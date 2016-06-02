@@ -1,0 +1,46 @@
+; UTF-8
+; Turkish translation by Erdem Ersoy (eersoy93) (erdemersoy@live.com)
+
+[Section]
+Name = Miranda IM
+Version = 0.10.24
+Licence = GPL
+Description = Open source multiprotocol instant messaging application - May not work completely.
+Size = 3.8 MB
+Category = 5
+URLSite = http://www.miranda-im.org/
+URLDownload = http://files.miranda-im.org/stable/0.10.24.0/miranda-im-v0.10.24-unicode.exe
+CDPath = none
+
+[Section.0407]
+Description = Open source Multiprotokoll Instant Messaging Anwendung - funktioniert möglicherweise nicht vollständig.
+
+[Section.040a]
+Description = Aplicación de mensajería instantánea multiprotocolo de código abierto - Puede no funcionar en su totalidad.
+
+[Section.040c]
+Description = Application de messagerie instantannée multi-protocoles open source - pourrait ne pas fonctionner complètement.
+Size = 3,8 Mo
+
+[Section.0410]
+Description = Multi-protocollo open source per applicazioni di messaggistica istantanea - potrebbe non funzionare del tutto.
+
+[Section.0413]
+Description = Open-bron multi-protocol instant message toepassing - werkt mogelijk niet volledig.
+
+[Section.0415]
+Description = Otwarty komunikator internetowy, obsługujący wiele różnych protokołów (m.in. GG, Tlen, Jabber, ICQ, IRC) - może nie działać prawidłowo.
+
+[Section.0418]
+Description = Aplicație de mesagerie instant multiprotocol (cu surse deschise) - posibil cu limitări în funcționalitate.
+Size = 3,8 Mo
+
+[Section.041f]
+Description = Açık kaynak, çoklu iletişim kâideli, evgin iletileşme uygulaması. Eksiksiz olarak çalışmayabilir.
+Size = 3,8 MB
+
+[Section.0422]
+Description = Відкрита мультипротокольна програма миттєвих повідомлень - може не працювати повністю.
+
+[Section.0813]
+Description = Open-bron multi-protocol instant message toepassing - werkt mogelijk niet volledig.

@@ -1,0 +1,7 @@
+/* Translated by David Nordenberg */
+
+LANGUAGE LANG_SWEDISH, SUBLANG_NEUTRAL
+STRINGTABLE
+BEGIN
+    STRING_USERINIT_FAIL "Userinit misslyckades att starta användargränssnittet!\n"
+END

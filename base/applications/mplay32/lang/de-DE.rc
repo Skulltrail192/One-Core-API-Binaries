@@ -1,0 +1,58 @@
+LANGUAGE LANG_GERMAN, SUBLANG_NEUTRAL
+
+IDR_MAINMENU MENU
+BEGIN
+    POPUP "&Datei"
+    BEGIN
+        MENUITEM "Ö&ffnen...\tStrg+O", IDM_OPEN_FILE
+        MENUITEM "Sch&ließen\tStrg+W", IDM_CLOSE_FILE
+        MENUITEM SEPARATOR
+        MENUITEM "&Beenden", IDM_EXIT
+    END
+    POPUP "&Wiedergabe"
+    BEGIN
+        MENUITEM "Wiedergabe/&Pause\tStrg+P", IDC_PLAY
+        MENUITEM "St&opp\tStrg+S", IDC_STOP
+        MENUITEM SEPARATOR
+        MENUITEM "W&iederholen\tStrg+T", IDM_REPEAT
+    END
+    POPUP "&Ansicht"
+    BEGIN
+        MENUITEM "Einzelfenster-&Modus", IDM_SWITCHVIEW
+    END
+    POPUP "&Gerät"
+    BEGIN
+        MENUITEM "&Eigenschaften", IDM_DEVPROPS
+        MENUITEM SEPARATOR
+        MENUITEM "&Lautstärkeregelung", IDM_VOLUMECTL
+    END
+    POPUP "&Hilfe"
+    BEGIN
+        MENUITEM "&Über...", IDM_ABOUT
+    END
+END
+
+ID_ACCELERATORS ACCELERATORS
+BEGIN
+    "^O", IDM_OPEN_FILE
+    "^W", IDM_CLOSE_FILE
+    "^P", IDC_PLAY
+    "^S", IDC_STOP
+    "^T", IDM_REPEAT
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ALL_TYPES_FILTER "Alle unterstützten (*.wav, *.cda, *.midi, *.mid, *.avi)\0*.wav;*.cda;*.midi;*.mid;*.avi\0"
+    IDS_TOOLTIP_PLAY "Wiedergabe"
+    IDS_TOOLTIP_STOP "Stopp"
+    IDS_TOOLTIP_EJECT "Auswerfen"
+    IDS_TOOLTIP_BACKWARD "Zurück"
+    IDS_TOOLTIP_SEEKBACK "Schneller Rücklauf"
+    IDS_TOOLTIP_SEEKFORW "Schneller Vorlauf"
+    IDS_TOOLTIP_FORWARD "Weiter"
+    IDS_APPTITLE "ReactOS Multimedia Player"
+    IDS_PLAY "Abspielen"
+    IDS_DEFAULTMCIERRMSG "Für diesen Fehler steht keine Beschreibung zur Verfügung."
+    IDS_UNKNOWNFILEEXT "Kann keinen Gerätetyp aus der angegebenen Dateinamenerweiterung ermitteln."
+END

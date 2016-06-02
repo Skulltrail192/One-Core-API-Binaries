@@ -1,0 +1,2771 @@
+﻿[Version]
+Signature="$ReactOS$"
+
+[AddReg]
+
+; Internet Explorer
+HKLM,"SOFTWARE\Microsoft\Internet Explorer","Build",,"62800"
+HKLM,"SOFTWARE\Microsoft\Internet Explorer","Version",,"6.0.2800.3959"
+HKLM,"SOFTWARE\Microsoft\Internet Explorer","W2kVersion",,"6.0.2800.3959"
+
+HKLM,"SOFTWARE\Classes\Applications\iexplore.exe","",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\iexplore.exe\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" %1"
+
+HKLM,"SOFTWARE\Classes\ftp","",0x00000000,"URL:File Transfer Protocol"
+HKLM,"SOFTWARE\Classes\ftp\Source Filter","",0x00000000,"{E436EBB6-524F-11CE-9F53-0020AF0BA770}"
+HKLM,"SOFTWARE\Classes\ftp\URL Protocol","",0x00000000,""
+HKLM,"SOFTWARE\Classes\ftp\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" %1"
+
+HKLM,"SOFTWARE\Classes\gopher","",0x00000000,"URL:Gopher Protocol"
+HKLM,"SOFTWARE\Classes\gopher\Source Filter","",0x00000000,"{E436EBB6-524F-11CE-9F53-0020AF0BA770}"
+HKLM,"SOFTWARE\Classes\gopher\URL Protocol","",0x00000000,""
+;see http
+;HKLM,"SOFTWARE\Classes\gopher\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" -nohome"
+HKLM,"SOFTWARE\Classes\gopher\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" %1"
+
+HKLM,"SOFTWARE\Classes\http","",0x00000000,"URL:HyperText Transfer Protocol"
+HKLM,"SOFTWARE\Classes\http\DefaultIcon","",0x00000000,"%systemroot%\system32\url.dll,0"
+HKLM,"SOFTWARE\Classes\http\Source Filter","",0x00000000,"{E436EBB6-524F-11CE-9F53-0020AF0BA770}"
+HKLM,"SOFTWARE\Classes\http\URL Protocol","",0x00000000,""
+HKLM,"SOFTWARE\Classes\http\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" %1"
+;TODO : iexplore should use DDE
+;HKLM,"SOFTWARE\Classes\http\shell\open\ddeexec","",0x00000000,"""%1"",,-1,0,,,,"
+;HKLM,"SOFTWARE\Classes\http\shell\open\ddeexec","NoActivateHandler",0x00000000,""
+;HKLM,"SOFTWARE\Classes\http\shell\open\ddeexec\Application","",0x00000000,"IExplore"
+;HKLM,"SOFTWARE\Classes\http\shell\open\ddeexec\Topic","",0x00000000,"WWW_OpenURL"
+
+HKLM,"SOFTWARE\Classes\https","",0x00000000,"URL:HyperText Transfer Protocol with Privacy"
+HKLM,"SOFTWARE\Classes\https\DefaultIcon","",0x00000000,"%systemroot%\system32\url.dll,0"
+HKLM,"SOFTWARE\Classes\https\Source Filter","",0x00000000,"{E436EBB6-524F-11CE-9F53-0020AF0BA770}"
+HKLM,"SOFTWARE\Classes\https\URL Protocol","",0x00000000,""
+;see http
+;HKLM,"SOFTWARE\Classes\https\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" -nohome"
+HKLM,"SOFTWARE\Classes\https\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" %1"
+
+; Register system default web browser
+HKLM,"SOFTWARE\Clients\StartMenuInternet","",0x00000000,"IEXPLORE.EXE"
+HKLM,"SOFTWARE\Clients\StartMenuInternet\IEXPLORE.EXE","",0x00000000,"Internet Explorer"
+HKLM,"SOFTWARE\Clients\StartMenuInternet\IEXPLORE.EXE\DefaultIcon","",0x00000000,"%programfiles%\Internet Explorer\iexplore.exe,-7"
+HKLM,"SOFTWARE\Clients\StartMenuInternet\IEXPLORE.EXE\shell\open\command","",0x00000000,"%programfiles%\Internet Explorer\iexplore.exe"
+
+; DirectX
+HKLM,"SOFTWARE\Microsoft\DirectX","InstalledVersion",0x00000001, 0x00,0x00,0x00,0x09,0x00,0x00,0x00,0x00
+HKLM,"SOFTWARE\Microsoft\DirectX","Version",0x00000000,"4.09.00.0904"
+
+; RPC
+HKLM,"SOFTWARE\Microsoft\Rpc",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Rpc\NetBios",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Rpc","DCOM Protocols",0x00010002,"ncacn_ip_tcp"
+HKLM,"SOFTWARE\Microsoft\Rpc\ClientProtocols","ncacn_np",0x00000000,"rpcrt4.dll"
+HKLM,"SOFTWARE\Microsoft\Rpc\NameService","DefaultSyntax",2,"3"
+HKLM,"SOFTWARE\Microsoft\Rpc\NameService","Endpoint",2,"\pipe\locator"
+HKLM,"SOFTWARE\Microsoft\Rpc\NameService","NetworkAddress",2,"\\."
+HKLM,"SOFTWARE\Microsoft\Rpc\NameService","Protocol",2,"ncacn_np"
+HKLM,"SOFTWARE\Microsoft\Rpc\NameService","ServerNetworkAddress",2,"\\."
+HKLM,"SOFTWARE\Microsoft\Rpc\SecurityService","1",2,"secur32.dll"
+HKLM,"SOFTWARE\Microsoft\Rpc\SecurityService","10",2,"secur32.dll"
+HKLM,"SOFTWARE\Microsoft\Rpc\SecurityService","14",2,"schannel.dll"
+HKLM,"SOFTWARE\Microsoft\Rpc\SecurityService","16",2,"secur32.dll"
+HKLM,"SOFTWARE\Microsoft\Rpc\SecurityService","18",2,"secur32.dll"
+HKLM,"SOFTWARE\Microsoft\Rpc\SecurityService","68",2,"netlogon.dll"
+HKLM,"SOFTWARE\Microsoft\Rpc\SecurityService","9",2,"secur32.dll"
+
+HKLM,"SOFTWARE\Microsoft\Secure",,0x00000012
+
+; WBem
+HKLM,"SOFTWARE\Microsoft\wbem\ess",,0x00000012
+HKLM,"SOFTWARE\Microsoft\wbem\Transports",,0x00000012
+HKLM,"SOFTWARE\Microsoft\wbem\Scripting",,0x00000012
+HKLM,"SOFTWARE\Microsoft\wbem","Installation Directory",0x00020000,"%SystemRoot%\system32\wbem"
+HKLM,"SOFTWARE\Microsoft\wbem","MOF Self-Install Directory",0x00020000,"%SystemRoot%\system32\wbem\mof"
+
+; HTML Help
+HKLM,"SOFTWARE\Microsoft\Active Setup\Installed Components\{de5aed00-a4bf-11d1-9948-00c04f98bbc9}",,2,"HTML Help"
+HKLM,"SOFTWARE\Microsoft\Active Setup\Installed Components\{de5aed00-a4bf-11d1-9948-00c04f98bbc9}","ComponentID",2,"HTMLHelp"
+HKLM,"SOFTWARE\Microsoft\Active Setup\Installed Components\{de5aed00-a4bf-11d1-9948-00c04f98bbc9}","IsInstalled",2,1
+HKLM,"SOFTWARE\Microsoft\Active Setup\Installed Components\{de5aed00-a4bf-11d1-9948-00c04f98bbc9}","Locale",2,"*"
+HKLM,"SOFTWARE\Microsoft\Active Setup\Installed Components\{de5aed00-a4bf-11d1-9948-00c04f98bbc9}","Version",2,"4,74,9273,0"
+
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion","DevicePath",0x00020002,"%SystemRoot%\inf"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion","MediaPathUnexpanded",0x00020000,"%SystemRoot%\Media"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Applets",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\Cpls",,0x00000012
+; Cursors Schemes
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\Cursors\Schemes","ReactOS Default",0x00020000,""",,,,,,,,,,,,,"""
+
+; Common shell folders
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\DefragPath",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\DefragPath","",0x00020000,"%systemroot%\system32\dfrg.msc %c:"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\BackupPath",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MyComputer\BackupPath","",0x00020000,"%SystemRoot%\system32\ntbackup.exe"
+
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnceEx",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Setup",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Setup","DriverCachePath",0x00020002,"%SystemRoot%\Driver Cache"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDlls",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Shell Extensions",,0x00000012
+
+; FIXME - usetup doesn't handle extra paths
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce","",0x00000000,"cmd /c md ""%programfiles%\Internet Explorer\"" && move %windir%\iexplore.exe ""%programfiles%\Internet Explorer\"" && ""%programfiles%\Internet Explorer\iexplore.exe"" /RegServer"
+; Create .NET Framework InstallRoot key, reg_sz & full path
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce","InstallRoot.NET",0x00000000,"cmd /c reg add HKLM\SOFTWARE\Microsoft\.NETFramework /v InstallRoot /t REG_SZ /d %SystemRoot%\Microsoft.NET\Framework\"
+
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons",,0x00000012
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu",,0x00000012
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu","{208D2C60-3AEA-1069-A2D7-08002B30309D}",0x00010001,0x00000000
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Bitbucket",,0x00000012
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Bitbucket\Volume",,0x00000012
+
+; CMD Settings
+HKLM,"SOFTWARE\Microsoft\Command Processor","AutoRun",0x00020000,""
+
+; Uninstall Application list
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",,0x00000012
+
+; Version Information
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion","CurrentVersion",0x00000000,"5.2"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion","CSDVersion",0x00000000,"Service Pack 2"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion","CurrentBuildNumber",0x00000000,"3790"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion","InstallDate",0x00010003,0
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion","ProductName",2,"ReactOS"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion","RegDone",0x00000002,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion","RegisteredOrganization",2,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion","RegisteredOwner",2,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion","SoftwareType",2,"System"
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Accessibility",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Compatibility",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Compatibility32",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Network",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Network\Shared Parameters",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Network\SMAddOns",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Network\UMAddOns",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Network\World Full Access Shared Parameters",,0x00000012
+
+; INI File Mappings
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\IniFileMapping",,0x00000012
+
+; Global Console settings
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Console",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Console\Nls","00000409",2,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Console\TrueTypeFont","0",2,"Lucida Console"
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers.desc",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontMapper",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\IME Compatibility",,0x00000012
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\IMM","LoadIMM",0x00010003,0
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\IMM","LoadCTFIME",0x00010003,0
+
+; DOS Device ports
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Ports","COM1:",2,"9600,n,8,1"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Ports","COM2:",2,"9600,n,8,1"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Ports","COM3:",2,"9600,n,8,1"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Ports","COM4:",2,"9600,n,8,1"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Ports","FILE:",2,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Ports","LPT1:",2,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Ports","LPT2:",2,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Ports","LPT3:",2,""
+
+; Image File Execution Options (NtGlobalFlag with FLG_SHOW_LDR_SNAPS set for loadlib.exe) 
+HKLM,"Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\loadlib.exe","GlobalFlag",0x00010001,0x00000002
+;HKLM,"Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\loaddll.exe","GlobalFlag",0x00010001,0x00000002
+;HKLM,"Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\soffice.exe","GlobalFlag",0x00010001,0x00000002
+;HKLM,"Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\tlstest.exe","GlobalFlag",0x00010001,0x00000002
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","midimapper",0x00000000,"midimap.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","wavemapper",0x00000000,"msacm32.drv"
+;HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","wave",0x00000000,"sndblst.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","midi",0x00000000,"beepmidi.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","msacm.msadpcm",0x00000000,"msadp32.acm"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","msacm.msg711",0x00000000,"msg711.acm"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","msacm.msgsm610",0x00000000,"msgsm32.acm"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","msacm.imaadpcm",0x00000000,"imaadp32.acm"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","msacm.winemp3",0x00000000,"winemp3.acm"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","vidc.cvid",0x00000000,"iccvid.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","vidc.mrle",0x00000000,"msrle32.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32","vidc.msvc",0x00000000,"msvidc32.dll"
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI32","AVIVideo",0x00000002,"mciavi32.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI32","CDAudio",0x00000002,"mcicda.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI32","Sequencer",0x00000002,"mciseq.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI32","WaveAudio",0x00000002,"mciwave.dll"
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","aifc",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","asf",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","asx",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","au",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","avi",0x00000002,"AVIVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","cda",0x00000002,"CDAudio"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","lsf",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","lsx",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","m1v",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","m3u",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","mid",0x00000002,"Sequencer"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","midi",0x00000002,"Sequencer"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","mp2",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","mp2v",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","mp3",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","mpa",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","mpe",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","mpeg",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","mpg",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","mpv",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","mpv2",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","rmi",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","rmi",0x00000002,"Sequencer"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","snd",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","wav",0x00000002,"WaveAudio"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","wax",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","wm",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","wma",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","wmp",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","wmv",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","wmx",0x00000002,"MPEGVideo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\MCI Extensions","wvx",0x00000002,"MPEGVideo"
+
+; User Profile List
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList","ProfilesDirectory",0x00020000,"%SystemDrive%\Documents and Settings"
+
+; Font substitutes
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontSubstitutes",,0x00000012
+
+; win32k GRE initialization
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize","MS Shell Dlg",0x00000002,"Microsoft Sans Serif"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize","FIXEDFON.FON",0x00000002,"vgafix.fon"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize","FONTS.FON",0x00000002,"vgasys.fon"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize","OEMFONT.FON",0x00000002,"vgaoem.fon"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize","DisableRemoteFontBootCache",0x00010001,0x00000000
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize","LastBootTimeFontCacheState",0x00010001,0x00000002
+
+; Certificates
+; GeoTrustGlobal CA (root)
+HKLM,"SOFTWARE\Microsoft\SystemCertificates\AuthRoot\Certificates\DE28F4A4FFE5B92FA3C503D1A349A7F9962A8212","Blob",0x00000001,\
+    0x20,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x58,0x03,0x00,0x00,0x30,0x82,0x03,0x54,\
+    0x30,0x82,0x02,0x3C,0xA0,0x03,0x02,0x01,0x02,0x02,0x03,0x02,0x34,0x56,0x30,0x0D,\
+    0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x05,0x05,0x00,0x30,0x42,0x31,\
+    0x0B,0x30,0x09,0x06,0x03,0x55,0x04,0x06,0x13,0x02,0x55,0x53,0x31,0x16,0x30,0x14,\
+    0x06,0x03,0x55,0x04,0x0A,0x13,0x0D,0x47,0x65,0x6F,0x54,0x72,0x75,0x73,0x74,0x20,\
+    0x49,0x6E,0x63,0x2E,0x31,0x1B,0x30,0x19,0x06,0x03,0x55,0x04,0x03,0x13,0x12,0x47,\
+    0x65,0x6F,0x54,0x72,0x75,0x73,0x74,0x20,0x47,0x6C,0x6F,0x62,0x61,0x6C,0x20,0x43,\
+    0x41,0x30,0x1E,0x17,0x0D,0x30,0x32,0x30,0x35,0x32,0x31,0x30,0x34,0x30,0x30,0x30,\
+    0x30,0x5A,0x17,0x0D,0x32,0x32,0x30,0x35,0x32,0x31,0x30,0x34,0x30,0x30,0x30,0x30,\
+    0x5A,0x30,0x42,0x31,0x0B,0x30,0x09,0x06,0x03,0x55,0x04,0x06,0x13,0x02,0x55,0x53,\
+    0x31,0x16,0x30,0x14,0x06,0x03,0x55,0x04,0x0A,0x13,0x0D,0x47,0x65,0x6F,0x54,0x72,\
+    0x75,0x73,0x74,0x20,0x49,0x6E,0x63,0x2E,0x31,0x1B,0x30,0x19,0x06,0x03,0x55,0x04,\
+    0x03,0x13,0x12,0x47,0x65,0x6F,0x54,0x72,0x75,0x73,0x74,0x20,0x47,0x6C,0x6F,0x62,\
+    0x61,0x6C,0x20,0x43,0x41,0x30,0x82,0x01,0x22,0x30,0x0D,0x06,0x09,0x2A,0x86,0x48,\
+    0x86,0xF7,0x0D,0x01,0x01,0x01,0x05,0x00,0x03,0x82,0x01,0x0F,0x00,0x30,0x82,0x01,\
+    0x0A,0x02,0x82,0x01,0x01,0x00,0xDA,0xCC,0x18,0x63,0x30,0xFD,0xF4,0x17,0x23,0x1A,\
+    0x56,0x7E,0x5B,0xDF,0x3C,0x6C,0x38,0xE4,0x71,0xB7,0x78,0x91,0xD4,0xBC,0xA1,0xD8,\
+    0x4C,0xF8,0xA8,0x43,0xB6,0x03,0xE9,0x4D,0x21,0x07,0x08,0x88,0xDA,0x58,0x2F,0x66,\
+    0x39,0x29,0xBD,0x05,0x78,0x8B,0x9D,0x38,0xE8,0x05,0xB7,0x6A,0x7E,0x71,0xA4,0xE6,\
+    0xC4,0x60,0xA6,0xB0,0xEF,0x80,0xE4,0x89,0x28,0x0F,0x9E,0x25,0xD6,0xED,0x83,0xF3,\
+    0xAD,0xA6,0x91,0xC7,0x98,0xC9,0x42,0x18,0x35,0x14,0x9D,0xAD,0x98,0x46,0x92,0x2E,\
+    0x4F,0xCA,0xF1,0x87,0x43,0xC1,0x16,0x95,0x57,0x2D,0x50,0xEF,0x89,0x2D,0x80,0x7A,\
+    0x57,0xAD,0xF2,0xEE,0x5F,0x6B,0xD2,0x00,0x8D,0xB9,0x14,0xF8,0x14,0x15,0x35,0xD9,\
+    0xC0,0x46,0xA3,0x7B,0x72,0xC8,0x91,0xBF,0xC9,0x55,0x2B,0xCD,0xD0,0x97,0x3E,0x9C,\
+    0x26,0x64,0xCC,0xDF,0xCE,0x83,0x19,0x71,0xCA,0x4E,0xE6,0xD4,0xD5,0x7B,0xA9,0x19,\
+    0xCD,0x55,0xDE,0xC8,0xEC,0xD2,0x5E,0x38,0x53,0xE5,0x5C,0x4F,0x8C,0x2D,0xFE,0x50,\
+    0x23,0x36,0xFC,0x66,0xE6,0xCB,0x8E,0xA4,0x39,0x19,0x00,0xB7,0x95,0x02,0x39,0x91,\
+    0x0B,0x0E,0xFE,0x38,0x2E,0xD1,0x1D,0x05,0x9A,0xF6,0x4D,0x3E,0x6F,0x0F,0x07,0x1D,\
+    0xAF,0x2C,0x1E,0x8F,0x60,0x39,0xE2,0xFA,0x36,0x53,0x13,0x39,0xD4,0x5E,0x26,0x2B,\
+    0xDB,0x3D,0xA8,0x14,0xBD,0x32,0xEB,0x18,0x03,0x28,0x52,0x04,0x71,0xE5,0xAB,0x33,\
+    0x3D,0xE1,0x38,0xBB,0x07,0x36,0x84,0x62,0x9C,0x79,0xEA,0x16,0x30,0xF4,0x5F,0xC0,\
+    0x2B,0xE8,0x71,0x6B,0xE4,0xF9,0x02,0x03,0x01,0x00,0x01,0xA3,0x53,0x30,0x51,0x30,\
+    0x0F,0x06,0x03,0x55,0x1D,0x13,0x01,0x01,0xFF,0x04,0x05,0x30,0x03,0x01,0x01,0xFF,\
+    0x30,0x1D,0x06,0x03,0x55,0x1D,0x0E,0x04,0x16,0x04,0x14,0xC0,0x7A,0x98,0x68,0x8D,\
+    0x89,0xFB,0xAB,0x05,0x64,0x0C,0x11,0x7D,0xAA,0x7D,0x65,0xB8,0xCA,0xCC,0x4E,0x30,\
+    0x1F,0x06,0x03,0x55,0x1D,0x23,0x04,0x18,0x30,0x16,0x80,0x14,0xC0,0x7A,0x98,0x68,\
+    0x8D,0x89,0xFB,0xAB,0x05,0x64,0x0C,0x11,0x7D,0xAA,0x7D,0x65,0xB8,0xCA,0xCC,0x4E,\
+    0x30,0x0D,0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x05,0x05,0x00,0x03,\
+    0x82,0x01,0x01,0x00,0x35,0xE3,0x29,0x6A,0xE5,0x2F,0x5D,0x54,0x8E,0x29,0x50,0x94,\
+    0x9F,0x99,0x1A,0x14,0xE4,0x8F,0x78,0x2A,0x62,0x94,0xA2,0x27,0x67,0x9E,0xD0,0xCF,\
+    0x1A,0x5E,0x47,0xE9,0xC1,0xB2,0xA4,0xCF,0xDD,0x41,0x1A,0x05,0x4E,0x9B,0x4B,0xEE,\
+    0x4A,0x6F,0x55,0x52,0xB3,0x24,0xA1,0x37,0x0A,0xEB,0x64,0x76,0x2A,0x2E,0x2C,0xF3,\
+    0xFD,0x3B,0x75,0x90,0xBF,0xFA,0x71,0xD8,0xC7,0x3D,0x37,0xD2,0xB5,0x05,0x95,0x62,\
+    0xB9,0xA6,0xDE,0x89,0x3D,0x36,0x7B,0x38,0x77,0x48,0x97,0xAC,0xA6,0x20,0x8F,0x2E,\
+    0xA6,0xC9,0x0C,0xC2,0xB2,0x99,0x45,0x00,0xC7,0xCE,0x11,0x51,0x22,0x22,0xE0,0xA5,\
+    0xEA,0xB6,0x15,0x48,0x09,0x64,0xEA,0x5E,0x4F,0x74,0xF7,0x05,0x3E,0xC7,0x8A,0x52,\
+    0x0C,0xDB,0x15,0xB4,0xBD,0x6D,0x9B,0xE5,0xC6,0xB1,0x54,0x68,0xA9,0xE3,0x69,0x90,\
+    0xB6,0x9A,0xA5,0x0F,0xB8,0xB9,0x3F,0x20,0x7D,0xAE,0x4A,0xB5,0xB8,0x9C,0xE4,0x1D,\
+    0xB6,0xAB,0xE6,0x94,0xA5,0xC1,0xC7,0x83,0xAD,0xDB,0xF5,0x27,0x87,0x0E,0x04,0x6C,\
+    0xD5,0xFF,0xDD,0xA0,0x5D,0xED,0x87,0x52,0xB7,0x2B,0x15,0x02,0xAE,0x39,0xA6,0x6A,\
+    0x74,0xE9,0xDA,0xC4,0xE7,0xBC,0x4D,0x34,0x1E,0xA9,0x5C,0x4D,0x33,0x5F,0x92,0x09,\
+    0x2F,0x88,0x66,0x5D,0x77,0x97,0xC7,0x1D,0x76,0x13,0xA9,0xD5,0xE5,0xF1,0x16,0x09,\
+    0x11,0x35,0xD5,0xAC,0xDB,0x24,0x71,0x70,0x2C,0x98,0x56,0x0B,0xD9,0x17,0xB4,0xD1,\
+    0xE3,0x51,0x2B,0x5E,0x75,0xE8,0xD5,0xD0,0xDC,0x4F,0x34,0xED,0xC2,0x05,0x66,0x80,\
+    0xA1,0xCB,0xE6,0x33
+
+; Equifax Secure CA (root)
+HKLM,"SOFTWARE\Microsoft\SystemCertificates\AuthRoot\Certificates\D23209AD23D314232174E40D7F9D62139786633A","Blob",0x00000001,\
+    0x20,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x24,0x03,0x00,0x00,0x30,0x82,0x03,0x20,\
+    0x30,0x82,0x02,0x89,0xA0,0x03,0x02,0x01,0x02,0x02,0x04,0x35,0xDE,0xF4,0xCF,0x30,\
+    0x0D,0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x05,0x05,0x00,0x30,0x4E,\
+    0x31,0x0B,0x30,0x09,0x06,0x03,0x55,0x04,0x06,0x13,0x02,0x55,0x53,0x31,0x10,0x30,\
+    0x0E,0x06,0x03,0x55,0x04,0x0A,0x13,0x07,0x45,0x71,0x75,0x69,0x66,0x61,0x78,0x31,\
+    0x2D,0x30,0x2B,0x06,0x03,0x55,0x04,0x0B,0x13,0x24,0x45,0x71,0x75,0x69,0x66,0x61,\
+    0x78,0x20,0x53,0x65,0x63,0x75,0x72,0x65,0x20,0x43,0x65,0x72,0x74,0x69,0x66,0x69,\
+    0x63,0x61,0x74,0x65,0x20,0x41,0x75,0x74,0x68,0x6F,0x72,0x69,0x74,0x79,0x30,0x1E,\
+    0x17,0x0D,0x39,0x38,0x30,0x38,0x32,0x32,0x31,0x36,0x34,0x31,0x35,0x31,0x5A,0x17,\
+    0x0D,0x31,0x38,0x30,0x38,0x32,0x32,0x31,0x36,0x34,0x31,0x35,0x31,0x5A,0x30,0x4E,\
+    0x31,0x0B,0x30,0x09,0x06,0x03,0x55,0x04,0x06,0x13,0x02,0x55,0x53,0x31,0x10,0x30,\
+    0x0E,0x06,0x03,0x55,0x04,0x0A,0x13,0x07,0x45,0x71,0x75,0x69,0x66,0x61,0x78,0x31,\
+    0x2D,0x30,0x2B,0x06,0x03,0x55,0x04,0x0B,0x13,0x24,0x45,0x71,0x75,0x69,0x66,0x61,\
+    0x78,0x20,0x53,0x65,0x63,0x75,0x72,0x65,0x20,0x43,0x65,0x72,0x74,0x69,0x66,0x69,\
+    0x63,0x61,0x74,0x65,0x20,0x41,0x75,0x74,0x68,0x6F,0x72,0x69,0x74,0x79,0x30,0x81,\
+    0x9F,0x30,0x0D,0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x01,0x05,0x00,\
+    0x03,0x81,0x8D,0x00,0x30,0x81,0x89,0x02,0x81,0x81,0x00,0xC1,0x5D,0xB1,0x58,0x67,\
+    0x08,0x62,0xEE,0xA0,0x9A,0x2D,0x1F,0x08,0x6D,0x91,0x14,0x68,0x98,0x0A,0x1E,0xFE,\
+    0xDA,0x04,0x6F,0x13,0x84,0x62,0x21,0xC3,0xD1,0x7C,0xCE,0x9F,0x05,0xE0,0xB8,0x01,\
+    0xF0,0x4E,0x34,0xEC,0xE2,0x8A,0x95,0x04,0x64,0xAC,0xF1,0x6B,0x53,0x5F,0x05,0xB3,\
+    0xCB,0x67,0x80,0xBF,0x42,0x02,0x8E,0xFE,0xDD,0x01,0x09,0xEC,0xE1,0x00,0x14,0x4F,\
+    0xFC,0xFB,0xF0,0x0C,0xDD,0x43,0xBA,0x5B,0x2B,0xE1,0x1F,0x80,0x70,0x99,0x15,0x57,\
+    0x93,0x16,0xF1,0x0F,0x97,0x6A,0xB7,0xC2,0x68,0x23,0x1C,0xCC,0x4D,0x59,0x30,0xAC,\
+    0x51,0x1E,0x3B,0xAF,0x2B,0xD6,0xEE,0x63,0x45,0x7B,0xC5,0xD9,0x5F,0x50,0xD2,0xE3,\
+    0x50,0x0F,0x3A,0x88,0xE7,0xBF,0x14,0xFD,0xE0,0xC7,0xB9,0x02,0x03,0x01,0x00,0x01,\
+    0xA3,0x82,0x01,0x09,0x30,0x82,0x01,0x05,0x30,0x70,0x06,0x03,0x55,0x1D,0x1F,0x04,\
+    0x69,0x30,0x67,0x30,0x65,0xA0,0x63,0xA0,0x61,0xA4,0x5F,0x30,0x5D,0x31,0x0B,0x30,\
+    0x09,0x06,0x03,0x55,0x04,0x06,0x13,0x02,0x55,0x53,0x31,0x10,0x30,0x0E,0x06,0x03,\
+    0x55,0x04,0x0A,0x13,0x07,0x45,0x71,0x75,0x69,0x66,0x61,0x78,0x31,0x2D,0x30,0x2B,\
+    0x06,0x03,0x55,0x04,0x0B,0x13,0x24,0x45,0x71,0x75,0x69,0x66,0x61,0x78,0x20,0x53,\
+    0x65,0x63,0x75,0x72,0x65,0x20,0x43,0x65,0x72,0x74,0x69,0x66,0x69,0x63,0x61,0x74,\
+    0x65,0x20,0x41,0x75,0x74,0x68,0x6F,0x72,0x69,0x74,0x79,0x31,0x0D,0x30,0x0B,0x06,\
+    0x03,0x55,0x04,0x03,0x13,0x04,0x43,0x52,0x4C,0x31,0x30,0x1A,0x06,0x03,0x55,0x1D,\
+    0x10,0x04,0x13,0x30,0x11,0x81,0x0F,0x32,0x30,0x31,0x38,0x30,0x38,0x32,0x32,0x31,\
+    0x36,0x34,0x31,0x35,0x31,0x5A,0x30,0x0B,0x06,0x03,0x55,0x1D,0x0F,0x04,0x04,0x03,\
+    0x02,0x01,0x06,0x30,0x1F,0x06,0x03,0x55,0x1D,0x23,0x04,0x18,0x30,0x16,0x80,0x14,\
+    0x48,0xE6,0x68,0xF9,0x2B,0xD2,0xB2,0x95,0xD7,0x47,0xD8,0x23,0x20,0x10,0x4F,0x33,\
+    0x98,0x90,0x9F,0xD4,0x30,0x1D,0x06,0x03,0x55,0x1D,0x0E,0x04,0x16,0x04,0x14,0x48,\
+    0xE6,0x68,0xF9,0x2B,0xD2,0xB2,0x95,0xD7,0x47,0xD8,0x23,0x20,0x10,0x4F,0x33,0x98,\
+    0x90,0x9F,0xD4,0x30,0x0C,0x06,0x03,0x55,0x1D,0x13,0x04,0x05,0x30,0x03,0x01,0x01,\
+    0xFF,0x30,0x1A,0x06,0x09,0x2A,0x86,0x48,0x86,0xF6,0x7D,0x07,0x41,0x00,0x04,0x0D,\
+    0x30,0x0B,0x1B,0x05,0x56,0x33,0x2E,0x30,0x63,0x03,0x02,0x06,0xC0,0x30,0x0D,0x06,\
+    0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x05,0x05,0x00,0x03,0x81,0x81,0x00,\
+    0x58,0xCE,0x29,0xEA,0xFC,0xF7,0xDE,0xB5,0xCE,0x02,0xB9,0x17,0xB5,0x85,0xD1,0xB9,\
+    0xE3,0xE0,0x95,0xCC,0x25,0x31,0x0D,0x00,0xA6,0x92,0x6E,0x7F,0xB6,0x92,0x63,0x9E,\
+    0x50,0x95,0xD1,0x9A,0x6F,0xE4,0x11,0xDE,0x63,0x85,0x6E,0x98,0xEE,0xA8,0xFF,0x5A,\
+    0xC8,0xD3,0x55,0xB2,0x66,0x71,0x57,0xDE,0xC0,0x21,0xEB,0x3D,0x2A,0xA7,0x23,0x49,\
+    0x01,0x04,0x86,0x42,0x7B,0xFC,0xEE,0x7F,0xA2,0x16,0x52,0xB5,0x67,0x67,0xD3,0x40,\
+    0xDB,0x3B,0x26,0x58,0xB2,0x28,0x77,0x3D,0xAE,0x14,0x77,0x61,0xD6,0xFA,0x2A,0x66,\
+    0x27,0xA0,0x0D,0xFA,0xA7,0x73,0x5C,0xEA,0x70,0xF1,0x94,0x21,0x65,0x44,0x5F,0xFA,\
+    0xFC,0xEF,0x29,0x68,0xA9,0xA2,0x87,0x79,0xEF,0x79,0xEF,0x4F,0xAC,0x07,0x77,0x38
+
+;GlobalSign Root CA
+HKLM,"SOFTWARE\Microsoft\SystemCertificates\AuthRoot\Certificates\B1BC968BD4F49D622AA89A81F2150152A41D829C","Blob",0x00000001,\
+    0x20,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x79,0x03,0x00,0x00,0x30,0x82,0x03,0x75,\
+    0x30,0x82,0x02,0x5D,0xA0,0x03,0x02,0x01,0x02,0x02,0x0B,0x04,0x00,0x00,0x00,0x00,\
+    0x01,0x15,0x4B,0x5A,0xC3,0x94,0x30,0x0D,0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,\
+    0x01,0x01,0x05,0x05,0x00,0x30,0x57,0x31,0x0B,0x30,0x09,0x06,0x03,0x55,0x04,0x06,\
+    0x13,0x02,0x42,0x45,0x31,0x19,0x30,0x17,0x06,0x03,0x55,0x04,0x0A,0x13,0x10,0x47,\
+    0x6C,0x6F,0x62,0x61,0x6C,0x53,0x69,0x67,0x6E,0x20,0x6E,0x76,0x2D,0x73,0x61,0x31,\
+    0x10,0x30,0x0E,0x06,0x03,0x55,0x04,0x0B,0x13,0x07,0x52,0x6F,0x6F,0x74,0x20,0x43,\
+    0x41,0x31,0x1B,0x30,0x19,0x06,0x03,0x55,0x04,0x03,0x13,0x12,0x47,0x6C,0x6F,0x62,\
+    0x61,0x6C,0x53,0x69,0x67,0x6E,0x20,0x52,0x6F,0x6F,0x74,0x20,0x43,0x41,0x30,0x1E,\
+    0x17,0x0D,0x39,0x38,0x30,0x39,0x30,0x31,0x31,0x32,0x30,0x30,0x30,0x30,0x5A,0x17,\
+    0x0D,0x32,0x38,0x30,0x31,0x32,0x38,0x31,0x32,0x30,0x30,0x30,0x30,0x5A,0x30,0x57,\
+    0x31,0x0B,0x30,0x09,0x06,0x03,0x55,0x04,0x06,0x13,0x02,0x42,0x45,0x31,0x19,0x30,\
+    0x17,0x06,0x03,0x55,0x04,0x0A,0x13,0x10,0x47,0x6C,0x6F,0x62,0x61,0x6C,0x53,0x69,\
+    0x67,0x6E,0x20,0x6E,0x76,0x2D,0x73,0x61,0x31,0x10,0x30,0x0E,0x06,0x03,0x55,0x04,\
+    0x0B,0x13,0x07,0x52,0x6F,0x6F,0x74,0x20,0x43,0x41,0x31,0x1B,0x30,0x19,0x06,0x03,\
+    0x55,0x04,0x03,0x13,0x12,0x47,0x6C,0x6F,0x62,0x61,0x6C,0x53,0x69,0x67,0x6E,0x20,\
+    0x52,0x6F,0x6F,0x74,0x20,0x43,0x41,0x30,0x82,0x01,0x22,0x30,0x0D,0x06,0x09,0x2A,\
+    0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x01,0x05,0x00,0x03,0x82,0x01,0x0F,0x00,0x30,\
+    0x82,0x01,0x0A,0x02,0x82,0x01,0x01,0x00,0xDA,0x0E,0xE6,0x99,0x8D,0xCE,0xA3,0xE3,\
+    0x4F,0x8A,0x7E,0xFB,0xF1,0x8B,0x83,0x25,0x6B,0xEA,0x48,0x1F,0xF1,0x2A,0xB0,0xB9,\
+    0x95,0x11,0x04,0xBD,0xF0,0x63,0xD1,0xE2,0x67,0x66,0xCF,0x1C,0xDD,0xCF,0x1B,0x48,\
+    0x2B,0xEE,0x8D,0x89,0x8E,0x9A,0xAF,0x29,0x80,0x65,0xAB,0xE9,0xC7,0x2D,0x12,0xCB,\
+    0xAB,0x1C,0x4C,0x70,0x07,0xA1,0x3D,0x0A,0x30,0xCD,0x15,0x8D,0x4F,0xF8,0xDD,0xD4,\
+    0x8C,0x50,0x15,0x1C,0xEF,0x50,0xEE,0xC4,0x2E,0xF7,0xFC,0xE9,0x52,0xF2,0x91,0x7D,\
+    0xE0,0x6D,0xD5,0x35,0x30,0x8E,0x5E,0x43,0x73,0xF2,0x41,0xE9,0xD5,0x6A,0xE3,0xB2,\
+    0x89,0x3A,0x56,0x39,0x38,0x6F,0x06,0x3C,0x88,0x69,0x5B,0x2A,0x4D,0xC5,0xA7,0x54,\
+    0xB8,0x6C,0x89,0xCC,0x9B,0xF9,0x3C,0xCA,0xE5,0xFD,0x89,0xF5,0x12,0x3C,0x92,0x78,\
+    0x96,0xD6,0xDC,0x74,0x6E,0x93,0x44,0x61,0xD1,0x8D,0xC7,0x46,0xB2,0x75,0x0E,0x86,\
+    0xE8,0x19,0x8A,0xD5,0x6D,0x6C,0xD5,0x78,0x16,0x95,0xA2,0xE9,0xC8,0x0A,0x38,0xEB,\
+    0xF2,0x24,0x13,0x4F,0x73,0x54,0x93,0x13,0x85,0x3A,0x1B,0xBC,0x1E,0x34,0xB5,0x8B,\
+    0x05,0x8C,0xB9,0x77,0x8B,0xB1,0xDB,0x1F,0x20,0x91,0xAB,0x09,0x53,0x6E,0x90,0xCE,\
+    0x7B,0x37,0x74,0xB9,0x70,0x47,0x91,0x22,0x51,0x63,0x16,0x79,0xAE,0xB1,0xAE,0x41,\
+    0x26,0x08,0xC8,0x19,0x2B,0xD1,0x46,0xAA,0x48,0xD6,0x64,0x2A,0xD7,0x83,0x34,0xFF,\
+    0x2C,0x2A,0xC1,0x6C,0x19,0x43,0x4A,0x07,0x85,0xE7,0xD3,0x7C,0xF6,0x21,0x68,0xEF,\
+    0xEA,0xF2,0x52,0x9F,0x7F,0x93,0x90,0xCF,0x02,0x03,0x01,0x00,0x01,0xA3,0x42,0x30,\
+    0x40,0x30,0x0E,0x06,0x03,0x55,0x1D,0x0F,0x01,0x01,0xFF,0x04,0x04,0x03,0x02,0x01,\
+    0x06,0x30,0x0F,0x06,0x03,0x55,0x1D,0x13,0x01,0x01,0xFF,0x04,0x05,0x30,0x03,0x01,\
+    0x01,0xFF,0x30,0x1D,0x06,0x03,0x55,0x1D,0x0E,0x04,0x16,0x04,0x14,0x60,0x7B,0x66,\
+    0x1A,0x45,0x0D,0x97,0xCA,0x89,0x50,0x2F,0x7D,0x04,0xCD,0x34,0xA8,0xFF,0xFC,0xFD,\
+    0x4B,0x30,0x0D,0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x05,0x05,0x00,\
+    0x03,0x82,0x01,0x01,0x00,0xD6,0x73,0xE7,0x7C,0x4F,0x76,0xD0,0x8D,0xBF,0xEC,0xBA,\
+    0xA2,0xBE,0x34,0xC5,0x28,0x32,0xB5,0x7C,0xFC,0x6C,0x9C,0x2C,0x2B,0xBD,0x09,0x9E,\
+    0x53,0xBF,0x6B,0x5E,0xAA,0x11,0x48,0xB6,0xE5,0x08,0xA3,0xB3,0xCA,0x3D,0x61,0x4D,\
+    0xD3,0x46,0x09,0xB3,0x3E,0xC3,0xA0,0xE3,0x63,0x55,0x1B,0xF2,0xBA,0xEF,0xAD,0x39,\
+    0xE1,0x43,0xB9,0x38,0xA3,0xE6,0x2F,0x8A,0x26,0x3B,0xEF,0xA0,0x50,0x56,0xF9,0xC6,\
+    0x0A,0xFD,0x38,0xCD,0xC4,0x0B,0x70,0x51,0x94,0x97,0x98,0x04,0xDF,0xC3,0x5F,0x94,\
+    0xD5,0x15,0xC9,0x14,0x41,0x9C,0xC4,0x5D,0x75,0x64,0x15,0x0D,0xFF,0x55,0x30,0xEC,\
+    0x86,0x8F,0xFF,0x0D,0xEF,0x2C,0xB9,0x63,0x46,0xF6,0xAA,0xFC,0xDF,0xBC,0x69,0xFD,\
+    0x2E,0x12,0x48,0x64,0x9A,0xE0,0x95,0xF0,0xA6,0xEF,0x29,0x8F,0x01,0xB1,0x15,0xB5,\
+    0x0C,0x1D,0xA5,0xFE,0x69,0x2C,0x69,0x24,0x78,0x1E,0xB3,0xA7,0x1C,0x71,0x62,0xEE,\
+    0xCA,0xC8,0x97,0xAC,0x17,0x5D,0x8A,0xC2,0xF8,0x47,0x86,0x6E,0x2A,0xC4,0x56,0x31,\
+    0x95,0xD0,0x67,0x89,0x85,0x2B,0xF9,0x6C,0xA6,0x5D,0x46,0x9D,0x0C,0xAA,0x82,0xE4,\
+    0x99,0x51,0xDD,0x70,0xB7,0xDB,0x56,0x3D,0x61,0xE4,0x6A,0xE1,0x5C,0xD6,0xF6,0xFE,\
+    0x3D,0xDE,0x41,0xCC,0x07,0xAE,0x63,0x52,0xBF,0x53,0x53,0xF4,0x2B,0xE9,0xC7,0xFD,\
+    0xB6,0xF7,0x82,0x5F,0x85,0xD2,0x41,0x18,0xDB,0x81,0xB3,0x04,0x1C,0xC5,0x1F,0xA4,\
+    0x80,0x6F,0x15,0x20,0xC9,0xDE,0x0C,0x88,0x0A,0x1D,0xD6,0x66,0x55,0xE2,0xFC,0x48,\
+    0xC9,0x29,0x26,0x69,0xE0
+
+; AddTrust External CA Root
+HKLM,"SOFTWARE\Microsoft\SystemCertificates\AuthRoot\Certificates\02FAF3E291435468607857694DF5E45B68851868","Blob",0x00000001,\
+    0x20,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x3A,0x04,0x00,0x00,0x30,0x82,0x04,0x36,\
+    0x30,0x82,0x03,0x1E,0xA0,0x03,0x02,0x01,0x02,0x02,0x01,0x01,0x30,0x0D,0x06,0x09,\
+    0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x05,0x05,0x00,0x30,0x6F,0x31,0x0B,0x30,\
+    0x09,0x06,0x03,0x55,0x04,0x06,0x13,0x02,0x53,0x45,0x31,0x14,0x30,0x12,0x06,0x03,\
+    0x55,0x04,0x0A,0x13,0x0B,0x41,0x64,0x64,0x54,0x72,0x75,0x73,0x74,0x20,0x41,0x42,\
+    0x31,0x26,0x30,0x24,0x06,0x03,0x55,0x04,0x0B,0x13,0x1D,0x41,0x64,0x64,0x54,0x72,\
+    0x75,0x73,0x74,0x20,0x45,0x78,0x74,0x65,0x72,0x6E,0x61,0x6C,0x20,0x54,0x54,0x50,\
+    0x20,0x4E,0x65,0x74,0x77,0x6F,0x72,0x6B,0x31,0x22,0x30,0x20,0x06,0x03,0x55,0x04,\
+    0x03,0x13,0x19,0x41,0x64,0x64,0x54,0x72,0x75,0x73,0x74,0x20,0x45,0x78,0x74,0x65,\
+    0x72,0x6E,0x61,0x6C,0x20,0x43,0x41,0x20,0x52,0x6F,0x6F,0x74,0x30,0x1E,0x17,0x0D,\
+    0x30,0x30,0x30,0x35,0x33,0x30,0x31,0x30,0x34,0x38,0x33,0x38,0x5A,0x17,0x0D,0x32,\
+    0x30,0x30,0x35,0x33,0x30,0x31,0x30,0x34,0x38,0x33,0x38,0x5A,0x30,0x6F,0x31,0x0B,\
+    0x30,0x09,0x06,0x03,0x55,0x04,0x06,0x13,0x02,0x53,0x45,0x31,0x14,0x30,0x12,0x06,\
+    0x03,0x55,0x04,0x0A,0x13,0x0B,0x41,0x64,0x64,0x54,0x72,0x75,0x73,0x74,0x20,0x41,\
+    0x42,0x31,0x26,0x30,0x24,0x06,0x03,0x55,0x04,0x0B,0x13,0x1D,0x41,0x64,0x64,0x54,\
+    0x72,0x75,0x73,0x74,0x20,0x45,0x78,0x74,0x65,0x72,0x6E,0x61,0x6C,0x20,0x54,0x54,\
+    0x50,0x20,0x4E,0x65,0x74,0x77,0x6F,0x72,0x6B,0x31,0x22,0x30,0x20,0x06,0x03,0x55,\
+    0x04,0x03,0x13,0x19,0x41,0x64,0x64,0x54,0x72,0x75,0x73,0x74,0x20,0x45,0x78,0x74,\
+    0x65,0x72,0x6E,0x61,0x6C,0x20,0x43,0x41,0x20,0x52,0x6F,0x6F,0x74,0x30,0x82,0x01,\
+    0x22,0x30,0x0D,0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x01,0x05,0x00,\
+    0x03,0x82,0x01,0x0F,0x00,0x30,0x82,0x01,0x0A,0x02,0x82,0x01,0x01,0x00,0xB7,0xF7,\
+    0x1A,0x33,0xE6,0xF2,0x00,0x04,0x2D,0x39,0xE0,0x4E,0x5B,0xED,0x1F,0xBC,0x6C,0x0F,\
+    0xCD,0xB5,0xFA,0x23,0xB6,0xCE,0xDE,0x9B,0x11,0x33,0x97,0xA4,0x29,0x4C,0x7D,0x93,\
+    0x9F,0xBD,0x4A,0xBC,0x93,0xED,0x03,0x1A,0xE3,0x8F,0xCF,0xE5,0x6D,0x50,0x5A,0xD6,\
+    0x97,0x29,0x94,0x5A,0x80,0xB0,0x49,0x7A,0xDB,0x2E,0x95,0xFD,0xB8,0xCA,0xBF,0x37,\
+    0x38,0x2D,0x1E,0x3E,0x91,0x41,0xAD,0x70,0x56,0xC7,0xF0,0x4F,0x3F,0xE8,0x32,0x9E,\
+    0x74,0xCA,0xC8,0x90,0x54,0xE9,0xC6,0x5F,0x0F,0x78,0x9D,0x9A,0x40,0x3C,0x0E,0xAC,\
+    0x61,0xAA,0x5E,0x14,0x8F,0x9E,0x87,0xA1,0x6A,0x50,0xDC,0xD7,0x9A,0x4E,0xAF,0x05,\
+    0xB3,0xA6,0x71,0x94,0x9C,0x71,0xB3,0x50,0x60,0x0A,0xC7,0x13,0x9D,0x38,0x07,0x86,\
+    0x02,0xA8,0xE9,0xA8,0x69,0x26,0x18,0x90,0xAB,0x4C,0xB0,0x4F,0x23,0xAB,0x3A,0x4F,\
+    0x84,0xD8,0xDF,0xCE,0x9F,0xE1,0x69,0x6F,0xBB,0xD7,0x42,0xD7,0x6B,0x44,0xE4,0xC7,\
+    0xAD,0xEE,0x6D,0x41,0x5F,0x72,0x5A,0x71,0x08,0x37,0xB3,0x79,0x65,0xA4,0x59,0xA0,\
+    0x94,0x37,0xF7,0x00,0x2F,0x0D,0xC2,0x92,0x72,0xDA,0xD0,0x38,0x72,0xDB,0x14,0xA8,\
+    0x45,0xC4,0x5D,0x2A,0x7D,0xB7,0xB4,0xD6,0xC4,0xEE,0xAC,0xCD,0x13,0x44,0xB7,0xC9,\
+    0x2B,0xDD,0x43,0x00,0x25,0xFA,0x61,0xB9,0x69,0x6A,0x58,0x23,0x11,0xB7,0xA7,0x33,\
+    0x8F,0x56,0x75,0x59,0xF5,0xCD,0x29,0xD7,0x46,0xB7,0x0A,0x2B,0x65,0xB6,0xD3,0x42,\
+    0x6F,0x15,0xB2,0xB8,0x7B,0xFB,0xEF,0xE9,0x5D,0x53,0xD5,0x34,0x5A,0x27,0x02,0x03,\
+    0x01,0x00,0x01,0xA3,0x81,0xDC,0x30,0x81,0xD9,0x30,0x1D,0x06,0x03,0x55,0x1D,0x0E,\
+    0x04,0x16,0x04,0x14,0xAD,0xBD,0x98,0x7A,0x34,0xB4,0x26,0xF7,0xFA,0xC4,0x26,0x54,\
+    0xEF,0x03,0xBD,0xE0,0x24,0xCB,0x54,0x1A,0x30,0x0B,0x06,0x03,0x55,0x1D,0x0F,0x04,\
+    0x04,0x03,0x02,0x01,0x06,0x30,0x0F,0x06,0x03,0x55,0x1D,0x13,0x01,0x01,0xFF,0x04,\
+    0x05,0x30,0x03,0x01,0x01,0xFF,0x30,0x81,0x99,0x06,0x03,0x55,0x1D,0x23,0x04,0x81,\
+    0x91,0x30,0x81,0x8E,0x80,0x14,0xAD,0xBD,0x98,0x7A,0x34,0xB4,0x26,0xF7,0xFA,0xC4,\
+    0x26,0x54,0xEF,0x03,0xBD,0xE0,0x24,0xCB,0x54,0x1A,0xA1,0x73,0xA4,0x71,0x30,0x6F,\
+    0x31,0x0B,0x30,0x09,0x06,0x03,0x55,0x04,0x06,0x13,0x02,0x53,0x45,0x31,0x14,0x30,\
+    0x12,0x06,0x03,0x55,0x04,0x0A,0x13,0x0B,0x41,0x64,0x64,0x54,0x72,0x75,0x73,0x74,\
+    0x20,0x41,0x42,0x31,0x26,0x30,0x24,0x06,0x03,0x55,0x04,0x0B,0x13,0x1D,0x41,0x64,\
+    0x64,0x54,0x72,0x75,0x73,0x74,0x20,0x45,0x78,0x74,0x65,0x72,0x6E,0x61,0x6C,0x20,\
+    0x54,0x54,0x50,0x20,0x4E,0x65,0x74,0x77,0x6F,0x72,0x6B,0x31,0x22,0x30,0x20,0x06,\
+    0x03,0x55,0x04,0x03,0x13,0x19,0x41,0x64,0x64,0x54,0x72,0x75,0x73,0x74,0x20,0x45,\
+    0x78,0x74,0x65,0x72,0x6E,0x61,0x6C,0x20,0x43,0x41,0x20,0x52,0x6F,0x6F,0x74,0x82,\
+    0x01,0x01,0x30,0x0D,0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x05,0x05,\
+    0x00,0x03,0x82,0x01,0x01,0x00,0xB0,0x9B,0xE0,0x85,0x25,0xC2,0xD6,0x23,0xE2,0x0F,\
+    0x96,0x06,0x92,0x9D,0x41,0x98,0x9C,0xD9,0x84,0x79,0x81,0xD9,0x1E,0x5B,0x14,0x07,\
+    0x23,0x36,0x65,0x8F,0xB0,0xD8,0x77,0xBB,0xAC,0x41,0x6C,0x47,0x60,0x83,0x51,0xB0,\
+    0xF9,0x32,0x3D,0xE7,0xFC,0xF6,0x26,0x13,0xC7,0x80,0x16,0xA5,0xBF,0x5A,0xFC,0x87,\
+    0xCF,0x78,0x79,0x89,0x21,0x9A,0xE2,0x4C,0x07,0x0A,0x86,0x35,0xBC,0xF2,0xDE,0x51,\
+    0xC4,0xD2,0x96,0xB7,0xDC,0x7E,0x4E,0xEE,0x70,0xFD,0x1C,0x39,0xEB,0x0C,0x02,0x51,\
+    0x14,0x2D,0x8E,0xBD,0x16,0xE0,0xC1,0xDF,0x46,0x75,0xE7,0x24,0xAD,0xEC,0xF4,0x42,\
+    0xB4,0x85,0x93,0x70,0x10,0x67,0xBA,0x9D,0x06,0x35,0x4A,0x18,0xD3,0x2B,0x7A,0xCC,\
+    0x51,0x42,0xA1,0x7A,0x63,0xD1,0xE6,0xBB,0xA1,0xC5,0x2B,0xC2,0x36,0xBE,0x13,0x0D,\
+    0xE6,0xBD,0x63,0x7E,0x79,0x7B,0xA7,0x09,0x0D,0x40,0xAB,0x6A,0xDD,0x8F,0x8A,0xC3,\
+    0xF6,0xF6,0x8C,0x1A,0x42,0x05,0x51,0xD4,0x45,0xF5,0x9F,0xA7,0x62,0x21,0x68,0x15,\
+    0x20,0x43,0x3C,0x99,0xE7,0x7C,0xBD,0x24,0xD8,0xA9,0x91,0x17,0x73,0x88,0x3F,0x56,\
+    0x1B,0x31,0x38,0x18,0xB4,0x71,0x0F,0x9A,0xCD,0xC8,0x0E,0x9E,0x8E,0x2E,0x1B,0xE1,\
+    0x8C,0x98,0x83,0xCB,0x1F,0x31,0xF1,0x44,0x4C,0xC6,0x04,0x73,0x49,0x76,0x60,0x0F,\
+    0xC7,0xF8,0xBD,0x17,0x80,0x6B,0x2E,0xE9,0xCC,0x4C,0x0E,0x5A,0x9A,0x79,0x0F,0x20,\
+    0x0A,0x2E,0xD5,0x9E,0x63,0x26,0x1E,0x55,0x92,0x94,0xD8,0x82,0x17,0x5A,0x7B,0xD0,\
+    0xBC,0xC7,0x8F,0x4E,0x86,0x04
+
+; Time zone settings
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones","IndexMapping",0x00010000,\
+   "409",   "4",\
+  "1009",   "4",\
+  "2809",  "20",\
+   "80a",  "30",\
+  "440a",  "30",\
+  "480a",  "30",\
+  "4c0a",  "30",\
+  "140a",  "30",\
+  "100a",  "33",\
+   "c0c",  "35",\
+  "2009",  "35",\
+  "240a",  "45",\
+  "280a",  "45",\
+  "300a",  "45",\
+  "180a",  "45",\
+  "500a",  "50",\
+  "2409",  "50",\
+  "1c0a",  "50",\
+  "2c09",  "50",\
+  "200a",  "55",\
+  "3c0a",  "55",\
+  "400a",  "55",\
+  "340a",  "56",\
+   "416",  "65",\
+  "2c0a",  "70",\
+  "380a",  "70",\
+   "438",  "85",\
+   "48f",  "85",\
+   "809",  "85",\
+   "816",  "85",\
+  "1809",  "85",\
+   "40f",  "90",\
+  "1801",  "90",\
+   "41c",  "95",\
+   "405",  "95",\
+   "40e",  "95",\
+   "424",  "95",\
+   "41b",  "95",\
+   "81a",  "95",\
+   "c1a",  "95",\
+   "415", "100",\
+  "1401", "100",\
+   "41a", "100",\
+   "42f", "100",\
+  "140c", "100",\
+  "180c", "100",\
+  "1c01", "100",\
+   "403", "105",\
+   "406", "105",\
+   "813", "105",\
+   "827", "105",\
+   "40a", "105",\
+   "40c", "105",\
+   "42d", "105",\
+   "80c", "105",\
+   "c0a", "105",\
+   "490", "105",\
+   "407", "110",\
+   "410", "110",\
+   "413", "110",\
+   "414", "110",\
+   "417", "110",\
+   "807", "110",\
+   "810", "110",\
+   "814", "110",\
+  "1007", "110",\
+  "1407", "110",\
+   "41d", "110",\
+   "c07", "110",\
+  "100c", "110",\
+  "1001", "115",\
+  "2801", "115",\
+  "3001", "115",\
+   "43e", "115",\
+  "2c01", "115",\
+   "423", "115",\
+   "c01", "120",\
+   "425", "125",\
+   "426", "125",\
+   "40b", "125",\
+   "81d", "125",\
+   "422", "125",\
+   "402", "125",\
+   "427", "125",\
+   "408", "130",\
+   "41f", "130",\
+   "418", "130",\
+   "40d", "135",\
+   "436", "140",\
+  "3009", "140",\
+  "1c09", "140",\
+   "419", "145",\
+   "401", "150",\
+  "4001", "150",\
+  "3c01", "150",\
+  "3401", "150",\
+   "441", "155",\
+   "801", "158",\
+  "2401", "158",\
+   "429", "160",\
+  "2001", "165",\
+  "3801", "165",\
+   "42b", "170",\
+   "420", "185",\
+   "439", "190",\
+   "445", "190",\
+   "421", "205",\
+   "41e", "205",\
+   "42a", "205",\
+   "804", "210",\
+   "c04", "210",\
+  "1404", "210",\
+   "83e", "210",\
+  "1004", "215",\
+   "404", "220",\
+  "3409", "220",\
+   "412", "230",\
+   "812", "230",\
+   "411", "235",\
+   "c09", "255",\
+  "1409", "290"
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Dateline Standard Time","Display",0x00000000,"(GMT-12:00) International Date Line West"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Dateline Standard Time","Dlt",0x00000000,"Dateline Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Dateline Standard Time","Std",0x00000000,"Dateline Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Dateline Standard Time","Index",0x00010001,0
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Dateline Standard Time","TZI",0x00000001,\
+0xd0,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Samoa Standard Time","Display",0x00000000,"(GMT-11:00) Midway Island, Samoa"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Samoa Standard Time","Dlt",0x00000000,"Samoa Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Samoa Standard Time","Std",0x00000000,"Samoa Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Samoa Standard Time","Index",0x00010001,1
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Samoa Standard Time","TZI",0x00000001,\
+0x94,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Hawaiian Standard Time","Display",0x00000000,"(GMT-10:00) Hawaii"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Hawaiian Standard Time","Dlt",0x00000000,"Hawaiian Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Hawaiian Standard Time","Std",0x00000000,"Hawaiian Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Hawaiian Standard Time","Index",0x00010001,2
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Hawaiian Standard Time","TZI",0x00000001,\
+0x58,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Alaskan Standard Time","Display",0x00000000,"(GMT-09:00) Alaska"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Alaskan Standard Time","Dlt",0x00000000,"Alaskan Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Alaskan Standard Time","Std",0x00000000,"Alaskan Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Alaskan Standard Time","Index",0x00010001,3
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Alaskan Standard Time","TZI",0x00000001,\
+0x1c,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0b,0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x02,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Pacific Standard Time","Display",0x00000000,"(GMT-08:00) Pacific Time (US & Canada)"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Pacific Standard Time","Dlt",0x00000000,"Pacific Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Pacific Standard Time","Std",0x00000000,"Pacific Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Pacific Standard Time","Index",0x00010001,4
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Pacific Standard Time","TZI",0x00000001,\
+0xe0,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0b,0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x02,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mountain Standard Time","Display",0x00000000,"(GMT-07:00) Mountain Time (US & Canada)"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mountain Standard Time","Dlt",0x00000000,"Mountain Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mountain Standard Time","Std",0x00000000,"Mountain Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mountain Standard Time","Index",0x00010001,10
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mountain Standard Time","TZI",0x00000001,\
+0xa4,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0b,0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x02,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mountain Standard Time (Mexico)","Display",0x00000000,"(GMT-07:00) Chihuahua, La Paz, Mazatlan"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mountain Standard Time (Mexico)","Dlt",0x00000000,"Mountain Daylight Time (Mexico)"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mountain Standard Time (Mexico)","Std",0x00000000,"Mountain Standard Time (Mexico)"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mountain Standard Time (Mexico)","Index",0x00010001,13
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mountain Standard Time (Mexico)","TZI",0x00000001,\
+0xa4,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x04,0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\US Mountain Standard Time","Display",0x00000000,"(GMT-07:00) Arizona"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\US Mountain Standard Time","Dlt",0x00000000,"US Mountain Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\US Mountain Standard Time","Std",0x00000000,"US Mountain Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\US Mountain Standard Time","Index",0x00010001,15
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\US Mountain Standard Time","TZI",0x00000001,\
+0xa4,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Standard Time","Display",0x00000000,"(GMT-06:00) Central Time (US & Canada)"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Standard Time","Dlt",0x00000000,"Central Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Standard Time","Std",0x00000000,"Central Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Standard Time","Index",0x00010001,20
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Standard Time","TZI",0x00000001,\
+0x68,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0b,0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x02,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Canada Central Standard Time","Display",0x00000000,"(GMT-06:00) Saskatchewan"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Canada Central Standard Time","Dlt",0x00000000,"Canada Central Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Canada Central Standard Time","Std",0x00000000,"Canada Central Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Canada Central Standard Time","Index",0x00010001,25
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Canada Central Standard Time","TZI",0x00000001,\
+0x68,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Standard Time (Mexico)","Display",0x00000000,"(GMT-06:00) Guadalajara, Mexico City, Monterrey"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Standard Time (Mexico)","Dlt",0x00000000,"Central Daylight Time (Mexico)"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Standard Time (Mexico)","Std",0x00000000,"Central Standard Time (Mexico)"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Standard Time (Mexico)","Index",0x00010001,30
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Standard Time (Mexico)","TZI",0x00000001,\
+0x68,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x04,0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central America Standard Time","Display",0x00000000,"(GMT-06:00) Central America"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central America Standard Time","Dlt",0x00000000,"Central America Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central America Standard Time","Std",0x00000000,"Central America Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central America Standard Time","Index",0x00010001,33
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central America Standard Time","TZI",0x00000001,\
+0x68,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Eastern Standard Time","Display",0x00000000,"(GMT-05:00) Eastern Time (US & Canada)"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Eastern Standard Time","Dlt",0x00000000,"Eastern Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Eastern Standard Time","Std",0x00000000,"Eastern Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Eastern Standard Time","Index",0x00010001,35
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Eastern Standard Time","TZI",0x00000001,\
+0x2c,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0b,0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x02,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\US Eastern Standard Time","Display",0x00000000,"(GMT-05:00) Indiana (East)"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\US Eastern Standard Time","Dlt",0x00000000,"US Eastern Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\US Eastern Standard Time","Std",0x00000000,"US Eastern Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\US Eastern Standard Time","Index",0x00010001,40
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\US Eastern Standard Time","TZI",0x00000001,\
+0x2c,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Pacific Standard Time","Display",0x00000000,"(GMT-05:00) Bogota, Lima, Quito, Rio Branco"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Pacific Standard Time","Dlt",0x00000000,"SA Pacific Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Pacific Standard Time","Std",0x00000000,"SA Pacific Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Pacific Standard Time","Index",0x00010001,45
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Pacific Standard Time","TZI",0x00000001,\
+0x2c,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Atlantic Standard Time","Display",0x00000000,"(GMT-04:00) Atlantic Time (Canada)"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Atlantic Standard Time","Dlt",0x00000000,"Atlantic Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Atlantic Standard Time","Std",0x00000000,"Atlantic Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Atlantic Standard Time","Index",0x00010001,50
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Atlantic Standard Time","TZI",0x00000001,\
+0xf0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0b,0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x02,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Western Standard Time","Display",0x00000000,"(GMT-04:00) La Paz"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Western Standard Time","Dlt",0x00000000,"SA Western Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Western Standard Time","Std",0x00000000,"SA Western Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Western Standard Time","Index",0x00010001,55
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Western Standard Time","TZI",0x00000001,\
+0xf0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Pacific SA Standard Time","Display",0x00000000,"(GMT-04:00) Santiago"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Pacific SA Standard Time","Dlt",0x00000000,"Pacific SA Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Pacific SA Standard Time","Std",0x00000000,"Pacific SA Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Pacific SA Standard Time","Index",0x00010001,56
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Pacific SA Standard Time","TZI",0x00000001,\
+0xf0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x03,0x00,0x06,0x00,0x02,0x00,0x17,0x00,0x3b,0x00,0x3b,0x00,0xe7,0x03,\
+0x00,0x00,0x0a,0x00,0x06,0x00,0x02,0x00,0x17,0x00,0x3b,0x00,0x3b,0x00,0xe7,0x03
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Newfoundland Standard Time","Display",0x00000000,"(GMT-03:30) Newfoundland"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Newfoundland Standard Time","Dlt",0x00000000,"Newfoundland Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Newfoundland Standard Time","Std",0x00000000,"Newfoundland Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Newfoundland Standard Time","Index",0x00010001,60
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Newfoundland Standard Time","TZI",0x00000001,\
+0xd2,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0b,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. South America Standard Time","Display",0x00000000,"(GMT-03:00) Brasilia"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. South America Standard Time","Dlt",0x00000000,"E. South America Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. South America Standard Time","Std",0x00000000,"E. South America Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. South America Standard Time","Index",0x00010001,65
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. South America Standard Time","TZI",0x00000001,\
+0xb4,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x02,0x00,0x00,0x00,0x05,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x0b,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Eastern Standard Time","Display",0x00000000,"(GMT-03:00) Buenos Aires, Georgetown"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Eastern Standard Time","Dlt",0x00000000,"SA Eastern Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Eastern Standard Time","Std",0x00000000,"SA Eastern Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Eastern Standard Time","Index",0x00010001,70
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SA Eastern Standard Time","TZI",0x00000001,\
+0xb4,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Greenland Standard Time","Display",0x00000000,"(GMT-03:00) Greenland"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Greenland Standard Time","Dlt",0x00000000,"Greenland Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Greenland Standard Time","Std",0x00000000,"Greenland Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Greenland Standard Time","Index",0x00010001,73
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Greenland Standard Time","TZI",0x00000001,\
+0xb4,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x04,0x00,0x00,0x00,0x01,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mid-Atlantic Standard Time","Display",0x00000000,"(GMT-02:00) Mid-Atlantic"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mid-Atlantic Standard Time","Dlt",0x00000000,"Mid-Atlantic Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mid-Atlantic Standard Time","Std",0x00000000,"Mid-Atlantic Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mid-Atlantic Standard Time","Index",0x00010001,75
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Mid-Atlantic Standard Time","TZI",0x00000001,\
+0x78,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x09,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Azores Standard Time","Display",0x00000000,"(GMT-01:00) Azores"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Azores Standard Time","Dlt",0x00000000,"Azores Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Azores Standard Time","Std",0x00000000,"Azores Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Azores Standard Time","Index",0x00010001,80
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Azores Standard Time","TZI",0x00000001,\
+0x3c,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Cape Verde Standard Time","Display",0x00000000,"(GMT-01:00) Cape Verde Is."
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Cape Verde Standard Time","Dlt",0x00000000,"Cape Verde Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Cape Verde Standard Time","Std",0x00000000,"Cape Verde Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Cape Verde Standard Time","Index",0x00010001,83
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Cape Verde Standard Time","TZI",0x00000001,\
+0x3c,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\GMT Standard Time","Display",0x00000000,"(GMT) Greenwich Mean Time: Dublin, Edinburgh, Lisbon, London"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\GMT Standard Time","Dlt",0x00000000,"GMT Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\GMT Standard Time","Std",0x00000000,"GMT Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\GMT Standard Time","Index",0x00010001,85
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\GMT Standard Time","TZI",0x00000001,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Greenwich Standard Time","Display",0x00000000,"(GMT) Casablanca, Monrovia, Reykjavik"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Greenwich Standard Time","Dlt",0x00000000,"Greenwich Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Greenwich Standard Time","Std",0x00000000,"Greenwich Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Greenwich Standard Time","Index",0x00010001,90
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Greenwich Standard Time","TZI",0x00000001,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Europe Standard Time","Display",0x00000000,"(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Europe Standard Time","Dlt",0x00000000,"Central Europe Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Europe Standard Time","Std",0x00000000,"Central Europe Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Europe Standard Time","Index",0x00010001,95
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Europe Standard Time","TZI",0x00000001,\
+0xc4,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central European Standard Time","Display",0x00000000,"(GMT+01:00) Sarajevo, Skopje, Warsaw, Zagreb"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central European Standard Time","Dlt",0x00000000,"Central European Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central European Standard Time","Std",0x00000000,"Central European Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central European Standard Time","Index",0x00010001,100
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central European Standard Time","TZI",0x00000001,\
+0xc4,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Romance Standard Time","Display",0x00000000,"(GMT+01:00) Brussels, Copenhagen, Madrid, Paris"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Romance Standard Time","Dlt",0x00000000,"Romance Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Romance Standard Time","Std",0x00000000,"Romance Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Romance Standard Time","Index",0x00010001,105
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Romance Standard Time","TZI",0x00000001,\
+0xc4,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\W. Europe Standard Time","Display",0x00000000,"(GMT+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\W. Europe Standard Time","Dlt",0x00000000,"W. Europe Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\W. Europe Standard Time","Std",0x00000000,"W. Europe Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\W. Europe Standard Time","Index",0x00010001,110
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\W. Europe Standard Time","TZI",0x00000001,\
+0xc4,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Europe Standard Time","Display",0x00000000,"(GMT+02:00) Minsk"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Europe Standard Time","Dlt",0x00000000,"E. Europe Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Europe Standard Time","Std",0x00000000,"E. Europe Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Europe Standard Time","Index",0x00010001,115
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Europe Standard Time","TZI",0x00000001,\
+0x88,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Egypt Standard Time","Display",0x00000000,"(GMT+02:00) Cairo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Egypt Standard Time","Dlt",0x00000000,"Egypt Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Egypt Standard Time","Std",0x00000000,"Egypt Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Egypt Standard Time","Index",0x00010001,120
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Egypt Standard Time","TZI",0x00000001,\
+0x88,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x09,0x00,0x04,0x00,0x05,0x00,0x17,0x00,0x3b,0x00,0x3b,0x00,0x00,0x00,\
+0x00,0x00,0x04,0x00,0x04,0x00,0x05,0x00,0x17,0x00,0x3b,0x00,0x3b,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\FLE Standard Time","Display",0x00000000,"(GMT+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\FLE Standard Time","Dlt",0x00000000,"FLE Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\FLE Standard Time","Std",0x00000000,"FLE Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\FLE Standard Time","Index",0x00010001,125
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\FLE Standard Time","TZI",0x00000001,\
+0x88,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\GTB Standard Time","Display",0x00000000,"(GMT+02:00) Athens, Bucharest, Istanbul"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\GTB Standard Time","Dlt",0x00000000,"GTB Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\GTB Standard Time","Std",0x00000000,"GTB Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\GTB Standard Time","Index",0x00010001,130
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\GTB Standard Time","TZI",0x00000001,\
+0x88,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Israel Standard Time","Display",0x00000000,"(GMT+02:00) Jerusalem"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Israel Standard Time","Dlt",0x00000000,"Israel Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Israel Standard Time","Std",0x00000000,"Israel Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Israel Standard Time","Index",0x00010001,135
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Israel Standard Time","TZI",0x00000001,\
+0x88,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x05,0x00,0x05,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x03,0x00,0x05,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\South Africa Standard Time","Display",0x00000000,"(GMT+02:00) Harare, Pretoria"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\South Africa Standard Time","Dlt",0x00000000,"South Africa Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\South Africa Standard Time","Std",0x00000000,"South Africa Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\South Africa Standard Time","Index",0x00010001,140
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\South Africa Standard Time","TZI",0x00000001,\
+0x88,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Kaliningrad Standard Time","Display",0x00000000,"(GMT+03:00) Kaliningrad"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Kaliningrad Standard Time","Dlt",0x00000000,"Kaliningrad Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Kaliningrad Standard Time","Std",0x00000000,"Kaliningrad Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Kaliningrad Standard Time","Index",0x00010001,143
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Kaliningrad Standard Time","TZI",0x00000001,\
+0x4c,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Russian Standard Time","Display",0x00000000,"(GMT+04:00) Moscow, St. Petersburg, Volgograd"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Russian Standard Time","Dlt",0x00000000,"Russian Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Russian Standard Time","Std",0x00000000,"Russian Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Russian Standard Time","Index",0x00010001,145
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Russian Standard Time","TZI",0x00000001,\
+0x10,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arab Standard Time","Display",0x00000000,"(GMT+03:00) Kuwait, Riyadh"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arab Standard Time","Dlt",0x00000000,"Arab Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arab Standard Time","Std",0x00000000,"Arab Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arab Standard Time","Index",0x00010001,150
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arab Standard Time","TZI",0x00000001,\
+0x4c,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Africa Standard Time","Display",0x00000000,"(GMT+03:00) Nairobi"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Africa Standard Time","Dlt",0x00000000,"E. Africa Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Africa Standard Time","Std",0x00000000,"E. Africa Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Africa Standard Time","Index",0x00010001,155
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Africa Standard Time","TZI",0x00000001,\
+0x4c,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arabic Standard Time","Display",0x00000000,"(GMT+03:00) Baghdad"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arabic Standard Time","Dlt",0x00000000,"Arabic Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arabic Standard Time","Std",0x00000000,"Arabic Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arabic Standard Time","Index",0x00010001,158
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arabic Standard Time","TZI",0x00000001,\
+0x4c,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x01,0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x04,0x00,0x00,0x00,0x01,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Iran Standard Time","Display",0x00000000,"(GMT+03:30) Tehran"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Iran Standard Time","Dlt",0x00000000,"Iran Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Iran Standard Time","Std",0x00000000,"Iran Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Iran Standard Time","Index",0x00010001,160
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Iran Standard Time","TZI",0x00000001,\
+0x2e,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arabian Standard Time","Display",0x00000000,"(GMT+04:00) Abu Dhabi, Muscat"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arabian Standard Time","Dlt",0x00000000,"Arabian Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arabian Standard Time","Std",0x00000000,"Arabian Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arabian Standard Time","Index",0x00010001,165
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Arabian Standard Time","TZI",0x00000001,\
+0x10,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Caucasus Standard Time","Display",0x00000000,"(GMT+04:00) Caucasus Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Caucasus Standard Time","Dlt",0x00000000,"Caucasus Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Caucasus Standard Time","Std",0x00000000,"Caucasus Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Caucasus Standard Time","Index",0x00010001,170
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Caucasus Standard Time","TZI",0x00000001,\
+0x10,0xff,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Afghanistan Standard Time","Display",0x00000000,"(GMT+04:30) Kabul"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Afghanistan Standard Time","Dlt",0x00000000,"Afghanistan Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Afghanistan Standard Time","Std",0x00000000,"Afghanistan Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Afghanistan Standard Time","Index",0x00010001,175
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Afghanistan Standard Time","TZI",0x00000001,\
+0xf2,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Ekaterinburg Standard Time","Display",0x00000000,"(GMT+06:00) Ekaterinburg"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Ekaterinburg Standard Time","Dlt",0x00000000,"Ekaterinburg Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Ekaterinburg Standard Time","Std",0x00000000,"Ekaterinburg Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Ekaterinburg Standard Time","Index",0x00010001,180
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Ekaterinburg Standard Time","TZI",0x00000001,\
+0x98,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\West Asia Standard Time","Display",0x00000000,"(GMT+05:00) Islamabad, Karachi, Tashkent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\West Asia Standard Time","Dlt",0x00000000,"West Asia Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\West Asia Standard Time","Std",0x00000000,"West Asia Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\West Asia Standard Time","Index",0x00010001,185
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\West Asia Standard Time","TZI",0x00000001,\
+0xd4,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\India Standard Time","Display",0x00000000,"(GMT+05:30) Chennai, Kolkata, Mumbai, New Delhi"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\India Standard Time","Dlt",0x00000000,"India Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\India Standard Time","Std",0x00000000,"India Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\India Standard Time","Index",0x00010001,190
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\India Standard Time","TZI",0x00000001,\
+0xb6,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Nepal Standard Time","Display",0x00000000,"(GMT+05:45) Kathmandu"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Nepal Standard Time","Dlt",0x00000000,"Nepal Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Nepal Standard Time","Std",0x00000000,"Nepal Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Nepal Standard Time","Index",0x00010001,193
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Nepal Standard Time","TZI",0x00000001,\
+0xa7,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Sri Lanka Standard Time","Display",0x00000000,"(GMT+05:30) Sri Jayawardenepura"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Sri Lanka Standard Time","Dlt",0x00000000,"Sri Lanka Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Sri Lanka Standard Time","Std",0x00000000,"Sri Lanka Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Sri Lanka Standard Time","Index",0x00010001,194
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Sri Lanka Standard Time","TZI",0x00000001,\
+0xb6,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Asia Standard Time","Display",0x00000000,"(GMT+06:00) Astana, Dhaka"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Asia Standard Time","Dlt",0x00000000,"Central Asia Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Asia Standard Time","Std",0x00000000,"Central Asia Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Asia Standard Time","Index",0x00010001,195
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Asia Standard Time","TZI",0x00000001,\
+0x98,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\N. Central Asia Standard Time","Display",0x00000000,"(GMT+07:00) Novosibirsk, Omsk"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\N. Central Asia Standard Time","Dlt",0x00000000,"N. Central Asia Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\N. Central Asia Standard Time","Std",0x00000000,"N. Central Asia Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\N. Central Asia Standard Time","Index",0x00010001,201
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\N. Central Asia Standard Time","TZI",0x00000001,\
+0x5c,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Myanmar Standard Time","Display",0x00000000,"(GMT+06:30) Yangon (Rangoon)"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Myanmar Standard Time","Dlt",0x00000000,"Myanmar Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Myanmar Standard Time","Std",0x00000000,"Myanmar Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Myanmar Standard Time","Index",0x00010001,203
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Myanmar Standard Time","TZI",0x00000001,\
+0x7a,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SE Asia Standard Time","Display",0x00000000,"(GMT+07:00) Bangkok, Hanoi, Jakarta"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SE Asia Standard Time","Dlt",0x00000000,"SE Asia Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SE Asia Standard Time","Std",0x00000000,"SE Asia Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SE Asia Standard Time","Index",0x00010001,205
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\SE Asia Standard Time","TZI",0x00000001,\
+0x5c,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\North Asia Standard Time","Display",0x00000000,"(GMT+08:00) Krasnoyarsk"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\North Asia Standard Time","Dlt",0x00000000,"North Asia Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\North Asia Standard Time","Std",0x00000000,"North Asia Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\North Asia Standard Time","Index",0x00010001,207
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\North Asia Standard Time","TZI",0x00000001,\
+0x20,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\China Standard Time","Display",0x00000000,"(GMT+08:00) Beijing, Chongqing, Hong Kong, Urumqi"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\China Standard Time","Dlt",0x00000000,"China Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\China Standard Time","Std",0x00000000,"China Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\China Standard Time","Index",0x00010001,210
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\China Standard Time","TZI",0x00000001,\
+0x20,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Singapore Standard Time","Display",0x00000000,"(GMT+08:00) Kuala Lumpur, Singapore"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Singapore Standard Time","Dlt",0x00000000,"Singapore Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Singapore Standard Time","Std",0x00000000,"Singapore Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Singapore Standard Time","Index",0x00010001,215
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Singapore Standard Time","TZI",0x00000001,\
+0x20,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Taipei Standard Time","Display",0x00000000,"(GMT+08:00) Taipei"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Taipei Standard Time","Dlt",0x00000000,"Taipei Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Taipei Standard Time","Std",0x00000000,"Taipei Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Taipei Standard Time","Index",0x00010001,220
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Taipei Standard Time","TZI",0x00000001,\
+0x20,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\W. Australia Standard Time","Display",0x00000000,"(GMT+08:00) Perth"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\W. Australia Standard Time","Dlt",0x00000000,"W. Australia Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\W. Australia Standard Time","Std",0x00000000,"W. Australia Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\W. Australia Standard Time","Index",0x00010001,225
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\W. Australia Standard Time","TZI",0x00000001,\
+0x20,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Ulaanbaatar Standard Time","Display",0x00000000,"(GMT+08:00) Ulaanbaatar"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Ulaanbaatar Standard Time","Dlt",0x00000000,"Ulaanbaatar Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Ulaanbaatar Standard Time","Std",0x00000000,"Ulaanbaatar Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Ulaanbaatar Standard Time","Index",0x00010001,226
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Ulaanbaatar Standard Time","TZI",0x00000001,\
+0x20,0xfe,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\North Asia East Standard Time","Display",0x00000000,"(GMT+09:00) Irkutsk"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\North Asia East Standard Time","Dlt",0x00000000,"North Asia East Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\North Asia East Standard Time","Std",0x00000000,"North Asia East Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\North Asia East Standard Time","Index",0x00010001,227
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\North Asia East Standard Time","TZI",0x00000001,\
+0xe4,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Korea Standard Time","Display",0x00000000,"(GMT+09:00) Seoul"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Korea Standard Time","Dlt",0x00000000,"Korea Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Korea Standard Time","Std",0x00000000,"Korea Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Korea Standard Time","Index",0x00010001,230
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Korea Standard Time","TZI",0x00000001,\
+0xe4,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tokyo Standard Time","Display",0x00000000,"(GMT+09:00) Osaka, Sapporo, Tokyo"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tokyo Standard Time","Dlt",0x00000000,"Tokyo Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tokyo Standard Time","Std",0x00000000,"Tokyo Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tokyo Standard Time","Index",0x00010001,235
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tokyo Standard Time","TZI",0x00000001,\
+0xe4,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Yakutsk Standard Time","Display",0x00000000,"(GMT+10:00) Yakutsk"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Yakutsk Standard Time","Dlt",0x00000000,"Yakutsk Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Yakutsk Standard Time","Std",0x00000000,"Yakutsk Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Yakutsk Standard Time","Index",0x00010001,240
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Yakutsk Standard Time","TZI",0x00000001,\
+0xa8,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\AUS Central Standard Time","Display",0x00000002,"(GMT+09:30) Darwin"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\AUS Central Standard Time","Dlt",0x00000002,"AUS Central Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\AUS Central Standard Time","Std",0x00000002,"AUS Central Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\AUS Central Standard Time","Index",0x00010001,245
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\AUS Central Standard Time","TZI",0x00000001,\
+0xc6,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Cen. Australia Standard Time","Display",0x00000000,"(GMT+09:30) Adelaide"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Cen. Australia Standard Time","Dlt",0x00000000,"Cen. Australia Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Cen. Australia Standard Time","Std",0x00000000,"Cen. Australia Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Cen. Australia Standard Time","Index",0x00010001,250
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Cen. Australia Standard Time","TZI",0x00000001,\
+0xc6,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\AUS Eastern Standard Time","Display",0x00000000,"(GMT+10:00) Canberra, Melbourne, Sydney"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\AUS Eastern Standard Time","Dlt",0x00000000,"AUS Eastern Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\AUS Eastern Standard Time","Std",0x00000000,"AUS Eastern Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\AUS Eastern Standard Time","Index",0x00010001,255
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\AUS Eastern Standard Time","TZI",0x00000001,\
+0xa8,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Australia Standard Time","Display",0x00000000,"(GMT+10:00) Brisbane"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Australia Standard Time","Dlt",0x00000000,"E. Australia Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Australia Standard Time","Std",0x00000000,"E. Australia Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Australia Standard Time","Index",0x00010001,260
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\E. Australia Standard Time","TZI",0x00000001,\
+0xa8,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tasmania Standard Time","Display",0x00000000,"(GMT+10:00) Hobart"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tasmania Standard Time","Dlt",0x00000000,"Tasmania Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tasmania Standard Time","Std",0x00000000,"Tasmania Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tasmania Standard Time","Index",0x00010001,265
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tasmania Standard Time","TZI",0x00000001,\
+0xa8,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x03,0x00,0x00,0x00,0x05,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x0a,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Vladivostok Standard Time","Display",0x00000000,"(GMT+11:00) Vladivostok"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Vladivostok Standard Time","Dlt",0x00000000,"Vladivostok Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Vladivostok Standard Time","Std",0x00000000,"Vladivostok Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Vladivostok Standard Time","Index",0x00010001,270
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Vladivostok Standard Time","TZI",0x00000001,\
+0x6c,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\West Pacific Standard Time","Display",0x00000000,"(GMT+10:00) Guam, Port Moresby"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\West Pacific Standard Time","Dlt",0x00000000,"West Pacific Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\West Pacific Standard Time","Std",0x00000000,"West Pacific Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\West Pacific Standard Time","Index",0x00010001,275
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\West Pacific Standard Time","TZI",0x00000001,\
+0xa8,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Pacific Standard Time","Display",0x00000000,"(GMT+11:00) Solomon Is., New Caledonia"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Pacific Standard Time","Dlt",0x00000000,"Central Pacific Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Pacific Standard Time","Std",0x00000000,"Central Pacific Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Pacific Standard Time","Index",0x00010001,280
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Central Pacific Standard Time","TZI",0x00000001,\
+0x6c,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Magadan Standard Time","Display",0x00000000,"(GMT+12:00) Magadan"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Magadan Standard Time","Dlt",0x00000000,"Magadan Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Magadan Standard Time","Std",0x00000000,"Magadan Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Magadan Standard Time","Index",0x00010001,283
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Magadan Standard Time","TZI",0x00000001,\
+0x30,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Fiji Standard Time","Display",0x00000000,"(GMT+12:00) Fiji, Kamchatka, Marshall Is."
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Fiji Standard Time","Dlt",0x00000000,"Fiji Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Fiji Standard Time","Std",0x00000000,"Fiji Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Fiji Standard Time","Index",0x00010001,285
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Fiji Standard Time","TZI",0x00000001,\
+0x30,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\New Zealand Standard Time","Display",0x00000000,"(GMT+12:00) Auckland, Wellington"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\New Zealand Standard Time","Dlt",0x00000000,"New Zealand Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\New Zealand Standard Time","Std",0x00000000,"New Zealand Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\New Zealand Standard Time","Index",0x00010001,290
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\New Zealand Standard Time","TZI",0x00000001,\
+0x30,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x04,0x00,0x00,0x00,0x01,0x00,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x09,0x00,0x00,0x00,0x05,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tonga Standard Time","Display",0x00000000,"(GMT+13:00) Nuku'alofa"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tonga Standard Time","Dlt",0x00000000,"Tonga Daylight Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tonga Standard Time","Std",0x00000000,"Tonga Standard Time"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tonga Standard Time","Index",0x00010001,300
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Time Zones\Tonga Standard Time","TZI",0x00000001,\
+0xf4,0xfc,0xff,0xff,0x00,0x00,0x00,0x00,0xc4,0xff,0xff,0xff,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+
+; Available file systems
+HKLM,"SOFTWARE\ReactOS\ReactOS\CurrentVersion\IFS","FAT",0x00000000,"ufat.dll"
+HKLM,"SOFTWARE\ReactOS\ReactOS\CurrentVersion\IFS","FAT32",0x00000000,"ufat.dll"
+HKLM,"SOFTWARE\ReactOS\ReactOS\CurrentVersion\IFS","FATX",0x00000000,"ufatx.dll"
+
+; Winlogon settings
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","ConsoleShell",0x00020000,"%SystemRoot%\system32\cmd.exe"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","Shell",0x00020000,"%SystemRoot%\explorer.exe"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","Userinit",0x00020000,"%SystemRoot%\system32\userinit.exe"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","AutoAdminLogon",0x00000000,"1"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","DefaultDomain",0x00000000,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","DefaultUserName",0x00000000,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","DefaultPassword",0x00000000,""
+
+; Time Zone Servers
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers","1",0x00000000,"pool.ntp.org"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers","2",0x00000000,"asia.pool.ntp.org"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers","3",0x00000000,"europe.pool.ntp.org"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers","4",0x00000000,"north-america.pool.ntp.org"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers","5",0x00000000,"oceania.pool.ntp.org"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers","6",0x00000000,"south-america.pool.ntp.org"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers","7",0x00000000,"time.windows.com"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers","8",0x00000000,"time.nist.gov"
+
+; Telephony
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Locations","DisableCallWaiting",0x00010003,3
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Locations","DisableCallWaiting0",2,"*70,"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Locations","DisableCallWaiting1",2,"70#,"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Locations","DisableCallWaiting2",2,"1170,"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\tapi3",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Terminal Manager",,0x00000012
+
+; Country Codes
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List","CountryListVersion",0x00010001,0x00000019
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\1","CountryCode",0x00010001,0x00000001
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\1","Name",0x00000000,"%COUNTRY_US%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\106","CountryCode",0x00010001,0x0000006A
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\106","Name",0x00000000,"%COUNTRY_VG%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\107","CountryCode",0x00010001,0x0000006B
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\107","Name",0x00000000,"%COUNTRY_CA%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\109","CountryCode",0x00010001,0x0000006D
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\109","Name",0x00000000,"%COUNTRY_DM%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\110","CountryCode",0x00010001,0x0000006E
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\110","Name",0x00000000,"%COUNTRY_DO%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\20","CountryCode",0x00010001,0x00000014
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\20","Name",0x00000000,"%COUNTRY_EG%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\268","CountryCode",0x00010001,0x0000010c
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\268","Name",0x00000000,"%COUNTRY_SZ%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\27","CountryCode",0x00010001,0x0000001b
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\27","Name",0x00000000,"%COUNTRY_ZA%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\30","CountryCode",0x00010001,0x0000001e
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\30","Name",0x00000000,"%COUNTRY_GR%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\31","CountryCode",0x00010001,0x0000001f
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\31","Name",0x00000000,"%COUNTRY_NL%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\32","CountryCode",0x00010001,0x00000020
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\32","Name",0x00000000,"%COUNTRY_BE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\33","CountryCode",0x00010001,0x00000021
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\33","Name",0x00000000,"%COUNTRY_FR%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\34","CountryCode",0x00010001,0x00000022
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\34","Name",0x00000000,"%COUNTRY_ES%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\351","CountryCode",0x00010001,0x0000015f
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\351","Name",0x00000000,"%COUNTRY_PT%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\352","CountryCode",0x00010001,0x00000160
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\352","Name",0x00000000,"%COUNTRY_LU%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\353","CountryCode",0x00010001,0x00000161
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\353","Name",0x00000000,"%COUNTRY_IE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\354","CountryCode",0x00010001,0x00000162
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\354","Name",0x00000000,"%COUNTRY_IS%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\355","CountryCode",0x00010001,0x00000163
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\355","Name",0x00000000,"%COUNTRY_AL%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\358","CountryCode",0x00010001,0x00000166
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\358","Name",0x00000000,"%COUNTRY_FI%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\359","CountryCode",0x00010001,0x00000167
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\359","Name",0x00000000,"%COUNTRY_BG%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\36","CountryCode",0x00010001,0x00000024
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\36","Name",0x00000000,"%COUNTRY_HU%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\370","CountryCode",0x00010001,0x00000172
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\370","Name",0x00000000,"%COUNTRY_LT%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\371","CountryCode",0x00010001,0x00000173
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\371","Name",0x00000000,"%COUNTRY_LV%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\372","CountryCode",0x00010001,0x00000174
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\372","Name",0x00000000,"%COUNTRY_EE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\373","CountryCode",0x00010001,0x00000175
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\373","Name",0x00000000,"%COUNTRY_MD%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\374","CountryCode",0x00010001,0x00000176
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\374","Name",0x00000000,"%COUNTRY_AM%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\380","CountryCode",0x00010001,0x0000017c
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\380","Name",0x00000000,"%COUNTRY_UA%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\381","CountryCode",0x00010001,0x0000017d
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\381","Name",0x00000000,"%COUNTRY_RS%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\385","CountryCode",0x00010001,0x00000181
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\385","Name",0x00000000,"%COUNTRY_HR%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\386","CountryCode",0x00010001,0x00000182
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\386","Name",0x00000000,"%COUNTRY_SI%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\387","CountryCode",0x00010001,0x00000183
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\387","Name",0x00000000,"%COUNTRY_BA%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\39","CountryCode",0x00010001,0x00000027
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\39","Name",0x00000000,"%COUNTRY_IT%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\40","CountryCode",0x00010001,0x00000028
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\40","Name",0x00000000,"%COUNTRY_RO%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\41","CountryCode",0x00010001,0x00000029
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\41","Name",0x00000000,"%COUNTRY_CH%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\420","CountryCode",0x00010001,0x000001a4
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\420","Name",0x00000000,"%COUNTRY_CZ%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\421","CountryCode",0x00010001,0x000001a5
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\421","Name",0x00000000,"%COUNTRY_SK%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\423","CountryCode",0x00010001,0x000001a7
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\423","Name",0x00000000,"%COUNTRY_LI%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\43","CountryCode",0x00010001,0x0000002b
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\43","Name",0x00000000,"%COUNTRY_AT%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\44","CountryCode",0x00010001,0x0000002c
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\44","Name",0x00000000,"%COUNTRY_UK%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\45","CountryCode",0x00010001,0x0000002D
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\45","Name",0x00000000,"%COUNTRY_DK%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\46","CountryCode",0x00010001,0x0000002e
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\46","Name",0x00000000,"%COUNTRY_SE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\47","CountryCode",0x00010001,0x0000002f
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\47","Name",0x00000000,"%COUNTRY_NO%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\48","CountryCode",0x00010001,0x00000030
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\48","Name",0x00000000,"%COUNTRY_PL%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\49","CountryCode",0x00010001,0x00000031
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\49","Name",0x00000000,"%COUNTRY_DE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\52","CountryCode",0x00010001,0x00000034
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\52","Name",0x00000000,"%COUNTRY_MX%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\54","CountryCode",0x00010001,0x00000036
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\54","Name",0x00000000,"%COUNTRY_AR%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\55","CountryCode",0x00010001,0x00000037
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\55","Name",0x00000000,"%COUNTRY_BR%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\56","CountryCode",0x00010001,0x00000038
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\56","Name",0x00000000,"%COUNTRY_CL%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\57","CountryCode",0x00010001,0x00000039
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\57","Name",0x00000000,"%COUNTRY_CO%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\58","CountryCode",0x00010001,0x0000003a
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\58","Name",0x00000000,"%COUNTRY_VE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\60","CountryCode",0x00010001,0x0000003c
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\60","Name",0x00000000,"%COUNTRY_MY%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\61","CountryCode",0x00010001,0x0000003d
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\61","Name",0x00000000,"%COUNTRY_AU%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\62","CountryCode",0x00010001,0x0000003e
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\62","Name",0x00000000,"%COUNTRY_ID%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\63","CountryCode",0x00010001,0x0000003f
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\63","Name",0x00000000,"%COUNTRY_PH%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\64","CountryCode",0x00010001,0x00000040
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\64","Name",0x00000000,"%COUNTRY_NZ%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\66","CountryCode",0x00010001,0x00000042
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\66","Name",0x00000000,"%COUNTRY_TH%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\7","CountryCode",0x00010001,0x00000007
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\7","Name",0x00000000,"%COUNTRY_RU%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\705","CountryCode",0x00010001,0x000002C1
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\705","Name",0x00000000,"%COUNTRY_KZ%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\708","CountryCode",0x00010001,0x000002C4
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\708","Name",0x00000000,"%COUNTRY_TJ%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\81","CountryCode",0x00010001,0x00000051
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\81","Name",0x00000000,"%COUNTRY_JP%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\82","CountryCode",0x00010001,0x00000052
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\82","Name",0x00000000,"%COUNTRY_KR%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\850","CountryCode",0x00010001,0x00000352
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\850","Name",0x00000000,"%COUNTRY_KP%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\86","CountryCode",0x00010001,0x00000056
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\86","Name",0x00000000,"%COUNTRY_CN%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\886","CountryCode",0x00010001,0x00000376
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\886","Name",0x00000000,"%COUNTRY_TW%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\90","CountryCode",0x00010001,0x0000005a
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\90","Name",0x00000000,"%COUNTRY_TR%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\91","CountryCode",0x00010001,0x0000005b
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\91","Name",0x00000000,"%COUNTRY_IN%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\93","CountryCode",0x00010001,0x0000005d
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\93","Name",0x00000000,"%COUNTRY_AF%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\960","CountryCode",0x00010001,0x000003c0
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\960","Name",0x00000000,"%COUNTRY_MV%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\964","CountryCode",0x00010001,0x000003c4
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\964","Name",0x00000000,"%COUNTRY_IQ%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\966","CountryCode",0x00010001,0x000003c6
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\966","Name",0x00000000,"%COUNTRY_SA%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\971","CountryCode",0x00010001,0x000003cb
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\971","Name",0x00000000,"%COUNTRY_AE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\972","CountryCode",0x00010001,0x000003cc
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\972","Name",0x00000000,"%COUNTRY_IL%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\974","CountryCode",0x00010001,0x000003ce
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\974","Name",0x00000000,"%COUNTRY_QA%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\976","CountryCode",0x00010001,0x000003d0
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\976","Name",0x00000000,"%COUNTRY_MN%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\977","CountryCode",0x00010001,0x000003d1
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\977","Name",0x00000000,"%COUNTRY_NP%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\98","CountryCode",0x00010001,0x00000062
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\98","Name",0x00000000,"%COUNTRY_IR%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\993","CountryCode",0x00010001,0x000003e1
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\993","Name",0x00000000,"%COUNTRY_TM%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\994","CountryCode",0x00010001,0x000003e2
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\994","Name",0x00000000,"%COUNTRY_AZ%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\995","CountryCode",0x00010001,0x000003e3
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\995","Name",0x00000000,"%COUNTRY_GE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\996","CountryCode",0x00010001,0x000003e4
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\996","Name",0x00000000,"%COUNTRY_KG%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\998","CountryCode",0x00010001,0x000003e6
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony\Country List\998","Name",0x00000000,"%COUNTRY_UZ%"
+
+; PowerCfg
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg","LastID",0x00000002,"0"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg","DiskSpinDownMax",0x00000002,"3600"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg","DiskSpinDownMin",0x00000002,"3"
+
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\GlobalPowerPolicy","Policies",0x00030003,\
+01,00,00,00,01,00,00,00,01,00,00,00,03,00,00,00
+
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\PowerPolicies\0","Policies",0x00030003,\
+01,00,00,00,02,00,00,00,04,00,00,00,02,00,00,00,02,00,00,00,00,00,00,00,84,03,00,00,00,00,00,00,84,03,00,00,32,\
+32,00,00,02,00,00,00,04,00,00,C0,00,00,00,00,02,00,00,00,04,00,00,C0,00,00,00,00
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\PowerPolicies\1","Policies",0x00030003,\
+01,00,00,00,02,00,00,00,03,00,00,00,03,00,00,00,03,00,00,00,60,09,00,00,2C,01,00,00,80,25,00,00,F4,1A,00,00,32,\
+32,00,00,02,00,00,00,04,00,00,C0,00,00,00,00,02,00,00,00,04,00,00,C0,00,00,00,00
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\PowerPolicies\2","Policies",0x00030003,\
+01,00,00,00,02,00,00,00,03,00,00,00,02,00,00,00,02,00,00,00,00,00,00,00,84,03,00,00,00,00,00,00,9C,18,00,00,32,\
+32,00,00,02,00,00,00,04,00,00,C0,00,00,00,00,02,00,00,00,04,00,00,C0,00,00,00,00
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\PowerPolicies\3","Policies",0x00030003,\
+01,00,00,00,02,00,00,00,04,00,00,00,02,00,00,00,02,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,5A,\
+5A,00,00,02,00,00,00,04,00,00,C0,00,00,00,00,02,00,00,00,04,00,00,C0,00,00,00,00
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\PowerPolicies\4","Policies",0x00030003,\
+01,00,00,00,02,00,00,00,04,00,00,00,02,00,00,00,02,00,00,00,00,00,00,00,08,07,00,00,00,00,00,00,04,29,00,00,5A,\
+5A,00,00,02,00,00,00,04,00,00,C0,00,00,00,00,02,00,00,00,04,00,00,C0,00,00,00,00
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\PowerPolicies\5","Policies",0x00030003,\
+01,00,00,00,02,00,00,00,04,00,00,00,03,00,00,00,03,00,00,00,DC,05,00,00,B4,00,00,00,DC,05,00,00,98,0D,00,00,32,\
+0A,00,00,02,00,00,00,04,00,00,C0,00,00,00,00,02,00,00,00,04,00,00,C0,00,00,00,00
+
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\ProcessorPolicies\0","Policies",0x00030001,\
+01,00,00,00,01,00,00,00,00,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,32,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,3C,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,50,00,00,\
+01,00,00,00,01,00,00,00,03,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,0A,14,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,28,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,46,00,00,\
+01,00,00,00
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\ProcessorPolicies\1","Policies",0x00030001,\
+01,00,00,00,01,00,00,00,03,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,32,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,3C,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,50,00,00,\
+01,00,00,00,01,00,00,00,03,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,0A,14,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,28,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,46,00,00,\
+01,00,00,00
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\ProcessorPolicies\2","Policies",0x00030001,\
+01,00,00,00,01,00,00,00,03,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,32,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,3C,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,50,00,00,\
+01,00,00,00,01,00,00,00,02,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,0A,14,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,28,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,46,00,00,\
+01,00,00,00
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\ProcessorPolicies\3","Policies",0x00030001,\
+01,00,00,00,01,00,00,00,00,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,32,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,3C,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,50,00,00,\
+01,00,00,00,01,00,00,00,00,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,0A,14,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,28,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,50,00,00,\
+01,00,00,00
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\ProcessorPolicies\4","Policies",0x00030001,\
+01,00,00,00,01,00,00,00,03,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,32,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,3C,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,50,00,00,\
+01,00,00,00,01,00,00,00,03,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,0A,14,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,28,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,46,00,00,\
+01,00,00,00
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\PowerCfg\ProcessorPolicies\5","Policies",0x00030001,\
+01,00,00,00,01,00,00,00,03,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,32,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,3C,00,00,02,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,28,50,00,00,\
+01,00,00,00,01,00,00,00,02,00,00,00,00,00,00,00,03,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,0A,14,00,00,02,00,\
+00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,28,00,00,02,00,00,00,A0,86,01,00,A0,86,01,00,A0,86,01,00,14,41,00,00,\
+01,00,00,00
+
+; deskadp.dll shell extension
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\Device\shellex\PropertySheetHandlers\Display Adapter CPL Extension","",0x00000000,"{42071712-76d4-11d1-8b24-00a0c9068ff3}"
+
+; deskmon.dll shell extension
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\Device\shellex\PropertySheetHandlers\Display Monitor CPL Extension","",0x00000000,"{42071713-76d4-11d1-8b24-00a0c9068ff3}"
+
+HKLM,"SOFTWARE\Microsoft\Ole","EnableDCOM",0x00000000,"Y"
+HKLM,"SOFTWARE\Microsoft\Ole","EnableRemoteConnect",0x00000000,"N"
+
+; Keyboard layout switcher
+;HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Run","kbswitch",0x00000000,"kbswitch.exe"
+
+; SvcHost services
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SvcHost",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SvcHost","DcomLaunch",0x00010000,"PlugPlay"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SvcHost","netsvcs",0x00010000,"DHCP","BITS"
+
+; Win32 config
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","AppInit_DLLs",0x00000000,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","DeviceNotSelectedTimeout",0x00000000,"15"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","GDIProcessHandleQuota",0x00010001,0x2710
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","Spooler",0x00000000,"yes"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","swapdisk",0x00000000,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","TransmissionRetryTimeout",0x00000000,"90"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","USERProcessHandleQuota",0x00010001,0x2710
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","DesktopHeapLogging",0x00010001,0x1
+
+;-------------------------------- STRINGS -------------------------------
+
+[Strings]
+COUNTRY_AD="Andorra"
+COUNTRY_AE="United Arab Emirates"
+COUNTRY_AF="Afghanistan"
+COUNTRY_AG="Antigua and Barbuda"
+COUNTRY_AI="Anguilla"
+COUNTRY_AL="Albania"
+COUNTRY_AM="Armenia"
+COUNTRY_AO="Angola"
+COUNTRY_AQ="Antarctica"
+COUNTRY_AR="Argentina"
+COUNTRY_AS="American Samoa"
+COUNTRY_AT="Austria"
+COUNTRY_AU="Australia"
+COUNTRY_AW="Aruba"
+COUNTRY_AX="Åland Islands"
+COUNTRY_AZ="Azerbaijan"
+COUNTRY_BA="Bosnia and Herzegovina"
+COUNTRY_BB="Barbados"
+COUNTRY_BD="Bangladesh"
+COUNTRY_BE="Belgium"
+COUNTRY_BF="Burkina Faso"
+COUNTRY_BG="Bulgaria"
+COUNTRY_BH="Bahrain"
+COUNTRY_BI="Burundi"
+COUNTRY_BJ="Benin"
+COUNTRY_BL="Saint Barthélemy"
+COUNTRY_BM="Bermuda"
+COUNTRY_BN="Brunei Darussalam"
+COUNTRY_BO="Bolivia, Plurinational State of"
+COUNTRY_BQ="Bonaire, Saint Eustatius and Saba"
+COUNTRY_BR="Brazil"
+COUNTRY_BS="Bahamas"
+COUNTRY_BT="Bhutan"
+COUNTRY_BV="Bouvet Island"
+COUNTRY_BW="Botswana"
+COUNTRY_BY="Belarus"
+COUNTRY_BZ="Belize"
+COUNTRY_CA="Canada"
+COUNTRY_CC="Cocos (Keeling) Islands"
+COUNTRY_CD="Congo, the Democratic Republic of the"
+COUNTRY_CF="Central African Republic"
+COUNTRY_CG="Congo"
+COUNTRY_CH="Switzerland"
+COUNTRY_CI="Côte d'Ivoire"
+COUNTRY_CK="Cook Islands"
+COUNTRY_CL="Chile"
+COUNTRY_CM="Cameroon"
+COUNTRY_CN="China"
+COUNTRY_CO="Colombia"
+COUNTRY_CR="Costa Rica"
+COUNTRY_CU="Cuba"
+COUNTRY_CV="Cape Verde"
+COUNTRY_CW="Curaçao"
+COUNTRY_CX="Christmas Island"
+COUNTRY_CY="Cyprus"
+COUNTRY_CZ="Czech Republic"
+COUNTRY_DE="Germany"
+COUNTRY_DJ="Djibouti"
+COUNTRY_DK="Denmark"
+COUNTRY_DM="Dominica"
+COUNTRY_DO="Dominican Republic"
+COUNTRY_DZ="Algeria"
+COUNTRY_EC="Ecuador"
+COUNTRY_EE="Estonia"
+COUNTRY_EG="Egypt"
+COUNTRY_EH="Western Sahara"
+COUNTRY_ER="Eritrea"
+COUNTRY_ES="Spain"
+COUNTRY_ET="Ethiopia"
+COUNTRY_FI="Finland"
+COUNTRY_FJ="Fiji"
+COUNTRY_FK="Falkland Islands (Malvinas)"
+COUNTRY_FM="Micronesia, Federated States of"
+COUNTRY_FO="Faroe Islands"
+COUNTRY_FR="France"
+COUNTRY_GA="Gabon"
+COUNTRY_GD="Grenada"
+COUNTRY_GE="Georgia"
+COUNTRY_GF="French Guiana"
+COUNTRY_GG="Guernsey"
+COUNTRY_GH="Ghana"
+COUNTRY_GI="Gibraltar"
+COUNTRY_GL="Greenland"
+COUNTRY_GM="Gambia"
+COUNTRY_GN="Guinea"
+COUNTRY_GP="Guadeloupe"
+COUNTRY_GQ="Equatorial Guinea"
+COUNTRY_GR="Greece"
+COUNTRY_GS="South Georgia and the South Sandwich Islands"
+COUNTRY_GT="Guatemala"
+COUNTRY_GU="Guam"
+COUNTRY_GW="Guinea-Bissau"
+COUNTRY_GY="Guyana"
+COUNTRY_HK="Hong Kong"
+COUNTRY_HM="Heard Island and McDonald Islands"
+COUNTRY_HN="Honduras"
+COUNTRY_HR="Croatia"
+COUNTRY_HT="Haiti"
+COUNTRY_HU="Hungary"
+COUNTRY_ID="Indonesia"
+COUNTRY_IE="Ireland"
+COUNTRY_IL="Israel"
+COUNTRY_IM="Isle of Man"
+COUNTRY_IN="India"
+COUNTRY_IO="British Indian Ocean Territory"
+COUNTRY_IQ="Iraq"
+COUNTRY_IR="Iran, Islamic Republic of"
+COUNTRY_IS="Iceland"
+COUNTRY_IT="Italy"
+COUNTRY_JE="Jersey"
+COUNTRY_JM="Jamaica"
+COUNTRY_JO="Jordan"
+COUNTRY_JP="Japan"
+COUNTRY_KE="Kenya"
+COUNTRY_KG="Kyrgyzstan"
+COUNTRY_KH="Cambodia"
+COUNTRY_KI="Kiribati"
+COUNTRY_KM="Comoros"
+COUNTRY_KN="Saint Kitts and Nevis"
+COUNTRY_KP="Korea, Democratic People's Republic of"
+COUNTRY_KR="Korea, Republic of"
+COUNTRY_KW="Kuwait"
+COUNTRY_KY="Cayman Islands"
+COUNTRY_KZ="Kazakhstan"
+COUNTRY_LA="Lao People's Democratic Republic"
+COUNTRY_LB="Lebanon"
+COUNTRY_LC="Saint Lucia"
+COUNTRY_LI="Liechtenstein"
+COUNTRY_LK="Sri Lanka"
+COUNTRY_LR="Liberia"
+COUNTRY_LS="Lesotho"
+COUNTRY_LT="Lithuania"
+COUNTRY_LU="Luxembourg"
+COUNTRY_LV="Latvia"
+COUNTRY_LY="Libyan Arab Jamahiriya"
+COUNTRY_MA="Morocco"
+COUNTRY_MC="Monaco"
+COUNTRY_MD="Moldova, Republic of"
+COUNTRY_ME="Montenegro"
+COUNTRY_MF="Saint Martin (French part)"
+COUNTRY_MG="Madagascar"
+COUNTRY_MH="Marshall Islands"
+COUNTRY_MK="Macedonia, the former Yugoslav Republic of"
+COUNTRY_ML="Mali"
+COUNTRY_MM="Myanmar"
+COUNTRY_MN="Mongolia"
+COUNTRY_MO="Macao"
+COUNTRY_MP="Northern Mariana Islands"
+COUNTRY_MQ="Martinique"
+COUNTRY_MR="Mauritania"
+COUNTRY_MS="Montserrat"
+COUNTRY_MT="Malta"
+COUNTRY_MU="Mauritius"
+COUNTRY_MV="Maldives"
+COUNTRY_MW="Malawi"
+COUNTRY_MX="Mexico"
+COUNTRY_MY="Malaysia"
+COUNTRY_MZ="Mozambique"
+COUNTRY_NA="Namibia"
+COUNTRY_NC="New Caledonia"
+COUNTRY_NE="Niger"
+COUNTRY_NF="Norfolk Island"
+COUNTRY_NG="Nigeria"
+COUNTRY_NI="Nicaragua"
+COUNTRY_NL="Netherlands"
+COUNTRY_NO="Norway"
+COUNTRY_NP="Nepal"
+COUNTRY_NR="Nauru"
+COUNTRY_NU="Niue"
+COUNTRY_NZ="New Zealand"
+COUNTRY_OM="Oman"
+COUNTRY_PA="Panama"
+COUNTRY_PE="Peru"
+COUNTRY_PF="French Polynesia"
+COUNTRY_PG="Papua New Guinea"
+COUNTRY_PH="Philippines"
+COUNTRY_PK="Pakistan"
+COUNTRY_PL="Poland"
+COUNTRY_PM="Saint Pierre and Miquelon"
+COUNTRY_PN="Pitcairn"
+COUNTRY_PR="Puerto Rico"
+COUNTRY_PS="Palestinian Territory, Occupied"
+COUNTRY_PT="Portugal"
+COUNTRY_PW="Palau"
+COUNTRY_PY="Paraguay"
+COUNTRY_QA="Qatar"
+COUNTRY_RE="Réunion"
+COUNTRY_RO="Romania"
+COUNTRY_RS="Serbia"
+COUNTRY_RU="Russian Federation"
+COUNTRY_RW="Rwanda"
+COUNTRY_SA="Saudi Arabia"
+COUNTRY_SB="Solomon Islands"
+COUNTRY_SC="Seychelles"
+COUNTRY_SD="Sudan"
+COUNTRY_SE="Sweden"
+COUNTRY_SG="Singapore"
+COUNTRY_SH="Saint Helena, Ascension and Tristan da Cunha"
+COUNTRY_SI="Slovenia"
+COUNTRY_SJ="Svalbard and Jan Mayen"
+COUNTRY_SK="Slovakia"
+COUNTRY_SL="Sierra Leone"
+COUNTRY_SM="San Marino"
+COUNTRY_SN="Senegal"
+COUNTRY_SO="Somalia"
+COUNTRY_SR="Suriname"
+COUNTRY_ST="Sao Tome and Principe"
+COUNTRY_SV="El Salvador"
+COUNTRY_SX="Sint Maarten (Dutch part)"
+COUNTRY_SY="Syrian Arab Republic"
+COUNTRY_SZ="Swaziland"
+COUNTRY_TC="Turks and Caicos Islands"
+COUNTRY_TD="Chad"
+COUNTRY_TF="French Southern Territories"
+COUNTRY_TG="Togo"
+COUNTRY_TH="Thailand"
+COUNTRY_TJ="Tajikistan"
+COUNTRY_TK="Tokelau"
+COUNTRY_TL="Timor-Leste"
+COUNTRY_TM="Turkmenistan"
+COUNTRY_TN="Tunisia"
+COUNTRY_TO="Tonga"
+COUNTRY_TR="Turkey"
+COUNTRY_TT="Trinidad and Tobago"
+COUNTRY_TV="Tuvalu"
+COUNTRY_TW="Taiwan, Province of China"
+COUNTRY_TZ="Tanzania, United Republic of"
+COUNTRY_UA="Ukraine"
+COUNTRY_UG="Uganda"
+COUNTRY_UK="United Kingdom"
+COUNTRY_UM="United States Minor Outlying Islands"
+COUNTRY_US="United States of America"
+COUNTRY_UY="Uruguay"
+COUNTRY_UZ="Uzbekistan"
+COUNTRY_VA="Holy See (Vatican City State)"
+COUNTRY_VC="Saint Vincent and the Grenadines"
+COUNTRY_VE="Venezuela, Bolivarian Republic of"
+COUNTRY_VG="Virgin Islands, British"
+COUNTRY_VI="Virgin Islands, U.S."
+COUNTRY_VN="Vietnam"
+COUNTRY_VU="Vanuatu"
+COUNTRY_WF="Wallis and Futuna"
+COUNTRY_WS="Samoa"
+COUNTRY_YE="Yemen"
+COUNTRY_YT="Mayotte"
+COUNTRY_ZA="South Africa"
+COUNTRY_ZM="Zambia"
+COUNTRY_ZW="Zimbabwe"
+
+
+; LANG_GERMAN SUBLANG_NEUTRAL
+[Strings.0007]
+COUNTRY_AE="Vereinigte Arabische Emirate"
+COUNTRY_AG="Antigua und Barbuda"
+COUNTRY_AL="Albanien"
+COUNTRY_AM="Armenien"
+COUNTRY_AQ="Antarktis"
+COUNTRY_AR="Argentinien"
+COUNTRY_AS="Amerikanisch Samoa"
+COUNTRY_AT="Österreich"
+COUNTRY_AU="Australien"
+COUNTRY_AX="Åland Inseln"
+COUNTRY_AZ="Aserbaidschan"
+COUNTRY_BA="Bosnien und Herzegowina"
+COUNTRY_BE="Belgien"
+COUNTRY_BG="Bulgarien"
+COUNTRY_BO="Bolivien, Plurinationaler Staat"
+COUNTRY_BQ="Bonaire, Saint Eustatius und Saba"
+COUNTRY_BR="Brasilien"
+COUNTRY_BV="Bouvetinsel"
+COUNTRY_BY="Weißrussland"
+COUNTRY_CA="Kanada"
+COUNTRY_CC="Kokosinseln"
+COUNTRY_CD="Kongo, Demokratische Republic"
+COUNTRY_CF="Zentralafrikanische Republik"
+COUNTRY_CG="Kongo"
+COUNTRY_CH="Schweiz"
+COUNTRY_CI="Elfenbeinküste"
+COUNTRY_CK="Cookinseln"
+COUNTRY_CM="Kamerun"
+COUNTRY_CO="Kolumbien"
+COUNTRY_CU="Kuba"
+COUNTRY_CV="Kap Verde"
+COUNTRY_CW="Curaçao"
+COUNTRY_CX="Weihnachtsinsel"
+COUNTRY_CY="Zypern"
+COUNTRY_CZ="Tschechien"
+COUNTRY_DE="Deutschland"
+COUNTRY_DJ="Dschibuti"
+COUNTRY_DK="Dänemark"
+COUNTRY_DO="Dominikanische Republik"
+COUNTRY_DZ="Algerien"
+COUNTRY_EE="Estland"
+COUNTRY_EG="Ägypten"
+COUNTRY_EH="Westsahara"
+COUNTRY_ES="Spanien"
+COUNTRY_ET="Äthiopien"
+COUNTRY_FI="Finnland"
+COUNTRY_FJ="Fidschi"
+COUNTRY_FK="Falklandinseln (Malwinen)"
+COUNTRY_FM="Mikronesien, Föderierte Staateb von"
+COUNTRY_FO="Färöer Inseln"
+COUNTRY_FR="Frankreich"
+COUNTRY_GA="Gabun"
+COUNTRY_GE="Georgien"
+COUNTRY_GF="Französisch Guayana"
+COUNTRY_GL="Grönland"
+COUNTRY_GQ="Äquatorial Guinea"
+COUNTRY_GR="Griechenland"
+COUNTRY_GS="Südgeorgien und die Südlichen Sandwichinseln"
+COUNTRY_GY="Guayana"
+COUNTRY_HM="Heard und McDonaldinseln"
+COUNTRY_HR="Kroatien"
+COUNTRY_HU="Ungarn"
+COUNTRY_ID="Indonesien"
+COUNTRY_IE="Irland"
+COUNTRY_IN="Indien"
+COUNTRY_IO="Britisches Territorium im Indischen Ozean"
+COUNTRY_IQ="Irak"
+COUNTRY_IR="Iran, Islamische Republik"
+COUNTRY_IS="Island"
+COUNTRY_IT="Italien"
+COUNTRY_JM="Jamaika"
+COUNTRY_JO="Jordanien"
+COUNTRY_KE="Kenia"
+COUNTRY_KG="Kirgistan"
+COUNTRY_KH="Kambodscha"
+COUNTRY_KM="Komoren"
+COUNTRY_KN="Saint Kitts und Nevis"
+COUNTRY_KP="Korea, Demokratische Volksrepublik"
+COUNTRY_KR="Korea, Republik"
+COUNTRY_KY="Kaymaninseln"
+COUNTRY_KZ="Kasachstan"
+COUNTRY_LA="Laos, Demokratische Volksrepublik"
+COUNTRY_LB="Libanon"
+COUNTRY_LT="Litauen"
+COUNTRY_LU="Luxemburg"
+COUNTRY_LV="Lettland"
+COUNTRY_LY="Libyen"
+COUNTRY_MA="Morokko"
+COUNTRY_MD="Moldau, Republik"
+COUNTRY_MF="Saint Martin (Französischer Teil)"
+COUNTRY_MG="Madagaskar"
+COUNTRY_MH="Marshallinseln"
+COUNTRY_MK="Mazedonien, Ehemalige Jugoslawische Republik"
+COUNTRY_MN="Mongolei"
+COUNTRY_MP="Nördliche Marianen"
+COUNTRY_MR="Mauretanien"
+COUNTRY_MV="Malediven"
+COUNTRY_MX="Mexiko"
+COUNTRY_MZ="Mosambik"
+COUNTRY_NC="Neukaledonien"
+COUNTRY_NF="Norfolkinsel"
+COUNTRY_NI="Nikaragua"
+COUNTRY_NL="Niederlande"
+COUNTRY_NO="Norwegen"
+COUNTRY_NZ="Neuseeland"
+COUNTRY_PF="Französisch Polynesien"
+COUNTRY_PG="Papua-Neuguinea"
+COUNTRY_PH="Philippinen"
+COUNTRY_PL="Polen"
+COUNTRY_PM="Saint Pierre und Miquelon"
+COUNTRY_PN="Pitcairn"
+COUNTRY_PS="Palästinensische Autonomiegebiete"
+COUNTRY_QA="Katar"
+COUNTRY_RO="Rumänien"
+COUNTRY_RS="Serbien"
+COUNTRY_RU="Russische Föderation"
+COUNTRY_RW="Ruanda"
+COUNTRY_SA="Saudi Arabien"
+COUNTRY_SB="Solomon-Inseln"
+COUNTRY_SC="Seychellen"
+COUNTRY_SE="Schweden"
+COUNTRY_SG="Singapur"
+COUNTRY_SH="Saint Helena, Ascension und Tristan da Cunha"
+COUNTRY_SI="Slowenien"
+COUNTRY_SJ="Spitzbergen"
+COUNTRY_SK="Slowakei"
+COUNTRY_ST="Sao Tome und Principe"
+COUNTRY_SX="Sint Maarten (Niederländischer Teil)"
+COUNTRY_SY="Syrien"
+COUNTRY_SZ="Swasiland"
+COUNTRY_TC="Turks- und Caicosinseln"
+COUNTRY_TD="Tschad"
+COUNTRY_TF="Französische Süd- und Antarktisgebiete"
+COUNTRY_TJ="Tadschikistan"
+COUNTRY_TL="Osttimor"
+COUNTRY_TN="Tunisien"
+COUNTRY_TR="Türkei"
+COUNTRY_TT="Trinidad und Tobago"
+COUNTRY_TW="Taiwan, Provinz"
+COUNTRY_TZ="Tansania, Vereinigte Republik"
+COUNTRY_UK="Vereinigtes Königreich von Großbritannien und Nordirland"
+COUNTRY_UM="United States Minor Outlying Islands"
+COUNTRY_US="Vereinigte Staaten von Amerika"
+COUNTRY_UZ="Usbekistan"
+COUNTRY_VA="Heiliger Stuhl (Vatikanstadt)"
+COUNTRY_VC="Saint Vincent und die Grenadinen"
+COUNTRY_VE="Venezuela, Bolivarische Republik"
+COUNTRY_VG="Jungferninseln, Britische"
+COUNTRY_VI="Jungferninseln, Amerikanische"
+COUNTRY_WF="Wallis und Futuna"
+COUNTRY_YE="Jemen"
+COUNTRY_ZA="Südafrika"
+COUNTRY_ZM="Sambia"
+COUNTRY_ZW="Simbabwe"
+
+
+; LANG_ROMANIAN SUBLANG_NEUTRAL
+[Strings.0018]
+COUNTRY_AD="Andorra, Principatul"
+COUNTRY_AE="Arabe Unite, Emiratele"
+COUNTRY_AF="Afghanistan, Republica Islamică"
+COUNTRY_AG="Antigua și Barbuda"
+COUNTRY_AI="Anguilla"
+COUNTRY_AL="Albania, Republica"
+COUNTRY_AM="Armenia, Republica"
+COUNTRY_AO="Angola, Republica"
+COUNTRY_AQ="Antarctica"
+COUNTRY_AR="Argentina, Republica"
+COUNTRY_AS="Americană, Samoa"
+COUNTRY_AT="Austria, Republica"
+COUNTRY_AU="Australia"
+COUNTRY_AW="Aruba"
+COUNTRY_AX="Åland, Insulele"
+COUNTRY_AZ="Azerbaidjan, Republica"
+COUNTRY_BA="Bosnia și Herzegovina"
+COUNTRY_BB="Barbados"
+COUNTRY_BD="Bangladeș, Republica Populară"
+COUNTRY_BE="Belgiei, Regatul"
+COUNTRY_BF="Burkina Faso"
+COUNTRY_BG="Bulgaria, Republica"
+COUNTRY_BH="Bahreinului, Regatul"
+COUNTRY_BI="Burundi, Republica"
+COUNTRY_BJ="Benin", Republica
+COUNTRY_BL="Barthélemy, Saint"
+COUNTRY_BM="Bermuda, Insulele"
+COUNTRY_BN="Brunei, Domiciliul Păcii, Statul"
+COUNTRY_BO="Boliviei, Statul plurinațional al"
+COUNTRY_BQ="Bonaire, Insula"
+COUNTRY_BR="Braziliei, Republica Federativă a"
+COUNTRY_BS="Bahamas"
+COUNTRY_BT="Bhutan, Regatul"
+COUNTRY_BV="Bouvet, Insula"
+COUNTRY_BW="Botswana, Republica"
+COUNTRY_BY="Belarus, Republica"
+COUNTRY_BZ="Belize"
+COUNTRY_CA="Canada"
+COUNTRY_CC="Cocos (Keeling), Insulele"
+COUNTRY_CD="Congo, Republica Democrată"
+COUNTRY_CF="Centrafricană, Republica"
+COUNTRY_CG="Congo, Republica"
+COUNTRY_CH="Elvețiană, Confederația"
+COUNTRY_CI="Coasta de Fildeș, Republica"
+COUNTRY_CK="Cook, Insulele"
+COUNTRY_CL="Chile, Republica"
+COUNTRY_CM="Camerunului, Republica"
+COUNTRY_CN="Chineză, Republica Populară"
+COUNTRY_CO="Columbia, Republica"
+COUNTRY_CR="Costa Rica, Republica"
+COUNTRY_CU="Cuba, Republica"
+COUNTRY_CV="Capului Verde, Republica"
+COUNTRY_CW="Curaçao"
+COUNTRY_CX="Crăciunului, Insula"
+COUNTRY_CY="Ciprului, Republica"
+COUNTRY_CZ="Cehă, Republica"
+COUNTRY_DE="Germania, Republica Federală"
+COUNTRY_DJ="Djibouti, Republica"
+COUNTRY_DK="Danemarcei, Regatul"
+COUNTRY_DM="Dominica"
+COUNTRY_DO="Dominicană, Republica"
+COUNTRY_DZ="Algeriană Democrată și Populară, Republica"
+COUNTRY_EC="Ecuador, Republica"
+COUNTRY_EE="Estoniei, Republica"
+COUNTRY_EG="Egipt"
+COUNTRY_EH="Sahara Occidentală"
+COUNTRY_ER="Eritreea, Statul"
+COUNTRY_ES="Spaniei, Regatul"
+COUNTRY_ET="Etiopiei, Republica Federală Democrată a"
+COUNTRY_FI="Finlandei, Republica"
+COUNTRY_FJ="Fiji, Republica Insulelor"
+COUNTRY_FK="Falkland, Insulele (Malvine)"
+COUNTRY_FM="Microneziei, Statele Federate ale"
+COUNTRY_FO="Feroe, Insulele"
+COUNTRY_FR="Franceză, Republica"
+COUNTRY_GA="Gaboneză, Republica"
+COUNTRY_GD="Grenada"
+COUNTRY_GE="Georgia (Gruzia)"
+COUNTRY_GF="Guiana Franceză"
+COUNTRY_GG="Guernsey"
+COUNTRY_GH="Ghana, Republica"
+COUNTRY_GI="Gibraltar"
+COUNTRY_GL="Groenlanda"
+COUNTRY_GM="Gambiei, Republica"
+COUNTRY_GN="Guineea, Republica"
+COUNTRY_GP="Guadelupa"
+COUNTRY_GQ="Guinea Ecuatorială, Republica"
+COUNTRY_GR="Grecia (Republica Elenă)"
+COUNTRY_GS="Georgia de Sud și Insulele Sandwich de Sud"
+COUNTRY_GT="Guatemala, Republica"
+COUNTRY_GU="Guam"
+COUNTRY_GW="Guineea-Bissau, Republica"
+COUNTRY_GY="Guyana, Republica Cooperativă"
+COUNTRY_HK="Hong Kong"
+COUNTRY_HM="Heard și Insulele McDonald, Insula"
+COUNTRY_HN="Honduras, Republica"
+COUNTRY_HR="Croația, Republica"
+COUNTRY_HT="Haiti, Republica"
+COUNTRY_HU="Ungară, Republica"
+COUNTRY_ID="Indonezia, Republica"
+COUNTRY_IE="Irlanda, Republica"
+COUNTRY_IL="Israel, Statul"
+COUNTRY_IM="Man, Insula"
+COUNTRY_IN="India, Republica"
+COUNTRY_IO="Britanic din Oceanul Indian, Teritoriul"
+COUNTRY_IQ="Irak, Republica"
+COUNTRY_IR="Iran, Republica Islamică"
+COUNTRY_IS="Islanda"
+COUNTRY_IT="Italiană, Republica"
+COUNTRY_JE="Jersey, Insula"
+COUNTRY_JM="Jamaica"
+COUNTRY_JO="Iordaniei, Regatul Hașemit al"
+COUNTRY_JP="Japonia"
+COUNTRY_KE="Kenya, Republica"
+COUNTRY_KG="Kîrgîză, Republica"
+COUNTRY_KH="Cambodgiei, Regatul"
+COUNTRY_KI="Kiribati, Republica"
+COUNTRY_KM="Comorelor, Uniunea"
+COUNTRY_KN="Cristofor și Nevis, Federația Sfântul"
+COUNTRY_KP="Coreeană, Republica Populară Democrată"
+COUNTRY_KR="Coreea, Republica"
+COUNTRY_KW="Kuweit, Statul"
+COUNTRY_KY="Cayman, Insulele"
+COUNTRY_KZ="Kazahstan, Republica"
+COUNTRY_LA="Lao, Republica Populară Democrată"
+COUNTRY_LB="Libaneză, Republica"
+COUNTRY_LC="Lucia, Sfânta"
+COUNTRY_LI="Liechtenstein, Principatul"
+COUNTRY_LK="Sri Lanka"
+COUNTRY_LR="Liberia, Republica"
+COUNTRY_LS="Lesotho, Regatul"
+COUNTRY_LT="Lituania, Republica"
+COUNTRY_LU="Luxemburg, Marele Ducat de"
+COUNTRY_LV="Letonia, Republica"
+COUNTRY_LY="Libia, Republica"
+COUNTRY_MA="Maroc, Regatul"
+COUNTRY_MC="Monaco, Principatul"
+COUNTRY_MD="Moldova, Republica"
+COUNTRY_ME="Muntenegru"
+COUNTRY_MF="Sfântul Martin (partea Franceză)"
+COUNTRY_MG="Madagascar, Republica"
+COUNTRY_MH="Marshall, Insulele"
+COUNTRY_MK="Macedonia, Republica"
+COUNTRY_ML="Mali, Republica"
+COUNTRY_MM="Myanmar, Uniunea"
+COUNTRY_MN="Mongolia"
+COUNTRY_MO="Macao a R.P. Chineze, Regiunea administrativă specială"
+COUNTRY_MP="Mariane de Nord, Comunitatea Insulelor"
+COUNTRY_MQ="Martinica, Regiunea"
+COUNTRY_MR="Mauritaniei, Republica Islamică a"
+COUNTRY_MS="Montserrat, Teritoriul Insulei"
+COUNTRY_MT="Malta, Republica"
+COUNTRY_MU="Mauritius, Republica"
+COUNTRY_MV="Maldives, Republica"
+COUNTRY_MW="Malawi, Republica"
+COUNTRY_MX="Mexicane, Statele Unite"
+COUNTRY_MY="Malaysia"
+COUNTRY_MZ="Mozambic, Republica"
+COUNTRY_NA="Namibia, Republica"
+COUNTRY_NC="Caledonie, Noua"
+COUNTRY_NE="Niger, Republica"
+COUNTRY_NF="Norfolk, Insula"
+COUNTRY_NG="Nigeria, Republica Federală"
+COUNTRY_NI="Nicaragua, Republica"
+COUNTRY_NL="Olandei, Regatul (Țărilor de Jos)"
+COUNTRY_NO="Norvegiei, Regatul"
+COUNTRY_NP="Nepal, Republica Federală Democrată"
+COUNTRY_NR="Nauru, Republica"
+COUNTRY_NU="Niue, Insula"
+COUNTRY_NZ="Noua Zeelandă (Aoteroa)"
+COUNTRY_OM="Oman, Sultanatul"
+COUNTRY_PA="Panama, Republica"
+COUNTRY_PE="Peru, Republica"
+COUNTRY_PF="Polinezia Franceză"
+COUNTRY_PG="Papua Noua Guinee"
+COUNTRY_PH="Filipinelor, Republica"
+COUNTRY_PK="Pakistan, Republica Islamică"
+COUNTRY_PL="Polonă, Republica"
+COUNTRY_PM="Saint Pierre și Miquelon"
+COUNTRY_PN="Pitcairn, Insula"
+COUNTRY_PR="Puerto Rico, Statul liber asociat"
+COUNTRY_PS="Palestiniene, Teritoriile"
+COUNTRY_PT="Portugheză, Republica"
+COUNTRY_PW="Palau, Republica"
+COUNTRY_PY="Paraguay, Republica"
+COUNTRY_QA="Qatar, Statul"
+COUNTRY_RE="Réunion, Regiunea"
+COUNTRY_RO="România"
+COUNTRY_RS="Serbia, Republica"
+COUNTRY_RU="Rusă, Federația"
+COUNTRY_RW="Rwanda, Republica"
+COUNTRY_SA="Arabiei Saudite, Regatul"
+COUNTRY_SB="Solomon, Insulele"
+COUNTRY_SC="Seychelles, Republica"
+COUNTRY_SD="Sudan, Republica"
+COUNTRY_SE="Suediei, Regatul"
+COUNTRY_SG="Singapore, Republica"
+COUNTRY_SH="Sfânta Elena, Ascension și Tristan da Cunha"
+COUNTRY_SI="Slovenia, Republica"
+COUNTRY_SJ="Svalbard și Jan Mayen"
+COUNTRY_SK="Slovacă, Republica"
+COUNTRY_SL="Sierra Leone"
+COUNTRY_SM="San Marino, Republica"
+COUNTRY_SN="Senegal, Republica"
+COUNTRY_SO="Somalia"
+COUNTRY_SR="Surinam, Republica"
+COUNTRY_ST="Sao Tome și Principe"
+COUNTRY_SV="El Salvador, Republica"
+COUNTRY_SX="Sfântul Martin (Antilele Olandeze), Insula"
+COUNTRY_SY="Siriană, Republica Arabă"
+COUNTRY_SZ="Swaziland, Regatul"
+COUNTRY_TC="Turks și Caicos, Insulele"
+COUNTRY_TD="Ciad, Republica"
+COUNTRY_TF="Franceze Australe și Antarctice, Teritoriile"
+COUNTRY_TG="Togoleză, Republica"
+COUNTRY_TH="Thailandei, Regatul"
+COUNTRY_TJ="Tajikistan, Republica"
+COUNTRY_TK="Tokelau, Insulele"
+COUNTRY_TL="Timorul de Est, Republica Democrată"
+COUNTRY_TM="Turkmenistan, Republica"
+COUNTRY_TN="Tunisiană, Republica"
+COUNTRY_TO="Tonga, Regatul"
+COUNTRY_TR="Turcia, Republica"
+COUNTRY_TT="Trinidad și Tobago, Republica"
+COUNTRY_TV="Tuvalu"
+COUNTRY_TW="Taiwan, Provincia Chineză"
+COUNTRY_TZ="Tanzaniei, Republica Unită a"
+COUNTRY_UA="Ucraina"
+COUNTRY_UG="Uganda, Republica"
+COUNTRY_UK="Regatul Unit al Marii Britanii"
+COUNTRY_UM="Statelor Unite, Insulele Minore Îndepărtate ale"
+COUNTRY_US="Statele Unite ale Americii"
+COUNTRY_UY="Uruguay, Republica Orientală"
+COUNTRY_UZ="Uzbekistan, Republica"
+COUNTRY_VA="Sfântul Scaun (Statul Cetății Vaticanului)"
+COUNTRY_VC="Sfântul Vicențiu și Grenadine"
+COUNTRY_VE="Venezuelei, Republica bolivariană a"
+COUNTRY_VG="Virgine Britanice, Insulele"
+COUNTRY_VI="Virgine Americane, Insulele"
+COUNTRY_VN="Vietnam, Republica Socialistă"
+COUNTRY_VU="Vanuatu, Republica"
+COUNTRY_WF="Wallis și Futuna"
+COUNTRY_WS="Samoa, Statul Independent"
+COUNTRY_YE="Yemen, Republica"
+COUNTRY_YT="Mayotte, Teritoriul"
+COUNTRY_ZA="Africa de Sud, Republica"
+COUNTRY_ZM="Zambia, Republica"
+COUNTRY_ZW="Zimbabwe, Republica"
+
+
+; LANG_RUSSIAN SUBLANG_NEUTRAL
+[Strings.0019]
+COUNTRY_AD="Андорра"
+COUNTRY_AE="Объединённые Арабские Эмираты"
+COUNTRY_AF="Афганистан"
+COUNTRY_AG="Антигуа и Барбуда"
+COUNTRY_AI="Ангилья"
+COUNTRY_AL="Албания"
+COUNTRY_AM="Армения"
+COUNTRY_AO="Ангола"
+COUNTRY_AQ="Антарктида"
+COUNTRY_AR="Аргентина"
+COUNTRY_AS="Американское Самоа"
+COUNTRY_AT="Австрия"
+COUNTRY_AU="Австралия"
+COUNTRY_AW="Аруба"
+COUNTRY_AX="Аландские острова"
+COUNTRY_AZ="Азербайджан"
+COUNTRY_BA="Босния и Герцеговина"
+COUNTRY_BB="Барбадос"
+COUNTRY_BD="Бангладеш"
+COUNTRY_BE="Бельгия"
+COUNTRY_BF="Буркина Фасо"
+COUNTRY_BG="Болгария"
+COUNTRY_BH="Бахрейн"
+COUNTRY_BI="Бурунди"
+COUNTRY_BJ="Бенин"
+COUNTRY_BL="Сен-Бартелеми"
+COUNTRY_BM="Бермуды"
+COUNTRY_BN="Бруней"
+COUNTRY_BO="Боливия"
+COUNTRY_BQ="Бонайре, Синт-Эстатиус и Саба"
+COUNTRY_BR="Бразилия"
+COUNTRY_BS="Багамы"
+COUNTRY_BT="Бутан"
+COUNTRY_BV="Буве"
+COUNTRY_BW="Ботсвана"
+COUNTRY_BY="Беларусь"
+COUNTRY_BZ="Белиз"
+COUNTRY_CA="Канада"
+COUNTRY_CC="Кокосовые (Килинг) острова"
+COUNTRY_CD="Конго, Демократическая Республика"
+COUNTRY_CF="Центральноафриканская Республика"
+COUNTRY_CG="Конго"
+COUNTRY_CH="Швейцария"
+COUNTRY_CI="Кот-д’Ивуар"
+COUNTRY_CK="Острова Кука"
+COUNTRY_CL="Чили"
+COUNTRY_CM="Камерун"
+COUNTRY_CN="Китай"
+COUNTRY_CO="Колумбия"
+COUNTRY_CR="Коста-Рика"
+COUNTRY_CU="Куба"
+COUNTRY_CV="Кабо-Верде"
+COUNTRY_CW="Кюрасао"
+COUNTRY_CX="Остров Рождества"
+COUNTRY_CY="Кипр"
+COUNTRY_CZ="Чехия"
+COUNTRY_DE="Германия"
+COUNTRY_DJ="Джибути"
+COUNTRY_DK="Дания"
+COUNTRY_DM="Доминика"
+COUNTRY_DO="Доминиканская Республика"
+COUNTRY_DZ="Алжир"
+COUNTRY_EC="Эквадор"
+COUNTRY_EE="Эстония"
+COUNTRY_EG="Египет"
+COUNTRY_EH="Западная Сахара"
+COUNTRY_ER="Эритрея"
+COUNTRY_ES="Испания"
+COUNTRY_ET="Эфиопия"
+COUNTRY_FI="Финляндия"
+COUNTRY_FJ="Фиджи"
+COUNTRY_FK="Фолклендские (Мальвинские) острова"
+COUNTRY_FM="Микронезия, Федеративные Штаты"
+COUNTRY_FO="Фарерские острова"
+COUNTRY_FR="Франция"
+COUNTRY_GA="Габон"
+COUNTRY_GD="Гренада"
+COUNTRY_GE="Грузия"
+COUNTRY_GF="Французская Гвиана"
+COUNTRY_GG="Гернси"
+COUNTRY_GH="Гана"
+COUNTRY_GI="Гибралтар"
+COUNTRY_GL="Гренландия"
+COUNTRY_GM="Гамбия"
+COUNTRY_GN="Гвинея"
+COUNTRY_GP="Гваделупа"
+COUNTRY_GQ="Экваториальная Гвинея"
+COUNTRY_GR="Греция"
+COUNTRY_GS="Южная Георгия и Южные Сандвичевы острова"
+COUNTRY_GT="Гватемала"
+COUNTRY_GU="Гуам"
+COUNTRY_GW="Гвинея-Бисау"
+COUNTRY_GY="Гайана"
+COUNTRY_HK="Гонконг"
+COUNTRY_HM="Остров Херд и Острова Макдональд"
+COUNTRY_HN="Гондурас"
+COUNTRY_HR="Хорватия"
+COUNTRY_HT="Гаити"
+COUNTRY_HU="Венгрия"
+COUNTRY_ID="Индонезия"
+COUNTRY_IE="Ирландия"
+COUNTRY_IL="Израиль"
+COUNTRY_IM="Остров Мэн"
+COUNTRY_IN="Индия"
+COUNTRY_IO="Британская территория в Индийском океане"
+COUNTRY_IQ="Ирак"
+COUNTRY_IR="Иран"
+COUNTRY_IS="Исландия"
+COUNTRY_IT="Италия"
+COUNTRY_JE="Джерси"
+COUNTRY_JM="Ямайка"
+COUNTRY_JO="Иордания"
+COUNTRY_JP="Япония"
+COUNTRY_KE="Кения"
+COUNTRY_KG="Киргизия"
+COUNTRY_KH="Камбоджа"
+COUNTRY_KI="Кирибати"
+COUNTRY_KM="Коморы"
+COUNTRY_KN="Сент-Китс и Невис"
+COUNTRY_KP="Корея, Народно-Демократическая Республика"
+COUNTRY_KR="Корея, Республика"
+COUNTRY_KW="Кувейт"
+COUNTRY_KY="Каймановы острова"
+COUNTRY_KZ="Казахстан"
+COUNTRY_LA="Лаос"
+COUNTRY_LB="Ливан"
+COUNTRY_LC="Сент-Люсия"
+COUNTRY_LI="Лихтенштейн"
+COUNTRY_LK="Шри-Ланка"
+COUNTRY_LR="Либерия"
+COUNTRY_LS="Лесото"
+COUNTRY_LT="Литва"
+COUNTRY_LU="Люксембург"
+COUNTRY_LV="Латвия"
+COUNTRY_LY="Ливия"
+COUNTRY_MA="Марокко"
+COUNTRY_MC="Монако"
+COUNTRY_MD="Молдова"
+COUNTRY_ME="Черногория"
+COUNTRY_MF="Сен-Мартен"
+COUNTRY_MG="Мадагаскар"
+COUNTRY_MH="Маршалловы Острова"
+COUNTRY_MK="Македония"
+COUNTRY_ML="Мали"
+COUNTRY_MM="Мьянма"
+COUNTRY_MN="Монголия"
+COUNTRY_MO="Макао"
+COUNTRY_MP="Северные Марианские острова"
+COUNTRY_MQ="Мартиника"
+COUNTRY_MR="Мавритания"
+COUNTRY_MS="Монтсеррат"
+COUNTRY_MT="Мальта"
+COUNTRY_MU="Маврикий"
+COUNTRY_MV="Мальдивы"
+COUNTRY_MW="Малави"
+COUNTRY_MX="Мексика"
+COUNTRY_MY="Малайзия"
+COUNTRY_MZ="Мозамбик"
+COUNTRY_NA="Намибия"
+COUNTRY_NC="Новая Каледония"
+COUNTRY_NE="Нигер"
+COUNTRY_NF="Остров Норфолк"
+COUNTRY_NG="Нигерия"
+COUNTRY_NI="Никарагуа"
+COUNTRY_NL="Нидерланды"
+COUNTRY_NO="Норвегия"
+COUNTRY_NP="Непал"
+COUNTRY_NR="Науру"
+COUNTRY_NU="Ниуэ"
+COUNTRY_NZ="Новая Зеландия"
+COUNTRY_OM="Оман"
+COUNTRY_PA="Панама"
+COUNTRY_PE="Перу"
+COUNTRY_PF="Французская Полинезия"
+COUNTRY_PG="Папуа — Новая Гвинея"
+COUNTRY_PH="Филиппины"
+COUNTRY_PK="Пакистан"
+COUNTRY_PL="Польша"
+COUNTRY_PM="Сен-Пьер и Микелон"
+COUNTRY_PN="Питкэрн"
+COUNTRY_PR="Пуэрто-Рико"
+COUNTRY_PS="Палестинская территория"
+COUNTRY_PT="Португалия"
+COUNTRY_PW="Палау"
+COUNTRY_PY="Парагвай"
+COUNTRY_QA="Катар"
+COUNTRY_RE="Реюньон"
+COUNTRY_RO="Румыния"
+COUNTRY_RS="Сербия"
+COUNTRY_RU="Россия"
+COUNTRY_RW="Руанда"
+COUNTRY_SA="Саудовская Аравия"
+COUNTRY_SB="Соломоновы Острова"
+COUNTRY_SC="Сейшелы"
+COUNTRY_SD="Судан"
+COUNTRY_SE="Швеция"
+COUNTRY_SG="Сингапур"
+COUNTRY_SH="Святая Елена"
+COUNTRY_SI="Словения"
+COUNTRY_SJ="Шпицберген и Ян-Майен"
+COUNTRY_SK="Словакия"
+COUNTRY_SL="Сьерра-Леоне"
+COUNTRY_SM="Сан-Марино"
+COUNTRY_SN="Сенегал"
+COUNTRY_SO="Сомали"
+COUNTRY_SR="Суринам"
+COUNTRY_ST="Сан-Томе и Принсипи"
+COUNTRY_SV="Сальвадор"
+COUNTRY_SX="Синт-Мартен"
+COUNTRY_SY="Сирия"
+COUNTRY_SZ="Свазиленд"
+COUNTRY_TC="Острова Тёркс и Кайкос"
+COUNTRY_TD="Чад"
+COUNTRY_TF="Французские Южные территории"
+COUNTRY_TG="Того"
+COUNTRY_TH="Таиланд"
+COUNTRY_TJ="Таджикистан"
+COUNTRY_TK="Токелау"
+COUNTRY_TL="Восточный Тимор"
+COUNTRY_TM="Туркменистан"
+COUNTRY_TN="Тунис"
+COUNTRY_TO="Тонга"
+COUNTRY_TR="Турция"
+COUNTRY_TT="Тринидад и Тобаго"
+COUNTRY_TV="Тувалу"
+COUNTRY_TW="Тайвань"
+COUNTRY_TZ="Танзания"
+COUNTRY_UA="Украина"
+COUNTRY_UG="Уганда"
+COUNTRY_UK="Великобритания"
+COUNTRY_UM="Внешние малые острова США"
+COUNTRY_US="Соединённые Штаты Америки"
+COUNTRY_UY="Уругвай"
+COUNTRY_UZ="Узбекистан"
+COUNTRY_VA="Ватикан"
+COUNTRY_VC="Сент-Винсент и Гренадины"
+COUNTRY_VE="Венесуэла"
+COUNTRY_VG="Виргинские острова, Британские"
+COUNTRY_VI="Виргинские острова, Американские"
+COUNTRY_VN="Вьетнам"
+COUNTRY_VU="Вануату"
+COUNTRY_WF="Уоллис и Футуна"
+COUNTRY_WS="Самоа"
+COUNTRY_YE="Йемен"
+COUNTRY_YT="Майотта"
+COUNTRY_ZA="Южно-Африканская Республика"
+COUNTRY_ZM="Замбия"
+COUNTRY_ZW="Зимбабве"
+
+
+; LANG_UKRAINIAN SUBLANG_NEUTRAL
+[Strings.0022]
+COUNTRY_AD="Андорра"
+COUNTRY_AE="Об'єднані Арабські Емірати"
+COUNTRY_AF="Афганістан"
+COUNTRY_AG="Антигуа і Барбуда"
+COUNTRY_AI="Ангілья"
+COUNTRY_AL="Албанія"
+COUNTRY_AM="Вірменія"
+COUNTRY_AO="Ангола"
+COUNTRY_AQ="Антарктида"
+COUNTRY_AR="Аргентина"
+COUNTRY_AS="Американське Самоа"
+COUNTRY_AT="Австрія"
+COUNTRY_AU="Австралія"
+COUNTRY_AW="Аруба"
+COUNTRY_AX="Аландські острови"
+COUNTRY_AZ="Азербайджан"
+COUNTRY_BA="Боснія і Герцоговина"
+COUNTRY_BB="Барбадос"
+COUNTRY_BD="Бангладеш"
+COUNTRY_BE="Бельгія"
+COUNTRY_BF="Буркіна-Фасо"
+COUNTRY_BG="Болгарія"
+COUNTRY_BH="Бахрейн"
+COUNTRY_BI="Бурунді"
+COUNTRY_BJ="Бенін"
+COUNTRY_BL="Сен-Бартельмі"
+COUNTRY_BM="Бермудські острови"
+COUNTRY_BN="Бруней-Даруссалам"
+COUNTRY_BO="Болівія, Багатонаціональна держава"
+COUNTRY_BQ="Бонер, Сінт-Естатіус і Саба"
+COUNTRY_BR="Бразилія"
+COUNTRY_BS="Багамські острови"
+COUNTRY_BT="Бутан"
+COUNTRY_BV="Острів Буве"
+COUNTRY_BW="Ботсвана"
+COUNTRY_BY="Білорусь"
+COUNTRY_BZ="Беліз"
+COUNTRY_CA="Канада"
+COUNTRY_CC="Кокосові (Кілінг) острови"
+COUNTRY_CD="Конго, Демократична Республіка"
+COUNTRY_CF="Центрально-Африканська Республіка"
+COUNTRY_CG="Конго"
+COUNTRY_CH="Швейцарія"
+COUNTRY_CI="Кот-д'Івуар"
+COUNTRY_CK="Острови Кука"
+COUNTRY_CL="Чилі"
+COUNTRY_CM="Камерун"
+COUNTRY_CN="Китай"
+COUNTRY_CO="Колумбія"
+COUNTRY_CR="Коста-Ріка"
+COUNTRY_CU="Куба"
+COUNTRY_CV="Кабо-Верде"
+COUNTRY_CW="Кюрасао"
+COUNTRY_CX="Острів Різдва"
+COUNTRY_CY="Кіпр"
+COUNTRY_CZ="Чеська Республіка"
+COUNTRY_DE="Німеччина"
+COUNTRY_DJ="Джибуті"
+COUNTRY_DK="Данія"
+COUNTRY_DM="Домініка"
+COUNTRY_DO="Домініканська Республіка"
+COUNTRY_DZ="Алжир"
+COUNTRY_EC="Еквадор"
+COUNTRY_EE="Естонія"
+COUNTRY_EG="Єгипт"
+COUNTRY_EH="Західна Сахара"
+COUNTRY_ER="Еритрея"
+COUNTRY_ES="Іспанія"
+COUNTRY_ET="Ефіопія"
+COUNTRY_FI="Фінляндія"
+COUNTRY_FJ="Фіджі"
+COUNTRY_FK="Фолклендські (Мальвінські) острови"
+COUNTRY_FM="Мікронезія, Федеративні Штати"
+COUNTRY_FO="Фарерські острови"
+COUNTRY_FR="Франція"
+COUNTRY_GA="Габон"
+COUNTRY_GD="Гренада"
+COUNTRY_GE="Грузія"
+COUNTRY_GF="Французька Гвіана"
+COUNTRY_GG="Гернсі"
+COUNTRY_GH="Гана"
+COUNTRY_GI="Гібралтар"
+COUNTRY_GL="Гренландія"
+COUNTRY_GM="Гамбія"
+COUNTRY_GN="Гвінея"
+COUNTRY_GP="Гваделупа"
+COUNTRY_GQ="Екваторіальна Гвінея"
+COUNTRY_GR="Греція"
+COUNTRY_GS="Південна Джорджія та Південні Сандвічеві острови"
+COUNTRY_GT="Гватемала"
+COUNTRY_GU="Гуам"
+COUNTRY_GW="Гвінея-Бісау"
+COUNTRY_GY="Гайана"
+COUNTRY_HK="Гонконг"
+COUNTRY_HM="Острів Херд і острови Макдональд"
+COUNTRY_HN="Гондурас"
+COUNTRY_HR="Хорватія"
+COUNTRY_HT="Гаїті"
+COUNTRY_HU="Угорщина"
+COUNTRY_ID="Індонезія"
+COUNTRY_IE="Ірландія"
+COUNTRY_IL="Ізраїль"
+COUNTRY_IM="Острів Мен"
+COUNTRY_IN="Індія"
+COUNTRY_IO="Британські Території в Індійському Океані"
+COUNTRY_IQ="Ірак"
+COUNTRY_IR="Іран, Ісламська Республіка"
+COUNTRY_IS="Ісландія"
+COUNTRY_IT="Італія"
+COUNTRY_JE="Джерсі"
+COUNTRY_JM="Ямайка"
+COUNTRY_JO="Йорданія"
+COUNTRY_JP="Японія"
+COUNTRY_KE="Кенія"
+COUNTRY_KG="Киргизстан"
+COUNTRY_KH="Камбоджа"
+COUNTRY_KI="Кірібаті"
+COUNTRY_KM="Коморські острови"
+COUNTRY_KN="Сент-Кітс і Невіс"
+COUNTRY_KP="Корея, Народна Демократична Республіка"
+COUNTRY_KR="Корея, Республіка"
+COUNTRY_KW="Кувейт"
+COUNTRY_KY="Кайманові острови"
+COUNTRY_KZ="Казахстан"
+COUNTRY_LA="Лаоська Народна Демократична Республіка"
+COUNTRY_LB="Ліван"
+COUNTRY_LC="Сент-Люсія"
+COUNTRY_LI="Ліхтенштейн"
+COUNTRY_LK="Шрі-Ланка"
+COUNTRY_LR="Ліберія"
+COUNTRY_LS="Лесото"
+COUNTRY_LT="Литва"
+COUNTRY_LU="Люксембург"
+COUNTRY_LV="латвія"
+COUNTRY_LY="Лівійська Арабська Джамахірія"
+COUNTRY_MA="Марокко"
+COUNTRY_MC="Монако"
+COUNTRY_MD="Молдова, Республіка"
+COUNTRY_ME="Чорногорія"
+COUNTRY_MF="Сен-Мартен (Французька частина)"
+COUNTRY_MG="Мадагаскар"
+COUNTRY_MH="Маршаллові острови"
+COUNTRY_MK="Македонія, колишня Югославська Республіка"
+COUNTRY_ML="Малі"
+COUNTRY_MM="М'янма"
+COUNTRY_MN="Монголія"
+COUNTRY_MO="Макао"
+COUNTRY_MP="Північні Маріанські острови"
+COUNTRY_MQ="Мартініка"
+COUNTRY_MR="Мавританія"
+COUNTRY_MS="Монтсеррат"
+COUNTRY_MT="Мальта"
+COUNTRY_MU="Маврикій"
+COUNTRY_MV="Мальдіви"
+COUNTRY_MW="Малаві"
+COUNTRY_MX="Мексика"
+COUNTRY_MY="Малайзія"
+COUNTRY_MZ="Мозамбік"
+COUNTRY_NA="Намібія"
+COUNTRY_NC="New Caledonia"
+COUNTRY_NE="Нігер"
+COUNTRY_NF="Острів Норфолк"
+COUNTRY_NG="Нігерія"
+COUNTRY_NI="Нікарагуа"
+COUNTRY_NL="Нідерланди"
+COUNTRY_NO="Норвегія"
+COUNTRY_NP="Непал"
+COUNTRY_NR="Науру"
+COUNTRY_NU="Ніуе"
+COUNTRY_NZ="Нова Зеландія"
+COUNTRY_OM="Оман"
+COUNTRY_PA="Панама"
+COUNTRY_PE="Перу"
+COUNTRY_PF="Французька Полінезія"
+COUNTRY_PG="Папуа Нова Гвінея"
+COUNTRY_PH="Філіппіни"
+COUNTRY_PK="Пакистан"
+COUNTRY_PL="Польща"
+COUNTRY_PM="Сен-П'єр і Мікелон"
+COUNTRY_PN="Піткерн"
+COUNTRY_PR="Пуерто-Ріко"
+COUNTRY_PS="Палестинські території, окуповані"
+COUNTRY_PT="Португалія"
+COUNTRY_PW="Палау"
+COUNTRY_PY="Парагвай"
+COUNTRY_QA="Катар"
+COUNTRY_RE="Реюньйон"
+COUNTRY_RO="Румунія"
+COUNTRY_RS="Сербія"
+COUNTRY_RU="Російська Федерація"
+COUNTRY_RW="Руанда"
+COUNTRY_SA="Саудівська Аравія"
+COUNTRY_SB="Соломонові Острови"
+COUNTRY_SC="Сейшельські острови"
+COUNTRY_SD="Судан"
+COUNTRY_SE="Швеція"
+COUNTRY_SG="Сінгапур"
+COUNTRY_SH="Острови Святої Єлени, Вознесіння і Трістан-да-Кунья"
+COUNTRY_SI="Словенія"
+COUNTRY_SJ="Шпіцберген та Ян-Майєн"
+COUNTRY_SK="Словакія"
+COUNTRY_SL="Сьєрра-Леоне"
+COUNTRY_SM="Сан-Маріно"
+COUNTRY_SN="Сенегал"
+COUNTRY_SO="Сомалі"
+COUNTRY_SR="Суринам"
+COUNTRY_ST="Сан-Томе і Принсіпі"
+COUNTRY_SV="Сальвадор"
+COUNTRY_SX="Сен-Мартен (Голландська частина)"
+COUNTRY_SY="Сирійська Арабська Республіка"
+COUNTRY_SZ="Свазіленд"
+COUNTRY_TC="Острови Теркс і Кайкос"
+COUNTRY_TD="Чад"
+COUNTRY_TF="Французькі південні території"
+COUNTRY_TG="Того"
+COUNTRY_TH="Таїланд"
+COUNTRY_TJ="Таджикистан"
+COUNTRY_TK="Токелау"
+COUNTRY_TL="Східний Тимор"
+COUNTRY_TM="Туркменістан"
+COUNTRY_TN="Туніс"
+COUNTRY_TO="Тонга"
+COUNTRY_TR="Туреччина"
+COUNTRY_TT="Тринідад і Тобаго"
+COUNTRY_TV="Тувалу"
+COUNTRY_TW="Тайвань, провінція Китаю"
+COUNTRY_TZ="Танзанія, Об'єднана Республіка"
+COUNTRY_UA="Україна"
+COUNTRY_UG="Уганда"
+COUNTRY_UK="Сполучене Королівство Великої Британії та Північної Ірландії"
+COUNTRY_UM="Зовнішні малі острови США"
+COUNTRY_US="Сполучені Штати Америки"
+COUNTRY_UY="Уругвай"
+COUNTRY_UZ="Узбекистан"
+COUNTRY_VA="Святійший Престол (Держава Ватикан)"
+COUNTRY_VC="Сент-Вінсент і Гренадіни"
+COUNTRY_VE="Венесуела, Боліваріанська Республіка"
+COUNTRY_VG="Віргінські острови, Британські"
+COUNTRY_VI="Віргінські острови, США"
+COUNTRY_VN="В'єтнам"
+COUNTRY_VU="Вануату"
+COUNTRY_WF="Уолліс і Футуна"
+COUNTRY_WS="Самоа"
+COUNTRY_YE="Ємен"
+COUNTRY_YT="Майотта"
+COUNTRY_ZA="Південна Африка"
+COUNTRY_ZM="Замбія"
+COUNTRY_ZW="Зімбабве"
+
+; EOF

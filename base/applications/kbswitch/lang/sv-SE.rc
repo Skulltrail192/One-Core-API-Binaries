@@ -1,0 +1,13 @@
+/* Swedish translation by Jaix Bly */
+
+LANGUAGE LANG_SWEDISH, SUBLANG_NEUTRAL
+
+IDR_POPUP MENU
+BEGIN
+    POPUP "popup"
+    BEGIN
+        MENUITEM "&Inställingar...", ID_PREFERENCES
+        MENUITEM SEPARATOR
+        MENUITEM "&Avsluta", ID_EXIT
+    END
+END

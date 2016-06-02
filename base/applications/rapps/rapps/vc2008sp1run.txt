@@ -1,0 +1,57 @@
+; UTF-8
+; Turkish translation by Erdem Ersoy (eersoy93) (erdemersoy@live.com)
+
+[Section]
+Name = Microsoft Visual C++ 2008 SP1 Redistributable Package
+Version = 8.0
+Licence = Unknown
+Description = Microsoft Visual Studio 2008 SP1 Runtime. Contains: atl90.dll, mfc90.dll, mfc90u.dll, mfcm90.dll, mfcm90u.dll, msdia90.dll, msvcm90.dll, msvcp90.dll, msvcr90.dll, vcomp90.dll.
+Size = 4.02 MB
+Category = 14
+URLSite = http://www.microsoft.com/en-us/download/details.aspx?id=5582
+URLDownload = http://download.microsoft.com/download/d/d/9/dd9a82d0-52ef-40db-8dab-795376989c03/vcredist_x86.exe
+CDPath = none
+
+[Section.0407]
+Licence = Unbekannt
+Description = Microsoft Visual Studio 2008 SP1 Laufzeitsystem. Enthält: atl90.dll, mfc90.dll, mfc90u.dll, mfcm90.dll, mfcm90u.dll, msdia90.dll, msvcm90.dll, msvcp90.dll, msvcr90.dll, vcomp90.dll.
+
+[Section.040a]
+Licence = Desconocida
+Description = Librerias Microsoft Visual Studio 2008 SP1. Incluye: atl90.dll, mfc90.dll, mfc90u.dll, mfcm90.dll, mfcm90u.dll, msdia90.dll, msvcm90.dll, msvcp90.dll, msvcr90.dll, vcomp90.dll.
+
+[Section.040c]
+Licence = Inconnue
+Description = Bibliothèque Microsoft Visual Studio 2008 SP1. Contient: atl90.dll, mfc90.dll, mfc90u.dll, mfcm90.dll, mfcm90u.dll, msdia90.dll, msvcm90.dll, msvcp90.dll, msvcr90.dll, vcomp90.dll.
+Size = 4,02 Mo
+
+[Section.0410]
+Licence = Sconosciuta
+Description = Microsoft Visual Studio 2008 Runtime SP1. Contiene: atl90.dll, mfc90.dll, mfc90u.dll, mfcm90.dll, mfcm90u.dll, msdia90.dll, msvcm90.dll, msvcp90.dll, msvcr90.dll, vcomp90.dll.
+
+[Section.0413]
+Licence = Ongekend
+Description = Microsoft Visual Studio 2008 SP1 Runtime. Bevat: atl90.dll, mfc90.dll, mfc90u.dll, mfcm90.dll, mfcm90u.dll, msdia90.dll, msvcm90.dll, msvcp90.dll, msvcr90.dll, vcomp90.dll.
+
+[Section.0415]
+Licence = Nieznana
+Description = Biblioteki uruchomieniowe Microsoft Visual Studio 2008 SP1. Zawiera: atl90.dll, mfc90.dll, mfc90u.dll, mfcm90.dll, mfcm90u.dll, msdia90.dll, msvcm90.dll, msvcp90.dll, msvcr90.dll, vcomp90.dll.
+
+[Section.0418]
+Licence = Necunoscută
+Description = Microsoft Visual Studio 2008 SP1 Runtime. Conține: atl90.dll, mfc90.dll, mfc90u.dll, mfcm90.dll, mfcm90u.dll, msdia90.dll, msvcm90.dll, msvcp90.dll, msvcr90.dll, vcomp90.dll.
+Size = 4,02 Mo
+
+[Section.041f]
+Name = Microsoft Visual C++ 2008 SP1 Yeniden Dağıtılabilir Paket
+Licence = Bilinmiyor
+Description = Microsoft Visual Studio 2008 SP1 Yürütücü. Şunları içerir: atl90.dll, mfc90.dll, mfc90u.dll, mfcm90.dll, mfcm90u.dll, msdia90.dll, msvcm90.dll, msvcp90.dll, msvcr90.dll, vcomp90.dll.
+Size = 4,02 MB
+
+[Section.0422]
+Licence = Невідома
+Description = Бібліотеки Microsoft Visual Studio 2008 SP1. включає: atl90.dll, mfc90.dll, mfc90u.dll, mfcm90.dll, mfcm90u.dll, msdia90.dll, msvcm90.dll, msvcp90.dll, msvcr90.dll, vcomp90.dll.
+
+[Section.0813]
+Licence = Ongekend
+Description = Microsoft Visual Studio 2008 SP1 Runtime. Bevat: atl90.dll, mfc90.dll, mfc90u.dll, mfcm90.dll, mfcm90u.dll, msdia90.dll, msvcm90.dll, msvcp90.dll, msvcr90.dll, vcomp90.dll.

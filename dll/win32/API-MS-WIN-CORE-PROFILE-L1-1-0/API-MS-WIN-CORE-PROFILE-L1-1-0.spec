@@ -1,0 +1,1 @@
+@ stdcall QueryPerformanceCounter(ptr) kernel32.QueryPerformanceCounter

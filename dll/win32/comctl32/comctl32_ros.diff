@@ -1,0 +1,585 @@
+diff -prudN e:\Wine\dlls\comctl32/comctl32.spec e:\reactos\dll\win32\comctl32/comctl32.spec
+--- e:\Wine\dlls\comctl32/comctl32.spec	2014-04-04 14:12:39.665980800 +0100
++++ e:\reactos\dll\win32\comctl32/comctl32.spec	2014-03-27 14:27:25.808903400 +0100
+@@ -15,7 +15,7 @@
+  11 stdcall -noname DPA_Merge(ptr ptr long ptr ptr long)
+ #12 stub Cctl1632_ThunkData32
+  13 stdcall MakeDragList(long)
+- 14 stdcall LBItemFromPt(long int64 long)
++ 14 stdcall LBItemFromPt(long double long) #(long int64 long)
+  15 stdcall DrawInsert(long long long)
+  16 stdcall CreateUpDownControl(long long long long long long long long long long long long)
+  17 stdcall InitCommonControls()
+@@ -30,8 +30,8 @@
+ 155 stdcall -noname FindMRUStringA(long str ptr)
+ 156 stdcall -noname DelMRUString(long long)
+ 157 stdcall -noname CreateMRUListLazyA(ptr long long long)
+-163 stub -noname CreatePage
+-164 stub -noname CreateProxyPage
++163 stdcall -noname CreatePage(long ptr)
++164 stdcall -noname CreateProxyPage(long long)
+ 167 stdcall -noname AddMRUData(long ptr long)
+ 169 stdcall -noname FindMRUData(long ptr long ptr)
+ 233 stdcall -noname Str_GetPtrA(str str long)
+@@ -89,13 +89,13 @@
+ 376 stdcall -noname -private IntlStrEqWorkerA(long str str long)
+ 377 stdcall -noname -private IntlStrEqWorkerW(long wstr wstr long)
+ 382 stdcall -noname SmoothScrollWindow(ptr)
+-383 stub -noname DoReaderMode
++383 stdcall -noname DoReaderMode(ptr)
+ 384 stdcall -noname SetPathWordBreakProc(ptr long)
+ 385 stdcall -ordinal DPA_EnumCallback(long long long)
+ 386 stdcall -ordinal DPA_DestroyCallback(ptr ptr long)
+ 387 stdcall -ordinal DSA_EnumCallback(ptr ptr long)
+ 388 stdcall -ordinal DSA_DestroyCallback(ptr ptr long)
+-389 stub -noname SHGetProcessDword
++389 stdcall -noname SHGetProcessDword(long long)
+ 390 stdcall -noname ImageList_SetColorTable(ptr long long ptr)
+ 400 stdcall -ordinal CreateMRUListW(ptr)
+ 401 stdcall -ordinal AddMRUStringW(long wstr)
+@@ -189,5 +189,6 @@
+ @ stdcall PropertySheet(ptr) PropertySheetA
+ @ stdcall PropertySheetA(ptr)
+ @ stdcall PropertySheetW(ptr)
++@ stdcall RegisterClassNameW(wstr)
+ @ stdcall UninitializeFlatSB(long)
+ @ stdcall _TrackMouseEvent(ptr)
+
+diff -prudN e:\Wine\dlls\comctl32/commctrl.c e:\reactos\dll\win32\comctl32/commctrl.c
+--- e:\Wine\dlls\comctl32/commctrl.c	2014-04-04 14:12:39.666981500 +0100
++++ e:\reactos\dll\win32\comctl32/commctrl.c	2014-04-06 12:07:15.451048000 +0100
+@@ -52,25 +52,26 @@
+  *   -- ICC_WIN95_CLASSES
+  */
+ 
+-#include <stdarg.h>
+-#include <string.h>
+-#include <stdlib.h>
++#include "comctl32.h"
+ 
+-#include "windef.h"
+-#include "winbase.h"
+-#include "wingdi.h"
+-#include "winuser.h"
+-#include "winnls.h"
+-#include "commctrl.h"
+-#include "winerror.h"
+-#include "winreg.h"
+ #define NO_SHLWAPI_STREAM
+-#include "shlwapi.h"
+-#include "comctl32.h"
+-#include "wine/debug.h"
++#include <shlwapi.h>
+ 
+ WINE_DEFAULT_DEBUG_CHANNEL(commctrl);
+ 
++#define NAME       L"microsoft.windows.common-controls"
++#define VERSION    L"6.0.2600.2982"
++#define PUBLIC_KEY L"6595b64144ccf1df"
++
++#ifdef __i386__
++#define ARCH L"x86"
++#elif defined __x86_64__
++#define ARCH L"amd64"
++#else
++#define ARCH L"none"
++#endif
++
++static const WCHAR manifest_filename[] = ARCH L"_" NAME L"_" PUBLIC_KEY L"_" VERSION L"_none_deadbeef.manifest";
+ 
+ static LRESULT WINAPI COMCTL32_SubclassProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+ 
+@@ -92,6 +93,67 @@ static const WCHAR strCC32SubclassInfo[]
+     'C','C','3','2','S','u','b','c','l','a','s','s','I','n','f','o',0
+ };
+ 
++static BOOL create_manifest(BOOL install)
++{
++    WCHAR *pwszBuf;
++    HRSRC hResInfo;
++    HGLOBAL hResData;
++    PVOID pManifest;
++    DWORD cchBuf, cbManifest, cbWritten;
++    HANDLE hFile;
++    BOOL bRet = FALSE;
++
++    hResInfo = FindResourceW(COMCTL32_hModule, L"WINE_MANIFEST", (LPWSTR)RT_MANIFEST);
++    if (!hResInfo)
++        return FALSE;
++
++    cbManifest = SizeofResource(COMCTL32_hModule, hResInfo);
++    if (!cbManifest)
++        return FALSE;
++
++    hResData = LoadResource(COMCTL32_hModule, hResInfo);
++    if (!hResData)
++        return FALSE;
++
++    pManifest = LockResource(hResData);
++    if (!pManifest)
++        return FALSE;
++
++    cchBuf = GetWindowsDirectoryW(NULL, 0) * sizeof(WCHAR) + sizeof(L"\\winsxs\\manifests\\") + sizeof(manifest_filename);
++    pwszBuf = (WCHAR*)HeapAlloc(GetProcessHeap(), 0, cchBuf * sizeof(WCHAR));
++    if (!pwszBuf)
++        return FALSE;
++
++    GetWindowsDirectoryW(pwszBuf, cchBuf);
++    lstrcatW(pwszBuf, L"\\winsxs");
++    CreateDirectoryW(pwszBuf, NULL);
++    lstrcatW(pwszBuf, L"\\manifests\\");
++    CreateDirectoryW(pwszBuf, NULL);
++    lstrcatW(pwszBuf, manifest_filename);
++    if (install)
++    {
++        hFile = CreateFileW(pwszBuf, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
++        if (hFile != INVALID_HANDLE_VALUE)
++        {
++            if (WriteFile(hFile, pManifest, cbManifest, &cbWritten, NULL) && cbWritten == cbManifest)
++                bRet = TRUE;
++
++            CloseHandle(hFile);
++
++            if (!bRet)
++                DeleteFileW(pwszBuf);
++            else
++                TRACE("created %s\n", debugstr_w(pwszBuf));
++        }
++    }
++    else
++        bRet = DeleteFileW(pwszBuf);
++
++    HeapFree(GetProcessHeap(), 0, pwszBuf);
++
++    return bRet;
++}
++
+ 
+ /***********************************************************************
+  * DllMain [Internal]
+@@ -928,6 +990,12 @@ HRESULT WINAPI DllGetVersion (DLLVERSION
+ HRESULT WINAPI DllInstall(BOOL bInstall, LPCWSTR cmdline)
+ {
+     TRACE("(%u, %s): stub\n", bInstall, debugstr_w(cmdline));
++    if (!create_manifest(bInstall))
++    {
++        ERR("create_manifest failed!\n");
++        return HRESULT_FROM_WIN32(GetLastError());
++    }
++
+     return S_OK;
+ }
+ 
+@@ -1591,12 +1659,114 @@ LRESULT WINAPI SetPathWordBreakProc(HWND
+  *
+  * Draw text with shadow.
+  */
+-int WINAPI DrawShadowText(HDC hdc, LPCWSTR pszText, UINT cch, RECT *rect, DWORD dwFlags,
++int WINAPI DrawShadowText(HDC hdc, LPCWSTR pszText, UINT cch, RECT *prc, DWORD dwFlags,
+                           COLORREF crText, COLORREF crShadow, int ixOffset, int iyOffset)
+ {
+-    FIXME("(%p, %s, %d, %p, %d, 0x%08x, 0x%08x, %d, %d): stub\n", hdc, debugstr_w(pszText), cch, rect, dwFlags,
+-                                                                  crText, crShadow, ixOffset, iyOffset);
+-    return DrawTextW(hdc, pszText, cch, rect, DT_LEFT);
++    COLORREF crOldText;
++    RECT rcText;
++    INT iRet, x, y, x2, y2;
++    BYTE *pBits;
++    HBITMAP hbm, hbmOld;
++    BITMAPINFO bi;
++    HDC hdcMem;
++    HFONT hOldFont;
++    BLENDFUNCTION bf;
++
++    /* Create 32 bit DIB section for the shadow */
++    ZeroMemory(&bi, sizeof(bi));
++    bi.bmiHeader.biSize = sizeof(bi.bmiHeader);
++    bi.bmiHeader.biWidth = prc->right - prc->left + 4;
++    bi.bmiHeader.biHeight = prc->bottom - prc->top + 5; // bottom-up DIB
++    bi.bmiHeader.biPlanes = 1;
++    bi.bmiHeader.biBitCount = 32;
++    bi.bmiHeader.biCompression = BI_RGB;
++    hbm = CreateDIBSection(hdc, &bi, DIB_RGB_COLORS, (PVOID*)&pBits, NULL, 0);
++    if(!hbm)
++    {
++        ERR("CreateDIBSection failed\n");
++        return 0;
++    }
++
++    /* Create memory device context for new DIB section and select it */
++    hdcMem = CreateCompatibleDC(hdc);
++    if(!hdcMem)
++    {
++        ERR("CreateCompatibleDC failed\n");
++        DeleteObject(hbm);
++        return 0;
++    }
++
++    hbmOld = (HBITMAP)SelectObject(hdcMem, hbm);
++
++    /* Draw text on our helper bitmap */
++    hOldFont = (HFONT)SelectObject(hdcMem, GetCurrentObject(hdc, OBJ_FONT));
++    SetTextColor(hdcMem, RGB(16, 16, 16));
++    SetBkColor(hdcMem, RGB(0, 0, 0));
++    SetBkMode(hdcMem, TRANSPARENT);
++    SetRect(&rcText, 0, 0, prc->right - prc->left, prc->bottom - prc->top);
++    DrawTextW(hdcMem, pszText, cch, &rcText, dwFlags);
++    SelectObject(hdcMem, hOldFont);
++
++    /* Flush GDI so data pointed by pBits is valid */
++    GdiFlush();
++
++    /* Set alpha of pixels (forget about colors for now. They will be changed in next loop).
++       We copy text image 4*5 times and each time alpha is added */
++    for (x = 0; x < bi.bmiHeader.biWidth; ++x)
++        for (y = 0; y < bi.bmiHeader.biHeight; ++y)
++        {
++            BYTE *pDest = &pBits[(y * bi.bmiHeader.biWidth + x) * 4];
++            UINT Alpha = 0;
++
++            for (x2 = x - 4 + 1; x2 <= x; ++x2)
++                for (y2 = y; y2 < y + 5; ++y2)
++                {
++                    if (x2 >= 0 && x2 < bi.bmiHeader.biWidth && y2 >= 0 && y2 < bi.bmiHeader.biHeight)
++                    {
++                        BYTE *pSrc = &pBits[(y2 * bi.bmiHeader.biWidth + x2) * 4];
++                        Alpha += pSrc[0];
++                    }
++                }
++
++            if (Alpha > 255)
++                Alpha = 255;
++            pDest[3] = Alpha;
++        }
++
++    /* Now set the color of each pixel to shadow color * alpha (see GdiAlphaBlend) */
++    for (x = 0; x < bi.bmiHeader.biWidth; ++x)
++        for (y = 0; y < bi.bmiHeader.biHeight; ++y)
++        {
++            BYTE *pDest = &pBits[(y * bi.bmiHeader.biWidth + x) * 4];
++            pDest[0] = GetBValue(crShadow) * pDest[3] / 255;
++            pDest[1] = GetGValue(crShadow) * pDest[3] / 255;
++            pDest[2] = GetRValue(crShadow) * pDest[3] / 255;
++        }
++
++    /* Fix ixOffset of the shadow (tested on Win) */
++    ixOffset -= 3;
++    iyOffset -= 3;
++
++    /* Alpha blend helper image to destination DC */
++    bf.BlendOp = AC_SRC_OVER;
++    bf.BlendFlags = 0;
++    bf.SourceConstantAlpha = 255;
++    bf.AlphaFormat = AC_SRC_ALPHA;
++    if (!GdiAlphaBlend(hdc, prc->left + ixOffset, prc->top + iyOffset, bi.bmiHeader.biWidth, bi.bmiHeader.biHeight, hdcMem, 0, 0, bi.bmiHeader.biWidth, bi.bmiHeader.biHeight, bf))
++        ERR("GdiAlphaBlend failed: %lu\n", GetLastError());
++
++    /* Delete the helper bitmap */
++    SelectObject(hdcMem, hbmOld);
++    DeleteObject(hbm);
++    DeleteDC(hdcMem);
++
++    /* Finally draw the text over shadow */
++    crOldText = SetTextColor(hdc, crText);
++    SetBkMode(hdc, TRANSPARENT);
++    iRet = DrawTextW(hdc, pszText, cch, prc, dwFlags);
++    SetTextColor(hdc, crOldText);
++
++    return iRet;
+ }
+ 
+ /***********************************************************************
+@@ -1637,3 +1807,15 @@ HRESULT WINAPI TaskDialogIndirect(const 
+     if (pfVerificationFlagChecked) *pfVerificationFlagChecked = TRUE;
+     return S_OK;
+ }
++
++/***********************************************************************
++ * RegisterClassNameW [COMCTL32.@]
++ *
++ * Register window class again while using as SxS module.
++ */
++BOOLEAN WINAPI RegisterClassNameW(LPCWSTR className)
++{
++    /* FIXME: actually register redirected user32 class,
++              comctl32 classes are registered by this module anyway */
++    return TRUE;
++}
+
+diff -prudN e:\Wine\dlls\comctl32/listview.c e:\reactos\dll\win32\comctl32/listview.c
+--- e:\Wine\dlls\comctl32/listview.c	2014-04-18 20:39:25.506861000 +0100
++++ e:\reactos\dll\win32\comctl32/listview.c	2014-04-22 13:09:20.504496900 +0100
+@@ -307,6 +288,7 @@ typedef struct tagLISTVIEW_INFO
+   COLORREF clrBk;
+   COLORREF clrText;
+   COLORREF clrTextBk;
++  BOOL bDefaultBkColor;
+ 
+   /* font */
+   HFONT hDefaultFont;
+@@ -1693,8 +1675,19 @@ static inline BOOL LISTVIEW_GetItemW(con
+ /* used to handle collapse main item column case */
+ static inline BOOL LISTVIEW_DrawFocusRect(const LISTVIEW_INFO *infoPtr, HDC hdc)
+ {
+-    return (infoPtr->rcFocus.left < infoPtr->rcFocus.right) ?
+-            DrawFocusRect(hdc, &infoPtr->rcFocus) : FALSE;
++    BOOL Ret = FALSE;
++
++    if (infoPtr->rcFocus.left < infoPtr->rcFocus.right)
++    {
++        DWORD dwOldBkColor, dwOldTextColor;
++
++        dwOldBkColor = SetBkColor(hdc, RGB(255, 255, 255));
++        dwOldTextColor = SetBkColor(hdc, RGB(0, 0, 0));
++        Ret = DrawFocusRect(hdc, &infoPtr->rcFocus);
++        SetBkColor(hdc, dwOldBkColor);
++        SetBkColor(hdc, dwOldTextColor);
++    }
++    return Ret;
+ }
+ 
+ /* Listview invalidation functions: use _only_ these functions to invalidate */
+@@ -4727,7 +4720,12 @@ static BOOL LISTVIEW_DrawItem(LISTVIEW_I
+     if (infoPtr->uView == LV_VIEW_DETAILS && infoPtr->dwLvExStyle & LVS_EX_GRIDLINES)
+         rcLabel.bottom--;
+ 
+-    DrawTextW(hdc, lvItem.pszText, -1, &rcLabel, uFormat);
++#ifdef __REACTOS__
++    if ((!(lvItem.state & LVIS_SELECTED) || !infoPtr->bFocus) && (infoPtr->dwLvExStyle & LVS_EX_TRANSPARENTSHADOWTEXT))
++        DrawShadowText(hdc, lvItem.pszText, -1, &rcLabel, uFormat, RGB(255, 255, 255), RGB(0, 0, 0), 2, 2);
++    else
++#endif
++        DrawTextW(hdc, lvItem.pszText, -1, &rcLabel, uFormat);
+ 
+ postpaint:
+     if (cdsubitemmode & CDRF_NOTIFYPOSTPAINT)
+@@ -5136,7 +5134,11 @@ enddraw:
+ 
+     /* Draw marquee rectangle if appropriate */
+     if (infoPtr->bMarqueeSelect)
++    {
++        SetBkColor(hdc, RGB(255, 255, 255));
++        SetTextColor(hdc, RGB(0, 0, 0));
+         DrawFocusRect(hdc, &infoPtr->marqueeDrawRect);
++    }
+ 
+     if (cdmode & CDRF_NOTIFYPOSTPAINT)
+ 	notify_postpaint(infoPtr, &nmlvcd);
+@@ -7939,6 +7941,7 @@ static BOOL LISTVIEW_SetBkColor(LISTVIEW
+ {
+     TRACE("(color=%x)\n", color);
+ 
++    infoPtr->bDefaultBkColor = FALSE;
+     if(infoPtr->clrBk != color) {
+ 	if (infoPtr->clrBk != CLR_NONE) DeleteObject(infoPtr->hBkBrush);
+ 	infoPtr->clrBk = color;
+@@ -8600,7 +8603,7 @@ static DWORD LISTVIEW_SetIconSpacing(LIS
+     return oldspacing;
+ }
+ 
+-static inline void set_icon_size(SIZE *size, HIMAGELIST himl, BOOL small)
++static inline void set_icon_size(SIZE *size, HIMAGELIST himl, BOOL is_small)
+ {
+     INT cx, cy;
+     
+@@ -8611,8 +8614,8 @@ static inline void set_icon_size(SIZE *s
+     }
+     else
+     {
+-	size->cx = GetSystemMetrics(small ? SM_CXSMICON : SM_CXICON);
+-	size->cy = GetSystemMetrics(small ? SM_CYSMICON : SM_CYICON);
++	size->cx = GetSystemMetrics(is_small ? SM_CXSMICON : SM_CXICON);
++	size->cy = GetSystemMetrics(is_small ? SM_CYSMICON : SM_CYICON);
+     }
+ }
+ 
+@@ -9349,6 +9352,7 @@ static LRESULT LISTVIEW_NCCreate(HWND hw
+   infoPtr->clrText = CLR_DEFAULT;
+   infoPtr->clrTextBk = CLR_DEFAULT;
+   LISTVIEW_SetBkColor(infoPtr, comctl32_color.clrWindow);
++  infoPtr->bDefaultBkColor = TRUE;
+ 
+   /* set default values */
+   infoPtr->nFocusedItem = -1;
+@@ -11631,6 +11635,12 @@ LISTVIEW_WindowProc(HWND hwnd, UINT uMsg
+ 
+   case WM_SYSCOLORCHANGE:
+     COMCTL32_RefreshSysColors();
++    if (infoPtr->bDefaultBkColor)
++    {
++        LISTVIEW_SetBkColor(infoPtr, comctl32_color.clrWindow);
++        infoPtr->bDefaultBkColor = TRUE;
++        LISTVIEW_InvalidateList(infoPtr);
++    }
+     return 0;
+ 
+ /*	case WM_TIMER: */
+
+diff -prudN e:\Wine\dlls\comctl32/propsheet.c e:\reactos\dll\win32\comctl32/propsheet.c
+--- e:\Wine\dlls\comctl32/propsheet.c	2014-04-04 14:12:39.676987100 +0100
++++ e:\reactos\dll\win32\comctl32/propsheet.c	2014-04-22 13:11:33.830045900 +0100
+@@ -2430,6 +2414,11 @@ static void PROPSHEET_SetWizButtons(HWND
+   HWND hwndBack   = GetDlgItem(hwndDlg, IDC_BACK_BUTTON);
+   HWND hwndNext   = GetDlgItem(hwndDlg, IDC_NEXT_BUTTON);
+   HWND hwndFinish = GetDlgItem(hwndDlg, IDC_FINISH_BUTTON);
++#ifdef __REACTOS__
++  HWND hwndCancel = GetDlgItem(hwndDlg, IDCANCEL);
++  INT iDefItem = 0;
++  HWND hwndFocus;
++#endif
+ 
+   TRACE("%d\n", dwFlags);
+ 
+@@ -2437,6 +2426,7 @@ static void PROPSHEET_SetWizButtons(HWND
+   EnableWindow(hwndNext, FALSE);
+   EnableWindow(hwndFinish, FALSE);
+ 
++#ifndef __REACTOS__
+   /* set the default pushbutton to an enabled button */
+   if (((dwFlags & PSWIZB_FINISH) || psInfo->hasFinish) && !(dwFlags & PSWIZB_DISABLEDFINISH))
+     SendMessageW(hwndDlg, DM_SETDEFID, IDC_FINISH_BUTTON, 0);
+@@ -2446,6 +2436,7 @@ static void PROPSHEET_SetWizButtons(HWND
+     SendMessageW(hwndDlg, DM_SETDEFID, IDC_BACK_BUTTON, 0);
+   else
+     SendMessageW(hwndDlg, DM_SETDEFID, IDCANCEL, 0);
++#endif
+ 
+ 
+   if (dwFlags & PSWIZB_BACK)
+@@ -2477,6 +2468,25 @@ static void PROPSHEET_SetWizButtons(HWND
+   }
+   else if (!(dwFlags & PSWIZB_DISABLEDFINISH))
+     EnableWindow(hwndFinish, TRUE);
++
++#ifdef __REACTOS__
++  /* set the default pushbutton to an enabled button */
++  if (((dwFlags & PSWIZB_FINISH) || psInfo->hasFinish) && !(dwFlags & PSWIZB_DISABLEDFINISH))
++    iDefItem = IDC_FINISH_BUTTON;
++  else if (dwFlags & PSWIZB_NEXT)
++    iDefItem = IDC_NEXT_BUTTON;
++  else if (dwFlags & PSWIZB_BACK)
++    iDefItem = IDC_BACK_BUTTON;
++  else
++    iDefItem = IDCANCEL;
++  SendMessageW(hwndDlg, DM_SETDEFID, iDefItem, 0);
++
++  /* Set focus if no control has it */
++  hwndFocus = GetFocus();
++  if (!hwndFocus || hwndFocus == hwndCancel)
++    SetFocus(GetDlgItem(hwndDlg, iDefItem));
++#endif
++
+ }
+ 
+ /******************************************************************************
+diff -prudN e:\Wine\dlls\comctl32/rebar.c e:\reactos\dll\win32\comctl32/rebar.c
+--- e:\Wine\dlls\comctl32/rebar.c	2014-04-04 14:12:39.678989500 +0100
++++ e:\reactos\dll\win32\comctl32/rebar.c	2014-04-22 13:17:59.092589800 +0100
+@@ -50,7 +50,6 @@
+  *   - WM_QUERYNEWPALETTE
+  *   - WM_RBUTTONDOWN
+  *   - WM_RBUTTONUP
+- *   - WM_SYSCOLORCHANGE
+  *   - WM_VKEYTOITEM
+  *   - WM_WININICHANGE
+  *   Notifications:
+@@ -2912,12 +2896,22 @@ REBAR_ShowBand (REBAR_INFO *infoPtr, INT
+ 
+ 
+ static LRESULT
+-REBAR_SizeToRect (REBAR_INFO *infoPtr, const RECT *lpRect)
++REBAR_SizeToRect (REBAR_INFO *infoPtr, WPARAM flags, RECT *lpRect)
+ {
+     if (!lpRect) return FALSE;
+ 
+     TRACE("[%s]\n", wine_dbgstr_rect(lpRect));
+     REBAR_SizeToHeight(infoPtr, get_rect_cy(infoPtr, lpRect));
++
++#ifdef __REACTOS__
++    /* Note that this undocumented flag is available on comctl32 v6 or later */
++    if ((flags & RBSTR_CHANGERECT) != 0)
++    {
++        RECT rcRebar;
++        GetClientRect(infoPtr->hwndSelf, &rcRebar);
++        lpRect->bottom = lpRect->top + (rcRebar.bottom - rcRebar.top);
++    }
++#endif
+     return TRUE;
+ }
+ 
+@@ -3675,7 +3669,7 @@ REBAR_WindowProc (HWND hwnd, UINT uMsg, 
+ 	    return REBAR_ShowBand (infoPtr, wParam, lParam);
+ 
+ 	case RB_SIZETORECT:
+-	    return REBAR_SizeToRect (infoPtr, (LPCRECT)lParam);
++	    return REBAR_SizeToRect (infoPtr, wParam, (LPRECT)lParam);
+ 
+ 
+ /*    Messages passed to parent */
+@@ -3758,6 +3752,11 @@ REBAR_WindowProc (HWND hwnd, UINT uMsg, 
+ 
+         case WM_SYSCOLORCHANGE:
+             COMCTL32_RefreshSysColors();
++#ifdef __REACTOS__
++            /* r51522 - Properly support WM_SYSCOLORCHANGE */
++            infoPtr->clrBtnText = comctl32_color.clrBtnText;
++            infoPtr->clrBtnFace = comctl32_color.clrBtnFace;
++#endif
+             return 0;
+ 
+ /*      case WM_VKEYTOITEM:     supported according to ControlSpy */
+
+diff -prudN e:\Wine\dlls\comctl32/tooltips.c e:\reactos\dll\win32\comctl32/tooltips.c
+--- e:\Wine\dlls\comctl32/tooltips.c	2014-04-04 14:12:39.707008100 +0100
++++ e:\reactos\dll\win32\comctl32/tooltips.c	2014-04-06 12:20:33.342535700 +0100
+@@ -2007,7 +1994,32 @@ TOOLTIPS_NCHitTest (const TOOLTIPS_INFO 
+ static LRESULT
+ TOOLTIPS_NotifyFormat (TOOLTIPS_INFO *infoPtr, WPARAM wParam, LPARAM lParam)
+ {
+-    FIXME ("hwnd=%p wParam=%lx lParam=%lx\n", infoPtr->hwndSelf, wParam, lParam);
++    TTTOOL_INFO *toolPtr = infoPtr->tools;
++    LRESULT nResult;
++
++    TRACE("infoPtr=%p wParam=%lx lParam=%p\n", infoPtr, wParam, (PVOID)lParam);
++
++    if (lParam == NF_QUERY) {
++        if (toolPtr->bNotifyUnicode) {
++            return NFR_UNICODE;
++        } else {
++            return NFR_ANSI;
++        }
++    }
++    else if (lParam == NF_REQUERY) {
++        nResult = SendMessageW (toolPtr->hwnd, WM_NOTIFYFORMAT,
++                    (WPARAM)infoPtr->hwndSelf, (LPARAM)NF_QUERY);
++        if (nResult == NFR_ANSI) {
++            toolPtr->bNotifyUnicode = FALSE;
++            TRACE(" -- WM_NOTIFYFORMAT returns: NFR_ANSI\n");
++        } else if (nResult == NFR_UNICODE) {
++            toolPtr->bNotifyUnicode = TRUE;
++            TRACE(" -- WM_NOTIFYFORMAT returns: NFR_UNICODE\n");
++        } else {
++            TRACE (" -- WM_NOTIFYFORMAT returns: error!\n");
++        }
++        return nResult;
++    }
+ 
+     return 0;
+ }
+diff -prudN e:\Wine\dlls\comctl32/treeview.c e:\reactos\dll\win32\comctl32/treeview.c
+--- e:\Wine\dlls\comctl32/treeview.c	2014-04-04 14:12:39.709009500 +0100
++++ e:\reactos\dll\win32\comctl32/treeview.c	2014-04-06 12:22:08.977839700 +0100
+@@ -2921,7 +2899,12 @@ TREEVIEW_Refresh(TREEVIEW_INFO *infoPtr,
+ 	}
+     }
+ 
+-    TREEVIEW_UpdateScrollBars(infoPtr);
++    //
++    // This is correct, but is causes and infinite loop of WM_PAINT messages, resulting
++    // in continuous painting of the scroll bar in reactos. Comment out until the real
++    // bug is found
++    // 
++    //TREEVIEW_UpdateScrollBars(infoPtr);
+ 
+     if (infoPtr->cdmode & CDRF_NOTIFYPOSTPAINT)
+ 	infoPtr->cdmode =

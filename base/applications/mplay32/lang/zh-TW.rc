@@ -1,0 +1,66 @@
+/*
+ * PROJECT:    ReactOS MPlay32
+ * LICENSE:    GPL - See COPYING in the top level directory
+ * FILE:       base/applications/mplay32/lang/zh-TW.rc
+ * PURPOSE:    Chinese (Traditional) Language File for MPlay32
+ * TRANSLATOR: Elton Chung aka MfldElton <elton328@gmail.com>
+ */
+
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL
+
+IDR_MAINMENU MENU
+BEGIN
+    POPUP "檔案(&F)"
+    BEGIN
+        MENUITEM "開啟(&O)...\tCtrl+O", IDM_OPEN_FILE
+        MENUITEM "關閉(&C)\tCtrl+W", IDM_CLOSE_FILE
+        MENUITEM SEPARATOR
+        MENUITEM "結束(&E)", IDM_EXIT
+    END
+    POPUP "&Play"
+    BEGIN
+        MENUITEM "Play/&Pause\tCtrl+P", IDC_PLAY
+        MENUITEM "St&op\tCtrl+S", IDC_STOP
+        MENUITEM SEPARATOR
+        MENUITEM "Repea&t\tCtrl+T", IDM_REPEAT
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "Single-Window &Mode", IDM_SWITCHVIEW
+    END
+    POPUP "&Device"
+    BEGIN
+        MENUITEM "&Properties", IDM_DEVPROPS
+        MENUITEM SEPARATOR
+        MENUITEM "&Volume Control", IDM_VOLUMECTL
+    END
+    POPUP "說明(&H)"
+    BEGIN
+        MENUITEM "關於(&A)...", IDM_ABOUT
+    END
+END
+
+ID_ACCELERATORS ACCELERATORS
+BEGIN
+    "^O", IDM_OPEN_FILE
+    "^W", IDM_CLOSE_FILE
+    "^P", IDC_PLAY
+    "^S", IDC_STOP
+    "^T", IDM_REPEAT
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ALL_TYPES_FILTER "所有支援格式 (*.wav, *.cda, *.midi, *.mid, *.avi)\0*.wav;*.cda;*.midi;*.mid;*.avi\0"
+    IDS_TOOLTIP_PLAY "播放"
+    IDS_TOOLTIP_STOP "停止"
+    IDS_TOOLTIP_EJECT "卸載"
+    IDS_TOOLTIP_BACKWARD "迴轉"
+    IDS_TOOLTIP_SEEKBACK "後退"
+    IDS_TOOLTIP_SEEKFORW "前進"
+    IDS_TOOLTIP_FORWARD "快轉"
+    IDS_APPTITLE "ReactOS 多媒體播放器"
+    IDS_PLAY "播放"
+    IDS_DEFAULTMCIERRMSG "No description is available for this error."
+    IDS_UNKNOWNFILEEXT "Cannot determine the device type from the given filename extension."
+END

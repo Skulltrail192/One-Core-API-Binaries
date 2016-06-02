@@ -1,0 +1,34 @@
+; UTF-8
+; Polish translation by wojo664
+; Turkish translation by Erdem Ersoy (eersoy93) (erdemersoy@live.com)
+
+[Section]
+Name = Mpxplay
+Version = 1.60b
+Licence = GPL
+Description = Mpxplay is a 32-bit console audio player for Windows. You need 7-Zip or a similar Utility to extract it.
+Size = 520 kB
+Category = 1
+URLSite = http://mpxplay.sourceforge.net/
+URLDownload = http://download.sourceforge.net/project/mpxplay/Mpxplay/Mpxplay%20v1.60%20final/mpxp160w.zip
+CDPath = none
+
+[Section.0407]
+Description = Mpxplay ist ein konsolenbasierter 32-bit Audio Player für Windows. Zum extrahieren wird 7-Zip oder ein ähnliches Tool benötigt.
+
+[Section.0410]
+Description = Mpxplay è una console audio 32-bit per Windows. Necessita 7-Zip o un programma simile per essere estratto.
+
+[Section.0415]
+Description = Mpxplay to 32 bitowy odtwarzacz audio (działający w konsoli) dla Windows. Wymaga programu archiwizującego (np. 7-Zip) do wypakowania.
+
+[Section.0418]
+Description = Mpxplay este un lector audio de tip consolă, pe 32-biți pentru Windows. E necesar un utilitar de dezarhivare de tip ZIP.
+Size = 520 ko
+
+[Section.0419]
+Description = Mpxplay - 32-разрядный консольный аудиоплеер для Windows. Вам нужен 7-Zip или подобная утилита для его распаковки.
+
+[Section.041f]
+Description = Mpxplay; Windows için, 32 bitlik, konsolluk bir ses oynatıcısıdır. Çıkartmak için 7-Zip ya da benzeri bir yazılım kullanmanız gerekir.
+Size = 520 KB

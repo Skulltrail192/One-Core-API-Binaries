@@ -1,0 +1,340 @@
+diff -prudN .\wine\dlls\rpcrt4/rpc_epmap.c .\reactos\dll\win32\rpcrt4/rpc_epmap.c
+--- .\wine\dlls\rpcrt4/rpc_epmap.c	2014-05-09 03:43:55.965035900 +0200
++++ .\reactos\dll\win32\rpcrt4/rpc_epmap.c	2013-12-27 18:11:56.421567500 +0100
+@@ -92,7 +80,7 @@ static BOOL start_rpcss(void)
+     lstrcatW( cmd, rpcss );
+ 
+     Wow64DisableWow64FsRedirection( &redir );
+-    rslt = CreateProcessW( cmd, cmd, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, NULL, &si, &pi );
++    rslt = CreateProcessW( cmd, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi );
+     Wow64RevertWow64FsRedirection( redir );
+ 
+     if (rslt)
+@@ -162,7 +150,7 @@ static RPC_STATUS get_epm_handle_server(
+ 
+ static LONG WINAPI rpc_filter(EXCEPTION_POINTERS *__eptr)
+ {
+-    switch (GetExceptionCode())
++    switch (__eptr->ExceptionRecord->ExceptionCode)
+     {
+         case EXCEPTION_ACCESS_VIOLATION:
+         case EXCEPTION_ILLEGAL_INSTRUCTION:
+diff -prudN .\wine\dlls\rpcrt4/rpc_server.c .\reactos\dll\win32\rpcrt4/rpc_server.c
+--- .\wine\dlls\rpcrt4/rpc_server.c	2014-05-09 03:43:55.973036400 +0200
++++ .\reactos\dll\win32\rpcrt4/rpc_server.c	2013-12-27 18:11:56.780368100 +0100
+@@ -1075,8 +1053,10 @@ void RPCRT4_destroy_all_protseqs(void)
+     EnterCriticalSection(&server_cs);
+     LIST_FOR_EACH_ENTRY_SAFE(cps, cursor2, &protseqs, RpcServerProtseq, entry)
+     {
++#ifndef __REACTOS__
+         if (listen_count != 0)
+             RPCRT4_sync_with_server_thread(cps);
++#endif
+         destroy_serverprotoseq(cps);
+     }
+     LeaveCriticalSection(&server_cs);
+diff -prudN .\wine\dlls\rpcrt4/rpc_transport.c .\reactos\dll\win32\rpcrt4/rpc_transport.c
+--- .\wine\dlls\rpcrt4/rpc_transport.c	2014-05-09 03:43:55.977036600 +0200
++++ .\reactos\dll\win32\rpcrt4/rpc_transport.c	2014-05-09 03:10:59.250551600 +0200
+@@ -113,31 +91,41 @@ typedef struct _RpcConnection_np
+ {
+   RpcConnection common;
+   HANDLE pipe;
+-  HANDLE listen_thread;
++  OVERLAPPED ovl;
+   BOOL listening;
+ } RpcConnection_np;
+ 
+ static RpcConnection *rpcrt4_conn_np_alloc(void)
+ {
+   RpcConnection_np *npc = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(RpcConnection_np));
++  if (npc)
++  {
++    npc->pipe = NULL;
++    memset(&npc->ovl, 0, sizeof(npc->ovl));
++    npc->listening = FALSE;
++  }
+   return &npc->common;
+ }
+ 
+-static DWORD CALLBACK listen_thread(void *arg)
++static RPC_STATUS rpcrt4_conn_listen_pipe(RpcConnection_np *npc)
+ {
+-  RpcConnection_np *npc = arg;
++  if (npc->listening)
++    return RPC_S_OK;
++
++  npc->listening = TRUE;
+   for (;;)
+   {
+-      if (ConnectNamedPipe(npc->pipe, NULL))
++      if (ConnectNamedPipe(npc->pipe, &npc->ovl))
+           return RPC_S_OK;
+ 
+       switch(GetLastError())
+       {
+       case ERROR_PIPE_CONNECTED:
++          SetEvent(npc->ovl.hEvent);
++          return RPC_S_OK;
++      case ERROR_IO_PENDING:
++          /* will be completed in rpcrt4_protseq_np_wait_for_new_connection */
+           return RPC_S_OK;
+-      case ERROR_HANDLES_CLOSED:
+-          /* connection closed during listen */
+-          return RPC_S_NO_CONTEXT_AVAILABLE;
+       case ERROR_NO_DATA_DETECTED:
+           /* client has disconnected, retry */
+           DisconnectNamedPipe( npc->pipe );
+@@ -150,6 +138,7 @@ static DWORD CALLBACK listen_thread(void
+   }
+ }
+ 
++#ifndef __REACTOS__
+ static RPC_STATUS rpcrt4_conn_listen_pipe(RpcConnection_np *npc)
+ {
+   if (npc->listening)
+@@ -165,13 +154,14 @@ static RPC_STATUS rpcrt4_conn_listen_pip
+   }
+   return RPC_S_OK;
+ }
++#endif
+ 
+ static RPC_STATUS rpcrt4_conn_create_pipe(RpcConnection *Connection, LPCSTR pname)
+ {
+   RpcConnection_np *npc = (RpcConnection_np *) Connection;
+   TRACE("listening on %s\n", pname);
+ 
+-  npc->pipe = CreateNamedPipeA(pname, PIPE_ACCESS_DUPLEX,
++  npc->pipe = CreateNamedPipeA(pname, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+                                PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE,
+                                PIPE_UNLIMITED_INSTANCES,
+                                RPC_MAX_PACKET_SIZE, RPC_MAX_PACKET_SIZE, 5000, NULL);
+@@ -183,6 +173,9 @@ static RPC_STATUS rpcrt4_conn_create_pip
+       return RPC_S_CANT_CREATE_ENDPOINT;
+   }
+ 
++  memset(&npc->ovl, 0, sizeof(npc->ovl));
++  npc->ovl.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
++
+   /* Note: we don't call ConnectNamedPipe here because it must be done in the
+    * server thread as the thread must be alertable */
+   return RPC_S_OK;
+@@ -229,6 +222,9 @@ static RPC_STATUS rpcrt4_conn_open_pipe(
+     if (err == ERROR_PIPE_BUSY) {
+       TRACE("connection failed, error=%x\n", err);
+       return RPC_S_SERVER_TOO_BUSY;
++    } else if (err == ERROR_BAD_NETPATH) {
++      TRACE("connection failed, error=%x\n", err);
++      return RPC_S_SERVER_UNAVAILABLE;
+     }
+     if (!wait || !WaitNamedPipeA(pname, NMPWAIT_WAIT_FOREVER)) {
+       err = GetLastError();
+@@ -238,9 +234,11 @@ static RPC_STATUS rpcrt4_conn_open_pipe(
+   }
+ 
+   /* success */
++  memset(&npc->ovl, 0, sizeof(npc->ovl));
+   /* pipe is connected; change to message-read mode. */
+   dwMode = PIPE_READMODE_MESSAGE;
+   SetNamedPipeHandleState(pipe, &dwMode, NULL, NULL);
++  npc->ovl.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
+   npc->pipe = pipe;
+ 
+   return RPC_S_OK;
+@@ -308,18 +306,64 @@ static RPC_STATUS rpcrt4_protseq_ncalrpc
+ static RPC_STATUS rpcrt4_ncacn_np_open(RpcConnection* Connection)
+ {
+   RpcConnection_np *npc = (RpcConnection_np *) Connection;
+-  static const char prefix[] = "\\\\.";
++  static const char prefix[] = "\\\\";
++  static const char local[] = ".";
++  BOOL bUseLocalName = TRUE;
++  CHAR ComputerName[MAX_COMPUTERNAME_LENGTH + 1];
++  DWORD bufLen = sizeof(ComputerName)/sizeof(ComputerName[0]);
+   RPC_STATUS r;
+   LPSTR pname;
++  LPSTR NetworkAddr;
++  INT size;
+ 
+   /* already connected? */
+   if (npc->pipe)
+     return RPC_S_OK;
+ 
+   /* protseq=ncacn_np: named pipes */
+-  pname = I_RpcAllocate(strlen(prefix) + strlen(Connection->Endpoint) + 1);
+-  strcat(strcpy(pname, prefix), Connection->Endpoint);
+-  r = rpcrt4_conn_open_pipe(Connection, pname, FALSE);
++  size = strlen(prefix);
++
++  if (Connection->NetworkAddr == NULL || strlen(Connection->NetworkAddr) == 0)
++  {
++    bUseLocalName = TRUE;
++    size += strlen(local);
++  }
++  else
++  {
++    NetworkAddr = Connection->NetworkAddr;
++    if (NetworkAddr[0] == '\\' && NetworkAddr[1] == '\\')
++        NetworkAddr += 2;
++
++    if (GetComputerNameA(ComputerName, &bufLen))
++    {
++      if (stricmp(ComputerName, NetworkAddr) == 0)
++      {
++        bUseLocalName = TRUE;
++        size += strlen(local);
++      }
++      else
++      {
++        bUseLocalName = FALSE;
++        size += strlen(NetworkAddr);
++      }
++    }
++    else
++    {
++      bUseLocalName = FALSE;
++      size += strlen(NetworkAddr);
++    }
++  }
++
++  size += strlen(Connection->Endpoint) + 1;
++
++  pname = I_RpcAllocate(size);
++  strcpy(pname, prefix);
++  if (bUseLocalName)
++    strcat(pname, local);
++  else
++    strcat(pname, NetworkAddr);
++  strcat(pname, Connection->Endpoint);
++  r = rpcrt4_conn_open_pipe(Connection, pname, TRUE);
+   I_RpcFree(pname);
+ 
+   return r;
+@@ -368,9 +412,9 @@ static void rpcrt4_conn_np_handoff(RpcCo
+    * to the child, then reopen the server binding to continue listening */
+ 
+   new_npc->pipe = old_npc->pipe;
+-  new_npc->listen_thread = old_npc->listen_thread;
++  new_npc->ovl = old_npc->ovl;
+   old_npc->pipe = 0;
+-  old_npc->listen_thread = 0;
++  memset(&old_npc->ovl, 0, sizeof(old_npc->ovl));
+   old_npc->listening = FALSE;
+ }
+ 
+@@ -415,11 +459,17 @@ static int rpcrt4_conn_np_read(RpcConnec
+   char *buf = buffer;
+   BOOL ret = TRUE;
+   unsigned int bytes_left = count;
++  OVERLAPPED ovl;
++
++  ZeroMemory(&ovl, sizeof(ovl));
++  ovl.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
+ 
+   while (bytes_left)
+   {
+     DWORD bytes_read;
+-    ret = ReadFile(npc->pipe, buf, bytes_left, &bytes_read, NULL);
++    ret = ReadFile(npc->pipe, buf, bytes_left, &bytes_read, &ovl);
++    if (!ret && GetLastError() == ERROR_IO_PENDING)
++        ret = GetOverlappedResult(npc->pipe, &ovl, &bytes_read, TRUE);
+     if (!ret && GetLastError() == ERROR_MORE_DATA)
+         ret = TRUE;
+     if (!ret || !bytes_read)
+@@ -427,6 +472,7 @@ static int rpcrt4_conn_np_read(RpcConnec
+     bytes_left -= bytes_read;
+     buf += bytes_read;
+   }
++  CloseHandle(ovl.hEvent);
+   return ret ? count : -1;
+ }
+ 
+@@ -437,16 +488,23 @@ static int rpcrt4_conn_np_write(RpcConne
+   const char *buf = buffer;
+   BOOL ret = TRUE;
+   unsigned int bytes_left = count;
++  OVERLAPPED ovl;
++
++  ZeroMemory(&ovl, sizeof(ovl));
++  ovl.hEvent = CreateEventW(NULL, TRUE, FALSE, NULL);
+ 
+   while (bytes_left)
+   {
+     DWORD bytes_written;
+-    ret = WriteFile(npc->pipe, buf, bytes_left, &bytes_written, NULL);
++    ret = WriteFile(npc->pipe, buf, bytes_left, &bytes_written, &ovl);
++    if (!ret && GetLastError() == ERROR_IO_PENDING)
++        ret = GetOverlappedResult(npc->pipe, &ovl, &bytes_written, TRUE);
+     if (!ret || !bytes_written)
+         break;
+     bytes_left -= bytes_written;
+     buf += bytes_written;
+   }
++  CloseHandle(ovl.hEvent);
+   return ret ? count : -1;
+ }
+ 
+@@ -458,9 +516,9 @@ static int rpcrt4_conn_np_close(RpcConne
+     CloseHandle(npc->pipe);
+     npc->pipe = 0;
+   }
+-  if (npc->listen_thread) {
+-    CloseHandle(npc->listen_thread);
+-    npc->listen_thread = 0;
++  if (npc->ovl.hEvent) {
++    CloseHandle(npc->ovl.hEvent);
++    npc->ovl.hEvent = 0;
+   }
+   return 0;
+ }
+@@ -664,7 +722,7 @@ static void *rpcrt4_protseq_np_get_wait_
+     conn = CONTAINING_RECORD(protseq->conn, RpcConnection_np, common);
+     while (conn) {
+         rpcrt4_conn_listen_pipe(conn);
+-        if (conn->listen_thread)
++        if (conn->ovl.hEvent)
+             (*count)++;
+         conn = CONTAINING_RECORD(conn->common.Next, RpcConnection_np, common);
+     }
+@@ -685,7 +743,7 @@ static void *rpcrt4_protseq_np_get_wait_
+     *count = 1;
+     conn = CONTAINING_RECORD(protseq->conn, RpcConnection_np, common);
+     while (conn) {
+-        if ((objs[*count] = conn->listen_thread))
++        if ((objs[*count] = conn->ovl.hEvent))
+             (*count)++;
+         conn = CONTAINING_RECORD(conn->common.Next, RpcConnection_np, common);
+     }
+@@ -732,18 +790,12 @@ static int rpcrt4_protseq_np_wait_for_ne
+         EnterCriticalSection(&protseq->cs);
+         conn = CONTAINING_RECORD(protseq->conn, RpcConnection_np, common);
+         while (conn) {
+-            if (b_handle == conn->listen_thread) break;
++            if (b_handle == conn->ovl.hEvent) break;
+             conn = CONTAINING_RECORD(conn->common.Next, RpcConnection_np, common);
+         }
+         cconn = NULL;
+         if (conn)
+-        {
+-            DWORD exit_code;
+-            if (GetExitCodeThread(conn->listen_thread, &exit_code) && exit_code == RPC_S_OK)
+-                RPCRT4_SpawnConnection(&cconn, &conn->common);
+-            CloseHandle(conn->listen_thread);
+-            conn->listen_thread = 0;
+-        }
++            RPCRT4_SpawnConnection(&cconn, &conn->common);
+         else
+             ERR("failed to locate connection for handle %p\n", b_handle);
+         LeaveCriticalSection(&protseq->cs);
+diff -prudN .\wine\dlls\rpcrt4/rpcrt4.spec .\reactos\dll\win32\rpcrt4/rpcrt4.spec
+--- .\wine\dlls\rpcrt4/rpcrt4.spec	2014-05-09 03:43:55.911032800 +0200
++++ .\reactos\dll\win32\rpcrt4/rpcrt4.spec	2013-12-07 15:35:15.331527800 +0100
+@@ -266,7 +266,7 @@
+ @ stdcall NdrRangeUnmarshall(ptr ptr ptr long)
+ @ stub NdrRpcSmClientAllocate
+ @ stub NdrRpcSmClientFree
+-@ stub NdrRpcSmSetClientToOsf
++@ stdcall NdrRpcSmSetClientToOsf(ptr)
+ @ stub NdrRpcSsDefaultAllocate
+ @ stub NdrRpcSsDefaultFree
+ @ stub NdrRpcSsDisableAllocate

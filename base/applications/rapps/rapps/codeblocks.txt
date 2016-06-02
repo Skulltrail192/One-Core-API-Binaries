@@ -1,0 +1,30 @@
+; UTF-8
+; Turkish translation by Erdem Ersoy (eersoy93) (erdemersoy@live.com)
+
+[Section]
+Name = Code::Blocks (without compiler)
+Version = 13.12
+Licence = GPLv3
+Description = A open source, cross-platform, powerful IDE. It doesn't contain a compiler.
+Size = 29.2 MB
+Category = 7
+URLSite = http://www.codeblocks.org/
+URLDownload = http://download.sourceforge.net/project/codeblocks/Binaries/13.12/Windows/codeblocks-13.12-setup.exe
+CDPath = none
+
+[Section.0407]
+Description = Eine quelloffene, plattformübergreifende, mächtige IDE. Diese enthält keinen Compiler.
+
+[Section.0410]
+Description = Un IDE potente, open source, multipiattaforma. Non contiene un compilatore.
+
+[Section.0418]
+Name = Code::Blocks (fără compilator)
+Description = Un IDE (mediu de dezvoltare integrat) puternic, multi-platformă, cu sursă deschisă. Nu conține nici un compilator.
+Size = 29,2 Mo
+
+[Section.041f]
+Name = Code::Blocks (Derleyicisiz)
+Licence = GPL 3. sürüm
+Description = Açık kaynak, çapraz platform, güçlü bir tümleşik geliştirme ortamı. Bir derleyici içermez.
+Size = 29,2 MB

@@ -1,0 +1,64 @@
+/*
+ * FILE:        base/applications/mplay32/lang/ro-RO.rc
+ *              ReactOS Project (http://www.reactos.org)
+ * TRANSLATOR:  Ștefan Fulea (stefan dot fulea at mail dot md)
+ */
+
+LANGUAGE LANG_ROMANIAN, SUBLANG_NEUTRAL
+
+IDR_MAINMENU MENU
+BEGIN
+    POPUP "&Fișier"
+    BEGIN
+        MENUITEM "&Deschidere…\tCtrl+O", IDM_OPEN_FILE
+        MENUITEM "Î&nchide\tCtrl+W", IDM_CLOSE_FILE
+        MENUITEM SEPARATOR
+        MENUITEM "I&eșire", IDM_EXIT
+    END
+    POPUP "&Lectură"
+    BEGIN
+        MENUITEM "Lecturează/&Pauză\tCtrl+P", IDC_PLAY
+        MENUITEM "&Oprește\tCtrl+S", IDC_STOP
+        MENUITEM SEPARATOR
+        MENUITEM "&Repetă\tCtrl+T", IDM_REPEAT
+    END
+    POPUP "&Afișare"
+    BEGIN
+        MENUITEM "&Mod fereastră-solitară", IDM_SWITCHVIEW
+    END
+    POPUP "&Dispozitiv"
+    BEGIN
+        MENUITEM "&Proprietăți…", IDM_DEVPROPS
+        MENUITEM SEPARATOR
+        MENUITEM "Control &volum…", IDM_VOLUMECTL
+    END
+    POPUP "&?"
+    BEGIN
+        MENUITEM "&Despre…", IDM_ABOUT
+    END
+END
+
+ID_ACCELERATORS ACCELERATORS
+BEGIN
+    "^O", IDM_OPEN_FILE
+    "^W", IDM_CLOSE_FILE
+    "^P", IDC_PLAY
+    "^S", IDC_STOP
+    "^T", IDM_REPEAT
+END
+
+STRINGTABLE
+BEGIN
+    IDS_ALL_TYPES_FILTER "Toate admisibile (*.wav, *.cda, *.midi, *.mid, *.avi)\0*.wav;*.cda;*.midi;*.mid;*.avi\0"
+    IDS_TOOLTIP_PLAY "Redare conținut multimedia"
+    IDS_TOOLTIP_STOP "Oprirea lecturii"
+    IDS_TOOLTIP_EJECT "Scoate"
+    IDS_TOOLTIP_BACKWARD "Salt la precedent"
+    IDS_TOOLTIP_SEEKBACK "Derulează înapoi"
+    IDS_TOOLTIP_SEEKFORW "Derulează înainte"
+    IDS_TOOLTIP_FORWARD "Salt la următor"
+    IDS_APPTITLE "Lector multimedia"
+    IDS_PLAY "Lecturare"
+    IDS_DEFAULTMCIERRMSG "Nu există descriere pentru această eroare."
+    IDS_UNKNOWNFILEEXT "Nu se poate determina tipul dispozitivului din extensia fișierului."
+END

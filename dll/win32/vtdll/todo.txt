@@ -1,0 +1,3 @@
+NtCreateIoCompletionEx
+NtCreateMutantEx
+NtCreateSemaphoreEx

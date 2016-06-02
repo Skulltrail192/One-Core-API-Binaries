@@ -1,0 +1,70 @@
+
+add_definitions(
+    -D__WINESRC__
+    -DENTRY_PREFIX=WIC_
+    -DPROXY_DELEGATION
+    -DWINE_REGISTER_DLL)
+
+remove_definitions(-D_WIN32_WINNT=0x502)
+add_definitions(-D_WIN32_WINNT=0x600)
+
+include_directories(
+    ${REACTOS_SOURCE_DIR}/include/reactos/wine
+    ${REACTOS_SOURCE_DIR}/include/reactos/libs/libjpeg
+    ${REACTOS_SOURCE_DIR}/include/reactos/libs/zlib
+    ${REACTOS_SOURCE_DIR}/include/reactos/libs/libpng
+    ${REACTOS_SOURCE_DIR}/include/reactos/libs/libtiff)
+
+if(MSVC)
+    add_compile_flags("/FItypeof.h")
+endif()
+
+spec2def(windowscodecsbase.dll windowscodecsbase.spec ADD_IMPORTLIB)
+
+add_rpcproxy_files(windowscodecsbase_wincodec.idl)
+
+list(APPEND SOURCE
+    bitmap.c
+    bmpdecode.c
+    bmpencode.c
+    clipper.c
+    clsfactory.c
+    colorcontext.c
+    colortransform.c
+    converter.c
+    fliprotate.c
+    gifformat.c
+    icnsformat.c
+    icoformat.c
+    imgfactory.c
+    info.c
+    jpegformat.c
+    main.c
+    metadatahandler.c
+    palette.c
+    pngformat.c
+    propertybag.c
+    proxy.c
+    regsvr.c
+    scaler.c
+    stream.c
+    tgaformat.c
+    tiffformat.c
+    ungif.c
+	unimplemented.c
+    wincodecs_private.h)
+
+add_library(windowscodecsbase SHARED
+    ${SOURCE}
+    guid.c
+    version.rc
+    ${CMAKE_CURRENT_BINARY_DIR}/proxy.dlldata.c
+    ${CMAKE_CURRENT_BINARY_DIR}/windowscodecsbase_stubs.c
+    ${CMAKE_CURRENT_BINARY_DIR}/windowscodecsbase.def
+    ${CMAKE_CURRENT_BINARY_DIR}/windowscodecsbase_wincodec_p.c)
+
+set_module_type(windowscodecsbase win32dll)
+target_link_libraries(windowscodecsbase wine uuid ${PSEH_LIB})
+add_importlibs(windowscodecsbase ole32 oleaut32 rpcrt4 shlwapi user32 gdi32 advapi32 msvcrt kernel32 ntdll)
+add_pch(windowscodecsbase wincodecs_private.h SOURCE)
+add_cd_file(TARGET windowscodecsbase DESTINATION reactos/system32 FOR all)
