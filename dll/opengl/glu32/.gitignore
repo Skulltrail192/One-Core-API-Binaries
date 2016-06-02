@@ -33,6 +33,8 @@ config.status
 cscope*
 build
 libtool
+output-MSVC-amd64
+output-MSVC-i386
 manifest.txt
 Makefile.in
 .dir-locals.el

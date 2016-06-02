@@ -70,10 +70,12 @@ RTL_QUERY_REGISTRY_TABLE BasepAppCertTable[2] =
 
 NTSTATUS
 NTAPI
-BasepAllocateActivationContextActivationBlock(IN DWORD Flags,
-                                              IN PVOID CompletionRoutine,
-                                              IN PVOID CompletionContext,
-                                              OUT PBASEP_ACTCTX_BLOCK *ActivationBlock)
+BasepAllocateActivationContextActivationBlock(
+	IN DWORD Flags,
+    IN PVOID CompletionRoutine,
+    IN PVOID CompletionContext,
+    OUT PBASEP_ACTCTX_BLOCK *ActivationBlock
+)
 {
     NTSTATUS Status;
     ACTIVATION_CONTEXT_BASIC_INFORMATION ContextInfo;
@@ -159,7 +161,11 @@ Quickie:
     return Status;
 }
 
-VOID NTAPI BasepFreeActivationContextActivationBlock 	( 	IN PBASEP_ACTCTX_BLOCK  	ActivationBlock	) 	
+VOID 
+NTAPI 
+BasepFreeActivationContextActivationBlock( 	
+	IN PBASEP_ACTCTX_BLOCK  	ActivationBlock	
+) 	
 {
     /* Exit if there was nothing passed in */
     if (!ActivationBlock) return;
@@ -176,7 +182,12 @@ VOID NTAPI BasepFreeActivationContextActivationBlock 	( 	IN PBASEP_ACTCTX_BLOCK 
     RtlFreeHeap(RtlGetProcessHeap(), 0, ActivationBlock);
 }
 
-BOOL WINAPI BasepAnsiStringToDynamicUnicodeString(PUNICODE_STRING DestinationString, PCSZ SourceStringParameter)
+BOOL 
+WINAPI 
+BasepAnsiStringToDynamicUnicodeString(
+	PUNICODE_STRING DestinationString, 
+	PCSZ SourceStringParameter
+)
 {
   NTSTATUS status; // eax@2
   STRING SourceString; // [sp+0h] [bp-8h]@1
@@ -185,18 +196,19 @@ BOOL WINAPI BasepAnsiStringToDynamicUnicodeString(PUNICODE_STRING DestinationStr
     goto LABEL_10;
   status = RtlAnsiStringToUnicodeString(DestinationString, &SourceString, 1u);
   if ( status >= 0 )
-    return 1;
-  if ( status == 0x80000005 )
+    return TRUE;
+  if ( status == STATUS_BUFFER_OVERFLOW )
 LABEL_10:
     SetLastError(206);
   else
     BaseSetLastNTError(status);
-  return 0;
+  return FALSE;
 }
 
-
 //move to other source file
-HANDLE WINAPI BaseGetNamedObjectDirectory(VOID) 	
+HANDLE 
+WINAPI 
+BaseGetNamedObjectDirectory(VOID) 	
 {
     OBJECT_ATTRIBUTES ObjectAttributes;
     NTSTATUS Status;
@@ -289,11 +301,13 @@ Quickie:
 
 
 
-POBJECT_ATTRIBUTES WINAPI BaseFormatObjectAttributes( 	
-		OUT POBJECT_ATTRIBUTES  	ObjectAttributes,
-		IN PSECURITY_ATTRIBUTES SecurityAttributes  	OPTIONAL,
-		IN PUNICODE_STRING  	ObjectName 
-	) 		
+POBJECT_ATTRIBUTES 
+WINAPI 
+BaseFormatObjectAttributes( 	
+	OUT POBJECT_ATTRIBUTES  	ObjectAttributes,
+	IN PSECURITY_ATTRIBUTES SecurityAttributes  	OPTIONAL,
+	IN PUNICODE_STRING  	ObjectName 
+) 		
 {
     ULONG Attributes;
     HANDLE RootDirectory;
@@ -339,7 +353,12 @@ POBJECT_ATTRIBUTES WINAPI BaseFormatObjectAttributes(
 /*
  * Converts an ANSI or OEM String to the TEB DynamicUnicodeString
  */
-BOOLEAN WINAPI Basep8BitStringToDynamicUnicodeString(OUT PUNICODE_STRING UnicodeString, IN LPCSTR String) 		
+BOOLEAN 
+WINAPI 
+Basep8BitStringToDynamicUnicodeString(
+	OUT PUNICODE_STRING UnicodeString, 
+	IN LPCSTR String
+) 		
 {
     ANSI_STRING AnsiString;
     NTSTATUS Status;
@@ -375,7 +394,9 @@ BOOLEAN WINAPI Basep8BitStringToDynamicUnicodeString(OUT PUNICODE_STRING Unicode
 */
 VOID
 WINAPI
-BaseSetLastNTError(IN NTSTATUS Status)
+BaseSetLastNTError(
+	IN NTSTATUS Status
+)
 {
     /* Convert from NT to Win32, then set */
     SetLastError(RtlNtStatusToDosError(Status));
@@ -386,7 +407,9 @@ BaseSetLastNTError(IN NTSTATUS Status)
  */
 PUNICODE_STRING
 WINAPI
-Basep8BitStringToStaticUnicodeString(IN LPCSTR String)
+Basep8BitStringToStaticUnicodeString(
+	IN LPCSTR String
+)
 {
     PUNICODE_STRING StaticString = &(NtCurrentTeb()->StaticUnicodeString);
     ANSI_STRING AnsiString;
@@ -421,10 +444,12 @@ Basep8BitStringToStaticUnicodeString(IN LPCSTR String)
 /*
  * @implemented
  */
-PLARGE_INTEGER WINAPI BaseFormatTimeOut(
-		OUT PLARGE_INTEGER  	Timeout,
-		IN DWORD  	dwMilliseconds 
-	) 		
+PLARGE_INTEGER 
+WINAPI 
+BaseFormatTimeOut(
+	OUT PLARGE_INTEGER  	Timeout,
+	IN DWORD  	dwMilliseconds 
+) 		
 {
     /* Check if this is an infinite wait, which means no timeout argument */
     if (dwMilliseconds == INFINITE) return NULL;
@@ -450,7 +475,12 @@ PVOID WINAPI BasepMapModuleHandle(
     return hModule;
 }
 
-DWORD WINAPI BasePrepareReasonContext(REASON_CONTEXT *contex, PVOID address)
+DWORD 
+WINAPI 
+BasePrepareReasonContext(
+	REASON_CONTEXT *contex, 
+	PVOID address
+)
 {
   size_t size; // ebx@1
   ULONG StringCount; // ecx@1
@@ -473,13 +503,13 @@ DWORD WINAPI BasePrepareReasonContext(REASON_CONTEXT *contex, PVOID address)
     if ( (Flags & 0x80000000u) == 0 )
     {
       if ( contex->Version > 0 || !(Flags & 3) || Flags & 0x7FFFFFFC )
-        return 0xC000000Du;
+        return STATUS_INVALID_PARAMETER;
       if ( !(Flags & 2) )
         goto LABEL_11;
       if ( contex->Reason.Detailed.LocalizedReasonId > 0xFFFF
         || (ModuleNamae = GetModuleFileNameW(contex->Reason.Detailed.LocalizedReasonModule, &Src, 0x104u)) == 0
         || ModuleNamae == 260 )
-        return 0xC000000Du;
+        return STATUS_INVALID_PARAMETER;
       size = 2 * ModuleNamae + 2;
       StringCount = ((2 * ModuleNamae + 5) & 0xFFFFFFFC) + 8 * contex->Reason.Detailed.ReasonStringCount + 28;
     }
@@ -527,11 +557,11 @@ LABEL_16:
         return resp;
       }
     }
-    resp = 0xC000000Du;
+    resp = STATUS_INVALID_PARAMETER;
   }
   else
   {
-    resp = 0xC000009Au;
+    resp = STATUS_INSUFFICIENT_RESOURCES;
   }
   if ( Localcontext )
 	#ifdef _M_IX86
@@ -542,17 +572,35 @@ LABEL_16:
   return resp;
 }
 
-BOOL WINAPI TermsrvAppInstallMode()
+BOOL 
+WINAPI 
+TermsrvAppInstallMode()
 {
   return BaseStaticServerData->NlsUserInfo.iDigits[28] != 0;
 }
 
-DWORD WINAPI BaseDllReadWriteIniFile(int a1, BOOLEAN a2, BOOLEAN a3, int a4, int a5, int a6, int a7, int a8)
+DWORD 
+WINAPI 
+BaseDllReadWriteIniFile(
+	int a1, 
+	BOOLEAN a2, 
+	BOOLEAN a3, 
+	int a4, 
+	int a5, 
+	int a6, 
+	int a7, 
+	int a8
+)
 {
 	return 0;
 }
 
-BOOL WINAPI BaseDestroyVDMEnvironment(PANSI_STRING AnsiString, PUNICODE_STRING UnicodeEnv)
+BOOL 
+WINAPI 
+BaseDestroyVDMEnvironment(
+	PANSI_STRING AnsiString, 
+	PUNICODE_STRING UnicodeEnv
+)
 {
   if ( AnsiString->Buffer )
     RtlFreeAnsiString(AnsiString);
@@ -561,9 +609,11 @@ BOOL WINAPI BaseDestroyVDMEnvironment(PANSI_STRING AnsiString, PUNICODE_STRING U
   return 1;
 }
 
-ULONG WINAPI BaseIsDosApplication( 
-		IN PUNICODE_STRING  	PathName,
-		IN NTSTATUS  	Status 
+ULONG 
+WINAPI 
+BaseIsDosApplication( 
+	IN PUNICODE_STRING  	PathName,
+	IN NTSTATUS  	Status 
 ) 
 {
     UNICODE_STRING String;
@@ -586,11 +636,13 @@ ULONG WINAPI BaseIsDosApplication(
     return 0;
 }
 
-BOOL WINAPI BaseUpdateVDMEntry( 	
-		IN ULONG  	UpdateIndex,
-		IN OUT PHANDLE  	WaitHandle,
-		IN ULONG  	IndexInfo,
-		IN ULONG  	BinaryType 
+BOOL 
+WINAPI 
+BaseUpdateVDMEntry( 	
+	IN ULONG  	UpdateIndex,
+	IN OUT PHANDLE  	WaitHandle,
+	IN ULONG  	IndexInfo,
+	IN ULONG  	BinaryType 
 )
 {
     NTSTATUS Status;
@@ -663,7 +715,11 @@ BOOL WINAPI BaseUpdateVDMEntry(
     return TRUE;
 }
 
-BOOLEAN WINAPI BaseConvertCharFree(PVOID Address)
+BOOLEAN 
+WINAPI 
+BaseConvertCharFree(
+	PVOID Address
+)
 {
   BOOLEAN result; // al@2
 
@@ -672,22 +728,30 @@ BOOLEAN WINAPI BaseConvertCharFree(PVOID Address)
   return result;
 }
 
-NTSTATUS WINAPI BaseElevationPostProcessing(BOOLEAN verification, ULONG ProcessInformation, HANDLE ProcessHandle)
+NTSTATUS 
+WINAPI 
+BaseElevationPostProcessing(
+	BOOLEAN verification, 
+	ULONG ProcessInformation, 
+	HANDLE ProcessHandle
+)
 {
   NTSTATUS result; // eax@1
 
-  result = 0;
+  result = STATUS_SUCCESS;
   if ( verification & 2 && (!ProcessInformation || ProcessInformation == 10) )
   {
     ProcessInformation = 1;
-    result = NtSetInformationProcess(ProcessHandle, (PROCESSINFOCLASS)0x30u, &ProcessInformation, 4u);
+    result = NtSetInformationProcess(ProcessHandle, ProcessBreakOnTermination, &ProcessInformation, 4u);
   }
   return result;
 }
 
 NTSTATUS
 WINAPI
-BasepIsProcessAllowed(IN LPWSTR ApplicationName)
+BasepIsProcessAllowed(
+	IN LPWSTR ApplicationName
+)
 {
     NTSTATUS Status, Status1;
     PWCHAR Buffer;
@@ -839,22 +903,27 @@ BasepIsProcessAllowed(IN LPWSTR ApplicationName)
 
 NTSTATUS
 NTAPI
-BasepSaveAppCertRegistryValue(IN PLIST_ENTRY List,
-                              IN PWCHAR ComponentName,
-                              IN PWCHAR DllName)
+BasepSaveAppCertRegistryValue(
+	IN PLIST_ENTRY List,
+    IN PWCHAR ComponentName,
+    IN PWCHAR DllName
+)
 {
     /* Pretty much the only thing this key is used for, is malware */
     UNIMPLEMENTED;
     return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS NTAPI BasepConfigureAppCertDlls 	( 	IN PWSTR  	ValueName,
-		IN ULONG  	ValueType,
-		IN PVOID  	ValueData,
-		IN ULONG  	ValueLength,
-		IN PVOID  	Context,
-		IN PVOID  	EntryContext 
-	)
+NTSTATUS 
+NTAPI 
+BasepConfigureAppCertDlls( 	
+	IN PWSTR  	ValueName,
+	IN ULONG  	ValueType,
+	IN PVOID  	ValueData,
+	IN ULONG  	ValueLength,
+	IN PVOID  	Context,
+	IN PVOID  	EntryContext 
+)
 {
     /* Add this to the certification list */
     return BasepSaveAppCertRegistryValue(Context, ValueName, ValueData);
@@ -892,7 +961,7 @@ NTSTATUS WINAPI BasepGetExeArchType(int ParameterOne, HANDLE FileHandle, PUNICOD
     goto LABEL_31;
   do
   {
-    if ( status != 0xC00000BB )
+    if ( status != STATUS_NOT_SUPPORTED )
       break;
     if ( one != 0x11000000 )
       goto LABEL_6;
@@ -920,7 +989,7 @@ LABEL_31:
           if ( error >= 0 )
           {
             otherStatus = LdrQueryImageFileKeyOption(handle, L"Wow64", 4, &v14, 4, 0);
-            if ( otherStatus == 0xC0000034 || otherStatus >= 0 && v14 )
+            if ( otherStatus == STATUS_OBJECT_NAME_NOT_FOUND || otherStatus >= 0 && v14 )
             {
 LABEL_26:
               if ( SystemInfo.dwOemId == 6 )
@@ -937,7 +1006,7 @@ LABEL_26:
           }
           else
           {
-            if ( error == 0xC0000034 )
+            if ( error == STATUS_OBJECT_NAME_NOT_FOUND )
               goto LABEL_26;
           }
         }
@@ -956,7 +1025,9 @@ LABEL_6:
 
 NTSTATUS
 WINAPI
-BasepCheckWebBladeHashes(IN HANDLE FileHandle)
+BasepCheckWebBladeHashes(
+	IN HANDLE FileHandle
+)
 {
     NTSTATUS Status;
     CHAR Hash[16];
@@ -983,7 +1054,9 @@ BasepCheckWebBladeHashes(IN HANDLE FileHandle)
     return STATUS_SUCCESS;
 }
 
-ULONG WINAPI BaseWriteErrorElevationRequiredEvent()
+ULONG 
+WINAPI 
+BaseWriteErrorElevationRequiredEvent()
 {
   ULONG result; // eax@1
   REGHANDLE handle; // [sp+4h] [bp-8h]@1  
@@ -997,7 +1070,12 @@ ULONG WINAPI BaseWriteErrorElevationRequiredEvent()
   return result;
 }
 
-DWORD WINAPI BasepReportFault(DWORD parameterOne, DWORD parameterTwo)
+DWORD 
+WINAPI 
+BasepReportFault(
+	DWORD parameterOne, 
+	DWORD parameterTwo
+)
 {
   DWORD result; // eax@2
 

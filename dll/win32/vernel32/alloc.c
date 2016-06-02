@@ -61,7 +61,16 @@ BOOL WINAPI AllocateUserPhysicalPagesNuma(HANDLE ProcessHandle, PULONG NumberOfP
   return result;
 }
 
-LPVOID WINAPI VirtualAllocExNuma(HANDLE ProcessHandle, LPVOID BaseAddress, SIZE_T AllocationSize, DWORD AllocationType, DWORD Protect, DWORD nndPreferred)
+LPVOID 
+WINAPI 
+VirtualAllocExNuma(
+	HANDLE ProcessHandle, 
+	LPVOID BaseAddress, 
+	SIZE_T AllocationSize, 
+	DWORD AllocationType, 
+	DWORD Protect, 
+	DWORD nndPreferred
+)
 {
   NTSTATUS status; // eax@8
 
