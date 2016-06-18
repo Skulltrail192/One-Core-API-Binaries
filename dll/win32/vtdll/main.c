@@ -21,6 +21,24 @@
 extern USHORT NlsAnsiCodePage = 0; /* exported */
 extern BOOLEAN NlsMbCodePageTag = FALSE; /* exported */
 extern BOOLEAN NlsMbOemCodePageTag = FALSE;
+//HANDLE Key_Event;
+
+/*****************************************************
+ *      DllMain
+ */
+BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
+{
+    DbgPrint("DllMain called\n");
+	//NtCreateKeyedEvent(&Key_Event, -1, NULL, 0);
+
+    switch(reason)
+    {
+    case DLL_PROCESS_ATTACH:
+        //DisableThreadLibraryCalls( hinst );
+        break;
+    }
+    return TRUE;
+}
 
 /*Functions ********************************************/
 

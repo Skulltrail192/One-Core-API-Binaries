@@ -20,17 +20,23 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
-DWORD WINAPI Wow64SuspendThread(HANDLE hThread)
+DWORD 
+WINAPI 
+Wow64SuspendThread(
+	HANDLE hThread
+)
 { 
   #ifdef _M_IX86
-	BaseSetLastNTError(0xC0000002u);
+	BaseSetLastNTError(STATUS_NOT_IMPLEMENTED);
 	return -1;
   #elif defined(_M_AMD64)
 	return SuspendThread(hThread);
   #endif  
 }
 
-BOOL WINAPI Wow64SetThreadContext(
+BOOL 
+WINAPI 
+Wow64SetThreadContext(
   _In_  HANDLE hThread,
   _In_  const WOW64_CONTEXT *lpContext
 )
@@ -43,7 +49,9 @@ BOOL WINAPI Wow64SetThreadContext(
   #endif  
 }
 
-BOOL WINAPI Wow64GetThreadContext(
+BOOL 
+WINAPI 
+Wow64GetThreadContext(
   _In_     HANDLE hThread,
   _Inout_  PWOW64_CONTEXT lpContext
 )
@@ -56,21 +64,27 @@ BOOL WINAPI Wow64GetThreadContext(
   #endif  
 }
 
-BOOL WINAPI Wow64GetThreadSelectorEntry(
+BOOL 
+WINAPI 
+Wow64GetThreadSelectorEntry(
   _In_   HANDLE hThread,
   _In_   DWORD dwSelector,
   _Out_  PWOW64_LDT_ENTRY lpSelectorEntry
 )
 { 
   #ifdef _M_IX86
-	BaseSetLastNTError(0xC00000BBu);
+	BaseSetLastNTError(STATUS_NOT_SUPPORTED);
 	return FALSE;
   #elif defined(_M_AMD64)
 	return GetThreadSelectorEntry(hThread, dwSelector, lpSelectorEntry);
   #endif  
 }
 
-BOOL WINAPI Wow64DisableWow64FsRedirection(PVOID *OldValue)
+BOOL 
+WINAPI 
+Wow64DisableWow64FsRedirection(
+	PVOID *OldValue
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -88,7 +102,11 @@ BOOL WINAPI Wow64DisableWow64FsRedirection(PVOID *OldValue)
   return result;
 }
 
-BOOL WINAPI Wow64RevertWow64FsRedirection(PVOID OlValue)
+BOOL 
+WINAPI 
+Wow64RevertWow64FsRedirection(
+	PVOID OlValue
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -106,7 +124,11 @@ BOOL WINAPI Wow64RevertWow64FsRedirection(PVOID OlValue)
   return result;
 }
 
-BOOLEAN WINAPI Wow64EnableWow64FsRedirection(BOOLEAN Wow64FsEnableRedirection)
+BOOLEAN 
+WINAPI 
+Wow64EnableWow64FsRedirection(
+	BOOLEAN Wow64FsEnableRedirection
+)
 {
   NTSTATUS status; // eax@1
   BOOLEAN result; // al@2
@@ -114,12 +136,12 @@ BOOLEAN WINAPI Wow64EnableWow64FsRedirection(BOOLEAN Wow64FsEnableRedirection)
   status = RtlWow64EnableFsRedirection(Wow64FsEnableRedirection);
   if ( status >= 0 )
   {
-    result = 1;
+    result = TRUE;
   }
   else
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   return result;
 }

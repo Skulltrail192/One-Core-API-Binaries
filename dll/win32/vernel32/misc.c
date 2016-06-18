@@ -488,7 +488,9 @@ LOAD_LIBRARY_EX:
   return 0;
 }
 
-BOOL  WINAPI SetDefaultDllDirectories(
+BOOL  
+WINAPI 
+SetDefaultDllDirectories(
   _In_  DWORD DirectoryFlags
 )
 {

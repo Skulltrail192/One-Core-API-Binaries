@@ -16,7 +16,7 @@ list(APPEND SOURCE
     main.c
 	ntapi.c
 	sqm.c
-	synctemp.c
+	sync.c
 	#threadpool.c
 	etw/etw.c	
     etw/trace.c	####### this is a only test ########

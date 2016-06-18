@@ -20,18 +20,12 @@
 
 HANDLE Globalkeyed;
 ULONG waiters;
-extern HANDLE keyed_event;
+HANDLE Key_Event = NULL;
 
 #define FAST_M_WAKE		256
 #define FAST_M_WAIT		512
 
 int ConditionVariableSpinCount = 400;
-
-// interlocked_xchg = InterlockedExchange
-//interlocked_cmpxchg = InterlockedCompareExchange
-//interlocked_xchg_ptr = InterlockedExchangePtr
-//interlocked_xchg_add = InterlockedExchangeAdd
-
 
 static inline int interlocked_dec_if_nonzero( int *dest )
 {
@@ -56,8 +50,14 @@ static inline int interlocked_dec_if_nonzero( int *dest )
   * RETURNS
   *  Nothing.
   */
-void WINAPI RtlInitializeConditionVariable( RTL_CONDITION_VARIABLE *variable )
+void WINAPI RtlInitializeConditionVariable( PRTL_CONDITION_VARIABLE variable )
 {
+	DbgPrint("RtlInitializeConditionVariable called\n");
+	if(Key_Event == NULL)
+	{
+		NtCreateKeyedEvent(&Key_Event, -1, NULL, 0);
+		DbgPrint("Key_Event initialized\n");
+	}
     variable->Ptr = NULL;
 }
 
@@ -66,11 +66,16 @@ void WINAPI RtlInitializeConditionVariable( RTL_CONDITION_VARIABLE *variable )
  *
  * See WakeConditionVariable, wakes up all waiting threads.
  */
-void WINAPI RtlWakeAllConditionVariable( RTL_CONDITION_VARIABLE *variable )
+void 
+WINAPI 
+RtlWakeAllConditionVariable( 
+	PRTL_CONDITION_VARIABLE variable 
+)
 {
-    int val = InterlockedExchange( (int *)&variable->Ptr, 0 );
-    while (val-- > 0)
-        ZwReleaseKeyedEvent( keyed_event, &variable->Ptr, FALSE, NULL );
+	while(variable->Ptr){
+		InterlockedDecrement((int *)&variable->Ptr);
+		NtReleaseKeyedEvent( Key_Event, &variable, FALSE, NULL );
+	}
 }
 
 /***********************************************************************
@@ -88,17 +93,16 @@ void WINAPI RtlWakeAllConditionVariable( RTL_CONDITION_VARIABLE *variable )
  *  The calling thread does not have to own any lock in order to call
  *  this function.
  */
-void WINAPI RtlWakeConditionVariable( RTL_CONDITION_VARIABLE *variable )
+void 
+WINAPI 
+RtlWakeConditionVariable( 
+	PRTL_CONDITION_VARIABLE variable 
+)
 {
-    if (interlocked_dec_if_nonzero( (int *)&variable->Ptr ))
-        ZwReleaseKeyedEvent( keyed_event, &variable->Ptr, FALSE, NULL );
-}
-
-BOOL RtlpWakeSingle(RTL_CONDITION_VARIABLE *variable)
-{
-	DbgPrint("RtlWakeConditionVariable called by RtlpWakeSingle and RtlSleepConditionVariableCS\n");
-	RtlWakeConditionVariable(variable);
-	return TRUE;
+	if(variable->Ptr){
+		InterlockedDecrement((int *)&variable->Ptr);
+		NtReleaseKeyedEvent( Key_Event, &variable->Ptr, FALSE, NULL );
+	}
 }
 
 /***********************************************************************
@@ -116,20 +120,18 @@ BOOL RtlpWakeSingle(RTL_CONDITION_VARIABLE *variable)
  * RETURNS
  *  see NtWaitForKeyedEvent for all possible return values.
  */
-NTSTATUS WINAPI RtlSleepConditionVariableCS( RTL_CONDITION_VARIABLE *variable, RTL_CRITICAL_SECTION *crit,
-                                             const LARGE_INTEGER *timeout )
+NTSTATUS 
+WINAPI 
+RtlSleepConditionVariableCS( 
+	PRTL_CONDITION_VARIABLE variable, 
+	PRTL_CRITICAL_SECTION crit,
+	const LARGE_INTEGER *timeout 
+)
 {
     NTSTATUS status;
     InterlockedExchangeAdd( (int *)&variable->Ptr, 1 );
-    RtlLeaveCriticalSection( crit );
-
-    status = ZwWaitForKeyedEvent( keyed_event, &variable->Ptr, FALSE, timeout );
-    if (status != STATUS_SUCCESS)
-    {
-        if (!interlocked_dec_if_nonzero( (int *)&variable->Ptr ))
-            status = ZwWaitForKeyedEvent( keyed_event, &variable->Ptr, FALSE, NULL );
-    }
-
-    RtlEnterCriticalSection( crit );
+    RtlLeaveCriticalSection(crit);
+	status = NtWaitForKeyedEvent(Key_Event, &variable->Ptr, 0, NULL);
+    RtlEnterCriticalSection(crit);
     return status;
 }

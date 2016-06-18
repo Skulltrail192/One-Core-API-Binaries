@@ -968,7 +968,7 @@
 #@ stdcall BaseThreadStartThunk(ptr ptr) 
 #@ stdcall -arch=x86_64 ConsoleIMERoutine() ;kernelfull.ConsoleIMERoutine
 #@ stdcall -arch=x86_64 CtrlRoutine() ;kernelfull.CtrlRoutine
-@ stdcall ConsoleIMERoutine() ;kernelfull.ConsoleIMERoutine
+@ stdcall ConsoleIMERoutine() kernelfull.ConsoleIMERoutine ;Make this function
 @ stdcall CtrlRoutine() ;kernelfull.CtrlRoutine
 #@ stdcall -arch=x86_64 DebugBreak()
 
@@ -1294,7 +1294,7 @@
 @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
 @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
 @ stdcall IdnToNameprepUnicode(long wstr long ptr long) normaliz.IdnToNameprepUnicode
-#@ stdcall InitializeConditionVariable(ptr) vtdll.RtlInitializeConditionVariable  ;error on K-Lite
+@ stdcall InitializeConditionVariable(ptr) vtdll.RtlInitializeConditionVariable  ;error on K-Lite
 @ stdcall InitializeContext(ptr long ptr ptr)
 @ stdcall InitializeCriticalSectionEx(ptr long long) 
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
@@ -1454,7 +1454,7 @@
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
 @ stdcall SetXStateFeaturesMask(ptr int64)
 @ stdcall SetVolumeMountPointWStub(wstr wstr) SetVolumeMountPointW
-#@ stdcall SleepConditionVariableCS(ptr ptr long)
+@ stdcall SleepConditionVariableCS(ptr ptr long)
 @ stdcall SleepConditionVariableSRW(ptr ptr long long)
 @ stdcall SortCloseHandle(ptr)
 @ stub SortGetHandle
@@ -1483,8 +1483,8 @@
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) ntdllnew.TpWaitForTimer
 @ stdcall WaitForThreadpoolWaitCallbacks(ptr long) ;ntdllnew.TpWaitForWait
 @ stdcall WaitForThreadpoolWorkCallbacks(ptr long) ntdllnew.TpWaitForWork
-#@ stdcall WakeAllConditionVariable(ptr) vtdll.RtlWakeAllConditionVariable ;error on K-Lite
-#@ stdcall WakeConditionVariable(ptr) vtdll.RtlWakeConditionVariable ;commented for now ;error on K-Lite
+@ stdcall WakeAllConditionVariable(ptr) vtdll.RtlWakeAllConditionVariable ;error on K-Lite
+@ stdcall WakeConditionVariable(ptr) vtdll.RtlWakeConditionVariable ;commented for now ;error on K-Lite
 @ stdcall WerGetFlags(ptr ptr)
 @ stdcall WerpCleanupMessageMapping()
 @ stdcall WerpGetDebugger(ptr long long long long)

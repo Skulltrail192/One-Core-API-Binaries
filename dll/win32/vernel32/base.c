@@ -1320,7 +1320,6 @@ Return Value:
 }
 
 VOID
-WINAPI
 BaseProcessStart(
     PPROCESS_START_ROUTINE lpStartAddress
     )

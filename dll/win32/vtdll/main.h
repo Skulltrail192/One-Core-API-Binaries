@@ -486,3 +486,5 @@ NTAPI
 RtlReportErrorOrigination(LPSTR a1, WCHAR string, int a3, NTSTATUS status);
 
 void initTable();
+
+extern HANDLE Key_Event;

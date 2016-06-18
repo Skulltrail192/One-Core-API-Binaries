@@ -366,10 +366,14 @@ LABEL_40:
   return 1;
 }
 
-BOOL WINAPI GetProcessUserModeExceptionPolicy(LPDWORD lpFlags)
+BOOL 
+WINAPI 
+GetProcessUserModeExceptionPolicy(
+	LPDWORD lpFlags
+)
 {
-  BaseSetLastNTError(0xC00000BBu);
-  return 0;
+  BaseSetLastNTError(STATUS_NOT_SUPPORTED);
+  return FALSE;
 }
 
 BOOL
@@ -381,19 +385,26 @@ SetProcessUserModeExceptionPolicy(
 	return TRUE;
 }
 
-BOOL WINAPI GetProcessInformation(HANDLE ProcessHandle, PROCESSINFOCLASS  ProcessInformationClass, PVOID ProcessInformation, DWORD ProcessInformationLength)
+BOOL 
+WINAPI 
+GetProcessInformation(
+	HANDLE ProcessHandle, 
+	PROCESSINFOCLASS  ProcessInformationClass, 
+	PVOID ProcessInformation, 
+	DWORD ProcessInformationLength
+)
 {
   BOOL resp; // esi@2
   NTSTATUS status; // eax@3
 
   if ( ProcessInformationClass )
   {
-    BaseSetLastNTError(0xC000000Du);
-    resp = 0;
+    BaseSetLastNTError(STATUS_INVALID_PARAMETER);
+    resp = FALSE;
   }
   else
   {
-    resp = 0;
+    resp = FALSE;
     status = NtQueryInformationProcess(
                ProcessHandle,
                ProcessDebugPort|0x20,
@@ -401,34 +412,43 @@ BOOL WINAPI GetProcessInformation(HANDLE ProcessHandle, PROCESSINFOCLASS  Proces
                ProcessInformationLength,
                0);
     if ( status >= 0 )
-      resp = 1;
+      resp = TRUE;
     else
       BaseSetLastNTError(status);
   }
   return resp;
 }
 
-BOOL WINAPI SetProcessInformation(HANDLE ProcessHandle, PROCESSINFOCLASS ProcessInformationClass, PVOID ProcessInformation, DWORD ProcessInformationLength)
+BOOL 
+WINAPI 
+SetProcessInformation(
+	HANDLE ProcessHandle, 
+	PROCESSINFOCLASS ProcessInformationClass, 
+	PVOID ProcessInformation, 
+	DWORD ProcessInformationLength
+)
 {
   NTSTATUS status; // eax@2
   NTSTATUS error; // [sp-4h] [bp-4h]@5
 
   if ( ProcessInformationClass )
   {
-    error = 0xC000000Du;
+    error = STATUS_INVALID_PARAMETER;
   }
   else
   {
     status = NtSetInformationProcess(ProcessHandle, ProcessDebugPort|0x20, ProcessInformation, ProcessInformationLength);
     if ( status >= 0 )
-      return 1;
+      return TRUE;
     error = status;
   }
   BaseSetLastNTError(error);
-  return 0;
+  return FALSE;
 }
 
-BOOL WINAPI GetProcessMitigationPolicy(
+BOOL 
+WINAPI 
+GetProcessMitigationPolicy(
   _In_   HANDLE hProcess,
   _In_   PROCESS_MITIGATION_POLICY MitigationPolicy,
   _Out_  PVOID lpBuffer,
@@ -439,7 +459,9 @@ BOOL WINAPI GetProcessMitigationPolicy(
 	return TRUE;
 }
 
-BOOL WINAPI SetProcessMitigationPolicy(
+BOOL 
+WINAPI 
+SetProcessMitigationPolicy(
   _In_  PROCESS_MITIGATION_POLICY MitigationPolicy,
   _In_  PVOID lpBuffer,
   _In_  SIZE_T dwLength
