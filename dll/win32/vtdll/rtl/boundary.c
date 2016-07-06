@@ -1,6 +1,4 @@
-/*
- * Copyright 2009 Henri Verbeet for CodeWeavers
- *
+ /*
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -21,31 +19,31 @@
 
 #include <main.h>
 
-WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
-
-BOOLEAN WINAPI InternalSortCloseHandle(PVOID Address)
+NTSTATUS 
+RtlAddIntegrityLabelToBoundaryDescriptor(
+	HANDLE *BoundaryDescriptor, 
+	PSID IntegrityLabel
+)
 {
-  BOOLEAN result; // al@4
-
-  if ( Address )
-  {
-    if ( *((PVOID *)Address + 69) != Address )
-      InternalSortCloseHandle(*((PVOID *)Address + 69));
-	#ifdef _M_IX86
-		result = RtlFreeHeap(*(HANDLE *)(*(DWORD *)(__readfsdword(24) + 48) + 24), 0, Address);
-    #elif defined(_M_AMD64)
-		result = RtlFreeHeap(*(HANDLE *)(*(DWORD *)(__readgsqword(24) + 48) + 24), 0, Address);
-    #endif
-  }
-  return result;
+	DbgPrint("UNIMPLEMENTED: RtlAddIntegrityLabelToBoundaryDescriptor\n");
+	return STATUS_SUCCESS;
 }
 
-BOOLEAN WINAPI SortCloseHandle(PVOID address)
+NTSTATUS 
+RtlAddSIDToBoundaryDescriptor(
+  _Inout_  HANDLE *BoundaryDescriptor,
+  _In_     PSID RequiredSid
+)
 {
-  return InternalSortCloseHandle(address);
+	DbgPrint("UNIMPLEMENTED: RtlAddSIDToBoundaryDescriptor");
+	return STATUS_SUCCESS;
 }
 
-BOOL WINAPI SetStdHandleEx(DWORD nStdHandle, HANDLE hHandle, BOOL verification)
+HANDLE 
+RtlCreateBoundaryDescriptor(
+	LSA_UNICODE_STRING *string, 
+	ULONG Flags
+)
 {
-	return SetStdHandle(nStdHandle, hHandle);
+	return NULL;
 }

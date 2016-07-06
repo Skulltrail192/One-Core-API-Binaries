@@ -583,7 +583,7 @@
 @ stdcall RtlDuplicateUnicodeString(long ptr ptr)
 @ stdcall RtlEmptyAtomTable(ptr long)
 @ stdcall RtlEnableEarlyCriticalSectionEventCreation()
-@ stdcall RtlEncodePointer(ptr)
+#@ stdcall RtlEncodePointer(ptr)
 @ stdcall RtlEncodeSystemPointer(ptr)
 @ stdcall -arch=win32 -ret64 RtlEnlargedIntegerMultiply(long long)
 @ stdcall -arch=win32 RtlEnlargedUnsignedDivide(double long ptr)

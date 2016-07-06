@@ -50,6 +50,37 @@ EtwEventWrite(
   IN ULONG UserDataCount,
   IN PEVENT_DATA_DESCRIPTOR UserData);
   
-DWORD WINAPI RtlRunOnceBeginInitialize( RTL_RUN_ONCE *once, ULONG flags, void **context );
-DWORD WINAPI RtlRunOnceComplete( RTL_RUN_ONCE *once, ULONG flags, void *context );
-DWORD WINAPI RtlRunOnceExecuteOnce( RTL_RUN_ONCE *once, PRTL_RUN_ONCE_INIT_FN func, void *param, void **context);
+DWORD 
+WINAPI 
+RtlRunOnceBeginInitialize( 
+	RTL_RUN_ONCE *once, 
+	ULONG flags, 
+	void **context 
+);
+
+DWORD 
+WINAPI 
+RtlRunOnceComplete( 
+	RTL_RUN_ONCE *once, 
+	ULONG flags, 
+	void *context 
+);
+DWORD 
+WINAPI 
+RtlRunOnceExecuteOnce( 
+	RTL_RUN_ONCE *once, 
+	PRTL_RUN_ONCE_INIT_FN func, 
+	void *param, 
+	void **context
+);
+
+void* 
+WINAPI 
+LdrResolveDelayLoadedAPI( 
+	void* base, 
+	const IMAGE_DELAYLOAD_DESCRIPTOR* desc,
+    PDELAYLOAD_FAILURE_DLL_CALLBACK dllhook, 
+	void* syshook,
+    IMAGE_THUNK_DATA* addr, 
+	ULONG flags 
+);

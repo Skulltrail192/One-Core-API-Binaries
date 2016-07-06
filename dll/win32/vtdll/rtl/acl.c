@@ -210,3 +210,19 @@ RtlAddMandatoryAce(
                            LabelSid,
                            AceType);
 }
+
+NTSTATUS 
+NTAPI 
+RtlAddResourceAttributeAce(
+	PACL pAcl, 
+	DWORD dwAceRevision, 
+	DWORD AceFlags, 
+	DWORD AccessMask, 
+	PSID pSid, 
+	PCLAIM_SECURITY_ATTRIBUTES_INFORMATION  pAttributeInfo, 
+	PDWORD pReturnLength
+)
+{
+	DbgPrint("UNIMPLEMENTED: RtlAddResourceAttributeAce");
+	return STATUS_SUCCESS;
+}

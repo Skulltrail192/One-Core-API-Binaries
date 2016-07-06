@@ -363,70 +363,51 @@ BaseIsAppcompatInfrastructureDisabled(VOID)
     return g_ShimsEnabled ? TRUE : FALSE;
 }
 
-void __cdecl CreateProcessInternalWSecure()
+BOOL 
+WINAPI 
+SetThreadStackGuarantee(
+	PULONG StackSizeInBytes
+)
 {
-  ;
-}
-
-BOOL WINAPI SetThreadStackGuarantee(PULONG StackSizeInBytes)
-{
-  ULONG number; // edi@1
-  DWORD pageSize; // esi@1
-  ULONG read; // ebx@1
-  PVOID receiveAlloc; // esp@1
-  int proxi; // eax@3
-  int receive; // edi@5
-  NTSTATUS status; // eax@8
-  int function; // [sp-4h] [bp-40h]@1
+  DWORD dwPageSize; // esi@1 MAPDST
+  ULONG GuaranteedStackBytes; // ebx@1
+  PVOID Allocation; // esp@1 MAPDST
+  int Size; // eax@3
+  PVOID DeallocationStack; // edi@7
+  NTSTATUS status; // eax@10
   struct _SYSTEM_INFO SystemInfo; // [sp+Ch] [bp-30h]@1
-  DWORD otherPageSize; // [sp+30h] [bp-Ch]@1
-  PVOID BaseAddress; // [sp+34h] [bp-8h]@7
-  ULONG AllocationSize; // [sp+38h] [bp-4h]@1
+  PVOID BaseAddress; // [sp+34h] [bp-8h]@9
+  ULONG AllocationSize; // [sp+38h] [bp-4h]@1 MAPDST
 
   GetSystemInfo(&SystemInfo);
-  pageSize = SystemInfo.dwPageSize;
+  dwPageSize = SystemInfo.dwPageSize;
   AllocationSize = *StackSizeInBytes;
-  number = AllocationSize;
-#ifdef _M_IX86
-  read = *(DWORD *)(__readfsdword(24) + 3960);
-#elif defined(_M_AMD64)
-  read = *(DWORD *)(__readgsqword(24) + 3960);
-#endif  
-  function = 4;
-  *StackSizeInBytes = read;
-  otherPageSize = pageSize;
-  //receiveAlloc = alloca(function);
-  if ( number && number >= read )
+  GuaranteedStackBytes = NtCurrentTeb()->GuaranteedStackBytes;
+  *StackSizeInBytes = GuaranteedStackBytes;
+  Allocation = alloca(4);
+  if ( AllocationSize && AllocationSize >= GuaranteedStackBytes )
   {
-    proxi = ~(pageSize - 1) & (2 * pageSize + number - 1);
-    if ( proxi < number )
-      goto LABEL_16;
-    AllocationSize = ~(pageSize - 1) & (2 * pageSize + number - 1);
-#ifdef _M_IX86
-    receive = *(DWORD *)(__readfsdword(24) + 3596);
-#elif defined(_M_AMD64)
-    receive = *(DWORD *)(__readgsqword(24) + 3596);
-#endif 	
-    if ( proxi < 2 * pageSize )
-      AllocationSize = 2 * pageSize;
-    BaseAddress = (PVOID)(((unsigned int)&function & ~(pageSize - 1)) - AllocationSize);
-    if ( ((unsigned int)&function & ~(pageSize - 1)) - AllocationSize < pageSize + receive )
+    Size = ~(dwPageSize - 1) & (2 * dwPageSize + AllocationSize - 1);
+    if ( Size < AllocationSize )
+      goto Error;
+    AllocationSize = ~(dwPageSize - 1) & (2 * dwPageSize + AllocationSize - 1);
+    DeallocationStack = NtCurrentTeb()->DeallocationStack;
+    if ( Size < 2 * dwPageSize )
+      AllocationSize = 2 * dwPageSize;
+    BaseAddress = (PVOID)(((ULONG)&Allocation & ~(dwPageSize - 1)) - AllocationSize);
+    if ( BaseAddress < (char *)DeallocationStack + dwPageSize )
     {
-LABEL_16:
+Error:
       SetLastError(0x57u);
-      return 0;
+      return FALSE;
     }
-    status = NtAllocateVirtualMemory((HANDLE)0xFFFFFFFF, &BaseAddress, 0, &AllocationSize, 0x1000u, 0x104u);
-    if ( status < 0 && status != 0xC0000021 )
+    status = NtAllocateVirtualMemory((HANDLE)0xFFFFFFFF, &BaseAddress, 0, &AllocationSize, 0x1000, 0x104);
+    if ( status < STATUS_SUCCESS && status != STATUS_ALREADY_COMMITTED )
     {
       BaseSetLastNTError(status);
-      return 0;
+      return FALSE;
     }
-#ifdef _M_IX86
-    *(DWORD *)(__readfsdword(24) + 3960) = AllocationSize - otherPageSize;
-#elif defined(_M_AMD64)
-    *(DWORD *)(__readgsqword(24) + 3960) = AllocationSize - otherPageSize;
-#endif 	
+    NtCurrentTeb()->GuaranteedStackBytes = AllocationSize - dwPageSize;
   }
-  return 1;
+  return TRUE;
 }

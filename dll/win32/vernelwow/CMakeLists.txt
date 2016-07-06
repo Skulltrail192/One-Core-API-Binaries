@@ -16,7 +16,9 @@ include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys/csr)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys/csrss)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys/Win)
 
-spec2def(vernelwow.dll vernelwow.spec ADD_IMPORTLIB)
+spec2def(vernelwow.dll ../vernel32/vernel32.spec ADD_IMPORTLIB)
+
+add_target_compile_definitions(vernel32 WOW64)
 
 list(APPEND SOURCE
 	../vernel32/alloc.c
@@ -55,14 +57,23 @@ list(APPEND SOURCE
 	../vernel32/wer.c
 	../vernel32/wow64.c
 	../vernel32/missing/fiber.c
-	../vernel32/missing/missing.c	
-    version.rc
-    ${CMAKE_CURRENT_BINARY_DIR}/vernelwow_stubs.c
-    ${CMAKE_CURRENT_BINARY_DIR}/vernelwow.def)
+	../vernel32/missing/missing.c)
+	
+if(ARCH STREQUAL "i386")
+    list(APPEND ASM_SOURCE
+        asm/i386/thunk.S)
+elseif(ARCH STREQUAL "amd64")
+    list(APPEND ASM_SOURCE
+        asm/amd64/thread.S)
+endif()
 
-add_library(vernelwow 
-			SHARED 
-			${SOURCE})
+add_asm_files(vernelwow ${ASM_SOURCE})		
+add_library(vernelwow SHARED 
+			${SOURCE}
+			${vernelwow_asm}
+			 ../vernel32/version.rc
+			 ${CMAKE_CURRENT_BINARY_DIR}/vernelwow_stubs.c
+			${CMAKE_CURRENT_BINARY_DIR}/vernelwow.def)	
 
 set_module_type(vernelwow win32dll HOTPATCHABLE ENTRYPOINT 0)
 #############################################

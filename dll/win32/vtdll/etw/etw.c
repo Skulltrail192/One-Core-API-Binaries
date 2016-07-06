@@ -23,12 +23,16 @@
 #include <strsafe.h>
 
 /*unimplemented */
-void WINAPI WinSqmEventWrite(int a1, int a2, int a3)
+void 
+WINAPI 
+WinSqmEventWrite(int a1, int a2, int a3)
 {
   ;
 }
 
-ULONG WINAPI EtwEventUnregister(
+ULONG 
+WINAPI
+EtwEventUnregister(
   _In_  REGHANDLE RegHandle
 )
 {
@@ -129,12 +133,16 @@ EtwReplyNotification(ULONG parameter)
 	return 0xC000000Du;
 }
 
-ULONG WINAPI EtwTraceDiagnosticEvent(BOOLEAN one, int two, DWORD three, BOOL four, BOOL five)
+ULONG 
+WINAPI 
+EtwTraceDiagnosticEvent(BOOLEAN one, int two, DWORD three, BOOL four, BOOL five)
 {
 	return ERROR_SUCCESS;
 }
 
-BOOL WINAPI EtwpIsHeapRangeLoggingEnabled()
+BOOL 
+WINAPI 
+EtwpIsHeapRangeLoggingEnabled()
 {
 	return TRUE;
 }
@@ -212,4 +220,105 @@ NTAPI EtwpGetCpuSpeed(
     Status = STATUS_NO_MEMORY;
   }
   return Status;
+}
+
+ULONG 
+WINAPI 
+EtwDeliverDataBlock(int a1)
+{
+	return 0;
+}
+
+DWORD 
+WINAPI 
+EtwEnumerateProcessRegGuids(
+	PVOID a1, 
+	ULONG a2, 
+	DWORD a3)
+{
+	return 0;
+}
+
+PVOID 
+EtwpCreateEtwThread(
+	PSTARTUP_ROUTINE StartupRoutine, 
+	PVOID threadHandle
+)
+{
+  NTSTATUS status; // eax@2
+
+  if ( RtlCreateUserThread((HANDLE)0xFFFFFFFF, 0, TRUE, 0, 0, 0, (PTHREAD_START_ROUTINE)StartupRoutine, threadHandle, &threadHandle, 0) < 0 )
+    goto Default_return;
+  status = ZwResumeThread(threadHandle, 0);
+  if ( status < 0 )
+  {
+    ZwTerminateThread(threadHandle, status);
+    NtClose(threadHandle);
+Default_return:
+    threadHandle = NULL;
+  }
+  return threadHandle;
+}
+
+//unknown prototype
+NTSTATUS 
+WINAPI 
+EtwNotificationRegister(
+	DWORD a1, 
+	BOOLEAN a2, 
+	DWORD a3, 
+	DWORD a4, 
+	DWORD a5)
+{
+	DbgPrint("UNIMPLEMENTED: EtwNotificationRegister");
+	return STATUS_SUCCESS;
+}	
+
+//unknown prototype
+NTSTATUS 
+WINAPI 
+EtwNotificationUnregister(
+	DWORD a1, 
+	ULONG a2, 
+	DWORD a3)
+{
+	DbgPrint("UNIMPLEMENTED: EtwNotificationUnregister");	
+	return STATUS_SUCCESS;
+}	
+
+//unknown prototype
+NTSTATUS 
+WINAPI 
+EtwSendNotification(
+	DWORD a1, 
+	DWORD a2, 
+	DWORD a3, 
+	DWORD a4, 
+	DWORD a5)
+{
+	DbgPrint("UNIMPLEMENTED: EtwSendNotification");		
+	return STATUS_SUCCESS;
+}	
+
+DWORD 
+WINAPI 
+EtwProcessPrivateLoggerRequest(
+	PVOID number
+)
+{
+	DbgPrint("UNIMPLEMENTED: EtwSendNotification");		
+	return ERROR_SUCCESS;
+}
+
+//unknown prototype
+DWORD 
+WINAPI 
+EtwLogTraceEvent(
+	DWORD a1, 
+	DWORD a2, 
+	DWORD a3
+)
+{
+	DbgPrint("UNIMPLEMENTED: EtwSendNotification");		
+	return ERROR_SUCCESS;
 }

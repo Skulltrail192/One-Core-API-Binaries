@@ -19,38 +19,10 @@
 
 #include <main.h>
 
-WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
-
-/*
-* @unimplemented - need implementation
-*/
-NTSTATUS WINAPI GetOSProductNameW(PCWSTR Source, ULONG var, ULONG parameter)
-{
-	Source = L"Microsoft Windows Codename \"Longhorn\" Professional Version 2003 Copyright ";
-	return 0x00000000;
-}
-
-/*
-* @unimplemented - need implementation
-*/
-NTSTATUS WINAPI GetOSProductNameA(PCSTR Source, ULONG var, ULONG parameter)
-{
-	Source = "Microsoft Windows Codename \"Longhorn\" Professional Version 2003 Copyright ";
-	return 0x00000000;
-}
-
-
-/*
- * @implemented - new
- */
-BOOL WINAPI GetProductInfo(
-  _In_   DWORD dwOSMajorVersion,
-  _In_   DWORD dwOSMinorVersion,
-  _In_   DWORD dwSpMajorVersion,
-  _In_   DWORD dwSpMinorVersion,
-  _Out_  PDWORD pdwReturnedProductType
+BOOL 
+RtlDeregisterSecureMemoryCacheCallback(
+  _In_  PRTL_SECURE_MEMORY_CACHE_CALLBACK pfnCallBack
 )
 {
-	*pdwReturnedProductType = 0x00000001;
 	return TRUE;
 }

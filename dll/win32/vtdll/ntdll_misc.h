@@ -22,12 +22,12 @@
 #include <stdarg.h>
 #include <signal.h>
 #include <sys/types.h>
-#include <pthread.h>
+//#include <pthread.h>
 
 #include "windef.h"
 #include "winnt.h"
-#include "winternl.h"
-#include "wine/server.h"
+//#include "winternl.h"
+//#include "wine/server.h"
 
 #define MAX_NT_PATH_LENGTH 277
 

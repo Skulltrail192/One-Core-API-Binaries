@@ -470,3 +470,9 @@ SetProcessMitigationPolicy(
 	UNIMPLEMENTED;
 	return TRUE;
 }
+
+void 
+CreateProcessInternalWSecure()
+{
+  ;
+}

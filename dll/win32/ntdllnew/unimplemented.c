@@ -505,7 +505,9 @@ NTSTATUS WINAPI EtwpSendWmiKMRequest(int a, int b, int c, int d, int e, int f, i
 }
 
 //unknown prototype
-int WINAPI ShipAssert(int a1, int a2)
+ULONG 
+WINAPI 
+ShipAssert(int a1, int a2)
 {
 	return 0;
 }
@@ -592,7 +594,9 @@ NTSTATUS WINAPI EtwSendNotification(int a1, int a2, int a3, int a4, int a5)
 	return 0x00000000;
 }	
 
-BOOL WINAPI RtlGetFileMUIPath(
+BOOL 
+WINAPI 
+RtlGetFileMUIPath(
   _In_         DWORD dwFlags,
   _In_         PCWSTR pcwszFilePath,
   _Inout_opt_  PWSTR pwszLanguage,
@@ -602,7 +606,7 @@ BOOL WINAPI RtlGetFileMUIPath(
   _Inout_      PULONGLONG pululEnumerator
 )
 {
-	return TRUE;
+	return FALSE;
 }
 
 BOOL WINAPI RtlGetSystemPreferredUILanguages(
@@ -798,7 +802,10 @@ NTSTATUS NTAPI RtlFlsFree(DWORD dwFlsIndex)
 	return 0x00000000;
 }
 
-PVOID NTAPI AlpcGetMessageAttribute(__in PALPC_MESSAGE_ATTRIBUTES  	Buffer,
+PVOID 
+NTAPI 
+AlpcGetMessageAttribute(
+	__in PALPC_MESSAGE_ATTRIBUTES  	Buffer,
 		__in ULONG  	AttributeFlag 
 ) 	
 {

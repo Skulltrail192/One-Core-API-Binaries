@@ -125,7 +125,9 @@ BOOL WINAPI CheckForReadOnlyResourceFilter(DWORD access)
   return result;
 }
 
-BOOL WINAPI CheckTokenMembershipEx(HANDLE HANDLE, PSID SidToCheck, DWORD Flags, PBOOL IsMember)
+BOOL 
+WINAPI 
+CheckTokenMembershipEx(HANDLE HANDLE, PSID SidToCheck, DWORD Flags, PBOOL IsMember)
 {
   PBOOL otherMember; // esi@2
   NTSTATUS status; // eax@3
@@ -134,15 +136,15 @@ BOOL WINAPI CheckTokenMembershipEx(HANDLE HANDLE, PSID SidToCheck, DWORD Flags, 
 
   if ( !SidToCheck || (otherMember = IsMember) == 0 )
   {
-    error = 0xC000000Du;
-    goto LABEL_9;
+    error = STATUS_INVALID_PARAMETER;
+    goto Default_error;
   }
   *IsMember = 0;
   status = RtlCheckTokenMembershipEx(HANDLE, SidToCheck, Flags, IsMember);
   if ( status < 0 )
   {
     error = status;
-LABEL_9:
+Default_error:
     BaseSetLastNTError(error);
     return 0;
   }
@@ -152,7 +154,13 @@ LABEL_9:
   return result;
 }
 
-BOOL WINAPI CheckTokenCapability(HANDLE TokenHandle, PSID CapabilitySidToCheck, PBOOL HasCapability)
+BOOL 
+WINAPI 
+CheckTokenCapability(
+	HANDLE TokenHandle, 
+	PSID CapabilitySidToCheck, 
+	PBOOL HasCapability
+)
 {
   PBOOL verification; // esi@2
   NTSTATUS resp; // eax@3
@@ -171,15 +179,17 @@ BOOL WINAPI CheckTokenCapability(HANDLE TokenHandle, PSID CapabilitySidToCheck, 
     error = resp;
 LABEL_9:
     BaseSetLastNTError(error);
-    return 0;
+    return FALSE;
   }
-  result = 1;
+  result = TRUE;
   if ( HasCapability )
     *verification = 1;
   return result;
 }
 
-BOOL WINAPI CheckAllowDecryptedRemoteDestinationPolicy()
+BOOL 
+WINAPI 
+CheckAllowDecryptedRemoteDestinationPolicy()
 {
   ULONG ResultLength; // [sp+0h] [bp-20h]@3
   HANDLE Handle; // [sp+4h] [bp-1Ch]@2

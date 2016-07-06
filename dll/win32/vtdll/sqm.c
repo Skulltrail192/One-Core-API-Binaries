@@ -25,14 +25,119 @@ int WINAPI WinSqmEventEnabled()
   return 0;
 }
 
-/*unimplemented */
-int WINAPI WinSqmIsOptedIn()
+/******************************************************************************
+ *                  WinSqmEndSession   (NTDLL.@)
+ */
+NTSTATUS 
+WINAPI 
+WinSqmEndSession(
+	HANDLE session
+)
 {
-  return 0;
+    DbgPrint("NIMPLEMENTED: WinSqmEndSession");
+    return STATUS_NOT_IMPLEMENTED;
+}
+
+/*********************************************************************
+ *                  WinSqmIsOptedIn   (NTDLL.@)
+ */
+BOOL 
+WINAPI 
+WinSqmIsOptedIn(
+	void
+)
+{
+    DbgPrint("NIMPLEMENTED: WinSqmIsOptedIn");
+    return FALSE;
+}
+
+/******************************************************************************
+ *                  WinSqmStartSession   (NTDLL.@)
+ */
+HANDLE 
+WINAPI 
+WinSqmStartSession(
+	GUID *sessionguid, 
+	DWORD sessionid, 
+	DWORD unknown1
+)
+{
+    DbgPrint("NIMPLEMENTED: WinSqmStartSession");
+    return INVALID_HANDLE_VALUE;
 }
 
 /*unimplemented */
-void WINAPI WinSqmSetDWORD(int a1, int a2, int a3)
+PVOID 
+WINAPI
+WinSqmAddToStream(
+	PVOID Source1, 
+	BOOL unknown1, 
+	DWORD unknown2, 
+	PVOID unknown3
+)
 {
+    DbgPrint("NIMPLEMENTED: WinSqmAddToStream");		
+	return NULL;
+}
+
+/*unimplemented */
+BOOL 
+WINAPI 
+WinSqmAddToStreamEx(
+	PVOID unknown1, 
+	DWORD unknown2, 
+	ULONG unknown3, 
+	DWORD unknown4, 
+	DWORD unknown5
+)
+{
+    DbgPrint("NIMPLEMENTED: WinSqmAddToStreamEx");	
+	return TRUE;
+}
+
+/*unimplemented */
+void 
+WINAPI 
+WinSqmSetDWORD(
+	DWORD unknown1, 
+	DWORD unknown2, 
+	DWORD unknown3
+)
+{
+	DbgPrint("UNIMPLEMENTED: WinSqmSetDWORD");		
   ;
+}
+
+/*unimplemented */
+int  
+WINAPI 
+WinSqmIncrementDWORD(
+	DWORD unknown1, 
+	DWORD unknown2, 
+	DWORD unknown3
+)
+{
+	DbgPrint("UNIMPLEMENTED: WinSqmIncrementDWORD");		
+	return 0;
+}
+
+/*unimplemented */
+int  
+WINAPI
+WinSqmSetIfMaxDWORD(
+	DWORD unknown1, 
+	DWORD unknown2, 
+	DWORD unknown3
+)
+{
+	DbgPrint("UNIMPLEMENTED: WinSqmSetIfMaxDWORD");		
+	return 0;
+}
+
+BOOL 
+NTAPI 
+WinSqmIsOptedInEx(ULONG number)
+{
+	DbgPrint("UNIMPLEMENTED: WinSqmIsOptedInEx");	
+	return TRUE;
 }

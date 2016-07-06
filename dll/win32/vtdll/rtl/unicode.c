@@ -52,7 +52,10 @@ RtlInitAnsiStringEx(
 
 NTSTATUS 
 NTAPI 
-RtlInitLUnicodeStringFromNullTerminatedString(PUNICODE_STRING string, PWSTR constantString)
+RtlInitLUnicodeStringFromNullTerminatedString(
+	PUNICODE_STRING string, 
+	PWSTR constantString
+)
 {
   SIZE_T size; // eax@3
   NTSTATUS status; // esi@4

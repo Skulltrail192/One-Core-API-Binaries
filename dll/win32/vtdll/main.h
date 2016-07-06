@@ -25,6 +25,11 @@
 #include <rtlavl.h>
 #include <rtltypes.h>
 #include <winnls.h>
+#include <assert.h>
+#include <stdarg.h>
+#include <limits.h>
+#include <list.h>
+//#include "ntdll_misc.h"
 
 /* Use intrinsics for x86 and x64 */
 #if defined(_M_IX86) || defined(_M_AMD64)
@@ -39,6 +44,8 @@
 #define IS_PATH_SEPARATOR(x) (((x)==L'\\')||((x)==L'/'))
 
 #define MAX_HW_COUNTERS 16
+typedef __int64 timeout_t;
+#define TIMEOUT_INFINITE (((timeout_t)0x7fffffff) << 32 | 0xffffffff)
 
 /* Definitions *****************************************/
 
@@ -323,6 +330,72 @@ typedef struct _DELAYLOAD_INFO
 } DELAYLOAD_INFO, *PDELAYLOAD_INFO;
 typedef PVOID (WINAPI *PDELAYLOAD_FAILURE_DLL_CALLBACK)(ULONG, PDELAYLOAD_INFO);
 
+//
+// This structure specifies an offset (from the beginning of CONTEXT_EX
+// structure) and size of a single chunk of an extended context structure.
+//
+// N.B. Offset may be negative.
+//
+
+typedef struct _CONTEXT_CHUNK {
+    LONG Offset;
+    DWORD Length;
+} CONTEXT_CHUNK, *PCONTEXT_CHUNK;
+
+//
+// CONTEXT_EX structure is an extension to CONTEXT structure. It defines
+// a context record as a set of disjoint variable-sized buffers (chunks)
+// each containing a portion of processor state. Currently there are only
+// two buffers (chunks) are defined:
+//
+//   - Legacy, that stores traditional CONTEXT structure;
+//   - XState, that stores XSAVE save area buffer starting from
+//     XSAVE_AREA_HEADER, i.e. without the first 512 bytes.
+//
+// There a few assumptions exists that simplify conversion of PCONTEXT
+// pointer to PCONTEXT_EX pointer.
+//
+// 1. APIs that work with PCONTEXT pointers assume that CONTEXT_EX is
+//    stored right after the CONTEXT structure. It is also assumed that
+//    CONTEXT_EX is present if and only if corresponding CONTEXT_XXX
+//    flags are set in CONTEXT.ContextFlags.
+//
+// 2. CONTEXT_EX.Legacy is always present if CONTEXT_EX structure is
+//    present. All other chunks are optional.
+//
+// 3. CONTEXT.ContextFlags unambigiously define which chunks are
+//    present. I.e. if CONTEXT_XSTATE is set CONTEXT_EX.XState is valid.
+//
+
+typedef struct _CONTEXT_EX {
+
+    //
+    // The total length of the structure starting from the chunk with
+    // the smallest offset. N.B. that the offset may be negative.
+    //
+
+    CONTEXT_CHUNK All;
+
+    //
+    // Wrapper for the traditional CONTEXT structure. N.B. the size of
+    // the chunk may be less than sizeof(CONTEXT) is some cases (when
+    // CONTEXT_EXTENDED_REGISTERS is not set on x86 for instance).
+    //
+
+    CONTEXT_CHUNK Legacy;
+
+    //
+    // CONTEXT_XSTATE: Extended processor state chunk. The state is
+    // stored in the same format XSAVE operation strores it with
+    // exception of the first 512 bytes, i.e. staring from
+    // XSAVE_AREA_HEADER. The lower two bits corresponding FP and
+    // SSE state must be zero.
+    //
+
+    CONTEXT_CHUNK XState;
+
+} CONTEXT_EX, *PCONTEXT_EX;
+
 //Windows 2000 or for new ntdll
 typedef struct _SCOPETABLE_ENTRY *PSCOPETABLE_ENTRY;
 
@@ -417,26 +490,31 @@ static void SHA1Transform(ULONG State[5], UCHAR Buffer[64])
 
 /* Functions Prototypes for public*/
 
+NTSYSAPI
 ULONG
 NTAPI
 RtlIsDosDeviceName_Ustr(
     _In_ PCUNICODE_STRING Name
 );
 
+NTSYSAPI
 PVOID 
-WINAPI 
+NTAPI 
 RtlEncodePointer(PVOID ptr);
 
+NTSYSAPI
 PVOID 
-WINAPI 
+NTAPI 
 RtlDecodePointer(PVOID ptr);
 
+NTSYSAPI
 PVOID 
-WINAPI 
+NTAPI 
 RtlEncodeSystemPointer(PVOID ptr);
 
+NTSYSAPI
 PVOID 
-WINAPI 
+NTAPI 
 RtlDecodeSystemPointer(PVOID ptr);
 
 void 
@@ -479,12 +557,243 @@ RtlLCIDToCultureName(
 
 void 
 NTAPI 
-RtlReportErrorPropagation(LPSTR a1, int a2, int a3, int a4);
+RtlReportErrorPropagation(
+	LPSTR a1, 
+	int a2, 
+	int a3, 
+	int a4
+);
 
 void 
 NTAPI 
-RtlReportErrorOrigination(LPSTR a1, WCHAR string, int a3, NTSTATUS status);
+RtlReportErrorOrigination(
+	LPSTR a1, 
+	WCHAR string, 
+	int a3, 
+	NTSTATUS status
+);
+
+//
+// Define a RESID
+//
+
+typedef PVOID RESID;
+
+//
+// Define a RESOURCE_HANDLE
+//
+
+typedef HANDLE   RESOURCE_HANDLE;
+
+typedef enum CLUSTER_RESOURCE_STATE { 
+  ClusterResourceStateUnknown    = -1,
+  ClusterResourceInherited       = 0,
+  ClusterResourceInitializing    = 1,
+  ClusterResourceOnline          = 2,
+  ClusterResourceOffline         = 3,
+  ClusterResourceFailed          = 4,
+  ClusterResourcePending         = 128, // 0x80
+  ClusterResourceOnlinePending   = 129, // 0x81
+  ClusterResourceOfflinePending  = 130 // 0x82
+} CLUSTER_RESOURCE_STATE, _CLUSTER_RESOURCE_STATE;
+
+//
+// Define Resource DLL callback method for logging events.
+//
+typedef enum LOG_LEVEL {
+    LOG_INFORMATION,
+    LOG_WARNING,
+    LOG_ERROR,
+    LOG_SEVERE
+} LOG_LEVEL, *PLOG_LEVEL;
+
+typedef struct _RESOURCE_STATUS {
+  CLUSTER_RESOURCE_STATE ResourceState;
+  DWORD                  CheckPoint;
+  DWORD                  WaitHint;
+  HANDLE                 EventHandle;
+} RESOURCE_STATUS, *PRESOURCE_STATUS;
+
+typedef DWORD (WINAPI *PSET_RESOURCE_STATUS_ROUTINE)(
+    _In_ RESOURCE_HANDLE  ResourceHandle,
+    _In_ PRESOURCE_STATUS ResourceStatus
+);
+
+//
+// Define Resource DLL callback method for notifying that a quorum
+// resource DLL failed to hold the quorum resource.
+//
+typedef
+VOID
+(_stdcall *PQUORUM_RESOURCE_LOST) (
+    IN RESOURCE_HANDLE Resource
+    );
+
+typedef VOID (WINAPI *PLOG_EVENT_ROUTINE)(
+    _In_ RESOURCE_HANDLE ResourceHandle,
+    _In_ LOG_LEVEL       LogLevel,
+    _In_ LPCWSTR         FormatString,
+                         ...
+);
+
+typedef
+DWORD
+(_stdcall *PRESOURCE_TYPE_CONTROL_ROUTINE) (
+    IN LPCWSTR ResourceTypeName,
+    IN DWORD ControlCode,
+    IN PVOID InBuffer,
+    IN DWORD InBufferSize,
+    OUT PVOID OutBuffer,
+    IN DWORD OutBufferSize,
+    OUT LPDWORD BytesReturned
+    );
+	
+typedef
+DWORD
+(_stdcall *PRESOURCE_CONTROL_ROUTINE) (
+    IN RESID Resource,
+    IN DWORD ControlCode,
+    IN PVOID InBuffer,
+    IN DWORD InBufferSize,
+    OUT PVOID OutBuffer,
+    IN DWORD OutBufferSize,
+    OUT LPDWORD BytesReturned
+    );
+	
+typedef
+DWORD
+(_stdcall *PRELEASE_ROUTINE) (
+    IN RESID Resource
+    );	
+	
+typedef
+DWORD
+(_stdcall *PARBITRATE_ROUTINE) (
+    IN RESID Resource,
+    IN PQUORUM_RESOURCE_LOST LostQuorumResource
+    );	
+	
+typedef
+BOOL
+(_stdcall *PIS_ALIVE_ROUTINE) (
+    IN RESID Resource
+    );	
+	
+typedef
+BOOL
+(_stdcall *PLOOKS_ALIVE_ROUTINE) (
+    IN RESID Resource
+    );	
+	
+typedef
+VOID
+(_stdcall *PTERMINATE_ROUTINE) (
+    IN RESID Resource
+    );	
+
+typedef
+DWORD
+(_stdcall *POFFLINE_ROUTINE) (
+    IN RESID Resource
+    );	
+	
+typedef
+DWORD
+(_stdcall *PONLINE_ROUTINE) (
+    IN RESID Resource,
+    IN OUT LPHANDLE EventHandle
+    );	
+	
+typedef
+VOID
+(_stdcall *PCLOSE_ROUTINE) (
+    IN RESID Resource
+    );	
+	
+typedef
+RESID
+(_stdcall *POPEN_ROUTINE) (
+    IN LPCWSTR ResourceName,
+    IN HKEY ResourceKey,
+    IN RESOURCE_HANDLE ResourceHandle
+    );	
+	
+//***************************************************************
+//
+// Define the Function Table Format
+//
+//***************************************************************
+
+//
+// Version 1 Resource DLL Interface definition
+//
+typedef struct CLRES_V1_FUNCTIONS {
+    POPEN_ROUTINE Open;
+    PCLOSE_ROUTINE Close;
+    PONLINE_ROUTINE Online;
+    POFFLINE_ROUTINE Offline;
+    PTERMINATE_ROUTINE Terminate;
+    PLOOKS_ALIVE_ROUTINE LooksAlive;
+    PIS_ALIVE_ROUTINE IsAlive;
+    PARBITRATE_ROUTINE Arbitrate;
+    PRELEASE_ROUTINE Release;
+    PRESOURCE_CONTROL_ROUTINE ResourceControl;
+    PRESOURCE_TYPE_CONTROL_ROUTINE ResourceTypeControl;
+} CLRES_V1_FUNCTIONS, *PCLRES_V1_FUNCTIONS;
+
+typedef struct CLRES_FUNCTION_TABLE {
+    DWORD   TableSize;
+    DWORD   Version;
+    union {
+        CLRES_V1_FUNCTIONS V1Functions;
+    };
+} CLRES_FUNCTION_TABLE, *PCLRES_FUNCTION_TABLE;
+
+typedef DWORD (WINAPI *PSTARTUP_ROUTINE)(
+    _In_  LPCWSTR                      ResourceType,
+    _In_  DWORD                        MinVersionSupported,
+    _In_  DWORD                        MaxVersionSupported,
+    _In_  PSET_RESOURCE_STATUS_ROUTINE SetResourceStatus,
+    _In_  PLOG_EVENT_ROUTINE           LogEvent,
+    _Out_ CLRES_FUNCTION_TABLE         *FunctionTable
+);
 
 void initTable();
 
 extern HANDLE Key_Event;
+
+typedef DWORD (CALLBACK *PRTL_WORK_ITEM_ROUTINE)(LPVOID); /* FIXME: not the right name */
+typedef void (NTAPI *RTL_WAITORTIMERCALLBACKFUNC)(PVOID,BOOLEAN); /* FIXME: not the right name */
+typedef VOID (CALLBACK *PRTL_OVERLAPPED_COMPLETION_ROUTINE)(DWORD,DWORD,LPVOID);
+
+// typedef struct _RTL_CONDITION_VARIABLE {
+    // PVOID Ptr;
+// } RTL_CONDITION_VARIABLE, *PRTL_CONDITION_VARIABLE;
+
+NTSTATUS 
+WINAPI
+RtlSleepConditionVariableCS(
+  RTL_CONDITION_VARIABLE* variable,
+  RTL_CRITICAL_SECTION*   crit,
+  const LARGE_INTEGER*    timeout
+);
+ 
+void 
+WINAPI
+RtlWakeConditionVariable(
+  RTL_CONDITION_VARIABLE* variable
+);
+
+NTSYSAPI 
+void 
+WINAPI 
+RtlInitializeConditionVariable(
+	PRTL_CONDITION_VARIABLE
+);
+
+NTSYSAPI 
+void
+WINAPI 
+RtlWakeAllConditionVariable(
+	PRTL_CONDITION_VARIABLE
+);

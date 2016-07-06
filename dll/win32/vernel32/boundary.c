@@ -23,7 +23,11 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
-BOOL WINAPI AddIntegrityLabelToBoundaryDescriptor(HANDLE *BoundaryDescriptor, PSID IntegrityLabel)
+BOOL 
+WINAPI 
+AddIntegrityLabelToBoundaryDescriptor(
+	HANDLE *BoundaryDescriptor, 
+	PSID IntegrityLabel)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -32,16 +36,20 @@ BOOL WINAPI AddIntegrityLabelToBoundaryDescriptor(HANDLE *BoundaryDescriptor, PS
   if ( status < 0 )
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   else
   {
-    result = 1;
+    result = TRUE;
   }
   return result;
 }
 
-HANDLE WINAPI CreateBoundaryDescriptorW(LPCWSTR Name, ULONG Flags)
+HANDLE 
+WINAPI 
+CreateBoundaryDescriptorW(
+	LPCWSTR Name, 
+	ULONG Flags)
 {
   NTSTATUS status; // eax@1
   HANDLE result; // eax@2
@@ -60,7 +68,12 @@ HANDLE WINAPI CreateBoundaryDescriptorW(LPCWSTR Name, ULONG Flags)
   return result;
 }
 
-HANDLE WINAPI CreateBoundaryDescriptorA(LPCTSTR Name, ULONG Flags)
+HANDLE 
+WINAPI 
+CreateBoundaryDescriptorA(
+	LPCTSTR Name, 
+	ULONG Flags
+)
 {
   LSA_UNICODE_STRING *string; // esi@2
   NTSTATUS status; // eax@2

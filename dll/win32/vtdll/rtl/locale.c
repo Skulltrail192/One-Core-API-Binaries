@@ -55,6 +55,65 @@ RtlGetThreadPreferredUILanguages(
 	return TRUE;
 }
 
+NTSTATUS 
+WINAPI 
+RtlGetUserPreferredUILanguages(
+	DWORD dwFlags, 
+	BOOL verification,
+	PULONG pulNumLanguages, 
+	PZZWSTR pwszLanguagesBuffer, 
+	PULONG pcchLanguagesBuffer
+)
+{
+	*pulNumLanguages = 1;
+	if(dwFlags == MUI_LANGUAGE_ID)
+	{
+		pwszLanguagesBuffer = L"0x0409";
+	}
+	if(dwFlags == MUI_LANGUAGE_NAME)
+	{
+		pwszLanguagesBuffer = L"en-US";
+	}
+	return TRUE;	
+}
+
+BOOL 
+WINAPI 
+RtlGetSystemPreferredUILanguages(
+  _In_       DWORD dwFlags,
+  _Out_      PULONG pulNumLanguages,
+  _Out_opt_  PZZWSTR pwszLanguagesBuffer,
+  _Inout_    PULONG pcchLanguagesBuffer
+)
+{
+	*pulNumLanguages = 1;
+	if(dwFlags == MUI_LANGUAGE_ID)
+	{
+		pwszLanguagesBuffer = L"0x0409";
+	}
+	if(dwFlags == MUI_LANGUAGE_NAME)
+	{
+		pwszLanguagesBuffer = L"en-US";
+	}
+	return TRUE;	
+}
+
+NTSTATUS 
+WINAPI 
+RtlGetUILanguageInfo(
+	DWORD dwFlags, 
+	PCZZWSTR pwmszLanguage, 
+	PZZWSTR pwszFallbackLanguages,
+	PDWORD pcchFallbackLanguages,
+	PDWORD pdwAttributes
+)
+{
+	pwmszLanguage = L"en-US";
+	pwszFallbackLanguages = L"en-US";
+	*pcchFallbackLanguages = 1;
+	return STATUS_SUCCESS;
+}
+
 /*
  * @unimplemented - need reimplementation
  */
@@ -146,4 +205,19 @@ NTAPI
 RtlpSetDefaultUILanguage(LANGID langId)
 {
 	return NtSetDefaultUILanguage(langId);
+}
+
+BOOL 
+NTAPI 
+RtlGetFileMUIPath(
+  _In_         DWORD dwFlags,
+  _In_         PCWSTR pcwszFilePath,
+  _Inout_opt_  PWSTR pwszLanguage,
+  _Inout_      PULONG pcchLanguage,
+  _Out_opt_    PWSTR pwszFileMUIPath,
+  _Inout_      PULONG pcchFileMUIPath,
+  _Inout_      PULONGLONG pululEnumerator
+)
+{
+	return FALSE;
 }

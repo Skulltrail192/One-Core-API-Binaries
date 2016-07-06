@@ -93,3 +93,27 @@ fail:
     delayinfo.LastError = nts;
     return dllhook(4, &delayinfo);
 }
+
+NTSTATUS
+NTAPI
+LdrQueryModuleServiceTags(
+    _In_ PVOID DllHandle,
+    _Out_writes_(*BufferSize) PULONG ServiceTagBuffer,
+    _Inout_ PULONG BufferSize
+)
+{
+	DbgPrint("UNIMPLEMENTED: LdrQueryModuleServiceTags");		
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS 
+WINAPI 
+LdrResolveDelayLoadsFromDll(
+  _In_        PVOID ParentBase,
+  _In_        LPCSTR TargetDllName,
+  _Reserved_  ULONG Flags
+)
+{
+	DbgPrint("UNIMPLEMENTED: LdrResolveDelayLoadsFromDll");		
+	return STATUS_SUCCESS;	
+}

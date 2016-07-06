@@ -98,7 +98,9 @@ RtlInsertElementGenericTableFull(
 
 FORCEINLINE
 VOID
-RtlpPromoteAvlTreeNode(IN PRTL_BALANCED_LINKS Node)
+RtlpPromoteAvlTreeNode(
+	IN PRTL_BALANCED_LINKS Node
+)
 {
     PRTL_BALANCED_LINKS ParentNode, SuperParentNode;
     PRTL_BALANCED_LINKS *SwapNode1, *SwapNode2;
@@ -127,7 +129,9 @@ RtlpPromoteAvlTreeNode(IN PRTL_BALANCED_LINKS Node)
 
 FORCEINLINE
 BOOLEAN
-RtlpRebalanceAvlTreeNode(IN PRTL_BALANCED_LINKS Node)
+RtlpRebalanceAvlTreeNode(
+	IN PRTL_BALANCED_LINKS Node
+)
 {
     PRTL_BALANCED_LINKS ChildNode, SubChildNode;
     CHAR Balance;
@@ -209,10 +213,11 @@ RtlpRebalanceAvlTreeNode(IN PRTL_BALANCED_LINKS Node)
 
 FORCEINLINE
 VOID
-RtlpInsertAvlTreeNode(IN PRTL_AVL_TABLE Table,
-                      IN PRTL_BALANCED_LINKS NewNode,
-                      IN OUT PVOID NodeOrParent,
-                      IN OUT TABLE_SEARCH_RESULT SearchResult)
+RtlpInsertAvlTreeNode(
+	IN PRTL_AVL_TABLE Table,
+    IN PRTL_BALANCED_LINKS NewNode,
+    IN OUT PVOID NodeOrParent,
+    IN OUT TABLE_SEARCH_RESULT SearchResult)
 {
     CHAR Balance;
 
@@ -300,12 +305,14 @@ RtlpInsertAvlTreeNode(IN PRTL_AVL_TABLE Table,
  */
 PVOID
 NTAPI
-RtlInsertElementGenericTableFullAvl(IN PRTL_AVL_TABLE Table,
-                                    IN PVOID Buffer,
-                                    IN ULONG BufferSize,
-                                    OUT PBOOLEAN NewElement OPTIONAL,
-                                    IN OUT PVOID NodeOrParent,
-                                    IN OUT TABLE_SEARCH_RESULT SearchResult)
+RtlInsertElementGenericTableFullAvl(
+	IN PRTL_AVL_TABLE Table,
+	IN PVOID Buffer,
+	IN ULONG BufferSize,
+	OUT PBOOLEAN NewElement OPTIONAL,
+	IN OUT PVOID NodeOrParent,
+	IN OUT TABLE_SEARCH_RESULT SearchResult
+)
 {
     PRTL_BALANCED_LINKS NewNode;
     PVOID UserData;
@@ -352,7 +359,7 @@ RtlInsertElementGenericTableFullAvl(IN PRTL_AVL_TABLE Table,
     return UserData;
 }
 
-TABLE_SEARCH_RESULT NTAPI RtlpFindGenericTableNodeOrParent 	( 	
+TABLE_SEARCH_RESULT NTAPI RtlpFindGenericTableNodeOrParent( 	
 	IN PRTL_GENERIC_TABLE  	Table,
 	IN PVOID  	Buffer,
 	OUT PRTL_SPLAY_LINKS *  	NodeOrParent 

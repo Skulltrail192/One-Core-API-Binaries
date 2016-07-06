@@ -20,7 +20,9 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
-PVOID WINAPI ResolveDelayLoadedAPI(
+PVOID 
+WINAPI 
+ResolveDelayLoadedAPI(
   _In_        PVOID ParentModuleBase,
   _In_        PCIMAGE_DELAYLOAD_DESCRIPTOR DelayloadDescriptor,
   _In_opt_    PDELAYLOAD_FAILURE_DLL_CALLBACK FailureDllHook,
@@ -37,7 +39,9 @@ PVOID WINAPI ResolveDelayLoadedAPI(
 									Flags);
 }
 
-NTSTATUS WINAPI ResolveDelayLoadsFromDll(
+NTSTATUS 
+WINAPI 
+ResolveDelayLoadsFromDll(
   _In_        PVOID ParentBase,
   _In_        LPCSTR TargetDllName,
   _Reserved_  ULONG Flags

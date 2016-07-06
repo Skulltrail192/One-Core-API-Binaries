@@ -9,5 +9,5 @@ LdrFindResourceEx_U(
     OUT PIMAGE_RESOURCE_DATA_ENTRY *ResourceDataEntry
 )
 {
-	return 0x00000000;
+	return STATUS_SUCCESS;
 }

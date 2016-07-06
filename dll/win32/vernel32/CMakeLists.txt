@@ -25,6 +25,7 @@ list(APPEND SOURCE
 	check.c
 	console.c
 	context.c
+	debug.c
 	dep.c
 	file.c
 	firmware.c
@@ -55,17 +56,15 @@ list(APPEND SOURCE
 	wer.c
 	wow64.c
 	missing/fiber.c
-	missing/missing.c	
-    version.rc
-    ${CMAKE_CURRENT_BINARY_DIR}/vernel32_stubs.c
-    ${CMAKE_CURRENT_BINARY_DIR}/vernel32.def)
+	missing/missing.c)
 
-list(APPEND ASM_SOURCE
-        client/i386/thread.S)
-
-add_library(vernel32 
-			SHARED 
-			${SOURCE})
+add_asm_files(vernel32_asm ${ASM_SOURCE})		
+add_library(vernel32 SHARED 
+			${SOURCE}
+			${vernel32_asm}
+			 version.rc
+			 ${CMAKE_CURRENT_BINARY_DIR}/vernel32_stubs.c
+			${CMAKE_CURRENT_BINARY_DIR}/vernel32.def)
 
 set_module_type(vernel32 win32dll HOTPATCHABLE ENTRYPOINT 0)
 #############################################

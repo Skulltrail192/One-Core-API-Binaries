@@ -964,12 +964,14 @@
 @ stdcall Wow64RevertWow64FsRedirection(ptr) 
 
 #Functions needed for Kernel32 for Wow and 
+#if defined(BUILD_WOW6432)
 #@ stdcall BaseProcessStartThunk(ptr ptr) 
-#@ stdcall BaseThreadStartThunk(ptr ptr) 
+#endif
+#@ stdcall -arch=x86 BaseThreadStartThunk(ptr ptr) 
 #@ stdcall -arch=x86_64 ConsoleIMERoutine() ;kernelfull.ConsoleIMERoutine
 #@ stdcall -arch=x86_64 CtrlRoutine() ;kernelfull.CtrlRoutine
-@ stdcall ConsoleIMERoutine() kernelfull.ConsoleIMERoutine ;Make this function
-@ stdcall CtrlRoutine() ;kernelfull.CtrlRoutine
+#@ stdcall ConsoleIMERoutine() kernelfull.ConsoleIMERoutine ;Make this function
+#@ stdcall CtrlRoutine() ;kernelfull.CtrlRoutine
 #@ stdcall -arch=x86_64 DebugBreak()
 
 #Needed functions for Server 2003 RTM
@@ -982,7 +984,7 @@
 #Only for Windows XP
 @ stdcall BaseInitAppcompatCache() kernelfull.BaseInitAppcompatCache
 @ stdcall BaseCleanupAppcompatCache() kernelfull.BaseCleanupAppcompatCache
-@ stdcall CreateProcessInternalWSecure() kernelfull.CreateProcessInternalWSecure
+@ stdcall CreateProcessInternalWSecure() 
 @ stdcall QueryWin31IniFilesMappedToRegistry(long wstr long ptr) kernelfull.QueryWin31IniFilesMappedToRegistry
 @ stdcall GetNumaAvailableMemory(ptr long ptr) 
 @ stdcall GetNumaProcessorMap(ptr long ptr) kernelfull.GetNumaProcessorMap
@@ -1005,8 +1007,8 @@
 @ stdcall Wow64EnableWow64FsRedirection(long) 
 
 #Needed funcions for XP x64
-@ stdcall -arch=x86_64 BaseProcessStart(ptr) 
-@ stdcall -arch=x86_64 BaseThreadStart(ptr ptr) 
+@ stdcall -arch=x86_64 BaseProcessStart(ptr)
+@ stdcall -arch=x86_64 BaseThreadStart(ptr ptr)
 @ stdcall -arch=x86_64 __C_specific_handler(ptr long ptr ptr) ntdll.__C_specific_handler
 @ stdcall -arch=x86_64 __chkstk() ntdll.__chkstk
 @ stdcall -arch=x86_64 _local_unwind(ptr ptr) ntdll._local_unwind
@@ -1033,7 +1035,7 @@
 
 #Windows Vista/7/8 Functions
 @ stdcall ActivateActCtxWorker(ptr ptr) ActivateActCtx
-@ stdcall AddDllDirectory(wstr) ntdllnew.LdrAddDllDirectory
+@ stdcall AddDllDirectory(wstr) vtdll.LdrAddDllDirectory
 @ stdcall AddRefActCtxWorker(ptr) AddRefActCtx
 @ stdcall AddIntegrityLabelToBoundaryDescriptor(ptr ptr)
 @ stdcall AddResourceAttributeAce(ptr long long long ptr ptr ptr)
@@ -1094,13 +1096,13 @@
 @ stdcall CheckTokenCapability(ptr ptr ptr)
 @ stdcall CheckTokenMembershipEx(ptr ptr long ptr)
 @ stdcall ClosePrivateNamespace(ptr long)
-@ stdcall CloseThreadpool(ptr) ;ntdllnew.TpReleasePool ;from ntdllnew CAUTION
-@ stdcall CloseThreadpoolCleanupGroup(ptr) ;ntdllnew.TpReleaseCleanupGroup ;from ntdllnew CAUTION
-@ stdcall CloseThreadpoolCleanupGroupMembers(ptr long ptr) ;ntdllnew.TpReleaseCleanupGroupMembers ;from ntdllnew CAUTION
-@ stdcall CloseThreadpoolIo(ptr) ;ntdllnew.TpReleaseIoCompletion ;from ntdllnew CAUTION
-@ stdcall CloseThreadpoolTimer(ptr) ;ntdllnew.TpReleaseTimer ;from ntdllnew CAUTION
-@ stdcall CloseThreadpoolWait(ptr) ;ntdllnew.TpReleaseWait ;from ntdllnew CAUTION
-@ stdcall CloseThreadpoolWork(ptr) ;ntdllnew.TpReleaseWork ;from ntdllnew CAUTION
+@ stdcall CloseThreadpool(ptr) 
+@ stdcall CloseThreadpoolCleanupGroup(ptr) 
+@ stdcall CloseThreadpoolCleanupGroupMembers(ptr long ptr) 
+@ stdcall CloseThreadpoolIo(ptr) 
+@ stdcall CloseThreadpoolTimer(ptr) 
+@ stdcall CloseThreadpoolWait(ptr) 
+@ stdcall CloseThreadpoolWork(ptr) 
 @ stdcall CompareCalendarDates(ptr ptr long)
 @ stdcall CompareStringEx(wstr long wstr long wstr long ptr ptr long)
 @ stdcall CompareStringOrdinal(wstr long wstr long long)
@@ -1140,14 +1142,14 @@
 @ stdcall CreateSymbolicLinkW(wstr wstr long)
 @ stdcall CreateThreadpool(ptr)
 @ stdcall CreateThreadpoolCleanupGroup() 
-@ stdcall CreateThreadpoolIo(ptr) ntdllnew.TpReleaseIoCompletion ;from ntdllnew CAUTION
+@ stdcall CreateThreadpoolIo(ptr) vtdll.TpReleaseIoCompletion ;from ntdllnew CAUTION
 @ stdcall CreateThreadpoolTimer(ptr ptr ptr) ;from ntdllnew CAUTION
 @ stdcall CreateThreadpoolWait(ptr ptr ptr)  ;from ntdllnew CAUTION
 @ stdcall CreateThreadpoolWork(ptr ptr ptr) ;from ntdllnew CAUTION
 @ stdcall CreateWaitableTimerExA(ptr str ptr long)
 @ stdcall CreateWaitableTimerExW(ptr wstr ptr long)
 @ stdcall DeactivateActCtxWorker(long ptr) DeactivateActCtx
-@ stdcall DeleteBoundaryDescriptor() ntdllnew.RtlDeleteBoundaryDescriptor
+@ stdcall DeleteBoundaryDescriptor() vtdll.RtlDeleteBoundaryDescriptor
 @ stdcall DeleteFileTransactedA(str ptr)
 @ stdcall DeleteFileTransactedW(wstr ptr)
 @ stdcall DeleteProcThreadAttributeList(ptr)
@@ -1446,7 +1448,7 @@
 @ stdcall SetThreadpoolStackInformation(ptr ptr) 
 @ stdcall SetThreadpoolThreadMaximum(ptr long) ntdllnew.TpSetPoolMaxThreads
 @ stdcall SetThreadpoolThreadMinimum(ptr long) 
-@ stdcall SetThreadpoolTimer(ptr ptr long long) ntdllnew.TpSetTimer
+@ stdcall SetThreadpoolTimer(ptr ptr long long) vtdll.TpSetTimer
 @ stdcall SetThreadpoolTimerEx(ptr ptr long long) ntdllnew.TpSetTimerEx
 @ stdcall SetThreadpoolWait(ptr ptr ptr) ntdllnew.TpSetWait
 @ stdcall SetThreadpoolWaitEx(ptr ptr ptr) ntdllnew.TpSetWaitEx
@@ -1467,7 +1469,7 @@
 @ stdcall timeGetDevCaps(ptr long)
 @ stdcall timeGetSystemTime(ptr long)
 @ stdcall timeGetTime()
-@ stdcall TryAcquireSRWLockExclusive(ptr) ntdllnew.RtlTryAcquireSRWLockExclusive
+@ stdcall TryAcquireSRWLockExclusive(ptr) vtdll.RtlTryAcquireSRWLockExclusive
 @ stdcall TryAcquireSRWLockShared(ptr) ntdllnew.RtlTryAcquireSRWLockShared
 @ stdcall TrySubmitThreadpoolCallback(ptr ptr ptr) 
 @ stdcall TzSpecificLocalTimeToSystemTimeEx(ptr ptr ptr)

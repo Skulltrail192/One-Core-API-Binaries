@@ -88,5 +88,5 @@ VirtualAllocExNuma(
       return BaseAddress;
     BaseSetLastNTError(status);
   }
-  return 0;
+  return NULL;
 }

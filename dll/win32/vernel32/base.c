@@ -47,7 +47,7 @@ BOOLEAN g_AppCertInitialized;
 
 NTSTATUS g_AppCertStatus;
 
-BOOLEAN BaseRunningInServerProcess;
+BOOLEAN BaseRunningInServerProcess = FALSE;
 
 PBASEP_APPCERT_EMBEDDED_FUNC fEmbeddedCertFunc;
 
@@ -459,9 +459,11 @@ BaseFormatTimeOut(
     return Timeout;
 }
 
-PVOID WINAPI BasepMapModuleHandle( 	
-		HMODULE  	hModule,
-		BOOLEAN  	AsDataFile 
+PVOID 
+WINAPI 
+BasepMapModuleHandle( 	
+	HMODULE  	hModule,
+	BOOLEAN  	AsDataFile 
 )
 {
     /* If no handle is provided - use current image base address */
@@ -929,7 +931,12 @@ BasepConfigureAppCertDlls(
     return BasepSaveAppCertRegistryValue(Context, ValueName, ValueData);
 }
 
-NTSTATUS WINAPI BasepGetExeArchType(int ParameterOne, HANDLE FileHandle, PUNICODE_STRING string)
+NTSTATUS 
+WINAPI 
+BasepGetExeArchType(
+	int ParameterOne, 
+	HANDLE FileHandle, 
+	PUNICODE_STRING string)
 {
   DWORD one; // ebx@1
   signed __int16 receive; // di@1
@@ -1088,7 +1095,7 @@ BasepReportFault(
 
 VOID
 WINAPI
-BaseThreadStartThunk(
+BaseThreadStartup(
     IN LPTHREAD_START_ROUTINE lpStartAddress,
     IN LPVOID lpParameter
     )
@@ -1126,6 +1133,7 @@ Return Value:
         // WARNING WARNING DO NOT CHANGE INIT OF NtTib.Version. There is
         // external code depending on this initialization !
         //
+		CsrNewThread();
         if ( NtCurrentTeb()->NtTib.Version == 7680 ) {
             if ( !BaseRunningInServerProcess ) {
                 CsrNewThread();
@@ -1171,6 +1179,99 @@ LONG BaseExceptionFilter(EXCEPTION_POINTERS *ExceptionInfo)
     }
 
     return ExceptionDisposition;
+}
+
+VOID
+WINAPI
+BaseProcessStartup(PPROCESS_START_ROUTINE lpStartAddress)
+{
+    DbgPrint("BaseProcessStartup(..) - setting up exception frame.\n");
+
+    _SEH2_TRY
+    {
+        /* Set our Start Address */
+        NtSetInformationThread(NtCurrentThread(),
+                               ThreadQuerySetWin32StartAddress,
+                               &lpStartAddress,
+                               sizeof(PPROCESS_START_ROUTINE));
+
+        /* Call the Start Routine */
+        ExitThread(lpStartAddress());
+    }
+    _SEH2_EXCEPT(BaseExceptionFilter(_SEH2_GetExceptionInformation()))
+    {
+        /* Get the Exit code from the SEH Handler */
+        if (!BaseRunningInServerProcess)
+        {
+            /* Kill the whole process, usually */
+            ExitProcess(_SEH2_GetExceptionCode());
+        }
+        else
+        {
+            /* If running inside CSRSS, kill just this thread */
+            ExitThread(_SEH2_GetExceptionCode());
+        }
+    }
+    _SEH2_END;
+}
+
+static
+LONG BaseThreadExceptionFilter(EXCEPTION_POINTERS * ExceptionInfo)
+{
+   LONG ExceptionDisposition = EXCEPTION_EXECUTE_HANDLER;
+   LPTOP_LEVEL_EXCEPTION_FILTER RealFilter;
+   RealFilter = RtlDecodePointer(GlobalTopLevelExceptionFilter);
+
+   if (RealFilter != NULL)
+   {
+      _SEH2_TRY
+      {
+         ExceptionDisposition = RealFilter(ExceptionInfo);
+      }
+      _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+      {
+         ExceptionDisposition = UnhandledExceptionFilter(ExceptionInfo);
+      }
+      _SEH2_END;
+   }
+
+   return ExceptionDisposition;
+}
+
+__declspec(noreturn)
+VOID
+WINAPI
+BasepThreadStartup(IN LPTHREAD_START_ROUTINE lpStartAddress,
+                  IN LPVOID lpParameter)
+{
+    /* Attempt to call the Thread Start Address */
+    _SEH2_TRY
+    {
+        /* Legacy check which is still used today for Win32 threads */
+        if (NtCurrentTeb()->NtTib.Version == (30 << 8)) // OS/2 V3.0 ("Cruiser")
+        {
+            /* This registers the termination port with CSRSS */
+            if (!BaseRunningInServerProcess) CsrNewThread();
+        }
+
+        /* Get the exit code from the Thread Start */
+        ExitThread((lpStartAddress)((PVOID)lpParameter));
+    }
+    _SEH2_EXCEPT(BaseThreadExceptionFilter(_SEH2_GetExceptionInformation()))
+    {
+        /* Get the Exit code from the SEH Handler */
+        if (!BaseRunningInServerProcess)
+        {
+            /* Kill the whole process, usually */
+            ExitProcess(_SEH2_GetExceptionCode());
+        }
+        else
+        {
+            /* If running inside CSRSS, kill just this thread */
+            ExitThread(_SEH2_GetExceptionCode());
+        }
+    }
+    _SEH2_END;
 }
 
 void
@@ -1262,105 +1363,105 @@ Return Value:
     }
 }
 
-VOID
-BaseThreadStart(
-    IN LPTHREAD_START_ROUTINE lpStartAddress,
-    IN LPVOID lpParameter
-    )
+// VOID
+// BaseThreadStart(
+    // IN LPTHREAD_START_ROUTINE lpStartAddress,
+    // IN LPVOID lpParameter
+    // )
 
-/*++
+// /*++
 
-Routine Description:
+// Routine Description:
 
-    This function is called to start a Win32 thread. Its purpose
-    is to call the thread, and if the thread returns, to terminate
-    the thread and delete its stack.
+    // This function is called to start a Win32 thread. Its purpose
+    // is to call the thread, and if the thread returns, to terminate
+    // the thread and delete its stack.
 
-Arguments:
+// Arguments:
 
-    lpStartAddress - Supplies the starting address of the new thread.  The
-        address is logically a procedure that never returns and that
-        accepts a single 32-bit pointer argument.
+    // lpStartAddress - Supplies the starting address of the new thread.  The
+        // address is logically a procedure that never returns and that
+        // accepts a single 32-bit pointer argument.
 
-    lpParameter - Supplies a single parameter value passed to the thread.
+    // lpParameter - Supplies a single parameter value passed to the thread.
 
-Return Value:
+// Return Value:
 
-    None.
+    // None.
 
---*/
+// --*/
 
-{
-    _SEH2_TRY {
+// {
+    // _SEH2_TRY {
 
-        //
-        // test for fiber start or new thread
-        //
+        
+        // // test for fiber start or new thread
+        
 
-        //
-        // WARNING WARNING DO NOT CHANGE INIT OF NtTib.Version. There is
-        // external code depending on this initialization !
-        //
-        if ( NtCurrentTeb()->NtTib.Version == 7680) {//OS2_VERSION ) {
-            if ( !BaseRunningInServerProcess ) {
-                CsrNewThread();
-                }
-            }
-        ExitThread((lpStartAddress)(lpParameter));
-        }
-    _SEH2_EXCEPT(UnhandledExceptionFilter( GetExceptionInformation() )) {
-        if ( !BaseRunningInServerProcess ) {
-            ExitProcess(GetExceptionCode());
-            }
-        else {
-            ExitThread(GetExceptionCode());
-            }
-        }
-	_SEH2_END
-}
+        
+        // // WARNING WARNING DO NOT CHANGE INIT OF NtTib.Version. There is
+        // // external code depending on this initialization !
+        
+        // if ( NtCurrentTeb()->NtTib.Version == 7680) {//OS2_VERSION ) {
+            // if ( !BaseRunningInServerProcess ) {
+                // CsrNewThread();
+                // }
+            // }
+        // ExitThread((lpStartAddress)(lpParameter));
+        // }
+    // _SEH2_EXCEPT(UnhandledExceptionFilter( GetExceptionInformation() )) {
+        // if ( !BaseRunningInServerProcess ) {
+            // ExitProcess(GetExceptionCode());
+            // }
+        // else {
+            // ExitThread(GetExceptionCode());
+            // }
+        // }
+	// _SEH2_END
+// }
 
-VOID
-BaseProcessStart(
-    PPROCESS_START_ROUTINE lpStartAddress
-    )
+// VOID
+// BaseProcessStart(
+    // PPROCESS_START_ROUTINE lpStartAddress
+    // )
 
-/*++
+// /*++
 
-Routine Description:
+// Routine Description:
 
-    This function is called to start a Win32 process.  Its purpose is to
-    call the initial thread of the process, and if the thread returns,
-    to terminate the thread and delete its stack.
+    // This function is called to start a Win32 process.  Its purpose is to
+    // call the initial thread of the process, and if the thread returns,
+    // to terminate the thread and delete its stack.
 
-Arguments:
+// Arguments:
 
-    lpStartAddress - Supplies the starting address of the new thread.  The
-        address is logically a procedure that never returns.
+    // lpStartAddress - Supplies the starting address of the new thread.  The
+        // address is logically a procedure that never returns.
 
-Return Value:
+// Return Value:
 
-    None.
+    // None.
 
---*/
+// --*/
 
-{
-    _SEH2_TRY {
+// {
+    // _SEH2_TRY {
 #if defined(BUILD_WOW6432)        
-        Report32bitAppLaunching ();
+        // Report32bitAppLaunching ();
 #endif 
-        NtSetInformationThread( NtCurrentThread(),
-                                ThreadQuerySetWin32StartAddress,
-                                &lpStartAddress,
-                                sizeof( lpStartAddress )
-                              );
-        ExitThread((lpStartAddress)());
-        }
-    _SEH2_EXCEPT(UnhandledExceptionFilter( GetExceptionInformation() )) {
-        if ( !BaseRunningInServerProcess ) {
-            ExitProcess(GetExceptionCode());
-            }
-        else {
-            ExitThread(GetExceptionCode());
-            }
-        }
-}
+        // NtSetInformationThread( NtCurrentThread(),
+                                // ThreadQuerySetWin32StartAddress,
+                                // &lpStartAddress,
+                                // sizeof( lpStartAddress )
+                              // );
+        // ExitThread((lpStartAddress)());
+        // }
+    // _SEH2_EXCEPT(UnhandledExceptionFilter( GetExceptionInformation() )) {
+        // if ( !BaseRunningInServerProcess ) {
+            // ExitProcess(GetExceptionCode());
+            // }
+        // else {
+            // ExitThread(GetExceptionCode());
+            // }
+        // }
+// }
