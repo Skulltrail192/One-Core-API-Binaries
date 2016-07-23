@@ -47,7 +47,7 @@
 @ stdcall CertFindCertificateInCRL(ptr ptr long ptr ptr)
 @ stdcall CertFindExtension(str long ptr)
 @ stdcall CertFindRDNAttr(str ptr)
-@ stub CertFindSubjectInCTL
+@ stdcall CertFindSubjectInCTL(long long ptr ptr long)
 @ stdcall CertFreeCRLContext(ptr)
 @ stdcall CertFreeCTLContext(ptr)
 @ stdcall CertFreeCertificateChain(ptr)
@@ -104,22 +104,22 @@
 @ stdcall CryptBinaryToStringW(ptr long long ptr ptr)
 @ stdcall CryptStringToBinaryA(str long long ptr ptr ptr ptr)
 @ stdcall CryptStringToBinaryW (wstr long long ptr ptr ptr ptr)
-@ stdcall CryptAcquireContextU(ptr wstr wstr long long) advapi32.CryptAcquireContextW
+@ stdcall CryptAcquireContextU(ptr wstr wstr long long)
 @ stdcall CryptAcquireCertificatePrivateKey(ptr long ptr ptr ptr ptr)
-@ stub CryptCloseAsyncHandle
-@ stub CryptCreateAsyncHandle
-@ stub CryptDecodeMessage
+@ stdcall CryptCloseAsyncHandle(ptr)
+@ stdcall CryptCreateAsyncHandle(long ptr)
+@ stdcall CryptDecodeMessage(long ptr ptr long ptr long long long long ptr long ptr ptr)
 @ stdcall CryptDecodeObject(long str ptr long long ptr ptr)
 @ stdcall CryptDecodeObjectEx(long str ptr long long ptr ptr ptr)
-@ stub CryptDecryptAndVerifyMessageSignature
-@ stub CryptDecryptMessage
+@ stdcall CryptDecryptAndVerifyMessageSignature(ptr ptr long ptr long ptr long ptr ptr)
+@ stdcall CryptDecryptMessage(ptr ptr long ptr ptr ptr)
 @ stdcall CryptEncodeObject(long str ptr ptr ptr)
 @ stdcall CryptEncodeObjectEx(long str ptr long ptr ptr ptr)
 @ stdcall CryptEncryptMessage(ptr long ptr ptr long ptr ptr)
-@ stub CryptEnumOIDFunction
+@ stdcall CryptEnumOIDFunction(long str str long ptr ptr)
 @ stdcall CryptEnumOIDInfo(long long ptr ptr)
-@ stub CryptEnumProvidersU
-@ stub CryptExportPKCS8
+@ stdcall CryptEnumProvidersU(long long long ptr ptr ptr)
+@ stdcall CryptExportPKCS8(ptr long str long ptr ptr ptr)
 @ stdcall CryptExportPublicKeyInfo(long long long ptr ptr)
 @ stdcall CryptExportPublicKeyInfoEx(long long long str long ptr ptr ptr)
 @ stdcall CryptFindCertificateKeyProvInfo(ptr long ptr)
@@ -127,7 +127,7 @@
 @ stdcall CryptFindOIDInfo(long ptr long)
 @ stdcall CryptFormatObject(long long long ptr str ptr long ptr ptr)
 @ stdcall CryptFreeOIDFunctionAddress(long long)
-@ stub CryptGetAsyncParam
+@ stdcall CryptGetAsyncParam(ptr str ptr ptr)
 @ stdcall CryptGetDefaultOIDDllList(long long ptr ptr)
 @ stdcall CryptGetDefaultOIDFunctionAddress(long long wstr long ptr ptr)
 @ stdcall CryptGetMessageCertificates(long ptr long ptr long)
@@ -138,20 +138,20 @@
 @ stdcall CryptHashMessage(ptr long long ptr ptr ptr ptr ptr ptr)
 @ stdcall CryptHashPublicKeyInfo(long long long long ptr ptr ptr)
 @ stdcall CryptHashToBeSigned(ptr long ptr long ptr ptr)
-@ stub CryptImportPKCS8
+@ stdcall CryptImportPKCS8(ptr long ptr ptr)
 @ stdcall CryptImportPublicKeyInfo(long long ptr ptr)
 @ stdcall CryptImportPublicKeyInfoEx(long long ptr long long ptr ptr)
 @ stdcall CryptInitOIDFunctionSet(str long)
 @ stdcall CryptInstallOIDFunctionAddress(ptr long str long ptr long)
-@ stub CryptLoadSip
+@ stdcall CryptLoadSip(ptr long ptr)
 @ stdcall CryptMemAlloc(long)
 @ stdcall CryptMemFree(ptr)
 @ stdcall CryptMemRealloc(ptr long)
-@ stub CryptMsgCalculateEncodedLength
+@ stdcall CryptMsgCalculateEncodedLength(long long long ptr str long)
 @ stdcall CryptMsgClose(ptr)
 @ stdcall CryptMsgControl(ptr long long ptr)
-@ stub CryptMsgCountersign
-@ stub CryptMsgCountersignEncoded
+@ stdcall CryptMsgCountersign(ptr long long ptr)
+@ stdcall CryptMsgCountersignEncoded(long ptr long long ptr ptr ptr)
 @ stdcall CryptMsgDuplicate(ptr)
 @ stdcall CryptMsgEncodeAndSignCTL(long ptr ptr long ptr ptr)
 @ stdcall CryptMsgGetAndVerifySigner(ptr long ptr long ptr ptr)
@@ -160,7 +160,7 @@
 @ stdcall CryptMsgOpenToEncode(long long long ptr str ptr)
 @ stdcall CryptMsgSignCTL(long ptr long ptr long ptr ptr)
 @ stdcall CryptMsgUpdate(ptr ptr long long)
-@ stub CryptMsgVerifyCountersignatureEncoded
+@ stdcall CryptMsgVerifyCountersignatureEncoded(ptr long ptr long ptr long ptr)
 @ stdcall CryptMsgVerifyCountersignatureEncodedEx(ptr long ptr long ptr long long ptr long ptr)
 @ stdcall CryptProtectData(ptr wstr ptr ptr ptr long ptr)
 @ stdcall CryptQueryObject(long ptr long long long ptr ptr ptr ptr ptr ptr)
@@ -176,27 +176,27 @@
 @ stdcall CryptSIPRemoveSignedDataMsg(ptr long)
 @ stdcall CryptSIPRetrieveSubjectGuid(wstr long ptr)
 @ stdcall CryptSIPVerifyIndirectData(ptr ptr)
-@ stub CryptSetAsyncParam
+@ stdcall CryptSetAsyncParam(ptr str ptr ptr)
 @ stdcall CryptSetOIDFunctionValue(long str str wstr long ptr long)
-@ stub CryptSetProviderU
+@ stdcall CryptSetProviderU(wstr long)
 @ stdcall CryptSignAndEncodeCertificate(long long long str ptr ptr ptr ptr ptr)
-@ stub CryptSignAndEncryptMessage
+@ stdcall CryptSignAndEncryptMessage(ptr ptr long ptr ptr long ptr ptr)
 @ stdcall CryptSignCertificate(long long long ptr long ptr ptr ptr ptr)
-@ stub CryptSignHashU
+@ stdcall CryptSignHashU(ptr long wstr long ptr ptr)
 @ stdcall CryptSignMessage(ptr long long ptr ptr ptr ptr)
-@ stub CryptSignMessageWithKey
+@ stdcall CryptSignMessageWithKey(ptr ptr long ptr ptr)
 @ stdcall CryptUnprotectData(ptr ptr ptr ptr ptr long ptr)
 @ stdcall CryptUnregisterDefaultOIDFunction(long str wstr)
 @ stdcall CryptUnregisterOIDFunction(long str str)
-@ stub CryptUnregisterOIDInfo
+@ stdcall CryptUnregisterOIDInfo(ptr)
 @ stdcall CryptVerifyCertificateSignature(long long ptr long ptr)
 @ stdcall CryptVerifyCertificateSignatureEx(long long long ptr long ptr long ptr)
 @ stdcall CryptVerifyDetachedMessageHash(ptr ptr long long ptr ptr ptr ptr)
 @ stdcall CryptVerifyDetachedMessageSignature(ptr long ptr long long ptr ptr ptr)
 @ stdcall CryptVerifyMessageHash(ptr ptr long ptr ptr ptr ptr)
 @ stdcall CryptVerifyMessageSignature(ptr long ptr long ptr ptr ptr)
-@ stub CryptVerifyMessageSignatureWithKey
-@ stub CryptVerifySignatureU
+@ stdcall CryptVerifyMessageSignatureWithKey(ptr ptr ptr long ptr ptr)
+@ stdcall CryptVerifySignatureU(ptr ptr long ptr wstr long)
 @ stdcall I_CertUpdateStore(ptr ptr long long)
 @ stdcall I_CryptAllocTls()
 @ stdcall I_CryptCreateLruCache(ptr ptr)
@@ -210,28 +210,80 @@
 @ stdcall I_CryptGetAsn1Decoder(long)
 @ stdcall I_CryptGetAsn1Encoder(long)
 @ stdcall I_CryptGetDefaultCryptProv(long)
-@ stub I_CryptGetDefaultCryptProvForEncrypt
+@ stdcall I_CryptGetDefaultCryptProvForEncrypt(ptr long long)
 @ stdcall I_CryptGetOssGlobal(long)
 @ stdcall I_CryptGetTls(long)
-@ stub I_CryptInsertLruEntry
+@ stdcall I_CryptInsertLruEntry(ptr long)
 @ stdcall I_CryptInstallAsn1Module(ptr long ptr)
 @ stdcall I_CryptInstallOssGlobal(long long long)
 @ stdcall I_CryptReadTrustedPublisherDWORDValueFromRegistry(wstr ptr)
-@ stub I_CryptReleaseLruEntry
+@ stdcall I_CryptReleaseLruEntry(ptr)
 @ stdcall I_CryptSetTls(long ptr)
 @ stdcall I_CryptUninstallAsn1Module(long)
-@ stub I_CryptUninstallOssGlobal
+@ stdcall I_CryptUninstallOssGlobal(ptr)
 @ stdcall PFXExportCertStore(ptr ptr ptr long)
 @ stdcall PFXExportCertStoreEx(ptr ptr ptr ptr long)
 @ stdcall PFXImportCertStore(ptr ptr long)
 @ stdcall PFXIsPFXBlob(ptr)
 @ stdcall PFXVerifyPassword(ptr wstr long)
-@ stub RegCreateHKCUKeyExU
-@ stub RegCreateKeyExU
-@ stub RegDeleteValueU
-@ stub RegEnumValueU
-@ stub RegOpenHKCUKeyExU
-@ stub RegOpenKeyExU
-@ stub RegQueryInfoKeyU
-@ stub RegQueryValueExU
-@ stub RegSetValueExU
+@ stdcall RegCreateHKCUKeyExU(ptr ptr wstr long wstr long ptr ptr ptr ptr)
+@ stdcall RegCreateKeyExU(ptr wstr long wstr long ptr ptr ptr ptr)
+@ stdcall RegDeleteValueU(ptr wstr)
+@ stdcall RegEnumValueU(ptr long wstr ptr ptr ptr ptr ptr)
+@ stdcall RegOpenHKCUKeyExU(ptr long wstr long ptr ptr)
+@ stdcall RegOpenKeyExU(ptr wstr long ptr ptr)
+@ stdcall RegQueryInfoKeyU(ptr wstr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr)
+@ stdcall RegQueryValueExU(ptr wstr long ptr ptr ptr)
+@ stdcall RegSetValueExU(ptr wstr long long ptr long)
+@ stdcall CertAddCRLLinkToStore(ptr ptr long ptr)
+@ stdcall CertAddCTLLinkToStore(ptr ptr long ptr)
+@ stdcall CertCreateCTLEntryFromCertificateContextProperties(ptr long ptr long ptr ptr ptr)
+@ stdcall CertEnumSubjectInSortedCTL(ptr ptr ptr ptr)
+@ stdcall CertEnumSystemStoreLocation(long ptr ptr)
+@ stdcall CertRegisterSystemStore(ptr long ptr ptr)
+@ stdcall CertResyncCertificateChainEngine(ptr)
+@ stdcall CertSetCertificateContextPropertiesFromCTLEntry(ptr ptr long)
+@ stdcall CertUnregisterPhysicalStore(ptr long wstr)
+@ stdcall CertUnregisterSystemStore(ptr long)
+@ stdcall ChainWlxLogoffEvent(ptr)
+@ stdcall CloseCertPerformanceData()
+@ stdcall CollectCertPerformanceData(wstr ptr ptr ptr)
+@ stdcall CryptCreateKeyIdentifierFromCSP(long str ptr long long ptr ptr ptr)
+@ stdcall CryptEnumKeyIdentifierProperties(ptr long long wstr ptr ptr ptr)
+@ stdcall CryptGetKeyIdentifierProperty(ptr long long wstr ptr ptr ptr)
+@ stdcall CryptInstallDefaultContext(ptr long ptr long ptr ptr)
+@ stdcall CryptProtectMemory(ptr long long)
+@ stdcall CryptSetKeyIdentifierProperty(ptr long long wstr ptr ptr)
+@ stdcall CryptSIPRetrieveSubjectGuidForCatalogFile(wstr ptr ptr)
+@ stdcall CryptUninstallDefaultContext(ptr long ptr)
+@ stdcall CryptUnprotectMemory(ptr long long)
+@ stdcall I_CertProtectFunction(long long wstr ptr long ptr ptr)
+@ stdcall I_CertSrvProtectFunction(ptr long long wstr ptr long ptr ptr ptr ptr)
+@ stdcall I_CertSyncStore(ptr ptr)
+@ stdcall I_CryptAddRefLruEntry(ptr)
+@ stdcall I_CryptAddSmartCardCertToStore(ptr ptr wstr ptr ptr)
+@ stdcall I_CryptDisableLruOfEntries(ptr)
+@ stdcall I_CryptEnableLruOfEntries(ptr ptr)
+@ stdcall I_CryptEnumMatchingLruEntries(ptr)
+@ stdcall I_CryptFindSmartCardCertInStore(ptr ptr ptr ptr)
+@ stdcall I_CryptGetFileVersion(wstr long long)
+@ stdcall I_CryptGetLruEntryData(ptr)
+@ stdcall I_CryptGetLruEntryIdentifier(ptr)
+@ stdcall I_CryptRegisterSmartCardStore(wstr wstr long wstr long)
+@ stdcall I_CryptRemoveLruEntry(ptr long ptr)
+@ stdcall I_CryptTouchLruEntry(ptr long)
+@ stdcall I_CryptUnregisterSmartCardStore(wstr)
+@ stdcall I_CryptWalkAllLruCacheEntries(ptr ptr ptr)
+@ stdcall OpenCertPerformanceData(wstr)
+@ stdcall CertFindSubjectInSortedCTL(ptr long ptr ptr)
+1001 stdcall -noname DbgInitOSS(ptr)
+1002 stdcall -noname DbgPrintf(wstr)
+;1003 stdcall -noname RegCreateKeyW(ptr wstr ptr)	advapi32.RegCreateKeyW
+;1004 stdcall -noname RegCreateKeyExW(ptr wstr long wstr long ptr ptr ptr ptr) advapi32.RegCreateKeyExW
+;1005 stdcall -noname RegOpenKeyW(ptr wstr long ptr ptr) advapi32.RegOpenKeyW
+;1006 stdcall -noname RegOpenKeyExW(ptr wstr long ptr ptr) advapi32.RegOpenKeyExW
+;1007 stdcall -noname RegCreateKeyA(ptr wstr ptr) advapi32.RegCreateKeyA	
+;1008 stdcall -noname RegCreateKeyExA(ptr str long str long ptr ptr ptr ptr) advapi32.RegCreateKeyExA
+;1009 stdcall -noname RegOpenKeyA(ptr str long ptr ptr) advapi32.RegOpenKeyA
+;1010 stdcall -noname RegOpenKeyExA(ptr str long ptr ptr) advapi32.RegOpenKeyExA
+;1011 stdcall -noname RegCloseKey(ptr) advapi32.RegCloseKey

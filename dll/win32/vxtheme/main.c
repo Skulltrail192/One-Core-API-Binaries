@@ -217,3 +217,11 @@ HRESULT WINAPI CheckThemeSignature(LPCWSTR  pszThemeFileName)
     return S_OK;
 }
 
+/***********************************************************************
+*      BufferedPaintSetAlpha                              (UXTHEME.@)
+*/
+HRESULT WINAPI BufferedPaintSetAlpha(HPAINTBUFFER hBufferedPaint, const RECT *prc, BYTE alpha)
+{
+    FIXME("Stub (%p %p %u)\n", hBufferedPaint, prc, alpha);
+	return E_NOTIMPL;
+}

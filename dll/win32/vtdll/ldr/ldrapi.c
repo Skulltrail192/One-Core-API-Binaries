@@ -117,3 +117,12 @@ LdrResolveDelayLoadsFromDll(
 	DbgPrint("UNIMPLEMENTED: LdrResolveDelayLoadsFromDll");		
 	return STATUS_SUCCESS;	
 }
+
+NTSTATUS  
+NTAPI 
+LdrRemoveDllDirectory(
+  _In_  DLL_DIRECTORY_COOKIE Cookie
+)
+{
+	return STATUS_SUCCESS;
+}

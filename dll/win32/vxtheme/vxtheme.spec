@@ -111,3 +111,4 @@
 @ stdcall FreeThemePropertyValues(ptr)
 @ stdcall FreeThemeSymbols(ptr)
 @ stdcall SetWindowThemeAttribute(long long ptr long)
+@ stdcall BufferedPaintSetAlpha(ptr ptr long)

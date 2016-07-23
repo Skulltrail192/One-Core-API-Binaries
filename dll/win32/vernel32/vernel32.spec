@@ -1082,7 +1082,7 @@
 @ stdcall BaseUpdateAppcompatCacheWorker(long long long) BaseUpdateAppcompatCache
 @ stub BaseVerifyUnicodeString
 @ stdcall BaseWriteErrorElevationRequiredEvent()
-@ stdcall CallbackMayRunLong() ntdllnew.TpCallbackMayRunLong
+@ stdcall CallbackMayRunLong() vtdll.TpCallbackMayRunLong
 @ stdcall CancelIoEx(long ptr) 
 @ stdcall CancelSynchronousIo(ptr)
 @ stdcall CancelThreadpoolIo(ptr) ntdllnew.TpCancelAsyncIoOperation
@@ -1142,10 +1142,10 @@
 @ stdcall CreateSymbolicLinkW(wstr wstr long)
 @ stdcall CreateThreadpool(ptr)
 @ stdcall CreateThreadpoolCleanupGroup() 
-@ stdcall CreateThreadpoolIo(ptr) vtdll.TpReleaseIoCompletion ;from ntdllnew CAUTION
-@ stdcall CreateThreadpoolTimer(ptr ptr ptr) ;from ntdllnew CAUTION
-@ stdcall CreateThreadpoolWait(ptr ptr ptr)  ;from ntdllnew CAUTION
-@ stdcall CreateThreadpoolWork(ptr ptr ptr) ;from ntdllnew CAUTION
+@ stdcall CreateThreadpoolIo(ptr) vtdll.TpReleaseIoCompletion
+@ stdcall CreateThreadpoolTimer(ptr ptr ptr) vtdll.TpReleaseTimer
+@ stdcall CreateThreadpoolWait(ptr ptr ptr)  vtdll.TpReleaseWait
+@ stdcall CreateThreadpoolWork(ptr ptr ptr) vtdll.TpReleaseWork
 @ stdcall CreateWaitableTimerExA(ptr str ptr long)
 @ stdcall CreateWaitableTimerExW(ptr wstr ptr long)
 @ stdcall DeactivateActCtxWorker(long ptr) DeactivateActCtx
@@ -1153,7 +1153,7 @@
 @ stdcall DeleteFileTransactedA(str ptr)
 @ stdcall DeleteFileTransactedW(wstr ptr)
 @ stdcall DeleteProcThreadAttributeList(ptr)
-@ stdcall DisassociateCurrentThreadFromCallback(ptr) ntdllnew.TpDisassociateCallback
+@ stdcall DisassociateCurrentThreadFromCallback(ptr) vtdll.TpDisassociateCallback
 @ stdcall EnableThreadProfiling(ptr long int64 ptr)
 @ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long ptr)
 @ stdcall EnumDateFormatsExEx(ptr wstr long)
@@ -1177,7 +1177,7 @@
 @ stdcall FindNLSStringEx(wstr long wstr long wstr long ptr ptr ptr ptr)
 @ stdcall FindStringOrdinal(long wstr long wstr long long)
 @ stdcall FlushProcessWriteBuffers()
-@ stdcall FreeLibraryWhenCallbackReturns(ptr ptr) ntdllnew.TpCallbackUnloadDllOnCompletion
+@ stdcall FreeLibraryWhenCallbackReturns(ptr ptr) vtdll.TpCallbackUnloadDllOnCompletion
 @ stdcall GetActiveProcessorCount(long)
 @ stdcall GetActiveProcessorGroupCount()
 @ stdcall GetApplicationRestart(ptr ptr ptr ptr)
@@ -1204,7 +1204,7 @@
 @ stdcall GetCurrentActCtxWorker(ptr) GetCurrentActCtx
 @ stdcall GetCurrencyFormatEx(wstr long wstr ptr wstr long) 
 @ stdcall GetCurrentConsoleFontEx(ptr long ptr) 
-@ stdcall GetCurrentProcessorNumberEx(ptr) ntdllnew.RtlGetCurrentProcessorNumberEx
+@ stdcall GetCurrentProcessorNumberEx(ptr) vtdll.RtlGetCurrentProcessorNumberEx
 @ stdcall GetCurrentProcessW() GetCurrentProcess
 @ stdcall GetCurrentTransaction()
 @ stdcall GetCurrentThreadStackLimits(ptr ptr)
@@ -1307,7 +1307,7 @@
 @ stdcall InitOnceInitialize(ptr)
 @ stdcall InterlockedPushListSList(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
 @ stdcall InterlockedPushListSListEx(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
-@ stdcall IsThreadpoolTimerSet(ptr) ntdllnew.TpIsTimerSet
+@ stdcall IsThreadpoolTimerSet(ptr) vtdll.TpIsTimerSet
 @ stdcall IntToULong(long ptr)
 @ stdcall IsCalendarLeapDay(long long long long long) 
 @ stdcall IsCalendarLeapYear(long long long)
@@ -1350,7 +1350,7 @@
 @ stdcall LCIDFromLocaleNameA(long ptr long long) LCIDToLocaleName
 @ stdcall LCIDFromLocaleNameW(long ptr long long) LCIDToLocaleName
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
-@ stdcall LeaveCriticalSectionWhenCallbackReturns(ptr ptr) ;ntdllnew.TpCallbackLeaveCriticalSectionOnCompletion
+@ stdcall LeaveCriticalSectionWhenCallbackReturns(ptr ptr) vtdll.TpCallbackLeaveCriticalSectionOnCompletion
 @ stdcall LoadAppInitDlls()
 @ stdcall LoadPackagedLibrary(wstr long)
 @ stdcall LoadStringA(ptr long ptr long)
@@ -1403,14 +1403,14 @@
 @ stdcall RegisterApplicationRestart(wstr long)
 @ stdcall RegisterBadMemoryNotification(ptr)
 @ stdcall ReleaseActCtxWorker(ptr) ReleaseActCtx
-@ stdcall ReleaseMutexWhenCallbackReturns(ptr ptr) ntdllnew.TpCallbackReleaseMutexOnCompletion
-@ stdcall ReleaseSemaphoreWhenCallbackReturns(ptr ptr long) ntdllnew.TpCallbackReleaseSemaphoreOnCompletion
+@ stdcall ReleaseMutexWhenCallbackReturns(ptr ptr) vtdll.TpCallbackReleaseMutexOnCompletion
+@ stdcall ReleaseSemaphoreWhenCallbackReturns(ptr ptr long) vtdll.TpCallbackReleaseSemaphoreOnCompletion
 @ stdcall ReleaseSRWLockExclusive(ptr) vtdll.RtlReleaseSRWLockExclusive
 @ stdcall ReleaseSRWLockShared(ptr) vtdll.RtlReleaseSRWLockShared
 @ stdcall ReplacePartitionUnit(wstr wstr long)
 @ stdcall RemoveDirectoryTransactedA(str ptr)
 @ stdcall RemoveDirectoryTransactedW(wstr ptr)
-@ stdcall RemoveDllDirectory(ptr) ntdllnew.LdrRemoveDllDirectory
+@ stdcall RemoveDllDirectory(ptr) vtdll.LdrRemoveDllDirectory
 @ stdcall RemoveSecureMemoryCacheCallback(ptr)
 @ stdcall ResolveDelayLoadedAPI(ptr ptr ptr ptr ptr long)
 @ stdcall ResolveDelayLoadsFromDll(ptr str long)
@@ -1423,7 +1423,7 @@
 @ stdcall SetDefaultDllDirectories(long)
 @ stdcall SetDynamicTimeZoneInformation(ptr)
 @ stdcall SetEndOfFileEx(ptr ptr)
-@ stdcall SetEventWhenCallbackReturns(ptr ptr) ntdllnew.TpCallbackSetEventOnCompletion
+@ stdcall SetEventWhenCallbackReturns(ptr ptr) vtdll.TpCallbackSetEventOnCompletion
 @ stdcall SetFileAttributesByHandle(ptr long long)
 @ stdcall SetFileAttributesTransactedA(str long ptr)
 @ stdcall SetFileAttributesTransactedW(wstr long ptr)
@@ -1446,12 +1446,12 @@
 @ stdcall SetThreadIdealProcessorEx(ptr ptr ptr)
 @ stdcall SetThreadInformation(ptr long ptr long)
 @ stdcall SetThreadpoolStackInformation(ptr ptr) 
-@ stdcall SetThreadpoolThreadMaximum(ptr long) ntdllnew.TpSetPoolMaxThreads
+@ stdcall SetThreadpoolThreadMaximum(ptr long) vtdll.TpSetPoolMaxThreads
 @ stdcall SetThreadpoolThreadMinimum(ptr long) 
 @ stdcall SetThreadpoolTimer(ptr ptr long long) vtdll.TpSetTimer
-@ stdcall SetThreadpoolTimerEx(ptr ptr long long) ntdllnew.TpSetTimerEx
-@ stdcall SetThreadpoolWait(ptr ptr ptr) ntdllnew.TpSetWait
-@ stdcall SetThreadpoolWaitEx(ptr ptr ptr) ntdllnew.TpSetWaitEx
+@ stdcall SetThreadpoolTimerEx(ptr ptr long long) vtdll.TpSetTimerEx
+@ stdcall SetThreadpoolWait(ptr ptr ptr) vtdll.TpSetWait
+@ stdcall SetThreadpoolWaitEx(ptr ptr ptr) vtdll.TpSetWaitEx
 @ stdcall SetThreadPreferredUILanguages(long wstr ptr)
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
 @ stdcall SetXStateFeaturesMask(ptr int64)
@@ -1460,8 +1460,8 @@
 @ stdcall SleepConditionVariableSRW(ptr ptr long long)
 @ stdcall SortCloseHandle(ptr)
 @ stub SortGetHandle
-@ stdcall StartThreadpoolIo(ptr) ntdllnew.TpStartAsyncIoOperation
-@ stdcall SubmitThreadpoolWork(ptr) ntdllnew.TpPostWork
+@ stdcall StartThreadpoolIo(ptr) vtdll.TpStartAsyncIoOperation
+@ stdcall SubmitThreadpoolWork(ptr) vtdll.TpPostWork
 @ stdcall SystemTimeToTzSpecificLocalTimeEx(ptr ptr ptr)
 @ stdcall SystemTimeToTzSpecificLocalTimeEx(ptr ptr ptr)
 @ stdcall timeBeginPeriod(long)
@@ -1470,7 +1470,7 @@
 @ stdcall timeGetSystemTime(ptr long)
 @ stdcall timeGetTime()
 @ stdcall TryAcquireSRWLockExclusive(ptr) vtdll.RtlTryAcquireSRWLockExclusive
-@ stdcall TryAcquireSRWLockShared(ptr) ntdllnew.RtlTryAcquireSRWLockShared
+@ stdcall TryAcquireSRWLockShared(ptr) vtdll.RtlTryAcquireSRWLockShared
 @ stdcall TrySubmitThreadpoolCallback(ptr ptr ptr) 
 @ stdcall TzSpecificLocalTimeToSystemTimeEx(ptr ptr ptr)
 @ stdcall UnmapViewOfFileEx(ptr long)
@@ -1481,10 +1481,10 @@
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
 @ stdcall VerifyScripts(long wstr long wstr long) idndl.DownlevelVerifyScripts
 @ stdcall VirtualAllocExNuma(ptr ptr long long long long)
-@ stdcall WaitForThreadpoolIoCallbacks(ptr long) ntdllnew.TpWaitForIoCompletion
-@ stdcall WaitForThreadpoolTimerCallbacks(ptr long) ntdllnew.TpWaitForTimer
-@ stdcall WaitForThreadpoolWaitCallbacks(ptr long) ;ntdllnew.TpWaitForWait
-@ stdcall WaitForThreadpoolWorkCallbacks(ptr long) ntdllnew.TpWaitForWork
+@ stdcall WaitForThreadpoolIoCallbacks(ptr long) vtdll.TpWaitForIoCompletion
+@ stdcall WaitForThreadpoolTimerCallbacks(ptr long) vtdll.TpWaitForTimer
+@ stdcall WaitForThreadpoolWaitCallbacks(ptr long) vtdll.TpWaitForWait
+@ stdcall WaitForThreadpoolWorkCallbacks(ptr long) vtdll.TpWaitForWork
 @ stdcall WakeAllConditionVariable(ptr) vtdll.RtlWakeAllConditionVariable ;error on K-Lite
 @ stdcall WakeConditionVariable(ptr) vtdll.RtlWakeConditionVariable ;commented for now ;error on K-Lite
 @ stdcall WerGetFlags(ptr ptr)

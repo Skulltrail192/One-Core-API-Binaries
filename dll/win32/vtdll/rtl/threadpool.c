@@ -2974,6 +2974,18 @@ VOID WINAPI TpSetWait( TP_WAIT *wait, HANDLE handle, LARGE_INTEGER *timeout )
         tp_object_submit( this, FALSE );
 }
 
+VOID 
+NTAPI 
+TpSetWaitEx(
+	PTP_WAIT pwa, 
+	HANDLE handle, 
+	PFILETIME pftTimeout, 
+	PVOID Reserved 
+) 	
+{
+	TpSetWait(pwa, handle, pftTimeout);
+}
+
 /***********************************************************************
  *           TpSimpleTryPost    (NTDLL.@)
  */
@@ -3074,5 +3086,26 @@ TpReleaseIoCompletion(
 	__inout PTP_IO Io
 )
 {
+	DbgPrint("UNIMPLEMENTED: TpReleaseIoCompletion");		
 	;
 }
+
+VOID 
+NTAPI 
+TpWaitForIoCompletion (
+	__inout PTP_IO Io, 
+	__in LOGICAL CancelPendingCallbacks)
+{
+	DbgPrint("UNIMPLEMENTED: TpWaitForIoCompletion");		
+	;
+}
+
+VOID 
+NTAPI 	
+TpStartAsyncIoOperation(
+	__inout PTP_IO Io
+)
+{
+	DbgPrint("UNIMPLEMENTED: TpStartAsyncIoOperation");	
+	;
+} 
