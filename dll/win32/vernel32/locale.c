@@ -1271,7 +1271,7 @@ GetFileMUIPath(
   }
   TRACE("%d\n",resp);
   return resp;*/
-  return TRUE;
+  return FALSE;
 }
 
 //NEED TEST!!! - USE FUNCTION FROM NTDLLNEW
@@ -1293,7 +1293,7 @@ BOOL WINAPI GetUILanguageInfo(DWORD dwFlags, PCZZWSTR pwmszLanguage, PZZWSTR pws
   }
   else
   {
-    if ( status == 0xC00000BB )
+    if ( status == STATUS_NOT_SUPPORTED )
       flags = 13;
     else
       flags = RtlNtStatusToDosError(status);
@@ -1304,7 +1304,9 @@ BOOL WINAPI GetUILanguageInfo(DWORD dwFlags, PCZZWSTR pwmszLanguage, PZZWSTR pws
 }
 
 //Need Test
-BOOL WINAPI EnumCalendarInfoExEx(
+BOOL 
+WINAPI 
+EnumCalendarInfoExEx(
   _In_      CALINFO_ENUMPROCEXEX pCalInfoEnumProcExEx,
   _In_opt_  LPCWSTR lpLocaleName,
   _In_      CALID Calendar,
@@ -1353,14 +1355,16 @@ BOOL WINAPI EnumDateFormatsExEx(
 	return EnumDateFormatsEx((DATEFMT_ENUMPROCEX)lpDateFmtEnumProcExEx, lcid, dwFlags);
 }
 
-BOOL WINAPI GetUserPreferredUILanguages(DWORD dwFlags, PULONG pulNumLanguages, PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer)
+BOOL 
+WINAPI 
+GetUserPreferredUILanguages(DWORD dwFlags, PULONG pulNumLanguages, PZZWSTR pwszLanguagesBuffer, PULONG pcchLanguagesBuffer)
 {
   NTSTATUS status; // eax@2
   DWORD error; // eax@6
 
   if ( dwFlags & 0xFFFFFFF1 )
   {
-    status = 0xC000000Du;
+    status = STATUS_INVALID_PARAMETER;
   }
   else
   {

@@ -33,21 +33,22 @@ int WINAPI WerpCurrentPeb()
   #endif
 }
 
-HRESULT WINAPI IntToULong(INT iOperand, ULONG *pulResult)
+__inline
+HRESULT
+IntToULong(
+    __in INT iOperand,
+    __out ULONG* pulResult)
 {
-  HRESULT result; // eax@2
+    HRESULT hr = INTSAFE_E_ARITHMETIC_OVERFLOW;
+    *pulResult = ULONG_ERROR;
 
-  if ( iOperand < 0 )
-  {
-    *pulResult = -1;
-    result = 0x80070216u;
-  }
-  else
-  {
-    *pulResult = iOperand;
-    result = 0;
-  }
-  return result;
+    if (iOperand >= 0)
+    {
+        *pulResult = (ULONG)iOperand;
+        hr = S_OK;
+    }
+
+    return hr;
 }
 
 int WINAPI CreateSocketHandle()
@@ -166,12 +167,16 @@ LABEL_5:
   return verify;
 }
 
-BOOL WINAPI GetQueuedCompletionStatusEx(HANDLE CompletionPort, 
-										LPOVERLAPPED_ENTRY lpCompletionPortEntries, 
-										ULONG ulCount, 
-										PULONG ulNumEntriesRemoved,
-										DWORD dwMilliseconds, 
-										BOOL fAlertable)
+BOOL 
+WINAPI 
+GetQueuedCompletionStatusEx(
+	HANDLE CompletionPort, 
+	LPOVERLAPPED_ENTRY lpCompletionPortEntries, 
+	ULONG ulCount, 
+	PULONG ulNumEntriesRemoved,
+	DWORD dwMilliseconds, 
+	BOOL fAlertable
+)
 {
   BOOLEAN allert; // eax@5
   LARGE_INTEGER * receive; // esi@5
@@ -193,14 +198,12 @@ BOOL WINAPI GetQueuedCompletionStatusEx(HANDLE CompletionPort,
       allert = (BOOLEAN)RtlActivateActivationContextUnsafeFast(Frame, 0);
     ms_exc.registration.TryLevel = 0;
     allert = fAlertable != 0;
-    /*result = NtRemoveIoCompletionEx(
+    result = NtRemoveIoCompletion(
                CompletionPort,
 			   information,
                ulCount,
                (PVOID)ulNumEntriesRemoved,
-               receive,
-               allert);*/
-	result = 0x00000000;
+               receive);
     ms_exc.registration.TryLevel = -2;
     if ( fAlertable )
       result =  (BOOL)RtlDeactivateActivationContextUnsafeFast(Frame);
@@ -213,7 +216,9 @@ BOOL WINAPI GetQueuedCompletionStatusEx(HANDLE CompletionPort,
   return result;
 }
 
-BOOL WINAPI ReplacePartitionUnit(PCWSTR TargetString, PCWSTR SourceString, ULONG unit)
+BOOL 
+WINAPI 
+ReplacePartitionUnit(PCWSTR TargetString, PCWSTR SourceString, ULONG unit)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -225,17 +230,28 @@ BOOL WINAPI ReplacePartitionUnit(PCWSTR TargetString, PCWSTR SourceString, ULONG
   status = NtReplacePartitionUnit(&string, &DestinationString, unit);
   if ( status >= 0 )
   {
-    result = 1;
+    result = TRUE;
   }
   else
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   return result;
 }
 
-BOOL WINAPI GetVolumeInformationByHandleW(HANDLE FileHandle, LPWSTR lpVolumeNameBuffer, DWORD nVolumeNameSize, LPDWORD lpVolumeSerialNumber, LPDWORD lpMaximumComponentLength, LPDWORD lpFileSystemFlags, LPWSTR lpFileSystemNameBuffer, DWORD nFileSystemNameSize)
+BOOL 
+WINAPI 
+GetVolumeInformationByHandleW(
+	HANDLE FileHandle, 
+	LPWSTR lpVolumeNameBuffer, 
+	DWORD nVolumeNameSize, 
+	LPDWORD lpVolumeSerialNumber, 
+	LPDWORD lpMaximumComponentLength, 
+	LPDWORD lpFileSystemFlags, 
+	LPWSTR lpFileSystemNameBuffer, 
+	DWORD nFileSystemNameSize
+)
 {
   PVOID eigth; // ebx@1
   DWORD nine; // eax@1
@@ -293,7 +309,7 @@ ALLOC_HEAP:
     if ( evelen )
 		RtlFreeHeap(RtlGetProcessHeap(), 0, evelen);   
 GLOBAL_ERROR:
-    BaseSetLastNTError(0xC0000017u);
+    BaseSetLastNTError(STATUS_NO_MEMORY);
     return 0;
   }
   tweleve = 0;
@@ -436,12 +452,12 @@ HMODULE WINAPI LoadPackagedLibrary(LPCWSTR lpLibFileName, DWORD Reserved)
 
   if ( Reserved )
   {
-    BaseSetLastNTError(0xC000000Du);
+    BaseSetLastNTError(STATUS_INVALID_PARAMETER);
     return 0;
   }
   if ( RtlDetermineDosPathNameType_U((PWSTR)lpLibFileName) != 5 )
   {
-    BaseSetLastNTError(0xC000000Du);
+    BaseSetLastNTError(STATUS_INVALID_PARAMETER);
     return 0;
   }
   libName = *lpLibFileName;
@@ -484,8 +500,8 @@ LOAD_LIBRARY_EX:
       return LoadLibraryExW(lpLibFileName, 0, 4u);
     goto CALCULE;
   }
-  BaseSetLastNTError(0xC000000Du);
-  return 0;
+  BaseSetLastNTError(STATUS_INVALID_PARAMETER);
+  return NULL;
 }
 
 BOOL  
@@ -569,7 +585,7 @@ BOOLEAN WINAPI NotifyMountMgr(PWSTR BytesReturned, PCWSTR SourceString, BOOL ver
       memcpy(localSource, DestinationString.Buffer, (size_t)localSource->Buffer);
       localSource->MaximumLength  = 63; 
 	  localSource->Buffer = (PWSTR)63;
-      localHandle = CreateFileW(L"\\\\.\\MountPointManager", 0xC0000000u, 3u, 0, 3u, 0x80u, (HANDLE)0xFFFFFFFF);
+      localHandle = CreateFileW(L"\\\\.\\MountPointManager", STATUS_INVALID_PARAMETER, 3u, 0, 3u, 0x80u, (HANDLE)0xFFFFFFFF);
       if ( localHandle != (HANDLE)-1 )
       {
         DeviceIoControl(
