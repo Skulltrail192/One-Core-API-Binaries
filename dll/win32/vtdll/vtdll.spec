@@ -1510,6 +1510,7 @@
 @ stdcall LdrLoadAlternateResourceModuleEx(long ptr ptr)
 @ stdcall NtUnmapViewOfSectionEx(ptr ptr long)
 @ stdcall RtlLCIDToCultureName(long wstr) ;this functions already have implementation
+@ stdcall RtlLcidToLocaleName(long ptr long long)
 @ stdcall RtlpQueryDefaultUILanguage(long long)
 @ stdcall RtlpSetDefaultUILanguage(long)
 @ stdcall RtlGetCurrentTransaction()

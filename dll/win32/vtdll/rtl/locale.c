@@ -186,6 +186,29 @@ RtlLCIDToCultureName(
 }
 
 NTSTATUS 
+NTAPI 	
+RtlLcidToLocaleName(
+	_In_ LCID lcid, 
+	_Inout_ PUNICODE_STRING LocaleName, 
+	_In_ ULONG Flags, 
+	_In_ BOOLEAN AllocateDestinationString
+)
+{
+	int i;
+	InitTable();
+	
+	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
+	{
+		if(lcid == LocaleList[i].lcidHex)
+		{
+			RtlInitUnicodeString(LocaleName, LocaleList[i].cultureName);
+			return STATUS_SUCCESS;
+		}
+	}	
+	return STATUS_UNSUCCESSFUL;
+}
+
+NTSTATUS 
 NTAPI 
 RtlpQueryDefaultUILanguage(
 	LANGID langid, 
