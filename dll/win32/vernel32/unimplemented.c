@@ -54,7 +54,7 @@ GetApplicationRecoveryCallback(IN HANDLE hProcess,
                                PDWORD dwFlags)
 {
     UNIMPLEMENTED;
-    return E_FAIL;
+    return S_OK;
 }
 
 
@@ -69,7 +69,7 @@ GetApplicationRestart(IN HANDLE hProcess,
                       OUT PDWORD pdwFlags  OPTIONAL)
 {
     UNIMPLEMENTED;
-    return E_FAIL;
+    return S_OK;
 }
 
 /*
@@ -77,7 +77,9 @@ GetApplicationRestart(IN HANDLE hProcess,
 */
 VOID
 WINAPI
-RecoveryFinished(IN BOOL bSuccess)
+RecoveryFinished(
+	IN BOOL bSuccess
+)
 {
     UNIMPLEMENTED;
 }
@@ -91,7 +93,8 @@ WINAPI
 RecoveryInProgress(OUT PBOOL pbCancelled)
 {
     UNIMPLEMENTED;
-    return E_FAIL;
+	*pbCancelled = TRUE;
+    return S_OK;
 }
 
 /*
@@ -99,13 +102,15 @@ RecoveryInProgress(OUT PBOOL pbCancelled)
 */
 HRESULT
 WINAPI
-RegisterApplicationRecoveryCallback(IN APPLICATION_RECOVERY_CALLBACK pRecoveyCallback,
-                                    IN PVOID pvParameter  OPTIONAL,
-                                    DWORD dwPingInterval,
-                                    DWORD dwFlags)
+RegisterApplicationRecoveryCallback(
+	IN APPLICATION_RECOVERY_CALLBACK pRecoveyCallback,
+    IN PVOID pvParameter  OPTIONAL,
+    DWORD dwPingInterval,
+    DWORD dwFlags
+)
 {
     UNIMPLEMENTED;
-    return E_FAIL;
+    return S_OK;
 }
 
 
@@ -114,11 +119,13 @@ RegisterApplicationRecoveryCallback(IN APPLICATION_RECOVERY_CALLBACK pRecoveyCal
  */
 HRESULT
 WINAPI
-RegisterApplicationRestart(IN PCWSTR pwzCommandline  OPTIONAL,
-                           IN DWORD dwFlags)
+RegisterApplicationRestart(
+	IN PCWSTR pwzCommandline  OPTIONAL,
+    IN DWORD dwFlags
+)
 {
     UNIMPLEMENTED;
-    return E_FAIL;
+    return S_OK;
 }
 
 /*
@@ -138,7 +145,9 @@ int WINAPI GetLocaleNullStringFromArrayInPool(int a1, int a2, int a3)
 /*
  * @unimplemented
 */
-HRESULT WINAPI GetApplicationRestartSettings(
+HRESULT 
+WINAPI 
+GetApplicationRestartSettings(
   _In_       HANDLE hProcess,
   _Out_opt_  PWSTR pwzCommandline,
   _Inout_    PDWORD pcchSize,
@@ -148,19 +157,23 @@ HRESULT WINAPI GetApplicationRestartSettings(
 	return S_OK;
 }
 
-VOID WINAPI RaiseFailFastException(
+VOID 
+WINAPI 
+RaiseFailFastException(
   _In_opt_  PEXCEPTION_RECORD pExceptionRecord,
   _In_opt_  PCONTEXT pContextRecord,
   _In_      DWORD dwFlags
 )
 {
-	;
+	RaiseException(pExceptionRecord->ExceptionCode, pExceptionRecord->ExceptionFlags, pExceptionRecord->NumberParameters, &pExceptionRecord->ExceptionInformation[0]);
 }
 
 /*
  * @unimplemented
 */
-VOID WINAPI ApplicationRecoveryFinished(
+VOID 
+WINAPI 
+ApplicationRecoveryFinished(
   _In_  BOOL bSuccess
 )
 {

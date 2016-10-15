@@ -32,6 +32,7 @@ list(APPEND SOURCE
 	rtl/cnvint.c
 	rtl/context.c
 	rtl/critical.c
+	rtl/environ.c
 	rtl/error.c
 	rtl/extfeatures.c
 	rtl/exception.c

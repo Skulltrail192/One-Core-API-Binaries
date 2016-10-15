@@ -1026,3 +1026,13 @@
 @ stdcall BaseThreadStartThunk(ptr ptr) 
 @ stdcall CtrlRoutine(long)
 @ stdcall ConsoleIMERoutine()
+
+#Only for Longhorn 5048
+@ stub BeginUpdateResourceExA
+@ stub BeginUpdateResourceExW
+@ stub EndUpdateResourceExA
+@ stub EndUpdateResourceExW
+@ stub InitializeCriticalSectionAndSpinCountEx
+@ stub UpdateResourceExA
+@ stub UpdateResourceExW
+@ stub SubmitThreadpoolCallback

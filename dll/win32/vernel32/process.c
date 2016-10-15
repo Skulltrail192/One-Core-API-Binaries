@@ -476,3 +476,442 @@ CreateProcessInternalWSecure()
 {
   ;
 }
+
+BOOL
+WINAPI
+GetProcessWorkingSetSizeEx(
+    HANDLE hProcess,
+    PSIZE_T lpMinimumWorkingSetSize,
+    PSIZE_T lpMaximumWorkingSetSize,
+    LPDWORD Flags
+    )
+
+/*++
+
+Routine Description:
+
+    This function allows the caller to determine the minimum and maximum working
+    set sizes of the specified process. The working set sizes effect the virtual
+    memory paging behavior for the process.
+
+Arguments:
+
+    hProcess - Supplies an open handle to the specified process.  The
+        handle must have been created with PROCESS_QUERY_INFORMATION
+        access.
+
+    lpMinimumWorkingSetSize - Supplies the address of the variable that
+        will receive the minimum working set size of the specified
+        process.  The virtual memory manager will attempt to keep at
+        least this much memory resident in the process whenever the
+        process is active.
+
+
+    lpMaximumWorkingSetSize - Supplies the address of the variable that
+        will receive the maximum working set size of the specified
+        process.  In tight memory situations, the virtual memory manager
+        will attempt to keep at no more than this much memory resident
+        in the process whenever the process is active.
+
+    Flags - Output flags, QUOTA_LIMITS_HARDWS_ENABLE enables hard WS
+                          QUOTA_LIMITS_HARDWS_DISABLE disabled hard WS
+
+Return Value:
+
+    TRUE - The API was successful
+
+    FALSE - The operation failed.  Extended error status is available
+        using GetLastError.
+
+--*/
+
+{
+    QUOTA_LIMITS_EX QuotaLimits;
+    NTSTATUS Status;
+    BOOL rv;
+
+    Status = NtQueryInformationProcess (hProcess,
+                                        ProcessQuotaLimits,
+                                        &QuotaLimits,
+                                        sizeof (QuotaLimits),
+                                        NULL);
+
+    if (NT_SUCCESS (Status)) {
+        *lpMinimumWorkingSetSize = QuotaLimits.MinimumWorkingSetSize;
+        *lpMaximumWorkingSetSize = QuotaLimits.MaximumWorkingSetSize;
+        *Flags = QuotaLimits.Flags;
+        rv = TRUE;
+    } else {
+        rv = FALSE;
+        BaseSetLastNTError (Status);
+    }
+    return rv;
+}
+
+BOOL
+BasepIsCurDirAllowedForPlainExeNames(
+    VOID
+    )
+
+/*++
+
+Routine Description:
+
+    This function determines whether or not the current directory
+    should be used as part of the process of locating an executable
+    whose name contains no directory components.
+
+Arguments:
+
+    None.
+
+Return Value:
+
+    TRUE - The current directory should be a part of the path used to
+           search for executables whose names contain no directory
+           components.
+
+    FALSE - The current directory should NOT be a part of the path
+            used to search for executables whose names contain no
+            directory components.
+
+--*/
+
+{
+    NTSTATUS Status;
+
+    static const UNICODE_STRING Name =
+        RTL_CONSTANT_STRING(L"NoDefaultCurrentDirectoryInExePath");
+
+    UNICODE_STRING Value;
+
+    RtlInitEmptyUnicodeString(&Value, NULL, 0);
+
+    Status = RtlQueryEnvironmentVariable_U(NULL, &Name, &Value);
+
+    if (Status == STATUS_BUFFER_TOO_SMALL || Status == STATUS_SUCCESS) {
+        return FALSE;
+    } else {
+        return TRUE;
+    }
+}
+
+BOOL
+WINAPI
+NeedCurrentDirectoryForExePathA(
+    IN LPCSTR ExeName
+    )
+
+/*++
+
+Routine Description:
+
+    This function determines whether or not the current directory
+    should be used as part of the process of locating an executable.
+
+Arguments:
+
+    ExeName - The name of the exe which will be looked for.
+
+Return Value:
+
+    TRUE - The current directory should be a part of the path used to
+           search for executables.
+
+    FALSE - The current directory should NOT be a part of the path
+            used to search for executables.
+
+--*/
+
+{
+    // N.B. Changes here should be reflected in the Unicode version as well.
+
+    if (strchr(ExeName, '\\')) { // if it contains a '\'
+        return TRUE;             // allow the current directory
+    }
+
+    // Otherwise, either it doesn't matter, or we want to optionally restrict it.
+
+    return BasepIsCurDirAllowedForPlainExeNames();
+}
+
+BOOL
+WINAPI
+NeedCurrentDirectoryForExePathW(
+    IN LPCWSTR ExeName
+    )
+
+/*++
+
+Routine Description:
+
+    This function determines whether or not the current directory
+    should be used as part of the process of locating an executable.
+
+Arguments:
+
+    ExeName - The name of the exe which will be looked for.
+
+Return Value:
+
+    TRUE - The current directory should be a part of the path used to
+           search for executables.
+
+    FALSE - The current directory should NOT be a part of the path
+            used to search for executables.
+
+--*/
+
+{
+    // N.B. Changes here should be reflected in the ANSI version as well.
+    
+    if (wcschr(ExeName, L'\\')) { // if it contains a '\'
+        return TRUE;              // allow the current directory
+    }
+
+    // Otherwise, either it doesn't matter, or we want to optionally restrict it.
+
+    return BasepIsCurDirAllowedForPlainExeNames();
+}
+
+BOOL
+WINAPI
+SetEnvironmentStringsA(
+    LPSTR NewEnvironment
+    )
+/*++
+
+Routine Description:
+
+    This function sets the environment block of the current process
+
+Arguments:
+
+    NewEnvironment - Zero terminated strings terminated by an extra termination
+
+Return Value:
+
+    TRUE - The function suceeded, FALSE - The function failed and GetLastError() gives the error
+
+--*/
+{
+    PSTR           Temp;
+    OEM_STRING     Buffer;
+    UNICODE_STRING Unicode;
+    SIZE_T         Len;
+    NTSTATUS       Status;
+
+    Temp = NewEnvironment;
+ 
+    while (1) {
+        Len = strlen (Temp);
+        if (Len == 0 || strchr (Temp+1, '=') == NULL) {
+            BaseSetLastNTError (STATUS_INVALID_PARAMETER);
+            return FALSE;
+        }
+        Temp += Len + 1;
+        if (*Temp == '\0') {
+            Temp++;
+            break;
+        }
+    }
+
+    //
+    // Calculate total size of buffer needed to hold the block
+    //
+
+    Len = Temp - NewEnvironment;
+
+    if (Len > UNICODE_STRING_MAX_CHARS) {
+        BaseSetLastNTError (STATUS_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    Buffer.Length = (USHORT) Len;
+    Buffer.Buffer = NewEnvironment;
+
+
+    Status = RtlOemStringToUnicodeString (&Unicode, &Buffer, TRUE);
+    if (!NT_SUCCESS (Status)) {
+        BaseSetLastNTError (STATUS_INVALID_PARAMETER);
+        return FALSE;
+    }
+    Status = RtlSetEnvironmentStrings (Unicode.Buffer, Unicode.Length);
+
+    RtlFreeUnicodeString (&Unicode);
+
+    if (!NT_SUCCESS (Status)) {
+        BaseSetLastNTError (STATUS_INVALID_PARAMETER);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+BOOL
+WINAPI
+SetEnvironmentStringsW(
+    LPWSTR NewEnvironment
+    )
+/*++
+
+Routine Description:
+
+    This function sets the environment block of the current process
+
+Arguments:
+
+    NewEnvironment - Zero terminated strings terminated by an extra termination
+
+Return Value:
+
+    TRUE - The function suceeded, FALSE - The function failed and GetLastError() gives the error
+
+--*/
+{
+    SIZE_T   Len;
+    PWSTR    Temp, p;
+    NTSTATUS Status;
+
+    Temp = NewEnvironment;
+ 
+    while (1) {
+        Len = wcslen (Temp);
+
+        //
+        // Reject zero length strings
+        //
+        if (Len == 0) {
+            BaseSetLastNTError (STATUS_INVALID_PARAMETER);
+            return FALSE;
+        }
+
+        //
+        // Reject strings without '=' in the name or if the first part of the string is too big.
+        //
+        p = wcschr (Temp+1, '=');
+        if (p == NULL || (p - Temp) > UNICODE_STRING_MAX_CHARS || Len - (p - Temp) - 1 > UNICODE_STRING_MAX_CHARS) {
+            BaseSetLastNTError (STATUS_INVALID_PARAMETER);
+            return FALSE;
+        }
+        Temp += Len + 1;
+        if (*Temp == L'\0') {
+            Temp++;
+            break;
+        }
+    }
+
+    //
+    // Calculate total size of buffer needed to hold the block
+    //
+
+    Len = (PUCHAR)Temp - (PUCHAR)NewEnvironment;
+
+    Status = RtlSetEnvironmentStrings (NewEnvironment, Len);
+    if (!NT_SUCCESS (Status)) {
+        BaseSetLastNTError (STATUS_INVALID_PARAMETER);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+BOOL
+WINAPI
+SetProcessWorkingSetSizeEx(
+    HANDLE hProcess,
+    SIZE_T dwMinimumWorkingSetSize,
+    SIZE_T dwMaximumWorkingSetSize,
+    ULONG  Flags
+    )
+
+/*++
+
+Routine Description:
+
+    This function allows the caller to set the minimum and maximum
+    working set sizes of the specified process.  The working set sizes
+    effect the virtual memory paging behavior for the process.  The
+    specified process's working set be emptied (essentially swapping out
+    the process) by specifying the distinguished values 0xffffffff for
+    both the minimum and maximum working set sizes.
+
+    If you are not trimming an address space, SE_INC_BASE_PRIORITY_PRIVILEGE
+    must be held by the process
+
+Arguments:
+
+    hProcess - Supplies an open handle to the specified process.  The
+        handle must have been created with PROCESS_SET_QUOTA
+        access.
+
+    dwMinimumWorkingSetSize - Supplies the minimum working set size for
+        the specified process.  The virtual memory manager will attempt
+        to keep at least this much memory resident in the process
+        whenever the process is active.  A value of (SIZE_T)-1 and the
+        same value in dwMaximumWorkingSetSize will temporarily trim the
+        working set of the specified process (essentially out swap the
+        process).
+
+
+    dwMaximumWorkingSetSize - Supplies the maximum working set size for
+        the specified process.  In tight memory situations, the virtual
+        memory manager will attempt to keep at no more than this much
+        memory resident in the process whenever the process is active.
+        A value of (SIZE_T)-1 and the same value in
+        dwMinimumWorkingSetSize will temporarily trim the working set of
+        the specified process (essentially out swap the process).
+
+    Flags - Supplied flags, QUOTA_LIMITS_HARDWS_ENABLE enables hard WS
+                            QUOTA_LIMITS_HARDWS_DISABLE disabled hard ws
+
+Return Value:
+
+    TRUE - The API was successful
+
+    FALSE - The operation failed.  Extended error status is available
+        using GetLastError.
+
+--*/
+
+{
+    QUOTA_LIMITS_EX QuotaLimits={0};
+    NTSTATUS Status, PrivStatus;
+    BOOL rv;
+
+#ifdef _WIN64
+    ASSERT(dwMinimumWorkingSetSize != 0xffffffff && dwMaximumWorkingSetSize != 0xffffffff);
+#endif
+
+    if (dwMinimumWorkingSetSize == 0 || dwMaximumWorkingSetSize == 0) {
+        Status = STATUS_INVALID_PARAMETER;
+        rv = FALSE;
+    } else {
+
+        QuotaLimits.MaximumWorkingSetSize = dwMaximumWorkingSetSize;
+        QuotaLimits.MinimumWorkingSetSize = dwMinimumWorkingSetSize;
+        QuotaLimits.Flags = Flags;
+
+        //
+        // Attempt to acquire the appropriate privilege.  If this
+        // fails, it's no big deal -- we'll attempt to make the
+        // NtSetInformationProcess call anyway, in case it turns out
+        // to be a decrease operation (which will succeed anyway).
+        //
+        PrivStatus = STATUS_SUCCESS;//BasepAcquirePrivilegeEx (SE_INC_BASE_PRIORITY_PRIVILEGE, &State);
+
+        Status = NtSetInformationProcess (hProcess,
+                                          ProcessQuotaLimits,
+                                          &QuotaLimits,
+                                          sizeof(QuotaLimits));
+        if (!NT_SUCCESS (Status)) {
+            rv = FALSE;
+        } else {
+            rv = TRUE;
+        }
+
+    }
+
+    if (!rv) {
+        BaseSetLastNTError (Status);
+    }
+    return rv;
+}

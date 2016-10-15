@@ -72,6 +72,7 @@ static CRITICAL_SECTION wined3d_wndproc_cs = {&wined3d_wndproc_cs_debug, -1, 0, 
  * where appropriate. */
 struct wined3d_settings wined3d_settings =
 {
+    MAKEDWORD_VERSION(1, 0), /* Default to legacy OpenGL */
     TRUE,           /* Use of GLSL enabled by default */
     ORM_FBO,        /* Use FBOs to do offscreen rendering */
     PCI_VENDOR_NONE,/* PCI Vendor ID */
@@ -79,11 +80,16 @@ struct wined3d_settings wined3d_settings =
     0,              /* The default of memory is set in init_driver_info */
     NULL,           /* No wine logo by default */
     TRUE,           /* Multisampling enabled by default. */
+    ~0u,            /* Don't force a specific sample count by default. */
     FALSE,          /* No strict draw ordering. */
     TRUE,           /* Don't try to render onscreen by default. */
+    FALSE,          /* Don't range check relative addressing indices in float constants. */
     ~0U,            /* No VS shader model limit by default. */
+    ~0U,            /* No HS shader model limit by default. */
+    ~0U,            /* No DS shader model limit by default. */
     ~0U,            /* No GS shader model limit by default. */
     ~0U,            /* No PS shader model limit by default. */
+    ~0u,            /* No CS shader model limit by default. */
     FALSE,          /* 3D support enabled by default. */
 };
 
@@ -199,6 +205,15 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
 
     if (hkey || appkey)
     {
+        if (!get_config_key_dword(hkey, appkey, "MaxVersionGL", &tmpvalue))
+        {
+            if (tmpvalue != wined3d_settings.max_gl_version)
+            {
+                ERR_(winediag)("Setting maximum allowed wined3d GL version to %u.%u.\n",
+                        tmpvalue >> 16, tmpvalue & 0xffff);
+                wined3d_settings.max_gl_version = tmpvalue;
+            }
+        }
         if ( !get_config_key( hkey, appkey, "UseGLSL", buffer, size) )
         {
             if (!strcmp(buffer,"disabled"))
@@ -280,6 +295,9 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
                 wined3d_settings.allow_multisampling = FALSE;
             }
         }
+        if (!get_config_key_dword(hkey, appkey, "SampleCount", &wined3d_settings.sample_count))
+            ERR_(winediag)("Forcing sample count to %u. This may not be compatible with all applications.\n",
+                    wined3d_settings.sample_count);
         if (!get_config_key(hkey, appkey, "StrictDrawOrdering", buffer, size)
                 && !strcmp(buffer,"enabled"))
         {
@@ -292,12 +310,24 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
             TRACE("Not always rendering backbuffers offscreen.\n");
             wined3d_settings.always_offscreen = FALSE;
         }
+        if (!get_config_key(hkey, appkey, "CheckFloatConstants", buffer, size)
+                && !strcmp(buffer, "enabled"))
+        {
+            TRACE("Checking relative addressing indices in float constants.\n");
+            wined3d_settings.check_float_constants = TRUE;
+        }
         if (!get_config_key_dword(hkey, appkey, "MaxShaderModelVS", &wined3d_settings.max_sm_vs))
             TRACE("Limiting VS shader model to %u.\n", wined3d_settings.max_sm_vs);
+        if (!get_config_key_dword(hkey, appkey, "MaxShaderModelHS", &wined3d_settings.max_sm_hs))
+            TRACE("Limiting HS shader model to %u.\n", wined3d_settings.max_sm_hs);
+        if (!get_config_key_dword(hkey, appkey, "MaxShaderModelDS", &wined3d_settings.max_sm_ds))
+            TRACE("Limiting DS shader model to %u.\n", wined3d_settings.max_sm_ds);
         if (!get_config_key_dword(hkey, appkey, "MaxShaderModelGS", &wined3d_settings.max_sm_gs))
             TRACE("Limiting GS shader model to %u.\n", wined3d_settings.max_sm_gs);
         if (!get_config_key_dword(hkey, appkey, "MaxShaderModelPS", &wined3d_settings.max_sm_ps))
             TRACE("Limiting PS shader model to %u.\n", wined3d_settings.max_sm_ps);
+        if (!get_config_key_dword(hkey, appkey, "MaxShaderModelCS", &wined3d_settings.max_sm_cs))
+            TRACE("Limiting CS shader model to %u.\n", wined3d_settings.max_sm_cs);
         if (!get_config_key(hkey, appkey, "DirectDrawRenderer", buffer, size)
                 && !strcmp(buffer, "gdi"))
         {
@@ -425,8 +455,10 @@ BOOL wined3d_register_window(HWND window, struct wined3d_device *device)
         unsigned int new_size = max(1, wndproc_table.size * 2);
         struct wined3d_wndproc *new_entries;
 
-        if (!wndproc_table.entries) new_entries = HeapAlloc(GetProcessHeap(), 0, new_size * sizeof(*new_entries));
-        else new_entries = HeapReAlloc(GetProcessHeap(), 0, wndproc_table.entries, new_size * sizeof(*new_entries));
+        if (!wndproc_table.entries)
+            new_entries = wined3d_calloc(new_size, sizeof(*new_entries));
+        else
+            new_entries = HeapReAlloc(GetProcessHeap(), 0, wndproc_table.entries, new_size * sizeof(*new_entries));
 
         if (!new_entries)
         {

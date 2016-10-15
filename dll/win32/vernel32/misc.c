@@ -18,26 +18,23 @@
 #define NDEBUG
 
 #include <main.h>
+#include <ntintsafe.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
 /*
  * @implemented
  */
-int WINAPI WerpCurrentPeb()
+PPEB WINAPI WerpCurrentPeb()
 {
-  #ifdef _M_IX86
-	return (__readfsdword(24) + 48);
-  #elif defined(_M_AMD64)
-	return (__readgsqword(24) + 48);
-  #endif
+  return NtCurrentTeb()->ProcessEnvironmentBlock;
 }
 
-__inline
 HRESULT
+WINAPI
 IntToULong(
-    __in INT iOperand,
-    __out ULONG* pulResult)
+    IN INT iOperand,
+    OUT ULONG* pulResult)
 {
     HRESULT hr = INTSAFE_E_ARITHMETIC_OVERFLOW;
     *pulResult = ULONG_ERROR;
@@ -51,10 +48,11 @@ IntToULong(
     return hr;
 }
 
-int WINAPI CreateSocketHandle()
+HANDLE
+CreateSocketHandle(void)
 {
-  SetLastError(120u);
-  return 0;
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return NULL;
 }
 
 UINT WINAPI GetErrorMode()
@@ -79,92 +77,96 @@ UINT WINAPI GetErrorMode()
   return result;
 }
 
-BOOL WINAPI QueryActCtxSettingsW(DWORD dwFlags, HANDLE hActCtx, PCWSTR SourceString, PCWSTR settingName, int a5, int a6, int a7)
+BOOL 
+WINAPI 
+QueryActCtxSettingsW(
+	DWORD dwFlags, 
+	HANDLE hActCtx, 
+	PCWSTR SourceString, 
+	PCWSTR settingName, 
+	PWSTR pvBuffer, 
+	SIZE_T dwBuffer, 
+	SIZE_T *pdwWrittenOrRequired
+)
 {
-  NTSTATUS otherStatus = 0x00000000; // eax@7
-  NTSTATUS status; // [sp-4h] [bp-20h]@8
-  LSA_UNICODE_STRING DestinationString; // [sp+8h] [bp-14h]@16
-  const UNICODE_STRING String2; // [sp+10h] [bp-Ch]@16
+  LSA_UNICODE_STRING DestinationString; // [sp+8h] [bp-14h]@15
+  LSA_UNICODE_STRING SmiString; // [sp+10h] [bp-Ch]@15
   BOOL resp; // [sp+18h] [bp-4h]@1
 
-  resp = 0;
-  if ( a7 )
-    a7 = 0;
+  resp = FALSE;
+  if ( pdwWrittenOrRequired )
+    *pdwWrittenOrRequired = 0;
   if ( dwFlags )
   {
-    status = 0xC00000EFu;
+    BaseSetLastNTError(STATUS_INVALID_PARAMETER_1);
   }
-  else
+  else if ( settingName )
   {
-    if ( settingName )
+    if ( dwBuffer && !pvBuffer )
     {
-      if ( a6 && !a5 )
-      {
-        status = 0xC000000Du;
-      }
-      else
-      {
-        if ( SourceString
-          && (RtlInitUnicodeString(&DestinationString, SourceString),
-              RtlInitUnicodeString((PUNICODE_STRING)&String2, L"http://schemas.microsoft.com/SMI/2005/WindowsSettings"),
-              RtlCompareUnicodeString(&DestinationString, &String2, 0)) )
-        {
-          status = -1073741583;
-        }
-        else
-        {
-          //otherStatus = RtlQueryActivationContextApplicationSettings(0, hActCtx, 0, settingName, a5, a6, a7);
-          if ( otherStatus >= 0 )
-            return 1;
-          status = otherStatus;
-        }
-      }
+      BaseSetLastNTError(STATUS_INVALID_PARAMETER);
+    }
+    else if ( SourceString
+           && (RtlInitUnicodeString(&DestinationString, SourceString),
+               RtlInitUnicodeString(&SmiString, L"http://schemas.microsoft.com/SMI/2005/WindowsSettings"),
+               RtlCompareUnicodeString(&DestinationString, &SmiString, 0)) )
+    {
+      BaseSetLastNTError(STATUS_INVALID_PARAMETER_3);
     }
     else
     {
-      status = 0xC00000F2u;
-    }
-  }
-  BaseSetLastNTError(status);
-  return resp;
-}
-
-BOOL WINAPI SetSearchPathMode(DWORD Flags)
-{
-  DWORD localFlags; // ebx@1
-  BOOL verify; // esi@11
-
-  localFlags = Flags;
-  if ( Flags & 0xFFFE7FFE )
-  {
-    BaseSetLastNTError(STATUS_SUCCESS);
-    return 0;
-  }
-  if ( Flags & 1 )
-  {
-    if ( localFlags & 0x10000 )
-    {
-LABEL_5:
-      BaseSetLastNTError(STATUS_SUCCESS);
-      return 0;
+      resp = QueryActCtxW(dwFlags, hActCtx, (PVOID)FileInformationInAssemblyOfAssemblyInActivationContext, 
+  4, pvBuffer, dwBuffer, pdwWrittenOrRequired);
+      if(!resp)
+        BaseSetLastNTError(STATUS_UNSUCCESSFUL);
     }
   }
   else
   {
-    if ( !(localFlags & 0x10000) || (Flags & 0x8000) )
-      goto LABEL_5;
+    BaseSetLastNTError(STATUS_INVALID_PARAMETER_4);
   }
-  if ( !(BaseSearchPathMode & 0x8000) || (Flags & 0x8000) )
+  return resp;
+}
+
+BOOL 
+WINAPI 
+SetSearchPathMode(
+	DWORD Flags
+)
+{
+  BOOL resp; // esi@11
+
+  if ( Flags & 0xFFFE7FFE )
+  {
+    BaseSetLastNTError(STATUS_INVALID_PARAMETER);
+    return FALSE;
+  }
+  if ( Flags & 1 )
+  {
+    if ( Flags & 0x10000 )
+    {
+RETURN_ERROR:
+      BaseSetLastNTError(STATUS_INVALID_PARAMETER);
+      return FALSE;
+    }
+  }
+  else if ( !(Flags & 0x10000) || Flags & 0x8000 )
+  {
+    goto RETURN_ERROR;
+  }
+  RtlEnterCriticalSection(&BaseSearchPathModeLock);
+  if ( !(BaseSearchPathMode & 0x8000) || Flags & 0x8000 )
   {
     BaseSearchPathMode = Flags;
-    verify = 1;
+    resp = TRUE;
   }
   else
   {
     BaseSetLastNTError(STATUS_ACCESS_DENIED);
-    verify = 0;
+    resp = FALSE;
   }
-  return verify;
+  RtlLeaveCriticalSection(&BaseSearchPathModeLock);
+  return resp;
 }
 
 BOOL 
@@ -179,39 +181,42 @@ GetQueuedCompletionStatusEx(
 )
 {
   BOOLEAN allert; // eax@5
-  LARGE_INTEGER * receive; // esi@5
+  PLARGE_INTEGER pTimeOut; // esi@5
+  NTSTATUS status;
   BOOL result; // eax@2
   PRTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME_EXTENDED Frame = NULL; // [sp+10h] [bp-48h]@1
-  char copy; // [sp+18h] [bp-40h]@1
   LARGE_INTEGER *large = NULL; // [sp+34h] [bp-24h]@5
-  CPPEH_RECORD ms_exc; // [sp+40h] [bp-18h]@7
-  FILE_IO_COMPLETION_INFORMATION information;
+  IO_STATUS_BLOCK IoStatusBlock;
+  LPOVERLAPPED LocalOverlapped;  
 
-  information.ApcContext = NULL;
-
-
-  memset(&copy, 0, 0x1Cu);
   if ( lpCompletionPortEntries && ulNumEntriesRemoved && ulCount )
   {
-    receive = BaseFormatTimeOut(large, dwMilliseconds);
-    if ( fAlertable )
-      allert = (BOOLEAN)RtlActivateActivationContextUnsafeFast(Frame, 0);
-    ms_exc.registration.TryLevel = 0;
+    pTimeOut = BaseFormatTimeOut(large, dwMilliseconds);
+    if ( fAlertable ){
+		allert = (BOOLEAN)RtlActivateActivationContextUnsafeFast(Frame, 0);
+	}      
     allert = fAlertable != 0;
-    result = NtRemoveIoCompletion(
+    status = NtRemoveIoCompletion(
                CompletionPort,
-			   information,
-               ulCount,
-               (PVOID)ulNumEntriesRemoved,
-               receive);
-    ms_exc.registration.TryLevel = -2;
+			   (PVOID *)lpCompletionPortEntries->lpCompletionKey,
+               (PVOID *)&LocalOverlapped,
+               &IoStatusBlock,
+               pTimeOut);
+			   
+    if(status == STATUS_SUCCESS){
+		lpCompletionPortEntries->dwNumberOfBytesTransferred = (DWORD)IoStatusBlock.Information;
+		lpCompletionPortEntries->lpOverlapped = LocalOverlapped;			
+		result = TRUE;
+	}else{
+		result = FALSE;
+	}  
     if ( fAlertable )
       result =  (BOOL)RtlDeactivateActivationContextUnsafeFast(Frame);
   }
   else
   {
     SetLastError(87);
-    result = 0;
+    result = FALSE;
   }
   return result;
 }
@@ -543,12 +548,20 @@ BOOL WINAPI AddScopedPolicyIDAce(
 	return TRUE;
 }
 
-ULONG WINAPI KernelBaseGetGlobalData()
+ULONG 
+WINAPI 
+KernelBaseGetGlobalData()
 {
   return KernelBaseGlobalData;
 }
 
-BOOLEAN WINAPI NotifyMountMgr(PWSTR BytesReturned, PCWSTR SourceString, BOOL verfication)
+BOOLEAN 
+WINAPI 
+NotifyMountMgr(
+	PWSTR BytesReturned, 
+	PCWSTR SourceString, 
+	BOOL verfication
+)
 {
   BOOLEAN result; // al@1
   int otherLength; // ebx@2
@@ -610,13 +623,17 @@ BOOLEAN WINAPI NotifyMountMgr(PWSTR BytesReturned, PCWSTR SourceString, BOOL ver
   return result;
 }
 
-BOOL WINAPI AddResourceAttributeAce(PACL pAcl, 
-								    DWORD dwAceRevision, 
-									DWORD AceFlags, 
-									DWORD AccessMask, 
-									PSID pSid, 
-									PCLAIM_SECURITY_ATTRIBUTES_INFORMATION  pAttributeInfo, 
-									PDWORD pReturnLength)
+BOOL 
+WINAPI 
+AddResourceAttributeAce(
+	PACL pAcl, 
+	DWORD dwAceRevision, 
+	DWORD AceFlags, 
+	DWORD AccessMask, 
+	PSID pSid, 
+	PCLAIM_SECURITY_ATTRIBUTES_INFORMATION  pAttributeInfo, 
+	PDWORD pReturnLength
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -624,17 +641,19 @@ BOOL WINAPI AddResourceAttributeAce(PACL pAcl,
   status = RtlAddResourceAttributeAce(pAcl, dwAceRevision, AceFlags, AccessMask, pSid, pAttributeInfo, pReturnLength);
   if ( status >= 0 )
   {
-    result = 1;
+    result = TRUE;
   }
   else
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   return result;
 }
 
-BOOL WINAPI GetVolumeBandwidthContractProperties(HANDLE FileHandle, int a2, int a3, int a4)
+BOOL 
+WINAPI 
+GetVolumeBandwidthContractProperties(HANDLE FileHandle, int a2, int a3, int a4)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -654,12 +673,12 @@ BOOL WINAPI GetVolumeBandwidthContractProperties(HANDLE FileHandle, int a2, int 
     a2 = FileInformation;
     a4 = two;
     a3 = one;
-    result = 1;
+    result = TRUE;
   }
   else
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   return result;
 }

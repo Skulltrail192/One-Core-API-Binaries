@@ -68,3 +68,4 @@
 @ stdcall -arch=x86_64 ScsiPortWriteRegisterUchar(ptr long)
 @ stdcall -arch=x86_64 ScsiPortWriteRegisterUshort(ptr long)
 @ stdcall -arch=x86_64 ScsiPortWriteRegisterUlong(ptr long)
+@ stdcall teste(ptr ptr long)

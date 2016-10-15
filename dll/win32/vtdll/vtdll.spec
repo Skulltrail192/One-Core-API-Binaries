@@ -1340,7 +1340,7 @@
 @ stdcall RtlMultipleFreeHeap(ptr long long ptr) ntdll.RtlMultipleFreeHeap
 @ stdcall RtlReleasePrivilege(ptr) ntdll.RtlReleasePrivilege
 @ stdcall RtlRemoveVectoredContinueHandler(ptr) ntdll.RtlRemoveVectoredContinueHandler
-@ stdcall RtlSetEnvironmentStrings(wstr long) ntdll.RtlSetEnvironmentStrings
+@ stdcall RtlSetEnvironmentStrings(wstr long) 
 @ stdcall ZwAddDriverEntry(ptr long) ntdll.ZwAddDriverEntry
 @ stdcall ZwApphelpCacheControl(long ptr) ntdll.ZwApphelpCacheControl
 @ stdcall ZwDeleteDriverEntry(long) ntdll.ZwDeleteDriverEntry

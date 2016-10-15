@@ -51,3 +51,13 @@ BOOL WINAPI FlsSetValue(DWORD dwFlsIndex, PVOID lpFlsData)
 {
   return TlsSetValue(dwFlsIndex, lpFlsData);
 }
+
+LPVOID
+WINAPI
+ConvertThreadToFiberEx(
+    IN LPVOID lpParameter,
+    IN DWORD dwFlags
+    )
+{
+	return ConvertThreadToFiber(lpParameter);
+}

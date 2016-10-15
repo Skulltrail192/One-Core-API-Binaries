@@ -84,3 +84,10 @@ LdrResolveDelayLoadedAPI(
     IMAGE_THUNK_DATA* addr, 
 	ULONG flags 
 );
+
+NTSTATUS
+NTAPI
+RtlSetEnvironmentStrings(
+    IN PWCHAR NewEnvironment,
+    IN SIZE_T NewEnvironmentSize
+    );

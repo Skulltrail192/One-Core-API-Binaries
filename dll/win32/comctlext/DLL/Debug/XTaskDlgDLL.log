@@ -1,0 +1,45 @@
+﻿Build started 12/10/2016 01:08:53.
+     1>Project "C:\Documents and Settings\Administrator\My Documents\Projetos\One-Core-API\dll\win32\comctlext\DLL\XTaskDlgDLL.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Debug\XTaskDlgDLL.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W4 /WX- /Od /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D _USRDLL /D _WINDLL /D _MBCS /D _ATL_STATIC_REGISTRY /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"StdAfx.h" /Fp"Debug\XTaskDlgDLL.pch" /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W4 /WX- /Od /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D _USRDLL /D _WINDLL /D _MBCS /D _ATL_STATIC_REGISTRY /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Debug\XTaskDlgDLL.pch" /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ..\XTaskDialog.cpp
+         XTaskDialog.cpp
+     1>c:\documents and settings\administrator\my documents\projetos\one-core-api\dll\win32\comctlext\xtaskdialog.cpp(2463): warning C4389: '==' : signed/unsigned mismatch
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W4 /WX- /Od /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D _USRDLL /D _WINDLL /D _MBCS /D _ATL_STATIC_REGISTRY /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt XTaskDlgDLL.cpp
+         XTaskDlgDLL.cpp
+       ResourceCompile:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /D _DEBUG /l"0x0409" /IDebug\ /nologo /fo"Debug\XTaskDlgDLL.res" XTaskDlgDLL.rc 
+       ManifestResourceCompile:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Debug\XTaskDlgDLL.dll.embed.manifest.res" Debug\XTaskDlgDLL_manifest.rc 
+       MakeDirsForLink:
+         Creating directory "C:\Documents and Settings\Administrator\My Documents\Projetos\One-Core-API\dll\win32\comctlext\DLL\..\Debug".
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\Microsoft.CppBuild.targets(990,5): warning MSB8012: TargetPath(C:\Documents and Settings\Administrator\My Documents\Projetos\One-Core-API\dll\win32\comctlext\DLL\Debug\XTaskDlgDLL.dll) does not match the Linker's OutputFile property value (C:\Documents and Settings\Administrator\My Documents\Projetos\One-Core-API\dll\win32\comctlext\Debug\XTaskDlg.dll). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\Microsoft.CppBuild.targets(992,5): warning MSB8012: TargetName(XTaskDlgDLL) does not match the Linker's OutputFile property value (XTaskDlg). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"..\Debug\XTaskDlg.dll" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /DEF:".\XTaskDlgDLL.def" /MANIFEST /ManifestFile:"Debug\XTaskDlgDLL.dll.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Documents and Settings\Administrator\My Documents\Projetos\One-Core-API\dll\win32\comctlext\DLL\Debug\XTaskDlgDLL.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 /DLL Debug\XTaskDlgDLL.res
+         Debug\XTaskDlgDLL.dll.embed.manifest.res
+         Debug\stdafx.obj
+         Debug\XTaskDialog.obj
+         Debug\XTaskDlgDLL.obj
+            Creating library ..\Debug\XTaskDlg.lib and object ..\Debug\XTaskDlg.exp
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"Debug\XTaskDlgDLL.dll.embed.manifest" /manifest Debug\XTaskDlgDLL.dll.intermediate.manifest
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Debug\XTaskDlgDLL.dll.embed.manifest.res" Debug\XTaskDlgDLL_manifest.rc 
+       LinkEmbedManifest:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"..\Debug\XTaskDlg.dll" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /DEF:".\XTaskDlgDLL.def" /MANIFEST /ManifestFile:"Debug\XTaskDlgDLL.dll.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Documents and Settings\Administrator\My Documents\Projetos\One-Core-API\dll\win32\comctlext\DLL\Debug\XTaskDlgDLL.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 /DLL Debug\XTaskDlgDLL.res
+         Debug\XTaskDlgDLL.dll.embed.manifest.res
+         Debug\stdafx.obj
+         Debug\XTaskDialog.obj
+         Debug\XTaskDlgDLL.obj
+         XTaskDlgDLL.vcxproj -> C:\Documents and Settings\Administrator\My Documents\Projetos\One-Core-API\dll\win32\comctlext\DLL\Debug\XTaskDlgDLL.dll
+       FinalizeBuildStatus:
+         Deleting file "Debug\XTaskDlgDLL.unsuccessfulbuild".
+         Touching "Debug\XTaskDlgDLL.lastbuildstate".
+     1>Done Building Project "C:\Documents and Settings\Administrator\My Documents\Projetos\One-Core-API\dll\win32\comctlext\DLL\XTaskDlgDLL.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:12.20

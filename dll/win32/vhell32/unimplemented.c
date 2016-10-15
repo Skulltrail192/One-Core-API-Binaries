@@ -70,7 +70,7 @@ HRESULT WINAPI SHBindToObject(
 )
 {
 	 ppv = NULL;
-	 return E_FAIL;
+	 return S_OK;
 }
 
 HRESULT WINAPI SHBindToFolderIDListParent(
@@ -293,4 +293,12 @@ HRESULT WINAPI SHGetPropertyStoreFromParsingName(
 )
 {
 	return E_FAIL;	
+}
+
+HRESULT 
+WPC_InstallState(
+	DWORD *pdwState
+){
+	*pdwState = 2;
+	return S_OK;
 }

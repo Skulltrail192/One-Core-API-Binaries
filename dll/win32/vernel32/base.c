@@ -1465,3 +1465,28 @@ Return Value:
             // }
         // }
 // }
+
+
+VOID
+BasepFreeAppCompatData(
+    PVOID  pAppCompatData,
+    SIZE_T cbAppCompatData,
+    PVOID  pSxsData,
+    SIZE_T cbSxsData
+    )
+{
+    if (pAppCompatData) {
+        NtFreeVirtualMemory(NtCurrentProcess(),
+                            &pAppCompatData,
+                            &cbAppCompatData,
+                            MEM_RELEASE);
+    }
+
+    if (pSxsData) {
+        NtFreeVirtualMemory(NtCurrentProcess(),
+                            &pSxsData,
+                            &cbSxsData,
+                            MEM_RELEASE);
+
+    }
+}

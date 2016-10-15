@@ -33,23 +33,28 @@ ULONG CDECL wined3d_sampler_incref(struct wined3d_sampler *sampler)
     return refcount;
 }
 
+static void wined3d_sampler_destroy_object(void *object)
+{
+    struct wined3d_sampler *sampler = object;
+    const struct wined3d_gl_info *gl_info;
+    struct wined3d_context *context;
+
+    context = context_acquire(sampler->device, NULL);
+    gl_info = context->gl_info;
+    GL_EXTCALL(glDeleteSamplers(1, &sampler->name));
+    context_release(context);
+
+    HeapFree(GetProcessHeap(), 0, sampler);
+}
+
 ULONG CDECL wined3d_sampler_decref(struct wined3d_sampler *sampler)
 {
     ULONG refcount = InterlockedDecrement(&sampler->refcount);
-    const struct wined3d_gl_info *gl_info;
-    struct wined3d_context *context;
 
     TRACE("%p decreasing refcount to %u.\n", sampler, refcount);
 
     if (!refcount)
-    {
-        context = context_acquire(sampler->device, NULL);
-        gl_info = context->gl_info;
-        GL_EXTCALL(glDeleteSamplers(1, &sampler->name));
-        context_release(context);
-
-        HeapFree(GetProcessHeap(), 0, sampler);
-    }
+        wined3d_cs_emit_destroy_object(sampler->device->cs, wined3d_sampler_destroy_object, sampler);
 
     return refcount;
 }
@@ -96,7 +101,8 @@ static void wined3d_sampler_init(struct wined3d_sampler *sampler, struct wined3d
         GL_EXTCALL(glSamplerParameteri(sampler->name, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE));
     GL_EXTCALL(glSamplerParameteri(sampler->name, GL_TEXTURE_COMPARE_FUNC,
             wined3d_gl_compare_func(desc->comparison_func)));
-    if (gl_info->supported[EXT_TEXTURE_SRGB_DECODE] && !desc->srgb_decode)
+    if ((context->d3d_info->wined3d_creation_flags & WINED3D_SRGB_READ_WRITE_CONTROL)
+            && gl_info->supported[EXT_TEXTURE_SRGB_DECODE] && !desc->srgb_decode)
         GL_EXTCALL(glSamplerParameteri(sampler->name, GL_TEXTURE_SRGB_DECODE_EXT, GL_SKIP_DECODE_EXT));
     checkGLcall("sampler creation");
 

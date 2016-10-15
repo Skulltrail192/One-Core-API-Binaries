@@ -28,11 +28,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 */
 BOOL WINAPI IsThreadAFiber()
 {
-  #ifdef _M_IX86
-		return ((unsigned int)*(BYTE *)(__readfsdword(24) + 4042) >> 2) & 1;
-  #elif defined(_M_AMD64)
-		return ((unsigned int)*(BYTE *)(__readgsqword(24) + 4042) >> 2) & 1;	
-  #endif
+  return ((ULONG)(NtCurrentTeb()[1].NtTib.SubSystemTib) >> 2) & 1;
 }
 
 BOOL WINAPI QueryThreadCycleTime(HANDLE ThreadHandle, PULONG64 CycleTime)
@@ -418,6 +414,70 @@ DWORD WINAPI GetThreadActualPriority(HANDLE ThreadHandle)
   {
     BaseSetLastNTError(status);
     result = 0x7FFFFFFFu;
+  }
+  return result;
+}
+
+DWORD
+APIENTRY
+GetProcessIdOfThread(
+    HANDLE Thread
+    )
+/*++
+
+Routine Description:
+
+    Gets the process ID of the thread opened via the specified handle
+
+Arguments:
+
+    Thread - Handle of thread to do the query on
+
+Return Value:
+
+    Returns a unique value representing the process ID of the
+    executing thread.  The return value may be used to identify a process
+    in the system. If the function fails the return value is zero.
+
+--*/
+
+{
+    NTSTATUS Status;
+    THREAD_BASIC_INFORMATION tbi;
+
+    Status = NtQueryInformationThread (Thread,
+                                       ThreadBasicInformation,
+                                       &tbi,
+                                       sizeof (tbi),
+                                       NULL);
+
+    if (!NT_SUCCESS (Status)) {
+        BaseSetLastNTError (Status);
+        return 0;
+    }
+
+    return HandleToUlong (tbi.ClientId.UniqueProcess);
+}
+
+BOOL 
+WINAPI 
+SetThreadActualPriority(
+	HANDLE ThreadHandle,
+	SYSTEM_THREAD_INFORMATION *ThreadInformation
+)
+{
+  NTSTATUS status; // eax@1
+  BOOL result; // eax@2
+
+  status = NtSetInformationThread(ThreadHandle, ThreadPriority, &ThreadInformation, 4u);
+  if ( status >= 0 )
+  {
+    result = TRUE;
+  }
+  else
+  {
+    BaseSetLastNTError(status);
+    result = FALSE;
   }
   return result;
 }

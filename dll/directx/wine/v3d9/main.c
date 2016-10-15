@@ -30,6 +30,14 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(bcrypt);
 
+struct d3d9
+{
+    IDirect3D9Ex IDirect3D9Ex_iface;
+    LONG refcount;
+    struct wined3d *wined3d;
+    BOOL extended;
+};
+
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 {
     TRACE("fdwReason %u\n", fdwReason);
@@ -46,10 +54,28 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 
 HRESULT WINAPI Direct3DCreate9Ex(
   _In_   UINT SDKVersion,
-  _Out_  IDirect3D9Ex **ppD3D
+  _Out_  IDirect3D9Ex **ppD3DEx
 )
 {
-	Direct3DCreate9(SDKVersion);
-	//return S_OK;
-	return D3DERR_NOTAVAILABLE;
+    struct d3d9 *object;
+	IDirect3D9* ppD3D;
+
+    // TRACE("sdk_version %#x, d3d9ex %p.\n", SDKVersion, ppD3D);
+
+    // if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object))))
+        // return E_OUTOFMEMORY;
+
+    // if (!d3d9_init(object, TRUE))
+    // {
+        // WARN("Failed to initialize d3d9.\n");
+        // HeapFree(GetProcessHeap(), 0, object);
+        // return D3DERR_NOTAVAILABLE;
+    // }
+
+    // TRACE("Created d3d9 object %p.\n", object);
+    // *ppD3D = &object->IDirect3D9Ex_iface;
+
+	*ppD3D = (IDirect3D9Ex)&Direct3DCreate9(SDKVersion);
+	
+    return D3D_OK;
 }

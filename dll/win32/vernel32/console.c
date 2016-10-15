@@ -183,7 +183,12 @@ DWORD WINAPI GetConsoleOriginalTitleW(
 	return GetConsoleTitleW(lpConsoleTitle, nSize);
 }
 
-BOOL WINAPI GetConsoleScreenBufferInfoEx(HANDLE hConsoleOutput, PCONSOLE_SCREEN_BUFFER_INFOEX ConsoleScreenBufferInfoEx)
+BOOL 
+WINAPI 
+GetConsoleScreenBufferInfoEx(
+	HANDLE hConsoleOutput, 
+	PCONSOLE_SCREEN_BUFFER_INFOEX ConsoleScreenBufferInfoEx
+)
 {
   BOOL result; // eax@2
   struct _CONSOLE_SCREEN_BUFFER_INFO ConsoleScreenBufferInfo; // [sp+0h] [bp-60h]@1
@@ -197,11 +202,11 @@ BOOL WINAPI GetConsoleScreenBufferInfoEx(HANDLE hConsoleOutput, PCONSOLE_SCREEN_
     ConsoleScreenBufferInfoEx->srWindow.Left = ConsoleScreenBufferInfo.srWindow.Left;
     ConsoleScreenBufferInfoEx->srWindow.Right = ConsoleScreenBufferInfo.srWindow.Right;
     ConsoleScreenBufferInfoEx->dwMaximumWindowSize.X = ConsoleScreenBufferInfo.dwMaximumWindowSize.X;
-    result = 1;
+    result = TRUE;
   }
   else
   {
-    result = 0;
+    result = FALSE;
   }
   return result;
 }

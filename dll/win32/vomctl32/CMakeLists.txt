@@ -1,6 +1,7 @@
 
 add_definitions(-D__WINESRC__)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
+include_directories(${REACTOS_SOURCE_DIR}/lib/atl)
 spec2def(vomctl32.dll vomctl32.spec)
 
 list(APPEND SOURCE

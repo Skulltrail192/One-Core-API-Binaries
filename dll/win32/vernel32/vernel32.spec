@@ -884,7 +884,6 @@
 @ stdcall VirtualQuery(ptr ptr long)
 @ stdcall VirtualQueryEx(long ptr ptr long)
 @ stdcall VirtualUnlock(ptr long)
-@ stdcall WTSGetActiveConsoleSessionId()
 @ stdcall WaitCommEvent(long ptr ptr)
 @ stdcall WaitForDebugEvent(ptr long)
 @ stdcall WaitForMultipleObjects(long ptr long long)
@@ -921,6 +920,7 @@
 @ stdcall WriteProfileStringA(str str str)
 @ stdcall WriteProfileStringW(wstr wstr wstr)
 @ stdcall WriteTapemark(ptr long long long)
+@ stdcall WTSGetActiveConsoleSessionId()
 @ stdcall ZombifyActCtx(ptr)
 @ stdcall _hread(long ptr long)
 @ stdcall _hwrite(long ptr long)
@@ -953,11 +953,11 @@
 @ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernelfull.BaseCheckRunApp
 @ stdcall BasepCheckBadapp(long ptr long long long long long long long) kernelfull.BasepCheckBadapp
 @ stdcall BasepCheckWinSaferRestrictions(long long long long long long) kernelfull.BasepCheckWinSaferRestrictions
-@ stdcall BasepFreeAppCompatData(ptr ptr) kernelfull.BasepFreeAppCompatData
+@ stdcall BasepFreeAppCompatData(ptr ptr) ;kernelfull.BasepFreeAppCompatData
 @ stdcall BaseQueryModuleData(str str ptr ptr ptr) kernelfull.BaseQueryModuleData
 @ stdcall EnumSystemFirmwareTables(long ptr long) kernelfull.EnumSystemFirmwareTables
 @ stdcall GetSystemFileCacheSize(ptr ptr ptr) kernelfull.GetSystemFileCacheSize
-@ stdcall GetSystemFirmwareTable(long long ptr long) kernelfull.GetSystemFirmwareTable
+@ stdcall GetSystemFirmwareTable(long long ptr long) ;Using owner implementation ;kernelfull.GetSystemFirmwareTable
 @ stdcall SetSystemFileCacheSize(long long long) 
 @ stdcall SetThreadStackGuarantee(ptr) 
 @ stdcall Wow64DisableWow64FsRedirection(ptr) 
@@ -991,19 +991,19 @@
 @ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
 
 #Missing on XP and avaliable for Server 2003
-@ stdcall ConvertThreadToFiberEx(ptr long) kernelfull.ConvertThreadToFiberEx
-@ stdcall FindNextStreamW(ptr ptr) kernelfull.FindNextStreamW
-@ stdcall GetLargePageMinimum() kernelfull.GetLargePageMinimum
+@ stdcall ConvertThreadToFiberEx(ptr long) ;kernelfull.ConvertThreadToFiberEx
+@ stdcall FindNextStreamW(ptr ptr) ;onwer implementation ;kernelfull.FindNextStreamW
+@ stdcall GetLargePageMinimum() ;onwer implementation ;kernelfull.GetLargePageMinimum
 @ stdcall GetNLSVersion(long long ptr) kernelfull.GetNLSVersion
-@ stdcall GetProcessIdOfThread(ptr) kernelfull.GetProcessIdOfThread
-@ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) kernelfull.GetProcessWorkingSetSizeEx
+@ stdcall GetProcessIdOfThread(ptr) ;onwer implementation ;kernelfull.GetProcessIdOfThread
+@ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) ;onwer implementation ;kernelfull.GetProcessWorkingSetSizeEx
 @ stdcall IsNLSDefinedString(long long ptr long long) kernelfull.IsNLSDefinedString
-@ stdcall NeedCurrentDirectoryForExePathA(str) kernelfull.NeedCurrentDirectoryForExePathA
-@ stdcall NeedCurrentDirectoryForExePathW(wstr) kernelfull.NeedCurrentDirectoryForExePathW
-@ stdcall ReOpenFile(ptr long long long) kernelfull.ReOpenFile
-@ stdcall SetEnvironmentStringsA(ptr) kernelfull.SetEnvironmentStringsA
-@ stdcall SetEnvironmentStringsW(ptr) kernelfull.SetEnvironmentStringsW
-@ stdcall SetProcessWorkingSetSizeEx(long long long long) kernelfull.SetProcessWorkingSetSizeEx
+@ stdcall NeedCurrentDirectoryForExePathA(str) ;onwer implementation ;kernelfull.NeedCurrentDirectoryForExePathA
+@ stdcall NeedCurrentDirectoryForExePathW(wstr) ;onwer implementation ;kernelfull.NeedCurrentDirectoryForExePathW
+@ stdcall ReOpenFile(ptr long long long) ;onwer implementation ;kernelfull.ReOpenFile
+@ stdcall SetEnvironmentStringsA(ptr) ;onwer implementation ;kernelfull.SetEnvironmentStringsA
+@ stdcall SetEnvironmentStringsW(ptr) ;onwer implementation ;kernelfull.SetEnvironmentStringsW
+@ stdcall SetProcessWorkingSetSizeEx(long long long long) ;onwer implementation ;kernelfull.SetProcessWorkingSetSizeEx
 @ stdcall Wow64EnableWow64FsRedirection(long) 
 
 #Needed funcions for XP x64
@@ -1618,3 +1618,16 @@
 #Import from user32
 
 #Todo GetOsSafeBootMode
+
+#Only Longhorn functions (Pre-reset)
+@ stdcall SetThreadActualPriority(ptr ptr)
+
+#Longhorn 5048 functions
+@ stdcall BeginUpdateResourceExA(str ptr ptr ptr) kernelfull.BeginUpdateResourceExA
+@ stdcall BeginUpdateResourceExW(wstr ptr ptr ptr) kernelfull.BeginUpdateResourceExW
+@ stdcall EndUpdateResourceExA(ptr long long long) kernelfull.EndUpdateResourceExA
+@ stdcall EndUpdateResourceExW(ptr long long long) kernelfull.EndUpdateResourceExW
+@ stdcall InitializeCriticalSectionAndSpinCountEx(ptr ptr ptr) kernelfull.InitializeCriticalSectionAndSpinCountEx
+@ stdcall UpdateResourceExA(ptr long str long long long long) kernelfull.UpdateResourceExA
+@ stdcall UpdateResourceExW(ptr long str long long long long) kernelfull.UpdateResourceExW
+@ stdcall SubmitThreadpoolCallback(ptr ptr) ntdll.SubmitThreadpoolCallback

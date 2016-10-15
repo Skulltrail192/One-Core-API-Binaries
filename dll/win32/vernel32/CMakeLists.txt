@@ -28,6 +28,7 @@ list(APPEND SOURCE
 	debug.c
 	dep.c
 	file.c
+	findfile.c
 	firmware.c
 	handle.c
     internal.c

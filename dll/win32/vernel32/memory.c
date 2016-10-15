@@ -154,3 +154,32 @@ PVOID WINAPI RegisterBadMemoryNotification(
 	UNIMPLEMENTED;
 	return 0;
 }
+
+SIZE_T
+WINAPI
+GetLargePageMinimum (
+    VOID
+    )
+
+/*++
+
+Routine Description:
+
+    This function returns the size in bytes of the minimum large
+    page size and address alignment that can be used with the
+    VirtualAlloc MEM_LARGE_PAGES flag.
+
+Arguments:
+
+    None.
+
+Return Value:
+
+    The size in bytes of the minimum large page or zero if no large page
+    is supported by the underlying hardware.
+
+--*/
+
+{
+    return (SIZE_T) SharedUserData->LargePageMinimum;
+}

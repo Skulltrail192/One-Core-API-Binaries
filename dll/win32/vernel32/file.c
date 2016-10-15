@@ -112,10 +112,10 @@ GetFileBandwidthReservation(
   DWORD localSize; // eax@4
   DWORD localRequest; // edx@4
   int FileInformation; // [sp+0h] [bp-1Ch]@1
-  DWORD localLpPeriodMilliseconds = (DWORD)lpPeriodMilliseconds; // [sp+4h] [bp-18h]@4
-  DWORD localpDiscardable = (DWORD)pDiscardable; // [sp+9h] [bp-13h]@4
-  DWORD localLpTransferSize = (DWORD)lpTransferSize; // [sp+Ch] [bp-10h]@4
-  DWORD localLpNumOutstandingRequests = (DWORD)lpNumOutstandingRequests; // [sp+10h] [bp-Ch]@4
+  DWORD localLpPeriodMilliseconds = *lpPeriodMilliseconds; // [sp+4h] [bp-18h]@4
+  DWORD localpDiscardable = *pDiscardable; // [sp+9h] [bp-13h]@4
+  DWORD localLpTransferSize = *lpTransferSize; // [sp+Ch] [bp-10h]@4
+  DWORD localLpNumOutstandingRequests = *lpNumOutstandingRequests; // [sp+10h] [bp-Ch]@4
   struct _IO_STATUS_BLOCK IoStatusBlock; // [sp+14h] [bp-8h]@1
 
   status = NtQueryInformationFile(
@@ -1477,4 +1477,290 @@ SetSystemFileCacheSize(
     result = TRUE;
   }
   return result;
+}
+
+HANDLE
+WINAPI
+ReOpenFile(
+    HANDLE  hOriginalFile,
+    DWORD   dwDesiredAccess,
+    DWORD   dwShareMode,
+    DWORD   dwFlags
+    )
+/*++
+
+Routine Description:
+
+    This API allows an application to reopen a file with different access, share modes
+    and flags given an already open handle. This API should be used if the application wants
+    to ensure that the original file does not go away but wants to reopen it with 
+
+Arguments:
+
+    hOriginalFile - Supplies the handle to the original file relative to which 
+        we open a new handle.
+
+    dwDesiredAccess - Supplies the caller's desired access to the file. Any combination of 
+        flags can be passed in (like FILE_READ_ATTRIBUTES)
+
+        Possible DesiredAccess Flags:
+
+        GENERIC_READ - Read access to the file is requested.  This
+            allows data to be read from the file and the file pointer to
+            be modified.
+
+        GENERIC_WRITE - Write access to the file is requested.  This
+            allows data to be written to the file and the file pointer to
+            be modified.
+
+
+    dwShareMode - Supplies a set of flags that indicates how this file is
+        to be shared with other openers of the file.  A value of zero
+        for this parameter indicates no sharing of the file, or
+        exclusive access to the file is to occur.
+
+        ShareMode Flags:
+
+        FILE_SHARE_READ - Other open operations may be performed on the
+            file for read access.
+
+        FILE_SHARE_WRITE - Other open operations may be performed on the
+            file for write access.
+
+        FILE_SHARE_DELETE - Other open operations may be performed on the
+            file for delete access.
+
+    dwFlags - Specifies flags and attributes for the file.
+
+        The attributes are not accepted by this API as they are used only for Creating a file
+        This API reopens an existing file. All FILE_ATTRIBUTE_* flags are not allowed.
+        
+        dwFlagsAndAttributes Flags:
+
+
+        FILE_FLAG_WRITE_THROUGH - Indicates that the system should
+            always write through any intermediate cache and go directly
+            to the file.  The system may still cache writes, but may not
+            lazily flush the writes.
+
+        FILE_FLAG_OVERLAPPED - Indicates that the system should initialize
+            the file so that ReadFile and WriteFile operations that may
+            take a significant time to complete will return ERROR_IO_PENDING.
+            An event will be set to the signalled state when the operation
+            completes. When FILE_FLAG_OVERLAPPED is specified the system will
+            not maintain the file pointer. The position to read/write from
+            is passed to the system as part of the OVERLAPPED structure
+            which is an optional parameter to ReadFile and WriteFile.
+
+        FILE_FLAG_NO_BUFFERING - Indicates that the file is to be opened
+            with no intermediate buffering or caching done by the
+            system.  Reads and writes to the file must be done on sector
+            boundries.  Buffer addresses for reads and writes must be
+            aligned on at least disk sector boundries in memory.
+
+        FILE_FLAG_RANDOM_ACCESS - Indicates that access to the file may
+            be random. The system cache manager may use this to influence
+            its caching strategy for this file.
+
+        FILE_FLAG_SEQUENTIAL_SCAN - Indicates that access to the file
+            may be sequential.  The system cache manager may use this to
+            influence its caching strategy for this file.  The file may
+            in fact be accessed randomly, but the cache manager may
+            optimize its cacheing policy for sequential access.
+
+        FILE_FLAG_DELETE_ON_CLOSE - Indicates that the file is to be
+            automatically deleted when the last handle to it is closed.
+
+        FILE_FLAG_BACKUP_SEMANTICS - Indicates that the file is being opened
+            or created for the purposes of either a backup or a restore
+            operation.  Thus, the system should make whatever checks are
+            appropriate to ensure that the caller is able to override
+            whatever security checks have been placed on the file to allow
+            this to happen.
+
+        FILE_FLAG_POSIX_SEMANTICS - Indicates that the file being opened
+            should be accessed in a manner compatible with the rules used
+            by POSIX.  This includes allowing multiple files with the same
+            name, differing only in case.  WARNING:  Use of this flag may
+            render it impossible for a DOS, WIN-16, or WIN-32 application
+            to access the file.
+
+        FILE_FLAG_OPEN_REPARSE_POINT - Indicates that the file being opened
+            should be accessed as if it were a reparse point.  WARNING:  Use
+            of this flag may inhibit the operation of file system filter drivers
+            present in the I/O subsystem.
+
+        FILE_FLAG_OPEN_NO_RECALL - Indicates that all the state of the file
+            should be acessed without changing its storage location.  Thus,
+            in the case of files that have parts of its state stored at a
+            remote servicer, no permanent recall of data is to happen.
+
+    Security Quality of Service information may also be specified in
+        the dwFlagsAndAttributes parameter.  These bits are meaningful
+        only if the file being opened is the client side of a Named
+        Pipe.  Otherwise they are ignored.
+
+        SECURITY_SQOS_PRESENT - Indicates that the Security Quality of
+            Service bits contain valid values.
+
+    Impersonation Levels:
+
+        SECURITY_ANONYMOUS - Specifies that the client should be impersonated
+            at Anonymous impersonation level.
+
+        SECURITY_IDENTIFICAION - Specifies that the client should be impersonated
+            at Identification impersonation level.
+
+        SECURITY_IMPERSONATION - Specifies that the client should be impersonated
+            at Impersonation impersonation level.
+
+        SECURITY_DELEGATION - Specifies that the client should be impersonated
+            at Delegation impersonation level.
+
+    Context Tracking:
+
+        SECURITY_CONTEXT_TRACKING - A boolean flag that when set,
+            specifies that the Security Tracking Mode should be
+            Dynamic, otherwise Static.
+
+        SECURITY_EFFECTIVE_ONLY - A boolean flag indicating whether
+            the entire security context of the client is to be made
+            available to the server or only the effective aspects of
+            the context.
+
+Return Value:
+
+    Not -1 - Returns an open handle to the specified file.  Subsequent
+        access to the file is controlled by the DesiredAccess parameter.
+
+    0xffffffff - The operation failed. Extended error status is available
+        using GetLastError.
+
+--*/
+{
+    ULONG CreateFlags = 0;
+    ULONG CreateDisposition;
+    NTSTATUS Status;
+    OBJECT_ATTRIBUTES Obja;
+    HANDLE Handle;
+    IO_STATUS_BLOCK IoStatusBlock;
+    DWORD SQOSFlags;
+    SECURITY_IMPERSONATION_LEVEL ImpersonationLevel = 0;
+    SECURITY_QUALITY_OF_SERVICE SecurityQualityOfService;
+    UNICODE_STRING  FileName;
+
+    //
+    // Don't support console handles.
+    //
+
+    if (((ULONG)hOriginalFile & 0x10000003) == 3 ){
+        BaseSetLastNTError(STATUS_INVALID_HANDLE);
+        return INVALID_HANDLE_VALUE;
+    }
+
+    //
+    // The attributes are useless as this reopen of an existing file.
+    //
+
+    if (dwFlags &  FILE_ATTRIBUTE_VALID_FLAGS) {
+        BaseSetLastNTError(STATUS_INVALID_PARAMETER);
+        return INVALID_HANDLE_VALUE;
+    }
+
+    //
+    // Initialize all the create flags from the Attribute flags.
+    //
+
+    CreateFlags |= (dwFlags & FILE_FLAG_NO_BUFFERING ? FILE_NO_INTERMEDIATE_BUFFERING : 0 );
+    CreateFlags |= (dwFlags & FILE_FLAG_WRITE_THROUGH ? FILE_WRITE_THROUGH : 0 );
+    CreateFlags |= (dwFlags & FILE_FLAG_OVERLAPPED ? 0 : FILE_SYNCHRONOUS_IO_NONALERT );
+    CreateFlags |= (dwFlags & FILE_FLAG_SEQUENTIAL_SCAN ? FILE_SEQUENTIAL_ONLY : 0 );
+    CreateFlags |= (dwFlags & FILE_FLAG_RANDOM_ACCESS ? FILE_RANDOM_ACCESS : 0 );
+    CreateFlags |= (dwFlags & FILE_FLAG_BACKUP_SEMANTICS ? FILE_OPEN_FOR_BACKUP_INTENT : 0 );
+    CreateFlags |= (dwFlags & FILE_FLAG_OPEN_REPARSE_POINT ? FILE_OPEN_REPARSE_POINT : 0 );
+    CreateFlags |= (dwFlags & FILE_FLAG_OPEN_NO_RECALL ? FILE_OPEN_NO_RECALL : 0 );
+
+    if ( dwFlags & FILE_FLAG_DELETE_ON_CLOSE ) {
+        CreateFlags |= FILE_DELETE_ON_CLOSE;
+        dwDesiredAccess |= DELETE;
+        }
+
+    CreateFlags |= FILE_NON_DIRECTORY_FILE;
+    CreateDisposition = FILE_OPEN;
+
+    RtlInitUnicodeString( &FileName, L"");
+    
+    //
+    // Pass a NULL name relative to the original handle.
+    //
+
+    InitializeObjectAttributes(
+        &Obja,
+        &FileName,  
+        dwFlags & FILE_FLAG_POSIX_SEMANTICS ? 0 : OBJ_CASE_INSENSITIVE,
+        hOriginalFile,  // Related handle
+        NULL
+        );
+
+    SQOSFlags = dwFlags & SECURITY_VALID_SQOS_FLAGS;
+
+    if ( SQOSFlags & SECURITY_SQOS_PRESENT ) {
+
+        SQOSFlags &= ~SECURITY_SQOS_PRESENT;
+
+        if (SQOSFlags & SECURITY_CONTEXT_TRACKING) {
+
+            SecurityQualityOfService.ContextTrackingMode = (SECURITY_CONTEXT_TRACKING_MODE) TRUE;
+            SQOSFlags &= ~SECURITY_CONTEXT_TRACKING;
+
+        } else {
+
+            SecurityQualityOfService.ContextTrackingMode = (SECURITY_CONTEXT_TRACKING_MODE) FALSE;
+        }
+
+        if (SQOSFlags & SECURITY_EFFECTIVE_ONLY) {
+
+            SecurityQualityOfService.EffectiveOnly = TRUE;
+            SQOSFlags &= ~SECURITY_EFFECTIVE_ONLY;
+
+        } else {
+
+            SecurityQualityOfService.EffectiveOnly = FALSE;
+        }
+
+        SecurityQualityOfService.ImpersonationLevel = SQOSFlags >> 16;
+
+
+    } else {
+
+        SecurityQualityOfService.ContextTrackingMode = SECURITY_DYNAMIC_TRACKING;
+        SecurityQualityOfService.ImpersonationLevel = SecurityImpersonation;
+        SecurityQualityOfService.EffectiveOnly = TRUE;
+    }
+
+    SecurityQualityOfService.Length = sizeof( SECURITY_QUALITY_OF_SERVICE );
+    Obja.SecurityQualityOfService = &SecurityQualityOfService;
+
+    Status = NtCreateFile(
+                &Handle,
+                (ACCESS_MASK)dwDesiredAccess | SYNCHRONIZE | FILE_READ_ATTRIBUTES,
+                &Obja,
+                &IoStatusBlock,
+                NULL,
+                0,
+                dwShareMode,
+                CreateDisposition,
+                CreateFlags,
+                NULL,
+                0
+                );
+
+    if ( !NT_SUCCESS(Status) ) {
+        BaseSetLastNTError(Status);
+        return INVALID_HANDLE_VALUE;
+    }
+
+    SetLastError(0);
+
+    return Handle;
 }

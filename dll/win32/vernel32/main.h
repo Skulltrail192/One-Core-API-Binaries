@@ -108,7 +108,7 @@ static ULONG TDD_MAXRESOLUTION = 0;
 
 static __int16 vector[30];
 
-static PRTL_CRITICAL_SECTION BaseSearchPathModeLock;
+static RTL_CRITICAL_SECTION BaseSearchPathModeLock;
 
 static int BaseSearchPathMode  = 0; 
 

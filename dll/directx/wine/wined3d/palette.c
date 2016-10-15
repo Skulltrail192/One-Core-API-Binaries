@@ -20,11 +20,6 @@
  */
 #include "config.h"
 #include "wine/port.h"
-#include "winerror.h"
-#include "wine/debug.h"
-
-#include <string.h>
-
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
@@ -38,6 +33,11 @@ ULONG CDECL wined3d_palette_incref(struct wined3d_palette *palette)
     return refcount;
 }
 
+static void wined3d_palette_destroy_object(void *object)
+{
+    HeapFree(GetProcessHeap(), 0, object);
+}
+
 ULONG CDECL wined3d_palette_decref(struct wined3d_palette *palette)
 {
     ULONG refcount = InterlockedDecrement(&palette->ref);
@@ -45,7 +45,7 @@ ULONG CDECL wined3d_palette_decref(struct wined3d_palette *palette)
     TRACE("%p decreasing refcount to %u.\n", palette, refcount);
 
     if (!refcount)
-        HeapFree(GetProcessHeap(), 0, palette);
+        wined3d_cs_emit_destroy_object(palette->device->cs, wined3d_palette_destroy_object, palette);
 
     return refcount;
 }
@@ -157,8 +157,8 @@ HRESULT CDECL wined3d_palette_create(struct wined3d_device *device, DWORD flags,
     struct wined3d_palette *object;
     HRESULT hr;
 
-    TRACE("device %p, flags %#x, entries %p, palette %p.\n",
-            device, flags, entries, palette);
+    TRACE("device %p, flags %#x, entry_count %u, entries %p, palette %p.\n",
+            device, flags, entry_count, entries, palette);
 
     object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object));
     if (!object)

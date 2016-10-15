@@ -953,16 +953,16 @@ static GLuint gen_ati_shader(const struct texture_stage_op op[MAX_TEXTURES],
 static void atifs_tfactor(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
-    float col[4];
     struct atifs_context_private_data *ctx_priv = context->fragment_pipe_data;
+    struct wined3d_color color;
 
     if (!ctx_priv->last_shader
             || ctx_priv->last_shader->constants[ATIFS_CONST_TFACTOR - GL_CON_0_ATI] != ATIFS_CONSTANT_TFACTOR)
         return;
 
-    D3DCOLORTOGLFLOAT4(state->render_states[WINED3D_RS_TEXTUREFACTOR], col);
-    GL_EXTCALL(glSetFragmentShaderConstantATI(ATIFS_CONST_TFACTOR, col));
-    checkGLcall("glSetFragmentShaderConstantATI(ATIFS_CONST_TFACTOR, col)");
+    wined3d_color_from_d3dcolor(&color, state->render_states[WINED3D_RS_TEXTUREFACTOR]);
+    GL_EXTCALL(glSetFragmentShaderConstantATI(ATIFS_CONST_TFACTOR, &color.r));
+    checkGLcall("glSetFragmentShaderConstantATI(ATIFS_CONST_TFACTOR, &color.r)");
 }
 
 static void set_bumpmat(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
@@ -998,16 +998,16 @@ static void atifs_stage_constant(struct wined3d_context *context, const struct w
 {
     DWORD stage = (state_id - STATE_TEXTURESTAGE(0, 0)) / (WINED3D_HIGHEST_TEXTURE_STATE + 1);
     const struct wined3d_gl_info *gl_info = context->gl_info;
-    float col[4];
     struct atifs_context_private_data *ctx_priv = context->fragment_pipe_data;
+    struct wined3d_color color;
 
     if (!ctx_priv->last_shader
             || ctx_priv->last_shader->constants[stage] != ATIFS_CONSTANT_STAGE)
         return;
 
-    D3DCOLORTOGLFLOAT4(state->texture_states[stage][WINED3D_TSS_CONSTANT], col);
-    GL_EXTCALL(glSetFragmentShaderConstantATI(ATIFS_CONST_STAGE(stage), col));
-    checkGLcall("glSetFragmentShaderConstantATI(ATIFS_CONST_STAGE(stage), col)");
+    wined3d_color_from_d3dcolor(&color, state->texture_states[stage][WINED3D_TSS_CONSTANT]);
+    GL_EXTCALL(glSetFragmentShaderConstantATI(ATIFS_CONST_STAGE(stage), &color.r));
+    checkGLcall("glSetFragmentShaderConstantATI(ATIFS_CONST_STAGE(stage), &color.r)");
 }
 
 static void set_tex_op_atifs(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
@@ -1114,6 +1114,7 @@ static const struct StateEntryTemplate atifs_fragmentstate_template[] = {
     {STATE_RENDER(WINED3D_RS_FOGEND),                     { STATE_RENDER(WINED3D_RS_FOGSTART),                  NULL                    }, WINED3D_GL_EXT_NONE             },
     {STATE_RENDER(WINED3D_RS_SRGBWRITEENABLE),            { STATE_RENDER(WINED3D_RS_SRGBWRITEENABLE),           atifs_srgbwriteenable   }, WINED3D_GL_EXT_NONE             },
     {STATE_COLOR_KEY,                                     { STATE_COLOR_KEY,                                    state_nop               }, WINED3D_GL_EXT_NONE             },
+    {STATE_RENDER(WINED3D_RS_SHADEMODE),                  { STATE_RENDER(WINED3D_RS_SHADEMODE),                 state_shademode         }, WINED3D_GL_EXT_NONE             },
     {STATE_TEXTURESTAGE(0, WINED3D_TSS_COLOR_OP),         { STATE_SHADER(WINED3D_SHADER_TYPE_PIXEL),            NULL                    }, WINED3D_GL_EXT_NONE             },
     {STATE_TEXTURESTAGE(0, WINED3D_TSS_COLOR_ARG1),       { STATE_SHADER(WINED3D_SHADER_TYPE_PIXEL),            NULL                    }, WINED3D_GL_EXT_NONE             },
     {STATE_TEXTURESTAGE(0, WINED3D_TSS_COLOR_ARG2),       { STATE_SHADER(WINED3D_SHADER_TYPE_PIXEL),            NULL                    }, WINED3D_GL_EXT_NONE             },
@@ -1310,6 +1311,11 @@ static void atifs_get_caps(const struct wined3d_gl_info *gl_info, struct fragmen
     caps->MaxSimultaneousTextures = 6;
 }
 
+static DWORD atifs_get_emul_mask(const struct wined3d_gl_info *gl_info)
+{
+    return GL_EXT_EMUL_ARB_MULTITEXTURE | GL_EXT_EMUL_EXT_FOG_COORD;
+}
+
 static void *atifs_alloc(const struct wined3d_shader_backend_ops *shader_backend, void *shader_priv)
 {
     struct atifs_private_data *priv;
@@ -1317,13 +1323,7 @@ static void *atifs_alloc(const struct wined3d_shader_backend_ops *shader_backend
     if (!(priv = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*priv))))
         return NULL;
 
-    if (wine_rb_init(&priv->fragment_shaders, &wined3d_ffp_frag_program_rb_functions) == -1)
-    {
-        ERR("Failed to initialize rbtree.\n");
-        HeapFree(GetProcessHeap(), 0, priv);
-        return NULL;
-    }
-
+    wine_rb_init(&priv->fragment_shaders, wined3d_ffp_frag_program_key_compare);
     return priv;
 }
 
@@ -1386,6 +1386,7 @@ static void atifs_free_context_data(struct wined3d_context *context)
 const struct fragment_pipeline atifs_fragment_pipeline = {
     atifs_enable,
     atifs_get_caps,
+    atifs_get_emul_mask,
     atifs_alloc,
     atifs_free,
     atifs_alloc_context_data,

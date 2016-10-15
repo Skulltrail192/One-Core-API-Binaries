@@ -276,7 +276,9 @@ int WINAPI SnapIconSize(int a1)
   return *(&v3 + v2);
 }
 
-HRESULT WINAPI LoadIconWithScaleDown(HINSTANCE hInst, LPCWSTR name, int a3, int cy, HICON *a5)
+HRESULT 
+WINAPI 
+LoadIconWithScaleDown(HINSTANCE hInst, LPCWSTR name, int a3, int cy, HICON *a5)
 {
   HICON *localIcon; // edi@1
   int snap; // eax@2
@@ -290,7 +292,7 @@ HRESULT WINAPI LoadIconWithScaleDown(HINSTANCE hInst, LPCWSTR name, int a3, int 
 
   localIcon = a5;
   *a5 = 0;
-  error = 0x80004005u;
+  error = E_FAIL;
   if ( name )
   {
     iconSize = SnapIconSize(a3);
@@ -330,7 +332,7 @@ HRESULT WINAPI LoadIconWithScaleDown(HINSTANCE hInst, LPCWSTR name, int a3, int 
   }
   else
   {
-    error = 0x80070057u;
+    error = E_INVALIDARG;
   }
   return error;
 }
@@ -344,7 +346,7 @@ HRESULT WINAPI LoadIconMetric(HINSTANCE hInst, LPCWSTR name, int lims, HICON *ph
 
   icon = phico;
   *phico = 0;
-  result = 0x80070057u;
+  result = E_INVALIDARG;
   if ( (unsigned int)lims <= 1 )
   {
     otherMetrics = GetSystemMetrics(lims != 1 ? 49 : 11);
@@ -472,10 +474,3 @@ HRESULT WINAPI TaskDialogIndirect(const TASKDIALOGCONFIG *pTaskConfig, int *pnBu
     );
 	return S_OK;
 } */
-
-typedef BOOL (WINAPI *DllEntryProc)(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved);
-
-PIMAGE_NT_HEADERS32 PEHeader;
-
-DllEntryProc entry = (DllEntryProc)(baseAddress + PEHeader->OptionalHeader.AddressOfEntryPoint);
-(*entry)((HINSTANCE)baseAddress, DLL_PROCESS_ATTACH, 0);

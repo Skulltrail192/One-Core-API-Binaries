@@ -528,3 +528,4 @@
 @ stdcall SHGetPropertyStoreFromParsingName(wstr ptr long long ptr)
 @ stub SHAssocEnumHandlers
 @ stub SHSetDefaultProperties
+@ stdcall WPC_InstallState(ptr)
