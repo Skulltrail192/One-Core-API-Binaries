@@ -758,6 +758,7 @@
 @ stdcall DisplayConfigSetDeviceInfo(ptr)
 @ stdcall DoSoundConnect()
 @ stdcall DoSoundDisconnect()
+@ stdcall DwmHintDxUpdate(ptr long)
 @ stdcall DwmShutdown()
 @ stdcall DwmStartRedirection(ptr)
 @ stdcall DwmStartup(ptr)

@@ -9,7 +9,7 @@ spec2def(vs2_32.dll vs2_32.spec)
 list(APPEND SOURCE
     main.c
 	socket.c
-	vs2_32.rc
+	version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/vs2_32_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/vs2_32.def)
 

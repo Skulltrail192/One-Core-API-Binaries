@@ -128,45 +128,30 @@ QueryActCtxSettingsW(
   return resp;
 }
 
-BOOL 
-WINAPI 
-SetSearchPathMode(
-	DWORD Flags
-)
-{
-  BOOL resp; // esi@11
-
-  if ( Flags & 0xFFFE7FFE )
-  {
-    BaseSetLastNTError(STATUS_INVALID_PARAMETER);
-    return FALSE;
+BOOL WINAPI SetSearchPathMode(DWORD Flags) {
+  DWORD localFlags; // ebx@1   
+  BOOL verify; // esi@11   
+  localFlags = Flags;
+  if (Flags & 0xFFFE7FFE) {
+    BaseSetLastNTError(STATUS_SUCCESS);
+    return 0;
   }
-  if ( Flags & 1 )
-  {
-    if ( Flags & 0x10000 )
-    {
-RETURN_ERROR:
-      BaseSetLastNTError(STATUS_INVALID_PARAMETER);
-      return FALSE;
+  if (Flags & 1) {
+    if (localFlags & 0x10000) {
+      LABEL_5: BaseSetLastNTError(STATUS_SUCCESS);
+      return 0;
     }
+  } else {
+    if (!(localFlags & 0x10000) || (Flags & 0x8000)) goto LABEL_5;
   }
-  else if ( !(Flags & 0x10000) || Flags & 0x8000 )
-  {
-    goto RETURN_ERROR;
-  }
-  RtlEnterCriticalSection(&BaseSearchPathModeLock);
-  if ( !(BaseSearchPathMode & 0x8000) || Flags & 0x8000 )
-  {
+  if (!(BaseSearchPathMode & 0x8000) || (Flags & 0x8000)) {
     BaseSearchPathMode = Flags;
-    resp = TRUE;
-  }
-  else
-  {
+    verify = 1;
+  } else {
     BaseSetLastNTError(STATUS_ACCESS_DENIED);
-    resp = FALSE;
+    verify = 0;
   }
-  RtlLeaveCriticalSection(&BaseSearchPathModeLock);
-  return resp;
+  return verify;
 }
 
 BOOL 

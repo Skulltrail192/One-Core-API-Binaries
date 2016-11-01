@@ -1945,45 +1945,51 @@ static int csidl_from_id( const KNOWNFOLDERID *id )
 /*************************************************************************
  * SHGetKnownFolderPath           [SHELL32.@]
  */
-HRESULT WINAPI SHGetKnownFolderPath(REFKNOWNFOLDERID rfid, DWORD flags, HANDLE token, PWSTR *path)
+HRESULT 
+WINAPI 
+SHGetKnownFolderPath(
+	REFKNOWNFOLDERID rfid, 
+	DWORD flags, 
+	HANDLE token, 
+	PWSTR *path)
 {
-    HRESULT hr;
-    WCHAR folder[MAX_PATH];
-    int index = csidl_from_id( rfid );
+     HRESULT hr;
+    // WCHAR folder[MAX_PATH];
+    // int index = csidl_from_id( rfid );
 
-    TRACE("%s, 0x%08x, %p, %p\n", debugstr_guid(rfid), flags, token, path);
+    // TRACE("%s, 0x%08x, %p, %p\n", debugstr_guid(rfid), flags, token, path);
 
-    *path = NULL;
+    // *path = NULL;
 
-    if (index < 0)
-        return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
+    // if (index < 0)
+        // return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
 
-    if (flags & KF_FLAG_CREATE)
-        index |= CSIDL_FLAG_CREATE;
+    // if (flags & KF_FLAG_CREATE)
+        // index |= CSIDL_FLAG_CREATE;
 
-    if (flags & KF_FLAG_DONT_VERIFY)
-        index |= CSIDL_FLAG_DONT_VERIFY;
+    // if (flags & KF_FLAG_DONT_VERIFY)
+        // index |= CSIDL_FLAG_DONT_VERIFY;
 
-    if (flags & KF_FLAG_NO_ALIAS)
-        index |= CSIDL_FLAG_NO_ALIAS;
+    // if (flags & KF_FLAG_NO_ALIAS)
+        // index |= CSIDL_FLAG_NO_ALIAS;
 
-    if (flags & KF_FLAG_INIT)
-        index |= CSIDL_FLAG_PER_USER_INIT;
+    // if (flags & KF_FLAG_INIT)
+        // index |= CSIDL_FLAG_PER_USER_INIT;
 
-    if (flags & ~(KF_FLAG_CREATE|KF_FLAG_DONT_VERIFY|KF_FLAG_NO_ALIAS|KF_FLAG_INIT))
-    {
-        FIXME("flags 0x%08x not supported\n", flags);
-        return E_INVALIDARG;
-    }
+    // if (flags & ~(KF_FLAG_CREATE|KF_FLAG_DONT_VERIFY|KF_FLAG_NO_ALIAS|KF_FLAG_INIT))
+    // {
+        // FIXME("flags 0x%08x not supported\n", flags);
+        // return E_INVALIDARG;
+    // }
 
-    hr = SHGetFolderPathW( NULL, index, token, 0, folder );
-    if (SUCCEEDED(hr))
-    {
-        *path = CoTaskMemAlloc( (strlenW( folder ) + 1) * sizeof(WCHAR) );
-        if (!*path)
-            return E_OUTOFMEMORY;
-        strcpyW( *path, folder );
-    }
+    // hr = SHGetFolderPathW( NULL, index, token, 0, folder );
+    // if (SUCCEEDED(hr))
+    // {
+        // *path = CoTaskMemAlloc( (strlenW( folder ) + 1) * sizeof(WCHAR) );
+        // if (!*path)
+            // return E_OUTOFMEMORY;
+        // strcpyW( *path, folder );
+    // }
     return hr;
 }
 

@@ -1982,7 +1982,9 @@ int  WINAPI ResolveLocaleName(
 }
 
 
-BOOL WINAPI SetProcessPreferredUILanguages(
+BOOL 
+WINAPI 
+SetProcessPreferredUILanguages(
   _In_       DWORD dwFlags,
   _In_opt_   PCZZWSTR pwszLanguagesBuffer,
   _Out_opt_  PULONG pulNumLanguages

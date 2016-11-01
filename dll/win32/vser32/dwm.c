@@ -116,3 +116,7 @@ DWORD WINAPI DwmStopRedirection()
 	DbgPrint("DwmStopRedirection is UNIMPLEMENTED\n");	
 	return 0;
 }
+
+NTSTATUS WINAPI DwmHintDxUpdate(HANDLE window, DWORD option){
+	return STATUS_SUCCESS;
+}

@@ -118,7 +118,7 @@
 @ stdcall CryptEncryptMessage(ptr long ptr ptr long ptr ptr)
 @ stdcall CryptEnumOIDFunction(long str str long ptr ptr)
 @ stdcall CryptEnumOIDInfo(long long ptr ptr)
-@ stdcall CryptEnumProvidersU(long long long ptr ptr ptr)
+@ stdcall CryptEnumProvidersU(long ptr long ptr wstr ptr)
 @ stdcall CryptExportPKCS8(ptr long str long ptr ptr ptr)
 @ stdcall CryptExportPublicKeyInfo(long long long ptr ptr)
 @ stdcall CryptExportPublicKeyInfoEx(long long long str long ptr ptr ptr)
@@ -278,7 +278,7 @@
 @ stdcall CertFindSubjectInSortedCTL(ptr long ptr ptr)
 1001 stdcall -noname DbgInitOSS(ptr)
 1002 stdcall -noname DbgPrintf(wstr)
-1003 stdcall -noname RegCreateKeyW(ptr wstr ptr)	advapi32.RegCreateKeyW
+1003 stdcall -noname RegCreateKeyW(ptr wstr ptr) advapi32.RegCreateKeyW
 1004 stdcall -noname RegCreateKeyExW(ptr wstr long wstr long ptr ptr ptr ptr) advapi32.RegCreateKeyExW
 1005 stdcall -noname RegOpenKeyW(ptr wstr long ptr ptr) advapi32.RegOpenKeyW
 1006 stdcall -noname RegOpenKeyExW(ptr wstr long ptr ptr) advapi32.RegOpenKeyExW

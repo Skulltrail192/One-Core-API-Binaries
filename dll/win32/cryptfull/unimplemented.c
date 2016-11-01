@@ -143,16 +143,15 @@ CryptEnumOIDFunction(
 	return FALSE;
 }
 
-BOOL 
-WINAPI
-CryptEnumProvidersU(
-	unsigned __int32 a1, 
-	DWORD a2, 
-	DWORD a3, 
-	unsigned __int32 *a4, 
-	wchar_t *a5, 
-	unsigned __int32 *a6
-)
+BOOL
+WINAPI CryptEnumProvidersU(
+                           IN DWORD dwIndex,
+                           IN DWORD *pdwReserved,
+                           IN DWORD dwFlags,
+                           OUT DWORD *pdwProvType,
+                           OUT LPWSTR pwszProvName,
+                           IN OUT DWORD *pcbProvName
+                           )
 {
 	return FALSE;
 }
@@ -275,12 +274,9 @@ CryptSetAsyncParam(
 	return FALSE;
 }
 
-BOOL
-WINAPI
-CryptSetProviderU(
-	const WCHAR *a1, 
-	DWORD a2
-)
+BOOL WINAPI CryptSetProviderU(
+    LPCWSTR lpProvName,
+    DWORD dwProvType) {
 {
 	return FALSE;
 }
@@ -301,16 +297,13 @@ CryptSignAndEncryptMessage(
 	return FALSE;
 }
 
-BOOL
-WINAPI
-CryptSignHashU(
-	HCRYPTHASH a1, 
-	DWORD a2, 
-	const WCHAR *a3, 
-	DWORD a4, 
-	BYTE *a5, 
-	DWORD *a6
-)
+BOOL WINAPI CryptSignHashU(
+    HCRYPTHASH hHash,
+    DWORD dwKeySpec,
+    LPCWSTR lpDescription,
+    DWORD dwFlags,
+    BYTE *pbSignature,
+    DWORD *pdwSigLen)
 {
 	return FALSE;
 }
@@ -365,12 +358,13 @@ CryptVerifySignatureU(
 	return FALSE;
 }
 
-BOOL
+HCRYPTPROV
 WINAPI
 I_CryptGetDefaultCryptProvForEncrypt(
-	HCRYPTPROV phProv, 
-	int b, 
-	int c)
+    IN ALG_ID aiPubKey,
+    IN ALG_ID aiEncrypt,
+    IN DWORD dwBitLen
+    )
 {
 	return FALSE;
 }

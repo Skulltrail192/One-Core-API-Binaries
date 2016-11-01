@@ -12,5 +12,5 @@ list(APPEND SOURCE
 add_library(vetupapi SHARED ${SOURCE})
 set_module_type(vetupapi win32dll ENTRYPOINT 0)
 target_link_libraries(vetupapi wine)
-add_importlibs(vetupapi setupapi advapi32 msvcrt kernel32 ntdll)
+add_importlibs(vetupapi setupapibase advapi32 msvcrt kernel32 ntdll)
 add_cd_file(TARGET vetupapi DESTINATION reactos/system32 FOR all)

@@ -1285,6 +1285,11 @@ int APIENTRY WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int);
 #endif
 int APIENTRY wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR, _In_ int);
 
+BOOL WINAPI GetDevicePowerState(
+  _In_  HANDLE hDevice,
+  _Out_ BOOL   *pfOn
+);
+
 long
 WINAPI
 _hread(

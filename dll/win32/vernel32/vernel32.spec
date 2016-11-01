@@ -991,19 +991,19 @@
 @ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
 
 #Missing on XP and avaliable for Server 2003
-@ stdcall ConvertThreadToFiberEx(ptr long) ;kernelfull.ConvertThreadToFiberEx
-@ stdcall FindNextStreamW(ptr ptr) ;onwer implementation ;kernelfull.FindNextStreamW
-@ stdcall GetLargePageMinimum() ;onwer implementation ;kernelfull.GetLargePageMinimum
+@ stdcall ConvertThreadToFiberEx(ptr long) kernelfull.ConvertThreadToFiberEx
+@ stdcall FindNextStreamW(ptr ptr) kernelfull.FindNextStreamW ;onwer implementation 
+@ stdcall GetLargePageMinimum() kernelfull.GetLargePageMinimum ;onwer implementation 
 @ stdcall GetNLSVersion(long long ptr) kernelfull.GetNLSVersion
-@ stdcall GetProcessIdOfThread(ptr) ;onwer implementation ;kernelfull.GetProcessIdOfThread
-@ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) ;onwer implementation ;kernelfull.GetProcessWorkingSetSizeEx
+@ stdcall GetProcessIdOfThread(ptr) kernelfull.GetProcessIdOfThread ;onwer implementation 
+@ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) kernelfull.GetProcessWorkingSetSizeEx ;onwer implementation 
 @ stdcall IsNLSDefinedString(long long ptr long long) kernelfull.IsNLSDefinedString
-@ stdcall NeedCurrentDirectoryForExePathA(str) ;onwer implementation ;kernelfull.NeedCurrentDirectoryForExePathA
-@ stdcall NeedCurrentDirectoryForExePathW(wstr) ;onwer implementation ;kernelfull.NeedCurrentDirectoryForExePathW
-@ stdcall ReOpenFile(ptr long long long) ;onwer implementation ;kernelfull.ReOpenFile
-@ stdcall SetEnvironmentStringsA(ptr) ;onwer implementation ;kernelfull.SetEnvironmentStringsA
-@ stdcall SetEnvironmentStringsW(ptr) ;onwer implementation ;kernelfull.SetEnvironmentStringsW
-@ stdcall SetProcessWorkingSetSizeEx(long long long long) ;onwer implementation ;kernelfull.SetProcessWorkingSetSizeEx
+@ stdcall NeedCurrentDirectoryForExePathA(str) kernelfull.NeedCurrentDirectoryForExePathA ;onwer implementation 
+@ stdcall NeedCurrentDirectoryForExePathW(wstr) kernelfull.NeedCurrentDirectoryForExePathW ;onwer implementation 
+@ stdcall ReOpenFile(ptr long long long) kernelfull.ReOpenFile ;onwer implementation 
+@ stdcall SetEnvironmentStringsA(ptr) kernelfull.SetEnvironmentStringsA ;onwer implementation 
+@ stdcall SetEnvironmentStringsW(ptr) kernelfull.SetEnvironmentStringsW ;onwer implementation 
+@ stdcall SetProcessWorkingSetSizeEx(long long long long) kernelfull.SetProcessWorkingSetSizeEx ;onwer implementation  
 @ stdcall Wow64EnableWow64FsRedirection(long) 
 
 #Needed funcions for XP x64

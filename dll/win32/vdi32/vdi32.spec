@@ -610,3 +610,10 @@
 
 #missing functions
 @ stdcall GdiGetBitmapBitsSize(ptr) #please, be careful with this function!
+@ stdcall GetFontFileInfo(long long ptr long long)
+
+#vista functions
+@ stdcall D3DKMTCloseAdapter(ptr)
+@ stdcall D3DKMTCreateDCFromMemory(ptr)
+@ stdcall D3DKMTDestroyDCFromMemory(ptr)
+@ stdcall D3DKMTCheckMonitorPowerState(ptr)

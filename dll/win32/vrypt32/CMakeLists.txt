@@ -1,7 +1,7 @@
 
 add_definitions(
     -D__WINESRC__
-    -D_WINE
+    -D_WINDOWS
     -D_CRYPT32_)
 include_directories(${REACTOS_SOURCE_DIR}/include/host)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)

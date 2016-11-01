@@ -1,0 +1,3 @@
+-Várias funções de locale
+
+-Provavelmente implementar nativamente as funções "SearchPathA e SearchPathW" para o correto funcionamento de SetSearchPathMode

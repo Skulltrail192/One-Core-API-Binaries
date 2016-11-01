@@ -175,16 +175,6 @@ HRESULT WINAPI SHCreateItemInKnownFolder(
 	return E_FAIL;
 }
 
-HRESULT WINAPI SHSetKnownFolderPath(
-  _In_  REFKNOWNFOLDERID rfid,
-  _In_  DWORD dwFlags,
-  _In_  HANDLE hToken,
-  _In_  PCWSTR pszPath
-)
-{
-	return SHSetFolderPathW((int)rfid, hToken, dwFlags, pszPath);
-}
-
 HRESULT WINAPI SHGetTemporaryPropertyForItem(
   _In_   IShellItem *psi,
   REFPROPERTYKEY pk,
