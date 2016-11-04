@@ -1990,13 +1990,16 @@ SHGetKnownFolderPath(
             // return E_OUTOFMEMORY;
         // strcpyW( *path, folder );
     // }
-    return hr;
+	*path = L"C:\\Program and Files\\";
+    return S_OK;
 }
 
 /*************************************************************************
  * SHGetFolderPathEx           [SHELL32.@]
  */
-HRESULT WINAPI SHGetFolderPathEx(REFKNOWNFOLDERID rfid, DWORD flags, HANDLE token, LPWSTR path, DWORD len)
+HRESULT 
+WINAPI 
+SHGetFolderPathEx(REFKNOWNFOLDERID rfid, DWORD flags, HANDLE token, LPWSTR path, DWORD len)
 {
     HRESULT hr;
     WCHAR *buffer;

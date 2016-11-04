@@ -3109,3 +3109,13 @@ TpStartAsyncIoOperation(
 	DbgPrint("UNIMPLEMENTED: TpStartAsyncIoOperation");	
 	;
 } 
+
+VOID 
+NTAPI 	
+TpCancelAsyncIoOperation(
+	_Inout_ PTP_IO Io
+)
+{
+	DbgPrint("UNIMPLEMENTED: TpCancelAsyncIoOperation");		
+	;
+}

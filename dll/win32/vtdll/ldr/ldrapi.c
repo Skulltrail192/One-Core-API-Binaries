@@ -126,3 +126,9 @@ LdrRemoveDllDirectory(
 {
 	return STATUS_SUCCESS;
 }
+
+NTSTATUS 
+LdrAddDllDirectory(LPCWSTR a1, void *a2)
+{
+	return STATUS_SUCCESS;
+}

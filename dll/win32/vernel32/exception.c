@@ -1,4 +1,6 @@
- /*
+/*
+ * Copyright 2009 Henri Verbeet for CodeWeavers
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -14,45 +16,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  *
  */
- 
-#define NDEBUG
-
 #include <main.h>
-
-NTSTATUS 
-RtlAddIntegrityLabelToBoundaryDescriptor(
-	HANDLE *BoundaryDescriptor, 
-	PSID IntegrityLabel
-)
-{
-	DbgPrint("UNIMPLEMENTED: RtlAddIntegrityLabelToBoundaryDescriptor\n");
-	return STATUS_SUCCESS;
-}
-
-NTSTATUS 
-RtlAddSIDToBoundaryDescriptor(
-  _Inout_  HANDLE *BoundaryDescriptor,
-  _In_     PSID RequiredSid
-)
-{
-	DbgPrint("UNIMPLEMENTED: RtlAddSIDToBoundaryDescriptor");
-	return STATUS_SUCCESS;
-}
-
-HANDLE 
-RtlCreateBoundaryDescriptor(
-	LSA_UNICODE_STRING *string, 
-	ULONG Flags
-)
-{
-	return NULL;
-}
 
 VOID 
 WINAPI 
-RtlDeleteBoundaryDescriptor(
-  _In_ HANDLE BoundaryDescriptor
+RaiseFailFastException(
+  _In_opt_  PEXCEPTION_RECORD pExceptionRecord,
+  _In_opt_  PCONTEXT pContextRecord,
+  _In_      DWORD dwFlags
 )
 {
-	RtlFreeHeap(NtCurrentTeb()->ProcessEnvironmentBlock->ProcessHeap, 8, BoundaryDescriptor);
+	RaiseException(pExceptionRecord->ExceptionCode, pExceptionRecord->ExceptionFlags, pExceptionRecord->NumberParameters, &pExceptionRecord->ExceptionInformation[0]);
 }

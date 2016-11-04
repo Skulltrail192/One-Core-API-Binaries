@@ -20,26 +20,6 @@
 #include <main.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
-/*
-typedef DWORD TP_VERSION, *PTP_VERSION;
-
-typedef DWORD TP_WAIT_RESULT;
-
-typedef struct _TP_POOL TP_POOL, *PTP_POOL;
-
-typedef struct _TP_TIMER TP_TIMER, *PTP_TIMER;
-
-typedef struct _TP_CLEANUP_GROUP TP_CLEANUP_GROUP, *PTP_CLEANUP_GROUP;
-
-typedef struct _TP_CALLBACK_INSTANCE TP_CALLBACK_INSTANCE, *PTP_CALLBACK_INSTANCE;
-
-typedef VOID (*PTP_TIMER_CALLBACK)(PTP_CALLBACK_INSTANCE Instance, PVOID Context, PTP_TIMER Timer);
-
-typedef struct _TP_WAIT TP_WAIT, *PTP_WAIT;
-
-typedef TP_CALLBACK_ENVIRON_V1 TP_CALLBACK_ENVIRON, *PTP_CALLBACK_ENVIRON;
-
-typedef VOID (*PTP_WAIT_CALLBACK)(PTP_CALLBACK_INSTANCE Instance, PVOID Context, PTP_WAIT Wait, TP_WAIT_RESULT WaitResult);*/
 
 /*UNIMPLEMENTED SECTION *******************************************/
 /*
@@ -47,11 +27,13 @@ typedef VOID (*PTP_WAIT_CALLBACK)(PTP_CALLBACK_INSTANCE Instance, PVOID Context,
 */ 
 HRESULT
 WINAPI
-GetApplicationRecoveryCallback(IN HANDLE hProcess,
-                               OUT APPLICATION_RECOVERY_CALLBACK* pRecoveryCallback,
-                               OUT PVOID* ppvParameter,
-                               PDWORD dwPingInterval,
-                               PDWORD dwFlags)
+GetApplicationRecoveryCallback(
+	IN HANDLE hProcess,
+    OUT APPLICATION_RECOVERY_CALLBACK* pRecoveryCallback,
+    OUT PVOID* ppvParameter,
+    PDWORD dwPingInterval,
+    PDWORD dwFlags
+)
 {
     UNIMPLEMENTED;
     return S_OK;
@@ -63,10 +45,12 @@ GetApplicationRecoveryCallback(IN HANDLE hProcess,
 */
 HRESULT
 WINAPI
-GetApplicationRestart(IN HANDLE hProcess,
-                      OUT PWSTR pwzCommandline  OPTIONAL,
-                      IN OUT PDWORD pcchSize,
-                      OUT PDWORD pdwFlags  OPTIONAL)
+GetApplicationRestart(
+	IN HANDLE hProcess,
+    OUT PWSTR pwzCommandline  OPTIONAL,
+    IN OUT PDWORD pcchSize,
+    OUT PDWORD pdwFlags  OPTIONAL
+)
 {
     UNIMPLEMENTED;
     return S_OK;
@@ -155,17 +139,6 @@ GetApplicationRestartSettings(
 )
 {
 	return S_OK;
-}
-
-VOID 
-WINAPI 
-RaiseFailFastException(
-  _In_opt_  PEXCEPTION_RECORD pExceptionRecord,
-  _In_opt_  PCONTEXT pContextRecord,
-  _In_      DWORD dwFlags
-)
-{
-	RaiseException(pExceptionRecord->ExceptionCode, pExceptionRecord->ExceptionFlags, pExceptionRecord->NumberParameters, &pExceptionRecord->ExceptionInformation[0]);
 }
 
 /*

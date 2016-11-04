@@ -1221,7 +1221,7 @@
 @ stdcall GetFileAttributesTransactedA(str long ptr ptr)
 @ stdcall GetFileAttributesTransactedW(wstr long ptr ptr)
 @ stdcall GetFileBandwidthReservation(ptr ptr ptr long long long)
-@ stdcall GetFileInformationByHandleEx(ptr long ptr long)
+@ stdcall GetFileInformationByHandleEx(ptr long ptr long) fileextd.GetFileInformationByHandleEx
 @ stdcall GetFinalPathNameByHandleA(ptr str long long)
 @ stdcall GetFinalPathNameByHandleW(ptr wstr long long)
 @ stdcall GetFileMUIInfo(long wstr ptr ptr)
@@ -1315,7 +1315,6 @@
 @ stdcall IsNativeVhdBoot(ptr)
 @ stdcall IsNormalizedString(long wstr long) normaliz.IsNormalizedString
 @ stdcall IsThreadAFiber()
-@ stdcall IsTimeZoneRedirectionEnabled() 
 @ stdcall IsValidCalDateTime(ptr long)
 @ stdcall IsValidLocaleName(wstr) ;see wine implementation ;unimplemented
 @ stdcall IsValidNLSVersion(long wstr ptr)
@@ -1428,7 +1427,7 @@
 @ stdcall SetFileAttributesTransactedA(str long ptr)
 @ stdcall SetFileAttributesTransactedW(wstr long ptr)
 @ stdcall SetFileBandwidthReservation(ptr ptr ptr long long long) 
-@ stdcall SetFileInformationByHandle(long long ptr long)
+@ stdcall SetFileInformationByHandle(long long ptr long) fileextd.SetFileInformationByHandle
 @ stdcall SetFileIoOverlappedRange(ptr ptr long)
 @ stdcall SetFirmwareEnvironmentVariableExA(str str ptr long long)
 @ stdcall SetFirmwareEnvironmentVariableExW(str str ptr long long)
@@ -1462,7 +1461,6 @@
 @ stub SortGetHandle
 @ stdcall StartThreadpoolIo(ptr) vtdll.TpStartAsyncIoOperation
 @ stdcall SubmitThreadpoolWork(ptr) vtdll.TpPostWork
-@ stdcall SystemTimeToTzSpecificLocalTimeEx(ptr ptr ptr)
 @ stdcall SystemTimeToTzSpecificLocalTimeEx(ptr ptr ptr)
 @ stdcall timeBeginPeriod(long)
 @ stdcall timeEndPeriod(long)

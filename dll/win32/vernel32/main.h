@@ -7,7 +7,6 @@
 #include <strsafe.h>
 #include <iofuncs.h>
 #include <mmfuncs.h>
-#include <ntdllnew.h>
 #include <base.h>
 #include <pofuncs.h>
 #include <cmfuncs.h>

@@ -42,7 +42,7 @@ Wow64SetThreadContext(
 )
 { 
   #ifdef _M_IX86
-	BaseSetLastNTError(-1073741822);
+	BaseSetLastNTError(STATUS_NOT_SUPPORTED);
 	return FALSE;
   #elif defined(_M_AMD64)
 	return SetThreadContext(hThread, lpContext);
@@ -57,7 +57,7 @@ Wow64GetThreadContext(
 )
 { 
   #ifdef _M_IX86
-	BaseSetLastNTError(-1073741822);
+	BaseSetLastNTError(STATUS_NOT_SUPPORTED);
 	return FALSE;
   #elif defined(_M_AMD64)
 	return GetThreadContext(hThread, lpContext);
@@ -86,6 +86,9 @@ Wow64DisableWow64FsRedirection(
 	PVOID *OldValue
 )
 {
+#ifdef _M_IX86	
+	return FALSE;
+#elif defined(_M_AMD64)			
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
 
@@ -100,6 +103,7 @@ Wow64DisableWow64FsRedirection(
     result = FALSE;
   }
   return result;
+#endif   
 }
 
 BOOL 
@@ -108,6 +112,9 @@ Wow64RevertWow64FsRedirection(
 	PVOID OlValue
 )
 {
+#ifdef _M_IX86	
+	return FALSE;
+#elif defined(_M_AMD64)		
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
 
@@ -122,6 +129,7 @@ Wow64RevertWow64FsRedirection(
     result = FALSE;
   }
   return result;
+#endif 
 }
 
 BOOLEAN 
@@ -130,18 +138,19 @@ Wow64EnableWow64FsRedirection(
 	BOOLEAN Wow64FsEnableRedirection
 )
 {
-  NTSTATUS status; // eax@1
-  BOOLEAN result; // al@2
+#ifdef _M_IX86	
+	return FALSE;
+#elif defined(_M_AMD64)	
+    NTSTATUS NtStatus;
+	
+    NtStatus = RtlWow64EnableFsRedirection (Wow64FsEnableRedirection);
 
-  status = RtlWow64EnableFsRedirection(Wow64FsEnableRedirection);
-  if ( status >= 0 )
-  {
-    result = TRUE;
-  }
-  else
-  {
-    BaseSetLastNTError(status);
-    result = FALSE;
-  }
-  return result;
+    if (!NT_SUCCESS (NtStatus)) {
+        
+        BaseSetLastNTError (NtStatus);
+        return FALSE;
+    }
+
+    return TRUE;
+#endif
 }

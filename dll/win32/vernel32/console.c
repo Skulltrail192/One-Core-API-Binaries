@@ -55,9 +55,11 @@ SetConsoleHistoryInfo(IN PCONSOLE_HISTORY_INFO lpConsoleHistoryInfo)
  */
 BOOL
 WINAPI
-GetCurrentConsoleFontEx(IN HANDLE hConsoleOutput,
-                        IN BOOL bMaximumWindow,
-                        OUT PCONSOLE_FONT_INFOEX lpConsoleCurrentFontEx)
+GetCurrentConsoleFontEx(
+	IN HANDLE hConsoleOutput,
+    IN BOOL bMaximumWindow,
+    OUT PCONSOLE_FONT_INFOEX lpConsoleCurrentFontEx
+)
 {
   DWORD status; // [sp-4h] [bp-ACh]@2
   CSR_API_MESSAGE server; // [sp+4h] [bp-A4h]@3
@@ -82,7 +84,7 @@ GetCurrentConsoleFontEx(IN HANDLE hConsoleOutput,
       lpConsoleCurrentFontEx->FontFamily = family;
       lpConsoleCurrentFontEx->FontWeight = wight;
       StringCchCopyW(lpConsoleCurrentFontEx->FaceName, 0x20u, &pszSrc);
-      return 1;
+      return TRUE;
     }
     status = RtlNtStatusToDosError(NtStatus);
   }
@@ -91,7 +93,7 @@ GetCurrentConsoleFontEx(IN HANDLE hConsoleOutput,
     status = 87;
   }
   SetLastError(status);
-  return 0;
+  return FALSE;
 }
 
 /*--------------------------------------------------------------
@@ -101,7 +103,10 @@ GetCurrentConsoleFontEx(IN HANDLE hConsoleOutput,
  */
 BOOL
 WINAPI
-SetConsoleScreenBufferInfoEx(HANDLE hConsoleOutput, PCONSOLE_SCREEN_BUFFER_INFOEX lpConsoleScreenBufferInfoEx)
+SetConsoleScreenBufferInfoEx(
+	HANDLE hConsoleOutput, 
+	PCONSOLE_SCREEN_BUFFER_INFOEX lpConsoleScreenBufferInfoEx
+)
 {
   ULONG resp; // [sp-4h] [bp-A8h]@2
   CSR_API_MESSAGE message; // [sp+0h] [bp-A4h]@5
@@ -145,7 +150,9 @@ SetConsoleScreenBufferInfoEx(HANDLE hConsoleOutput, PCONSOLE_SCREEN_BUFFER_INFOE
  */
 BOOL
 WINAPI
-GetConsoleHistoryInfo(PCONSOLE_HISTORY_INFO lpConsoleHistoryInfo)
+GetConsoleHistoryInfo(
+	PCONSOLE_HISTORY_INFO lpConsoleHistoryInfo
+)
 {
     CSR_API_MESSAGE_KERNEL Request;
     ULONG CsrRequest = MAKE_CSR_API(GET_HISTORY_INFO, CSR_CONSOLE);
@@ -167,7 +174,9 @@ GetConsoleHistoryInfo(PCONSOLE_HISTORY_INFO lpConsoleHistoryInfo)
     return TRUE;
 }
 
-DWORD WINAPI GetConsoleOriginalTitleA(
+DWORD 
+WINAPI 
+GetConsoleOriginalTitleA(
   _Out_  LPTSTR lpConsoleTitle,
   _In_   DWORD nSize
 )
@@ -175,7 +184,9 @@ DWORD WINAPI GetConsoleOriginalTitleA(
 	return GetConsoleTitleA(lpConsoleTitle, nSize);
 }
 
-DWORD WINAPI GetConsoleOriginalTitleW(
+DWORD 
+WINAPI 
+GetConsoleOriginalTitleW(
   _Out_  LPWSTR lpConsoleTitle,
   _In_   DWORD nSize
 )
@@ -211,13 +222,17 @@ GetConsoleScreenBufferInfoEx(
   return result;
 }
 
-BOOL WINAPI SetCurrentConsoleFontEx(HANDLE hConsoleOutput, BOOL bMaximumWindow, PCONSOLE_FONT_INFOEX lpConsoleCurrentFontEx)
+BOOL 
+WINAPI 
+SetCurrentConsoleFontEx(
+	HANDLE hConsoleOutput, 
+	BOOL bMaximumWindow, 
+	PCONSOLE_FONT_INFOEX lpConsoleCurrentFontEx
+)
 {
   DWORD error; // [sp-4h] [bp-A8h]@2
   PCSR_API_MESSAGE message = NULL; // [sp+0h] [bp-A4h]@3
   NTSTATUS NtStatus = STATUS_SUCCESS; // [sp+20h] [bp-84h]@3
-  HANDLE handle; // [sp+2Ch] [bp-78h]@3
-  BOOL verification; // [sp+30h] [bp-74h]@3
   DWORD font; // [sp+34h] [bp-70h]@3
   SHORT size; // [sp+38h] [bp-6Ch]@3
   UINT family; // [sp+3Ch] [bp-68h]@3
@@ -226,8 +241,6 @@ BOOL WINAPI SetCurrentConsoleFontEx(HANDLE hConsoleOutput, BOOL bMaximumWindow, 
 
   if ( lpConsoleCurrentFontEx->cbSize == 84 )
   {
-    handle = hConsoleOutput;
-    verification = bMaximumWindow;
     size = lpConsoleCurrentFontEx->dwFontSize.X;
     font = lpConsoleCurrentFontEx->nFont;
     family = lpConsoleCurrentFontEx->FontFamily;

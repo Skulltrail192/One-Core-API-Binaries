@@ -51,6 +51,7 @@ list(APPEND SOURCE
 	rtl/sid.c
 	rtl/sync.c		
 	rtl/sysinfo.c
+	rtl/time.c
 	rtl/transaction.c
 	rtl/threadpool.c
 	rtl/unicode.c

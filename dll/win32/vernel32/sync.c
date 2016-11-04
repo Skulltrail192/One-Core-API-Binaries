@@ -61,6 +61,8 @@ SleepConditionVariableCS(
     LARGE_INTEGER time;
 
     status = RtlSleepConditionVariableCS( ConditionVariable, CriticalSection, get_nt_timeout( &time, dwMilliseconds ) );
+	
+	DbgPrint("Function: RtlSleepConditionVariableCS. From ntdll function: RtlSleepConditionVariableCS. Status: %08x\n",status);
 
     if (status != STATUS_SUCCESS)
     {
@@ -73,7 +75,14 @@ SleepConditionVariableCS(
 /*
  * @implemented - need test - used function from ntdllnew
  */
-BOOL WINAPI SleepConditionVariableSRW(PRTL_CONDITION_VARIABLE ConditionVariable, PRTL_SRWLOCK SRWLock, DWORD dwMilliseconds, ULONG Flags)
+BOOL 
+WINAPI 
+SleepConditionVariableSRW(
+	PRTL_CONDITION_VARIABLE ConditionVariable, 
+	PRTL_SRWLOCK SRWLock, 
+	DWORD dwMilliseconds, 
+	ULONG Flags
+)
 {
 	NTSTATUS status;
     LARGE_INTEGER time;

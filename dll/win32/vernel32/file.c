@@ -155,114 +155,114 @@ GetFileInformationByHandleEx(
 	DWORD FileInformationLength
 )
 {
-  DWORD lenght; // ecx@1
-  BOOL verification; // edx@1
-  FILE_INFORMATION_CLASS file; // eax@4
-  NTSTATUS status; // eax@8
-  DWORD sei; // [sp-4h] [bp-14h]@4
-  DWORD la; // [sp-4h] [bp-14h]@19
-  DWORD error; // [sp-4h] [bp-14h]@23
-  NTSTATUS receiveStatus; // [sp-4h] [bp-14h]@32
-  struct _IO_STATUS_BLOCK IoStatusBlock; // [sp+8h] [bp-8h]@1
+  // DWORD lenght; // ecx@1
+  // BOOL verification; // edx@1
+  // FILE_INFORMATION_CLASS file; // eax@4
+  // NTSTATUS status; // eax@8
+  // DWORD sei; // [sp-4h] [bp-14h]@4
+  // DWORD la; // [sp-4h] [bp-14h]@19
+  // DWORD error; // [sp-4h] [bp-14h]@23
+  // NTSTATUS receiveStatus; // [sp-4h] [bp-14h]@32
+  // struct _IO_STATUS_BLOCK IoStatusBlock; // [sp+8h] [bp-8h]@1
 
-  lenght = 8;
-  verification = 0;
-  IoStatusBlock.Information = 0;
-  if ( (signed int)FileInformationClass <= 8 )
-  {
-    if ( FileInformationClass == 8 )
-    {
-      file = 28;
-      sei = 16;
-      goto LABEL_5;
-    }
-    if ( !FileInformationClass )
-    {
-      file = 4;
-      sei = 40;
-LABEL_5:
-      lenght = sei;
-      goto LABEL_6;
-    }
-    if ( FileInformationClass == 1 )
-    {
-      file = 5;
-      sei = 24;
-      goto LABEL_5;
-    }
-    if ( FileInformationClass != 2 )
-    {
-      if ( FileInformationClass == 7 )
-      {
-        file = 22;
-        sei = 32;
-        goto LABEL_5;
-      }
-LABEL_23:
-      error = 87;
-LABEL_24:
-      SetLastError(error);
-      return 0;
-    }
-    la = 9;
-    goto LABEL_29;
-  }
-  if ( FileInformationClass == 9 )
-  {
-    la = 35;
-LABEL_29:
-    file = la;
-    goto LABEL_6;
-  }
-  if ( FileInformationClass == 10 )
-  {
-    file = 37;
-    lenght = 112;
-    verification = 1;
-    IoStatusBlock.Information = 0;
-  }
-  else
-  {
-    if ( FileInformationClass != 11 )
-      goto LABEL_23;
-    file = 37;
-    verification = 1;
-    lenght = 112;
-    IoStatusBlock.Information = 1;
-  }
-LABEL_6:
-  if ( lenght > FileInformationLength )
-  {
-    error = 24;
-    goto LABEL_24;
-  }
-  if ( verification )
-    status = NtQueryDirectoryFile(
-               FileHandle,
-               NULL,
-               NULL,
-               NULL,
-               &IoStatusBlock,
-               FileInformation,
-               FileInformationLength,
-               file,
-               0,
-               NULL,
-               LOBYTE(IoStatusBlock.Information));
-  else
-    status = NtQueryInformationFile(FileHandle, &IoStatusBlock, FileInformation, FileInformationLength, file);
-  if ( status < 0 )
-  {
-    receiveStatus = status;
-  }
-  else
-  {
-    if ( FileInformationClass != 7 || IoStatusBlock.Information )
-      return 1;
-    receiveStatus = 0xC0000011u;
-  }
- SetLastError(receiveStatus);
-  return 0;
+  // lenght = 8;
+  // verification = 0;
+  // IoStatusBlock.Information = 0;
+  // if ( (signed int)FileInformationClass <= 8 )
+  // {
+    // if ( FileInformationClass == 8 )
+    // {
+      // file = 28;
+      // sei = 16;
+      // goto LABEL_5;
+    // }
+    // if ( !FileInformationClass )
+    // {
+      // file = 4;
+      // sei = 40;
+// LABEL_5:
+      // lenght = sei;
+      // goto LABEL_6;
+    // }
+    // if ( FileInformationClass == 1 )
+    // {
+      // file = 5;
+      // sei = 24;
+      // goto LABEL_5;
+    // }
+    // if ( FileInformationClass != 2 )
+    // {
+      // if ( FileInformationClass == 7 )
+      // {
+        // file = 22;
+        // sei = 32;
+        // goto LABEL_5;
+      // }
+// LABEL_23:
+      // error = 87;
+// LABEL_24:
+      // SetLastError(error);
+      // return 0;
+    // }
+    // la = 9;
+    // goto LABEL_29;
+  // }
+  // if ( FileInformationClass == 9 )
+  // {
+    // la = 35;
+// LABEL_29:
+    // file = la;
+    // goto LABEL_6;
+  // }
+  // if ( FileInformationClass == 10 )
+  // {
+    // file = 37;
+    // lenght = 112;
+    // verification = 1;
+    // IoStatusBlock.Information = 0;
+  // }
+  // else
+  // {
+    // if ( FileInformationClass != 11 )
+      // goto LABEL_23;
+    // file = 37;
+    // verification = 1;
+    // lenght = 112;
+    // IoStatusBlock.Information = 1;
+  // }
+// LABEL_6:
+  // if ( lenght > FileInformationLength )
+  // {
+    // error = 24;
+    // goto LABEL_24;
+  // }
+  // if ( verification )
+    // status = NtQueryDirectoryFile(
+               // FileHandle,
+               // NULL,
+               // NULL,
+               // NULL,
+               // &IoStatusBlock,
+               // FileInformation,
+               // FileInformationLength,
+               // file,
+               // 0,
+               // NULL,
+               // LOBYTE(IoStatusBlock.Information));
+  // else
+    // status = NtQueryInformationFile(FileHandle, &IoStatusBlock, FileInformation, FileInformationLength, file);
+  // if ( status < 0 )
+  // {
+    // receiveStatus = status;
+  // }
+  // else
+  // {
+    // if ( FileInformationClass != 7 || IoStatusBlock.Information )
+      // return 1;
+    // receiveStatus = 0xC0000011u;
+  // }
+ // SetLastError(receiveStatus);
+  // return 0;
 }
 
 /*

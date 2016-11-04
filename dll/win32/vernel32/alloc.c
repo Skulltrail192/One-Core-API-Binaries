@@ -21,7 +21,14 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
-BOOL WINAPI AllocateUserPhysicalPagesNuma(HANDLE ProcessHandle, PULONG NumberOfPages, PULONG PageFrameNumbers, int Node)
+BOOL 
+WINAPI 
+AllocateUserPhysicalPagesNuma(
+	HANDLE ProcessHandle, 
+	PULONG NumberOfPages, 
+	PULONG PageFrameNumbers, 
+	int Node
+)
 {
   DWORD_PTR number; // esi@1
   BOOL result; // eax@3

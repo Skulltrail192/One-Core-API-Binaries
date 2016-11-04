@@ -1128,7 +1128,9 @@ BOOL WINAPI GetCalendarDateFormatEx(
   return TRUE;
 }
 
-BOOL WINAPI QueryUnbiasedInterruptTime(
+BOOL 
+WINAPI 
+QueryUnbiasedInterruptTime(
   _Out_  PULONGLONG UnbiasedTime
 )
 {
@@ -1153,7 +1155,9 @@ BOOL WINAPI TzSpecificLocalTimeToSystemTimeEx(
 	return TzSpecificLocalTimeToSystemTime(time_information, (LPSYSTEMTIME)lpLocalTime, lpUniversalTime);
 }
 
-BOOL WINAPI SystemTimeToTzSpecificLocalTimeEx(
+BOOL 
+WINAPI 
+SystemTimeToTzSpecificLocalTimeEx(
   _In_opt_  const DYNAMIC_TIME_ZONE_INFORMATION *lpTimeZoneInformation,
   _In_      const SYSTEMTIME *lpUniversalTime,
   _Out_     LPSYSTEMTIME lpLocalTime
@@ -1170,13 +1174,12 @@ BOOL WINAPI SystemTimeToTzSpecificLocalTimeEx(
 	return SystemTimeToTzSpecificLocalTime(time_information, (LPSYSTEMTIME)lpUniversalTime, lpLocalTime);
 }
 
-VOID WINAPI GetSystemTimePreciseAsFileTime(LPFILETIME lpSystemTimeAsFileTime)
+VOID 
+WINAPI 
+GetSystemTimePreciseAsFileTime(
+	LPFILETIME lpSystemTimeAsFileTime
+)
 {
-  DWORD result; // eax@1
-  DWORD highTime = 0; // edx@1
-
-  result = RtlGetSystemTimePrecise();
-  lpSystemTimeAsFileTime->dwLowDateTime = result;
-  lpSystemTimeAsFileTime->dwHighDateTime = highTime;
+  GetSystemTimeAsFileTime(lpSystemTimeAsFileTime);
 }
 /*EOF*/

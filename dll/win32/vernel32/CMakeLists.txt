@@ -8,7 +8,6 @@ include_directories(${REACTOS_SOURCE_DIR}/dll/win32/idndl)
 include_directories(${REACTOS_SOURCE_DIR}/dll/win32/kernelfull)
 include_directories(${REACTOS_SOURCE_DIR}/dll/win32/normaliz)
 include_directories(${REACTOS_SOURCE_DIR}/dll/win32/vtdll)
-include_directories(${REACTOS_SOURCE_DIR}/dll/win32/ntdllnew)
 include_directories(${REACTOS_SOURCE_DIR}/win32ss/user/ntuser)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys)
@@ -27,6 +26,7 @@ list(APPEND SOURCE
 	context.c
 	debug.c
 	dep.c
+	exception.c
 	file.c
 	findfile.c
 	firmware.c
@@ -57,7 +57,8 @@ list(APPEND SOURCE
 	wer.c
 	wow64.c
 	missing/fiber.c
-	missing/missing.c)
+	missing/missing.c
+	)
 
 add_asm_files(vernel32_asm ${ASM_SOURCE})		
 add_library(vernel32 SHARED 
@@ -82,5 +83,5 @@ if(ARCH STREQUAL "amd64")
 elseif(ARCH STREQUAL "i386")
 	target_link_libraries(vernel32 wine chkstk ${PSEH_LIB})
 endif()
-add_importlibs(vernel32 kernelfull vtdll ntdllnew normaliz psapi idndl advapi32 user32 version)
+add_importlibs(vernel32 kernelfull vtdll normaliz psapi idndl advapi32 user32 fileextd version)
 add_cd_file(TARGET vernel32 DESTINATION reactos/system32 FOR all)

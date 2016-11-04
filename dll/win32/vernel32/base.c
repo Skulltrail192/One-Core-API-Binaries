@@ -608,7 +608,7 @@ BaseDestroyVDMEnvironment(
     RtlFreeAnsiString(AnsiString);
   if ( UnicodeEnv->Buffer )
     RtlDestroyEnvironment(UnicodeEnv->Buffer);
-  return 1;
+  return TRUE;
 }
 
 ULONG 

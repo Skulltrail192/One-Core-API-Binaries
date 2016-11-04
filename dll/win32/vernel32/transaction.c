@@ -22,7 +22,9 @@
 /*
  * @implemented - fazer versão x64
  */
-HANDLE WINAPI GetCurrentTransaction()
+HANDLE 
+WINAPI 
+GetCurrentTransaction()
 {
   return RtlGetCurrentTransaction();
 }
@@ -30,7 +32,11 @@ HANDLE WINAPI GetCurrentTransaction()
 /*
  * @implemented - fazer versão x64
  */
-BOOL WINAPI SetCurrentTransaction(HANDLE new_transaction)
+BOOL 
+WINAPI 
+SetCurrentTransaction(
+	HANDLE new_transaction
+)
 {
   return RtlSetCurrentTransaction(new_transaction);
 }
@@ -240,7 +246,17 @@ Cleanup:
 /*
  * @implemented - need test
  */
-BOOL WINAPI CopyFileTransactedA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, LPBOOL pbCancel, DWORD dwCopyFlags, HANDLE hTransaction)
+BOOL 
+WINAPI 
+CopyFileTransactedA(
+	LPCSTR lpExistingFileName, 
+	LPCSTR lpNewFileName, 
+	LPPROGRESS_ROUTINE lpProgressRoutine, 
+	LPVOID lpData, 
+	LPBOOL pbCancel, 
+	DWORD dwCopyFlags, 
+	HANDLE hTransaction
+)
 {
   BOOL resp; // [sp+10h] [bp-1Ch]@4
 
@@ -266,7 +282,17 @@ BOOL WINAPI CopyFileTransactedA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName,
 /*
  * @implemented - need test
  */
-BOOL WINAPI CopyFileTransactedW(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, LPBOOL pbCancel, DWORD dwCopyFlags, HANDLE hTransaction)
+BOOL 
+WINAPI 
+CopyFileTransactedW(
+LPCWSTR lpExistingFileName, 
+LPCWSTR lpNewFileName, 
+LPPROGRESS_ROUTINE lpProgressRoutine, 
+LPVOID lpData, 
+LPBOOL pbCancel, 
+DWORD dwCopyFlags, 
+HANDLE hTransaction
+)
 {
   BOOL resp; // [sp+10h] [bp-1Ch]@4
 
@@ -315,7 +341,14 @@ BOOL WINAPI GetFileAttributesTransactedW(LPCWSTR lpFileName, GET_FILEEX_INFO_LEV
 }
 
 
-BOOL WINAPI GetFileAttributesTransactedA(LPCSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, LPVOID lpFileInformation, HANDLE hTransaction)
+BOOL 
+WINAPI 
+GetFileAttributesTransactedA(
+	LPCSTR lpFileName, 
+	GET_FILEEX_INFO_LEVELS fInfoLevelId, 
+	LPVOID lpFileInformation, 
+	HANDLE hTransaction
+)
 {
   BOOL result=1;
   PUNICODE_STRING local;
@@ -464,21 +497,13 @@ HANDLE WINAPI BasepSetMiniVersionForCreate(HANDLE a1)
 {
   HANDLE result; // eax@1
   result = a1;  
-  #ifdef _M_IX86
-	 (HANDLE)*(DWORD *)(__readfsdword(24) + 464) = a1;
-  #elif defined(_M_AMD64)
-	 (HANDLE)*(DWORD64 *)(__readgsqword(24) + 464) = a1;
-  #endif
+  NtCurrentTeb()->SpareBytes1[36] = (UCHAR)a1;
   return result;
 }
 
 HANDLE WINAPI BasepGetMiniVersionForCreate()
 {
-  #ifdef _M_IX86
-	 return (HANDLE)(__readfsdword(24) + 464);
-  #elif defined(_M_AMD64)
-	 return (HANDLE)(__readgsqword(24) + 464);
-  #endif
+  return &NtCurrentTeb()->SpareBytes1[36];
 }
 
 HANDLE WINAPI CreateFileTransactedW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile, HANDLE hTransaction, PUSHORT pusMiniVersion, PVOID pExtendedParameter)

@@ -86,7 +86,9 @@ HRESULT WINAPI GetThemeTransitionDuration(
 }
 
 //unimplemented
-HRESULT WINAPI DrawThemeTextEx(
+HRESULT 
+WINAPI 
+DrawThemeTextEx(
   _In_     HTHEME hTheme,
   _In_     HDC hdc,
   _In_     int iPartId,
@@ -98,7 +100,7 @@ HRESULT WINAPI DrawThemeTextEx(
   _In_     const DTTOPTS *pOptions
 )
 {
-	return S_OK;
+	return DrawThemeText(hTheme, hdc, iPartId, iStateId, pszText, iCharCount, dwFlags, 0, pRect);
 }
 
 //unimplemented
@@ -212,7 +214,9 @@ HPAINTBUFFER WINAPI BeginBufferedPaint(
 	return NULL;
 }
 
-HRESULT WINAPI CheckThemeSignature(LPCWSTR  pszThemeFileName) 	
+HRESULT 
+WINAPI 
+CheckThemeSignature(LPCWSTR  pszThemeFileName) 	
 {
     return S_OK;
 }

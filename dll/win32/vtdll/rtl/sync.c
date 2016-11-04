@@ -59,8 +59,6 @@ int ConditionVariableSpinCount = 400;
 
 int localConditionCount = 10;
 
-HANDLE keyed_event = NULL;
-
 int countTimes;
 
 HANDLE Key_Event = NULL;
@@ -407,6 +405,11 @@ VOID
 NTAPI
 RtlInitializeSRWLock(OUT PRTL_SRWLOCK SRWLock)
 {
+	if(Key_Event == NULL)
+	{
+		NtCreateKeyedEvent(&Key_Event, -1, NULL, 0);
+		DbgPrint("Key_Event initialized\n");
+	}	
     SRWLock->Ptr = NULL;
 }
 
@@ -786,11 +789,11 @@ NTSTATUS WINAPI RtlSleepConditionVariableSRW( RTL_CONDITION_VARIABLE *variable, 
     else
         RtlReleaseSRWLockExclusive( lock );
 
-    status = NtWaitForKeyedEvent( keyed_event, &variable->Ptr, FALSE, timeout );
+    status = NtWaitForKeyedEvent( Key_Event, &variable->Ptr, FALSE, timeout );
     if (status != STATUS_SUCCESS)
     {
         if (!interlocked_dec_if_nonzero( (int *)&variable->Ptr ))
-            status = NtWaitForKeyedEvent( keyed_event, &variable->Ptr, FALSE, NULL );
+            status = NtWaitForKeyedEvent( Key_Event, &variable->Ptr, FALSE, NULL );
     }
 
     if (flags & RTL_CONDITION_VARIABLE_LOCKMODE_SHARED)
@@ -832,7 +835,7 @@ DWORD WINAPI RtlRunOnceBeginInitialize( RTL_RUN_ONCE *once, ULONG flags, void **
             next = val & ~3;
             if (interlocked_cmpxchg_ptr( &once->Ptr, (void *)((ULONG_PTR)&next | 1),
                                          (void *)val ) == (void *)val)
-                NtWaitForKeyedEvent( keyed_event, &next, FALSE, NULL );
+                NtWaitForKeyedEvent( Key_Event, &next, FALSE, NULL );
             break;
 
         case 2:  /* done */
@@ -875,7 +878,7 @@ DWORD WINAPI RtlRunOnceComplete( RTL_RUN_ONCE *once, ULONG flags, void *context 
             while (val)
             {
                 ULONG_PTR next = *(ULONG_PTR *)val;
-                NtReleaseKeyedEvent( keyed_event, (void *)val, FALSE, NULL );
+                NtReleaseKeyedEvent( Key_Event, (void *)val, FALSE, NULL );
                 val = next;
             }
             return STATUS_SUCCESS;
@@ -936,6 +939,38 @@ RtlInitializeConditionVariable(
 }
 
 /***********************************************************************
+ *           RtlSleepConditionVariableCS   (NTDLL.@)
+ *
+ * Atomically releases the critical section and suspends the thread,
+ * waiting for a Wake(All)ConditionVariable event. Afterwards it enters
+ * the critical section again and returns.
+ *
+ * PARAMS
+ *  variable  [I/O] condition variable
+ *  crit      [I/O] critical section to leave temporarily
+ *  timeout   [I]   timeout
+ *
+ * RETURNS
+ *  see NtWaitForKeyedEvent for all possible return values.
+ */
+NTSTATUS 
+WINAPI 
+RtlSleepConditionVariableCS( 
+	PRTL_CONDITION_VARIABLE variable, 
+	PRTL_CRITICAL_SECTION crit,
+	const LARGE_INTEGER *timeout 
+)
+{
+    NTSTATUS status;
+	
+    InterlockedExchangeAdd( (int *)&variable->Ptr, 1 );
+    RtlLeaveCriticalSection(crit);	
+	status = NtWaitForKeyedEvent(Key_Event, &variable->Ptr, 0, timeout);
+    RtlEnterCriticalSection(crit);
+    return status;
+}
+
+/***********************************************************************
  *           RtlWakeAllConditionVariable   (NTDLL.@)
  *
  * See WakeConditionVariable, wakes up all waiting threads.
@@ -946,9 +981,11 @@ RtlWakeAllConditionVariable(
 	PRTL_CONDITION_VARIABLE variable 
 )
 {
-	while(variable->Ptr){
+	NTSTATUS status;
+	while(variable->Ptr){	
 		InterlockedDecrement((int *)&variable->Ptr);
-		NtReleaseKeyedEvent( Key_Event, &variable, FALSE, NULL );
+		status = NtReleaseKeyedEvent( Key_Event, &variable->Ptr, FALSE, NULL );	
+		DbgPrint("RtlWakeAllConditionVariable. Status: %08x\n",status);	
 	}
 }
 
@@ -973,41 +1010,12 @@ RtlWakeConditionVariable(
 	PRTL_CONDITION_VARIABLE variable 
 )
 {
+	NTSTATUS status;
 	if(variable->Ptr){
 		InterlockedDecrement((int *)&variable->Ptr);
-		NtReleaseKeyedEvent( Key_Event, &variable->Ptr, FALSE, NULL );
+		status = NtReleaseKeyedEvent( Key_Event, &variable->Ptr, FALSE, NULL );
+		DbgPrint("RtlWakeConditionVariable. Status: %08x\n",status);	
 	}
-}
-
-/***********************************************************************
- *           RtlSleepConditionVariableCS   (NTDLL.@)
- *
- * Atomically releases the critical section and suspends the thread,
- * waiting for a Wake(All)ConditionVariable event. Afterwards it enters
- * the critical section again and returns.
- *
- * PARAMS
- *  variable  [I/O] condition variable
- *  crit      [I/O] critical section to leave temporarily
- *  timeout   [I]   timeout
- *
- * RETURNS
- *  see NtWaitForKeyedEvent for all possible return values.
- */
-NTSTATUS 
-WINAPI 
-RtlSleepConditionVariableCS( 
-	PRTL_CONDITION_VARIABLE variable, 
-	PRTL_CRITICAL_SECTION crit,
-	const LARGE_INTEGER *timeout 
-)
-{
-    NTSTATUS status;
-    InterlockedExchangeAdd( (int *)&variable->Ptr, 1 );
-    RtlLeaveCriticalSection(crit);
-	status = NtWaitForKeyedEvent(Key_Event, &variable->Ptr, 0, NULL);
-    RtlEnterCriticalSection(crit);
-    return status;
 }
 
 /***********************************************************************

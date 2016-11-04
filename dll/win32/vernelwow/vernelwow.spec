@@ -1310,7 +1310,7 @@
 @ stdcall IsNativeVhdBoot(ptr)
 @ stdcall IsNormalizedString(long wstr long) normaliz.IsNormalizedString
 @ stdcall IsThreadAFiber()
-@ stdcall IsTimeZoneRedirectionEnabled() 
+;@ stdcall IsTimeZoneRedirectionEnabled() 
 @ stdcall IsValidCalDateTime(ptr long)
 @ stdcall IsValidLocaleName(wstr) ;see wine implementation ;unimplemented
 @ stdcall IsValidNLSVersion(long wstr ptr)
@@ -1457,7 +1457,6 @@
 @ stub SortGetHandle
 @ stdcall StartThreadpoolIo(ptr) ntdllnew.TpStartAsyncIoOperation
 @ stdcall SubmitThreadpoolWork(ptr) ntdllnew.TpPostWork
-@ stdcall SystemTimeToTzSpecificLocalTimeEx(ptr ptr ptr)
 @ stdcall SystemTimeToTzSpecificLocalTimeEx(ptr ptr ptr)
 @ stdcall timeBeginPeriod(long)
 @ stdcall timeEndPeriod(long)

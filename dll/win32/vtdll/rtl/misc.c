@@ -34,14 +34,6 @@ RtlRegisterThreadWithCsrss()
 	return ERROR_SUCCESS;	
 }
 
-DWORD
-NTAPI 
-RtlGetSystemTimePrecise()
-{
-	DbgPrint("UNIMPLEMENTED: RtlGetSystemTimePrecise");
-	return ERROR_SUCCESS;
-}
-
 NTSTATUS
 RtlRemovePrivileges(
 	HANDLE TokenHandle, 
