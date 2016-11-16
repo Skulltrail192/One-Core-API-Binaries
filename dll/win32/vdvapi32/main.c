@@ -763,3 +763,32 @@ AddMandatoryAce(
   }
   return result;
 }
+
+ULONG 
+WINAPI
+EnableTraceEx2(
+  _In_     TRACEHANDLE              TraceHandle,
+  _In_     LPCGUID                  ProviderId,
+  _In_     ULONG                    ControlCode,
+  _In_     UCHAR                    Level,
+  _In_     ULONGLONG                MatchAnyKeyword,
+  _In_     ULONGLONG                MatchAllKeyword,
+  _In_     ULONG                    Timeout,
+  _In_opt_ PENABLE_TRACE_PARAMETERS EnableParameters
+)
+{
+	return ERROR_SUCCESS;
+}
+
+
+ULONG 
+WINAPI
+EventSetInformation(
+  _In_ REGHANDLE        RegHandle,
+  _In_ EVENT_INFO_CLASS InformationClass,
+  _In_ PVOID            EventInformation,
+  _In_ ULONG            InformationLength
+)
+{
+	return ERROR_SUCCESS;
+}

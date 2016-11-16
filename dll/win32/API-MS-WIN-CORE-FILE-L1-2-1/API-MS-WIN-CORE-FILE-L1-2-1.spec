@@ -52,7 +52,7 @@
 @ stdcall GetShortPathNameW(wstr ptr long) kernel32.GetShortPathNameW
 @ stdcall GetTempFileNameW(wstr wstr long ptr) kernel32.GetTempFileNameW
 @ stdcall GetTempPathW(long ptr) kernel32.GetTempPathW
-@ stub GetVolumeInformationByHandleW
+@ stdcall GetVolumeInformationByHandleW(ptr wstr long ptr ptr ptr wstr long) kernel32.GetVolumeInformationByHandleW
 @ stdcall GetVolumeInformationW(wstr ptr long ptr ptr ptr ptr long) kernel32.GetVolumeInformationW
 @ stdcall GetVolumeNameForVolumeMountPointW(wstr ptr long) kernel32.GetVolumeNameForVolumeMountPointW
 @ stdcall GetVolumePathNameW(wstr ptr long) kernel32.GetVolumePathNameW
@@ -70,7 +70,7 @@
 @ stdcall SetFileAttributesA(str long) kernel32.SetFileAttributesA
 @ stdcall SetFileAttributesW(wstr long) kernel32.SetFileAttributesW
 @ stdcall SetFileInformationByHandle(long long ptr long) kernel32.SetFileInformationByHandle
-@ stub SetFileIoOverlappedRange
+@ stdcall SetFileIoOverlappedRange(ptr ptr long) kernel32.SetFileIoOverlappedRange
 @ stdcall SetFilePointer(long long ptr long) kernel32.SetFilePointer
 @ stdcall SetFilePointerEx(long int64 ptr long) kernel32.SetFilePointerEx
 @ stdcall SetFileTime(long ptr ptr ptr) kernel32.SetFileTime

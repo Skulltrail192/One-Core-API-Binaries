@@ -55,7 +55,9 @@ CreateSocketHandle(void)
     return NULL;
 }
 
-UINT WINAPI GetErrorMode()
+UINT 
+WINAPI 
+GetErrorMode()
 {
   NTSTATUS status; // eax@1
   UINT result; // eax@3
@@ -128,7 +130,9 @@ QueryActCtxSettingsW(
   return resp;
 }
 
-BOOL WINAPI SetSearchPathMode(DWORD Flags) {
+BOOL 
+WINAPI 
+SetSearchPathMode(DWORD Flags) {
   DWORD localFlags; // ebx@1   
   BOOL verify; // esi@11   
   localFlags = Flags;
@@ -138,11 +142,12 @@ BOOL WINAPI SetSearchPathMode(DWORD Flags) {
   }
   if (Flags & 1) {
     if (localFlags & 0x10000) {
-      LABEL_5: BaseSetLastNTError(STATUS_SUCCESS);
+GLOBAL_ERROR: 
+	  BaseSetLastNTError(STATUS_SUCCESS);
       return 0;
     }
   } else {
-    if (!(localFlags & 0x10000) || (Flags & 0x8000)) goto LABEL_5;
+    if (!(localFlags & 0x10000) || (Flags & 0x8000)) goto GLOBAL_ERROR;
   }
   if (!(BaseSearchPathMode & 0x8000) || (Flags & 0x8000)) {
     BaseSearchPathMode = Flags;
@@ -638,7 +643,12 @@ AddResourceAttributeAce(
 
 BOOL 
 WINAPI 
-GetVolumeBandwidthContractProperties(HANDLE FileHandle, int a2, int a3, int a4)
+GetVolumeBandwidthContractProperties(
+	HANDLE FileHandle, 
+	int a2, 
+	int a3, 
+	int a4
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -666,4 +676,26 @@ GetVolumeBandwidthContractProperties(HANDLE FileHandle, int a2, int a3, int a4)
     result = FALSE;
   }
   return result;
+}
+
+BOOL
+WINAPI
+DnsHostnameToComputerNameExW(
+      LPCWSTR Hostname,
+      LPWSTR ComputerName,
+      LPDWORD nSize
+)
+{
+	DnsHostnameToComputerNameW(Hostname, ComputerName, nSize);
+}
+
+BOOL
+WINAPI
+SetComputerNameEx2W(
+	COMPUTER_NAME_FORMAT NameType, 
+	DWORD Flags, 
+	LPCWSTR lpBuffer
+)
+{
+	return SetComputerNameExW(NameType, lpBuffer);
 }

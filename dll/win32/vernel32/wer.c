@@ -18,7 +18,9 @@
 #define NDEBUG
 
 #include <main.h>
-#include <werapi.h>
+//#include <werapi.h>
+
+#define WER_FAULT_REPORTING_ALWAYS_SHOW_UI          16
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
@@ -27,7 +29,9 @@ const WCHAR path = 0;
 /*
 * @unimplemented
 */
-HRESULT WINAPI WerSetFlags(
+HRESULT 
+WINAPI 
+WerSetFlags(
   _In_  DWORD dwFlags
 )
 {
@@ -37,7 +41,9 @@ HRESULT WINAPI WerSetFlags(
 /*
 * @unimplemented
 */
-LONG WINAPI WerpCleanupMessageMapping()
+LONG 
+WINAPI 
+WerpCleanupMessageMapping()
 {
 	UNIMPLEMENTED;	
 	return 0;
@@ -46,19 +52,23 @@ LONG WINAPI WerpCleanupMessageMapping()
 /*
 * @unimplemented
 */
-HRESULT WINAPI WerGetFlags(
+HRESULT 
+WINAPI 
+WerGetFlags(
   _In_   HANDLE hProcess,
   _Out_  PDWORD pdwFlags
 )
 {
-	UNIMPLEMENTED;	
+	*pdwFlags = WER_FAULT_REPORTING_ALWAYS_SHOW_UI;	
 	return S_OK;
 }
 
 /*
 * @unimplemented
 */
-HRESULT WINAPI WerRegisterMemoryBlock(
+HRESULT 
+WINAPI 
+WerRegisterMemoryBlock(
   _In_  PVOID pvAddress,
   _In_  DWORD dwSize
 )
@@ -105,7 +115,9 @@ BOOL WINAPI WerpStringLookup(
 /*
 * @unimplemented
 */
-int WINAPI WerpInitiateRemoteRecovery(HANDLE hndl)
+int 
+WINAPI 
+WerpInitiateRemoteRecovery(HANDLE hndl)
 {
 	UNIMPLEMENTED;
 	return 0;
@@ -114,7 +126,9 @@ int WINAPI WerpInitiateRemoteRecovery(HANDLE hndl)
 /*
 * @unimplemented
 */
-HRESULT WINAPI WerRegisterFile(
+HRESULT 
+WINAPI 
+WerRegisterFile(
   _In_  PCWSTR pwzFile,
   _In_  WER_REGISTER_FILE_TYPE regFileType,
   _In_  DWORD dwFlags
@@ -127,12 +141,21 @@ HRESULT WINAPI WerRegisterFile(
 /*
 * @unimplemented
 */
-void WINAPI WerpNotifyUseStringResource(HANDLE file)
+void 
+WINAPI 
+WerpNotifyUseStringResource(HANDLE file)
 {
 	UNIMPLEMENTED;
 }
 
-void WINAPI WerpNotifyLoadStringResource(HMODULE module, LPCWSTR string, HANDLE handle, DWORD flags)
+void 
+WINAPI 
+WerpNotifyLoadStringResource(
+	HMODULE module, 
+	LPCWSTR string, 
+	HANDLE handle, 
+	DWORD flags
+)
 {
 	UNIMPLEMENTED;
 }
@@ -148,7 +171,9 @@ HRESULT WINAPI WerUnregisterRuntimeExceptionModule(
 }
 
 
-HRESULT WINAPI WerRegisterRuntimeExceptionModule(
+HRESULT 
+WINAPI 
+WerRegisterRuntimeExceptionModule(
   _In_      PCWSTR pwszOutOfProcessCallbackDll,
   _In_opt_  PVOID pContext
 )
@@ -157,7 +182,9 @@ HRESULT WINAPI WerRegisterRuntimeExceptionModule(
 	return S_OK;
 }
 
-int WINAPI WerpLaunchAeDebug(void *a1, HANDLE hSourceHandle, char *a3, const void *a4, WCHAR *a5, int a6)
+int 
+WINAPI 
+WerpLaunchAeDebug(void *a1, HANDLE hSourceHandle, char *a3, const void *a4, WCHAR *a5, int a6)
 {
   void *v6; // ebx@1
   int v7; // edi@1
@@ -383,7 +410,9 @@ LABEL_44:
   return v10;
 }
 
-BOOL WINAPI WerpIsProtectedProcess(HANDLE ProcessHandle)
+BOOL 
+WINAPI 
+WerpIsProtectedProcess(HANDLE ProcessHandle)
 {
   NTSTATUS status; // eax@3
   PVOID ProcessInformation; // [sp+8h] [bp-24h]@1
@@ -403,7 +432,11 @@ BOOL WINAPI WerpIsProtectedProcess(HANDLE ProcessHandle)
   return TRUE;
 }
 
-BOOL WINAPI WerpIsProcessInAeDebugExclusionList(HANDLE ProcessHandle)
+BOOL 
+WINAPI 
+WerpIsProcessInAeDebugExclusionList(
+	HANDLE ProcessHandle
+)
 {
   BOOL resp; // ebx@1
   BOOL otherResult; // edi@1
@@ -496,7 +529,15 @@ LABEL_22:
   return resp;
 }
 
-HRESULT WINAPI WerpGetDebugger(HANDLE ProcessHandle, BOOL second, int thrird, int four, BOOL verificationParameter)
+HRESULT 
+WINAPI 
+WerpGetDebugger(
+	HANDLE ProcessHandle, 
+	BOOL second, 
+	int thrird, 
+	int four, 
+	BOOL verificationParameter
+)
 {
   BOOL resp; // edi@1
   PUNICODE_STRING freeAloocString; // ebx@4
@@ -513,7 +554,7 @@ HRESULT WINAPI WerpGetDebugger(HANDLE ProcessHandle, BOOL second, int thrird, in
   ULONG KeyValueInformationLength; // [sp+18h] [bp-20h]@4
   BOOL verification; // [sp+1Ch] [bp-1Ch]@1
   OBJECT_ATTRIBUTES ObjectAttributes; // [sp+20h] [bp-18h]@1
-  LSA_UNICODE_STRING otherLsaUnicode;
+  PUNICODE_STRING otherLsaUnicode = NULL;
   LSA_UNICODE_STRING LSAUnicodeString;
   LSA_UNICODE_STRING Launch;
   LSA_UNICODE_STRING AutoString;
@@ -522,7 +563,6 @@ HRESULT WINAPI WerpGetDebugger(HANDLE ProcessHandle, BOOL second, int thrird, in
   
   AutoString.Buffer = L"Auto";
   Launch.Buffer = L"LaunchNonProtected";
-  otherLsaUnicode.Buffer = L"\\Registry\\Machine\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AeDebugProtected";
   ObjectAttributes.Length = 0;
   ObjectAttributes.RootDirectory = 0;
   ObjectAttributes.ObjectName = 0;
@@ -558,8 +598,8 @@ HRESULT WINAPI WerpGetDebugger(HANDLE ProcessHandle, BOOL second, int thrird, in
       {
         if ( IsProtect )
         {
-          //RtlInitUnicodeString(otherLsaUnicode, L"\\Registry\\Machine\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AeDebugProtected");
-		  hum = &otherLsaUnicode;
+          RtlInitUnicodeString(otherLsaUnicode, L"\\Registry\\Machine\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AeDebugProtected");
+		  hum = otherLsaUnicode;
           verification = 1;
         }
         else
@@ -575,7 +615,7 @@ HRESULT WINAPI WerpGetDebugger(HANDLE ProcessHandle, BOOL second, int thrird, in
                &ResultLength) < 0
           || freeAloocString->Buffer != (PWSTR)1 )
         {
-          Hresult = 0x80070490u;
+          Hresult = ERROR_NOT_FOUND;
         }
         else
         {
@@ -624,7 +664,7 @@ HRESULT WINAPI WerpGetDebugger(HANDLE ProcessHandle, BOOL second, int thrird, in
     }
     else
     {
-      Hresult = 0x8007000Eu;
+      Hresult = E_OUTOFMEMORY;
     }
     if ( four )
       four = resp;
@@ -641,12 +681,16 @@ HRESULT WINAPI WerpGetDebugger(HANDLE ProcessHandle, BOOL second, int thrird, in
   }
   else
   {
-    result = 0x80070057u;
+    result = E_INVALIDARG;
   }
   return result;
 }
 
-BOOL WINAPI WerpReportExceptionInProcessContext(DWORD parameter)
+BOOL 
+WINAPI 
+WerpReportExceptionInProcessContext(
+	DWORD parameter
+)
 {
   BOOL resp; // ecx@1
 

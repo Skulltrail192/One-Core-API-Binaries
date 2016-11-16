@@ -134,8 +134,8 @@
 @ stdcall DeviceIoControl(long long ptr long ptr long ptr ptr)
 @ stdcall DisableThreadLibraryCalls(long)
 @ stdcall DisconnectNamedPipe(long)
-@ stdcall DnsHostnameToComputerNameA (str ptr ptr)
-@ stdcall DnsHostnameToComputerNameW (wstr ptr ptr)
+@ stdcall DnsHostnameToComputerNameA(str str ptr)
+@ stdcall DnsHostnameToComputerNameW(wstr wstr ptr)
 @ stdcall DosDateTimeToFileTime(long long ptr)
 @ stdcall DosPathToSessionPathA(long str str)
 @ stdcall DosPathToSessionPathW(long wstr wstr)
@@ -963,16 +963,12 @@
 @ stdcall Wow64DisableWow64FsRedirection(ptr) 
 @ stdcall Wow64RevertWow64FsRedirection(ptr) 
 
-#Functions needed for Kernel32 for Wow and 
-#if defined(BUILD_WOW6432)
-#@ stdcall BaseProcessStartThunk(ptr ptr) 
-#endif
-#@ stdcall -arch=x86 BaseThreadStartThunk(ptr ptr) 
-#@ stdcall -arch=x86_64 ConsoleIMERoutine() ;kernelfull.ConsoleIMERoutine
-#@ stdcall -arch=x86_64 CtrlRoutine() ;kernelfull.CtrlRoutine
-#@ stdcall ConsoleIMERoutine() kernelfull.ConsoleIMERoutine ;Make this function
-#@ stdcall CtrlRoutine() ;kernelfull.CtrlRoutine
-#@ stdcall -arch=x86_64 DebugBreak()
+#Functions needed for Kernel32 for Wow 
+@ stdcall -arch=x86 BaseProcessStartThunk(ptr) 
+@ stdcall -arch=x86 BaseThreadStartThunk(ptr ptr)
+@ stdcall -arch=x86 ConsoleIMERoutine() kernelfull.ConsoleIMERoutine ;Make this function
+@ stdcall -arch=x86 CtrlRoutine() kernelfull.CtrlRoutine
+@ stdcall -arch=x86 DebugBreak()
 
 #Needed functions for Server 2003 RTM
 @ stdcall CreateVirtualBuffer(ptr long long) kernelfull.CreateVirtualBuffer
@@ -1085,7 +1081,7 @@
 @ stdcall CallbackMayRunLong() vtdll.TpCallbackMayRunLong
 @ stdcall CancelIoEx(long ptr) 
 @ stdcall CancelSynchronousIo(ptr)
-@ stdcall CancelThreadpoolIo(ptr) ntdllnew.TpCancelAsyncIoOperation
+@ stdcall CancelThreadpoolIo(ptr) vtdll.TpCancelAsyncIoOperation
 @ stdcall DisableThreadProfiling(ptr)
 @ stdcall CeipIsOptedIn()
 @ stdcall CheckAllowDecryptedRemoteDestinationPolicy()
@@ -1153,7 +1149,10 @@
 @ stdcall DeleteFileTransactedA(str ptr)
 @ stdcall DeleteFileTransactedW(wstr ptr)
 @ stdcall DeleteProcThreadAttributeList(ptr)
+@ stdcall DeleteSynchronizationBarrier(ptr)
 @ stdcall DisassociateCurrentThreadFromCallback(ptr) vtdll.TpDisassociateCallback
+@ stdcall DnsHostnameToComputerNameExW(wstr wstr ptr)
+@ stdcall EnterSynchronizationBarrier(ptr long)
 @ stdcall EnableThreadProfiling(ptr long int64 ptr)
 @ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long ptr)
 @ stdcall EnumDateFormatsExEx(ptr wstr long)
@@ -1221,7 +1220,7 @@
 @ stdcall GetFileAttributesTransactedA(str long ptr ptr)
 @ stdcall GetFileAttributesTransactedW(wstr long ptr ptr)
 @ stdcall GetFileBandwidthReservation(ptr ptr ptr long long long)
-@ stdcall GetFileInformationByHandleEx(ptr long ptr long) fileextd.GetFileInformationByHandleEx
+@ stdcall GetFileInformationByHandleEx(ptr long ptr long) ;fileextd.GetFileInformationByHandleEx
 @ stdcall GetFinalPathNameByHandleA(ptr str long long)
 @ stdcall GetFinalPathNameByHandleW(ptr wstr long long)
 @ stdcall GetFileMUIInfo(long wstr ptr ptr)
@@ -1301,10 +1300,12 @@
 @ stdcall InitializeCriticalSectionEx(ptr long long) 
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
 @ stdcall InitializeSRWLock(ptr) vtdll.RtlInitializeSRWLock
+@ stdcall InitializeSynchronizationBarrier(ptr long long)
 @ stdcall InitOnceBeginInitialize(ptr long ptr ptr) ;- need test
 @ stdcall InitOnceComplete(ptr long ptr) ;- need implement
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stdcall InitOnceInitialize(ptr)
+@ stdcall InstallELAMCertificateInfo(ptr)
 @ stdcall InterlockedPushListSList(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
 @ stdcall InterlockedPushListSListEx(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
 @ stdcall IsThreadpoolTimerSet(ptr) vtdll.TpIsTimerSet
@@ -1415,6 +1416,7 @@
 @ stdcall ResolveDelayLoadsFromDll(ptr str long)
 @ stdcall ResolveLocaleName(wstr wstr long)
 @ stdcall SetCachedSigningLevel(ptr long long ptr)
+@ stdcall SetComputerNameEx2W(long long wstr)
 @ stdcall SetConsoleHistoryInfo(ptr)
 @ stdcall SetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall SetCurrentConsoleFontEx(ptr long ptr)
@@ -1427,7 +1429,7 @@
 @ stdcall SetFileAttributesTransactedA(str long ptr)
 @ stdcall SetFileAttributesTransactedW(wstr long ptr)
 @ stdcall SetFileBandwidthReservation(ptr ptr ptr long long long) 
-@ stdcall SetFileInformationByHandle(long long ptr long) fileextd.SetFileInformationByHandle
+@ stdcall SetFileInformationByHandle(long long ptr long) ;fileextd.SetFileInformationByHandle
 @ stdcall SetFileIoOverlappedRange(ptr ptr long)
 @ stdcall SetFirmwareEnvironmentVariableExA(str str ptr long long)
 @ stdcall SetFirmwareEnvironmentVariableExW(str str ptr long long)

@@ -152,3 +152,12 @@ ApplicationRecoveryFinished(
 {
 	bSuccess = TRUE;
 }
+
+BOOL 
+WINAPI 
+InstallELAMCertificateInfo(
+  _In_ HANDLE ELAMFile
+)
+{
+	return TRUE;
+}

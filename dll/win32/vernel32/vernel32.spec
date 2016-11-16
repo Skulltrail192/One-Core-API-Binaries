@@ -102,7 +102,7 @@
 @ stdcall CreateRemoteThread(long ptr long ptr long long ptr)
 @ stdcall CreateSemaphoreA(ptr long long str)
 @ stdcall CreateSemaphoreW(ptr long long wstr)
-@ stdcall -arch=x86 CreateSocketHandle()
+@ stdcall -arch=i386 CreateSocketHandle()
 @ stdcall CreateTapePartition(long long long long)
 @ stdcall CreateThread(ptr long ptr long long ptr)
 @ stdcall CreateTimerQueue ()
@@ -134,8 +134,8 @@
 @ stdcall DeviceIoControl(long long ptr long ptr long ptr ptr)
 @ stdcall DisableThreadLibraryCalls(long)
 @ stdcall DisconnectNamedPipe(long)
-@ stdcall DnsHostnameToComputerNameA (str ptr ptr)
-@ stdcall DnsHostnameToComputerNameW (wstr ptr ptr)
+@ stdcall DnsHostnameToComputerNameA(str str ptr)
+@ stdcall DnsHostnameToComputerNameW(wstr wstr ptr)
 @ stdcall DosDateTimeToFileTime(long long ptr)
 @ stdcall DosPathToSessionPathA(long str str)
 @ stdcall DosPathToSessionPathW(long wstr wstr)
@@ -949,6 +949,12 @@
 @ stdcall lstrlenA(str)
 @ stdcall lstrlenW(wstr)
 
+#Functions needed for Kernel32 for Wow 
+@ stdcall -arch=i386 BaseProcessStartThunk(ptr) 
+@ stdcall -arch=i386 BaseThreadStartThunk(ptr ptr)
+@ stdcall -arch=i386 ConsoleIMERoutine() kernelfull.ConsoleIMERoutine ;Make this function
+@ stdcall -arch=i386 CtrlRoutine() kernelfull.CtrlRoutine
+
 #Missing on Server 2003 RTM (only available on 2003 SP1 and SP2)
 @ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernelfull.BaseCheckRunApp
 @ stdcall BasepCheckBadapp(long ptr long long long long long long long) kernelfull.BasepCheckBadapp
@@ -962,17 +968,6 @@
 @ stdcall SetThreadStackGuarantee(ptr) 
 @ stdcall Wow64DisableWow64FsRedirection(ptr) 
 @ stdcall Wow64RevertWow64FsRedirection(ptr) 
-
-#Functions needed for Kernel32 for Wow and 
-#if defined(BUILD_WOW6432)
-#@ stdcall BaseProcessStartThunk(ptr ptr) 
-#endif
-#@ stdcall -arch=x86 BaseThreadStartThunk(ptr ptr) 
-#@ stdcall -arch=x86_64 ConsoleIMERoutine() ;kernelfull.ConsoleIMERoutine
-#@ stdcall -arch=x86_64 CtrlRoutine() ;kernelfull.CtrlRoutine
-#@ stdcall ConsoleIMERoutine() kernelfull.ConsoleIMERoutine ;Make this function
-#@ stdcall CtrlRoutine() ;kernelfull.CtrlRoutine
-#@ stdcall -arch=x86_64 DebugBreak()
 
 #Needed functions for Server 2003 RTM
 @ stdcall CreateVirtualBuffer(ptr long long) kernelfull.CreateVirtualBuffer
@@ -992,23 +987,25 @@
 
 #Missing on XP and avaliable for Server 2003
 @ stdcall ConvertThreadToFiberEx(ptr long) kernelfull.ConvertThreadToFiberEx
-@ stdcall FindNextStreamW(ptr ptr) kernelfull.FindNextStreamW ;onwer implementation 
-@ stdcall GetLargePageMinimum() kernelfull.GetLargePageMinimum ;onwer implementation 
-@ stdcall GetNLSVersion(long long ptr) kernelfull.GetNLSVersion
-@ stdcall GetProcessIdOfThread(ptr) kernelfull.GetProcessIdOfThread ;onwer implementation 
-@ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) kernelfull.GetProcessWorkingSetSizeEx ;onwer implementation 
-@ stdcall IsNLSDefinedString(long long ptr long long) kernelfull.IsNLSDefinedString
-@ stdcall NeedCurrentDirectoryForExePathA(str) kernelfull.NeedCurrentDirectoryForExePathA ;onwer implementation 
-@ stdcall NeedCurrentDirectoryForExePathW(wstr) kernelfull.NeedCurrentDirectoryForExePathW ;onwer implementation 
-@ stdcall ReOpenFile(ptr long long long) kernelfull.ReOpenFile ;onwer implementation 
-@ stdcall SetEnvironmentStringsA(ptr) kernelfull.SetEnvironmentStringsA ;onwer implementation 
-@ stdcall SetEnvironmentStringsW(ptr) kernelfull.SetEnvironmentStringsW ;onwer implementation 
-@ stdcall SetProcessWorkingSetSizeEx(long long long long) kernelfull.SetProcessWorkingSetSizeEx ;onwer implementation  
+@ stdcall FindNextStreamW(ptr ptr) ;kernelfull.FindNextStreamW ;onwer implementation 
+@ stdcall GetLargePageMinimum() ;kernelfull.GetLargePageMinimum ;onwer implementation 
+@ stdcall GetNLSVersion(long long ptr) ;kernelfull.GetNLSVersion
+@ stdcall GetProcessIdOfThread(ptr) ;kernelfull.GetProcessIdOfThread ;onwer implementation 
+@ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) ;kernelfull.GetProcessWorkingSetSizeEx ;onwer implementation 
+@ stdcall IsNLSDefinedString(long long ptr long long) ;kernelfull.IsNLSDefinedString
+@ stdcall NeedCurrentDirectoryForExePathA(str) ;kernelfull.NeedCurrentDirectoryForExePathA ;onwer implementation 
+@ stdcall NeedCurrentDirectoryForExePathW(wstr) ;kernelfull.NeedCurrentDirectoryForExePathW ;onwer implementation 
+@ stdcall ReOpenFile(ptr long long long) ;kernelfull.ReOpenFile ;onwer implementation 
+@ stdcall SetEnvironmentStringsA(ptr) ;kernelfull.SetEnvironmentStringsA ;onwer implementation 
+@ stdcall SetEnvironmentStringsW(ptr) ;kernelfull.SetEnvironmentStringsW ;onwer implementation 
+@ stdcall SetProcessWorkingSetSizeEx(long long long long) ;kernelfull.SetProcessWorkingSetSizeEx ;onwer implementation  
 @ stdcall Wow64EnableWow64FsRedirection(long) 
 
 #Needed funcions for XP x64
 @ stdcall -arch=x86_64 BaseProcessStart(ptr)
 @ stdcall -arch=x86_64 BaseThreadStart(ptr ptr)
+@ stdcall -arch=x86_64 ConsoleIMERoutine() ;Make this function
+@ stdcall -arch=x86_64 CtrlRoutine() 
 @ stdcall -arch=x86_64 __C_specific_handler(ptr long ptr ptr) ntdll.__C_specific_handler
 @ stdcall -arch=x86_64 __chkstk() ntdll.__chkstk
 @ stdcall -arch=x86_64 _local_unwind(ptr ptr) ntdll._local_unwind
@@ -1021,7 +1018,7 @@
 @ stdcall -arch=x86_64 uaw_wcsicmp(wstr wstr)
 @ stdcall -arch=x86_64 uaw_wcslen(wstr)
 @ stdcall -arch=x86_64 uaw_wcsrchr(wstr long)
-@ cdecl -arch=x86_64 RtlAddFunctionTable(ptr long long) ntdll.RtlAddFunctionTable
+@ stdcall -arch=x86_64 RtlAddFunctionTable(ptr long long) ntdll.RtlAddFunctionTable
 @ stdcall -arch=x86_64 RtlCompareMemory(ptr ptr ptr)
 @ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr ptr)
 @ stdcall -arch=x86_64 RtlDeleteFunctionTable(ptr)
@@ -1085,7 +1082,7 @@
 @ stdcall CallbackMayRunLong() vtdll.TpCallbackMayRunLong
 @ stdcall CancelIoEx(long ptr) 
 @ stdcall CancelSynchronousIo(ptr)
-@ stdcall CancelThreadpoolIo(ptr) ntdllnew.TpCancelAsyncIoOperation
+@ stdcall CancelThreadpoolIo(ptr) vtdll.TpCancelAsyncIoOperation
 @ stdcall DisableThreadProfiling(ptr)
 @ stdcall CeipIsOptedIn()
 @ stdcall CheckAllowDecryptedRemoteDestinationPolicy()
@@ -1153,7 +1150,10 @@
 @ stdcall DeleteFileTransactedA(str ptr)
 @ stdcall DeleteFileTransactedW(wstr ptr)
 @ stdcall DeleteProcThreadAttributeList(ptr)
+@ stdcall DeleteSynchronizationBarrier(ptr)
 @ stdcall DisassociateCurrentThreadFromCallback(ptr) vtdll.TpDisassociateCallback
+@ stdcall DnsHostnameToComputerNameExW(wstr wstr ptr)
+@ stdcall EnterSynchronizationBarrier(ptr long)
 @ stdcall EnableThreadProfiling(ptr long int64 ptr)
 @ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long ptr)
 @ stdcall EnumDateFormatsExEx(ptr wstr long)
@@ -1204,6 +1204,7 @@
 @ stdcall GetCurrentActCtxWorker(ptr) GetCurrentActCtx
 @ stdcall GetCurrencyFormatEx(wstr long wstr ptr wstr long) 
 @ stdcall GetCurrentConsoleFontEx(ptr long ptr) 
+@ stdcall GetCurrentPackageId(ptr ptr)
 @ stdcall GetCurrentProcessorNumberEx(ptr) vtdll.RtlGetCurrentProcessorNumberEx
 @ stdcall GetCurrentProcessW() GetCurrentProcess
 @ stdcall GetCurrentTransaction()
@@ -1301,10 +1302,12 @@
 @ stdcall InitializeCriticalSectionEx(ptr long long) 
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
 @ stdcall InitializeSRWLock(ptr) vtdll.RtlInitializeSRWLock
+@ stdcall InitializeSynchronizationBarrier(ptr long long)
 @ stdcall InitOnceBeginInitialize(ptr long ptr ptr) ;- need test
 @ stdcall InitOnceComplete(ptr long ptr) ;- need implement
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stdcall InitOnceInitialize(ptr)
+@ stdcall InstallELAMCertificateInfo(ptr)
 @ stdcall InterlockedPushListSList(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
 @ stdcall InterlockedPushListSListEx(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
 @ stdcall IsThreadpoolTimerSet(ptr) vtdll.TpIsTimerSet
@@ -1314,6 +1317,7 @@
 @ stdcall IsCalendarLeapMonth(long long long long)
 @ stdcall IsNativeVhdBoot(ptr)
 @ stdcall IsNormalizedString(long wstr long) normaliz.IsNormalizedString
+@ stdcall IsProcessCritical(ptr ptr)
 @ stdcall IsThreadAFiber()
 @ stdcall IsValidCalDateTime(ptr long)
 @ stdcall IsValidLocaleName(wstr) ;see wine implementation ;unimplemented
@@ -1415,6 +1419,7 @@
 @ stdcall ResolveDelayLoadsFromDll(ptr str long)
 @ stdcall ResolveLocaleName(wstr wstr long)
 @ stdcall SetCachedSigningLevel(ptr long long ptr)
+@ stdcall SetComputerNameEx2W(long long wstr)
 @ stdcall SetConsoleHistoryInfo(ptr)
 @ stdcall SetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall SetCurrentConsoleFontEx(ptr long ptr)
@@ -1615,7 +1620,11 @@
 
 #Import from user32
 
-#Todo GetOsSafeBootMode
+#Todo 
+GetOsSafeBootMode
+EnumDynamicTimeZoneInformation
+GetDynamicTimeZoneInformationEffectiveYears
+SetDynamicTimeZoneInformation
 
 #Only Longhorn functions (Pre-reset)
 @ stdcall SetThreadActualPriority(ptr ptr)
@@ -1629,3 +1638,5 @@
 @ stdcall UpdateResourceExA(ptr long str long long long long) kernelfull.UpdateResourceExA
 @ stdcall UpdateResourceExW(ptr long str long long long long) kernelfull.UpdateResourceExW
 @ stdcall SubmitThreadpoolCallback(ptr ptr) ntdll.SubmitThreadpoolCallback
+
+

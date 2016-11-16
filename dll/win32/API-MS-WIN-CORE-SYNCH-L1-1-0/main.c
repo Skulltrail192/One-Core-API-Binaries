@@ -46,9 +46,13 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 /*
  * @implemented
  */
-BOOL WINAPI InitializeCriticalSectionEx(OUT LPCRITICAL_SECTION lpCriticalSection,
-                                       IN DWORD dwSpinCount,
-                                       IN DWORD flags )
+BOOL 
+WINAPI 
+InitializeCriticalSectionEx(
+	OUT LPCRITICAL_SECTION lpCriticalSection,
+    IN DWORD dwSpinCount,
+    IN DWORD flags 
+)
 {
     NTSTATUS Status;
 

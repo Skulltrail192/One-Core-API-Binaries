@@ -506,7 +506,7 @@
 @ stdcall InitNetworkAddressControl()
 @ stdcall SHCreateDefaultContextMenu(ptr ptr ptr)
 @ stdcall SHCreateDefaultExtractIcon(ptr ptr)
-@ stdcall SHOpenWithDialog(ptr ptr)
+@ stdcall SHOpenWithDialog(ptr wstr)
 @ stdcall SHCreateDataObject(ptr long ptr ptr ptr ptr)
 @ stdcall SHBindToFolderIDListParent(ptr ptr ptr ptr ptr)
 @ stdcall SHCreateDefaultExtractIcon(ptr ptr)
@@ -529,3 +529,7 @@
 @ stub SHAssocEnumHandlers
 @ stub SHSetDefaultProperties
 @ stdcall WPC_InstallState(ptr)
+
+#Win7
+@ stdcall GetCurrentProcessExplicitAppUserModelID(wstr)
+@ stdcall SetCurrentProcessExplicitAppUserModelID(wstr)

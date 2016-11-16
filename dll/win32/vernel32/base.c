@@ -53,6 +53,8 @@ PBASEP_APPCERT_EMBEDDED_FUNC fEmbeddedCertFunc;
 
 PRTL_CONVERT_STRING Basep8BitStringToUnicodeString = RtlAnsiStringToUnicodeString;
 
+LPTOP_LEVEL_EXCEPTION_FILTER GlobalTopLevelExceptionFilter;
+
 void Report32bitAppLaunching ( );
 
 RTL_QUERY_REGISTRY_TABLE BasepAppCertTable[2] =
@@ -1093,9 +1095,70 @@ BasepReportFault(
   return result;
 }
 
+static
+LONG BaseExceptionFilter(EXCEPTION_POINTERS *ExceptionInfo)
+{
+    LONG ExceptionDisposition = EXCEPTION_EXECUTE_HANDLER;
+    LPTOP_LEVEL_EXCEPTION_FILTER RealFilter;
+    RealFilter = RtlDecodePointer(GlobalTopLevelExceptionFilter);
+
+    if (RealFilter != NULL)
+    {
+        _SEH2_TRY
+        {
+            ExceptionDisposition = RealFilter(ExceptionInfo);
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+        {
+        }
+        _SEH2_END;
+    }
+    if ((ExceptionDisposition == EXCEPTION_CONTINUE_SEARCH || ExceptionDisposition == EXCEPTION_EXECUTE_HANDLER) &&
+        RealFilter != UnhandledExceptionFilter)
+    {
+       ExceptionDisposition = UnhandledExceptionFilter(ExceptionInfo);
+    }
+
+    return ExceptionDisposition;
+}
+
 VOID
 WINAPI
-BaseThreadStartup(
+BaseProcessStart(PPROCESS_START_ROUTINE lpStartAddress)
+{
+    DbgPrint("BaseProcessStartup(..) - setting up exception frame.\n");
+
+    _SEH2_TRY
+    {
+        /* Set our Start Address */
+        NtSetInformationThread(NtCurrentThread(),
+                               ThreadQuerySetWin32StartAddress,
+                               &lpStartAddress,
+                               sizeof(PPROCESS_START_ROUTINE));
+
+        /* Call the Start Routine */
+        ExitThread(lpStartAddress());
+    }
+    _SEH2_EXCEPT(BaseExceptionFilter(_SEH2_GetExceptionInformation()))
+    {
+        /* Get the Exit code from the SEH Handler */
+        if (!BaseRunningInServerProcess)
+        {
+            /* Kill the whole process, usually */
+            ExitProcess(_SEH2_GetExceptionCode());
+        }
+        else
+        {
+            /* If running inside CSRSS, kill just this thread */
+            ExitThread(_SEH2_GetExceptionCode());
+        }
+    }
+    _SEH2_END;
+}
+
+VOID
+WINAPI
+BaseThreadStart(
     IN LPTHREAD_START_ROUTINE lpStartAddress,
     IN LPVOID lpParameter
     )
@@ -1152,69 +1215,6 @@ Return Value:
 	_SEH2_END;
 }
 
-LPTOP_LEVEL_EXCEPTION_FILTER GlobalTopLevelExceptionFilter;
-
-static
-LONG BaseExceptionFilter(EXCEPTION_POINTERS *ExceptionInfo)
-{
-    LONG ExceptionDisposition = EXCEPTION_EXECUTE_HANDLER;
-    LPTOP_LEVEL_EXCEPTION_FILTER RealFilter;
-    RealFilter = RtlDecodePointer(GlobalTopLevelExceptionFilter);
-
-    if (RealFilter != NULL)
-    {
-        _SEH2_TRY
-        {
-            ExceptionDisposition = RealFilter(ExceptionInfo);
-        }
-        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
-        {
-        }
-        _SEH2_END;
-    }
-    if ((ExceptionDisposition == EXCEPTION_CONTINUE_SEARCH || ExceptionDisposition == EXCEPTION_EXECUTE_HANDLER) &&
-        RealFilter != UnhandledExceptionFilter)
-    {
-       ExceptionDisposition = UnhandledExceptionFilter(ExceptionInfo);
-    }
-
-    return ExceptionDisposition;
-}
-
-VOID
-WINAPI
-BaseProcessStartup(PPROCESS_START_ROUTINE lpStartAddress)
-{
-    DbgPrint("BaseProcessStartup(..) - setting up exception frame.\n");
-
-    _SEH2_TRY
-    {
-        /* Set our Start Address */
-        NtSetInformationThread(NtCurrentThread(),
-                               ThreadQuerySetWin32StartAddress,
-                               &lpStartAddress,
-                               sizeof(PPROCESS_START_ROUTINE));
-
-        /* Call the Start Routine */
-        ExitThread(lpStartAddress());
-    }
-    _SEH2_EXCEPT(BaseExceptionFilter(_SEH2_GetExceptionInformation()))
-    {
-        /* Get the Exit code from the SEH Handler */
-        if (!BaseRunningInServerProcess)
-        {
-            /* Kill the whole process, usually */
-            ExitProcess(_SEH2_GetExceptionCode());
-        }
-        else
-        {
-            /* If running inside CSRSS, kill just this thread */
-            ExitThread(_SEH2_GetExceptionCode());
-        }
-    }
-    _SEH2_END;
-}
-
 static
 LONG BaseThreadExceptionFilter(EXCEPTION_POINTERS * ExceptionInfo)
 {
@@ -1236,42 +1236,6 @@ LONG BaseThreadExceptionFilter(EXCEPTION_POINTERS * ExceptionInfo)
    }
 
    return ExceptionDisposition;
-}
-
-__declspec(noreturn)
-VOID
-WINAPI
-BasepThreadStartup(IN LPTHREAD_START_ROUTINE lpStartAddress,
-                  IN LPVOID lpParameter)
-{
-    /* Attempt to call the Thread Start Address */
-    _SEH2_TRY
-    {
-        /* Legacy check which is still used today for Win32 threads */
-        if (NtCurrentTeb()->NtTib.Version == (30 << 8)) // OS/2 V3.0 ("Cruiser")
-        {
-            /* This registers the termination port with CSRSS */
-            if (!BaseRunningInServerProcess) CsrNewThread();
-        }
-
-        /* Get the exit code from the Thread Start */
-        ExitThread((lpStartAddress)((PVOID)lpParameter));
-    }
-    _SEH2_EXCEPT(BaseThreadExceptionFilter(_SEH2_GetExceptionInformation()))
-    {
-        /* Get the Exit code from the SEH Handler */
-        if (!BaseRunningInServerProcess)
-        {
-            /* Kill the whole process, usually */
-            ExitProcess(_SEH2_GetExceptionCode());
-        }
-        else
-        {
-            /* If running inside CSRSS, kill just this thread */
-            ExitThread(_SEH2_GetExceptionCode());
-        }
-    }
-    _SEH2_END;
 }
 
 void
@@ -1362,110 +1326,6 @@ Return Value:
         }
     }
 }
-
-// VOID
-// BaseThreadStart(
-    // IN LPTHREAD_START_ROUTINE lpStartAddress,
-    // IN LPVOID lpParameter
-    // )
-
-// /*++
-
-// Routine Description:
-
-    // This function is called to start a Win32 thread. Its purpose
-    // is to call the thread, and if the thread returns, to terminate
-    // the thread and delete its stack.
-
-// Arguments:
-
-    // lpStartAddress - Supplies the starting address of the new thread.  The
-        // address is logically a procedure that never returns and that
-        // accepts a single 32-bit pointer argument.
-
-    // lpParameter - Supplies a single parameter value passed to the thread.
-
-// Return Value:
-
-    // None.
-
-// --*/
-
-// {
-    // _SEH2_TRY {
-
-        
-        // // test for fiber start or new thread
-        
-
-        
-        // // WARNING WARNING DO NOT CHANGE INIT OF NtTib.Version. There is
-        // // external code depending on this initialization !
-        
-        // if ( NtCurrentTeb()->NtTib.Version == 7680) {//OS2_VERSION ) {
-            // if ( !BaseRunningInServerProcess ) {
-                // CsrNewThread();
-                // }
-            // }
-        // ExitThread((lpStartAddress)(lpParameter));
-        // }
-    // _SEH2_EXCEPT(UnhandledExceptionFilter( GetExceptionInformation() )) {
-        // if ( !BaseRunningInServerProcess ) {
-            // ExitProcess(GetExceptionCode());
-            // }
-        // else {
-            // ExitThread(GetExceptionCode());
-            // }
-        // }
-	// _SEH2_END
-// }
-
-// VOID
-// BaseProcessStart(
-    // PPROCESS_START_ROUTINE lpStartAddress
-    // )
-
-// /*++
-
-// Routine Description:
-
-    // This function is called to start a Win32 process.  Its purpose is to
-    // call the initial thread of the process, and if the thread returns,
-    // to terminate the thread and delete its stack.
-
-// Arguments:
-
-    // lpStartAddress - Supplies the starting address of the new thread.  The
-        // address is logically a procedure that never returns.
-
-// Return Value:
-
-    // None.
-
-// --*/
-
-// {
-    // _SEH2_TRY {
-#if defined(BUILD_WOW6432)        
-        // Report32bitAppLaunching ();
-#endif 
-        // NtSetInformationThread( NtCurrentThread(),
-                                // ThreadQuerySetWin32StartAddress,
-                                // &lpStartAddress,
-                                // sizeof( lpStartAddress )
-                              // );
-        // ExitThread((lpStartAddress)());
-        // }
-    // _SEH2_EXCEPT(UnhandledExceptionFilter( GetExceptionInformation() )) {
-        // if ( !BaseRunningInServerProcess ) {
-            // ExitProcess(GetExceptionCode());
-            // }
-        // else {
-            // ExitThread(GetExceptionCode());
-            // }
-        // }
-// }
-
 
 VOID
 BasepFreeAppCompatData(

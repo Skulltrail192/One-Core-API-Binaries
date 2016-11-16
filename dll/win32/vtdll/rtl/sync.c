@@ -55,6 +55,8 @@
 #define FAST_M_WAKE		256
 #define FAST_M_WAIT		512
 
+#define RtlpSetKeyedEventHandle(xxHandle) ((HANDLE)(((ULONG_PTR)xxHandle)|1))
+
 int ConditionVariableSpinCount = 400;
 
 int localConditionCount = 10;
@@ -63,12 +65,20 @@ int countTimes;
 
 HANDLE Key_Event = NULL;
 
+void InitKeyedEvent(){
+	if(!Key_Event)
+	{
+		NtCreateKeyedEvent(&Key_Event, -1, NULL, 0);
+		DbgPrint("Key_Event initialized\n");
+	}
+}
+
 static inline int interlocked_dec_if_nonzero( int *dest )
 {
      int val, tmp;
      for (val = *dest;; val = tmp)
      {
-         if (!val || (tmp = interlocked_cmpxchg( dest, val - 1, val )) == val)
+         if (!val || (tmp = InterlockedCompareExchange( dest, val - 1, val )) == val)
              break;
      }
      return val;
@@ -405,11 +415,6 @@ VOID
 NTAPI
 RtlInitializeSRWLock(OUT PRTL_SRWLOCK SRWLock)
 {
-	if(Key_Event == NULL)
-	{
-		NtCreateKeyedEvent(&Key_Event, -1, NULL, 0);
-		DbgPrint("Key_Event initialized\n");
-	}	
     SRWLock->Ptr = NULL;
 }
 
@@ -778,8 +783,12 @@ RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock)
  * NOTES
  *  the behaviour is undefined if the thread doesn't own the lock.
  */
-NTSTATUS WINAPI RtlSleepConditionVariableSRW( RTL_CONDITION_VARIABLE *variable, RTL_SRWLOCK *lock,
-                                              const LARGE_INTEGER *timeout, ULONG flags )
+NTSTATUS 
+WINAPI 
+RtlSleepConditionVariableSRW( 
+	RTL_CONDITION_VARIABLE *variable, RTL_SRWLOCK *lock,
+    const LARGE_INTEGER *timeout, ULONG flags 
+)
 {
     NTSTATUS status;
     interlocked_xchg_add( (int *)&variable->Ptr, 1 );
@@ -789,6 +798,7 @@ NTSTATUS WINAPI RtlSleepConditionVariableSRW( RTL_CONDITION_VARIABLE *variable, 
     else
         RtlReleaseSRWLockExclusive( lock );
 
+	InitKeyedEvent();
     status = NtWaitForKeyedEvent( Key_Event, &variable->Ptr, FALSE, timeout );
     if (status != STATUS_SUCCESS)
     {
@@ -806,7 +816,13 @@ NTSTATUS WINAPI RtlSleepConditionVariableSRW( RTL_CONDITION_VARIABLE *variable, 
 /******************************************************************
  *              RtlRunOnceBeginInitialize (NTDLL.@)
  */
-DWORD WINAPI RtlRunOnceBeginInitialize( RTL_RUN_ONCE *once, ULONG flags, void **context )
+DWORD 
+WINAPI 
+RtlRunOnceBeginInitialize( 
+	RTL_RUN_ONCE *once, 
+	ULONG flags, 
+	void **context 
+)
 {
     if (flags & RTL_RUN_ONCE_CHECK_ONLY)
     {
@@ -817,6 +833,8 @@ DWORD WINAPI RtlRunOnceBeginInitialize( RTL_RUN_ONCE *once, ULONG flags, void **
         if (context) *context = (void *)(val & ~3);
         return STATUS_SUCCESS;
     }
+	
+	InitKeyedEvent();
 
     for (;;)
     {
@@ -830,7 +848,7 @@ DWORD WINAPI RtlRunOnceBeginInitialize( RTL_RUN_ONCE *once, ULONG flags, void **
                 return STATUS_PENDING;
             break;
 
-        case 1:  /* in progress, wait */
+        case 1:  /* in progress, wait */			
             if (flags & RTL_RUN_ONCE_ASYNC) return STATUS_INVALID_PARAMETER;
             next = val & ~3;
             if (interlocked_cmpxchg_ptr( &once->Ptr, (void *)((ULONG_PTR)&next | 1),
@@ -855,7 +873,13 @@ DWORD WINAPI RtlRunOnceBeginInitialize( RTL_RUN_ONCE *once, ULONG flags, void **
 /******************************************************************
  *              RtlRunOnceComplete (NTDLL.@)
  */
-DWORD WINAPI RtlRunOnceComplete( RTL_RUN_ONCE *once, ULONG flags, void *context )
+DWORD 
+WINAPI 
+RtlRunOnceComplete( 
+	RTL_RUN_ONCE *once, 
+	ULONG flags, 
+	void *context 
+)
 {
     if ((ULONG_PTR)context & 3) return STATUS_INVALID_PARAMETER;
 
@@ -865,6 +889,8 @@ DWORD WINAPI RtlRunOnceComplete( RTL_RUN_ONCE *once, ULONG flags, void *context 
         if (flags & RTL_RUN_ONCE_ASYNC) return STATUS_INVALID_PARAMETER;
     }
     else context = (void *)((ULONG_PTR)context | 2);
+
+	InitKeyedEvent();
 
     for (;;)
     {
@@ -929,12 +955,6 @@ RtlInitializeConditionVariable(
 	PRTL_CONDITION_VARIABLE variable
 )
 {
-	DbgPrint("RtlInitializeConditionVariable called\n");
-	if(Key_Event == NULL)
-	{
-		NtCreateKeyedEvent(&Key_Event, -1, NULL, 0);
-		DbgPrint("Key_Event initialized\n");
-	}
     variable->Ptr = NULL;
 }
 
@@ -965,6 +985,7 @@ RtlSleepConditionVariableCS(
 	
     InterlockedExchangeAdd( (int *)&variable->Ptr, 1 );
     RtlLeaveCriticalSection(crit);	
+	InitKeyedEvent();
 	status = NtWaitForKeyedEvent(Key_Event, &variable->Ptr, 0, timeout);
     RtlEnterCriticalSection(crit);
     return status;
@@ -982,10 +1003,12 @@ RtlWakeAllConditionVariable(
 )
 {
 	NTSTATUS status;
-	while(variable->Ptr){	
+	InitKeyedEvent();
+	
+	while(variable->Ptr){
 		InterlockedDecrement((int *)&variable->Ptr);
-		status = NtReleaseKeyedEvent( Key_Event, &variable->Ptr, FALSE, NULL );	
-		DbgPrint("RtlWakeAllConditionVariable. Status: %08x\n",status);	
+		status = NtReleaseKeyedEvent(Key_Event, &variable->Ptr, FALSE, NULL );	
+		DbgPrint("RtlWakeAllConditionVariable. Status: %08x\n",status);
 	}
 }
 
@@ -1011,10 +1034,12 @@ RtlWakeConditionVariable(
 )
 {
 	NTSTATUS status;
-	if(variable->Ptr){
-		InterlockedDecrement((int *)&variable->Ptr);
-		status = NtReleaseKeyedEvent( Key_Event, &variable->Ptr, FALSE, NULL );
-		DbgPrint("RtlWakeConditionVariable. Status: %08x\n",status);	
+	InitKeyedEvent();
+	
+	if(variable->Ptr){ 		
+		InterlockedDecrement((int *)&variable->Ptr); 		
+		status = NtReleaseKeyedEvent( Key_Event, &variable->Ptr, FALSE, NULL ); 		
+		DbgPrint("RtlWakeConditionVariable. Status: %08x\n",status);		
 	}
 }
 

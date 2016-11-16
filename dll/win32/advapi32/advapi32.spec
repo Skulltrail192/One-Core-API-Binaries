@@ -95,7 +95,7 @@
 @ stdcall CreatePrivateObjectSecurityEx(ptr ptr ptr ptr long long ptr ptr)
 @ stdcall CreatePrivateObjectSecurityWithMultipleInheritance(ptr ptr ptr ptr long long long ptr ptr)
 @ stdcall CreateProcessAsUserA(long str str ptr ptr long long ptr str ptr ptr)
-@ stdcall CreateProcessAsUserW(long str str ptr ptr long long ptr str ptr ptr)
+#@ stdcall CreateProcessAsUserW(long str str ptr ptr long long ptr str ptr ptr)
 @ stdcall CreateProcessWithLogonW(wstr wstr wstr long wstr wstr long ptr wstr ptr ptr)
 @ stdcall CreateProcessWithTokenW(ptr long wstr wstr long ptr wstr ptr ptr)
 @ stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr)
@@ -126,7 +126,7 @@
 @ stdcall CredUnmarshalCredentialW(wstr ptr ptr)
 @ stdcall CredWriteA(ptr long)
 # @ stub CredWriteDomainCredentialsA
-# @ stub CredWriteDomainCredentialsW
+@ stub CredWriteDomainCredentialsW
 @ stdcall CredWriteW(ptr long)
 @ stub CredpConvertCredential
 @ stub CredpConvertTargetInfo
@@ -426,12 +426,12 @@
 @ stub OpenEncryptedFileRawW
 @ stdcall OpenEventLogA(str str)
 @ stdcall OpenEventLogW(wstr wstr)
-@ stdcall OpenProcessToken(long long ptr)
+#@ stdcall OpenProcessToken(long long ptr)
 @ stdcall OpenSCManagerA(str str long)
 @ stdcall OpenSCManagerW(wstr wstr long)
 @ stdcall OpenServiceA(long str long)
 @ stdcall OpenServiceW(long wstr long)
-@ stdcall OpenThreadToken(long long long ptr)
+#@ stdcall OpenThreadToken(long long long ptr)
 @ stub OpenTraceA
 @ stub OpenTraceW
 @ stdcall PrivilegeCheck(ptr ptr ptr)
@@ -693,3 +693,44 @@
 @ stub RegLoadAppKeyW
 @ stub RegLoadMUIStringA
 @ stub RegLoadMUIStringW
+@ stub EventActivityIdControl
+@ stub EventEnabled
+@ stub EventProviderEnabled
+@ stub EventRegister
+@ stub EventUnregister
+@ stub EventWrite
+@ stub EventWriteString
+@ stub EventWriteTransfer
+@ stub QuerySecurityAccessMask
+@ stub SetSecurityAccessMask
+@ stub CreateProcessAsUserW
+@ stub OpenProcessToken
+@ stub OpenThreadToken
+@ stub EnableTraceEx2
+@ stub EnumerateTraceGuidsEx
+@ stub EventAccessControl
+@ stub EventAccessQuery
+@ stub EventAccessRemove
+@ stub EventWriteEx
+@ stub EventSetInformation
+@ stub AuditComputeEffectivePolicyBySid
+@ stub AuditEnumerateCategories
+@ stub AuditEnumeratePerUserPolicy
+@ stub AuditEnumerateSubCategories
+@ stub AuditFree
+@ stub AuditLookupCategoryNameW
+@ stub AuditLookupSubCategoryNameW
+@ stub AuditQueryPerUserPolicy
+@ stub AuditQuerySecurity
+@ stub AuditQuerySystemPolicy
+@ stub AuditSetPerUserPolicy
+@ stub AuditSetSecurity
+@ stub AuditSetSystemPolicy
+@ stub IsValidRelativeSecurityDescriptor
+@ stub ControlServiceExW
+@ stub NotifyServiceStatusChangeW
+@ stub I_ScQueryServiceConfig
+@ stub I_ScSendPnPMessage
+@ stub I_ScValidatePnPService
+@ stub ControlServiceExA
+@ stub NotifyServiceStatusChangeA

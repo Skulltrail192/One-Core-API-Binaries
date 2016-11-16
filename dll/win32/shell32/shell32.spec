@@ -505,3 +505,8 @@
 @ stdcall SHRegQueryValueW (long long long long)
 @ stdcall SHRegQueryValueExW (long wstr ptr ptr ptr ptr)
 @ stdcall SHRegDeleteKeyW(long wstr)
+
+@ stub GetCurrentProcessExplicitAppUserModelID
+@ stub SetCurrentProcessExplicitAppUserModelID
+@ stub SHGetKnownFolderPath
+@ stub SHSetKnownFolderPath

@@ -18,57 +18,72 @@ include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys/Win)
 spec2def(vernel32.dll vernel32.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
-	alloc.c
-	base.c
-	boundary.c
-	check.c
-	console.c
-	context.c
-	debug.c
-	dep.c
-	exception.c
-	file.c
-	findfile.c
-	firmware.c
-	handle.c
-    internal.c
-	loader.c
-	locale.c
-	main.c
-	memory.c
-	misc.c
-	namespace.c
-	numa.c
-	pipe.c
-	pointer.c
-	power.c
-	process.c
-	processor.c
-	recovery.c
-	sortkey.c
-	state.c
-	sync.c
-	sysinfo.c	
-	thread.c
-	threadpool.c
-	time.c
-	transaction.c
-	unimplemented.c
-	wer.c
-	wow64.c
-	missing/fiber.c
-	missing/missing.c
-	)
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/alloc.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/appmodel.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/barrier.c	
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/base.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/boundary.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/check.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/console.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/context.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/debug.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/dep.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/exception.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/file.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/findfile.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/firmware.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/handle.c
+    ${REACTOS_SOURCE_DIR}/dll/win32/vernel32/internal.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/loader.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/locale.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/main.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/memory.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/misc.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/namespace.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/numa.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/pipe.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/pointer.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/power.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/process.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/processor.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/recovery.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/sortkey.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/state.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/sync.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/sysinfo.c	
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/thread.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/threadpool.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/time.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/transaction.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/unimplemented.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/wer.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/wow64.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/missing/fiber.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/missing/missing.c
+)
+	
+if(ARCH STREQUAL "i386")
+    list(APPEND ASM_SOURCE
+        asm/i386/thread.S
+		)
+elseif(ARCH STREQUAL "amd64")
+    list(APPEND ASM_SOURCE
+        #asm/amd64/thread.S
+		)
+endif()
 
-add_asm_files(vernel32_asm ${ASM_SOURCE})		
+set(VERNEL32_SOURCE ${SOURCE})
+set(VERNEL32_ASM_SOURCE ${ASM_SOURCE})
+
+add_asm_files(VERNEL32_ASM ${ASM_SOURCE})		
 add_library(vernel32 SHARED 
-			${SOURCE}
-			${vernel32_asm}
+			${VERNEL32_SOURCE}
+			${VERNEL32_ASM}
 			 version.rc
 			 ${CMAKE_CURRENT_BINARY_DIR}/vernel32_stubs.c
 			${CMAKE_CURRENT_BINARY_DIR}/vernel32.def)
 
-set_module_type(vernel32 win32dll HOTPATCHABLE ENTRYPOINT 0)
+set_module_type(vernel32 win32dll HOTPATCHABLE ENTRYPOINT DllMain)
 #############################################
 ## HACK FOR MSVC COMPILATION WITH win32dll ##
 set_subsystem(vernel32 console)

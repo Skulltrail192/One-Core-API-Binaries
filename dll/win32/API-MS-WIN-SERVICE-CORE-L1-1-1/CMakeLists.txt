@@ -1,0 +1,15 @@
+
+add_definitions(-D__WINESRC__)
+include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
+spec2def(API-MS-WIN-SERVICE-CORE-L1-1-1.dll API-MS-WIN-SERVICE-CORE-L1-1-1.spec)
+
+list(APPEND SOURCE
+    API-MS-WIN-SERVICE-CORE-L1-1-1.rc
+    ${CMAKE_CURRENT_BINARY_DIR}/API-MS-WIN-SERVICE-CORE-L1-1-1_stubs.c
+    ${CMAKE_CURRENT_BINARY_DIR}/API-MS-WIN-SERVICE-CORE-L1-1-1.def)
+
+add_library(API-MS-WIN-SERVICE-CORE-L1-1-1 SHARED ${SOURCE})
+set_module_type(API-MS-WIN-SERVICE-CORE-L1-1-1 win32dll ENTRYPOINT 0)
+target_link_libraries(API-MS-WIN-SERVICE-CORE-L1-1-1 wine)
+add_importlibs(API-MS-WIN-SERVICE-CORE-L1-1-1 advapi32 kernel32 ntdll)
+add_cd_file(TARGET API-MS-WIN-SERVICE-CORE-L1-1-1 DESTINATION reactos/system32 FOR all)

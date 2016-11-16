@@ -583,7 +583,12 @@ WINAPI GetCalendarWeekNumber(_In_ CALID calId, _In_ const LPCALDATETIME lpCalDat
  * @implemented clean
  */
 ULONG 
-WINAPI GetCalendarMonthsInYear(_In_ CALID calId, _In_ UINT year, _In_  UINT era)
+WINAPI 
+GetCalendarMonthsInYear(
+	_In_ CALID calId, 
+	_In_ UINT year, 
+	_In_  UINT era
+)
 {
 	if(IsValidGregorianYear(year,era))
 	{
@@ -598,9 +603,11 @@ WINAPI GetCalendarMonthsInYear(_In_ CALID calId, _In_ UINT year, _In_  UINT era)
  * @implemented clean 
  */
 BOOL 
-WINAPI GetCalendarSupportedDateRange(_In_   CALID Calendar,  
-									 _Out_  LPCALDATETIME lpCalMinDateTime,
-									 _Out_  LPCALDATETIME lpCalMaxDateTime)
+WINAPI GetCalendarSupportedDateRange(
+	_In_   CALID Calendar,  
+	_Out_  LPCALDATETIME lpCalMinDateTime,
+	_Out_  LPCALDATETIME lpCalMaxDateTime
+)
 {
 	if(lpCalMinDateTime && lpCalMaxDateTime){
 	//Set min supported date:	
@@ -634,9 +641,12 @@ WINAPI GetCalendarSupportedDateRange(_In_   CALID Calendar,
  * @implemented clean verify IsValidCalDateTime
  */
 BOOL 
-WINAPI GetCalendarDifferenceInDays(_In_ const LPCALDATETIME lpCalDateTimeFirst, 
-								   _In_ const LPCALDATETIME lpCalDateTimeSecond,
-								   _Inout_ const LPCALDATETIME lpCalDateTimeResult)
+WINAPI 
+GetCalendarDifferenceInDays(
+	_In_ const LPCALDATETIME lpCalDateTimeFirst, 
+	_In_ const LPCALDATETIME lpCalDateTimeSecond,
+	 _Inout_ const LPCALDATETIME lpCalDateTimeResult
+)
 {
 		int result;
 		result = GetGregorianDifferenceInDays(lpCalDateTimeFirst,lpCalDateTimeSecond);
@@ -656,7 +666,10 @@ WINAPI GetGregorianDifferenceInDays(const LPCALDATETIME lpCalDateTimeFirst, cons
 	return GetAbsoluteDateFromGregorian(lpCalDateTimeSecond->Year,lpCalDateTimeSecond->Month,lpCalDateTimeSecond->Day) - var;
 }
 
-BOOL WINAPI GetCalendarDateFormat(
+//TODO
+BOOL 
+WINAPI 
+GetCalendarDateFormat(
   _In_   LCID lpszLocale,
   _In_   DWORD dwFlags,
   _In_   const LPCALDATETIME lpCalDateTime,
@@ -729,7 +742,13 @@ GetTickCount64(VOID)
 }
 
 
-BOOL WINAPI CompareCalendarDates(CALDATETIME *dateTimeOne, CALDATETIME *dateTimeTwo, int parameter)
+BOOL 
+WINAPI 
+CompareCalendarDates(
+	CALDATETIME *dateTimeOne, 
+	CALDATETIME *dateTimeTwo, 
+	int parameter
+)
 {
   int hum; // ebx@1
   BOOL result; // eax@2
@@ -790,12 +809,16 @@ LABEL_17:
   return result;
 }
 
-BOOL WINAPI IsTimeZoneRedirectionEnabled()
+BOOL 
+WINAPI 
+IsTimeZoneRedirectionEnabled()
 {
   return BaseStaticServerData->NlsUserInfo.iFirstDayOfWeek[38] != -1;
 }
 
-int WINAPI GetClientDynamicTimeZoneInformation(HANDLE hHandle)
+int 
+WINAPI 
+GetClientDynamicTimeZoneInformation(HANDLE hHandle)
 {
   int other; // edx@1
   int result; // eax@1
@@ -844,7 +867,12 @@ BOOLEAN WINAPI RTL_DTZItoDTZI(PDYNAMIC_TIME_ZONE_INFORMATION information, PDYNAM
   return result;
 }
 
-BOOLEAN WINAPI DTZItoRTL_DTZI(PDYNAMIC_TIME_ZONE_INFORMATION timeOne, PDYNAMIC_TIME_ZONE_INFORMATION timeTwo)
+BOOLEAN 
+WINAPI 
+DTZItoRTL_DTZI(
+	PDYNAMIC_TIME_ZONE_INFORMATION timeOne, 
+	PDYNAMIC_TIME_ZONE_INFORMATION timeTwo
+)
 {
   BOOLEAN result; // al@1
 
@@ -875,7 +903,12 @@ BOOLEAN WINAPI DTZItoRTL_DTZI(PDYNAMIC_TIME_ZONE_INFORMATION timeOne, PDYNAMIC_T
   return result;
 }
 
-DWORD WINAPI GetDynamicTimeZoneInformationRaw(PDYNAMIC_TIME_ZONE_INFORMATION systemTime, BOOL comparation)
+DWORD 
+WINAPI 
+GetDynamicTimeZoneInformationRaw(
+	PDYNAMIC_TIME_ZONE_INFORMATION systemTime, 
+	BOOL comparation
+)
 {
   NTSTATUS status; // eax@2
   DWORD resp; // edi@3

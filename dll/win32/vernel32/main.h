@@ -18,6 +18,7 @@
 #include <config.h>
 #include <port.h>
 #include <ntdllbase.h>
+#include <werapi.h>
 
 /* DEFINITIONS **********************************************************/
 
@@ -55,6 +56,11 @@
 #define IDN_ALLOW_UNASSIGNED        0x1
 #define IDN_USE_STD3_ASCII_RULES    0x2
 #define FIND_DATA_SIZE      0x4000
+
+#define APPMODEL_ERROR_NO_PACKAGE                          15700
+#define APPMODEL_ERROR_PACKAGE_RUNTIME_CORRUPT             15701
+#define APPMODEL_ERROR_PACKAGE_IDENTITY_CORRUPT            15702
+#define APPMODEL_ERROR_NO_APPLICATION                      15703
 
 /* TYPE DEFINITIONS **********************************************************/
 
@@ -120,6 +126,28 @@ static PCEVENT_DESCRIPTOR UACUnhandledErrorElevationRequired = NULL;
 static LPCGUID MS_Windows_UAC_Provider = 0;
 
 /* STRUCTURES AND ENUMERATIONS **************************************************/
+
+typedef struct PACKAGE_VERSION {
+  union {
+    UINT64 Version;
+    struct {
+      USHORT Revision;
+      USHORT Build;
+      USHORT Minor;
+      USHORT Major;
+    };
+  };
+} PACKAGE_VERSION;
+
+typedef struct PACKAGE_ID {
+  UINT32          reserved;
+  UINT32          processorArchitecture;
+  PACKAGE_VERSION version;
+  PWSTR           name;
+  PWSTR           publisher;
+  PWSTR           resourceId;
+  PWSTR           publisherId;
+} PACKAGE_ID;
 
 #ifdef _M_AMD64
 typedef struct _FLOATING_SAVE_AREA
@@ -671,6 +699,23 @@ typedef enum _BASE_CONTEXT_TYPE {
     BaseContextTypeFiber
 } BASE_CONTEXT_TYPE, *PBASE_CONTEXT_TYPE;
 
+typedef struct _RTL_BARRIER
+{
+	DWORD Reserved1;
+	DWORD Reserved2;
+	ULONG_PTR Reserved3[2];
+	DWORD Reserved4;
+	DWORD Reserved5;
+} RTL_BARRIER, *PRTL_BARRIER;
+
+typedef RTL_BARRIER SYNCHRONIZATION_BARRIER;
+typedef PRTL_BARRIER PSYNCHRONIZATION_BARRIER;
+typedef PRTL_BARRIER LPSYNCHRONIZATION_BARRIER;
+
+#define SYNCHRONIZATION_BARRIER_FLAGS_SPIN_ONLY		0x01
+#define SYNCHRONIZATION_BARRIER_FLAGS_BLOCK_ONLY	0x02
+#define SYNCHRONIZATION_BARRIER_FLAGS_NO_DELETE		0x04
+
 /* FUNCTION PROTOTYPES *******************************************************/
 
 /*-------------------------------------INTERNAL FUNCTIONS -----------------------------------------*/
@@ -689,7 +734,9 @@ BaseFormatObjectAttributes(
 
 VOID 
 WINAPI 
-BaseSetLastNTError(IN NTSTATUS Status);
+BaseSetLastNTError(
+	IN NTSTATUS Status
+);
 
 PLARGE_INTEGER 
 WINAPI 
@@ -718,11 +765,16 @@ BasepConfigureAppCertDlls(
 
 PUNICODE_STRING
 WINAPI
-Basep8BitStringToStaticUnicodeString(IN LPCSTR String);
+Basep8BitStringToStaticUnicodeString(
+	IN LPCSTR String
+);
 
 BOOLEAN 
 WINAPI 
-Basep8BitStringToDynamicUnicodeString(OUT PUNICODE_STRING UnicodeString, IN LPCSTR String) ;	
+Basep8BitStringToDynamicUnicodeString(
+	OUT PUNICODE_STRING UnicodeString, 
+	IN LPCSTR String
+) ;	
 
 HANDLE 
 WINAPI 
@@ -734,11 +786,13 @@ BaseFiberStart (
 );
 
 VOID
+WINAPI
 BaseProcessStart(
     PPROCESS_START_ROUTINE lpStartAddress
 );
 
 VOID
+WINAPI
 BaseThreadStart(
     LPTHREAD_START_ROUTINE lpStartAddress,
     LPVOID lpParameter
@@ -761,7 +815,30 @@ int wine_get_sortkey(int flags, const WCHAR *src, int srclen, char *dst, int dst
 int wine_compare_string(int flags, const WCHAR *str1, int len1, const WCHAR *str2, int len2);
 /*-------------------------------------TRANSACTIONS FUNCTIONS -----------------------------------------*/
 
-BOOL WINAPI SetCurrentTransaction(HANDLE new_transaction);
-HANDLE WINAPI GetCurrentTransaction();
-BOOLEAN WINAPI CreateSymbolicLinkW(IN LPCWSTR lpSymlinkFileName, IN LPCWSTR lpTargetFileName, IN DWORD dwFlags);
-BOOL WINAPI GetNamedPipeAttribute(HANDLE Pipe, PIPE_ATTRIBUTE_TYPE AttributeType, PSTR AttributeName, PVOID AttributeValue, PSIZE_T AttributeValueLength);
+BOOL 
+WINAPI 
+SetCurrentTransaction(
+	HANDLE new_transaction
+);
+
+HANDLE 
+WINAPI 
+GetCurrentTransaction();
+
+BOOLEAN 
+WINAPI 
+CreateSymbolicLinkW(
+	IN LPCWSTR lpSymlinkFileName, 
+	IN LPCWSTR lpTargetFileName, 
+	IN DWORD dwFlags
+);
+
+BOOL 
+WINAPI 
+GetNamedPipeAttribute(
+	HANDLE Pipe, 
+	PIPE_ATTRIBUTE_TYPE AttributeType, 
+	PSTR AttributeName, 
+	PVOID AttributeValue, 
+	PSIZE_T AttributeValueLength
+);

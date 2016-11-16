@@ -143,7 +143,14 @@ VOID WINAPI FlushProcessWriteBuffers(void)
 /*
  * @implemented - need test
  */
-BOOL WINAPI InitializeProcThreadAttributeList(LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList, DWORD dwAttributeCount, DWORD dwFlags, PSIZE_T lpSize)
+BOOL 
+WINAPI 
+InitializeProcThreadAttributeList(
+	LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList, 
+	DWORD dwAttributeCount, 
+	DWORD dwFlags, 
+	PSIZE_T lpSize
+)
 {
   SIZE_T size; // esi@3
   BOOL resp; // edi@5
@@ -181,7 +188,11 @@ LABEL_10:
   return result;
 }
 
-BOOL WINAPI QueryProcessCycleTime(HANDLE ProcessHandle, PULONG64 CycleTime)
+BOOL 
+WINAPI 
+QueryProcessCycleTime(
+	HANDLE ProcessHandle, 
+	PULONG64 CycleTime)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -914,4 +925,31 @@ Return Value:
         BaseSetLastNTError (Status);
     }
     return rv;
+}
+
+BOOL 
+WINAPI 
+IsProcessCritical(
+	HANDLE ProcessHandle, 
+	PBOOL Critical)
+{
+  NTSTATUS status; // eax@1
+  BOOL result; // eax@2
+  ULONG breakOnTermination;
+
+  status = NtQueryInformationProcess(ProcessHandle, ProcessBreakOnTermination, &breakOnTermination, sizeof(ULONG), NULL);
+  if ( status < 0 )
+  {
+    BaseSetLastNTError(status);
+    result = FALSE;
+  }
+  else
+  {
+    if(!breakOnTermination)
+		*Critical = TRUE;
+	else
+		*Critical = FALSE;
+	 result = TRUE;
+  }
+  return result;
 }

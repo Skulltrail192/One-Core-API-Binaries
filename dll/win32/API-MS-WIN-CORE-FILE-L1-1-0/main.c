@@ -71,7 +71,14 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 /*
  * @implemented
  */
-BOOL WINAPI SetFileInformationByHandle(HANDLE FileHandle, FILE_INFO_BY_HANDLE_CLASS FileInformationClass, PVOID FileInformation, DWORD FileInformationLength)
+BOOL 
+WINAPI 
+SetFileInformationByHandle(
+	HANDLE FileHandle, 
+	FILE_INFO_BY_HANDLE_CLASS FileInformationClass, 
+	PVOID FileInformation, 
+	DWORD FileInformationLength
+)
 {
   FILE_INFORMATION_CLASS file; // eax@10
   DWORD receive; // ecx@12

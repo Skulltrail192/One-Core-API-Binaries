@@ -398,7 +398,7 @@ unsigned short _rotl16(unsigned short value, unsigned char shift);
 _Check_return_ unsigned int _rotl(unsigned int value, int shift);
 #pragma intrinsic(_rotl)
 _Check_return_ unsigned __int64 __cdecl _rotl64(_In_ unsigned __int64 Value, _In_ int Shift);
-#pragma intrinsic(_rotl64)
+//#pragma intrinsic(_rotl64)
 _Check_return_ unsigned long __cdecl _lrotl(_In_ unsigned long, _In_ int);
 #pragma intrinsic(_lrotl)
 unsigned char _rotr8(unsigned char value, unsigned char shift);
@@ -408,15 +408,15 @@ unsigned short _rotr16(unsigned short value, unsigned char shift);
 _Check_return_ unsigned int _rotr(unsigned int value, int shift);
 #pragma intrinsic(_rotr)
 _Check_return_ unsigned __int64 __cdecl _rotr64(_In_ unsigned __int64 Value, _In_ int Shift);
-#pragma intrinsic(_rotr64)
+//#pragma intrinsic(_rotr64)
 _Check_return_ unsigned long __cdecl _lrotr(_In_ unsigned long, _In_ int);
 #pragma intrinsic(_lrotr)
 unsigned short _byteswap_ushort(unsigned short value);
-#pragma intrinsic(_byteswap_ushort)
+//#pragma intrinsic(_byteswap_ushort)
 unsigned long _byteswap_ulong(unsigned long value);
-#pragma intrinsic(_byteswap_ulong)
+//#pragma intrinsic(_byteswap_ulong)
 unsigned __int64 _byteswap_uint64(unsigned __int64 value);
-#pragma intrinsic(_byteswap_uint64)
+// #pragma intrinsic(_byteswap_uint64)
 #if defined(_M_IX86) || defined(_M_AMD64)
 unsigned __int64 __ll_lshift(unsigned __int64 Mask, int Bit);
 #pragma intrinsic(__ll_lshift)
@@ -462,8 +462,8 @@ unsigned int _CountOneBits64(unsigned __int64 Value);
 #endif
 
 /*** 64/128-bit math ***/
-__int64 __cdecl _abs64(__int64);
-#pragma intrinsic(_abs64)
+// __int64 __cdecl _abs64(__int64);
+// #pragma intrinsic(_abs64)
 #if defined(_M_IX86) || defined(_M_AMD64)
 __int64 __emul(int a, int b);
 #pragma intrinsic(__emul)

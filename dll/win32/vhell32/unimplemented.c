@@ -123,15 +123,29 @@ HRESULT WINAPI SHCreateDefaultExtractIcon(
 }
 
 
-HRESULT WINAPI SHOpenWithDialog(
-  _In_opt_  HWND hwndParent,
-  _In_      const OPENASINFO *poainfo
+HRESULT 
+WINAPI 
+SHOpenWithDialog(
+  _In_opt_  HWND hwnd,
+  _In_ const OPENASINFO *poainfo
 )
 {
-	return E_FAIL;
+	LPCWSTR strCmd= L"shell32.dll,OpenAs_RunDLL ";
+	StrCatW(strCmd, poainfo->pcszFile);
+
+	ShellExecuteW(hwnd,
+				  L"open", 
+				  L"Rundll32.exe",
+				  strCmd,
+				  NULL,
+				  SW_SHOW);
+
+	return S_OK;
 }
 
-HRESULT WINAPI SHSetTemporaryPropertyForItem(
+HRESULT 
+WINAPI 
+SHSetTemporaryPropertyForItem(
   _In_  IShellItem *psi,
   _In_  REFPROPERTYKEY propkey,
   _In_  REFPROPVARIANT propvar
@@ -140,7 +154,9 @@ HRESULT WINAPI SHSetTemporaryPropertyForItem(
 	return E_FAIL;
 }
 
-HRESULT WINAPI SHGetLocalizedName(
+HRESULT 
+WINAPI 
+SHGetLocalizedName(
   _In_   PCWSTR pszPath,
   _Out_  PWSTR pszResModule,
   UINT cch,
@@ -151,7 +167,9 @@ HRESULT WINAPI SHGetLocalizedName(
 }
 
 
-HRESULT WINAPI ILLoadFromStreamEx(
+HRESULT 
+WINAPI 
+ILLoadFromStreamEx(
   _In_   IStream *pstm,
   _Out_  PITEMID_CHILD *ppidl
 )
@@ -159,7 +177,9 @@ HRESULT WINAPI ILLoadFromStreamEx(
 	return E_FAIL;
 }
 
-BOOL WINAPI InitNetworkAddressControl(void)
+BOOL 
+WINAPI 
+InitNetworkAddressControl(void)
 {
 	return FALSE;
 }
@@ -241,7 +261,9 @@ HRESULT WINAPI SHCreateItemFromRelativeName(
 	return E_FAIL;
 }
 
-HRESULT WINAPI SHGetDriveMedia(
+HRESULT 
+WINAPI 
+SHGetDriveMedia(
   _In_   PCWSTR pszDrive,
   _Out_  DWORD *pdwMediaContent
 )
@@ -291,4 +313,22 @@ WPC_InstallState(
 ){
 	*pdwState = 2;
 	return S_OK;
+}
+
+HRESULT 
+WINAPI
+SetCurrentProcessExplicitAppUserModelID(
+  _In_ PCWSTR AppID
+)
+{
+	return E_NOTIMPL;
+}
+
+HRESULT 
+WINAPI
+GetCurrentProcessExplicitAppUserModelID(
+  _Out_ PWSTR *AppID
+)
+{
+	return E_NOTIMPL;
 }

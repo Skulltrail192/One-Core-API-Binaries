@@ -25,6 +25,8 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
+HINSTANCE kernelfull = NULL;
+
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 {
 	switch(fdwReason)

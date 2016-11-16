@@ -767,7 +767,7 @@
 767 stdcall StrCSpnW(wstr wstr)
 768 stdcall StrCatBuffA(str str long)
 769 stdcall StrCatBuffW(wstr wstr long)
-#770 StrCatChainW
+770 stub StrCatChainW
 771 stdcall StrCatW(ptr wstr)
 772 stdcall StrChrA(str long)
 773 stdcall StrChrIA(str long)

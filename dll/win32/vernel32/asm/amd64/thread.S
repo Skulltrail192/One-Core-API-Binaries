@@ -9,13 +9,13 @@
 #include <asm.inc>
 .code64
 
-EXTERN BaseThreadStartup:PROC
-EXTERN BaseProcessStartup:PROC
+EXTERN BaseThreadStart:PROC
+EXTERN BaseProcessStart:PROC
 
-PUBLIC BaseThreadStartupThunk
+PUBLIC BaseThreadStartThunk
 PUBLIC BaseProcessStartThunk
 
-BaseThreadStartupThunk:
+BaseThreadStartThunk:
 
     /* Start out fresh */
     xor rbp, rbp

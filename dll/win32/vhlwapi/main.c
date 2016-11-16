@@ -43,3 +43,25 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 
     return TRUE;
 }
+
+HRESULT 
+WINAPI
+PathMatchSpecExA(
+  _In_ LPCTSTR pszFile,
+  _In_ LPCTSTR pszSpec,
+  _In_ DWORD   dwFlags
+)
+{
+	return PathMatchSpecA(pszFile, pszSpec);
+}
+
+HRESULT 
+WINAPI
+PathMatchSpecExW(
+  _In_ LPCTWSTR pszFile,
+  _In_ LPCTWSTR pszSpec,
+  _In_ DWORD   dwFlags
+)
+{
+	return PathMatchSpecW(pszFile, pszSpec);
+}

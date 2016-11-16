@@ -1,8 +1,8 @@
 @ stdcall CLSIDFromProgID(wstr ptr) ole32.CLSIDFromProgID
 @ stdcall CLSIDFromString(wstr ptr) ole32.CLSIDFromString
 @ stdcall CoAddRefServerProcess() ole32.CoAddRefServerProcess
-@ stub CoAllowUnmarshalerCLSID
-@ stub CoCancelCall
+@ stdcall CoAllowUnmarshalerCLSID(long) ole.CoAllowUnmarshalerCLSID
+@ stdcall CoCancelCall
 @ stdcall CoCopyProxy(ptr ptr) ole32.CoCopyProxy
 @ stdcall CoCreateFreeThreadedMarshaler(ptr ptr) ole32.CoCreateFreeThreadedMarshaler
 @ stdcall CoCreateGuid(ptr) ole32.CoCreateGuid
