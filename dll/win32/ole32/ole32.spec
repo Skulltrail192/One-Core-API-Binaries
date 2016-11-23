@@ -14,7 +14,7 @@
 @ stdcall CoAddRefServerProcess()
 @ stdcall CoAllowSetForegroundWindow(ptr ptr)
 @ stdcall CoBuildVersion()
-# CoCancelCall
+@ stub CoCancelCall
 @ stdcall CoCopyProxy(ptr ptr)
 @ stdcall CoCreateFreeThreadedMarshaler(ptr ptr)
 @ stdcall CoCreateGuid(ptr)
@@ -22,10 +22,10 @@
 @ stdcall CoCreateInstanceEx(ptr ptr long ptr long ptr)
 # CoCreateObjectInContext
 # CoDeactivateObject
-# CoDisableCallCancellation
+@ stub CoDisableCallCancellation
 @ stdcall CoDisconnectObject(ptr long)
 @ stdcall CoDosDateTimeToFileTime(long long ptr) kernel32.DosDateTimeToFileTime
-# CoEnableCallCancellation
+@ stub CoEnableCallCancellation
 @ stdcall CoFileTimeNow(ptr)
 @ stdcall CoFileTimeToDosDateTime(ptr ptr ptr) kernel32.FileTimeToDosDateTime
 @ stdcall CoFreeAllLibraries()
@@ -35,7 +35,7 @@
 # CoGetApartmentID
 @ stdcall CoGetCallContext(ptr ptr)
 @ stdcall CoGetCallerTID(ptr)
-# CoGetCancelObject
+@ stub CoGetCancelObject
 @ stdcall CoGetClassObject(ptr long ptr ptr ptr)
 # CoGetClassVersion
 # CoGetComCatalog
@@ -97,7 +97,7 @@
 @ stdcall CoRevokeClassObject(long)
 @ stdcall CoRevokeInitializeSpy(int64)
 @ stdcall CoRevokeMallocSpy()
-# CoSetCancelObject
+@ stub CoSetCancelObject
 @ stdcall CoSetProxyBlanket(ptr long long ptr long long ptr long)
 @ stdcall CoSetState(ptr)
 @ stdcall CoSuspendClassObjects()
@@ -105,7 +105,7 @@
 @ stdcall CoTaskMemAlloc(long)
 @ stdcall CoTaskMemFree(ptr)
 @ stdcall CoTaskMemRealloc(ptr long)
-# CoTestCancel
+@ stub CoTestCancel
 @ stdcall CoTreatAsClass(ptr ptr)
 @ stdcall CoUninitialize()
 @ stub CoUnloadingWOW
@@ -323,3 +323,4 @@
 @ stdcall WriteFmtUserTypeStg(ptr long ptr)
 @ stub WriteOleStg
 @ stub WriteStringStream
+@ stub CoInvalidateRemoteMachineBindings

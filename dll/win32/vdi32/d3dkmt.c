@@ -270,3 +270,23 @@ D3DKMTCheckMonitorPowerState(
 		return STATUS_INVALID_PARAMETER;
 	}		
 }
+
+/******************************************************************************
+ *		D3DKMTOpenAdapterFromHdc [GDI32.@]
+ */
+NTSTATUS 
+WINAPI 
+D3DKMTOpenAdapterFromHdc( void *pData )
+{
+    return STATUS_NO_MEMORY;
+}
+
+/******************************************************************************
+ *		D3DKMTEscape [GDI32.@]
+ */
+NTSTATUS 
+WINAPI 
+D3DKMTEscape( const void *pData )
+{
+    return STATUS_NO_MEMORY;
+}

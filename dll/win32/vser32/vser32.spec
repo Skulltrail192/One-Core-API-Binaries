@@ -753,6 +753,7 @@
 @ stub ControlMagnification
 @ stdcall CreateDesktopExA(str str ptr long long ptr long ptr)
 @ stdcall CreateDesktopExW(wstr wstr ptr long long ptr long ptr)
+@ stdcall CreateWindowInBand(long wstr wstr long long long long ptr ptr ptr ptr long)
 @ stdcall DCEQueryMode()
 @ stdcall DisplayConfigGetDeviceInfo(ptr)
 @ stdcall DisplayConfigSetDeviceInfo(ptr)
@@ -784,6 +785,7 @@
 @ stdcall GetTopLevelWindow(ptr)
 @ stdcall GetUpdatedClipboardFormats(ptr long ptr)
 @ stdcall GetTouchInputInfo(ptr long ptr long)
+@ stdcall GetWindowBand(ptr ptr)
 @ stdcall GetWindowDisplayAffinity(ptr ptr)
 @ stdcall GetWindowCompositionAttribute(ptr ptr)
 @ stdcall GetWindowCompositionInfo(ptr long)

@@ -873,3 +873,4 @@
 
 #Win7+
 @ stdcall EnableTraceEx2(int64 ptr long long int64 int64 long ptr)
+@ stdcall LsaLookupSids2(ptr long long ptr ptr ptr)

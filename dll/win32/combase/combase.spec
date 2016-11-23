@@ -88,11 +88,14 @@
 @ stub CoEnableCallCancellation
 @ stdcall CoFreeUnusedLibraries() ole32.CoFreeUnusedLibraries
 @ stdcall CoFreeUnusedLibrariesEx(long long) ole32.CoFreeUnusedLibrariesEx
-@ stdcall CoGetActivationState(int128 long ptr) ole32.CoGetActivationState
+#@ stdcall CoGetActivationState(int128 long ptr) ole32.CoGetActivationState
+@ stub CoGetActivationState
 @ stub CoGetApartmentID
-@ stdcall CoGetApartmentType(ptr ptr) ole32.CoGetApartmentType
+#@ stdcall CoGetApartmentType(ptr ptr) ole32.CoGetApartmentType
+@ stub CoGetApartmentType
 @ stdcall CoGetCallContext(ptr ptr) ole32.CoGetCallContext
-@ stdcall CoGetCallState(long ptr) ole32.CoGetCallState
+#@ stdcall CoGetCallState(long ptr) ole32.CoGetCallState
+@ stub CoGetCallState
 @ stdcall CoGetCallerTID(ptr) ole32.CoGetCallerTID
 @ stub CoGetCancelObject
 @ stdcall CoGetClassObject(ptr long ptr ptr ptr) ole32.CoGetClassObject
@@ -138,7 +141,7 @@
 @ stdcall CoRegisterMallocSpy(ptr) ole32.CoRegisterMallocSpy
 @ stdcall CoRegisterMessageFilter(ptr ptr) ole32.CoRegisterMessageFilter
 @ stdcall CoRegisterPSClsid(ptr ptr) ole32.CoRegisterPSClsid
-@ stub CoRegisterSurrogate
+@ stdcall CoRegisterSurrogate(ptr) ole32.CoRegisterSurrogate
 @ stub CoRegisterSurrogateEx
 @ stdcall CoReleaseMarshalData(ptr) ole32.CoReleaseMarshalData
 @ stdcall CoReleaseServerProcess() ole32.CoReleaseServerProcess

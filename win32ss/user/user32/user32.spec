@@ -773,3 +773,23 @@
 ; @ stub WinOldAppHackoMatic
 ; @ stub YieldTask
 ; @ stub _SetProcessDefaultLayout
+
+@ stub CreateWindowInBand
+@ stub GetWindowBand
+@ stub RegisterSessionPort
+@ stub UnregisterSessionPort
+@ stub CancelShutdown
+@ stub IsThreadDesktopComposited
+@ stub SetWindowCompositionAttribute
+@ stub SwitchDesktopWithFade
+@ stub GetWindowDisplayAffinity
+@ stub LogicalToPhysicalPoint
+@ stub SetWindowDisplayAffinity
+@ stub SoundSentry
+@ stub WindowFromPhysicalPoint
+@ stub DisplayConfigGetDeviceInfo
+@ stub DisplayConfigSetDeviceInfo
+@ stub GetDisplayConfigBufferSizes
+@ stub IsProcessDPIAware
+@ stub QueryDisplayConfig
+@ stub SetProcessDPIAware

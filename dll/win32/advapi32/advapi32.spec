@@ -734,3 +734,5 @@
 @ stub I_ScValidatePnPService
 @ stub ControlServiceExA
 @ stub NotifyServiceStatusChangeA
+@ stub EnableTraceEx
+@ stub LsaLookupSids2

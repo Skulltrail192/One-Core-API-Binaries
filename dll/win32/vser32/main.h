@@ -433,4 +433,9 @@ typedef struct _WINCOMPATTRDATA
     ULONG dataSize; // size of the pData buffer
 }WINCOMPATTRDATA, *PWINCOMPATTRDATA;
 
-BOOL WINAPI GetCurrentInputMessageSource(INPUT_MESSAGE_DEVICE_TYPE *this, BOOL otherParamter);
+BOOL 
+WINAPI 
+GetCurrentInputMessageSource(
+	INPUT_MESSAGE_DEVICE_TYPE *this, 
+	BOOL otherParamter
+);

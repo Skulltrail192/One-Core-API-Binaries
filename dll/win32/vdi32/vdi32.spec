@@ -617,3 +617,5 @@
 @ stdcall D3DKMTCreateDCFromMemory(ptr)
 @ stdcall D3DKMTDestroyDCFromMemory(ptr)
 @ stdcall D3DKMTCheckMonitorPowerState(ptr)
+@ stdcall D3DKMTOpenAdapterFromHdc(ptr)
+@ stdcall D3DKMTEscape(ptr)

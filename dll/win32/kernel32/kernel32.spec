@@ -1020,6 +1020,7 @@
 @ stub SetStdHandleEx
 @ stub GetTickCount64
 @ stub GetCurrentPackageId
+@ stub GetCurrentPackageInfo
 @ stub LoadAppInitDlls
 @ stub GlobalAddAtomExA
 @ stub GlobalAddAtomExW
@@ -1056,8 +1057,8 @@
 @ stub EnumResourceTypesExA
 @ stub EnumResourceTypesExW
 @ stub FindStringOrdinal
-@ stub LoadStringA
-@ stub LoadStringW
+@ stdcall LoadStringA(ptr long ptr long) user32.LoadStringA
+@ stdcall LoadStringW(ptr long ptr long) user32.LoadStringW
 @ stub QueryOptionalDelayLoadedAPI
 @ stub RemoveDllDirectory
 @ stub SetDefaultDllDirectories
@@ -1259,3 +1260,10 @@
 @ stub WerUnregisterRuntimeExceptionModule
 @ stub WerpNotifyLoadStringResource
 @ stub WerpNotifyUseStringResource
+@ stdcall CompareStringOrdinal(wstr long wstr long long)
+@ stub BaseSetLastNTError
+@ stub CheckElevation
+@ stub CheckElevationEnabled
+@ stub CompareCalendarDates
+@ stub GetCalendarMonthsInYear
+@ stub GetActiveProcessorCount

@@ -23,6 +23,18 @@
 
 LONG 
 WINAPI 
+GetCurrentPackageInfo(
+  _In_      const UINT32 flags,
+  _Inout_         UINT32 *bufferLength,
+  _Out_opt_       BYTE   *buffer,
+  _Out_opt_       UINT32 *count
+)
+{
+	return APPMODEL_ERROR_NO_PACKAGE;
+}
+
+LONG 
+WINAPI 
 GetCurrentPackageId(
   _Inout_   UINT32 *bufferLength,
   _Out_opt_ BYTE   *buffer

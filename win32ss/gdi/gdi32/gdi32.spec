@@ -607,3 +607,11 @@
 @ stdcall bMakePathNameW(wstr wstr wstr long)
 @ stdcall cGetTTFFromFOT(long long long long long long long)
 @ stdcall gdiPlaySpoolStream(long long long long long long)
+
+#Onnly for compile APi-Set
+@ stub D3DKMTCloseAdapter
+@ stub D3DKMTCreateDCFromMemory
+@ stub D3DKMTDestroyDCFromMemory
+@ stub D3DKMTCheckMonitorPowerState
+@ stub D3DKMTOpenAdapterFromHdc
+@ stub D3DKMTEscape

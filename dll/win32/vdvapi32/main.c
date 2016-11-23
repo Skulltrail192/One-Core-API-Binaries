@@ -64,6 +64,8 @@ typedef VOID( CALLBACK * PFN_SC_NOTIFY_CALLBACK ) (
     IN PVOID pParameter 
 );
 
+typedef ULONG64 TRACEHANDLE,*PTRACEHANDLE;
+
 typedef struct _SERVICE_NOTIFY {
   DWORD                  dwVersion;
   PFN_SC_NOTIFY_CALLBACK pfnNotifyCallback;
@@ -73,6 +75,22 @@ typedef struct _SERVICE_NOTIFY {
   DWORD                  dwNotificationTriggered;
   LPTSTR                 pszServiceNames;
 } SERVICE_NOTIFY, *PSERVICE_NOTIFY;
+
+typedef struct _ENABLE_TRACE_PARAMETERS {
+  ULONG                    Version;
+  ULONG                    EnableProperty;
+  ULONG                    ControlFlags;
+  GUID                     SourceId;
+  PEVENT_FILTER_DESCRIPTOR EnableFilterDesc;
+  ULONG                    FilterDescCount;
+} ENABLE_TRACE_PARAMETERS, *PENABLE_TRACE_PARAMETERS;
+
+typedef enum _EVENT_INFO_CLASS { 
+  EventProviderBinaryTrackInfo    = 0,
+  EventProviderSetTraits          = 1,
+  EventProviderUseDescriptorType  = 2,
+  MaxEventInfo                    = 3
+} EVENT_INFO_CLASS;
 
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 {
@@ -791,4 +809,22 @@ EventSetInformation(
 )
 {
 	return ERROR_SUCCESS;
+}
+
+NTSTATUS 
+WINAPI
+LsaLookupSids2(
+  _In_  LSA_HANDLE                  PolicyHandle,
+  _In_  ULONG                       LookupOptions,
+  _In_  ULONG                       Count,
+  _In_  PSID                        *Sids,
+  _Out_ PLSA_REFERENCED_DOMAIN_LIST *ReferencedDomains,
+  _Out_ PLSA_TRANSLATED_NAME        *Names
+)
+{
+	return LsaLookupSids(PolicyHandle,
+						 Count,
+						 Sids,
+						 ReferencedDomains,
+						 Names);
 }

@@ -19,7 +19,11 @@
 
 #include <main.h>
 
-BOOL WINAPI ChangeWindowMessageFilter(
+WINCOMPATTRDATA WindowAttribute;
+
+BOOL 
+WINAPI 
+ChangeWindowMessageFilter(
   _In_  UINT message,
   _In_  DWORD dwFlag
 )
@@ -28,13 +32,17 @@ BOOL WINAPI ChangeWindowMessageFilter(
 	return TRUE;
 }
 
-BOOL WINAPI UpdateWindowTransform(HWND hwnd, D3DMATRIX* pMatrix, DWORD unk) 
+BOOL 
+WINAPI 
+UpdateWindowTransform(HWND hwnd, D3DMATRIX* pMatrix, DWORD unk) 
 {
 	DbgPrint("UpdateWindowTransform is UNIMPLEMENTED\n");
 	return TRUE;
 }
 
-int WINAPI SetWindowRgnEx(HWND hWnd, HGDIOBJ hRgn, BOOL bRedraw)
+int 
+WINAPI 
+SetWindowRgnEx(HWND hWnd, HGDIOBJ hRgn, BOOL bRedraw)
 {
   int obj = 0; // esi@1
 
@@ -43,13 +51,17 @@ int WINAPI SetWindowRgnEx(HWND hWnd, HGDIOBJ hRgn, BOOL bRedraw)
   return obj;
 }
 
-int WINAPI GetWindowRgnEx(HWND hWnd, HGDIOBJ hRgn, BOOL bRedraw)
+int 
+WINAPI 
+GetWindowRgnEx(HWND hWnd, HGDIOBJ hRgn, BOOL bRedraw)
 {
   int obj = 0; // esi@1
   return obj;
 }
 
-HWND WINAPI GhostWindowFromHungWindow (
+HWND 
+WINAPI 
+GhostWindowFromHungWindow (
     HWND hwndGhost
 ) 
 {
@@ -94,20 +106,26 @@ BOOL WINAPI SetWindowCompositionAttribute(
     WINCOMPATTRDATA* pAttrData
 ) 
 {
+	WindowAttribute = *pAttrData;
 	DbgPrint("SetWindowCompositionAttribute is UNIMPLEMENTED\n");
 	return TRUE;
 }
 
-BOOL WINAPI GetWindowCompositionAttribute (
+BOOL 
+WINAPI 
+GetWindowCompositionAttribute (
     HWND hwnd,
     WINCOMPATTRDATA* pAttrData
 ) 
 {
+	*pAttrData = WindowAttribute;
 	DbgPrint("GetWindowCompositionAttribute is UNIMPLEMENTED\n");
 	return TRUE;
 }
 
-HWND WINAPI FrostCrashedWindow(
+HWND 
+WINAPI 
+FrostCrashedWindow(
     HWND hwndToReplace,
     HWND hwndErrorReportOwnerWnd
 ) 
@@ -116,7 +134,9 @@ HWND WINAPI FrostCrashedWindow(
 	return hwndToReplace;
 }
 
-BOOL WINAPI ChangeWindowMessageFilterEx(
+BOOL
+WINAPI 
+ChangeWindowMessageFilterEx(
   _In_         HWND hWnd,
   _In_         UINT message,
   _In_         DWORD action,
@@ -127,7 +147,9 @@ BOOL WINAPI ChangeWindowMessageFilterEx(
 	return TRUE;
 }
 
-BOOL WINAPI CalculatePopupWindowPosition(
+BOOL 
+WINAPI 
+CalculatePopupWindowPosition(
   _In_      const POINT *anchorPoint,
   _In_      const SIZE *windowSize,
   _In_      UINT flags,
@@ -210,4 +232,47 @@ SetWindowRelative(HWND windowOne, HWND windowTwo)
 {
 	DbgPrint("SetWindowRelative is UNIMPLEMENTED\n");	
 	return TRUE;
+}
+
+HWND 
+WINAPI 
+CreateWindowInBand(
+	DWORD dwExStyle, 
+	LPCWSTR lpClassName, 
+	LPCWSTR lpWindowName, 
+	DWORD dwStyle, 
+	int x, 
+	int y, 
+	int nWidth, 
+	int nHeight, 
+	HWND hWndParent, 
+	HMENU hMenu, 
+	HINSTANCE hInstance, 
+	LPVOID lpParam, 
+	DWORD dwBand
+)
+{
+	return CreateWindowExW(dwExStyle,
+						  lpClassName, 
+						  lpWindowName,
+						  dwStyle,
+						  x,
+						  y,
+						  nWidth,
+						  nHeight, 
+						  hWndParent,
+						  hMenu,
+						  hInstance,
+						  lpParam);
+}
+
+BOOL 
+WINAPI 
+GetWindowBand(
+	HWND hWnd, 
+	PDWORD pdwBand
+)
+{
+	*pdwBand = 0;
+	hWnd = GetWindow(hWnd, GW_CHILD);
 }

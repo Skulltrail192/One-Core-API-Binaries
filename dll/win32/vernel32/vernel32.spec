@@ -1205,6 +1205,7 @@
 @ stdcall GetCurrencyFormatEx(wstr long wstr ptr wstr long) 
 @ stdcall GetCurrentConsoleFontEx(ptr long ptr) 
 @ stdcall GetCurrentPackageId(ptr ptr)
+@ stdcall GetCurrentPackageInfo(long ptr ptr ptr)
 @ stdcall GetCurrentProcessorNumberEx(ptr) vtdll.RtlGetCurrentProcessorNumberEx
 @ stdcall GetCurrentProcessW() GetCurrentProcess
 @ stdcall GetCurrentTransaction()
@@ -1621,10 +1622,10 @@
 #Import from user32
 
 #Todo 
-GetOsSafeBootMode
-EnumDynamicTimeZoneInformation
-GetDynamicTimeZoneInformationEffectiveYears
-SetDynamicTimeZoneInformation
+#GetOsSafeBootMode
+#EnumDynamicTimeZoneInformation
+#GetDynamicTimeZoneInformationEffectiveYears
+#SetDynamicTimeZoneInformation
 
 #Only Longhorn functions (Pre-reset)
 @ stdcall SetThreadActualPriority(ptr ptr)
@@ -1638,5 +1639,3 @@ SetDynamicTimeZoneInformation
 @ stdcall UpdateResourceExA(ptr long str long long long long) kernelfull.UpdateResourceExA
 @ stdcall UpdateResourceExW(ptr long str long long long long) kernelfull.UpdateResourceExW
 @ stdcall SubmitThreadpoolCallback(ptr ptr) ntdll.SubmitThreadpoolCallback
-
-

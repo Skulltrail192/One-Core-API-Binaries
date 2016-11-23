@@ -18,7 +18,7 @@
 
 #include "objbase.h"
 #include "roapi.h"
-#include "hstring.h"
+
 
 #include "wine/debug.h"
 
