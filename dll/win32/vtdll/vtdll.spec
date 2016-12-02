@@ -1490,7 +1490,7 @@
 @ stdcall RtlAcquireSRWLockShared(ptr)
 @ stdcall RtlCloseStringHandle(long long) 
 @ stdcall RtlSetThreadPreferredUILanguages(long wstr ptr)
-@ stdcall RtlInitializeConditionVariable(ptr) ntdllnew.RtlInitializeConditionVariable
+@ stdcall RtlInitializeConditionVariable(ptr)
 @ stdcall RtlInitializeSRWLock(ptr) 
 @ stdcall RtlInternString(long long) ; to review
 @ stdcall RtlReleaseSRWLockExclusive(ptr) 
@@ -1531,7 +1531,7 @@
 @ stdcall EtwNotificationUnregister(long long long)
 @ stdcall EtwSendNotification(long long long long long)
 @ stdcall ShipAssert(long long) 
-@ stdcall LdrAddDllDirectory(wstr ptr)
+@ stdcall LdrAddDllDirectory(wstr)
 @ stdcall LdrQueryModuleServiceTags(ptr ptr long)
 @ stdcall NtAlpcAcceptConnectPort(ptr ptr long ptr ptr ptr ptr ptr long) 
 @ stdcall NtAlpcCancelMessage(ptr long ptr)	

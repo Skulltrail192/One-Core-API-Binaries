@@ -147,7 +147,9 @@ DWORD WINAPI NotifyStableUnicastIpAddressTable(
 	return ERROR_NOT_SUPPORTED;
 }
 
-DWORD WINAPI ResolveIpNetEntry2(
+DWORD 
+WINAPI 
+ResolveIpNetEntry2(
   _Inout_   PMIB_IPNET_ROW2 Row,
   _In_opt_  const SOCKADDR_INET *SourceAddress
 )
@@ -162,4 +164,28 @@ DWORD WINAPI GetIpNetEntry2(
 {
 	UNIMPLEMENTED;
 	return ERROR_NOT_SUPPORTED;
+}
+
+/******************************************************************
+ *    ConvertInterfaceLuidToGuid (IPHLPAPI.@)
+ */
+DWORD 
+WINAPI 
+ConvertInterfaceLuidToGuid(
+	const NET_LUID *luid, 
+	GUID *guid
+)
+{
+    DWORD ret;
+    MIB_IFROW row;
+
+    TRACE("(%p %p)\n", luid, guid);
+
+    if (!luid || !guid) return ERROR_INVALID_PARAMETER;
+
+    row.dwIndex = luid->Info.NetLuidIndex;
+    if ((ret = GetIfEntry( &row ))) return ret;
+
+    guid->Data1 = luid->Info.NetLuidIndex;
+    return NO_ERROR;
 }

@@ -169,3 +169,4 @@
 @ stdcall ParseNetworkString(ptr long ptr ptr ptr)
 @ stdcall ResolveNeighbor(ptr ptr ptr)
 @ stdcall ResolveIpNetEntry2(ptr ptr)
+@ stdcall ConvertInterfaceLuidToGuid(ptr ptr)

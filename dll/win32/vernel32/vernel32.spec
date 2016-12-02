@@ -963,7 +963,7 @@
 @ stdcall BaseQueryModuleData(str str ptr ptr ptr) kernelfull.BaseQueryModuleData
 @ stdcall EnumSystemFirmwareTables(long ptr long) kernelfull.EnumSystemFirmwareTables
 @ stdcall GetSystemFileCacheSize(ptr ptr ptr) kernelfull.GetSystemFileCacheSize
-@ stdcall GetSystemFirmwareTable(long long ptr long) ;Using owner implementation ;kernelfull.GetSystemFirmwareTable
+@ stdcall GetSystemFirmwareTable(long long ptr long) kernelfull.GetSystemFirmwareTable ;(Need implement for XP/2003 RTM)
 @ stdcall SetSystemFileCacheSize(long long long) 
 @ stdcall SetThreadStackGuarantee(ptr) 
 @ stdcall Wow64DisableWow64FsRedirection(ptr) 
@@ -1032,7 +1032,6 @@
 
 #Windows Vista/7/8 Functions
 @ stdcall ActivateActCtxWorker(ptr ptr) ActivateActCtx
-@ stdcall AddDllDirectory(wstr) vtdll.LdrAddDllDirectory
 @ stdcall AddRefActCtxWorker(ptr) AddRefActCtx
 @ stdcall AddIntegrityLabelToBoundaryDescriptor(ptr ptr)
 @ stdcall AddResourceAttributeAce(ptr long long long ptr ptr ptr)
@@ -1376,7 +1375,7 @@
 @ stdcall NormalizeString(long wstr long wstr long) normaliz.NormalizeString
 @ stdcall NotifyMountMgr(wstr wstr long)
 @ stdcall NotifyUILanguageChange(long wstr wstr long ptr)
-@ stub NtVdm64CreateProcessInternalW
+@ stdcall NtVdm64CreateProcessInternalW(long wstr wstr wstr ptr ptr long long ptr wstr ptr ptr) ntvdm64.NtVdm64CreateProcess
 @ stdcall PowerClearRequest(ptr ptr)
 @ stdcall PowerCreateRequest(ptr)
 @ stdcall PowerCreateRequestW(ptr) PowerCreateRequest
@@ -1414,7 +1413,6 @@
 @ stdcall ReplacePartitionUnit(wstr wstr long)
 @ stdcall RemoveDirectoryTransactedA(str ptr)
 @ stdcall RemoveDirectoryTransactedW(wstr ptr)
-@ stdcall RemoveDllDirectory(ptr) vtdll.LdrRemoveDllDirectory
 @ stdcall RemoveSecureMemoryCacheCallback(ptr)
 @ stdcall ResolveDelayLoadedAPI(ptr ptr ptr ptr ptr long)
 @ stdcall ResolveDelayLoadsFromDll(ptr str long)
@@ -1621,12 +1619,6 @@
 
 #Import from user32
 
-#Todo 
-#GetOsSafeBootMode
-#EnumDynamicTimeZoneInformation
-#GetDynamicTimeZoneInformationEffectiveYears
-#SetDynamicTimeZoneInformation
-
 #Only Longhorn functions (Pre-reset)
 @ stdcall SetThreadActualPriority(ptr ptr)
 
@@ -1639,3 +1631,11 @@
 @ stdcall UpdateResourceExA(ptr long str long long long long) kernelfull.UpdateResourceExA
 @ stdcall UpdateResourceExW(ptr long str long long long long) kernelfull.UpdateResourceExW
 @ stdcall SubmitThreadpoolCallback(ptr ptr) ntdll.SubmitThreadpoolCallback
+
+#Todo 
+#GetOsSafeBootMode #(win8)
+#EnumDynamicTimeZoneInformation
+#GetDynamicTimeZoneInformationEffectiveYears
+#SetDynamicTimeZoneInformation
+#@ stdcall AddDllDirectory(wstr) vtdll.LdrAddDllDirectory #(win8)
+#@ stdcall RemoveDllDirectory(ptr) vtdll.LdrRemoveDllDirectory #(win8)

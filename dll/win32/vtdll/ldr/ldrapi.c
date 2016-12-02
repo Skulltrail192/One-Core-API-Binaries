@@ -127,8 +127,8 @@ LdrRemoveDllDirectory(
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS 
-LdrAddDllDirectory(LPCWSTR a1, void *a2)
+DLL_DIRECTORY_COOKIE 
+LdrAddDllDirectory(LPCWSTR NewDirectory)
 {
-	return STATUS_SUCCESS;
+	return NULL;
 }

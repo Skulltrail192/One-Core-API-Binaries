@@ -1022,7 +1022,7 @@
 @ stdcall VirtualBufferExceptionHandler(long ptr ptr) 
 
 #functions for XP x64 WOW
-#@ stdcall BaseProcessStartThunk(ptr ptr) BaseProcessStartThunkEx
+@ stdcall BaseProcessStartThunk(ptr ptr) BaseProcessStartThunkEx
 @ stdcall BaseThreadStartThunk(ptr ptr) 
 @ stdcall CtrlRoutine(long)
 @ stdcall ConsoleIMERoutine()

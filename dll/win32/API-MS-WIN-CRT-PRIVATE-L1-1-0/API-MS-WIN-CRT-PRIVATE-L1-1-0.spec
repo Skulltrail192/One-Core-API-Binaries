@@ -1157,7 +1157,7 @@
 @ cdecl memcpy(ptr ptr long) ucrtbase.memcpy
 @ cdecl memmove(ptr ptr long) ucrtbase.memmove
 @ cdecl set_unexpected(ptr) ucrtbase.set_unexpected
-@ cdecl -arch=arm,x86_64 -norelay -private setjmp(ptr) ucrtbase.setjmp
+@ cdecl -norelay -private setjmp(ptr) ucrtbase.setjmp
 @ cdecl strchr(str long) ucrtbase.strchr
 @ cdecl strrchr(str long) ucrtbase.strrchr
 @ cdecl strstr(str str) ucrtbase.strstr

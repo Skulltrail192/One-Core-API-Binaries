@@ -1980,7 +1980,7 @@
 @ cdecl memcpy(ptr ptr long) 
 @ cdecl memmove(ptr ptr long) 
 @ stub set_unexpected ;(ptr) ucrtbase.set_unexpected
-@ stub -arch=arm,x86_64 -norelay -private setjmp ;(ptr) ucrtbase.setjmp
+@ stub setjmp ;(ptr) ucrtbase.setjmp
 @ cdecl strchr(str long)
 @ cdecl strrchr(str long)
 @ cdecl strstr(str str) 
@@ -2105,7 +2105,7 @@
 @ stub _statusfp ;() ucrtbase._statusfp
 @ stub -arch=i386 _statusfp2 ;(ptr ptr) ucrtbase._statusfp2
 @ cdecl _strerror(long)
-;@ cdecl _strerror_s(str long long)
+@ cdecl _strerror_s(str long long)
 @ stub _wassert ;(wstr wstr long) ucrtbase._wassert
 @ cdecl _wcserror(long) 
 @ stub _wcserror_s ;(ptr long long) ucrtbase._wcserror_s
