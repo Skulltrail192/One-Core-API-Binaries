@@ -86,9 +86,6 @@ Wow64DisableWow64FsRedirection(
 	PVOID *OldValue
 )
 {
-#ifdef _M_IX86	
-	return FALSE;
-#elif defined(_M_AMD64)			
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
 
@@ -103,7 +100,6 @@ Wow64DisableWow64FsRedirection(
     result = FALSE;
   }
   return result;
-#endif   
 }
 
 BOOL 
@@ -111,10 +107,7 @@ WINAPI
 Wow64RevertWow64FsRedirection(
 	PVOID OlValue
 )
-{
-#ifdef _M_IX86	
-	return FALSE;
-#elif defined(_M_AMD64)		
+{	
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
 
@@ -129,7 +122,6 @@ Wow64RevertWow64FsRedirection(
     result = FALSE;
   }
   return result;
-#endif 
 }
 
 BOOLEAN 
@@ -138,9 +130,6 @@ Wow64EnableWow64FsRedirection(
 	BOOLEAN Wow64FsEnableRedirection
 )
 {
-#ifdef _M_IX86	
-	return FALSE;
-#elif defined(_M_AMD64)	
     NTSTATUS NtStatus;
 	
     NtStatus = RtlWow64EnableFsRedirection (Wow64FsEnableRedirection);
@@ -152,5 +141,4 @@ Wow64EnableWow64FsRedirection(
     }
 
     return TRUE;
-#endif
 }

@@ -797,3 +797,85 @@ WINAPI
 RtlWakeAllConditionVariable(
 	PRTL_CONDITION_VARIABLE
 );
+
+#define WOW64_TLS_FILESYSREDIR      8
+
+inline
+PVOID 
+Wow64SetFilesystemRedirectorEx (
+    IN PVOID NewValue
+    )
+/*++
+
+Routine Description:
+
+    This routine allows a thread running inside Wow64 to disable file-system 
+    redirection for all calls happening in the context of this thread.
+    
+    
+    NOTE: This routine should only called from a wow64 process, and is only available 
+          when running on .NET server platforms and beyond. If you component will 
+          run on downlevel platforms (XP 2600 for example), you shouldn't use WOW64_FILE_SYSTEM_DISABLE_REDIRECT (see below).
+
+Example (Enumerating files under c:\windows\system32):
+    
+    {
+        HANDLE File;
+        WIN32_FIND_DATA FindData;
+#ifndef _WIN64        
+        BOOL bWow64Process = FALSE;
+        PVOID Wow64RedirectionOld;
+#endif        
+
+        //
+        // Disable Wow64 file system redirection
+        //
+#ifndef _WIN64        
+        IsWow64Process (GetCurrentProcess (), &bWow64Process);
+        if (bWow64Process == TRUE) {
+            Wow64RedirectionOld = Wow64SetFilesystemRedirectorEx (WOW64_FILE_SYSTEM_DISABLE_REDIRECT);
+        }
+#endif        
+        File = FindFirstFileA ("c:\\windows\\system32\\*.*", &FindData);
+        
+        do {
+        .
+        .
+        } while (FindNextFileA (File, &FindData) != 0);
+        
+        FindClose (File);
+        
+        //
+        // Enable Wow64 file-system redirection
+        //
+#ifndef _WIN64        
+        if (bWow64Process == TRUE) {
+            Wow64SetFilesystemRedirectorEx (Wow64RedirectionOld);
+        }
+#endif        
+    }
+
+
+Arguments:
+
+    NewValue - New Wow64 file-system redirection value. This can either be:
+               a- pointer to a unicode string with a fully-qualified path name (e.g. L"c:\\windows\\notepad.exe").
+               b- any of the following predefined values :
+                  * WOW64_FILE_SYSTEM_ENABLE_REDIRECT : Enables file-system redirection (default)
+                  * WOW64_FILE_SYSTEM_DISABLE_REDIRECT : Disables file-system redirection on all
+                    file I/O operations happening within the context of the current thread.
+                  * WOW64_FILE_SYSTEM_DISABLE_REDIRECT_LEGACY: Use this only if you want to run on 
+                    download level platforms (for example XP 2600), as it will have no effect
+                    and prevents your program from malfunctioning.
+    
+Return:
+
+    Old Wow64 file-system redirection value
+
+--*/
+{
+    PVOID OldValue;
+    OldValue = (PVOID)(ULONG_PTR)NtCurrentTeb()->TlsSlots[WOW64_TLS_FILESYSREDIR];
+    NtCurrentTeb()->TlsSlots[WOW64_TLS_FILESYSREDIR] = NewValue;//(ULONGLONG)PtrToUlong(NewValue);
+    return OldValue;
+}

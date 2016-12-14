@@ -22,10 +22,74 @@
 #include <main.h>
 #include <strsafe.h>
 
+typedef HANDLE TRACEHANDLE;
+
+typedef void (
+WINAPI
+*NOTIFICATIONCALLBACK)(
+    PVOID Wnode,
+    UINT_PTR NotificationContext
+    );
+	
+//
+// Instance Information to track parent child relationship of Instances.
+//
+typedef struct EVENT_INSTANCE_INFO {
+    HANDLE      RegHandle;
+    ULONG       InstanceId;
+} EVENT_INSTANCE_INFO, *PEVENT_INSTANCE_INFO;	
+
+typedef struct _EVENT_INSTANCE_HEADER {
+    USHORT          Size;
+    union {
+        USHORT      FieldTypeFlags;     // Indicates valid fields
+        struct {
+            UCHAR   HeaderType;         // Header type - internal use only
+            UCHAR   MarkerFlags;        // Marker - internal use only
+        };
+    };
+    union {
+        ULONG       Version;
+        struct {
+            UCHAR   Type;
+            UCHAR   Level;
+            USHORT  Version;
+        } Class;
+    };
+    ULONG           ThreadId;
+    ULONG           ProcessId;
+    LARGE_INTEGER   TimeStamp;
+    ULONGLONG       RegHandle;
+    ULONG           InstanceId;
+    ULONG           ParentInstanceId;
+    union {
+        struct {
+            ULONG   ClientContext;          // Reserved
+            ULONG   Flags;                  // Flags for header
+        };
+        struct {
+            ULONG   KernelTime;             // Kernel Mode CPU ticks
+            ULONG   UserTime;               // User mode CPU ticks
+        };
+        ULONG64     ProcessorTime;          // Processor Clock
+    };
+    ULONGLONG       ParentRegHandle;
+} EVENT_INSTANCE_HEADER, *PEVENT_INSTANCE_HEADER;	
+	
+#define CPU_ROOT \
+    L"\\Registry\\Machine\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor"
+
+#define MHZ_VALUE_NAME \
+    L"~MHz"
+
 /*unimplemented */
 void 
 WINAPI 
-WinSqmEventWrite(int a1, int a2, int a3)
+WinSqmEventWrite(
+	int a1, 
+	int a2, 
+	int a3
+)
 {
   ;
 }
@@ -128,9 +192,11 @@ EtwEventWriteStartScenario (
 	
 NTSTATUS
 WINAPI
-EtwReplyNotification(ULONG parameter)
+EtwReplyNotification(
+	ULONG parameter
+)
 {
-	return 0xC000000Du;
+	return STATUS_SUCCESS;
 }
 
 ULONG 
@@ -153,9 +219,10 @@ BOOL WINAPI EtwpIsPrivateLoggerOn()
 }
 
 NTSTATUS 
-NTAPI EtwpGetCpuSpeed(
-	int arg, 
-	ULONG Speed
+NTAPI 
+EtwpGetCpuSpeed(
+    IN DWORD* CpuNum,
+    OUT DWORD* CpuSpeed
 )
 {
   LPWSTR pszDestTemp; // edi@1
@@ -170,7 +237,7 @@ NTAPI EtwpGetCpuSpeed(
   NTSTATUS Status; // [sp+48h] [bp+8h]@3
 
   key = (HANDLE)-1;
-  Speed = 0;
+  CpuSpeed = 0;
   pszDestTemp = (LPWSTR)RtlAllocateHeap((PVOID)NtCurrentTeb()->ProcessEnvironmentBlock->SubSystemData, 0, 0x1000u);
   pszDest = pszDestTemp;
   if ( pszDestTemp )
@@ -179,8 +246,8 @@ NTAPI EtwpGetCpuSpeed(
            pszDestTemp,
            0x1000u,
            L"%ws\\%u",
-           L"\\Registry\\Machine\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor",
-           arg) < 0 )
+           CPU_ROOT,
+           CpuNum) < 0 )
     {
       Status = STATUS_NO_MEMORY;
     }
@@ -197,13 +264,13 @@ NTAPI EtwpGetCpuSpeed(
       if ( Status >= 0 )
       {
         KeyValueInformation = RtlAllocateHeap((PVOID)NtCurrentTeb()->ProcessEnvironmentBlock->SubSystemData, 0, 0x10u);
-        if ( KeyValueInformation )
+        if ((ULONG) KeyValueInformation )
         {
-          StringCbCopyW(pszDest, 0x1000u, L"~MHz");
+          StringCbCopyW(pszDest, 0x1000u, MHZ_VALUE_NAME);
           RtlInitUnicodeString(&ValueName, pszDest);
           Status = ZwQueryValueKey(key, &ValueName, 2, KeyValueInformation, 16, &ResultLength);
           if ( Status >= 0 )
-            Speed = ((ULONG)KeyValueInformation + 3);
+            *CpuSpeed = ((ULONG)KeyValueInformation);
           RtlFreeHeap(NtCurrentTeb()->ProcessEnvironmentBlock->SubSystemData, 0, KeyValueInformation);
         }
         else
@@ -306,19 +373,93 @@ EtwProcessPrivateLoggerRequest(
 	PVOID number
 )
 {
-	DbgPrint("UNIMPLEMENTED: EtwSendNotification");		
+	DbgPrint("UNIMPLEMENTED: EtwProcessPrivateLoggerRequest");		
 	return ERROR_SUCCESS;
 }
 
 //unknown prototype
-DWORD 
-WINAPI 
+ULONG 
+NTAPI
 EtwLogTraceEvent(
-	DWORD a1, 
-	DWORD a2, 
-	DWORD a3
+    IN TRACEHANDLE LoggerHandle,
+    IN PEVENT_TRACE_HEADER EventTrace
 )
 {
-	DbgPrint("UNIMPLEMENTED: EtwSendNotification");		
+	DbgPrint("UNIMPLEMENTED: EtwLogTraceEvent");		
 	return ERROR_SUCCESS;
+}
+
+ULONG
+NTAPI
+EtwNotificationRegistrationA(
+    IN LPGUID Guid,
+    IN BOOLEAN Enable,
+    IN PVOID DeliveryInfo,
+    IN ULONG_PTR DeliveryContext,
+    IN ULONG Flags
+    )
+{
+	return ERROR_SUCCESS;
+}
+
+ULONG
+NTAPI
+EtwNotificationRegistrationW(
+    IN LPGUID Guid,
+    IN BOOLEAN Enable,
+    IN PVOID DeliveryInfo,
+    IN ULONG_PTR DeliveryContext,
+    IN ULONG Flags
+)
+{
+	return ERROR_SUCCESS;
+}
+
+ULONG
+NTAPI
+EtwReceiveNotificationsW(
+    IN ULONG HandleCount,
+    IN HANDLE *HandleList,
+    IN NOTIFICATIONCALLBACK Callback,
+    IN ULONG_PTR DeliveryContext
+)
+{
+    return ERROR_SUCCESS;
+}
+
+ULONG
+NTAPI
+EtwReceiveNotificationsA(
+    IN ULONG HandleCount,
+    IN HANDLE *HandleList,
+    IN NOTIFICATIONCALLBACK Callback,
+    IN ULONG_PTR DeliveryContext
+)
+{
+    return ERROR_SUCCESS;
+}
+
+ULONG
+NTAPI
+EtwTraceEventInstance(
+    IN TRACEHANDLE  LoggerHandle,
+    IN PEVENT_INSTANCE_HEADER EventTrace,
+    IN PEVENT_INSTANCE_INFO pInstInfo,
+    IN PEVENT_INSTANCE_INFO pParentInstInfo
+)
+{
+    return ERROR_SUCCESS;
+}
+
+ULONG
+NTAPI
+EtwTraceMessageVa(
+    IN TRACEHANDLE LoggerHandle,
+    IN ULONG       MessageFlags,
+    IN LPGUID      MessageGuid,
+    IN USHORT      MessageNumber,
+    IN va_list     MessageArgList
+)
+{
+    return ERROR_SUCCESS;
 }

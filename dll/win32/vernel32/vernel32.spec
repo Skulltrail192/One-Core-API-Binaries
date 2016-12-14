@@ -945,8 +945,8 @@
 @ stdcall lstrcpyn(ptr str long) lstrcpynA
 @ stdcall lstrcpynA(ptr str long)
 @ stdcall lstrcpynW(ptr wstr long)
-@ stdcall lstrlen(str) lstrlenA
-@ stdcall lstrlenA(str)
+@ stdcall lstrlen(str) 
+@ stdcall lstrlenA(str) lstrlen
 @ stdcall lstrlenW(wstr)
 
 #Functions needed for Kernel32 for Wow 
@@ -989,10 +989,10 @@
 @ stdcall ConvertThreadToFiberEx(ptr long) kernelfull.ConvertThreadToFiberEx
 @ stdcall FindNextStreamW(ptr ptr) ;kernelfull.FindNextStreamW ;onwer implementation 
 @ stdcall GetLargePageMinimum() ;kernelfull.GetLargePageMinimum ;onwer implementation 
-@ stdcall GetNLSVersion(long long ptr) ;kernelfull.GetNLSVersion
+@ stdcall GetNLSVersion(long long ptr) kernelfull.GetNLSVersion
 @ stdcall GetProcessIdOfThread(ptr) ;kernelfull.GetProcessIdOfThread ;onwer implementation 
 @ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) ;kernelfull.GetProcessWorkingSetSizeEx ;onwer implementation 
-@ stdcall IsNLSDefinedString(long long ptr long long) ;kernelfull.IsNLSDefinedString
+@ stdcall IsNLSDefinedString(long long ptr long long) kernelfull.IsNLSDefinedString
 @ stdcall NeedCurrentDirectoryForExePathA(str) ;kernelfull.NeedCurrentDirectoryForExePathA ;onwer implementation 
 @ stdcall NeedCurrentDirectoryForExePathW(wstr) ;kernelfull.NeedCurrentDirectoryForExePathW ;onwer implementation 
 @ stdcall ReOpenFile(ptr long long long) ;kernelfull.ReOpenFile ;onwer implementation 
@@ -1030,7 +1030,7 @@
 @ stdcall -arch=x86_64 RtlUnwindEx(ptr ptr ptr ptr ptr ptr) ntdll.RtlUnwindEx
 @ stdcall -arch=x86_64 RtlVirtualUnwind(ptr ptr ptr long) ntdll.RtlVirtualUnwind
 
-#Windows Vista/7/8 Functions
+; #Windows Vista/7/8 Functions
 @ stdcall ActivateActCtxWorker(ptr ptr) ActivateActCtx
 @ stdcall AddRefActCtxWorker(ptr) AddRefActCtx
 @ stdcall AddIntegrityLabelToBoundaryDescriptor(ptr ptr)
@@ -1349,9 +1349,7 @@
 @ stdcall K32InitializeProcessForWsWatch(ptr) InitializeProcessForWsWatch
 @ stdcall K32QueryWorkingSet(ptr ptr long) QueryWorkingSet
 @ stdcall K32QueryWorkingSetEx(ptr ptr long) QueryWorkingSetEx
-@ stdcall LCIDToLocaleName(long ptr long long)
-@ stdcall LCIDFromLocaleNameA(long ptr long long) LCIDToLocaleName
-@ stdcall LCIDFromLocaleNameW(long ptr long long) LCIDToLocaleName
+@ stdcall LCIDToLocaleName(long wstr long long)
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
 @ stdcall LeaveCriticalSectionWhenCallbackReturns(ptr ptr) vtdll.TpCallbackLeaveCriticalSectionOnCompletion
 @ stdcall LoadAppInitDlls()
@@ -1542,7 +1540,8 @@
 @ stdcall AdjustTokenPrivileges(long long ptr long ptr ptr) advapi32.AdjustTokenPrivileges
 @ stdcall AllocateAndInitializeSid(ptr long long long long long long long long long ptr) advapi32.AllocateAndInitializeSid
 @ stdcall AllocateLocallyUniqueId(ptr) advapi32.AllocateLocallyUniqueId
-@ stdcall CreateProcessAsUserW(long str str ptr ptr long long ptr str ptr ptr) advapi32.CreateProcessAsUserW
+@ stdcall CreateProcessAsUserA(long str str ptr ptr long long ptr str ptr ptr) advapi32.CreateProcessAsUserA
+@ stdcall CreateProcessAsUserW(long wstr wstr ptr ptr long long ptr wstr ptr ptr) advapi32.CreateProcessAsUserW
 @ stdcall CreateWellKnownSid(long ptr ptr ptr) advapi32.CreateWellKnownSid
 @ stdcall DuplicateTokenEx(long long ptr long long ptr)  advapi32.DuplicateTokenEx
 @ stdcall EqualSid(ptr ptr) advapi32.EqualSid

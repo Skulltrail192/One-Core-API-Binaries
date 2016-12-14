@@ -21,7 +21,8 @@
 #include <cmfuncs.h>
 
 /*subimplemented*/
-NTSTATUS NTAPI
+NTSTATUS 
+NTAPI
 NtAlpcAcceptConnectPort(
     __out HANDLE                         PortHandle,
     __in HANDLE                          ConnectionPortHandle,
@@ -47,7 +48,9 @@ NtAlpcAcceptConnectPort(
 }
 
 /*subimplemented*/
-NTSTATUS NTAPI NtAlpcCancelMessage(
+NTSTATUS 
+NTAPI 
+NtAlpcCancelMessage(
 		__in HANDLE  	PortHandle,
 		__in ULONG  	Flags,
 		__in PALPC_CONTEXT_ATTR  	MessageContext 
@@ -57,7 +60,9 @@ NTSTATUS NTAPI NtAlpcCancelMessage(
 }
 
 /*subimplemented*/
-NTSTATUS NTAPI NtAlpcConnectPort( 	
+NTSTATUS 
+NTAPI 
+NtAlpcConnectPort( 	
 		__out PHANDLE  	PortHandle,
 		__in PUNICODE_STRING  	PortName,
 		__in POBJECT_ATTRIBUTES  	ObjectAttributes,
@@ -86,7 +91,9 @@ NTSTATUS NTAPI NtAlpcConnectPort(
 }
 
 /*subimplemented*/
-NTSTATUS NTAPI NtAlpcCreatePort( 	
+NTSTATUS 
+NTAPI 
+NtAlpcCreatePort( 	
 		__out PHANDLE  	PortHandle,
 		__in POBJECT_ATTRIBUTES  	ObjectAttributes,
 		__in_opt PALPC_PORT_ATTRIBUTES  	PortAttributes 

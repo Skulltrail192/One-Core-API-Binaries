@@ -19,6 +19,7 @@
 #include <port.h>
 #include <ntdllbase.h>
 #include <werapi.h>
+#include <nlsdl.h>
 
 /* DEFINITIONS **********************************************************/
 
@@ -228,6 +229,16 @@ typedef enum _COPYFILE2_MESSAGE_TYPE {
   COPYFILE2_CALLBACK_ERROR            = 6,
   COPYFILE2_CALLBACK_MAX
 } COPYFILE2_MESSAGE_TYPE;
+
+enum {
+    BASE = 36,
+    TMIN = 1,
+    TMAX = 26,
+    SKEW = 38,
+    DAMP = 700,
+    INIT_BIAS = 72,
+    INIT_N = 128
+};
 
 typedef enum _FIND_DATA_TYPE
 {
@@ -551,7 +562,7 @@ typedef struct _LOCALE{
 	LPCWSTR description;
 	LPCWSTR cultureName;
 	LCID lcidHex;
-	LCID lcidDec;	
+	INT lcidDec;	
 }LOCALE;
 
 typedef struct _FIBER                                    /* Field offsets:    */
@@ -708,9 +719,37 @@ typedef struct _RTL_BARRIER
 	DWORD Reserved5;
 } RTL_BARRIER, *PRTL_BARRIER;
 
+//
+//  Locale Hash Table Structure.
+//
+// typedef struct loc_hash_s {
+    // LCID           Locale;             // locale ID
+    // PLOCALE_VAR    pLocaleHdr;         // ptr to locale header info
+    // PLOCALE_FIXED  pLocaleFixed;       // ptr to locale fixed size info
+    // PCASE          pUpperCase;         // ptr to Upper Case table
+    // PCASE          pLowerCase;         // ptr to Lower Case table
+    // PCASE          pUpperLinguist;     // ptr to Upper Case Linguistic table
+    // PCASE          pLowerLinguist;     // ptr to Lower Case Linguistic table
+    // PSORTKEY       pSortkey;           // ptr to sortkey table
+    // BOOL           IfReverseDW;        // if DW should go from right to left
+    // BOOL           IfCompression;      // if compression code points exist
+    // BOOL           IfDblCompression;   // if double compression exists
+    // BOOL           IfIdeographFailure; // if ideograph table failed to load
+    // PCOMPRESS_HDR  pCompHdr;           // ptr to compression header
+    // PCOMPRESS_2    pCompress2;         // ptr to 2 compression table
+    // PCOMPRESS_3    pCompress3;         // ptr to 3 compression table
+    // struct loc_hash_s *pNext;          // ptr to next locale hash node
+// } LOC_HASH, *PLOC_HASH;
+
 typedef RTL_BARRIER SYNCHRONIZATION_BARRIER;
 typedef PRTL_BARRIER PSYNCHRONIZATION_BARRIER;
 typedef PRTL_BARRIER LPSYNCHRONIZATION_BARRIER;
+
+typedef BOOL (CALLBACK *CALINFO_ENUMPROCEXEX)(LPWSTR lpCalendarInfoString,CALID Calendar,LPWSTR lpReserved,LPARAM lParam);
+
+typedef BOOL (CALLBACK* DATEFMT_ENUMPROCEXEX)(LPWSTR, CALID, LPARAM);
+
+typedef BOOL (CALLBACK* TIMEFMT_ENUMPROCEX)(LPWSTR, LPARAM);
 
 #define SYNCHRONIZATION_BARRIER_FLAGS_SPIN_ONLY		0x01
 #define SYNCHRONIZATION_BARRIER_FLAGS_BLOCK_ONLY	0x02
@@ -798,21 +837,239 @@ BaseThreadStart(
     LPVOID lpParameter
 );
 
-BOOL WINAPI WerpReportExceptionInProcessContext(DWORD parameter);
+BOOL 
+WINAPI 
+WerpReportExceptionInProcessContext(
+	DWORD parameter
+);
 
-DWORD WINAPI BasePrepareReasonContext(REASON_CONTEXT *contex, PVOID address);
+DWORD 
+WINAPI 
+BasePrepareReasonContext(
+	REASON_CONTEXT *contex, 
+	PVOID address
+);
 
-void WINAPI WerpNotifyLoadStringResource(HMODULE module, LPCWSTR string, HANDLE handle, DWORD flags);
+void 
+WINAPI 
+WerpNotifyLoadStringResource(
+	HMODULE module, 
+	LPCWSTR string, 
+	HANDLE handle, 
+	DWORD flags
+);
 
-ULONG WINAPI KernelBaseGetGlobalData();
+ULONG 
+WINAPI 
+KernelBaseGetGlobalData();
 
 extern LOCALE LocaleList[3];
 
-void WINAPI InitTable();
+int 
+wine_get_sortkey(
+	int flags, 
+	const WCHAR *src, 
+	int srclen, 
+	char *dst, 
+	int dstlen
+);
 
-int wine_get_sortkey(int flags, const WCHAR *src, int srclen, char *dst, int dstlen);
+int 
+wine_compare_string(
+	int flags, 
+	const WCHAR *str1, 
+	int len1, 
+	const WCHAR *str2, 
+	int len2
+);
 
-int wine_compare_string(int flags, const WCHAR *str1, int len1, const WCHAR *str2, int len2);
+static const LOCALE Locale_Data[] =
+{
+	{
+		L"English - United States",
+		L"en-US",
+		0x0409,
+		1033
+	},
+	{
+		L"Português - Brasil",
+		L"pt-BR",
+		0x0416,
+		1046
+	},
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},
+	{
+		L"Afrikaans",
+		L"af-ZA",
+		0x0436,
+		1078
+	},	
+	{
+		L"Albanian",
+		L"sq-AL",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},		{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},		{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},		{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},		{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},		{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	},	
+	{
+		L"Chinese",
+		L"zh-CN",
+		0x0804,
+		2052
+	}		
+};
+
+#define LocaleArraySize sizeof(Locale_Data) / sizeof(Locale_Data[0])
+
 /*-------------------------------------TRANSACTIONS FUNCTIONS -----------------------------------------*/
 
 BOOL 

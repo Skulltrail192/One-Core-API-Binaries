@@ -1385,39 +1385,39 @@
 @ stdcall RtlWriteMemoryStream(ptr ptr long ptr) ntdll.RtlWriteMemoryStream
 
 #Missing functions on Reactos - need realoc
-@ stdcall EtwControlTraceA(int64 str ptr long) ntdll.EtwControlTraceA
-@ stdcall EtwControlTraceW(int64 wstr ptr long) ntdll.EtwControlTraceW
-@ stdcall EtwCreateTraceInstanceId(ptr ptr) ntdll.EtwCreateTraceInstanceId
-@ stdcall EtwEnableTrace(long long long ptr int64) ntdll.EtwEnableTrace
-@ stdcall EtwEnumerateTraceGuids(ptr long ptr) ntdll.EtwEnumerateTraceGuids
-@ stdcall EtwFlushTraceA(int64 str ptr) ntdll.EtwFlushTraceA
-@ stdcall EtwFlushTraceW(int64 wstr ptr) ntdll.EtwFlushTraceW
-@ stdcall EtwQueryAllTracesA(ptr long ptr) ntdll.EtwQueryAllTracesA
-@ stdcall EtwQueryAllTracesW(ptr long ptr) ntdll.EtwQueryAllTracesW
-@ stdcall EtwQueryTraceA(int64 str ptr) ntdll.EtwQueryTraceA
-@ stdcall EtwQueryTraceW(int64 wstr ptr) ntdll.EtwQueryTraceW
-@ stdcall EtwRegisterTraceGuidsA(long ptr ptr long ptr str str ptr) ntdll.EtwRegisterTraceGuidsA
-@ stdcall EtwRegisterTraceGuidsW(long ptr ptr long ptr wstr wstr ptr) ntdll.EtwRegisterTraceGuidsW
-@ stdcall EtwStartTraceA(int64 str ptr) ntdll.EtwStartTraceA
-@ stdcall EtwStartTraceW(int64 wstr ptr) ntdll.EtwStartTraceW
-@ stdcall EtwStopTraceA(int64 str ptr) ntdll.EtwStopTraceA
-@ stdcall EtwStopTraceW(int64 wstr ptr) ntdll.EtwStopTraceW
-@ stdcall EtwTraceEvent(int64 ptr) ntdll.EtwTraceEvent
-@ stdcall EtwTraceEventInstance(int64 ptr ptr ptr) ntdll.EtwTraceEventInstance
-@ stdcall EtwTraceMessage(int64 long ptr long) ntdll.EtwTraceMessage
-@ stdcall EtwTraceMessageVa(int64 long ptr long ptr) ntdll.EtwTraceMessageVa
-@ stdcall EtwUpdateTraceA(int64 str ptr) ntdll.EtwUpdateTraceA
-@ stdcall EtwUpdateTraceW(int64 wstr ptr) ntdll.EtwUpdateTraceW
-@ stdcall EtwGetTraceEnableFlags(int64) ntdll.EtwGetTraceEnableFlags
-@ stdcall EtwGetTraceEnableLevel(int64) ntdll.EtwGetTraceEnableLevel
-@ stdcall EtwGetTraceLoggerHandle(ptr) ntdll.EtwGetTraceLoggerHandle
-@ stdcall EtwUnregisterTraceGuids(int64) ntdll.EtwUnregisterTraceGuids
-@ stdcall EtwNotificationRegistrationA(long long long long long) ntdll.EtwNotificationRegistrationA
-@ stdcall EtwNotificationRegistrationW(long long long long long) ntdll.EtwNotificationRegistrationW
-@ stdcall EtwpGetTraceBuffer(long long long long) ntdll.EtwpGetTraceBuffer
-@ stdcall EtwpSetHWConfigFunction(long long) ntdll.EtwpSetHWConfigFunction
-@ stdcall EtwReceiveNotificationsA(long long long long) ntdll.EtwReceiveNotificationsA
-@ stdcall EtwReceiveNotificationsW(long long long long) ntdll.EtwReceiveNotificationsW
+@ stdcall EtwControlTraceA(int64 str ptr long) 
+@ stdcall EtwControlTraceW(int64 wstr ptr long) 
+@ stdcall EtwCreateTraceInstanceId(ptr ptr)
+@ stdcall EtwEnableTrace(long long long ptr int64)
+@ stdcall EtwEnumerateTraceGuids(ptr long ptr) 
+@ stdcall EtwFlushTraceA(int64 str ptr)
+@ stdcall EtwFlushTraceW(int64 wstr ptr)
+@ stdcall EtwQueryAllTracesA(ptr long ptr)
+@ stdcall EtwQueryAllTracesW(ptr long ptr) 
+@ stdcall EtwQueryTraceA(int64 str ptr) 
+@ stdcall EtwQueryTraceW(int64 wstr ptr) 
+@ stdcall EtwRegisterTraceGuidsA(long ptr ptr long ptr str str ptr)
+@ stdcall EtwRegisterTraceGuidsW(long ptr ptr long ptr wstr wstr ptr)
+@ stdcall EtwStartTraceA(int64 str ptr) 
+@ stdcall EtwStartTraceW(int64 wstr ptr) 
+@ stdcall EtwStopTraceA(int64 str ptr) 
+@ stdcall EtwStopTraceW(int64 wstr ptr) 
+@ stdcall EtwTraceEvent(int64 ptr) 
+@ stdcall EtwTraceEventInstance(int64 ptr ptr ptr) 
+@ stdcall EtwTraceMessage(int64 long ptr long) 
+@ stdcall EtwTraceMessageVa(int64 long ptr long ptr) 
+@ stdcall EtwUpdateTraceA(int64 str ptr) 
+@ stdcall EtwUpdateTraceW(int64 wstr ptr)
+@ stdcall EtwGetTraceEnableFlags(int64) 
+@ stdcall EtwGetTraceEnableLevel(int64) 
+@ stdcall EtwGetTraceLoggerHandle(ptr)
+@ stdcall EtwUnregisterTraceGuids(int64)
+@ stdcall EtwNotificationRegistrationA(long long long long long)
+@ stdcall EtwNotificationRegistrationW(long long long long long) 
+@ stdcall EtwpGetTraceBuffer(ptr ptr long long) 
+@ stdcall EtwpSetHWConfigFunction(ptr long)
+@ stdcall EtwReceiveNotificationsA(long long long long) 
+@ stdcall EtwReceiveNotificationsW(long long long long)
 
 #Only on XP/2003 x64
 @ cdecl -arch=x86_64 __misaligned_access() 
@@ -1426,7 +1426,6 @@
 @ stdcall -arch=x86_64 LdrProcessInitializationComplete()
 @ stdcall -arch=x86_64 RtlLookupFunctionTable(int64 ptr ptr)
 @ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr long)
-#@ stdcall -arch=x86_64 RtlCreateServiceSid(ptr ptr ptr)
 @ stdcall -arch=x86_64 RtlCopyMemoryNonTemporal(ptr ptr long)
 @ stdcall -arch=x86_64 RtlGetFunctionTableListHead()
 
@@ -1526,7 +1525,7 @@
 @ stdcall EtwEnumerateProcessRegGuids(ptr long long)
 @ stdcall EtwpCreateEtwThread(ptr ptr)
 @ stdcall EtwProcessPrivateLoggerRequest(ptr)
-@ stdcall EtwLogTraceEvent(long long long)
+@ stdcall EtwLogTraceEvent(int64 ptr)
 @ stdcall EtwNotificationRegister(long long long long long)
 @ stdcall EtwNotificationUnregister(long long long)
 @ stdcall EtwSendNotification(long long long long long)

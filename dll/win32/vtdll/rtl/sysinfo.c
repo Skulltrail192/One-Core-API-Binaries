@@ -142,7 +142,7 @@ RtlGetOSProductName(
     return STATUS_BUFFER_TOO_SMALL;
   *Destination->Buffer = 0;
   Destination->Length = 0;
-  VersionInformation.dwOSVersionInfoSize = 284;
+  VersionInformation.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
   result = RtlGetVersion(&VersionInformation);
   if ( result < 0 )
     return result;
@@ -256,18 +256,59 @@ LABEL_14:
   return result;
 }
 
-BOOL 
+/***********************************************************************
+ *           RtlGetProductInfo    (NTDLL.@)
+ *
+ * Gives info about the current Windows product type, in a format compatible
+ * with the given Windows version
+ *
+ * Returns TRUE if the input is valid, FALSE otherwise
+ */
+BOOLEAN 
 WINAPI 
 RtlGetProductInfo(
-  _In_   DWORD dwOSMajorVersion,
-  _In_   DWORD dwOSMinorVersion,
-  _In_   DWORD dwSpMajorVersion,
-  _In_   DWORD dwSpMinorVersion,
-  _Out_  PDWORD pdwReturnedProductType
+	DWORD dwOSMajorVersion, 
+	DWORD dwOSMinorVersion, 
+	DWORD dwSpMajorVersion,
+    DWORD dwSpMinorVersion, 
+	PDWORD pdwReturnedProductType
 )
 {
-	*pdwReturnedProductType = 0x00000001;
-	return TRUE;
+    RTL_OSVERSIONINFOEXW VersionInformation;
+	
+	VersionInformation.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
+	
+	RtlGetVersion(&VersionInformation);
+
+    if (!pdwReturnedProductType)
+        return FALSE;
+
+    if (VersionInformation.wProductType == VER_NT_WORKSTATION)
+	{
+		if(VersionInformation.wSuiteMask == VER_SUITE_PERSONAL)
+			*pdwReturnedProductType = PRODUCT_HOME_PREMIUM;
+		else
+			*pdwReturnedProductType = PRODUCT_ULTIMATE;
+	}else{
+		if(VersionInformation.wSuiteMask == VER_SUITE_BLADE)
+			*pdwReturnedProductType = PRODUCT_WEB_SERVER;
+		if(VersionInformation.wSuiteMask == VER_SUITE_COMPUTE_SERVER)
+			*pdwReturnedProductType = PRODUCT_CLUSTER_SERVER;
+		if(VersionInformation.wSuiteMask == VER_SUITE_DATACENTER)
+			*pdwReturnedProductType = PRODUCT_DATACENTER_SERVER;
+		if(VersionInformation.wSuiteMask == VER_SUITE_ENTERPRISE)
+			*pdwReturnedProductType = PRODUCT_ENTERPRISE_SERVER;
+		if(VersionInformation.wSuiteMask == VER_SUITE_SMALLBUSINESS)
+			*pdwReturnedProductType = PRODUCT_SMALLBUSINESS_SERVER;		
+		if(VersionInformation.wSuiteMask == VER_SUITE_SMALLBUSINESS_RESTRICTED)
+			*pdwReturnedProductType = PRODUCT_SB_SOLUTION_SERVER;	
+		if(VersionInformation.wSuiteMask == VER_SUITE_STORAGE_SERVER)
+			*pdwReturnedProductType = PRODUCT_STORAGE_ENTERPRISE_SERVER;		
+		if(VersionInformation.wSuiteMask == VER_SUITE_WH_SERVER)
+			*pdwReturnedProductType = PRODUCT_HOME_PREMIUM_SERVER;			
+	}        
+
+    return TRUE;
 }
 
 NTSTATUS 

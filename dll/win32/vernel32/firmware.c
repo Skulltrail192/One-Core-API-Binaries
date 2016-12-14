@@ -190,57 +190,57 @@ BOOL WINAPI SetFirmwareEnvironmentVariableExA(LPCTSTR SourceString, LPCTSTR lpGu
   return 0;
 }
 
-UINT 
-WINAPI 
-GetSystemFirmwareTable(
-	SYSTEM_FIRMWARE_TABLE_INFORMATION *FirmwareTableProviderSignature, 
-	DWORD FirmwareTableID, 
-	PVOID pFirmwareTableBuffer, 
-	DWORD BufferSize
-)
-{
-  SYSTEM_FIRMWARE_TABLE_INFORMATION *SysInfo; // eax@1
-  NTSTATUS Status; // eax@2 MAPDST
-  ULONG ReturnLength; // [sp+14h] [bp-24h]@1
-  UINT resp; // [sp+18h] [bp-20h]@1
-  CPPEH_RECORD ms_exc; // [sp+20h] [bp-18h]@1
+// UINT  //Bug with Skype
+// WINAPI 
+// GetSystemFirmwareTable(
+	// SYSTEM_FIRMWARE_TABLE_INFORMATION *FirmwareTableProviderSignature, 
+	// DWORD FirmwareTableID, 
+	// PVOID pFirmwareTableBuffer, 
+	// DWORD BufferSize
+// )
+// {
+  // SYSTEM_FIRMWARE_TABLE_INFORMATION *SysInfo; // eax@1
+  // NTSTATUS Status; // eax@2 MAPDST
+  // ULONG ReturnLength; // [sp+14h] [bp-24h]@1
+  // UINT resp; // [sp+18h] [bp-20h]@1
+  // CPPEH_RECORD ms_exc; // [sp+20h] [bp-18h]@1
 
-  Status = STATUS_SUCCESS;
-  ReturnLength = 0;
-  resp = FALSE;
-  SysInfo = (SYSTEM_FIRMWARE_TABLE_INFORMATION *)RtlAllocateHeap(
-                                                    NtCurrentTeb()->ProcessEnvironmentBlock->ProcessHeap,
-                                                    BaseDllTag,
-                                                    BufferSize);
-  FirmwareTableProviderSignature = SysInfo;
-  ms_exc.registration.TryLevel = 0;
-  if ( SysInfo )
-  {
-    SysInfo->ProviderSignature = (ULONG)FirmwareTableProviderSignature;
-    SysInfo->TableID = FirmwareTableID;
-    SysInfo->TableBufferLength = BufferSize;
-    SysInfo->Action = 1;
-    Status = NtQuerySystemInformation(SystemFirmwareTableInformation|0x40, &SysInfo, BufferSize, &ReturnLength);
-    if ( (Status & 0x80000000) == 0 || Status == STATUS_BUFFER_TOO_SMALL )
-      resp = FirmwareTableProviderSignature->TableBufferLength;
-    if ( (Status & 0x80000000) == 0 && pFirmwareTableBuffer )
-    {
-      ms_exc.registration.TryLevel = 1;
-      memcpy(
-        pFirmwareTableBuffer,
-        FirmwareTableProviderSignature->TableBuffer,
-        FirmwareTableProviderSignature->TableBufferLength);
-      ms_exc.registration.TryLevel = 0;
-      Status = STATUS_SUCCESS;
-    }
-  }
-  else
-  {
-    Status = STATUS_INSUFFICIENT_RESOURCES;
-  }
-  ms_exc.registration.TryLevel = -2;
-  if ( FirmwareTableProviderSignature )
-    RtlFreeHeap(NtCurrentTeb()->ProcessEnvironmentBlock->ProcessHeap, 0, FirmwareTableProviderSignature);
-  BaseSetLastNTError(Status);
-  return resp;
-}
+  // Status = STATUS_SUCCESS;
+  // ReturnLength = 0;
+  // resp = FALSE;
+  // SysInfo = (SYSTEM_FIRMWARE_TABLE_INFORMATION *)RtlAllocateHeap(
+                                                    // NtCurrentTeb()->ProcessEnvironmentBlock->ProcessHeap,
+                                                    // BaseDllTag,
+                                                    // BufferSize);
+  // FirmwareTableProviderSignature = SysInfo;
+  // ms_exc.registration.TryLevel = 0;
+  // if ( SysInfo )
+  // {
+    // SysInfo->ProviderSignature = (ULONG)FirmwareTableProviderSignature;
+    // SysInfo->TableID = FirmwareTableID;
+    // SysInfo->TableBufferLength = BufferSize;
+    // SysInfo->Action = 1;
+    // Status = NtQuerySystemInformation(SystemFirmwareTableInformation|0x40, &SysInfo, BufferSize, &ReturnLength);
+    // if ( (Status & 0x80000000) == 0 || Status == STATUS_BUFFER_TOO_SMALL )
+      // resp = FirmwareTableProviderSignature->TableBufferLength;
+    // if ( (Status & 0x80000000) == 0 && pFirmwareTableBuffer )
+    // {
+      // ms_exc.registration.TryLevel = 1;
+      // memcpy(
+        // pFirmwareTableBuffer,
+        // FirmwareTableProviderSignature->TableBuffer,
+        // FirmwareTableProviderSignature->TableBufferLength);
+      // ms_exc.registration.TryLevel = 0;
+      // Status = STATUS_SUCCESS;
+    // }
+  // }
+  // else
+  // {
+    // Status = STATUS_INSUFFICIENT_RESOURCES;
+  // }
+  // ms_exc.registration.TryLevel = -2;
+  // if ( FirmwareTableProviderSignature )
+    // RtlFreeHeap(NtCurrentTeb()->ProcessEnvironmentBlock->ProcessHeap, 0, FirmwareTableProviderSignature);
+  // BaseSetLastNTError(Status);
+  // return resp;
+// }

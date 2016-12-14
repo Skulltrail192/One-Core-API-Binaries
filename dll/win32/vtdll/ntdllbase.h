@@ -463,7 +463,7 @@ NTSTATUS WINAPI LdrResolveDelayLoadsFromDll(
   _Reserved_  ULONG Flags
 );
 
-PTEB NtCurrentTeb(void);
+//PTEB NtCurrentTeb(void);
 
 NTSTATUS NTAPI RtlProcessFlsData(ULONG Buffer);
 

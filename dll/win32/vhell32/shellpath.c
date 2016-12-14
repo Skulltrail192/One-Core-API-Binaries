@@ -669,7 +669,7 @@ static const CSIDL_DATA CSIDL_Data[] =
     },
     { /* 0x2a - CSIDL_PROGRAM_FILESX86 */
         &FOLDERID_ProgramFilesX86,
-        CSIDL_Type_CurrVer,
+        CSIDL_PROGRAM_FILESX86,
         ProgramFilesDirX86W,
         Program_Files_x86W
     },
@@ -1934,11 +1934,40 @@ static HRESULT create_extra_folders(void)
     return hr;
 }
 
+static int convertWinVistaFolderToWinXPFolder(KNOWNFOLDERID *id){
+	if(IsEqualGUID( id , &FOLDERID_UserProgramFiles ))
+		return CSIDL_LOCAL_APPDATA;
+	if(IsEqualGUID( id , &FOLDERID_VideosLibrary ))
+		return CSIDL_COMMON_VIDEO;
+	if(IsEqualGUID( id , &FOLDERID_UsersLibraries ))
+		return CSIDL_PROFILE;
+	if(IsEqualGUID( id , &FOLDERID_UserProgramFilesCommon ))
+		return CSIDL_LOCAL_APPDATA;
+	if(IsEqualGUID( id , &FOLDERID_SampleVideos ))
+		return CSIDL_MYVIDEO;
+	if(IsEqualGUID( id , &FOLDERID_PicturesLibrary ))
+		return CSIDL_MYPICTURES;
+	if(IsEqualGUID( id , &FOLDERID_OriginalImages ))
+		return CSIDL_MYPICTURES;
+	if(IsEqualGUID( id , &FOLDERID_MusicLibrary ))
+		return CSIDL_MYMUSIC;
+	if(IsEqualGUID( id , &FOLDERID_DocumentsLibrary ))
+		return CSIDL_PERSONAL;	
+	return 0;
+}
+
 static int csidl_from_id( const KNOWNFOLDERID *id )
 {
     int i;
+	int special;
     for (i = 0; i < sizeof(CSIDL_Data) / sizeof(CSIDL_Data[0]); i++)
-        if (IsEqualGUID( CSIDL_Data[i].id, id )) return i;
+	{
+		special = convertWinVistaFolderToWinXPFolder(id);
+		if(special)
+			return special;			
+        if (IsEqualGUID( CSIDL_Data[i].id, id )) 
+			return i;		
+	}
     return -1;
 }
 
@@ -1948,49 +1977,44 @@ static int csidl_from_id( const KNOWNFOLDERID *id )
 HRESULT 
 WINAPI 
 SHGetKnownFolderPath(
-	REFKNOWNFOLDERID rfid, 
+	REFKNOWNFOLDERID id, 
 	DWORD flags, 
 	HANDLE token, 
 	PWSTR *path)
 {
-     HRESULT hr;
-    // WCHAR folder[MAX_PATH];
-    // int index = csidl_from_id( rfid );
+     wchar_t folder[MAX_PATH+1] = {0};
+     int index = csidl_from_id( id );
+	 LPCWSTR allusers = L"";
+	 
+    if (index < 0)
+        return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
 
-    // TRACE("%s, 0x%08x, %p, %p\n", debugstr_guid(rfid), flags, token, path);
+    if (flags & KF_FLAG_CREATE)
+        index |= CSIDL_FLAG_CREATE;
 
-    // *path = NULL;
+    if (flags & KF_FLAG_DONT_VERIFY)
+        index |= CSIDL_FLAG_DONT_VERIFY;
 
-    // if (index < 0)
-        // return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
+    if (flags & KF_FLAG_NO_ALIAS)
+        index |= CSIDL_FLAG_NO_ALIAS;
 
-    // if (flags & KF_FLAG_CREATE)
-        // index |= CSIDL_FLAG_CREATE;
+    if (flags & KF_FLAG_INIT)
+        index |= CSIDL_FLAG_PER_USER_INIT;
 
-    // if (flags & KF_FLAG_DONT_VERIFY)
-        // index |= CSIDL_FLAG_DONT_VERIFY;
-
-    // if (flags & KF_FLAG_NO_ALIAS)
-        // index |= CSIDL_FLAG_NO_ALIAS;
-
-    // if (flags & KF_FLAG_INIT)
-        // index |= CSIDL_FLAG_PER_USER_INIT;
-
-    // if (flags & ~(KF_FLAG_CREATE|KF_FLAG_DONT_VERIFY|KF_FLAG_NO_ALIAS|KF_FLAG_INIT))
-    // {
-        // FIXME("flags 0x%08x not supported\n", flags);
-        // return E_INVALIDARG;
-    // }
-
-    // hr = SHGetFolderPathW( NULL, index, token, 0, folder );
-    // if (SUCCEEDED(hr))
-    // {
-        // *path = CoTaskMemAlloc( (strlenW( folder ) + 1) * sizeof(WCHAR) );
-        // if (!*path)
-            // return E_OUTOFMEMORY;
-        // strcpyW( *path, folder );
-    // }
-	*path = L"C:\\Program and Files\\";
+    if (flags & ~(KF_FLAG_CREATE|KF_FLAG_DONT_VERIFY|KF_FLAG_NO_ALIAS|KF_FLAG_INIT))
+    {
+        FIXME("flags 0x%08x not supported\n", flags);
+        return E_INVALIDARG;
+    }
+	
+	SHGetFolderPathW(NULL, index, token, 0, folder);
+	if(IsEqualGUID( id , &FOLDERID_Public ))
+	{
+		ExpandEnvironmentStringsW(L"%ALLUSERSPROFILE%", allusers, MAX_PATH);
+		*path = allusers;
+	}else{
+		*path = folder;
+	}	
     return S_OK;
 }
 
@@ -1999,7 +2023,13 @@ SHGetKnownFolderPath(
  */
 HRESULT 
 WINAPI 
-SHGetFolderPathEx(REFKNOWNFOLDERID rfid, DWORD flags, HANDLE token, LPWSTR path, DWORD len)
+SHGetFolderPathEx(
+	REFKNOWNFOLDERID rfid, 
+	DWORD flags, 
+	HANDLE token, 
+	LPWSTR path, 
+	DWORD len
+)
 {
     HRESULT hr;
     WCHAR *buffer;

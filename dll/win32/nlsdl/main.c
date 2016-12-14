@@ -16,24 +16,31 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  *
  */
- 
-#define NDEBUG
+#include <nlsdl.h>
 
-#include <main.h>
-#include <csr.h>
+WINE_DEFAULT_DEBUG_CHANNEL(bcrypt);
 
-WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
-
-HINSTANCE kernelfull = NULL;
-
-BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
+int 
+WINAPI 
+DownlevelLCIDToLocaleName( 
+	LCID lcid, 
+	LPWSTR name, 
+	INT count, 
+	DWORD flags 
+)
 {
-	switch(fdwReason)
-    {
-        case DLL_PROCESS_ATTACH:
-            DisableThreadLibraryCalls(hInstDLL);
-            break;
-    }
+	return 0;
+}
 
-    return TRUE;
+/*
+ * @implemented - need test
+ */
+LCID 
+WINAPI 
+DownlevelLocaleNameToLCID(
+  _In_  LPCWSTR lpName,
+  _In_  DWORD dwFlags
+)
+{
+	return 0;
 }

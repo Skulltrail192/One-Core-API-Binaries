@@ -57,9 +57,9 @@ list(APPEND SOURCE
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32_test/transaction.c
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32_test/unimplemented.c
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32_test/wer.c
-	${REACTOS_SOURCE_DIR}/dll/win32/vernel32_test/wow64.c
-	${REACTOS_SOURCE_DIR}/dll/win32/vernel32_test/missing/fiber.c
-	${REACTOS_SOURCE_DIR}/dll/win32/vernel32_test/missing/missing.c
+	# ${REACTOS_SOURCE_DIR}/dll/win32/vernel32_test/wow64.c
+	# ${REACTOS_SOURCE_DIR}/dll/win32/vernel32_test/missing/fiber.c
+	# ${REACTOS_SOURCE_DIR}/dll/win32/vernel32_test/missing/missing.c
 )
 	
 if(ARCH STREQUAL "i386")

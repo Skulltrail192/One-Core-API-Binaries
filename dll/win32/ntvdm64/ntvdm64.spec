@@ -1,0 +1,1 @@
+@ stub NtVdm64CreateProcess

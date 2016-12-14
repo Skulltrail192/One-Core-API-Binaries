@@ -26,35 +26,101 @@ WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 LCID gSystemLocale = 0;
 int gpSysLocHashN = 0;
 
-static LOCALE LocaleList[3];
+////////////////////////////////////////////////////////////////////////////
+//
+//  NlsStrLenW
+//
+//  This routine returns the length of the given wide character string.
+//  The length does NOT include the null terminator.
+//
+//  NOTE: This routine is here to avoid any dependencies on other DLLs
+//        during initialization.
+//
+//  05-31-91    JulieB    Created.
+////////////////////////////////////////////////////////////////////////////
 
-void WINAPI InitTable()
+int FASTCALL NlsStrLenW(
+    LPCWSTR pwsz)
 {
-	LocaleList[0].description = L"English - United States"; LocaleList[0].cultureName = L"en-US"; LocaleList[0].lcidHex = 0x0409; LocaleList[0].lcidDec = 1033;	
-	LocaleList[1].description = L"Português - Brasil"; LocaleList[1].cultureName = L"pt-BR"; LocaleList[1].lcidHex = 0x0416; LocaleList[1].lcidDec = 1046;
-	LocaleList[2].description = L"Chinese"; LocaleList[2].cultureName = L"zh-CN"; LocaleList[2].lcidHex = 0x0804; LocaleList[2].lcidDec = 2052;	
+    LPCWSTR pwszStart = pwsz;          // ptr to beginning of string
+
+    loop:
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+        if (*pwsz) pwsz++;   else goto done;
+
+        goto loop;
+
+    done:
+        return ((int)(pwsz - pwszStart));
 }
 
-enum {
-    BASE = 36,
-    TMIN = 1,
-    TMAX = 26,
-    SKEW = 38,
-    DAMP = 700,
-    INIT_BIAS = 72,
-    INIT_N = 128
-};
+LPCWSTR GetLocaleDescriptionByLocaleCultureName(LPWSTR cultureName){
+	int i;
+	for(i=0;i<LocaleArraySize;i++){
+		if(lstrcmpW(cultureName, Locale_Data[i].cultureName))
+			return Locale_Data[i].description;
+	}
+	return NULL;
+}
 
-typedef BOOL (CALLBACK *CALINFO_ENUMPROCEXEX)(
-LPWSTR lpCalendarInfoString,
-CALID Calendar,
-LPWSTR lpReserved,
-LPARAM lParam
-);
+LPCWSTR GetLocaleDescriptionByLocaleLCID(LCID localeLcid){
+	int i;
+	for(i=0;i<LocaleArraySize;i++){
+		if(localeLcid == Locale_Data[i].lcidHex)
+			return Locale_Data[i].description;
+	}
+	return NULL;
+}
 
-typedef BOOL (CALLBACK* DATEFMT_ENUMPROCEXEX)(LPWSTR, CALID, LPARAM);
+LPCWSTR GetLocaleCultureNameByLocaleDescription(LPWSTR description){
+	int i;
+	for(i=0;i<LocaleArraySize;i++){
+		if(lstrcmpW(description, Locale_Data[i].description))
+			return Locale_Data[i].cultureName;
+	}
+	return NULL;
+}
 
-typedef BOOL (CALLBACK* TIMEFMT_ENUMPROCEX)(LPWSTR, LPARAM);
+LPCWSTR GetLocaleCultureNameByLocaleLCID(LCID localeLcid){
+	int i;
+	for(i=0;i<LocaleArraySize;i++){
+		if(localeLcid == Locale_Data[i].lcidHex)
+			return Locale_Data[i].cultureName;
+	}
+	return NULL;
+}
+
+LCID GetLocaleLCIDByLocaleDescription(LPWSTR description){
+	int i;
+	for(i=0;i<LocaleArraySize;i++){
+		if(lstrcmpW(description, Locale_Data[i].description))
+			return Locale_Data[i].lcidHex;
+	}
+	return 0;
+}
+
+LCID GetLocaleLCIDByLocaleCultureName(LPWSTR cultureName){
+	int i;
+	for(i=0;i<LocaleArraySize;i++){
+		if(lstrcmpW(cultureName, Locale_Data[i].cultureName))
+			return Locale_Data[i].lcidHex;
+	}
+	return 0;
+}
 
 static inline INT adapt(INT delta, INT numpoints, BOOL firsttime)
 {
@@ -76,7 +142,15 @@ static inline unsigned short get_table_entry( const unsigned short *table, WCHAR
 /******************************************************************************
  *           CompareStringOrdinal    (KERNEL32.@) implemented - need test
  */
-INT WINAPI CompareStringOrdinal(LPCWSTR str1, int len1, LPCWSTR str2, int len2, BOOL ignore_case)
+INT 
+WINAPI 
+CompareStringOrdinal(
+	LPCWSTR str1, 
+	int len1, 
+	LPCWSTR str2, 
+	int len2, 
+	BOOL ignore_case
+)
 {
     int ret, len;
 
@@ -112,8 +186,19 @@ INT WINAPI CompareStringOrdinal(LPCWSTR str1, int len1, LPCWSTR str2, int len2, 
 /******************************************************************************
  *           CompareStringEx    (KERNEL32.@)
  */
-INT WINAPI CompareStringEx(LPCWSTR locale, DWORD flags, LPCWSTR str1, INT len1,
-                           LPCWSTR str2, INT len2, LPNLSVERSIONINFO version, LPVOID reserved, LPARAM lParam)
+INT 
+WINAPI 
+CompareStringEx(
+	LPCWSTR locale, 
+	DWORD flags, 
+	LPCWSTR str1, 
+	INT len1,
+    LPCWSTR str2, 
+	INT len2, 
+	LPNLSVERSIONINFO version, 
+	LPVOID reserved, 
+	LPARAM lParam
+)
 {
     INT ret;
 
@@ -158,20 +243,9 @@ LocaleNameToLCID(
   _In_  DWORD dwFlags
 )
 {
-	int i;	
-	LCID result;
-	
-	InitTable();
-	
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(strcmp(lpName,LocaleList[i].cultureName) == 0)
-		{
-			result = LocaleList[i].lcidHex;
-			return result;
-		}
-	}
-	return 0;
+	DbgPrint("LocaleNameToLCID called\n");
+	DbgPrint("LCID for %s is 0x%x\n", GetLocaleLCIDByLocaleCultureName(lpName));
+	return GetLocaleLCIDByLocaleCultureName(lpName);
 }
 
 /*
@@ -181,23 +255,14 @@ int
 WINAPI 
 LCIDToLocaleName( 
 	LCID lcid, 
-	LPWSTR name, 
+	LPWSTR lpName, 
 	INT count, 
 	DWORD flags 
 )
 {
-	int i;
-	InitTable();
-	
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(lcid == LocaleList[i].lcidHex)
-		{
-			name = LocaleList[i].cultureName;			
-			return wcslen(name);
-		}
-	} 
-	return 0;
+	DbgPrint("LCIDToLocaleName called\n");	
+	lpName = GetLocaleCultureNameByLocaleLCID(lcid);
+	return 1;
 }
 
 /*
@@ -214,16 +279,16 @@ GetUserDefaultLocaleName(
 	NTSTATUS Status;
 	int i;
 	
-	InitTable();
+	DbgPrint("GetUserDefaultLocaleName called\n");	
 	
 	Status = NtQueryDefaultUILanguage(&UILangID);
 	if(NT_SUCCESS(Status))
 	{
-		for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
+		for(i=0;i<LocaleArraySize;i++)
 		{
-			if(UILangID == LocaleList[i].lcidHex)
+			if(UILangID == Locale_Data[i].lcidHex)
 			{
-				lpLocaleName = LocaleList[i].cultureName;
+				lpLocaleName = Locale_Data[i].cultureName;
 				return wcslen(lpLocaleName);
 			}
 		}
@@ -235,13 +300,16 @@ GetUserDefaultLocaleName(
 /*
  * @semi-implemented - need test and may be implemented by lcid table
  */
-int WINAPI GetSystemDefaultLocaleName(
+int 
+WINAPI 
+GetSystemDefaultLocaleName(
   _Out_  LPWSTR lpLocaleName,
   _In_   int cchLocaleName
 )
 {
+	DbgPrint("GetSystemDefaultLocaleName called\n");		
 	lpLocaleName = L"en-US";
-	return 5;
+	return wcslen(lpLocaleName) + 1;
 }
 
 /*
@@ -249,7 +317,8 @@ int WINAPI GetSystemDefaultLocaleName(
  */
 int WINAPI LocaleNameFromLCID(LCID Locale, LPWSTR lpLCData, int cchData)
 {
-  return GetLocaleInfoW(Locale, 0x5Cu, lpLCData, cchData);
+	DbgPrint("LocaleNameFromLCID called\n");		
+	return GetLocaleInfoW(Locale, 0x5Cu, lpLCData, cchData);
 }
 
 /*************************************************************************
@@ -276,6 +345,8 @@ INT WINAPI LCMapStringEx(LPCWSTR name, DWORD flags, LPCWSTR src, INT srclen, LPW
                          LPNLSVERSIONINFO version, LPVOID reserved, LPARAM lparam)
 {
     LPWSTR dst_ptr;
+	
+	DbgPrint("LCMapStringEx called\n");		
 
     if (version) FIXME("unsupported version structure %p\n", version);
     if (reserved) FIXME("unsupported reserved pointer %p\n", reserved);
@@ -418,23 +489,16 @@ static inline UINT get_lcid_codepage( LCID lcid )
  */
 int 
 WINAPI 
-GetLocaleInfoEx(_In_opt_   LPCWSTR lpLocaleName,
-					_In_      LCTYPE LCType,
-					_Out_opt_ LPWSTR lpLCData,
-					_In_      int cchData)
+GetLocaleInfoEx(
+	_In_opt_  LPCWSTR lpLocaleName,
+	_In_      LCTYPE LCType,
+	_Out_opt_ LPWSTR lpLCData,
+	_In_      int cchData
+)
 {
-	LCID lcid = 0x0409;
-	int i;
+	LCID lcid = 0x0409;	
+	lcid = GetLocaleLCIDByLocaleCultureName(lpLocaleName);	
 	
-	InitTable();
-	
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(lstrcmpW(lpLocaleName,LocaleList[i].cultureName) == 0)
-		{
-			lcid = LocaleList[i].lcidHex;
-		}
-	}
 	return GetLocaleInfoW(lcid,LCType,lpLCData,cchData);
 }
 
@@ -452,17 +516,10 @@ GetNumberFormatEx(
   _In_       int cchNumber
 )
 {
-	int i;
-	InitTable();
+	LCID lcid = 0x0409;	
+	lcid = GetLocaleLCIDByLocaleCultureName(lpLocaleName);	
 	
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(lstrcmpW(lpLocaleName,LocaleList[i].cultureName) == 0)
-		{
-			return GetNumberFormat(LocaleList[i].lcidHex, dwFlags, lpValue, lpFormat, lpNumberStr, cchNumber);
-		}
-	}
-	return GetNumberFormat(0x0409, dwFlags, lpValue, lpFormat, lpNumberStr, cchNumber);
+	return GetNumberFormat(lcid, dwFlags, lpValue, lpFormat, lpNumberStr, cchNumber);
 }
 
 /* UNIMPLEMENTED SECTION **********************************************/
@@ -489,7 +546,9 @@ LANGID WINAPI GetThreadUILanguage( void )
 /*
  * @unimplemented - need reimplementation
  */
-BOOL WINAPI SetThreadPreferredUILanguages(
+BOOL 
+WINAPI 
+SetThreadPreferredUILanguages(
   _In_       DWORD dwFlags,
   _In_opt_   PCZZWSTR pwszLanguagesBuffer,
   _Out_opt_  PULONG pulNumLanguages
@@ -510,7 +569,9 @@ BOOL WINAPI SetThreadPreferredUILanguages(
 /*
  * @unimplemented - need reimplementation
  */
-BOOL WINAPI GetThreadPreferredUILanguages(
+BOOL 
+WINAPI 
+GetThreadPreferredUILanguages(
   _In_       DWORD dwFlags,
   _Out_      PULONG pulNumLanguages,
   _Out_opt_  PZZWSTR pwszLanguagesBuffer,
@@ -532,7 +593,9 @@ BOOL WINAPI GetThreadPreferredUILanguages(
 /*
  * @unimplemented - need reimplementation
  */
-DWORD WINAPI NlsUpdateSystemLocale(LCID Locale, BOOL verification)
+DWORD 
+WINAPI
+NlsUpdateSystemLocale(LCID Locale, BOOL verification)
 {
   DWORD resp; // esi@1
   LCID lcid; // edi@1
@@ -553,7 +616,7 @@ DWORD WINAPI NlsUpdateSystemLocale(LCID Locale, BOOL verification)
     {
       if ( unknown == GetOEMCP() )
       {
-        if ( LocaleNameToLCID((LPCWSTR)Locale, 0) < 0 )
+        if ( LocaleNameToLCID((LPCWSTR)Locale, Locale) < 0 )
           return RtlNtStatusToDosError(0);
         if ( Locale != 4096 && Locale != 3072 )
         {
@@ -571,7 +634,9 @@ DWORD WINAPI NlsUpdateSystemLocale(LCID Locale, BOOL verification)
   return 87;
 }
 
-DWORD WINAPI NlsPadInt64ToUnicodeStr(ULONGLONG Val, unsigned int a2, int a3, int a4, int a5)
+DWORD 
+WINAPI 
+NlsPadInt64ToUnicodeStr(ULONGLONG Val, unsigned int a2, int a3, int a4, int a5)
 {
   unsigned int v6; // esi@5
   wchar_t *v7; // eax@7
@@ -684,7 +749,14 @@ LABEL_32:
   return -1;
 }
 
-int WINAPI ParseDuration(ULONGLONG longNumber, LPCWSTR lpFormat, LPWSTR lpDurationStr, int cchDuration)
+int 
+WINAPI 
+ParseDuration(
+	ULONGLONG longNumber, 
+	LPCWSTR lpFormat, 
+	LPWSTR lpDurationStr, 
+	int cchDuration
+)
 {
   int one; // ebx@1
   int two; // di@1
@@ -909,12 +981,27 @@ LABEL_75:
 /*
  * @unimplemented - need reimplementation
 */
-NTSTATUS WINAPI NlsUpdateLocale(LCID locale, DWORD dwFlags) 
+NTSTATUS 
+WINAPI 
+NlsUpdateLocale(
+	LCID locale, 
+	DWORD dwFlags
+) 
 {
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-int WINAPI GetDurationFormatWorker(LCID Locale, int dwFlags, const SYSTEMTIME *lpDuration, ULONGLONG ullDuration, LPCWSTR lpFormat, LPWSTR lpDurationStr, int cchDuration)
+int 
+WINAPI 
+GetDurationFormatWorker(
+	LCID Locale, 
+	int dwFlags, 
+	const SYSTEMTIME *lpDuration, 
+	ULONGLONG ullDuration, 
+	LPCWSTR lpFormat, 
+	LPWSTR lpDurationStr, 
+	int cchDuration
+)
 {
   LPCWSTR format; // edi@1
   ULONG one; // ebx@2
@@ -944,7 +1031,9 @@ int WINAPI GetDurationFormatWorker(LCID Locale, int dwFlags, const SYSTEMTIME *l
 /*
 * @unimplemented
 */
-int WINAPI GetDurationFormat(
+int 
+WINAPI 
+GetDurationFormat(
   _In_       LCID Locale,
   _In_       DWORD dwFlags,
   _In_opt_   const SYSTEMTIME *lpDuration,
@@ -982,23 +1071,10 @@ GetDurationFormatEx(
   _In_       int cchDuration
 )
 {
-  LCID lcid = 0; // eax@1
-  int i;
+  LCID lcid = 0x0409; // eax@1
+  lcid = GetLocaleLCIDByLocaleCultureName(lpLocaleName);
   
-  InitTable();
- 
-  for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(lstrcmpW(lpLocaleName,LocaleList[i].cultureName) == 0)
-		{
-			lcid = LocaleList[i].lcidHex;
-		}
-	}
-    if(lcid == 0)
-	{
-		lcid = 0x0409;
-	}
-	return GetDurationFormat(lcid, dwFlags, lpDuration, ullDuration, lpFormat, lpDurationStr, cchDuration);
+  return GetDurationFormat(lcid, dwFlags, lpDuration, ullDuration, lpFormat, lpDurationStr, cchDuration);
 }
 
 /*
@@ -1015,25 +1091,17 @@ GetCalendarInfoEx(
   _In_       int cchData,
   _Out_opt_  LPDWORD lpValue
 )
-{
-	int i;
-	InitTable();	
-	
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(lstrcmpW(lpLocaleName,LocaleList[i].cultureName) == 0)
-		{
-			return GetCalendarInfoW(LocaleList[i].lcidHex,Calendar,CalType,lpCalData,cchData,lpValue);
-		}
-	}
-	cchData = 0;
-	return 1;
+{	
+	LCID locale = LocaleNameToLCID(lpLocaleName, 0);
+	return GetCalendarInfoW(locale ,Calendar,CalType,lpCalData,cchData,lpValue);
 }
 
 /*
 * @semi-implemented need test
 */
-int WINAPI GetDateFormatEx(
+int 
+WINAPI 
+GetDateFormatEx(
   _In_opt_   LPCWSTR lpLocaleName,
   _In_       DWORD dwFlags,
   _In_opt_   const SYSTEMTIME *lpDate,
@@ -1043,22 +1111,16 @@ int WINAPI GetDateFormatEx(
   _In_opt_   LPCWSTR lpCalendar
 )
 {
-	int i;
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(lstrcmpW(lpLocaleName,LocaleList[i].cultureName) == 0)
-		{
-			return GetDateFormatW(LocaleList[i].lcidHex,dwFlags,lpDate,lpFormat,lpDateStr,cchDate);
-		}
-	}
-	cchDate = 0;
-	return 1;
+	LCID locale = LocaleNameToLCID(lpLocaleName, 0);
+	return GetDateFormatW(locale,dwFlags,lpDate,lpFormat,lpDateStr,cchDate);	
 }
 
 /*
 * @semi-implemented need test
 */
-BOOL WINAPI IsValidLocaleName(
+BOOL 
+WINAPI 
+IsValidLocaleName(
   _In_  LPCWSTR lpLocaleName
 )
 {
@@ -1066,39 +1128,51 @@ BOOL WINAPI IsValidLocaleName(
 	int i;
 	BOOL result;
 	
-	InitTable();
-	
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
+	for(i=0;i<LocaleArraySize;i++)
 	{
-		if(lstrcmpiW(lpLocaleName,LocaleList[i].cultureName) == 0)
+		if(lstrcmpiW(lpLocaleName,Locale_Data[i].cultureName) == 0)
 		{
 			count = 1;
 		}
 	}	
-	if(count!=0)
+	if(count>0)
 		result = TRUE;
 	else
 		result = FALSE;
 	return result;
 }
 
+// BOOL CALLBACK EnumLocalesProc(
+  // _In_ LPTSTR lpLocaleString
+// )
+// {
+	
+// }
+
 /*
 * @unimplemented need test
 */
-BOOL WINAPI EnumSystemLocalesEx(
+BOOL 
+WINAPI 
+EnumSystemLocalesEx(
   _In_      LOCALE_ENUMPROCEX lpLocaleEnumProcEx,
   _In_      DWORD dwFlags,
   _In_      LPARAM lParam,
   _In_opt_  LPVOID lpReserved
 )
 {
+	
+	//LOCALE_ENUMPROC lpLocaleEnumProc;
+	//EnumSystemLocales(EnumLocalesProc, LCID_INSTALLED);	
 	return TRUE;
 }
 
 /*
 * @semi-implemented need test
 */
-BOOL WINAPI GetSystemPreferredUILanguages(
+BOOL 
+WINAPI 
+GetSystemPreferredUILanguages(
   _In_       DWORD dwFlags,
   _Out_      PULONG pulNumLanguages,
   _Out_opt_  PZZWSTR pwszLanguagesBuffer,
@@ -1129,24 +1203,16 @@ int WINAPI GetTimeFormatEx(
   _In_       int cchTime
 )
 {
-	int i;
-	
-	InitTable();
-	
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(lstrcmpW(lpLocaleName,LocaleList[i].cultureName) == 0)
-		{
-			return GetTimeFormatW(LocaleList[i].lcidHex,dwFlags,lpTime,lpFormat,lpTimeStr,cchTime);
-		}
-	}
-	return GetTimeFormatW(0x0409,dwFlags,lpTime,lpFormat,lpTimeStr,cchTime);
+	LCID locale = LocaleNameToLCID(lpLocaleName, 0);
+	return GetTimeFormatW(locale,dwFlags,lpTime,lpFormat,lpTimeStr,cchTime);
 }
 
 /*
 * @semi-implemented need test
 */
-int WINAPI GetCurrencyFormatEx(
+int 
+WINAPI 
+GetCurrencyFormatEx(
      LPCWSTR lpLocaleName,
      DWORD dwFlags,
      LPCWSTR lpValue,
@@ -1154,35 +1220,30 @@ int WINAPI GetCurrencyFormatEx(
      LPWSTR lpCurrencyStr,
      int cchCurrency
 )
-{
-	int i;
-	
-	InitTable();
-	
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(lstrcmpW(lpLocaleName,LocaleList[i].cultureName) == 0)
-		{
-			return GetCurrencyFormatW(LocaleList[i].lcidHex,dwFlags,lpValue,lpFormat,lpCurrencyStr,cchCurrency);
-		}
-	}
-	return GetCurrencyFormatW(0x0409,dwFlags,lpValue,lpFormat,lpCurrencyStr,cchCurrency);
+{	
+	LCID locale = LocaleNameToLCID(lpLocaleName, 0);
+	return GetCurrencyFormatW(locale,dwFlags,lpValue,lpFormat,lpCurrencyStr,cchCurrency);
 }
 
-int WINAPI FindNLSString(
+int 
+WINAPI 
+FindNLSString(
   _In_ 		 LCID Locale,
   _In_       DWORD dwFindNLSStringFlags,
   _In_       LPCWSTR lpStringSource,
   _In_       int cchSource,
   _In_       LPCWSTR lpStringValue,
   _In_       int cchValue,
-  _Out_opt_  LPINT pcchFound)
+  _Out_opt_  LPINT pcchFound
+)
 {
 	SetLastError(50);
 	return 0;
 }
 
-int WINAPI FindNLSStringEx(
+int 
+WINAPI 
+FindNLSStringEx(
   _In_opt_   LPCWSTR lpLocaleName,
   _In_       DWORD dwFindNLSStringFlags,
   _In_       LPCWSTR lpStringSource,
@@ -1201,14 +1262,27 @@ int WINAPI FindNLSStringEx(
 /*
  * @unimplemented
 */
-BOOL WINAPI GetNLSVersionEx(
+BOOL 
+WINAPI 
+GetNLSVersionEx(
   _In_      NLS_FUNCTION function,
   _In_opt_  LPCWSTR lpLocaleName,
   _Inout_   LPNLSVERSIONINFOEX lpVersionInformation
 )
 {
-	SetLastError(ERROR_INVALID_FLAGS);
 	return FALSE;
+	// LPNLSVERSIONINFO lpVersionInformationOld  = NULL;
+	// lpVersionInformationOld->dwNLSVersionInfoSize = sizeof(LPNLSVERSIONINFO);
+	// if(GetNLSVersion(function, LocaleNameToLCID(lpLocaleName, 0), lpVersionInformationOld))
+	// {
+		// lpVersionInformation->dwNLSVersionInfoSize = sizeof(LPNLSVERSIONINFOEX);
+		// lpVersionInformation->dwNLSVersion = lpVersionInformationOld->dwNLSVersion;
+		// lpVersionInformation->dwDefinedVersion = lpVersionInformationOld->dwDefinedVersion;
+		// lpVersionInformation->dwEffectiveId = LocaleNameToLCID(lpLocaleName, 0);		
+		// return TRUE;
+	// }else{
+		// return FALSE;
+	// }	
 }
 
 BOOL 
@@ -1274,7 +1348,15 @@ GetFileMUIPath(
 }
 
 //NEED TEST!!! - USE FUNCTION FROM NTDLLNEW
-BOOL WINAPI GetUILanguageInfo(DWORD dwFlags, PCZZWSTR pwmszLanguage, PZZWSTR pwszFallbackLanguages, PDWORD pcchFallbackLanguages, PDWORD pdwAttributes)
+BOOL 
+WINAPI 
+GetUILanguageInfo(
+	DWORD dwFlags, 
+	PCZZWSTR pwmszLanguage, 
+	PZZWSTR pwszFallbackLanguages, 
+	PDWORD pcchFallbackLanguages, 
+	PDWORD pdwAttributes
+)
 {
   NTSTATUS status; // eax@1
   DWORD flags; // eax@3
@@ -1336,7 +1418,9 @@ EnumCalendarInfoExEx(
 }
 
 //Need Test
-BOOL WINAPI EnumDateFormatsExEx(
+BOOL 
+WINAPI 
+EnumDateFormatsExEx(
   _In_      DATEFMT_ENUMPROCEXEX lpDateFmtEnumProcExEx,
   _In_opt_  LPCWSTR lpLocaleName,
   _In_      DWORD dwFlags,
@@ -1376,22 +1460,29 @@ GetUserPreferredUILanguages(DWORD dwFlags, PULONG pulNumLanguages, PZZWSTR pwszL
   return 0;
 }
 
-BOOL WINAPI EnumResourceNamesExW(HMODULE hModule, 
-								 LPCWSTR lpType, 
-								 ENUMRESNAMEPROCW lpEnumFunc, 
-								 LONG_PTR lParam, 
-								 DWORD dwFlags, 
-								 LANGID LangId)
+BOOL 
+WINAPI 
+EnumResourceNamesExW(
+	HMODULE hModule, 
+	LPCWSTR lpType, 
+	ENUMRESNAMEPROCW lpEnumFunc, 
+	LONG_PTR lParam, 
+	DWORD dwFlags, 
+	LANGID LangId
+)
 {
 	return EnumResourceNamesW(hModule, lpType, lpEnumFunc, lParam);
 }	
 
-BOOL WINAPI EnumResourceNamesExA(HMODULE hModule, 
-								 LPCSTR lpType, 
-								 ENUMRESNAMEPROCA lpEnumFunc, 
-								 LONG_PTR lParam, 
-								 DWORD dwFlags, 
-								 LANGID LangId)
+BOOL 
+WINAPI 
+EnumResourceNamesExA(
+	HMODULE hModule, 
+	LPCSTR lpType, 
+	ENUMRESNAMEPROCA lpEnumFunc, 
+	LONG_PTR lParam, 
+	DWORD dwFlags, 
+	LANGID LangId)
 {
 	return EnumResourceNamesA(hModule, lpType, lpEnumFunc, lParam);
 }	
@@ -1462,7 +1553,14 @@ BOOL WINAPI EnumTimeFormatsEx(
 	return EnumTimeFormatsA((TIMEFMT_ENUMPROCA)lpTimeFmtEnumProcEx, lcid, dwFlags);
 }	
 
-ULONG WINAPI NlsWriteEtwEvent(REGHANDLE RegHandle, PCEVENT_DESCRIPTOR EventDescriptor, ULONG UserDataCount, PEVENT_DATA_DESCRIPTOR UserData)
+ULONG 
+WINAPI 
+NlsWriteEtwEvent(
+	REGHANDLE RegHandle, 
+	PCEVENT_DESCRIPTOR EventDescriptor, 
+	ULONG UserDataCount, 
+	PEVENT_DATA_DESCRIPTOR UserData
+)
 {
   ULONG result; // eax@2
 
@@ -1600,7 +1698,16 @@ BOOL WINAPI NotifyUILanguageChange(
 	return TRUE;
 }
 
-BOOL WINAPI _FillBuffer(PFILEMUIINFO a1, unsigned int a2, const void *Src, size_t Size, int a5, PCWSTR a6)
+BOOL 
+WINAPI 
+_FillBuffer(
+	PFILEMUIINFO a1, 
+	unsigned int a2, 
+	const void *Src, 
+	size_t Size, 
+	int a5, 
+	PCWSTR a6
+)
 {
   if ( a5 + Size > a2 )
   {
@@ -1617,7 +1724,9 @@ BOOL WINAPI _FillBuffer(PFILEMUIINFO a1, unsigned int a2, const void *Src, size_
   return 1;
 }
 
-BOOL WINAPI GetFileMUIInfo(DWORD dwFlags, PCWSTR pcwszFilePath, PFILEMUIINFO pFileMUIInfo, DWORD *pcbFileMUIInfo)
+BOOL 
+WINAPI 
+GetFileMUIInfo(DWORD dwFlags, PCWSTR pcwszFilePath, PFILEMUIINFO pFileMUIInfo, DWORD *pcbFileMUIInfo)
 {
   DWORD *fileInfo; // edi@1
   DWORD filePath; // esi@3
@@ -1945,7 +2054,9 @@ LABEL_71:
   return 0;
 }
 
-int WINAPI FindStringOrdinal(
+int 
+WINAPI 
+FindStringOrdinal(
   _In_  DWORD dwFindStringOrdinalFlags,
   _In_  LPCWSTR lpStringSource,
   _In_  int cchSource,
@@ -1959,7 +2070,9 @@ int WINAPI FindStringOrdinal(
 }
 
 
-BOOL WINAPI GetProcessPreferredUILanguages(
+BOOL 
+WINAPI 
+GetProcessPreferredUILanguages(
   _In_       DWORD dwFlags,
   _Out_      PULONG pulNumLanguages,
   _Out_opt_  PZZWSTR pwszLanguagesBuffer,
@@ -1970,7 +2083,9 @@ BOOL WINAPI GetProcessPreferredUILanguages(
 	return TRUE;	
 }
 
-int  WINAPI ResolveLocaleName(
+int  
+WINAPI 
+ResolveLocaleName(
   _In_opt_   LPCWSTR lpNameToResolve,
   _Out_opt_  LPWSTR lpLocaleName,
   _In_       int cchLocaleName
@@ -1994,7 +2109,9 @@ SetProcessPreferredUILanguages(
 }
 
 
-DWORD WINAPI IsValidNLSVersion(
+DWORD 
+WINAPI 
+IsValidNLSVersion(
   _In_      NLS_FUNCTION function,
   _In_opt_  LPCWSTR lpLocaleName,
   _In_      LPNLSVERSIONINFOEX lpVersionInformation
@@ -2004,19 +2121,118 @@ DWORD WINAPI IsValidNLSVersion(
 	return 0;	
 }
 
-/* Internal call cause error on Server 2003 SP1 and XP SP2
-int WINAPI GetStringScripts(
-        __in                         DWORD   dwFlags,        // optional behavior flags
-        __in                         LPCWSTR lpString,       // Unicode character input string
-        __in                         int     cchString,      // size of input string
-        __out_ecount_opt(cchScripts) LPWSTR  lpScripts,      // Script list output string
-        __in                         int     cchScripts      // size of output string
-)
-{
-	return DownlevelGetStringScripts(dwFlags, lpString, cchString, lpScripts, cchScripts);
-}
+// //Native Code
+// ////////////////////////////////////////////////////////////////////////////
+// //
+// //  GetNLSVersion
+// //
+// //  Return the version of a specific NLS function.
+// //
+// //  08-15-2001    LGuindon    Created.
+// ////////////////////////////////////////////////////////////////////////////
+// BOOL
+// WINAPI 
+// GetNLSVersion(
+    // NLS_FUNCTION     function,
+    // LCID             locale,
+    // LPNLSVERSIONINFO lpVersionInformation)
+// {
+    // PLOC_HASH pHashN;
+    
+    // //
+    // //  Invalid parameter check:
+    // //    - validate LCID
+    // //    - NULL data pointer
+    // //
+    // //  NOTE: invalid function is checked in the switch statement below.
+    // //
+    // VALIDATE_LOCALE(locale, pHashN, FALSE);
+    // if ((lpVersionInformation == NULL) || (pHashN == NULL))
+    // {
+        // SetLastError(ERROR_INVALID_PARAMETER);
+        // return (FALSE);
+    // }
 
-BOOL WINAPI VerifyScripts(DWORD dwFlags, LPCWSTR lpLocaleScripts, int cchLocaleScripts, LPCWSTR lpTestScripts, int cchTestScripts)
-{
-  return DownlevelVerifyScripts(dwFlags, lpLocaleScripts, cchLocaleScripts, lpTestScripts, cchTestScripts);
-}*/
+    // //
+    // //  Buffer size check.
+    // //
+    // if (lpVersionInformation->dwNLSVersionInfoSize != sizeof(NLSVERSIONINFO)) 
+    // {
+        // SetLastError( ERROR_INSUFFICIENT_BUFFER );
+        // return (FALSE);
+    // }
+
+    // //
+    // //  Make sure the appropriate tables are available.  If not,
+    // //  return an error.
+    // //
+    // if (pTblPtrs->pSortVersion == NULL )
+    // {
+        // KdPrint(("NLSAPI: Appropriate Versioning Table Not Loaded.\n"));
+        // SetLastError(ERROR_FILE_NOT_FOUND);
+        // return (FALSE);
+    // }
+
+    // //
+    // //  Make sure the appropriate tables are available.  If not,
+    // //  return an error.
+    // //
+    // if (pTblPtrs->pDefinedVersion == NULL)
+    // {
+        // KdPrint(("NLSAPI: Appropriate Defined Code Point Table Not Loaded.\n"));
+        // SetLastError(ERROR_FILE_NOT_FOUND);
+        // return (FALSE);
+    // }
+    
+    // //
+    // //  Check which NLS functionnality version is requested.
+    // //
+    // switch (function)
+    // {
+        // case (COMPARE_STRING):
+            // {
+                // UINT i;
+                
+                // //
+                // //  Get the Defined version. Always the first entry
+                // //  in the Defined Code Point version table. The first
+                // //  entry represent the current Defined version.
+                // //
+                
+                // lpVersionInformation->dwDefinedVersion = (pTblPtrs->pDefinedVersion)[0].Version;
+                
+                // //
+                // //  Get the NLS sorting version. Search specific locale 
+                // //  version info. Start from the second entry; after default
+                // //  value.
+                // //
+                // lpVersionInformation->dwNLSVersion = (pTblPtrs->pSortVersion)[0].Version;
+                // for (i = 1; i < pTblPtrs->NumSortVersion; i++)
+                // {
+                    // if (pHashN->Locale == (pTblPtrs->pSortVersion)[i].Locale)
+                    // {
+                        // lpVersionInformation->dwNLSVersion = (pTblPtrs->pSortVersion)[i].Version;
+                        // break;
+                    // }
+                // }
+
+                // break;
+            // }
+// //        case (NORMALIZE_STRING):
+// //            {
+// //                //
+// //                //  Not implemented yet.
+// //                //
+// //                SetLastError(ERROR_NOT_SUPPORTED);
+// //                return (FALSE);
+// //            }
+        // default:
+            // {
+                // SetLastError(ERROR_INVALID_FLAGS);
+                // return (FALSE);
+            // }
+    // }
+
+    // return (TRUE);
+// }
+

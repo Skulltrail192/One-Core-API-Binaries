@@ -9,6 +9,9 @@
 #define NDEBUG
 #include <debug.h>
 
+PVOID EtwpDumpHardwareConfig;
+PVOID EtwpDumpHWConfig;
+
 /*
  * @unimplemented
  */
@@ -143,7 +146,14 @@ ULONG WINAPI EtwStartTraceA( PTRACEHANDLE pSessionHandle, LPCSTR SessionName, PE
  * Control a givel event trace session
  *
  */
-ULONG WINAPI EtwControlTraceW( TRACEHANDLE hSession, LPCWSTR SessionName, PEVENT_TRACE_PROPERTIES Properties, ULONG control )
+ULONG 
+WINAPI
+EtwControlTraceW( 
+	TRACEHANDLE hSession, 
+	LPCWSTR SessionName, 
+	PEVENT_TRACE_PROPERTIES Properties, 
+	ULONG control 
+)
 {
     DbgPrint("(%I64x, %s, %p, %d) stub\n", hSession, SessionName, Properties, control);
     return ERROR_SUCCESS;
@@ -155,7 +165,14 @@ ULONG WINAPI EtwControlTraceW( TRACEHANDLE hSession, LPCWSTR SessionName, PEVENT
  * See ControlTraceW.
  *
  */
-ULONG WINAPI EtwControlTraceA( TRACEHANDLE hSession, LPCSTR SessionName, PEVENT_TRACE_PROPERTIES Properties, ULONG control )
+ULONG 
+WINAPI 
+EtwControlTraceA( 
+	TRACEHANDLE hSession, 
+	LPCSTR SessionName, 
+	PEVENT_TRACE_PROPERTIES Properties, 
+	ULONG control 
+)
 {
     DbgPrint("(%I64x, %s, %p, %d) stub\n", hSession, SessionName, Properties, control);
     return ERROR_SUCCESS;
@@ -164,7 +181,15 @@ ULONG WINAPI EtwControlTraceA( TRACEHANDLE hSession, LPCSTR SessionName, PEVENT_
 /******************************************************************************
  * EtwEnableTrace [NTDLL.@]
  */
-ULONG WINAPI EtwEnableTrace( ULONG enable, ULONG flag, ULONG level, LPCGUID guid, TRACEHANDLE hSession )
+ULONG 
+WINAPI 
+EtwEnableTrace( 
+	ULONG enable, 
+	ULONG flag, 
+	ULONG level, 
+	LPCGUID guid, 
+	TRACEHANDLE hSession
+)
 {
     DbgPrint("(%d, 0x%x, %d, %p, %I64x): stub\n", enable, flag, level,
             guid, hSession);
@@ -178,7 +203,13 @@ ULONG WINAPI EtwEnableTrace( ULONG enable, ULONG flag, ULONG level, LPCGUID guid
  * Query information for started event trace sessions
  *
  */
-ULONG WINAPI EtwQueryAllTracesW( PEVENT_TRACE_PROPERTIES * parray, ULONG arraycount, PULONG psessioncount )
+ULONG 
+WINAPI 
+EtwQueryAllTracesW( 
+	PEVENT_TRACE_PROPERTIES * parray, 
+	ULONG arraycount, 
+	PULONG psessioncount 
+)
 {
     DbgPrint("(%p, %d, %p) stub\n", parray, arraycount, psessioncount);
 
@@ -191,7 +222,13 @@ ULONG WINAPI EtwQueryAllTracesW( PEVENT_TRACE_PROPERTIES * parray, ULONG arrayco
  *
  * See EtwQueryAllTracesA.
  */
-ULONG WINAPI EtwQueryAllTracesA( PEVENT_TRACE_PROPERTIES * parray, ULONG arraycount, PULONG psessioncount )
+ULONG 
+WINAPI 
+EtwQueryAllTracesA( 
+	PEVENT_TRACE_PROPERTIES * parray, 
+	ULONG arraycount, 
+	PULONG psessioncount 
+)
 {
     DbgPrint("(%p, %d, %p) stub\n", parray, arraycount, psessioncount);
 
@@ -200,15 +237,38 @@ ULONG WINAPI EtwQueryAllTracesA( PEVENT_TRACE_PROPERTIES * parray, ULONG arrayco
 }
 
 /*Unknow prototype*/
-ULONG WINAPI EtwpGetTraceBuffer( int a, int b, int c, int d)
+PVOID
+EtwpGetTraceBuffer(
+    IN PVOID Logger,
+    IN PSYSTEM_THREAD_INFORMATION pThread,
+    IN ULONG GroupType,
+    IN ULONG RequiredSize
+)
 {
-    return ERROR_SUCCESS;
+    return NULL;
 }
-
-ULONG WINAPI EtwpSetHWConfigFunction( PEVENT_TRACE_PROPERTIES * parray, ULONG arraycount)
+ 
+void 
+EtwpSetHWConfigFunction(
+	PVOID DumpHardwareConfig, 
+	ULONG Reason)
 {
-    DbgPrint("(%p, %d) stub\n", parray, arraycount);
-    return ERROR_SUCCESS;
+    if (Reason == DLL_PROCESS_ATTACH)       
+    {
+        //
+        // On DLL Laod Get the pointer in Advapi32.dll
+        //
+
+        EtwpDumpHardwareConfig = DumpHardwareConfig;
+
+    } else {
+
+        //
+        // On DLL unload point it back to Dummy function.
+        //
+
+        EtwpDumpHardwareConfig = EtwpDumpHWConfig;
+    }
 }
 /* EOF */
 
@@ -252,7 +312,9 @@ ULONG WINAPI EtwStopTraceW(
     return ERROR_SUCCESS;	
 }
 
-ULONG WINAPI EtwQueryTraceA(
+ULONG 
+WINAPI 
+EtwQueryTraceA(
   _In_    TRACEHANDLE             SessionHandle,
   _In_    LPCTSTR                 SessionName,
   _Inout_ PEVENT_TRACE_PROPERTIES Properties
@@ -261,7 +323,9 @@ ULONG WINAPI EtwQueryTraceA(
     return ERROR_SUCCESS;	
 }
 
-ULONG WINAPI EtwQueryTraceW(
+ULONG 
+WINAPI 
+EtwQueryTraceW(
   _In_    TRACEHANDLE             SessionHandle,
   _In_    LPCWSTR                 SessionName,
   _Inout_ PEVENT_TRACE_PROPERTIES Properties
@@ -270,7 +334,9 @@ ULONG WINAPI EtwQueryTraceW(
     return ERROR_SUCCESS;	
 }
 
-ULONG WINAPI EtwFlushTraceA(
+ULONG 
+WINAPI 
+EtwFlushTraceA(
   _In_    TRACEHANDLE             SessionHandle,
   _In_    LPCTSTR                 SessionName,
   _Inout_ PEVENT_TRACE_PROPERTIES Properties
@@ -288,7 +354,9 @@ ULONG WINAPI EtwFlushTraceW(
     return ERROR_SUCCESS;	
 }
 
-ULONG WINAPI EtwCreateTraceInstanceId(
+ULONG 
+WINAPI 
+EtwCreateTraceInstanceId(
   _In_  HANDLE               RegHandle,
   _Out_ PEVENT_INSTANCE_INFO pInstInfo
 )

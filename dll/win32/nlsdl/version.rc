@@ -14,26 +14,13 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
  */
- 
-#define NDEBUG
 
-#include <main.h>
-#include <csr.h>
+#define WINE_FILEDESCRIPTION_STR "Wine Crypto Library"
+#define WINE_FILENAME_STR "bcrypt.dll"
+#define WINE_FILEVERSION 6,0,6000,16386
+#define WINE_FILEVERSION_STR "6.0.6000.16386"
+#define WINE_PRODUCTVERSION 6,0,6000,16386
+#define WINE_PRODUCTVERSION_STR "6.0.6000.16386"
 
-WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
-
-HINSTANCE kernelfull = NULL;
-
-BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
-{
-	switch(fdwReason)
-    {
-        case DLL_PROCESS_ATTACH:
-            DisableThreadLibraryCalls(hInstDLL);
-            break;
-    }
-
-    return TRUE;
-}
+#include "wine/wine_common_ver.rc"
