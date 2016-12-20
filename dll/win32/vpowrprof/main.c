@@ -34,6 +34,7 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(powrprof);
 
+typedef PVOID HPOWERNOTIFY, *PHPOWERNOTIFY;
 
 static const WCHAR szPowerCfgSubKey[] =
     L"Software\\Microsoft\\Windows\\CurrentVersion\\Controls Folder\\PowerCfg";
@@ -70,7 +71,16 @@ PowerGetActiveScheme(
 	GUID **polguid
 )
 {
-   FIXME("(%p,%p) stub!\n", UserRootPowerKey, polguid);
+   return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+DWORD 
+WINAPI 
+PowerSetActiveScheme(
+  _In_opt_       HKEY UserRootPowerKey,
+  _In_     const GUID *SchemeGuid
+)
+{
    return ERROR_CALL_NOT_IMPLEMENTED;
 }
 
@@ -86,7 +96,6 @@ PowerReadDCValue(
 	DWORD *BufferSize
 )
 {
-   FIXME("(%p,%s,%s,%s,%p,%p,%p) stub!\n", RootPowerKey, debugstr_guid(Scheme), debugstr_guid(SubGroup), debugstr_guid(PowerSettings), Type, Buffer, BufferSize);
    return ERROR_CALL_NOT_IMPLEMENTED;
 }
 
@@ -104,4 +113,87 @@ PowerDeterminePlatformRoleEx(
 )
 {
 	return PlatformRoleDesktop;
+}
+
+DWORD 
+WINAPI 
+PowerRegisterSuspendResumeNotification(
+  _In_  DWORD         Flags,
+  _In_  HANDLE        Recipient,
+  _Out_ PHPOWERNOTIFY RegistrationHandle
+)
+{
+   return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+
+DWORD
+WINAPI 
+PowerUnregisterSuspendResumeNotification(
+  _Inout_ HPOWERNOTIFY RegistrationHandle
+)
+{
+   return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+DWORD 
+WINAPI 
+PowerReadACValue(
+  _In_opt_          HKEY    RootPowerKey,
+  _In_opt_    const GUID    *SchemeGuid,
+  _In_opt_    const GUID    *SubGroupOfPowerSettingsGuid,
+  _In_opt_    const GUID    *PowerSettingGuid,
+  _Out_opt_         PULONG  Type,
+  _Out_opt_         LPBYTE  Buffer,
+  _Inout_opt_       LPDWORD BufferSize
+)
+{
+   return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+DWORD
+WINAPI 
+PowerSettingRegisterNotification(
+  _In_  LPCGUID       SettingGuid,
+  _In_  DWORD         Flags,
+  _In_  HANDLE        Recipient,
+  _Out_ PHPOWERNOTIFY RegistrationHandle
+)
+{
+   return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+DWORD 
+WINAPI 
+PowerSettingUnregisterNotification(
+  _Inout_ HPOWERNOTIFY RegistrationHandle
+)
+{
+   return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+DWORD 
+WINAPI 
+PowerWriteACValueIndex(
+  _In_opt_       HKEY  RootPowerKey,
+  _In_     const GUID  *SchemeGuid,
+  _In_opt_ const GUID  *SubGroupOfPowerSettingsGuid,
+  _In_opt_ const GUID  *PowerSettingGuid,
+  _In_           DWORD AcValueIndex
+)
+{
+   return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+DWORD 
+WINAPI 
+PowerWriteDCValueIndex(
+  _In_opt_       HKEY  RootSystemPowerKey,
+  _In_     const GUID  *SchemePersonalityGuid,
+  _In_opt_ const GUID  *SubGroupOfPowerSettingsGuid,
+  _In_     const GUID  *PowerSettingGuid,
+  _In_           DWORD DefaultDcIndex
+)
+{
+   return ERROR_CALL_NOT_IMPLEMENTED;
 }

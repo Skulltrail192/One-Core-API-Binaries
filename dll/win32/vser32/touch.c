@@ -535,3 +535,62 @@ BOOL WINAPI GetGestureExtraArgs(
 	DbgPrint("GetGestureExtraArgs is UNIMPLEMENTED\n");  	
 	return TRUE;
 }
+
+BOOL 
+WINAPI 
+EvaluateProximityToRect(
+  _In_  const RECT                                   *controlBoundingBox,
+  _In_  const TOUCH_HIT_TESTING_INPUT                *pHitTestingInput,
+  _Out_       TOUCH_HIT_TESTING_PROXIMITY_EVALUATION *pProximityEval
+)
+{
+	DbgPrint("EvaluateProximityToRect is UNIMPLEMENTED\n");  	
+	return FALSE;
+}
+
+BOOL 
+WINAPI 
+WINAPI 
+GetPointerDevices(
+  _Inout_   UINT32              *deviceCount,
+  _Out_opt_ POINTER_DEVICE_INFO *pointerDevices
+)
+{
+	DbgPrint("GetPointerDevices is UNIMPLEMENTED\n");	
+	*deviceCount = 0;
+	return TRUE;
+}
+
+BOOL 
+WINAPI 
+GetPointerType(
+  _In_  UINT32             pointerId,
+  _Out_ POINTER_INPUT_TYPE *pointerType
+)
+{
+	DbgPrint("GetPointerType is UNIMPLEMENTED\n");		
+	*pointerType = PT_MOUSE;
+	return TRUE;
+}
+
+BOOL 
+WINAPI 
+RegisterPointerDeviceNotifications(
+  _In_ HWND window,
+  _In_ BOOL notifyRange
+)
+{
+	DbgPrint("RegisterPointerDeviceNotifications is UNIMPLEMENTED\n");		
+	return TRUE;
+}
+
+BOOL 
+WINAPI 
+RegisterTouchHitTestingWindow(
+  _In_ HWND  hwnd,
+  _In_ ULONG value
+)
+{
+	DbgPrint("RegisterTouchHitTestingWindow is UNIMPLEMENTED\n");		
+	return TRUE;
+}

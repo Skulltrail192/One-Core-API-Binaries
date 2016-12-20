@@ -519,12 +519,7 @@ BasePrepareReasonContext(
     }
   }
 LABEL_11:
-
-  #ifdef _M_IX86
-	 heap = RtlAllocateHeap(*(HANDLE *)(*(DWORD *)(__readfsdword(24) + 48) + 24), 0, StringCount);
-  #elif defined(_M_AMD64)
-	 heap = RtlAllocateHeap(*(HANDLE *)(*(DWORD *)(__readgsqword(24) + 48) + 24), 0, StringCount);
-  #endif
+  heap = RtlAllocateHeap(GetProcessHeap(), 0, StringCount);
   Localcontext = (REASON_CONTEXT *)heap;
   if ( heap )
   {
@@ -568,11 +563,7 @@ LABEL_16:
     resp = STATUS_INSUFFICIENT_RESOURCES;
   }
   if ( Localcontext )
-	#ifdef _M_IX86
-		RtlFreeHeap(*(HANDLE *)(*(DWORD *)(__readfsdword(24) + 48) + 24), 0, Localcontext);
-    #elif defined(_M_AMD64)
-	    RtlFreeHeap(*(HANDLE *)(*(DWORD *)(__readgsqword(24) + 48) + 24), 0, Localcontext);
-    #endif
+		RtlFreeHeap(GetProcessHeap(), 0, Localcontext);
   return resp;
 }
 

@@ -373,16 +373,85 @@ NtCreateSemaphoreEx(
 	return STATUS_SUCCESS;
 }
 
+// /******************************************************************************
+ // * NtQuerySystemInformationEx [NTDLL.@]
+ // * ZwQuerySystemInformationEx [NTDLL.@]
+ // */
+// NTSTATUS 
+// WINAPI 
+// NtQuerySystemInformationEx(SYSTEM_INFORMATION_CLASS SystemInformationClass,
+    // void *Query, ULONG QueryLength, void *SystemInformation, ULONG Length, ULONG *ResultLength)
+// {
+    // ULONG len = 0;
+    // NTSTATUS ret = STATUS_NOT_IMPLEMENTED;
+
+    // switch (SystemInformationClass) {
+    // case SystemLogicalProcessorInformationEx:
+        // {
+            // SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *buf;
+
+            // if (!Query || QueryLength < sizeof(DWORD))
+            // {
+                // ret = STATUS_INVALID_PARAMETER;
+                // break;
+            // }
+
+            // if (*(DWORD*)Query != RelationAll)
+                // FIXME("Relationship filtering not implemented: 0x%x\n", *(DWORD*)Query);
+
+            // len = 3 * sizeof(*buf);
+            // buf = RtlAllocateHeap(GetProcessHeap(), 0, len);
+            // if (!buf)
+            // {
+                // ret = STATUS_NO_MEMORY;
+                // break;
+            // }
+
+            // ret = create_logical_proc_info(NULL, &buf, &len);
+            // if (ret != STATUS_SUCCESS)
+            // {
+                // RtlFreeHeap(GetProcessHeap(), 0, buf);
+                // break;
+            // }
+
+            // if (Length >= len)
+            // {
+                // if (!SystemInformation)
+                    // ret = STATUS_ACCESS_VIOLATION;
+                // else
+                    // memcpy( SystemInformation, buf, len);
+            // }
+            // else
+                // ret = STATUS_INFO_LENGTH_MISMATCH;
+
+            // RtlFreeHeap(GetProcessHeap(), 0, buf);
+
+            // break;
+        // }
+    // default:
+        // FIXME("(0x%08x,%p,%u,%p,%u,%p) stub\n", SystemInformationClass, Query, QueryLength, SystemInformation,
+            // Length, ResultLength);
+        // break;
+    // }
+
+    // if (ResultLength)
+        // *ResultLength = len;
+
+    // return ret;
+// }
+
 NTSTATUS 
 NTAPI 
-NtQuerySystemInformationEx(SYSTEM_INFORMATION_CLASS Information,
-						   PVOID SystemInformation, 
-						   ULONG QueryInformationLength, 
-						   PVOID SystemInformatiom, 
-						   ULONG BufferLength, 
-						   PULONG ReturnLength)
+NtQuerySystemInformationEx(
+	SYSTEM_INFORMATION_CLASS SystemInformationClass,
+	PVOID SystemInformation, 
+	ULONG QueryInformationLength, 
+	PVOID SystemInformatiom, 
+	ULONG BufferLength, 
+	PULONG ReturnLength
+)
 {
-	return NtQuerySystemInformation(Information,
+	return NtQuerySystemInformation(SystemInformationClass,
 									SystemInformation,
 									BufferLength,
 									ReturnLength);
@@ -497,12 +566,64 @@ DWORD WINAPI NtRollbackTransaction(int a, int b)
 }
 
 /*need implementation*/
-NTSTATUS WINAPI NtCommitTransaction(HANDLE hTransaction, DWORD options)
+NTSTATUS 
+WINAPI 
+NtCommitTransaction(HANDLE hTransaction, DWORD options)
 {
 	return 0;
 }
 
-DWORD WINAPI NtCreateTransaction(int a, int b)
+DWORD 
+WINAPI 
+NtCreateTransaction(int a, int b)
 {
 	return 0;
+}
+
+NTSTATUS 
+WINAPI 
+NtpQueryInformationToken(
+     HANDLE token,
+     TOKEN_INFORMATION_CLASS tokeninfoclass,
+     PVOID tokeninfo,
+     ULONG tokeninfolength,
+     PULONG retlen 
+)
+{
+	switch(tokeninfoclass){
+		case TokenIntegrityLevel:
+		    DbgPrint("IntegrityLevel token\n");
+			{
+				/* report always "S-1-16-12288" (high mandatory level) for now */
+				static const SID high_level = {SID_REVISION, 1, {SECURITY_MANDATORY_LABEL_AUTHORITY},
+																{SECURITY_MANDATORY_HIGH_RID}};
+
+				TOKEN_MANDATORY_LABEL *tml = tokeninfo;
+				PSID psid = tml + 1;
+
+				tml->Label.Sid = psid;
+				tml->Label.Attributes = SE_GROUP_INTEGRITY | SE_GROUP_INTEGRITY_ENABLED;
+				memcpy(psid, &high_level, sizeof(SID));
+			}
+			break;	
+		// case TokenAppContainerSid:
+			// {
+				// TOKEN_APPCONTAINER_INFORMATION *container = tokeninfo;
+				// FIXME("QueryInformationToken( ..., TokenAppContainerSid, ...) semi-stub\n");
+				// container->TokenAppContainer = NULL;
+			// }
+			// break;
+		// case TokenIsAppContainer:
+			// {
+				// TRACE("TokenIsAppContainer semi-stub\n");
+				// *(DWORD*)tokeninfo = 0;
+				// break;
+			// }			
+		default:
+			return NtQueryInformationToken(token,
+										   tokeninfoclass,
+										   tokeninfo,
+										   tokeninfolength,
+										   retlen);
+	}
 }

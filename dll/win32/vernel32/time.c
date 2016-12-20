@@ -838,7 +838,9 @@ GetClientDynamicTimeZoneInformation(HANDLE hHandle)
   return result;
 }
 
-BOOLEAN WINAPI RTL_DTZItoDTZI(PDYNAMIC_TIME_ZONE_INFORMATION information, PDYNAMIC_TIME_ZONE_INFORMATION recept)
+BOOLEAN 
+WINAPI 
+RTL_DTZItoDTZI(PDYNAMIC_TIME_ZONE_INFORMATION information, PDYNAMIC_TIME_ZONE_INFORMATION recept)
 {
   BOOLEAN result; // al@1
 
@@ -932,12 +934,18 @@ GetDynamicTimeZoneInformationRaw(
   return resp;
 }
 
-DWORD WINAPI GetDynamicTimeZoneInformation(PDYNAMIC_TIME_ZONE_INFORMATION pTimeZoneInformation)
+DWORD 
+WINAPI 
+GetDynamicTimeZoneInformation(
+	PDYNAMIC_TIME_ZONE_INFORMATION pTimeZoneInformation
+)
 {
   return GetDynamicTimeZoneInformationRaw(pTimeZoneInformation, 1);
 }
 
-LONG WINAPI OpenTzSpecificCache()
+LONG 
+WINAPI 
+OpenTzSpecificCache()
 {
   PVOID alloc; // eax@3
   LONG hum; // edi@4
@@ -946,11 +954,7 @@ LONG WINAPI OpenTzSpecificCache()
   resp = TzSpecificCache;
   if ( !TzSpecificCache )
   {
-   #ifdef _M_IX86
-		alloc = RtlAllocateHeap(*(HANDLE *)(*(DWORD *)(__readfsdword(24) + 48) + 24), (BaseDllTag + 0x280000) | 8, 0x748u);
-   #elif defined(_M_AMD64)
-		alloc = RtlAllocateHeap(*(HANDLE *)(*(DWORD *)(__readgsqword(24) + 48) + 24), (BaseDllTag + 0x280000) | 8, 0x748u);
-   #endif 
+    alloc = RtlAllocateHeap(GetProcessHeap(), (BaseDllTag + 0x280000) | 8, 0x748u);
     resp = (LONG)alloc;
     if ( alloc )
     {
@@ -958,11 +962,7 @@ LONG WINAPI OpenTzSpecificCache()
       hum = InterlockedCompareExchange(&TzSpecificCache, resp, 0);
       if ( hum )
       {
-		#ifdef _M_IX86
-			RtlFreeHeap(*(HANDLE *)(*(DWORD *)(__readfsdword(24) + 48) + 24), BaseDllTag + 0x280000, (PVOID)resp);
-	    #elif defined(_M_AMD64)
-			RtlFreeHeap(*(HANDLE *)(*(DWORD *)(__readgsqword(24) + 48) + 24), BaseDllTag + 0x280000, (PVOID)resp);
-	    #endif 
+			RtlFreeHeap(GetProcessHeap(), BaseDllTag + 0x280000, (PVOID)resp);
         resp = hum;
       }
     }
@@ -970,7 +970,9 @@ LONG WINAPI OpenTzSpecificCache()
   return resp;
 }
 
-LONG WINAPI InvalidateTzSpecificCache()
+LONG 
+WINAPI 
+InvalidateTzSpecificCache()
 {
   LONG result; // eax@1
   PRTL_SRWLOCK resp; // esi@1
@@ -1007,13 +1009,13 @@ NTSTATUS WINAPI CsrBasepSetClientTimeZoneInformation(LONG parameterOne, PDYNAMIC
     one = other->Bias;
     two = other->StandardName[0];
     three = other->StandardName[2];
-    client = CsrClientCallServer(message, capture, 65558, 24);
+    client = CsrClientCallServer(message, capture, sizeof(CSR_API_MESSAGE), 24);
     CsrFreeCaptureBuffer(capture);
     result = client;
   }
   else
   {
-    result = 0xC0000017u;
+    result = STATUS_NO_MEMORY;
   }
   return result;
 }
@@ -1148,7 +1150,9 @@ BOOL WINAPI GetTimeZoneInformationForYear(USHORT wYear, PDYNAMIC_TIME_ZONE_INFOR
   return TRUE;
 }
 
-BOOL WINAPI GetCalendarDateFormatEx(
+BOOL 
+WINAPI 
+GetCalendarDateFormatEx(
   _In_   LPCWSTR lpszLocale,
   _In_   DWORD dwFlags,
   _In_   const LPCALDATETIME lpCalDateTime,
@@ -1171,7 +1175,9 @@ QueryUnbiasedInterruptTime(
 	return TRUE;
 }
 
-BOOL WINAPI TzSpecificLocalTimeToSystemTimeEx(
+BOOL 
+WINAPI 
+TzSpecificLocalTimeToSystemTimeEx(
   _In_opt_  const DYNAMIC_TIME_ZONE_INFORMATION *lpTimeZoneInformation,
   _In_      const SYSTEMTIME *lpLocalTime,
   _Out_     LPSYSTEMTIME lpUniversalTime

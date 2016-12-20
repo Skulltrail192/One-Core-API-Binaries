@@ -42,3 +42,22 @@ typedef struct _D3DKMDT_VIDEO_PRESENT_SOURCE {
   D3DDDI_VIDEO_PRESENT_SOURCE_ID Id;
   DWORD                          dwReserved;
 } D3DKMDT_VIDEO_PRESENT_SOURCE;
+
+typedef struct gdi_physdev
+{
+     const struct gdi_dc_funcs *funcs;
+     struct gdi_physdev        *next;
+     HDC                        hdc;
+} *PHYSDEV;
+
+/* Undocumented structure filled in by GetFontRealizationInfo */
+struct font_realization_info
+{
+    DWORD size;        /* could be 16 or 24 */
+    DWORD flags;       /* 1 for bitmap fonts, 3 for scalable fonts */
+    DWORD cache_num;   /* keeps incrementing - num of fonts that have been created allowing for caching?? */
+    DWORD instance_id; /* identifies a realized font instance */
+    DWORD unk;         /* unknown */
+    WORD  face_index;  /* face index in case of font collections */
+    WORD  simulations; /* 0 bit - bold simulation, 1 bit - oblique simulation */
+};

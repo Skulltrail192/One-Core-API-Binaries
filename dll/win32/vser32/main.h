@@ -439,3 +439,23 @@ GetCurrentInputMessageSource(
 	INPUT_MESSAGE_DEVICE_TYPE *this, 
 	BOOL otherParamter
 );
+
+#define POINTER_DEVICE_PRODUCT_STRING_MAX 520
+
+typedef enum POINTER_DEVICE_TYPE { 
+  POINTER_DEVICE_TYPE_INTEGRATED_PEN  = 0x00000001,
+  POINTER_DEVICE_TYPE_EXTERNAL_PEN    = 0x00000002,
+  POINTER_DEVICE_TYPE_TOUCH           = 0x00000003,
+  POINTER_DEVICE_TYPE_TOUCH_PAD       = 0x00000004,
+  POINTER_DEVICE_TYPE_MAX             = 0xFFFFFFFF
+} POINTER_DEVICE_TYPE;
+
+typedef struct tagPOINTER_DEVICE_INFO {
+  DWORD               displayOrientation;
+  HANDLE              device;
+  POINTER_DEVICE_TYPE pointerDeviceType;
+  HMONITOR            monitor;
+  ULONG               startingCursorId;
+  USHORT              maxActiveContacts;
+  WCHAR               productString[POINTER_DEVICE_PRODUCT_STRING_MAX];
+} POINTER_DEVICE_INFO;

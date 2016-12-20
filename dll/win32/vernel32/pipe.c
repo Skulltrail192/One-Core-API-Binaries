@@ -129,14 +129,28 @@ BOOL WINAPI GetNamedPipeClientComputerNameW(HANDLE Pipe, LPWSTR ClientComputerNa
   return resp;
 }
 
-BOOL WINAPI GetNamedPipeClientComputerNameA(HANDLE Pipe, LPSTR ClientComputerName, ULONG ClientComputerNameLength)
+BOOL 
+WINAPI 
+GetNamedPipeClientComputerNameA(
+	HANDLE Pipe, 
+	LPSTR ClientComputerName, 
+	ULONG ClientComputerNameLength
+)
 {
 	PUNICODE_STRING string;
 	string = Basep8BitStringToStaticUnicodeString(ClientComputerName);
 	return GetNamedPipeClientComputerNameW(Pipe, string->Buffer, ClientComputerNameLength);
 }
 
-BOOL WINAPI SetNamedPipeAttribute(HANDLE Pipe, PIPE_ATTRIBUTE_TYPE AttributeType, PSTR AttributeName, PVOID AttributeValue, SIZE_T AttributeValueLength)
+BOOL 
+WINAPI 
+SetNamedPipeAttribute(
+	HANDLE Pipe, 
+	PIPE_ATTRIBUTE_TYPE AttributeType, 
+	PSTR AttributeName, 
+	PVOID AttributeValue, 
+	SIZE_T AttributeValueLength
+)
 {
   BOOL result; // eax@4
   SIZE_T size; // ebx@8
@@ -145,7 +159,6 @@ BOOL WINAPI SetNamedPipeAttribute(HANDLE Pipe, PIPE_ATTRIBUTE_TYPE AttributeType
   PVOID other; // edi@8
   ULONG number; // eax@10
   NTSTATUS status; // eax@12
-  BOOL verification = FALSE; // esi@13
   struct _IO_STATUS_BLOCK IoStatusBlock; // [sp+0h] [bp-8h]@12
   ULONG AttributeTypea; // [sp+14h] [bp+Ch]@5
   ULONG AttributeValueLengtha; // [sp+20h] [bp+18h]@8
@@ -173,12 +186,8 @@ BOOL WINAPI SetNamedPipeAttribute(HANDLE Pipe, PIPE_ATTRIBUTE_TYPE AttributeType
   size = AttributeValueLength;
   localSize = strlen(AttributeName) + 1;
   AttributeValueLengtha = localSize + AttributeValueLength;
-  #ifdef _M_IX86
-		alloc = RtlAllocateHeap(*(HANDLE *)(*(DWORD *)(__readfsdword(24) + 48) + 24), 0, AttributeValueLengtha);
-  #elif defined(_M_AMD64)
-		alloc = RtlAllocateHeap(*(HANDLE *)(*(DWORD *)(__readgsqword(24) + 48) + 24), 0, AttributeValueLengtha);
-  #endif    
-    result = verification;
+
+  alloc = RtlAllocateHeap(GetProcessHeap(), 0, AttributeValueLengtha);
   other = alloc;
   if ( alloc )
   {
@@ -202,24 +211,19 @@ BOOL WINAPI SetNamedPipeAttribute(HANDLE Pipe, PIPE_ATTRIBUTE_TYPE AttributeType
                number);
     if ( status >= 0 )
     {
-      verification = TRUE;
+      result = TRUE;
     }
     else
     {
       BaseSetLastNTError(status);
-      verification = FALSE;
+      result = FALSE;
     }
-	#ifdef _M_IX86
-		RtlFreeHeap(*(HANDLE *)(*(DWORD *)(__readfsdword(24) + 48) + 24), 0, other);
-	#elif defined(_M_AMD64)
-		RtlFreeHeap(*(HANDLE *)(*(DWORD *)(__readgsqword(24) + 48) + 24), 0, other);
-	#endif    
-    result = verification;
+	RtlFreeHeap(GetProcessHeap(), 0, other);
   }
   else
   {
     SetLastError(8u);
-    result = 0;
+    result = FALSE;
   }
   return result;
 }

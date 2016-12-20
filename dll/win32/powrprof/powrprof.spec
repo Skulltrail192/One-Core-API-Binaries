@@ -20,4 +20,12 @@
 @ stdcall WriteGlobalPwrPolicy (ptr)
 @ stdcall WriteProcessorPwrScheme (long ptr)
 @ stdcall WritePwrScheme (ptr str str ptr)
-@ stdcall ValidatePowerPolicies (ptr ptr)
+@ stdcall ValidatePowerPolicies(ptr ptr)
+@ stub PowerDeterminePlatformRoleEx
+@ stub PowerRegisterSuspendResumeNotification
+@ stub PowerSettingRegisterNotification
+@ stub PowerSettingUnregisterNotification
+@ stub PowerUnregisterSuspendResumeNotification
+@ stub PowerSetActiveScheme
+@ stub PowerWriteACValueIndex
+@ stub PowerWriteDCValueIndex

@@ -87,3 +87,27 @@ BOOL WINAPI GetFontFileInfo( DWORD instance_id, DWORD unknown, struct font_filei
     // memcpy(info, font->fileinfo, *needed);
     // return TRUE;
 // }
+
+/*************************************************************
+ *           GetFontRealizationInfo    (GDI32.@)
+ */
+BOOL 
+WINAPI 
+GetFontRealizationInfo(HDC hdc, struct font_realization_info *info)
+{
+	return FALSE;
+    // BOOL is_v0 = info->size == FIELD_OFFSET(struct font_realization_info, unk);
+    // PHYSDEV dev;
+    // BOOL ret;
+    // DC *dc;
+
+    // if (info->size != sizeof(*info) && !is_v0)
+        // return FALSE;
+
+    // dc = get_dc_ptr(hdc);
+    // if (!dc) return FALSE;
+    // dev = GET_DC_PHYSDEV( dc, pGetFontRealizationInfo );
+    // ret = dev->funcs->pGetFontRealizationInfo( dev, info );
+    // release_dc_ptr(dc);
+    // return ret;
+}

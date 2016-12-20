@@ -926,7 +926,9 @@ SetFileIoOverlappedRange(HANDLE FileHandle, PUCHAR OverlappedRangeStart, ULONG L
   return 1;
 }
 
-PVOID WINAPI BasepInitializeFindFileHandle(HANDLE a1)
+PVOID 
+WINAPI 
+BasepInitializeFindFileHandle(HANDLE a1)
 {
   PVOID hum; // eax@1
   PVOID dois; // esi@1

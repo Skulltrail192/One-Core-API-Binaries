@@ -72,12 +72,12 @@ GetCurrentConsoleFontEx(
   UINT wight = 0; // [sp+44h] [bp-64h]@4
   const wchar_t pszSrc; // [sp+48h] [bp-60h]@4
 
-  if ( lpConsoleCurrentFontEx->cbSize == 84 )
+  if ( lpConsoleCurrentFontEx->cbSize == sizeof(CONSOLE_FONT_INFOEX ) )
   {
     maxi = bMaximumWindow;
     handle = hConsoleOutput;
-    CsrClientCallServer(&server, 0, 131600, 92);
-    if ( NtStatus >= 0 )
+    CsrClientCallServer(&server, 0, 131600, sizeof(CSR_API_MESSAGE));
+    if ( NT_SUCCESS(NtStatus) )
     {
       *(DWORD *)&lpConsoleCurrentFontEx->dwFontSize.X = size;
       lpConsoleCurrentFontEx->nFont = font;
@@ -119,10 +119,10 @@ SetConsoleScreenBufferInfoEx(
   WORD popup; // [sp+46h] [bp-5Eh]@5
   char copy; // [sp+48h] [bp-5Ch]@5
 
-  if ( lpConsoleScreenBufferInfoEx->cbSize != 92 )
+  if ( lpConsoleScreenBufferInfoEx->cbSize != sizeof(CONSOLE_SCREEN_BUFFER_INFOEX) )
   {
     resp = 87;
-    return 0;
+    return FALSE;
   }
   output = hConsoleOutput;
   indexx = *&lpConsoleScreenBufferInfoEx->dwSize.X;
@@ -138,9 +138,9 @@ SetConsoleScreenBufferInfoEx(
   {
     resp = RtlNtStatusToDosError(NtStatus);
     resp = 87;
-    return 0;
+    return FALSE;
   }
-  return 1;
+  return TRUE;
 }
 
 /*--------------------------------------------------------------
@@ -204,7 +204,7 @@ GetConsoleScreenBufferInfoEx(
   BOOL result; // eax@2
   struct _CONSOLE_SCREEN_BUFFER_INFO ConsoleScreenBufferInfo; // [sp+0h] [bp-60h]@1
 
-  ConsoleScreenBufferInfoEx->cbSize = 96;
+  ConsoleScreenBufferInfoEx->cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
   if ( GetConsoleScreenBufferInfo(hConsoleOutput, &ConsoleScreenBufferInfo) )
   {
     ConsoleScreenBufferInfoEx->dwSize.X = ConsoleScreenBufferInfo.dwSize.X;
@@ -239,7 +239,7 @@ SetCurrentConsoleFontEx(
   UINT weght; // [sp+40h] [bp-64h]@3
   wchar_t pszDest; // [sp+44h] [bp-60h]@3
 
-  if ( lpConsoleCurrentFontEx->cbSize == 84 )
+  if ( lpConsoleCurrentFontEx->cbSize == sizeof(CONSOLE_FONT_INFOEX) )
   {
     size = lpConsoleCurrentFontEx->dwFontSize.X;
     font = lpConsoleCurrentFontEx->nFont;
@@ -248,7 +248,7 @@ SetCurrentConsoleFontEx(
     StringCchCopyW(&pszDest, 0x20u, lpConsoleCurrentFontEx->FaceName);
     CsrClientCallServer(message, 0, 131671, 92);
     if ( NtStatus >= 0 )
-      return 1;
+      return TRUE;
     error = RtlNtStatusToDosError(NtStatus);
   }
   else
@@ -256,5 +256,5 @@ SetCurrentConsoleFontEx(
     error = 87;
   }
   SetLastError(error);
-  return 0;
+  return FALSE;
 }

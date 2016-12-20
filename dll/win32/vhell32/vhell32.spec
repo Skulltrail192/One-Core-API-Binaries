@@ -526,6 +526,7 @@
 @ stdcall SHChangeNotifyRegisterThread(long)
 @ stdcall SHAddDefaultPropertiesByExt(wstr ptr)
 @ stdcall SHGetPropertyStoreFromParsingName(wstr ptr long long ptr)
+@ stdcall Shell_NotifyIconGetRect(ptr ptr)
 @ stub SHAssocEnumHandlers
 @ stub SHSetDefaultProperties
 @ stdcall WPC_InstallState(ptr)

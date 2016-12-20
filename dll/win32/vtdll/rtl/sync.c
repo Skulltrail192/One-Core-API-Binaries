@@ -175,6 +175,339 @@ RtlpAcquireSRWLockSharedWait(
     }
 }
 
+static VOID
+NTAPI
+RtlpReleaseWaitBlockLockExclusive(IN OUT PRTL_SRWLOCK SRWLock,
+                                  IN PRTLP_SRWLOCK_WAITBLOCK FirstWaitBlock)
+{
+    PRTLP_SRWLOCK_WAITBLOCK Next;
+    LONG_PTR NewValue;
+
+    /* NOTE: We're currently in an exclusive lock in contended mode. */
+
+    Next = FirstWaitBlock->Next;
+    if (Next != NULL)
+    {
+        /* There's more blocks chained, we need to update the pointers
+           in the next wait block and update the wait block pointer. */
+        NewValue = (LONG_PTR)Next | RTL_SRWLOCK_OWNED | RTL_SRWLOCK_CONTENDED;
+        if (!FirstWaitBlock->Exclusive)
+        {
+            /* The next wait block has to be an exclusive lock! */
+            ASSERT(Next->Exclusive);
+
+            /* Save the shared count */
+            Next->SharedCount = FirstWaitBlock->SharedCount;
+
+            NewValue |= RTL_SRWLOCK_SHARED;
+        }
+
+        Next->Last = FirstWaitBlock->Last;
+    }
+    else
+    {
+        /* Convert the lock to a simple lock. */
+        if (FirstWaitBlock->Exclusive)
+            NewValue = RTL_SRWLOCK_OWNED;
+        else
+        {
+            ASSERT(FirstWaitBlock->SharedCount > 0);
+
+            NewValue = ((LONG_PTR)FirstWaitBlock->SharedCount << RTL_SRWLOCK_BITS) |
+                       RTL_SRWLOCK_SHARED | RTL_SRWLOCK_OWNED;
+        }
+    }
+
+    (void)InterlockedExchangePointer(&SRWLock->Ptr, (PVOID)NewValue);
+
+    if (FirstWaitBlock->Exclusive)
+    {
+        (void)InterlockedOr(&FirstWaitBlock->Wake,
+                            TRUE);
+    }
+    else
+    {
+        PRTLP_SRWLOCK_SHARED_WAKE WakeChain, Next;
+
+        /* If we were the first one to acquire the shared
+           lock, we now need to wake all others... */
+        WakeChain = FirstWaitBlock->SharedWakeChain;
+        do
+        {
+            Next = WakeChain->Next;
+
+            (void)InterlockedOr((PLONG)&WakeChain->Wake,
+                                TRUE);
+
+            WakeChain = Next;
+        } while (WakeChain != NULL);
+    }
+}
+
+static VOID
+NTAPI
+RtlpReleaseWaitBlockLockLastShared(IN OUT PRTL_SRWLOCK SRWLock,
+                                   IN PRTLP_SRWLOCK_WAITBLOCK FirstWaitBlock)
+{
+    PRTLP_SRWLOCK_WAITBLOCK Next;
+    LONG_PTR NewValue;
+
+    /* NOTE: We're currently in a shared lock in contended mode. */
+
+    /* The next acquirer to be unwaited *must* be an exclusive lock! */
+	ASSERT(FirstWaitBlock->Exclusive);
+
+    Next = FirstWaitBlock->Next;
+    if (Next != NULL)
+    {
+        /* There's more blocks chained, we need to update the pointers
+           in the next wait block and update the wait block pointer. */
+        NewValue = (LONG_PTR)Next | RTL_SRWLOCK_OWNED | RTL_SRWLOCK_CONTENDED;
+
+        Next->Last = FirstWaitBlock->Last;
+    }
+    else
+    {
+        /* Convert the lock to a simple exclusive lock. */
+        NewValue = RTL_SRWLOCK_OWNED;
+    }
+
+    (void)InterlockedExchangePointer(&SRWLock->Ptr, (PVOID)NewValue);
+
+    (void)InterlockedOr(&FirstWaitBlock->Wake,
+                        TRUE);
+}
+
+/******************************************************************
+ *              RtlRunOnceBeginInitialize (NTDLL.@)
+ */
+DWORD 
+WINAPI 
+RtlRunOnceBeginInitialize( 
+	RTL_RUN_ONCE *once, 
+	ULONG flags, 
+	void **context 
+)
+{
+    if (flags & RTL_RUN_ONCE_CHECK_ONLY)
+    {
+        ULONG_PTR val = (ULONG_PTR)once->Ptr;
+
+        if (flags & RTL_RUN_ONCE_ASYNC) return STATUS_INVALID_PARAMETER;
+        if ((val & 3) != 2) return STATUS_UNSUCCESSFUL;
+        if (context) *context = (void *)(val & ~3);
+        return STATUS_SUCCESS;
+    }
+	
+	InitKeyedEvent();
+
+    for (;;)
+    {
+        ULONG_PTR next, val = (ULONG_PTR)once->Ptr;
+
+        switch (val & 3)
+        {
+        case 0:  /* first time */
+            if (!interlocked_cmpxchg_ptr( &once->Ptr,
+                                          (flags & RTL_RUN_ONCE_ASYNC) ? (void *)3 : (void *)1, 0 ))
+                return STATUS_PENDING;
+            break;
+
+        case 1:  /* in progress, wait */			
+            if (flags & RTL_RUN_ONCE_ASYNC) return STATUS_INVALID_PARAMETER;
+            next = val & ~3;
+            if (interlocked_cmpxchg_ptr( &once->Ptr, (void *)((ULONG_PTR)&next | 1),
+                                         (void *)val ) == (void *)val)
+                NtWaitForKeyedEvent( Key_Event, &next, FALSE, NULL );
+            break;
+
+        case 2:  /* done */
+            if (context) *context = (void *)(val & ~3);
+            return STATUS_SUCCESS;
+
+        case 3:  /* in progress, async */
+            if (!(flags & RTL_RUN_ONCE_ASYNC)) return STATUS_INVALID_PARAMETER;
+            return STATUS_PENDING;
+        }
+    }
+}
+
+/*
+ * @implemented - need test
+ */
+/******************************************************************
+ *              RtlRunOnceComplete (NTDLL.@)
+ */
+DWORD 
+WINAPI 
+RtlRunOnceComplete( 
+	RTL_RUN_ONCE *once, 
+	ULONG flags, 
+	void *context 
+)
+{
+    if ((ULONG_PTR)context & 3) return STATUS_INVALID_PARAMETER;
+
+    if (flags & RTL_RUN_ONCE_INIT_FAILED)
+    {
+        if (context) return STATUS_INVALID_PARAMETER;
+        if (flags & RTL_RUN_ONCE_ASYNC) return STATUS_INVALID_PARAMETER;
+    }
+    else context = (void *)((ULONG_PTR)context | 2);
+
+	InitKeyedEvent();
+
+    for (;;)
+    {
+        ULONG_PTR val = (ULONG_PTR)once->Ptr;
+
+        switch (val & 3)
+        {
+        case 1:  /* in progress */
+            if (interlocked_cmpxchg_ptr( &once->Ptr, context, (void *)val ) != (void *)val) break;
+            val &= ~3;
+            while (val)
+            {
+                ULONG_PTR next = *(ULONG_PTR *)val;
+                NtReleaseKeyedEvent( Key_Event, (void *)val, FALSE, NULL );
+                val = next;
+            }
+            return STATUS_SUCCESS;
+
+        case 3:  /* in progress, async */
+            if (!(flags & RTL_RUN_ONCE_ASYNC)) return STATUS_INVALID_PARAMETER;
+            if (interlocked_cmpxchg_ptr( &once->Ptr, context, (void *)val ) != (void *)val) break;
+            return STATUS_SUCCESS;
+
+        default:
+            return STATUS_UNSUCCESSFUL;
+        }
+    }
+}
+
+/******************************************************************
+  *              RtlRunOnceExecuteOnce (NTDLL.@)
+  */
+DWORD WINAPI RtlRunOnceExecuteOnce( RTL_RUN_ONCE *once, PRTL_RUN_ONCE_INIT_FN func,
+                                     void *param, void **context )
+{
+     DWORD ret = RtlRunOnceBeginInitialize( once, 0, context );
+ 
+     if (ret != STATUS_PENDING) return ret;
+ 
+     if (!func( once, param, context ))
+     {
+         RtlRunOnceComplete( once, RTL_RUN_ONCE_INIT_FAILED, NULL );
+         return STATUS_UNSUCCESSFUL;
+     } 
+     return RtlRunOnceComplete( once, 0, context ? *context : NULL );
+}
+
+/***********************************************************************
+  *           RtlInitializeConditionVariable   (NTDLL.@)
+  *
+  * Initializes the condition variable with NULL.
+  *
+  * PARAMS
+  *  variable [O] condition variable
+  *
+  * RETURNS
+  *  Nothing.
+  */
+void 
+WINAPI 
+RtlInitializeConditionVariable( 
+	PRTL_CONDITION_VARIABLE variable
+)
+{
+    variable->Ptr = NULL;
+}
+
+/***********************************************************************
+ *           RtlSleepConditionVariableCS   (NTDLL.@)
+ *
+ * Atomically releases the critical section and suspends the thread,
+ * waiting for a Wake(All)ConditionVariable event. Afterwards it enters
+ * the critical section again and returns.
+ *
+ * PARAMS
+ *  variable  [I/O] condition variable
+ *  crit      [I/O] critical section to leave temporarily
+ *  timeout   [I]   timeout
+ *
+ * RETURNS
+ *  see NtWaitForKeyedEvent for all possible return values.
+ */
+NTSTATUS 
+WINAPI 
+RtlSleepConditionVariableCS( 
+	PRTL_CONDITION_VARIABLE variable, 
+	PRTL_CRITICAL_SECTION crit,
+	const LARGE_INTEGER *timeout 
+)
+{
+    NTSTATUS status;
+	
+    InterlockedExchangeAdd( (int *)&variable->Ptr, 1 );
+    RtlLeaveCriticalSection(crit);	
+	InitKeyedEvent();
+	status = NtWaitForKeyedEvent(Key_Event, &variable->Ptr, 0, timeout);
+    RtlEnterCriticalSection(crit);
+    return status;
+}
+
+/***********************************************************************
+ *           RtlWakeAllConditionVariable   (NTDLL.@)
+ *
+ * See WakeConditionVariable, wakes up all waiting threads.
+ */
+void 
+WINAPI 
+RtlWakeAllConditionVariable( 
+	PRTL_CONDITION_VARIABLE variable 
+)
+{
+	NTSTATUS status;
+	InitKeyedEvent();
+	
+	while(variable->Ptr){
+		InterlockedDecrement((int *)&variable->Ptr);
+		status = NtReleaseKeyedEvent(Key_Event, &variable->Ptr, FALSE, NULL );	
+		DbgPrint("RtlWakeAllConditionVariable. Status: %08x\n",status);
+	}
+}
+
+/***********************************************************************
+ *           RtlWakeConditionVariable   (NTDLL.@)
+ *
+ * Wakes up one thread waiting on the condition variable.
+ *
+ * PARAMS
+ *  variable [I/O] condition variable to wake up.
+ *
+ * RETURNS
+ *  Nothing.
+ *
+ * NOTES
+ *  The calling thread does not have to own any lock in order to call
+ *  this function.
+ */
+void 
+WINAPI 
+RtlWakeConditionVariable( 
+	PRTL_CONDITION_VARIABLE variable 
+)
+{
+	NTSTATUS status;
+	InitKeyedEvent();
+	
+	if(variable->Ptr){ 		
+		InterlockedDecrement((int *)&variable->Ptr); 		
+		status = NtReleaseKeyedEvent( Key_Event, &variable->Ptr, FALSE, NULL ); 		
+		DbgPrint("RtlWakeConditionVariable. Status: %08x\n",status);		
+	}
+}
+
 VOID
 NTAPI
 RtlAcquireSRWLockShared(
@@ -536,109 +869,6 @@ AddWaitBlock:
     }
 }
 
-static VOID
-NTAPI
-RtlpReleaseWaitBlockLockExclusive(IN OUT PRTL_SRWLOCK SRWLock,
-                                  IN PRTLP_SRWLOCK_WAITBLOCK FirstWaitBlock)
-{
-    PRTLP_SRWLOCK_WAITBLOCK Next;
-    LONG_PTR NewValue;
-
-    /* NOTE: We're currently in an exclusive lock in contended mode. */
-
-    Next = FirstWaitBlock->Next;
-    if (Next != NULL)
-    {
-        /* There's more blocks chained, we need to update the pointers
-           in the next wait block and update the wait block pointer. */
-        NewValue = (LONG_PTR)Next | RTL_SRWLOCK_OWNED | RTL_SRWLOCK_CONTENDED;
-        if (!FirstWaitBlock->Exclusive)
-        {
-            /* The next wait block has to be an exclusive lock! */
-            ASSERT(Next->Exclusive);
-
-            /* Save the shared count */
-            Next->SharedCount = FirstWaitBlock->SharedCount;
-
-            NewValue |= RTL_SRWLOCK_SHARED;
-        }
-
-        Next->Last = FirstWaitBlock->Last;
-    }
-    else
-    {
-        /* Convert the lock to a simple lock. */
-        if (FirstWaitBlock->Exclusive)
-            NewValue = RTL_SRWLOCK_OWNED;
-        else
-        {
-            ASSERT(FirstWaitBlock->SharedCount > 0);
-
-            NewValue = ((LONG_PTR)FirstWaitBlock->SharedCount << RTL_SRWLOCK_BITS) |
-                       RTL_SRWLOCK_SHARED | RTL_SRWLOCK_OWNED;
-        }
-    }
-
-    (void)InterlockedExchangePointer(&SRWLock->Ptr, (PVOID)NewValue);
-
-    if (FirstWaitBlock->Exclusive)
-    {
-        (void)InterlockedOr(&FirstWaitBlock->Wake,
-                            TRUE);
-    }
-    else
-    {
-        PRTLP_SRWLOCK_SHARED_WAKE WakeChain, Next;
-
-        /* If we were the first one to acquire the shared
-           lock, we now need to wake all others... */
-        WakeChain = FirstWaitBlock->SharedWakeChain;
-        do
-        {
-            Next = WakeChain->Next;
-
-            (void)InterlockedOr((PLONG)&WakeChain->Wake,
-                                TRUE);
-
-            WakeChain = Next;
-        } while (WakeChain != NULL);
-    }
-}
-
-static VOID
-NTAPI
-RtlpReleaseWaitBlockLockLastShared(IN OUT PRTL_SRWLOCK SRWLock,
-                                   IN PRTLP_SRWLOCK_WAITBLOCK FirstWaitBlock)
-{
-    PRTLP_SRWLOCK_WAITBLOCK Next;
-    LONG_PTR NewValue;
-
-    /* NOTE: We're currently in a shared lock in contended mode. */
-
-    /* The next acquirer to be unwaited *must* be an exclusive lock! */
-	ASSERT(FirstWaitBlock->Exclusive);
-
-    Next = FirstWaitBlock->Next;
-    if (Next != NULL)
-    {
-        /* There's more blocks chained, we need to update the pointers
-           in the next wait block and update the wait block pointer. */
-        NewValue = (LONG_PTR)Next | RTL_SRWLOCK_OWNED | RTL_SRWLOCK_CONTENDED;
-
-        Next->Last = FirstWaitBlock->Last;
-    }
-    else
-    {
-        /* Convert the lock to a simple exclusive lock. */
-        NewValue = RTL_SRWLOCK_OWNED;
-    }
-
-    (void)InterlockedExchangePointer(&SRWLock->Ptr, (PVOID)NewValue);
-
-    (void)InterlockedOr(&FirstWaitBlock->Wake,
-                        TRUE);
-}
-
 VOID
 NTAPI
 RtlReleaseSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock)
@@ -813,235 +1043,6 @@ RtlSleepConditionVariableSRW(
     return status;
 }
 
-/******************************************************************
- *              RtlRunOnceBeginInitialize (NTDLL.@)
- */
-DWORD 
-WINAPI 
-RtlRunOnceBeginInitialize( 
-	RTL_RUN_ONCE *once, 
-	ULONG flags, 
-	void **context 
-)
-{
-    if (flags & RTL_RUN_ONCE_CHECK_ONLY)
-    {
-        ULONG_PTR val = (ULONG_PTR)once->Ptr;
-
-        if (flags & RTL_RUN_ONCE_ASYNC) return STATUS_INVALID_PARAMETER;
-        if ((val & 3) != 2) return STATUS_UNSUCCESSFUL;
-        if (context) *context = (void *)(val & ~3);
-        return STATUS_SUCCESS;
-    }
-	
-	InitKeyedEvent();
-
-    for (;;)
-    {
-        ULONG_PTR next, val = (ULONG_PTR)once->Ptr;
-
-        switch (val & 3)
-        {
-        case 0:  /* first time */
-            if (!interlocked_cmpxchg_ptr( &once->Ptr,
-                                          (flags & RTL_RUN_ONCE_ASYNC) ? (void *)3 : (void *)1, 0 ))
-                return STATUS_PENDING;
-            break;
-
-        case 1:  /* in progress, wait */			
-            if (flags & RTL_RUN_ONCE_ASYNC) return STATUS_INVALID_PARAMETER;
-            next = val & ~3;
-            if (interlocked_cmpxchg_ptr( &once->Ptr, (void *)((ULONG_PTR)&next | 1),
-                                         (void *)val ) == (void *)val)
-                NtWaitForKeyedEvent( Key_Event, &next, FALSE, NULL );
-            break;
-
-        case 2:  /* done */
-            if (context) *context = (void *)(val & ~3);
-            return STATUS_SUCCESS;
-
-        case 3:  /* in progress, async */
-            if (!(flags & RTL_RUN_ONCE_ASYNC)) return STATUS_INVALID_PARAMETER;
-            return STATUS_PENDING;
-        }
-    }
-}
-
-/*
- * @implemented - need test
- */
-/******************************************************************
- *              RtlRunOnceComplete (NTDLL.@)
- */
-DWORD 
-WINAPI 
-RtlRunOnceComplete( 
-	RTL_RUN_ONCE *once, 
-	ULONG flags, 
-	void *context 
-)
-{
-    if ((ULONG_PTR)context & 3) return STATUS_INVALID_PARAMETER;
-
-    if (flags & RTL_RUN_ONCE_INIT_FAILED)
-    {
-        if (context) return STATUS_INVALID_PARAMETER;
-        if (flags & RTL_RUN_ONCE_ASYNC) return STATUS_INVALID_PARAMETER;
-    }
-    else context = (void *)((ULONG_PTR)context | 2);
-
-	InitKeyedEvent();
-
-    for (;;)
-    {
-        ULONG_PTR val = (ULONG_PTR)once->Ptr;
-
-        switch (val & 3)
-        {
-        case 1:  /* in progress */
-            if (interlocked_cmpxchg_ptr( &once->Ptr, context, (void *)val ) != (void *)val) break;
-            val &= ~3;
-            while (val)
-            {
-                ULONG_PTR next = *(ULONG_PTR *)val;
-                NtReleaseKeyedEvent( Key_Event, (void *)val, FALSE, NULL );
-                val = next;
-            }
-            return STATUS_SUCCESS;
-
-        case 3:  /* in progress, async */
-            if (!(flags & RTL_RUN_ONCE_ASYNC)) return STATUS_INVALID_PARAMETER;
-            if (interlocked_cmpxchg_ptr( &once->Ptr, context, (void *)val ) != (void *)val) break;
-            return STATUS_SUCCESS;
-
-        default:
-            return STATUS_UNSUCCESSFUL;
-        }
-    }
-}
-
-/******************************************************************
-  *              RtlRunOnceExecuteOnce (NTDLL.@)
-  */
-DWORD WINAPI RtlRunOnceExecuteOnce( RTL_RUN_ONCE *once, PRTL_RUN_ONCE_INIT_FN func,
-                                     void *param, void **context )
-{
-     DWORD ret = RtlRunOnceBeginInitialize( once, 0, context );
- 
-     if (ret != STATUS_PENDING) return ret;
- 
-     if (!func( once, param, context ))
-     {
-         RtlRunOnceComplete( once, RTL_RUN_ONCE_INIT_FAILED, NULL );
-         return STATUS_UNSUCCESSFUL;
-     } 
-     return RtlRunOnceComplete( once, 0, context ? *context : NULL );
-}
-
-/***********************************************************************
-  *           RtlInitializeConditionVariable   (NTDLL.@)
-  *
-  * Initializes the condition variable with NULL.
-  *
-  * PARAMS
-  *  variable [O] condition variable
-  *
-  * RETURNS
-  *  Nothing.
-  */
-void 
-WINAPI 
-RtlInitializeConditionVariable( 
-	PRTL_CONDITION_VARIABLE variable
-)
-{
-    variable->Ptr = NULL;
-}
-
-/***********************************************************************
- *           RtlSleepConditionVariableCS   (NTDLL.@)
- *
- * Atomically releases the critical section and suspends the thread,
- * waiting for a Wake(All)ConditionVariable event. Afterwards it enters
- * the critical section again and returns.
- *
- * PARAMS
- *  variable  [I/O] condition variable
- *  crit      [I/O] critical section to leave temporarily
- *  timeout   [I]   timeout
- *
- * RETURNS
- *  see NtWaitForKeyedEvent for all possible return values.
- */
-NTSTATUS 
-WINAPI 
-RtlSleepConditionVariableCS( 
-	PRTL_CONDITION_VARIABLE variable, 
-	PRTL_CRITICAL_SECTION crit,
-	const LARGE_INTEGER *timeout 
-)
-{
-    NTSTATUS status;
-	
-    InterlockedExchangeAdd( (int *)&variable->Ptr, 1 );
-    RtlLeaveCriticalSection(crit);	
-	InitKeyedEvent();
-	status = NtWaitForKeyedEvent(Key_Event, &variable->Ptr, 0, timeout);
-    RtlEnterCriticalSection(crit);
-    return status;
-}
-
-/***********************************************************************
- *           RtlWakeAllConditionVariable   (NTDLL.@)
- *
- * See WakeConditionVariable, wakes up all waiting threads.
- */
-void 
-WINAPI 
-RtlWakeAllConditionVariable( 
-	PRTL_CONDITION_VARIABLE variable 
-)
-{
-	NTSTATUS status;
-	InitKeyedEvent();
-	
-	while(variable->Ptr){
-		InterlockedDecrement((int *)&variable->Ptr);
-		status = NtReleaseKeyedEvent(Key_Event, &variable->Ptr, FALSE, NULL );	
-		DbgPrint("RtlWakeAllConditionVariable. Status: %08x\n",status);
-	}
-}
-
-/***********************************************************************
- *           RtlWakeConditionVariable   (NTDLL.@)
- *
- * Wakes up one thread waiting on the condition variable.
- *
- * PARAMS
- *  variable [I/O] condition variable to wake up.
- *
- * RETURNS
- *  Nothing.
- *
- * NOTES
- *  The calling thread does not have to own any lock in order to call
- *  this function.
- */
-void 
-WINAPI 
-RtlWakeConditionVariable( 
-	PRTL_CONDITION_VARIABLE variable 
-)
-{
-	NTSTATUS status;
-	InitKeyedEvent();
-	
-	if(variable->Ptr){ 		
-		InterlockedDecrement((int *)&variable->Ptr); 		
-		status = NtReleaseKeyedEvent( Key_Event, &variable->Ptr, FALSE, NULL ); 		
-		DbgPrint("RtlWakeConditionVariable. Status: %08x\n",status);		
-	}
-}
 
 /***********************************************************************
  *              RtlTryAcquireSRWLockExclusive (NTDLL.@)

@@ -18,6 +18,7 @@
  */
 
 #include <main.h>
+#include <windef.h>
  
 WINE_DEFAULT_DEBUG_CHANNEL(shell);
 
@@ -332,3 +333,138 @@ GetCurrentProcessExplicitAppUserModelID(
 {
 	return E_NOTIMPL;
 }
+
+// HRESULT 
+// WINAPI 
+// Shell_NotifyIconGetRect(
+	// const NOTIFYICONIDENTIFIER *identifier, 
+	// RECT *iconLocation
+// )
+HRESULT 
+WINAPI 
+Shell_NotifyIconGetRect(
+	PVOID *identifier, 
+	PVOID *iconLocation
+)
+{
+	return E_NOTIMPL;
+}
+// {
+  // char *unused1; // edi@3
+  // HRESULT result; // eax@6 MAPDST
+  // WPARAM v6; // eax@11
+  // HWND v7; // ST08_4@14
+  // HWND v8; // ST08_4@17
+  // LONG rigth; // edi@18
+  // LONG bottom; // ecx@18
+  // signed int v12; // [sp+Ch] [bp-4Ch]@11
+  // LPARAM lParam; // [sp+14h] [bp-44h]@11
+  // int v15; // [sp+18h] [bp-40h]@11
+  // int *v16; // [sp+1Ch] [bp-3Ch]@11
+  // ULONG_PTR v17; // [sp+20h] [bp-38h]@11
+  // BOOL pfEnabled; // [sp+24h] [bp-34h]@4
+  // ULONG_PTR dwResult; // [sp+28h] [bp-30h]@6 MAPDST
+  // int v20; // [sp+2Ch] [bp-2Ch]@11
+  // int v21; // [sp+30h] [bp-28h]@11
+  // int v22; // [sp+34h] [bp-24h]@11
+  // int v23; // [sp+38h] [bp-20h]@11
+  // WPARAM v24; // [sp+3Ch] [bp-1Ch]@11
+  // UINT v25; // [sp+40h] [bp-18h]@11 MAPDST
+  // DWORD v26; // [sp+44h] [bp-14h]@11
+  // int v27; // [sp+48h] [bp-10h]@11
+  // int v28; // [sp+4Ch] [bp-Ch]@11
+  // int v29; // [sp+50h] [bp-8h]@11
+
+  // result = 0x80004005;
+  // if ( identifier && iconLocation )
+  // {
+    // iconLocation->left = 0;
+    // iconLocation->top = 0;
+    // unused1 = (char *)&iconLocation->right;
+    // *(_DWORD *)unused1 = 0;
+    // *((_DWORD *)unused1 + 1) = 0;
+    // if ( !memcmp(&identifier->guidItem, &GUID_ShellNotifyTaskbarOffset, 0x10u) )
+    // {
+      // result = 0;
+      // pfEnabled = 0;
+      // if ( DwmIsCompositionEnabled(&pfEnabled) >= 0 )
+      // {
+        // if ( pfEnabled )
+        // {
+          // dwResult = 8;
+          // SHLogicalToPhysicalDPI(0, (int *)&dwResult);
+          // iconLocation->bottom = dwResult;
+          // iconLocation->right = dwResult;
+        // }
+      // }
+    // }
+    // else
+    // {
+      // pfEnabled = (BOOL)FindWindowW(c_szTrayClass, 0);
+      // if ( pfEnabled )
+      // {
+        // if ( identifier->cbSize == 28 )
+        // {
+          // memset(&v21, 0, 0x24u);
+          // v25 = identifier->uID;
+          // v6 = (WPARAM)identifier->hWnd;
+          // v23 = 0;
+          // v22 = 32;
+          // v24 = v6;
+          // v16 = &v20;
+          // v26 = identifier->guidItem.Data1;
+          // v27 = *(_DWORD *)&identifier->guidItem.Data2;
+          // lParam = 3;
+          // v28 = *(_DWORD *)&identifier->guidItem.Data4[0];
+          // v29 = *(_DWORD *)&identifier->guidItem.Data4[4];
+          // v20 = 880096291;
+          // v15 = 40;
+          // v21 = 2;
+          // v12 = 0;
+          // v17 = SendMessageTimeoutW((HWND)pfEnabled, 0x4Au, v6, (LPARAM)&lParam, 3u, 0x1B58u, &dwResult);
+          // if ( v17 )
+          // {
+            // if ( dwResult == -1 && memcmp(&v26, &GUID_ShellNotifyChevron, 0x10u) )
+            // {
+              // v26 = GUID_ShellNotifyChevron.Data1;
+              // v27 = *(_DWORD *)&GUID_ShellNotifyChevron.Data2;
+              // v7 = identifier->hWnd;
+              // v28 = *(_DWORD *)&GUID_ShellNotifyChevron.Data4[0];
+              // v29 = *(_DWORD *)&GUID_ShellNotifyChevron.Data4[4];
+              // v17 = SendMessageTimeoutW((HWND)pfEnabled, 0x4Au, (WPARAM)v7, (LPARAM)&lParam, 3u, 0x1B58u, &dwResult);
+              // v12 = 1;
+            // }
+            // if ( v17 )
+            // {
+              // if ( dwResult )
+              // {
+                // v8 = identifier->hWnd;
+                // v21 = 1;
+                // if ( SendMessageTimeoutW((HWND)pfEnabled, 0x4Au, (WPARAM)v8, (LPARAM)&lParam, 3u, 0x1B58u, &v17) )
+                // {
+                  // dwResult = SHIWORD(v17);
+                  // rigth = (signed __int16)v17 + (signed __int16)dwResult;
+                  // bottom = SHIWORD(v17) + SHIWORD(dwResult);
+                  // iconLocation->left = (signed __int16)v17;
+                  // iconLocation->top = dwResult;
+                  // iconLocation->right = rigth;
+                  // iconLocation->bottom = bottom;
+                  // result = v12 != 0;
+                // }
+              // }
+            // }
+          // }
+        // }
+        // else
+        // {
+          // result = 0x80070057;
+        // }
+      // }
+    // }
+  // }
+  // else
+  // {
+    // result = 0x80004003;
+  // }
+  // return result;
+// }

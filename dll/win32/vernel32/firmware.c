@@ -190,6 +190,62 @@ BOOL WINAPI SetFirmwareEnvironmentVariableExA(LPCTSTR SourceString, LPCTSTR lpGu
   return 0;
 }
 
+UINT 
+WINAPI 
+pGetSystemFirmwareTable(
+	DWORD FirmwareTableProviderSignature, 
+	DWORD FirmwareTableID, 
+	PVOID pFirmwareTableBuffer, 
+	DWORD BufferSize
+)
+{
+  PSYSTEM_BASIC_INFORMATION SystemInformation; 
+  PSYSTEM_BASIC_INFORMATION LocalSytemInformation; 
+  NTSTATUS Status; 
+  ULONG ReturnLength;
+  UINT NumberOfPhysicalPages; 
+  NTSTATUS NtStatus; 
+  CPPEH_RECORD ms_exc; 
+
+  NtStatus = 0;
+  ReturnLength = 0;
+  NumberOfPhysicalPages = 0;
+  SystemInformation = (PSYSTEM_BASIC_INFORMATION)RtlAllocateHeap(
+                                                   RtlGetProcessHeap(),
+                                                   BaseDllTag,
+                                                   BufferSize + 20);
+  LocalSytemInformation = SystemInformation;
+  ms_exc.registration.TryLevel = 0;
+  if ( SystemInformation )
+  {
+    SystemInformation->Reserved = FirmwareTableProviderSignature;
+    SystemInformation->PageSize = FirmwareTableID;
+    SystemInformation->NumberOfPhysicalPages = BufferSize;
+    SystemInformation->TimerResolution = 1;
+    Status = NtQuerySystemInformation(0x40, SystemInformation, BufferSize + 20, &ReturnLength);
+    NtStatus = Status;
+    if ( Status >= STATUS_SUCCESS || Status == STATUS_BUFFER_TOO_SMALL )
+      NumberOfPhysicalPages = LocalSytemInformation->NumberOfPhysicalPages;
+    if ( Status >= STATUS_SUCCESS && pFirmwareTableBuffer )
+    {
+      memcpy(
+        pFirmwareTableBuffer,
+        &LocalSytemInformation->LowestPhysicalPageNumber,
+        LocalSytemInformation->NumberOfPhysicalPages);
+      NtStatus = STATUS_SUCCESS;
+    }
+  }
+  else
+  {
+    NtStatus = STATUS_INSUFFICIENT_RESOURCES;
+  }
+  ms_exc.registration.TryLevel = -1;
+  if ( LocalSytemInformation )
+    RtlFreeHeap(RtlGetProcessHeap(), 0, LocalSytemInformation);
+  BaseSetLastNTError(NtStatus);
+  return NumberOfPhysicalPages;
+}
+
 // UINT  //Bug with Skype
 // WINAPI 
 // GetSystemFirmwareTable(

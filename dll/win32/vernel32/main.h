@@ -1099,3 +1099,12 @@ GetNamedPipeAttribute(
 	PVOID AttributeValue, 
 	PSIZE_T AttributeValueLength
 );
+
+UINT 
+WINAPI 
+pGetSystemFirmwareTable(
+	DWORD FirmwareTableProviderSignature, 
+	DWORD FirmwareTableID, 
+	PVOID pFirmwareTableBuffer, 
+	DWORD BufferSize
+);

@@ -765,6 +765,7 @@
 @ stdcall DwmStartup(ptr)
 @ stdcall DwmStopRedirection()
 @ stdcall EnableMouseInPointer(long)
+@ stdcall EvaluateProximityToRect(ptr ptr ptr)
 @ stdcall FrostCrashedWindow(ptr ptr)
 @ stub gapfnScSendMessage
 @ stdcall GetCIMSSM(ptr)
@@ -781,6 +782,8 @@
 @ stub GetMagnificationLensCtxInformation
 @ stdcall GetMagnificationDesktopMagnification(ptr ptr ptr)
 @ stdcall GetPhysicalCursorPos(ptr)
+@ stdcall GetPointerDevices(ptr ptr)
+@ stdcall GetPointerType(long ptr)
 @ stdcall GetSendMessageReceiver(long)
 @ stdcall GetTopLevelWindow(ptr)
 @ stdcall GetUpdatedClipboardFormats(ptr long ptr)
@@ -813,7 +816,9 @@
 @ stdcall RegisterFrostWindow(ptr long)
 @ stdcall RegisterGhostWindow(ptr long)
 @ stdcall RegisterPowerSettingNotification(ptr ptr long)
+@ stdcall RegisterPointerDeviceNotifications(ptr long)
 @ stdcall RegisterSessionPort(ptr ptr)
+@ stdcall RegisterTouchHitTestingWindow(ptr long)
 @ stdcall RegisterTouchWindow(ptr)
 @ stdcall RemoveClipboardFormatListener(ptr)
 @ stdcall SetCoalescableTimer(ptr long long ptr long)

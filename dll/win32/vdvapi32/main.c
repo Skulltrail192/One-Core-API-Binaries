@@ -828,3 +828,218 @@ LsaLookupSids2(
 						 ReferencedDomains,
 						 Names);
 }
+
+// BOOL
+// APIENTRY
+// GetTokenInformation (
+    // HANDLE TokenHandle,
+    // TOKEN_INFORMATION_CLASS TokenInformationClass,
+    // PVOID TokenInformation,
+    // DWORD TokenInformationLength,
+    // PDWORD ReturnLength
+    // )
+// /*++
+
+
+// Routine Description:
+
+    // Retrieve information about a specified token.
+
+// Arguments:
+
+    // TokenHandle - Provides a handle to the token to operate on.
+
+    // TokenInformationClass - The token information class about which
+        // to retrieve information.
+
+    // TokenInformation - The buffer to receive the requested class of
+        // information.  The buffer must be aligned on at least a
+        // longword boundary.  The actual structures returned are
+        // dependent upon the information class requested, as defined in
+        // the TokenInformationClass parameter description.
+
+        // TokenInformation Format By Information Class:
+
+           // TokenUser => TOKEN_USER data structure.  TOKEN_QUERY
+           // access is needed to retrieve this information about a
+           // token.
+
+           // TokenGroups => TOKEN_GROUPS data structure.  TOKEN_QUERY
+           // access is needed to retrieve this information about a
+           // token.
+
+           // TokenPrivileges => TOKEN_PRIVILEGES data structure.
+           // TOKEN_QUERY access is needed to retrieve this information
+           // about a token.
+
+           // TokenOwner => TOKEN_OWNER data structure.  TOKEN_QUERY
+           // access is needed to retrieve this information about a
+           // token.
+
+           // TokenPrimaryGroup => TOKEN_PRIMARY_GROUP data structure.
+           // TOKEN_QUERY access is needed to retrieve this information
+           // about a token.
+
+           // TokenDefaultDacl => TOKEN_DEFAULT_DACL data structure.
+           // TOKEN_QUERY access is needed to retrieve this information
+           // about a token.
+
+           // TokenSource => TOKEN_SOURCE data structure.
+           // TOKEN_QUERY_SOURCE access is needed to retrieve this
+           // information about a token.
+
+           // TokenType => TOKEN_TYPE data structure.
+           // TOKEN_QUERY access is needed to retrieve this information
+           // about a token.
+
+           // TokenStatistics => TOKEN_STATISTICS data structure.
+           // TOKEN_QUERY access is needed to retrieve this
+           // information about a token.
+
+           // TokenSessionId => ULONG.  TOKEN_QUERY access is needed to 
+           // query the Session ID of the token.
+            
+    // TokenInformationLength - Indicates the length, in bytes, of the
+        // TokenInformation buffer.
+
+    // ReturnLength - This parameter receives the actual length of the
+        // requested information.  If this value is larger than that
+        // provided by the TokenInformationLength parameter, then the
+        // buffer provided to receive the requested information is not
+        // large enough to hold that data and no data is returned.
+
+        // If the queried class is TokenDefaultDacl and there is no
+        // default Dacl established for the token, then the return
+        // length will be returned as zero, and no data will be returned.
+
+// Return Value:
+
+    // Returns TRUE for success, FALSE for failure.  Extended error status
+    // is available using GetLastError.
+
+// --*/
+// {
+    // NTSTATUS Status;
+
+    // Status = NtQueryInformationToken (
+        // TokenHandle,
+        // TokenInformationClass,
+        // TokenInformation,
+        // TokenInformationLength,
+        // ReturnLength
+        // );
+
+    // if ( !NT_SUCCESS(Status) ) {
+       // // BaseSetLastNTError(Status);
+        // return FALSE;
+    // }
+
+    // return TRUE;
+// }
+
+
+
+
+// BOOL
+// APIENTRY
+// SetTokenInformation (
+    // HANDLE TokenHandle,
+    // TOKEN_INFORMATION_CLASS TokenInformationClass,
+    // PVOID TokenInformation,
+    // DWORD TokenInformationLength
+    // )
+// /*++
+
+
+// Routine Description:
+
+    // Modify information in a specified token.
+
+// Arguments:
+
+    // TokenHandle - Provides a handle to the token to operate on.
+
+    // TokenInformationClass - The token information class being set.
+
+    // TokenInformation - The buffer containing the new values for the
+        // specified class of information.  The buffer must be aligned
+        // on at least a longword boundary.  The actual structures
+        // provided are dependent upon the information class specified,
+        // as defined in the TokenInformationClass parameter
+        // description.
+
+        // TokenInformation Format By Information Class:
+
+           // TokenUser => This value is not a valid value for this API.
+           // The User ID may not be replaced.
+
+           // TokenGroups => This value is not a valid value for this
+           // API.  The Group IDs may not be replaced.  However, groups
+           // may be enabled and disabled using NtAdjustGroupsToken().
+
+           // TokenPrivileges => This value is not a valid value for
+           // this API.  Privilege information may not be replaced.
+           // However, privileges may be explicitly enabled and disabled
+           // using the NtAdjustPrivilegesToken API.
+
+           // TokenOwner => TOKEN_OWNER data structure.
+           // TOKEN_ADJUST_DEFAULT access is needed to replace this
+           // information in a token.  The owner values that may be
+           // specified are restricted to the user and group IDs with an
+           // attribute indicating they may be assigned as the owner of
+           // objects.
+
+           // TokenPrimaryGroup => TOKEN_PRIMARY_GROUP data structure.
+           // TOKEN_ADJUST_DEFAULT access is needed to replace this
+           // information in a token.  The primary group values that may
+           // be specified are restricted to be one of the group IDs
+           // already in the token.
+
+           // TokenDefaultDacl => TOKEN_DEFAULT_DACL data structure.
+           // TOKEN_ADJUST_DEFAULT access is needed to replace this
+           // information in a token.  The ACL provided as a new default
+           // discretionary ACL is not validated for structural
+           // correctness or consistency.
+
+           // TokenSource => This value is not a valid value for this
+           // API.  The source name and context handle  may not be
+           // replaced.
+
+           // TokenStatistics => This value is not a valid value for this
+           // API.  The statistics of a token are read-only.
+
+           // TokenSessionId => ULONG to set the token session.  Must have
+           // TOKEN_ADJUST_SESSIONID and TCB privilege.
+
+           // TokenSessionReference => ULONG.  Must be zero.  Must have 
+           // TCB privilege to dereference the logon session.  This info class
+           // will remove a reference for the logon session, and mark the token
+           // as not referencing the session.
+              
+    // TokenInformationLength - Indicates the length, in bytes, of the
+        // TokenInformation buffer.  This is only the length of the primary
+        // buffer.  All extensions of the primary buffer are self describing.
+
+// Return Value:
+
+    // Returns TRUE for success, FALSE for failure.  Extended error status
+    // is available using GetLastError.
+
+// --*/
+// {
+    // NTSTATUS Status;
+
+    // Status = NtSetInformationToken (
+        // TokenHandle,
+        // TokenInformationClass,
+        // TokenInformation,
+        // TokenInformationLength
+        // );
+
+    // if ( !NT_SUCCESS(Status) ) {
+        // //BaseSetLastNTError(Status);
+        // return FALSE;
+    // }
+
+    // return TRUE;
+// }

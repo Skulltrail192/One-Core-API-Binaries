@@ -1517,7 +1517,7 @@
 @ stdcall Wow64SuspendThread(ptr)
 @ stdcall ZombifyActCtxWorker(ptr) ZombifyActCtx
 
-#Import from advapi32
+; #Import from advapi32
 @ stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr) advapi32.AccessCheck
 @ stdcall AccessCheckAndAuditAlarmW(wstr ptr wstr wstr ptr long ptr long ptr ptr ptr) advapi32.AccessCheckAndAuditAlarmW
 @ stdcall AccessCheckByType(ptr ptr long long ptr long ptr ptr ptr ptr ptr) advapi32.AccessCheckByType

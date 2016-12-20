@@ -20,7 +20,12 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
-BOOL WINAPI QueryIdleProcessorCycleTime(PULONG ReturnLength, PULONG64 SystemInformation)
+BOOL 
+WINAPI 
+QueryIdleProcessorCycleTime(
+	PULONG ReturnLength, 
+	PULONG64 SystemInformation
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@3
@@ -42,7 +47,13 @@ BOOL WINAPI QueryIdleProcessorCycleTime(PULONG ReturnLength, PULONG64 SystemInfo
   return result;
 }
 
-BOOL WINAPI QueryIdleProcessorCycleTimeEx(USHORT Group, PULONG BufferLength, PULONG64 ProcessorIdleCycleTime)
+BOOL 
+WINAPI 
+QueryIdleProcessorCycleTimeEx(
+	USHORT Group, 
+	PULONG BufferLength, 
+	PULONG64 ProcessorIdleCycleTime
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@3
@@ -65,7 +76,13 @@ BOOL WINAPI QueryIdleProcessorCycleTimeEx(USHORT Group, PULONG BufferLength, PUL
   return result;
 }
 
-BOOL WINAPI GetProcessGroupAffinity(HANDLE ProcessHandle, PUSHORT GroupCount, PUSHORT GroupArray)
+BOOL 
+WINAPI 
+GetProcessGroupAffinity(
+	HANDLE ProcessHandle, 
+	PUSHORT GroupCount, 
+	PUSHORT GroupArray
+)
 {
   PUSHORT LocalGroupCount; // esi@1
   NTSTATUS status; // eax@1
@@ -78,7 +95,7 @@ BOOL WINAPI GetProcessGroupAffinity(HANDLE ProcessHandle, PUSHORT GroupCount, PU
              GroupArray,
              2 * *GroupCount,
              (PULONG)&GroupCount);
-  if ( status >= 0 || status == 0xC0000023 )
+  if ( status >= 0 || status == STATUS_BUFFER_TOO_SMALL )
     *LocalGroupCount = (unsigned int)GroupCount >> 1;
   if ( status >= 0 )
   {
@@ -92,7 +109,13 @@ BOOL WINAPI GetProcessGroupAffinity(HANDLE ProcessHandle, PUSHORT GroupCount, PU
   return result;
 }
 
-BOOL WINAPI GetProcessorSystemCycleTime(USHORT Group, PSYSTEM_PROCESSOR_CYCLE_TIME_INFORMATION Buffer, PDWORD ReturnedLength)
+BOOL 
+WINAPI 
+GetProcessorSystemCycleTime(
+	USHORT Group, 
+	PSYSTEM_PROCESSOR_CYCLE_TIME_INFORMATION Buffer, 
+	PDWORD ReturnedLength
+)
 {
   NTSTATUS status; // eax@4
 
@@ -102,8 +125,8 @@ BOOL WINAPI GetProcessorSystemCycleTime(USHORT Group, PSYSTEM_PROCESSOR_CYCLE_TI
     return FALSE;
   }
   status = NtQuerySystemInformationEx(108, &Group, 2, (PULONG64)Buffer->CycleTime, (PULONG*)ReturnedLength, ReturnedLength);
-  if ( status == 0xC0000004 )
-    status = 0xC0000023u;
+  if ( status == STATUS_INFO_LENGTH_MISMATCH )
+    status = STATUS_BUFFER_TOO_SMALL;
   if ( status < 0 )
   {
     BaseSetLastNTError(status);
@@ -112,30 +135,36 @@ BOOL WINAPI GetProcessorSystemCycleTime(USHORT Group, PSYSTEM_PROCESSOR_CYCLE_TI
   return TRUE;
 }
 
-DWORD WINAPI GetMaximumProcessorCount(
+DWORD 
+WINAPI 
+GetMaximumProcessorCount(
   _In_  WORD GroupNumber
 )
 {
-	UNIMPLEMENTED;
-	DbgPrint("THIS IS A HACK");
-	return 256;
-}
-
-WORD WINAPI GetMaximumProcessorGroupCount(void)
-{
-	UNIMPLEMENTED;
-	DbgPrint("THIS IS A HACK");	
+	//Windows XP/2003 don't support more than 64 processors, so, we have only one processor group
 	return 64;
 }
 
-WORD WINAPI GetActiveProcessorGroupCount(void)
+WORD 
+WINAPI 
+GetMaximumProcessorGroupCount(void)
 {
-	UNIMPLEMENTED;
-	DbgPrint("THIS IS A HACK");	
-	return 64;
+	//Windows XP/2003 don't support more than 64 processors, so, we have only one processor group
+	return 1;
 }
 
-DWORD CountSetBits(ULONG_PTR bitMask)
+WORD 
+WINAPI 
+GetActiveProcessorGroupCount(void)
+{
+	//Windows XP/2003 don't support more than 64 processors, so, we have only one processor group
+	return 1;
+}
+
+DWORD 
+CountSetBits(
+	ULONG_PTR bitMask
+)
 {
     DWORD LSHIFT = sizeof(ULONG_PTR)*8 - 1;
     DWORD bitSetCount = 0;
@@ -151,71 +180,101 @@ DWORD CountSetBits(ULONG_PTR bitMask)
     return bitSetCount;
 }
 
-DWORD WINAPI GetActiveProcessorCount(
+DWORD 
+WINAPI 
+GetActiveProcessorCount(
   _In_  WORD GroupNumber
 )
 {
-	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer = NULL;
-	DWORD lenght = 0;
-	DWORD processorCoreCount = 0;
-	DWORD logicalProcessorCount = 0;
-	DWORD processorPackageCount = 0;
-	DWORD byteOffset = 0;
-	GetLogicalProcessorInformation(buffer, &lenght);
-	while (byteOffset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= lenght) 
-    {
-        switch (buffer->Relationship) 
-        {
-        case RelationProcessorCore:
-            processorCoreCount++;
-
-            // A hyperthreaded core supplies more than one logical processor.
-            logicalProcessorCount += CountSetBits(buffer->ProcessorMask);
-			GroupNumber = logicalProcessorCount;
-            break;
-
-        case RelationProcessorPackage:
-            // Logical processors share a physical package.
-            processorPackageCount++;
-			GroupNumber = processorPackageCount;
-            break;
-
-        default:
-            DbgPrint("\nError: Unsupported LOGICAL_PROCESSOR_RELATIONSHIP value.\n");
-            break;
-        }
-        byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
-        buffer++;
-    }
-	return GroupNumber;
+	//We don't support really groups, so, we emulate to support ALL_PROCESSOR_GROUPS	
+	SYSTEM_INFO sysinfo;	
+	GetSystemInfo( &sysinfo );
+	return sysinfo.dwNumberOfProcessors;;
 }
 
-BOOL WINAPI GetLogicalProcessorInformation(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION Buffer, PDWORD ReturnedLength)
+BOOL
+WINAPI
+GetLogicalProcessorInformation(
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION Buffer,
+    PDWORD ReturnedLength
+    )
 {
-  NTSTATUS status; // eax@5
+    NTSTATUS Status;
 
-  if ( !ReturnedLength )
-  {
-    SetLastError(0x57u);
-    return FALSE;
-  }
-  status = NtQuerySystemInformation(SystemLogicalProcessorInformation|0x40, Buffer, *ReturnedLength, ReturnedLength);
-  if ( status == STATUS_INFO_LENGTH_MISMATCH )
-    status = STATUS_BUFFER_TOO_SMALL;
-  if ( status < 0 )
-  {
-    BaseSetLastNTError(status);
-    return FALSE;
-  }
-  return TRUE;
+    if (ReturnedLength == NULL) {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    Status = NtQuerySystemInformation( SystemLogicalProcessorInformation,
+                                       Buffer,
+                                       *ReturnedLength,
+                                       ReturnedLength);
+    if (Status == STATUS_INFO_LENGTH_MISMATCH) {
+        Status = STATUS_BUFFER_TOO_SMALL;
+    }
+
+    if (!NT_SUCCESS(Status)) {
+        BaseSetLastNTError(Status);
+        return FALSE;
+    } else {
+        return TRUE;
+    }
 }
 
-BOOL WINAPI GetLogicalProcessorInformationEx(
+BOOL 
+WINAPI 
+GetLogicalProcessorInformationEx(
   _In_       LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType,
   _Out_opt_  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Buffer,
   _Inout_    PDWORD ReturnedLength
 )
 {
 	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION information = NULL;
-	return GetLogicalProcessorInformation(information, ReturnedLength);
+	DWORD byteOffset = 0;
+	SYSTEM_INFO sysinfo;
+	
+	Buffer->Size = sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+	
+	if(!GetLogicalProcessorInformation(information, ReturnedLength)){
+		return FALSE;
+	}
+	Buffer->Relationship = information->Relationship;
+	
+	//We don't support really groups, so, we emulate to support ALL_PROCESSOR_GROUPS
+	while (byteOffset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= *ReturnedLength) {
+		switch(Buffer->Relationship){
+			case RelationNumaNode:
+				Buffer->NumaNode.NodeNumber = information->NumaNode.NodeNumber;
+				Buffer->NumaNode.GroupMask.Group = ALL_PROCESSOR_GROUPS;
+				break;
+			case RelationProcessorCore:
+				Buffer->Processor.Flags = information->ProcessorCore.Flags;
+				Buffer->Processor.GroupCount = 1;
+				Buffer->Processor.GroupMask[0].Group = ALL_PROCESSOR_GROUPS;
+				break;
+			case RelationProcessorPackage:
+				Buffer->Processor.Flags = 0;
+				Buffer->Processor.GroupCount = 1;
+				Buffer->Processor.GroupMask[0].Group = ALL_PROCESSOR_GROUPS;			
+				break;
+			case RelationCache:
+				Buffer->Cache.Level = information->Cache.Level;
+				Buffer->Cache.Associativity = information->Cache.Associativity;
+				Buffer->Cache.LineSize = information->Cache.LineSize;
+				Buffer->Cache.CacheSize = information->Cache.Size;
+				Buffer->Cache.Type = information->Cache.Type;
+				Buffer->Cache.GroupMask.Group = ALL_PROCESSOR_GROUPS;				
+				break;
+			case RelationGroup:
+				GetSystemInfo( &sysinfo );
+				Buffer->Group.MaximumGroupCount = 1;
+				Buffer->Group.ActiveGroupCount = 1;
+				Buffer->Group.GroupInfo[0].MaximumProcessorCount = 64;
+				Buffer->Group.GroupInfo[0].ActiveProcessorCount = sysinfo.dwNumberOfProcessors;
+				break;
+		}
+	}	
+	
+	return TRUE;
 }
