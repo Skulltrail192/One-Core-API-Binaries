@@ -31,7 +31,12 @@ BOOL WINAPI IsThreadAFiber()
   return ((ULONG)(NtCurrentTeb()[1].NtTib.SubSystemTib) >> 2) & 1;
 }
 
-BOOL WINAPI QueryThreadCycleTime(HANDLE ThreadHandle, PULONG64 CycleTime)
+BOOL 
+WINAPI 
+QueryThreadCycleTime(
+	HANDLE ThreadHandle, 
+	PULONG64 CycleTime
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -43,79 +48,111 @@ BOOL WINAPI QueryThreadCycleTime(HANDLE ThreadHandle, PULONG64 CycleTime)
              &ThreadInformation,
              0x10u,
              0);
-  if ( status < 0 )
+  if ( NT_SUCCESS(status))
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   else
   {
     CycleTime = ThreadInformation;
-    result = 1;
+    result = TRUE;
   }
   return result;
 }
 
-BOOL WINAPI SetThreadErrorMode(DWORD dwNewMode, LPDWORD lpOldMode)
+/*************************************************************************
+ *              rtlmode_to_win32mode
+ */
+static 
+DWORD 
+rtlmode_to_win32mode( 
+	DWORD rtlmode 
+)
 {
-  BOOL result; // eax@2
-  ULONG NewMode; // eax@3
-  NTSTATUS status; // eax@9
-  DWORD error; // eax@12
+    DWORD win32mode = 0;
 
-  if ( dwNewMode & 0xFFFF7FFC )
-  {
-    BaseSetLastNTError(-1073741811);
-    result = 0;
-  }
-  else
-  {
-    NewMode = 0;
-    if ( dwNewMode & 1 )
-      NewMode = 16;
-    if ( dwNewMode & 2 )
-      NewMode |= 0x20u;
-    if ( dwNewMode & 0x8000 )
-      NewMode |= 0x40u;
-    status = RtlSetThreadErrorMode(NewMode, &dwNewMode);
-    if ( status >= 0 )
-    {
-      if ( lpOldMode )
-      {
-        error = 0;
-        if ( dwNewMode & 0x10 )
-          error = 1;
-        if ( dwNewMode & 0x20 )
-          error |= 2u;
-        if ( dwNewMode & 0x40 )
-          error |= 0x8000u;
-        *lpOldMode = error;
-      }
-      result = 1;
-    }
-    else
-    {
-      BaseSetLastNTError(status);
-      result = 0;
-    }
-  }
-  return result;
+    if (rtlmode & 0x10)
+        win32mode |= SEM_FAILCRITICALERRORS;
+    if (rtlmode & 0x20)
+        win32mode |= SEM_NOGPFAULTERRORBOX;
+    if (rtlmode & 0x40)
+        win32mode |= SEM_NOOPENFILEERRORBOX;
+
+    return win32mode;
 }
 
-BOOL WINAPI SetThreadpoolStackInformation(PTP_POOL ptpp, PTP_POOL_STACK_INFORMATION ptpsi)
+/***********************************************************************
+ *              SetThreadErrorMode (KERNEL32.@)
+ *
+ * Set the thread local error mode.
+ *
+ * PARAMS
+ *  mode    [I] The new error mode, a bitwise or of SEM_FAILCRITICALERRORS,
+ *              SEM_NOGPFAULTERRORBOX and SEM_NOOPENFILEERRORBOX.
+ *  oldmode [O] Destination of the old error mode (may be NULL)
+ *
+ * RETURNS
+ *  Success: TRUE
+ *  Failure: FALSE, check GetLastError
+ */
+BOOL 
+WINAPI 
+SetThreadErrorMode( 
+	DWORD mode, 
+	LPDWORD oldmode 
+)
+{
+    NTSTATUS status;
+    DWORD tmp = 0;
+
+    if (mode & ~(SEM_FAILCRITICALERRORS |
+                 SEM_NOGPFAULTERRORBOX |
+                 SEM_NOOPENFILEERRORBOX))
+    {
+        SetLastError( ERROR_INVALID_PARAMETER );
+        return FALSE;
+    }
+
+    if (mode & SEM_FAILCRITICALERRORS)
+        tmp |= 0x10;
+    if (mode & SEM_NOGPFAULTERRORBOX)
+        tmp |= 0x20;
+    if (mode & SEM_NOOPENFILEERRORBOX)
+        tmp |= 0x40;
+
+    status = RtlSetThreadErrorMode( tmp, oldmode );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return FALSE;
+    }
+
+    if (oldmode)
+        *oldmode = rtlmode_to_win32mode(*oldmode);
+
+    return TRUE;
+}
+
+BOOL 
+WINAPI 
+SetThreadpoolStackInformation(
+	PTP_POOL ptpp, 
+	PTP_POOL_STACK_INFORMATION ptpsi
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
 
   status = TpSetPoolStackInformation(ptpp, ptpsi);
-  if ( status >= 0 )
+  if (NT_SUCCESS(status))
   {
-    result = 1;
+    result = TRUE;
   }
   else
   {
     RtlSetLastWin32ErrorAndNtStatusFromNtStatus(status);
-    result = 0;
+    result = FALSE;
   }
   return result;
 }
@@ -127,21 +164,24 @@ BOOL WINAPI SetThreadIdealProcessorEx(HANDLE ThreadHandle, PPROCESSOR_NUMBER Thr
 
   ThreadInformation = *(PPROCESSOR_NUMBER *)&ThreadInformation->Group;
   status = NtSetInformationThread(ThreadHandle, (THREADINFOCLASS)0x21u, &ThreadInformation, 4u);
-  if ( status >= 0 )
+  if (NT_SUCCESS(status))
   {
     if ( lpPreviousIdealProcessor )
       lpPreviousIdealProcessor->Group = ThreadInformation->Group;
-    result = 1;
+    result = TRUE;
   }
   else
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   return result;
 }
 
-BOOL WINAPI SetThreadGroupAffinity(HANDLE ThreadHandle, const GROUP_AFFINITY *GroupAffinity, PGROUP_AFFINITY PreviousGroupAffinity)
+BOOL 
+WINAPI 
+SetThreadGroupAffinity(
+	HANDLE ThreadHandle, const GROUP_AFFINITY *GroupAffinity, PGROUP_AFFINITY PreviousGroupAffinity)
 {
   NTSTATUS status; // eax@2
   BOOL result; // eax@6
@@ -156,12 +196,12 @@ BOOL WINAPI SetThreadGroupAffinity(HANDLE ThreadHandle, const GROUP_AFFINITY *Gr
                    &ThreadInformation,
                    0xCu,
                    0),
-        status < 0)
+        !NT_SUCCESS(status))
     || (status = NtSetInformationThread(ThreadHandle, MaxThreadInfoClass|ThreadPriorityBoost, GroupAffinity, 0xCu),
-        status < 0) )
+        !NT_SUCCESS(status)) )
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   else
   {
@@ -171,12 +211,18 @@ BOOL WINAPI SetThreadGroupAffinity(HANDLE ThreadHandle, const GROUP_AFFINITY *Gr
       PreviousGroupAffinity->Group = one;
       PreviousGroupAffinity->Reserved[1] = two;
     }
-    result = 1;
+    result = TRUE;
   }
   return result;
 }
 
-DWORD WINAPI ReadThreadProfilingData(HANDLE PerformanceDataHandle, DWORD Flags, PPERFORMANCE_DATA PerformanceData)
+DWORD 
+WINAPI 
+ReadThreadProfilingData(
+	HANDLE PerformanceDataHandle, 
+	DWORD Flags, 
+	PPERFORMANCE_DATA PerformanceData
+)
 {
   NTSTATUS status; // eax@1
   DWORD result; // eax@2
@@ -189,7 +235,12 @@ DWORD WINAPI ReadThreadProfilingData(HANDLE PerformanceDataHandle, DWORD Flags, 
   return result;
 }
 
-BOOL WINAPI QueryThreadpoolStackInformation(PTP_POOL ptpp, PTP_POOL_STACK_INFORMATION ptpsi)
+BOOL 
+WINAPI 
+QueryThreadpoolStackInformation(
+	PTP_POOL ptpp, 
+	PTP_POOL_STACK_INFORMATION ptpsi
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -207,7 +258,12 @@ BOOL WINAPI QueryThreadpoolStackInformation(PTP_POOL ptpp, PTP_POOL_STACK_INFORM
   return result;
 }
 
-DWORD WINAPI QueryThreadProfiling(HANDLE HANDLE, PBOOLEAN Enabled)
+DWORD 
+WINAPI 
+QueryThreadProfiling(
+	HANDLE HANDLE, 
+	PBOOLEAN Enabled
+)
 {
   NTSTATUS status; // eax@1
   DWORD result; // eax@2
@@ -220,7 +276,12 @@ DWORD WINAPI QueryThreadProfiling(HANDLE HANDLE, PBOOLEAN Enabled)
   return result;
 }
 
-BOOL WINAPI GetThreadIdealProcessorEx(HANDLE ThreadHandle, PPROCESSOR_NUMBER ThreadInformation)
+BOOL 
+WINAPI 
+GetThreadIdealProcessorEx(
+	HANDLE ThreadHandle, 
+	PPROCESSOR_NUMBER ThreadInformation
+)
 {
   NTSTATUS status; // eax@5
 
@@ -233,16 +294,21 @@ BOOL WINAPI GetThreadIdealProcessorEx(HANDLE ThreadHandle, PPROCESSOR_NUMBER Thr
     *(DWORD *)&ThreadInformation->Group = *(DWORD *)(__readgsqword(24) + 3956);
    #endif*/  
     ThreadInformation->Reserved = 0;
-    return 1;
+    return TRUE;
   }
   status = NtQueryInformationThread(ThreadHandle, (THREADINFOCLASS)33u, ThreadInformation, 4u, 0);
   if ( status >= 0 )
-    return 1;
+    return TRUE;
   BaseSetLastNTError(status);
-  return 0;
+  return FALSE;
 }
 
-BOOL WINAPI GetThreadGroupAffinity(HANDLE ThreadHandle, PGROUP_AFFINITY ThreadInformation)
+BOOL 
+WINAPI 
+GetThreadGroupAffinity(
+	HANDLE ThreadHandle, 
+	PGROUP_AFFINITY ThreadInformation
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -250,17 +316,21 @@ BOOL WINAPI GetThreadGroupAffinity(HANDLE ThreadHandle, PGROUP_AFFINITY ThreadIn
   status = NtQueryInformationThread(ThreadHandle, MaxThreadInfoClass|ThreadPriorityBoost, ThreadInformation, 0xCu, 0);
   if ( status >= 0 )
   {
-    result = 1;
+    result = TRUE;
   }
   else
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   return result;
 }
 
-DWORD WINAPI DisableThreadProfiling(HANDLE PerformanceDataHandle)
+DWORD 
+WINAPI 
+DisableThreadProfiling(
+	HANDLE PerformanceDataHandle
+)
 {
   NTSTATUS status; // eax@1
   DWORD result; // eax@2
@@ -273,23 +343,27 @@ DWORD WINAPI DisableThreadProfiling(HANDLE PerformanceDataHandle)
   return result;
 }
 
-DWORD WINAPI GetThreadErrorMode()
+/***********************************************************************
+ *              GetThreadErrorMode (KERNEL32.@)
+ *
+ * Get the thread local error mode.
+ *
+ * PARAMS
+ *  None.
+ *
+ * RETURNS
+ *  The current thread local error mode.
+ */
+DWORD 
+WINAPI 
+GetThreadErrorMode( void )
 {
-  ULONG error; // ecx@1
-  DWORD result; // eax@1
-
-  error = RtlGetThreadErrorMode();
-  result = 0;
-  if ( error & 0x10 )
-    result = 1;
-  if ( error & 0x20 )
-    result |= 2u;
-  if ( error & 0x40 )
-    result |= 0x8000u;
-  return result;
+    return rtlmode_to_win32mode( RtlGetThreadErrorMode() );
 }
 
-HANDLE WINAPI CreateRemoteThreadEx(
+HANDLE 
+WINAPI 
+CreateRemoteThreadEx(
   _In_       HANDLE hProcess,
   _In_opt_   LPSECURITY_ATTRIBUTES lpThreadAttributes,
   _In_       SIZE_T dwStackSize,
@@ -309,44 +383,57 @@ HANDLE WINAPI CreateRemoteThreadEx(
 							  lpThreadId);
 }
 
-DWORD WINAPI EnableThreadProfiling(HANDLE ThreadHandle, DWORD Flags, DWORD64 HardwareCounters, HANDLE PerformanceDataHandle)
+DWORD 
+WINAPI 
+EnableThreadProfiling(
+	HANDLE ThreadHandle, 
+	DWORD Flags, 
+	DWORD64 HardwareCounters, 
+	HANDLE PerformanceDataHandle
+)
 {
   NTSTATUS status; // eax@1
-  DWORD result; // eax@2
+  DWORD result = 0; // eax@2
 
   status = RtlEnableThreadProfiling(
              ThreadHandle,
              Flags,
              HardwareCounters,
              PerformanceDataHandle);
-  if ( status >= 0 )
+  if ( NT_SUCCESS(result) )
     result = 0;
   else
     result = RtlNtStatusToDosErrorNoTeb(status);
   return result;
 }
 
-BOOL WINAPI GetThreadInformation(HANDLE ProcessHandle, THREADINFOCLASS ProcessInformationClass, PVOID ProcessInformation, DWORD ProcessInformationLength)
+BOOL 
+WINAPI 
+GetThreadInformation(
+	HANDLE ProcessHandle, 
+	THREADINFOCLASS ProcessInformationClass,
+	PVOID ProcessInformation, 
+	DWORD ProcessInformationLength
+)
 {
-  BOOL resp; // esi@2
+  BOOL resp = FALSE; // esi@2
   NTSTATUS status; // eax@3
 
   if ( ProcessInformationClass )
   {
-    BaseSetLastNTError(0xC000000Du);
-    resp = 0;
+    BaseSetLastNTError(STATUS_INVALID_PARAMETER);
+	return FALSE;
   }
   else
   {
-    resp = 0;
     status = NtQueryInformationProcess(
                ProcessHandle,
                ProcessDebugPort|0x20,
                ProcessInformation,
                ProcessInformationLength,
                0);
-    if ( status >= 0 )
-      resp = 1;
+    if ( NT_SUCCESS(status) )
+      resp = TRUE;
     else
       BaseSetLastNTError(status);
   }
@@ -363,8 +450,8 @@ BOOL WINAPI SetThreadInformation(HANDLE ThreadHandle, THREADINFOCLASS ThreadInfo
   {
     if ( ThreadInformationClass != 1 )
     {
-      BaseSetLastNTError(0xC000000Du);
-      return 0;
+      BaseSetLastNTError(STATUS_INVALID_PARAMETER);
+      return FALSE;
     }
     threadClass = 25;
   }
@@ -376,11 +463,11 @@ BOOL WINAPI SetThreadInformation(HANDLE ThreadHandle, THREADINFOCLASS ThreadInfo
   if ( status < 0 )
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   else
   {
-    result = 1;
+    result = TRUE;
   }
   return result;
 }
@@ -390,7 +477,7 @@ VOID WINAPI GetCurrentThreadStackLimits(PULONG_PTR LowLimit, PULONG_PTR HighLimi
   PULONG_PTR numberOne; // edx@1
   
   #ifdef _M_IX86
-		numberOne = (PULONG_PTR)__readfsdword(24);;
+		numberOne = (PULONG_PTR)__readfsdword(24);
   #elif defined(_M_AMD64)
 		numberOne = (PULONG_PTR)__readgsqword(24);
   #endif
@@ -470,7 +557,7 @@ SetThreadActualPriority(
   BOOL result; // eax@2
 
   status = NtSetInformationThread(ThreadHandle, ThreadPriority, &ThreadInformation, 4u);
-  if ( status >= 0 )
+  if ( NT_SUCCESS(status))
   {
     result = TRUE;
   }

@@ -122,13 +122,6 @@ QueryFullProcessImageNameA(HANDLE hProcess,
     return Result;
 }
 
-VOID WINAPI DeleteProcThreadAttributeList(
-  _Inout_  LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList
-)
-{
-	;
-}
-
 /**********************************************************************
   *           FlushProcessWriteBuffers     (KERNEL32.@)
   */
@@ -138,54 +131,6 @@ VOID WINAPI FlushProcessWriteBuffers(void)
  
      if (!once++)
          FIXME(": stub\n");
-}
-
-/*
- * @implemented - need test
- */
-BOOL 
-WINAPI 
-InitializeProcThreadAttributeList(
-	LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList, 
-	DWORD dwAttributeCount, 
-	DWORD dwFlags, 
-	PSIZE_T lpSize
-)
-{
-  SIZE_T size; // esi@3
-  BOOL resp; // edi@5
-  BOOL result; // eax@6
-  NTSTATUS error; // [sp-4h] [bp-4h]@9
-
-  if ( dwFlags )
-  {
-    error = 0xC00000F1u;
-LABEL_10:
-    BaseSetLastNTError(error);
-    return 0;
-  }
-  if ( dwAttributeCount > 3 )
-  {
-    error = 0xC00000F0u;
-    goto LABEL_10;
-  }
-  size = 12 * dwAttributeCount + 20;
-  if ( lpAttributeList && *lpSize >= size )
-  {
-    *(DWORD *)lpAttributeList = 0;
-    *((DWORD *)lpAttributeList + 4) = 0;
-    *((DWORD *)lpAttributeList + 1) = dwAttributeCount;
-    *((DWORD *)lpAttributeList + 2) = 0;
-    resp = 1;
-  }
-  else
-  {
-    resp = 0;
-    SetLastError(0x7Au);
-  }
-  result = resp;
-  *lpSize = size;
-  return result;
 }
 
 BOOL 
@@ -212,7 +157,12 @@ QueryProcessCycleTime(
   return result;
 }
 
-BOOL WINAPI QueryProcessAffinityUpdateMode(HANDLE ProcessInformation, DWORD lpdwFlags)
+BOOL 
+WINAPI 
+QueryProcessAffinityUpdateMode(
+	HANDLE ProcessInformation, 
+	DWORD lpdwFlags
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -236,145 +186,147 @@ BOOL WINAPI QueryProcessAffinityUpdateMode(HANDLE ProcessInformation, DWORD lpdw
   return result;
 }
 
-BOOL WINAPI SetProcessAffinityUpdateMode(HANDLE ProcessHandle, DWORD ProcessInformation)
+BOOL 
+WINAPI 
+SetProcessAffinityUpdateMode(
+	HANDLE ProcessHandle, 
+	DWORD ProcessInformation
+)
 {
   NTSTATUS status; // eax@4
-  NTSTATUS otherStatus; // [sp-4h] [bp-4h]@2
 
   if ( ProcessInformation & 0xFFFFFFFE )
   {
-    otherStatus = 0xC00000F1u;
+    status = STATUS_INVALID_PARAMETER_3;
 LABEL_3:
-    BaseSetLastNTError(otherStatus);
-    return 0;
+    BaseSetLastNTError(status);
+    return FALSE;
   }
   ProcessInformation = ((ProcessInformation & 1) == 0) + 1;
   status = NtSetInformationProcess(ProcessHandle, ProcessIoPortHandlers|0x20, &ProcessInformation, 4u);
-  if ( status < 0 )
+  if ( !NT_SUCCESS(status))
   {
-    otherStatus = status;
     goto LABEL_3;
   }
-  return 1;
+  return TRUE;
 }
 
-BOOL WINAPI UpdateProcThreadAttribute(LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList, DWORD dwFlags, DWORD_PTR Attribute, PVOID lpValue, SIZE_T cbSize, PVOID lpPreviousValue, PSIZE_T lpReturnSize)
+/***********************************************************************
+ *           InitializeProcThreadAttributeList       (KERNEL32.@)
+ */
+BOOL 
+WINAPI 
+InitializeProcThreadAttributeList(
+	LPPROC_THREAD_ATTRIBUTE_LIST list,
+    DWORD count, 
+	DWORD flags, 
+	SIZE_T *size
+)
 {
-  DWORD_PTR localAttributes; // ebx@2
-  BOOL hum; // edi@2
-  LPCSTR string; // edx@5
-  PVOID v10; // eax@5
-  int uneeded; // esi@9
-  int otherUnneeded; // esi@10
-  BOOL otherLogical; // zf@24
-  NTSTATUS receiveStatus; // eax@33
-  NTSTATUS otherStatus; // [sp-10h] [bp-10h]@32
-  NTSTATUS status; // [sp-Ch] [bp-Ch]@23
+    SIZE_T needed;
+    BOOL ret = FALSE;
 
-  if ( dwFlags & 0xFFFFFFFE )
-  {
-    BaseSetLastNTError(0xC00000F0u);
-    return 0;
-  }
-  localAttributes = Attribute;
-  hum = 1 << Attribute;
-  if ( !(localAttributes & 0x40000) )
-  {
-    if ( *((DWORD *)lpAttributeList + 2) == *((DWORD *)lpAttributeList + 1) )
+    TRACE("(%p %d %x %p)\n", list, count, flags, size);
+
+    needed = FIELD_OFFSET(PROC_THREAD_ATTRIBUTE_LIST, attrs[count]);
+    if (list && *size >= needed)
     {
-      status = 0xC0000001u;
+        list->mask = 0;
+        list->size = count;
+        list->count = 0;
+        list->unk = 0;
+        ret = TRUE;
     }
     else
+        SetLastError(ERROR_INSUFFICIENT_BUFFER);
+
+    *size = needed;
+    return ret;
+}
+
+/***********************************************************************
+ *           UpdateProcThreadAttribute       (KERNEL32.@)
+ */
+BOOL 
+WINAPI 
+UpdateProcThreadAttribute(
+	LPPROC_THREAD_ATTRIBUTE_LIST list,
+    DWORD flags, DWORD_PTR attr, 
+	void *value, SIZE_T size,
+    void *prev_ret, SIZE_T *size_ret
+)
+{
+    DWORD mask;
+    struct proc_thread_attr *entry;
+
+    TRACE("(%p %x %08lx %p %ld %p %p)\n", list, flags, attr, value, size, prev_ret, size_ret);
+
+    if (list->count >= list->size)
     {
-      if ( hum & *(DWORD *)lpAttributeList )
-      {
-        status = 0x40000000u;
-      }
-      else
-      {
-        if ( lpPreviousValue )
-        {
-          status = 0xC00000F4u;
-        }
-        else
-        {
-          if ( !(dwFlags & 1) )
-            goto LABEL_3;
-          status = 0xC00000F0u;
-        }
-      }
+        SetLastError(ERROR_GEN_FAILURE);
+        return FALSE;
     }
-    BaseSetLastNTError(status);
-    return 0;
-  }
-LABEL_3:
-  if ( Attribute & 0x20000 && lpReturnSize )
-  {
-    otherStatus = -1073741579;
-LABEL_42:
-    BaseSetLastNTError(otherStatus);
-    return 0;
-  }
-  string = (char *)lpAttributeList + 12 * *((DWORD *)lpAttributeList + 2) + 20;
-  v10 = lpValue;
-  if ( Attribute == 131072 )
-  {
-    otherLogical = cbSize == 4;
-  }
-  else
-  {
-    if ( Attribute != 131074 )
+
+    switch (attr)
     {
-      if ( Attribute != 393217 )
-      {
-        receiveStatus = 0xC00000BBu;
-LABEL_41:
-        otherStatus = receiveStatus;
-        goto LABEL_42;
-      }
-      if ( cbSize == 4 )
-      {
-        uneeded = *((DWORD *)lpAttributeList + 4);
-        if ( uneeded )
+    case PROC_THREAD_ATTRIBUTE_PARENT_PROCESS:
+        if (size != sizeof(HANDLE))
         {
-          string = (LPCSTR)*((DWORD *)lpAttributeList + 4);
-          otherUnneeded = *(DWORD *)(uneeded + 8);
-          hum = 0;
+            SetLastError(ERROR_BAD_LENGTH);
+            return FALSE;
         }
-        else
+        break;
+
+    case PROC_THREAD_ATTRIBUTE_HANDLE_LIST:
+        if ((size / sizeof(HANDLE)) * sizeof(HANDLE) != size)
         {
-          lpAttributeList= (LPPROC_THREAD_ATTRIBUTE_LIST)string;
-          otherUnneeded = 0;
+            SetLastError(ERROR_BAD_LENGTH);
+            return FALSE;
         }
-        v10 = *(PVOID *)lpValue;
-        if ( !(*(DWORD *)lpValue & 0xFFFFFFFC) )
+        break;
+
+    case PROC_THREAD_ATTRIBUTE_IDEAL_PROCESSOR:
+        if (size != sizeof(PROCESSOR_NUMBER))
         {
-          if ( !(dwFlags & 1) && otherUnneeded )
-            v10 = (PVOID)(otherUnneeded | (unsigned int)v10);
-          if ( lpPreviousValue )
-            *(DWORD *)lpPreviousValue = otherUnneeded;
+            SetLastError(ERROR_BAD_LENGTH);
+            return FALSE;
         }
-        receiveStatus = 0xC000000Du;
-        goto LABEL_41;
-      }
-LABEL_40:
-      receiveStatus = 0xC0000004u;
-      goto LABEL_41;
+        break;
+
+    default:
+        SetLastError(ERROR_NOT_SUPPORTED);
+        return FALSE;
     }
-    if ( !cbSize )
-      goto LABEL_40;
-    otherLogical = (cbSize & 3) == 0;
-  }
-  if ( !otherLogical )
-    goto LABEL_40;
-  if ( hum )
-  {
-    *(DWORD *)string = Attribute;
-    *((DWORD *)string + 1) = cbSize;
-    ++*((DWORD *)lpAttributeList + 2);
-    *(DWORD *)lpAttributeList |= hum;
-  }
-  return 1;
+
+    mask = 1 << (attr & PROC_THREAD_ATTRIBUTE_NUMBER);
+
+    if (list->mask & mask)
+    {
+        SetLastError(ERROR_OBJECT_NAME_EXISTS);
+        return FALSE;
+    }
+
+    list->mask |= mask;
+
+    entry = list->attrs + list->count;
+    entry->attr = attr;
+    entry->size = size;
+    entry->value = value;
+    list->count++;
+
+    return TRUE;
+}
+
+/***********************************************************************
+ *           DeleteProcThreadAttributeList       (KERNEL32.@)
+ */
+void 
+WINAPI 
+DeleteProcThreadAttributeList(
+	struct _PROC_THREAD_ATTRIBUTE_LIST *list
+)
+{
+    return;
 }
 
 BOOL 

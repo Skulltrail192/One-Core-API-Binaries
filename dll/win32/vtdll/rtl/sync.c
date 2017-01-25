@@ -388,8 +388,13 @@ RtlRunOnceComplete(
 /******************************************************************
   *              RtlRunOnceExecuteOnce (NTDLL.@)
   */
-DWORD WINAPI RtlRunOnceExecuteOnce( RTL_RUN_ONCE *once, PRTL_RUN_ONCE_INIT_FN func,
-                                     void *param, void **context )
+DWORD 
+WINAPI 
+RtlRunOnceExecuteOnce( 
+	RTL_RUN_ONCE *once, 
+	PRTL_RUN_ONCE_INIT_FN func,
+    void *param, void **context 
+)
 {
      DWORD ret = RtlRunOnceBeginInitialize( once, 0, context );
  
@@ -508,6 +513,13 @@ RtlWakeConditionVariable(
 	}
 }
 
+/***********************************************************************
+ *              RtlAcquireSRWLockShared (NTDLL.@)
+ *
+ * NOTES
+ *   Do not call this function recursively - it will only succeed when
+ *   there are no threads waiting for an exclusive lock!
+ */
 VOID
 NTAPI
 RtlAcquireSRWLockShared(
@@ -1079,4 +1091,16 @@ RtlTryAcquireSRWLockShared(
             break;
     }
     return TRUE;
+}
+
+/******************************************************************
+ *              RtlRunOnceInitialize (NTDLL.@)
+ */
+void 
+WINAPI 
+RtlRunOnceInitialize( 
+	RTL_RUN_ONCE *once 
+)
+{
+    once->Ptr = NULL;
 }

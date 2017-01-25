@@ -19,7 +19,6 @@ include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys/Win)
 spec2def(vernel32.dll vernel32.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
-	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/alloc.c
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/appmodel.c
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/barrier.c	
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/base.c

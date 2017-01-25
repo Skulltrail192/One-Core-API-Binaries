@@ -317,7 +317,9 @@ HANDLE hTransaction
 /*
  * @implemented - need test
  */
-BOOL WINAPI GetFileAttributesTransactedW(LPCWSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, LPVOID lpFileInformation, HANDLE hTransaction)
+BOOL 
+WINAPI 
+GetFileAttributesTransactedW(LPCWSTR lpFileName, GET_FILEEX_INFO_LEVELS fInfoLevelId, LPVOID lpFileInformation, HANDLE hTransaction)
 {
   BOOL resp; // [sp+10h] [bp-1Ch]@6
 
@@ -330,12 +332,12 @@ BOOL WINAPI GetFileAttributesTransactedW(LPCWSTR lpFileName, GET_FILEEX_INFO_LEV
       return SetCurrentTransaction(0);
     }
     SetLastError(0x1A45u);
-    resp = 0;
+    resp = FALSE;
   }
   else
   {
     SetLastError(0x1A2Cu);
-    resp = 0;
+    resp = FALSE;
   }
   return resp;
 }
@@ -501,12 +503,16 @@ HANDLE WINAPI BasepSetMiniVersionForCreate(HANDLE a1)
   return result;
 }
 
-HANDLE WINAPI BasepGetMiniVersionForCreate()
+HANDLE 
+WINAPI 
+BasepGetMiniVersionForCreate()
 {
   return &NtCurrentTeb()->SpareBytes1[36];
 }
 
-HANDLE WINAPI CreateFileTransactedW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile, HANDLE hTransaction, PUSHORT pusMiniVersion, PVOID pExtendedParameter)
+HANDLE 
+WINAPI 
+CreateFileTransactedW(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile, HANDLE hTransaction, PUSHORT pusMiniVersion, PVOID pExtendedParameter)
 {
   HANDLE result; // eax@6
   DWORD flags; // [sp-4h] [bp-30h]@8
@@ -888,7 +894,9 @@ BOOL WINAPI MoveFileTransactedW(LPCWSTR lpExistingFileName,
   return FALSE;
 }
 
-HANDLE WINAPI FindFirstFileTransactedA(LPCSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId, LPVOID lpFindFileData, FINDEX_SEARCH_OPS fSearchOp, LPVOID lpSearchFilter, DWORD dwAdditionalFlags, HANDLE hTransaction)
+HANDLE 
+WINAPI 
+FindFirstFileTransactedA(LPCSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId, LPVOID lpFindFileData, FINDEX_SEARCH_OPS fSearchOp, LPVOID lpSearchFilter, DWORD dwAdditionalFlags, HANDLE hTransaction)
 {
   DWORD error; // [sp-4h] [bp-30h]@4
 

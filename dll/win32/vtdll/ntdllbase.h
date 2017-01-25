@@ -598,3 +598,19 @@ LdrFindResourceEx_U(
     IN ULONG ResourceIdPathLength,
     OUT PIMAGE_RESOURCE_DATA_ENTRY *ResourceDataEntry
 );
+
+BOOLEAN 
+WINAPI 
+RtlGetProductInfo(
+	DWORD dwOSMajorVersion, 
+	DWORD dwOSMinorVersion, 
+	DWORD dwSpMajorVersion,
+    DWORD dwSpMinorVersion, 
+	PDWORD pdwReturnedProductType
+);
+
+NTSTATUS 
+WINAPI 
+RtlQueryUnbiasedInterruptTime(
+	ULONGLONG *time
+);

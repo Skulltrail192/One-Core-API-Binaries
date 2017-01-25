@@ -24,7 +24,13 @@ WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 /*
 * @unimplemented - need implementation
 */
-NTSTATUS WINAPI GetOSProductNameW(PCWSTR Source, ULONG var, ULONG parameter)
+NTSTATUS 
+WINAPI 
+GetOSProductNameW(
+	PCWSTR Source, 
+	ULONG var, 
+	ULONG parameter
+)
 {
 	Source = L"Microsoft Windows Codename \"Longhorn\" Professional Version 2003 Copyright ";
 	return STATUS_SUCCESS;
@@ -33,16 +39,24 @@ NTSTATUS WINAPI GetOSProductNameW(PCWSTR Source, ULONG var, ULONG parameter)
 /*
 * @unimplemented - need implementation
 */
-NTSTATUS WINAPI GetOSProductNameA(PCSTR Source, ULONG var, ULONG parameter)
+NTSTATUS 
+WINAPI 
+GetOSProductNameA(
+	PCSTR Source, 
+	ULONG var, 
+	ULONG parameter
+)
 {
 	Source = "Microsoft Windows Codename \"Longhorn\" Professional Version 2003 Copyright ";
-	return 0x00000000;
+	return STATUS_SUCCESS;
 }
 
 /*
  * @implemented - new
  */
-BOOL WINAPI GetProductInfo(
+BOOL 
+WINAPI 
+GetProductInfo(
   _In_   DWORD dwOSMajorVersion,
   _In_   DWORD dwOSMinorVersion,
   _In_   DWORD dwSpMajorVersion,
@@ -50,6 +64,9 @@ BOOL WINAPI GetProductInfo(
   _Out_  PDWORD pdwReturnedProductType
 )
 {
-	*pdwReturnedProductType = 0x00000001;
-	return TRUE;
+	return RtlGetProductInfo(dwOSMajorVersion, 
+							 dwOSMinorVersion,
+                             dwSpMajorVersion, 
+							 dwSpMinorVersion, 
+							 pdwReturnedProductType);
 }

@@ -1494,6 +1494,7 @@
 @ stdcall RtlInternString(long long) ; to review
 @ stdcall RtlReleaseSRWLockExclusive(ptr) 
 @ stdcall RtlReleaseSRWLockShared(ptr) 
+@ stdcall RtlRunOnceInitialize(ptr)
 @ stdcall RtlRunOnceBeginInitialize(ptr long ptr)
 @ stdcall RtlRunOnceComplete(ptr long ptr)
 @ stdcall RtlRunOnceExecuteOnce(ptr ptr ptr ptr)
@@ -1572,6 +1573,7 @@
 @ stdcall TpSetWaitEx(ptr ptr ptr ptr)
 @ stdcall TpSimpleTryPost(ptr ptr ptr)
 @ stdcall TpSetPoolMaxThreads(ptr long)
+@ stdcall TpSetPoolMinThreads(ptr long)
 @ stdcall TpDisassociateCallback(ptr)
 @ stdcall TpCallbackMayRunLong(ptr)
 @ stdcall TpCallbackUnloadDllOnCompletion(ptr ptr)
@@ -1621,6 +1623,7 @@
 @ stdcall RtlDeregisterSecureMemoryCacheCallback(ptr)
 @ stdcall RtlLocateLegacyContext(ptr long)
 @ stdcall RtlQueryThreadProfiling(ptr ptr)
+@ stdcall RtlQueryUnbiasedInterruptTime(ptr)
 @ stdcall RtlReadThreadProfilingData(ptr long ptr)
 @ stdcall TpSetPoolStackInformation(ptr ptr)
 @ stdcall TpQueryPoolStackInformation(ptr ptr)

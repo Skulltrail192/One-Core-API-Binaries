@@ -20,21 +20,6 @@
  */
 
 #include "main.h"
-// #include "wine/port.h"
-
-// #include <ASSERT.h>
-// #include <stdarg.h>
-// #include <limits.h>
-
-// #define NONAMELESSUNION
-// #include "ntstatus.h"
-// #define WIN32_NO_STATUS
-// #include "winternl.h"
-
-// #include "wine/debug.h"
-// #include "wine/list.h"
-
-//#include "ntdll_misc.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(vtdll);
 

@@ -424,7 +424,7 @@ WerpIsProtectedProcess(HANDLE ProcessHandle)
     return FALSE;
   ProcessInformation = (PVOID)32;
   status = NtQueryInformationProcess(ProcessHandle, 0, &ProcessInformation, 0x20u, 0);
-  if ( status < 0 )
+  if ( !NT_SUCCESS(status))
   {
     TRACE(0, "NtQueryInformationProcess failed with status: 0x%x", status);
     return FALSE;
@@ -694,8 +694,8 @@ WerpReportExceptionInProcessContext(
 {
   BOOL resp; // ecx@1
 
-  resp = 1;
+  resp = TRUE;
   if ( parameter == 0xC00000FD )
-    resp = 0;
+    resp = FALSE;
   return resp;
 }

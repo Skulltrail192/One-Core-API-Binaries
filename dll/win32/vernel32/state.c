@@ -306,7 +306,7 @@ BOOL WINAPI GetXStateFeaturesMask(PWOW64_CONTEXT Context, PDWORD64 FeatureMask)
     if ( !(contextFlags & 0x100000) )
     {
       RtlSetLastWin32ErrorAndNtStatusFromNtStatus(0xC00000BBu);
-      return 0;
+      return FALSE;
     }
     compare = Context->ContextFlags;
     if ( (compare & 0x100040) == 1048640 )
@@ -321,6 +321,6 @@ BOOL WINAPI GetXStateFeaturesMask(PWOW64_CONTEXT Context, PDWORD64 FeatureMask)
     longNumber = (PDWORD64)highPart;
   }
   FeatureMask = longNumber;
-  return 1;
+  return TRUE;
 }
 #endif  

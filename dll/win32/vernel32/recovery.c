@@ -21,7 +21,9 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
-HRESULT WINAPI WerpRecoveryInProgress(PBOOL pbCancelled)
+HRESULT 
+WINAPI 
+WerpRecoveryInProgress(PBOOL pbCancelled)
 {
   HRESULT result; // eax@2
   int v2 = 0; // eax@3
@@ -51,19 +53,19 @@ HRESULT WINAPI WerpRecoveryInProgress(PBOOL pbCancelled)
       }
       else
       {
-        result = 0x80004005u;
+        result = E_FAIL;
       }
     }
     else
     {
       TRACE(0, "WerpGetRecoveryInfoForSelf failed with 0x%x", v2);
-      result = 0x80004005u;
+      result = E_FAIL;
     }
   }
   else
   {
     TRACE(0, "WerpRecoveryInProgress Invalid params", v4);
-    result = 0x80070057u;
+    result = E_INVALIDARG;
   }
   return result;
 }

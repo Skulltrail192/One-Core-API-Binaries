@@ -18,6 +18,10 @@
  */
 
 #include <main.h>
+#include <Windows.h>
+#include <stdint.h> // portable: uint64_t   MSVC: __int64 
+
+timeout_t server_start_time = 0;  /* time of server startup */
 
 #define TICKSPERSEC        10000000
 #define TICKSPERMSEC       10000
@@ -51,29 +55,74 @@
     // return Year % 4 == 0 && (Year % 100 != 0 || Year % 400 == 0);
 // }
 
-// /* return a monotonic time counter, in Win32 ticks */
-// static ULONGLONG monotonic_counter(void)
-// {
-    // struct timeval now;
+struct timeval
+{
+    int tv_sec; /*seconds*/
+    int tv_usec; /*microseconds*/
+};
 
-// #ifdef HAVE_CLOCK_GETTIME
-    // struct timespec ts;
-// #ifdef CLOCK_MONOTONIC_RAW
-    // if (!clock_gettime( CLOCK_MONOTONIC_RAW, &ts ))
-        // return ts.tv_sec * (ULONGLONG)TICKSPERSEC + ts.tv_nsec / 100;
-// #endif
-    // if (!clock_gettime( CLOCK_MONOTONIC, &ts ))
-        // return ts.tv_sec * (ULONGLONG)TICKSPERSEC + ts.tv_nsec / 100;
-// #elif defined(__APPLE__)
-    // static mach_timebase_info_data_t timebase;
+/*********************************************************************
+ *      SystemTimeToFileTime                            (KERNEL32.@)
+ */
+BOOL WINAPI RtlSystemTimeToFileTime( const SYSTEMTIME *syst, LPFILETIME ft )
+{
+    TIME_FIELDS tf;
+    LARGE_INTEGER t;
 
-    // if (!timebase.denom) mach_timebase_info( &timebase );
-    // return mach_absolute_time() * timebase.numer / timebase.denom / 100;
-// #endif
+    tf.Year = syst->wYear;
+    tf.Month = syst->wMonth;
+    tf.Day = syst->wDay;
+    tf.Hour = syst->wHour;
+    tf.Minute = syst->wMinute;
+    tf.Second = syst->wSecond;
+    tf.Milliseconds = syst->wMilliseconds;
 
-    // gettimeofday( &now, 0 );
-    // return now.tv_sec * (ULONGLONG)TICKSPERSEC + now.tv_usec * 10 + TICKS_1601_TO_1970 - server_start_time;
-// }
+    if( !RtlTimeFieldsToTime(&tf, &t)) {
+        return FALSE;
+    }
+    ft->dwLowDateTime = t.u.LowPart;
+    ft->dwHighDateTime = t.u.HighPart;
+    return TRUE;
+}
+
+int gettimeofday(struct timeval * tp, struct timezone * tzp)
+{
+    // Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+    // This magic number is the number of 100 nanosecond intervals since January 1, 1601 (UTC)
+    // until 00:00:00 January 1, 1970 
+    static const uint64_t EPOCH = ((uint64_t) 116444736000000000ULL);
+
+    SYSTEMTIME  system_time;
+    FILETIME    file_time;
+    uint64_t    time;
+
+    NtQuerySystemTime( &system_time );
+    RtlSystemTimeToFileTime( &system_time, &file_time );
+    time =  ((uint64_t)file_time.dwLowDateTime )      ;
+    time += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+    tp->tv_sec  = (long) ((time - EPOCH) / 10000000L);
+    tp->tv_usec = (long) (system_time.wMilliseconds * 1000);
+    return 0;
+}
+
+/* return a monotonic time counter, in Win32 ticks */
+static ULONGLONG monotonic_counter(void)
+{
+    struct timeval now;
+
+#ifdef HAVE_CLOCK_GETTIME
+    struct timespec ts;
+#ifdef CLOCK_MONOTONIC_RAW
+    if (!clock_gettime( CLOCK_MONOTONIC_RAW, &ts ))
+        return ts.tv_sec * (ULONGLONG)TICKSPERSEC + ts.tv_nsec / 100;
+#endif
+    if (!clock_gettime( CLOCK_MONOTONIC, &ts ))
+        return ts.tv_sec * (ULONGLONG)TICKSPERSEC + ts.tv_nsec / 100;
+#endif
+    gettimeofday( &now, 0 );
+    return now.tv_sec * (ULONGLONG)TICKSPERSEC + now.tv_usec * 10 + TICKS_1601_TO_1970 - server_start_time;
+}
 
 DWORD
 NTAPI 
@@ -92,6 +141,6 @@ RtlQueryUnbiasedInterruptTime(
 	ULONGLONG *time
 )
 {
-    //*time = monotonic_counter();
+    *time = monotonic_counter();
     return STATUS_SUCCESS;
 }

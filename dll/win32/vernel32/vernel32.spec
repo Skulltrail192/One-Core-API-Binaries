@@ -1092,13 +1092,13 @@
 @ stdcall CheckTokenCapability(ptr ptr ptr)
 @ stdcall CheckTokenMembershipEx(ptr ptr long ptr)
 @ stdcall ClosePrivateNamespace(ptr long)
-@ stdcall CloseThreadpool(ptr) 
-@ stdcall CloseThreadpoolCleanupGroup(ptr) 
-@ stdcall CloseThreadpoolCleanupGroupMembers(ptr long ptr) 
-@ stdcall CloseThreadpoolIo(ptr) 
-@ stdcall CloseThreadpoolTimer(ptr) 
-@ stdcall CloseThreadpoolWait(ptr) 
-@ stdcall CloseThreadpoolWork(ptr) 
+@ stdcall CloseThreadpool(ptr) vtdll.TpReleasePool 
+@ stdcall CloseThreadpoolCleanupGroup(ptr) vtdll.TpReleaseCleanupGroup
+@ stdcall CloseThreadpoolCleanupGroupMembers(ptr long ptr) ntdll.TpReleaseCleanupGroupMembers
+@ stdcall CloseThreadpoolIo(ptr) ;review 
+@ stdcall CloseThreadpoolTimer(ptr) vtdll.TpReleaseTimer 
+@ stdcall CloseThreadpoolWait(ptr) vtdll.TpReleaseWait
+@ stdcall CloseThreadpoolWork(ptr) vtdll.TpReleaseWork
 @ stdcall CompareCalendarDates(ptr ptr long)
 @ stdcall CompareStringEx(wstr long wstr long wstr long ptr ptr long)
 @ stdcall CompareStringOrdinal(wstr long wstr long long)
@@ -1138,10 +1138,10 @@
 @ stdcall CreateSymbolicLinkW(wstr wstr long)
 @ stdcall CreateThreadpool(ptr)
 @ stdcall CreateThreadpoolCleanupGroup() 
-@ stdcall CreateThreadpoolIo(ptr) vtdll.TpReleaseIoCompletion
-@ stdcall CreateThreadpoolTimer(ptr ptr ptr) vtdll.TpReleaseTimer
-@ stdcall CreateThreadpoolWait(ptr ptr ptr)  vtdll.TpReleaseWait
-@ stdcall CreateThreadpoolWork(ptr ptr ptr) vtdll.TpReleaseWork
+@ stdcall CreateThreadpoolIo(ptr) ;review
+@ stdcall CreateThreadpoolTimer(ptr ptr ptr)
+@ stdcall CreateThreadpoolWait(ptr ptr ptr) 
+@ stdcall CreateThreadpoolWork(ptr ptr ptr)
 @ stdcall CreateWaitableTimerExA(ptr str ptr long)
 @ stdcall CreateWaitableTimerExW(ptr wstr ptr long)
 @ stdcall DeactivateActCtxWorker(long ptr) DeactivateActCtx
@@ -1297,7 +1297,7 @@
 @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
 @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
 @ stdcall IdnToNameprepUnicode(long wstr long ptr long) normaliz.IdnToNameprepUnicode
-@ stdcall InitializeConditionVariable(ptr) vtdll.RtlInitializeConditionVariable  ;error on K-Lite
+@ stdcall InitializeConditionVariable(ptr) ;vtdll.RtlInitializeConditionVariable  ;error on K-Lite
 @ stdcall InitializeContext(ptr long ptr ptr)
 @ stdcall InitializeCriticalSectionEx(ptr long long) 
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
@@ -1306,7 +1306,7 @@
 @ stdcall InitOnceBeginInitialize(ptr long ptr ptr) ;- need test
 @ stdcall InitOnceComplete(ptr long ptr) ;- need implement
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
-@ stdcall InitOnceInitialize(ptr)
+@ stdcall InitOnceInitialize(ptr) vtdll.RtlRunOnceInitialize
 @ stdcall InstallELAMCertificateInfo(ptr)
 @ stdcall InterlockedPushListSList(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
 @ stdcall InterlockedPushListSListEx(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
@@ -1448,7 +1448,7 @@
 @ stdcall SetThreadInformation(ptr long ptr long)
 @ stdcall SetThreadpoolStackInformation(ptr ptr) 
 @ stdcall SetThreadpoolThreadMaximum(ptr long) vtdll.TpSetPoolMaxThreads
-@ stdcall SetThreadpoolThreadMinimum(ptr long) 
+@ stdcall SetThreadpoolThreadMinimum(ptr long) vtdll.TpSetPoolMinThreads
 @ stdcall SetThreadpoolTimer(ptr ptr long long) vtdll.TpSetTimer
 @ stdcall SetThreadpoolTimerEx(ptr ptr long long) vtdll.TpSetTimerEx
 @ stdcall SetThreadpoolWait(ptr ptr ptr) vtdll.TpSetWait
@@ -1485,8 +1485,8 @@
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) vtdll.TpWaitForTimer
 @ stdcall WaitForThreadpoolWaitCallbacks(ptr long) vtdll.TpWaitForWait
 @ stdcall WaitForThreadpoolWorkCallbacks(ptr long) vtdll.TpWaitForWork
-@ stdcall WakeAllConditionVariable(ptr) vtdll.RtlWakeAllConditionVariable ;error on K-Lite
-@ stdcall WakeConditionVariable(ptr) vtdll.RtlWakeConditionVariable ;commented for now ;error on K-Lite
+@ stdcall WakeAllConditionVariable(ptr) ;vtdll.RtlWakeAllConditionVariable ;error on K-Lite
+@ stdcall WakeConditionVariable(ptr) ;vtdll.RtlWakeConditionVariable ;commented for now ;error on K-Lite
 @ stdcall WerGetFlags(ptr ptr)
 @ stdcall WerpCleanupMessageMapping()
 @ stdcall WerpGetDebugger(ptr long long long long)
@@ -1517,7 +1517,7 @@
 @ stdcall Wow64SuspendThread(ptr)
 @ stdcall ZombifyActCtxWorker(ptr) ZombifyActCtx
 
-; #Import from advapi32
+#Import from advapi32
 @ stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr) advapi32.AccessCheck
 @ stdcall AccessCheckAndAuditAlarmW(wstr ptr wstr wstr ptr long ptr long ptr ptr ptr) advapi32.AccessCheckAndAuditAlarmW
 @ stdcall AccessCheckByType(ptr ptr long long ptr long ptr ptr ptr ptr ptr) advapi32.AccessCheckByType

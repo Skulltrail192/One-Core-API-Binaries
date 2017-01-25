@@ -23,47 +23,6 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
-VOID WINAPI CloseThreadpool(
-  _Inout_  PTP_POOL ptpp
-)
-{
-    DbgPrint("Function: CloseThreadpool. Result from: TpAllocCleanupGroup. Status: %08x\n");  	
-	;	
-}
-
-VOID WINAPI CloseThreadpoolWait(
-  _Inout_  PTP_WAIT pwa
-)
-{
-    DbgPrint("Function: CloseThreadpoolWait. Result from: TpAllocCleanupGroup. Status: %08x\n");  		
-	;	
-}
-
-VOID WINAPI CloseThreadpoolTimer(
-  _Inout_  PTP_TIMER pti
-)
-{
-    DbgPrint("Function: CloseThreadpoolTimer. Result from: TpAllocCleanupGroup. Status: %08x\n");  		
-	;	
-}
-
-VOID WINAPI CloseThreadpoolWork(
-  _Inout_  PTP_WORK pwk
-)
-{
-    DbgPrint("Function: CloseThreadpoolWork. Result from: TpAllocCleanupGroup. Status: %08x\n");  	
-	;	
-}
-
-VOID WINAPI CloseThreadpoolCleanupGroup(
-  _Inout_  PTP_CLEANUP_GROUP ptpcg
-)
-{
-    DbgPrint("Function: CloseThreadpoolCleanupGroup. Result from: TpAllocCleanupGroup. Status: %08x\n");  		
-	;	
-}
-
-
 VOID WINAPI CloseThreadpoolIo(
   _Inout_  PTP_IO pio
 )
@@ -72,167 +31,162 @@ VOID WINAPI CloseThreadpoolIo(
 	;
 }
 
-VOID WINAPI CloseThreadpoolCleanupGroupMembers(
-  _Inout_      PTP_CLEANUP_GROUP ptpcg,
-  _In_         BOOL fCancelPendingCallbacks,
-  _Inout_opt_  PVOID pvCleanupContext
+PTP_IO 
+WINAPI 
+CreateThreadpoolIo(
+  _In_        HANDLE                fl,
+  _In_        PTP_WIN32_IO_CALLBACK pfnio,
+  _Inout_opt_ PVOID                 pv,
+  _In_opt_    PTP_CALLBACK_ENVIRON  pcbe
 )
 {
-    DbgPrint("Function: CloseThreadpoolIo. Result from: TpAllocCleanupGroup. Status: %08x\n");  	
-	;
+	return NULL;
 }
 
-PTP_CLEANUP_GROUP WINAPI CreateThreadpoolCleanupGroup()
+/***********************************************************************
+ *              CreateThreadpoolCleanupGroup (KERNEL32.@)
+ */
+PTP_CLEANUP_GROUP WINAPI 
+CreateThreadpoolCleanupGroup( void )
 {
-  NTSTATUS status; // eax@1
-  PTP_CLEANUP_GROUP result; // eax@2
-  PVOID group = NULL; // [sp+0h] [bp-4h]@1
+    TP_CLEANUP_GROUP *group;
+    NTSTATUS status;
 
-#ifdef _M_IX86
-	  group = RtlAllocateHeap(*(HANDLE *)(__readfsdword(48) + 24), 0, 56);//TpAllocCleanupGroup(group);
-#elif defined(_M_AMD64)
-      group = RtlAllocateHeap(*(HANDLE *)(__readgsqword(48) + 24), 0, 56);//TpAllocCleanupGroup(group);
-#endif
-  if ( !group)
-  {
-	status = STATUS_NOT_IMPLEMENTED;
-	DbgPrint("Function: CreateThreadpoolCleanupGroup. Result from: TpAllocCleanupGroup. Status: %08x\n");  
-    RtlSetLastWin32ErrorAndNtStatusFromNtStatus(status);
-    result = 0;
-  }
-  else
-  {
-    result = (PTP_CLEANUP_GROUP)group;
-  }
-  return result;
+    TRACE( "\n" );
+
+    status = TpAllocCleanupGroup( &group );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return NULL;
+    }
+
+    return group;
 }
 
-PVOID WINAPI CreateThreadpool(PVOID reserved)
-{
-  NTSTATUS status; // eax@1
-  PVOID result; // eax@2
-
-  status = TpAllocPool(&reserved, reserved);
-  DbgPrint("Function: CreateThreadpool. Result from: TpAllocPool. Status: %08x\n", status);  
-  if ( status < 0 )
-  {
-    RtlSetLastWin32ErrorAndNtStatusFromNtStatus(status);
-    result = 0;
-  }
-  else
-  {
-    result = reserved;
-  }
-  return result;
-}
-
-PTP_TIMER WINAPI CreateThreadpoolTimer(PTP_TIMER_CALLBACK PTP_TIMER_CALLBACK, PVOID pv, PTP_CALLBACK_ENVIRON pcbe)
-{
-  NTSTATUS status; // eax@1
-  PTP_TIMER result; // eax@2
-
-  status = STATUS_SUCCESS;//TpAllocTimer((PTP_TIMER *)pcbe, PTP_TIMER_CALLBACK, pv, pcbe);
-  DbgPrint("Function: CreateThreadpoolTimer. Result from: TpAllocTimer. Status: %08x\n", status);  
-  if ( status < 0 )
-  {
-    RtlSetLastWin32ErrorAndNtStatusFromNtStatus(status);
-    result = 0;
-  }
-  else
-  {
-    result = (PTP_TIMER)pcbe;
-  }
-  return result;
-}
-
-PTP_WAIT WINAPI CreateThreadpoolWait(PTP_WAIT_CALLBACK pfnwa, PVOID pv, PTP_CALLBACK_ENVIRON pcbe)
-{
-  NTSTATUS status; // eax@1
-  PTP_WAIT result; // eax@2
-
-  status = STATUS_SUCCESS;//TpAllocWait((PTP_WAIT *)pcbe, pfnwa, pv, pcbe);
-  DbgPrint("Function: CreateThreadpoolWait. Result from: TpAllocWait. Status: %08x\n", status);  
-  if ( status < 0 )
-  {
-    RtlSetLastWin32ErrorAndNtStatusFromNtStatus(status);
-    result = 0;
-  }
-  else
-  {
-    result = (PTP_WAIT)pcbe;
-  }
-  return result;
-}
-
-PTP_WORK WINAPI CreateThreadpoolWork(PTP_WORK_CALLBACK pfnwk, PVOID pv, PTP_CALLBACK_ENVIRON pcbe)
-{
-  NTSTATUS status; // eax@1
-  PTP_WORK result; // eax@2
-
-  status  = STATUS_SUCCESS;//TpAllocWork((PTP_WORK *)pcbe, pfnwk, pv, pcbe);
-  DbgPrint("Function: CreateThreadpoolWork. Result from: TpAllocWork. Status: %08x\n", status);    
-  if ( status < 0 )
-  {
-    RtlSetLastWin32ErrorAndNtStatusFromNtStatus(status);
-    result = 0;
-  }
-  else
-  {
-    result = (PTP_WORK)pcbe;
-  }
-  return result;
-}
-
-VOID WINAPI LeaveCriticalSectionWhenCallbackReturns(
-  _Inout_  PTP_CALLBACK_INSTANCE pci,
-  _Inout_  PCRITICAL_SECTION pcs
+/***********************************************************************
+ *              CreateThreadpool (KERNEL32.@)
+ */
+PTP_POOL 
+WINAPI 
+CreateThreadpool( 
+	PVOID reserved 
 )
 {
-	;	
+    TP_POOL *pool;
+    NTSTATUS status;
+
+    TRACE( "%p\n", reserved );
+
+    status = TpAllocPool( &pool, reserved );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return NULL;
+    }
+
+    return pool;
 }
 
-BOOL WINAPI SetThreadpoolThreadMinimum(PTP_POOL ptpp, DWORD cthrdMic)
-{
-  NTSTATUS status; // eax@1
-  BOOL result; // eax@2
-
-  status = STATUS_SUCCESS;//TpSetPoolMinThreads(ptpp, cthrdMic);
-  DbgPrint("Function: SetThreadpoolThreadMinimum. Result from: TpSetPoolMinThreads. Status: %08x\n", status);  
-  if ( status < 0 )
-  {
-    RtlSetLastWin32ErrorAndNtStatusFromNtStatus(status);
-    result = 0;
-  }
-  else
-  {
-    result = 1;
-  }
-  return result;
-}
-
-BOOL WINAPI TrySubmitThreadpoolCallback(PTP_SIMPLE_CALLBACK a1, PVOID a2, PTP_CALLBACK_ENVIRON a3)
-{
-  NTSTATUS status; // eax@1
-  BOOL result; // eax@2
-
-  status = STATUS_SUCCESS;//TpSimpleTryPost(a1, a2, a3);
-  DbgPrint("Function: TrySubmitThreadpoolCallback. Result from: TpSimpleTryPost. Status: %08x\n", status);
-  if ( status < 0 )
-  {
-    RtlSetLastWin32ErrorAndNtStatusFromNtStatus(status);
-    result = FALSE;
-  }
-  else
-  {
-    result = TRUE;
-  }
-  return result;
-}
-
-VOID WINAPI WaitForThreadpoolWaitCallbacks(
-  _Inout_  PTP_WAIT pwa,
-  _In_     BOOL fCancelPendingCallbacks
+/***********************************************************************
+ *              CreateThreadpoolTimer (KERNEL32.@)
+ */
+PTP_TIMER 
+WINAPI 
+CreateThreadpoolTimer( 
+	PTP_TIMER_CALLBACK callback, 
+	PVOID userdata,
+	TP_CALLBACK_ENVIRON *environment
 )
 {
-	;	
+    TP_TIMER *timer;
+    NTSTATUS status;
+
+    TRACE( "%p, %p, %p\n", callback, userdata, environment );
+
+    status = TpAllocTimer( &timer, callback, userdata, environment );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return NULL;
+    }
+
+    return timer;
+}
+
+/***********************************************************************
+ *              CreateThreadpoolWait (KERNEL32.@)
+ */
+PTP_WAIT 
+WINAPI 
+CreateThreadpoolWait( 
+	PTP_WAIT_CALLBACK callback, 
+	PVOID userdata,
+	TP_CALLBACK_ENVIRON *environment 
+)
+{
+    TP_WAIT *wait;
+    NTSTATUS status;
+
+    TRACE( "%p, %p, %p\n", callback, userdata, environment );
+
+    status = TpAllocWait( &wait, callback, userdata, environment );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return NULL;
+    }
+
+    return wait;
+}
+
+/***********************************************************************
+ *              CreateThreadpoolWork (KERNEL32.@)
+ */
+PTP_WORK 
+WINAPI 
+CreateThreadpoolWork( 
+	PTP_WORK_CALLBACK callback, 
+	PVOID userdata,
+	TP_CALLBACK_ENVIRON *environment 
+)
+{
+    TP_WORK *work;
+    NTSTATUS status;
+
+    TRACE( "%p, %p, %p\n", callback, userdata, environment );
+
+    status = TpAllocWork( &work, callback, userdata, environment );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return NULL;
+    }
+
+    return work;
+}
+
+/***********************************************************************
+ *              TrySubmitThreadpoolCallback (KERNEL32.@)
+ */
+BOOL 
+WINAPI 
+TrySubmitThreadpoolCallback( 
+	PTP_SIMPLE_CALLBACK callback, 
+	PVOID userdata,
+    TP_CALLBACK_ENVIRON *environment 
+)
+{
+    NTSTATUS status;
+
+    TRACE( "%p, %p, %p\n", callback, userdata, environment );
+
+    status = TpSimpleTryPost( callback, userdata, environment );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return FALSE;
+    }
+
+    return TRUE;
 }

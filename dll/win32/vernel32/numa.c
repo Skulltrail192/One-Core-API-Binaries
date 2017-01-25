@@ -23,34 +23,88 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
-BOOL WINAPI GetNumaAvailableMemoryNodeEx(USHORT Node, PULONGLONG AvailableBytes)
-{
-  NTSTATUS status; // eax@1
-  PULONGLONG Avaliable; // edx@6
-  ULONG SystemInformation; // [sp+0h] [bp-10Ch]@1
-  int hum; // [sp+8h] [bp-104h]@6
-  int position[63]; // [sp+Ch] [bp-100h]@6
-  ULONG ReturnLength; // [sp+108h] [bp-4h]@1
+BOOL
+WINAPI
+GetNumaAvailableMemoryNode(
+    UCHAR Node,
+    PULONGLONG AvailableBytes
+    )
 
-  status = NtQuerySystemInformation(SystemAddVerifier|SystemProcessorTimes, &SystemInformation, 0x108u, &ReturnLength);
-  if ( status < 0 )
-  {
-    BaseSetLastNTError(status);
-    return 0;
-  }
-  if ( Node > SystemInformation )
-  {
-    SetLastError(87);
-    return 0;
-  }
-  Avaliable = (PULONGLONG)*(&hum + 2 * Node);
-  *((DWORD *)AvailableBytes + 1) = position[2 * Node];
-  AvailableBytes = Avaliable;
-  return 1;
+
+/*++
+
+Routine Description:
+
+    This routine returns the (aproximate) amount of memory available
+    on a given node.
+
+Arguments:
+
+    Node        Node number for which available memory count is
+                needed.
+    AvailableBytes  Supplies a pointer to a ULONGLONG in which the
+                    number of bytes of available memory will be 
+                    returned.
+
+Return Value:
+
+    TRUE is this call was successful, FALSE otherwise.
+
+--*/
+
+{
+    NTSTATUS Status;
+    ULONG ReturnedSize;
+    SYSTEM_NUMA_INFORMATION Memory;
+
+    //
+    // Get the per node available memory table from the system.
+    //
+
+    Status = NtQuerySystemInformation(SystemNumaAvailableMemory,
+                                      &Memory,
+                                      sizeof(Memory),
+                                      &ReturnedSize);
+    if (!NT_SUCCESS(Status)) {
+        BaseSetLastNTError(Status);
+        return FALSE;
+    }
+
+    //
+    // If the requested node doesn't exist, it doesn't have any
+    // available memory either.
+    //
+
+    if (Node > Memory.HighestNodeNumber) {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    //
+    // Return the amount of available memory on the requested node.
+    //
+
+    *AvailableBytes = Memory.AvailableMemory[Node];
+    return TRUE;
+}
+
+BOOL 
+WINAPI 
+GetNumaAvailableMemoryNodeEx(
+	USHORT Node, 
+	PULONGLONG AvailableBytes
+)
+{
+	return GetNumaAvailableMemoryNode(Node, AvailableBytes);
 }
 
 
-BOOL WINAPI GetNumaProximityNode(ULONG ProximityId, PUCHAR NodeNumber)
+BOOL 
+WINAPI 
+GetNumaProximityNode(
+	ULONG ProximityId, 
+	PUCHAR NodeNumber
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -59,27 +113,31 @@ BOOL WINAPI GetNumaProximityNode(ULONG ProximityId, PUCHAR NodeNumber)
 
   SystemInformation = ProximityId;
   status = NtQuerySystemInformation(SystemRegistryQuotaInformation|0x40, &SystemInformation, 8u, &ProximityId);
-  if ( status >= 0 )
+  if ( NT_SUCCESS(status))
   {
     *NodeNumber = number;
-    result = 1;
+    result = TRUE;
   }
   else
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   return result;
 }
 
 
-LPVOID WINAPI MapViewOfFileExNuma(HANDLE SectionHandle, 
-								  DWORD dwDesiredAccess, 
-								  DWORD dwFileOffsetHigh,
-								  DWORD dwFileOffsetLow, 
-								  SIZE_T dwNumberOfBytesToMap, 
-								  LPVOID lpBaseAddress, 
-								  DWORD nndPreferred)
+LPVOID 
+WINAPI 
+MapViewOfFileExNuma(
+	HANDLE SectionHandle, 
+	DWORD dwDesiredAccess, 
+	DWORD dwFileOffsetHigh,
+	DWORD dwFileOffsetLow, 
+	SIZE_T dwNumberOfBytesToMap, 
+	LPVOID lpBaseAddress, 
+	DWORD nndPreferred
+)
 {
   DWORD localBaseAddress; // ecx@1
   ULONG other; // eax@6
@@ -146,7 +204,12 @@ LPVOID WINAPI MapViewOfFileExNuma(HANDLE SectionHandle,
   return (LPVOID)nndPreferred;
 }
 
-BOOL WINAPI GetNumaNodeNumberFromHandle(HANDLE FileInformation, PUSHORT NodeNumber)
+BOOL 
+WINAPI 
+GetNumaNodeNumberFromHandle(
+	HANDLE FileInformation, 
+	PUSHORT NodeNumber
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -158,51 +221,130 @@ BOOL WINAPI GetNumaNodeNumberFromHandle(HANDLE FileInformation, PUSHORT NodeNumb
              &FileInformation,
              2u,
              FileInformationReserved33|FileEndOfFileInformation);
-  if ( status >= 0 )
+  if ( NT_SUCCESS(status) )
   {
     *NodeNumber = (unsigned __int16)FileInformation;
-    result = 1;
+    result = TRUE;
   }
   else
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   return result;
 }
 
-BOOL WINAPI GetNumaNodeProcessorMaskEx(USHORT Node, PGROUP_AFFINITY ProcessorMask)
-{
-  NTSTATUS status; // eax@1
-  KAFFINITY *affinity; // esi@6
-  unsigned int SystemInformation; // [sp+0h] [bp-10Ch]@1
-  char nodes[256]; // [sp+8h] [bp-104h]@6
-  ULONG ReturnLength; // [sp+108h] [bp-4h]@1
+BOOL
+WINAPI
+GetNumaNodeProcessorMask(
+    UCHAR Node,
+    PULONGLONG ProcessorMask
+    )
 
-  status = NtQuerySystemInformation(
-             SystemSessionProcessesInformation|SystemPerformanceInformation,
-             &SystemInformation,
-             0x108u,
-             &ReturnLength);
-  if ( status < 0 )
-  {
-    BaseSetLastNTError(status);
-    return 0;
-  }
-  if ( Node > SystemInformation )
-  {
-    SetLastError(87);
-    return 0;
-  }
-  affinity = (KAFFINITY *)&nodes[12 * Node];
-  ProcessorMask->Mask = *affinity;
-  ++affinity;
-  ProcessorMask->Group = (WORD)affinity;
-  ProcessorMask->Reserved[1] = (WORD)affinity[1];
-  return 1;
+/*++
+
+Routine Description:
+
+    This routine is used to obtain the bitmask of processors for a
+    given node.
+
+Arguments:
+
+    Node            Supplies the Node number for which the set of
+                    processors is returned.
+    ProcessorMask Pointer to a ULONGLONG to receivethe bitmask of 
+                    processors on this node.
+
+Return Value:
+
+    TRUE is the Node number was reasonable, FALSE otherwise.
+
+--*/
+
+{
+    NTSTATUS Status;
+    ULONG ReturnedSize;
+    SYSTEM_NUMA_INFORMATION Map;
+
+    //
+    // Get the node -> processor mask table from the system.
+    //
+
+    Status = NtQuerySystemInformation(SystemNumaProcessorMap,
+                                      &Map,
+                                      sizeof(Map),
+                                      &ReturnedSize);
+    if (!NT_SUCCESS(Status)) {
+
+        //
+        // This can't possibly have happened.
+        //
+
+        BaseSetLastNTError(Status);
+        return FALSE;
+    }
+
+    //
+    // If the requested node doesn't exist, return a zero processor
+    // mask.
+    //
+
+    if (Node > Map.HighestNodeNumber) {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    //
+    // Return the processor mask for the requested node.
+    //
+
+    *ProcessorMask = Map.ActiveProcessorsAffinityMask[Node];
+    return TRUE;
 }
 
-BOOL WINAPI GetNumaProcessorNodeEx(PPROCESSOR_NUMBER Processor, PUSHORT NodeNumber)
+BOOL 
+WINAPI 
+GetNumaNodeProcessorMaskEx(
+	USHORT Node, 
+	PGROUP_AFFINITY ProcessorMask
+)
+{
+	return GetNumaNodeProcessorMask(Node, ProcessorMask);
+  // NTSTATUS status; // eax@1
+  // KAFFINITY *affinity; // esi@6
+  // unsigned int SystemInformation; // [sp+0h] [bp-10Ch]@1
+  // char nodes[256]; // [sp+8h] [bp-104h]@6
+  // ULONG ReturnLength; // [sp+108h] [bp-4h]@1
+
+  // status = NtQuerySystemInformation(
+             // SystemSessionProcessesInformation|SystemPerformanceInformation,
+             // &SystemInformation,
+             // 0x108u,
+             // &ReturnLength);
+  // if ( !NT_SUCCESS(status) )
+  // {
+    // BaseSetLastNTError(status);
+    // return FALSE;
+  // }
+  // if ( Node > SystemInformation )
+  // {
+    // SetLastError(87);
+    // return FALSE;
+  // }
+  // affinity = (KAFFINITY *)&nodes[12 * Node];
+  // ProcessorMask->Mask = *affinity;
+  // ++affinity;
+  // ProcessorMask->Group = (WORD)affinity;
+  // ProcessorMask->Reserved[1] = (WORD)affinity[1];
+  // return TRUE;
+}
+
+BOOL 
+WINAPI 
+GetNumaProcessorNodeEx(
+	PPROCESSOR_NUMBER Processor, 
+	PUSHORT NodeNumber
+)
 {
   PPROCESSOR_NUMBER number; // esi@1
   int count; // ebx@3
@@ -227,15 +369,15 @@ LABEL_10:
              &SystemInformation,
              0x108u,
              (PULONG)&Processor);
-  if ( status < 0 )
+  if ( NT_SUCCESS(status))
   {
     *NodeNumber = -1;
     BaseSetLastNTError(status);
-    return 0;
+    return FALSE;
   }
   byteLocal = 1i64 << number->Number;
   otherCount = 0;
-  while ( 1 )
+  while ( TRUE )
   {
     position = 6 * otherCount;
     if ( group[position] == number->Group )
@@ -249,10 +391,15 @@ LABEL_10:
       goto LABEL_10;
   }
   *NodeNumber = count;
-  return 1;
+  return TRUE;
 }
 
-BOOL WINAPI GetNumaProximityNodeEx(ULONG ReturnLength, PUSHORT NodeNumber)
+BOOL 
+WINAPI 
+GetNumaProximityNodeEx(
+	ULONG ReturnLength, 
+	PUSHORT NodeNumber
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -274,30 +421,129 @@ BOOL WINAPI GetNumaProximityNodeEx(ULONG ReturnLength, PUSHORT NodeNumber)
   return result;
 }
 
-BOOL WINAPI GetNumaAvailableMemory(PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength)
-{
-  char *receive; // edi@1
-  ULONG count; // ecx@1
-  NTSTATUS status; // eax@4
-  BOOL result; // eax@5
+BOOL
+WINAPI
+GetNumaAvailableMemory(
+    PSYSTEM_NUMA_INFORMATION Memory,
+    ULONG Length,
+    PULONG ReturnedLength
+    )
 
-  memset(SystemInformation, 0, 4 * (SystemInformationLength >> 2));
-  receive = (char *)SystemInformation + 4 * (SystemInformationLength >> 2);
-  for ( count = SystemInformationLength & 3; count; --count )
-    *receive++ = 0;
-  status = NtQuerySystemInformation(
-             SystemAddVerifier|SystemProcessorTimes,
-             SystemInformation,
-             SystemInformationLength,
-             ReturnLength);
-  if ( status >= 0 )
+/*++
+
+Routine Description:
+
+    Query the system for the NUMA processor map.
+
+Arguments:
+
+    Memory          Supplies a pointer to a stucture into which the
+                    per node available memory data is copied.
+    Length          Size of data (ie max size to copy).
+    ReturnedLength  Nomber of bytes returned in Memory.
+
+Return Value:
+
+    Returns the length of the data returned.
+
+--*/
+
+{
+    NTSTATUS Status;
+    ULONG ReturnedSize;
+
+    RtlZeroMemory(Memory, Length);
+
+    //
+    // Fill in the user's buffer with the per node available
+    // memory table.
+    //
+
+    Status = NtQuerySystemInformation(SystemNumaAvailableMemory,
+                                      Memory,
+                                      Length,
+                                      ReturnedLength);
+    if (!NT_SUCCESS(Status)) {
+        BaseSetLastNTError(Status);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+BOOL 
+WINAPI 
+AllocateUserPhysicalPagesNuma(
+	HANDLE ProcessHandle, 
+	PULONG NumberOfPages, 
+	PULONG PageFrameNumbers, 
+	int Node
+)
+{
+  DWORD_PTR number; // esi@1
+  BOOL result; // eax@3
+  DWORD_PTR compare; // ST0C_4@4
+  HANDLE otherHandle; // eax@4
+  NTSTATUS status; // edi@5
+  HANDLE localHandle; // eax@6
+  ULONGLONG dwThreadAffinityMask; // [sp+4h] [bp-8h]@2
+
+  number = 0;
+  if ( Node == -1
+    || GetNumaNodeProcessorMask(Node, &dwThreadAffinityMask)
+    && (compare = (DWORD_PTR)dwThreadAffinityMask,
+        otherHandle = GetCurrentThread(),
+        (number = SetThreadAffinityMask(otherHandle, compare)) != 0) )
   {
-    result = TRUE;
+    status = NtAllocateUserPhysicalPages(ProcessHandle, NumberOfPages, PageFrameNumbers);
+    if ( number )
+    {
+      localHandle = GetCurrentThread();
+      SetThreadAffinityMask(localHandle, number);
+    }
+    if ( status < 0 )
+    {
+      BaseSetLastNTError(status);
+      result = FALSE;
+    }
+    else
+    {
+      result = TRUE;
+    }
   }
   else
   {
-    BaseSetLastNTError(status);
     result = FALSE;
   }
   return result;
+}
+
+LPVOID 
+WINAPI 
+VirtualAllocExNuma(
+	HANDLE ProcessHandle, 
+	LPVOID BaseAddress, 
+	SIZE_T AllocationSize, 
+	DWORD AllocationType, 
+	DWORD Protect, 
+	DWORD nndPreferred
+)
+{
+  NTSTATUS status; // eax@8
+
+  if ( BaseAddress && BaseAddress < (LPVOID)BaseStaticServerData || nndPreferred != -1 && nndPreferred >= 0x10 )
+  {
+    SetLastError(0x57u);
+  }
+  else
+  {
+    AllocationType &= 0xFFFFFFF0u;
+    if ( nndPreferred != -1 )
+      AllocationType |= nndPreferred + 1;
+    status = NtAllocateVirtualMemory(ProcessHandle, &BaseAddress, 0, &AllocationSize, AllocationType, Protect);
+    if ( status >= 0 )
+      return BaseAddress;
+    BaseSetLastNTError(status);
+  }
+  return NULL;
 }

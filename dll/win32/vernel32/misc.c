@@ -52,7 +52,7 @@ HANDLE
 CreateSocketHandle(void)
 {
     SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-    return NULL;
+    return INVALID_HANDLE_VALUE;
 }
 
 UINT 

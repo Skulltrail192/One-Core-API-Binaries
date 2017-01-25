@@ -22,7 +22,12 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
-BOOL WINAPI PowerSetRequest(HANDLE PowerRequest, POWER_REQUEST_TYPE RequestType)
+BOOL 
+WINAPI 
+PowerSetRequest(
+	HANDLE PowerRequest, 
+	POWER_REQUEST_TYPE RequestType
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -32,19 +37,24 @@ BOOL WINAPI PowerSetRequest(HANDLE PowerRequest, POWER_REQUEST_TYPE RequestType)
   InputBuffer = PowerRequest;
   LocalRequestType = RequestType;
   status = NtPowerInformation(PowerRequestAction, &InputBuffer, 0xCu, 0, 0);
-  if ( status < 0 )
+  if ( !NT_SUCCESS(status) )
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   else
   {
-    result = 1;
+    result = TRUE;
   }
   return result;
 }
 
-BOOL WINAPI PowerClearRequest(HANDLE PowerRequest, POWER_REQUEST_TYPE RequestType)
+BOOL 
+WINAPI 
+PowerClearRequest(
+	HANDLE PowerRequest, 
+	POWER_REQUEST_TYPE RequestType
+)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -54,19 +64,23 @@ BOOL WINAPI PowerClearRequest(HANDLE PowerRequest, POWER_REQUEST_TYPE RequestTyp
   InputBuffer = PowerRequest;
   LocalRequestType = RequestType;
   status = NtPowerInformation(PowerRequestAction, &InputBuffer, 0xCu, 0, 0);
-  if ( status < 0 )
+  if ( !NT_SUCCESS(status) )
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   else
   {
-    result = 1;
+    result = TRUE;
   }
   return result;
 }
 
-HANDLE WINAPI PowerCreateRequest(REASON_CONTEXT *context)
+HANDLE 
+WINAPI 
+PowerCreateRequest(
+	REASON_CONTEXT *context
+)
 {
   NTSTATUS status; // eax@1
   PVOID address; // ST10_4@4
@@ -77,7 +91,7 @@ HANDLE WINAPI PowerCreateRequest(REASON_CONTEXT *context)
   adderess = 0;
   OutputBuffer = (HANDLE)-1;
   status = BasePrepareReasonContext(context, &adderess);
-  if ( status < 0 || (status = NtPowerInformation(PowerRequestCreate, adderess, 0x1Cu, &OutputBuffer, 4u), status < 0) )
+  if (  !NT_SUCCESS(status) || (status = NtPowerInformation(PowerRequestCreate, adderess, 0x1Cu, &OutputBuffer, 4u), status < 0) )
     BaseSetLastNTError(status);
   if ( adderess )
   {
