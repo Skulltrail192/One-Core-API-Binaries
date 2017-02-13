@@ -146,125 +146,68 @@ GetFileBandwidthReservation(
 /*
  * @implemented
  */
-BOOL 
-WINAPI 
-GetFileInformationByHandleEx(
-	HANDLE FileHandle, 
-	FILE_INFO_BY_HANDLE_CLASS FileInformationClass, 
-	PVOID FileInformation, 
-	DWORD FileInformationLength
-)
+/***********************************************************************
+*             GetFileInformationByHandleEx (KERNEL32.@)
+*/
+BOOL WINAPI GetFileInformationByHandleEx( HANDLE handle, FILE_INFO_BY_HANDLE_CLASS class,
+                                          LPVOID info, DWORD size )
 {
-  // DWORD lenght; // ecx@1
-  // BOOL verification; // edx@1
-  // FILE_INFORMATION_CLASS file; // eax@4
-  // NTSTATUS status; // eax@8
-  // DWORD sei; // [sp-4h] [bp-14h]@4
-  // DWORD la; // [sp-4h] [bp-14h]@19
-  // DWORD error; // [sp-4h] [bp-14h]@23
-  // NTSTATUS receiveStatus; // [sp-4h] [bp-14h]@32
-  // struct _IO_STATUS_BLOCK IoStatusBlock; // [sp+8h] [bp-8h]@1
+    NTSTATUS status;
+    IO_STATUS_BLOCK io;
 
-  // lenght = 8;
-  // verification = 0;
-  // IoStatusBlock.Information = 0;
-  // if ( (signed int)FileInformationClass <= 8 )
-  // {
-    // if ( FileInformationClass == 8 )
-    // {
-      // file = 28;
-      // sei = 16;
-      // goto LABEL_5;
-    // }
-    // if ( !FileInformationClass )
-    // {
-      // file = 4;
-      // sei = 40;
-// LABEL_5:
-      // lenght = sei;
-      // goto LABEL_6;
-    // }
-    // if ( FileInformationClass == 1 )
-    // {
-      // file = 5;
-      // sei = 24;
-      // goto LABEL_5;
-    // }
-    // if ( FileInformationClass != 2 )
-    // {
-      // if ( FileInformationClass == 7 )
-      // {
-        // file = 22;
-        // sei = 32;
-        // goto LABEL_5;
-      // }
-// LABEL_23:
-      // error = 87;
-// LABEL_24:
-      // SetLastError(error);
-      // return 0;
-    // }
-    // la = 9;
-    // goto LABEL_29;
-  // }
-  // if ( FileInformationClass == 9 )
-  // {
-    // la = 35;
-// LABEL_29:
-    // file = la;
-    // goto LABEL_6;
-  // }
-  // if ( FileInformationClass == 10 )
-  // {
-    // file = 37;
-    // lenght = 112;
-    // verification = 1;
-    // IoStatusBlock.Information = 0;
-  // }
-  // else
-  // {
-    // if ( FileInformationClass != 11 )
-      // goto LABEL_23;
-    // file = 37;
-    // verification = 1;
-    // lenght = 112;
-    // IoStatusBlock.Information = 1;
-  // }
-// LABEL_6:
-  // if ( lenght > FileInformationLength )
-  // {
-    // error = 24;
-    // goto LABEL_24;
-  // }
-  // if ( verification )
-    // status = NtQueryDirectoryFile(
-               // FileHandle,
-               // NULL,
-               // NULL,
-               // NULL,
-               // &IoStatusBlock,
-               // FileInformation,
-               // FileInformationLength,
-               // file,
-               // 0,
-               // NULL,
-               // LOBYTE(IoStatusBlock.Information));
-  // else
-    // status = NtQueryInformationFile(FileHandle, &IoStatusBlock, FileInformation, FileInformationLength, file);
-  // if ( status < 0 )
-  // {
-    // receiveStatus = status;
-  // }
-  // else
-  // {
-    // if ( FileInformationClass != 7 || IoStatusBlock.Information )
-      // return 1;
-    // receiveStatus = 0xC0000011u;
-  // }
- // SetLastError(receiveStatus);
-  // return 0;
+    switch (class)
+    {
+    case FileStreamInfo:
+    case FileCompressionInfo:
+    case FileAttributeTagInfo:
+    case FileRemoteProtocolInfo:
+    case FileFullDirectoryInfo:
+    case FileFullDirectoryRestartInfo:
+    case FileStorageInfo:
+    case FileAlignmentInfo:
+    case FileIdInfo:
+    case FileIdExtdDirectoryInfo:
+    case FileIdExtdDirectoryRestartInfo:
+        FIXME( "%p, %u, %p, %u\n", handle, class, info, size );
+        SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+        return FALSE;
+
+    case FileBasicInfo:
+        status = NtQueryInformationFile( handle, &io, info, size, FileBasicInformation );
+        break;
+
+    case FileStandardInfo:
+        status = NtQueryInformationFile( handle, &io, info, size, FileStandardInformation );
+        break;
+
+    case FileNameInfo:
+        status = NtQueryInformationFile( handle, &io, info, size, FileNameInformation );
+        break;
+
+    case FileIdBothDirectoryRestartInfo:
+    case FileIdBothDirectoryInfo:
+        status = NtQueryDirectoryFile( handle, NULL, NULL, NULL, &io, info, size,
+                                       FileIdBothDirectoryInformation, FALSE, NULL,
+                                       (class == FileIdBothDirectoryRestartInfo) );
+        break;
+
+    case FileRenameInfo:
+    case FileDispositionInfo:
+    case FileAllocationInfo:
+    case FileIoPriorityHintInfo:
+    case FileEndOfFileInfo:
+    default:
+        SetLastError( ERROR_INVALID_PARAMETER );
+        return FALSE;
+    }
+
+    if (status != STATUS_SUCCESS)
+    {
+        SetLastError( RtlNtStatusToDosError( status ) );
+        return FALSE;
+    }
+    return TRUE;
 }
-
 /*
  * @implemented - new (CHANGE URGENCY!!!)
  */
@@ -564,79 +507,57 @@ DWORD WINAPI GetFinalPathNameByHandleA(HANDLE file, LPSTR path, DWORD charcount,
     return len - 1;
 }
 
-/*
- * @implemented
+/***********************************************************************
+ *           SetFileInformationByHandle   (KERNEL32.@)
  */
-BOOL 
-WINAPI 
-SetFileInformationByHandle(
-	HANDLE FileHandle, 
-	FILE_INFO_BY_HANDLE_CLASS FileInformationClass, 
-	PVOID FileInformation, 
-	DWORD FileInformationLength
-)
+BOOL WINAPI SetFileInformationByHandle( HANDLE file, FILE_INFO_BY_HANDLE_CLASS class, VOID *info, DWORD size )
 {
-  FILE_INFORMATION_CLASS file; // eax@10
-  DWORD receive; // ecx@12
-  NTSTATUS status; // eax@18
-  DWORD error; // [sp-4h] [bp-Ch]@6
-  DWORD other; // [sp-4h] [bp-Ch]@9
-  DWORD compose; // [sp-4h] [bp-Ch]@10
-  struct _IO_STATUS_BLOCK IoStatusBlock; // [sp+0h] [bp-8h]@18
+    NTSTATUS status;
+    IO_STATUS_BLOCK io;
 
-  if ( FileInformationClass )
-  {
-    if ( FileInformationClass == 3 )
+    TRACE( "%p %u %p %u\n", file, class, info, size );
+
+    switch (class)
     {
-      file = 10;
-      compose = 16;
+    case FileBasicInfo:
+    case FileNameInfo:
+    case FileRenameInfo:
+    case FileAllocationInfo:
+    case FileEndOfFileInfo:
+    case FileStreamInfo:
+    case FileIdBothDirectoryInfo:
+    case FileIdBothDirectoryRestartInfo:
+    case FileIoPriorityHintInfo:
+    case FileFullDirectoryInfo:
+    case FileFullDirectoryRestartInfo:
+    case FileStorageInfo:
+    case FileAlignmentInfo:
+    case FileIdInfo:
+    case FileIdExtdDirectoryInfo:
+    case FileIdExtdDirectoryRestartInfo:
+        FIXME( "%p, %u, %p, %u\n", file, class, info, size );
+        SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+        return FALSE;
+
+    case FileDispositionInfo:
+        status = NtSetInformationFile( file, &io, info, size, FileDispositionInformation );
+        break;
+
+    case FileStandardInfo:
+    case FileCompressionInfo:
+    case FileAttributeTagInfo:
+    case FileRemoteProtocolInfo:
+    default:
+        SetLastError( ERROR_INVALID_PARAMETER );
+        return FALSE;
     }
-    else
+
+    if (status != STATUS_SUCCESS)
     {
-      if ( FileInformationClass == 4 )
-      {
-        file = 13;
-        receive = 1;
-        goto LABEL_16;
-      }
-      if ( FileInformationClass == 5 )
-      {
-        other = 19;
-      }
-      else
-      {
-        if ( FileInformationClass != 6 )
-        {
-          error = 87;
-LABEL_7:
-          SetLastError(error);
-          return 0;
-        }
-        other = 20;
-      }
-      file = other;
-      compose = 8;
+        SetLastError( RtlNtStatusToDosError( status ) );
+        return FALSE;
     }
-  }
-  else
-  {
-    file = 4;
-    compose = 40;
-  }
-  receive = compose;
-LABEL_16:
-  if ( receive > FileInformationLength )
-  {
-    error = 24;
-    goto LABEL_7;
-  }
-  status = NtSetInformationFile(FileHandle, &IoStatusBlock, FileInformation, FileInformationLength, file);
-  if ( status < 0 )
-  {
-    SetLastError(status);
-    return 0;
-  }
-  return 1;
+    return TRUE;
 }
 
 /*
@@ -706,11 +627,11 @@ CancelSynchronousIo(
   if ( status < 0 )
   {
     SetLastError(status);
-    result = 0;
+    result = FALSE;
   }
   else
   {
-    result = 1;
+    result = TRUE;
   }
   return result;
 }
@@ -736,11 +657,11 @@ CancelIoEx(
   if ( status < 0 )
   {
     SetLastError(status);
-    result = 0;
+    result = FALSE;
   }
   else
   {
-    result = 1;
+    result = TRUE;
   }
   return result;
 }
@@ -908,7 +829,7 @@ SetFileIoOverlappedRange(HANDLE FileHandle, PUCHAR OverlappedRangeStart, ULONG L
   if ( Length < 0x14 )
   {
     SetLastError(87);
-    return 0;
+    return FALSE;
   }
   localLegngth = Length;
   FileInformation = OverlappedRangeStart;
@@ -921,11 +842,11 @@ SetFileIoOverlappedRange(HANDLE FileHandle, PUCHAR OverlappedRangeStart, ULONG L
   if ( status < 0 )
   {
     BaseSetLastNTError(status);
-    return 0;
+    return FALSE;
   }
-  return 1;
+  return TRUE;
 }
-
+//Reimplement!!!!
 PVOID 
 WINAPI 
 BasepInitializeFindFileHandle(HANDLE a1)

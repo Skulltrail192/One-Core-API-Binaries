@@ -20,9 +20,9 @@
 119 stub DWMAPI_118
 120 stub DWMAPI_120
 
-@ stub DwmAttachMilContent
+@ stdcall DwmAttachMilContent(long)
 @ stdcall DwmDefWindowProc(long long long long ptr)
-@ stub DwmDetachMilContent
+@ stdcall DwmDetachMilContent(long)
 @ stdcall DwmEnableBlurBehindWindow(ptr ptr)
 @ stdcall DwmEnableMMCSS(long)
 @ stdcall DwmExtendFrameIntoClientArea(long ptr)
@@ -35,11 +35,11 @@
 @ stdcall DwmGetWindowAttribute(ptr long ptr long)
 @ stdcall DwmInvalidateIconicBitmaps(ptr)
 @ stdcall DwmIsCompositionEnabled(ptr)
-@ stub DwmModifyPreviousDxFrameDuration
-@ stub DwmQueryThumbnailSourceSize
+@ stdcall DwmModifyPreviousDxFrameDuration(ptr long long)
+@ stdcall DwmQueryThumbnailSourceSize(ptr ptr)
 @ stdcall DwmRegisterThumbnail(long long ptr)
-@ stub DwmSetDxFrameDuration
-@ stub DwmSetPresentParameters
+@ stdcall DwmSetDxFrameDuration(ptr long)
+@ stdcall DwmSetPresentParameters(ptr ptr)
 @ stdcall DwmSetWindowAttribute(long long ptr long)
 @ stdcall DwmUnregisterThumbnail(long)
-@ stub DwmUpdateThumbnailProperties
+@ stdcall DwmUpdateThumbnailProperties(ptr ptr)

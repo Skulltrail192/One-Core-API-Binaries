@@ -1381,8 +1381,14 @@ HRESULT WINAPI SHGetItemFromDataObject(IDataObject *pdtobj,
     return ret;
 }
 
-HRESULT WINAPI SHCreateItemFromParsingName(PCWSTR pszPath,
-    IBindCtx *pbc, REFIID riid, void **ppv)
+HRESULT 
+WINAPI 
+SHCreateItemFromParsingName(
+	PCWSTR pszPath,
+    IBindCtx *pbc, 
+	REFIID riid, 
+	void **ppv
+)
 {
     LPITEMIDLIST pidl;
     HRESULT ret;

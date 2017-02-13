@@ -38,6 +38,31 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(dwmapi);
 
+typedef enum _DWM_SOURCE_FRAME_SAMPLING { 
+  DWM_SOURCE_FRAME_SAMPLING_POINT     = 1,
+  DWM_SOURCE_FRAME_SAMPLING_COVERAGE,
+  DWM_SOURCE_FRAME_SAMPLING_LAST
+} DWM_SOURCE_FRAME_SAMPLING;
+
+typedef struct _DWM_THUMBNAIL_PROPERTIES {
+  DWORD dwFlags;
+  RECT  rcDestination;
+  RECT  rcSource;
+  BYTE  opacity;
+  BOOL  fVisible;
+  BOOL  fSourceClientAreaOnly;
+} DWM_THUMBNAIL_PROPERTIES, *PDWM_THUMBNAIL_PROPERTIES;
+
+typedef struct _DWM_PRESENT_PARAMETERS {
+  UINT32                    cbSize;
+  BOOL                      fQueue;
+  DWM_FRAME_COUNT           cRefreshStart;
+  UINT                      cBuffer;
+  BOOL                      fUseSourceRate;
+  UNSIGNED_RATIO            rateSource;
+  UINT                      cRefreshesPerFrame;
+  DWM_SOURCE_FRAME_SAMPLING eSampling;
+} DWM_PRESENT_PARAMETERS;
 
 /* At process attach */
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
@@ -236,5 +261,65 @@ HRESULT WINAPI DwmGetCompositionTimingInfo(HWND hwnd, DWM_TIMING_INFO *info)
 
     if(!i++) FIXME("(%p %p)\n", hwnd, info);
 
+    return E_NOTIMPL;
+}
+
+/**********************************************************************
+ *           DwmAttachMilContent         (DWMAPI.@)
+ */
+HRESULT WINAPI DwmAttachMilContent(HWND hwnd)
+{
+    FIXME("(%p) stub\n", hwnd);
+    return E_NOTIMPL;
+}
+
+/**********************************************************************
+ *           DwmDetachMilContent         (DWMAPI.@)
+ */
+HRESULT WINAPI DwmDetachMilContent(HWND hwnd)
+{
+    FIXME("(%p) stub\n", hwnd);
+    return E_NOTIMPL;
+}
+
+/**********************************************************************
+ *           DwmUpdateThumbnailProperties         (DWMAPI.@)
+ */
+HRESULT WINAPI DwmUpdateThumbnailProperties(HTHUMBNAIL thumbnail, const DWM_THUMBNAIL_PROPERTIES *props)
+{
+    return E_NOTIMPL;
+}
+
+/**********************************************************************
+ *           DwmSetPresentParameters         (DWMAPI.@)
+ */
+HRESULT WINAPI DwmSetPresentParameters(HWND hwnd, DWM_PRESENT_PARAMETERS *params)
+{
+    FIXME("(%p %p) stub\n", hwnd, params);
+    return S_OK;
+}
+
+HRESULT WINAPI DwmSetDxFrameDuration(
+   HWND hwnd,
+   INT  cRefreshes
+)
+{
+    return E_NOTIMPL;
+}
+
+HRESULT WINAPI DwmModifyPreviousDxFrameDuration(
+   HWND hwnd,
+   INT  cRefreshes,
+   BOOL fRelative
+)
+{
+    return E_NOTIMPL;
+}
+
+HRESULT WINAPI DwmQueryThumbnailSourceSize(
+        HTHUMBNAIL hThumbnail,
+  _Out_ PSIZE      pSize
+)
+{
     return E_NOTIMPL;
 }

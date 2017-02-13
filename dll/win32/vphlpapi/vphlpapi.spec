@@ -30,7 +30,7 @@
 @ stdcall GetBestInterface( long ptr )
 @ stdcall GetBestInterfaceEx(ptr ptr)
 @ stdcall GetBestInterfaceFromStack(ptr ptr)
-@ stdcall GetBestRoute( long long long )
+@ stdcall GetBestRoute(long long ptr)
 @ stdcall GetBestRouteFromStack(ptr ptr ptr)
 @ stdcall GetExtendedTcpTable( ptr ptr long long long long )
 @ stdcall GetExtendedUdpTable(ptr ptr long long long long)

@@ -226,8 +226,6 @@ InitializeProcThreadAttributeList(
     SIZE_T needed;
     BOOL ret = FALSE;
 
-    TRACE("(%p %d %x %p)\n", list, count, flags, size);
-
     needed = FIELD_OFFSET(PROC_THREAD_ATTRIBUTE_LIST, attrs[count]);
     if (list && *size >= needed)
     {
@@ -258,8 +256,6 @@ UpdateProcThreadAttribute(
 {
     DWORD mask;
     struct proc_thread_attr *entry;
-
-    TRACE("(%p %x %08lx %p %ld %p %p)\n", list, flags, attr, value, size, prev_ret, size_ret);
 
     if (list->count >= list->size)
     {
@@ -447,47 +443,7 @@ GetProcessWorkingSetSizeEx(
     PSIZE_T lpMinimumWorkingSetSize,
     PSIZE_T lpMaximumWorkingSetSize,
     LPDWORD Flags
-    )
-
-/*++
-
-Routine Description:
-
-    This function allows the caller to determine the minimum and maximum working
-    set sizes of the specified process. The working set sizes effect the virtual
-    memory paging behavior for the process.
-
-Arguments:
-
-    hProcess - Supplies an open handle to the specified process.  The
-        handle must have been created with PROCESS_QUERY_INFORMATION
-        access.
-
-    lpMinimumWorkingSetSize - Supplies the address of the variable that
-        will receive the minimum working set size of the specified
-        process.  The virtual memory manager will attempt to keep at
-        least this much memory resident in the process whenever the
-        process is active.
-
-
-    lpMaximumWorkingSetSize - Supplies the address of the variable that
-        will receive the maximum working set size of the specified
-        process.  In tight memory situations, the virtual memory manager
-        will attempt to keep at no more than this much memory resident
-        in the process whenever the process is active.
-
-    Flags - Output flags, QUOTA_LIMITS_HARDWS_ENABLE enables hard WS
-                          QUOTA_LIMITS_HARDWS_DISABLE disabled hard WS
-
-Return Value:
-
-    TRUE - The API was successful
-
-    FALSE - The operation failed.  Extended error status is available
-        using GetLastError.
-
---*/
-
+)
 {
     QUOTA_LIMITS_EX QuotaLimits;
     NTSTATUS Status;
@@ -515,31 +471,6 @@ BOOL
 BasepIsCurDirAllowedForPlainExeNames(
     VOID
     )
-
-/*++
-
-Routine Description:
-
-    This function determines whether or not the current directory
-    should be used as part of the process of locating an executable
-    whose name contains no directory components.
-
-Arguments:
-
-    None.
-
-Return Value:
-
-    TRUE - The current directory should be a part of the path used to
-           search for executables whose names contain no directory
-           components.
-
-    FALSE - The current directory should NOT be a part of the path
-            used to search for executables whose names contain no
-            directory components.
-
---*/
-
 {
     NTSTATUS Status;
 
@@ -785,56 +716,6 @@ SetProcessWorkingSetSizeEx(
     SIZE_T dwMaximumWorkingSetSize,
     ULONG  Flags
     )
-
-/*++
-
-Routine Description:
-
-    This function allows the caller to set the minimum and maximum
-    working set sizes of the specified process.  The working set sizes
-    effect the virtual memory paging behavior for the process.  The
-    specified process's working set be emptied (essentially swapping out
-    the process) by specifying the distinguished values 0xffffffff for
-    both the minimum and maximum working set sizes.
-
-    If you are not trimming an address space, SE_INC_BASE_PRIORITY_PRIVILEGE
-    must be held by the process
-
-Arguments:
-
-    hProcess - Supplies an open handle to the specified process.  The
-        handle must have been created with PROCESS_SET_QUOTA
-        access.
-
-    dwMinimumWorkingSetSize - Supplies the minimum working set size for
-        the specified process.  The virtual memory manager will attempt
-        to keep at least this much memory resident in the process
-        whenever the process is active.  A value of (SIZE_T)-1 and the
-        same value in dwMaximumWorkingSetSize will temporarily trim the
-        working set of the specified process (essentially out swap the
-        process).
-
-
-    dwMaximumWorkingSetSize - Supplies the maximum working set size for
-        the specified process.  In tight memory situations, the virtual
-        memory manager will attempt to keep at no more than this much
-        memory resident in the process whenever the process is active.
-        A value of (SIZE_T)-1 and the same value in
-        dwMinimumWorkingSetSize will temporarily trim the working set of
-        the specified process (essentially out swap the process).
-
-    Flags - Supplied flags, QUOTA_LIMITS_HARDWS_ENABLE enables hard WS
-                            QUOTA_LIMITS_HARDWS_DISABLE disabled hard ws
-
-Return Value:
-
-    TRUE - The API was successful
-
-    FALSE - The operation failed.  Extended error status is available
-        using GetLastError.
-
---*/
-
 {
     QUOTA_LIMITS_EX QuotaLimits={0};
     NTSTATUS Status, PrivStatus;

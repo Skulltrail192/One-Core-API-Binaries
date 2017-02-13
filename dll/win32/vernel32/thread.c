@@ -157,25 +157,57 @@ SetThreadpoolStackInformation(
   return result;
 }
 
-BOOL WINAPI SetThreadIdealProcessorEx(HANDLE ThreadHandle, PPROCESSOR_NUMBER ThreadInformation, PPROCESSOR_NUMBER lpPreviousIdealProcessor)
-{
-  NTSTATUS status; // eax@1
-  BOOL result; // eax@2
+// BOOL 
+// WINAPI 
+// SetThreadIdealProcessorEx(
+	// HANDLE ThreadHandle, 
+	// PPROCESSOR_NUMBER ThreadInformation, 
+	// PPROCESSOR_NUMBER lpPreviousIdealProcessor
+// )
+// {
+  // NTSTATUS status; // eax@1
+  // BOOL result; // eax@2
 
-  ThreadInformation = *(PPROCESSOR_NUMBER *)&ThreadInformation->Group;
-  status = NtSetInformationThread(ThreadHandle, (THREADINFOCLASS)0x21u, &ThreadInformation, 4u);
-  if (NT_SUCCESS(status))
-  {
-    if ( lpPreviousIdealProcessor )
-      lpPreviousIdealProcessor->Group = ThreadInformation->Group;
-    result = TRUE;
-  }
-  else
-  {
-    BaseSetLastNTError(status);
-    result = FALSE;
-  }
-  return result;
+  // ThreadInformation = *(PPROCESSOR_NUMBER *)&ThreadInformation->Group;
+  // status = NtSetInformationThread(ThreadHandle, (THREADINFOCLASS)0x21u, &ThreadInformation, 4u);
+  // if (NT_SUCCESS(status))
+  // {
+    // if ( lpPreviousIdealProcessor )
+      // lpPreviousIdealProcessor->Group = ThreadInformation->Group;
+    // result = TRUE;
+  // }
+  // else
+  // {
+    // BaseSetLastNTError(status);
+    // result = FALSE;
+  // }
+  // return result;
+// }
+
+BOOL 
+WINAPI 
+SetThreadIdealProcessorEx(
+	HANDLE thread, 
+	PROCESSOR_NUMBER *processor, 
+	PROCESSOR_NUMBER *previous
+)
+{
+
+
+    if (!processor || processor->Group > 0 || processor->Number > MAXIMUM_PROCESSORS)
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    if (previous)
+    {
+        previous->Group = 0;
+        previous->Number = 0;
+        previous->Reserved = 0;
+    }
+
+    return TRUE;
 }
 
 BOOL 
