@@ -1644,3 +1644,4 @@
 @ stdcall NtQuerySystemInformationEx(long ptr long ptr ptr ptr)
 @ stdcall NtReplacePartitionUnit(wstr wstr long)
 @ stdcall NtSetInformationVirtualMemory(ptr long long ptr ptr long)
+@ stdcall NtFlushProcessWriteBuffers()

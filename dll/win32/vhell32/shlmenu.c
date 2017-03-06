@@ -1111,3 +1111,23 @@ HRESULT WINAPI SHCreateDefaultContextMenu(const DEFCONTEXTMENU *pdcm, REFIID rii
     ILFree(folder_pidl);
     return ret;
 }
+
+HRESULT 
+WINAPI 
+SHOpenWithDialog(
+  _In_opt_  HWND hwnd,
+  _In_ const OPENASINFO *poainfo
+)
+{
+	LPCWSTR strCmd= L"shell32.dll,OpenAs_RunDLL ";
+	StrCatW(strCmd, poainfo->pcszFile);
+
+	ShellExecuteW(hwnd,
+				  L"open", 
+				  L"Rundll32.exe",
+				  strCmd,
+				  NULL,
+				  SW_SHOW);
+
+	return S_OK;
+}

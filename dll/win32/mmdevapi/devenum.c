@@ -16,15 +16,33 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+
+#include <stdarg.h>
+
+#define NONAMELESSUNION
+#define COBJMACROS
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "winreg.h"
+#include "wine/debug.h"
+#include "wine/list.h"
+#include "wine/unicode.h"
+
+#include "initguid.h"
+#include "ole2.h"
+#include "mmdeviceapi.h"
+#include "dshow.h"
+#include "dsound.h"
+#include "audioclient.h"
+#include "endpointvolume.h"
+#include "audiopolicy.h"
+
 #include "mmdevapi.h"
+#include "devpkey.h"
 
-#include <wine/list.h>
-
-#include <oleauto.h>
-#include <initguid.h>
-#define _WINDOWS_H
-#include <dshow.h>
-#include <devpkey.h>
+WINE_DEFAULT_DEBUG_CHANNEL(mmdevapi);
 
 static const WCHAR software_mmdevapi[] =
     { 'S','o','f','t','w','a','r','e','\\',
@@ -125,12 +143,12 @@ static HRESULT MMDevPropStore_OpenPropKey(const GUID *guid, DWORD flow, HKEY *pr
     LONG ret;
     HKEY key;
     StringFromGUID2(guid, buffer, 39);
-    if ((ret = RegOpenKeyExW(flow == eRender ? key_render : key_capture, buffer, 0, KEY_READ|KEY_WRITE, &key)) != ERROR_SUCCESS)
+    if ((ret = RegOpenKeyExW(flow == eRender ? key_render : key_capture, buffer, 0, KEY_READ|KEY_WRITE|KEY_WOW64_64KEY, &key)) != ERROR_SUCCESS)
     {
         WARN("Opening key %s failed with %u\n", debugstr_w(buffer), ret);
         return E_FAIL;
     }
-    ret = RegOpenKeyExW(key, reg_properties, 0, KEY_READ|KEY_WRITE, propkey);
+    ret = RegOpenKeyExW(key, reg_properties, 0, KEY_READ|KEY_WRITE|KEY_WOW64_64KEY, propkey);
     RegCloseKey(key);
     if (ret != ERROR_SUCCESS)
     {
@@ -246,6 +264,25 @@ static HRESULT MMDevice_SetPropValue(const GUID *devguid, DWORD flow, REFPROPERT
     return hr;
 }
 
+static HRESULT set_driver_prop_value(GUID *id, const EDataFlow flow, const PROPERTYKEY *prop)
+{
+    HRESULT hr;
+    PROPVARIANT pv;
+
+    if (!drvs.pGetPropValue)
+        return E_NOTIMPL;
+
+    hr = drvs.pGetPropValue(id, prop, &pv);
+
+    if (SUCCEEDED(hr))
+    {
+        MMDevice_SetPropValue(id, flow, prop, &pv);
+        PropVariantClear(&pv);
+    }
+
+    return hr;
+}
+
 /* Creates or updates the state of a device
  * If GUID is null, a random guid will be assigned
  * and the device will be created
@@ -259,6 +296,10 @@ static MMDevice *MMDevice_Create(WCHAR *name, GUID *id, EDataFlow flow, DWORD st
 
     static const PROPERTYKEY deviceinterface_key = {
         {0x233164c8, 0x1b2c, 0x4c7d, {0xbc, 0x68, 0xb6, 0x71, 0x68, 0x7a, 0x25, 0x67}}, 1
+    };
+
+    static const PROPERTYKEY devicepath_key = {
+        {0xb3f8fa53, 0x0004, 0x438e, {0x90, 0x03, 0x51, 0xa4, 0x6e, 0x13, 0x9b, 0xfc}}, 2
     };
 
     for (i = 0; i < MMDevice_count; ++i)
@@ -304,21 +345,45 @@ static MMDevice *MMDevice_Create(WCHAR *name, GUID *id, EDataFlow flow, DWORD st
     else
         root = key_capture;
 
-    if (RegCreateKeyExW(root, guidstr, 0, NULL, 0, KEY_WRITE|KEY_READ, NULL, &key, NULL) == ERROR_SUCCESS)
+    if (RegCreateKeyExW(root, guidstr, 0, NULL, 0, KEY_WRITE|KEY_READ|KEY_WOW64_64KEY, NULL, &key, NULL) == ERROR_SUCCESS)
     {
         HKEY keyprop;
         RegSetValueExW(key, reg_devicestate, 0, REG_DWORD, (const BYTE*)&state, sizeof(DWORD));
-        if (!RegCreateKeyExW(key, reg_properties, 0, NULL, 0, KEY_WRITE|KEY_READ, NULL, &keyprop, NULL))
+        if (!RegCreateKeyExW(key, reg_properties, 0, NULL, 0, KEY_WRITE|KEY_READ|KEY_WOW64_64KEY, NULL, &keyprop, NULL))
         {
             PROPVARIANT pv;
 
             pv.vt = VT_LPWSTR;
             pv.u.pwszVal = name;
             MMDevice_SetPropValue(id, flow, (const PROPERTYKEY*)&DEVPKEY_Device_FriendlyName, &pv);
+            MMDevice_SetPropValue(id, flow, (const PROPERTYKEY*)&DEVPKEY_DeviceInterface_FriendlyName, &pv);
             MMDevice_SetPropValue(id, flow, (const PROPERTYKEY*)&DEVPKEY_Device_DeviceDesc, &pv);
 
             pv.u.pwszVal = guidstr;
             MMDevice_SetPropValue(id, flow, &deviceinterface_key, &pv);
+
+            set_driver_prop_value(id, flow, &devicepath_key);
+
+            if (FAILED(set_driver_prop_value(id, flow, &PKEY_AudioEndpoint_FormFactor)))
+            {
+                pv.vt = VT_UI4;
+                pv.u.ulVal = (flow == eCapture) ? Microphone : Speakers;
+
+                MMDevice_SetPropValue(id, flow, &PKEY_AudioEndpoint_FormFactor, &pv);
+            }
+
+            if (flow != eCapture)
+            {
+                PROPVARIANT pv2;
+
+                PropVariantInit(&pv2);
+
+                /* make read-write by not overwriting if already set */
+                if (FAILED(MMDevice_GetPropValue(id, flow, &PKEY_AudioEndpoint_PhysicalSpeakers, &pv2)) || pv2.vt != VT_UI4)
+                    set_driver_prop_value(id, flow, &PKEY_AudioEndpoint_PhysicalSpeakers);
+
+                PropVariantClear(&pv2);
+            }
 
             RegCloseKey(keyprop);
         }
@@ -342,11 +407,11 @@ static HRESULT load_devices_from_reg(void)
     LONG ret;
     DWORD curflow;
 
-    ret = RegCreateKeyExW(HKEY_LOCAL_MACHINE, software_mmdevapi, 0, NULL, 0, KEY_WRITE|KEY_READ, NULL, &root, NULL);
+    ret = RegCreateKeyExW(HKEY_LOCAL_MACHINE, software_mmdevapi, 0, NULL, 0, KEY_WRITE|KEY_READ|KEY_WOW64_64KEY, NULL, &root, NULL);
     if (ret == ERROR_SUCCESS)
-        ret = RegCreateKeyExW(root, reg_capture, 0, NULL, 0, KEY_READ|KEY_WRITE, NULL, &key_capture, NULL);
+        ret = RegCreateKeyExW(root, reg_capture, 0, NULL, 0, KEY_READ|KEY_WRITE|KEY_WOW64_64KEY, NULL, &key_capture, NULL);
     if (ret == ERROR_SUCCESS)
-        ret = RegCreateKeyExW(root, reg_render, 0, NULL, 0, KEY_READ|KEY_WRITE, NULL, &key_render, NULL);
+        ret = RegCreateKeyExW(root, reg_render, 0, NULL, 0, KEY_READ|KEY_WRITE|KEY_WOW64_64KEY, NULL, &key_render, NULL);
     RegCloseKey(root);
     cur = key_capture;
     curflow = eCapture;
@@ -421,6 +486,7 @@ static HRESULT set_format(MMDevice *dev)
             &PKEY_AudioEngine_DeviceFormat, &pv);
     MMDevice_SetPropValue(&dev->devguid, dev->flow,
             &PKEY_AudioEngine_OEMFormat, &pv);
+    CoTaskMemFree(fmt);
 
     return S_OK;
 }
@@ -486,7 +552,7 @@ static HRESULT WINAPI MMDevice_QueryInterface(IMMDevice *iface, REFIID riid, voi
     *ppv = NULL;
     if (IsEqualIID(riid, &IID_IUnknown)
         || IsEqualIID(riid, &IID_IMMDevice))
-        *ppv = This;
+        *ppv = &This->IMMDevice_iface;
     else if (IsEqualIID(riid, &IID_IMMEndpoint))
         *ppv = &This->IMMEndpoint_iface;
     if (*ppv)
@@ -523,15 +589,16 @@ static HRESULT WINAPI MMDevice_Activate(IMMDevice *iface, REFIID riid, DWORD cls
     HRESULT hr = E_NOINTERFACE;
     MMDevice *This = impl_from_IMMDevice(iface);
 
-    TRACE("(%p)->(%p,%x,%p,%p)\n", iface, riid, clsctx, params, ppv);
+    TRACE("(%p)->(%s, %x, %p, %p)\n", iface, debugstr_guid(riid), clsctx, params, ppv);
 
     if (!ppv)
         return E_POINTER;
 
     if (IsEqualIID(riid, &IID_IAudioClient)){
         hr = drvs.pGetAudioEndpoint(&This->devguid, iface, (IAudioClient**)ppv);
-    }else if (IsEqualIID(riid, &IID_IAudioEndpointVolume))
-        hr = AudioEndpointVolume_Create(This, (IAudioEndpointVolume**)ppv);
+    }else if (IsEqualIID(riid, &IID_IAudioEndpointVolume) ||
+            IsEqualIID(riid, &IID_IAudioEndpointVolumeEx))
+        hr = AudioEndpointVolume_Create(This, (IAudioEndpointVolumeEx**)ppv);
     else if (IsEqualIID(riid, &IID_IAudioSessionManager)
              || IsEqualIID(riid, &IID_IAudioSessionManager2))
     {
@@ -546,7 +613,7 @@ static HRESULT WINAPI MMDevice_Activate(IMMDevice *iface, REFIID riid, DWORD cls
         if (SUCCEEDED(hr))
         {
             IPersistPropertyBag *ppb;
-            hr = IUnknown_QueryInterface((IUnknown*)*ppv, &IID_IPersistPropertyBag, (void*)&ppb);
+            hr = IUnknown_QueryInterface((IUnknown*)*ppv, &IID_IPersistPropertyBag, (void **)&ppb);
             if (SUCCEEDED(hr))
             {
                 /* ::Load cannot assume the interface stays alive after the function returns,
@@ -581,8 +648,7 @@ static HRESULT WINAPI MMDevice_Activate(IMMDevice *iface, REFIID riid, DWORD cls
                 IDirectSound_Release((IDirectSound*)*ppv);
         }
     }
-    else if (IsEqualIID(riid, &IID_IDirectSoundCapture)
-             || IsEqualIID(riid, &IID_IDirectSoundCapture8))
+    else if (IsEqualIID(riid, &IID_IDirectSoundCapture))
     {
         if (This->flow == eCapture)
             hr = CoCreateInstance(&CLSID_DirectSoundCapture8, NULL, clsctx, riid, ppv);
@@ -733,7 +799,7 @@ static HRESULT WINAPI MMDevCol_QueryInterface(IMMDeviceCollection *iface, REFIID
         return E_POINTER;
     if (IsEqualIID(riid, &IID_IUnknown)
         || IsEqualIID(riid, &IID_IMMDeviceCollection))
-        *ppv = This;
+        *ppv = &This->IMMDeviceCollection_iface;
     else
         *ppv = NULL;
     if (!*ppv)
@@ -833,7 +899,7 @@ HRESULT MMDevEnum_Create(REFIID riid, void **ppv)
         load_driver_devices(eRender);
         load_driver_devices(eCapture);
     }
-    return IUnknown_QueryInterface((IUnknown*)This, riid, ppv);
+    return IMMDeviceEnumerator_QueryInterface(&This->IMMDeviceEnumerator_iface, riid, ppv);
 }
 
 void MMDevEnum_Free(void)
@@ -856,7 +922,7 @@ static HRESULT WINAPI MMDevEnum_QueryInterface(IMMDeviceEnumerator *iface, REFII
         return E_POINTER;
     if (IsEqualIID(riid, &IID_IUnknown)
         || IsEqualIID(riid, &IID_IMMDeviceEnumerator))
-        *ppv = This;
+        *ppv = &This->IMMDeviceEnumerator_iface;
     else
         *ppv = NULL;
     if (!*ppv)
@@ -1001,9 +1067,15 @@ static HRESULT WINAPI MMDevEnum_GetDevice(IMMDeviceEnumerator *iface, const WCHA
 
     for (i = 0; i < MMDevice_count; ++i)
     {
+        HRESULT hr;
         WCHAR *str;
         dev = &MMDevice_head[i]->IMMDevice_iface;
-        IMMDevice_GetId(dev, &str);
+        hr = IMMDevice_GetId(dev, &str);
+        if (FAILED(hr))
+        {
+            WARN("GetId failed: %08x\n", hr);
+            continue;
+        }
 
         if (str && !lstrcmpW(str, name))
         {
@@ -1210,7 +1282,7 @@ static HRESULT WINAPI MMDevEnum_RegisterEndpointNotificationCallback(IMMDeviceEn
 static HRESULT WINAPI MMDevEnum_UnregisterEndpointNotificationCallback(IMMDeviceEnumerator *iface, IMMNotificationClient *client)
 {
     MMDevEnumImpl *This = impl_from_IMMDeviceEnumerator(iface);
-    struct NotificationClientWrapper *wrapper, *wrapper2;
+    struct NotificationClientWrapper *wrapper;
 
     TRACE("(%p)->(%p)\n", This, client);
 
@@ -1219,8 +1291,7 @@ static HRESULT WINAPI MMDevEnum_UnregisterEndpointNotificationCallback(IMMDevice
 
     EnterCriticalSection(&g_notif_lock);
 
-    LIST_FOR_EACH_ENTRY_SAFE(wrapper, wrapper2, &g_notif_clients,
-            struct NotificationClientWrapper, entry){
+    LIST_FOR_EACH_ENTRY(wrapper, &g_notif_clients, struct NotificationClientWrapper, entry){
         if(wrapper->client == client){
             list_remove(&wrapper->entry);
             HeapFree(GetProcessHeap(), 0, wrapper);
@@ -1281,7 +1352,7 @@ static HRESULT WINAPI MMDevPropStore_QueryInterface(IPropertyStore *iface, REFII
         return E_POINTER;
     if (IsEqualIID(riid, &IID_IUnknown)
         || IsEqualIID(riid, &IID_IPropertyStore))
-        *ppv = This;
+        *ppv = &This->IPropertyStore_iface;
     else
         *ppv = NULL;
     if (!*ppv)
@@ -1405,8 +1476,17 @@ static HRESULT WINAPI MMDevPropStore_SetValue(IPropertyStore *iface, REFPROPERTY
 
 static HRESULT WINAPI MMDevPropStore_Commit(IPropertyStore *iface)
 {
-    FIXME("stub\n");
-    return E_NOTIMPL;
+    MMDevPropStore *This = impl_from_IPropertyStore(iface);
+    TRACE("(%p)\n", iface);
+
+    if (This->access != STGM_WRITE
+        && This->access != STGM_READWRITE)
+        return STG_E_ACCESSDENIED;
+
+    /* Does nothing - for mmdevapi, the propstore values are written on SetValue,
+     * not on Commit. */
+
+    return S_OK;
 }
 
 static const IPropertyStoreVtbl MMDevPropVtbl =

@@ -1174,3 +1174,6 @@ pGetSystemFirmwareTable(
 	PVOID pFirmwareTableBuffer, 
 	DWORD BufferSize
 );
+
+static CRITICAL_SECTION g_thread_xp_lock;
+static DWORD g_thread_xp_waiter_tls;

@@ -56,6 +56,7 @@ list(APPEND SOURCE
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/time.c
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/transaction.c
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/unimplemented.c
+	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/version.c
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/wer.c
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/wow64.c
 	${REACTOS_SOURCE_DIR}/dll/win32/vernel32/missing/fiber.c
@@ -98,5 +99,5 @@ if(ARCH STREQUAL "amd64")
 elseif(ARCH STREQUAL "i386")
 	target_link_libraries(vernel32 wine chkstk ${PSEH_LIB})
 endif()
-add_importlibs(vernel32 kernelfull vtdll normaliz psapi idndl advapi32 user32 fileextd ntvdm64 version)
+add_importlibs(vernel32 kernelfull vtdll normaliz psapi idndl advapi32 user32 ntvdm64 version)
 add_cd_file(TARGET vernel32 DESTINATION reactos/system32 FOR all)

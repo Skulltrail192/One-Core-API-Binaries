@@ -170,8 +170,6 @@ SleepConditionVariableSRW(
     LARGE_INTEGER time;
 
     status = RtlSleepConditionVariableSRW( ConditionVariable, SRWLock, get_nt_timeout( &time, dwMilliseconds ), Flags );
-	
-    DbgPrint("Function: SleepConditionVariableSRW. From ntdll function: RtlSleepConditionVariableSRW. Status: %08x\n",status);
     if (status != STATUS_SUCCESS)
     {
         SetLastError( RtlNtStatusToDosError(status) );
@@ -315,7 +313,14 @@ CreateWaitableTimerExA(
  */
 HANDLE 
 WINAPI 
-CreateSemaphoreExW(LPSECURITY_ATTRIBUTES lpSemaphoreAttributes, LONG InitialCount, LONG MaximumCount, LPCWSTR lpName, DWORD dwFlags, DWORD DesiredAccess)
+CreateSemaphoreExW(
+	LPSECURITY_ATTRIBUTES lpSemaphoreAttributes, 
+	LONG InitialCount, 
+	LONG MaximumCount, 
+	LPCWSTR lpName, 
+	DWORD dwFlags, 
+	DWORD DesiredAccess
+)
 {
   OBJECT_ATTRIBUTES *localAttributes; // ecx@4
   NTSTATUS status; // eax@5
@@ -471,7 +476,12 @@ LastNtError:
  */
 HANDLE 
 WINAPI 
-CreateMutexExA(LPSECURITY_ATTRIBUTES lpMutexAttributes, LPCTSTR lpName, DWORD dwFlags, DWORD DesiredAccess)
+CreateMutexExA(
+	LPSECURITY_ATTRIBUTES lpMutexAttributes, 
+	LPCTSTR lpName, 
+	DWORD dwFlags, 
+	DWORD DesiredAccess
+)
 {
   BOOL result; // eax@2
   LPCWSTR localWstring; // eax@3
@@ -499,7 +509,14 @@ CreateMutexExA(LPSECURITY_ATTRIBUTES lpMutexAttributes, LPCTSTR lpName, DWORD dw
 /*
  * @implemented - need test
  */
-HANDLE WINAPI CreateEventExW(LPSECURITY_ATTRIBUTES lpEventAttributes, PCWSTR SourceString, DWORD dwFlags, DWORD DesiredAccess)
+HANDLE 
+WINAPI 
+CreateEventExW(
+	LPSECURITY_ATTRIBUTES lpEventAttributes, 
+	PCWSTR SourceString, 
+	DWORD dwFlags, 
+	DWORD DesiredAccess
+)
 {
   OBJECT_ATTRIBUTES *obj; // edx@3
   NTSTATUS status; // eax@3
@@ -544,7 +561,9 @@ LastNtError:
 /*
  * @implemented - need test
  */
-HANDLE WINAPI CreateEventExA(LPSECURITY_ATTRIBUTES lpEventAttributes, LPCTSTR lpName, DWORD dwFlags, DWORD DesiredAccess)
+HANDLE 
+WINAPI 
+CreateEventExA(LPSECURITY_ATTRIBUTES lpEventAttributes, LPCTSTR lpName, DWORD dwFlags, DWORD DesiredAccess)
 {
   LPCWSTR localString; // eax@2
   HANDLE receiveHandle; // edi@3
@@ -574,9 +593,11 @@ HANDLE WINAPI CreateEventExA(LPSECURITY_ATTRIBUTES lpEventAttributes, LPCTSTR lp
  */
 BOOL 
 WINAPI 
-InitializeCriticalSectionEx(OUT LPCRITICAL_SECTION lpCriticalSection,
-                                       IN DWORD dwSpinCount,
-                                       IN DWORD flags )
+InitializeCriticalSectionEx(
+	OUT LPCRITICAL_SECTION lpCriticalSection,
+    IN DWORD dwSpinCount,
+    IN DWORD flags 
+)
 {
     NTSTATUS Status;
 
@@ -597,7 +618,9 @@ InitializeCriticalSectionEx(OUT LPCRITICAL_SECTION lpCriticalSection,
     return TRUE;
 } 
 
-BOOL WINAPI SetWaitableTimerEx(
+BOOL 
+WINAPI 
+SetWaitableTimerEx(
   _In_  HANDLE hTimer,
   _In_  const LARGE_INTEGER *lpDueTime,
   _In_  LONG lPeriod,

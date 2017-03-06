@@ -4454,6 +4454,12 @@ RtlInitString(
 	PCSZ target
 );
 
+NTSYSAPI
+NTSTATUS
+NTAPI
+RtlGetLastNtStatus(
+   VOID
+);
 
 
 #ifdef __cplusplus

@@ -16,34 +16,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#ifndef _MMDEVAPI_H_
-#define _MMDEVAPI_H_
-
-#include <wine/config.h>
-#include <wine/port.h>
-
-#include <stdarg.h>
-
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
-
-#define COBJMACROS
-#define NONAMELESSUNION
-
-#include <windef.h>
-#include <winbase.h>
-#include <wingdi.h>
-#include <winreg.h>
-#include <objbase.h>
-#include <audiopolicy.h>
-#include <endpointvolume.h>
-#include <mmdeviceapi.h>
-
-#include <wine/debug.h>
-#include <wine/unicode.h>
-
-WINE_DEFAULT_DEBUG_CHANNEL(mmdevapi);
+#ifndef __WINE_CONFIG_H
+# error You must include config.h to use this header
+#endif
 
 extern HRESULT MMDevEnum_Create(REFIID riid, void **ppv) DECLSPEC_HIDDEN;
 extern void MMDevEnum_Free(void) DECLSPEC_HIDDEN;
@@ -79,6 +54,8 @@ typedef struct _DriverFuncs {
             IAudioClient **out);
     HRESULT (WINAPI *pGetAudioSessionManager)(IMMDevice *device,
             IAudioSessionManager2 **out);
+    HRESULT (WINAPI *pGetPropValue)(GUID *guid,
+            const PROPERTYKEY *prop, PROPVARIANT *out);
 } DriverFuncs;
 
 extern DriverFuncs drvs DECLSPEC_HIDDEN;
@@ -97,8 +74,6 @@ typedef struct MMDevice {
 } MMDevice;
 
 extern HRESULT AudioClient_Create(MMDevice *parent, IAudioClient **ppv) DECLSPEC_HIDDEN;
-extern HRESULT AudioEndpointVolume_Create(MMDevice *parent, IAudioEndpointVolume **ppv) DECLSPEC_HIDDEN;
+extern HRESULT AudioEndpointVolume_Create(MMDevice *parent, IAudioEndpointVolumeEx **ppv) DECLSPEC_HIDDEN;
 
 extern const WCHAR drv_keyW[] DECLSPEC_HIDDEN;
-
-#endif /* _MMDEVAPI_H_ */

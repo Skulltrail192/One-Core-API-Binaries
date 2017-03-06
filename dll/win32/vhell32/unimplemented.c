@@ -123,27 +123,6 @@ HRESULT WINAPI SHCreateDefaultExtractIcon(
 	return E_FAIL;
 }
 
-
-HRESULT 
-WINAPI 
-SHOpenWithDialog(
-  _In_opt_  HWND hwnd,
-  _In_ const OPENASINFO *poainfo
-)
-{
-	LPCWSTR strCmd= L"shell32.dll,OpenAs_RunDLL ";
-	StrCatW(strCmd, poainfo->pcszFile);
-
-	ShellExecuteW(hwnd,
-				  L"open", 
-				  L"Rundll32.exe",
-				  strCmd,
-				  NULL,
-				  SW_SHOW);
-
-	return S_OK;
-}
-
 HRESULT 
 WINAPI 
 SHSetTemporaryPropertyForItem(
@@ -297,15 +276,22 @@ HRESULT WINAPI SHGetThreadUndoManager(int a1, int a2)
 	return E_FAIL;	
 }
 
-HRESULT WINAPI SHGetPropertyStoreFromParsingName(
-  _In_      PCWSTR pszPath,
-  _In_opt_  IBindCtx *pbc,
-  _In_      GETPROPERTYSTOREFLAGS flags,
-  _In_      REFIID riid,
-  _Out_     void **ppv
-)
+HRESULT WINAPI SHGetPropertyStoreFromParsingName(const WCHAR *path, IBindCtx *pbc, GETPROPERTYSTOREFLAGS flags,
+    REFIID riid, void **ppv)
 {
-	return E_FAIL;	
+    IShellItem2 *item;
+    HRESULT hr;
+
+    TRACE("(%s %p %#x %p %p)\n", debugstr_w(path), pbc, flags, riid, ppv);
+
+    hr = SHCreateItemFromParsingName(path, pbc, &IID_IShellItem2, (void **)&item);
+    if(SUCCEEDED(hr))
+    {
+        hr = IShellItem2_GetPropertyStore(item, flags, riid, ppv);
+        IShellItem2_Release(item);
+    }
+
+    return hr;
 }
 
 HRESULT 

@@ -1,17 +1,17 @@
- 2 stub MMDEVAPI_2
- 3 stub MMDEVAPI_3
- 4 stub MMDEVAPI_4
- 5 stub MMDEVAPI_5
- 6 stub MMDEVAPI_6
- 7 stub MMDEVAPI_7
- 8 stub MMDEVAPI_8
- 9 stub MMDEVAPI_9
-10 stub MMDEVAPI_10
-11 stub MMDEVAPI_11
-12 stub MMDEVAPI_12
-13 stub MMDEVAPI_13
-14 stub MMDEVAPI_14
-15 stub MMDEVAPI_15
+ 2 stub @
+ 3 stub @
+ 4 stub @
+ 5 stub @
+ 6 stub @
+ 7 stub @
+ 8 stub @
+ 9 stub @
+10 stub @
+11 stub @
+12 stub @
+13 stub @
+14 stub @
+15 stub @
 
 @ stdcall -private DllCanUnloadNow()
 @ stdcall -private DllGetClassObject( ptr ptr ptr )

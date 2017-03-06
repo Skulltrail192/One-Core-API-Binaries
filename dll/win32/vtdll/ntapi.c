@@ -627,3 +627,10 @@ NtpQueryInformationToken(
 										   retlen);
 	}
 }
+
+VOID 
+NTAPI 
+NtFlushProcessWriteBuffers()	
+{
+	;
+}
