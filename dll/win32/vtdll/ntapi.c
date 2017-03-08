@@ -634,3 +634,13 @@ NtFlushProcessWriteBuffers()
 {
 	;
 }
+
+NTAPI 
+NtSetSystemPowerState( 	
+	IN POWER_ACTION  	SystemAction,
+	IN SYSTEM_POWER_STATE  	MinSystemState,
+	IN ULONG  	Flags 
+)
+{
+	return STATUS_SUCCESS;
+} 	

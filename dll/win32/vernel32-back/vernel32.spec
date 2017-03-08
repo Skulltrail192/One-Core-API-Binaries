@@ -22,12 +22,9 @@
 @ stdcall BaseDumpAppcompatCache()
 @ stdcall BaseFlushAppcompatCache()
 @ stdcall BaseInitAppcompatCacheSupport()
+@ stdcall BaseIsAppcompatInfrastructureDisabled() 
 @ stdcall BaseProcessInitPostImport() ; missing in Win 7
-@ stdcall -arch=x86_64 BaseProcessStart()
-@ stdcall BaseQueryModuleData(str str ptr ptr ptr) ;check
-@ stdcall -arch=x86_64 BaseThreadStart()
 @ stdcall BaseUpdateAppcompatCache(long long long)
-@ stdcall BasepCheckWinSaferRestrictions(long long long long long long)
 @ stdcall Beep(long long)
 @ stdcall BeginUpdateResourceA(str long)
 @ stdcall BeginUpdateResourceW(wstr long)
@@ -58,7 +55,6 @@
 @ stdcall CompareStringA(long long str long str long)
 @ stdcall CompareStringW(long long wstr long wstr long)
 @ stdcall ConnectNamedPipe(long ptr)
-@ stdcall -arch=x86_64 ConsoleIMERoutine()
 @ stdcall ConsoleMenuControl(long long long)
 @ stdcall ContinueDebugEvent(long long long)
 @ stdcall ConvertDefaultLocale (long)
@@ -106,23 +102,22 @@
 @ stdcall CreateRemoteThread(long ptr long ptr long long ptr)
 @ stdcall CreateSemaphoreA(ptr long long str)
 @ stdcall CreateSemaphoreW(ptr long long wstr)
-@ stdcall -i386 CreateSocketHandle()
+@ stdcall -arch=i386 CreateSocketHandle()
 @ stdcall CreateTapePartition(long long long long)
 @ stdcall CreateThread(ptr long ptr long long ptr)
 @ stdcall CreateTimerQueue ()
 @ stdcall CreateTimerQueueTimer(ptr long ptr ptr long long long)
 @ stdcall CreateToolhelp32Snapshot(long long)
-@ stdcall CreateWaitableTimerA(ptr long str)
-@ stdcall CreateWaitableTimerW(ptr long wstr)
-;@ stdcall -arch=x86_64 CtrlRoutine()
+@ stdcall CreateWaitableTimerA(ptr long str) kernelfull.CreateWaitableTimerA
+@ stdcall CreateWaitableTimerW(ptr long wstr) kernelfull.CreateWaitableTimerW
 @ stdcall DeactivateActCtx(long ptr)
 @ stdcall DebugActiveProcess(long)
 @ stdcall DebugActiveProcessStop(long)
 @ stdcall DebugBreak() ntdll.DbgBreakPoint
 @ stdcall DebugBreakProcess(long)
 @ stdcall DebugSetProcessKillOnExit(long)
-@ stdcall DecodePointer(ptr) ntdll.RtlDecodePointer
-@ stdcall DecodeSystemPointer(ptr) ntdll.RtlDecodeSystemPointer
+@ stdcall DecodePointer(ptr) 
+@ stdcall DecodeSystemPointer(ptr) 
 @ stdcall DefineDosDeviceA(long str str)
 @ stdcall DefineDosDeviceW(long wstr wstr)
 @ stdcall DelayLoadFailureHook(str str)
@@ -139,15 +134,15 @@
 @ stdcall DeviceIoControl(long long ptr long ptr long ptr ptr)
 @ stdcall DisableThreadLibraryCalls(long)
 @ stdcall DisconnectNamedPipe(long)
-@ stdcall DnsHostnameToComputerNameA (str ptr ptr)
-@ stdcall DnsHostnameToComputerNameW (wstr ptr ptr)
+@ stdcall DnsHostnameToComputerNameA(str str ptr)
+@ stdcall DnsHostnameToComputerNameW(wstr wstr ptr)
 @ stdcall DosDateTimeToFileTime(long long ptr)
 @ stdcall DosPathToSessionPathA(long str str)
 @ stdcall DosPathToSessionPathW(long wstr wstr)
 @ stdcall DuplicateConsoleHandle(long long long long)
 @ stdcall DuplicateHandle(long long long ptr long long long)
-@ stdcall EncodePointer(ptr) ntdll.RtlEncodePointer
-@ stdcall EncodeSystemPointer(ptr) ntdll.RtlEncodeSystemPointer
+@ stdcall EncodePointer(ptr) 
+@ stdcall EncodeSystemPointer(ptr) 
 @ stdcall EndUpdateResourceA(long long)
 @ stdcall EndUpdateResourceW(long long)
 @ stdcall EnterCriticalSection(ptr) ntdll.RtlEnterCriticalSection
@@ -187,8 +182,8 @@
 @ stdcall ExitVDM(long long)
 @ stdcall ExpandEnvironmentStringsA(str ptr long)
 @ stdcall ExpandEnvironmentStringsW(wstr ptr long)
-@ stdcall ExpungeConsoleCommandHistoryA(long)
-@ stdcall ExpungeConsoleCommandHistoryW(long)
+@ stdcall ExpungeConsoleCommandHistoryA(long) kernelfull.ExpungeConsoleCommandHistoryA
+@ stdcall ExpungeConsoleCommandHistoryW(long) kernelfull.ExpungeConsoleCommandHistoryW
 @ stdcall FatalAppExitA(long str)
 @ stdcall FatalAppExitW(long wstr)
 @ stdcall FatalExit(long)
@@ -211,6 +206,7 @@
 @ stdcall FindFirstFileExA(str long ptr long ptr long)
 @ stdcall FindFirstFileExW(wstr long ptr long ptr long)
 @ stdcall FindFirstFileW(wstr ptr)
+@ stdcall FindFirstStreamW(wstr ptr ptr long)
 @ stdcall FindFirstVolumeA(ptr long)
 @ stdcall FindFirstVolumeMountPointA(str ptr long)
 @ stdcall FindFirstVolumeMountPointW(wstr ptr long)
@@ -228,6 +224,10 @@
 @ stdcall FindResourceW(long wstr wstr)
 @ stdcall FindVolumeClose(ptr)
 @ stdcall FindVolumeMountPointClose(ptr)
+@ stdcall FlsAlloc(ptr)
+@ stdcall FlsFree(long)
+@ stdcall FlsGetValue(long)
+@ stdcall FlsSetValue(long ptr)
 @ stdcall FlushConsoleInputBuffer(long)
 @ stdcall FlushFileBuffers(long)
 @ stdcall FlushInstructionCache(long long long)
@@ -313,11 +313,11 @@
 @ stdcall GetCurrentConsoleFont(long long ptr)
 @ stdcall GetCurrentDirectoryA(long ptr)
 @ stdcall GetCurrentDirectoryW(long ptr)
-@ stdcall -norelay GetCurrentProcess()
-@ stdcall -norelay GetCurrentProcessId()
+@ stdcall GetCurrentProcess()
+@ stdcall GetCurrentProcessId()
 @ stdcall GetCurrentProcessorNumber() ntdll.RtlGetCurrentProcessorNumber
-@ stdcall -norelay GetCurrentThread()
-@ stdcall -norelay GetCurrentThreadId()
+@ stdcall GetCurrentThread()
+@ stdcall GetCurrentThreadId()
 @ stdcall GetDateFormatA(long long ptr str ptr long)
 @ stdcall GetDateFormatW(long long ptr wstr ptr long)
 @ stdcall GetDefaultCommConfigA(str ptr long)
@@ -356,7 +356,7 @@
 @ stdcall GetFullPathNameW(wstr long ptr ptr)
 @ stdcall GetGeoInfoA(long long ptr long long)
 @ stdcall GetGeoInfoW(long long ptr long long)
-@ stdcall -i386 GetHandleContext(long) ; missing on x64
+@ stdcall -arch=i386 GetHandleContext(long) 
 @ stdcall GetHandleInformation(long ptr)
 @ stdcall GetLargestConsoleWindowSize(long)
 @ stdcall GetLastError() ntdll.RtlGetLastWin32Error
@@ -408,7 +408,7 @@
 @ stdcall GetProcAddress(long str)
 @ stdcall GetProcessAffinityMask(long ptr ptr)
 @ stdcall GetProcessHandleCount(long ptr)
-@ stdcall -norelay GetProcessHeap()
+@ stdcall GetProcessHeap()
 @ stdcall GetProcessHeaps(long ptr)
 @ stdcall GetProcessId(long)
 @ stdcall GetProcessIoCounters(long ptr)
@@ -458,6 +458,7 @@
 @ stdcall GetTempPathW(long ptr)
 @ stdcall GetThreadContext(long ptr)
 @ stdcall GetThreadIOPendingFlag(long ptr)
+@ stdcall GetThreadId(ptr)
 @ stdcall GetThreadLocale()
 @ stdcall GetThreadPriority(long)
 @ stdcall GetThreadPriorityBoost(long ptr)
@@ -557,6 +558,7 @@
 @ stdcall IsProcessInJob(long long ptr)
 @ stdcall IsProcessorFeaturePresent(long)
 @ stdcall IsSystemResumeAutomatic()
+@ stdcall IsTimeZoneRedirectionEnabled()
 @ stdcall IsValidCodePage(long)
 @ stdcall IsValidLanguageGroup(long long)
 @ stdcall IsValidLocale(long long)
@@ -659,7 +661,7 @@
 @ stdcall QueryPerformanceFrequency(ptr)
 @ stdcall QueueUserAPC(ptr long long)
 @ stdcall QueueUserWorkItem(ptr ptr long)
-@ stdcall -norelay RaiseException(long long long ptr)
+@ stdcall RaiseException(long long long ptr)
 @ stdcall ReadConsoleA(long ptr long ptr ptr)
 @ stdcall ReadConsoleInputA(long ptr long ptr)
 @ stdcall ReadConsoleInputExA(long ptr long ptr long)
@@ -702,22 +704,11 @@
 @ stdcall ResetWriteWatch(ptr long)
 @ stdcall RestoreLastError(long) ntdll.RtlRestoreLastWin32Error
 @ stdcall ResumeThread(long)
-@ stdcall -arch=x86_64 RtlAddFunctionTable(ptr long long) ntdll.RtlAddFunctionTable
 @ stdcall -register RtlCaptureContext(ptr) ntdll.RtlCaptureContext
 @ stdcall RtlCaptureStackBackTrace(long long ptr ptr) ntdll.RtlCaptureStackBackTrace
-@ stdcall -arch=x86_64 RtlCompareMemory(ptr ptr ptr) ntdll.RtlCompareMemory
-@ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr ptr) ntdll.memcpy
-@ stdcall -arch=x86_64 RtlDeleteFunctionTable(ptr) ntdll.RtlDeleteFunctionTable
 @ stdcall RtlFillMemory(ptr long long) ntdll.RtlFillMemory
-@ stdcall -arch=x86_64 RtlInstallFunctionTableCallback(double double long ptr ptr ptr) ntdll.RtlInstallFunctionTableCallback
-@ stdcall -arch=x86_64 RtlLookupFunctionEntry(ptr ptr ptr) ntdll.RtlLookupFunctionEntry
 @ stdcall RtlMoveMemory(ptr ptr long) ntdll.RtlMoveMemory
-@ stdcall -arch=x86_64 RtlPcToFileHeader(ptr ptr) ntdll.RtlPcToFileHeader
-@ stdcall -arch=x86_64 RtlRaiseException(ptr) ntdll.RtlRaiseException
-@ stdcall -arch=x86_64 RtlRestoreContext(ptr ptr) ntdll.RtlRestoreContext
 @ stdcall RtlUnwind(ptr ptr ptr long) ntdll.RtlUnwind
-@ stdcall -arch=x86_64 RtlUnwindEx(ptr ptr ptr ptr ptr ptr) ntdll.RtlUnwindEx
-@ stdcall -arch=x86_64 RtlVirtualUnwind(ptr ptr ptr long) ntdll.RtlVirtualUnwind
 @ stdcall RtlZeroMemory(ptr long) ntdll.RtlZeroMemory
 @ stdcall ScrollConsoleScreenBufferA(long ptr ptr ptr ptr)
 @ stdcall ScrollConsoleScreenBufferW(long ptr ptr ptr ptr)
@@ -783,6 +774,7 @@
 @ stdcall SetFileApisToOEM()
 @ stdcall SetFileAttributesA(str long)
 @ stdcall SetFileAttributesW(wstr long)
+@ stdcall SetFileCompletionNotificationModes(ptr str) kernelfull.SetFileCompletionNotificationModes
 @ stdcall SetFilePointer(long long ptr long)
 @ stdcall SetFilePointerEx(long double ptr long)
 @ stdcall SetFileShortNameA(long str)
@@ -791,7 +783,7 @@
 @ stdcall SetFileValidData(long double)
 @ stdcall SetFirmwareEnvironmentVariableA(str str ptr long)
 @ stdcall SetFirmwareEnvironmentVariableW(wstr wstr ptr long)
-@ stdcall -i386 SetHandleContext(long long) ; missing in Win 7 x64
+@ stdcall -arch=i386 SetHandleContext(long long) ; missing in Win 7 x64
 @ stdcall SetHandleCount(long)
 @ stdcall SetHandleInformation(long long long)
 @ stdcall SetInformationJobObject(long long ptr long)
@@ -854,8 +846,8 @@
 @ stdcall Thread32Next(long ptr)
 @ stdcall TlsAlloc()
 @ stdcall TlsFree(long)
-@ stdcall -norelay TlsGetValue(long)
-@ stdcall -norelay TlsSetValue(long ptr)
+@ stdcall TlsGetValue(long)
+@ stdcall TlsSetValue(long ptr)
 @ stdcall Toolhelp32ReadProcessMemory(long ptr ptr long ptr)
 @ stdcall TransactNamedPipe(long ptr long ptr long ptr ptr)
 @ stdcall TransmitCommChar(long long)
@@ -878,7 +870,7 @@
 @ stdcall ValidateLocale(long)
 @ stdcall VerLanguageNameA(long str long)
 @ stdcall VerLanguageNameW(long wstr long)
-@ stdcall -ret64 VerSetConditionMask(long long long long) ntdll.VerSetConditionMask
+@ stdcall VerSetConditionMask(long long long long) ntdll.VerSetConditionMask
 @ stdcall VerifyConsoleIoHandle(long)
 @ stdcall VerifyVersionInfoA(long long double)
 @ stdcall VerifyVersionInfoW(long long double)
@@ -892,7 +884,6 @@
 @ stdcall VirtualQuery(ptr ptr long)
 @ stdcall VirtualQueryEx(long ptr ptr long)
 @ stdcall VirtualUnlock(ptr long)
-@ stdcall WTSGetActiveConsoleSessionId()
 @ stdcall WaitCommEvent(long ptr ptr)
 @ stdcall WaitForDebugEvent(ptr long)
 @ stdcall WaitForMultipleObjects(long ptr long long)
@@ -929,16 +920,13 @@
 @ stdcall WriteProfileStringA(str str str)
 @ stdcall WriteProfileStringW(wstr wstr wstr)
 @ stdcall WriteTapemark(ptr long long long)
+@ stdcall WTSGetActiveConsoleSessionId()
 @ stdcall ZombifyActCtx(ptr)
-@ stdcall -arch=x86_64 __C_specific_handler() ntdll.__C_specific_handler
-@ stdcall -arch=x86_64 __chkstk() ntdll.__chkstk
-;@ stdcall -arch=x86_64 __misaligned_access() ntdll.__misaligned_access
 @ stdcall _hread(long ptr long)
 @ stdcall _hwrite(long ptr long)
 @ stdcall _lclose(long)
 @ stdcall _lcreat(str long)
 @ stdcall _llseek(long long long)
-@ stdcall -arch=x86_64 _local_unwind() ntdll._local_unwind
 @ stdcall _lopen(str long)
 @ stdcall _lread(long ptr long) _hread
 @ stdcall _lwrite(long ptr long) _hwrite
@@ -957,70 +945,58 @@
 @ stdcall lstrcpyn(ptr str long) lstrcpynA
 @ stdcall lstrcpynA(ptr str long)
 @ stdcall lstrcpynW(ptr wstr long)
-@ stdcall lstrlen(str) lstrlenA
-@ stdcall lstrlenA(str)
+@ stdcall lstrlen(str) 
+@ stdcall lstrlenA(str) lstrlen
 @ stdcall lstrlenW(wstr)
-;@ stdcall -arch=x86_64 uaw_lstrcmpW(wstr wstr)
-;@ stdcall -arch=x86_64 uaw_lstrcmpiW(wstr wstr)
-;@ stdcall -arch=x86_64 uaw_lstrlenW(wstr)
-;@ stdcall -arch=x86_64 uaw_wcschr(wstr long)
-;@ stdcall -arch=x86_64 uaw_wcscpy(ptr wstr)
-;@ stdcall -arch=x86_64 uaw_wcsicmp(wstr wstr)
-;@ stdcall -arch=x86_64 uaw_wcslen(wstr)
-;@ stdcall -arch=x86_64 uaw_wcsrchr(wstr long)
 
-#Only for XP 
-@ stdcall BaseInitAppcompatCache() kernelfull.BaseInitAppcompatCache
-@ stdcall BaseCleanupAppcompatCache() kernelfull.BaseCleanupAppcompatCache
-@ stdcall CreateProcessInternalWSecure() kernelfull.CreateProcessInternalWSecure
-@ stdcall GetNumaAvailableMemory(ptr long ptr) kernelfull.GetNumaAvailableMemory
-@ stdcall GetNumaProcessorMap(ptr long ptr) kernelfull.GetNumaProcessorMap
-@ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
-@ stdcall QueryWin31IniFilesMappedToRegistry(long wstr long ptr) kernelfull.QueryWin31IniFilesMappedToRegistry
+#Functions needed for Kernel32 for Wow 
+@ stdcall -arch=i386 BaseProcessStartThunk(ptr) 
+@ stdcall -arch=i386 BaseThreadStartThunk(ptr ptr)
+@ stdcall -arch=i386 ConsoleIMERoutine() kernelfull.ConsoleIMERoutine ;Make this function
+@ stdcall -arch=i386 CtrlRoutine() kernelfull.CtrlRoutine
 
-#Native on XP SP3
-@ stdcall GetProcessDEPPolicy(ptr ptr ptr) kernelfull.GetProcessDEPPolicy
-@ stdcall GetSystemDEPPolicy() kernelfull.GetSystemDEPPolicy
-@ stdcall SetProcessDEPPolicy(long) kernelfull.SetProcessDEPPolicy
+#Missing on Server 2003 RTM (only available on 2003 SP1 and SP2)
+@ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernelfull.BaseCheckRunApp
+@ stdcall BasepCheckBadapp(long ptr long long long long long long long) kernelfull.BasepCheckBadapp
+@ stdcall BasepCheckWinSaferRestrictions(long long long long long long) kernelfull.BasepCheckWinSaferRestrictions
+@ stdcall BasepFreeAppCompatData(ptr ptr) 
+@ stdcall BaseQueryModuleData(str str ptr ptr ptr) kernelfull.BaseQueryModuleData
+@ stdcall EnumSystemFirmwareTables(long ptr long) kernelfull.EnumSystemFirmwareTables
+@ stdcall GetSystemFileCacheSize(ptr ptr ptr) kernelfull.GetSystemFileCacheSize
+@ stdcall GetSystemFirmwareTable(long long ptr long) kernelfull.GetSystemFirmwareTable ;(Need implement for XP/2003 RTM)
+@ stdcall SetSystemFileCacheSize(long long long) kernelfull.SetSystemFileCacheSize
+@ stdcall SetThreadStackGuarantee(ptr) 
+@ stdcall Wow64DisableWow64FsRedirection(ptr) kernelfull.Wow64DisableWow64FsRedirection
+@ stdcall Wow64RevertWow64FsRedirection(ptr) kernelfull.Wow64RevertWow64FsRedirection
 
-#Only for XP and Server 2003 RTM
+#Needed functions for Server 2003 RTM
 @ stdcall CreateVirtualBuffer(ptr long long) kernelfull.CreateVirtualBuffer
 @ stdcall ExtendVirtualBuffer(ptr) kernelfull.ExtendVirtualBuffer
 @ stdcall FreeVirtualBuffer(ptr) kernelfull.FreeVirtualBuffer
 @ stdcall TrimVirtualBuffer(ptr) kernelfull.TrimVirtualBuffer
 @ stdcall VirtualBufferExceptionHandler(long ptr ptr) kernelfull.VirtualBufferExceptionHandler
 
-#Missing on XP SP3 and native on Server 2003
-@ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernelfull.BaseCheckRunApp
-@ stdcall BaseIsAppcompatInfrastructureDisabled() kernelfull.BaseIsAppcompatInfrastructureDisabled
-@ stdcall BasepCheckBadapp(long ptr long long long long long long long) kernelfull.BasepCheckBadapp
-@ stdcall BasepFreeAppCompatData(ptr ptr) kernelfull.BasepFreeAppCompatData
+#Only for Windows XP
+@ stdcall BaseInitAppcompatCache() kernelfull.BaseInitAppcompatCache
+@ stdcall BaseCleanupAppcompatCache() kernelfull.BaseCleanupAppcompatCache
+@ stdcall CreateProcessInternalWSecure() kernelfull.CreateProcessInternalWSecure
+@ stdcall QueryWin31IniFilesMappedToRegistry(long wstr long ptr) kernelfull.QueryWin31IniFilesMappedToRegistry
+@ stdcall GetNumaAvailableMemory(ptr long ptr) kernelfull.GetNumaAvailableMemory
+@ stdcall GetNumaProcessorMap(ptr long ptr) kernelfull.GetNumaProcessorMap
+@ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
+
+#Missing on XP and avaliable for Server 2003
 @ stdcall ConvertThreadToFiberEx(ptr long) kernelfull.ConvertThreadToFiberEx
-@ stdcall EnumSystemFirmwareTables(long ptr long) kernelfull.EnumSystemFirmwareTables
-@ stdcall FindFirstStreamW(wstr ptr ptr long) kernelfull.FindFirstStreamW
-@ stdcall FindNextStreamW(ptr ptr) kernelfull.FindNextStreamW
-@ stdcall FlsAlloc(ptr) kernelfull.FlsAlloc
-@ stdcall FlsFree(long) kernelfull.FlsFree
-@ stdcall FlsGetValue(long) kernelfull.FlsGetValue
-@ stdcall FlsSetValue(long ptr) kernelfull.FlsSetValue
-@ stdcall GetLargePageMinimum() kernelfull.GetLargePageMinimum
+@ stdcall FindNextStreamW(ptr ptr) ;kernelfull.FindNextStreamW ;onwer implementation 
+@ stdcall GetLargePageMinimum() ;kernelfull.GetLargePageMinimum ;onwer implementation 
 @ stdcall GetNLSVersion(long long ptr) kernelfull.GetNLSVersion
-@ stdcall GetProcessIdOfThread(ptr) kernelfull.GetProcessIdOfThread
-@ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) kernelfull.GetProcessWorkingSetSizeEx
-@ stdcall GetSystemFileCacheSize(ptr ptr ptr) kernelfull.GetSystemFileCacheSize
-@ stdcall GetSystemFirmwareTable(long long ptr long) kernelfull.GetSystemFirmwareTable
-@ stdcall GetThreadId(ptr) kernelfull.GetThreadId
+@ stdcall GetProcessIdOfThread(ptr) ;kernelfull.GetProcessIdOfThread ;onwer implementation 
+@ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) ;kernelfull.GetProcessWorkingSetSizeEx ;onwer implementation 
 @ stdcall IsNLSDefinedString(long long ptr long long) kernelfull.IsNLSDefinedString
-@ stdcall IsTimeZoneRedirectionEnabled() kernelfull.IsTimeZoneRedirectionEnabled
-@ stdcall NeedCurrentDirectoryForExePathA(str) kernelfull.NeedCurrentDirectoryForExePathA
-@ stdcall NeedCurrentDirectoryForExePathW(wstr) kernelfull.NeedCurrentDirectoryForExePathW
-@ stdcall ReOpenFile(ptr long long long) kernelfull.ReOpenFile
-@ stdcall SetEnvironmentStringsA(ptr) kernelfull.SetEnvironmentStringsA
-@ stdcall SetEnvironmentStringsW(ptr) kernelfull.SetEnvironmentStringsW
-@ stdcall SetFileCompletionNotificationModes(ptr long) kernelfull.SetFileCompletionNotificationModes
-@ stdcall SetProcessWorkingSetSizeEx(long long long long) kernelfull.SetProcessWorkingSetSizeEx
-@ stdcall SetSystemFileCacheSize(long long long) kernelfull.SetSystemFileCacheSize
-@ stdcall SetThreadStackGuarantee(ptr) kernelfull.SetThreadStackGuarantee
-@ stdcall Wow64DisableWow64FsRedirection(ptr) kernelfull.Wow64DisableWow64FsRedirection
+@ stdcall NeedCurrentDirectoryForExePathA(str) ;kernelfull.NeedCurrentDirectoryForExePathA ;onwer implementation 
+@ stdcall NeedCurrentDirectoryForExePathW(wstr) ;kernelfull.NeedCurrentDirectoryForExePathW ;onwer implementation 
+@ stdcall ReOpenFile(ptr long long long) ;kernelfull.ReOpenFile ;onwer implementation 
+@ stdcall SetEnvironmentStringsA(ptr) ;kernelfull.SetEnvironmentStringsA ;onwer implementation 
+@ stdcall SetEnvironmentStringsW(ptr) ;kernelfull.SetEnvironmentStringsW ;onwer implementation 
+@ stdcall SetProcessWorkingSetSizeEx(long long long long) ;kernelfull.SetProcessWorkingSetSizeEx ;onwer implementation  
 @ stdcall Wow64EnableWow64FsRedirection(long) kernelfull.Wow64EnableWow64FsRedirection
-@ stdcall Wow64RevertWow64FsRedirection(ptr) kernelfull.Wow64RevertWow64FsRedirection

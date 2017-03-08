@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Henri Verbeet for CodeWeavers
+ * Copyright 2016 Jacek Caban for CodeWeavers
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,28 +14,36 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
  */
-#include <main.h>
 
-BOOL
-WINAPI
-VerifyVersionInfoA(
-    OUT LPOSVERSIONINFOEXA lpVersionInformation,
-	IN DWORD dwTypeMask,
-	IN DWORDLONG dwlConditionMask	
-    )
+#define WIN32_LEAN_AND_MEAN
+#define COBJMACROS
+#include "initguid.h"
+#include "wpcapi.h"
+
+#include "wine/test.h"
+
+static void test_wpc(void)
 {
-    return TRUE;	
+    IWindowsParentalControls *wpc;
+    HRESULT hres;
+
+    hres = CoCreateInstance(&CLSID_WindowsParentalControls, NULL, CLSCTX_INPROC_SERVER, &IID_IWindowsParentalControls, (void**)&wpc);
+    if(hres == REGDB_E_CLASSNOTREG)
+        win_skip("CLSID_WindowsParentalControls not registered\n");
+    else
+        ok(hres == S_OK, "Could not create CLSID_WindowsParentalControls instance: %08x\n", hres);
+    if(FAILED(hres))
+        return;
+
+    IWindowsParentalControls_Release(wpc);
 }
 
-BOOL
-WINAPI
-VerifyVersionInfoW(
-    OUT LPOSVERSIONINFOEXW lpVersionInformation,
-	IN DWORD dwTypeMask,
-	IN DWORDLONG dwlConditionMask		
-    )
+START_TEST(wpc)
 {
-    return TRUE;	
+    CoInitialize(NULL);
+
+    test_wpc();
+
+    CoUninitialize();
 }

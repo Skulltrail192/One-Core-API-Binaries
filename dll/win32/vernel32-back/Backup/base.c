@@ -55,8 +55,6 @@ PRTL_CONVERT_STRING Basep8BitStringToUnicodeString = RtlAnsiStringToUnicodeStrin
 
 LPTOP_LEVEL_EXCEPTION_FILTER GlobalTopLevelExceptionFilter;
 
-void Report32bitAppLaunching ( );
-
 RTL_QUERY_REGISTRY_TABLE BasepAppCertTable[2] =
 {
     {
@@ -300,8 +298,6 @@ Quickie:
 
     return BaseNamedObjectDirectory;
 }
-
-
 
 POBJECT_ATTRIBUTES 
 WINAPI 
@@ -1117,8 +1113,6 @@ VOID
 WINAPI
 BaseProcessStart(PPROCESS_START_ROUTINE lpStartAddress)
 {
-    DbgPrint("BaseProcessStartup(..) - setting up exception frame.\n");
-
     _SEH2_TRY
     {
         /* Set our Start Address */
@@ -1227,95 +1221,6 @@ LONG BaseThreadExceptionFilter(EXCEPTION_POINTERS * ExceptionInfo)
    }
 
    return ExceptionDisposition;
-}
-
-void
-Report32bitAppLaunching ()
-/*++
-
-Routine Description:
-
-      This routine is called whenever a 32-bit is launched on win64 (inside Wow64). It will
-      check to see if application loggin is enabled, and if so, will log an event to the 
-      application log.
-      
-Arguments:
-
-    None.
-
-Return Value:
-
-    None.
---*/
-
-{
-
-    
-    const static UNICODE_STRING KeyName = RTL_CONSTANT_STRING  (L"\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\wow64\\config");
-    static UNICODE_STRING ValueName = RTL_CONSTANT_STRING  (L"LogAppLaunchingEvent");
-    static OBJECT_ATTRIBUTES ObjA = RTL_CONSTANT_OBJECT_ATTRIBUTES (&KeyName, OBJ_CASE_INSENSITIVE);
-    
-    WCHAR Buffer [MAX_PATH];
-    const PWCHAR Msg [2] = {Buffer, NULL};
-    PWCHAR pAppName;
-    HKEY  hKey;
-    PUNICODE_STRING ImageName;
-    PKEY_VALUE_PARTIAL_INFORMATION KeyValueInformation;
-    NTSTATUS Status;
-    PPEB Peb;
-    PWSTR PtrToCopy;
-    DWORD CopyLength;
-
-    
-    Status = NtOpenKey (&hKey, KEY_READ | KEY_WOW64_64KEY, &ObjA);
-
-    if (NT_SUCCESS(Status)) {
-        
-        KeyValueInformation = (PKEY_VALUE_PARTIAL_INFORMATION)Buffer;
-  
-        Status = NtQueryValueKey(
-                                hKey,
-                                &ValueName,
-                                KeyValuePartialInformation,
-                                KeyValueInformation,
-                                sizeof (Buffer),
-                                &CopyLength
-                                );
-        NtClose (hKey);
-
-        if ((NT_SUCCESS (Status)) && 
-            (KeyValueInformation->Type == REG_DWORD) &&
-            (KeyValueInformation->DataLength == sizeof (DWORD))) {
-
-            if (*(LONG *)KeyValueInformation->Data == 0x1) {
-
-                Peb = NtCurrentPeb ();
-                PtrToCopy = NULL;
-
-                if (Peb->ProcessParameters != NULL) {
-
-                    ImageName = &Peb->ProcessParameters->ImagePathName;
-
-                    ASSERT (ImageName->Buffer != NULL);
-                    if (ImageName->Length > (sizeof (Buffer) - sizeof (UNICODE_NULL))) {
-                        
-                        CopyLength = (sizeof (Buffer) - sizeof (UNICODE_NULL));
-                        PtrToCopy = (PWSTR)((PSTR)ImageName->Buffer + (ImageName->Length - sizeof (Buffer)) + sizeof (UNICODE_NULL));
-                    } else {
-
-                        CopyLength = ImageName->Length;
-                        PtrToCopy = ImageName->Buffer;
-                    }
-
-                    if ( CopyLength){
-                        RtlCopyMemory (Buffer, PtrToCopy, CopyLength);
-                        Buffer [(CopyLength >> 1)] = UNICODE_NULL;
-                    } else swprintf (Buffer, L"PID=%d",NtCurrentTeb()->ClientId.UniqueProcess);  
-                }
-                //Wow64LogMessageInEventLogger ((PWCHAR *)Msg);
-            }
-        }
-    }
 }
 
 VOID
