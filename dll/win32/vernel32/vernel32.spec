@@ -990,6 +990,7 @@
 @ stdcall TrimVirtualBuffer(ptr) kernelfull.TrimVirtualBuffer
 @ stdcall VirtualBufferExceptionHandler(long ptr ptr) kernelfull.VirtualBufferExceptionHandler
 
+
 #Missing on XP SP3 and native on Server 2003
 @ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernelfull.BaseCheckRunApp
 @ stdcall BaseIsAppcompatInfrastructureDisabled() kernelfull.BaseIsAppcompatInfrastructureDisabled
