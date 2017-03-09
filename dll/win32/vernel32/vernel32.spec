@@ -7,8 +7,8 @@
 @ stdcall AddLocalAlternateComputerNameA(str ptr)
 @ stdcall AddLocalAlternateComputerNameW(wstr ptr)
 @ stdcall AddRefActCtx(ptr)
-@ stdcall AddVectoredContinueHandler(long ptr) ntdll.RtlAddVectoredContinueHandler
-@ stdcall AddVectoredExceptionHandler(long ptr) ntdll.RtlAddVectoredExceptionHandler
+@ stdcall AddVectoredContinueHandler(long ptr) vtdll.RtlAddVectoredContinueHandler
+@ stdcall AddVectoredExceptionHandler(long ptr) vtdll.RtlAddVectoredExceptionHandler
 @ stdcall AllocConsole()
 @ stdcall AllocateUserPhysicalPages(long ptr ptr)
 @ stdcall AreFileApisANSI()
@@ -24,10 +24,8 @@
 @ stdcall BaseInitAppcompatCacheSupport()
 @ stdcall BaseProcessInitPostImport() ; missing in Win 7
 @ stdcall -arch=x86_64 BaseProcessStart()
-@ stdcall BaseQueryModuleData(str str ptr ptr ptr) ;check
 @ stdcall -arch=x86_64 BaseThreadStart()
 @ stdcall BaseUpdateAppcompatCache(long long long)
-@ stdcall BasepCheckWinSaferRestrictions(long long long long long long)
 @ stdcall Beep(long long)
 @ stdcall BeginUpdateResourceA(str long)
 @ stdcall BeginUpdateResourceW(wstr long)
@@ -118,16 +116,16 @@
 @ stdcall DeactivateActCtx(long ptr)
 @ stdcall DebugActiveProcess(long)
 @ stdcall DebugActiveProcessStop(long)
-@ stdcall DebugBreak() ntdll.DbgBreakPoint
+@ stdcall DebugBreak() vtdll.DbgBreakPoint
 @ stdcall DebugBreakProcess(long)
 @ stdcall DebugSetProcessKillOnExit(long)
-@ stdcall DecodePointer(ptr) ntdll.RtlDecodePointer
-@ stdcall DecodeSystemPointer(ptr) ntdll.RtlDecodeSystemPointer
+@ stdcall DecodePointer(ptr) vtdll.RtlDecodePointer
+@ stdcall DecodeSystemPointer(ptr) vtdll.RtlDecodeSystemPointer
 @ stdcall DefineDosDeviceA(long str str)
 @ stdcall DefineDosDeviceW(long wstr wstr)
 @ stdcall DelayLoadFailureHook(str str)
 @ stdcall DeleteAtom(long)
-@ stdcall DeleteCriticalSection(ptr) ntdll.RtlDeleteCriticalSection
+@ stdcall DeleteCriticalSection(ptr) vtdll.RtlDeleteCriticalSection
 @ stdcall DeleteFiber(ptr)
 @ stdcall DeleteFileA(str)
 @ stdcall DeleteFileW(wstr)
@@ -146,11 +144,11 @@
 @ stdcall DosPathToSessionPathW(long wstr wstr)
 @ stdcall DuplicateConsoleHandle(long long long long)
 @ stdcall DuplicateHandle(long long long ptr long long long)
-@ stdcall EncodePointer(ptr) ntdll.RtlEncodePointer
-@ stdcall EncodeSystemPointer(ptr) ntdll.RtlEncodeSystemPointer
+@ stdcall EncodePointer(ptr) vtdll.RtlEncodePointer
+@ stdcall EncodeSystemPointer(ptr) vtdll.RtlEncodeSystemPointer
 @ stdcall EndUpdateResourceA(long long)
 @ stdcall EndUpdateResourceW(long long)
-@ stdcall EnterCriticalSection(ptr) ntdll.RtlEnterCriticalSection
+@ stdcall EnterCriticalSection(ptr) vtdll.RtlEnterCriticalSection
 @ stdcall EnumCalendarInfoA(ptr long long long)
 @ stdcall EnumCalendarInfoExA(ptr long long long)
 @ stdcall EnumCalendarInfoExW(ptr long long long)
@@ -182,8 +180,8 @@
 @ stdcall EnumerateLocalComputerNamesW(ptr long wstr ptr)
 @ stdcall EraseTape(ptr long long)
 @ stdcall EscapeCommFunction(long long)
-@ stdcall ExitProcess(long) ; FIXME: ntdll.RtlExitUserProcess
-@ stdcall ExitThread(long) ; FIXME: ntdll.RtlExitUserThread
+@ stdcall ExitProcess(long) ; FIXME: vtdll.RtlExitUserProcess
+@ stdcall ExitThread(long) ; FIXME: vtdll.RtlExitUserThread
 @ stdcall ExitVDM(long long)
 @ stdcall ExpandEnvironmentStringsA(str ptr long)
 @ stdcall ExpandEnvironmentStringsW(wstr ptr long)
@@ -315,7 +313,7 @@
 @ stdcall GetCurrentDirectoryW(long ptr)
 @ stdcall -norelay GetCurrentProcess()
 @ stdcall -norelay GetCurrentProcessId()
-@ stdcall GetCurrentProcessorNumber() ntdll.RtlGetCurrentProcessorNumber
+@ stdcall GetCurrentProcessorNumber() vtdll.RtlGetCurrentProcessorNumber
 @ stdcall -norelay GetCurrentThread()
 @ stdcall -norelay GetCurrentThreadId()
 @ stdcall GetDateFormatA(long long ptr str ptr long)
@@ -359,7 +357,7 @@
 @ stdcall -i386 GetHandleContext(long) ; missing on x64
 @ stdcall GetHandleInformation(long ptr)
 @ stdcall GetLargestConsoleWindowSize(long)
-@ stdcall GetLastError() ntdll.RtlGetLastWin32Error
+@ stdcall GetLastError() vtdll.RtlGetLastWin32Error
 @ stdcall GetLinguistLangSize(ptr) ; missing in Win 7
 @ stdcall GetLocalTime(ptr)
 @ stdcall GetLocaleInfoA(long long ptr long)
@@ -512,19 +510,19 @@
 @ stdcall Heap32ListFirst(long ptr)
 @ stdcall Heap32ListNext(long ptr)
 @ stdcall Heap32Next(ptr)
-@ stdcall HeapAlloc(long long long) ntdll.RtlAllocateHeap
+@ stdcall HeapAlloc(long long long) vtdll.RtlAllocateHeap
 @ stdcall HeapCompact(long long)
 @ stdcall HeapCreate(long long long)
 @ stdcall HeapCreateTagsW(long long wstr wstr) ; missing in Win 7
 @ stdcall HeapDestroy(long)
 @ stdcall HeapExtend(long long ptr long) ; missing in Win 7
-@ stdcall HeapFree(long long long) ntdll.RtlFreeHeap
+@ stdcall HeapFree(long long long) vtdll.RtlFreeHeap
 @ stdcall HeapLock(long)
 @ stdcall HeapQueryInformation(long long ptr long ptr)
 @ stdcall HeapQueryTagW(long long long long ptr) ; missing in Win 7
-@ stdcall HeapReAlloc(long long ptr long) ntdll.RtlReAllocateHeap
+@ stdcall HeapReAlloc(long long ptr long) vtdll.RtlReAllocateHeap
 @ stdcall HeapSetInformation(ptr long ptr long)
-@ stdcall HeapSize(long long ptr) ntdll.RtlSizeHeap
+@ stdcall HeapSize(long long ptr) vtdll.RtlSizeHeap
 @ stdcall HeapSummary(long long ptr)
 @ stdcall HeapUnlock(long)
 @ stdcall HeapUsage(long long long long ptr) ; missing in Win 7
@@ -533,16 +531,16 @@
 @ stdcall InitAtomTable(long)
 @ stdcall InitializeCriticalSection(ptr)
 @ stdcall InitializeCriticalSectionAndSpinCount(ptr long)
-@ stdcall InitializeSListHead(ptr) ntdll.RtlInitializeSListHead
-@ stdcall -arch=i386 -ret64 InterlockedCompareExchange64(ptr double double) ntdll.RtlInterlockedCompareExchange64
+@ stdcall InitializeSListHead(ptr) vtdll.RtlInitializeSListHead
+@ stdcall -arch=i386 -ret64 InterlockedCompareExchange64(ptr double double) vtdll.RtlInterlockedCompareExchange64
 @ stdcall -arch=i386 InterlockedCompareExchange (ptr long long)
 @ stdcall -arch=i386 InterlockedDecrement(ptr)
 @ stdcall -arch=i386 InterlockedExchange(ptr long)
 @ stdcall -arch=i386 InterlockedExchangeAdd(ptr long)
-@ stdcall InterlockedFlushSList(ptr) ntdll.RtlInterlockedFlushSList
+@ stdcall InterlockedFlushSList(ptr) vtdll.RtlInterlockedFlushSList
 @ stdcall -arch=i386 InterlockedIncrement(ptr)
-@ stdcall InterlockedPopEntrySList(ptr) ntdll.RtlInterlockedPopEntrySList
-@ stdcall InterlockedPushEntrySList(ptr ptr) ntdll.RtlInterlockedPushEntrySList
+@ stdcall InterlockedPopEntrySList(ptr) vtdll.RtlInterlockedPopEntrySList
+@ stdcall InterlockedPushEntrySList(ptr ptr) vtdll.RtlInterlockedPushEntrySList
 @ stdcall InvalidateConsoleDIBits(long long)
 @ stdcall IsBadCodePtr(ptr)
 @ stdcall IsBadHugeReadPtr(ptr long)
@@ -575,7 +573,7 @@
 @ stdcall LZRead(long str long)
 @ stdcall LZSeek(long long long)
 @ stdcall LZStart()
-@ stdcall LeaveCriticalSection(ptr) ntdll.RtlLeaveCriticalSection
+@ stdcall LeaveCriticalSection(ptr) vtdll.RtlLeaveCriticalSection
 @ stdcall LoadLibraryA(str)
 @ stdcall LoadLibraryExA( str long long)
 @ stdcall LoadLibraryExW(wstr long long)
@@ -650,7 +648,7 @@
 @ stdcall PulseEvent(long)
 @ stdcall PurgeComm(long long)
 @ stdcall QueryActCtxW(long ptr ptr long ptr long ptr)
-@ stdcall QueryDepthSList(ptr) ntdll.RtlQueryDepthSList
+@ stdcall QueryDepthSList(ptr) vtdll.RtlQueryDepthSList
 @ stdcall QueryDosDeviceA(str ptr long)
 @ stdcall QueryDosDeviceW(wstr ptr long)
 @ stdcall QueryInformationJobObject(long long ptr long ptr)
@@ -691,8 +689,8 @@
 @ stdcall RemoveDirectoryW(wstr)
 @ stdcall RemoveLocalAlternateComputerNameA(str long)
 @ stdcall RemoveLocalAlternateComputerNameW(wstr long)
-@ stdcall RemoveVectoredContinueHandler(ptr) ntdll.RtlRemoveVectoredContinueHandler
-@ stdcall RemoveVectoredExceptionHandler(ptr) ntdll.RtlRemoveVectoredExceptionHandler
+@ stdcall RemoveVectoredContinueHandler(ptr) vtdll.RtlRemoveVectoredContinueHandler
+@ stdcall RemoveVectoredExceptionHandler(ptr) vtdll.RtlRemoveVectoredExceptionHandler
 @ stdcall ReplaceFile(wstr wstr wstr long ptr ptr) ReplaceFileW
 @ stdcall ReplaceFileA(str str str long ptr ptr)
 @ stdcall ReplaceFileW(wstr wstr wstr long ptr ptr)
@@ -700,25 +698,25 @@
 @ stdcall RequestWakeupLatency(long)
 @ stdcall ResetEvent(long)
 @ stdcall ResetWriteWatch(ptr long)
-@ stdcall RestoreLastError(long) ntdll.RtlRestoreLastWin32Error
+@ stdcall RestoreLastError(long) vtdll.RtlRestoreLastWin32Error
 @ stdcall ResumeThread(long)
-@ stdcall -arch=x86_64 RtlAddFunctionTable(ptr long long) ntdll.RtlAddFunctionTable
-@ stdcall -register RtlCaptureContext(ptr) ntdll.RtlCaptureContext
-@ stdcall RtlCaptureStackBackTrace(long long ptr ptr) ntdll.RtlCaptureStackBackTrace
-@ stdcall -arch=x86_64 RtlCompareMemory(ptr ptr ptr) ntdll.RtlCompareMemory
-@ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr ptr) ntdll.memcpy
-@ stdcall -arch=x86_64 RtlDeleteFunctionTable(ptr) ntdll.RtlDeleteFunctionTable
-@ stdcall RtlFillMemory(ptr long long) ntdll.RtlFillMemory
-@ stdcall -arch=x86_64 RtlInstallFunctionTableCallback(double double long ptr ptr ptr) ntdll.RtlInstallFunctionTableCallback
-@ stdcall -arch=x86_64 RtlLookupFunctionEntry(ptr ptr ptr) ntdll.RtlLookupFunctionEntry
-@ stdcall RtlMoveMemory(ptr ptr long) ntdll.RtlMoveMemory
-@ stdcall -arch=x86_64 RtlPcToFileHeader(ptr ptr) ntdll.RtlPcToFileHeader
-@ stdcall -arch=x86_64 RtlRaiseException(ptr) ntdll.RtlRaiseException
-@ stdcall -arch=x86_64 RtlRestoreContext(ptr ptr) ntdll.RtlRestoreContext
-@ stdcall RtlUnwind(ptr ptr ptr long) ntdll.RtlUnwind
-@ stdcall -arch=x86_64 RtlUnwindEx(ptr ptr ptr ptr ptr ptr) ntdll.RtlUnwindEx
-@ stdcall -arch=x86_64 RtlVirtualUnwind(ptr ptr ptr long) ntdll.RtlVirtualUnwind
-@ stdcall RtlZeroMemory(ptr long) ntdll.RtlZeroMemory
+@ stdcall -arch=x86_64 RtlAddFunctionTable(ptr long long) vtdll.RtlAddFunctionTable
+@ stdcall -register RtlCaptureContext(ptr) vtdll.RtlCaptureContext
+@ stdcall RtlCaptureStackBackTrace(long long ptr ptr) vtdll.RtlCaptureStackBackTrace
+@ stdcall -arch=x86_64 RtlCompareMemory(ptr ptr ptr) vtdll.RtlCompareMemory
+@ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr ptr) vtdll.memcpy
+@ stdcall -arch=x86_64 RtlDeleteFunctionTable(ptr) vtdll.RtlDeleteFunctionTable
+@ stdcall RtlFillMemory(ptr long long) vtdll.RtlFillMemory
+@ stdcall -arch=x86_64 RtlInstallFunctionTableCallback(double double long ptr ptr ptr) vtdll.RtlInstallFunctionTableCallback
+@ stdcall -arch=x86_64 RtlLookupFunctionEntry(ptr ptr ptr) vtdll.RtlLookupFunctionEntry
+@ stdcall RtlMoveMemory(ptr ptr long) vtdll.RtlMoveMemory
+@ stdcall -arch=x86_64 RtlPcToFileHeader(ptr ptr) vtdll.RtlPcToFileHeader
+@ stdcall -arch=x86_64 RtlRaiseException(ptr) vtdll.RtlRaiseException
+@ stdcall -arch=x86_64 RtlRestoreContext(ptr ptr) vtdll.RtlRestoreContext
+@ stdcall RtlUnwind(ptr ptr ptr long) vtdll.RtlUnwind
+@ stdcall -arch=x86_64 RtlUnwindEx(ptr ptr ptr ptr ptr ptr) vtdll.RtlUnwindEx
+@ stdcall -arch=x86_64 RtlVirtualUnwind(ptr ptr ptr long) vtdll.RtlVirtualUnwind
+@ stdcall RtlZeroMemory(ptr long) vtdll.RtlZeroMemory
 @ stdcall ScrollConsoleScreenBufferA(long ptr ptr ptr ptr)
 @ stdcall ScrollConsoleScreenBufferW(long ptr ptr ptr ptr)
 @ stdcall SearchPathA(str str str long ptr ptr)
@@ -767,7 +765,7 @@
 @ stdcall SetConsoleTitleA(str)
 @ stdcall SetConsoleTitleW(wstr)
 @ stdcall SetConsoleWindowInfo(long long ptr)
-@ stdcall SetCriticalSectionSpinCount(ptr long) ntdll.RtlSetCriticalSectionSpinCount
+@ stdcall SetCriticalSectionSpinCount(ptr long) vtdll.RtlSetCriticalSectionSpinCount
 @ stdcall SetCurrentDirectoryA(str)
 @ stdcall SetCurrentDirectoryW(wstr)
 @ stdcall SetDefaultCommConfigA(str ptr long)
@@ -796,7 +794,7 @@
 @ stdcall SetHandleInformation(long long long)
 @ stdcall SetInformationJobObject(long long ptr long)
 @ stdcall SetLastConsoleEventActive() ; missing in XP SP3
-@ stdcall SetLastError(long) ntdll.RtlSetLastWin32Error
+@ stdcall SetLastError(long) vtdll.RtlSetLastWin32Error
 @ stdcall SetLocalPrimaryComputerNameA(long long) ; missing in XP SP3
 @ stdcall SetLocalPrimaryComputerNameW(long long) ; missing in XP SP3
 @ stdcall SetLocalTime(ptr)
@@ -859,7 +857,7 @@
 @ stdcall Toolhelp32ReadProcessMemory(long ptr ptr long ptr)
 @ stdcall TransactNamedPipe(long ptr long ptr long ptr ptr)
 @ stdcall TransmitCommChar(long long)
-@ stdcall TryEnterCriticalSection(ptr) ntdll.RtlTryEnterCriticalSection
+@ stdcall TryEnterCriticalSection(ptr) vtdll.RtlTryEnterCriticalSection
 @ stdcall TzSpecificLocalTimeToSystemTime(ptr ptr ptr)
 @ stdcall UTRegister(long str str str ptr ptr ptr)
 @ stdcall UTUnRegister(long)
@@ -878,7 +876,7 @@
 @ stdcall ValidateLocale(long)
 @ stdcall VerLanguageNameA(long str long)
 @ stdcall VerLanguageNameW(long wstr long)
-@ stdcall -ret64 VerSetConditionMask(long long long long) ntdll.VerSetConditionMask
+@ stdcall -ret64 VerSetConditionMask(long long long long) vtdll.VerSetConditionMask
 @ stdcall VerifyConsoleIoHandle(long)
 @ stdcall VerifyVersionInfoA(long long double)
 @ stdcall VerifyVersionInfoW(long long double)
@@ -930,15 +928,15 @@
 @ stdcall WriteProfileStringW(wstr wstr wstr)
 @ stdcall WriteTapemark(ptr long long long)
 @ stdcall ZombifyActCtx(ptr)
-@ stdcall -arch=x86_64 __C_specific_handler() ntdll.__C_specific_handler
-@ stdcall -arch=x86_64 __chkstk() ntdll.__chkstk
-;@ stdcall -arch=x86_64 __misaligned_access() ntdll.__misaligned_access
+@ stdcall -arch=x86_64 __C_specific_handler() vtdll.__C_specific_handler
+@ stdcall -arch=x86_64 __chkstk() vtdll.__chkstk
+;@ stdcall -arch=x86_64 __misaligned_access() vtdll.__misaligned_access
 @ stdcall _hread(long ptr long)
 @ stdcall _hwrite(long ptr long)
 @ stdcall _lclose(long)
 @ stdcall _lcreat(str long)
 @ stdcall _llseek(long long long)
-@ stdcall -arch=x86_64 _local_unwind() ntdll._local_unwind
+@ stdcall -arch=x86_64 _local_unwind() vtdll._local_unwind
 @ stdcall _lopen(str long)
 @ stdcall _lread(long ptr long) _hread
 @ stdcall _lwrite(long ptr long) _hwrite
@@ -990,6 +988,9 @@
 @ stdcall TrimVirtualBuffer(ptr) kernelfull.TrimVirtualBuffer
 @ stdcall VirtualBufferExceptionHandler(long ptr ptr) kernelfull.VirtualBufferExceptionHandler
 
+#Missing Server 2003 RTM
+@ stdcall BaseQueryModuleData(str str ptr ptr ptr) kernelfull.BaseQueryModuleData
+@ stdcall BasepCheckWinSaferRestrictions(long long long long long long) kernelfull.BasepCheckWinSaferRestrictions
 
 #Missing on XP SP3 and native on Server 2003
 @ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernelfull.BaseCheckRunApp
