@@ -1,24 +1,19 @@
 ========================
-ReactOS Version 0.3.x
-Updated Dec 16, 2006
+One-Core-API source code based on Reactos 3.x source code, wine and others improviments.
 ========================
 
-1. What is ReactOS?
+1. What is One-Core-API?
 
-   ReactOS is an Open Source effort to develop a quality operating system
-that is compatible with Windows NT applications and drivers.
-
-   The ReactOS project, although currently focused on Windows XP/2003
-drivers compatibility, is always keeping an eye toward compatibility with
-older version of Windows NT family ( NT 4.0, 2000 (NT 5.0)) and new
-Windows NT releases (Vista, etc). Applications (Win32 API) compatibility
-focus is Windows XP.
+   One-Core-API is a compatibility layer to run native programs of XP/2003 and incompatible programs and designed for upper Windows
+versions, like Windows Vista+. The One-Core-API's acrhitectures involves system dlls and compiled wrappers to "simulate" native dlls
+like kernel32, user32.dll, shell32.dll and others. x64 versions also avaliable.
 
 More information is available at http://www.reactos.org/.
 
-2. Building ReactOS
+2. Building One-Core-API
 
-See the INSTALL file for more details.
+Because the source is based on Reactos, you need cmake and visual studio to compile. See Reactos visual studio build video on: 
+https://vimeo.com/58933587.Wrapper dlls's name starts with a "v", like "vernel32" or "vtdll"
 
 3. More information
 
@@ -26,4 +21,11 @@ See the media\doc subdirectory for some sparse notes.
 
 4. Who is responsible
 
-See the CREDITS file.
+Skulltrail
+
+5. Where can i find One-Core-API binaries?
+
+You can find in: http://shorthornproject.com/allcategories.html?tab=onecore&item=item-onecore
+
+This is official website of project
+
