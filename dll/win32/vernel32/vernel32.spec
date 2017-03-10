@@ -365,7 +365,6 @@
 @ stdcall GetLogicalDriveStringsA(long ptr)
 @ stdcall GetLogicalDriveStringsW(long ptr)
 @ stdcall GetLogicalDrives()
-@ stdcall GetLogicalProcessorInformation(ptr ptr)
 @ stdcall GetLongPathNameA (str long long)
 @ stdcall GetLongPathNameW (wstr long long)
 @ stdcall GetMailslotInfo(long ptr ptr ptr ptr)
@@ -976,7 +975,7 @@
 @ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
 @ stdcall QueryWin31IniFilesMappedToRegistry(long wstr long ptr) kernelfull.QueryWin31IniFilesMappedToRegistry
 
-#Native on XP SP3
+#Native in XP SP3 and Missing in Server 2003 SP2 without updates
 @ stdcall GetProcessDEPPolicy(ptr ptr ptr) kernelfull.GetProcessDEPPolicy
 @ stdcall GetSystemDEPPolicy() kernelfull.GetSystemDEPPolicy
 @ stdcall SetProcessDEPPolicy(long) kernelfull.SetProcessDEPPolicy
@@ -988,11 +987,14 @@
 @ stdcall TrimVirtualBuffer(ptr) kernelfull.TrimVirtualBuffer
 @ stdcall VirtualBufferExceptionHandler(long ptr ptr) kernelfull.VirtualBufferExceptionHandler
 
-#Missing Server 2003 RTM
+#Missing in Server 2003 RTM
 @ stdcall BaseQueryModuleData(str str ptr ptr ptr) kernelfull.BaseQueryModuleData
 @ stdcall BasepCheckWinSaferRestrictions(long long long long long long) kernelfull.BasepCheckWinSaferRestrictions
 
-#Missing on XP SP3 and native on Server 2003
+#Missing in XP SP2
+@ stdcall GetLogicalProcessorInformation(ptr ptr) kernelfull.GetLogicalProcessorInformation
+
+#Missing in XP SP3 and native in Server 2003
 @ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernelfull.BaseCheckRunApp
 @ stdcall BaseIsAppcompatInfrastructureDisabled() kernelfull.BaseIsAppcompatInfrastructureDisabled
 @ stdcall BasepCheckBadapp(long ptr long long long long long long long) kernelfull.BasepCheckBadapp
