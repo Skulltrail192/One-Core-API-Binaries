@@ -56,7 +56,6 @@
 @ stdcall CompareStringA(long long str long str long)
 @ stdcall CompareStringW(long long wstr long wstr long)
 @ stdcall ConnectNamedPipe(long ptr)
-@ stdcall -arch=x86_64 ConsoleIMERoutine()
 @ stdcall ConsoleMenuControl(long long long)
 @ stdcall ContinueDebugEvent(long long long)
 @ stdcall ConvertDefaultLocale (long)
@@ -112,7 +111,6 @@
 @ stdcall CreateToolhelp32Snapshot(long long)
 @ stdcall CreateWaitableTimerA(ptr long str)
 @ stdcall CreateWaitableTimerW(ptr long wstr)
-;@ stdcall -arch=x86_64 CtrlRoutine()
 @ stdcall DeactivateActCtx(long ptr)
 @ stdcall DebugActiveProcess(long)
 @ stdcall DebugActiveProcessStop(long)
@@ -1028,3 +1026,12 @@
 @ stdcall Wow64DisableWow64FsRedirection(ptr) kernelfull.Wow64DisableWow64FsRedirection
 @ stdcall Wow64EnableWow64FsRedirection(long) kernelfull.Wow64EnableWow64FsRedirection
 @ stdcall Wow64RevertWow64FsRedirection(ptr) kernelfull.Wow64RevertWow64FsRedirection
+
+#Server 2003 Pos-SP2 Functions
+@ stdcall SetSearchPathMode(long) kernelfull.SetSearchPathMode
+
+#Needed for XP x64 Wow
+@ stdcall -arch=i386 BaseProcessStartThunk(ptr) 
+@ stdcall -arch=i386 BaseThreadStartThunk(ptr ptr)
+@ stdcall ConsoleIMERoutine() kernelfull.ConsoleIMERoutine
+@ stdcall CtrlRoutine() kernelfull.CtrlRoutine
