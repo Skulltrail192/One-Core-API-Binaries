@@ -4,6 +4,7 @@ spec2def(VERNEL32.dll VERNEL32.spec)
 
 list(APPEND SOURCE
 	support.c
+	thread.c
     VERNEL32.rc
     ${CMAKE_CURRENT_BINARY_DIR}/VERNEL32_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/VERNEL32.def)

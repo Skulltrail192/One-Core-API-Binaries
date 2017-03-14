@@ -997,14 +997,9 @@
 @ stdcall BaseIsAppcompatInfrastructureDisabled() kernelfull.BaseIsAppcompatInfrastructureDisabled
 @ stdcall BasepCheckBadapp(long ptr long long long long long long long) kernelfull.BasepCheckBadapp
 @ stdcall BasepFreeAppCompatData(ptr ptr) kernelfull.BasepFreeAppCompatData
-@ stdcall ConvertThreadToFiberEx(ptr long) kernelfull.ConvertThreadToFiberEx
 @ stdcall EnumSystemFirmwareTables(long ptr long) kernelfull.EnumSystemFirmwareTables
 @ stdcall FindFirstStreamW(wstr ptr ptr long) kernelfull.FindFirstStreamW
 @ stdcall FindNextStreamW(ptr ptr) kernelfull.FindNextStreamW
-@ stdcall FlsAlloc(ptr) kernelfull.FlsAlloc
-@ stdcall FlsFree(long) kernelfull.FlsFree
-@ stdcall FlsGetValue(long) kernelfull.FlsGetValue
-@ stdcall FlsSetValue(long ptr) kernelfull.FlsSetValue
 @ stdcall GetLargePageMinimum() kernelfull.GetLargePageMinimum
 @ stdcall GetNLSVersion(long long ptr) kernelfull.GetNLSVersion
 @ stdcall GetProcessIdOfThread(ptr) kernelfull.GetProcessIdOfThread
@@ -1026,6 +1021,13 @@
 @ stdcall Wow64DisableWow64FsRedirection(ptr) kernelfull.Wow64DisableWow64FsRedirection
 @ stdcall Wow64EnableWow64FsRedirection(long) kernelfull.Wow64EnableWow64FsRedirection
 @ stdcall Wow64RevertWow64FsRedirection(ptr) kernelfull.Wow64RevertWow64FsRedirection
+
+#Implemented only because is missing on XP
+@ stdcall ConvertThreadToFiberEx(ptr long) #implemented for XP Support
+@ stdcall FlsAlloc(ptr) #implemented for XP Support
+@ stdcall FlsFree(long) #implemented for XP Support
+@ stdcall FlsGetValue(long) #implemented for XP Support
+@ stdcall FlsSetValue(long ptr) #implemented for XP Support
 
 #Server 2003 Pos-SP2 Functions
 @ stdcall SetSearchPathMode(long) kernelfull.SetSearchPathMode

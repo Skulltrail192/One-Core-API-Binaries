@@ -1,0 +1,5 @@
+FlsAlloc
+FlsFree
+FlsGetValue
+FlsSetValue
+ConvertThreadToFiberEx

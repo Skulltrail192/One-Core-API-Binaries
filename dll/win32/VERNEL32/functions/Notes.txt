@@ -1,0 +1,5 @@
+MSVCRT from Windows Vista needs these functions:
+FlsAlloc
+FlsFree
+FlsGetValue
+FlsSetValue
