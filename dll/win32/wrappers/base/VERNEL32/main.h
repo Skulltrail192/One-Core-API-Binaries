@@ -12,15 +12,27 @@
 /* PSEH for SEH Support */
 #include <pseh/pseh2.h>
 
-//#include <obfuncs.h>
+#include <cmfuncs.h>
 #include <psfuncs.h>
 #include <rtlfuncs.h>
 #include <csr/csr.h>
+
+#include <config.h>
+#include <port.h>
+#include <ntdllbase.h>
+#include <winnls.h>
+#include <unicode.h>
+#include <base.h>
 // #include <kefuncs.h>
 // #include <exfuncs.h>
 // #include <strsafe.h>
 // #include <iofuncs.h>
 // #include <mmfuncs.h>
+
+#define FIND_DATA_SIZE 0x4000
+#define BASESRV_SERVERDLL_INDEX 1
+
+PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 
 /* TYPE DEFINITIONS **********************************************************/
 typedef UINT(WINAPI * PPROCESS_START_ROUTINE)(VOID);
@@ -46,3 +58,67 @@ typedef struct _FIBER                                    /* Field offsets:    */
     struct _ACTIVATION_CONTEXT_STACK *ActivationContextStackPointer;
 #endif
 } FIBER, *PFIBER;
+
+typedef enum _FIND_DATA_TYPE
+{
+    FindFile   = 1,
+    FindStream = 2
+} FIND_DATA_TYPE;
+
+typedef union _DIR_INFORMATION
+{
+    PVOID DirInfo;
+    PFILE_FULL_DIR_INFORMATION FullDirInfo;
+    PFILE_BOTH_DIR_INFORMATION BothDirInfo;
+} DIR_INFORMATION;
+
+typedef struct _FIND_FILE_DATA
+{
+    HANDLE Handle;
+    FINDEX_INFO_LEVELS InfoLevel;
+    FINDEX_SEARCH_OPS SearchOp;
+
+    /*
+     * For handling STATUS_BUFFER_OVERFLOW errors emitted by
+     * NtQueryDirectoryFile in the FildNextFile function.
+     */
+    BOOLEAN HasMoreData;
+
+    /*
+     * "Pointer" to the next file info structure in the buffer.
+     * The type is defined by the 'InfoLevel' parameter.
+     */
+    DIR_INFORMATION NextDirInfo;
+
+    BYTE Buffer[FIND_DATA_SIZE];
+} FIND_FILE_DATA, *PFIND_FILE_DATA;
+
+typedef struct _FIND_STREAM_DATA
+{
+    STREAM_INFO_LEVELS InfoLevel;
+    PFILE_STREAM_INFORMATION FileStreamInfo;
+    PFILE_STREAM_INFORMATION CurrentInfo;
+} FIND_STREAM_DATA, *PFIND_STREAM_DATA;
+
+typedef struct _FIND_DATA_HANDLE
+{
+    FIND_DATA_TYPE Type;
+    RTL_CRITICAL_SECTION Lock;
+
+    /*
+     * Pointer to the following finding data, located at
+     * (this + 1). The type is defined by the 'Type' parameter.
+     */
+    union
+    {
+        PFIND_FILE_DATA FindFileData;
+        PFIND_STREAM_DATA FindStreamData;
+    } u;
+
+} FIND_DATA_HANDLE, *PFIND_DATA_HANDLE;
+
+ULONG
+WINAPI
+BaseSetLastNTError(
+    IN NTSTATUS Status
+);

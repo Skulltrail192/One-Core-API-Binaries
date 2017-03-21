@@ -1,10 +1,28 @@
 
+include_directories(${REACTOS_SOURCE_DIR}/lib/rtl)
+include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys)
+include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys/win)
+include_directories(${REACTOS_SOURCE_DIR}/dll/win32/wrappers/base/vtdll)
 spec2def(VERNEL32.dll VERNEL32.spec)
 
 list(APPEND SOURCE
-	support.c
+	ahcache.c
+	appcompat.c
+	datetime.c
+	dllmain.c
+	error.c
+	filehops.c
+	findfile.c
+	fileopcr.c	
+	mem.c
+	namepipe.c
+	process.c
+	support.c	
+	synch.c
 	thread.c
+	tick.c
+	winnls/ansi.c
     VERNEL32.rc
     ${CMAKE_CURRENT_BINARY_DIR}/VERNEL32_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/VERNEL32.def)
@@ -23,7 +41,7 @@ add_asm_files(VERNEL32_ASM ${ASM_SOURCE})
 
 add_library(VERNEL32 SHARED ${VERNEL32_ASM} ${SOURCE})
 
-set_module_type(VERNEL32 win32dll ENTRYPOINT 0)
+set_module_type(VERNEL32 win32dll ENTRYPOINT BaseDllInitialize 12)
 
 add_importlibs(VERNEL32 kernelfull vtdll)
 

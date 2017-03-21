@@ -3702,8 +3702,8 @@ NTSYSAPI
 NTSTATUS
 NTAPI
 RtlWow64EnableFsRedirectionEx(
-    _In_ PVOID Wow64FsEnableRedirection,
-    _Out_ PVOID *OldFsRedirectionLevel
+    _In_ ULONG Wow64FsEnableRedirection,
+    _Out_ ULONG *OldFsRedirectionLevel
 );
 
 #endif

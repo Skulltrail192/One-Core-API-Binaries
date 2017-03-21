@@ -42,6 +42,7 @@ list(APPEND SOURCE
 	rtl/ldrrsrc.c
 	rtl/locale.c
 	rtl/misc.c
+	rtl/nls.c
 	rtl/notification.c
 #	rtl/message.c
 	rtl/path.c

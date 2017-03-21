@@ -1,24 +1,28 @@
- /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- */
+/*++
+
+Copyright (c) 2017  Shorthorn Project
+
+Module Name:
+
+    thread.c
+
+Abstract:
+
+    This module implements Win32 Thread Object APIs
+
+Author:
+
+    Skulltrail 16-March-2017
+
+Revision History:
+
+--*/
  
 #define NDEBUG
 
 #include "main.h"
-#include <ketypes.h>
+
+static BOOL (WINAPI *pSetThreadStackGuarantee)(PULONG);
 
 /***********************************************************************
  *           FlsAlloc   (KERNEL32.@) - For XP support
@@ -133,4 +137,72 @@ ConvertThreadToFiberEx(
 
     /* Return opaque fiber data */
     return (LPVOID)Fiber;
+}
+
+/**********************************************************************
+ *           SetThreadStackGuarantee   (KERNEL32.@)
+ */
+BOOL 
+WINAPI 
+SetThreadStackGuarantee(
+	PULONG stacksize
+)
+{
+	HMODULE hkernel32 = GetModuleHandleA("kernelfull.dll");
+	pSetThreadStackGuarantee = (void *)GetProcAddress(hkernel32, "SetThreadStackGuarantee");
+	if(pSetThreadStackGuarantee){
+		return pSetThreadStackGuarantee(stacksize);
+	}else{
+		static int once;
+		if (once++ == 0)
+			DbgPrint("SetThreadStackGuarantee: stub\n", stacksize);
+		return TRUE;
+	}    
+}
+
+/*
+ * @implemented
+ */
+DWORD
+WINAPI
+GetThreadId(IN HANDLE Thread)
+{
+    THREAD_BASIC_INFORMATION ThreadBasic;
+    NTSTATUS Status;
+
+    Status = NtQueryInformationThread(Thread,
+                                      ThreadBasicInformation,
+                                      &ThreadBasic,
+                                      sizeof(THREAD_BASIC_INFORMATION),
+                                      NULL);
+    if (!NT_SUCCESS(Status))
+    {
+        BaseSetLastNTError(Status);
+        return 0;
+    }
+
+    return HandleToUlong(ThreadBasic.ClientId.UniqueThread);
+}
+
+DWORD
+APIENTRY
+GetProcessIdOfThread(
+    HANDLE Thread
+    )
+{
+    NTSTATUS Status;
+    THREAD_BASIC_INFORMATION ThreadBasic;
+
+    Status = NtQueryInformationThread (Thread,
+                                       ThreadBasicInformation,
+                                       &ThreadBasic,
+                                       sizeof (ThreadBasic),
+                                       NULL);
+
+    if (!NT_SUCCESS (Status)) {
+        BaseSetLastNTError (Status);
+        return 0;
+    }
+
+    return HandleToUlong (ThreadBasic.ClientId.UniqueProcess);
 }

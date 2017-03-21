@@ -614,3 +614,13 @@ WINAPI
 RtlQueryUnbiasedInterruptTime(
 	ULONGLONG *time
 );
+
+LONG 
+WINAPI 
+RtlCompareUnicodeStrings( 
+	const WCHAR *s1, 
+	SIZE_T len1, 
+	const WCHAR *s2, 
+	SIZE_T len2,
+    BOOLEAN case_insensitive 
+);

@@ -433,7 +433,7 @@
 @ stdcall RtlCompareMemory(ptr ptr long)
 @ stdcall RtlCompareMemoryUlong(ptr long long)
 @ stdcall RtlCompareString(ptr ptr long)
-@ stdcall RtlCompareUnicodeString (ptr ptr long)
+@ stdcall RtlCompareUnicodeString(ptr ptr long)
 @ stdcall RtlCompressBuffer(long ptr long ptr long long ptr ptr)
 @ stdcall RtlComputeCrc32(long ptr long)
 @ stdcall RtlComputeImportTableHash(ptr ptr long)
@@ -1604,9 +1604,10 @@
 @ stdcall LdrRemoveDllDirectory(ptr)
 
 #win7
+@ stdcall RtlGetSystemTimePrecise()
+@ stdcall RtlCompareUnicodeStrings(ptr long ptr long long)
 @ stdcall RtlTryAcquireSRWLockExclusive(ptr)
 @ stdcall RtlTryAcquireSRWLockShared(ptr)
-@ stdcall RtlGetSystemTimePrecise()
 
 #win8
 @ stdcall LdrResolveDelayLoadsFromDll(ptr str long)
