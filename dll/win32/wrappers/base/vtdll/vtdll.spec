@@ -1505,6 +1505,7 @@
 @ stdcall ZwQueryLicenseValue(ptr ptr ptr long ptr) NtQueryLicenseValue
 @ stdcall NtCreateMutantEx(ptr long ptr long long)
 @ stdcall NtCreateSemaphoreEx(ptr long long str long long)
+@ stdcall NtCreateThreadEx(ptr long ptr ptr ptr ptr long ptr long long ptr)
 @ stdcall NtCreateIoCompletionEx(ptr long ptr long)
 @ stdcall NtRemoveIoCompletionEx(ptr long long ptr ptr long)
 @ stdcall LdrLoadAlternateResourceModuleEx(long ptr ptr)

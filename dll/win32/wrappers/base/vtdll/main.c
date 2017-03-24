@@ -21,68 +21,27 @@
 extern USHORT NlsAnsiCodePage = 0; /* exported */
 extern BOOLEAN NlsMbCodePageTag = FALSE; /* exported */
 extern BOOLEAN NlsMbOemCodePageTag = FALSE;
-//HANDLE Key_Event;
+
+extern HANDLE Key_Event = NULL;
 
 /*****************************************************
  *      DllMain
  */
-BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
+BOOL 
+WINAPI 
+LdrInitialize(
+	HINSTANCE hinst, 
+	DWORD reason, 
+	LPVOID reserved
+)
 {
     DbgPrint("DllMain called\n");
-	//NtCreateKeyedEvent(&Key_Event, -1, NULL, 0);
 
     switch(reason)
     {
     case DLL_PROCESS_ATTACH:
-        //DisableThreadLibraryCalls( hinst );
+        NtCreateKeyedEvent(&Key_Event, -1, NULL, 0);
         break;
     }
     return TRUE;
 }
-
-/*Functions ********************************************/
-
-/*
-ULONG 
-NTAPI 
-RtlExtendHeap( 	
-	IN HANDLE  	Heap,
-	IN ULONG  	Flags,
-	IN PVOID  	P,
-	IN SIZE_T  	Size 
-) 		
-{
-    // TODO 
-    DbgPrint("RtlExtendHeap is unimplemented\n");
-    return 0;
-}
-
-NTSTATUS 
-NTAPI 
-RtlUsageHeap( 	
-	IN HANDLE  	Heap,
-	IN ULONG  	Flags,
-	OUT PRTL_HEAP_USAGE  	Usage 
-) 		
-{
-    // TODO 
-    DbgPrint("RtlUsageHeap is unimplemented\n");
-    return STATUS_NOT_IMPLEMENTED;
-}
-//Maybe need for universal code
-NTSTATUS 
-NTAPI 
-RtlAcquirePrivilege( 	
-	IN PULONG  	Privilege,
-	IN ULONG  	NumPriv,
-	IN ULONG  	Flags,
-	OUT PVOID *  	ReturnedState 
-) 		
-{
-    return STATUS_NOT_IMPLEMENTED;
-}
-//Maybe need for universal code
-VOID NTAPI RtlReleasePrivilege 	( 	IN PVOID  	ReturnedState	) 	
-{
-;
-}*/

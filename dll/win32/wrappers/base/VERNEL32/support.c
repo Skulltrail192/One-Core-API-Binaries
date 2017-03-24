@@ -25,7 +25,7 @@ Revision History:
 
 BOOLEAN BaseRunningInServerProcess = FALSE;
 
-WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
+PRTL_CONVERT_STRING Basep8BitStringToUnicodeString = RtlAnsiStringToUnicodeString;
 
 VOID
 WINAPI
@@ -118,4 +118,43 @@ Return Value:
             }
         }
 	_SEH2_END;
+}
+
+/*
+ * Converts an ANSI or OEM String to the TEB StaticUnicodeString
+ */
+PUNICODE_STRING
+WINAPI
+Basep8BitStringToStaticUnicodeString(
+	IN LPCSTR String
+)
+{
+    PUNICODE_STRING StaticString = &(NtCurrentTeb()->StaticUnicodeString);
+    ANSI_STRING AnsiString;
+    NTSTATUS Status;
+
+    /* Initialize an ANSI String */
+    Status = RtlInitAnsiStringEx(&AnsiString, String);
+    if (!NT_SUCCESS(Status))
+    {
+        Status = STATUS_BUFFER_OVERFLOW;
+    }
+    else
+    {
+        /* Convert it */
+        Status = Basep8BitStringToUnicodeString(StaticString, &AnsiString, FALSE);
+    }
+
+    if (NT_SUCCESS(Status)) return StaticString;
+
+    if (Status == STATUS_BUFFER_OVERFLOW)
+    {
+        SetLastError(ERROR_FILENAME_EXCED_RANGE);
+    }
+    else
+    {
+        BaseSetLastNTError(Status);
+    }
+
+    return NULL;
 }

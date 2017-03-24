@@ -443,15 +443,15 @@ BOOL
 WINAPI 
 GetThreadInformation(
 	HANDLE ProcessHandle, 
-	THREADINFOCLASS ProcessInformationClass,
-	PVOID ProcessInformation, 
-	DWORD ProcessInformationLength
+	THREADINFOCLASS ThreadInformationClass,
+	PVOID ThreadInformation, 
+	DWORD ThreadInformationSize
 )
 {
   BOOL resp = FALSE; // esi@2
   NTSTATUS status; // eax@3
 
-  if ( ProcessInformationClass )
+  if ( ThreadInformationClass )
   {
     BaseSetLastNTError(STATUS_INVALID_PARAMETER);
 	return FALSE;
@@ -461,8 +461,8 @@ GetThreadInformation(
     status = NtQueryInformationProcess(
                ProcessHandle,
                ProcessDebugPort|0x20,
-               ProcessInformation,
-               ProcessInformationLength,
+               ThreadInformation,
+               ThreadInformationSize,
                0);
     if ( NT_SUCCESS(status) )
       resp = TRUE;

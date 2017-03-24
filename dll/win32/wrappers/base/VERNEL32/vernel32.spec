@@ -1038,9 +1038,36 @@
 @ stdcall -arch=x86_64 RtlUnwindEx(ptr ptr ptr ptr ptr ptr) ntdll.RtlUnwindEx
 @ stdcall -arch=x86_64 RtlVirtualUnwind(ptr ptr ptr long) ntdll.RtlVirtualUnwind
 
-#Vista Functions
+#Vista Functions 
+@ stdcall AcquireSRWLockExclusive(ptr) vtdll.RtlAcquireSRWLockExclusive
+@ stdcall AcquireSRWLockShared(ptr) vtdll.RtlAcquireSRWLockShared
 @ stdcall CompareStringOrdinal(wstr long wstr long long)
+@ stdcall GetLocaleInfoEx(wstr long ptr long)
+@ stdcall GetNamedPipeAttribute(ptr long str ptr ptr)
+@ stdcall GetNamedPipeClientComputerNameA(ptr str long)
+@ stdcall GetNamedPipeClientComputerNameW(ptr wstr long)
+@ stdcall GetNamedPipeClientProcessId(ptr ptr)
+@ stdcall GetNamedPipeClientSessionId(ptr ptr)
+@ stdcall GetNamedPipeServerProcessId(ptr ptr)
+@ stdcall GetNamedPipeServerSessionId(ptr ptr)
+@ stdcall GetSystemDefaultLocaleName(ptr long)
+@ stdcall GetThreadInformation(ptr long ptr long)
+@ stdcall GetThreadUILanguage()
 @ stdcall GetTickCount64() 
+@ stdcall InitializeConditionVariable(ptr) 
 @ stdcall InitializeCriticalSectionEx(ptr long long) 
+@ stdcall InitializeSRWLock(ptr) vtdll.RtlInitializeSRWLock
+@ stdcall IsValidLocaleName(wstr)
+@ stdcall LCIDToLocaleName(long ptr long long)
+@ stdcall LocaleNameToLCID(wstr long)
 @ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 
 @ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
+@ stdcall ReleaseSRWLockExclusive(ptr) vtdll.RtlReleaseSRWLockExclusive
+@ stdcall ReleaseSRWLockShared(ptr) vtdll.RtlReleaseSRWLockShared
+@ stdcall SetNamedPipeAttribute(ptr long str ptr long)
+@ stdcall SleepConditionVariableCS(ptr ptr long)
+@ stdcall SleepConditionVariableSRW(ptr ptr long long)
+@ stdcall TryAcquireSRWLockExclusive(ptr) vtdll.RtlTryAcquireSRWLockExclusive
+@ stdcall TryAcquireSRWLockShared(ptr) vtdll.RtlTryAcquireSRWLockShared
+@ stdcall WakeAllConditionVariable(ptr) 
+@ stdcall WakeConditionVariable(ptr) 

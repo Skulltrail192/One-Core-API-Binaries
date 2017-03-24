@@ -86,6 +86,8 @@ typedef RTL_RUN_ONCE_INIT_FN *PRTL_RUN_ONCE_INIT_FN;
 
 #define STATUS_INCOMPATIBLE_DRIVER_BLOCKED 0xC0000424
 
+HANDLE Key_Event;
+
 /* Enumarations ****************************************/
 
 /* Structs *********************************************/
@@ -759,8 +761,6 @@ typedef DWORD (WINAPI *PSTARTUP_ROUTINE)(
 );
 
 void initTable();
-
-extern HANDLE Key_Event;
 
 typedef DWORD (CALLBACK *PRTL_WORK_ITEM_ROUTINE)(LPVOID); /* FIXME: not the right name */
 typedef void (NTAPI *RTL_WAITORTIMERCALLBACKFUNC)(PVOID,BOOLEAN); /* FIXME: not the right name */

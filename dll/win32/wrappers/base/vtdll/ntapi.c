@@ -644,3 +644,30 @@ NtSetSystemPowerState(
 {
 	return STATUS_SUCCESS;
 } 	
+
+NTSTATUS 
+WINAPI 
+NtCreateThreadEx(PHANDLE hThread,
+    ACCESS_MASK DesiredAccess,
+    POBJECT_ATTRIBUTES ObjectAttributes,
+    HANDLE ProcessHandle,
+    LPTHREAD_START_ROUTINE lpStartAddress,
+    LPVOID lpParameter,
+    ULONG CreateFlags,
+    ULONG StackZeroBits,
+    ULONG SizeOfStackCommit,
+    ULONG SizeOfStackReserve,
+    LPVOID lpBytesBuffer)
+{
+    NTSTATUS status = RtlCreateUserThread(ProcessHandle, 
+										  NULL, 
+										  CreateFlags & 1, 
+										  0, 
+										  0, 
+										  0, 
+										  lpStartAddress, 
+										  lpParameter, 
+										  hThread, 
+										  NULL);
+    return status;
+}

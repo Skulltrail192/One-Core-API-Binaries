@@ -23,7 +23,9 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 
-VOID WINAPI CloseThreadpoolIo(
+VOID 
+WINAPI 
+CloseThreadpoolIo(
   _Inout_  PTP_IO pio
 )
 {

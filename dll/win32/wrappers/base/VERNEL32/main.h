@@ -31,11 +31,13 @@
 
 #define FIND_DATA_SIZE 0x4000
 #define BASESRV_SERVERDLL_INDEX 1
+#define LOCALE_NAME_USER_DEFAULT    NULL
 
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 
 /* TYPE DEFINITIONS **********************************************************/
 typedef UINT(WINAPI * PPROCESS_START_ROUTINE)(VOID);
+typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 
 /* STRUCTS DEFINITIONS ******************************************************/
 typedef struct _FIBER                                    /* Field offsets:    */
@@ -64,6 +66,12 @@ typedef enum _FIND_DATA_TYPE
     FindFile   = 1,
     FindStream = 2
 } FIND_DATA_TYPE;
+
+typedef enum _PIPE_ATTRIBUTE_TYPE {
+  PipeAttribute = 0,
+  PipeConnectionAttribute = 1,
+  PipeHandleAttribute = 2
+}PIPE_ATTRIBUTE_TYPE, *PPIPE_ATTRIBUTE_TYPE;
 
 typedef union _DIR_INFORMATION
 {
@@ -117,8 +125,24 @@ typedef struct _FIND_DATA_HANDLE
 
 } FIND_DATA_HANDLE, *PFIND_DATA_HANDLE;
 
+typedef NTSTATUS(NTAPI * PRTL_CONVERT_STRING)(IN PUNICODE_STRING UnicodeString, IN PANSI_STRING AnsiString, IN BOOLEAN AllocateMemory);
+
 ULONG
 WINAPI
 BaseSetLastNTError(
     IN NTSTATUS Status
 );
+
+PUNICODE_STRING
+WINAPI
+Basep8BitStringToStaticUnicodeString(
+	IN LPCSTR String
+);
+
+/* helper for kernel32->ntdll timeout format conversion */
+static inline PLARGE_INTEGER get_nt_timeout( PLARGE_INTEGER pTime, DWORD timeout )
+{
+    if (timeout == INFINITE) return NULL;
+    pTime->QuadPart = (ULONGLONG)timeout * -10000;
+    return pTime;
+}

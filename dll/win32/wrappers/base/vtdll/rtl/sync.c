@@ -71,8 +71,6 @@ int localConditionCount = 10;
 
 int countTimes;
 
-HANDLE Key_Event = NULL;
-
 void InitKeyedEvent(){
 	if(!Key_Event)
 	{
@@ -422,6 +420,25 @@ RtlInitializeSRWLock(OUT PRTL_SRWLOCK SRWLock)
 }
 
 /***********************************************************************
+ *              RtlAcquireSRWLockExclusive (NTDLL.@)
+ *
+ * NOTES
+ *  Unlike RtlAcquireResourceExclusive this function doesn't allow
+ *  nested calls from the same thread. "Upgrading" a shared access lock
+ *  to an exclusive access lock also doesn't seem to be supported.
+ */
+VOID 
+WINAPI 
+RtlAcquireSRWLockExclusive( 
+	RTL_SRWLOCK *lock 
+)
+{
+	InitKeyedEvent();
+    if (srwlock_lock_exclusive( (unsigned int *)&lock->Ptr, SRWLOCK_RES_EXCLUSIVE ))
+        NtWaitForKeyedEvent( Key_Event, srwlock_key_exclusive(lock), FALSE, NULL );
+}
+
+/***********************************************************************
  *              RtlAcquireSRWLockShared (NTDLL.@)
  *
  * NOTES
@@ -496,21 +513,6 @@ RtlTryAcquireSRWLockShared(
             break;
     }
     return TRUE;
-}
-
-/***********************************************************************
- *              RtlAcquireSRWLockExclusive (NTDLL.@)
- *
- * NOTES
- *  Unlike RtlAcquireResourceExclusive this function doesn't allow
- *  nested calls from the same thread. "Upgrading" a shared access lock
- *  to an exclusive access lock also doesn't seem to be supported.
- */
-VOID WINAPI RtlAcquireSRWLockExclusive( RTL_SRWLOCK *lock )
-{
-	InitKeyedEvent();
-    if (srwlock_lock_exclusive( (unsigned int *)&lock->Ptr, SRWLOCK_RES_EXCLUSIVE ))
-        NtWaitForKeyedEvent( Key_Event, srwlock_key_exclusive(lock), FALSE, NULL );
 }
 
 /***********************************************************************

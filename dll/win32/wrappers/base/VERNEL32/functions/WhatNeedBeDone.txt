@@ -1,0 +1,2 @@
+-Transaction and others are contained on PEB - Structure, so, need implement with Vista or above model
+-Implement GetFileMUIPath based in MUI functions localized on Ntdll

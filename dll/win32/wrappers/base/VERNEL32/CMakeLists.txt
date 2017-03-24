@@ -14,7 +14,8 @@ list(APPEND SOURCE
 	error.c
 	filehops.c
 	findfile.c
-	fileopcr.c	
+	fileopcr.c
+    locale.c
 	mem.c
 	namepipe.c
 	process.c
@@ -22,6 +23,7 @@ list(APPEND SOURCE
 	synch.c
 	thread.c
 	tick.c
+	wer.c
 	winnls/ansi.c
     VERNEL32.rc
     ${CMAKE_CURRENT_BINARY_DIR}/VERNEL32_stubs.c

@@ -64,7 +64,7 @@ list(APPEND SOURCE
 
 add_library(vtdll SHARED ${SOURCE})
 
-set_module_type(vtdll win32dll HOTPATCHABLE ENTRYPOINT 0)
+set_module_type(vtdll win32dll ENTRYPOINT LdrInitialize 12)
 #############################################
 ## HACK FOR MSVC COMPILATION WITH win32dll ##
 set_subsystem(vtdll console)
