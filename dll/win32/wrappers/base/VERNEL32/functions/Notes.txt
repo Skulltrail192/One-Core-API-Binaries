@@ -3,3 +3,9 @@ FlsAlloc
 FlsFree
 FlsGetValue
 FlsSetValue
+
+
+These functions maybe be better with fileext.lib
+SetFileInformationByHandle
+GetFileInformationByHandleEx
+OpenFileByID

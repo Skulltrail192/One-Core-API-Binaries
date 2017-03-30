@@ -386,3 +386,73 @@ GetLogicalProcessorInformation(
 
     return TRUE;
 }
+
+ /**********************************************************************
+*           FlushProcessWriteBuffers     (KERNEL32.@)
+*/
+VOID 
+WINAPI 
+FlushProcessWriteBuffers(void)
+{
+    static int once = 0;
+ 
+    if (!once++)
+         DbgPrint("FlushProcessWriteBuffers is stub\n");
+}
+
+BOOL 
+WINAPI 
+GetLogicalProcessorInformationEx(
+  _In_       LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType,
+  _Out_opt_  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Buffer,
+  _Inout_    PDWORD ReturnedLength
+)
+{
+	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION information = NULL;
+	DWORD byteOffset = 0;
+	SYSTEM_INFO sysinfo;
+	
+	Buffer->Size = sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+	
+	if(!GetLogicalProcessorInformation(information, ReturnedLength)){
+		return FALSE;
+	}
+	Buffer->Relationship = information->Relationship;
+	
+	//We don't support really groups, so, we emulate to support ALL_PROCESSOR_GROUPS
+	while (byteOffset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= *ReturnedLength) {
+		switch(Buffer->Relationship){
+			case RelationNumaNode:
+				Buffer->NumaNode.NodeNumber = information->NumaNode.NodeNumber;
+				Buffer->NumaNode.GroupMask.Group = ALL_PROCESSOR_GROUPS;
+				break;
+			case RelationProcessorCore:
+				Buffer->Processor.Flags = information->ProcessorCore.Flags;
+				Buffer->Processor.GroupCount = 1;
+				Buffer->Processor.GroupMask[0].Group = ALL_PROCESSOR_GROUPS;
+				break;
+			case RelationProcessorPackage:
+				Buffer->Processor.Flags = 0;
+				Buffer->Processor.GroupCount = 1;
+				Buffer->Processor.GroupMask[0].Group = ALL_PROCESSOR_GROUPS;			
+				break;
+			case RelationCache:
+				Buffer->Cache.Level = information->Cache.Level;
+				Buffer->Cache.Associativity = information->Cache.Associativity;
+				Buffer->Cache.LineSize = information->Cache.LineSize;
+				Buffer->Cache.CacheSize = information->Cache.Size;
+				Buffer->Cache.Type = information->Cache.Type;
+				Buffer->Cache.GroupMask.Group = ALL_PROCESSOR_GROUPS;				
+				break;
+			case RelationGroup:
+				GetSystemInfo( &sysinfo );
+				Buffer->Group.MaximumGroupCount = 1;
+				Buffer->Group.ActiveGroupCount = 1;
+				Buffer->Group.GroupInfo[0].MaximumProcessorCount = 64;
+				Buffer->Group.GroupInfo[0].ActiveProcessorCount = sysinfo.dwNumberOfProcessors;
+				break;
+		}
+	}	
+	
+	return TRUE;
+}

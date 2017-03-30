@@ -41,12 +41,10 @@ list(APPEND SOURCE
 	
 if(ARCH STREQUAL "i386")
     list(APPEND ASM_SOURCE
-		asm/i386/thread.S
-	)
+        asm/i386/thread.S)
 elseif(ARCH STREQUAL "amd64")
     list(APPEND ASM_SOURCE
-        asm/amd64/thread.S
-	)
+        asm/amd64/thread.S)
 endif()
 
 set(VERNEL32_ASM_SOURCE ${ASM_SOURCE})

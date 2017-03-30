@@ -8,3 +8,8 @@ FlsFree
 FlsGetValue
 FlsSetValue
 GetThreadId
+
+
+For Internal management variables
+SetFileApisToANSI
+SetFileApisToOEM

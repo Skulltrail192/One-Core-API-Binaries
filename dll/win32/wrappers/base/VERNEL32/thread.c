@@ -23,6 +23,8 @@ Revision History:
 #include "main.h"
 
 static BOOL (WINAPI *pSetThreadStackGuarantee)(PULONG);
+static DWORD (WINAPI *pConsoleIMERoutine)(LPVOID);
+static DWORD (WINAPI *pCtrlRoutine)(LPVOID);
 
 /***********************************************************************
  *           FlsAlloc   (KERNEL32.@) - For XP support
@@ -160,6 +162,34 @@ SetThreadStackGuarantee(
 	}    
 }
 
+DWORD
+ConsoleIMERoutine(
+    IN LPVOID lpThreadParameter
+    )
+{
+	HMODULE hkernel32 = GetModuleHandleA("kernelfull.dll");
+	pConsoleIMERoutine = (void *)GetProcAddress(hkernel32, "ConsoleIMERoutine");
+	if(pConsoleIMERoutine){
+		return pConsoleIMERoutine(lpThreadParameter);
+	}else{		
+		return 0;
+	}   		
+}
+
+DWORD
+CtrlRoutine(
+    IN LPVOID lpThreadParameter
+)
+{
+	HMODULE hkernel32 = GetModuleHandleA("kernelfull.dll");
+	pCtrlRoutine = (void *)GetProcAddress(hkernel32, "CtrlRoutine");
+	if(pCtrlRoutine){
+		return pCtrlRoutine(lpThreadParameter);
+	}else{		
+		return 0;
+	}  	
+}
+
 /*
  * @implemented
  */
@@ -216,7 +246,7 @@ GetThreadInformation(
 	DWORD ThreadInformationSize
 )
 {
-  BOOL resp = FALSE; // esi@2
+  BOOL result = FALSE; // esi@2
   NTSTATUS status; // eax@3
 
   if ( ThreadInformationClass )
@@ -233,10 +263,137 @@ GetThreadInformation(
                ThreadInformationSize,
                0);
     if ( NT_SUCCESS(status) )
-      resp = TRUE;
+      result = TRUE;
     else
       BaseSetLastNTError(status);
   }
-  return resp;
+  return result;
 }
 
+/***********************************************************************
+ *              CreateThreadpoolWork (KERNEL32.@)
+ */
+PTP_WORK 
+WINAPI 
+CreateThreadpoolWork( 
+	PTP_WORK_CALLBACK callback, 
+	PVOID userdata,
+	TP_CALLBACK_ENVIRON *environment 
+)
+{
+    TP_WORK *work;
+    NTSTATUS status;
+
+    status = TpAllocWork( &work, callback, userdata, environment );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return NULL;
+    }
+
+    return work;
+}
+
+/***********************************************************************
+ *              CreateThreadpoolTimer (KERNEL32.@)
+ */
+PTP_TIMER 
+WINAPI 
+CreateThreadpoolTimer( 
+	PTP_TIMER_CALLBACK callback, 
+	PVOID userdata,
+	TP_CALLBACK_ENVIRON *environment
+)
+{
+    TP_TIMER *timer;
+    NTSTATUS status;
+
+    status = TpAllocTimer( &timer, callback, userdata, environment );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return NULL;
+    }
+
+    return timer;
+}
+
+/***********************************************************************
+ *              CreateThreadpoolWait (KERNEL32.@)
+ */
+PTP_WAIT 
+WINAPI 
+CreateThreadpoolWait( 
+	PTP_WAIT_CALLBACK callback, 
+	PVOID userdata,
+	TP_CALLBACK_ENVIRON *environment 
+)
+{
+    TP_WAIT *wait;
+    NTSTATUS status;
+
+    status = TpAllocWait( &wait, callback, userdata, environment );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return NULL;
+    }
+
+    return wait;
+}
+
+/***********************************************************************
+ *              GetThreadGroupAffinity (KERNEL32.@)
+ */
+BOOL 
+WINAPI 
+GetThreadGroupAffinity(
+	HANDLE thread, 
+	GROUP_AFFINITY *affinity 
+)
+{
+    NTSTATUS status;
+
+    if (!affinity)
+    {
+        SetLastError( ERROR_INVALID_PARAMETER );
+        return FALSE;
+    }
+
+    status = NtQueryInformationThread( thread, MaxThreadInfoClass|ThreadPriorityBoost,
+                                       affinity, sizeof(*affinity), NULL );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/***********************************************************************
+ *              SetThreadGroupAffinity (KERNEL32.@)
+ */
+BOOL 
+WINAPI 
+SetThreadGroupAffinity( 
+	HANDLE thread, 
+	const GROUP_AFFINITY *affinity_new,
+    GROUP_AFFINITY *affinity_old 
+)
+{
+    NTSTATUS status;
+
+    if (affinity_old && !GetThreadGroupAffinity( thread, affinity_old ))
+        return FALSE;
+
+    status = NtSetInformationThread( thread, MaxThreadInfoClass|ThreadPriorityBoost,
+                                     affinity_new, sizeof(*affinity_new) );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return FALSE;
+    }
+
+    return TRUE;
+}

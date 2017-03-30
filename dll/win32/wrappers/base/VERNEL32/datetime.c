@@ -30,3 +30,20 @@ IsTimeZoneRedirectionEnabled(VOID)
      /* Return if a TS Timezone ID is active */
      return (BaseStaticServerData->TermsrvClientTimeZoneId != TIME_ZONE_ID_INVALID);
 }
+
+/***********************************************************************
+ *              GetSystemTimePreciseAsFileTime  (KERNEL32.@)
+ *
+ *  Get the current time in utc format, with <1 us precision.
+ *
+ *  RETURNS
+ *   Nothing.
+ */
+VOID 
+WINAPI 
+GetSystemTimePreciseAsFileTime(
+	LPFILETIME lpSystemTimeAsFileTime
+)
+{
+  GetSystemTimeAsFileTime(lpSystemTimeAsFileTime);
+}

@@ -1,2 +1,8 @@
-Maybe these functions need more types or implementation
+Maybe these functions need more class types or implementation
 NtQueryInformationProcess
+
+
+Vista and newer support new types class, for:
+ThreadGroupInformation (class type),
+NtQueryInformationThread (kernel function)
+NtSetInformationThread(kernel function)

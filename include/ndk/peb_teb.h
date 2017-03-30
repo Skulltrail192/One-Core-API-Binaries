@@ -277,15 +277,15 @@ typedef struct STRUCT(_TEB)
 #endif
     PTR(PVOID)             WinSockData;
     ULONG                  GdiBatchCount;
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
-    BOOLEAN                SpareBool0;
-    BOOLEAN                SpareBool1;
-    BOOLEAN                SpareBool2;
-#else
+// #if (NTDDI_VERSION >= NTDDI_LONGHORN)
+    // BOOLEAN                SpareBool0;
+    // BOOLEAN                SpareBool1;
+    // BOOLEAN                SpareBool2;
+// #else
     BOOLEAN                InDbgPrint;
     BOOLEAN                FreeStackOnTermination;
     BOOLEAN                HasFiberData;
-#endif
+//#endif
     UCHAR                  IdealProcessor;
 #if (NTDDI_VERSION >= NTDDI_WS03)
     ULONG                  GuaranteedStackBytes;

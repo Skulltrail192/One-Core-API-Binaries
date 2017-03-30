@@ -317,3 +317,216 @@ GetFileMUIPath(
 	SetLastError(ERROR_CALL_NOT_IMPLEMENTED);		
 	return FALSE;
 }
+
+/*
+ * @implemented - need test
+ */
+/******************************************************************************
+ *           CompareStringEx    (KERNEL32.@)
+ */
+INT 
+WINAPI 
+CompareStringEx(
+	LPCWSTR locale, 
+	DWORD flags, 
+	LPCWSTR str1, 
+	INT len1,
+    LPCWSTR str2, 
+	INT len2, 
+	LPNLSVERSIONINFO version, 
+	LPVOID reserved, 
+	LPARAM lParam
+)
+{
+    INT ret;
+
+    if (version) DbgPrint("unexpected version parameter\n");
+    if (reserved) DbgPrint("unexpected reserved value\n");
+    if (lParam) DbgPrint("unexpected lParam\n");
+
+    if (!str1 || !str2)
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return 0;
+    }
+
+    if( flags & ~(NORM_IGNORECASE|NORM_IGNORENONSPACE|NORM_IGNORESYMBOLS|
+        SORT_STRINGSORT|NORM_IGNOREKANATYPE|NORM_IGNOREWIDTH|LOCALE_USE_CP_ACP|0x10000000) )
+    {
+        SetLastError(ERROR_INVALID_FLAGS);
+        return 0;
+    }
+
+    /* this style is related to diacritics in Arabic, Japanese, and Hebrew */
+    if (flags & 0x10000000)
+        DbgPrint("Ignoring unknown flags 0x10000000\n");
+
+    if (len1 < 0) len1 = strlenW(str1);
+    if (len2 < 0) len2 = strlenW(str2);
+
+    ret = wine_compare_string(flags, str1, len1, str2, len2);
+
+    if (ret) /* need to translate result */
+        return (ret < 0) ? CSTR_LESS_THAN : CSTR_GREATER_THAN;
+    return CSTR_EQUAL;
+}
+
+/*************************************************************************
+ *           LCMapStringEx   (KERNEL32.@)
+ *
+ * Map characters in a locale sensitive string.
+ *
+ * PARAMS
+ *  name     [I] Locale name for the conversion.
+ *  flags    [I] Flags controlling the mapping (LCMAP_ constants from "winnls.h")
+ *  src      [I] String to map
+ *  srclen   [I] Length of src in chars, or -1 if src is NUL terminated
+ *  dst      [O] Destination for mapped string
+ *  dstlen   [I] Length of dst in characters
+ *  version  [I] reserved, must be NULL
+ *  reserved [I] reserved, must be NULL
+ *  lparam   [I] reserved, must be 0
+ *
+ * RETURNS
+ *  Success: The length of the mapped string in dst, including the NUL terminator.
+ *  Failure: 0. Use GetLastError() to determine the cause.
+ */
+INT 
+WINAPI 
+LCMapStringEx(
+	LPCWSTR name, 
+	DWORD flags, 
+	LPCWSTR src, 
+	INT srclen, 
+	LPWSTR dst, 
+	INT dstlen,
+    LPNLSVERSIONINFO version, 
+	LPVOID reserved, 
+	LPARAM lparam
+)
+{
+    LPWSTR dst_ptr;
+	
+	DbgPrint("LCMapStringEx called\n");		
+
+    if (version) DbgPrint("unsupported version structure %p\n", version);
+    if (reserved) DbgPrint("unsupported reserved pointer %p\n", reserved);
+    if (lparam) DbgPrint("unsupported lparam %lx\n", lparam);
+
+    if (!src || !srclen || dstlen < 0)
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return 0;
+    }
+
+    /* mutually exclusive flags */
+    if ((flags & (LCMAP_LOWERCASE | LCMAP_UPPERCASE)) == (LCMAP_LOWERCASE | LCMAP_UPPERCASE) ||
+        (flags & (LCMAP_HIRAGANA | LCMAP_KATAKANA)) == (LCMAP_HIRAGANA | LCMAP_KATAKANA) ||
+        (flags & (LCMAP_HALFWIDTH | LCMAP_FULLWIDTH)) == (LCMAP_HALFWIDTH | LCMAP_FULLWIDTH) ||
+        (flags & (LCMAP_TRADITIONAL_CHINESE | LCMAP_SIMPLIFIED_CHINESE)) == (LCMAP_TRADITIONAL_CHINESE | LCMAP_SIMPLIFIED_CHINESE))
+    {
+        SetLastError(ERROR_INVALID_FLAGS);
+        return 0;
+    }
+
+    if (!dstlen) dst = NULL;
+
+    if (flags & LCMAP_SORTKEY)
+    {
+        INT ret;
+        if (src == dst)
+        {
+            SetLastError(ERROR_INVALID_FLAGS);
+            return 0;
+        }
+
+        if (srclen < 0) srclen = strlenW(src);
+
+        DbgPrint("(%s,0x%08x,%s,%d,%p,%d)\n",
+              debugstr_w(name), flags, debugstr_wn(src, srclen), srclen, dst, dstlen);
+
+        ret = wine_get_sortkey(flags, src, srclen, (char *)dst, dstlen);
+        if (ret == 0)
+            SetLastError(ERROR_INSUFFICIENT_BUFFER);
+        else
+            ret++;
+        return ret;
+    }
+
+    /* SORT_STRINGSORT must be used exclusively with LCMAP_SORTKEY */
+    if (flags & SORT_STRINGSORT)
+    {
+        SetLastError(ERROR_INVALID_FLAGS);
+        return 0;
+    }
+
+    if (srclen < 0) srclen = strlenW(src) + 1;
+
+    DbgPrint("(%s,0x%08x,%s,%d,%p,%d)\n",
+          debugstr_w(name), flags, debugstr_wn(src, srclen), srclen, dst, dstlen);
+
+    if (!dst) /* return required string length */
+    {
+        INT len;
+
+        for (len = 0; srclen; src++, srclen--)
+        {
+            WCHAR wch = *src;
+            /* tests show that win2k just ignores NORM_IGNORENONSPACE,
+             * and skips white space and punctuation characters for
+             * NORM_IGNORESYMBOLS.
+             */
+            if ((flags & NORM_IGNORESYMBOLS) && (get_char_typeW(wch) & (C1_PUNCT | C1_SPACE)))
+                continue;
+            len++;
+        }
+        return len;
+    }
+
+    if (flags & LCMAP_UPPERCASE)
+    {
+        for (dst_ptr = dst; srclen && dstlen; src++, srclen--)
+        {
+            WCHAR wch = *src;
+            if ((flags & NORM_IGNORESYMBOLS) && (get_char_typeW(wch) & (C1_PUNCT | C1_SPACE)))
+                continue;
+            *dst_ptr++ = toupperW(wch);
+            dstlen--;
+        }
+    }
+    else if (flags & LCMAP_LOWERCASE)
+    {
+        for (dst_ptr = dst; srclen && dstlen; src++, srclen--)
+        {
+            WCHAR wch = *src;
+            if ((flags & NORM_IGNORESYMBOLS) && (get_char_typeW(wch) & (C1_PUNCT | C1_SPACE)))
+                continue;
+            *dst_ptr++ = tolowerW(wch);
+            dstlen--;
+        }
+    }
+    else
+    {
+        if (src == dst)
+        {
+            SetLastError(ERROR_INVALID_FLAGS);
+            return 0;
+        }
+        for (dst_ptr = dst; srclen && dstlen; src++, srclen--)
+        {
+            WCHAR wch = *src;
+            if ((flags & NORM_IGNORESYMBOLS) && (get_char_typeW(wch) & (C1_PUNCT | C1_SPACE)))
+                continue;
+            *dst_ptr++ = wch;
+            dstlen--;
+        }
+    }
+
+    if (srclen)
+    {
+        SetLastError(ERROR_INSUFFICIENT_BUFFER);
+        return 0;
+    }
+
+    return dst_ptr - dst;
+}

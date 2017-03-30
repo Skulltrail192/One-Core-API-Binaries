@@ -37,5 +37,7 @@ RtlGetCurrentProcessorNumberEx(
   _Out_  PPROCESSOR_NUMBER ProcNumber
 )
 {
+	ProcNumber->Group = 0;
 	ProcNumber->Number = RtlGetCurrentProcessorNumber();
+	ProcNumber->Reserved = 0;
 }

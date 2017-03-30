@@ -485,14 +485,27 @@ void WINAPI RtlAcquireSRWLockShared( RTL_SRWLOCK *lock )
  *  Similar to AcquireSRWLockExclusive recusive calls are not allowed
  *  and will fail with return value FALSE.
  */
+// BOOLEAN 
+// WINAPI 
+// RtlTryAcquireSRWLockExclusive( 
+	// RTL_SRWLOCK *lock 
+// )
+// {
+    // return interlocked_cmpxchg( (int *)&lock->Ptr, SRWLOCK_MASK_IN_EXCLUSIVE |
+                                // SRWLOCK_RES_EXCLUSIVE, 0 ) == 0;
+// }
+
 BOOLEAN 
-WINAPI 
-RtlTryAcquireSRWLockExclusive( 
-	RTL_SRWLOCK *lock 
-)
+WINAPI
+RtlTryAcquireSRWLockExclusive(RTL_SRWLOCK *lock)
 {
-    return InterlockedCompareExchange( (int *)&lock->Ptr, SRWLOCK_MASK_IN_EXCLUSIVE |
-                                SRWLOCK_RES_EXCLUSIVE, 0 ) == 0;
+  BOOLEAN result; // al@2
+
+  if ( _interlockedbittestandset((int *)&lock->Ptr, 0) )
+    result = FALSE;
+  else
+    result = TRUE;
+  return result;
 }
 
 /***********************************************************************
@@ -509,7 +522,7 @@ RtlTryAcquireSRWLockShared(
     {
         if (val & SRWLOCK_MASK_EXCLUSIVE_QUEUE)
             return FALSE;
-        if ((tmp = InterlockedCompareExchange( (int *)&lock->Ptr, val + SRWLOCK_RES_SHARED, val )) == val)
+        if ((tmp = interlocked_cmpxchg( (int *)&lock->Ptr, val + SRWLOCK_RES_SHARED, val )) == val)
             break;
     }
     return TRUE;

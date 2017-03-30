@@ -15,6 +15,8 @@
 #include <cmfuncs.h>
 #include <psfuncs.h>
 #include <rtlfuncs.h>
+#define NTOS_MODE_USER
+#include <iofuncs.h>
 #include <csr/csr.h>
 
 #include <config.h>
@@ -23,6 +25,9 @@
 #include <winnls.h>
 #include <unicode.h>
 #include <base.h>
+
+#define WIN32_NO_STATUS
+#include <winbase.h>
 // #include <kefuncs.h>
 // #include <exfuncs.h>
 // #include <strsafe.h>
@@ -32,12 +37,25 @@
 #define FIND_DATA_SIZE 0x4000
 #define BASESRV_SERVERDLL_INDEX 1
 #define LOCALE_NAME_USER_DEFAULT    NULL
+#define CREATE_EVENT_MANUAL_RESET 1
+#define CREATE_EVENT_INITIAL_SET  2
+#define SYMBOLIC_LINK_FLAG_DIRECTORY  0x1
+#define REPARSE_DATA_BUFFER_HEADER_SIZE   FIELD_OFFSET(REPARSE_DATA_BUFFER, GenericReparseBuffer)
+#define APPMODEL_ERROR_NO_PACKAGE                          15700
+#define APPMODEL_ERROR_PACKAGE_RUNTIME_CORRUPT             15701
+#define APPMODEL_ERROR_PACKAGE_IDENTITY_CORRUPT            15702
+#define APPMODEL_ERROR_NO_APPLICATION                      15703]
+#ifndef FileIdInformation
+#define FileIdInformation (enum _FILE_INFORMATION_CLASS)59
+#endif
 
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
+extern BOOL bIsFileApiAnsi;
 
 /* TYPE DEFINITIONS **********************************************************/
 typedef UINT(WINAPI * PPROCESS_START_ROUTINE)(VOID);
 typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
+typedef NTSTATUS(NTAPI * PRTL_CONVERT_STRING)(IN PUNICODE_STRING UnicodeString, IN PANSI_STRING AnsiString, IN BOOLEAN AllocateMemory);
 
 /* STRUCTS DEFINITIONS ******************************************************/
 typedef struct _FIBER                                    /* Field offsets:    */
@@ -125,7 +143,87 @@ typedef struct _FIND_DATA_HANDLE
 
 } FIND_DATA_HANDLE, *PFIND_DATA_HANDLE;
 
-typedef NTSTATUS(NTAPI * PRTL_CONVERT_STRING)(IN PUNICODE_STRING UnicodeString, IN PANSI_STRING AnsiString, IN BOOLEAN AllocateMemory);
+typedef struct _REPARSE_DATA_BUFFER {
+    ULONG  ReparseTag;
+    USHORT ReparseDataLength;
+    USHORT Reserved;
+    union {
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT SubstituteNameLength;
+            USHORT PrintNameOffset;
+            USHORT PrintNameLength;
+            ULONG Flags;
+            WCHAR PathBuffer[1];
+        } SymbolicLinkReparseBuffer;
+        struct {
+            USHORT SubstituteNameOffset;
+            USHORT SubstituteNameLength;
+            USHORT PrintNameOffset;
+            USHORT PrintNameLength;
+            WCHAR PathBuffer[1];
+        } MountPointReparseBuffer;
+        struct {
+            UCHAR  DataBuffer[1];
+        } GenericReparseBuffer;
+    };
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+
+typedef struct _PROCESSOR_RELATIONSHIP {
+  BYTE           Flags;
+  BYTE           Reserved[21];
+  WORD           GroupCount;
+  GROUP_AFFINITY GroupMask[ANYSIZE_ARRAY];
+} PROCESSOR_RELATIONSHIP, *PPROCESSOR_RELATIONSHIP;
+
+typedef struct _NUMA_NODE_RELATIONSHIP {
+  DWORD          NodeNumber;
+  BYTE           Reserved[20];
+  GROUP_AFFINITY GroupMask;
+} NUMA_NODE_RELATIONSHIP, *PNUMA_NODE_RELATIONSHIP;
+
+typedef struct _PROCESSOR_GROUP_INFO {
+  BYTE      MaximumProcessorCount;
+  BYTE      ActiveProcessorCount;
+  BYTE      Reserved[38];
+  KAFFINITY ActiveProcessorMask;
+} PROCESSOR_GROUP_INFO, *PPROCESSOR_GROUP_INFO;
+
+typedef struct _GROUP_RELATIONSHIP {
+  WORD                 MaximumGroupCount;
+  WORD                 ActiveGroupCount;
+  BYTE                 Reserved[20];
+  PROCESSOR_GROUP_INFO GroupInfo[ANYSIZE_ARRAY];
+} GROUP_RELATIONSHIP, *PGROUP_RELATIONSHIP;
+
+typedef struct _CACHE_RELATIONSHIP {
+  BYTE                 Level;
+  BYTE                 Associativity;
+  WORD                 LineSize;
+  DWORD                CacheSize;
+  PROCESSOR_CACHE_TYPE Type;
+  BYTE                 Reserved[20];
+  GROUP_AFFINITY       GroupMask;
+} CACHE_RELATIONSHIP, *PCACHE_RELATIONSHIP;
+
+typedef struct _SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX {
+  LOGICAL_PROCESSOR_RELATIONSHIP Relationship;
+  DWORD                          Size;
+  union {
+    PROCESSOR_RELATIONSHIP Processor;
+    NUMA_NODE_RELATIONSHIP NumaNode;
+    CACHE_RELATIONSHIP     Cache;
+    GROUP_RELATIONSHIP     Group;
+  };
+} SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, *PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX;
+
+/* helper for kernel32->ntdll timeout format conversion */
+static inline PLARGE_INTEGER get_nt_timeout( PLARGE_INTEGER pTime, DWORD timeout )
+{
+    if (timeout == INFINITE) return NULL;
+    pTime->QuadPart = (ULONGLONG)timeout * -10000;
+    return pTime;
+}
 
 ULONG
 WINAPI
@@ -139,10 +237,26 @@ Basep8BitStringToStaticUnicodeString(
 	IN LPCSTR String
 );
 
-/* helper for kernel32->ntdll timeout format conversion */
-static inline PLARGE_INTEGER get_nt_timeout( PLARGE_INTEGER pTime, DWORD timeout )
-{
-    if (timeout == INFINITE) return NULL;
-    pTime->QuadPart = (ULONGLONG)timeout * -10000;
-    return pTime;
-}
+PWCHAR 
+FilenameA2W(
+	LPCSTR NameA, 
+	BOOL alloc
+);
+
+int 
+wine_compare_string(
+	int flags, 
+	const WCHAR *str1, 
+	int len1,
+    const WCHAR *str2, 
+	int len2
+);
+
+int 
+wine_get_sortkey(
+	int flags, 
+	const WCHAR *src, 
+	int srclen, 
+	char *dst, 
+	int dstlen
+);
