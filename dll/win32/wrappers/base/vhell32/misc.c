@@ -100,7 +100,9 @@ HRESULT WINAPI SHQueryUserNotificationState(QUERY_USER_NOTIFICATION_STATE *pquns
   return resp;
 }
 
-HRESULT WINAPI SHBindToFolderIDListParentEx(
+HRESULT 
+WINAPI 
+SHBindToFolderIDListParentEx(
   _In_opt_   IShellFolder *psfRoot,
   _In_       PCUIDLIST_RELATIVE pidl,
   _In_opt_   IBindCtx *ppbc,
@@ -109,7 +111,8 @@ HRESULT WINAPI SHBindToFolderIDListParentEx(
   _Out_opt_  PCUITEMID_CHILD *ppidlLast
 )
 {
-	return SHBindToFolderIDListParent(psfRoot, pidl, riid, ppv, ppidlLast);
+	return S_OK;
+	//return SHBindToFolderIDListParent(psfRoot, pidl, riid, ppv, ppidlLast);
 }
 
 HRESULT WINAPI SHFormatForDisplay(

@@ -530,3 +530,16 @@ LCMapStringEx(
 
     return dst_ptr - dst;
 }
+
+INT 
+WINAPI 
+GetUserDefaultLocaleName(
+	LPWSTR localename, 
+	int buffersize
+)
+{
+     LCID userlcid;
+   
+	userlcid = GetUserDefaultLCID();
+    return LCIDToLocaleName(userlcid, localename, buffersize, 0);
+}

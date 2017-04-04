@@ -28,12 +28,20 @@
 
 #include "pidl.h"
 #include "wine/debug.h"
+#include <undocshell.h>
 
 
 #ifdef FM_SEPARATOR
 #undef FM_SEPARATOR
 #endif
 #define FM_SEPARATOR (LPCWSTR)1
+
+BOOL WINAPI Shell_GetImageLists(
+	HIMAGELIST *lphimlLarge,
+	HIMAGELIST *lphimlSmall);
+
+static HIMAGELIST ShellSmallIconList;
+static HIMAGELIST ShellBigIconList;
 
 static inline BOOL SHELL_OsIsUnicode(void)
 {
@@ -584,6 +592,7 @@ LRESULT WINAPI FileMenu_MeasureItem(
 	ReleaseDC (hWnd, hdc);
 	return 0;
 }
+
 /*************************************************************************
  * FileMenu_DrawItem				[SHELL32.105]
  */

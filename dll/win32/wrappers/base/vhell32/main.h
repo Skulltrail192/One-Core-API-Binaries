@@ -57,7 +57,7 @@
 #include <sys/types.h>
 #include <wingdi.h>
 #include <commdlg.h>
-#include <link.h>
+// #include <link.h>
 
 //DEFINITIONS
 #define IDS_DESKTOP		20

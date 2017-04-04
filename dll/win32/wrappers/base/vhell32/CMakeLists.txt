@@ -7,7 +7,7 @@ include_directories(${REACTOS_SOURCE_DIR}/include/lib/atl)
 include_directories(${REACTOS_SOURCE_DIR}/include/psdk)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
 include_directories(${REACTOS_SOURCE_DIR}/dll/win32/propsys)
-include_directories(${REACTOS_SOURCE_DIR}/dll/win32/shellbase)
+include_directories(${REACTOS_SOURCE_DIR}/dll/win32/wrappers/wrappers_dependencies/shellbase)
 spec2def(vhell32.dll vhell32.spec)
 
 list(APPEND SOURCE

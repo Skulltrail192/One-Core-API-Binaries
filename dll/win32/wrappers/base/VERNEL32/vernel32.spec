@@ -1037,6 +1037,8 @@
 #Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) vtdll.RtlAcquireSRWLockExclusive
 @ stdcall AcquireSRWLockShared(ptr) vtdll.RtlAcquireSRWLockShared
+@ stdcall CancelIoEx(long ptr)
+@ stdcall CancelSynchronousIo(ptr)
 @ stdcall CloseThreadpoolTimer(ptr) vtdll.TpReleaseTimer
 @ stdcall CloseThreadpoolWait(ptr) vtdll.TpReleaseWait
 @ stdcall CloseThreadpoolWork(ptr) vtdll.TpReleaseWork
@@ -1044,14 +1046,20 @@
 @ stdcall CompareStringOrdinal(wstr long wstr long long)
 @ stdcall CreateEventExA(ptr str ptr long)
 @ stdcall CreateEventExW(ptr wstr ptr long) 
+@ stdcall CreateSemaphoreExA(ptr long long str ptr long) 
+@ stdcall CreateSemaphoreExW(ptr long long wstr ptr long)  
 @ stdcall CreateSymbolicLinkA(str str long)
 @ stdcall CreateSymbolicLinkW(wstr wstr long)
+@ stdcall CreateThreadpoolTimer(ptr ptr ptr)
 @ stdcall CreateThreadpoolWait(ptr ptr ptr) 
 @ stdcall CreateThreadpoolWork(ptr ptr ptr)
+@ stdcall DeleteProcThreadAttributeList(ptr)
 @ stdcall FlushProcessWriteBuffers()
 @ stdcall FreeLibraryWhenCallbackReturns(ptr ptr) vtdll.TpCallbackUnloadDllOnCompletion
 @ stdcall GetFileInformationByHandleEx(ptr long ptr long)
+@ stdcall GetFileInformationByHandleExW(ptr long ptr long) GetFileInformationByHandleEx
 @ stdcall GetLocaleInfoEx(wstr long ptr long)
+@ stdcall GetFileMUIPath(long wstr wstr ptr wstr ptr ptr)
 @ stdcall GetNamedPipeAttribute(ptr long str ptr ptr)
 @ stdcall GetNamedPipeClientComputerNameA(ptr str long)
 @ stdcall GetNamedPipeClientComputerNameW(ptr wstr long)
@@ -1060,13 +1068,19 @@
 @ stdcall GetNamedPipeServerProcessId(ptr ptr)
 @ stdcall GetNamedPipeServerSessionId(ptr ptr)
 @ stdcall GetSystemDefaultLocaleName(ptr long)
+@ stdcall GetThreadErrorMode()
 @ stdcall GetThreadGroupAffinity(long ptr)
 @ stdcall GetThreadInformation(ptr long ptr long)
 @ stdcall GetThreadUILanguage()
 @ stdcall GetTickCount64() 
-@ stdcall InitializeConditionVariable(ptr) 
+@ stdcall GetUserDefaultLocaleName(wstr long)
+@ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
+@ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
+@ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
+@ stdcall InitializeConditionVariable(ptr) vtdll.InitializeConditionVariable
 @ stdcall InitializeCriticalSectionEx(ptr long long) 
 @ stdcall InitializeSRWLock(ptr) vtdll.RtlInitializeSRWLock
+@ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stdcall IsValidLocaleName(wstr)
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
 @ stdcall LCIDToLocaleName(long ptr long long)
@@ -1076,22 +1090,28 @@
 @ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
 @ stdcall ReleaseSRWLockExclusive(ptr) vtdll.RtlReleaseSRWLockExclusive
 @ stdcall ReleaseSRWLockShared(ptr) vtdll.RtlReleaseSRWLockShared
+@ stdcall SetFileInformationByHandle(long long ptr long)
+@ stdcall SetFileInformationByHandleW(long long ptr long) SetFileInformationByHandle
 @ stdcall SetNamedPipeAttribute(ptr long str ptr long)
+@ stdcall SetThreadErrorMode(long ptr)
 @ stdcall SetThreadGroupAffinity(long ptr ptr)
 @ stdcall SetThreadpoolTimer(ptr ptr long long) vtdll.TpSetTimer
 @ stdcall SetThreadpoolWait(ptr ptr ptr) vtdll.TpSetWait
-@ stdcall SleepConditionVariableCS(ptr ptr long)
-@ stdcall SleepConditionVariableSRW(ptr ptr long long)
+@ stdcall SleepConditionVariableCS(ptr ptr long) vtdll.SleepConditionVariableCS
+@ stdcall SleepConditionVariableSRW(ptr ptr long long) vtdll.SleepConditionVariableSRW
 @ stdcall SubmitThreadpoolWork(ptr) vtdll.TpPostWork
-;@ stdcall TryAcquireSRWLockExclusive(ptr) vtdll.RtlTryAcquireSRWLockExclusive
-@ stdcall TryAcquireSRWLockShared(ptr) vtdll.RtlTryAcquireSRWLockShared
+@ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) vtdll.TpWaitForTimer
-@ stdcall WakeAllConditionVariable(ptr) 
-@ stdcall WakeConditionVariable(ptr) 
+@ stdcall WakeAllConditionVariable(ptr) vtdll.RtlWakeAllConditionVariable
+@ stdcall WakeConditionVariable(ptr) vtdll.RtlWakeConditionVariable
+@ stdcall WerRegisterMemoryBlock(ptr long)
+@ stdcall WerRegisterMemoryBlockWorker(ptr long) WerRegisterMemoryBlock
 
 #Win7 Functions
 @ stdcall GetCurrentProcessorNumberEx(ptr) vtdll.RtlGetCurrentProcessorNumberEx
 @ stdcall GetLogicalProcessorInformationEx(long ptr ptr)
+;@ stdcall TryAcquireSRWLockExclusive(ptr) ntdllnew.RtlTryAcquireSRWLockExclusive
+;@ stdcall TryAcquireSRWLockShared(ptr) ntdllnew.RtlTryAcquireSRWLockShared
 
 #Win8 Functions 
 @ stdcall GetCurrentPackageId(ptr ptr)

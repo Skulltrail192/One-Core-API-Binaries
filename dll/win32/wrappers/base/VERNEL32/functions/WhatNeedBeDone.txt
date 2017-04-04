@@ -1,2 +1,3 @@
 -Transaction and others are contained on PEB - Structure, so, need implement with Vista or above model
 -Implement GetFileMUIPath based in MUI functions localized on Ntdll
+-Implement GetLocaleInfoW And all functions on locale.c (maybe are a missing structure contain)

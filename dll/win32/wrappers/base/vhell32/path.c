@@ -614,5 +614,6 @@ SHSetKnownFolderPath(
   _In_  PCWSTR pszPath
 )
 {
-	return SHSetFolderPathW((int)rfid, hToken, dwFlags, pszPath);
+	return S_OK;
+	//return SHSetFolderPathW((int)rfid, hToken, dwFlags, pszPath);
 }

@@ -1,6 +1,7 @@
 
 add_definitions(-D__WINESRC__)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
+include_directories(${REACTOS_SOURCE_DIR}/lib/3rdparty/freetype/include)
 spec2def(vdi32.dll vdi32.spec)
 
 list(APPEND SOURCE

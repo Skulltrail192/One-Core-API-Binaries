@@ -249,3 +249,51 @@ OpenFileById(
     }
     return result;
 }
+
+BOOL
+WINAPI
+CancelIoEx(
+    HANDLE hFile,
+	LPOVERLAPPED lpOverlapped	
+)
+{
+    NTSTATUS Status;
+    IO_STATUS_BLOCK IoStatusBlock;
+
+    Status = NtCancelIoFile(hFile, &IoStatusBlock);
+
+    if ( NT_SUCCESS(Status) ) {
+        return TRUE;
+        }
+    else {
+        BaseSetLastNTError(Status);
+        return FALSE;
+        }
+
+}
+
+/*
+ * @implemented - new
+ */
+BOOL 
+WINAPI 
+CancelSynchronousIo(
+	HANDLE hFile
+)
+{
+  NTSTATUS status; // eax@3
+  BOOL result; // eax@4
+  IO_STATUS_BLOCK IoStatusBlock;
+
+  status = NtCancelIoFile(hFile, &IoStatusBlock);
+  if ( NT_SUCCESS(status))
+  {
+    SetLastError(status);
+    result = FALSE;
+  }
+  else
+  {
+    result = TRUE;
+  }
+  return result;
+}

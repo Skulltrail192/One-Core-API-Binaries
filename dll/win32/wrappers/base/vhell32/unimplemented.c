@@ -276,19 +276,23 @@ HRESULT WINAPI SHGetThreadUndoManager(int a1, int a2)
 	return E_FAIL;	
 }
 
-HRESULT WINAPI SHGetPropertyStoreFromParsingName(const WCHAR *path, IBindCtx *pbc, GETPROPERTYSTOREFLAGS flags,
-    REFIID riid, void **ppv)
+HRESULT 
+WINAPI 
+SHGetPropertyStoreFromParsingName(
+	const WCHAR *path, 
+	IBindCtx *pbc, 
+	GETPROPERTYSTOREFLAGS flags,
+    REFIID riid, void **ppv
+)
 {
     IShellItem2 *item;
     HRESULT hr;
 
-    TRACE("(%s %p %#x %p %p)\n", debugstr_w(path), pbc, flags, riid, ppv);
-
     hr = SHCreateItemFromParsingName(path, pbc, &IID_IShellItem2, (void **)&item);
     if(SUCCEEDED(hr))
     {
-        hr = IShellItem2_GetPropertyStore(item, flags, riid, ppv);
-        IShellItem2_Release(item);
+        hr = E_NOTIMPL;
+        //IShellItem2_Release(item);
     }
 
     return hr;

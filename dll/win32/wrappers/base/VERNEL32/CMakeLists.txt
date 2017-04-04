@@ -3,6 +3,7 @@ add_definitions(-D_KERNEL32_)
 remove_definitions(-D_WIN32_WINNT=0x502)
 add_definitions(-D_WIN32_WINNT=0x600)
 include_directories(${REACTOS_SOURCE_DIR}/lib/rtl)
+include_directories(${REACTOS_SOURCE_DIR}/include/crt)
 include_directories(${REACTOS_SOURCE_DIR}/include/ndk)
 include_directories(${REACTOS_SOURCE_DIR}/include/psdk)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
@@ -57,7 +58,7 @@ add_library(VERNEL32 SHARED ${VERNEL32_ASM} ${SOURCE})
 
 set_module_type(VERNEL32 win32dll ENTRYPOINT BaseDllInitialize 12)
 
-add_importlibs(VERNEL32 kernelfull vtdll)
+add_importlibs(VERNEL32 kernelfull vtdll normaliz)
 
 add_dependencies(VERNEL32 psdk)
 

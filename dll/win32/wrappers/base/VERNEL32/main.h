@@ -44,7 +44,24 @@
 #define APPMODEL_ERROR_NO_PACKAGE                          15700
 #define APPMODEL_ERROR_PACKAGE_RUNTIME_CORRUPT             15701
 #define APPMODEL_ERROR_PACKAGE_IDENTITY_CORRUPT            15702
-#define APPMODEL_ERROR_NO_APPLICATION                      15703]
+#define APPMODEL_ERROR_NO_APPLICATION                      15703
+#define PROC_THREAD_ATTRIBUTE_PARENT_PROCESS (ProcThreadAttributeParentProcess | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_HANDLE_LIST (ProcThreadAttributeHandleList | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_GROUP_AFFINITY (ProcThreadAttributeGroupAffinity | PROC_THREAD_ATTRIBUTE_THREAD | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_IDEAL_PROCESSOR (ProcThreadAttributeIdealProcessor | PROC_THREAD_ATTRIBUTE_THREAD | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_UMS_THREAD (ProcThreadAttributeUmsThread | PROC_THREAD_ATTRIBUTE_THREAD | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_MIGITATION_POLICY (ProcThreadAttributeMitigationPolicy | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES (ProcThreadAttributeSecurityCapabilities | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_PROTECTION_LEVEL (ProcThreadAttributeProtectionLevel | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_JOB_LIST (ProcThreadAttributeJobList | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY (ProcThreadAttributeChildProcessPolicy | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY (ProcThreadAttributeAllApplicationPackagesPolicy | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_WIN32K_FILTER (ProcThreadAttributeWin32kFilter | PROC_THREAD_ATTRIBUTE_INPUT)
+#define PROC_THREAD_ATTRIBUTE_NUMBER   0x0000ffff
+#define PROC_THREAD_ATTRIBUTE_THREAD   0x00010000
+#define PROC_THREAD_ATTRIBUTE_INPUT    0x00020000
+#define PROC_THREAD_ATTRIBUTE_ADDITIVE 0x00040000
+
 #ifndef FileIdInformation
 #define FileIdInformation (enum _FILE_INFORMATION_CLASS)59
 #endif
@@ -260,3 +277,37 @@ wine_get_sortkey(
 	char *dst, 
 	int dstlen
 );
+
+struct proc_thread_attr
+{
+    DWORD_PTR attr;
+    SIZE_T size;
+    void *value;
+};
+
+typedef struct _PROC_THREAD_ATTRIBUTE_LIST
+{
+    DWORD mask;  /* bitmask of items in list */
+    DWORD size;  /* max number of items in list */
+    DWORD count; /* number of items in list */
+    DWORD pad;
+    DWORD_PTR unk;
+    struct proc_thread_attr attrs[1];
+}PROC_THREAD_ATTRIBUTE_LIST, *PPROC_THREAD_ATTRIBUTE_LIST, *LPPROC_THREAD_ATTRIBUTE_LIST;
+
+typedef enum _PROC_THREAD_ATTRIBUTE_NUM
+{
+    ProcThreadAttributeParentProcess = 0,
+    ProcThreadAttributeHandleList = 2,
+    ProcThreadAttributeGroupAffinity = 3,
+    ProcThreadAttributeIdealProcessor = 5,
+    ProcThreadAttributeUmsThread = 6,
+    ProcThreadAttributeMitigationPolicy = 7,
+    ProcThreadAttributeSecurityCapabilities = 9,
+    ProcThreadAttributeProtectionLevel = 11,
+    ProcThreadAttributeJobList = 13,
+    ProcThreadAttributeChildProcessPolicy = 14,
+    ProcThreadAttributeAllApplicationPackagesPolicy = 15,
+    ProcThreadAttributeWin32kFilter = 16,
+    ProcThreadAttributeSafeOpenPromptOriginClaim = 17,
+} PROC_THREAD_ATTRIBUTE_NUM;

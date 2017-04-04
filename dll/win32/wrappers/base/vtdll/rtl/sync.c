@@ -499,13 +499,14 @@ BOOLEAN
 WINAPI
 RtlTryAcquireSRWLockExclusive(RTL_SRWLOCK *lock)
 {
-  BOOLEAN result; // al@2
+  // BOOLEAN result; // al@2
 
-  if ( _interlockedbittestandset((int *)&lock->Ptr, 0) )
-    result = FALSE;
-  else
-    result = TRUE;
-  return result;
+  // if ( _interlockedbittestandset((int *)&lock->Ptr, 0) )
+    // result = FALSE;
+  // else
+    // result = TRUE;
+  lock->Ptr = NULL;
+  return FALSE;
 }
 
 /***********************************************************************

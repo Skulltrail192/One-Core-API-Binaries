@@ -36,3 +36,16 @@ GetApplicationRestartSettings(
 	pcchSize = 0;
 	return S_OK;
 }
+
+/***********************************************************************
+ * WerRegisterMemoryBlock (KERNEL32.@)
+ */
+HRESULT 
+WINAPI 
+WerRegisterMemoryBlock(
+	void *block, 
+	DWORD size
+)
+{
+    return E_NOTIMPL;
+}
