@@ -609,9 +609,9 @@
 @ stdcall gdiPlaySpoolStream(long long long long long long)
 
 #missing functions
-@ stdcall GetFontRealizationInfo(ptr ptr)
-@ stdcall GdiGetBitmapBitsSize(ptr) #please, be careful with this function!
 @ stdcall GetFontFileInfo(long long ptr long long)
+@ stdcall GetFontRealizationInfo(long ptr)
+@ stdcall GdiGetBitmapBitsSize(ptr) #please, be careful with this function!
 
 #vista functions
 @ stdcall D3DKMTCloseAdapter(ptr)

@@ -28,6 +28,20 @@
 
 #include <main.h>
 
+typedef enum{ 
+  KF_FLAG_DEFAULT                      = 0x00000000,
+  KF_FLAG_SIMPLE_IDLIST                = 0x00000100,
+  KF_FLAG_NOT_PARENT_RELATIVE          = 0x00000200,
+  KF_FLAG_DEFAULT_PATH                 = 0x00000400,
+  KF_FLAG_INIT                         = 0x00000800,
+  KF_FLAG_NO_ALIAS                     = 0x00001000,
+  KF_FLAG_DONT_UNEXPAND                = 0x00002000,
+  KF_FLAG_DONT_VERIFY                  = 0x00004000,
+  KF_FLAG_CREATE                       = 0x00008000,
+  KF_FLAG_NO_APPCONTAINER_REDIRECTION  = 0x00010000,
+  KF_FLAG_ALIAS_ONLY                   = 0x80000000
+} KNOWN_FOLDER_FLAG;
+
 static const GUID CLSID_UnixDosFolder = 
 {0x9d20aae8, 0x0625, 0x44b0, {0x9c, 0xa7, 0x71, 0x88, 0x9c, 0x22, 0x54, 0xd9}};
 
@@ -1953,6 +1967,8 @@ static int convertWinVistaFolderToWinXPFolder(KNOWNFOLDERID *id){
 		return CSIDL_MYMUSIC;
 	if(IsEqualGUID( id , &FOLDERID_DocumentsLibrary ))
 		return CSIDL_PERSONAL;	
+	if(IsEqualGUID( id , &FOLDERID_Downloads ))
+		return CSIDL_PERSONAL;	
 	return 0;
 }
 
@@ -2012,6 +2028,8 @@ SHGetKnownFolderPath(
 	{
 		ExpandEnvironmentStringsW(L"%ALLUSERSPROFILE%", allusers, MAX_PATH);
 		*path = allusers;
+	}else if(IsEqualGUID( id , &FOLDERID_Downloads )){
+		*path = strcatW(folder, L"\\Downloads");		
 	}else{
 		*path = folder;
 	}	
@@ -2965,6 +2983,79 @@ HRESULT WINAPI KnownFolderManager_Constructor( IUnknown *punk, REFIID riid, void
 
 HRESULT WINAPI SHGetKnownFolderIDList(REFKNOWNFOLDERID rfid, DWORD flags, HANDLE token, PIDLIST_ABSOLUTE *pidl)
 {
-        FIXME("%s, 0x%08x, %p, %p\n", debugstr_guid(rfid), flags, token, pidl);
-        return E_NOTIMPL;
+    TRACE("%s, 0x%08x, %p, %p\n", debugstr_guid(rfid), flags, token, pidl);
+
+    if (!pidl)
+        return E_INVALIDARG;
+
+    if (flags)
+        FIXME("unsupported flags: 0x%08x\n", flags);
+
+    if (token)
+        FIXME("user token is not used.\n");
+
+    *pidl = NULL;
+    if (IsEqualIID(rfid, &FOLDERID_Desktop))
+        *pidl = _ILCreateDesktop();
+    else if (IsEqualIID(rfid, &FOLDERID_RecycleBinFolder))
+        *pidl = _ILCreateBitBucket();
+    else if (IsEqualIID(rfid, &FOLDERID_ComputerFolder))
+        *pidl = _ILCreateMyComputer();
+    else if (IsEqualIID(rfid, &FOLDERID_PrintersFolder))
+        *pidl = _ILCreatePrinters();
+    else if (IsEqualIID(rfid, &FOLDERID_ControlPanelFolder))
+        *pidl = _ILCreateControlPanel();
+    else if (IsEqualIID(rfid, &FOLDERID_NetworkFolder))
+        *pidl = _ILCreateNetwork();
+    else if (IsEqualIID(rfid, &FOLDERID_Documents))
+        *pidl = _ILCreateMyDocuments();
+    else
+    {
+        DWORD attributes = 0;
+        WCHAR *pathW;
+        HRESULT hr;
+
+        hr = SHGetKnownFolderPath(rfid, flags, token, &pathW);
+        if (FAILED(hr))
+            return hr;
+
+        hr = SHILCreateFromPath(pathW, pidl, &attributes);
+        CoTaskMemFree(pathW);
+        return hr;
+    }
+
+    return *pidl ? S_OK : E_FAIL;
+}
+
+HRESULT WINAPI SHGetKnownFolderItem(REFKNOWNFOLDERID rfid, KNOWN_FOLDER_FLAG flags, HANDLE hToken,
+    REFIID riid, void **ppv)
+{
+    PIDLIST_ABSOLUTE pidl;
+    HRESULT hr;
+
+    TRACE("%s, 0x%08x, %p, %s, %p\n", debugstr_guid(rfid), flags, hToken, debugstr_guid(riid), ppv);
+
+    hr = SHGetKnownFolderIDList(rfid, flags, hToken, &pidl);
+    if (FAILED(hr))
+    {
+        *ppv = NULL;
+        return hr;
+    }
+
+    hr = SHCreateItemFromIDList(pidl, riid, ppv);
+    CoTaskMemFree(pidl);
+    return hr;
+}
+
+HRESULT 
+WINAPI 
+SHSetKnownFolderPath(
+  _In_  REFKNOWNFOLDERID rfid,
+  _In_  DWORD dwFlags,
+  _In_  HANDLE hToken,
+  _In_  PCWSTR pszPath
+)
+{
+	return S_OK;
+	//return SHSetFolderPathW((int)rfid, hToken, dwFlags, pszPath);
 }

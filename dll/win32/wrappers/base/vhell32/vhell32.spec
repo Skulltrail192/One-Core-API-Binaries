@@ -385,8 +385,6 @@
 @ stdcall SHGetIDListFromObject(ptr ptr)
 @ stdcall SHGetInstanceExplorer(long)
 @ stdcall SHGetItemFromDataObject(ptr long ptr ptr)
-@ stdcall SHGetKnownFolderIDList(ptr long ptr ptr)
-@ stdcall SHGetKnownFolderPath(ptr long ptr ptr)
 @ stdcall SHGetMalloc(ptr)
 @ stdcall SHGetNameFromIDList(ptr long ptr)
 @ stdcall SHGetNewLinkInfo(str str ptr long long) 
@@ -500,6 +498,8 @@
 882 stdcall -noname SHWriteClassesOfCategories(long long long long long long long)
 
 # Functions exported by the WinVista shell32.dll
+@ stdcall SHGetKnownFolderIDList(ptr long ptr ptr)
+@ stdcall SHGetKnownFolderPath(ptr long ptr ptr)
 @ stdcall AssocCreateForClasses(ptr long long ptr)
 @ stdcall AssocGetDetailsOfPropKey(ptr ptr ptr ptr ptr)
 @ stdcall ILLoadFromStreamEx(ptr ptr)
@@ -534,3 +534,4 @@
 #Win7
 @ stdcall GetCurrentProcessExplicitAppUserModelID(wstr)
 @ stdcall SetCurrentProcessExplicitAppUserModelID(wstr)
+@ stdcall SHGetKnownFolderItem(ptr long long ptr ptr)

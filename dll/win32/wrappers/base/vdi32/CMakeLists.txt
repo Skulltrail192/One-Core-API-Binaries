@@ -5,6 +5,7 @@ include_directories(${REACTOS_SOURCE_DIR}/lib/3rdparty/freetype/include)
 spec2def(vdi32.dll vdi32.spec)
 
 list(APPEND SOURCE
+	dc.c
     font.c
 	main.c
 	d3dkmt.c

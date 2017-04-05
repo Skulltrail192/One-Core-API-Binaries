@@ -490,7 +490,9 @@ LABEL_14:
   return resp;
 }
 
-HRESULT WINAPI NetGetUserPicture(DWORD lpStart, HLOCAL hMem, LPWSTR lpFileName, size_t a4, LPWSTR a5, size_t a6)
+HRESULT 
+WINAPI 
+NetGetUserPicture(DWORD lpStart, HLOCAL hMem, LPWSTR lpFileName, size_t a4, LPWSTR a5, size_t a6)
 {
   LPWSTR path; // eax@1
   HRESULT result; // eax@3
@@ -504,7 +506,9 @@ HRESULT WINAPI NetGetUserPicture(DWORD lpStart, HLOCAL hMem, LPWSTR lpFileName, 
   return result;
 }
 
-HRESULT WINAPI SHGetUserPicturePathEx(LPCWSTR lpStart, DWORD sguppFlags, LPCWSTR pwszDesiredSrcExt, LPWSTR pwszPicPath, UINT picPathLen, LPWSTR pwszSrcPath, UINT pwszSrcPathTwo)
+HRESULT 
+WINAPI 
+SHGetUserPicturePathEx(LPCWSTR lpStart, DWORD sguppFlags, LPCWSTR pwszDesiredSrcExt, LPWSTR pwszPicPath, UINT picPathLen, LPWSTR pwszSrcPath, UINT pwszSrcPathTwo)
 {
   LPCWSTR localStart; // edi@1
   UINT localSize; // esi@2
@@ -584,7 +588,7 @@ LABEL_15:
     }
     else
     {
-      result = 0x80070002u;
+      result = 0x80070002;
     }
 LABEL_14:
     localSize = 0;
@@ -595,7 +599,9 @@ LABEL_14:
   return result;
 }
 
-BOOL WINAPI SHGetPathFromIDListEx(
+BOOL 
+WINAPI 
+SHGetPathFromIDListEx(
   _In_   PCIDLIST_ABSOLUTE pidl,
   _Out_  PWSTR pszPath,
   DWORD cchPath,
@@ -603,17 +609,4 @@ BOOL WINAPI SHGetPathFromIDListEx(
 )
 {
 	return SHGetPathFromIDListW(pidl, pszPath);
-}
-
-HRESULT 
-WINAPI 
-SHSetKnownFolderPath(
-  _In_  REFKNOWNFOLDERID rfid,
-  _In_  DWORD dwFlags,
-  _In_  HANDLE hToken,
-  _In_  PCWSTR pszPath
-)
-{
-	return S_OK;
-	//return SHSetFolderPathW((int)rfid, hToken, dwFlags, pszPath);
 }
