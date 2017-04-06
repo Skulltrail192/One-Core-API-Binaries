@@ -236,8 +236,6 @@
 @ stdcall SetupCommitFileQueue(long long ptr ptr) SetupCommitFileQueueA
 @ stdcall SetupCommitFileQueueA(long long ptr ptr)
 @ stdcall SetupCommitFileQueueW(long long ptr ptr)
-@ stdcall SetupConfigureWmiFromInfSectionA(ptr ptr str)
-@ stdcall SetupConfigureWmiFromInfSectionW(ptr ptr wstr)
 @ stdcall SetupCopyErrorA(long str str str str str long long str long ptr)
 @ stdcall SetupCopyErrorW(long wstr wstr wstr wstr wstr long long wstr long ptr)
 @ stdcall SetupCopyOEMInfA(str str long long ptr long ptr ptr)
@@ -291,8 +289,6 @@
 @ stdcall SetupDiEnumDeviceInterfaces(long ptr ptr long ptr)
 @ stdcall SetupDiEnumDriverInfoA(long ptr long long ptr)
 @ stdcall SetupDiEnumDriverInfoW(long ptr long long ptr)
-@ stdcall SetupDiGetActualModelsSectionA(ptr ptr ptr long ptr ptr)
-@ stdcall SetupDiGetActualModelsSectionW(ptr ptr ptr long ptr ptr)
 @ stdcall SetupDiGetActualSectionToInstallA(long str str long ptr ptr)
 @ stdcall SetupDiGetActualSectionToInstallExA(long str ptr str long ptr ptr ptr)
 @ stdcall SetupDiGetActualSectionToInstallExW(long wstr ptr wstr long ptr ptr ptr)
@@ -369,7 +365,6 @@
 @ stdcall SetupDiRegisterDeviceInfo(ptr ptr long ptr ptr ptr)
 @ stdcall SetupDiRemoveDevice(ptr ptr)
 @ stdcall SetupDiRemoveDeviceInterface(ptr ptr)
-@ stdcall SetupDiRestartDevices(ptr ptr)
 @ stdcall SetupDiSelectBestCompatDrv(ptr ptr)
 @ stdcall SetupDiSelectDevice(ptr ptr)
 @ stdcall SetupDiSelectOEMDrv(ptr ptr ptr)
@@ -565,7 +560,6 @@
 @ stdcall pSetupInstallCatalog(wstr wstr ptr)
 @ stdcall pSetupInstallStopEx(ptr ptr ptr)
 @ stdcall pSetupIsGuidNull(ptr)
-@ stdcall pSetupIsLocalSystem()
 @ stdcall pSetupIsUserAdmin()
 @ stdcall pSetupMakeSurePathExists(wstr)
 @ stdcall pSetupMalloc(long)
@@ -624,3 +618,11 @@
 @ stub SetupDiSetDeviceProperty
 @ stub SetupDiGetDeviceProperty
 @ stub SetupDiGetClassProperty
+
+#Missing on XP
+@ stdcall SetupConfigureWmiFromInfSectionA(ptr ptr str) setupapibase.SetupConfigureWmiFromInfSectionA
+@ stdcall SetupConfigureWmiFromInfSectionW(ptr ptr wstr) setupapibase.SetupConfigureWmiFromInfSectionW
+@ stdcall SetupDiGetActualModelsSectionA(ptr ptr ptr long ptr ptr) setupapibase.SetupDiGetActualModelsSectionA
+@ stdcall SetupDiGetActualModelsSectionW(ptr ptr ptr long ptr ptr) setupapibase.SetupDiGetActualModelsSectionW
+@ stdcall SetupDiRestartDevices(ptr ptr) setupapibase.SetupDiRestartDevices
+@ stdcall pSetupIsLocalSystem() setupapibase.pSetupIsLocalSystem
