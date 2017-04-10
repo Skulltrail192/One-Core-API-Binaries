@@ -85,7 +85,7 @@ HRESULT WINAPI SHQueryUserNotificationState(QUERY_USER_NOTIFICATION_STATE *pquns
   HWND window; // eax@2
   ULONG_PTR dwResult; // [sp+8h] [bp-8h]@3
 
-  resp = 0x80070057u;
+  resp = 0x80070057;
   if ( pquns )
   {
     resp = 0;

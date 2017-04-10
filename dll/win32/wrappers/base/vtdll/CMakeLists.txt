@@ -26,10 +26,10 @@ list(APPEND SOURCE
 	ldr/loader.c
 	rtl/acl.c
 	rtl/actctx.c
+	rtl/atom.c
 	rtl/avl.c	
 	rtl/boundary.c
 	rtl/cache.c
-	rtl/cnvint.c
 	rtl/context.c
 	rtl/critical.c
 	rtl/environ.c

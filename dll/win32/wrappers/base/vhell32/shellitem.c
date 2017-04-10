@@ -1220,9 +1220,13 @@ HRESULT WINAPI SHCreateShellItemArrayFromShellItem(IShellItem *psi, REFIID riid,
     return ret;
 }
 
-HRESULT WINAPI SHCreateShellItemArrayFromIDLists(UINT cidl,
-                                                 PCIDLIST_ABSOLUTE_ARRAY pidl_array,
-                                                 IShellItemArray **psia)
+HRESULT 
+WINAPI 
+SHCreateShellItemArrayFromIDLists(
+	UINT cidl,
+    CIDLIST_ABSOLUTE_ARRAY pidl_array,
+    IShellItemArray **psia
+)
 {
     IShellItemArrayImpl *This;
     IShellItem **array;
@@ -1265,7 +1269,13 @@ HRESULT WINAPI SHCreateShellItemArrayFromIDLists(UINT cidl,
     return ret;
 }
 
-HRESULT WINAPI SHCreateItemFromIDList(PCIDLIST_ABSOLUTE pidl, REFIID riid, void **ppv)
+HRESULT 
+WINAPI 
+SHCreateItemFromIDList(
+	PCIDLIST_ABSOLUTE pidl, 
+	REFIID riid, 
+	void **ppv
+)
 {
     ShellItem2 *psiimpl;
     HRESULT ret;
@@ -1283,8 +1293,14 @@ HRESULT WINAPI SHCreateItemFromIDList(PCIDLIST_ABSOLUTE pidl, REFIID riid, void 
     return ret;
 }
 
-HRESULT WINAPI SHGetItemFromDataObject(IDataObject *pdtobj,
-    DATAOBJ_GET_ITEM_FLAGS dwFlags, REFIID riid, void **ppv)
+HRESULT 
+WINAPI 
+SHGetItemFromDataObject(
+	IDataObject *pdtobj,
+    DATAOBJ_GET_ITEM_FLAGS dwFlags, 
+	REFIID riid, 
+	void **ppv
+)
 {
     FORMATETC fmt;
     STGMEDIUM medium;
@@ -1395,18 +1411,11 @@ SHCreateItemFromParsingName(
 
     *ppv = NULL;
 
-    ret = SHParseDisplayName(pszPath, pbc, &pidl, 0, NULL);
-    if(SUCCEEDED(ret))
+    ret = SHParseDisplayName(pszPath, pbc, &pidl, SFGAO_FOLDER, NULL);
+	if(SUCCEEDED(ret))
     {
-        ShellItem2 *This;
-        ret = IShellItem_Constructor(NULL, riid, (void**)&This);
-
-        if(SUCCEEDED(ret))
-        {
-            This->pidl = pidl;
-            *ppv = (void*)This;
-        }
-        else
+        ret = SHCreateShellItem(NULL, NULL, pidl, (IShellItem **) ppv);
+        if(!SUCCEEDED(ret))
         {
             ILFree(pidl);
         }
@@ -1414,7 +1423,9 @@ SHCreateItemFromParsingName(
     return ret;
 }
 
-HRESULT WINAPI SHCreateItemWithParent(
+HRESULT 
+WINAPI 
+SHCreateItemWithParent(
   _In_   PCIDLIST_ABSOLUTE pidlParent,
   _In_   IShellFolder *psfParent,
   _In_   PCUITEMID_CHILD pidl,
@@ -1422,6 +1433,12 @@ HRESULT WINAPI SHCreateItemWithParent(
   _Out_  void **ppvItem
 )
 {
-	UNIMPLEMENTED;
-	return S_OK;
+	HRESULT ret;
+	*ppvItem = NULL;
+	ret = SHCreateShellItem(NULL, NULL, pidl, (IShellItem **) ppvItem);
+    if(!SUCCEEDED(ret))
+    {
+		ILFree(pidl);
+    }
+	return ret;
 }

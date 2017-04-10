@@ -47,6 +47,12 @@
 typedef __int64 timeout_t;
 #define TIMEOUT_INFINITE (((timeout_t)0x7fffffff) << 32 | 0xffffffff)
 
+#define RTL_ATOM_MAXIMUM_INTEGER_ATOM   (RTL_ATOM)0xC000
+#define RTL_ATOM_INVALID_ATOM           (RTL_ATOM)0x0000
+#define RTL_ATOM_TABLE_DEFAULT_NUMBER_OF_BUCKETS 37
+#define RTL_ATOM_MAXIMUM_NAME_LENGTH    255
+#define RTL_ATOM_PINNED 0x01
+
 /* Definitions *****************************************/
 
 typedef PVOID* PALPC_HANDLE;

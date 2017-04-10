@@ -26,7 +26,9 @@ DEP_SYSTEM_POLICY_TYPE WINAPI GetSystemDEPPolicy(void)
 	return OptOut;
 }
 
-BOOL WINAPI GetProcessDEPPolicy(HANDLE ProcessInformation, LPDWORD lpFlags, PBOOL lpPermanent)
+BOOL 
+WINAPI 
+GetProcessDEPPolicy(HANDLE ProcessInformation, LPDWORD lpFlags, PBOOL lpPermanent)
 {
   NTSTATUS status; // eax@1
   BOOL result; // eax@2
@@ -56,40 +58,40 @@ BOOL WINAPI GetProcessDEPPolicy(HANDLE ProcessInformation, LPDWORD lpFlags, PBOO
   return result;
 }
 
-DWORD WINAPI SetProcessDEPPolicy(DWORD ProcessInformation)
+DWORD 
+WINAPI 
+SetProcessDEPPolicy(DWORD dwFlags)
 {
   BOOL value; // eax@1
-  NTSTATUS otherStatus; // eax@10
   NTSTATUS status; // [sp-4h] [bp-4h]@2
 
-  value = ProcessInformation;
-  if ( ProcessInformation & 0xFFFFFFFC )
+  value = dwFlags;
+  if ( dwFlags & 0xFFFFFFFC )
   {
     status = STATUS_INVALID_PARAMETER;
-LABEL_3:
+ERROR:
     BaseSetLastNTError(status);
-    return 0;
+    return FALSE;
   }
-  if ( ProcessInformation & 1 )
+  if ( dwFlags & 1 )
   {
-    ProcessInformation = 9;
+    dwFlags = 9;
     if ( value & 2 )
-      ProcessInformation = 13;
+      dwFlags = 13;
   }
   else
   {
-    if ( ProcessInformation & 2 )
+    if ( dwFlags & 2 )
     {
       status = STATUS_INVALID_PARAMETER_MIX;
       goto LABEL_3;
     }
-    ProcessInformation = 2;
+    dwFlags = 2;
   }
-  otherStatus = NtSetInformationProcess((HANDLE)0xFFFFFFFF, (PROCESSINFOCLASS)0x22u, &ProcessInformation, 4u);
-  if ( otherStatus < 0 )
+  status = NtSetInformationProcess((HANDLE)0xFFFFFFFF, (PROCESSINFOCLASS)0x22u, &dwFlags, 4u);
+  if ( !NT_SUCCESS(status))
   {
-    status = otherStatus;
-    goto LABEL_3;
+    goto ERROR;
   }
-  return 1;
+  return TRUE;
 }

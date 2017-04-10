@@ -247,16 +247,18 @@ NTSTATUS NTAPI NtAlpcQueryInformation(
 }
 
 /*subimplemented*/
-NTSTATUS NTAPI NtAlpcSendWaitReceivePort( 	
-		__in HANDLE  	PortHandle,
-		__in ULONG  	Flags,
-		__in_opt PPORT_MESSAGE  	SendMessage,
-		__in_opt PALPC_MESSAGE_ATTRIBUTES  	SendMessageAttributes,
-		__inout_opt PPORT_MESSAGE  	ReceiveMessage,
-		__inout_opt PULONG  	BufferLength,
-		__inout_opt PALPC_MESSAGE_ATTRIBUTES  	ReceiveMessageAttributes,
-		__in_opt PLARGE_INTEGER  	Timeout 
-	) 	
+NTSTATUS 
+NTAPI 
+NtAlpcSendWaitReceivePort( 	
+	__in HANDLE  	PortHandle,
+	__in ULONG  	Flags,
+	__in_opt PPORT_MESSAGE  	SendMessage,
+	__in_opt PALPC_MESSAGE_ATTRIBUTES  	SendMessageAttributes,
+	__inout_opt PPORT_MESSAGE  	ReceiveMessage,
+	__inout_opt PULONG  	BufferLength,
+	__inout_opt PALPC_MESSAGE_ATTRIBUTES  	ReceiveMessageAttributes,
+	__in_opt PLARGE_INTEGER  	Timeout 
+) 	
 {
 	NTSTATUS status;
 	DbgPrint("A syscall numero 311 NtAlpcSendWaitReceivePort foi chamada\n");	
@@ -266,12 +268,14 @@ NTSTATUS NTAPI NtAlpcSendWaitReceivePort(
 }
 
 /*subimplemented*/
-NTSTATUS NTAPI NtAlpcSetInformation( 	
-		__in HANDLE  	PortHandle,
-		__in ALPC_PORT_INFORMATION_CLASS  	PortInformationClass,
-		__in_bcount(Length) PVOID  	PortInformation,
-		__in ULONG  	Length 
-	) 	
+NTSTATUS 
+NTAPI 
+NtAlpcSetInformation( 	
+	__in HANDLE  	PortHandle,
+	__in ALPC_PORT_INFORMATION_CLASS  	PortInformationClass,
+	__in_bcount(Length) PVOID  	PortInformation,
+	__in ULONG  	Length 
+) 	
 {
 	//status = NtSetInformationObject(PortHandle, PortInformationClass, PortInformation, Length);
 	//status = NtSetInformationThread(PortHandle, ThreadImpersonationToken, PortInformation, sizeof(HANDLE));
@@ -309,9 +313,10 @@ NtQueryOpenSubKeysEx(
 
 NTSTATUS 
 WINAPI 
-NtUnmapViewOfSectionEx(HANDLE handle, 
-					   PVOID MemoryCache, 
-					   ULONG number)
+NtUnmapViewOfSectionEx(
+	HANDLE handle, 
+	PVOID MemoryCache, 
+	ULONG number)
 {
 	return NtUnmapViewOfSection(handle, MemoryCache);	
 }
@@ -459,14 +464,15 @@ NtQuerySystemInformationEx(
 
 NTSTATUS 
 NTAPI 
-NtCreateKeyTransacted(__out PHANDLE KeyHandle, 
-					__in ACCESS_MASK DesiredAccess, 
-					__in POBJECT_ATTRIBUTES ObjectAttributes, 
-					__reserved ULONG TitleIndex, 
-					__in_opt PUNICODE_STRING Class, 
-					__in ULONG CreateOptions, 
-					__in HANDLE TransactionHandle, 
-					__out_opt PULONG Disposition)
+NtCreateKeyTransacted(
+	__out PHANDLE KeyHandle, 
+	__in ACCESS_MASK DesiredAccess, 
+	__in POBJECT_ATTRIBUTES ObjectAttributes, 
+	__reserved ULONG TitleIndex, 
+	__in_opt PUNICODE_STRING Class, 
+	__in ULONG CreateOptions, 
+	__in HANDLE TransactionHandle, 
+	__out_opt PULONG Disposition)
 {
 	return NtCreateKey(KeyHandle, 
 					   DesiredAccess, 
@@ -570,14 +576,14 @@ NTSTATUS
 WINAPI 
 NtCommitTransaction(HANDLE hTransaction, DWORD options)
 {
-	return 0;
+	return STATUS_SUCCESS;
 }
 
 DWORD 
 WINAPI 
 NtCreateTransaction(int a, int b)
 {
-	return 0;
+	return STATUS_SUCCESS;
 }
 
 NTSTATUS 

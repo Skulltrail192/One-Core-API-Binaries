@@ -1488,6 +1488,7 @@
 @ stdcall RtlAcquireSRWLockExclusive(ptr) 
 @ stdcall RtlAcquireSRWLockShared(ptr)
 @ stdcall RtlCloseStringHandle(long long) 
+@ stdcall RtlGetIntegerAtom(wstr ptr)
 @ stdcall RtlSetThreadPreferredUILanguages(long wstr ptr)
 @ stdcall RtlInitializeConditionVariable(ptr)
 @ stdcall RtlInitializeSRWLock(ptr) 
