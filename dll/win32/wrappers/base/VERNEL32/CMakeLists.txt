@@ -16,6 +16,7 @@ list(APPEND SOURCE
 	ahcache.c
 	appcompat.c
 	datetime.c
+	dep.c
 	dllmain.c
 	error.c
 	filehops.c
@@ -31,6 +32,7 @@ list(APPEND SOURCE
 	support.c
 	syblink.c
 	synch.c
+	sysinfo.c
 	thread.c
 	tick.c
 	wer.c

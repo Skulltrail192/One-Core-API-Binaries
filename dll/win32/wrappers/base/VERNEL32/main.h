@@ -28,11 +28,6 @@
 
 #define WIN32_NO_STATUS
 #include <winbase.h>
-// #include <kefuncs.h>
-// #include <exfuncs.h>
-// #include <strsafe.h>
-// #include <iofuncs.h>
-// #include <mmfuncs.h>
 
 #define FIND_DATA_SIZE 0x4000
 #define BASESRV_SERVERDLL_INDEX 1
@@ -114,6 +109,11 @@ typedef union _DIR_INFORMATION
     PFILE_FULL_DIR_INFORMATION FullDirInfo;
     PFILE_BOTH_DIR_INFORMATION BothDirInfo;
 } DIR_INFORMATION;
+
+typedef enum _DEP_SYSTEM_POLICY_TYPE
+{
+	OptOut = 1
+}DEP_SYSTEM_POLICY_TYPE, *PDEP_SYSTEM_POLICY_TYPE;
 
 typedef struct _FIND_FILE_DATA
 {

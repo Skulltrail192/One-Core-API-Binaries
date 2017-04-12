@@ -72,7 +72,8 @@ PALT_RESOURCE_MODULE AlternateResourceModules;
     }                                                                                                    \
 }       
 
-NTSTATUS LdrpLoadResourceFromAlternativeModule(
+NTSTATUS 
+LdrpLoadResourceFromAlternativeModule(
    IN PVOID DllHandle,
    IN ULONG_PTR* ResourceIdPath,
    IN ULONG ResourceIdPathLength,

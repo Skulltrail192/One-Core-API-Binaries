@@ -1010,9 +1010,9 @@
 
 #Native in XP SP3 and Missing in Server 2003 SP2 with Updates
 @ stdcall SetSearchPathMode(long) kernelfull.SetSearchPathMode
-@ stdcall GetProcessDEPPolicy(ptr ptr ptr) kernelfull.GetProcessDEPPolicy
-@ stdcall GetSystemDEPPolicy() kernelfull.GetSystemDEPPolicy
-@ stdcall SetProcessDEPPolicy(long) kernelfull.SetProcessDEPPolicy
+@ stdcall GetProcessDEPPolicy(ptr ptr ptr)
+@ stdcall GetSystemDEPPolicy() 
+@ stdcall SetProcessDEPPolicy(long) 
 
 #Onwn implementation only for support
 @ stdcall SetFileApisToANSI() SetpFileApisToANSI
@@ -1067,6 +1067,9 @@
 @ stdcall GetNamedPipeClientSessionId(ptr ptr)
 @ stdcall GetNamedPipeServerProcessId(ptr ptr)
 @ stdcall GetNamedPipeServerSessionId(ptr ptr)
+@ stdcall GetOSProductNameA(str long long)
+@ stdcall GetOSProductNameW(wstr long long)
+@ stdcall GetProductInfo(long long long long ptr) 
 @ stdcall GetSystemDefaultLocaleName(ptr long)
 @ stdcall GetThreadErrorMode()
 @ stdcall GetThreadGroupAffinity(long ptr)
@@ -1077,7 +1080,7 @@
 @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
 @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
-@ stdcall InitializeConditionVariable(ptr) vtdll.InitializeConditionVariable
+@ stdcall InitializeConditionVariable(ptr)
 @ stdcall InitializeCriticalSectionEx(ptr long long) 
 @ stdcall InitializeSRWLock(ptr) vtdll.RtlInitializeSRWLock
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
@@ -1097,13 +1100,13 @@
 @ stdcall SetThreadGroupAffinity(long ptr ptr)
 @ stdcall SetThreadpoolTimer(ptr ptr long long) vtdll.TpSetTimer
 @ stdcall SetThreadpoolWait(ptr ptr ptr) vtdll.TpSetWait
-@ stdcall SleepConditionVariableCS(ptr ptr long) vtdll.SleepConditionVariableCS
+@ stdcall SleepConditionVariableCS(ptr ptr long) 
 @ stdcall SleepConditionVariableSRW(ptr ptr long long) vtdll.SleepConditionVariableSRW
 @ stdcall SubmitThreadpoolWork(ptr) vtdll.TpPostWork
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) vtdll.TpWaitForTimer
-@ stdcall WakeAllConditionVariable(ptr) vtdll.RtlWakeAllConditionVariable
-@ stdcall WakeConditionVariable(ptr) vtdll.RtlWakeConditionVariable
+@ stdcall WakeAllConditionVariable(ptr) 
+@ stdcall WakeConditionVariable(ptr) 
 @ stdcall WerRegisterMemoryBlock(ptr long)
 @ stdcall WerRegisterMemoryBlockWorker(ptr long) WerRegisterMemoryBlock
 

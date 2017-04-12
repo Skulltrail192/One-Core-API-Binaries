@@ -409,12 +409,16 @@ GetLogicalProcessorInformationEx(
 )
 {
 	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION information = NULL;
+	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = NULL;
 	DWORD byteOffset = 0;
 	SYSTEM_INFO sysinfo;
+	BOOLEAN result;
 	
 	Buffer->Size = sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
 	
-	if(!GetLogicalProcessorInformation(information, ReturnedLength)){
+	result = GetLogicalProcessorInformation(information, ReturnedLength);
+	
+	if(!result){
 		return FALSE;
 	}
 	Buffer->Relationship = information->Relationship;

@@ -79,4 +79,3 @@ int WINAPI GdiGetBitmapBitsSize(BITMAPINFO * lpbmi)
     }
     return Ret;
 }
-
