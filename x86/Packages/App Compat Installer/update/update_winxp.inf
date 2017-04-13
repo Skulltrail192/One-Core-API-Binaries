@@ -1,0 +1,88 @@
+[Version]
+LanguageType 		  = %LANGTYPEVALUE%
+MaxNtBuildToUpdate        = 2600
+MaxNtMajorVersionToUpdate = 5
+MaxNtMinorVersionToUpdate = 1
+MaxNtServicePackVersion   = 1024
+MinNtServicePackVersion   = 512
+NtBuildToUpdate           = 2600
+NtMajorVersionToUpdate    = 5
+NtMinorVersionToUpdate    = 1
+Signature                 = "$Windows NT$"
+
+[Configuration]
+    InstallationType     = Hotfix
+    InstallLogFileName   = %SP_SHORT_TITLE%.log
+    EventLogKeyName      = NtServicePack
+    EventLogDllName      = spmsg.dll
+    NoPNPFiles           = 1
+    UnInstallLogFileName = %SP_SHORT_TITLE%Uninst.log
+    UnInstallDirName     = $NtUninstall%SP_SHORT_TITLE%$
+    ServiceFileInUseDetect    = 1
+    AppFileinUseDetect        = 3
+
+[Strings]
+WIC_FILE_VERSION       = "6.0.6000.16385"
+WIC_VERSION             = "3.0.0.0"
+SP_TITLE                = "One-Core-API AppCompat"
+LANGTYPEVALUE           = 0x0409
+SP_SHORT_TITLE          = "OCAA"
+SERVICE_PACK_NUMBER     = 3
+COMMENT                 = "One-Core-API AppCompat [See Q100000 for more information]"
+SERVICEPACKSOURCEFILES  = "One-Core-API AppCompat"
+Msft                    = "Microsoft"
+ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+PARENT_DISPLAY_NAME     = "Windows Updates"
+
+[UninstallSections]
+    Add.Reg, Add.Reg.Uninstall
+    Del.Reg, Del.Reg.Uninstall
+	
+[Product.Add.Reg]
+
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%WIC_VERSION%
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
+
+HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION%"
+	
+
+[ProductInstall.CopyFilesAlways]
+	CopyFiles                  = CopyAlways.AppPatch.files
+    CopyFiles                  = CopyAlways.System32.files
+
+[DestinationDirs]
+	CopyAlways.AppPatch.files=11  ; %windir%\AppPatch (don't delay until reboot)
+    CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+
+[CopyAlways.AppPatch.Files]
+    "AcLayers.dll"
+	"apphelp.sdb"
+	"drvmain.sdb"
+	"msimain.sdb"
+	"sysmain.sdb"
+[CopyAlways.System32.Files]
+    "SlayerXP.dll"
+[SourceDisksNames]
+    1=%ServicePackSourceFiles%
+
+[SourceDisksFiles]
+    "AcLayers.dll" =1
+	"apphelp.sdb" =1
+	"drvmain.sdb" =1
+	"msimain.sdb" =1
+	"sysmain.sdb" =1
+	"SlayerXP.dll" =1
+[Strings]
+MSFT_Prefix                 = "MicrosoftOneCoreAPIAppCompat"
+MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
+
+
+[Save.Reg.For.Uninstall]
+
+HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+
+HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"

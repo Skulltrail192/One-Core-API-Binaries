@@ -1,0 +1,191 @@
+[Version]
+LanguageType 		  = %LANGTYPEVALUE%
+MaxNtBuildToUpdate        = 3790
+MaxNtMajorVersionToUpdate = 5
+MaxNtMinorVersionToUpdate = 2
+MaxNtServicePackVersion   = 1024
+MinNtServicePackVersion   = 512
+NtBuildToUpdate           = 3790
+NtMajorVersionToUpdate    = 5
+NtMinorVersionToUpdate    = 2
+Signature                 = "$Windows NT$"
+
+[Configuration]
+    InstallationType     = Hotfix
+    InstallLogFileName   = %SP_SHORT_TITLE%.log
+    EventLogKeyName      = NtServicePack
+    EventLogDllName      = spmsg.dll
+    NoPNPFiles           = 1
+    UnInstallLogFileName = %SP_SHORT_TITLE%Uninst.log
+    UnInstallDirName     = $NtUninstall%SP_SHORT_TITLE%$
+    ServiceFileInUseDetect    = 1
+    AppFileinUseDetect        = 3
+
+[Strings]
+WIC_FILE_VERSION       = "6.0.6000.16385"
+WIC_VERSION             = "3.0.0.0"
+SP_TITLE                = "Windows Base Wrappers"
+LANGTYPEVALUE           = 0x0409
+SP_SHORT_TITLE          = "WBW"
+SERVICE_PACK_NUMBER     = 3
+COMMENT                 = "Windows Base Wrappers [See Q100000 for more information]"
+SERVICEPACKSOURCEFILES  = "Windows Base Wrappers"
+Msft                    = "Microsoft"
+ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+PARENT_DISPLAY_NAME     = "Windows Updates"
+
+[UninstallSections]
+    Add.Reg, Add.Reg.Uninstall
+    Del.Reg, Del.Reg.Uninstall
+	
+[Product.Add.Reg]
+
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%WIC_VERSION%
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
+
+HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION%"
+	
+
+[ProductInstall.CopyFilesAlways]
+    CopyFiles                  = CopyAlways.System32.files
+
+[DestinationDirs]
+    CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+
+[CopyAlways.System32.Files]
+    "advapibase.dll"
+	"browsebase.dll"
+	"combase.dll"
+	"d3d9base.dll"
+	"gdibase.dll"
+	"iphlpapibase.dll"
+	"netapibase.dll"
+	"pdhbase.dll"
+	"powrprofbase.dll"
+	"rpcrtbase.dll"
+	"securbase.dll"
+	"setupapibase.dll"
+	"shellbase.dll"
+	"ucrtbase.dll"
+	"userbase.dll"
+	"uxthemebase.dll"
+	"advapi32.dll"
+	"advapilong.dll"
+	"advapinew.dll"
+	"bcrypt.dll"
+	"msvcrt.dll"
+	"winbrand.dll"
+	"xmllite.dll"
+	"xmlrw.dll"
+	"browseui.dll"
+	"combase.dll"
+	; "crypt32.dll"
+	"d3d9.dll"
+	"d3d9base.dll"
+	"gdi32.dll"
+	"iphlpapi.dll"
+	"iphlpapibase.dll"
+	"idndl.dll"
+	"kernel32.dll" 
+	"kernelbase.dll"
+	"kernelfull.dll"
+	"Nlsdl.dll"
+	"normaliz.dll"
+	"psapi.dll"
+	"netapi32.dll"
+	"netapinew.dll"
+	"pdh.dll"
+	"pdhbase.dll"
+	"powrprof.dll"
+	"rpcrt4.dll"
+	"secur32.dll"
+	"securnew.dll"
+	"setupapi.dll"
+	"propsys.dll"
+	"shell32.dll"
+	"ucrtbase.dll"
+	"user32.dll"
+	"uxtheme.dll"
+	"vtdll.dll"
+	"winsta.dll"
+	"winstabase.dll"
+	"winstanew.dll"
+	"ws2_32.dll"
+	"ws2_base.dll"
+[SourceDisksNames]
+    1=%ServicePackSourceFiles%
+
+[SourceDisksFiles]
+    "advapibase.dll" = 1
+	"browsebase.dll" = 1
+	"combase.dll" = 1
+	"d3d9base.dll" = 1
+	"gdibase.dll" = 1
+	"iphlpapibase.dll" = 1
+	"netapibase.dll" = 1
+	"pdhbase.dll" = 1
+	"powrprofbase.dll" = 1
+	"rpcrtbase.dll" = 1
+	"securbase.dll" = 1
+	"setupapibase.dll" = 1
+	"shellbase.dll" = 1
+	"ucrtbase.dll" = 1
+	"userbase.dll" = 1
+	"uxthemebase.dll" = 1
+	"advapi32.dll" = 1
+	"advapilong.dll" = 1
+	"advapinew.dll" = 1
+	"bcrypt.dll" = 1
+	"msvcrt.dll" = 1
+	"winbrand.dll" = 1
+	"xmllite.dll" = 1
+	"xmlrw.dll" = 1
+	"browseui.dll" = 1
+	"combase.dll" = 1
+	; "crypt32.dll" = 1
+	"d3d9.dll" = 1
+	"d3d9base.dll" = 1
+	"gdi32.dll" = 1
+	"iphlpapi.dll" = 1
+	"iphlpapibase.dll" = 1
+	"idndl.dll" = 1
+	"kernel32.dll" = 1
+	"kernelbase.dll" = 1
+	"kernelfull.dll" = 1
+	"Nlsdl.dll" = 1
+	"normaliz.dll" = 1
+	"psapi.dll" = 1
+	"netapi32.dll" = 1
+	"netapinew.dll" = 1
+	"pdh.dll" = 1
+	"pdhbase.dll" = 1
+	"powrprof.dll" = 1
+	"rpcrt4.dll" = 1
+	"secur32.dll" = 1
+	"securnew.dll" = 1
+	"setupapi.dll" = 1
+	"propsys.dll" = 1
+	"shell32.dll" = 1
+	"ucrtbase.dll" = 1
+	"user32.dll" = 1
+	"uxtheme.dll" = 1
+	"vtdll.dll" = 1
+	"winsta.dll" = 1
+	"winstabase.dll" = 1
+	"winstanew.dll" = 1
+	"ws2_32.dll" = 1
+	"ws2_base.dll" = 1
+[Strings]
+MSFT_Prefix                 = "MicrosoftWrappersBase"
+MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
+
+
+[Save.Reg.For.Uninstall]
+
+HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+
+HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"

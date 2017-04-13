@@ -1,0 +1,3 @@
+msvcrt.dll (vista)
+kernelbase.dll
+vtdll.dll

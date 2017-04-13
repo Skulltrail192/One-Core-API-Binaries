@@ -1,0 +1,4 @@
+msvcrt(vista)
+advapi32 (wrapper)
+credui
+feclient

@@ -1,0 +1,96 @@
+After remane native dlls, you can copy all contents on folders placed here
+
+- Dll to replace 
+
+advapi32 - advapibase
+browseui - browsebase
+//crypt32- cryptfull (Cause error, investigate)
+gdi32    - gdibase
+kernel32 - kernelfull
+netapi32 - netapibase
+pdh      - pdhbase
+powrprof - powrprofbase
+rpcrt4   - rpcrtbase 
+secur32  - securbase
+setupapi - setupapibase 
+shell32  - shellbase
+winsta   - winstabase
+ws2_32   - ws2_base
+user32   - userbase 
+uxtheme  - uxthemebase
+
+- Dlls helpers (from Vista or alky)
+advapinew.dll
+comctlext.dll
+netapinew.dll
+securnew.dll
+winstanew.dll
+wevtapinase.dll
+advapilong.dll
+
+
+- Dll from Server 2003 to all system supported
+iphlpapi - iphlpapibase.dll
+d3d9 - d3d9base.dll
+
+
+- Dll only exist on 7 +
+kernelbase.dll (is wrapper dll)
+cryptbase.dll
+sddbase.dll
+secbase.dll
+wevtbase.dll
+
+- Dll add for requeriment
+avrt.dll
+browseui.dll
+bcrypt.dll
+comctlbase.dll
+credui.dll
+crypt32.dll
+cryptbase.dll
+cryptsp.dll
+dbghelp.dll
+duser.dll
+dwmapi.dll
+efsadu.dll
+esent.dll
+evr.dll
+feclient.dll
+httpapi.dll
+idndl.dll
+ktmw32.dll
+lsalookup.dll
+milcore.dll
+mland.dll
+msdrm.dll
+msidcrl30.dll
+msvcrt.dll
+ncrypt.dll
+nlsdl.dll
+normaliz.dll
+photometadahandler.dll
+propsys.dll
+psapi.dll
+rstrmgr.dll
+slc.dll
+slcext.dll
+sqmapi.dll
+sspicli.dll
+traffic.dll
+vtdll.dll
+wer.dll
+wfapi.dll
+winbrand.dll
+windowscodecs.dll
+windowscodecsext.dll
+winsvc.dll
+wlanapi.dll
+wlanutil.dll
+wmphoto.dll
+wsdapi.dll
+xmllite.dll
+xmlrw.dll
+wtsapi32
+
+
