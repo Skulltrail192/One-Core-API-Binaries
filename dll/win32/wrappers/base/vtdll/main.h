@@ -184,6 +184,13 @@ typedef enum _NORM_FORM {
   NormalizationKD     = 0x6
 } NORM_FORM;
 
+typedef enum _TRANSACTION_INFORMATION_CLASS { 
+  TransactionBasicInformation               = 0,
+  TransactionPropertiesInformation,
+  TransactionEnlistmentInformation,
+  TransactionSuperiorEnlistmentInformation
+} TRANSACTION_INFORMATION_CLASS;
+
 typedef struct _WIN32_MEMORY_RANGE_ENTRY {
   PVOID  VirtualAddress;
   SIZE_T NumberOfBytes;

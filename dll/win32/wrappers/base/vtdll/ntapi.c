@@ -566,26 +566,6 @@ NtTraceControl(
 	return STATUS_SUCCESS;
 }
 
-DWORD WINAPI NtRollbackTransaction(int a, int b)
-{
-	return 0;
-}
-
-/*need implementation*/
-NTSTATUS 
-WINAPI 
-NtCommitTransaction(HANDLE hTransaction, DWORD options)
-{
-	return STATUS_SUCCESS;
-}
-
-DWORD 
-WINAPI 
-NtCreateTransaction(int a, int b)
-{
-	return STATUS_SUCCESS;
-}
-
 NTSTATUS 
 WINAPI 
 NtpQueryInformationToken(
@@ -676,4 +656,83 @@ NtCreateThreadEx(PHANDLE hThread,
 										  hThread, 
 										  NULL);
     return status;
+}
+
+NTSTATUS 
+NTAPI
+NtCreateTransaction(
+  _Out_    PHANDLE            TransactionHandle,
+  _In_     ACCESS_MASK        DesiredAccess,
+  _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
+  _In_opt_ LPGUID             Uow,
+  _In_opt_ HANDLE             TmHandle,
+  _In_opt_ ULONG              CreateOptions,
+  _In_opt_ ULONG              IsolationLevel,
+  _In_opt_ ULONG              IsolationFlags,
+  _In_opt_ PLARGE_INTEGER     Timeout,
+  _In_opt_ PUNICODE_STRING    Description
+)
+{
+	*TransactionHandle = NULL;
+	return STATUS_NOT_IMPLEMENTED;
+}
+
+NTSTATUS 
+NTAPI
+NtQueryInformationTransaction(
+  _In_      HANDLE                        TransactionHandle,
+  _In_      TRANSACTION_INFORMATION_CLASS TransactionInformationClass,
+  _Out_     PVOID                         TransactionInformation,
+  _In_      ULONG                         TransactionInformationLength,
+  _Out_opt_ PULONG                        ReturnLength
+)
+{
+	TransactionInformation = NULL;
+	return STATUS_NOT_IMPLEMENTED;
+}
+
+NTSTATUS 
+NTAPI
+NtSetInformationTransaction(
+  _In_ HANDLE                        TransactionHandle,
+  _In_ TRANSACTION_INFORMATION_CLASS TransactionInformationClass,
+  _In_ PVOID                         TransactionInformation,
+  _In_ ULONG                         TransactionInformationLength
+)
+{
+	return STATUS_NOT_IMPLEMENTED;
+}
+
+NTSTATUS 
+NTAPI
+NtRollbackTransaction(
+  _In_ HANDLE  TransactionHandle,
+  _In_ BOOLEAN Wait
+)
+{
+	return STATUS_NOT_IMPLEMENTED;
+}
+
+NTSTATUS 
+NTAPI
+NtCommitTransaction(
+  _In_ HANDLE  TransactionHandle,
+  _In_ BOOLEAN Wait
+)
+{
+	return STATUS_NOT_IMPLEMENTED;
+}
+
+NTSTATUS 
+NTAPI
+NtOpenTransaction(
+  _Out_    PHANDLE            TransactionHandle,
+  _In_     ACCESS_MASK        DesiredAccess,
+  _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
+  _In_     LPGUID             Uow,
+  _In_opt_ HANDLE             TmHandle
+)
+{
+	*TransactionHandle = NULL;
+	return STATUS_NOT_IMPLEMENTED;
 }
