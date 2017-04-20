@@ -71,8 +71,7 @@
 @ stdcall I_RpcRecordCalloutFailure() rpcrtbase.I_RpcRecordCalloutFailure
 @ stdcall I_RpcReplyToClientWithStatus() rpcrtbase.I_RpcReplyToClientWithStatus
 @ stdcall I_RpcRequestMutex() rpcrtbase.I_RpcRequestMutex
-#@ stdcall I_RpcSNCHOption() rpcrtbase.I_RpcSNCHOption
-@ stub I_RpcSNCHOption
+@ stdcall I_RpcSNCHOption(ptr ptr) rpcrtbase.I_RpcSNCHOption
 @ stdcall I_RpcSend(ptr)
 @ stdcall I_RpcSendReceive(ptr)
 @ stdcall I_RpcServerAllocateIpPort() rpcrtbase.I_RpcServerAllocateIpPort

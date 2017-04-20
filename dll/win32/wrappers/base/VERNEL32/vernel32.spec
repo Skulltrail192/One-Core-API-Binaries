@@ -25,11 +25,8 @@
 @ stdcall BaseIsAppcompatInfrastructureDisabled() 
 @ stdcall BaseProcessInitPostImport() ; missing in Win 7
 @ stdcall -arch=x86_64 BaseProcessStart()
-@ stdcall BaseQueryModuleData(str str ptr ptr ptr) ;check
 @ stdcall -arch=x86_64 BaseThreadStart()
 @ stdcall BaseUpdateAppcompatCache(long long long)
-@ stdcall BasepCheckWinSaferRestrictions(long long long long long long)
-@ stdcall BasepFreeAppCompatData(ptr ptr)
 @ stdcall Beep(long long)
 @ stdcall BeginUpdateResourceA(str long)
 @ stdcall BeginUpdateResourceW(wstr long)
@@ -122,8 +119,8 @@
 @ stdcall DebugBreak() ntdll.DbgBreakPoint
 @ stdcall DebugBreakProcess(long)
 @ stdcall DebugSetProcessKillOnExit(long)
-@ stdcall DecodePointer(ptr) ntdll.RtlDecodePointer
-@ stdcall DecodeSystemPointer(ptr) ntdll.RtlDecodeSystemPointer
+@ stdcall DecodePointer(ptr) vtdll.RtlDecodePointer
+@ stdcall DecodeSystemPointer(ptr) vtdll.RtlDecodeSystemPointer
 @ stdcall DefineDosDeviceA(long str str)
 @ stdcall DefineDosDeviceW(long wstr wstr)
 @ stdcall DelayLoadFailureHook(str str)
@@ -147,8 +144,8 @@
 @ stdcall DosPathToSessionPathW(long wstr wstr)
 @ stdcall DuplicateConsoleHandle(long long long long)
 @ stdcall DuplicateHandle(long long long ptr long long long)
-@ stdcall EncodePointer(ptr) ntdll.RtlEncodePointer
-@ stdcall EncodeSystemPointer(ptr) ntdll.RtlEncodeSystemPointer
+@ stdcall EncodePointer(ptr) vtdll.RtlEncodePointer
+@ stdcall EncodeSystemPointer(ptr) vtdll.RtlEncodeSystemPointer
 @ stdcall EndUpdateResourceA(long long)
 @ stdcall EndUpdateResourceW(long long)
 @ stdcall EnterCriticalSection(ptr) ntdll.RtlEnterCriticalSection
@@ -829,7 +826,6 @@
 @ stdcall SetProcessWorkingSetSize(long long long)
 @ stdcall SetProcessWorkingSetSizeEx(long long long long)
 @ stdcall SetStdHandle(long long)
-@ stdcall SetSystemFileCacheSize(long long long)
 @ stdcall SetSystemPowerState(long long)
 @ stdcall SetSystemTime(ptr)
 @ stdcall SetSystemTimeAdjustment(long long)
@@ -843,7 +839,6 @@
 @ stdcall SetThreadLocale(long)
 @ stdcall SetThreadPriority(long long)
 @ stdcall SetThreadPriorityBoost(long long)
-@ stdcall SetThreadStackGuarantee(ptr)
 @ stdcall SetThreadUILanguage(long)
 @ stdcall SetTimeZoneInformation(ptr)
 @ stdcall SetTimerQueueTimer(long ptr ptr long long long)
@@ -998,15 +993,24 @@
 @ stdcall CtrlRoutine(ptr) 
 @ stdcall ConsoleIMERoutine(ptr)
 
-#missing on XP
+#missing on XP 
+@ stdcall GetNLSVersion(long long ptr) kernelfull.GetNLSVersion
+@ stdcall IsNLSDefinedString(long long ptr long long) kernelfull.IsNLSDefinedString
+@ stdcall SetFileCompletionNotificationModes(ptr long) kernelfull.SetFileCompletionNotificationModes
+
+#Missing on XP and 2003 RTM
 @ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernelfull.BaseCheckRunApp
 @ stdcall BasepCheckBadapp(long ptr long long long long long long long) kernelfull.BasepCheckBadapp
 @ stdcall EnumSystemFirmwareTables(long ptr long) kernelfull.EnumSystemFirmwareTables
-@ stdcall GetNLSVersion(long long ptr) kernelfull.GetNLSVersion
 @ stdcall GetSystemFileCacheSize(ptr ptr ptr) kernelfull.GetSystemFileCacheSize
-@ stdcall IsNLSDefinedString(long long ptr long long) kernelfull.IsNLSDefinedString
-@ stdcall SetFileCompletionNotificationModes(ptr long) kernelfull.SetFileCompletionNotificationModes
 @ stdcall GetSystemFirmwareTable(long long ptr long) kernelfull.GetSystemFirmwareTable
+ 
+#Missing on Server 2003 RTM (only available on 2003 SP1 and SP2)
+@ stdcall BaseQueryModuleData(str str ptr ptr ptr) kernelfull.BaseQueryModuleData
+@ stdcall BasepCheckWinSaferRestrictions(long long long long long long) kernelfull.BasepCheckWinSaferRestrictions
+@ stdcall BasepFreeAppCompatData(ptr ptr)
+@ stdcall SetSystemFileCacheSize(long long long) kernelfull.SetSystemFileCacheSize
+@ stdcall SetThreadStackGuarantee(ptr)
 
 #Native in XP SP3 and Missing in Server 2003 SP2 with Updates
 @ stdcall SetSearchPathMode(long) kernelfull.SetSearchPathMode

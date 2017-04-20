@@ -229,7 +229,7 @@ D3DKMTCreateDCFromMemory(
     }	
     pData->hDc = CreateCompatibleDC(pData->hDeviceDc);
 	bitmap = CreateDIBitmap(pData->hDc, &bmp->dib.dsBmih, CBM_INIT, NULL, &bmp->dib.dsBm, DIB_RGB_COLORS);	
-	pData->hBitmap = bitmap;//CreateCompatibleBitmap(pData->hDc, pData->Width, pData->Height);
+	pData->hBitmap = bitmap;
     //SelectObject();
 	return STATUS_SUCCESS;
 error:
