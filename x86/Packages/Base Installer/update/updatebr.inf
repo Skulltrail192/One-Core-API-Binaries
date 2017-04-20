@@ -1,0 +1,18 @@
+[Version]
+Signature="$Windows NT$"
+
+[DefaultBranchesServicePacks.WinNt51]
+0=WinXPSP2
+1=WinXPSP3
+
+[DefaultBranchesServicePacks.WinNt52]
+0=Srv2k3RTM
+1=Srv2k3SP1
+2=Srv2k3SP2
+
+[SourceInfsBranches]
+WinXPSP2=update\update_WinXP_SP2.inf
+WinXPSP3=update\update_WinXP_SP3.inf
+Srv2k3RTM=update\update_srv2k3_RTM.inf
+Srv2k3SP1=update\update_srv2k3_SP1.inf
+Srv2k3SP2=update\update_srv2k3_SP2.inf
