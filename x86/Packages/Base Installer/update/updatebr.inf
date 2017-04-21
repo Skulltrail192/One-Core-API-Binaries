@@ -2,8 +2,8 @@
 Signature="$Windows NT$"
 
 [DefaultBranchesServicePacks.WinNt51]
-0=WinXPSP2
-1=WinXPSP3
+1=WinXPSP2
+0=WinXPSP3
 
 [DefaultBranchesServicePacks.WinNt52]
 0=Srv2k3RTM
