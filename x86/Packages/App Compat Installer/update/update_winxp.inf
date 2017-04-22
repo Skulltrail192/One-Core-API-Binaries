@@ -33,6 +33,8 @@ SERVICEPACKSOURCEFILES  = "One-Core-API AppCompat"
 Msft                    = "Microsoft"
 ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
 PARENT_DISPLAY_NAME     = "Windows Updates"
+MSFT_Prefix                 = "MicrosoftOneCoreAPIAppCompat"
+MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 
 [UninstallSections]
     Add.Reg, Add.Reg.Uninstall
@@ -99,15 +101,11 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
 	"msimain.sdb" =1
 	"sysmain.sdb" =1
 	"SlayerXP.dll" =1
-[Strings]
-MSFT_Prefix                 = "MicrosoftOneCoreAPIAppCompat"
-MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
-
 
 [Save.Reg.For.Uninstall]
 
 HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
 HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
 HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
-
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
 HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"

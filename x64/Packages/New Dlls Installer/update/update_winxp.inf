@@ -1,0 +1,190 @@
+[Version]
+LanguageType 		  = %LANGTYPEVALUE%
+MaxNtBuildToUpdate        = 2600
+MaxNtMajorVersionToUpdate = 5
+MaxNtMinorVersionToUpdate = 1
+MaxNtServicePackVersion   = 768
+MinNtServicePackVersion   = 512
+NtBuildToUpdate           = 2600
+NtMajorVersionToUpdate    = 5
+NtMinorVersionToUpdate    = 1
+Signature                 = "$Windows NT$"
+
+[Prerequisite]
+condition=SingleOp,LatestUpdateCheck2.Section
+
+[Configuration]
+    InstallationType     = Hotfix
+    InstallLogFileName   = %SP_SHORT_TITLE%.log
+    EventLogKeyName      = NtServicePack
+    EventLogDllName      = spmsg.dll
+    NoPNPFiles           = 1
+    UnInstallLogFileName = %SP_SHORT_TITLE%Uninst.log
+    UnInstallDirName     = $NtUninstall%SP_SHORT_TITLE%$
+    ServiceFileInUseDetect    = 1
+    AppFileinUseDetect        = 3
+	
+[LatestUpdateCheck2.Section]
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\KB3204724",Installed,0x10001,==,1
+    Display_String="%LatestUpdateFail%"	
+
+[Strings]
+OCAAD_FILE_VERSION       = "6.0.6000.16385"
+OCAAD_VERSION             = "3.0.0.0"
+SP_TITLE                = "One-Core-API Additional Dlls"
+LANGTYPEVALUE           = 0x0
+SP_SHORT_TITLE          = "OCAAD"
+SERVICE_PACK_NUMBER     = 3
+COMMENT                 = "One-Core-API Additional Dlls [See Q100000 for more information]"
+SERVICEPACKSOURCEFILES  = "One-Core-API Additional Dlls"
+Msft                    = "Microsoft"
+ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+PARENT_DISPLAY_NAME     = "Windows Updates"
+LatestUpdateFail        = "Please Install One-Core-API Base first!"
+
+[Prerequisite]
+	condition=SingleOp,LatestUpdateCheck2.Section
+	
+[LatestUpdateCheck2.Section]
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
+    Display_String="%LatestUpdateFail%"	
+
+[UninstallSections]
+    Add.Reg, Add.Reg.Uninstall
+    Del.Reg, Del.Reg.Uninstall
+	
+[Product.Add.Reg]
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed",0x10001,1
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Comments",0,%SP_TITLE%
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Backup Dir",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Fix Description",0,%SP_TITLE%
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed By",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed On",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Service Pack",0x10001,%SERVICE_PACK_NUMBER%
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Valid",0x10001,1
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"Flags",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"New File",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"New Link Date",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"Old Link Date",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%OCAAD_VERSION%
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%OCAAD_VERSION%"
+
+[ProductInstall.CopyFilesAlways]
+    CopyFiles                  = CopyAlways.System32.files
+
+[DestinationDirs]
+    CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+
+[CopyAlways.System32.Files]
+	"avrt.dll"
+	"bcrypt.dll"
+	"credui.dll"
+	"cryptbase.dll"
+	"cryptsp.dll"
+	"dbghelp.dll"
+	"dir.txt
+	"duser.dll"
+	"dwmapi.dll"
+	"dxva2.dll"
+	"efsadu.dll"
+	"esent.dll"
+	"evr.dll"
+	"feclient.dll"
+	"httpapi.dll"
+	"ktmw32.dll"
+	"lsalookup.dll"
+	"milcore.dll"
+	"mlang.dll"
+	"msdrm.dll"
+	"msidcrl30.dll"
+	"mtdll.dll"
+	"ncrypt.dll"
+	"ndfapi.dll"
+	"photometadatahandler.dll"
+	"RstrtMgr.dll"
+	"sddlbase.dll"
+	"secbase.dll"
+	"SLC.dll"
+	"SLCExt.dll"
+	"sqmapi.dll"
+	"sspicli.dll"
+	"traffic.dll"
+	"version.dll"
+	"wdi.dll"
+	"wer.dll"
+	"wevtapibase.dll"
+	"wevtbase.dll"
+	"wfapi.dll"
+	"windowscodecs.dll"
+	"windowscodecsext.dll"
+	"winsvc.dll"
+	"wlanapi.dll"
+	"wlanutil.dll"
+	"wmphoto.dll"
+	"WSDApi.dll"
+	"wtsapi32.dll"
+[SourceDisksNames]
+    1=%ServicePackSourceFiles%
+
+[SourceDisksFiles]
+	"avrt.dll" = 1
+	"bcrypt.dll" = 1
+	"credui.dll" = 1
+	"cryptbase.dll" = 1
+	"cryptsp.dll" = 1
+	"dbghelp.dll" = 1
+	"dir.txt
+	"duser.dll" = 1
+	"dwmapi.dll" = 1
+	"dxva2.dll" = 1
+	"efsadu.dll" = 1
+	"esent.dll" = 1
+	"evr.dll" = 1
+	"feclient.dll" = 1
+	"httpapi.dll" = 1
+	"ktmw32.dll" = 1
+	"lsalookup.dll" = 1
+	"milcore.dll" = 1
+	"mlang.dll" = 1
+	"msdrm.dll" = 1
+	"msidcrl30.dll" = 1
+	"mtdll.dll" = 1
+	"ncrypt.dll" = 1
+	"ndfapi.dll" = 1
+	"photometadatahandler.dll" = 1
+	"RstrtMgr.dll" = 1
+	"sddlbase.dll" = 1
+	"secbase.dll" = 1
+	"SLC.dll" = 1
+	"SLCExt.dll" = 1
+	"sqmapi.dll" = 1
+	"sspicli.dll" = 1
+	"traffic.dll" = 1
+	"version.dll" = 1
+	"wdi.dll" = 1
+	"wer.dll" = 1
+	"wevtapibase.dll" = 1
+	"wevtbase.dll" = 1
+	"wfapi.dll" = 1
+	"windowscodecs.dll" = 1
+	"windowscodecsext.dll" = 1
+	"winsvc.dll" = 1
+	"wlanapi.dll" = 1
+	"wlanutil.dll" = 1
+	"wmphoto.dll" = 1
+	"WSDApi.dll" = 1
+	"wtsapi32.dll" = 1
+[Strings]
+MSFT_Prefix                 = "OneCoreAPIAdditionalDlls"
+MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
+
+[Save.Reg.For.Uninstall]
+
+HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"

@@ -1,0 +1,476 @@
+[Version]
+LanguageType 		  = %LANGTYPEVALUE%
+MaxNtBuildToUpdate        = 3790
+MaxNtMajorVersionToUpdate = 5
+MaxNtMinorVersionToUpdate = 2
+MaxNtServicePackVersion   = 768
+MinNtServicePackVersion   = 0
+NtBuildToUpdate           = 3790
+NtMajorVersionToUpdate    = 5
+NtMinorVersionToUpdate    = 2
+Signature                 = "$Windows NT$"
+
+[Configuration]
+    InstallationType     = Hotfix
+    InstallLogFileName   = %SP_SHORT_TITLE%.log
+    EventLogKeyName      = NtServicePack
+    EventLogDllName      = spmsg.dll
+    NoPNPFiles           = 1
+    UnInstallLogFileName = %SP_SHORT_TITLE%Uninst.log
+    UnInstallDirName     = $NtUninstall%SP_SHORT_TITLE%$
+    ServiceFileInUseDetect    = 1
+    AppFileinUseDetect        = 3
+
+[Strings]
+APIS_FILE_VERSION       = "6.0.6000.16385"
+APIS_VERSION             = "3.0.0.0"
+SP_TITLE                = "One-Core-API API-SETS"
+LANGTYPEVALUE           = 0x0
+SP_SHORT_TITLE          = "OCAAS"
+SERVICE_PACK_NUMBER     = 3
+COMMENT                 = "One-Core-API API-SETS [See Q100000 for more information]"
+SERVICEPACKSOURCEFILES  = "One-Core-API API-SETS"
+Msft                    = "Microsoft"
+ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+PARENT_DISPLAY_NAME     = "Windows Updates"
+MSFT_Prefix                 = "OneCoreAPIApiSets"
+MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
+LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
+
+[Prerequisite]
+	condition=SingleOp,LatestUpdateCheck2.Section
+	
+[LatestUpdateCheck2.Section]
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
+    Display_String="%LatestUpdateFail%"	
+
+[UninstallSections]
+    Add.Reg, Add.Reg.Uninstall
+    Del.Reg, Del.Reg.Uninstall
+	
+[Product.Add.Reg]
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Backup Dir",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed By",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed On",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Service Pack",0x10001,%SERVICE_PACK_NUMBER%
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Valid",0x10001,1
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Flags",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New File",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New Link Date",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Old Link Date",0,""
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%APIS_VERSION%
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
+HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSION%"
+	
+
+[ProductInstall.CopyFilesAlways]
+    CopyFiles                  = CopyAlways.System32.files
+
+[DestinationDirs]
+    CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+
+[CopyAlways.System32.Files]
+   "API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll"
+   "API-MS-WIN-APPMODEL-RUNTIME-L1-1-1.dll"
+   "API-MS-WIN-BASE-UTIL-L1-1-0.dll"
+   "API-MS-WIN-CORE-APIQUERY-L1-1-0.dll"
+   "API-MS-WIN-CORE-APPCOMPAT-L1-1-1.dll"
+   "API-MS-WIN-CORE-APPINIT-L1-1-0.dll"
+   "API-MS-WIN-CORE-ATOMS-L1-1-0.dll"
+   "API-MS-WIN-CORE-BEM-L1-1-0.dll"
+   "API-MS-WIN-CORE-COM-L1-1-0.dll"
+   "API-MS-WIN-CORE-COM-L1-1-1.dll"
+   "API-MS-WIN-CORE-COM-PRIVATE-L1-1-0.dll"
+   "API-MS-WIN-CORE-CONSOLE-L1-1-0.dll"
+   "API-MS-WIN-CORE-CONSOLE-L2-1-0.dll"
+   "API-MS-WIN-CORE-DATETIME-L1-1-0.dll"
+   "API-MS-WIN-CORE-DATETIME-L1-1-1.dll"
+   "API-MS-WIN-CORE-DEBUG-L1-1-0.dll"
+   "API-MS-WIN-CORE-DEBUG-L1-1-1.dll"
+   "API-MS-WIN-CORE-DELAYLOAD-L1-1-0.dll"
+   "API-MS-WIN-CORE-DELAYLOAD-L1-1-1.dll"
+   "API-MS-WIN-CORE-ERRORHANDLING-L1-1-0.dll"
+   "API-MS-WIN-CORE-ERRORHANDLING-L1-1-1.dll"
+   "API-MS-WIN-CORE-ERRORHANDLING-L1-1-2.dll"
+   "API-MS-WIN-CORE-FIBERS-L1-1-0.dll"
+   "API-MS-WIN-CORE-FIBERS-L1-1-1.dll"
+   "API-MS-WIN-CORE-FIBERS-L2-1-0.dll"
+   "API-MS-WIN-CORE-FIBERS-L2-1-1.dll"
+   "API-MS-WIN-CORE-FILE-L1-1-0.dll"
+   "API-MS-WIN-CORE-FILE-L1-2-0.dll"
+   "API-MS-WIN-CORE-FILE-L1-2-1.dll"
+   "API-MS-WIN-CORE-FILE-L2-1-0.dll"
+   "API-MS-WIN-CORE-FILE-L2-1-1.dll"
+   "API-MS-WIN-CORE-HANDLE-L1-1-0.dll"
+   "API-MS-WIN-CORE-HEAP-L1-1-0.dll"
+   "API-MS-WIN-CORE-HEAP-L1-2-0.dll"
+   "API-MS-WIN-CORE-HEAP-OBSOLETE-L1-1-0.dll"
+   "API-MS-WIN-CORE-INTERLOCKED-L1-1-0.dll"
+   "API-MS-WIN-CORE-INTERLOCKED-L1-2-0.dll"
+   "API-MS-WIN-CORE-IO-L1-1-0.dll"
+   "API-MS-WIN-CORE-IO-L1-1-1.dll"
+   "API-MS-WIN-CORE-JOB-L1-1-0.dll"
+   "API-MS-WIN-CORE-JOB-L2-1-0.dll"
+   "API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-0.dll"
+   "API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-1.dll"
+   "API-MS-WIN-CORE-KERNEL32-PRIVATE-L1-1-0.dll"
+   "API-MS-WIN-CORE-KERNEL32-PRIVATE-L1-1-1.dll"
+   "API-MS-WIN-CORE-LIBRARYLOADER-L1-1-0.dll"
+   "API-MS-WIN-CORE-LIBRARYLOADER-L1-1-1.dll"
+   "API-MS-WIN-CORE-LIBRARYLOADER-L1-2-0.dll"
+   "API-MS-WIN-CORE-LIBRARYLOADER-L1-2-2.dll"
+   "API-MS-WIN-CORE-LOCALIZATION-L1-1-0.dll"
+   "API-MS-WIN-CORE-LOCALIZATION-L1-2-0.dll"
+   "API-MS-WIN-CORE-LOCALIZATION-L1-2-1.dll"
+   "API-MS-WIN-CORE-LOCALIZATION-L2-1-0.dll"
+   "API-MS-WIN-CORE-LOCALIZATION-OBSOLETE-L1-1-0.dll"
+   "API-MS-WIN-CORE-LOCALIZATION-OBSOLETE-L1-2-0.dll"
+   "API-MS-WIN-CORE-LOCALIZATION-PRIVATE-L1-1-0.dll"
+   "API-MS-WIN-CORE-LOCALREGISTRY-L1-1-0.dll"
+   "API-MS-WIN-CORE-MEMORY-L1-1-0.dll"
+   "API-MS-WIN-CORE-MEMORY-L1-1-1.dll"
+   "API-MS-WIN-CORE-MEMORY-L1-1-2.dll"
+   "API-MS-WIN-CORE-MISC-L1-1-0.dll"
+   "API-MS-WIN-CORE-NAMEDPIPE-L1-1-0.dll"
+   "API-MS-WIN-CORE-NAMEDPIPE-L1-2-0.dll"
+   "API-MS-WIN-CORE-NAMESPACE-L1-1-0.dll"
+   "API-MS-WIN-CORE-NORMALIZATION-L1-1-0.dll"
+   "API-MS-WIN-CORE-PATH-L1-1-0.dll"
+   "API-MS-WIN-CORE-PRIVATEPROFILE-L1-1-0.dll"
+   "API-MS-WIN-CORE-PRIVATEPROFILE-L1-1-1.dll"
+   "API-MS-WIN-CORE-PROCESSENVIRONMENT-L1-1-0.dll"
+   "API-MS-WIN-CORE-PROCESSENVIRONMENT-L1-2-0.dll"
+   "API-MS-WIN-CORE-PROCESSTHREADS-L1-1-0.dll"
+   "API-MS-WIN-CORE-PROCESSTHREADS-L1-1-1.dll"
+   "API-MS-WIN-CORE-PROCESSTHREADS-L1-1-2.dll"
+   "API-MS-WIN-CORE-PROCESSTOPOLOGY-OBSOLETE-L1-1-0.dll"
+   "API-MS-WIN-CORE-PROFILE-L1-1-0.dll"
+   "API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll"
+   "API-MS-WIN-CORE-PSAPI-L1-1-0.dll"
+   "API-MS-WIN-CORE-PSAPI-OBSOLETE-L1-1-0.dll"
+   "API-MS-WIN-CORE-REALTIME-L1-1-0.dll"
+   "API-MS-WIN-CORE-REGISTRY-L1-1-0.dll"
+   "API-MS-WIN-CORE-REGISTRYUSERSPECIFIC-L1-1-0.dll"
+   "API-MS-WIN-CORE-RTLSUPPORT-L1-1-0.dll"
+   "API-MS-WIN-CORE-RTLSUPPORT-L1-2-0.dll"
+   "API-MS-WIN-CORE-SHLWAPI-LEGACY-L1-1-0.dll"
+   "API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-1-0.dll"
+   "API-MS-WIN-CORE-SHUTDOWN-L1-1-0.dll"
+   "API-MS-WIN-CORE-SIDEBYSIDE-L1-1-0.dll"
+   "API-MS-WIN-CORE-STRING-L1-1-0.dll"
+   "API-MS-WIN-CORE-STRING-L2-1-0.dll"
+   "API-MS-WIN-CORE-STRING-OBSOLETE-L1-1-0.dll"
+   "API-MS-WIN-CORE-STRINGANSI-L1-1-0.dll"
+   "API-MS-WIN-CORE-STRINGLOADER-L1-1-1.dll"
+   "API-MS-WIN-CORE-SYNCH-L1-1-0.dll"
+   "API-MS-WIN-CORE-SYNCH-L1-2-0.dll"
+   "API-MS-WIN-CORE-SYSINFO-L1-1-0.dll"
+   "API-MS-WIN-CORE-SYSINFO-L1-2-0.dll"
+   "API-MS-WIN-CORE-SYSINFO-L1-2-1.dll"
+   "API-MS-WIN-CORE-THREADPOOL-L1-1-0.dll"
+   "API-MS-WIN-CORE-THREADPOOL-L1-2-0.dll"
+   "API-MS-WIN-CORE-THREADPOOL-LEGACY-L1-1-0.dll"
+   "API-MS-WIN-CORE-THREADPOOL-PRIVATE-L1-1-0.dll"
+   "API-MS-WIN-CORE-TIMEZONE-L1-1-0.dll"
+   "API-MS-WIN-CORE-TOOLHELP-L1-1-0.dll"
+   "API-MS-WIN-CORE-URL-L1-1-0.dll"
+   "API-MS-WIN-CORE-UTIL-L1-1-0.dll"
+   "API-MS-WIN-CORE-VERSION-L1-1-0.dll"
+   "API-MS-WIN-CORE-VERSION-PRIVATE-L1-1-0.dll"
+   "API-MS-WIN-CORE-VERSIONANSI-L1-1-0.dll"
+   "API-MS-WIN-CORE-WINDOWSERRORREPORTING-L1-1-0.dll"
+   "API-MS-WIN-CORE-WINRT-ERROR-L1-1-0.dll"
+   "API-MS-WIN-CORE-WINRT-ERROR-L1-1-1.dll"
+   "API-MS-WIN-CORE-WINRT-ERRORPRIVATE-L1-1-1.dll"
+   "API-MS-WIN-CORE-WINRT-L1-1-0.dll"
+   "API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll"
+   "API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll"
+   "API-MS-WIN-CORE-WOW64-L1-1-0.dll"
+   "API-MS-WIN-CORE-XSTATE-L1-1-0.dll"
+   "API-MS-WIN-CORE-XSTATE-L2-1-0.dll"
+   "API-MS-WIN-CRT-CONIO-L1-1-0.dll"
+   "API-MS-WIN-CRT-CONVERT-L1-1-0.dll"
+   "API-MS-WIN-CRT-ENVIRONMENT-L1-1-0.dll"
+   "API-MS-WIN-CRT-FILESYSTEM-L1-1-0.dll"
+   "API-MS-WIN-CRT-HEAP-L1-1-0.dll"
+   "API-MS-WIN-CRT-LOCALE-L1-1-0.dll"
+   "API-MS-WIN-CRT-MATH-L1-1-0.dll"
+   "API-MS-WIN-CRT-MULTIBYTE-L1-1-0.dll"
+   "API-MS-WIN-CRT-PRIVATE-L1-1-0.dll"
+   "API-MS-WIN-CRT-PROCESS-L1-1-0.dll"
+   "API-MS-WIN-CRT-RUNTIME-L1-1-0.dll"
+   "API-MS-WIN-CRT-STDIO-L1-1-0.dll"
+   "API-MS-WIN-CRT-STRING-L1-1-0.dll"
+   "API-MS-WIN-CRT-TIME-L1-1-0.dll"
+   "API-MS-WIN-CRT-UTILITY-L1-1-0.dll"
+   "API-MS-WIN-DEVICES-CONFIG-L1-1-0.dll"
+   "API-MS-WIN-DEVICES-CONFIG-L1-1-1.dll"
+   "API-MS-WIN-DEVICES-QUERY-L1-1-1.dll"
+   "API-MS-WIN-DOWNLEVEL-ADVAPI32-L1-1-0.dll"
+   "API-MS-WIN-DOWNLEVEL-ADVAPI32-L2-1-0.dll"
+   "API-MS-WIN-DOWNLEVEL-NORMALIZ-L1-1-0.dll"
+   "API-MS-WIN-DOWNLEVEL-OLE32-L1-1-0.dll"
+   "API-MS-WIN-DOWNLEVEL-SHELL32-L1-1-0.dll"
+   "API-MS-WIN-DOWNLEVEL-SHLWAPI-L1-1-0.dll"
+   "API-MS-WIN-DOWNLEVEL-SHLWAPI-L2-1-0.dll"
+   "API-MS-WIN-DOWNLEVEL-USER32-L1-1-0.dll"
+   "API-MS-WIN-DOWNLEVEL-VERSION-L1-1-0.dll"
+   "API-MS-WIN-DX-D3DKMT-L1-1-0.dll"
+   "API-MS-WIN-EVENTING-CLASSICPROVIDER-L1-1-0.dll"
+   "API-MS-WIN-EVENTING-CONSUMER-L1-1-0.dll"
+   "API-MS-WIN-EVENTING-CONTROLLER-L1-1-0.dll"
+   "API-MS-WIN-EVENTING-LEGACY-L1-1-0.dll"
+   "API-MS-WIN-EVENTING-PROVIDER-L1-1-0.dll"
+   "API-MS-WIN-EVENTLOG-LEGACY-L1-1-0.dll"
+   "API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll"
+   "API-MS-WIN-POWER-BASE-L1-1-0.dll"
+   "API-MS-WIN-POWER-SETTING-L1-1-0.dll"
+   "API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-0.dll"
+   "API-MS-WIN-SECURITY-AUDIT-L1-1-1.dll"
+   "API-MS-WIN-SECURITY-BASE-L1-1-0.dll"
+   "API-MS-WIN-SECURITY-BASE-L1-2-0.dll"
+   "API-MS-WIN-SECURITY-BASE-PRIVATE-L1-1-1.dll"
+   "API-MS-WIN-SECURITY-CRYPTOAPI-L1-1-0.dll"
+   "API-MS-WIN-SECURITY-LSALOOKUP-L1-1-0.dll"
+   "API-MS-WIN-SECURITY-LSALOOKUP-L1-1-1.dll"
+   "API-MS-WIN-SECURITY-LSALOOKUP-L2-1-0.dll"
+   "API-MS-WIN-SECURITY-LSALOOKUP-L2-1-1.dll"
+   "API-MS-WIN-SECURITY-LSAPOLICY-L1-1-0.dll"
+   "API-MS-WIN-SECURITY-PROVIDER-L1-1-0.dll"
+   "API-MS-WIN-SECURITY-SDDL-L1-1-0.dll"
+   "API-MS-WIN-SERVICE-CORE-L1-1-0.dll"
+   "API-MS-WIN-SERVICE-CORE-L1-1-1.dll"
+   "API-MS-WIN-SERVICE-MANAGEMENT-L1-1-0.dll"
+   "API-MS-WIN-SERVICE-MANAGEMENT-L2-1-0.dll"
+   "API-MS-WIN-SERVICE-PRIVATE-L1-1-0.dll"
+   "API-MS-WIN-SERVICE-PRIVATE-L1-1-1.dll"
+   "API-MS-WIN-SERVICE-WINSVC-L1-1-0.dll"
+   "API-MS-WIN-SERVICE-WINSVC-L1-2-0.dll"
+   "API-MS-WIN-SHELL-SHELLCOM-L1-1-0.dll"
+   "API-MS-WIN-SHELL-SHELLFOLDERS-L1-1-0.dll"
+   "ext-ms-win-gdi-dc-create-l1-1-1.dll"
+   "ext-ms-win-gdi-dc-l1-2-0.dll"
+   "ext-ms-win-gdi-devcaps-l1-1-0.dll"
+   "ext-ms-win-gdi-draw-l1-1-1.dll"
+   "ext-ms-win-gdi-render-l1-1-0.dll"
+   "ext-ms-win-kernel32-package-current-l1-1-0.dll"
+   "ext-ms-win-ntuser-message-l1-1-1.dll"
+   "ext-ms-win-ntuser-private-l1-1-1.dll"
+   "ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll"
+   "ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll"
+   "ext-ms-win-ntuser-window-l1-1-1.dll"
+   "ext-ms-win-rtcore-gdi-object-l1-1-0.dll"
+   "ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll"
+   "ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll"
+   "ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll"
+   "ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll"
+
+[SourceDisksNames]
+    1=%ServicePackSourceFiles%
+
+[SourceDisksFiles]
+   "API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll" = 1
+   "API-MS-WIN-APPMODEL-RUNTIME-L1-1-1.dll" = 1
+   "API-MS-WIN-BASE-UTIL-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-APIQUERY-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-APPCOMPAT-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-APPINIT-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-ATOMS-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-BEM-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-COM-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-COM-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-COM-PRIVATE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-CONSOLE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-CONSOLE-L2-1-0.dll" = 1
+   "API-MS-WIN-CORE-DATETIME-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-DATETIME-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-DEBUG-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-DEBUG-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-DELAYLOAD-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-DELAYLOAD-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-ERRORHANDLING-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-ERRORHANDLING-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-ERRORHANDLING-L1-1-2.dll" = 1
+   "API-MS-WIN-CORE-FIBERS-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-FIBERS-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-FIBERS-L2-1-0.dll" = 1
+   "API-MS-WIN-CORE-FIBERS-L2-1-1.dll" = 1
+   "API-MS-WIN-CORE-FILE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-FILE-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-FILE-L1-2-1.dll" = 1
+   "API-MS-WIN-CORE-FILE-L2-1-0.dll" = 1
+   "API-MS-WIN-CORE-FILE-L2-1-1.dll" = 1
+   "API-MS-WIN-CORE-HANDLE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-HEAP-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-HEAP-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-HEAP-OBSOLETE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-INTERLOCKED-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-INTERLOCKED-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-IO-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-IO-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-JOB-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-JOB-L2-1-0.dll" = 1
+   "API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-KERNEL32-LEGACY-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-KERNEL32-PRIVATE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-KERNEL32-PRIVATE-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-LIBRARYLOADER-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-LIBRARYLOADER-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-LIBRARYLOADER-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-LIBRARYLOADER-L1-2-2.dll" = 1
+   "API-MS-WIN-CORE-LOCALIZATION-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-LOCALIZATION-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-LOCALIZATION-L1-2-1.dll" = 1
+   "API-MS-WIN-CORE-LOCALIZATION-L2-1-0.dll" = 1
+   "API-MS-WIN-CORE-LOCALIZATION-OBSOLETE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-LOCALIZATION-OBSOLETE-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-LOCALIZATION-PRIVATE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-LOCALREGISTRY-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-MEMORY-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-MEMORY-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-MEMORY-L1-1-2.dll" = 1
+   "API-MS-WIN-CORE-MISC-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-NAMEDPIPE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-NAMEDPIPE-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-NAMESPACE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-NORMALIZATION-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-PATH-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-PRIVATEPROFILE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-PRIVATEPROFILE-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-PROCESSENVIRONMENT-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-PROCESSENVIRONMENT-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-PROCESSTHREADS-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-PROCESSTHREADS-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-PROCESSTHREADS-L1-1-2.dll" = 1
+   "API-MS-WIN-CORE-PROCESSTOPOLOGY-OBSOLETE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-PROFILE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-PSAPI-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-PSAPI-OBSOLETE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-REALTIME-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-REGISTRY-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-REGISTRYUSERSPECIFIC-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-RTLSUPPORT-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-RTLSUPPORT-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-SHLWAPI-LEGACY-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-SHUTDOWN-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-SIDEBYSIDE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-STRING-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-STRING-L2-1-0.dll" = 1
+   "API-MS-WIN-CORE-STRING-OBSOLETE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-STRINGANSI-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-STRINGLOADER-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-SYNCH-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-SYNCH-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-SYSINFO-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-SYSINFO-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-SYSINFO-L1-2-1.dll" = 1
+   "API-MS-WIN-CORE-THREADPOOL-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-THREADPOOL-L1-2-0.dll" = 1
+   "API-MS-WIN-CORE-THREADPOOL-LEGACY-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-THREADPOOL-PRIVATE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-TIMEZONE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-TOOLHELP-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-URL-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-UTIL-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-VERSION-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-VERSION-PRIVATE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-VERSIONANSI-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-WINDOWSERRORREPORTING-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-WINRT-ERROR-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-WINRT-ERROR-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-WINRT-ERRORPRIVATE-L1-1-1.dll" = 1
+   "API-MS-WIN-CORE-WINRT-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-WOW64-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-XSTATE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-XSTATE-L2-1-0.dll" = 1
+   "API-MS-WIN-CRT-CONIO-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-CONVERT-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-ENVIRONMENT-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-FILESYSTEM-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-HEAP-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-LOCALE-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-MATH-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-MULTIBYTE-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-PRIVATE-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-PROCESS-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-RUNTIME-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-STDIO-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-STRING-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-TIME-L1-1-0.dll" = 1
+   "API-MS-WIN-CRT-UTILITY-L1-1-0.dll" = 1
+   "API-MS-WIN-DEVICES-CONFIG-L1-1-0.dll" = 1
+   "API-MS-WIN-DEVICES-CONFIG-L1-1-1.dll" = 1
+   "API-MS-WIN-DEVICES-QUERY-L1-1-1.dll" = 1
+   "API-MS-WIN-DOWNLEVEL-ADVAPI32-L1-1-0.dll" = 1
+   "API-MS-WIN-DOWNLEVEL-ADVAPI32-L2-1-0.dll" = 1
+   "API-MS-WIN-DOWNLEVEL-NORMALIZ-L1-1-0.dll" = 1
+   "API-MS-WIN-DOWNLEVEL-OLE32-L1-1-0.dll" = 1
+   "API-MS-WIN-DOWNLEVEL-SHELL32-L1-1-0.dll" = 1
+   "API-MS-WIN-DOWNLEVEL-SHLWAPI-L1-1-0.dll" = 1
+   "API-MS-WIN-DOWNLEVEL-SHLWAPI-L2-1-0.dll" = 1
+   "API-MS-WIN-DOWNLEVEL-USER32-L1-1-0.dll" = 1
+   "API-MS-WIN-DOWNLEVEL-VERSION-L1-1-0.dll" = 1
+   "API-MS-WIN-DX-D3DKMT-L1-1-0.dll" = 1
+   "API-MS-WIN-EVENTING-CLASSICPROVIDER-L1-1-0.dll" = 1
+   "API-MS-WIN-EVENTING-CONSUMER-L1-1-0.dll" = 1
+   "API-MS-WIN-EVENTING-CONTROLLER-L1-1-0.dll" = 1
+   "API-MS-WIN-EVENTING-LEGACY-L1-1-0.dll" = 1
+   "API-MS-WIN-EVENTING-PROVIDER-L1-1-0.dll" = 1
+   "API-MS-WIN-EVENTLOG-LEGACY-L1-1-0.dll" = 1
+   "API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll" = 1
+   "API-MS-WIN-POWER-BASE-L1-1-0.dll" = 1
+   "API-MS-WIN-POWER-SETTING-L1-1-0.dll" = 1
+   "API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-0.dll" = 1
+   "API-MS-WIN-SECURITY-AUDIT-L1-1-1.dll" = 1
+   "API-MS-WIN-SECURITY-BASE-L1-1-0.dll" = 1
+   "API-MS-WIN-SECURITY-BASE-L1-2-0.dll" = 1
+   "API-MS-WIN-SECURITY-BASE-PRIVATE-L1-1-1.dll" = 1
+   "API-MS-WIN-SECURITY-CRYPTOAPI-L1-1-0.dll" = 1
+   "API-MS-WIN-SECURITY-LSALOOKUP-L1-1-0.dll" = 1
+   "API-MS-WIN-SECURITY-LSALOOKUP-L1-1-1.dll" = 1
+   "API-MS-WIN-SECURITY-LSALOOKUP-L2-1-0.dll" = 1
+   "API-MS-WIN-SECURITY-LSALOOKUP-L2-1-1.dll" = 1
+   "API-MS-WIN-SECURITY-LSAPOLICY-L1-1-0.dll" = 1
+   "API-MS-WIN-SECURITY-PROVIDER-L1-1-0.dll" = 1
+   "API-MS-WIN-SECURITY-SDDL-L1-1-0.dll" = 1
+   "API-MS-WIN-SERVICE-CORE-L1-1-0.dll" = 1
+   "API-MS-WIN-SERVICE-CORE-L1-1-1.dll" = 1
+   "API-MS-WIN-SERVICE-MANAGEMENT-L1-1-0.dll" = 1
+   "API-MS-WIN-SERVICE-MANAGEMENT-L2-1-0.dll" = 1
+   "API-MS-WIN-SERVICE-PRIVATE-L1-1-0.dll" = 1
+   "API-MS-WIN-SERVICE-PRIVATE-L1-1-1.dll" = 1
+   "API-MS-WIN-SERVICE-WINSVC-L1-1-0.dll" = 1
+   "API-MS-WIN-SERVICE-WINSVC-L1-2-0.dll" = 1
+   "API-MS-WIN-SHELL-SHELLCOM-L1-1-0.dll" = 1
+   "API-MS-WIN-SHELL-SHELLFOLDERS-L1-1-0.dll" = 1
+   "ext-ms-win-gdi-dc-create-l1-1-1.dll" = 1
+   "ext-ms-win-gdi-dc-l1-2-0.dll" = 1
+   "ext-ms-win-gdi-devcaps-l1-1-0.dll" = 1
+   "ext-ms-win-gdi-draw-l1-1-1.dll" = 1
+   "ext-ms-win-gdi-render-l1-1-0.dll" = 1
+   "ext-ms-win-kernel32-package-current-l1-1-0.dll" = 1
+   "ext-ms-win-ntuser-message-l1-1-1.dll" = 1
+   "ext-ms-win-ntuser-private-l1-1-1.dll" = 1
+   "ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll" = 1
+   "ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll" = 1
+   "ext-ms-win-ntuser-window-l1-1-1.dll" = 1
+   "ext-ms-win-rtcore-gdi-object-l1-1-0.dll" = 1
+   "ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll" = 1
+   "ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll" = 1
+   "ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll" = 1
+   "ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll" = 1
+
+[Save.Reg.For.Uninstall]
+
+HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"

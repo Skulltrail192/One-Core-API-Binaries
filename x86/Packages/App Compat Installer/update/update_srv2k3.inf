@@ -22,8 +22,8 @@ Signature                 = "$Windows NT$"
     AppFileinUseDetect        = 3
 
 [Strings]
-WIC_FILE_VERSION       = "6.0.6000.16385"
-WIC_VERSION             = "3.0.0.0"
+APPC_FILE_VERSION       = "6.0.6000.16385"
+APPC_VERSION             = "3.0.0.0"
 SP_TITLE                = "One-Core-API AppCompat"
 LANGTYPEVALUE           = 0x0
 SP_SHORT_TITLE          = "OCAA"
@@ -33,6 +33,8 @@ SERVICEPACKSOURCEFILES  = "One-Core-API AppCompat"
 Msft                    = "Microsoft"
 ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
 PARENT_DISPLAY_NAME     = "Windows Updates"
+MSFT_Prefix                 = "MicrosoftOneCoreAPIAppCompat"
+MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 
 [UninstallSections]
     Add.Reg, Add.Reg.Uninstall
@@ -54,11 +56,10 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","Dis
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%WIC_VERSION%
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%APPC_VERSION%
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
-
-HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION%"
+HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APPC_VERSION%"
 	
 
 [ProductInstall.CopyFilesAlways]
@@ -99,15 +100,11 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
 	"msimain.sdb" =1
 	"sysmain.sdb" =1
 	"SlayerXP.dll" =1
-[Strings]
-MSFT_Prefix                 = "MicrosoftOneCoreAPIAppCompat"
-MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
-
 
 [Save.Reg.For.Uninstall]
 
 HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
 HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
 HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
-
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
 HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"
