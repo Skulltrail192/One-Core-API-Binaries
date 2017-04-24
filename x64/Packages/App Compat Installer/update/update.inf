@@ -1,0 +1,103 @@
+[Version]
+LanguageType 		  = %LANGTYPEVALUE%
+MaxNtBuildToUpdate        = 3790
+MaxNtMajorVersionToUpdate = 5
+MaxNtMinorVersionToUpdate = 2
+MaxNtServicePackVersion   = 512
+MinNtServicePackVersion   = 256
+NtBuildToUpdate           = 3790
+NtMajorVersionToUpdate    = 5
+NtMinorVersionToUpdate    = 2
+Signature                 = "$Windows NT$"
+MachineType=64
+
+[Configuration]
+    InstallationType     = Hotfix
+    InstallLogFileName   = %SP_SHORT_TITLE%.log
+    EventLogKeyName      = NtServicePack
+    EventLogDllName      = spmsg.dll
+    NoPNPFiles           = 1
+    UnInstallLogFileName = %SP_SHORT_TITLE%Uninst.log
+    UnInstallDirName     = $NtUninstall%SP_SHORT_TITLE%$
+    ServiceFileInUseDetect    = 1
+    AppFileinUseDetect        = 3
+
+[Strings]
+APIS_FILE_VERSION       = "6.0.6000.16385"
+APIS_VERSION             = "3.0.0.0"
+SP_TITLE                = "One-Core-API App Compat"
+LANGTYPEVALUE           = 0x0
+SP_SHORT_TITLE          = "OCAAS"
+SERVICE_PACK_NUMBER     = 3
+COMMENT                 = "One-Core-API App Compat [See Q100000 for more information]"
+SERVICEPACKSOURCEFILES  = "One-Core-API App Compat"
+Msft                    = "Microsoft"
+ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+PARENT_DISPLAY_NAME     = "Windows Updates"
+MSFT_Prefix                 = "OneCoreAPIApiSets"
+MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
+
+[UninstallSections]
+    Add.Reg, Add.Reg.Uninstall
+    Del.Reg, Del.Reg.Uninstall
+	
+[Product.Add.Reg]
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Backup Dir",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed By",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed On",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Service Pack",0x10001,%SERVICE_PACK_NUMBER%
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Valid",0x10001,1
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Flags",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New File",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New Link Date",0,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Old Link Date",0,""
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%APIS_VERSION%
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
+HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSION%"
+
+[ProductInstall.CopyFilesAlways]
+	CopyFiles                  = CopyAlways.AppPatch.files
+    CopyFiles                  = CopyAlways.System32.files
+	CopyFiles                  = CopyAlways.SysWOW64.files
+
+[DestinationDirs]
+	CopyAlways.AppPatch.files=10,AppPatch  ; %windir%\AppPatch (don't delay until reboot)
+    CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+	CopyAlways.SysWOW64.files=10,SysWOW64  ; %windir%\AppPatch (don't delay until reboot)
+	
+[CopyAlways.AppPatch.Files]
+    "AcLayers.dll"
+	"apphelp.sdb"
+	"drvmain.sdb"
+	"msimain.sdb"
+	"sysmain.sdb"
+[CopyAlways.System32.Files]
+	"nsvcrt.dll"
+    "SlayerXP.dll"
+
+[CopyAlways.SysWOW64.Files]
+    SlayerXP.dll,wSlayerXP.dll	
+	
+[SourceDisksNames]
+    1=%ServicePackSourceFiles%
+
+[SourceDisksFiles]
+    "AcLayers.dll" =1
+	"apphelp.sdb" =1
+	"drvmain.sdb" =1
+	"msimain.sdb" =1
+	"nsvcrt.dll" = 1
+	"sysmain.sdb" =1
+	"SlayerXP.dll" =1
+	"wSlayerXP.dll" = 1
+	
+[Save.Reg.For.Uninstall]
+
+HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"

@@ -34,6 +34,8 @@ SERVICEPACKSOURCEFILES  = "One-Core-API Base"
 Msft                    = "Microsoft"
 ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
 PARENT_DISPLAY_NAME     = "Windows Updates"
+MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
+MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 
 [UninstallSections]
     Add.Reg, Add.Reg.Uninstall
@@ -58,12 +60,14 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
+	CopyFiles                  = CopyAlways.SysWOW64.files
 	CopyFiles                  = CopyAlways.WinSxS.Main.files
 	CopyFiles                  = CopyAlways.WinSxS.Manifests.files
 	CopyFiles                  = CopyAlways.WinSxS.Policies.files
 	
 [ProductInstall.DontDelayUntilReboot]
     CopyFiles=MustReplace.System32.files
+	CopyFiles=MustReplace.SysWOW64.files
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -72,160 +76,288 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     AddReg=Product.Add.Reg
 
 [DestinationDirs]
-	System32.files=11                   ; %windir%\system32 (replace if exist)
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+	CopyAlways.SysWOW64.files=10,SysWOW64  ; %windir%\SysWOW64 (don't delay until reboot)
 	CopyAlways.WinSxS.Main.files = 10 ; %windir%
 	CopyAlways.WinSxS.Manifests.files = 10 ; %windir%
 	CopyAlways.WinSxS.Policies.files = 10 ; %windir%
 	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
+	MustReplace.SysWOW64.files=10,SysWOW64  ; %windir%\system32 (don't delay until reboot)
 
 [MustReplace.System32.files]
-    ntdll.dll,2k3SP1\ntdll.dll	
+    ntdll.dll,XP64SP1/amd64/ntdll.dll	
+	
+[MustReplace.SysWOW64.files]
+    ntdll.dll,XP64SP1/i386/ntdll.dll		
 	
 [CopyAlways.WinSxS.Main.files]	
-	"WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll"
-	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23693_x-ww_F6E8B294\gdiplus.dll"
+	"WinSxS\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E\comctl32.dll"
+	"WinSxS\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7\comctl32.dll"
+	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_F3F35550\gdiplus.dll"
+	"WinSxS\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_25FD3B30\gdiplus.dll"
 	
 [CopyAlways.WinSxS.Manifests.files]	
-	"WinSxS\manifests\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat"
-	"WinSxS\manifests\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest"
-	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23693_x-ww_F6E8B294.cat"
-	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23693_x-ww_F6E8B294.manifest"
+	"WinSxS\manifests\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E.cat"
+	"WinSxS\manifests\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E.manifest"
+	"WinSxS\manifests\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_25FD3B30.cat"
+	"WinSxS\manifests\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_25FD3B30.manifest"	
+	"WinSxS\manifests\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7.cat"
+	"WinSxS\manifests\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7.manifest"
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_F3F35550.cat"
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_F3F35550.manifest"	
 	
 [CopyAlways.WinSxS.Policies.files]
+	"WinSxS\Policies\amd64_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_BD997995\6.0.3790.5190.policy"
+	"WinSxS\Policies\amd64_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_BD997995\6.0.3790.5190.cat"	
 	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.policy"
 	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.cat"	
-	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.23693.cat"
-	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.23693.policy"
+	"WinSxS\Policies\amd64_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_AE43B2CC\1.0.6002.23693.cat"
+	"WinSxS\Policies\amd64_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_AE43B2CC\1.0.6002.23693.policy"	
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.23084.cat"
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\5.1.6002.23084.policy"	
 
 [CopyAlways.System32.Files]
-    advapibase.dll,2k3SP1\advapibase.dll
-    browsebase.dll,2k3SP1\browsebase.dll	
-    gdibase.dll,2k3SP1\gdibase.dll	
-    kernelfull.dll,2k3SP1\kernelfull.dll
-    netapibase.dll,2k3SP1\netapibase.dll	
-    powrprofbase.dll,2k3SP1\powrprofbase.dll
-    rpcrtbase.dll,2k3SP1\rpcrtbase.dll
-    securbase.dll,2k3SP1\securbase.dll
-    setupapibase.dll,2k3SP1\setupapibase.dll
-    shellbase.dll,2k3SP1\shellbase.dll	
-    userbase.dll,2k3SP1\userbase.dll
-    uxthemebase.dll,2k3SP1\uxthemebase.dll
-    winstabase.dll,2k3SP1\winstabase.dll
-    ws2_base.dll,2k3SP1\ws2_base.dll
-    advapi32.dll
-    advapilong.dll
-    advapinew.dll
-    bcrypt.dll
-    combase.dll
-    comctlext.dll
-    msvcrt.dll
-    pdhbase.dll
-    winbrand.dll
-    xmllite.dll
-    xmlrw.dll
-    browseui.dll
-    combase.dll
-    gdi32.dll
-    iphlpapi.dll
-    iphlpapibase.dll
-    idndl.dll
-    kernel32.dll 
-    kernelbase.dll	
-    Nlsdl.dll
-    normaliz.dll
-    ntdllbase.dll
-    psapi.dll
-    netapi32.dll
-    netapinew.dll
-    pdh.dll	
-    powrprof.dll
-    rpcrt4.dll
-    secur32.dll
-    securnew.dll
-    setupapi.dll
-    propsys.dll
-    shell32.dll
-    ucrtbase.dll
-    user32.dll
-    uxtheme.dll
-    vtdll.dll
-    winsta.dll	
-    winstanew.dll
-    ws2_32.dll
+    advapibase.dll,XP64SP1/amd64/advapibase.dll
+    browsebase.dll,XP64SP1/amd64/browsebase.dll	
+    gdibase.dll,XP64SP1/amd64/gdibase.dll	
+    kernelfull.dll,XP64SP1/amd64/kernelfull.dll
+    netapibase.dll,XP64SP1/amd64/netapibase.dll	
+    powrprofbase.dll,XP64SP1/amd64/powrprofbase.dll
+    rpcrtbase.dll,XP64SP1/amd64/rpcrtbase.dll
+    securbase.dll,XP64SP1/amd64/securbase.dll
+    setupapibase.dll,XP64SP1/amd64/setupapibase.dll
+    shellbase.dll,XP64SP1/amd64/shellbase.dll	
+    userbase.dll,XP64SP1/amd64/userbase.dll
+    uxthemebase.dll,XP64SP1/amd64/uxthemebase.dll
+    winstabase.dll,XP64SP1/amd64/winstabase.dll
+    ws2_base.dll,XP64SP1/amd64/ws2_base.dll
+    advapi32.dll,amd64/advapi32.dll
+    advapilong.dll,amd64/advapilong.dll
+    advapinew.dll,amd64/advapinew.dll
+    bcrypt.dll,amd64/bcrypt.dll
+    browseui.dll,amd64/browseui.dll	
+    combase.dll,amd64/combase.dll
+    comctlext.dll,amd64/comctlext.dll
+    msvcrt.dll,amd64/msvcrt.dll
+    pdhbase.dll,amd64/pdhbase.dll
+    winbrand.dll,amd64/winbrand.dll
+    xmllite.dll,amd64/xmllite.dll
+    xmlrw.dll,amd64/xmlrw.dll
+    gdi32.dll,amd64/gdi32.dll
+    iphlpapi.dll,amd64/iphlpapi.dll
+    iphlpapibase.dll,amd64/iphlpapibase.dll
+    idndl.dll,amd64/idndl.dll
+    kernel32.dll,amd64/kernel32.dll 
+    kernelbase.dll,amd64/kernelbase.dll	
+    Nlsdl.dll,amd64/Nlsdl.dll
+    normaliz.dll,amd64/normaliz.dll
+    ntdllbase.dll,amd64/ntdllbase.dll
+    psapi.dll,amd64/psapi.dll
+    netapi32.dll,amd64/netapi32.dll
+    netapinew.dll,amd64/netapinew.dll
+    pdh.dll,amd64/pdh.dll
+    powrprof.dll,amd64/powrprof.dll
+    rpcrt4.dll,amd64/rpcrt4.dll
+    secur32.dll,amd64/secur32.dll
+    securnew.dll,amd64/securnew.dll
+    setupapi.dll,amd64/setupapi.dll
+    propsys.dll,amd64/propsys.dll
+    shell32.dll,amd64/shell32.dll
+    ucrtbase.dll,amd64/ucrtbase.dll
+    user32.dll,amd64/user32.dll
+    uxtheme.dll,amd64/uxtheme.dll
+    vtdll.dll,amd64/vtdll.dll
+    winsta.dll,amd64/winsta.dll
+    winstanew.dll,amd64/winstanew.dll
+    ws2_32.dll,amd64/ws2_32.dll
+	
+[CopyAlways.SysWOW64.Files]
+    advapibase.dll,XP64SP1/i386/advapibase.dll
+    browsebase.dll,XP64SP1/i386/browsebase.dll	
+    gdibase.dll,XP64SP1/i386/gdibase.dll	
+    kernelfull.dll,XP64SP1/i386/kernelfull.dll
+    netapibase.dll,XP64SP1/i386/netapibase.dll	
+    powrprofbase.dll,XP64SP1/i386/powrprofbase.dll
+    rpcrtbase.dll,XP64SP1/i386/rpcrtbase.dll
+    securbase.dll,XP64SP1/i386/securbase.dll
+    setupapibase.dll,XP64SP1/i386/setupapibase.dll
+    shellbase.dll,XP64SP1/i386/shellbase.dll	
+    userbase.dll,XP64SP1/i386/userbase.dll
+    uxthemebase.dll,XP64SP1/i386/uxthemebase.dll
+    winstabase.dll,XP64SP1/i386/winstabase.dll
+    ws2_base.dll,XP64SP1/i386/ws2_base.dll
+    advapi32.dll,i386/advapi32.dll
+    advapilong.dll,i386/advapilong.dll
+    advapinew.dll,i386/advapinew.dll
+    bcrypt.dll,i386/bcrypt.dll
+    browseui.dll,i386/browseui.dll	
+    combase.dll,i386/combase.dll
+    comctlext.dll,i386/comctlext.dll
+    msvcrt.dll,i386/msvcrt.dll
+    pdhbase.dll,i386/pdhbase.dll
+    winbrand.dll,i386/winbrand.dll
+    xmllite.dll,i386/xmllite.dll
+    xmlrw.dll,i386/xmlrw.dll
+    gdi32.dll,i386/gdi32.dll
+    iphlpapi.dll,i386/iphlpapi.dll
+    iphlpapibase.dll,i386/iphlpapibase.dll
+    idndl.dll,i386/idndl.dll
+    kernel32.dll,i386/kernel32.dll 
+    kernelbase.dll,i386/kernelbase.dll	
+    Nlsdl.dll,i386/Nlsdl.dll
+    normaliz.dll,i386/normaliz.dll
+    ntdllbase.dll,i386/ntdllbase.dll
+    psapi.dll,i386/psapi.dll
+    netapi32.dll,i386/netapi32.dll
+    netapinew.dll,i386/netapinew.dll
+    pdh.dll,i386/pdh.dll
+    powrprof.dll,i386/powrprof.dll
+    rpcrt4.dll,i386/rpcrt4.dll
+    secur32.dll,i386/secur32.dll
+    securnew.dll,i386/securnew.dll
+    setupapi.dll,i386/setupapi.dll
+    propsys.dll,i386/propsys.dll
+    shell32.dll,i386/shell32.dll
+    ucrtbase.dll,i386/ucrtbase.dll
+    user32.dll,i386/user32.dll
+    uxtheme.dll,i386/uxtheme.dll
+    vtdll.dll,i386/vtdll.dll
+    winsta.dll,i386/winsta.dll
+    winstanew.dll,i386/winstanew.dll
+    ws2_32.dll,i386/ws2_32.dll	
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
 [SourceDisksFiles]
-    2k3SP1\advapibase.dll = 1
-    2k3SP1\browsebase.dll = 1
-    2k3SP1\gdibase.dll = 1	
-    2k3SP1\kernelfull.dll = 1
-    2k3SP1\netapibase.dll = 1	
-    2k3SP1\ntdll.dll = 1	
-    2k3SP1\powrprofbase.dll = 1
-    2k3SP1\rpcrtbase.dll = 1
-    2k3SP1\securbase.dll = 1
-    2k3SP1\setupapibase.dll = 1
-    2k3SP1\shellbase.dll = 1
-    2k3SP1\userbase.dll = 1
-    2k3SP1\uxthemebase.dll = 1
-    2k3SP1\winstabase.dll = 1
-    2k3SP1\ws2_base.dll = 1
-    advapi32.dll = 1
-    advapilong.dll = 1
-    advapinew.dll = 1
-    bcrypt.dll = 1
-    combase.dll = 1
-    comctlext.dll =1
-    msvcrt.dll = 1
-    ntdllbase.dll = 1
-    winbrand.dll = 1
-    xmllite.dll = 1
-    xmlrw.dll = 1
-    browseui.dll = 1
-    combase.dll = 1
-    gdi32.dll = 1
-    iphlpapi.dll = 1
-    iphlpapibase.dll = 1
-    idndl.dll = 1
-    kernel32.dll = 1
-    kernelbase.dll = 1	
-    Nlsdl.dll = 1
-    normaliz.dll = 1
-    psapi.dll = 1
-    netapi32.dll = 1
-    netapinew.dll = 1
-    pdh.dll = 1
-    pdhbase.dll = 1
-    powrprof.dll = 1
-    rpcrt4.dll = 1
-    secur32.dll = 1
-    securnew.dll = 1
-    setupapi.dll = 1
-    propsys.dll = 1
-    shell32.dll = 1
-    ucrtbase.dll = 1
-    user32.dll = 1
-    uxtheme.dll = 1
-    vtdll.dll = 1
-    winsta.dll = 1	
-    winstanew.dll = 1
-    ws2_32.dll = 1
-	WinSxS\comctl32.dll = 1
-	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat = 1
-	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest = 1
-	WinSxS\6.0.3790.5190.policy = 1
-	WinSxS\6.0.3790.5190.cat = 1	
-    WinSxS\gdiplus.dll =1
-    WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23693_x-ww_F6E8B294.cat =1
-	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23693_x-ww_F6E8B294.manifest =1
-	WinSxS\1.0.6002.23693.cat =1
-	WinSxS\1.0.6002.23693.policy =1	
-[Strings]
-MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
-MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
+    XP64SP1/amd64/advapibase.dll = 1
+    XP64SP1/amd64/browsebase.dll = 1
+    XP64SP1/amd64/gdibase.dll = 1	
+    XP64SP1/amd64/kernelfull.dll = 1
+    XP64SP1/amd64/netapibase.dll = 1	
+    XP64SP1/amd64/ntdll.dll = 1	
+    XP64SP1/amd64/powrprofbase.dll = 1
+    XP64SP1/amd64/rpcrtbase.dll = 1
+    XP64SP1/amd64/securbase.dll = 1
+    XP64SP1/amd64/setupapibase.dll = 1
+    XP64SP1/amd64/shellbase.dll = 1
+    XP64SP1/amd64/userbase.dll = 1
+    XP64SP1/amd64/uxthemebase.dll = 1
+    XP64SP1/amd64/winstabase.dll = 1
+    XP64SP1/amd64/ws2_base.dll = 1
+    XP64SP1/i386/advapibase.dll = 1
+    XP64SP1/i386/browsebase.dll = 1
+    XP64SP1/i386/gdibase.dll = 1	
+    XP64SP1/i386/kernelfull.dll = 1
+    XP64SP1/i386/netapibase.dll = 1	
+    XP64SP1/i386/ntdll.dll = 1	
+    XP64SP1/i386/powrprofbase.dll = 1
+    XP64SP1/i386/rpcrtbase.dll = 1
+    XP64SP1/i386/securbase.dll = 1
+    XP64SP1/i386/setupapibase.dll = 1
+    XP64SP1/i386/shellbase.dll = 1
+    XP64SP1/i386/userbase.dll = 1
+    XP64SP1/i386/uxthemebase.dll = 1
+    XP64SP1/i386/winstabase.dll = 1
+    XP64SP1/i386/ws2_base.dll = 1	
+    amd64/advapi32.dll = 1
+    amd64/advapilong.dll = 1
+    amd64/advapinew.dll = 1
+    amd64/bcrypt.dll = 1
+    amd64/combase.dll = 1
+    amd64/comctlext.dll =1
+    amd64/msvcrt.dll = 1
+    amd64/ntdllbase.dll = 1
+    amd64/winbrand.dll = 1
+    amd64/xmllite.dll = 1
+    amd64/xmlrw.dll = 1
+    amd64/browseui.dll = 1
+    amd64/gdi32.dll = 1
+    amd64/iphlpapi.dll = 1
+    amd64/iphlpapibase.dll = 1
+    amd64/idndl.dll = 1
+    amd64/kernel32.dll = 1
+    amd64/kernelbase.dll = 1	
+    amd64/Nlsdl.dll = 1
+    amd64/normaliz.dll = 1
+    amd64/psapi.dll = 1
+    amd64/netapi32.dll = 1
+    amd64/netapinew.dll = 1
+    amd64/pdh.dll = 1
+    amd64/pdhbase.dll = 1
+    amd64/powrprof.dll = 1
+    amd64/rpcrt4.dll = 1
+    amd64/secur32.dll = 1
+    amd64/securnew.dll = 1
+    amd64/setupapi.dll = 1
+    amd64/propsys.dll = 1
+    amd64/shell32.dll = 1
+    amd64/ucrtbase.dll = 1
+    amd64/user32.dll = 1
+    amd64/uxtheme.dll = 1
+    amd64/vtdll.dll = 1
+    amd64/winsta.dll = 1	
+    amd64/winstanew.dll = 1
+    amd64/ws2_32.dll = 1
+    i386/advapi32.dll = 1
+    i386/advapilong.dll = 1
+    i386/advapinew.dll = 1
+    i386/bcrypt.dll = 1
+    i386/combase.dll = 1
+    i386/comctlext.dll =1
+    i386/msvcrt.dll = 1
+    i386/ntdllbase.dll = 1
+    i386/winbrand.dll = 1
+    i386/xmllite.dll = 1
+    i386/xmlrw.dll = 1
+    i386/browseui.dll = 1
+    i386/gdi32.dll = 1
+    i386/iphlpapi.dll = 1
+    i386/iphlpapibase.dll = 1
+    i386/idndl.dll = 1
+    i386/kernel32.dll = 1
+    i386/kernelbase.dll = 1	
+    i386/Nlsdl.dll = 1
+    i386/normaliz.dll = 1
+    i386/psapi.dll = 1
+    i386/netapi32.dll = 1
+    i386/netapinew.dll = 1
+    i386/pdh.dll = 1
+    i386/pdhbase.dll = 1
+    i386/powrprof.dll = 1
+    i386/rpcrt4.dll = 1
+    i386/secur32.dll = 1
+    i386/securnew.dll = 1
+    i386/setupapi.dll = 1
+    i386/propsys.dll = 1
+    i386/shell32.dll = 1
+    i386/ucrtbase.dll = 1
+    i386/user32.dll = 1
+    i386/uxtheme.dll = 1
+    i386/vtdll.dll = 1
+    i386/winsta.dll = 1	
+    i386/winstanew.dll = 1
+    i386/ws2_32.dll = 1	
+	"WinSxS\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E\comctl32.dll" = 1	
+	"WinSxS\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7\comctl32.dll" = 1	
+	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_F3F35550\gdiplus.dll" = 1
+	"WinSxS\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_25FD3B30\gdiplus.dll" = 1
+	"WinSxS\manifests\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E.cat" = 1
+	"WinSxS\manifests\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E.manifest" = 1
+	"WinSxS\manifests\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_25FD3B30.cat" = 1
+	"WinSxS\manifests\amd64_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_25FD3B30.manifest" = 1	
+	"WinSxS\manifests\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7.cat" = 1
+	"WinSxS\manifests\wow64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_B8C2A5B7.manifest" = 1
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_F3F35550.cat" = 1
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23084_x-ww_F3F35550.manifest"	 = 1
+	"WinSxS\Policies\amd64_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_BD997995\6.0.3790.5190.policy" = 1
+	"WinSxS\Policies\amd64_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_BD997995\6.0.3790.5190.cat" = 1	
+	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.policy" = 1
+	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.cat" = 1	
+	"WinSxS\Policies\amd64_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_AE43B2CC\1.0.6002.23693.cat" = 1
+	"WinSxS\Policies\amd64_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_AE43B2CC\1.0.6002.23693.policy" = 1	
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.23084.cat" = 1
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\5.1.6002.23084.policy"	= 1
 
 [UninstallSections]
     GlobalRegistryChanges, GlobalRegistryChanges.UnInstall
