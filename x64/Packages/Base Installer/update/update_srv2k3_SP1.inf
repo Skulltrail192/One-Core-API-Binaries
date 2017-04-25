@@ -10,6 +10,7 @@ NtBuildToUpdate           = 3790
 NtMajorVersionToUpdate    = 5
 NtMinorVersionToUpdate    = 2
 Signature                 = "$Windows NT$"
+MachineType=64
 
 [Configuration]
     InstallationType     = Hotfix

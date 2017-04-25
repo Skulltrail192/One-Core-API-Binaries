@@ -1,0 +1,280 @@
+[Version]
+LanguageType 		  = %LANGTYPEVALUE%
+MaxNtBuildToUpdate        = 3790
+MaxNtMajorVersionToUpdate = 5
+MaxNtMinorVersionToUpdate = 2
+MaxNtServicePackVersion   = 512
+MinNtServicePackVersion   = 256
+NtBuildToUpdate           = 3790
+NtMajorVersionToUpdate    = 5
+NtMinorVersionToUpdate    = 2
+Signature                 = "$Windows NT$"
+MachineType=64
+
+[Prerequisite]
+condition=SingleOp,LatestUpdateCheck2.Section
+
+[Configuration]
+    InstallationType     = Hotfix
+    InstallLogFileName   = %SP_SHORT_TITLE%.log
+    EventLogKeyName      = NtServicePack
+    EventLogDllName      = spmsg.dll
+    NoPNPFiles           = 1
+    UnInstallLogFileName = %SP_SHORT_TITLE%Uninst.log
+    UnInstallDirName     = $NtUninstall%SP_SHORT_TITLE%$
+    ServiceFileInUseDetect    = 1
+    AppFileinUseDetect        = 3
+	
+[LatestUpdateCheck2.Section]
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\KB3204724",Installed,0x10001,==,1
+    Display_String="%LatestUpdateFail%"	
+
+[Strings]
+OCAAD_FILE_VERSION       = "6.0.6000.16385"
+OCAAD_VERSION             = "3.0.0.0"
+SP_TITLE                = "One-Core-API Additional Dlls"
+LANGTYPEVALUE           = 0x0
+SP_SHORT_TITLE          = "OCAAD"
+SERVICE_PACK_NUMBER     = 3
+COMMENT                 = "One-Core-API Additional Dlls [See Q100000 for more information]"
+SERVICEPACKSOURCEFILES  = "One-Core-API Additional Dlls"
+Msft                    = "Microsoft"
+ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+PARENT_DISPLAY_NAME     = "Windows Updates"
+LatestUpdateFail        = "Please Install One-Core-API Base first!"
+MSFT_Prefix                 = "OneCoreAPIAdditionalDlls"
+MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
+
+[Prerequisite]
+	condition=SingleOp,LatestUpdateCheck2.Section
+	
+[LatestUpdateCheck2.Section]
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
+    Display_String="%LatestUpdateFail%"	
+
+[UninstallSections]
+    Add.Reg, Add.Reg.Uninstall
+    Del.Reg, Del.Reg.Uninstall
+	
+[Product.Add.Reg]
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed",0x10001,1
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Comments",0,%SP_TITLE%
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Backup Dir",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Fix Description",0,%SP_TITLE%
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed By",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed On",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Service Pack",0x10001,%SERVICE_PACK_NUMBER%
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Valid",0x10001,1
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"Flags",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"New File",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"New Link Date",0,""
+    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"Old Link Date",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%OCAAD_VERSION%
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%OCAAD_VERSION%"
+
+[ProductInstall.CopyFilesAlways]
+    CopyFiles                  = CopyAlways.System32.files
+	CopyFiles                  = CopyAlways.SysWOW64.files
+
+[DestinationDirs]
+    CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+	CopyAlways.SysWOW64.files=10,SysWOW64  ; %windir%\system32 (don't delay until reboot)
+
+[CopyAlways.System32.Files]
+	avrt.dll,amd64/avrt.dll
+	credui.dll,amd64/credui.dll
+	cryptbase.dll,amd64/cryptbase.dll
+	cryptsp.dll,amd64/cryptsp.dll
+	dbghelp.dll,amd64/dbghelp.dll
+	duser.dll,amd64/duser.dll
+	dwmapi.dll,amd64/dwmapi.dll
+	dxva2.dll,amd64/dxva2.dll
+	efsadu.dll,amd64/efsadu.dll
+	esent.dll,amd64/esent.dll
+	evr.dll,amd64/evr.dll
+	feclient.dll,amd64/feclient.dll
+	httpapi.dll,amd64/httpapi.dll
+	ktmw32.dll,amd64/ktmw32.dll
+	lsalookup.dll,amd64/lsalookup.dll
+	milcore.dll,amd64/milcore.dll
+	mlang.dll,amd64/mlang.dll
+	msdrm.dll,amd64/msdrm.dll
+	msidcrl30.dll,amd64/msidcrl30.dll
+	mtdll.dll,amd64/mtdll.dll
+	ncrypt.dll,amd64/ncrypt.dll
+	ndfapi.dll,amd64/ndfapi.dll
+	photometadatahandler.dll,amd64/photometadatahandler.dll
+	RstrtMgr.dll,amd64/RstrtMgr.dll
+	sddlbase.dll,amd64/sddlbase.dll
+	secbase.dll,amd64/secbase.dll
+	SLC.dll,amd64/SLC.dll
+	SLCExt.dll,amd64/SLCExt.dll
+	sqmapi.dll,amd64/sqmapi.dll
+	sspicli.dll,amd64/sspicli.dll
+	traffic.dll,amd64/traffic.dll
+	version.dll,amd64/version.dll
+	wdi.dll,amd64/wdi.dll
+	wer.dll,amd64/wer.dll
+	wevtapibase.dll,amd64/wevtapibase.dll
+	wevtbase.dll,amd64/wevtbase.dll
+	wfapi.dll,amd64/wfapi.dll
+	windowscodecs.dll,amd64/windowscodecs.dll
+	windowscodecsext.dll,amd64/windowscodecsext.dll
+	winsvc.dll,amd64/winsvc.dll
+	wlanapi.dll,amd64/wlanapi.dll
+	wlanutil.dll,amd64/wlanutil.dll
+	wmphoto.dll,amd64/wmphoto.dll
+	WSDApi.dll,amd64/WSDApi.dll
+	wtsapi32.dll,amd64/wtsapi32.dll
+[CopyAlways.SysWOW64.Files]	
+		avrt.dll,i386/avrt.dll
+	credui.dll,i386/credui.dll
+	cryptbase.dll,i386/cryptbase.dll
+	cryptsp.dll,i386/cryptsp.dll
+	dbghelp.dll,i386/dbghelp.dll
+	duser.dll,i386/duser.dll
+	dwmapi.dll,i386/dwmapi.dll
+	dxva2.dll,i386/dxva2.dll
+	efsadu.dll,i386/efsadu.dll
+	esent.dll,i386/esent.dll
+	evr.dll,i386/evr.dll
+	feclient.dll,i386/feclient.dll
+	httpapi.dll,i386/httpapi.dll
+	ktmw32.dll,i386/ktmw32.dll
+	lsalookup.dll,i386/lsalookup.dll
+	milcore.dll,i386/milcore.dll
+	mlang.dll,i386/mlang.dll
+	msdrm.dll,i386/msdrm.dll
+	msidcrl30.dll,i386/msidcrl30.dll
+	mtdll.dll,i386/mtdll.dll
+	ncrypt.dll,i386/ncrypt.dll
+	ndfapi.dll,i386/ndfapi.dll
+	photometadatahandler.dll,i386/photometadatahandler.dll
+	RstrtMgr.dll,i386/RstrtMgr.dll
+	sddlbase.dll,i386/sddlbase.dll
+	secbase.dll,i386/secbase.dll
+	SLC.dll,i386/SLC.dll
+	SLCExt.dll,i386/SLCExt.dll
+	sqmapi.dll,i386/sqmapi.dll
+	sspicli.dll,i386/sspicli.dll
+	traffic.dll,i386/traffic.dll
+	version.dll,i386/version.dll
+	wdi.dll,i386/wdi.dll
+	wer.dll,i386/wer.dll
+	wevtapibase.dll,i386/wevtapibase.dll
+	wevtbase.dll,i386/wevtbase.dll
+	wfapi.dll,i386/wfapi.dll
+	windowscodecs.dll,i386/windowscodecs.dll
+	windowscodecsext.dll,i386/windowscodecsext.dll
+	winsvc.dll,i386/winsvc.dll
+	wlanapi.dll,i386/wlanapi.dll
+	wlanutil.dll,i386/wlanutil.dll
+	wmphoto.dll,i386/wmphoto.dll
+	WSDApi.dll,i386/WSDApi.dll
+	wtsapi32.dll,i386/wtsapi32.dll
+[SourceDisksNames]
+    1=%ServicePackSourceFiles%
+
+[SourceDisksFiles]
+	amd64/avrt.dll = 1
+	amd64/credui.dll = 1
+	amd64/cryptbase.dll = 1
+	amd64/cryptsp.dll = 1
+	amd64/dbghelp.dll = 1
+	amd64/duser.dll = 1
+	amd64/dwmapi.dll = 1
+	amd64/dxva2.dll = 1
+	amd64/efsadu.dll = 1
+	amd64/esent.dll = 1
+	amd64/evr.dll = 1
+	amd64/feclient.dll = 1
+	amd64/httpapi.dll = 1
+	amd64/ktmw32.dll = 1
+	amd64/lsalookup.dll = 1
+	amd64/milcore.dll = 1
+	amd64/mlang.dll = 1
+	amd64/msdrm.dll = 1
+	amd64/msidcrl30.dll = 1
+	amd64/mtdll.dll = 1
+	amd64/ncrypt.dll = 1
+	amd64/ndfapi.dll = 1
+	amd64/photometadatahandler.dll = 1
+	amd64/RstrtMgr.dll = 1
+	amd64/sddlbase.dll = 1
+	amd64/secbase.dll = 1
+	amd64/SLC.dll = 1
+	amd64/SLCExt.dll = 1
+	amd64/sqmapi.dll = 1
+	amd64/sspicli.dll = 1
+	amd64/traffic.dll = 1
+	amd64/version.dll = 1
+	amd64/wdi.dll = 1
+	amd64/wer.dll = 1
+	amd64/wevtapibase.dll = 1
+	amd64/wevtbase.dll = 1
+	amd64/wfapi.dll = 1
+	amd64/windowscodecs.dll = 1
+	amd64/windowscodecsext.dll = 1
+	amd64/winsvc.dll = 1
+	amd64/wlanapi.dll = 1
+	amd64/wlanutil.dll = 1
+	amd64/wmphoto.dll = 1
+	amd64/WSDApi.dll = 1
+	amd64/wtsapi32.dll = 1
+	i386/avrt.dll = 1
+	i386/credui.dll = 1
+	i386/cryptbase.dll = 1
+	i386/cryptsp.dll = 1
+	i386/dbghelp.dll = 1
+	i386/duser.dll = 1
+	i386/dwmapi.dll = 1
+	i386/dxva2.dll = 1
+	i386/efsadu.dll = 1
+	i386/esent.dll = 1
+	i386/evr.dll = 1
+	i386/feclient.dll = 1
+	i386/httpapi.dll = 1
+	i386/ktmw32.dll = 1
+	i386/lsalookup.dll = 1
+	i386/milcore.dll = 1
+	i386/mlang.dll = 1
+	i386/msdrm.dll = 1
+	i386/msidcrl30.dll = 1
+	i386/mtdll.dll = 1
+	i386/ncrypt.dll = 1
+	i386/ndfapi.dll = 1
+	i386/photometadatahandler.dll = 1
+	i386/RstrtMgr.dll = 1
+	i386/sddlbase.dll = 1
+	i386/secbase.dll = 1
+	i386/SLC.dll = 1
+	i386/SLCExt.dll = 1
+	i386/sqmapi.dll = 1
+	i386/sspicli.dll = 1
+	i386/traffic.dll = 1
+	i386/version.dll = 1
+	i386/wdi.dll = 1
+	i386/wer.dll = 1
+	i386/wevtapibase.dll = 1
+	i386/wevtbase.dll = 1
+	i386/wfapi.dll = 1
+	i386/windowscodecs.dll = 1
+	i386/windowscodecsext.dll = 1
+	i386/winsvc.dll = 1
+	i386/wlanapi.dll = 1
+	i386/wlanutil.dll = 1
+	i386/wmphoto.dll = 1
+	i386/WSDApi.dll = 1
+	i386/wtsapi32.dll = 1
+
+	
+[Save.Reg.For.Uninstall]
+
+HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
+HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"

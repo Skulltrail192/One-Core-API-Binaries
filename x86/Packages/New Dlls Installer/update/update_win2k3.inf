@@ -82,12 +82,11 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 
 [CopyAlways.System32.Files]
 	"avrt.dll"
-	"bcrypt.dll"
 	"credui.dll"
 	"cryptbase.dll"
 	"cryptsp.dll"
 	"dbghelp.dll"
-	"dir.txt
+	"duser.dll"
 	"duser.dll"
 	"dwmapi.dll"
 	"dxva2.dll"
@@ -133,12 +132,10 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 
 [SourceDisksFiles]
 	"avrt.dll" = 1
-	"bcrypt.dll" = 1
 	"credui.dll" = 1
 	"cryptbase.dll" = 1
 	"cryptsp.dll" = 1
 	"dbghelp.dll" = 1
-	"dir.txt
 	"duser.dll" = 1
 	"dwmapi.dll" = 1
 	"dxva2.dll" = 1

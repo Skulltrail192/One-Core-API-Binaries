@@ -1,0 +1,10 @@
+[Version]
+Signature="$Windows NT$"
+
+[DefaultBranchesServicePacks.WinNt52]
+1=XP64SP1
+2=XP64SP2
+
+[SourceInfsBranches]
+XP64SP1=update\update_srv2k3_SP1.inf
+XP64SP2=update\update_srv2k3_SP2.inf
