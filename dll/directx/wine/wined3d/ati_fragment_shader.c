@@ -53,7 +53,7 @@ struct atifs_ffp_desc
     struct ffp_frag_desc parent;
     GLuint shader;
     unsigned int num_textures_used;
-    enum atifs_constant_value constants[8];
+    enum atifs_constant_value constants[MAX_TEXTURES];
 };
 
 struct atifs_private_data
@@ -938,7 +938,7 @@ static GLuint gen_ati_shader(const struct texture_stage_op op[MAX_TEXTURES],
     constants[ATIFS_CONST_TFACTOR - GL_CON_0_ATI] = ATIFS_CONSTANT_TFACTOR;
 
     /* Assign unused constants to avoid reloading due to unused <-> bump matrix switches. */
-    for (stage = 0; stage < 8; ++stage)
+    for (stage = 0; stage < MAX_TEXTURES; ++stage)
     {
         if (constants[stage] == ATIFS_CONSTANT_UNUSED)
             constants[stage] = ATIFS_CONSTANT_BUMP;
@@ -1012,7 +1012,7 @@ static void atifs_stage_constant(struct wined3d_context *context, const struct w
 
 static void set_tex_op_atifs(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
-    const struct wined3d_device *device = context->swapchain->device;
+    const struct wined3d_device *device = context->device;
     const struct wined3d_gl_info *gl_info = context->gl_info;
     const struct wined3d_d3d_info *d3d_info = context->d3d_info;
     struct atifs_context_private_data *ctx_priv = context->fragment_pipe_data;
@@ -1024,7 +1024,8 @@ static void set_tex_op_atifs(struct wined3d_context *context, const struct wined
 
     gen_ffp_frag_op(context, state, &settings, TRUE);
     desc = (const struct atifs_ffp_desc *)find_ffp_frag_shader(&priv->fragment_shaders, &settings);
-    if(!desc) {
+    if (!desc)
+    {
         struct atifs_ffp_desc *new_desc = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*new_desc));
         if (!new_desc)
         {
@@ -1036,13 +1037,13 @@ static void set_tex_op_atifs(struct wined3d_context *context, const struct wined
         {
             if (settings.op[i].cop == WINED3D_TOP_DISABLE)
                 break;
-            new_desc->num_textures_used = i + 1;
+            ++new_desc->num_textures_used;
         }
 
         new_desc->parent.settings = settings;
         new_desc->shader = gen_ati_shader(settings.op, gl_info, new_desc->constants);
         add_ffp_frag_shader(&priv->fragment_shaders, &new_desc->parent);
-        TRACE("Allocated fixed function replacement shader descriptor %p\n", new_desc);
+        TRACE("Allocated fixed function replacement shader descriptor %p.\n", new_desc);
         desc = new_desc;
     }
 
@@ -1062,7 +1063,7 @@ static void set_tex_op_atifs(struct wined3d_context *context, const struct wined
     GL_EXTCALL(glBindFragmentShaderATI(desc->shader));
     ctx_priv->last_shader = desc;
 
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < MAX_TEXTURES; i++)
     {
         if (last_shader && last_shader->constants[i] == desc->constants[i])
             continue;
@@ -1307,7 +1308,7 @@ static void atifs_get_caps(const struct wined3d_gl_info *gl_info, struct fragmen
      * The proper fix for this is not to use GL_ATI_fragment_shader on cards newer than the
      * r200 series and use an ARB or GLSL shader instead
      */
-    caps->MaxTextureBlendStages   = 8;
+    caps->MaxTextureBlendStages   = MAX_TEXTURES;
     caps->MaxSimultaneousTextures = 6;
 }
 

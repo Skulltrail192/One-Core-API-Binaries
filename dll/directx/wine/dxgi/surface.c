@@ -22,6 +22,8 @@
 
 #include "dxgi_private.h"
 
+WINE_DEFAULT_DEBUG_CHANNEL(dxgi);
+
 /* Inner IUnknown methods */
 
 static inline struct dxgi_surface *impl_from_IUnknown(IUnknown *iface)
@@ -35,13 +37,14 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_inner_QueryInterface(IUnknown *ifa
 
     TRACE("iface %p, riid %s, out %p.\n", iface, debugstr_guid(riid), out);
 
-    if (IsEqualGUID(riid, &IID_IDXGISurface)
+    if (IsEqualGUID(riid, &IID_IDXGISurface1)
+            || IsEqualGUID(riid, &IID_IDXGISurface)
             || IsEqualGUID(riid, &IID_IDXGIDeviceSubObject)
             || IsEqualGUID(riid, &IID_IDXGIObject)
             || IsEqualGUID(riid, &IID_IUnknown))
     {
-        IDXGISurface_AddRef(&surface->IDXGISurface_iface);
-        *out = &surface->IDXGISurface_iface;
+        IDXGISurface1_AddRef(&surface->IDXGISurface1_iface);
+        *out = &surface->IDXGISurface1_iface;
         return S_OK;
     }
 
@@ -77,70 +80,70 @@ static ULONG STDMETHODCALLTYPE dxgi_surface_inner_Release(IUnknown *iface)
     return refcount;
 }
 
-static inline struct dxgi_surface *impl_from_IDXGISurface(IDXGISurface *iface)
+static inline struct dxgi_surface *impl_from_IDXGISurface1(IDXGISurface1 *iface)
 {
-    return CONTAINING_RECORD(iface, struct dxgi_surface, IDXGISurface_iface);
+    return CONTAINING_RECORD(iface, struct dxgi_surface, IDXGISurface1_iface);
 }
 
 /* IUnknown methods */
 
-static HRESULT STDMETHODCALLTYPE dxgi_surface_QueryInterface(IDXGISurface *iface, REFIID riid,
+static HRESULT STDMETHODCALLTYPE dxgi_surface_QueryInterface(IDXGISurface1 *iface, REFIID riid,
         void **object)
 {
-    struct dxgi_surface *This = impl_from_IDXGISurface(iface);
+    struct dxgi_surface *This = impl_from_IDXGISurface1(iface);
     TRACE("Forwarding to outer IUnknown\n");
     return IUnknown_QueryInterface(This->outer_unknown, riid, object);
 }
 
-static ULONG STDMETHODCALLTYPE dxgi_surface_AddRef(IDXGISurface *iface)
+static ULONG STDMETHODCALLTYPE dxgi_surface_AddRef(IDXGISurface1 *iface)
 {
-    struct dxgi_surface *This = impl_from_IDXGISurface(iface);
+    struct dxgi_surface *This = impl_from_IDXGISurface1(iface);
     TRACE("Forwarding to outer IUnknown\n");
     return IUnknown_AddRef(This->outer_unknown);
 }
 
-static ULONG STDMETHODCALLTYPE dxgi_surface_Release(IDXGISurface *iface)
+static ULONG STDMETHODCALLTYPE dxgi_surface_Release(IDXGISurface1 *iface)
 {
-    struct dxgi_surface *This = impl_from_IDXGISurface(iface);
+    struct dxgi_surface *This = impl_from_IDXGISurface1(iface);
     TRACE("Forwarding to outer IUnknown\n");
     return IUnknown_Release(This->outer_unknown);
 }
 
 /* IDXGIObject methods */
 
-static HRESULT STDMETHODCALLTYPE dxgi_surface_SetPrivateData(IDXGISurface *iface,
+static HRESULT STDMETHODCALLTYPE dxgi_surface_SetPrivateData(IDXGISurface1 *iface,
         REFGUID guid, UINT data_size, const void *data)
 {
-    struct dxgi_surface *surface = impl_from_IDXGISurface(iface);
+    struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
 
     TRACE("iface %p, guid %s, data_size %u, data %p.\n", iface, debugstr_guid(guid), data_size, data);
 
     return dxgi_set_private_data(&surface->private_store, guid, data_size, data);
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_surface_SetPrivateDataInterface(IDXGISurface *iface,
+static HRESULT STDMETHODCALLTYPE dxgi_surface_SetPrivateDataInterface(IDXGISurface1 *iface,
         REFGUID guid, const IUnknown *object)
 {
-    struct dxgi_surface *surface = impl_from_IDXGISurface(iface);
+    struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
 
     TRACE("iface %p, guid %s, object %p.\n", iface, debugstr_guid(guid), object);
 
     return dxgi_set_private_data_interface(&surface->private_store, guid, object);
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_surface_GetPrivateData(IDXGISurface *iface,
+static HRESULT STDMETHODCALLTYPE dxgi_surface_GetPrivateData(IDXGISurface1 *iface,
         REFGUID guid, UINT *data_size, void *data)
 {
-    struct dxgi_surface *surface = impl_from_IDXGISurface(iface);
+    struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
 
     TRACE("iface %p, guid %s, data_size %p, data %p.\n", iface, debugstr_guid(guid), data_size, data);
 
     return dxgi_get_private_data(&surface->private_store, guid, data_size, data);
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_surface_GetParent(IDXGISurface *iface, REFIID riid, void **parent)
+static HRESULT STDMETHODCALLTYPE dxgi_surface_GetParent(IDXGISurface1 *iface, REFIID riid, void **parent)
 {
-    struct dxgi_surface *This = impl_from_IDXGISurface(iface);
+    struct dxgi_surface *This = impl_from_IDXGISurface1(iface);
 
     TRACE("iface %p, riid %s, parent %p.\n", iface, debugstr_guid(riid), parent);
 
@@ -149,9 +152,9 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_GetParent(IDXGISurface *iface, REF
 
 /* IDXGIDeviceSubObject methods */
 
-static HRESULT STDMETHODCALLTYPE dxgi_surface_GetDevice(IDXGISurface *iface, REFIID riid, void **device)
+static HRESULT STDMETHODCALLTYPE dxgi_surface_GetDevice(IDXGISurface1 *iface, REFIID riid, void **device)
 {
-    struct dxgi_surface *This = impl_from_IDXGISurface(iface);
+    struct dxgi_surface *This = impl_from_IDXGISurface1(iface);
 
     TRACE("iface %p, riid %s, device %p.\n", iface, debugstr_guid(riid), device);
 
@@ -159,32 +162,77 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_GetDevice(IDXGISurface *iface, REF
 }
 
 /* IDXGISurface methods */
-static HRESULT STDMETHODCALLTYPE dxgi_surface_GetDesc(IDXGISurface *iface, DXGI_SURFACE_DESC *desc)
+static HRESULT STDMETHODCALLTYPE dxgi_surface_GetDesc(IDXGISurface1 *iface, DXGI_SURFACE_DESC *desc)
 {
-    struct dxgi_surface *surface = impl_from_IDXGISurface(iface);
+    struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
+    struct wined3d_resource_desc wined3d_desc;
 
     TRACE("iface %p, desc %p.\n", iface, desc);
 
-    *desc = surface->desc;
+    wined3d_mutex_lock();
+    wined3d_resource_get_desc(wined3d_texture_get_resource(surface->wined3d_texture), &wined3d_desc);
+    wined3d_mutex_unlock();
+    desc->Width = wined3d_desc.width;
+    desc->Height = wined3d_desc.height;
+    desc->Format = dxgi_format_from_wined3dformat(wined3d_desc.format);
+    dxgi_sample_desc_from_wined3d(&desc->SampleDesc, wined3d_desc.multisample_type, wined3d_desc.multisample_quality);
 
     return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_surface_Map(IDXGISurface *iface, DXGI_MAPPED_RECT *mapped_rect, UINT flags)
+static HRESULT STDMETHODCALLTYPE dxgi_surface_Map(IDXGISurface1 *iface, DXGI_MAPPED_RECT *mapped_rect, UINT flags)
 {
     FIXME("iface %p, mapped_rect %p, flags %#x stub!\n", iface, mapped_rect, flags);
 
     return E_NOTIMPL;
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_surface_Unmap(IDXGISurface *iface)
+static HRESULT STDMETHODCALLTYPE dxgi_surface_Unmap(IDXGISurface1 *iface)
 {
     FIXME("iface %p stub!\n", iface);
 
     return E_NOTIMPL;
 }
 
-static const struct IDXGISurfaceVtbl dxgi_surface_vtbl =
+/* IDXGISurface1 methods */
+static HRESULT STDMETHODCALLTYPE dxgi_surface_GetDC(IDXGISurface1 *iface, BOOL discard, HDC *hdc)
+{
+    struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
+    HRESULT hr;
+
+    FIXME("iface %p, discard %d, hdc %p semi-stub!\n", iface, discard, hdc);
+
+    if (!hdc)
+        return E_INVALIDARG;
+
+    wined3d_mutex_lock();
+    hr = wined3d_texture_get_dc(surface->wined3d_texture, 0, hdc);
+    wined3d_mutex_unlock();
+
+    if (SUCCEEDED(hr))
+       surface->dc = *hdc;
+
+    return hr;
+}
+
+static HRESULT STDMETHODCALLTYPE dxgi_surface_ReleaseDC(IDXGISurface1 *iface, RECT *dirty_rect)
+{
+    struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
+    HRESULT hr;
+
+    TRACE("iface %p, rect %s\n", iface, wine_dbgstr_rect(dirty_rect));
+
+    if (!IsRectEmpty(dirty_rect))
+        FIXME("dirty rectangle is ignored.\n");
+
+    wined3d_mutex_lock();
+    hr = wined3d_texture_release_dc(surface->wined3d_texture, 0, surface->dc);
+    wined3d_mutex_unlock();
+
+    return hr;
+}
+
+static const struct IDXGISurface1Vtbl dxgi_surface_vtbl =
 {
     /* IUnknown methods */
     dxgi_surface_QueryInterface,
@@ -201,6 +249,9 @@ static const struct IDXGISurfaceVtbl dxgi_surface_vtbl =
     dxgi_surface_GetDesc,
     dxgi_surface_Map,
     dxgi_surface_Unmap,
+    /* IDXGISurface1 methods */
+    dxgi_surface_GetDC,
+    dxgi_surface_ReleaseDC,
 };
 
 static const struct IUnknownVtbl dxgi_surface_inner_unknown_vtbl =
@@ -212,15 +263,16 @@ static const struct IUnknownVtbl dxgi_surface_inner_unknown_vtbl =
 };
 
 HRESULT dxgi_surface_init(struct dxgi_surface *surface, IDXGIDevice *device,
-        IUnknown *outer, const DXGI_SURFACE_DESC *desc)
+        IUnknown *outer, struct wined3d_texture *wined3d_texture)
 {
-    surface->IDXGISurface_iface.lpVtbl = &dxgi_surface_vtbl;
+    surface->IDXGISurface1_iface.lpVtbl = &dxgi_surface_vtbl;
     surface->IUnknown_iface.lpVtbl = &dxgi_surface_inner_unknown_vtbl;
     surface->refcount = 1;
     wined3d_private_store_init(&surface->private_store);
     surface->outer_unknown = outer ? outer : &surface->IUnknown_iface;
     surface->device = device;
-    surface->desc = *desc;
+    surface->wined3d_texture = wined3d_texture;
+    surface->dc = NULL;
 
     return S_OK;
 }

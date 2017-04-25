@@ -43,7 +43,7 @@ struct wined3d_wndproc_table
 {
     struct wined3d_wndproc *entries;
     unsigned int count;
-    unsigned int size;
+    SIZE_T size;
 };
 
 static struct wined3d_wndproc_table wndproc_table;
@@ -72,6 +72,7 @@ static CRITICAL_SECTION wined3d_wndproc_cs = {&wined3d_wndproc_cs_debug, -1, 0, 
  * where appropriate. */
 struct wined3d_settings wined3d_settings =
 {
+    FALSE,          /* No multithreaded CS by default. */
     MAKEDWORD_VERSION(1, 0), /* Default to legacy OpenGL */
     TRUE,           /* Use of GLSL enabled by default */
     ORM_FBO,        /* Use FBOs to do offscreen rendering */
@@ -82,7 +83,6 @@ struct wined3d_settings wined3d_settings =
     TRUE,           /* Multisampling enabled by default. */
     ~0u,            /* Don't force a specific sample count by default. */
     FALSE,          /* No strict draw ordering. */
-    TRUE,           /* Don't try to render onscreen by default. */
     FALSE,          /* Don't range check relative addressing indices in float constants. */
     ~0U,            /* No VS shader model limit by default. */
     ~0U,            /* No HS shader model limit by default. */
@@ -205,6 +205,8 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
 
     if (hkey || appkey)
     {
+        if (!get_config_key_dword(hkey, appkey, "csmt", &wined3d_settings.cs_multithreaded))
+            ERR_(winediag)("Setting multithreaded command stream to %#x.\n", wined3d_settings.cs_multithreaded);
         if (!get_config_key_dword(hkey, appkey, "MaxVersionGL", &tmpvalue))
         {
             if (tmpvalue != wined3d_settings.max_gl_version)
@@ -227,7 +229,7 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
         {
             if (!strcmp(buffer,"backbuffer"))
             {
-                TRACE("Using the backbuffer for offscreen rendering\n");
+                ERR_(winediag)("Using the backbuffer for offscreen rendering.\n");
                 wined3d_settings.offscreen_rendering_mode = ORM_BACKBUFFER;
             }
             else if (!strcmp(buffer,"fbo"))
@@ -301,14 +303,9 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
         if (!get_config_key(hkey, appkey, "StrictDrawOrdering", buffer, size)
                 && !strcmp(buffer,"enabled"))
         {
+            ERR_(winediag)("\"StrictDrawOrdering\" is deprecated, please use \"csmt\" instead.");
             TRACE("Enforcing strict draw ordering.\n");
             wined3d_settings.strict_draw_ordering = TRUE;
-        }
-        if (!get_config_key(hkey, appkey, "AlwaysOffscreen", buffer, size)
-                && !strcmp(buffer,"disabled"))
-        {
-            TRACE("Not always rendering backbuffers offscreen.\n");
-            wined3d_settings.always_offscreen = FALSE;
         }
         if (!get_config_key(hkey, appkey, "CheckFloatConstants", buffer, size)
                 && !strcmp(buffer, "enabled"))
@@ -450,25 +447,12 @@ BOOL wined3d_register_window(HWND window, struct wined3d_device *device)
         return TRUE;
     }
 
-    if (wndproc_table.size == wndproc_table.count)
+    if (!wined3d_array_reserve((void **)&wndproc_table.entries, &wndproc_table.size,
+            wndproc_table.count + 1, sizeof(*entry)))
     {
-        unsigned int new_size = max(1, wndproc_table.size * 2);
-        struct wined3d_wndproc *new_entries;
-
-        if (!wndproc_table.entries)
-            new_entries = wined3d_calloc(new_size, sizeof(*new_entries));
-        else
-            new_entries = HeapReAlloc(GetProcessHeap(), 0, wndproc_table.entries, new_size * sizeof(*new_entries));
-
-        if (!new_entries)
-        {
-            wined3d_wndproc_mutex_unlock();
-            ERR("Failed to grow table.\n");
-            return FALSE;
-        }
-
-        wndproc_table.entries = new_entries;
-        wndproc_table.size = new_size;
+        wined3d_wndproc_mutex_unlock();
+        ERR("Failed to grow table.\n");
+        return FALSE;
     }
 
     entry = &wndproc_table.entries[wndproc_table.count++];

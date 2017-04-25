@@ -17,7 +17,6 @@ list(APPEND SOURCE
 
 add_library(dxgi SHARED
     ${SOURCE}
-    guid.c
     version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/dxgi.def)
 

@@ -291,9 +291,6 @@ struct shader_arb_priv
     GLuint                  current_fprogram_id;
     const struct arb_ps_compiled_shader *compiled_fprog;
     const struct arb_vs_compiled_shader *compiled_vprog;
-    GLuint                  depth_blt_vprogram_id;
-    GLuint                  depth_blt_fprogram_id_full[WINED3D_GL_RES_TYPE_COUNT];
-    GLuint                  depth_blt_fprogram_id_masked[WINED3D_GL_RES_TYPE_COUNT];
     BOOL                    use_arbfp_fixed_func;
     struct wine_rb_tree     fragment_shaders;
     BOOL                    last_ps_const_clamped;
@@ -732,7 +729,8 @@ static void shader_arb_update_float_vertex_constants(struct wined3d_device *devi
 
     /* We don't want shader constant dirtification to be an O(contexts), so just dirtify the active
      * context. On a context switch the old context will be fully dirtified */
-    if (!context || context->swapchain->device != device) return;
+    if (!context || context->device != device)
+        return;
 
     memset(priv->vshader_const_dirty + start, 1, sizeof(*priv->vshader_const_dirty) * count);
     priv->highest_dirty_vs_const = max(priv->highest_dirty_vs_const, start + count);
@@ -745,7 +743,8 @@ static void shader_arb_update_float_pixel_constants(struct wined3d_device *devic
 
     /* We don't want shader constant dirtification to be an O(contexts), so just dirtify the active
      * context. On a context switch the old context will be fully dirtified */
-    if (!context || context->swapchain->device != device) return;
+    if (!context || context->device != device)
+        return;
 
     memset(priv->pshader_const_dirty + start, 1, sizeof(*priv->pshader_const_dirty) * count);
     priv->highest_dirty_ps_const = max(priv->highest_dirty_ps_const, start + count);
@@ -820,7 +819,7 @@ static void shader_generate_arb_declarations(const struct wined3d_shader *shader
             if(use_nv_clip(gl_info) && ctx->target_version >= NV2)
             {
                 if(ctx->cur_vs_args->super.clip_enabled)
-                    clip_limit = gl_info->limits.clipplanes;
+                    clip_limit = gl_info->limits.user_clip_distances;
                 else
                     clip_limit = 0;
             }
@@ -833,13 +832,16 @@ static void shader_generate_arb_declarations(const struct wined3d_shader *shader
             max_constantsF -= *num_clipplanes;
             if(*num_clipplanes < clip_limit)
             {
-                WARN("Only %u clipplanes out of %u enabled\n", *num_clipplanes, gl_info->limits.clipplanes);
+                WARN("Only %u clip planes out of %u enabled.\n", *num_clipplanes,
+                        gl_info->limits.user_clip_distances);
             }
         }
         else
         {
-            if (ctx->target_version >= NV2) *num_clipplanes = gl_info->limits.clipplanes;
-            else *num_clipplanes = min(gl_info->limits.clipplanes, 4);
+            if (ctx->target_version >= NV2)
+                *num_clipplanes = gl_info->limits.user_clip_distances;
+            else
+                *num_clipplanes = min(gl_info->limits.user_clip_distances, 4);
         }
     }
 
@@ -3230,7 +3232,7 @@ static void vshader_add_footer(struct shader_arb_ctx_priv *priv_ctx,
         unsigned int cur_clip = 0;
         const char *zero = arb_get_helper_value(WINED3D_SHADER_TYPE_VERTEX, ARB_ZERO);
 
-        for (i = 0; i < gl_info->limits.clipplanes; ++i)
+        for (i = 0; i < gl_info->limits.user_clip_distances; ++i)
         {
             if (args->clip.boolclip.clipplane_mask & (1u << i))
             {
@@ -3264,22 +3266,24 @@ static void vshader_add_footer(struct shader_arb_ctx_priv *priv_ctx,
      * 1.0 or -1.0 to turn the rendering upside down for offscreen rendering. PosFixup.x
      * contains 1.0 to allow a mad, but arb vs swizzles are too restricted for that.
      */
-    shader_addline(buffer, "MUL TA, posFixup, TMP_OUT.w;\n");
-    shader_addline(buffer, "ADD TMP_OUT.x, TMP_OUT.x, TA.z;\n");
-    shader_addline(buffer, "MAD TMP_OUT.y, TMP_OUT.y, posFixup.y, TA.w;\n");
+    if (!gl_info->supported[ARB_CLIP_CONTROL])
+    {
+        shader_addline(buffer, "MUL TA, posFixup, TMP_OUT.w;\n");
+        shader_addline(buffer, "ADD TMP_OUT.x, TMP_OUT.x, TA.z;\n");
+        shader_addline(buffer, "MAD TMP_OUT.y, TMP_OUT.y, posFixup.y, TA.w;\n");
 
-    /* Z coord [0;1]->[-1;1] mapping, see comment in transform_projection in state.c
-     * and the glsl equivalent
-     */
-    if (need_helper_const(shader_data, reg_maps, gl_info))
-    {
-        const char *two = arb_get_helper_value(WINED3D_SHADER_TYPE_VERTEX, ARB_TWO);
-        shader_addline(buffer, "MAD TMP_OUT.z, TMP_OUT.z, %s, -TMP_OUT.w;\n", two);
-    }
-    else
-    {
-        shader_addline(buffer, "ADD TMP_OUT.z, TMP_OUT.z, TMP_OUT.z;\n");
-        shader_addline(buffer, "ADD TMP_OUT.z, TMP_OUT.z, -TMP_OUT.w;\n");
+        /* Z coord [0;1]->[-1;1] mapping, see comment in
+         * get_projection_matrix() in utils.c. */
+        if (need_helper_const(shader_data, reg_maps, gl_info))
+        {
+            const char *two = arb_get_helper_value(WINED3D_SHADER_TYPE_VERTEX, ARB_TWO);
+            shader_addline(buffer, "MAD TMP_OUT.z, TMP_OUT.z, %s, -TMP_OUT.w;\n", two);
+        }
+        else
+        {
+            shader_addline(buffer, "ADD TMP_OUT.z, TMP_OUT.z, TMP_OUT.z;\n");
+            shader_addline(buffer, "ADD TMP_OUT.z, TMP_OUT.z, -TMP_OUT.w;\n");
+        }
     }
 
     shader_addline(buffer, "MOV result.position, TMP_OUT;\n");
@@ -3349,120 +3353,6 @@ static BOOL shader_arb_compile(const struct wined3d_gl_info *gl_info, GLenum tar
     }
 
     return TRUE;
-}
-
-/* Context activation is done by the caller. */
-static GLuint create_arb_blt_vertex_program(const struct wined3d_gl_info *gl_info)
-{
-    GLuint program_id = 0;
-
-    static const char blt_vprogram[] =
-        "!!ARBvp1.0\n"
-        "PARAM c[1] = { { 1, 0.5 } };\n"
-        "MOV result.position, vertex.position;\n"
-        "MOV result.color, c[0].x;\n"
-        "MOV result.texcoord[0], vertex.texcoord[0];\n"
-        "END\n";
-
-    GL_EXTCALL(glGenProgramsARB(1, &program_id));
-    GL_EXTCALL(glBindProgramARB(GL_VERTEX_PROGRAM_ARB, program_id));
-    shader_arb_compile(gl_info, GL_VERTEX_PROGRAM_ARB, blt_vprogram);
-
-    return program_id;
-}
-
-/* Context activation is done by the caller. */
-static GLuint create_arb_blt_fragment_program(const struct wined3d_gl_info *gl_info,
-        enum wined3d_gl_resource_type tex_type, BOOL masked)
-{
-    GLuint program_id = 0;
-    const char *fprogram;
-
-    static const char * const blt_fprograms_full[WINED3D_GL_RES_TYPE_COUNT] =
-    {
-        /* WINED3D_GL_RES_TYPE_TEX_1D */
-        NULL,
-        /* WINED3D_GL_RES_TYPE_TEX_2D */
-        "!!ARBfp1.0\n"
-        "TEMP R0;\n"
-        "TEX R0.x, fragment.texcoord[0], texture[0], 2D;\n"
-        "MOV result.depth.z, R0.x;\n"
-        "END\n",
-        /* WINED3D_GL_RES_TYPE_TEX_3D */
-        NULL,
-        /* WINED3D_GL_RES_TYPE_TEX_CUBE */
-        "!!ARBfp1.0\n"
-        "TEMP R0;\n"
-        "TEX R0.x, fragment.texcoord[0], texture[0], CUBE;\n"
-        "MOV result.depth.z, R0.x;\n"
-        "END\n",
-        /* WINED3D_GL_RES_TYPE_TEX_RECT */
-        "!!ARBfp1.0\n"
-        "TEMP R0;\n"
-        "TEX R0.x, fragment.texcoord[0], texture[0], RECT;\n"
-        "MOV result.depth.z, R0.x;\n"
-        "END\n",
-        /* WINED3D_GL_RES_TYPE_BUFFER */
-        NULL,
-        /* WINED3D_GL_RES_TYPE_RB */
-        NULL,
-    };
-
-    static const char * const blt_fprograms_masked[WINED3D_GL_RES_TYPE_COUNT] =
-    {
-        /* WINED3D_GL_RES_TYPE_TEX_1D */
-        NULL,
-        /* WINED3D_GL_RES_TYPE_TEX_2D */
-        "!!ARBfp1.0\n"
-        "PARAM mask = program.local[0];\n"
-        "TEMP R0;\n"
-        "SLT R0.xy, fragment.position, mask.zwzw;\n"
-        "MUL R0.x, R0.x, R0.y;\n"
-        "KIL -R0.x;\n"
-        "TEX R0.x, fragment.texcoord[0], texture[0], 2D;\n"
-        "MOV result.depth.z, R0.x;\n"
-        "END\n",
-        /* WINED3D_GL_RES_TYPE_TEX_3D */
-        NULL,
-        /* WINED3D_GL_RES_TYPE_TEX_CUBE */
-        "!!ARBfp1.0\n"
-        "PARAM mask = program.local[0];\n"
-        "TEMP R0;\n"
-        "SLT R0.xy, fragment.position, mask.zwzw;\n"
-        "MUL R0.x, R0.x, R0.y;\n"
-        "KIL -R0.x;\n"
-        "TEX R0.x, fragment.texcoord[0], texture[0], CUBE;\n"
-        "MOV result.depth.z, R0.x;\n"
-        "END\n",
-        /* WINED3D_GL_RES_TYPE_TEX_RECT */
-        "!!ARBfp1.0\n"
-        "PARAM mask = program.local[0];\n"
-        "TEMP R0;\n"
-        "SLT R0.xy, fragment.position, mask.zwzw;\n"
-        "MUL R0.x, R0.x, R0.y;\n"
-        "KIL -R0.x;\n"
-        "TEX R0.x, fragment.texcoord[0], texture[0], RECT;\n"
-        "MOV result.depth.z, R0.x;\n"
-        "END\n",
-        /* WINED3D_GL_RES_TYPE_BUFFER */
-        NULL,
-        /* WINED3D_GL_RES_TYPE_RB */
-        NULL,
-    };
-
-    fprogram = masked ? blt_fprograms_masked[tex_type] : blt_fprograms_full[tex_type];
-    if (!fprogram)
-    {
-        FIXME("tex_type %#x not supported, falling back to 2D\n", tex_type);
-        tex_type = WINED3D_GL_RES_TYPE_TEX_2D;
-        fprogram = masked ? blt_fprograms_masked[tex_type] : blt_fprograms_full[tex_type];
-    }
-
-    GL_EXTCALL(glGenProgramsARB(1, &program_id));
-    GL_EXTCALL(glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, program_id));
-    shader_arb_compile(gl_info, GL_FRAGMENT_PROGRAM_ARB, fprogram);
-
-    return program_id;
 }
 
 static void arbfp_add_sRGB_correction(struct wined3d_string_buffer *buffer, const char *fragcolor,
@@ -3620,7 +3510,6 @@ static GLuint shader_arb_generate_pshader(const struct wined3d_shader *shader,
         const struct arb_ps_compile_args *args, struct arb_ps_compiled_shader *compiled)
 {
     const struct wined3d_shader_reg_maps *reg_maps = &shader->reg_maps;
-    const DWORD *function = shader->function;
     GLuint retval;
     char fragcolor[16];
     DWORD next_local = 0;
@@ -3920,7 +3809,8 @@ static GLuint shader_arb_generate_pshader(const struct wined3d_shader *shader,
     }
 
     /* Base Shader Body */
-    shader_generate_main(shader, buffer, reg_maps, function, &priv_ctx);
+    if (FAILED(shader_generate_main(shader, buffer, reg_maps, &priv_ctx)))
+        return 0;
 
     if(args->super.srgb_correction) {
         arbfp_add_sRGB_correction(buffer, fragcolor, srgbtmp[0], srgbtmp[1], srgbtmp[2], srgbtmp[3],
@@ -4224,7 +4114,6 @@ static GLuint shader_arb_generate_vshader(const struct wined3d_shader *shader,
     const struct arb_vshader_private *shader_data = shader->backend_data;
     const struct wined3d_shader_reg_maps *reg_maps = &shader->reg_maps;
     struct shader_arb_priv *priv = shader->device->shader_priv;
-    const DWORD *function = shader->function;
     GLuint ret;
     DWORD next_local = 0;
     struct shader_arb_ctx_priv priv_ctx;
@@ -4334,7 +4223,8 @@ static GLuint shader_arb_generate_vshader(const struct wined3d_shader *shader,
     /* The shader starts with the main function */
     priv_ctx.in_main_func = TRUE;
     /* Base Shader Body */
-    shader_generate_main(shader, buffer, reg_maps, function, &priv_ctx);
+    if (FAILED(shader_generate_main(shader, buffer, reg_maps, &priv_ctx)))
+        return -1;
 
     if (!priv_ctx.footer_written) vshader_add_footer(&priv_ctx,
             shader_data, args, reg_maps, gl_info, buffer);
@@ -4808,6 +4698,11 @@ static void shader_arb_select(void *shader_priv, struct wined3d_context *context
     }
 }
 
+static void shader_arb_select_compute(void *shader_priv, struct wined3d_context *context,
+        const struct wined3d_state *state)
+{
+    ERR("Compute pipeline not supported by the ARB shader backend.\n");
+}
 
 /* Context activation is done by the caller. */
 static void shader_arb_disable(void *shader_priv, struct wined3d_context *context)
@@ -4846,56 +4741,6 @@ static void shader_arb_disable(void *shader_priv, struct wined3d_context *contex
             | (1u << WINED3D_SHADER_TYPE_COMPUTE);
 }
 
-/* Context activation is done by the caller. */
-static void shader_arb_select_depth_blt(void *shader_priv, const struct wined3d_gl_info *gl_info,
-        enum wined3d_gl_resource_type tex_type, const SIZE *ds_mask_size)
-{
-    const float mask[] = {0.0f, 0.0f, (float)ds_mask_size->cx, (float)ds_mask_size->cy};
-    BOOL masked = ds_mask_size->cx && ds_mask_size->cy;
-    struct shader_arb_priv *priv = shader_priv;
-    GLuint *blt_fprogram;
-
-    if (!priv->depth_blt_vprogram_id) priv->depth_blt_vprogram_id = create_arb_blt_vertex_program(gl_info);
-    GL_EXTCALL(glBindProgramARB(GL_VERTEX_PROGRAM_ARB, priv->depth_blt_vprogram_id));
-    gl_info->gl_ops.gl.p_glEnable(GL_VERTEX_PROGRAM_ARB);
-
-    blt_fprogram = masked ? &priv->depth_blt_fprogram_id_masked[tex_type] : &priv->depth_blt_fprogram_id_full[tex_type];
-    if (!*blt_fprogram) *blt_fprogram = create_arb_blt_fragment_program(gl_info, tex_type, masked);
-    GL_EXTCALL(glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, *blt_fprogram));
-    if (masked) GL_EXTCALL(glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 0, mask));
-    gl_info->gl_ops.gl.p_glEnable(GL_FRAGMENT_PROGRAM_ARB);
-}
-
-/* Context activation is done by the caller. */
-static void shader_arb_deselect_depth_blt(void *shader_priv, const struct wined3d_gl_info *gl_info)
-{
-    struct shader_arb_priv *priv = shader_priv;
-
-    if (priv->current_vprogram_id) {
-        GL_EXTCALL(glBindProgramARB(GL_VERTEX_PROGRAM_ARB, priv->current_vprogram_id));
-        checkGLcall("glBindProgramARB(GL_VERTEX_PROGRAM_ARB, vertexShader->prgId);");
-
-        TRACE("Bound vertex program %u and enabled GL_VERTEX_PROGRAM_ARB.\n", priv->current_vprogram_id);
-    }
-    else
-    {
-        gl_info->gl_ops.gl.p_glDisable(GL_VERTEX_PROGRAM_ARB);
-        checkGLcall("glDisable(GL_VERTEX_PROGRAM_ARB)");
-    }
-
-    if (priv->current_fprogram_id) {
-        GL_EXTCALL(glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, priv->current_fprogram_id));
-        checkGLcall("glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, pixelShader->prgId);");
-
-        TRACE("Bound fragment program %u and enabled GL_FRAGMENT_PROGRAM_ARB.\n", priv->current_fprogram_id);
-    }
-    else if(!priv->use_arbfp_fixed_func)
-    {
-        gl_info->gl_ops.gl.p_glDisable(GL_FRAGMENT_PROGRAM_ARB);
-        checkGLcall("glDisable(GL_FRAGMENT_PROGRAM_ARB)");
-    }
-}
-
 static void shader_arb_destroy(struct wined3d_shader *shader)
 {
     struct wined3d_device *device = shader->device;
@@ -4910,7 +4755,7 @@ static void shader_arb_destroy(struct wined3d_shader *shader)
 
         if (shader_data->num_gl_shaders)
         {
-            struct wined3d_context *context = context_acquire(device, NULL);
+            struct wined3d_context *context = context_acquire(device, NULL, 0);
 
             for (i = 0; i < shader_data->num_gl_shaders; ++i)
             {
@@ -4934,7 +4779,7 @@ static void shader_arb_destroy(struct wined3d_shader *shader)
 
         if (shader_data->num_gl_shaders)
         {
-            struct wined3d_context *context = context_acquire(device, NULL);
+            struct wined3d_context *context = context_acquire(device, NULL, 0);
 
             for (i = 0; i < shader_data->num_gl_shaders; ++i)
             {
@@ -5015,24 +4860,7 @@ static void release_signature(struct wine_rb_entry *entry, void *context)
 /* Context activation is done by the caller. */
 static void shader_arb_free(struct wined3d_device *device)
 {
-    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
     struct shader_arb_priv *priv = device->shader_priv;
-    int i;
-
-    if (priv->depth_blt_vprogram_id)
-        GL_EXTCALL(glDeleteProgramsARB(1, &priv->depth_blt_vprogram_id));
-
-    for (i = 0; i < WINED3D_GL_RES_TYPE_COUNT; ++i)
-    {
-        if (priv->depth_blt_fprogram_id_full[i])
-        {
-            GL_EXTCALL(glDeleteProgramsARB(1, &priv->depth_blt_fprogram_id_full[i]));
-        }
-        if (priv->depth_blt_fprogram_id_masked[i])
-        {
-            GL_EXTCALL(glDeleteProgramsARB(1, &priv->depth_blt_fprogram_id_masked[i]));
-        }
-    }
 
     wine_rb_destroy(&priv->signature_tree, release_signature, NULL);
     priv->fragment_pipe->free_private(device);
@@ -5049,10 +4877,7 @@ static void shader_arb_free_context_data(struct wined3d_context *context)
 {
     struct shader_arb_priv *priv;
 
-    if (!context->swapchain)
-        return;
-
-    priv = context->swapchain->device->shader_priv;
+    priv = context->device->shader_priv;
     if (priv->last_context == context)
         priv->last_context = NULL;
 }
@@ -5198,6 +5023,15 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_ABS                              */ shader_hw_map2gl,
     /* WINED3DSIH_ADD                              */ shader_hw_map2gl,
     /* WINED3DSIH_AND                              */ NULL,
+    /* WINED3DSIH_ATOMIC_AND                       */ NULL,
+    /* WINED3DSIH_ATOMIC_CMP_STORE                 */ NULL,
+    /* WINED3DSIH_ATOMIC_IADD                      */ NULL,
+    /* WINED3DSIH_ATOMIC_IMAX                      */ NULL,
+    /* WINED3DSIH_ATOMIC_IMIN                      */ NULL,
+    /* WINED3DSIH_ATOMIC_OR                        */ NULL,
+    /* WINED3DSIH_ATOMIC_UMAX                      */ NULL,
+    /* WINED3DSIH_ATOMIC_UMIN                      */ NULL,
+    /* WINED3DSIH_ATOMIC_XOR                       */ NULL,
     /* WINED3DSIH_BEM                              */ pshader_hw_bem,
     /* WINED3DSIH_BFI                              */ NULL,
     /* WINED3DSIH_BFREV                            */ NULL,
@@ -5211,15 +5045,20 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_CMP                              */ pshader_hw_cmp,
     /* WINED3DSIH_CND                              */ pshader_hw_cnd,
     /* WINED3DSIH_CONTINUE                         */ NULL,
+    /* WINED3DSIH_COUNTBITS                        */ NULL,
     /* WINED3DSIH_CRS                              */ shader_hw_map2gl,
     /* WINED3DSIH_CUT                              */ NULL,
     /* WINED3DSIH_CUT_STREAM                       */ NULL,
     /* WINED3DSIH_DCL                              */ shader_hw_nop,
     /* WINED3DSIH_DCL_CONSTANT_BUFFER              */ shader_hw_nop,
+    /* WINED3DSIH_DCL_FUNCTION_BODY                */ NULL,
+    /* WINED3DSIH_DCL_FUNCTION_TABLE               */ NULL,
     /* WINED3DSIH_DCL_GLOBAL_FLAGS                 */ NULL,
     /* WINED3DSIH_DCL_HS_FORK_PHASE_INSTANCE_COUNT */ NULL,
+    /* WINED3DSIH_DCL_HS_JOIN_PHASE_INSTANCE_COUNT */ NULL,
     /* WINED3DSIH_DCL_HS_MAX_TESSFACTOR            */ NULL,
     /* WINED3DSIH_DCL_IMMEDIATE_CONSTANT_BUFFER    */ NULL,
+    /* WINED3DSIH_DCL_INDEX_RANGE                  */ NULL,
     /* WINED3DSIH_DCL_INDEXABLE_TEMP               */ NULL,
     /* WINED3DSIH_DCL_INPUT                        */ NULL,
     /* WINED3DSIH_DCL_INPUT_CONTROL_POINT_COUNT    */ NULL,
@@ -5229,10 +5068,12 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_DCL_INPUT_PS_SIV                 */ NULL,
     /* WINED3DSIH_DCL_INPUT_SGV                    */ NULL,
     /* WINED3DSIH_DCL_INPUT_SIV                    */ NULL,
+    /* WINED3DSIH_DCL_INTERFACE                    */ NULL,
     /* WINED3DSIH_DCL_OUTPUT                       */ NULL,
     /* WINED3DSIH_DCL_OUTPUT_CONTROL_POINT_COUNT   */ NULL,
     /* WINED3DSIH_DCL_OUTPUT_SIV                   */ NULL,
     /* WINED3DSIH_DCL_OUTPUT_TOPOLOGY              */ shader_hw_nop,
+    /* WINED3DSIH_DCL_RESOURCE_RAW                 */ NULL,
     /* WINED3DSIH_DCL_RESOURCE_STRUCTURED          */ NULL,
     /* WINED3DSIH_DCL_SAMPLER                      */ NULL,
     /* WINED3DSIH_DCL_STREAM                       */ NULL,
@@ -5243,6 +5084,8 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_DCL_TGSM_RAW                     */ NULL,
     /* WINED3DSIH_DCL_TGSM_STRUCTURED              */ NULL,
     /* WINED3DSIH_DCL_THREAD_GROUP                 */ NULL,
+    /* WINED3DSIH_DCL_UAV_RAW                      */ NULL,
+    /* WINED3DSIH_DCL_UAV_STRUCTURED               */ NULL,
     /* WINED3DSIH_DCL_UAV_TYPED                    */ NULL,
     /* WINED3DSIH_DCL_VERTICES_OUT                 */ shader_hw_nop,
     /* WINED3DSIH_DEF                              */ shader_hw_nop,
@@ -5271,17 +5114,25 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_EQ                               */ NULL,
     /* WINED3DSIH_EXP                              */ shader_hw_scalar_op,
     /* WINED3DSIH_EXPP                             */ shader_hw_scalar_op,
+    /* WINED3DSIH_F16TOF32                         */ NULL,
+    /* WINED3DSIH_F32TOF16                         */ NULL,
+    /* WINED3DSIH_FCALL                            */ NULL,
+    /* WINED3DSIH_FIRSTBIT_HI                      */ NULL,
+    /* WINED3DSIH_FIRSTBIT_LO                      */ NULL,
+    /* WINED3DSIH_FIRSTBIT_SHI                     */ NULL,
     /* WINED3DSIH_FRC                              */ shader_hw_map2gl,
     /* WINED3DSIH_FTOI                             */ NULL,
     /* WINED3DSIH_FTOU                             */ NULL,
     /* WINED3DSIH_GATHER4                          */ NULL,
     /* WINED3DSIH_GATHER4_C                        */ NULL,
+    /* WINED3DSIH_GATHER4_PO                       */ NULL,
     /* WINED3DSIH_GE                               */ NULL,
     /* WINED3DSIH_HS_CONTROL_POINT_PHASE           */ NULL,
     /* WINED3DSIH_HS_DECLS                         */ NULL,
     /* WINED3DSIH_HS_FORK_PHASE                    */ NULL,
     /* WINED3DSIH_HS_JOIN_PHASE                    */ NULL,
     /* WINED3DSIH_IADD                             */ NULL,
+    /* WINED3DSIH_IBFE                             */ NULL,
     /* WINED3DSIH_IEQ                              */ NULL,
     /* WINED3DSIH_IF                               */ NULL /* Hardcoded into the shader */,
     /* WINED3DSIH_IFC                              */ shader_hw_ifc,
@@ -5291,7 +5142,17 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_IMAX                             */ NULL,
     /* WINED3DSIH_IMIN                             */ NULL,
     /* WINED3DSIH_IMM_ATOMIC_ALLOC                 */ NULL,
+    /* WINED3DSIH_IMM_ATOMIC_AND                   */ NULL,
+    /* WINED3DSIH_IMM_ATOMIC_CMP_EXCH              */ NULL,
     /* WINED3DSIH_IMM_ATOMIC_CONSUME               */ NULL,
+    /* WINED3DSIH_IMM_ATOMIC_EXCH                  */ NULL,
+    /* WINED3DSIH_IMM_ATOMIC_IADD                  */ NULL,
+    /* WINED3DSIH_IMM_ATOMIC_IMAX                  */ NULL,
+    /* WINED3DSIH_IMM_ATOMIC_IMIN                  */ NULL,
+    /* WINED3DSIH_IMM_ATOMIC_OR                    */ NULL,
+    /* WINED3DSIH_IMM_ATOMIC_UMAX                  */ NULL,
+    /* WINED3DSIH_IMM_ATOMIC_UMIN                  */ NULL,
+    /* WINED3DSIH_IMM_ATOMIC_XOR                   */ NULL,
     /* WINED3DSIH_IMUL                             */ NULL,
     /* WINED3DSIH_INE                              */ NULL,
     /* WINED3DSIH_INEG                             */ NULL,
@@ -5334,6 +5195,7 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_REP                              */ shader_hw_rep,
     /* WINED3DSIH_RESINFO                          */ NULL,
     /* WINED3DSIH_RET                              */ shader_hw_ret,
+    /* WINED3DSIH_RETP                             */ NULL,
     /* WINED3DSIH_ROUND_NE                         */ NULL,
     /* WINED3DSIH_ROUND_NI                         */ NULL,
     /* WINED3DSIH_ROUND_PI                         */ NULL,
@@ -5359,6 +5221,7 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_SUB                              */ shader_hw_map2gl,
     /* WINED3DSIH_SWAPC                            */ NULL,
     /* WINED3DSIH_SWITCH                           */ NULL,
+    /* WINED3DSIH_SYNC                             */ NULL,
     /* WINED3DSIH_TEX                              */ pshader_hw_tex,
     /* WINED3DSIH_TEXBEM                           */ pshader_hw_texbem,
     /* WINED3DSIH_TEXBEML                          */ pshader_hw_texbem,
@@ -5387,6 +5250,7 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_ULT                              */ NULL,
     /* WINED3DSIH_UMAX                             */ NULL,
     /* WINED3DSIH_UMIN                             */ NULL,
+    /* WINED3DSIH_UMUL                             */ NULL,
     /* WINED3DSIH_USHR                             */ NULL,
     /* WINED3DSIH_UTOF                             */ NULL,
     /* WINED3DSIH_XOR                              */ NULL,
@@ -5805,13 +5669,15 @@ static BOOL shader_arb_has_ffp_proj_control(void *shader_priv)
     return priv->ffp_proj_control;
 }
 
+static void shader_arb_precompile(void *shader_priv, struct wined3d_shader *shader) {}
+
 const struct wined3d_shader_backend_ops arb_program_shader_backend =
 {
     shader_arb_handle_instruction,
+    shader_arb_precompile,
     shader_arb_select,
+    shader_arb_select_compute,
     shader_arb_disable,
-    shader_arb_select_depth_blt,
-    shader_arb_deselect_depth_blt,
     shader_arb_update_float_vertex_constants,
     shader_arb_update_float_pixel_constants,
     shader_arb_load_constants,
@@ -5934,8 +5800,8 @@ static void arbfp_get_caps(const struct wined3d_gl_info *gl_info, struct fragmen
 
     /* TODO: Implement WINED3DTEXOPCAPS_PREMODULATE */
 
-    caps->MaxTextureBlendStages   = 8;
-    caps->MaxSimultaneousTextures = min(gl_info->limits.fragment_samplers, 8);
+    caps->MaxTextureBlendStages   = MAX_TEXTURES;
+    caps->MaxSimultaneousTextures = min(gl_info->limits.samplers[WINED3D_SHADER_TYPE_PIXEL], MAX_TEXTURES);
 }
 
 static DWORD arbfp_get_emul_mask(const struct wined3d_gl_info *gl_info)
@@ -5946,8 +5812,8 @@ static DWORD arbfp_get_emul_mask(const struct wined3d_gl_info *gl_info)
 static void state_texfactor_arbfp(struct wined3d_context *context,
         const struct wined3d_state *state, DWORD state_id)
 {
-    struct wined3d_device *device = context->swapchain->device;
     const struct wined3d_gl_info *gl_info = context->gl_info;
+    struct wined3d_device *device = context->device;
     struct wined3d_color color;
 
     if (device->shader_backend == &arb_program_shader_backend)
@@ -5973,8 +5839,8 @@ static void state_tss_constant_arbfp(struct wined3d_context *context,
         const struct wined3d_state *state, DWORD state_id)
 {
     DWORD stage = (state_id - STATE_TEXTURESTAGE(0, 0)) / (WINED3D_HIGHEST_TEXTURE_STATE + 1);
-    struct wined3d_device *device = context->swapchain->device;
     const struct wined3d_gl_info *gl_info = context->gl_info;
+    struct wined3d_device *device = context->device;
     struct wined3d_color color;
 
     if (device->shader_backend == &arb_program_shader_backend)
@@ -6000,8 +5866,8 @@ static void state_tss_constant_arbfp(struct wined3d_context *context,
 static void state_arb_specularenable(struct wined3d_context *context,
         const struct wined3d_state *state, DWORD state_id)
 {
-    struct wined3d_device *device = context->swapchain->device;
     const struct wined3d_gl_info *gl_info = context->gl_info;
+    struct wined3d_device *device = context->device;
     float col[4];
 
     if (device->shader_backend == &arb_program_shader_backend)
@@ -6035,8 +5901,8 @@ static void state_arb_specularenable(struct wined3d_context *context,
 static void set_bumpmat_arbfp(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
     DWORD stage = (state_id - STATE_TEXTURESTAGE(0, 0)) / (WINED3D_HIGHEST_TEXTURE_STATE + 1);
-    struct wined3d_device *device = context->swapchain->device;
     const struct wined3d_gl_info *gl_info = context->gl_info;
+    struct wined3d_device *device = context->device;
     float mat[2][2];
 
     context->constant_update_mask |= WINED3D_SHADER_CONST_PS_BUMP_ENV;
@@ -6066,8 +5932,8 @@ static void tex_bumpenvlum_arbfp(struct wined3d_context *context,
         const struct wined3d_state *state, DWORD state_id)
 {
     DWORD stage = (state_id - STATE_TEXTURESTAGE(0, 0)) / (WINED3D_HIGHEST_TEXTURE_STATE + 1);
-    struct wined3d_device *device = context->swapchain->device;
     const struct wined3d_gl_info *gl_info = context->gl_info;
+    struct wined3d_device *device = context->device;
     float param[4];
 
     context->constant_update_mask |= WINED3D_SHADER_CONST_PS_BUMP_ENV;
@@ -6125,10 +5991,10 @@ static void alpha_test_arbfp(struct wined3d_context *context, const struct wined
 
 static void color_key_arbfp(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
-    struct wined3d_device *device = context->swapchain->device;
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-    struct wined3d_color float_key[2];
     const struct wined3d_texture *texture = state->textures[0];
+    const struct wined3d_gl_info *gl_info = context->gl_info;
+    struct wined3d_device *device = context->device;
+    struct wined3d_color float_key[2];
 
     if (!texture)
         return;
@@ -6680,8 +6546,8 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, con
 
 static void fragment_prog_arbfp(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
-    const struct wined3d_device *device = context->swapchain->device;
     const struct wined3d_gl_info *gl_info = context->gl_info;
+    const struct wined3d_device *device = context->device;
     struct shader_arb_priv *priv = device->fragment_priv;
     BOOL use_pshader = use_ps(state);
     struct ffp_frag_settings settings;
@@ -7019,8 +6885,9 @@ struct arbfp_blit_desc
 #define ARBFP_BLIT_PARAM_COLOR_KEY_LOW 1
 #define ARBFP_BLIT_PARAM_COLOR_KEY_HIGH 2
 
-struct arbfp_blit_priv
+struct wined3d_arbfp_blitter
 {
+    struct wined3d_blitter blitter;
     struct wine_rb_tree shaders;
     GLuint palette_texture;
 };
@@ -7034,44 +6901,39 @@ static int arbfp_blit_type_compare(const void *key, const struct wine_rb_entry *
 }
 
 /* Context activation is done by the caller. */
-static void arbfp_free_blit_shader(struct wine_rb_entry *entry, void *context)
+static void arbfp_free_blit_shader(struct wine_rb_entry *entry, void *ctx)
 {
-    const struct wined3d_gl_info *gl_info = context;
     struct arbfp_blit_desc *entry_arb = WINE_RB_ENTRY_VALUE(entry, struct arbfp_blit_desc, entry);
+    const struct wined3d_gl_info *gl_info;
+    struct wined3d_context *context;
+
+    context = ctx;
+    gl_info = context->gl_info;
 
     GL_EXTCALL(glDeleteProgramsARB(1, &entry_arb->shader));
     checkGLcall("glDeleteProgramsARB(1, &entry_arb->shader)");
     HeapFree(GetProcessHeap(), 0, entry_arb);
 }
 
-static HRESULT arbfp_blit_alloc(struct wined3d_device *device)
-{
-    struct arbfp_blit_priv *priv;
-
-    if (!(priv = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*priv))))
-        return E_OUTOFMEMORY;
-
-    wine_rb_init(&priv->shaders, arbfp_blit_type_compare);
-
-    device->blit_priv = priv;
-
-    return WINED3D_OK;
-}
-
 /* Context activation is done by the caller. */
-static void arbfp_blit_free(struct wined3d_device *device)
+static void arbfp_blitter_destroy(struct wined3d_blitter *blitter, struct wined3d_context *context)
 {
-    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
-    struct arbfp_blit_priv *priv = device->blit_priv;
+    const struct wined3d_gl_info *gl_info = context->gl_info;
+    struct wined3d_arbfp_blitter *arbfp_blitter;
+    struct wined3d_blitter *next;
 
-    wine_rb_destroy(&priv->shaders, arbfp_free_blit_shader, &device->adapter->gl_info);
+    if ((next = blitter->next))
+        next->ops->blitter_destroy(next, context);
+
+    arbfp_blitter = CONTAINING_RECORD(blitter, struct wined3d_arbfp_blitter, blitter);
+
+    wine_rb_destroy(&arbfp_blitter->shaders, arbfp_free_blit_shader, context);
     checkGLcall("Delete blit programs");
 
-    if (priv->palette_texture)
-        gl_info->gl_ops.gl.p_glDeleteTextures(1, &priv->palette_texture);
+    if (arbfp_blitter->palette_texture)
+        gl_info->gl_ops.gl.p_glDeleteTextures(1, &arbfp_blitter->palette_texture);
 
-    HeapFree(GetProcessHeap(), 0, device->blit_priv);
-    device->blit_priv = NULL;
+    HeapFree(GetProcessHeap(), 0, arbfp_blitter);
 }
 
 static BOOL gen_planar_yuv_read(struct wined3d_string_buffer *buffer, const struct arbfp_blit_type *type,
@@ -7448,8 +7310,7 @@ static BOOL gen_nv12_read(struct wined3d_string_buffer *buffer, const struct arb
 }
 
 /* Context activation is done by the caller. */
-static GLuint gen_p8_shader(struct arbfp_blit_priv *priv,
-        const struct wined3d_gl_info *gl_info, const struct arbfp_blit_type *type)
+static GLuint gen_p8_shader(const struct wined3d_gl_info *gl_info, const struct arbfp_blit_type *type)
 {
     GLuint shader;
     struct wined3d_string_buffer buffer;
@@ -7499,18 +7360,17 @@ static GLuint gen_p8_shader(struct arbfp_blit_priv *priv,
 }
 
 /* Context activation is done by the caller. */
-static void upload_palette(const struct wined3d_texture *texture, struct wined3d_context *context)
+static void upload_palette(struct wined3d_arbfp_blitter *blitter,
+        const struct wined3d_texture *texture, struct wined3d_context *context)
 {
     const struct wined3d_palette *palette = texture->swapchain ? texture->swapchain->palette : NULL;
-    struct wined3d_device *device = texture->resource.device;
     const struct wined3d_gl_info *gl_info = context->gl_info;
-    struct arbfp_blit_priv *priv = device->blit_priv;
 
-    if (!priv->palette_texture)
-        gl_info->gl_ops.gl.p_glGenTextures(1, &priv->palette_texture);
+    if (!blitter->palette_texture)
+        gl_info->gl_ops.gl.p_glGenTextures(1, &blitter->palette_texture);
 
     GL_EXTCALL(glActiveTexture(GL_TEXTURE1));
-    gl_info->gl_ops.gl.p_glBindTexture(GL_TEXTURE_1D, priv->palette_texture);
+    gl_info->gl_ops.gl.p_glBindTexture(GL_TEXTURE_1D, blitter->palette_texture);
 
     gl_info->gl_ops.gl.p_glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
@@ -7537,8 +7397,7 @@ static void upload_palette(const struct wined3d_texture *texture, struct wined3d
 }
 
 /* Context activation is done by the caller. */
-static GLuint gen_yuv_shader(struct arbfp_blit_priv *priv, const struct wined3d_gl_info *gl_info,
-        const struct arbfp_blit_type *type)
+static GLuint gen_yuv_shader(const struct wined3d_gl_info *gl_info, const struct arbfp_blit_type *type)
 {
     GLuint shader;
     struct wined3d_string_buffer buffer;
@@ -7662,8 +7521,7 @@ static GLuint gen_yuv_shader(struct arbfp_blit_priv *priv, const struct wined3d_
 }
 
 /* Context activation is done by the caller. */
-static GLuint arbfp_gen_plain_shader(struct arbfp_blit_priv *priv,
-        const struct wined3d_gl_info *gl_info, const struct arbfp_blit_type *type)
+static GLuint arbfp_gen_plain_shader(const struct wined3d_gl_info *gl_info, const struct arbfp_blit_type *type)
 {
     GLuint shader;
     struct wined3d_string_buffer buffer;
@@ -7716,11 +7574,10 @@ static GLuint arbfp_gen_plain_shader(struct arbfp_blit_priv *priv,
 }
 
 /* Context activation is done by the caller. */
-static HRESULT arbfp_blit_set(void *blit_priv, struct wined3d_context *context, const struct wined3d_surface *surface,
-        const struct wined3d_color_key *color_key)
+static HRESULT arbfp_blit_set(struct wined3d_arbfp_blitter *blitter, struct wined3d_context *context,
+        const struct wined3d_surface *surface, const struct wined3d_color_key *color_key)
 {
     const struct wined3d_texture *texture = surface->container;
-    struct arbfp_blit_priv *priv = blit_priv;
     enum complex_fixup fixup;
     const struct wined3d_gl_info *gl_info = context->gl_info;
     struct wine_rb_entry *entry;
@@ -7770,8 +7627,7 @@ static HRESULT arbfp_blit_set(void *blit_priv, struct wined3d_context *context, 
     type.use_color_key = !!color_key;
     type.padding = 0;
 
-    entry = wine_rb_get(&priv->shaders, &type);
-    if (entry)
+    if ((entry = wine_rb_get(&blitter->shaders, &type)))
     {
         desc = WINE_RB_ENTRY_VALUE(entry, struct arbfp_blit_desc, entry);
         shader = desc->shader;
@@ -7783,18 +7639,18 @@ static HRESULT arbfp_blit_set(void *blit_priv, struct wined3d_context *context, 
             case COMPLEX_FIXUP_NONE:
                 if (!is_identity_fixup(texture->resource.format->color_fixup))
                     FIXME("Implement support for sign or swizzle fixups.\n");
-                shader = arbfp_gen_plain_shader(priv, gl_info, &type);
+                shader = arbfp_gen_plain_shader(gl_info, &type);
                 break;
 
             case COMPLEX_FIXUP_P8:
-                shader = gen_p8_shader(priv, gl_info, &type);
+                shader = gen_p8_shader(gl_info, &type);
                 break;
 
             case COMPLEX_FIXUP_YUY2:
             case COMPLEX_FIXUP_UYVY:
             case COMPLEX_FIXUP_YV12:
             case COMPLEX_FIXUP_NV12:
-                shader = gen_yuv_shader(priv, gl_info, &type);
+                shader = gen_yuv_shader(gl_info, &type);
                 break;
         }
 
@@ -7810,7 +7666,7 @@ static HRESULT arbfp_blit_set(void *blit_priv, struct wined3d_context *context, 
 
         desc->type = type;
         desc->shader = shader;
-        if (wine_rb_put(&priv->shaders, &desc->type, &desc->entry) == -1)
+        if (wine_rb_put(&blitter->shaders, &desc->type, &desc->entry) == -1)
         {
 err_out:
             ERR("Out of memory\n");
@@ -7824,7 +7680,7 @@ err_out:
     }
 
     if (fixup == COMPLEX_FIXUP_P8)
-        upload_palette(texture, context);
+        upload_palette(blitter, texture, context);
 
     gl_info->gl_ops.gl.p_glEnable(GL_FRAGMENT_PROGRAM_ARB);
     checkGLcall("glEnable(GL_FRAGMENT_PROGRAM_ARB)");
@@ -7854,10 +7710,11 @@ static void arbfp_blit_unset(const struct wined3d_gl_info *gl_info)
 
 static BOOL arbfp_blit_supported(const struct wined3d_gl_info *gl_info,
         const struct wined3d_d3d_info *d3d_info, enum wined3d_blit_op blit_op,
-        const RECT *src_rect, DWORD src_usage, enum wined3d_pool src_pool, const struct wined3d_format *src_format,
-        const RECT *dst_rect, DWORD dst_usage, enum wined3d_pool dst_pool, const struct wined3d_format *dst_format)
+        enum wined3d_pool src_pool, const struct wined3d_format *src_format, DWORD src_location,
+        enum wined3d_pool dst_pool, const struct wined3d_format *dst_format, DWORD dst_location)
 {
     enum complex_fixup src_fixup;
+    BOOL decompress;
 
     if (!gl_info->supported[ARB_FRAGMENT_PROGRAM])
         return FALSE;
@@ -7880,7 +7737,9 @@ static BOOL arbfp_blit_supported(const struct wined3d_gl_info *gl_info,
             return FALSE;
     }
 
-    if (src_pool == WINED3D_POOL_SYSTEM_MEM || dst_pool == WINED3D_POOL_SYSTEM_MEM)
+    decompress = src_format && (src_format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & WINED3DFMT_FLAG_COMPRESSED)
+            && !(dst_format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & WINED3DFMT_FLAG_COMPRESSED);
+    if (!decompress && (dst_pool == WINED3D_POOL_SYSTEM_MEM || src_pool == WINED3D_POOL_SYSTEM_MEM))
         return FALSE;
 
     src_fixup = get_complex_fixup(src_format->color_fixup);
@@ -7890,7 +7749,8 @@ static BOOL arbfp_blit_supported(const struct wined3d_gl_info *gl_info,
         dump_color_fixup_desc(src_format->color_fixup);
     }
 
-    if (!is_identity_fixup(dst_format->color_fixup))
+    if (!is_identity_fixup(dst_format->color_fixup)
+            && (dst_format->id != src_format->id || dst_location != WINED3D_LOCATION_DRAWABLE))
     {
         TRACE("Destination fixups are not supported\n");
         return FALSE;
@@ -7926,21 +7786,30 @@ static BOOL arbfp_blit_supported(const struct wined3d_gl_info *gl_info,
     }
 }
 
-static void arbfp_blit_surface(struct wined3d_device *device, enum wined3d_blit_op op, DWORD filter,
-        struct wined3d_surface *src_surface, const RECT *src_rect_in,
-        struct wined3d_surface *dst_surface, const RECT *dst_rect_in,
-        const struct wined3d_color_key *color_key)
+static void arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_op op,
+        struct wined3d_context *context, struct wined3d_surface *src_surface, DWORD src_location,
+        const RECT *src_rect, struct wined3d_surface *dst_surface, DWORD dst_location, const RECT *dst_rect,
+        const struct wined3d_color_key *color_key, enum wined3d_texture_filter_type filter)
 {
-    unsigned int dst_sub_resource_idx = surface_get_sub_resource_idx(dst_surface);
     struct wined3d_texture *src_texture = src_surface->container;
     struct wined3d_texture *dst_texture = dst_surface->container;
-    struct wined3d_context *context;
-    RECT src_rect = *src_rect_in;
-    RECT dst_rect = *dst_rect_in;
+    struct wined3d_device *device = dst_texture->resource.device;
+    struct wined3d_arbfp_blitter *arbfp_blitter;
     struct wined3d_color_key alpha_test_key;
+    struct wined3d_blitter *next;
+    RECT s, d;
 
-    /* Activate the destination context, set it up for blitting */
-    context = context_acquire(device, dst_surface);
+    if (!arbfp_blit_supported(&device->adapter->gl_info, &device->adapter->d3d_info, op,
+            src_texture->resource.pool, src_texture->resource.format, src_location,
+            dst_texture->resource.pool, dst_texture->resource.format, dst_location))
+    {
+        if ((next = blitter->next))
+            next->ops->blitter_blit(next, op, context, src_surface, src_location,
+                    src_rect, dst_surface, dst_location, dst_rect, color_key, filter);
+        return;
+    }
+
+    arbfp_blitter = CONTAINING_RECORD(blitter, struct wined3d_arbfp_blitter, blitter);
 
     /* Now load the surface */
     if (wined3d_settings.offscreen_rendering_mode != ORM_FBO
@@ -7956,16 +7825,42 @@ static void arbfp_blit_surface(struct wined3d_device *device, enum wined3d_blit_
          * rectangle instead. */
         surface_load_fb_texture(src_surface, FALSE, context);
 
-        src_rect.top = wined3d_texture_get_level_height(src_texture, src_surface->texture_level) - src_rect.top;
-        src_rect.bottom = wined3d_texture_get_level_height(src_texture, src_surface->texture_level) - src_rect.bottom;
+        s = *src_rect;
+        s.top = wined3d_texture_get_level_height(src_texture, src_surface->texture_level) - s.top;
+        s.bottom = wined3d_texture_get_level_height(src_texture, src_surface->texture_level) - s.bottom;
+        src_rect = &s;
     }
     else
         wined3d_texture_load(src_texture, context, FALSE);
 
     context_apply_blit_state(context, device);
 
-    if (!wined3d_resource_is_offscreen(&dst_texture->resource))
-        surface_translate_drawable_coords(dst_surface, context->win_handle, &dst_rect);
+    if (dst_location == WINED3D_LOCATION_DRAWABLE)
+    {
+        d = *dst_rect;
+        surface_translate_drawable_coords(dst_surface, context->win_handle, &d);
+        dst_rect = &d;
+    }
+
+    if (wined3d_settings.offscreen_rendering_mode == ORM_FBO)
+    {
+        GLenum buffer;
+
+        if (dst_location == WINED3D_LOCATION_DRAWABLE)
+        {
+            TRACE("Destination surface %p is onscreen.\n", dst_surface);
+            buffer = wined3d_texture_get_gl_buffer(dst_texture);
+        }
+        else
+        {
+            TRACE("Destination surface %p is offscreen.\n", dst_surface);
+            buffer = GL_COLOR_ATTACHMENT0;
+        }
+        context_apply_fbo_state_blit(context, GL_DRAW_FRAMEBUFFER, dst_surface, NULL, dst_location);
+        context_set_draw_buffer(context, buffer);
+        context_check_fbo_status(context, GL_DRAW_FRAMEBUFFER);
+        context_invalidate_state(context, STATE_FRAMEBUFFER);
+    }
 
     if (op == WINED3D_BLIT_OP_COLOR_BLIT_ALPHATEST)
     {
@@ -7975,10 +7870,10 @@ static void arbfp_blit_surface(struct wined3d_device *device, enum wined3d_blit_
         color_key = &alpha_test_key;
     }
 
-    arbfp_blit_set(device->blit_priv, context, src_surface, color_key);
+    arbfp_blit_set(arbfp_blitter, context, src_surface, color_key);
 
     /* Draw a textured quad */
-    draw_textured_quad(src_surface, context, &src_rect, &dst_rect, filter);
+    draw_textured_quad(src_surface, context, src_rect, dst_rect, filter);
 
     /* Leave the opengl state valid for blitting */
     arbfp_blit_unset(context->gl_info);
@@ -7986,34 +7881,49 @@ static void arbfp_blit_surface(struct wined3d_device *device, enum wined3d_blit_
     if (wined3d_settings.strict_draw_ordering
             || (dst_texture->swapchain && (dst_texture->swapchain->front_buffer == dst_texture)))
         context->gl_info->gl_ops.gl.p_glFlush(); /* Flush to ensure ordering across contexts. */
-
-    context_release(context);
-
-    wined3d_texture_validate_location(dst_texture, dst_sub_resource_idx, dst_texture->resource.draw_binding);
-    wined3d_texture_invalidate_location(dst_texture, dst_sub_resource_idx, ~dst_texture->resource.draw_binding);
 }
 
-static HRESULT arbfp_blit_color_fill(struct wined3d_device *device, struct wined3d_rendertarget_view *view,
-        const RECT *rect, const struct wined3d_color *color)
+static void arbfp_blitter_clear(struct wined3d_blitter *blitter, struct wined3d_device *device,
+        unsigned int rt_count, const struct wined3d_fb_state *fb, unsigned int rect_count, const RECT *clear_rects,
+        const RECT *draw_rect, DWORD flags, const struct wined3d_color *colour, float depth, DWORD stencil)
 {
-    FIXME("Color filling not implemented by arbfp_blit\n");
-    return WINED3DERR_INVALIDCALL;
+    struct wined3d_blitter *next;
+
+    if ((next = blitter->next))
+        next->ops->blitter_clear(next, device, rt_count, fb, rect_count,
+                clear_rects, draw_rect, flags, colour, depth, stencil);
 }
 
-static HRESULT arbfp_blit_depth_fill(struct wined3d_device *device, struct wined3d_rendertarget_view *view,
-        const RECT *rect, DWORD clear_flags, float depth, DWORD stencil)
+static const struct wined3d_blitter_ops arbfp_blitter_ops =
 {
-    FIXME("Depth/stencil filling not implemented by arbfp_blit.\n");
-    return WINED3DERR_INVALIDCALL;
-}
-
-const struct blit_shader arbfp_blit = {
-    arbfp_blit_alloc,
-    arbfp_blit_free,
-    arbfp_blit_set,
-    arbfp_blit_unset,
-    arbfp_blit_supported,
-    arbfp_blit_color_fill,
-    arbfp_blit_depth_fill,
-    arbfp_blit_surface,
+    arbfp_blitter_destroy,
+    arbfp_blitter_clear,
+    arbfp_blitter_blit,
 };
+
+void wined3d_arbfp_blitter_create(struct wined3d_blitter **next, const struct wined3d_device *device)
+{
+    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
+    struct wined3d_arbfp_blitter *blitter;
+
+    if (device->shader_backend != &arb_program_shader_backend
+            && device->shader_backend != &glsl_shader_backend)
+        return;
+
+    if (!gl_info->supported[ARB_FRAGMENT_PROGRAM])
+        return;
+
+    if (!(blitter = HeapAlloc(GetProcessHeap(), 0, sizeof(*blitter))))
+    {
+        ERR("Failed to allocate blitter.\n");
+        return;
+    }
+
+    TRACE("Created blitter %p.\n", blitter);
+
+    blitter->blitter.ops = &arbfp_blitter_ops;
+    blitter->blitter.next = *next;
+    wine_rb_init(&blitter->shaders, arbfp_blit_type_compare);
+    blitter->palette_texture = 0;
+    *next = &blitter->blitter;
+}

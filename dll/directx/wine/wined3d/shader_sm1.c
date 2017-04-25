@@ -213,6 +213,7 @@ struct wined3d_sm1_data
 {
     struct wined3d_shader_version shader_version;
     const struct wined3d_sm1_opcode_info *opcode_table;
+    const DWORD *start;
 
     struct wined3d_shader_src_param src_rel_addr[4];
     struct wined3d_shader_src_param pred_rel_addr;
@@ -532,10 +533,13 @@ static unsigned int shader_skip_unrecognized(const struct wined3d_sm1_data *priv
     return tokens_read;
 }
 
-static void *shader_sm1_init(const DWORD *byte_code, const struct wined3d_shader_signature *output_signature)
+static void *shader_sm1_init(const DWORD *byte_code, size_t byte_code_size,
+        const struct wined3d_shader_signature *output_signature)
 {
     struct wined3d_sm1_data *priv;
     BYTE major, minor;
+
+    TRACE("Version: 0x%08x.\n", *byte_code);
 
     major = WINED3D_SM1_VERSION_MAJOR(*byte_code);
     minor = WINED3D_SM1_VERSION_MINOR(*byte_code);
@@ -568,6 +572,10 @@ static void *shader_sm1_init(const DWORD *byte_code, const struct wined3d_shader
             HeapFree(GetProcessHeap(), 0, priv);
             return NULL;
     }
+    priv->shader_version.major = WINED3D_SM1_VERSION_MAJOR(*byte_code);
+    priv->shader_version.minor = WINED3D_SM1_VERSION_MINOR(*byte_code);
+
+    priv->start = &byte_code[1];
 
     return priv;
 }
@@ -580,13 +588,8 @@ static void shader_sm1_free(void *data)
 static void shader_sm1_read_header(void *data, const DWORD **ptr, struct wined3d_shader_version *shader_version)
 {
     struct wined3d_sm1_data *priv = data;
-    DWORD version_token;
 
-    version_token = *(*ptr)++;
-    TRACE("Version: 0x%08x.\n", version_token);
-
-    priv->shader_version.major = WINED3D_SM1_VERSION_MAJOR(version_token);
-    priv->shader_version.minor = WINED3D_SM1_VERSION_MINOR(version_token);
+    *ptr = priv->start;
     *shader_version = priv->shader_version;
 }
 
@@ -657,7 +660,7 @@ static void shader_sm1_read_immconst(const DWORD **ptr, struct wined3d_shader_sr
     src_param->reg.idx[1].offset = ~0U;
     src_param->reg.idx[1].rel_addr = NULL;
     src_param->reg.immconst_type = type;
-    memcpy(src_param->reg.immconst_data, *ptr, count * sizeof(DWORD));
+    memcpy(src_param->reg.u.immconst_data, *ptr, count * sizeof(DWORD));
     src_param->swizzle = WINED3DSP_NOSWIZZLE;
     src_param->modifiers = 0;
 

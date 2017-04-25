@@ -1,10 +1,12 @@
 
 add_definitions(
-    -D__WINESRC__
+    -D__WINESRC__ 
+	-Dcopysignf=_copysignf
     -D_USE_MATH_DEFINES
-    -DUSE_WIN32_OPENGL)
+    -DUSE_WIN32_OPENGL
+	)
 
-include_directories(BEFORE ${REACTOS_SOURCE_DIR}/include/reactos/wine)
+include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
 
 # We name this d3dwine.dll, because the Virtualbox additions ship with a custom wined3d.dll
 # and it breaks everything if it is installed.
@@ -37,7 +39,6 @@ list(APPEND SOURCE
     utils.c
     vertexdeclaration.c
     view.c
-    volume.c
     wined3d_main.c
     wined3d_private.h)
 

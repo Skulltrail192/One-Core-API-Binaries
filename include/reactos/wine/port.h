@@ -324,7 +324,7 @@ static inline void *memcpy_unaligned( void *dst, const void *src, size_t size )
 extern void *memcpy_unaligned( void *dst, const void *src, size_t size );
 #endif /* __i386__ */
 
-extern int mkstemps(char *template, int suffix_len);
+//extern int mkstemps(char *template, int suffix_len);
 
 /* Process creation flags */
 #ifndef _P_WAIT

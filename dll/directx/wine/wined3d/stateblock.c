@@ -38,9 +38,9 @@ static const DWORD pixel_states_render[] =
     WINED3D_RS_BLENDFACTOR,
     WINED3D_RS_BLENDOP,
     WINED3D_RS_BLENDOPALPHA,
-    WINED3D_RS_CCW_STENCILFAIL,
-    WINED3D_RS_CCW_STENCILPASS,
-    WINED3D_RS_CCW_STENCILZFAIL,
+    WINED3D_RS_BACK_STENCILFAIL,
+    WINED3D_RS_BACK_STENCILPASS,
+    WINED3D_RS_BACK_STENCILZFAIL,
     WINED3D_RS_COLORWRITEENABLE,
     WINED3D_RS_COLORWRITEENABLE1,
     WINED3D_RS_COLORWRITEENABLE2,
@@ -202,7 +202,6 @@ static void stateblock_savedstates_set_all(struct wined3d_saved_states *states, 
     unsigned int i;
 
     /* Single values */
-    states->primitive_type = 1;
     states->indices = 1;
     states->material = 1;
     states->viewport = 1;
@@ -424,6 +423,7 @@ ULONG CDECL wined3d_stateblock_incref(struct wined3d_stateblock *stateblock)
 
 void state_unbind_resources(struct wined3d_state *state)
 {
+    struct wined3d_unordered_access_view *uav;
     struct wined3d_shader_resource_view *srv;
     struct wined3d_vertex_declaration *decl;
     struct wined3d_sampler *sampler;
@@ -447,7 +447,7 @@ void state_unbind_resources(struct wined3d_state *state)
         }
     }
 
-    for (i = 0; i < MAX_STREAM_OUT; ++i)
+    for (i = 0; i < WINED3D_MAX_STREAM_OUTPUT_BUFFERS; ++i)
     {
         if ((buffer = state->stream_output[i].buffer))
         {
@@ -506,6 +506,18 @@ void state_unbind_resources(struct wined3d_state *state)
             }
         }
     }
+
+    for (i = 0; i < WINED3D_PIPELINE_COUNT; ++i)
+    {
+        for (j = 0; j < MAX_UNORDERED_ACCESS_VIEWS; ++j)
+        {
+            if ((uav = state->unordered_access_view[i][j]))
+            {
+                state->unordered_access_view[i][j] = NULL;
+                wined3d_unordered_access_view_decref(uav);
+            }
+        }
+    }
 }
 
 void state_cleanup(struct wined3d_state *state)
@@ -545,6 +557,66 @@ ULONG CDECL wined3d_stateblock_decref(struct wined3d_stateblock *stateblock)
     }
 
     return refcount;
+}
+
+struct wined3d_light_info *wined3d_state_get_light(const struct wined3d_state *state, unsigned int idx)
+{
+    struct wined3d_light_info *light_info;
+    unsigned int hash_idx;
+
+    hash_idx = LIGHTMAP_HASHFUNC(idx);
+    LIST_FOR_EACH_ENTRY(light_info, &state->light_map[hash_idx], struct wined3d_light_info, entry)
+    {
+        if (light_info->OriginalIndex == idx)
+            return light_info;
+    }
+
+    return NULL;
+}
+
+void wined3d_state_enable_light(struct wined3d_state *state, const struct wined3d_d3d_info *d3d_info,
+        struct wined3d_light_info *light_info, BOOL enable)
+{
+    unsigned int light_count, i;
+
+    if (!(light_info->enabled = enable))
+    {
+        if (light_info->glIndex == -1)
+        {
+            TRACE("Light already disabled, nothing to do.\n");
+            return;
+        }
+
+        state->lights[light_info->glIndex] = NULL;
+        light_info->glIndex = -1;
+        return;
+    }
+
+    if (light_info->glIndex != -1)
+    {
+        TRACE("Light already enabled, nothing to do.\n");
+        return;
+    }
+
+    /* Find a free light. */
+    light_count = d3d_info->limits.active_light_count;
+    for (i = 0; i < light_count; ++i)
+    {
+        if (state->lights[i])
+            continue;
+
+        state->lights[i] = light_info;
+        light_info->glIndex = i;
+        return;
+    }
+
+    /* Our tests show that Windows returns D3D_OK in this situation, even with
+     * D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_PUREDEVICE devices.
+     * This is consistent among ddraw, d3d8 and d3d9. GetLightEnable returns
+     * TRUE * as well for those lights.
+     *
+     * TODO: Test how this affects rendering. */
+    WARN("Too many concurrently active lights.\n");
 }
 
 static void wined3d_state_record_lights(struct wined3d_state *dst_state, const struct wined3d_state *src_state)
@@ -698,9 +770,6 @@ void CDECL wined3d_stateblock_capture(struct wined3d_stateblock *stateblock)
 
         stateblock->state.transforms[transform] = src_state->transforms[transform];
     }
-
-    if (stateblock->changed.primitive_type)
-        stateblock->state.gl_primitive_type = src_state->gl_primitive_type;
 
     if (stateblock->changed.indices
             && ((stateblock->state.index_buffer != src_state->index_buffer)
@@ -972,19 +1041,6 @@ void CDECL wined3d_stateblock_apply(const struct wined3d_stateblock *stateblock)
                 &stateblock->state.transforms[stateblock->contained_transform_states[i]]);
     }
 
-    if (stateblock->changed.primitive_type)
-    {
-        GLenum gl_primitive_type, prev;
-
-        if (device->recording)
-            device->recording->changed.primitive_type = TRUE;
-        gl_primitive_type = stateblock->state.gl_primitive_type;
-        prev = device->update_state->gl_primitive_type;
-        device->update_state->gl_primitive_type = gl_primitive_type;
-        if (gl_primitive_type != prev && (gl_primitive_type == GL_POINTS || prev == GL_POINTS))
-            device_invalidate_state(device, STATE_POINT_ENABLE);
-    }
-
     if (stateblock->changed.indices)
     {
         wined3d_device_set_index_buffer(device, stateblock->state.index_buffer,
@@ -1176,10 +1232,10 @@ static void state_init_default(struct wined3d_state *state, const struct wined3d
     state->render_states[WINED3D_RS_ADAPTIVETESS_W] = tmpfloat.d;
     state->render_states[WINED3D_RS_ENABLEADAPTIVETESSELLATION] = FALSE;
     state->render_states[WINED3D_RS_TWOSIDEDSTENCILMODE] = FALSE;
-    state->render_states[WINED3D_RS_CCW_STENCILFAIL] = WINED3D_STENCIL_OP_KEEP;
-    state->render_states[WINED3D_RS_CCW_STENCILZFAIL] = WINED3D_STENCIL_OP_KEEP;
-    state->render_states[WINED3D_RS_CCW_STENCILPASS] = WINED3D_STENCIL_OP_KEEP;
-    state->render_states[WINED3D_RS_CCW_STENCILFUNC] = WINED3D_CMP_ALWAYS;
+    state->render_states[WINED3D_RS_BACK_STENCILFAIL] = WINED3D_STENCIL_OP_KEEP;
+    state->render_states[WINED3D_RS_BACK_STENCILZFAIL] = WINED3D_STENCIL_OP_KEEP;
+    state->render_states[WINED3D_RS_BACK_STENCILPASS] = WINED3D_STENCIL_OP_KEEP;
+    state->render_states[WINED3D_RS_BACK_STENCILFUNC] = WINED3D_CMP_ALWAYS;
     state->render_states[WINED3D_RS_COLORWRITEENABLE1] = 0x0000000f;
     state->render_states[WINED3D_RS_COLORWRITEENABLE2] = 0x0000000f;
     state->render_states[WINED3D_RS_COLORWRITEENABLE3] = 0x0000000f;

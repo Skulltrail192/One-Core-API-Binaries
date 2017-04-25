@@ -37,6 +37,10 @@ list(APPEND SOURCE
 	d2d1.idl
 	d3d10.idl
 	d3d10_1.idl
+	d3d10sdklayers.idl
+	d3d11.idl
+	d3d11_1.idl
+	d3d11sdklayers.idl
 	d3dcommon.idl
 	dwrite.idl
 	dwrite_1.idl
@@ -49,6 +53,7 @@ list(APPEND SOURCE
     docobjectservice.idl
     downloadmgr.idl
     dxgi.idl
+	dxgi1_2.idl
 #   dyngraph.idl
     endpointvolume.idl
     exdisp.idl
@@ -127,6 +132,7 @@ list(APPEND SOURCE
     wia_xp.idl
     wincodec.idl
     wincodecsdk.idl
+	winedxgi.idl
     winsxs.idl
     wtypes.idl
     wuapi.idl
@@ -139,7 +145,7 @@ add_idl_headers(psdk ${SOURCE})
 add_typelib(stdole2.idl)
 add_custom_target(stdole2 DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/stdole2.tlb)
 
-add_idl_headers(d3d_idl_headers d3d10.idl d2d1.idl d3d10_1.idl dwrite.idl dwrite_1.idl dwrite_2.idl d3dcommon.idl)
+add_idl_headers(d3d_idl_headers dxgi.idl d3d10.idl d2d1.idl d3d10_1.idl d3d10sdklayers.idl d3d11.idl d3d11_1.idl d3d11sdklayers.idl dwrite.idl dwrite_1.idl dwrite_2.idl dxgi1_2.idl d3dcommon.idl winedxgi.idl)
 
 add_iid_library(dxgi_uuids dxgi.idl)
 add_iid_library(d3d10_uuids d3d10.idl)

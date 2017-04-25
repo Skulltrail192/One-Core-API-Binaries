@@ -27,6 +27,11 @@
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
 WINE_DECLARE_DEBUG_CHANNEL(fps);
 
+static void wined3d_swapchain_destroy_object(void *object)
+{
+    swapchain_destroy_contexts(object);
+}
+
 static void swapchain_cleanup(struct wined3d_swapchain *swapchain)
 {
     HRESULT hr;
@@ -60,11 +65,7 @@ static void swapchain_cleanup(struct wined3d_swapchain *swapchain)
         swapchain->back_buffers = NULL;
     }
 
-    for (i = 0; i < swapchain->num_contexts; ++i)
-    {
-        context_destroy(swapchain->device, swapchain->context[i]);
-    }
-    HeapFree(GetProcessHeap(), 0, swapchain->context);
+    wined3d_cs_destroy_object(swapchain->device->cs, wined3d_swapchain_destroy_object, swapchain);
 
     /* Restore the screen resolution if we rendered in fullscreen.
      * This will restore the screen resolution to what it was before creating
@@ -304,133 +305,28 @@ static void swapchain_blit(const struct wined3d_swapchain *swapchain,
 {
     struct wined3d_texture *texture = swapchain->back_buffers[0];
     struct wined3d_surface *back_buffer = texture->sub_resources[0].u.surface;
-    struct wined3d_surface *front_buffer = swapchain->front_buffer->sub_resources[0].u.surface;
-    UINT src_w = src_rect->right - src_rect->left;
-    UINT src_h = src_rect->bottom - src_rect->top;
-    GLenum gl_filter;
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-    RECT win_rect;
-    UINT win_h;
+    struct wined3d_device *device = swapchain->device;
+    enum wined3d_texture_filter_type filter;
+    DWORD location;
 
     TRACE("swapchain %p, context %p, src_rect %s, dst_rect %s.\n",
             swapchain, context, wine_dbgstr_rect(src_rect), wine_dbgstr_rect(dst_rect));
 
-    if (src_w == dst_rect->right - dst_rect->left && src_h == dst_rect->bottom - dst_rect->top)
-        gl_filter = GL_NEAREST;
+    if ((src_rect->right - src_rect->left == dst_rect->right - dst_rect->left
+            && src_rect->bottom - src_rect->top == dst_rect->bottom - dst_rect->top)
+            || is_complex_fixup(texture->resource.format->color_fixup))
+        filter = WINED3D_TEXF_NONE;
     else
-        gl_filter = GL_LINEAR;
+        filter = WINED3D_TEXF_LINEAR;
 
-    GetClientRect(swapchain->win_handle, &win_rect);
-    win_h = win_rect.bottom - win_rect.top;
+    location = WINED3D_LOCATION_TEXTURE_RGB;
+    if (texture->resource.multisample_type)
+        location = WINED3D_LOCATION_RB_RESOLVED;
 
-    if (gl_info->fbo_ops.glBlitFramebuffer && is_identity_fixup(texture->resource.format->color_fixup))
-    {
-        DWORD location = WINED3D_LOCATION_TEXTURE_RGB;
-
-        if (texture->resource.multisample_type)
-        {
-            location = WINED3D_LOCATION_RB_RESOLVED;
-            wined3d_texture_load_location(texture, 0, context, location);
-        }
-
-        context_apply_fbo_state_blit(context, GL_READ_FRAMEBUFFER, back_buffer, NULL, location);
-        gl_info->gl_ops.gl.p_glReadBuffer(GL_COLOR_ATTACHMENT0);
-        context_check_fbo_status(context, GL_READ_FRAMEBUFFER);
-
-        context_apply_fbo_state_blit(context, GL_DRAW_FRAMEBUFFER, front_buffer, NULL, WINED3D_LOCATION_DRAWABLE);
-        context_set_draw_buffer(context, GL_BACK);
-        context_invalidate_state(context, STATE_FRAMEBUFFER);
-
-        gl_info->gl_ops.gl.p_glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE));
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1));
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2));
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3));
-
-        gl_info->gl_ops.gl.p_glDisable(GL_SCISSOR_TEST);
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_SCISSORTESTENABLE));
-
-        /* Note that the texture is upside down */
-        gl_info->fbo_ops.glBlitFramebuffer(src_rect->left, src_rect->top, src_rect->right, src_rect->bottom,
-                dst_rect->left, win_h - dst_rect->top, dst_rect->right, win_h - dst_rect->bottom,
-                GL_COLOR_BUFFER_BIT, gl_filter);
-        checkGLcall("Swapchain present blit(EXT_framebuffer_blit)\n");
-    }
-    else
-    {
-        struct wined3d_device *device = swapchain->device;
-        struct wined3d_context *context2;
-        float tex_left = src_rect->left;
-        float tex_top = src_rect->top;
-        float tex_right = src_rect->right;
-        float tex_bottom = src_rect->bottom;
-
-        context2 = context_acquire(device, back_buffer);
-        context_apply_blit_state(context2, device);
-
-        if (texture->flags & WINED3D_TEXTURE_NORMALIZED_COORDS)
-        {
-            tex_left /= texture->pow2_width;
-            tex_right /= texture->pow2_width;
-            tex_top /= texture->pow2_height;
-            tex_bottom /= texture->pow2_height;
-        }
-
-        if (is_complex_fixup(texture->resource.format->color_fixup))
-            gl_filter = GL_NEAREST;
-
-        context_apply_fbo_state_blit(context2, GL_FRAMEBUFFER, front_buffer, NULL, WINED3D_LOCATION_DRAWABLE);
-        context_bind_texture(context2, back_buffer->texture_target, texture->texture_rgb.name);
-
-        /* Set up the texture. The surface is not in a wined3d_texture
-         * container, so there are no D3D texture settings to dirtify. */
-        device->blitter->set_shader(device->blit_priv, context2, back_buffer, NULL);
-        gl_info->gl_ops.gl.p_glTexParameteri(back_buffer->texture_target, GL_TEXTURE_MIN_FILTER, gl_filter);
-        gl_info->gl_ops.gl.p_glTexParameteri(back_buffer->texture_target, GL_TEXTURE_MAG_FILTER, gl_filter);
-
-        context_set_draw_buffer(context, GL_BACK);
-
-        /* Set the viewport to the destination rectandle, disable any projection
-         * transformation set up by context_apply_blit_state(), and draw a
-         * (-1,-1)-(1,1) quad.
-         *
-         * Back up viewport and matrix to avoid breaking last_was_blit
-         *
-         * Note that context_apply_blit_state() set up viewport and ortho to
-         * match the surface size - we want the GL drawable(=window) size. */
-        gl_info->gl_ops.gl.p_glPushAttrib(GL_VIEWPORT_BIT);
-        gl_info->gl_ops.gl.p_glViewport(dst_rect->left, win_h - dst_rect->bottom,
-                dst_rect->right, win_h - dst_rect->top);
-        gl_info->gl_ops.gl.p_glMatrixMode(GL_PROJECTION);
-        gl_info->gl_ops.gl.p_glPushMatrix();
-        gl_info->gl_ops.gl.p_glLoadIdentity();
-
-        gl_info->gl_ops.gl.p_glBegin(GL_QUADS);
-            /* bottom left */
-            gl_info->gl_ops.gl.p_glTexCoord2f(tex_left, tex_bottom);
-            gl_info->gl_ops.gl.p_glVertex2i(-1, -1);
-
-            /* top left */
-            gl_info->gl_ops.gl.p_glTexCoord2f(tex_left, tex_top);
-            gl_info->gl_ops.gl.p_glVertex2i(-1, 1);
-
-            /* top right */
-            gl_info->gl_ops.gl.p_glTexCoord2f(tex_right, tex_top);
-            gl_info->gl_ops.gl.p_glVertex2i(1, 1);
-
-            /* bottom right */
-            gl_info->gl_ops.gl.p_glTexCoord2f(tex_right, tex_bottom);
-            gl_info->gl_ops.gl.p_glVertex2i(1, -1);
-        gl_info->gl_ops.gl.p_glEnd();
-
-        gl_info->gl_ops.gl.p_glPopMatrix();
-        gl_info->gl_ops.gl.p_glPopAttrib();
-
-        device->blitter->unset_shader(context->gl_info);
-        checkGLcall("Swapchain present blit(manual)\n");
-
-        context_release(context2);
-    }
+    wined3d_texture_validate_location(texture, 0, WINED3D_LOCATION_DRAWABLE);
+    device->blitter->ops->blitter_blit(device->blitter, WINED3D_BLIT_OP_COLOR_BLIT, context, back_buffer,
+            location, src_rect, back_buffer, WINED3D_LOCATION_DRAWABLE, dst_rect, NULL, filter);
+    wined3d_texture_invalidate_location(texture, 0, WINED3D_LOCATION_DRAWABLE);
 }
 
 /* Context activation is done by the caller. */
@@ -484,13 +380,13 @@ static void swapchain_gl_present(struct wined3d_swapchain *swapchain,
         const RECT *src_rect, const RECT *dst_rect, DWORD flags)
 {
     struct wined3d_texture *back_buffer = swapchain->back_buffers[0];
-    const struct wined3d_fb_state *fb = &swapchain->device->fb;
+    const struct wined3d_fb_state *fb = &swapchain->device->cs->fb;
     const struct wined3d_gl_info *gl_info;
     struct wined3d_texture *logo_texture;
     struct wined3d_context *context;
     BOOL render_to_fbo;
 
-    context = context_acquire(swapchain->device, back_buffer->sub_resources[0].u.surface);
+    context = context_acquire(swapchain->device, back_buffer, 0);
     if (!context->valid)
     {
         context_release(context);
@@ -506,7 +402,7 @@ static void swapchain_gl_present(struct wined3d_swapchain *swapchain,
 
         /* Blit the logo into the upper left corner of the drawable. */
         wined3d_texture_blt(back_buffer, 0, &rect, logo_texture, 0, &rect,
-                WINED3D_BLT_ALPHA_TEST, NULL, WINED3D_TEXF_POINT);
+                WINED3D_BLT_SRC_CKEY, NULL, WINED3D_TEXF_POINT);
     }
 
     if (swapchain->device->bCursorVisible && swapchain->device->cursor_texture
@@ -621,15 +517,8 @@ static void swapchain_gl_present(struct wined3d_swapchain *swapchain,
 
         if (ds && (swapchain->desc.flags & WINED3D_SWAPCHAIN_DISCARD_DEPTHSTENCIL
                 || ds->container->flags & WINED3D_TEXTURE_DISCARD))
-        {
-            surface_modify_ds_location(ds, WINED3D_LOCATION_DISCARDED,
-                    fb->depth_stencil->width, fb->depth_stencil->height);
-            if (ds == swapchain->device->onscreen_depth_stencil)
-            {
-                wined3d_texture_decref(swapchain->device->onscreen_depth_stencil->container);
-                swapchain->device->onscreen_depth_stencil = NULL;
-            }
-        }
+            wined3d_texture_validate_location(ds->container,
+                    fb->depth_stencil->sub_resource_idx, WINED3D_LOCATION_DISCARDED);
     }
 
     context_release(context);
@@ -640,7 +529,7 @@ static void swapchain_gl_frontbuffer_updated(struct wined3d_swapchain *swapchain
     struct wined3d_texture *front_buffer = swapchain->front_buffer;
     struct wined3d_context *context;
 
-    context = context_acquire(swapchain->device, front_buffer->sub_resources[0].u.surface);
+    context = context_acquire(swapchain->device, front_buffer, 0);
     wined3d_texture_load_location(front_buffer, 0, context, front_buffer->resource.draw_binding);
     context_release(context);
     SetRectEmpty(&swapchain->front_buffer_update);
@@ -749,33 +638,12 @@ static const struct wined3d_swapchain_ops swapchain_gdi_ops =
 
 static void swapchain_update_render_to_fbo(struct wined3d_swapchain *swapchain)
 {
-    RECT client_rect;
-
     if (wined3d_settings.offscreen_rendering_mode != ORM_FBO)
         return;
 
     if (!swapchain->desc.backbuffer_count)
     {
         TRACE("Single buffered rendering.\n");
-        swapchain->render_to_fbo = FALSE;
-        return;
-    }
-
-    GetClientRect(swapchain->win_handle, &client_rect);
-
-    TRACE("Backbuffer %ux%u, window %ux%u.\n",
-            swapchain->desc.backbuffer_width,
-            swapchain->desc.backbuffer_height,
-            client_rect.right, client_rect.bottom);
-    TRACE("Multisample type %#x, quality %#x.\n",
-            swapchain->desc.multisample_type,
-            swapchain->desc.multisample_quality);
-
-    if (!wined3d_settings.always_offscreen && !swapchain->desc.multisample_type
-            && swapchain->desc.backbuffer_width == client_rect.right
-            && swapchain->desc.backbuffer_height == client_rect.bottom)
-    {
-        TRACE("Backbuffer dimensions match window dimensions, rendering onscreen.\n");
         swapchain->render_to_fbo = FALSE;
         return;
     }
@@ -795,7 +663,7 @@ static void wined3d_swapchain_apply_sample_count_override(const struct wined3d_s
         return;
 
     gl_info = &swapchain->device->adapter->gl_info;
-    if (!(format = wined3d_get_format(gl_info, format_id)))
+    if (!(format = wined3d_get_format(gl_info, format_id, WINED3DUSAGE_RENDERTARGET)))
         return;
 
     if ((t = min(wined3d_settings.sample_count, gl_info->limits.samples)))
@@ -806,12 +674,100 @@ static void wined3d_swapchain_apply_sample_count_override(const struct wined3d_s
     *quality = 0;
 }
 
+static void wined3d_swapchain_update_swap_interval_cs(void *object)
+{
+    struct wined3d_swapchain *swapchain = object;
+    const struct wined3d_gl_info *gl_info;
+    struct wined3d_context *context;
+    int swap_interval;
+
+    context = context_acquire(swapchain->device, swapchain->front_buffer, 0);
+    gl_info = context->gl_info;
+
+    switch (swapchain->desc.swap_interval)
+    {
+        case WINED3DPRESENT_INTERVAL_IMMEDIATE:
+            swap_interval = 0;
+            break;
+        case WINED3DPRESENT_INTERVAL_DEFAULT:
+        case WINED3DPRESENT_INTERVAL_ONE:
+            swap_interval = 1;
+            break;
+        case WINED3DPRESENT_INTERVAL_TWO:
+            swap_interval = 2;
+            break;
+        case WINED3DPRESENT_INTERVAL_THREE:
+            swap_interval = 3;
+            break;
+        case WINED3DPRESENT_INTERVAL_FOUR:
+            swap_interval = 4;
+            break;
+        default:
+            FIXME("Unhandled present interval %#x.\n", swapchain->desc.swap_interval);
+            swap_interval = 1;
+    }
+
+    if (gl_info->supported[WGL_EXT_SWAP_CONTROL])
+    {
+        if (!GL_EXTCALL(wglSwapIntervalEXT(swap_interval)))
+            ERR("wglSwapIntervalEXT failed to set swap interval %d for context %p, last error %#x\n",
+                swap_interval, context, GetLastError());
+    }
+
+    context_release(context);
+}
+
+static void wined3d_swapchain_cs_init(void *object)
+{
+    struct wined3d_swapchain *swapchain = object;
+    const struct wined3d_gl_info *gl_info;
+    unsigned int i;
+
+    static const enum wined3d_format_id formats[] =
+    {
+        WINED3DFMT_D24_UNORM_S8_UINT,
+        WINED3DFMT_D32_UNORM,
+        WINED3DFMT_R24_UNORM_X8_TYPELESS,
+        WINED3DFMT_D16_UNORM,
+        WINED3DFMT_S1_UINT_D15_UNORM,
+    };
+
+    gl_info = &swapchain->device->adapter->gl_info;
+
+    /* Without ORM_FBO, switching the depth/stencil format is hard. Always
+     * request a depth/stencil buffer in the likely case it's needed later. */
+    for (i = 0; i < ARRAY_SIZE(formats); ++i)
+    {
+        swapchain->ds_format = wined3d_get_format(gl_info, formats[i], WINED3DUSAGE_DEPTHSTENCIL);
+        if ((swapchain->context[0] = context_create(swapchain, swapchain->front_buffer, swapchain->ds_format)))
+            break;
+        TRACE("Depth stencil format %s is not supported, trying next format.\n", debug_d3dformat(formats[i]));
+    }
+
+    if (!swapchain->context[0])
+    {
+        WARN("Failed to create context.\n");
+        return;
+    }
+    swapchain->num_contexts = 1;
+
+    if (wined3d_settings.offscreen_rendering_mode != ORM_FBO
+            && (!swapchain->desc.enable_auto_depth_stencil
+            || swapchain->desc.auto_depth_stencil_format != swapchain->ds_format->id))
+        FIXME("Add OpenGL context recreation support.\n");
+
+    context_release(swapchain->context[0]);
+
+    wined3d_swapchain_update_swap_interval_cs(swapchain);
+}
+
 static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3d_device *device,
         struct wined3d_swapchain_desc *desc, void *parent, const struct wined3d_parent_ops *parent_ops)
 {
     const struct wined3d_adapter *adapter = device->adapter;
     struct wined3d_resource_desc texture_desc;
     BOOL displaymode_set = FALSE;
+    DWORD texture_flags = 0;
     RECT client_rect;
     HWND window;
     HRESULT hr;
@@ -884,8 +840,11 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
     texture_desc.depth = 1;
     texture_desc.size = 0;
 
+    if (swapchain->desc.flags & WINED3D_SWAPCHAIN_GDI_COMPATIBLE)
+        texture_flags |= WINED3D_TEXTURE_CREATE_GET_DC;
+
     if (FAILED(hr = device->device_parent->ops->create_swapchain_texture(device->device_parent,
-            parent, &texture_desc, &swapchain->front_buffer)))
+            parent, &texture_desc, texture_flags, &swapchain->front_buffer)))
     {
         WARN("Failed to create front buffer, hr %#x.\n", hr);
         goto err;
@@ -928,17 +887,6 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
 
     if (!(device->wined3d->flags & WINED3D_NO3D))
     {
-        static const enum wined3d_format_id formats[] =
-        {
-            WINED3DFMT_D24_UNORM_S8_UINT,
-            WINED3DFMT_D32_UNORM,
-            WINED3DFMT_R24_UNORM_X8_TYPELESS,
-            WINED3DFMT_D16_UNORM,
-            WINED3DFMT_S1_UINT_D15_UNORM
-        };
-
-        const struct wined3d_gl_info *gl_info = &adapter->gl_info;
-
         swapchain->context = HeapAlloc(GetProcessHeap(), 0, sizeof(*swapchain->context));
         if (!swapchain->context)
         {
@@ -946,43 +894,14 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
             hr = E_OUTOFMEMORY;
             goto err;
         }
-        swapchain->num_contexts = 1;
 
-        /* In WGL both color, depth and stencil are features of a pixel format. In case of D3D they are separate.
-         * You are able to add a depth + stencil surface at a later stage when you need it.
-         * In order to support this properly in WineD3D we need the ability to recreate the opengl context and
-         * drawable when this is required. This is very tricky as we need to reapply ALL opengl states for the new
-         * context, need torecreate shaders, textures and other resources.
-         *
-         * The context manager already takes care of the state problem and for the other tasks code from Reset
-         * can be used. These changes are way to risky during the 1.0 code freeze which is taking place right now.
-         * Likely a lot of other new bugs will be exposed. For that reason request a depth stencil surface all the
-         * time. It can cause a slight performance hit but fixes a lot of regressions. A fixme reminds of that this
-         * issue needs to be fixed. */
-        for (i = 0; i < (sizeof(formats) / sizeof(*formats)); i++)
-        {
-            swapchain->ds_format = wined3d_get_format(gl_info, formats[i]);
-            swapchain->context[0] = context_create(swapchain, swapchain->front_buffer, swapchain->ds_format);
-            if (swapchain->context[0]) break;
-            TRACE("Depth stencil format %s is not supported, trying next format\n",
-                  debug_d3dformat(formats[i]));
-        }
+        wined3d_cs_init_object(device->cs, wined3d_swapchain_cs_init, swapchain);
 
         if (!swapchain->context[0])
         {
-            WARN("Failed to create context.\n");
             hr = WINED3DERR_NOTAVAILABLE;
             goto err;
         }
-
-        if (wined3d_settings.offscreen_rendering_mode != ORM_FBO
-                && (!desc->enable_auto_depth_stencil
-                || swapchain->desc.auto_depth_stencil_format != swapchain->ds_format->id))
-        {
-            FIXME("Add OpenGL context recreation support to context_validate_onscreen_formats\n");
-        }
-        context_release(swapchain->context[0]);
-        swapchain_update_swap_interval(swapchain);
     }
 
     if (swapchain->desc.backbuffer_count > 0)
@@ -1000,7 +919,7 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
         {
             TRACE("Creating back buffer %u.\n", i);
             if (FAILED(hr = device->device_parent->ops->create_swapchain_texture(device->device_parent,
-                    parent, &texture_desc, &swapchain->back_buffers[i])))
+                    parent, &texture_desc, texture_flags, &swapchain->back_buffers[i])))
             {
                 WARN("Failed to create back buffer %u, hr %#x.\n", i, hr);
                 swapchain->desc.backbuffer_count = i;
@@ -1016,21 +935,23 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
         TRACE("Creating depth/stencil buffer.\n");
         if (!device->auto_depth_stencil_view)
         {
+            struct wined3d_view_desc desc;
             struct wined3d_texture *ds;
-            struct wined3d_rendertarget_view_desc desc;
 
             texture_desc.format = swapchain->desc.auto_depth_stencil_format;
             texture_desc.usage = WINED3DUSAGE_DEPTHSTENCIL;
 
             if (FAILED(hr = device->device_parent->ops->create_swapchain_texture(device->device_parent,
-                    device->device_parent, &texture_desc, &ds)))
+                    device->device_parent, &texture_desc, texture_flags, &ds)))
             {
                 WARN("Failed to create the auto depth/stencil surface, hr %#x.\n", hr);
                 goto err;
             }
 
             desc.format_id = ds->resource.format->id;
+            desc.flags = 0;
             desc.u.texture.level_idx = 0;
+            desc.u.texture.level_count = 1;
             desc.u.texture.layer_idx = 0;
             desc.u.texture.layer_count = 1;
             hr = wined3d_rendertarget_view_create(&desc, &ds->resource, NULL, &wined3d_null_parent_ops,
@@ -1070,16 +991,7 @@ err:
         HeapFree(GetProcessHeap(), 0, swapchain->back_buffers);
     }
 
-    if (swapchain->context)
-    {
-        if (swapchain->context[0])
-        {
-            context_release(swapchain->context[0]);
-            context_destroy(device, swapchain->context[0]);
-            swapchain->num_contexts = 0;
-        }
-        HeapFree(GetProcessHeap(), 0, swapchain->context);
-    }
+    wined3d_cs_destroy_object(swapchain->device->cs, wined3d_swapchain_destroy_object, swapchain);
 
     if (swapchain->front_buffer)
     {
@@ -1155,7 +1067,9 @@ void swapchain_destroy_contexts(struct wined3d_swapchain *swapchain)
     {
         context_destroy(swapchain->device, swapchain->context[i]);
     }
+    HeapFree(GetProcessHeap(), 0, swapchain->context);
     swapchain->num_contexts = 0;
+    swapchain->context = NULL;
 }
 
 struct wined3d_context *swapchain_get_context(struct wined3d_swapchain *swapchain)
@@ -1212,44 +1126,7 @@ void swapchain_update_draw_bindings(struct wined3d_swapchain *swapchain)
 
 void swapchain_update_swap_interval(struct wined3d_swapchain *swapchain)
 {
-    const struct wined3d_gl_info *gl_info;
-    struct wined3d_context *context;
-    int swap_interval;
-
-    context = context_acquire(swapchain->device, swapchain->front_buffer->sub_resources[0].u.surface);
-    gl_info = context->gl_info;
-
-    switch (swapchain->desc.swap_interval)
-    {
-        case WINED3DPRESENT_INTERVAL_IMMEDIATE:
-            swap_interval = 0;
-            break;
-        case WINED3DPRESENT_INTERVAL_DEFAULT:
-        case WINED3DPRESENT_INTERVAL_ONE:
-            swap_interval = 1;
-            break;
-        case WINED3DPRESENT_INTERVAL_TWO:
-            swap_interval = 2;
-            break;
-        case WINED3DPRESENT_INTERVAL_THREE:
-            swap_interval = 3;
-            break;
-        case WINED3DPRESENT_INTERVAL_FOUR:
-            swap_interval = 4;
-            break;
-        default:
-            FIXME("Unhandled present interval %#x.\n", swapchain->desc.swap_interval);
-            swap_interval = 1;
-    }
-
-    if (gl_info->supported[WGL_EXT_SWAP_CONTROL])
-    {
-        if (!GL_EXTCALL(wglSwapIntervalEXT(swap_interval)))
-            ERR("wglSwapIntervalEXT failed to set swap interval %d for context %p, last error %#x\n",
-                swap_interval, context, GetLastError());
-    }
-
-    context_release(context);
+    wined3d_cs_init_object(swapchain->device->cs, wined3d_swapchain_update_swap_interval_cs, swapchain);
 }
 
 void wined3d_swapchain_activate(struct wined3d_swapchain *swapchain, BOOL activate)
@@ -1523,6 +1400,7 @@ HRESULT CDECL wined3d_swapchain_set_fullscreen(struct wined3d_swapchain *swapcha
 
         if (swapchain->desc.windowed)
         {
+            /* Switch from windowed to fullscreen */
             HWND focus_window = device->create_parms.focus_window;
             if (!focus_window)
                 focus_window = swapchain->device_window;
@@ -1532,20 +1410,24 @@ HRESULT CDECL wined3d_swapchain_set_fullscreen(struct wined3d_swapchain *swapcha
                 return hr;
             }
 
-            /* switch from windowed to fs */
             wined3d_device_setup_fullscreen_window(device, swapchain->device_window, width, height);
         }
         else
         {
             /* Fullscreen -> fullscreen mode change */
+            BOOL filter_messages = device->filter_messages;
+            device->filter_messages = TRUE;
+
             MoveWindow(swapchain->device_window, 0, 0, width, height, TRUE);
+
+            device->filter_messages = filter_messages;
         }
         swapchain->d3d_mode = actual_mode;
     }
     else if (!swapchain->desc.windowed)
     {
-        RECT *window_rect = NULL;
         /* Fullscreen -> windowed switch */
+        RECT *window_rect = NULL;
         if (swapchain->desc.flags & WINED3D_SWAPCHAIN_RESTORE_WINDOW_RECT)
             window_rect = &swapchain->original_window_rect;
         wined3d_device_restore_fullscreen_window(device, swapchain->device_window, window_rect);

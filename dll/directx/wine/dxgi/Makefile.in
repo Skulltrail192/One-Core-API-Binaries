@@ -1,0 +1,15 @@
+MODULE    = dxgi.dll
+IMPORTLIB = dxgi
+IMPORTS   = dxguid uuid wined3d user32
+
+C_SRCS = \
+	adapter.c \
+	device.c \
+	dxgi_main.c \
+	factory.c \
+	output.c \
+	surface.c \
+	swapchain.c \
+	utils.c
+
+RC_SRCS = version.rc

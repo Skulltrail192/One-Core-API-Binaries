@@ -135,7 +135,7 @@ static void draw_primitive_arrays(struct wined3d_context *context, const struct 
             element = &si->elements[element_idx];
             ptr = element->data.addr + element->stride * i;
             if (element->data.buffer_object)
-                ptr += (ULONG_PTR)buffer_get_sysmem(state->streams[element->stream_idx].buffer, context);
+                ptr += (ULONG_PTR)wined3d_buffer_load_sysmem(state->streams[element->stream_idx].buffer, context);
             ops->generic[element->format->emit_idx](element_idx, ptr);
         }
 
@@ -196,12 +196,10 @@ static void draw_primitive_immediate_mode(struct wined3d_context *context, const
     if (instance_count)
         FIXME("Instancing not implemented.\n");
 
-    /* Immediate mode drawing can't make use of indices in a vbo - get the
-     * data from the index buffer. If the index buffer has no vbo (not
-     * supported or other reason), or with user pointer drawing idx_data
-     * will be non-NULL. */
-    if (idx_size && !idx_data)
-        idx_data = buffer_get_sysmem(state->index_buffer, context);
+    /* Immediate mode drawing can't make use of indices in a VBO - get the
+     * data from the index buffer. */
+    if (idx_size)
+        idx_data = wined3d_buffer_load_sysmem(state->index_buffer, context) + state->index_offset;
 
     ops = &d3d_info->ffp_attrib_ops;
 
@@ -391,19 +389,75 @@ static void remove_vbos(struct wined3d_context *context,
 {
     unsigned int i;
 
-    for (i = 0; i < (sizeof(s->elements) / sizeof(*s->elements)); ++i)
+    for (i = 0; i < ARRAY_SIZE(s->elements); ++i)
     {
         struct wined3d_stream_info_element *e;
 
-        if (!(s->use_map & (1u << i))) continue;
+        if (!(s->use_map & (1u << i)))
+            continue;
 
         e = &s->elements[i];
         if (e->data.buffer_object)
         {
             struct wined3d_buffer *vb = state->streams[e->stream_idx].buffer;
             e->data.buffer_object = 0;
-            e->data.addr = (BYTE *)((ULONG_PTR)e->data.addr + (ULONG_PTR)buffer_get_sysmem(vb, context));
+            e->data.addr += (ULONG_PTR)wined3d_buffer_load_sysmem(vb, context);
         }
+    }
+}
+
+static BOOL use_transform_feedback(const struct wined3d_state *state)
+{
+    const struct wined3d_shader *shader;
+    if (!(shader = state->shader[WINED3D_SHADER_TYPE_GEOMETRY]))
+        return FALSE;
+    return shader->u.gs.so_desc.element_count;
+}
+
+static void context_pause_transform_feedback(struct wined3d_context *context, BOOL force)
+{
+    const struct wined3d_gl_info *gl_info = context->gl_info;
+
+    if (!context->transform_feedback_active || context->transform_feedback_paused)
+        return;
+
+    if (gl_info->supported[ARB_TRANSFORM_FEEDBACK2])
+    {
+        GL_EXTCALL(glPauseTransformFeedback());
+        checkGLcall("glPauseTransformFeedback");
+        context->transform_feedback_paused = 1;
+        return;
+    }
+
+    WARN("Cannot pause transform feedback operations.\n");
+
+    if (force)
+        context_end_transform_feedback(context);
+}
+
+static GLenum gl_tfb_primitive_type_from_d3d(enum wined3d_primitive_type primitive_type)
+{
+    GLenum gl_primitive_type = gl_primitive_type_from_d3d(primitive_type);
+    switch (gl_primitive_type)
+    {
+        case GL_POINTS:
+            return GL_POINTS;
+
+        case GL_LINE_STRIP:
+        case GL_LINE_STRIP_ADJACENCY:
+        case GL_LINES_ADJACENCY:
+        case GL_LINES:
+            return GL_LINES;
+
+        case GL_TRIANGLE_FAN:
+        case GL_TRIANGLE_STRIP:
+        case GL_TRIANGLE_STRIP_ADJACENCY:
+        case GL_TRIANGLES_ADJACENCY:
+        case GL_TRIANGLES:
+            return GL_TRIANGLES;
+
+        default:
+            return gl_primitive_type;
     }
 }
 
@@ -412,21 +466,26 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
         int base_vertex_idx, unsigned int start_idx, unsigned int index_count,
         unsigned int start_instance, unsigned int instance_count, BOOL indexed)
 {
+    BOOL emulation = FALSE, rasterizer_discard = FALSE;
     const struct wined3d_fb_state *fb = state->fb;
     const struct wined3d_stream_info *stream_info;
     struct wined3d_event_query *ib_query = NULL;
+    struct wined3d_rendertarget_view *dsv, *rtv;
     struct wined3d_stream_info si_emulated;
-    struct wined3d_rendertarget_view *dsv;
     const struct wined3d_gl_info *gl_info;
     struct wined3d_context *context;
     unsigned int i, idx_size = 0;
     const void *idx_data = NULL;
-    BOOL emulation = FALSE;
 
     if (!index_count)
         return;
 
-    context = context_acquire(device, wined3d_rendertarget_view_get_surface(fb->render_targets[0]));
+    if (!(rtv = fb->render_targets[0]))
+        rtv = fb->depth_stencil;
+    if (rtv)
+        context = context_acquire(device, wined3d_texture_from_resource(rtv->resource), rtv->sub_resource_idx);
+    else
+        context = context_acquire(device, NULL, 0);
     if (!context->valid)
     {
         context_release(context);
@@ -435,12 +494,14 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
     }
     gl_info = context->gl_info;
 
+    if (!use_transform_feedback(state))
+        context_pause_transform_feedback(context, TRUE);
+
     for (i = 0; i < gl_info->limits.buffers; ++i)
     {
-        struct wined3d_rendertarget_view *rtv = fb->render_targets[i];
         struct wined3d_texture *rt;
 
-        if (!rtv || rtv->format->id == WINED3DFMT_NULL)
+        if (!(rtv = fb->render_targets[i]) || rtv->format->id == WINED3DFMT_NULL)
             continue;
 
         rt = wined3d_texture_from_resource(rtv->resource);
@@ -466,25 +527,7 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
         struct wined3d_surface *ds = wined3d_rendertarget_view_get_surface(dsv);
 
         if (state->render_states[WINED3D_RS_ZWRITEENABLE] || state->render_states[WINED3D_RS_ZENABLE])
-        {
-            RECT current_rect, draw_rect, r;
-
-            if (!context->render_offscreen && ds != device->onscreen_depth_stencil)
-                device_switch_onscreen_ds(device, context, ds);
-
-            if (surface_get_sub_resource(ds)->locations & location)
-                SetRect(&current_rect, 0, 0, ds->ds_current_size.cx, ds->ds_current_size.cy);
-            else
-                SetRectEmpty(&current_rect);
-
-            wined3d_get_draw_rect(state, &draw_rect);
-
-            IntersectRect(&r, &draw_rect, &current_rect);
-            if (!EqualRect(&r, &draw_rect))
-                wined3d_texture_load_location(ds->container, dsv->sub_resource_idx, context, location);
-            else
-                wined3d_texture_prepare_location(ds->container, dsv->sub_resource_idx, context, location);
-        }
+            wined3d_texture_load_location(ds->container, dsv->sub_resource_idx, context, location);
         else
             wined3d_texture_prepare_location(ds->container, dsv->sub_resource_idx, context, location);
     }
@@ -496,21 +539,13 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
         return;
     }
 
-    if (fb->depth_stencil && state->render_states[WINED3D_RS_ZWRITEENABLE])
+    if (dsv && state->render_states[WINED3D_RS_ZWRITEENABLE])
     {
-        struct wined3d_surface *ds = wined3d_rendertarget_view_get_surface(fb->depth_stencil);
+        struct wined3d_surface *ds = wined3d_rendertarget_view_get_surface(dsv);
         DWORD location = context->render_offscreen ? ds->container->resource.draw_binding : WINED3D_LOCATION_DRAWABLE;
 
-        surface_modify_ds_location(ds, location, ds->ds_current_size.cx, ds->ds_current_size.cy);
-    }
-
-    if ((!gl_info->supported[WINED3D_GL_VERSION_2_0]
-            || !gl_info->supported[NV_POINT_SPRITE])
-            && context->render_offscreen
-            && state->render_states[WINED3D_RS_POINTSPRITEENABLE]
-            && state->gl_primitive_type == GL_POINTS)
-    {
-        FIXME("Point sprite coordinate origin switching not supported.\n");
+        wined3d_texture_validate_location(ds->container, dsv->sub_resource_idx, location);
+        wined3d_texture_invalidate_location(ds->container, dsv->sub_resource_idx, ~location);
     }
 
     stream_info = &context->stream_info;
@@ -572,12 +607,52 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
         }
     }
 
+    if (use_transform_feedback(state))
+    {
+        const struct wined3d_shader *shader = state->shader[WINED3D_SHADER_TYPE_GEOMETRY];
+
+        if (shader->u.gs.so_desc.rasterizer_stream_idx == WINED3D_NO_RASTERIZER_STREAM)
+        {
+            glEnable(GL_RASTERIZER_DISCARD);
+            checkGLcall("enable rasterizer discard");
+            rasterizer_discard = TRUE;
+        }
+
+        if (context->transform_feedback_paused)
+        {
+            GL_EXTCALL(glResumeTransformFeedback());
+            checkGLcall("glResumeTransformFeedback");
+            context->transform_feedback_paused = 0;
+        }
+        else if (!context->transform_feedback_active)
+        {
+            GLenum mode = gl_tfb_primitive_type_from_d3d(shader->u.gs.output_type);
+            GL_EXTCALL(glBeginTransformFeedback(mode));
+            checkGLcall("glBeginTransformFeedback");
+            context->transform_feedback_active = 1;
+        }
+    }
+
     if (context->use_immediate_mode_draw || emulation)
         draw_primitive_immediate_mode(context, state, stream_info, idx_data,
                 idx_size, base_vertex_idx, start_idx, index_count, instance_count);
     else
         draw_primitive_arrays(context, state, idx_data, idx_size, base_vertex_idx,
                 start_idx, index_count, start_instance, instance_count);
+
+    if (context->uses_uavs)
+    {
+        GL_EXTCALL(glMemoryBarrier(GL_ALL_BARRIER_BITS));
+        checkGLcall("glMemoryBarrier");
+    }
+
+    context_pause_transform_feedback(context, FALSE);
+
+    if (rasterizer_discard)
+    {
+        glDisable(GL_RASTERIZER_DISCARD);
+        checkGLcall("disable rasterizer discard");
+    }
 
     if (ib_query)
         wined3d_event_query_issue(ib_query, device);
@@ -590,4 +665,47 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
     context_release(context);
 
     TRACE("Done all gl drawing.\n");
+}
+
+void dispatch_compute(struct wined3d_device *device, const struct wined3d_state *state,
+        unsigned int group_count_x, unsigned int group_count_y, unsigned int group_count_z)
+{
+    const struct wined3d_gl_info *gl_info;
+    struct wined3d_context *context;
+
+    context = context_acquire(device, NULL, 0);
+    if (!context->valid)
+    {
+        context_release(context);
+        WARN("Invalid context, skipping dispatch.\n");
+        return;
+    }
+    gl_info = context->gl_info;
+
+    if (!gl_info->supported[ARB_COMPUTE_SHADER])
+    {
+        context_release(context);
+        FIXME("OpenGL implementation does not support compute shaders.\n");
+        return;
+    }
+
+    context_apply_compute_state(context, device, state);
+
+    if (!state->shader[WINED3D_SHADER_TYPE_COMPUTE])
+    {
+        context_release(context);
+        WARN("No compute shader bound, skipping dispatch.\n");
+        return;
+    }
+
+    GL_EXTCALL(glDispatchCompute(group_count_x, group_count_y, group_count_z));
+    checkGLcall("glDispatchCompute");
+
+    GL_EXTCALL(glMemoryBarrier(GL_ALL_BARRIER_BITS));
+    checkGLcall("glMemoryBarrier");
+
+    if (wined3d_settings.strict_draw_ordering)
+        gl_info->gl_ops.gl.p_glFlush(); /* Flush to ensure ordering across contexts. */
+
+    context_release(context);
 }

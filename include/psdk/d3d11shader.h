@@ -35,7 +35,7 @@ typedef D3D_TESSELLATOR_OUTPUT_PRIMITIVE D3D11_TESSELLATOR_OUTPUT_PRIMITIVE;
 typedef struct _D3D11_SHADER_DESC
 {
     UINT Version;
-    LPCSTR Creator;
+    const char *Creator;
     UINT Flags;
     UINT ConstantBuffers;
     UINT BoundResources;
@@ -76,11 +76,11 @@ typedef struct _D3D11_SHADER_DESC
 
 typedef struct _D3D11_SHADER_VARIABLE_DESC
 {
-    LPCSTR Name;
+    const char *Name;
     UINT StartOffset;
     UINT Size;
     UINT uFlags;
-    LPVOID DefaultValue;
+    void *DefaultValue;
     UINT StartTexture;
     UINT TextureSize;
     UINT StartSampler;
@@ -96,12 +96,12 @@ typedef struct _D3D11_SHADER_TYPE_DESC
     UINT Elements;
     UINT Members;
     UINT Offset;
-    LPCSTR Name;
+    const char *Name;
 } D3D11_SHADER_TYPE_DESC;
 
 typedef struct _D3D11_SHADER_BUFFER_DESC
 {
-    LPCSTR Name;
+    const char *Name;
     D3D_CBUFFER_TYPE Type;
     UINT Variables;
     UINT Size;
@@ -110,7 +110,7 @@ typedef struct _D3D11_SHADER_BUFFER_DESC
 
 typedef struct _D3D11_SHADER_INPUT_BIND_DESC
 {
-    LPCSTR Name;
+    const char *Name;
     D3D_SHADER_INPUT_TYPE Type;
     UINT BindPoint;
     UINT BindCount;
@@ -122,7 +122,7 @@ typedef struct _D3D11_SHADER_INPUT_BIND_DESC
 
 typedef struct _D3D11_SIGNATURE_PARAMETER_DESC
 {
-    LPCSTR SemanticName;
+    const char *SemanticName;
     UINT SemanticIndex;
     UINT Register;
     D3D_NAME SystemValueType;
@@ -139,8 +139,8 @@ DECLARE_INTERFACE(ID3D11ShaderReflectionType)
 {
     STDMETHOD(GetDesc)(THIS_ D3D11_SHADER_TYPE_DESC *desc) PURE;
     STDMETHOD_(struct ID3D11ShaderReflectionType *, GetMemberTypeByIndex)(THIS_ UINT index) PURE;
-    STDMETHOD_(struct ID3D11ShaderReflectionType *, GetMemberTypeByName)(THIS_ LPCSTR name) PURE;
-    STDMETHOD_(LPCSTR, GetMemberTypeName)(THIS_ UINT index) PURE;
+    STDMETHOD_(struct ID3D11ShaderReflectionType *, GetMemberTypeByName)(THIS_ const char *name) PURE;
+    STDMETHOD_(const char *, GetMemberTypeName)(THIS_ UINT index) PURE;
     STDMETHOD(IsEqual)(THIS_ struct ID3D11ShaderReflectionType *type) PURE;
     STDMETHOD_(struct ID3D11ShaderReflectionType *, GetSubType)(THIS) PURE;
     STDMETHOD_(struct ID3D11ShaderReflectionType *, GetBaseClass)(THIS) PURE;
@@ -170,7 +170,7 @@ DECLARE_INTERFACE(ID3D11ShaderReflectionConstantBuffer)
 {
     STDMETHOD(GetDesc)(THIS_ D3D11_SHADER_BUFFER_DESC *desc) PURE;
     STDMETHOD_(struct ID3D11ShaderReflectionVariable *, GetVariableByIndex)(THIS_ UINT index) PURE;
-    STDMETHOD_(struct ID3D11ShaderReflectionVariable *, GetVariableByName)(THIS_ LPCSTR name) PURE;
+    STDMETHOD_(struct ID3D11ShaderReflectionVariable *, GetVariableByName)(THIS_ const char *name) PURE;
 };
 #undef INTERFACE
 
@@ -180,19 +180,19 @@ DEFINE_GUID(IID_ID3D11ShaderReflection, 0x0a233719, 0x3960, 0x4578, 0x9d, 0x7c, 
 DECLARE_INTERFACE_(ID3D11ShaderReflection, IUnknown)
 {
     /* IUnknown methods */
-    STDMETHOD(QueryInterface)(THIS_ REFIID riid, LPVOID *object) PURE;
+    STDMETHOD(QueryInterface)(THIS_ REFIID riid, void **out) PURE;
     STDMETHOD_(ULONG, AddRef)(THIS) PURE;
     STDMETHOD_(ULONG, Release)(THIS) PURE;
     /* ID3D11ShaderReflection methods */
     STDMETHOD(GetDesc)(THIS_ D3D11_SHADER_DESC *desc) PURE;
     STDMETHOD_(struct ID3D11ShaderReflectionConstantBuffer *, GetConstantBufferByIndex)(THIS_ UINT index) PURE;
-    STDMETHOD_(struct ID3D11ShaderReflectionConstantBuffer *, GetConstantBufferByName)(THIS_ LPCSTR name) PURE;
+    STDMETHOD_(struct ID3D11ShaderReflectionConstantBuffer *, GetConstantBufferByName)(THIS_ const char *name) PURE;
     STDMETHOD(GetResourceBindingDesc)(THIS_ UINT index, D3D11_SHADER_INPUT_BIND_DESC *desc) PURE;
     STDMETHOD(GetInputParameterDesc)(THIS_ UINT index, D3D11_SIGNATURE_PARAMETER_DESC *desc) PURE;
     STDMETHOD(GetOutputParameterDesc)(THIS_ UINT index, D3D11_SIGNATURE_PARAMETER_DESC *desc) PURE;
     STDMETHOD(GetPatchConstantParameterDesc)(THIS_ UINT index, D3D11_SIGNATURE_PARAMETER_DESC *desc) PURE;
-    STDMETHOD_(struct ID3D11ShaderReflectionVariable *, GetVariableByName)(THIS_ LPCSTR name) PURE;
-    STDMETHOD(GetResourceBindingDescByName)(THIS_ LPCSTR name, D3D11_SHADER_INPUT_BIND_DESC *desc) PURE;
+    STDMETHOD_(struct ID3D11ShaderReflectionVariable *, GetVariableByName)(THIS_ const char *name) PURE;
+    STDMETHOD(GetResourceBindingDescByName)(THIS_ const char *name, D3D11_SHADER_INPUT_BIND_DESC *desc) PURE;
     STDMETHOD_(UINT, GetMovInstructionCount)(THIS) PURE;
     STDMETHOD_(UINT, GetMovcInstructionCount)(THIS) PURE;
     STDMETHOD_(UINT, GetConversionInstructionCount)(THIS) PURE;
@@ -202,6 +202,47 @@ DECLARE_INTERFACE_(ID3D11ShaderReflection, IUnknown)
     STDMETHOD_(UINT, GetNumInterfaceSlots)(THIS) PURE;
     STDMETHOD(GetMinFeatureLevel)(THIS_ enum D3D_FEATURE_LEVEL *level) PURE;
     STDMETHOD_(UINT, GetThreadGroupSize)(THIS_ UINT *sizex, UINT *sizey, UINT *sizez) PURE;
+};
+#undef INTERFACE
+
+DEFINE_GUID(IID_ID3D11ModuleInstance, 0x469e07f7, 0x45a, 0x48d5, 0xaa, 0x12, 0x68, 0xa4, 0x78, 0xcd, 0xf7, 0x5d);
+
+#define INTERFACE ID3D11ModuleInstance
+DECLARE_INTERFACE_(ID3D11ModuleInstance, IUnknown)
+{
+    STDMETHOD(QueryInterface)(THIS_ REFIID iid, void **out) PURE;
+    STDMETHOD_(ULONG, AddRef)(THIS) PURE;
+    STDMETHOD_(ULONG, Release)(THIS) PURE;
+
+    /* ID3D11ModuleInstance methods */
+    STDMETHOD(BindConstantBuffer)(THIS_ UINT srcslot, UINT dstslot, UINT dstoffset) PURE;
+    STDMETHOD(BindConstantBufferByName)(THIS_ const char *name, UINT dstslot, UINT dstoffset) PURE;
+
+    STDMETHOD(BindResource)(THIS_ UINT srcslot, UINT dstslot, UINT count) PURE;
+    STDMETHOD(BindResourceByName)(THIS_ const char *name, UINT dstslot, UINT count) PURE;
+
+    STDMETHOD(BindSampler)(THIS_ UINT srcslot,  UINT dstslot,  UINT count) PURE;
+    STDMETHOD(BindSamplerByName)(THIS_ const char *name,  UINT dstslot, UINT count) PURE;
+
+    STDMETHOD(BindUnorderedAccessView)(THIS_ UINT srcslot,  UINT dstslot, UINT count) PURE;
+    STDMETHOD(BindUnorderedAccessViewByName)(THIS_ const char *name, UINT dstslot, UINT count) PURE;
+
+    STDMETHOD(BindResourceAsUnorderedAccessView)(THIS_ UINT srcslot, UINT dstslot, UINT count) PURE;
+    STDMETHOD(BindResourceAsUnorderedAccessViewByName)(THIS_ const char *name, UINT dstslot, UINT count) PURE;
+};
+#undef INTERFACE
+
+DEFINE_GUID(IID_ID3D11Module, 0xcac701ee, 0x80fc, 0x4122, 0x82, 0x42, 0x10, 0xb3, 0x9c, 0x8c, 0xec, 0x34);
+
+#define INTERFACE ID3D11Module
+DECLARE_INTERFACE_(ID3D11Module, IUnknown)
+{
+    STDMETHOD(QueryInterface)(THIS_ REFIID iid, void **out) PURE;
+    STDMETHOD_(ULONG, AddRef)(THIS) PURE;
+    STDMETHOD_(ULONG, Release)(THIS) PURE;
+
+    /* ID3D11Module methods */
+    STDMETHOD(CreateInstance)(THIS_ const char *instnamespace, ID3D11ModuleInstance **moduleinstance) PURE;
 };
 #undef INTERFACE
 

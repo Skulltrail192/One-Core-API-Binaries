@@ -135,6 +135,9 @@ extern "C" {
   _CRTIMP int __cdecl _finitef(_In_ float x);
   _CRTIMP int __cdecl _isnanf(_In_ float x);
   _CRTIMP int __cdecl _fpclassf(_In_ float x);
+#else
+   _Check_return_ __CRT_INLINE float _chgsignf(_In_ float x) { return (float)_chgsign((double)x); }
+   _Check_return_ __CRT_INLINE float _copysignf(_In_ float x, _In_ float y) { return (float)_copysign((double)x, (double)y); }	
 #endif
 
 #if defined(__ia64__) || defined (_M_IA64)

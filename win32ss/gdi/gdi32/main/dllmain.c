@@ -87,4 +87,22 @@ GdiDllInitialize (
     return TRUE;
 }
 
+
+NTSTATUS 
+WINAPI
+D3DKMTCreateDCFromMemory(
+  _Inout_ D3DKMT_CREATEDCFROMMEMORY *pData
+)
+{
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS 
+WINAPI
+D3DKMTDestroyDCFromMemory(
+  _In_ const D3DKMT_DESTROYDCFROMMEMORY *pData
+)
+{
+	return STATUS_SUCCESS;
+}  
 /* EOF */

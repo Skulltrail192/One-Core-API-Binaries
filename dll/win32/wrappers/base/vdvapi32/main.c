@@ -23,7 +23,8 @@
 #include <rtl.h>
 #include <winsvc.h>
 #include <evntprov.h>
-#include <ntdllnew.h>
+#include <ntsecapi.h>
+// #include <ntdllnew.h>
 #include <ndk/cmfuncs.h>
 
 
@@ -63,6 +64,8 @@ static BOOLEAN DllInitialized = FALSE; /* HACK */
 typedef VOID( CALLBACK * PFN_SC_NOTIFY_CALLBACK ) (
     IN PVOID pParameter 
 );
+
+typedef PVOID LSA_HANDLE, *PLSA_HANDLE;
 
 typedef ULONG64 TRACEHANDLE,*PTRACEHANDLE;
 

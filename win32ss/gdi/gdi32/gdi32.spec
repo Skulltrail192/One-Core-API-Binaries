@@ -610,8 +610,8 @@
 
 #Onnly for compile APi-Set
 @ stub D3DKMTCloseAdapter
-@ stub D3DKMTCreateDCFromMemory
-@ stub D3DKMTDestroyDCFromMemory
+@ stdcall D3DKMTCreateDCFromMemory(ptr);
+@ stdcall D3DKMTDestroyDCFromMemory(ptr)
 @ stub D3DKMTCheckMonitorPowerState
 @ stub D3DKMTOpenAdapterFromHdc
 @ stub D3DKMTEscape
