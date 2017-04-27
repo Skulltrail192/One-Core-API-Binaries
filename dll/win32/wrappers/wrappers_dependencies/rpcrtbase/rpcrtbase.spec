@@ -38,6 +38,7 @@
 @ stdcall I_RpcBindingInqTransportType(ptr ptr)
 @ stub I_RpcBindingInqWireIdForSnego
 @ stub I_RpcBindingIsClientLocal
+@ stub I_RpcBindingIsServerLocal
 @ stub I_RpcBindingToStaticStringBindingW
 @ stub I_RpcClearMutex
 @ stub I_RpcConnectionInqSockBuffSize

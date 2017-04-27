@@ -1224,7 +1224,7 @@ HRESULT
 WINAPI 
 SHCreateShellItemArrayFromIDLists(
 	UINT cidl,
-    CIDLIST_ABSOLUTE_ARRAY pidl_array,
+    PCIDLIST_ABSOLUTE_ARRAY pidl_array,
     IShellItemArray **psia
 )
 {

@@ -463,3 +463,102 @@ EtwTraceMessageVa(
 {
     return ERROR_SUCCESS;
 }
+//Add daqui pra lá
+ULONG
+NTAPI
+EtwpAddLogHeaderToLogFile(
+    IN OUT PWMI_LOGGER_INFORMATION LoggerInfo,
+    IN PVOID              RefClock,
+    IN     ULONG                   Update
+)
+{
+    return ERROR_SUCCESS;
+}
+
+ULONG
+EtwpFinalizeLogFileHeader(
+    IN PWMI_LOGGER_INFORMATION LoggerInfo
+)
+{
+    return ERROR_SUCCESS;
+}
+
+ULONG 
+EtwpFlushUmLogger(
+    IN ULONG WnodeSize,
+    IN OUT ULONG *SizeUsed,
+    OUT ULONG *SizeNeeded,
+    IN OUT PWMI_LOGGER_INFORMATION LoggerInfo
+)
+{
+	*SizeNeeded = 10000;
+    return ERROR_SUCCESS;
+}
+
+ULONG
+EtwpQueryUmLogger(
+    IN ULONG WnodeSize,
+    IN OUT ULONG *SizeUsed,
+    OUT ULONG *SizeNeeded,
+    IN OUT PWMI_LOGGER_INFORMATION LoggerInfo
+)
+{
+	*SizeNeeded = 10000;
+    return ERROR_SUCCESS;
+}
+
+ULONG EtwpSendWmiKMRequest(
+    HANDLE DeviceHandle,
+    ULONG Ioctl,
+    PVOID InBuffer,
+    ULONG InBufferSize,
+    PVOID OutBuffer,
+    ULONG MaxBufferSize,
+    ULONG *ReturnSize,
+    LPOVERLAPPED Overlapped
+)
+{
+	return ERROR_SUCCESS;
+}
+
+ULONG
+EtwpStartUmLogger(
+    IN ULONG WnodeSize,
+    IN OUT ULONG *SizeUsed,
+    OUT ULONG *SizeNeeded,
+    IN OUT PWMI_LOGGER_INFORMATION LoggerInfo
+)
+{
+	*SizeNeeded = 10000;
+	return ERROR_SUCCESS;
+}
+
+ULONG
+EtwpStopUmLogger(
+        IN ULONG WnodeSize,
+        IN OUT ULONG *SizeUsed,
+        OUT ULONG *SizeNeeded,
+        IN OUT PWMI_LOGGER_INFORMATION LoggerInfo
+)
+{
+	*SizeNeeded = 10000;
+	return ERROR_SUCCESS;
+}
+
+ULONG
+EtwpUpdateUmLogger(
+    IN ULONG WnodeSize,
+    IN OUT ULONG *SizeUsed,
+    OUT ULONG *SizeNeeded,
+    IN OUT PWMI_LOGGER_INFORMATION LoggerInfo
+)
+{
+	*SizeNeeded = 10000;
+	return ERROR_SUCCESS;
+}
+
+BOOLEAN 
+EtwpIsProcessExiting()
+{
+	return FALSE;
+}

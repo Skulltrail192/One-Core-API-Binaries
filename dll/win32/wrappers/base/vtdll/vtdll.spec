@@ -1463,6 +1463,21 @@
 @ stdcall ZwWow64QueryVirtualMemory64(ptr ptr ptr long ptr long long ptr) ntdll.NtWow64QueryVirtualMemory64
 @ stdcall ZwWow64ReadVirtualMemory64(ptr ptr ptr ptr long long ptr) ntdll.NtWow64ReadVirtualMemory64
 
+#Longhorn Functions
+@ stdcall EtwpAddLogHeaderToLogFile(ptr ptr long)
+@ stdcall EtwpFinalizeLogFileHeader(ptr)
+@ stdcall EtwpFlushUmLogger(long ptr ptr ptr)
+@ stdcall EtwpIsProcessExiting()
+@ stdcall EtwpQueryUmLogger(long ptr ptr ptr)
+@ stdcall EtwpSendWmiKMRequest(ptr long ptr long ptr long ptr ptr)
+@ stdcall EtwpStartUmLogger(long ptr ptr ptr)
+@ stdcall EtwpStopUmLogger(long ptr ptr ptr)
+@ stdcall EtwpUpdateUmLogger(long ptr ptr ptr)
+@ stdcall RtlCloseDefinitionIdentityHandle(ptr ptr)
+@ stdcall RtlGetDefinitionIdentityAttributeValue(ptr ptr ptr ptr)
+@ stdcall RtlInitLUnicodeStringFromNullTerminatedString(ptr ptr)
+@ stdcall RtlParseDefinitionIdentity(ptr ptr long)
+
 #Vista Functions
 @ stdcall AlpcGetMessageAttribute(ptr long)
 @ stdcall AlpcInitializeMessageAttribute(long ptr long ptr)

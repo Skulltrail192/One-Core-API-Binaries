@@ -988,8 +988,8 @@
 @ stdcall -arch=x86_64 uaw_wcsrchr(wstr long)
 
 #functions for XP x64 WOW
-@ stdcall BaseProcessStartThunk(ptr ptr)
-@ stdcall BaseThreadStartThunk(ptr ptr) 
+@ stdcall -arch=i386 BaseProcessStartThunk(ptr ptr)
+@ stdcall -arch=i386 BaseThreadStartThunk(ptr ptr) 
 @ stdcall CtrlRoutine(ptr) 
 @ stdcall ConsoleIMERoutine(ptr)
 

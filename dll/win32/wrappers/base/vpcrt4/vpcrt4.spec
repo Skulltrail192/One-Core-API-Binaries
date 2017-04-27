@@ -38,6 +38,7 @@
 @ stdcall I_RpcBindingInqTransportType(ptr ptr)
 @ stdcall I_RpcBindingInqWireIdForSnego() rpcrtbase.I_RpcBindingInqWireIdForSnego
 @ stdcall I_RpcBindingIsClientLocal() rpcrtbase.I_RpcBindingIsClientLocal
+@ stdcall I_RpcBindingIsServerLocal() rpcrtbase.I_RpcBindingIsServerLocal
 @ stdcall I_RpcBindingToStaticStringBindingW() rpcrtbase.I_RpcBindingToStaticStringBindingW
 @ stdcall I_RpcClearMutex() rpcrtbase.I_RpcClearMutex
 @ stdcall I_RpcConnectionInqSockBuffSize() rpcrtbase.I_RpcConnectionInqSockBuffSize
