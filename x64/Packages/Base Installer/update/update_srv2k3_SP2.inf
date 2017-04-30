@@ -110,11 +110,11 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
 [CopyAlways.WinSxS.Policies.files]
 	"WinSxS\Policies\amd64_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_BD997995\6.0.3790.5190.policy"
 	"WinSxS\Policies\amd64_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_BD997995\6.0.3790.5190.cat"	
-	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.policy"
-	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.cat"	
-	"WinSxS\Policies\amd64_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_AE43B2CC\1.0.6002.23693.cat"
-	"WinSxS\Policies\amd64_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_AE43B2CC\1.0.6002.23693.policy"	
-	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.23084.cat"
+	"WinSxS\Policies\wow64_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5C2DC83C\6.0.3790.5190.policy"
+	"WinSxS\Policies\wow64_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5C2DC83C\6.0.3790.5190.cat"	
+	"WinSxS\Policies\amd64_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_AE43B2CC\5.1.6002.23084.cat"
+	"WinSxS\Policies\amd64_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_AE43B2CC\5.1.6002.23084.policy"	
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\5.1.6002.23084.cat"
 	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\5.1.6002.23084.policy"	
 
 [CopyAlways.System32.Files]
@@ -150,6 +150,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     idndl.dll,amd64/idndl.dll
     kernel32.dll,amd64/kernel32.dll 
     kernelbase.dll,amd64/kernelbase.dll	
+	kernelex.dll,amd64/kernelex.dll	
     Nlsdl.dll,amd64/Nlsdl.dll
     normaliz.dll,amd64/normaliz.dll
     ntdllbase.dll,amd64/ntdllbase.dll
@@ -279,6 +280,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     amd64/idndl.dll = 1
     amd64/kernel32.dll = 1
     amd64/kernelbase.dll = 1	
+	amd64/kernelex.dll = 1
     amd64/Nlsdl.dll = 1
     amd64/normaliz.dll = 1
     amd64/psapi.dll = 1
