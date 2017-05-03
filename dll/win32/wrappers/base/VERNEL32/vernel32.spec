@@ -1060,6 +1060,11 @@
 @ stdcall DeleteProcThreadAttributeList(ptr)
 @ stdcall FlushProcessWriteBuffers()
 @ stdcall FreeLibraryWhenCallbackReturns(ptr ptr) vtdll.TpCallbackUnloadDllOnCompletion
+@ stdcall GetConsoleHistoryInfo(ptr) 
+@ stdcall GetConsoleOriginalTitleA(str long)
+@ stdcall GetConsoleOriginalTitleW(wstr long)
+@ stdcall GetConsoleScreenBufferInfoEx(ptr ptr)
+@ stdcall GetCurrentConsoleFontEx(ptr long ptr) 
 @ stdcall GetFileInformationByHandleEx(ptr long ptr long)
 @ stdcall GetFileInformationByHandleExW(ptr long ptr long) GetFileInformationByHandleEx
 @ stdcall GetLocaleInfoEx(wstr long ptr long)
@@ -1097,6 +1102,9 @@
 @ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
 @ stdcall ReleaseSRWLockExclusive(ptr) vtdll.RtlReleaseSRWLockExclusive
 @ stdcall ReleaseSRWLockShared(ptr) vtdll.RtlReleaseSRWLockShared
+@ stdcall SetConsoleHistoryInfo(ptr)
+@ stdcall SetConsoleScreenBufferInfoEx(ptr ptr)
+@ stdcall SetCurrentConsoleFontEx(ptr long ptr)
 @ stdcall SetFileInformationByHandle(long long ptr long)
 @ stdcall SetFileInformationByHandleW(long long ptr long) SetFileInformationByHandle
 @ stdcall SetNamedPipeAttribute(ptr long str ptr long)

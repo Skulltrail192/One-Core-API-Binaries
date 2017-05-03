@@ -69,7 +69,7 @@ SetProcessDEPPolicy(DWORD dwFlags)
   if ( dwFlags & 0xFFFFFFFC )
   {
     status = STATUS_INVALID_PARAMETER;
-ERROR:
+error_return:
     BaseSetLastNTError(status);
     return FALSE;
   }
@@ -84,14 +84,14 @@ ERROR:
     if ( dwFlags & 2 )
     {
       status = STATUS_INVALID_PARAMETER_MIX;
-      goto ERROR;
+      goto error_return;
     }
     dwFlags = 2;
   }
   status = NtSetInformationProcess((HANDLE)0xFFFFFFFF, (PROCESSINFOCLASS)0x22u, &dwFlags, 4u);
   if ( !NT_SUCCESS(status))
   {
-    goto ERROR;
+    goto error_return;
   }
   return TRUE;
 }

@@ -574,3 +574,12 @@ DeleteProcThreadAttributeList(
 {
     return;
 }
+
+BOOL
+BasepIsImageVersionOk(
+    IN ULONG ImageMajorVersion,
+    IN ULONG ImageMinorVersion
+    )
+{
+	return TRUE;
+}

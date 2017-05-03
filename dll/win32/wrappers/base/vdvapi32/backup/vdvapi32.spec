@@ -934,49 +934,49 @@
 @ stdcall UsePinForEncryptedFilesA(long long long)
 @ stdcall UsePinForEncryptedFilesW(long long long)
 
-#Imports from wevtapibase (wevtapi from Longhorn Pre-Reset)
-@ stdcall EvtAssertConfig() EvtIntAssertConfig
-@ stdcall EvtClearLog() EvtIntClearLog
-@ stdcall EvtClose() EvtIntClose
-@ stdcall EvtCompileTemplate() EvtIntCompileTemplate
-@ stdcall EvtCreateBookmark() EvtIntCreateBookmark
-@ stdcall EvtCreateMessageRenderContext() EvtIntCreateMessageRenderContext
-@ stdcall EvtCreateValuesRenderContext() EvtIntCreateValuesRenderContext
-@ stdcall EvtDeleteChannelConfig() EvtIntDeleteChannelConfig
-@ stdcall EvtExportLog() EvtIntExportLog
-@ stdcall EvtGetChannelConfigProperty() EvtIntGetChannelConfigProperty
-@ stdcall EvtGetEventMetadataProperty() EvtIntGetEventMetadataProperty
-@ stdcall EvtGetExtendedStatus() EvtIntGetExtendedStatus
-@ stdcall EvtGetMatchedQueryIds() EvtIntGetMatchedQueryIds
-@ stdcall EvtGetNamedObjectInformation() EvtIntGetNamedObjectInformation
-@ stdcall EvtGetPublisherMetadataProperty() EvtIntGetPublisherMetadataProperty
-@ stdcall EvtNext() EvtIntNext
-@ stdcall EvtNextBatch() EvtIntNextBatch
-@ stdcall EvtNextChannelPath() EvtIntNextChannelPath
-@ stdcall EvtNextEventMetadata() EvtIntNextEventMetadata
-@ stdcall EvtNextPublisherId() EvtIntNextPublisherId
-@ stdcall EvtOpenChannelConfig() EvtIntOpenChannelConfig
-@ stdcall EvtOpenChannelEnum() EvtIntOpenChannelEnum
-@ stdcall EvtOpenEventMetadataEnum() EvtIntOpenEventMetadataEnum
-@ stdcall EvtOpenPublisherEnum() EvtIntOpenPublisherEnum
-@ stdcall EvtOpenPublisherMetadata() EvtIntOpenPublisherMetadata
-@ stdcall EvtQueryLog() EvtIntQueryLog
-@ stdcall EvtRegisterSubscription() EvtIntRegisterSubscription
-@ stdcall EvtRender() EvtIntRender
-@ stdcall EvtRenderBookmark() EvtIntRenderBookmark
-@ stdcall EvtRetractConfig() EvtIntRetractConfig
-@ stdcall EvtSaveChannelConfig() EvtIntSaveChannelConfig
-@ stdcall EvtSeek() EvtIntSeek
-@ stdcall EvtSetChannelConfigProperty() EvtIntSetChannelConfigProperty
-@ stdcall EvtUpdateBookmark() EvtIntUpdateBookmark
-@ stdcall EvtUpdateSubscription() EvtIntUpdateSubscription
+; #Imports from wevtapibase (wevtapi from Longhorn Pre-Reset)
+; @ stdcall EvtAssertConfig() EvtIntAssertConfig
+; @ stdcall EvtClearLog() EvtIntClearLog
+; @ stdcall EvtClose() EvtIntClose
+; @ stdcall EvtCompileTemplate() EvtIntCompileTemplate
+; @ stdcall EvtCreateBookmark() EvtIntCreateBookmark
+; @ stdcall EvtCreateMessageRenderContext() EvtIntCreateMessageRenderContext
+; @ stdcall EvtCreateValuesRenderContext() EvtIntCreateValuesRenderContext
+; @ stdcall EvtDeleteChannelConfig() EvtIntDeleteChannelConfig
+; @ stdcall EvtExportLog() EvtIntExportLog
+; @ stdcall EvtGetChannelConfigProperty() EvtIntGetChannelConfigProperty
+; @ stdcall EvtGetEventMetadataProperty() EvtIntGetEventMetadataProperty
+; @ stdcall EvtGetExtendedStatus() EvtIntGetExtendedStatus
+; @ stdcall EvtGetMatchedQueryIds() EvtIntGetMatchedQueryIds
+; @ stdcall EvtGetNamedObjectInformation() EvtIntGetNamedObjectInformation
+; @ stdcall EvtGetPublisherMetadataProperty() EvtIntGetPublisherMetadataProperty
+; @ stdcall EvtNext() EvtIntNext
+; @ stdcall EvtNextBatch() EvtIntNextBatch
+; @ stdcall EvtNextChannelPath() EvtIntNextChannelPath
+; @ stdcall EvtNextEventMetadata() EvtIntNextEventMetadata
+; @ stdcall EvtNextPublisherId() EvtIntNextPublisherId
+; @ stdcall EvtOpenChannelConfig() EvtIntOpenChannelConfig
+; @ stdcall EvtOpenChannelEnum() EvtIntOpenChannelEnum
+; @ stdcall EvtOpenEventMetadataEnum() EvtIntOpenEventMetadataEnum
+; @ stdcall EvtOpenPublisherEnum() EvtIntOpenPublisherEnum
+; @ stdcall EvtOpenPublisherMetadata() EvtIntOpenPublisherMetadata
+; @ stdcall EvtQueryLog() EvtIntQueryLog
+; @ stdcall EvtRegisterSubscription() EvtIntRegisterSubscription
+; @ stdcall EvtRender() EvtIntRender
+; @ stdcall EvtRenderBookmark() EvtIntRenderBookmark
+; @ stdcall EvtRetractConfig() EvtIntRetractConfig
+; @ stdcall EvtSaveChannelConfig() EvtIntSaveChannelConfig
+; @ stdcall EvtSeek() EvtIntSeek
+; @ stdcall EvtSetChannelConfigProperty() EvtIntSetChannelConfigProperty
+; @ stdcall EvtUpdateBookmark() EvtIntUpdateBookmark
+; @ stdcall EvtUpdateSubscription() EvtIntUpdateSubscription
 
-#Imports from advapilong (advapi32 from Longhorn Pre-Reset)
-@ stdcall EvtGetThreadCorrelationId()
-@ stdcall EvtIsActive()
-@ stdcall EvtRegisterPublisher()
-@ stdcall EvtRegisterSubscriber()
-@ stdcall EvtReport()
-@ stdcall EvtReportText()
-@ stdcall EvtScopePublisher()
-@ stdcall EvtSetThreadCorrelationId()
+; #Imports from advapilong (advapi32 from Longhorn Pre-Reset)
+; @ stdcall EvtGetThreadCorrelationId()
+; @ stdcall EvtIsActive()
+; @ stdcall EvtRegisterPublisher()
+; @ stdcall EvtRegisterSubscriber()
+; @ stdcall EvtReport()
+; @ stdcall EvtReportText()
+; @ stdcall EvtScopePublisher()
+; @ stdcall EvtSetThreadCorrelationId()

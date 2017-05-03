@@ -736,3 +736,15 @@ NtOpenTransaction(
 	*TransactionHandle = NULL;
 	return STATUS_NOT_IMPLEMENTED;
 }
+
+NTSTATUS 
+WINAPI 
+NtOpenKeyEx( 
+	PHANDLE retkey, 
+	ACCESS_MASK access, 
+	const OBJECT_ATTRIBUTES *attr, 
+	ULONG options 
+)
+{
+    return NtOpenKey( retkey, access, attr);
+}

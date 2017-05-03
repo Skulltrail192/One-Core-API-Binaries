@@ -1621,6 +1621,8 @@
 @ stdcall RtlCompareUnicodeStrings(ptr long ptr long long)
 @ stdcall RtlTryAcquireSRWLockExclusive(ptr)
 @ stdcall RtlTryAcquireSRWLockShared(ptr)
+@ stdcall NtOpenKeyEx(ptr long ptr long)
+@ stdcall ZwOpenKeyEx(ptr long ptr long) NtOpenKeyEx
 
 #win8
 @ stdcall LdrAddDllDirectory(wstr)

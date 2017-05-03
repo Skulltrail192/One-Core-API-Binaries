@@ -15,6 +15,7 @@ spec2def(vernel32.dll vernel32.spec)
 list(APPEND SOURCE
 	ahcache.c
 	appcompat.c
+	console.c
 	datetime.c
 	dep.c
 	dllmain.c
@@ -58,9 +59,19 @@ add_asm_files(vernel32_ASM ${ASM_SOURCE})
 
 add_library(vernel32 SHARED ${vernel32_ASM} ${SOURCE})
 
-set_module_type(vernel32 win32dll ENTRYPOINT BaseDllInitialize 12)
+set_module_type(vernel32 win32dll HOTPATCHABLE ENTRYPOINT BaseDllInitialize 12)
 
-add_importlibs(vernel32 kernelfull vtdll normaliz)
+#############################################
+## HACK FOR MSVC COMPILATION WITH win32dll ##
+set_subsystem(vernel32 console)
+################# END  HACK #################
+
+if(ARCH STREQUAL "i386")
+	add_importlibs(vernel32 kernelfull vtdll normaliz)
+
+elseif(ARCH STREQUAL "amd64")
+	add_importlibs(vernel32 kernel32 vtdll normaliz)
+endif()
 
 add_dependencies(vernel32 psdk)
 

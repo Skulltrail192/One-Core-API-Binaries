@@ -655,7 +655,7 @@ typedef struct _KINTERRUPT
     PVOID Reserved;
 #endif
     ULONG DispatchCode[DISPATCH_LENGTH];
-} KINTERRUPT;
+} KINTERRUPT, *PKINTERRUPT;
 
 //
 // Kernel Event Pair Object

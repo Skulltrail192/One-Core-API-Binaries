@@ -14,7 +14,7 @@ list(APPEND SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/vdi32.def)
 
 add_library(vdi32 SHARED ${SOURCE})
-set_module_type(vdi32 win32dll)
+set_module_type(vdi32 win32dll ENTRYPOINT DllMain 12 UNICODE)
 target_link_libraries(vdi32 wine)
-add_importlibs(vdi32 advapi32 msvcrt kernel32 user32 ntdll gdibase)
+add_importlibs(vdi32 gdibase advapi32 msvcrt kernel32 user32 ntdll)
 add_cd_file(TARGET vdi32 DESTINATION reactos/system32 FOR all)

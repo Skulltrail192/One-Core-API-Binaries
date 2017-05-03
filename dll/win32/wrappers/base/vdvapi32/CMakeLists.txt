@@ -21,6 +21,6 @@ set_module_type(vdvapi32 win32dll ENTRYPOINT 0)
 
 target_link_libraries(vdvapi32 wine)
 
-add_importlibs(vdvapi32 advapibase advapilong wevtapibase ntdll vtdll)
+add_importlibs(vdvapi32 advapibase advapinew advapilong wevtapibase ntdll vtdll)
 
 add_cd_file(TARGET vdvapi32 DESTINATION reactos/system32 FOR all)

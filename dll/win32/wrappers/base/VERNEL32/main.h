@@ -25,6 +25,7 @@
 #include <winnls.h>
 #include <unicode.h>
 #include <base.h>
+#include <wincon.h>
 
 #define WIN32_NO_STATUS
 #include <winbase.h>
