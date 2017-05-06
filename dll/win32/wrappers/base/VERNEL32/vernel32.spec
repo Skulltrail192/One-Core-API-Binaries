@@ -1058,13 +1058,21 @@
 @ stdcall CreateThreadpoolWait(ptr ptr ptr) 
 @ stdcall CreateThreadpoolWork(ptr ptr ptr)
 @ stdcall DeleteProcThreadAttributeList(ptr)
+@ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long long)
+@ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long long)
+@ stdcall EnumSystemLocalesEx(ptr long ptr ptr)
+@ stdcall EnumTimeFormatsEx(ptr wstr long ptr)
 @ stdcall FlushProcessWriteBuffers()
 @ stdcall FreeLibraryWhenCallbackReturns(ptr ptr) vtdll.TpCallbackUnloadDllOnCompletion
+@ stdcall GetApplicationRestartSettings(ptr wstr ptr ptr)
+@ stdcall GetApplicationRestartSettingsWorker(ptr wstr ptr ptr) GetApplicationRestartSettings
+@ stdcall GetCalendarInfoEx(wstr long wstr long wstr long ptr) 
 @ stdcall GetConsoleHistoryInfo(ptr) 
 @ stdcall GetConsoleOriginalTitleA(str long)
 @ stdcall GetConsoleOriginalTitleW(wstr long)
 @ stdcall GetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall GetCurrentConsoleFontEx(ptr long ptr) 
+@ stdcall GetDateFormatEx(wstr long ptr wstr ptr long wstr)
 @ stdcall GetFileInformationByHandleEx(ptr long ptr long)
 @ stdcall GetFileInformationByHandleExW(ptr long ptr long) GetFileInformationByHandleEx
 @ stdcall GetLocaleInfoEx(wstr long ptr long)
@@ -1085,6 +1093,7 @@
 @ stdcall GetThreadInformation(ptr long ptr long)
 @ stdcall GetThreadUILanguage()
 @ stdcall GetTickCount64() 
+@ stdcall GetTimeFormatEx(wstr long ptr wstr ptr long)
 @ stdcall GetUserDefaultLocaleName(wstr long)
 @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
 @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
@@ -1124,7 +1133,38 @@
 
 #Win7 Functions
 @ stdcall GetCurrentProcessorNumberEx(ptr) vtdll.RtlGetCurrentProcessorNumberEx
+@ stdcall GetTimeFormatWWorker(long long ptr wstr ptr long) GetTimeFormatW
 @ stdcall GetLogicalProcessorInformationEx(long ptr ptr)
+@ stdcall K32EmptyWorkingSet(ptr) EmptyWorkingSet
+@ stdcall K32EnumDeviceDrivers(ptr long ptr) EnumDeviceDrivers
+@ stdcall K32EnumPageFilesA(ptr ptr) EnumPageFilesA
+@ stdcall K32EnumPageFilesW(ptr ptr) EnumPageFilesW
+@ stdcall K32EnumProcessModules(ptr ptr long ptr) EnumProcessModules
+@ stdcall K32EnumProcessModulesEx(ptr ptr long ptr long) EnumProcessModulesEx
+@ stdcall K32EnumProcesses(ptr long ptr) EnumProcesses
+@ stdcall K32GetDeviceDriverBaseNameA(ptr ptr long) GetDeviceDriverBaseNameA
+@ stdcall K32GetDeviceDriverBaseNameW(ptr ptr long) GetDeviceDriverBaseNameW
+@ stdcall K32GetDeviceDriverFileNameA(ptr ptr long) GetDeviceDriverFileNameA
+@ stdcall K32GetDeviceDriverFileNameW(ptr ptr long) GetDeviceDriverFileNameW
+@ stdcall K32GetMappedFileNameA(ptr ptr ptr long) GetMappedFileNameA
+@ stdcall K32GetMappedFileNameW(ptr ptr ptr long) GetMappedFileNameW
+@ stdcall K32GetModuleBaseNameA(ptr ptr ptr long) GetModuleBaseNameA
+@ stdcall K32GetModuleBaseNameW(ptr ptr ptr long) GetModuleBaseNameW
+@ stdcall K32GetModuleFileNameExA(ptr ptr ptr long) GetModuleFileNameExA
+@ stdcall K32GetModuleFileNameExW(ptr ptr ptr long) GetModuleFileNameExW
+@ stdcall K32GetModuleInformation(ptr ptr ptr long) GetModuleInformation
+@ stdcall K32GetPerformanceInfo(ptr long) GetPerformanceInfo
+@ stdcall K32GetProcessImageFileNameA(ptr ptr long) GetProcessImageFileNameA
+@ stdcall K32GetProcessImageFileNameW(ptr ptr long) GetProcessImageFileNameW
+@ stdcall K32GetProcessMemoryInfo(ptr ptr long) GetProcessMemoryInfo
+@ stdcall K32GetWsChanges(ptr ptr long) GetWsChanges
+@ stdcall K32GetWsChangesEx(ptr ptr ptr) GetWsChangesEx
+@ stdcall K32InitializeProcessForWsWatch(ptr) InitializeProcessForWsWatch
+@ stdcall K32QueryWorkingSet(ptr ptr long) QueryWorkingSet
+@ stdcall K32QueryWorkingSetEx(ptr ptr long) QueryWorkingSetEx
+@ stdcall QueryUnbiasedInterruptTime(ptr)
+@ stdcall RaiseFailFastException(ptr ptr long)
+@ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
 ;@ stdcall TryAcquireSRWLockExclusive(ptr) ntdllnew.RtlTryAcquireSRWLockExclusive
 ;@ stdcall TryAcquireSRWLockShared(ptr) ntdllnew.RtlTryAcquireSRWLockShared
 

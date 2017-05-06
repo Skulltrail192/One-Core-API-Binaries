@@ -11,6 +11,8 @@
 
 /* PSEH for SEH Support */
 #include <pseh/pseh2.h>
+#include <debug.h>
+#define NDEBUG
 
 #include <cmfuncs.h>
 #include <psfuncs.h>
@@ -62,8 +64,20 @@
 #define FileIdInformation (enum _FILE_INFORMATION_CLASS)59
 #endif
 
+#if DBG
+#define DEBUG_CHANNEL(ch) static ULONG gDebugChannel = ch;
+#else
+#define DEBUG_CHANNEL(ch)
+#endif
+
+#define TRACE(fmt, ...)         TRACE__(gDebugChannel, fmt, ##__VA_ARGS__)
+#define WARN(fmt, ...)          WARN__(gDebugChannel, fmt, ##__VA_ARGS__)
+#define FIXME(fmt, ...)         WARN__(gDebugChannel, fmt,## __VA_ARGS__)
+#define ERR(fmt, ...)           ERR__(gDebugChannel, fmt, ##__VA_ARGS__)
+
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 extern BOOL bIsFileApiAnsi;
+extern HMODULE kernel32_handle DECLSPEC_HIDDEN;
 
 /* TYPE DEFINITIONS **********************************************************/
 typedef UINT(WINAPI * PPROCESS_START_ROUTINE)(VOID);
@@ -235,6 +249,20 @@ typedef struct _SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX {
   };
 } SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, *PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX;
 
+typedef struct _REASON_CONTEXT {
+  ULONG Version;
+  DWORD Flags;
+  union {
+    struct {
+      HMODULE LocalizedReasonModule;
+      ULONG   LocalizedReasonId;
+      ULONG   ReasonStringCount;
+      LPWSTR  *ReasonStrings;
+    } Detailed;
+    LPWSTR SimpleReasonString;
+  } Reason;
+} REASON_CONTEXT, *PREASON_CONTEXT;
+
 /* helper for kernel32->ntdll timeout format conversion */
 static inline PLARGE_INTEGER get_nt_timeout( PLARGE_INTEGER pTime, DWORD timeout )
 {
@@ -312,3 +340,10 @@ typedef enum _PROC_THREAD_ATTRIBUTE_NUM
     ProcThreadAttributeWin32kFilter = 16,
     ProcThreadAttributeSafeOpenPromptOriginClaim = 17,
 } PROC_THREAD_ATTRIBUTE_NUM;
+
+LCID 
+WINAPI 
+LocaleNameToLCID( 
+	LPCWSTR name, 
+	DWORD flags 
+);

@@ -28,6 +28,7 @@ list(APPEND SOURCE
 	mem.c
 	module.c
 	namepipe.c
+	nls.c
 	process.c
 	sortkey.c	
 	support.c
@@ -36,6 +37,7 @@ list(APPEND SOURCE
 	sysinfo.c
 	thread.c
 	tick.c
+	time.c
 	wer.c
 	utils.c
 	winnls/ansi.c
@@ -67,10 +69,10 @@ set_subsystem(vernel32 console)
 ################# END  HACK #################
 
 if(ARCH STREQUAL "i386")
-	add_importlibs(vernel32 kernelfull vtdll normaliz)
+	add_importlibs(vernel32 kernelfull vtdll normaliz psapi)
 
 elseif(ARCH STREQUAL "amd64")
-	add_importlibs(vernel32 kernel32 vtdll normaliz)
+	add_importlibs(vernel32 kernel32 vtdll normaliz psapi)
 endif()
 
 add_dependencies(vernel32 psdk)

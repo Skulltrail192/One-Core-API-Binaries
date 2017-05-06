@@ -488,3 +488,17 @@ GetThreadErrorMode( void )
 {
     return rtlmode_to_win32mode( RtlGetThreadErrorMode() );
 }
+
+VOID 
+WINAPI 
+RaiseFailFastException(
+  _In_opt_  PEXCEPTION_RECORD pExceptionRecord,
+  _In_opt_  PCONTEXT pContextRecord,
+  _In_      DWORD dwFlags
+)
+{
+	RaiseException(pExceptionRecord->ExceptionCode, 
+				   pExceptionRecord->ExceptionFlags, 
+				   pExceptionRecord->NumberParameters, 
+				   &pExceptionRecord->ExceptionInformation[0]);
+}

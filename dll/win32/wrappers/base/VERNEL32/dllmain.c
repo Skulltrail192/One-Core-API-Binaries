@@ -23,6 +23,7 @@ Revision History:
 
 static BOOL DllInitialized = FALSE;
 PPEB Peb;
+HMODULE kernel32_handle = 0;
 
 BOOL
 WINAPI
@@ -41,6 +42,7 @@ BaseDllInitialize(HANDLE hDll,
         case DLL_PROCESS_ATTACH:
         {
             /* Insert more dll attach stuff here! */
+			kernel32_handle = GetModuleHandleW(L"kernel32");
             DllInitialized = TRUE;
             break;
         }

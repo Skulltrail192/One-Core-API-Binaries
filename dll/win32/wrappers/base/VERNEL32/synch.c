@@ -751,3 +751,23 @@ ReleaseSRWLockShared (PSRWLOCK srwlock)
 
   LeaveCriticalSection (&lock->atomicity);
 }
+
+BOOL 
+WINAPI 
+SetWaitableTimerEx(
+  _In_  HANDLE hTimer,
+  _In_  const LARGE_INTEGER *lpDueTime,
+  _In_  LONG lPeriod,
+  _In_  PTIMERAPCROUTINE pfnCompletionRoutine,
+  _In_  LPVOID lpArgToCompletionRoutine,
+  _In_  PREASON_CONTEXT WakeContext,
+  _In_  ULONG TolerableDelay
+)
+{
+	return SetWaitableTimer(hTimer, 
+							lpDueTime, 
+							lPeriod, 
+							pfnCompletionRoutine, 
+							lpArgToCompletionRoutine, 
+							TRUE);
+}
