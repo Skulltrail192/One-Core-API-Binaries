@@ -158,3 +158,51 @@ Basep8BitStringToStaticUnicodeString(
 
     return NULL;
 }
+
+POBJECT_ATTRIBUTES 
+WINAPI 
+BaseFormatObjectAttributes( 	
+	OUT POBJECT_ATTRIBUTES  	ObjectAttributes,
+	IN PSECURITY_ATTRIBUTES SecurityAttributes  	OPTIONAL,
+	IN PUNICODE_STRING  	ObjectName 
+) 		
+{
+    ULONG Attributes;
+    HANDLE RootDirectory;
+    PVOID SecurityDescriptor;
+    DPRINTF("BaseFormatObjectAttributes. Security: %p, Name: %p\n",
+            SecurityAttributes, ObjectName);
+
+    /* Get the attributes if present */
+    if (SecurityAttributes)
+    {
+        Attributes = SecurityAttributes->bInheritHandle ? OBJ_INHERIT : 0;
+        SecurityDescriptor = SecurityAttributes->lpSecurityDescriptor;
+    }
+    else
+    {
+        if (!ObjectName) return NULL;
+        Attributes = 0;
+        SecurityDescriptor = NULL;
+    }
+
+    if (ObjectName)
+    {
+        Attributes |= OBJ_OPENIF;
+        RootDirectory = BaseGetNamedObjectDirectory();
+    }
+    else
+    {
+        RootDirectory = NULL;
+    }
+
+    /* Create the Object Attributes */
+    InitializeObjectAttributes(ObjectAttributes,
+                               ObjectName,
+                               Attributes,
+                               RootDirectory,
+                               SecurityDescriptor);
+    DPRINTF("Attributes: %lx, RootDirectory: %p, SecurityDescriptor: %p\n",
+            Attributes, RootDirectory, SecurityDescriptor);
+    return ObjectAttributes;
+}

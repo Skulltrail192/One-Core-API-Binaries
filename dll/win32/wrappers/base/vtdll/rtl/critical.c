@@ -62,3 +62,21 @@ RtlGetCriticalSectionRecursionCount(PRTL_CRITICAL_SECTION CriticalSection)
         return 0;
     }
 }
+
+/***********************************************************************
+ *           RtlIsCriticalSectionLockedByThread   (NTDLL.@)
+ *
+ * Checks if the critical section is locked by the current thread.
+ *
+ * PARAMS
+ *  crit [I/O] Critical section to check.
+ *
+ * RETURNS
+ *  Success: TRUE. The critical section is locked.
+ *  Failure: FALSE. The critical section is not locked.
+ */
+BOOL WINAPI RtlIsCriticalSectionLockedByThread( RTL_CRITICAL_SECTION *crit )
+{
+    return crit->OwningThread == ULongToHandle(NtCurrentTeb()->ClientId.UniqueThread) &&
+           crit->RecursionCount;
+}

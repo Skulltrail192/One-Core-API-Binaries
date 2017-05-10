@@ -15,6 +15,7 @@ spec2def(vernel32.dll vernel32.spec)
 list(APPEND SOURCE
 	ahcache.c
 	appcompat.c
+	baseinit.c
 	console.c
 	datetime.c
 	dep.c
@@ -24,6 +25,7 @@ list(APPEND SOURCE
 	fileinfo.c
 	fileopcr.c	
 	findfile.c
+	handle.c
     locale.c
 	mem.c
 	module.c

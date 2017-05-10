@@ -18,6 +18,7 @@ Revision History:
 --*/
 
 #include "main.h"
+#include "locale.h"
 
 #define LOCALE_WINDOWS              0x01
 #define LOCALE_NEUTRALDATA          0x10

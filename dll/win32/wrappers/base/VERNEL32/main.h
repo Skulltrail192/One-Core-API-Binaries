@@ -64,16 +64,7 @@
 #define FileIdInformation (enum _FILE_INFORMATION_CLASS)59
 #endif
 
-#if DBG
-#define DEBUG_CHANNEL(ch) static ULONG gDebugChannel = ch;
-#else
-#define DEBUG_CHANNEL(ch)
-#endif
-
-#define TRACE(fmt, ...)         TRACE__(gDebugChannel, fmt, ##__VA_ARGS__)
-#define WARN(fmt, ...)          WARN__(gDebugChannel, fmt, ##__VA_ARGS__)
-#define FIXME(fmt, ...)         WARN__(gDebugChannel, fmt,## __VA_ARGS__)
-#define ERR(fmt, ...)           ERR__(gDebugChannel, fmt, ##__VA_ARGS__)
+#define ARGUMENT_PRESENT(x) ((x) != NULL)
 
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 extern BOOL bIsFileApiAnsi;
@@ -263,6 +254,52 @@ typedef struct _REASON_CONTEXT {
   } Reason;
 } REASON_CONTEXT, *PREASON_CONTEXT;
 
+struct proc_thread_attr
+{
+    DWORD_PTR attr;
+    SIZE_T size;
+    void *value;
+};
+
+typedef struct _PROC_THREAD_ATTRIBUTE_LIST
+{
+    DWORD mask;  /* bitmask of items in list */
+    DWORD size;  /* max number of items in list */
+    DWORD count; /* number of items in list */
+    DWORD pad;
+    DWORD_PTR unk;
+    struct proc_thread_attr attrs[1];
+}PROC_THREAD_ATTRIBUTE_LIST, *PPROC_THREAD_ATTRIBUTE_LIST, *LPPROC_THREAD_ATTRIBUTE_LIST;
+
+typedef enum _PROC_THREAD_ATTRIBUTE_NUM
+{
+    ProcThreadAttributeParentProcess = 0,
+    ProcThreadAttributeHandleList = 2,
+    ProcThreadAttributeGroupAffinity = 3,
+    ProcThreadAttributeIdealProcessor = 5,
+    ProcThreadAttributeUmsThread = 6,
+    ProcThreadAttributeMitigationPolicy = 7,
+    ProcThreadAttributeSecurityCapabilities = 9,
+    ProcThreadAttributeProtectionLevel = 11,
+    ProcThreadAttributeJobList = 13,
+    ProcThreadAttributeChildProcessPolicy = 14,
+    ProcThreadAttributeAllApplicationPackagesPolicy = 15,
+    ProcThreadAttributeWin32kFilter = 16,
+    ProcThreadAttributeSafeOpenPromptOriginClaim = 17,
+} PROC_THREAD_ATTRIBUTE_NUM;
+
+typedef enum _WER_REGISTER_FILE_TYPE
+{
+     WerRegFileTypeUserDocument = 1,
+     WerRegFileTypeOther = 2,
+     WerRegFileTypeMax
+} WER_REGISTER_FILE_TYPE;
+
+typedef struct _LOCALE_LCID{
+	LPWSTR localeName;
+	LCID lcidID;
+}LOCALE_LCID;
+
 /* helper for kernel32->ntdll timeout format conversion */
 static inline PLARGE_INTEGER get_nt_timeout( PLARGE_INTEGER pTime, DWORD timeout )
 {
@@ -307,43 +344,21 @@ wine_get_sortkey(
 	int dstlen
 );
 
-struct proc_thread_attr
-{
-    DWORD_PTR attr;
-    SIZE_T size;
-    void *value;
-};
-
-typedef struct _PROC_THREAD_ATTRIBUTE_LIST
-{
-    DWORD mask;  /* bitmask of items in list */
-    DWORD size;  /* max number of items in list */
-    DWORD count; /* number of items in list */
-    DWORD pad;
-    DWORD_PTR unk;
-    struct proc_thread_attr attrs[1];
-}PROC_THREAD_ATTRIBUTE_LIST, *PPROC_THREAD_ATTRIBUTE_LIST, *LPPROC_THREAD_ATTRIBUTE_LIST;
-
-typedef enum _PROC_THREAD_ATTRIBUTE_NUM
-{
-    ProcThreadAttributeParentProcess = 0,
-    ProcThreadAttributeHandleList = 2,
-    ProcThreadAttributeGroupAffinity = 3,
-    ProcThreadAttributeIdealProcessor = 5,
-    ProcThreadAttributeUmsThread = 6,
-    ProcThreadAttributeMitigationPolicy = 7,
-    ProcThreadAttributeSecurityCapabilities = 9,
-    ProcThreadAttributeProtectionLevel = 11,
-    ProcThreadAttributeJobList = 13,
-    ProcThreadAttributeChildProcessPolicy = 14,
-    ProcThreadAttributeAllApplicationPackagesPolicy = 15,
-    ProcThreadAttributeWin32kFilter = 16,
-    ProcThreadAttributeSafeOpenPromptOriginClaim = 17,
-} PROC_THREAD_ATTRIBUTE_NUM;
-
 LCID 
 WINAPI 
 LocaleNameToLCID( 
 	LPCWSTR name, 
 	DWORD flags 
 );
+
+POBJECT_ATTRIBUTES 
+WINAPI 
+BaseFormatObjectAttributes( 	
+	OUT POBJECT_ATTRIBUTES  	ObjectAttributes,
+	IN PSECURITY_ATTRIBUTES SecurityAttributes  	OPTIONAL,
+	IN PUNICODE_STRING  	ObjectName 
+);
+
+HANDLE 
+WINAPI 
+BaseGetNamedObjectDirectory(VOID);

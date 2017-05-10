@@ -771,3 +771,111 @@ SetWaitableTimerEx(
 							lpArgToCompletionRoutine, 
 							TRUE);
 }
+
+HANDLE
+APIENTRY
+CreateMutexExW(
+    LPSECURITY_ATTRIBUTES lpMutexAttributes,
+    LPCWSTR lpName,
+    DWORD                 dwFlags,
+    DWORD                 dwDesiredAccess	
+)
+{
+    NTSTATUS Status;
+    OBJECT_ATTRIBUTES Obja;
+    POBJECT_ATTRIBUTES pObja;
+    HANDLE Handle;
+    UNICODE_STRING ObjectName;
+
+    if ( ARGUMENT_PRESENT(lpName) ) {
+        RtlInitUnicodeString(&ObjectName,lpName);
+        pObja = BaseFormatObjectAttributes(&Obja,lpMutexAttributes,&ObjectName);
+        }
+    else {
+        pObja = BaseFormatObjectAttributes(&Obja,lpMutexAttributes,NULL);
+        }
+
+    Status = NtCreateMutant(
+                &Handle,
+                dwDesiredAccess,
+                pObja,
+                (dwFlags & CREATE_MUTEX_INITIAL_OWNER) != 0
+                );
+
+    if ( NT_SUCCESS(Status) ) {
+        if ( Status == STATUS_OBJECT_NAME_EXISTS ) {
+            SetLastError(ERROR_ALREADY_EXISTS);
+            }
+        else {
+            SetLastError(0);
+            }
+        return Handle;
+        }
+    else {
+        BaseSetLastNTError(Status);
+        return NULL;
+        }
+}
+
+HANDLE 
+WINAPI 
+CreateMutexExA( 
+	LPSECURITY_ATTRIBUTES sa, 
+	LPCSTR name, 
+	DWORD flags, 
+	DWORD access 
+)
+{
+    ANSI_STRING nameA;
+    NTSTATUS status;
+
+    if (ARGUMENT_PRESENT(name)) 
+		return CreateMutexExW( sa, NULL, flags, access );
+
+    RtlInitAnsiString( &nameA, name );
+    status = RtlAnsiStringToUnicodeString( &NtCurrentTeb()->StaticUnicodeString, &nameA, FALSE );
+    if (status != STATUS_SUCCESS)
+    {
+        SetLastError( ERROR_FILENAME_EXCED_RANGE );
+        return NULL;
+    }
+    return CreateMutexExW( sa, NtCurrentTeb()->StaticUnicodeString.Buffer, flags, access );
+}
+
+/***********************************************************************
+*           InitOnceBeginInitialize    (KERNEL32.@)
+*/
+BOOL 
+WINAPI 
+InitOnceBeginInitialize( 
+	INIT_ONCE *once, 
+	DWORD flags, 
+	BOOL *pending, 
+	void **context 
+)
+{
+     NTSTATUS status = RtlRunOnceBeginInitialize( once, flags, context );
+     if (NT_SUCCESS(status)) 
+	 {
+		*pending = (status == STATUS_PENDING);
+	 }else{ 
+		SetLastError( RtlNtStatusToDosError(status) );
+	 }
+     return status >= 0;
+}
+
+/***********************************************************************
+  *           InitOnceComplete    (KERNEL32.@)
+  */
+BOOL 
+WINAPI 
+InitOnceComplete( 
+	INIT_ONCE *once, 
+	DWORD flags, 
+	void *context 
+)
+{
+     NTSTATUS status = RtlRunOnceComplete( once, flags, context );
+     if (status != STATUS_SUCCESS) SetLastError( RtlNtStatusToDosError(status) );
+     return !status;
+}

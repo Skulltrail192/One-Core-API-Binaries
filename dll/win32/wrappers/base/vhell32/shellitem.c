@@ -1407,20 +1407,21 @@ SHCreateItemFromParsingName(
 )
 {
     LPITEMIDLIST pidl;
-    HRESULT ret;
+    HRESULT hresult;
+	IShellItem *psi;
 
-    *ppv = NULL;
-
-    ret = SHParseDisplayName(pszPath, pbc, &pidl, SFGAO_FOLDER, NULL);
-	if(SUCCEEDED(ret))
-    {
-        ret = SHCreateShellItem(NULL, NULL, pidl, (IShellItem **) ppv);
-        if(!SUCCEEDED(ret))
+    //ret = SHParseDisplayName(pszPath, pbc, &pidl, SFGAO_FOLDER, NULL);
+	hresult = SHParseDisplayName(pszPath, 0, &pidl, SFGAO_FOLDER, 0);
+	if(SUCCEEDED(hresult))
+    {		
+        hresult = SHCreateShellItem(NULL, NULL, pidl, &psi);
+        if(!SUCCEEDED(hresult))
         {
             ILFree(pidl);
         }
     }
-    return ret;
+	*ppv = psi;
+    return hresult;
 }
 
 HRESULT 

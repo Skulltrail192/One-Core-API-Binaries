@@ -1333,7 +1333,7 @@
 @ stdcall RtlInsertElementGenericTableFullAvl(ptr ptr long ptr ptr long)
 @ stdcall -arch=win32 -ret64 RtlInterlockedCompareExchange64(ptr double double)
 @ stdcall RtlIsCriticalSectionLocked(ptr) ntdll.RtlIsCriticalSectionLocked
-@ stdcall RtlIsCriticalSectionLockedByThread(ptr) ntdll.RtlIsCriticalSectionLockedByThread
+@ stdcall RtlIsCriticalSectionLockedByThread(ptr) 
 @ stdcall RtlLookupElementGenericTableFull(ptr ptr ptr ptr)
 @ stdcall RtlLookupElementGenericTableFullAvl(ptr ptr ptr ptr)
 @ stdcall RtlMultipleAllocateHeap(ptr long long long ptr) ntdll.RtlMultipleAllocateHeap

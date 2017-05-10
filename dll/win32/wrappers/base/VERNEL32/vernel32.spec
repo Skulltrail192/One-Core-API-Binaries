@@ -1050,6 +1050,8 @@
 @ stdcall CompareStringOrdinal(wstr long wstr long long)
 @ stdcall CreateEventExA(ptr str ptr long)
 @ stdcall CreateEventExW(ptr wstr ptr long) 
+@ stdcall CreateMutexExA(ptr str long long)
+@ stdcall CreateMutexExW(ptr wstr long long)
 @ stdcall CreateSemaphoreExA(ptr long long str ptr long) 
 @ stdcall CreateSemaphoreExW(ptr long long wstr ptr long)  
 @ stdcall CreateSymbolicLinkA(str str long)
@@ -1060,6 +1062,7 @@
 @ stdcall DeleteProcThreadAttributeList(ptr)
 @ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long long)
 @ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long long)
+@ stdcall EnumDateFormatsExEx(ptr wstr long)
 @ stdcall EnumSystemLocalesEx(ptr long ptr ptr)
 @ stdcall EnumTimeFormatsEx(ptr wstr long ptr)
 @ stdcall FlushProcessWriteBuffers()
@@ -1075,6 +1078,8 @@
 @ stdcall GetDateFormatEx(wstr long ptr wstr ptr long wstr)
 @ stdcall GetFileInformationByHandleEx(ptr long ptr long)
 @ stdcall GetFileInformationByHandleExW(ptr long ptr long) GetFileInformationByHandleEx
+@ stdcall GetFinalPathNameByHandleA(ptr str long long)
+@ stdcall GetFinalPathNameByHandleW(ptr wstr long long)
 @ stdcall GetLocaleInfoEx(wstr long ptr long)
 @ stdcall GetFileMUIPath(long wstr wstr ptr wstr ptr ptr)
 @ stdcall GetNamedPipeAttribute(ptr long str ptr ptr)
@@ -1101,6 +1106,8 @@
 @ stdcall InitializeConditionVariable(ptr)
 @ stdcall InitializeCriticalSectionEx(ptr long long) 
 @ stdcall InitializeSRWLock(ptr) vtdll.RtlInitializeSRWLock
+@ stdcall InitOnceBeginInitialize(ptr long ptr ptr)
+@ stdcall InitOnceComplete(ptr long ptr)
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stdcall IsValidLocaleName(wstr)
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
@@ -1119,15 +1126,19 @@
 @ stdcall SetNamedPipeAttribute(ptr long str ptr long)
 @ stdcall SetThreadErrorMode(long ptr)
 @ stdcall SetThreadGroupAffinity(long ptr ptr)
+@ stdcall SetThreadpoolThreadMaximum(ptr long) vtdll.TpSetPoolMaxThreads
+@ stdcall SetThreadpoolThreadMinimum(ptr long) vtdll.TpSetPoolMinThreads
 @ stdcall SetThreadpoolTimer(ptr ptr long long) vtdll.TpSetTimer
 @ stdcall SetThreadpoolWait(ptr ptr ptr) vtdll.TpSetWait
 @ stdcall SleepConditionVariableCS(ptr ptr long) 
-@ stdcall SleepConditionVariableSRW(ptr ptr long long) vtdll.SleepConditionVariableSRW
+@ stdcall SleepConditionVariableSRW(ptr ptr long long) vtdll.RtlSleepConditionVariableSRW
 @ stdcall SubmitThreadpoolWork(ptr) vtdll.TpPostWork
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) vtdll.TpWaitForTimer
+@ stdcall WaitForThreadpoolWorkCallbacks(ptr long) vtdll.TpWaitForWork
 @ stdcall WakeAllConditionVariable(ptr) 
 @ stdcall WakeConditionVariable(ptr) 
+@ stdcall WerRegisterFile(wstr long long)
 @ stdcall WerRegisterMemoryBlock(ptr long)
 @ stdcall WerRegisterMemoryBlockWorker(ptr long) WerRegisterMemoryBlock
 
@@ -1165,8 +1176,8 @@
 @ stdcall QueryUnbiasedInterruptTime(ptr)
 @ stdcall RaiseFailFastException(ptr ptr long)
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
-;@ stdcall TryAcquireSRWLockExclusive(ptr) ntdllnew.RtlTryAcquireSRWLockExclusive
-;@ stdcall TryAcquireSRWLockShared(ptr) ntdllnew.RtlTryAcquireSRWLockShared
+;@ stdcall TryAcquireSRWLockExclusive(ptr) vtdll.RtlTryAcquireSRWLockExclusive
+@ stdcall TryAcquireSRWLockShared(ptr) vtdll.RtlTryAcquireSRWLockShared
 
 #Win8 Functions 
 @ stdcall GetCurrentPackageId(ptr ptr)

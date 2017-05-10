@@ -67,7 +67,7 @@ GetErrorMode()
   if ( status < 0 )
   {
     BaseSetLastNTError(status);
-    result = 0;
+    result = FALSE;
   }
   else
   {
@@ -132,31 +132,34 @@ QueryActCtxSettingsW(
 
 BOOL 
 WINAPI 
-SetSearchPathMode(DWORD Flags) {
+SetSearchPathMode(
+	DWORD Flags
+)
+{
   DWORD localFlags; // ebx@1   
-  BOOL verify; // esi@11   
+  BOOL result; // esi@11   
   localFlags = Flags;
   if (Flags & 0xFFFE7FFE) {
     BaseSetLastNTError(STATUS_SUCCESS);
-    return 0;
+    return FALSE;
   }
   if (Flags & 1) {
     if (localFlags & 0x10000) {
 GLOBAL_ERROR: 
 	  BaseSetLastNTError(STATUS_SUCCESS);
-      return 0;
+      return fALSE;
     }
   } else {
     if (!(localFlags & 0x10000) || (Flags & 0x8000)) goto GLOBAL_ERROR;
   }
   if (!(BaseSearchPathMode & 0x8000) || (Flags & 0x8000)) {
     BaseSearchPathMode = Flags;
-    verify = 1;
+    result = TRUE;
   } else {
     BaseSetLastNTError(STATUS_ACCESS_DENIED);
-    verify = 0;
+    result = FALSE;
   }
-  return verify;
+  return result;
 }
 
 BOOL 
@@ -526,7 +529,9 @@ BOOL WINAPI GetCachedSigningLevel(HANDLE File,
 	return TRUE;
 }
 
-BOOL WINAPI AddScopedPolicyIDAce(
+BOOL 
+WINAPI 
+AddScopedPolicyIDAce(
   _Inout_  PACL pAcl,
   _In_     DWORD dwAceRevision,
   _In_     DWORD AceFlags,
