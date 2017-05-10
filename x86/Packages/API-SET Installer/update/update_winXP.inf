@@ -1,13 +1,13 @@
 [Version]
 LanguageType 		  = %LANGTYPEVALUE%
-MaxNtBuildToUpdate        = 3790
+MaxNtBuildToUpdate        = 2600
 MaxNtMajorVersionToUpdate = 5
-MaxNtMinorVersionToUpdate = 2
+MaxNtMinorVersionToUpdate = 1
 MaxNtServicePackVersion   = 1024
 MinNtServicePackVersion   = 512
-NtBuildToUpdate           = 3790
+NtBuildToUpdate           = 2600
 NtMajorVersionToUpdate    = 5
-NtMinorVersionToUpdate    = 2
+NtMinorVersionToUpdate    = 1
 Signature                 = "$Windows NT$"
 
 [Configuration]

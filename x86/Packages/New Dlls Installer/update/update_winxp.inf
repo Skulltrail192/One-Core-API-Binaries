@@ -25,7 +25,7 @@ condition=SingleOp,LatestUpdateCheck2.Section
     AppFileinUseDetect        = 3
 	
 [LatestUpdateCheck2.Section]
-    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\KB3204724",Installed,0x10001,==,1
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
     Display_String="%LatestUpdateFail%"	
 
 [Strings]
