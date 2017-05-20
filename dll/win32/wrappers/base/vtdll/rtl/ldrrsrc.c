@@ -84,51 +84,7 @@ BOOLEAN
 LdrAlternateResourcesEnabled(
     VOID
     )
-
-/*++
-
-Routine Description:
-
-    This function determines if the althernate resources are enabled.
-
-Arguments:
-
-    None.
-
-Return Value:
-
-    True - Alternate Resource enabled.
-    False - Alternate Resource not enabled.
-
---*/
-
 {
-    NTSTATUS Status;
-
-    GET_UI_LANGID();
-
-    if (!UILangId){
-        return FALSE;
-        }
-
-    if (!InstallLangId){
-        Status = NtQueryInstallUILanguage( &InstallLangId);
-
-        if (!NT_SUCCESS( Status )) {
-            //
-            //  Failed to get Intall LangID.  AltResource not enabled.
-            //
-            return FALSE;
-            }
-        }
-// #ifndef MUI_MAGIC
-    // if (UILangId == InstallLangId) {
-        
-         //UI Lang matches Installed Lang. AltResource not enabled.
-        
-        // return FALSE;
-        // }
-// #endif
     return TRUE;
 }
 
@@ -136,23 +92,6 @@ PVOID
 LdrGetAlternateResourceModuleHandle(
     IN PVOID Module
     )
-/*++
-
-Routine Description:
-
-    This function gets the alternate resource module from the table
-    containing the handle.
-
-Arguments:
-
-    Module - Module of which alternate resource module needs to loaded.
-
-Return Value:
-
-   Handle of the alternate resource module.
-
---*/
-
 {
     ULONG ModuleIndex;
 
@@ -172,25 +111,6 @@ LdrpSetAlternateResourceModuleHandle(
     IN PVOID Module,
     IN PVOID AlternateModule
     )
-
-/*++
-
-Routine Description:
-
-    This function records the handle of the base module and alternate
-    resource module in an array.
-
-Arguments:
-
-    Module - The handle of the base module.
-    AlternateModule - The handle of the alternate resource module
-
-Return Value:
-
-    TBD.
-
---*/
-
 {
     PALT_RESOURCE_MODULE NewModules;
 
@@ -245,25 +165,6 @@ LdrLoadAlternateResourceModuleEx(
     IN PVOID Module,
     IN LPCWSTR PathToAlternateModule OPTIONAL
     )
-
-/*++
-
-Routine Description:
-
-    This function does the acutally loading into memory of the alternate
-    resource module, or loads from the table if it was loaded before.
-
-Arguments:
-
-    Module - The handle of the base module.
-    PathToAlternateModule - Optional path from which module is being loaded.
-
-Return Value:
-
-    Handle to the alternate resource module.
-
---*/
-
 {
     PVOID AlternateModule, DllBase;
     PLDR_DATA_TABLE_ENTRY Entry;
@@ -292,9 +193,9 @@ Return Value:
     UNICODE_STRING NtSystemRoot;
 	UNICODE_STRING LocaleName;
 
-    /*if (!LdrAlternateResourcesEnabled()) {
+    if (!LdrAlternateResourcesEnabled()) {
         return NULL;
-        }*/
+    }
 
     RtlEnterCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
 
@@ -928,37 +829,6 @@ LdrpAccessResourceData(
     OUT PVOID *Address OPTIONAL,
     OUT PULONG Size OPTIONAL
     )
-
-/*++
-
-Routine Description:
-
-    This function returns the data necessary to actually examine the
-    contents of a particular resource.
-
-Arguments:
-
-    DllHandle - Supplies a handle to the image file that the resource is
-        contained in.
-
-    ResourceDataEntry - Supplies a pointer to the resource data entry in
-   the resource data directory of the image file specified by the
-        DllHandle parameter.  This pointer should have been one returned
-        by the LdrFindResource function.
-
-    Address - Optional pointer to a variable that will receive the
-        address of the resource specified by the first two parameters.
-
-    Size - Optional pointer to a variable that will receive the size of
-        the resource specified by the first two parameters.
-
-
-Return Value:
-
-    TBD
-
---*/
-
 {
     PIMAGE_RESOURCE_DIRECTORY ResourceDirectory;
     ULONG ResourceSize;
@@ -1070,35 +940,6 @@ LdrAccessResource(
     OUT PULONG Size OPTIONAL
     )
 
-/*++
-
-Routine Description:
-
-    This function locates the address of the specified resource in the
-    specified DLL and returns its address.
-
-Arguments:
-
-    DllHandle - Supplies a handle to the image file that the resource is
-        contained in.
-
-    ResourceDataEntry - Supplies a pointer to the resource data entry in
-        the resource data section of the image file specified by the
-        DllHandle parameter.  This pointer should have been one returned
-        by the LdrFindResource function.
-
-    Address - Optional pointer to a variable that will receive the
-        address of the resource specified by the first two parameters.
-
-    Size - Optional pointer to a variable that will receive the size of
-        the resource specified by the first two parameters.
-
-Return Value:
-
-    TBD
-
---*/
-
 {
     RTL_PAGED_CODE();
 
@@ -1163,63 +1004,6 @@ LdrpSearchResourceSection_U(
     IN ULONG Flags,
     OUT PVOID *ResourceDirectoryOrData
     )
-
-/*++
-
-Routine Description:
-
-    This function locates the address of the specified resource in the
-    specified DLL and returns its address.
-
-Arguments:
-
-    DllHandle - Supplies a handle to the image file that the resource is
-        contained in.
-
-    ResourceIdPath - Supplies a pointer to an array of 32-bit resource
-        identifiers.  Each identifier is either an integer or a pointer
-        to a null terminated string (PSZ) that specifies a resource
-        name.  The array is used to traverse the directory structure
-        contained in the resource section in the image file specified by
-        the DllHandle parameter.
-
-    ResourceIdPathLength - Supplies the number of elements in the
-        ResourceIdPath array.
-
-    Flags -
-        LDRP_FIND_RESOURCE_DIRECTORY
-        searching for a resource directory, otherwise the caller is
-        searching for a resource data entry.
-
-        LDR_FIND_RESOURCE_LANGUAGE_EXACT
-        searching for a resource with, and only with, the language id
-        specified in ResourceIdPath, otherwise the caller wants the routine
-        to come up with default when specified langid is not found.
-
-        LDR_FIND_RESOURCE_LANGUAGE_REDIRECT_VERSION
-        searching for a resource version in main and alternative
-        modules paths
-
-    FindDirectoryEntry - Supplies a boolean that is TRUE if caller is
-        searching for a resource directory, otherwise the caller is
-        searching for a resource data entry.
-
-    ExactLangMatchOnly - Supplies a boolean that is TRUE if caller is
-        searching for a resource with, and only with, the language id
-        specified in ResourceIdPath, otherwise the caller wants the routine
-        to come up with default when specified langid is not found.
-
-    ResourceDirectoryOrData - Supplies a pointer to a variable that will
-        receive the address of the resource directory or data entry in
-        the resource data section of the image file specified by the
-        DllHandle parameter.
-
-Return Value:
-
-    TBD
-
---*/
-
 {
     NTSTATUS Status;
     PIMAGE_RESOURCE_DIRECTORY LanguageResourceDirectory, ResourceDirectory, TopResourceDirectory;
@@ -1728,62 +1512,6 @@ LdrpLoadResourceFromAlternativeModule(
    IN ULONG ResourceIdPathLength,
    IN ULONG Flags,
    OUT PVOID *ResourceDirectoryOrData )
-/*++
-
-Routine Description:
-
-    This function locates the address of the specified resource in the
-    specified module's MUI resource DLL and returns its address.
-
-Arguments:
-
-    DllHandle - Supplies a handle to the image file that the resource is
-        contained in.
-
-    ResourceIdPath - Supplies a pointer to an array of 32-bit resource
-        identifiers.  Each identifier is either an integer or a pointer
-        to a null terminated string (PSZ) that specifies a resource
-        name.  The array is used to traverse the directory structure
-        contained in the resource section in the image file specified by
-        the DllHandle parameter.
-
-    ResourceIdPathLength - Supplies the number of elements in the
-        ResourceIdPath array.
-
-    Flags -
-        LDRP_FIND_RESOURCE_DIRECTORY
-        searching for a resource directory, otherwise the caller is
-        searching for a resource data entry.
-
-        LDR_FIND_RESOURCE_LANGUAGE_EXACT
-        searching for a resource with, and only with, the language id
-        specified in ResourceIdPath, otherwise the caller wants the routine
-        to come up with default when specified langid is not found.
-
-        LDR_FIND_RESOURCE_LANGUAGE_REDIRECT_VERSION
-        searching for a resource version in main and alternative
-        modules paths
-
-    FindDirectoryEntry - Supplies a boolean that is TRUE if caller is
-        searching for a resource directory, otherwise the caller is
-        searching for a resource data entry.
-
-    ExactLangMatchOnly - Supplies a boolean that is TRUE if caller is
-        searching for a resource with, and only with, the language id
-        specified in ResourceIdPath, otherwise the caller wants the routine
-        to come up with default when specified langid is not found.
-
-    ResourceDirectoryOrData - Supplies a pointer to a variable that will
-        receive the address of the resource directory or data entry in
-        the resource data section of the image file specified by the
-        DllHandle parameter.
-
-Return Value:
-
-    TBD
-
---*/
-
 {
     NTSTATUS Status = STATUS_RESOURCE_DATA_NOT_FOUND;
     PVOID AltResourceDllHandle = NULL;
@@ -1914,40 +1642,6 @@ LdrFindResource_U(
     IN ULONG ResourceIdPathLength,
     OUT PIMAGE_RESOURCE_DATA_ENTRY *ResourceDataEntry
     )
-
-/*++
-
-Routine Description:
-
-    This function locates the address of the specified resource in the
-    specified DLL and returns its address.
-
-Arguments:
-
-    DllHandle - Supplies a handle to the image file that the resource is
-        contained in.
-
-    ResourceIdPath - Supplies a pointer to an array of 32-bit resource
-        identifiers.  Each identifier is either an integer or a pointer
-        to a STRING structure that specifies a resource name.  The array
-        is used to traverse the directory structure contained in the
-        resource section in the image file specified by the DllHandle
-        parameter.
-
-    ResourceIdPathLength - Supplies the number of elements in the
-        ResourceIdPath array.
-
-    ResourceDataEntry - Supplies a pointer to a variable that will
-        receive the address of the resource data entry in the resource
-        data section of the image file specified by the DllHandle
-        parameter.
-
-Return Value:
-
-    TBD
-
---*/
-
 {
     RTL_PAGED_CODE();
 
@@ -1969,53 +1663,6 @@ LdrFindResourceEx_U(
     IN ULONG ResourceIdPathLength,
     OUT PIMAGE_RESOURCE_DATA_ENTRY *ResourceDataEntry
     )
-
-/*++
-
-Routine Description:
-
-    This function locates the address of the specified resource in the
-    specified DLL and returns its address.
-
-Arguments:
-    Flags -
-        LDRP_FIND_RESOURCE_DIRECTORY
-        searching for a resource directory, otherwise the caller is
-        searching for a resource data entry.
-
-        LDR_FIND_RESOURCE_LANGUAGE_EXACT
-        searching for a resource with, and only with, the language id
-        specified in ResourceIdPath, otherwise the caller wants the routine
-        to come up with default when specified langid is not found.
-
-        LDR_FIND_RESOURCE_LANGUAGE_REDIRECT_VERSION
-        searching for a resource version in both main and alternative
-        module paths
-
-    DllHandle - Supplies a handle to the image file that the resource is
-        contained in.
-
-    ResourceIdPath - Supplies a pointer to an array of 32-bit resource
-        identifiers.  Each identifier is either an integer or a pointer
-        to a STRING structure that specifies a resource name.  The array
-        is used to traverse the directory structure contained in the
-        resource section in the image file specified by the DllHandle
-        parameter.
-
-    ResourceIdPathLength - Supplies the number of elements in the
-        ResourceIdPath array.
-
-    ResourceDataEntry - Supplies a pointer to a variable that will
-        receive the address of the resource data entry in the resource
-        data section of the image file specified by the DllHandle
-        parameter.
-
-Return Value:
-
-    TBD
-
---*/
-
 {
     RTL_PAGED_CODE();
 
@@ -2028,8 +1675,6 @@ Return Value:
       );
 }
 
-
-
 NTSTATUS
 NTAPI
 LdrFindResourceDirectory_U(
@@ -2038,40 +1683,6 @@ LdrFindResourceDirectory_U(
     IN ULONG ResourceIdPathLength,
     OUT PIMAGE_RESOURCE_DIRECTORY *ResourceDirectory
     )
-
-/*++
-
-Routine Description:
-
-    This function locates the address of the specified resource directory in
-    specified DLL and returns its address.
-
-Arguments:
-
-    DllHandle - Supplies a handle to the image file that the resource
-        directory is contained in.
-
-    ResourceIdPath - Supplies a pointer to an array of 32-bit resource
-        identifiers.  Each identifier is either an integer or a pointer
-        to a STRING structure that specifies a resource name.  The array
-        is used to traverse the directory structure contained in the
-        resource section in the image file specified by the DllHandle
-        parameter.
-
-    ResourceIdPathLength - Supplies the number of elements in the
-        ResourceIdPath array.
-
-    ResourceDirectory - Supplies a pointer to a variable that will
-        receive the address of the resource directory specified by
-        ResourceIdPath in the resource data section of the image file
-        the DllHandle parameter.
-
-Return Value:
-
-    TBD
-
---*/
-
 {
     RTL_PAGED_CODE();
 

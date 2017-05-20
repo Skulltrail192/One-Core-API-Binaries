@@ -83,19 +83,15 @@ PowerCreateRequest(
 )
 {
   NTSTATUS status; // eax@1
-  PVOID address; // ST10_4@4
+  PVOID address = NULL; // ST10_4@4
   HANDLE proAddress; // eax@4
   HANDLE OutputBuffer; // [sp+0h] [bp-8h]@1
-  PVOID adderess; // [sp+4h] [bp-4h]@1
 
-  adderess = 0;
   OutputBuffer = (HANDLE)-1;
-  status = BasePrepareReasonContext(context, &adderess);
-  if (  !NT_SUCCESS(status) || (status = NtPowerInformation(PowerRequestCreate, adderess, 0x1Cu, &OutputBuffer, 4u), status < 0) )
+  if(status = NtPowerInformation(PowerRequestCreate, address, 0x1Cu, &OutputBuffer, 4u), status < 0) 
     BaseSetLastNTError(status);
-  if ( adderess )
+  if ( address )
   {
-    address = adderess;
     proAddress = GetProcessHeap();
     HeapFree(proAddress, 0, address);
   }

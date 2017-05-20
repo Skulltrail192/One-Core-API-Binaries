@@ -649,6 +649,14 @@ static ULONG STDMETHODCALLTYPE d3d11_rasterizer_state_AddRef(ID3D11RasterizerSta
 
     TRACE("%p increasing refcount to %u.\n", state, refcount);
 
+    if (refcount == 1)
+    {
+        ID3D11Device_AddRef(state->device);
+        wined3d_mutex_lock();
+        wined3d_rasterizer_state_incref(state->wined3d_state);
+        wined3d_mutex_unlock();
+    }
+
     return refcount;
 }
 
@@ -661,14 +669,13 @@ static ULONG STDMETHODCALLTYPE d3d11_rasterizer_state_Release(ID3D11RasterizerSt
 
     if (!refcount)
     {
-        struct d3d_device *device = impl_from_ID3D11Device(state->device);
+        ID3D11Device *device = state->device;
+
         wined3d_mutex_lock();
-        wine_rb_remove(&device->rasterizer_states, &state->entry);
         wined3d_rasterizer_state_decref(state->wined3d_state);
-        wined3d_private_store_cleanup(&state->private_store);
         wined3d_mutex_unlock();
-        ID3D11Device_Release(state->device);
-        HeapFree(GetProcessHeap(), 0, state);
+
+        ID3D11Device_Release(device);
     }
 
     return refcount;
@@ -847,6 +854,21 @@ static const struct ID3D10RasterizerStateVtbl d3d10_rasterizer_state_vtbl =
     d3d10_rasterizer_state_GetDesc,
 };
 
+static void STDMETHODCALLTYPE d3d_rasterizer_state_wined3d_object_destroyed(void *parent)
+{
+    struct d3d_rasterizer_state *state = parent;
+    struct d3d_device *device = impl_from_ID3D11Device(state->device);
+
+    wine_rb_remove(&device->rasterizer_states, &state->entry);
+    wined3d_private_store_cleanup(&state->private_store);
+    HeapFree(GetProcessHeap(), 0, parent);
+}
+
+static const struct wined3d_parent_ops d3d_rasterizer_state_wined3d_parent_ops =
+{
+    d3d_rasterizer_state_wined3d_object_destroyed,
+};
+
 HRESULT d3d_rasterizer_state_init(struct d3d_rasterizer_state *state, struct d3d_device *device,
         const D3D11_RASTERIZER_DESC *desc)
 {
@@ -860,23 +882,26 @@ HRESULT d3d_rasterizer_state_init(struct d3d_rasterizer_state *state, struct d3d
     wined3d_private_store_init(&state->private_store);
     state->desc = *desc;
 
-    wined3d_desc.front_ccw = desc->FrontCounterClockwise;
-    if (FAILED(hr = wined3d_rasterizer_state_create(device->wined3d_device,
-            &wined3d_desc, &state->wined3d_state)))
-    {
-        WARN("Failed to create wined3d rasterizer state, hr %#x.\n", hr);
-        wined3d_private_store_cleanup(&state->private_store);
-        wined3d_mutex_unlock();
-        return hr;
-    }
-
     if (wine_rb_put(&device->rasterizer_states, desc, &state->entry) == -1)
     {
         ERR("Failed to insert rasterizer state entry.\n");
         wined3d_private_store_cleanup(&state->private_store);
-        wined3d_rasterizer_state_decref(state->wined3d_state);
         wined3d_mutex_unlock();
         return E_FAIL;
+    }
+
+    wined3d_desc.front_ccw = desc->FrontCounterClockwise;
+
+    /* We cannot fail after creating a wined3d_rasterizer_state object. It
+     * would lead to double free. */
+    if (FAILED(hr = wined3d_rasterizer_state_create(device->wined3d_device, &wined3d_desc,
+            state, &d3d_rasterizer_state_wined3d_parent_ops, &state->wined3d_state)))
+    {
+        WARN("Failed to create wined3d rasterizer state, hr %#x.\n", hr);
+        wined3d_private_store_cleanup(&state->private_store);
+        wine_rb_remove(&device->rasterizer_states, &state->entry);
+        wined3d_mutex_unlock();
+        return hr;
     }
     wined3d_mutex_unlock();
 
@@ -947,6 +972,14 @@ static ULONG STDMETHODCALLTYPE d3d11_sampler_state_AddRef(ID3D11SamplerState *if
 
     TRACE("%p increasing refcount to %u.\n", state, refcount);
 
+    if (refcount == 1)
+    {
+        ID3D11Device_AddRef(state->device);
+        wined3d_mutex_lock();
+        wined3d_sampler_incref(state->wined3d_sampler);
+        wined3d_mutex_unlock();
+    }
+
     return refcount;
 }
 
@@ -959,15 +992,13 @@ static ULONG STDMETHODCALLTYPE d3d11_sampler_state_Release(ID3D11SamplerState *i
 
     if (!refcount)
     {
-        struct d3d_device *device = impl_from_ID3D11Device(state->device);
+        ID3D11Device *device = state->device;
 
         wined3d_mutex_lock();
         wined3d_sampler_decref(state->wined3d_sampler);
-        wine_rb_remove(&device->sampler_states, &state->entry);
-        ID3D11Device_Release(state->device);
-        wined3d_private_store_cleanup(&state->private_store);
         wined3d_mutex_unlock();
-        HeapFree(GetProcessHeap(), 0, state);
+
+        ID3D11Device_Release(device);
     }
 
     return refcount;
@@ -1146,6 +1177,21 @@ static const struct ID3D10SamplerStateVtbl d3d10_sampler_state_vtbl =
     d3d10_sampler_state_GetDesc,
 };
 
+static void STDMETHODCALLTYPE d3d_sampler_wined3d_object_destroyed(void *parent)
+{
+    struct d3d_sampler_state *state = parent;
+    struct d3d_device *device = impl_from_ID3D11Device(state->device);
+
+    wine_rb_remove(&device->sampler_states, &state->entry);
+    wined3d_private_store_cleanup(&state->private_store);
+    HeapFree(GetProcessHeap(), 0, parent);
+}
+
+static const struct wined3d_parent_ops d3d_sampler_wined3d_parent_ops =
+{
+    d3d_sampler_wined3d_object_destroyed,
+};
+
 static enum wined3d_texture_address wined3d_texture_address_from_d3d11(enum D3D11_TEXTURE_ADDRESS_MODE t)
 {
     return (enum wined3d_texture_address)t;
@@ -1211,21 +1257,24 @@ HRESULT d3d_sampler_state_init(struct d3d_sampler_state *state, struct d3d_devic
     wined3d_desc.comparison_func = wined3d_cmp_func_from_d3d11(desc->ComparisonFunc);
     wined3d_desc.srgb_decode = TRUE;
 
-    if (FAILED(hr = wined3d_sampler_create(device->wined3d_device, &wined3d_desc, state, &state->wined3d_sampler)))
-    {
-        WARN("Failed to create wined3d sampler, hr %#x.\n", hr);
-        wined3d_private_store_cleanup(&state->private_store);
-        wined3d_mutex_unlock();
-        return hr;
-    }
-
     if (wine_rb_put(&device->sampler_states, desc, &state->entry) == -1)
     {
         ERR("Failed to insert sampler state entry.\n");
-        wined3d_sampler_decref(state->wined3d_sampler);
         wined3d_private_store_cleanup(&state->private_store);
         wined3d_mutex_unlock();
         return E_FAIL;
+    }
+
+    /* We cannot fail after creating a wined3d_sampler object. It would lead to
+     * double free. */
+    if (FAILED(hr = wined3d_sampler_create(device->wined3d_device, &wined3d_desc,
+            state, &d3d_sampler_wined3d_parent_ops, &state->wined3d_sampler)))
+    {
+        WARN("Failed to create wined3d sampler, hr %#x.\n", hr);
+        wined3d_private_store_cleanup(&state->private_store);
+        wine_rb_remove(&device->sampler_states, &state->entry);
+        wined3d_mutex_unlock();
+        return hr;
     }
     wined3d_mutex_unlock();
 

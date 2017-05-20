@@ -18,41 +18,111 @@
  */
 
 #include <main.h>
+#include <locale.h>
 
 #define MUI_LANGUAGE_ID 1
 #define MUI_LANGUAGE_NAME 2
 
-LOCALE LocaleList[3];
-
-void InitTable()
+/***********************************************************************
+ *           LCIDToLocaleName  (KERNEL32.@)
+ */
+INT 
+WINAPI 
+RtlpLCIDToLocaleName( 
+	LCID lcid, 
+	LPWSTR lpName, 
+	INT count, 
+	DWORD flags 
+)
 {
-	LocaleList[0].description = L"English - United States"; LocaleList[0].cultureName = L"en-US"; LocaleList[0].lcidHex = 0x0409; LocaleList[0].lcidDec = 1033;	
-	LocaleList[1].description = L"Portuguese - Brazil"; LocaleList[1].cultureName = L"pt-BR"; LocaleList[1].lcidHex = 0x0416; LocaleList[1].lcidDec = 1046;
-	LocaleList[2].description = L"Chinese"; LocaleList[2].cultureName = L"zh-CN"; LocaleList[2].lcidHex = 0x0804; LocaleList[2].lcidDec = 2052;	
+	int i;
+	int length = 0;
+	for(i=0;i<LOCALE_TABLE_SIZE;i++){
+		if(lcid == locale_table[i].lcid){
+			length = (wcslen(locale_table[i].localeName)+1);
+			if(lpName){
+				memcpy(lpName, locale_table[i].localeName, sizeof(WCHAR)*(length));
+				lpName[length-1] = 0;
+			}			
+			return length;
+		}
+	}
+	return length;
+}
+
+NTSTATUS 
+NTAPI 	
+RtlLcidToLocaleName(
+	_In_ LCID lcid, 
+	_Inout_ PUNICODE_STRING locale, 
+	_In_ ULONG Flags, 
+	_In_ BOOLEAN AllocateDestinationString
+)
+{
+	int i;
+	LPWSTR lpName = L"";
+	
+	if(RtlpLCIDToLocaleName(lcid, lpName, 0, 0)>0){
+		RtlInitUnicodeString(locale, lpName);
+		return STATUS_SUCCESS;
+	}else{
+		return STATUS_UNSUCCESSFUL;		
+	}
+
 }
 
 /*
- * @unimplemented - need reimplementation
- */
-BOOL 
-WINAPI 
-RtlGetThreadPreferredUILanguages(
-	_In_       DWORD dwFlags,
-	_Out_      PULONG pulNumLanguages,
-	_Out_opt_  PZZWSTR pwszLanguagesBuffer,
-	_Inout_    PULONG pcchLanguagesBuffer
+ * @implemented - new - locale
+*/
+NTSTATUS 
+NTAPI 
+RtlLCIDToCultureName(
+	IN LCID lcid, 
+	OUT PUNICODE_STRING lpName
 )
 {
-	*pulNumLanguages = 1;
-	if(dwFlags == MUI_LANGUAGE_ID)
-	{
-		pwszLanguagesBuffer = L"0x0409";
+	return RtlLcidToLocaleName(lcid, lpName, 0, TRUE);
+}
+
+/*
+ * @implemented - need test
+*/
+BOOLEAN 
+NTAPI 
+RtlCultureNameToLCID(
+	__in PUNICODE_STRING String, 
+	__out PLCID Lcid
+)
+{
+	int i;
+	
+	for(i=0;i<LOCALE_TABLE_SIZE;i++){
+		if(wcscmp(String->Buffer, locale_table[i].localeName)==0){
+			*Lcid = locale_table[i].lcid;
+			return TRUE;
+		}
 	}
-	if(dwFlags == MUI_LANGUAGE_NAME)
-	{
-		pwszLanguagesBuffer = L"en-US";
+	return FALSE;
+}
+
+NTSTATUS
+NTAPI
+RtlLocaleNameToLcid(
+    _In_ PWSTR LocaleName,
+    _Out_ PLCID lcid,
+    _In_ ULONG Flags
+)
+{
+    int i;
+
+	for(i=0;i<LOCALE_TABLE_SIZE;i++){
+		if(wcscmp(LocaleName, locale_table[i].localeName)==0){
+			*lcid = locale_table[i].lcid;
+			return STATUS_SUCCESS;
+		}
 	}
-	return TRUE;
+	
+	return STATUS_UNSUCCESSFUL;
 }
 
 NTSTATUS 
@@ -65,16 +135,33 @@ RtlGetUserPreferredUILanguages(
 	PULONG pcchLanguagesBuffer
 )
 {
-	*pulNumLanguages = 1;
-	if(dwFlags == MUI_LANGUAGE_ID)
-	{
-		pwszLanguagesBuffer = L"0x0409";
-	}
-	if(dwFlags == MUI_LANGUAGE_NAME)
-	{
-		pwszLanguagesBuffer = L"en-US";
-	}
-	return TRUE;	
+	WCHAR locale[LOCALE_NAME_MAX_LENGTH];
+	UINT length;	
+	LCID lcid = ((LCID)(NtCurrentTeb()->CurrentLocale));
+
+	if ( pwszLanguagesBuffer ){
+		*pulNumLanguages = 2;	
+		length = *pcchLanguagesBuffer;	
+		if(dwFlags == MUI_LANGUAGE_ID){
+			wcscpy(locale, _itow(lcid, locale, 16));
+			wcscpy(pwszLanguagesBuffer, locale);
+			memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0409\0\0", sizeof(WCHAR)*(5));				
+		}else{
+			RtlpLCIDToLocaleName(lcid, locale, LOCALE_NAME_MAX_LENGTH, 0);
+			wcscpy(pwszLanguagesBuffer, locale);
+			memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0en-US\0\0", sizeof(WCHAR)*(7));				
+		}		
+		return STATUS_SUCCESS;
+	}else{
+		*pulNumLanguages = 2;
+		if(dwFlags == MUI_LANGUAGE_ID){
+			length = 9;
+		}else{
+			length = (7 + RtlpLCIDToLocaleName(lcid, NULL, 0, 0));
+		}		
+		*pcchLanguagesBuffer = length;
+		return STATUS_INVALID_PARAMETER;
+	}	
 }
 
 BOOL 
@@ -86,16 +173,76 @@ RtlGetSystemPreferredUILanguages(
   _Inout_    PULONG pcchLanguagesBuffer
 )
 {
-	*pulNumLanguages = 1;
-	if(dwFlags == MUI_LANGUAGE_ID)
-	{
-		pwszLanguagesBuffer = L"0x0409";
-	}
-	if(dwFlags == MUI_LANGUAGE_NAME)
-	{
-		pwszLanguagesBuffer = L"en-US";
-	}
-	return TRUE;	
+	WCHAR locale[LOCALE_NAME_MAX_LENGTH];
+	UINT length;	
+	LCID lcid = ((LCID)(NtCurrentTeb()->CurrentLocale));
+
+	if ( pwszLanguagesBuffer ){
+		*pulNumLanguages = 2;	
+		length = *pcchLanguagesBuffer;	
+		if(dwFlags == MUI_LANGUAGE_ID){
+			wcscpy(locale, _itow(lcid, locale, 16));
+			wcscpy(pwszLanguagesBuffer, locale);
+			memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0409\0\0", sizeof(WCHAR)*(5));				
+		}else{
+			RtlpLCIDToLocaleName(lcid, locale, LOCALE_NAME_MAX_LENGTH, 0);
+			wcscpy(pwszLanguagesBuffer, locale);
+			memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0en-US\0\0", sizeof(WCHAR)*(7));				
+		}		
+		return STATUS_SUCCESS;
+	}else{
+		*pulNumLanguages = 2;
+		if(dwFlags == MUI_LANGUAGE_ID){
+			length = 9;
+		}else{
+			length = (7 + RtlpLCIDToLocaleName(lcid, NULL, 0, 0));
+		}		
+		*pcchLanguagesBuffer = length;
+		return STATUS_INVALID_PARAMETER;
+	}		
+}
+
+/*
+ * @unimplemented - need reimplementation
+ */
+NTSTATUS 
+WINAPI 
+RtlGetThreadPreferredUILanguages(
+	_In_       DWORD dwFlags,
+	_Out_      PULONG pulNumLanguages,
+	_Out_opt_  PZZWSTR pwszLanguagesBuffer,
+	_Inout_    PULONG pcchLanguagesBuffer
+)
+{
+	WCHAR locale[LOCALE_NAME_MAX_LENGTH];
+	UINT length;	
+	LCID lcid;
+	
+	lcid  = ((LCID)(NtCurrentTeb()->CurrentLocale));
+
+	if ( pwszLanguagesBuffer ){
+		*pulNumLanguages = 2;	
+		length = *pcchLanguagesBuffer;	
+		if(dwFlags == MUI_LANGUAGE_ID){
+			wcscpy(locale, _itow(lcid, locale, 16));
+			wcscpy(pwszLanguagesBuffer, locale);
+			memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0409\0\0", sizeof(WCHAR)*(5));				
+		}else{
+			RtlpLCIDToLocaleName(lcid, locale, LOCALE_NAME_MAX_LENGTH, 0);
+			wcscpy(pwszLanguagesBuffer, locale);
+			memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0en-US\0\0", sizeof(WCHAR)*(7));				
+		}		
+		return STATUS_SUCCESS;
+	}else{
+		*pulNumLanguages = 2;
+		if(dwFlags == MUI_LANGUAGE_ID){
+			length = 9;
+		}else{
+			length = (7 + RtlpLCIDToLocaleName(lcid, NULL, 0, 0));
+		}		
+		*pcchLanguagesBuffer = length;
+		return STATUS_INVALID_PARAMETER;
+	}	
 }
 
 NTSTATUS 
@@ -135,77 +282,6 @@ RtlSetThreadPreferredUILanguages(
 		pwszLanguagesBuffer = L"en-US";
 	}
 	return TRUE;
-}
-
-/*
- * @implemented - need test
-*/
-BOOLEAN 
-NTAPI 
-RtlCultureNameToLCID(
-	__in PUNICODE_STRING String, 
-	__out PLCID Lcid
-)
-{
-	int i;	
-	InitTable();
-	
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(strcmp(String->Buffer,LocaleList[i].cultureName) == 0)
-		{
-			*Lcid = LocaleList[i].lcidHex;
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-/*
- * @implemented - new - locale
-*/
-BOOLEAN 
-WINAPI 
-RtlLCIDToCultureName(
-	IN LCID lcid, 
-	OUT PUNICODE_STRING locale
-)
-{
-	int i;
-	InitTable();
-	
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(lcid == LocaleList[i].lcidHex)
-		{
-			RtlInitUnicodeString(locale, LocaleList[i].cultureName);
-			return TRUE;
-		}
-	} 
-	return FALSE;
-}
-
-NTSTATUS 
-NTAPI 	
-RtlLcidToLocaleName(
-	_In_ LCID lcid, 
-	_Inout_ PUNICODE_STRING LocaleName, 
-	_In_ ULONG Flags, 
-	_In_ BOOLEAN AllocateDestinationString
-)
-{
-	int i;
-	InitTable();
-	
-	for(i=0;i<sizeof(LocaleList)/sizeof(LOCALE);i++)
-	{
-		if(lcid == LocaleList[i].lcidHex)
-		{
-			RtlInitUnicodeString(LocaleName, LocaleList[i].cultureName);
-			return STATUS_SUCCESS;
-		}
-	}	
-	return STATUS_UNSUCCESSFUL;
 }
 
 NTSTATUS 

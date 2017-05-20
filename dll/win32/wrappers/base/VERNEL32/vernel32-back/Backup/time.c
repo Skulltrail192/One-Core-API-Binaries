@@ -407,7 +407,7 @@ WINAPI IsCalendarLeapYear(_In_  CALID calId,
 }
 
 /*
- * @implemented cledan
+ * @implemented clean
  */
 BOOL 
 WINAPI IsGregorianLeapMonth(ULONG month, ULONG year, int era)
@@ -426,7 +426,7 @@ WINAPI IsGregorianLeapMonth(ULONG month, ULONG year, int era)
 }
 
 /*
- * @implemented cledan
+ * @implemented clean
  */
 BOOL 
 WINAPI IsCalendarLeapMonth(CALID calId, ULONG month, ULONG year, ULONG era)
@@ -435,7 +435,7 @@ WINAPI IsCalendarLeapMonth(CALID calId, ULONG month, ULONG year, ULONG era)
 }
 
 /*
- * @implemented cledan
+ * @implemented clean
  */
 BOOL
 WINAPI UpdateCalendarDayOfWeek(_Out_ LPCALDATETIME lpCalDateTime)
@@ -532,7 +532,6 @@ switch (month) {
   }
 }
 
-
 /*
  * @implemented 
  */
@@ -572,7 +571,6 @@ BOOL WINAPI IsValidYearAndMonth(LPCALDATETIME lpCalDateTime)
 		return FALSE;
 	}
 }
-
 
 /*
  * @implemented 
@@ -681,7 +679,8 @@ WINAPI AdjustCalendarDate(_Inout_ LPCALDATETIME lpCalDateTime,
  * @implemented clean
  */
 BOOL 
-WINAPI ConvertCalDateTimeToSystemTime(
+WINAPI 
+ConvertCalDateTimeToSystemTime(
   _In_   const LPCALDATETIME lpCalDateTime,
   _Out_  SYSTEMTIME *lpSystemTime
 )
@@ -710,7 +709,8 @@ WINAPI ConvertCalDateTimeToSystemTime(
  * @implemented clean
  */
 BOOL
-WINAPI ConvertSystemTimeToCalDateTime(
+WINAPI 
+ConvertSystemTimeToCalDateTime(
   _In_   const LPSYSTEMTIME lpSystemTime,
   _In_   CALID calId,
   _Out_  LPCALDATETIME lpCalDateTime
@@ -777,7 +777,8 @@ GetCalendarMonthsInYear(
  * @implemented clean 
  */
 BOOL 
-WINAPI GetCalendarSupportedDateRange(
+WINAPI 
+GetCalendarSupportedDateRange(
 	_In_   CALID Calendar,  
 	_Out_  LPCALDATETIME lpCalMinDateTime,
 	_Out_  LPCALDATETIME lpCalMaxDateTime
@@ -834,7 +835,11 @@ LPCWSTR dayofweek = 0; //Hack for work on MSVC
  * @implemented
  */
 ULONG 
-WINAPI GetGregorianDifferenceInDays(const LPCALDATETIME lpCalDateTimeFirst, const LPCALDATETIME lpCalDateTimeSecond){
+WINAPI 
+GetGregorianDifferenceInDays(
+	const LPCALDATETIME lpCalDateTimeFirst, 
+	const LPCALDATETIME lpCalDateTimeSecond
+){
 	int var;
 	var = GetAbsoluteDateFromGregorian(lpCalDateTimeFirst->Year,lpCalDateTimeFirst->Month,lpCalDateTimeFirst->Day);
 	return GetAbsoluteDateFromGregorian(lpCalDateTimeSecond->Year,lpCalDateTimeSecond->Month,lpCalDateTimeSecond->Day) - var;

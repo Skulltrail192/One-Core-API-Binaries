@@ -2510,6 +2510,16 @@ void context_active_texture(struct wined3d_context *context, const struct wined3
     context->active_texture = unit;
 }
 
+void context_bind_bo(struct wined3d_context *context, GLenum binding, GLuint name)
+{
+    const struct wined3d_gl_info *gl_info = context->gl_info;
+
+    if (binding == GL_ELEMENT_ARRAY_BUFFER)
+        context_invalidate_state(context, STATE_INDEXBUFFER);
+
+    GL_EXTCALL(glBindBuffer(binding, name));
+}
+
 void context_bind_texture(struct wined3d_context *context, GLenum target, GLuint name)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
@@ -2569,6 +2579,48 @@ void context_bind_texture(struct wined3d_context *context, GLenum target, GLuint
 
         context->texture_type[unit] = target;
     }
+}
+
+void *context_map_bo_address(struct wined3d_context *context,
+        const struct wined3d_bo_address *data, size_t size, GLenum binding, DWORD flags)
+{
+    const struct wined3d_gl_info *gl_info = context->gl_info;
+    BYTE *memory;
+
+    if (!data->buffer_object)
+        return data->addr;
+
+    context_bind_bo(context, binding, data->buffer_object);
+
+    if (gl_info->supported[ARB_MAP_BUFFER_RANGE])
+    {
+        GLbitfield map_flags = wined3d_resource_gl_map_flags(flags) & ~GL_MAP_FLUSH_EXPLICIT_BIT;
+        memory = GL_EXTCALL(glMapBufferRange(binding, (INT_PTR)data->addr, size, map_flags));
+    }
+    else
+    {
+        memory = GL_EXTCALL(glMapBuffer(binding, wined3d_resource_gl_legacy_map_flags(flags)));
+        memory += (INT_PTR)data->addr;
+    }
+
+    context_bind_bo(context, binding, 0);
+    checkGLcall("Map buffer object");
+
+    return memory;
+}
+
+void context_unmap_bo_address(struct wined3d_context *context,
+        const struct wined3d_bo_address *data, GLenum binding)
+{
+    const struct wined3d_gl_info *gl_info = context->gl_info;
+
+    if (!data->buffer_object)
+        return;
+
+    context_bind_bo(context, binding, data->buffer_object);
+    GL_EXTCALL(glUnmapBuffer(binding));
+    context_bind_bo(context, binding, 0);
+    checkGLcall("Unmap buffer object");
 }
 
 static void context_set_render_offscreen(struct wined3d_context *context, BOOL offscreen)

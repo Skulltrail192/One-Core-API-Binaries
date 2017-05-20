@@ -296,9 +296,16 @@ typedef enum _WER_REGISTER_FILE_TYPE
 } WER_REGISTER_FILE_TYPE;
 
 typedef struct _LOCALE_LCID{
-	LPWSTR localeName;
-	LCID lcidID;
+	LPCWSTR localeName;
+	LCID lcid;
 }LOCALE_LCID;
+
+typedef enum _POWER_REQUEST_TYPE { 
+  PowerRequestDisplayRequired,
+  PowerRequestSystemRequired,
+  PowerRequestAwayModeRequired,
+  PowerRequestExecutionRequired
+} POWER_REQUEST_TYPE, *PPOWER_REQUEST_TYPE;
 
 /* helper for kernel32->ntdll timeout format conversion */
 static inline PLARGE_INTEGER get_nt_timeout( PLARGE_INTEGER pTime, DWORD timeout )
@@ -307,24 +314,6 @@ static inline PLARGE_INTEGER get_nt_timeout( PLARGE_INTEGER pTime, DWORD timeout
     pTime->QuadPart = (ULONGLONG)timeout * -10000;
     return pTime;
 }
-
-ULONG
-WINAPI
-BaseSetLastNTError(
-    IN NTSTATUS Status
-);
-
-PUNICODE_STRING
-WINAPI
-Basep8BitStringToStaticUnicodeString(
-	IN LPCSTR String
-);
-
-PWCHAR 
-FilenameA2W(
-	LPCSTR NameA, 
-	BOOL alloc
-);
 
 int 
 wine_compare_string(
@@ -344,10 +333,37 @@ wine_get_sortkey(
 	int dstlen
 );
 
+ULONG
+WINAPI
+BaseSetLastNTError(
+    IN NTSTATUS Status
+);
+
+PUNICODE_STRING
+WINAPI
+Basep8BitStringToStaticUnicodeString(
+	IN LPCSTR String
+);
+
+PWCHAR 
+FilenameA2W(
+	LPCSTR NameA, 
+	BOOL alloc
+);
+
 LCID 
 WINAPI 
 LocaleNameToLCID( 
 	LPCWSTR name, 
+	DWORD flags 
+);
+
+INT 
+WINAPI 
+LCIDToLocaleName( 
+	LCID lcid, 
+	LPWSTR name, 
+	INT count, 
 	DWORD flags 
 );
 
@@ -359,6 +375,35 @@ BaseFormatObjectAttributes(
 	IN PUNICODE_STRING  	ObjectName 
 );
 
+NTSTATUS 
+NTAPI
+NtPowerInformation(
+  _In_      POWER_INFORMATION_LEVEL InformationLevel,
+  _In_opt_  PVOID                   InputBuffer,
+  _In_      ULONG                   InputBufferLength,
+  _Out_opt_ PVOID                   OutputBuffer,
+  _In_      ULONG                   OutputBufferLength
+);
+
 HANDLE 
 WINAPI 
 BaseGetNamedObjectDirectory(VOID);
+
+NTSTATUS 
+WINAPI 
+RtlGetUserPreferredUILanguages(
+	DWORD dwFlags, 
+	BOOL verification,
+	PULONG pulNumLanguages, 
+	PZZWSTR pwszLanguagesBuffer, 
+	PULONG pcchLanguagesBuffer
+);
+
+NTSTATUS 
+WINAPI 
+RtlGetThreadPreferredUILanguages(
+	_In_       DWORD dwFlags,
+	_Out_      PULONG pulNumLanguages,
+	_Out_opt_  PZZWSTR pwszLanguagesBuffer,
+	_Inout_    PULONG pcchLanguagesBuffer
+);

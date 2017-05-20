@@ -20,6 +20,8 @@ Revision History:
 
 #include "main.h"
 
+#define DIV 1024
+
 SIZE_T
 WINAPI
 GetLargePageMinimum (
@@ -52,4 +54,17 @@ SetSystemFileCacheSize(
     result = TRUE;
   }
   return result;
+}
+
+BOOL 
+WINAPI 
+GetPhysicallyInstalledSystemMemory(
+  _Out_  PULONGLONG TotalMemoryInKilobytes
+)
+{
+	MEMORYSTATUSEX memory;
+	memory.dwLength = sizeof(MEMORYSTATUSEX);
+	GlobalMemoryStatusEx(&memory);
+	*TotalMemoryInKilobytes = memory.ullTotalPhys/DIV;
+	return TRUE;
 }

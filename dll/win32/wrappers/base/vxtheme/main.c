@@ -229,3 +229,4 @@ HRESULT WINAPI BufferedPaintSetAlpha(HPAINTBUFFER hBufferedPaint, const RECT *pr
     FIXME("Stub (%p %p %u)\n", hBufferedPaint, prc, alpha);
 	return E_NOTIMPL;
 }
+

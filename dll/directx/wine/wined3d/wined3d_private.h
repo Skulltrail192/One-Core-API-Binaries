@@ -388,7 +388,6 @@ struct wined3d_settings
     /* Memory tracking and object counting. */
     UINT64 emulated_textureram;
     char *logo;
-    int allow_multisampling;
     unsigned int sample_count;
     BOOL strict_draw_ordering;
     BOOL check_float_constants;
@@ -490,6 +489,7 @@ enum wined3d_shader_register_type
     WINED3DSPR_FUNCTIONPOINTER,
     WINED3DSPR_COVERAGE,
     WINED3DSPR_SAMPLEMASK,
+    WINED3DSPR_GSINSTID,
 };
 
 enum wined3d_data_type
@@ -699,6 +699,7 @@ enum WINED3D_SHADER_INSTRUCTION_HANDLER
     WINED3DSIH_DCL_FUNCTION_BODY,
     WINED3DSIH_DCL_FUNCTION_TABLE,
     WINED3DSIH_DCL_GLOBAL_FLAGS,
+    WINED3DSIH_DCL_GS_INSTANCES,
     WINED3DSIH_DCL_HS_FORK_PHASE_INSTANCE_COUNT,
     WINED3DSIH_DCL_HS_JOIN_PHASE_INSTANCE_COUNT,
     WINED3DSIH_DCL_HS_MAX_TESSFACTOR,
@@ -1582,6 +1583,7 @@ struct wined3d_query
     LONG ref;
 
     void *parent;
+    const struct wined3d_parent_ops *parent_ops;
     struct wined3d_device *device;
     enum wined3d_query_state state;
     enum wined3d_query_type type;
@@ -1945,6 +1947,7 @@ void context_apply_fbo_state_blit(struct wined3d_context *context, GLenum target
         struct wined3d_surface *render_target, struct wined3d_surface *depth_stencil, DWORD location) DECLSPEC_HIDDEN;
 void context_active_texture(struct wined3d_context *context, const struct wined3d_gl_info *gl_info,
         unsigned int unit) DECLSPEC_HIDDEN;
+void context_bind_bo(struct wined3d_context *context, GLenum binding, GLuint name) DECLSPEC_HIDDEN;
 void context_bind_dummy_textures(const struct wined3d_device *device,
         const struct wined3d_context *context) DECLSPEC_HIDDEN;
 void context_bind_texture(struct wined3d_context *context, GLenum target, GLuint name) DECLSPEC_HIDDEN;
@@ -1965,6 +1968,8 @@ void context_gl_resource_released(struct wined3d_device *device,
         GLuint name, BOOL rb_namespace) DECLSPEC_HIDDEN;
 void context_invalidate_compute_state(struct wined3d_context *context, DWORD state_id) DECLSPEC_HIDDEN;
 void context_invalidate_state(struct wined3d_context *context, DWORD state_id) DECLSPEC_HIDDEN;
+void *context_map_bo_address(struct wined3d_context *context, const struct wined3d_bo_address *data,
+        size_t size, GLenum binding, DWORD flags) DECLSPEC_HIDDEN;
 struct wined3d_context *context_reacquire(const struct wined3d_device *device,
         struct wined3d_context *context) DECLSPEC_HIDDEN;
 void context_release(struct wined3d_context *context) DECLSPEC_HIDDEN;
@@ -1979,6 +1984,8 @@ void context_state_drawbuf(struct wined3d_context *context,
 void context_state_fb(struct wined3d_context *context,
         const struct wined3d_state *state, DWORD state_id) DECLSPEC_HIDDEN;
 void context_surface_update(struct wined3d_context *context, const struct wined3d_surface *surface) DECLSPEC_HIDDEN;
+void context_unmap_bo_address(struct wined3d_context *context,
+        const struct wined3d_bo_address *data, GLenum binding) DECLSPEC_HIDDEN;
 
 /*****************************************************************************
  * Internal representation of a light
@@ -2195,6 +2202,8 @@ enum wined3d_pci_device
     CARD_NVIDIA_GEFORCE_GTX1060     = 0x1c03,
     CARD_NVIDIA_GEFORCE_GTX1070     = 0x1b81,
     CARD_NVIDIA_GEFORCE_GTX1080     = 0x1b80,
+    CARD_NVIDIA_GEFORCE_GTX1080TI   = 0x1b06,
+    CARD_NVIDIA_TITANX_PASCAL       = 0x1b00,
 
     CARD_VMWARE_SVGA3D              = 0x0405,
 
@@ -2565,6 +2574,9 @@ struct wined3d_rasterizer_state
     LONG refcount;
     struct wined3d_rasterizer_state_desc desc;
 
+    void *parent;
+    const struct wined3d_parent_ops *parent_ops;
+
     struct wined3d_device *device;
 };
 
@@ -2765,8 +2777,6 @@ struct wined3d_resource_ops
     void (*resource_unload)(struct wined3d_resource *resource);
     HRESULT (*resource_sub_resource_map)(struct wined3d_resource *resource, unsigned int sub_resource_idx,
             struct wined3d_map_desc *map_desc, const struct wined3d_box *box, DWORD flags);
-	HRESULT (*resource_map_info)(struct wined3d_resource *resource, unsigned int sub_resource_idx,
-			struct wined3d_map_info *info, DWORD flags);		
     HRESULT (*resource_sub_resource_unmap)(struct wined3d_resource *resource, unsigned int sub_resource_idx);
 };
 
@@ -2994,8 +3004,6 @@ void wined3d_texture_load(struct wined3d_texture *texture,
         struct wined3d_context *context, BOOL srgb) DECLSPEC_HIDDEN;
 BOOL wined3d_texture_load_location(struct wined3d_texture *texture,
         unsigned int sub_resource_idx, struct wined3d_context *context, DWORD location) DECLSPEC_HIDDEN;
-void *wined3d_texture_map_bo_address(const struct wined3d_bo_address *data, size_t size,
-        const struct wined3d_gl_info *gl_info, GLenum binding, DWORD flags) DECLSPEC_HIDDEN;
 BOOL wined3d_texture_prepare_location(struct wined3d_texture *texture, unsigned int sub_resource_idx,
         struct wined3d_context *context, DWORD location) DECLSPEC_HIDDEN;
 void wined3d_texture_prepare_texture(struct wined3d_texture *texture,
@@ -3003,8 +3011,6 @@ void wined3d_texture_prepare_texture(struct wined3d_texture *texture,
 void wined3d_texture_set_map_binding(struct wined3d_texture *texture, DWORD map_binding) DECLSPEC_HIDDEN;
 void wined3d_texture_set_swapchain(struct wined3d_texture *texture,
         struct wined3d_swapchain *swapchain) DECLSPEC_HIDDEN;
-void wined3d_texture_unmap_bo_address(const struct wined3d_bo_address *data,
-        const struct wined3d_gl_info *gl_info, GLenum binding) DECLSPEC_HIDDEN;
 void wined3d_texture_upload_data(struct wined3d_texture *texture, unsigned int sub_resource_idx,
         const struct wined3d_context *context, const struct wined3d_box *box,
         const struct wined3d_const_bo_address *data, unsigned int row_pitch, unsigned int slice_pitch) DECLSPEC_HIDDEN;
@@ -3109,10 +3115,11 @@ struct wined3d_sampler
 {
     struct wine_rb_entry entry;
     LONG refcount;
+    GLuint name;
     struct wined3d_device *device;
     void *parent;
+    const struct wined3d_parent_ops *parent_ops;
     struct wined3d_sampler_desc desc;
-    GLuint name;
 };
 
 void wined3d_sampler_bind(struct wined3d_sampler *sampler, unsigned int unit,
@@ -3245,6 +3252,7 @@ struct wined3d_cs_ops
 {
     void *(*require_space)(struct wined3d_cs *cs, size_t size);
     void (*submit)(struct wined3d_cs *cs);
+    void (*finish)(struct wined3d_cs *cs);
     void (*push_constants)(struct wined3d_cs *cs, enum wined3d_push_constants p,
             unsigned int start_idx, unsigned int count, const void *constants);
 };
@@ -3255,6 +3263,7 @@ struct wined3d_cs
     struct wined3d_device *device;
     struct wined3d_fb_state fb;
     struct wined3d_state state;
+    HMODULE wined3d_module;
     HANDLE thread;
     DWORD thread_id;
 
@@ -3265,6 +3274,7 @@ struct wined3d_cs
 
     HANDLE event;
     BOOL waiting_for_event;
+    LONG pending_presents;
 };
 
 struct wined3d_cs *wined3d_cs_create(struct wined3d_device *device) DECLSPEC_HIDDEN;
@@ -3281,6 +3291,8 @@ void wined3d_cs_emit_clear(struct wined3d_cs *cs, DWORD rect_count, const RECT *
         DWORD flags, const struct wined3d_color *color, float depth, DWORD stencil) DECLSPEC_HIDDEN;
 void wined3d_cs_emit_clear_rendertarget_view(struct wined3d_cs *cs, struct wined3d_rendertarget_view *view,
         const RECT *rect, DWORD flags, const struct wined3d_color *color, float depth, DWORD stencil) DECLSPEC_HIDDEN;
+void wined3d_cs_emit_clear_unordered_access_view_uint(struct wined3d_cs *cs,
+        struct wined3d_unordered_access_view *view, const struct wined3d_uvec4 *clear_value) DECLSPEC_HIDDEN;
 void wined3d_cs_emit_dispatch(struct wined3d_cs *cs,
         unsigned int group_count_x, unsigned int group_count_y, unsigned int group_count_z) DECLSPEC_HIDDEN;
 void wined3d_cs_emit_draw(struct wined3d_cs *cs, GLenum primitive_type, int base_vertex_idx,
@@ -3460,6 +3472,14 @@ static inline struct wined3d_surface *wined3d_rendertarget_view_get_surface(
 
 void wined3d_rendertarget_view_get_drawable_size(const struct wined3d_rendertarget_view *view,
         const struct wined3d_context *context, unsigned int *width, unsigned int *height) DECLSPEC_HIDDEN;
+void wined3d_rendertarget_view_invalidate_location(struct wined3d_rendertarget_view *view,
+        DWORD location) DECLSPEC_HIDDEN;
+void wined3d_rendertarget_view_load_location(struct wined3d_rendertarget_view *view,
+        struct wined3d_context *context, DWORD location) DECLSPEC_HIDDEN;
+void wined3d_rendertarget_view_prepare_location(struct wined3d_rendertarget_view *view,
+        struct wined3d_context *context, DWORD location) DECLSPEC_HIDDEN;
+void wined3d_rendertarget_view_validate_location(struct wined3d_rendertarget_view *view,
+        DWORD location) DECLSPEC_HIDDEN;
 
 struct wined3d_shader_resource_view
 {
@@ -3493,6 +3513,8 @@ struct wined3d_unordered_access_view
     struct wined3d_view_desc desc;
 };
 
+void wined3d_unordered_access_view_clear_uint(struct wined3d_unordered_access_view *view,
+        const struct wined3d_uvec4 *clear_value, struct wined3d_context *context) DECLSPEC_HIDDEN;
 void wined3d_unordered_access_view_invalidate_location(struct wined3d_unordered_access_view *view,
         DWORD location) DECLSPEC_HIDDEN;
 
@@ -3570,6 +3592,7 @@ const char *debug_fboattachment(GLenum attachment) DECLSPEC_HIDDEN;
 const char *debug_fbostatus(GLenum status) DECLSPEC_HIDDEN;
 const char *debug_glerror(GLenum error) DECLSPEC_HIDDEN;
 const char *debug_ivec4(const struct wined3d_ivec4 *v) DECLSPEC_HIDDEN;
+const char *debug_uvec4(const struct wined3d_uvec4 *v) DECLSPEC_HIDDEN;
 const char *debug_shader_type(enum wined3d_shader_type shader_type) DECLSPEC_HIDDEN;
 const char *debug_vec4(const struct wined3d_vec4 *v) DECLSPEC_HIDDEN;
 void dump_color_fixup_desc(struct color_fixup_desc fixup) DECLSPEC_HIDDEN;
@@ -3672,7 +3695,8 @@ struct wined3d_geometry_shader
 {
     enum wined3d_primitive_type input_type;
     enum wined3d_primitive_type output_type;
-    UINT vertices_out;
+    unsigned int vertices_out;
+    unsigned int instance_count;
 
     struct wined3d_stream_output_desc so_desc;
 };
@@ -3720,6 +3744,7 @@ struct wined3d_shader
 
     struct wined3d_shader_signature input_signature;
     struct wined3d_shader_signature output_signature;
+    struct wined3d_shader_signature patch_constant_signature;
     char *signature_strings;
 
     /* Pointer to the parent device */

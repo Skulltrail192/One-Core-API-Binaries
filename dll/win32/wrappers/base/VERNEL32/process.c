@@ -583,3 +583,33 @@ BasepIsImageVersionOk(
 {
 	return TRUE;
 }
+
+/*
+ * @unimplemented
+*/
+HRESULT
+WINAPI
+RegisterApplicationRecoveryCallback(
+	IN APPLICATION_RECOVERY_CALLBACK pRecoveyCallback,
+    IN PVOID pvParameter  OPTIONAL,
+    DWORD dwPingInterval,
+    DWORD dwFlags
+)
+{
+    UNIMPLEMENTED;
+    return S_OK;
+}
+
+/*
+ * @unimplemented
+ */
+HRESULT
+WINAPI
+RegisterApplicationRestart(
+	IN PCWSTR pwzCommandline  OPTIONAL,
+    IN DWORD dwFlags
+)
+{
+    UNIMPLEMENTED;
+    return S_OK;
+}

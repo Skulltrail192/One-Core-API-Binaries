@@ -77,6 +77,16 @@ static HRESULT shdr_handler(const char *data, DWORD data_size, DWORD tag, void *
                 return hr;
             break;
 
+        case TAG_PCSG:
+            if (desc->patch_constant_signature.elements)
+            {
+                FIXME("Multiple patch constant signatures.\n");
+                break;
+            }
+            if (FAILED(hr = shader_parse_signature(tag, data, data_size, &desc->patch_constant_signature)))
+                return hr;
+            break;
+
         case TAG_SHDR:
         case TAG_SHEX:
             if (ctx->feature_level <= D3D_FEATURE_LEVEL_9_3)
@@ -134,8 +144,15 @@ static HRESULT shdr_handler(const char *data, DWORD data_size, DWORD tag, void *
     return S_OK;
 }
 
-static HRESULT shader_extract_from_dxbc(const void *dxbc, SIZE_T dxbc_length, struct wined3d_shader_desc *desc,
-        D3D_FEATURE_LEVEL feature_level)
+static void free_shader_desc(struct wined3d_shader_desc *desc)
+{
+    shader_free_signature(&desc->input_signature);
+    shader_free_signature(&desc->output_signature);
+    shader_free_signature(&desc->patch_constant_signature);
+}
+
+static HRESULT shader_extract_from_dxbc(const void *dxbc, SIZE_T dxbc_length,
+        struct wined3d_shader_desc *desc, D3D_FEATURE_LEVEL feature_level)
 {
     struct shader_handler_context ctx = {feature_level, desc};
     HRESULT hr;
@@ -144,6 +161,7 @@ static HRESULT shader_extract_from_dxbc(const void *dxbc, SIZE_T dxbc_length, st
     desc->byte_code_size = 0;
     memset(&desc->input_signature, 0, sizeof(desc->input_signature));
     memset(&desc->output_signature, 0, sizeof(desc->output_signature));
+    memset(&desc->patch_constant_signature, 0, sizeof(desc->patch_constant_signature));
 
     hr = parse_dxbc(dxbc, dxbc_length, shdr_handler, &ctx);
     if (!desc->byte_code)
@@ -152,8 +170,7 @@ static HRESULT shader_extract_from_dxbc(const void *dxbc, SIZE_T dxbc_length, st
     if (FAILED(hr))
     {
         FIXME("Failed to parse shader, hr %#x.\n", hr);
-        shader_free_signature(&desc->input_signature);
-        shader_free_signature(&desc->output_signature);
+        free_shader_desc(desc);
     }
 
     return hr;
@@ -170,7 +187,8 @@ static const char *shader_get_string(const char *data, size_t data_size, DWORD o
     }
 
     max_len = data_size - offset;
-    len = strnlen(data + offset, max_len);
+    //len = strlen(data + offset, max_len);
+	len = strlen(data + offset);
 
     if (len == max_len)
         return NULL;
@@ -544,8 +562,7 @@ static HRESULT d3d_vertex_shader_init(struct d3d_vertex_shader *shader, struct d
 
     hr = wined3d_shader_create_vs(device->wined3d_device, &desc, shader,
             &d3d_vertex_shader_wined3d_parent_ops, &shader->wined3d_shader);
-    shader_free_signature(&desc.input_signature);
-    shader_free_signature(&desc.output_signature);
+    free_shader_desc(&desc);
     if (FAILED(hr))
     {
         WARN("Failed to create wined3d vertex shader, hr %#x.\n", hr);
@@ -634,6 +651,14 @@ static ULONG STDMETHODCALLTYPE d3d11_hull_shader_AddRef(ID3D11HullShader *iface)
     ULONG refcount = InterlockedIncrement(&shader->refcount);
 
     TRACE("%p increasing refcount to %u.\n", shader, refcount);
+
+    if (refcount == 1)
+    {
+        ID3D11Device_AddRef(shader->device);
+        wined3d_mutex_lock();
+        wined3d_shader_incref(shader->wined3d_shader);
+        wined3d_mutex_unlock();
+    }
 
     return refcount;
 }
@@ -750,8 +775,7 @@ static HRESULT d3d11_hull_shader_init(struct d3d11_hull_shader *shader, struct d
 
     hr = wined3d_shader_create_hs(device->wined3d_device, &desc, shader,
             &d3d11_hull_shader_wined3d_parent_ops, &shader->wined3d_shader);
-    shader_free_signature(&desc.input_signature);
-    shader_free_signature(&desc.output_signature);
+    free_shader_desc(&desc);
     if (FAILED(hr))
     {
         WARN("Failed to create wined3d hull shader, hr %#x.\n", hr);
@@ -788,6 +812,15 @@ HRESULT d3d11_hull_shader_create(struct d3d_device *device, const void *byte_cod
     return S_OK;
 }
 
+struct d3d11_hull_shader *unsafe_impl_from_ID3D11HullShader(ID3D11HullShader *iface)
+{
+    if (!iface)
+        return NULL;
+    assert(iface->lpVtbl == &d3d11_hull_shader_vtbl);
+
+    return impl_from_ID3D11HullShader(iface);
+}
+
 /* ID3D11DomainShader methods */
 
 static inline struct d3d11_domain_shader *impl_from_ID3D11DomainShader(ID3D11DomainShader *iface)
@@ -821,6 +854,14 @@ static ULONG STDMETHODCALLTYPE d3d11_domain_shader_AddRef(ID3D11DomainShader *if
     ULONG refcount = InterlockedIncrement(&shader->refcount);
 
     TRACE("%p increasing refcount to %u.\n", shader, refcount);
+
+    if (refcount == 1)
+    {
+        ID3D11Device_AddRef(shader->device);
+        wined3d_mutex_lock();
+        wined3d_shader_incref(shader->wined3d_shader);
+        wined3d_mutex_unlock();
+    }
 
     return refcount;
 }
@@ -937,8 +978,7 @@ static HRESULT d3d11_domain_shader_init(struct d3d11_domain_shader *shader, stru
 
     hr = wined3d_shader_create_ds(device->wined3d_device, &desc, shader,
             &d3d11_domain_shader_wined3d_parent_ops, &shader->wined3d_shader);
-    shader_free_signature(&desc.input_signature);
-    shader_free_signature(&desc.output_signature);
+    free_shader_desc(&desc);
     if (FAILED(hr))
     {
         WARN("Failed to create wined3d domain shader, hr %#x.\n", hr);
@@ -973,6 +1013,15 @@ HRESULT d3d11_domain_shader_create(struct d3d_device *device, const void *byte_c
     *shader = object;
 
     return S_OK;
+}
+
+struct d3d11_domain_shader *unsafe_impl_from_ID3D11DomainShader(ID3D11DomainShader *iface)
+{
+    if (!iface)
+        return NULL;
+    assert(iface->lpVtbl == &d3d11_domain_shader_vtbl);
+
+    return impl_from_ID3D11DomainShader(iface);
 }
 
 /* ID3D11GeometryShader methods */
@@ -1018,6 +1067,14 @@ static ULONG STDMETHODCALLTYPE d3d11_geometry_shader_AddRef(ID3D11GeometryShader
     ULONG refcount = InterlockedIncrement(&shader->refcount);
 
     TRACE("%p increasing refcount to %u.\n", shader, refcount);
+
+    if (refcount == 1)
+    {
+        ID3D11Device_AddRef(shader->device);
+        wined3d_mutex_lock();
+        wined3d_shader_incref(shader->wined3d_shader);
+        wined3d_mutex_unlock();
+    }
 
     return refcount;
 }
@@ -1438,8 +1495,7 @@ static HRESULT d3d_geometry_shader_init(struct d3d_geometry_shader *shader,
         if (!(so_desc.elements = d3d11_calloc(so_entry_count, sizeof(*so_desc.elements))))
         {
             ERR("Failed to allocate wined3d stream output element array memory.\n");
-            shader_free_signature(&desc.input_signature);
-            shader_free_signature(&desc.output_signature);
+            free_shader_desc(&desc);
             return E_OUTOFMEMORY;
         }
         if (FAILED(hr = wined3d_so_elements_from_d3d11_so_entries(so_desc.elements,
@@ -1447,8 +1503,7 @@ static HRESULT d3d_geometry_shader_init(struct d3d_geometry_shader *shader,
                 &desc.output_signature, device->feature_level)))
         {
             HeapFree(GetProcessHeap(), 0, so_desc.elements);
-            shader_free_signature(&desc.input_signature);
-            shader_free_signature(&desc.output_signature);
+            free_shader_desc(&desc);
             return hr;
         }
     }
@@ -1462,8 +1517,7 @@ static HRESULT d3d_geometry_shader_init(struct d3d_geometry_shader *shader,
     hr = wined3d_shader_create_gs(device->wined3d_device, &desc, so_entries ? &so_desc : NULL,
             shader, &d3d_geometry_shader_wined3d_parent_ops, &shader->wined3d_shader);
     HeapFree(GetProcessHeap(), 0, so_desc.elements);
-    shader_free_signature(&desc.input_signature);
-    shader_free_signature(&desc.output_signature);
+    free_shader_desc(&desc);
     if (FAILED(hr))
     {
         WARN("Failed to create wined3d geometry shader, hr %#x.\n", hr);
@@ -1782,8 +1836,7 @@ static HRESULT d3d_pixel_shader_init(struct d3d_pixel_shader *shader, struct d3d
 
     hr = wined3d_shader_create_ps(device->wined3d_device, &desc, shader,
             &d3d_pixel_shader_wined3d_parent_ops, &shader->wined3d_shader);
-    shader_free_signature(&desc.input_signature);
-    shader_free_signature(&desc.output_signature);
+    free_shader_desc(&desc);
     if (FAILED(hr))
     {
         WARN("Failed to create wined3d pixel shader, hr %#x.\n", hr);
@@ -1855,7 +1908,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_compute_shader_QueryInterface(ID3D11Compu
             || IsEqualGUID(riid, &IID_ID3D11DeviceChild)
             || IsEqualGUID(riid, &IID_IUnknown))
     {
-        ID3D11ComputeShader_AddRef(*object = iface);
+        //ID3D11ComputeShader_AddRef(*object = iface);
         return S_OK;
     }
 
@@ -1871,6 +1924,14 @@ static ULONG STDMETHODCALLTYPE d3d11_compute_shader_AddRef(ID3D11ComputeShader *
     ULONG refcount = InterlockedIncrement(&shader->refcount);
 
     TRACE("%p increasing refcount to %u.\n", shader, refcount);
+
+    if (refcount == 1)
+    {
+        ID3D11Device_AddRef(shader->device);
+        wined3d_mutex_lock();
+        wined3d_shader_incref(shader->wined3d_shader);
+        wined3d_mutex_unlock();
+    }
 
     return refcount;
 }
@@ -1986,8 +2047,7 @@ static HRESULT d3d11_compute_shader_init(struct d3d11_compute_shader *shader, st
 
     hr = wined3d_shader_create_cs(device->wined3d_device, &desc, shader,
             &d3d11_compute_shader_wined3d_parent_ops, &shader->wined3d_shader);
-    shader_free_signature(&desc.input_signature);
-    shader_free_signature(&desc.output_signature);
+    free_shader_desc(&desc);
     if (FAILED(hr))
     {
         WARN("Failed to create wined3d compute shader, hr %#x.\n", hr);
@@ -2048,7 +2108,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_class_linkage_QueryInterface(ID3D11ClassL
             || IsEqualGUID(riid, &IID_ID3D11DeviceChild)
             || IsEqualGUID(riid, &IID_IUnknown))
     {
-        ID3D11ClassLinkage_AddRef(*object = iface);
+        //ID3D11ClassLinkage_AddRef(*object = iface);
         return S_OK;
     }
 
@@ -2077,8 +2137,12 @@ static ULONG STDMETHODCALLTYPE d3d11_class_linkage_Release(ID3D11ClassLinkage *i
 
     if (!refcount)
     {
+        ID3D11Device *device = class_linkage->device;
+
         wined3d_private_store_cleanup(&class_linkage->private_store);
         HeapFree(GetProcessHeap(), 0, class_linkage);
+
+        ID3D11Device_Release(device);
     }
 
     return refcount;
@@ -2087,7 +2151,11 @@ static ULONG STDMETHODCALLTYPE d3d11_class_linkage_Release(ID3D11ClassLinkage *i
 static void STDMETHODCALLTYPE d3d11_class_linkage_GetDevice(ID3D11ClassLinkage *iface,
         ID3D11Device **device)
 {
-    FIXME("iface %p, device %p stub!\n", iface, device);
+    struct d3d11_class_linkage *class_linkage = impl_from_ID3D11ClassLinkage(iface);
+
+    TRACE("iface %p, device %p.\n", iface, device);
+
+    ID3D11Device_AddRef(*device = class_linkage->device);
 }
 
 static HRESULT STDMETHODCALLTYPE d3d11_class_linkage_GetPrivateData(ID3D11ClassLinkage *iface,
@@ -2167,6 +2235,8 @@ HRESULT d3d11_class_linkage_create(struct d3d_device *device, struct d3d11_class
     object->ID3D11ClassLinkage_iface.lpVtbl = &d3d11_class_linkage_vtbl;
     object->refcount = 1;
     wined3d_private_store_init(&object->private_store);
+
+    ID3D11Device_AddRef(object->device = &device->ID3D11Device_iface);
 
     TRACE("Created class linkage %p.\n", object);
     *class_linkage = object;

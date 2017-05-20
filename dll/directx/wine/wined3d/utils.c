@@ -30,7 +30,6 @@
 #include <stdio.h>
 
 #include "wined3d_private.h"
-#include "math.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
 
@@ -3758,6 +3757,14 @@ const char *debug_ivec4(const struct wined3d_ivec4 *v)
             v->x, v->y, v->z, v->w);
 }
 
+const char *debug_uvec4(const struct wined3d_uvec4 *v)
+{
+    if (!v)
+        return "(null)";
+    return wine_dbg_sprintf("{%u, %u, %u, %u}",
+            v->x, v->y, v->z, v->w);
+}
+
 const char *debug_vec4(const struct wined3d_vec4 *v)
 {
     if (!v)
@@ -4972,53 +4979,71 @@ DWORD wined3d_format_convert_from_float(const struct wined3d_format *format, con
     static const struct
     {
         enum wined3d_format_id format_id;
-        float r_mul;
-        float g_mul;
-        float b_mul;
-        float a_mul;
-        BYTE r_shift;
-        BYTE g_shift;
-        BYTE b_shift;
-        BYTE a_shift;
+        struct wined3d_vec4 mul;
+        struct wined3d_uvec4 shift;
     }
-    conv[] =
+    float_conv[] =
     {
-        {WINED3DFMT_B8G8R8A8_UNORM,           255.0f,  255.0f,  255.0f,  255.0f, 16,  8,  0, 24},
-        {WINED3DFMT_B8G8R8X8_UNORM,           255.0f,  255.0f,  255.0f,  255.0f, 16,  8,  0, 24},
-        {WINED3DFMT_B8G8R8_UNORM,             255.0f,  255.0f,  255.0f,  255.0f, 16,  8,  0, 24},
-        {WINED3DFMT_B5G6R5_UNORM,              31.0f,   63.0f,   31.0f,    0.0f, 11,  5,  0,  0},
-        {WINED3DFMT_B5G5R5A1_UNORM,            31.0f,   31.0f,   31.0f,    1.0f, 10,  5,  0, 15},
-        {WINED3DFMT_B5G5R5X1_UNORM,            31.0f,   31.0f,   31.0f,    1.0f, 10,  5,  0, 15},
-        {WINED3DFMT_R8_UNORM,                 255.0f,    0.0f,    0.0f,    0.0f,  0,  0,  0,  0},
-        {WINED3DFMT_A8_UNORM,                   0.0f,    0.0f,    0.0f,  255.0f,  0,  0,  0,  0},
-        {WINED3DFMT_B4G4R4A4_UNORM,            15.0f,   15.0f,   15.0f,   15.0f,  8,  4,  0, 12},
-        {WINED3DFMT_B4G4R4X4_UNORM,            15.0f,   15.0f,   15.0f,   15.0f,  8,  4,  0, 12},
-        {WINED3DFMT_B2G3R3_UNORM,               7.0f,    7.0f,    3.0f,    0.0f,  5,  2,  0,  0},
-        {WINED3DFMT_R8G8B8A8_UNORM,           255.0f,  255.0f,  255.0f,  255.0f,  0,  8, 16, 24},
-        {WINED3DFMT_R8G8B8X8_UNORM,           255.0f,  255.0f,  255.0f,  255.0f,  0,  8, 16, 24},
-        {WINED3DFMT_B10G10R10A2_UNORM,       1023.0f, 1023.0f, 1023.0f,    3.0f, 20, 10,  0, 30},
-        {WINED3DFMT_R10G10B10A2_UNORM,       1023.0f, 1023.0f, 1023.0f,    3.0f,  0, 10, 20, 30},
-        {WINED3DFMT_P8_UINT,                    0.0f,    0.0f,    0.0f,  255.0f,  0,  0,  0,  0},
-        {WINED3DFMT_S1_UINT_D15_UNORM,      32767.0f,    0.0f,    0.0f,    0.0f,  0,  0,  0,  0},
-        {WINED3DFMT_D16_UNORM,              65535.0f,    0.0f,    0.0f,    0.0f,  0,  0,  0,  0},
-        {WINED3DFMT_D24_UNORM_S8_UINT,   16777215.0f,    0.0f,    0.0f,    0.0f,  0,  0,  0,  0},
-        {WINED3DFMT_X8D24_UNORM,         16777215.0f,    0.0f,    0.0f,    0.0f,  0,  0,  0,  0},
-        {WINED3DFMT_D32_UNORM,         4294967295.0f,    0.0f,    0.0f,    0.0f,  0,  0,  0,  0},
+        {WINED3DFMT_B8G8R8A8_UNORM,    {       255.0f,  255.0f,  255.0f, 255.0f}, {16,  8,  0, 24}},
+        {WINED3DFMT_B8G8R8X8_UNORM,    {       255.0f,  255.0f,  255.0f, 255.0f}, {16,  8,  0, 24}},
+        {WINED3DFMT_B8G8R8_UNORM,      {       255.0f,  255.0f,  255.0f, 255.0f}, {16,  8,  0, 24}},
+        {WINED3DFMT_B5G6R5_UNORM,      {        31.0f,   63.0f,   31.0f,   0.0f}, {11,  5,  0,  0}},
+        {WINED3DFMT_B5G5R5A1_UNORM,    {        31.0f,   31.0f,   31.0f,   1.0f}, {10,  5,  0, 15}},
+        {WINED3DFMT_B5G5R5X1_UNORM,    {        31.0f,   31.0f,   31.0f,   1.0f}, {10,  5,  0, 15}},
+        {WINED3DFMT_R8_UNORM,          {       255.0f,    0.0f,    0.0f,   0.0f}, { 0,  0,  0,  0}},
+        {WINED3DFMT_A8_UNORM,          {         0.0f,    0.0f,    0.0f, 255.0f}, { 0,  0,  0,  0}},
+        {WINED3DFMT_B4G4R4A4_UNORM,    {        15.0f,   15.0f,   15.0f,  15.0f}, { 8,  4,  0, 12}},
+        {WINED3DFMT_B4G4R4X4_UNORM,    {        15.0f,   15.0f,   15.0f,  15.0f}, { 8,  4,  0, 12}},
+        {WINED3DFMT_B2G3R3_UNORM,      {         7.0f,    7.0f,    3.0f,   0.0f}, { 5,  2,  0,  0}},
+        {WINED3DFMT_R8G8B8A8_UNORM,    {       255.0f,  255.0f,  255.0f, 255.0f}, { 0,  8, 16, 24}},
+        {WINED3DFMT_R8G8B8X8_UNORM,    {       255.0f,  255.0f,  255.0f, 255.0f}, { 0,  8, 16, 24}},
+        {WINED3DFMT_B10G10R10A2_UNORM, {      1023.0f, 1023.0f, 1023.0f,   3.0f}, {20, 10,  0, 30}},
+        {WINED3DFMT_R10G10B10A2_UNORM, {      1023.0f, 1023.0f, 1023.0f,   3.0f}, { 0, 10, 20, 30}},
+        {WINED3DFMT_P8_UINT,           {         0.0f,    0.0f,    0.0f, 255.0f}, { 0,  0,  0,  0}},
+        {WINED3DFMT_S1_UINT_D15_UNORM, {     32767.0f,    0.0f,    0.0f,   0.0f}, { 0,  0,  0,  0}},
+        {WINED3DFMT_D16_UNORM,         {     65535.0f,    0.0f,    0.0f,   0.0f}, { 0,  0,  0,  0}},
+    };
+    static const struct
+    {
+        enum wined3d_format_id format_id;
+        struct wined3d_dvec4 mul;
+        struct wined3d_uvec4 shift;
+    }
+    double_conv[] =
+    {
+        {WINED3DFMT_D24_UNORM_S8_UINT, {  16777215.0, 0.0, 0.0, 0.0}, {0, 0, 0, 0}},
+        {WINED3DFMT_X8D24_UNORM,       {  16777215.0, 0.0, 0.0, 0.0}, {0, 0, 0, 0}},
+        {WINED3DFMT_D32_UNORM,         {4294967295.0, 0.0, 0.0, 0.0}, {0, 0, 0, 0}},
     };
     unsigned int i;
+    DWORD ret;
 
     TRACE("Converting color %s to format %s.\n", debug_color(color), debug_d3dformat(format->id));
 
-    for (i = 0; i < sizeof(conv) / sizeof(*conv); ++i)
+    for (i = 0; i < ARRAY_SIZE(float_conv); ++i)
     {
-        DWORD ret;
+        if (format->id != float_conv[i].format_id)
+            continue;
 
-        if (format->id != conv[i].format_id) continue;
+        ret = ((DWORD)((color->r * float_conv[i].mul.x) + 0.5f)) << float_conv[i].shift.x;
+        ret |= ((DWORD)((color->g * float_conv[i].mul.y) + 0.5f)) << float_conv[i].shift.y;
+        ret |= ((DWORD)((color->b * float_conv[i].mul.z) + 0.5f)) << float_conv[i].shift.z;
+        ret |= ((DWORD)((color->a * float_conv[i].mul.w) + 0.5f)) << float_conv[i].shift.w;
 
-        ret = ((DWORD)((color->r * conv[i].r_mul) + 0.5f)) << conv[i].r_shift;
-        ret |= ((DWORD)((color->g * conv[i].g_mul) + 0.5f)) << conv[i].g_shift;
-        ret |= ((DWORD)((color->b * conv[i].b_mul) + 0.5f)) << conv[i].b_shift;
-        ret |= ((DWORD)((color->a * conv[i].a_mul) + 0.5f)) << conv[i].a_shift;
+        TRACE("Returning 0x%08x.\n", ret);
+
+        return ret;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(double_conv); ++i)
+    {
+        if (format->id != double_conv[i].format_id)
+            continue;
+
+        ret = ((DWORD)((color->r * double_conv[i].mul.x) + 0.5)) << double_conv[i].shift.x;
+        ret |= ((DWORD)((color->g * double_conv[i].mul.y) + 0.5)) << double_conv[i].shift.y;
+        ret |= ((DWORD)((color->b * double_conv[i].mul.z) + 0.5)) << double_conv[i].shift.z;
+        ret |= ((DWORD)((color->a * double_conv[i].mul.w) + 0.5)) << double_conv[i].shift.w;
 
         TRACE("Returning 0x%08x.\n", ret);
 

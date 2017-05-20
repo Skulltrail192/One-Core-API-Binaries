@@ -80,7 +80,6 @@ struct wined3d_settings wined3d_settings =
     PCI_DEVICE_NONE,/* PCI Device ID */
     0,              /* The default of memory is set in init_driver_info */
     NULL,           /* No wine logo by default */
-    TRUE,           /* Multisampling enabled by default. */
     ~0u,            /* Don't force a specific sample count by default. */
     FALSE,          /* No strict draw ordering. */
     FALSE,          /* Don't range check relative addressing indices in float constants. */
@@ -128,13 +127,20 @@ static DWORD get_config_key(HKEY defkey, HKEY appkey, const char *name, char *bu
     return ERROR_FILE_NOT_FOUND;
 }
 
-static DWORD get_config_key_dword(HKEY defkey, HKEY appkey, const char *name, DWORD *data)
+static DWORD get_config_key_dword(HKEY defkey, HKEY appkey, const char *name, DWORD *value)
 {
-    DWORD type;
-    DWORD size = sizeof(DWORD);
-    if (appkey && !RegQueryValueExA(appkey, name, 0, &type, (BYTE *)data, &size) && (type == REG_DWORD)) return 0;
-    if (defkey && !RegQueryValueExA(defkey, name, 0, &type, (BYTE *)data, &size) && (type == REG_DWORD)) return 0;
+    DWORD type, data, size;
+
+    size = sizeof(data);
+    if (appkey && !RegQueryValueExA(appkey, name, 0, &type, (BYTE *)&data, &size) && type == REG_DWORD) goto success;
+    size = sizeof(data);
+    if (defkey && !RegQueryValueExA(defkey, name, 0, &type, (BYTE *)&data, &size) && type == REG_DWORD) goto success;
+
     return ERROR_FILE_NOT_FOUND;
+
+success:
+    *value = data;
+    return 0;
 }
 
 static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
@@ -288,14 +294,6 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
             wined3d_settings.logo = HeapAlloc(GetProcessHeap(), 0, len);
             if (!wined3d_settings.logo) ERR("Failed to allocate logo path memory.\n");
             else memcpy(wined3d_settings.logo, buffer, len);
-        }
-        if ( !get_config_key( hkey, appkey, "Multisampling", buffer, size) )
-        {
-            if (!strcmp(buffer, "disabled"))
-            {
-                TRACE("Multisampling disabled.\n");
-                wined3d_settings.allow_multisampling = FALSE;
-            }
         }
         if (!get_config_key_dword(hkey, appkey, "SampleCount", &wined3d_settings.sample_count))
             ERR_(winediag)("Forcing sample count to %u. This may not be compatible with all applications.\n",

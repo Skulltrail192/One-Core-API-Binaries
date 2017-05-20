@@ -564,7 +564,7 @@ RtlAddressInSectionTable (
     IN ULONG Address
     );
 	
-BOOLEAN 
+NTSTATUS 
 WINAPI 
 RtlLCIDToCultureName(
 	IN LCID lcid, 
@@ -629,6 +629,11 @@ typedef struct _RESOURCE_STATUS {
   DWORD                  WaitHint;
   HANDLE                 EventHandle;
 } RESOURCE_STATUS, *PRESOURCE_STATUS;
+
+typedef struct _LOCALE_LCID{
+	LPCWSTR localeName;
+	LCID lcid;
+}LOCALE_LCID;
 
 typedef DWORD (WINAPI *PSET_RESOURCE_STATUS_ROUTINE)(
     _In_ RESOURCE_HANDLE  ResourceHandle,
@@ -773,8 +778,6 @@ typedef DWORD (WINAPI *PSTARTUP_ROUTINE)(
     _In_  PLOG_EVENT_ROUTINE           LogEvent,
     _Out_ CLRES_FUNCTION_TABLE         *FunctionTable
 );
-
-void initTable();
 
 typedef DWORD (CALLBACK *PRTL_WORK_ITEM_ROUTINE)(LPVOID); /* FIXME: not the right name */
 typedef void (NTAPI *RTL_WAITORTIMERCALLBACKFUNC)(PVOID,BOOLEAN); /* FIXME: not the right name */

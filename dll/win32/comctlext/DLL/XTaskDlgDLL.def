@@ -1,7 +1,0 @@
-; XTaskDlgDLL.def : Declares the module parameters.
-
-LIBRARY      "XTaskDlg.DLL"
-
-EXPORTS
-  TaskDialogIndirect PRIVATE
-  TaskDialog PRIVATE

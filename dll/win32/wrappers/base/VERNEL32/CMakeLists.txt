@@ -31,6 +31,7 @@ list(APPEND SOURCE
 	module.c
 	namepipe.c
 	nls.c
+	powrmgmt.c
 	process.c
 	sortkey.c	
 	support.c

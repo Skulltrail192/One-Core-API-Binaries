@@ -367,8 +367,8 @@
 @ stdcall GetLastError() ntdll.RtlGetLastWin32Error
 @ stdcall GetLinguistLangSize(ptr) ; missing in Win 7
 @ stdcall GetLocalTime(ptr)
-@ stdcall GetLocaleInfoA(long long ptr long)
-@ stdcall GetLocaleInfoW(long long ptr long)
+@ stdcall GetLocaleInfoA(long long ptr long) GeptLocaleInfoA
+@ stdcall GetLocaleInfoW(long long ptr long) GetpLocaleInfoW
 @ stdcall GetLogicalDriveStringsA(long ptr)
 @ stdcall GetLogicalDriveStringsW(long ptr)
 @ stdcall GetLogicalDrives()
@@ -1041,6 +1041,8 @@
 #Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) vtdll.RtlAcquireSRWLockExclusive
 @ stdcall AcquireSRWLockShared(ptr) vtdll.RtlAcquireSRWLockShared
+@ stdcall ApplicationRecoveryFinished(long)
+@ stdcall ApplicationRecoveryInProgress(ptr)
 @ stdcall CancelIoEx(long ptr)
 @ stdcall CancelSynchronousIo(ptr)
 @ stdcall CloseThreadpoolTimer(ptr) vtdll.TpReleaseTimer
@@ -1091,15 +1093,19 @@
 @ stdcall GetNamedPipeServerSessionId(ptr ptr)
 @ stdcall GetOSProductNameA(str long long)
 @ stdcall GetOSProductNameW(wstr long long)
+@ stdcall GetPhysicallyInstalledSystemMemory(ptr)
 @ stdcall GetProductInfo(long long long long ptr) 
 @ stdcall GetSystemDefaultLocaleName(ptr long)
+@ stdcall GetSystemPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetThreadErrorMode()
 @ stdcall GetThreadGroupAffinity(long ptr)
 @ stdcall GetThreadInformation(ptr long ptr long)
+@ stdcall GetThreadPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetThreadUILanguage()
 @ stdcall GetTickCount64() 
 @ stdcall GetTimeFormatEx(wstr long ptr wstr ptr long)
 @ stdcall GetUserDefaultLocaleName(wstr long)
+@ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
 @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
 @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
@@ -1113,6 +1119,10 @@
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
 @ stdcall LCIDToLocaleName(long ptr long long)
 @ stdcall LocaleNameToLCID(wstr long)
+@ stdcall PowerClearRequest(ptr ptr)
+@ stdcall PowerCreateRequest(ptr)
+@ stdcall PowerCreateRequestW(ptr) PowerCreateRequest
+@ stdcall PowerSetRequest(ptr long)
 @ stdcall OpenFileById(long ptr long long ptr long)
 @ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 
 @ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
@@ -1175,6 +1185,8 @@
 @ stdcall K32QueryWorkingSetEx(ptr ptr long) QueryWorkingSetEx
 @ stdcall QueryUnbiasedInterruptTime(ptr)
 @ stdcall RaiseFailFastException(ptr ptr long)
+@ stdcall RegisterApplicationRecoveryCallback(long ptr long long)
+@ stdcall RegisterApplicationRestart(wstr long)
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
 ;@ stdcall TryAcquireSRWLockExclusive(ptr) vtdll.RtlTryAcquireSRWLockExclusive
 @ stdcall TryAcquireSRWLockShared(ptr) vtdll.RtlTryAcquireSRWLockShared

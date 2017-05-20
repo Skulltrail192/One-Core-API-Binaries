@@ -62,7 +62,9 @@ HRESULT WINAPI SHGetPropertyStoreForWindow(
 	return E_FAIL;
 }
 
-HRESULT WINAPI SHBindToObject(
+HRESULT 
+WINAPI 
+SHBindToObject(
   IShellFolder *psf,
   PCUIDLIST_RELATIVE pidl,
   _In_   IBindCtx *pbc,

@@ -68,3 +68,22 @@ WerRegisterFile(
     FIXME("(%s, %d, %d) stub!\n", debugstr_w(file), regfiletype, flags);
     return E_NOTIMPL;
 }
+
+VOID 
+WINAPI 
+ApplicationRecoveryFinished(
+  _In_  BOOL bSuccess
+)
+{
+	bSuccess = TRUE;
+}
+
+HRESULT 
+WINAPI
+ApplicationRecoveryInProgress(
+	PBOOL pbCancelled
+)
+{
+  *pbCancelled = TRUE;
+  return S_OK;
+}

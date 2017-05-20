@@ -294,6 +294,7 @@ enum wined3d_sm4_opcode
     WINED3D_SM5_OP_IMM_ATOMIC_UMAX                  = 0xbc,
     WINED3D_SM5_OP_IMM_ATOMIC_UMIN                  = 0xbd,
     WINED3D_SM5_OP_SYNC                             = 0xbe,
+    WINED3D_SM5_OP_DCL_GS_INSTANCES                 = 0xce,
 };
 
 enum wined3d_sm4_register_type
@@ -328,6 +329,7 @@ enum wined3d_sm4_register_type
     WINED3D_SM5_RT_LOCAL_THREAD_ID         = 0x22,
     WINED3D_SM5_RT_COVERAGE                = 0x23,
     WINED3D_SM5_RT_LOCAL_THREAD_INDEX      = 0x24,
+    WINED3D_SM5_RT_GS_INSTANCE_ID          = 0x25,
 };
 
 enum wined3d_sm4_output_primitive_type
@@ -496,8 +498,8 @@ static void shader_sm4_read_shader_data(struct wined3d_shader_instruction *ins,
     type = (opcode_token & WINED3D_SM4_SHADER_DATA_TYPE_MASK) >> WINED3D_SM4_SHADER_DATA_TYPE_SHIFT;
     if (type != WINED3D_SM4_SHADER_DATA_IMMEDIATE_CONSTANT_BUFFER)
     {
-        FIXME("Unhandled shader data type %#x.\n", type);
-        ins->handler_idx = WINED3DSIH_TABLE_SIZE;
+        FIXME("Ignoring shader data type %#x.\n", type);
+        ins->handler_idx = WINED3DSIH_NOP;
         return;
     }
 
@@ -1052,6 +1054,8 @@ static const struct wined3d_sm4_opcode_info opcode_table[] =
     {WINED3D_SM5_OP_IMM_ATOMIC_UMIN,                  WINED3DSIH_IMM_ATOMIC_UMIN,                  "uU",   "iu"},
     {WINED3D_SM5_OP_SYNC,                             WINED3DSIH_SYNC,                             "",     "",
             shader_sm5_read_sync},
+    {WINED3D_SM5_OP_DCL_GS_INSTANCES,                 WINED3DSIH_DCL_GS_INSTANCES,                 "",     "",
+            shader_sm4_read_declaration_count},
 };
 
 static const enum wined3d_shader_register_type register_type_table[] =
@@ -1093,6 +1097,7 @@ static const enum wined3d_shader_register_type register_type_table[] =
     /* WINED3D_SM5_RT_LOCAL_THREAD_ID */         WINED3DSPR_LOCALTHREADID,
     /* WINED3D_SM5_RT_COVERAGE */                WINED3DSPR_COVERAGE,
     /* WINED3D_SM5_RT_LOCAL_THREAD_INDEX */      WINED3DSPR_LOCALTHREADINDEX,
+    /* WINED3D_SM5_RT_GS_INSTANCE_ID */          WINED3DSPR_GSINSTID,
 };
 
 static const struct wined3d_sm4_opcode_info *get_opcode_info(enum wined3d_sm4_opcode opcode)
