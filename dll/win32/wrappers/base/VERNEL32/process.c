@@ -22,146 +22,40 @@ Revision History:
 
 UNICODE_STRING NoDefaultCurrentDirectoryInExePath = RTL_CONSTANT_STRING(L"NoDefaultCurrentDirectoryInExePath");
 
-// /*
- // * @implemented clean
- // */
-// BOOL
-// WINAPI
-// QueryFullProcessImageNameW(HANDLE hProcess,
-                           // DWORD dwFlags,
-                           // LPWSTR lpExeName,
-                           // PDWORD pdwSize)
-// {
-    // BYTE Buffer[sizeof(UNICODE_STRING) + MAX_PATH * sizeof(WCHAR)];
-    // UNICODE_STRING *DynamicBuffer = NULL;
-    // UNICODE_STRING *Result = NULL;
-    // NTSTATUS Status;
-    // DWORD Needed;
+DWORD 
+WINAPI 
+GetProcessImageFileNameW(
+  _In_  HANDLE hProcess,
+  _Out_ LPWSTR lpImageFileName,
+  _In_  DWORD  nSize
+);
 
-    // Status = NtQueryInformationProcess(hProcess,
-                                       // ProcessImageFileName,
-                                       // Buffer,
-                                       // sizeof(Buffer) - sizeof(WCHAR),
-                                       // &Needed);
-    // if (Status == STATUS_INFO_LENGTH_MISMATCH)
-    // {
-        // DynamicBuffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, Needed + sizeof(WCHAR));
-        // if (!DynamicBuffer)
-        // {
-            // SetLastError(STATUS_NO_MEMORY);
-            // return FALSE;
-        // }
-        // Status = NtQueryInformationProcess(hProcess,
-                                           // ProcessImageFileName,
-                                           // (LPBYTE)DynamicBuffer,
-                                           // Needed,
-                                           // &Needed);
-        // Result = DynamicBuffer;
-    // }
-    // else Result = (PUNICODE_STRING)Buffer;
+DWORD 
+WINAPI 
+GetProcessImageFileNameA(
+  _In_  HANDLE hProcess,
+  _Out_ LPTSTR lpImageFileName,
+  _In_  DWORD  nSize
+);
 
-    // if (!NT_SUCCESS(Status)) goto Cleanup;
-
-    // if (Result->Length / sizeof(WCHAR) + 1 > *pdwSize)
-    // {
-        // Status = STATUS_BUFFER_TOO_SMALL;
-        // goto Cleanup;
-    // }
-
-    // *pdwSize = Result->Length / sizeof(WCHAR);
-    // memcpy(lpExeName, Result->Buffer, Result->Length);
-    // lpExeName[*pdwSize] = 0;
-
-// Cleanup:
-    // RtlFreeHeap(RtlGetProcessHeap(), 0, DynamicBuffer);
-
-    // if (!NT_SUCCESS(Status))
-    // {
-        // SetLastError(Status);
-    // }
-
-    // return !Status;
-// }
 
 /******************************************************************
  *		QueryFullProcessImageNameW (KERNEL32.@)
  */
-BOOL WINAPI QueryFullProcessImageNameW(HANDLE hProcess, DWORD dwFlags, LPWSTR lpExeName, PDWORD pdwSize)
+BOOL 
+WINAPI 
+QueryFullProcessImageNameW(
+	HANDLE hProcess, 
+	DWORD dwFlags, 
+	LPWSTR lpExeName, 
+	PDWORD pdwSize
+)
 {
-    BYTE buffer[sizeof(UNICODE_STRING) + MAX_PATH*sizeof(WCHAR)];  /* this buffer should be enough */
-    UNICODE_STRING *dynamic_buffer = NULL;
-    UNICODE_STRING *result = NULL;
-    NTSTATUS status;
-    DWORD needed;
-
-    /* FIXME: On Windows, ProcessImageFileName return an NT path. In Wine it
-     * is a DOS path and we depend on this. */
-    status = NtQueryInformationProcess(hProcess, ProcessImageFileName, buffer,
-                                       sizeof(buffer) - sizeof(WCHAR), &needed);
-    if (status == STATUS_INFO_LENGTH_MISMATCH)
-    {
-        dynamic_buffer = HeapAlloc(GetProcessHeap(), 0, needed + sizeof(WCHAR));
-        status = NtQueryInformationProcess(hProcess, ProcessImageFileName, (LPBYTE)dynamic_buffer, needed, &needed);
-        result = dynamic_buffer;
-    }
-    else
-        result = (PUNICODE_STRING)buffer;
-
-    if (status) goto cleanup;
-
-    if (dwFlags & PROCESS_NAME_NATIVE)
-    {
-        WCHAR drive[3];
-        WCHAR device[1024];
-        DWORD ntlen, devlen;
-
-        if (result->Buffer[1] != ':' || result->Buffer[0] < 'A' || result->Buffer[0] > 'Z')
-        {
-            /* We cannot convert it to an NT device path so fail */
-            status = STATUS_NO_SUCH_DEVICE;
-            goto cleanup;
-        }
-
-        /* Find this drive's NT device path */
-        drive[0] = result->Buffer[0];
-        drive[1] = ':';
-        drive[2] = 0;
-        if (!QueryDosDeviceW(drive, device, sizeof(device)/sizeof(*device)))
-        {
-            status = STATUS_NO_SUCH_DEVICE;
-            goto cleanup;
-        }
-
-        devlen = lstrlenW(device);
-        ntlen = devlen + (result->Length/sizeof(WCHAR) - 2);
-        if (ntlen + 1 > *pdwSize)
-        {
-            status = STATUS_BUFFER_TOO_SMALL;
-            goto cleanup;
-        }
-        *pdwSize = ntlen;
-
-        memcpy(lpExeName, device, devlen * sizeof(*device));
-        memcpy(lpExeName + devlen, result->Buffer + 2, result->Length - 2 * sizeof(WCHAR));
-        lpExeName[*pdwSize] = 0;
-    }
-    else
-    {
-        if (result->Length/sizeof(WCHAR) + 1 > *pdwSize)
-        {
-            status = STATUS_BUFFER_TOO_SMALL;
-            goto cleanup;
-        }
-
-        *pdwSize = result->Length/sizeof(WCHAR);
-        memcpy( lpExeName, result->Buffer, result->Length );
-        lpExeName[*pdwSize] = 0;
-    }
-
-cleanup:
-    HeapFree(GetProcessHeap(), 0, dynamic_buffer);
-    if (status) SetLastError( RtlNtStatusToDosError(status) );
-    return !status;
+	if(GetProcessImageFileNameW(hProcess, lpExeName, *pdwSize)>0){
+		return TRUE;
+	}else{
+		return FALSE;
+	}
 }
 
 /*
@@ -169,39 +63,17 @@ cleanup:
  */
 BOOL
 WINAPI
-QueryFullProcessImageNameA(HANDLE hProcess,
-                           DWORD dwFlags,
-                           LPSTR lpExeName,
-                           PDWORD pdwSize)
+QueryFullProcessImageNameA(
+	HANDLE hProcess,
+    DWORD dwFlags,
+    LPSTR lpExeName,
+    PDWORD pdwSize)
 {
-    DWORD pdwSizeW = *pdwSize;
-    BOOL Result;
-    LPWSTR lpExeNameW;
-
-    lpExeNameW = RtlAllocateHeap(RtlGetProcessHeap(),
-                                 HEAP_ZERO_MEMORY,
-                                 *pdwSize * sizeof(WCHAR));
-    if (!lpExeNameW)
-    {
-        SetLastError(STATUS_NO_MEMORY);
-        return FALSE;
-    }
-
-    Result = QueryFullProcessImageNameW(hProcess, dwFlags, lpExeNameW, &pdwSizeW);
-
-    if (Result)
-        Result = (0 != WideCharToMultiByte(CP_ACP, 0,
-                                           lpExeNameW,
-                                           -1,
-                                           lpExeName,
-                                           *pdwSize,
-                                           NULL, NULL));
-
-    if (Result)
-        *pdwSize = strlen(lpExeName);
-
-    RtlFreeHeap(RtlGetProcessHeap(), 0, lpExeNameW);
-    return Result;
+	if(GetProcessImageFileNameA(hProcess, lpExeName, *pdwSize)>0){
+		return TRUE;
+	}else{
+		return FALSE;
+	}
 }
 
 BOOL

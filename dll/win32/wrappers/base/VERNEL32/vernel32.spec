@@ -1126,8 +1126,8 @@
 @ stdcall PowerCreateRequestW(ptr) PowerCreateRequest
 @ stdcall PowerSetRequest(ptr long)
 @ stdcall OpenFileById(long ptr long long ptr long)
-#@ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 
-#@ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
+@ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 
+@ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
 @ stdcall ReleaseSRWLockExclusive(ptr) vtdll.RtlReleaseSRWLockExclusive
 @ stdcall ReleaseSRWLockShared(ptr) vtdll.RtlReleaseSRWLockShared
 @ stdcall SetConsoleHistoryInfo(ptr)
@@ -1156,7 +1156,6 @@
 @ stdcall WerRegisterFile(wstr long long)
 @ stdcall WerRegisterMemoryBlock(ptr long)
 @ stdcall WerRegisterMemoryBlockWorker(ptr long) WerRegisterMemoryBlock
-
 
 #Win7 Functions
 @ stdcall GetCurrentProcessorNumberEx(ptr) vtdll.RtlGetCurrentProcessorNumberEx
