@@ -3027,7 +3027,9 @@ HRESULT WINAPI SHGetKnownFolderIDList(REFKNOWNFOLDERID rfid, DWORD flags, HANDLE
     return *pidl ? S_OK : E_FAIL;
 }
 
-HRESULT WINAPI SHGetKnownFolderItem(REFKNOWNFOLDERID rfid, KNOWN_FOLDER_FLAG flags, HANDLE hToken,
+HRESULT 
+WINAPI 
+SHGetKnownFolderItem(REFKNOWNFOLDERID rfid, KNOWN_FOLDER_FLAG flags, HANDLE hToken,
     REFIID riid, void **ppv)
 {
     PIDLIST_ABSOLUTE pidl;

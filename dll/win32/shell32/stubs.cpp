@@ -841,112 +841,6 @@ SHGetShellFolderViewCB(HWND hwnd)
     FIXME("SHGetShellFolderViewCB() stub\n");
     return NULL;
 }
-
-/*
- * Unimplemented
- */
-EXTERN_C INT
-WINAPI
-SHLookupIconIndexA(LPCSTR lpName, INT iIndex, UINT uFlags)
-{
-    FIXME("SHLookupIconIndexA() stub\n");
-    return 0;
-}
-
-/*
- * Unimplemented
- */
-EXTERN_C INT
-WINAPI
-SHLookupIconIndexW(LPCWSTR lpName, INT iIndex, UINT uFlags)
-{
-    FIXME("SHLookupIconIndexW() stub\n");
-    return 0;
-}
-
-/*
- * Unimplemented
- */
-EXTERN_C HANDLE
-WINAPI
-PifMgr_OpenProperties(LPCWSTR lpAppPath, LPCWSTR lpPifPath, UINT hInfIndex, UINT options)
-{
-    FIXME("PifMgr_OpenProperties() stub\n");
-    return 0;
-}
-
-/*
- * Unimplemented
- */
-EXTERN_C INT
-WINAPI
-PifMgr_GetProperties(HANDLE hHandle, LPCSTR lpName, LPVOID lpUnknown, INT iUnknown, UINT uUnknown)
-{
-    FIXME("PifMgr_GetProperties() stub\n");
-    return 0;
-}
-
-/*
- * Unimplemented
- */
-EXTERN_C INT
-WINAPI
-PifMgr_SetProperties(HANDLE hHandle, LPCSTR lpName, LPCVOID lpUnknown, INT iUnknown, UINT uUnknown)
-{
-    FIXME("PifMgr_SetProperties() stub\n");
-    return 0;
-}
-
-/*
- * Unimplemented
- */
-EXTERN_C HRESULT
-WINAPI
-SHStartNetConnectionDialogA(HWND hwnd,
-                            LPCSTR pszRemoteName,
-                            DWORD dwType)
-{
-    FIXME("SHStartNetConnectionDialogA() stub\n");
-    return E_FAIL;
-}
-
-/*
- * Unimplemented
- */
-EXTERN_C HRESULT
-WINAPI
-SHStartNetConnectionDialogW(HWND hwnd,
-                            LPCWSTR pszRemoteName,
-                            DWORD dwType)
-{
-    FIXME("SHStartNetConnectionDialogW() stub\n");
-    return E_FAIL;
-}
-
-/*
- * Unimplemented
- */
-EXTERN_C HANDLE
-WINAPI
-PifMgr_CloseProperties(HANDLE hHandle, UINT uUnknown)
-{
-    FIXME("PifMgr_CloseProperties() stub\n");
-    return NULL;
-}
-
-/*
- * Unimplemented
- */
-EXTERN_C BOOL
-WINAPI
-DAD_DragEnterEx2(HWND hwndTarget,
-                 POINT ptStart,
-                 IDataObject *pdtObject)
-{
-    FIXME("DAD_DragEnterEx2() stub\n");
-    return FALSE;
-}
-
 /*
  * Unimplemented
  */
@@ -978,17 +872,6 @@ DragQueryInfo(HDROP hDrop, DRAGINFO *pDragInfo)
 {
     FIXME("DragQueryInfo() stub\n");
     return FALSE;
-}
-
-/*
- * Unimplemented
- */
-EXTERN_C LPVOID
-WINAPI
-DDECreatePostNotify(LPVOID lpUnknown)
-{
-    FIXME("DDECreatePostNotify() stub\n");
-    return NULL;
 }
 
 /*

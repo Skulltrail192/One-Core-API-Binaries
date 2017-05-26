@@ -87,3 +87,25 @@ ApplicationRecoveryInProgress(
   *pbCancelled = TRUE;
   return S_OK;
 }
+
+/*
+* @unimplemented
+*/
+void 
+WINAPI 
+WerpNotifyUseStringResource(HANDLE file)
+{
+	UNIMPLEMENTED;
+}
+
+void 
+WINAPI 
+WerpNotifyLoadStringResource(
+	HMODULE module, 
+	LPCWSTR string, 
+	HANDLE handle, 
+	DWORD flags
+)
+{
+	UNIMPLEMENTED;
+}

@@ -24,18 +24,22 @@ WINE_DEFAULT_DEBUG_CHANNEL(vernel32);
 /*
 * @unimplemented
 */
-DWORD WINAPI CheckElevationEnabled(
+DWORD 
+WINAPI 
+CheckElevationEnabled(
     BOOL *pResult
 ) 
 {
 	*pResult = FALSE;
-	return 1;
+	return S_OK;
 }
 
 /*
 * @unimplemented
 */
-DWORD WINAPI CheckElevation(
+DWORD 
+WINAPI 
+CheckElevation(
    LPCWSTR lpApplicationName,
    PDWORD pdwFlags,
    HANDLE hChildToken,
@@ -43,7 +47,7 @@ DWORD WINAPI CheckElevation(
    PDWORD pdwReason
 )
 {
-	return 1;
+	return S_OK;
 }
 
 

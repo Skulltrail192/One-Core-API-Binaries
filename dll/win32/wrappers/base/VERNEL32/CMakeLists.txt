@@ -33,6 +33,7 @@ list(APPEND SOURCE
 	nls.c
 	powrmgmt.c
 	process.c
+	security.c
 	sortkey.c	
 	support.c
 	syblink.c

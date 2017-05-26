@@ -1,6 +1,5 @@
 
 spec2def(advapi32.dll advapi32.spec ADD_IMPORTLIB)
-
 add_definitions(-D_ADVAPI32_)
 
 remove_definitions(-D_WIN32_WINNT=0x502)

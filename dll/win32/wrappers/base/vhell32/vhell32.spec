@@ -443,8 +443,6 @@
 @ stdcall ShellExecuteW(long wstr wstr wstr wstr long)
 @ stdcall ShellHookProc(long ptr ptr)
 @ stdcall Shell_NotifyIcon(long ptr)
-@ stdcall Shell_NotifyIconA(long ptr)
-@ stdcall Shell_NotifyIconW(long ptr)
 @ stdcall StrChrA(str long) 
 @ stdcall StrChrIA(str long) 
 @ stdcall StrChrIW(wstr long) 
@@ -481,11 +479,11 @@
 @ stdcall SHCreateItemFromIDList(ptr ptr ptr)
 @ stdcall SHCreateItemFromParsingName(wstr ptr ptr ptr)
 @ stdcall SHCreateItemWithParent(ptr ptr ptr long ptr)
-@ stdcall SHBindToObject(ptr ptr ptr ptr ptr)
+@ stdcall SHBindToObject(ptr ptr ptr ptr ptr) 
 @ stdcall Shell_GetCachedImageIndexA(ptr ptr long) Shell_GetCachedImageIndex
 @ stdcall Shell_GetCachedImageIndexW(ptr ptr long) Shell_GetCachedImageIndex
 @ stdcall Shell_NotifyIconA(long ptr)
-@ stdcall Shell_NotifyIconW(long ptr)
+;@ stdcall Shell_NotifyIconW(long ptr)
 @ stdcall SHEvaluateSystemCommandTemplate(wstr wstr wstr wstr)
 @ stdcall SHFormatForDisplay(ptr ptr long wstr long) 
 @ stdcall SHGetPropertyStoreForWindow(ptr long ptr)
@@ -535,3 +533,7 @@
 @ stdcall GetCurrentProcessExplicitAppUserModelID(wstr)
 @ stdcall SetCurrentProcessExplicitAppUserModelID(wstr)
 @ stdcall SHGetKnownFolderItem(ptr long long ptr ptr)
+
+#remake functions
+@ stdcall Shell_NotifyIconA(long ptr)
+@ stdcall Shell_NotifyIconW(long ptr) Shell_NotifyIconInternalW

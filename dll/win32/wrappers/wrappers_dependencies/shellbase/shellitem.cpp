@@ -307,3 +307,34 @@ HRESULT WINAPI SHCreateShellItem(LPCITEMIDLIST pidlParent,
     *ppsi = newShellItem;
     return hr;
 }
+
+HRESULT 
+WINAPI
+SHCreateItemFromIDList(PCIDLIST_ABSOLUTE pidl, REFIID riid, void **ppv)
+{
+    HRESULT ret;
+    CComPtr<CShellItem> pItem;
+    CComPtr<IPersistIDList> pPersistIDList;
+
+    if (!pidl)
+        return E_POINTER;
+
+    *ppv = NULL;
+
+    ret = CShellItem::_CreatorClass::CreateInstance(
+        NULL, IID_IShellItem, reinterpret_cast<void **>(&pItem));
+    if (SUCCEEDED(ret))
+     {
+        ret = pItem->QueryInterface(
+            IID_IPersistIDList, reinterpret_cast<void **>(&pPersistIDList));
+        if (SUCCEEDED(ret))
+        {
+            ret = pPersistIDList->SetIDList(pidl);
+            if (SUCCEEDED(ret))
+            {
+                *ppv = static_cast<IShellItem *>(pItem.Detach());
+            }
+        }
+     }
+    return ret;
+ }

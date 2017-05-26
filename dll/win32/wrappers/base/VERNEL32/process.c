@@ -22,67 +22,147 @@ Revision History:
 
 UNICODE_STRING NoDefaultCurrentDirectoryInExePath = RTL_CONSTANT_STRING(L"NoDefaultCurrentDirectoryInExePath");
 
-/*
- * @implemented clean
+// /*
+ // * @implemented clean
+ // */
+// BOOL
+// WINAPI
+// QueryFullProcessImageNameW(HANDLE hProcess,
+                           // DWORD dwFlags,
+                           // LPWSTR lpExeName,
+                           // PDWORD pdwSize)
+// {
+    // BYTE Buffer[sizeof(UNICODE_STRING) + MAX_PATH * sizeof(WCHAR)];
+    // UNICODE_STRING *DynamicBuffer = NULL;
+    // UNICODE_STRING *Result = NULL;
+    // NTSTATUS Status;
+    // DWORD Needed;
+
+    // Status = NtQueryInformationProcess(hProcess,
+                                       // ProcessImageFileName,
+                                       // Buffer,
+                                       // sizeof(Buffer) - sizeof(WCHAR),
+                                       // &Needed);
+    // if (Status == STATUS_INFO_LENGTH_MISMATCH)
+    // {
+        // DynamicBuffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, Needed + sizeof(WCHAR));
+        // if (!DynamicBuffer)
+        // {
+            // SetLastError(STATUS_NO_MEMORY);
+            // return FALSE;
+        // }
+        // Status = NtQueryInformationProcess(hProcess,
+                                           // ProcessImageFileName,
+                                           // (LPBYTE)DynamicBuffer,
+                                           // Needed,
+                                           // &Needed);
+        // Result = DynamicBuffer;
+    // }
+    // else Result = (PUNICODE_STRING)Buffer;
+
+    // if (!NT_SUCCESS(Status)) goto Cleanup;
+
+    // if (Result->Length / sizeof(WCHAR) + 1 > *pdwSize)
+    // {
+        // Status = STATUS_BUFFER_TOO_SMALL;
+        // goto Cleanup;
+    // }
+
+    // *pdwSize = Result->Length / sizeof(WCHAR);
+    // memcpy(lpExeName, Result->Buffer, Result->Length);
+    // lpExeName[*pdwSize] = 0;
+
+// Cleanup:
+    // RtlFreeHeap(RtlGetProcessHeap(), 0, DynamicBuffer);
+
+    // if (!NT_SUCCESS(Status))
+    // {
+        // SetLastError(Status);
+    // }
+
+    // return !Status;
+// }
+
+/******************************************************************
+ *		QueryFullProcessImageNameW (KERNEL32.@)
  */
-BOOL
-WINAPI
-QueryFullProcessImageNameW(HANDLE hProcess,
-                           DWORD dwFlags,
-                           LPWSTR lpExeName,
-                           PDWORD pdwSize)
+BOOL WINAPI QueryFullProcessImageNameW(HANDLE hProcess, DWORD dwFlags, LPWSTR lpExeName, PDWORD pdwSize)
 {
-    BYTE Buffer[sizeof(UNICODE_STRING) + MAX_PATH * sizeof(WCHAR)];
-    UNICODE_STRING *DynamicBuffer = NULL;
-    UNICODE_STRING *Result = NULL;
-    NTSTATUS Status;
-    DWORD Needed;
+    BYTE buffer[sizeof(UNICODE_STRING) + MAX_PATH*sizeof(WCHAR)];  /* this buffer should be enough */
+    UNICODE_STRING *dynamic_buffer = NULL;
+    UNICODE_STRING *result = NULL;
+    NTSTATUS status;
+    DWORD needed;
 
-    Status = NtQueryInformationProcess(hProcess,
-                                       ProcessImageFileName,
-                                       Buffer,
-                                       sizeof(Buffer) - sizeof(WCHAR),
-                                       &Needed);
-    if (Status == STATUS_INFO_LENGTH_MISMATCH)
+    /* FIXME: On Windows, ProcessImageFileName return an NT path. In Wine it
+     * is a DOS path and we depend on this. */
+    status = NtQueryInformationProcess(hProcess, ProcessImageFileName, buffer,
+                                       sizeof(buffer) - sizeof(WCHAR), &needed);
+    if (status == STATUS_INFO_LENGTH_MISMATCH)
     {
-        DynamicBuffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, Needed + sizeof(WCHAR));
-        if (!DynamicBuffer)
+        dynamic_buffer = HeapAlloc(GetProcessHeap(), 0, needed + sizeof(WCHAR));
+        status = NtQueryInformationProcess(hProcess, ProcessImageFileName, (LPBYTE)dynamic_buffer, needed, &needed);
+        result = dynamic_buffer;
+    }
+    else
+        result = (PUNICODE_STRING)buffer;
+
+    if (status) goto cleanup;
+
+    if (dwFlags & PROCESS_NAME_NATIVE)
+    {
+        WCHAR drive[3];
+        WCHAR device[1024];
+        DWORD ntlen, devlen;
+
+        if (result->Buffer[1] != ':' || result->Buffer[0] < 'A' || result->Buffer[0] > 'Z')
         {
-            SetLastError(STATUS_NO_MEMORY);
-            return FALSE;
+            /* We cannot convert it to an NT device path so fail */
+            status = STATUS_NO_SUCH_DEVICE;
+            goto cleanup;
         }
-        Status = NtQueryInformationProcess(hProcess,
-                                           ProcessImageFileName,
-                                           (LPBYTE)DynamicBuffer,
-                                           Needed,
-                                           &Needed);
-        Result = DynamicBuffer;
+
+        /* Find this drive's NT device path */
+        drive[0] = result->Buffer[0];
+        drive[1] = ':';
+        drive[2] = 0;
+        if (!QueryDosDeviceW(drive, device, sizeof(device)/sizeof(*device)))
+        {
+            status = STATUS_NO_SUCH_DEVICE;
+            goto cleanup;
+        }
+
+        devlen = lstrlenW(device);
+        ntlen = devlen + (result->Length/sizeof(WCHAR) - 2);
+        if (ntlen + 1 > *pdwSize)
+        {
+            status = STATUS_BUFFER_TOO_SMALL;
+            goto cleanup;
+        }
+        *pdwSize = ntlen;
+
+        memcpy(lpExeName, device, devlen * sizeof(*device));
+        memcpy(lpExeName + devlen, result->Buffer + 2, result->Length - 2 * sizeof(WCHAR));
+        lpExeName[*pdwSize] = 0;
     }
-    else Result = (PUNICODE_STRING)Buffer;
-
-    if (!NT_SUCCESS(Status)) goto Cleanup;
-
-    if (Result->Length / sizeof(WCHAR) + 1 > *pdwSize)
+    else
     {
-        Status = STATUS_BUFFER_TOO_SMALL;
-        goto Cleanup;
+        if (result->Length/sizeof(WCHAR) + 1 > *pdwSize)
+        {
+            status = STATUS_BUFFER_TOO_SMALL;
+            goto cleanup;
+        }
+
+        *pdwSize = result->Length/sizeof(WCHAR);
+        memcpy( lpExeName, result->Buffer, result->Length );
+        lpExeName[*pdwSize] = 0;
     }
 
-    *pdwSize = Result->Length / sizeof(WCHAR);
-    memcpy(lpExeName, Result->Buffer, Result->Length);
-    lpExeName[*pdwSize] = 0;
-
-Cleanup:
-    RtlFreeHeap(RtlGetProcessHeap(), 0, DynamicBuffer);
-
-    if (!NT_SUCCESS(Status))
-    {
-        SetLastError(Status);
-    }
-
-    return !Status;
+cleanup:
+    HeapFree(GetProcessHeap(), 0, dynamic_buffer);
+    if (status) SetLastError( RtlNtStatusToDosError(status) );
+    return !status;
 }
-
 
 /*
  * @implemented
@@ -399,6 +479,130 @@ FlushProcessWriteBuffers(void)
     if (!once++)
          DbgPrint("FlushProcessWriteBuffers is stub\n");
 }
+/* 
+Helper function to count set bits in the processor mask.
+DWORD CountSetBits(ULONG_PTR bitMask)
+{
+    DWORD LSHIFT = sizeof(ULONG_PTR)*8 - 1;
+    DWORD bitSetCount = 0;
+    ULONG_PTR bitTest = (ULONG_PTR)1 << LSHIFT;    
+    DWORD i;
+    
+    for (i = 0; i <= LSHIFT; ++i)
+    {
+        bitSetCount += ((bitMask & bitTest)?1:0);
+        bitTest/=2;
+    }
+
+    return bitSetCount;
+}
+
+int _cdecl _tmain ()
+{
+    LPFN_GLPI glpi;
+    BOOL done = FALSE;
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer = NULL;
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = NULL;
+    DWORD returnLength = 0;
+    DWORD logicalProcessorCount = 0;
+    DWORD numaNodeCount = 0;
+    DWORD processorCoreCount = 0;
+    DWORD processorL1CacheCount = 0;
+    DWORD processorL2CacheCount = 0;
+    DWORD processorL3CacheCount = 0;
+    DWORD processorPackageCount = 0;
+    DWORD byteOffset = 0;
+    PCACHE_DESCRIPTOR Cache;
+
+    glpi = (LPFN_GLPI) GetProcAddress(
+                            GetModuleHandle(TEXT("kernel32")),
+                            "GetLogicalProcessorInformation");
+    if (NULL == glpi) 
+    {
+        _tprintf(TEXT("\nGetLogicalProcessorInformation is not supported.\n"));
+        return (1);
+    }
+
+    while (!done)
+    {
+        DWORD rc = glpi(buffer, &returnLength);
+
+        if (FALSE == rc) 
+        {
+            if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) 
+            {
+                if (buffer) 
+                    free(buffer);
+
+                buffer = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(
+                        returnLength);
+
+                if (NULL == buffer) 
+                {
+                    _tprintf(TEXT("\nError: Allocation failure\n"));
+                    return (2);
+                }
+            } 
+            else 
+            {
+                _tprintf(TEXT("\nError %d\n"), GetLastError());
+                return (3);
+            }
+        } 
+        else
+        {
+            done = TRUE;
+        }
+    }
+
+    ptr = buffer;
+
+    while (byteOffset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= returnLength) 
+    {
+        switch (ptr->Relationship) 
+        {
+        case RelationNumaNode:
+            Non-NUMA systems report a single record of this type.
+            numaNodeCount++;
+            break;
+
+        case RelationProcessorCore:
+            processorCoreCount++;
+
+            A hyperthreaded core supplies more than one logical processor.
+            logicalProcessorCount += CountSetBits(ptr->ProcessorMask);
+            break;
+
+        case RelationCache:
+            Cache data is in ptr->Cache, one CACHE_DESCRIPTOR structure for each cache. 
+            Cache = &ptr->Cache;
+            if (Cache->Level == 1)
+            {
+                processorL1CacheCount++;
+            }
+            else if (Cache->Level == 2)
+            {
+                processorL2CacheCount++;
+            }
+            else if (Cache->Level == 3)
+            {
+                processorL3CacheCount++;
+            }
+            break;
+
+        case RelationProcessorPackage:
+            Logical processors share a physical package.
+            processorPackageCount++;
+            break;
+
+        default:
+            _tprintf(TEXT("\nError: Unsupported LOGICAL_PROCESSOR_RELATIONSHIP value.\n"));
+            break;
+        }
+        byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+        ptr++;
+    }
+}
 
 BOOL 
 WINAPI 
@@ -408,37 +612,49 @@ GetLogicalProcessorInformationEx(
   _Inout_    PDWORD ReturnedLength
 )
 {
+	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Output;
 	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION information = NULL;
 	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = NULL;
 	DWORD byteOffset = 0;
 	SYSTEM_INFO sysinfo;
 	BOOLEAN result;
+	DWORD returnLength;
+	DWORD length = 0;
+	ULONG CurrentLength;
 	
-	Buffer->Size = sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+	Output = Buffer;
 	
-	result = GetLogicalProcessorInformation(information, ReturnedLength);
+	CurrentLength = 0;
+	
+	Output->Size = sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+	
+	result = GetLogicalProcessorInformation(information, &returnLength);
 	
 	if(!result){
 		return FALSE;
-	}
-	Buffer->Relationship = information->Relationship;
+	}	
+
+	Output->Relationship = information->Relationship;
 	
-	//We don't support really groups, so, we emulate to support ALL_PROCESSOR_GROUPS
-	while (byteOffset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= *ReturnedLength) {
-		switch(Buffer->Relationship){
+	We don't support really groups, so, we emulate to support ALL_PROCESSOR_GROUPS
+	while (byteOffset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= *returnLength) {
+		switch(RelationshipType){
 			case RelationNumaNode:
 				Buffer->NumaNode.NodeNumber = information->NumaNode.NodeNumber;
 				Buffer->NumaNode.GroupMask.Group = ALL_PROCESSOR_GROUPS;
+				length++;
 				break;
 			case RelationProcessorCore:
 				Buffer->Processor.Flags = information->ProcessorCore.Flags;
 				Buffer->Processor.GroupCount = 1;
 				Buffer->Processor.GroupMask[0].Group = ALL_PROCESSOR_GROUPS;
+				length++;
 				break;
 			case RelationProcessorPackage:
 				Buffer->Processor.Flags = 0;
 				Buffer->Processor.GroupCount = 1;
-				Buffer->Processor.GroupMask[0].Group = ALL_PROCESSOR_GROUPS;			
+				Buffer->Processor.GroupMask[0].Group = ALL_PROCESSOR_GROUPS;	
+				length++;		
 				break;
 			case RelationCache:
 				Buffer->Cache.Level = information->Cache.Level;
@@ -446,7 +662,8 @@ GetLogicalProcessorInformationEx(
 				Buffer->Cache.LineSize = information->Cache.LineSize;
 				Buffer->Cache.CacheSize = information->Cache.Size;
 				Buffer->Cache.Type = information->Cache.Type;
-				Buffer->Cache.GroupMask.Group = ALL_PROCESSOR_GROUPS;				
+				Buffer->Cache.GroupMask.Group = ALL_PROCESSOR_GROUPS;
+				length++;
 				break;
 			case RelationGroup:
 				GetSystemInfo( &sysinfo );
@@ -454,13 +671,46 @@ GetLogicalProcessorInformationEx(
 				Buffer->Group.ActiveGroupCount = 1;
 				Buffer->Group.GroupInfo[0].MaximumProcessorCount = 64;
 				Buffer->Group.GroupInfo[0].ActiveProcessorCount = sysinfo.dwNumberOfProcessors;
+				length++;
 				break;
 		}
-	}	
+        byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+        information++;	
+		Output++;
+	}
+	
+        CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+        if (CurrentLength <= SystemInformationLength) {
+            Output->ProcessorMask = Mask;
+            Output->Relationship = RelationNumaNode;
+            Output->Reserved[0] = Output->Reserved[1] = 0;
+            Output->NumaNode.NodeNumber = Index;
+            Output += 1;
+    
+        } else {
+            Status = STATUS_INFO_LENGTH_MISMATCH;
+        }	
+
+	*ReturnedLength = length;
 	
 	return TRUE;
 }
 
+
+
+ */
+ 
+BOOL 
+WINAPI 
+GetLogicalProcessorInformationEx(
+  _In_       LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType,
+  _Out_opt_  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Buffer,
+  _Inout_    PDWORD ReturnedLength
+)
+{
+	return FALSE;
+} 
+ 
 /***********************************************************************
  *           InitializeProcThreadAttributeList       (KERNEL32.@)
  */

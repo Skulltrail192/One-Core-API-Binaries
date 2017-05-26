@@ -1045,6 +1045,8 @@
 @ stdcall ApplicationRecoveryInProgress(ptr)
 @ stdcall CancelIoEx(long ptr)
 @ stdcall CancelSynchronousIo(ptr)
+@ stdcall CheckElevation(wstr long ptr long long)
+@ stdcall CheckElevationEnabled(ptr) 
 @ stdcall CloseThreadpoolTimer(ptr) vtdll.TpReleaseTimer
 @ stdcall CloseThreadpoolWait(ptr) vtdll.TpReleaseWait
 @ stdcall CloseThreadpoolWork(ptr) vtdll.TpReleaseWork
@@ -1124,8 +1126,8 @@
 @ stdcall PowerCreateRequestW(ptr) PowerCreateRequest
 @ stdcall PowerSetRequest(ptr long)
 @ stdcall OpenFileById(long ptr long long ptr long)
-@ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 
-@ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
+#@ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 
+#@ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
 @ stdcall ReleaseSRWLockExclusive(ptr) vtdll.RtlReleaseSRWLockExclusive
 @ stdcall ReleaseSRWLockShared(ptr) vtdll.RtlReleaseSRWLockShared
 @ stdcall SetConsoleHistoryInfo(ptr)
@@ -1148,9 +1150,13 @@
 @ stdcall WaitForThreadpoolWorkCallbacks(ptr long) vtdll.TpWaitForWork
 @ stdcall WakeAllConditionVariable(ptr) 
 @ stdcall WakeConditionVariable(ptr) 
+@ stdcall WerpNotifyLoadStringResource(ptr wstr ptr long)
+@ stub WerpNotifyLoadStringResourceEx
+@ stdcall WerpNotifyUseStringResource(ptr)
 @ stdcall WerRegisterFile(wstr long long)
 @ stdcall WerRegisterMemoryBlock(ptr long)
 @ stdcall WerRegisterMemoryBlockWorker(ptr long) WerRegisterMemoryBlock
+
 
 #Win7 Functions
 @ stdcall GetCurrentProcessorNumberEx(ptr) vtdll.RtlGetCurrentProcessorNumberEx
@@ -1188,9 +1194,11 @@
 @ stdcall RegisterApplicationRecoveryCallback(long ptr long long)
 @ stdcall RegisterApplicationRestart(wstr long)
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
-;@ stdcall TryAcquireSRWLockExclusive(ptr) vtdll.RtlTryAcquireSRWLockExclusive
+@ stdcall TryAcquireSRWLockExclusive(ptr) vtdll.RtlTryAcquireSRWLockExclusive
 @ stdcall TryAcquireSRWLockShared(ptr) vtdll.RtlTryAcquireSRWLockShared
 
 #Win8 Functions 
 @ stdcall GetCurrentPackageId(ptr ptr)
 @ stdcall GetSystemTimePreciseAsFileTime(ptr)
+@ stdcall WerpNotifyLoadStringResourceWorker(ptr wstr ptr long) WerpNotifyLoadStringResource
+@ stdcall WerpNotifyUseStringResourceWorker(ptr) WerpNotifyUseStringResource

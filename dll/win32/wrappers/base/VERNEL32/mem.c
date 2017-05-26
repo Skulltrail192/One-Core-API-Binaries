@@ -44,7 +44,7 @@ SetSystemFileCacheSize(
   char SystemInformation; // [sp+0h] [bp-24h]@1
 
   status = NtSetSystemInformation(SystemObjectInformation|0x40, &SystemInformation, 0x24u);
-  if ( status < 0 )
+  if (!NT_SUCCESS(status) )
   {
     BaseSetLastNTError(status);
     result = FALSE;

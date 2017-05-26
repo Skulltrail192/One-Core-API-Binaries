@@ -65,7 +65,7 @@ DWORD WINAPI __SHGUIDToStringW (REFGUID guid, LPWSTR str)
  * SEE ALSO
  *     CoCreateInstace, SHLoadOLE
  */
-HRESULT WINAPI SHCoCreateInstance(
+HRESULT WINAPI SHpCoCreateInstance(
     LPCWSTR aclsid,
     const CLSID *clsid,
     LPUNKNOWN pUnkOuter,

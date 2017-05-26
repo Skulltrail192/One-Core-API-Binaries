@@ -30,32 +30,6 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(shell);
 
-/*
-    ########## Combining and Constructing paths ##########
-*/
-
-/*************************************************************************
- * PathAppend        [SHELL32.36]
- */
-BOOL WINAPI PathAppendAW(
-    LPVOID lpszPath1,
-    LPCVOID lpszPath2)
-{
-    if (SHELL_OsIsUnicode())
-      return PathAppendW((LPWSTR)lpszPath1, (LPCWSTR)lpszPath2);
-    return PathAppendA((LPSTR)lpszPath1, (LPCSTR)lpszPath2);
-}
-
-/*************************************************************************
- * PathBuildRoot        [SHELL32.30]
- */
-LPVOID WINAPI PathBuildRootAW(LPVOID lpszPath, int drive)
-{
-    if(SHELL_OsIsUnicode())
-      return PathBuildRootW((LPWSTR)lpszPath, drive);
-    return PathBuildRootA((LPSTR)lpszPath, drive);
-}
-
 /*************************************************************************
  * PathGetExtensionA        [internal]
  *
@@ -88,16 +62,6 @@ static LPWSTR PathGetExtensionW(LPCWSTR lpszPath)
 EXTERN_C LPVOID WINAPI SHPathGetExtensionW(LPCWSTR lpszPath, DWORD void1, DWORD void2)
 {
     return PathGetExtensionW(lpszPath);
-}
-
-/*************************************************************************
- * PathRemoveFileSpec [SHELL32.35]
- */
-BOOL WINAPI PathRemoveFileSpecAW(LPVOID lpszPath)
-{
-    if (SHELL_OsIsUnicode())
-      return PathRemoveFileSpecW((LPWSTR)lpszPath);
-    return PathRemoveFileSpecA((LPSTR)lpszPath);
 }
 
 /*
@@ -144,20 +108,6 @@ EXTERN_C VOID WINAPI PathGetShortPathAW(LPVOID pszPath)
     PathGetShortPathA((LPSTR)pszPath);
 }
 
-/*
-    ########## Path Testing ##########
-*/
-
-/*************************************************************************
- * PathIsRoot        [SHELL32.29]
- */
-BOOL WINAPI PathIsRootAW(LPCVOID lpszPath)
-{
-    if (SHELL_OsIsUnicode())
-      return PathIsRootW((LPWSTR)lpszPath);
-    return PathIsRootA((LPSTR)lpszPath);
-}
-
 /*************************************************************************
  *  PathIsExeA        [internal]
  */
@@ -197,26 +147,6 @@ BOOL PathIsExeW (LPCWSTR lpszPath)
 }
 
 /*************************************************************************
- *  PathIsExe        [SHELL32.43]
- */
-BOOL WINAPI PathIsExeAW (LPCVOID path)
-{
-    if (SHELL_OsIsUnicode())
-      return PathIsExeW ((LPWSTR)path);
-    return PathIsExeA((LPSTR)path);
-}
-
-/*************************************************************************
- * PathFileExists    [SHELL32.45]
- */
-BOOL WINAPI PathFileExistsAW (LPCVOID lpszPath)
-{
-    if (SHELL_OsIsUnicode())
-      return PathFileExistsW ((LPWSTR)lpszPath);
-    return PathFileExistsA ((LPSTR)lpszPath);
-}
-
-/*************************************************************************
  * PathIsSameRoot    [SHELL32.650]
  */
 BOOL WINAPI PathIsSameRootAW(LPCVOID lpszPath1, LPCVOID lpszPath2)
@@ -224,40 +154,6 @@ BOOL WINAPI PathIsSameRootAW(LPCVOID lpszPath1, LPCVOID lpszPath2)
     if (SHELL_OsIsUnicode())
       return PathIsSameRootW((LPCWSTR)lpszPath1, (LPCWSTR)lpszPath2);
     return PathIsSameRootA((LPCSTR)lpszPath1, (LPCSTR)lpszPath2);
-}
-
-/*************************************************************************
- * IsLFNDriveA        [SHELL32.41]
- */
-EXTERN_C BOOL WINAPI IsLFNDriveA(LPCSTR lpszPath)
-{
-    DWORD    fnlen;
-
-    if (!GetVolumeInformationA(lpszPath, NULL, 0, NULL, &fnlen, NULL, NULL, 0))
-    return FALSE;
-    return fnlen > 12;
-}
-
-/*************************************************************************
- * IsLFNDriveW        [SHELL32.42]
- */
-EXTERN_C BOOL WINAPI IsLFNDriveW(LPCWSTR lpszPath)
-{
-    DWORD    fnlen;
-
-    if (!GetVolumeInformationW(lpszPath, NULL, 0, NULL, &fnlen, NULL, NULL, 0))
-    return FALSE;
-    return fnlen > 12;
-}
-
-/*************************************************************************
- * IsLFNDrive        [SHELL32.119]
- */
-EXTERN_C BOOL WINAPI IsLFNDriveAW(LPCVOID lpszPath)
-{
-    if (SHELL_OsIsUnicode())
-      return IsLFNDriveW((LPCWSTR)lpszPath);
-    return IsLFNDriveA((LPCSTR)lpszPath);
 }
 
 /*
@@ -1724,109 +1620,6 @@ BOOL WINAPI SHGetSpecialFolderPathW (
         szPath)) == S_OK ? TRUE : FALSE;
 }
 
-/*************************************************************************
- * SHGetFolderLocation [SHELL32.@]
- *
- * Gets the folder locations from the registry and creates a pidl.
- *
- * PARAMS
- *   hwndOwner  [I]
- *   nFolder    [I] CSIDL_xxxxx
- *   hToken     [I] token representing user, or NULL for current user, or -1 for
- *                  default user
- *   dwReserved [I] must be zero
- *   ppidl      [O] PIDL of a special folder
- *
- * RETURNS
- *  Success: S_OK
- *  Failure: Standard OLE-defined error result, S_FALSE or E_INVALIDARG
- *
- * NOTES
- *  Creates missing reg keys and directories.
- *  Mostly forwards to SHGetFolderPathW, but a few values of nFolder return
- *  virtual folders that are handled here.
- */
-HRESULT WINAPI SHGetFolderLocation(
-    HWND hwndOwner,
-    int nFolder,
-    HANDLE hToken,
-    DWORD dwReserved,
-    LPITEMIDLIST *ppidl)
-{
-    HRESULT hr = E_INVALIDARG;
-
-    TRACE("%p 0x%08x %p 0x%08x %p\n",
-     hwndOwner, nFolder, hToken, dwReserved, ppidl);
-
-    if (!ppidl)
-        return E_INVALIDARG;
-    if (dwReserved)
-        return E_INVALIDARG;
-
-    /* The virtual folders' locations are not user-dependent */
-    *ppidl = NULL;
-    switch (nFolder)
-    {
-        case CSIDL_DESKTOP:
-            *ppidl = _ILCreateDesktop();
-            break;
-
-        case CSIDL_PERSONAL:
-            *ppidl = _ILCreateMyDocuments();
-            break;
-
-        case CSIDL_INTERNET:
-            *ppidl = _ILCreateIExplore();
-            break;
-
-        case CSIDL_CONTROLS:
-            *ppidl = _ILCreateControlPanel();
-            break;
-
-        case CSIDL_PRINTERS:
-            *ppidl = _ILCreatePrinters();
-            break;
-
-        case CSIDL_BITBUCKET:
-            *ppidl = _ILCreateBitBucket();
-            break;
-
-        case CSIDL_DRIVES:
-            *ppidl = _ILCreateMyComputer();
-            break;
-
-        case CSIDL_NETWORK:
-            *ppidl = _ILCreateNetwork();
-            break;
-
-        default:
-        {
-            WCHAR szPath[MAX_PATH];
-
-            hr = SHGetFolderPathW(hwndOwner, nFolder, hToken,
-             SHGFP_TYPE_CURRENT, szPath);
-            if (SUCCEEDED(hr))
-            {
-                DWORD attributes=0;
-
-                TRACE("Value=%s\n", debugstr_w(szPath));
-                hr = SHILCreateFromPathW(szPath, ppidl, &attributes);
-            }
-            else if (hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
-            {
-                /* unlike SHGetFolderPath, SHGetFolderLocation in shell32
-                 * version 6.0 returns E_FAIL for nonexistent paths
-                 */
-                hr = E_FAIL;
-            }
-        }
-    }
-    if(*ppidl)
-        hr = S_OK;
-
-    TRACE("-- (new pidl %p)\n",*ppidl);
-    return hr;
-}
 
 /*************************************************************************
  * SHGetSpecialFolderLocation        [SHELL32.@]
