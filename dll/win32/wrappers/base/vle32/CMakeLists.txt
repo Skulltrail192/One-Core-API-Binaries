@@ -11,5 +11,5 @@ list(APPEND SOURCE
 add_library(vle32 SHARED ${SOURCE})
 set_module_type(vle32 win32dll ENTRYPOINT 0)
 target_link_libraries(vle32 wine)
-add_importlibs(vle32 ole32 msvcrt kernel32 ntdll)
+add_importlibs(vle32 olebase msvcrt kernel32 ntdll)
 add_cd_file(TARGET vle32 DESTINATION reactos/system32 FOR all)

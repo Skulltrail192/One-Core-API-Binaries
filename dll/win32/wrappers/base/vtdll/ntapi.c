@@ -748,3 +748,195 @@ NtOpenKeyEx(
 {
     return NtOpenKey( retkey, access, attr);
 }
+
+NTSTATUS
+KeQueryLogicalProcessorInformation (
+    OUT PVOID SystemInformation,
+    IN ULONG SystemInformationLength,
+    OUT PULONG ReturnedLength
+    )
+
+/*++
+
+Routine Description:
+
+    This function returns information about the physical processors and nodes
+    in the host system.
+
+    Information is returned for each physical processor in the host system
+    that describes any associated logical processors if present.
+
+    Information is returned for each node in the host system that describes
+    the processors associated with the node.
+
+    N.B. It assumed that specified buffer is either accessible or access
+         is protected by an outer try/except block.
+
+Arguments:
+
+    SystemInformation - Supplies a pointer to a buffer which receives the
+        specified information.
+
+    SystemInformationLength - Supplies the length of the output buffer in
+        bytes.
+
+    ReturnLength - Supples a pointer to a variable which receives the number
+        of bytes necessary to return all of the information records available.
+
+Return Value:
+
+    NTSTATUS
+
+--*/
+
+{
+
+    KAFFINITY ActiveProcessors;
+    ULONG CurrentLength;
+    UCHAR Flags;
+    ULONG Index;
+    ULONG Level;
+    KAFFINITY Mask;
+
+#if defined(KE_MULTINODE)
+
+    PKNODE Node;
+
+#endif
+
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION Output;
+    PKPRCB Prcb;
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    PAGED_CODE();
+
+    //
+    // Add a record for each physical processor in the host system.
+    //
+
+    CurrentLength = 0;
+    Output = SystemInformation;
+    ActiveProcessors = KeActiveProcessors;
+    Index = (ULONG)(-1);
+    do {
+        Flags = 0;
+        Index += 1;
+        Prcb = KiProcessorBlock[Index];
+        if ((ActiveProcessors & 1) != 0) {
+    
+            //
+            // Skip logical processors that are not the master of their thread
+            // set.
+            //
+
+#if defined(NT_SMT)
+
+            if (Prcb != Prcb->MultiThreadSetMaster) {
+                continue;
+            }
+    
+            //
+            // If this physical processor has more than one logical processor,
+            // then mark it as an SMT relationship.
+            //
+
+            Mask = Prcb->MultiThreadProcessorSet;
+            if (Prcb->SetMember != Mask) {
+                Flags = LTP_PC_SMT;
+            }
+
+#else
+
+            Mask = Prcb->SetMember;
+
+#endif
+
+            CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+            if (CurrentLength <= SystemInformationLength) {
+                Output->ProcessorMask = Mask;
+                Output->Relationship = RelationProcessorCore;
+                Output->Reserved[0] = Output->Reserved[1] = 0;
+                Output->ProcessorCore.Flags = Flags;
+                Output += 1;
+    
+            } else {
+                Status = STATUS_INFO_LENGTH_MISMATCH;
+            }
+            
+            //
+            // Add a record for each cache level associated with the physical
+            // processor.
+            //
+    
+#if defined(_AMD64_)
+
+            for (Level = 0; Level < Prcb->CacheCount; Level += 1) {
+                CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+                if (CurrentLength <= SystemInformationLength) {
+                    Output->ProcessorMask = Mask;
+                    Output->Relationship = RelationCache;
+                    Output->Reserved[0] = Output->Reserved[1] = 0;
+                    Output->Cache = Prcb->Cache[Level];
+                    Output += 1;
+    
+                } else {
+                    Status = STATUS_INFO_LENGTH_MISMATCH;
+                }
+           }
+
+#else
+
+            Level = 0;
+
+#endif
+
+        }
+
+    } while((ActiveProcessors >>= 1) != 0);
+
+    //
+    // Add a record for each node in the host system.
+    //
+
+    Index = 0;
+    do {
+
+#if defined(KE_MULTINODE)
+
+        Node = KeNodeBlock[Index];
+        if (Node->ProcessorMask == 0) {
+            Index += 1;
+            continue;
+        }
+
+        Mask = Node->ProcessorMask;
+
+#else
+
+        Mask = KeActiveProcessors;
+
+#endif
+
+        CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+        if (CurrentLength <= SystemInformationLength) {
+            Output->ProcessorMask = Mask;
+            Output->Relationship = RelationNumaNode;
+            Output->Reserved[0] = Output->Reserved[1] = 0;
+            Output->NumaNode.NodeNumber = Index;
+            Output += 1;
+    
+        } else {
+            Status = STATUS_INFO_LENGTH_MISMATCH;
+        }
+
+        Index += 1;
+    } while (Index < KeNumberNodes);
+
+    // 
+    // Return the length of the buffer required to hold the entire set of
+    // information.
+    //
+
+    *ReturnedLength = CurrentLength;
+    return Status;
+}

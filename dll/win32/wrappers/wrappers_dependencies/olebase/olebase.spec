@@ -1,72 +1,72 @@
-@ stdcall CoVrfCheckThreadState(ptr)
-@ stdcall CoVrfGetThreadState(ptr)
-@ stdcall CoVrfReleaseThreadState(ptr)
-@ stdcall PropVariantChangeType(ptr ptr long long)
+@ stub CoVrfCheckThreadState
+@ stub CoVrfGetThreadState
+@ stub CoVrfReleaseThreadState
+@ stub PropVariantChangeType
 @ stdcall BindMoniker(ptr long ptr ptr)
 @ stdcall CLIPFORMAT_UserFree(ptr ptr)
 @ stdcall CLIPFORMAT_UserMarshal(ptr ptr ptr)
 @ stdcall CLIPFORMAT_UserSize(ptr long ptr)
 @ stdcall CLIPFORMAT_UserUnmarshal(ptr ptr ptr)
-@ stdcall CLSIDFromOle1Class(wstr ptr ptr)
+@ stub CLSIDFromOle1Class
 @ stdcall CLSIDFromProgID(wstr ptr)
 @ stdcall CLSIDFromProgIDEx(wstr ptr)
 @ stdcall CLSIDFromString(wstr ptr)
 @ stdcall CoAddRefServerProcess()
 @ stdcall CoAllowSetForegroundWindow(ptr ptr)
 @ stdcall CoBuildVersion()
-@ stdcall CoCancelCall(ptr long)
+@ stub CoCancelCall
 @ stdcall CoCopyProxy(ptr ptr)
 @ stdcall CoCreateFreeThreadedMarshaler(ptr ptr)
 @ stdcall CoCreateGuid(ptr)
 @ stdcall CoCreateInstance(ptr ptr long ptr ptr)
 @ stdcall CoCreateInstanceEx(ptr ptr long ptr long ptr)
-@ stdcall CoCreateObjectInContext(ptr ptr ptr ptr)
-@ stdcall CoDeactivateObject(long long)
-@ stdcall CoDisableCallCancellation(ptr)
+@ stub CoCreateObjectInContext
+@ stub CoDeactivateObject
+@ stub CoDisableCallCancellation
 @ stdcall CoDisconnectObject(ptr long)
 @ stdcall CoDosDateTimeToFileTime(long long ptr) kernel32.DosDateTimeToFileTime
-@ stdcall CoEnableCallCancellation(ptr)
+@ stub CoEnableCallCancellation
 @ stdcall CoFileTimeNow(ptr)
 @ stdcall CoFileTimeToDosDateTime(ptr ptr ptr) kernel32.FileTimeToDosDateTime
 @ stdcall CoFreeAllLibraries()
 @ stdcall CoFreeLibrary(long)
 @ stdcall CoFreeUnusedLibraries()
 @ stdcall CoFreeUnusedLibrariesEx(long long)
-@ stdcall CoGetApartmentID(long ptr)
+@ stub CoGetApartmentID
 @ stdcall CoGetCallContext(ptr ptr)
 @ stdcall CoGetCallerTID(ptr)
-@ stdcall CoGetCancelObject(long ptr ptr)
+@ stub CoGetCancelObject
 @ stdcall CoGetClassObject(ptr long ptr ptr ptr)
-@ stdcall CoGetClassVersion(ptr ptr ptr)
-@ stdcall CoGetComCatalog(long ptr)
+@ stub CoGetClassVersion
+@ stub CoGetComCatalog
 @ stdcall CoGetContextToken(ptr)
 @ stdcall CoGetCurrentLogicalThreadId(ptr)
 @ stdcall CoGetCurrentProcess()
 @ stdcall CoGetDefaultContext(long ptr ptr)
 @ stdcall CoGetInstanceFromFile(ptr ptr ptr long long wstr long ptr)
 @ stdcall CoGetInstanceFromIStorage(ptr ptr ptr long ptr long ptr)
-@ stdcall CoGetInterceptor(long ptr long ptr)
-@ stdcall CoGetInterceptorFromTypeInfo(long ptr ptr long ptr)
+@ stub CoGetInterceptor
+@ stub CoGetInterceptorFromTypeInfo
 @ stdcall CoGetInterfaceAndReleaseStream(ptr ptr ptr)
 @ stdcall CoGetMalloc(long ptr)
 @ stdcall CoGetMarshalSizeMax(ptr ptr ptr long ptr long)
-@ stdcall CoGetModuleType(wstr ptr)
+@ stub CoGetModuleType
 @ stdcall CoGetObject(wstr ptr ptr ptr)
 @ stdcall CoGetObjectContext(ptr ptr)
 @ stdcall CoGetPSClsid(ptr ptr)
-@ stdcall CoGetProcessIdentifier(ptr)
+@ stub CoGetProcessIdentifier
 @ stdcall CoGetStandardMarshal(ptr ptr long ptr long ptr)
 @ stdcall CoGetState(ptr)
-@ stdcall CoGetStdMarshalEx(ptr long ptr)
-@ stdcall CoGetSystemSecurityPermissions(long ptr)
+@ stdcall -stub CoGetStdMarshalEx(ptr long ptr)
+@ stub CoGetSystemSecurityPermissions
 @ stdcall CoGetTreatAsClass(ptr ptr)
 @ stdcall CoImpersonateClient()
 @ stdcall CoInitialize(ptr)
 @ stdcall CoInitializeEx(ptr long)
 @ stdcall CoInitializeSecurity(ptr long ptr ptr long long ptr long ptr)
 @ stdcall CoInitializeWOW(long long)
-@ stdcall CoInstall(ptr long ptr ptr wstr)
-@ stdcall CoInvalidateRemoteMachineBindings(str)
+@ stub CoInstall
+@ stub CoInvalidateRemoteMachineBindings
 @ stdcall CoIsHandlerConnected(ptr)
 @ stdcall CoIsOle1Class (ptr)
 @ stdcall CoLoadLibrary(wstr long)
@@ -74,30 +74,30 @@
 @ stdcall CoMarshalHresult(ptr long)
 @ stdcall CoMarshalInterThreadInterfaceInStream(ptr ptr ptr)
 @ stdcall CoMarshalInterface(ptr ptr ptr long ptr long)
-@ stdcall CoPopServiceDomain(ptr)
-@ stdcall CoPushServiceDomain(ptr)
-@ stdcall CoQueryAuthenticationServices(ptr ptr)
+@ stub CoPopServiceDomain
+@ stub CoPushServiceDomain
+@ stub CoQueryAuthenticationServices
 @ stdcall CoQueryClientBlanket(ptr ptr ptr ptr ptr ptr ptr)
 @ stdcall CoQueryProxyBlanket(ptr ptr ptr ptr ptr ptr ptr ptr)
-@ stdcall CoQueryReleaseObject(ptr)
-@ stdcall CoReactivateObject(long ptr)
+@ stub CoQueryReleaseObject
+@ stub CoReactivateObject
 @ stdcall CoRegisterChannelHook(ptr ptr)
 @ stdcall CoRegisterClassObject(ptr ptr long long ptr)
 @ stdcall CoRegisterInitializeSpy(ptr ptr)
 @ stdcall CoRegisterMallocSpy (ptr)
 @ stdcall CoRegisterMessageFilter(ptr ptr)
 @ stdcall CoRegisterPSClsid(ptr ptr)
-@ stdcall CoRegisterSurrogate(ptr)
-@ stdcall CoRegisterSurrogateEx(ptr ptr)
+@ stub CoRegisterSurrogate
+@ stub CoRegisterSurrogateEx
 @ stdcall CoReleaseMarshalData(ptr)
 @ stdcall CoReleaseServerProcess()
 @ stdcall CoResumeClassObjects()
-@ stdcall CoRetireServer(ptr)
+@ stub CoRetireServer
 @ stdcall CoRevertToSelf()
 @ stdcall CoRevokeClassObject(long)
 @ stdcall CoRevokeInitializeSpy(int64)
 @ stdcall CoRevokeMallocSpy()
-@ stdcall CoSetCancelObject(ptr)
+@ stub CoSetCancelObject
 @ stdcall CoSetProxyBlanket(ptr long long ptr long long ptr long)
 @ stdcall CoSetState(ptr)
 @ stdcall CoSuspendClassObjects()
@@ -105,17 +105,17 @@
 @ stdcall CoTaskMemAlloc(long)
 @ stdcall CoTaskMemFree(ptr)
 @ stdcall CoTaskMemRealloc(ptr long)
-@ stdcall CoTestCancel()
+@ stub CoTestCancel
 @ stdcall CoTreatAsClass(ptr ptr)
 @ stdcall CoUninitialize()
-@ stdcall CoUnloadingWOW(long)
+@ stub CoUnloadingWOW
 @ stdcall CoUnmarshalHresult(ptr ptr)
 @ stdcall CoUnmarshalInterface(ptr ptr ptr)
 @ stdcall CoWaitForMultipleHandles(long long long ptr ptr)
-@ stdcall ComPs_NdrDllCanUnloadNow(ptr)
-@ stdcall ComPs_NdrDllGetClassObject(long long ptr ptr ptr ptr)
-@ stdcall ComPs_NdrDllRegisterProxy(ptr ptr ptr ptr ptr)
-@ stdcall ComPs_NdrDllUnregisterProxy(ptr ptr ptr ptr ptr)
+@ stub ComPs_NdrDllCanUnloadNow
+@ stub ComPs_NdrDllGetClassObject
+@ stub ComPs_NdrDllRegisterProxy
+@ stub ComPs_NdrDllUnregisterProxy
 @ stdcall CreateAntiMoniker(ptr)
 @ stdcall CreateBindCtx(long ptr)
 @ stdcall CreateClassMoniker(ptr ptr)
@@ -126,27 +126,27 @@
 @ stdcall CreateGenericComposite(ptr ptr ptr)
 @ stdcall CreateILockBytesOnHGlobal(ptr long ptr)
 @ stdcall CreateItemMoniker(wstr wstr ptr)
-@ stdcall CreateObjrefMoniker(ptr ptr)
+@ stub CreateObjrefMoniker
 @ stdcall CreateOleAdviseHolder(ptr)
 @ stdcall CreatePointerMoniker(ptr ptr)
-@ stdcall CreateStdProgressIndicator(ptr str ptr ptr)
+@ stub CreateStdProgressIndicator
 @ stdcall CreateStreamOnHGlobal(ptr long ptr)
-@ stdcall DcomChannelSetHResult(ptr ptr ptr)
+@ stub DcomChannelSetHResult
 @ stdcall DllDebugObjectRPCHook(long ptr)
 @ stdcall DllGetClassObject(ptr ptr ptr)
-@ stdcall DllGetClassObjectWOW(long ptr ptr)
+@ stub DllGetClassObjectWOW
 @ stdcall DllRegisterServer()
 @ stdcall DoDragDrop(ptr ptr long ptr)
-@ stdcall EnableHookObject(long ptr)
+@ stub EnableHookObject
 @ stdcall FmtIdToPropStgName(ptr wstr)
 @ stdcall FreePropVariantArray(long ptr)
 @ stdcall GetClassFile(wstr ptr)
 @ stdcall GetConvertStg(ptr)
-@ stdcall GetDocumentBitStg(ptr)
+@ stub GetDocumentBitStg
 @ stdcall GetErrorInfo(long ptr)
 @ stdcall GetHGlobalFromILockBytes(ptr ptr)
 @ stdcall GetHGlobalFromStream(ptr ptr)
-@ stdcall GetHookInterface(ptr)
+@ stub GetHookInterface
 @ stdcall GetRunningObjectTable(long ptr)
 @ stdcall HACCEL_UserFree(ptr ptr)
 @ stdcall HACCEL_UserMarshal(ptr ptr ptr)
@@ -156,10 +156,10 @@
 @ stdcall HBITMAP_UserMarshal(ptr ptr ptr)
 @ stdcall HBITMAP_UserSize(ptr long ptr)
 @ stdcall HBITMAP_UserUnmarshal(ptr ptr ptr)
-@ stdcall HBRUSH_UserFree(ptr ptr)
-@ stdcall HBRUSH_UserMarshal(ptr ptr ptr)
-@ stdcall HBRUSH_UserSize(ptr ptr)
-@ stdcall HBRUSH_UserUnmarshal(ptr ptr ptr)
+@ stub HBRUSH_UserFree
+@ stub HBRUSH_UserMarshal
+@ stub HBRUSH_UserSize
+@ stub HBRUSH_UserUnmarshal
 @ stdcall HDC_UserFree(ptr ptr)
 @ stdcall HDC_UserMarshal(ptr ptr ptr)
 @ stdcall HDC_UserSize(ptr long ptr)
@@ -196,36 +196,36 @@
 @ stdcall HWND_UserMarshal(ptr ptr ptr)
 @ stdcall HWND_UserSize(ptr long ptr)
 @ stdcall HWND_UserUnmarshal(ptr ptr ptr)
-@ stdcall  HkOleRegisterObject(ptr ptr ptr long)
+@ stub HkOleRegisterObject
 @ stdcall IIDFromString(wstr ptr)
 @ stdcall IsAccelerator(long long ptr long)
 @ stdcall IsEqualGUID(ptr ptr)
-@ stdcall IsValidIid(ptr)
+@ stub IsValidIid
 @ stdcall IsValidInterface(ptr)
-@ stdcall IsValidPtrIn(ptr long)
-@ stdcall IsValidPtrOut(ptr long)
+@ stub IsValidPtrIn
+@ stub IsValidPtrOut
 @ stdcall MkParseDisplayName(ptr ptr ptr ptr)
 @ stdcall MonikerCommonPrefixWith(ptr ptr ptr)
-@ stdcall MonikerRelativePathTo(ptr ptr ptr long)
+@ stub MonikerRelativePathTo
 @ stdcall OleBuildVersion()
 @ stdcall OleConvertIStorageToOLESTREAM(ptr ptr)
-@ stdcall OleConvertIStorageToOLESTREAMEx(ptr ptr long long long ptr ptr)
+@ stub OleConvertIStorageToOLESTREAMEx
 @ stdcall OleConvertOLESTREAMToIStorage(ptr ptr ptr)
-@ stdcall OleConvertOLESTREAMToIStorageEx(ptr ptr ptr ptr ptr ptr ptr)
+@ stub OleConvertOLESTREAMToIStorageEx
 @ stdcall OleCreate(ptr ptr long ptr ptr ptr ptr)
 @ stdcall OleCreateDefaultHandler(ptr ptr ptr ptr)
 @ stdcall OleCreateEmbeddingHelper(ptr ptr long ptr ptr ptr)
-@ stdcall OleCreateEx(long long long long long ptr ptr ptr ptr ptr ptr ptr)
+@ stub OleCreateEx
 @ stdcall OleCreateFromData(ptr ptr long ptr ptr ptr ptr)
 @ stdcall OleCreateFromDataEx(ptr ptr long long long ptr ptr ptr ptr ptr ptr ptr)
 @ stdcall OleCreateFromFile(ptr ptr ptr long ptr ptr ptr ptr)
-@ stdcall OleCreateFromFileEx(long str long long long long ptr ptr ptr ptr ptr ptr ptr)
+@ stub OleCreateFromFileEx
 @ stdcall OleCreateLink(ptr ptr long ptr ptr ptr ptr)
-@ stdcall OleCreateLinkEx(ptr long long long long ptr ptr ptr ptr ptr ptr)
+@ stub OleCreateLinkEx
 @ stdcall OleCreateLinkFromData(ptr ptr long ptr ptr ptr ptr)
-@ stdcall OleCreateLinkFromDataEx(ptr long long long long ptr ptr ptr ptr ptr ptr ptr)
+@ stub OleCreateLinkFromDataEx
 @ stdcall OleCreateLinkToFile(ptr ptr long ptr ptr ptr ptr)
-@ stdcall OleCreateLinkToFileEx(str long long long long ptr ptr ptr ptr ptr ptr ptr)
+@ stub OleCreateLinkToFileEx
 @ stdcall OleCreateMenuDescriptor(long ptr)
 @ stdcall OleCreateStaticFromData(ptr ptr long ptr ptr ptr ptr)
 @ stdcall OleDestroyMenuDescriptor(long)
@@ -236,7 +236,7 @@
 @ stdcall OleGetAutoConvert(ptr ptr)
 @ stdcall OleGetClipboard(ptr)
 @ stdcall OleGetIconOfClass(ptr ptr long)
-@ stdcall OleGetIconOfFile(str long)
+@ stub OleGetIconOfFile
 @ stdcall OleInitialize(ptr)
 @ stdcall OleInitializeWOW(long long)
 @ stdcall OleIsCurrentClipboard(ptr)
@@ -261,7 +261,7 @@
 @ stdcall OleSetMenuDescriptor(long long long ptr ptr)
 @ stdcall OleTranslateAccelerator(ptr ptr ptr)
 @ stdcall OleUninitialize()
-@ stdcall OpenOrCreateStream(ptr str ptr)
+@ stub OpenOrCreateStream
 @ stdcall ProgIDFromCLSID(ptr ptr)
 @ stdcall PropStgNameToFmtId(wstr ptr)
 @ stdcall PropSysAllocString(wstr)
@@ -271,8 +271,8 @@
 @ stdcall ReadClassStg(ptr ptr)
 @ stdcall ReadClassStm(ptr ptr)
 @ stdcall ReadFmtUserTypeStg(ptr ptr ptr)
-@ stdcall ReadOleStg(ptr ptr ptr ptr ptr ptr)
-@ stdcall ReadStringStream(ptr str)
+@ stub ReadOleStg
+@ stub ReadStringStream
 @ stdcall RegisterDragDrop(long ptr)
 @ stdcall ReleaseStgMedium(ptr)
 @ stdcall RevokeDragDrop(long)
@@ -285,35 +285,35 @@
 @ stdcall STGMEDIUM_UserSize(ptr long ptr)
 @ stdcall STGMEDIUM_UserUnmarshal(ptr ptr ptr)
 @ stdcall SetConvertStg(ptr long)
-@ stdcall SetDocumentBitStg(ptr long)
+@ stub SetDocumentBitStg
 @ stdcall SetErrorInfo(long ptr)
 @ stdcall StgConvertPropertyToVariant(ptr long ptr ptr)
 @ stdcall StgConvertVariantToProperty(ptr long ptr ptr long long ptr)
 @ stdcall StgCreateDocfile(wstr long long ptr)
 @ stdcall StgCreateDocfileOnILockBytes(ptr long long ptr)
 @ stdcall StgCreatePropSetStg(ptr long ptr)
-@ stdcall StgCreatePropStg(ptr ptr ptr long long ptr)
+@ stub StgCreatePropStg
 @ stdcall StgCreateStorageEx(wstr long long long ptr ptr ptr ptr)
-@ stdcall StgGetIFillLockBytesOnFile(ptr ptr)
-@ stdcall StgGetIFillLockBytesOnILockBytes(ptr ptr)
+@ stub StgGetIFillLockBytesOnFile
+@ stub StgGetIFillLockBytesOnILockBytes
 @ stdcall StgIsStorageFile(wstr)
 @ stdcall StgIsStorageILockBytes(ptr)
-@ stdcall StgOpenAsyncDocfileOnIFillLockBytes(ptr long long ptr)
-@ stdcall StgOpenPropStg(ptr ptr long long ptr)
+@ stub StgOpenAsyncDocfileOnIFillLockBytes
+@ stub StgOpenPropStg
 @ stdcall StgOpenStorage(wstr ptr long ptr long ptr)
 @ stdcall StgOpenStorageEx(wstr long long long ptr ptr ptr ptr)
-@ stdcall StgOpenStorageOnHandle(ptr long long long ptr ptr)
+@ stub StgOpenStorageOnHandle
 @ stdcall StgOpenStorageOnILockBytes(ptr ptr long long long ptr)
-@ stdcall StgPropertyLengthAsVariant(ptr long long long)
+@ stub StgPropertyLengthAsVariant
 @ stdcall StgSetTimes(wstr ptr ptr ptr )
 @ stdcall StringFromCLSID(ptr ptr)
 @ stdcall StringFromGUID2(ptr ptr long)
 @ stdcall StringFromIID(ptr ptr) StringFromCLSID
-@ stdcall UpdateDCOMSettings()
-@ stdcall UtConvertDvtd16toDvtd32(ptr ptr ptr)
-@ stdcall UtConvertDvtd32toDvtd16(ptr ptr ptr)
-@ stdcall UtGetDvtd16Info(ptr ptr)
-@ stdcall UtGetDvtd32Info(ptr ptr)
+@ stub UpdateDCOMSettings
+@ stub UtConvertDvtd16toDvtd32
+@ stub UtConvertDvtd32toDvtd16
+@ stub UtGetDvtd16Info
+@ stub UtGetDvtd32Info
 @ stdcall WdtpInterfacePointer_UserFree(ptr)
 @ stdcall WdtpInterfacePointer_UserMarshal(ptr long ptr ptr ptr)
 @ stdcall WdtpInterfacePointer_UserSize(ptr long ptr long ptr)
@@ -321,5 +321,5 @@
 @ stdcall WriteClassStg(ptr ptr)
 @ stdcall WriteClassStm(ptr ptr)
 @ stdcall WriteFmtUserTypeStg(ptr long ptr)
-@ stdcall WriteOleStg(ptr ptr long ptr)
-@ stdcall WriteStringStream(ptr str)
+@ stub WriteOleStg
+@ stub WriteStringStream

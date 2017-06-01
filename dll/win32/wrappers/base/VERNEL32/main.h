@@ -194,6 +194,7 @@ typedef struct _REPARSE_DATA_BUFFER {
 
 typedef struct _PROCESSOR_RELATIONSHIP {
   BYTE           Flags;
+  BYTE           EfficiencyClass;
   BYTE           Reserved[21];
   WORD           GroupCount;
   GROUP_AFFINITY GroupMask[ANYSIZE_ARRAY];

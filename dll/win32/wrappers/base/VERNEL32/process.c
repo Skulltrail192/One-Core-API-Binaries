@@ -351,8 +351,8 @@ FlushProcessWriteBuffers(void)
     if (!once++)
          DbgPrint("FlushProcessWriteBuffers is stub\n");
 }
-/* 
-Helper function to count set bits in the processor mask.
+ 
+//Helper function to count set bits in the processor mask.
 DWORD CountSetBits(ULONG_PTR bitMask)
 {
     DWORD LSHIFT = sizeof(ULONG_PTR)*8 - 1;
@@ -369,7 +369,18 @@ DWORD CountSetBits(ULONG_PTR bitMask)
     return bitSetCount;
 }
 
-int _cdecl _tmain ()
+
+typedef BOOL (WINAPI *LPFN_GLPI)(
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, 
+    PDWORD);
+
+BOOL 
+WINAPI 
+GetLogicalProcessorInformationEx(
+  _In_       LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType,
+  _Out_opt_  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX SystemInformation,
+  _Inout_    PDWORD ReturnedLength
+)
 {
     LPFN_GLPI glpi;
     BOOL done = FALSE;
@@ -385,14 +396,20 @@ int _cdecl _tmain ()
     DWORD processorPackageCount = 0;
     DWORD byteOffset = 0;
     PCACHE_DESCRIPTOR Cache;
+	ULONG CurrentLength = 0;
+	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Output;
+	ULONG Index = 0;
+	SYSTEM_INFO sysinfo;
+	
+	Output = SystemInformation;
 
     glpi = (LPFN_GLPI) GetProcAddress(
                             GetModuleHandle(TEXT("kernel32")),
                             "GetLogicalProcessorInformation");
     if (NULL == glpi) 
     {
-        _tprintf(TEXT("\nGetLogicalProcessorInformation is not supported.\n"));
-        return (1);
+        DbgPrint(TEXT("\nGetLogicalProcessorInformation is not supported.\n"));
+        return FALSE;
     }
 
     while (!done)
@@ -404,21 +421,20 @@ int _cdecl _tmain ()
             if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) 
             {
                 if (buffer) 
-                    free(buffer);
+					RtlFreeHeap(GetProcessHeap(),0,buffer);
 
-                buffer = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(
-                        returnLength);
+                buffer = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)RtlAllocateHeap(GetProcessHeap(), HEAP_ZERO_MEMORY, returnLength);
 
                 if (NULL == buffer) 
                 {
-                    _tprintf(TEXT("\nError: Allocation failure\n"));
-                    return (2);
+                    DbgPrint(TEXT("\nError: Allocation failure\n"));
+                    //return (2);
                 }
             } 
             else 
             {
-                _tprintf(TEXT("\nError %d\n"), GetLastError());
-                return (3);
+                DbgPrint(TEXT("\nError %d\n"), GetLastError());
+                //return (3);
             }
         } 
         else
@@ -434,154 +450,84 @@ int _cdecl _tmain ()
         switch (ptr->Relationship) 
         {
         case RelationNumaNode:
-            Non-NUMA systems report a single record of this type.
-            numaNodeCount++;
+            //Non-NUMA systems report a single record of this type.
+            //numaNodeCount++;
+			CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+			if (CurrentLength <= Output->Size) {
+				Output->NumaNode.GroupMask.Mask = ptr->ProcessorMask;
+				Output->NumaNode.GroupMask.Group = 0;
+				Output->NumaNode.Reserved[0] = 0;
+				Output->NumaNode.NodeNumber = ptr->NumaNode.NodeNumber;
+				Output += 1;			
+			}
             break;
-
         case RelationProcessorCore:
-            processorCoreCount++;
+            CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+            if (CurrentLength <= Output->Size) {
+                Output->Processor.GroupMask[0].Mask = ptr->ProcessorMask;
+				Output->Processor.GroupMask[0].Group = 0;
+                Output->Processor.Reserved[0] = 0;
+				Output->Processor.EfficiencyClass = 0;
+                Output->Processor.Flags = ptr->ProcessorCore.Flags;
+                Output += 1;    
+            } 		
+            //processorCoreCount++;
 
-            A hyperthreaded core supplies more than one logical processor.
-            logicalProcessorCount += CountSetBits(ptr->ProcessorMask);
+            //A hyperthreaded core supplies more than one logical processor.
+            //logicalProcessorCount += CountSetBits(ptr->ProcessorMask);
             break;
 
         case RelationCache:
-            Cache data is in ptr->Cache, one CACHE_DESCRIPTOR structure for each cache. 
+            //Cache data is in ptr->Cache, one CACHE_DESCRIPTOR structure for each cache. 
             Cache = &ptr->Cache;
-            if (Cache->Level == 1)
-            {
-                processorL1CacheCount++;
-            }
-            else if (Cache->Level == 2)
-            {
-                processorL2CacheCount++;
-            }
-            else if (Cache->Level == 3)
-            {
-                processorL3CacheCount++;
-            }
+	
+            CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+            if (CurrentLength <= Output->Size) {
+                Output->Cache.Level = Cache->Level;
+                Output->Cache.Associativity = Cache->Associativity;
+				Output->Cache.LineSize = Cache->LineSize;
+                Output->Cache.CacheSize = Cache->Size;
+                Output->Cache.Type = Cache->Type;	
+				Output->Cache.GroupMask.Mask = ptr->ProcessorMask;				
+                Output += 1;    
+            } 			
             break;
 
         case RelationProcessorPackage:
-            Logical processors share a physical package.
-            processorPackageCount++;
+            //Logical processors share a physical package.
+            CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+            if (CurrentLength <= Output->Size) {
+                Output->Processor.GroupMask[0].Mask = ptr->ProcessorMask;
+				Output->Processor.GroupMask[0].Group = 0;
+                Output->Processor.Reserved[0] = 0;
+				Output->Processor.EfficiencyClass = 0;
+                Output->Processor.Flags = 0;
+                Output += 1;    
+            } 	
             break;
-
+		case RelationGroup:
+			GetSystemInfo( &sysinfo );
+            CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+            if (CurrentLength <= Output->Size) {			
+				Output->Group.MaximumGroupCount = 1;
+				Output->Group.ActiveGroupCount = 1;
+				Output->Group.GroupInfo[0].MaximumProcessorCount = sysinfo.dwNumberOfProcessors;
+				Output->Group.GroupInfo[0].ActiveProcessorCount = sysinfo.dwNumberOfProcessors;
+				Output->Group.GroupInfo[0].ActiveProcessorMask = ptr->ProcessorMask;
+                Output += 1;    
+            } 			
+			break;		
         default:
-            _tprintf(TEXT("\nError: Unsupported LOGICAL_PROCESSOR_RELATIONSHIP value.\n"));
+            DbgPrint(TEXT("\nError: Unsupported LOGICAL_PROCESSOR_RELATIONSHIP value.\n"));
             break;
         }
         byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
         ptr++;
     }
-}
-
-BOOL 
-WINAPI 
-GetLogicalProcessorInformationEx(
-  _In_       LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType,
-  _Out_opt_  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Buffer,
-  _Inout_    PDWORD ReturnedLength
-)
-{
-	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Output;
-	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION information = NULL;
-	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = NULL;
-	DWORD byteOffset = 0;
-	SYSTEM_INFO sysinfo;
-	BOOLEAN result;
-	DWORD returnLength;
-	DWORD length = 0;
-	ULONG CurrentLength;
 	
-	Output = Buffer;
-	
-	CurrentLength = 0;
-	
-	Output->Size = sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
-	
-	result = GetLogicalProcessorInformation(information, &returnLength);
-	
-	if(!result){
-		return FALSE;
-	}	
-
-	Output->Relationship = information->Relationship;
-	
-	We don't support really groups, so, we emulate to support ALL_PROCESSOR_GROUPS
-	while (byteOffset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= *returnLength) {
-		switch(RelationshipType){
-			case RelationNumaNode:
-				Buffer->NumaNode.NodeNumber = information->NumaNode.NodeNumber;
-				Buffer->NumaNode.GroupMask.Group = ALL_PROCESSOR_GROUPS;
-				length++;
-				break;
-			case RelationProcessorCore:
-				Buffer->Processor.Flags = information->ProcessorCore.Flags;
-				Buffer->Processor.GroupCount = 1;
-				Buffer->Processor.GroupMask[0].Group = ALL_PROCESSOR_GROUPS;
-				length++;
-				break;
-			case RelationProcessorPackage:
-				Buffer->Processor.Flags = 0;
-				Buffer->Processor.GroupCount = 1;
-				Buffer->Processor.GroupMask[0].Group = ALL_PROCESSOR_GROUPS;	
-				length++;		
-				break;
-			case RelationCache:
-				Buffer->Cache.Level = information->Cache.Level;
-				Buffer->Cache.Associativity = information->Cache.Associativity;
-				Buffer->Cache.LineSize = information->Cache.LineSize;
-				Buffer->Cache.CacheSize = information->Cache.Size;
-				Buffer->Cache.Type = information->Cache.Type;
-				Buffer->Cache.GroupMask.Group = ALL_PROCESSOR_GROUPS;
-				length++;
-				break;
-			case RelationGroup:
-				GetSystemInfo( &sysinfo );
-				Buffer->Group.MaximumGroupCount = 1;
-				Buffer->Group.ActiveGroupCount = 1;
-				Buffer->Group.GroupInfo[0].MaximumProcessorCount = 64;
-				Buffer->Group.GroupInfo[0].ActiveProcessorCount = sysinfo.dwNumberOfProcessors;
-				length++;
-				break;
-		}
-        byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
-        information++;	
-		Output++;
-	}
-	
-        CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
-        if (CurrentLength <= SystemInformationLength) {
-            Output->ProcessorMask = Mask;
-            Output->Relationship = RelationNumaNode;
-            Output->Reserved[0] = Output->Reserved[1] = 0;
-            Output->NumaNode.NodeNumber = Index;
-            Output += 1;
-    
-        } else {
-            Status = STATUS_INFO_LENGTH_MISMATCH;
-        }	
-
-	*ReturnedLength = length;
-	
+    *ReturnedLength = CurrentLength;	
 	return TRUE;
 }
-
-
-
- */
- 
-BOOL 
-WINAPI 
-GetLogicalProcessorInformationEx(
-  _In_       LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType,
-  _Out_opt_  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Buffer,
-  _Inout_    PDWORD ReturnedLength
-)
-{
-	return FALSE;
-} 
  
 /***********************************************************************
  *           InitializeProcThreadAttributeList       (KERNEL32.@)
