@@ -43,3 +43,7 @@
 @ stdcall DwmSetWindowAttribute(long long ptr long)
 @ stdcall DwmUnregisterThumbnail(long)
 @ stdcall DwmUpdateThumbnailProperties(ptr ptr)
+
+#win7 functions
+@ stdcall DwmSetIconicLivePreviewBitmap(ptr ptr ptr long)
+@ stdcall DwmSetIconicThumbnail(ptr ptr long)

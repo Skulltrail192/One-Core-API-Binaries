@@ -323,3 +323,25 @@ HRESULT WINAPI DwmQueryThumbnailSourceSize(
 {
     return E_NOTIMPL;
 }
+
+
+HRESULT 
+WINAPI 
+DwmSetIconicLivePreviewBitmap(
+           HWND    hwnd,
+           HBITMAP hbmp,
+  _In_opt_ POINT   *pptClient,
+           DWORD   dwSITFlags
+)
+{
+    return E_NOTIMPL;
+}
+
+HRESULT WINAPI DwmSetIconicThumbnail(
+  _In_ HWND    hwnd,
+  _In_ HBITMAP hbmp,
+  _In_ DWORD   dwSITFlags
+)
+{
+    return E_NOTIMPL;	
+}

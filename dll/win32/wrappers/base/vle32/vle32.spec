@@ -1,6 +1,6 @@
-@ stdcall CoVrfCheckThreadState(ptr)
-@ stdcall CoVrfGetThreadState(ptr)
-@ stdcall CoVrfReleaseThreadState(ptr)
+@ stdcall CoVrfCheckThreadState(ptr) olebase.CoVrfCheckThreadState
+@ stdcall CoVrfGetThreadState(ptr) olebase.CoVrfGetThreadState
+@ stdcall CoVrfReleaseThreadState(ptr) olebase.CoVrfReleaseThreadState
 @ stdcall PropVariantChangeType(ptr ptr long long)
 @ stdcall BindMoniker(ptr long ptr ptr)
 @ stdcall CLIPFORMAT_UserFree(ptr ptr)
@@ -50,7 +50,7 @@
 @ stdcall CoGetInterfaceAndReleaseStream(ptr ptr ptr)
 @ stdcall CoGetMalloc(long ptr)
 @ stdcall CoGetMarshalSizeMax(ptr ptr ptr long ptr long)
-@ stdcall CoGetModuleType(wstr ptr)
+@ stdcall CoGetModuleType(wstr ptr) olebase.CoGetModuleType
 @ stdcall CoGetObject(wstr ptr ptr ptr)
 @ stdcall CoGetObjectContext(ptr ptr)
 @ stdcall CoGetPSClsid(ptr ptr)
@@ -323,3 +323,7 @@
 @ stdcall WriteFmtUserTypeStg(ptr long ptr)
 @ stdcall WriteOleStg(ptr ptr long ptr)
 @ stdcall WriteStringStream(ptr str)
+@ stdcall UpdateProcessTracing(ptr ptr) olebase.UpdateProcessTracing
+
+#win7 functions
+@ stdcall CoGetApartmentType(ptr ptr)
