@@ -1,0 +1,12 @@
+advapi32 - advapibase
+d3d9 - d3d9base
+gdi32 - gdibase
+iphlpapi - iphlpapibase
+kernel32 - kernelbasex
+netapi32 - netapibase
+rpcrt4 - rpcrtbase (2003 por enquanto)
+secur32 - securbase 
+shell32 - shellbase
+winsta - winstabase
+user32 - userbase 
+uxtheme - uxthemebase

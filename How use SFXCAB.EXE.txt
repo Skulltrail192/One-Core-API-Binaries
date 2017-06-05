@@ -1,0 +1,8 @@
+SFXCAB.exe KB3049874.exe target -r:update/update.exe -ipd -iswu
+
+
+IF not work:
+(x86)
+SFXCAB.exe WindowsXP-KB3049874-x86-Embedded-ENU.exe target -r:update/update.exe -ipd -iswu
+(x64)
+SFXCAB.exe WindowsServer2003-KB3049874-x64-ENU.exe target -r:update\update.exe

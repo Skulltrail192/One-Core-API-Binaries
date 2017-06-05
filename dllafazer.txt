@@ -1,0 +1,8 @@
+netapi32 - feito - linkar com a netapi32 do vista
+crypt32
+
+winsta - linkar com winsta do Vista
+netapi32
+
+rpcrt4
+setupapi
