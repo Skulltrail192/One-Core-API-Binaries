@@ -73,10 +73,10 @@ set_subsystem(vernel32 console)
 ################# END  HACK #################
 
 if(ARCH STREQUAL "i386")
-	add_importlibs(vernel32 kernelfull vtdll normaliz psapi)
+	add_importlibs(vernel32 kernelfull vtdll normaliz psapi advapi32 user32 version)
 
 elseif(ARCH STREQUAL "amd64")
-	add_importlibs(vernel32 kernel32 vtdll normaliz psapi)
+	add_importlibs(vernel32 kernel32 vtdll normaliz psapi advapi32 user32 version)
 endif()
 
 add_dependencies(vernel32 psdk)

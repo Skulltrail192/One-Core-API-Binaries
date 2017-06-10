@@ -1187,7 +1187,7 @@
 @ stub EnterSynchronizationBarrier
 @ stub InitOnceBeginInitialize
 @ stub InitOnceComplete
-@ stub InitOnceExecuteOnce
+;@ stub InitOnceExecuteOnce
 @ stub InitOnceInitialize
 @ stub InitializeConditionVariable
 @ stub InitializeCriticalSectionEx
@@ -1288,3 +1288,5 @@
 @ stub uaw_wcsicmp
 @ stub uaw_wcslen
 @ stub uaw_wcsrchr
+
+@ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)

@@ -22,7 +22,8 @@ extern USHORT NlsAnsiCodePage = 0; /* exported */
 extern BOOLEAN NlsMbCodePageTag = FALSE; /* exported */
 extern BOOLEAN NlsMbOemCodePageTag = FALSE;
 
-extern HANDLE Key_Event = NULL;
+RtlpInitializeKeyedEvent(VOID);
+VOID RtlpCloseKeyedEvent(VOID);
 
 /*****************************************************
  *      DllMain
@@ -37,11 +38,15 @@ LdrInitialize(
 {
     DbgPrint("DllMain called\n");
 
-    switch(reason)
+    if (dwReason == DLL_PROCESS_ATTACH)
     {
-    case DLL_PROCESS_ATTACH:
-        NtCreateKeyedEvent(&Key_Event, -1, NULL, 0);
-        break;
+        LdrDisableThreadCalloutsForDll(hDll);
+        RtlpInitializeKeyedEvent();
     }
+    else if (dwReason == DLL_PROCESS_DETACH)
+    {
+        RtlpCloseKeyedEvent();
+    }	
+	
     return TRUE;
 }

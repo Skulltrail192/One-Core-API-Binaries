@@ -682,3 +682,11 @@
 @ stub WmiSetSingleItemW
 @ stub Wow64Win32ApiEntry
 @ stub WriteEncryptedFileRaw
+@ stub AddMandatoryAce
+@ stub OpenThreadToken
+@ stub RegCopyTreeW
+@ stub RegDeleteTreeA
+@ stub RegDeleteTreeW
+@ stub RegDisablePredefinedCacheEx
+@ stub RegLoadMUIStringA
+@ stub RegLoadMUIStringW

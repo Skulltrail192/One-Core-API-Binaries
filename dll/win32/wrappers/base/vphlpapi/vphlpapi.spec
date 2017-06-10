@@ -170,3 +170,6 @@
 @ stdcall ResolveNeighbor(ptr ptr ptr)
 @ stdcall ResolveIpNetEntry2(ptr ptr)
 @ stdcall ConvertInterfaceLuidToGuid(ptr ptr)
+@ stdcall GetIfTable2Ex( long ptr )
+@ stdcall GetIfTable2( long ptr )
+@ stdcall GetIpInterfaceEntry(ptr)

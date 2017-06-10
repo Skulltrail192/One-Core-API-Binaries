@@ -52,6 +52,20 @@ static HINSTANCE instance;
 
 DriverFuncs drvs;
 
+#define RTL_RUN_ONCE_INIT {0}
+
+#define INIT_ONCE_STATIC_INIT       RTL_RUN_ONCE_INIT
+#define INIT_ONCE_CHECK_ONLY        RTL_RUN_ONCE_CHECK_ONLY
+#define INIT_ONCE_ASYNC             RTL_RUN_ONCE_ASYNC
+#define INIT_ONCE_INIT_FAILED       RTL_RUN_ONCE_INIT_FAILED
+
+BOOL WINAPI InitOnceExecuteOnce(
+  _Inout_     PINIT_ONCE    InitOnce,
+  _In_        PINIT_ONCE_FN InitFn,
+  _Inout_opt_ PVOID         Parameter,
+  _Out_opt_   LPVOID        *Context
+);
+
 const WCHAR drv_keyW[] = {'S','o','f','t','w','a','r','e','\\',
     'W','i','n','e','\\','D','r','i','v','e','r','s',0};
 

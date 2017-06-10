@@ -502,3 +502,19 @@ RaiseFailFastException(
 				   pExceptionRecord->NumberParameters, 
 				   &pExceptionRecord->ExceptionInformation[0]);
 }
+
+BOOL 
+WINAPI 
+QueryThreadCycleTime(
+  _In_  HANDLE   ThreadHandle,
+  _Out_ PULONG64 CycleTime
+)
+{
+	LARGE_INTEGER ltime;
+	UINT32 cycles; 
+	QueryPerformanceCounter(&ltime);
+
+	cycles = (UINT32) ((ltime.QuadPart >> 8) & 0xFFFFFFF);	
+	
+	*CycleTime = cycles;
+}

@@ -7,8 +7,8 @@
 @ stdcall AddLocalAlternateComputerNameA(str ptr)
 @ stdcall AddLocalAlternateComputerNameW(wstr ptr)
 @ stdcall AddRefActCtx(ptr)
-@ stdcall AddVectoredContinueHandler(long ptr) ntdll.RtlAddVectoredContinueHandler
-@ stdcall AddVectoredExceptionHandler(long ptr) ntdll.RtlAddVectoredExceptionHandler
+@ stdcall AddVectoredContinueHandler(long ptr) vtdll.RtlAddVectoredContinueHandler
+@ stdcall AddVectoredExceptionHandler(long ptr) vtdll.RtlAddVectoredExceptionHandler
 @ stdcall AllocConsole()
 @ stdcall AllocateUserPhysicalPages(long ptr ptr)
 @ stdcall AreFileApisANSI()
@@ -116,7 +116,7 @@
 @ stdcall DeactivateActCtx(long ptr)
 @ stdcall DebugActiveProcess(long)
 @ stdcall DebugActiveProcessStop(long)
-@ stdcall DebugBreak() ntdll.DbgBreakPoint
+@ stdcall DebugBreak() vtdll.DbgBreakPoint
 @ stdcall DebugBreakProcess(long)
 @ stdcall DebugSetProcessKillOnExit(long)
 @ stdcall DecodePointer(ptr) vtdll.RtlDecodePointer
@@ -125,7 +125,7 @@
 @ stdcall DefineDosDeviceW(long wstr wstr)
 @ stdcall DelayLoadFailureHook(str str)
 @ stdcall DeleteAtom(long)
-@ stdcall DeleteCriticalSection(ptr) ntdll.RtlDeleteCriticalSection
+@ stdcall DeleteCriticalSection(ptr) vtdll.RtlDeleteCriticalSection
 @ stdcall DeleteFiber(ptr)
 @ stdcall DeleteFileA(str)
 @ stdcall DeleteFileW(wstr)
@@ -148,7 +148,7 @@
 @ stdcall EncodeSystemPointer(ptr) vtdll.RtlEncodeSystemPointer
 @ stdcall EndUpdateResourceA(long long)
 @ stdcall EndUpdateResourceW(long long)
-@ stdcall EnterCriticalSection(ptr) ntdll.RtlEnterCriticalSection
+@ stdcall EnterCriticalSection(ptr) vtdll.RtlEnterCriticalSection
 @ stdcall EnumCalendarInfoA(ptr long long long)
 @ stdcall EnumCalendarInfoExA(ptr long long long)
 @ stdcall EnumCalendarInfoExW(ptr long long long)
@@ -180,8 +180,8 @@
 @ stdcall EnumerateLocalComputerNamesW(ptr long wstr ptr)
 @ stdcall EraseTape(ptr long long)
 @ stdcall EscapeCommFunction(long long)
-@ stdcall ExitProcess(long) ; FIXME: ntdll.RtlExitUserProcess
-@ stdcall ExitThread(long) ; FIXME: ntdll.RtlExitUserThread
+@ stdcall ExitProcess(long) ; FIXME: vtdll.RtlExitUserProcess
+@ stdcall ExitThread(long) ; FIXME: vtdll.RtlExitUserThread
 @ stdcall ExitVDM(long long)
 @ stdcall ExpandEnvironmentStringsA(str ptr long)
 @ stdcall ExpandEnvironmentStringsW(wstr ptr long)
@@ -319,7 +319,7 @@
 @ stdcall GetCurrentDirectoryW(long ptr)
 @ stdcall -norelay GetCurrentProcess()
 @ stdcall -norelay GetCurrentProcessId()
-@ stdcall GetCurrentProcessorNumber() ntdll.RtlGetCurrentProcessorNumber
+@ stdcall GetCurrentProcessorNumber() vtdll.RtlGetCurrentProcessorNumber
 @ stdcall -norelay GetCurrentThread()
 @ stdcall -norelay GetCurrentThreadId()
 @ stdcall GetDateFormatA(long long ptr str ptr long)
@@ -364,7 +364,7 @@
 @ stdcall GetHandleInformation(long ptr)
 @ stdcall GetLargePageMinimum()
 @ stdcall GetLargestConsoleWindowSize(long)
-@ stdcall GetLastError() ntdll.RtlGetLastWin32Error
+@ stdcall GetLastError() vtdll.RtlGetLastWin32Error
 @ stdcall GetLinguistLangSize(ptr) ; missing in Win 7
 @ stdcall GetLocalTime(ptr)
 @ stdcall GetLocaleInfoA(long long ptr long) GeptLocaleInfoA
@@ -520,19 +520,19 @@
 @ stdcall Heap32ListFirst(long ptr)
 @ stdcall Heap32ListNext(long ptr)
 @ stdcall Heap32Next(ptr)
-@ stdcall HeapAlloc(long long long) ntdll.RtlAllocateHeap
+@ stdcall HeapAlloc(long long long) vtdll.RtlAllocateHeap
 @ stdcall HeapCompact(long long)
 @ stdcall HeapCreate(long long long)
 @ stdcall HeapCreateTagsW(long long wstr wstr) ; missing in Win 7
 @ stdcall HeapDestroy(long)
 @ stdcall HeapExtend(long long ptr long) ; missing in Win 7
-@ stdcall HeapFree(long long long) ntdll.RtlFreeHeap
+@ stdcall HeapFree(long long long) vtdll.RtlFreeHeap
 @ stdcall HeapLock(long)
 @ stdcall HeapQueryInformation(long long ptr long ptr)
 @ stdcall HeapQueryTagW(long long long long ptr) ; missing in Win 7
-@ stdcall HeapReAlloc(long long ptr long) ntdll.RtlReAllocateHeap
+@ stdcall HeapReAlloc(long long ptr long) vtdll.RtlReAllocateHeap
 @ stdcall HeapSetInformation(ptr long ptr long)
-@ stdcall HeapSize(long long ptr) ntdll.RtlSizeHeap
+@ stdcall HeapSize(long long ptr) vtdll.RtlSizeHeap
 @ stdcall HeapSummary(long long ptr)
 @ stdcall HeapUnlock(long)
 @ stdcall HeapUsage(long long long long ptr) ; missing in Win 7
@@ -541,16 +541,16 @@
 @ stdcall InitAtomTable(long)
 @ stdcall InitializeCriticalSection(ptr)
 @ stdcall InitializeCriticalSectionAndSpinCount(ptr long)
-@ stdcall InitializeSListHead(ptr) ntdll.RtlInitializeSListHead
-@ stdcall -arch=i386 -ret64 InterlockedCompareExchange64(ptr double double) ntdll.RtlInterlockedCompareExchange64
+@ stdcall InitializeSListHead(ptr) vtdll.RtlInitializeSListHead
+@ stdcall -arch=i386 -ret64 InterlockedCompareExchange64(ptr double double) vtdll.RtlInterlockedCompareExchange64
 @ stdcall -arch=i386 InterlockedCompareExchange (ptr long long)
 @ stdcall -arch=i386 InterlockedDecrement(ptr)
 @ stdcall -arch=i386 InterlockedExchange(ptr long)
 @ stdcall -arch=i386 InterlockedExchangeAdd(ptr long)
-@ stdcall InterlockedFlushSList(ptr) ntdll.RtlInterlockedFlushSList
+@ stdcall InterlockedFlushSList(ptr) vtdll.RtlInterlockedFlushSList
 @ stdcall -arch=i386 InterlockedIncrement(ptr)
-@ stdcall InterlockedPopEntrySList(ptr) ntdll.RtlInterlockedPopEntrySList
-@ stdcall InterlockedPushEntrySList(ptr ptr) ntdll.RtlInterlockedPushEntrySList
+@ stdcall InterlockedPopEntrySList(ptr) vtdll.RtlInterlockedPopEntrySList
+@ stdcall InterlockedPushEntrySList(ptr ptr) vtdll.RtlInterlockedPushEntrySList
 @ stdcall InvalidateConsoleDIBits(long long)
 @ stdcall IsBadCodePtr(ptr)
 @ stdcall IsBadHugeReadPtr(ptr long)
@@ -584,7 +584,7 @@
 @ stdcall LZRead(long str long)
 @ stdcall LZSeek(long long long)
 @ stdcall LZStart()
-@ stdcall LeaveCriticalSection(ptr) ntdll.RtlLeaveCriticalSection
+@ stdcall LeaveCriticalSection(ptr) vtdll.RtlLeaveCriticalSection
 @ stdcall LoadLibraryA(str)
 @ stdcall LoadLibraryExA( str long long)
 @ stdcall LoadLibraryExW(wstr long long)
@@ -661,7 +661,7 @@
 @ stdcall PulseEvent(long)
 @ stdcall PurgeComm(long long)
 @ stdcall QueryActCtxW(long ptr ptr long ptr long ptr)
-@ stdcall QueryDepthSList(ptr) ntdll.RtlQueryDepthSList
+@ stdcall QueryDepthSList(ptr) vtdll.RtlQueryDepthSList
 @ stdcall QueryDosDeviceA(str ptr long)
 @ stdcall QueryDosDeviceW(wstr ptr long)
 @ stdcall QueryInformationJobObject(long long ptr long ptr)
@@ -703,8 +703,8 @@
 @ stdcall RemoveDirectoryW(wstr)
 @ stdcall RemoveLocalAlternateComputerNameA(str long)
 @ stdcall RemoveLocalAlternateComputerNameW(wstr long)
-@ stdcall RemoveVectoredContinueHandler(ptr) ntdll.RtlRemoveVectoredContinueHandler
-@ stdcall RemoveVectoredExceptionHandler(ptr) ntdll.RtlRemoveVectoredExceptionHandler
+@ stdcall RemoveVectoredContinueHandler(ptr) vtdll.RtlRemoveVectoredContinueHandler
+@ stdcall RemoveVectoredExceptionHandler(ptr) vtdll.RtlRemoveVectoredExceptionHandler
 @ stdcall ReplaceFile(wstr wstr wstr long ptr ptr) ReplaceFileW
 @ stdcall ReplaceFileA(str str str long ptr ptr)
 @ stdcall ReplaceFileW(wstr wstr wstr long ptr ptr)
@@ -712,25 +712,25 @@
 @ stdcall RequestWakeupLatency(long)
 @ stdcall ResetEvent(long)
 @ stdcall ResetWriteWatch(ptr long)
-@ stdcall RestoreLastError(long) ntdll.RtlRestoreLastWin32Error
+@ stdcall RestoreLastError(long) vtdll.RtlRestoreLastWin32Error
 @ stdcall ResumeThread(long)
-@ stdcall -arch=x86_64 RtlAddFunctionTable(ptr long long) ntdll.RtlAddFunctionTable
-@ stdcall -register RtlCaptureContext(ptr) ntdll.RtlCaptureContext
-@ stdcall RtlCaptureStackBackTrace(long long ptr ptr) ntdll.RtlCaptureStackBackTrace
-@ stdcall -arch=x86_64 RtlCompareMemory(ptr ptr ptr) ntdll.RtlCompareMemory
-@ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr ptr) ntdll.memcpy
-@ stdcall -arch=x86_64 RtlDeleteFunctionTable(ptr) ntdll.RtlDeleteFunctionTable
-@ stdcall RtlFillMemory(ptr long long) ntdll.RtlFillMemory
-@ stdcall -arch=x86_64 RtlInstallFunctionTableCallback(double double long ptr ptr ptr) ntdll.RtlInstallFunctionTableCallback
-@ stdcall -arch=x86_64 RtlLookupFunctionEntry(ptr ptr ptr) ntdll.RtlLookupFunctionEntry
-@ stdcall RtlMoveMemory(ptr ptr long) ntdll.RtlMoveMemory
-@ stdcall -arch=x86_64 RtlPcToFileHeader(ptr ptr) ntdll.RtlPcToFileHeader
-@ stdcall -arch=x86_64 RtlRaiseException(ptr) ntdll.RtlRaiseException
-@ stdcall -arch=x86_64 RtlRestoreContext(ptr ptr) ntdll.RtlRestoreContext
-@ stdcall RtlUnwind(ptr ptr ptr long) ntdll.RtlUnwind
-@ stdcall -arch=x86_64 RtlUnwindEx(ptr ptr ptr ptr ptr ptr) ntdll.RtlUnwindEx
-@ stdcall -arch=x86_64 RtlVirtualUnwind(ptr ptr ptr long) ntdll.RtlVirtualUnwind
-@ stdcall RtlZeroMemory(ptr long) ntdll.RtlZeroMemory
+@ stdcall -arch=x86_64 RtlAddFunctionTable(ptr long long) vtdll.RtlAddFunctionTable
+@ stdcall -register RtlCaptureContext(ptr) vtdll.RtlCaptureContext
+@ stdcall RtlCaptureStackBackTrace(long long ptr ptr) vtdll.RtlCaptureStackBackTrace
+@ stdcall -arch=x86_64 RtlCompareMemory(ptr ptr ptr) vtdll.RtlCompareMemory
+@ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr ptr) vtdll.memcpy
+@ stdcall -arch=x86_64 RtlDeleteFunctionTable(ptr) vtdll.RtlDeleteFunctionTable
+@ stdcall RtlFillMemory(ptr long long) vtdll.RtlFillMemory
+@ stdcall -arch=x86_64 RtlInstallFunctionTableCallback(double double long ptr ptr ptr) vtdll.RtlInstallFunctionTableCallback
+@ stdcall -arch=x86_64 RtlLookupFunctionEntry(ptr ptr ptr) vtdll.RtlLookupFunctionEntry
+@ stdcall RtlMoveMemory(ptr ptr long) vtdll.RtlMoveMemory
+@ stdcall -arch=x86_64 RtlPcToFileHeader(ptr ptr) vtdll.RtlPcToFileHeader
+@ stdcall -arch=x86_64 RtlRaiseException(ptr) vtdll.RtlRaiseException
+@ stdcall -arch=x86_64 RtlRestoreContext(ptr ptr) vtdll.RtlRestoreContext
+@ stdcall RtlUnwind(ptr ptr ptr long) vtdll.RtlUnwind
+@ stdcall -arch=x86_64 RtlUnwindEx(ptr ptr ptr ptr ptr ptr) vtdll.RtlUnwindEx
+@ stdcall -arch=x86_64 RtlVirtualUnwind(ptr ptr ptr long) vtdll.RtlVirtualUnwind
+@ stdcall RtlZeroMemory(ptr long) vtdll.RtlZeroMemory
 @ stdcall ScrollConsoleScreenBufferA(long ptr ptr ptr ptr)
 @ stdcall ScrollConsoleScreenBufferW(long ptr ptr ptr ptr)
 @ stdcall SearchPathA(str str str long ptr ptr)
@@ -779,7 +779,7 @@
 @ stdcall SetConsoleTitleA(str)
 @ stdcall SetConsoleTitleW(wstr)
 @ stdcall SetConsoleWindowInfo(long long ptr)
-@ stdcall SetCriticalSectionSpinCount(ptr long) ntdll.RtlSetCriticalSectionSpinCount
+@ stdcall SetCriticalSectionSpinCount(ptr long) vtdll.RtlSetCriticalSectionSpinCount
 @ stdcall SetCurrentDirectoryA(str)
 @ stdcall SetCurrentDirectoryW(wstr)
 @ stdcall SetDefaultCommConfigA(str ptr long)
@@ -810,7 +810,7 @@
 @ stdcall SetHandleInformation(long long long)
 @ stdcall SetInformationJobObject(long long ptr long)
 @ stdcall SetLastConsoleEventActive() ; missing in XP SP3
-@ stdcall SetLastError(long) ntdll.RtlSetLastWin32Error
+@ stdcall SetLastError(long) vtdll.RtlSetLastWin32Error
 @ stdcall SetLocalPrimaryComputerNameA(long long) ; missing in XP SP3
 @ stdcall SetLocalPrimaryComputerNameW(long long) ; missing in XP SP3
 @ stdcall SetLocalTime(ptr)
@@ -874,7 +874,7 @@
 @ stdcall Toolhelp32ReadProcessMemory(long ptr ptr long ptr)
 @ stdcall TransactNamedPipe(long ptr long ptr long ptr ptr)
 @ stdcall TransmitCommChar(long long)
-@ stdcall TryEnterCriticalSection(ptr) ntdll.RtlTryEnterCriticalSection
+@ stdcall TryEnterCriticalSection(ptr) vtdll.RtlTryEnterCriticalSection
 @ stdcall TzSpecificLocalTimeToSystemTime(ptr ptr ptr)
 @ stdcall UTRegister(long str str str ptr ptr ptr)
 @ stdcall UTUnRegister(long)
@@ -893,7 +893,7 @@
 @ stdcall ValidateLocale(long)
 @ stdcall VerLanguageNameA(long str long)
 @ stdcall VerLanguageNameW(long wstr long)
-@ stdcall -ret64 VerSetConditionMask(long long long long) ntdll.VerSetConditionMask
+@ stdcall -ret64 VerSetConditionMask(long long long long) vtdll.VerSetConditionMask
 @ stdcall VerifyConsoleIoHandle(long)
 @ stdcall VerifyVersionInfoA(long long double)
 @ stdcall VerifyVersionInfoW(long long double)
@@ -948,15 +948,15 @@
 @ stdcall WriteProfileStringW(wstr wstr wstr)
 @ stdcall WriteTapemark(ptr long long long)
 @ stdcall ZombifyActCtx(ptr)
-@ stdcall -arch=x86_64 __C_specific_handler() ntdll.__C_specific_handler
-@ stdcall -arch=x86_64 __chkstk() ntdll.__chkstk
-@ stdcall -arch=x86_64 __misaligned_access() ntdll.__misaligned_access
+@ stdcall -arch=x86_64 __C_specific_handler() vtdll.__C_specific_handler
+@ stdcall -arch=x86_64 __chkstk() vtdll.__chkstk
+@ stdcall -arch=x86_64 __misaligned_access() vtdll.__misaligned_access
 @ stdcall _hread(long ptr long)
 @ stdcall _hwrite(long ptr long)
 @ stdcall _lclose(long)
 @ stdcall _lcreat(str long)
 @ stdcall _llseek(long long long)
-@ stdcall -arch=x86_64 _local_unwind() ntdll._local_unwind
+@ stdcall -arch=x86_64 _local_unwind() vtdll._local_unwind
 @ stdcall _lopen(str long)
 @ stdcall _lread(long ptr long) _hread
 @ stdcall _lwrite(long ptr long) _hwrite
@@ -1128,6 +1128,9 @@
 @ stdcall OpenFileById(long ptr long long ptr long)
 @ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 
 @ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
+@ stdcall QueryIdleProcessorCycleTime(ptr ptr)
+@ stdcall QueryProcessCycleTime(ptr ptr)
+@ stdcall QueryThreadCycleTime(ptr ptr)
 @ stdcall ReleaseSRWLockExclusive(ptr) vtdll.RtlReleaseSRWLockExclusive
 @ stdcall ReleaseSRWLockShared(ptr) vtdll.RtlReleaseSRWLockShared
 @ stdcall SetConsoleHistoryInfo(ptr)
@@ -1193,7 +1196,7 @@
 @ stdcall RegisterApplicationRecoveryCallback(long ptr long long)
 @ stdcall RegisterApplicationRestart(wstr long)
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
-;@ stdcall TryAcquireSRWLockExclusive(ptr) vtdll.RtlTryAcquireSRWLockExclusive
+@ stdcall TryAcquireSRWLockExclusive(ptr) vtdll.RtlTryAcquireSRWLockExclusive
 @ stdcall TryAcquireSRWLockShared(ptr) vtdll.RtlTryAcquireSRWLockShared
 
 #Win8 Functions 
@@ -1201,3 +1204,106 @@
 @ stdcall GetSystemTimePreciseAsFileTime(ptr)
 @ stdcall WerpNotifyLoadStringResourceWorker(ptr wstr ptr long) WerpNotifyLoadStringResource
 @ stdcall WerpNotifyUseStringResourceWorker(ptr) WerpNotifyUseStringResource
+
+#Import from advapi32
+@ stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr) advapi32.AccessCheck
+@ stdcall AccessCheckAndAuditAlarmW(wstr ptr wstr wstr ptr long ptr long ptr ptr ptr) advapi32.AccessCheckAndAuditAlarmW
+@ stdcall AccessCheckByType(ptr ptr long long ptr long ptr ptr ptr ptr ptr) advapi32.AccessCheckByType
+@ stdcall AccessCheckByTypeAndAuditAlarmW(wstr ptr wstr wstr ptr ptr long long long ptr long ptr long ptr ptr ptr) advapi32.AccessCheckByTypeAndAuditAlarmW
+@ stdcall AccessCheckByTypeResultList(ptr ptr ptr long ptr long ptr ptr ptr ptr ptr) advapi32.AccessCheckByTypeResultList
+@ stdcall AccessCheckByTypeResultListAndAuditAlarmByHandleW(wstr ptr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr) advapi32.AccessCheckByTypeResultListAndAuditAlarmByHandleW
+@ stdcall AccessCheckByTypeResultListAndAuditAlarmW(wstr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr) advapi32.AccessCheckByTypeResultListAndAuditAlarmW
+@ stdcall AddAccessAllowedAce(ptr long long ptr) advapi32.AddAccessAllowedAce
+@ stdcall AddAccessAllowedAceEx(ptr long long long ptr) advapi32.AddAccessAllowedAceEx
+@ stdcall AddAccessAllowedObjectAce(ptr long long long ptr ptr ptr) advapi32.AddAccessAllowedObjectAce
+@ stdcall AddAccessDeniedAce(ptr long long ptr) advapi32.AddAccessDeniedAce
+@ stdcall AddAccessDeniedAceEx(ptr long long long ptr) advapi32.AddAccessDeniedAceEx
+@ stdcall AddAccessDeniedObjectAce(ptr long long long ptr ptr ptr) advapi32.AddAccessDeniedObjectAce
+@ stdcall AddAce(ptr long long ptr long) advapi32.AddAce
+@ stdcall AddAuditAccessAce(ptr long long ptr long long) advapi32.AddAuditAccessAce
+@ stdcall AddAuditAccessAceEx(ptr long long long ptr long long) advapi32.AddAuditAccessAceEx
+@ stdcall AddAuditAccessObjectAce(ptr long long long ptr ptr ptr long long) advapi32.AddAuditAccessObjectAce
+@ stdcall AddMandatoryAce(ptr long long long ptr) advapi32.AddMandatoryAce
+@ stdcall AdjustTokenGroups(long long ptr long ptr ptr) advapi32.AdjustTokenGroups
+@ stdcall AdjustTokenPrivileges(long long ptr long ptr ptr) advapi32.AdjustTokenPrivileges
+@ stdcall AllocateAndInitializeSid(ptr long long long long long long long long long ptr) advapi32.AllocateAndInitializeSid
+@ stdcall AllocateLocallyUniqueId(ptr) advapi32.AllocateLocallyUniqueId
+@ stdcall CreateProcessAsUserA(long str str ptr ptr long long ptr str ptr ptr) advapi32.CreateProcessAsUserA
+@ stdcall CreateProcessAsUserW(long wstr wstr ptr ptr long long ptr wstr ptr ptr) advapi32.CreateProcessAsUserW
+@ stdcall CreateWellKnownSid(long ptr ptr ptr) advapi32.CreateWellKnownSid
+@ stdcall DuplicateTokenEx(long long ptr long long ptr)  advapi32.DuplicateTokenEx
+@ stdcall EqualSid(ptr ptr) advapi32.EqualSid
+@ stdcall FreeSid(ptr) advapi32.FreeSid
+@ stdcall GetFileSecurityA(str long ptr long ptr) advapi32.GetFileSecurityA
+@ stdcall GetFileSecurityW(wstr long ptr long ptr) advapi32.GetFileSecurityW
+@ stdcall GetLengthSid(ptr) advapi32.GetLengthSid
+@ stdcall GetSecurityDescriptorControl(ptr ptr ptr) advapi32.GetSecurityDescriptorControl
+@ stdcall GetSecurityDescriptorDacl(ptr ptr ptr ptr) advapi32.GetSecurityDescriptorDacl
+@ stdcall GetSecurityDescriptorLength(ptr) ntdll.RtlLengthSecurityDescriptor
+@ stdcall GetSecurityDescriptorOwner(ptr ptr ptr) advapi32.GetSecurityDescriptorOwner
+@ stdcall GetTokenInformation(long long ptr long ptr) advapi32.GetTokenInformation
+@ stdcall ImpersonateLoggedOnUser(long) advapi32.ImpersonateLoggedOnUser
+@ stdcall InitializeAcl(ptr long long) advapi32.InitializeAcl
+@ stdcall InitializeSecurityDescriptor(ptr long) advapi32.InitializeSecurityDescriptor
+@ stdcall IsValidSecurityDescriptor(ptr) advapi32.IsValidSecurityDescriptor
+@ stdcall IsValidSid(ptr) advapi32.IsValidSid
+@ stdcall IsWellKnownSid(ptr long) advapi32.IsWellKnownSid
+@ stdcall MakeSelfRelativeSD(ptr ptr ptr) advapi32.MakeSelfRelativeSD
+@ stdcall OpenProcessToken(ptr long ptr) advapi32.OpenProcessToken
+@ stdcall OpenThreadToken(ptr long long ptr) advapi32.OpenThreadToken
+@ stdcall RegCloseKey(ptr) advapi32.RegCloseKey 
+@ stdcall RegCopyTreeW(ptr str ptr) advapi32.RegCopyTreeW 
+@ stdcall RegCreateKeyExA(long str long ptr long long ptr ptr ptr) advapi32.RegCreateKeyExA 
+@ stdcall RegCreateKeyExW(long wstr long ptr long long ptr ptr ptr) advapi32.RegCreateKeyExW 
+@ stdcall RegDeleteKeyExA(long str long long) advapi32.RegDeleteKeyExA 
+@ stdcall RegDeleteKeyExW(long wstr long long) advapi32.RegDeleteKeyExW 
+@ stdcall RegDeleteTreeA(long str) advapi32.RegDeleteTreeA 
+@ stdcall RegDeleteTreeW(long wstr) advapi32.RegDeleteTreeW 
+@ stdcall RegDeleteValueA(long str) advapi32.RegDeleteValueA
+@ stdcall RegDeleteValueW(long wstr) advapi32.RegDeleteValueW 
+@ stdcall RegDisablePredefinedCacheEx() advapi32.RegDisablePredefinedCacheEx 
+@ stdcall RegEnumKeyExA(long long ptr ptr ptr ptr ptr ptr) advapi32.RegEnumKeyExA 
+@ stdcall RegEnumKeyExW(long long ptr ptr ptr ptr ptr ptr) advapi32.RegEnumKeyExW 
+@ stdcall RegEnumValueA(long long ptr ptr ptr ptr ptr ptr) advapi32.RegEnumValueA 
+@ stdcall RegEnumValueW(long long ptr ptr ptr ptr ptr ptr) advapi32.RegEnumValueW 
+@ stdcall RegFlushKey(long) advapi32.RegFlushKey 
+@ stdcall RegGetKeySecurity(long long ptr ptr) advapi32.RegGetKeySecurity 
+@ stdcall RegGetValueA(long str str long ptr ptr ptr) advapi32.RegGetValueA 
+@ stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapi32.RegGetValueW 
+@ stdcall RegLoadKeyA(long str str) advapi32.RegLoadKeyA 
+@ stdcall RegLoadKeyW(long wstr wstr) advapi32.RegLoadKeyW 
+@ stdcall RegLoadMUIStringA(long str str long ptr long str) advapi32.RegLoadMUIStringA 
+@ stdcall RegLoadMUIStringW(long wstr wstr long ptr long wstr) advapi32.RegLoadMUIStringW 
+@ stdcall RegNotifyChangeKeyValue(long long long long long) advapi32.RegNotifyChangeKeyValue 
+@ stdcall RegOpenCurrentUser(long ptr) advapi32.RegOpenCurrentUser 
+@ stdcall RegOpenKeyExA(long str long long ptr) advapi32.RegOpenKeyExA 
+@ stdcall RegOpenKeyExW(long wstr long long ptr) advapi32.RegOpenKeyExW 
+@ stdcall RegOpenUserClassesRoot(ptr long long ptr) advapi32.RegOpenUserClassesRoot 
+@ stdcall RegQueryInfoKeyA(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapi32.RegQueryInfoKeyA 
+@ stdcall RegQueryInfoKeyW(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapi32.RegQueryInfoKeyW 
+@ stdcall RegQueryValueExA(long str ptr ptr ptr ptr) advapi32.RegQueryValueExA
+@ stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr) advapi32.RegQueryValueExW 
+@ stdcall RegRestoreKeyA(long str long) advapi32.RegRestoreKeyA 
+@ stdcall RegRestoreKeyW(long wstr long) advapi32.RegRestoreKeyW 
+@ stdcall RegSaveKeyExA(ptr str ptr long) advapi32.RegSaveKeyExA 
+@ stdcall RegSaveKeyExW(ptr str ptr long) advapi32.RegSaveKeyExW 
+@ stdcall RegSetKeySecurity(long long ptr) advapi32.RegSetKeySecurity 
+@ stdcall RegSetValueExA(long str long long ptr long) advapi32.RegSetValueExA 
+@ stdcall RegSetValueExW(long wstr long long ptr long) advapi32.RegSetValueExW 
+@ stdcall RegUnLoadKeyA(long str) advapi32.RegUnLoadKeyA 
+@ stdcall RegUnLoadKeyW(long wstr) advapi32.RegUnLoadKeyW
+@ stdcall RevertToSelf() advapi32.RevertToSelf
+@ stdcall SetFileSecurityA(str long ptr) advapi32.SetFileSecurityA
+@ stdcall SetFileSecurityW(wstr long ptr) advapi32.SetFileSecurityW
+@ stdcall SetSecurityDescriptorDacl(ptr long ptr long) advapi32.SetSecurityDescriptorDacl
+@ stdcall SetSecurityDescriptorGroup(ptr ptr long) advapi32.SetSecurityDescriptorGroup
+@ stdcall SetSecurityDescriptorOwner(ptr ptr long) advapi32.SetSecurityDescriptorOwner
+@ stdcall SetThreadToken(ptr ptr) advapi32.SetThreadToken 
+
+#Import from Version
+@ stdcall VerQueryValueA(ptr str ptr ptr) version.VerQueryValueA
+@ stdcall VerQueryValueW(ptr wstr ptr ptr) version.VerQueryValueW
+
+#Import from user32
+@ stdcall LoadStringA(ptr long ptr long)
+@ stdcall LoadStringW(ptr long ptr long)

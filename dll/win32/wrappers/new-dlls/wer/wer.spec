@@ -63,12 +63,12 @@
 @ stub WerpSvcReportFromMachineQueue
 @ stdcall WerAddExcludedApplication(wstr long)
 @ stdcall WerRemoveExcludedApplication(wstr long)
-@ stub WerReportAddDump
-@ stub WerReportAddFile
+@ stdcall WerReportAddDump(ptr ptr ptr long ptr ptr long)
+@ stdcall WerReportAddFile(ptr wstr long long)
 @ stdcall WerReportCloseHandle(ptr)
 @ stdcall WerReportCreate(wstr long ptr ptr)
 @ stdcall WerReportSetParameter(ptr long wstr wstr)
-@ stub WerReportSetUIOption
+@ stdcall WerReportSetUIOption(ptr long wstr)
 @ stdcall WerReportSubmit(ptr long long ptr)
 @ stub WerpGetReportConsent
 @ stub WerpIsDisabled

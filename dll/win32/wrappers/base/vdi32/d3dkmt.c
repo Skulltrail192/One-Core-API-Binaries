@@ -21,6 +21,11 @@
 
 #define MAX_GDI_HANDLES  16384
 #define FIRST_GDI_HANDLE 32
+#define MAX_FONT_HANDLES  256
+
+WINE_DEFAULT_DEBUG_CHANNEL(gdi);
+
+static CRITICAL_SECTION gdi_section;
 
 typedef struct tagBITMAPOBJ
 {
@@ -28,6 +33,24 @@ typedef struct tagBITMAPOBJ
      SIZE                size;   /* For SetBitmapDimension() */
      RGBQUAD            *color_table;  /* DIB color table if <= 8bpp (always 1 << bpp in size) */
 } BITMAPOBJ;
+
+struct font_handle_entry
+{
+    void *obj;
+    WORD  generation; /* generation count for reusing handle values */
+};
+
+static struct font_handle_entry font_handles[MAX_FONT_HANDLES];
+static struct font_handle_entry *next_free;
+static struct font_handle_entry *next_unused = font_handles;
+static struct gdi_handle_entry gdi_handles[MAX_GDI_HANDLES];
+
+static LONG debug_count;
+
+static inline int get_dib_stride( int width, int bpp )
+{
+    return ((width * bpp + 31) >> 3) & ~3;
+}
 
 const RGBQUAD *get_default_color_table( int bpp )
 {
@@ -120,6 +143,27 @@ const RGBQUAD *get_default_color_table( int bpp )
     }
 }
 
+static const char *gdi_obj_type( unsigned type )
+{
+    switch ( type )
+    {
+        case OBJ_PEN: return "OBJ_PEN";
+        case OBJ_BRUSH: return "OBJ_BRUSH";
+        case OBJ_DC: return "OBJ_DC";
+        case OBJ_METADC: return "OBJ_METADC";
+        case OBJ_PAL: return "OBJ_PAL";
+        case OBJ_FONT: return "OBJ_FONT";
+        case OBJ_BITMAP: return "OBJ_BITMAP";
+        case OBJ_REGION: return "OBJ_REGION";
+        case OBJ_METAFILE: return "OBJ_METAFILE";
+        case OBJ_MEMDC: return "OBJ_MEMDC";
+        case OBJ_EXTPEN: return "OBJ_EXTPEN";
+        case OBJ_ENHMETADC: return "OBJ_ENHMETADC";
+        case OBJ_ENHMETAFILE: return "OBJ_ENHMETAFILE";
+        case OBJ_COLORSPACE: return "OBJ_COLORSPACE";
+        default: return "UNKNOWN";
+    }
+}
 
 NTSTATUS 
 APIENTRY 
@@ -135,122 +179,391 @@ D3DKMTCloseAdapter(
 	return STATUS_SUCCESS;
 }
 
+static inline HGDIOBJ entry_to_handle( struct gdi_handle_entry *entry )
+{
+    unsigned int idx = entry - gdi_handles + FIRST_GDI_HANDLE;
+    return LongToHandle( idx | (entry->generation << 16) );
+}
 
-// NTSTATUS 
-// APIENTRY
-// D3DKMTCreateDCFromMemory(
-   // IN OUT D3DKMT_CREATEDCFROMMEMORY *pData
-// )
-// {
-    // const struct d3dddi_format_info
-    // {
-        // D3DDDIFORMAT format;
-        // unsigned int bit_count;
-        // DWORD compression;
-        // unsigned int palette_size;
-        // DWORD mask_r, mask_g, mask_b;
-    // } *format = NULL;
-    // BITMAPOBJ *bmp = NULL;
-    // HBITMAP bitmap;
-    // unsigned int i;
-    // HDC dc;
+static void dump_gdi_objects( void )
+{
+    struct gdi_handle_entry *entry;
 
-    // static const struct d3dddi_format_info format_info[] =
-    // {
-        // { D3DDDIFMT_R8G8B8,   24, BI_RGB,       0,   0x00000000, 0x00000000, 0x00000000 },
-        // { D3DDDIFMT_A8R8G8B8, 32, BI_RGB,       0,   0x00000000, 0x00000000, 0x00000000 },
-        // { D3DDDIFMT_X8R8G8B8, 32, BI_RGB,       0,   0x00000000, 0x00000000, 0x00000000 },
-        // { D3DDDIFMT_R5G6B5,   16, BI_BITFIELDS, 0,   0x0000f800, 0x000007e0, 0x0000001f },
-        // { D3DDDIFMT_X1R5G5B5, 16, BI_BITFIELDS, 0,   0x00007c00, 0x000003e0, 0x0000001f },
-        // { D3DDDIFMT_A1R5G5B5, 16, BI_BITFIELDS, 0,   0x00007c00, 0x000003e0, 0x0000001f },
-        // { D3DDDIFMT_P8,       8,  BI_RGB,       256, 0x00000000, 0x00000000, 0x00000000 },
-    // };
+    TRACE( "%u objects:\n", MAX_GDI_HANDLES );
 
-    // if (!pData) return STATUS_INVALID_PARAMETER;
+    EnterCriticalSection( &gdi_section );
+    for (entry = gdi_handles; entry < next_unused; entry++)
+    {
+        if (!entry->type)
+            TRACE( "handle %p FREE\n", entry_to_handle( entry ));
+        else
+            TRACE( "handle %p obj %p type %s selcount %u deleted %u\n",
+                   entry_to_handle( entry ), entry->obj, gdi_obj_type( entry->type ),
+                   entry->selcount, entry->deleted );
+    }
+    LeaveCriticalSection( &gdi_section );
+}
 
-    // if (!pData->pMemory) return STATUS_INVALID_PARAMETER;
+struct gdi_obj_funcs
+{
+    HGDIOBJ (*pSelectObject)( HGDIOBJ handle, HDC hdc );
+    INT     (*pGetObjectA)( HGDIOBJ handle, INT count, LPVOID buffer );
+    INT     (*pGetObjectW)( HGDIOBJ handle, INT count, LPVOID buffer );
+    BOOL    (*pUnrealizeObject)( HGDIOBJ handle );
+    BOOL    (*pDeleteObject)( HGDIOBJ handle );
+};
 
-    // for (i = 0; i < sizeof(format_info) / sizeof(*format_info); ++i)
-    // {
-        // if (format_info[i].format == pData->Format)
-        // {
-            // format = &format_info[i];
-            // break;
-        // }
-    // }
-    // if (!format) return STATUS_INVALID_PARAMETER;
+static HGDIOBJ DIB_SelectObject( HGDIOBJ handle, HDC hdc );
+static INT DIB_GetObject( HGDIOBJ handle, INT count, LPVOID buffer );
+static BOOL DIB_DeleteObject( HGDIOBJ handle );
 
-    // if (pData->Width > (UINT_MAX & ~3) / (format->bit_count / 8) ||
-        // !pData->Pitch || !pData->Height || pData->Height > UINT_MAX / pData->Pitch) return STATUS_INVALID_PARAMETER;
+static const struct gdi_obj_funcs dib_funcs =
+{
+    DIB_SelectObject,  /* pSelectObject */
+    DIB_GetObject,     /* pGetObjectA */
+    DIB_GetObject,     /* pGetObjectW */
+    NULL,              /* pUnrealizeObject */
+    DIB_DeleteObject   /* pDeleteObject */
+};
 
-    // if (!pData->hDeviceDc || !(dc = CreateCompatibleDC( pData->hDeviceDc ))) return STATUS_INVALID_PARAMETER;
+void GDI_ReleaseObj( HGDIOBJ handle );
+/***********************************************************************
+ *           GDI_GetObjPtr
+ *
+ * Return a pointer to the GDI object associated with the handle.
+ * Return NULL if the object has the wrong type.
+ * The object must be released with GDI_ReleaseObj.
+ */
+void *GDI_GetObjPtr( HGDIOBJ handle, WORD type )
+{
+    WORD ret_type;
+    void *ptr = get_any_obj_ptr( handle, &ret_type );
+    if (ptr && ret_type != type)
+    {
+        GDI_ReleaseObj( handle );
+        ptr = NULL;
+    }
+    return ptr;
+}
 
-    // if (!(bmp = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*bmp) ))) goto error;
+static inline struct gdi_handle_entry *handle_entry( HGDIOBJ handle )
+{
+    unsigned int idx = LOWORD(handle) - FIRST_GDI_HANDLE;
 
-    // bmp->dib.dsBm.bmWidth      = pData->Width;
-    // bmp->dib.dsBm.bmHeight     = pData->Height;
-    // bmp->dib.dsBm.bmWidthBytes = pData->Pitch;
-    // bmp->dib.dsBm.bmPlanes     = 1;
-    // bmp->dib.dsBm.bmBitsPixel  = format->bit_count;
-    // bmp->dib.dsBm.bmBits       = pData->pMemory;
+    if (idx < MAX_GDI_HANDLES && gdi_handles[idx].type)
+    {
+        if (!HIWORD( handle ) || HIWORD( handle ) == gdi_handles[idx].generation)
+            return &gdi_handles[idx];
+    }
+    if (handle) WARN( "invalid handle %p\n", handle );
+    return NULL;
+}
 
-    // bmp->dib.dsBmih.biSize         = sizeof(bmp->dib.dsBmih);
-    // bmp->dib.dsBmih.biWidth        = pData->Width;
-    // bmp->dib.dsBmih.biHeight       = -(LONG)pData->Height;
-    // bmp->dib.dsBmih.biPlanes       = 1;
-    // bmp->dib.dsBmih.biBitCount     = format->bit_count;
-    // bmp->dib.dsBmih.biCompression  = format->compression;
-    // bmp->dib.dsBmih.biClrUsed      = format->palette_size;
-    // bmp->dib.dsBmih.biClrImportant = format->palette_size;
+/***********************************************************************
+ *           GDI_get_ref_count
+ *
+ * Retrieve the reference count of a GDI object.
+ * Note: the object must be locked otherwise the count is meaningless.
+ */
+UINT GDI_get_ref_count( HGDIOBJ handle )
+{
+    struct gdi_handle_entry *entry;
+    UINT ret = 0;
 
-    // bmp->dib.dsBitfields[0] = format->mask_r;
-    // bmp->dib.dsBitfields[1] = format->mask_g;
-    // bmp->dib.dsBitfields[2] = format->mask_b;
+    EnterCriticalSection( &gdi_section );
+    if ((entry = handle_entry( handle ))) ret = entry->selcount;
+    LeaveCriticalSection( &gdi_section );
+    return ret;
+}
 
-    // if (format->palette_size)
-    // {
-        // if (!(bmp->color_table = HeapAlloc( GetProcessHeap(), 0, format->palette_size * sizeof(*bmp->color_table) )))
-            // goto error;
-        // if (pData->pColorTable)
-        // {
-            // for (i = 0; i < format->palette_size; ++i)
-            // {
-                // bmp->color_table[i].rgbRed      = pData->pColorTable[i].peRed;
-                // bmp->color_table[i].rgbGreen    = pData->pColorTable[i].peGreen;
-                // bmp->color_table[i].rgbBlue     = pData->pColorTable[i].peBlue;
-                // bmp->color_table[i].rgbReserved = 0;
-            // }
-        // }
-        // else
-        // {
-            // memcpy( bmp->color_table, get_default_color_table( format->bit_count ),
-                    // format->palette_size * sizeof(*bmp->color_table) );
-        // }
-    // }	
-    // pData->hDc = CreateCompatibleDC(pData->hDeviceDc);
-	// bitmap = CreateDIBitmap(pData->hDc, &bmp->dib.dsBmih, CBM_INIT, NULL, &bmp->dib.dsBm, DIB_RGB_COLORS);	
-	// pData->hBitmap = bitmap;
-    //SelectObject();
-	// return STATUS_SUCCESS;
-// error:
-    // if (bmp) HeapFree( GetProcessHeap(), 0, bmp->color_table );
-    // HeapFree( GetProcessHeap(), 0, bmp );
-    // DeleteDC( dc );
-    // return STATUS_INVALID_PARAMETER;	
-    // pData->hDc = NULL;
-	// bitmap = CreateDIBitmap(pData->hDc, &bmp->dib.dsBmih, CBM_INIT, NULL, &bmp->dib.dsBm, DIB_RGB_COLORS);	
-	// pData->hBitmap = NULL;   
-	// return STATUS_SUCCESS;
-// }
+
+/***********************************************************************
+ *           GDI_inc_ref_count
+ *
+ * Increment the reference count of a GDI object.
+ */
+HGDIOBJ GDI_inc_ref_count( HGDIOBJ handle )
+{
+    struct gdi_handle_entry *entry;
+
+    EnterCriticalSection( &gdi_section );
+    if ((entry = handle_entry( handle ))) entry->selcount++;
+    else handle = 0;
+    LeaveCriticalSection( &gdi_section );
+    return handle;
+}
+
+/***********************************************************************
+ *           GDI_dec_ref_count
+ *
+ * Decrement the reference count of a GDI object.
+ */
+BOOL GDI_dec_ref_count( HGDIOBJ handle )
+{
+    struct gdi_handle_entry *entry;
+
+    EnterCriticalSection( &gdi_section );
+    if ((entry = handle_entry( handle )))
+    {
+        ASSERT( entry->selcount );
+        if (!--entry->selcount && entry->deleted)
+        {
+            /* handle delayed DeleteObject*/
+            entry->deleted = 0;
+            LeaveCriticalSection( &gdi_section );
+            TRACE( "executing delayed DeleteObject for %p\n", handle );
+            DeleteObject( handle );
+            return TRUE;
+        }
+    }
+    LeaveCriticalSection( &gdi_section );
+    return entry != NULL;
+}
+
+/* Return the total DC region (if any) */
+static inline HRGN get_dc_region( DC *dc )
+{
+    if (dc->region) return dc->region;
+    if (dc->hVisRgn) return dc->hVisRgn;
+    if (dc->hClipRgn) return dc->hClipRgn;
+    return dc->hMetaRgn;
+}
+
+/***********************************************************************
+ *           update_dc_clipping
+ *
+ * Update the DC and device clip regions when the ClipRgn or VisRgn have changed.
+ */
+void update_dc_clipping( DC * dc )
+{
+    PHYSDEV physdev = GET_DC_PHYSDEV( dc, pSetDeviceClipping );
+    HRGN regions[3];
+    int count = 0;
+
+    if (dc->hVisRgn)  regions[count++] = dc->hVisRgn;
+    if (dc->hClipRgn) regions[count++] = dc->hClipRgn;
+    if (dc->hMetaRgn) regions[count++] = dc->hMetaRgn;
+
+    if (count > 1)
+    {
+        if (!dc->region) dc->region = CreateRectRgn( 0, 0, 0, 0 );
+        CombineRgn( dc->region, regions[0], regions[1], RGN_AND );
+        if (count > 2) CombineRgn( dc->region, dc->region, regions[2], RGN_AND );
+    }
+    else  /* only one region, we don't need the total region */
+    {
+        if (dc->region) DeleteObject( dc->region );
+        dc->region = 0;
+    }
+    physdev->funcs->pSetDeviceClipping( physdev, get_dc_region( dc ));
+}
+
+/***********************************************************************
+ *           DIB_GetObject
+ */
+static INT DIB_GetObject( HGDIOBJ handle, INT count, LPVOID buffer )
+{
+    INT ret = 0;
+    BITMAPOBJ *bmp = GDI_GetObjPtr( handle, OBJ_BITMAP );
+
+    if (!bmp) return 0;
+
+    if (!buffer) ret = sizeof(BITMAP);
+    else if (count >= sizeof(DIBSECTION))
+    {
+        DIBSECTION *dib = buffer;
+        *dib = bmp->dib;
+        dib->dsBm.bmWidthBytes = get_dib_stride( dib->dsBm.bmWidth, dib->dsBm.bmBitsPixel );
+        dib->dsBmih.biHeight = abs( dib->dsBmih.biHeight );
+        ret = sizeof(DIBSECTION);
+    }
+    else if (count >= sizeof(BITMAP))
+    {
+        BITMAP *bitmap = buffer;
+        *bitmap = bmp->dib.dsBm;
+        bitmap->bmWidthBytes = get_dib_stride( bitmap->bmWidth, bitmap->bmBitsPixel );
+        ret = sizeof(BITMAP);
+    }
+
+    GDI_ReleaseObj( handle );
+    return ret;
+}
+
+/***********************************************************************
+ *           free_gdi_handle
+ *
+ * Free a GDI handle and return a pointer to the object.
+ */
+void *free_gdi_handle( HGDIOBJ handle )
+{
+    void *object = NULL;
+    struct gdi_handle_entry *entry;
+
+    EnterCriticalSection( &gdi_section );
+    if ((entry = handle_entry( handle )))
+    {
+        TRACE( "freed %s %p %u/%u\n", gdi_obj_type( entry->type ), handle,
+               InterlockedDecrement( &debug_count ) + 1, MAX_GDI_HANDLES );
+        object = entry->obj;
+        entry->type = 0;
+        entry->obj = next_free;
+        next_free = entry;
+    }
+    LeaveCriticalSection( &gdi_section );
+    return object;
+}
+
+/***********************************************************************
+ *           DIB_DeleteObject
+ */
+static BOOL DIB_DeleteObject( HGDIOBJ handle )
+{
+    BITMAPOBJ *bmp;
+
+    if (!(bmp = free_gdi_handle( handle ))) return FALSE;
+
+    if (bmp->dib.dshSection)
+    {
+        SYSTEM_INFO SystemInfo;
+        GetSystemInfo( &SystemInfo );
+        UnmapViewOfFile( (char *)bmp->dib.dsBm.bmBits -
+                         (bmp->dib.dsOffset % SystemInfo.dwAllocationGranularity) );
+    }
+    else VirtualFree( bmp->dib.dsBm.bmBits, 0, MEM_RELEASE );
+
+    HeapFree(GetProcessHeap(), 0, bmp->color_table);
+    return HeapFree( GetProcessHeap(), 0, bmp );
+}
+
+BOOL WINAPI SetVirtualResolution(HDC hdc, DWORD horz_res, DWORD vert_res,
+                                 DWORD horz_size, DWORD vert_size);
+
+/***********************************************************************
+ *           DC_InitDC
+ *
+ * Setup device-specific DC values for a newly created DC.
+ */
+void DC_InitDC( DC* dc )
+{
+    PHYSDEV physdev = GET_DC_PHYSDEV( dc, pRealizeDefaultPalette );
+    physdev->funcs->pRealizeDefaultPalette( physdev );
+    SetTextColor( dc->hSelf, dc->textColor );
+    SetBkColor( dc->hSelf, dc->backgroundColor );
+    SelectObject( dc->hSelf, dc->hPen );
+    SelectObject( dc->hSelf, dc->hBrush );
+    SelectObject( dc->hSelf, dc->hFont );
+    update_dc_clipping( dc );
+    SetVirtualResolution( dc->hSelf, 0, 0, 0, 0 );
+    physdev = GET_DC_PHYSDEV( dc, pSetBoundsRect );
+    physdev->funcs->pSetBoundsRect( physdev, &dc->bounds, dc->bounds_enabled ? DCB_ENABLE : DCB_DISABLE );
+}
+
+
+/***********************************************************************
+ *           DIB_SelectObject
+ */
+static HGDIOBJ DIB_SelectObject( HGDIOBJ handle, HDC hdc )
+{
+    HGDIOBJ ret;
+    BITMAPOBJ *bitmap;
+    DC *dc;
+    PHYSDEV physdev;
+
+    if (!(dc = get_dc_ptr( hdc ))) return 0;
+
+    if (GetObjectType( hdc ) != OBJ_MEMDC)
+    {
+        ret = 0;
+        goto done;
+    }
+    ret = dc->hBitmap;
+    if (handle == dc->hBitmap) goto done;  /* nothing to do */
+
+    if (!(bitmap = GDI_GetObjPtr( handle, OBJ_BITMAP )))
+    {
+        ret = 0;
+        goto done;
+    }
+
+    if (GDI_get_ref_count( handle ))
+    {
+        WARN( "Bitmap already selected in another DC\n" );
+        GDI_ReleaseObj( handle );
+        ret = 0;
+        goto done;
+    }
+
+    physdev = GET_DC_PHYSDEV( dc, pSelectBitmap );
+    if (!physdev->funcs->pSelectBitmap( physdev, handle ))
+    {
+        GDI_ReleaseObj( handle );
+        ret = 0;
+    }
+    else
+    {
+        dc->hBitmap = handle;
+        GDI_inc_ref_count( handle );
+        dc->dirty = 0;
+        dc->vis_rect.left   = 0;
+        dc->vis_rect.top    = 0;
+        dc->vis_rect.right  = bitmap->dib.dsBm.bmWidth;
+        dc->vis_rect.bottom = bitmap->dib.dsBm.bmHeight;
+        dc->device_rect = dc->vis_rect;
+        GDI_ReleaseObj( handle );
+        DC_InitDC( dc );
+        GDI_dec_ref_count( ret );
+    }
+
+ done:
+    release_dc_ptr( dc );
+    return ret;
+}
+
+/***********************************************************************
+ *           alloc_gdi_handle
+ *
+ * Allocate a GDI handle for an object, which must have been allocated on the process heap.
+ */
+HGDIOBJ alloc_gdi_handle( void *obj, WORD type, const struct gdi_obj_funcs *funcs )
+{
+    struct gdi_handle_entry *entry;
+    HGDIOBJ ret;
+
+    ASSERT( type );  /* type 0 is reserved to mark free entries */
+
+    EnterCriticalSection( &gdi_section );
+
+    entry = next_free;
+    if (entry)
+        next_free = entry->obj;
+    else if (next_unused < gdi_handles + MAX_GDI_HANDLES)
+        entry = next_unused++;
+    else
+    {
+        LeaveCriticalSection( &gdi_section );
+        ERR( "out of GDI object handles, expect a crash\n" );
+        if (TRACE_ON(gdi)) dump_gdi_objects();
+        return 0;
+    }
+    entry->obj      = obj;
+    entry->funcs    = funcs;
+    entry->hdcs     = NULL;
+    entry->type     = type;
+    entry->selcount = 0;
+    entry->system   = 0;
+    entry->deleted  = 0;
+    if (++entry->generation == 0xffff) entry->generation = 1;
+    ret = entry_to_handle( entry );
+    LeaveCriticalSection( &gdi_section );
+    TRACE( "allocated %s %p %u/%u\n", gdi_obj_type(type), ret,
+           InterlockedIncrement( &debug_count ), MAX_GDI_HANDLES );
+    return ret;
+}
 
 /***********************************************************************
  *           D3DKMTCreateDCFromMemory    (GDI32.@)
  */
-NTSTATUS 
-APIENTRY 
-D3DKMTCreateDCFromMemory( 
-	D3DKMT_CREATEDCFROMMEMORY *desc 
-)
+NTSTATUS WINAPI D3DKMTCreateDCFromMemory( D3DKMT_CREATEDCFROMMEMORY *desc )
 {
     const struct d3dddi_format_info
     {
@@ -260,8 +573,7 @@ D3DKMTCreateDCFromMemory(
         unsigned int palette_size;
         DWORD mask_r, mask_g, mask_b;
     } *format = NULL;
-    BITMAPINFO *bmpInfo = NULL;
-    BITMAPV5HEADER *bmpHeader = NULL;
+    BITMAPOBJ *bmp = NULL;
     HBITMAP bitmap;
     unsigned int i;
     HDC dc;
@@ -281,9 +593,13 @@ D3DKMTCreateDCFromMemory(
 
     if (!desc) return STATUS_INVALID_PARAMETER;
 
+    TRACE("memory %p, format %#x, width %u, height %u, pitch %u, device dc %p, color table %p.\n",
+          desc->pMemory, desc->Format, desc->Width, desc->Height,
+          desc->Pitch, desc->hDeviceDc, desc->pColorTable);
+
     if (!desc->pMemory) return STATUS_INVALID_PARAMETER;
 
-    for (i = 0; i < sizeof(format_info) / sizeof(*format_info); i)
+    for (i = 0; i < sizeof(format_info) / sizeof(*format_info); ++i)
     {
         if (format_info[i].format == desc->Format)
         {
@@ -294,47 +610,55 @@ D3DKMTCreateDCFromMemory(
     if (!format) return STATUS_INVALID_PARAMETER;
 
     if (desc->Width > (UINT_MAX & ~3) / (format->bit_count / 8) ||
-        !desc->Pitch || 
-		desc->Pitch < (((desc->Width * format->bit_count + 31) >> 3) & ~3) ||
+        !desc->Pitch || desc->Pitch < get_dib_stride( desc->Width, format->bit_count ) ||
         !desc->Height || desc->Height > UINT_MAX / desc->Pitch) return STATUS_INVALID_PARAMETER;
 
     if (!desc->hDeviceDc || !(dc = CreateCompatibleDC( desc->hDeviceDc ))) return STATUS_INVALID_PARAMETER;
 
-    if (!(bmpInfo = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*bmpInfo) + (format->palette_size * sizeof(RGBQUAD)) ))) goto error;
-    if (!(bmpHeader = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*bmpHeader) ))) goto error;
-	
-    bmpHeader->bV5Size        = sizeof(*bmpHeader);
-    bmpHeader->bV5Width       = desc->Width;
-    bmpHeader->bV5Height      = desc->Height;
-    bmpHeader->bV5SizeImage   = desc->Pitch;
-    bmpHeader->bV5Planes      = 1;
-    bmpHeader->bV5BitCount    = format->bit_count;
-    bmpHeader->bV5Compression = BI_BITFIELDS;
-    bmpHeader->bV5RedMask     = format->mask_r;
-    bmpHeader->bV5GreenMask   = format->mask_g;
-    bmpHeader->bV5BlueMask    = format->mask_b;
+    if (!(bmp = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*bmp) ))) goto error;
 
-    bmpInfo->bmiHeader.biSize         = sizeof(BITMAPINFOHEADER);
-    bmpInfo->bmiHeader.biWidth        = desc->Width;
-    bmpInfo->bmiHeader.biHeight       = -(LONG)desc->Height;
-    bmpInfo->bmiHeader.biPlanes       = 1;
-    bmpInfo->bmiHeader.biBitCount     = format->bit_count;
-    bmpInfo->bmiHeader.biCompression  = format->compression;
-    bmpInfo->bmiHeader.biClrUsed      = format->palette_size;
-    bmpInfo->bmiHeader.biClrImportant = format->palette_size;
+    bmp->dib.dsBm.bmWidth      = desc->Width;
+    bmp->dib.dsBm.bmHeight     = desc->Height;
+    bmp->dib.dsBm.bmWidthBytes = desc->Pitch;
+    bmp->dib.dsBm.bmPlanes     = 1;
+    bmp->dib.dsBm.bmBitsPixel  = format->bit_count;
+    bmp->dib.dsBm.bmBits       = desc->pMemory;
 
-    if (desc->pColorTable)
+    bmp->dib.dsBmih.biSize         = sizeof(bmp->dib.dsBmih);
+    bmp->dib.dsBmih.biWidth        = desc->Width;
+    bmp->dib.dsBmih.biHeight       = -(LONG)desc->Height;
+    bmp->dib.dsBmih.biPlanes       = 1;
+    bmp->dib.dsBmih.biBitCount     = format->bit_count;
+    bmp->dib.dsBmih.biCompression  = format->compression;
+    bmp->dib.dsBmih.biClrUsed      = format->palette_size;
+    bmp->dib.dsBmih.biClrImportant = format->palette_size;
+
+    bmp->dib.dsBitfields[0] = format->mask_r;
+    bmp->dib.dsBitfields[1] = format->mask_g;
+    bmp->dib.dsBitfields[2] = format->mask_b;
+
+    if (format->palette_size)
     {
-        for (i = 0; i < format->palette_size; i)
+        if (!(bmp->color_table = HeapAlloc( GetProcessHeap(), 0, format->palette_size * sizeof(*bmp->color_table) )))
+            goto error;
+        if (desc->pColorTable)
         {
-             bmpInfo->bmiColors[i].rgbRed   = desc->pColorTable[i].peRed;
-             bmpInfo->bmiColors[i].rgbGreen = desc->pColorTable[i].peGreen;
-             bmpInfo->bmiColors[i].rgbGreen = desc->pColorTable[i].peBlue;
-             bmpInfo->bmiColors[i].rgbReserved = 0;
+            for (i = 0; i < format->palette_size; ++i)
+            {
+                bmp->color_table[i].rgbRed      = desc->pColorTable[i].peRed;
+                bmp->color_table[i].rgbGreen    = desc->pColorTable[i].peGreen;
+                bmp->color_table[i].rgbBlue     = desc->pColorTable[i].peBlue;
+                bmp->color_table[i].rgbReserved = 0;
+            }
+        }
+        else
+        {
+            memcpy( bmp->color_table, get_default_color_table( format->bit_count ),
+                    format->palette_size * sizeof(*bmp->color_table) );
         }
     }
 
-    if (!(bitmap = CreateDIBitmap(dc, (BITMAPINFOHEADER*)bmpHeader, CBM_INIT, desc->pMemory, bmpInfo, DIB_RGB_COLORS))) goto error;
+    if (!(bitmap = alloc_gdi_handle( bmp, OBJ_BITMAP, &dib_funcs ))) goto error;
 
     desc->hDc = dc;
     desc->hBitmap = bitmap;
@@ -342,9 +666,8 @@ D3DKMTCreateDCFromMemory(
     return STATUS_SUCCESS;
 
 error:
-    if (bmpInfo)  HeapFree( GetProcessHeap(), 0, bmpInfo );
-    if (bmpHeader) HeapFree( GetProcessHeap(), 0, bmpHeader );
-
+    if (bmp) HeapFree( GetProcessHeap(), 0, bmp->color_table );
+    HeapFree( GetProcessHeap(), 0, bmp );
     DeleteDC( dc );
     return STATUS_INVALID_PARAMETER;
 }

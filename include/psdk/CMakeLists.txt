@@ -8,6 +8,7 @@ list(APPEND SOURCE
     activaut.idl
     activdbg.idl
     activscp.idl
+	amvideo.idl
     asptlb.idl
 #   asynot.idl
 #   asysta.idl
@@ -58,6 +59,7 @@ list(APPEND SOURCE
     endpointvolume.idl
     exdisp.idl
     fusion.idl
+	gameux.idl
     hlink.idl
     htiface.idl
     htiframe.idl
@@ -134,6 +136,7 @@ list(APPEND SOURCE
     wincodecsdk.idl
 	winedxgi.idl
     winsxs.idl
+	wpcapi.idl
     wtypes.idl
     wuapi.idl
     xmldom.idl

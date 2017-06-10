@@ -908,3 +908,13 @@ SetThreadPreferredUILanguages(
     return FALSE;
 }
 
+BOOL WINAPI InitOnceExecuteOnce(
+  _Inout_     PINIT_ONCE    InitOnce,
+  _In_        PINIT_ONCE_FN InitFn,
+  _Inout_opt_ PVOID         Parameter,
+  _Out_opt_   LPVOID        *Context
+)
+{
+	return FALSE;
+}
+

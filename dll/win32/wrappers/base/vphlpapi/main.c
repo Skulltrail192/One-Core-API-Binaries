@@ -19,12 +19,98 @@
 #include <ntstatus.h>
 #include "windef.h"
 #include "winbase.h"
+// #include <winsock2.h>
+// #include <ws2tcpip.h>
+#include <iofuncs.h>
+#include <iphlpapi.h>
 #include <icmpapi.h>
+#include <ifdef.h>
 #define WIN32_NO_STATUS
 
 #include <ip.h>
 
+#define ScopeLevelCount 16
+
 typedef void (WINAPI * PIO_APC_ROUTINE)(PVOID,PIO_STATUS_BLOCK,ULONG);
+
+typedef ULONG NET_IFINDEX, *PNET_IFINDEX;
+
+typedef NET_IFINDEX IF_INDEX, *PIF_INDEX;
+
+typedef enum _MIB_IF_TABLE_LEVEL { 
+  MibIfTableNormal                   = 0,
+  MibIfTableRaw                      = 1,
+  MibIfTableNormalWithoutStatistics  = 2
+} MIB_IF_TABLE_LEVEL, *PMIB_IF_TABLE_LEVEL;
+
+typedef struct _InterfaceIndexTable {
+   DWORD numIndexes;
+   IF_INDEX indexes[1];
+} InterfaceIndexTable;
+
+typedef enum _NL_ROUTER_DISCOVERY_BEHAVIOR { 
+  RouterDiscoveryDisabled   = 0,
+  RouterDiscoveryEnabled,
+  RouterDiscoveryDhcp,
+  RouterDiscoveryUnchanged  = -1
+} NL_ROUTER_DISCOVERY_BEHAVIOR;
+
+typedef enum _NL_LINK_LOCAL_ADDRESS_BEHAVIOR { 
+  LinkLocalAlwaysOff  = 0,
+  LinkLocalDelayed,
+  LinkLocalAlwaysOn,
+  LinkLocalUnchanged  = -1
+} NL_LINK_LOCAL_ADDRESS_BEHAVIOR;
+
+typedef struct _NL_INTERFACE_OFFLOAD_ROD {
+  BOOLEAN NlChecksumSupported  :1;
+  BOOLEAN NlOptionsSupported  :1;
+  BOOLEAN TlDatagramChecksumSupported  :1;
+  BOOLEAN TlStreamChecksumSupported  :1;
+  BOOLEAN TlStreamOptionsSupported  :1;
+  BOOLEAN TlStreamFastPathCompatible  :1;
+  BOOLEAN TlDatagramFastPathCompatible  :1;
+  BOOLEAN TlLargeSendOffloadSupported  :1;
+  BOOLEAN TlGiantSendOffloadSupported  :1;
+} NL_INTERFACE_OFFLOAD_ROD, *PNL_INTERFACE_OFFLOAD_ROD;
+
+typedef struct _MIB_IPINTERFACE_ROW {
+  ADDRESS_FAMILY                 Family;
+  NET_LUID                       InterfaceLuid;
+  NET_IFINDEX                    InterfaceIndex;
+  ULONG                          MaxReassemblySize;
+  ULONG64                        InterfaceIdentifier;
+  ULONG                          MinRouterAdvertisementInterval;
+  ULONG                          MaxRouterAdvertisementInterval;
+  BOOLEAN                        AdvertisingEnabled;
+  BOOLEAN                        ForwardingEnabled;
+  BOOLEAN                        WeakHostSend;
+  BOOLEAN                        WeakHostReceive;
+  BOOLEAN                        UseAutomaticMetric;
+  BOOLEAN                        UseNeighborUnreachabilityDetection;
+  BOOLEAN                        ManagedAddressConfigurationSupported;
+  BOOLEAN                        OtherStatefulConfigurationSupported;
+  BOOLEAN                        AdvertiseDefaultRoute;
+  NL_ROUTER_DISCOVERY_BEHAVIOR   RouterDiscoveryBehavior;
+  ULONG                          DadTransmits;
+  ULONG                          BaseReachableTime;
+  ULONG                          RetransmitTime;
+  ULONG                          PathMtuDiscoveryTimeout;
+  NL_LINK_LOCAL_ADDRESS_BEHAVIOR LinkLocalAddressBehavior;
+  ULONG                          LinkLocalAddressTimeout;
+  ULONG                          ZoneIndices[ScopeLevelCount];
+  ULONG                          SitePrefixLength;
+  ULONG                          Metric;
+  ULONG                          NlMtu;
+  BOOLEAN                        Connected;
+  BOOLEAN                        SupportsWakeUpPatterns;
+  BOOLEAN                        SupportsNeighborDiscovery;
+  BOOLEAN                        SupportsRouterDiscovery;
+  ULONG                          ReachableTime;
+  NL_INTERFACE_OFFLOAD_ROD       TransmitOffload;
+  NL_INTERFACE_OFFLOAD_ROD       ReceiveOffload;
+  BOOLEAN                        DisableDefaultRoutes;
+} MIB_IPINTERFACE_ROW, *PMIB_IPINTERFACE_ROW;
 
 WINE_DEFAULT_DEBUG_CHANNEL(bcrypt);
 
@@ -235,4 +321,68 @@ DWORD WINAPI IcmpSendEcho2Ex(
 
     return IcmpSendEcho(IcmpHandle, DestinationAddress, RequestData,
             RequestSize, RequestOptions, ReplyBuffer, ReplySize, Timeout);
+}
+
+DWORD get_interface_indices( BOOL skip_loopback, InterfaceIndexTable **table )
+{
+    if (table) *table = NULL;
+    return 0;
+}
+
+/******************************************************************
+ *    GetIfTable2Ex (IPHLPAPI.@)
+ */
+DWORD WINAPI GetIfTable2Ex( MIB_IF_TABLE_LEVEL level, MIB_IF_TABLE2 **table )
+{
+    DWORD i, nb_interfaces, size = sizeof(MIB_IF_TABLE2);
+    InterfaceIndexTable *index_table;
+    MIB_IF_TABLE2 *ret;
+
+    TRACE( "level %u, table %p\n", level, table );
+
+    if (!table || level > MibIfTableRaw)
+        return ERROR_INVALID_PARAMETER;
+
+    if (level != MibIfTableNormal)
+        FIXME("level %u not fully supported\n", level);
+
+    if ((nb_interfaces = get_interface_indices( FALSE, NULL )) > 1)
+        size += (nb_interfaces - 1) * sizeof(MIB_IF_ROW2);
+
+    if (!(ret = HeapAlloc( GetProcessHeap(), 0, size ))) return ERROR_OUTOFMEMORY;
+
+    get_interface_indices( FALSE, &index_table );
+    if (!index_table)
+    {
+        HeapFree( GetProcessHeap(), 0, ret );
+        return ERROR_OUTOFMEMORY;
+    }
+
+    ret->NumEntries = 0;
+    for (i = 0; i < index_table->numIndexes; i++)
+    {
+        ret->Table[i].InterfaceIndex = index_table->indexes[i];
+        GetIfEntry2( &ret->Table[i] );
+        ret->NumEntries++;
+    }
+
+    HeapFree( GetProcessHeap(), 0, index_table );
+    *table = ret;
+    return NO_ERROR;
+}
+
+/******************************************************************
+ *    GetIfTable2 (IPHLPAPI.@)
+ */
+DWORD WINAPI GetIfTable2( MIB_IF_TABLE2 **table )
+{
+    TRACE( "table %p\n", table );
+    return GetIfTable2Ex(MibIfTableNormal, table);
+}
+
+NETIOAPI_API GetIpInterfaceEntry(
+  _Inout_ PMIB_IPINTERFACE_ROW Row
+)
+{
+	return ERROR_NOT_FOUND;
 }

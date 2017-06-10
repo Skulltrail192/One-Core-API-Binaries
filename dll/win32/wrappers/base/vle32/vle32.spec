@@ -325,5 +325,11 @@
 @ stdcall WriteStringStream(ptr str)
 @ stdcall UpdateProcessTracing(ptr ptr) olebase.UpdateProcessTracing
 
+#win Vista functions
+@ stdcall PropVariantToVariant(ptr ptr)
+@ stdcall StgDeserializePropVariant(ptr long ptr)
+@ stdcall StgSerializePropVariant(ptr ptr ptr)
+@ stdcall VariantToPropVariant(ptr ptr)
+
 #win7 functions
 @ stdcall CoGetApartmentType(ptr ptr)

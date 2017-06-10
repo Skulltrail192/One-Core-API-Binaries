@@ -1,3 +1,5 @@
+add_subdirectory(ext-ms-win-authz-context-l1-1-0)
+add_subdirectory(ext-ms-win-domainjoin-netjoin-l1-1-0)
 add_subdirectory(ext-ms-win-gdi-dc-create-l1-1-1) 
 add_subdirectory(ext-ms-win-gdi-dc-l1-2-0) 
 add_subdirectory(ext-ms-win-gdi-devcaps-l1-1-0) 

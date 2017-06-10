@@ -1274,3 +1274,42 @@ SHCreateItemWithParent(
 
 static const GUID CLSID_Bind_Query = 
 {0x000214e6, 0x0000, 0x0000, {0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
+
+
+HRESULT SHCreateShellItem(
+  _In_opt_ PCIDLIST_ABSOLUTE pidlParent,
+  _In_opt_ IShellFolder      *psfParent,
+  _In_     PCUITEMID_CHILD   pidl,
+  _Out_    IShellItem        **ppsi
+)
+{
+	return S_OK;
+}
+
+HRESULT SHCreateShellItemArray(
+  _In_  PCIDLIST_ABSOLUTE     pidlParent,
+  _In_  IShellFolder          *psf,
+  _In_  UINT                  cidl,
+  _In_  PCUITEMID_CHILD_ARRAY ppidl,
+  _Out_ IShellItemArray       **ppsiItemArray
+)
+{
+	return S_OK;
+}
+
+HRESULT SHCreateShellItemArrayFromShellItem(
+  _In_  IShellItem *psi,
+  _In_  REFIID     riid,
+  _Out_ void       **ppv
+)
+{
+	return S_OK;
+}
+
+HRESULT SHGetIDListFromObject(
+  _In_  IUnknown         *punk,
+  _Out_ PIDLIST_ABSOLUTE *ppidl
+)
+{
+	return S_OK;
+}

@@ -66,7 +66,7 @@
 68  stdcall SHGetSetSettings(ptr long long)
 69  stdcall -noname SHGetNetResource(ptr long ptr long)
 70  stdcall -noname SHCreateDefClassObject(long long long long long)
-71  stdcall Shell_GetImageLists(ptr ptr)
+@  stdcall Shell_GetImageLists(ptr ptr)
 72  stdcall Shell_GetCachedImageIndex(ptr ptr long) 
 73  stdcall SHShellFolderView_Message(long long long)
 74  stdcall SHCreateStdEnumFmtEtc(long ptr ptr)
@@ -462,3 +462,8 @@
 @ stdcall StrStrIW(wstr wstr)
 @ stdcall StrStrW(wstr wstr) 
 @ stdcall WOWShellExecute(ptr str str str str long ptr)
+
+@ stdcall SHCreateShellItem(ptr ptr ptr ptr)
+@ stdcall SHCreateShellItemArray(ptr ptr long ptr ptr)
+@ stdcall SHCreateShellItemArrayFromShellItem(ptr ptr ptr)
+@ stdcall SHGetIDListFromObject(ptr ptr)

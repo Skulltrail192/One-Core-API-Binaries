@@ -32,7 +32,11 @@
 #include "wine/list.h"
 #include "wine/debug.h"
 
+#include "shlobj.h"
+
 #include "explorerframe_main.h"
+
+typedef BOOL (WINAPI * SH_GIL_PROC)(HIMAGELIST *phLarge, HIMAGELIST *phSmall);
 
 WINE_DEFAULT_DEBUG_CHANNEL(nstc);
 
@@ -454,7 +458,9 @@ static LRESULT create_namespacetree(HWND hWnd, CREATESTRUCTW *crs)
 {
     NSTC2Impl *This = crs->lpCreateParams;
     HIMAGELIST ShellSmallIconList;
+	SH_GIL_PROC Shell_GetImageLists;
     DWORD treeview_style, treeview_ex_style;
+	HMODULE hShell32;
 
     TRACE("%p (%p)\n", This, crs);
     SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LPARAM)This);
@@ -488,6 +494,17 @@ static LRESULT create_namespacetree(HWND hWnd, CREATESTRUCTW *crs)
 
     SendMessageW(This->hwnd_tv, TVM_SETEXTENDEDSTYLE, treeview_ex_style, 0xffff);
 
+	hShell32 = LoadLibraryW(L"shell32.dll");
+	
+	Shell_GetImageLists = (SH_GIL_PROC)GetProcAddress(hShell32, (LPCSTR)71);
+
+    if(Shell_GetImageLists == NULL)
+    {
+       FreeLibrary(hShell32);
+       return FALSE;
+    }
+    	
+
     if(Shell_GetImageLists(NULL, &ShellSmallIconList))
     {
         SendMessageW(This->hwnd_tv, TVM_SETIMAGELIST,
@@ -497,6 +514,8 @@ static LRESULT create_namespacetree(HWND hWnd, CREATESTRUCTW *crs)
     {
         ERR("Failed to get the System Image List.\n");
     }
+	
+	FreeLibrary(hShell32);
 
     INameSpaceTreeControl2_AddRef(&This->INameSpaceTreeControl2_iface);
 

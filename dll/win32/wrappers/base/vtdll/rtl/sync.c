@@ -65,18 +65,36 @@
 
 #define RtlpSetKeyedEventHandle(xxHandle) ((HANDLE)(((ULONG_PTR)xxHandle)|1))
 
+/* GLOBALS *******************************************************************/
+
+static HANDLE Key_Event = NULL;
+
 int ConditionVariableSpinCount = 400;
 
 int localConditionCount = 10;
 
 int countTimes;
 
-void InitKeyedEvent(){
-	if(!Key_Event)
-	{
-		NtCreateKeyedEvent(&Key_Event, -1, NULL, 0);
-		DbgPrint("Key_Event initialized\n");
-	}
+// void InitKeyedEvent(){
+	// if(!Key_Event)
+	// {
+		// NtCreateKeyedEvent(&Key_Event, -1, NULL, 0);
+		// DbgPrint("Key_Event initialized\n");
+	// }
+// }
+VOID
+RtlpInitializeKeyedEvent(VOID)
+{
+    ASSERT(Key_Event == NULL);
+    NtCreateKeyedEvent(&Key_Event, EVENT_ALL_ACCESS, NULL, 0);
+}
+
+VOID
+RtlpCloseKeyedEvent(VOID)
+{
+    ASSERT(Key_Event != NULL);
+    NtClose(Key_Event);
+    Key_Event = NULL;
 }
 
 static inline void srwlock_check_invalid( unsigned int val )
@@ -130,7 +148,7 @@ static inline void srwlock_leave_exclusive( RTL_SRWLOCK *lock, unsigned int val 
     /* Used when a thread leaves an exclusive section. If there are other
      * exclusive access threads they are processed first, followed by
      * the shared waiters. */
-	 InitKeyedEvent();
+	 //InitKeyedEvent();
     if (val & SRWLOCK_MASK_EXCLUSIVE_QUEUE)
         NtReleaseKeyedEvent( Key_Event, srwlock_key_exclusive(lock), FALSE, NULL );
     else
@@ -143,7 +161,7 @@ static inline void srwlock_leave_exclusive( RTL_SRWLOCK *lock, unsigned int val 
 
 static inline void srwlock_leave_shared( RTL_SRWLOCK *lock, unsigned int val )
 {
-	InitKeyedEvent();
+	//InitKeyedEvent();
     /* Wake up one exclusive thread as soon as the last shared access thread
      * has left. */
     if ((val & SRWLOCK_MASK_EXCLUSIVE_QUEUE) && !(val & SRWLOCK_MASK_SHARED_QUEUE))
@@ -182,7 +200,7 @@ RtlRunOnceBeginInitialize(
         return STATUS_SUCCESS;
     }
 	
-	InitKeyedEvent();
+	//InitKeyedEvent();
 
     for (;;)
     {
@@ -238,7 +256,7 @@ RtlRunOnceComplete(
     }
     else context = (void *)((ULONG_PTR)context | 2);
 
-	InitKeyedEvent();
+	//InitKeyedEvent();
 
     for (;;)
     {
@@ -352,7 +370,7 @@ RtlSleepConditionVariableCS(
 	
     InterlockedExchangeAdd( (int *)&variable->Ptr, 1 );
     RtlLeaveCriticalSection(crit);	
-	InitKeyedEvent();
+	//InitKeyedEvent();
 	status = NtWaitForKeyedEvent(Key_Event, &variable->Ptr, 0, timeout);
     RtlEnterCriticalSection(crit);
     return status;
@@ -370,7 +388,7 @@ RtlWakeAllConditionVariable(
 )
 {
 	NTSTATUS status;
-	InitKeyedEvent();
+	//InitKeyedEvent();
 	
 	while(variable->Ptr){
 		InterlockedDecrement((int *)&variable->Ptr);
@@ -401,7 +419,7 @@ RtlWakeConditionVariable(
 )
 {
 	NTSTATUS status;
-	InitKeyedEvent();
+	//InitKeyedEvent();
 	
 	if(variable->Ptr){ 		
 		InterlockedDecrement((int *)&variable->Ptr); 		
@@ -433,7 +451,7 @@ RtlAcquireSRWLockExclusive(
 	RTL_SRWLOCK *lock 
 )
 {
-	InitKeyedEvent();
+	//InitKeyedEvent();
     if (srwlock_lock_exclusive( (unsigned int *)&lock->Ptr, SRWLOCK_RES_EXCLUSIVE ))
         NtWaitForKeyedEvent( Key_Event, srwlock_key_exclusive(lock), FALSE, NULL );
 }
@@ -461,7 +479,7 @@ void WINAPI RtlAcquireSRWLockShared( RTL_SRWLOCK *lock )
             break;
     }
 	
-	InitKeyedEvent();
+	//InitKeyedEvent();
 
     /* Drop exclusive access again and instead requeue for shared access. */
     if ((val & SRWLOCK_MASK_EXCLUSIVE_QUEUE) && !(val & SRWLOCK_MASK_IN_EXCLUSIVE))
@@ -583,7 +601,7 @@ RtlSleepConditionVariableSRW(
     else
         RtlReleaseSRWLockExclusive( lock );
 
-	InitKeyedEvent();
+	//InitKeyedEvent();
     status = NtWaitForKeyedEvent( Key_Event, &variable->Ptr, FALSE, timeout );
     if (status != STATUS_SUCCESS)
     {

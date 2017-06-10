@@ -41,7 +41,7 @@ list(APPEND IDL_SOURCES
     exdisp.idl
 #    filter.idl
 #    filtntfy.idl
-#    fsciclnt.idl
+#    fsciclnt.idl    
 #    h323priv.idl
     hlink.idl
 #    hnetbcon.idl
@@ -49,7 +49,6 @@ list(APPEND IDL_SOURCES
     htiface.idl
     htiframe.idl
 #    htmlfilter.idl
-    httprequest.idl
 #    iaccess.idl
 #    iaspolcy.idl
 #    iedial.idl
