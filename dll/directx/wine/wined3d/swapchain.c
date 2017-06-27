@@ -66,7 +66,7 @@ static void swapchain_cleanup(struct wined3d_swapchain *swapchain)
     }
 
     wined3d_cs_destroy_object(swapchain->device->cs, wined3d_swapchain_destroy_object, swapchain);
-    swapchain->device->cs->ops->finish(swapchain->device->cs);
+    swapchain->device->cs->ops->finish(swapchain->device->cs, WINED3D_CS_QUEUE_DEFAULT);
 
     /* Restore the screen resolution if we rendered in fullscreen.
      * This will restore the screen resolution to what it was before creating
@@ -116,7 +116,7 @@ ULONG CDECL wined3d_swapchain_decref(struct wined3d_swapchain *swapchain)
     {
         struct wined3d_device *device = swapchain->device;
 
-        device->cs->ops->finish(device->cs);
+        device->cs->ops->finish(device->cs, WINED3D_CS_QUEUE_DEFAULT);
 
         swapchain_cleanup(swapchain);
         swapchain->parent_ops->wined3d_object_destroyed(swapchain->parent);
@@ -148,14 +148,18 @@ void CDECL wined3d_swapchain_set_window(struct wined3d_swapchain *swapchain, HWN
 HRESULT CDECL wined3d_swapchain_present(struct wined3d_swapchain *swapchain,
         const RECT *src_rect, const RECT *dst_rect, HWND dst_window_override, DWORD flags)
 {
+    static DWORD notified_flags = 0;
     RECT s, d;
 
     TRACE("swapchain %p, src_rect %s, dst_rect %s, dst_window_override %p, flags %#x.\n",
             swapchain, wine_dbgstr_rect(src_rect), wine_dbgstr_rect(dst_rect),
             dst_window_override, flags);
 
-    if (flags)
-        FIXME("Ignoring flags %#x.\n", flags);
+    if (flags & ~notified_flags)
+    {
+        FIXME("Ignoring flags %#x.\n", flags & ~notified_flags);
+        notified_flags |= flags;
+    }
 
     if (!swapchain->back_buffers)
     {
@@ -478,7 +482,11 @@ static void swapchain_gl_present(struct wined3d_swapchain *swapchain,
         swapchain_blit(swapchain, context, src_rect, dst_rect);
     }
 
+#if !defined(STAGING_CSMT)
     if (swapchain->num_contexts > 1)
+#else  /* STAGING_CSMT */
+    if (swapchain->num_contexts > 1 && !wined3d_settings.cs_multithreaded)
+#endif /* STAGING_CSMT */
         gl_info->gl_ops.gl.p_glFinish();
 
     /* call wglSwapBuffers through the gl table to avoid confusing the Steam overlay */
@@ -901,7 +909,7 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
         }
 
         wined3d_cs_init_object(device->cs, wined3d_swapchain_cs_init, swapchain);
-        device->cs->ops->finish(device->cs);
+        device->cs->ops->finish(device->cs, WINED3D_CS_QUEUE_DEFAULT);
 
         if (!swapchain->context[0])
         {
@@ -998,7 +1006,7 @@ err:
     }
 
     wined3d_cs_destroy_object(swapchain->device->cs, wined3d_swapchain_destroy_object, swapchain);
-    swapchain->device->cs->ops->finish(device->cs);
+    swapchain->device->cs->ops->finish(device->cs, WINED3D_CS_QUEUE_DEFAULT);
 
     if (swapchain->front_buffer)
     {
@@ -1204,7 +1212,7 @@ HRESULT CDECL wined3d_swapchain_resize_buffers(struct wined3d_swapchain *swapcha
     if (buffer_count && buffer_count != swapchain->desc.backbuffer_count)
         FIXME("Cannot change the back buffer count yet.\n");
 
-    device->cs->ops->finish(device->cs);
+    device->cs->ops->finish(device->cs, WINED3D_CS_QUEUE_DEFAULT);
 
     if (!width || !height)
     {

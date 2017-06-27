@@ -109,6 +109,7 @@ struct dxgi_factory
     struct wined3d *wined3d;
     BOOL extended;
     HWND device_window;
+    HWND assoc_window;
 };
 
 HRESULT dxgi_factory_create(REFIID riid, void **factory, BOOL extended) DECLSPEC_HIDDEN;

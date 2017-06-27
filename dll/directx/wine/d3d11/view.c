@@ -344,6 +344,8 @@ static HRESULT normalize_rtv_desc(D3D11_RENDER_TARGET_VIEW_DESC *desc, ID3D11Res
 
         case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
         {
+            const struct d3d_texture1d *texture;
+
             if (desc->ViewDimension != D3D11_RTV_DIMENSION_TEXTURE1D
                     && desc->ViewDimension != D3D11_RTV_DIMENSION_TEXTURE1DARRAY)
             {
@@ -351,8 +353,15 @@ static HRESULT normalize_rtv_desc(D3D11_RENDER_TARGET_VIEW_DESC *desc, ID3D11Res
                 return E_INVALIDARG;
             }
 
-            FIXME("Unhandled 1D texture resource.\n");
-            return S_OK;
+            if (!(texture = unsafe_impl_from_ID3D11Texture1D((ID3D11Texture1D *)resource)))
+            {
+                ERR("Cannot get implementation from ID3D11Texture1D.\n");
+                return E_FAIL;
+            }
+
+            format = texture->desc.Format;
+            layer_count = texture->desc.ArraySize;
+            break;
         }
 
         case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
@@ -621,6 +630,8 @@ static HRESULT normalize_srv_desc(D3D11_SHADER_RESOURCE_VIEW_DESC *desc, ID3D11R
 
         case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
         {
+            const struct d3d_texture1d *texture;
+
             if (desc->ViewDimension != D3D11_SRV_DIMENSION_TEXTURE1D
                     && desc->ViewDimension != D3D11_SRV_DIMENSION_TEXTURE1DARRAY)
             {
@@ -628,8 +639,16 @@ static HRESULT normalize_srv_desc(D3D11_SHADER_RESOURCE_VIEW_DESC *desc, ID3D11R
                 return E_INVALIDARG;
             }
 
-            FIXME("Unhandled 1D texture resource.\n");
-            return S_OK;
+            if (!(texture = unsafe_impl_from_ID3D11Texture1D((ID3D11Texture1D *)resource)))
+            {
+                ERR("Cannot get implementation from ID3D11Texture1D.\n");
+                return E_FAIL;
+            }
+
+            format = texture->desc.Format;
+            miplevel_count = texture->desc.MipLevels;
+            layer_count = texture->desc.ArraySize;
+            break;
         }
 
         case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
@@ -2340,7 +2359,7 @@ struct d3d_shader_resource_view *unsafe_impl_from_ID3D10ShaderResourceView(ID3D1
     if (!iface)
         return NULL;
     assert(iface->lpVtbl == (ID3D10ShaderResourceViewVtbl *)&d3d10_shader_resource_view_vtbl);
-    return CONTAINING_RECORD(iface, struct d3d_shader_resource_view, ID3D10ShaderResourceView1_iface);
+    return CONTAINING_RECORD((ID3D10ShaderResourceView1 *)iface, struct d3d_shader_resource_view, ID3D10ShaderResourceView1_iface);
 }
 
 /* ID3D11UnorderedAccessView methods */
@@ -2360,7 +2379,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_unordered_access_view_QueryInterface(ID3D
             || IsEqualGUID(riid, &IID_ID3D11DeviceChild)
             || IsEqualGUID(riid, &IID_IUnknown))
     {
-        //ID3D11UnorderedAccessView_AddRef(*object = iface);
+        ID3D11UnorderedAccessView_AddRef((ID3D11ComputeShader *)*object = iface);
         return S_OK;
     }
 

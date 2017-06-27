@@ -297,3 +297,15 @@ CancelSynchronousIo(
   }
   return result;
 }
+
+BOOL 
+WINAPI 
+SetStdHandleEx(
+  _In_ DWORD  nStdHandle,
+  _In_ HANDLE hHandle,
+  _In_ HANDLE oldHandle  
+)
+{
+	oldHandle = GetStdHandle(nStdHandle);
+	return SetStdHandle(nStdHandle, hHandle);
+}

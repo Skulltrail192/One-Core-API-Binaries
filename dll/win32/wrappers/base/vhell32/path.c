@@ -27,7 +27,12 @@ typedef enum tagGPFIDL_FLAGS {
 	GPFIDL_UNCPRINTER = 0x0002, // include UNC printer names too (non file system item) 
 }GPFIDL_FLAGS;
 
-HRESULT WINAPI PathComparePaths(LPWSTR external, LPCWSTR lpString)
+HRESULT 
+WINAPI 
+PathComparePaths(
+	LPWSTR external, 
+	LPCWSTR lpString
+)
 {
   HRESULT resp; // eax@2
   int other; // ebx@5

@@ -22,7 +22,7 @@ add_library(dxgi SHARED
 
 set_module_type(dxgi win32dll)
 target_link_libraries(dxgi dxguid uuid dxgi_uuids d3d10_uuids d3d10_1_uuids wine)
-add_importlibs(dxgi d3dwine user32 msvcrt kernel32 ntdll)
+add_importlibs(dxgi wined3d gdi32 user32 msvcrt kernel32 ntdll)
 add_dependencies(dxgi wineheaders)
 add_pch(dxgi dxgi_private.h SOURCE)
 add_cd_file(TARGET dxgi DESTINATION reactos/system32 FOR all)

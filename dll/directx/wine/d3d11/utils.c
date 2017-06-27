@@ -166,6 +166,47 @@ const char *debug_float4(const float *values)
             values[0], values[1], values[2], values[3]);
 }
 
+void d3d11_primitive_topology_from_wined3d_primitive_type(enum wined3d_primitive_type primitive_type,
+        unsigned int patch_vertex_count, D3D11_PRIMITIVE_TOPOLOGY *topology)
+{
+    if (primitive_type <= WINED3D_PT_TRIANGLESTRIP_ADJ)
+    {
+        *topology = (D3D11_PRIMITIVE_TOPOLOGY)primitive_type;
+        return;
+    }
+
+    if (primitive_type == WINED3D_PT_PATCH)
+    {
+        *topology = D3D11_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST + patch_vertex_count - 1;
+        return;
+    }
+
+    *topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+}
+
+void wined3d_primitive_type_from_d3d11_primitive_topology(D3D11_PRIMITIVE_TOPOLOGY topology,
+        enum wined3d_primitive_type *type, unsigned int *patch_vertex_count)
+{
+    if (topology <= D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ)
+    {
+        *type = (enum wined3d_primitive_type)topology;
+        *patch_vertex_count = 0;
+        return;
+    }
+
+    if (D3D11_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST <= topology
+            && topology <= D3D11_PRIMITIVE_TOPOLOGY_32_CONTROL_POINT_PATCHLIST)
+    {
+        *type = WINED3D_PT_PATCH;
+        *patch_vertex_count = topology - D3D11_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST + 1;
+        return;
+    }
+
+    WARN("Invalid primitive topology %#x.\n", topology);
+    *type = WINED3D_PT_UNDEFINED;
+    *patch_vertex_count = 0;
+}
+
 DXGI_FORMAT dxgi_format_from_wined3dformat(enum wined3d_format_id format)
 {
     switch(format)
@@ -566,6 +607,10 @@ struct wined3d_resource *wined3d_resource_from_d3d11_resource(ID3D11Resource *re
             return wined3d_buffer_get_resource(unsafe_impl_from_ID3D11Buffer(
                     (ID3D11Buffer *)resource)->wined3d_buffer);
 
+        case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
+            return wined3d_texture_get_resource(unsafe_impl_from_ID3D11Texture1D(
+                    (ID3D11Texture1D *)resource)->wined3d_texture);
+
         case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
             return wined3d_texture_get_resource(unsafe_impl_from_ID3D11Texture2D(
                     (ID3D11Texture2D *)resource)->wined3d_texture);
@@ -591,6 +636,10 @@ struct wined3d_resource *wined3d_resource_from_d3d10_resource(ID3D10Resource *re
         case D3D10_RESOURCE_DIMENSION_BUFFER:
             return wined3d_buffer_get_resource(unsafe_impl_from_ID3D10Buffer(
                     (ID3D10Buffer *)resource)->wined3d_buffer);
+
+        case D3D10_RESOURCE_DIMENSION_TEXTURE1D:
+            return wined3d_texture_get_resource(unsafe_impl_from_ID3D10Texture1D(
+                    (ID3D10Texture1D *)resource)->wined3d_texture);
 
         case D3D10_RESOURCE_DIMENSION_TEXTURE2D:
             return wined3d_texture_get_resource(unsafe_impl_from_ID3D10Texture2D(

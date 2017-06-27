@@ -550,7 +550,7 @@
 550 stdcall -noname GetTemplateInfoFromHandle(ptr ptr ptr)
 551 stdcall -noname IShellFolder_CompareIDs(ptr ptr ptr ptr)
 552 stdcall -noname SHEvaluateSystemCommandTemplate(wstr wstr wstr wstr)
-553 stdcall IsInternetESCEnabled(wstr str ptr)
+553 stdcall -noname IsInternetESCEnabled(wstr str ptr)
 554 stdcall -noname SHGetAllAccessSA(ptr ptr)
 555 stdcall AssocQueryStringByKeyA(long long ptr str ptr ptr)
 556 stdcall -noname SHCoExtensionAllowed(ptr ptr)

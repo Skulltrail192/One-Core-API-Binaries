@@ -739,7 +739,11 @@
 @ stdcall wvsprintfA(ptr str ptr)
 @ stdcall wvsprintfW(ptr wstr ptr)
 
-; Functions exported by Win Vista and 7
+#Only for XP
+@ stdcall PrivateSetDbgTag(ptr ptr) userbase.PrivateSetDbgTag
+@ stdcall PrivateSetRipFlags(long) userbase.PrivateSetRipFlags
+
+#Functions exported by Win Vista and 7
 @ stdcall AddClipboardFormatListener(ptr)
 @ stdcall CalculatePopupWindowPosition(ptr ptr long ptr ptr)
 @ stdcall CancelShutdown()
@@ -809,7 +813,7 @@
 @ stdcall OpenThreadDesktop(long long long long)
 @ stdcall PackTouchHitTestingProximityEvaluation(ptr ptr)
 @ stdcall PaintMonitor(ptr ptr ptr) ;not-implemented
-@ stdcall PrivateRegisterICSProc(ptr) ;user32.PrivateRegisterICSProc
+@ stdcall PrivateRegisterICSProc(ptr) userbase.PrivateRegisterICSProc
 @ stdcall PhysicalToLogicalPoint(ptr ptr)
 @ stdcall QueryDisplayConfig(long ptr ptr ptr ptr ptr)
 @ stdcall RegisterErrorReportingDialog(ptr long)

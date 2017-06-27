@@ -46,13 +46,12 @@
 #include "windef.h"
 #include "winbase.h"
 #include "wine/debug.h"
-#include "wine/list.h"
 
 #include "dwrite_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(bidi);
 
-extern const unsigned short bidi_bracket_table[];
+extern const unsigned short bidi_bracket_table[] DECLSPEC_HIDDEN;
 
 #define ASSERT(x) do { if (!(x)) FIXME("assert failed: %s\n", #x); } while(0)
 #define MAX_DEPTH 125
@@ -199,7 +198,7 @@ static void bidi_classify(const WCHAR *string, UINT8 *chartype, UINT32 count)
 
 WCHAR bidi_get_mirrored_char(WCHAR ch)
 {
-    extern const WCHAR wine_mirror_map[];
+    extern const WCHAR wine_mirror_map[] DECLSPEC_HIDDEN;
     return ch + wine_mirror_map[wine_mirror_map[ch >> 8] + (ch & 0xff)];
 }
 
@@ -279,7 +278,7 @@ static void bidi_resolve_explicit(UINT8 baselevel, UINT8 *classes, UINT8 *levels
         /* X2 */
         case RLE:
             least_odd = get_greater_odd_level(stack[stack_top].level);
-            levels[i] = stack[stack_top].level;
+            levels[i] = valid_level(least_odd) ? least_odd : stack[stack_top].level;
             if (valid_level(least_odd))
                 push_stack(least_odd, NI, FALSE);
             else if (overflow_isolate_count == 0)
@@ -289,7 +288,7 @@ static void bidi_resolve_explicit(UINT8 baselevel, UINT8 *classes, UINT8 *levels
         /* X3 */
         case LRE:
             least_even = get_greater_even_level(stack[stack_top].level);
-            levels[i] = stack[stack_top].level;
+            levels[i] = valid_level(least_even) ? least_even : stack[stack_top].level;
             if (valid_level(least_even))
                 push_stack(least_even, NI, FALSE);
             else if (overflow_isolate_count == 0)
@@ -445,8 +444,9 @@ static void bidi_resolve_explicit(UINT8 baselevel, UINT8 *classes, UINT8 *levels
                 pop_stack();
             break;
 
-        /* X8: Nothing */
+        /* X8 */
         default:
+            levels[i] = baselevel;
             break;
         }
     }
@@ -542,6 +542,11 @@ static inline void iso_dump_types(const char* header, IsolatedRun *run)
     Note: On input only these directional classes are expected
           AL, HL, R, L,  ON, BN, NSM, AN, EN, ES, ET, CS,
 ------------------------------------------------------------------------*/
+static BOOL bidi_is_isolate(UINT8 class)
+{
+    return class == LRI || class == RLI || class == FSI || class == PDI;
+}
+
 static void bidi_resolve_weak(IsolatedRun *iso_run)
 {
     int i;
@@ -552,7 +557,7 @@ static void bidi_resolve_weak(IsolatedRun *iso_run)
             int j = get_prev_valid_char_from_run(iso_run, i);
             if (j == -1)
                 *iso_run->item[i].class = iso_run->sos;
-            else if (*iso_run->item[j].class >= LRI)
+            else if (bidi_is_isolate(*iso_run->item[j].class))
                 *iso_run->item[i].class = ON;
             else
                 *iso_run->item[i].class = *iso_run->item[j].class;
@@ -753,16 +758,18 @@ static void bidi_resolve_neutrals(IsolatedRun *run)
 
     /* Translate isolates into NI */
     for (i = 0; i < run->length; i++) {
-        if (*run->item[i].class >= LRI)
-            *run->item[i].class = NI;
-
         switch (*run->item[i].class) {
             case B:
             case S:
-            case WS: *run->item[i].class = NI;
+            case WS:
+            case FSI:
+            case LRI:
+            case RLI:
+            case PDI: *run->item[i].class = NI;
         }
 
-        ASSERT(*run->item[i].class < 5 || *run->item[i].class == BN); /* "Only NI, L, R,  AN, EN and BN are allowed" */
+        /* "Only NI, L, R, AN, EN and BN are allowed" */
+        ASSERT(*run->item[i].class <= EN || *run->item[i].class == BN);
     }
 
     /* N0: Skipping bracketed pairs for now */
@@ -894,8 +901,8 @@ static void bidi_resolve_implicit(const UINT8 *classes, UINT8 *levels, int sos, 
         if (classes[i] == BN)
             continue;
 
-        ASSERT(classes[i] > 0); /* "No Neutrals allowed to survive here." */
-        ASSERT(classes[i] < 5); /* "Out of range." */
+        ASSERT(classes[i] != ON); /* "No Neutrals allowed to survive here." */
+        ASSERT(classes[i] <= EN); /* "Out of range." */
 
         if (odd(levels[i]) && (classes[i] == L || classes[i] == EN || classes[i] == AN))
             levels[i]++;
@@ -937,6 +944,10 @@ static void bidi_resolve_resolved(UINT8 baselevel, const UINT8 *classes, UINT8 *
             while (i > sos && j >= sos && is_rule_L1_reset_class(classes[j]))
                 levels[j--] = baselevel;
             levels[i] = baselevel;
+        }
+        else if (classes[i] == LRE || classes[i] == RLE || classes[i] == LRO || classes[i] == RLO ||
+                 classes[i] == PDF || classes[i] == BN) {
+            levels[i] = i ? levels[i - 1] : baselevel;
         }
         if (i == eos && is_rule_L1_reset_class(classes[i])) {
             int j = i;

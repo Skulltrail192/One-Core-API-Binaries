@@ -8,10 +8,12 @@ include_directories(${REACTOS_SOURCE_DIR}/include/reactos/win32k)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys/csr)
 include_directories(${REACTOS_SOURCE_DIR}/subsystems/win32/win32k)
 include_directories(${REACTOS_SOURCE_DIR}/win32ss/user/winsrv/usersrv)
+include_directories(${REACTOS_SOURCE_DIR}/win32ss/include)
 
 spec2def(vser32.dll vser32.spec)
 
 list(APPEND SOURCE
+	dib.c
 	display.c
 	dwm.c
 	icon.c

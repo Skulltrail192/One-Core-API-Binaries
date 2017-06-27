@@ -6,8 +6,8 @@
 @ stdcall RegCreateKeyTransactedW(long wstr long ptr long long ptr ptr ptr long ptr) advapi32.RegCreateKeyTransactedW
 @ stdcall RegCreateKeyW(long wstr ptr) advapi32.RegCreateKeyW
 @ stdcall RegDeleteKeyA(long str) advapi32.RegDeleteKeyA
-@ stub RegDeleteKeyTransactedA
-@ stub RegDeleteKeyTransactedW
+@ stdcall RegDeleteKeyTransactedA(ptr str long long ptr ptr) advapi32.RegDeleteKeyTransactedA
+@ stdcall RegDeleteKeyTransactedW(ptr wstr long long ptr ptr) advapi32.RegDeleteKeyTransactedW
 @ stdcall RegDeleteKeyValueA(long str str) advapi32.RegDeleteKeyValueA
 @ stdcall RegDeleteKeyValueW(long wstr wstr) advapi32.RegDeleteKeyValueW
 @ stdcall RegDeleteKeyW(long wstr) advapi32.RegDeleteKeyW
@@ -15,8 +15,8 @@
 @ stdcall RegEnumKeyA(long long ptr long) advapi32.RegEnumKeyA
 @ stdcall RegEnumKeyW(long long ptr long) advapi32.RegEnumKeyW
 @ stdcall RegOpenKeyA(long str ptr) advapi32.RegOpenKeyA
-@ stub RegOpenKeyTransactedA
-@ stub RegOpenKeyTransactedW
+@ stdcall RegOpenKeyTransactedA(ptr str long long ptr ptr ptr) advapi32.RegOpenKeyTransactedA
+@ stdcall RegOpenKeyTransactedW(ptr wstr long long ptr ptr ptr) advapi32.RegOpenKeyTransactedW
 @ stdcall RegOpenKeyW(long wstr ptr) advapi32.RegOpenKeyW
 @ stdcall RegOverridePredefKey(long long) advapi32.RegOverridePredefKey
 @ stdcall RegQueryMultipleValuesA(long ptr long ptr ptr) advapi32.RegQueryMultipleValuesA

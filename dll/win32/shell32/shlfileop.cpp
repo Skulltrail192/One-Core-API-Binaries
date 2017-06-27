@@ -794,7 +794,7 @@ static DWORD SHNotifyCopyFileW(LPCWSTR src, LPCWSTR dest, BOOL bFailIfExists)
  *  Win9x exports ANSI
  *  WinNT/2000 exports Unicode
  */
-int WINAPI SHCreatepDirectory(HWND hWnd, LPCWSTR path)
+int WINAPI SHCreateDirectory(HWND hWnd, LPCWSTR path)
 {
      return SHCreateDirectoryExW(hWnd, path, NULL);
 }
@@ -845,6 +845,59 @@ int WINAPI SHCreateDirectoryExA(HWND hWnd, LPCSTR path, LPSECURITY_ATTRIBUTES se
         SHELL32_FreeUnicodeBuf(wPath);
     }
     return retCode;
+}
+
+/*************************************************************************
+ * SHCreateDirectoryExW      [SHELL32.@]
+ *
+ * See SHCreateDirectoryExA.
+ */
+int WINAPI SHCreateDirectoryExW(HWND hWnd, LPCWSTR path, LPSECURITY_ATTRIBUTES sec)
+{
+    int ret = ERROR_BAD_PATHNAME;
+    TRACE("(%p, %s, %p)\n", hWnd, debugstr_w(path), sec);
+
+    if (PathIsRelativeW(path))
+    {
+      SetLastError(ret);
+    }
+    else
+    {
+        ret = SHNotifyCreateDirectoryW(path, sec);
+        /* Refuse to work on certain error codes before trying to create directories recursively */
+        if (ret != ERROR_SUCCESS &&
+          ret != ERROR_FILE_EXISTS &&
+          ret != ERROR_ALREADY_EXISTS &&
+          ret != ERROR_FILENAME_EXCED_RANGE)
+        {
+            WCHAR *pEnd, *pSlash, szTemp[MAX_PATH + 1];  /* extra for PathAddBackslash() */
+
+            lstrcpynW(szTemp, path, MAX_PATH);
+            pEnd = PathAddBackslashW(szTemp);
+            pSlash = szTemp + 3;
+
+            while (*pSlash)
+            {
+                while (*pSlash && *pSlash != '\\') pSlash++;
+                if (*pSlash)
+                {
+                    *pSlash = 0;    /* terminate path at separator */
+
+                    ret = SHNotifyCreateDirectoryW(szTemp, pSlash + 1 == pEnd ? sec : NULL);
+                }
+                *pSlash++ = '\\'; /* put the separator back */
+            }
+        }
+
+        if (ret && hWnd && (ERROR_CANCELLED != ret))
+        {
+            /* We failed and should show a dialog box */
+            FIXME("Show system error message, creating path %s, failed with error %d\n", debugstr_w(path), ret);
+            ret = ERROR_CANCELLED; /* Error has been already presented to user (not really yet!) */
+        }
+    }
+
+    return ret;
 }
 
 /*************************************************************************

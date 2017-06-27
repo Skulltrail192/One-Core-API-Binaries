@@ -7,6 +7,7 @@ add_definitions(-D_WIN32_WINNT=0x600)
 add_definitions(
     -D_SHELL32_
     -D_WINE)
+	
 
 include_directories(
     ${REACTOS_SOURCE_DIR}/lib/recyclebin
@@ -16,63 +17,63 @@ include_directories(
 spec2def(shell32.dll shell32.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
-    authors.cpp
-    # autocomplete.cpp
-    # brsfolder.cpp
-    # changenotify.cpp
-    # classes.cpp
-    # clipboard.cpp
-    # control.cpp
-    # CMenuBand.cpp
-    # CMenuDeskBar.cpp
-    # dataobject.cpp
-    # dde.cpp
-    # debughlp.cpp
-    # desktop.cpp
-    # dialogs.cpp
-    # dragdrophelper.cpp
-    # enumidlist.cpp
-    # extracticon.cpp
-    # folders.cpp
-    # iconcache.cpp
-    # pidl.cpp
-    #shell32_main.cpp
-    # shellitem.cpp
-    # shelllink.cpp
-    # shellole.cpp
-    # shellord.cpp
-    # shellpath.cpp
-    # shellreg.cpp
-    # shellstring.cpp
-    # folders/desktop.cpp
-    # folders/fs.cpp
-    # folders/mycomp.cpp
-    # folders/mydocuments.cpp
-    # folders/printers.cpp
-    # folders/admintools.cpp
-    # folders/netplaces.cpp
-    # folders/fonts.cpp
-    # folders/cpanel.cpp
-    # folders/recyclebin.cpp
-    # droptargets/CexeDropHandler.cpp
-    # shlexec.cpp
-    # shlfileop.cpp
+    #authors.cpp
+    autocomplete.cpp
+    brsfolder.cpp
+    changenotify.cpp
+    classes.cpp
+    clipboard.cpp
+    control.cpp
+    CMenuBand.cpp
+    CMenuDeskBar.cpp
+    dataobject.cpp
+    dde.cpp
+    debughlp.cpp
+    desktop.cpp
+    dialogs.cpp
+    dragdrophelper.cpp
+    enumidlist.cpp
+    extracticon.cpp
+    folders.cpp
+    iconcache.cpp
+    pidl.cpp
+    shell32_main.cpp
+    shellitem.cpp
+    shelllink.cpp
+    shellole.cpp
+    shellord.cpp
+    shellpath.cpp
+    shellreg.cpp
+    shellstring.cpp
+    folders/desktop.cpp
+    folders/fs.cpp
+    folders/mycomp.cpp
+    folders/mydocuments.cpp
+    folders/printers.cpp
+    folders/admintools.cpp
+    folders/netplaces.cpp
+    folders/fonts.cpp
+    folders/cpanel.cpp
+    folders/recyclebin.cpp
+    droptargets/CexeDropHandler.cpp
+    shlexec.cpp
+    shlfileop.cpp
     shlfolder.cpp
-    # shlfsbind.cpp
-    # shlmenu.cpp
-    # shlview.cpp
-    # shpolicy.cpp
-    # stubs.cpp
-    # systray.cpp
-    # fprop.cpp
-    # drive.cpp
-    # defcontextmenu.cpp
-    # openwithmenu.cpp
-    # newmenu.cpp
-    # startmenu.cpp
-    # folder_options.cpp
-    # filedefext.cpp
-    # drvdefext.cpp
+    shlfsbind.cpp
+    shlmenu.cpp
+    shlview.cpp
+    shpolicy.cpp
+    stubs.cpp
+    systray.cpp
+    fprop.cpp
+    drive.cpp
+    defcontextmenu.cpp
+    openwithmenu.cpp
+    newmenu.cpp
+    startmenu.cpp
+    folder_options.cpp
+    filedefext.cpp
+    drvdefext.cpp
     precomp.h)
 
 add_library(shell32 SHARED
@@ -90,7 +91,7 @@ target_link_libraries(shell32
     uuid
     recyclebin)
 
-add_delay_importlibs(shell32 shellbase devmgr winspool winmm ole32 oleaut32 browseui version fmifs)
+add_delay_importlibs(shell32 shdocvw devmgr winspool winmm ole32 oleaut32 browseui version fmifs)
 
 add_importlibs(shell32
     advapi32
@@ -98,16 +99,15 @@ add_importlibs(shell32
     gdi32
     user32
     comctl32
-    comdlg32    
+    comdlg32
+    shdocvw
     shlwapi
     devmgr
-	shellbase
     winspool
     winmm
     msvcrt
     kernel32
     ntdll)
 
-add_dependencies(shell32 shdocvw_v1)	
 add_pch(shell32 precomp.h SOURCE)
 add_cd_file(TARGET shell32 DESTINATION reactos/system32 FOR all)

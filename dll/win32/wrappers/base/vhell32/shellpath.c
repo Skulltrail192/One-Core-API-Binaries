@@ -158,6 +158,45 @@ const GUID CLSID_MyDocuments;
 
 WINE_DEFAULT_DEBUG_CHANNEL(shell);
 
+HRESULT 
+WINAPI 
+SHGetKnownFolderItem(
+	REFKNOWNFOLDERID rfid, 
+	KNOWN_FOLDER_FLAG flags, 
+	HANDLE hToken,
+    REFIID riid, 
+	void **ppv
+);
+
+HRESULT 
+WINAPI 
+SHGetKnownFolderPath(
+	REFKNOWNFOLDERID id, 
+	DWORD flags, 
+	HANDLE token, 
+	PWSTR *path
+);
+
+HRESULT 
+WINAPI 
+SHGetKnownFolderIDList(
+	REFKNOWNFOLDERID rfid, 
+	DWORD flags, 
+	HANDLE token, 
+	PIDLIST_ABSOLUTE *pidl
+);
+
+HRESULT 
+WINAPI
+SHSetFolderPathW(
+  _In_       int     csidl,
+  _In_       HANDLE  hToken,
+  _Reserved_ DWORD   dwFlags,
+  _In_       LPCTSTR pszPath
+);
+
+csidl_from_id( const KNOWNFOLDERID *id );
+
 static const BOOL is_win64 = sizeof(void *) > sizeof(int);
 
 /*
@@ -1948,128 +1987,6 @@ static HRESULT create_extra_folders(void)
     return hr;
 }
 
-static int convertWinVistaFolderToWinXPFolder(KNOWNFOLDERID *id){
-	if(IsEqualGUID( id , &FOLDERID_UserProgramFiles ))
-		return CSIDL_LOCAL_APPDATA;
-	if(IsEqualGUID( id , &FOLDERID_VideosLibrary ))
-		return CSIDL_COMMON_VIDEO;
-	if(IsEqualGUID( id , &FOLDERID_UsersLibraries ))
-		return CSIDL_PROFILE;
-	if(IsEqualGUID( id , &FOLDERID_UserProgramFilesCommon ))
-		return CSIDL_LOCAL_APPDATA;
-	if(IsEqualGUID( id , &FOLDERID_SampleVideos ))
-		return CSIDL_MYVIDEO;
-	if(IsEqualGUID( id , &FOLDERID_PicturesLibrary ))
-		return CSIDL_MYPICTURES;
-	if(IsEqualGUID( id , &FOLDERID_OriginalImages ))
-		return CSIDL_MYPICTURES;
-	if(IsEqualGUID( id , &FOLDERID_MusicLibrary ))
-		return CSIDL_MYMUSIC;
-	if(IsEqualGUID( id , &FOLDERID_DocumentsLibrary ))
-		return CSIDL_PERSONAL;	
-	if(IsEqualGUID( id , &FOLDERID_Downloads ))
-		return CSIDL_PERSONAL;	
-	return 0;
-}
-
-static int csidl_from_id( const KNOWNFOLDERID *id )
-{
-    int i;
-	int special;
-    for (i = 0; i < sizeof(CSIDL_Data) / sizeof(CSIDL_Data[0]); i++)
-	{
-		special = convertWinVistaFolderToWinXPFolder(id);
-		if(special)
-			return special;			
-        if (IsEqualGUID( CSIDL_Data[i].id, id )) 
-			return i;		
-	}
-    return -1;
-}
-
-/*************************************************************************
- * SHGetKnownFolderPath           [SHELL32.@]
- */
-HRESULT 
-WINAPI 
-SHGetKnownFolderPath(
-	REFKNOWNFOLDERID id, 
-	DWORD flags, 
-	HANDLE token, 
-	PWSTR *path)
-{
-     wchar_t folder[MAX_PATH+1] = {0};
-     int index = csidl_from_id( id );
-	 LPCWSTR allusers = L"";
-	 
-    if (index < 0)
-        return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
-
-    if (flags & KF_FLAG_CREATE)
-        index |= CSIDL_FLAG_CREATE;
-
-    if (flags & KF_FLAG_DONT_VERIFY)
-        index |= CSIDL_FLAG_DONT_VERIFY;
-
-    if (flags & KF_FLAG_NO_ALIAS)
-        index |= CSIDL_FLAG_NO_ALIAS;
-
-    if (flags & KF_FLAG_INIT)
-        index |= CSIDL_FLAG_PER_USER_INIT;
-
-    if (flags & ~(KF_FLAG_CREATE|KF_FLAG_DONT_VERIFY|KF_FLAG_NO_ALIAS|KF_FLAG_INIT))
-    {
-        FIXME("flags 0x%08x not supported\n", flags);
-        return E_INVALIDARG;
-    }
-	
-	SHGetFolderPathW(NULL, index, token, 0, folder);
-	if(IsEqualGUID( id , &FOLDERID_Public ))
-	{
-		ExpandEnvironmentStringsW(L"%ALLUSERSPROFILE%", allusers, MAX_PATH);
-		*path = allusers;
-	}else if(IsEqualGUID( id , &FOLDERID_Downloads )){
-		*path = strcatW(folder, L"\\Downloads");		
-	}else{
-		*path = folder;
-	}	
-    return S_OK;
-}
-
-/*************************************************************************
- * SHGetFolderPathEx           [SHELL32.@]
- */
-HRESULT 
-WINAPI 
-SHGetFolderPathEx(
-	REFKNOWNFOLDERID rfid, 
-	DWORD flags, 
-	HANDLE token, 
-	LPWSTR path, 
-	DWORD len
-)
-{
-    HRESULT hr;
-    WCHAR *buffer;
-
-    TRACE("%s, 0x%08x, %p, %p, %u\n", debugstr_guid(rfid), flags, token, path, len);
-
-    if (!path || !len) return E_INVALIDARG;
-
-    hr = SHGetKnownFolderPath( rfid, flags, token, &buffer );
-    if (SUCCEEDED( hr ))
-    {
-        if (strlenW( buffer ) + 1 > len)
-        {
-            CoTaskMemFree( buffer );
-            return HRESULT_FROM_WIN32( ERROR_INSUFFICIENT_BUFFER );
-        }
-        strcpyW( path, buffer );
-        CoTaskMemFree( buffer );
-    }
-    return hr;
-}
-
 /* constant values used by known folder functions */
 static const WCHAR szCategory[] = {'C','a','t','e','g','o','r','y',0};
 static const WCHAR szName[] = {'N','a','m','e',0};
@@ -2389,12 +2306,13 @@ static HRESULT WINAPI knownfolder_GetCategory(
 
 static HRESULT WINAPI knownfolder_GetShellItem(
     IKnownFolder *iface,
-    DWORD dwFlags,
+    DWORD flags,
     REFIID riid,
     void **ppv)
 {
-    FIXME("0x%08x, %s, %p\n", dwFlags, debugstr_guid(riid), ppv);
-    return E_NOTIMPL;
+    struct knownfolder *knownfolder = impl_from_IKnownFolder(iface);
+    TRACE("(%p, 0x%08x, %s, %p)\n", knownfolder, flags, debugstr_guid(riid), ppv);
+    return SHGetKnownFolderItem(&knownfolder->id, flags, NULL, riid, ppv);
 }
 
 static HRESULT get_known_folder_path(
@@ -2560,11 +2478,12 @@ static HRESULT WINAPI knownfolder_SetPath(
 
 static HRESULT WINAPI knownfolder_GetIDList(
     IKnownFolder *iface,
-    DWORD dwFlags,
+    DWORD flags,
     PIDLIST_ABSOLUTE *ppidl)
 {
-    FIXME("0x%08x, %p\n", dwFlags, ppidl);
-    return E_NOTIMPL;
+    struct knownfolder *knownfolder = impl_from_IKnownFolder( iface );
+    TRACE("(%p, 0x%08x, %p)\n", knownfolder, flags, ppidl);
+    return SHGetKnownFolderIDList(&knownfolder->id, flags, NULL, ppidl);
 }
 
 static HRESULT WINAPI knownfolder_GetFolderType(
@@ -2801,13 +2720,77 @@ static HRESULT WINAPI foldermanager_GetFolder(
     return hr;
 }
 
+static HRESULT get_known_folder_wstr(const WCHAR *regpath, const WCHAR *value, WCHAR **out)
+{
+    DWORD size = 0;
+    HRESULT hr;
+
+    size = 0;
+    hr = HRESULT_FROM_WIN32(RegGetValueW(HKEY_LOCAL_MACHINE, regpath, value, RRF_RT_REG_SZ, NULL, NULL, &size));
+    if(FAILED(hr))
+        return hr;
+
+    *out = CoTaskMemAlloc(size);
+    if(!*out)
+        return E_OUTOFMEMORY;
+
+    hr = HRESULT_FROM_WIN32(RegGetValueW(HKEY_LOCAL_MACHINE, regpath, value, RRF_RT_REG_SZ, NULL, *out, &size));
+    if(FAILED(hr)){
+        CoTaskMemFree(*out);
+        *out = NULL;
+    }
+
+    return hr;
+}
+
 static HRESULT WINAPI foldermanager_GetFolderByName(
     IKnownFolderManager *iface,
     LPCWSTR pszCanonicalName,
     IKnownFolder **ppkf)
 {
-    FIXME("%s, %p\n", debugstr_w(pszCanonicalName), ppkf);
-    return E_NOTIMPL;
+    struct foldermanager *fm = impl_from_IKnownFolderManager( iface );
+    struct knownfolder *kf;
+    BOOL found = FALSE;
+    HRESULT hr;
+    UINT i;
+
+    TRACE( "%s, %p\n", debugstr_w(pszCanonicalName), ppkf );
+
+    for (i = 0; i < fm->num_ids; i++)
+    {
+        WCHAR *path, *name;
+        hr = get_known_folder_registry_path( &fm->ids[i], NULL, &path );
+        if (FAILED( hr )) return hr;
+
+        hr = get_known_folder_wstr( path, szName, &name );
+        HeapFree( GetProcessHeap(), 0, path );
+        if (FAILED( hr )) return hr;
+
+        found = !strcmpiW( pszCanonicalName, name );
+        CoTaskMemFree( name );
+        if (found) break;
+    }
+
+    if (found)
+    {
+        hr = knownfolder_create( &kf );
+        if (FAILED( hr )) return hr;
+
+        hr = knownfolder_set_id( kf, &fm->ids[i] );
+        if (FAILED( hr ))
+        {
+            IKnownFolder_Release( &kf->IKnownFolder_iface );
+            return hr;
+        }
+        *ppkf = &kf->IKnownFolder_iface;
+    }
+    else
+    {
+        hr = HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
+        *ppkf = NULL;
+    }
+
+    return hr;
 }
 
 static HRESULT WINAPI foldermanager_RegisterFolder(
@@ -2981,7 +2964,53 @@ HRESULT WINAPI KnownFolderManager_Constructor( IUnknown *punk, REFIID riid, void
     return foldermanager_create( ppv );
 }
 
-HRESULT WINAPI SHGetKnownFolderIDList(REFKNOWNFOLDERID rfid, DWORD flags, HANDLE token, PIDLIST_ABSOLUTE *pidl)
+static int convertWinVistaFolderToWinXPFolder(KNOWNFOLDERID *id){
+	if(IsEqualGUID( id , &FOLDERID_UserProgramFiles ))
+		return CSIDL_LOCAL_APPDATA;
+	if(IsEqualGUID( id , &FOLDERID_VideosLibrary ))
+		return CSIDL_COMMON_VIDEO;
+	if(IsEqualGUID( id , &FOLDERID_UsersLibraries ))
+		return CSIDL_PROFILE;
+	if(IsEqualGUID( id , &FOLDERID_UserProgramFilesCommon ))
+		return CSIDL_LOCAL_APPDATA;
+	if(IsEqualGUID( id , &FOLDERID_SampleVideos ))
+		return CSIDL_MYVIDEO;
+	if(IsEqualGUID( id , &FOLDERID_PicturesLibrary ))
+		return CSIDL_MYPICTURES;
+	if(IsEqualGUID( id , &FOLDERID_OriginalImages ))
+		return CSIDL_MYPICTURES;
+	if(IsEqualGUID( id , &FOLDERID_MusicLibrary ))
+		return CSIDL_MYMUSIC;
+	if(IsEqualGUID( id , &FOLDERID_DocumentsLibrary ))
+		return CSIDL_PERSONAL;	
+	if(IsEqualGUID( id , &FOLDERID_Downloads ))
+		return CSIDL_PERSONAL;	
+	return 0;
+}
+
+static int csidl_from_id( const KNOWNFOLDERID *id )
+{
+    int i;
+	int special;
+    for (i = 0; i < sizeof(CSIDL_Data) / sizeof(CSIDL_Data[0]); i++)
+	{
+		special = convertWinVistaFolderToWinXPFolder(id);
+		if(special)
+			return special;			
+        if (IsEqualGUID( CSIDL_Data[i].id, id )) 
+			return i;		
+	}
+    return -1;
+}
+
+HRESULT 
+WINAPI 
+SHGetKnownFolderIDList(
+	REFKNOWNFOLDERID rfid, 
+	DWORD flags, 
+	HANDLE token, 
+	PIDLIST_ABSOLUTE *pidl
+)
 {
     TRACE("%s, 0x%08x, %p, %p\n", debugstr_guid(rfid), flags, token, pidl);
 
@@ -3029,8 +3058,13 @@ HRESULT WINAPI SHGetKnownFolderIDList(REFKNOWNFOLDERID rfid, DWORD flags, HANDLE
 
 HRESULT 
 WINAPI 
-SHGetKnownFolderItem(REFKNOWNFOLDERID rfid, KNOWN_FOLDER_FLAG flags, HANDLE hToken,
-    REFIID riid, void **ppv)
+SHGetKnownFolderItem(
+	REFKNOWNFOLDERID rfid, 
+	KNOWN_FOLDER_FLAG flags, 
+	HANDLE hToken,
+    REFIID riid, 
+	void **ppv
+)
 {
     PIDLIST_ABSOLUTE pidl;
     HRESULT hr;
@@ -3058,6 +3092,95 @@ SHSetKnownFolderPath(
   _In_  PCWSTR pszPath
 )
 {
-	return S_OK;
-	//return SHSetFolderPathW((int)rfid, hToken, dwFlags, pszPath);
+     int index = csidl_from_id( rfid );
+	 LPCWSTR allusers = L"";
+	 
+    if (index < 0)
+        return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );	
+	return SHSetFolderPathW(index, hToken, dwFlags, pszPath);
+}
+
+/*************************************************************************
+ * SHGetKnownFolderPath           [SHELL32.@]
+ */
+HRESULT 
+WINAPI 
+SHGetKnownFolderPath(
+	REFKNOWNFOLDERID id, 
+	DWORD flags, 
+	HANDLE token, 
+	PWSTR *path
+)
+{
+     wchar_t folder[MAX_PATH+1] = {0};
+     int index = csidl_from_id( id );
+	 LPCWSTR allusers = L"";
+	 
+    if (index < 0)
+        return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
+
+    if (flags & KF_FLAG_CREATE)
+        index |= CSIDL_FLAG_CREATE;
+
+    if (flags & KF_FLAG_DONT_VERIFY)
+        index |= CSIDL_FLAG_DONT_VERIFY;
+
+    if (flags & KF_FLAG_NO_ALIAS)
+        index |= CSIDL_FLAG_NO_ALIAS;
+
+    if (flags & KF_FLAG_INIT)
+        index |= CSIDL_FLAG_PER_USER_INIT;
+
+    if (flags & ~(KF_FLAG_CREATE|KF_FLAG_DONT_VERIFY|KF_FLAG_NO_ALIAS|KF_FLAG_INIT))
+    {
+        FIXME("flags 0x%08x not supported\n", flags);
+        return E_INVALIDARG;
+    }
+	
+	SHGetFolderPathW(NULL, index, token, 0, folder);
+	TRACE("Folder path: %s\n", folder);
+	if(IsEqualGUID( id , &FOLDERID_Public ))
+	{
+		ExpandEnvironmentStringsW(L"%ALLUSERSPROFILE%", allusers, MAX_PATH);
+		*path = allusers;
+	}else if(IsEqualGUID( id , &FOLDERID_Downloads )){
+		*path = PathCombine(*path, folder, L"\\Downloads");		
+	}else{
+		*path = folder;
+	}	
+    return S_OK;
+}
+
+/*************************************************************************
+ * SHGetFolderPathEx           [SHELL32.@]
+ */
+HRESULT 
+WINAPI 
+SHGetFolderPathEx(
+	REFKNOWNFOLDERID rfid, 
+	DWORD flags, 
+	HANDLE token, 
+	LPWSTR path, 
+	DWORD len
+)
+{
+    HRESULT hr;
+    WCHAR *buffer;
+
+    TRACE("%s, 0x%08x, %p, %p, %u\n", debugstr_guid(rfid), flags, token, path, len);
+
+    if (!path || !len) return E_INVALIDARG;
+
+    hr = SHGetKnownFolderPath( rfid, flags, token, &buffer );
+    if (SUCCEEDED( hr ))
+    {
+        if (strlenW( buffer ) + 1 > len)
+        {
+            CoTaskMemFree( buffer );
+            return HRESULT_FROM_WIN32( ERROR_INSUFFICIENT_BUFFER );
+        }
+        strcpyW( path, buffer );
+        CoTaskMemFree( buffer );
+    }
+    return hr;
 }

@@ -20,6 +20,8 @@ Revision History:
 
 #include <main.h>
 
+WINE_DEFAULT_DEBUG_CHANNEL(process); 
+
 UNICODE_STRING NoDefaultCurrentDirectoryInExePath = RTL_CONSTANT_STRING(L"NoDefaultCurrentDirectoryInExePath");
 
 DWORD 
@@ -843,11 +845,14 @@ QueryProcessCycleTime(
 {
 	LARGE_INTEGER ltime;
 	UINT32 cycles; 
-	QueryPerformanceCounter(&ltime);
+	BOOL resp;
+	
+	resp = QueryPerformanceCounter(&ltime);
 
 	cycles = (UINT32) ((ltime.QuadPart >> 8) & 0xFFFFFFF);	
 	
 	*CycleTime = cycles;
+	return resp;
 }
 
 BOOL 
@@ -859,10 +864,36 @@ QueryIdleProcessorCycleTime(
 {
 	LARGE_INTEGER ltime;
 	UINT32 cycles; 
-	QueryPerformanceCounter(&ltime);
+	BOOL resp;	
+	
+	resp = QueryPerformanceCounter(&ltime);
 
 	cycles = (UINT32) ((ltime.QuadPart >> 8) & 0xFFFFFFF);	
 	
 	*CycleTime = cycles;
 	*BufferLength = sizeof(cycles);
+	return resp;
+}
+
+BOOL 
+WINAPI 
+SetProcessAffinityUpdateMode(
+  _In_ HANDLE ProcessHandle,
+  _In_ DWORD  dwFlags
+)
+{
+	//We don't support this feature for now
+	return TRUE;
+}
+
+BOOL 
+WINAPI 
+QueryProcessAffinityUpdateMode(
+  _In_      HANDLE ProcessHandle,
+  _Out_opt_ DWORD  lpdwFlags
+)
+{
+	//We don't support this feature for now, setting disabling feature
+	lpdwFlags = 0;
+	return TRUE;	
 }

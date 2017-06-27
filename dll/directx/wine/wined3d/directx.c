@@ -33,7 +33,6 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d);
 WINE_DECLARE_DEBUG_CHANNEL(d3d_perf);
 WINE_DECLARE_DEBUG_CHANNEL(winediag);
 
-#define WINE_DEFAULT_VIDMEM (64 * 1024 * 1024)
 #define DEFAULT_REFRESH_RATE 0
 
 /* The driver names reflect the lowest GPU supported
@@ -145,6 +144,7 @@ static const struct wined3d_extension_map gl_extension_map[] =
     {"GL_ARB_multisample",                  ARB_MULTISAMPLE               },
     {"GL_ARB_multitexture",                 ARB_MULTITEXTURE              },
     {"GL_ARB_occlusion_query",              ARB_OCCLUSION_QUERY           },
+    {"GL_ARB_pipeline_statistics_query",    ARB_PIPELINE_STATISTICS_QUERY },
     {"GL_ARB_pixel_buffer_object",          ARB_PIXEL_BUFFER_OBJECT       },
     {"GL_ARB_point_parameters",             ARB_POINT_PARAMETERS          },
     {"GL_ARB_point_sprite",                 ARB_POINT_SPRITE              },
@@ -236,6 +236,7 @@ static const struct wined3d_extension_map gl_extension_map[] =
     {"GL_EXT_texture_integer",              EXT_TEXTURE_INTEGER           },
     {"GL_EXT_texture_lod_bias",             EXT_TEXTURE_LOD_BIAS          },
     {"GL_EXT_texture_mirror_clamp",         EXT_TEXTURE_MIRROR_CLAMP      },
+    {"GL_EXT_texture_shared_exponent",      EXT_TEXTURE_SHARED_EXPONENT   },
     {"GL_EXT_texture_snorm",                EXT_TEXTURE_SNORM             },
     {"GL_EXT_texture_sRGB",                 EXT_TEXTURE_SRGB              },
     {"GL_EXT_texture_sRGB_decode",          EXT_TEXTURE_SRGB_DECODE       },
@@ -261,6 +262,7 @@ static const struct wined3d_extension_map gl_extension_map[] =
     {"GL_NV_vertex_program2",               NV_VERTEX_PROGRAM2            },
     {"GL_NV_vertex_program2_option",        NV_VERTEX_PROGRAM2_OPTION     },
     {"GL_NV_vertex_program3",               NV_VERTEX_PROGRAM3            },
+    {"GL_NVX_gpu_memory_info",              NVX_GPU_MEMORY_INFO           },
 
     /* SGI */
     {"GL_SGIS_generate_mipmap",             SGIS_GENERATE_MIPMAP          },
@@ -1334,6 +1336,7 @@ static const struct gpu_description gpu_description_table[] =
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX550,     "NVIDIA GeForce GTX 550 Ti",        DRIVER_NVIDIA_GEFORCE8,  1024},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GT555M,     "NVIDIA GeForce GT 555M",           DRIVER_NVIDIA_GEFORCE8,  1024},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX560TI,   "NVIDIA GeForce GTX 560 Ti",        DRIVER_NVIDIA_GEFORCE8,  1024},
+    {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX560M,    "NVIDIA GeForce GTX 560M",          DRIVER_NVIDIA_GEFORCE8,  3072},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX560,     "NVIDIA GeForce GTX 560",           DRIVER_NVIDIA_GEFORCE8,  1024},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX570,     "NVIDIA GeForce GTX 570",           DRIVER_NVIDIA_GEFORCE8,  1280},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX580,     "NVIDIA GeForce GTX 580",           DRIVER_NVIDIA_GEFORCE8,  1536},
@@ -1571,6 +1574,15 @@ static const struct gpu_description *query_gpu_description(const struct wined3d_
         TRACE("Card reports vendor PCI ID 0x%04x, device PCI ID 0x%04x, 0x%s bytes of video memory.\n",
                 vendor, device, wine_dbgstr_longlong(*vram_bytes));
     }
+    else if (gl_info->supported[NVX_GPU_MEMORY_INFO])
+    {
+        GLint vram_kb;
+        gl_info->gl_ops.gl.p_glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &vram_kb);
+
+        *vram_bytes = (UINT64)vram_kb * 1024;
+        TRACE("Got 0x%s as video memory from NVX_GPU_MEMORY_INFO extension.\n",
+                wine_dbgstr_longlong(*vram_bytes));
+    }
 
     if (wined3d_settings.pci_vendor_id != PCI_VENDOR_NONE)
     {
@@ -1682,11 +1694,13 @@ static void init_driver_info(struct wined3d_driver_info *driver_info,
      * In order to avoid this application bug we limit the amount of video memory
      * to LONG_MAX for older Windows versions.
      */
+#ifdef __i386__
     if (driver_model < DRIVER_MODEL_NT6X && driver_info->vram_bytes > LONG_MAX)
     {
         TRACE("Limiting amount of video memory to %#lx bytes for OS version older than Vista.\n", LONG_MAX);
         driver_info->vram_bytes = LONG_MAX;
     }
+#endif
 
     /* Try to obtain driver version information for the current Windows version. This fails in
      * some cases:
@@ -1760,7 +1774,7 @@ static DWORD wined3d_parse_gl_version(const char *gl_version)
 }
 
 static enum wined3d_gl_vendor wined3d_guess_gl_vendor(const struct wined3d_gl_info *gl_info,
-        const char *gl_vendor_string, const char *gl_renderer)
+        const char *gl_vendor_string, const char *gl_renderer, const char *gl_version)
 {
     /* MacOS has various specialities in the extensions it advertises. Some have to be loaded from
      * the opengl 1.2+ core, while other extensions are advertised, but software emulated. So try to
@@ -1783,6 +1797,7 @@ static enum wined3d_gl_vendor wined3d_guess_gl_vendor(const struct wined3d_gl_in
         return GL_VENDOR_FGLRX;
 
     if (strstr(gl_vendor_string, "Mesa")
+            || strstr(gl_vendor_string, "Brian Paul")
             || strstr(gl_vendor_string, "X.Org")
             || strstr(gl_vendor_string, "Advanced Micro Devices, Inc.")
             || strstr(gl_vendor_string, "DRI R300 Project")
@@ -1791,7 +1806,8 @@ static enum wined3d_gl_vendor wined3d_guess_gl_vendor(const struct wined3d_gl_in
             || strstr(gl_vendor_string, "Intel")
             || strstr(gl_renderer, "Mesa")
             || strstr(gl_renderer, "Gallium")
-            || strstr(gl_renderer, "Intel"))
+            || strstr(gl_renderer, "Intel")
+            || strstr(gl_version, "Mesa"))
         return GL_VENDOR_MESA;
 
     FIXME("Received unrecognized GL_VENDOR %s. Returning GL_VENDOR_UNKNOWN.\n",
@@ -1934,6 +1950,7 @@ cards_nvidia_binary[] =
     {"GTX 580",                     CARD_NVIDIA_GEFORCE_GTX580},    /* Geforce 500 - highend */
     {"GTX 570",                     CARD_NVIDIA_GEFORCE_GTX570},    /* Geforce 500 - midend high */
     {"GTX 560 Ti",                  CARD_NVIDIA_GEFORCE_GTX560TI},  /* Geforce 500 - midend */
+    {"GTX 560M",                    CARD_NVIDIA_GEFORCE_GTX560M},   /* Geforce 500 - midend mobile */
     {"GTX 560",                     CARD_NVIDIA_GEFORCE_GTX560},    /* Geforce 500 - midend */
     {"GT 555M",                     CARD_NVIDIA_GEFORCE_GT555M},    /* Geforce 500 - midend mobile */
     {"GTX 550 Ti",                  CARD_NVIDIA_GEFORCE_GTX550},    /* Geforce 500 - midend */
@@ -3824,6 +3841,7 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter,
         {EXT_PACKED_FLOAT,                 MAKEDWORD_VERSION(3, 0)},
         {EXT_TEXTURE_ARRAY,                MAKEDWORD_VERSION(3, 0)},
         {EXT_TEXTURE_INTEGER,              MAKEDWORD_VERSION(3, 0)},
+        {EXT_TEXTURE_SHARED_EXPONENT,      MAKEDWORD_VERSION(3, 0)},
         /* We don't want to enable EXT_GPU_SHADER4: even though similar
          * functionality is available in core GL 3.0 / GLSL 1.30, it's different
          * enough that reusing the same flag for the new features hurts more
@@ -4011,8 +4029,6 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter,
         gl_info->supported[WINED3D_GL_VERSION_2_0] = TRUE;
     if (gl_version >= MAKEDWORD_VERSION(3, 2))
         gl_info->supported[WINED3D_GL_VERSION_3_2] = TRUE;
-    if (gl_version >= MAKEDWORD_VERSION(4, 3))
-        gl_info->supported[WINED3D_GL_VERSION_4_3] = TRUE;
 
     /* All the points are actually point sprites in core contexts, the APIs from
      * ARB_point_sprite are not supported anymore. */
@@ -4139,6 +4155,22 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter,
         TRACE("Timestamp query counter has %d bits.\n", counter_bits);
         if (!counter_bits)
             gl_info->supported[ARB_TIMER_QUERY] = FALSE;
+    }
+    if (gl_version >= MAKEDWORD_VERSION(3, 0))
+    {
+        GLint counter_bits;
+
+        gl_info->supported[WINED3D_GL_PRIMITIVE_QUERY] = TRUE;
+
+        GL_EXTCALL(glGetQueryiv(GL_PRIMITIVES_GENERATED, GL_QUERY_COUNTER_BITS, &counter_bits));
+        TRACE("Primitives query counter has %d bits.\n", counter_bits);
+        if (!counter_bits)
+            gl_info->supported[WINED3D_GL_PRIMITIVE_QUERY] = FALSE;
+
+        GL_EXTCALL(glGetQueryiv(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, GL_QUERY_COUNTER_BITS, &counter_bits));
+        TRACE("Transform feedback primitives query counter has %d bits.\n", counter_bits);
+        if (!counter_bits)
+            gl_info->supported[WINED3D_GL_PRIMITIVE_QUERY] = FALSE;
     }
     if (gl_info->supported[ARB_VIEWPORT_ARRAY])
     {
@@ -4334,13 +4366,11 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter,
         checkGLcall("creating VAO");
     }
 
-    gl_vendor = wined3d_guess_gl_vendor(gl_info, gl_vendor_str, gl_renderer_str);
+    gl_vendor = wined3d_guess_gl_vendor(gl_info, gl_vendor_str, gl_renderer_str, gl_version_str);
     TRACE("Guessed GL vendor %#x.\n", gl_vendor);
 
     if (!(gpu_description = query_gpu_description(gl_info, &vram_bytes)))
     {
-        static const struct gpu_description default_gpu_description =
-                {HW_VENDOR_NVIDIA, CARD_NVIDIA_RIVA_128, "Direct3D HAL", DRIVER_UNKNOWN, WINE_DEFAULT_VIDMEM};
         enum wined3d_pci_vendor vendor;
         enum wined3d_pci_device device;
 
@@ -4354,7 +4384,7 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter,
         if (!(gpu_description = get_gpu_description(vendor, device)))
         {
             ERR("Card %04x:%04x not found in driver DB.\n", vendor, device);
-            gpu_description = &default_gpu_description;
+            return FALSE;
         }
     }
     fixup_extensions(gl_info, caps_gl_ctx, gl_renderer_str, gl_vendor,
@@ -5127,6 +5157,8 @@ static BOOL CheckRenderTargetCapability(const struct wined3d_adapter *adapter,
     /* Filter out non-RT formats */
     if (!(check_format->flags[gl_type] & WINED3DFMT_FLAG_RENDERTARGET))
         return FALSE;
+    if (wined3d_settings.offscreen_rendering_mode == ORM_FBO)
+        return TRUE;
     if (wined3d_settings.offscreen_rendering_mode == ORM_BACKBUFFER)
     {
         const struct wined3d_pixel_format *cfgs = adapter->cfgs;
@@ -5155,12 +5187,6 @@ static BOOL CheckRenderTargetCapability(const struct wined3d_adapter *adapter,
                 return TRUE;
             }
         }
-    }
-    else if(wined3d_settings.offscreen_rendering_mode == ORM_FBO)
-    {
-        /* For now return TRUE for FBOs until we have some proper checks.
-         * Note that this function will only be called when the format is around for texturing. */
-        return TRUE;
     }
     return FALSE;
 }
@@ -5227,9 +5253,9 @@ HRESULT CDECL wined3d_check_device_format(const struct wined3d *wined3d, UINT ad
     const struct wined3d_format *adapter_format = wined3d_get_format(gl_info, adapter_format_id,
             WINED3DUSAGE_RENDERTARGET);
     const struct wined3d_format *format = wined3d_get_format(gl_info, check_format_id, usage);
+    enum wined3d_gl_resource_type gl_type, gl_type_end;
     DWORD format_flags = 0;
     DWORD allowed_usage;
-    enum wined3d_gl_resource_type gl_type;
 
     TRACE("wined3d %p, adapter_idx %u, device_type %s, adapter_format %s, usage %s, %s, "
             "resource_type %s, check_format %s.\n",
@@ -5242,6 +5268,26 @@ HRESULT CDECL wined3d_check_device_format(const struct wined3d *wined3d, UINT ad
 
     switch (resource_type)
     {
+        case WINED3D_RTYPE_NONE:
+            allowed_usage = WINED3DUSAGE_DEPTHSTENCIL
+                    | WINED3DUSAGE_RENDERTARGET;
+            gl_type = WINED3D_GL_RES_TYPE_TEX_1D;
+            gl_type_end = WINED3D_GL_RES_TYPE_TEX_3D;
+            break;
+
+        case WINED3D_RTYPE_TEXTURE_1D:
+            allowed_usage = WINED3DUSAGE_DYNAMIC
+                    | WINED3DUSAGE_SOFTWAREPROCESSING
+                    | WINED3DUSAGE_TEXTURE
+                    | WINED3DUSAGE_QUERY_FILTER
+                    | WINED3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING
+                    | WINED3DUSAGE_QUERY_SRGBREAD
+                    | WINED3DUSAGE_QUERY_SRGBWRITE
+                    | WINED3DUSAGE_QUERY_VERTEXTEXTURE
+                    | WINED3DUSAGE_QUERY_WRAPANDMIP;
+            gl_type = gl_type_end = WINED3D_GL_RES_TYPE_TEX_1D;
+            break;
+
         case WINED3D_RTYPE_TEXTURE_2D:
             allowed_usage = WINED3DUSAGE_DEPTHSTENCIL
                     | WINED3DUSAGE_RENDERTARGET
@@ -5256,7 +5302,7 @@ HRESULT CDECL wined3d_check_device_format(const struct wined3d *wined3d, UINT ad
                     return WINED3DERR_NOTAVAILABLE;
                 }
 
-                gl_type = WINED3D_GL_RES_TYPE_RB;
+                gl_type = gl_type_end = WINED3D_GL_RES_TYPE_RB;
                 break;
             }
             allowed_usage |= WINED3DUSAGE_AUTOGENMIPMAP
@@ -5270,11 +5316,11 @@ HRESULT CDECL wined3d_check_device_format(const struct wined3d *wined3d, UINT ad
                     | WINED3DUSAGE_QUERY_SRGBWRITE
                     | WINED3DUSAGE_QUERY_VERTEXTEXTURE
                     | WINED3DUSAGE_QUERY_WRAPANDMIP;
-            gl_type = WINED3D_GL_RES_TYPE_TEX_2D;
+            gl_type = gl_type_end = WINED3D_GL_RES_TYPE_TEX_2D;
             if (usage & WINED3DUSAGE_LEGACY_CUBEMAP)
             {
                 allowed_usage &= ~(WINED3DUSAGE_DEPTHSTENCIL | WINED3DUSAGE_QUERY_LEGACYBUMPMAP);
-                gl_type = WINED3D_GL_RES_TYPE_TEX_CUBE;
+                gl_type = gl_type_end = WINED3D_GL_RES_TYPE_TEX_CUBE;
             }
             else if ((usage & WINED3DUSAGE_DEPTHSTENCIL)
                     && (format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & WINED3DFMT_FLAG_SHADOW)
@@ -5295,7 +5341,13 @@ HRESULT CDECL wined3d_check_device_format(const struct wined3d *wined3d, UINT ad
                     | WINED3DUSAGE_QUERY_SRGBWRITE
                     | WINED3DUSAGE_QUERY_VERTEXTEXTURE
                     | WINED3DUSAGE_QUERY_WRAPANDMIP;
-            gl_type = WINED3D_GL_RES_TYPE_TEX_3D;
+            gl_type = gl_type_end = WINED3D_GL_RES_TYPE_TEX_3D;
+            break;
+
+        case WINED3D_RTYPE_BUFFER:
+            allowed_usage = WINED3DUSAGE_DYNAMIC
+                    | WINED3DUSAGE_QUERY_VERTEXTEXTURE;
+            gl_type = gl_type_end = WINED3D_GL_RES_TYPE_BUFFER;
             break;
 
         default:
@@ -5325,32 +5377,9 @@ HRESULT CDECL wined3d_check_device_format(const struct wined3d *wined3d, UINT ad
     if (usage & WINED3DUSAGE_QUERY_LEGACYBUMPMAP)
         format_flags |= WINED3DFMT_FLAG_BUMPMAP;
 
-    if ((format->flags[gl_type] & format_flags) != format_flags)
-    {
-        TRACE("Requested format flags %#x, but format %s only has %#x.\n",
-                format_flags, debug_d3dformat(check_format_id), format->flags[gl_type]);
-        return WINED3DERR_NOTAVAILABLE;
-    }
-
     if ((format_flags & WINED3DFMT_FLAG_TEXTURE) && (wined3d->flags & WINED3D_NO3D))
     {
         TRACE("Requested texturing support, but wined3d was created with WINED3D_NO3D.\n");
-        return WINED3DERR_NOTAVAILABLE;
-    }
-
-    if ((usage & WINED3DUSAGE_DEPTHSTENCIL)
-            && !CheckDepthStencilCapability(adapter, adapter_format, format, gl_type))
-    {
-        TRACE("Requested WINED3DUSAGE_DEPTHSTENCIL, but format %s is not supported for depth / stencil buffers.\n",
-                debug_d3dformat(check_format_id));
-        return WINED3DERR_NOTAVAILABLE;
-    }
-
-    if ((usage & WINED3DUSAGE_RENDERTARGET)
-            && !CheckRenderTargetCapability(adapter, adapter_format, format, gl_type))
-    {
-        TRACE("Requested WINED3DUSAGE_RENDERTARGET, but format %s is not supported for render targets.\n",
-                debug_d3dformat(check_format_id));
         return WINED3DERR_NOTAVAILABLE;
     }
 
@@ -5358,6 +5387,36 @@ HRESULT CDECL wined3d_check_device_format(const struct wined3d *wined3d, UINT ad
     {
         TRACE("No WINED3DUSAGE_AUTOGENMIPMAP support, returning WINED3DOK_NOAUTOGEN.\n");
         return WINED3DOK_NOAUTOGEN;
+    }
+
+    for (; gl_type <= gl_type_end; ++gl_type)
+    {
+        if ((format->flags[gl_type] & format_flags) != format_flags)
+        {
+            TRACE("Requested format flags %#x, but format %s only has %#x.\n",
+                    format_flags, debug_d3dformat(check_format_id), format->flags[gl_type]);
+            return WINED3DERR_NOTAVAILABLE;
+        }
+
+        if ((usage & WINED3DUSAGE_RENDERTARGET)
+                && !CheckRenderTargetCapability(adapter, adapter_format, format, gl_type))
+        {
+            TRACE("Requested WINED3DUSAGE_RENDERTARGET, but format %s is not supported for render targets.\n",
+                    debug_d3dformat(check_format_id));
+            return WINED3DERR_NOTAVAILABLE;
+        }
+
+        /* 3D depth / stencil textures are never supported. */
+        if (usage == WINED3DUSAGE_DEPTHSTENCIL && gl_type == WINED3D_GL_RES_TYPE_TEX_3D)
+            continue;
+
+        if ((usage & WINED3DUSAGE_DEPTHSTENCIL)
+                && !CheckDepthStencilCapability(adapter, adapter_format, format, gl_type))
+        {
+            TRACE("Requested WINED3DUSAGE_DEPTHSTENCIL, but format %s is not supported for depth / stencil buffers.\n",
+                    debug_d3dformat(check_format_id));
+            return WINED3DERR_NOTAVAILABLE;
+        }
     }
 
     return WINED3D_OK;
@@ -6546,6 +6605,10 @@ static BOOL wined3d_adapter_init(struct wined3d_adapter *adapter, UINT ordinal, 
         wined3d_caps_gl_ctx_destroy(&caps_gl_ctx);
         return FALSE;
     }
+
+    if (wined3d_settings.offscreen_rendering_mode == ORM_BACKBUFFER)
+        ERR_(winediag)("You are using the backbuffer for offscreen rendering. "
+                "This is unsupported, and will be removed in a future version.\n");
 
     wined3d_adapter_init_fb_cfgs(adapter, caps_gl_ctx.dc);
     /* We haven't found any suitable formats. This should only happen in

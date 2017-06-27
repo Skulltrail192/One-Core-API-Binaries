@@ -6,7 +6,7 @@ include_directories(${REACTOS_SOURCE_DIR}/include)
 include_directories(${REACTOS_SOURCE_DIR}/include/lib/atl)
 include_directories(${REACTOS_SOURCE_DIR}/include/psdk)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
-include_directories(${REACTOS_SOURCE_DIR}/dll/win32/propsys)
+include_directories(${REACTOS_SOURCE_DIR}/dll/win32/wrappers/wrappers_dependencies/propsys)
 include_directories(${REACTOS_SOURCE_DIR}/dll/win32/wrappers/wrappers_dependencies/shellbase)
 spec2def(vhell32.dll vhell32.spec)
 
@@ -26,6 +26,7 @@ list(APPEND SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/vhell32_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/vhell32.def)
 
+	
 add_library(vhell32 SHARED ${SOURCE})
 
 set_module_type(vhell32 win32dll)

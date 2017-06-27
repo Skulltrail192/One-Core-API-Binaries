@@ -21,7 +21,7 @@ add_subdirectory(vpowrprof)
 add_subdirectory(vrypt32)
 add_subdirectory(vs2_32)
 add_subdirectory(vser32)
-add_subdirectory(vtdll)
+add_subdirectory(ntext)
 add_subdirectory(vxtheme)
 add_subdirectory(windowscodecsext)
 

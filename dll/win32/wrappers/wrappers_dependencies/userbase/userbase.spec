@@ -739,3 +739,7 @@
 @ varargs wsprintfW(wstr wstr)
 @ stdcall wvsprintfA(ptr str ptr)
 @ stdcall wvsprintfW(ptr wstr ptr)
+
+@ stub PrivateSetDbgTag
+@ stub PrivateSetRipFlags
+@ stub PrivateRegisterICSProc

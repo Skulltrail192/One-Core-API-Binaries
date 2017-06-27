@@ -72,7 +72,11 @@ static CRITICAL_SECTION wined3d_wndproc_cs = {&wined3d_wndproc_cs_debug, -1, 0, 
  * where appropriate. */
 struct wined3d_settings wined3d_settings =
 {
+#if !defined(STAGING_CSMT)
     FALSE,          /* No multithreaded CS by default. */
+#else  /* STAGING_CSMT */
+    TRUE,           /* Multithreaded CS by default. */
+#endif /* STAGING_CSMT */
     MAKEDWORD_VERSION(1, 0), /* Default to legacy OpenGL */
     TRUE,           /* Use of GLSL enabled by default */
     ORM_FBO,        /* Use FBOs to do offscreen rendering */
@@ -231,19 +235,9 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
                 wined3d_settings.glslRequested = FALSE;
             }
         }
-        if ( !get_config_key( hkey, appkey, "OffscreenRenderingMode", buffer, size) )
-        {
-            if (!strcmp(buffer,"backbuffer"))
-            {
-                ERR_(winediag)("Using the backbuffer for offscreen rendering.\n");
-                wined3d_settings.offscreen_rendering_mode = ORM_BACKBUFFER;
-            }
-            else if (!strcmp(buffer,"fbo"))
-            {
-                TRACE("Using FBOs for offscreen rendering\n");
-                wined3d_settings.offscreen_rendering_mode = ORM_FBO;
-            }
-        }
+        if (!get_config_key(hkey, appkey, "OffscreenRenderingMode", buffer, size)
+                && !strcmp(buffer,"backbuffer"))
+            wined3d_settings.offscreen_rendering_mode = ORM_BACKBUFFER;
         if ( !get_config_key_dword( hkey, appkey, "VideoPciDeviceID", &tmpvalue) )
         {
             int pci_device_id = tmpvalue;
@@ -301,7 +295,7 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
         if (!get_config_key(hkey, appkey, "StrictDrawOrdering", buffer, size)
                 && !strcmp(buffer,"enabled"))
         {
-            ERR_(winediag)("\"StrictDrawOrdering\" is deprecated, please use \"csmt\" instead.");
+            ERR_(winediag)("\"StrictDrawOrdering\" is deprecated, please use \"csmt\" instead.\n");
             TRACE("Enforcing strict draw ordering.\n");
             wined3d_settings.strict_draw_ordering = TRUE;
         }
@@ -334,6 +328,8 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
     if (appkey) RegCloseKey( appkey );
     if (hkey) RegCloseKey( hkey );
 
+    wined3d_dxtn_init();
+
     return TRUE;
 }
 
@@ -365,6 +361,9 @@ static BOOL wined3d_dll_destroy(HINSTANCE hInstDLL)
 
     DeleteCriticalSection(&wined3d_wndproc_cs);
     DeleteCriticalSection(&wined3d_cs);
+
+    wined3d_dxtn_free();
+
     return TRUE;
 }
 
@@ -517,6 +516,11 @@ void wined3d_unregister_window(HWND window)
     if (entry != last) *entry = *last;
 
     wined3d_wndproc_mutex_unlock();
+}
+
+void CDECL wined3d_strictdrawing_set(int value)
+{
+    wined3d_settings.strict_draw_ordering = value;
 }
 
 /* At process attach */

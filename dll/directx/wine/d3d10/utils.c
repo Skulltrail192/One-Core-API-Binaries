@@ -21,9 +21,6 @@
 #include "wine/port.h"
 
 #include "d3d10_private.h"
-#include "d3d10misc.h"
-
-#define D3D10_DRIVER_TYPE_WARP 5
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d10);
 
@@ -135,21 +132,6 @@ const char *debug_d3d10_device_state_types(D3D10_DEVICE_STATE_TYPES t)
 
 #undef WINE_D3D10_TO_STR
 
-void *d3d10_rb_alloc(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), 0, size);
-}
-
-void *d3d10_rb_realloc(void *ptr, size_t size)
-{
-    return HeapReAlloc(GetProcessHeap(), 0, ptr, size);
-}
-
-void d3d10_rb_free(void *ptr)
-{
-    HeapFree(GetProcessHeap(), 0, ptr);
-}
-
 void skip_dword_unknown(const char *location, const char **ptr, unsigned int count)
 {
     unsigned int i;
@@ -220,10 +202,22 @@ HRESULT parse_dxbc(const char *data, SIZE_T data_size,
         read_dword(&ptr, &chunk_offset);
         TRACE("chunk %u at offset %#x\n", i, chunk_offset);
 
+        if (chunk_offset >= data_size || !require_space(chunk_offset, 2, sizeof(DWORD), data_size))
+        {
+            WARN("Invalid chunk offset %#x (data size %#lx).\n", chunk_offset, data_size);
+            return E_FAIL;
+        }
+
         chunk_ptr = data + chunk_offset;
 
         read_dword(&chunk_ptr, &chunk_tag);
         read_dword(&chunk_ptr, &chunk_size);
+
+        if (!require_space(chunk_ptr - data, 1, chunk_size, data_size))
+        {
+            WARN("Invalid chunk size %#x (data size %#lx, chunk offset %#x).\n", chunk_size, data_size, chunk_offset);
+            return E_FAIL;
+        }
 
         hr = chunk_handler(chunk_ptr, chunk_size, chunk_tag, ctx);
         if (FAILED(hr)) break;

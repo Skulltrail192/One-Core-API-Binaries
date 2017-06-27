@@ -65,77 +65,106 @@ static ULONG STDMETHODCALLTYPE d2d_stroke_style_Release(ID2D1StrokeStyle *iface)
     TRACE("%p decreasing refcount to %u.\n", iface, refcount);
 
     if (!refcount)
+    {
+        ID2D1Factory_Release(style->factory);
+        if (style->desc.dashStyle == D2D1_DASH_STYLE_CUSTOM)
+            HeapFree(GetProcessHeap(), 0, style->dashes);
         HeapFree(GetProcessHeap(), 0, style);
+    }
 
     return refcount;
 }
 
 static void STDMETHODCALLTYPE d2d_stroke_style_GetFactory(ID2D1StrokeStyle *iface, ID2D1Factory **factory)
 {
-    FIXME("iface %p, factory %p stub!\n", iface, factory);
+    struct d2d_stroke_style *style = impl_from_ID2D1StrokeStyle(iface);
 
-    *factory = NULL;
+    TRACE("iface %p, factory %p.\n", iface, factory);
+
+    ID2D1Factory_AddRef(*factory = style->factory);
 }
 
 static D2D1_CAP_STYLE STDMETHODCALLTYPE d2d_stroke_style_GetStartCap(ID2D1StrokeStyle *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    struct d2d_stroke_style *style = impl_from_ID2D1StrokeStyle(iface);
 
-    return D2D1_CAP_STYLE_FLAT;
+    TRACE("iface %p.\n", iface);
+
+    return style->desc.startCap;
 }
 
 static D2D1_CAP_STYLE STDMETHODCALLTYPE d2d_stroke_style_GetEndCap(ID2D1StrokeStyle *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    struct d2d_stroke_style *style = impl_from_ID2D1StrokeStyle(iface);
 
-    return D2D1_CAP_STYLE_FLAT;
+    TRACE("iface %p.\n", iface);
+
+    return style->desc.endCap;
 }
 
 static D2D1_CAP_STYLE STDMETHODCALLTYPE d2d_stroke_style_GetDashCap(ID2D1StrokeStyle *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    struct d2d_stroke_style *style = impl_from_ID2D1StrokeStyle(iface);
 
-    return D2D1_CAP_STYLE_FLAT;
+    TRACE("iface %p.\n", iface);
+
+    return style->desc.dashCap;
 }
 
 static float STDMETHODCALLTYPE d2d_stroke_style_GetMiterLimit(ID2D1StrokeStyle *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    struct d2d_stroke_style *style = impl_from_ID2D1StrokeStyle(iface);
 
-    return 0.0f;
+    TRACE("iface %p.\n", iface);
+
+    return style->desc.miterLimit;
 }
 
 static D2D1_LINE_JOIN STDMETHODCALLTYPE d2d_stroke_style_GetLineJoin(ID2D1StrokeStyle *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    struct d2d_stroke_style *style = impl_from_ID2D1StrokeStyle(iface);
 
-    return D2D1_LINE_JOIN_MITER;
+    TRACE("iface %p.\n", iface);
+
+    return style->desc.lineJoin;
 }
 
 static float STDMETHODCALLTYPE d2d_stroke_style_GetDashOffset(ID2D1StrokeStyle *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    struct d2d_stroke_style *style = impl_from_ID2D1StrokeStyle(iface);
 
-    return 0.0f;
+    TRACE("iface %p.\n", iface);
+
+    return style->desc.dashOffset;
 }
 
 static D2D1_DASH_STYLE STDMETHODCALLTYPE d2d_stroke_style_GetDashStyle(ID2D1StrokeStyle *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    struct d2d_stroke_style *style = impl_from_ID2D1StrokeStyle(iface);
 
-    return D2D1_DASH_STYLE_SOLID;
+    TRACE("iface %p.\n", iface);
+
+    return style->desc.dashStyle;
 }
 
 static UINT32 STDMETHODCALLTYPE d2d_stroke_style_GetDashesCount(ID2D1StrokeStyle *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    struct d2d_stroke_style *style = impl_from_ID2D1StrokeStyle(iface);
 
-    return 0;
+    TRACE("iface %p.\n", iface);
+
+    return style->dash_count;
 }
 
-static void STDMETHODCALLTYPE d2d_stroke_style_GetDashes(ID2D1StrokeStyle *iface, float *dashes, UINT32 count)
+static void STDMETHODCALLTYPE d2d_stroke_style_GetDashes(ID2D1StrokeStyle *iface, float *dashes, UINT32 dash_count)
 {
-    FIXME("iface %p, dashes %p, count %u stub!\n", iface, dashes, count);
+    struct d2d_stroke_style *style = impl_from_ID2D1StrokeStyle(iface);
+
+    TRACE("iface %p, dashes %p, count %u.\n", iface, dashes, dash_count);
+
+    memcpy(dashes, style->dashes, min(style->dash_count, dash_count) * sizeof(*dashes));
+    if (dash_count > style->dash_count)
+        memset(dashes + style->dash_count, 0, (dash_count - style->dash_count) * sizeof(*dashes));
 }
 
 static const struct ID2D1StrokeStyleVtbl d2d_stroke_style_vtbl =
@@ -155,11 +184,50 @@ static const struct ID2D1StrokeStyleVtbl d2d_stroke_style_vtbl =
     d2d_stroke_style_GetDashes,
 };
 
-void d2d_stroke_style_init(struct d2d_stroke_style *style, ID2D1Factory *factory,
+HRESULT d2d_stroke_style_init(struct d2d_stroke_style *style, ID2D1Factory *factory,
         const D2D1_STROKE_STYLE_PROPERTIES *desc, const float *dashes, UINT32 dash_count)
 {
-    FIXME("Ignoring stroke style properties.\n");
+    static const struct
+    {
+        UINT32 dash_count;
+        float dashes[6];
+    }
+    builtin_dash_styles[] =
+    {
+        /* D2D1_DASH_STYLE_SOLID */        { 0 },
+        /* D2D1_DASH_STYLE_DASH */         { 2, {2.0f, 2.0f}},
+        /* D2D1_DASH_STYLE_DOT */          { 2, {0.0f, 2.0f}},
+        /* D2D1_DASH_STYLE_DASH_DOT */     { 4, {2.0f, 2.0f, 0.0f, 2.0f}},
+        /* D2D1_DASH_STYLE_DASH_DOT_DOT */ { 6, {2.0f, 2.0f, 0.0f, 2.0f, 0.0f, 2.0f}},
+    };
+
+    if (desc->dashStyle > D2D1_DASH_STYLE_CUSTOM)
+        return E_INVALIDARG;
 
     style->ID2D1StrokeStyle_iface.lpVtbl = &d2d_stroke_style_vtbl;
     style->refcount = 1;
+
+    if (desc->dashStyle == D2D1_DASH_STYLE_CUSTOM)
+    {
+        if (!dashes || !dash_count)
+            return E_INVALIDARG;
+
+        if (!(style->dashes = HeapAlloc(GetProcessHeap(), 0, dash_count * sizeof(*style->dashes))))
+            return E_OUTOFMEMORY;
+        memcpy(style->dashes, dashes, dash_count * sizeof(*style->dashes));
+        style->dash_count = dash_count;
+    }
+    else
+    {
+        if (dashes)
+            return E_INVALIDARG;
+
+        style->dashes = (float *)builtin_dash_styles[desc->dashStyle].dashes;
+        style->dash_count = builtin_dash_styles[desc->dashStyle].dash_count;
+    }
+
+    ID2D1Factory_AddRef(style->factory = factory);
+    style->desc = *desc;
+
+    return S_OK;
 }

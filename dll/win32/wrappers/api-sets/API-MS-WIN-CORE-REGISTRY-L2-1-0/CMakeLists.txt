@@ -9,6 +9,6 @@ list(APPEND SOURCE
 add_library(API-MS-WIN-CORE-REGISTRY-L2-1-0 SHARED ${SOURCE})
 
 set_module_type(API-MS-WIN-CORE-REGISTRY-L2-1-0 win32dll ENTRYPOINT 0)
-add_importlibs(API-MS-WIN-CORE-REGISTRY-L2-1-0 advapi32)
+add_importlibs(API-MS-WIN-CORE-REGISTRY-L2-1-0 advapi32 kernel32 ntdll)
 add_dependencies(API-MS-WIN-CORE-REGISTRY-L2-1-0 psdk)
 add_cd_file(TARGET API-MS-WIN-CORE-REGISTRY-L2-1-0 DESTINATION reactos/system32 FOR all)

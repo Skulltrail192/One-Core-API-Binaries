@@ -135,7 +135,9 @@ HRESULT WINAPI SHCreateDataObject(
 }
 
 //@unimplemented
-HRESULT WINAPI SHEvaluateSystemCommandTemplate(
+HRESULT 
+WINAPI 
+SHEvaluateSystemCommandTemplate(
   _In_       PCWSTR pszCmdTemplate,
   _Out_      PWSTR *ppszApplication,
   _Out_opt_  PWSTR *ppszCommandLine,
@@ -333,17 +335,11 @@ GetCurrentProcessExplicitAppUserModelID(
 	return E_NOTIMPL;
 }
 
-// HRESULT 
-// WINAPI 
-// Shell_NotifyIconGetRect(
-	// const NOTIFYICONIDENTIFIER *identifier, 
-	// RECT *iconLocation
-// )
 HRESULT 
 WINAPI 
 Shell_NotifyIconGetRect(
-	PVOID *identifier, 
-	PVOID *iconLocation
+	const NOTIFYICONIDENTIFIER *identifier, 
+	RECT *iconLocation
 )
 {
 	return E_NOTIMPL;

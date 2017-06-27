@@ -187,8 +187,7 @@ static const char *shader_get_string(const char *data, size_t data_size, DWORD o
     }
 
     max_len = data_size - offset;
-    //len = strlen(data + offset, max_len);
-	len = strlen(data + offset);
+    len = strnlen(data + offset, max_len);
 
     if (len == max_len)
         return NULL;
@@ -1908,7 +1907,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_compute_shader_QueryInterface(ID3D11Compu
             || IsEqualGUID(riid, &IID_ID3D11DeviceChild)
             || IsEqualGUID(riid, &IID_IUnknown))
     {
-        //ID3D11ComputeShader_AddRef(*object = iface);
+        ID3D11ComputeShader_AddRef((ID3D11ComputeShader *)*object = iface);
         return S_OK;
     }
 
@@ -2108,7 +2107,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_class_linkage_QueryInterface(ID3D11ClassL
             || IsEqualGUID(riid, &IID_ID3D11DeviceChild)
             || IsEqualGUID(riid, &IID_IUnknown))
     {
-        //ID3D11ClassLinkage_AddRef(*object = iface);
+        ID3D11ClassLinkage_AddRef((ID3D11ComputeShader *)*object = iface);
         return S_OK;
     }
 

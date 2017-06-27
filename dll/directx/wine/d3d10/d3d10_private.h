@@ -43,10 +43,6 @@ const char *debug_d3d10_shader_variable_class(D3D10_SHADER_VARIABLE_CLASS c) DEC
 const char *debug_d3d10_shader_variable_type(D3D10_SHADER_VARIABLE_TYPE t) DECLSPEC_HIDDEN;
 const char *debug_d3d10_device_state_types(D3D10_DEVICE_STATE_TYPES t) DECLSPEC_HIDDEN;
 
-void *d3d10_rb_alloc(size_t size) DECLSPEC_HIDDEN;
-void *d3d10_rb_realloc(void *ptr, size_t size) DECLSPEC_HIDDEN;
-void d3d10_rb_free(void *ptr) DECLSPEC_HIDDEN;
-
 enum d3d10_effect_object_type
 {
     D3D10_EOT_RASTERIZER_STATE = 0x0,
@@ -236,7 +232,7 @@ struct d3d10_effect
     DWORD technique_count;
     DWORD index_offset;
     DWORD texture_count;
-    DWORD dephstencilstate_count;
+    DWORD depthstencilstate_count;
     DWORD blendstate_count;
     DWORD rasterizerstate_count;
     DWORD samplerstate_count;
@@ -268,7 +264,7 @@ HRESULT d3d10_effect_parse(struct d3d10_effect *This, const void *data, SIZE_T d
 
 /* D3D10Core */
 HRESULT WINAPI D3D10CoreCreateDevice(IDXGIFactory *factory, IDXGIAdapter *adapter,
-        UINT flags, void *unknown0, ID3D10Device **device);
+        unsigned int flags, D3D_FEATURE_LEVEL feature_level, ID3D10Device **device);
 
 #define MAKE_TAG(ch0, ch1, ch2, ch3) \
     ((DWORD)(ch0) | ((DWORD)(ch1) << 8) | \
@@ -282,6 +278,13 @@ HRESULT WINAPI D3D10CoreCreateDevice(IDXGIFactory *factory, IDXGIAdapter *adapte
 HRESULT parse_dxbc(const char *data, SIZE_T data_size,
         HRESULT (*chunk_handler)(const char *data, DWORD data_size, DWORD tag, void *ctx), void *ctx) DECLSPEC_HIDDEN;
 
+static inline void *d3d10_calloc(SIZE_T count, SIZE_T size)
+{
+    if (count > ~(SIZE_T)0 / size)
+        return NULL;
+    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, count * size);
+}
+
 static inline void read_dword(const char **ptr, DWORD *d)
 {
     memcpy(d, *ptr, sizeof(*d));
@@ -292,6 +295,11 @@ static inline void write_dword(char **ptr, DWORD d)
 {
     memcpy(*ptr, &d, sizeof(d));
     *ptr += sizeof(d);
+}
+
+static inline BOOL require_space(size_t offset, size_t count, size_t size, size_t data_size)
+{
+    return !count || (data_size - offset) / count >= size;
 }
 
 void skip_dword_unknown(const char *location, const char **ptr, unsigned int count) DECLSPEC_HIDDEN;

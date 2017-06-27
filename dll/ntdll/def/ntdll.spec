@@ -184,7 +184,7 @@
 @ stdcall NtCreateTimer(ptr long ptr long)
 @ stdcall NtCreateToken(ptr long ptr long ptr ptr ptr ptr ptr ptr ptr ptr ptr)
 @ stdcall NtCreateWaitablePort(ptr ptr long long long)
-@ stdcall -arch=win32 NtCurrentTeb() _NtCurrentTeb
+;@ stdcall -arch=win32 NtCurrentTeb() _NtCurrentTeb
 @ stdcall NtDebugActiveProcess(ptr ptr)
 @ stdcall NtDebugContinue(ptr ptr long)
 @ stdcall NtDelayExecution(long ptr)
@@ -583,7 +583,7 @@
 @ stdcall RtlDuplicateUnicodeString(long ptr ptr)
 @ stdcall RtlEmptyAtomTable(ptr long)
 @ stdcall RtlEnableEarlyCriticalSectionEventCreation()
-#@ stdcall RtlEncodePointer(ptr)
+;@ stdcall RtlEncodePointer(ptr)
 @ stdcall RtlEncodeSystemPointer(ptr)
 @ stdcall -arch=win32 -ret64 RtlEnlargedIntegerMultiply(long long)
 @ stdcall -arch=win32 RtlEnlargedUnsignedDivide(double long ptr)

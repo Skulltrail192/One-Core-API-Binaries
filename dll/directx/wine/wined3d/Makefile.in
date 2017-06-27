@@ -1,6 +1,6 @@
 MODULE    = wined3d.dll
 IMPORTLIB = wined3d
-IMPORTS   = uuid opengl32 user32 gdi32 advapi32
+IMPORTS   = opengl32 user32 gdi32 advapi32
 
 C_SRCS = \
 	arb_program_shader.c \
@@ -11,6 +11,7 @@ C_SRCS = \
 	device.c \
 	directx.c \
 	drawprim.c \
+	dxtn.c \
 	gl_compat.c \
 	glsl_shader.c \
 	nvidia_texture_shader.c \
@@ -29,7 +30,6 @@ C_SRCS = \
 	utils.c \
 	vertexdeclaration.c \
 	view.c \
-	volume.c \
 	wined3d_main.c
 
 RC_SRCS = version.rc

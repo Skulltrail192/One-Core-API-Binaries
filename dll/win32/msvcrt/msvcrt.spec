@@ -891,3 +891,6 @@
 @ cdecl wctomb(ptr long)
 @ varargs wprintf(wstr)
 @ varargs wscanf(wstr)
+@ cdecl strnlen(str long) MSVCRT_strnlen
+@ stub _initterm_e
+@ stub _invalid_parameter

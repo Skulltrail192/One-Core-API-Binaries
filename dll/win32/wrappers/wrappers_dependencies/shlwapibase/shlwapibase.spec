@@ -550,7 +550,7 @@
 550 stub -noname GetTemplateInfoFromHandle
 551 stub -noname IShellFolder_CompareIDs
 552 stub -noname SHEvaluateSystemCommandTemplate
-553 stdcall IsInternetESCEnabled()
+553 stdcall -noname IsInternetESCEnabled()
 554 stub -noname SHGetAllAccessSA
 555 stdcall AssocQueryStringByKeyA(long long ptr str ptr ptr)
 556 stub -noname SHCoExtensionAllowed

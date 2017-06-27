@@ -187,7 +187,8 @@ static void buffer_destroy_buffer_object(struct wined3d_buffer *buffer, struct w
 
     if (buffer->query)
     {
-        wined3d_event_query_destroy(buffer->query);
+        struct wined3d_query *query = &buffer->query->query;
+        query->query_ops->query_destroy(query);
         buffer->query = NULL;
     }
     buffer->flags &= ~WINED3D_BUFFER_APPLESYNC;
@@ -532,7 +533,7 @@ ULONG CDECL wined3d_buffer_incref(struct wined3d_buffer *buffer)
 
 /* Context activation is done by the caller. */
 static void wined3d_buffer_upload_ranges(struct wined3d_buffer *buffer, struct wined3d_context *context,
-        const void *data, unsigned int data_offset, unsigned int range_count, const struct wined3d_map_range *ranges)
+        const void *data, unsigned int range_count, const struct wined3d_map_range *ranges)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
     const struct wined3d_map_range *range;
@@ -543,7 +544,7 @@ static void wined3d_buffer_upload_ranges(struct wined3d_buffer *buffer, struct w
     {
         range = &ranges[range_count];
         GL_EXTCALL(glBufferSubData(buffer->buffer_type_hint,
-                range->offset, range->size, (BYTE *)data + range->offset - data_offset));
+                range->offset, range->size, (BYTE *)data + range->offset));
     }
     checkGLcall("glBufferSubData");
 }
@@ -599,7 +600,7 @@ static void buffer_conversion_upload(struct wined3d_buffer *buffer, struct wined
         }
     }
 
-    wined3d_buffer_upload_ranges(buffer, context, data, 0, buffer->modified_areas, buffer->maps);
+    wined3d_buffer_upload_ranges(buffer, context, data, buffer->modified_areas, buffer->maps);
 
     HeapFree(GetProcessHeap(), 0, data);
 }
@@ -683,7 +684,7 @@ BOOL wined3d_buffer_load_location(struct wined3d_buffer *buffer,
         case WINED3D_LOCATION_BUFFER:
             if (!buffer->conversion_map)
                 wined3d_buffer_upload_ranges(buffer, context, buffer->resource.heap_memory,
-                        0, buffer->modified_areas, buffer->maps);
+                        buffer->modified_areas, buffer->maps);
             else
                 buffer_conversion_upload(buffer, context);
             break;
@@ -827,7 +828,7 @@ static void buffer_sync_apple(struct wined3d_buffer *This, DWORD flags, const st
         return;
     }
 
-    if(!This->query)
+    if (!This->query)
     {
         TRACE("Creating event query for buffer %p\n", This);
 
@@ -850,7 +851,7 @@ static void buffer_sync_apple(struct wined3d_buffer *This, DWORD flags, const st
     }
     TRACE("Synchronizing buffer %p\n", This);
     ret = wined3d_event_query_finish(This->query, This->resource.device);
-    switch(ret)
+    switch (ret)
     {
         case WINED3D_EVENT_QUERY_NOT_STARTED:
         case WINED3D_EVENT_QUERY_OK:
@@ -867,9 +868,10 @@ static void buffer_sync_apple(struct wined3d_buffer *This, DWORD flags, const st
     }
 
 drop_query:
-    if(This->query)
+    if (This->query)
     {
-        wined3d_event_query_destroy(This->query);
+        struct wined3d_query *query = &This->query->query;
+        query->query_ops->query_destroy(query);
         This->query = NULL;
     }
 
@@ -1261,23 +1263,41 @@ HRESULT wined3d_buffer_copy(struct wined3d_buffer *dst_buffer, unsigned int dst_
     return WINED3D_OK;
 }
 
-void wined3d_buffer_upload_data(struct wined3d_buffer *buffer, struct wined3d_context *context,
+HRESULT wined3d_buffer_upload_data(struct wined3d_buffer *buffer,
         const struct wined3d_box *box, const void *data)
 {
-    struct wined3d_map_range range;
+    UINT offset, size;
+#if defined(STAGING_CSMT)
+    DWORD flags = 0;
+#endif /* STAGING_CSMT */
+    HRESULT hr;
+    BYTE *ptr;
 
     if (box)
     {
-        range.offset = box->left;
-        range.size = box->right - box->left;
+        offset = box->left;
+        size = box->right - box->left;
     }
     else
     {
-        range.offset = 0;
-        range.size = buffer->resource.size;
+        offset = 0;
+        size = buffer->resource.size;
     }
 
-    wined3d_buffer_upload_ranges(buffer, context, data, range.offset, 1, &range);
+#if !defined(STAGING_CSMT)
+    if (FAILED(hr = wined3d_buffer_map(buffer, offset, size, &ptr, 0)))
+#else  /* STAGING_CSMT */
+    if (offset == 0 && size == buffer->resource.size)
+        flags = WINED3D_MAP_DISCARD;
+
+    if (FAILED(hr = wined3d_buffer_map(buffer, offset, size, &ptr, flags)))
+#endif /* STAGING_CSMT */
+        return hr;
+
+    memcpy(ptr, data, size);
+
+    wined3d_buffer_unmap(buffer);
+    return WINED3D_OK;
 }
 
 static ULONG buffer_resource_incref(struct wined3d_resource *resource)
@@ -1325,6 +1345,24 @@ static HRESULT buffer_resource_sub_resource_map(struct wined3d_resource *resourc
     return wined3d_buffer_map(buffer, offset, size, (BYTE **)&map_desc->data, flags);
 }
 
+static HRESULT buffer_resource_sub_resource_map_info(struct wined3d_resource *resource, unsigned int sub_resource_idx,
+        struct wined3d_map_info *info, DWORD flags)
+{
+    struct wined3d_buffer *buffer = buffer_from_resource(resource);
+
+    if (sub_resource_idx)
+    {
+        WARN("Invalid sub_resource_idx %u.\n", sub_resource_idx);
+        return E_INVALIDARG;
+    }
+
+    info->row_pitch   = buffer->desc.byte_width;
+    info->slice_pitch = buffer->desc.byte_width;
+    info->size        = buffer->resource.size;
+
+    return WINED3D_OK;
+}
+
 static HRESULT buffer_resource_sub_resource_unmap(struct wined3d_resource *resource, unsigned int sub_resource_idx)
 {
     if (sub_resource_idx)
@@ -1344,6 +1382,7 @@ static const struct wined3d_resource_ops buffer_resource_ops =
     buffer_resource_preload,
     buffer_unload,
     buffer_resource_sub_resource_map,
+    buffer_resource_sub_resource_map_info,
     buffer_resource_sub_resource_unmap,
 };
 
@@ -1380,8 +1419,14 @@ static HRESULT buffer_init(struct wined3d_buffer *buffer, struct wined3d_device 
 
     if (!size)
     {
-        WARN("Size 0 requested, returning WINED3DERR_INVALIDCALL.\n");
-        return WINED3DERR_INVALIDCALL;
+        WARN("Size 0 requested, returning E_INVALIDARG.\n");
+        return E_INVALIDARG;
+    }
+
+    if (bind_flags & WINED3D_BIND_CONSTANT_BUFFER && size & (WINED3D_CONSTANT_BUFFER_ALIGNMENT - 1))
+    {
+        WARN("Size %#x is not suitably aligned for constant buffers.\n", size);
+        return E_INVALIDARG;
     }
 
     if (data && !data->data)
@@ -1458,6 +1503,7 @@ HRESULT CDECL wined3d_buffer_create(struct wined3d_device *device, const struct 
         struct wined3d_buffer **buffer)
 {
     struct wined3d_buffer *object;
+    enum wined3d_pool pool;
     HRESULT hr;
 
     TRACE("device %p, desc %p, data %p, parent %p, parent_ops %p, buffer %p.\n",
@@ -1468,8 +1514,21 @@ HRESULT CDECL wined3d_buffer_create(struct wined3d_device *device, const struct 
 
     FIXME("Ignoring access flags (pool).\n");
 
+    /* Some applications map the whole buffer even if they
+     * only update a small portion of it. If we pin such a
+     * buffer into system memory things get very slow as
+     * we upload the whole buffer even though just parts of
+     * it changed. Most drivers can handle this case more
+     * efficient using the OpenGL map functions. Applications
+     * affected by this problem are Banished and Witcher 3.
+     */
+    if (desc->byte_width > 0x10000)
+        pool = WINED3D_POOL_DEFAULT;
+    else
+        pool = WINED3D_POOL_MANAGED;
+
     if (FAILED(hr = buffer_init(object, device, desc->byte_width, desc->usage, WINED3DFMT_UNKNOWN,
-            WINED3D_POOL_MANAGED, desc->bind_flags, data, parent, parent_ops)))
+            pool, desc->bind_flags, data, parent, parent_ops)))
     {
         WARN("Failed to initialize buffer, hr %#x.\n", hr);
         HeapFree(GetProcessHeap(), 0, object);

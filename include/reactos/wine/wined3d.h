@@ -72,6 +72,7 @@ enum wined3d_primitive_type
     WINED3D_PT_LINESTRIP_ADJ                = 11,
     WINED3D_PT_TRIANGLELIST_ADJ             = 12,
     WINED3D_PT_TRIANGLESTRIP_ADJ            = 13,
+    WINED3D_PT_PATCH                        = 14,
 };
 
 enum wined3d_device_type
@@ -669,9 +670,11 @@ enum wined3d_texture_filter_type
 
 enum wined3d_resource_type
 {
+    WINED3D_RTYPE_NONE                      = 0,
     WINED3D_RTYPE_BUFFER                    = 1,
-    WINED3D_RTYPE_TEXTURE_2D                = 2,
-    WINED3D_RTYPE_TEXTURE_3D                = 3,
+    WINED3D_RTYPE_TEXTURE_1D                = 2,
+    WINED3D_RTYPE_TEXTURE_2D                = 3,
+    WINED3D_RTYPE_TEXTURE_3D                = 4,
 };
 
 enum wined3d_pool
@@ -684,29 +687,59 @@ enum wined3d_pool
 
 enum wined3d_query_type
 {
-    WINED3D_QUERY_TYPE_PIPELINE_STATISTICS  = 1,
-    WINED3D_QUERY_TYPE_SO_STATISTICS        = 2,
-    WINED3D_QUERY_TYPE_SO_OVERFLOW          = 3,
-    WINED3D_QUERY_TYPE_VCACHE               = 4,
-    WINED3D_QUERY_TYPE_RESOURCE_MANAGER     = 5,
-    WINED3D_QUERY_TYPE_VERTEX_STATS         = 6,
-    WINED3D_QUERY_TYPE_EVENT                = 8,
-    WINED3D_QUERY_TYPE_OCCLUSION            = 9,
-    WINED3D_QUERY_TYPE_TIMESTAMP            = 10,
-    WINED3D_QUERY_TYPE_TIMESTAMP_DISJOINT   = 11,
-    WINED3D_QUERY_TYPE_TIMESTAMP_FREQ       = 12,
-    WINED3D_QUERY_TYPE_PIPELINE_TIMINGS     = 13,
-    WINED3D_QUERY_TYPE_INTERFACE_TIMINGS    = 14,
-    WINED3D_QUERY_TYPE_VERTEX_TIMINGS       = 15,
-    WINED3D_QUERY_TYPE_PIXEL_TIMINGS        = 16,
-    WINED3D_QUERY_TYPE_BANDWIDTH_TIMINGS    = 17,
-    WINED3D_QUERY_TYPE_CACHE_UTILIZATION    = 18
+    WINED3D_QUERY_TYPE_VCACHE                = 4,
+    WINED3D_QUERY_TYPE_RESOURCE_MANAGER      = 5,
+    WINED3D_QUERY_TYPE_VERTEX_STATS          = 6,
+    WINED3D_QUERY_TYPE_EVENT                 = 8,
+    WINED3D_QUERY_TYPE_OCCLUSION             = 9,
+    WINED3D_QUERY_TYPE_TIMESTAMP             = 10,
+    WINED3D_QUERY_TYPE_TIMESTAMP_DISJOINT    = 11,
+    WINED3D_QUERY_TYPE_TIMESTAMP_FREQ        = 12,
+    WINED3D_QUERY_TYPE_PIPELINE_TIMINGS      = 13,
+    WINED3D_QUERY_TYPE_INTERFACE_TIMINGS     = 14,
+    WINED3D_QUERY_TYPE_VERTEX_TIMINGS        = 15,
+    WINED3D_QUERY_TYPE_PIXEL_TIMINGS         = 16,
+    WINED3D_QUERY_TYPE_BANDWIDTH_TIMINGS     = 17,
+    WINED3D_QUERY_TYPE_CACHE_UTILIZATION     = 18,
+    WINED3D_QUERY_TYPE_MEMORY_PRESSURE       = 19,
+    WINED3D_QUERY_TYPE_PIPELINE_STATISTICS   = 20,
+    WINED3D_QUERY_TYPE_SO_STATISTICS         = 21,
+    WINED3D_QUERY_TYPE_SO_OVERFLOW           = 22,
+    WINED3D_QUERY_TYPE_SO_STATISTICS_STREAM0 = 23,
+    WINED3D_QUERY_TYPE_SO_STATISTICS_STREAM1 = 24,
+    WINED3D_QUERY_TYPE_SO_STATISTICS_STREAM2 = 25,
+    WINED3D_QUERY_TYPE_SO_STATISTICS_STREAM3 = 26,
+    WINED3D_QUERY_TYPE_SO_OVERFLOW_STREAM0   = 27,
+    WINED3D_QUERY_TYPE_SO_OVERFLOW_STREAM1   = 28,
+    WINED3D_QUERY_TYPE_SO_OVERFLOW_STREAM2   = 29,
+    WINED3D_QUERY_TYPE_SO_OVERFLOW_STREAM3   = 30,
 };
 
 struct wined3d_query_data_timestamp_disjoint
 {
     UINT64 frequency;
     BOOL disjoint;
+};
+
+struct wined3d_query_data_so_statistics
+{
+    UINT64 primitives_written;
+    UINT64 primitives_generated;
+};
+
+struct wined3d_query_data_pipeline_statistics
+{
+    UINT64 vertices_submitted;
+    UINT64 primitives_submitted;
+    UINT64 vs_invocations;
+    UINT64 gs_invocations;
+    UINT64 gs_primitives;
+    UINT64 clipping_input_primitives;
+    UINT64 clipping_output_primitives;
+    UINT64 ps_invocations;
+    UINT64 hs_invocations;
+    UINT64 ds_invocations;
+    UINT64 cs_invocations;
 };
 
 #define WINED3DISSUE_BEGIN                                      (1u << 1)
@@ -762,18 +795,12 @@ enum wined3d_sysval_semantic
     WINED3D_SV_INSTANCE_ID                  = 8,
     WINED3D_SV_IS_FRONT_FACE                = 9,
     WINED3D_SV_SAMPLE_INDEX                 = 10,
-    WINED3D_SV_QUAD_U0_TESS_FACTOR          = 11,
-    WINED3D_SV_QUAD_V0_TESS_FACTOR          = 12,
-    WINED3D_SV_QUAD_U1_TESS_FACTOR          = 13,
-    WINED3D_SV_QUAD_V1_TESS_FACTOR          = 14,
-    WINED3D_SV_QUAD_U_INNER_TESS_FACTOR     = 15,
-    WINED3D_SV_QUAD_V_INNER_TESS_FACTOR     = 16,
-    WINED3D_SV_TRIANGLE_U_TESS_FACTOR       = 17,
-    WINED3D_SV_TRIANGLE_V_TESS_FACTOR       = 18,
-    WINED3D_SV_TRIANGLE_W_TESS_FACTOR       = 19,
-    WINED3D_SV_TRIANGLE_INNER_TESS_FACTOR   = 20,
-    WINED3D_SV_LINE_DETAIL_TESS_FACTOR      = 21,
-    WINED3D_SV_LINE_DENSITY_TESS_FACTOR     = 22,
+    WINED3D_SV_TESS_FACTOR_QUADEDGE         = 11,
+    WINED3D_SV_TESS_FACTOR_QUADINT          = 12,
+    WINED3D_SV_TESS_FACTOR_TRIEDGE          = 13,
+    WINED3D_SV_TESS_FACTOR_TRIINT           = 14,
+    WINED3D_SV_TESS_FACTOR_LINEDET          = 15,
+    WINED3D_SV_TESS_FACTOR_LINEDEN          = 16,
 };
 
 enum wined3d_component_type
@@ -1770,6 +1797,13 @@ struct wined3d_map_desc
     void *data;
 };
 
+struct wined3d_map_info
+{
+    UINT row_pitch;
+    UINT slice_pitch;
+    UINT size;
+};
+
 struct wined3d_sub_resource_data
 {
     const void *data;
@@ -2244,7 +2278,7 @@ float __cdecl wined3d_device_get_npatch_mode(const struct wined3d_device *device
 struct wined3d_shader * __cdecl wined3d_device_get_pixel_shader(const struct wined3d_device *device);
 struct wined3d_query * __cdecl wined3d_device_get_predication(struct wined3d_device *device, BOOL *value);
 void __cdecl wined3d_device_get_primitive_type(const struct wined3d_device *device,
-        enum wined3d_primitive_type *primitive_topology);
+        enum wined3d_primitive_type *primitive_topology, unsigned int *patch_vertex_count);
 struct wined3d_buffer * __cdecl wined3d_device_get_ps_cb(const struct wined3d_device *device, UINT idx);
 HRESULT __cdecl wined3d_device_get_ps_consts_b(const struct wined3d_device *device,
         unsigned int start_idx, unsigned int count, BOOL *constants);
@@ -2360,7 +2394,7 @@ void __cdecl wined3d_device_set_pixel_shader(struct wined3d_device *device, stru
 void __cdecl wined3d_device_set_predication(struct wined3d_device *device,
         struct wined3d_query *predicate, BOOL value);
 void __cdecl wined3d_device_set_primitive_type(struct wined3d_device *device,
-        enum wined3d_primitive_type primitive_topology);
+        enum wined3d_primitive_type primitive_topology, unsigned int patch_vertex_count);
 void __cdecl wined3d_device_set_ps_cb(struct wined3d_device *device, UINT idx, struct wined3d_buffer *buffer);
 HRESULT __cdecl wined3d_device_set_ps_consts_b(struct wined3d_device *device,
         unsigned int start_idx, unsigned int count, const BOOL *constants);
@@ -2525,6 +2559,8 @@ void * __cdecl wined3d_resource_get_parent(const struct wined3d_resource *resour
 DWORD __cdecl wined3d_resource_get_priority(const struct wined3d_resource *resource);
 HRESULT __cdecl wined3d_resource_map(struct wined3d_resource *resource, unsigned int sub_resource_idx,
         struct wined3d_map_desc *map_desc, const struct wined3d_box *box, DWORD flags);
+HRESULT __cdecl wined3d_resource_map_info(struct wined3d_resource *resource, unsigned int sub_resource_idx,
+        struct wined3d_map_info *info, DWORD flags);
 void __cdecl wined3d_resource_preload(struct wined3d_resource *resource);
 void __cdecl wined3d_resource_set_parent(struct wined3d_resource *resource, void *parent);
 DWORD __cdecl wined3d_resource_set_priority(struct wined3d_resource *resource, DWORD priority);
@@ -2717,5 +2753,19 @@ static inline void wined3d_box_set(struct wined3d_box *box, unsigned int left, u
     box->front = front;
     box->back = back;
 }
+
+BOOL wined3d_dxt1_decode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
+                         enum wined3d_format_id format, unsigned int w, unsigned int h);
+BOOL wined3d_dxt1_encode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
+                         enum wined3d_format_id format, unsigned int w, unsigned int h);
+BOOL wined3d_dxt3_decode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
+                         enum wined3d_format_id format, unsigned int w, unsigned int h);
+BOOL wined3d_dxt3_encode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
+                         enum wined3d_format_id format, unsigned int w, unsigned int h);
+BOOL wined3d_dxt5_decode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
+                         enum wined3d_format_id format, unsigned int w, unsigned int h);
+BOOL wined3d_dxt5_encode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
+                         enum wined3d_format_id format, unsigned int w, unsigned int h);
+BOOL wined3d_dxtn_supported(void);
 
 #endif /* __WINE_WINED3D_H */

@@ -9,6 +9,6 @@ list(APPEND SOURCE
 add_library(ext-ms-win-authz-context-l1-1-0 SHARED ${SOURCE})
 
 set_module_type(ext-ms-win-authz-context-l1-1-0 win32dll ENTRYPOINT 0)
-add_importlibs(ext-ms-win-authz-context-l1-1-0 netapi32)
+add_importlibs(ext-ms-win-authz-context-l1-1-0 authz)
 add_dependencies(ext-ms-win-authz-context-l1-1-0 psdk)
 add_cd_file(TARGET ext-ms-win-authz-context-l1-1-0 DESTINATION reactos/system32 FOR all)

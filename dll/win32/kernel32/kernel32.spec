@@ -1290,3 +1290,7 @@
 @ stub uaw_wcsrchr
 
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
+@ stub QuirkIsEnabled3
+@ stub GetNamedPipeAttribute
+@ stub ImpersonateNamedPipeClient
+@ stub CompareStringEx

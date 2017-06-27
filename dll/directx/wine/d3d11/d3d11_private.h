@@ -62,6 +62,10 @@ const char *debug_float4(const float *values) DECLSPEC_HIDDEN;
 
 DXGI_FORMAT dxgi_format_from_wined3dformat(enum wined3d_format_id format) DECLSPEC_HIDDEN;
 enum wined3d_format_id wined3dformat_from_dxgi_format(DXGI_FORMAT format) DECLSPEC_HIDDEN;
+void d3d11_primitive_topology_from_wined3d_primitive_type(enum wined3d_primitive_type primitive_type,
+        unsigned int patch_vertex_count, D3D11_PRIMITIVE_TOPOLOGY *topology) DECLSPEC_HIDDEN;
+void wined3d_primitive_type_from_d3d11_primitive_topology(D3D11_PRIMITIVE_TOPOLOGY topology,
+        enum wined3d_primitive_type *type, unsigned int *patch_vertex_count) DECLSPEC_HIDDEN;
 unsigned int wined3d_getdata_flags_from_d3d11_async_getdata_flags(unsigned int d3d11_flags) DECLSPEC_HIDDEN;
 DWORD wined3d_usage_from_d3d11(UINT bind_flags, enum D3D11_USAGE usage) DECLSPEC_HIDDEN;
 struct wined3d_resource *wined3d_resource_from_d3d11_resource(ID3D11Resource *resource) DECLSPEC_HIDDEN;
@@ -107,6 +111,30 @@ void skip_dword_unknown(const char **ptr, unsigned int count) DECLSPEC_HIDDEN;
 
 HRESULT parse_dxbc(const char *data, SIZE_T data_size,
         HRESULT (*chunk_handler)(const char *data, DWORD data_size, DWORD tag, void *ctx), void *ctx) DECLSPEC_HIDDEN;
+
+/* ID3D11Texture1D, ID3D10Texture1D */
+struct d3d_texture1d
+{
+    ID3D11Texture1D ID3D11Texture1D_iface;
+    ID3D10Texture1D ID3D10Texture1D_iface;
+    LONG refcount;
+
+    struct wined3d_private_store private_store;
+    IUnknown *dxgi_surface;
+    struct wined3d_texture *wined3d_texture;
+    D3D11_TEXTURE1D_DESC desc;
+    ID3D11Device *device;
+};
+
+static inline struct d3d_texture1d *impl_from_ID3D10Texture1D(ID3D10Texture1D *iface)
+{
+    return CONTAINING_RECORD(iface, struct d3d_texture1d, ID3D10Texture1D_iface);
+}
+
+HRESULT d3d_texture1d_create(struct d3d_device *device, const D3D11_TEXTURE1D_DESC *desc,
+        const D3D11_SUBRESOURCE_DATA *data, struct d3d_texture1d **texture) DECLSPEC_HIDDEN;
+struct d3d_texture1d *unsafe_impl_from_ID3D11Texture1D(ID3D11Texture1D *iface) DECLSPEC_HIDDEN;
+struct d3d_texture1d *unsafe_impl_from_ID3D10Texture1D(ID3D10Texture1D *iface) DECLSPEC_HIDDEN;
 
 /* ID3D11Texture2D, ID3D10Texture2D */
 struct d3d_texture2d
@@ -476,6 +504,7 @@ struct d3d_query
     struct wined3d_private_store private_store;
     struct wined3d_query *wined3d_query;
     BOOL predicate;
+    D3D11_QUERY_DESC desc;
     ID3D11Device *device;
 };
 

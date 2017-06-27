@@ -9,7 +9,7 @@ include_directories(${REACTOS_SOURCE_DIR}/include/psdk)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys/win)
-include_directories(${REACTOS_SOURCE_DIR}/dll/win32/wrappers/base/vtdll)
+include_directories(${REACTOS_SOURCE_DIR}/dll/win32/wrappers/base/ntext)
 spec2def(vernel32.dll vernel32.spec)
 
 list(APPEND SOURCE
@@ -31,6 +31,8 @@ list(APPEND SOURCE
 	module.c
 	namepipe.c
 	nls.c
+	number.c
+	pathmisc.c
 	powrmgmt.c
 	process.c
 	security.c
@@ -73,10 +75,10 @@ set_subsystem(vernel32 console)
 ################# END  HACK #################
 
 if(ARCH STREQUAL "i386")
-	add_importlibs(vernel32 kernelfull vtdll normaliz psapi advapi32 user32 version)
+	add_importlibs(vernel32 kernelfull ntext normaliz psapi advapi32 user32 version)
 
 elseif(ARCH STREQUAL "amd64")
-	add_importlibs(vernel32 kernel32 vtdll normaliz psapi advapi32 user32 version)
+	add_importlibs(vernel32 kernel32 ntext normaliz psapi advapi32 user32 version)
 endif()
 
 add_dependencies(vernel32 psdk)

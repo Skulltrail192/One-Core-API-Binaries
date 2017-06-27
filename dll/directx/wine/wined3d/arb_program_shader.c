@@ -3809,7 +3809,7 @@ static GLuint shader_arb_generate_pshader(const struct wined3d_shader *shader,
     }
 
     /* Base Shader Body */
-    if (FAILED(shader_generate_main(shader, buffer, reg_maps, &priv_ctx)))
+    if (FAILED(shader_generate_code(shader, buffer, reg_maps, &priv_ctx, NULL, NULL)))
         return 0;
 
     if(args->super.srgb_correction) {
@@ -4223,7 +4223,7 @@ static GLuint shader_arb_generate_vshader(const struct wined3d_shader *shader,
     /* The shader starts with the main function */
     priv_ctx.in_main_func = TRUE;
     /* Base Shader Body */
-    if (FAILED(shader_generate_main(shader, buffer, reg_maps, &priv_ctx)))
+    if (FAILED(shader_generate_code(shader, buffer, reg_maps, &priv_ctx, NULL, NULL)))
         return -1;
 
     if (!priv_ctx.footer_written) vshader_add_footer(&priv_ctx,
@@ -4977,21 +4977,8 @@ static void shader_arb_get_caps(const struct wined3d_gl_info *gl_info, struct sh
 
 static BOOL shader_arb_color_fixup_supported(struct color_fixup_desc fixup)
 {
-    if (TRACE_ON(d3d_shader) && TRACE_ON(d3d))
-    {
-        TRACE("Checking support for color_fixup:\n");
-        dump_color_fixup_desc(fixup);
-    }
-
     /* We support everything except complex conversions. */
-    if (!is_complex_fixup(fixup))
-    {
-        TRACE("[OK]\n");
-        return TRUE;
-    }
-
-    TRACE("[FAILED]\n");
-    return FALSE;
+    return !is_complex_fixup(fixup);
 }
 
 static void shader_arb_add_instruction_modifiers(const struct wined3d_shader_instruction *ins) {
@@ -5045,6 +5032,7 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_CMP                              */ pshader_hw_cmp,
     /* WINED3DSIH_CND                              */ pshader_hw_cnd,
     /* WINED3DSIH_CONTINUE                         */ NULL,
+    /* WINED3DSIH_CONTINUEP                        */ NULL,
     /* WINED3DSIH_COUNTBITS                        */ NULL,
     /* WINED3DSIH_CRS                              */ shader_hw_map2gl,
     /* WINED3DSIH_CUT                              */ NULL,
@@ -5127,6 +5115,7 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_GATHER4                          */ NULL,
     /* WINED3DSIH_GATHER4_C                        */ NULL,
     /* WINED3DSIH_GATHER4_PO                       */ NULL,
+    /* WINED3DSIH_GATHER4_PO_C                     */ NULL,
     /* WINED3DSIH_GE                               */ NULL,
     /* WINED3DSIH_HS_CONTROL_POINT_PHASE           */ NULL,
     /* WINED3DSIH_HS_DECLS                         */ NULL,
@@ -7766,6 +7755,12 @@ static BOOL arbfp_blit_supported(const struct wined3d_gl_info *gl_info,
      /* We only support YUV conversions. */
     if (!is_complex_fixup(src_format->color_fixup))
     {
+        if (wined3d_settings.offscreen_rendering_mode == ORM_BACKBUFFER)
+        {
+            WARN("Claiming fixup support because of ORM_BACKBUFFER.\n");
+            return TRUE;
+        }
+
         TRACE("[FAILED]\n");
         return FALSE;
     }

@@ -44,6 +44,8 @@
 #include <wine/debug.h>
 #include <csrsrv.h>
 #include <api.h>
+#include <ntuser.h>
+#include <winuser.h>
 
 #define WH_MIN   (-1)
 #define WH_MAX   14
@@ -261,32 +263,32 @@ typedef enum  {
   DISPLAYCONFIG_TOPOLOGY_FORCE_UINT32  = 0xFFFFFFFF
 } DISPLAYCONFIG_TOPOLOGY_ID;
 
-typedef struct _DESKTOPINFO
- {
-     PVOID pvDesktopBase;
-     PVOID pvDesktopLimit;
-     struct _WND *spwnd;
-     DWORD fsHooks;
-     LIST_ENTRY aphkStart[NB_HOOKS];
+// typedef struct _DESKTOPINFO
+ // {
+     // PVOID pvDesktopBase;
+     // PVOID pvDesktopLimit;
+     // struct _WND *spwnd;
+     // DWORD fsHooks;
+     // LIST_ENTRY aphkStart[NB_HOOKS];
  
-     HWND hTaskManWindow;
-     HWND hProgmanWindow;
-     HWND hShellWindow;
-     struct _WND * spwndShell;
+     // HWND hTaskManWindow;
+     // HWND hProgmanWindow;
+     // HWND hShellWindow;
+     // struct _WND * spwndShell;
  
-     PPROCESSINFO ppiShellProcess;
+     // PPROCESSINFO ppiShellProcess;
  
-     union
-     {
-         UINT Dummy;
-         struct
-         {
-             UINT LastInputWasKbd : 1;
-         };
-     };
+     // union
+     // {
+         // UINT Dummy;
+         // struct
+         // {
+             // UINT LastInputWasKbd : 1;
+         // };
+     // };
  
-     WCHAR szDesktopName[1];
- } DESKTOPINFO, *PDESKTOPINFO;
+     // WCHAR szDesktopName[1];
+ // } DESKTOPINFO, *PDESKTOPINFO;
 
 typedef enum  { 
   DISPLAYCONFIG_PIXELFORMAT_8BPP          = 1,

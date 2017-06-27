@@ -50,7 +50,7 @@ static DWORD resource_access_from_pool(enum wined3d_pool pool)
 
 static void resource_check_usage(DWORD usage)
 {
-    static const DWORD handled = WINED3DUSAGE_RENDERTARGET
+    static DWORD handled = WINED3DUSAGE_RENDERTARGET
             | WINED3DUSAGE_DEPTHSTENCIL
             | WINED3DUSAGE_WRITEONLY
             | WINED3DUSAGE_DYNAMIC
@@ -68,7 +68,10 @@ static void resource_check_usage(DWORD usage)
      * driver. */
 
     if (usage & ~handled)
+    {
         FIXME("Unhandled usage flags %#x.\n", usage & ~handled);
+        handled |= usage;
+    }
     if ((usage & (WINED3DUSAGE_DYNAMIC | WINED3DUSAGE_WRITEONLY)) == WINED3DUSAGE_DYNAMIC)
         WARN_(d3d_perf)("WINED3DUSAGE_DYNAMIC used without WINED3DUSAGE_WRITEONLY.\n");
 }
@@ -95,6 +98,7 @@ HRESULT resource_init(struct wined3d_resource *resource, struct wined3d_device *
     resource_types[] =
     {
         {WINED3D_RTYPE_BUFFER,      0,                              WINED3D_GL_RES_TYPE_BUFFER},
+        {WINED3D_RTYPE_TEXTURE_1D,  0,                              WINED3D_GL_RES_TYPE_TEX_1D},
         {WINED3D_RTYPE_TEXTURE_2D,  0,                              WINED3D_GL_RES_TYPE_TEX_2D},
         {WINED3D_RTYPE_TEXTURE_2D,  0,                              WINED3D_GL_RES_TYPE_TEX_RECT},
         {WINED3D_RTYPE_TEXTURE_2D,  0,                              WINED3D_GL_RES_TYPE_RB},
@@ -358,8 +362,17 @@ HRESULT CDECL wined3d_resource_map(struct wined3d_resource *resource, unsigned i
             resource, sub_resource_idx, map_desc, debug_box(box), flags);
 
     flags = wined3d_resource_sanitise_map_flags(resource, flags);
+    wined3d_resource_wait_idle(resource);
 
     return wined3d_cs_map(resource->device->cs, resource, sub_resource_idx, map_desc, box, flags);
+}
+
+HRESULT CDECL wined3d_resource_map_info(struct wined3d_resource *resource, unsigned int sub_resource_idx,
+        struct wined3d_map_info *info, DWORD flags)
+{
+    TRACE("resource %p, sub_resource_idx %u.\n", resource, sub_resource_idx);
+
+    return resource->resource_ops->resource_map_info(resource, sub_resource_idx, info, flags);
 }
 
 HRESULT CDECL wined3d_resource_unmap(struct wined3d_resource *resource, unsigned int sub_resource_idx)

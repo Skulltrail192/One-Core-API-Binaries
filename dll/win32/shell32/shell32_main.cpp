@@ -23,7 +23,6 @@
 
 #include "shell32_version.h"
 #include <reactos/version.h>
-#include <pidl.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(shell);
 
@@ -387,6 +386,337 @@ BOOL SHELL_IsShortcut(LPCITEMIDLIST pidlLast)
      SHGFI_ICON | SHGFI_DISPLAYNAME | SHGFI_TYPENAME | SHGFI_ATTRIBUTES | \
      SHGFI_ICONLOCATION | SHGFI_EXETYPE | SHGFI_SYSICONINDEX | \
      SHGFI_LINKOVERLAY | SHGFI_SELECTED | SHGFI_ATTR_SPECIFIED)
+
+/*************************************************************************
+ * SHGetFileInfoW            [SHELL32.@]
+ *
+ */
+DWORD_PTR WINAPI SHGetFileInfoW(LPCWSTR path,DWORD dwFileAttributes,
+                                SHFILEINFOW *psfi, UINT sizeofpsfi, UINT flags )
+{
+    WCHAR szLocation[MAX_PATH], szFullPath[MAX_PATH];
+    int iIndex;
+    DWORD_PTR ret = TRUE;
+    DWORD dwAttributes = 0;
+    CComPtr<IShellFolder>        psfParent;
+    CComPtr<IExtractIconW>        pei;
+    LPITEMIDLIST    pidlLast = NULL, pidl = NULL;
+    HRESULT hr = S_OK;
+    BOOL IconNotYetLoaded=TRUE;
+    UINT uGilFlags = 0;
+
+    TRACE("%s fattr=0x%x sfi=%p(attr=0x%08x) size=0x%x flags=0x%x\n",
+          (flags & SHGFI_PIDL)? "pidl" : debugstr_w(path), dwFileAttributes,
+          psfi, psfi->dwAttributes, sizeofpsfi, flags);
+
+    if (!path)
+         return FALSE;
+
+    /* windows initializes these values regardless of the flags */
+    if (psfi != NULL)
+    {
+        psfi->szDisplayName[0] = '\0';
+        psfi->szTypeName[0] = '\0';
+        psfi->iIcon = 0;
+    }
+
+    if (!(flags & SHGFI_PIDL))
+    {
+        /* SHGetFileInfo should work with absolute and relative paths */
+        if (PathIsRelativeW(path))
+        {
+            GetCurrentDirectoryW(MAX_PATH, szLocation);
+            PathCombineW(szFullPath, szLocation, path);
+        }
+        else
+        {
+            lstrcpynW(szFullPath, path, MAX_PATH);
+        }
+    }
+
+    if (flags & SHGFI_EXETYPE)
+    {
+        if (flags != SHGFI_EXETYPE)
+            return 0;
+        return shgfi_get_exe_type(szFullPath);
+    }
+
+    /*
+     * psfi is NULL normally to query EXE type. If it is NULL, none of the
+     * below makes sense anyway. Windows allows this and just returns FALSE
+     */
+    if (psfi == NULL)
+        return FALSE;
+
+    /*
+     * translate the path into a pidl only when SHGFI_USEFILEATTRIBUTES
+     * is not specified.
+     * The pidl functions fail on not existing file names
+     */
+
+    if (flags & SHGFI_PIDL)
+    {
+        pidl = ILClone((LPCITEMIDLIST)path);
+    }
+    else if (!(flags & SHGFI_USEFILEATTRIBUTES))
+    {
+        hr = SHILCreateFromPathW(szFullPath, &pidl, &dwAttributes);
+    }
+
+    if ((flags & SHGFI_PIDL) || !(flags & SHGFI_USEFILEATTRIBUTES))
+    {
+        /* get the parent shellfolder */
+        if (pidl)
+        {
+            hr = SHBindToParent( pidl, IID_PPV_ARG(IShellFolder, &psfParent),
+                                (LPCITEMIDLIST*)&pidlLast );
+            if (SUCCEEDED(hr))
+                pidlLast = ILClone(pidlLast);
+            ILFree(pidl);
+        }
+        else
+        {
+            ERR("pidl is null!\n");
+            return FALSE;
+        }
+    }
+
+    /* get the attributes of the child */
+    if (SUCCEEDED(hr) && (flags & SHGFI_ATTRIBUTES))
+    {
+        if (!(flags & SHGFI_ATTR_SPECIFIED))
+        {
+            psfi->dwAttributes = 0xffffffff;
+        }
+        if (psfParent != NULL)
+            psfParent->GetAttributesOf(1, (LPCITEMIDLIST*)&pidlLast,
+                                      &(psfi->dwAttributes) );
+    }
+
+    /* get the displayname */
+    if (SUCCEEDED(hr) && (flags & SHGFI_DISPLAYNAME))
+    {
+        if (flags & SHGFI_USEFILEATTRIBUTES)
+        {
+            wcscpy (psfi->szDisplayName, PathFindFileNameW(szFullPath));
+        }
+        else
+        {
+            STRRET str;
+            hr = psfParent->GetDisplayNameOf(pidlLast,
+                                                SHGDN_INFOLDER, &str);
+            StrRetToStrNW (psfi->szDisplayName, MAX_PATH, &str, pidlLast);
+        }
+    }
+
+    /* get the type name */
+    if (SUCCEEDED(hr) && (flags & SHGFI_TYPENAME))
+    {
+        static const WCHAR szFile[] = { 'F','i','l','e',0 };
+        static const WCHAR szDashFile[] = { '-','f','i','l','e',0 };
+
+        if (!(flags & SHGFI_USEFILEATTRIBUTES))
+        {
+            char ftype[80];
+
+            _ILGetFileType(pidlLast, ftype, 80);
+            MultiByteToWideChar(CP_ACP, 0, ftype, -1, psfi->szTypeName, 80 );
+        }
+        else
+        {
+            if (dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                wcscat (psfi->szTypeName, szFile);
+            else
+            {
+                WCHAR sTemp[64];
+
+                wcscpy(sTemp,PathFindExtensionW(szFullPath));
+                if (!( HCR_MapTypeToValueW(sTemp, sTemp, 64, TRUE) &&
+                    HCR_MapTypeToValueW(sTemp, psfi->szTypeName, 80, FALSE )))
+                {
+                    lstrcpynW (psfi->szTypeName, sTemp, 64);
+                    wcscat (psfi->szTypeName, szDashFile);
+                }
+            }
+        }
+    }
+
+    /* ### icons ###*/
+    if (flags & SHGFI_OPENICON)
+        uGilFlags |= GIL_OPENICON;
+
+    if (flags & SHGFI_LINKOVERLAY)
+        uGilFlags |= GIL_FORSHORTCUT;
+    else if ((flags&SHGFI_ADDOVERLAYS) ||
+             (flags&(SHGFI_ICON|SHGFI_SMALLICON))==SHGFI_ICON)
+    {
+        if (SHELL_IsShortcut(pidlLast))
+            uGilFlags |= GIL_FORSHORTCUT;
+    }
+
+    if (flags & SHGFI_OVERLAYINDEX)
+        FIXME("SHGFI_OVERLAYINDEX unhandled\n");
+
+    if (flags & SHGFI_SELECTED)
+        FIXME("set icon to selected, stub\n");
+
+    if (flags & SHGFI_SHELLICONSIZE)
+        FIXME("set icon to shell size, stub\n");
+
+    /* get the iconlocation */
+    if (SUCCEEDED(hr) && (flags & SHGFI_ICONLOCATION ))
+    {
+        UINT uDummy,uFlags;
+
+        if (flags & SHGFI_USEFILEATTRIBUTES)
+        {
+            if (dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                wcscpy(psfi->szDisplayName, swShell32Name);
+                psfi->iIcon = -IDI_SHELL_FOLDER;
+            }
+            else
+            {
+                WCHAR* szExt;
+                static const WCHAR p1W[] = {'%','1',0};
+                WCHAR sTemp [MAX_PATH];
+
+                szExt = PathFindExtensionW(szFullPath);
+                TRACE("szExt=%s\n", debugstr_w(szExt));
+                if ( szExt &&
+                     HCR_MapTypeToValueW(szExt, sTemp, MAX_PATH, TRUE) &&
+                     HCR_GetIconW(sTemp, sTemp, NULL, MAX_PATH, &psfi->iIcon))
+                {
+                    if (lstrcmpW(p1W, sTemp))
+                        wcscpy(psfi->szDisplayName, sTemp);
+                    else
+                    {
+                        /* the icon is in the file */
+                        wcscpy(psfi->szDisplayName, szFullPath);
+                    }
+                }
+                else
+                    ret = FALSE;
+            }
+        }
+        else
+        {
+            hr = psfParent->GetUIObjectOf(0, 1,
+                (LPCITEMIDLIST*)&pidlLast, IID_IExtractIconW,
+                &uDummy, (LPVOID*)&pei);
+            if (SUCCEEDED(hr))
+            {
+                hr = pei->GetIconLocation(uGilFlags,
+                    szLocation, MAX_PATH, &iIndex, &uFlags);
+
+                if (uFlags & GIL_NOTFILENAME)
+                    ret = FALSE;
+                else
+                {
+                    wcscpy (psfi->szDisplayName, szLocation);
+                    psfi->iIcon = iIndex;
+                }
+            }
+        }
+    }
+
+    /* get icon index (or load icon)*/
+    if (SUCCEEDED(hr) && (flags & (SHGFI_ICON | SHGFI_SYSICONINDEX)))
+    {
+        if (flags & SHGFI_USEFILEATTRIBUTES && !(flags & SHGFI_PIDL))
+        {
+            WCHAR sTemp [MAX_PATH];
+            WCHAR * szExt;
+            int icon_idx=0;
+
+            lstrcpynW(sTemp, szFullPath, MAX_PATH);
+
+            if (dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                psfi->iIcon = SIC_GetIconIndex(swShell32Name, -IDI_SHELL_FOLDER, 0);
+            else
+            {
+                static const WCHAR p1W[] = {'%','1',0};
+
+                psfi->iIcon = 0;
+                szExt = PathFindExtensionW(sTemp);
+                if ( szExt &&
+                     HCR_MapTypeToValueW(szExt, sTemp, MAX_PATH, TRUE) &&
+                     HCR_GetIconW(sTemp, sTemp, NULL, MAX_PATH, &icon_idx))
+                {
+                    if (!lstrcmpW(p1W,sTemp))            /* icon is in the file */
+                        wcscpy(sTemp, szFullPath);
+
+                    if (flags & SHGFI_SYSICONINDEX)
+                    {
+                        psfi->iIcon = SIC_GetIconIndex(sTemp,icon_idx,0);
+                        if (psfi->iIcon == -1)
+                            psfi->iIcon = 0;
+                    }
+                    else
+                    {
+                        UINT ret;
+                        if (flags & SHGFI_SMALLICON)
+                            ret = PrivateExtractIconsW( sTemp,icon_idx,
+                                GetSystemMetrics( SM_CXSMICON ),
+                                GetSystemMetrics( SM_CYSMICON ),
+                                &psfi->hIcon, 0, 1, 0);
+                        else
+                            ret = PrivateExtractIconsW( sTemp, icon_idx,
+                                GetSystemMetrics( SM_CXICON),
+                                GetSystemMetrics( SM_CYICON),
+                                &psfi->hIcon, 0, 1, 0);
+
+                        if (ret != 0 && ret != 0xFFFFFFFF)
+                        {
+                            IconNotYetLoaded=FALSE;
+                            psfi->iIcon = icon_idx;
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (!(PidlToSicIndex(psfParent, pidlLast, !(flags & SHGFI_SMALLICON),
+                uGilFlags, &(psfi->iIcon))))
+            {
+                ret = FALSE;
+            }
+        }
+        if (ret && (flags & SHGFI_SYSICONINDEX))
+        {
+            if (flags & SHGFI_SMALLICON)
+                ret = (DWORD_PTR) ShellSmallIconList;
+            else
+                ret = (DWORD_PTR) ShellBigIconList;
+        }
+    }
+
+    /* icon handle */
+    if (SUCCEEDED(hr) && (flags & SHGFI_ICON) && IconNotYetLoaded)
+    {
+        if (flags & SHGFI_SMALLICON)
+            psfi->hIcon = ImageList_GetIcon( ShellSmallIconList, psfi->iIcon, ILD_NORMAL);
+        else
+            psfi->hIcon = ImageList_GetIcon( ShellBigIconList, psfi->iIcon, ILD_NORMAL);
+    }
+
+    if (flags & ~SHGFI_KNOWN_FLAGS)
+        FIXME("unknown flags %08x\n", flags & ~SHGFI_KNOWN_FLAGS);
+
+    if (hr != S_OK)
+        ret = FALSE;
+
+    SHFree(pidlLast);
+
+#ifdef MORE_DEBUG
+    TRACE ("icon=%p index=0x%08x attr=0x%08x name=%s type=%s ret=0x%08lx\n",
+           psfi->hIcon, psfi->iIcon, psfi->dwAttributes,
+           debugstr_w(psfi->szDisplayName), debugstr_w(psfi->szTypeName), ret);
+#endif
+
+    return ret;
+}
 
 /*************************************************************************
  * SHGetFileInfoA            [SHELL32.@]
@@ -1231,85 +1561,4 @@ HRESULT WINAPI DllInstall(BOOL bInstall, LPCWSTR cmdline)
 {
     FIXME("%s %s: stub\n", bInstall ? "TRUE":"FALSE", debugstr_w(cmdline));
     return S_OK;        /* indicate success */
-}
-
-HRESULT 
-WINAPI 
-SHCreateItemFromIDList(LPCITEMIDLIST pidl, REFIID riid, void **ppv)
-{
-  HRESULT resp; // edi@1
-  IPersistIDList *idList; // [sp+10h] [bp-8h]@1
-
-  *ppv = 0;
-  resp = CShellLink::_CreatorClass::CreateInstance(NULL, riid, (void**)&idList);
-  if ( resp >= 0 )
-  {
-    resp = idList->SetIDList(pidl);
-    if ( resp >= 0 )
-      resp = idList->QueryInterface(riid, ppv);
-    idList->Release();
-  }
-  return resp;
-}
-
-HRESULT 
-WINAPI 
-SHCreateItemWithParent(
-  _In_   PCIDLIST_ABSOLUTE pidlParent,
-  _In_   IShellFolder *psfParent,
-  _In_   PCUITEMID_CHILD pidl,
-  _In_   REFIID riid,
-  _Out_  void **ppvItem
-)
-{
-	HRESULT ret;
-	*ppvItem = NULL;
-	ret = SHCreateShellItem(NULL, NULL, pidl, (IShellItem **) ppvItem);
-    if(!SUCCEEDED(ret))
-    {
-		ILFree((LPITEMIDLIST)pidl);
-    }
-	return ret;
-}
-
-static const GUID CLSID_Bind_Query = 
-{0x000214e6, 0x0000, 0x0000, {0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
-
-
-HRESULT SHCreateShellItem(
-  _In_opt_ PCIDLIST_ABSOLUTE pidlParent,
-  _In_opt_ IShellFolder      *psfParent,
-  _In_     PCUITEMID_CHILD   pidl,
-  _Out_    IShellItem        **ppsi
-)
-{
-	return S_OK;
-}
-
-HRESULT SHCreateShellItemArray(
-  _In_  PCIDLIST_ABSOLUTE     pidlParent,
-  _In_  IShellFolder          *psf,
-  _In_  UINT                  cidl,
-  _In_  PCUITEMID_CHILD_ARRAY ppidl,
-  _Out_ IShellItemArray       **ppsiItemArray
-)
-{
-	return S_OK;
-}
-
-HRESULT SHCreateShellItemArrayFromShellItem(
-  _In_  IShellItem *psi,
-  _In_  REFIID     riid,
-  _Out_ void       **ppv
-)
-{
-	return S_OK;
-}
-
-HRESULT SHGetIDListFromObject(
-  _In_  IUnknown         *punk,
-  _Out_ PIDLIST_ABSOLUTE *ppidl
-)
-{
-	return S_OK;
 }

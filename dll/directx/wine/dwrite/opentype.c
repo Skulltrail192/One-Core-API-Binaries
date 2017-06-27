@@ -19,8 +19,10 @@
  */
 
 #define COBJMACROS
+#define NONAMELESSUNION
 
 #include "dwrite_private.h"
+#include "winternl.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(dwrite);
 
@@ -32,13 +34,25 @@ WINE_DEFAULT_DEBUG_CHANNEL(dwrite);
 #define MS_TTCF_TAG DWRITE_MAKE_OPENTYPE_TAG('t','t','c','f')
 #define MS_GPOS_TAG DWRITE_MAKE_OPENTYPE_TAG('G','P','O','S')
 #define MS_GSUB_TAG DWRITE_MAKE_OPENTYPE_TAG('G','S','U','B')
+#define MS_NAME_TAG DWRITE_MAKE_OPENTYPE_TAG('n','a','m','e')
+#define MS_GLYF_TAG DWRITE_MAKE_OPENTYPE_TAG('g','l','y','f')
+#define MS_CFF__TAG DWRITE_MAKE_OPENTYPE_TAG('C','F','F',' ')
+#define MS_COLR_TAG DWRITE_MAKE_OPENTYPE_TAG('C','O','L','R')
+#define MS_SVG__TAG DWRITE_MAKE_OPENTYPE_TAG('S','V','G',' ')
+#define MS_SBIX_TAG DWRITE_MAKE_OPENTYPE_TAG('s','b','i','x')
+#define MS_MAXP_TAG DWRITE_MAKE_OPENTYPE_TAG('m','a','x','p')
+
+/* 'sbix' formats */
+#define MS_PNG__TAG DWRITE_MAKE_OPENTYPE_TAG('p','n','g',' ')
+#define MS_JPG__TAG DWRITE_MAKE_OPENTYPE_TAG('j','p','g',' ')
+#define MS_TIFF_TAG DWRITE_MAKE_OPENTYPE_TAG('t','i','f','f')
 
 #ifdef WORDS_BIGENDIAN
 #define GET_BE_WORD(x) (x)
 #define GET_BE_DWORD(x) (x)
 #else
-#define GET_BE_WORD(x) MAKEWORD(HIBYTE(x), LOBYTE(x))
-#define GET_BE_DWORD(x) MAKELONG(GET_BE_WORD(HIWORD(x)), GET_BE_WORD(LOWORD(x)))
+#define GET_BE_WORD(x)  RtlUshortByteSwap(x)
+#define GET_BE_DWORD(x) RtlUlongByteSwap(x)
 #endif
 
 typedef struct {
@@ -111,7 +125,8 @@ enum OPENTYPE_CMAP_TABLE_FORMAT
 #include "pshpack2.h"
 typedef struct
 {
-    ULONG version;
+    USHORT majorVersion;
+    USHORT minorVersion;
     ULONG revision;
     ULONG checksumadj;
     ULONG magic;
@@ -129,6 +144,17 @@ typedef struct
     SHORT index_format;
     SHORT glyphdata_format;
 } TT_HEAD;
+
+enum TT_HEAD_MACSTYLE
+{
+    TT_HEAD_MACSTYLE_BOLD      = 1 << 0,
+    TT_HEAD_MACSTYLE_ITALIC    = 1 << 1,
+    TT_HEAD_MACSTYLE_UNDERLINE = 1 << 2,
+    TT_HEAD_MACSTYLE_OUTLINE   = 1 << 3,
+    TT_HEAD_MACSTYLE_SHADOW    = 1 << 4,
+    TT_HEAD_MACSTYLE_CONDENSED = 1 << 5,
+    TT_HEAD_MACSTYLE_EXTENDED  = 1 << 6,
+};
 
 typedef struct
 {
@@ -191,7 +217,8 @@ typedef struct
 } TT_OS2_V2;
 
 typedef struct {
-    ULONG  version;
+    USHORT majorVersion;
+    USHORT minorVersion;
     SHORT  ascender;
     SHORT  descender;
     SHORT  linegap;
@@ -206,6 +233,31 @@ typedef struct {
     SHORT  metricDataFormat;
     USHORT numberOfHMetrics;
 } TT_HHEA;
+
+typedef struct {
+    WORD version;
+    WORD flags;
+    DWORD numStrikes;
+    DWORD strikeOffset[1];
+} sbix_header;
+
+typedef struct {
+    WORD ppem;
+    WORD ppi;
+    DWORD glyphDataOffsets[1];
+} sbix_strike;
+
+typedef struct {
+    WORD originOffsetX;
+    WORD originOffsetY;
+    DWORD graphicType;
+    BYTE data[1];
+} sbix_glyph_data;
+
+typedef struct {
+    DWORD version;
+    WORD numGlyphs;
+} maxp;
 
 #include "poppack.h"
 
@@ -237,6 +289,35 @@ typedef struct {
     WORD stringOffset;
     TT_NameRecord nameRecord[1];
 } TT_NAME_V0;
+
+struct VDMX_Header
+{
+    WORD version;
+    WORD numRecs;
+    WORD numRatios;
+};
+
+struct VDMX_Ratio
+{
+    BYTE bCharSet;
+    BYTE xRatio;
+    BYTE yStartRatio;
+    BYTE yEndRatio;
+};
+
+struct VDMX_group
+{
+    WORD recs;
+    BYTE startsz;
+    BYTE endsz;
+};
+
+struct VDMX_vTable
+{
+    WORD yPelHeight;
+    SHORT yMax;
+    SHORT yMin;
+};
 
 typedef struct {
     CHAR FeatureTag[4];
@@ -290,6 +371,49 @@ enum OPENTYPE_PLATFORM_ID
     OPENTYPE_PLATFORM_ISO,
     OPENTYPE_PLATFORM_WIN,
     OPENTYPE_PLATFORM_CUSTOM
+};
+
+typedef struct {
+    WORD FeatureParams;
+    WORD LookupCount;
+    WORD LookupListIndex[1];
+} OT_Feature;
+
+typedef struct {
+    WORD LookupCount;
+    WORD Lookup[1];
+} OT_LookupList;
+
+typedef struct {
+    WORD LookupType;
+    WORD LookupFlag;
+    WORD SubTableCount;
+    WORD SubTable[1];
+} OT_LookupTable;
+
+typedef struct {
+    WORD SubstFormat;
+    WORD Coverage;
+    WORD DeltaGlyphID;
+} GSUB_SingleSubstFormat1;
+
+typedef struct {
+    WORD SubstFormat;
+    WORD Coverage;
+    WORD GlyphCount;
+    WORD Substitute[1];
+} GSUB_SingleSubstFormat2;
+
+typedef struct {
+    WORD SubstFormat;
+    WORD ExtensionLookupType;
+    DWORD ExtensionOffset;
+} GSUB_ExtensionPosFormat1;
+
+enum OPENTYPE_GPOS_LOOKUPS
+{
+    OPENTYPE_GPOS_SINGLE_SUBST = 1,
+    OPENTYPE_GPOS_EXTENSION_SUBST = 7
 };
 
 enum TT_NAME_WINDOWS_ENCODING_ID
@@ -428,7 +552,7 @@ enum TT_NAME_MAC_LANGUAGE_ID
     TT_NAME_MAC_LANGID_LAO,
     TT_NAME_MAC_LANGID_VIETNAMESE,
     TT_NAME_MAC_LANGID_INDONESIAN,
-    TT_NAME_MAC_LANGID_TAGALONG,
+    TT_NAME_MAC_LANGID_TAGALOG,
     TT_NAME_MAC_LANGID_MALAY_ROMAN,
     TT_NAME_MAC_LANGID_MALAY_ARABIC,
     TT_NAME_MAC_LANGID_AMHARIC,
@@ -441,11 +565,11 @@ enum TT_NAME_MAC_LANGUAGE_ID
     TT_NAME_MAC_LANGID_NYANJA,
     TT_NAME_MAC_LANGID_MALAGASY,
     TT_NAME_MAC_LANGID_ESPERANTO,
-    TT_NAME_MAC_LANGID_WELSH,
+    TT_NAME_MAC_LANGID_WELSH = 128,
     TT_NAME_MAC_LANGID_BASQUE,
     TT_NAME_MAC_LANGID_CATALAN,
     TT_NAME_MAC_LANGID_LATIN,
-    TT_NAME_MAC_LANGID_QUENCHUA,
+    TT_NAME_MAC_LANGID_QUECHUA,
     TT_NAME_MAC_LANGID_GUARANI,
     TT_NAME_MAC_LANGID_AYMARA,
     TT_NAME_MAC_LANGID_TATAR,
@@ -563,6 +687,39 @@ static const char name_mac_langid_to_locale[][10] = {
     "",
     "",
     "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
     "cy-GB",
     "eu-ES",
     "ca-ES",
@@ -638,62 +795,248 @@ static const UINT16 dwriteid_to_opentypeid[DWRITE_INFORMATIONAL_STRING_POSTSCRIP
     OPENTYPE_STRING_POSTSCRIPT_CID_NAME
 };
 
+/* CPAL table */
+struct CPAL_Header_0
+{
+    USHORT version;
+    USHORT numPaletteEntries;
+    USHORT numPalette;
+    USHORT numColorRecords;
+    ULONG  offsetFirstColorRecord;
+    USHORT colorRecordIndices[1];
+};
+
+/* for version == 1, this comes after full CPAL_Header_0 */
+struct CPAL_SubHeader_1
+{
+    ULONG  offsetPaletteTypeArray;
+    ULONG  offsetPaletteLabelArray;
+    ULONG  offsetPaletteEntryLabelArray;
+};
+
+struct CPAL_ColorRecord
+{
+    BYTE blue;
+    BYTE green;
+    BYTE red;
+    BYTE alpha;
+};
+
+/* COLR table */
+struct COLR_Header
+{
+    USHORT version;
+    USHORT numBaseGlyphRecords;
+    ULONG  offsetBaseGlyphRecord;
+    ULONG  offsetLayerRecord;
+    USHORT numLayerRecords;
+};
+
+struct COLR_BaseGlyphRecord
+{
+    USHORT GID;
+    USHORT firstLayerIndex;
+    USHORT numLayers;
+};
+
+struct COLR_LayerRecord
+{
+    USHORT GID;
+    USHORT paletteIndex;
+};
+
 BOOL is_face_type_supported(DWRITE_FONT_FACE_TYPE type)
 {
     return (type == DWRITE_FONT_FACE_TYPE_CFF) ||
            (type == DWRITE_FONT_FACE_TYPE_TRUETYPE) ||
-           (type == DWRITE_FONT_FACE_TYPE_TRUETYPE_COLLECTION) ||
+           (type == DWRITE_FONT_FACE_TYPE_OPENTYPE_COLLECTION) ||
            (type == DWRITE_FONT_FACE_TYPE_RAW_CFF);
+}
+
+typedef HRESULT (*dwrite_fontfile_analyzer)(IDWriteFontFileStream *stream, UINT32 *font_count, DWRITE_FONT_FILE_TYPE *file_type,
+    DWRITE_FONT_FACE_TYPE *face_type);
+
+static HRESULT opentype_ttc_analyzer(IDWriteFontFileStream *stream, UINT32 *font_count, DWRITE_FONT_FILE_TYPE *file_type,
+    DWRITE_FONT_FACE_TYPE *face_type)
+{
+    static const DWORD ttctag = MS_TTCF_TAG;
+    const TTC_Header_V1 *header;
+    void *context;
+    HRESULT hr;
+
+    hr = IDWriteFontFileStream_ReadFileFragment(stream, (const void**)&header, 0, sizeof(header), &context);
+    if (FAILED(hr))
+        return hr;
+
+    if (!memcmp(header->TTCTag, &ttctag, sizeof(ttctag))) {
+        *font_count = GET_BE_DWORD(header->numFonts);
+        *file_type = DWRITE_FONT_FILE_TYPE_OPENTYPE_COLLECTION;
+        *face_type = DWRITE_FONT_FACE_TYPE_OPENTYPE_COLLECTION;
+    }
+
+    IDWriteFontFileStream_ReleaseFileFragment(stream, context);
+
+    return *file_type != DWRITE_FONT_FILE_TYPE_UNKNOWN ? S_OK : S_FALSE;
+}
+
+static HRESULT opentype_ttf_analyzer(IDWriteFontFileStream *stream, UINT32 *font_count, DWRITE_FONT_FILE_TYPE *file_type,
+    DWRITE_FONT_FACE_TYPE *face_type)
+{
+    const DWORD *header;
+    void *context;
+    HRESULT hr;
+
+    hr = IDWriteFontFileStream_ReadFileFragment(stream, (const void**)&header, 0, sizeof(*header), &context);
+    if (FAILED(hr))
+        return hr;
+
+    if (GET_BE_DWORD(*header) == 0x10000) {
+        *font_count = 1;
+        *file_type = DWRITE_FONT_FILE_TYPE_TRUETYPE;
+        *face_type = DWRITE_FONT_FACE_TYPE_TRUETYPE;
+    }
+
+    IDWriteFontFileStream_ReleaseFileFragment(stream, context);
+
+    return *file_type != DWRITE_FONT_FILE_TYPE_UNKNOWN ? S_OK : S_FALSE;
+}
+
+static HRESULT opentype_otf_analyzer(IDWriteFontFileStream *stream, UINT32 *font_count, DWRITE_FONT_FILE_TYPE *file_type,
+    DWRITE_FONT_FACE_TYPE *face_type)
+{
+    const DWORD *header;
+    void *context;
+    HRESULT hr;
+
+    hr = IDWriteFontFileStream_ReadFileFragment(stream, (const void**)&header, 0, sizeof(*header), &context);
+    if (FAILED(hr))
+        return hr;
+
+    if (GET_BE_DWORD(*header) == MS_OTTO_TAG) {
+        *font_count = 1;
+        *file_type = DWRITE_FONT_FILE_TYPE_CFF;
+        *face_type = DWRITE_FONT_FACE_TYPE_CFF;
+    }
+
+    IDWriteFontFileStream_ReleaseFileFragment(stream, context);
+
+    return *file_type != DWRITE_FONT_FILE_TYPE_UNKNOWN ? S_OK : S_FALSE;
+}
+
+static HRESULT opentype_type1_analyzer(IDWriteFontFileStream *stream, UINT32 *font_count, DWRITE_FONT_FILE_TYPE *file_type,
+    DWRITE_FONT_FACE_TYPE *face_type)
+{
+#include "pshpack1.h"
+    /* Specified in Adobe TechNote #5178 */
+    struct pfm_header {
+        WORD  dfVersion;
+        DWORD dfSize;
+        char  data0[95];
+        DWORD dfDevice;
+        char  data1[12];
+    };
+#include "poppack.h"
+    struct type1_header {
+        WORD tag;
+        char data[14];
+    };
+    const struct type1_header *header;
+    void *context;
+    HRESULT hr;
+
+    hr = IDWriteFontFileStream_ReadFileFragment(stream, (const void**)&header, 0, sizeof(*header), &context);
+    if (FAILED(hr))
+        return hr;
+
+    /* tag is followed by plain text section */
+    if (header->tag == 0x8001 &&
+        (!memcmp(header->data, "%!PS-AdobeFont", 14) ||
+         !memcmp(header->data, "%!FontType", 10))) {
+        *font_count = 1;
+        *file_type = DWRITE_FONT_FILE_TYPE_TYPE1_PFB;
+        *face_type = DWRITE_FONT_FACE_TYPE_TYPE1;
+    }
+
+    IDWriteFontFileStream_ReleaseFileFragment(stream, context);
+
+    /* let's see if it's a .pfm metrics file */
+    if (*file_type == DWRITE_FONT_FILE_TYPE_UNKNOWN) {
+        const struct pfm_header *pfm_header;
+        UINT64 filesize;
+        DWORD offset;
+        BOOL header_checked;
+
+        hr = IDWriteFontFileStream_GetFileSize(stream, &filesize);
+        if (FAILED(hr))
+            return hr;
+
+        hr = IDWriteFontFileStream_ReadFileFragment(stream, (const void**)&pfm_header, 0, sizeof(*pfm_header), &context);
+        if (FAILED(hr))
+            return hr;
+
+        offset = pfm_header->dfDevice;
+        header_checked = pfm_header->dfVersion == 0x100 && pfm_header->dfSize == filesize;
+        IDWriteFontFileStream_ReleaseFileFragment(stream, context);
+
+        /* as a last test check static string in PostScript information section */
+        if (header_checked) {
+            static const char postscript[] = "PostScript";
+            char *devtype_name;
+
+            hr = IDWriteFontFileStream_ReadFileFragment(stream, (const void**)&devtype_name, offset, sizeof(postscript), &context);
+            if (FAILED(hr))
+                return hr;
+
+            if (!memcmp(devtype_name, postscript, sizeof(postscript))) {
+                *font_count = 1;
+                *file_type = DWRITE_FONT_FILE_TYPE_TYPE1_PFM;
+                *face_type = DWRITE_FONT_FACE_TYPE_TYPE1;
+            }
+
+            IDWriteFontFileStream_ReleaseFileFragment(stream, context);
+        }
+    }
+
+    return *file_type != DWRITE_FONT_FILE_TYPE_UNKNOWN ? S_OK : S_FALSE;
 }
 
 HRESULT opentype_analyze_font(IDWriteFontFileStream *stream, UINT32* font_count, DWRITE_FONT_FILE_TYPE *file_type, DWRITE_FONT_FACE_TYPE *face_type, BOOL *supported)
 {
-    /* TODO: Do font validation */
+    static dwrite_fontfile_analyzer fontfile_analyzers[] = {
+        opentype_ttf_analyzer,
+        opentype_otf_analyzer,
+        opentype_ttc_analyzer,
+        opentype_type1_analyzer,
+        NULL
+    };
+    dwrite_fontfile_analyzer *analyzer = fontfile_analyzers;
     DWRITE_FONT_FACE_TYPE face;
-    const void *font_data;
-    const char* tag;
-    void *context;
     HRESULT hr;
 
-    hr = IDWriteFontFileStream_ReadFileFragment(stream, &font_data, 0, sizeof(TTC_Header_V1), &context);
-    if (FAILED(hr))
-        return hr;
+    if (!face_type)
+        face_type = &face;
 
-    tag = font_data;
     *file_type = DWRITE_FONT_FILE_TYPE_UNKNOWN;
-    face = DWRITE_FONT_FACE_TYPE_UNKNOWN;
+    *face_type = DWRITE_FONT_FACE_TYPE_UNKNOWN;
     *font_count = 0;
 
-    if (DWRITE_MAKE_OPENTYPE_TAG(tag[0], tag[1], tag[2], tag[3]) == MS_TTCF_TAG)
-    {
-        const TTC_Header_V1 *header = font_data;
-        *font_count = GET_BE_DWORD(header->numFonts);
-        *file_type = DWRITE_FONT_FILE_TYPE_TRUETYPE_COLLECTION;
-        face = DWRITE_FONT_FACE_TYPE_TRUETYPE_COLLECTION;
-    }
-    else if (GET_BE_DWORD(*(DWORD*)font_data) == 0x10000)
-    {
-        *font_count = 1;
-        *file_type = DWRITE_FONT_FILE_TYPE_TRUETYPE;
-        face = DWRITE_FONT_FACE_TYPE_TRUETYPE;
-    }
-    else if (DWRITE_MAKE_OPENTYPE_TAG(tag[0], tag[1], tag[2], tag[3]) == MS_OTTO_TAG)
-    {
-        *file_type = DWRITE_FONT_FILE_TYPE_CFF;
-        face = DWRITE_FONT_FACE_TYPE_CFF;
+    while (*analyzer) {
+        hr = (*analyzer)(stream, font_count, file_type, face_type);
+        if (FAILED(hr))
+            return hr;
+
+        if (hr == S_OK)
+            break;
+
+        analyzer++;
     }
 
-    if (face_type)
-        *face_type = face;
-
-    *supported = is_face_type_supported(face);
-
-    IDWriteFontFileStream_ReleaseFileFragment(stream, context);
+    *supported = is_face_type_supported(*face_type);
     return S_OK;
 }
 
-HRESULT opentype_get_font_table(IDWriteFontFileStream *stream, DWRITE_FONT_FACE_TYPE type, UINT32 font_index, UINT32 tag,
-    const void **table_data, void **table_context, UINT32 *table_size, BOOL *found)
+HRESULT opentype_get_font_table(struct file_stream_desc *stream_desc, UINT32 tag, const void **table_data,
+    void **table_context, UINT32 *table_size, BOOL *found)
 {
     HRESULT hr;
     TTC_SFNT_V1 *font_header = NULL;
@@ -706,21 +1049,25 @@ HRESULT opentype_get_font_table(IDWriteFontFileStream *stream, DWRITE_FONT_FACE_
     if (found) *found = FALSE;
     if (table_size) *table_size = 0;
 
-    if (type == DWRITE_FONT_FACE_TYPE_TRUETYPE_COLLECTION) {
+    *table_data = NULL;
+    *table_context = NULL;
+
+    if (stream_desc->face_type == DWRITE_FONT_FACE_TYPE_OPENTYPE_COLLECTION) {
         const TTC_Header_V1 *ttc_header;
         void * ttc_context;
-        hr = IDWriteFontFileStream_ReadFileFragment(stream, (const void**)&ttc_header, 0, sizeof(*ttc_header), &ttc_context);
+        hr = IDWriteFontFileStream_ReadFileFragment(stream_desc->stream, (const void**)&ttc_header, 0, sizeof(*ttc_header), &ttc_context);
         if (SUCCEEDED(hr)) {
-            table_offset = GET_BE_DWORD(ttc_header->OffsetTable[0]);
-            if (font_index >= GET_BE_DWORD(ttc_header->numFonts))
+            if (stream_desc->face_index >= GET_BE_DWORD(ttc_header->numFonts))
                 hr = E_INVALIDARG;
-            else
-                hr = IDWriteFontFileStream_ReadFileFragment(stream, (const void**)&font_header, table_offset, sizeof(*font_header), &sfnt_context);
-            IDWriteFontFileStream_ReleaseFileFragment(stream, ttc_context);
+            else {
+                table_offset = GET_BE_DWORD(ttc_header->OffsetTable[stream_desc->face_index]);
+                hr = IDWriteFontFileStream_ReadFileFragment(stream_desc->stream, (const void**)&font_header, table_offset, sizeof(*font_header), &sfnt_context);
+            }
+            IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, ttc_context);
         }
     }
     else
-        hr = IDWriteFontFileStream_ReadFileFragment(stream, (const void**)&font_header, 0, sizeof(*font_header), &sfnt_context);
+        hr = IDWriteFontFileStream_ReadFileFragment(stream_desc->stream, (const void**)&font_header, 0, sizeof(*font_header), &sfnt_context);
 
     if (FAILED(hr))
         return hr;
@@ -729,25 +1076,25 @@ HRESULT opentype_get_font_table(IDWriteFontFileStream *stream, DWRITE_FONT_FACE_
     table_offset += sizeof(*font_header);
     for (i = 0; i < table_count; i++)
     {
-        hr = IDWriteFontFileStream_ReadFileFragment(stream, (const void**)&table_record, table_offset, sizeof(*table_record), &table_record_context);
+        hr = IDWriteFontFileStream_ReadFileFragment(stream_desc->stream, (const void**)&table_record, table_offset, sizeof(*table_record), &table_record_context);
         if (FAILED(hr))
             break;
         if (DWRITE_MAKE_OPENTYPE_TAG(table_record->tag[0], table_record->tag[1], table_record->tag[2], table_record->tag[3]) == tag)
             break;
-        IDWriteFontFileStream_ReleaseFileFragment(stream, table_record_context);
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, table_record_context);
         table_offset += sizeof(*table_record);
     }
 
-    IDWriteFontFileStream_ReleaseFileFragment(stream, sfnt_context);
+    IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, sfnt_context);
     if (SUCCEEDED(hr) && i < table_count)
     {
         int offset = GET_BE_DWORD(table_record->offset);
         int length = GET_BE_DWORD(table_record->length);
-        IDWriteFontFileStream_ReleaseFileFragment(stream, table_record_context);
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, table_record_context);
 
         if (found) *found = TRUE;
         if (table_size) *table_size = length;
-        hr = IDWriteFontFileStream_ReadFileFragment(stream, table_data, offset, length, table_context);
+        hr = IDWriteFontFileStream_ReadFileFragment(stream_desc->stream, table_data, offset, length, table_context);
     }
 
     return hr;
@@ -849,8 +1196,7 @@ HRESULT opentype_cmap_get_unicode_ranges(void *data, UINT32 max_count, DWRITE_UN
     return *count > max_count ? E_NOT_SUFFICIENT_BUFFER : S_OK;
 }
 
-void opentype_get_font_metrics(IDWriteFontFileStream *stream, DWRITE_FONT_FACE_TYPE face_type, UINT32 face_index,
-    DWRITE_FONT_METRICS1 *metrics, DWRITE_CARET_METRICS *caret)
+void opentype_get_font_metrics(struct file_stream_desc *stream_desc, DWRITE_FONT_METRICS1 *metrics, DWRITE_CARET_METRICS *caret)
 {
     void *os2_context, *head_context, *post_context, *hhea_context;
     const TT_OS2_V2 *tt_os2;
@@ -860,10 +1206,10 @@ void opentype_get_font_metrics(IDWriteFontFileStream *stream, DWRITE_FONT_FACE_T
 
     memset(metrics, 0, sizeof(*metrics));
 
-    opentype_get_font_table(stream, face_type, face_index, MS_OS2_TAG,  (const void**)&tt_os2, &os2_context, NULL, NULL);
-    opentype_get_font_table(stream, face_type, face_index, MS_HEAD_TAG, (const void**)&tt_head, &head_context, NULL, NULL);
-    opentype_get_font_table(stream, face_type, face_index, MS_POST_TAG, (const void**)&tt_post, &post_context, NULL, NULL);
-    opentype_get_font_table(stream, face_type, face_index, MS_HHEA_TAG, (const void**)&tt_hhea, &hhea_context, NULL, NULL);
+    opentype_get_font_table(stream_desc, MS_OS2_TAG,  (const void**)&tt_os2, &os2_context, NULL, NULL);
+    opentype_get_font_table(stream_desc, MS_HEAD_TAG, (const void**)&tt_head, &head_context, NULL, NULL);
+    opentype_get_font_table(stream_desc, MS_POST_TAG, (const void**)&tt_post, &post_context, NULL, NULL);
+    opentype_get_font_table(stream_desc, MS_HHEA_TAG, (const void**)&tt_hhea, &hhea_context, NULL, NULL);
 
     if (tt_head) {
         metrics->designUnitsPerEm = GET_BE_WORD(tt_head->unitsPerEm);
@@ -890,7 +1236,9 @@ void opentype_get_font_metrics(IDWriteFontFileStream *stream, DWRITE_FONT_FACE_T
         USHORT version = GET_BE_WORD(tt_os2->version);
 
         metrics->ascent  = GET_BE_WORD(tt_os2->usWinAscent);
-        metrics->descent = GET_BE_WORD(tt_os2->usWinDescent);
+        /* Some fonts have usWinDescent value stored as signed short, which could be wrongly
+           interpreted as large unsigned value. */
+        metrics->descent = abs((SHORT)GET_BE_WORD(tt_os2->usWinDescent));
 
         /* line gap is estimated using two sets of ascender/descender values and 'hhea' line gap */
         if (tt_hhea) {
@@ -920,15 +1268,12 @@ void opentype_get_font_metrics(IDWriteFontFileStream *stream, DWRITE_FONT_FACE_T
             metrics->xHeight   = GET_BE_WORD(tt_os2->sxHeight);
         }
 
-        /* version 4 fields */
-        if (version >= 4) {
-            if (GET_BE_WORD(tt_os2->fsSelection) & OS2_FSSELECTION_USE_TYPO_METRICS) {
-                SHORT descent = GET_BE_WORD(tt_os2->sTypoDescender);
-                metrics->ascent = GET_BE_WORD(tt_os2->sTypoAscender);
-                metrics->descent = descent < 0 ? -descent : 0;
-                metrics->lineGap = GET_BE_WORD(tt_os2->sTypoLineGap);
-                metrics->hasTypographicMetrics = TRUE;
-            }
+        if (GET_BE_WORD(tt_os2->fsSelection) & OS2_FSSELECTION_USE_TYPO_METRICS) {
+            SHORT descent = GET_BE_WORD(tt_os2->sTypoDescender);
+            metrics->ascent = GET_BE_WORD(tt_os2->sTypoAscender);
+            metrics->descent = descent < 0 ? -descent : 0;
+            metrics->lineGap = GET_BE_WORD(tt_os2->sTypoLineGap);
+            metrics->hasTypographicMetrics = TRUE;
         }
     }
 
@@ -937,6 +1282,11 @@ void opentype_get_font_metrics(IDWriteFontFileStream *stream, DWRITE_FONT_FACE_T
         metrics->underlineThickness = GET_BE_WORD(tt_post->underlineThickness);
     }
 
+    if (metrics->underlineThickness == 0)
+        metrics->underlineThickness = metrics->designUnitsPerEm / 14;
+    if (metrics->strikethroughThickness == 0)
+        metrics->strikethroughThickness = metrics->underlineThickness;
+
     /* estimate missing metrics */
     if (metrics->xHeight == 0)
         metrics->xHeight = metrics->designUnitsPerEm / 2;
@@ -944,49 +1294,80 @@ void opentype_get_font_metrics(IDWriteFontFileStream *stream, DWRITE_FONT_FACE_T
         metrics->capHeight = metrics->designUnitsPerEm * 7 / 10;
 
     if (tt_os2)
-        IDWriteFontFileStream_ReleaseFileFragment(stream, os2_context);
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, os2_context);
     if (tt_head)
-        IDWriteFontFileStream_ReleaseFileFragment(stream, head_context);
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, head_context);
     if (tt_post)
-        IDWriteFontFileStream_ReleaseFileFragment(stream, post_context);
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, post_context);
     if (tt_hhea)
-        IDWriteFontFileStream_ReleaseFileFragment(stream, hhea_context);
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, hhea_context);
 }
 
-void opentype_get_font_properties(IDWriteFontFileStream *stream, DWRITE_FONT_FACE_TYPE type, UINT32 index,
-    DWRITE_FONT_STRETCH *stretch, DWRITE_FONT_WEIGHT *weight, DWRITE_FONT_STYLE *style)
+void opentype_get_font_properties(struct file_stream_desc *stream_desc, struct dwrite_font_props *props)
 {
     void *os2_context, *head_context;
     const TT_OS2_V2 *tt_os2;
     const TT_HEAD *tt_head;
 
-    opentype_get_font_table(stream, type, index, MS_OS2_TAG,  (const void**)&tt_os2, &os2_context, NULL, NULL);
-    opentype_get_font_table(stream, type, index, MS_HEAD_TAG, (const void**)&tt_head, &head_context, NULL, NULL);
+    opentype_get_font_table(stream_desc, MS_OS2_TAG,  (const void**)&tt_os2, &os2_context, NULL, NULL);
+    opentype_get_font_table(stream_desc, MS_HEAD_TAG, (const void**)&tt_head, &head_context, NULL, NULL);
 
     /* default stretch, weight and style to normal */
-    *stretch = DWRITE_FONT_STRETCH_NORMAL;
-    *weight = DWRITE_FONT_WEIGHT_NORMAL;
-    *style = DWRITE_FONT_STYLE_NORMAL;
+    props->stretch = DWRITE_FONT_STRETCH_NORMAL;
+    props->weight = DWRITE_FONT_WEIGHT_NORMAL;
+    props->style = DWRITE_FONT_STYLE_NORMAL;
+    memset(&props->panose, 0, sizeof(props->panose));
+    memset(&props->lf, 0, sizeof(props->lf));
 
     /* DWRITE_FONT_STRETCH enumeration values directly match font data values */
     if (tt_os2) {
-        if (GET_BE_WORD(tt_os2->usWidthClass) <= DWRITE_FONT_STRETCH_ULTRA_EXPANDED)
-            *stretch = GET_BE_WORD(tt_os2->usWidthClass);
+        USHORT version = GET_BE_WORD(tt_os2->version);
+        USHORT fsSelection = GET_BE_WORD(tt_os2->fsSelection);
+        USHORT usWeightClass = GET_BE_WORD(tt_os2->usWeightClass);
+        USHORT usWidthClass = GET_BE_WORD(tt_os2->usWidthClass);
 
-        *weight = GET_BE_WORD(tt_os2->usWeightClass);
-        TRACE("stretch=%d, weight=%d\n", *stretch, *weight);
+        if (usWidthClass > DWRITE_FONT_STRETCH_UNDEFINED && usWidthClass <= DWRITE_FONT_STRETCH_ULTRA_EXPANDED)
+            props->stretch = usWidthClass;
+
+        if (usWeightClass >= 1 && usWeightClass <= 9)
+            usWeightClass *= 100;
+
+        if (usWeightClass > DWRITE_FONT_WEIGHT_ULTRA_BLACK)
+            props->weight = DWRITE_FONT_WEIGHT_ULTRA_BLACK;
+        else if (usWeightClass > 0)
+            props->weight = usWeightClass;
+
+        if (version >= 4 && (fsSelection & OS2_FSSELECTION_OBLIQUE))
+            props->style = DWRITE_FONT_STYLE_OBLIQUE;
+        else if (fsSelection & OS2_FSSELECTION_ITALIC)
+            props->style = DWRITE_FONT_STYLE_ITALIC;
+
+        memcpy(&props->panose, &tt_os2->panose, sizeof(props->panose));
     }
-
-    if (tt_head) {
+    else if (tt_head) {
         USHORT macStyle = GET_BE_WORD(tt_head->macStyle);
-        if (macStyle & 0x0002)
-            *style = DWRITE_FONT_STYLE_ITALIC;
+
+        if (macStyle & TT_HEAD_MACSTYLE_CONDENSED)
+            props->stretch = DWRITE_FONT_STRETCH_CONDENSED;
+        else if (macStyle & TT_HEAD_MACSTYLE_EXTENDED)
+            props->stretch = DWRITE_FONT_STRETCH_EXPANDED;
+
+        if (macStyle & TT_HEAD_MACSTYLE_BOLD)
+            props->weight = DWRITE_FONT_WEIGHT_BOLD;
+
+        if (macStyle & TT_HEAD_MACSTYLE_ITALIC)
+            props->style = DWRITE_FONT_STYLE_ITALIC;
     }
+
+    props->lf.lfWeight = props->weight;
+    props->lf.lfItalic = props->style == DWRITE_FONT_STYLE_ITALIC;
+
+    TRACE("stretch=%d, weight=%d, style %d\n", props->stretch, props->weight, props->style);
 
     if (tt_os2)
-        IDWriteFontFileStream_ReleaseFileFragment(stream, os2_context);
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, os2_context);
     if (tt_head)
-        IDWriteFontFileStream_ReleaseFileFragment(stream, head_context);
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, head_context);
 }
 
 static UINT get_name_record_codepage(enum OPENTYPE_PLATFORM_ID platform, USHORT encoding)
@@ -1077,7 +1458,7 @@ static void get_name_record_locale(enum OPENTYPE_PLATFORM_ID platform, USHORT la
         const char *locale_name = NULL;
 
         if (lang_id > TT_NAME_MAC_LANGID_AZER_ROMAN)
-            ERR("invalid mac lang id %d\n", lang_id);
+            WARN("invalid mac lang id %d\n", lang_id);
         else if (!name_mac_langid_to_locale[lang_id][0])
             FIXME("failed to map mac lang id %d to locale name\n", lang_id);
         else
@@ -1095,20 +1476,69 @@ static void get_name_record_locale(enum OPENTYPE_PLATFORM_ID platform, USHORT la
             strcpyW(locale, enusW);
         }
         break;
+    case OPENTYPE_PLATFORM_UNICODE:
+        strcpyW(locale, enusW);
+        break;
     default:
         FIXME("unknown platform %d\n", platform);
     }
 }
 
-HRESULT opentype_get_font_strings_from_id(const void *table_data, DWRITE_INFORMATIONAL_STRING_ID id, IDWriteLocalizedStrings **strings)
+static BOOL opentype_decode_namerecord(const TT_NAME_V0 *header, BYTE *storage_area, USHORT recid, IDWriteLocalizedStrings *strings)
+{
+    const TT_NameRecord *record = &header->nameRecord[recid];
+    USHORT lang_id, length, offset, encoding, platform;
+    BOOL ret = FALSE;
+
+    platform = GET_BE_WORD(record->platformID);
+    lang_id = GET_BE_WORD(record->languageID);
+    length = GET_BE_WORD(record->length);
+    offset = GET_BE_WORD(record->offset);
+    encoding = GET_BE_WORD(record->encodingID);
+
+    if (lang_id < 0x8000) {
+        WCHAR locale[LOCALE_NAME_MAX_LENGTH];
+        WCHAR *name_string;
+        UINT codepage;
+
+        codepage = get_name_record_codepage(platform, encoding);
+        get_name_record_locale(platform, lang_id, locale, sizeof(locale)/sizeof(WCHAR));
+
+        if (codepage) {
+            DWORD len = MultiByteToWideChar(codepage, 0, (LPSTR)(storage_area + offset), length, NULL, 0);
+            name_string = heap_alloc(sizeof(WCHAR) * (len+1));
+            MultiByteToWideChar(codepage, 0, (LPSTR)(storage_area + offset), length, name_string, len);
+            name_string[len] = 0;
+        }
+        else {
+            int i;
+
+            length /= sizeof(WCHAR);
+            name_string = heap_strdupnW((LPWSTR)(storage_area + offset), length);
+            for (i = 0; i < length; i++)
+                name_string[i] = GET_BE_WORD(name_string[i]);
+        }
+
+        TRACE("string %s for locale %s found\n", debugstr_w(name_string), debugstr_w(locale));
+        add_localizedstring(strings, locale, name_string);
+        heap_free(name_string);
+        ret = TRUE;
+    }
+    else
+        FIXME("handle NAME format 1\n");
+
+    return ret;
+}
+
+static HRESULT opentype_get_font_strings_from_id(const void *table_data, enum OPENTYPE_STRING_ID id, IDWriteLocalizedStrings **strings)
 {
     const TT_NAME_V0 *header;
     BYTE *storage_area = 0;
     USHORT count = 0;
-    UINT16 name_id;
+    int i, candidate;
+    WORD format;
     BOOL exists;
     HRESULT hr;
-    int i;
 
     if (!table_data)
         return E_FAIL;
@@ -1117,28 +1547,27 @@ HRESULT opentype_get_font_strings_from_id(const void *table_data, DWRITE_INFORMA
     if (FAILED(hr)) return hr;
 
     header = table_data;
+    format = GET_BE_WORD(header->format);
 
-    switch (header->format) {
+    switch (format) {
     case 0:
+    case 1:
         break;
     default:
-        FIXME("unsupported NAME format %d\n", header->format);
+        FIXME("unsupported NAME format %d\n", format);
     }
 
     storage_area = (LPBYTE)table_data + GET_BE_WORD(header->stringOffset);
     count = GET_BE_WORD(header->count);
 
-    name_id = dwriteid_to_opentypeid[id];
-
     exists = FALSE;
+    candidate = -1;
     for (i = 0; i < count; i++) {
         const TT_NameRecord *record = &header->nameRecord[i];
-        USHORT lang_id, length, offset, encoding, platform;
+        USHORT platform;
 
-        if (GET_BE_WORD(record->nameID) != name_id)
+        if (GET_BE_WORD(record->nameID) != id)
             continue;
-
-        exists = TRUE;
 
         /* Right now only accept unicode and windows encoded fonts */
         platform = GET_BE_WORD(record->platformID);
@@ -1150,54 +1579,122 @@ HRESULT opentype_get_font_strings_from_id(const void *table_data, DWRITE_INFORMA
             continue;
         }
 
-        /* Skip such entries for now, as it's not clear which locale is implied when
-           unicode platform is used. Also fonts tend to duplicate those strings as
-           WIN platform entries. */
-        if (platform == OPENTYPE_PLATFORM_UNICODE)
-            continue;
-
-        lang_id = GET_BE_WORD(record->languageID);
-        length = GET_BE_WORD(record->length);
-        offset = GET_BE_WORD(record->offset);
-        encoding = GET_BE_WORD(record->encodingID);
-
-        if (lang_id < 0x8000) {
-            WCHAR locale[LOCALE_NAME_MAX_LENGTH];
-            WCHAR *name_string;
-            UINT codepage;
-
-            codepage = get_name_record_codepage(platform, encoding);
-            get_name_record_locale(platform, lang_id, locale, sizeof(locale)/sizeof(WCHAR));
-
-            if (codepage) {
-                DWORD len = MultiByteToWideChar(codepage, 0, (LPSTR)(storage_area + offset), length, NULL, 0);
-                name_string = heap_alloc(sizeof(WCHAR) * (len+1));
-                MultiByteToWideChar(codepage, 0, (LPSTR)(storage_area + offset), length, name_string, len);
-                name_string[len] = 0;
-            }
-            else {
-                int i;
-
-                length /= sizeof(WCHAR);
-                name_string = heap_strdupnW((LPWSTR)(storage_area + offset), length);
-                for (i = 0; i < length; i++)
-                    name_string[i] = GET_BE_WORD(name_string[i]);
-            }
-
-            TRACE("string %s for locale %s found\n", debugstr_w(name_string), debugstr_w(locale));
-            add_localizedstring(*strings, locale, name_string);
-            heap_free(name_string);
-        }
-        else {
-            FIXME("handle NAME format 1\n");
+        /* Skip such entries for now, fonts tend to duplicate those strings as
+           WIN platform entries. If font does not have WIN or MAC entry for this id, we will
+           use this Unicode platform entry while assuming en-US locale. */
+        if (platform == OPENTYPE_PLATFORM_UNICODE) {
+            candidate = i;
             continue;
         }
+
+        if (!opentype_decode_namerecord(header, storage_area, i, *strings))
+            continue;
+
+        exists = TRUE;
     }
 
     if (!exists) {
-        IDWriteLocalizedStrings_Release(*strings);
-        *strings = NULL;
+        if (candidate != -1)
+            exists = opentype_decode_namerecord(header, storage_area, candidate, *strings);
+        else {
+            IDWriteLocalizedStrings_Release(*strings);
+            *strings = NULL;
+        }
     }
+
+    return exists ? S_OK : E_FAIL;
+}
+
+/* Provides a conversion from DWRITE to OpenType name ids, input id should be valid, it's not checked. */
+HRESULT opentype_get_font_info_strings(const void *table_data, DWRITE_INFORMATIONAL_STRING_ID id, IDWriteLocalizedStrings **strings)
+{
+    return opentype_get_font_strings_from_id(table_data, dwriteid_to_opentypeid[id], strings);
+}
+
+/* FamilyName locating order is WWS Family Name -> Preferred Family Name -> Family Name. If font claims to
+   have 'Preferred Family Name' in WWS format, then WWS name is not used. */
+HRESULT opentype_get_font_familyname(struct file_stream_desc *stream_desc, IDWriteLocalizedStrings **names)
+{
+    const TT_OS2_V2 *tt_os2;
+    void *os2_context, *name_context;
+    const void *name_table;
+    HRESULT hr;
+
+    opentype_get_font_table(stream_desc, MS_OS2_TAG,  (const void**)&tt_os2, &os2_context, NULL, NULL);
+    opentype_get_font_table(stream_desc, MS_NAME_TAG, &name_table, &name_context, NULL, NULL);
+
+    *names = NULL;
+
+    /* if Preferred Family doesn't conform to WWS model try WWS name */
+    if (tt_os2 && !(GET_BE_WORD(tt_os2->fsSelection) & OS2_FSSELECTION_WWS))
+        hr = opentype_get_font_strings_from_id(name_table, OPENTYPE_STRING_WWS_FAMILY_NAME, names);
+    else
+        hr = E_FAIL;
+
+    if (FAILED(hr))
+        hr = opentype_get_font_strings_from_id(name_table, OPENTYPE_STRING_PREFERRED_FAMILY_NAME, names);
+    if (FAILED(hr))
+        hr = opentype_get_font_strings_from_id(name_table, OPENTYPE_STRING_FAMILY_NAME, names);
+
+    if (tt_os2)
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, os2_context);
+    if (name_context)
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, name_context);
+
+    return hr;
+}
+
+/* FaceName locating order is WWS Face Name -> Preferred Face Name -> Face Name. If font claims to
+   have 'Preferred Face Name' in WWS format, then WWS name is not used. */
+HRESULT opentype_get_font_facename(struct file_stream_desc *stream_desc, WCHAR *lfname, IDWriteLocalizedStrings **names)
+{
+    IDWriteLocalizedStrings *lfnames;
+    void *os2_context, *name_context;
+    const TT_OS2_V2 *tt_os2;
+    const void *name_table;
+    HRESULT hr;
+
+    opentype_get_font_table(stream_desc, MS_OS2_TAG,  (const void**)&tt_os2, &os2_context, NULL, NULL);
+    opentype_get_font_table(stream_desc, MS_NAME_TAG, &name_table, &name_context, NULL, NULL);
+
+    *names = NULL;
+
+    /* if Preferred Family doesn't conform to WWS model try WWS name */
+    if (tt_os2 && !(GET_BE_WORD(tt_os2->fsSelection) & OS2_FSSELECTION_WWS))
+        hr = opentype_get_font_strings_from_id(name_table, OPENTYPE_STRING_WWS_SUBFAMILY_NAME, names);
+    else
+        hr = E_FAIL;
+
+    if (FAILED(hr))
+        hr = opentype_get_font_strings_from_id(name_table, OPENTYPE_STRING_PREFERRED_SUBFAMILY_NAME, names);
+    if (FAILED(hr))
+        hr = opentype_get_font_strings_from_id(name_table, OPENTYPE_STRING_SUBFAMILY_NAME, names);
+
+    /* User locale is preferred, with fallback to en-us. */
+    *lfname = 0;
+    if (SUCCEEDED(opentype_get_font_strings_from_id(name_table, OPENTYPE_STRING_FAMILY_NAME, &lfnames))) {
+        static const WCHAR enusW[] = {'e','n','-','u','s',0};
+        WCHAR localeW[LOCALE_NAME_MAX_LENGTH];
+        UINT32 index;
+        BOOL exists;
+
+        exists = FALSE;
+        if (GetSystemDefaultLocaleName(localeW, sizeof(localeW)/sizeof(WCHAR)))
+            IDWriteLocalizedStrings_FindLocaleName(lfnames, localeW, &index, &exists);
+
+        if (!exists)
+            IDWriteLocalizedStrings_FindLocaleName(lfnames, enusW, &index, &exists);
+
+        if (exists)
+            IDWriteLocalizedStrings_GetString(lfnames, index, lfname, LF_FACESIZE);
+
+        IDWriteLocalizedStrings_Release(lfnames);
+    }
+
+    if (tt_os2)
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, os2_context);
+    if (name_context)
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, name_context);
 
     return hr;
 }
@@ -1284,4 +1781,401 @@ HRESULT opentype_get_typographic_features(IDWriteFontFace *fontface, UINT32 scri
     }
 
     return *count > max_tagcount ? E_NOT_SUFFICIENT_BUFFER : S_OK;
+}
+
+static const struct VDMX_group *find_vdmx_group(const struct VDMX_Header *hdr)
+{
+    WORD num_ratios, i, group_offset = 0;
+    struct VDMX_Ratio *ratios = (struct VDMX_Ratio*)(hdr + 1);
+    BYTE dev_x_ratio = 1, dev_y_ratio = 1;
+
+    num_ratios = GET_BE_WORD(hdr->numRatios);
+
+    for (i = 0; i < num_ratios; i++) {
+
+        if (!ratios[i].bCharSet) continue;
+
+        if ((ratios[i].xRatio == 0 && ratios[i].yStartRatio == 0 &&
+             ratios[i].yEndRatio == 0) ||
+	   (ratios[i].xRatio == dev_x_ratio && ratios[i].yStartRatio <= dev_y_ratio &&
+            ratios[i].yEndRatio >= dev_y_ratio))
+        {
+            group_offset = GET_BE_WORD(*((WORD *)(ratios + num_ratios) + i));
+            break;
+        }
+    }
+    if (group_offset)
+        return (const struct VDMX_group *)((BYTE *)hdr + group_offset);
+    return NULL;
+}
+
+BOOL opentype_get_vdmx_size(const void *data, INT emsize, UINT16 *ascent, UINT16 *descent)
+{
+    const struct VDMX_Header *hdr = (const struct VDMX_Header*)data;
+    const struct VDMX_group *group;
+    const struct VDMX_vTable *tables;
+    WORD recs, i;
+
+    if (!data)
+        return FALSE;
+
+    group = find_vdmx_group(hdr);
+    if (!group)
+        return FALSE;
+
+    recs = GET_BE_WORD(group->recs);
+    if (emsize < group->startsz || emsize >= group->endsz) return FALSE;
+
+    tables = (const struct VDMX_vTable *)(group + 1);
+    for (i = 0; i < recs; i++) {
+        WORD ppem = GET_BE_WORD(tables[i].yPelHeight);
+        if (ppem > emsize) {
+            FIXME("interpolate %d\n", emsize);
+            return FALSE;
+        }
+
+        if (ppem == emsize) {
+            *ascent = (SHORT)GET_BE_WORD(tables[i].yMax);
+            *descent = -(SHORT)GET_BE_WORD(tables[i].yMin);
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+WORD opentype_get_gasp_flags(const WORD *ptr, UINT32 size, INT emsize)
+{
+    WORD num_recs, version;
+    WORD flags = 0;
+
+    if (!ptr)
+        return 0;
+
+    version  = GET_BE_WORD( *ptr++ );
+    num_recs = GET_BE_WORD( *ptr++ );
+    if (version > 1 || size < (num_recs * 2 + 2) * sizeof(WORD)) {
+        ERR("unsupported gasp table: ver %d size %d recs %d\n", version, size, num_recs);
+        goto done;
+    }
+
+    while (num_recs--) {
+        flags = GET_BE_WORD( *(ptr + 1) );
+        if (emsize <= GET_BE_WORD( *ptr )) break;
+        ptr += 2;
+    }
+
+done:
+    return flags;
+}
+
+UINT32 opentype_get_cpal_palettecount(const void *cpal)
+{
+    const struct CPAL_Header_0 *header = (const struct CPAL_Header_0*)cpal;
+    return header ? GET_BE_WORD(header->numPalette) : 0;
+}
+
+UINT32 opentype_get_cpal_paletteentrycount(const void *cpal)
+{
+    const struct CPAL_Header_0 *header = (const struct CPAL_Header_0*)cpal;
+    return header ? GET_BE_WORD(header->numPaletteEntries) : 0;
+}
+
+HRESULT opentype_get_cpal_entries(const void *cpal, UINT32 palette, UINT32 first_entry_index, UINT32 entry_count,
+    DWRITE_COLOR_F *entries)
+{
+    const struct CPAL_Header_0 *header = (const struct CPAL_Header_0*)cpal;
+    const struct CPAL_ColorRecord *records;
+    UINT32 palettecount, entrycount, i;
+
+    if (!header) return DWRITE_E_NOCOLOR;
+
+    palettecount = GET_BE_WORD(header->numPalette);
+    if (palette >= palettecount)
+        return DWRITE_E_NOCOLOR;
+
+    entrycount = GET_BE_WORD(header->numPaletteEntries);
+    if (first_entry_index + entry_count > entrycount)
+        return E_INVALIDARG;
+
+    records = (const struct CPAL_ColorRecord*)((BYTE*)cpal + GET_BE_DWORD(header->offsetFirstColorRecord));
+    first_entry_index += GET_BE_WORD(header->colorRecordIndices[palette]);
+
+    for (i = 0; i < entry_count; i++) {
+        entries[i].u1.r = records[first_entry_index + i].red   / 255.0f;
+        entries[i].u2.g = records[first_entry_index + i].green / 255.0f;
+        entries[i].u3.b = records[first_entry_index + i].blue  / 255.0f;
+        entries[i].u4.a = records[first_entry_index + i].alpha / 255.0f;
+    }
+
+    return S_OK;
+}
+
+static int colr_compare_gid(const void *g, const void *r)
+{
+    const struct COLR_BaseGlyphRecord *record = r;
+    UINT16 glyph = *(UINT16*)g, GID = GET_BE_WORD(record->GID);
+    int ret = 0;
+
+    if (glyph > GID)
+        ret = 1;
+    else if (glyph < GID)
+        ret = -1;
+
+    return ret;
+}
+
+HRESULT opentype_get_colr_glyph(const void *colr, UINT16 glyph, struct dwrite_colorglyph *ret)
+{
+    const struct COLR_BaseGlyphRecord *record;
+    const struct COLR_Header *header = colr;
+    const struct COLR_LayerRecord *layer;
+    DWORD layerrecordoffset = GET_BE_DWORD(header->offsetLayerRecord);
+    DWORD baserecordoffset = GET_BE_DWORD(header->offsetBaseGlyphRecord);
+    WORD numbaserecords = GET_BE_WORD(header->numBaseGlyphRecords);
+
+    record = bsearch(&glyph, (BYTE*)colr + baserecordoffset, numbaserecords, sizeof(struct COLR_BaseGlyphRecord),
+        colr_compare_gid);
+    if (!record) {
+        ret->layer = 0;
+        ret->first_layer = 0;
+        ret->num_layers = 0;
+        ret->glyph = glyph;
+        ret->palette_index = 0xffff;
+        return S_FALSE;
+    }
+
+    ret->layer = 0;
+    ret->first_layer = GET_BE_WORD(record->firstLayerIndex);
+    ret->num_layers = GET_BE_WORD(record->numLayers);
+
+    layer = (struct COLR_LayerRecord*)((BYTE*)colr + layerrecordoffset) + ret->first_layer + ret->layer;
+    ret->glyph = GET_BE_WORD(layer->GID);
+    ret->palette_index = GET_BE_WORD(layer->paletteIndex);
+
+    return S_OK;
+}
+
+void opentype_colr_next_glyph(const void *colr, struct dwrite_colorglyph *glyph)
+{
+    const struct COLR_Header *header = colr;
+    const struct COLR_LayerRecord *layer;
+    DWORD layerrecordoffset = GET_BE_DWORD(header->offsetLayerRecord);
+
+    /* iterated all the way through */
+    if (glyph->layer == glyph->num_layers)
+        return;
+
+    glyph->layer++;
+    layer = (struct COLR_LayerRecord*)((BYTE*)colr + layerrecordoffset) + glyph->first_layer + glyph->layer;
+    glyph->glyph = GET_BE_WORD(layer->GID);
+    glyph->palette_index = GET_BE_WORD(layer->paletteIndex);
+}
+
+HRESULT opentype_get_font_signature(struct file_stream_desc *stream_desc, FONTSIGNATURE *fontsig)
+{
+    const TT_OS2_V2 *tt_os2;
+    void *os2_context;
+    HRESULT hr;
+
+    hr = opentype_get_font_table(stream_desc, MS_OS2_TAG,  (const void**)&tt_os2, &os2_context, NULL, NULL);
+    if (tt_os2) {
+        fontsig->fsUsb[0] = GET_BE_DWORD(tt_os2->ulUnicodeRange1);
+        fontsig->fsUsb[1] = GET_BE_DWORD(tt_os2->ulUnicodeRange2);
+        fontsig->fsUsb[2] = GET_BE_DWORD(tt_os2->ulUnicodeRange3);
+        fontsig->fsUsb[3] = GET_BE_DWORD(tt_os2->ulUnicodeRange4);
+
+        if (GET_BE_WORD(tt_os2->version) == 0) {
+            fontsig->fsCsb[0] = 0;
+            fontsig->fsCsb[1] = 0;
+        }
+        else {
+            fontsig->fsCsb[0] = GET_BE_DWORD(tt_os2->ulCodePageRange1);
+            fontsig->fsCsb[1] = GET_BE_DWORD(tt_os2->ulCodePageRange2);
+        }
+
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, os2_context);
+    }
+
+    return hr;
+}
+
+BOOL opentype_has_vertical_variants(IDWriteFontFace4 *fontface)
+{
+    const OT_FeatureList *featurelist;
+    const OT_LookupList *lookup_list;
+    BOOL exists = FALSE, ret = FALSE;
+    const GPOS_GSUB_Header *header;
+    const void *data;
+    void *context;
+    UINT32 size;
+    HRESULT hr;
+    UINT16 i;
+
+    hr = IDWriteFontFace4_TryGetFontTable(fontface, MS_GSUB_TAG, &data, &size, &context, &exists);
+    if (FAILED(hr) || !exists)
+        return FALSE;
+
+    header = data;
+    featurelist = (OT_FeatureList*)((BYTE*)header + GET_BE_WORD(header->FeatureList));
+    lookup_list = (const OT_LookupList*)((BYTE*)header + GET_BE_WORD(header->LookupList));
+
+    for (i = 0; i < GET_BE_WORD(featurelist->FeatureCount); i++) {
+        if (*(UINT32*)featurelist->FeatureRecord[i].FeatureTag == DWRITE_FONT_FEATURE_TAG_VERTICAL_WRITING) {
+            const OT_Feature *feature = (const OT_Feature*)((BYTE*)featurelist + GET_BE_WORD(featurelist->FeatureRecord[i].Feature));
+            UINT16 lookup_count = GET_BE_WORD(feature->LookupCount), i, index, count, type;
+            const GSUB_SingleSubstFormat2 *subst2;
+            const OT_LookupTable *lookup_table;
+            UINT32 offset;
+
+            if (lookup_count == 0)
+                continue;
+
+            for (i = 0; i < lookup_count; i++) {
+                /* check if lookup is empty */
+                index = GET_BE_WORD(feature->LookupListIndex[i]);
+                lookup_table = (const OT_LookupTable*)((BYTE*)lookup_list + GET_BE_WORD(lookup_list->Lookup[index]));
+
+                type = GET_BE_WORD(lookup_table->LookupType);
+                if (type != OPENTYPE_GPOS_SINGLE_SUBST && type != OPENTYPE_GPOS_EXTENSION_SUBST)
+                    continue;
+
+                count = GET_BE_WORD(lookup_table->SubTableCount);
+                if (count == 0)
+                    continue;
+
+                offset = GET_BE_WORD(lookup_table->SubTable[0]);
+                if (type == OPENTYPE_GPOS_EXTENSION_SUBST) {
+                    const GSUB_ExtensionPosFormat1 *ext = (const GSUB_ExtensionPosFormat1 *)((const BYTE *)lookup_table + offset);
+                    if (GET_BE_WORD(ext->SubstFormat) == 1)
+                        offset += GET_BE_DWORD(ext->ExtensionOffset);
+                    else
+                        FIXME("Unhandled Extension Substitution Format %u\n", GET_BE_WORD(ext->SubstFormat));
+                }
+
+                subst2 = (const GSUB_SingleSubstFormat2*)((BYTE*)lookup_table + offset);
+                index = GET_BE_WORD(subst2->SubstFormat);
+                if (index == 1)
+                    FIXME("Validate Single Substitution Format 1\n");
+                else if (index == 2) {
+                    /* SimSun-ExtB has 0 glyph count for this substitution */
+                    if (GET_BE_WORD(subst2->GlyphCount) > 0) {
+                        ret = TRUE;
+                        break;
+                    }
+                }
+                else
+                    WARN("Unknown Single Substitution Format, %u\n", index);
+            }
+        }
+    }
+
+    IDWriteFontFace4_ReleaseFontTable(fontface, context);
+
+    return ret;
+}
+
+static BOOL opentype_has_font_table(IDWriteFontFace4 *fontface, UINT32 tag)
+{
+    BOOL exists = FALSE;
+    const void *data;
+    void *context;
+    UINT32 size;
+    HRESULT hr;
+
+    hr = IDWriteFontFace4_TryGetFontTable(fontface, tag, &data, &size, &context, &exists);
+    if (FAILED(hr))
+        return FALSE;
+
+    if (exists)
+        IDWriteFontFace4_ReleaseFontTable(fontface, context);
+
+    return exists;
+}
+
+static DWORD opentype_get_sbix_formats(IDWriteFontFace4 *fontface)
+{
+    UINT32 size, s, num_strikes;
+    const sbix_header *header;
+    UINT16 g, num_glyphs;
+    BOOL exists = FALSE;
+    const maxp *maxp;
+    const void *data;
+    DWORD ret = 0;
+    void *context;
+    HRESULT hr;
+
+    hr = IDWriteFontFace4_TryGetFontTable(fontface, MS_MAXP_TAG, &data, &size, &context, &exists);
+    if (FAILED(hr) || !exists)
+        return 0;
+
+    maxp = data;
+    num_glyphs = GET_BE_WORD(maxp->numGlyphs);
+
+    IDWriteFontFace4_ReleaseFontTable(fontface, context);
+
+    if (FAILED(IDWriteFontFace4_TryGetFontTable(fontface, MS_SBIX_TAG, &data, &size, &context, &exists))) {
+        WARN("Failed to get 'sbix' table, %#x\n", hr);
+        return 0;
+    }
+
+    header = data;
+    num_strikes = GET_BE_DWORD(header->numStrikes);
+
+    for (s = 0; s < num_strikes; s++) {
+        sbix_strike *strike = (sbix_strike *)((BYTE *)header + GET_BE_DWORD(header->strikeOffset[s]));
+
+        for (g = 0; g < num_glyphs; g++) {
+            DWORD offset = GET_BE_DWORD(strike->glyphDataOffsets[g]);
+            DWORD offset_next = GET_BE_DWORD(strike->glyphDataOffsets[g + 1]);
+            sbix_glyph_data *glyph_data;
+            DWORD format;
+
+            if (offset == offset_next)
+                continue;
+
+            glyph_data = (sbix_glyph_data *)((BYTE *)strike + offset);
+            switch (format = glyph_data->graphicType)
+            {
+            case MS_PNG__TAG:
+                ret |= DWRITE_GLYPH_IMAGE_FORMATS_PNG;
+                break;
+            case MS_JPG__TAG:
+                ret |= DWRITE_GLYPH_IMAGE_FORMATS_JPEG;
+                break;
+            case MS_TIFF_TAG:
+                ret |= DWRITE_GLYPH_IMAGE_FORMATS_TIFF;
+                break;
+            default:
+                format = GET_BE_DWORD(format);
+                FIXME("unexpected bitmap format %s\n", debugstr_an((char *)&format, 4));
+            }
+        }
+    }
+
+    IDWriteFontFace4_ReleaseFontTable(fontface, context);
+
+    return ret;
+}
+
+UINT32 opentype_get_glyph_image_formats(IDWriteFontFace4 *fontface)
+{
+    UINT32 ret = DWRITE_GLYPH_IMAGE_FORMATS_NONE;
+
+    if (opentype_has_font_table(fontface, MS_GLYF_TAG))
+        ret |= DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE;
+
+    if (opentype_has_font_table(fontface, MS_CFF__TAG))
+        ret |= DWRITE_GLYPH_IMAGE_FORMATS_CFF;
+
+    if (opentype_has_font_table(fontface, MS_COLR_TAG))
+        ret |= DWRITE_GLYPH_IMAGE_FORMATS_COLR;
+
+    if (opentype_has_font_table(fontface, MS_SVG__TAG))
+        ret |= DWRITE_GLYPH_IMAGE_FORMATS_SVG;
+
+    if (opentype_has_font_table(fontface, MS_SBIX_TAG))
+        ret |= opentype_get_sbix_formats(fontface);
+
+    /* TODO: handle embedded bitmaps tables */
+    return ret;
 }

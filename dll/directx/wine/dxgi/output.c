@@ -293,24 +293,80 @@ static void STDMETHODCALLTYPE dxgi_output_ReleaseOwnership(IDXGIOutput *iface)
 static HRESULT STDMETHODCALLTYPE dxgi_output_GetGammaControlCapabilities(IDXGIOutput *iface,
         DXGI_GAMMA_CONTROL_CAPABILITIES *gamma_caps)
 {
-    FIXME("iface %p, gamma_caps %p stub!\n", iface, gamma_caps);
+    int i;
 
-    return E_NOTIMPL;
+    TRACE("iface %p, gamma_caps %p.\n", iface, gamma_caps);
+
+    if (!gamma_caps)
+        return E_INVALIDARG;
+
+    gamma_caps->ScaleAndOffsetSupported = FALSE;
+    gamma_caps->MaxConvertedValue = 1.0;
+    gamma_caps->MinConvertedValue = 0.0;
+    gamma_caps->NumGammaControlPoints = 256;
+
+    for (i = 0; i < 256; i++)
+        gamma_caps->ControlPointPositions[i] = i / 255.0f;
+
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_output_SetGammaControl(IDXGIOutput *iface,
         const DXGI_GAMMA_CONTROL *gamma_control)
 {
-    FIXME("iface %p, gamma_control %p stub!\n", iface, gamma_control);
+    struct wined3d_gamma_ramp ramp;
+    HDC dc;
+    int i;
 
-    return E_NOTIMPL;
+    TRACE("iface %p, gamma_control %p.\n", iface, gamma_control);
+
+    if (!gamma_control)
+        return E_INVALIDARG;
+
+    for (i = 0; i < 256; i++)
+    {
+        ramp.red[i] = gamma_control->GammaCurve[i].Red * 65535;
+        ramp.green[i] = gamma_control->GammaCurve[i].Green * 65535;
+        ramp.blue[i] = gamma_control->GammaCurve[i].Blue * 65535;
+    }
+
+    /* we can not use wined3d_swapchain_set_gamma_ramp here, because outputs don't have
+     * references to swapchains and the output handling of dxgi is far from complete yet */
+    dc = GetDC(0);
+    SetDeviceGammaRamp(dc, &ramp);
+    ReleaseDC(0, dc);
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_output_GetGammaControl(IDXGIOutput *iface, DXGI_GAMMA_CONTROL *gamma_control)
 {
-    FIXME("iface %p, gamma_control %p stub!\n", iface, gamma_control);
+    struct wined3d_gamma_ramp ramp;
+    HDC dc;
+    int i;
 
-    return E_NOTIMPL;
+    TRACE("iface %p, gamma_control %p.\n", iface, gamma_control);
+
+    /* We can not use wined3d_swapchain_get_gamma_ramp here, because outputs don't have
+     * references to swapchains and the output handling of dxgi is far from complete yet */
+    dc = GetDC(0);
+    GetDeviceGammaRamp(dc, &ramp);
+    ReleaseDC(0, dc);
+
+    gamma_control->Scale.Red    = 0.0f;
+    gamma_control->Scale.Green  = 0.0f;
+    gamma_control->Scale.Blue   = 0.0f;
+    gamma_control->Offset.Red   = 0.0f;
+    gamma_control->Offset.Green = 0.0f;
+    gamma_control->Offset.Blue  = 0.0f;
+
+    for (i = 0; i < 256; i++)
+    {
+        gamma_control->GammaCurve[i].Red = ramp.red[i] / 65535.0f;
+        gamma_control->GammaCurve[i].Green = ramp.green[i] / 65535.0f;
+        gamma_control->GammaCurve[i].Blue = ramp.blue[i] / 65535.0f;
+    }
+
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_output_SetDisplaySurface(IDXGIOutput *iface, IDXGISurface *surface)

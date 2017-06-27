@@ -109,3 +109,14 @@ WerpNotifyLoadStringResource(
 {
 	UNIMPLEMENTED;
 }
+
+/***********************************************************************
+* WerSetFlags (KERNEL32.@)
+*
+* Sets error reporting flags for the current process.
+*/
+HRESULT WINAPI WerSetFlags(DWORD flags)
+{
+     FIXME("(%d) stub!\n", flags);
+     return E_NOTIMPL;
+}

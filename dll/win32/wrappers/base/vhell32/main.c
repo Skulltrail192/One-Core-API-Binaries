@@ -151,46 +151,51 @@ NotificationWindowCallback(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 HWND globalWindow;
 HWND hWnd;
 
-BOOL WINAPI Shell_NotifyIconInternal(PNOTIFYICONDATAW pNotificationData, DWORD dwMessage, __int16 dwOption)
+signed int  Internal_Shell_NotifyIcon(PNOTIFYICONDATA lpdata, DWORD dwMessage, __int16 flags)
 {
-  WCHAR *lpszClassName; // edi@1
-  HWND localWindow; // eax@6
-  HWND window; // ST28_4@13
-  WNDCLASSW WndClass; // [sp+8h] [bp-28h]@13
+  void *allocation; // edi@1
+  HWND findWindow; // eax@7
+  HWND otherWindow; // ST28_4@14
+  DWORD localMessage; // [sp-8h] [bp-38h]@5
+  struct _NOTIFYICONDATAA *lpDataPointer; // [sp-4h] [bp-34h]@3
+  WNDCLASSW WndClass; // [sp+8h] [bp-28h]@14
 
-  lpszClassName = (WCHAR *)malloc(0x10u);
-  wsprintfW(lpszClassName, L"%x", pNotificationData->hWnd);
+  allocation = malloc(0x10u);
+  wsprintfW((LPWSTR)allocation, L"%x", lpdata->hWnd);
   if ( dwMessage )
   {
-    // if ( dwMessage != 2 )
-    // {
-      // free(lpszClassName);
-      // pNotificationData->hWnd = globalWindow;
-      // if ( dwOption != 1 )
-        // return Shell_NotifyIconW(dwMessage, pNotificationData);
-      // return Shell_NotifyIconA(dwMessage, (PNOTIFYICONDATAA)pNotificationData);
-    // }
-    localWindow = FindWindowW(lpszClassName, 0);
-    globalWindow = localWindow;
-    if ( localWindow )
+    if ( dwMessage != 2 )
     {
-      DestroyWindow(localWindow);
-      localWindow = globalWindow;
+      free(allocation);
+      lpdata->hWnd = globalWindow;
+      lpDataPointer = (struct _NOTIFYICONDATAA *)lpdata;
+      if ( flags != 1 )
+        return Shell_NotifyIconW(dwMessage, (PNOTIFYICONDATAW)lpdata);
+      localMessage = dwMessage;
+      return Shell_NotifyIconA(localMessage, lpDataPointer);
     }
-    pNotificationData->hWnd = localWindow;
-    free(lpszClassName);
-    dwMessage = 2;
+    findWindow = FindWindowW((LPCWSTR)allocation, 0);
+    globalWindow = findWindow;
+    if ( findWindow )
+    {
+      DestroyWindow(findWindow);
+      findWindow = globalWindow;
+    }
+    lpdata->hWnd = findWindow;
+    free(allocation);
+    lpDataPointer = (struct _NOTIFYICONDATAA *)lpdata;
+    localMessage = 2;
   }
   else
   {
     if ( hWnd || lpPrevWndFunc )
     {
-      free(lpszClassName);
+      free(allocation);
       return 183;
     }
-    window = pNotificationData->hWnd;
-    WndClass.hInstance = (HINSTANCE)0x10000000;
-    WndClass.lpszClassName = lpszClassName;
+    otherWindow = lpdata->hWnd;
+    WndClass.hInstance = (HINSTANCE)268435456;
+    WndClass.lpszClassName = (LPCWSTR)allocation;
     WndClass.lpfnWndProc = NotificationWindowCallback;
     WndClass.style = 0;
     WndClass.hIcon = 0;
@@ -199,21 +204,31 @@ BOOL WINAPI Shell_NotifyIconInternal(PNOTIFYICONDATAW pNotificationData, DWORD d
     WndClass.hbrBackground = 0;
     WndClass.cbClsExtra = 0;
     WndClass.cbWndExtra = 0;
-    lpPrevWndFunc = (WNDPROC)GetWindowLongW(window, -4);
-    hWnd = pNotificationData->hWnd;
+    lpPrevWndFunc = (WNDPROC)GetWindowLongW(otherWindow, -4);
+    hWnd = lpdata->hWnd;
     RegisterClassW(&WndClass);
-    globalWindow = CreateWindowExW(0, lpszClassName, 0, 0, 0, 0, 0, 0, HWND_MESSAGE, 0, (HINSTANCE)0x10000000, 0);
-    pNotificationData->hWnd = globalWindow;
-    free(lpszClassName);
-    dwMessage = 0;
+    globalWindow = CreateWindowExW(0, (LPCWSTR)allocation, 0, 0, 0, 0, 0, 0, HWND_MESSAGE, 0, (HINSTANCE)0x10000000, 0);
+    lpdata->hWnd = globalWindow;
+    free(allocation);
+    lpDataPointer = (struct _NOTIFYICONDATAA *)lpdata;
+    localMessage = 0;
   }
-  // if ( dwOption == 1 )
-    // return Shell_NotifyIconA(dwMessage, (PNOTIFYICONDATAA)pNotificationData);
-  //
-  //return Shell_NotifyIconW(dwMessage, pNotificationData);
+  if ( flags == 1 )
+    return Shell_NotifyIconA(localMessage, lpDataPointer);
+  return Shell_NotifyIconW(localMessage, (PNOTIFYICONDATAW)lpDataPointer);
 }
 
-BOOL WINAPI Shell_NotifyIconInternalW(DWORD dwMessage, PNOTIFYICONDATAW lpData)
+BOOL __stdcall Shell_NotifyIconInternal(DWORD dwMessage, PNOTIFYICONDATA lpdata)
 {
-  return Shell_NotifyIconInternal(lpData, dwMessage, 2);
+  return Internal_Shell_NotifyIcon(lpdata, dwMessage, 0);
+}
+
+BOOL __stdcall Shell_NotifyIconInternalA(DWORD dwMessage, PNOTIFYICONDATAA lpData)
+{
+  return Internal_Shell_NotifyIcon((PNOTIFYICONDATA)lpData, dwMessage, 1);
+}
+
+BOOL __stdcall Shell_NotifyIconInternalW(DWORD dwMessage, PNOTIFYICONDATAW lpData)
+{
+  return Internal_Shell_NotifyIcon((PNOTIFYICONDATA)lpData, dwMessage, 2);
 }
