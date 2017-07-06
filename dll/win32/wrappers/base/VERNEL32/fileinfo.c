@@ -54,3 +54,12 @@ FilenameA2W(
 
     return NULL;
 }
+
+/**************************************************************************
+ *           SetFileCompletionNotificationModes   (KERNEL32.@)
+ */
+BOOL WINAPI SetFileCompletionNotificationModes( HANDLE handle, UCHAR flags )
+{
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return FALSE;
+}

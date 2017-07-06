@@ -75,6 +75,6 @@ endif()
 
 target_link_libraries(ntext libcntpr uuid ${PSEH_LIB})
 
-add_importlibs(ntext ntdll msvcrt)
+add_importlibs(ntext ntdll)
 
 add_cd_file(TARGET ntext DESTINATION reactos/system32 FOR all)

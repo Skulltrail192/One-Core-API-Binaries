@@ -4021,6 +4021,11 @@ void CDECL wined3d_device_copy_resource(struct wined3d_device *device,
     unsigned int i, j;
 
     TRACE("device %p, dst_resource %p, src_resource %p.\n", device, dst_resource, src_resource);
+    if (dst_resource->format->id == WINED3DFMT_R8G8B8A8_TYPELESS)
+    {
+       *((int *)&(dst_resource->format->id)) = src_resource->format->id;
+    }
+
 
     if (src_resource == dst_resource)
     {

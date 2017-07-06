@@ -167,3 +167,13 @@ HRESULT WINAPI CoGetApartmentType(APTTYPE *type, APTTYPEQUALIFIER *qualifier)
 
     return info->apt ? S_OK : CO_E_NOTINITIALIZED;
 }
+
+
+HRESULT 
+WINAPI
+CoDisconnectContext(
+  _In_ DWORD dwTimeout
+)
+{
+	return S_OK;
+}

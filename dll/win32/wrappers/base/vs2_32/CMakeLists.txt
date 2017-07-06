@@ -1,6 +1,8 @@
 
 spec2def(vs2_32.dll vs2_32.spec)
 
+include_directories(${REACTOS_SOURCE_DIR}/include/wine)
+
 list(APPEND SOURCE
     main.c
 	socket.c

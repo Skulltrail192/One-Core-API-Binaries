@@ -91,6 +91,7 @@ struct glsl_sample_function
     enum wined3d_data_type data_type;
     BOOL output_single_component;
     unsigned int offset_size;
+    BOOL emulate_lod;
 };
 
 enum heap_node_op
@@ -3439,6 +3440,18 @@ static void shader_glsl_get_sample_function(const struct wined3d_shader_context 
     if (resource_type == WINED3D_SHADER_RESOURCE_TEXTURE_CUBE)
         projected = FALSE;
 
+    /* emulate textureLod(sampler2DArrayShadow, ...) using textureGradOffset */
+    if (shadow && lod && resource_type == WINED3D_SHADER_RESOURCE_TEXTURE_2DARRAY)
+    {
+        sample_function->emulate_lod = TRUE;
+        grad = offset = TRUE;
+        lod = FALSE;
+    }
+    else
+    {
+        sample_function->emulate_lod = FALSE;
+    }
+
     if (needs_legacy_glsl_syntax(gl_info))
     {
         if (shadow)
@@ -3600,6 +3613,7 @@ static void PRINTF_ATTR(9, 10) shader_glsl_gen_sample_code(const struct wined3d_
         const char *dx, const char *dy, const char *bias, const struct wined3d_shader_texel_offset *offset,
         const char *coord_reg_fmt, ...)
 {
+    static const struct wined3d_shader_texel_offset dummy_offset = {0, 0, 0};
     const struct wined3d_shader_version *version = &ins->ctx->reg_maps->shader_version;
     char dst_swizzle[6];
     struct color_fixup_desc fixup;
@@ -3667,6 +3681,13 @@ static void PRINTF_ATTR(9, 10) shader_glsl_gen_sample_code(const struct wined3d_
                         idx >> 1, (idx % 2) ? "zw" : "xy");
                 break;
         }
+    }
+    if (sample_function->emulate_lod)
+    {
+        if (strcmp(bias, "0")) FIXME("Don't know how to emulate lod level %s\n", bias);
+        if (!dx) dx = "vec2(0.0, 0.0)";
+        if (!dy) dy = "vec2(0.0, 0.0)";
+        if (!offset) offset = &dummy_offset;
     }
     if (dx && dy)
         shader_addline(ins->ctx->buffer, ", %s, %s", dx, dy);

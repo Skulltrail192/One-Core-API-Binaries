@@ -1689,19 +1689,6 @@ static void init_driver_info(struct wined3d_driver_info *driver_info,
     driver_info->vram_bytes = vram_bytes ? vram_bytes : (UINT64)gpu_desc->vidmem * 1024 * 1024;
     driver = gpu_desc->driver;
 
-    /**
-     * Diablo 2 crashes when the amount of video memory is greater than 0x7fffffff.
-     * In order to avoid this application bug we limit the amount of video memory
-     * to LONG_MAX for older Windows versions.
-     */
-#ifdef __i386__
-    if (driver_model < DRIVER_MODEL_NT6X && driver_info->vram_bytes > LONG_MAX)
-    {
-        TRACE("Limiting amount of video memory to %#lx bytes for OS version older than Vista.\n", LONG_MAX);
-        driver_info->vram_bytes = LONG_MAX;
-    }
-#endif
-
     /* Try to obtain driver version information for the current Windows version. This fails in
      * some cases:
      * - the gpu is not available on the currently selected OS version:

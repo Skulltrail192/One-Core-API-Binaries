@@ -2458,22 +2458,6 @@ static HRESULT texture_resource_sub_resource_map_info(struct wined3d_resource *r
     return WINED3D_OK;
 }
 
-void swapchain_frontbuffer_updated(struct wined3d_texture *texture, unsigned int sub_resource_idx,
-        const struct wined3d_box *box)
-{
-    struct wined3d_texture_sub_resource *sub_resource;
-
-    if (!texture->swapchain || texture->swapchain->front_buffer != texture)
-        return;
-    if (!(sub_resource = wined3d_texture_get_sub_resource(texture, sub_resource_idx)))
-        return;
-    if (sub_resource->locations & (WINED3D_LOCATION_DRAWABLE | WINED3D_LOCATION_TEXTURE_RGB))
-        return;
-
-    if (box) SetRect(&texture->swapchain->front_buffer_update, box->left, box->top, box->right, box->bottom);
-    texture->swapchain->swapchain_ops->swapchain_frontbuffer_updated(texture->swapchain);
-}
-
 static HRESULT texture_resource_sub_resource_unmap(struct wined3d_resource *resource, unsigned int sub_resource_idx)
 {
     struct wined3d_texture_sub_resource *sub_resource;
@@ -2505,7 +2489,11 @@ static HRESULT texture_resource_sub_resource_unmap(struct wined3d_resource *reso
     if (context)
         context_release(context);
 
-    swapchain_frontbuffer_updated(texture, sub_resource_idx, NULL);
+    if (texture->swapchain && texture->swapchain->front_buffer == texture)
+    {
+        if (!(sub_resource->locations & (WINED3D_LOCATION_DRAWABLE | WINED3D_LOCATION_TEXTURE_RGB)))
+            texture->swapchain->swapchain_ops->swapchain_frontbuffer_updated(texture->swapchain);
+    }
 
     --sub_resource->map_count;
     if (!--resource->map_count && texture->update_map_binding)

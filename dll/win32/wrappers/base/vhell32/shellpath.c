@@ -3144,7 +3144,8 @@ SHGetKnownFolderPath(
 		ExpandEnvironmentStringsW(L"%ALLUSERSPROFILE%", allusers, MAX_PATH);
 		*path = allusers;
 	}else if(IsEqualGUID( id , &FOLDERID_Downloads )){
-		*path = PathCombine(*path, folder, L"\\Downloads");		
+		StringCbCatW(*path, _countof(folder), L"\\Downloads");
+		//*path = PathCombine(*path, folder, L"\\Downloads");		
 	}else{
 		*path = folder;
 	}	

@@ -754,22 +754,51 @@ GetUserPreferredUILanguages(
   _Inout_    PULONG pcchLanguagesBuffer
 )
 {
-	  NTSTATUS status;
-	  BOOL result;
-	  DWORD error; 
+	WCHAR locale[LOCALE_NAME_MAX_LENGTH];
+	UINT length;	
+	LCID UILangId = 0x0416;// = ((LCID)(NtCurrentTeb()->CurrentLocale));
+	
+	//UILangId = GetUserDefaultLCID();
 
-	  status = RtlGetUserPreferredUILanguages(dwFlags, FALSE, pulNumLanguages, pwszLanguagesBuffer, pcchLanguagesBuffer);
-	  if (!NT_SUCCESS(status) )
-	  {
-		error = RtlNtStatusToDosError(status);
-		SetLastError(error);
-		result = FALSE;
-	  }
-	  else
-	  {
-		result = TRUE;
-	  }
-	  return result;
+	if ( pwszLanguagesBuffer ){
+		*pulNumLanguages = 2;	
+		length = *pcchLanguagesBuffer;	
+		if(dwFlags == MUI_LANGUAGE_ID){
+			wcscpy(locale, _itow(UILangId, locale, 16));
+			wcscpy(pwszLanguagesBuffer, locale);
+			memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0409\0\0", sizeof(WCHAR)*(5));				
+		}else{
+			LCIDToLocaleName(UILangId, locale, LOCALE_NAME_MAX_LENGTH, 0);
+			wcscpy(pwszLanguagesBuffer, locale);
+			memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0en-US\0\0", sizeof(WCHAR)*(7));				
+		}		
+		return TRUE;
+	}else{
+		*pulNumLanguages = 2;
+		if(dwFlags == MUI_LANGUAGE_ID){
+			length = 9;
+		}else{
+			length = (7 + LCIDToLocaleName(UILangId, NULL, 0, 0));
+		}		
+		*pcchLanguagesBuffer = length;
+		return FALSE;
+	}		
+	  // NTSTATUS status;
+	  // BOOL result;
+	  // DWORD error; 
+
+	  // status = RtlGetUserPreferredUILanguages(dwFlags, FALSE, pulNumLanguages, pwszLanguagesBuffer, pcchLanguagesBuffer);
+	  // if (!NT_SUCCESS(status) )
+	  // {
+		// error = RtlNtStatusToDosError(status);
+		// SetLastError(error);
+		// result = FALSE;
+	  // }
+	  // else
+	  // {
+		// result = TRUE;
+	  // }
+	  // return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////

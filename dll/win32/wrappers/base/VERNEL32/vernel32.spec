@@ -994,7 +994,7 @@
 #missing on XP 
 ;@ stdcall GetNLSVersion(long long ptr) 
 @ stdcall IsNLSDefinedString(long long ptr long long) kernelfull.IsNLSDefinedString
-@ stdcall SetFileCompletionNotificationModes(ptr long) kernelfull.SetFileCompletionNotificationModes
+@ stdcall SetFileCompletionNotificationModes(ptr long) ;kernelfull.SetFileCompletionNotificationModes
 
 #Missing on XP and 2003 RTM
 @ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernelfull.BaseCheckRunApp
@@ -1036,7 +1036,7 @@
 @ stdcall GetNumaProcessorMap(ptr long ptr) kernelfull.GetNumaProcessorMap
 @ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
 
-#Vista Functions 
+; #Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) ntext.RtlAcquireSRWLockExclusive
 @ stdcall AcquireSRWLockShared(ptr) ntext.RtlAcquireSRWLockShared
 @ stdcall ApplicationRecoveryFinished(long)
@@ -1109,7 +1109,7 @@
 @ stdcall GetTimeFormatEx(wstr long ptr wstr ptr long)
 @ stdcall GetTimeZoneInformationForYear(long ptr ptr)
 @ stdcall GetUserDefaultLocaleName(wstr long)
-@ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
+;@ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetVolumeInformationW(ptr ptr long ptr ptr ptr ptr long)
 @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
 @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode

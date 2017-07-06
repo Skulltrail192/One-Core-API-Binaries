@@ -137,17 +137,24 @@ RtlGetUserPreferredUILanguages(
 {
 	WCHAR locale[LOCALE_NAME_MAX_LENGTH];
 	UINT length;	
-	LCID lcid = ((LCID)(NtCurrentTeb()->CurrentLocale));
+	LCID UILangId;// = ((LCID)(NtCurrentTeb()->CurrentLocale));
+	NTSTATUS status;
+	
+	status = NtQueryDefaultUILanguage( &UILangId );
+	
+	if(!NT_SUCCESS(status)){
+		return status;
+	}
 
 	if ( pwszLanguagesBuffer ){
 		*pulNumLanguages = 2;	
 		length = *pcchLanguagesBuffer;	
 		if(dwFlags == MUI_LANGUAGE_ID){
-			wcscpy(locale, _itow(lcid, locale, 16));
+			wcscpy(locale, _itow(UILangId, locale, 16));
 			wcscpy(pwszLanguagesBuffer, locale);
 			memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0409\0\0", sizeof(WCHAR)*(5));				
 		}else{
-			RtlpLCIDToLocaleName(lcid, locale, LOCALE_NAME_MAX_LENGTH, 0);
+			RtlpLCIDToLocaleName(UILangId, locale, LOCALE_NAME_MAX_LENGTH, 0);
 			wcscpy(pwszLanguagesBuffer, locale);
 			memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0en-US\0\0", sizeof(WCHAR)*(7));				
 		}		
@@ -157,7 +164,7 @@ RtlGetUserPreferredUILanguages(
 		if(dwFlags == MUI_LANGUAGE_ID){
 			length = 9;
 		}else{
-			length = (7 + RtlpLCIDToLocaleName(lcid, NULL, 0, 0));
+			length = (7 + RtlpLCIDToLocaleName(UILangId, NULL, 0, 0));
 		}		
 		*pcchLanguagesBuffer = length;
 		return STATUS_INVALID_PARAMETER;

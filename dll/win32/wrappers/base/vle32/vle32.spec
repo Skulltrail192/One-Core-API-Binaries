@@ -326,6 +326,7 @@
 @ stdcall UpdateProcessTracing(ptr ptr) olebase.UpdateProcessTracing
 
 #win Vista functions
+@ stdcall CoDisconnectContext(long)
 @ stdcall PropVariantToVariant(ptr ptr)
 @ stdcall StgDeserializePropVariant(ptr long ptr)
 @ stdcall StgSerializePropVariant(ptr ptr ptr)

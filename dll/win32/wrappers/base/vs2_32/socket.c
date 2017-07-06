@@ -33,6 +33,53 @@
 #include <wine/list.h>
 #include <wine/unicode.h>
 #include <winsock.h>
+#include <winsock2.h>
+
+#define POLLHUP                    0x0002
+#define WS_POLLHUP                 0x0002
+#define WS_POLLNVAL                0x0004
+
+#define POLLERR                    0x0001
+#define POLLHUP                    0x0002
+#define POLLNVAL                   0x0004
+#define POLLWRNORM                 0x0010
+#define POLLWRBAND                 0x0020
+#define POLLRDNORM                 0x0100
+#define POLLRDBAND                 0x0200
+#define POLLPRI                    0x0400
+#define POLLIN                     (POLLRDNORM|POLLRDBAND)
+#define POLLOUT                    (POLLWRNORM)
+
+#define WS_POLLERR                 0x0001
+#define WS_POLLHUP                 0x0002
+#define WS_POLLNVAL                0x0004
+#define WS_POLLWRNORM              0x0010
+#define WS_POLLWRBAND              0x0020
+#define WS_POLLRDNORM              0x0100
+#define WS_POLLRDBAND              0x0200
+#define WS_POLLPRI                 0x0400
+#define WS_POLLIN                  (WS_POLLRDNORM|WS_POLLRDBAND)
+#define WS_POLLOUT                 (WS_POLLWRNORM)
+
+#define MAP_OPTION(opt) { WS_##opt, opt }
+
+static const unsigned __int64 epoch = ((unsigned __int64) 116444736000000000ULL);
+
+struct pollfd
+{
+     int fd;
+     short events;
+     short revents;
+};
+
+typedef struct /*WS(pollfd)*/
+{
+    SOCKET fd;
+    SHORT events;
+    SHORT revents;
+} WSAPOLLFD;
+
+int poll( struct pollfd *fds, unsigned int count, int timeout );
 
 WINE_DEFAULT_DEBUG_CHANNEL(ws2_32);
 
@@ -112,4 +159,176 @@ INT WINAPI WS_inet_pton( INT family, PCSTR addr, PVOID buffer)
     SetLastError( WSAEAFNOSUPPORT );
     return SOCKET_ERROR;
 #endif
+}
+
+static const int ws_poll_map[][2] =
+{
+    MAP_OPTION( POLLERR ),
+    MAP_OPTION( POLLHUP ),
+    MAP_OPTION( POLLNVAL ),
+    MAP_OPTION( POLLWRNORM ),
+    MAP_OPTION( POLLWRBAND ),
+    MAP_OPTION( POLLRDNORM ),
+    { WS_POLLRDBAND, POLLPRI }
+};
+
+static int convert_poll_u2w(int events)
+{
+    int i, ret;
+    for (i = ret = 0; events && i < sizeof(ws_poll_map) / sizeof(ws_poll_map[0]); i++)
+    {
+        if (ws_poll_map[i][1] & events)
+        {
+            ret |= ws_poll_map[i][0];
+            events &= ~ws_poll_map[i][1];
+        }
+    }
+
+    if (events)
+        FIXME("Unsupported poll() flags 0x%x\n", events);
+    return ret;
+}
+
+static int convert_poll_w2u(int events)
+{
+    int i, ret;
+    for (i = ret = 0; events && i < sizeof(ws_poll_map) / sizeof(ws_poll_map[0]); i++)
+    {
+        if (ws_poll_map[i][0] & events)
+        {
+            ret |= ws_poll_map[i][1];
+            events &= ~ws_poll_map[i][0];
+        }
+    }
+
+    if (events)
+        FIXME("Unsupported WSAPoll() flags 0x%x\n", events);
+    return ret;
+}
+
+int
+gettimeofday(struct timeval * tp, struct timezone * tzp)
+{
+    FILETIME    file_time;
+    SYSTEMTIME  system_time;
+    ULARGE_INTEGER ularge;
+
+    GetSystemTime(&system_time);
+    SystemTimeToFileTime(&system_time, &file_time);
+    ularge.u.LowPart = file_time.dwLowDateTime;
+    ularge.u.HighPart = file_time.dwHighDateTime;
+
+    tp->tv_sec = (long) ((ularge.QuadPart - epoch) / 10000000L);
+    tp->tv_usec = (long) (system_time.wMilliseconds * 1000);
+
+    return 0;
+}
+
+static int do_poll(struct pollfd *pollfds, int count, int timeout)
+{
+    struct timeval tv1, tv2;
+    int ret, torig = timeout;
+
+    if (timeout > 0) gettimeofday( &tv1, 0 );
+
+    while ((ret = poll( pollfds, count, timeout )) < 0)
+    {
+        if (errno != EINTR) break;
+        if (timeout < 0) continue;
+        if (timeout == 0) return 0;
+
+        gettimeofday( &tv2, 0 );
+
+        tv2.tv_sec  -= tv1.tv_sec;
+        tv2.tv_usec -= tv1.tv_usec;
+        if (tv2.tv_usec < 0)
+        {
+            tv2.tv_usec += 1000000;
+            tv2.tv_sec  -= 1;
+        }
+
+        timeout = torig - (tv2.tv_sec * 1000) - (tv2.tv_usec + 999) / 1000;
+        if (timeout <= 0) return 0;
+    }
+    return ret;
+}
+
+static inline int get_sock_fd( SOCKET s, DWORD access, unsigned int *options )
+{
+    int fd;
+    //if (set_error( wine_server_handle_to_fd( SOCKET2HANDLE(s), access, &fd, options ) ))
+        return -1;
+    //return fd;
+}
+
+static inline void release_sock_fd( SOCKET s, int fd )
+{
+    //wine_server_release_fd( SOCKET2HANDLE(s), fd );
+}
+
+int poll( struct pollfd *fds, unsigned int count, int timeout )
+{
+	return 0;
+}
+
+/***********************************************************************
+ *     WSAPoll
+ */
+int WINAPI WSAPoll(WSAPOLLFD *wfds, ULONG count, int timeout)
+{
+    int i, ret;
+    struct pollfd *ufds;
+
+    if (!count)
+    {
+        SetLastError(WSAEINVAL);
+        return SOCKET_ERROR;
+    }
+    if (!wfds)
+    {
+        SetLastError(WSAEFAULT);
+        return SOCKET_ERROR;
+    }
+
+    if (!(ufds = HeapAlloc(GetProcessHeap(), 0, count * sizeof(ufds[0]))))
+    {
+        SetLastError(WSAENOBUFS);
+        return SOCKET_ERROR;
+    }
+
+    for (i = 0; i < count; i++)
+    {
+        ufds[i].fd = get_sock_fd(wfds[i].fd, 0, NULL);
+        ufds[i].events = convert_poll_w2u(wfds[i].events);
+        ufds[i].revents = 0;
+    }
+
+    ret = do_poll(ufds, count, timeout);
+
+    for (i = 0; i < count; i++)
+    {
+        if (ufds[i].fd != -1)
+        {
+            release_sock_fd(wfds[i].fd, ufds[i].fd);
+            if (ufds[i].revents & POLLHUP)
+            {
+                /* Check if the socket still exists */
+                int fd = get_sock_fd(wfds[i].fd, 0, NULL);
+                if (fd != -1)
+                {
+                    wfds[i].revents = WS_POLLHUP;
+                    release_sock_fd(wfds[i].fd, fd);
+                }
+                else
+                    wfds[i].revents = WS_POLLNVAL;
+            }
+            else
+                wfds[i].revents = convert_poll_u2w(ufds[i].revents);
+        }
+        else
+            wfds[i].revents = WS_POLLNVAL;
+    }
+
+    HeapFree(GetProcessHeap(), 0, ufds);
+    return ret;
 }
