@@ -1,12 +1,15 @@
 advapi32 - advapibase
-d3d9 - d3d9base
+browseui - browbase
 gdi32 - gdibase
 iphlpapi - iphlpapibase
 kernel32 - kernelbasex
 netapi32 - netapibase
-rpcrt4 - rpcrtbase (2003 por enquanto)
-secur32 - securbase 
+ole32 - olebase
+rpcrt4 - rpcrtbase
+secur32 - securbase
+setupapi - setuapibase 
 shell32 - shellbase
+shlwapi - shwlapibase
 winsta - winstabase
 user32 - userbase 
 uxtheme - uxthemebase
