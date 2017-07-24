@@ -75,25 +75,35 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 
 [CopyAlways.System32.Files]
 	"avrt.dll"
+	"cabinet.dll"
 	"credui.dll"
 	"cryptbase.dll"
 	"cryptsp.dll"
 	"dbghelp.dll"
+	"dpx.dll"
 	"duser.dll"
-	"duser.dll"
+	"dui70.dll"
+	"dusex.dll"
 	"dwmapi.dll"
 	"dxva2.dll"
 	"efsadu.dll"
 	"esent.dll"
 	"evr.dll"
+	"explorerframe.dll"
 	"feclient.dll"
+	"gameux.dll"
 	"httpapi.dll"
 	"ktmw32.dll"
 	"lsalookup.dll"
+	"mf.dll"
+	"mfplat.dll"
+	"mfreadwrite.dll"
 	"milcore.dll"
 	"mlang.dll"
+	"mmdevapi.dll"
 	"msdrm.dll"
 	"msidcrl30.dll"
+	"mspatcha.dll"
 	"mtdll.dll"
 	"ncrypt.dll"
 	"ndfapi.dll"
@@ -106,6 +116,10 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 	"sqmapi.dll"
 	"sspicli.dll"
 	"traffic.dll"
+	"UIAnimation.dll"
+	"UIAutomationCore.dll"
+	"UIRibbon.dll"
+	"UIRibbonRes.dll"
 	"version.dll"
 	"wdi.dll"
 	"wer.dll"
@@ -118,31 +132,45 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 	"wlanapi.dll"
 	"wlanutil.dll"
 	"wmphoto.dll"
+	"wpc.dll"
 	"WSDApi.dll"
 	"wtsapi32.dll"
+	"wusa.exe"
+	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
 [SourceDisksFiles]
 	"avrt.dll" = 1
+	"cabinet.dll" = 1
 	"credui.dll" = 1
 	"cryptbase.dll" = 1
 	"cryptsp.dll" = 1
 	"dbghelp.dll" = 1
+	"dpx.dll" = 1
 	"duser.dll" = 1
+	"dui70.dll" = 1
+	"dusex.dll" = 1
 	"dwmapi.dll" = 1
 	"dxva2.dll" = 1
 	"efsadu.dll" = 1
 	"esent.dll" = 1
 	"evr.dll" = 1
+	"explorerframe.dll" = 1
 	"feclient.dll" = 1
+	"gameux.dll" = 1
 	"httpapi.dll" = 1
 	"ktmw32.dll" = 1
 	"lsalookup.dll" = 1
+	"mf.dll" = 1
+	"mfplat.dll" = 1
+	"mfreadwrite.dll" = 1
 	"milcore.dll" = 1
 	"mlang.dll" = 1
+	"mmdevapi.dll" = 1
 	"msdrm.dll" = 1
 	"msidcrl30.dll" = 1
+	"mspatcha.dll" = 1
 	"mtdll.dll" = 1
 	"ncrypt.dll" = 1
 	"ndfapi.dll" = 1
@@ -155,6 +183,10 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 	"sqmapi.dll" = 1
 	"sspicli.dll" = 1
 	"traffic.dll" = 1
+	"UIAnimation.dll" = 1
+	"UIAutomationCore.dll" = 1
+	"UIRibbon.dll" = 1
+	"UIRibbonRes.dll" = 1
 	"version.dll" = 1
 	"wdi.dll" = 1
 	"wer.dll" = 1
@@ -167,8 +199,10 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 	"wlanapi.dll" = 1
 	"wlanutil.dll" = 1
 	"wmphoto.dll" = 1
+	"wpc.dll" = 1
 	"WSDApi.dll" = 1
 	"wtsapi32.dll" = 1
+	"wusa.exe" = 1
 
 [Save.Reg.For.Uninstall]
 

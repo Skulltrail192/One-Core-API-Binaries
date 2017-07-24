@@ -100,15 +100,18 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
 
 [CopyAlways.System32.Files]
     advapibase.dll,2k3SP1\advapibase.dll
-    browsebase.dll,2k3SP1\browsebase.dll	
+    browsebase.dll,2k3SP1\browsebase.dll
+    crypt32.dll,2k3SP1\crypt32.dll	
     gdibase.dll,2k3SP1\gdibase.dll	
     kernelfull.dll,2k3SP1\kernelfull.dll
-    netapibase.dll,2k3SP1\netapibase.dll	
+    netapibase.dll,2k3SP1\netapibase.dll
+    olebase.dll,XPSP3\olebase.dll	
     powrprofbase.dll,2k3SP1\powrprofbase.dll
     rpcrtbase.dll,2k3SP1\rpcrtbase.dll
     securbase.dll,2k3SP1\securbase.dll
     setupapibase.dll,2k3SP1\setupapibase.dll
-    shellbase.dll,2k3SP1\shellbase.dll	
+    shellbase.dll,2k3SP1\shellbase.dll
+    shlwapibase.dll,2k3SP1\shlwapibase.dll		
     userbase.dll,2k3SP1\userbase.dll
     uxthemebase.dll,2k3SP1\uxthemebase.dll
     winstabase.dll,2k3SP1\winstabase.dll
@@ -119,13 +122,15 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     bcrypt.dll
     combase.dll
     comctlext.dll
+	cryptnew.dll
+	dbgeng.dll 
+	fileextd.dll 	
     msvcrt.dll
     pdhbase.dll
     winbrand.dll
     xmllite.dll
     xmlrw.dll
     browseui.dll
-    combase.dll
     gdi32.dll
     iphlpapi.dll
     iphlpapibase.dll
@@ -134,18 +139,23 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     kernelbase.dll	
     Nlsdl.dll
     normaliz.dll
-    ntdllbase.dll
     psapi.dll
     netapi32.dll
     netapinew.dll
+	ntshrui.dll 
+	ole32.dll 	
     pdh.dll	
     powrprof.dll
+	query.dll 	
     rpcrt4.dll
     secur32.dll
     securnew.dll
     setupapi.dll
     propsys.dll
     shell32.dll
+	shlwnew.dll 
+	shlwapi.dll 	
+	synceng.dll 	
     ucrtbase.dll
     user32.dll
     uxtheme.dll
@@ -164,11 +174,13 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     2k3SP1\kernelfull.dll = 1
     2k3SP1\netapibase.dll = 1	
     2k3SP1\ntdll.dll = 1	
+    2k3SP1\olebase.dll = 1		
     2k3SP1\powrprofbase.dll = 1
     2k3SP1\rpcrtbase.dll = 1
     2k3SP1\securbase.dll = 1
     2k3SP1\setupapibase.dll = 1
     2k3SP1\shellbase.dll = 1
+	2k3SP1\shlwapibase.dll = 1	
     2k3SP1\userbase.dll = 1
     2k3SP1\uxthemebase.dll = 1
     2k3SP1\winstabase.dll = 1
@@ -179,13 +191,14 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     bcrypt.dll = 1
     combase.dll = 1
     comctlext.dll =1
+	cryptnew.dll = 1	
+	dbgeng.dll = 1	
+	fileextd.dll = 1	
     msvcrt.dll = 1
-    ntdllbase.dll = 1
     winbrand.dll = 1
     xmllite.dll = 1
     xmlrw.dll = 1
     browseui.dll = 1
-    combase.dll = 1
     gdi32.dll = 1
     iphlpapi.dll = 1
     iphlpapibase.dll = 1
@@ -194,18 +207,24 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     kernelbase.dll = 1	
     Nlsdl.dll = 1
     normaliz.dll = 1
+	ntshrui.dll = 1	
     psapi.dll = 1
     netapi32.dll = 1
     netapinew.dll = 1
+	ole32.dll = 1	
     pdh.dll = 1
     pdhbase.dll = 1
     powrprof.dll = 1
+	query.dll = 1	
     rpcrt4.dll = 1
     secur32.dll = 1
     securnew.dll = 1
     setupapi.dll = 1
     propsys.dll = 1
     shell32.dll = 1
+	shlwnew.dll = 1		
+	shlwapi.dll =1	
+	synceng.dll = 1	
     ucrtbase.dll = 1
     user32.dll = 1
     uxtheme.dll = 1

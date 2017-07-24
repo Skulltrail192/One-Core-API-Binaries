@@ -100,25 +100,33 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
 
 [CopyAlways.System32.Files]
     advapibase.dll,XPSP3\advapibase.dll
+	advpack.dll,XPSP3\advpack.dll
     browsebase.dll,XPSP3\browsebase.dll	
+	crypt32.dll,XPSP3\crypt32.dll
     gdibase.dll,XPSP3\gdibase.dll	
     kernelfull.dll,XPSP3\kernelfull.dll
     netapibase.dll,XPSP3\netapibase.dll	
+	ntdsapi.dll,XPSP3\ntdsapi.dll	
+    olebase.dll,XPSP3\olebase.dll		
     powrprofbase.dll,XPSP3\powrprofbase.dll
     rpcrtbase.dll,XPSP3\rpcrtbase.dll
     securbase.dll,XPSP3\securbase.dll
     setupapibase.dll,XPSP3\setupapibase.dll
     shellbase.dll,XPSP3\shellbase.dll	
+    shlwapibase.dll,XPSP3\shlwapibase.dll		
     userbase.dll,XPSP3\userbase.dll
     uxthemebase.dll,XPSP3\uxthemebase.dll
     winstabase.dll,XPSP3\winstabase.dll
     ws2_base.dll,XPSP3\ws2_base.dll
     advapi32.dll
     advapilong.dll
-    advapinew.dll
+    advapinew.dll	
     bcrypt.dll
     combase.dll
     comctlext.dll
+	cryptnew.dll
+	dbgeng.dll
+	fileextd.dll	
     msvcrt.dll
     pdhbase.dll
     winbrand.dll
@@ -134,18 +142,24 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     kernelbase.dll	
     Nlsdl.dll
     normaliz.dll
-    ntdllbase.dll
+	ntshrui.dll 	
     psapi.dll
     netapi32.dll
     netapinew.dll
+	ntext.dll	
+	ole32.dll
     pdh.dll	
     powrprof.dll
+	query.dll	
     rpcrt4.dll
     secur32.dll
     securnew.dll
     setupapi.dll
+	synceng.dll 	
     propsys.dll
     shell32.dll
+	shlwapi.dll 
+	shlwnew.dll 	
     ucrtbase.dll
     user32.dll
     uxtheme.dll
@@ -158,17 +172,22 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     1=%ServicePackSourceFiles%
 
 [SourceDisksFiles]
+	XPSP3\advpack.dll = 1
     XPSP3\advapibase.dll = 1
     XPSP3\browsebase.dll = 1
+	XPSP3\crypt32.dll = 1
     XPSP3\gdibase.dll = 1	
     XPSP3\kernelfull.dll = 1
     XPSP3\netapibase.dll = 1	
     XPSP3\ntdll.dll = 1	
+	XPSP3\ntdsapi.dll = 1	
+    XPSP3\olebase.dll = 1	
     XPSP3\powrprofbase.dll = 1
     XPSP3\rpcrtbase.dll = 1
     XPSP3\securbase.dll = 1
     XPSP3\setupapibase.dll = 1
     XPSP3\shellbase.dll = 1
+	XPSP3\shlwapibase.dll = 1
     XPSP3\userbase.dll = 1
     XPSP3\uxthemebase.dll = 1
     XPSP3\winstabase.dll = 1
@@ -179,8 +198,10 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     bcrypt.dll = 1
     combase.dll = 1
     comctlext.dll =1
+	cryptnew.dll = 1	
+	dbgeng.dll = 1	
+	fileextd.dll = 1
     msvcrt.dll = 1
-    ntdllbase.dll = 1
     winbrand.dll = 1
     xmllite.dll = 1
     xmlrw.dll = 1
@@ -194,18 +215,25 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     kernelbase.dll = 1	
     Nlsdl.dll = 1
     normaliz.dll = 1
+	ntext.dll = 1
+	ntshrui.dll = 1
     psapi.dll = 1
     netapi32.dll = 1
     netapinew.dll = 1
+	ole32.dll = 1	
     pdh.dll = 1
     pdhbase.dll = 1
     powrprof.dll = 1
+	query.dll = 1
     rpcrt4.dll = 1
     secur32.dll = 1
     securnew.dll = 1
     setupapi.dll = 1
+	synceng.dll = 1
     propsys.dll = 1
     shell32.dll = 1
+	shlwapi.dll =1 	
+	shlwnew.dll = 1		
     ucrtbase.dll = 1
     user32.dll = 1
     uxtheme.dll = 1
@@ -224,8 +252,8 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
 	WinSxS\1.0.6002.23693.cat =1
 	WinSxS\1.0.6002.23693.policy =1	
 [Strings]
-MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
-MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
+	MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
+	MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 
 [UninstallSections]
     GlobalRegistryChanges, GlobalRegistryChanges.UnInstall

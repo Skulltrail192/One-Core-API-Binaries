@@ -1,5 +1,5 @@
 Version 0.2:
--Fixed GetLogicicalProcessorInformationEx
+-Fixed GetLogicalProcessorInformationEx
 -Remade shell32 functions
 -Added ole32 wrapper
 -Added shlwapi wrapper
@@ -14,12 +14,18 @@ Version 0.2:
  - API-MS-WIN-SECURITY-GROUPPOLICY-L1-1-0
  - ext-ms-win-authz-context-l1-1-0
  - ext-ms-win-domainjoin-netjoin-l1-1-0
+ - ext-ms-win-kernel32-package-l1-1-1
+ - ext-ms-win-ntuser-windowclass-l1-1-1
+ - ext-ms-win-ras-rasapi32-l1-1-0
+ - ext-ms-win-security-credui-l1-1-0
  - API-MS-WIN-CORE-CRT-L2-1-0.dll
  - API-MS-WIN-SECURITY-CREDENTIALS-L1-1-0
+ - API-MS-WIN-MM-TIME-L1-1-0
  - explorerframe.dll
  - gameux.dll
  - wpc.dll
  - mmdevapi.dll
+
 
 - New native dlls:
  - dbgeng.dll
@@ -27,6 +33,15 @@ Version 0.2:
  - mf.dll
  - mfplat.dll
  - mfreadwrite.dll
+ - dui70.dll
+ - dusex.dll
+ - UIAnimation.dll
+ - UIAutomationCore.dll
+ - UIRibbon.dll
+ - UIRibbonRes.dll
+ - Advpack.dll
+ - Sysceng.dll
+ - fileextd.dll
 
 - Updated dlls:
  - vhlpapi
@@ -45,5 +60,21 @@ Version 0.2:
  - API-MS-WIN-CORE-UTIL-L1-1-0.dll
  - API-MS-WIN-SERVICE-WINSVC-L1-1-0.dll
  - vs2_32.dll
+ - vxtheme.dll
+
+-Added dlls
+ -advpack.dll - For XP
+ -crypt32 patched 
+ -cryptnew (Vista dll helper)
+ -ntdsapi - For XP
+ -shlwnew - Vista dll helper
+ -Query - From Vista
 
 -Changed vtdll to ntext
+
+Added Follow functions on ntdll XP SP3:
+ - RtlDosPathNameToRelativeNtPathName_U
+ - RtlReleaseRelativeName
+
+- New App
+ - wusa.exe

@@ -4,16 +4,17 @@ After remane native dlls, you can copy all contents on folders placed here
 
 advapi32 - advapibase
 browseui - browsebase
-//crypt32- cryptfull (Cause error, investigate)
 gdi32    - gdibase
 kernel32 - kernelfull
 netapi32 - netapibase
 pdh      - pdhbase
 powrprof - powrprofbase
+ole32    - olebase
 rpcrt4   - rpcrtbase 
 secur32  - securbase
 setupapi - setupapibase 
 shell32  - shellbase
+shlwapi  - shlwapibase
 winsta   - winstabase
 ws2_32   - ws2_base
 user32   - userbase 

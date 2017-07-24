@@ -78,6 +78,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-CORE-COM-PRIVATE-L1-1-0.dll"
    "API-MS-WIN-CORE-CONSOLE-L1-1-0.dll"
    "API-MS-WIN-CORE-CONSOLE-L2-1-0.dll"
+   "API-MS-WIN-CORE-CRT-L2-1-0.dll"
    "API-MS-WIN-CORE-DATETIME-L1-1-0.dll"
    "API-MS-WIN-CORE-DATETIME-L1-1-1.dll"
    "API-MS-WIN-CORE-DEBUG-L1-1-0.dll"
@@ -143,8 +144,10 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll"
    "API-MS-WIN-CORE-PSAPI-L1-1-0.dll"
    "API-MS-WIN-CORE-PSAPI-OBSOLETE-L1-1-0.dll"
+   "API-MS-WIN-CORE-QUIRKS-L1-1-0.dll"
    "API-MS-WIN-CORE-REALTIME-L1-1-0.dll"
    "API-MS-WIN-CORE-REGISTRY-L1-1-0.dll"
+   "API-MS-WIN-CORE-REGISTRY-L2-1-0.dll"
    "API-MS-WIN-CORE-REGISTRYUSERSPECIFIC-L1-1-0.dll"
    "API-MS-WIN-CORE-RTLSUPPORT-L1-1-0.dll"
    "API-MS-WIN-CORE-RTLSUPPORT-L1-2-0.dll"
@@ -179,6 +182,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-CORE-WINRT-ERRORPRIVATE-L1-1-1.dll"
    "API-MS-WIN-CORE-WINRT-L1-1-0.dll"
    "API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll"
+   "API-MS-WIN-CORE-WINRT-ROPARAMETERIZEDIID-L1-1-0.dll"
    "API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll"
    "API-MS-WIN-CORE-WOW64-L1-1-0.dll"
    "API-MS-WIN-CORE-XSTATE-L1-1-0.dll"
@@ -217,15 +221,21 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-EVENTING-LEGACY-L1-1-0.dll"
    "API-MS-WIN-EVENTING-PROVIDER-L1-1-0.dll"
    "API-MS-WIN-EVENTLOG-LEGACY-L1-1-0.dll"
+   "API-MS-WIN-MM-MISC-L1-1-1.dll"
+   "API-MS-WIN-MM-MME-L1-1-0.dll"
+   "API-MS-WIN-MM-TIME-L1-1-0.dll"
    "API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll"
    "API-MS-WIN-POWER-BASE-L1-1-0.dll"
    "API-MS-WIN-POWER-SETTING-L1-1-0.dll"
    "API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-0.dll"
+   "API-MS-WIN-SECURITY-ACTIVEDIRECTORYCLIENT-L1-1-0.dll"
    "API-MS-WIN-SECURITY-AUDIT-L1-1-1.dll"
    "API-MS-WIN-SECURITY-BASE-L1-1-0.dll"
    "API-MS-WIN-SECURITY-BASE-L1-2-0.dll"
    "API-MS-WIN-SECURITY-BASE-PRIVATE-L1-1-1.dll"
+   "API-MS-WIN-SECURITY-CREDENTIALS-L1-1-0.dll"
    "API-MS-WIN-SECURITY-CRYPTOAPI-L1-1-0.dll"
+   "API-MS-WIN-SECURITY-GROUPPOLICY-L1-1-0.dll"
    "API-MS-WIN-SECURITY-LSALOOKUP-L1-1-0.dll"
    "API-MS-WIN-SECURITY-LSALOOKUP-L1-1-1.dll"
    "API-MS-WIN-SECURITY-LSALOOKUP-L2-1-0.dll"
@@ -233,6 +243,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-SECURITY-LSAPOLICY-L1-1-0.dll"
    "API-MS-WIN-SECURITY-PROVIDER-L1-1-0.dll"
    "API-MS-WIN-SECURITY-SDDL-L1-1-0.dll"
+   "API-MS-WIN-SECURITY-SYSTEMFUNCTIONS-L1-1-0.dll"
    "API-MS-WIN-SERVICE-CORE-L1-1-0.dll"
    "API-MS-WIN-SERVICE-CORE-L1-1-1.dll"
    "API-MS-WIN-SERVICE-MANAGEMENT-L1-1-0.dll"
@@ -243,22 +254,29 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-SERVICE-WINSVC-L1-2-0.dll"
    "API-MS-WIN-SHELL-SHELLCOM-L1-1-0.dll"
    "API-MS-WIN-SHELL-SHELLFOLDERS-L1-1-0.dll"
+   "ext-ms-win-authz-context-l1-1-0.dll"
+   "ext-ms-win-domainjoin-netjoin-l1-1-0.dll"
    "ext-ms-win-gdi-dc-create-l1-1-1.dll"
    "ext-ms-win-gdi-dc-l1-2-0.dll"
    "ext-ms-win-gdi-devcaps-l1-1-0.dll"
    "ext-ms-win-gdi-draw-l1-1-1.dll"
    "ext-ms-win-gdi-render-l1-1-0.dll"
    "ext-ms-win-kernel32-package-current-l1-1-0.dll"
+   "ext-ms-win-kernel32-package-l1-1-1.dll"
    "ext-ms-win-ntuser-message-l1-1-1.dll"
    "ext-ms-win-ntuser-private-l1-1-1.dll"
    "ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll"
    "ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll"
+   "ext-ms-win-ntuser-windowclass-l1-1-1.dll"
    "ext-ms-win-ntuser-window-l1-1-1.dll"
+   "ext-ms-win-ras-rasapi32-l1-1-0.dll"
    "ext-ms-win-rtcore-gdi-object-l1-1-0.dll"
    "ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll"
    "ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll"
    "ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll"
    "ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll"
+   "ext-ms-win-security-credui-l1-1-0.dll"
+   "ext-ms-win-security-cryptui-l1-1-0.dll"
 
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
@@ -277,6 +295,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-CORE-COM-PRIVATE-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-CONSOLE-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-CONSOLE-L2-1-0.dll" = 1
+   "API-MS-WIN-CORE-CRT-L2-1-0.dll" = 1
    "API-MS-WIN-CORE-DATETIME-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-DATETIME-L1-1-1.dll" = 1
    "API-MS-WIN-CORE-DEBUG-L1-1-0.dll" = 1
@@ -342,8 +361,10 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-PSAPI-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-PSAPI-OBSOLETE-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-QUIRKS-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-REALTIME-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-REGISTRY-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-REGISTRY-L2-1-0.dll" = 1
    "API-MS-WIN-CORE-REGISTRYUSERSPECIFIC-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-RTLSUPPORT-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-RTLSUPPORT-L1-2-0.dll" = 1
@@ -378,6 +399,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-CORE-WINRT-ERRORPRIVATE-L1-1-1.dll" = 1
    "API-MS-WIN-CORE-WINRT-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll" = 1
+   "API-MS-WIN-CORE-WINRT-ROPARAMETERIZEDIID-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-WOW64-L1-1-0.dll" = 1
    "API-MS-WIN-CORE-XSTATE-L1-1-0.dll" = 1
@@ -416,15 +438,21 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-EVENTING-LEGACY-L1-1-0.dll" = 1
    "API-MS-WIN-EVENTING-PROVIDER-L1-1-0.dll" = 1
    "API-MS-WIN-EVENTLOG-LEGACY-L1-1-0.dll" = 1
+   "API-MS-WIN-MM-MISC-L1-1-1.dll" = 1
+   "API-MS-WIN-MM-MME-L1-1-0.dll" = 1
+   "API-MS-WIN-MM-TIME-L1-1-0.dll" = 1
    "API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll" = 1
    "API-MS-WIN-POWER-BASE-L1-1-0.dll" = 1
    "API-MS-WIN-POWER-SETTING-L1-1-0.dll" = 1
    "API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-0.dll" = 1
+   "API-MS-WIN-SECURITY-ACTIVEDIRECTORYCLIENT-L1-1-0.dll" = 1
    "API-MS-WIN-SECURITY-AUDIT-L1-1-1.dll" = 1
    "API-MS-WIN-SECURITY-BASE-L1-1-0.dll" = 1
    "API-MS-WIN-SECURITY-BASE-L1-2-0.dll" = 1
    "API-MS-WIN-SECURITY-BASE-PRIVATE-L1-1-1.dll" = 1
+   "API-MS-WIN-SECURITY-CREDENTIALS-L1-1-0.dll" = 1
    "API-MS-WIN-SECURITY-CRYPTOAPI-L1-1-0.dll" = 1
+   "API-MS-WIN-SECURITY-GROUPPOLICY-L1-1-0.dll" = 1
    "API-MS-WIN-SECURITY-LSALOOKUP-L1-1-0.dll" = 1
    "API-MS-WIN-SECURITY-LSALOOKUP-L1-1-1.dll" = 1
    "API-MS-WIN-SECURITY-LSALOOKUP-L2-1-0.dll" = 1
@@ -432,6 +460,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-SECURITY-LSAPOLICY-L1-1-0.dll" = 1
    "API-MS-WIN-SECURITY-PROVIDER-L1-1-0.dll" = 1
    "API-MS-WIN-SECURITY-SDDL-L1-1-0.dll" = 1
+   "API-MS-WIN-SECURITY-SYSTEMFUNCTIONS-L1-1-0.dll" = 1
    "API-MS-WIN-SERVICE-CORE-L1-1-0.dll" = 1
    "API-MS-WIN-SERVICE-CORE-L1-1-1.dll" = 1
    "API-MS-WIN-SERVICE-MANAGEMENT-L1-1-0.dll" = 1
@@ -442,22 +471,29 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "API-MS-WIN-SERVICE-WINSVC-L1-2-0.dll" = 1
    "API-MS-WIN-SHELL-SHELLCOM-L1-1-0.dll" = 1
    "API-MS-WIN-SHELL-SHELLFOLDERS-L1-1-0.dll" = 1
+   "ext-ms-win-authz-context-l1-1-0.dll" = 1
+   "ext-ms-win-domainjoin-netjoin-l1-1-0.dll" = 1
    "ext-ms-win-gdi-dc-create-l1-1-1.dll" = 1
    "ext-ms-win-gdi-dc-l1-2-0.dll" = 1
    "ext-ms-win-gdi-devcaps-l1-1-0.dll" = 1
    "ext-ms-win-gdi-draw-l1-1-1.dll" = 1
    "ext-ms-win-gdi-render-l1-1-0.dll" = 1
    "ext-ms-win-kernel32-package-current-l1-1-0.dll" = 1
+   "ext-ms-win-kernel32-package-l1-1-1.dll" = 1
    "ext-ms-win-ntuser-message-l1-1-1.dll" = 1
    "ext-ms-win-ntuser-private-l1-1-1.dll" = 1
    "ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll" = 1
    "ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll" = 1
+   "ext-ms-win-ntuser-windowclass-l1-1-1.dll" = 1
    "ext-ms-win-ntuser-window-l1-1-1.dll" = 1
+   "ext-ms-win-ras-rasapi32-l1-1-0.dll" = 1
    "ext-ms-win-rtcore-gdi-object-l1-1-0.dll" = 1
    "ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll" = 1
    "ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll" = 1
    "ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll" = 1
    "ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll" = 1
+   "ext-ms-win-security-credui-l1-1-0.dll" = 1
+   "ext-ms-win-security-cryptui-l1-1-0.dll" = 1
 
 [Save.Reg.For.Uninstall]
 
