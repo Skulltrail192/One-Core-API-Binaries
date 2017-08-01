@@ -31,10 +31,13 @@ Notes:
 Revision History:
 
     Code was created by
-         Alter, Copyright (c) 2002-2014
+         Alter, Copyright (c) 2002-2015
 
     Some definitions were taken from FreeBSD 4.3-9.2 ATA driver by
          Søren Schmidt, Copyright (c) 1998-2014
+
+Licence:
+    GPLv2
 
 --*/
 
@@ -60,9 +63,11 @@ Revision History:
 #define         ATA_WAIT_IDLE           0x9
 
 
-#include "bm_devs.h"
+#include "bm_devs_decl.h"
 
 #include "uata_ctl.h"
+
+#pragma pack(push, 8)
 
 #define MAX_RETRIES                     6
 #define RETRY_UDMA2                     1
@@ -73,6 +78,7 @@ Revision History:
 #define	IO_WD1	        0x1F0		/* Primary Fixed Disk Controller */
 #define	IO_WD2	        0x170		/* Secondary Fixed Disk Controller */
 #define IP_PC98_BANK    0x432
+#define	IO_FLOPPY_INT	0x3F6		/* AltStatus inside Floppy I/O range */
 
 #define PCI_ADDRESS_IOMASK              0xfffffff0
 
@@ -113,6 +119,8 @@ typedef struct _BUSMASTER_CTX {
 #define PCI_DEV_SUBCLASS_SATA           0x06
 
 #define PCI_DEV_PROGIF_AHCI_1_0         0x01
+
+#pragma pack(push, 1)
 
 /* structure for holding DMA address data */
 typedef struct BM_DMA_ENTRY {
@@ -836,6 +844,7 @@ typedef struct _IDE_AHCI_CHANNEL_CTL_BLOCK {
     IDE_AHCI_CMD       cmd; // for single internal commands w/o associated AtaReq
 } IDE_AHCI_CHANNEL_CTL_BLOCK, *PIDE_AHCI_CHANNEL_CTL_BLOCK;
 
+#pragma pack(pop)
 
 #define IsBusMaster(pciData) \
     ( ((pciData)->Command & (PCI_ENABLE_BUS_MASTER/* | PCI_ENABLE_IO_SPACE*/)) == \
@@ -1003,6 +1012,8 @@ typedef struct _HW_CHANNEL {
 
     PATA_REQ            cur_req;
     ULONG               cur_cdev;
+    ULONG               last_cdev; /* device for which we have configured timings last time */
+    ULONG               last_devsel; /* device selected during last call to SelectDrive() */
 /*    PATA_REQ            first_req;
     PATA_REQ            last_req;*/
     ULONG               queue_depth;
@@ -1026,8 +1037,9 @@ typedef struct _HW_CHANNEL {
     BOOLEAN             CopyDmaBuffer;
     //BOOLEAN             MemIo;
     BOOLEAN             AltRegMap;
+    BOOLEAN             Force80pin;
 
-    UCHAR               Reserved[3];
+    UCHAR               Reserved[2];
 
     MECHANICAL_STATUS_INFORMATION_HEADER MechStatusData;
     SENSE_DATA          MechStatusSense;
@@ -1117,6 +1129,7 @@ typedef struct _HW_CHANNEL {
 #define CTRFLAGS_LBA48                  0x0040
 #define CTRFLAGS_DSC_BSY                0x0080
 #define CTRFLAGS_NO_SLAVE               0x0100
+//#define CTRFLAGS_DMA_BEFORE_R           0x0200
 //#define CTRFLAGS_PATA                   0x0200
 //#define CTRFLAGS_NOT_PRESENT            0x0200
 #define CTRFLAGS_AHCI_PM                0x0400
@@ -1197,6 +1210,11 @@ typedef struct _HW_LU_EXTENSION {
     struct _HW_DEVICE_EXTENSION* DeviceExtension;
     struct _HW_CHANNEL* chan;
     ULONG  Lun;
+
+    ULONGLONG errLastLba;
+    ULONG    errBCount;
+    UCHAR    errRetry;
+    UCHAR    errPadding[3];
 
 #ifdef IO_STATISTICS
 
@@ -1303,6 +1321,7 @@ typedef struct _HW_DEVICE_EXTENSION {
     //PIDE_AHCI_PORT_REGISTERS  BaseIoAHCIPort[AHCI_MAX_PORT];
     ULONG          AHCI_CAP;
     ULONG          AHCI_PI;
+    ULONG          AHCI_PI_mask; // for port exclusion, usually = AHCI_PI
     PATA_REQ       AhciInternalAtaReq0;
     PSCSI_REQUEST_BLOCK AhciInternalSrb0;
 
@@ -1427,7 +1446,7 @@ ScsiPortGetBusDataByOffset(
 extern ULONG
 NTAPI
 AtapiFindListedDev(
-    PBUSMASTER_CONTROLLER_INFORMATION BusMasterAdapters,
+    PBUSMASTER_CONTROLLER_INFORMATION_BASE BusMasterAdapters,
     ULONG     lim,
     IN PVOID  HwDeviceExtension,
     IN ULONG  BusNumber,
@@ -1477,6 +1496,14 @@ AtapiDmaPioSync(
 extern BOOLEAN
 NTAPI
 AtapiDmaDBSync(
+    PHW_CHANNEL chan,
+    PSCSI_REQUEST_BLOCK Srb
+    );
+
+extern BOOLEAN
+NTAPI
+AtapiDmaDBPreSync(
+    IN PVOID HwDeviceExtension,
     PHW_CHANNEL chan,
     PSCSI_REQUEST_BLOCK Srb
     );
@@ -1854,18 +1881,27 @@ extern BOOLEAN g_opt_AtapiDmaRawRead;
 extern BOOLEAN hasPCI;
 
 extern BOOLEAN InDriverEntry;
+extern BOOLEAN g_Dump;
 
 extern BOOLEAN g_opt_Verbose;
 extern ULONG   g_opt_VirtualMachine;
+
+extern ULONG   g_opt_WaitBusyResetCount;
+
+extern ULONG CPU_num;
 
 #define VM_AUTO      0x00
 #define VM_NONE      0x01
 #define VM_VBOX      0x02
 #define VM_VMWARE    0x03
 #define VM_QEMU      0x04
+#define VM_BOCHS     0x05
+#define VM_PCEM      0x06
 
-#define VM_MAX_KNOWN VM_QEMU
+#define VM_MAX_KNOWN VM_PCEM
 
 extern BOOLEAN WinVer_WDM_Model;
+
+#pragma pack(pop)
 
 #endif //__IDE_BUSMASTER_H__

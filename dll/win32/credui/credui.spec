@@ -15,3 +15,7 @@
 @ stub -private DllGetClassObject
 @ stub -private DllRegisterServer
 @ stub -private DllUnregisterServer
+
+@ stub CredPackAuthenticationBufferW
+@ stub CredUIPromptForWindowsCredentialsW
+@ stub CredUnPackAuthenticationBufferW

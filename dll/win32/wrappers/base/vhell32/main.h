@@ -39,6 +39,7 @@
 #include <objbase.h>
 #include <rpcproxy.h>
 #include <security.h>
+#include <knownfolders.h>
 #include <shlobj_undoc.h>
 //#include <shlwapi_undoc.h>
 #include <unicode.h>

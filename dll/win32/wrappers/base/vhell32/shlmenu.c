@@ -1095,31 +1095,31 @@ static HRESULT SHELL_CreateContextMenu(HWND hwnd, IContextMenu* system_menu,
     return ret;
 }
 
-HRESULT WINAPI SHCreateDefaultContextMenu(const DEFCONTEXTMENU *pdcm, REFIID riid, void **ppv)
-{
-    IShellFolder *folder=pdcm->psf;
-    LPITEMIDLIST folder_pidl;
-    HRESULT ret;
-    IContextMenu *system_menu;
-    TRACE("(%p,%s,%p)\n",pdcm,shdebugstr_guid(riid),ppv);
-    if(!pdcm->pidlFolder)
-    {
-        IPersistFolder2 *persist;
-        IShellFolder_QueryInterface(folder,&IID_IPersistFolder2,(void**)&persist);
-        IPersistFolder2_GetCurFolder(persist,&folder_pidl);
-        IPersistFolder2_Release(persist);
-    }
-    else
-        folder_pidl=ILClone(pdcm->pidlFolder);
-    if(pdcm->cKeys==0)
-        FIXME("Loading shell extensions using IQueryAssociations not yet supported\n");
+// HRESULT WINAPI SHCreateDefaultContextMenu(const DEFCONTEXTMENU *pdcm, REFIID riid, void **ppv)
+// {
+    // IShellFolder *folder=pdcm->psf;
+    // LPITEMIDLIST folder_pidl;
+    // HRESULT ret;
+    // IContextMenu *system_menu;
+    // TRACE("(%p,%s,%p)\n",pdcm,shdebugstr_guid(riid),ppv);
+    // if(!pdcm->pidlFolder)
+    // {
+        // IPersistFolder2 *persist;
+        // IShellFolder_QueryInterface(folder,&IID_IPersistFolder2,(void**)&persist);
+        // IPersistFolder2_GetCurFolder(persist,&folder_pidl);
+        // IPersistFolder2_Release(persist);
+    // }
+    // else
+        // folder_pidl=ILClone(pdcm->pidlFolder);
+    // if(pdcm->cKeys==0)
+        // FIXME("Loading shell extensions using IQueryAssociations not yet supported\n");
 
-    ItemMenu_Constructor(folder, folder_pidl, (const LPCITEMIDLIST*)pdcm->apidl, pdcm->cidl, &IID_IContextMenu, (void**)&system_menu);
-    ret = SHELL_CreateContextMenu(pdcm->hwnd,system_menu,folder,folder_pidl,(LPCITEMIDLIST*)pdcm->apidl,pdcm->cidl,pdcm->aKeys,pdcm->cKeys,riid,ppv);
-    IContextMenu_Release(system_menu);
-    ILFree(folder_pidl);
-    return ret;
-}
+    // ItemMenu_Constructor(folder, folder_pidl, (const LPCITEMIDLIST*)pdcm->apidl, pdcm->cidl, &IID_IContextMenu, (void**)&system_menu);
+    // ret = SHELL_CreateContextMenu(pdcm->hwnd,system_menu,folder,folder_pidl,(LPCITEMIDLIST*)pdcm->apidl,pdcm->cidl,pdcm->aKeys,pdcm->cKeys,riid,ppv);
+    // IContextMenu_Release(system_menu);
+    // ILFree(folder_pidl);
+    // return ret;
+// }
 
 HRESULT 
 WINAPI 

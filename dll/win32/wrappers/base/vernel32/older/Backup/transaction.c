@@ -265,16 +265,13 @@ CopyFileTransactedA(
     if ( !GetCurrentTransaction() )
     {
       SetCurrentTransaction(hTransaction);
-      CopyFileExA(lpExistingFileName, lpNewFileName, lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
-      return SetCurrentTransaction(0);
+      return CopyFileExA(lpExistingFileName, lpNewFileName, lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
     }
     SetLastError(6725u);
-    resp = 0;
   }
   else
   {
     SetLastError(6700u);
-    resp = 0;
   }
   return resp;
 }
@@ -294,22 +291,20 @@ DWORD dwCopyFlags,
 HANDLE hTransaction
 )
 {
-  BOOL resp; // [sp+10h] [bp-1Ch]@4
+  BOOL resp = FALSE; // [sp+10h] [bp-1Ch]@4
 
   if ( hTransaction != (HANDLE)-1 && hTransaction )
   {
     if ( !GetCurrentTransaction() )
     {
       SetCurrentTransaction(hTransaction);
-      CopyFileExW(lpExistingFileName, lpNewFileName, lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
+      return CopyFileExW(lpExistingFileName, lpNewFileName, lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
     }
     SetLastError(6725u);
-    resp = 0;
   }
   else
   {
     SetLastError(6700u);
-    resp = 0;
   }
   return resp;
 }
@@ -403,26 +398,21 @@ BOOL WINAPI DeleteFileTransactedA(LPCTSTR lpFileName, HANDLE hTransaction)
 /*
  * @implemented
  */
-BOOLEAN WINAPI CreateSymbolicLinkTransactedW(PWSTR dosname, PWSTR Src, DWORD FileInformation, HANDLE hTransaction)
+BOOL WINAPI CreateSymbolicLinkTransactedW(PWSTR dosname, PWSTR Src, DWORD FileInformation, HANDLE hTransaction)
 {
-  BOOLEAN symbolic; // ST1F_1@5
-  BOOLEAN resp; // [sp+13h] [bp-19h]@4
+  BOOLEAN resp = FALSE; // [sp+13h] [bp-19h]@4
 
   if ( hTransaction != (HANDLE)-1 && hTransaction )
   {
     if ( !GetCurrentTransaction() )
     {
       SetCurrentTransaction(hTransaction);
-      symbolic = CreateSymbolicLinkW(dosname, Src, FileInformation);
-      return SetCurrentTransaction(0);
+      return CreateSymbolicLinkW(dosname, Src, FileInformation);
     }
-    SetLastError(0x1A45u);
-    resp = 0;
   }
   else
   {
     SetLastError(0x1A2Cu);
-    resp = 0;
   }
   return resp;
 }
@@ -450,7 +440,7 @@ BOOLEAN WINAPI CreateSymbolicLinkTransactedA(PSTR dosname, PSTR Src, DWORD FileI
   {
     SetLastError(0x57u);
   }
-  return 0;
+  return FALSE;
 }
 
 BOOL WINAPI CreateDirectoryTransactedW(LPCWSTR lpTemplateDirectory, LPCWSTR lpNewDirectory, LPSECURITY_ATTRIBUTES lpSecurityAttributes, HANDLE hTransaction)

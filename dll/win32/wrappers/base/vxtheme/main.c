@@ -230,3 +230,7 @@ HRESULT WINAPI BufferedPaintSetAlpha(HPAINTBUFFER hBufferedPaint, const RECT *pr
 	return E_NOTIMPL;
 }
 
+BOOL WINAPI IsCompositionActive(void)
+{
+	return FALSE;
+}

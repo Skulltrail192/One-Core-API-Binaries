@@ -29,3 +29,4 @@
 136 stdcall -noname SHEnumClassesOfCategories(long long long long long)
 137 stdcall -noname SHWriteClassesOfCategories(long long long long long long long)
 138 stdcall -noname SHIsExplorerBrowser()
+139 stdcall -noname SHCreateBrowserProgressAggregator(long long long ptr ptr)

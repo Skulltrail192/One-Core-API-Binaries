@@ -1907,7 +1907,8 @@ static HRESULT STDMETHODCALLTYPE d3d11_compute_shader_QueryInterface(ID3D11Compu
             || IsEqualGUID(riid, &IID_ID3D11DeviceChild)
             || IsEqualGUID(riid, &IID_IUnknown))
     {
-        ID3D11ComputeShader_AddRef(*object = iface);
+		*object = iface;
+        ID3D11ComputeShader_AddRef((ID3D11ComputeShader*)object);
         return S_OK;
     }
 

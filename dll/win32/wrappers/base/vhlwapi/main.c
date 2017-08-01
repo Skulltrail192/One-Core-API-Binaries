@@ -109,30 +109,30 @@ SHAutoCompGetPidl(
   return result;
 }
 
-/*************************************************************************
- * PathCreateFromUrlAlloc   [SHLWAPI.@]
- */
-HRESULT 
-WINAPI 
-PathCreateFromUrlAlloc(
-	LPCWSTR pszUrl, 
-	LPWSTR *pszPath,
-    DWORD dwReserved
-)
-{
-    WCHAR pathW[MAX_PATH];
-    DWORD size;
-    HRESULT hr;
+// /*************************************************************************
+ // * PathCreateFromUrlAlloc   [SHLWAPI.@]
+ // */
+// HRESULT 
+// WINAPI 
+// PathCreateFromUrlAlloc(
+	// LPCWSTR pszUrl, 
+	// LPWSTR *pszPath,
+    // DWORD dwReserved
+// )
+// {
+    // WCHAR pathW[MAX_PATH];
+    // DWORD size;
+    // HRESULT hr;
 
-    size = MAX_PATH;
-    hr = PathCreateFromUrlW(pszUrl, pathW, &size, dwReserved);
-    if (SUCCEEDED(hr))
-    {
-        /* Yes, this is supposed to crash if pszPath is NULL */
-        *pszPath = StrDupW(pathW);
-    }
-    return hr;
-}
+    // size = MAX_PATH;
+    // hr = PathCreateFromUrlW(pszUrl, pathW, &size, dwReserved);
+    // if (SUCCEEDED(hr))
+    // {
+        // /* Yes, this is supposed to crash if pszPath is NULL */
+        // *pszPath = StrDupW(pathW);
+    // }
+    // return hr;
+// }
 
 HRESULT 
 WINAPI 

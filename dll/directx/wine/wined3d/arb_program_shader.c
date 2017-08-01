@@ -1194,6 +1194,8 @@ static void shader_arb_get_register_name(const struct wined3d_shader_instruction
                 sprintf(register_name, "%s", rastout_reg_names[reg->idx[0].offset]);
             break;
 
+        case WINED3DSPR_DEPTHOUT_GREATER_EQUAL:
+        case WINED3DSPR_DEPTHOUT_LESS_EQUAL:
         case WINED3DSPR_DEPTHOUT:
             strcpy(register_name, "result.depth");
             break;

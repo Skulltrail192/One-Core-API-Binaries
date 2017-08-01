@@ -862,3 +862,4 @@
 @ stdcall PathMatchSpecExW(wstr wstr long)
 @ stdcall PathCreateFromUrlAlloc(wstr wstr long)
 @ stdcall StrFormatByteSizeEx(long long long wstr long)
+@ stdcall SHAutoCompGetPidl(ptr ptr long ptr)

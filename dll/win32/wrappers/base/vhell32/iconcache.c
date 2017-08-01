@@ -616,18 +616,6 @@ static INT Shell_GetCachedImageIndexA(LPCSTR szPath, INT nIndex, BOOL bSimulateD
 	return ret;
 }
 
-static INT Shell_GetCachedImageIndexW(LPCWSTR szPath, INT nIndex, BOOL bSimulateDoc)
-{
-	WARN("(%s,%08x,%08x) semi-stub.\n",debugstr_w(szPath), nIndex, bSimulateDoc);
-
-	return SIC_GetIconIndex(szPath, nIndex, 0);
-}
-
-INT WINAPI Shell_GetCachedImageIndexAW(LPCVOID szPath, INT nIndex, BOOL bSimulateDoc)
-{	if( SHELL_OsIsUnicode())
-	  return Shell_GetCachedImageIndexW(szPath, nIndex, bSimulateDoc);
-	return Shell_GetCachedImageIndexA(szPath, nIndex, bSimulateDoc);
-}
 
 /****************************************************************************
  * SHGetStockIconInfo [SHELL32.@]

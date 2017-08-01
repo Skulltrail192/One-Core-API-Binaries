@@ -3170,8 +3170,9 @@ static HRESULT volumetexture_init(struct wined3d_texture *texture, const struct 
         const struct wined3d_parent_ops *parent_ops)
 {
     struct wined3d_device_parent *device_parent = device->device_parent;
+    struct wined3d_surface *surfaces;
     const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
-    unsigned int i;
+    unsigned int i, j, depth = desc->depth;
     HRESULT hr;
 
     if (layer_count != 1)
@@ -3253,26 +3254,52 @@ static HRESULT volumetexture_init(struct wined3d_texture *texture, const struct 
         texture->resource.map_binding = WINED3D_LOCATION_BUFFER;
     }
 
+    if (level_count > ~(SIZE_T)0 / depth
+            || !(surfaces = wined3d_calloc(level_count * depth, sizeof(*surfaces))))
+    {
+        wined3d_texture_cleanup_sync(texture);
+        return E_OUTOFMEMORY;
+    }
+
     /* Generate all the surfaces. */
     for (i = 0; i < texture->level_count; ++i)
     {
-        struct wined3d_texture_sub_resource *sub_resource;
-
-        sub_resource = &texture->sub_resources[i];
-        sub_resource->locations = WINED3D_LOCATION_DISCARDED;
-
-        if (FAILED(hr = device_parent->ops->volume_created(device_parent,
-                texture, i, &sub_resource->parent, &sub_resource->parent_ops)))
+        for (j = 0; j < depth; ++j)
         {
-            WARN("Failed to create volume parent, hr %#x.\n", hr);
-            sub_resource->parent = NULL;
-            wined3d_texture_cleanup_sync(texture);
-            return hr;
+            struct wined3d_texture_sub_resource *sub_resource;
+            unsigned int idx = j * texture->level_count + i;
+            struct wined3d_surface *surface;
+
+            surface = &surfaces[idx];
+            surface->container = texture;
+            surface->texture_target = texture->target;
+            surface->texture_level = i;
+            surface->texture_layer = j;
+            list_init(&surface->renderbuffers);
+            list_init(&surface->overlays);
+
+            sub_resource = &texture->sub_resources[idx];
+            sub_resource->locations = WINED3D_LOCATION_DISCARDED;
+            sub_resource->u.surface = surface;
+            if (!(texture->resource.usage & WINED3DUSAGE_DEPTHSTENCIL))
+            {
+                wined3d_texture_validate_location(texture, idx, WINED3D_LOCATION_SYSMEM);
+                wined3d_texture_invalidate_location(texture, idx, ~WINED3D_LOCATION_SYSMEM);
+            }
+
+            if (FAILED(hr = device_parent->ops->surface_created(device_parent,
+                    texture, idx, &sub_resource->parent, &sub_resource->parent_ops)))
+            {
+                WARN("Failed to create surface parent, hr %#x.\n", hr);
+                sub_resource->parent = NULL;
+                wined3d_texture_cleanup_sync(texture);
+                return hr;
+            }
+
+            TRACE("parent %p, parent_ops %p.\n", sub_resource->parent, sub_resource->parent_ops);
+
+            TRACE("Created 3D surface level %u, layer %u @ %p.\n", i, j, surface);
         }
-
-        TRACE("parent %p, parent_ops %p.\n", parent, parent_ops);
-
-        TRACE("Created volume level %u.\n", i);
     }
 
     return WINED3D_OK;
@@ -3530,6 +3557,7 @@ HRESULT CDECL wined3d_texture_create(struct wined3d_device *device, const struct
         void *parent, const struct wined3d_parent_ops *parent_ops, struct wined3d_texture **texture)
 {
     struct wined3d_texture *object;
+    unsigned int depth_or_layer_count;
     HRESULT hr;
 
     TRACE("device %p, desc %p, layer_count %u, level_count %u, flags %#x, data %p, "
@@ -3575,8 +3603,13 @@ HRESULT CDECL wined3d_texture_create(struct wined3d_device *device, const struct
         }
     }
 
+    if (desc->resource_type == WINED3D_RTYPE_TEXTURE_3D)
+        depth_or_layer_count = desc->depth;
+    else
+        depth_or_layer_count = layer_count;
+
     if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY,
-            FIELD_OFFSET(struct wined3d_texture, sub_resources[level_count * layer_count]))))
+            FIELD_OFFSET(struct wined3d_texture, sub_resources[level_count * depth_or_layer_count]))))
         return E_OUTOFMEMORY;
 
     switch (desc->resource_type)

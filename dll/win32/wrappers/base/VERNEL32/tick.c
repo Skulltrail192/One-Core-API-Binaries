@@ -4,11 +4,11 @@ Copyright (c) 2017  Shorthorn Project
 
 File name:
 
-    sched.c
+    tick.c
    
 Author:
     
-    adrmarin  Fri Jul 19 17:41:07 2002
+   Skulltrail 21 - July - 2017
 
 */
 
@@ -36,3 +36,34 @@ GetTickCount64(VOID)
      return (UInt32x32To64(TickCount.LowPart, SharedUserData->TickCountMultiplier) >> 24) +
             (UInt32x32To64(TickCount.HighPart, SharedUserData->TickCountMultiplier) << 8);
 }
+
+// /*
+ // * @implemented
+ // */
+// DWORD
+// WINAPI
+// GetTickCount(VOID)
+// {
+    // ULARGE_INTEGER TickCount;
+
+// #ifdef _M_AMD64
+    // TickCount.QuadPart = *((volatile ULONG64*)&SharedUserData->TickCount);
+// #else
+    // while (TRUE)
+    // {
+        // TickCount.HighPart = (ULONG)SharedUserData->TickCount.High1Time;
+        // TickCount.LowPart = SharedUserData->TickCount.LowPart;
+
+        // if (TickCount.HighPart == (ULONG)SharedUserData->TickCount.High2Time)
+            // break;
+
+        // YieldProcessor();
+    // }
+// #endif
+
+    // return (ULONG)((UInt32x32To64(TickCount.LowPart,
+                                  // SharedUserData->TickCountMultiplier) >> 24) +
+                    // UInt32x32To64((TickCount.HighPart << 8) & 0xFFFFFFFF,
+                                  // SharedUserData->TickCountMultiplier));
+
+// }

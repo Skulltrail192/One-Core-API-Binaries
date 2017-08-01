@@ -1294,3 +1294,4 @@
 @ stub GetNamedPipeAttribute
 @ stub ImpersonateNamedPipeClient
 @ stub CompareStringEx
+@ stub GetPackageFullName

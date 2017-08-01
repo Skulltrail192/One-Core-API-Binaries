@@ -239,7 +239,6 @@
 702 stdcall -noname CDefFolderMenu_MergeMenu(ptr long long ptr)
 703 stdcall -noname GUIDFromStringA(str ptr)
 704 stdcall -noname GUIDFromStringW(wstr ptr)
-705 stdcall -noname IsEnabled()
 707 stdcall -noname SHOpenPropSheetA(str ptr long ptr ptr ptr str)
 708 stdcall -noname SHGetSetFolderCustomSettingsA(ptr str long)
 709 stdcall SHGetSetFolderCustomSettingsW(ptr wstr long)
@@ -351,10 +350,6 @@
 @ stdcall SHCreateProcessAsUserW(ptr)
 @ stdcall SHCreateQueryCancelAutoPlayMoniker(ptr)
 @ stdcall SHCreateShellItem(ptr ptr ptr ptr)
-@ stdcall SHCreateShellItemArray(ptr ptr long ptr ptr)
-@ stdcall SHCreateShellItemArrayFromDataObject(ptr ptr ptr)
-@ stdcall SHCreateShellItemArrayFromShellItem(ptr ptr ptr)
-@ stdcall SHCreateShellItemArrayFromIDLists(long ptr ptr)
 @ stdcall SHEmptyRecycleBinA(long str long)
 @ stdcall SHEmptyRecycleBinW(long wstr long)
 @ stdcall SHEnableServiceObject(ptr long)
@@ -376,17 +371,13 @@
 @ stdcall SHGetFileInfoW(ptr long ptr long long)
 @ stdcall SHGetFolderLocation(long long long long ptr)
 @ stdcall SHGetFolderPathA(long long long long ptr)
-@ stdcall SHGetFolderPathEx(ptr long ptr ptr long)
 @ stdcall SHGetFolderPathAndSubDirA(long long long long str ptr)
 @ stdcall SHGetFolderPathAndSubDirW(long long long long wstr ptr)
 @ stdcall SHGetFolderPathW(long long long long ptr)
 @ stdcall SHGetIconOverlayIndexA(str long)
 @ stdcall SHGetIconOverlayIndexW(wstr long)
-@ stdcall SHGetIDListFromObject(ptr ptr)
 @ stdcall SHGetInstanceExplorer(long)
-@ stdcall SHGetItemFromDataObject(ptr long ptr ptr)
 @ stdcall SHGetMalloc(ptr)
-@ stdcall SHGetNameFromIDList(ptr long ptr)
 @ stdcall SHGetNewLinkInfo(str str ptr long long) 
 @ stdcall SHGetPathFromIDList(ptr ptr) 
 @ stdcall SHGetPathFromIDListA(ptr ptr)
@@ -395,7 +386,6 @@
 @ stdcall SHGetSpecialFolderLocation(long long ptr)
 @ stdcall SHGetSpecialFolderPathA(long ptr long long)
 @ stdcall SHGetSpecialFolderPathW(long ptr long long)
-@ stdcall SHGetStockIconInfo(long long ptr)
 @ stdcall SHGetUnreadMailCountW (long wstr long ptr wstr long)
 @ stdcall SHHelpShortcuts_RunDLL(long long long long) 
 @ stdcall SHHelpShortcuts_RunDLLA(long long long long)
@@ -442,7 +432,6 @@
 @ stdcall ShellExecuteExW(long)
 @ stdcall ShellExecuteW(long wstr wstr wstr wstr long)
 @ stdcall ShellHookProc(long ptr ptr)
-@ stdcall Shell_NotifyIcon(long ptr) Shell_NotifyIconInternal
 @ stdcall StrChrA(str long) 
 @ stdcall StrChrIA(str long) 
 @ stdcall StrChrIW(wstr long) 
@@ -473,67 +462,77 @@
 @ stdcall StrStrW(wstr wstr) 
 @ stdcall WOWShellExecute(ptr str str str str long ptr)
 
-#Functions exported by Longhorn shell32.dll
+; #Functions exported by Longhorn shell32.dll
 @ stdcall SHInitializeNamespace() ;version 3718
 @ stdcall SHUninitializeNamespace() ;version 3718
-@ stdcall SHCreateItemFromIDList(ptr ptr ptr)
-@ stdcall SHCreateItemFromParsingName(wstr ptr ptr ptr)
-@ stdcall SHCreateItemWithParent(ptr ptr ptr long ptr)
-@ stdcall SHBindToObject(ptr ptr ptr ptr ptr) 
-@ stdcall Shell_GetCachedImageIndexA(ptr ptr long) Shell_GetCachedImageIndex
-@ stdcall Shell_GetCachedImageIndexW(ptr ptr long) Shell_GetCachedImageIndex
-@ stdcall Shell_NotifyIconA(long ptr)
-;@ stdcall Shell_NotifyIconW(long ptr)
-@ stdcall SHEvaluateSystemCommandTemplate(wstr wstr wstr wstr)
+@ stdcall SHEvaluateSystemCommandTemplate(wstr wstr wstr wstr)  ;Redirected to Longhorn shell
 @ stdcall SHFormatForDisplay(ptr ptr long wstr long) 
-@ stdcall SHGetPropertyStoreForWindow(ptr long ptr)
 @ stdcall WaitForExplorerRestartW(long long wstr long)
-758 stdcall -noname SHCreateThreadUndoManager(ptr ptr)
-759 stdcall -noname SHGetThreadUndoManager(ptr ptr)
+758 stdcall -noname SHCreateThreadUndoManager(ptr ptr) ;Redirected to Longhorn shell
+759 stdcall -noname SHGetThreadUndoManager(ptr ptr) ;Redirected to Longhorn shell
+761 stdcall -noname SHChangeNotifyDeregisterWindow(ptr) ;Redirected to Longhorn shell
 810 stdcall -noname SHGetUserPicturePathEx(wstr long wstr wstr long wstr long)
-850 stdcall -noname PathComparePaths(wstr wstr)
+850 stdcall -noname PathComparePaths(wstr wstr) ;Redirected to Longhorn shell
 881 stdcall -noname SHEnumClassesOfCategories(long long long long long)
 882 stdcall -noname SHWriteClassesOfCategories(long long long long long long long)
 
-# Functions exported by the WinVista shell32.dll
+; # Functions exported by the WinVista shell32.dll
+@ stdcall Shell_GetCachedImageIndexA(ptr ptr long)  ;Redirected to Longhorn shell
+@ stdcall Shell_GetCachedImageIndexW(ptr ptr long)  ;Redirected to Longhorn shell
+@ stdcall SHBindToObject(ptr ptr ptr ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHCreateItemFromIDList(ptr ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHCreateItemFromParsingName(wstr ptr ptr ptr)  ;Redirected to Longhorn shell
+@ stdcall SHCreateItemFromRelativeName(ptr wstr ptr long ptr) ;Redirected to Longhorn shell
+@ stdcall SHCreateItemWithParent(ptr ptr ptr long ptr) ;Redirected to Longhorn shell
+@ stdcall SHCreateShellItemArray(ptr ptr long ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHCreateShellItemArrayFromDataObject(ptr ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHCreateShellItemArrayFromShellItem(ptr ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHCreateShellItemArrayFromIDLists(long ptr ptr) ;Redirected to Longhorn shell
 @ stdcall SHGetKnownFolderIDList(ptr long ptr ptr)
 @ stdcall SHGetKnownFolderPath(ptr long ptr ptr)
-@ stdcall AssocCreateForClasses(ptr long long ptr)
-@ stdcall AssocGetDetailsOfPropKey(ptr ptr ptr ptr ptr)
-@ stdcall ILLoadFromStreamEx(ptr ptr)
-@ stdcall InitNetworkAddressControl()
-@ stdcall SHCreateDefaultContextMenu(ptr ptr ptr)
-@ stdcall SHCreateDefaultExtractIcon(ptr ptr)
+@ stdcall AssocCreateForClasses(ptr long long ptr) ;Redirected to Longhorn shell
+@ stdcall AssocGetDetailsOfPropKey(ptr ptr ptr ptr ptr) ;Redirected to Longhorn shell
+@ stdcall ILLoadFromStreamEx(ptr ptr) ;Redirected to Longhorn shell
+@ stdcall InitNetworkAddressControl() ;Redirected to Longhorn shell
+@ stdcall SHCreateDefaultContextMenu(ptr ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHCreateDefaultExtractIcon(ptr ptr) ;Redirected to Longhorn shell
 @ stdcall SHOpenWithDialog(ptr wstr)
-@ stdcall SHCreateDataObject(ptr long ptr ptr ptr ptr)
-@ stdcall SHBindToFolderIDListParent(ptr ptr ptr ptr ptr)
-@ stdcall SHCreateDefaultExtractIcon(ptr ptr)
-@ stdcall SHSetTemporaryPropertyForItem(ptr ptr ptr)
-@ stdcall SHGetLocalizedName(wstr wstr long ptr)
-@ stdcall SHCreateItemInKnownFolder(ptr long wstr ptr ptr)
-@ stdcall SHGetPathFromIDListEx(ptr wstr long long)
+@ stdcall SHCreateDataObject(ptr long ptr ptr ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHBindToFolderIDListParent(ptr ptr ptr ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHBindToFolderIDListParentEx(ptr ptr ptr long ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHGetFolderPathEx(ptr long ptr ptr long)
+@ stdcall SHGetIDListFromObject(ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHSetTemporaryPropertyForItem(ptr ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHGetLocalizedName(wstr wstr long ptr) ;Redirected to Longhorn shell
+@ stdcall SHCreateItemInKnownFolder(ptr long wstr ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHGetPathFromIDListEx(ptr wstr long long) ;Redirected to Longhorn shell
 @ stdcall SHSetKnownFolderPath(long long ptr wstr)
-@ stdcall SHGetTemporaryPropertyForItem(ptr ptr ptr)
-@ stdcall SHGetPropertyStoreFromIDList(ptr long long ptr)
-@ stdcall SHRemoveLocalizedName(wstr)
-@ stdcall SHQueryUserNotificationState(ptr)
-@ stdcall SHGetDriveMedia(wstr ptr)
-@ stdcall SHBindToFolderIDListParentEx(ptr ptr ptr long ptr ptr)
-@ stdcall SHCreateItemFromRelativeName(ptr wstr ptr long ptr)
-@ stdcall SHCreateAssociationRegistration(long ptr)
-@ stdcall SHChangeNotifyRegisterThread(long)
-@ stdcall SHAddDefaultPropertiesByExt(wstr ptr)
-@ stdcall SHGetPropertyStoreFromParsingName(wstr ptr long long ptr)
-@ stdcall Shell_NotifyIconGetRect(ptr ptr)
-@ stub SHAssocEnumHandlers
-@ stub SHSetDefaultProperties
+@ stdcall SHGetTemporaryPropertyForItem(ptr ptr ptr) ;Redirected to Longhorn shell
+@ stdcall SHGetPropertyStoreFromIDList(ptr long long ptr) ;Redirected to Longhorn shell
+@ stdcall SHRemoveLocalizedName(wstr) ;Redirected to Longhorn shell
+@ stdcall SHQueryUserNotificationState(ptr) ;Redirected to Longhorn shell
+@ stdcall SHGetDriveMedia(wstr ptr) ;Redirected to Longhorn shell
+@ stdcall SHGetNameFromIDList(ptr long ptr) ;Redirected to Longhorn shell
+@ stdcall SHCreateAssociationRegistration(long ptr) ;Redirected to Longhorn shell
+@ stdcall SHChangeNotifyRegisterThread(long) ;Redirected to Longhorn shell
+@ stdcall SHAddDefaultPropertiesByExt(wstr ptr) ;Redirected to Longhorn shell
+@ stdcall SHGetPropertyStoreFromParsingName(wstr ptr long long ptr) ;Redirected to Longhorn shell
+@ stdcall SHGetStockIconInfo(long long ptr)
+@ stdcall SHAssocEnumHandlers(wstr long ptr) ;Redirected to Longhorn shell
+@ stdcall SHSetDefaultProperties(ptr ptr long ptr) ;Redirected to Longhorn shell
 @ stdcall WPC_InstallState(ptr)
+@ stdcall Shell_NotifyIcon(long ptr)  ;Redirected to Longhorn shell
+@ stdcall Shell_NotifyIconA(long ptr)  ;Redirected to Longhorn shell
+@ stdcall Shell_NotifyIconW(long ptr) ;Redirected to Longhorn shell
 
 #Win7
 @ stdcall GetCurrentProcessExplicitAppUserModelID(wstr)
+@ stdcall Shell_NotifyIconGetRect(ptr ptr)
 @ stdcall SetCurrentProcessExplicitAppUserModelID(wstr)
 @ stdcall SHGetKnownFolderItem(ptr long long ptr ptr)
+@ stdcall SHGetItemFromObject(ptr long ptr)
+@ stdcall SHGetItemFromDataObject(ptr long ptr ptr)
+@ stdcall SHGetPropertyStoreForWindow(ptr long ptr)
 
-#remake functions
-@ stdcall Shell_NotifyIconA(long ptr) Shell_NotifyIconInternalA
-@ stdcall Shell_NotifyIconW(long ptr) Shell_NotifyIconInternalW
+#Unknown 
+;705 stdcall -noname IsEnabled()

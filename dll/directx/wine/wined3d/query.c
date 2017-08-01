@@ -288,21 +288,33 @@ void wined3d_fence_destroy(struct wined3d_fence *fence)
     HeapFree(GetProcessHeap(), 0, fence);
 }
 
-HRESULT wined3d_fence_create(struct wined3d_device *device, struct wined3d_fence **fence)
+static HRESULT wined3d_fence_init(struct wined3d_fence *fence, const struct wined3d_gl_info *gl_info)
 {
-    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
-    struct wined3d_fence *object;
-
-    TRACE("device %p, fence %p.\n", device, fence);
-
     if (!wined3d_fence_supported(gl_info))
     {
         WARN("Fences not supported.\n");
         return WINED3DERR_NOTAVAILABLE;
     }
 
+    return WINED3D_OK;
+}
+
+HRESULT wined3d_fence_create(struct wined3d_device *device, struct wined3d_fence **fence)
+{
+    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
+    struct wined3d_fence *object;
+    HRESULT hr;
+
+    TRACE("device %p, fence %p.\n", device, fence);
+
     if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object))))
         return E_OUTOFMEMORY;
+
+    if (FAILED(hr = wined3d_fence_init(object, gl_info)))
+    {
+        HeapFree(GetProcessHeap(), 0, object);
+        return hr;
+    }
 
     TRACE("Created fence %p.\n", object);
     *fence = object;
@@ -949,18 +961,20 @@ static HRESULT wined3d_event_query_create(struct wined3d_device *device,
 {
     const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
     struct wined3d_event_query *object;
+    HRESULT hr;
 
     TRACE("device %p, type %#x, parent %p, parent_ops %p, query %p.\n",
             device, type, parent, parent_ops, query);
 
-    if (!wined3d_fence_supported(gl_info))
-    {
-        WARN("Event queries not supported.\n");
-        return WINED3DERR_NOTAVAILABLE;
-    }
-
     if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object))))
         return E_OUTOFMEMORY;
+
+    if (FAILED(hr = wined3d_fence_init(&object->fence, gl_info)))
+    {
+        WARN("Event queries not supported.\n");
+        HeapFree(GetProcessHeap(), 0, object);
+        return hr;
+    }
 
     wined3d_query_init(&object->query, device, type, &object->signalled,
             sizeof(object->signalled), &event_query_ops, parent, parent_ops);

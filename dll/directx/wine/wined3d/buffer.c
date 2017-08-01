@@ -1259,6 +1259,61 @@ HRESULT wined3d_buffer_copy(struct wined3d_buffer *dst_buffer, unsigned int dst_
     return WINED3D_OK;
 }
 
+/* caller is responsible for tracking state of gl buffer binding */
+HRESULT wined3d_buffer_copy_from_gl_buffer(struct wined3d_buffer *dst_buffer, unsigned int dst_offset,
+        GLuint src_buffer, GLenum src_target, unsigned int src_offset, unsigned int size)
+{
+    const struct wined3d_gl_info *gl_info;
+    struct wined3d_bo_address dst;
+    struct wined3d_context *context;
+    struct wined3d_device *device;
+    DWORD dst_location;
+    BYTE *dst_ptr;
+
+    buffer_mark_used(dst_buffer);
+
+    device = dst_buffer->resource.device;
+
+    context = context_acquire(device, NULL, 0);
+    gl_info = context->gl_info;
+
+    dst_location = wined3d_buffer_get_memory(dst_buffer, &dst, dst_buffer->locations);
+    dst.addr += dst_offset;
+
+    if (dst.buffer_object)
+    {
+        if (gl_info->supported[ARB_COPY_BUFFER])
+        {
+            GL_EXTCALL(glBindBuffer(GL_COPY_READ_BUFFER, src_buffer));
+            GL_EXTCALL(glBindBuffer(GL_COPY_WRITE_BUFFER, dst.buffer_object));
+            GL_EXTCALL(glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER,
+                    src_offset, dst_offset, size));
+            checkGLcall("direct buffer copy");
+        }
+        else
+        {
+            dst_ptr = context_map_bo_address(context, &dst, size, dst_buffer->buffer_type_hint, 0);
+
+            GL_EXTCALL(glBindBuffer(src_target, src_buffer));
+            GL_EXTCALL(glGetBufferSubData(src_target, src_offset, size, dst_ptr));
+            checkGLcall("buffer download");
+
+            context_unmap_bo_address(context, &dst, dst_buffer->buffer_type_hint);
+        }
+    }
+    else
+    {
+        GL_EXTCALL(glBindBuffer(src_target, src_buffer));
+        GL_EXTCALL(glGetBufferSubData(src_target, src_offset, size, dst.addr));
+        checkGLcall("buffer download");
+    }
+
+    wined3d_buffer_invalidate_range(dst_buffer, ~dst_location, dst_offset, size);
+
+    context_release(context);
+    return WINED3D_OK;
+}
+
 HRESULT wined3d_buffer_upload_data(struct wined3d_buffer *buffer,
         const struct wined3d_box *box, const void *data)
 {

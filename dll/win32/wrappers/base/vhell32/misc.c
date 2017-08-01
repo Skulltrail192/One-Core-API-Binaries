@@ -79,41 +79,26 @@ LPVOID WINAPI SHUninitializeNamespace()
 	return NULL;
 }
 
-HRESULT WINAPI SHQueryUserNotificationState(QUERY_USER_NOTIFICATION_STATE *pquns)
-{
-  HRESULT resp; // ebx@1
-  HWND window; // eax@2
-  ULONG_PTR dwResult; // [sp+8h] [bp-8h]@3
+// HRESULT WINAPI SHQueryUserNotificationState(QUERY_USER_NOTIFICATION_STATE *pquns)
+// {
+  // HRESULT resp; // ebx@1
+  // HWND window; // eax@2
+  // ULONG_PTR dwResult; // [sp+8h] [bp-8h]@3
 
-  resp = 0x80070057;
-  if ( pquns )
-  {
-    resp = 0;
-    *pquns = 2;
-    window = FindWindowW(L"Shell_TrayWnd", 0);
-    if ( window )
-    {
-      if ( SendMessageTimeoutW(window, 0x4EFu, 0, 0, 3u, 0x1B58u, &dwResult) )
-        *pquns = dwResult;
-    }
-  }
-  return resp;
-}
-
-HRESULT 
-WINAPI 
-SHBindToFolderIDListParentEx(
-  _In_opt_   IShellFolder *psfRoot,
-  _In_       PCUIDLIST_RELATIVE pidl,
-  _In_opt_   IBindCtx *ppbc,
-  _In_       REFIID riid,
-  _Out_      void **ppv,
-  _Out_opt_  PCUITEMID_CHILD *ppidlLast
-)
-{
-	return S_OK;
-	//return SHBindToFolderIDListParent(psfRoot, pidl, riid, ppv, ppidlLast);
-}
+  // resp = 0x80070057;
+  // if ( pquns )
+  // {
+    // resp = 0;
+    // *pquns = 2;
+    // window = FindWindowW(L"Shell_TrayWnd", 0);
+    // if ( window )
+    // {
+      // if ( SendMessageTimeoutW(window, 0x4EFu, 0, 0, 3u, 0x1B58u, &dwResult) )
+        // *pquns = dwResult;
+    // }
+  // }
+  // return resp;
+// }
 
 HRESULT WINAPI SHFormatForDisplay(
   _In_   REFPROPERTYKEY propkey,

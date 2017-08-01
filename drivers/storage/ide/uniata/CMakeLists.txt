@@ -8,6 +8,8 @@ include_directories(
 #add_definitions(-D_DEBUG)
 
 list(APPEND SOURCE
+    atacmd_map.cpp
+    bm_devs.cpp
     id_ata.cpp
     id_badblock.cpp
     id_dma.cpp
@@ -20,7 +22,6 @@ list(APPEND SOURCE
 
 add_library(uniata SHARED ${SOURCE} idedma.rc)
 
-
 if(NOT MSVC)
     add_target_compile_flags(uniata "-Wno-narrowing")
     if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
@@ -32,3 +33,4 @@ add_pch(uniata stdafx.h SOURCE)
 set_module_type(uniata kernelmodedriver)
 add_importlibs(uniata scsiport ntoskrnl hal)
 add_cd_file(TARGET uniata DESTINATION reactos/system32/drivers NO_CAB FOR all)
+#add_registry_inf(uniata_reg.inf)

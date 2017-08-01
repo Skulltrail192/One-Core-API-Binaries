@@ -426,8 +426,8 @@ static inline struct d3d_blend_state *impl_from_ID3D11BlendState(ID3D11BlendStat
     return CONTAINING_RECORD(iface, struct d3d_blend_state, ID3D11BlendState_iface);
 }
 
-HRESULT d3d_blend_state_init(struct d3d_blend_state *state, struct d3d_device *device,
-        const D3D11_BLEND_DESC *desc) DECLSPEC_HIDDEN;
+HRESULT d3d_blend_state_create(struct d3d_device *device, const D3D11_BLEND_DESC *desc,
+        struct d3d_blend_state **state) DECLSPEC_HIDDEN;
 struct d3d_blend_state *unsafe_impl_from_ID3D11BlendState(ID3D11BlendState *iface) DECLSPEC_HIDDEN;
 struct d3d_blend_state *unsafe_impl_from_ID3D10BlendState(ID3D10BlendState *iface) DECLSPEC_HIDDEN;
 
@@ -449,8 +449,8 @@ static inline struct d3d_depthstencil_state *impl_from_ID3D11DepthStencilState(I
     return CONTAINING_RECORD(iface, struct d3d_depthstencil_state, ID3D11DepthStencilState_iface);
 }
 
-HRESULT d3d_depthstencil_state_init(struct d3d_depthstencil_state *state, struct d3d_device *device,
-        const D3D11_DEPTH_STENCIL_DESC *desc) DECLSPEC_HIDDEN;
+HRESULT d3d_depthstencil_state_create(struct d3d_device *device, const D3D11_DEPTH_STENCIL_DESC *desc,
+        struct d3d_depthstencil_state **state) DECLSPEC_HIDDEN;
 struct d3d_depthstencil_state *unsafe_impl_from_ID3D11DepthStencilState(
         ID3D11DepthStencilState *iface) DECLSPEC_HIDDEN;
 struct d3d_depthstencil_state *unsafe_impl_from_ID3D10DepthStencilState(
@@ -470,8 +470,8 @@ struct d3d_rasterizer_state
     ID3D11Device *device;
 };
 
-HRESULT d3d_rasterizer_state_init(struct d3d_rasterizer_state *state, struct d3d_device *device,
-        const D3D11_RASTERIZER_DESC *desc) DECLSPEC_HIDDEN;
+HRESULT d3d_rasterizer_state_create(struct d3d_device *device, const D3D11_RASTERIZER_DESC *desc,
+        struct d3d_rasterizer_state **state) DECLSPEC_HIDDEN;
 struct d3d_rasterizer_state *unsafe_impl_from_ID3D11RasterizerState(ID3D11RasterizerState *iface) DECLSPEC_HIDDEN;
 struct d3d_rasterizer_state *unsafe_impl_from_ID3D10RasterizerState(ID3D10RasterizerState *iface) DECLSPEC_HIDDEN;
 
@@ -489,8 +489,8 @@ struct d3d_sampler_state
     ID3D11Device *device;
 };
 
-HRESULT d3d_sampler_state_init(struct d3d_sampler_state *state, struct d3d_device *device,
-        const D3D11_SAMPLER_DESC *desc) DECLSPEC_HIDDEN;
+HRESULT d3d_sampler_state_create(struct d3d_device *device, const D3D11_SAMPLER_DESC *desc,
+        struct d3d_sampler_state **state) DECLSPEC_HIDDEN;
 struct d3d_sampler_state *unsafe_impl_from_ID3D11SamplerState(ID3D11SamplerState *iface) DECLSPEC_HIDDEN;
 struct d3d_sampler_state *unsafe_impl_from_ID3D10SamplerState(ID3D10SamplerState *iface) DECLSPEC_HIDDEN;
 

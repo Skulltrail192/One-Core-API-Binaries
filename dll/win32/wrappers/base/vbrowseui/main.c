@@ -88,3 +88,8 @@ HRESULT WINAPI SHWriteClassesOfCategories(long param8, long paramC, long param10
 {
     return E_NOTIMPL;
 }
+
+HRESULT WINAPI SHCreateBrowserProgressAggregator(int a1, int a2, int a3, const IID *a4, void **a5)
+{
+    return E_NOTIMPL;	
+}

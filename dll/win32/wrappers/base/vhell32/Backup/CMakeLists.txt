@@ -26,11 +26,12 @@ list(APPEND SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/vhell32_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/vhell32.def)
 
+	
 add_library(vhell32 SHARED ${SOURCE})
 
 set_module_type(vhell32 win32dll)
 target_link_libraries(vhell32 wine uuid)
 add_pch(shell32 main.h SOURCE)
-add_importlibs(vhell32 advapi32 msvcrt user32 kernel32 ntdll shellbase shlwapi secur32 ole32 netapi32 rpcrt4 propsys comctl32 gdi32 browseui)
+add_importlibs(vhell32 advapi32 msvcrt user32 kernel32 ntdll shellbase shellnew shlwapi secur32 ole32 netapi32 rpcrt4 propsys comctl32 gdi32 browseui)
 add_dependencies(shell32 shdocvw_v1)
 add_cd_file(TARGET vhell32 DESTINATION reactos/system32 FOR all)

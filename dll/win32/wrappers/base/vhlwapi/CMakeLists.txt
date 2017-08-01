@@ -12,5 +12,5 @@ list(APPEND SOURCE
 add_library(vhlwapi SHARED ${SOURCE})
 set_module_type(vhlwapi win32dll)
 target_link_libraries(vhlwapi wine)
-add_importlibs(vhlwapi shlwapibase advapi32 msvcrt kernel32 user32 ole32 gdi32 ntdll userenv wininet propsys)
+add_importlibs(vhlwapi shlwapibase shlwnew advapi32 msvcrt kernel32 user32 ole32 gdi32 ntdll userenv wininet propsys)
 add_cd_file(TARGET vhlwapi DESTINATION reactos/system32 FOR all)

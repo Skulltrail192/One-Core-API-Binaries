@@ -433,9 +433,6 @@
 @ stdcall ShellExecuteExW (long)
 @ stdcall ShellExecuteW(long wstr wstr wstr wstr long)
 @ stdcall ShellHookProc(long ptr ptr)
-@ stdcall Shell_NotifyIcon(long ptr) Shell_NotifyIconA
-@ stdcall Shell_NotifyIconA(long ptr)
-@ stdcall Shell_NotifyIconW(long ptr)
 @ stdcall StrChrA(str long) shlwapi.StrChrA
 @ stdcall StrChrIA(str long) shlwapi.StrChrIA
 @ stdcall StrChrIW(wstr long) shlwapi.StrChrIW
@@ -505,3 +502,7 @@
 @ stdcall SHRegQueryValueW (long long long long)
 @ stdcall SHRegQueryValueExW (long wstr ptr ptr ptr ptr)
 @ stdcall SHRegDeleteKeyW(long wstr)
+
+;@ stdcall Shell_NotifyIcon(long ptr) Shell_NotifyIconA
+;@ stdcall Shell_NotifyIconA(long ptr)
+;@ stdcall Shell_NotifyIconW(long ptr)

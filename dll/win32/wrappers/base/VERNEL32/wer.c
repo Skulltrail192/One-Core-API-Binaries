@@ -120,3 +120,13 @@ HRESULT WINAPI WerSetFlags(DWORD flags)
      FIXME("(%d) stub!\n", flags);
      return E_NOTIMPL;
 }
+
+
+HRESULT 
+WINAPI 
+WerUnregisterFile(
+  _In_ PCWSTR pwzFilePath
+)
+{
+	return S_OK;
+}
