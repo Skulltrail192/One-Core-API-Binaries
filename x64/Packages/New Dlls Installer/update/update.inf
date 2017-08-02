@@ -149,21 +149,16 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 [CopyAlways.SysWOW64.Files]	
 	avrt.dll,i386/avrt.dll
 	cabinet.dll,i386/cabinet.dll
-	credui.dll,i386/credui.dll
 	cryptbase.dll,i386/cryptbase.dll
 	cryptsp.dll,i386/cryptsp.dll
 	dbghelp.dll,i386/dbghelp.dll
 	dpx.dll,i386/dpx.dll
 	dui70.dll,i386/dui70.dll
 	dusex.dll,i386/dusex.dll
-	duser.dll,i386/duser.dll
-	dwmapi.dll,i386/dwmapi.dll
 	dxva2.dll,i386/dxva2.dll
-	efsadu.dll,i386/efsadu.dll
 	esent.dll,i386/esent.dll
 	evr.dll,i386/evr.dll
 	explorerframe.dll,i386/explorerframe.dll
-	feclient.dll,i386/feclient.dll
 	httpapi.dll,i386/httpapi.dll
 	gameux.dll,i386/gameux.dll
 	ktmw32.dll,i386/ktmw32.dll

@@ -141,8 +141,13 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     browseui.dll,amd64/browseui.dll	
     combase.dll,amd64/combase.dll
     comctlext.dll,amd64/comctlext.dll
+	credui.dll,amd64/credui.dll	
     cryptnew.dll,amd64/cryptnew.dll	
 	dbgeng.dll,amd64/dbgeng.dll	
+	duser.dll,amd64/duser.dll
+	dwmapi.dll,amd64/dwmapi.dll
+	efsadu.dll,amd64/efsadu.dll	
+	feclient.dll,amd64/feclient.dll	
 	fileextd.dll,amd64/fileextd.dll		
     msvcrt.dll,amd64/msvcrt.dll
     pdhbase.dll,amd64/pdhbase.dll
@@ -153,14 +158,16 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     iphlpapi.dll,amd64/iphlpapi.dll
     iphlpapibase.dll,amd64/iphlpapibase.dll
     idndl.dll,amd64/idndl.dll
+	iertutil.dll,amd64/iertutil.dll		
     kernel32.dll,amd64/kernel32.dll 
     kernelbase.dll,amd64/kernelbase.dll	
     Nlsdl.dll,amd64/Nlsdl.dll
     normaliz.dll,amd64/normaliz.dll
     ntdllbase.dll,amd64/ntdllbase.dll
 	ntext.dll,amd64/ntext.dll	
-	ntshrui.dll,amd64/ntshrui.dll	
 	ole32.dll,amd64/ole32.dll
+	msiltcfg.dll,amd64/msiltcfg.dll			
+	ncrypt.dll,amd64/ncrypt.dll		
     psapi.dll,amd64/psapi.dll
     netapi32.dll,amd64/netapi32.dll
     netapinew.dll,amd64/netapinew.dll
@@ -174,12 +181,16 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     synceng.dll,amd64/synceng.dll	
     propsys.dll,amd64/propsys.dll
     shell32.dll,amd64/shell32.dll
+    shellnew.dll,amd64/shellnew.dll	
     shlwapi.dll,amd64/shlwapi.dll	
-    shlwnew.dll,amd64/shlwnew.dll	
+    shlwnew.dll,amd64/shlwnew.dll
+	SLC.dll,amd64/SLC.dll	
     ucrtbase.dll,amd64/ucrtbase.dll
+	urlmon.dll,amd64/urlmon.dll		
     user32.dll,amd64/user32.dll
     uxtheme.dll,amd64/uxtheme.dll
     vtdll.dll,amd64/vtdll.dll
+	wevtold.dll,amd64/wevtold.dll	
     winsta.dll,amd64/winsta.dll
     winstanew.dll,amd64/winstanew.dll
     ws2_32.dll,amd64/ws2_32.dll
@@ -209,8 +220,13 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     browseui.dll,i386/browseui.dll	
     combase.dll,i386/combase.dll
     comctlext.dll,i386/comctlext.dll
+	credui.dll,i386/credui.dll	
     cryptnew.dll,i386/cryptnew.dll	
 	dbgeng.dll,i386/dbgeng.dll	
+	duser.dll,i386/duser.dll
+	dwmapi.dll,i386/dwmapi.dll
+	efsadu.dll,i386/efsadu.dll	
+	feclient.dll,i386/feclient.dll	
 	fileextd.dll,i386/fileextd.dll		
     msvcrt.dll,i386/msvcrt.dll
     pdhbase.dll,i386/pdhbase.dll
@@ -221,14 +237,16 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     iphlpapi.dll,i386/iphlpapi.dll
     iphlpapibase.dll,i386/iphlpapibase.dll
     idndl.dll,i386/idndl.dll
+	iertutil.dll,i386/iertutil.dll		
     kernel32.dll,i386/kernel32.dll 
     kernelbase.dll,i386/kernelbase.dll	
     Nlsdl.dll,i386/Nlsdl.dll
     normaliz.dll,i386/normaliz.dll
     ntdllbase.dll,i386/ntdllbase.dll
 	ntext.dll,i386/ntext.dll	
-	ntshrui.dll,i386/ntshrui.dll	
 	ole32.dll,i386/ole32.dll
+	msiltcfg.dll,i386/msiltcfg.dll			
+	ncrypt.dll,i386/ncrypt.dll		
     psapi.dll,i386/psapi.dll
     netapi32.dll,i386/netapi32.dll
     netapinew.dll,i386/netapinew.dll
@@ -242,12 +260,16 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     synceng.dll,i386/synceng.dll	
     propsys.dll,i386/propsys.dll
     shell32.dll,i386/shell32.dll
+    shellnew.dll,i386/shellnew.dll		
     shlwapi.dll,i386/shlwapi.dll	
-    shlwnew.dll,i386/shlwnew.dll	
+    shlwnew.dll,i386/shlwnew.dll
+	SLC.dll,i386/SLC.dll	
     ucrtbase.dll,i386/ucrtbase.dll
+	urlmon.dll,i386/urlmon.dll		
     user32.dll,i386/user32.dll
     uxtheme.dll,i386/uxtheme.dll
     vtdll.dll,i386/vtdll.dll
+	wevtold.dll,i386/wevtold.dll	
     winsta.dll,i386/winsta.dll
     winstanew.dll,i386/winstanew.dll
     ws2_32.dll,i386/ws2_32.dll
@@ -297,8 +319,13 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     amd64/bcrypt.dll = 1
     amd64/combase.dll = 1
     amd64/comctlext.dll =1
-    amd64/cryptnew.dll =1	
-    amd64/dbgeng.dll =1		
+    amd64/cryptnew.dll =1
+	amd64/credui.dll = 1	
+    amd64/dbgeng.dll =1	
+    amd64/duser.dll = 1
+	amd64/dwmapi.dll = 1
+	amd64/efsadu.dll = 1
+	amd64/feclient.dll = 1
     amd64/fileextd.dll =1		
     amd64/msvcrt.dll = 1
     amd64/ntdllbase.dll = 1
@@ -310,12 +337,14 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     amd64/iphlpapi.dll = 1
     amd64/iphlpapibase.dll = 1
     amd64/idndl.dll = 1
+	amd64/iertutil.dll = 1
     amd64/kernel32.dll = 1
     amd64/kernelbase.dll = 1	
+	amd64/msiltcfg.dll = 1
+	amd64/ncrypt.dll = 1
     amd64/Nlsdl.dll = 1
     amd64/normaliz.dll = 1
     amd64/ntext.dll =1
-    amd64/ntshrui.dll =1	
     amd64/ole32.dll =1	
     amd64/psapi.dll = 1
     amd64/query.dll =1		
@@ -330,13 +359,17 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     amd64/setupapi.dll = 1
     amd64/shlwapi.dll =1
     amd64/shlwnew.dll =1
+	amd64/SLC.dll = 1
     amd64/synceng.dll =1		
     amd64/propsys.dll = 1
     amd64/shell32.dll = 1
+    amd64/shellnew.dll = 1		
     amd64/ucrtbase.dll = 1
+	amd64/urlmon.dll = 1
     amd64/user32.dll = 1
     amd64/uxtheme.dll = 1
     amd64/vtdll.dll = 1
+	amd64/wevtold.dll = 1
     amd64/winsta.dll = 1	
     amd64/winstanew.dll = 1
     amd64/ws2_32.dll = 1
@@ -346,8 +379,13 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     i386/bcrypt.dll = 1
     i386/combase.dll = 1
     i386/comctlext.dll =1
-    i386/cryptnew.dll =1	
-    i386/dbgeng.dll =1		
+    i386/cryptnew.dll =1
+	i386/credui.dll = 1	
+    i386/dbgeng.dll =1	
+    i386/duser.dll = 1
+	i386/dwmapi.dll = 1
+	i386/efsadu.dll = 1
+	i386/feclient.dll = 1
     i386/fileextd.dll =1		
     i386/msvcrt.dll = 1
     i386/ntdllbase.dll = 1
@@ -359,12 +397,14 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     i386/iphlpapi.dll = 1
     i386/iphlpapibase.dll = 1
     i386/idndl.dll = 1
+	i386/iertutil.dll = 1
     i386/kernel32.dll = 1
     i386/kernelbase.dll = 1	
+	i386/msiltcfg.dll = 1
+	i386/ncrypt.dll = 1
     i386/Nlsdl.dll = 1
     i386/normaliz.dll = 1
     i386/ntext.dll =1
-    i386/ntshrui.dll =1	
     i386/ole32.dll =1	
     i386/psapi.dll = 1
     i386/query.dll =1		
@@ -379,13 +419,17 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%BASE_VERSIO
     i386/setupapi.dll = 1
     i386/shlwapi.dll =1
     i386/shlwnew.dll =1
+	i386/SLC.dll = 1
     i386/synceng.dll =1		
     i386/propsys.dll = 1
     i386/shell32.dll = 1
+    i386/shellnew.dll = 1		
     i386/ucrtbase.dll = 1
+	i386/urlmon.dll = 1
     i386/user32.dll = 1
     i386/uxtheme.dll = 1
     i386/vtdll.dll = 1
+	i386/wevtold.dll = 1
     i386/winsta.dll = 1	
     i386/winstanew.dll = 1
     i386/ws2_32.dll = 1

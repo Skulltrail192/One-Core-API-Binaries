@@ -76,21 +76,16 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 [CopyAlways.System32.Files]
 	"avrt.dll"
 	"cabinet.dll"
-	"credui.dll"
 	"cryptbase.dll"
 	"cryptsp.dll"
 	"dbghelp.dll"
 	"dpx.dll"
-	"duser.dll"
 	"dui70.dll"
 	"dusex.dll"
-	"dwmapi.dll"
 	"dxva2.dll"
-	"efsadu.dll"
 	"esent.dll"
 	"evr.dll"
 	"explorerframe.dll"
-	"feclient.dll"
 	"gameux.dll"
 	"httpapi.dll"
 	"ktmw32.dll"
@@ -105,13 +100,11 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 	"msidcrl30.dll"
 	"mspatcha.dll"
 	"mtdll.dll"
-	"ncrypt.dll"
 	"ndfapi.dll"
 	"photometadatahandler.dll"
 	"RstrtMgr.dll"
 	"sddlbase.dll"
 	"secbase.dll"
-	"SLC.dll"
 	"SLCExt.dll"
 	"sqmapi.dll"
 	"sspicli.dll"
@@ -143,21 +136,16 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 [SourceDisksFiles]
 	"avrt.dll" = 1
 	"cabinet.dll" = 1
-	"credui.dll" = 1
 	"cryptbase.dll" = 1
 	"cryptsp.dll" = 1
 	"dbghelp.dll" = 1
 	"dpx.dll" = 1
-	"duser.dll" = 1
 	"dui70.dll" = 1
 	"dusex.dll" = 1
-	"dwmapi.dll" = 1
 	"dxva2.dll" = 1
-	"efsadu.dll" = 1
 	"esent.dll" = 1
 	"evr.dll" = 1
 	"explorerframe.dll" = 1
-	"feclient.dll" = 1
 	"gameux.dll" = 1
 	"httpapi.dll" = 1
 	"ktmw32.dll" = 1
@@ -172,13 +160,11 @@ MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 	"msidcrl30.dll" = 1
 	"mspatcha.dll" = 1
 	"mtdll.dll" = 1
-	"ncrypt.dll" = 1
 	"ndfapi.dll" = 1
 	"photometadatahandler.dll" = 1
 	"RstrtMgr.dll" = 1
 	"sddlbase.dll" = 1
 	"secbase.dll" = 1
-	"SLC.dll" = 1
 	"SLCExt.dll" = 1
 	"sqmapi.dll" = 1
 	"sspicli.dll" = 1
