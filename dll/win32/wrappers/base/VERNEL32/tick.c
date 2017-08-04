@@ -21,20 +21,31 @@ ULONGLONG
 WINAPI
 GetTickCount64(VOID)
 {
-    ULARGE_INTEGER TickCount;
+    LARGE_INTEGER counter, frequency;
+	
+    NtQueryPerformanceCounter( &counter, &frequency );
+    return counter.QuadPart * 1000 / frequency.QuadPart;	
+    // ULARGE_INTEGER TickCount;
     
-    while (TRUE)
-    {
-        TickCount.HighPart = (ULONG)SharedUserData->TickCount.High1Time;
-        TickCount.LowPart = SharedUserData->TickCount.LowPart;
+    // while (TRUE)
+    // {
+        // TickCount.HighPart = (ULONG)SharedUserData->TickCount.High1Time;
+        // TickCount.LowPart = SharedUserData->TickCount.LowPart;
 
-        if (TickCount.HighPart == (ULONG)SharedUserData->TickCount.High2Time) break;
+        // if (TickCount.HighPart == (ULONG)SharedUserData->TickCount.High2Time) break;
 
-        YieldProcessor();
-     }
+        // YieldProcessor();
+     // }
      
-     return (UInt32x32To64(TickCount.LowPart, SharedUserData->TickCountMultiplier) >> 24) +
-            (UInt32x32To64(TickCount.HighPart, SharedUserData->TickCountMultiplier) << 8);
+     // return (UInt32x32To64(TickCount.LowPart, SharedUserData->TickCountMultiplier) >> 24) +
+            // (UInt32x32To64(TickCount.HighPart, SharedUserData->TickCountMultiplier) << 8);
+}
+
+DWORD
+WINAPI
+GetTickCount(VOID)
+{
+	return GetTickCount64();
 }
 
 // /*
