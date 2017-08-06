@@ -53,6 +53,7 @@ list(APPEND SOURCE
 	
 if(ARCH STREQUAL "i386")
     list(APPEND ASM_SOURCE
+		asm/i386/srw.S
 		asm/i386/thread.S
 	)
 elseif(ARCH STREQUAL "amd64")

@@ -69,7 +69,11 @@
 
 static HANDLE Key_Event = NULL;
 
+static CRITICAL_SECTION criticalTrySection;
+
 int ConditionVariableSpinCount = 400;
+
+int SRWLockSpinCount = 400;
 
 int localConditionCount = 10;
 
@@ -86,6 +90,7 @@ VOID
 RtlpInitializeKeyedEvent(VOID)
 {
     ASSERT(Key_Event == NULL);
+	RtlInitializeCriticalSection(&criticalTrySection);
     NtCreateKeyedEvent(&Key_Event, EVENT_ALL_ACCESS, NULL, 0);
 }
 
@@ -432,9 +437,11 @@ RtlWakeConditionVariable(
 
 VOID
 NTAPI
-RtlInitializeSRWLock(OUT PRTL_SRWLOCK SRWLock)
+RtlInitializeSRWLock(PRTL_CRITICAL_SECTION CriticalSectionObject)
 {
-    SRWLock->Ptr = NULL;
+	RtlInitializeCriticalSectionAndSpinCount(CriticalSectionObject, 1024);
+	return;
+    //SRWLock->Ptr = NULL;
 }
 
 /***********************************************************************
@@ -448,121 +455,289 @@ RtlInitializeSRWLock(OUT PRTL_SRWLOCK SRWLock)
 VOID 
 WINAPI 
 RtlAcquireSRWLockExclusive( 
-	RTL_SRWLOCK *lock 
+	PRTL_CRITICAL_SECTION CriticalSectionObject
 )
 {
-	//InitKeyedEvent();
-    if (srwlock_lock_exclusive( (unsigned int *)&lock->Ptr, SRWLOCK_RES_EXCLUSIVE ))
-        NtWaitForKeyedEvent( Key_Event, srwlock_key_exclusive(lock), FALSE, NULL );
+	RtlEnterCriticalSection(CriticalSectionObject);
+	return;
+	// //InitKeyedEvent();
+    // if (srwlock_lock_exclusive( (unsigned int *)&lock->Ptr, SRWLOCK_RES_EXCLUSIVE ))
+        // NtWaitForKeyedEvent( Key_Event, srwlock_key_exclusive(lock), FALSE, NULL );
 }
 
-/***********************************************************************
- *              RtlAcquireSRWLockShared (NTDLL.@)
- *
- * NOTES
- *   Do not call this function recursively - it will only succeed when
- *   there are no threads waiting for an exclusive lock!
- */
-void WINAPI RtlAcquireSRWLockShared( RTL_SRWLOCK *lock )
-{
-    unsigned int val, tmp;
-	NTSTATUS status;
-    /* Acquires a shared lock. If it's currently not possible to add elements to
-     * the shared queue, then request exclusive access instead. */
-    for (val = *(unsigned int *)&lock->Ptr;; val = tmp)
-    {
-        if ((val & SRWLOCK_MASK_EXCLUSIVE_QUEUE) && !(val & SRWLOCK_MASK_IN_EXCLUSIVE))
-            tmp = val + SRWLOCK_RES_EXCLUSIVE;
-        else
-            tmp = val + SRWLOCK_RES_SHARED;
-        if ((tmp = interlocked_cmpxchg( (int *)&lock->Ptr, tmp, val )) == val)
-            break;
-    }
+// /***********************************************************************
+ // *              RtlAcquireSRWLockShared (NTDLL.@)
+ // *
+ // * NOTES
+ // *   Do not call this function recursively - it will only succeed when
+ // *   there are no threads waiting for an exclusive lock!
+ // */
+// void WINAPI RtlAcquireSRWLockShared( RTL_SRWLOCK *lock )
+// {
+    // unsigned int val, tmp;
+	// NTSTATUS status;
+    // /* Acquires a shared lock. If it's currently not possible to add elements to
+     // * the shared queue, then request exclusive access instead. */
+    // for (val = *(unsigned int *)&lock->Ptr;; val = tmp)
+    // {
+        // if ((val & SRWLOCK_MASK_EXCLUSIVE_QUEUE) && !(val & SRWLOCK_MASK_IN_EXCLUSIVE))
+            // tmp = val + SRWLOCK_RES_EXCLUSIVE;
+        // else
+            // tmp = val + SRWLOCK_RES_SHARED;
+        // if ((tmp = interlocked_cmpxchg( (int *)&lock->Ptr, tmp, val )) == val)
+            // break;
+    // }
 	
-	//InitKeyedEvent();
+	// //InitKeyedEvent();
 
-    /* Drop exclusive access again and instead requeue for shared access. */
-    if ((val & SRWLOCK_MASK_EXCLUSIVE_QUEUE) && !(val & SRWLOCK_MASK_IN_EXCLUSIVE))
-    {
-        status = NtWaitForKeyedEvent( Key_Event, srwlock_key_exclusive(lock), FALSE, NULL );
+    // /* Drop exclusive access again and instead requeue for shared access. */
+    // if ((val & SRWLOCK_MASK_EXCLUSIVE_QUEUE) && !(val & SRWLOCK_MASK_IN_EXCLUSIVE))
+    // {
+        // status = NtWaitForKeyedEvent( Key_Event, srwlock_key_exclusive(lock), FALSE, NULL );
 		
-        val = srwlock_unlock_exclusive( (unsigned int *)&lock->Ptr, (SRWLOCK_RES_SHARED
-                                        - SRWLOCK_RES_EXCLUSIVE) ) - SRWLOCK_RES_EXCLUSIVE;
-        srwlock_leave_exclusive( lock, val );
-    }
+        // val = srwlock_unlock_exclusive( (unsigned int *)&lock->Ptr, (SRWLOCK_RES_SHARED
+                                        // - SRWLOCK_RES_EXCLUSIVE) ) - SRWLOCK_RES_EXCLUSIVE;
+        // srwlock_leave_exclusive( lock, val );
+    // }
 
 	
-    if (val & SRWLOCK_MASK_EXCLUSIVE_QUEUE)
-        NtWaitForKeyedEvent( Key_Event, srwlock_key_shared(lock), FALSE, NULL );
+    // if (val & SRWLOCK_MASK_EXCLUSIVE_QUEUE)
+        // NtWaitForKeyedEvent( Key_Event, srwlock_key_shared(lock), FALSE, NULL );
+// }
+
+void __stdcall RtlBackoff(unsigned int *pCount)  
+{  
+    unsigned int nBackCount;
+	unsigned int i;
+  
+    nBackCount = *pCount;  
+    if ( nBackCount )  
+    {  
+        if ( nBackCount < 0x1FFF )  
+            nBackCount *= 2;  
+    }  
+    else  
+    {  
+        // __readfsdword(24) --> teb  
+        // teb+48           --> peb  
+        // peb+100          --> NumberOfProcessors  
+        if ( *(DWORD *)(*(DWORD *)(__readfsdword(24) + 48) + 100) == 1 ) // 获取cpu个数(核数)  
+            return;  
+  
+        // ================for ia64================  
+        // NtCurrentTeb()  
+        // teb+48h  --> tid(64bits)  
+        // teb+60h  --> peb(64bits)  
+        // peb+b8h  --> NumberOfProcessors(32bits)  
+  
+        nBackCount = 64;  
+    }  
+  
+    nBackCount = ((nBackCount - 1) & __rdtsc()) + nBackCount;  
+  
+    for ( i = 0; i < nBackCount; i++ )  
+    {  
+        _mm_pause();  
+    }  
+  
+    return;  
+}  
+
+typedef struct _SyncItem  
+{  
+    struct _SyncItem* back;  
+    struct _SyncItem* notify;  
+    struct _SyncItem* next;  
+    size_t shareCount;  
+    size_t flag;      
+}_SyncItem;  
+
+#define SRWLockSpinCount 1024  
+#define Busy_Lock       1   // 已经有人获取了锁  
+#define Wait_Lock       2   // 有人等待锁  
+#define Release_Lock    4   // 说明已经有人释放一次锁  
+#define Mixed_Lock      8   // 共享锁、独占锁并存  
+  
+#define EXTRACT_ADDR(s) ((s) & (~0xf))  
+
+void WINAPI RtlAcquireSRWLockShared(PRTL_CRITICAL_SECTION CriticalSectionObject)
+{
+	RtlEnterCriticalSection(CriticalSectionObject);
+	return;
 }
 
-/***********************************************************************
- *              RtlTryAcquireSRWLockExclusive (NTDLL.@)
- *
- * NOTES
- *  Similar to AcquireSRWLockExclusive recusive calls are not allowed
- *  and will fail with return value FALSE.
- */
+// /***********************************************************************
+ // *              RtlTryAcquireSRWLockExclusive (NTDLL.@)
+ // *
+ // * NOTES
+ // *  Similar to AcquireSRWLockExclusive recusive calls are not allowed
+ // *  and will fail with return value FALSE.
+ // */
+// // BOOLEAN 
+// // WINAPI 
+// // RtlTryAcquireSRWLockExclusive( 
+	// // RTL_SRWLOCK *lock 
+// // )
+// // {
+    // // return interlocked_cmpxchg( (int *)&lock->Ptr, SRWLOCK_MASK_IN_EXCLUSIVE |
+                                // // SRWLOCK_RES_EXCLUSIVE, 0 ) == 0;
+// // }
+
+// BOOLEAN 
+// WINAPI
+// RtlTryAcquireSRWLockExclusive(RTL_SRWLOCK *lock)
+// {
+  // // BOOLEAN result; // al@2
+
+  // // if ( _interlockedbittestandset((int *)&lock->Ptr, 0) )
+    // // result = FALSE;
+  // // else
+    // // result = TRUE;
+  // lock->Ptr = NULL;
+  // return FALSE;
+// }
+
+// /***********************************************************************
+ // *              RtlTryAcquireSRWLockShared (NTDLL.@)
+ // */
 // BOOLEAN 
 // WINAPI 
-// RtlTryAcquireSRWLockExclusive( 
+// RtlTryAcquireSRWLockShared( 
 	// RTL_SRWLOCK *lock 
 // )
 // {
-    // return interlocked_cmpxchg( (int *)&lock->Ptr, SRWLOCK_MASK_IN_EXCLUSIVE |
-                                // SRWLOCK_RES_EXCLUSIVE, 0 ) == 0;
+	// // lock->Ptr = NULL;
+	// return FALSE;
+	// // if (!RtlTryEnterCriticalSection (&criticalTrySection))
+       // // return FALSE;
+   
+    // // if(lock->Ptr)
+	// // {
+		// // RtlLeaveCriticalSection(&criticalTrySection);
+		// // return FALSE;
+	// // }
+	
+	// // RtlAcquireSRWLockShared(lock);
+	// // return TRUE;
+    // // unsigned int val, tmp;
+    // // for (val = *(unsigned int *)&lock->Ptr;; val = tmp)
+    // // {
+        // // if (val & SRWLOCK_MASK_EXCLUSIVE_QUEUE)
+            // // return FALSE;
+        // // if ((tmp = interlocked_cmpxchg( (int *)&lock->Ptr, val + SRWLOCK_RES_SHARED, val )) == val)
+            // // break;
+    // // }
+    // // return TRUE;
 // }
 
-BOOLEAN 
-WINAPI
-RtlTryAcquireSRWLockExclusive(RTL_SRWLOCK *lock)
+BOOLEAN __stdcall SleepTry(PRTL_CRITICAL_SECTION CriticalSectionObject)
 {
-  // BOOLEAN result; // al@2
+  HANDLE handle; // et1@2
+  BOOLEAN result; // al@2
 
-  // if ( _interlockedbittestandset((int *)&lock->Ptr, 0) )
-    // result = FALSE;
-  // else
-    // result = TRUE;
-  lock->Ptr = NULL;
-  return FALSE;
+  if ( _InterlockedCompareExchange(&CriticalSectionObject->LockCount, 0, -1) )
+  {
+    if ( CriticalSectionObject->OwningThread == NtCurrentTeb()->ClientId.UniqueThread )
+    {
+      _InterlockedIncrement(&CriticalSectionObject->LockCount);
+      ++CriticalSectionObject->RecursionCount;
+      result = 1;
+    }
+    else
+    {
+      result = 0;
+      _mm_pause();
+    }
+  }
+  else
+  {
+    handle = CriticalSectionObject->OwningThread;
+    CriticalSectionObject->RecursionCount = 1;
+    result = 1;
+  }
+  return result;
 }
 
-/***********************************************************************
- *              RtlTryAcquireSRWLockShared (NTDLL.@)
- */
-BOOLEAN 
-WINAPI 
-RtlTryAcquireSRWLockShared( 
-	RTL_SRWLOCK *lock 
-)
+void __cdecl LockTry(PRTL_CRITICAL_SECTION CriticalSectionObject)
 {
-    unsigned int val, tmp;
-    for (val = *(unsigned int *)&lock->Ptr;; val = tmp)
+  BOOL verify; // cf@3
+
+  if ( CriticalSectionObject )
+  {
+    if ( !CriticalSectionObject->DebugInfo )
     {
-        if (val & SRWLOCK_MASK_EXCLUSIVE_QUEUE)
-            return FALSE;
-        if ((tmp = interlocked_cmpxchg( (int *)&lock->Ptr, val + SRWLOCK_RES_SHARED, val )) == val)
-            break;
+      verify = CriticalSectionObject->LockCount < 0xFFFFFFFF;
+      RtlInitializeSRWLock(CriticalSectionObject);
     }
-    return TRUE;
+  }
+}
+
+BOOL __stdcall RtlTryAcquireSRWLockExclusive(PRTL_CRITICAL_SECTION CriticalSectionObject)
+{
+   LockTry(CriticalSectionObject);
+   SleepTry(CriticalSectionObject);
+   return TRUE;
+  //return _interlockedbittestandset((signed __int32 *)a1, 0) == 0;
+}
+
+BOOL __stdcall RtlTryAcquireSRWLockShared(PRTL_CRITICAL_SECTION CriticalSectionObject)
+{
+   LockTry(CriticalSectionObject);
+   SleepTry(CriticalSectionObject);
+   return TRUE;	
+  // BOOL result; // eax@1
+  // signed __int32 v2; // ecx@1
+  // signed __int32 v3; // eax@7
+  // int v4; // [sp+4h] [bp-4h]@1
+
+  // v4 = 0;
+  // result = _InterlockedCompareExchange((signed __int32 *)a1, 17, 0);
+  // v2 = result;
+  // if ( result )
+  // {
+    // while ( 1 )
+    // {
+      // if ( v2 & 1 && (v2 & 2 || !(v2 & 0xFFFFFFF0)) )
+      // {
+        // result = FALSE;
+        // return result;
+      // }
+      // v3 = v2 & 2 ? v2 + 1 : (v2 + 16) | 1;
+      // result = _InterlockedCompareExchange((signed __int32 *)a1, v3, v2);
+      // if ( result == v2 )
+        // break;
+      // RtlBackoff(&v4);
+      // v2 = (signed __int32)a1->Ptr;
+    // }
+    // result = TRUE;
+  // }
+  // else
+  // {
+    // result = TRUE;
+  // }
+  // return result;
 }
 
 /***********************************************************************
  *              RtlReleaseSRWLockShared (NTDLL.@)
  */
-VOID WINAPI RtlReleaseSRWLockShared( RTL_SRWLOCK *lock )
+VOID WINAPI RtlReleaseSRWLockShared(PRTL_CRITICAL_SECTION CriticalSectionObject)
 {
-    srwlock_leave_shared( lock, srwlock_lock_exclusive( (unsigned int *)&lock->Ptr,
-                          - SRWLOCK_RES_SHARED ) - SRWLOCK_RES_SHARED );
+	RtlLeaveCriticalSection(CriticalSectionObject);
+	return;
+    // srwlock_leave_shared( lock, srwlock_lock_exclusive( (unsigned int *)&lock->Ptr,
+                          // - SRWLOCK_RES_SHARED ) - SRWLOCK_RES_SHARED );
 }
 
 /***********************************************************************
  *              RtlReleaseSRWLockExclusive (NTDLL.@)
  */
-void WINAPI RtlReleaseSRWLockExclusive( RTL_SRWLOCK *lock )
+void WINAPI RtlReleaseSRWLockExclusive(PRTL_CRITICAL_SECTION CriticalSectionObject)
 {
-    srwlock_leave_exclusive( lock, srwlock_unlock_exclusive( (unsigned int *)&lock->Ptr,
-                             - SRWLOCK_RES_EXCLUSIVE ) - SRWLOCK_RES_EXCLUSIVE );
+	RtlLeaveCriticalSection(CriticalSectionObject);
+	return;
+    // srwlock_leave_exclusive( lock, srwlock_unlock_exclusive( (unsigned int *)&lock->Ptr,
+                             // - SRWLOCK_RES_EXCLUSIVE ) - SRWLOCK_RES_EXCLUSIVE );
 }
 
 /***********************************************************************

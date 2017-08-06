@@ -115,16 +115,6 @@ SleepConditionVariableSRW(
 	CRITICAL_SECTION crit;
 	InitializeCriticalSection(&crit);
 	return SleepConditionVariableCS(ConditionVariable, &crit, Flags);
-	// NTSTATUS status;
-    // LARGE_INTEGER time;
-
-    // status = RtlSleepConditionVariableSRW( ConditionVariable, SRWLock, get_nt_timeout( &time, dwMilliseconds ), Flags );
-    // if (status != STATUS_SUCCESS)
-    // {
-        // SetLastError( RtlNtStatusToDosError(status) );
-        // return FALSE;
-    // }
-    // return TRUE;
 }
 
 void 
@@ -385,372 +375,283 @@ CreateSemaphoreExA(
     return CreateSemaphoreExW( sa, initial, max, buffer, flags, access );
 }
 
-// void 
-// WINAPI
-// InitializeSRWLock(PSRWLOCK lock)
-// {
-	// RW_LOCK *rwlock = NULL;
-    // rwlock = (RW_LOCK *)LocalAlloc(0x40,sizeof(RW_LOCK));
-    // if (!rwlock)
-        // return;
-	// lock->Ptr = rwlock;
-    // InitializeCriticalSection(&rwlock->writerLock);
-    // InitializeCriticalSection(&rwlock->countsLock);
+// /* {{{1 SRWLock and CONDITION_VARIABLE emulation (for Windows XP) */
 
-    // /*
-     // * Could use a semaphore as well.  There can only be one waiter ever,
-     // * so I'm showing an auto-reset event here.
-     // */
-    // rwlock->noReaders = CreateEvent (NULL, FALSE, FALSE, NULL);
+// static CRITICAL_SECTION g_thread_xp_lock;
+// static DWORD            g_thread_xp_waiter_tls;
+
+// /* {{{2 GThreadWaiter utility class for CONDITION_VARIABLE emulation */
+// typedef struct _GThreadXpWaiter GThreadXpWaiter;
+// struct _GThreadXpWaiter
+// {
+  // HANDLE                     event;
+  // volatile GThreadXpWaiter  *next;
+  // volatile GThreadXpWaiter **my_owner;
+// };
+
+// /* {{{2 SRWLock emulation */
+// typedef struct
+// {
+  // CRITICAL_SECTION  writer_lock;
+  // boolean          ever_shared;    /* protected by writer_lock */
+  // boolean          writer_locked;  /* protected by writer_lock */
+
+  // /* below is only ever touched if ever_shared becomes true */
+  // CRITICAL_SECTION  atomicity;
+  // GThreadXpWaiter  *queued_writer; /* protected by atomicity lock */
+  // int              num_readers;   /* protected by atomicity lock */
+// } GThreadSRWLock;
+
+// /*
+ // * The G_LIKELY and G_UNLIKELY macros let the programmer give hints to 
+ // * the compiler about the expected result of an expression. Some compilers
+ // * can use this information for optimizations.
+ // *
+ // * The _G_BOOLEAN_EXPR macro is intended to trigger a gcc warning when
+ // * putting assignments in g_return_if_fail ().  
+ // */
+// #if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
+// #define _G_BOOLEAN_EXPR(expr)                   \
+ // G_GNUC_EXTENSION ({                            \
+   // int _g_boolean_var_;                         \
+   // if (expr)                                    \
+      // _g_boolean_var_ = 1;                      \
+   // else                                         \
+      // _g_boolean_var_ = 0;                      \
+   // _g_boolean_var_;                             \
+// })
+// #define G_LIKELY(expr) (__builtin_expect (_G_BOOLEAN_EXPR((expr)), 1))
+// #define G_UNLIKELY(expr) (__builtin_expect (_G_BOOLEAN_EXPR((expr)), 0))
+// #else
+// #define G_LIKELY(expr) (expr)
+// #define G_UNLIKELY(expr) (expr)
+// #endif
+
+// #define g_abort() abort ()
+
+// static void
+// g_thread_abort (int         status,
+                // const char *function)
+// {
+  // //g_abort ();
 // }
 
-// void 
-// WINAPI
-// AcquireSRWLockShared(PSRWLOCK lock)
+// static GThreadSRWLock * WINAPI
+// g_thread_xp_get_srwlock (GThreadSRWLock * volatile *lock)
 // {
-    // /*
-     // * We need to lock the writerLock too, otherwise a writer could
-     // * do the whole of rwlock_wrlock after the readerCount changed
-     // * from 0 to 1, but before the event was reset.
-     // */
-	// RW_LOCK *rwlock = (RW_LOCK *)lock->Ptr;
-    // EnterCriticalSection(&rwlock->writerLock);
-    // EnterCriticalSection(&rwlock->countsLock);
-    // ++rwlock->readerCount;
-    // LeaveCriticalSection(&rwlock->countsLock);
-    // LeaveCriticalSection(&rwlock->writerLock);
+  // GThreadSRWLock *result;
+
+  // /* It looks like we're missing some barriers here, but this code only
+   // * ever runs on Windows XP, which in turn only ever runs on hardware
+   // * with a relatively rigid memory model.  The 'volatile' will take
+   // * care of the compiler.
+   // */
+  // result = *lock;
+
+  // if G_UNLIKELY (result == NULL)
+    // {
+      // EnterCriticalSection (&g_thread_xp_lock);
+
+      // /* Check again */
+      // result = *lock;
+      // if (result == NULL)
+        // {
+          // result = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY,sizeof (GThreadSRWLock));//malloc (sizeof (GThreadSRWLock));
+
+          // if (result == NULL)
+            // ;
+
+          // InitializeCriticalSection (&result->writer_lock);
+          // result->writer_locked = FALSE;
+          // result->ever_shared = FALSE;
+          // *lock = result;
+        // }
+
+      // LeaveCriticalSection (&g_thread_xp_lock);
+    // }
+
+  // return result;
 // }
 
-// VOID 
-// WINAPI
-// AcquireSRWLockExclusive(PSRWLOCK lock)
+// static void
+// g_thread_xp_srwlock_become_reader (GThreadSRWLock *lock)
 // {
-	// RW_LOCK *rwlock = (RW_LOCK *)lock->Ptr;
-	// EnterCriticalSection(&rwlock->writerLock);
-	// rwlock->waitingWriter = TRUE;
-	// while (rwlock->readerCount > 0) {
-		// LeaveCriticalSection(&rwlock->writerLock);
-		// WaitForSingleObject(rwlock->noReaders, INFINITE);
-		// EnterCriticalSection(&rwlock->writerLock);
-	// }
-	// rwlock->waitingWriter = FALSE;
+  // if G_UNLIKELY (!lock->ever_shared)
+    // {
+      // InitializeCriticalSection (&lock->atomicity);
+      // lock->queued_writer = NULL;
+      // lock->num_readers = 0;
 
-    // /* writerLock remains locked.  */
+      // lock->ever_shared = TRUE;
+    // }
+
+  // EnterCriticalSection (&lock->atomicity);
+  // lock->num_readers++;
+  // LeaveCriticalSection (&lock->atomicity);
 // }
 
-// void 
-// WINAPI
-// ReleaseSRWLockShared(PSRWLOCK lock)
+// static GThreadXpWaiter *
+// g_thread_xp_waiter_get (void)
 // {
-	// RW_LOCK *rwlock = (RW_LOCK *)lock->Ptr;	
-    // EnterCriticalSection(&rwlock->countsLock);
-    // assert (rwlock->readerCount > 0);
-    // if (--rwlock->readerCount == 0) {
-        // if (rwlock->waitingWriter) {
-            // /*
-             // * Clear waitingWriter here to avoid taking countsLock
-             // * again in wrlock.
-             // */
-            // rwlock->waitingWriter = FALSE;
-            // SetEvent(rwlock->noReaders);
+  // GThreadXpWaiter *waiter;
+
+  // waiter = TlsGetValue (g_thread_xp_waiter_tls);
+
+  // if G_UNLIKELY (waiter == NULL)
+    // {
+      // waiter = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY,sizeof (GThreadXpWaiter));//malloc (sizeof (GThreadXpWaiter));
+      // if (waiter == NULL)
+        // g_thread_abort (GetLastError (), "malloc");
+      // waiter->event = CreateEvent (0, FALSE, FALSE, NULL);
+      // if (waiter->event == NULL)
+        // g_thread_abort (GetLastError (), "CreateEvent");
+      // waiter->my_owner = NULL;
+
+      // TlsSetValue (g_thread_xp_waiter_tls, waiter);
+    // }
+
+  // return waiter;
+// }
+
+// void WINAPI
+// InitializeSRWLock (PSRWLOCK srwlock)
+// {
+  // GThreadSRWLock * volatile mutex = NULL;
+  // srwlock->Ptr = mutex;
+// }
+
+// void WINAPI
+// AcquireSRWLockExclusive(PSRWLOCK srwlock)
+// {
+  // GThreadSRWLock *lock = g_thread_xp_get_srwlock (srwlock->Ptr);
+
+  // EnterCriticalSection (&lock->writer_lock);
+
+  // /* CRITICAL_SECTION is reentrant, but SRWLock is not.
+   // * Detect the deadlock that would occur on later Windows version.
+   // */
+  // ASSERT (!lock->writer_locked);
+  // lock->writer_locked = TRUE;
+
+  // if (lock->ever_shared)
+    // {
+      // GThreadXpWaiter *waiter = NULL;
+
+      // EnterCriticalSection (&lock->atomicity);
+      // if (lock->num_readers > 0)
+        // lock->queued_writer = waiter = g_thread_xp_waiter_get ();
+      // LeaveCriticalSection (&lock->atomicity);
+
+      // if (waiter != NULL)
+        // WaitForSingleObject (waiter->event, INFINITE);
+
+      // lock->queued_writer = NULL;
+    // }
+// }
+
+// BOOLEAN WINAPI
+// TryAcquireSRWLockExclusive (PSRWLOCK srwlock)
+// {
+  // GThreadSRWLock *lock = g_thread_xp_get_srwlock (srwlock->Ptr);
+
+  // if (!TryEnterCriticalSection (&lock->writer_lock))
+    // return FALSE;
+
+  // /* CRITICAL_SECTION is reentrant, but SRWLock is not.
+   // * Ensure that this properly returns FALSE (as SRWLock would).
+   // */
+  // if G_UNLIKELY (lock->writer_locked)
+    // {
+      // LeaveCriticalSection (&lock->writer_lock);
+      // return FALSE;
+    // }
+
+  // lock->writer_locked = TRUE;
+
+  // if (lock->ever_shared)
+    // {
+      // boolean available;
+
+      // EnterCriticalSection (&lock->atomicity);
+      // available = lock->num_readers == 0;
+      // LeaveCriticalSection (&lock->atomicity);
+
+      // if (!available)
+        // {
+          // LeaveCriticalSection (&lock->writer_lock);
+          // return FALSE;
         // }
     // }
-    // LeaveCriticalSection(&rwlock->countsLock);
+
+  // return TRUE;
 // }
 
-// void 
-// WINAPI
-// ReleaseSRWLockExclusive(PSRWLOCK lock)
+// void WINAPI
+// ReleaseSRWLockExclusive (PSRWLOCK srwlock)
 // {
-	// RW_LOCK *rwlock = (RW_LOCK *)lock->Ptr;	
-    // LeaveCriticalSection(&rwlock->writerLock);
+  // GThreadSRWLock *lock = *(GThreadSRWLock * volatile *) srwlock->Ptr;
+
+  // lock->writer_locked = FALSE;
+
+  // /* We need this until we fix some weird parts of GLib that try to
+   // * unlock freshly-allocated mutexes.
+   // */
+  // if (lock != NULL)
+    // LeaveCriticalSection (&lock->writer_lock);
 // }
 
 
+// void WINAPI
+// AcquireSRWLockShared (PSRWLOCK srwlock)
+// {
+  // GThreadSRWLock *lock = g_thread_xp_get_srwlock (srwlock->Ptr);
 
+  // EnterCriticalSection (&lock->writer_lock);
 
+  // /* See g_thread_xp_AcquireSRWLockExclusive */
+  // ASSERT (!lock->writer_locked);
 
+  // g_thread_xp_srwlock_become_reader (lock);
 
+  // LeaveCriticalSection (&lock->writer_lock);
+// }
 
+// BOOLEAN WINAPI
+// TryAcquireSRWLockShared (PSRWLOCK srwlock)
+// {
+  // GThreadSRWLock *lock = g_thread_xp_get_srwlock (srwlock->Ptr);
 
+  // if (!TryEnterCriticalSection (&lock->writer_lock))
+    // return FALSE;
 
-/* {{{1 SRWLock and CONDITION_VARIABLE emulation (for Windows XP) */
+  // /* See g_thread_xp_AcquireSRWLockExclusive */
+  // if G_UNLIKELY (lock->writer_locked)
+    // {
+      // LeaveCriticalSection (&lock->writer_lock);
+      // return FALSE;
+    // }
 
-static CRITICAL_SECTION g_thread_xp_lock;
-static DWORD            g_thread_xp_waiter_tls;
+  // g_thread_xp_srwlock_become_reader (lock);
 
-/* {{{2 GThreadWaiter utility class for CONDITION_VARIABLE emulation */
-typedef struct _GThreadXpWaiter GThreadXpWaiter;
-struct _GThreadXpWaiter
-{
-  HANDLE                     event;
-  volatile GThreadXpWaiter  *next;
-  volatile GThreadXpWaiter **my_owner;
-};
+  // LeaveCriticalSection (&lock->writer_lock);
 
-/* {{{2 SRWLock emulation */
-typedef struct
-{
-  CRITICAL_SECTION  writer_lock;
-  boolean          ever_shared;    /* protected by writer_lock */
-  boolean          writer_locked;  /* protected by writer_lock */
+  // return TRUE;
+// }
 
-  /* below is only ever touched if ever_shared becomes true */
-  CRITICAL_SECTION  atomicity;
-  GThreadXpWaiter  *queued_writer; /* protected by atomicity lock */
-  int              num_readers;   /* protected by atomicity lock */
-} GThreadSRWLock;
+// void WINAPI
+// ReleaseSRWLockShared (PSRWLOCK srwlock)
+// {
+  // GThreadSRWLock *lock = g_thread_xp_get_srwlock (srwlock->Ptr);
 
-/*
- * The G_LIKELY and G_UNLIKELY macros let the programmer give hints to 
- * the compiler about the expected result of an expression. Some compilers
- * can use this information for optimizations.
- *
- * The _G_BOOLEAN_EXPR macro is intended to trigger a gcc warning when
- * putting assignments in g_return_if_fail ().  
- */
-#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
-#define _G_BOOLEAN_EXPR(expr)                   \
- G_GNUC_EXTENSION ({                            \
-   int _g_boolean_var_;                         \
-   if (expr)                                    \
-      _g_boolean_var_ = 1;                      \
-   else                                         \
-      _g_boolean_var_ = 0;                      \
-   _g_boolean_var_;                             \
-})
-#define G_LIKELY(expr) (__builtin_expect (_G_BOOLEAN_EXPR((expr)), 1))
-#define G_UNLIKELY(expr) (__builtin_expect (_G_BOOLEAN_EXPR((expr)), 0))
-#else
-#define G_LIKELY(expr) (expr)
-#define G_UNLIKELY(expr) (expr)
-#endif
+  // EnterCriticalSection (&lock->atomicity);
 
-#define g_abort() abort ()
+  // lock->num_readers--;
 
-static void
-g_thread_abort (int         status,
-                const char *function)
-{
-  //g_abort ();
-}
+  // if (lock->num_readers == 0 && lock->queued_writer)
+    // SetEvent (lock->queued_writer->event);
 
-static GThreadSRWLock * WINAPI
-g_thread_xp_get_srwlock (GThreadSRWLock * volatile *lock)
-{
-  GThreadSRWLock *result;
-
-  /* It looks like we're missing some barriers here, but this code only
-   * ever runs on Windows XP, which in turn only ever runs on hardware
-   * with a relatively rigid memory model.  The 'volatile' will take
-   * care of the compiler.
-   */
-  result = *lock;
-
-  if G_UNLIKELY (result == NULL)
-    {
-      EnterCriticalSection (&g_thread_xp_lock);
-
-      /* Check again */
-      result = *lock;
-      if (result == NULL)
-        {
-          result = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY,sizeof (GThreadSRWLock));//malloc (sizeof (GThreadSRWLock));
-
-          if (result == NULL)
-            ;
-
-          InitializeCriticalSection (&result->writer_lock);
-          result->writer_locked = FALSE;
-          result->ever_shared = FALSE;
-          *lock = result;
-        }
-
-      LeaveCriticalSection (&g_thread_xp_lock);
-    }
-
-  return result;
-}
-
-static void
-g_thread_xp_srwlock_become_reader (GThreadSRWLock *lock)
-{
-  if G_UNLIKELY (!lock->ever_shared)
-    {
-      InitializeCriticalSection (&lock->atomicity);
-      lock->queued_writer = NULL;
-      lock->num_readers = 0;
-
-      lock->ever_shared = TRUE;
-    }
-
-  EnterCriticalSection (&lock->atomicity);
-  lock->num_readers++;
-  LeaveCriticalSection (&lock->atomicity);
-}
-
-static GThreadXpWaiter *
-g_thread_xp_waiter_get (void)
-{
-  GThreadXpWaiter *waiter;
-
-  waiter = TlsGetValue (g_thread_xp_waiter_tls);
-
-  if G_UNLIKELY (waiter == NULL)
-    {
-      waiter = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY,sizeof (GThreadXpWaiter));//malloc (sizeof (GThreadXpWaiter));
-      if (waiter == NULL)
-        g_thread_abort (GetLastError (), "malloc");
-      waiter->event = CreateEvent (0, FALSE, FALSE, NULL);
-      if (waiter->event == NULL)
-        g_thread_abort (GetLastError (), "CreateEvent");
-      waiter->my_owner = NULL;
-
-      TlsSetValue (g_thread_xp_waiter_tls, waiter);
-    }
-
-  return waiter;
-}
-
-void WINAPI
-InitializeSRWLock (PSRWLOCK srwlock)
-{
-  GThreadSRWLock * volatile mutex = NULL;
-  srwlock->Ptr = mutex;
-}
-
-void WINAPI
-AcquireSRWLockExclusive(PSRWLOCK srwlock)
-{
-  GThreadSRWLock *lock = g_thread_xp_get_srwlock (srwlock->Ptr);
-
-  EnterCriticalSection (&lock->writer_lock);
-
-  /* CRITICAL_SECTION is reentrant, but SRWLock is not.
-   * Detect the deadlock that would occur on later Windows version.
-   */
-  ASSERT (!lock->writer_locked);
-  lock->writer_locked = TRUE;
-
-  if (lock->ever_shared)
-    {
-      GThreadXpWaiter *waiter = NULL;
-
-      EnterCriticalSection (&lock->atomicity);
-      if (lock->num_readers > 0)
-        lock->queued_writer = waiter = g_thread_xp_waiter_get ();
-      LeaveCriticalSection (&lock->atomicity);
-
-      if (waiter != NULL)
-        WaitForSingleObject (waiter->event, INFINITE);
-
-      lock->queued_writer = NULL;
-    }
-}
-
-BOOLEAN WINAPI
-TryAcquireSRWLockExclusive (PSRWLOCK srwlock)
-{
-  GThreadSRWLock *lock = g_thread_xp_get_srwlock (srwlock->Ptr);
-
-  if (!TryEnterCriticalSection (&lock->writer_lock))
-    return FALSE;
-
-  /* CRITICAL_SECTION is reentrant, but SRWLock is not.
-   * Ensure that this properly returns FALSE (as SRWLock would).
-   */
-  if G_UNLIKELY (lock->writer_locked)
-    {
-      LeaveCriticalSection (&lock->writer_lock);
-      return FALSE;
-    }
-
-  lock->writer_locked = TRUE;
-
-  if (lock->ever_shared)
-    {
-      boolean available;
-
-      EnterCriticalSection (&lock->atomicity);
-      available = lock->num_readers == 0;
-      LeaveCriticalSection (&lock->atomicity);
-
-      if (!available)
-        {
-          LeaveCriticalSection (&lock->writer_lock);
-          return FALSE;
-        }
-    }
-
-  return TRUE;
-}
-
-void WINAPI
-ReleaseSRWLockExclusive (PSRWLOCK srwlock)
-{
-  GThreadSRWLock *lock = *(GThreadSRWLock * volatile *) srwlock->Ptr;
-
-  lock->writer_locked = FALSE;
-
-  /* We need this until we fix some weird parts of GLib that try to
-   * unlock freshly-allocated mutexes.
-   */
-  if (lock != NULL)
-    LeaveCriticalSection (&lock->writer_lock);
-}
-
-
-void WINAPI
-AcquireSRWLockShared (PSRWLOCK srwlock)
-{
-  GThreadSRWLock *lock = g_thread_xp_get_srwlock (srwlock->Ptr);
-
-  EnterCriticalSection (&lock->writer_lock);
-
-  /* See g_thread_xp_AcquireSRWLockExclusive */
-  ASSERT (!lock->writer_locked);
-
-  g_thread_xp_srwlock_become_reader (lock);
-
-  LeaveCriticalSection (&lock->writer_lock);
-}
-
-BOOLEAN WINAPI
-TryAcquireSRWLockShared (PSRWLOCK srwlock)
-{
-  GThreadSRWLock *lock = g_thread_xp_get_srwlock (srwlock->Ptr);
-
-  if (!TryEnterCriticalSection (&lock->writer_lock))
-    return FALSE;
-
-  /* See g_thread_xp_AcquireSRWLockExclusive */
-  if G_UNLIKELY (lock->writer_locked)
-    {
-      LeaveCriticalSection (&lock->writer_lock);
-      return FALSE;
-    }
-
-  g_thread_xp_srwlock_become_reader (lock);
-
-  LeaveCriticalSection (&lock->writer_lock);
-
-  return TRUE;
-}
-
-void WINAPI
-ReleaseSRWLockShared (PSRWLOCK srwlock)
-{
-  GThreadSRWLock *lock = g_thread_xp_get_srwlock (srwlock->Ptr);
-
-  EnterCriticalSection (&lock->atomicity);
-
-  lock->num_readers--;
-
-  if (lock->num_readers == 0 && lock->queued_writer)
-    SetEvent (lock->queued_writer->event);
-
-  LeaveCriticalSection (&lock->atomicity);
-}
+  // LeaveCriticalSection (&lock->atomicity);
+// }
 
 BOOL 
 WINAPI 
@@ -879,3 +780,111 @@ InitOnceComplete(
      if (status != STATUS_SUCCESS) SetLastError( RtlNtStatusToDosError(status) );
      return !status;
 }
+
+// /***********************************************************************
+ // *              RtlAcquireSRWLockExclusive (NTDLL.@)
+ // *
+ // * NOTES
+ // *  Unlike RtlAcquireResourceExclusive this function doesn't allow
+ // *  nested calls from the same thread. "Upgrading" a shared access lock
+ // *  to an exclusive access lock also doesn't seem to be supported.
+ // */
+// VOID 
+// WINAPI 
+// AcquireSRWLockExclusive( 
+	// PRTL_CRITICAL_SECTION CriticalSectionObject
+// )
+// {
+	// RtlEnterCriticalSection(CriticalSectionObject);
+	// return;
+// }
+
+// VOID
+// NTAPI
+// InitializeSRWLock(PRTL_CRITICAL_SECTION CriticalSectionObject)
+// {
+	// RtlInitializeCriticalSectionAndSpinCount(CriticalSectionObject, 1024);
+	// return;
+// }
+
+// void 
+// WINAPI 
+// AcquireSRWLockShared(PRTL_CRITICAL_SECTION CriticalSectionObject)
+// {
+	// RtlEnterCriticalSection(CriticalSectionObject);
+	// return;
+// }
+
+// BOOLEAN __stdcall SleepTry(PRTL_CRITICAL_SECTION CriticalSectionObject)
+// {
+  // HANDLE handle; // et1@2
+  // BOOLEAN result; // al@2
+
+  // if ( _InterlockedCompareExchange(&CriticalSectionObject->LockCount, 0, -1) )
+  // {
+    // if ( CriticalSectionObject->OwningThread == NtCurrentTeb()->ClientId.UniqueThread )
+    // {
+      // _InterlockedIncrement(&CriticalSectionObject->LockCount);
+      // ++CriticalSectionObject->RecursionCount;
+      // result = 1;
+    // }
+    // else
+    // {
+      // result = 0;
+      // _mm_pause();
+    // }
+  // }
+  // else
+  // {
+    // handle = CriticalSectionObject->OwningThread;
+    // CriticalSectionObject->RecursionCount = 1;
+    // result = 1;
+  // }
+  // return result;
+// }
+
+// void __cdecl LockTry(PRTL_CRITICAL_SECTION CriticalSectionObject)
+// {
+  // BOOL verify; // cf@3
+
+  // if ( CriticalSectionObject )
+  // {
+    // if ( !CriticalSectionObject->DebugInfo )
+    // {
+      // verify = CriticalSectionObject->LockCount < 0xFFFFFFFF;
+      // InitializeSRWLock(CriticalSectionObject);
+    // }
+  // }
+// }
+
+// BOOL __stdcall TryAcquireSRWLockExclusive(PRTL_CRITICAL_SECTION CriticalSectionObject)
+// {
+   // LockTry(CriticalSectionObject);
+   // return RtlTryEnterCriticalSection(CriticalSectionObject);
+// }
+
+// BOOL __stdcall TryAcquireSRWLockShared(PRTL_CRITICAL_SECTION CriticalSectionObject)
+// {
+   // LockTry(CriticalSectionObject);	
+   // return RtlTryEnterCriticalSection(CriticalSectionObject);
+// }
+
+// /***********************************************************************
+ // *              RtlReleaseSRWLockShared (NTDLL.@)
+ // */
+// VOID WINAPI ReleaseSRWLockShared(PRTL_CRITICAL_SECTION CriticalSectionObject)
+// {
+    // LockTry(CriticalSectionObject);		
+	// RtlLeaveCriticalSection(CriticalSectionObject);
+	// return;
+// }
+
+// /***********************************************************************
+ // *              RtlReleaseSRWLockExclusive (NTDLL.@)
+ // */
+// void WINAPI ReleaseSRWLockExclusive(PRTL_CRITICAL_SECTION CriticalSectionObject)
+// {
+    // LockTry(CriticalSectionObject);	
+	// LeaveCriticalSection(CriticalSectionObject);
+	// return;
+// }
