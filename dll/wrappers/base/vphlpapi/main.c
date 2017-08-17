@@ -31,6 +31,69 @@
 
 #define ScopeLevelCount 16
 
+typedef enum _MIB_NOTIFICATION_TYPE
+{
+    MibParameterNotification,
+    MibAddInstance,
+    MibDeleteInstance,
+    MibInitialNotification,
+} MIB_NOTIFICATION_TYPE, *PMIB_NOTIFICATION_TYPE;
+
+typedef struct _IP_ADDRESS_PREFIX {
+  SOCKADDR_INET Prefix;
+  UINT8         PrefixLength;
+} IP_ADDRESS_PREFIX, *PIP_ADDRESS_PREFIX;
+
+typedef enum _NL_ROUTE_ORIGIN { 
+  NlroManual,
+  NlroWellKnown,
+  NlroDHCP,
+  NlroRouterAdvertisement,
+  Nlro6to4
+} NL_ROUTE_ORIGIN, *PNL_ROUTE_ORIGIN;
+
+#define MAKE_ROUTE_PROTOCOL(N, V) MIB_IPPROTO_ ## N = V, PROTO_IP_ ## N = V
+
+typedef enum {
+  RouteProtocolOther = 1,
+  RouteProtocolLocal = 2,
+  RouteProtocolNetMgmt = 3,
+  RouteProtocolIcmp = 4,
+  RouteProtocolEgp = 5,
+  RouteProtocolGgp = 6,
+  RouteProtocolHello = 7,
+  RouteProtocolRip = 8,
+  RouteProtocolIsIs = 9,
+  RouteProtocolEsIs = 10,
+  RouteProtocolCisco = 11,
+  RouteProtocolBbn = 12,
+  RouteProtocolOspf = 13,
+  RouteProtocolBgp = 14
+} NL_ROUTE_PROTOCOL,*PNL_ROUTE_PROTOCOL;
+
+typedef struct _MIB_IPFORWARD_ROW2 {
+  NET_LUID          InterfaceLuid;
+  NET_IFINDEX       InterfaceIndex;
+  IP_ADDRESS_PREFIX DestinationPrefix;
+  SOCKADDR_INET     NextHop;
+  UCHAR             SitePrefixLength;
+  ULONG             ValidLifetime;
+  ULONG             PreferredLifetime;
+  ULONG             Metric;
+  NL_ROUTE_PROTOCOL Protocol;
+  BOOLEAN           Loopback;
+  BOOLEAN           AutoconfigureAddress;
+  BOOLEAN           Publish;
+  BOOLEAN           Immortal;
+  ULONG             Age;
+  NL_ROUTE_ORIGIN   Origin;
+} MIB_IPFORWARD_ROW2, *PMIB_IPFORWARD_ROW2;
+
+typedef VOID (NETIOAPI_API_ *PIPFORWARD_CHANGE_CALLBACK) (PVOID CallerContext, PMIB_IPFORWARD_ROW2 Row, MIB_NOTIFICATION_TYPE NotificationType);
+
+typedef VOID (WINAPI *PUNICAST_IPADDRESS_CHANGE_CALLBACK)(PVOID, PMIB_UNICASTIPADDRESS_ROW,
+                                                          MIB_NOTIFICATION_TYPE);
+
 typedef void (WINAPI * PIO_APC_ROUTINE)(PVOID,PIO_STATUS_BLOCK,ULONG);
 
 typedef ULONG NET_IFINDEX, *PNET_IFINDEX;
@@ -382,6 +445,42 @@ DWORD WINAPI GetIfTable2( MIB_IF_TABLE2 **table )
 
 NETIOAPI_API GetIpInterfaceEntry(
   _Inout_ PMIB_IPINTERFACE_ROW Row
+)
+{
+	return ERROR_NOT_FOUND;
+}
+
+/******************************************************************
+ *    NotifyUnicastIpAddressChange (IPHLPAPI.@)
+ */
+DWORD WINAPI NotifyUnicastIpAddressChange(ADDRESS_FAMILY family, PUNICAST_IPADDRESS_CHANGE_CALLBACK callback,
+                                          PVOID context, BOOLEAN init_notify, PHANDLE handle)
+{
+    FIXME("(family %d, callback %p, context %p, init_notify %d, handle %p): stub\n",
+          family, callback, context, init_notify, handle);
+    if (handle) *handle = NULL;
+    return ERROR_NOT_SUPPORTED;
+}
+
+NETIOAPI_API NotifyRouteChange2(
+  _In_    ADDRESS_FAMILY             Family,
+  _In_    PIPFORWARD_CHANGE_CALLBACK Callback,
+  _In_    PVOID                      CallerContext,
+  _In_    BOOLEAN                    InitialNotification,
+  _Inout_ HANDLE                     *NotificationHandle
+)
+{
+	return ERROR_NOT_FOUND;
+}
+
+NETIOAPI_API GetBestRoute2(
+  _In_opt_       NET_LUID            *InterfaceLuid,
+  _In_           NET_IFINDEX         InterfaceIndex,
+  _In_     const SOCKADDR_INET       *SourceAddress,
+  _In_     const SOCKADDR_INET       *DestinationAddress,
+  _In_           ULONG               AddressSortOptions,
+  _Out_          PMIB_IPFORWARD_ROW2 BestRoute,
+  _Out_          SOCKADDR_INET       *BestSourceAddress
 )
 {
 	return ERROR_NOT_FOUND;

@@ -173,3 +173,6 @@
 @ stdcall GetIfTable2Ex( long ptr )
 @ stdcall GetIfTable2( long ptr )
 @ stdcall GetIpInterfaceEntry(ptr)
+@ stdcall NotifyUnicastIpAddressChange(long ptr ptr long ptr)
+@ stdcall NotifyRouteChange2(ptr ptr ptr long ptr)
+@ stdcall GetBestRoute2(ptr long ptr ptr long ptr ptr)
