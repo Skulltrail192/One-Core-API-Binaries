@@ -221,6 +221,7 @@ static BOOL DP_DestroyDirectPlay2( LPVOID lpDP )
 
   NS_DeleteSessionCache( This->dp2->lpNameServerData );
 
+  HeapFree( GetProcessHeap(), 0, This->dp2->dplspData.lpCB);
   HeapFree( GetProcessHeap(), 0, This->dp2->lpSessionDesc );
 
   IDirectPlaySP_Release( This->dp2->spData.lpISP );
@@ -1569,17 +1570,12 @@ static HRESULT DP_IF_CreatePlayer( IDirectPlayImpl *This, void *lpMsgHdr, DPID *
      player total */
   lpPData = DP_CreatePlayer( This, lpidPlayer, lpPlayerName, dwCreateFlags,
                              hEvent, bAnsi );
-
-  if( lpPData == NULL )
-  {
-    return DPERR_CANTADDPLAYER;
-  }
-
   /* Create the list object and link it in */
   lpPList = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof( *lpPList ) );
-  if( lpPList == NULL )
+  if( !lpPData || !lpPList )
   {
-    FIXME( "Memory leak\n" );
+    HeapFree( GetProcessHeap(), 0, lpPData );
+    HeapFree( GetProcessHeap(), 0, lpPList );
     return DPERR_CANTADDPLAYER;
   }
 
@@ -2871,8 +2867,14 @@ static HRESULT WINAPI IDirectPlay4Impl_GetPlayerCaps( IDirectPlay4 *iface, DPID 
 
     TRACE( "(%p)->(0x%08x,%p,0x%08x)\n", This, player, caps, flags);
 
+    if ( !caps )
+        return DPERR_INVALIDPARAMS;
+
     if ( This->dp2->connectionInitialized == NO_PROVIDER )
         return DPERR_UNINITIALIZED;
+
+    if( caps->dwSize != sizeof(DPCAPS) )
+        return DPERR_INVALIDPARAMS;
 
     /* Query the service provider */
     data.idPlayer = player;
@@ -4341,8 +4343,10 @@ static HRESULT WINAPI IDirectPlay4AImpl_EnumConnections( IDirectPlay4A *iface,
       if( !lpEnumCallback( &serviceProviderGUID, lpAddressBuffer, dwAddressBufferSize,
                            &dpName, dwFlags, lpContext ) )
       {
+         HeapFree( GetProcessHeap(), 0, lpAddressBuffer );
          return DP_OK;
       }
+      HeapFree( GetProcessHeap(), 0, lpAddressBuffer );
     }
   }
 
@@ -4360,8 +4364,7 @@ static HRESULT WINAPI IDirectPlay4AImpl_EnumConnections( IDirectPlay4A *iface,
     if( RegOpenKeyExA( HKEY_LOCAL_MACHINE, searchSubKey,
                          0, KEY_READ, &hkResult ) != ERROR_SUCCESS )
     {
-      /* Hmmm. Does this mean that there are no service providers? */
-      ERR(": no service providers?\n");
+      TRACE("No Lobby Providers have been registered.\n");
       return DP_OK;
     }
 
@@ -5761,6 +5764,11 @@ static HRESULT DirectPlayEnumerateAW(LPDPENUMDPCALLBACKA lpEnumCallbackA,
     DWORD max_sizeOfDescriptionA = 0;
     WCHAR *descriptionW = NULL;
     DWORD max_sizeOfDescriptionW = 0;
+    DWORD sizeOfSubKeyName;
+    WCHAR subKeyName[255]; /* 255 is the maximum key size according to MSDN */
+    LONG  ret_value;
+    static GUID *guid_cache;
+    static int cache_count;
     
     if (!lpEnumCallbackA && !lpEnumCallbackW)
     {
@@ -5775,19 +5783,37 @@ static HRESULT DirectPlayEnumerateAW(LPDPENUMDPCALLBACKA lpEnumCallbackA,
 	ERR(": no service provider key in the registry - check your Wine installation !!!\n");
 	return DPERR_GENERIC;
     }
-    
+
+    dwIndex = 0;
+    do
+    {
+	sizeOfSubKeyName = sizeof(subKeyName) / sizeof(WCHAR);
+	ret_value = RegEnumKeyW(hkResult, dwIndex, subKeyName, sizeOfSubKeyName);
+	dwIndex++;
+    }
+    while (ret_value == ERROR_SUCCESS);
+    /* The game Swing from bug 37185 expects GUID values to persist after
+     * the end of the enumeration. */
+    if (cache_count < dwIndex)
+    {
+	HeapFree(GetProcessHeap(), 0, guid_cache);
+	guid_cache = HeapAlloc(GetProcessHeap(), 0, sizeof(GUID) * dwIndex);
+	if (!guid_cache)
+	{
+	    ERR(": failed to allocate required memory.\n");
+	    return DPERR_EXCEPTION;
+	}
+	cache_count = dwIndex;
+    }
     /* Traverse all the service providers we have available */
     dwIndex = 0;
     while (1)
     {
-	WCHAR subKeyName[255]; /* 255 is the maximum key size according to MSDN */
-	DWORD sizeOfSubKeyName = sizeof(subKeyName) / sizeof(WCHAR);
 	HKEY  hkServiceProvider;
-	GUID  serviceProviderGUID;
 	WCHAR guidKeyContent[(2 * 16) + 1 + 6 /* This corresponds to '{....-..-..-..-......}' */ ];
 	DWORD sizeOfGuidKeyContent = sizeof(guidKeyContent);
-	LONG  ret_value;
 	
+	sizeOfSubKeyName = sizeof(subKeyName) / sizeof(WCHAR);
 	ret_value = RegEnumKeyExW(hkResult, dwIndex, subKeyName, &sizeOfSubKeyName,
 				  NULL, NULL, NULL, &filetime);
 	if (ret_value == ERROR_NO_MORE_ITEMS)
@@ -5818,7 +5844,7 @@ static HRESULT DirectPlayEnumerateAW(LPDPENUMDPCALLBACKA lpEnumCallbackA,
 	    ERR(": invalid format for the GUID registry data member for service provider %s (%s).\n", debugstr_w(subKeyName), debugstr_w(guidKeyContent));
 	    continue;
 	}
-	CLSIDFromString(guidKeyContent, &serviceProviderGUID );
+	CLSIDFromString(guidKeyContent, &guid_cache[dwIndex]);
 	
 	/* The enumeration will return FALSE if we are not to continue.
 	 *
@@ -5846,7 +5872,7 @@ static HRESULT DirectPlayEnumerateAW(LPDPENUMDPCALLBACKA lpEnumCallbackA,
 	    RegQueryValueExA(hkServiceProvider, "DescriptionA",
 			     NULL, NULL, (LPBYTE) descriptionA, &sizeOfDescription);
 	    
-	    if (!lpEnumCallbackA(&serviceProviderGUID, descriptionA, 6, 0, lpContext))
+	    if (!lpEnumCallbackA(&guid_cache[dwIndex], descriptionA, 6, 0, lpContext))
 		goto end;
 	}
 	else
@@ -5868,7 +5894,7 @@ static HRESULT DirectPlayEnumerateAW(LPDPENUMDPCALLBACKA lpEnumCallbackA,
 	    RegQueryValueExW(hkServiceProvider, descW,
 			     NULL, NULL, (LPBYTE) descriptionW, &sizeOfDescription);
 
-	    if (!lpEnumCallbackW(&serviceProviderGUID, descriptionW, 6, 0, lpContext))
+	    if (!lpEnumCallbackW(&guid_cache[dwIndex], descriptionW, 6, 0, lpContext))
 		goto end;
 	}
       

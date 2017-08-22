@@ -26,27 +26,27 @@ GetSelectedService(PMAIN_WND_INFO Info)
 }
 
 LPQUERY_SERVICE_CONFIG
-GetServiceConfig(LPTSTR lpServiceName)
+GetServiceConfig(LPWSTR lpServiceName)
 {
-    LPQUERY_SERVICE_CONFIG lpServiceConfig = NULL;
+    LPQUERY_SERVICE_CONFIGW lpServiceConfig = NULL;
     SC_HANDLE hSCManager;
     SC_HANDLE hService;
     DWORD dwBytesNeeded;
 
-    hSCManager = OpenSCManager(NULL,
-                               NULL,
-                               SC_MANAGER_ALL_ACCESS);
+    hSCManager = OpenSCManagerW(NULL,
+                                NULL,
+                                SC_MANAGER_CONNECT);
     if (hSCManager)
     {
-        hService = OpenService(hSCManager,
-                               lpServiceName,
-                               SERVICE_QUERY_STATUS | SERVICE_ENUMERATE_DEPENDENTS | SERVICE_QUERY_CONFIG);
+        hService = OpenServiceW(hSCManager,
+                                lpServiceName,
+                                SERVICE_QUERY_CONFIG);
         if (hService)
         {
-            if (!QueryServiceConfig(hService,
-                                    NULL,
-                                    0,
-                                    &dwBytesNeeded))
+            if (!QueryServiceConfigW(hService,
+                                     NULL,
+                                     0,
+                                     &dwBytesNeeded))
             {
                 if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
                 {
@@ -55,7 +55,7 @@ GetServiceConfig(LPTSTR lpServiceName)
                                                                         dwBytesNeeded);
                     if (lpServiceConfig)
                     {
-                        if (!QueryServiceConfig(hService,
+                        if (!QueryServiceConfigW(hService,
                                                 lpServiceConfig,
                                                 dwBytesNeeded,
                                                 &dwBytesNeeded))
@@ -80,38 +80,38 @@ GetServiceConfig(LPTSTR lpServiceName)
 
 BOOL
 SetServiceConfig(LPQUERY_SERVICE_CONFIG pServiceConfig,
-                 LPTSTR lpServiceName,
-                 LPTSTR lpPassword)
+                 LPWSTR lpServiceName,
+                 LPWSTR lpPassword)
 {
     SC_HANDLE hSCManager;
     SC_HANDLE hSc;
     SC_LOCK scLock;
     BOOL bRet = FALSE;
 
-    hSCManager = OpenSCManager(NULL,
-                               NULL,
-                               SC_MANAGER_LOCK);
+    hSCManager = OpenSCManagerW(NULL,
+                                NULL,
+                                SC_MANAGER_LOCK);
     if (hSCManager)
     {
         scLock = LockServiceDatabase(hSCManager);
         if (scLock)
         {
-            hSc = OpenService(hSCManager,
-                              lpServiceName,
-                              SERVICE_CHANGE_CONFIG);
+            hSc = OpenServiceW(hSCManager,
+                               lpServiceName,
+                               SERVICE_CHANGE_CONFIG);
             if (hSc)
             {
-                if (ChangeServiceConfig(hSc,
-                                        pServiceConfig->dwServiceType,
-                                        pServiceConfig->dwStartType,
-                                        pServiceConfig->dwErrorControl,
-                                        pServiceConfig->lpBinaryPathName,
-                                        pServiceConfig->lpLoadOrderGroup,
-                                        pServiceConfig->dwTagId ? &pServiceConfig->dwTagId : NULL,
-                                        pServiceConfig->lpDependencies,
-                                        pServiceConfig->lpServiceStartName,
-                                        lpPassword,
-                                        pServiceConfig->lpDisplayName))
+                if (ChangeServiceConfigW(hSc,
+                                         pServiceConfig->dwServiceType,
+                                         pServiceConfig->dwStartType,
+                                         pServiceConfig->dwErrorControl,
+                                         pServiceConfig->lpBinaryPathName,
+                                         pServiceConfig->lpLoadOrderGroup,
+                                         pServiceConfig->dwTagId ? &pServiceConfig->dwTagId : NULL,
+                                         pServiceConfig->lpDependencies,
+                                         pServiceConfig->lpServiceStartName,
+                                         lpPassword,
+                                         pServiceConfig->lpDisplayName))
                 {
                     bRet = TRUE;
                 }
@@ -131,35 +131,35 @@ SetServiceConfig(LPQUERY_SERVICE_CONFIG pServiceConfig,
     return bRet;
 }
 
-LPTSTR
-GetServiceDescription(LPTSTR lpServiceName)
+LPWSTR
+GetServiceDescription(LPWSTR lpServiceName)
 {
     SC_HANDLE hSCManager = NULL;
     SC_HANDLE hSc = NULL;
-    SERVICE_DESCRIPTION *pServiceDescription = NULL;
-    LPTSTR lpDescription = NULL;
+    SERVICE_DESCRIPTIONW *pServiceDescription = NULL;
+    LPWSTR lpDescription = NULL;
     DWORD BytesNeeded = 0;
     DWORD dwSize;
 
-    hSCManager = OpenSCManager(NULL,
-                               NULL,
-                               SC_MANAGER_ENUMERATE_SERVICE);
+    hSCManager = OpenSCManagerW(NULL,
+                                NULL,
+                                SC_MANAGER_ENUMERATE_SERVICE);
     if (hSCManager == NULL)
     {
         GetError();
         return NULL;
     }
 
-    hSc = OpenService(hSCManager,
-                      lpServiceName,
-                      SERVICE_QUERY_CONFIG);
+    hSc = OpenServiceW(hSCManager,
+                       lpServiceName,
+                       SERVICE_QUERY_CONFIG);
     if (hSc)
     {
-        if (!QueryServiceConfig2(hSc,
-                                 SERVICE_CONFIG_DESCRIPTION,
-                                 NULL,
-                                 0,
-                                 &BytesNeeded))
+        if (!QueryServiceConfig2W(hSc,
+                                  SERVICE_CONFIG_DESCRIPTION,
+                                  NULL,
+                                  0,
+                                  &BytesNeeded))
         {
             if (GetLastError() == ERROR_INSUFFICIENT_BUFFER)
             {
@@ -169,23 +169,23 @@ GetServiceDescription(LPTSTR lpServiceName)
                 if (pServiceDescription == NULL)
                     goto cleanup;
 
-                if (QueryServiceConfig2(hSc,
-                                        SERVICE_CONFIG_DESCRIPTION,
-                                        (LPBYTE)pServiceDescription,
-                                        BytesNeeded,
-                                        &BytesNeeded))
+                if (QueryServiceConfig2W(hSc,
+                                         SERVICE_CONFIG_DESCRIPTION,
+                                         (LPBYTE)pServiceDescription,
+                                         BytesNeeded,
+                                         &BytesNeeded))
                 {
                     if (pServiceDescription->lpDescription)
                     {
-                        dwSize = _tcslen(pServiceDescription->lpDescription) + 1;
+                        dwSize = wcslen(pServiceDescription->lpDescription) + 1;
                         lpDescription = HeapAlloc(ProcessHeap,
                                                   0,
-                                                  dwSize * sizeof(TCHAR));
+                                                  dwSize * sizeof(WCHAR));
                         if (lpDescription)
                         {
-                            StringCchCopy(lpDescription,
-                                          dwSize,
-                                          pServiceDescription->lpDescription);
+                            StringCchCopyW(lpDescription,
+                                           dwSize,
+                                           pServiceDescription->lpDescription);
                         }
                     }
                 }
@@ -207,8 +207,8 @@ cleanup:
 }
 
 BOOL
-SetServiceDescription(LPTSTR lpServiceName,
-                      LPTSTR lpDescription)
+SetServiceDescription(LPWSTR lpServiceName,
+                      LPWSTR lpDescription)
 {
     SC_HANDLE hSCManager;
     SC_HANDLE hSc;
@@ -216,24 +216,24 @@ SetServiceDescription(LPTSTR lpServiceName,
     SERVICE_DESCRIPTION ServiceDescription;
     BOOL bRet = FALSE;
 
-    hSCManager = OpenSCManager(NULL,
-                               NULL,
-                               SC_MANAGER_LOCK);
+    hSCManager = OpenSCManagerW(NULL,
+                                NULL,
+                                SC_MANAGER_LOCK);
     if (hSCManager)
     {
         scLock = LockServiceDatabase(hSCManager);
         if (scLock)
         {
-            hSc = OpenService(hSCManager,
-                              lpServiceName,
-                              SERVICE_CHANGE_CONFIG);
+            hSc = OpenServiceW(hSCManager,
+                               lpServiceName,
+                               SERVICE_CHANGE_CONFIG);
             if (hSc)
             {
                 ServiceDescription.lpDescription = lpDescription;
 
-                if (ChangeServiceConfig2(hSc,
-                                         SERVICE_CONFIG_DESCRIPTION,
-                                         &ServiceDescription))
+                if (ChangeServiceConfig2W(hSc,
+                                          SERVICE_CONFIG_DESCRIPTION,
+                                          &ServiceDescription))
                 {
                     bRet = TRUE;
                 }
@@ -253,29 +253,46 @@ SetServiceDescription(LPTSTR lpServiceName,
     return bRet;
 }
 
-BOOL
-GetServiceList(PMAIN_WND_INFO Info,
-               DWORD *NumServices)
+VOID
+FreeServiceList(PMAIN_WND_INFO Info)
 {
+    DWORD i;
+
+    if (Info->pAllServices != NULL)
+    {
+        for (i = 0; i < Info->NumServices; i++)
+        {
+            if (Info->pAllServices[i].lpServiceName)
+                HeapFree(ProcessHeap, 0, Info->pAllServices[i].lpServiceName);
+
+            if (Info->pAllServices[i].lpDisplayName)
+                HeapFree(ProcessHeap, 0, Info->pAllServices[i].lpDisplayName);
+        }
+
+        HeapFree(ProcessHeap, 0, Info->pAllServices);
+        Info->pAllServices = NULL;
+        Info->NumServices = 0;
+    }
+}
+
+BOOL
+GetServiceList(PMAIN_WND_INFO Info)
+{
+    ENUM_SERVICE_STATUS_PROCESS *pServices = NULL;
     SC_HANDLE ScHandle;
     BOOL bRet = FALSE;
 
     DWORD BytesNeeded = 0;
     DWORD ResumeHandle = 0;
+    DWORD NumServices = 0;
+    DWORD i;
 
-    *NumServices = 0;
+    FreeServiceList(Info);
 
-    if (Info->pAllServices != NULL)
-    {
-        HeapFree(ProcessHeap,
-                     0,
-                     Info->pAllServices);
-    }
-
-    ScHandle = OpenSCManager(NULL,
-                             NULL,
-                             SC_MANAGER_ENUMERATE_SERVICE);
-    if (ScHandle != INVALID_HANDLE_VALUE)
+    ScHandle = OpenSCManagerW(NULL,
+                              NULL,
+                              SC_MANAGER_ENUMERATE_SERVICE);
+    if (ScHandle != NULL)
     {
         if (!EnumServicesStatusEx(ScHandle,
                                   SC_ENUM_PROCESS_INFO,
@@ -284,7 +301,7 @@ GetServiceList(PMAIN_WND_INFO Info,
                                   NULL,
                                   0,
                                   &BytesNeeded,
-                                  NumServices,
+                                  &NumServices,
                                   &ResumeHandle,
                                   0))
         {
@@ -292,20 +309,20 @@ GetServiceList(PMAIN_WND_INFO Info,
             if (GetLastError() == ERROR_MORE_DATA)
             {
                 /* reserve memory for service info array */
-                Info->pAllServices = (ENUM_SERVICE_STATUS_PROCESS *) HeapAlloc(ProcessHeap,
-                                                                         0,
-                                                                         BytesNeeded);
-                if (Info->pAllServices)
+                pServices = (ENUM_SERVICE_STATUS_PROCESS *)HeapAlloc(ProcessHeap,
+                                                                     0,
+                                                                     BytesNeeded);
+                if (pServices)
                 {
                     /* fill array with service info */
                     if (EnumServicesStatusEx(ScHandle,
                                              SC_ENUM_PROCESS_INFO,
                                              SERVICE_WIN32,
                                              SERVICE_STATE_ALL,
-                                             (LPBYTE)Info->pAllServices,
+                                             (LPBYTE)pServices,
                                              BytesNeeded,
                                              &BytesNeeded,
-                                             NumServices,
+                                             &NumServices,
                                              &ResumeHandle,
                                              0))
                     {
@@ -319,12 +336,35 @@ GetServiceList(PMAIN_WND_INFO Info,
     if (ScHandle)
         CloseServiceHandle(ScHandle);
 
-    if (!bRet)
+    Info->pAllServices = (ENUM_SERVICE_STATUS_PROCESS *)HeapAlloc(ProcessHeap,
+                                                                  HEAP_ZERO_MEMORY,
+                                                                  NumServices * sizeof(ENUM_SERVICE_STATUS_PROCESS));
+    if (Info->pAllServices != NULL)
     {
-        HeapFree(ProcessHeap,
-                 0,
-                 Info->pAllServices);
+        Info->NumServices = NumServices;
+
+        for (i = 0; i < NumServices; i++)
+        {
+            Info->pAllServices[i].lpServiceName = HeapAlloc(ProcessHeap,
+                                                            HEAP_ZERO_MEMORY,
+                                                            (wcslen(pServices[i].lpServiceName) + 1) * sizeof(WCHAR));
+            if (Info->pAllServices[i].lpServiceName)
+                wcscpy(Info->pAllServices[i].lpServiceName, pServices[i].lpServiceName);
+
+            Info->pAllServices[i].lpDisplayName = HeapAlloc(ProcessHeap,
+                                                            HEAP_ZERO_MEMORY,
+                                                            (wcslen(pServices[i].lpDisplayName) + 1) * sizeof(WCHAR));
+            if (Info->pAllServices[i].lpDisplayName)
+                wcscpy(Info->pAllServices[i].lpDisplayName, pServices[i].lpDisplayName);
+
+            CopyMemory(&Info->pAllServices[i].ServiceStatusProcess,
+                       &pServices[i].ServiceStatusProcess,
+                       sizeof(SERVICE_STATUS_PROCESS));
+        }
     }
+
+    if (pServices)
+        HeapFree(ProcessHeap, 0, pServices);
 
     return bRet;
 }
@@ -335,16 +375,16 @@ UpdateServiceStatus(ENUM_SERVICE_STATUS_PROCESS* pService)
     SC_HANDLE hScm;
     BOOL bRet = FALSE;
 
-    hScm = OpenSCManager(NULL,
-                             NULL,
-                             SC_MANAGER_ENUMERATE_SERVICE);
-    if (hScm != INVALID_HANDLE_VALUE)
+    hScm = OpenSCManagerW(NULL,
+                          NULL,
+                          SC_MANAGER_ENUMERATE_SERVICE);
+    if (hScm != NULL)
     {
         SC_HANDLE hService;
 
-        hService = OpenService(hScm,
-                               pService->lpServiceName,
-                               SERVICE_QUERY_STATUS);
+        hService = OpenServiceW(hScm,
+                                pService->lpServiceName,
+                                SERVICE_QUERY_STATUS);
         if (hService)
         {
             DWORD size;

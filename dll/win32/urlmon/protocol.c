@@ -298,6 +298,12 @@ HINTERNET get_internet_session(IInternetBindInfo *bind_info)
     return internet_session;
 }
 
+void update_user_agent(WCHAR *user_agent)
+{
+    if(internet_session)
+        InternetSetOptionW(internet_session, INTERNET_OPTION_USER_AGENT, user_agent, strlenW(user_agent));
+}
+
 HRESULT protocol_start(Protocol *protocol, IInternetProtocol *prot, IUri *uri,
         IInternetProtocolSink *protocol_sink, IInternetBindInfo *bind_info)
 {
@@ -385,13 +391,7 @@ HRESULT protocol_continue(Protocol *protocol, PROTOCOLDATA *data)
                 if(res) {
                     TRACE("available %u bytes\n", protocol->query_available);
                     if(!protocol->query_available) {
-                        if(is_start) {
-                            TRACE("empty file\n");
-                            all_data_read(protocol);
-                        }else {
-                            WARN("unexpected end of file?\n");
-                            report_result(protocol, INET_E_DOWNLOAD_FAILURE);
-                        }
+                        all_data_read(protocol);
                         return S_OK;
                     }
                     protocol->available_bytes = protocol->query_available;

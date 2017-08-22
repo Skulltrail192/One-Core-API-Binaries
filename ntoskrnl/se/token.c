@@ -123,7 +123,7 @@ SepUpdateSinglePrivilegeFlagToken(
     _In_ ULONG Index)
 {
     ULONG TokenFlag;
-    NT_ASSERT(Index < Token->PrivilegeCount);
+    ASSERT(Index < Token->PrivilegeCount);
 
     /* The high part of all values we are interested in is 0 */
     if (Token->Privileges[Index].Luid.HighPart != 0)
@@ -189,7 +189,7 @@ SepRemovePrivilegeToken(
     _In_ ULONG Index)
 {
     ULONG MoveCount;
-    NT_ASSERT(Index < Token->PrivilegeCount);
+    ASSERT(Index < Token->PrivilegeCount);
 
     /* Calculate the number of trailing privileges */
     MoveCount = Token->PrivilegeCount - Index - 1;
@@ -232,7 +232,7 @@ SeExchangePrimaryToken(PEPROCESS Process,
 
     PAGED_CODE();
 
-    if (NewToken->TokenType != TokenPrimary) return(STATUS_BAD_TOKEN_TYPE);
+    if (NewToken->TokenType != TokenPrimary) return STATUS_BAD_TOKEN_TYPE;
     if (NewToken->TokenInUse)
     {
         BOOLEAN IsEqual;
@@ -294,6 +294,9 @@ SeDeassignPrimaryToken(PEPROCESS Process)
 
     /* Mark the Old Token as free */
     OldToken->TokenInUse = 0;
+
+    /* Dereference the Token */
+    ObDereferenceObject(OldToken);
 }
 
 static ULONG
@@ -345,12 +348,12 @@ SepFindPrimaryGroupAndDefaultOwner(PTOKEN Token,
 
     if (Token->DefaultOwnerIndex == Token->UserAndGroupCount)
     {
-        return(STATUS_INVALID_OWNER);
+        return STATUS_INVALID_OWNER;
     }
 
     if (Token->PrimaryGroup == 0)
     {
-        return(STATUS_INVALID_PRIMARY_GROUP);
+        return STATUS_INVALID_PRIMARY_GROUP;
     }
 
     return STATUS_SUCCESS;
@@ -370,7 +373,7 @@ SepDuplicateToken(PTOKEN Token,
     ULONG uLength;
     ULONG i;
     PVOID EndMem;
-    PTOKEN AccessToken = NULL;
+    PTOKEN AccessToken;
     NTSTATUS Status;
 
     PAGED_CODE();
@@ -393,25 +396,17 @@ SepDuplicateToken(PTOKEN Token,
     /* Zero out the buffer */
     RtlZeroMemory(AccessToken, sizeof(TOKEN));
 
-    Status = ZwAllocateLocallyUniqueId(&AccessToken->TokenId);
-    if (!NT_SUCCESS(Status))
-    {
-        ObDereferenceObject(AccessToken);
-        return Status;
-    }
-
-    Status = ZwAllocateLocallyUniqueId(&AccessToken->ModifiedId);
-    if (!NT_SUCCESS(Status))
-    {
-        ObDereferenceObject(AccessToken);
-        return Status;
-    }
+    ExAllocateLocallyUniqueId(&AccessToken->TokenId);
 
     AccessToken->TokenLock = &SepTokenLock;
 
+    /* Copy and reference the logon session */
+    RtlCopyLuid(&AccessToken->AuthenticationId, &Token->AuthenticationId);
+    SepRmReferenceLogonSession(&AccessToken->AuthenticationId);
+
     AccessToken->TokenType  = TokenType;
     AccessToken->ImpersonationLevel = Level;
-    RtlCopyLuid(&AccessToken->AuthenticationId, &Token->AuthenticationId);
+    RtlCopyLuid(&AccessToken->ModifiedId, &Token->ModifiedId);
 
     AccessToken->TokenSource.SourceIdentifier.LowPart = Token->TokenSource.SourceIdentifier.LowPart;
     AccessToken->TokenSource.SourceIdentifier.HighPart = Token->TokenSource.SourceIdentifier.HighPart;
@@ -494,19 +489,8 @@ SepDuplicateToken(PTOKEN Token,
 done:
     if (!NT_SUCCESS(Status))
     {
-        if (AccessToken)
-        {
-            if (AccessToken->UserAndGroups)
-                ExFreePoolWithTag(AccessToken->UserAndGroups, TAG_TOKEN_USERS);
-
-            if (AccessToken->Privileges)
-                ExFreePoolWithTag(AccessToken->Privileges, TAG_TOKEN_PRIVILAGES);
-
-            if (AccessToken->DefaultDacl)
-                ExFreePoolWithTag(AccessToken->DefaultDacl, TAG_TOKEN_ACL);
-
-            ObDereferenceObject(AccessToken);
-        }
+        /* Dereference the token, the delete procedure will clean up */
+        ObDereferenceObject(AccessToken);
     }
 
     return Status;
@@ -620,6 +604,11 @@ SepDeleteToken(PVOID ObjectBody)
 {
     PTOKEN AccessToken = (PTOKEN)ObjectBody;
 
+    DPRINT("SepDeleteToken()\n");
+
+    /* Dereference the logon session */
+    SepRmDereferenceLogonSession(&AccessToken->AuthenticationId);
+
     if (AccessToken->UserAndGroups)
         ExFreePoolWithTag(AccessToken->UserAndGroups, TAG_TOKEN_USERS);
 
@@ -710,6 +699,8 @@ SepCreateToken(OUT PHANDLE TokenHandle,
     NTSTATUS Status;
     ULONG TokenFlags = 0;
 
+    PAGED_CODE();
+
     /* Loop all groups */
     for (i = 0; i < GroupCount; i++)
     {
@@ -728,13 +719,8 @@ SepCreateToken(OUT PHANDLE TokenHandle,
         }
     }
 
-    Status = ZwAllocateLocallyUniqueId(&TokenId);
-    if (!NT_SUCCESS(Status))
-        return Status;
-
-    Status = ZwAllocateLocallyUniqueId(&ModifiedId);
-    if (!NT_SUCCESS(Status))
-        return Status;
+    ExAllocateLocallyUniqueId(&TokenId);
+    ExAllocateLocallyUniqueId(&ModifiedId);
 
     Status = ObCreateObject(PreviousMode,
                             SeTokenObjectType,
@@ -762,8 +748,11 @@ SepCreateToken(OUT PHANDLE TokenHandle,
            TokenSource->SourceName,
            sizeof(TokenSource->SourceName));
 
-    RtlCopyLuid(&AccessToken->TokenId, &TokenId);
+    /* Copy and reference the logon session */
     RtlCopyLuid(&AccessToken->AuthenticationId, AuthenticationId);
+    SepRmReferenceLogonSession(&AccessToken->AuthenticationId);
+
+    RtlCopyLuid(&AccessToken->TokenId, &TokenId);
     AccessToken->ExpirationTime = *ExpirationTime;
     RtlCopyLuid(&AccessToken->ModifiedId, &ModifiedId);
 
@@ -905,11 +894,8 @@ SepCreateToken(OUT PHANDLE TokenHandle,
 done:
     if (!NT_SUCCESS(Status))
     {
-        if (AccessToken)
-        {
-            /* Dereference the token, the delete procedure will clean up */
-            ObDereferenceObject(AccessToken);
-        }
+        /* Dereference the token, the delete procedure will clean up */
+        ObDereferenceObject(AccessToken);
     }
 
     return Status;
@@ -1074,16 +1060,429 @@ SeFilterToken(IN PACCESS_TOKEN ExistingToken,
 }
 
 /*
- * @unimplemented
+ * @implemented
+ *
+ * NOTE: SeQueryInformationToken is just NtQueryInformationToken without all
+ * the bells and whistles needed for user-mode buffer access protection.
  */
 NTSTATUS
 NTAPI
-SeQueryInformationToken(IN PACCESS_TOKEN Token,
+SeQueryInformationToken(IN PACCESS_TOKEN AccessToken,
                         IN TOKEN_INFORMATION_CLASS TokenInformationClass,
                         OUT PVOID *TokenInformation)
 {
-    UNIMPLEMENTED;
-    return STATUS_NOT_IMPLEMENTED;
+    NTSTATUS Status;
+    PTOKEN Token = (PTOKEN)AccessToken;
+    ULONG RequiredLength;
+    union
+    {
+        PSID PSid;
+        ULONG Ulong;
+    } Unused;
+
+    PAGED_CODE();
+
+    if (TokenInformationClass >= MaxTokenInfoClass)
+    {
+        DPRINT1("SeQueryInformationToken(%d) invalid information class\n", TokenInformationClass);
+        return STATUS_INVALID_INFO_CLASS;
+    }
+
+    switch (TokenInformationClass)
+    {
+        case TokenUser:
+        {
+            PTOKEN_USER tu;
+
+            DPRINT("SeQueryInformationToken(TokenUser)\n");
+            RequiredLength = sizeof(TOKEN_USER) +
+                RtlLengthSid(Token->UserAndGroups[0].Sid);
+
+            /* Allocate the output buffer */
+            tu = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (tu == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            Status = RtlCopySidAndAttributesArray(1,
+                                                  &Token->UserAndGroups[0],
+                                                  RequiredLength - sizeof(TOKEN_USER),
+                                                  &tu->User,
+                                                  (PSID)(tu + 1),
+                                                  &Unused.PSid,
+                                                  &Unused.Ulong);
+
+            /* Return the structure */
+            *TokenInformation = tu;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        case TokenGroups:
+        {
+            PTOKEN_GROUPS tg;
+            ULONG SidLen;
+            PSID Sid;
+
+            DPRINT("SeQueryInformationToken(TokenGroups)\n");
+            RequiredLength = sizeof(tg->GroupCount) +
+                RtlLengthSidAndAttributes(Token->UserAndGroupCount - 1, &Token->UserAndGroups[1]);
+
+            SidLen = RequiredLength - sizeof(tg->GroupCount) -
+                ((Token->UserAndGroupCount - 1) * sizeof(SID_AND_ATTRIBUTES));
+
+            /* Allocate the output buffer */
+            tg = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (tg == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            Sid = (PSID)((ULONG_PTR)tg + sizeof(tg->GroupCount) +
+                         ((Token->UserAndGroupCount - 1) * sizeof(SID_AND_ATTRIBUTES)));
+
+            tg->GroupCount = Token->UserAndGroupCount - 1;
+            Status = RtlCopySidAndAttributesArray(Token->UserAndGroupCount - 1,
+                                                  &Token->UserAndGroups[1],
+                                                  SidLen,
+                                                  &tg->Groups[0],
+                                                  Sid,
+                                                  &Unused.PSid,
+                                                  &Unused.Ulong);
+
+            /* Return the structure */
+            *TokenInformation = tg;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        case TokenPrivileges:
+        {
+            PTOKEN_PRIVILEGES tp;
+
+            DPRINT("SeQueryInformationToken(TokenPrivileges)\n");
+            RequiredLength = sizeof(tp->PrivilegeCount) +
+                (Token->PrivilegeCount * sizeof(LUID_AND_ATTRIBUTES));
+
+            /* Allocate the output buffer */
+            tp = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (tp == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            tp->PrivilegeCount = Token->PrivilegeCount;
+            RtlCopyLuidAndAttributesArray(Token->PrivilegeCount,
+                                          Token->Privileges,
+                                          &tp->Privileges[0]);
+
+            /* Return the structure */
+            *TokenInformation = tp;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        case TokenOwner:
+        {
+            PTOKEN_OWNER to;
+            ULONG SidLen;
+
+            DPRINT("SeQueryInformationToken(TokenOwner)\n");
+            SidLen = RtlLengthSid(Token->UserAndGroups[Token->DefaultOwnerIndex].Sid);
+            RequiredLength = sizeof(TOKEN_OWNER) + SidLen;
+
+            /* Allocate the output buffer */
+            to = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (to == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            to->Owner = (PSID)(to + 1);
+            Status = RtlCopySid(SidLen,
+                                to->Owner,
+                                Token->UserAndGroups[Token->DefaultOwnerIndex].Sid);
+
+            /* Return the structure */
+            *TokenInformation = to;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        case TokenPrimaryGroup:
+        {
+            PTOKEN_PRIMARY_GROUP tpg;
+            ULONG SidLen;
+
+            DPRINT("SeQueryInformationToken(TokenPrimaryGroup)\n");
+            SidLen = RtlLengthSid(Token->PrimaryGroup);
+            RequiredLength = sizeof(TOKEN_PRIMARY_GROUP) + SidLen;
+
+            /* Allocate the output buffer */
+            tpg = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (tpg == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            tpg->PrimaryGroup = (PSID)(tpg + 1);
+            Status = RtlCopySid(SidLen,
+                                tpg->PrimaryGroup,
+                                Token->PrimaryGroup);
+
+            /* Return the structure */
+            *TokenInformation = tpg;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        case TokenDefaultDacl:
+        {
+            PTOKEN_DEFAULT_DACL tdd;
+
+            DPRINT("SeQueryInformationToken(TokenDefaultDacl)\n");
+            RequiredLength = sizeof(TOKEN_DEFAULT_DACL);
+
+            if (Token->DefaultDacl != NULL)
+                RequiredLength += Token->DefaultDacl->AclSize;
+
+            /* Allocate the output buffer */
+            tdd = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (tdd == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            if (Token->DefaultDacl != NULL)
+            {
+                tdd->DefaultDacl = (PACL)(tdd + 1);
+                RtlCopyMemory(tdd->DefaultDacl,
+                              Token->DefaultDacl,
+                              Token->DefaultDacl->AclSize);
+            }
+            else
+            {
+                tdd->DefaultDacl = NULL;
+            }
+
+            /* Return the structure */
+            *TokenInformation = tdd;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        case TokenSource:
+        {
+            PTOKEN_SOURCE ts;
+
+            DPRINT("SeQueryInformationToken(TokenSource)\n");
+            RequiredLength = sizeof(TOKEN_SOURCE);
+
+            /* Allocate the output buffer */
+            ts = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (ts == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            *ts = Token->TokenSource;
+
+            /* Return the structure */
+            *TokenInformation = ts;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        case TokenType:
+        {
+            PTOKEN_TYPE tt;
+
+            DPRINT("SeQueryInformationToken(TokenType)\n");
+            RequiredLength = sizeof(TOKEN_TYPE);
+
+            /* Allocate the output buffer */
+            tt = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (tt == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            *tt = Token->TokenType;
+
+            /* Return the structure */
+            *TokenInformation = tt;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        case TokenImpersonationLevel:
+        {
+            PSECURITY_IMPERSONATION_LEVEL sil;
+
+            DPRINT("SeQueryInformationToken(TokenImpersonationLevel)\n");
+            RequiredLength = sizeof(SECURITY_IMPERSONATION_LEVEL);
+
+            /* Fail if the token is not an impersonation token */
+            if (Token->TokenType != TokenImpersonation)
+            {
+                Status = STATUS_INVALID_INFO_CLASS;
+                break;
+            }
+
+            /* Allocate the output buffer */
+            sil = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (sil == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            *sil = Token->ImpersonationLevel;
+
+            /* Return the structure */
+            *TokenInformation = sil;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        case TokenStatistics:
+        {
+            PTOKEN_STATISTICS ts;
+
+            DPRINT("SeQueryInformationToken(TokenStatistics)\n");
+            RequiredLength = sizeof(TOKEN_STATISTICS);
+
+            /* Allocate the output buffer */
+            ts = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (ts == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            ts->TokenId = Token->TokenId;
+            ts->AuthenticationId = Token->AuthenticationId;
+            ts->ExpirationTime = Token->ExpirationTime;
+            ts->TokenType = Token->TokenType;
+            ts->ImpersonationLevel = Token->ImpersonationLevel;
+            ts->DynamicCharged = Token->DynamicCharged;
+            ts->DynamicAvailable = Token->DynamicAvailable;
+            ts->GroupCount = Token->UserAndGroupCount - 1;
+            ts->PrivilegeCount = Token->PrivilegeCount;
+            ts->ModifiedId = Token->ModifiedId;
+
+            /* Return the structure */
+            *TokenInformation = ts;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+/*
+ * The following 4 cases are only implemented in NtQueryInformationToken
+ */
+#if 0
+
+        case TokenOrigin:
+        {
+            PTOKEN_ORIGIN to;
+
+            DPRINT("SeQueryInformationToken(TokenOrigin)\n");
+            RequiredLength = sizeof(TOKEN_ORIGIN);
+
+            /* Allocate the output buffer */
+            to = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (to == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            RtlCopyLuid(&to->OriginatingLogonSession,
+                        &Token->AuthenticationId);
+
+            /* Return the structure */
+            *TokenInformation = to;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        case TokenGroupsAndPrivileges:
+            DPRINT1("SeQueryInformationToken(TokenGroupsAndPrivileges) not implemented\n");
+            Status = STATUS_NOT_IMPLEMENTED;
+            break;
+
+        case TokenRestrictedSids:
+        {
+            PTOKEN_GROUPS tg = (PTOKEN_GROUPS)TokenInformation;
+            ULONG SidLen;
+            PSID Sid;
+
+            DPRINT("SeQueryInformationToken(TokenRestrictedSids)\n");
+            RequiredLength = sizeof(tg->GroupCount) +
+            RtlLengthSidAndAttributes(Token->RestrictedSidCount, Token->RestrictedSids);
+
+            SidLen = RequiredLength - sizeof(tg->GroupCount) -
+                (Token->RestrictedSidCount * sizeof(SID_AND_ATTRIBUTES));
+
+            /* Allocate the output buffer */
+            tg = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_SE);
+            if (tg == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            }
+
+            Sid = (PSID)((ULONG_PTR)tg + sizeof(tg->GroupCount) +
+                         (Token->RestrictedSidCount * sizeof(SID_AND_ATTRIBUTES)));
+
+            tg->GroupCount = Token->RestrictedSidCount;
+            Status = RtlCopySidAndAttributesArray(Token->RestrictedSidCount,
+                                                  Token->RestrictedSids,
+                                                  SidLen,
+                                                  &tg->Groups[0],
+                                                  Sid,
+                                                  &Unused.PSid,
+                                                  &Unused.Ulong);
+
+            /* Return the structure */
+            *TokenInformation = tg;
+            Status = STATUS_SUCCESS;
+            break;
+        }
+
+        case TokenSandBoxInert:
+            DPRINT1("SeQueryInformationToken(TokenSandboxInert) not implemented\n");
+            Status = STATUS_NOT_IMPLEMENTED;
+            break;
+
+#endif
+
+        case TokenSessionId:
+        {
+            DPRINT("SeQueryInformationToken(TokenSessionId)\n");
+
+            Status = SeQuerySessionIdToken(Token, (PULONG)TokenInformation);
+
+            // Status = STATUS_SUCCESS;
+            break;
+        }
+
+        default:
+            DPRINT1("SeQueryInformationToken(%d) invalid information class\n", TokenInformationClass);
+            Status = STATUS_INVALID_INFO_CLASS;
+            break;
+    }
+
+    return Status;
 }
 
 /*
@@ -1187,15 +1586,15 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
                         IN ULONG TokenInformationLength,
                         OUT PULONG ReturnLength)
 {
-    union
-    {
-        PVOID Ptr;
-        ULONG Ulong;
-    } Unused;
+    NTSTATUS Status;
+    KPROCESSOR_MODE PreviousMode;
     PTOKEN Token;
     ULONG RequiredLength;
-    KPROCESSOR_MODE PreviousMode;
-    NTSTATUS Status;
+    union
+    {
+        PSID PSid;
+        ULONG Ulong;
+    } Unused;
 
     PAGED_CODE();
 
@@ -1204,7 +1603,7 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
     /* Check buffers and class validity */
     Status = DefaultQueryInfoBufferCheck(TokenInformationClass,
                                          SeTokenInformationClass,
-                                         sizeof(SeTokenInformationClass) / sizeof(SeTokenInformationClass[0]),
+                                         RTL_NUMBER_OF(SeTokenInformationClass),
                                          TokenInformation,
                                          TokenInformationLength,
                                          ReturnLength,
@@ -1232,7 +1631,7 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
 
                 DPRINT("NtQueryInformationToken(TokenUser)\n");
                 RequiredLength = sizeof(TOKEN_USER) +
-                RtlLengthSid(Token->UserAndGroups[0].Sid);
+                    RtlLengthSid(Token->UserAndGroups[0].Sid);
 
                 _SEH2_TRY
                 {
@@ -1243,7 +1642,7 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
                                                               RequiredLength - sizeof(TOKEN_USER),
                                                               &tu->User,
                                                               (PSID)(tu + 1),
-                                                              &Unused.Ptr,
+                                                              &Unused.PSid,
                                                               &Unused.Ulong);
                     }
                     else
@@ -1271,24 +1670,24 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
 
                 DPRINT("NtQueryInformationToken(TokenGroups)\n");
                 RequiredLength = sizeof(tg->GroupCount) +
-                RtlLengthSidAndAttributes(Token->UserAndGroupCount - 1, &Token->UserAndGroups[1]);
+                    RtlLengthSidAndAttributes(Token->UserAndGroupCount - 1, &Token->UserAndGroups[1]);
 
                 _SEH2_TRY
                 {
                     if (TokenInformationLength >= RequiredLength)
                     {
                         ULONG SidLen = RequiredLength - sizeof(tg->GroupCount) -
-                        ((Token->UserAndGroupCount - 1) * sizeof(SID_AND_ATTRIBUTES));
-                        PSID_AND_ATTRIBUTES Sid = (PSID_AND_ATTRIBUTES)((ULONG_PTR)TokenInformation + sizeof(tg->GroupCount) +
-                                                                        ((Token->UserAndGroupCount - 1) * sizeof(SID_AND_ATTRIBUTES)));
+                            ((Token->UserAndGroupCount - 1) * sizeof(SID_AND_ATTRIBUTES));
+                        PSID Sid = (PSID_AND_ATTRIBUTES)((ULONG_PTR)tg + sizeof(tg->GroupCount) +
+                                                         ((Token->UserAndGroupCount - 1) * sizeof(SID_AND_ATTRIBUTES)));
 
                         tg->GroupCount = Token->UserAndGroupCount - 1;
                         Status = RtlCopySidAndAttributesArray(Token->UserAndGroupCount - 1,
                                                               &Token->UserAndGroups[1],
                                                               SidLen,
                                                               &tg->Groups[0],
-                                                              (PSID)Sid,
-                                                              &Unused.Ptr,
+                                                              Sid,
+                                                              &Unused.PSid,
                                                               &Unused.Ulong);
                     }
                     else
@@ -1316,7 +1715,7 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
 
                 DPRINT("NtQueryInformationToken(TokenPrivileges)\n");
                 RequiredLength = sizeof(tp->PrivilegeCount) +
-                (Token->PrivilegeCount * sizeof(LUID_AND_ATTRIBUTES));
+                    (Token->PrivilegeCount * sizeof(LUID_AND_ATTRIBUTES));
 
                 _SEH2_TRY
                 {
@@ -1348,8 +1747,8 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
 
             case TokenOwner:
             {
-                ULONG SidLen;
                 PTOKEN_OWNER to = (PTOKEN_OWNER)TokenInformation;
+                ULONG SidLen;
 
                 DPRINT("NtQueryInformationToken(TokenOwner)\n");
                 SidLen = RtlLengthSid(Token->UserAndGroups[Token->DefaultOwnerIndex].Sid);
@@ -1385,8 +1784,8 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
 
             case TokenPrimaryGroup:
             {
-                ULONG SidLen;
                 PTOKEN_PRIMARY_GROUP tpg = (PTOKEN_PRIMARY_GROUP)TokenInformation;
+                ULONG SidLen;
 
                 DPRINT("NtQueryInformationToken(TokenPrimaryGroup)\n");
                 SidLen = RtlLengthSid(Token->PrimaryGroup);
@@ -1428,9 +1827,7 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
                 RequiredLength = sizeof(TOKEN_DEFAULT_DACL);
 
                 if (Token->DefaultDacl != NULL)
-                {
                     RequiredLength += Token->DefaultDacl->AclSize;
-                }
 
                 _SEH2_TRY
                 {
@@ -1663,17 +2060,17 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
                     if (TokenInformationLength >= RequiredLength)
                     {
                         ULONG SidLen = RequiredLength - sizeof(tg->GroupCount) -
-                        (Token->RestrictedSidCount * sizeof(SID_AND_ATTRIBUTES));
-                        PSID_AND_ATTRIBUTES Sid = (PSID_AND_ATTRIBUTES)((ULONG_PTR)TokenInformation + sizeof(tg->GroupCount) +
-                                                                        (Token->RestrictedSidCount * sizeof(SID_AND_ATTRIBUTES)));
+                            (Token->RestrictedSidCount * sizeof(SID_AND_ATTRIBUTES));
+                        PSID Sid = (PSID)((ULONG_PTR)tg + sizeof(tg->GroupCount) +
+                                          (Token->RestrictedSidCount * sizeof(SID_AND_ATTRIBUTES)));
 
                         tg->GroupCount = Token->RestrictedSidCount;
                         Status = RtlCopySidAndAttributesArray(Token->RestrictedSidCount,
                                                               Token->RestrictedSids,
                                                               SidLen,
                                                               &tg->Groups[0],
-                                                              (PSID)Sid,
-                                                              &Unused.Ptr,
+                                                              Sid,
+                                                              &Unused.PSid,
                                                               &Unused.Ulong);
                     }
                     else
@@ -1706,14 +2103,12 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
 
                 DPRINT("NtQueryInformationToken(TokenSessionId)\n");
 
-                Status = SeQuerySessionIdToken(Token,
-                                               &SessionId);
-
+                Status = SeQuerySessionIdToken(Token, &SessionId);
                 if (NT_SUCCESS(Status))
                 {
                     _SEH2_TRY
                     {
-                        /* buffer size was already verified, no need to check here again */
+                        /* Buffer size was already verified, no need to check here again */
                         *(PULONG)TokenInformation = SessionId;
 
                         if (ReturnLength != NULL)
@@ -1753,7 +2148,7 @@ NtQueryInformationToken(IN HANDLE TokenHandle,
 NTSTATUS NTAPI
 NtSetInformationToken(IN HANDLE TokenHandle,
                       IN TOKEN_INFORMATION_CLASS TokenInformationClass,
-                      OUT PVOID TokenInformation,
+                      IN PVOID TokenInformation,
                       IN ULONG TokenInformationLength)
 {
     PTOKEN Token;
@@ -1767,7 +2162,7 @@ NtSetInformationToken(IN HANDLE TokenHandle,
 
     Status = DefaultSetInfoBufferCheck(TokenInformationClass,
                                        SeTokenInformationClass,
-                                       sizeof(SeTokenInformationClass) / sizeof(SeTokenInformationClass[0]),
+                                       RTL_NUMBER_OF(SeTokenInformationClass),
                                        TokenInformation,
                                        TokenInformationLength,
                                        PreviousMode);
@@ -1807,7 +2202,7 @@ NtSetInformationToken(IN HANDLE TokenHandle,
                     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
                     {
                         Status = _SEH2_GetExceptionCode();
-                        goto Cleanup;
+                        _SEH2_YIELD(goto Cleanup);
                     }
                     _SEH2_END;
 
@@ -1847,7 +2242,7 @@ NtSetInformationToken(IN HANDLE TokenHandle,
                     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
                     {
                         Status = _SEH2_GetExceptionCode();
-                        goto Cleanup;
+                        _SEH2_YIELD(goto Cleanup);
                     }
                     _SEH2_END;
 
@@ -1887,7 +2282,7 @@ NtSetInformationToken(IN HANDLE TokenHandle,
                     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
                     {
                         Status = _SEH2_GetExceptionCode();
-                        goto Cleanup;
+                        _SEH2_YIELD(goto Cleanup);
                     }
                     _SEH2_END;
 
@@ -1909,8 +2304,20 @@ NtSetInformationToken(IN HANDLE TokenHandle,
                                 ExFreePoolWithTag(Token->DefaultDacl, TAG_TOKEN_ACL);
                             }
 
-                            /* Set the new dacl */
-                            Token->DefaultDacl = CapturedAcl;
+                            Token->DefaultDacl = ExAllocatePoolWithTag(PagedPool,
+                                                                       CapturedAcl->AclSize,
+                                                                       TAG_TOKEN_ACL);
+                            if (!Token->DefaultDacl)
+                            {
+                                ExFreePoolWithTag(CapturedAcl, TAG_ACL);
+                                Status = STATUS_NO_MEMORY;
+                            }
+                            else
+                            {
+                                /* Set the new dacl */
+                                RtlCopyMemory(Token->DefaultDacl, CapturedAcl, CapturedAcl->AclSize);
+                                ExFreePoolWithTag(CapturedAcl, TAG_ACL);
+                            }
                         }
                     }
                     else
@@ -1942,7 +2349,7 @@ NtSetInformationToken(IN HANDLE TokenHandle,
                 _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
                 {
                     Status = _SEH2_GetExceptionCode();
-                    goto Cleanup;
+                    _SEH2_YIELD(goto Cleanup);
                 }
                 _SEH2_END;
 
@@ -1969,7 +2376,7 @@ NtSetInformationToken(IN HANDLE TokenHandle,
                 _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
                 {
                     Status = _SEH2_GetExceptionCode();
-                    goto Cleanup;
+                    _SEH2_YIELD(goto Cleanup);
                 }
                 _SEH2_END;
 
@@ -2053,7 +2460,7 @@ NtSetInformationToken(IN HANDLE TokenHandle,
                 _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
                 {
                     Status = _SEH2_GetExceptionCode();
-                    goto Cleanup;
+                    _SEH2_YIELD(goto Cleanup);
                 }
                 _SEH2_END;
 
@@ -2088,7 +2495,7 @@ NtSetInformationToken(IN HANDLE TokenHandle,
                 _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
                 {
                     Status = _SEH2_GetExceptionCode();
-                    goto Cleanup;
+                    _SEH2_YIELD(goto Cleanup);
                 }
                 _SEH2_END;
 
@@ -2142,14 +2549,16 @@ Cleanup:
  * @implemented
  *
  * NOTE: Some sources claim 4th param is ImpersonationLevel, but on W2K
- * this is certainly NOT true, thou i can't say for sure that EffectiveOnly
+ * this is certainly NOT true, although I can't say for sure that EffectiveOnly
  * is correct either. -Gunnar
  * This is true. EffectiveOnly overrides SQOS.EffectiveOnly. - IAI
+ * NOTE for readers: http://hex.pp.ua/nt/NtDuplicateToken.php is therefore
+ * wrong in that regard.
  */
 NTSTATUS NTAPI
 NtDuplicateToken(IN HANDLE ExistingTokenHandle,
                  IN ACCESS_MASK DesiredAccess,
-                 IN POBJECT_ATTRIBUTES ObjectAttributes  OPTIONAL,
+                 IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL,
                  IN BOOLEAN EffectiveOnly,
                  IN TOKEN_TYPE TokenType,
                  OUT PHANDLE NewTokenHandle)
@@ -2293,7 +2702,7 @@ NtAdjustGroupsToken(IN HANDLE TokenHandle,
                     OUT PULONG ReturnLength)
 {
     UNIMPLEMENTED;
-    return(STATUS_NOT_IMPLEMENTED);
+    return STATUS_NOT_IMPLEMENTED;
 }
 
 
@@ -2556,7 +2965,7 @@ NtAdjustPrivilegesToken(
         {
             /* Do cleanup and return the exception code */
             Status = _SEH2_GetExceptionCode();
-            goto Cleanup;
+            _SEH2_YIELD(goto Cleanup);
         }
         _SEH2_END;
 
@@ -2584,7 +2993,7 @@ NtAdjustPrivilegesToken(
     {
         /* Do cleanup and return the exception code */
         Status = _SEH2_GetExceptionCode();
-        goto Cleanup;
+        _SEH2_YIELD(goto Cleanup);
     }
     _SEH2_END;
 
@@ -2714,7 +3123,7 @@ NtCreateToken(
         _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
         {
             /* Return the exception code */
-            return _SEH2_GetExceptionCode();
+            _SEH2_YIELD(return _SEH2_GetExceptionCode());
         }
         _SEH2_END;
     }
@@ -2817,6 +3226,10 @@ NtCreateToken(
                                NonPagedPool,
                                FALSE,
                                &CapturedDefaultDacl);
+        if (!NT_SUCCESS(Status))
+        {
+            goto Cleanup;
+        }
     }
 
     /* Call the internal function */
@@ -2907,10 +3320,12 @@ NtOpenThreadTokenEx(IN HANDLE ThreadHandle,
         _SEH2_END;
     }
 
+    /* Validate object attributes */
+    HandleAttributes = ObpValidateAttributes(HandleAttributes, PreviousMode);
+
     /*
      * At first open the thread token for information access and verify
-     * that the token associated with thread is valid.
-     */
+     * that the token associated with thread is valid.     */
 
     Status = ObReferenceObjectByHandle(ThreadHandle, THREAD_QUERY_INFORMATION,
                                        PsThreadType, PreviousMode, (PVOID*)&Thread,
@@ -3008,6 +3423,8 @@ NtOpenThreadTokenEx(IN HANDLE ThreadHandle,
     if (NewToken) ObDereferenceObject(NewToken);
 
     if (CopyOnOpen && NewThread) ObDereferenceObject(NewThread);
+
+    ObDereferenceObject(Thread);
 
     if (NT_SUCCESS(Status))
     {

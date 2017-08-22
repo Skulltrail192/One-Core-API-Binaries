@@ -17,7 +17,7 @@
  *
  *
  * PROJECT:         ReactOS kernel
- * FILE:            ntoskrnl/mm/section/fault.c
+ * FILE:            ntoskrnl/cache/section/swapout.c
  * PURPOSE:         Consolidate fault handlers for sections
  *
  * PROGRAMMERS:     Arty
@@ -289,7 +289,8 @@ MmPageOutCacheSection(PMMSUPPORT AddressSpace,
     PMM_SECTION_SEGMENT Segment;
     PVOID PAddress = MM_ROUND_DOWN(Address, PAGE_SIZE);
 
-    TotalOffset.QuadPart = (ULONG_PTR)PAddress - (ULONG_PTR)MemoryArea->StartingAddress +
+    TotalOffset.QuadPart = (ULONG_PTR)PAddress -
+                           MA_GetStartingAddress(MemoryArea) +
                            MemoryArea->Data.SectionData.ViewOffset.QuadPart;
 
     Segment = MemoryArea->Data.SectionData.Segment;
@@ -456,8 +457,8 @@ MmpPageOutPhysicalAddress(PFN_NUMBER Page)
 
             DPRINTC("Type %x (%p -> %p)\n",
                     MemoryArea->Type,
-                    MemoryArea->StartingAddress,
-                    MemoryArea->EndingAddress);
+                    MA_GetStartingAddress(MemoryArea),
+                    MA_GetEndingAddress(MemoryArea));
 
             Resources.DoAcquisition = NULL;
             Resources.Page[0] = Page;

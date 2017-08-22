@@ -3,6 +3,7 @@
  *
  * Copyright 1997 Dimitrie O. Paun
  * Copyright 1998,2000 Eric Kohl
+ * Copyright 2014-2015 Michael Müller
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,19 +60,6 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(commctrl);
 
-#define NAME       L"microsoft.windows.common-controls"
-#define VERSION    L"6.0.2600.2982"
-#define PUBLIC_KEY L"6595b64144ccf1df"
-
-#ifdef __i386__
-#define ARCH L"x86"
-#elif defined __x86_64__
-#define ARCH L"amd64"
-#else
-#define ARCH L"none"
-#endif
-
-static const WCHAR manifest_filename[] = ARCH L"_" NAME L"_" PUBLIC_KEY L"_" VERSION L"_none_deadbeef.manifest";
 
 static LRESULT WINAPI COMCTL32_SubclassProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -93,17 +81,69 @@ static const WCHAR strCC32SubclassInfo[] = {
     'C','C','3','2','S','u','b','c','l','a','s','s','I','n','f','o',0
 };
 
-static BOOL create_manifest(BOOL install)
+#ifdef __REACTOS__
+
+#include <strsafe.h>
+
+#define NAME       L"microsoft.windows.common-controls"
+#define VERSION_V5 L"5.82.2600.2982"
+#define VERSION    L"6.0.2600.2982"
+#define PUBLIC_KEY L"6595b64144ccf1df"
+
+#ifdef __i386__
+#define ARCH L"x86"
+#elif defined __x86_64__
+#define ARCH L"amd64"
+#else
+#define ARCH L"none"
+#endif
+
+static const WCHAR manifest_filename[] = ARCH L"_" NAME L"_" PUBLIC_KEY L"_" VERSION L"_none_deadbeef.manifest";
+static const WCHAR manifest_filename_v5[] = ARCH L"_" NAME L"_" PUBLIC_KEY L"_" VERSION_V5 L"_none_deadbeef.manifest";
+
+static WCHAR* GetManifestPath(BOOL create, BOOL bV6)
+{
+    WCHAR *pwszBuf;
+    HRESULT hres;
+
+    pwszBuf = HeapAlloc(GetProcessHeap(), 0, MAX_PATH * sizeof(WCHAR));
+    if (!pwszBuf)
+        return NULL;
+
+    GetWindowsDirectoryW(pwszBuf, MAX_PATH);
+    hres = StringCchCatW(pwszBuf, MAX_PATH, L"\\winsxs");
+    if (FAILED(hres))
+        return NULL;
+    if (create)
+        CreateDirectoryW(pwszBuf, NULL);
+    hres = StringCchCatW(pwszBuf, MAX_PATH, L"\\manifests\\");
+    if (FAILED(hres))
+        return NULL;
+    if (create)
+        CreateDirectoryW(pwszBuf, NULL);
+
+    hres = StringCchCatW(pwszBuf, MAX_PATH, bV6 ? manifest_filename : manifest_filename_v5);
+    if (FAILED(hres))
+        return NULL;
+
+    return pwszBuf;
+}
+
+static BOOL create_manifest(BOOL install, BOOL bV6)
 {
     WCHAR *pwszBuf;
     HRSRC hResInfo;
     HGLOBAL hResData;
     PVOID pManifest;
-    DWORD cchBuf, cbManifest, cbWritten;
+    DWORD cbManifest, cbWritten;
     HANDLE hFile;
     BOOL bRet = FALSE;
 
-    hResInfo = FindResourceW(COMCTL32_hModule, L"WINE_MANIFEST", (LPWSTR)RT_MANIFEST);
+    if (bV6)
+        hResInfo = FindResourceW(COMCTL32_hModule, L"WINE_MANIFEST", (LPWSTR)RT_MANIFEST);
+    else
+        hResInfo = FindResourceW(COMCTL32_hModule, L"WINE_MANIFESTV5", (LPWSTR)RT_MANIFEST);
+
     if (!hResInfo)
         return FALSE;
 
@@ -119,17 +159,10 @@ static BOOL create_manifest(BOOL install)
     if (!pManifest)
         return FALSE;
 
-    cchBuf = GetWindowsDirectoryW(NULL, 0) * sizeof(WCHAR) + sizeof(L"\\winsxs\\manifests\\") + sizeof(manifest_filename);
-    pwszBuf = (WCHAR*)HeapAlloc(GetProcessHeap(), 0, cchBuf * sizeof(WCHAR));
+    pwszBuf = GetManifestPath(TRUE, bV6);
     if (!pwszBuf)
         return FALSE;
 
-    GetWindowsDirectoryW(pwszBuf, cchBuf);
-    lstrcatW(pwszBuf, L"\\winsxs");
-    CreateDirectoryW(pwszBuf, NULL);
-    lstrcatW(pwszBuf, L"\\manifests\\");
-    CreateDirectoryW(pwszBuf, NULL);
-    lstrcatW(pwszBuf, manifest_filename);
     if (install)
     {
         hFile = CreateFileW(pwszBuf, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
@@ -154,6 +187,153 @@ static BOOL create_manifest(BOOL install)
     return bRet;
 }
 
+static HANDLE CreateComctl32ActCtx(BOOL bV6)
+{
+    HANDLE ret;
+    WCHAR* pwstrSource;
+    ACTCTXW ActCtx = {sizeof(ACTCTX)};
+
+    pwstrSource = GetManifestPath(FALSE, bV6);
+    if (!pwstrSource)
+    {
+        ERR("GetManifestPath failed! bV6=%d\n", bV6);
+        return INVALID_HANDLE_VALUE;
+    }
+    ActCtx.lpSource = pwstrSource;
+    ret = CreateActCtxW(&ActCtx);
+    HeapFree(GetProcessHeap(), 0, pwstrSource);
+    if (ret == INVALID_HANDLE_VALUE)
+        ERR("CreateActCtxW failed! bV6=%d\n", bV6);
+    return ret;
+}
+
+static void RegisterControls(BOOL bV6)
+{
+    ANIMATE_Register ();
+    COMBOEX_Register ();
+    DATETIME_Register ();
+    FLATSB_Register ();
+    HEADER_Register ();
+    HOTKEY_Register ();
+    IPADDRESS_Register ();
+    LISTVIEW_Register ();
+    MONTHCAL_Register ();
+    NATIVEFONT_Register ();
+    PAGER_Register ();
+    PROGRESS_Register ();
+    REBAR_Register ();
+    STATUS_Register ();
+    SYSLINK_Register ();
+    TAB_Register ();
+    TOOLTIPS_Register ();
+    TRACKBAR_Register ();
+    TREEVIEW_Register ();
+    UPDOWN_Register ();
+
+    if (!bV6)
+    {
+        TOOLBAR_Register ();
+    }
+    else
+    {
+        BUTTON_Register();
+        TOOLBARv6_Register();
+    }
+}
+
+static void UnregisterControls(BOOL bV6)
+{
+    ANIMATE_Unregister ();
+    COMBOEX_Unregister ();
+    DATETIME_Unregister ();
+    FLATSB_Unregister ();
+    HEADER_Unregister ();
+    HOTKEY_Unregister ();
+    IPADDRESS_Unregister ();
+    LISTVIEW_Unregister ();
+    MONTHCAL_Unregister ();
+    NATIVEFONT_Unregister ();
+    PAGER_Unregister ();
+    PROGRESS_Unregister ();
+    REBAR_Unregister ();
+    STATUS_Unregister ();
+    SYSLINK_Unregister ();
+    TAB_Unregister ();
+    TOOLTIPS_Unregister ();
+    TRACKBAR_Unregister ();
+    TREEVIEW_Unregister ();
+    UPDOWN_Unregister ();
+
+    if (!bV6)
+    {
+        TOOLBAR_Unregister ();
+    }
+    else
+    {
+        BUTTON_Unregister();
+        TOOLBARv6_Unregister ();
+    }
+
+}
+
+static void InitializeClasses()
+{
+    HANDLE hActCtx5, hActCtx6;
+    BOOL activated;
+    ULONG_PTR ulCookie;
+
+    /* like comctl32 5.82+ register all the common control classes */
+    /* Register the classes once no matter what */
+    hActCtx5 = CreateComctl32ActCtx(FALSE);
+    activated = (hActCtx5 != INVALID_HANDLE_VALUE ? ActivateActCtx(hActCtx5, &ulCookie) : FALSE);
+    RegisterControls(FALSE);      /* Register the classes pretending to be v5 */
+    if (activated) DeactivateActCtx(0, ulCookie);
+
+    hActCtx6 = CreateComctl32ActCtx(TRUE);
+    if (hActCtx6 != INVALID_HANDLE_VALUE)
+    {
+        activated = ActivateActCtx(hActCtx6, &ulCookie);
+        RegisterControls(TRUE);      /* Register the classes pretending to be v6 */
+        if (activated) DeactivateActCtx(0, ulCookie);
+
+        /* Initialize the themed controls only when the v6 manifest is present */
+        THEMING_Initialize (hActCtx5, hActCtx6);
+    }
+}
+
+static void UninitializeClasses()
+{
+    HANDLE hActCtx5, hActCtx6;
+    BOOL activated;
+    ULONG_PTR ulCookie;
+
+    hActCtx5 = CreateComctl32ActCtx(FALSE);
+    activated = (hActCtx5 != INVALID_HANDLE_VALUE ? ActivateActCtx(hActCtx5, &ulCookie) : FALSE);
+    UnregisterControls(FALSE);
+    if (activated) DeactivateActCtx(0, ulCookie);
+
+    hActCtx6 = CreateComctl32ActCtx(TRUE);
+    if (hActCtx6 != INVALID_HANDLE_VALUE)
+    {
+        activated = ActivateActCtx(hActCtx6, &ulCookie);
+        THEMING_Uninitialize();
+        UnregisterControls(TRUE);
+        if (activated) DeactivateActCtx(0, ulCookie);
+    }
+}
+
+/***********************************************************************
+ * RegisterClassNameW [COMCTL32.@]
+ *
+ * Register window class again while using as SxS module.
+ */
+BOOLEAN WINAPI RegisterClassNameW(LPCWSTR className)
+{
+    InitializeClasses();
+    return TRUE;
+}
+
+#endif
 
 /***********************************************************************
  * DllMain [Internal]
@@ -191,6 +371,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 	    /* Get all the colors at DLL load */
 	    COMCTL32_RefreshSysColors();
 
+#ifndef __REACTOS__
             /* like comctl32 5.82+ register all the common control classes */
             ANIMATE_Register ();
             COMBOEX_Register ();
@@ -216,10 +397,15 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
             /* subclass user32 controls */
             THEMING_Initialize ();
+#else
+            InitializeClasses();
+#endif
+
             break;
 
 	case DLL_PROCESS_DETACH:
             if (lpvReserved) break;
+#ifndef __REACTOS__
             /* clean up subclassing */
             THEMING_Uninitialize();
 
@@ -245,7 +431,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
             TRACKBAR_Unregister ();
             TREEVIEW_Unregister ();
             UPDOWN_Unregister ();
-
+#else
+            UninitializeClasses();
+#endif
             /* delete local pattern brush */
             DeleteObject (COMCTL32_hPattern55AABrush);
             DeleteObject (COMCTL32_hPattern55AABitmap);
@@ -990,11 +1178,21 @@ HRESULT WINAPI DllGetVersion (DLLVERSIONINFO *pdvi)
 HRESULT WINAPI DllInstall(BOOL bInstall, LPCWSTR cmdline)
 {
     TRACE("(%u, %s): stub\n", bInstall, debugstr_w(cmdline));
-    if (!create_manifest(bInstall))
+
+#ifdef __REACTOS__
+
+    if (!create_manifest(bInstall, TRUE))
     {
-        ERR("create_manifest failed!\n");
+        ERR("Failed to install comctl32 v6 manifest!\n");
         return HRESULT_FROM_WIN32(GetLastError());
     }
+
+    if (!create_manifest(bInstall, FALSE))
+    {
+        ERR("Failed to install comctl32 v5 manifest!\n");
+        return HRESULT_FROM_WIN32(GetLastError());
+    }
+#endif
 
     return S_OK;
 }
@@ -1152,7 +1350,7 @@ BOOL WINAPI SetWindowSubclass (HWND hWnd, SUBCLASSPROC pfnSubclass,
  * Gets the Reference data from a subclass.
  *
  * PARAMS
- *     hWnd [in] Handle to window which were subclassing
+ *     hWnd [in] Handle to the window which we are subclassing
  *     pfnSubclass [in] Pointer to the subclass procedure
  *     uID [in] Unique identifier of the subclassing procedure
  *     pdwRef [out] Pointer to the reference data
@@ -1195,7 +1393,7 @@ BOOL WINAPI GetWindowSubclass (HWND hWnd, SUBCLASSPROC pfnSubclass,
  * Removes a window subclass.
  *
  * PARAMS
- *     hWnd [in] Handle to the window were subclassing
+ *     hWnd [in] Handle to the window which we are subclassing
  *     pfnSubclass [in] Pointer to the subclass procedure
  *     uID [in] Unique identifier of this subclass
  *
@@ -1770,52 +1968,49 @@ int WINAPI DrawShadowText(HDC hdc, LPCWSTR pszText, UINT cch, RECT *prc, DWORD d
 }
 
 /***********************************************************************
- * TaskDialogIndirect [COMCTL32.@]
+ * LoadIconWithScaleDown [COMCTL32.@]
  */
-HRESULT WINAPI TaskDialogIndirect(const TASKDIALOGCONFIG *pTaskConfig, int *pnButton,
-                                  int *pnRadioButton, BOOL *pfVerificationFlagChecked)
+HRESULT WINAPI LoadIconWithScaleDown(HINSTANCE hinst, const WCHAR *name, int cx, int cy, HICON *icon)
 {
-    UINT uType = 0;
-    INT  ret;
-    FIXME("%p, %p, %p, %p\n", pTaskConfig, pnButton, pnRadioButton, pfVerificationFlagChecked);
+    TRACE("(%p, %s, %d, %d, %p)\n", hinst, debugstr_w(name), cx, cy, icon);
 
-    if (pTaskConfig->dwCommonButtons & TDCBF_YES_BUTTON &&
-        pTaskConfig->dwCommonButtons & TDCBF_NO_BUTTON &&
-        pTaskConfig->dwCommonButtons & TDCBF_CANCEL_BUTTON)
-        uType |= MB_YESNOCANCEL;
-    else
-    if (pTaskConfig->dwCommonButtons & TDCBF_YES_BUTTON &&
-        pTaskConfig->dwCommonButtons & TDCBF_NO_BUTTON)
-        uType |= MB_YESNO;
-    else
-    if (pTaskConfig->dwCommonButtons & TDCBF_RETRY_BUTTON &&
-        pTaskConfig->dwCommonButtons & TDCBF_CANCEL_BUTTON)
-        uType |= MB_RETRYCANCEL;
-    else
-    if (pTaskConfig->dwCommonButtons & TDCBF_OK_BUTTON &&
-        pTaskConfig->dwCommonButtons & TDCBF_CANCEL_BUTTON)
-        uType |= MB_OKCANCEL;
-    else
-    if (pTaskConfig->dwCommonButtons & TDCBF_OK_BUTTON)
-        uType |= MB_OK;
-    ret = MessageBoxW(pTaskConfig->hwndParent, pTaskConfig->pszMainInstruction,
-                      pTaskConfig->pszWindowTitle, uType);
-    FIXME("dwCommonButtons=%x uType=%x ret=%x\n", pTaskConfig->dwCommonButtons, uType, ret);
+    *icon = NULL;
 
-    if (pnButton) *pnButton = ret;
-    if (pnRadioButton) *pnRadioButton = pTaskConfig->nDefaultButton;
-    if (pfVerificationFlagChecked) *pfVerificationFlagChecked = TRUE;
+    if (!name)
+        return E_INVALIDARG;
+
+    *icon = LoadImageW(hinst, name, IMAGE_ICON, cx, cy,
+                       (hinst || IS_INTRESOURCE(name)) ? 0 : LR_LOADFROMFILE);
+    if (!*icon)
+        return HRESULT_FROM_WIN32(GetLastError());
+
     return S_OK;
 }
 
 /***********************************************************************
- * RegisterClassNameW [COMCTL32.@]
- *
- * Register window class again while using as SxS module.
+ * LoadIconMetric [COMCTL32.@]
  */
-BOOLEAN WINAPI RegisterClassNameW(LPCWSTR className)
+HRESULT WINAPI LoadIconMetric(HINSTANCE hinst, const WCHAR *name, int size, HICON *icon)
 {
-    /* FIXME: actually register redirected user32 class,
-              comctl32 classes are registered by this module anyway */
-    return TRUE;
+    int cx, cy;
+
+    TRACE("(%p, %s, %d, %p)\n", hinst, debugstr_w(name), size, icon);
+
+    if (size == LIM_SMALL)
+    {
+        cx = GetSystemMetrics(SM_CXSMICON);
+        cy = GetSystemMetrics(SM_CYSMICON);
+    }
+    else if (size == LIM_LARGE)
+    {
+        cx = GetSystemMetrics(SM_CXICON);
+        cy = GetSystemMetrics(SM_CYICON);
+    }
+    else
+    {
+        *icon = NULL;
+        return E_INVALIDARG;
+    }
+
+    return LoadIconWithScaleDown(hinst, name, cx, cy, icon);
 }

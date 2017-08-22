@@ -3,9 +3,6 @@
 
 /* Constants ******************************************************************/
 
-/* Get/SetBounds/Rect support. */
-#define DCB_WINDOWMGR 0x8000 /* Queries the Windows bounding rectangle instead of the application's */
-
 /* flFontState */
 enum _FONT_STATE
 {
@@ -33,7 +30,10 @@ enum _DCFLAGS
     DC_FULLSCREEN        = 0x0800,
     DC_IN_CLONEPDEV      = 0x1000,
     DC_REDIRECTION       = 0x2000,
-    DC_SHAREACCESS       = 0x4000
+    DC_SHAREACCESS       = 0x4000,
+#if DBG
+    DC_PREPARED          = 0x8000
+#endif
 };
 
 typedef enum _DCTYPE
@@ -96,7 +96,7 @@ typedef struct _DC
   BASEOBJECT  BaseObject;
 
   DHPDEV      dhpdev;   /* <- PDEVOBJ.hPDev DHPDEV for device. */
-  INT         dctype;
+  DCTYPE      dctype;
   INT         fs;
   PPDEVOBJ    ppdev;
   PVOID       hsem;   /* PERESOURCE aka HSEMAPHORE */
@@ -132,6 +132,7 @@ typedef struct _DC
   PVOID       pSurfInfo;
   POINTL      ptlDoBanding;
 } DC;
+// typedef struct _DC *PDC;
 
 extern PDC defaultDCstate;
 
@@ -175,13 +176,15 @@ int FASTCALL GreSetStretchBltMode(HDC hdc, int iStretchMode);
 int FASTCALL GreGetBkMode(HDC);
 int FASTCALL GreGetMapMode(HDC);
 COLORREF FASTCALL GreGetTextColor(HDC);
+COLORREF FASTCALL GreGetBkColor(HDC);
 COLORREF FASTCALL IntSetDCBrushColor(HDC,COLORREF);
 COLORREF FASTCALL IntSetDCPenColor(HDC,COLORREF);
-
+int FASTCALL GreGetGraphicsMode(HDC);
+BOOL FASTCALL GreSetBrushOrg(HDC,INT,INT,LPPOINT);
 
 INIT_FUNCTION NTSTATUS NTAPI InitDcImpl(VOID);
 PPDEVOBJ FASTCALL IntEnumHDev(VOID);
-PDC NTAPI DC_AllocDcWithHandle(VOID);
+PDC NTAPI DC_AllocDcWithHandle(GDILOOBJTYPE eDcObjType);
 BOOL NTAPI DC_bAllocDcAttr(PDC pdc);
 VOID NTAPI DC_vCleanup(PVOID ObjectBody);
 BOOL FASTCALL IntGdiDeleteDC(HDC, BOOL);
@@ -202,8 +205,10 @@ VOID FASTCALL IntGdiUnreferencePdev(PPDEVOBJ pPDev, DWORD CleanUpType);
 HDC FASTCALL IntGdiCreateDisplayDC(HDEV hDev, ULONG DcType, BOOL EmptyDC);
 BOOL FASTCALL IntGdiCleanDC(HDC hDC);
 VOID FASTCALL IntvGetDeviceCaps(PPDEVOBJ, PDEVCAPS);
+VOID FASTCALL IntUpdateBoundsRect(PDC,PRECTL);
 
 BOOL NTAPI GreSetDCOwner(HDC hdc, ULONG ulOwner);
+HDC APIENTRY GreCreateCompatibleDC(HDC hdc, BOOL bAltDc);
 
 VOID
 NTAPI
@@ -215,10 +220,11 @@ DC_LockDc(HDC hdc)
 {
     PDC pdc;
 
-    pdc = GDIOBJ_LockObject(hdc, GDIObjType_DC_TYPE);
+    pdc = (PDC)GDIOBJ_LockObject(hdc, GDIObjType_DC_TYPE);
     if (pdc)
     {
-        ASSERT(GDI_HANDLE_GET_TYPE(pdc->BaseObject.hHmgr) == GDILoObjType_LO_DC_TYPE);
+        ASSERT((GDI_HANDLE_GET_TYPE(pdc->BaseObject.hHmgr) == GDILoObjType_LO_DC_TYPE) ||
+               (GDI_HANDLE_GET_TYPE(pdc->BaseObject.hHmgr) == GDILoObjType_LO_ALTDC_TYPE));
         ASSERT(pdc->dclevel.plfnt != NULL);
         ASSERT(GDI_HANDLE_GET_TYPE(((POBJ)pdc->dclevel.plfnt)->hHmgr) == GDILoObjType_LO_FONT_TYPE);
     }
@@ -289,5 +295,7 @@ DC_vSelectPalette(PDC pdc, PPALETTE ppal)
 
 extern _Notnull_ PBRUSH pbrDefaultBrush;
 extern _Notnull_ PSURFACE psurfDefaultBitmap;
+
+#define ASSERT_DC_PREPARED(pdc) NT_ASSERT((pdc)->fs & DC_PREPARED)
 
 #endif /* not __WIN32K_DC_H */

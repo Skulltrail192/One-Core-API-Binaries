@@ -26,18 +26,18 @@ GpStatus WINGDIPAPI GdipCloneCustomLineCap(GpCustomLineCap* from,
     if(!from || !to)
         return InvalidParameter;
 
-    *to = GdipAlloc(sizeof(GpCustomLineCap));
+    *to = heap_alloc_zero(sizeof(GpCustomLineCap));
     if(!*to)   return OutOfMemory;
 
     memcpy(*to, from, sizeof(GpCustomLineCap));
 
-    (*to)->pathdata.Points = GdipAlloc(from->pathdata.Count * sizeof(PointF));
-    (*to)->pathdata.Types = GdipAlloc(from->pathdata.Count);
+    (*to)->pathdata.Points = heap_alloc_zero(from->pathdata.Count * sizeof(PointF));
+    (*to)->pathdata.Types = heap_alloc_zero(from->pathdata.Count);
 
     if((!(*to)->pathdata.Types  || !(*to)->pathdata.Points) && (*to)->pathdata.Count){
-        GdipFree((*to)->pathdata.Points);
-        GdipFree((*to)->pathdata.Types);
-        GdipFree(*to);
+        heap_free((*to)->pathdata.Points);
+        heap_free((*to)->pathdata.Types);
+        heap_free(*to);
         return OutOfMemory;
     }
 
@@ -62,9 +62,10 @@ GpStatus WINGDIPAPI GdipCreateCustomLineCap(GpPath* fillPath, GpPath* strokePath
     if(!customCap || !(fillPath || strokePath))
         return InvalidParameter;
 
-    *customCap = GdipAlloc(sizeof(GpCustomLineCap));
+    *customCap = heap_alloc_zero(sizeof(GpCustomLineCap));
     if(!*customCap)    return OutOfMemory;
 
+    (*customCap)->type = CustomLineCapTypeDefault;
     if(strokePath){
         (*customCap)->fill = FALSE;
         pathdata = &strokePath->pathdata;
@@ -74,14 +75,14 @@ GpStatus WINGDIPAPI GdipCreateCustomLineCap(GpPath* fillPath, GpPath* strokePath
         pathdata = &fillPath->pathdata;
     }
 
-    (*customCap)->pathdata.Points = GdipAlloc(pathdata->Count * sizeof(PointF));
-    (*customCap)->pathdata.Types = GdipAlloc(pathdata->Count);
+    (*customCap)->pathdata.Points = heap_alloc_zero(pathdata->Count * sizeof(PointF));
+    (*customCap)->pathdata.Types = heap_alloc_zero(pathdata->Count);
 
     if((!(*customCap)->pathdata.Types || !(*customCap)->pathdata.Points) &&
         pathdata->Count){
-        GdipFree((*customCap)->pathdata.Points);
-        GdipFree((*customCap)->pathdata.Types);
-        GdipFree(*customCap);
+        heap_free((*customCap)->pathdata.Points);
+        heap_free((*customCap)->pathdata.Types);
+        heap_free(*customCap);
         return OutOfMemory;
     }
 
@@ -107,9 +108,9 @@ GpStatus WINGDIPAPI GdipDeleteCustomLineCap(GpCustomLineCap *customCap)
     if(!customCap)
         return InvalidParameter;
 
-    GdipFree(customCap->pathdata.Points);
-    GdipFree(customCap->pathdata.Types);
-    GdipFree(customCap);
+    heap_free(customCap->pathdata.Points);
+    heap_free(customCap->pathdata.Types);
+    heap_free(customCap);
 
     return Ok;
 }
@@ -230,6 +231,17 @@ GpStatus WINGDIPAPI GdipGetCustomLineCapBaseCap(GpCustomLineCap *customCap, GpLi
 
     *baseCap = customCap->cap;
 
+    return Ok;
+}
+
+GpStatus WINGDIPAPI GdipGetCustomLineCapType(GpCustomLineCap *customCap, CustomLineCapType *type)
+{
+    TRACE("(%p, %p)\n", customCap, type);
+
+    if(!customCap || !type)
+        return InvalidParameter;
+
+    *type = customCap->type;
     return Ok;
 }
 

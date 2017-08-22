@@ -12,18 +12,17 @@
 @ stub CreateLocalAdminAccount
 @ stub CreateLocalAdminAccountEx
 @ stub CreateLocalUserAccount
-@ stub CriticalDeviceCoInstaller
+@ stdcall CriticalDeviceCoInstaller(long ptr ptr ptr)
 @ stub DevInstallW
 @ stdcall DeviceBayClassInstaller(long ptr ptr)
 @ stub DiskPropPageProvider
 @ stub DoInstallComponentInfs
-@ stub EisaUpHalCoInstaller
+@ stdcall EisaUpHalCoInstaller(long ptr ptr ptr)
 @ stub EisaUpHalPropPageProvider
 @ stub GenerateName
 @ stdcall HdcClassInstaller(long ptr ptr)
 @ stdcall InitializeSetupActionLog(long)
-@ stdcall InstallLiveCD(ptr)
-@ stdcall InstallReactOS(ptr)
+@ stdcall InstallWindowsNt(long ptr)
 @ stub InvokeExternalApplicationEx
 @ stdcall KeyboardClassInstaller(long ptr ptr)
 @ stub LegacyDriverPropPageProvider
@@ -38,7 +37,7 @@
 @ stub ReportError
 @ stub RunOEMExtraTasks
 @ stdcall ScsiClassInstaller(long ptr ptr)
-@ stub SetAccountDomainSid
+@ stdcall SetAccountsDomainSid(ptr wstr)
 @ stub SetupAddOrRemoveTestCertificate
 @ stdcall SetupChangeFontSize(ptr wstr)
 @ stdcall SetupChangeLocale(ptr long)
@@ -72,9 +71,9 @@
 @ stub SetupSetRegisteredOsComponentsOrder
 @ stub SetupSetSetupInfo
 @ stub SetupShellSettings
-@ stub SetupStartService
+@ stdcall SetupStartService(wstr long)
 @ stub SetupUnregisterOsComponent
-@ stub StorageCoInstaller
+@ stdcall StorageCoInstaller(long ptr ptr ptr)
 @ stub SystemUpdateUserProfileDirectory
 @ stdcall TapeClassInstaller(long ptr ptr)
 @ stub TapePropPageProvider
@@ -82,5 +81,6 @@
 @ stub UpdatePnpDeviceDrivers
 @ stub UpgradePrinters
 @ stub ViewSetupActionLog
-@ stub pSetupDebugPrint
+@ stdcall VolumeClassInstaller(long ptr ptr)
+@ varargs pSetupDebugPrint(wstr long wstr wstr)
 @ stub pSetuplogSfcError

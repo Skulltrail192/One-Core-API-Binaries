@@ -159,10 +159,9 @@ static ULONG WINAPI IcnsFrameEncode_Release(IWICBitmapFrameEncode *iface)
             This->encoder->outstanding_commits--;
             LeaveCriticalSection(&This->encoder->lock);
         }
-        if (This->icns_image != NULL)
-            HeapFree(GetProcessHeap(), 0, This->icns_image);
+        HeapFree(GetProcessHeap(), 0, This->icns_image);
 
-        IUnknown_Release((IUnknown*)This->encoder);
+        IWICBitmapEncoder_Release(&This->encoder->IWICBitmapEncoder_iface);
         HeapFree(GetProcessHeap(), 0, This);
     }
 
@@ -380,7 +379,7 @@ static HRESULT WINAPI IcnsFrameEncode_WriteSource(IWICBitmapFrameEncode *iface,
     if (!This->initialized)
         return WINCODEC_ERR_WRONGSTATE;
 
-    hr = configure_write_source(iface, pIBitmapSource, &prc,
+    hr = configure_write_source(iface, pIBitmapSource, prc,
         &GUID_WICPixelFormat32bppBGRA, This->size, This->size,
         1.0, 1.0);
 
@@ -400,7 +399,7 @@ static HRESULT WINAPI IcnsFrameEncode_Commit(IWICBitmapFrameEncode *iface)
     OSErr ret;
     HRESULT hr = S_OK;
 
-    TRACE("(%p): stub\n", iface);
+    TRACE("(%p)\n", iface);
 
     EnterCriticalSection(&This->encoder->lock);
 
@@ -472,7 +471,7 @@ static HRESULT WINAPI IcnsEncoder_QueryInterface(IWICBitmapEncoder *iface, REFII
     if (IsEqualIID(&IID_IUnknown, iid) ||
         IsEqualIID(&IID_IWICBitmapEncoder, iid))
     {
-        *ppv = This;
+        *ppv = &This->IWICBitmapEncoder_iface;
     }
     else
     {
@@ -622,7 +621,7 @@ static HRESULT WINAPI IcnsEncoder_CreateNewFrame(IWICBitmapEncoder *iface,
     frameEncode->committed = FALSE;
     *ppIFrameEncode = &frameEncode->IWICBitmapFrameEncode_iface;
     This->outstanding_commits++;
-    IUnknown_AddRef((IUnknown*)This);
+    IWICBitmapEncoder_AddRef(&This->IWICBitmapEncoder_iface);
 
 end:
     LeaveCriticalSection(&This->lock);
@@ -708,8 +707,8 @@ HRESULT IcnsEncoder_CreateInstance(REFIID iid, void** ppv)
     InitializeCriticalSection(&This->lock);
     This->lock.DebugInfo->Spare[0] = (DWORD_PTR)(__FILE__ ": IcnsEncoder.lock");
 
-    ret = IUnknown_QueryInterface((IUnknown*)This, iid, ppv);
-    IUnknown_Release((IUnknown*)This);
+    ret = IWICBitmapEncoder_QueryInterface(&This->IWICBitmapEncoder_iface, iid, ppv);
+    IWICBitmapEncoder_Release(&This->IWICBitmapEncoder_iface);
 
     return ret;
 }

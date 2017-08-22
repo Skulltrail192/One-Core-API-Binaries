@@ -15,7 +15,7 @@
 
 /* GLOBALS *******************************************************************/
 
-PVOID LdrpManifestProberRoutine;
+PLDR_MANIFEST_PROBER_ROUTINE LdrpManifestProberRoutine;
 ULONG LdrpNormalSnap;
 
 /* FUNCTIONS *****************************************************************/
@@ -148,7 +148,7 @@ LdrpSnapIAT(IN PLDR_DATA_TABLE_ENTRY ExportLdrEntry,
         /* We'll only do forwarders. Get the import name */
         ImportName = (LPSTR)((ULONG_PTR)ImportLdrEntry->DllBase + IatEntry->Name);
 
-        /* Get the list of forwaders */
+        /* Get the list of forwarders */
         ForwarderChain = IatEntry->ForwarderChain;
 
         /* Loop them */
@@ -288,7 +288,7 @@ LdrpHandleOneNewFormatImportDescriptor(IN LPWSTR DllPath OPTIONAL,
     /* Get the name's VA */
     BoundImportName = (LPSTR)FirstEntry + BoundEntry->OffsetModuleName;
 
-    /* Show debug mesage */
+    /* Show debug message */
     if (ShowSnaps)
     {
         DPRINT1("LDR: %wZ bound to %s\n", &LdrEntry->BaseDllName, BoundImportName);
@@ -297,7 +297,6 @@ LdrpHandleOneNewFormatImportDescriptor(IN LPWSTR DllPath OPTIONAL,
     /* Load the module for this entry */
     Status = LdrpLoadImportModule(DllPath,
                                   BoundImportName,
-                                  LdrEntry->DllBase,
                                   &DllLdrEntry,
                                   &AlreadyLoaded);
     if (!NT_SUCCESS(Status))
@@ -318,7 +317,7 @@ LdrpHandleOneNewFormatImportDescriptor(IN LPWSTR DllPath OPTIONAL,
     {
         /* Add it to our list */
         InsertTailList(&Peb->Ldr->InInitializationOrderModuleList,
-                       &DllLdrEntry->InInitializationOrderModuleList);
+                       &DllLdrEntry->InInitializationOrderLinks);
     }
 
     /* Check if the Bound Entry is now invalid */
@@ -371,7 +370,6 @@ LdrpHandleOneNewFormatImportDescriptor(IN LPWSTR DllPath OPTIONAL,
         /* Load the module */
         Status = LdrpLoadImportModule(DllPath,
                                       ForwarderName,
-                                      LdrEntry->DllBase,
                                       &ForwarderLdrEntry,
                                       &AlreadyLoaded);
         if (NT_SUCCESS(Status))
@@ -381,7 +379,7 @@ LdrpHandleOneNewFormatImportDescriptor(IN LPWSTR DllPath OPTIONAL,
             {
                 /* Add it to our list */
                 InsertTailList(&Peb->Ldr->InInitializationOrderModuleList,
-                               &ForwarderLdrEntry->InInitializationOrderModuleList);
+                               &ForwarderLdrEntry->InInitializationOrderLinks);
             }
         }
 
@@ -558,7 +556,6 @@ LdrpHandleOneOldFormatImportDescriptor(IN LPWSTR DllPath OPTIONAL,
     /* Load the module associated to it */
     Status = LdrpLoadImportModule(DllPath,
                                   ImportName,
-                                  LdrEntry->DllBase,
                                   &DllLdrEntry,
                                   &AlreadyLoaded);
     if (!NT_SUCCESS(Status))
@@ -590,7 +587,7 @@ LdrpHandleOneOldFormatImportDescriptor(IN LPWSTR DllPath OPTIONAL,
     {
         /* Add the DLL to our list */
         InsertTailList(&Peb->Ldr->InInitializationOrderModuleList,
-                       &DllLdrEntry->InInitializationOrderModuleList);
+                       &DllLdrEntry->InInitializationOrderLinks);
     }
 
     /* Now snap the IAT Entry */
@@ -686,11 +683,12 @@ LdrpWalkImportDescriptor(IN LPWSTR DllPath OPTIONAL,
 {
     RTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME_EXTENDED ActCtx;
     PPEB Peb = NtCurrentPeb();
-    NTSTATUS Status = STATUS_SUCCESS;
+    NTSTATUS Status = STATUS_SUCCESS, Status2;
     PIMAGE_BOUND_IMPORT_DESCRIPTOR BoundEntry = NULL;
     PIMAGE_IMPORT_DESCRIPTOR ImportEntry;
     ULONG BoundSize, IatSize;
-    DPRINT("LdrpWalkImportDescriptor('%S' %p)\n", DllPath, LdrEntry);
+
+    DPRINT("LdrpWalkImportDescriptor - BEGIN (%wZ %p '%S')\n", &LdrEntry->BaseDllName, LdrEntry, DllPath);
 
     /* Set up the Act Ctx */
     RtlZeroMemory(&ActCtx, sizeof(ActCtx));
@@ -700,23 +698,44 @@ LdrpWalkImportDescriptor(IN LPWSTR DllPath OPTIONAL,
     /* Check if we have a manifest prober routine */
     if (LdrpManifestProberRoutine)
     {
-        DPRINT1("We don't support manifests yet, much less prober routines\n");
+        /* Probe the DLL for its manifest. Some details are omitted */
+        Status2 = LdrpManifestProberRoutine(LdrEntry->DllBase, LdrEntry->FullDllName.Buffer, &LdrEntry->EntryPointActivationContext);
+
+        if (!NT_SUCCESS(Status2) &&
+            Status2 != STATUS_NO_SUCH_FILE &&
+            Status2 != STATUS_RESOURCE_DATA_NOT_FOUND &&
+            Status2 != STATUS_RESOURCE_TYPE_NOT_FOUND &&
+            Status2 != STATUS_RESOURCE_NAME_NOT_FOUND &&
+            Status2 != STATUS_RESOURCE_LANG_NOT_FOUND)
+        {
+            /* Some serious issue */
+            //Status = Status2; // FIXME: Ignore that error for now
+            DbgPrintEx(DPFLTR_SXS_ID,
+                DPFLTR_WARNING_LEVEL,
+                "LDR: LdrpWalkImportDescriptor() failed to probe %wZ for its "
+                "manifest, ntstatus = 0x%08lx\n",
+                &LdrEntry->FullDllName, Status);
+        }
     }
 
     /* Check if we failed above */
     if (!NT_SUCCESS(Status)) return Status;
 
     /* Get the Active ActCtx */
-    Status = RtlGetActiveActivationContext(&LdrEntry->EntryPointActivationContext);
-    if (!NT_SUCCESS(Status))
+    if (!LdrEntry->EntryPointActivationContext)
     {
-        /* Exit */
-        DbgPrintEx(DPFLTR_SXS_ID,
-                   DPFLTR_WARNING_LEVEL,
-                   "LDR: RtlGetActiveActivationContext() failed; ntstatus = "
-                   "0x%08lx\n",
-                   Status);
-        return Status;
+        Status = RtlGetActiveActivationContext(&LdrEntry->EntryPointActivationContext);
+
+        if (!NT_SUCCESS(Status))
+        {
+            /* Exit */
+            DbgPrintEx(DPFLTR_SXS_ID,
+                DPFLTR_WARNING_LEVEL,
+                "LDR: RtlGetActiveActivationContext() failed; ntstatus = "
+                "0x%08lx\n",
+                Status);
+            return Status;
+        }
     }
 
     /* Activate the ActCtx */
@@ -790,32 +809,79 @@ LdrpWalkImportDescriptor(IN LPWSTR DllPath OPTIONAL,
     /* Release the activation context */
     RtlDeactivateActivationContextUnsafeFast(&ActCtx);
 
+    DPRINT("LdrpWalkImportDescriptor - END (%wZ %p)\n", &LdrEntry->BaseDllName, LdrEntry);
+
     /* Return status */
     return Status;
 }
 
-/* FIXME: This function is missing SxS support and has wrong prototype */
+/* FIXME: This function is missing SxS support */
 NTSTATUS
 NTAPI
 LdrpLoadImportModule(IN PWSTR DllPath OPTIONAL,
                      IN LPSTR ImportName,
-                     IN PVOID DllBase,
                      OUT PLDR_DATA_TABLE_ENTRY *DataTableEntry,
                      OUT PBOOLEAN Existing)
 {
     ANSI_STRING AnsiString;
     PUNICODE_STRING ImpDescName;
+    const WCHAR *p;
+    BOOLEAN GotExtension;
+    WCHAR c;
     NTSTATUS Status;
     PPEB Peb = RtlGetCurrentPeb();
     PTEB Teb = NtCurrentTeb();
 
-    DPRINT("LdrpLoadImportModule('%S' '%s' %p %p %p)\n", DllPath, ImportName, DllBase, DataTableEntry, Existing);
+    DPRINT("LdrpLoadImportModule('%S' '%s' %p %p)\n", DllPath, ImportName, DataTableEntry, Existing);
 
     /* Convert import descriptor name to unicode string */
     ImpDescName = &Teb->StaticUnicodeString;
     RtlInitAnsiString(&AnsiString, ImportName);
     Status = RtlAnsiStringToUnicodeString(ImpDescName, &AnsiString, FALSE);
     if (!NT_SUCCESS(Status)) return Status;
+
+    /* Find the extension, if present */
+    p = ImpDescName->Buffer + ImpDescName->Length / sizeof(WCHAR) - 1;
+    GotExtension = FALSE;
+    while (p >= ImpDescName->Buffer)
+    {
+        c = *p--;
+        if (c == L'.')
+        {
+            GotExtension = TRUE;
+            break;
+        }
+        else if (c == L'\\')
+        {
+            break;
+        }
+    }
+
+    /* If no extension was found, add the default extension */
+    if (!GotExtension)
+    {
+        /* Check that we have space to add one */
+        if ((ImpDescName->Length + LdrApiDefaultExtension.Length + sizeof(UNICODE_NULL)) >=
+            sizeof(Teb->StaticUnicodeBuffer))
+        {
+            /* No space to add the extension */
+            DbgPrintEx(DPFLTR_LDR_ID,
+                       DPFLTR_ERROR_LEVEL,
+                       "LDR: %s - Dll name missing extension; with extension "
+                       "added the name is too long\n"
+                       "   ImpDescName: (@ %p) \"%wZ\"\n"
+                       "   ImpDescName->Length: %u\n",
+                       __FUNCTION__,
+                       ImpDescName,
+                       ImpDescName,
+                       ImpDescName->Length);
+            return STATUS_NAME_TOO_LONG;
+        }
+
+        /* Add it. Needs to be null terminated, thus the length check above */
+        (VOID)RtlAppendUnicodeStringToString(ImpDescName,
+                                             &LdrApiDefaultExtension);
+    }
 
     /* Check if it's loaded */
     if (LdrpCheckForLoadedDll(DllPath,
@@ -831,6 +897,51 @@ LdrpLoadImportModule(IN PWSTR DllPath OPTIONAL,
 
     /* We're loading it for the first time */
     *Existing = FALSE;
+
+#if 0
+    /* Load manifest */
+    {
+        ACTCTX_SECTION_KEYED_DATA data;
+        NTSTATUS status;
+
+        //DPRINT1("find_actctx_dll for %S\n", fullname);
+        //RtlInitUnicodeString(&nameW, libname);
+        data.cbSize = sizeof(data);
+        status = RtlFindActivationContextSectionString(
+                    FIND_ACTCTX_SECTION_KEY_RETURN_HACTCTX, NULL,
+                    ACTIVATION_CONTEXT_SECTION_DLL_REDIRECTION,
+                    ImpDescName,
+                    &data);
+        //if (status != STATUS_SUCCESS) return status;
+        DPRINT1("Status: 0x%08X\n", status);
+
+        if (NT_SUCCESS(status))
+        {
+            ACTIVATION_CONTEXT_ASSEMBLY_DETAILED_INFORMATION *info;
+            SIZE_T needed, size = 1024;
+
+            for (;;)
+            {
+                if (!(info = RtlAllocateHeap(RtlGetProcessHeap(), 0, size)))
+                {
+                    status = STATUS_NO_MEMORY;
+                    goto done;
+                }
+                status = RtlQueryInformationActivationContext(0, data.hActCtx, &data.ulAssemblyRosterIndex,
+                    AssemblyDetailedInformationInActivationContext,
+                    info, size, &needed);
+                if (status == STATUS_SUCCESS) break;
+                if (status != STATUS_BUFFER_TOO_SMALL) goto done;
+                RtlFreeHeap(RtlGetProcessHeap(), 0, info);
+                size = needed;
+            }
+
+            DPRINT("manifestpath === %S\n", info->lpAssemblyManifestPath);
+            DPRINT("DirectoryName === %S\n", info->lpAssemblyDirectoryName);
+        }
+    }
+done:
+#endif
 
     /* Map it */
     Status = LdrpMapDll(DllPath,
@@ -850,7 +961,7 @@ LdrpLoadImportModule(IN PWSTR DllPath OPTIONAL,
     {
         /* Add it to the in-init-order list in case of failure */
         InsertTailList(&Peb->Ldr->InInitializationOrderModuleList,
-                       &(*DataTableEntry)->InInitializationOrderModuleList);
+                       &(*DataTableEntry)->InInitializationOrderLinks);
     }
 
     return Status;

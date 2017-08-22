@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS Windows-Compatible Session Manager
  * LICENSE:         BSD 2-Clause License
- * FILE:            base/system/smss/smss.c
+ * FILE:            base/system/smss/smsubsys.c
  * PURPOSE:         Main SMSS Code
  * PROGRAMMERS:     Alex Ionescu
  */
@@ -155,7 +155,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
     /* Make sure this is a found subsystem */
     if (Flags & SMP_INVALID_PATH)
     {
-        DbgPrint("SMSS: Unable to find subsystem - %wZ\n", FileName);
+        DPRINT1("SMSS: Unable to find subsystem - %wZ\n", FileName);
         return STATUS_OBJECT_NAME_NOT_FOUND;
     }
 
@@ -166,7 +166,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
     RtlEnterCriticalSection(&SmpKnownSubSysLock);
     while (TRUE)
     {
-        /* Check if we found a subsystem not yet fully iniitalized */
+        /* Check if we found a subsystem not yet fully initialized */
         Subsystem = SmpLocateKnownSubSysByType(MuSessionId, -1);
         if (!Subsystem) break;
         RtlLeaveCriticalSection(&SmpKnownSubSysLock);
@@ -220,7 +220,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
     NewSubsystem->PortHandle = NULL;
     NewSubsystem->SbApiPort = NULL;
 
-    /* Create the event we'll be wating on for initialization */
+    /* Create the event we'll be waiting on for initialization */
     Status = NtCreateEvent(&NewSubsystem->Event,
                            EVENT_ALL_ACCESS,
                            NULL,
@@ -246,7 +246,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
                                                     IMAGE_SUBSYSTEM_WINDOWS_GUI);
         if (!KnownSubsystem)
         {
-            DbgPrint("SMSS: SmpLoadSubSystem - SmpLocateKnownSubSysByType Failed\n");
+            DPRINT1("SMSS: SmpLoadSubSystem - SmpLocateKnownSubSysByType Failed\n");
             goto Quickie2;
         }
 
@@ -264,7 +264,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
         if (!NT_SUCCESS(Status))
         {
             /* Handle failures */
-            DbgPrint("SMSS: SmpLoadSubSystem - SmpCallCsrCreateProcess Failed with  Status %lx\n",
+            DPRINT1("SMSS: SmpLoadSubSystem - SmpCallCsrCreateProcess Failed with  Status %lx\n",
                     Status);
             goto Quickie2;
         }
@@ -287,7 +287,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
         if (!NT_SUCCESS(Status))
         {
             /* Handle failures */
-            DbgPrint("SMSS: SmpLoadSubSystem - SmpExecuteImage Failed with  Status %lx\n",
+            DPRINT1("SMSS: SmpLoadSubSystem - SmpExecuteImage Failed with  Status %lx\n",
                     Status);
             goto Quickie2;
         }
@@ -331,7 +331,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
         {
             /* Odd failure -- but handle it anyway */
             Status = STATUS_NO_SUCH_PACKAGE;
-            DbgPrint("SMSS: SmpLoadSubSystem - SmpLocateKnownSubSysByType Failed with  Status %lx for sessionid %lu\n",
+            DPRINT1("SMSS: SmpLoadSubSystem - SmpLocateKnownSubSysByType Failed with  Status %lx for sessionid %lu\n",
                     Status,
                     MuSessionId);
             goto Quickie;
@@ -348,7 +348,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
         if (!NT_SUCCESS(Status))
         {
             /* Fail since this is critical */
-            DbgPrint("SMSS: SmpLoadSubSystem - NtDuplicateObject Failed with  Status %lx for sessionid %lu\n",
+            DPRINT1("SMSS: SmpLoadSubSystem - NtDuplicateObject Failed with  Status %lx for sessionid %lu\n",
                     Status,
                     MuSessionId);
             goto Quickie;
@@ -365,7 +365,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
         if (!NT_SUCCESS(Status))
         {
             /* Fail since this is critical */
-            DbgPrint("SMSS: SmpLoadSubSystem - NtDuplicateObject Failed with  Status %lx for sessionid %lu\n",
+            DPRINT1("SMSS: SmpLoadSubSystem - NtDuplicateObject Failed with  Status %lx for sessionid %lu\n",
                     Status,
                     MuSessionId);
             goto Quickie;
@@ -388,7 +388,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
         {
             /* Delete the session and handle failure if the LPC call failed */
             SmpDeleteSession(CreateSession->SessionId);
-            DbgPrint("SMSS: SmpLoadSubSystem - NtRequestWaitReplyPort Failed with  Status %lx for sessionid %lu\n",
+            DPRINT1("SMSS: SmpLoadSubSystem - NtRequestWaitReplyPort Failed with  Status %lx for sessionid %lu\n",
                     Status,
                     CreateSession->SessionId);
             goto Quickie;
@@ -400,7 +400,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
     if (!NT_SUCCESS(Status))
     {
         /* That didn't work -- back out of everything */
-        DbgPrint("SMSS: SmpLoadSubSystem - NtResumeThread failed Status %lx\n", Status);
+        DPRINT1("SMSS: SmpLoadSubSystem - NtResumeThread failed Status %lx\n", Status);
         goto Quickie;
     }
 
@@ -415,7 +415,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
         if (!SmpCheckDuplicateMuSessionId(MuSessionId))
         {
             /* Nope, it died. Cleanup should've ocurred in a different path. */
-            DbgPrint("SMSS: SmpLoadSubSystem - session deleted\n");
+            DPRINT1("SMSS: SmpLoadSubSystem - session deleted\n");
             return STATUS_DELETE_PENDING;
         }
 
@@ -423,7 +423,7 @@ SmpLoadSubSystem(IN PUNICODE_STRING FileName,
         if (Status != STATUS_WAIT_0)
         {
             /* Something is wrong with the subsystem, so back out of everything */
-            DbgPrint("SMSS: SmpLoadSubSystem - Timeout waiting for subsystem connect with Status %lx for sessionid %lu\n",
+            DPRINT1("SMSS: SmpLoadSubSystem - Timeout waiting for subsystem connect with Status %lx for sessionid %lu\n",
                     Status,
                     MuSessionId);
             goto Quickie;
@@ -445,7 +445,7 @@ Quickie:
     if ((AttachedSessionId == -1) || (Flags & (SMP_POSIX_FLAG | SMP_OS2_FLAG)))
     {
         /* We were not attached, or did not launch subsystems that required it */
-        DbgPrint("SMSS: Did not detach from Session Space: SessionId=%x Flags=%x Status=%x\n",
+        DPRINT1("SMSS: Did not detach from Session Space: SessionId=%x Flags=%x Status=%x\n",
                 AttachedSessionId,
                 Flags | SMP_DEFERRED_FLAG,
                 Status);
@@ -457,7 +457,7 @@ Quickie:
         if (!NT_SUCCESS(Status))
         {
             /* We can't detach without it */
-            DbgPrint("SMSS: Did not detach from Session Space: SessionId=%x Flags=%x Status=%x\n",
+            DPRINT1("SMSS: Did not detach from Session Space: SessionId=%x Flags=%x Status=%x\n",
                     AttachedSessionId,
                     Flags | SMP_DEFERRED_FLAG,
                     Status);
@@ -470,8 +470,8 @@ Quickie:
                                             sizeof(AttachedSessionId));
             if (!NT_SUCCESS(Status))
             {
-                /* Failed to detach. Note the DbgPrint has a typo in Windows */
-                DbgPrint("SMSS: SmpStartCsr, Couldn't Detach from Session Space. Status=%x\n", Status);
+                /* Failed to detach. Note the DPRINT1 has a typo in Windows */
+                DPRINT1("SMSS: SmpStartCsr, Couldn't Detach from Session Space. Status=%x\n", Status);
                 ASSERT(NT_SUCCESS(Status));
             }
             else
@@ -500,7 +500,7 @@ Quickie2:
     {
         RemoveEntryList(&NewSubsystem->Entry);
         NtSetEvent(NewSubsystem->Event, 0);
-        if (NewSubsystem) SmpDereferenceSubsystem(NewSubsystem);
+        SmpDereferenceSubsystem(NewSubsystem);
     }
 
     /* Finally, we're all done! */
@@ -549,7 +549,7 @@ SmpLoadSubSystemsForMuSession(IN PULONG MuSessionId,
                                               NULL))
             {
                 Status = STATUS_OBJECT_PATH_SYNTAX_BAD;
-                DbgPrint("Failed: %lx\n", Status);
+                DPRINT1("Failed: %lx\n", Status);
             }
             else
             {
@@ -564,7 +564,7 @@ SmpLoadSubSystemsForMuSession(IN PULONG MuSessionId,
                                                     sizeof(*MuSessionId));
                     if (!NT_SUCCESS(Status))
                     {
-                        DbgPrint("SMSS: Session space creation failed\n");
+                        DPRINT1("SMSS: Session space creation failed\n");
                         SmpReleasePrivilege(State);
                         RtlFreeHeap(RtlGetProcessHeap(), 0, NtPath.Buffer);
                         return Status;
@@ -584,7 +584,7 @@ SmpLoadSubSystemsForMuSession(IN PULONG MuSessionId,
                     SmpReleasePrivilege(State);
                     if (!NT_SUCCESS(Status))
                     {
-                        DbgPrint("SMSS: Load of WIN32K failed.\n");
+                        DPRINT1("SMSS: Load of WIN32K failed.\n");
                         return Status;
                     }
                 }

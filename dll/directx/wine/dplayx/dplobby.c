@@ -745,8 +745,6 @@ static HRESULT WINAPI IDirectPlayLobby3AImpl_EnumAddressTypes( IDirectPlayLobby3
       DWORD    dwAtIndex;
       LPCSTR   atKey = "Address Types";
       LPCSTR   guidDataSubKey   = "Guid";
-      FILETIME filetime;
-
 
       TRACE(" this time through: %s\n", subKeyName );
 
@@ -1711,8 +1709,7 @@ HRESULT DPL_CreateCompoundAddress
     }
     else
     {
-      ERR( "Unknown GUID %s\n", debugstr_guid(&lpElements->guidDataType) );
-      return DPERR_INVALIDFLAGS;
+      WARN( "Skipping Unknown GUID %s\n", debugstr_guid(&lpElements->guidDataType) );
     }
   }
 

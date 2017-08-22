@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS Windows-Compatible Session Manager
  * LICENSE:         BSD 2-Clause License
- * FILE:            base/system/smss/smss.c
+ * FILE:            base/system/smss/smutil.c
  * PURPOSE:         Main SMSS Code
  * PROGRAMMERS:     Alex Ionescu
  */
@@ -348,7 +348,7 @@ SmpParseCommandLine(IN PUNICODE_STRING CommandLine,
     if (!NT_SUCCESS(Status))
     {
         /* Another failure means that the kernel hasn't passed the path correctly */
-        DbgPrint("SMSS: %wZ environment variable not defined.\n", &EnvString);
+        DPRINT1("SMSS: %wZ environment variable not defined.\n", &EnvString);
         Status = STATUS_OBJECT_NAME_NOT_FOUND;
     }
     else
@@ -392,7 +392,7 @@ SmpParseCommandLine(IN PUNICODE_STRING CommandLine,
     /* Convert it and bail out if this failed */
     if (!RtlDosPathNameToNtPathName_U(PathBuffer, FileName, NULL, NULL))
     {
-        DbgPrint("SMSS: Unable to translate %ws into an NT File Name\n",
+        DPRINT1("SMSS: Unable to translate %ws into an NT File Name\n",
                 &PathBuffer);
         Status = STATUS_OBJECT_PATH_INVALID;
     }
@@ -442,7 +442,7 @@ SmpQueryRegistrySosOption(VOID)
     Status = NtOpenKey(&KeyHandle, KEY_READ, &ObjectAttributes);
     if (!NT_SUCCESS(Status))
     {
-        DbgPrint("SMSS: can't open control key: 0x%x\n", Status);
+        DPRINT1("SMSS: can't open control key: 0x%x\n", Status);
         return FALSE;
     }
 
@@ -458,7 +458,7 @@ SmpQueryRegistrySosOption(VOID)
     NtClose(KeyHandle);
     if (!NT_SUCCESS(Status))
     {
-        DbgPrint("SMSS: can't query value key: 0x%x\n", Status);
+        DPRINT1("SMSS: can't query value key: 0x%x\n", Status);
         return FALSE;
     }
 

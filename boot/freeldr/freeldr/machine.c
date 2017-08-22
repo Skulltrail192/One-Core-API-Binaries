@@ -18,154 +18,26 @@
 
 #include <freeldr.h>
 
-#undef MachConsPutChar
-#undef MachConsKbHit
-#undef MachConsGetCh
-#undef MachVideoClearScreen
-#undef MachVideoSetDisplayMode
-#undef MachVideoGetDisplaySize
-#undef MachVideoGetBufferSize
-#undef MachVideoSetTextCursorPosition
-#undef MachVideoHideShowTextCursor
-#undef MachVideoPutChar
-#undef MachVideoCopyOffScreenBufferToVRAM
-#undef MachVideoIsPaletteFixed
-#undef MachVideoSetPaletteColor
-#undef MachVideoGetPaletteColor
-#undef MachVideoSync
-#undef MachBeep
-#undef MachPrepareForReactOS
-#undef MachDiskGetBootPath
-#undef MachDiskReadLogicalSectors
-#undef MachDiskGetDriveGeometry
-#undef MachDiskGetCacheableBlockCount
-
 MACHVTBL MachVtbl;
 
-VOID
-MachConsPutChar(int Ch)
-{
-  MachVtbl.ConsPutChar(Ch);
-}
 
-BOOLEAN
-MachConsKbHit()
-{
-  return MachVtbl.ConsKbHit();
-}
+/* ARC FUNCTIONS **************************************************************/
 
-int
-MachConsGetCh()
+TIMEINFO*
+ArcGetTime(VOID)
 {
-  return MachVtbl.ConsGetCh();
-}
-
-VOID
-MachVideoClearScreen(UCHAR Attr)
-{
-  MachVtbl.VideoClearScreen(Attr);
-}
-
-VIDEODISPLAYMODE
-MachVideoSetDisplayMode(char *DisplayMode, BOOLEAN Init)
-{
-  return MachVtbl.VideoSetDisplayMode(DisplayMode, Init);
-}
-
-VOID
-MachVideoGetDisplaySize(PULONG Width, PULONG Height, PULONG Depth)
-{
-  MachVtbl.VideoGetDisplaySize(Width, Height, Depth);
+    return MachVtbl.GetTime();
 }
 
 ULONG
-MachVideoGetBufferSize(VOID)
+ArcGetRelativeTime(VOID)
 {
-  return MachVtbl.VideoGetBufferSize();
-}
+    TIMEINFO* TimeInfo;
+    ULONG ret;
 
-VOID
-MachVideoSetTextCursorPosition(UCHAR X, UCHAR Y)
-{
-  MachVtbl.VideoSetTextCursorPosition(X, Y);
-}
-
-VOID
-MachVideoHideShowTextCursor(BOOLEAN Show)
-{
-  MachVtbl.VideoHideShowTextCursor(Show);
-}
-
-VOID
-MachVideoPutChar(int Ch, UCHAR Attr, unsigned X, unsigned Y)
-{
-  MachVtbl.VideoPutChar(Ch, Attr, X, Y);
-}
-
-VOID
-MachVideoCopyOffScreenBufferToVRAM(PVOID Buffer)
-{
-  MachVtbl.VideoCopyOffScreenBufferToVRAM(Buffer);
-}
-
-BOOLEAN
-MachVideoIsPaletteFixed(VOID)
-{
-  return MachVtbl.VideoIsPaletteFixed();
-}
-
-VOID
-MachVideoSetPaletteColor(UCHAR Color, UCHAR Red, UCHAR Green, UCHAR Blue)
-{
-  MachVtbl.VideoSetPaletteColor(Color, Red, Green, Blue);
-}
-
-VOID
-MachVideoGetPaletteColor(UCHAR Color, UCHAR *Red, UCHAR *Green, UCHAR *Blue)
-{
-  MachVtbl.VideoGetPaletteColor(Color, Red, Green, Blue);
-}
-
-VOID
-MachVideoSync(VOID)
-{
-  MachVtbl.VideoSync();
-}
-
-VOID
-MachBeep(VOID)
-{
-  MachVtbl.Beep();
-}
-
-VOID
-MachPrepareForReactOS(IN BOOLEAN Setup)
-{
-  MachVtbl.PrepareForReactOS(Setup);
-}
-
-BOOLEAN
-MachDiskGetBootPath(char *BootPath, unsigned Size)
-{
-  return MachVtbl.DiskGetBootPath(BootPath, Size);
-}
-
-BOOLEAN
-MachDiskReadLogicalSectors(UCHAR DriveNumber, ULONGLONG SectorNumber, ULONG SectorCount, PVOID Buffer)
-{
-  return MachVtbl.DiskReadLogicalSectors(DriveNumber, SectorNumber, SectorCount, Buffer);
-}
-
-BOOLEAN
-MachDiskGetDriveGeometry(UCHAR DriveNumber, PGEOMETRY DriveGeometry)
-{
-  return MachVtbl.DiskGetDriveGeometry(DriveNumber, DriveGeometry);
-}
-
-ULONG
-MachDiskGetCacheableBlockCount(UCHAR DriveNumber)
-{
-  return MachVtbl.DiskGetCacheableBlockCount(DriveNumber);
+    TimeInfo = ArcGetTime();
+    ret = ((TimeInfo->Hour * 24) + TimeInfo->Minute) * 60 + TimeInfo->Second;
+    return ret;
 }
 
 /* EOF */

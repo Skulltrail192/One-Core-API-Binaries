@@ -17,6 +17,7 @@ Bus_PDO_EvalMethod(PPDO_DEVICE_DATA DeviceData,
   PIO_STACK_LOCATION IrpSp = IoGetCurrentIrpStackLocation(Irp);
   ACPI_EVAL_INPUT_BUFFER_SIMPLE_INTEGER *SimpleInt;
   ACPI_EVAL_INPUT_BUFFER_SIMPLE_STRING *SimpleStr;
+  CHAR MethodName[5];
 
   if (IrpSp->Parameters.DeviceIoControl.InputBufferLength < sizeof(ULONG))
       return STATUS_INVALID_PARAMETER;
@@ -40,7 +41,7 @@ Bus_PDO_EvalMethod(PPDO_DEVICE_DATA DeviceData,
 
         ParamList.Count = 1;
 
-        ParamList.Pointer = ExAllocatePoolWithTag(NonPagedPool, sizeof(ACPI_OBJECT), 'IPCA');
+        ParamList.Pointer = ExAllocatePoolWithTag(NonPagedPool, sizeof(ACPI_OBJECT), 'OpcA');
         if (!ParamList.Pointer) return STATUS_INSUFFICIENT_RESOURCES;
 
         ParamList.Pointer[0].Type = ACPI_TYPE_INTEGER;
@@ -55,7 +56,7 @@ Bus_PDO_EvalMethod(PPDO_DEVICE_DATA DeviceData,
 
         ParamList.Count = 1;
 
-        ParamList.Pointer = ExAllocatePoolWithTag(NonPagedPool, sizeof(ACPI_OBJECT), 'IPCA');
+        ParamList.Pointer = ExAllocatePoolWithTag(NonPagedPool, sizeof(ACPI_OBJECT), 'OpcA');
         if (!ParamList.Pointer) return STATUS_INSUFFICIENT_RESOURCES;
 
         ParamList.Pointer[0].String.Pointer = (CHAR*)SimpleStr->String;
@@ -67,13 +68,17 @@ Bus_PDO_EvalMethod(PPDO_DEVICE_DATA DeviceData,
         return STATUS_NOT_IMPLEMENTED;
   }
 
+  RtlCopyMemory(MethodName,
+                EvalInputBuff->MethodName,
+                sizeof(EvalInputBuff->MethodName));
+  MethodName[4] = ANSI_NULL;
   Status = AcpiEvaluateObject(DeviceData->AcpiHandle,
-                              (CHAR*)EvalInputBuff->MethodName,
+                              MethodName,
                               &ParamList,
                               &RetBuff);
 
   if (ParamList.Count != 0)
-      ExFreePoolWithTag(ParamList.Pointer, 'IPCA');
+      ExFreePoolWithTag(ParamList.Pointer, 'OpcA');
 
   if (ACPI_SUCCESS(Status))
   {
@@ -114,7 +119,7 @@ Bus_PDO_EvalMethod(PPDO_DEVICE_DATA DeviceData,
           ExtraParamLength = 0;
 
       OutputBuf = ExAllocatePoolWithTag(NonPagedPool, sizeof(ACPI_EVAL_OUTPUT_BUFFER) +
-                                               ExtraParamLength, 'IPCA');
+                                               ExtraParamLength, 'BpcA');
       if (!OutputBuf) return STATUS_INSUFFICIENT_RESOURCES;
 
       OutputBuf->Signature = ACPI_EVAL_OUTPUT_BUFFER_SIGNATURE;
@@ -150,12 +155,12 @@ Bus_PDO_EvalMethod(PPDO_DEVICE_DATA DeviceData,
           RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer, OutputBuf, sizeof(ACPI_EVAL_OUTPUT_BUFFER) +
                                                                     ExtraParamLength);
           Irp->IoStatus.Information = sizeof(ACPI_EVAL_OUTPUT_BUFFER) + ExtraParamLength;
-          ExFreePoolWithTag(OutputBuf, 'IPCA');
+          ExFreePoolWithTag(OutputBuf, 'BpcA');
           return STATUS_SUCCESS;
       }
       else
       {
-          ExFreePoolWithTag(OutputBuf, 'IPCA');
+          ExFreePoolWithTag(OutputBuf, 'BpcA');
           return STATUS_BUFFER_TOO_SMALL;
       }
   }

@@ -16,7 +16,10 @@ extern ATOM AtomFlashWndState;
 #define HAS_THINFRAME(Style, ExStyle) \
             (((Style) & WS_BORDER) || (!((Style) & (WS_CHILD | WS_POPUP))))
 
-#define HAS_MENU(pWnd,style)  ((((style) & (WS_CHILD | WS_POPUP)) != WS_CHILD) && pWnd->IDMenu)
+#define HAS_CLIENTFRAME(Style, ExStyle) \
+            (((ExStyle) & WS_EX_CLIENTEDGE) || (!((Style) & (WS_CHILD | WS_POPUP))))
+
+#define HAS_MENU(pWnd,style)  ((((style) & (WS_CHILD | WS_POPUP)) != WS_CHILD) && (pWnd->IDMenu) && IntIsMenu(UlongToHandle(pWnd->IDMenu)))
 
 #define IntIsDesktopWindow(WndObj) \
   (WndObj->spwndParent == NULL)
@@ -55,6 +58,10 @@ PWND FASTCALL IntCreateWindow(CREATESTRUCTW* Cs,
                                         PWND OwnerWindow,
                                         PVOID acbiBuffer,
                                         PDESKTOP pdeskCreated);
+PWND FASTCALL co_UserCreateWindowEx(CREATESTRUCTW* Cs,
+                                    PUNICODE_STRING ClassName,
+                                    PLARGE_STRING WindowName,
+                                    PVOID acbiBuffer);
 BOOL FASTCALL IntEnableWindow(HWND,BOOL);
 BOOL FASTCALL IntIsWindowVisible(PWND);
 DWORD FASTCALL GetNCHitEx(PWND,POINT);
@@ -63,5 +70,6 @@ PWND FASTCALL VerifyWnd(PWND);
 PWND FASTCALL IntGetNonChildAncestor(PWND);
 LONG FASTCALL co_UserSetWindowLong(HWND,DWORD,LONG,BOOL);
 HWND FASTCALL IntGetWindow(HWND,UINT);
+LRESULT co_UserFreeWindow(PWND,PPROCESSINFO,PTHREADINFO,BOOLEAN);
 
 /* EOF */

@@ -14,11 +14,15 @@
 //#define NDEBUG
 #include <debug.h>
 
-#include "../ARM3/miarm.h"
+#include <mm/ARM3/miarm.h>
 
 #ifdef _WINKD_
 extern PMMPTE MmDebugPte;
 #endif
+
+/* Helper macros */
+#define IS_ALIGNED(addr, align) (((ULONG64)(addr) & (align - 1)) == 0)
+#define IS_PAGE_ALIGNED(addr) IS_ALIGNED(addr, PAGE_SIZE)
 
 /* GLOBALS *****************************************************************/
 
@@ -58,7 +62,7 @@ BOOLEAN MiPfnsInitialized = FALSE;
 VOID
 NTAPI
 INIT_FUNCTION
-MiInitializeSessionSpaceLayout()
+MiInitializeSessionSpaceLayout(VOID)
 {
     MmSessionSize = MI_SESSION_SIZE;
     MmSessionViewSize = MI_SESSION_VIEW_SIZE;
@@ -181,7 +185,7 @@ MiMapPTEs(
 VOID
 NTAPI
 INIT_FUNCTION
-MiInitializePageTable()
+MiInitializePageTable(VOID)
 {
     ULONG64 PxePhysicalAddress;
     MMPTE TmplPte, *PointerPxe;
@@ -363,17 +367,18 @@ MiBuildNonPagedPool(VOID)
 VOID
 NTAPI
 INIT_FUNCTION
-MiBuildSystemPteSpace()
+MiBuildSystemPteSpace(VOID)
 {
     PMMPTE PointerPte;
+    SIZE_T NonPagedSystemSize;
 
-    /* Use the default numer of system PTEs */
+    /* Use the default number of system PTEs */
     MmNumberOfSystemPtes = MI_NUMBER_SYSTEM_PTES;
-    MiNonPagedSystemSize = (MmNumberOfSystemPtes + 1) * PAGE_SIZE;
+    NonPagedSystemSize = (MmNumberOfSystemPtes + 1) * PAGE_SIZE;
 
     /* Put system PTEs at the start of the system VA space */
     MiSystemPteSpaceStart = MmNonPagedSystemStart;
-    MiSystemPteSpaceEnd = (PUCHAR)MiSystemPteSpaceStart + MiNonPagedSystemSize;
+    MiSystemPteSpaceEnd = (PUCHAR)MiSystemPteSpaceStart + NonPagedSystemSize;
 
     /* Map the PPEs and PDEs for the system PTEs */
     MiMapPPEs(MiSystemPteSpaceStart, MiSystemPteSpaceEnd);

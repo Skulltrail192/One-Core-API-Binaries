@@ -42,7 +42,7 @@ static cookie_t *find_cookie( domain_t *domain, const WCHAR *path, const WCHAR *
     LIST_FOR_EACH( item, &domain->cookies )
     {
         cookie = LIST_ENTRY( item, cookie_t, entry );
-        if (!strcmpW( cookie->path, path ) && !strcmpiW( cookie->name, name ))
+        if (!strcmpW( cookie->path, path ) && !strcmpW( cookie->name, name ))
         {
             TRACE("found %s=%s\n", debugstr_w(cookie->name), debugstr_w(cookie->value));
             return cookie;
@@ -109,7 +109,7 @@ static BOOL add_cookie( session_t *session, cookie_t *cookie, WCHAR *domain_name
     else if ((old_cookie = find_cookie( domain, path, cookie->name ))) delete_cookie( old_cookie );
 
     cookie->path = strdupW( path );
-    list_add_tail( &domain->cookies, &cookie->entry );
+    list_add_head( &domain->cookies, &cookie->entry );
 
     TRACE("domain %s path %s <- %s=%s\n", debugstr_w(domain_name), debugstr_w(cookie->path),
           debugstr_w(cookie->name), debugstr_w(cookie->value));
@@ -122,22 +122,14 @@ static cookie_t *parse_cookie( const WCHAR *string )
     const WCHAR *p;
     int len;
 
-    if (!(p = strchrW( string, '=' )))
-    {
-        WARN("no '=' in %s\n", debugstr_w(string));
-        return NULL;
-    }
-    if (p == string)
-    {
-        WARN("empty cookie name in %s\n", debugstr_w(string));
-        return NULL;
-    }
+    if (!(p = strchrW( string, '=' ))) p = string + strlenW( string );
+    len = p - string;
+    while (len && string[len - 1] == ' ') len--;
+    if (!len) return NULL;
 
     if (!(cookie = heap_alloc_zero( sizeof(cookie_t) ))) return NULL;
-
     list_init( &cookie->entry );
 
-    len = p - string;
     if (!(cookie->name = heap_alloc( (len + 1) * sizeof(WCHAR) )))
     {
         heap_free( cookie );
@@ -146,32 +138,96 @@ static cookie_t *parse_cookie( const WCHAR *string )
     memcpy( cookie->name, string, len * sizeof(WCHAR) );
     cookie->name[len] = 0;
 
-    p++; /* skip '=' */
-    while (*p == ' ') p++;
-
-    len = strlenW( p );
-    if (!(cookie->value = heap_alloc( (len + 1) * sizeof(WCHAR) )))
+    if (*p++ == '=')
     {
-        free_cookie( cookie );
+        while (*p && *p == ' ') p++;
+        len = strlenW( p );
+        while (len && p[len - 1] == ' ') len--;
+
+        if (!(cookie->value = heap_alloc( (len + 1) * sizeof(WCHAR) )))
+        {
+            free_cookie( cookie );
+            return NULL;
+        }
+        memcpy( cookie->value, p, len * sizeof(WCHAR) );
+        cookie->value[len] = 0;
+    }
+    return cookie;
+}
+
+struct attr
+{
+    WCHAR *name;
+    WCHAR *value;
+};
+
+static void free_attr( struct attr *attr )
+{
+    if (!attr) return;
+    heap_free( attr->name );
+    heap_free( attr->value );
+    heap_free( attr );
+}
+
+static struct attr *parse_attr( const WCHAR *str, int *used )
+{
+    const WCHAR *p = str, *q;
+    struct attr *attr;
+    int len;
+
+    while (*p == ' ') p++;
+    q = p;
+    while (*q && *q != ' ' && *q != '=' && *q != ';') q++;
+    len = q - p;
+    if (!len) return NULL;
+
+    if (!(attr = heap_alloc( sizeof(struct attr) ))) return NULL;
+    if (!(attr->name = heap_alloc( (len + 1) * sizeof(WCHAR) )))
+    {
+        heap_free( attr );
         return NULL;
     }
-    memcpy( cookie->value, p, len * sizeof(WCHAR) );
-    cookie->value[len] = 0;
+    memcpy( attr->name, p, len * sizeof(WCHAR) );
+    attr->name[len] = 0;
+    attr->value = NULL;
 
-    return cookie;
+    p = q;
+    while (*p == ' ') p++;
+    if (*p++ == '=')
+    {
+        while (*p == ' ') p++;
+        q = p;
+        while (*q && *q != ';') q++;
+        len = q - p;
+        while (len && p[len - 1] == ' ') len--;
+
+        if (!(attr->value = heap_alloc( (len + 1) * sizeof(WCHAR) )))
+        {
+            free_attr( attr );
+            return NULL;
+        }
+        memcpy( attr->value, p, len * sizeof(WCHAR) );
+        attr->value[len] = 0;
+    }
+
+    while (*q == ' ') q++;
+    if (*q == ';') q++;
+    *used = q - str;
+
+    return attr;
 }
 
 BOOL set_cookies( request_t *request, const WCHAR *cookies )
 {
     static const WCHAR pathW[] = {'p','a','t','h',0};
     static const WCHAR domainW[] = {'d','o','m','a','i','n',0};
-
     BOOL ret = FALSE;
-    WCHAR *buffer, *p, *q, *r;
+    WCHAR *buffer, *p;
     WCHAR *cookie_domain = NULL, *cookie_path = NULL;
+    struct attr *attr, *domain = NULL, *path = NULL;
     session_t *session = request->connect->session;
     cookie_t *cookie;
-    int len;
+    int len, used;
 
     len = strlenW( cookies );
     if (!(buffer = heap_alloc( (len + 1) * sizeof(WCHAR) ))) return FALSE;
@@ -185,32 +241,26 @@ BOOL set_cookies( request_t *request, const WCHAR *cookies )
         heap_free( buffer );
         return FALSE;
     }
-    if ((q = strstrW( p, domainW ))) /* FIXME: do real attribute parsing */
+    len = strlenW( p );
+    while (len && (attr = parse_attr( p, &used )))
     {
-        while (*q && *q != '=') q++;
-        if (!*q) goto end;
-
-        r = ++q;
-        while (*r && *r != ';') r++;
-        len = r - q;
-
-        if (!(cookie_domain = heap_alloc( (len + 1) * sizeof(WCHAR) ))) goto end;
-        memcpy( cookie_domain, q, len * sizeof(WCHAR) );
-        cookie_domain[len] = 0;
-
-    }
-    if ((q = strstrW( p, pathW )))
-    {
-        while (*q && *q != '=') q++;
-        if (!*q) goto end;
-
-        r = ++q;
-        while (*r && *r != ';') r++;
-        len = r - q;
-
-        if (!(cookie_path = heap_alloc( (len + 1) * sizeof(WCHAR) ))) goto end;
-        memcpy( cookie_path, q, len * sizeof(WCHAR) );
-        cookie_path[len] = 0;
+        if (!strcmpiW( attr->name, domainW ))
+        {
+            domain = attr;
+            cookie_domain = attr->value;
+        }
+        else if (!strcmpiW( attr->name, pathW ))
+        {
+            path = attr;
+            cookie_path = attr->value;
+        }
+        else
+        {
+            FIXME( "unhandled attribute %s\n", debugstr_w(attr->name) );
+            free_attr( attr );
+        }
+        len -= used;
+        p += used;
     }
     if (!cookie_domain && !(cookie_domain = strdupW( request->connect->servername ))) goto end;
     if (!cookie_path && !(cookie_path = strdupW( request->path ))) goto end;
@@ -220,8 +270,10 @@ BOOL set_cookies( request_t *request, const WCHAR *cookies )
 
 end:
     if (!ret) free_cookie( cookie );
-    heap_free( cookie_domain );
-    heap_free( cookie_path );
+    if (domain) free_attr( domain );
+    else heap_free( cookie_domain );
+    if (path) free_attr( path );
+    else heap_free( cookie_path );
     heap_free( buffer );
     return ret;
 }
@@ -247,17 +299,25 @@ BOOL add_cookie_headers( request_t *request )
 
                 if (strstrW( request->path, cookie->path ) == request->path)
                 {
-                    const WCHAR format[] = {'C','o','o','k','i','e',':',' ','%','s','=','%','s',0};
-                    int len;
+                    const WCHAR cookieW[] = {'C','o','o','k','i','e',':',' '};
+                    int len, len_cookie = sizeof(cookieW) / sizeof(cookieW[0]), len_name = strlenW( cookie->name );
                     WCHAR *header;
 
-                    len = strlenW( cookie->name ) + strlenW( format ) + strlenW( cookie->value );
+                    len = len_cookie + len_name;
+                    if (cookie->value) len += strlenW( cookie->value ) + 1;
                     if (!(header = heap_alloc( (len + 1) * sizeof(WCHAR) ))) return FALSE;
 
-                    sprintfW( header, format, cookie->name, cookie->value );
+                    memcpy( header, cookieW, len_cookie * sizeof(WCHAR) );
+                    strcpyW( header + len_cookie, cookie->name );
+                    if (cookie->value)
+                    {
+                        header[len_cookie + len_name] = '=';
+                        strcpyW( header + len_cookie + len_name + 1, cookie->value );
+                    }
 
                     TRACE("%s\n", debugstr_w(header));
-                    add_request_headers( request, header, len, WINHTTP_ADDREQ_FLAG_ADD );
+                    add_request_headers( request, header, len,
+                                         WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_COALESCE_WITH_SEMICOLON );
                     heap_free( header );
                 }
             }

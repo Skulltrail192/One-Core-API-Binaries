@@ -6,6 +6,8 @@
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 
+IDI_ICON  ICON  DISCARDABLE  "res/icon_3dtext.ico"
+
 #define REACTOS_VERSION_DLL
 #define REACTOS_STR_FILE_DESCRIPTION  "OpenGL 3DText ScreenSaver"
 #define REACTOS_STR_INTERNAL_NAME     "3dtext"
@@ -17,11 +19,14 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 /* UTF-8 */
 #pragma code_page(65001)
 
-#ifdef LANGUAGE_DE_DE
-    #include "lang/de-DE.rc"
-#endif
 #ifdef LANGUAGE_BG_BG
     #include "lang/bg-BG.rc"
+#endif
+#ifdef LANGUAGE_CS_CZ
+    #include "lang/cs-CZ.rc"
+#endif
+#ifdef LANGUAGE_DE_DE
+    #include "lang/de-DE.rc"
 #endif
 #ifdef LANGUAGE_EL_GR
     #include "lang/el-GR.rc"
@@ -58,6 +63,9 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #endif
 #ifdef LANGUAGE_PL_PL
     #include "lang/pl-PL.rc"
+#endif
+#ifdef LANGUAGE_PT_BR
+    #include "lang/pt-BR.rc"
 #endif
 #ifdef LANGUAGE_RO_RO
     #include "lang/ro-RO.rc"

@@ -13,6 +13,7 @@
 #define NDEBUG
 #include <debug.h>
 
+BOOLEAN CcPfEnablePrefetcher;
 PFSN_PREFETCHER_GLOBALS CcPfGlobals;
 
 /* FUNCTIONS *****************************************************************/
@@ -101,6 +102,9 @@ CcSetAdditionalCacheAttributes (
 	IN	BOOLEAN		DisableWriteBehind
 	)
 {
+    CCTRACE(CC_API_DEBUG, "FileObject=%p DisableReadAhead=%d DisableWriteBehind=%d\n",
+        FileObject, DisableReadAhead, DisableWriteBehind);
+
 	UNIMPLEMENTED;
 }
 
@@ -114,7 +118,18 @@ CcSetBcbOwnerPointer (
 	IN	PVOID	Owner
 	)
 {
-	UNIMPLEMENTED;
+    PINTERNAL_BCB iBcb = Bcb;
+
+    CCTRACE(CC_API_DEBUG, "Bcb=%p Owner=%p\n",
+        Bcb, Owner);
+
+    if (!ExIsResourceAcquiredExclusiveLite(&iBcb->Lock) && !ExIsResourceAcquiredSharedLite(&iBcb->Lock))
+    {
+        DPRINT1("Current thread doesn't own resource!\n");
+        return;
+    }
+
+    ExSetResourceOwnerPointer(&iBcb->Lock, Owner);
 }
 
 /*
@@ -127,6 +142,9 @@ CcSetDirtyPageThreshold (
 	IN	ULONG		DirtyPageThreshold
 	)
 {
+    CCTRACE(CC_API_DEBUG, "FileObject=%p DirtyPageThreshold=%lu\n",
+        FileObject, DirtyPageThreshold);
+
 	UNIMPLEMENTED;
 }
 
@@ -140,5 +158,8 @@ CcSetReadAheadGranularity (
 	IN	ULONG		Granularity
 	)
 {
+    CCTRACE(CC_API_DEBUG, "FileObject=%p Granularity=%lu\n",
+        FileObject, Granularity);
+
 	UNIMPLEMENTED;
 }

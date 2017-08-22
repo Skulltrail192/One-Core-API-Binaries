@@ -21,7 +21,7 @@ IDB_SPECTRUM_4 BITMAP "resources/spectrum_4.bmp"
 IDB_SPECTRUM_8 BITMAP "resources/spectrum_8.bmp"
 IDB_SPECTRUM_16 BITMAP "resources/spectrum_16.bmp"
 
-#include <reactos/manifest_dll.rc>
+#include <reactos/manifest_hosted.rc>
 
 /* UTF-8 */
 #pragma code_page(65001)
@@ -37,6 +37,9 @@ IDB_SPECTRUM_16 BITMAP "resources/spectrum_16.bmp"
 #endif
 #ifdef LANGUAGE_EL_GR
     #include "lang/el-GR.rc"
+#endif
+#ifdef LANGUAGE_EN_GB
+    #include "lang/en-GB.rc"
 #endif
 #ifdef LANGUAGE_EN_US
     #include "lang/en-US.rc"
@@ -71,6 +74,9 @@ IDB_SPECTRUM_16 BITMAP "resources/spectrum_16.bmp"
 #ifdef LANGUAGE_PL_PL
     #include "lang/pl-PL.rc"
 #endif
+#ifdef LANGUAGE_PT_BR
+    #include "lang/pt-BR.rc"
+#endif
 #ifdef LANGUAGE_RO_RO
     #include "lang/ro-RO.rc"
 #endif
@@ -94,4 +100,7 @@ IDB_SPECTRUM_16 BITMAP "resources/spectrum_16.bmp"
 #endif
 #ifdef LANGUAGE_ZH_CN
     #include "lang/zh-CN.rc"
+#endif
+#ifdef LANGUAGE_ZH_TW
+    #include "lang/zh-TW.rc"
 #endif

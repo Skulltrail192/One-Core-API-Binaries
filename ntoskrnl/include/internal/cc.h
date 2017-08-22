@@ -1,5 +1,46 @@
 #pragma once
 
+//
+// Define this if you want debugging support
+//
+#define _CC_DEBUG_                                      0x00
+
+//
+// These define the Debug Masks Supported
+//
+#define CC_API_DEBUG                                    0x01
+
+//
+// Debug/Tracing support
+//
+#if _CC_DEBUG_
+#ifdef NEW_DEBUG_SYSTEM_IMPLEMENTED // enable when Debug Filters are implemented
+#define CCTRACE(x, ...)                                     \
+    {                                                       \
+        DbgPrintEx("%s [%.16s] - ",                         \
+                   __FUNCTION__,                            \
+                   PsGetCurrentProcess()->ImageFileName);   \
+        DbgPrintEx(__VA_ARGS__);                            \
+    }
+#else
+#define CCTRACE(x, ...)                                     \
+    if (x & CcRosTraceLevel)                                \
+    {                                                       \
+        DbgPrint("%s [%.16s] - ",                           \
+                 __FUNCTION__,                              \
+                 PsGetCurrentProcess()->ImageFileName);     \
+        DbgPrint(__VA_ARGS__);                              \
+    }
+#endif
+#else
+#define CCTRACE(x, fmt, ...) DPRINT(fmt, ##__VA_ARGS__)
+#endif
+
+//
+// Global Cc Data
+//
+extern ULONG CcRosTraceLevel;
+
 typedef struct _PF_SCENARIO_ID
 {
     WCHAR ScenName[30];
@@ -108,10 +149,11 @@ typedef struct _ROS_SHARED_CACHE_MAP
     PFILE_OBJECT FileObject;
     LARGE_INTEGER SectionSize;
     LARGE_INTEGER FileSize;
+    BOOLEAN PinAccess;
     PCACHE_MANAGER_CALLBACKS Callbacks;
     PVOID LazyWriteContext;
     KSPIN_LOCK CacheMapLock;
-    ULONG RefCount;
+    ULONG OpenCount;
 #if DBG
     BOOLEAN Trace; /* enable extra trace output for this cache map and it's VACBs */
 #endif
@@ -142,6 +184,9 @@ typedef struct _ROS_VACB
     KMUTEX Mutex;
     /* Number of references. */
     ULONG ReferenceCount;
+    /* How many times was it pinned? */
+    _Guarded_by_(Mutex)
+    LONG PinCount;
     /* Pointer to the shared cache map for the file which this view maps data for. */
     PROS_SHARED_CACHE_MAP SharedCacheMap;
     /* Pointer to the next VACB in a chain. */
@@ -149,9 +194,12 @@ typedef struct _ROS_VACB
 
 typedef struct _INTERNAL_BCB
 {
+    /* Lock */
+    ERESOURCE Lock;
     PUBLIC_BCB PFCB;
     PROS_VACB Vacb;
     BOOLEAN Dirty;
+    BOOLEAN Pinned;
     CSHORT RefCount; /* (At offset 0x34 on WinNT4) */
 } INTERNAL_BCB, *PINTERNAL_BCB;
 
@@ -278,6 +326,7 @@ NTAPI
 CcRosInitializeFileCache(
     PFILE_OBJECT FileObject,
     PCC_FILE_SIZES FileSizes,
+    BOOLEAN PinAccess,
     PCACHE_MANAGER_CALLBACKS CallBacks,
     PVOID LazyWriterContext
 );
@@ -291,6 +340,29 @@ CcRosReleaseFileCache(
 NTSTATUS
 NTAPI
 CcTryToInitializeFileCache(PFILE_OBJECT FileObject);
+
+FORCEINLINE
+NTSTATUS
+CcRosAcquireVacbLock(
+    _Inout_ PROS_VACB Vacb,
+    _In_ PLARGE_INTEGER Timeout)
+{
+    NTSTATUS Status;
+    Status = KeWaitForSingleObject(&Vacb->Mutex,
+                                   Executive,
+                                   KernelMode,
+                                   FALSE,
+                                   Timeout);
+    return Status;
+}
+
+FORCEINLINE
+VOID
+CcRosReleaseVacbLock(
+    _Inout_ PROS_VACB Vacb)
+{
+    KeReleaseMutex(&Vacb->Mutex, FALSE);
+}
 
 FORCEINLINE
 BOOLEAN

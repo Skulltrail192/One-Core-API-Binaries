@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:            See COPYING in the top level directory
  * PROJECT:              ReactOS DirectX
- * FILE:                 ddraw/surface/createsurface.c
+ * FILE:                 dll/directx/ddraw/Surface/createsurface.c
  * PURPOSE:              IDirectDrawSurface Creation
  * PROGRAMMER:           Magnus Olsen
  *
@@ -73,7 +73,7 @@ Internal_CreateSurface( LPDDRAWI_DIRECTDRAW_INT pDDraw, LPDDSURFACEDESC2 pDDSD,
 
     /*
      * program does not need set the DDSD_LPSURFACE,
-     * if they forget set it, the ddraw will autoamtic
+     * if they forget set it, the ddraw will automatic
      * set it for system memory.
      */
     if ( ((pDDSD->ddsCaps.dwCaps & DDSCAPS_SYSTEMMEMORY) == DDSCAPS_SYSTEMMEMORY) &&
@@ -229,7 +229,7 @@ Internal_CreateSurface( LPDDRAWI_DIRECTDRAW_INT pDDraw, LPDDSURFACEDESC2 pDDSD,
 
     /* Fixme call on DdCanCreate then on DdCreateSurface createsurface data here */
 
-    /* FIXME bIsDifferentPixelFormat being set to true or false with automatic detcitons */
+    /* FIXME bIsDifferentPixelFormat being set to true or false with automatic detections */
     mDdCanCreateSurface.bIsDifferentPixelFormat = FALSE;
 
     mDdCanCreateSurface.lpDD = pDDraw->lpLcl->lpGbl;

@@ -68,7 +68,7 @@ DWORD             symt_ptr2index(struct module* module, const struct symt* sym)
 
     /* try to find the pointer in our ht */
     while ((ptr = hash_table_iter_up(&hti))) {
-        idx_to_ptr = GET_ENTRY(ptr, struct symt_idx_to_ptr, hash_elt);
+        idx_to_ptr = CONTAINING_RECORD(ptr, struct symt_idx_to_ptr, hash_elt);
         if (idx_to_ptr->sym == sym)
             return idx_to_ptr->idx;
     }
@@ -430,7 +430,7 @@ struct symt_block* symt_close_func_block(struct module* module,
 
     if (pc) block->size = func->address + pc - block->address;
     return (block->container->tag == SymTagBlock) ? 
-        GET_ENTRY(block->container, struct symt_block, symt) : NULL;
+        CONTAINING_RECORD(block->container, struct symt_block, symt) : NULL;
 }
 
 struct symt_hierarchy_point* symt_add_function_point(struct module* module,
@@ -572,7 +572,7 @@ static void symt_fill_sym_info(struct module_pair* pair,
 
     if (!symt_get_info(pair->effective, sym, TI_GET_TYPE, &sym_info->TypeIndex))
         sym_info->TypeIndex = 0;
-    sym_info->info = symt_ptr2index(pair->effective, sym);
+    sym_info->Index = symt_ptr2index(pair->effective, sym);
     sym_info->Reserved[0] = sym_info->Reserved[1] = 0;
     if (!symt_get_info(pair->effective, sym, TI_GET_LENGTH, &size) &&
         (!sym_info->TypeIndex ||
@@ -731,7 +731,7 @@ static BOOL send_symbol(const struct sym_enum* se, struct module_pair* pair,
                         const struct symt_function* func, const struct symt* sym)
 {
     symt_fill_sym_info(pair, func, sym, se->sym_info);
-    if (se->index && se->sym_info->info != se->index) return FALSE;
+    if (se->index && se->sym_info->Index != se->index) return FALSE;
     if (se->tag && se->sym_info->Tag != se->tag) return FALSE;
     if (se->addr && !(se->addr >= se->sym_info->Address && se->addr < se->sym_info->Address + se->sym_info->Size)) return FALSE;
     return !se->cb(se->sym_info, se->sym_info->Size, se->user);
@@ -749,7 +749,7 @@ static BOOL symt_enum_module(struct module_pair* pair, const WCHAR* match,
     hash_table_iter_init(&pair->effective->ht_symbols, &hti, NULL);
     while ((ptr = hash_table_iter_up(&hti)))
     {
-        sym = GET_ENTRY(ptr, struct symt_ht, hash_elt);
+        sym = CONTAINING_RECORD(ptr, struct symt_ht, hash_elt);
         nameW = symt_get_nameW(&sym->symt);
         ret = SymMatchStringW(nameW, match, FALSE);
         HeapFree(GetProcessHeap(), 0, nameW);
@@ -995,7 +995,7 @@ void copy_symbolW(SYMBOL_INFOW* siw, const SYMBOL_INFO* si)
     siw->TypeIndex = si->TypeIndex; 
     siw->Reserved[0] = si->Reserved[0];
     siw->Reserved[1] = si->Reserved[1];
-    siw->Index = si->info; /* FIXME: see dbghelp.h */
+    siw->Index = si->Index;
     siw->Size = si->Size;
     siw->ModBase = si->ModBase;
     siw->Flags = si->Flags;
@@ -1337,7 +1337,7 @@ static BOOL find_name(struct process* pcs, struct module* module, const char* na
     hash_table_iter_init(&pair.effective->ht_symbols, &hti, name);
     while ((ptr = hash_table_iter_up(&hti)))
     {
-        sym = GET_ENTRY(ptr, struct symt_ht, hash_elt);
+        sym = CONTAINING_RECORD(ptr, struct symt_ht, hash_elt);
 
         if (!strcmp(sym->hash_elt.name, name))
         {
@@ -1760,32 +1760,69 @@ BOOL WINAPI SymUnDName64(PIMAGEHLP_SYMBOL64 sym, PSTR UnDecName, DWORD UnDecName
 static void * CDECL und_alloc(size_t len) { return HeapAlloc(GetProcessHeap(), 0, len); }
 static void   CDECL und_free (void* ptr)  { HeapFree(GetProcessHeap(), 0, ptr); }
 
-/***********************************************************************
- *		UnDecorateSymbolName (DBGHELP.@)
- */
-DWORD WINAPI UnDecorateSymbolName(PCSTR DecoratedName, PSTR UnDecoratedName,
-                                  DWORD UndecoratedLength, DWORD Flags)
+static char *und_name(char *buffer, const char *mangled, int buflen, unsigned short flags)
 {
     /* undocumented from msvcrt */
     static HANDLE hMsvcrt;
     static char* (CDECL *p_undname)(char*, const char*, int, void* (CDECL*)(size_t), void (CDECL*)(void*), unsigned short);
     static const WCHAR szMsvcrt[] = {'m','s','v','c','r','t','.','d','l','l',0};
 
-    TRACE("(%s, %p, %d, 0x%08x)\n",
-          debugstr_a(DecoratedName), UnDecoratedName, UndecoratedLength, Flags);
-
     if (!p_undname)
     {
         if (!hMsvcrt) hMsvcrt = LoadLibraryW(szMsvcrt);
         if (hMsvcrt) p_undname = (void*)GetProcAddress(hMsvcrt, "__unDName");
-        if (!p_undname) return 0;
+        if (!p_undname) return NULL;
     }
 
-    if (!UnDecoratedName) return 0;
-    if (!p_undname(UnDecoratedName, DecoratedName, UndecoratedLength, 
-                   und_alloc, und_free, Flags))
+    return p_undname(buffer, mangled, buflen, und_alloc, und_free, flags);
+}
+
+/***********************************************************************
+ *		UnDecorateSymbolName (DBGHELP.@)
+ */
+DWORD WINAPI UnDecorateSymbolName(const char *decorated_name, char *undecorated_name,
+                                  DWORD undecorated_length, DWORD flags)
+{
+    TRACE("(%s, %p, %d, 0x%08x)\n",
+          debugstr_a(decorated_name), undecorated_name, undecorated_length, flags);
+
+    if (!undecorated_name || !undecorated_length)
         return 0;
-    return strlen(UnDecoratedName);
+    if (!und_name(undecorated_name, decorated_name, undecorated_length, flags))
+        return 0;
+    return strlen(undecorated_name);
+}
+
+/***********************************************************************
+ *		UnDecorateSymbolNameW (DBGHELP.@)
+ */
+DWORD WINAPI UnDecorateSymbolNameW(const WCHAR *decorated_name, WCHAR *undecorated_name,
+                                   DWORD undecorated_length, DWORD flags)
+{
+    char *buf, *ptr;
+    int len, ret = 0;
+
+    TRACE("(%s, %p, %d, 0x%08x)\n",
+          debugstr_w(decorated_name), undecorated_name, undecorated_length, flags);
+
+    if (!undecorated_name || !undecorated_length)
+        return 0;
+
+    len = WideCharToMultiByte(CP_ACP, 0, decorated_name, -1, NULL, 0, NULL, NULL);
+    if ((buf = HeapAlloc(GetProcessHeap(), 0, len)))
+    {
+        WideCharToMultiByte(CP_ACP, 0, decorated_name, -1, buf, len, NULL, NULL);
+        if ((ptr = und_name(NULL, buf, 0, flags)))
+        {
+            MultiByteToWideChar(CP_ACP, 0, ptr, -1, undecorated_name, undecorated_length);
+            undecorated_name[undecorated_length - 1] = 0;
+            ret = strlenW(undecorated_name);
+            und_free(ptr);
+        }
+        HeapFree(GetProcessHeap(), 0, buf);
+    }
+
+    return ret;
 }
 
 #define WILDCHAR(x)      (-(x))
@@ -2119,7 +2156,7 @@ BOOL WINAPI SymEnumLines(HANDLE hProcess, ULONG64 base, PCSTR compiland,
     {
         unsigned int    i;
 
-        sym = GET_ENTRY(ptr, struct symt_ht, hash_elt);
+        sym = CONTAINING_RECORD(ptr, struct symt_ht, hash_elt);
         if (sym->symt.tag != SymTagFunction) continue;
 
         sci.FileName[0] = '\0';

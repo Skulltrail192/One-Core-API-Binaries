@@ -119,15 +119,12 @@ static HRESULT VARIANT_FromDisp(IDispatch* pdispIn, LCID lcid, void* pOut,
   if (SUCCEEDED(hRet))
   {
     /* Convert the property to the requested type */
-    V_VT(&dstVar) = VT_EMPTY;
+    VariantInit(&dstVar);
     hRet = VariantChangeTypeEx(&dstVar, &srcVar, lcid, dwFlags, vt);
     VariantClear(&srcVar);
 
     if (SUCCEEDED(hRet))
-    {
       VARIANT_CopyData(&dstVar, vt, pOut);
-      VariantClear(&srcVar);
-    }
   }
   else
     hRet = DISP_E_TYPEMISMATCH;
@@ -2938,28 +2935,28 @@ HRESULT WINAPI VarR4FromUI4(ULONG ulIn, float *pFltOut)
 HRESULT WINAPI VarR4FromDec(DECIMAL* pDecIn, float *pFltOut)
 {
   BYTE scale = DEC_SCALE(pDecIn);
-  int divisor = 1;
+  double divisor = 1.0;
   double highPart;
 
   if (scale > DEC_MAX_SCALE || DEC_SIGN(pDecIn) & ~DECIMAL_NEG)
     return E_INVALIDARG;
 
   while (scale--)
-    divisor *= 10;
+    divisor *= 10.0;
 
   if (DEC_SIGN(pDecIn))
     divisor = -divisor;
 
   if (DEC_HI32(pDecIn))
   {
-    highPart = (double)DEC_HI32(pDecIn) / (double)divisor;
+    highPart = (double)DEC_HI32(pDecIn) / divisor;
     highPart *= 4294967296.0F;
     highPart *= 4294967296.0F;
   }
   else
     highPart = 0.0;
 
-  *pFltOut = (double)DEC_LO64(pDecIn) / (double)divisor + highPart;
+  *pFltOut = (double)DEC_LO64(pDecIn) / divisor + highPart;
   return S_OK;
 }
 
@@ -4137,8 +4134,6 @@ HRESULT WINAPI VarDecFromI4(LONG lIn, DECIMAL* pDecOut)
   }
   return S_OK;
 }
-
-#define LOCALE_EN_US		(MAKELCID(MAKELANGID(LANG_ENGLISH,SUBLANG_ENGLISH_US),SORT_DEFAULT))
 
 /* internal representation of the value stored in a DECIMAL. The bytes are
    stored from LSB at index 0 to MSB at index 11
@@ -7660,16 +7655,18 @@ HRESULT WINAPI VarDateFromStr(OLECHAR* strIn, LCID lcid, ULONG dwFlags, DATE* pd
   /* Parse the string into our structure */
   while (*strIn)
   {
-    if (dp.dwCount >= 6)
-      break;
-
     if (isdigitW(*strIn))
     {
+      if (dp.dwCount >= 6)
+      {
+        hRet = DISP_E_TYPEMISMATCH;
+        break;
+      }
       dp.dwValues[dp.dwCount] = strtoulW(strIn, &strIn, 10);
       dp.dwCount++;
       strIn--;
     }
-    else if (isalpha(*strIn))
+    else if (isalphaW(*strIn))
     {
       BOOL bFound = FALSE;
 
@@ -7680,9 +7677,14 @@ HRESULT WINAPI VarDateFromStr(OLECHAR* strIn, LCID lcid, ULONG dwFlags, DATE* pd
         {
           if (i <= 25)
           {
-            dp.dwValues[dp.dwCount] = ParseDateMonths[i];
-            dp.dwFlags[dp.dwCount] |= (DP_MONTH|DP_DATESEP);
-            dp.dwCount++;
+            if (dp.dwCount >= 6)
+              hRet = DISP_E_TYPEMISMATCH;
+            else
+            {
+              dp.dwValues[dp.dwCount] = ParseDateMonths[i];
+              dp.dwFlags[dp.dwCount] |= (DP_MONTH|DP_DATESEP);
+              dp.dwCount++;
+            }
           }
           else if (i > 39 && i < 42)
           {

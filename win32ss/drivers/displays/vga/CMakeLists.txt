@@ -1,6 +1,4 @@
 
-spec2def(vgaddi.dll vgaddi.spec)
-
 list(APPEND SOURCE
     main/enable.c
     objects/screen.c
@@ -16,11 +14,9 @@ list(APPEND SOURCE
 
 add_library(vgaddi SHARED
     ${SOURCE}
-    vgaddi.rc
-    ${CMAKE_CURRENT_BINARY_DIR}/vgaddi.def)
+    vgaddi.rc)
 
 set_module_type(vgaddi kerneldll ENTRYPOINT DrvEnableDriver 12)
-
 add_pch(vgaddi vgaddi.h SOURCE)
 add_importlibs(vgaddi win32k)
 target_link_libraries(vgaddi libcntpr)

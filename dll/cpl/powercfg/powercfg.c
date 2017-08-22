@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS Power Configuration Applet
  * LICENSE:         GPL - See COPYING in the top level directory
- * FILE:            dll/cpl/powercfg/powershemes.c
+ * FILE:            dll/cpl/powercfg/powercfg.c
  * PURPOSE:         initialization of applet
  * PROGRAMMERS:     Alexander Wurzinger (Lohnegrim at gmx dot net)
  *                  Johannes Anderwald (johannes.anderwald@reactos.org)
@@ -14,7 +14,7 @@
 #include <winreg.h>
 #include <regstr.h>
 
-#define NUM_APPLETS	(1)
+#define NUM_APPLETS (1)
 
 static LONG APIENTRY Applet1(HWND hwnd, UINT uMsg, LPARAM wParam, LPARAM lParam);
 
@@ -97,13 +97,13 @@ Applet1(HWND hwnd, UINT uMsg, LPARAM wParam, LPARAM lParam)
   psh.nStartPage = 0;
   psh.phpage = hpsp;
 
-  InitPropSheetPage(&psh, IDD_PROPPAGEPOWERSHEMES, (DLGPROC)PowerSchemesDlgProc);
+  InitPropSheetPage(&psh, IDD_PROPPAGEPOWERSCHEMES, (DLGPROC)PowerSchemesDlgProc);
   if (GetPwrCapabilities(&spc))
   {
     if (spc.SystemBatteriesPresent)
-	{
-	  InitPropSheetPage(&psh, IDD_PROPPAGEALARMS, (DLGPROC)AlarmsDlgProc);
-	}
+    {
+      InitPropSheetPage(&psh, IDD_PROPPAGEALARMS, (DLGPROC)AlarmsDlgProc);
+    }
   }
   InitPropSheetPage(&psh, IDD_PROPPAGEADVANCED, (DLGPROC)AdvancedDlgProc);
   InitPropSheetPage(&psh, IDD_PROPPAGEHIBERNATE, (DLGPROC)HibernateDlgProc);

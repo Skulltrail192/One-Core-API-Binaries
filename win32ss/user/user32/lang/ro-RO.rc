@@ -1,7 +1,7 @@
 /*
-Translators: Petru Dumitriu (petrimetri at gmail dot com)
-             Ștefan Fulea (stefan dot fulea at mail dot md)
-*/
+ * Translators: Petru Dimitriu (petrimetri at gmail dot com)
+ *              Ștefan Fulea (stefan dot fulea at mail dot md)
+ */
 
 LANGUAGE LANG_ROMANIAN, SUBLANG_NEUTRAL
 
@@ -67,10 +67,11 @@ BEGIN
     IDS_CANCEL "A&nulează"
     IDS_ABORT "Aba&ndon"
     IDS_RETRY "&Reîncearcă"
-    IDS_IGNORE "&Ignoră"
+    IDS_IGNORE "Ign&oră"
     IDS_YES "D&a"
     IDS_NO "N&u"
-    IDS_HELP "&Manual…"
+    IDS_CLOSE "Î&nchide"
+    IDS_HELP "&Manual"
     IDS_TRYAGAIN "&Reîncearcă"
     IDS_CONTINUE "&Continuă"
 END

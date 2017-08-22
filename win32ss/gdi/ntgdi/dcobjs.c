@@ -2,7 +2,7 @@
  * COPYRIGHT:         See COPYING in the top level directory
  * PROJECT:           ReactOS Win32k subsystem
  * PURPOSE:           Functions for creation and destruction of DCs
- * FILE:              subsystems/win32/win32k/objects/dcobjs.c
+ * FILE:              win32ss/gdi/ntgdi/dcobjs.c
  * PROGRAMER:         Timo Kreuzer (timo.kreuzer@rectos.org)
  */
 
@@ -49,9 +49,8 @@ DC_vUpdateFillBrush(PDC pdc)
     /* Check for DC brush */
     if (pdcattr->hbrush == StockObjects[DC_BRUSH])
     {
-        /* ROS HACK, should use surf xlate */
         /* Update the eboFill's solid color */
-        EBRUSHOBJ_vSetSolidRGBColor(&pdc->eboFill, pdcattr->crPenClr);
+        EBRUSHOBJ_vSetSolidRGBColor(&pdc->eboFill, pdcattr->crBrushClr);
     }
 
     /* Clear flags */
@@ -159,7 +158,8 @@ DC_vSetBrushOrigin(PDC pdc, LONG x, LONG y)
  *
  * @implemented
  */
-_Success_(return != FALSE)
+_Success_(return!=FALSE)
+__kernel_entry
 BOOL
 APIENTRY
 NtGdiSetBrushOrg(
@@ -168,40 +168,30 @@ NtGdiSetBrushOrg(
     _In_ INT y,
     _Out_opt_ LPPOINT pptOut)
 {
-    PDC pdc;
 
-    /* Lock the DC */
-    pdc = DC_LockDc(hdc);
-    if (pdc == NULL)
+    POINT ptOut;
+                /* Call the internal function */
+    BOOL  Ret = GreSetBrushOrg( hdc, x, y, &ptOut);
+    if (Ret)
     {
-        EngSetLastError(ERROR_INVALID_HANDLE);
-        return FALSE;
+       /* Check if the old origin was requested */
+       if (pptOut != NULL)
+       {
+           /* Enter SEH for buffer transfer */
+           _SEH2_TRY
+           {
+               /* Probe and copy the old origin */
+               ProbeForWrite(pptOut, sizeof(POINT), 1);
+               *pptOut = ptOut;
+           }
+           _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+           {
+               _SEH2_YIELD(return FALSE);
+           }
+           _SEH2_END;
+       }
     }
-
-    /* Check if the old origin was requested */
-    if (pptOut != NULL)
-    {
-        /* Enter SEH for buffer transfer */
-        _SEH2_TRY
-        {
-            /* Probe and copy the old origin */
-            ProbeForWrite(pptOut, sizeof(POINT), 1);
-            *pptOut = pdc->pdcattr->ptlBrushOrigin;
-        }
-        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
-        {
-            DC_UnlockDc(pdc);
-            _SEH2_YIELD(return FALSE);
-        }
-        _SEH2_END;
-    }
-
-    /* Call the internal function */
-    DC_vSetBrushOrigin(pdc, x, y);
-
-    /* Unlock the DC and return success */
-    DC_UnlockDc(pdc);
-    return TRUE;
+    return Ret;
 }
 
 HPALETTE
@@ -230,6 +220,7 @@ GdiSelectPalette(
         return NULL;
     }
 
+    /// FIXME: we shouldn't dereference pSurface when the PDEV is not locked
     /* Is this a valid palette for this depth? */
 	if ((!pdc->dclevel.pSurface) ||
         (BitsPerFormat(pdc->dclevel.pSurface->SurfObj.iBitmapFormat) <= 8
@@ -330,6 +321,10 @@ DC_bIsBitmapCompatible(PDC pdc, PSURFACE psurf)
     /* DIB sections are always compatible */
     if (psurf->hSecure != NULL) return TRUE;
 
+    /* See if this is the same PDEV */
+    if (psurf->SurfObj.hdev == (HDEV)pdc->ppdev)
+        return TRUE;
+
     /* Get the bit depth of the bitmap */
     cBitsPixel = gajBitsPerFormat[psurf->SurfObj.iBitmapFormat];
 
@@ -352,7 +347,6 @@ NtGdiSelectBitmap(
     PDC pdc;
     HBITMAP hbmpOld;
     PSURFACE psurfNew, psurfOld;
-    PREGION VisRgn;
     HDC hdcOld;
     ASSERT_NOGDILOCKS();
 
@@ -415,7 +409,7 @@ NtGdiSelectBitmap(
             return NULL;
         }
 
-        /* Check if the bitmap is compatile with the dc */
+        /* Check if the bitmap is compatible with the dc */
         if (!DC_bIsBitmapCompatible(pdc, psurfNew))
         {
             /* Dereference the bitmap, unlock the DC and fail. */
@@ -466,20 +460,16 @@ NtGdiSelectBitmap(
         SURFACE_ShareUnlockSurface(psurfOld);
     }
 
-    /* Mark the dc brushes invalid */
+    /* Mark the DC brushes and the RAO region invalid */
     pdc->pdcattr->ulDirty_ |= DIRTY_FILL | DIRTY_LINE;
+    pdc->fs |= DC_FLAG_DIRTY_RAO;
 
-    /* FIXME: Improve by using a region without a handle and selecting it */
-    VisRgn = IntSysCreateRectpRgn( 0,
-                                   0,
-                                   pdc->dclevel.sizl.cx,
-                                   pdc->dclevel.sizl.cy);
-
-    if (VisRgn)
-    {
-        GdiSelectVisRgn(hdc, VisRgn);
-        REGION_Delete(VisRgn);
-    }
+    /* Update the system region */
+    REGION_SetRectRgn(pdc->prgnVis,
+                      0,
+                      0,
+                      pdc->dclevel.sizl.cx,
+                      pdc->dclevel.sizl.cy);
 
     /* Unlock the DC */
     DC_UnlockDc(pdc);
@@ -496,7 +486,7 @@ NtGdiSelectClipPath(
     int Mode)
 {
     PREGION  RgnPath;
-    PPATH pPath;
+    PPATH pPath, pNewPath;
     BOOL  success = FALSE;
     PDC_ATTR pdcattr;
     PDC pdc;
@@ -520,8 +510,8 @@ NtGdiSelectClipPath(
     if (pPath->state != PATH_Closed)
     {
         EngSetLastError(ERROR_CAN_NOT_COMPLETE);
-        DC_UnlockDc(pdc);
-        return FALSE;
+        success = FALSE;
+        goto Exit;
     }
 
     /* Construct a region from the path */
@@ -533,24 +523,23 @@ NtGdiSelectClipPath(
         return FALSE;
     }
 
-    if (!PATH_PathToRegion(pPath, pdcattr->jFillMode, RgnPath))
-    {
-        EngSetLastError(ERROR_CAN_NOT_COMPLETE);
-        REGION_Delete(RgnPath);
-        DC_UnlockDc(pdc);
-        return FALSE;
-    }
+    pNewPath = PATH_FlattenPath(pPath);
 
-    success = IntGdiExtSelectClipRgn(pdc, RgnPath, Mode) != ERROR;
+    success = PATH_PathToRegion(pNewPath, pdcattr->jFillMode, RgnPath);
+
+    PATH_UnlockPath(pNewPath);
+    PATH_Delete(pNewPath->BaseObject.hHmgr);
+
+    if (success) success = IntGdiExtSelectClipRgn(pdc, RgnPath, Mode) != ERROR;
+
     REGION_Delete(RgnPath);
 
-    /* Empty the path */
-    if (success)
-        PATH_EmptyPath(pPath);
-
-    /* FIXME: Should this function delete the path even if it failed? */
-
+Exit:
     PATH_UnlockPath(pPath);
+    PATH_Delete(pdc->dclevel.hPath);
+    pdc->dclevel.flPath &= ~DCPATH_ACTIVE;
+    pdc->dclevel.hPath = NULL;
+
     DC_UnlockDc(pdc);
 
     return success;
@@ -775,7 +764,10 @@ NtGdiGetRandomRgn(
         {
             ret = IntGdiCombineRgn(prgnDest, prgnSrc, 0, RGN_COPY) == ERROR ? -1 : 1;
             if ((ret == 1) && (iCode == SYSRGN))
-                IntGdiOffsetRgn(prgnDest, pdc->ptlDCOrig.x, pdc->ptlDCOrig.y);
+            {
+                /// \todo FIXME This is not really correct, since we already modified the region
+                ret = REGION_bOffsetRgn(prgnDest, pdc->ptlDCOrig.x, pdc->ptlDCOrig.y);
+            }
             REGION_UnlockRgn(prgnDest);
         }
         else

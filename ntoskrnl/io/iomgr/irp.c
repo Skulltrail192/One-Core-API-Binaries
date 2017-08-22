@@ -264,9 +264,15 @@ IopCompleteRequest(IN PKAPC Apc,
         if ((Irp->IoStatus.Status == STATUS_REPARSE) &&
             (Irp->IoStatus.Information == IO_REPARSE_TAG_MOUNT_POINT))
         {
-            /* We should never get this yet */
-            UNIMPLEMENTED_DBGBREAK("Reparse support not yet present!\n");
-            return;
+            PREPARSE_DATA_BUFFER ReparseData;
+
+            ReparseData = (PREPARSE_DATA_BUFFER)*SystemArgument2;
+
+            ASSERT(ReparseData->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT);
+            ASSERT(ReparseData->ReparseDataLength < MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
+            ASSERT(ReparseData->Reserved < MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
+
+            IopDoNameTransmogrify(Irp, FileObject, ReparseData);
         }
     }
 
@@ -278,10 +284,19 @@ IopCompleteRequest(IN PKAPC Apc,
             (Irp->IoStatus.Status != STATUS_VERIFY_REQUIRED) &&
             !(NT_ERROR(Irp->IoStatus.Status)))
         {
-            /* Copy the buffer back to the user */
-            RtlCopyMemory(Irp->UserBuffer,
-                          Irp->AssociatedIrp.SystemBuffer,
-                          Irp->IoStatus.Information);
+            _SEH2_TRY
+            {
+                /* Copy the buffer back to the user */
+                RtlCopyMemory(Irp->UserBuffer,
+                              Irp->AssociatedIrp.SystemBuffer,
+                              Irp->IoStatus.Information);
+            }
+            _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+            {
+                /* Fail the IRP */
+                Irp->IoStatus.Status = _SEH2_GetExceptionCode();
+            }
+            _SEH2_END;
         }
 
         /* Also check if we should de-allocate it */
@@ -311,10 +326,9 @@ IopCompleteRequest(IN PKAPC Apc,
      * (but warnings are OK!), or if it was completed with an error, but
      * did return from a pending I/O Operation and is not synchronous.
      */
-    if (!(NT_ERROR(Irp->IoStatus.Status)) ||
-         (NT_ERROR(Irp->IoStatus.Status) &&
-          (Irp->PendingReturned) &&
-          !(IsIrpSynchronous(Irp, FileObject))))
+    if (!NT_ERROR(Irp->IoStatus.Status) ||
+        (Irp->PendingReturned &&
+         !IsIrpSynchronous(Irp, FileObject)))
     {
         /* Get any information we need from the FO before we kill it */
         if ((FileObject) && (FileObject->CompletionContext))
@@ -324,17 +338,21 @@ IopCompleteRequest(IN PKAPC Apc,
             Key = FileObject->CompletionContext->Key;
         }
 
-        /* Use SEH to make sure we don't write somewhere invalid */
-        _SEH2_TRY
+        /* Check for UserIos */
+        if (Irp->UserIosb != NULL)
         {
-            /*  Save the IOSB Information */
-            *Irp->UserIosb = Irp->IoStatus;
+            /* Use SEH to make sure we don't write somewhere invalid */
+            _SEH2_TRY
+            {
+                /*  Save the IOSB Information */
+                *Irp->UserIosb = Irp->IoStatus;
+            }
+            _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+            {
+                /* Ignore any error */
+            }
+            _SEH2_END;
         }
-        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
-        {
-            /* Ignore any error */
-        }
-        _SEH2_END;
 
         /* Check if we have an event or a file object */
         if (Irp->UserEvent)
@@ -544,13 +562,14 @@ IoAllocateIrp(IN CCHAR StackSize,
     /* Set Charge Quota Flag */
     if (ChargeQuota) Flags |= IRP_QUOTA_CHARGED;
 
-    /* FIXME: Implement Lookaside Floats */
+    /* Get the PRCB */
+    Prcb = KeGetCurrentPrcb();
 
     /* Figure out which Lookaside List to use */
-    if ((StackSize <= 8) && (ChargeQuota == FALSE))
+    if ((StackSize <= 8) && (ChargeQuota == FALSE || Prcb->LookasideIrpFloat > 0))
     {
         /* Set Fixed Size Flag */
-        Flags = IRP_ALLOCATED_FIXED_SIZE;
+        Flags |= IRP_ALLOCATED_FIXED_SIZE;
 
         /* See if we should use big list */
         if (StackSize != 1)
@@ -558,9 +577,6 @@ IoAllocateIrp(IN CCHAR StackSize,
             Size = IoSizeOfIrp(8);
             ListType = LookasideLargeIrpList;
         }
-
-        /* Get the PRCB */
-        Prcb = KeGetCurrentPrcb();
 
         /* Get the P List First */
         List = (PNPAGED_LOOKASIDE_LIST)Prcb->PPLookasideList[ListType].P;
@@ -604,8 +620,12 @@ IoAllocateIrp(IN CCHAR StackSize,
         /* Make sure it was sucessful */
         if (!Irp) return NULL;
     }
-    else
+    else if (Flags & IRP_QUOTA_CHARGED)
     {
+        /* Decrement lookaside float */
+        InterlockedDecrement(&Prcb->LookasideIrpFloat);
+        Flags |= IRP_LOOKASIDE_ALLOCATION;
+
         /* In this case there is no charge quota */
         Flags &= ~IRP_QUOTA_CHARGED;
     }
@@ -647,7 +667,7 @@ IopAllocateIrpMustSucceed(IN CCHAR StackSize)
         i--;
 
         /* First, sleep for 10ms */
-        Sleep.QuadPart = -10 * 1000 * 10;;
+        Sleep.QuadPart = -10 * 1000 * 10;
         KeDelayExecutionThread(KernelMode, FALSE, &Sleep);
 
         /* Then, retry allocation */
@@ -1030,7 +1050,7 @@ IoCancelIrp(IN PIRP Irp)
     Irp->Cancel = TRUE;
 
     /* Clear the cancel routine and get the old one */
-    CancelRoutine = (PVOID)IoSetCancelRoutine(Irp, NULL);
+    CancelRoutine = IoSetCancelRoutine(Irp, NULL);
     if (CancelRoutine)
     {
         /* We had a routine, make sure the IRP isn't completed */
@@ -1235,6 +1255,7 @@ IofCompleteRequest(IN PIRP Irp,
     PIRP MasterIrp;
     ULONG Flags;
     NTSTATUS ErrorCode = STATUS_SUCCESS;
+    PREPARSE_DATA_BUFFER DataBuffer = NULL;
     IOTRACE(IO_IRP_DEBUG,
             "%s - Completing IRP %p\n",
             __FUNCTION__,
@@ -1363,8 +1384,24 @@ IofCompleteRequest(IN PIRP Irp,
         return;
     }
 
-    /* We don't support this yet */
-    ASSERT(Irp->IoStatus.Status != STATUS_REPARSE);
+    /* Check whether we have to reparse */
+    if (Irp->IoStatus.Status == STATUS_REPARSE)
+    {
+        if (Irp->IoStatus.Information > IO_REMOUNT)
+        {
+            /* If that's a reparse tag we understand, save the buffer from deletion */
+            if (Irp->IoStatus.Information == IO_REPARSE_TAG_MOUNT_POINT)
+            {
+                ASSERT(Irp->Tail.Overlay.AuxiliaryBuffer != NULL);
+                DataBuffer = (PREPARSE_DATA_BUFFER)Irp->Tail.Overlay.AuxiliaryBuffer;
+                Irp->Tail.Overlay.AuxiliaryBuffer = NULL;
+            }
+            else
+            {
+                Irp->IoStatus.Status = STATUS_IO_REPARSE_TAG_NOT_HANDLED;
+            }
+        }
+    }
 
     /* Check if we have an auxiliary buffer */
     if (Irp->Tail.Overlay.AuxiliaryBuffer)
@@ -1418,13 +1455,20 @@ IofCompleteRequest(IN PIRP Irp,
     Mdl = Irp->MdlAddress;
     while (Mdl)
     {
-		MmUnlockPages(Mdl);
+        MmUnlockPages(Mdl);
         Mdl = Mdl->Next;
     }
 
     /* Check if we should exit because of a Deferred I/O (page 168) */
     if ((Irp->Flags & IRP_DEFER_IO_COMPLETION) && !(Irp->PendingReturned))
     {
+        /* Restore the saved reparse buffer for the caller */
+        if (Irp->IoStatus.Status == STATUS_REPARSE &&
+            Irp->IoStatus.Information == IO_REPARSE_TAG_MOUNT_POINT)
+        {
+            Irp->Tail.Overlay.AuxiliaryBuffer = (PCHAR)DataBuffer;
+        }
+
         /*
          * Return without queuing the completion APC, since the caller will
          * take care of doing its own optimized completion at PASSIVE_LEVEL.
@@ -1452,7 +1496,7 @@ IofCompleteRequest(IN PIRP Irp,
         /* Queue it */
         KeInsertQueueApc(&Irp->Tail.Apc,
                          FileObject,
-                         NULL, /* This is used for REPARSE stuff */
+                         DataBuffer,
                          PriorityBoost);
     }
     else
@@ -1473,7 +1517,7 @@ IofCompleteRequest(IN PIRP Irp,
             /* Queue it */
             KeInsertQueueApc(&Irp->Tail.Apc,
                              FileObject,
-                             NULL, /* This is used for REPARSE stuff */
+                             DataBuffer,
                              PriorityBoost);
         }
         else
@@ -1545,7 +1589,7 @@ NTAPI
 IoFreeIrp(IN PIRP Irp)
 {
     PNPAGED_LOOKASIDE_LIST List;
-    PP_NPAGED_LOOKASIDE_NUMBER ListType =  LookasideSmallIrpList;
+    PP_NPAGED_LOOKASIDE_NUMBER ListType = LookasideSmallIrpList;
     PKPRCB Prcb;
     IOTRACE(IO_IRP_DEBUG,
             "%s - Freeing IRPs %p\n",
@@ -1557,6 +1601,16 @@ IoFreeIrp(IN PIRP Irp)
     ASSERT(IsListEmpty(&Irp->ThreadListEntry));
     ASSERT(Irp->CurrentLocation >= Irp->StackCount);
 
+    /* Get the PRCB */
+    Prcb = KeGetCurrentPrcb();
+
+    /* If this was a lookaside alloc, increment lookaside float */
+    if (Irp->AllocationFlags & IRP_LOOKASIDE_ALLOCATION)
+    {
+        Irp->AllocationFlags &= ~IRP_LOOKASIDE_ALLOCATION;
+        InterlockedIncrement(&Prcb->LookasideIrpFloat);
+    }
+
     /* If this was a pool alloc, free it with the pool */
     if (!(Irp->AllocationFlags & IRP_ALLOCATED_FIXED_SIZE))
     {
@@ -1567,9 +1621,6 @@ IoFreeIrp(IN PIRP Irp)
     {
         /* Check if this was a Big IRP */
         if (Irp->StackCount != 1) ListType = LookasideLargeIrpList;
-
-        /* Get the PRCB */
-        Prcb = KeGetCurrentPrcb();
 
         /* Use the P List */
         List = (PNPAGED_LOOKASIDE_LIST)Prcb->PPLookasideList[ListType].P;
@@ -1598,8 +1649,16 @@ IoFreeIrp(IN PIRP Irp)
         /* The free was within the Depth */
         if (Irp)
         {
-           InterlockedPushEntrySList(&List->L.ListHead,
-                                     (PSLIST_ENTRY)Irp);
+            /* Remove the association with the process */
+            if (Irp->AllocationFlags & IRP_QUOTA_CHARGED)
+            {
+                ExReturnPoolQuota(Irp);
+                Irp->AllocationFlags &= ~IRP_QUOTA_CHARGED;
+            }
+
+            /* Add it to the lookaside list */
+            InterlockedPushEntrySList(&List->L.ListHead,
+                                      (PSLIST_ENTRY)Irp);
         }
     }
 }

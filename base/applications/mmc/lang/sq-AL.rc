@@ -9,12 +9,13 @@ BEGIN
     POPUP "&File"
     BEGIN
         MENUITEM "I Ri\tCtrl+N", IDM_FILE_NEW
+        MENUITEM "&Hap...\tCtrl+O", IDM_FILE_OPEN
         MENUITEM SEPARATOR
         MENUITEM "D&il\tAlt+F4", IDM_FILE_EXIT
     END
     POPUP "&Ndihmë"
     BEGIN
-        MENUITEM "&Rreth menaxhimit konsol të ReactOS...", IDM_HELP_ABOUT
+        MENUITEM "&Rreth menaxhimit konsol të ReactOS", IDM_HELP_ABOUT
     END
 END
 
@@ -23,6 +24,9 @@ BEGIN
     POPUP "&File"
     BEGIN
         MENUITEM "I Ri\tCtrl+N", IDM_FILE_NEW
+        MENUITEM "&Hap...\tCtrl+O", IDM_FILE_OPEN
+        MENUITEM "&Ruaj", IDM_FILE_SAVE
+        MENUITEM "Ruaj &si...", IDM_FILE_SAVEAS
         MENUITEM SEPARATOR
         MENUITEM "D&il\tAlt+F4", IDM_FILE_EXIT
     END
@@ -32,7 +36,7 @@ BEGIN
     END
     POPUP "&Ndihmë"
     BEGIN
-        MENUITEM "&Rreth menaxhimit konsol të ReactOS...", IDM_HELP_ABOUT
+        MENUITEM "&Rreth menaxhimit konsol të ReactOS", IDM_HELP_ABOUT
     END
 END
 

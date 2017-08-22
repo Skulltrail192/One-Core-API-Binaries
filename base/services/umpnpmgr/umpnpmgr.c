@@ -19,9 +19,9 @@
 /*
  * COPYRIGHT:        See COPYING in the top level directory
  * PROJECT:          ReactOS kernel
- * FILE:             services/umpnpmgr/umpnpmgr.c
+ * FILE:             base/services/umpnpmgr/umpnpmgr.c
  * PURPOSE:          User-mode Plug and Play manager
- * PROGRAMMER:       Eric Kohl
+ * PROGRAMMER:       Eric Kohl (eric.kohl@reactos.org)
  *                   Hervé Poussineau (hpoussin@reactos.org)
  *                   Colin Finck (colin@reactos.org)
  */
@@ -37,6 +37,8 @@
 #include <winbase.h>
 #include <winreg.h>
 #include <winsvc.h>
+#include <winuser.h>
+#include <dbt.h>
 #include <stdio.h>
 #include <cmfuncs.h>
 #include <rtlfuncs.h>
@@ -169,6 +171,8 @@ NtStatusToCrError(NTSTATUS Status)
     {
         case STATUS_NO_SUCH_DEVICE:
             return CR_NO_SUCH_DEVINST;
+        case STATUS_NOT_IMPLEMENTED:
+            return CR_CALL_NOT_IMPLEMENTED;
 
         default:
             /* FIXME: add more mappings */
@@ -262,7 +266,7 @@ PNP_ReportLogOn(
     /* Get the users token */
     hProcess = OpenProcess(PROCESS_ALL_ACCESS, TRUE, ProcessId);
 
-    if(!hProcess)
+    if (!hProcess)
     {
         DPRINT1("OpenProcess failed with error %u\n", GetLastError());
         goto cleanup;
@@ -274,7 +278,7 @@ PNP_ReportLogOn(
         hUserToken = NULL;
     }
 
-    if(!OpenProcessToken(hProcess, TOKEN_ASSIGN_PRIMARY | TOKEN_DUPLICATE | TOKEN_QUERY, &hUserToken))
+    if (!OpenProcessToken(hProcess, TOKEN_ASSIGN_PRIMARY | TOKEN_DUPLICATE | TOKEN_QUERY, &hUserToken))
     {
         DPRINT1("OpenProcessToken failed with error %u\n", GetLastError());
         goto cleanup;
@@ -287,7 +291,7 @@ PNP_ReportLogOn(
     ReturnValue = CR_SUCCESS;
 
 cleanup:
-    if(hProcess)
+    if (hProcess)
         CloseHandle(hProcess);
 
     return ReturnValue;
@@ -486,8 +490,75 @@ PNP_GetDeviceList(
     PNP_RPC_STRING_LEN *pulLength,
     DWORD ulFlags)
 {
-    UNIMPLEMENTED;
-    return CR_CALL_NOT_IMPLEMENTED;
+    PLUGPLAY_CONTROL_DEVICE_RELATIONS_DATA PlugPlayData;
+    CONFIGRET ret = CR_SUCCESS;
+    NTSTATUS Status;
+
+    DPRINT("PNP_GetDeviceList() called\n");
+
+    if (ulFlags & ~CM_GETIDLIST_FILTER_BITS)
+        return CR_INVALID_FLAG;
+
+    if (pulLength == NULL || pszFilter == NULL)
+        return CR_INVALID_POINTER;
+
+//    if (Buffer == NULL)
+//        return CR_INVALID_POINTER;
+
+    if (ulFlags &
+        (CM_GETIDLIST_FILTER_BUSRELATIONS |
+         CM_GETIDLIST_FILTER_POWERRELATIONS |
+         CM_GETIDLIST_FILTER_REMOVALRELATIONS |
+         CM_GETIDLIST_FILTER_EJECTRELATIONS))
+    {
+        RtlInitUnicodeString(&PlugPlayData.DeviceInstance,
+                             pszFilter);
+        if (ulFlags & CM_GETIDLIST_FILTER_BUSRELATIONS)
+        {
+            PlugPlayData.Relations = 3;
+        }
+        else if (ulFlags & CM_GETIDLIST_FILTER_POWERRELATIONS)
+        {
+            PlugPlayData.Relations = 2;
+        }
+        else if (ulFlags & CM_GETIDLIST_FILTER_REMOVALRELATIONS)
+        {
+            PlugPlayData.Relations = 1;
+        }
+        else if (ulFlags & CM_GETIDLIST_FILTER_EJECTRELATIONS)
+        {
+            PlugPlayData.Relations = 0;
+        }
+
+        PlugPlayData.BufferSize = *pulLength * sizeof(WCHAR);
+        PlugPlayData.Buffer = Buffer;
+
+        Status = NtPlugPlayControl(PlugPlayControlQueryDeviceRelations,
+                                   (PVOID)&PlugPlayData,
+                                   sizeof(PLUGPLAY_CONTROL_DEVICE_RELATIONS_DATA));
+        if (NT_SUCCESS(Status))
+        {
+            *pulLength = PlugPlayData.BufferSize / sizeof(WCHAR);
+        }
+        else
+        {
+            ret = NtStatusToCrError(Status);
+        }
+    }
+    else if (ulFlags & CM_GETIDLIST_FILTER_SERVICE)
+    {
+        ret = CR_CALL_NOT_IMPLEMENTED;
+    }
+    else if (ulFlags & CM_GETIDLIST_FILTER_ENUMERATOR)
+    {
+        ret = CR_CALL_NOT_IMPLEMENTED;
+    }
+    else /* CM_GETIDLIST_FILTER_NONE */
+    {
+        ret = CR_CALL_NOT_IMPLEMENTED;
+    }
+
+    return ret;
 }
 
 
@@ -497,11 +568,77 @@ WINAPI
 PNP_GetDeviceListSize(
     handle_t hBinding,
     LPWSTR pszFilter,
-    PNP_RPC_BUFFER_SIZE *pulLen,
+    PNP_RPC_BUFFER_SIZE *pulLength,
     DWORD ulFlags)
 {
-    UNIMPLEMENTED;
-    return CR_CALL_NOT_IMPLEMENTED;
+    PLUGPLAY_CONTROL_DEVICE_RELATIONS_DATA PlugPlayData;
+    CONFIGRET ret = CR_SUCCESS;
+    NTSTATUS Status;
+
+    DPRINT("PNP_GetDeviceListSize() called\n");
+
+    if (ulFlags & ~CM_GETIDLIST_FILTER_BITS)
+        return CR_INVALID_FLAG;
+
+    if (pulLength == NULL || pszFilter == NULL)
+        return CR_INVALID_POINTER;
+
+    *pulLength = 0;
+
+    if (ulFlags &
+        (CM_GETIDLIST_FILTER_BUSRELATIONS |
+         CM_GETIDLIST_FILTER_POWERRELATIONS |
+         CM_GETIDLIST_FILTER_REMOVALRELATIONS |
+         CM_GETIDLIST_FILTER_EJECTRELATIONS))
+    {
+        RtlInitUnicodeString(&PlugPlayData.DeviceInstance,
+                             pszFilter);
+        if (ulFlags & CM_GETIDLIST_FILTER_BUSRELATIONS)
+        {
+            PlugPlayData.Relations = 3;
+        }
+        else if (ulFlags & CM_GETIDLIST_FILTER_POWERRELATIONS)
+        {
+            PlugPlayData.Relations = 2;
+        }
+        else if (ulFlags & CM_GETIDLIST_FILTER_REMOVALRELATIONS)
+        {
+            PlugPlayData.Relations = 1;
+        }
+        else if (ulFlags & CM_GETIDLIST_FILTER_EJECTRELATIONS)
+        {
+            PlugPlayData.Relations = 0;
+        }
+
+        PlugPlayData.BufferSize = 0;
+        PlugPlayData.Buffer = NULL;
+
+        Status = NtPlugPlayControl(PlugPlayControlQueryDeviceRelations,
+                                   (PVOID)&PlugPlayData,
+                                   sizeof(PLUGPLAY_CONTROL_DEVICE_RELATIONS_DATA));
+        if (NT_SUCCESS(Status))
+        {
+            *pulLength = PlugPlayData.BufferSize / sizeof(WCHAR);
+        }
+        else
+        {
+            ret = NtStatusToCrError(Status);
+        }
+    }
+    else if (ulFlags & CM_GETIDLIST_FILTER_SERVICE)
+    {
+        ret = CR_CALL_NOT_IMPLEMENTED;
+    }
+    else if (ulFlags & CM_GETIDLIST_FILTER_ENUMERATOR)
+    {
+        ret = CR_CALL_NOT_IMPLEMENTED;
+    }
+    else /* CM_GETIDLIST_FILTER_NONE */
+    {
+        ret = CR_CALL_NOT_IMPLEMENTED;
+    }
+
+    return ret;
 }
 
 
@@ -811,7 +948,7 @@ PNP_GetDeviceRegProp(
 #endif
 
             case CM_DRP_REMOVAL_POLICY:
-                PlugPlayData.Property = 0x12; // DevicePropertyRemovalPolicy
+                PlugPlayData.Property = 0x13; // DevicePropertyRemovalPolicy
                 break;
 
 #if 0
@@ -854,7 +991,9 @@ PNP_GetDeviceRegProp(
     }
 
 done:
-    *pulTransferLen = (ret == CR_SUCCESS) ? *pulLength : 0;
+
+    if (pulTransferLen)
+        *pulTransferLen = (ret == CR_SUCCESS) ? *pulLength : 0;
 
     if (hKey != NULL)
         RegCloseKey(hKey);
@@ -1129,9 +1268,10 @@ PNP_GetClassName(
     DPRINT("PNP_GetClassName() called\n");
 
     lstrcpyW(szKeyName, L"System\\CurrentControlSet\\Control\\Class\\");
-    if(lstrlenW(pszClassGuid) + 1 < sizeof(szKeyName)/sizeof(WCHAR)-(lstrlenW(szKeyName) * sizeof(WCHAR)))
+    if (lstrlenW(pszClassGuid) + 1 < sizeof(szKeyName)/sizeof(WCHAR)-(lstrlenW(szKeyName) * sizeof(WCHAR)))
         lstrcatW(szKeyName, pszClassGuid);
-    else return CR_INVALID_DATA;
+    else
+        return CR_INVALID_DATA;
 
     if (RegOpenKeyExW(HKEY_LOCAL_MACHINE,
                       szKeyName,
@@ -1223,8 +1363,34 @@ PNP_GetInterfaceDeviceList(
     PNP_RPC_BUFFER_SIZE *pulLength,
     DWORD ulFlags)
 {
-    UNIMPLEMENTED;
-    return CR_CALL_NOT_IMPLEMENTED;
+    NTSTATUS Status;
+    PLUGPLAY_CONTROL_INTERFACE_DEVICE_LIST_DATA PlugPlayData;
+    DWORD ret = CR_SUCCESS;
+
+    UNREFERENCED_PARAMETER(hBinding);
+
+    RtlInitUnicodeString(&PlugPlayData.DeviceInstance,
+                         pszDeviceID);
+
+    PlugPlayData.Flags = ulFlags;
+    PlugPlayData.FilterGuid = InterfaceGuid;
+    PlugPlayData.Buffer = Buffer;
+    PlugPlayData.BufferSize = *pulLength;
+
+    Status = NtPlugPlayControl(PlugPlayControlGetInterfaceDeviceList,
+                               (PVOID)&PlugPlayData,
+                               sizeof(PLUGPLAY_CONTROL_INTERFACE_DEVICE_LIST_DATA));
+    if (NT_SUCCESS(Status))
+    {
+        *pulLength = PlugPlayData.BufferSize;
+    }
+    else
+    {
+        ret = NtStatusToCrError(Status);
+    }
+
+    DPRINT("PNP_GetInterfaceDeviceListSize() done (returns %lx)\n", ret);
+    return ret;
 }
 
 
@@ -1238,8 +1404,36 @@ PNP_GetInterfaceDeviceListSize(
     LPWSTR pszDeviceID,
     DWORD ulFlags)
 {
-    UNIMPLEMENTED;
-    return CR_CALL_NOT_IMPLEMENTED;
+    NTSTATUS Status;
+    PLUGPLAY_CONTROL_INTERFACE_DEVICE_LIST_DATA PlugPlayData;
+    DWORD ret = CR_SUCCESS;
+
+    UNREFERENCED_PARAMETER(hBinding);
+
+    DPRINT("PNP_GetInterfaceDeviceListSize() called\n");
+
+    RtlInitUnicodeString(&PlugPlayData.DeviceInstance,
+                         pszDeviceID);
+
+    PlugPlayData.FilterGuid = InterfaceGuid;
+    PlugPlayData.Buffer = NULL;
+    PlugPlayData.BufferSize = 0;
+    PlugPlayData.Flags = ulFlags;
+
+    Status = NtPlugPlayControl(PlugPlayControlGetInterfaceDeviceList,
+                               (PVOID)&PlugPlayData,
+                               sizeof(PLUGPLAY_CONTROL_INTERFACE_DEVICE_LIST_DATA));
+    if (NT_SUCCESS(Status))
+    {
+        *pulLen = PlugPlayData.BufferSize;
+    }
+    else
+    {
+        ret = NtStatusToCrError(Status);
+    }
+
+    DPRINT("PNP_GetInterfaceDeviceListSize() done (returns %lx)\n", ret);
+    return ret;
 }
 
 
@@ -1683,7 +1877,7 @@ PNP_CreateDevInst(
             dwInstanceNumber++;
         }
         while (ret == CR_ALREADY_SUCH_DEVINST);
-        
+
         if (ret == CR_SUCCESS)
         {
             /* pszDeviceID is an out parameter too for generated IDs */
@@ -1736,7 +1930,7 @@ EnableDeviceInstance(LPWSTR pszDeviceInstance)
     CONFIGRET ret = CR_SUCCESS;
     NTSTATUS Status;
 
-    DPRINT("Enable device instance\n");
+    DPRINT("Enable device instance %S\n", pszDeviceInstance);
 
     RtlInitUnicodeString(&ResetDeviceData.DeviceInstance, pszDeviceInstance);
     Status = NtPlugPlayControl(PlugPlayControlResetDevice, &ResetDeviceData, sizeof(PLUGPLAY_CONTROL_RESET_DEVICE_DATA));
@@ -2663,10 +2857,28 @@ PNP_RunDetection(
 DWORD
 WINAPI
 PNP_RegisterNotification(
-    handle_t hBinding)
+    handle_t hBinding,
+    DWORD ulFlags,
+    DWORD *pulNotify)
 {
-    UNIMPLEMENTED;
-    return CR_CALL_NOT_IMPLEMENTED;
+#if 0
+    PNOTIFY_DATA pNotifyData;
+#endif
+
+    DPRINT1("PNP_RegisterNotification(%p 0x%lx %p)\n",
+           hBinding, ulFlags, pulNotify);
+
+#if 0
+    pNotifyData = RtlAllocateHeap(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(NOTIFY_DATA));
+    if (pNotifyData == NULL)
+        return CR_OUT_OF_MEMORY;
+
+    *pulNotify = (DWORD)pNotifyData;
+#endif
+
+    *pulNotify = 1;
+
+    return CR_SUCCESS;
 }
 
 
@@ -2674,10 +2886,18 @@ PNP_RegisterNotification(
 DWORD
 WINAPI
 PNP_UnregisterNotification(
-    handle_t hBinding)
+    handle_t hBinding,
+    DWORD ulNotify)
 {
+    DPRINT1("PNP_UnregisterNotification(%p 0x%lx)\n",
+           hBinding, ulNotify);
+
+#if 0
     UNIMPLEMENTED;
     return CR_CALL_NOT_IMPLEMENTED;
+#endif
+
+    return CR_SUCCESS;
 }
 
 
@@ -2784,6 +3004,8 @@ PNP_GetVersionInternal(
     handle_t hBinding,
     WORD *pwVersion)
 {
+    UNREFERENCED_PARAMETER(hBinding);
+
     *pwVersion = 0x501;
     return CR_SUCCESS;
 }
@@ -2812,8 +3034,21 @@ PNP_GetServerSideDeviceInstallFlags(
     DWORD *pulSSDIFlags,
     DWORD ulFlags)
 {
-    UNIMPLEMENTED;
-    return CR_CALL_NOT_IMPLEMENTED;
+    UNREFERENCED_PARAMETER(hBinding);
+
+    DPRINT1("PNP_GetServerSideDeviceInstallFlags(%p %p %lu)\n",
+            hBinding, pulSSDIFlags, ulFlags);
+
+    if (pulSSDIFlags == NULL)
+        return CR_INVALID_POINTER;
+
+    if (ulFlags != 0)
+        return CR_INVALID_FLAG;
+
+    /* FIXME */
+    *pulSSDIFlags = 0;
+
+    return CR_SUCCESS;
 }
 
 
@@ -2959,6 +3194,7 @@ InstallDevice(PCWSTR DeviceInstance, BOOL ShowWizard)
     BOOL DeviceInstalled = FALSE;
     DWORD BytesWritten;
     DWORD Value;
+    HANDLE hInstallEvent;
     HANDLE hPipe = INVALID_HANDLE_VALUE;
     LPVOID Environment = NULL;
     PROCESS_INFORMATION ProcessInfo;
@@ -2994,12 +3230,28 @@ InstallDevice(PCWSTR DeviceInstance, BOOL ShowWizard)
             return TRUE;
         }
 
+        BytesWritten = sizeof(DWORD);
+        if (RegQueryValueExW(DeviceKey,
+                             L"ConfigFlags",
+                             NULL,
+                             NULL,
+                             (PBYTE)&Value,
+                             &BytesWritten) == ERROR_SUCCESS)
+        {
+            if (Value & CONFIGFLAG_FAILEDINSTALL)
+            {
+                DPRINT("No need to install: %S\n", DeviceInstance);
+                RegCloseKey(DeviceKey);
+                return TRUE;
+            }
+        }
+
         RegCloseKey(DeviceKey);
     }
 
     DPRINT1("Installing: %S\n", DeviceInstance);
 
-    /* Create a random UUID for the named pipe */
+    /* Create a random UUID for the named pipe & event*/
     UuidCreate(&RandomUuid);
     swprintf(UuidString, L"{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",
         RandomUuid.Data1, RandomUuid.Data2, RandomUuid.Data3,
@@ -3007,12 +3259,21 @@ InstallDevice(PCWSTR DeviceInstance, BOOL ShowWizard)
         RandomUuid.Data4[3], RandomUuid.Data4[4], RandomUuid.Data4[5],
         RandomUuid.Data4[6], RandomUuid.Data4[7]);
 
+    /* Create the event */
+    wcscpy(InstallEventName, L"Global\\PNP_Device_Install_Event_0.");
+    wcscat(InstallEventName, UuidString);
+    hInstallEvent = CreateEventW(NULL, TRUE, FALSE, InstallEventName);
+    if (!hInstallEvent)
+    {
+        DPRINT1("CreateEventW('%ls') failed with error %lu\n", InstallEventName, GetLastError());
+        goto cleanup;
+    }
+
     /* Create the named pipe */
     wcscpy(PipeName, L"\\\\.\\pipe\\PNP_Device_Install_Pipe_0.");
     wcscat(PipeName, UuidString);
     hPipe = CreateNamedPipeW(PipeName, PIPE_ACCESS_OUTBOUND, PIPE_TYPE_BYTE, 1, 512, 512, 0, NULL);
-
-    if(hPipe == INVALID_HANDLE_VALUE)
+    if (hPipe == INVALID_HANDLE_VALUE)
     {
         DPRINT1("CreateNamedPipeW failed with error %u\n", GetLastError());
         goto cleanup;
@@ -3025,16 +3286,16 @@ InstallDevice(PCWSTR DeviceInstance, BOOL ShowWizard)
     ZeroMemory(&StartupInfo, sizeof(StartupInfo));
     StartupInfo.cb = sizeof(StartupInfo);
 
-    if(hUserToken)
+    if (hUserToken)
     {
         /* newdev has to run under the environment of the current user */
-        if(!CreateEnvironmentBlock(&Environment, hUserToken, FALSE))
+        if (!CreateEnvironmentBlock(&Environment, hUserToken, FALSE))
         {
             DPRINT1("CreateEnvironmentBlock failed with error %d\n", GetLastError());
             goto cleanup;
         }
 
-        if(!CreateProcessAsUserW(hUserToken, NULL, CommandLine, NULL, NULL, FALSE, CREATE_UNICODE_ENVIRONMENT, Environment, NULL, &StartupInfo, &ProcessInfo))
+        if (!CreateProcessAsUserW(hUserToken, NULL, CommandLine, NULL, NULL, FALSE, CREATE_UNICODE_ENVIRONMENT, Environment, NULL, &StartupInfo, &ProcessInfo))
         {
             DPRINT1("CreateProcessAsUserW failed with error %u\n", GetLastError());
             goto cleanup;
@@ -3048,7 +3309,7 @@ InstallDevice(PCWSTR DeviceInstance, BOOL ShowWizard)
            (ShowWizard is only set to FALSE for these two modes) */
         ASSERT(!ShowWizard);
 
-        if(!CreateProcessW(NULL, CommandLine, NULL, NULL, FALSE, 0, NULL, NULL, &StartupInfo, &ProcessInfo))
+        if (!CreateProcessW(NULL, CommandLine, NULL, NULL, FALSE, 0, NULL, NULL, &StartupInfo, &ProcessInfo))
         {
             DPRINT1("CreateProcessW failed with error %u\n", GetLastError());
             goto cleanup;
@@ -3056,7 +3317,7 @@ InstallDevice(PCWSTR DeviceInstance, BOOL ShowWizard)
     }
 
     /* Wait for the function to connect to our pipe */
-    if(!ConnectNamedPipe(hPipe, NULL))
+    if (!ConnectNamedPipe(hPipe, NULL))
     {
         if (GetLastError() != ERROR_PIPE_CONNECTED)
         {
@@ -3066,9 +3327,6 @@ InstallDevice(PCWSTR DeviceInstance, BOOL ShowWizard)
     }
 
     /* Pass the data. The following output is partly compatible to Windows XP SP2 (researched using a modified newdev.dll to log this stuff) */
-    wcscpy(InstallEventName, L"Global\\PNP_Device_Install_Event_0.");
-    wcscat(InstallEventName, UuidString);
-
     Value = sizeof(InstallEventName);
     WriteFile(hPipe, &Value, sizeof(Value), &BytesWritten, NULL);
     WriteFile(hPipe, InstallEventName, Value, &BytesWritten, NULL);
@@ -3084,29 +3342,29 @@ InstallDevice(PCWSTR DeviceInstance, BOOL ShowWizard)
     /* Wait for newdev.dll to finish processing */
     WaitForSingleObject(ProcessInfo.hProcess, INFINITE);
 
-    /* The following check for success is probably not compatible to Windows, but should do its job */
-    if(!GetExitCodeProcess(ProcessInfo.hProcess, &Value))
-    {
-        DPRINT1("GetExitCodeProcess failed with error %u\n", GetLastError());
-        goto cleanup;
-    }
-
-    DeviceInstalled = Value;
+    /* If the event got signalled, this is success */
+    DeviceInstalled = WaitForSingleObject(hInstallEvent, 0) == WAIT_OBJECT_0;
 
 cleanup:
-    if(hPipe != INVALID_HANDLE_VALUE)
+    if (hInstallEvent)
+        CloseHandle(hInstallEvent);
+
+    if (hPipe != INVALID_HANDLE_VALUE)
         CloseHandle(hPipe);
 
-    if(Environment)
+    if (Environment)
         DestroyEnvironmentBlock(Environment);
 
-    if(ProcessInfo.hProcess)
+    if (ProcessInfo.hProcess)
         CloseHandle(ProcessInfo.hProcess);
 
-    if(ProcessInfo.hThread)
+    if (ProcessInfo.hThread)
         CloseHandle(ProcessInfo.hThread);
 
-    DPRINT1("Success? %d\n", DeviceInstalled);
+    if (!DeviceInstalled)
+    {
+        DPRINT1("InstallDevice failed for DeviceInstance '%ws'\n", DeviceInstance);
+    }
 
     return DeviceInstalled;
 }
@@ -3338,8 +3596,17 @@ PnpEventThread(LPVOID lpParameter)
         }
         else if (UuidEqual(&PnpEvent->EventGuid, (UUID*)&GUID_DEVICE_ARRIVAL, &RpcStatus))
         {
+//            DWORD dwRecipient;
+
             DPRINT("Device arrival: %S\n", PnpEvent->TargetDevice.DeviceIds);
-            /* FIXME: ? */
+
+//            dwRecipient = BSM_ALLDESKTOPS | BSM_APPLICATIONS;
+//            BroadcastSystemMessageW(BSF_POSTMESSAGE,
+//                                    &dwRecipient,
+//                                    WM_DEVICECHANGE,
+//                                    DBT_DEVNODES_CHANGED,
+//                                    0);
+            SendMessageW(HWND_BROADCAST, WM_DEVICECHANGE, DBT_DEVNODES_CHANGED, 0);
         }
         else if (UuidEqual(&PnpEvent->EventGuid, (UUID*)&GUID_DEVICE_EJECT_VETOED, &RpcStatus))
         {
@@ -3351,11 +3618,31 @@ PnpEventThread(LPVOID lpParameter)
         }
         else if (UuidEqual(&PnpEvent->EventGuid, (UUID*)&GUID_DEVICE_SAFE_REMOVAL, &RpcStatus))
         {
+//            DWORD dwRecipient;
+
             DPRINT1("Safe removal: %S\n", PnpEvent->TargetDevice.DeviceIds);
+
+//            dwRecipient = BSM_ALLDESKTOPS | BSM_APPLICATIONS;
+//            BroadcastSystemMessageW(BSF_POSTMESSAGE,
+//                                    &dwRecipient,
+//                                    WM_DEVICECHANGE,
+//                                    DBT_DEVNODES_CHANGED,
+//                                    0);
+            SendMessageW(HWND_BROADCAST, WM_DEVICECHANGE, DBT_DEVNODES_CHANGED, 0);
         }
         else if (UuidEqual(&PnpEvent->EventGuid, (UUID*)&GUID_DEVICE_SURPRISE_REMOVAL, &RpcStatus))
         {
+//            DWORD dwRecipient;
+
             DPRINT1("Surprise removal: %S\n", PnpEvent->TargetDevice.DeviceIds);
+
+//            dwRecipient = BSM_ALLDESKTOPS | BSM_APPLICATIONS;
+//            BroadcastSystemMessageW(BSF_POSTMESSAGE,
+//                                    &dwRecipient,
+//                                    WM_DEVICECHANGE,
+//                                    DBT_DEVNODES_CHANGED,
+//                                    0);
+            SendMessageW(HWND_BROADCAST, WM_DEVICECHANGE, DBT_DEVNODES_CHANGED, 0);
         }
         else if (UuidEqual(&PnpEvent->EventGuid, (UUID*)&GUID_DEVICE_REMOVAL_VETOED, &RpcStatus))
         {
@@ -3448,7 +3735,7 @@ ServiceControlHandler(DWORD dwControl,
             return ERROR_SUCCESS;
 
         default :
-            DPRINT1("  Control %lu received\n");
+            DPRINT1("  Control %lu received\n", dwControl);
             return ERROR_CALL_NOT_IMPLEMENTED;
     }
 }

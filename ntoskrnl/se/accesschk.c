@@ -18,10 +18,11 @@
 
 /* PRIVATE FUNCTIONS **********************************************************/
 
-#define OLD_ACCESS_CHECK
-
+/*
+ * FIXME: Incomplete!
+ */
 BOOLEAN NTAPI
-SepAccessCheckEx(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+SepAccessCheck(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
                IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
                IN ACCESS_MASK DesiredAccess,
                IN POBJECT_TYPE_LIST ObjectTypeList,
@@ -47,6 +48,8 @@ SepAccessCheckEx(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
     PSID Sid;
     NTSTATUS Status;
     PAGED_CODE();
+
+    DPRINT("SepAccessCheck()\n");
 
     /* Check for no access desired */
     if (!DesiredAccess)
@@ -210,11 +213,6 @@ SepAccessCheckEx(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
             {
                 if (SepSidInToken(Token, Sid))
                 {
-#ifdef OLD_ACCESS_CHECK
-                    PreviouslyGrantedAccess = 0;
-                    Status = STATUS_ACCESS_DENIED;
-                    goto ReturnCommonStatus;
-#else
                     /* Map access rights from the ACE */
                     TempAccess = CurrentAce->AccessMask;
                     RtlMapGenericMask(&TempAccess, GenericMapping);
@@ -222,25 +220,21 @@ SepAccessCheckEx(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
                     /* Leave if a remaining right must be denied */
                     if (RemainingAccess & TempAccess)
                         break;
-#endif
                 }
             }
             else if (CurrentAce->Header.AceType == ACCESS_ALLOWED_ACE_TYPE)
             {
                 if (SepSidInToken(Token, Sid))
                 {
-#ifdef OLD_ACCESS_CHECK
-                    TempAccess = CurrentAce->AccessMask;
-                    RtlMapGenericMask(&TempAccess, GenericMapping);
-                    PreviouslyGrantedAccess |= TempAccess;
-#else
                     /* Map access rights from the ACE */
                     TempAccess = CurrentAce->AccessMask;
+                    DPRINT("TempAccess 0x%08lx\n", TempAccess);
                     RtlMapGenericMask(&TempAccess, GenericMapping);
 
                     /* Remove granted rights */
+                    DPRINT("RemainingAccess 0x%08lx  TempAccess 0x%08lx\n", RemainingAccess, TempAccess);
                     RemainingAccess &= ~TempAccess;
-#endif
+                    DPRINT("RemainingAccess 0x%08lx\n", RemainingAccess);
                 }
             }
             else
@@ -253,58 +247,35 @@ SepAccessCheckEx(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
         CurrentAce = (PACE)((ULONG_PTR)CurrentAce + CurrentAce->Header.AceSize);
     }
 
-#ifdef OLD_ACCESS_CHECK
-    DPRINT("PreviouslyGrantedAccess %08lx\n DesiredAccess %08lx\n",
-           PreviouslyGrantedAccess, DesiredAccess);
-
-    PreviouslyGrantedAccess &= DesiredAccess;
-
-    if ((PreviouslyGrantedAccess & ~VALID_INHERIT_FLAGS) ==
-        (DesiredAccess & ~VALID_INHERIT_FLAGS))
-    {
-        Status = STATUS_SUCCESS;
-        goto ReturnCommonStatus;
-    }
-    else
-    {
-        DPRINT1("HACK: Should deny access for caller: granted 0x%lx, desired 0x%lx (generic mapping %p).\n",
-                PreviouslyGrantedAccess, DesiredAccess, GenericMapping);
-        //*AccessStatus = STATUS_ACCESS_DENIED;
-        //return FALSE;
-        PreviouslyGrantedAccess = DesiredAccess;
-        Status = STATUS_SUCCESS;
-        goto ReturnCommonStatus;
-    }
-#else
     DPRINT("DesiredAccess %08lx\nPreviouslyGrantedAccess %08lx\nRemainingAccess %08lx\n",
            DesiredAccess, PreviouslyGrantedAccess, RemainingAccess);
 
     /* Fail if some rights have not been granted */
     if (RemainingAccess != 0)
     {
-        *GrantedAccess = 0;
+        DPRINT("HACK: RemainingAccess = 0x%08lx  DesiredAccess = 0x%08lx\n", RemainingAccess, DesiredAccess);
+#if 0
+        /* HACK HACK HACK */
         Status = STATUS_ACCESS_DENIED;
         goto ReturnCommonStatus;
+#endif
     }
 
     /* Set granted access rights */
     PreviouslyGrantedAccess |= DesiredAccess;
 
-    DPRINT("GrantedAccess %08lx\n", *GrantedAccess);
-
     /* Fail if no rights have been granted */
     if (PreviouslyGrantedAccess == 0)
     {
+        DPRINT1("PreviouslyGrantedAccess == 0  DesiredAccess = %08lx\n", DesiredAccess);
         Status = STATUS_ACCESS_DENIED;
         goto ReturnCommonStatus;
     }
 
     Status = STATUS_SUCCESS;
     goto ReturnCommonStatus;
-#endif
 
 ReturnCommonStatus:
-
     ResultListLength = UseResultList ? ObjectTypeListLength : 1;
     for (i = 0; i < ResultListLength; i++)
     {
@@ -313,31 +284,6 @@ ReturnCommonStatus:
     }
 
     return NT_SUCCESS(Status);
-}
-
-BOOLEAN NTAPI
-SepAccessCheck(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
-               IN PSECURITY_SUBJECT_CONTEXT SubjectSecurityContext,
-               IN ACCESS_MASK DesiredAccess,
-               IN ACCESS_MASK PreviouslyGrantedAccess,
-               OUT PPRIVILEGE_SET* Privileges,
-               IN PGENERIC_MAPPING GenericMapping,
-               IN KPROCESSOR_MODE AccessMode,
-               OUT PACCESS_MASK GrantedAccess,
-               OUT PNTSTATUS AccessStatus)
-{
-    return SepAccessCheckEx(SecurityDescriptor,
-                            SubjectSecurityContext,
-                            DesiredAccess,
-                            NULL,
-                            0,
-                            PreviouslyGrantedAccess,
-                            Privileges,
-                            GenericMapping,
-                            AccessMode,
-                            GrantedAccess,
-                            AccessStatus,
-                            FALSE);
 }
 
 static PSID
@@ -370,6 +316,19 @@ SepGetSDGroup(IN PSECURITY_DESCRIPTOR _SecurityDescriptor)
     return Group;
 }
 
+static
+ULONG
+SepGetPrivilegeSetLength(IN PPRIVILEGE_SET PrivilegeSet)
+{
+    if (PrivilegeSet == NULL)
+        return 0;
+
+    if (PrivilegeSet->PrivilegeCount == 0)
+        return (ULONG)(sizeof(PRIVILEGE_SET) - sizeof(LUID_AND_ATTRIBUTES));
+
+    return (ULONG)(sizeof(PRIVILEGE_SET) +
+                   (PrivilegeSet->PrivilegeCount - 1) * sizeof(LUID_AND_ATTRIBUTES));
+}
 
 /* PUBLIC FUNCTIONS ***********************************************************/
 
@@ -457,8 +416,17 @@ SeAccessCheck(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
     if (DesiredAccess == 0)
     {
         *GrantedAccess = PreviouslyGrantedAccess;
-        *AccessStatus = STATUS_SUCCESS;
-        ret = TRUE;
+        if (PreviouslyGrantedAccess == 0)
+        {
+            DPRINT1("Request for zero access to an object. Denying.\n");
+            *AccessStatus = STATUS_ACCESS_DENIED;
+            ret = FALSE;
+        }
+        else
+        {
+            *AccessStatus = STATUS_SUCCESS;
+            ret = TRUE;
+        }
     }
     else
     {
@@ -466,12 +434,15 @@ SeAccessCheck(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
         ret = SepAccessCheck(SecurityDescriptor,
                              SubjectSecurityContext,
                              DesiredAccess,
+                             NULL,
+                             0,
                              PreviouslyGrantedAccess,
                              Privileges,
                              GenericMapping,
                              AccessMode,
                              GrantedAccess,
-                             AccessStatus);
+                             AccessStatus,
+                             FALSE);
     }
 
     /* Release the lock if needed */
@@ -497,7 +468,7 @@ SeFastTraverseCheck(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
 
     PAGED_CODE();
 
-    NT_ASSERT(AccessMode != KernelMode);
+    ASSERT(AccessMode != KernelMode);
 
     if (SecurityDescriptor == NULL)
         return FALSE;
@@ -525,7 +496,7 @@ SeFastTraverseCheck(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
             continue;
 
         /* If access-allowed ACE */
-        if (Ace->Header.AceType & ACCESS_ALLOWED_ACE_TYPE)
+        if (Ace->Header.AceType == ACCESS_ALLOWED_ACE_TYPE)
         {
             /* Check if all accesses are granted */
             if (!(Ace->Mask & DesiredAccess))
@@ -536,9 +507,9 @@ SeFastTraverseCheck(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
                 return TRUE;
         }
         /* If access-denied ACE */
-        else if (Ace->Header.AceType & ACCESS_DENIED_ACE_TYPE)
+        else if (Ace->Header.AceType == ACCESS_DENIED_ACE_TYPE)
         {
-            /* Here, only check if it denies all the access wanted and deny if so */
+            /* Here, only check if it denies any access wanted and deny if so */
             if (Ace->Mask & DesiredAccess)
                 return FALSE;
         }
@@ -568,6 +539,8 @@ NtAccessCheck(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
     SECURITY_SUBJECT_CONTEXT SubjectSecurityContext;
     KPROCESSOR_MODE PreviousMode = ExGetPreviousMode();
     ACCESS_MASK PreviouslyGrantedAccess = 0;
+    PPRIVILEGE_SET Privileges = NULL;
+    ULONG CapturedPrivilegeSetLength, RequiredPrivilegeSetLength;
     PTOKEN Token;
     NTSTATUS Status;
     PAGED_CODE();
@@ -603,8 +576,8 @@ NtAccessCheck(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
         ProbeForWrite(GrantedAccess, sizeof(ACCESS_MASK), sizeof(ULONG));
         ProbeForWrite(AccessStatus, sizeof(NTSTATUS), sizeof(ULONG));
 
-        /* Initialize the privilege set */
-        PrivilegeSet->PrivilegeCount = 0;
+        /* Capture the privilege set length and the mapping */
+        CapturedPrivilegeSetLength = *PrivilegeSetLength;
     }
     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
     {
@@ -644,6 +617,64 @@ NtAccessCheck(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
         DPRINT("Impersonation level < SecurityIdentification\n");
         ObDereferenceObject(Token);
         return STATUS_BAD_IMPERSONATION_LEVEL;
+    }
+
+    /* Check for ACCESS_SYSTEM_SECURITY and WRITE_OWNER access */
+    Status = SePrivilegePolicyCheck(&DesiredAccess,
+                                    &PreviouslyGrantedAccess,
+                                    NULL,
+                                    Token,
+                                    &Privileges,
+                                    PreviousMode);
+    if (!NT_SUCCESS(Status))
+    {
+        DPRINT("SePrivilegePolicyCheck failed (Status 0x%08lx)\n", Status);
+        ObDereferenceObject(Token);
+        *AccessStatus = Status;
+        *GrantedAccess = 0;
+        return STATUS_SUCCESS;
+    }
+
+    /* Check the size of the privilege set and return the privileges */
+    if (Privileges != NULL)
+    {
+        DPRINT("Privileges != NULL\n");
+
+        /* Calculate the required privilege set buffer size */
+        RequiredPrivilegeSetLength = SepGetPrivilegeSetLength(Privileges);
+
+        /* Fail if the privilege set buffer is too small */
+        if (CapturedPrivilegeSetLength < RequiredPrivilegeSetLength)
+        {
+            ObDereferenceObject(Token);
+            SeFreePrivileges(Privileges);
+            *PrivilegeSetLength = RequiredPrivilegeSetLength;
+            return STATUS_BUFFER_TOO_SMALL;
+        }
+
+        /* Copy the privilege set to the caller */
+        RtlCopyMemory(PrivilegeSet,
+                      Privileges,
+                      RequiredPrivilegeSetLength);
+
+        /* Free the local privilege set */
+        SeFreePrivileges(Privileges);
+    }
+    else
+    {
+        DPRINT("Privileges == NULL\n");
+
+        /* Fail if the privilege set buffer is too small */
+        if (CapturedPrivilegeSetLength < sizeof(PRIVILEGE_SET))
+        {
+            ObDereferenceObject(Token);
+            *PrivilegeSetLength = sizeof(PRIVILEGE_SET);
+            return STATUS_BUFFER_TOO_SMALL;
+        }
+
+        /* Initialize the privilege set */
+        PrivilegeSet->PrivilegeCount = 0;
+        PrivilegeSet->Control = 0;
     }
 
     /* Capture the security descriptor */
@@ -710,12 +741,15 @@ NtAccessCheck(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
         SepAccessCheck(SecurityDescriptor, // FIXME: use CapturedSecurityDescriptor
                        &SubjectSecurityContext,
                        DesiredAccess,
+                       NULL,
+                       0,
                        PreviouslyGrantedAccess,
                        &PrivilegeSet, //FIXME
                        GenericMapping,
                        PreviousMode,
                        GrantedAccess,
-                       AccessStatus);
+                       AccessStatus,
+                       FALSE);
     }
 
     /* Release subject context and unlock the token */

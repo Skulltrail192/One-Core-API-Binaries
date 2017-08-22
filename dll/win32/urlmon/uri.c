@@ -1472,7 +1472,7 @@ static BOOL parse_reg_name(const WCHAR **ptr, parse_data *data, DWORD flags, DWO
     while((!is_res && !is_auth_delim(**ptr, known_scheme)) ||
           (is_res && **ptr && **ptr != '/')) {
         if(**ptr == ':' && !ignore_col) {
-            /* We can ignore ':' if were inside brackets.*/
+            /* We can ignore ':' if we are inside brackets.*/
             if(!inside_brackets) {
                 const WCHAR *tmp = (*ptr)++;
 
@@ -6760,7 +6760,7 @@ HRESULT WINAPI CoInternetCombineUrlEx(IUri *pBaseUri, LPCWSTR pwzRelativeUrl, DW
     HRESULT hr;
     IInternetProtocolInfo *info;
 
-    TRACE("(%p %s %x %p %x) stub\n", pBaseUri, debugstr_w(pwzRelativeUrl), dwCombineFlags,
+    TRACE("(%p %s %x %p %x)\n", pBaseUri, debugstr_w(pwzRelativeUrl), dwCombineFlags,
         ppCombinedUri, (DWORD)dwReserved);
 
     if(!ppCombinedUri)
@@ -6817,7 +6817,6 @@ static HRESULT parse_canonicalize(const Uri *uri, DWORD flags, LPWSTR output,
     const WCHAR *ptr = NULL;
     WCHAR *path = NULL;
     const WCHAR **pptr;
-    WCHAR buffer[INTERNET_MAX_URL_LENGTH+1];
     DWORD len = 0;
     BOOL reduce_path;
 
@@ -6834,8 +6833,7 @@ static HRESULT parse_canonicalize(const Uri *uri, DWORD flags, LPWSTR output,
         ptr = uri->canon_uri+uri->scheme_start+uri->scheme_len+1;
         pptr = &ptr;
     }
-    reduce_path = !(flags & URL_NO_META) &&
-                  !(flags & URL_DONT_SIMPLIFY) &&
+    reduce_path = !(flags & URL_DONT_SIMPLIFY) &&
                   ptr && check_hierarchical(pptr);
 
     for(ptr = uri->canon_uri; ptr < uri->canon_uri+uri->canon_len; ++ptr) {
@@ -6845,11 +6843,11 @@ static HRESULT parse_canonicalize(const Uri *uri, DWORD flags, LPWSTR output,
          * it later.
          */
         if(reduce_path && !path && ptr == uri->canon_uri+uri->path_start)
-            path = buffer+len;
+            path = output+len;
 
         /* Check if it's time to reduce the path. */
         if(reduce_path && ptr == uri->canon_uri+uri->path_start+uri->path_len) {
-            DWORD current_path_len = (buffer+len) - path;
+            DWORD current_path_len = (output+len) - path;
             DWORD new_path_len = remove_dot_segments(path, current_path_len);
 
             /* Update the current length. */
@@ -6861,7 +6859,9 @@ static HRESULT parse_canonicalize(const Uri *uri, DWORD flags, LPWSTR output,
             const WCHAR decoded = decode_pct_val(ptr);
             if(decoded) {
                 if(allow_unescape && (flags & URL_UNESCAPE)) {
-                    buffer[len++] = decoded;
+                    if(len < output_len)
+                        output[len] = decoded;
+                    len++;
                     ptr += 2;
                     do_default_action = FALSE;
                 }
@@ -6869,48 +6869,55 @@ static HRESULT parse_canonicalize(const Uri *uri, DWORD flags, LPWSTR output,
 
             /* See if %'s needed to encoded. */
             if(do_default_action && (flags & URL_ESCAPE_PERCENT)) {
-                pct_encode_val(*ptr, buffer+len);
+                if(len + 3 < output_len)
+                    pct_encode_val(*ptr, output+len);
                 len += 3;
                 do_default_action = FALSE;
             }
         } else if(*ptr == ' ') {
             if((flags & URL_ESCAPE_SPACES_ONLY) &&
                !(flags & URL_ESCAPE_UNSAFE)) {
-                pct_encode_val(*ptr, buffer+len);
+                if(len + 3 < output_len)
+                    pct_encode_val(*ptr, output+len);
                 len += 3;
                 do_default_action = FALSE;
             }
         } else if(!is_reserved(*ptr) && !is_unreserved(*ptr)) {
             if(flags & URL_ESCAPE_UNSAFE) {
-                pct_encode_val(*ptr, buffer+len);
+                if(len + 3 < output_len)
+                    pct_encode_val(*ptr, output+len);
                 len += 3;
                 do_default_action = FALSE;
             }
         }
 
-        if(do_default_action)
-            buffer[len++] = *ptr;
+        if(do_default_action) {
+            if(len < output_len)
+                output[len] = *ptr;
+            len++;
+        }
     }
 
     /* Sometimes the path is the very last component of the IUri, so
      * see if the dot segments need to be reduced now.
      */
     if(reduce_path && path) {
-        DWORD current_path_len = (buffer+len) - path;
+        DWORD current_path_len = (output+len) - path;
         DWORD new_path_len = remove_dot_segments(path, current_path_len);
 
         /* Update the current length. */
         len -= (current_path_len-new_path_len);
     }
 
-    buffer[len++] = 0;
+    if(len < output_len)
+        output[len] = 0;
+    else
+        output[output_len-1] = 0;
 
     /* The null terminator isn't included in the length. */
-    *result_len = len-1;
-    if(len > output_len)
+    *result_len = len;
+    if(len >= output_len)
         return STRSAFE_E_INSUFFICIENT_BUFFER;
-    else
-        memcpy(output, buffer, len*sizeof(WCHAR));
 
     return S_OK;
 }

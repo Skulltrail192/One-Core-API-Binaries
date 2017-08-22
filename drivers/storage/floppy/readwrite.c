@@ -149,8 +149,8 @@ RWFreeAdapterChannel(PADAPTER_OBJECT AdapterObject)
 }
 
 
-static NTSTATUS NTAPI
-RWDetermineMediaType(PDRIVE_INFO DriveInfo)
+NTSTATUS NTAPI
+RWDetermineMediaType(PDRIVE_INFO DriveInfo, BOOLEAN OneShot)
 /*
  * FUNCTION: Determine the media type of the disk in the drive and fill in the geometry
  * ARGUMENTS:
@@ -177,8 +177,8 @@ RWDetermineMediaType(PDRIVE_INFO DriveInfo)
 
     /*
      * This algorithm assumes that a 1.44MB floppy is in the drive.  If it's not,
-     * it works backwards until the read works.  Note that only 1.44 has been tested
-     * at all.
+     * it works backwards until the read works unless OneShot try is asked.
+     * Note that only 1.44 has been tested at all.
      */
 
     do
@@ -249,7 +249,10 @@ RWDetermineMediaType(PDRIVE_INFO DriveInfo)
         if(HwReadIdResult(DriveInfo->ControllerInfo, NULL, NULL) != STATUS_SUCCESS)
         {
             WARN_(FLOPPY, "RWDetermineMediaType(): ReadIdResult failed; continuing\n");
-            continue;
+            if (OneShot)
+                break;
+            else
+                continue;
         }
 
         /* Found the media; populate the geometry now */
@@ -325,7 +328,7 @@ RWSeekToCylinder(PDRIVE_INFO DriveInfo, UCHAR Cylinder)
 
     if(CurCylinder != Cylinder)
     {
-        WARN_(FLOPPY, "RWSeekToTrack(): Seeek to track failed; current cylinder is 0x%x\n", CurCylinder);
+        WARN_(FLOPPY, "RWSeekToTrack(): Seek to track failed; current cylinder is 0x%x\n", CurCylinder);
         return STATUS_UNSUCCESSFUL;
     }
 
@@ -492,7 +495,7 @@ ReadWritePassive(PDRIVE_INFO DriveInfo, PIRP Irp)
      */
     if(DriveInfo->DiskGeometry.MediaType == Unknown)
     {
-        if(RWDetermineMediaType(DriveInfo) != STATUS_SUCCESS)
+        if(RWDetermineMediaType(DriveInfo, FALSE) != STATUS_SUCCESS)
         {
             WARN_(FLOPPY, "ReadWritePassive(): unable to determine media type; completing with STATUS_UNSUCCESSFUL\n");
             IoCompleteRequest(Irp, IO_NO_INCREMENT);
@@ -540,7 +543,7 @@ ReadWritePassive(PDRIVE_INFO DriveInfo, PIRP Irp)
      * greatly (and I even wrote some of the kernel's DMA code, so if it confuses me, it
      * probably confuses at least a couple of other people too).
      *
-     * MmGetMdlVirtualAddress() returns the virtal address, as mapped in the buffer's original
+     * MmGetMdlVirtualAddress() returns the virtual address, as mapped in the buffer's original
      * process context, of the MDL.  In other words:  say you start with a buffer at address X, then
      * you build an MDL out of that buffer called Mdl. If you call MmGetMdlVirtualAddress(Mdl), it
      * will return X.

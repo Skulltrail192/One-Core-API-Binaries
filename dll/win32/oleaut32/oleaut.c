@@ -67,6 +67,9 @@ static CRITICAL_SECTION_DEBUG cs_bstr_cache_dbg =
 static CRITICAL_SECTION cs_bstr_cache = { &cs_bstr_cache_dbg, -1, 0, 0, 0, 0 };
 
 typedef struct {
+#ifdef _WIN64
+    DWORD pad;
+#endif
     DWORD size;
     union {
         char ptr[1];
@@ -97,27 +100,40 @@ static inline size_t bstr_alloc_size(size_t size)
 
 static inline bstr_t *bstr_from_str(BSTR str)
 {
-    return CONTAINING_RECORD(str, bstr_t, u.str);
+    return CONTAINING_RECORD((void *)str, bstr_t, u.str);
 }
 
-static inline bstr_cache_entry_t *get_cache_entry(size_t size)
+static inline bstr_cache_entry_t *get_cache_entry_from_idx(unsigned cache_idx)
 {
-    unsigned cache_idx = FIELD_OFFSET(bstr_t, u.ptr[size-1])/BUCKET_SIZE;
     return bstr_cache_enabled && cache_idx < sizeof(bstr_cache)/sizeof(*bstr_cache)
         ? bstr_cache + cache_idx
         : NULL;
 }
 
+static inline bstr_cache_entry_t *get_cache_entry(size_t size)
+{
+    unsigned cache_idx = FIELD_OFFSET(bstr_t, u.ptr[size+sizeof(WCHAR)-1])/BUCKET_SIZE;
+    return get_cache_entry_from_idx(cache_idx);
+}
+
+static inline bstr_cache_entry_t *get_cache_entry_from_alloc_size(SIZE_T alloc_size)
+{
+    unsigned cache_idx;
+    if (alloc_size < BUCKET_SIZE) return NULL;
+    cache_idx = (alloc_size - BUCKET_SIZE) / BUCKET_SIZE;
+    return get_cache_entry_from_idx(cache_idx);
+}
+
 static bstr_t *alloc_bstr(size_t size)
 {
-    bstr_cache_entry_t *cache_entry = get_cache_entry(size+sizeof(WCHAR));
+    bstr_cache_entry_t *cache_entry = get_cache_entry(size);
     bstr_t *ret;
 
     if(cache_entry) {
         EnterCriticalSection(&cs_bstr_cache);
 
         if(!cache_entry->cnt) {
-            cache_entry = get_cache_entry(size+sizeof(WCHAR)+BUCKET_SIZE);
+            cache_entry = get_cache_entry(size+BUCKET_SIZE);
             if(cache_entry && !cache_entry->cnt)
                 cache_entry = NULL;
         }
@@ -132,19 +148,16 @@ static bstr_t *alloc_bstr(size_t size)
 
         if(cache_entry) {
             if(WARN_ON(heap)) {
-                size_t tail;
-
-                memset(ret, ARENA_INUSE_FILLER, FIELD_OFFSET(bstr_t, u.ptr[size+sizeof(WCHAR)]));
-                tail = bstr_alloc_size(size) - FIELD_OFFSET(bstr_t, u.ptr[size+sizeof(WCHAR)]);
-                if(tail)
-                    memset(ret->u.ptr+size+sizeof(WCHAR), ARENA_TAIL_FILLER, tail);
+                size_t fill_size = (FIELD_OFFSET(bstr_t, u.ptr[size])+2*sizeof(WCHAR)-1) & ~(sizeof(WCHAR)-1);
+                memset(ret, ARENA_INUSE_FILLER, fill_size);
+                memset((char *)ret+fill_size, ARENA_TAIL_FILLER, bstr_alloc_size(size)-fill_size);
             }
             ret->size = size;
             return ret;
         }
     }
 
-    ret = HeapAlloc(GetProcessHeap(), 0, bstr_alloc_size(size));
+    ret = CoTaskMemAlloc(bstr_alloc_size(size));
     if(ret)
         ret->size = size;
     return ret;
@@ -217,6 +230,16 @@ BSTR WINAPI SysAllocString(LPCOLESTR str)
     return SysAllocStringLen(str, lstrlenW(str));
 }
 
+static inline IMalloc *get_malloc(void)
+{
+    static IMalloc *malloc;
+
+    if (!malloc)
+        CoGetMalloc(1, &malloc);
+
+    return malloc;
+}
+
 /******************************************************************************
  *		SysFreeString	[OLEAUT32.6]
  *
@@ -236,12 +259,19 @@ void WINAPI SysFreeString(BSTR str)
 {
     bstr_cache_entry_t *cache_entry;
     bstr_t *bstr;
+    IMalloc *malloc = get_malloc();
+    SIZE_T alloc_size;
 
     if(!str)
         return;
 
     bstr = bstr_from_str(str);
-    cache_entry = get_cache_entry(bstr->size+sizeof(WCHAR));
+
+    alloc_size = IMalloc_GetSize(malloc, bstr);
+    if (alloc_size == ~0UL)
+        return;
+
+    cache_entry = get_cache_entry_from_alloc_size(alloc_size);
     if(cache_entry) {
         unsigned i;
 
@@ -262,8 +292,7 @@ void WINAPI SysFreeString(BSTR str)
             cache_entry->cnt++;
 
             if(WARN_ON(heap)) {
-                unsigned n = bstr_alloc_size(bstr->size) / sizeof(DWORD) - 1;
-                bstr->size = ARENA_FREE_FILLER;
+                unsigned n = (alloc_size-FIELD_OFFSET(bstr_t, u.ptr))/sizeof(DWORD);
                 for(i=0; i<n; i++)
                     bstr->u.dwptr[i] = ARENA_FREE_FILLER;
             }
@@ -275,7 +304,7 @@ void WINAPI SysFreeString(BSTR str)
         LeaveCriticalSection(&cs_bstr_cache);
     }
 
-    HeapFree(GetProcessHeap(), 0, bstr);
+    CoTaskMemFree(bstr);
 }
 
 /******************************************************************************
@@ -342,29 +371,25 @@ int WINAPI SysReAllocStringLen(BSTR* old, const OLECHAR* str, unsigned int len)
 {
     /* Detect integer overflow. */
     if (len >= ((UINT_MAX-sizeof(WCHAR)-sizeof(DWORD))/sizeof(WCHAR)))
-	return 0;
+	return FALSE;
 
     if (*old!=NULL) {
-      BSTR old_copy = *old;
       DWORD newbytelen = len*sizeof(WCHAR);
-      bstr_t *bstr = HeapReAlloc(GetProcessHeap(),0,((DWORD*)*old)-1,bstr_alloc_size(newbytelen));
+      bstr_t *old_bstr = bstr_from_str(*old);
+      bstr_t *bstr = CoTaskMemRealloc(old_bstr, bstr_alloc_size(newbytelen));
+
+      if (!bstr) return FALSE;
+
       *old = bstr->u.str;
       bstr->size = newbytelen;
-      /* Subtle hidden feature: The old string data is still there
-       * when 'in' is NULL!
-       * Some Microsoft program needs it.
-       * FIXME: Is it a sideeffect of BSTR caching?
-       */
-      if (str && old_copy!=str) memmove(*old, str, newbytelen);
-      (*old)[len] = 0;
+      /* The old string data is still there when str is NULL */
+      if (str && old_bstr->u.str != str) memmove(bstr->u.str, str, newbytelen);
+      bstr->u.str[len] = 0;
     } else {
-      /*
-       * Allocate the new string
-       */
       *old = SysAllocStringLen(str, len);
     }
 
-    return 1;
+    return TRUE;
 }
 
 /******************************************************************************
@@ -401,10 +426,11 @@ BSTR WINAPI SysAllocStringByteLen(LPCSTR str, UINT len)
 
     if(str) {
         memcpy(bstr->u.ptr, str, len);
-        bstr->u.ptr[len] = bstr->u.ptr[len+1] = 0;
+        bstr->u.ptr[len] = 0;
     }else {
-        memset(bstr->u.ptr, 0, len+sizeof(WCHAR));
+        memset(bstr->u.ptr, 0, len+1);
     }
+    bstr->u.str[(len+sizeof(WCHAR)-1)/sizeof(WCHAR)] = 0;
 
     return bstr->u.str;
 }
@@ -484,7 +510,7 @@ static const WCHAR	*pdelimiter = &_delimiter[0];
  *  Success: S_OK.
  *  Failure: HRESULT code.
  */
-HRESULT WINAPI RegisterActiveObject(
+HRESULT WINAPI DECLSPEC_HOTPATCH RegisterActiveObject(
 	LPUNKNOWN punk,REFCLSID rcid,DWORD dwFlags,LPDWORD pdwRegister
 ) {
 	WCHAR 			guidbuf[80];
@@ -523,7 +549,7 @@ HRESULT WINAPI RegisterActiveObject(
  *  Success: S_OK.
  *  Failure: HRESULT code.
  */
-HRESULT WINAPI RevokeActiveObject(DWORD xregister,LPVOID reserved)
+HRESULT WINAPI DECLSPEC_HOTPATCH RevokeActiveObject(DWORD xregister,LPVOID reserved)
 {
 	LPRUNNINGOBJECTTABLE	runobtable;
 	HRESULT			ret;
@@ -550,7 +576,7 @@ HRESULT WINAPI RevokeActiveObject(DWORD xregister,LPVOID reserved)
  *  Success: S_OK.
  *  Failure: HRESULT code.
  */
-HRESULT WINAPI GetActiveObject(REFCLSID rcid,LPVOID preserved,LPUNKNOWN *ppunk)
+HRESULT WINAPI DECLSPEC_HOTPATCH GetActiveObject(REFCLSID rcid,LPVOID preserved,LPUNKNOWN *ppunk)
 {
 	WCHAR 			guidbuf[80];
 	HRESULT			ret;
@@ -828,7 +854,8 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID iid, LPVOID *ppv)
 	    return S_OK;
 	/*FALLTHROUGH*/
     }
-    if (IsEqualCLSID(rclsid, &CLSID_PSTypeInfo) ||
+    if (IsEqualCLSID(rclsid, &CLSID_PSTypeComp) ||
+        IsEqualCLSID(rclsid, &CLSID_PSTypeInfo) ||
         IsEqualCLSID(rclsid, &CLSID_PSTypeLib) ||
         IsEqualCLSID(rclsid, &CLSID_PSDispatch) ||
         IsEqualCLSID(rclsid, &CLSID_PSEnumVariant))
@@ -890,4 +917,113 @@ HCURSOR WINAPI OleIconToCursor( HINSTANCE hinstExe, HICON hIcon)
     FIXME("(%p,%p), partially implemented.\n",hinstExe,hIcon);
     /* FIXME: make an extended conversation from HICON to HCURSOR */
     return CopyCursor(hIcon);
+}
+
+/***********************************************************************
+ *              GetAltMonthNames (OLEAUT32.@)
+ */
+HRESULT WINAPI GetAltMonthNames(LCID lcid, LPOLESTR **str)
+{
+    static const WCHAR ar_month1W[] = {0x645,0x62d,0x631,0x645,0};
+    static const WCHAR ar_month2W[] = {0x635,0x641,0x631,0};
+    static const WCHAR ar_month3W[] = {0x631,0x628,0x64a,0x639,' ',0x627,0x644,0x627,0x648,0x644,0};
+    static const WCHAR ar_month4W[] = {0x631,0x628,0x64a,0x639,' ',0x627,0x644,0x62b,0x627,0x646,0x64a,0};
+    static const WCHAR ar_month5W[] = {0x62c,0x645,0x627,0x62f,0x649,' ',0x627,0x644,0x627,0x648,0x644,0x649,0};
+    static const WCHAR ar_month6W[] = {0x62c,0x645,0x627,0x62f,0x649,' ',0x627,0x644,0x62b,0x627,0x646,0x64a,0x629,0};
+    static const WCHAR ar_month7W[] = {0x631,0x62c,0x628,0};
+    static const WCHAR ar_month8W[] = {0x634,0x639,0x628,0x627,0x646,0};
+    static const WCHAR ar_month9W[] = {0x631,0x645,0x636,0x627,0x646,0};
+    static const WCHAR ar_month10W[] = {0x634,0x648,0x627,0x643,0};
+    static const WCHAR ar_month11W[] = {0x630,0x648,' ',0x627,0x644,0x642,0x639,0x62f,0x629,0};
+    static const WCHAR ar_month12W[] = {0x630,0x648,' ',0x627,0x644,0x62d,0x62c,0x629,0};
+
+    static const WCHAR *arabic_hijri[] =
+    {
+        ar_month1W,
+        ar_month2W,
+        ar_month3W,
+        ar_month4W,
+        ar_month5W,
+        ar_month6W,
+        ar_month7W,
+        ar_month8W,
+        ar_month9W,
+        ar_month10W,
+        ar_month11W,
+        ar_month12W,
+        NULL
+    };
+
+    static const WCHAR pl_month1W[] = {'s','t','y','c','z','n','i','a',0};
+    static const WCHAR pl_month2W[] = {'l','u','t','e','g','o',0};
+    static const WCHAR pl_month3W[] = {'m','a','r','c','a',0};
+    static const WCHAR pl_month4W[] = {'k','w','i','e','t','n','i','a',0};
+    static const WCHAR pl_month5W[] = {'m','a','j','a',0};
+    static const WCHAR pl_month6W[] = {'c','z','e','r','w','c','a',0};
+    static const WCHAR pl_month7W[] = {'l','i','p','c','a',0};
+    static const WCHAR pl_month8W[] = {'s','i','e','r','p','n','i','a',0};
+    static const WCHAR pl_month9W[] = {'w','r','z','e',0x15b,'n','i','a',0};
+    static const WCHAR pl_month10W[] = {'p','a',0x17a,'d','z','i','e','r','n','i','k','a',0};
+    static const WCHAR pl_month11W[] = {'l','i','s','t','o','p','a','d','a',0};
+    static const WCHAR pl_month12W[] = {'g','r','u','d','n','i','a',0};
+
+    static const WCHAR *polish_genitive_names[] =
+    {
+        pl_month1W,
+        pl_month2W,
+        pl_month3W,
+        pl_month4W,
+        pl_month5W,
+        pl_month6W,
+        pl_month7W,
+        pl_month8W,
+        pl_month9W,
+        pl_month10W,
+        pl_month11W,
+        pl_month12W,
+        NULL
+    };
+
+    static const WCHAR ru_month1W[] = {0x44f,0x43d,0x432,0x430,0x440,0x44f,0};
+    static const WCHAR ru_month2W[] = {0x444,0x435,0x432,0x440,0x430,0x43b,0x44f,0};
+    static const WCHAR ru_month3W[] = {0x43c,0x430,0x440,0x442,0x430,0};
+    static const WCHAR ru_month4W[] = {0x430,0x43f,0x440,0x435,0x43b,0x44f,0};
+    static const WCHAR ru_month5W[] = {0x43c,0x430,0x44f,0};
+    static const WCHAR ru_month6W[] = {0x438,0x44e,0x43d,0x44f,0};
+    static const WCHAR ru_month7W[] = {0x438,0x44e,0x43b,0x44f,0};
+    static const WCHAR ru_month8W[] = {0x430,0x432,0x433,0x443,0x441,0x442,0x430,0};
+    static const WCHAR ru_month9W[] = {0x441,0x435,0x43d,0x442,0x44f,0x431,0x440,0x44f,0};
+    static const WCHAR ru_month10W[] = {0x43e,0x43a,0x442,0x44f,0x431,0x440,0x44f,0};
+    static const WCHAR ru_month11W[] = {0x43d,0x43e,0x44f,0x431,0x440,0x44f,0};
+    static const WCHAR ru_month12W[] = {0x434,0x435,0x43a,0x430,0x431,0x440,0x44f,0};
+
+    static const WCHAR *russian_genitive_names[] =
+    {
+        ru_month1W,
+        ru_month2W,
+        ru_month3W,
+        ru_month4W,
+        ru_month5W,
+        ru_month6W,
+        ru_month7W,
+        ru_month8W,
+        ru_month9W,
+        ru_month10W,
+        ru_month11W,
+        ru_month12W,
+        NULL
+    };
+
+    TRACE("%#x, %p\n", lcid, str);
+
+    if (PRIMARYLANGID(LANGIDFROMLCID(lcid)) == LANG_ARABIC)
+        *str = (LPOLESTR *)arabic_hijri;
+    else if (PRIMARYLANGID(LANGIDFROMLCID(lcid)) == LANG_POLISH)
+        *str = (LPOLESTR *)polish_genitive_names;
+    else if (PRIMARYLANGID(LANGIDFROMLCID(lcid)) == LANG_RUSSIAN)
+        *str = (LPOLESTR *)russian_genitive_names;
+    else
+        *str = NULL;
+
+    return S_OK;
 }

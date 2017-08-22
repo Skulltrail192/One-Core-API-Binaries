@@ -22,6 +22,7 @@
 
 #define IDM_FILE_CLOSE                   0xA021
 #define IDM_FILE_EXPLORE_MENU            0xA027
+#define IDM_BACKSPACE                    0xA032
 #define IDM_EXPLORE_ITEM_FIRST           0xA470
 #define IDM_EXPLORE_ITEM_LAST            0xA570
 #define IDM_FILE_EXPLORE_SEP             0xA028
@@ -53,8 +54,22 @@
 #define IDM_TOOLS_DISCONNECTNETWORKDRIVE 0xA082
 #define IDM_TOOLS_SYNCHRONIZE            0xA176
 #define IDM_TOOLS_FOLDEROPTIONS          0xA123
-#define IDM_HELP_ISTHISCOPYLEGAL         0xA104
 #define IDM_HELP_ABOUT                   0xA102
+#define IDM_TASKBAR_TOOLBARS                268
+#define IDM_TASKBAR_TOOLBARS_DESKTOP          3
+#define IDM_TASKBAR_TOOLBARS_QUICKLAUNCH      4
+#define IDM_TASKBAR_TOOLBARS_NEW              1
+
+#define IDM_BAND_MENU                       269
+#define IDM_BAND_TITLE                   0xA200
+#define IDM_BAND_CLOSE                   0xA201
+
+/* Random id for band close button, feel free to change it */
+#define IDM_BASEBAR_CLOSE                0xA200
+
+/* User-installed explorer band IDs according to API Monitor traces */
+#define IDM_EXPLORERBAND_BEGINCUSTOM     0xA240
+#define IDM_EXPLORERBAND_ENDCUSTOM       0xA25C
 
 #define IDM_GOTO_TRAVEL_FIRST       0xA141
 #define IDM_GOTO_TRAVEL_LAST        0xA151
@@ -76,6 +91,10 @@
 #define IDR_INTERNETTOOLBAR      136
 #define IDR_GLOBALFOLDERSETTINGS 137
 #define IDR_REGTREEOPTIONS       138
+#define IDR_EXPLORERBAND         139
+#define IDR_PROGRESSDIALOG       140
+#define IDR_AUTOCOMPLETE         141
+#define IDR_ACLISTISF            142
 
 #define IDS_SMALLICONS           12301
 #define IDS_LARGEICONS           12302
@@ -85,12 +104,20 @@
 #define IDS_GOBUTTONLABEL        12656
 #define IDS_GOBUTTONTIPTEMPLATE  12657
 #define IDS_SEARCHLABEL          12897
+#define IDS_STANDARD_TOOLBAR     12624
 #define IDS_ADDRESSBANDLABEL     12902
 #define IDS_FOLDERSLABEL         12919
 #define IDS_HISTORYTEXT          13169
 #define IDS_UP                   58434
 #define IDS_BACK                 58689
 #define IDS_FORWARD              58690
+
+#define IDS_CANCELLING           16
+#define IDS_REMAINING            17
+#define IDC_ANIMATION            100
+#define IDC_PROGRESS_BAR         102
+#define IDC_TEXT_LINE            103
+#define IDD_PROGRESS_DLG         100
 
 #define IDR_ACCELERATORS 256
 
@@ -100,3 +127,5 @@
 
 #define IDC_TEXTOPTIONS 4096
 #define IDC_ICONOPTIONS 4097
+
+#define IDB_BANDBUTTONS 545

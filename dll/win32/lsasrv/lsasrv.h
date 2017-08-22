@@ -22,6 +22,7 @@
 
 #define NTOS_MODE_USER
 #include <ndk/cmfuncs.h>
+#include <ndk/exfuncs.h>
 #include <ndk/kefuncs.h>
 #include <ndk/mmfuncs.h>
 #include <ndk/obfuncs.h>
@@ -32,6 +33,8 @@
 #include <ntsam.h>
 #include <ntlsa.h>
 #include <sddl.h>
+
+#include <srmp.h>
 
 #include <lsass.h>
 #include <lsa_s.h>
@@ -165,6 +168,10 @@ LsapSetObjectAttribute(PLSA_DB_OBJECT DbObject,
 NTSTATUS
 LsapDeleteObjectAttribute(PLSA_DB_OBJECT DbObject,
                           LPWSTR AttributeName);
+
+/* dssetup.c */
+VOID
+DsSetupInit(VOID);
 
 /* lookup.c */
 NTSTATUS
@@ -303,8 +310,15 @@ LsarpLookupPrivilegeName(PLUID Value,
                          PRPC_UNICODE_STRING *Name);
 
 NTSTATUS
-LsarpLookupPrivilegeValue(PRPC_UNICODE_STRING Name,
-                          PLUID Value);
+LsarpLookupPrivilegeDisplayName(PRPC_UNICODE_STRING Name,
+                                USHORT ClientLanguage,
+                                USHORT ClientSystemDefaultLanguage,
+                                PRPC_UNICODE_STRING *DisplayName,
+                                USHORT *LanguageReturned);
+
+PLUID
+LsarpLookupPrivilegeValue(
+    IN PRPC_UNICODE_STRING Name);
 
 NTSTATUS
 LsarpEnumeratePrivileges(DWORD *EnumerationContext,
@@ -314,6 +328,10 @@ LsarpEnumeratePrivileges(DWORD *EnumerationContext,
 NTSTATUS
 LsapLookupAccountRightName(ULONG RightValue,
                            PRPC_UNICODE_STRING *Name);
+
+ACCESS_MASK
+LsapLookupAccountRightValue(
+    IN PRPC_UNICODE_STRING Name);
 
 /* registry.h */
 NTSTATUS
@@ -347,6 +365,7 @@ LsapRegOpenKey(IN HANDLE ParentKeyHandle,
 NTSTATUS
 LsapRegQueryKeyInfo(IN HANDLE KeyHandle,
                     OUT PULONG SubKeyCount,
+                    OUT PULONG MaxSubKeyNameLength,
                     OUT PULONG ValueCount);
 
 NTSTATUS
@@ -402,7 +421,38 @@ NTAPI
 LsapDeleteLogonSession(IN PLUID LogonId);
 
 NTSTATUS
-LsapSetLogonSessionData(IN PLUID LogonId);
+NTAPI
+LsapAddCredential(
+    _In_ PLUID LogonId,
+    _In_ ULONG AuthenticationPackage,
+    _In_ PLSA_STRING PrimaryKeyValue,
+    _In_ PLSA_STRING Credential);
+
+NTSTATUS
+NTAPI
+LsapGetCredentials(
+    _In_ PLUID LogonId,
+    _In_ ULONG AuthenticationPackage,
+    _Inout_ PULONG QueryContext,
+    _In_ BOOLEAN RetrieveAllCredentials,
+    _Inout_ PLSA_STRING PrimaryKeyValue,
+    _Out_ PULONG PrimaryKeyLength,
+    _Out_ PLSA_STRING Credentials);
+
+NTSTATUS
+NTAPI
+LsapDeleteCredential(
+    _In_ PLUID LogonId,
+    _In_ ULONG AuthenticationPackage,
+    _In_ PLSA_STRING PrimaryKeyValue);
+
+NTSTATUS
+LsapSetLogonSessionData(
+    _In_ PLUID LogonId,
+    _In_ ULONG LogonType,
+    _In_ PUNICODE_STRING UserName,
+    _In_ PUNICODE_STRING LogonDomain,
+    _In_ PSID Sid);
 
 NTSTATUS
 LsapEnumLogonSessions(IN OUT PLSA_API_MSG RequestMsg);
@@ -410,12 +460,38 @@ LsapEnumLogonSessions(IN OUT PLSA_API_MSG RequestMsg);
 NTSTATUS
 LsapGetLogonSessionData(IN OUT PLSA_API_MSG RequestMsg);
 
+/* srm.c */
+NTSTATUS
+LsapRmInitializeServer(VOID);
+
+NTSTATUS
+LsapRmCreateLogonSession(
+    PLUID LogonId);
+
+NTSTATUS
+LsapRmDeleteLogonSession(
+    PLUID LogonId);
+
 /* utils.c */
 INT
 LsapLoadString(HINSTANCE hInstance,
                UINT uId,
                LPWSTR lpBuffer,
                INT nBufferMax);
+
+INT
+LsapGetResourceStringLengthEx(
+    _In_ HINSTANCE hInstance,
+    _In_ UINT uId,
+    _In_ USHORT usLanguage);
+
+INT
+LsapLoadStringEx(
+    _In_ HINSTANCE hInstance,
+    _In_ UINT uId,
+    _In_ USHORT usLanguage,
+    _Out_ LPWSTR lpBuffer,
+    _Out_ INT nBufferMax);
 
 PSID
 LsapAppendRidToSid(

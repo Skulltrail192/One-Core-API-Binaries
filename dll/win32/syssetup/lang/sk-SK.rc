@@ -23,7 +23,7 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     LTEXT "Vývojári systému ReactOS by sa chceli poďakovať nasledujúcim Open Source projektom, ktoré (alebo časti ktorých) boli použité pri vývoji systému ReactOS:", IDC_STATIC, 15, 7, 286, 19
     LISTBOX IDC_PROJECTS, 15, 30, 286, 75, LBS_NOSEL | LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
-    LTEXT "Systém ReactOS je vydaný pod licenciou GPL. Pokiaľ chcete systém (alebo jeho časti) použiť alebo redistribuovať, musíte rešpektovať GPL", IDC_STATIC, 15, 110, 228, 22
+    LTEXT "Systém ReactOS je vydaný pod licenciou GPL. Pokiaľ chcete systém (alebo jeho časti) použiť alebo redistribuovať, musíte rešpektovať GPL.", IDC_STATIC, 15, 110, 228, 22
     PUSHBUTTON "&Zobraziť GPL...", IDC_VIEWGPL, 245, 110, 56, 19
     LTEXT "Kliknutím na Ďalej pokračujte v inštalácii.", IDC_STATIC, 15, 136, 195, 17
 END
@@ -122,7 +122,7 @@ END
 IDD_STATUSWINDOW_DLG DIALOGEX 0, 0, 274, 26
 STYLE NOT WS_VISIBLE | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP
 CAPTION "Počkajte, prosím ..."
-FONT 8, "MS Shell Dlg 2", 400, 0, 1
+FONT 8, "MS Shell Dlg", 400, 0, 1
 BEGIN
     LTEXT "", IDC_STATUSLABEL, 7, 8, 234, 12, SS_WORDELLIPSIS
 END
@@ -155,12 +155,13 @@ BEGIN
     IDS_TIMEOUT "Vypršal časový limit registrácie"
     IDS_REASON_UNKNOWN ""
     /*
-     * ATTENTION: 
-     *   If you translate the administator account name, keep IDS_ADMINISTRATOR_NAME and
+     * ATTENTION:
+     *   If you translate the administrator account name, keep IDS_ADMINISTRATOR_NAME and
      *   samsrv.dll:IDS_USER_ADMINISTRATOR_NAME synchronized.
      *   Also check the IDD_COMPUTERPAGE dialog.
      */
     IDS_ADMINISTRATOR_NAME "Administrator"
+    IDS_MACHINE_OWNER_NAME "Vlastník"
 END
 
 STRINGTABLE
@@ -177,4 +178,11 @@ END
 STRINGTABLE
 BEGIN
     IDS_STATUS_INSTALL_DEV "Inštalujem zariadenia..."
+END
+
+/* ATTENTION: Synchronize the translation of these strings with shell32 */
+STRINGTABLE
+BEGIN
+    IDS_PROGRAMFILES "%SystemDrive%\\Program Files"
+    IDS_COMMONFILES "Common Files"
 END

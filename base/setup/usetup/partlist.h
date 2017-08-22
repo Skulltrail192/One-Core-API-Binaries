@@ -18,15 +18,12 @@
  */
 /* COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS text-mode setup
- * FILE:            subsys/system/usetup/partlist.h
+ * FILE:            base/setup/usetup/partlist.h
  * PURPOSE:         Partition list functions
  * PROGRAMMER:      Eric Kohl
  */
 
 #pragma once
-
-/* We have to define it there, because it is not in the MS DDK */
-#define PARTITION_EXT2 0x83
 
 typedef enum _FORMATSTATE
 {
@@ -37,6 +34,18 @@ typedef enum _FORMATSTATE
     Formatted
 } FORMATSTATE, *PFORMATSTATE;
 
+typedef enum _FORMATMACHINESTATE
+{
+    Start,
+    FormatSystemPartition,
+    FormatInstallPartition,
+    FormatOtherPartition,
+    FormatDone,
+    CheckSystemPartition,
+    CheckInstallPartition,
+    CheckOtherPartition,
+    CheckDone
+} FORMATMACHINESTATE, *PFORMATMACHINESTATE;
 
 typedef struct _PARTENTRY
 {
@@ -62,14 +71,18 @@ typedef struct _PARTENTRY
     /* Partition is partitioned disk space */
     BOOLEAN IsPartitioned;
 
-    /* Partition is new. Table does not exist on disk yet */
+    /* Partition is new, table does not exist on disk yet */
     BOOLEAN New;
 
-    /* Partition was created automatically. */
+    /* Partition was created automatically */
     BOOLEAN AutoCreate;
 
     FORMATSTATE FormatState;
 
+    /* Partition must be checked */
+    BOOLEAN NeedsCheck;
+
+    struct _FILE_SYSTEM_ITEM *FileSystem;
 } PARTENTRY, *PPARTENTRY;
 
 
@@ -96,6 +109,7 @@ typedef struct _DISKENTRY
 
     ULARGE_INTEGER SectorCount;
     ULONG SectorAlignment;
+    ULONG CylinderAlignment;
 
     BOOLEAN BiosFound;
     ULONG BiosDiskNumber;
@@ -135,14 +149,25 @@ typedef struct _PARTLIST
     SHORT Line;
     SHORT Offset;
 
-    ULONG TopDisk;
-    ULONG TopPartition;
-
     PDISKENTRY CurrentDisk;
     PPARTENTRY CurrentPartition;
 
-    PDISKENTRY ActiveBootDisk;
-    PPARTENTRY ActiveBootPartition;
+    /* The system disk and partition where the boot manager resides */
+    PDISKENTRY SystemDisk;
+    PPARTENTRY SystemPartition;
+    /*
+     * The original system disk and partition in case we are redefining them
+     * because we do not have write support on them.
+     * Please not that this is partly a HACK and MUST NEVER happen on
+     * architectures where real system partitions are mandatory (because then
+     * they are formatted in FAT FS and we support write operation on them).
+     */
+    PDISKENTRY OriginalSystemDisk;
+    PPARTENTRY OriginalSystemPartition;
+
+    PDISKENTRY TempDisk;
+    PPARTENTRY TempPartition;
+    FORMATMACHINESTATE FormatState;
 
     LIST_ENTRY DiskListHead;
     LIST_ENTRY BiosDiskListHead;
@@ -182,7 +207,7 @@ typedef struct
 {
     LIST_ENTRY ListEntry;
     ULONG DiskNumber;
-    ULONG Idendifier;
+    ULONG Identifier;
     ULONG Signature;
 } BIOS_DISK, *PBIOS_DISK;
 
@@ -222,30 +247,28 @@ ScrollUpPartitionList(
 VOID
 CreatePrimaryPartition(
     PPARTLIST List,
-    ULONGLONG PartitionSize,
+    ULONGLONG SectorCount,
     BOOLEAN AutoCreate);
 
 VOID
 CreateExtendedPartition(
     PPARTLIST List,
-    ULONGLONG PartitionSize);
+    ULONGLONG SectorCount);
 
 VOID
 CreateLogicalPartition(
     PPARTLIST List,
-    ULONGLONG PartitionSize);
+    ULONGLONG SectorCount,
+    BOOLEAN AutoCreate);
 
 VOID
 DeleteCurrentPartition(
     PPARTLIST List);
 
 VOID
-CheckActiveBootPartition(
-    PPARTLIST List);
-
-BOOLEAN
-CheckForLinuxFdiskPartitions(
-    PPARTLIST List);
+CheckActiveSystemPartition(
+    IN PPARTLIST List,
+    IN PFILE_SYSTEM_LIST FileSystemList);
 
 BOOLEAN
 WritePartitionsToDisk(
@@ -262,5 +285,23 @@ ExtendedPartitionCreationChecks(
 ULONG
 LogicalPartitionCreationChecks(
     IN PPARTLIST List);
+
+BOOL
+GetNextUnformattedPartition(
+    IN PPARTLIST List,
+    OUT PDISKENTRY *pDiskEntry,
+    OUT PPARTENTRY *pPartEntry);
+
+BOOL
+GetNextUncheckedPartition(
+    IN PPARTLIST List,
+    OUT PDISKENTRY *pDiskEntry,
+    OUT PPARTENTRY *pPartEntry);
+
+VOID
+GetPartTypeStringFromPartitionType(
+    UCHAR partitionType,
+    PCHAR strPartType,
+    DWORD cchPartType);
 
 /* EOF */

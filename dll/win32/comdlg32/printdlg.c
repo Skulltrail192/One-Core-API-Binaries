@@ -816,8 +816,7 @@ static BOOL PRINTDLG_SetUpPaperComboBoxA(HWND hDlg,
 
     Names = HeapAlloc(GetProcessHeap(),0, NrOfEntries*sizeof(char)*NamesSize);
     Words = HeapAlloc(GetProcessHeap(),0, NrOfEntries*sizeof(WORD));
-    NrOfEntries = DeviceCapabilitiesA(PrinterName, PortName,
-                                      fwCapability_Names, Names, dm);
+    DeviceCapabilitiesA(PrinterName, PortName, fwCapability_Names, Names, dm);
     NrOfEntries = DeviceCapabilitiesA(PrinterName, PortName,
 				      fwCapability_Words, (LPSTR)Words, dm);
 
@@ -927,8 +926,7 @@ static BOOL PRINTDLG_SetUpPaperComboBoxW(HWND hDlg,
 
     Names = HeapAlloc(GetProcessHeap(),0, NrOfEntries*sizeof(WCHAR)*NamesSize);
     Words = HeapAlloc(GetProcessHeap(),0, NrOfEntries*sizeof(WORD));
-    NrOfEntries = DeviceCapabilitiesW(PrinterName, PortName,
-                                      fwCapability_Names, Names, dm);
+    DeviceCapabilitiesW(PrinterName, PortName, fwCapability_Names, Names, dm);
     NrOfEntries = DeviceCapabilitiesW(PrinterName, PortName,
                                       fwCapability_Words, Words, dm);
 
@@ -1776,10 +1774,12 @@ static LRESULT PRINTDLG_WMCommandA(HWND hDlg, WPARAM wParam,
     case cmb2: /* Papersize */
       {
 	  DWORD Sel = SendDlgItemMessageA(hDlg, cmb2, CB_GETCURSEL, 0, 0);
-	  if(Sel != CB_ERR)
+	  if(Sel != CB_ERR) {
 	      lpdm->u1.s1.dmPaperSize = SendDlgItemMessageA(hDlg, cmb2,
 							    CB_GETITEMDATA,
 							    Sel, 0);
+	      GetDlgItemTextA(hDlg, cmb2, (char *)lpdm->dmFormName, CCHFORMNAME);
+	  }
       }
       break;
 
@@ -1932,10 +1932,12 @@ static LRESULT PRINTDLG_WMCommandW(HWND hDlg, WPARAM wParam,
     case cmb2: /* Papersize */
       {
 	  DWORD Sel = SendDlgItemMessageW(hDlg, cmb2, CB_GETCURSEL, 0, 0);
-	  if(Sel != CB_ERR)
+	  if(Sel != CB_ERR) {
 	      lpdm->u1.s1.dmPaperSize = SendDlgItemMessageW(hDlg, cmb2,
 							    CB_GETITEMDATA,
 							    Sel, 0);
+	      GetDlgItemTextW(hDlg, cmb2, lpdm->dmFormName, CCHFORMNAME);
+	  }
       }
       break;
 
@@ -3593,11 +3595,8 @@ PRINTDLG_PagePaintProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         default_page_paint_hook(hWnd, WM_PSD_MARGINRECT, (WPARAM)hdc, (LPARAM)&rcMargin, data);
 
         /* give text a bit of a space from the frame */
-        rcMargin.left += 2;
-        rcMargin.top += 2;
-        rcMargin.right -= 2;
-        rcMargin.bottom -= 2;
-        
+        InflateRect(&rcMargin, -2, -2);
+
         /* if the space is too small then we make sure to not draw anything */
         rcMargin.left = min(rcMargin.left, rcMargin.right);
         rcMargin.top = min(rcMargin.top, rcMargin.bottom);
@@ -3791,16 +3790,16 @@ static void *pagesetup_get_template(pagesetup_data *data)
     {
         if(data->unicode)
             res = FindResourceW(data->u.dlgw->hInstance,
-                                data->u.dlgw->lpPageSetupTemplateName, MAKEINTRESOURCEW(RT_DIALOG));
+                                data->u.dlgw->lpPageSetupTemplateName, (LPWSTR)RT_DIALOG);
         else
             res = FindResourceA(data->u.dlga->hInstance,
-                                data->u.dlga->lpPageSetupTemplateName, MAKEINTRESOURCEA(RT_DIALOG));
+                                data->u.dlga->lpPageSetupTemplateName, (LPSTR)RT_DIALOG);
         tmpl_handle = LoadResource(data->u.dlgw->hInstance, res);
     }
     else
     {
         res = FindResourceW(COMDLG32_hInstance, MAKEINTRESOURCEW(PAGESETUPDLGORD),
-                            MAKEINTRESOURCEW(RT_DIALOG));
+                            (LPWSTR)RT_DIALOG);
         tmpl_handle = LoadResource(COMDLG32_hInstance, res);
     }
     return LockResource(tmpl_handle);
@@ -4102,7 +4101,7 @@ HRESULT WINAPI PrintDlgExA(LPPRINTDLGEXA lppd)
         hr = E_FAIL;
 
     lppd->hDevMode = update_devmode_handleA(lppd->hDevMode, dm);
-    if (!hr && lppd->hDevMode) {
+    if (hr == S_OK && lppd->hDevMode) {
         if (lppd->Flags & PD_RETURNDC) {
             lppd->hDC = CreateDCA(dbuf->pDriverPath, pbuf->pPrinterName, pbuf->pPortName, dm);
             if (!lppd->hDC)
@@ -4250,7 +4249,7 @@ HRESULT WINAPI PrintDlgExW(LPPRINTDLGEXW lppd)
         hr = E_FAIL;
 
     lppd->hDevMode = update_devmode_handleW(lppd->hDevMode, dm);
-    if (!hr && lppd->hDevMode) {
+    if (hr == S_OK && lppd->hDevMode) {
         if (lppd->Flags & PD_RETURNDC) {
             lppd->hDC = CreateDCW(dbuf->pDriverPath, pbuf->pPrinterName, pbuf->pPortName, dm);
             if (!lppd->hDC)

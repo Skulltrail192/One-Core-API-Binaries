@@ -24,17 +24,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
-#include "wine/port.h"
-
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_draw);
 WINE_DECLARE_DEBUG_CHANNEL(d3d_perf);
 WINE_DECLARE_DEBUG_CHANNEL(d3d);
-
-#include <stdio.h>
-#include <math.h>
 
 /* Context activation is done by the caller. */
 static void draw_primitive_arrays(struct wined3d_context *context, const struct wined3d_state *state,
@@ -72,32 +66,18 @@ static void draw_primitive_arrays(struct wined3d_context *context, const struct 
         return;
     }
 
-    if (start_instance && !(gl_info->supported[ARB_BASE_INSTANCE] && gl_info->supported[ARB_INSTANCED_ARRAYS]))
+    if (start_instance)
         FIXME("Start instance (%u) not supported.\n", start_instance);
 
     if (gl_info->supported[ARB_INSTANCED_ARRAYS])
     {
         if (!idx_size)
         {
-            if (gl_info->supported[ARB_BASE_INSTANCE])
-            {
-                GL_EXTCALL(glDrawArraysInstancedBaseInstance(state->gl_primitive_type, start_idx, count, instance_count, start_instance));
-                checkGLcall("glDrawArraysInstancedBaseInstance");
-                return;
-            }
-
             GL_EXTCALL(glDrawArraysInstanced(state->gl_primitive_type, start_idx, count, instance_count));
             checkGLcall("glDrawArraysInstanced");
             return;
         }
 
-        if (gl_info->supported[ARB_BASE_INSTANCE])
-        {
-            GL_EXTCALL(glDrawElementsInstancedBaseVertexBaseInstance(state->gl_primitive_type, count, idx_type,
-                        (const char *)idx_data + (idx_size * start_idx), instance_count, base_vertex_idx, start_instance));
-            checkGLcall("glDrawElementsInstancedBaseVertexBaseInstance");
-            return;
-        }
         if (gl_info->supported[ARB_DRAW_ELEMENTS_BASE_VERTEX])
         {
             GL_EXTCALL(glDrawElementsInstancedBaseVertex(state->gl_primitive_type, count, idx_type,
@@ -166,38 +146,6 @@ static void draw_primitive_arrays(struct wined3d_context *context, const struct 
             checkGLcall("glDrawElements");
         }
     }
-}
-
-/* Context activation is done by the caller. */
-static void draw_primitive_arrays_indirect(struct wined3d_context *context, const struct wined3d_state *state,
-        const void *idx_data, unsigned int idx_size, struct wined3d_buffer *buffer, unsigned int offset)
-{
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-
-    if (!gl_info->supported[ARB_DRAW_INDIRECT])
-    {
-        FIXME("Indirect draw not supported.\n");
-        return;
-    }
-
-    wined3d_buffer_load(buffer, context, state);
-    GL_EXTCALL(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer->buffer_object));
-
-    if (idx_size)
-    {
-        GLenum idx_type = (idx_size == 2) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
-
-        GL_EXTCALL(glDrawElementsIndirect(state->gl_primitive_type, idx_type,
-                (const BYTE *)NULL + offset));
-    }
-    else
-    {
-        GL_EXTCALL(glDrawArraysIndirect(state->gl_primitive_type,
-                (const BYTE *)NULL + offset));
-    }
-
-    GL_EXTCALL(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0));
-    checkGLcall("draw indirect");
 }
 
 static unsigned int get_stride_idx(const void *idx_data, unsigned int idx_size,
@@ -509,20 +457,21 @@ static GLenum gl_tfb_primitive_type_from_d3d(enum wined3d_primitive_type primiti
 
 /* Routine common to the draw primitive and draw indexed primitive routines */
 void draw_primitive(struct wined3d_device *device, const struct wined3d_state *state,
-        const struct wined3d_draw_parameters *parameters)
+        int base_vertex_idx, unsigned int start_idx, unsigned int index_count,
+        unsigned int start_instance, unsigned int instance_count, BOOL indexed)
 {
     BOOL emulation = FALSE, rasterizer_discard = FALSE;
     const struct wined3d_fb_state *fb = state->fb;
     const struct wined3d_stream_info *stream_info;
+    struct wined3d_event_query *ib_query = NULL;
     struct wined3d_rendertarget_view *dsv, *rtv;
     struct wined3d_stream_info si_emulated;
-    struct wined3d_fence *ib_fence = NULL;
     const struct wined3d_gl_info *gl_info;
     struct wined3d_context *context;
     unsigned int i, idx_size = 0;
     const void *idx_data = NULL;
 
-    if (!parameters->indirect && !parameters->u.direct.index_count)
+    if (!index_count)
         return;
 
     if (!(rtv = fb->render_targets[0]))
@@ -547,7 +496,7 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
         if (!(rtv = fb->render_targets[i]) || rtv->format->id == WINED3DFMT_NULL)
             continue;
 
-        if (state->render_states[WINED3D_RS_COLORWRITE(i)])
+        if (state->render_states[WINED3D_RS_COLORWRITEENABLE])
         {
             wined3d_rendertarget_view_load_location(rtv, context, rtv->resource->draw_binding);
             wined3d_rendertarget_view_invalidate_location(rtv, ~rtv->resource->draw_binding);
@@ -589,8 +538,10 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
     }
 
     stream_info = &context->stream_info;
+    if (context->instance_count)
+        instance_count = context->instance_count;
 
-    if (parameters->indexed)
+    if (indexed)
     {
         struct wined3d_buffer *index_buffer = state->index_buffer;
         if (!index_buffer->buffer_object || !stream_info->all_vbo)
@@ -599,7 +550,7 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
         }
         else
         {
-            ib_fence = index_buffer->fence;
+            ib_query = index_buffer->query;
             idx_data = NULL;
         }
         idx_data = (const BYTE *)idx_data + state->index_offset;
@@ -677,29 +628,12 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
         checkGLcall("glPatchParameteri");
     }
 
-    if (parameters->indirect)
-    {
-        if (context->use_immediate_mode_draw || emulation)
-            FIXME("Indirect draw with immediate mode/emulation is not supported.\n");
-        else
-            draw_primitive_arrays_indirect(context, state, idx_data, idx_size,
-                    parameters->u.indirect.buffer, parameters->u.indirect.offset);
-    }
+    if (context->use_immediate_mode_draw || emulation)
+        draw_primitive_immediate_mode(context, state, stream_info, idx_data,
+                idx_size, base_vertex_idx, start_idx, index_count, instance_count);
     else
-    {
-        unsigned int instance_count = parameters->u.direct.instance_count;
-        if (context->instance_count)
-            instance_count = context->instance_count;
-
-        if (context->use_immediate_mode_draw || emulation)
-            draw_primitive_immediate_mode(context, state, stream_info, idx_data,
-                    idx_size, parameters->u.direct.base_vertex_idx,
-                    parameters->u.direct.start_idx, parameters->u.direct.index_count, instance_count);
-        else
-            draw_primitive_arrays(context, state, idx_data, idx_size, parameters->u.direct.base_vertex_idx,
-                    parameters->u.direct.start_idx, parameters->u.direct.index_count,
-                    parameters->u.direct.start_instance, instance_count);
-    }
+        draw_primitive_arrays(context, state, idx_data, idx_size, base_vertex_idx,
+                start_idx, index_count, start_instance, instance_count);
 
     if (context->uses_uavs)
     {
@@ -715,10 +649,10 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
         checkGLcall("disable rasterizer discard");
     }
 
-    if (ib_fence)
-        wined3d_fence_issue(ib_fence, device);
-    for (i = 0; i < context->buffer_fence_count; ++i)
-        wined3d_fence_issue(context->buffer_fences[i], device);
+    if (ib_query)
+        wined3d_event_query_issue(ib_query, device);
+    for (i = 0; i < context->num_buffer_queries; ++i)
+        wined3d_event_query_issue(context->buffer_queries[i], device);
 
     if (wined3d_settings.strict_draw_ordering)
         gl_info->gl_ops.gl.p_glFlush(); /* Flush to ensure ordering across contexts. */
@@ -729,7 +663,7 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
 }
 
 void dispatch_compute(struct wined3d_device *device, const struct wined3d_state *state,
-        const struct wined3d_dispatch_parameters *parameters)
+        unsigned int group_count_x, unsigned int group_count_y, unsigned int group_count_z)
 {
     const struct wined3d_gl_info *gl_info;
     struct wined3d_context *context;
@@ -759,22 +693,8 @@ void dispatch_compute(struct wined3d_device *device, const struct wined3d_state 
         return;
     }
 
-    if (!parameters->indirect)
-    {
-        GL_EXTCALL(glDispatchCompute(parameters->u.direct.group_count_x,
-                parameters->u.direct.group_count_y, parameters->u.direct.group_count_z));
-        checkGLcall("dispatch compute");
-    }
-    else
-    {
-        struct wined3d_buffer *buffer = parameters->u.indirect.buffer;
-
-        wined3d_buffer_load(buffer, context, state);
-        GL_EXTCALL(glBindBuffer(GL_DISPATCH_INDIRECT_BUFFER, buffer->buffer_object));
-        GL_EXTCALL(glDispatchComputeIndirect((GLintptr)0 + parameters->u.indirect.offset));
-        GL_EXTCALL(glBindBuffer(GL_DISPATCH_INDIRECT_BUFFER, 0));
-        checkGLcall("dispatch compute indirect");
-    }
+    GL_EXTCALL(glDispatchCompute(group_count_x, group_count_y, group_count_z));
+    checkGLcall("glDispatchCompute");
 
     GL_EXTCALL(glMemoryBarrier(GL_ALL_BARRIER_BITS));
     checkGLcall("glMemoryBarrier");

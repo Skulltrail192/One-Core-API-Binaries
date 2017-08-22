@@ -20,7 +20,7 @@
 
 IDC_CPLICON ICON "res/terminal.ico"
 
-#include <reactos/manifest_dll.rc>
+#include <reactos/manifest_hosted.rc>
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 
@@ -54,11 +54,17 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #ifdef LANGUAGE_IT_IT
     #include "lang/it-IT.rc"
 #endif
+#ifdef LANGUAGE_JA_JP
+    #include "lang/ja-JP.rc"
+#endif
 #ifdef LANGUAGE_NB_NO
     #include "lang/no-NO.rc"
 #endif
 #ifdef LANGUAGE_PL_PL
     #include "lang/pl-PL.rc"
+#endif
+#ifdef LANGUAGE_PT_BR
+    #include "lang/pt-BR.rc"
 #endif
 #ifdef LANGUAGE_RO_RO
     #include "lang/ro-RO.rc"
@@ -80,4 +86,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #endif
 #ifdef LANGUAGE_ZH_CN
     #include "lang/zh-CN.rc"
+#endif
+#ifdef LANGUAGE_ZH_TW
+    #include "lang/zh-TW.rc"
 #endif

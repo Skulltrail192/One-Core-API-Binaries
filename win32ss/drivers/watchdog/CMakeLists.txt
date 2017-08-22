@@ -1,5 +1,5 @@
 
-spec2def(watchdog.sys watchdog.spec ADD_IMPORTLIB)
+spec2def(watchdog.sys watchdog.spec)
 
 add_library(watchdog SHARED
     watchdog.c
@@ -7,5 +7,4 @@ add_library(watchdog SHARED
 
 set_module_type(watchdog kernelmodedriver)
 add_importlibs(watchdog ntoskrnl)
-
 add_cd_file(TARGET watchdog DESTINATION reactos/system32/drivers FOR all)

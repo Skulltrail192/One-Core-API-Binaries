@@ -57,14 +57,17 @@ HKCU,"Control Panel\Desktop","CursorBlinkRate",2,"530"
 HKCU,"Control Panel\Desktop","DragFullWindows",2,"1"
 HKCU,"Control Panel\Desktop","DragHeight",0x00000000,"4"
 HKCU,"Control Panel\Desktop","DragWidth",0x00000000,"4"
-HKCU,"Control Panel\Desktop","PaintDesktopVersion",0x00010001,"0"
+HKCU,"Control Panel\Desktop","PaintDesktopVersion",0x00010001,0x0
 HKCU,"Control Panel\Desktop","HungAppTimeout",2,"5000"
 HKCU,"Control Panel\Desktop","ScreenSaveActive",2,"0"
 HKCU,"Control Panel\Desktop","ScreenSaverIsSecure",2,"1"
-HKCU,"Control Panel\Desktop","ScreenSaveTimeOut",0,"600"
+HKCU,"Control Panel\Desktop","ScreenSaveTimeOut",2,"600"
 HKCU,"Control Panel\Desktop","WaitToKillAppTimeout",2,"20000"
-HKCU,"Control Panel\Desktop","Wallpaper",0x00000000,""
-HKCU,"Control Panel\Desktop","FontSmoothing",0,"1"
+HKCU,"Control Panel\Desktop","Pattern",2,"(None)"
+HKCU,"Control Panel\Desktop","Wallpaper",0x00000002,""
+HKCU,"Control Panel\Desktop","TileWallpaper",2,"0"
+HKCU,"Control Panel\Desktop","WallpaperStyle",2,"2"
+HKCU,"Control Panel\Desktop","FontSmoothing",2,"1"
 HKCU,"Control Panel\Desktop","FontSmoothingOrientation",0x00010003,0x00000001
 HKCU,"Control Panel\Desktop","FontSmoothingType",0x00010003,0x00000001
 HKCU,"Control Panel\Desktop","ForegroundFlashCount",0x00010003,0x00000003
@@ -79,8 +82,6 @@ HKCU,"Control Panel\Desktop","PowerOffTimeOut",2,"0"
 HKCU,"Control Panel\Desktop","MenuShowDelay",2,"400"
 HKCU,"Control Panel\Desktop","WheelScrollLines",2,"3"
 HKCU,"Control Panel\Desktop","WheelScrollChars",2,"3"
-HKCU,"Control Panel\Desktop","TileWallpaper",2,"0"
-HKCU,"Control Panel\Desktop","Pattern",2,"(None)"
 
 HKCU,"Control Panel\Desktop\WindowMetrics","ScrollWidth",2,"16"
 HKCU,"Control Panel\Desktop\WindowMetrics","ScrollHeight",2,"16"
@@ -94,27 +95,27 @@ HKCU,"Control Panel\Desktop\WindowMetrics","BorderWidth",2,"1"
 HKCU,"Control Panel\Desktop\WindowMetrics","Shell Icon Size",2,"32"
 HKCU,"Control Panel\Desktop\WindowMetrics","IconSpacing",2,"75"
 HKCU,"Control Panel\Desktop\WindowMetrics","IconVerticalspacing",2,"75"
-HKCU, "Control Panel\Desktop\WindowMetrics","CaptionFont",0x00000001,f5,ff,ff,ff,00,00,00,\
+HKCU, "Control Panel\Desktop\WindowMetrics","CaptionFont",0x00000003,f5,ff,ff,ff,00,00,00,\
 00,00,00,00,00,00,00,00,00,bc,02,00,00,00,00,00,01,00,00,00,00,54,00,61,00,68,00,6f,00,6d,\
 00,61,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,\
 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-HKCU, "Control Panel\Desktop\WindowMetrics","IconFont",0x00000001,f5,ff,ff,ff,00,00,00,00,\
+HKCU, "Control Panel\Desktop\WindowMetrics","IconFont",0x00000003,f5,ff,ff,ff,00,00,00,00,\
 00,00,00,00,00,00,00,00,90,01,00,00,00,00,00,01,00,00,00,00,54,00,61,00,68,00,6f,00,6d,00,\
 61,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,\
 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-HKCU, "Control Panel\Desktop\WindowMetrics","MenuFont",0x00000001,f5,ff,ff,ff,00,00,00,00,\
+HKCU, "Control Panel\Desktop\WindowMetrics","MenuFont",0x00000003,f5,ff,ff,ff,00,00,00,00,\
 00,00,00,00,00,00,00,00,90,01,00,00,00,00,00,01,00,00,00,00,54,00,61,00,68,00,6f,00,6d,00,\
 61,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,\
 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-HKCU, "Control Panel\Desktop\WindowMetrics","MessageFont",0x00000001,f5,ff,ff,ff,00,00,00,\
+HKCU, "Control Panel\Desktop\WindowMetrics","MessageFont",0x00000003,f5,ff,ff,ff,00,00,00,\
 00,00,00,00,00,00,00,00,00,90,01,00,00,00,00,00,01,00,00,00,00,54,00,61,00,68,00,6f,00,6d,\
 00,61,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,\
 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-HKCU, "Control Panel\Desktop\WindowMetrics","SmCaptionFont",0x00000001,f5,ff,ff,ff,00,00,\
+HKCU, "Control Panel\Desktop\WindowMetrics","SmCaptionFont",0x00000003,f5,ff,ff,ff,00,00,\
 00,00,00,00,00,00,00,00,00,00,90,01,00,00,00,00,00,01,00,00,00,00,54,00,61,00,68,00,6f,00,\
 6d,00,61,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,\
 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-HKCU, "Control Panel\Desktop\WindowMetrics","StatusFont",0x00000001,f5,ff,ff,ff,00,00,00,\
+HKCU, "Control Panel\Desktop\WindowMetrics","StatusFont",0x00000003,f5,ff,ff,ff,00,00,00,\
 00,00,00,00,00,00,00,00,00,90,01,00,00,00,00,00,01,00,00,00,00,54,00,61,00,68,00,6f,00,6d,\
 00,61,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,\
 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
@@ -151,30 +152,7 @@ HKCU,"Control Panel\Input Method\Hot Keys\00000202","Virtual Key",0x00030003,4c,
 
 ; International keys
 HKCU,"Control Panel\International",,0x00000012
-HKCU,"Control Panel\International","Locale",0x00000000,"0409"
-HKCU,"Control Panel\International","iCountry",2,"1"
-HKCU,"Control Panel\International","iCurrDigits",2,"2"
-HKCU,"Control Panel\International","iCurrency",2,"0"
-HKCU,"Control Panel\International","iDate",2,"0"
-HKCU,"Control Panel\International","iDigits",2,"2"
-HKCU,"Control Panel\International","iLZero",2,"1"
-HKCU,"Control Panel\International","iMeasure",2,"1"
-HKCU,"Control Panel\International","iNegCurr",2,"0"
-HKCU,"Control Panel\International","iTime",2,"0"
-HKCU,"Control Panel\International","iTLZero",2,"0"
-HKCU,"Control Panel\International","s1159",2,"AM"
-HKCU,"Control Panel\International","s2359",2,"PM"
-HKCU,"Control Panel\International","sCountry",2,"United States"
-HKCU,"Control Panel\International","sCurrency",2,"$"
-HKCU,"Control Panel\International","sDate",2,"/"
-HKCU,"Control Panel\International","sDecimal",2,"."
-;HKCU,"Control Panel\International","sLanguage",2,"ENU"
-HKCU,"Control Panel\International","sList",2,","
-HKCU,"Control Panel\International","sLongDate",2,"dddd, MMMM dd, yyyy"
-HKCU,"Control Panel\International","sShortDate",2,"M/d/yyyy"
-HKCU,"Control Panel\International","sThousand",2,","
-HKCU,"Control Panel\International","sTime",2,":"
-HKCU,"Control Panel\International\Geo","Nation",0x00000000,"1"
+HKCU,"Control Panel\International\Geo",,0x00000012
 
 ; Cursors Schemes
 HKCU,"Control Panel\Cursors",,,"ReactOS Default"
@@ -1812,6 +1790,11 @@ HKCU,"SOFTWARE",,0x00000012
 HKCU,"SOFTWARE\Policies",,0x00000012
 HKCU,"SOFTWARE\Microsoft",,0x00000012
 
+; ReactOS Calculator
+HKCU,"SOFTWARE\Microsoft\Calc",,0x00000012
+HKCU,"SOFTWARE\Microsoft\Calc","layout",0x00010003,0x00000001
+HKCU,"SOFTWARE\Microsoft\Calc","UseSep",0x00010003,0x00000001
+
 ; DirectX version report as DirectX 9.0
 HKCU,"SOFTWARE\Microsoft\DirectX","Debug",0x00010001,0x00000000
 HKCU,"SOFTWARE\Microsoft\DirectX","InstalledVersion",0x00000001,0x00,0x00,0x00,0x09,0x00,0x00,0x00,0x00
@@ -1834,8 +1817,10 @@ HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons",,0x00
 HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu",,0x00000012
 HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu","{208D2C60-3AEA-1069-A2D7-08002B30309D}",0x00010001,0x00000000
 HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\CLSID\{20D04FE0-3AEA-1069-A2D8-08002B30309D}",,0x00000012
-HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced","ListviewShadow",0x00010001,0x00000001
-HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced","HideFileExt",0x00010001,0x00000000
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced","ListviewShadow",0x00010003,0x00000001
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced","HideFileExt",0x00010003,0x00000000
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced","StartMenuLogoff",0x00010003,0x00000001
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced","Hidden",0x00010003,1
 
 ; default shell
 HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon",,0x00000012
@@ -1846,15 +1831,19 @@ HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",,0x00000012
 HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Telephony",,0x00000012
 HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",,0x00000012
 
+; Keyboard layout switcher
+;HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Run","kbswitch.exe",0x00020002,"%SystemRoot%\system32\kbswitch.exe"
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Run","kbswitch.exe",2,"kbswitch.exe"
+
 HKCU,"SOFTWARE\Microsoft\Windows NT",,0x00000012
 HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion",,0x00000012
-HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Devices",,0x00000012
+HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Devices","Dummy Printer On LPT1",2,"winspool,LPT1:"
 HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Network",,0x00000012
-HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\PrinterPorts",,0x00000012
+HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\PrinterPorts","Dummy Printer On LPT1",2,"winspool,LPT1:,15,45"
 HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Program Manager",,0x00000012
 
 HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","DebugOptions",2,"2048"
-HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","device",2,""
+HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","Device",2,"Dummy Printer On LPT1,winspool,LPT1:"
 HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","Documents",2,""
 HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","DosPrint",2,"no"
 HKCU,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","load",2,""
@@ -1911,8 +1900,6 @@ HKCU,"SOFTWARE\ReactOS\Debug","SpyInclude",0x00020000,"INCLUDEALL"
 ; Internet Explorer
 HKCU,"SOFTWARE\Wine\MSHTML","GeckoUrl",,"http://source.winehq.org/winegecko.php"
 HKCU,"SOFTWARE\Wine\MSHTML","GeckoCabDir",0x00020000,"%SystemRoot%\"
-
-HKCU,"SOFTWARE\Microsoft\Internet Explorer\Main","Start Page",0x00000000,"http://www.reactos.org"
 
 ; Sound Schemes
 HKCU,"AppEvents",,0x00000012
@@ -2276,42 +2263,42 @@ TEMP_DIR="%USERPROFILE%\Local Settings\Temp"
 
 ; LANG_SPANISH SUBLANG_NEUTRAL
 [Strings.000A]
-POWERCFG_NAME_0="Casa/Officina"
-POWERCFG_DESC_0="Esta combinación es ideal para la mayor pare de los usuarios home o desktop que dejan el equipo conectado todo el tiempo."
-POWERCFG_NAME_1="Portátil/Laptop"
-POWERCFG_DESC_1="Esta combinación está diseñada para aumentar la duración de la batería cuando se viaja."
+POWERCFG_NAME_0="Equipo doméstico o de oficina"
+POWERCFG_DESC_0="Este perfil es ideal para gran parte de los usuarios domésticos que dejan el equipo encendido todo el día."
+POWERCFG_NAME_1="Portátil"
+POWERCFG_DESC_1="Este perfil economiza la vida útil de la batería en portátiles que estén de viaje."
 POWERCFG_NAME_2="Presentación"
-POWERCFG_DESC_2="Esta combinación mantiene el monitor encendido para hacer presentaciones."
-POWERCFG_NAME_3="Siempre activa"
-POWERCFG_DESC_3="Esta combinación mantiene la computadora encendida para que pueda ser accedida desde la red. Usar esta combinación si no se dispone de hardware WOL."
-POWERCFG_NAME_4="Administración mínima de la corriente"
-POWERCFG_DESC_4="Esta combinación mantiene la computadora encendida y la optimiza para una performance elevada."
-POWERCFG_NAME_5="Máxima Batería"
-POWERCFG_DESC_5="Esta combinación permite el máximo ahorro de la energía."
-DESKTOP_SCHEME_0="ReactOS Estandard"
-DESKTOP_SCHEME_1="Rojo ladrillo"
+POWERCFG_DESC_2="Este perfil mantiene el monitor encendido para hacer presentaciones."
+POWERCFG_NAME_3="Siempre encendido"
+POWERCFG_DESC_3="Este perfil mantiene el equipo siempre encendido para que pueda accederse desde la red. Útil a falta de hardware de arranque por red."
+POWERCFG_NAME_4="Alto rendimiento"
+POWERCFG_DESC_4="Este perfil mantiene el equipo funcionando de forma permanente y lo optimiza para un rendimiento óptimo."
+POWERCFG_NAME_5="Batería máxima"
+POWERCFG_DESC_5="Este perfil proporciona el máximo ahorro energético a costa de un rendimiento mínimo."
+DESKTOP_SCHEME_0="ReactOS estándar"
+DESKTOP_SCHEME_1="Ladrillo"
 DESKTOP_SCHEME_2="Berenjena"
-DESKTOP_SCHEME_3="Verde Olivo"
-DESKTOP_SCHEME_4="Alto Contraste 1"
-DESKTOP_SCHEME_5="Alto Contraste 2"
-DESKTOP_SCHEME_6="Alto Contraste Negro"
-DESKTOP_SCHEME_7="Alto Contraste Blanco"
+DESKTOP_SCHEME_3="Verde oliva"
+DESKTOP_SCHEME_4="Alto contraste 1"
+DESKTOP_SCHEME_5="Alto contraste 2"
+DESKTOP_SCHEME_6="Alto contraste oscuro"
+DESKTOP_SCHEME_7="Alto contraste claro"
 DESKTOP_SCHEME_8="Lila"
 DESKTOP_SCHEME_9="Arce"
-DESKTOP_SCHEME_10="Verde Marino"
+DESKTOP_SCHEME_10="Marino"
 DESKTOP_SCHEME_11="Ciruela"
 DESKTOP_SCHEME_12="Calabaza"
-DESKTOP_SCHEME_13="Día lluvioso"
-DESKTOP_SCHEME_14="ReactOS Clásico"
+DESKTOP_SCHEME_13="Días de lluvia"
+DESKTOP_SCHEME_14="ReactOS clásico"
 DESKTOP_SCHEME_15="Rosa"
-DESKTOP_SCHEME_16="Arena"
-DESKTOP_SCHEME_17="Sky"
-DESKTOP_SCHEME_18="Gris"
+DESKTOP_SCHEME_16="Arenisca"
+DESKTOP_SCHEME_17="Cielo"
+DESKTOP_SCHEME_18="Pizarra"
 DESKTOP_SCHEME_19="Tormenta"
-DESKTOP_SCHEME_20="Verde agua"
-DESKTOP_SCHEME_21="Tabaco"
-DESKTOP_SCHEME_SIZE_0="Default size"
-TEMP_DIR="%USERPROFILE%\Configuración Local\Temp"
+DESKTOP_SCHEME_20="Verde turquesa"
+DESKTOP_SCHEME_21="Trigo"
+DESKTOP_SCHEME_SIZE_0="Tamaño predeterminado"
+TEMP_DIR="%USERPROFILE%\Configuración local\Temp"
 
 
 ; LANG_FINNISH SUBLANG_NEUTRAL
@@ -2390,7 +2377,7 @@ DESKTOP_SCHEME_18="Slate"
 DESKTOP_SCHEME_19="Storm"
 DESKTOP_SCHEME_20="Teal"
 DESKTOP_SCHEME_21="Wheat"
-DESKTOP_SCHEME_SIZE_0="Default size"
+DESKTOP_SCHEME_SIZE_0="Taille par défaut"
 TEMP_DIR="%USERPROFILE%\Local Settings\Temp"
 
 
@@ -2644,15 +2631,15 @@ TEMP_DIR="%USERPROFILE%\Ustawienia lokalne\Temp"
 POWERCFG_NAME_0="Acasă/Birou"
 POWERCFG_DESC_0="Aceas regim este potrivit calculatoarelor conectate permanent la rețeaua electrică."
 POWERCFG_NAME_1="Portabilitate"
-POWERCFG_DESC_1="Aceast regim a fost conceput pentru a spori perioada de alimentare a bateriei calculatoarelor portabile."
+POWERCFG_DESC_1="Aceast regim a fost conceput pentru a spori perioada de autonomie a calculatoarelor portabile."
 POWERCFG_NAME_2="Prezentare"
 POWERCFG_DESC_2="Aceast regim menține ecranul în permanență deschis (util pentru prezentări)."
 POWERCFG_NAME_3="Conectat în permanență"
 POWERCFG_DESC_3="Aceast regim menține calculatorul disponibil pentru a putea fi accesat din rețea. Utilizați această opțiune în lipsa soluțiilor de autodeschidere pentru rețea."
 POWERCFG_NAME_4="Gestiune minimă"
 POWERCFG_DESC_4="Aceast regim menține calculatorul deschis și-i optimizează alimentarea pentru o înaltă performanță."
-POWERCFG_NAME_5="Alimentare maximă"
-POWERCFG_DESC_5="Aceasta este cel mai agresiv regim de reducere a consumului și de extindere a perioadei de alimentare."
+POWERCFG_NAME_5="Consum minim"
+POWERCFG_DESC_5="Aceasta este cel mai agresiv regim de reducere a consumului de energie."
 DESKTOP_SCHEME_0="ReactOS Standard"
 DESKTOP_SCHEME_1="Cărămiziu"
 DESKTOP_SCHEME_2="Vânăt"
@@ -2675,15 +2662,15 @@ DESKTOP_SCHEME_18="Ardezie"
 DESKTOP_SCHEME_19="Furtună"
 DESKTOP_SCHEME_20="Turcoaz"
 DESKTOP_SCHEME_21="Grâu"
-DESKTOP_SCHEME_SIZE_0="Default size"
+DESKTOP_SCHEME_SIZE_0="Dimensiune implicită"
 TEMP_DIR="%USERPROFILE%\Preferințe locale\Temp"
 
 
 ; LANG_RUSSIAN SUBLANG_NEUTRAL
 [Strings.0019]
-POWERCFG_NAME_0="Домашний/офисный настольный"
+POWERCFG_NAME_0="Домашний/офисный компьютер"
 POWERCFG_DESC_0="Эта схема подходит для большинства домашних и офисных настольных компьютеров, которые работают от электросети."
-POWERCFG_NAME_1="Переносный/ноутбук"
+POWERCFG_NAME_1="Ноутбук"
 POWERCFG_DESC_1="Эта схема предназначена для продления времени работы переносного компьютера от батареи в дороге."
 POWERCFG_NAME_2="Презентация"
 POWERCFG_DESC_2="Эта схема оставляет монитор включённым для ведения презентаций."
@@ -2887,5 +2874,44 @@ DESKTOP_SCHEME_20="Teal"
 DESKTOP_SCHEME_21="Wheat"
 DESKTOP_SCHEME_SIZE_0="Default size"
 TEMP_DIR="%USERPROFILE%\Local Settings\Temp"
+
+; Turkish
+[Strings.041f]
+POWERCFG_NAME_0="Ev ve Ofis Masaüstü"
+POWERCFG_DESC_0="Bu düzen, tüm zamanlarda fişte kalmış olan çoğu ev veyâ masaüstü bilgisayarlar için uygundur."
+POWERCFG_NAME_1="Taşınabilir/Dizüstü"
+POWERCFG_DESC_1="Bu düzen, yolda taşınabilir bilgisayarlara uzun pil yaşamı için tasarlanmıştır."
+POWERCFG_NAME_2="Sunum"
+POWERCFG_DESC_2="Bu düzen, sunumlar yapmak için göstergeci açık tutar."
+POWERCFG_NAME_3="Sürekli Açık"
+POWERCFG_DESC_3="Bu düzen, bilgisayarın çalışmasını korur, böylece bilgisayar ağdan erişilebilir. Ağdan uyandırma donanımınız yoksa bu düzeni kullanınız."
+POWERCFG_NAME_4="En Az Güç Yönetimi"
+POWERCFG_DESC_4="Bu düzen, bilgisayarı, açık tutar ve yüksek başarım için en uygun duruma getirir."
+POWERCFG_NAME_5="En Çok Pil Yaşamı"
+POWERCFG_DESC_5="Bu düzen, güç koruma için aşırı olarak girişkendir."
+DESKTOP_SCHEME_0="ReactOS Ölçünlü"
+DESKTOP_SCHEME_1="Tuğla"
+DESKTOP_SCHEME_2="Patlıcan"
+DESKTOP_SCHEME_3="Yeşil Zeytin"
+DESKTOP_SCHEME_4="Yüksek Karşıtlık 1"
+DESKTOP_SCHEME_5="Yüksek Karşıtlık 2"
+DESKTOP_SCHEME_6="Yüksek Karşıtlık Kara"
+DESKTOP_SCHEME_7="Yüksek Karşıtlık Ak"
+DESKTOP_SCHEME_8="Leylak"
+DESKTOP_SCHEME_9="Akçaağaç"
+DESKTOP_SCHEME_10="Deniz"
+DESKTOP_SCHEME_11="Erik"
+DESKTOP_SCHEME_12="Kabak"
+DESKTOP_SCHEME_13="Yağmurlu Gün"
+DESKTOP_SCHEME_14="ReactOS Kökleşik"
+DESKTOP_SCHEME_15="Gül"
+DESKTOP_SCHEME_16="Kum"
+DESKTOP_SCHEME_17="Gökyüzü"
+DESKTOP_SCHEME_18="Kayağan Taş"
+DESKTOP_SCHEME_19="Fırtına"
+DESKTOP_SCHEME_20="Çamurcun"
+DESKTOP_SCHEME_21="Buğday"
+DESKTOP_SCHEME_SIZE_0="Ön Tanımlı Büyüklük"
+TEMP_DIR="%USERPROFILE%\Yerli Ayarlar\Geçici"
 
 ; EOF

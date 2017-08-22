@@ -2,7 +2,7 @@
  * COPYRIGHT:        See COPYING in the top level directory
  * PROJECT:          ReactOS Win32k subsystem
  * PURPOSE:          Support for logical devices
- * FILE:             subsystems/win32/win32k/eng/ldevobj.c
+ * FILE:             win32ss/gdi/eng/ldevobj.c
  * PROGRAMER:        Timo Kreuzer (timo.kreuzer@reactos.org)
  */
 
@@ -121,6 +121,12 @@ LDEVOBJ_pdmiGetModes(
     PDEVMODEINFO pdminfo;
 
     TRACE("LDEVOBJ_pdmiGetModes(%p, %p)\n", pldev, hDriver);
+
+    /* Mirror drivers may omit this function */
+    if (!pldev->pfn.GetModes)
+    {
+        return NULL;
+    }
 
     /* Call the driver to get the required size */
     cbSize = pldev->pfn.GetModes(hDriver, 0, NULL);

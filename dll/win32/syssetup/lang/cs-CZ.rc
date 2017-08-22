@@ -23,7 +23,7 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     LTEXT "Vývojáři systému ReactOS by rádi zmínili následující Open Source projekty. Tyto projekty (nebo jejich části) byly použity při vývoji systému ReactOS:", IDC_STATIC, 15, 7, 286, 19
     LISTBOX IDC_PROJECTS, 15, 30, 286, 75, LBS_NOSEL | LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
-    LTEXT "ReactOS je licencován pod GPL. Pokud chcete systém (nebo jeho části) použít nebo redistribuovat, musíte respektovat GPL", IDC_STATIC, 15, 110, 227, 19
+    LTEXT "ReactOS je licencován pod GPL. Pokud chcete systém (nebo jeho části) použít nebo redistribuovat, musíte respektovat GPL.", IDC_STATIC, 15, 110, 227, 19
     PUSHBUTTON "&Zobrazit GPL...", IDC_VIEWGPL, 251, 110, 50, 19
     LTEXT "Kliknutím na Další pokračujte v instalaci.", IDC_STATIC, 15, 136, 195, 17
 END
@@ -65,7 +65,7 @@ CAPTION "ReactOS Instalátor"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON IDI_ICON4, IDC_STATIC, 21, 7, 20, 20
-    LTEXT "Lokalizace systému by měla souhlasit s jazykem aplikací, které chcete používat. Localizace určí jak budou zobrazena čísla, měny a kalendářní data.", IDC_STATIC, 53, 7, 253, 20
+    LTEXT "Lokalizace systému by měla souhlasit s jazykem aplikací, které chcete používat. Localizace určí, jak budou zobrazena čísla, měny a kalendářní data.", IDC_STATIC, 53, 7, 253, 20
     LTEXT "", IDC_LOCALETEXT, 53, 29, 250, 16
     LTEXT "Pro změnu lokalizace systému klikněte na Změnit.", IDC_STATIC, 53, 60, 184, 8
     PUSHBUTTON "&Změnit...", IDC_CUSTOMLOCALE, 245, 57, 50, 14
@@ -122,7 +122,7 @@ END
 IDD_STATUSWINDOW_DLG DIALOGEX 0, 0, 274, 26
 STYLE NOT WS_VISIBLE | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP
 CAPTION "Prosím čekejte..."
-FONT 8, "MS Shell Dlg 2", 400, 0, 1
+FONT 8, "MS Shell Dlg", 400, 0, 1
 BEGIN
     LTEXT "", IDC_STATUSLABEL, 7, 8, 234, 12, SS_WORDELLIPSIS
 END
@@ -148,19 +148,20 @@ BEGIN
     IDS_REACTOS_SETUP "ReactOS Instalátor"
     IDS_UNKNOWN_ERROR "Neznámá chyba"
     IDS_REGISTERING_COMPONENTS "Registruji součásti..."
-    IDS_LOADLIBRARY_FAILED "LoadLibrary failed: "
-    IDS_GETPROCADDR_FAILED "GetProcAddr failed: "
-    IDS_REGSVR_FAILED "DllRegisterServer failed: "
-    IDS_DLLINSTALL_FAILED "DllInstall failed: "
+    IDS_LOADLIBRARY_FAILED "LoadLibrary selhalo: "
+    IDS_GETPROCADDR_FAILED "GetProcAddr selhalo: "
+    IDS_REGSVR_FAILED "DllRegisterServer selhalo: "
+    IDS_DLLINSTALL_FAILED "DllInstall selhalo: "
     IDS_TIMEOUT "Vypršel časový limit registrace"
     IDS_REASON_UNKNOWN ""
     /*
      * ATTENTION:
-     *   If you translate the administator account name, keep IDS_ADMINISTRATOR_NAME and
+     *   If you translate the administrator account name, keep IDS_ADMINISTRATOR_NAME and
      *   samsrv.dll:IDS_USER_ADMINISTRATOR_NAME synchronized.
      *   Also check the IDD_COMPUTERPAGE dialog.
      */
     IDS_ADMINISTRATOR_NAME "Administrator"
+    IDS_MACHINE_OWNER_NAME "Vlastník"
 END
 
 STRINGTABLE
@@ -177,4 +178,11 @@ END
 STRINGTABLE
 BEGIN
     IDS_STATUS_INSTALL_DEV "Instaluji zařízení..."
+END
+
+/* ATTENTION: Synchronize the translation of these strings with shell32 */
+STRINGTABLE
+BEGIN
+    IDS_PROGRAMFILES "%SystemDrive%\\Program Files"
+    IDS_COMMONFILES "Common Files"
 END

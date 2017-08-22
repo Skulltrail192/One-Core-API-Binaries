@@ -3,7 +3,7 @@ add_definitions(
     -D__WINESRC__
     -D_WINE)
 
-include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 spec2def(winhttp.dll winhttp.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
@@ -28,6 +28,6 @@ set_module_type(winhttp win32dll)
 target_link_libraries(winhttp uuid wine)
 add_delay_importlibs(winhttp oleaut32 ole32 crypt32 secur32)
 add_importlibs(winhttp user32 advapi32 ws2_32 jsproxy msvcrt kernel32 ntdll)
-add_dependencies(winhttp stdole2) # wininet_tlb.tlb needs stdole2.tlb
+add_dependencies(winhttp stdole2)
 add_pch(winhttp winhttp_private.h SOURCE)
 add_cd_file(TARGET winhttp DESTINATION reactos/system32 FOR all)

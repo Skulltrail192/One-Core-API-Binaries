@@ -15,11 +15,11 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYS
 CAPTION "Installazione di ReactOS"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    LTEXT "Gli sviluppatori di ReactOS desiderano citare i seguenti progetti Open Source, che sono stati usati (in tutto o in parte) per creare ReactOS:", IDC_STATIC, 20, 7, 286, 19
-    LISTBOX IDC_PROJECTS, 20, 30, 280, 75, LBS_NOSEL | LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
-    LTEXT "ReactOS è soggetto alla licenza GPL, per cui se si desidera riusarlo o ridistribuirlo (in tutto o in parte) è necessario rispettare la GPL", IDC_STATIC, 20, 110, 217, 22
+    LTEXT "Gli sviluppatori di ReactOS desiderano citare i seguenti progetti Open Source, che sono stati usati (in tutto o in parte) per creare ReactOS:", IDC_STATIC, 15, 7, 286, 19
+    LISTBOX IDC_PROJECTS, 15, 30, 286, 75, LBS_NOSEL | LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
+    LTEXT "ReactOS è soggetto alla licenza GPL, per cui se si desidera riusarlo o ridistribuirlo (in tutto o in parte) è necessario rispettare la GPL.", IDC_STATIC, 15, 110, 217, 22
     PUSHBUTTON "&Mostra la GPL...", IDC_VIEWGPL, 241, 110, 60, 19
-    LTEXT "Selezionare Avanti per proseguire con la configurazione.", IDC_STATIC, 20, 136, 195, 17
+    LTEXT "Selezionare Avanti per proseguire con la configurazione.", IDC_STATIC, 15, 136, 195, 17
 END
 
 IDD_OWNERPAGE DIALOGEX 0, 0, 317, 143
@@ -116,7 +116,7 @@ END
 IDD_STATUSWINDOW_DLG DIALOGEX 0, 0, 274, 26
 STYLE NOT WS_VISIBLE | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP
 CAPTION "Attendere ..."
-FONT 8, "MS Shell Dlg 2", 400, 0, 1
+FONT 8, "MS Shell Dlg", 400, 0, 1
 BEGIN
     LTEXT "", IDC_STATUSLABEL, 7, 8, 234, 12, SS_WORDELLIPSIS
 END
@@ -149,12 +149,13 @@ IDS_REACTOS_SETUP "Installazione di ReactOS"
     IDS_TIMEOUT "Tempo scaduto durante la registrazione"
     IDS_REASON_UNKNOWN ""
     /*
-     * ATTENTION: 
-     *   If you translate the administator account name, keep IDS_ADMINISTRATOR_NAME and
+     * ATTENTION:
+     *   If you translate the administrator account name, keep IDS_ADMINISTRATOR_NAME and
      *   samsrv.dll:IDS_USER_ADMINISTRATOR_NAME synchronized.
      *   Also check the IDD_COMPUTERPAGE dialog.
      */
     IDS_ADMINISTRATOR_NAME "Administrator"
+    IDS_MACHINE_OWNER_NAME "Proprietario"
 END
 
 STRINGTABLE
@@ -171,4 +172,11 @@ END
 STRINGTABLE
 BEGIN
     IDS_STATUS_INSTALL_DEV "Installazione dei dispositivi in corso..."
+END
+
+/* ATTENTION: Synchronize the translation of these strings with shell32 */
+STRINGTABLE
+BEGIN
+    IDS_PROGRAMFILES "%SystemDrive%\\Programmi"
+    IDS_COMMONFILES "File comuni"
 END

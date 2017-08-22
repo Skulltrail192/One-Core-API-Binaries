@@ -29,9 +29,9 @@
  *
  * TODO:
  *   missing notifications: TVN_GETINFOTIP, TVN_KEYDOWN,
- *      TVN_SETDISPINFO, TVN_SINGLEEXPAND
+ *      TVN_SETDISPINFO
  *
- *   missing styles: TVS_FULLROWSELECT, TVS_INFOTIP, TVS_RTLREADING,
+ *   missing styles: TVS_INFOTIP, TVS_RTLREADING,
  *
  *   missing item styles: TVIS_EXPANDPARTIAL, TVIS_EX_FLAT,
  *      TVIS_EX_DISABLED
@@ -41,6 +41,8 @@
  */
 
 #include "comctl32.h"
+
+#include <wine/exception.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(treeview);
 
@@ -73,7 +75,7 @@ typedef struct tagTREEVIEW_INFO
   HTREEITEM	focusedItem;    /* item that was under the cursor when WM_LBUTTONDOWN was received */
   HTREEITEM     editItem;       /* item being edited with builtin edit box */
 
-  HTREEITEM     firstVisible;   /* handle to first visible item */
+  HTREEITEM     firstVisible;   /* handle to item whose top edge is at y = 0 */
   LONG          maxVisibleOrder;
   HTREEITEM     dropItem;       /* handle to item selected by drag cursor */
   HTREEITEM     insertMarkItem; /* item after which insertion mark is placed */
@@ -139,7 +141,10 @@ typedef struct _TREEITEM    /* HTREEITEM is a _TREEINFO *. */
   LONG      imageOffset;
   LONG      textOffset;
   LONG      textWidth;      /* horizontal text extent for pszText */
-  LONG      visibleOrder;   /* visible ordering, 0 is first visible item */
+  LONG      visibleOrder;   /* Depth-first numbering of the items whose ancestors are all expanded,
+                               corresponding to a top-to-bottom ordering in the tree view.
+                               Each item takes up "item.iIntegral" spots in the visible order.
+                               0 is the root's first child. */
   const TREEVIEW_INFO *infoPtr; /* tree data this item belongs to */
 } TREEVIEW_ITEM;
 
@@ -327,6 +332,20 @@ TREEVIEW_IsChildOf(const TREEVIEW_ITEM *parent, const TREEVIEW_ITEM *child)
     return FALSE;
 }
 
+static BOOL
+TREEVIEW_IsFullRowSelect(const TREEVIEW_INFO *infoPtr)
+{
+    return !(infoPtr->dwStyle & TVS_HASLINES) && (infoPtr->dwStyle & TVS_FULLROWSELECT);
+}
+
+static BOOL
+TREEVIEW_IsItemHit(const TREEVIEW_INFO *infoPtr, const TVHITTESTINFO *ht)
+{
+    if (TREEVIEW_IsFullRowSelect(infoPtr))
+        return ht->flags & (TVHT_ONITEMINDENT | TVHT_ONITEMBUTTON | TVHT_ONITEM | TVHT_ONITEMRIGHT);
+    else
+        return ht->flags & TVHT_ONITEM;
+}
 
 /* Tree Traversal *******************************************************/
 
@@ -535,7 +554,7 @@ TREEVIEW_SendTreeviewNotify(const TREEVIEW_INFO *infoPtr, UINT code, UINT action
     NMTREEVIEWW nmhdr;
     BOOL ret;
 
-    TRACE("code:%d action:%x olditem:%p newitem:%p\n",
+    TRACE("code:%d action:0x%x olditem:%p newitem:%p\n",
 	  code, action, oldItem, newItem);
 
     memset(&nmhdr, 0, sizeof(NMTREEVIEWW));
@@ -587,7 +606,7 @@ TREEVIEW_SendCustomDrawNotify(const TREEVIEW_INFO *infoPtr, DWORD dwDrawStage,
     NMTVCUSTOMDRAW nmcdhdr;
     NMCUSTOMDRAW *nmcd;
 
-    TRACE("drawstage:%x hdc:%p\n", dwDrawStage, hdc);
+    TRACE("drawstage:0x%x hdc:%p\n", dwDrawStage, hdc);
 
     nmcd = &nmcdhdr.nmcd;
     nmcd->dwDrawStage = dwDrawStage;
@@ -634,7 +653,7 @@ TREEVIEW_SendCustomDrawItemNotify(const TREEVIEW_INFO *infoPtr, HDC hdc,
     nmcd->lItemlParam = item->lParam;
     nmcdhdr->iLevel = item->iLevel;
 
-    TRACE("drawstage:%x hdc:%p item:%lx, itemstate:%x, lItemlParam:%lx\n",
+    TRACE("drawstage:0x%x hdc:%p item:%lx, itemstate:0x%x, lItemlParam:0x%lx\n",
 	  nmcd->dwDrawStage, nmcd->hdc, nmcd->dwItemSpec,
 	  nmcd->uItemState, nmcd->lItemlParam);
 
@@ -793,8 +812,9 @@ static BOOL
 TREEVIEW_HasChildren(const TREEVIEW_INFO *infoPtr, TREEVIEW_ITEM *item)
 {
     TREEVIEW_UpdateDispInfo(infoPtr, item, TVIF_CHILDREN);
-
-    return item->cChildren > 0;
+    /* Protect for a case when callback field is not changed by a host,
+       otherwise negative values trigger normal notifications. */
+    return item->cChildren != 0 && item->cChildren != I_CHILDRENCALLBACK;
 }
 
 static INT TREEVIEW_NotifyFormat (TREEVIEW_INFO *infoPtr, HWND hwndFrom, UINT nCommand)
@@ -1169,7 +1189,7 @@ TREEVIEW_DoSetItemT(const TREEVIEW_INFO *infoPtr, TREEVIEW_ITEM *item,
 
     if (tvItem->mask & TVIF_STATE)
     {
-	TRACE("prevstate,state,mask:%x,%x,%x\n", item->state, tvItem->state,
+	TRACE("prevstate 0x%x, state 0x%x, mask 0x%x\n", item->state, tvItem->state,
 	      tvItem->stateMask);
 	item->state &= ~tvItem->stateMask;
 	item->state |= (tvItem->state & tvItem->stateMask);
@@ -1177,7 +1197,7 @@ TREEVIEW_DoSetItemT(const TREEVIEW_INFO *infoPtr, TREEVIEW_ITEM *item,
 
     if (tvItem->mask & TVIF_STATEEX)
     {
-        FIXME("New extended state: %x\n", tvItem->uStateEx);
+        FIXME("New extended state: 0x%x\n", tvItem->uStateEx);
     }
 
     item->callbackMask |= callbackSet;
@@ -1335,7 +1355,7 @@ TREEVIEW_InsertItemT(TREEVIEW_INFO *infoPtr, const TVINSERTSTRUCTW *ptdi, BOOL i
     }
 
 
-    TRACE("new item %p; parent %p, mask %x\n", newItem,
+    TRACE("new item %p; parent %p, mask 0x%x\n", newItem,
 	  newItem->parent, tvItem->mask);
 
     newItem->iLevel = newItem->parent->iLevel + 1;
@@ -1418,10 +1438,12 @@ TREEVIEW_RemoveAllChildren(TREEVIEW_INFO *infoPtr, const TREEVIEW_ITEM *parentIt
 static void
 TREEVIEW_UnlinkItem(const TREEVIEW_ITEM *item)
 {
-    TREEVIEW_ITEM *parentItem = item->parent;
+    TREEVIEW_ITEM *parentItem;
 
     assert(item != NULL);
     assert(item->parent != NULL); /* i.e. it must not be the root */
+
+    parentItem = item->parent;
 
     if (parentItem->firstChild == item)
 	parentItem->firstChild = item->nextSibling;
@@ -1516,6 +1538,7 @@ TREEVIEW_DeleteItem(TREEVIEW_INFO *infoPtr, HTREEITEM item)
 
 	if (infoPtr->firstVisible == item)
 	{
+	    visible = TRUE;
 	    if (item->nextSibling)
 	       newFirstVisible = item->nextSibling;
 	    else if (item->prevSibling)
@@ -1551,11 +1574,13 @@ TREEVIEW_DeleteItem(TREEVIEW_INFO *infoPtr, HTREEITEM item)
 
     TREEVIEW_VerifyTree(infoPtr);
 
+    if (visible)
+        TREEVIEW_SetFirstVisible(infoPtr, newFirstVisible, TRUE);
+
     if (!infoPtr->bRedraw) return TRUE;
 
     if (visible)
     {
-       TREEVIEW_SetFirstVisible(infoPtr, newFirstVisible, TRUE);
        TREEVIEW_RecalculateVisibleOrder(infoPtr, prev);
        TREEVIEW_UpdateScrollBars(infoPtr);
        TREEVIEW_Invalidate(infoPtr, NULL);
@@ -1960,7 +1985,7 @@ TREEVIEW_SetInsertMarkColor(TREEVIEW_INFO *infoPtr, COLORREF color)
 {
     COLORREF prevColor = infoPtr->clrInsertMark;
 
-    TRACE("%x\n", color);
+    TRACE("0x%08x\n", color);
     infoPtr->clrInsertMark = color;
 
     return (LRESULT)prevColor;
@@ -2046,11 +2071,20 @@ TREEVIEW_GetItemT(const TREEVIEW_INFO *infoPtr, LPTVITEMEXW tvItem, BOOL isW)
 
     if (!TREEVIEW_ValidItem(infoPtr, item))
     {
+        BOOL valid_item = FALSE;
         if (!item) return FALSE;
 
-        TRACE("got item from different tree %p, called from %p\n", item->infoPtr, infoPtr);
-        infoPtr = item->infoPtr;
-        if (!TREEVIEW_ValidItem(infoPtr, item)) return FALSE;
+        __TRY
+        {
+            infoPtr = item->infoPtr;
+            TRACE("got item from different tree %p, called from %p\n", item->infoPtr, infoPtr);
+            valid_item = TREEVIEW_ValidItem(infoPtr, item);
+        }
+        __EXCEPT_PAGE_FAULT
+        {
+        }
+        __ENDTRY
+        if (!valid_item) return FALSE;
     }
 
     TREEVIEW_UpdateDispInfo(infoPtr, item, tvItem->mask);
@@ -2123,7 +2157,7 @@ TREEVIEW_GetItemT(const TREEVIEW_INFO *infoPtr, LPTVITEMEXW tvItem, BOOL isW)
         tvItem->uStateEx = 0;
     }
 
-    TRACE("item <%p>, txt %p, img %d, mask %x\n",
+    TRACE("item <%p>, txt %p, img %d, mask 0x%x\n",
 	  item, tvItem->pszText, tvItem->iImage, tvItem->mask);
 
     return TRUE;
@@ -2139,7 +2173,7 @@ TREEVIEW_SetItemT(TREEVIEW_INFO *infoPtr, const TVITEMEXW *tvItem, BOOL isW)
 
     item = tvItem->hItem;
 
-    TRACE("item %d,mask %x\n", TREEVIEW_GetItemIndex(infoPtr, item),
+    TRACE("item %d, mask 0x%x\n", TREEVIEW_GetItemIndex(infoPtr, item),
 	  tvItem->mask);
 
     if (!TREEVIEW_ValidItem(infoPtr, item))
@@ -2234,7 +2268,7 @@ TREEVIEW_GetNextItem(const TREEVIEW_INFO *infoPtr, UINT which, HTREEITEM item)
 
     if (retval)
     {
-	TRACE("flags:%x, returns %p\n", which, retval);
+	TRACE("flags:0x%x, returns %p\n", which, retval);
 	return (LRESULT)retval;
     }
 
@@ -2264,11 +2298,11 @@ TREEVIEW_GetNextItem(const TREEVIEW_INFO *infoPtr, UINT which, HTREEITEM item)
 	retval = TREEVIEW_GetPrevListItem(infoPtr, item);
 	break;
     default:
-	TRACE("Unknown msg %x,item %p\n", which, item);
+	TRACE("Unknown msg 0x%x, item %p\n", which, item);
 	break;
     }
 
-    TRACE("flags:%x, item %p;returns %p\n", which, item, retval);
+    TRACE("flags: 0x%x, item %p;returns %p\n", which, item, retval);
     return (LRESULT)retval;
 }
 
@@ -2290,7 +2324,7 @@ TREEVIEW_ToggleItemState(const TREEVIEW_INFO *infoPtr, TREEVIEW_ITEM *item)
 	unsigned int state;
 
 	state = STATEIMAGEINDEX(item->state);
-	TRACE("state:%x\n", state);
+	TRACE("state: 0x%x\n", state);
 	item->state &= ~TVIS_STATEIMAGEMASK;
 
 	if (state < 3)
@@ -2298,7 +2332,7 @@ TREEVIEW_ToggleItemState(const TREEVIEW_INFO *infoPtr, TREEVIEW_ITEM *item)
 
 	item->state |= INDEXTOSTATEIMAGEMASK(state);
 
-	TRACE("state:%x\n", state);
+	TRACE("state: 0x%x\n", state);
 	TREEVIEW_Invalidate(infoPtr, item);
     }
 }
@@ -2497,6 +2531,8 @@ TREEVIEW_DrawItem(const TREEVIEW_INFO *infoPtr, HDC hdc, TREEVIEW_ITEM *item)
     }
 
     hOldFont = SelectObject(hdc, TREEVIEW_FontForItem(infoPtr, item));
+    oldTextColor = SetTextColor(hdc, nmcdhdr.clrText);
+    oldTextBkColor = SetBkColor(hdc, nmcdhdr.clrTextBk);
 
     /* The custom draw handler can query the text rectangle,
      * so get ready. */
@@ -2522,11 +2558,18 @@ TREEVIEW_DrawItem(const TREEVIEW_INFO *infoPtr, HDC hdc, TREEVIEW_ITEM *item)
     if (cditem & CDRF_NEWFONT)
 	TREEVIEW_ComputeTextWidth(infoPtr, item, hdc);
 
+    if (TREEVIEW_IsFullRowSelect(infoPtr))
+    {
+        HBRUSH brush = CreateSolidBrush(nmcdhdr.clrTextBk);
+        FillRect(hdc, &item->rect, brush);
+        DeleteObject(brush);
+    }
+
     TREEVIEW_DrawItemLines(infoPtr, hdc, item);
 
-    /* Set colors. Custom draw handler can change these so we do this after it. */
-    oldTextColor = SetTextColor(hdc, nmcdhdr.clrText);
-    oldTextBkColor = SetBkColor(hdc, nmcdhdr.clrTextBk);
+    /* reset colors. Custom draw handler can change them */
+    SetTextColor(hdc, nmcdhdr.clrText);
+    SetBkColor(hdc, nmcdhdr.clrTextBk);
 
     centery = (item->rect.top + item->rect.bottom) / 2;
 
@@ -2869,11 +2912,13 @@ TREEVIEW_Refresh(TREEVIEW_INFO *infoPtr, HDC hdc, const RECT *rc)
     }
 
     //
-    // This is correct, but is causes and infinite loop of WM_PAINT messages, resulting
-    // in continuous painting of the scroll bar in reactos. Comment out until the real
-    // bug is found
-    // 
-    //TREEVIEW_UpdateScrollBars(infoPtr);
+    // FIXME: This is correct, but is causes and infinite loop of WM_PAINT
+    // messages, resulting in continuous painting of the scroll bar in reactos.
+    // Comment out until the real bug is found. CORE-4912
+    //
+#ifndef __REACTOS__
+    TREEVIEW_UpdateScrollBars(infoPtr);
+#endif
 
     if (infoPtr->cdmode & CDRF_NOTIFYPOSTPAINT)
 	infoPtr->cdmode =
@@ -3491,47 +3536,31 @@ TREEVIEW_Expand(TREEVIEW_INFO *infoPtr, TREEVIEW_ITEM *item,
 static void TREEVIEW_SingleExpand(TREEVIEW_INFO *infoPtr,
     HTREEITEM selection, HTREEITEM item)
 {
-    TREEVIEW_ITEM *SelItem;
+    TREEVIEW_ITEM *prev, *curr;
 
     if ((infoPtr->dwStyle & TVS_SINGLEEXPAND) == 0 || infoPtr->hwndEdit || !item) return;
 
     TREEVIEW_SendTreeviewNotify(infoPtr, TVN_SINGLEEXPAND, TVC_UNKNOWN, TVIF_HANDLE | TVIF_PARAM, item, 0);
 
     /*
-     * Close the previous selection all the way to the root
-     * as long as the new selection is not a child
+     * Close the previous item and its ancestors as long as they are not
+     * ancestors of the current item
      */
-    if(selection && (selection != item))
+    for (prev = selection; prev && TREEVIEW_ValidItem(infoPtr, prev); prev = prev->parent)
     {
-        BOOL closeit = TRUE;
-        SelItem = item;
-
-        /* determine if the hitItem is a child of the currently selected item */
-        while(closeit && SelItem && TREEVIEW_ValidItem(infoPtr, SelItem) &&
-              (SelItem->parent != infoPtr->root))
+        for (curr = item; curr && TREEVIEW_ValidItem(infoPtr, curr); curr = curr->parent)
         {
-            closeit = (SelItem != selection);
-            SelItem = SelItem->parent;
+            if (curr == prev)
+                goto finish;
         }
-
-        if(closeit)
-        {
-            if(TREEVIEW_ValidItem(infoPtr, selection))
-                SelItem = selection;
-
-            while(SelItem && (SelItem != item) && TREEVIEW_ValidItem(infoPtr, SelItem) &&
-                  SelItem->parent != infoPtr->root)
-            {
-                TREEVIEW_Collapse(infoPtr, SelItem, FALSE, FALSE);
-                SelItem = SelItem->parent;
-            }
-        }
+        TREEVIEW_Collapse(infoPtr, prev, FALSE, TRUE);
     }
 
+finish:
     /*
      * Expand the current item
      */
-    TREEVIEW_Expand(infoPtr, item, FALSE, FALSE);
+    TREEVIEW_Expand(infoPtr, item, FALSE, TRUE);
 }
 
 static BOOL
@@ -3615,7 +3644,7 @@ TREEVIEW_HitTestPoint(const TREEVIEW_INFO *infoPtr, POINT pt)
     return item;
 }
 
-static LRESULT
+static TREEVIEW_ITEM *
 TREEVIEW_HitTest(const TREEVIEW_INFO *infoPtr, LPTVHITTESTINFO lpht)
 {
     TREEVIEW_ITEM *item;
@@ -3650,15 +3679,18 @@ TREEVIEW_HitTest(const TREEVIEW_INFO *infoPtr, LPTVHITTESTINFO lpht)
     if (status)
     {
 	lpht->flags = status;
-        return 0;
+        return NULL;
     }
 
     item = TREEVIEW_HitTestPoint(infoPtr, lpht->pt);
     if (!item)
     {
 	lpht->flags = TVHT_NOWHERE;
-        return 0;
+        return NULL;
     }
+
+    if (!item->textWidth)
+        TREEVIEW_ComputeTextWidth(infoPtr, item, 0);
 
     if (x >= item->textOffset + item->textWidth)
     {
@@ -3686,9 +3718,9 @@ TREEVIEW_HitTest(const TREEVIEW_INFO *infoPtr, LPTVHITTESTINFO lpht)
     }
 
     lpht->hItem = item;
-    TRACE("(%d,%d):result %x\n", lpht->pt.x, lpht->pt.y, lpht->flags);
+    TRACE("(%d,%d):result 0x%x\n", lpht->pt.x, lpht->pt.y, lpht->flags);
 
-    return (LRESULT)item;
+    return item;
 }
 
 /* Item Label Editing ***************************************************/
@@ -3763,7 +3795,7 @@ TREEVIEW_Edit_SubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 static LRESULT
 TREEVIEW_Command(TREEVIEW_INFO *infoPtr, WPARAM wParam, LPARAM lParam)
 {
-    TRACE("code=%x, id=%x, handle=%lx\n", HIWORD(wParam), LOWORD(wParam), lParam);
+    TRACE("code=0x%x, id=0x%x, handle=0x%lx\n", HIWORD(wParam), LOWORD(wParam), lParam);
 
     switch (HIWORD(wParam))
     {
@@ -4111,7 +4143,7 @@ TREEVIEW_LButtonDoubleClick(TREEVIEW_INFO *infoPtr, LPARAM lParam)
     hit.pt.x = (short)LOWORD(lParam);
     hit.pt.y = (short)HIWORD(lParam);
 
-    item = (TREEVIEW_ITEM *)TREEVIEW_HitTest(infoPtr, &hit);
+    item = TREEVIEW_HitTest(infoPtr, &hit);
     if (!item)
 	return 0;
     TRACE("item %d\n", TREEVIEW_GetItemIndex(infoPtr, item));
@@ -4163,9 +4195,9 @@ TREEVIEW_LButtonDoubleClick(TREEVIEW_INFO *infoPtr, LPARAM lParam)
 static LRESULT
 TREEVIEW_LButtonDown(TREEVIEW_INFO *infoPtr, LPARAM lParam)
 {
+    BOOL do_track, do_select, bDoLabelEdit;
     HWND hwnd = infoPtr->hwnd;
     TVHITTESTINFO ht;
-    BOOL bTrack, bDoLabelEdit;
 
     /* If Edit control is active - kill it and return.
      * The best way to do it is to set focus to itself.
@@ -4185,15 +4217,32 @@ TREEVIEW_LButtonDown(TREEVIEW_INFO *infoPtr, LPARAM lParam)
     TRACE("item %d\n", TREEVIEW_GetItemIndex(infoPtr, ht.hItem));
 
     /* update focusedItem and redraw both items */
-    if(ht.hItem && (ht.flags & TVHT_ONITEM))
+    if (ht.hItem)
     {
-        infoPtr->focusedItem = ht.hItem;
-        TREEVIEW_InvalidateItem(infoPtr, infoPtr->focusedItem);
-        TREEVIEW_InvalidateItem(infoPtr, infoPtr->selectedItem);
+        BOOL do_focus;
+
+        if (TREEVIEW_IsFullRowSelect(infoPtr))
+            do_focus = ht.flags & (TVHT_ONITEMINDENT | TVHT_ONITEM | TVHT_ONITEMRIGHT);
+        else
+            do_focus = ht.flags & TVHT_ONITEM;
+
+        if (do_focus)
+        {
+            infoPtr->focusedItem = ht.hItem;
+            TREEVIEW_InvalidateItem(infoPtr, infoPtr->focusedItem);
+            TREEVIEW_InvalidateItem(infoPtr, infoPtr->selectedItem);
+        }
     }
 
-    bTrack = (ht.flags & TVHT_ONITEM)
-	&& !(infoPtr->dwStyle & TVS_DISABLEDRAGDROP);
+    if (!(infoPtr->dwStyle & TVS_DISABLEDRAGDROP))
+    {
+        if (TREEVIEW_IsFullRowSelect(infoPtr))
+            do_track = ht.flags & (TVHT_ONITEMINDENT | TVHT_ONITEM | TVHT_ONITEMRIGHT);
+        else
+            do_track = ht.flags & TVHT_ONITEM;
+    }
+    else
+        do_track = FALSE;
 
     /*
      * If the style allows editing and the node is already selected
@@ -4203,16 +4252,15 @@ TREEVIEW_LButtonDown(TREEVIEW_INFO *infoPtr, LPARAM lParam)
         (ht.flags & TVHT_ONITEMLABEL) && (infoPtr->selectedItem == ht.hItem);
 
     /* Send NM_CLICK right away */
-    if (!bTrack)
-	if (TREEVIEW_SendSimpleNotify(infoPtr, NM_CLICK))
-	    goto setfocus;
+    if (!do_track && TREEVIEW_SendSimpleNotify(infoPtr, NM_CLICK))
+        goto setfocus;
 
     if (ht.flags & TVHT_ONITEMBUTTON)
     {
 	TREEVIEW_Toggle(infoPtr, ht.hItem, TRUE);
 	goto setfocus;
     }
-    else if (bTrack)
+    else if (do_track)
     {   /* if TREEVIEW_TrackMouse == 1 dragging occurred and the cursor left the dragged item's rectangle */
 	if (TREEVIEW_TrackMouse(infoPtr, ht.pt))
 	{
@@ -4234,8 +4282,13 @@ TREEVIEW_LButtonDown(TREEVIEW_INFO *infoPtr, LPARAM lParam)
         }
     }
 
-    if (bTrack && TREEVIEW_SendSimpleNotify(infoPtr, NM_CLICK))
+    if (do_track && TREEVIEW_SendSimpleNotify(infoPtr, NM_CLICK))
         goto setfocus;
+
+    if (TREEVIEW_IsFullRowSelect(infoPtr))
+        do_select = ht.flags & (TVHT_ONITEMINDENT | TVHT_ONITEMICON | TVHT_ONITEMLABEL | TVHT_ONITEMRIGHT);
+    else
+        do_select = ht.flags & (TVHT_ONITEMICON | TVHT_ONITEMLABEL);
 
     if (bDoLabelEdit)
     {
@@ -4245,7 +4298,7 @@ TREEVIEW_LButtonDown(TREEVIEW_INFO *infoPtr, LPARAM lParam)
 	SetTimer(hwnd, TV_EDIT_TIMER, GetDoubleClickTime(), 0);
 	infoPtr->Timer |= TV_EDIT_TIMER_SET;
     }
-    else if (ht.flags & (TVHT_ONITEMICON|TVHT_ONITEMLABEL)) /* select the item if the hit was inside of the icon or text */
+    else if (do_select)
     {
         TREEVIEW_ITEM *selection = infoPtr->selectedItem;
 
@@ -4280,7 +4333,12 @@ TREEVIEW_RButtonDown(TREEVIEW_INFO *infoPtr, LPARAM lParam)
     ht.pt.x = (short)LOWORD(lParam);
     ht.pt.y = (short)HIWORD(lParam);
 
-    TREEVIEW_HitTest(infoPtr, &ht);
+    if (TREEVIEW_HitTest(infoPtr, &ht))
+    {
+        infoPtr->focusedItem = ht.hItem;
+        TREEVIEW_InvalidateItem(infoPtr, infoPtr->focusedItem);
+        TREEVIEW_InvalidateItem(infoPtr, infoPtr->selectedItem);
+    }
 
     if (TREEVIEW_TrackMouse(infoPtr, ht.pt))
     {
@@ -4299,6 +4357,13 @@ TREEVIEW_RButtonDown(TREEVIEW_INFO *infoPtr, LPARAM lParam)
 	    SendMessageW(infoPtr->hwndNotify, WM_CONTEXTMENU,
 		(WPARAM)infoPtr->hwnd, (LPARAM)GetMessagePos());
 	}
+    }
+
+    if (ht.hItem)
+    {
+        TREEVIEW_InvalidateItem(infoPtr, infoPtr->focusedItem);
+        infoPtr->focusedItem = infoPtr->selectedItem;
+        TREEVIEW_InvalidateItem(infoPtr, infoPtr->focusedItem);
     }
 
     return 0;
@@ -4386,7 +4451,7 @@ TREEVIEW_DoSelectItem(TREEVIEW_INFO *infoPtr, INT action, HTREEITEM newSelect,
 
     assert(newSelect == NULL || TREEVIEW_ValidItem(infoPtr, newSelect));
 
-    TRACE("Entering item %p (%s), flag %x, cause %x, state %d\n",
+    TRACE("Entering item %p (%s), flag 0x%x, cause 0x%x, state 0x%x\n",
 	  newSelect, TREEVIEW_ItemName(newSelect), action, cause,
 	  newSelect ? newSelect->state : 0);
 
@@ -4461,7 +4526,7 @@ TREEVIEW_DoSelectItem(TREEVIEW_INFO *infoPtr, INT action, HTREEITEM newSelect,
 	break;
     }
 
-    TRACE("Leaving state %d\n", newSelect ? newSelect->state : 0);
+    TRACE("Leaving state 0x%x\n", newSelect ? newSelect->state : 0);
     return TRUE;
 }
 
@@ -4473,6 +4538,9 @@ TREEVIEW_SelectItem(TREEVIEW_INFO *infoPtr, INT wParam, HTREEITEM item)
 
     if (item && !TREEVIEW_ValidItem(infoPtr, item))
 	return FALSE;
+
+    if (item == infoPtr->selectedItem)
+	return TRUE;
 
     TRACE("%p (%s) %d\n", item, TREEVIEW_ItemName(item), wParam);
 
@@ -4659,7 +4727,7 @@ TREEVIEW_EnsureVisible(TREEVIEW_INFO *infoPtr, HTREEITEM item, BOOL bHScroll)
 	while (parent != infoPtr->root)
 	{
 	    if (!(parent->state & TVIS_EXPANDED))
-		TREEVIEW_Expand(infoPtr, parent, FALSE, FALSE);
+		TREEVIEW_Expand(infoPtr, parent, FALSE, TRUE);
 
 	    parent = parent->parent;
 	}
@@ -4994,7 +5062,7 @@ TREEVIEW_Create(HWND hwnd, const CREATESTRUCTW *lpcs)
     TREEVIEW_INFO *infoPtr;
     LOGFONTW lf;
 
-    TRACE("wnd %p, style %x\n", hwnd, GetWindowLongW(hwnd, GWL_STYLE));
+    TRACE("wnd %p, style 0x%x\n", hwnd, GetWindowLongW(hwnd, GWL_STYLE));
 
     infoPtr = Alloc(sizeof(TREEVIEW_INFO));
 
@@ -5308,9 +5376,10 @@ TREEVIEW_MouseLeave (TREEVIEW_INFO * infoPtr)
 static LRESULT
 TREEVIEW_MouseMove (TREEVIEW_INFO * infoPtr, LPARAM lParam)
 {
-    POINT pt;
     TRACKMOUSEEVENT trackinfo;
     TREEVIEW_ITEM * item;
+    TVHITTESTINFO ht;
+    BOOL item_hit;
 
     if (!(infoPtr->dwStyle & TVS_TRACKSELECT)) return 0;
 
@@ -5335,18 +5404,22 @@ TREEVIEW_MouseMove (TREEVIEW_INFO * infoPtr, LPARAM lParam)
         _TrackMouseEvent(&trackinfo);
     }
 
-    pt.x = (short)LOWORD(lParam);
-    pt.y = (short)HIWORD(lParam);
+    ht.pt.x = (short)LOWORD(lParam);
+    ht.pt.y = (short)HIWORD(lParam);
 
-    item = TREEVIEW_HitTestPoint(infoPtr, pt);
-
-    if (item != infoPtr->hotItem)
+    item = TREEVIEW_HitTest(infoPtr, &ht);
+    item_hit = TREEVIEW_IsItemHit(infoPtr, &ht);
+    if ((item != infoPtr->hotItem) || !item_hit)
     {
         /* redraw old hot item */
         TREEVIEW_InvalidateItem(infoPtr, infoPtr->hotItem);
-        infoPtr->hotItem = item;
-        /* redraw new hot item */
-        TREEVIEW_InvalidateItem(infoPtr, infoPtr->hotItem);
+        infoPtr->hotItem = NULL;
+        if (item && item_hit)
+        {
+            infoPtr->hotItem = item;
+            /* redraw new hot item */
+            TREEVIEW_InvalidateItem(infoPtr, infoPtr->hotItem);
+        }
     }
 
     return 0;
@@ -5373,8 +5446,15 @@ static BOOL TREEVIEW_NCPaint (const TREEVIEW_INFO *infoPtr, HRGN region, LPARAM 
         CombineRgn (cliprgn, cliprgn, region, RGN_AND);
     OffsetRect(&r, -r.left, -r.top);
 
+#ifdef __REACTOS__ /* r73789 */
+    dc = GetWindowDC(infoPtr->hwnd);
+    /* Exclude client part */
+    ExcludeClipRect(dc, r.left + cxEdge, r.top + cyEdge,
+        r.right - cxEdge, r.bottom -cyEdge);
+#else
     dc = GetDCEx(infoPtr->hwnd, region, DCX_WINDOW|DCX_INTERSECTRGN);
     OffsetRect(&r, -r.left, -r.top);
+#endif
 
     if (IsThemeBackgroundPartiallyTransparent (theme, 0, 0))
         DrawThemeParentBackground(infoPtr->hwnd, dc, &r);
@@ -5485,14 +5565,14 @@ TREEVIEW_StyleChanged(TREEVIEW_INFO *infoPtr, WPARAM wParam, LPARAM lParam)
 static LRESULT
 TREEVIEW_SetCursor(const TREEVIEW_INFO *infoPtr, WPARAM wParam, LPARAM lParam)
 {
-    POINT pt;
     TREEVIEW_ITEM * item;
+    TVHITTESTINFO ht;
     NMMOUSE nmmouse;
 
-    GetCursorPos(&pt);
-    ScreenToClient(infoPtr->hwnd, &pt);
+    GetCursorPos(&ht.pt);
+    ScreenToClient(infoPtr->hwnd, &ht.pt);
 
-    item = TREEVIEW_HitTestPoint(infoPtr, pt);
+    item = TREEVIEW_HitTest(infoPtr, &ht);
 
     memset(&nmmouse, 0, sizeof(nmmouse));
     if (item)
@@ -5506,7 +5586,7 @@ TREEVIEW_SetCursor(const TREEVIEW_INFO *infoPtr, WPARAM wParam, LPARAM lParam)
     if (TREEVIEW_SendRealNotify(infoPtr, NM_SETCURSOR, &nmmouse.hdr))
         return 0;
 
-    if (item && (infoPtr->dwStyle & TVS_TRACKSELECT))
+    if (item && (infoPtr->dwStyle & TVS_TRACKSELECT) && TREEVIEW_IsItemHit(infoPtr, &ht))
     {
         SetCursor(infoPtr->hcurHand);
         return 0;
@@ -5650,7 +5730,7 @@ TREEVIEW_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return TREEVIEW_GetVisibleCount(infoPtr);
 
     case TVM_HITTEST:
-	return TREEVIEW_HitTest(infoPtr, (LPTVHITTESTINFO)lParam);
+	return (LRESULT)TREEVIEW_HitTest(infoPtr, (TVHITTESTINFO*)lParam);
 
     case TVM_INSERTITEMA:
     case TVM_INSERTITEMW:
@@ -5726,6 +5806,7 @@ TREEVIEW_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return TREEVIEW_HScroll(infoPtr, wParam);
 
     case WM_KEYDOWN:
+    case WM_SYSKEYDOWN:
 	return TREEVIEW_KeyDown(infoPtr, wParam);
 
     case WM_KILLFOCUS:
@@ -5789,8 +5870,6 @@ TREEVIEW_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_SYSCOLORCHANGE:
         COMCTL32_RefreshSysColors();
         return 0;
-
-	/* WM_SYSKEYDOWN */
 
     case WM_TIMER:
 	return TREEVIEW_HandleTimer(infoPtr, wParam);

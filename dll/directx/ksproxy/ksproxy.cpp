@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS WDM Streaming ActiveMovie Proxy
- * FILE:            dll/directx/ksproxy/ksproxy.c
+ * FILE:            dll/directx/ksproxy/ksproxy.cpp
  * PURPOSE:         ActiveMovie Proxy functions
  *
  * PROGRAMMERS:     Dmitry Chapyshev
@@ -225,7 +225,7 @@ KsGetMediaTypeCount(
     PKSMULTIPLE_ITEM MultipleItem;
     HRESULT hr;
 
-    /* try get contrained data ranges */
+    /* try get constrained data ranges */
     hr = KsGetMultiplePinFactoryItems(FilterHandle, PinFactoryId, KSPROPERTY_PIN_CONSTRAINEDDATARANGES, (PVOID*)&MultipleItem);
 
     /* check for failure*/

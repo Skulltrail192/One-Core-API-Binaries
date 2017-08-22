@@ -30,6 +30,9 @@
 #define NDEBUG
 #include <debug.h>
 
+extern VFAT_DISPATCH FatXDispatch;
+extern VFAT_DISPATCH FatDispatch;
+
 /* FUNCTIONS ****************************************************************/
 
 #define  CACHEPAGESIZE(pDeviceExt) ((pDeviceExt)->FatInfo.BytesPerCluster > PAGE_SIZE ? \
@@ -40,7 +43,8 @@ NTSTATUS
 VfatHasFileSystem(
     PDEVICE_OBJECT DeviceToMount,
     PBOOLEAN RecognizedFS,
-    PFATINFO pFatInfo)
+    PFATINFO pFatInfo,
+    BOOLEAN Override)
 {
     NTSTATUS Status;
     PARTITION_INFORMATION PartitionInfo;
@@ -64,10 +68,10 @@ VfatHasFileSystem(
                                       0,
                                       &DiskGeometry,
                                       &Size,
-                                      FALSE);
+                                      Override);
     if (!NT_SUCCESS(Status))
     {
-        DPRINT("VfatBlockDeviceIoControl faild (%x)\n", Status);
+        DPRINT("VfatBlockDeviceIoControl failed (%x)\n", Status);
         return Status;
     }
 
@@ -82,14 +86,13 @@ VfatHasFileSystem(
                                           0,
                                           &PartitionInfo,
                                           &Size,
-                                          FALSE);
+                                          Override);
         if (!NT_SUCCESS(Status))
         {
-            DPRINT("VfatBlockDeviceIoControl faild (%x)\n", Status);
+            DPRINT("VfatBlockDeviceIoControl failed (%x)\n", Status);
             return Status;
         }
 
-        PartitionInfoIsValid = TRUE;
         DPRINT("Partition Information:\n");
         DPRINT("StartingOffset      %I64x\n", PartitionInfo.StartingOffset.QuadPart  / 512);
         DPRINT("PartitionLength     %I64x\n", PartitionInfo.PartitionLength.QuadPart / 512);
@@ -108,6 +111,7 @@ VfatHasFileSystem(
                 PartitionInfo.PartitionType == PARTITION_FAT32_XINT13 ||
                 PartitionInfo.PartitionType == PARTITION_XINT13)
             {
+                 PartitionInfoIsValid = TRUE;
                 *RecognizedFS = TRUE;
             }
         }
@@ -117,18 +121,9 @@ VfatHasFileSystem(
                  PartitionInfo.PartitionLength.QuadPart > 0)
         {
             /* This is possible a removable media formated as super floppy */
+            PartitionInfoIsValid = TRUE;
             *RecognizedFS = TRUE;
         }
-    }
-    else if (DiskGeometry.MediaType == Unknown)
-    {
-        /*
-         * Floppy disk driver can return Unknown as media type if it
-         * doesn't know yet what floppy in the drive really is. This is
-         * perfectly correct to do under Windows.
-         */
-        *RecognizedFS = TRUE;
-        DiskGeometry.BytesPerSector = 512;
     }
     else
     {
@@ -146,7 +141,7 @@ VfatHasFileSystem(
         Offset.QuadPart = 0;
 
         /* Try to recognize FAT12/FAT16/FAT32 partitions */
-        Status = VfatReadDisk(DeviceToMount, &Offset, DiskGeometry.BytesPerSector, (PUCHAR) Boot, FALSE);
+        Status = VfatReadDisk(DeviceToMount, &Offset, DiskGeometry.BytesPerSector, (PUCHAR) Boot, Override);
         if (NT_SUCCESS(Status))
         {
             if (Boot->Signatur1 != 0xaa55)
@@ -228,6 +223,7 @@ VfatHasFileSystem(
                     DPRINT("FAT12\n");
                     FatInfo.FatType = FAT12;
                     FatInfo.RootCluster = (FatInfo.rootStart - 1) / FatInfo.SectorsPerCluster;
+                    RtlCopyMemory(&FatInfo.VolumeLabel, &Boot->VolumeLabel, sizeof(FatInfo.VolumeLabel));
                 }
                 else if (FatInfo.NumberOfClusters >= 65525)
                 {
@@ -236,12 +232,14 @@ VfatHasFileSystem(
                     FatInfo.RootCluster = ((struct _BootSector32*) Boot)->RootCluster;
                     FatInfo.rootStart = FatInfo.dataStart + ((FatInfo.RootCluster - 2) * FatInfo.SectorsPerCluster);
                     FatInfo.VolumeID = ((struct _BootSector32*) Boot)->VolumeID;
+                    RtlCopyMemory(&FatInfo.VolumeLabel, &((struct _BootSector32*)Boot)->VolumeLabel, sizeof(FatInfo.VolumeLabel));
                 }
                 else
                 {
                     DPRINT("FAT16\n");
                     FatInfo.FatType = FAT16;
                     FatInfo.RootCluster = FatInfo.rootStart / FatInfo.SectorsPerCluster;
+                    RtlCopyMemory(&FatInfo.VolumeLabel, &Boot->VolumeLabel, sizeof(FatInfo.VolumeLabel));
                 }
 
                 if (PartitionInfoIsValid &&
@@ -272,7 +270,7 @@ VfatHasFileSystem(
         Offset.QuadPart = 0;
 
         /* Try to recognize FATX16/FATX32 partitions (Xbox) */
-        Status = VfatReadDisk(DeviceToMount, &Offset, sizeof(struct _BootSectorFatX), (PUCHAR) BootFatX, FALSE);
+        Status = VfatReadDisk(DeviceToMount, &Offset, sizeof(struct _BootSectorFatX), (PUCHAR) BootFatX, Override);
         if (NT_SUCCESS(Status))
         {
             *RecognizedFS = TRUE;
@@ -341,25 +339,172 @@ VfatHasFileSystem(
 }
 
 /*
- * FUNCTION: Mounts the device
+ * FUNCTION: Read the volume label
+ * WARNING: Read this comment carefully before using it (and using it wrong)
+ * Device parameter is expected to be the lower DO is start isn't 0
+ *                  otherwise, it is expected to be the VCB is start is 0
+ * Start parameter is expected to be, in bytes, the beginning of the root start.
+ *                 Set it to 0 if you wish to use the associated FCB with caching.
+ *                 In that specific case, Device parameter is expected to be the VCB!
+ * VolumeLabel parameter is expected to be a preallocated UNICODE_STRING (ie, with buffer)
+ *                       Its buffer has to be able to contain MAXIMUM_VOLUME_LABEL_LENGTH bytes 
  */
 static
 NTSTATUS
-VfatMountDevice(
-    PDEVICE_EXTENSION DeviceExt,
-    PDEVICE_OBJECT DeviceToMount)
+ReadVolumeLabel(
+    PVOID Device,
+    ULONG Start,
+    BOOLEAN IsFatX,
+    PUNICODE_STRING VolumeLabel)
 {
-    NTSTATUS Status;
-    BOOLEAN RecognizedFS;
+    PDEVICE_EXTENSION DeviceExt;
+    PDEVICE_OBJECT DeviceObject;
+    PVOID Context = NULL;
+    ULONG DirIndex = 0;
+    PDIR_ENTRY Entry;
+    PVFATFCB pFcb;
+    LARGE_INTEGER FileOffset;
+    ULONG SizeDirEntry;
+    ULONG EntriesPerPage;
+    OEM_STRING StringO;
+    BOOLEAN NoCache = (Start != 0);
+    PVOID Buffer;
+    NTSTATUS Status = STATUS_SUCCESS;
 
-    DPRINT("Mounting VFAT device...\n");
-
-    Status = VfatHasFileSystem(DeviceToMount, &RecognizedFS, &DeviceExt->FatInfo);
-    if (!NT_SUCCESS(Status))
+    if (IsFatX)
     {
-        return Status;
+        SizeDirEntry = sizeof(FATX_DIR_ENTRY);
+        EntriesPerPage = FATX_ENTRIES_PER_PAGE;
     }
-    DPRINT("MountVfatdev %u, PAGE_SIZE = %d\n", DeviceExt->FatInfo.BytesPerCluster, PAGE_SIZE);
+    else
+    {
+        SizeDirEntry = sizeof(FAT_DIR_ENTRY);
+        EntriesPerPage = FAT_ENTRIES_PER_PAGE;
+    }
+
+    FileOffset.QuadPart = Start;
+    if (!NoCache)
+    {
+        DeviceExt = Device;
+
+        /* FIXME: Check we really have a VCB
+        ASSERT();
+        */
+
+        ExAcquireResourceExclusiveLite(&DeviceExt->DirResource, TRUE);
+        pFcb = vfatOpenRootFCB(DeviceExt);
+        ExReleaseResourceLite(&DeviceExt->DirResource);
+
+        _SEH2_TRY
+        {
+            CcMapData(pFcb->FileObject, &FileOffset, SizeDirEntry, MAP_WAIT, &Context, (PVOID*)&Entry);
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+        {
+            Status = _SEH2_GetExceptionCode();
+        }
+        _SEH2_END;
+    }
+    else
+    {
+        DeviceObject = Device;
+
+        ASSERT(DeviceObject->Type == 3);
+
+        Buffer = ExAllocatePoolWithTag(NonPagedPool, PAGE_SIZE, TAG_VFAT);
+        if (Buffer != NULL)
+        {
+            Status = VfatReadDisk(DeviceObject, &FileOffset, PAGE_SIZE, (PUCHAR)Buffer, TRUE);
+            if (!NT_SUCCESS(Status))
+            {
+                ExFreePoolWithTag(Buffer, TAG_VFAT);
+            }
+            else
+            {
+                Entry = Buffer;
+            }
+        }
+        else
+        {
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+        }
+    }
+
+    if (NT_SUCCESS(Status))
+    {
+        while (TRUE)
+        {
+            if (ENTRY_VOLUME(IsFatX, Entry))
+            {
+                /* copy volume label */
+                if (IsFatX)
+                {
+                    StringO.Buffer = (PCHAR)Entry->FatX.Filename;
+                    StringO.MaximumLength = StringO.Length = Entry->FatX.FilenameLength;
+                    RtlOemStringToUnicodeString(VolumeLabel, &StringO, FALSE);
+                }
+                else
+                {
+                    vfat8Dot3ToString(&Entry->Fat, VolumeLabel);
+                }
+                break;
+            }
+            if (ENTRY_END(IsFatX, Entry))
+            {
+                break;
+            }
+            DirIndex++;
+            Entry = (PDIR_ENTRY)((ULONG_PTR)Entry + SizeDirEntry);
+            if ((DirIndex % EntriesPerPage) == 0)
+            {
+                FileOffset.u.LowPart += PAGE_SIZE;
+
+                if (!NoCache)
+                {
+                    CcUnpinData(Context);
+
+                    _SEH2_TRY
+                    {
+                        CcMapData(pFcb->FileObject, &FileOffset, SizeDirEntry, MAP_WAIT, &Context, (PVOID*)&Entry);
+                    }
+                    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+                    {
+                        Status = _SEH2_GetExceptionCode();
+                    }
+                    _SEH2_END;
+                    if (!NT_SUCCESS(Status))
+                    {
+                        Context = NULL;
+                        break;
+                    }
+                }
+                else
+                {
+                    Status = VfatReadDisk(DeviceObject, &FileOffset, PAGE_SIZE, (PUCHAR)Buffer, TRUE);
+                    if (!NT_SUCCESS(Status))
+                    {
+                        break;
+                    }
+                    Entry = Buffer;
+                }
+            }
+        }
+        if (Context)
+        {
+            CcUnpinData(Context);
+        }
+        else if (NoCache)
+        {
+            ExFreePoolWithTag(Buffer, TAG_VFAT);
+        }
+    }
+
+    if (!NoCache)
+    {
+        ExAcquireResourceExclusiveLite(&DeviceExt->DirResource, TRUE);
+        vfatReleaseFCB(DeviceExt, pFcb);
+        ExReleaseResourceLite(&DeviceExt->DirResource);
+    }
 
     return STATUS_SUCCESS;
 }
@@ -384,6 +529,7 @@ VfatMount(
     PVPB Vpb;
     UNICODE_STRING NameU = RTL_CONSTANT_STRING(L"\\$$Fat$$");
     UNICODE_STRING VolumeNameU = RTL_CONSTANT_STRING(L"\\$$Volume$$");
+    UNICODE_STRING VolumeLabelU;
     ULONG HashTableSize;
     ULONG eocMark;
     FATINFO FatInfo;
@@ -401,7 +547,7 @@ VfatMount(
     DeviceToMount = IrpContext->Stack->Parameters.MountVolume.DeviceObject;
     Vpb = IrpContext->Stack->Parameters.MountVolume.Vpb;
 
-    Status = VfatHasFileSystem(DeviceToMount, &RecognizedFS, &FatInfo);
+    Status = VfatHasFileSystem(DeviceToMount, &RecognizedFS, &FatInfo, FALSE);
     if (!NT_SUCCESS(Status))
     {
         goto ByeBye;
@@ -428,7 +574,6 @@ VfatMount(
     {
         HashTableSize = 65537; // 65536 = 64 * 1024;
     }
-    HashTableSize = FCB_HASH_TABLE_SIZE;
     DPRINT("VFAT: Recognized volume\n");
     Status = IoCreateDevice(VfatGlobalData->DriverObject,
                             ROUND_UP(sizeof (DEVICE_EXTENSION), sizeof(ULONG)) + sizeof(HASHENTRY*) * HashTableSize,
@@ -446,17 +591,13 @@ VfatMount(
     RtlZeroMemory(DeviceExt, ROUND_UP(sizeof(DEVICE_EXTENSION), sizeof(ULONG)) + sizeof(HASHENTRY*) * HashTableSize);
     DeviceExt->FcbHashTable = (HASHENTRY**)((ULONG_PTR)DeviceExt + ROUND_UP(sizeof(DEVICE_EXTENSION), sizeof(ULONG)));
     DeviceExt->HashTableSize = HashTableSize;
+    DeviceExt->VolumeDevice = DeviceObject;
 
     /* use same vpb as device disk */
     DeviceObject->Vpb = Vpb;
     DeviceToMount->Vpb = Vpb;
 
-    Status = VfatMountDevice(DeviceExt, DeviceToMount);
-    if (!NT_SUCCESS(Status))
-    {
-        /* FIXME: delete device object */
-        goto ByeBye;
-    }
+    RtlCopyMemory(&DeviceExt->FatInfo, &FatInfo, sizeof(FATINFO));
 
     DPRINT("BytesPerSector:     %u\n", DeviceExt->FatInfo.BytesPerSector);
     DPRINT("SectorsPerCluster:  %u\n", DeviceExt->FatInfo.SectorsPerCluster);
@@ -499,13 +640,13 @@ VfatMount(
         DeviceExt->FatInfo.FatType == FATX32)
     {
         DeviceExt->Flags |= VCB_IS_FATX;
-        DeviceExt->GetNextDirEntry = FATXGetNextDirEntry;
         DeviceExt->BaseDateYear = 2000;
+        RtlCopyMemory(&DeviceExt->Dispatch, &FatXDispatch, sizeof(VFAT_DISPATCH));
     }
     else
     {
-        DeviceExt->GetNextDirEntry = FATGetNextDirEntry;
         DeviceExt->BaseDateYear = 1980;
+        RtlCopyMemory(&DeviceExt->Dispatch, &FatDispatch, sizeof(VFAT_DISPATCH));
     }
 
     DeviceExt->StorageDevice = DeviceToMount;
@@ -519,6 +660,14 @@ VfatMount(
 
     /* Initialize this resource early ... it's used in VfatCleanup */
     ExInitializeResourceLite(&DeviceExt->DirResource);
+
+    DeviceExt->IoVPB = DeviceObject->Vpb;
+    DeviceExt->SpareVPB = ExAllocatePoolWithTag(NonPagedPool, sizeof(VPB), TAG_VFAT);
+    if (DeviceExt->SpareVPB == NULL)
+    {
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+        goto ByeBye;
+    }
 
     DeviceExt->FATFileObject = IoCreateStreamFileObject(NULL, DeviceExt->StorageDevice);
     Fcb = vfatNewFCB(DeviceExt, &NameU);
@@ -577,7 +726,7 @@ VfatMount(
     }
 
     VolumeFcb->Flags = FCB_IS_VOLUME;
-    VolumeFcb->RFCB.FileSize.QuadPart = DeviceExt->FatInfo.Sectors * DeviceExt->FatInfo.BytesPerSector;
+    VolumeFcb->RFCB.FileSize.QuadPart = (LONGLONG) DeviceExt->FatInfo.Sectors * DeviceExt->FatInfo.BytesPerSector;
     VolumeFcb->RFCB.ValidDataLength = VolumeFcb->RFCB.FileSize;
     VolumeFcb->RFCB.AllocationSize = VolumeFcb->RFCB.FileSize;
     DeviceExt->VolumeFcb = VolumeFcb;
@@ -590,7 +739,11 @@ VfatMount(
     DeviceObject->Vpb->SerialNumber = DeviceExt->FatInfo.VolumeID;
 
     /* read volume label */
-    ReadVolumeLabel(DeviceExt,  DeviceObject->Vpb);
+    VolumeLabelU.Buffer = DeviceObject->Vpb->VolumeLabel;
+    VolumeLabelU.Length = 0;
+    VolumeLabelU.MaximumLength = sizeof(DeviceObject->Vpb->VolumeLabel);
+    ReadVolumeLabel(DeviceExt, 0, vfatVolumeIsFatX(DeviceExt), &VolumeLabelU);
+    Vpb->VolumeLabelLength = VolumeLabelU.Length;
 
     /* read clean shutdown bit status */
     Status = GetNextCluster(DeviceExt, 1, &eocMark);
@@ -611,6 +764,8 @@ VfatMount(
     FsRtlNotifyInitializeSync(&DeviceExt->NotifySync);
     InitializeListHead(&DeviceExt->NotifyList);
 
+    DPRINT("Mount success\n");
+
     Status = STATUS_SUCCESS;
 
 ByeBye:
@@ -619,6 +774,8 @@ ByeBye:
         /* Cleanup */
         if (DeviceExt && DeviceExt->FATFileObject)
             ObDereferenceObject (DeviceExt->FATFileObject);
+        if (DeviceExt && DeviceExt->SpareVPB)
+            ExFreePoolWithTag(DeviceExt->SpareVPB, TAG_VFAT);
         if (Fcb)
             vfatDestroyFCB(Fcb);
         if (Ccb)
@@ -640,48 +797,89 @@ VfatVerify(
     PVFAT_IRP_CONTEXT IrpContext)
 {
     PDEVICE_OBJECT DeviceToVerify;
-    NTSTATUS Status = STATUS_SUCCESS;
+    NTSTATUS Status;
     FATINFO FatInfo;
     BOOLEAN RecognizedFS;
-    PDEVICE_EXTENSION DeviceExt = IrpContext->DeviceExt;
+    PDEVICE_EXTENSION DeviceExt;
+    BOOLEAN AllowRaw;
+    PVPB Vpb;
+    ULONG ChangeCount, BufSize = sizeof(ChangeCount);
 
     DPRINT("VfatVerify(IrpContext %p)\n", IrpContext);
 
     DeviceToVerify = IrpContext->Stack->Parameters.VerifyVolume.DeviceObject;
-    Status = VfatBlockDeviceIoControl(DeviceToVerify,
+    DeviceExt = DeviceToVerify->DeviceExtension;
+    Vpb = IrpContext->Stack->Parameters.VerifyVolume.Vpb;
+    AllowRaw = BooleanFlagOn(IrpContext->Stack->Flags, SL_ALLOW_RAW_MOUNT);
+
+    if (!BooleanFlagOn(Vpb->RealDevice->Flags, DO_VERIFY_VOLUME))
+    {
+        DPRINT("Already verified\n");
+        return STATUS_SUCCESS;
+    }
+
+    Status = VfatBlockDeviceIoControl(DeviceExt->StorageDevice,
                                       IOCTL_DISK_CHECK_VERIFY,
                                       NULL,
                                       0,
-                                      NULL,
-                                      0,
+                                      &ChangeCount,
+                                      &BufSize,
                                       TRUE);
-    DeviceToVerify->Flags &= ~DO_VERIFY_VOLUME;
     if (!NT_SUCCESS(Status) && Status != STATUS_VERIFY_REQUIRED)
     {
         DPRINT("VfatBlockDeviceIoControl() failed (Status %lx)\n", Status);
-        Status = STATUS_WRONG_VOLUME;
+        Status = (AllowRaw ? STATUS_WRONG_VOLUME : Status);
     }
     else
     {
-        Status = VfatHasFileSystem(DeviceToVerify, &RecognizedFS, &FatInfo);
+        Status = VfatHasFileSystem(DeviceExt->StorageDevice, &RecognizedFS, &FatInfo, TRUE);
         if (!NT_SUCCESS(Status) || RecognizedFS == FALSE)
         {
-            Status = STATUS_WRONG_VOLUME;
+            if (NT_SUCCESS(Status) || AllowRaw)
+            {
+                Status = STATUS_WRONG_VOLUME;
+            }
         }
         else if (sizeof(FATINFO) == RtlCompareMemory(&FatInfo, &DeviceExt->FatInfo, sizeof(FATINFO)))
         {
-            /*
-             * FIXME:
-             *   Preformated floppy disks have very often a serial number of 0000:0000.
-             *   We should calculate a crc sum over the sectors from the root directory as secondary volume number.
-             *   Each write to the root directory must update this crc sum.
-             */
+            WCHAR BufferU[MAXIMUM_VOLUME_LABEL_LENGTH / sizeof(WCHAR)];
+            UNICODE_STRING VolumeLabelU;
+            UNICODE_STRING VpbLabelU;
+
+            VolumeLabelU.Buffer = BufferU;
+            VolumeLabelU.Length = 0;
+            VolumeLabelU.MaximumLength = sizeof(BufferU);
+            Status = ReadVolumeLabel(DeviceExt->StorageDevice, FatInfo.rootStart * FatInfo.BytesPerSector, (FatInfo.FatType >= FATX16), &VolumeLabelU);
+            if (!NT_SUCCESS(Status))
+            {
+                if (AllowRaw)
+                {
+                    Status = STATUS_WRONG_VOLUME;
+                }
+            }
+            else
+            {
+                VpbLabelU.Buffer = Vpb->VolumeLabel;
+                VpbLabelU.Length = Vpb->VolumeLabelLength;
+                VpbLabelU.MaximumLength = sizeof(Vpb->VolumeLabel);
+
+                if (RtlCompareUnicodeString(&VpbLabelU, &VolumeLabelU, FALSE) != 0)
+                {
+                    Status = STATUS_WRONG_VOLUME;
+                }
+                else
+                {
+                    DPRINT1("Same volume\n");
+                }
+            }
         }
         else
         {
             Status = STATUS_WRONG_VOLUME;
         }
     }
+
+    Vpb->RealDevice->Flags &= ~DO_VERIFY_VOLUME;
 
     return Status;
 }
@@ -817,8 +1015,8 @@ VfatIsVolumeDirty(
     Flags = (PULONG)IrpContext->Irp->AssociatedIrp.SystemBuffer;
     *Flags = 0;
 
-    if ((IrpContext->DeviceExt->VolumeFcb->Flags & VCB_IS_DIRTY) &&
-        !(IrpContext->DeviceExt->VolumeFcb->Flags & VCB_CLEAR_DIRTY))
+    if (BooleanFlagOn(IrpContext->DeviceExt->VolumeFcb->Flags, VCB_IS_DIRTY) &&
+        !BooleanFlagOn(IrpContext->DeviceExt->VolumeFcb->Flags, VCB_CLEAR_DIRTY))
     {
         *Flags |= VOLUME_IS_DIRTY;
     }
@@ -838,7 +1036,7 @@ VfatMarkVolumeDirty(
     DPRINT("VfatMarkVolumeDirty(IrpContext %p)\n", IrpContext);
     DeviceExt = IrpContext->DeviceExt;
 
-    if (!(DeviceExt->VolumeFcb->Flags & VCB_IS_DIRTY))
+    if (!BooleanFlagOn(DeviceExt->VolumeFcb->Flags, VCB_IS_DIRTY))
     {
         Status = GetNextCluster(DeviceExt, 1, &eocMark);
         if (NT_SUCCESS(Status))
@@ -852,6 +1050,140 @@ VfatMarkVolumeDirty(
     DeviceExt->VolumeFcb->Flags &= ~VCB_CLEAR_DIRTY;
 
     return Status;
+}
+
+static
+NTSTATUS
+VfatLockOrUnlockVolume(
+    PVFAT_IRP_CONTEXT IrpContext,
+    BOOLEAN Lock)
+{
+    PFILE_OBJECT FileObject;
+    PDEVICE_EXTENSION DeviceExt;
+    PVFATFCB Fcb;
+    PVPB Vpb;
+
+    DPRINT("VfatLockOrUnlockVolume(%p, %d)\n", IrpContext, Lock);
+
+    DeviceExt = IrpContext->DeviceExt;
+    FileObject = IrpContext->FileObject;
+    Fcb = FileObject->FsContext;
+    Vpb = DeviceExt->FATFileObject->Vpb;
+
+    /* Only allow locking with the volume open */
+    if (!BooleanFlagOn(Fcb->Flags, FCB_IS_VOLUME))
+    {
+        return STATUS_ACCESS_DENIED;
+    }
+
+    /* Bail out if it's already in the demanded state */
+    if ((BooleanFlagOn(DeviceExt->Flags, VCB_VOLUME_LOCKED) && Lock) ||
+        (!BooleanFlagOn(DeviceExt->Flags, VCB_VOLUME_LOCKED) && !Lock))
+    {
+        return STATUS_ACCESS_DENIED;
+    }
+
+    /* Bail out if it's already in the demanded state */
+    if ((BooleanFlagOn(Vpb->Flags, VPB_LOCKED) && Lock) ||
+        (!BooleanFlagOn(Vpb->Flags, VPB_LOCKED) && !Lock))
+    {
+        return STATUS_ACCESS_DENIED;
+    }
+
+    /* Deny locking if we're not alone */
+    if (Lock && DeviceExt->OpenHandleCount != 1)
+    {
+        return STATUS_ACCESS_DENIED;
+    }
+
+    /* Finally, proceed */
+    if (Lock)
+    {
+        DeviceExt->Flags |= VCB_VOLUME_LOCKED;
+        Vpb->Flags |= VPB_LOCKED;
+    }
+    else
+    {
+        DeviceExt->Flags &= ~VCB_VOLUME_LOCKED;
+        Vpb->Flags &= ~VPB_LOCKED;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+static
+NTSTATUS
+VfatDismountVolume(
+    PVFAT_IRP_CONTEXT IrpContext)
+{
+    PDEVICE_EXTENSION DeviceExt;
+    PLIST_ENTRY NextEntry;
+    PVFATFCB Fcb;
+    PFILE_OBJECT FileObject;
+    ULONG eocMark;
+    NTSTATUS Status;
+
+    DPRINT("VfatDismountVolume(%p)\n", IrpContext);
+
+    DeviceExt = IrpContext->DeviceExt;
+    FileObject = IrpContext->FileObject;
+
+    /* We HAVE to be locked. Windows also allows dismount with no lock
+     * but we're here mainly for 1st stage, so KISS
+     */
+    if (!BooleanFlagOn(DeviceExt->Flags, VCB_VOLUME_LOCKED))
+    {
+        return STATUS_ACCESS_DENIED;
+    }
+
+    /* Race condition? */
+    if (BooleanFlagOn(DeviceExt->Flags, VCB_DISMOUNT_PENDING))
+    {
+        return STATUS_VOLUME_DISMOUNTED;
+    }
+
+    /* Notify we'll dismount. Pass that point there's no reason we fail */
+    FsRtlNotifyVolumeEvent(IrpContext->Stack->FileObject, FSRTL_VOLUME_DISMOUNT);
+
+    ExAcquireResourceExclusiveLite(&DeviceExt->FatResource, TRUE);
+
+    if (BooleanFlagOn(DeviceExt->VolumeFcb->Flags, VCB_CLEAR_DIRTY))
+    {
+        /* Set clean shutdown bit */
+        Status = GetNextCluster(DeviceExt, 1, &eocMark);
+        if (NT_SUCCESS(Status))
+        {
+            eocMark |= DeviceExt->CleanShutBitMask;
+            if (NT_SUCCESS(WriteCluster(DeviceExt, 1, eocMark)))
+                DeviceExt->VolumeFcb->Flags &= ~VCB_IS_DIRTY;
+        }
+    }
+
+    /* Flush volume & files */
+    VfatFlushVolume(DeviceExt, (PVFATFCB)FileObject->FsContext);
+
+    /* Rebrowse the FCB in order to free them now */
+    while (!IsListEmpty(&DeviceExt->FcbListHead))
+    {
+        NextEntry = RemoveHeadList(&DeviceExt->FcbListHead);
+        Fcb = CONTAINING_RECORD(NextEntry, VFATFCB, FcbListEntry);
+        vfatDestroyFCB(Fcb);
+    }
+
+    /* Mark we're being dismounted */
+    DeviceExt->Flags |= VCB_DISMOUNT_PENDING;
+#ifndef ENABLE_SWAPOUT
+    IrpContext->DeviceObject->Vpb->Flags &= ~VPB_MOUNTED;
+#endif
+
+    ExReleaseResourceLite(&DeviceExt->FatResource);
+
+    /* Release a few resources and quit, we're done */
+    ExDeleteResourceLite(&DeviceExt->DirResource);
+    ExDeleteResourceLite(&DeviceExt->FatResource);
+    ObDereferenceObject(DeviceExt->FATFileObject);
+
+    return STATUS_SUCCESS;
 }
 
 /*
@@ -897,6 +1229,18 @@ VfatFileSystemControl(
                     Status = VfatMarkVolumeDirty(IrpContext);
                     break;
 
+                case FSCTL_LOCK_VOLUME:
+                    Status = VfatLockOrUnlockVolume(IrpContext, TRUE);
+                    break;
+
+                case FSCTL_UNLOCK_VOLUME:
+                    Status = VfatLockOrUnlockVolume(IrpContext, FALSE);
+                    break;
+
+                case FSCTL_DISMOUNT_VOLUME:
+                    Status = VfatDismountVolume(IrpContext);
+                    break;
+
                 default:
                     Status = STATUS_INVALID_DEVICE_REQUEST;
             }
@@ -917,9 +1261,5 @@ VfatFileSystemControl(
             break;
     }
 
-    IrpContext->Irp->IoStatus.Status = Status;
-
-    IoCompleteRequest(IrpContext->Irp, IO_NO_INCREMENT);
-    VfatFreeIrpContext(IrpContext);
     return Status;
 }

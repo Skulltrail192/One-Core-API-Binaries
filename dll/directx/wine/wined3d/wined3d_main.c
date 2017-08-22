@@ -22,11 +22,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
-#include "wine/port.h"
-
-#include "initguid.h"
 #include "wined3d_private.h"
+
+#include <winreg.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
 WINE_DECLARE_DEBUG_CHANNEL(winediag);
@@ -295,7 +293,7 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
         if (!get_config_key(hkey, appkey, "StrictDrawOrdering", buffer, size)
                 && !strcmp(buffer,"enabled"))
         {
-            ERR_(winediag)("\"StrictDrawOrdering\" is deprecated, please use \"csmt\" instead.\n");
+            ERR_(winediag)("\"StrictDrawOrdering\" is deprecated, please use \"csmt\" instead.");
             TRACE("Enforcing strict draw ordering.\n");
             wined3d_settings.strict_draw_ordering = TRUE;
         }

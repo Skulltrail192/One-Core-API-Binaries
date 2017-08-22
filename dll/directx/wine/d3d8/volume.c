@@ -27,7 +27,7 @@ static inline struct d3d8_volume *impl_from_IDirect3DVolume8(IDirect3DVolume8 *i
 
 static HRESULT WINAPI d3d8_volume_QueryInterface(IDirect3DVolume8 *iface, REFIID riid, void **out)
 {
-    TRACE("iface %p, riid %s, object %p.\n", iface, debugstr_guid(riid), out);
+    TRACE("iface %p, riid %s, out %p.\n", iface, debugstr_guid(riid), out);
 
     if (IsEqualGUID(riid, &IID_IDirect3DVolume8)
             || IsEqualGUID(riid, &IID_IUnknown))
@@ -112,18 +112,16 @@ static HRESULT WINAPI d3d8_volume_GetContainer(IDirect3DVolume8 *iface, REFIID r
 static HRESULT WINAPI d3d8_volume_GetDesc(IDirect3DVolume8 *iface, D3DVOLUME_DESC *desc)
 {
     struct d3d8_volume *volume = impl_from_IDirect3DVolume8(iface);
-    struct wined3d_resource_desc wined3d_desc;
-    struct wined3d_resource *wined3d_resource;
+    struct wined3d_sub_resource_desc wined3d_desc;
 
     TRACE("iface %p, desc %p.\n", iface, desc);
 
     wined3d_mutex_lock();
-    wined3d_resource = wined3d_volume_get_resource(volume->wined3d_volume);
-    wined3d_resource_get_desc(wined3d_resource, &wined3d_desc);
+    wined3d_texture_get_sub_resource_desc(volume->wined3d_texture, volume->sub_resource_idx, &wined3d_desc);
     wined3d_mutex_unlock();
 
     desc->Format = d3dformat_from_wined3dformat(wined3d_desc.format);
-    desc->Type = wined3d_desc.resource_type;
+    desc->Type = D3DRTYPE_VOLUME;
     desc->Usage = wined3d_desc.usage & WINED3DUSAGE_MASK;
     desc->Pool = wined3d_desc.pool;
     desc->Size = wined3d_desc.size;
@@ -145,7 +143,9 @@ static HRESULT WINAPI d3d8_volume_LockBox(IDirect3DVolume8 *iface,
             iface, locked_box, box, flags);
 
     wined3d_mutex_lock();
-    hr = wined3d_volume_map(volume->wined3d_volume, &map_desc, (const struct wined3d_box *)box, flags);
+    if (FAILED(hr = wined3d_resource_map(wined3d_texture_get_resource(volume->wined3d_texture),
+            volume->sub_resource_idx, &map_desc, (const struct wined3d_box *)box, flags)))
+        map_desc.data = NULL;
     wined3d_mutex_unlock();
 
     locked_box->RowPitch = map_desc.row_pitch;
@@ -163,9 +163,11 @@ static HRESULT WINAPI d3d8_volume_UnlockBox(IDirect3DVolume8 *iface)
     TRACE("iface %p.\n", iface);
 
     wined3d_mutex_lock();
-    hr = wined3d_volume_unmap(volume->wined3d_volume);
+    hr = wined3d_resource_unmap(wined3d_texture_get_resource(volume->wined3d_texture), volume->sub_resource_idx);
     wined3d_mutex_unlock();
 
+    if (hr == WINEDDERR_NOTLOCKED)
+        return D3DERR_INVALIDCALL;
     return hr;
 }
 
@@ -198,14 +200,15 @@ static const struct wined3d_parent_ops d3d8_volume_wined3d_parent_ops =
     volume_wined3d_object_destroyed,
 };
 
-void volume_init(struct d3d8_volume *volume, struct d3d8_texture *texture,
-        struct wined3d_volume *wined3d_volume, const struct wined3d_parent_ops **parent_ops)
+void volume_init(struct d3d8_volume *volume, struct wined3d_texture *wined3d_texture,
+        unsigned int sub_resource_idx, const struct wined3d_parent_ops **parent_ops)
 {
     volume->IDirect3DVolume8_iface.lpVtbl = &d3d8_volume_vtbl;
     d3d8_resource_init(&volume->resource);
     volume->resource.refcount = 0;
-    volume->wined3d_volume = wined3d_volume;
-    volume->texture = texture;
+    volume->texture = wined3d_texture_get_parent(wined3d_texture);
+    volume->wined3d_texture = wined3d_texture;
+    volume->sub_resource_idx = sub_resource_idx;
 
     *parent_ops = &d3d8_volume_wined3d_parent_ops;
 }

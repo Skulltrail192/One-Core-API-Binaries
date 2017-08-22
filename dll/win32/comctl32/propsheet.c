@@ -32,10 +32,7 @@
  *   - Wizard 97 header resizing
  *   - Enforcing of minimal wizard size
  *   - Messages:
- *     o PSM_INSERTPAGE
  *     o PSM_RECALCPAGESIZES
- *     o PSM_SETHEADERSUBTITLE
- *     o PSM_SETHEADERTITLE
  *     o WM_HELP
  *     o WM_CONTEXTMENU
  *   - Notifications:
@@ -162,6 +159,26 @@ PROPSHEET_DialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 WINE_DEFAULT_DEBUG_CHANNEL(propsheet);
 
+static WCHAR *heap_strdupW(const WCHAR *str)
+{
+    int len = strlenW(str) + 1;
+    WCHAR *ret = Alloc(len * sizeof(WCHAR));
+    strcpyW(ret, str);
+    return ret;
+}
+
+static WCHAR *heap_strdupAtoW(const char *str)
+{
+    WCHAR *ret;
+    INT len;
+
+    len = MultiByteToWideChar(CP_ACP, 0, str, -1, 0, 0);
+    ret = Alloc(len * sizeof(WCHAR));
+    MultiByteToWideChar(CP_ACP, 0, str, -1, ret, len);
+
+    return ret;
+}
+
 #define add_flag(a) if (dwFlags & a) {strcat(string, #a );strcat(string," ");}
 /******************************************************************************
  *            PROPSHEET_UnImplementedFlags
@@ -255,23 +272,6 @@ static INT PROPSHEET_FindPageByResId(const PropSheetInfo * psInfo, LRESULT resId
 }
 
 /******************************************************************************
- *            PROPSHEET_AtoW
- *
- * Convert ASCII to Unicode since all data is saved as Unicode.
- */
-static void PROPSHEET_AtoW(LPCWSTR *tostr, LPCSTR frstr)
-{
-    INT len;
-    WCHAR *to;
-
-    TRACE("<%s>\n", frstr);
-    len = MultiByteToWideChar(CP_ACP, 0, frstr, -1, 0, 0);
-    to = Alloc(len * sizeof(WCHAR));
-    MultiByteToWideChar(CP_ACP, 0, frstr, -1, to, len);
-    *tostr = to;
-}
-
-/******************************************************************************
  *            PROPSHEET_CollectSheetInfoCommon
  *
  * Common code for PROPSHEET_CollectSheetInfoA/W
@@ -359,12 +359,7 @@ static void PROPSHEET_CollectSheetInfoW(LPCPROPSHEETHEADERW lppsh,
   else
   {
      if (!IS_INTRESOURCE(lppsh->pszCaption))
-     {
-        int len = strlenW(lppsh->pszCaption);
-        WCHAR *caption = Alloc( (len+1)*sizeof(WCHAR) );
-
-        psInfo->ppshheader.pszCaption = strcpyW( caption, lppsh->pszCaption );
-     }
+       psInfo->ppshheader.pszCaption = heap_strdupW( lppsh->pszCaption );
   }
   psInfo->nPages = lppsh->nPages;
 
@@ -470,6 +465,9 @@ static BOOL PROPSHEET_CollectPageInfo(LPCPROPSHEETPAGEW lppsp,
   width  = (WORD)*p; p++;
   height = (WORD)*p; p++;
 
+  if (lppsp->dwFlags & (PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE))
+    psInfo->ppshheader.dwFlags |= PSH_HEADER;
+
   /* Special calculation for interior wizard pages so the largest page is
    * calculated correctly. We need to add all the padding and space occupied
    * by the header so the width and height sums up to the whole wizard client
@@ -534,8 +532,6 @@ static BOOL PROPSHEET_CollectPageInfo(LPCPROPSHEETPAGEW lppsp,
     WCHAR szTitle[256];
     const WCHAR *pTitle;
     static const WCHAR pszNull[] = { '(','n','u','l','l',')',0 };
-    WCHAR *text;
-    int len;
 
     if (IS_INTRESOURCE( lppsp->pszTitle ))
     {
@@ -549,9 +545,7 @@ static BOOL PROPSHEET_CollectPageInfo(LPCPROPSHEETPAGEW lppsp,
     else
       pTitle = lppsp->pszTitle;
 
-    len = strlenW(pTitle);
-    text = Alloc( (len+1)*sizeof (WCHAR) );
-    psInfo->proppage[index].pszText = strcpyW( text, pTitle);
+    psInfo->proppage[index].pszText = heap_strdupW( pTitle );
   }
 
   /*
@@ -623,7 +617,7 @@ static INT_PTR PROPSHEET_CreateDialog(PropSheetInfo* psInfo)
    */
   resSize = SizeofResource(COMCTL32_hModule, hRes);
 
-  temp = Alloc(resSize);
+  temp = Alloc(2 * resSize);
 
   if (!temp)
     return -1;
@@ -693,11 +687,7 @@ static BOOL PROPSHEET_SizeMismatch(HWND hwndDlg, const PropSheetInfo* psInfo)
   /*
    * Biggest page size.
    */
-  rcPage.left   = 0;
-  rcPage.top    = 0;
-  rcPage.right  = psInfo->width;
-  rcPage.bottom = psInfo->height;
-
+  SetRect(&rcPage, 0, 0, psInfo->width, psInfo->height);
   MapDialogRect(hwndDlg, &rcPage);
   TRACE("biggest page %s\n", wine_dbgstr_rect(&rcPage));
 
@@ -731,11 +721,7 @@ static BOOL PROPSHEET_AdjustSize(HWND hwndDlg, PropSheetInfo* psInfo)
   /*
    * Biggest page size.
    */
-  rc.left   = 0;
-  rc.top    = 0;
-  rc.right  = psInfo->width;
-  rc.bottom = psInfo->height;
-
+  SetRect(&rc, 0, 0, psInfo->width, psInfo->height);
   MapDialogRect(hwndDlg, &rc);
 
   /* retrieve the dialog units */
@@ -806,10 +792,7 @@ static BOOL PROPSHEET_AdjustSizeWizard(HWND hwndDlg, const PropSheetInfo* psInfo
   RECT rc, lineRect, dialogRect;
 
   /* Biggest page size */
-  rc.left   = 0;
-  rc.top    = 0;
-  rc.right  = psInfo->width;
-  rc.bottom = psInfo->height;
+  SetRect(&rc, 0, 0, psInfo->width, psInfo->height);
   MapDialogRect(hwndDlg, &rc);
 
   TRACE("Biggest page %s\n", wine_dbgstr_rect(&rc));
@@ -1193,8 +1176,13 @@ PROPSHEET_WizardSubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
       return TRUE;
 
     case WM_CTLCOLORSTATIC:
+#ifdef __REACTOS__
+      SetBkMode((HDC)wParam, TRANSPARENT);
+      return (INT_PTR)GetStockObject(HOLLOW_BRUSH);
+#else
       SetBkColor((HDC)wParam, GetSysColor(COLOR_WINDOW));
       return (INT_PTR)GetSysColorBrush(COLOR_WINDOW);
+#endif
   }
 
   return DefSubclassProc(hwnd, uMsg, wParam, lParam);
@@ -2236,67 +2224,108 @@ static LRESULT PROPSHEET_QuerySiblings(HWND hwndDlg,
   return msgResult;
 }
 
-
 /******************************************************************************
- *            PROPSHEET_AddPage
+ *            PROPSHEET_InsertPage
  */
-static BOOL PROPSHEET_AddPage(HWND hwndDlg,
-                              HPROPSHEETPAGE hpage)
+static BOOL PROPSHEET_InsertPage(HWND hwndDlg, HPROPSHEETPAGE hpageInsertAfter, HPROPSHEETPAGE hpage)
 {
-  PropPageInfo * ppi;
-  PropSheetInfo * psInfo = GetPropW(hwndDlg, PropSheetInfoStr);
+  PropSheetInfo *psInfo = GetPropW(hwndDlg, PropSheetInfoStr);
+  PropPageInfo *ppi, *prev_ppi = psInfo->proppage;
   HWND hwndTabControl = GetDlgItem(hwndDlg, IDC_TABCONTROL);
-  TCITEMW item;
   LPCPROPSHEETPAGEW ppsp = (LPCPROPSHEETPAGEW)hpage;
+  TCITEMW item;
+  int index;
 
-  TRACE("hpage %p\n", hpage);
-  /*
-   * Allocate and fill in a new PropPageInfo entry.
-   */
-  ppi = ReAlloc(psInfo->proppage, sizeof(PropPageInfo) * (psInfo->nPages + 1));
+  TRACE("hwndDlg %p, hpageInsertAfter %p, hpage %p\n", hwndDlg, hpageInsertAfter, hpage);
+
+  if (IS_INTRESOURCE(hpageInsertAfter))
+    index = LOWORD(hpageInsertAfter);
+  else
+  {
+    index = PROPSHEET_GetPageIndex(hpageInsertAfter, psInfo, -1);
+    if (index < 0)
+    {
+      TRACE("Could not find page to insert after!\n");
+      return FALSE;
+    }
+    index++;
+  }
+
+  if (index > psInfo->nPages)
+    index = psInfo->nPages;
+
+  ppi = Alloc(sizeof(PropPageInfo) * (psInfo->nPages + 1));
   if (!ppi)
       return FALSE;
 
+  /*
+   * Fill in a new PropPageInfo entry.
+   */
+  if (index > 0)
+    memcpy(ppi, prev_ppi, index * sizeof(PropPageInfo));
+  memset(&ppi[index], 0, sizeof(PropPageInfo));
+  if (index < psInfo->nPages)
+    memcpy(&ppi[index + 1], &prev_ppi[index], (psInfo->nPages - index) * sizeof(PropPageInfo));
   psInfo->proppage = ppi;
-  if (!PROPSHEET_CollectPageInfo(ppsp, psInfo, psInfo->nPages, FALSE))
-      return FALSE;
 
-  psInfo->proppage[psInfo->nPages].hpage = hpage;
+  if (!PROPSHEET_CollectPageInfo(ppsp, psInfo, index, FALSE))
+  {
+     psInfo->proppage = prev_ppi;
+     Free(ppi);
+     return FALSE;
+  }
+
+  psInfo->proppage[index].hpage = hpage;
 
   if (ppsp->dwFlags & PSP_PREMATURE)
   {
      /* Create the page but don't show it */
-     if(!PROPSHEET_CreatePage(hwndDlg, psInfo->nPages, psInfo, ppsp))
-         return FALSE;
+     if (!PROPSHEET_CreatePage(hwndDlg, index, psInfo, ppsp))
+     {
+        psInfo->proppage = prev_ppi;
+        Free(ppi);
+        return FALSE;
+     }
   }
+
+  Free(prev_ppi);
+  psInfo->nPages++;
+  if (index <= psInfo->active_page)
+    psInfo->active_page++;
 
   /*
    * Add a new tab to the tab control.
    */
   item.mask = TCIF_TEXT;
-  item.pszText = (LPWSTR) psInfo->proppage[psInfo->nPages].pszText;
+  item.pszText = (LPWSTR) psInfo->proppage[index].pszText;
   item.cchTextMax = MAX_TABTEXT_LENGTH;
 
   if (psInfo->hImageList)
-  {
     SendMessageW(hwndTabControl, TCM_SETIMAGELIST, 0, (LPARAM)psInfo->hImageList);
-  }
 
-  if ( psInfo->proppage[psInfo->nPages].hasIcon )
+  if (psInfo->proppage[index].hasIcon)
   {
     item.mask |= TCIF_IMAGE;
-    item.iImage = psInfo->nPages;
+    item.iImage = index;
   }
 
-  SendMessageW(hwndTabControl, TCM_INSERTITEMW, psInfo->nPages + 1,
-               (LPARAM)&item);
-
-  psInfo->nPages++;
+  SendMessageW(hwndTabControl, TCM_INSERTITEMW, index, (LPARAM)&item);
 
   /* If it is the only page - show it */
-  if(psInfo->nPages == 1)
+  if (psInfo->nPages == 1)
      PROPSHEET_SetCurSel(hwndDlg, 0, 1, 0);
+
   return TRUE;
+}
+
+/******************************************************************************
+ *            PROPSHEET_AddPage
+ */
+static BOOL PROPSHEET_AddPage(HWND hwndDlg, HPROPSHEETPAGE hpage)
+{
+  PropSheetInfo * psInfo = GetPropW(hwndDlg, PropSheetInfoStr);
+  TRACE("hwndDlg %p, hpage %p\n", hwndDlg, hpage);
+  return PROPSHEET_InsertPage(hwndDlg, UlongToPtr(psInfo->nPages), hpage);
 }
 
 /******************************************************************************
@@ -2414,6 +2443,8 @@ static void PROPSHEET_SetWizButtons(HWND hwndDlg, DWORD dwFlags)
   HWND hwndBack   = GetDlgItem(hwndDlg, IDC_BACK_BUTTON);
   HWND hwndNext   = GetDlgItem(hwndDlg, IDC_NEXT_BUTTON);
   HWND hwndFinish = GetDlgItem(hwndDlg, IDC_FINISH_BUTTON);
+  BOOL enable_finish = ((dwFlags & PSWIZB_FINISH) || psInfo->hasFinish) && !(dwFlags & PSWIZB_DISABLEDFINISH);
+
 #ifdef __REACTOS__
   HWND hwndCancel = GetDlgItem(hwndDlg, IDCANCEL);
   INT iDefItem = 0;
@@ -2422,13 +2453,13 @@ static void PROPSHEET_SetWizButtons(HWND hwndDlg, DWORD dwFlags)
 
   TRACE("%d\n", dwFlags);
 
-  EnableWindow(hwndBack, FALSE);
-  EnableWindow(hwndNext, FALSE);
-  EnableWindow(hwndFinish, FALSE);
+  EnableWindow(hwndBack, dwFlags & PSWIZB_BACK);
+  EnableWindow(hwndNext, dwFlags & PSWIZB_NEXT);
+  EnableWindow(hwndFinish, enable_finish);
 
 #ifndef __REACTOS__
   /* set the default pushbutton to an enabled button */
-  if (((dwFlags & PSWIZB_FINISH) || psInfo->hasFinish) && !(dwFlags & PSWIZB_DISABLEDFINISH))
+  if (enable_finish)
     SendMessageW(hwndDlg, DM_SETDEFID, IDC_FINISH_BUTTON, 0);
   else if (dwFlags & PSWIZB_NEXT)
     SendMessageW(hwndDlg, DM_SETDEFID, IDC_NEXT_BUTTON, 0);
@@ -2437,13 +2468,6 @@ static void PROPSHEET_SetWizButtons(HWND hwndDlg, DWORD dwFlags)
   else
     SendMessageW(hwndDlg, DM_SETDEFID, IDCANCEL, 0);
 #endif
-
-
-  if (dwFlags & PSWIZB_BACK)
-    EnableWindow(hwndBack, TRUE);
-
-  if (dwFlags & PSWIZB_NEXT)
-    EnableWindow(hwndNext, TRUE);
 
   if (!psInfo->hasFinish)
   {
@@ -2454,9 +2478,6 @@ static void PROPSHEET_SetWizButtons(HWND hwndDlg, DWORD dwFlags)
       
       /* Show the Finish button */
       ShowWindow(hwndFinish, SW_SHOW);
-
-      if (!(dwFlags & PSWIZB_DISABLEDFINISH))
-        EnableWindow(hwndFinish, TRUE);
     }
     else
     {
@@ -2466,8 +2487,6 @@ static void PROPSHEET_SetWizButtons(HWND hwndDlg, DWORD dwFlags)
       ShowWindow(hwndNext, SW_SHOW);
     }
   }
-  else if (!(dwFlags & PSWIZB_DISABLEDFINISH))
-    EnableWindow(hwndFinish, TRUE);
 
 #ifdef __REACTOS__
   /* set the default pushbutton to an enabled button */
@@ -2490,47 +2509,75 @@ static void PROPSHEET_SetWizButtons(HWND hwndDlg, DWORD dwFlags)
 }
 
 /******************************************************************************
- *            PROPSHEET_InsertPage
- */
-static BOOL PROPSHEET_InsertPage(HWND hwndDlg, HPROPSHEETPAGE hpageInsertAfter, HPROPSHEETPAGE hpage)
-{
-    if (IS_INTRESOURCE(hpageInsertAfter))
-        FIXME("(%p, %d, %p): stub\n", hwndDlg, LOWORD(hpageInsertAfter), hpage);
-    else
-        FIXME("(%p, %p, %p): stub\n", hwndDlg, hpageInsertAfter, hpage);
-    return FALSE;
-}
-
-/******************************************************************************
  *            PROPSHEET_SetHeaderTitleW
  */
-static void PROPSHEET_SetHeaderTitleW(HWND hwndDlg, int iPageIndex, LPCWSTR pszHeaderTitle)
+static void PROPSHEET_SetHeaderTitleW(HWND hwndDlg, UINT page_index, const WCHAR *title)
 {
-    FIXME("(%p, %d, %s): stub\n", hwndDlg, iPageIndex, debugstr_w(pszHeaderTitle));
+    PropSheetInfo *psInfo = GetPropW(hwndDlg, PropSheetInfoStr);
+    PROPSHEETPAGEW *page;
+
+    TRACE("(%p, %u, %s)\n", hwndDlg, page_index, debugstr_w(title));
+
+    if (page_index >= psInfo->nPages)
+        return;
+
+    page = (PROPSHEETPAGEW *)psInfo->proppage[page_index].hpage;
+
+    if (!IS_INTRESOURCE(page->pszHeaderTitle))
+        Free((void *)page->pszHeaderTitle);
+
+    page->pszHeaderTitle = heap_strdupW(title);
+    page->dwFlags |= PSP_USEHEADERTITLE;
 }
 
 /******************************************************************************
  *            PROPSHEET_SetHeaderTitleA
  */
-static void PROPSHEET_SetHeaderTitleA(HWND hwndDlg, int iPageIndex, LPCSTR pszHeaderTitle)
+static void PROPSHEET_SetHeaderTitleA(HWND hwndDlg, UINT page_index, const char *title)
 {
-    FIXME("(%p, %d, %s): stub\n", hwndDlg, iPageIndex, debugstr_a(pszHeaderTitle));
+    WCHAR *titleW;
+
+    TRACE("(%p, %u, %s)\n", hwndDlg, page_index, debugstr_a(title));
+
+    titleW = heap_strdupAtoW(title);
+    PROPSHEET_SetHeaderTitleW(hwndDlg, page_index, titleW);
+    Free(titleW);
 }
 
 /******************************************************************************
  *            PROPSHEET_SetHeaderSubTitleW
  */
-static void PROPSHEET_SetHeaderSubTitleW(HWND hwndDlg, int iPageIndex, LPCWSTR pszHeaderSubTitle)
+static void PROPSHEET_SetHeaderSubTitleW(HWND hwndDlg, UINT page_index, const WCHAR *subtitle)
 {
-    FIXME("(%p, %d, %s): stub\n", hwndDlg, iPageIndex, debugstr_w(pszHeaderSubTitle));
+    PropSheetInfo *psInfo = GetPropW(hwndDlg, PropSheetInfoStr);
+    PROPSHEETPAGEW *page;
+
+    TRACE("(%p, %u, %s)\n", hwndDlg, page_index, debugstr_w(subtitle));
+
+    if (page_index >= psInfo->nPages)
+        return;
+
+    page = (PROPSHEETPAGEW *)psInfo->proppage[page_index].hpage;
+
+    if (!IS_INTRESOURCE(page->pszHeaderSubTitle))
+        Free((void *)page->pszHeaderSubTitle);
+
+    page->pszHeaderSubTitle = heap_strdupW(subtitle);
+    page->dwFlags |= PSP_USEHEADERSUBTITLE;
 }
 
 /******************************************************************************
  *            PROPSHEET_SetHeaderSubTitleA
  */
-static void PROPSHEET_SetHeaderSubTitleA(HWND hwndDlg, int iPageIndex, LPCSTR pszHeaderSubTitle)
+static void PROPSHEET_SetHeaderSubTitleA(HWND hwndDlg, UINT page_index, const char *subtitle)
 {
-    FIXME("(%p, %d, %s): stub\n", hwndDlg, iPageIndex, debugstr_a(pszHeaderSubTitle));
+    WCHAR *subtitleW;
+
+    TRACE("(%p, %u, %s)\n", hwndDlg, page_index, debugstr_a(subtitle));
+
+    subtitleW = heap_strdupAtoW(subtitle);
+    PROPSHEET_SetHeaderSubTitleW(hwndDlg, page_index, subtitleW);
+    Free(subtitleW);
 }
 
 /******************************************************************************
@@ -2727,6 +2774,7 @@ static INT do_loop(const PropSheetInfo *psInfo)
     MSG msg;
     INT ret = -1;
     HWND hwnd = psInfo->hwnd;
+    HWND parent = psInfo->ppshheader.hwndParent;
 
     while(IsWindow(hwnd) && !psInfo->ended && (ret = GetMessageW(&msg, NULL, 0, 0)))
     {
@@ -2748,6 +2796,9 @@ static INT do_loop(const PropSheetInfo *psInfo)
 
     if(ret != -1)
         ret = psInfo->result;
+
+    if(parent)
+        EnableWindow(parent, TRUE);
 
     DestroyWindow(hwnd);
     return ret;
@@ -2775,10 +2826,7 @@ static INT_PTR PROPSHEET_PropertySheet(PropSheetInfo* psInfo, BOOL unicode)
   }
   bRet = PROPSHEET_CreateDialog(psInfo);
   if(!psInfo->isModeless)
-  {
       bRet = do_loop(psInfo);
-      if (parent) EnableWindow(parent, TRUE);
-  }
   return bRet;
 }
 
@@ -2925,11 +2973,25 @@ static LPWSTR load_string( HINSTANCE instance, LPCWSTR str )
 HPROPSHEETPAGE WINAPI CreatePropertySheetPageA(
                           LPCPROPSHEETPAGEA lpPropSheetPage)
 {
-  PROPSHEETPAGEW* ppsp = Alloc(sizeof(PROPSHEETPAGEW));
+    PROPSHEETPAGEW *ppsp;
 
-  memcpy(ppsp,lpPropSheetPage,min(lpPropSheetPage->dwSize,sizeof(PROPSHEETPAGEA)));
+    if (lpPropSheetPage->dwSize < PROPSHEETPAGEA_V1_SIZE)
+        return NULL;
 
-  ppsp->dwFlags &= ~ PSP_INTERNAL_UNICODE;
+    /* original data is used for callback notifications */
+    if ((lpPropSheetPage->dwFlags & PSP_USECALLBACK) && lpPropSheetPage->pfnCallback)
+    {
+        ppsp = Alloc(2 * sizeof(*ppsp));
+        memcpy(ppsp, lpPropSheetPage, min(lpPropSheetPage->dwSize, sizeof(PROPSHEETPAGEA)));
+        memcpy(ppsp + 1, lpPropSheetPage, min(lpPropSheetPage->dwSize, sizeof(PROPSHEETPAGEA)));
+    }
+    else
+    {
+        ppsp = Alloc(sizeof(*ppsp));
+        memcpy(ppsp, lpPropSheetPage, min(lpPropSheetPage->dwSize, sizeof(PROPSHEETPAGEA)));
+    }
+
+    ppsp->dwFlags &= ~PSP_INTERNAL_UNICODE;
 
     if ( !(ppsp->dwFlags & PSP_DLGINDIRECT) )
     {
@@ -2945,15 +3007,15 @@ HPROPSHEETPAGE WINAPI CreatePropertySheetPageA(
     if (ppsp->dwFlags & PSP_USEICONID)
     {
         if (!IS_INTRESOURCE( ppsp->u2.pszIcon ))
-            PROPSHEET_AtoW(&ppsp->u2.pszIcon, lpPropSheetPage->u2.pszIcon);
+            ppsp->u2.pszIcon = heap_strdupAtoW( lpPropSheetPage->u2.pszIcon );
     }
 
     if (ppsp->dwFlags & PSP_USETITLE)
     {
-        if (!IS_INTRESOURCE( ppsp->pszTitle ))
-            PROPSHEET_AtoW( &ppsp->pszTitle, lpPropSheetPage->pszTitle );
-        else
+        if (IS_INTRESOURCE( ppsp->pszTitle ))
             ppsp->pszTitle = load_string( ppsp->hInstance, ppsp->pszTitle );
+        else
+            ppsp->pszTitle = heap_strdupAtoW( lpPropSheetPage->pszTitle );
     }
     else
         ppsp->pszTitle = NULL;
@@ -2963,23 +3025,26 @@ HPROPSHEETPAGE WINAPI CreatePropertySheetPageA(
 
     if (ppsp->dwFlags & PSP_USEHEADERTITLE)
     {
-        if (!IS_INTRESOURCE( ppsp->pszHeaderTitle ))
-            PROPSHEET_AtoW(&ppsp->pszHeaderTitle, lpPropSheetPage->pszHeaderTitle);
-        else
+        if (IS_INTRESOURCE( ppsp->pszHeaderTitle ))
             ppsp->pszHeaderTitle = load_string( ppsp->hInstance, ppsp->pszHeaderTitle );
+        else
+            ppsp->pszHeaderTitle = heap_strdupAtoW( lpPropSheetPage->pszHeaderTitle );
     }
     else
         ppsp->pszHeaderTitle = NULL;
 
     if (ppsp->dwFlags & PSP_USEHEADERSUBTITLE)
     {
-        if (!IS_INTRESOURCE( ppsp->pszHeaderSubTitle ))
-            PROPSHEET_AtoW(&ppsp->pszHeaderSubTitle, lpPropSheetPage->pszHeaderSubTitle);
-        else
+        if (IS_INTRESOURCE( ppsp->pszHeaderSubTitle ))
             ppsp->pszHeaderSubTitle = load_string( ppsp->hInstance, ppsp->pszHeaderSubTitle );
+        else
+            ppsp->pszHeaderSubTitle = heap_strdupAtoW( lpPropSheetPage->pszHeaderSubTitle );
     }
     else
         ppsp->pszHeaderSubTitle = NULL;
+
+    if ((ppsp->dwFlags & PSP_USECALLBACK) && ppsp->dwSize > PROPSHEETPAGEA_V1_SIZE && ppsp->pfnCallback)
+        ppsp->pfnCallback(0, PSPCB_ADDREF, ppsp + 1);
 
     return (HPROPSHEETPAGE)ppsp;
 }
@@ -2991,32 +3056,36 @@ HPROPSHEETPAGE WINAPI CreatePropertySheetPageA(
  */
 HPROPSHEETPAGE WINAPI CreatePropertySheetPageW(LPCPROPSHEETPAGEW lpPropSheetPage)
 {
-  PROPSHEETPAGEW* ppsp = Alloc(sizeof(PROPSHEETPAGEW));
+    PROPSHEETPAGEW *ppsp;
 
-  memcpy(ppsp,lpPropSheetPage,min(lpPropSheetPage->dwSize,sizeof(PROPSHEETPAGEW)));
+    if (lpPropSheetPage->dwSize < PROPSHEETPAGEW_V1_SIZE)
+        return NULL;
 
-  ppsp->dwFlags |= PSP_INTERNAL_UNICODE;
+    /* original data is used for callback notifications */
+    if ((lpPropSheetPage->dwFlags & PSP_USECALLBACK) && lpPropSheetPage->pfnCallback)
+    {
+        ppsp = Alloc(2 * sizeof(*ppsp));
+        memcpy(ppsp, lpPropSheetPage, min(lpPropSheetPage->dwSize, sizeof(PROPSHEETPAGEW)));
+        memcpy(ppsp + 1, lpPropSheetPage, min(lpPropSheetPage->dwSize, sizeof(PROPSHEETPAGEW)));
+    }
+    else
+    {
+        ppsp = Alloc(sizeof(*ppsp));
+        memcpy(ppsp, lpPropSheetPage, min(lpPropSheetPage->dwSize, sizeof(PROPSHEETPAGEW)));
+    }
+
+    ppsp->dwFlags |= PSP_INTERNAL_UNICODE;
 
     if ( !(ppsp->dwFlags & PSP_DLGINDIRECT) )
     {
         if (!IS_INTRESOURCE( ppsp->u.pszTemplate ))
-        {
-            int len = strlenW(lpPropSheetPage->u.pszTemplate) + 1;
-            WCHAR *template = Alloc( len * sizeof (WCHAR) );
-
-            ppsp->u.pszTemplate = strcpyW( template, lpPropSheetPage->u.pszTemplate );
-        }
+            ppsp->u.pszTemplate = heap_strdupW( lpPropSheetPage->u.pszTemplate );
     }
 
     if ( ppsp->dwFlags & PSP_USEICONID )
     {
         if (!IS_INTRESOURCE( ppsp->u2.pszIcon ))
-        {
-            int len = strlenW(lpPropSheetPage->u2.pszIcon) + 1;
-            WCHAR *icon = Alloc( len * sizeof (WCHAR) );
-
-            ppsp->u2.pszIcon = strcpyW( icon, lpPropSheetPage->u2.pszIcon );
-        }
+            ppsp->u2.pszIcon = heap_strdupW( lpPropSheetPage->u2.pszIcon );
     }
 
     if (ppsp->dwFlags & PSP_USETITLE)
@@ -3036,6 +3105,9 @@ HPROPSHEETPAGE WINAPI CreatePropertySheetPageW(LPCPROPSHEETPAGEW lpPropSheetPage
         ppsp->pszHeaderSubTitle = load_string( ppsp->hInstance, ppsp->pszHeaderSubTitle );
     else
         ppsp->pszHeaderSubTitle = NULL;
+
+    if ((ppsp->dwFlags & PSP_USECALLBACK) && ppsp->dwSize > PROPSHEETPAGEW_V1_SIZE && ppsp->pfnCallback)
+        ppsp->pfnCallback(0, PSPCB_ADDREF, ppsp + 1);
 
     return (HPROPSHEETPAGE)ppsp;
 }
@@ -3057,6 +3129,9 @@ BOOL WINAPI DestroyPropertySheetPage(HPROPSHEETPAGE hPropPage)
 
   if (!psp)
      return FALSE;
+
+  if ((psp->dwFlags & PSP_USECALLBACK) && psp->pfnCallback)
+     psp->pfnCallback(0, PSPCB_RELEASE, psp + 1);
 
   if (!(psp->dwFlags & PSP_DLGINDIRECT) && !IS_INTRESOURCE( psp->u.pszTemplate ))
      Free ((LPVOID)psp->u.pszTemplate);
@@ -3233,61 +3308,69 @@ static LRESULT PROPSHEET_Paint(HWND hwnd, HDC hdcParam)
 	COLORREF clrOld = 0;
 	int oldBkMode = 0;
 
-	hbmp = SelectObject(hdcSrc, psInfo->ppshheader.u5.hbmHeader);
-	hOldFont = SelectObject(hdc, psInfo->hFontBold);
+        GetClientRect(hwndLineHeader, &r);
+        MapWindowPoints(hwndLineHeader, hwnd, (LPPOINT) &r, 2);
+        SetRect(&rzone, 0, 0, r.right + 1, r.top - 1);
 
-	GetClientRect(hwndLineHeader, &r);
-	MapWindowPoints(hwndLineHeader, hwnd, (LPPOINT) &r, 2);
-	SetRect(&rzone, 0, 0, r.right + 1, r.top - 1);
+        hOldFont = SelectObject(hdc, psInfo->hFontBold);
 
-	GetObjectW(psInfo->ppshheader.u5.hbmHeader, sizeof(BITMAP), &bm);
+#ifdef __REACTOS__
+        if (psInfo->ppshheader.u5.hbmHeader)
+#else
+        if (psInfo->ppshheader.dwFlags & PSH_USEHBMHEADER)
+#endif
+        {
+            hbmp = SelectObject(hdcSrc, psInfo->ppshheader.u5.hbmHeader);
 
- 	if (psInfo->ppshheader.dwFlags & PSH_WIZARD97_OLD)
- 	{
- 	    /* Fill the unoccupied part of the header with color of the
- 	     * left-top pixel, but do it only when needed.
- 	     */
- 	    if (bm.bmWidth < r.right || bm.bmHeight < r.bottom)
- 	    {
- 	        hbr = CreateSolidBrush(GetPixel(hdcSrc, 0, 0));
- 	        CopyRect(&r, &rzone);
- 	        if (bm.bmWidth < r.right)
- 	        {
- 	            r.left = bm.bmWidth;
- 	            FillRect(hdc, &r, hbr);
- 	        }
- 	        if (bm.bmHeight < r.bottom)
- 	        {
- 	            r.left = 0;
- 	            r.top = bm.bmHeight;
- 	            FillRect(hdc, &r, hbr);
- 	        }
- 	        DeleteObject(hbr);
- 	    }
+            GetObjectW(psInfo->ppshheader.u5.hbmHeader, sizeof(BITMAP), &bm);
+            if (psInfo->ppshheader.dwFlags & PSH_WIZARD97_OLD)
+            {
+                /* Fill the unoccupied part of the header with color of the
+                 * left-top pixel, but do it only when needed.
+                 */
+                if (bm.bmWidth < r.right || bm.bmHeight < r.bottom)
+                {
+                    hbr = CreateSolidBrush(GetPixel(hdcSrc, 0, 0));
+                    r = rzone;
+                    if (bm.bmWidth < r.right)
+                    {
+                        r.left = bm.bmWidth;
+                        FillRect(hdc, &r, hbr);
+                    }
+                    if (bm.bmHeight < r.bottom)
+                    {
+                        r.left = 0;
+                        r.top = bm.bmHeight;
+                        FillRect(hdc, &r, hbr);
+                    }
+                    DeleteObject(hbr);
+                }
 
- 	    /* Draw the header itself. */
- 	    BitBlt(hdc, 0, 0,
- 	           bm.bmWidth, min(bm.bmHeight, rzone.bottom),
- 	           hdcSrc, 0, 0, SRCCOPY);
- 	}
- 	else
- 	{
-            int margin;
- 	    hbr = GetSysColorBrush(COLOR_WINDOW);
- 	    FillRect(hdc, &rzone, hbr);
+                /* Draw the header itself. */
+                BitBlt(hdc, 0, 0, bm.bmWidth, min(bm.bmHeight, rzone.bottom),
+                        hdcSrc, 0, 0, SRCCOPY);
+            }
+            else
+            {
+                int margin;
+                hbr = GetSysColorBrush(COLOR_WINDOW);
+                FillRect(hdc, &rzone, hbr);
 
- 	    /* Draw the header bitmap. It's always centered like a
- 	     * common 49 x 49 bitmap. */
-            margin = (rzone.bottom - 49) / 2;
- 	    BitBlt(hdc, rzone.right - 49 - margin, margin,
-                   min(bm.bmWidth, 49), min(bm.bmHeight, 49),
-                   hdcSrc, 0, 0, SRCCOPY);
+                /* Draw the header bitmap. It's always centered like a
+                 * common 49 x 49 bitmap. */
+                margin = (rzone.bottom - 49) / 2;
+                BitBlt(hdc, rzone.right - 49 - margin, margin,
+                        min(bm.bmWidth, 49), min(bm.bmHeight, 49),
+                        hdcSrc, 0, 0, SRCCOPY);
 
- 	    /* NOTE: Native COMCTL32 draws a white stripe over the bitmap
- 	     * if its height is smaller than 49 pixels. Because the reason
- 	     * for this bug is unknown the current code doesn't try to
- 	     * replicate it. */
- 	}
+                /* NOTE: Native COMCTL32 draws a white stripe over the bitmap
+                 * if its height is smaller than 49 pixels. Because the reason
+                 * for this bug is unknown the current code doesn't try to
+                 * replicate it. */
+            }
+
+            SelectObject(hdcSrc, hbmp);
+        }
 
 	clrOld = SetTextColor (hdc, 0x00000000);
 	oldBkMode = SetBkMode (hdc, TRANSPARENT); 
@@ -3310,7 +3393,11 @@ static LRESULT PROPSHEET_Paint(HWND hwnd, HDC hdcParam)
 	if (ppshpage->dwFlags & PSP_USEHEADERSUBTITLE) {
 	    SelectObject(hdc, psInfo->hFont);
 	    SetRect(&r, 40, 25, rzone.right - 69, rzone.bottom);
+#ifdef __REACTOS__
+            if (!IS_INTRESOURCE(ppshpage->pszHeaderSubTitle))
+#else
             if (!IS_INTRESOURCE(ppshpage->pszHeaderTitle))
+#endif
                 DrawTextW(hdc, ppshpage->pszHeaderSubTitle, -1, &r, DT_LEFT | DT_WORDBREAK);
 	    else
 	    {
@@ -3328,22 +3415,22 @@ static LRESULT PROPSHEET_Paint(HWND hwnd, HDC hdcParam)
 	SetTextColor(hdc, clrOld);
 	SetBkMode(hdc, oldBkMode);
 	SelectObject(hdc, hOldFont);
-	SelectObject(hdcSrc, hbmp);
     }
 
     if ( (ppshpage && (ppshpage->dwFlags & PSP_HIDEHEADER)) &&
 	 (psInfo->ppshheader.dwFlags & (PSH_WIZARD97_OLD | PSH_WIZARD97_NEW)) &&
+#ifdef __REACTOS__
+	 (psInfo->ppshheader.dwFlags & PSH_WATERMARK) &&
+	 (psInfo->ppshheader.u4.hbmWatermark) ) 
+#else
 	 (psInfo->ppshheader.dwFlags & PSH_WATERMARK) ) 
+#endif
     {
 	HWND hwndLine = GetDlgItem(hwnd, IDC_SUNKEN_LINE);	    
 
 	GetClientRect(hwndLine, &r);
 	MapWindowPoints(hwndLine, hwnd, (LPPOINT) &r, 2);
-
-	rzone.left = 0;
-	rzone.top = 0;
-	rzone.right = r.right;
-	rzone.bottom = r.top - 1;
+        SetRect(&rzone, 0, 0, r.right, r.top - 1);
 
 	hbr = GetSysColorBrush(COLOR_WINDOW);
 	FillRect(hdc, &rzone, hbr);
@@ -3740,19 +3827,19 @@ PROPSHEET_DialogProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
 
     case PSM_SETHEADERTITLEW:
-        PROPSHEET_SetHeaderTitleW(hwnd, (int)wParam, (LPCWSTR)lParam);
+        PROPSHEET_SetHeaderTitleW(hwnd, wParam, (LPCWSTR)lParam);
         return TRUE;
 
     case PSM_SETHEADERTITLEA:
-        PROPSHEET_SetHeaderTitleA(hwnd, (int)wParam, (LPCSTR)lParam);
+        PROPSHEET_SetHeaderTitleA(hwnd, wParam, (LPCSTR)lParam);
         return TRUE;
 
     case PSM_SETHEADERSUBTITLEW:
-        PROPSHEET_SetHeaderSubTitleW(hwnd, (int)wParam, (LPCWSTR)lParam);
+        PROPSHEET_SetHeaderSubTitleW(hwnd, wParam, (LPCWSTR)lParam);
         return TRUE;
 
     case PSM_SETHEADERSUBTITLEA:
-        PROPSHEET_SetHeaderSubTitleA(hwnd, (int)wParam, (LPCSTR)lParam);
+        PROPSHEET_SetHeaderSubTitleA(hwnd, wParam, (LPCSTR)lParam);
         return TRUE;
 
     case PSM_HWNDTOINDEX:

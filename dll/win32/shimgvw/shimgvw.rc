@@ -9,6 +9,8 @@
 #include <reactos/version.rc>
 
 IDI_APPICON ICON "res/main.ico"
+IDI_BMP_ICON ICON "res/bmp.ico"
+IDI_PNG_ICON ICON "res/png.ico"
 
 IDB_PREVICON BITMAP "res/prev.bmp"
 IDB_NEXTICON BITMAP "res/next.bmp"
@@ -46,6 +48,9 @@ IDB_ROT2ICON BITMAP "res/rot2.bmp"
 #ifdef LANGUAGE_IT_IT
     #include "lang/it-IT.rc"
 #endif
+#ifdef LANGUAGE_JA_JP
+    #include "lang/ja-JP.rc"
+#endif
 #ifdef LANGUAGE_NB_NO
     #include "lang/no-NO.rc"
 #endif
@@ -72,4 +77,10 @@ IDB_ROT2ICON BITMAP "res/rot2.bmp"
 #endif
 #ifdef LANGUAGE_UK_UA
     #include "lang/uk-UA.rc"
+#endif
+#ifdef LANGUAGE_ZH_CN
+    #include "lang/zh-CN.rc"
+#endif
+#ifdef LANGUAGE_ZH_TW
+    #include "lang/zh-TW.rc"
 #endif

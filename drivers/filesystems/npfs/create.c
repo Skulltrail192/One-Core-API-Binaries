@@ -384,7 +384,7 @@ NpFsdCreate(IN PDEVICE_OBJECT DeviceObject,
     IoStatus.Information = 0;
 
     FsRtlEnterFileSystem();
-    ExAcquireResourceExclusiveLite(&NpVcb->Lock, TRUE);
+    NpAcquireExclusiveVcb();
 
     if (RelatedFileObject)
     {
@@ -462,7 +462,7 @@ NpFsdCreate(IN PDEVICE_OBJECT DeviceObject,
             goto Quickie;
         }
 
-        Fcb = NpFindPrefix(&FileName, TRUE, &Prefix);
+        Fcb = NpFindPrefix(&FileName, 1, &Prefix);
     }
 
     if (Prefix.Length)
@@ -499,7 +499,7 @@ NpFsdCreate(IN PDEVICE_OBJECT DeviceObject,
                                  &DeferredList);
 
 Quickie:
-    ExReleaseResourceLite(&NpVcb->Lock);
+    NpReleaseVcb();
     NpCompleteDeferredIrps(&DeferredList);
     FsRtlExitFileSystem();
 
@@ -676,7 +676,7 @@ NpCreateNewNamedPipe(IN PNP_DCB Dcb,
 
     if (!(Parameters->TimeoutSpecified) ||
         !(Parameters->MaximumInstances) ||
-        (Parameters->DefaultTimeout.HighPart >= 0))
+        (Parameters->DefaultTimeout.QuadPart >= 0))
     {
         Status = STATUS_INVALID_PARAMETER;
         goto Quickie;
@@ -706,7 +706,8 @@ NpCreateNewNamedPipe(IN PNP_DCB Dcb,
         goto Quickie;
     }
 
-    if (!Parameters->NamedPipeType && Parameters->ReadMode == 1)
+    if (Parameters->NamedPipeType == FILE_PIPE_BYTE_STREAM_TYPE &&
+        Parameters->ReadMode == FILE_PIPE_MESSAGE_MODE)
     {
         Status = STATUS_INVALID_PARAMETER;
         goto Quickie;
@@ -736,12 +737,12 @@ NpCreateNewNamedPipe(IN PNP_DCB Dcb,
     }
 
     SecurityContext = &AccessState->SubjectSecurityContext;
-    SeLockSubjectContext(&AccessState->SubjectSecurityContext);
+    SeLockSubjectContext(SecurityContext);
 
-    Status = SeAssignSecurity(0,
+    Status = SeAssignSecurity(NULL,
                               AccessState->SecurityDescriptor,
                               &SecurityDescriptor,
-                              0,
+                              FALSE,
                               SecurityContext,
                               IoGetFileObjectGenericMapping(),
                               PagedPool);
@@ -756,7 +757,7 @@ NpCreateNewNamedPipe(IN PNP_DCB Dcb,
     Status = ObLogSecurityDescriptor(SecurityDescriptor,
                                      &CachedSecurityDescriptor,
                                      1);
-    ExFreePool(SecurityDescriptor);
+    ExFreePoolWithTag(SecurityDescriptor, 0);
 
     if (!NT_SUCCESS(Status))
     {
@@ -852,7 +853,7 @@ NpFsdCreateNamedPipe(IN PDEVICE_OBJECT DeviceObject,
             goto Quickie;
         }
 
-        Fcb = NpFindPrefix(&FileName, TRUE, &Prefix);
+        Fcb = NpFindPrefix(&FileName, 1, &Prefix);
     }
 
     if (Prefix.Length)

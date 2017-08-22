@@ -16,7 +16,7 @@ StreamClassCreatePin(
     IN  PDEVICE_OBJECT DeviceObject,
     IN  PIRP Irp)
 {
-    UNIMPLEMENTED
+    UNIMPLEMENTED;
 
     Irp->IoStatus.Status = STATUS_NOT_IMPLEMENTED;
     Irp->IoStatus.Information = 0;
@@ -130,7 +130,7 @@ RegisterDeviceInterfaces(
             /* Register device interface */
             Status = IoRegisterDeviceInterface(DeviceExtension->PhysicalDeviceObject,
                                                StreamInformation->Category,
-                                               NULL, /* see bug 4566 */
+                                               NULL, /* see CORE-4218 and r42457 */
                                                &SymbolicLink);
 
             if (NT_SUCCESS(Status))

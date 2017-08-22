@@ -6,13 +6,30 @@
 #include <dos.h>
 #include <pseh/pseh2.h>
 
+#ifdef __GNUC__
+#define INIT_SECTION __attribute__((section ("INIT")))
+#else
+#define INIT_SECTION /* Done via alloc_text for MSC */
+#endif
+
 #define USE_ROS_CC_AND_FS
+#if 0
+#ifndef _MSC_VER
+#define ENABLE_SWAPOUT
+#endif
+#endif
 
 #define ROUND_DOWN(n, align) \
     (((ULONG)n) & ~((align) - 1l))
 
 #define ROUND_UP(n, align) \
     ROUND_DOWN(((ULONG)n) + (align) - 1, (align))
+
+#define ROUND_DOWN_64(n, align) \
+    (((ULONGLONG)n) & ~((align) - 1LL))
+
+#define ROUND_UP_64(n, align) \
+    ROUND_DOWN_64(((ULONGLONG)n) + (align) - 1LL, (align))
 
 #include <pshpack1.h>
 struct _BootSector
@@ -180,9 +197,9 @@ typedef struct _slot slot;
 
 #define LONGNAME_MAX_LENGTH 	256		// max length for a long filename
 
-#define ENTRY_DELETED(DeviceExt, DirEntry) ((DeviceExt)->Flags & VCB_IS_FATX ? FATX_ENTRY_DELETED(&((DirEntry)->FatX)) : FAT_ENTRY_DELETED(&((DirEntry)->Fat)))
-#define ENTRY_VOLUME(DeviceExt, DirEntry)  ((DeviceExt)->Flags & VCB_IS_FATX ? FATX_ENTRY_VOLUME(&((DirEntry)->FatX)) : FAT_ENTRY_VOLUME(&((DirEntry)->Fat)))
-#define ENTRY_END(DeviceExt, DirEntry)     ((DeviceExt)->Flags & VCB_IS_FATX ? FATX_ENTRY_END(&((DirEntry)->FatX)) : FAT_ENTRY_END(&((DirEntry)->Fat)))
+#define ENTRY_DELETED(IsFatX, DirEntry) (IsFatX ? FATX_ENTRY_DELETED(&((DirEntry)->FatX)) : FAT_ENTRY_DELETED(&((DirEntry)->Fat)))
+#define ENTRY_VOLUME(IsFatX, DirEntry) (IsFatX ? FATX_ENTRY_VOLUME(&((DirEntry)->FatX)) : FAT_ENTRY_VOLUME(&((DirEntry)->Fat)))
+#define ENTRY_END(IsFatX, DirEntry) (IsFatX ? FATX_ENTRY_END(&((DirEntry)->FatX)) : FAT_ENTRY_END(&((DirEntry)->Fat)))
 
 #define FAT_ENTRY_DELETED(DirEntry)  ((DirEntry)->Filename[0] == 0xe5)
 #define FAT_ENTRY_END(DirEntry)      ((DirEntry)->Filename[0] == 0)
@@ -224,6 +241,7 @@ typedef union _DIR_ENTRY DIR_ENTRY, *PDIR_ENTRY;
 typedef struct
 {
     ULONG VolumeID;
+    CHAR VolumeLabel[11];
     ULONG FATStart;
     ULONG FATCount;
     ULONG FATSectors;
@@ -242,6 +260,7 @@ typedef struct
 
 struct _VFATFCB;
 struct _VFAT_DIRENTRY_CONTEXT;
+struct _VFAT_MOVE_CONTEXT;
 
 typedef struct _HASHENTRY
 {
@@ -251,15 +270,24 @@ typedef struct _HASHENTRY
 }
 HASHENTRY;
 
-#define FCB_HASH_TABLE_SIZE 65536
-
 typedef struct DEVICE_EXTENSION *PDEVICE_EXTENSION;
 
 typedef NTSTATUS (*PGET_NEXT_CLUSTER)(PDEVICE_EXTENSION,ULONG,PULONG);
 typedef NTSTATUS (*PFIND_AND_MARK_AVAILABLE_CLUSTER)(PDEVICE_EXTENSION,PULONG);
 typedef NTSTATUS (*PWRITE_CLUSTER)(PDEVICE_EXTENSION,ULONG,ULONG,PULONG);
 
+typedef BOOLEAN (*PIS_DIRECTORY_EMPTY)(struct _VFATFCB*);
+typedef NTSTATUS (*PADD_ENTRY)(PDEVICE_EXTENSION,PUNICODE_STRING,struct _VFATFCB**,struct _VFATFCB*,ULONG,UCHAR,struct _VFAT_MOVE_CONTEXT*);
+typedef NTSTATUS (*PDEL_ENTRY)(PDEVICE_EXTENSION,struct _VFATFCB*,struct _VFAT_MOVE_CONTEXT*);
 typedef NTSTATUS (*PGET_NEXT_DIR_ENTRY)(PVOID*,PVOID*,struct _VFATFCB*,struct _VFAT_DIRENTRY_CONTEXT*,BOOLEAN);
+
+typedef struct _VFAT_DISPATCH
+{
+    PIS_DIRECTORY_EMPTY IsDirectoryEmpty;
+    PADD_ENTRY AddEntry;
+    PDEL_ENTRY DelEntry;
+    PGET_NEXT_DIR_ENTRY GetNextDirEntry;
+} VFAT_DISPATCH, *PVFAT_DISPATCH;
 
 typedef struct DEVICE_EXTENSION
 {
@@ -271,6 +299,7 @@ typedef struct DEVICE_EXTENSION
     ULONG HashTableSize;
     struct _HASHENTRY **FcbHashTable;
 
+    PDEVICE_OBJECT VolumeDevice;
     PDEVICE_OBJECT StorageDevice;
     PFILE_OBJECT FATFileObject;
     FATINFO FatInfo;
@@ -286,9 +315,6 @@ typedef struct DEVICE_EXTENSION
     PWRITE_CLUSTER WriteCluster;
     ULONG CleanShutBitMask;
 
-    /* Pointers to functions for manipulating directory entries. */
-    PGET_NEXT_DIR_ENTRY GetNextDirEntry;
-
     ULONG BaseDateYear;
 
     LIST_ENTRY VolumeListEntry;
@@ -296,7 +322,61 @@ typedef struct DEVICE_EXTENSION
     /* Notifications */
     LIST_ENTRY NotifyList;
     PNOTIFY_SYNC NotifySync;
+
+    /* Incremented on IRP_MJ_CREATE, decremented on IRP_MJ_CLOSE */
+    ULONG OpenHandleCount;
+
+    /* VPBs for dismount */
+    PVPB IoVPB;
+    PVPB SpareVPB;
+
+    /* Pointers to functions for manipulating directory entries. */
+    VFAT_DISPATCH Dispatch;
 } DEVICE_EXTENSION, VCB, *PVCB;
+
+FORCEINLINE
+BOOLEAN
+VfatIsDirectoryEmpty(PDEVICE_EXTENSION DeviceExt,
+                     struct _VFATFCB* Fcb)
+{
+    return DeviceExt->Dispatch.IsDirectoryEmpty(Fcb);
+}
+
+FORCEINLINE
+NTSTATUS
+VfatAddEntry(PDEVICE_EXTENSION DeviceExt,
+             PUNICODE_STRING NameU,
+             struct _VFATFCB** Fcb,
+             struct _VFATFCB* ParentFcb,
+             ULONG RequestedOptions,
+             UCHAR ReqAttr,
+             struct _VFAT_MOVE_CONTEXT* MoveContext)
+{
+    return DeviceExt->Dispatch.AddEntry(DeviceExt, NameU, Fcb, ParentFcb, RequestedOptions, ReqAttr, MoveContext);
+}
+
+FORCEINLINE
+NTSTATUS
+VfatDelEntry(PDEVICE_EXTENSION DeviceExt,
+             struct _VFATFCB* Fcb,
+             struct _VFAT_MOVE_CONTEXT* MoveContext)
+{
+    return DeviceExt->Dispatch.DelEntry(DeviceExt, Fcb, MoveContext);
+}
+
+FORCEINLINE
+NTSTATUS
+VfatGetNextDirEntry(PDEVICE_EXTENSION DeviceExt,
+                    PVOID *pContext,
+                    PVOID *pPage,
+                    struct _VFATFCB* pDirFcb,
+                    struct _VFAT_DIRENTRY_CONTEXT* DirContext,
+                    BOOLEAN First)
+{
+    return DeviceExt->Dispatch.GetNextDirEntry(pContext, pPage, pDirFcb, DirContext, First);
+}
+
+#define VFAT_BREAK_ON_CORRUPTION 1
 
 typedef struct
 {
@@ -320,7 +400,6 @@ extern PVFAT_GLOBAL_DATA VfatGlobalData;
 #define FCB_IS_PAGE_FILE        0x0008
 #define FCB_IS_VOLUME           0x0010
 #define FCB_IS_DIRTY            0x0020
-#define FCB_IS_FATX_ENTRY       0x0040
 
 typedef struct _VFATFCB
 {
@@ -361,8 +440,14 @@ typedef struct _VFATFCB
     /* List of FCB's for this volume */
     LIST_ENTRY FcbListEntry;
 
+    /* List of FCB's for the parent */ 
+    LIST_ENTRY ParentListEntry;
+
     /* pointer to the parent fcb */
     struct _VFATFCB *parentFcb;
+
+    /* List for the children */
+    LIST_ENTRY ParentListHead;
 
     /* Flags for the fcb */
     ULONG Flags;
@@ -392,7 +477,7 @@ typedef struct _VFATFCB
     FILE_LOCK FileLock;
 
     /*
-     * Optimalization: caching of last read/write cluster+offset pair. Can't
+     * Optimization: caching of last read/write cluster+offset pair. Can't
      * be in VFATCCB because it must be reset everytime the allocated clusters
      * change.
      */
@@ -401,9 +486,12 @@ typedef struct _VFATFCB
     ULONG LastOffset;
 } VFATFCB, *PVFATFCB;
 
+#define CCB_DELETE_ON_CLOSE     0x0001
+
 typedef struct _VFATCCB
 {
     LARGE_INTEGER  CurrentByteOffset;
+    ULONG Flags;
     /* for DirectoryControl */
     ULONG Entry;
     /* for DirectoryControl */
@@ -433,8 +521,10 @@ typedef struct __DOSDATE
 }
 DOSDATE, *PDOSDATE;
 
-#define IRPCONTEXT_CANWAIT	    0x0001
-#define IRPCONTEXT_PENDINGRETURNED  0x0002
+#define IRPCONTEXT_CANWAIT          0x0001
+#define IRPCONTEXT_COMPLETE         0x0002
+#define IRPCONTEXT_QUEUE            0x0004
+#define IRPCONTEXT_PENDINGRETURNED  0x0008
 
 typedef struct
 {
@@ -449,6 +539,7 @@ typedef struct
     PFILE_OBJECT FileObject;
     ULONG RefCount;
     KEVENT Event;
+    CCHAR PriorityBoost;
 } VFAT_IRP_CONTEXT, *PVFAT_IRP_CONTEXT;
 
 typedef struct _VFAT_DIRENTRY_CONTEXT
@@ -460,6 +551,47 @@ typedef struct _VFAT_DIRENTRY_CONTEXT
     UNICODE_STRING ShortNameU;
 } VFAT_DIRENTRY_CONTEXT, *PVFAT_DIRENTRY_CONTEXT;
 
+typedef struct _VFAT_MOVE_CONTEXT
+{
+    ULONG FirstCluster;
+    ULONG FileSize;
+    USHORT CreationDate;
+    USHORT CreationTime;
+    BOOLEAN InPlace;
+} VFAT_MOVE_CONTEXT, *PVFAT_MOVE_CONTEXT;
+
+FORCEINLINE
+NTSTATUS
+VfatMarkIrpContextForQueue(PVFAT_IRP_CONTEXT IrpContext)
+{
+    PULONG Flags = &IrpContext->Flags;
+
+    *Flags &= ~IRPCONTEXT_COMPLETE;
+    *Flags |= IRPCONTEXT_QUEUE;
+
+    return STATUS_PENDING;
+}
+
+FORCEINLINE
+BOOLEAN
+vfatFCBIsDirectory(PVFATFCB FCB)
+{
+    return BooleanFlagOn(*FCB->Attributes, FILE_ATTRIBUTE_DIRECTORY);
+}
+
+FORCEINLINE
+BOOLEAN
+vfatFCBIsReadOnly(PVFATFCB FCB)
+{
+    return BooleanFlagOn(*FCB->Attributes, FILE_ATTRIBUTE_READONLY);
+}
+
+FORCEINLINE
+BOOLEAN
+vfatVolumeIsFatX(PDEVICE_EXTENSION DeviceExt)
+{
+    return BooleanFlagOn(DeviceExt->Flags, VCB_IS_FATX);
+}
 
 /* blockdev.c */
 
@@ -533,11 +665,6 @@ vfat8Dot3ToString(
     PFAT_DIR_ENTRY pEntry,
     PUNICODE_STRING NameU);
 
-NTSTATUS
-ReadVolumeLabel(
-    PDEVICE_EXTENSION DeviceExt,
-    PVPB Vpb);
-
 /* dir.c */
 
 NTSTATUS
@@ -565,45 +692,12 @@ vfatDirEntryGetFirstCluster(
     PDEVICE_EXTENSION pDeviceExt,
     PDIR_ENTRY pDirEntry);
 
-BOOLEAN
-VfatIsDirectoryEmpty(
-    PVFATFCB Fcb);
-
-NTSTATUS
-FATGetNextDirEntry(
-    PVOID *pContext,
-    PVOID *pPage,
-    IN PVFATFCB pDirFcb,
-    IN PVFAT_DIRENTRY_CONTEXT DirContext,
-    BOOLEAN First);
-
-NTSTATUS
-FATXGetNextDirEntry(
-    PVOID *pContext,
-    PVOID *pPage,
-    IN PVFATFCB pDirFcb,
-    IN PVFAT_DIRENTRY_CONTEXT DirContext,
-    BOOLEAN First);
-
 /* dirwr.c */
 
 NTSTATUS
-VfatAddEntry(
-    PDEVICE_EXTENSION DeviceExt,
-    PUNICODE_STRING PathNameU,
-    PVFATFCB* Fcb,
-    PVFATFCB ParentFcb,
-    ULONG RequestedOptions,
-    UCHAR ReqAttr);
-
-NTSTATUS
 VfatUpdateEntry(
-    PVFATFCB pFcb);
-
-NTSTATUS
-VfatDelEntry(
-    PDEVICE_EXTENSION,
-    PVFATFCB);
+    PVFATFCB pFcb,
+    IN BOOLEAN IsFatX);
 
 BOOLEAN
 vfatFindDirSpace(
@@ -611,6 +705,20 @@ vfatFindDirSpace(
     PVFATFCB pDirFcb,
     ULONG nbSlots,
     PULONG start);
+
+NTSTATUS
+vfatRenameEntry(
+    IN PDEVICE_EXTENSION DeviceExt,
+    IN PVFATFCB pFcb,
+    IN PUNICODE_STRING FileName,
+    IN BOOLEAN CaseChangeOnly);
+
+NTSTATUS
+VfatMoveEntry(
+    IN PDEVICE_EXTENSION DeviceExt,
+    IN PVFATFCB pFcb,
+    IN PUNICODE_STRING FileName,
+    IN PVFATFCB ParentFcb);
 
 /* ea.h */
 
@@ -747,6 +855,19 @@ vfatNewFCB(
     PDEVICE_EXTENSION pVCB,
     PUNICODE_STRING pFileNameU);
 
+NTSTATUS
+vfatSetFCBNewDirName(
+    PDEVICE_EXTENSION pVCB,
+    PVFATFCB Fcb,
+    PVFATFCB ParentFcb);
+
+NTSTATUS
+vfatUpdateFCB(
+    PDEVICE_EXTENSION pVCB,
+    PVFATFCB Fcb,
+    PVFAT_DIRENTRY_CONTEXT DirContext,
+    PVFATFCB ParentFcb);
+
 VOID
 vfatDestroyFCB(
     PVFATFCB pFCB);
@@ -762,11 +883,6 @@ vfatGrabFCB(
 
 VOID
 vfatReleaseFCB(
-    PDEVICE_EXTENSION pVCB,
-    PVFATFCB pFCB);
-
-VOID
-vfatAddFCBToTable(
     PDEVICE_EXTENSION pVCB,
     PVFATFCB pFCB);
 
@@ -821,6 +937,20 @@ vfatMakeFCBFromDirEntry(
 /* finfo.c */
 
 NTSTATUS
+VfatGetStandardInformation(
+    PVFATFCB FCB,
+    PFILE_STANDARD_INFORMATION StandardInfo,
+    PULONG BufferLength);
+
+NTSTATUS
+VfatGetBasicInformation(
+    PFILE_OBJECT FileObject,
+    PVFATFCB FCB,
+    PDEVICE_EXTENSION DeviceExt,
+    PFILE_BASIC_INFORMATION BasicInfo,
+    PULONG BufferLength);
+
+NTSTATUS
 VfatQueryInformation(
     PVFAT_IRP_CONTEXT IrpContext);
 
@@ -863,19 +993,6 @@ DriverEntry(
 
 /* misc.c */
 
-NTSTATUS
-VfatQueueRequest(
-    PVFAT_IRP_CONTEXT IrpContext);
-
-PVFAT_IRP_CONTEXT
-VfatAllocateIrpContext(
-    PDEVICE_OBJECT DeviceObject,
-    PIRP Irp);
-
-VOID
-VfatFreeIrpContext(
-    PVFAT_IRP_CONTEXT IrpContext);
-
 DRIVER_DISPATCH
 VfatBuildRequest;
 
@@ -887,13 +1004,19 @@ VfatBuildRequest(
 
 PVOID
 VfatGetUserBuffer(
-    IN PIRP);
+    IN PIRP,
+    IN BOOLEAN Paging);
 
 NTSTATUS
 VfatLockUserBuffer(
     IN PIRP,
     IN ULONG,
     IN LOCK_OPERATION);
+
+BOOLEAN
+VfatCheckForDismount(
+    IN PDEVICE_EXTENSION DeviceExt,
+    IN BOOLEAN Create);
 
 /* pnp.c */
 

@@ -102,7 +102,7 @@ static void set_status_text(BindStatusCallback *This, ULONG statuscode, LPCWSTR 
     }
 
     V_VT(&arg) = VT_BSTR;
-    V_BSTR(&arg) = str ? SysAllocString(buffer) : NULL;
+    V_BSTR(&arg) = str ? SysAllocString(buffer) : SysAllocString(emptyW);
     TRACE("=> %s\n", debugstr_w(V_BSTR(&arg)));
 
     call_sink(This->doc_host->cps.wbe2, DISPID_STATUSTEXTCHANGE, &dispparams);
@@ -129,8 +129,15 @@ HRESULT set_dochost_url(DocHost *This, const WCHAR *url)
     heap_free(This->url);
     This->url = new_url;
 
-    This->container_vtbl->SetURL(This, This->url);
+    This->container_vtbl->set_url(This, This->url);
     return S_OK;
+}
+
+void notify_download_state(DocHost *dochost, BOOL is_downloading)
+{
+    DISPPARAMS dwl_dp = {NULL};
+    TRACE("(%x)\n", is_downloading);
+    call_sink(dochost->cps.wbe2, is_downloading ? DISPID_DOWNLOADBEGIN : DISPID_DOWNLOADCOMPLETE, &dwl_dp);
 }
 
 static inline BindStatusCallback *impl_from_IBindStatusCallback(IBindStatusCallback *iface)
@@ -344,6 +351,8 @@ static HRESULT WINAPI BindStatusCallback_OnStopBinding(IBindStatusCallback *ifac
     if(!This->doc_host)
         return S_OK;
 
+    if(!This->doc_host->olecmd)
+        notify_download_state(This->doc_host, FALSE);
     if(FAILED(hresult))
         handle_navigation_error(This->doc_host, hresult, This->url, NULL);
 
@@ -681,13 +690,16 @@ static HRESULT bind_to_object(DocHost *This, IMoniker *mon, LPCWSTR url, IBindCt
     hres = IMoniker_GetDisplayName(mon, 0, NULL, &display_name);
     if(FAILED(hres)) {
         FIXME("GetDisplayName failed: %08x\n", hres);
+        IMoniker_Release(mon);
         return hres;
     }
 
     hres = set_dochost_url(This, display_name);
     CoTaskMemFree(display_name);
-    if(FAILED(hres))
+    if(FAILED(hres)) {
+        IMoniker_Release(mon);
         return hres;
+    }
 
     IBindCtx_RegisterObjectParam(bindctx, (LPOLESTR)SZ_HTML_CLIENTSITE_OBJECTPARAM,
                                  (IUnknown*)&This->IOleClientSite_iface);
@@ -862,6 +874,10 @@ static HRESULT navigate_bsc(DocHost *This, BindStatusCallback *bsc, IMoniker *mo
         return S_OK;
     }
 
+    notify_download_state(This, TRUE);
+    on_commandstate_change(This, CSC_NAVIGATEBACK, FALSE);
+    on_commandstate_change(This, CSC_NAVIGATEFORWARD, FALSE);
+
     if(This->document)
         deactivate_document(This);
 
@@ -907,6 +923,7 @@ static void navigate_bsc_proc(DocHost *This, task_header_t *t)
 HRESULT navigate_url(DocHost *This, LPCWSTR url, const VARIANT *Flags,
                      const VARIANT *TargetFrameName, VARIANT *PostData, VARIANT *Headers)
 {
+    SAFEARRAY *post_array = NULL;
     PBYTE post_data = NULL;
     ULONG post_data_len = 0;
     LPWSTR headers = NULL;
@@ -918,9 +935,18 @@ HRESULT navigate_url(DocHost *This, LPCWSTR url, const VARIANT *Flags,
        || (TargetFrameName && V_VT(TargetFrameName) != VT_EMPTY && V_VT(TargetFrameName) != VT_ERROR))
         FIXME("Unsupported args (Flags %s; TargetFrameName %s)\n", debugstr_variant(Flags), debugstr_variant(TargetFrameName));
 
-    if(PostData && V_VT(PostData) == (VT_ARRAY | VT_UI1) && V_ARRAY(PostData)) {
-        SafeArrayAccessData(V_ARRAY(PostData), (void**)&post_data);
-        post_data_len = V_ARRAY(PostData)->rgsabound[0].cElements;
+    if(PostData) {
+        if(V_VT(PostData) & VT_ARRAY)
+            post_array = V_ISBYREF(PostData) ? *V_ARRAYREF(PostData) : V_ARRAY(PostData);
+        else
+            WARN("Invalid post data %s\n", debugstr_variant(PostData));
+    }
+
+    if(post_array) {
+        LONG elem_max;
+        SafeArrayAccessData(post_array, (void**)&post_data);
+        SafeArrayGetUBound(post_array, 1, &elem_max);
+        post_data_len = (elem_max+1) * SafeArrayGetElemsize(post_array);
     }
 
     if(Headers && V_VT(Headers) == VT_BSTR) {
@@ -959,7 +985,7 @@ HRESULT navigate_url(DocHost *This, LPCWSTR url, const VARIANT *Flags,
     }
 
     if(post_data)
-        SafeArrayUnaccessData(V_ARRAY(PostData));
+        SafeArrayUnaccessData(post_array);
 
     return hres;
 }
@@ -1057,6 +1083,8 @@ static HRESULT navigate_history(DocHost *This, unsigned travellog_pos)
 
     This->travellog.loading_pos = travellog_pos;
     entry = This->travellog.log + This->travellog.loading_pos;
+
+    update_navigation_commands(This);
 
     if(!entry->stream)
         return async_doc_navigate(This, entry->url, NULL, NULL, 0, FALSE);
@@ -1203,9 +1231,152 @@ static const IHlinkFrameVtbl HlinkFrameVtbl = {
     HlinkFrame_UpdateHlink
 };
 
+static inline HlinkFrame *impl_from_ITargetFrame(ITargetFrame *iface)
+{
+    return CONTAINING_RECORD(iface, HlinkFrame, ITargetFrame_iface);
+}
+
+static HRESULT WINAPI TargetFrame_QueryInterface(ITargetFrame *iface, REFIID riid, void **ppv)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    return IUnknown_QueryInterface(This->outer, riid, ppv);
+}
+
+static ULONG WINAPI TargetFrame_AddRef(ITargetFrame *iface)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    return IUnknown_AddRef(This->outer);
+}
+
+static ULONG WINAPI TargetFrame_Release(ITargetFrame *iface)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    return IUnknown_Release(This->outer);
+}
+
+static HRESULT WINAPI TargetFrame_SetFrameName(ITargetFrame *iface, LPCWSTR pszFrameName)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%s)\n", This, debugstr_w(pszFrameName));
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_GetFrameName(ITargetFrame *iface, LPWSTR *ppszFrameName)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%p)\n", This, ppszFrameName);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_GetParentFrame(ITargetFrame *iface, IUnknown **ppunkParent)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%p)\n", This, ppunkParent);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_FindFrame(ITargetFrame *iface, LPCWSTR pszTargetName,
+        IUnknown *ppunkContextFrame, DWORD dwFlags, IUnknown **ppunkTargetFrame)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%s %p %x %p)\n", This, debugstr_w(pszTargetName),
+            ppunkContextFrame, dwFlags, ppunkTargetFrame);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_SetFrameSrc(ITargetFrame *iface, LPCWSTR pszFrameSrc)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%s)\n", This, debugstr_w(pszFrameSrc));
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_GetFrameSrc(ITargetFrame *iface, LPWSTR *ppszFrameSrc)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%p)\n", This, ppszFrameSrc);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_GetFramesContainer(ITargetFrame *iface, IOleContainer **ppContainer)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%p)\n", This, ppContainer);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_SetFrameOptions(ITargetFrame *iface, DWORD dwFlags)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%x)\n", This, dwFlags);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_GetFrameOptions(ITargetFrame *iface, DWORD *pdwFlags)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%p)\n", This, pdwFlags);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_SetFrameMargins(ITargetFrame *iface, DWORD dwWidth, DWORD dwHeight)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%d %d)\n", This, dwWidth, dwHeight);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_GetFrameMargins(ITargetFrame *iface, DWORD *pdwWidth, DWORD *pdwHeight)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%p %p)\n", This, pdwWidth, pdwHeight);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_RemoteNavigate(ITargetFrame *iface, ULONG cLength, ULONG *pulData)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%u %p)\n", This, cLength, pulData);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_OnChildFrameActivate(ITargetFrame *iface, IUnknown *pUnkChildFrame)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%p)\n", This, pUnkChildFrame);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI TargetFrame_OnChildFrameDeactivate(ITargetFrame *iface, IUnknown *pUnkChildFrame)
+{
+    HlinkFrame *This = impl_from_ITargetFrame(iface);
+    FIXME("(%p)->(%p)\n", This, pUnkChildFrame);
+    return E_NOTIMPL;
+}
+
+static const ITargetFrameVtbl TargetFrameVtbl = {
+    TargetFrame_QueryInterface,
+    TargetFrame_AddRef,
+    TargetFrame_Release,
+    TargetFrame_SetFrameName,
+    TargetFrame_GetFrameName,
+    TargetFrame_GetParentFrame,
+    TargetFrame_FindFrame,
+    TargetFrame_SetFrameSrc,
+    TargetFrame_GetFrameSrc,
+    TargetFrame_GetFramesContainer,
+    TargetFrame_SetFrameOptions,
+    TargetFrame_GetFrameOptions,
+    TargetFrame_SetFrameMargins,
+    TargetFrame_GetFrameMargins,
+    TargetFrame_RemoteNavigate,
+    TargetFrame_OnChildFrameActivate,
+    TargetFrame_OnChildFrameDeactivate
+};
+
 static inline HlinkFrame *impl_from_ITargetFrame2(ITargetFrame2 *iface)
 {
-    return CONTAINING_RECORD(iface, HlinkFrame, IHlinkFrame_iface);
+    return CONTAINING_RECORD(iface, HlinkFrame, ITargetFrame2_iface);
 }
 
 static HRESULT WINAPI TargetFrame2_QueryInterface(ITargetFrame2 *iface, REFIID riid, void **ppv)
@@ -1479,6 +1650,9 @@ BOOL HlinkFrame_QI(HlinkFrame *This, REFIID riid, void **ppv)
     if(IsEqualGUID(&IID_IHlinkFrame, riid)) {
         TRACE("(%p)->(IID_IHlinkFrame %p)\n", This, ppv);
         *ppv = &This->IHlinkFrame_iface;
+    }else if(IsEqualGUID(&IID_ITargetFrame, riid)) {
+        TRACE("(%p)->(IID_ITargetFrame %p)\n", This, ppv);
+        *ppv = &This->ITargetFrame_iface;
     }else if(IsEqualGUID(&IID_ITargetFrame2, riid)) {
         TRACE("(%p)->(IID_ITargetFrame2 %p)\n", This, ppv);
         *ppv = &This->ITargetFrame2_iface;
@@ -1501,7 +1675,8 @@ BOOL HlinkFrame_QI(HlinkFrame *This, REFIID riid, void **ppv)
 
 void HlinkFrame_Init(HlinkFrame *This, IUnknown *outer, DocHost *doc_host)
 {
-    This->IHlinkFrame_iface.lpVtbl   = &HlinkFrameVtbl;
+    This->IHlinkFrame_iface.lpVtbl = &HlinkFrameVtbl;
+    This->ITargetFrame_iface.lpVtbl = &TargetFrameVtbl;
     This->ITargetFrame2_iface.lpVtbl = &TargetFrame2Vtbl;
     This->ITargetFramePriv2_iface.lpVtbl = &TargetFramePriv2Vtbl;
     This->IWebBrowserPriv2IE9_iface.lpVtbl = &WebBrowserPriv2IE9Vtbl;

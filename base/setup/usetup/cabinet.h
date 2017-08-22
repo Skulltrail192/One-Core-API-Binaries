@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:   See COPYING in the top level directory
  * PROJECT:     ReactOS cabinet manager
- * FILE:        apps/cabman/cabinet.h
+ * FILE:        base/setup/usetup/cabinet.h
  * PURPOSE:     Cabinet definitions
  */
 #pragma once
@@ -143,7 +143,7 @@ typedef ULONG (*PCABINET_CODEC_UNCOMPRESS)(PVOID OutputBuffer,
 #define CS_NOMEMORY     0x0001  /* Not enough free memory */
 #define CS_BADSTREAM    0x0002  /* Bad data stream */
 
-/* Codec indentifiers */
+/* Codec identifiers */
 #define CAB_CODEC_RAW   0x00
 #define CAB_CODEC_LZX   0x01
 #define CAB_CODEC_MSZIP 0x02

@@ -1,12 +1,13 @@
 
 include_directories(
-    ${REACTOS_SOURCE_DIR}/include/reactos/idl
+    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/idl
     ${CMAKE_CURRENT_BINARY_DIR})
 
-add_rpc_files(server ${REACTOS_SOURCE_DIR}/include/reactos/idl/winreg.idl)
+add_rpc_files(server ${REACTOS_SOURCE_DIR}/sdk/include/reactos/idl/winreg.idl)
 
 list(APPEND SOURCE
     environment.c
+    notify.c
     rpcserver.c
     sas.c
     screensaver.c
@@ -16,6 +17,7 @@ list(APPEND SOURCE
     winlogon.h
     ${CMAKE_CURRENT_BINARY_DIR}/winreg_s.c)
 
+add_rc_deps(winlogon.rc ${CMAKE_CURRENT_SOURCE_DIR}/res/winlogon.ico)
 add_executable(winlogon ${SOURCE} winlogon.rc)
 target_link_libraries(winlogon wine)
 set_module_type(winlogon win32gui)

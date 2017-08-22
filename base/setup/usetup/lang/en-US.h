@@ -157,42 +157,12 @@ static MUI_ENTRY enUSIntroPageEntries[] =
     {
         8,
         13,
-        "- Setup can not handle more than one primary partition per disk.",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        14,
-        "- Setup can not delete a primary partition from a disk",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        15,
-        "  as long as extended partitions exist on this disk.",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        16,
-        "- Setup can not delete the first extended partition from a disk",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        17,
-        "  as long as other extended partitions exist on this disk.",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        18,
         "- Setup supports FAT file systems only.",
         TEXT_STYLE_NORMAL
     },
     {
         8,
-        19,
+        14,
         "- File system checks are not implemented yet.",
         TEXT_STYLE_NORMAL
     },
@@ -831,6 +801,12 @@ static MUI_ENTRY enUSSelectPartitionEntries[] =
     {
         8,
         19,
+        "\x07  Press L to create a logical partition.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        21,
         "\x07  Press D to delete an existing partition.",
         TEXT_STYLE_NORMAL
     },
@@ -847,6 +823,101 @@ static MUI_ENTRY enUSSelectPartitionEntries[] =
         0
     }
 };
+
+static MUI_ENTRY enUSConfirmDeleteSystemPartitionEntries[] =
+{
+    {
+        4,
+        3,
+        " ReactOS " KERNEL_VERSION_STR " Setup ",
+        TEXT_STYLE_UNDERLINE
+    },
+    {
+        6,
+        8,
+        "You have chosen to delete the system partition.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        10,
+        "System partitions can contain diagnostic programs, hardware configuration",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        11,
+        "programs, programs to start an operating system (like ReactOS) or other",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        12,
+        "programs provided by the hardware manufacturer.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        14,
+        "Delete a system partition only when you are sure that there are no such",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        15,
+        "programs on the partition, or when you are sure you want to delete them.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        16,
+        "When you delete the partition, you might not be able to boot the",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        17,
+        "computer from the harddisk until you finished the ReactOS Setup.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        20,
+        "\x07  Press ENTER to delete the system partition. You will be asked",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        21,
+        "   to confirm the deletion of the partition again later.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        24,
+        "\x07  Press ESC to return to the previous page. The partition will",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        25,
+        "   not be deleted.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        0,
+        0,
+        "ENTER=Continue  ESC=Cancel",
+        TEXT_TYPE_STATUS | TEXT_PADDING_BIG
+    },
+    {
+        0,
+        0,
+        NULL,
+        0
+    }
+};
+
 
 static MUI_ENTRY enUSFormatPartitionEntries[] =
 {
@@ -1355,14 +1426,14 @@ MUI_ERROR enUSErrorEntries[] =
     },
     {
         //ERROR_WARN_PARTITION,
-          "Setup found that at least one harddisk contains an incompatible\n"
-          "partition table that can not be handled properly!\n"
-          "\n"
-          "Creating or deleting partitions can destroy the partition table.\n"
-          "\n"
-          "  \x07  Press F3 to quit Setup.\n"
-          "  \x07  Press ENTER to continue.",
-          "F3= Quit  ENTER = Continue"
+        "Setup found that at least one harddisk contains an incompatible\n"
+        "partition table that can not be handled properly!\n"
+        "\n"
+        "Creating or deleting partitions can destroy the partition table.\n"
+        "\n"
+        "  \x07  Press F3 to quit Setup.\n"
+        "  \x07  Press ENTER to continue.",
+        "F3 = Quit  ENTER = Continue"
     },
     {
         //ERROR_NEW_PARTITION,
@@ -1493,8 +1564,16 @@ MUI_ERROR enUSErrorEntries[] =
         "ENTER = Reboot computer"
     },
     {
-        //ERROR_INSUFFICIENT_DISKSPACE,
-        "Not enough free space in the selected partition.\n"
+        //ERROR_DIRECTORY_NAME,
+        "Invalid directory name.\n"
+        "\n"
+        "  * Press any key to continue."
+    },
+    {
+        //ERROR_INSUFFICIENT_PARTITION_SIZE,
+        "The selected partition is not large enough to install ReactOS.\n"
+        "The install partition must have a size of at least %lu MB.\n"
+        "\n"
         "  * Press any key to continue.",
         NULL
     },
@@ -1510,6 +1589,13 @@ MUI_ERROR enUSErrorEntries[] =
         "You can not create more than one extended partition per disk.\n"
         "\n"
         "  * Press any key to continue."
+    },
+    {
+        //ERROR_FORMATTING_PARTITION,
+        "Setup is unable to format the partition:\n"
+        " %S\n"
+        "\n"
+        "ENTER = Reboot computer"
     },
     {
         NULL,
@@ -1558,6 +1644,10 @@ MUI_PAGE enUSPages[] =
     {
         SELECT_PARTITION_PAGE,
         enUSSelectPartitionEntries
+    },
+    {
+        CONFIRM_DELETE_SYSTEM_PARTITION_PAGE,
+        enUSConfirmDeleteSystemPartitionEntries
     },
     {
         SELECT_FILE_SYSTEM_PAGE,
@@ -1645,12 +1735,18 @@ MUI_STRING enUSStrings[] =
     "This Partition will be formatted next."},
     {STRING_NONFORMATTEDPART,
     "You chose to install ReactOS on a new or unformatted Partition."},
+    {STRING_NONFORMATTEDSYSTEMPART,
+    "The system partition is not formatted yet."},
+    {STRING_NONFORMATTEDOTHERPART,
+    "The new partition is not formatted yet."},
     {STRING_INSTALLONPART,
     "Setup installs ReactOS onto Partition"},
     {STRING_CHECKINGPART,
     "Setup is now checking the selected partition."},
+    {STRING_CONTINUE,
+    "ENTER = Continue"},
     {STRING_QUITCONTINUE,
-    "F3= Quit  ENTER = Continue"},
+    "F3 = Quit  ENTER = Continue"},
     {STRING_REBOOTCOMPUTER,
     "ENTER = Reboot computer"},
     {STRING_TXTSETUPFAILED,
@@ -1696,7 +1792,7 @@ MUI_STRING enUSStrings[] =
     {STRING_HDDINFOUNK1,
     "%I64u %s  Harddisk %lu  (Port=%hu, Bus=%hu, Id=%hu)."},
     {STRING_HDDINFOUNK2,
-    "   %c%c  Type %lu    %I64u %s"},
+    "   %c%c  Type 0x%02X    %I64u %s"},
     {STRING_HDINFOPARTDELETE,
     "on %I64u %s  Harddisk %lu  (Port=%hu, Bus=%hu, Id=%hu) on %wZ."},
     {STRING_HDDINFOUNK3,
@@ -1704,11 +1800,11 @@ MUI_STRING enUSStrings[] =
     {STRING_HDINFOPARTZEROED,
     "Harddisk %lu (%I64u %s), Port=%hu, Bus=%hu, Id=%hu (%wZ)."},
     {STRING_HDDINFOUNK4,
-    "%c%c  Type %lu    %I64u %s"},
+    "%c%c  Type 0x%02X    %I64u %s"},
     {STRING_HDINFOPARTEXISTS,
     "on Harddisk %lu (%I64u %s), Port=%hu, Bus=%hu, Id=%hu (%wZ)."},
     {STRING_HDDINFOUNK5,
-    "%c%c  %sType %-3u%s                       %6lu %s"},
+    "%c%c %c %sType %-3u%s                      %6lu %s"},
     {STRING_HDINFOPARTSELECT,
     "%6lu %s  Harddisk %lu  (Port=%hu, Bus=%hu, Id=%hu) on %S"},
     {STRING_HDDINFOUNK6,

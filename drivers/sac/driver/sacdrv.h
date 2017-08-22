@@ -1245,7 +1245,7 @@ extern ULONG Utf8ConversionBufferSize;
 extern BOOLEAN CommandConsoleLaunchingEnabled;
 
 //
-// Function to initailize a SAC Semaphore Lock
+// Function to initialize a SAC Semaphore Lock
 //
 FORCEINLINE
 VOID
@@ -1394,11 +1394,11 @@ typedef enum _VT_ANSI_ATTRIBUTES
     AlternateFont2,
     AlternateFont3,
     Alternatefont4,
-    AlteronateFont5,
-    AlteronateFont6,
+    AlternateFont5,
+    AlternateFont6,
     AlternateFont7,
-    AlternatEfont8,
-    Alternatefont9,
+    AlternateFont8,
+    AlternateFont9,
 
     //
     // Additional attributes (not supported)

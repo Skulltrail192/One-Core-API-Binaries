@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS user32.dll
- * FILE:            dll/win32/user32/misc/usrapihk.c
+ * FILE:            win32ss/user/user32/misc/usrapihk.c
  * PURPOSE:         User32.dll User32 Api Hook interface and support functions
  * PROGRAMMER:
  *
@@ -28,12 +28,13 @@ INT WINAPI RealSetScrollInfo(HWND,int,LPCSCROLLINFO,BOOL);
 BOOL WINAPI RealSystemParametersInfoA(UINT,UINT,PVOID,UINT);
 BOOL WINAPI RealSystemParametersInfoW(UINT,UINT,PVOID,UINT);
 DWORD WINAPI GetRealWindowOwner(HWND);
+BOOL WINAPI RealUserDrawCaption(HWND hWnd, HDC hDC, LPCRECT lpRc, UINT uFlags);
 
 /* GLOBALS *******************************************************************/
 
 DWORD gcLoadUserApiHook = 0;
 LONG gcCallUserApiHook = 0;
-DWORD gfUserApiHook;
+DWORD gfUserApiHook = 0;
 HINSTANCE ghmodUserApiHook = NULL;
 USERAPIHOOKPROC gpfnInitUserApi;
 RTL_CRITICAL_SECTION gcsUserApiHook;
@@ -136,10 +137,10 @@ ResetUserApiHook(PUSERAPIHOOK puah)
   puah->DefWindowProcW = RealDefWindowProcW;
   puah->DefWndProcArray.MsgBitArray = NULL;
   puah->DefWndProcArray.Size = 0;
-  puah->GetScrollInfo = (FARPROC)RealGetScrollInfo;
-  puah->SetScrollInfo = (FARPROC)RealSetScrollInfo;
-  puah->EnableScrollBar = (FARPROC)NtUserEnableScrollBar;
-  puah->AdjustWindowRectEx = (FARPROC)RealAdjustWindowRectEx;
+  puah->GetScrollInfo = RealGetScrollInfo;
+  puah->SetScrollInfo = RealSetScrollInfo;
+  puah->EnableScrollBar = NtUserEnableScrollBar;
+  puah->AdjustWindowRectEx = RealAdjustWindowRectEx;
   puah->SetWindowRgn = NtUserSetWindowRgn;
   puah->PreWndProc = DefaultOWP;
   puah->PostWndProc = DefaultOWP;
@@ -149,14 +150,14 @@ ResetUserApiHook(PUSERAPIHOOK puah)
   puah->PostDefDlgProc = DefaultOWP;
   puah->DlgProcArray.MsgBitArray = NULL;
   puah->DlgProcArray.Size = 0;
-  puah->GetSystemMetrics = (FARPROC)RealGetSystemMetrics;
-  puah->SystemParametersInfoA = (FARPROC)RealSystemParametersInfoA;
-  puah->SystemParametersInfoW = (FARPROC)RealSystemParametersInfoW;
-  puah->ForceResetUserApiHook = (FARPROC)ForceResetUserApiHook;
-  puah->DrawFrameControl = (FARPROC)RealDrawFrameControl;
-  puah->DrawCaption = (FARPROC)NtUserDrawCaption;
-  puah->MDIRedrawFrame = (FARPROC)RealMDIRedrawFrame;
-  puah->GetRealWindowOwner = (FARPROC)GetRealWindowOwner;
+  puah->GetSystemMetrics = RealGetSystemMetrics;
+  puah->SystemParametersInfoA = RealSystemParametersInfoA;
+  puah->SystemParametersInfoW = RealSystemParametersInfoW;
+  puah->ForceResetUserApiHook = ForceResetUserApiHook;
+  puah->DrawFrameControl = RealDrawFrameControl;
+  puah->DrawCaption = RealUserDrawCaption;
+  puah->MDIRedrawFrame = RealMDIRedrawFrame;
+  puah->GetRealWindowOwner = GetRealWindowOwner;
 }
 
 BOOL
@@ -261,7 +262,7 @@ InitUserApiHook(HINSTANCE hInstance, USERAPIHOOKPROC pfn)
   RtlEnterCriticalSection(&gcsUserApiHook);
 
   if (!pfn(uahLoadInit,&uah) ||  // Swap data, User32 to and Uxtheme from!
-       uah.ForceResetUserApiHook != (FARPROC)ForceResetUserApiHook ||
+       uah.ForceResetUserApiHook != ForceResetUserApiHook ||
        uah.size <= 0 )
   {
      RtlLeaveCriticalSection(&gcsUserApiHook);
@@ -346,10 +347,10 @@ USERAPIHOOK guah =
   RealDefWindowProcA,
   RealDefWindowProcW,
   {NULL, 0},
-  (FARPROC)RealGetScrollInfo,
-  (FARPROC)RealSetScrollInfo,
-  (FARPROC)NtUserEnableScrollBar,
-  (FARPROC)RealAdjustWindowRectEx,
+  RealGetScrollInfo,
+  RealSetScrollInfo,
+  NtUserEnableScrollBar,
+  RealAdjustWindowRectEx,
   NtUserSetWindowRgn,
   DefaultOWP,
   DefaultOWP,
@@ -357,14 +358,14 @@ USERAPIHOOK guah =
   DefaultOWP,
   DefaultOWP,
   {NULL, 0},
-  (FARPROC)RealGetSystemMetrics,
-  (FARPROC)RealSystemParametersInfoA,
-  (FARPROC)RealSystemParametersInfoW,
-  (FARPROC)ForceResetUserApiHook,
-  (FARPROC)RealDrawFrameControl,
-  (FARPROC)NtUserDrawCaption,
-  (FARPROC)RealMDIRedrawFrame,
-  (FARPROC)GetRealWindowOwner,
+  RealGetSystemMetrics,
+  RealSystemParametersInfoA,
+  RealSystemParametersInfoW,
+  ForceResetUserApiHook,
+  RealDrawFrameControl,
+  NtUserDrawCaption,
+  RealMDIRedrawFrame,
+  GetRealWindowOwner,
 };
 
 /* FUNCTIONS *****************************************************************/

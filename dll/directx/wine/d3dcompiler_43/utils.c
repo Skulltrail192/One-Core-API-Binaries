@@ -797,6 +797,7 @@ void free_declaration(struct hlsl_ir_var *decl)
 {
     d3dcompiler_free((void *)decl->name);
     d3dcompiler_free((void *)decl->semantic);
+    d3dcompiler_free((void *)decl->reg_reservation);
     d3dcompiler_free(decl);
 }
 
@@ -1579,8 +1580,31 @@ struct hlsl_ir_node *make_assignment(struct hlsl_ir_node *left, enum parse_assig
         type = left->data_type;
     else
     {
-        FIXME("Assignments with writemasks not supported yet.\n");
-        type = NULL;
+        unsigned int dimx = 0;
+        DWORD bitmask;
+        enum hlsl_type_class type_class;
+
+        if (left->data_type->type > HLSL_CLASS_LAST_NUMERIC)
+        {
+            hlsl_report_message(left->loc.file, left->loc.line, left->loc.col, HLSL_LEVEL_ERROR,
+                    "writemask on a non scalar/vector/matrix type");
+            d3dcompiler_free(assign);
+            return NULL;
+        }
+        bitmask = writemask & ((1 << left->data_type->dimx) - 1);
+        while (bitmask)
+        {
+            if (bitmask & 1)
+                dimx++;
+            bitmask >>= 1;
+        }
+        if (left->data_type->type == HLSL_CLASS_MATRIX)
+            FIXME("Assignments with writemasks and matrices on lhs are not supported yet.\n");
+        if (dimx == 1)
+            type_class = HLSL_CLASS_SCALAR;
+        else
+            type_class = left->data_type->type;
+        type = new_hlsl_type(NULL, type_class, left->data_type->base_type, dimx, 1);
     }
     assign->node.type = HLSL_IR_ASSIGNMENT;
     assign->node.loc = left->loc;
@@ -1672,28 +1696,6 @@ static int compare_hlsl_types_rb(const void *key, const struct wine_rb_entry *en
     return strcmp(name, type->name);
 }
 
-static inline void *d3dcompiler_alloc_rb(size_t size)
-{
-    return d3dcompiler_alloc(size);
-}
-
-static inline void *d3dcompiler_realloc_rb(void *ptr, size_t size)
-{
-    return d3dcompiler_realloc(ptr, size);
-}
-
-static inline void d3dcompiler_free_rb(void *ptr)
-{
-    d3dcompiler_free(ptr);
-}
-static const struct wine_rb_functions hlsl_type_rb_funcs =
-{
-    d3dcompiler_alloc_rb,
-    d3dcompiler_realloc_rb,
-    d3dcompiler_free_rb,
-    compare_hlsl_types_rb,
-};
-
 void push_scope(struct hlsl_parse_ctx *ctx)
 {
     struct hlsl_scope *new_scope = d3dcompiler_alloc(sizeof(*new_scope));
@@ -1705,12 +1707,7 @@ void push_scope(struct hlsl_parse_ctx *ctx)
     }
     TRACE("Pushing a new scope\n");
     list_init(&new_scope->vars);
-    if (wine_rb_init(&new_scope->types, &hlsl_type_rb_funcs) == -1)
-    {
-        ERR("Failed to initialize types rbtree.\n");
-        d3dcompiler_free(new_scope);
-        return;
-    }
+    wine_rb_init(&new_scope->types, compare_hlsl_types_rb);
     new_scope->upper = ctx->cur_scope;
     ctx->cur_scope = new_scope;
     list_add_tail(&ctx->scopes, &new_scope->entry);
@@ -1820,14 +1817,6 @@ static int compare_function_decl_rb(const void *key, const struct wine_rb_entry 
     return 0;
 }
 
-static const struct wine_rb_functions hlsl_ir_function_decl_rb_funcs =
-{
-    d3dcompiler_alloc_rb,
-    d3dcompiler_realloc_rb,
-    d3dcompiler_free_rb,
-    compare_function_decl_rb,
-};
-
 static int compare_function_rb(const void *key, const struct wine_rb_entry *entry)
 {
     const char *name = key;
@@ -1836,18 +1825,9 @@ static int compare_function_rb(const void *key, const struct wine_rb_entry *entr
     return strcmp(name, func->name);
 }
 
-static const struct wine_rb_functions function_rb_funcs =
-{
-    d3dcompiler_alloc_rb,
-    d3dcompiler_realloc_rb,
-    d3dcompiler_free_rb,
-    compare_function_rb,
-};
-
 void init_functions_tree(struct wine_rb_tree *funcs)
 {
-    if (wine_rb_init(&hlsl_ctx.functions, &function_rb_funcs) == -1)
-        ERR("Failed to initialize functions rbtree.\n");
+    wine_rb_init(&hlsl_ctx.functions, compare_function_rb);
 }
 
 static const char *debug_base_type(const struct hlsl_type *type)
@@ -2078,6 +2058,11 @@ static const char *debug_expr_op(const struct hlsl_ir_expr *expr)
 
         "sat",
 
+        "pre++",
+        "pre--",
+        "post++",
+        "post--",
+
         "+",
         "-",
         "*",
@@ -2107,11 +2092,6 @@ static const char *debug_expr_op(const struct hlsl_ir_expr *expr)
         "max",
 
         "pow",
-
-        "pre++",
-        "pre--",
-        "post++",
-        "post--",
 
         "lerp",
 
@@ -2440,12 +2420,12 @@ void free_instr(struct hlsl_ir_node *node)
     }
 }
 
-static void free_function_decl(struct hlsl_ir_function_decl *func)
+static void free_function_decl(struct hlsl_ir_function_decl *decl)
 {
-    d3dcompiler_free((void *)func->semantic);
-    d3dcompiler_free(func->parameters);
-    free_instr_list(func->body);
-    d3dcompiler_free(func);
+    d3dcompiler_free((void *)decl->semantic);
+    d3dcompiler_free(decl->parameters);
+    free_instr_list(decl->body);
+    d3dcompiler_free(decl);
 }
 
 static void free_function_decl_rb(struct wine_rb_entry *entry, void *context)
@@ -2457,6 +2437,7 @@ static void free_function(struct hlsl_ir_function *func)
 {
     wine_rb_destroy(&func->overloads, free_function_decl_rb, NULL);
     d3dcompiler_free((void *)func->name);
+    d3dcompiler_free(func);
 }
 
 void free_function_rb(struct wine_rb_entry *entry, void *context)
@@ -2473,6 +2454,18 @@ void add_function_decl(struct wine_rb_tree *funcs, char *name, struct hlsl_ir_fu
     if (func_entry)
     {
         func = WINE_RB_ENTRY_VALUE(func_entry, struct hlsl_ir_function, entry);
+        if (intrinsic != func->intrinsic)
+        {
+            if (intrinsic)
+            {
+                ERR("Redeclaring a user defined function as an intrinsic.\n");
+                return;
+            }
+            TRACE("Function %s redeclared as a user defined function.\n", debugstr_a(name));
+            func->intrinsic = intrinsic;
+            wine_rb_destroy(&func->overloads, free_function_decl_rb, NULL);
+            wine_rb_init(&func->overloads, compare_function_decl_rb);
+        }
         decl->func = func;
         if ((old_entry = wine_rb_get(&func->overloads, decl->parameters)))
         {
@@ -2485,7 +2478,7 @@ void add_function_decl(struct wine_rb_tree *funcs, char *name, struct hlsl_ir_fu
                 d3dcompiler_free(name);
                 return;
             }
-            wine_rb_remove(&func->overloads, decl->parameters);
+            wine_rb_remove(&func->overloads, old_entry);
             free_function_decl(old_decl);
         }
         wine_rb_put(&func->overloads, decl->parameters, &decl->entry);
@@ -2494,13 +2487,7 @@ void add_function_decl(struct wine_rb_tree *funcs, char *name, struct hlsl_ir_fu
     }
     func = d3dcompiler_alloc(sizeof(*func));
     func->name = name;
-    if (wine_rb_init(&func->overloads, &hlsl_ir_function_decl_rb_funcs) == -1)
-    {
-        ERR("Failed to initialize function rbtree.\n");
-        d3dcompiler_free(name);
-        d3dcompiler_free(func);
-        return;
-    }
+    wine_rb_init(&func->overloads, compare_function_decl_rb);
     decl->func = func;
     wine_rb_put(&func->overloads, decl->parameters, &decl->entry);
     func->intrinsic = intrinsic;

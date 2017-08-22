@@ -74,6 +74,13 @@ typedef struct PresentationDataHeader
   DWORD dwSize;
 } PresentationDataHeader;
 
+enum stream_type
+{
+    no_stream,
+    pres_stream,
+    contents_stream
+};
+
 typedef struct DataCacheEntry
 {
   struct list entry;
@@ -84,11 +91,12 @@ typedef struct DataCacheEntry
   /* cached data */
   STGMEDIUM stgmedium;
   /*
-   * This storage pointer is set through a call to
+   * This stream pointer is set through a call to
    * IPersistStorage_Load. This is where the visual
    * representation of the object is stored.
    */
-  IStorage *storage;
+  IStream *stream;
+  enum stream_type stream_type;
   /* connection ID */
   DWORD id;
   /* dirty flag */
@@ -109,8 +117,8 @@ struct DataCache
   /*
    * List all interface here
    */
+  IUnknown          IUnknown_inner;
   IDataObject       IDataObject_iface;
-  IUnknown          IUnknown_iface;
   IPersistStorage   IPersistStorage_iface;
   IViewObject2      IViewObject2_iface;
   IOleCache2        IOleCache2_iface;
@@ -128,7 +136,7 @@ struct DataCache
   /*
    * IUnknown implementation of the outer object.
    */
-  IUnknown* outerUnknown;
+  IUnknown *outer_unk;
 
   /*
    * The user of this object can setup ONE advise sink
@@ -166,7 +174,7 @@ static inline DataCache *impl_from_IDataObject( IDataObject *iface )
 
 static inline DataCache *impl_from_IUnknown( IUnknown *iface )
 {
-    return CONTAINING_RECORD(iface, DataCache, IUnknown_iface);
+    return CONTAINING_RECORD(iface, DataCache, IUnknown_inner);
 }
 
 static inline DataCache *impl_from_IPersistStorage( IPersistStorage *iface )
@@ -194,19 +202,48 @@ static inline DataCache *impl_from_IAdviseSink( IAdviseSink *iface )
     return CONTAINING_RECORD(iface, DataCache, IAdviseSink_iface);
 }
 
-static const char * debugstr_formatetc(const FORMATETC *formatetc)
+const char *debugstr_formatetc(const FORMATETC *formatetc)
 {
     return wine_dbg_sprintf("{ cfFormat = 0x%x, ptd = %p, dwAspect = %d, lindex = %d, tymed = %d }",
         formatetc->cfFormat, formatetc->ptd, formatetc->dwAspect,
         formatetc->lindex, formatetc->tymed);
 }
 
+/***********************************************************************
+ *           bitmap_info_size
+ *
+ * Return the size of the bitmap info structure including color table.
+ */
+int bitmap_info_size( const BITMAPINFO * info, WORD coloruse )
+{
+    unsigned int colors, size, masks = 0;
+
+    if (info->bmiHeader.biSize == sizeof(BITMAPCOREHEADER))
+    {
+        const BITMAPCOREHEADER *core = (const BITMAPCOREHEADER *)info;
+        colors = (core->bcBitCount <= 8) ? 1 << core->bcBitCount : 0;
+        return sizeof(BITMAPCOREHEADER) + colors *
+            ((coloruse == DIB_RGB_COLORS) ? sizeof(RGBTRIPLE) : sizeof(WORD));
+    }
+    else  /* assume BITMAPINFOHEADER */
+    {
+        colors = info->bmiHeader.biClrUsed;
+        if (colors > 256) /* buffer overflow otherwise */
+            colors = 256;
+        if (!colors && (info->bmiHeader.biBitCount <= 8))
+            colors = 1 << info->bmiHeader.biBitCount;
+        if (info->bmiHeader.biCompression == BI_BITFIELDS) masks = 3;
+        size = max( info->bmiHeader.biSize, sizeof(BITMAPINFOHEADER) + masks * sizeof(DWORD) );
+        return size + colors * ((coloruse == DIB_RGB_COLORS) ? sizeof(RGBQUAD) : sizeof(WORD));
+    }
+}
+
 static void DataCacheEntry_Destroy(DataCache *cache, DataCacheEntry *cache_entry)
 {
     list_remove(&cache_entry->entry);
-    if (cache_entry->storage)
-        IStorage_Release(cache_entry->storage);
-    HeapFree(GetProcessHeap(), 0, cache_entry->fmtetc.ptd);
+    if (cache_entry->stream)
+        IStream_Release(cache_entry->stream);
+    CoTaskMemFree(cache_entry->fmtetc.ptd);
     ReleaseStgMedium(&cache_entry->stgmedium);
     if(cache_entry->sink_id)
         IDataObject_DUnadvise(cache->running_object, cache_entry->sink_id);
@@ -245,13 +282,21 @@ static void DataCache_Destroy(
 static DataCacheEntry *DataCache_GetEntryForFormatEtc(DataCache *This, const FORMATETC *formatetc)
 {
     DataCacheEntry *cache_entry;
+    FORMATETC fmt = *formatetc;
+
+    if (fmt.cfFormat == CF_BITMAP)
+    {
+        fmt.cfFormat = CF_DIB;
+        fmt.tymed = TYMED_HGLOBAL;
+    }
+
     LIST_FOR_EACH_ENTRY(cache_entry, &This->cache_list, DataCacheEntry, entry)
     {
         /* FIXME: also compare DVTARGETDEVICEs */
-        if ((!cache_entry->fmtetc.cfFormat || !formatetc->cfFormat || (formatetc->cfFormat == cache_entry->fmtetc.cfFormat)) &&
-            (formatetc->dwAspect == cache_entry->fmtetc.dwAspect) &&
-            (formatetc->lindex == cache_entry->fmtetc.lindex) &&
-            (!cache_entry->fmtetc.tymed || !formatetc->tymed || (formatetc->tymed == cache_entry->fmtetc.tymed)))
+        if ((!cache_entry->fmtetc.cfFormat || !fmt.cfFormat || (fmt.cfFormat == cache_entry->fmtetc.cfFormat)) &&
+            (fmt.dwAspect == cache_entry->fmtetc.dwAspect) &&
+            (fmt.lindex == cache_entry->fmtetc.lindex) &&
+            (!cache_entry->fmtetc.tymed || !fmt.tymed || (fmt.tymed == cache_entry->fmtetc.tymed)))
             return cache_entry;
     }
     return NULL;
@@ -260,10 +305,10 @@ static DataCacheEntry *DataCache_GetEntryForFormatEtc(DataCache *This, const FOR
 /* checks that the clipformat and tymed are valid and returns an error if they
 * aren't and CACHE_S_NOTSUPPORTED if they are valid, but can't be rendered by
 * DataCache_Draw */
-static HRESULT check_valid_clipformat_and_tymed(CLIPFORMAT cfFormat, DWORD tymed)
+static HRESULT check_valid_clipformat_and_tymed(CLIPFORMAT cfFormat, DWORD tymed, BOOL load)
 {
     if (!cfFormat || !tymed ||
-        (cfFormat == CF_METAFILEPICT && tymed == TYMED_MFPICT) ||
+        (cfFormat == CF_METAFILEPICT && (tymed == TYMED_MFPICT || load)) ||
         (cfFormat == CF_BITMAP && tymed == TYMED_GDI) ||
         (cfFormat == CF_DIB && tymed == TYMED_HGLOBAL) ||
         (cfFormat == CF_ENHMETAFILE && tymed == TYMED_ENHMF))
@@ -277,11 +322,34 @@ static HRESULT check_valid_clipformat_and_tymed(CLIPFORMAT cfFormat, DWORD tymed
     }
 }
 
-static HRESULT DataCache_CreateEntry(DataCache *This, const FORMATETC *formatetc, DataCacheEntry **cache_entry)
+static BOOL init_cache_entry(DataCacheEntry *entry, const FORMATETC *fmt, DWORD advf,
+                             DWORD id)
 {
     HRESULT hr;
 
-    hr = check_valid_clipformat_and_tymed(formatetc->cfFormat, formatetc->tymed);
+    hr = copy_formatetc(&entry->fmtetc, fmt);
+    if (FAILED(hr)) return FALSE;
+
+    entry->data_cf = 0;
+    entry->stgmedium.tymed = TYMED_NULL;
+    entry->stgmedium.pUnkForRelease = NULL;
+    entry->stream = NULL;
+    entry->stream_type = no_stream;
+    entry->id = id;
+    entry->dirty = TRUE;
+    entry->stream_number = -1;
+    entry->sink_id = 0;
+    entry->advise_flags = advf;
+
+    return TRUE;
+}
+
+static HRESULT DataCache_CreateEntry(DataCache *This, const FORMATETC *formatetc, DWORD advf,
+                                     DataCacheEntry **cache_entry, BOOL load)
+{
+    HRESULT hr;
+
+    hr = check_valid_clipformat_and_tymed(formatetc->cfFormat, formatetc->tymed, load);
     if (FAILED(hr))
         return hr;
     if (hr == CACHE_S_FORMATETC_NOTSUPPORTED)
@@ -291,23 +359,17 @@ static HRESULT DataCache_CreateEntry(DataCache *This, const FORMATETC *formatetc
     if (!*cache_entry)
         return E_OUTOFMEMORY;
 
-    (*cache_entry)->fmtetc = *formatetc;
-    if (formatetc->ptd)
-    {
-        (*cache_entry)->fmtetc.ptd = HeapAlloc(GetProcessHeap(), 0, formatetc->ptd->tdSize);
-        memcpy((*cache_entry)->fmtetc.ptd, formatetc->ptd, formatetc->ptd->tdSize);
-    }
-    (*cache_entry)->data_cf = 0;
-    (*cache_entry)->stgmedium.tymed = TYMED_NULL;
-    (*cache_entry)->stgmedium.pUnkForRelease = NULL;
-    (*cache_entry)->storage = NULL;
-    (*cache_entry)->id = This->last_cache_id++;
-    (*cache_entry)->dirty = TRUE;
-    (*cache_entry)->stream_number = -1;
-    (*cache_entry)->sink_id = 0;
-    (*cache_entry)->advise_flags = 0;
+    if (!init_cache_entry(*cache_entry, formatetc, advf, This->last_cache_id))
+        goto fail;
+
     list_add_tail(&This->cache_list, &(*cache_entry)->entry);
+    This->last_cache_id++;
+
     return hr;
+
+fail:
+    HeapFree(GetProcessHeap(), 0, *cache_entry);
+    return E_OUTOFMEMORY;
 }
 
 /************************************************************************
@@ -385,7 +447,7 @@ static HRESULT read_clipformat(IStream *stream, CLIPFORMAT *clipformat)
     if (length == -1)
     {
         DWORD cf;
-        hr = IStream_Read(stream, &cf, sizeof(cf), 0);
+        hr = IStream_Read(stream, &cf, sizeof(cf), &read);
         if (hr != S_OK || read != sizeof(cf))
             return DV_E_CLIPFORMAT;
         *clipformat = cf;
@@ -463,63 +525,185 @@ static HRESULT write_clipformat(IStream *stream, CLIPFORMAT clipformat)
  */
 static HRESULT DataCacheEntry_OpenPresStream(DataCacheEntry *cache_entry, IStream **ppStm)
 {
-    STATSTG elem;
-    IEnumSTATSTG *pEnum;
     HRESULT hr;
+    LARGE_INTEGER offset;
 
-    if (!ppStm) return E_POINTER;
-
-    hr = IStorage_EnumElements(cache_entry->storage, 0, NULL, 0, &pEnum);
-    if (FAILED(hr)) return hr;
-
-    while ((hr = IEnumSTATSTG_Next(pEnum, 1, &elem, NULL)) == S_OK)
+    if (cache_entry->stream)
     {
-	if (DataCache_IsPresentationStream(&elem))
-	{
-	    IStream *pStm;
+        /* Rewind the stream before returning it. */
+        offset.QuadPart = 0;
 
-	    hr = IStorage_OpenStream(cache_entry->storage, elem.pwcsName,
-				     NULL, STGM_READ | STGM_SHARE_EXCLUSIVE, 0,
-				     &pStm);
-	    if (SUCCEEDED(hr))
-	    {
-		PresentationDataHeader header;
-		ULONG actual_read;
-                CLIPFORMAT clipformat;
+        hr = IStream_Seek( cache_entry->stream, offset, STREAM_SEEK_SET, NULL );
+        if (SUCCEEDED( hr ))
+        {
+            *ppStm = cache_entry->stream;
+            IStream_AddRef( cache_entry->stream );
+        }
+    }
+    else
+        hr = OLE_E_BLANK;
 
-                hr = read_clipformat(pStm, &clipformat);
+    return hr;
+}
 
-                if (hr == S_OK)
-                    hr = IStream_Read(pStm, &header, sizeof(header), &actual_read);
 
-		/* can't use SUCCEEDED(hr): S_FALSE counts as an error */
-		if (hr == S_OK && actual_read == sizeof(header)
-		    && header.dvAspect == cache_entry->fmtetc.dwAspect)
-		{
-		    /* Rewind the stream before returning it. */
-		    LARGE_INTEGER offset;
-		    offset.u.LowPart = 0;
-		    offset.u.HighPart = 0;
-		    IStream_Seek(pStm, offset, STREAM_SEEK_SET, NULL);
+static HRESULT load_mf_pict( DataCacheEntry *cache_entry, IStream *stm )
+{
+    HRESULT hr;
+    STATSTG stat;
+    ULARGE_INTEGER current_pos;
+    void *bits;
+    METAFILEPICT *mfpict;
+    HGLOBAL hmfpict;
+    PresentationDataHeader header;
+    CLIPFORMAT clipformat;
+    static const LARGE_INTEGER offset_zero;
+    ULONG read;
 
-		    *ppStm = pStm;
-
-		    CoTaskMemFree(elem.pwcsName);
-		    IEnumSTATSTG_Release(pEnum);
-
-		    return S_OK;
-		}
-
-		IStream_Release(pStm);
-	    }
-	}
-
-	CoTaskMemFree(elem.pwcsName);
+    if (cache_entry->stream_type != pres_stream)
+    {
+        FIXME( "Unimplemented for stream type %d\n", cache_entry->stream_type );
+        return E_FAIL;
     }
 
-    IEnumSTATSTG_Release(pEnum);
+    hr = IStream_Stat( stm, &stat, STATFLAG_NONAME );
+    if (FAILED( hr )) return hr;
 
-    return (hr == S_FALSE ? OLE_E_BLANK : hr);
+    hr = read_clipformat( stm, &clipformat );
+    if (FAILED( hr )) return hr;
+
+    hr = IStream_Read( stm, &header, sizeof(header), &read );
+    if (hr != S_OK || read != sizeof(header)) return E_FAIL;
+
+    hr = IStream_Seek( stm, offset_zero, STREAM_SEEK_CUR, &current_pos );
+    if (FAILED( hr )) return hr;
+
+    stat.cbSize.QuadPart -= current_pos.QuadPart;
+
+    hmfpict = GlobalAlloc( GMEM_MOVEABLE, sizeof(METAFILEPICT) );
+    if (!hmfpict) return E_OUTOFMEMORY;
+    mfpict = GlobalLock( hmfpict );
+
+    bits = HeapAlloc( GetProcessHeap(), 0, stat.cbSize.u.LowPart);
+    if (!bits)
+    {
+        GlobalFree( hmfpict );
+        return E_OUTOFMEMORY;
+    }
+
+    hr = IStream_Read( stm, bits, stat.cbSize.u.LowPart, &read );
+    if (hr != S_OK || read != stat.cbSize.u.LowPart) hr = E_FAIL;
+
+    if (SUCCEEDED( hr ))
+    {
+        /* FIXME: get this from the stream */
+        mfpict->mm = MM_ANISOTROPIC;
+        mfpict->xExt = header.dwObjectExtentX;
+        mfpict->yExt = header.dwObjectExtentY;
+        mfpict->hMF = SetMetaFileBitsEx( stat.cbSize.u.LowPart, bits );
+        if (!mfpict->hMF)
+            hr = E_FAIL;
+    }
+
+    GlobalUnlock( hmfpict );
+    if (SUCCEEDED( hr ))
+    {
+        cache_entry->data_cf = cache_entry->fmtetc.cfFormat;
+        cache_entry->stgmedium.tymed = TYMED_MFPICT;
+        cache_entry->stgmedium.u.hMetaFilePict = hmfpict;
+    }
+    else
+        GlobalFree( hmfpict );
+
+    HeapFree( GetProcessHeap(), 0, bits );
+
+    return hr;
+}
+
+static HRESULT load_dib( DataCacheEntry *cache_entry, IStream *stm )
+{
+    HRESULT hr;
+    STATSTG stat;
+    void *dib;
+    HGLOBAL hglobal;
+    ULONG read, info_size, bi_size;
+    BITMAPFILEHEADER file;
+    BITMAPINFOHEADER *info;
+
+    if (cache_entry->stream_type != contents_stream)
+    {
+        FIXME( "Unimplemented for stream type %d\n", cache_entry->stream_type );
+        return E_FAIL;
+    }
+
+    hr = IStream_Stat( stm, &stat, STATFLAG_NONAME );
+    if (FAILED( hr )) return hr;
+
+    if (stat.cbSize.QuadPart < sizeof(file) + sizeof(DWORD)) return E_FAIL;
+    hr = IStream_Read( stm, &file, sizeof(file), &read );
+    if (hr != S_OK || read != sizeof(file)) return E_FAIL;
+    stat.cbSize.QuadPart -= sizeof(file);
+
+    hglobal = GlobalAlloc( GMEM_MOVEABLE, stat.cbSize.u.LowPart );
+    if (!hglobal) return E_OUTOFMEMORY;
+    dib = GlobalLock( hglobal );
+
+    hr = IStream_Read( stm, dib, sizeof(DWORD), &read );
+    if (hr != S_OK || read != sizeof(DWORD)) goto fail;
+    bi_size = *(DWORD *)dib;
+    if (stat.cbSize.QuadPart < bi_size) goto fail;
+
+    hr = IStream_Read( stm, (char *)dib + sizeof(DWORD), bi_size - sizeof(DWORD), &read );
+    if (hr != S_OK || read != bi_size - sizeof(DWORD)) goto fail;
+
+    info_size = bitmap_info_size( dib, DIB_RGB_COLORS );
+    if (stat.cbSize.QuadPart < info_size) goto fail;
+    if (info_size > bi_size)
+    {
+        hr = IStream_Read( stm, (char *)dib + bi_size, info_size - bi_size, &read );
+        if (hr != S_OK || read != info_size - bi_size) goto fail;
+    }
+    stat.cbSize.QuadPart -= info_size;
+
+    if (file.bfOffBits)
+    {
+        LARGE_INTEGER skip;
+
+        skip.QuadPart = file.bfOffBits - sizeof(file) - info_size;
+        if (stat.cbSize.QuadPart < skip.QuadPart) goto fail;
+        hr = IStream_Seek( stm, skip, STREAM_SEEK_CUR, NULL );
+        if (hr != S_OK) goto fail;
+        stat.cbSize.QuadPart -= skip.QuadPart;
+    }
+
+    hr = IStream_Read( stm, (char *)dib + info_size, stat.cbSize.u.LowPart, &read );
+    if (hr != S_OK || read != stat.cbSize.QuadPart) goto fail;
+
+    if (bi_size >= sizeof(*info))
+    {
+        info = (BITMAPINFOHEADER *)dib;
+        if (info->biXPelsPerMeter == 0 || info->biYPelsPerMeter == 0)
+        {
+            HDC hdc = GetDC( 0 );
+            info->biXPelsPerMeter = MulDiv( GetDeviceCaps( hdc, LOGPIXELSX ), 10000, 254 );
+            info->biYPelsPerMeter = MulDiv( GetDeviceCaps( hdc, LOGPIXELSY ), 10000, 254 );
+            ReleaseDC( 0, hdc );
+        }
+    }
+
+    GlobalUnlock( hglobal );
+
+    cache_entry->data_cf = cache_entry->fmtetc.cfFormat;
+    cache_entry->stgmedium.tymed = TYMED_HGLOBAL;
+    cache_entry->stgmedium.u.hGlobal = hglobal;
+
+    return S_OK;
+
+fail:
+    GlobalUnlock( hglobal );
+    GlobalFree( hglobal );
+    return E_FAIL;
+
 }
 
 /************************************************************************
@@ -537,113 +721,29 @@ static HRESULT DataCacheEntry_OpenPresStream(DataCacheEntry *cache_entry, IStrea
  */
 static HRESULT DataCacheEntry_LoadData(DataCacheEntry *cache_entry)
 {
-  IStream*      presStream = NULL;
-  HRESULT       hres;
-  ULARGE_INTEGER current_pos;
-  STATSTG       streamInfo;
-  void*         metafileBits;
-  METAFILEPICT *mfpict;
-  HGLOBAL       hmfpict;
-  PresentationDataHeader header;
-  CLIPFORMAT    clipformat;
-  static const LARGE_INTEGER offset_zero;
+    HRESULT hr;
+    IStream *stm;
 
-  /*
-   * Open the presentation stream.
-   */
-  hres = DataCacheEntry_OpenPresStream(cache_entry, &presStream);
+    hr = DataCacheEntry_OpenPresStream( cache_entry, &stm );
+    if (FAILED(hr)) return hr;
 
-  if (FAILED(hres))
-    return hres;
+    switch (cache_entry->fmtetc.cfFormat)
+    {
+    case CF_METAFILEPICT:
+        hr = load_mf_pict( cache_entry, stm );
+        break;
 
-  /*
-   * Get the size of the stream.
-   */
-  hres = IStream_Stat(presStream,
-		      &streamInfo,
-		      STATFLAG_NONAME);
+    case CF_DIB:
+        hr = load_dib( cache_entry, stm );
+        break;
 
-  /*
-   * Read the header.
-   */
+    default:
+        FIXME( "Unimplemented clip format %x\n", cache_entry->fmtetc.cfFormat );
+        hr = E_NOTIMPL;
+    }
 
-  hres = read_clipformat(presStream, &clipformat);
-  if (FAILED(hres))
-  {
-      IStream_Release(presStream);
-      return hres;
-  }
-
-  hres = IStream_Read(
-                      presStream,
-                      &header,
-                      sizeof(PresentationDataHeader),
-                      NULL);
-  if (hres != S_OK)
-  {
-      IStream_Release(presStream);
-      return E_FAIL;
-  }
-
-  hres = IStream_Seek(presStream, offset_zero, STREAM_SEEK_CUR, &current_pos);
-
-  streamInfo.cbSize.QuadPart -= current_pos.QuadPart;
-
-  hmfpict = GlobalAlloc(GMEM_MOVEABLE, sizeof(METAFILEPICT));
-  if (!hmfpict)
-  {
-      IStream_Release(presStream);
-      return E_OUTOFMEMORY;
-  }
-  mfpict = GlobalLock(hmfpict);
-
-  /*
-   * Allocate a buffer for the metafile bits.
-   */
-  metafileBits = HeapAlloc(GetProcessHeap(),
-			   0,
-			   streamInfo.cbSize.u.LowPart);
-
-  /*
-   * Read the metafile bits.
-   */
-  hres = IStream_Read(
-	   presStream,
-	   metafileBits,
-	   streamInfo.cbSize.u.LowPart,
-	   NULL);
-
-  /*
-   * Create a metafile with those bits.
-   */
-  if (SUCCEEDED(hres))
-  {
-    /* FIXME: get this from the stream */
-    mfpict->mm = MM_ANISOTROPIC;
-    mfpict->xExt = header.dwObjectExtentX;
-    mfpict->yExt = header.dwObjectExtentY;
-    mfpict->hMF = SetMetaFileBitsEx(streamInfo.cbSize.u.LowPart, metafileBits);
-    if (!mfpict->hMF)
-      hres = E_FAIL;
-  }
-
-  GlobalUnlock(hmfpict);
-  if (SUCCEEDED(hres))
-  {
-    cache_entry->data_cf = cache_entry->fmtetc.cfFormat;
-    cache_entry->stgmedium.tymed = TYMED_MFPICT;
-    cache_entry->stgmedium.u.hMetaFilePict = hmfpict;
-  }
-  else
-    GlobalFree(hmfpict);
-
-  /*
-   * Cleanup.
-   */
-  HeapFree(GetProcessHeap(), 0, metafileBits);
-  IStream_Release(presStream);
-
-  return hres;
+    IStream_Release( stm );
+    return hr;
 }
 
 static HRESULT DataCacheEntry_CreateStream(DataCacheEntry *cache_entry,
@@ -794,11 +894,56 @@ static HRESULT copy_stg_medium(CLIPFORMAT cf, STGMEDIUM *dest_stgm,
     return S_OK;
 }
 
+static HGLOBAL synthesize_dib( HBITMAP bm )
+{
+    HDC hdc = GetDC( 0 );
+    BITMAPINFOHEADER header;
+    BITMAPINFO *bmi;
+    HGLOBAL ret = 0;
+    DWORD header_size;
+
+    memset( &header, 0, sizeof(header) );
+    header.biSize = sizeof(header);
+    if (!GetDIBits( hdc, bm, 0, 0, NULL, (BITMAPINFO *)&header, DIB_RGB_COLORS )) goto done;
+
+    header_size = bitmap_info_size( (BITMAPINFO *)&header, DIB_RGB_COLORS );
+    if (!(ret = GlobalAlloc( GMEM_MOVEABLE, header_size + header.biSizeImage ))) goto done;
+    bmi = GlobalLock( ret );
+    memset( bmi, 0, header_size );
+    memcpy( bmi, &header, header.biSize );
+    GetDIBits( hdc, bm, 0, abs(header.biHeight), (char *)bmi + header_size, bmi, DIB_RGB_COLORS );
+    GlobalUnlock( ret );
+
+done:
+    ReleaseDC( 0, hdc );
+    return ret;
+}
+
+static HBITMAP synthesize_bitmap( HGLOBAL dib )
+{
+    HBITMAP ret = 0;
+    BITMAPINFO *bmi;
+    HDC hdc = GetDC( 0 );
+
+    if ((bmi = GlobalLock( dib )))
+    {
+        /* FIXME: validate data size */
+        ret = CreateDIBitmap( hdc, &bmi->bmiHeader, CBM_INIT,
+                              (char *)bmi + bitmap_info_size( bmi, DIB_RGB_COLORS ),
+                              bmi, DIB_RGB_COLORS );
+        GlobalUnlock( dib );
+    }
+    ReleaseDC( 0, hdc );
+    return ret;
+}
+
 static HRESULT DataCacheEntry_SetData(DataCacheEntry *cache_entry,
                                       const FORMATETC *formatetc,
-                                      const STGMEDIUM *stgmedium,
+                                      STGMEDIUM *stgmedium,
                                       BOOL fRelease)
 {
+    STGMEDIUM dib_copy;
+
     if ((!cache_entry->fmtetc.cfFormat && !formatetc->cfFormat) ||
         (cache_entry->fmtetc.tymed == TYMED_NULL && formatetc->tymed == TYMED_NULL) ||
         stgmedium->tymed == TYMED_NULL)
@@ -810,6 +955,17 @@ static HRESULT DataCacheEntry_SetData(DataCacheEntry *cache_entry,
     cache_entry->dirty = TRUE;
     ReleaseStgMedium(&cache_entry->stgmedium);
     cache_entry->data_cf = cache_entry->fmtetc.cfFormat ? cache_entry->fmtetc.cfFormat : formatetc->cfFormat;
+
+    if (formatetc->cfFormat == CF_BITMAP)
+    {
+        dib_copy.tymed = TYMED_HGLOBAL;
+        dib_copy.u.hGlobal = synthesize_dib( stgmedium->u.hBitmap );
+        dib_copy.pUnkForRelease = NULL;
+        if (fRelease) ReleaseStgMedium(stgmedium);
+        stgmedium = &dib_copy;
+        fRelease = TRUE;
+    }
+
     if (fRelease)
     {
         cache_entry->stgmedium = *stgmedium;
@@ -820,9 +976,9 @@ static HRESULT DataCacheEntry_SetData(DataCacheEntry *cache_entry,
                                &cache_entry->stgmedium, stgmedium);
 }
 
-static HRESULT DataCacheEntry_GetData(DataCacheEntry *cache_entry, STGMEDIUM *stgmedium)
+static HRESULT DataCacheEntry_GetData(DataCacheEntry *cache_entry, FORMATETC *fmt, STGMEDIUM *stgmedium)
 {
-    if (stgmedium->tymed == TYMED_NULL && cache_entry->storage)
+    if (cache_entry->stgmedium.tymed == TYMED_NULL && cache_entry->stream)
     {
         HRESULT hr = DataCacheEntry_LoadData(cache_entry);
         if (FAILED(hr))
@@ -830,6 +986,14 @@ static HRESULT DataCacheEntry_GetData(DataCacheEntry *cache_entry, STGMEDIUM *st
     }
     if (cache_entry->stgmedium.tymed == TYMED_NULL)
         return OLE_E_BLANK;
+
+    if (fmt->cfFormat == CF_BITMAP)
+    {
+        stgmedium->tymed = TYMED_GDI;
+        stgmedium->u.hBitmap = synthesize_bitmap( cache_entry->stgmedium.u.hGlobal );
+        stgmedium->pUnkForRelease = NULL;
+        return S_OK;
+    }
     return copy_stg_medium(cache_entry->data_cf, stgmedium, &cache_entry->stgmedium);
 }
 
@@ -842,10 +1006,10 @@ static inline HRESULT DataCacheEntry_DiscardData(DataCacheEntry *cache_entry)
 
 static inline void DataCacheEntry_HandsOffStorage(DataCacheEntry *cache_entry)
 {
-    if (cache_entry->storage)
+    if (cache_entry->stream)
     {
-        IStorage_Release(cache_entry->storage);
-        cache_entry->storage = NULL;
+        IStream_Release(cache_entry->stream);
+        cache_entry->stream = NULL;
     }
 }
 
@@ -958,7 +1122,7 @@ static HRESULT WINAPI DataCache_IDataObject_QueryInterface(
 {
   DataCache *this = impl_from_IDataObject(iface);
 
-  return IUnknown_QueryInterface(this->outerUnknown, riid, ppvObject);
+  return IUnknown_QueryInterface(this->outer_unk, riid, ppvObject);
 }
 
 /************************************************************************
@@ -969,7 +1133,7 @@ static ULONG WINAPI DataCache_IDataObject_AddRef(
 {
   DataCache *this = impl_from_IDataObject(iface);
 
-  return IUnknown_AddRef(this->outerUnknown);
+  return IUnknown_AddRef(this->outer_unk);
 }
 
 /************************************************************************
@@ -980,7 +1144,7 @@ static ULONG WINAPI DataCache_IDataObject_Release(
 {
   DataCache *this = impl_from_IDataObject(iface);
 
-  return IUnknown_Release(this->outerUnknown);
+  return IUnknown_Release(this->outer_unk);
 }
 
 /************************************************************************
@@ -1002,7 +1166,7 @@ static HRESULT WINAPI DataCache_GetData(
     if (!cache_entry)
         return OLE_E_BLANK;
 
-    return DataCacheEntry_GetData(cache_entry, pmedium);
+    return DataCacheEntry_GetData(cache_entry, pformatetcIn, pmedium);
 }
 
 static HRESULT WINAPI DataCache_GetDataHere(
@@ -1014,12 +1178,15 @@ static HRESULT WINAPI DataCache_GetDataHere(
   return E_NOTIMPL;
 }
 
-static HRESULT WINAPI DataCache_QueryGetData(
-	    IDataObject*     iface,
-	    LPFORMATETC      pformatetc)
+static HRESULT WINAPI DataCache_QueryGetData( IDataObject *iface, FORMATETC *fmt )
 {
-  FIXME("stub\n");
-  return E_NOTIMPL;
+    DataCache *This = impl_from_IDataObject( iface );
+    DataCacheEntry *cache_entry;
+
+    TRACE( "(%p)->(%s)\n", iface, debugstr_formatetc( fmt ) );
+    cache_entry = DataCache_GetEntryForFormatEtc( This, fmt );
+
+    return cache_entry ? S_OK : S_FALSE;
 }
 
 /************************************************************************
@@ -1135,7 +1302,7 @@ static HRESULT WINAPI DataCache_IPersistStorage_QueryInterface(
 {
   DataCache *this = impl_from_IPersistStorage(iface);
 
-  return IUnknown_QueryInterface(this->outerUnknown, riid, ppvObject);
+  return IUnknown_QueryInterface(this->outer_unk, riid, ppvObject);
 }
 
 /************************************************************************
@@ -1146,7 +1313,7 @@ static ULONG WINAPI DataCache_IPersistStorage_AddRef(
 {
   DataCache *this = impl_from_IPersistStorage(iface);
 
-  return IUnknown_AddRef(this->outerUnknown);
+  return IUnknown_AddRef(this->outer_unk);
 }
 
 /************************************************************************
@@ -1157,40 +1324,34 @@ static ULONG WINAPI DataCache_IPersistStorage_Release(
 {
   DataCache *this = impl_from_IPersistStorage(iface);
 
-  return IUnknown_Release(this->outerUnknown);
+  return IUnknown_Release(this->outer_unk);
 }
 
 /************************************************************************
  * DataCache_GetClassID (IPersistStorage)
  *
- * The data cache doesn't implement this method.
  */
-static HRESULT WINAPI DataCache_GetClassID(
-            IPersistStorage* iface,
-	    CLSID*           pClassID)
+static HRESULT WINAPI DataCache_GetClassID(IPersistStorage *iface, CLSID *clsid)
 {
-  DataCache *This = impl_from_IPersistStorage(iface);
-  DataCacheEntry *cache_entry;
+    DataCache *This = impl_from_IPersistStorage( iface );
+    HRESULT hr;
+    STATSTG statstg;
 
-  TRACE("(%p, %p)\n", iface, pClassID);
+    TRACE( "(%p, %p)\n", iface, clsid );
 
-  LIST_FOR_EACH_ENTRY(cache_entry, &This->cache_list, DataCacheEntry, entry)
-  {
-    if (cache_entry->storage != NULL)
+    if (This->presentationStorage)
     {
-      STATSTG statstg;
-      HRESULT hr = IStorage_Stat(cache_entry->storage, &statstg, STATFLAG_NONAME);
-      if (SUCCEEDED(hr))
-      {
-        *pClassID = statstg.clsid;
-        return S_OK;
-      }
+        hr = IStorage_Stat( This->presentationStorage, &statstg, STATFLAG_NONAME );
+        if (SUCCEEDED(hr))
+        {
+            *clsid = statstg.clsid;
+            return S_OK;
+        }
     }
-  }
 
-  *pClassID = CLSID_NULL;
+    *clsid = CLSID_NULL;
 
-  return S_OK;
+    return S_OK;
 }
 
 /************************************************************************
@@ -1239,6 +1400,101 @@ static HRESULT WINAPI DataCache_InitNew(
     return S_OK;
 }
 
+
+static HRESULT add_cache_entry( DataCache *This, const FORMATETC *fmt, IStream *stm,
+                                enum stream_type type )
+{
+    DataCacheEntry *cache_entry;
+    HRESULT hr = S_OK;
+
+    TRACE( "loading entry with formatetc: %s\n", debugstr_formatetc( fmt ) );
+
+    cache_entry = DataCache_GetEntryForFormatEtc( This, fmt );
+    if (!cache_entry)
+        hr = DataCache_CreateEntry( This, fmt, 0, &cache_entry, TRUE );
+    if (SUCCEEDED( hr ))
+    {
+        DataCacheEntry_DiscardData( cache_entry );
+        if (cache_entry->stream) IStream_Release( cache_entry->stream );
+        cache_entry->stream = stm;
+        IStream_AddRef( stm );
+        cache_entry->stream_type = type;
+        cache_entry->dirty = FALSE;
+    }
+    return hr;
+}
+
+static HRESULT parse_pres_streams( DataCache *This, IStorage *stg )
+{
+    HRESULT hr;
+    IEnumSTATSTG *stat_enum;
+    STATSTG stat;
+    IStream *stm;
+    PresentationDataHeader header;
+    ULONG actual_read;
+    CLIPFORMAT clipformat;
+    FORMATETC fmtetc;
+
+    hr = IStorage_EnumElements( stg, 0, NULL, 0, &stat_enum );
+    if (FAILED( hr )) return hr;
+
+    while ((hr = IEnumSTATSTG_Next( stat_enum, 1, &stat, NULL )) == S_OK)
+    {
+        if (DataCache_IsPresentationStream( &stat ))
+        {
+            hr = IStorage_OpenStream( stg, stat.pwcsName, NULL, STGM_READ | STGM_SHARE_EXCLUSIVE,
+                                      0, &stm );
+            if (SUCCEEDED( hr ))
+            {
+                hr = read_clipformat( stm, &clipformat );
+
+                if (hr == S_OK)
+                    hr = IStream_Read( stm, &header, sizeof(header), &actual_read );
+
+                if (hr == S_OK && actual_read == sizeof(header))
+                {
+                    fmtetc.cfFormat = clipformat;
+                    fmtetc.ptd = NULL; /* FIXME */
+                    fmtetc.dwAspect = header.dvAspect;
+                    fmtetc.lindex = header.lindex;
+                    fmtetc.tymed = header.tymed;
+
+                    add_cache_entry( This, &fmtetc, stm, pres_stream );
+                }
+                IStream_Release( stm );
+            }
+        }
+        CoTaskMemFree( stat.pwcsName );
+    }
+    IEnumSTATSTG_Release( stat_enum );
+
+    return S_OK;
+}
+
+static const FORMATETC static_dib_fmt = { CF_DIB, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+
+static HRESULT parse_contents_stream( DataCache *This, IStorage *stg, IStream *stm )
+{
+    HRESULT hr;
+    STATSTG stat;
+    const FORMATETC *fmt;
+
+    hr = IStorage_Stat( stg, &stat, STATFLAG_NONAME );
+    if (FAILED( hr )) return hr;
+
+    if (IsEqualCLSID( &stat.clsid, &CLSID_Picture_Dib ))
+        fmt = &static_dib_fmt;
+    else
+    {
+        FIXME("unsupported format %s\n", debugstr_guid( &stat.clsid ));
+        return E_FAIL;
+    }
+
+    return add_cache_entry( This, fmt, stm, contents_stream );
+}
+
+static const WCHAR CONTENTS[] = {'C','O','N','T','E','N','T','S',0};
+
 /************************************************************************
  * DataCache_Load (IPersistStorage)
  *
@@ -1247,86 +1503,35 @@ static HRESULT WINAPI DataCache_InitNew(
  * and it will load the presentation information when the
  * IDataObject_GetData or IViewObject2_Draw methods are called.
  */
-static HRESULT WINAPI DataCache_Load(
-            IPersistStorage* iface,
-	    IStorage*        pStg)
+static HRESULT WINAPI DataCache_Load( IPersistStorage *iface, IStorage *pStg )
 {
     DataCache *This = impl_from_IPersistStorage(iface);
-    STATSTG elem;
-    IEnumSTATSTG *pEnum;
     HRESULT hr;
+    IStream *stm;
 
     TRACE("(%p, %p)\n", iface, pStg);
 
-    if (This->presentationStorage != NULL)
-      IStorage_Release(This->presentationStorage);
+    IPersistStorage_HandsOffStorage( iface );
 
-    This->presentationStorage = pStg;
-
-    hr = IStorage_EnumElements(pStg, 0, NULL, 0, &pEnum);
-    if (FAILED(hr)) return hr;
-
-    while ((hr = IEnumSTATSTG_Next(pEnum, 1, &elem, NULL)) == S_OK)
+    hr = IStorage_OpenStream( pStg, CONTENTS, NULL, STGM_READ | STGM_SHARE_EXCLUSIVE,
+                              0, &stm );
+    if (SUCCEEDED( hr ))
     {
-	if (DataCache_IsPresentationStream(&elem))
-	{
-	    IStream *pStm;
-
-	    hr = IStorage_OpenStream(This->presentationStorage, elem.pwcsName,
-				     NULL, STGM_READ | STGM_SHARE_EXCLUSIVE, 0,
-				     &pStm);
-	    if (SUCCEEDED(hr))
-	    {
-                PresentationDataHeader header;
-                ULONG actual_read;
-                CLIPFORMAT clipformat;
-
-                hr = read_clipformat(pStm, &clipformat);
-
-                if (hr == S_OK)
-                    hr = IStream_Read(pStm, &header, sizeof(header),
-                                      &actual_read);
-
-		/* can't use SUCCEEDED(hr): S_FALSE counts as an error */
-		if (hr == S_OK && actual_read == sizeof(header))
-		{
-		    DataCacheEntry *cache_entry;
-		    FORMATETC fmtetc;
-
-		    fmtetc.cfFormat = clipformat;
-		    fmtetc.ptd = NULL; /* FIXME */
-		    fmtetc.dwAspect = header.dvAspect;
-		    fmtetc.lindex = header.lindex;
-		    fmtetc.tymed = header.tymed;
-
-                    TRACE("loading entry with formatetc: %s\n", debugstr_formatetc(&fmtetc));
-
-                    cache_entry = DataCache_GetEntryForFormatEtc(This, &fmtetc);
-                    if (!cache_entry)
-                        hr = DataCache_CreateEntry(This, &fmtetc, &cache_entry);
-                    if (SUCCEEDED(hr))
-                    {
-                        DataCacheEntry_DiscardData(cache_entry);
-                        if (cache_entry->storage) IStorage_Release(cache_entry->storage);
-                        cache_entry->storage = pStg;
-                        IStorage_AddRef(pStg);
-                        cache_entry->dirty = FALSE;
-                    }
-		}
-
-		IStream_Release(pStm);
-	    }
-	}
-
-	CoTaskMemFree(elem.pwcsName);
+        hr = parse_contents_stream( This, pStg, stm );
+        IStream_Release( stm );
     }
 
-    This->dirty = FALSE;
+    if (FAILED(hr))
+        hr = parse_pres_streams( This, pStg );
 
-    IEnumSTATSTG_Release(pEnum);
+    if (SUCCEEDED( hr ))
+    {
+        This->dirty = FALSE;
+        This->presentationStorage = pStg;
+        IStorage_AddRef( This->presentationStorage );
+    }
 
-    IStorage_AddRef(This->presentationStorage);
-    return S_OK;
+    return hr;
 }
 
 /************************************************************************
@@ -1458,7 +1663,7 @@ static HRESULT WINAPI DataCache_IViewObject2_QueryInterface(
 {
   DataCache *this = impl_from_IViewObject2(iface);
 
-  return IUnknown_QueryInterface(this->outerUnknown, riid, ppvObject);
+  return IUnknown_QueryInterface(this->outer_unk, riid, ppvObject);
 }
 
 /************************************************************************
@@ -1469,7 +1674,7 @@ static ULONG WINAPI DataCache_IViewObject2_AddRef(
 {
   DataCache *this = impl_from_IViewObject2(iface);
 
-  return IUnknown_AddRef(this->outerUnknown);
+  return IUnknown_AddRef(this->outer_unk);
 }
 
 /************************************************************************
@@ -1480,7 +1685,7 @@ static ULONG WINAPI DataCache_IViewObject2_Release(
 {
   DataCache *this = impl_from_IViewObject2(iface);
 
-  return IUnknown_Release(this->outerUnknown);
+  return IUnknown_Release(this->outer_unk);
 }
 
 /************************************************************************
@@ -1529,7 +1734,7 @@ static HRESULT WINAPI DataCache_Draw(
       continue;
 
     /* if the data hasn't been loaded yet, do it now */
-    if ((cache_entry->stgmedium.tymed == TYMED_NULL) && cache_entry->storage)
+    if ((cache_entry->stgmedium.tymed == TYMED_NULL) && cache_entry->stream)
     {
       hres = DataCacheEntry_LoadData(cache_entry);
       if (FAILED(hres))
@@ -1599,6 +1804,24 @@ static HRESULT WINAPI DataCache_Draw(
         GlobalUnlock(cache_entry->stgmedium.u.hMetaFilePict);
 
         return S_OK;
+      }
+      case CF_DIB:
+      {
+          BITMAPINFO *info;
+          BYTE *bits;
+
+          if ((cache_entry->stgmedium.tymed != TYMED_HGLOBAL) ||
+              !((info = GlobalLock( cache_entry->stgmedium.u.hGlobal ))))
+              continue;
+
+          bits = (BYTE *) info + bitmap_info_size( info, DIB_RGB_COLORS );
+          StretchDIBits( hdcDraw, lprcBounds->left, lprcBounds->top,
+                         lprcBounds->right - lprcBounds->left, lprcBounds->bottom - lprcBounds->top,
+                         0, 0, info->bmiHeader.biWidth, info->bmiHeader.biHeight,
+                         bits, info, DIB_RGB_COLORS, SRCCOPY );
+
+          GlobalUnlock( cache_entry->stgmedium.u.hGlobal );
+          return S_OK;
       }
     }
   }
@@ -1771,7 +1994,7 @@ static HRESULT WINAPI DataCache_GetExtent(
       continue;
 
     /* if the data hasn't been loaded yet, do it now */
-    if ((cache_entry->stgmedium.tymed == TYMED_NULL) && cache_entry->storage)
+    if ((cache_entry->stgmedium.tymed == TYMED_NULL) && cache_entry->stream)
     {
       hres = DataCacheEntry_LoadData(cache_entry);
       if (FAILED(hres))
@@ -1800,6 +2023,38 @@ static HRESULT WINAPI DataCache_GetExtent(
 
         return S_OK;
       }
+      case CF_DIB:
+      {
+          BITMAPINFOHEADER *info;
+          LONG x_pels_m, y_pels_m;
+
+
+          if ((cache_entry->stgmedium.tymed != TYMED_HGLOBAL) ||
+              !((info = GlobalLock( cache_entry->stgmedium.u.hGlobal ))))
+              continue;
+
+          x_pels_m = info->biXPelsPerMeter;
+          y_pels_m = info->biYPelsPerMeter;
+
+          /* Size in units of 0.01mm (ie. MM_HIMETRIC) */
+          if (x_pels_m != 0 && y_pels_m != 0)
+          {
+              lpsizel->cx = info->biWidth  * 100000 / x_pels_m;
+              lpsizel->cy = info->biHeight * 100000 / y_pels_m;
+          }
+          else
+          {
+              HDC hdc = GetDC( 0 );
+              lpsizel->cx = info->biWidth  * 2540 / GetDeviceCaps( hdc, LOGPIXELSX );
+              lpsizel->cy = info->biHeight * 2540 / GetDeviceCaps( hdc, LOGPIXELSY );
+
+              ReleaseDC( 0, hdc );
+          }
+
+          GlobalUnlock( cache_entry->stgmedium.u.hGlobal );
+
+          return S_OK;
+      }
     }
   }
 
@@ -1827,7 +2082,7 @@ static HRESULT WINAPI DataCache_IOleCache2_QueryInterface(
 {
   DataCache *this = impl_from_IOleCache2(iface);
 
-  return IUnknown_QueryInterface(this->outerUnknown, riid, ppvObject);
+  return IUnknown_QueryInterface(this->outer_unk, riid, ppvObject);
 }
 
 /************************************************************************
@@ -1838,7 +2093,7 @@ static ULONG WINAPI DataCache_IOleCache2_AddRef(
 {
   DataCache *this = impl_from_IOleCache2(iface);
 
-  return IUnknown_AddRef(this->outerUnknown);
+  return IUnknown_AddRef(this->outer_unk);
 }
 
 /************************************************************************
@@ -1849,7 +2104,7 @@ static ULONG WINAPI DataCache_IOleCache2_Release(
 {
   DataCache *this = impl_from_IOleCache2(iface);
 
-  return IUnknown_Release(this->outerUnknown);
+  return IUnknown_Release(this->outer_unk);
 }
 
 /*****************************************************************************
@@ -1881,6 +2136,7 @@ static HRESULT WINAPI DataCache_Cache(
     DataCache *This = impl_from_IOleCache2(iface);
     DataCacheEntry *cache_entry;
     HRESULT hr;
+    FORMATETC fmt_cpy;
 
     TRACE("(%p, 0x%x, %p)\n", pformatetc, advf, pdwConnection);
 
@@ -1889,9 +2145,16 @@ static HRESULT WINAPI DataCache_Cache(
 
     TRACE("pformatetc = %s\n", debugstr_formatetc(pformatetc));
 
+    fmt_cpy = *pformatetc; /* No need for a deep copy */
+    if (fmt_cpy.cfFormat == CF_BITMAP && fmt_cpy.tymed == TYMED_GDI)
+    {
+        fmt_cpy.cfFormat = CF_DIB;
+        fmt_cpy.tymed = TYMED_HGLOBAL;
+    }
+
     *pdwConnection = 0;
 
-    cache_entry = DataCache_GetEntryForFormatEtc(This, pformatetc);
+    cache_entry = DataCache_GetEntryForFormatEtc(This, &fmt_cpy);
     if (cache_entry)
     {
         TRACE("found an existing cache entry\n");
@@ -1899,12 +2162,11 @@ static HRESULT WINAPI DataCache_Cache(
         return CACHE_S_SAMECACHE;
     }
 
-    hr = DataCache_CreateEntry(This, pformatetc, &cache_entry);
+    hr = DataCache_CreateEntry(This, &fmt_cpy, advf, &cache_entry, FALSE);
 
     if (SUCCEEDED(hr))
     {
         *pdwConnection = cache_entry->id;
-        cache_entry->advise_flags = advf;
         setup_sink(This, cache_entry);
     }
 
@@ -1932,12 +2194,58 @@ static HRESULT WINAPI DataCache_Uncache(
     return OLE_E_NOCONNECTION;
 }
 
-static HRESULT WINAPI DataCache_EnumCache(
-            IOleCache2*     iface,
-	    IEnumSTATDATA** ppenumSTATDATA)
+static HRESULT WINAPI DataCache_EnumCache(IOleCache2 *iface,
+                                          IEnumSTATDATA **enum_stat)
 {
-  FIXME("stub\n");
-  return E_NOTIMPL;
+    DataCache *This = impl_from_IOleCache2( iface );
+    DataCacheEntry *cache_entry;
+    int i = 0, count = 0;
+    STATDATA *data;
+    HRESULT hr;
+
+    TRACE( "(%p, %p)\n", This, enum_stat );
+
+    LIST_FOR_EACH_ENTRY( cache_entry, &This->cache_list, DataCacheEntry, entry )
+    {
+        count++;
+        if (cache_entry->fmtetc.cfFormat == CF_DIB)
+            count++;
+    }
+
+    data = CoTaskMemAlloc( count * sizeof(*data) );
+    if (!data) return E_OUTOFMEMORY;
+
+    LIST_FOR_EACH_ENTRY( cache_entry, &This->cache_list, DataCacheEntry, entry )
+    {
+        if (i == count) goto fail;
+        hr = copy_formatetc( &data[i].formatetc, &cache_entry->fmtetc );
+        if (FAILED(hr)) goto fail;
+        data[i].advf = cache_entry->advise_flags;
+        data[i].pAdvSink = NULL;
+        data[i].dwConnection = cache_entry->id;
+        i++;
+
+        if (cache_entry->fmtetc.cfFormat == CF_DIB)
+        {
+            if (i == count) goto fail;
+            hr = copy_formatetc( &data[i].formatetc, &cache_entry->fmtetc );
+            if (FAILED(hr)) goto fail;
+            data[i].formatetc.cfFormat = CF_BITMAP;
+            data[i].formatetc.tymed = TYMED_GDI;
+            data[i].advf = cache_entry->advise_flags;
+            data[i].pAdvSink = NULL;
+            data[i].dwConnection = cache_entry->id;
+            i++;
+        }
+    }
+
+    hr = EnumSTATDATA_Construct( NULL, 0, i, data, FALSE, enum_stat );
+    if (SUCCEEDED(hr)) return hr;
+
+fail:
+    while (i--) CoTaskMemFree( data[i].formatetc.ptd );
+    CoTaskMemFree( data );
+    return hr;
 }
 
 static HRESULT WINAPI DataCache_InitCache(
@@ -2026,7 +2334,7 @@ static HRESULT WINAPI DataCache_IOleCacheControl_QueryInterface(
 {
   DataCache *this = impl_from_IOleCacheControl(iface);
 
-  return IUnknown_QueryInterface(this->outerUnknown, riid, ppvObject);
+  return IUnknown_QueryInterface(this->outer_unk, riid, ppvObject);
 }
 
 /************************************************************************
@@ -2037,7 +2345,7 @@ static ULONG WINAPI DataCache_IOleCacheControl_AddRef(
 {
   DataCache *this = impl_from_IOleCacheControl(iface);
 
-  return IUnknown_AddRef(this->outerUnknown);
+  return IUnknown_AddRef(this->outer_unk);
 }
 
 /************************************************************************
@@ -2048,7 +2356,7 @@ static ULONG WINAPI DataCache_IOleCacheControl_Release(
 {
   DataCache *this = impl_from_IOleCacheControl(iface);
 
-  return IUnknown_Release(this->outerUnknown);
+  return IUnknown_Release(this->outer_unk);
 }
 
 /************************************************************************
@@ -2270,29 +2578,14 @@ static DataCache* DataCache_Construct(
    * Initialize the virtual function table.
    */
   newObject->IDataObject_iface.lpVtbl = &DataCache_IDataObject_VTable;
-  newObject->IUnknown_iface.lpVtbl = &DataCache_NDIUnknown_VTable;
+  newObject->IUnknown_inner.lpVtbl = &DataCache_NDIUnknown_VTable;
   newObject->IPersistStorage_iface.lpVtbl = &DataCache_IPersistStorage_VTable;
   newObject->IViewObject2_iface.lpVtbl = &DataCache_IViewObject2_VTable;
   newObject->IOleCache2_iface.lpVtbl = &DataCache_IOleCache2_VTable;
   newObject->IOleCacheControl_iface.lpVtbl = &DataCache_IOleCacheControl_VTable;
   newObject->IAdviseSink_iface.lpVtbl = &DataCache_IAdviseSink_VTable;
-
-  /*
-   * Start with one reference count. The caller of this function
-   * must release the interface pointer when it is done.
-   */
+  newObject->outer_unk = pUnkOuter ? pUnkOuter : &newObject->IUnknown_inner;
   newObject->ref = 1;
-
-  /*
-   * Initialize the outer unknown
-   * We don't keep a reference on the outer unknown since, the way
-   * aggregation works, our lifetime is at least as large as its
-   * lifetime.
-   */
-  if (pUnkOuter==NULL)
-    pUnkOuter = &newObject->IUnknown_iface;
-
-  newObject->outerUnknown = pUnkOuter;
 
   /*
    * Initialize the other members of the structure.
@@ -2356,7 +2649,7 @@ HRESULT WINAPI CreateDataCache(
    * IUnknown pointer can be returned to the outside.
    */
   if ( pUnkOuter && !IsEqualIID(&IID_IUnknown, riid) )
-    return CLASS_E_NOAGGREGATION;
+    return E_INVALIDARG;
 
   /*
    * Try to construct a new instance of the class.
@@ -2367,16 +2660,8 @@ HRESULT WINAPI CreateDataCache(
   if (newCache == 0)
     return E_OUTOFMEMORY;
 
-  /*
-   * Make sure it supports the interface required by the caller.
-   */
-  hr = IUnknown_QueryInterface(&newCache->IUnknown_iface, riid, ppvObj);
-
-  /*
-   * Release the reference obtained in the constructor. If
-   * the QueryInterface was unsuccessful, it will free the class.
-   */
-  IUnknown_Release(&newCache->IUnknown_iface);
+  hr = IUnknown_QueryInterface(&newCache->IUnknown_inner, riid, ppvObj);
+  IUnknown_Release(&newCache->IUnknown_inner);
 
   return hr;
 }

@@ -13,7 +13,7 @@
 #include <debug.h>
 
 #define MODULE_INVOLVED_IN_ARM3
-#include "../ARM3/miarm.h"
+#include <mm/ARM3/miarm.h>
 
 /* GLOBALS *******************************************************************/
 
@@ -36,7 +36,7 @@ VOID
 NTAPI
 MmUnlockPageableImageSection(IN PVOID ImageSectionHandle)
 {
-    UNIMPLEMENTED;
+    static ULONG Warn; if (!Warn++) UNIMPLEMENTED;
 }
 
 /*
@@ -59,7 +59,7 @@ MmLockPageableDataSection(IN PVOID AddressWithinSection)
     //
     // We should just find the section and call MmLockPageableSectionByHandle
     //
-    static BOOLEAN Warn; if (!Warn++) UNIMPLEMENTED;
+    static ULONG Warn; if (!Warn++) UNIMPLEMENTED;
     return AddressWithinSection;
 }
 

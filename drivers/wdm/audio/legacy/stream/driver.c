@@ -50,6 +50,7 @@ StreamClassAddDevice(
     {
         /* Failed to attach */
         IoDeleteDevice(DeviceObject);
+        ExFreePool(ItemList);
         return STATUS_UNSUCCESSFUL;
     }
 
@@ -278,7 +279,7 @@ StreamClassDeviceNotification(
         return;
     }
 
-    UNIMPLEMENTED
+    UNIMPLEMENTED;
 }
 
 /*

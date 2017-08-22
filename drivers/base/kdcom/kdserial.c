@@ -3,13 +3,10 @@
  * PROJECT:         ReactOS kernel
  * FILE:            drivers/base/kddll/kdserial.c
  * PURPOSE:         Serial communication functions for the kernel debugger.
- * PROGRAMMER:      Timo Kreuzer (timo.kreuzer@ewactos.org)
+ * PROGRAMMER:      Timo Kreuzer (timo.kreuzer@reactos.org)
  */
 
 #include "kddll.h"
-
-#define NDEBUG
-#include <debug.h>
 
 /* FUNCTIONS ******************************************************************/
 
@@ -39,7 +36,7 @@ KdpSendBuffer(
  * \param Buffer Pointer to a buffer that receives the data.
  * \param Size Size of data to receive in bytes.
  * \return KDP_PACKET_RECEIVED if successful.
- *         KDP_PACKET_TIMEOUT if the receice timed out.
+ *         KDP_PACKET_TIMEOUT if the receive timed out.
  */
 KDP_STATUS
 NTAPI
@@ -67,7 +64,7 @@ KdpReceiveBuffer(
 
 /******************************************************************************
  * \name KdpReceivePacketLeader
- * \brief Receives a packet leadr from the KD port.
+ * \brief Receives a packet leader from the KD port.
  * \param PacketLeader Pointer to an ULONG that receives the packet leader.
  * \return KDP_PACKET_RECEIVED if successful.
  *         KDP_PACKET_TIMEOUT if the receive timed out.

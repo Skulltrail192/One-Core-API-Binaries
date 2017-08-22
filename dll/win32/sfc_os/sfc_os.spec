@@ -1,10 +1,10 @@
-1 stdcall -noname SfcInitPro(long wstr long long long long long ptr long)
-2 stdcall -noname SfcTerminateWatcherThread()
-3 stdcall -noname SfcConnectToServer(ptr)
-4 stdcall -noname SfcClose(ptr)
-5 stdcall -noname SfcFileException(long ptr long)
-6 stdcall -noname SfcInitiateScan(ptr long)
-7 stdcall -noname SfcInstallProtectedFiles(ptr wstr long long long ptr long)
+@ stub sfc_os_1
+@ stub sfc_os_2
+@ stub sfc_os_3
+@ stub sfc_os_4
+@ stdcall SfcFileException(long ptr long)
+@ stub sfc_os_6
+@ stub sfc_os_7
 @ stdcall SfcGetNextProtectedFile(ptr ptr)
 @ stdcall SfcIsFileProtected(ptr wstr)
 @ stdcall SfcIsKeyProtected(long wstr long)

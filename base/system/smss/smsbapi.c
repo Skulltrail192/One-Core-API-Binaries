@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS Windows-Compatible Session Manager
  * LICENSE:         BSD 2-Clause License
- * FILE:            base/system/smss/smss.c
+ * FILE:            base/system/smss/smsbapi.c
  * PURPOSE:         Main SMSS Code
  * PROGRAMMERS:     Alex Ionescu
  */
@@ -60,7 +60,7 @@ SmpSbCreateSession(IN PVOID Reserved,
     {
         NtClose(ProcessInformation->ProcessHandle);
         NtClose(ProcessInformation->ThreadHandle);
-        DbgPrint("SMSS: CreateSession status=%x\n", STATUS_OBJECT_NAME_NOT_FOUND);
+        DPRINT1("SMSS: CreateSession status=%x\n", STATUS_OBJECT_NAME_NOT_FOUND);
         return STATUS_OBJECT_NAME_NOT_FOUND;
     }
 
@@ -117,7 +117,7 @@ SmpSbCreateSession(IN PVOID Reserved,
             if (!NT_SUCCESS(Status))
             {
                 /* Bail out */
-                DbgPrint("SmpSbCreateSession: NtRequestWaitReply Failed %lx\n", Status);
+                DPRINT1("SmpSbCreateSession: NtRequestWaitReply Failed %lx\n", Status);
             }
             else
             {
@@ -131,7 +131,7 @@ SmpSbCreateSession(IN PVOID Reserved,
         else
         {
             /* Close the handles on failure */
-            DbgPrint("SmpSbCreateSession: NtDuplicateObject (Process) Failed %lx\n", Status);
+            DPRINT1("SmpSbCreateSession: NtDuplicateObject (Process) Failed %lx\n", Status);
             NtClose(ProcessInformation->ProcessHandle);
             NtClose(ProcessInformation->ThreadHandle);
         }
@@ -145,7 +145,7 @@ SmpSbCreateSession(IN PVOID Reserved,
     if (ProcessInformation->ImageInformation.SubSystemType != IMAGE_SUBSYSTEM_NATIVE)
     {
         /* Fail */
-        DbgPrint("SMSS: %s SubSystem has not been started.\n",
+        DPRINT1("SMSS: %s SubSystem has not been started.\n",
                 SmpSubSystemNames[ProcessInformation->ImageInformation.SubSystemType]);
         Status = STATUS_UNSUCCESSFUL;
         NtClose(ProcessInformation->ProcessHandle);
@@ -160,7 +160,7 @@ SmpSbCreateSession(IN PVOID Reserved,
         Process = RtlAllocateHeap(SmpHeap, SmBaseTag, sizeof(SMP_PROCESS));
         if (!Process)
         {
-            DbgPrint("Unable to initialize debugging for Native App %lx.%lx -- out of memory\n",
+            DPRINT1("Unable to initialize debugging for Native App %lx.%lx -- out of memory\n",
                     ProcessInformation->ClientId.UniqueProcess,
                     ProcessInformation->ClientId.UniqueThread);
             NtClose(ProcessInformation->ProcessHandle);
@@ -171,7 +171,7 @@ SmpSbCreateSession(IN PVOID Reserved,
         Process->DbgClientId = CreateSessionMsg->ClientId;
         Process->ClientId = ProcessInformation->ClientId;
         InsertHeadList(&NativeProcessList, &Process->Entry);
-        DbgPrint("Native Debug App %lx.%lx\n", Process->ClientId.UniqueProcess, Process->ClientId.UniqueThread);
+        DPRINT1("Native Debug App %lx.%lx\n", Process->ClientId.UniqueProcess, Process->ClientId.UniqueThread);
 
         Status = NtSetInformationProcess(ProcessInformation->ProcessHandle, 7, &SmpDebugPort, 4);
         ASSERT(NT_SUCCESS(Status));
@@ -179,7 +179,7 @@ SmpSbCreateSession(IN PVOID Reserved,
 #endif
 
     /* This is a native application being started as the initial command */
-    DbgPrint("Subsystem active, starting thread\n");
+    DPRINT("Subsystem active, starting thread\n");
     NtClose(ProcessInformation->ProcessHandle);
     NtResumeThread(ProcessInformation->ThreadHandle, NULL);
     NtClose(ProcessInformation->ThreadHandle);

@@ -1,4 +1,6 @@
 
+include_directories(${REACTOS_SOURCE_DIR}/sdk/lib/conutils)
+
 list(APPEND SOURCE
     active.c
     add.c
@@ -28,6 +30,7 @@ list(APPEND SOURCE
     merge.c
     offline.c
     online.c
+    partlist.c
     recover.c
     remove.c
     repair.c
@@ -42,9 +45,12 @@ list(APPEND SOURCE
 
 add_executable(diskpart ${SOURCE} diskpart.rc)
 set_module_type(diskpart win32cui UNICODE)
-add_importlibs(diskpart user32 msvcrt advapi32 kernel32)
+target_link_libraries(diskpart conutils ${PSEH_LIB})
+add_importlibs(diskpart advapi32 msvcrt kernel32 ntdll)
+
 if(MSVC)
-	add_importlibs(diskpart ntdll)
+    add_importlibs(diskpart ntdll)
 endif()
+
 add_pch(diskpart diskpart.h SOURCE)
 add_cd_file(TARGET diskpart DESTINATION reactos/system32 FOR all)

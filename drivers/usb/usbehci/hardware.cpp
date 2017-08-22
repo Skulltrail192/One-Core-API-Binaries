@@ -23,7 +23,7 @@ InterruptServiceRoutine(
 
 VOID
 NTAPI
-EhciDefferedRoutine(
+EhciDeferredRoutine(
     IN PKDPC Dpc,
     IN PVOID DeferredContext,
     IN PVOID SystemArgument1,
@@ -67,7 +67,7 @@ public:
 
     // friend function
     friend BOOLEAN NTAPI InterruptServiceRoutine(IN PKINTERRUPT  Interrupt, IN PVOID  ServiceContext);
-    friend VOID NTAPI EhciDefferedRoutine(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2);
+    friend VOID NTAPI EhciDeferredRoutine(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2);
     friend VOID NTAPI StatusChangeWorkItemRoutine(PVOID Context);
     // constructor / destructor
     CUSBHardwareDevice(IUnknown *OuterUnknown){}
@@ -183,7 +183,7 @@ CUSBHardwareDevice::Initialize(
     KeInitializeSpinLock(&m_Lock);
 
     //
-    // intialize status change work item
+    // initialize status change work item
     //
     ExInitializeWorkItem(&m_StatusChangeWorkItem, StatusChangeWorkItemRoutine, PVOID(this));
 
@@ -193,7 +193,7 @@ CUSBHardwareDevice::Initialize(
     Status = GetBusInterface(PhysicalDeviceObject, &m_BusInterface);
     if (!NT_SUCCESS(Status))
     {
-        DPRINT1("Failed to get BusInteface!\n");
+        DPRINT1("Failed to get BusInterface!\n");
         return Status;
     }
 
@@ -250,7 +250,7 @@ CUSBHardwareDevice::PrintCapabilities()
 {
     if (m_Capabilities.HCSParams.PortPowerControl)
     {
-        DPRINT1("Controler EHCI has Port Power Control\n");
+        DPRINT1("Controller EHCI has Port Power Control\n");
     }
 
     DPRINT1("Controller Port Routing Rules %lu\n", m_Capabilities.HCSParams.PortRouteRules);
@@ -316,7 +316,7 @@ CUSBHardwareDevice::PnpStart(
             case CmResourceTypeInterrupt:
             {
                 KeInitializeDpc(&m_IntDpcObject,
-                                EhciDefferedRoutine,
+                                EhciDeferredRoutine,
                                 this);
 
                 Status = IoConnectInterrupt(&m_Interrupt,
@@ -499,7 +499,7 @@ NTSTATUS
 STDMETHODCALLTYPE
 CUSBHardwareDevice::PnpStop(void)
 {
-    UNIMPLEMENTED
+    UNIMPLEMENTED;
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -578,7 +578,7 @@ CUSBHardwareDevice::StartController(void)
             //
             if ((Caps & EHCI_LEGSUP_BIOSOWNED))
             {
-                DPRINT1("[EHCI] Controller is BIOS owned, acquring control\n");
+                DPRINT1("[EHCI] Controller is BIOS owned, acquiring control\n");
 
                 //
                 // acquire ownership
@@ -614,7 +614,7 @@ CUSBHardwareDevice::StartController(void)
                 if ((Caps & EHCI_LEGSUP_BIOSOWNED))
                 {
                     //
-                    // failed to aquire ownership
+                    // failed to acquire ownership
                     //
                     DPRINT1("[EHCI] failed to acquire ownership\n");
                 }
@@ -627,7 +627,7 @@ CUSBHardwareDevice::StartController(void)
                 }
 #if 0
                 //
-                // explictly clear the bios owned flag 2.1.7
+                // explicitly clear the bios owned flag 2.1.7
                 //
                 Value = 0;
                 m_BusInterface.SetBusData(m_BusInterface.Context, PCI_WHICHSPACE_CONFIG, &Value, ExtendedCapsSupport+2, sizeof(UCHAR));
@@ -1171,7 +1171,7 @@ CUSBHardwareDevice::SetPortFeature(
             // enable port power
             //
             Value = EHCI_READ_REGISTER_ULONG(EHCI_PORTSC + (4 * PortId)) | EHCI_PRT_POWER;
-            EHCI_WRITE_REGISTER_ULONG(EHCI_PORTSC, Value);
+            EHCI_WRITE_REGISTER_ULONG(EHCI_PORTSC + (4 * PortId), Value);
 
             //
             // delay is 20 ms
@@ -1223,7 +1223,7 @@ ULONG
 STDMETHODCALLTYPE
 CUSBHardwareDevice::GetPeriodicListRegister()
 {
-    UNIMPLEMENTED
+    UNIMPLEMENTED;
     return NULL;
 }
 
@@ -1287,7 +1287,7 @@ InterruptServiceRoutine(
 }
 
 VOID NTAPI
-EhciDefferedRoutine(
+EhciDeferredRoutine(
     IN PKDPC Dpc,
     IN PVOID DeferredContext,
     IN PVOID SystemArgument1,
@@ -1301,7 +1301,7 @@ EhciDefferedRoutine(
     This = (CUSBHardwareDevice*) SystemArgument1;
     CStatus = (ULONG) SystemArgument2;
 
-    DPRINT("EhciDefferedRoutine CStatus %lx\n", CStatus);
+    DPRINT("EhciDeferredRoutine CStatus %lx\n", CStatus);
 
     //
     // check for completion of async schedule
@@ -1397,7 +1397,7 @@ EhciDefferedRoutine(
                     {
                         if (PortStatus & EHCI_PRT_ENABLED)
                         {
-                            DPRINT1("Misbeaving controller. Port should be disabled at this point\n");
+                            DPRINT1("Misbehaving controller. Port should be disabled at this point\n");
                         }
 
                         if (EHCI_IS_LOW_SPEED(PortStatus))

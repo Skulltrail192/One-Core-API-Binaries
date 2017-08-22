@@ -137,6 +137,7 @@ DriverEntry(
 /* The following hack to assign drive letters with a non-PnP storage stack */
 
 typedef struct _CLASS_DEVICE_INFO {
+  ULONG Signature;
   ULONG DeviceType;
   ULONG Partitions;
   ULONG DeviceNumber;
@@ -346,18 +347,21 @@ ScsiClassPlugPlay(
     IN PDEVICE_OBJECT DeviceObject,
     IN PIRP Irp)
 {
+    PCLASS_DEVICE_INFO DeviceInfo = DeviceObject->DeviceExtension;
     PIO_STACK_LOCATION IrpSp = IoGetCurrentIrpStackLocation(Irp);
 
     if (IrpSp->MinorFunction == IRP_MN_START_DEVICE)
     {
+        ASSERT(DeviceInfo->Signature == '2slc');
         IoSkipCurrentIrpStackLocation(Irp);
-        return STATUS_SUCCESS;
+        return IoCallDriver(DeviceInfo->LowerDevice, Irp);
     }
     else if (IrpSp->MinorFunction == IRP_MN_REMOVE_DEVICE)
     {
-        PCLASS_DEVICE_INFO DeviceInfo = DeviceObject->DeviceExtension;
-
+        ASSERT(DeviceInfo->Signature == '2slc');
         ScsiClassRemoveDriveLetter(DeviceInfo);
+
+        IoForwardIrpSynchronously(DeviceInfo->LowerDevice, Irp);
 
         Irp->IoStatus.Status = STATUS_SUCCESS;
         IoCompleteRequest(Irp, IO_NO_INCREMENT);
@@ -368,6 +372,12 @@ ScsiClassPlugPlay(
     }
     else
     {
+        if (DeviceInfo->Signature == '2slc')
+        {
+            IoSkipCurrentIrpStackLocation(Irp);
+            return IoCallDriver(DeviceInfo->LowerDevice, Irp);
+        }
+
         Irp->IoStatus.Status = STATUS_NOT_SUPPORTED;
         IoCompleteRequest(Irp, IO_NO_INCREMENT);
         return STATUS_NOT_SUPPORTED;
@@ -403,6 +413,7 @@ ScsiClassAddDevice(
 
         DeviceInfo = DeviceObject->DeviceExtension;
         RtlZeroMemory(DeviceInfo, sizeof(CLASS_DEVICE_INFO));
+        DeviceInfo->Signature = '2slc';
 
         /* Attach it to the PDO */
         DeviceInfo->LowerDevice = IoAttachDeviceToDeviceStack(DeviceObject, PhysicalDeviceObject);
@@ -624,6 +635,8 @@ Return Value:
 {
     PDEVICE_EXTENSION deviceExtension = DeviceObject->DeviceExtension;
 
+    ASSERT(*(PULONG)deviceExtension != '2slc');
+
     //
     // Invoke the device-specific routine, if one exists. Otherwise complete
     // with SUCCESS
@@ -677,6 +690,8 @@ Return Value:
     ULONG               transferByteCount = currentIrpStack->Parameters.Read.Length;
     ULONG               maximumTransferLength = deviceExtension->PortCapabilities->MaximumTransferLength;
     NTSTATUS            status;
+
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     if (DeviceObject->Flags & DO_VERIFY_VOLUME &&
         !(currentIrpStack->Flags & SL_OVERRIDE_VERIFY_VOLUME)) {
@@ -838,7 +853,7 @@ Routine Description:
 
     This routine builds and sends a request to the port driver to
     get a pointer to a structure that describes the adapter's
-    capabilities/limitations. This routine is sychronous.
+    capabilities/limitations. This routine is synchronous.
 
 Arguments:
 
@@ -1040,6 +1055,8 @@ Return Value:
     PREAD_CAPACITY_DATA readCapacityBuffer;
     SCSI_REQUEST_BLOCK  srb;
     NTSTATUS            status;
+
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     //
     // Allocate read capacity buffer from nonpaged pool.
@@ -1264,6 +1281,8 @@ Return Value:
     PSCSI_REQUEST_BLOCK srb;
     KIRQL currentIrql;
 
+    ASSERT(*(PULONG)deviceExtension != '2slc');
+
     //
     // Allocate context from nonpaged pool.
     //
@@ -1382,7 +1401,7 @@ StartUnit(
 Routine Description:
 
     Send command to SCSI unit to start or power up.
-    Because this command is issued asynchronounsly, that is, without
+    Because this command is issued asynchronously, that is, without
     waiting on it to complete, the IMMEDIATE flag is not set. This
     means that the CDB will not return until the drive has powered up.
     This should keep subsequent requests from being submitted to the
@@ -1408,6 +1427,8 @@ Return Value:
     PSCSI_REQUEST_BLOCK srb;
     PCOMPLETION_CONTEXT context;
     PCDB cdb;
+
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     //
     // Allocate Srb from nonpaged pool.
@@ -1516,7 +1537,7 @@ ScsiClassAsynchronousCompletion(
 Routine Description:
 
     This routine is called when an asynchronous I/O request
-    which was issused by the class driver completes.  Examples of such requests
+    which was issued by the class driver completes.  Examples of such requests
     are release queue or START UNIT. This routine releases the queue if
     necessary.  It then frees the context and the IRP.
 
@@ -1610,7 +1631,7 @@ Arguments:
 
     DeviceObject - Pointer to the class device object to be addressed.
 
-    Irp - Pointer to Irp the orginal request.
+    Irp - Pointer to Irp the original request.
 
 Return Value:
 
@@ -1632,6 +1653,8 @@ Return Value:
 
     DebugPrint((2, "ScsiClassSplitRequest: Requires %d IRPs\n", irpCount));
     DebugPrint((2, "ScsiClassSplitRequest: Original IRP %lx\n", Irp));
+
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     //
     // If all partial transfers complete successfully then the status and
@@ -1668,9 +1691,9 @@ Return Value:
             DebugPrint((1,"ScsiClassSplitRequest: Can't allocate Irp\n"));
 
             //
-            // If an Irp can't be allocated then the orginal request cannot
+            // If an Irp can't be allocated then the original request cannot
             // be executed.  If this is the first request then just fail the
-            // orginal request; otherwise just return.  When the pending
+            // original request; otherwise just return.  When the pending
             // requests complete, they will complete the original request.
             // In either case set the IRP status to failure.
             //
@@ -1816,6 +1839,8 @@ Return Value:
     PDEVICE_EXTENSION deviceExtension = DeviceObject->DeviceExtension;
     NTSTATUS status;
     BOOLEAN retry;
+
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     //
     // Check SRB status for success of completing request.
@@ -1968,6 +1993,8 @@ Return Value:
     LONG                irpCount;
     NTSTATUS            status;
     BOOLEAN             retry;
+
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     //
     // Check SRB status for success of completing request.
@@ -2190,6 +2217,8 @@ Return Value:
 
     PAGED_CODE();
 
+    ASSERT(*(PULONG)deviceExtension != '2slc');
+
     dummy.QuadPart = 0;
 
     //
@@ -2210,7 +2239,7 @@ Return Value:
     //
     // NOTICE:  The SCSI-II specification indicates that this field should be
     // zero; however, some target controllers ignore the logical unit number
-    // in the INDENTIFY message and only look at the logical unit number field
+    // in the IDENTIFY message and only look at the logical unit number field
     // in the CDB.
     //
 
@@ -2481,6 +2510,7 @@ Return Value:
     ULONG             i;
 #endif
 
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     //
     // Check that request sense buffer is valid.
@@ -3014,7 +3044,7 @@ Return Value:
         //
         // If the error count has exceeded the error limit, then disable
         // any tagged queuing, multiple requests per lu queueing
-        // and sychronous data transfers.
+        // and synchronous data transfers.
         //
 
         if (deviceExtension->ErrorCount == 4) {
@@ -3147,7 +3177,7 @@ Arguments:
 
     Srb - Supplies a Pointer to the SCSI request block to be retied.
 
-    Assocaiated - Indicates this is an assocatied Irp created by split request.
+    Associated - Indicates this is an associated Irp created by split request.
 
 Return Value:
 
@@ -3160,6 +3190,8 @@ Return Value:
     PIO_STACK_LOCATION currentIrpStack = IoGetCurrentIrpStackLocation(Irp);
     PIO_STACK_LOCATION nextIrpStack = IoGetNextIrpStackLocation(Irp);
     ULONG transferByteCount;
+
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     //
     // Determine the transfer count of the request.  If this is a read or a
@@ -3291,6 +3323,8 @@ Return Value:
     PCDB                cdb;
     ULONG               logicalBlockAddress;
     USHORT              transferBlocks;
+
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     //
     // Calculate relative sector address.
@@ -3497,7 +3531,7 @@ Arguments:
 
     Length - Supplies the length in bytes of the mode sense buffer.
 
-    PageMode - Supplies the page or pages of mode sense data to be retrived.
+    PageMode - Supplies the page or pages of mode sense data to be retrieved.
 
 Return Value:
 
@@ -3510,6 +3544,8 @@ Return Value:
     SCSI_REQUEST_BLOCK srb;
     ULONG retries = 1;
     NTSTATUS status;
+
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     RtlZeroMemory(&srb, sizeof(SCSI_REQUEST_BLOCK));
 
@@ -3660,9 +3696,9 @@ Routine Description:
     the port driver.
 
 Arguments:
-    DeviceObject - Supplies the device object for the orginal request.
+    DeviceObject - Supplies the device object for the original request.
 
-    Srb - Supplies a paritally build ScsiRequestBlock.  In particular, the
+    Srb - Supplies a partially built ScsiRequestBlock.  In particular, the
         CDB and the SRB timeout value must be filled in.  The SRB must not be
         allocated from zone.
 
@@ -3686,6 +3722,8 @@ Return Value:
     PIO_STACK_LOCATION irpStack;
 
     PAGED_CODE();
+
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     //
     // Write length to SRB.
@@ -3860,6 +3898,7 @@ Return Value:
 
     PDEVICE_EXTENSION deviceExtension = DeviceObject->DeviceExtension;
 
+    ASSERT(*(PULONG)deviceExtension != '2slc');
 
     //
     // Call the class specific driver DeviceControl routine.
@@ -3909,6 +3948,8 @@ Return Value:
     NTSTATUS status;
     ULONG modifiedIoControlCode;
 
+    ASSERT(*(PULONG)deviceExtension != '2slc');
+
     if (irpStack->Parameters.DeviceIoControl.IoControlCode ==
         IOCTL_STORAGE_RESET_DEVICE) {
 
@@ -3931,7 +3972,7 @@ Return Value:
         nextStack = IoGetNextIrpStackLocation(Irp);
 
         //
-        // Validiate the user buffer.
+        // Validate the user buffer.
         //
 
         if (irpStack->Parameters.DeviceIoControl.InputBufferLength < sizeof(SCSI_PASS_THROUGH)){
@@ -3952,9 +3993,9 @@ Return Value:
         scsiPass->Lun = deviceExtension->Lun;
 
         //
-        // NOTICE:  The SCSI-II specificaiton indicates that this field
+        // NOTICE:  The SCSI-II specification indicates that this field
         // should be zero; however, some target controllers ignore the logical
-        // unit number in the INDENTIFY message and only look at the logical
+        // unit number in the IDENTIFY message and only look at the logical
         // unit number field in the CDB.
         //
 
@@ -4456,6 +4497,8 @@ Return Value:
 {
     PDEVICE_EXTENSION deviceExtension = DeviceObject->DeviceExtension;
 
+    ASSERT(*(PULONG)deviceExtension != '2slc');
+
     if (deviceExtension->ClassShutdownFlush) {
 
         //
@@ -4608,6 +4651,8 @@ Return Value:
     } else {
 
         PDEVICE_EXTENSION deviceExtension = deviceObject->DeviceExtension;
+
+        ASSERT(*(PULONG)deviceExtension != '2slc');
 
         //
         // Fill in entry points
@@ -4781,7 +4826,7 @@ Return Value:
 
     if (Release) {
 
-        ObDereferenceObject(PortDeviceObject);
+        //ObDereferenceObject(PortDeviceObject);
         return STATUS_SUCCESS;
     }
 
@@ -4805,6 +4850,7 @@ Return Value:
 
         return status;
     }
+    ObDereferenceObject(srb.DataBuffer);
 
     //
     // Return the new port device object pointer.
@@ -4854,6 +4900,8 @@ Return Value:
     PDEVICE_EXTENSION deviceExtension = DeviceObject->DeviceExtension;
     PSCSI_REQUEST_BLOCK srb;
 
+    ASSERT(*(PULONG)deviceExtension != '2slc');
+
     //
     // Get a pointer to the SRB.
     //
@@ -4869,9 +4917,9 @@ Return Value:
     srb->Lun = deviceExtension->Lun;
 
     //
-    // NOTICE:  The SCSI-II specificaiton indicates that this field should be
+    // NOTICE:  The SCSI-II specification indicates that this field should be
     // zero; however, some target controllers ignore the logical unit number
-    // in the INDENTIFY message and only look at the logical unit number field
+    // in the IDENTIFY message and only look at the logical unit number field
     // in the CDB.
     //
 
@@ -5107,6 +5155,9 @@ Return Value:
     PDEVICE_EXTENSION physicalExtension =
                         deviceExtension->PhysicalDevice->DeviceExtension;
     PIRP originalIrp;
+
+    ASSERT(*(PULONG)deviceExtension != '2slc');
+    ASSERT(*(PULONG)physicalExtension != '2slc');
 
     originalIrp = irpStack->Parameters.Others.Argument1;
 

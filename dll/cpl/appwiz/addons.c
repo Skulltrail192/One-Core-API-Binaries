@@ -26,11 +26,11 @@
 
 #include <msi.h>
 
-#define GECKO_VERSION "2.24"
+#define GECKO_VERSION "2.40"
 
 #ifdef __i386__
 #define ARCH_STRING "x86"
-#define GECKO_SHA "f6984567b24fef7b0be79837e04d3a913af1a88c"
+#define GECKO_SHA "8a3adedf3707973d1ed4ac3b2e791486abf814bd"
 #else
 #define ARCH_STRING ""
 #define GECKO_SHA "???"
@@ -59,8 +59,9 @@ static const addon_info_t addons_info[] = {
 static const addon_info_t *addon;
 
 static HWND install_dialog = NULL;
+static IBinding *download_binding;
 
-static WCHAR GeckoUrl[] = L"http://svn.reactos.org/amine/wine_gecko-2.24-x86.msi";
+static WCHAR GeckoUrl[] = L"https://svn.reactos.org/amine/wine_gecko-2.40-x86.msi";
 
 /* SHA definitions are copied from advapi32. They aren't available in headers. */
 
@@ -259,6 +260,9 @@ static HRESULT WINAPI InstallCallback_OnStartBinding(IBindStatusCallback *iface,
         DWORD dwReserved, IBinding *pib)
 {
     set_status(IDS_DOWNLOADING);
+    IBinding_AddRef(pib);
+    download_binding = pib;
+
     return S_OK;
 }
 
@@ -290,8 +294,16 @@ static HRESULT WINAPI InstallCallback_OnProgress(IBindStatusCallback *iface, ULO
 static HRESULT WINAPI InstallCallback_OnStopBinding(IBindStatusCallback *iface,
         HRESULT hresult, LPCWSTR szError)
 {
+    if(download_binding) {
+        IBinding_Release(download_binding);
+        download_binding = NULL;
+    }
+
     if(FAILED(hresult)) {
-        ERR("Binding failed %08x\n", hresult);
+        if(hresult == E_ABORT)
+            TRACE("Binding aborted\n");
+        else
+            ERR("Binding failed %08x\n", hresult);
         return S_OK;
     }
 
@@ -350,16 +362,15 @@ static DWORD WINAPI download_proc(PVOID arg)
     hres = URLDownloadToFileW(NULL, GeckoUrl, tmp_file, 0, &InstallCallback);
     if(FAILED(hres)) {
         ERR("URLDownloadToFile failed: %08x\n", hres);
-        return 0;
-    }
+    } else {
+        if(sha_check(tmp_file)) {
+            install_file(tmp_file);
+        }else {
+            WCHAR message[256];
 
-    if(sha_check(tmp_file)) {
-        install_file(tmp_file);
-    }else {
-        WCHAR message[256];
-
-        if(LoadStringW(hApplet, IDS_INVALID_SHA, message, sizeof(message)/sizeof(WCHAR))) {
-            MessageBoxW(NULL, message, NULL, MB_ICONERROR);
+            if(LoadStringW(hApplet, IDS_INVALID_SHA, message, sizeof(message)/sizeof(WCHAR))) {
+                MessageBoxW(NULL, message, NULL, MB_ICONERROR);
+            }
         }
     }
 
@@ -382,13 +393,17 @@ static INT_PTR CALLBACK installer_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
     case WM_COMMAND:
         switch(wParam) {
         case IDCANCEL:
-            EndDialog(hwnd, 0);
+            if(download_binding) {
+                IBinding_Abort(download_binding);
+            }
+            else {
+                EndDialog(hwnd, 0);
+            }
             return FALSE;
 
         case ID_DWL_INSTALL:
             ShowWindow(GetDlgItem(hwnd, ID_DWL_PROGRESS), SW_SHOW);
             EnableWindow(GetDlgItem(hwnd, ID_DWL_INSTALL), 0);
-            EnableWindow(GetDlgItem(hwnd, IDCANCEL), 0); /* FIXME */
             CloseHandle( CreateThread(NULL, 0, download_proc, NULL, 0, NULL));
             return FALSE;
         }
@@ -397,7 +412,7 @@ static INT_PTR CALLBACK installer_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
     return FALSE;
 }
 
-BOOL install_addon(addon_t addon_type)
+BOOL install_addon(addon_t addon_type, HWND hwnd_parent)
 {
 
     if(!*ARCH_STRING)
@@ -411,7 +426,7 @@ BOOL install_addon(addon_t addon_type)
      * - download the package
      */
     if (install_from_registered_dir() == INSTALL_NEXT)
-        DialogBoxW(hApplet, addon->dialog_template, 0, installer_proc);
+        DialogBoxW(hApplet, addon->dialog_template, hwnd_parent, installer_proc);
 
     return TRUE;
 }

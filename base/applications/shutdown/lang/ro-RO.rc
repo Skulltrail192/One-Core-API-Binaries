@@ -4,21 +4,21 @@ LANGUAGE LANG_ROMANIAN, SUBLANG_NEUTRAL
 
 /* Dialog */
 IDD_GUI DIALOGEX 0, 0, 240, 255
-STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Închidere la distanță"
 FONT 8, "MS Shell Dlg"
 BEGIN
     DEFPUSHBUTTON "Con&firmă", IDC_OK, 125, 232, 50, 14
     PUSHBUTTON "A&nulează", IDC_CANCEL, 178, 232, 50, 14
-    LTEXT "&Calculatoare:", IDC_STATIC, 9, 9, 35, 36
+    LTEXT "C&alculatoare:", IDC_STATIC, 9, 9, 35, 36
     LISTBOX IDC_COMPUTER_LIST, 8, 19, 162, 55
-    PUSHBUTTON "&Adăugare…", IDC_ADD_SYSTEM, 179, 19, 50, 14
+    PUSHBUTTON "A&dăugare…", IDC_ADD_SYSTEM, 179, 19, 50, 14
     PUSHBUTTON "&Elimină", IDC_REMOVE_SYSTEM, 179, 36, 50, 14, WS_DISABLED
-    PUSHBUTTON "&Specificare…", IDC_BROWSE_SYSTEM, 179, 53, 50, 14
+    PUSHBUTTON "Spe&cificare…", IDC_BROWSE_SYSTEM, 179, 53, 50, 14
     LTEXT "Acțiune", IDC_ACTION, 11, 81, 20, 14
     COMBOBOX IDC_ACTION_TYPE, 37, 79, 129, 14, WS_TABSTOP | CBS_DROPDOWN
-    CHECKBOX "Avertizează utilizatorii", IDC_WARN_USERS, 175, 79, 55, 14, BS_AUTOCHECKBOX | WS_TABSTOP
-    LTEXT "Fișați avertisment pentru", IDC_SHOW_WARN_ONE, 11, 99, 65, 14
+    CHECKBOX "A&vertizează utilizatorii", IDC_WARN_USERS, 175, 79, 55, 14, BS_AUTOCHECKBOX | WS_TABSTOP
+    LTEXT "Avertismente afișate pentru", IDC_SHOW_WARN_ONE, 11, 99, 65, 14
     EDITTEXT IDC_SHOW_WARN, 78, 97, 41, 14
     LTEXT "secunde", IDC_SHOW_WARN_TWO, 124, 99, 32, 10
     GROUPBOX "Jurnal de evenimente-închideri", IDC_STATIC, 5, 114, 224, 114
@@ -37,7 +37,7 @@ BEGIN
 Utilizare: shutdown [/?] [/i | /l | /s | /r | /g | /a | /p | /h | /e] [/f]\n\
            [/m \\\\calculator][/t xxx][/d [p|u:]xx:yy [/c «comentariu»]]\n\
 \n\
-    Fără argumente sau /?    Se afișează acest manual.\n\
+    Fără argumente sau /?    Este afișat acest manual.\n\
     /i      Afișarea interfeței grafice de utilizator (GUI). Această\n\
             opțiune trebuie să preceadă.\n\
     /l      Desautentificare locală. Nu poate fi utilizată cu /m sau /d.\n\
@@ -68,7 +68,7 @@ Utilizare: shutdown [/?] [/i | /l | /s | /r | /g | /a | /p | /h | /e] [/f]\n\
             xx este codul pentru motivul major (întreg pozitiv sub 256).\n\
             yy este codul pentru motivul minor (întreg pozitiv sub 65536).\n"
 
-    IDS_ERROR_SHUTDOWN_REBOOT "Eroare: Nu se poate închide și reporni în același timp.\n"
+    IDS_ERROR_SHUTDOWN_REBOOT "Eroare: Închiderea și repornirea nu pot fi în același timp.\n"
     IDS_ERROR_TIMEOUT "Eroare: Valoarea %u a cronometrului este în afara limitelor valide (0-315360000).\n"
     IDS_ERROR_ABORT "Eroare: Închiderea sistemului nu poate fi anulată.\n"
     IDS_ERROR_LOGOFF "Eroare: Deautentificarea din sistem nu poate fi executată.\n"
@@ -79,7 +79,7 @@ Utilizare: shutdown [/?] [/i | /l | /s | /r | /g | /a | /p | /h | /e] [/f]\n\
     IDS_ERROR_HIBERNATE_LOCAL "Eroare: Hibernarea nu poate fi comandată la distanță.\n"
     IDS_ERROR_HIBERNATE_ENABLED "Eroare: Modul de hibernare nu este activat.\n"
     IDS_ERROR_DIALOG_CAPTION "Închidere la distanță"
-    IDS_ERROR_DIALOG_INIT "Nu se poate afișa interfața grafică de utilizator."
+    IDS_ERROR_DIALOG_INIT "Interfața grafică de utilizator nu a putut fi afișată."
 END
 
 /* Remote shutdown action strings */

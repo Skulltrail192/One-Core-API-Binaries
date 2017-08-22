@@ -554,6 +554,7 @@ IopMountVolume(IN PDEVICE_OBJECT DeviceObject,
                 (ListEntry->Flink != FsList))
             {
                 /* Then skip this entry */
+                ListEntry = ListEntry->Flink;
                 continue;
             }
 
@@ -1365,7 +1366,7 @@ IoVolumeDeviceToDosName(IN PVOID VolumeDeviceObject,
      * name lengths than MAXUSHORT, we can't use
      * them, because we have to return this in an UNICODE_STRING
      * that stores length on USHORT.
-     */ 
+     */
     Length = VolumePath.MultiSzLength + sizeof(VolumePath);
     if (Length > MAXUSHORT)
     {

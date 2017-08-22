@@ -1,5 +1,6 @@
 /*
  * Copyright 2007 Juan Lang
+ * Copyright 2016 Mark Jansen
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -199,6 +200,195 @@ static DWORD SOFTPUB_GetMessageFromFile(CRYPT_PROVIDER_DATA *data, HANDLE file,
     return err;
 }
 
+/* See https://www.cs.auckland.ac.nz/~pgut001/pubs/authenticode.txt
+ * for details about the hashing.
+ */
+static BOOL SOFTPUB_HashPEFile(HANDLE file, HCRYPTHASH hash)
+{
+    DWORD pos, checksum, security_dir;
+    IMAGE_DOS_HEADER dos_header;
+    union
+    {
+        IMAGE_NT_HEADERS32 nt32;
+        IMAGE_NT_HEADERS64 nt64;
+    } nt_header;
+    IMAGE_DATA_DIRECTORY secdir;
+    LARGE_INTEGER file_size;
+    DWORD bytes_read;
+    BYTE buffer[1024];
+    BOOL ret;
+
+    if (!GetFileSizeEx(file, &file_size))
+        return FALSE;
+
+    SetFilePointer(file, 0, NULL, FILE_BEGIN);
+    ret = ReadFile(file, &dos_header, sizeof(dos_header), &bytes_read, NULL);
+    if (!ret || bytes_read != sizeof(dos_header))
+        return FALSE;
+
+    if (dos_header.e_magic != IMAGE_DOS_SIGNATURE)
+    {
+        ERR("Unrecognized IMAGE_DOS_HEADER magic %04x\n", dos_header.e_magic);
+        return FALSE;
+    }
+    if (dos_header.e_lfanew >= 256 * 1024 * 1024) /* see RtlImageNtHeaderEx */
+        return FALSE;
+    if (dos_header.e_lfanew + FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader.MajorLinkerVersion) > file_size.QuadPart)
+        return FALSE;
+
+    SetFilePointer(file, dos_header.e_lfanew, NULL, FILE_BEGIN);
+    ret = ReadFile(file, &nt_header, sizeof(nt_header), &bytes_read, NULL);
+    if (!ret || bytes_read < FIELD_OFFSET(IMAGE_NT_HEADERS32, OptionalHeader.Magic) +
+                             sizeof(nt_header.nt32.OptionalHeader.Magic))
+        return FALSE;
+
+    if (nt_header.nt32.Signature != IMAGE_NT_SIGNATURE)
+    {
+        ERR("Unrecognized IMAGE_NT_HEADERS signature %08x\n", nt_header.nt32.Signature);
+        return FALSE;
+    }
+
+    if (nt_header.nt32.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
+    {
+        if (bytes_read < sizeof(nt_header.nt32))
+            return FALSE;
+
+        checksum     = dos_header.e_lfanew + FIELD_OFFSET(IMAGE_NT_HEADERS32, OptionalHeader.CheckSum);
+        security_dir = dos_header.e_lfanew + FIELD_OFFSET(IMAGE_NT_HEADERS32, OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]);
+        secdir       = nt_header.nt32.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY];
+    }
+    else if (nt_header.nt32.OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+    {
+        if (bytes_read < sizeof(nt_header.nt64))
+            return FALSE;
+
+        checksum     = dos_header.e_lfanew + FIELD_OFFSET(IMAGE_NT_HEADERS64, OptionalHeader.CheckSum);
+        security_dir = dos_header.e_lfanew + FIELD_OFFSET(IMAGE_NT_HEADERS64, OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY]);
+        secdir       = nt_header.nt64.OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY];
+    }
+    else
+    {
+        ERR("Unrecognized OptionalHeader magic %04x\n", nt_header.nt32.OptionalHeader.Magic);
+        return FALSE;
+    }
+
+    if (secdir.VirtualAddress < security_dir + sizeof(IMAGE_DATA_DIRECTORY))
+        return FALSE;
+    if (secdir.VirtualAddress > file_size.QuadPart)
+        return FALSE;
+    if (secdir.VirtualAddress + secdir.Size != file_size.QuadPart)
+        return FALSE;
+
+    /* Hash until checksum. */
+    SetFilePointer(file, 0, NULL, FILE_BEGIN);
+    for (pos = 0; pos < checksum; pos += bytes_read)
+    {
+        ret = ReadFile(file, buffer, min(sizeof(buffer), checksum - pos), &bytes_read, NULL);
+        if (!ret || !bytes_read)
+            return FALSE;
+        if (!CryptHashData(hash, buffer, bytes_read, 0))
+            return FALSE;
+    }
+
+    /* Hash until the DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY] entry. */
+    checksum += sizeof(DWORD);
+    SetFilePointer(file, checksum, NULL, FILE_BEGIN);
+    for (pos = checksum; pos < security_dir; pos += bytes_read)
+    {
+        ret = ReadFile(file, buffer, min(sizeof(buffer), security_dir - pos), &bytes_read, NULL);
+        if (!ret || !bytes_read)
+            return FALSE;
+        if (!CryptHashData(hash, buffer, bytes_read, 0))
+            return FALSE;
+    }
+
+    /* Hash until the end of the file. */
+    security_dir += sizeof(IMAGE_DATA_DIRECTORY);
+    SetFilePointer(file, security_dir, NULL, FILE_BEGIN);
+    for (pos = security_dir; pos < secdir.VirtualAddress; pos += bytes_read)
+    {
+        ret = ReadFile(file, buffer, min(sizeof(buffer), secdir.VirtualAddress - pos), &bytes_read, NULL);
+        if (!ret || !bytes_read)
+            return FALSE;
+        if (!CryptHashData(hash, buffer, bytes_read, 0))
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+static DWORD SOFTPUB_VerifyImageHash(CRYPT_PROVIDER_DATA *data, HANDLE file)
+{
+    SPC_INDIRECT_DATA_CONTENT *indirect = (SPC_INDIRECT_DATA_CONTENT *)data->u.pPDSip->psIndirectData;
+    DWORD err, hash_size, length;
+    BYTE *hash_data;
+    BOOL release_prov = FALSE;
+    HCRYPTPROV prov = data->hProv;
+    HCRYPTHASH hash = 0;
+    ALG_ID algID;
+
+    if (((ULONG_PTR)indirect->Data.pszObjId >> 16) == 0 ||
+        strcmp(indirect->Data.pszObjId, SPC_PE_IMAGE_DATA_OBJID))
+    {
+        FIXME("Cannot verify hash for pszObjId=%s\n", debugstr_a(indirect->Data.pszObjId));
+        return ERROR_SUCCESS;
+    }
+
+    if (!(algID = CertOIDToAlgId(indirect->DigestAlgorithm.pszObjId)))
+        return TRUST_E_SYSTEM_ERROR; /* FIXME */
+
+    if (!prov)
+    {
+        if (!CryptAcquireContextW(&prov, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
+            return GetLastError();
+        release_prov = TRUE;
+    }
+
+    if (!CryptCreateHash(prov, algID, 0, 0, &hash))
+    {
+        err = GetLastError();
+        goto done;
+    }
+
+    if (!SOFTPUB_HashPEFile(file, hash))
+    {
+        err = TRUST_E_NOSIGNATURE;
+        goto done;
+    }
+
+    length = sizeof(hash_size);
+    if (!CryptGetHashParam(hash, HP_HASHSIZE, (BYTE *)&hash_size, &length, 0))
+    {
+        err = GetLastError();
+        goto done;
+    }
+
+    if (!(hash_data = data->psPfns->pfnAlloc(hash_size)))
+    {
+        err = ERROR_OUTOFMEMORY;
+        goto done;
+    }
+
+    if (!CryptGetHashParam(hash, HP_HASHVAL, hash_data, &hash_size, 0))
+    {
+        err = GetLastError();
+        data->psPfns->pfnFree(hash_data);
+        goto done;
+    }
+
+    err = (hash_size == indirect->Digest.cbData &&
+           !memcmp(hash_data, indirect->Digest.pbData, hash_size)) ? S_OK : TRUST_E_BAD_DIGEST;
+    data->psPfns->pfnFree(hash_data);
+
+done:
+    if (hash)
+        CryptDestroyHash(hash);
+    if (release_prov)
+        CryptReleaseContext(prov, 0);
+    return err;
+}
+
+
 static DWORD SOFTPUB_CreateStoreFromMessage(CRYPT_PROVIDER_DATA *data)
 {
     DWORD err = ERROR_SUCCESS;
@@ -362,6 +552,9 @@ static DWORD SOFTPUB_LoadFileMessage(CRYPT_PROVIDER_DATA *data)
     if (err)
         goto error;
     err = SOFTPUB_DecodeInnerContent(data);
+    if (err)
+        goto error;
+    err = SOFTPUB_VerifyImageHash(data, data->pWintrustData->u.pFile->hFile);
 
 error:
     if (err && data->fOpenedFile && data->pWintrustData->u.pFile)
@@ -1200,7 +1393,11 @@ HRESULT WINAPI SoftpubCleanup(CRYPT_PROVIDER_DATA *data)
     if (data->fOpenedFile &&
      data->pWintrustData->dwUnionChoice == WTD_CHOICE_FILE &&
      data->pWintrustData->u.pFile)
+    {
         CloseHandle(data->pWintrustData->u.pFile->hFile);
+        data->pWintrustData->u.pFile->hFile = INVALID_HANDLE_VALUE;
+        data->fOpenedFile = FALSE;
+    }
 
     return S_OK;
 }

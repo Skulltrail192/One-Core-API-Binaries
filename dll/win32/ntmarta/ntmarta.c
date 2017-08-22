@@ -252,7 +252,7 @@ AccpGetTrusteeObjects(IN PTRUSTEE_W Trustee,
                 *pObjectTypeGuid = pOas->ObjectTypeGuid;
 
             if (pInheritedObjectTypeGuid != NULL && pOas->ObjectsPresent & ACE_INHERITED_OBJECT_TYPE_PRESENT)
-                *pObjectTypeGuid = pOas->InheritedObjectTypeGuid;
+                *pInheritedObjectTypeGuid = pOas->InheritedObjectTypeGuid;
 
             Ret = pOas->ObjectsPresent;
             break;
@@ -444,6 +444,51 @@ AccpGetTrusteeName(IN PTRUSTEE_W Trustee)
 }
 
 static DWORD
+AccpLookupCurrentUser(OUT PSID *ppSid)
+{
+    DWORD Ret;
+    CHAR Buffer[sizeof(TOKEN_USER) + sizeof(SID) + sizeof(DWORD)*SID_MAX_SUB_AUTHORITIES];
+    DWORD Length;
+    HANDLE Token;
+    PSID pSid;
+
+    *ppSid = NULL;
+    if (!OpenThreadToken(GetCurrentThread(), TOKEN_READ, TRUE, &Token))
+    {
+        Ret = GetLastError();
+        if (Ret != ERROR_NO_TOKEN)
+        {
+            return Ret;
+        }
+
+        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_READ, &Token))
+        {
+            return GetLastError();
+        }
+    }
+
+    Length = sizeof(Buffer);
+    if (!GetTokenInformation(Token, TokenUser, Buffer, Length, &Length))
+    {
+        Ret = GetLastError();
+        CloseHandle(Token);
+        return Ret;
+    }
+    CloseHandle(Token);
+
+    pSid = ((PTOKEN_USER)Buffer)->User.Sid;
+    Length = GetLengthSid(pSid);
+    *ppSid = LocalAlloc(LMEM_FIXED, Length);
+    if (!*ppSid)
+    {
+        return ERROR_NOT_ENOUGH_MEMORY;
+    }
+    CopyMemory(*ppSid, pSid, Length);
+
+    return ERROR_SUCCESS;
+}
+
+static DWORD
 AccpLookupSidByName(IN LSA_HANDLE PolicyHandle,
                     IN LPWSTR Name,
                     OUT PSID *pSid)
@@ -509,15 +554,19 @@ AccpGetTrusteeSid(IN PTRUSTEE_W Trustee,
                   OUT BOOL *Allocated)
 {
     DWORD Ret = ERROR_SUCCESS;
+    LPWSTR TrusteeName;
 
     *ppSid = NULL;
     *Allocated = FALSE;
 
+    /* Windows ignores this */
+#if 0
     if (Trustee->pMultipleTrustee || Trustee->MultipleTrusteeOperation != NO_MULTIPLE_TRUSTEE)
     {
         /* This is currently not supported */
         return ERROR_INVALID_PARAMETER;
     }
+#endif
 
     switch (Trustee->TrusteeForm)
     {
@@ -532,6 +581,18 @@ AccpGetTrusteeSid(IN PTRUSTEE_W Trustee,
             /* fall through */
 
         case TRUSTEE_IS_NAME:
+            TrusteeName = AccpGetTrusteeName(Trustee);
+            if (!wcscmp(TrusteeName, L"CURRENT_USER"))
+            {
+                Ret = AccpLookupCurrentUser(ppSid);
+                if (Ret == ERROR_SUCCESS)
+                {
+                    ASSERT(*ppSid != NULL);
+                    *Allocated = TRUE;
+                }
+                break;
+            }
+
             if (*pPolicyHandle == NULL)
             {
                 Ret = AccpOpenLSAPolicyHandle(NULL, /* FIXME - always local? */
@@ -544,7 +605,7 @@ AccpGetTrusteeSid(IN PTRUSTEE_W Trustee,
             }
 
             Ret = AccpLookupSidByName(*pPolicyHandle,
-                                      AccpGetTrusteeName(Trustee),
+                                      TrusteeName,
                                       ppSid);
             if (Ret == ERROR_SUCCESS)
             {
@@ -705,7 +766,7 @@ AccRewriteGetHandleRights(HANDLE handle,
 
         if (SecurityInfo & GROUP_SECURITY_INFORMATION && ppsidGroup != NULL)
         {
-            *ppsidOwner = NULL;
+            *ppsidGroup = NULL;
             if (!GetSecurityDescriptorGroup(pSD,
                                             ppsidGroup,
                                             &Defaulted))
@@ -1068,7 +1129,9 @@ ParseRegErr:
                                              (DWORD)DesiredAccess);
             if (*Handle2 == NULL)
             {
-                goto FailOpenService;
+                Ret = GetLastError();
+                ASSERT(Ret != ERROR_SUCCESS);
+                goto Cleanup;
             }
 
             DesiredAccess &= ~SC_MANAGER_CONNECT;
@@ -1077,13 +1140,11 @@ ParseRegErr:
                                           (DWORD)DesiredAccess);
             if (*Handle == NULL)
             {
-                if (*Handle2 != NULL)
-                {
-                    CloseServiceHandle((SC_HANDLE)(*Handle2));
-                }
-
-FailOpenService:
                 Ret = GetLastError();
+                ASSERT(Ret != ERROR_SUCCESS);
+                ASSERT(*Handle2 != NULL);
+                CloseServiceHandle((SC_HANDLE)(*Handle2));
+
                 goto Cleanup;
             }
             break;
@@ -1114,7 +1175,7 @@ AccpCloseObjectHandle(SE_OBJECT_TYPE ObjectType,
 {
     ASSERT(Handle != NULL);
 
-    /* close allocated handlees depending on the object type */
+    /* close allocated handles depending on the object type */
     switch (ObjectType)
     {
         case SE_REGISTRY_KEY:

@@ -10,12 +10,14 @@ endif()
 list(APPEND ACPICA_SOURCE
     acpica/dispatcher/dsargs.c
     acpica/dispatcher/dscontrol.c
+    acpica/dispatcher/dsdebug.c
     acpica/dispatcher/dsfield.c
     acpica/dispatcher/dsinit.c
     acpica/dispatcher/dsmethod.c
     acpica/dispatcher/dsmthdat.c
     acpica/dispatcher/dsobject.c
     acpica/dispatcher/dsopcode.c
+    acpica/dispatcher/dspkginit.c
     acpica/dispatcher/dsutils.c
     acpica/dispatcher/dswexec.c
     acpica/dispatcher/dswload.c
@@ -37,6 +39,7 @@ list(APPEND ACPICA_SOURCE
     acpica/events/evxfevnt.c
     acpica/events/evxfgpe.c
     acpica/events/evxfregn.c
+    acpica/executer/exconcat.c
     acpica/executer/exconfig.c
     acpica/executer/exconvrt.c
     acpica/executer/excreate.c
@@ -60,6 +63,7 @@ list(APPEND ACPICA_SOURCE
     acpica/executer/exstoren.c
     acpica/executer/exstorob.c
     acpica/executer/exsystem.c
+    acpica/executer/extrace.c
     acpica/executer/exutils.c
     acpica/hardware/hwacpi.c
     acpica/hardware/hwesleep.c
@@ -129,28 +133,36 @@ list(APPEND ACPICA_SOURCE
     acpica/tables/tbxfroot.c
     acpica/utilities/utaddress.c
     acpica/utilities/utalloc.c
+    acpica/utilities/utascii.c
     acpica/utilities/utbuffer.c
     acpica/utilities/utcache.c
-    acpica/utilities/utclib.c
+    # acpica/utilities/utclib.c
     acpica/utilities/utcopy.c
-    acpica/utilities/utdebug.c
+    # acpica/utilities/utdebug.c
     acpica/utilities/utdecode.c
     acpica/utilities/utdelete.c
     acpica/utilities/uterror.c
     acpica/utilities/uteval.c
+    # acpica/utilities/utfileio.c
+    acpica/utilities/uthex.c
     acpica/utilities/utids.c
     acpica/utilities/utinit.c
     acpica/utilities/utlock.c
     acpica/utilities/utmath.c
     acpica/utilities/utmisc.c
     acpica/utilities/utmutex.c
+    acpica/utilities/utnonansi.c
     acpica/utilities/utobject.c
     acpica/utilities/utosi.c
     acpica/utilities/utownerid.c
     acpica/utilities/utpredef.c
+    # acpica/utilities/utprint.c
+    # acpica/utilities/utresdecode.c
     acpica/utilities/utresrc.c
     acpica/utilities/utstate.c
     acpica/utilities/utstring.c
+    acpica/utilities/utstrtoul64.c
+    # acpica/utilities/utuuid.c
     acpica/utilities/uttrack.c
     acpica/utilities/utxface.c
     acpica/utilities/utxferror.c
@@ -164,8 +176,8 @@ add_library(acpica
     acpica/utilities/utglobal.c)
 
 add_pch(acpica acpica/include/acpi.h ACPICA_SOURCE)
-set_target_properties(acpica PROPERTIES COMPILE_DEFINITIONS "ACPI_USE_LOCAL_CACHE")
-add_dependencies(acpica bugcodes)
+set_target_properties(acpica PROPERTIES COMPILE_DEFINITIONS "ACPI_USE_LOCAL_CACHE;ACPI_USE_SYSTEM_INTTYPES")
+add_dependencies(acpica bugcodes xdk)
 
 list(APPEND ACPI_SOURCE
     busmgr/bus.c
@@ -185,7 +197,7 @@ list(APPEND ACPI_SOURCE
 
 add_library(acpi SHARED ${ACPI_SOURCE})
 set_module_type(acpi kernelmodedriver)
-target_link_libraries(acpi wdmguid acpica ${PSEH_LIB})
+target_link_libraries(acpi wdmguid acpica memcmp strtol ${PSEH_LIB})
 add_importlibs(acpi ntoskrnl hal)
 add_pch(acpi precomp.h ACPI_SOURCE)
 add_cd_file(TARGET acpi DESTINATION reactos/system32/drivers NO_CAB FOR all)

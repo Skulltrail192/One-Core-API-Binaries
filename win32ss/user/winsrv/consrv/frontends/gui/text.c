@@ -44,7 +44,7 @@ CopyBlock(PTEXTMODE_SCREEN_BUFFER Buffer,
      * Pressing the Shift key while copying text, allows us to copy
      * text without newline characters (inline-text copy mode).
      */
-    BOOL InlineCopyMode = !!(GetKeyState(VK_SHIFT) & 0x8000);
+    BOOL InlineCopyMode = !!(GetKeyState(VK_SHIFT) & KEY_PRESSED);
 
     HANDLE hData;
     PCHAR_INFO ptr;
@@ -80,7 +80,7 @@ CopyBlock(PTEXTMODE_SCREEN_BUFFER Buffer,
         DPRINT1("This case must never happen, because selHeight is at least == 1\n");
     }
 
-    size += 1; /* Null-termination */
+    size++; /* Null-termination */
     size *= sizeof(WCHAR);
 
     /* Allocate some memory area to be given to the clipboard, so it will not be freed here */
@@ -199,7 +199,7 @@ CopyLines(PTEXTMODE_SCREEN_BUFFER Buffer,
      * array, because of the way things are stored inside it. The downside is
      * that it makes the code more complicated.
      */
-    for (yPos = Begin->Y; (yPos <= End->Y) && (NumChars > 0); yPos++)
+    for (yPos = Begin->Y; (yPos <= (ULONG)End->Y) && (NumChars > 0); yPos++)
     {
         xBeg = (yPos == Begin->Y ? Begin->X : 0);
         xEnd = (yPos ==   End->Y ?   End->X : Buffer->ScreenBufferSize.X - 1);
@@ -304,8 +304,14 @@ GuiPasteToTextModeBuffer(PTEXTMODE_SCREEN_BUFFER Buffer,
         VkKey = VkKeyScanW(CurChar);
         if (VkKey == 0xFFFF)
         {
-            DPRINT1("VkKeyScanW failed - Should simulate the key...\n");
-            continue;
+            DPRINT1("FIXME: TODO: VkKeyScanW failed - Should simulate the key!\n");
+            /*
+             * We don't really need the scan/key code because we actually only
+             * use the UnicodeChar for output purposes. It may pose few problems
+             * later on but it's not of big importance. One trick would be to
+             * convert the character to OEM / multibyte and use MapVirtualKey
+             * on each byte (simulating an Alt-0xxx OEM keyboard press).
+             */
         }
 
         /* Pressing some control keys */
@@ -313,7 +319,7 @@ GuiPasteToTextModeBuffer(PTEXTMODE_SCREEN_BUFFER Buffer,
         /* Pressing the character key, with the control keys maintained pressed */
         er.Event.KeyEvent.bKeyDown = TRUE;
         er.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKey);
-        er.Event.KeyEvent.wVirtualScanCode = MapVirtualKeyW(LOBYTE(VkKey), MAPVK_VK_TO_CHAR);
+        er.Event.KeyEvent.wVirtualScanCode = MapVirtualKeyW(LOBYTE(VkKey), MAPVK_VK_TO_VSC);
         er.Event.KeyEvent.uChar.UnicodeChar = CurChar;
         er.Event.KeyEvent.dwControlKeyState = 0;
         if (HIBYTE(VkKey) & 1)
@@ -354,7 +360,7 @@ GuiPaintTextModeBuffer(PTEXTMODE_SCREEN_BUFFER Buffer,
 
     if (Buffer->Buffer == NULL) return;
 
-    if (!ConDrvValidateConsoleUnsafe(Console, CONSOLE_RUNNING, TRUE)) return;
+    if (!ConDrvValidateConsoleUnsafe((PCONSOLE)Console, CONSOLE_RUNNING, TRUE)) return;
 
     rcFramebuffer->left   = Buffer->ViewOrigin.X * GuiData->CharWidth  + rcView->left;
     rcFramebuffer->top    = Buffer->ViewOrigin.Y * GuiData->CharHeight + rcView->top;
@@ -366,8 +372,8 @@ GuiPaintTextModeBuffer(PTEXTMODE_SCREEN_BUFFER Buffer,
     RightChar  = rcFramebuffer->right  / GuiData->CharWidth;
     BottomLine = rcFramebuffer->bottom / GuiData->CharHeight;
 
-    if (RightChar  >= Buffer->ScreenBufferSize.X) RightChar  = Buffer->ScreenBufferSize.X - 1;
-    if (BottomLine >= Buffer->ScreenBufferSize.Y) BottomLine = Buffer->ScreenBufferSize.Y - 1;
+    if (RightChar  >= (ULONG)Buffer->ScreenBufferSize.X) RightChar  = Buffer->ScreenBufferSize.X - 1;
+    if (BottomLine >= (ULONG)Buffer->ScreenBufferSize.Y) BottomLine = Buffer->ScreenBufferSize.Y - 1;
 
     LastAttribute = ConioCoordToPointer(Buffer, LeftChar, TopLine)->Attributes;
 

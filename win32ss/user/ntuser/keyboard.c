@@ -15,6 +15,8 @@ static BYTE gafAsyncKeyStateRecentDown[256 / 8]; // 1 bit per key
 static PKEYBOARD_INDICATOR_TRANSLATION gpKeyboardIndicatorTrans = NULL;
 static KEYBOARD_INDICATOR_PARAMETERS gIndicators = {0, 0};
 KEYBOARD_ATTRIBUTES gKeyboardInfo;
+int gLanguageToggleKeyState = 0;
+DWORD gdwLanguageToggleKey = 0;
 
 /* FUNCTIONS *****************************************************************/
 
@@ -170,12 +172,16 @@ UserInitKeyboard(HANDLE hKeyboardDevice)
                                    &Block,
                                    IOCTL_KEYBOARD_QUERY_INDICATORS,
                                    NULL, 0,
-                                   &gIndicators, sizeof(gIndicators));
+                                   &gIndicators,
+                                   sizeof(gIndicators));
 
     if (!NT_SUCCESS(Status))
     {
         WARN("NtDeviceIoControlFile() failed, ignored\n");
+        gIndicators.LedFlags = 0;
+        gIndicators.UnitId = 0;
     }
+
     SET_KEY_LOCKED(gafAsyncKeyState, VK_CAPITAL,
                    gIndicators.LedFlags & KEYBOARD_CAPS_LOCK_ON);
     SET_KEY_LOCKED(gafAsyncKeyState, VK_NUMLOCK,
@@ -197,7 +203,7 @@ UserInitKeyboard(HANDLE hKeyboardDevice)
     {
         ERR("NtDeviceIoControlFile() failed, ignored\n");
     }
-    ERR("Keyboard type %d, subtype %d and number of func keys %d\n",
+    TRACE("Keyboard type %u, subtype %u and number of func keys %u\n",
              gKeyboardInfo.KeyboardIdentifier.Type,
              gKeyboardInfo.KeyboardIdentifier.Subtype,
              gKeyboardInfo.NumberOfFunctionKeys);
@@ -815,12 +821,12 @@ ProcessKeyEvent(WORD wVk, WORD wScanCode, DWORD dwFlags, BOOL bInjected, DWORD d
     }
 
     /* Check if this is a hotkey */
-    if (co_UserProcessHotKeys(wSimpleVk, bIsDown))
+    if (co_UserProcessHotKeys(wSimpleVk, bIsDown)) //// Check if this is correct, refer to hotkey sequence message tests.
     {
         TRACE("HotKey Processed\n");
         bPostMsg = FALSE;
     }
- 
+
     wFixedVk = IntFixVk(wSimpleVk, bExt); /* LSHIFT + EXT = RSHIFT */
     if (wSimpleVk == VK_SHIFT) /* shift can't be extended */
         bExt = FALSE;
@@ -932,16 +938,21 @@ ProcessKeyEvent(WORD wVk, WORD wScanCode, DWORD dwFlags, BOOL bInjected, DWORD d
             /* FIXME: Set KF_DLGMODE and KF_MENUMODE when needed */
             if (pFocusQueue->QF_flags & QF_DIALOGACTIVE)
                 Msg.lParam |= KF_DLGMODE << 16;
-            if (pFocusQueue->MenuOwner) // pFocusQueue->MenuState) // MenuState needs a start flag...
+            if (pFocusQueue->MenuOwner) // pti->pMenuState->fMenuStarted
                 Msg.lParam |= KF_MENUMODE << 16;
+        }
+
+        // Post mouse move before posting key buttons, to keep it syned.
+        if (pFocusQueue->QF_flags & QF_MOUSEMOVED)
+        {
+           IntCoalesceMouseMove(pti);
         }
 
         /* Post a keyboard message */
         TRACE("Posting keyboard msg %u wParam 0x%x lParam 0x%x\n", Msg.message, Msg.wParam, Msg.lParam);
         if (!Wnd) {ERR("Window is NULL\n");}
-        MsqPostMessage(pti, &Msg, TRUE, QS_KEY, 0);
+        MsqPostMessage(pti, &Msg, TRUE, QS_KEY, 0, dwExtraInfo);
     }
-
     return TRUE;
 }
 
@@ -1061,7 +1072,7 @@ UserProcessKeyboardInput(
              but it wouldn't interpret E1 key(s) properly */
     wVk = IntVscToVk(wScanCode, pKbdTbl);
     TRACE("UserProcessKeyboardInput: %x (break: %u) -> %x\n",
-          wScanCode, (pKbdInputData->Flags & KEY_BREAK) ? 1 : 0, wVk);
+          wScanCode, (pKbdInputData->Flags & KEY_BREAK) ? 1u : 0, wVk);
 
     if (wVk)
     {
@@ -1079,8 +1090,17 @@ UserProcessKeyboardInput(
         KbdInput.dwFlags = 0;
         if (pKbdInputData->Flags & KEY_BREAK)
             KbdInput.dwFlags |= KEYEVENTF_KEYUP;
+
         if (wVk & KBDEXT)
             KbdInput.dwFlags |= KEYEVENTF_EXTENDEDKEY;
+        //
+        // Based on wine input:test_Input_blackbox this is okay. It seems the 
+        // bit did not get set and more research is needed. Now the right
+        // shift works.
+        //
+        if (wVk == VK_RSHIFT)
+            KbdInput.dwFlags |= KEYEVENTF_EXTENDEDKEY;
+
         KbdInput.time = 0;
         KbdInput.dwExtraInfo = pKbdInputData->ExtraInformation;
         UserSendKeyboardInput(&KbdInput, FALSE);
@@ -1154,7 +1174,7 @@ IntTranslateKbdMessage(LPMSG lpMsg,
         NewMsg.message = (lpMsg->message == WM_KEYDOWN) ? WM_CHAR : WM_SYSCHAR;
         NewMsg.wParam = HIWORD(lpMsg->lParam);
         NewMsg.lParam = LOWORD(lpMsg->lParam);
-        MsqPostMessage(pti, &NewMsg, FALSE, QS_KEY, 0);
+        MsqPostMessage(pti, &NewMsg, FALSE, QS_KEY, 0, 0);
         return TRUE;
     }
 
@@ -1183,12 +1203,12 @@ IntTranslateKbdMessage(LPMSG lpMsg,
         {
             TRACE("Msg: %x '%lc' (%04x) %08x\n", NewMsg.message, wch[i], wch[i], NewMsg.lParam);
             NewMsg.wParam = wch[i];
-            MsqPostMessage(pti, &NewMsg, FALSE, QS_KEY, 0);
+            MsqPostMessage(pti, &NewMsg, FALSE, QS_KEY, 0, 0);
         }
         bResult = TRUE;
     }
 
-    TRACE("Leave IntTranslateKbdMessage ret %u, cch %d, msg %x, wch %x\n",
+    TRACE("Leave IntTranslateKbdMessage ret %d, cch %d, msg %x, wch %x\n",
         bResult, cch, NewMsg.message, NewMsg.wParam);
     return bResult;
 }

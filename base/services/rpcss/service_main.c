@@ -1,7 +1,7 @@
 /*
  * PROJECT:     ReactOS Remote Procedure Call service
  * LICENSE:     GPL - See COPYING in the top level directory
- * FILE:        /base/services/rpcss/service_main.c
+ * FILE:        base/services/rpcss/service_main.c
  * PURPOSE:     Service control code
  * COPYRIGHT:   Copyright 2008 Ged Murphy <gedmurphy@reactos.org>
  *
@@ -82,9 +82,10 @@ ServiceMain(DWORD argc, LPWSTR argv[])
 
         WaitForSingleObject(exit_event, INFINITE);
 
+        RPCSS_Shutdown();
+
         ServiceStatus.dwCurrentState = SERVICE_STOPPED;
         SetServiceStatus(ServiceStatusHandle, &ServiceStatus);
-        RPCSS_Shutdown();
     }
 }
 

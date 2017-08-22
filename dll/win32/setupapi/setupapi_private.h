@@ -30,10 +30,14 @@
 
 #include <windef.h>
 #include <winbase.h>
-#include <winreg.h>
+#include <winuser.h>
 #include <wingdi.h>
+#include <winreg.h>
 #include <winspool.h>
 #include <wincon.h>
+
+#include <commdlg.h>
+
 #include <objbase.h>
 #include <cfgmgr32.h>
 #include <regstr.h>
@@ -41,6 +45,7 @@
 #include <setupapi.h>
 #include <softpub.h>
 #include <mscat.h>
+#include <lzexpand.h>
 #include <shlobj.h>
 #include <wine/unicode.h>
 #define NTOS_MODE_USER
@@ -52,6 +57,8 @@ WINE_DEFAULT_DEBUG_CHANNEL(setupapi);
 #ifdef __REACTOS__
 #undef __WINESRC__
 #endif
+
+#include "resource.h"
 
 #define SETUP_DEVICE_INFO_SET_MAGIC 0xd00ff057
 #define SETUP_CLASS_IMAGE_LIST_MAGIC 0xd00ff058
@@ -239,6 +246,16 @@ struct FileLog /* HSPFILELOG */
 };
 
 extern HINSTANCE hInstance;
+extern OSVERSIONINFOEXW OsVersionInfo;
+
+/*
+ * See: https://msdn.microsoft.com/en-us/library/bb432397(v=vs.85).aspx
+ * for more information.
+ */
+extern DWORD GlobalSetupFlags;
+#define PSPGF_NO_BACKUP         0x0002
+#define PSPGF_NONINTERACTIVE    0x0004
+
 #define RC_STRING_MAX_SIZE 256
 
 #define REG_INSTALLEDFILES "System\\CurrentControlSet\\Control\\InstalledFiles"
@@ -261,13 +278,9 @@ inline static WCHAR *strdupAtoW( const char *str )
 
 struct inf_file;
 extern const WCHAR *DIRID_get_string( int dirid );
-extern unsigned int PARSER_string_substA( const struct inf_file *file, const WCHAR *text,
-                                          char *buffer, unsigned int size );
-extern unsigned int PARSER_string_substW( const struct inf_file *file, const WCHAR *text,
-                                          WCHAR *buffer, unsigned int size );
-extern const WCHAR *PARSER_get_inf_filename( HINF hinf );
-extern WCHAR *PARSER_get_src_root( HINF hinf );
-extern WCHAR *PARSER_get_dest_dir( INFCONTEXT *context );
+extern const WCHAR *PARSER_get_inf_filename( HINF hinf ) DECLSPEC_HIDDEN;
+extern WCHAR *PARSER_get_src_root( HINF hinf ) DECLSPEC_HIDDEN;
+extern WCHAR *PARSER_get_dest_dir( INFCONTEXT *context ) DECLSPEC_HIDDEN;
 
 /* support for Ascii queue callback functions */
 
@@ -282,9 +295,6 @@ UINT CALLBACK QUEUE_callback_WtoA( void *context, UINT notification, UINT_PTR, U
 /* from msvcrt/sys/stat.h */
 #define _S_IWRITE 0x0080
 #define _S_IREAD  0x0100
-
-extern HINSTANCE hInstance;
-extern OSVERSIONINFOW OsVersionInfo;
 
 /* devinst.c */
 

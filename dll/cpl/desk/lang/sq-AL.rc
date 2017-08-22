@@ -99,16 +99,16 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL "&Përdorni efektin e mëposhtme tranzicionit për menutë dhe ndihmesa",
             IDC_EFFAPPEARANCE_ANIMATION, "button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 5, 267, 19
-    COMBOBOX IDC_EFFAPPEARANCE_ANIMATIONTYPE, 20, 25, 80, 19, CBS_DROPDOWNLIST |
+    COMBOBOX IDC_EFFAPPEARANCE_ANIMATIONTYPE, 20, 25, 95, 19, CBS_DROPDOWNLIST |
              CBS_HASSTRINGS | WS_CHILD | WS_VSCROLL | WS_TABSTOP
     CONTROL "Përdor metodën e mëposhtme për të zbutë skajet e fonts ekran", IDC_EFFAPPEARANCE_SMOOTHING,
-            "button", BS_AUTOCHECKBOX | WS_TABSTOP | WS_DISABLED, 10, 42, 267, 19
-    COMBOBOX IDC_EFFAPPEARANCE_SMOOTHINGTYPE, 20, 62, 80, 19, CBS_DROPDOWNLIST |
-             CBS_HASSTRINGS | CBS_SORT | WS_VSCROLL | WS_TABSTOP | WS_DISABLED
+            "button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 42, 267, 19
+    COMBOBOX IDC_EFFAPPEARANCE_SMOOTHINGTYPE, 20, 62, 95, 19, CBS_DROPDOWNLIST |
+             CBS_HASSTRINGS | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     CONTROL "Përdor ikona të mëdha", IDC_EFFAPPEARANCE_LARGEICONS, "button",
             BS_AUTOCHECKBOX | WS_TABSTOP | WS_DISABLED, 10, 80, 267, 19
     CONTROL "Shfaq hije poshte menus", IDC_EFFAPPEARANCE_SETDROPSHADOW,
-            "button", BS_AUTOCHECKBOX | WS_TABSTOP | WS_DISABLED, 10, 95, 267, 19
+            "button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 95, 267, 19
     CONTROL "Shfaq &përmbajtjen dritare ndërsa zvarritet", IDC_EFFAPPEARANCE_DRAGFULLWINDOWS,
             "button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 110, 267, 19
     CONTROL "Fsheh gërma të nënvizuara për kërkimin e tastierës deri sa të shtypni butonin Alt",
@@ -126,11 +126,11 @@ BEGIN
     CONTROL "", IDC_SETTINGS_MONSEL, "MONITORSELWNDCLASS", WS_CHILD | WS_VISIBLE |
             WS_TABSTOP, 3, 23, 240, 82, WS_EX_CLIENTEDGE
     LTEXT "&Ekran", 1820, 3, 107, 70, 9
-    LTEXT "<none>", IDC_SETTINGS_DEVICE, 9, 116, 224, 9
+    LTEXT "<none>", IDC_SETTINGS_DEVICE, 3, 116, 224, 9
     GROUPBOX "&Zona ekranit", 1818, 3, 127, 115, 43
     CONTROL "", IDC_SETTINGS_RESOLUTION, "msctls_trackbar32", TBS_AUTOTICKS | WS_TABSTOP, 30, 137, 58, 17
     LTEXT "Pak", 1815, 9, 137, 25, 9, NOT WS_GROUP
-    LTEXT "Shumë", 1816, 93, 137, 25, 9, NOT WS_GROUP
+    LTEXT "Shumë", 1816, 93, 137, 20, 9, NOT WS_GROUP
     LTEXT "", IDC_SETTINGS_RESOLUTION_TEXT, 10, 157, 100, 10, NOT WS_GROUP | SS_CENTER
     GROUPBOX "&Ngjyra", 1817, 125, 127, 115, 43
     COMBOBOX IDC_SETTINGS_BPP, 131, 137, 103, 80, CBS_DROPDOWNLIST | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
@@ -152,6 +152,17 @@ BEGIN
     AUTORADIOBUTTON "&Rifillo kompjuterin para se të aplikoni vetit e reja ngjyra.", IDC_RESTART_RB, 14, 116, 228, 10
     AUTORADIOBUTTON "Apliko parametrat e ngjyrave te reja par rifilluar sistemit.", IDC_WITHOUTREBOOT_RB, 14, 131, 228, 10
     AUTORADIOBUTTON "Pyet para se te aplikosh parametrat e ngjyrave te reja.", IDC_ASKME_RB, 14, 146, 228, 10
+END
+
+IDD_CONFIRMSETTINGS DIALOGEX 20, 30, 233, 57
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+CAPTION "Display Settings"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "Do you want to keep these display settings?", IDC_STATIC, 7, 7, 219, 8
+    LTEXT "", IDC_TIMEOUTTEXT, 7, 20, 219, 8
+    PUSHBUTTON "&Yes", IDYES, 121, 36, 50, 14
+    DEFPUSHBUTTON "&No", IDNO, 175, 36, 50, 14
 END
 
 IDR_PREVIEW_MENU MENU
@@ -182,7 +193,7 @@ END
 STRINGTABLE
 BEGIN
     IDS_STANDARDEFFECT "Standart"
-    IDS_CLEARTYPEEFFECT "Tip Paster"
+    IDS_CLEARTYPEEFFECT "FreeType Antialiased"
 END
 
 STRINGTABLE
@@ -209,13 +220,12 @@ BEGIN
     IDS_COLOR_16BIT "Ngjyra Larta (16 Bit)"
     IDS_COLOR_24BIT "Ngjyra Verteta (24 Bit)"
     IDS_COLOR_32BIT "Ngjyra Verteta (32 Bit)"
-    IDS_PIXEL "%lux%lu Pixel"
+    IDS_PIXEL "%lux%lu pixels"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_BACKGROUND_COMDLG_FILTER "Pictures (*.bmp;*.dib)\0*.bmp;*.dib\0"
-    IDS_SUPPORTED_EXT "*.bmp;*.dib"
+    IDS_BACKGROUND_COMDLG_FILTER "Pictures"
 END
 
 STRINGTABLE
@@ -231,28 +241,25 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_ELEMENT_1 "Desktop"
-    IDS_ELEMENT_2 "Titull i dritares inaktive"
-    IDS_ELEMENT_3 "Skaj i dritares inaktive"
-    IDS_ELEMENT_4 "Titull i dritares aktive"
-    IDS_ELEMENT_5 "Skaj i dritares aktive"
-    IDS_ELEMENT_6 "Menu"
-    IDS_ELEMENT_7 "Artikuj të përzgjedhur"
-    IDS_ELEMENT_8 "Dritare"
-    IDS_ELEMENT_9 "Scrollbars"
-    IDS_ELEMENT_10 "3D objekte"
-    IDS_ELEMENT_11 "Palette titulli"
-    IDS_ELEMENT_12 "Titulli Symboli"
-    IDS_ELEMENT_13 "Captionbar"
-    IDS_ELEMENT_14 "Elementet çaktivizuar menu"
-    IDS_ELEMENT_15 "Dialog"
-    IDS_ELEMENT_16 "Kontrolli Scrollbar"
-    IDS_ELEMENT_17 "Sfondi Aplikacioneve"
-    IDS_ELEMENT_18 "Captionbar vogel"
-    IDS_ELEMENT_19 "Simboli distanca (horizontale)"
-    IDS_ELEMENT_20 "Simboli distanca (vertikale)"
-    IDS_ELEMENT_21 "Info e shpejt"
-    IDS_ELEMENT_22 "Simboli"
+    IDS_ELEMENT_0 "Desktop"
+    IDS_ELEMENT_1 "Titull i dritares inaktive"
+    IDS_ELEMENT_2 "Skaj i dritares inaktive"
+    IDS_ELEMENT_3 "Titull i dritares aktive"
+    IDS_ELEMENT_4 "Skaj i dritares aktive"
+    IDS_ELEMENT_5 "Menu"
+    IDS_ELEMENT_6 "Artikuj të përzgjedhur"
+    IDS_ELEMENT_7 "Dritare"
+    IDS_ELEMENT_8 "Scrollbars"
+    IDS_ELEMENT_9 "3D objekte"
+    IDS_ELEMENT_10 "Palette titulli"
+    IDS_ELEMENT_11 "Caption bar buttons"
+    IDS_ELEMENT_12 "Dialog"
+    IDS_ELEMENT_13 "Sfondi Aplikacioneve"
+    IDS_ELEMENT_14 "Simboli distanca (horizontale)"
+    IDS_ELEMENT_15 "Simboli distanca (vertikale)"
+    IDS_ELEMENT_16 "Info e shpejt"
+    IDS_ELEMENT_17 "Simboli"
+//  IDS_ELEMENT_18 "Elementet çaktivizuar menu"
 END
 
 STRINGTABLE
@@ -260,4 +267,5 @@ BEGIN
     IDS_DISPLAY_SETTINGS "Konfigurimi i Ekranit"
     IDS_APPLY_FAILED "Deshtoj ne apilimin e konfigurimit..."
     IDS_APPLY_NEEDS_RESTART "Ju duhet te rifilloni sistemin tuaj qe te aplikoni ndryshimet."
+    IDS_TIMEOUTTEXT "Revert to previous settings in %d seconds."
 END

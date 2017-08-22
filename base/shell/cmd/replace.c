@@ -33,7 +33,7 @@ void invalid_switch(LPTSTR is)
     ConOutResPaging(TRUE,STRING_REPLACE_HELP3);
 }
 
-/* retrives the pathe dependen om the input file name */
+/* retrieves the path dependent on the input file name */
 void getPath(TCHAR* out, LPTSTR in)
 {
     if (_tcslen(in) == 2 && in[1] == _T(':'))
@@ -86,7 +86,7 @@ INT replace(TCHAR source[MAX_PATH], TCHAR dest[MAX_PATH], DWORD dwFlags, BOOL *d
     if (IsExistingFile (dest))
     {
         /*
-         * Resets the attributes to avoid probles with read only files,
+         * Resets the attributes to avoid problems with read only files,
          * checks for read only has been made earlier.
          */
         SetFileAttributes(dest,FILE_ATTRIBUTE_NORMAL);
@@ -100,9 +100,10 @@ INT replace(TCHAR source[MAX_PATH], TCHAR dest[MAX_PATH], DWORD dwFlags, BOOL *d
             hFileDest = CreateFile(dest, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
                 0, NULL);
 
-            if (hFileSrc == INVALID_HANDLE_VALUE)
+            if (hFileDest == INVALID_HANDLE_VALUE)
             {
                 ConOutResPrintf(STRING_COPY_ERROR1, dest);
+                CloseHandle (hFileSrc);
                 return 0;
             }
 
@@ -131,7 +132,10 @@ INT replace(TCHAR source[MAX_PATH], TCHAR dest[MAX_PATH], DWORD dwFlags, BOOL *d
         else
             ConOutResPrintf(STRING_REPLACE_HELP10, dest);
         if ( !FilePromptYNA (0))
+        {
+            CloseHandle (hFileSrc);
             return 0;
+        }
     }
 
     /* Output depending on add flag */
@@ -220,7 +224,7 @@ INT recReplace(DWORD dwFlags,
     HANDLE hFile;
     WIN32_FIND_DATA findBuffer;
 
-    /* Get file handel to the sourcefile(s) */
+    /* Get file handle to the sourcefile(s) */
     hFile = FindFirstFile (szSrcPath, &findBuffer);
 
     /*
@@ -235,7 +239,7 @@ INT recReplace(DWORD dwFlags,
             break;
     }
 
-    /* Go through all the soursfiles and copy/replace them */
+    /* Go through all the sourcefiles and copy/replace them */
     do
     {
         if (CheckCtrlBreak(BREAK_INPUT))
@@ -302,6 +306,8 @@ INT recReplace(DWORD dwFlags,
     /* Take next sourcefile if any */
     } while(FindNextFile (hFile, &findBuffer));
 
+    FindClose(hFile);
+
     return filesReplaced;
 }
 
@@ -326,7 +332,7 @@ INT recFindSubDirs(DWORD dwFlags,
     /* Get the first file in the directory */
     hFile = FindFirstFile (szDestPath, &findBuffer);
 
-    /* Remove the star added earlyer to dest path */
+    /* Remove the star added earlier to dest path */
     for(i = (_tcslen(szDestPath) -  1); i > -1; i--)
     {
         if (szDestPath[i] != _T('\\'))
@@ -370,13 +376,15 @@ INT recFindSubDirs(DWORD dwFlags,
             if (!*doMore)
                 break;
             _tcscpy(tmpSrcPath,szSrcPath);
-            /* Controle the next level of subdirs */
+            /* Control the next level of subdirs */
             filesReplaced += recFindSubDirs(dwFlags,tmpSrcPath,tmpDestPath, doMore);
             if (!*doMore)
                 break;
         }
         /* Get the next handle */
     } while(FindNextFile (hFile, &findBuffer));
+
+    FindClose(hFile);
 
     return filesReplaced;
 }

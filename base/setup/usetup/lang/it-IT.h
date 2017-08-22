@@ -163,38 +163,14 @@ static MUI_ENTRY itITIntroPageEntries[] =
     },
     {
         8, 
-        13,
-        "- Il setup non gestisce pió di una partizione primaria per disco.",
+        13, 
+        "- Il setup supporta solamente il sistema FAT.",
         TEXT_STYLE_NORMAL
     },
     {
         8,
         14,
-        "- Il setup non puï eliminare una partizione primaria",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        15,
-        "  se ci sono partizioni estese nel disco fisso.",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        16,
-        "- Il setup non puï eliminare la prima partizione estesa",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        17,
-        "  se ci sono altre partizioni estese nel disco fisso.",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8, 
-        18, 
-        "- Il setup supporta solamente il sistema FAT.",
+        "- File system checks are not implemented yet.",
         TEXT_STYLE_NORMAL
     },
     {
@@ -503,6 +479,7 @@ static MUI_ENTRY itITRepairPageEntries[] =
         0
     }
 };
+
 static MUI_ENTRY itITComputerPageEntries[] =
 {
     {
@@ -618,7 +595,7 @@ static MUI_ENTRY itITQuitPageEntries[] =
     {
         10,
         9,
-        "tutti i CD-ROMs dalle unitÖ.",
+        "Tutti i CD-ROMs dalle unit‡.",
         TEXT_STYLE_NORMAL
     },
     {
@@ -820,19 +797,24 @@ static MUI_ENTRY itITSelectPartitionEntries[] =
     {
         8,
         15,
-        "\x07  Press P to create a primary partition.",
-//        "\x07  Premere C per creare una nuova partizione.",
+        "\x07  Premere P per creare una nuova partizione.",
         TEXT_STYLE_NORMAL
     },
     {
         8,
         17,
-        "\x07  Press E to create an extended partition.",
+        "\x07  Premere E per creare una partizione estesa.",
         TEXT_STYLE_NORMAL
     },
     {
         8,
         19,
+        "\x07  Premere L per creare una partizione logica.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        21,
         "\x07  Premere D per cancellare una partizione esistente.",
         TEXT_STYLE_NORMAL
     },
@@ -841,6 +823,100 @@ static MUI_ENTRY itITSelectPartitionEntries[] =
         0,
         "   Attendere...",
         TEXT_TYPE_STATUS
+    },
+    {
+        0,
+        0,
+        NULL,
+        0
+    }
+};
+
+static MUI_ENTRY itITConfirmDeleteSystemPartitionEntries[] =
+{
+    {
+        4, 
+        3,
+        " Installazione di ReactOS " KERNEL_VERSION_STR " ",
+        TEXT_STYLE_UNDERLINE
+    },
+    {
+        6,
+        8,
+        "Hai scelto di eliminare la partizione di sistema.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        10,
+        "Le partizioni di sistema possono contenere i programmi diagnostici, configurazione hardware",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        11,
+        "Programmi utilizzati per l'avvio di un sistema operativo (come ReactOS) o altri.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        12,
+        "Programmi forniti dal produttore dell'hardware.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        14,
+        "Elimina una partizione di sistema solo quando sei sicuro che non ci siano",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        15,
+        "programmi sulla partizione, o quando sei sicuro di eliminarla.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        16,
+        "Cancellando una partizione, non sar√† pi√π possibile avviare",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        17,
+        "il computer dall'harddisk fino al termine del setup di ReactOS.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        20,
+        "\x07  Primere INVIO per eliminare una partizione di sistema. Ti sar√† chiesto",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        21,
+        "   di confermare ancora l'eliminazione della partizione.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        24,
+        "\x07  Premere ESC per ritornare alla pagina precedente. La partizione",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        25,
+        "   non verr√† cancellata.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        0,
+        0,
+        "INVIO=Continua  ESC=Annulla",
+        TEXT_TYPE_STATUS | TEXT_PADDING_BIG
     },
     {
         0,
@@ -1232,7 +1308,7 @@ static MUI_ENTRY itITDeletePartitionEntries[] =
     {
         11,
         19,
-		"ATTENZIONE: Tutti i dati di questa partizione saranno persi!!",
+        "ATTENZIONE: Tutti i dati di questa partizione saranno persi!!",
         TEXT_STYLE_NORMAL
     },
     {
@@ -1288,7 +1364,7 @@ MUI_ERROR itITErrorEntries[] =
 {
     {
         // NOT_AN_ERROR
-        "Success\n"
+        "Successo\n"
     },
     {
         //ERROR_NOT_INSTALLED
@@ -1298,7 +1374,7 @@ MUI_ERROR itITErrorEntries[] =
         "\n"
         "  \x07  Premere INVIO per continuare il setup.\n"
         "  \x07  Premere F3 per uscire.",
-        "F3= Uscire INVIO = Continuare"
+        "F3 = Uscire INVIO = Continuare"
     },
     {
         //ERROR_NO_HDD
@@ -1364,7 +1440,7 @@ MUI_ERROR itITErrorEntries[] =
         "\n"
         "  \x07  Premere F3 per uscire dal Setup.\n"
         "  \x07  Premere INVIO per continuare.",
-        "F3= Uscire  INVIO = Continuare"
+        "F3 = Uscire  INVIO = Continuare"
     },
     {
         //ERROR_NEW_PARTITION,
@@ -1495,30 +1571,44 @@ MUI_ERROR itITErrorEntries[] =
         "INVIO = Riavviare il computer"
     },
     {
-        //ERROR_INSUFFICIENT_DISKSPACE,
-        "Lo spazio disponibile nella partizione selezionata ä insufficiente.\n"
+        //ERROR_DIRECTORY_NAME,
+        "Nome della cartella non valido.\n"
+        "\n"
+        "  * Premere un tasto qualsiasi per continuare."
+    },
+    {
+        //ERROR_INSUFFICIENT_PARTITION_SIZE,
+        "Spazio nella partizione insufficiente per installare ReactOS.\n"
+        "La partizione deve avere una dimensione di almeno %lu MB.\n"
+        "\n"
         "  * Premere un tasto qualsiasi per continuare.",
         NULL
     },
     {
         //ERROR_PARTITION_TABLE_FULL,
-        "You can not create a new primary or extended partition in the\n"
-        "partition table of this disk because the partition table is full.\n"
+        "Non √® possibile creare una partizione primaria o secondaria nella\n"
+        "tabella delle partizioni del disco perch√® questa √® piena.\n"
         "\n"
-        "  * Press any key to continue."
+        "  * Premere un tasto qualsiasi per continuare."
     },
     {
         //ERROR_ONLY_ONE_EXTENDED,
-        "You can not create more than one extended partition per disk.\n"
+        "Impossibile creare pi√π di una partizione primaria per disco.\n"
         "\n"
-        "  * Press any key to continue."
+        "  * Premere un tasto qualsiasi per continuare."
+    },
+    {
+        //ERROR_FORMATTING_PARTITION,
+        "Setup non √® riuscito a formattare la partizione:\n"
+        " %S\n"
+        "\n"
+        "ENTER = Riavvia il computer"
     },
     {
         NULL,
         NULL
     }
 };
-
 
 MUI_PAGE itITPages[] =
 {
@@ -1561,6 +1651,10 @@ MUI_PAGE itITPages[] =
     {
         SELECT_PARTITION_PAGE,
         itITSelectPartitionEntries
+    },
+    {
+        CONFIRM_DELETE_SYSTEM_PARTITION_PAGE,
+        itITConfirmDeleteSystemPartitionEntries
     },
     {
         SELECT_FILE_SYSTEM_PAGE,
@@ -1625,23 +1719,21 @@ MUI_STRING itITStrings[] =
     {STRING_PLEASEWAIT,
      "   Attendere..."},
     {STRING_INSTALLCREATEPARTITION,
-     "   ENTER = Install   P = Create Primary   E = Create Extended   F3 = Quit"},
-//     "   INVIO = Installa   C = Crea Partizione   F3 = Esci"},
+     "   INVIO = Installa   P = Crea Partizione   E = Crea Partizione Estesa   F3 = Esci"},
     {STRING_INSTALLCREATELOGICAL,
-     "   ENTER = Install   L = Create Logical Partition   F3 = Quit"},
+     "   INVIO = Installa   L = Crea Partizione Lgica  F3 = Esci"},
     {STRING_INSTALLDELETEPARTITION,
      "   INVIO = Installa   D = Rimuovi Partizione   F3 = Esci"},
     {STRING_DELETEPARTITION,
-     "   D = Delete Partition   F3 = Quit"},
+     "   D = Elimina Partizione   F3 = Esci"},
     {STRING_PARTITIONSIZE,
      "Dimensione della nuova partizione:"},
     {STRING_CHOOSENEWPARTITION,
-     "You have chosen to create a primary partition on"},
-//     "Avete scelto di creare una nuova partizione su"},
+     "Si √® scelto di creare una nuova partizione primaria su"},
     {STRING_CHOOSE_NEW_EXTENDED_PARTITION,
-     "You have chosen to create an extended partition on"},
+     "Si √® scelto di creare una nuova partizione estesa su"},
     {STRING_CHOOSE_NEW_LOGICAL_PARTITION,
-     "You have chosen to create a logical partition on"},
+     "Si √® scelto di creare una nuova partizione logica su"},
     {STRING_HDDSIZE,
     "Indicare la dimensione della nuova partizione in megabyte."},
     {STRING_CREATEPARTITION,
@@ -1650,12 +1742,18 @@ MUI_STRING itITStrings[] =
     "Questa partizione sarÖ formattata successivamente."},
     {STRING_NONFORMATTEDPART,
     "Avete scelto di installare ReactOS su una partizione nuova o non formattata."},
+    {STRING_NONFORMATTEDSYSTEMPART,
+    "La partizione di sistema non √® stata ancora formattata."},
+    {STRING_NONFORMATTEDOTHERPART,
+    "La nuova partizione non √® stata ancora formattata."},
     {STRING_INSTALLONPART,
     "Setup installerÖ ReactOS sulla partitione"},
     {STRING_CHECKINGPART,
     "Setup sta controllando la partizione selezionata."},
+    {STRING_CONTINUE,
+    "INVIO = Continua"},
     {STRING_QUITCONTINUE,
-    "F3= Esci  INVIO = Continua"},
+    "F3 = Esci  INVIO = Continua"},
     {STRING_REBOOTCOMPUTER,
     "INVIO = Riavvia il computer"},
     {STRING_TXTSETUPFAILED,
@@ -1701,7 +1799,7 @@ MUI_STRING itITStrings[] =
     {STRING_HDDINFOUNK1,
     "%I64u %s  Harddisk %lu  (Port=%hu, Bus=%hu, Id=%hu)."},
     {STRING_HDDINFOUNK2,
-    "   %c%c  Tipo %lu    %I64u %s"},
+    "   %c%c  Tipo 0x%02X    %I64u %s"},
     {STRING_HDINFOPARTDELETE,
     "su %I64u %s  Harddisk %lu  (Port=%hu, Bus=%hu, Id=%hu) su %wZ."},
     {STRING_HDDINFOUNK3,
@@ -1709,11 +1807,11 @@ MUI_STRING itITStrings[] =
     {STRING_HDINFOPARTZEROED,
     "Harddisk %lu (%I64u %s), Port=%hu, Bus=%hu, Id=%hu (%wZ)."},
     {STRING_HDDINFOUNK4,
-    "%c%c  Tipo %lu    %I64u %s"},
+    "%c%c  Tipo 0x%02X    %I64u %s"},
     {STRING_HDINFOPARTEXISTS,
     "su Harddisk %lu (%I64u %s), Port=%hu, Bus=%hu, Id=%hu (%wZ)."},
     {STRING_HDDINFOUNK5,
-    "%c%c  %sTipo %-3u%s                       %6lu %s"},
+    "%c%c %c %sTipo %-3u%s                       %6lu %s"},
     {STRING_HDINFOPARTSELECT,
     "%6lu %s  Harddisk %lu  (Port=%hu, Bus=%hu, Id=%hu) su %S"},
     {STRING_HDDINFOUNK6,
@@ -1724,6 +1822,8 @@ MUI_STRING itITStrings[] =
     "    %sSpazio non partizionato%s             %6lu %s"},
     {STRING_MAXSIZE,
     "MB (max. %lu MB)"},
+    {STRING_EXTENDED_PARTITION,
+    "Partizione estesa"},
     {STRING_UNFORMATTED,
     "Nuova (Non formattata)"},
     {STRING_FORMATUNUSED,

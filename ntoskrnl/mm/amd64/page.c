@@ -13,7 +13,7 @@
 #include <ntoskrnl.h>
 #define NDEBUG
 #include <debug.h>
-#include "../ARM3/miarm.h"
+#include <mm/ARM3/miarm.h>
 
 #undef InterlockedExchangePte
 #define InterlockedExchangePte(pte1, pte2) \
@@ -480,7 +480,7 @@ MmDeleteVirtualMapping(
 
     /* Return information to the caller */
     if (WasDirty)
-        *WasDirty = (BOOLEAN)OldPte.u.Hard.Dirty;;
+        *WasDirty = (BOOLEAN)OldPte.u.Hard.Dirty;
 
     if (Page)
         *Page = Pfn;

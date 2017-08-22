@@ -39,6 +39,15 @@ HRESULT WINAPI ClearDownloadCache(void)
 }
 
 /******************************************************************
+ *  CopyPDBs   (FUSION.@)
+ */
+HRESULT WINAPI CopyPDBs(void *unknown)
+{
+    FIXME("(%p) stub!\n", unknown);
+    return E_NOTIMPL;
+}
+
+/******************************************************************
  *  CreateInstallReferenceEnum   (FUSION.@)
  */
 HRESULT WINAPI CreateInstallReferenceEnum(IInstallReferenceEnum **ppRefEnum,
@@ -148,7 +157,7 @@ HRESULT WINAPI GetCachePath(ASM_CACHE_FLAGS dwCacheFlags, LPWSTR pwzCachePath,
 
     len++;
     if (*pcchPath <= len || !pwzCachePath)
-        hr = HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
+        hr = E_NOT_SUFFICIENT_BUFFER;
     else if (pwzCachePath)
         strcpyW(pwzCachePath, path);
 

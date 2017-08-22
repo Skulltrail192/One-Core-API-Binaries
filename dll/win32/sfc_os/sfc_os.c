@@ -25,12 +25,13 @@
 #include <windef.h>
 #include <winbase.h>
 #include <winreg.h>
+#include <winuser.h>
+#include <winwlx.h>
 
 #define NDEBUG
 #include <debug.h>
 
 HINSTANCE hLibModule;
-typedef HANDLE RPC_BINDING_HANDLE;
 
 typedef struct _PROTECTED_FILE_DATA
 {
@@ -45,6 +46,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     {
         case DLL_PROCESS_ATTACH:
         {
+            DisableThreadLibraryCalls(hinstDLL);
+            hLibModule = hinstDLL;
             break;
         }
         case DLL_PROCESS_DETACH:
@@ -171,42 +174,42 @@ DWORD WINAPI SfcFileException(DWORD dwUnknown0, PWCHAR pwszFile, DWORD dwUnknown
     return 0;
 }
 
-DWORD WINAPI SfcInitiateScan(PVOID handle, DWORD flags)
+/******************************************************************
+ *              SfcWLEventLogoff     [sfc_os.@]
+ *
+ * Logoff notification function
+ *
+ * PARAMS
+ *  pInfo         [I] Pointer to logoff notification information
+ *
+ * RETURNS
+ *  nothing
+ *
+ */
+VOID
+WINAPI
+SfcWLEventLogoff(
+    PWLX_NOTIFICATION_INFO pInfo)
 {
-	return 0;
+    UNIMPLEMENTED;
 }
 
-void WINAPI SfcWLEventLogon(PROTECTED_FILE_DATA a1)
+/******************************************************************
+ *              SfcWLEventLogon     [sfc_os.@]
+ *
+ * Logon notification function
+ *
+ * PARAMS
+ *  pInfo         [I] Pointer to logon notification information
+ *
+ * RETURNS
+ *  nothing
+ *
+ */
+VOID
+WINAPI
+SfcWLEventLogon(
+    PWLX_NOTIFICATION_INFO pInfo)
 {
-	;
-}
-
-void WINAPI SfcWLEventLogoff(PROTECTED_FILE_DATA a1)
-{
-	;
-}
-
-void WINAPI SfcTerminateWatcherThread()
-{
-	;
-}
-
-RPC_BINDING_HANDLE WINAPI SfcConnectToServer(RPC_BINDING_HANDLE Binding)
-{
-	return NULL;
-}
-
-int WINAPI SfcClose(void *a1)
-{
-	return 0;
-}
-
-DWORD WINAPI SfcInitPro(size_t a1, const wchar_t *a2, int a3, int a4, int a5, int a6, int a7, size_t *a8, int a9)
-{
-	return 0;
-}
-
-BOOL WINAPI SfcInstallProtectedFiles(RPC_BINDING_HANDLE a1, wchar_t *lpSrc, int a3, int a4, int a5, PVOID a6, int a7)
-{
-	return TRUE;
+    UNIMPLEMENTED;
 }

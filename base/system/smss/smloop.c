@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS Windows-Compatible Session Manager
  * LICENSE:         BSD 2-Clause License
- * FILE:            base/system/smss/smss.c
+ * FILE:            base/system/smss/smloop.c
  * PURPOSE:         Main SMSS Code
  * PROGRAMMERS:     Alex Ionescu
  */
@@ -34,10 +34,6 @@ NTSTATUS
 volatile LONG SmTotalApiThreads;
 HANDLE SmUniqueProcessId;
 
-PSMP_SESSION
-NTAPI
-SmpSessionIdToSession(IN ULONG SessionId);
-
 /* API HANDLERS ***************************************************************/
 
 NTSTATUS
@@ -46,31 +42,18 @@ SmpCreateForeignSession(IN PSM_API_MSG SmApiMsg,
                         IN PSMP_CLIENT_CONTEXT ClientContext,
                         IN HANDLE SmApiPort)
 {
-    DbgPrint("%s is not yet implemented\n", __FUNCTION__);
+    DPRINT1("%s is not yet implemented\n", __FUNCTION__);
     return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS 
-NTAPI 
-SmpSessionComplete(PSM_API_MSG SmApiMsg, PSMP_CLIENT_CONTEXT ClientContext, HANDLE SmApiPort)
+NTSTATUS
+NTAPI
+SmpSessionComplete(IN PSM_API_MSG SmApiMsg,
+                   IN PSMP_CLIENT_CONTEXT ClientContext,
+                   IN HANDLE SmApiPort)
 {
-  PSMP_SESSION SessionID; // ebx@1
-  NTSTATUS result; // eax@3
-
-  RtlEnterCriticalSection(&SmpSessionListLock);
-  SessionID = SmpSessionIdToSession(SmApiMsg->u.CreateForeignSession.NotImplemented);
-  RtlLeaveCriticalSection(&SmpSessionListLock);
-  if ( SessionID && SessionID->Subsystem == (PSMP_SUBSYSTEM)ClientContext->Subsystem )
-  {
-    SmpDeleteSession(SmApiMsg->u.CreateForeignSession.NotImplemented);
-    result = STATUS_SUCCESS;
-  }
-  else
-  {
-    result = STATUS_INVALID_PARAMETER;
-  }
-  DbgPrint("SmpSessionComplete Status: %08x\n",result);
-  return result;
+    DPRINT1("%s is not yet implemented\n", __FUNCTION__);
+    return STATUS_NOT_IMPLEMENTED;
 }
 
 NTSTATUS
@@ -79,7 +62,7 @@ SmpTerminateForeignSession(IN PSM_API_MSG SmApiMsg,
                            IN PSMP_CLIENT_CONTEXT ClientContext,
                            IN HANDLE SmApiPort)
 {
-    DbgPrint("%s is not yet implemented\n", __FUNCTION__);
+    DPRINT1("%s is not yet implemented\n", __FUNCTION__);
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -104,7 +87,7 @@ SmpExecPgm(IN PSM_API_MSG SmApiMsg,
     if (!NT_SUCCESS(Status))
     {
         /* Fail */
-        DbgPrint("SmExecPgm: NtOpenProcess Failed %lx\n", Status);
+        DPRINT1("SmExecPgm: NtOpenProcess Failed %lx\n", Status);
         return Status;
     }
 
@@ -124,7 +107,7 @@ SmpExecPgm(IN PSM_API_MSG SmApiMsg,
     {
         /* Close the handle and fail */
         NtClose(ProcessHandle);
-        DbgPrint("SmExecPgm: NtDuplicateObject (Process) Failed %lx\n", Status);
+        DPRINT1("SmExecPgm: NtDuplicateObject (Process) Failed %lx\n", Status);
         return Status;
     }
 
@@ -141,7 +124,7 @@ SmpExecPgm(IN PSM_API_MSG SmApiMsg,
         /* Close both handles and fail */
         NtClose(ProcessInformation.ProcessHandle);
         NtClose(ProcessHandle);
-        DbgPrint("SmExecPgm: NtDuplicateObject (Thread) Failed %lx\n", Status);
+        DPRINT1("SmExecPgm: NtDuplicateObject (Thread) Failed %lx\n", Status);
         return Status;
     }
 
@@ -160,7 +143,7 @@ SmpLoadDeferedSubsystem(IN PSM_API_MSG SmApiMsg,
                         IN PSMP_CLIENT_CONTEXT ClientContext,
                         IN HANDLE SmApiPort)
 {
-    DbgPrint("%s is not yet implemented\n", __FUNCTION__);
+    DPRINT1("%s is not yet implemented\n", __FUNCTION__);
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -170,7 +153,7 @@ SmpStartCsr(IN PSM_API_MSG SmApiMsg,
             IN PSMP_CLIENT_CONTEXT ClientContext,
             IN HANDLE SmApiPort)
 {
-    DbgPrint("%s is not yet implemented\n", __FUNCTION__);
+    DPRINT1("%s is not yet implemented\n", __FUNCTION__);
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -180,7 +163,7 @@ SmpStopCsr(IN PSM_API_MSG SmApiMsg,
            IN PSMP_CLIENT_CONTEXT ClientContext,
            IN HANDLE SmApiPort)
 {
-    DbgPrint("%s is not yet implemented\n", __FUNCTION__);
+    DPRINT1("%s is not yet implemented\n", __FUNCTION__);
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -239,7 +222,7 @@ SmpHandleConnectionRequest(IN HANDLE SmApiPort,
         SmpGetProcessMuSessionId(ProcessHandle, &SessionId);
     }
 
-    /* See if we already know about the caller's subystem */
+    /* See if we already know about the caller's subsystem */
     CidSubsystem = SmpLocateKnownSubSysByCid(&SbApiMsg->h.ClientId);
     if ((CidSubsystem) && (Accept))
     {
@@ -250,8 +233,8 @@ SmpHandleConnectionRequest(IN HANDLE SmApiPort,
         {
             /* Someone is trying to take control of an existing subsystem, fail */
             Accept = FALSE;
-            DbgPrint("SMSS: Connection from SubSystem rejected\n");
-            DbgPrint("SMSS: Image type already being served\n");
+            DPRINT1("SMSS: Connection from SubSystem rejected\n");
+            DPRINT1("SMSS: Image type already being served\n");
         }
         else
         {
@@ -278,7 +261,7 @@ SmpHandleConnectionRequest(IN HANDLE SmApiPort,
         else
         {
             /* Failed to allocate a client context, so reject the connection */
-            DbgPrint("Rejecting connectiond due to lack of memory\n");
+            DPRINT1("Rejecting connectiond due to lack of memory\n");
             Accept = FALSE;
         }
     }
@@ -299,7 +282,7 @@ SmpHandleConnectionRequest(IN HANDLE SmApiPort,
     if (!(Accept) || !(NT_SUCCESS(Status)))
     {
         /* Close the process handle, reference the subsystem, and exit */
-        DbgPrint("Accept failed or rejected: %lx\n", Status);
+        DPRINT1("Accept failed or rejected: %lx\n", Status);
         if (ClientContext != (PVOID)SbApiMsg) RtlFreeHeap(SmpHeap, 0, ClientContext);
         if (ProcessHandle) NtClose(ProcessHandle);
         if (CidSubsystem) SmpDereferenceSubsystem(CidSubsystem);
@@ -328,7 +311,7 @@ SmpHandleConnectionRequest(IN HANDLE SmApiPort,
                                NULL);
         if (!NT_SUCCESS(Status))
         {
-            DbgPrint("SMSS: Connect back to Sb %wZ failed %lx\n", &SubsystemPort, Status);
+            DPRINT1("SMSS: Connect back to Sb %wZ failed %lx\n", &SubsystemPort, Status);
         }
         RtlFreeUnicodeString(&SubsystemPort);
 
@@ -338,7 +321,7 @@ SmpHandleConnectionRequest(IN HANDLE SmApiPort,
     else if (CidSubsystem)
     {
         /* We failed to complete the connection, so clear the port handle */
-        DbgPrint("Completing the connection failed: %lx\n", Status);
+        DPRINT1("Completing the connection failed: %lx\n", Status);
         CidSubsystem->PortHandle = NULL;
     }
 
@@ -384,7 +367,7 @@ SmpApiLoop(IN PVOID Parameter)
         if (Status == STATUS_NO_MEMORY)
         {
             /* Ran out of memory, so do a little timeout and try again */
-            if (ReplyMsg) DbgPrint("SMSS: Failed to reply to calling thread, retrying.\n");
+            if (ReplyMsg) DPRINT1("SMSS: Failed to reply to calling thread, retrying.\n");
             Timeout.QuadPart = -50000000;
             NtDelayExecution(FALSE, &Timeout);
             continue;
@@ -397,13 +380,13 @@ SmpApiLoop(IN PVOID Parameter)
             case LPC_CONNECTION_REQUEST:
                 /* Create the right structures for it */
                 SmpHandleConnectionRequest(SmApiPort, (PSB_API_MSG)&RequestMsg);
-                ReplyMsg =  NULL;
+                ReplyMsg = NULL;
                 break;
 
             /* A closed connection */
             case LPC_PORT_CLOSED:
                 /* Destroy any state we had for this client */
-                DbgPrint("Port closed\n");
+                DPRINT1("Port closed\n");
                 //if (ClientContext) SmpPushDeferredClientContext(ClientContext);
                 ReplyMsg = NULL;
                 break;
@@ -422,14 +405,14 @@ SmpApiLoop(IN PVOID Parameter)
                 if (RequestMsg.ApiNumber >= SmpMaxApiNumber)
                 {
                     /* It isn't, fail */
-                    DbgPrint("Invalid API: %lx\n", RequestMsg.ApiNumber);
+                    DPRINT1("Invalid API: %lx\n", RequestMsg.ApiNumber);
                     Status = STATUS_NOT_IMPLEMENTED;
                 }
                 else if ((RequestMsg.ApiNumber <= SmpTerminateForeignSessionApi) &&
                          !(ClientContext->Subsystem))
                 {
                     /* It's valid, but doesn't have a subsystem with it */
-                    DbgPrint("Invalid session API\n");
+                    DPRINT1("Invalid session API\n");
                     Status = STATUS_INVALID_PARAMETER;
                 }
                 else
@@ -440,7 +423,7 @@ SmpApiLoop(IN PVOID Parameter)
                                                                   SmApiPort);
                 }
 
-                /* Write the result valud and return the message back */
+                /* Write the result value and return the message back */
                 RequestMsg.ReturnValue = Status;
                 ReplyMsg = &RequestMsg;
                 break;

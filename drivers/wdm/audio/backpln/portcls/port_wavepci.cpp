@@ -134,7 +134,7 @@ CPortWavePci::GenerateEventList(
     IN  BOOL NodeEvent,
     IN  ULONG NodeId)
 {
-    UNIMPLEMENTED
+    UNIMPLEMENTED;
 }
 //---------------------------------------------------------------
 // IServiceSink
@@ -228,7 +228,7 @@ CPortWavePci::Init(
     IN PRESOURCELIST  ResourceList)
 {
     IMiniportWavePci * Miniport;
-    PSERVICEGROUP ServiceGroup;
+    PSERVICEGROUP ServiceGroup = 0;
     NTSTATUS Status;
     PPINCOUNT PinCount;
     PPOWERNOTIFY PowerNotify;
@@ -329,7 +329,7 @@ CPortWavePci::Init(
         m_pPowerNotify = PowerNotify;
     }
 
-    DPRINT("IPortWavePci_Init sucessfully initialized\n");
+    DPRINT("IPortWavePci_Init successfully initialized\n");
     return STATUS_SUCCESS;
 }
 
@@ -464,7 +464,7 @@ NTSTATUS
 NTAPI
 CPortWavePci::ReleaseChildren()
 {
-    UNIMPLEMENTED
+    UNIMPLEMENTED;
     return STATUS_UNSUCCESSFUL;
 }
 

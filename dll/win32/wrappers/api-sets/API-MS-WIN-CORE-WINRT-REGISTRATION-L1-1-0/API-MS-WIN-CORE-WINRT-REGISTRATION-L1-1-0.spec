@@ -1,2 +1,0 @@
-@ stub RoGetActivatableClassRegistration
-@ stub RoGetServerActivatableClasses

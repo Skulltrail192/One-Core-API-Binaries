@@ -17,9 +17,6 @@
  *
  */
 
-#include "config.h"
-#include "wine/port.h"
-
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
@@ -557,7 +554,8 @@ static HRESULT wined3d_rendertarget_view_init(struct wined3d_rendertarget_view *
         struct wined3d_texture *texture = texture_from_resource(resource);
 
         view->sub_resource_idx = desc->u.texture.level_idx;
-        view->sub_resource_idx += desc->u.texture.layer_idx * texture->level_count;
+        if (resource->type != WINED3D_RTYPE_TEXTURE_3D)
+            view->sub_resource_idx += desc->u.texture.layer_idx * texture->level_count;
         view->layer_count = desc->u.texture.layer_count;
         view->width = wined3d_texture_get_level_width(texture, desc->u.texture.level_idx);
         view->height = wined3d_texture_get_level_height(texture, desc->u.texture.level_idx);
@@ -908,24 +906,6 @@ void wined3d_unordered_access_view_clear_uint(struct wined3d_unordered_access_vi
     checkGLcall("clear unordered access view");
 }
 
-void wined3d_unordered_access_view_set_counter(struct wined3d_unordered_access_view *view,
-        unsigned int initial_count)
-{
-    const struct wined3d_gl_info *gl_info;
-    struct wined3d_context *context;
-    GLuint value = initial_count;
-
-    if (!view->counter_bo)
-        return;
-
-    context = context_acquire(view->resource->device, NULL, 0);
-    gl_info = context->gl_info;
-    GL_EXTCALL(glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, view->counter_bo));
-    GL_EXTCALL(glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(value), &value));
-    checkGLcall("set atomic counter");
-    context_release(context);
-}
-
 static void wined3d_unordered_access_view_cs_init(void *object)
 {
     struct wined3d_unordered_access_view *view = object;
@@ -943,7 +923,7 @@ static void wined3d_unordered_access_view_cs_init(void *object)
         context = context_acquire(resource->device, NULL, 0);
         gl_info = context->gl_info;
         create_buffer_view(&view->gl_view, context, desc, buffer, view->format);
-        if (desc->flags & (WINED3D_VIEW_BUFFER_COUNTER|WINED3D_VIEW_BUFFER_APPEND))
+        if (desc->flags & WINED3D_VIEW_BUFFER_COUNTER)
         {
             static const GLuint initial_value = 0;
             GL_EXTCALL(glGenBuffers(1, &view->counter_bo));
@@ -987,6 +967,9 @@ static HRESULT wined3d_unordered_access_view_init(struct wined3d_unordered_acces
     if (!(view->format = validate_resource_view(desc, resource, TRUE)))
         return E_INVALIDARG;
     view->desc = *desc;
+
+    if (desc->flags & WINED3D_VIEW_BUFFER_APPEND)
+        FIXME("Unhandled view flags %#x.\n", desc->flags);
 
     wined3d_resource_incref(view->resource = resource);
 

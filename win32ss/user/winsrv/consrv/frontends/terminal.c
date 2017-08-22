@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS Console Server DLL
- * FILE:            frontends/terminal.c
+ * FILE:            win32ss/user/winsrv/consrv/frontends/terminal.c
  * PURPOSE:         ConSrv terminal.
  * PROGRAMMERS:     Hermes Belusca-Maito (hermes.belusca@sfr.fr)
  */
@@ -94,27 +94,27 @@ ConioInputEventToUnicode(PCONSOLE Console, PINPUT_RECORD InputEvent)
 #ifdef TUITERM_COMPILE
 NTSTATUS NTAPI
 TuiLoadFrontEnd(IN OUT PFRONTEND FrontEnd,
-                IN OUT PCONSOLE_INFO ConsoleInfo,
-                IN OUT PVOID ExtraConsoleInfo,
-                IN ULONG ProcessId);
+                IN OUT PCONSOLE_STATE_INFO ConsoleInfo,
+                IN OUT PCONSOLE_INIT_INFO ConsoleInitInfo,
+                IN HANDLE ConsoleLeaderProcessHandle);
 NTSTATUS NTAPI
 TuiUnloadFrontEnd(IN OUT PFRONTEND FrontEnd);
 #endif
 
 NTSTATUS NTAPI
 GuiLoadFrontEnd(IN OUT PFRONTEND FrontEnd,
-                IN OUT PCONSOLE_INFO ConsoleInfo,
-                IN OUT PVOID ExtraConsoleInfo,
-                IN ULONG ProcessId);
+                IN OUT PCONSOLE_STATE_INFO ConsoleInfo,
+                IN OUT PCONSOLE_INIT_INFO ConsoleInitInfo,
+                IN HANDLE ConsoleLeaderProcessHandle);
 NTSTATUS NTAPI
 GuiUnloadFrontEnd(IN OUT PFRONTEND FrontEnd);
 /***************/
 
 typedef
 NTSTATUS (NTAPI *FRONTEND_LOAD)(IN OUT PFRONTEND FrontEnd,
-                                IN OUT PCONSOLE_INFO ConsoleInfo,
-                                IN OUT PVOID ExtraConsoleInfo,
-                                IN ULONG ProcessId);
+                                IN OUT PCONSOLE_STATE_INFO ConsoleInfo,
+                                IN OUT PCONSOLE_INIT_INFO ConsoleInitInfo,
+                                IN HANDLE ConsoleLeaderProcessHandle);
 
 typedef
 NTSTATUS (NTAPI *FRONTEND_UNLOAD)(IN OUT PFRONTEND FrontEnd);
@@ -154,9 +154,9 @@ static struct
 
 static NTSTATUS
 ConSrvLoadFrontEnd(IN OUT PFRONTEND FrontEnd,
-                   IN OUT PCONSOLE_INFO ConsoleInfo,
-                   IN OUT PVOID ExtraConsoleInfo,
-                   IN ULONG ProcessId)
+                   IN OUT PCONSOLE_STATE_INFO ConsoleInfo,
+                   IN OUT PCONSOLE_INIT_INFO ConsoleInitInfo,
+                   IN HANDLE ConsoleLeaderProcessHandle)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     ULONG i;
@@ -164,14 +164,14 @@ ConSrvLoadFrontEnd(IN OUT PFRONTEND FrontEnd,
     /*
      * Choose an adequate terminal front-end to load, and load it
      */
-    for (i = 0; i < sizeof(FrontEndLoadingMethods) / sizeof(FrontEndLoadingMethods[0]); ++i)
+    for (i = 0; i < ARRAYSIZE(FrontEndLoadingMethods); ++i)
     {
         DPRINT("CONSRV: Trying to load %s frontend...\n",
                FrontEndLoadingMethods[i].FrontEndName);
         Status = FrontEndLoadingMethods[i].FrontEndLoad(FrontEnd,
                                                         ConsoleInfo,
-                                                        ExtraConsoleInfo,
-                                                        ProcessId);
+                                                        ConsoleInitInfo,
+                                                        ConsoleLeaderProcessHandle);
         if (NT_SUCCESS(Status))
         {
             /* Save the unload callback */
@@ -204,9 +204,9 @@ static TERMINAL_VTBL ConSrvTermVtbl;
 
 NTSTATUS NTAPI
 ConSrvInitTerminal(IN OUT PTERMINAL Terminal,
-                   IN OUT PCONSOLE_INFO ConsoleInfo,
-                   IN OUT PVOID ExtraConsoleInfo,
-                   IN ULONG ProcessId)
+                   IN OUT PCONSOLE_STATE_INFO ConsoleInfo,
+                   IN OUT PCONSOLE_INIT_INFO ConsoleInitInfo,
+                   IN HANDLE ConsoleLeaderProcessHandle)
 {
     NTSTATUS Status;
     PFRONTEND FrontEnd;
@@ -217,8 +217,8 @@ ConSrvInitTerminal(IN OUT PTERMINAL Terminal,
 
     Status = ConSrvLoadFrontEnd(FrontEnd,
                                 ConsoleInfo,
-                                ExtraConsoleInfo,
-                                ProcessId);
+                                ConsoleInitInfo,
+                                ConsoleLeaderProcessHandle);
     if (!NT_SUCCESS(Status))
     {
         DPRINT1("CONSRV: Failed to initialize a frontend, Status = 0x%08lx\n", Status);
@@ -229,8 +229,8 @@ ConSrvInitTerminal(IN OUT PTERMINAL Terminal,
 
     /* Initialize the ConSrv terminal */
     Terminal->Vtbl = &ConSrvTermVtbl;
-    // Terminal->Console will be initialized by ConDrvRegisterTerminal
-    Terminal->Data = FrontEnd; /* We store the frontend pointer in the terminal private data */
+    // Terminal->Console will be initialized by ConDrvAttachTerminal
+    Terminal->Context = FrontEnd; /* We store the frontend pointer in the terminal private context */
 
     return STATUS_SUCCESS;
 }
@@ -239,10 +239,10 @@ NTSTATUS NTAPI
 ConSrvDeinitTerminal(IN OUT PTERMINAL Terminal)
 {
     NTSTATUS Status = STATUS_SUCCESS;
-    PFRONTEND FrontEnd = Terminal->Data;
+    PFRONTEND FrontEnd = Terminal->Context;
 
     /* Reset the ConSrv terminal */
-    Terminal->Data = NULL;
+    Terminal->Context = NULL;
     Terminal->Vtbl = NULL;
 
     /* Unload the frontend */
@@ -263,7 +263,7 @@ ConSrvTermInitTerminal(IN OUT PTERMINAL This,
                        IN PCONSOLE Console)
 {
     NTSTATUS Status;
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
 
     /* Initialize the console pointer for our frontend */
     FrontEnd->Console = Console;
@@ -277,7 +277,7 @@ ConSrvTermInitTerminal(IN OUT PTERMINAL This,
         DPRINT1("InitFrontEnd failed, Status = 0x%08lx\n", Status);
 
     /** HACK HACK!! Be sure FrontEndIFace is correctly updated in the console!! **/
-    DPRINT1("Using FrontEndIFace HACK(2), should be removed after proper implementation!\n");
+    DPRINT("Using FrontEndIFace HACK(2), should be removed after proper implementation!\n");
     Console->FrontEndIFace = *FrontEnd;
 
     return Status;
@@ -286,7 +286,7 @@ ConSrvTermInitTerminal(IN OUT PTERMINAL This,
 static VOID NTAPI
 ConSrvTermDeinitTerminal(IN OUT PTERMINAL This)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     FrontEnd->Vtbl->DeinitFrontEnd(FrontEnd);
 }
 
@@ -296,31 +296,31 @@ ConSrvTermDeinitTerminal(IN OUT PTERMINAL This)
 
 static NTSTATUS NTAPI
 ConSrvTermReadStream(IN OUT PTERMINAL This,
-                     /**/IN PUNICODE_STRING ExeName /**/OPTIONAL/**/,/**/
                      IN BOOLEAN Unicode,
                      /**PWCHAR Buffer,**/
                      OUT PVOID Buffer,
                      IN OUT PCONSOLE_READCONSOLE_CONTROL ReadControl,
+                     IN PVOID Parameter OPTIONAL,
                      IN ULONG NumCharsToRead,
                      OUT PULONG NumCharsRead OPTIONAL)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     PCONSRV_CONSOLE Console = FrontEnd->Console;
     PCONSOLE_INPUT_BUFFER InputBuffer = &Console->InputBuffer;
+    PUNICODE_STRING ExeName = Parameter;
 
     // STATUS_PENDING : Wait if more to read ; STATUS_SUCCESS : Don't wait.
     NTSTATUS Status = STATUS_PENDING;
 
     PLIST_ENTRY CurrentEntry;
     ConsoleInput *Input;
-    ULONG i;
+    ULONG i = 0;
 
     /* Validity checks */
     // ASSERT(Console == InputBuffer->Header.Console);
     ASSERT((Buffer != NULL) || (Buffer == NULL && NumCharsToRead == 0));
 
     /* We haven't read anything (yet) */
-    i = ReadControl->nInitialChars;
 
     if (InputBuffer->Mode & ENABLE_LINE_INPUT)
     {
@@ -328,8 +328,15 @@ ConSrvTermReadStream(IN OUT PTERMINAL This,
 
         if (Console->LineBuffer == NULL)
         {
-            /* Starting a new line */
+            /* Start a new line */
             Console->LineMaxSize = max(256, NumCharsToRead);
+
+            /*
+             * Fixup ReadControl->nInitialChars in case the number of initial
+             * characters is bigger than the number of characters to be read.
+             * It will always be, lesser than or equal to Console->LineMaxSize.
+             */
+            ReadControl->nInitialChars = min(ReadControl->nInitialChars, NumCharsToRead);
 
             Console->LineBuffer = ConsoleAllocHeap(0, Console->LineMaxSize * sizeof(WCHAR));
             if (Console->LineBuffer == NULL) return STATUS_NO_MEMORY;
@@ -340,11 +347,12 @@ ConSrvTermReadStream(IN OUT PTERMINAL This,
             Console->LineWakeupMask = ReadControl->dwCtrlWakeupMask;
 
             /*
-             * Pre-filling the buffer is only allowed in the Unicode API,
-             * so we don't need to worry about ANSI <-> Unicode conversion.
+             * Pre-fill the buffer with the nInitialChars from the user buffer.
+             * Since pre-filling is only allowed in Unicode, we don't need to
+             * worry about ANSI <-> Unicode conversion.
              */
             memcpy(Console->LineBuffer, Buffer, Console->LineSize * sizeof(WCHAR));
-            if (Console->LineSize == Console->LineMaxSize)
+            if (Console->LineSize >= Console->LineMaxSize)
             {
                 Console->LineComplete = TRUE;
                 Console->LinePos = 0;
@@ -354,7 +362,7 @@ ConSrvTermReadStream(IN OUT PTERMINAL This,
         /* If we don't have a complete line yet, process the pending input */
         while (!Console->LineComplete && !IsListEmpty(&InputBuffer->InputEvents))
         {
-            /* Remove input event from queue */
+            /* Remove an input event from the queue */
             CurrentEntry = RemoveHeadList(&InputBuffer->InputEvents);
             if (IsListEmpty(&InputBuffer->InputEvents))
             {
@@ -376,7 +384,14 @@ ConSrvTermReadStream(IN OUT PTERMINAL This,
         /* Check if we have a complete line to read from */
         if (Console->LineComplete)
         {
-            while (i < NumCharsToRead && Console->LinePos != Console->LineSize)
+            /*
+             * Console->LinePos keeps the next position of the character to read
+             * in the line buffer across the different calls of the function,
+             * so that the line buffer can be read by chunks after all the input
+             * has been buffered.
+             */
+
+            while (i < NumCharsToRead && Console->LinePos < Console->LineSize)
             {
                 WCHAR Char = Console->LineBuffer[Console->LinePos++];
 
@@ -391,11 +406,14 @@ ConSrvTermReadStream(IN OUT PTERMINAL This,
                 ++i;
             }
 
-            if (Console->LinePos == Console->LineSize)
+            if (Console->LinePos >= Console->LineSize)
             {
-                /* Entire line has been read */
+                /* The entire line has been read */
                 ConsoleFreeHeap(Console->LineBuffer);
                 Console->LineBuffer = NULL;
+                Console->LinePos = Console->LineMaxSize = Console->LineSize = 0;
+                // Console->LineComplete = Console->LineUpPressed = FALSE;
+                Console->LineComplete = FALSE;
             }
 
             Status = STATUS_SUCCESS;
@@ -408,7 +426,7 @@ ConSrvTermReadStream(IN OUT PTERMINAL This,
         /* Character input */
         while (i < NumCharsToRead && !IsListEmpty(&InputBuffer->InputEvents))
         {
-            /* Remove input event from queue */
+            /* Remove an input event from the queue */
             CurrentEntry = RemoveHeadList(&InputBuffer->InputEvents);
             if (IsListEmpty(&InputBuffer->InputEvents))
             {
@@ -560,7 +578,7 @@ ConioWriteConsole(PFRONTEND FrontEnd,
                 EndX = (Buff->CursorPosition.X + TAB_WIDTH) & ~(TAB_WIDTH - 1);
                 EndX = min(EndX, (UINT)Buff->ScreenBufferSize.X);
                 Ptr = ConioCoordToPointer(Buff, Buff->CursorPosition.X, Buff->CursorPosition.Y);
-                while (Buff->CursorPosition.X < EndX)
+                while ((UINT)Buff->CursorPosition.X < EndX)
                 {
                     Ptr->Char.UnicodeChar = L' ';
                     Ptr->Attributes = Buff->ScreenDefaultAttrib;
@@ -636,7 +654,7 @@ ConSrvTermWriteStream(IN OUT PTERMINAL This,
                       DWORD Length,
                       BOOL Attrib)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     return ConioWriteConsole(FrontEnd,
                              Buff,
                              Buffer,
@@ -648,11 +666,26 @@ ConSrvTermWriteStream(IN OUT PTERMINAL This,
 
 
 
+VOID
+ConioDrawConsole(PCONSRV_CONSOLE Console)
+{
+    SMALL_RECT Region;
+    PCONSOLE_SCREEN_BUFFER ActiveBuffer = Console->ActiveBuffer;
+
+    if (!ActiveBuffer) return;
+
+    ConioInitRect(&Region, 0, 0,
+                  ActiveBuffer->ViewSize.Y - 1,
+                  ActiveBuffer->ViewSize.X - 1);
+    TermDrawRegion(Console, &Region);
+    // Console->FrontEndIFace.Vtbl->DrawRegion(&Console->FrontEndIFace, &Region);
+}
+
 static VOID NTAPI
 ConSrvTermDrawRegion(IN OUT PTERMINAL This,
                 SMALL_RECT* Region)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     FrontEnd->Vtbl->DrawRegion(FrontEnd, Region);
 }
 
@@ -660,7 +693,7 @@ static BOOL NTAPI
 ConSrvTermSetCursorInfo(IN OUT PTERMINAL This,
                    PCONSOLE_SCREEN_BUFFER ScreenBuffer)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     return FrontEnd->Vtbl->SetCursorInfo(FrontEnd, ScreenBuffer);
 }
 
@@ -670,7 +703,7 @@ ConSrvTermSetScreenInfo(IN OUT PTERMINAL This,
                    SHORT OldCursorX,
                    SHORT OldCursorY)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     return FrontEnd->Vtbl->SetScreenInfo(FrontEnd,
                                          ScreenBuffer,
                                          OldCursorX,
@@ -680,14 +713,14 @@ ConSrvTermSetScreenInfo(IN OUT PTERMINAL This,
 static VOID NTAPI
 ConSrvTermResizeTerminal(IN OUT PTERMINAL This)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     FrontEnd->Vtbl->ResizeTerminal(FrontEnd);
 }
 
 static VOID NTAPI
 ConSrvTermSetActiveScreenBuffer(IN OUT PTERMINAL This)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     FrontEnd->Vtbl->SetActiveScreenBuffer(FrontEnd);
 }
 
@@ -695,7 +728,7 @@ static VOID NTAPI
 ConSrvTermReleaseScreenBuffer(IN OUT PTERMINAL This,
                          IN PCONSOLE_SCREEN_BUFFER ScreenBuffer)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     FrontEnd->Vtbl->ReleaseScreenBuffer(FrontEnd, ScreenBuffer);
 }
 
@@ -703,7 +736,7 @@ static VOID NTAPI
 ConSrvTermGetLargestConsoleWindowSize(IN OUT PTERMINAL This,
                                  PCOORD pSize)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     FrontEnd->Vtbl->GetLargestConsoleWindowSize(FrontEnd, pSize);
 }
 
@@ -712,7 +745,7 @@ ConSrvTermSetPalette(IN OUT PTERMINAL This,
                 HPALETTE PaletteHandle,
                 UINT PaletteUsage)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     return FrontEnd->Vtbl->SetPalette(FrontEnd, PaletteHandle, PaletteUsage);
 }
 
@@ -720,7 +753,7 @@ static INT NTAPI
 ConSrvTermShowMouseCursor(IN OUT PTERMINAL This,
                      BOOL Show)
 {
-    PFRONTEND FrontEnd = This->Data;
+    PFRONTEND FrontEnd = This->Context;
     return FrontEnd->Vtbl->ShowMouseCursor(FrontEnd, Show);
 }
 

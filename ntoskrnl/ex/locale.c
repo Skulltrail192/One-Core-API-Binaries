@@ -35,7 +35,7 @@ ExpGetCurrentUserUILanguage(IN PWSTR MuiName,
     PKEY_VALUE_PARTIAL_INFORMATION ValueInfo;
     OBJECT_ATTRIBUTES ObjectAttributes;
     UNICODE_STRING KeyName =
-        RTL_CONSTANT_STRING(L"Control Panel\\International");
+        RTL_CONSTANT_STRING(L"Control Panel\\Desktop");
     UNICODE_STRING ValueName;
     UNICODE_STRING ValueString;
     ULONG ValueLength;
@@ -55,7 +55,7 @@ ExpGetCurrentUserUILanguage(IN PWSTR MuiName,
     /* Initialize the attributes and open the key */
     InitializeObjectAttributes(&ObjectAttributes,
                                &KeyName,
-                               OBJ_CASE_INSENSITIVE,
+                               OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
                                UserKey,
                                NULL);
     Status = ZwOpenKey(&KeyHandle, KEY_QUERY_VALUE,&ObjectAttributes);
@@ -88,10 +88,10 @@ ExpGetCurrentUserUILanguage(IN PWSTR MuiName,
                 /* Fail */
                 Status = STATUS_UNSUCCESSFUL;
             }
-
-            /* Close the key */
-            ZwClose(KeyHandle);
         }
+
+        /* Close the key */
+        ZwClose(KeyHandle);
     }
 
     /* Close the user key and return */
@@ -221,7 +221,7 @@ NtSetDefaultLocale(IN BOOLEAN UserProfile,
     {
         /* Open the user's key */
         Status = RtlOpenCurrentUser(KEY_WRITE, &UserKey);
-        if (!NT_SUCCESS(Status)) return(Status);
+        if (!NT_SUCCESS(Status)) return Status;
 
         /* Initialize the registry location */
         RtlInitUnicodeString(&KeyName, L"Control Panel\\International");
@@ -237,12 +237,12 @@ NtSetDefaultLocale(IN BOOLEAN UserProfile,
         UserKey = NULL;
     }
 
-    /* Initailize the object attributes */
+    /* Initialize the object attributes */
     InitializeObjectAttributes(&ObjectAttributes,
-                              &KeyName,
-                              OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
-                              UserKey,
-                              NULL);
+                               &KeyName,
+                               OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
+                               UserKey,
+                               NULL);
 
     /* Check if we don't have a default locale yet */
     if (!DefaultLocaleId)
@@ -432,7 +432,7 @@ NtQueryDefaultUILanguage(OUT LANGID* LanguageId)
     _SEH2_EXCEPT(ExSystemExceptionFilter())
     {
         /* Return exception code */
-        return _SEH2_GetExceptionCode();
+        _SEH2_YIELD(return _SEH2_GetExceptionCode());
     }
     _SEH2_END;
 

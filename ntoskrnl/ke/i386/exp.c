@@ -549,6 +549,7 @@ KeContextToTrapFrame(IN PCONTEXT Context,
         {
             /* FIXME: Handle FPU Emulation */
             //ASSERT(FALSE);
+            UNIMPLEMENTED;
         }
     }
 
@@ -898,7 +899,7 @@ KiDispatchException(IN PEXCEPTION_RECORD ExceptionRecord,
     if (PreviousMode == KernelMode)
     {
         /* Check if this is a first-chance exception */
-        if (FirstChance == TRUE)
+        if (FirstChance != FALSE)
         {
             /* Break into the debugger for the first time */
             if (KiDebugRoutine(TrapFrame,

@@ -3,7 +3,7 @@
  * FILE:    dll/win32/syssetup/lang/ro-RO.rc
  * PURPOSE: Romanian Language File for system setup
  * TRANSLATORS:
- *          Petru Dumitriu (petrimetri at gmail dot com)
+ *          Petru Dimitriu (petrimetri at gmail dot com)
  *          Ștefan Fulea (stefan dot fulea at mail dot md)
  */
 
@@ -56,7 +56,7 @@ BEGIN
     ICON IDI_ICON5, IDC_STATIC, 21, 57, 20, 20
     LTEXT "Asistentul va crea un cont de utilizator cu numele Administrator. Îl puteți folosi când veți avea nevoie de control complet asupra calculatorului.", IDC_STATIC, 54, 57, 250, 25
     LTEXT "Introduceți o parolă pentru Administrator de maxim 127 caractere.", IDC_STATIC, 54, 87, 250, 8
-    LTEXT "&Parola de administrator:", IDC_STATIC, 54, 104, 105, 8
+    LTEXT "&Parola pentru Administrator:", IDC_STATIC, 54, 104, 105, 8
     EDITTEXT IDC_ADMINPASSWORD1, 165, 101, 148, 14, WS_VISIBLE | WS_TABSTOP | ES_PASSWORD
     LTEXT "&Confirmarea parolei:", IDC_STATIC, 54, 123, 105, 8
     EDITTEXT IDC_ADMINPASSWORD2, 165, 120, 148, 14, WS_VISIBLE | WS_TABSTOP | ES_PASSWORD
@@ -125,7 +125,7 @@ END
 IDD_STATUSWINDOW_DLG DIALOGEX 0, 0, 274, 26
 STYLE NOT WS_VISIBLE | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP
 CAPTION "Așteptați…"
-FONT 8, "MS Shell Dlg 2", 400, 0, 1
+FONT 8, "MS Shell Dlg", 400, 0, 1
 BEGIN
     LTEXT "", IDC_STATUSLABEL, 7, 8, 234, 12, SS_WORDELLIPSIS
 END
@@ -150,7 +150,7 @@ STRINGTABLE
 BEGIN
     IDS_REACTOS_SETUP "Asistent de instalare ReactOS"
     IDS_UNKNOWN_ERROR "Eroare necunoscută"
-    IDS_REGISTERING_COMPONENTS "Se înregistrează componentele…"
+    IDS_REGISTERING_COMPONENTS "Componente în curs de înregistrare…"
     IDS_LOADLIBRARY_FAILED "LoadLibrary a eșuat: "
     IDS_GETPROCADDR_FAILED "GetProcAddr a eșuat: "
     IDS_REGSVR_FAILED "DllRegisterServer a eșuat: "
@@ -158,26 +158,34 @@ BEGIN
     IDS_TIMEOUT "Timp expirat în timpul înregistrării"
     IDS_REASON_UNKNOWN ""
     /*
-     * ATTENTION: 
-     *   If you translate the administator account name, keep IDS_ADMINISTRATOR_NAME and
+     * ATTENTION:
+     *   If you translate the administrator account name, keep IDS_ADMINISTRATOR_NAME and
      *   samsrv.dll:IDS_USER_ADMINISTRATOR_NAME synchronized.
      *   Also check the IDD_COMPUTERPAGE dialog.
      */
     IDS_ADMINISTRATOR_NAME "Administrator"
+    IDS_MACHINE_OWNER_NAME "Proprietar"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_WZD_NAME "Nu se poate continua până nu scrieți un nume."
-    IDS_WZD_SETCOMPUTERNAME "Se poate da calculatorului acest nume."
-    IDS_WZD_COMPUTERNAME "Nu se poate continua până nu introduceți un nume pentru calculator."
+    IDS_WZD_NAME "Continuarea nu este posibilă fără un nume."
+    IDS_WZD_SETCOMPUTERNAME "Eșec în instituirea numelui de calculator."
+    IDS_WZD_COMPUTERNAME "Continuarea nu este posibilă fără un nume de calculator."
     IDS_WZD_PASSWORDEMPTY "Trebuie să introduceți o parolă!"
-    IDS_WZD_PASSWORDMATCH "Mostrele pentru parolă nu se potrivesc. Încercați reintroducerea parolei."
+    IDS_WZD_PASSWORDMATCH "Mostrele pentru parolă nu se potrivesc. Încercați să reintroduceți parolele."
     IDS_WZD_PASSWORDCHAR "Parola introdusă de dumneavoastră conține caractere invalide. încercați rescrierea parolei."
-    IDS_WZD_LOCALTIME "Nu se poate stabili ora locală."
+    IDS_WZD_LOCALTIME "Eșec la instituirea orei locale."
 END
 
 STRINGTABLE
 BEGIN
-    IDS_STATUS_INSTALL_DEV "Se instalează dispozitivele…"
+    IDS_STATUS_INSTALL_DEV "Dispozitive în curs de instalare…"
+END
+
+/* ATTENTION: Synchronize the translation of these strings with shell32 */
+STRINGTABLE
+BEGIN
+    IDS_PROGRAMFILES "%SystemDrive%\\Fișiere de program"
+    IDS_COMMONFILES "Fișiere comune"
 END

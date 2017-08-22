@@ -1,6 +1,7 @@
 #ifndef _RAPPS_H
 #define _RAPPS_H
 
+#include <tchar.h>
 #include <stdarg.h>
 
 #define WIN32_NO_STATUS
@@ -16,16 +17,23 @@
 #include <winuser.h>
 #include <wincon.h>
 #include <richedit.h>
+#include <shellapi.h>
 #include <shlobj.h>
 #include <shlwapi.h>
 #include <stdio.h>
 #include <strsafe.h>
+#include <ndk/rtlfuncs.h>
 
 #include <rappsmsg.h>
 
 #include "resource.h"
 
-#define APPLICATION_DATEBASE_URL L"http://svn.reactos.org/packages/rappmgr.cab"
+#ifdef USE_CERT_PINNING
+  #define CERT_ISSUER_INFO "BE\r\nGlobalSign nv-sa\r\nGlobalSign Domain Validation CA - SHA256 - G2"
+  #define CERT_SUBJECT_INFO "Domain Control Validated\r\n*.reactos.org"
+#endif
+
+#define APPLICATION_DATABASE_URL L"https://svn.reactos.org/packages/rappmgr.cab"
 
 #define SPLIT_WIDTH 4
 #define MAX_STR_LEN 256
@@ -73,12 +81,20 @@ typedef struct
     WCHAR szName[MAX_PATH];
     WCHAR szRegName[MAX_PATH];
     WCHAR szVersion[MAX_PATH];
-    WCHAR szLicence[MAX_PATH];
+    WCHAR szLicense[MAX_PATH];
     WCHAR szDesc[MAX_PATH];
     WCHAR szSize[MAX_PATH];
     WCHAR szUrlSite[MAX_PATH];
     WCHAR szUrlDownload[MAX_PATH];
     WCHAR szCDPath[MAX_PATH];
+
+    /* caching mechanism related entries */
+    WCHAR cFileName[MAX_PATH];
+    FILETIME ftCacheStamp;
+    LIST_ENTRY List;
+
+    /* optional integrity checks (SHA-1 digests are 160 bit = 40 characters in hex string form) */
+    WCHAR szSHA1[40 + 1];
 
 } APPLICATION_INFO, *PAPPLICATION_INFO;
 
@@ -101,8 +117,12 @@ typedef struct
     BOOL Maximized;
     INT Left;
     INT Top;
-    INT Right;
-    INT Bottom;
+    INT Width;
+    INT Height;
+    /* Proxy settings */
+    INT Proxy;
+    WCHAR szProxyServer[MAX_PATH];
+    WCHAR szNoProxyFor[MAX_PATH];
 
 } SETTINGS_INFO, *PSETTINGS_INFO;
 
@@ -111,6 +131,7 @@ typedef BOOL (CALLBACK *AVAILENUMPROC)(PAPPLICATION_INFO Info);
 BOOL EnumAvailableApplications(INT EnumType, AVAILENUMPROC lpEnumProc);
 BOOL ShowAvailableAppInfo(INT Index);
 BOOL UpdateAppsDB(VOID);
+VOID FreeCachedAvailableEntries(VOID);
 
 /* installdlg.c */
 BOOL InstallApplication(INT Index);
@@ -118,7 +139,7 @@ BOOL InstallApplication(INT Index);
 /* installed.c */
 typedef BOOL (CALLBACK *APPENUMPROC)(INT ItemIndex, LPWSTR lpName, PINSTALLED_INFO Info);
 BOOL EnumInstalledApplications(INT EnumType, BOOL IsUserKey, APPENUMPROC lpEnumProc);
-BOOL GetApplicationString(HKEY hKey, LPWSTR lpKeyName, LPWSTR lpString);
+BOOL GetApplicationString(HKEY hKey, LPCWSTR lpKeyName, LPWSTR lpString);
 BOOL ShowInstalledAppInfo(INT Index);
 BOOL UninstallApplication(INT Index, BOOL bModify);
 BOOL IsInstalledApplication(LPWSTR lpRegName, BOOL IsUserKey);
@@ -132,18 +153,9 @@ extern SETTINGS_INFO SettingsInfo;
 VOID SaveSettings(HWND hwnd);
 VOID FillDefaultSettings(PSETTINGS_INFO pSettingsInfo);
 
-/* listview.c */
-extern HWND hListView;
-extern BOOL bAscending;
-BOOL CreateListView(HWND hwnd);
-BOOL ListViewAddColumn(INT Index, LPWSTR lpText, INT Width, INT Format);
-INT ListViewAddItem(INT ItemIndex, INT IconIndex, LPWSTR lpText, LPARAM lParam);
-INT CALLBACK ListViewCompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
-PVOID ListViewGetlParam(INT Index);
-
 /* loaddlg.c */
 BOOL DownloadApplication(INT Index);
-VOID DownloadApplicationsDB(LPWSTR lpUrl);
+VOID DownloadApplicationsDB(LPCWSTR lpUrl);
 
 /* misc.c */
 INT GetSystemColorDepth(VOID);
@@ -161,43 +173,28 @@ VOID InitLogs(VOID);
 VOID FreeLogs(VOID);
 BOOL WriteLogMessage(WORD wType, DWORD dwEventID, LPWSTR lpMsg);
 
-/* parser.c */
-INT ParserGetString(LPCWSTR section, LPCWSTR entry, LPWSTR buffer, UINT len, LPCWSTR filename);
-UINT ParserGetInt(LPCWSTR section, LPCWSTR entry, LPCWSTR filename);
-
-/* richedit.c */
-extern HWND hRichEdit;
-extern PWSTR pLink;
-BOOL CreateRichEdit(HWND hwnd);
-VOID RichEditOnLink(HWND hwnd, ENLINK *Link);
-VOID InsertRichEditText(LPCWSTR lpszText, DWORD dwEffects);
-VOID NewRichEditText(LPCWSTR lpszText, DWORD dwEffects);
+UINT ParserGetString(LPCWSTR lpKeyName, LPWSTR lpReturnedString, UINT nSize, LPCWSTR lpFileName);
+UINT ParserGetInt(LPCWSTR lpKeyName, LPCWSTR lpFileName);
 
 /* settingsdlg.c */
 VOID CreateSettingsDlg(HWND hwnd);
 
-/* splitter.c */
-extern HWND hVSplitter;
-extern HWND hHSplitter;
-BOOL CreateVSplitBar(HWND hwnd);
-BOOL CreateHSplitBar(HWND hwnd);
-int GetHSplitterPos(VOID);
-VOID SetHSplitterPos(int Pos);
+/* gui.cpp */
+HWND CreateMainWindow();
+DWORD_PTR ListViewGetlParam(INT item);
+INT ListViewAddItem(INT ItemIndex, INT IconIndex, PWSTR lpName, LPARAM lParam);
+VOID SetStatusBarText(PCWSTR szText);
+VOID NewRichEditText(PCWSTR szText, DWORD flags);
+VOID InsertRichEditText(PCWSTR szText, DWORD flags);
+extern HWND hListView;
+extern WCHAR szSearchPattern[MAX_STR_LEN];
 
-/* statusbar.c */
-extern HWND hStatusBar;
-BOOL CreateStatusBar(HWND hwnd);
-VOID SetStatusBarText(LPCWSTR lpszText);
+/* integrity.cpp */
+BOOL VerifyInteg(LPCWSTR lpSHA1Hash, LPCWSTR lpFileName);
 
-/* toolbar.c */
-extern HWND hToolBar;
-extern HWND hSearchBar;
-BOOL CreateToolBar(HWND hwnd);
-VOID ToolBarOnGetDispInfo(LPTOOLTIPTEXT lpttt);
+//extern HWND hTreeView;
+//BOOL CreateTreeView(HWND hwnd);
+//HTREEITEM TreeViewAddItem(HTREEITEM hParent, LPWSTR lpText, INT Image, INT SelectedImage, LPARAM lParam);
 
-/* treeview.c */
-extern HWND hTreeView;
-BOOL CreateTreeView(HWND hwnd);
-HTREEITEM TreeViewAddItem(HTREEITEM hParent, LPWSTR lpText, INT Image, INT SelectedImage, LPARAM lParam);
 
 #endif /* _RAPPS_H */

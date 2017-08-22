@@ -18,12 +18,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
-#include "wine/port.h"
-
-#include <math.h>
-#include <stdio.h>
-
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_shader);
@@ -1352,9 +1346,22 @@ static void atifs_free(struct wined3d_device *device)
 
 static BOOL atifs_color_fixup_supported(struct color_fixup_desc fixup)
 {
+    if (TRACE_ON(d3d_shader) && TRACE_ON(d3d))
+    {
+        TRACE("Checking support for fixup:\n");
+        dump_color_fixup_desc(fixup);
+    }
+
     /* We only support sign fixup of the first two channels. */
-    return is_identity_fixup(fixup) || is_same_fixup(fixup, color_fixup_rg)
-            || is_same_fixup(fixup, color_fixup_rgl) || is_same_fixup(fixup, color_fixup_rgba);
+    if (is_identity_fixup(fixup) || is_same_fixup(fixup, color_fixup_rg)
+            || is_same_fixup(fixup, color_fixup_rgl) || is_same_fixup(fixup, color_fixup_rgba))
+    {
+        TRACE("[OK]\n");
+        return TRUE;
+    }
+
+    TRACE("[FAILED]\n");
+    return FALSE;
 }
 
 static BOOL atifs_alloc_context_data(struct wined3d_context *context)

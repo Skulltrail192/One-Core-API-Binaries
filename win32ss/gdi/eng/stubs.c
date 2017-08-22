@@ -72,29 +72,6 @@ EngComputeGlyphSet(
 /*
  * @unimplemented
  */
-PATHOBJ*
-APIENTRY
-EngCreatePath(VOID)
-{
-    // www.osr.com/ddk/graphics/gdifncs_4aav.htm
-    UNIMPLEMENTED;
-    return NULL;
-}
-
-/*
- * @unimplemented
- */
-VOID
-APIENTRY
-EngDeletePath(IN PATHOBJ *ppo)
-{
-    // www.osr.com/ddk/graphics/gdifncs_3fl3.htm
-    UNIMPLEMENTED;
-}
-
-/*
- * @unimplemented
- */
 BOOL
 APIENTRY
 EngEnumForms(
@@ -284,10 +261,21 @@ EngMultiByteToWideChar(
 
 VOID
 APIENTRY
-EngQueryLocalTime(OUT PENG_TIME_FIELDS ptf)
+EngQueryLocalTime(
+    _Out_ PENG_TIME_FIELDS ptf)
 {
-    // www.osr.com/ddk/graphics/gdifncs_389z.htm
-    UNIMPLEMENTED;
+    LARGE_INTEGER liSystemTime, liLocalTime;
+    NT_ASSERT(ptf != NULL);
+
+    /* Query the system time */
+    KeQuerySystemTime(&liSystemTime);
+
+    /* Convert it to local time */
+    ExSystemTimeToLocalTime(&liSystemTime, &liLocalTime);
+
+    /* Convert the local time into time fields
+       (note that ENG_TIME_FIELDS is identical to TIME_FIELDS) */
+    RtlTimeToTimeFields(&liLocalTime, (PTIME_FIELDS)ptf);
 }
 
 ULONG
@@ -423,11 +411,13 @@ FONTOBJ_pifi(IN FONTOBJ *FontObj)
 /*
  * @unimplemented
  */
+_Ret_opt_bytecount_(*pcjFile)
+ENGAPI
 PVOID
 APIENTRY
 FONTOBJ_pvTrueTypeFontFile(
-    IN FONTOBJ  *FontObj,
-    IN ULONG    *FileSize)
+    _In_ FONTOBJ *pfo,
+    _Out_ ULONG *pcjFile)
 {
     UNIMPLEMENTED;
     return NULL;
@@ -483,103 +473,6 @@ HT_Get8BPPFormatPalette(
     // www.osr.com/ddk/graphics/gdifncs_8kvb.htm
     UNIMPLEMENTED;
     return 0;
-}
-
-BOOL
-APIENTRY
-PATHOBJ_bCloseFigure(IN PATHOBJ *ppo)
-{
-    // www.osr.com/ddk/graphics/gdifncs_5mhz.htm
-    UNIMPLEMENTED;
-    return FALSE;
-}
-
-BOOL
-APIENTRY
-PATHOBJ_bEnum(
-    IN  PATHOBJ   *ppo,
-    OUT PATHDATA  *ppd)
-{
-    // www.osr.com/ddk/graphics/gdifncs_98o7.htm
-    UNIMPLEMENTED;
-    return FALSE;
-}
-
-BOOL
-APIENTRY
-PATHOBJ_bEnumClipLines(
-    IN PATHOBJ  *ppo,
-    IN ULONG  cb,
-    OUT CLIPLINE  *pcl)
-{
-    // www.osr.com/ddk/graphics/gdifncs_4147.htm
-    UNIMPLEMENTED;
-    return FALSE;
-}
-
-BOOL
-APIENTRY
-PATHOBJ_bMoveTo(
-    IN PATHOBJ  *ppo,
-    IN POINTFIX  ptfx)
-{
-    // www.osr.com/ddk/graphics/gdifncs_70vb.htm
-    UNIMPLEMENTED;
-    return FALSE;
-}
-
-BOOL
-APIENTRY
-PATHOBJ_bPolyBezierTo(
-    IN PATHOBJ  *ppo,
-    IN POINTFIX  *pptfx,
-    IN ULONG  cptfx)
-{
-    // www.osr.com/ddk/graphics/gdifncs_2c9z.htm
-    UNIMPLEMENTED;
-    return FALSE;
-}
-
-BOOL
-APIENTRY
-PATHOBJ_bPolyLineTo(
-    IN PATHOBJ  *ppo,
-    IN POINTFIX  *pptfx,
-    IN ULONG  cptfx)
-{
-    // www.osr.com/ddk/graphics/gdifncs_0x47.htm
-    UNIMPLEMENTED;
-    return FALSE;
-}
-
-VOID
-APIENTRY
-PATHOBJ_vEnumStart(IN PATHOBJ *ppo)
-{
-    // www.osr.com/ddk/graphics/gdifncs_74br.htm
-    UNIMPLEMENTED;
-}
-
-VOID
-APIENTRY
-PATHOBJ_vEnumStartClipLines(
-    IN PATHOBJ  *ppo,
-    IN CLIPOBJ  *pco,
-    IN SURFOBJ  *pso,
-    IN LINEATTRS  *pla)
-{
-    // www.osr.com/ddk/graphics/gdifncs_5grr.htm
-    UNIMPLEMENTED;
-}
-
-VOID
-APIENTRY
-PATHOBJ_vGetBounds(
-    IN PATHOBJ  *ppo,
-    OUT PRECTFX  prectfx)
-{
-    // www.osr.com/ddk/graphics/gdifncs_8qp3.htm
-    UNIMPLEMENTED;
 }
 
 /*
@@ -656,7 +549,7 @@ EngHangNotification(
  */
 BOOL
 APIENTRY
-EngLpkInstalled()
+EngLpkInstalled(VOID)
 {
     UNIMPLEMENTED;
     return FALSE;
@@ -729,12 +622,14 @@ FONTOBJ_pfdg(
 /*
  * @unimplemented
  */
+_Ret_opt_bytecount_(*pcjTable)
+ENGAPI
 PBYTE
 APIENTRY
 FONTOBJ_pjOpenTypeTablePointer(
-    IN FONTOBJ *FontObj,
-    IN ULONG Tag,
-    OUT ULONG *Table)
+    _In_ FONTOBJ *pfo,
+    _In_ ULONG ulTag,
+    _Out_ ULONG *pcjTable)
 {
     UNIMPLEMENTED;
     return NULL;
@@ -788,7 +683,7 @@ HT_Get8BPPMaskPalette(
  */
 BOOL
 APIENTRY
-NtGdiAnyLinkedFonts()
+NtGdiAnyLinkedFonts(VOID)
 {
     UNIMPLEMENTED;
     return FALSE;
@@ -818,22 +713,6 @@ NtGdiAddRemoteFontToDC(
 {
     UNIMPLEMENTED;
     return 0;
-}
-
-/*
- * @unimplemented
- */
-HANDLE
-APIENTRY
-NtGdiAddFontMemResourceEx(
-    IN PVOID pvBuffer,
-    IN DWORD cjBuffer,
-    IN DESIGNVECTOR *pdv,
-    IN ULONG cjDV,
-    OUT DWORD *pNumFonts)
-{
-    UNIMPLEMENTED;
-    return NULL;
 }
 
 /*
@@ -923,18 +802,6 @@ NtGdiGetUFI(
     return FALSE;
 }
 
-/*
- * @unimplemented
- */
-HBRUSH
-APIENTRY
-NtGdiClearBrushAttributes(
-    IN HBRUSH hbm,
-    IN DWORD dwFlags)
-{
-    UNIMPLEMENTED;
-    return NULL;
-}
 
 /*
  * @unimplemented
@@ -1259,19 +1126,6 @@ NtGdiGetLinkedUFIs(
 /*
  * @unimplemented
  */
-HBITMAP
-APIENTRY
-NtGdiGetObjectBitmapHandle(
-    IN HBRUSH hbr,
-    OUT UINT *piUsage)
-{
-    UNIMPLEMENTED;
-    return 0;
-}
-
-/*
- * @unimplemented
- */
 BOOL
 APIENTRY
 NtGdiGetMonitorID(
@@ -1341,18 +1195,6 @@ NtGdiGetStringBitmapW(
  */
 BOOL
 APIENTRY
-NtGdiRemoveFontMemResourceEx(
-    IN HANDLE hMMFont)
-{
-    UNIMPLEMENTED;
-    return FALSE;
-}
-
-/*
- * @unimplemented
- */
-BOOL
-APIENTRY
 NtGdiRemoveFontResourceW(
     IN WCHAR *pwszFiles,
     IN ULONG cwc,
@@ -1408,19 +1250,6 @@ NtGdiSetupPublicCFONT(
 {
     UNIMPLEMENTED;
     return 0;
-}
-
-/*
- * @unimplemented
- */
-HBRUSH
-APIENTRY
-NtGdiSetBrushAttributes(
-    IN HBRUSH hbm,
-    IN DWORD dwFlags)
-{
-    UNIMPLEMENTED;
-    return NULL;
 }
 
 /*
@@ -1535,16 +1364,6 @@ NtGdiIcmBrushInfo(
 {
     UNIMPLEMENTED;
     return FALSE;
-}
-
-/*
- * @implemented
- */
-BOOL
-APIENTRY
-NtGdiInit(VOID)
-{
-    return TRUE;
 }
 
 /*
@@ -1676,11 +1495,14 @@ EngControlSprites(
     return FALSE;
 }
 
+_Must_inspect_result_
+_Ret_opt_bytecap_(cjSize)
+ENGAPI
 PVOID
 APIENTRY
 EngFntCacheAlloc(
-    IN ULONG FastCheckSum,
-    IN ULONG ulSize)
+    _In_ ULONG ulFastCheckSum,
+    _In_ ULONG cjSize)
 {
     UNIMPLEMENTED;
     return NULL;

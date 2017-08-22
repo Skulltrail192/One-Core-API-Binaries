@@ -30,7 +30,6 @@ typedef struct _GDIPOINTER /* should stay private to ENG? No, part of PDEVOBJ ak
   BOOL     Enabled;
   SIZEL    Size;
   POINTL   HotSpot;
-  XLATEOBJ *XlateObject;
   SURFACE  *psurfColor;
   SURFACE  *psurfMask;
   SURFACE  *psurfSave;
@@ -124,7 +123,7 @@ typedef struct _PDEVOBJ
     DEVINFO                   devinfo;
     GDIINFO                   gdiinfo;
     PSURFACE                  pSurface;       /* SURFACE for this device. */
-//  HANDLE                    hSpooler;       /* Handle to spooler, if spooler dev driver. */
+    HANDLE                    hSpooler;       /* Handle to spooler, if spooler dev driver, DeviceObject if graphics device */
 //  PVOID                     pDesktopId;
     PGRAPHICS_DEVICE          pGraphicsDevice;
     POINTL                    ptlOrigion;
@@ -189,5 +188,17 @@ FASTCALL
 PDEVOBJ_sizl(
     _In_ PPDEVOBJ ppdev,
     _Out_ PSIZEL psizl);
+
+BOOL
+NTAPI
+PDEVOBJ_bSwitchMode(
+    PPDEVOBJ ppdev,
+    PDEVMODEW pdm);
+
+PDEVMODEW
+NTAPI
+PDEVOBJ_pdmMatchDevMode(
+    PPDEVOBJ ppdev,
+    PDEVMODEW pdm);
 
 #endif /* !__WIN32K_PDEVOBJ_H */

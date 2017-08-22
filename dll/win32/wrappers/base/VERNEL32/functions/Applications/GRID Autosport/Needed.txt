@@ -1,5 +1,0 @@
-AcquireSRWLockExclusive
-GetFileInformationByHandleEx
-OpenFileById
-ReleaseSRWLockExclusive
-InitializeSRWLock

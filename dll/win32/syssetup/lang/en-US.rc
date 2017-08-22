@@ -36,7 +36,7 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     LTEXT "The ReactOS developers would like to acknowledge the following Open Source projects, (parts of) which were used to create ReactOS:", IDC_STATIC, 15, 7, 286, 19
     LISTBOX IDC_PROJECTS, 15, 30, 286, 75, LBS_NOSEL | LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
-    LTEXT "ReactOS is licensed under the GPL, so if you want to reuse or redistribute (parts of) it you must respect the GPL", IDC_STATIC, 15, 110, 227, 19
+    LTEXT "ReactOS is licensed under the GPL, so if you want to reuse or redistribute (parts of) it you must respect the GPL.", IDC_STATIC, 15, 110, 227, 19
     PUSHBUTTON "&View GPL...", IDC_VIEWGPL, 251, 110, 50, 19
     LTEXT "Click Next to continue with Setup.", IDC_STATIC, 15, 136, 195, 17
 END
@@ -135,7 +135,7 @@ END
 IDD_STATUSWINDOW_DLG DIALOGEX 0, 0, 274, 26
 STYLE NOT WS_VISIBLE | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP
 CAPTION "Please wait..."
-FONT 8, "MS Shell Dlg 2", 400, 0, 1
+FONT 8, "MS Shell Dlg", 400, 0, 1
 BEGIN
     LTEXT "", IDC_STATUSLABEL, 7, 8, 234, 12, SS_WORDELLIPSIS
 END
@@ -168,12 +168,13 @@ BEGIN
     IDS_TIMEOUT "Timeout during registration"
     IDS_REASON_UNKNOWN ""
     /*
-     * ATTENTION: 
-     *   If you translate the administator account name, keep IDS_ADMINISTRATOR_NAME and
+     * ATTENTION:
+     *   If you translate the administrator account name, keep IDS_ADMINISTRATOR_NAME and
      *   samsrv.dll:IDS_USER_ADMINISTRATOR_NAME synchronized.
      *   Also check the IDD_COMPUTERPAGE dialog.
      */
     IDS_ADMINISTRATOR_NAME "Administrator"
+    IDS_MACHINE_OWNER_NAME "Owner"
 END
 
 STRINGTABLE
@@ -190,4 +191,11 @@ END
 STRINGTABLE
 BEGIN
     IDS_STATUS_INSTALL_DEV "Installing devices..."
+END
+
+/* ATTENTION: Synchronize the translation of these strings with shell32 */
+STRINGTABLE
+BEGIN
+    IDS_PROGRAMFILES "%SystemDrive%\\Program Files"
+    IDS_COMMONFILES "Common Files"
 END

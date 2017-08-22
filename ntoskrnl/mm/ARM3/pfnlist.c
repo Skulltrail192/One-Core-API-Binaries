@@ -13,7 +13,7 @@
 #include <debug.h>
 
 #define MODULE_INVOLVED_IN_ARM3
-#include "../ARM3/miarm.h"
+#include <mm/ARM3/miarm.h>
 
 #if DBG
 #define ASSERT_LIST_INVARIANT(x) \
@@ -64,7 +64,6 @@ ULONG MI_PFN_CURRENT_USAGE;
 CHAR MI_PFN_CURRENT_PROCESS_NAME[16] = "None yet";
 
 /* FUNCTIONS ******************************************************************/
-
 static
 VOID
 MiIncrementAvailablePages(
@@ -597,6 +596,9 @@ MiRemoveZeroPage(IN ULONG Color)
     return PageIndex;
 }
 
+/* HACK for keeping legacy Mm alive */
+extern BOOLEAN MmRosNotifyAvailablePage(PFN_NUMBER PageFrameIndex);
+
 VOID
 NTAPI
 MiInsertPageInFreeList(IN PFN_NUMBER PageFrameIndex)
@@ -623,6 +625,13 @@ MiInsertPageInFreeList(IN PFN_NUMBER PageFrameIndex)
     ASSERT(Pfn1->u3.e1.RemovalRequested == 0);
     ASSERT(Pfn1->u4.VerifierAllocation == 0);
     ASSERT(Pfn1->u3.e2.ReferenceCount == 0);
+
+    /* HACK HACK HACK : Feed the page to legacy Mm */
+    if (MmRosNotifyAvailablePage(PageFrameIndex))
+    {
+        DPRINT1("Legacy Mm eating ARM3 page!.\n");
+        return;
+    }
 
     /* Get the free page list and increment its count */
     ListHead = &MmFreePageListHead;
@@ -695,7 +704,6 @@ MiInsertPageInFreeList(IN PFN_NUMBER PageFrameIndex)
     if ((ListHead->Total >= 8) && !(MmZeroingPageThreadActive))
     {
         /* Set the event */
-        MmZeroingPageThreadActive = TRUE;
         KeSetEvent(&MmZeroingPageEvent, IO_NO_INCREMENT, FALSE);
     }
 
@@ -1083,15 +1091,15 @@ MiInitializePfnAndMakePteValid(IN PFN_NUMBER PageFrameIndex,
 NTSTATUS
 NTAPI
 MiInitializeAndChargePfn(OUT PPFN_NUMBER PageFrameIndex,
-                         IN PMMPTE PointerPde,
+                         IN PMMPDE PointerPde,
                          IN PFN_NUMBER ContainingPageFrame,
                          IN BOOLEAN SessionAllocation)
 {
-    MMPTE TempPte;
+    MMPDE TempPde;
     KIRQL OldIrql;
 
     /* Use either a global or local PDE */
-    TempPte = SessionAllocation ? ValidKernelPdeLocal : ValidKernelPde;
+    TempPde = SessionAllocation ? ValidKernelPdeLocal : ValidKernelPde;
 
     /* Lock the PFN database */
     OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
@@ -1106,8 +1114,8 @@ MiInitializeAndChargePfn(OUT PPFN_NUMBER PageFrameIndex,
 
     /* Grab a zero page and set the PFN, then make it valid */
     *PageFrameIndex = MiRemoveZeroPage(MI_GET_NEXT_COLOR());
-    TempPte.u.Hard.PageFrameNumber = *PageFrameIndex;
-    MI_WRITE_VALID_PTE(PointerPde, TempPte);
+    TempPde.u.Hard.PageFrameNumber = *PageFrameIndex;
+    MI_WRITE_VALID_PDE(PointerPde, TempPde);
 
     /* Initialize the PFN */
     MiInitializePfnForOtherProcess(*PageFrameIndex,
@@ -1183,7 +1191,7 @@ MiDecrementShareCount(IN PMMPFN Pfn1,
         if (Pfn1->u3.e2.ReferenceCount == 1)
         {
             /* Is there still a PFN for this page? */
-            if (MI_IS_PFN_DELETED(Pfn1) == TRUE)
+            if (MI_IS_PFN_DELETED(Pfn1))
             {
                 /* Clear the last reference */
                 Pfn1->u3.e2.ReferenceCount = 0;
@@ -1270,14 +1278,14 @@ MiDecrementReferenceCount(IN PMMPFN Pfn1,
 VOID
 NTAPI
 MiInitializePfnForOtherProcess(IN PFN_NUMBER PageFrameIndex,
-                               IN PMMPTE PointerPte,
+                               IN PVOID PteAddress,
                                IN PFN_NUMBER PteFrame)
 {
     PMMPFN Pfn1;
 
     /* Setup the PTE */
     Pfn1 = MI_PFN_ELEMENT(PageFrameIndex);
-    Pfn1->PteAddress = PointerPte;
+    Pfn1->PteAddress = PteAddress;
 
     /* Make this a software PTE */
     MI_MAKE_SOFTWARE_PTE(&Pfn1->OriginalPte, MM_READWRITE);

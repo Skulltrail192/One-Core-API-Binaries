@@ -1,4 +1,0 @@
-MODULE    = mfreadwrite.dll
-
-C_SRCS = \
-	main.c

@@ -36,7 +36,7 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     LTEXT "Zhvilluesit e ReactOS dëshirojnë të vlerësojë projektet e mëposhtme Burim i Hapur, (pjesëve të) të cilave u përdorën për të krijuar ReactOS:", IDC_STATIC, 15, 7, 286, 19
     LISTBOX IDC_PROJECTS, 15, 30, 286, 75, LBS_NOSEL | LBS_HASSTRINGS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
-    LTEXT "ReactOS publikohet nën lejen GPL, kështu që nëse doni të ripërdorni ose rishpërndani (pjesëve të) atë që ju duhet të respektojnë GPL", IDC_STATIC, 15, 110, 227, 19
+    LTEXT "ReactOS publikohet nën lejen GPL, kështu që nëse doni të ripërdorni ose rishpërndani (pjesëve të) atë që ju duhet të respektojnë GPL.", IDC_STATIC, 15, 110, 227, 19
     PUSHBUTTON "&Vëzhgo GPL...", IDC_VIEWGPL, 251, 110, 50, 19
     LTEXT "Klikoni Tjetër për të vazhduar me Ndërtimin.", IDC_STATIC, 15, 136, 195, 17
 END
@@ -135,7 +135,7 @@ END
 IDD_STATUSWINDOW_DLG DIALOGEX 0, 0, 274, 26
 STYLE NOT WS_VISIBLE | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP
 CAPTION "Ju Lutem prisni..."
-FONT 8, "MS Shell Dlg 2", 400, 0, 1
+FONT 8, "MS Shell Dlg", 400, 0, 1
 BEGIN
     LTEXT "", IDC_STATUSLABEL, 7, 8, 234, 12, SS_WORDELLIPSIS
 END
@@ -168,12 +168,13 @@ BEGIN
     IDS_TIMEOUT "Timeout gjatë regjistrimit"
     IDS_REASON_UNKNOWN ""
     /*
-     * ATTENTION: 
-     *   If you translate the administator account name, keep IDS_ADMINISTRATOR_NAME and
+     * ATTENTION:
+     *   If you translate the administrator account name, keep IDS_ADMINISTRATOR_NAME and
      *   samsrv.dll:IDS_USER_ADMINISTRATOR_NAME synchronized.
      *   Also check the IDD_COMPUTERPAGE dialog.
      */
     IDS_ADMINISTRATOR_NAME "Administratorër"
+    IDS_MACHINE_OWNER_NAME "Zotëruesi"
 END
 
 STRINGTABLE
@@ -190,4 +191,11 @@ END
 STRINGTABLE
 BEGIN
     IDS_STATUS_INSTALL_DEV "Instalimi Pajisjeve..."
+END
+
+/* ATTENTION: Synchronize the translation of these strings with shell32 */
+STRINGTABLE
+BEGIN
+    IDS_PROGRAMFILES "%SystemDrive%\\Dokumente Programi"
+    IDS_COMMONFILES "Dokumente Zakonshëm"
 END

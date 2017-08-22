@@ -424,8 +424,8 @@ BitBlt(IN ULONG Left,
     ULONG sx, dx, dy;
     UCHAR color;
     ULONG offset = 0;
-    const ULONG Bottom = 479;//Top + Height;
-    const ULONG Right = 639;//Left + Width;
+    const ULONG Bottom = Top + Height;
+    const ULONG Right = Left + Width;
 
     /* Check if the buffer isn't 4bpp */
     if (BitsPerPixel != 4)
@@ -455,25 +455,17 @@ BitBlt(IN ULONG Left,
     __outpw(0x3CE, 7);
 
     /* 4bpp blitting */
-    //dy = Top;
-	dy = 0;
-	Delta = -320;
-	DbgPrint("Dy %d\n",dy);	
-	DbgPrint("Bottom %d\n",Bottom);
-	DbgPrint("Right %d\n",Right);
+    dy = Top;
     do
     {
         sx = 0;
         do
         {
             /* Extract color */
-			DbgPrint("Count %d\n",sx);
             color = Buffer[offset + sx];
-			//color = Buffer[1];
 
             /* Calc destination x */
-            dx = (sx << 1);//Left + (sx << 1);
-			DbgPrint("Dx %d\n",dx);
+            dx = Left + (sx << 1);
 
             /* Set two pixels */
             SetPixel(dx, dy, color >> 4);
@@ -481,7 +473,6 @@ BitBlt(IN ULONG Left,
 
             sx++;
         } while (dx < Right);
-		DbgPrint("Delta %d\n", Delta);
         offset += Delta;
         dy++;
     } while (dy < Bottom);
@@ -524,7 +515,7 @@ RleBitBlt(IN ULONG Left,
             /* Check if we've gone past the edge */
             if ((x + RleValue) > (Width + Left))
             {
-                /* Fixeup the pixel value */
+                /* Fixup the pixel value */
                 RleValue = Left - x + Width;
             }
 
@@ -535,7 +526,7 @@ RleBitBlt(IN ULONG Left,
             Color = NewRleValue >> 4;
             Color2 = NewRleValue & 0xF;
 
-            /* Increase buffer positition */
+            /* Increase buffer position */
             Buffer++;
 
             /* Check if we need to do a fill */
@@ -569,7 +560,7 @@ RleBitBlt(IN ULONG Left,
             /* Check if there is any value at all */
             if (RleValue)
             {
-                /* Set the pixel and increase posititon */
+                /* Set the pixel and increase position */
                 SetPixel(x, YDelta, (UCHAR)Color);
                 x++;
             }

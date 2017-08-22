@@ -193,7 +193,7 @@ FindModule(IN HANDLE hProcess,
     {
         /* Load module data */
         if (!ReadProcessMemory(hProcess,
-                               CONTAINING_RECORD(ListEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderModuleList),
+                               NULL,
                                Module,
                                sizeof(*Module),
                                NULL))
@@ -214,7 +214,7 @@ FindModule(IN HANDLE hProcess,
         }
 
         /* Get to next listed module */
-        ListEntry = Module->InMemoryOrderModuleList.Flink;
+        ListEntry = NULL;
     }
 
     SetLastError(ERROR_INVALID_HANDLE);

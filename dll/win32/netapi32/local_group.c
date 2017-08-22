@@ -103,7 +103,7 @@ BuildAliasInfoBuffer(PALIAS_GENERAL_INFORMATION AliasInfo,
         case 0:
             LocalInfo0 = (PLOCALGROUP_INFO_0)LocalBuffer;
 
-            Ptr = (LPWSTR)LocalInfo0++;
+            Ptr = (LPWSTR)((ULONG_PTR)LocalInfo0 + sizeof(LOCALGROUP_INFO_0));
             LocalInfo0->lgrpi0_name = Ptr;
 
             memcpy(LocalInfo0->lgrpi0_name,
@@ -1163,7 +1163,7 @@ NetLocalGroupEnum(
 //    }
 
 done:
-    if (ApiStatus == NERR_Success && EnumContext->Phase != DonePhase)
+    if (ApiStatus == NERR_Success && EnumContext != NULL && EnumContext->Phase != DonePhase)
         ApiStatus = ERROR_MORE_DATA;
 
     if (EnumContext != NULL)
@@ -1610,7 +1610,7 @@ NetLocalGroupGetMembers(
 
                 TRACE("Name: %S\n", EnumContext->Names[i].Name.Buffer);
 
-                MembersInfo1->lgrmi1_name = (LPWSTR)Ptr;
+                MembersInfo1->lgrmi1_name = Ptr;
 
                 memcpy(MembersInfo1->lgrmi1_name,
                        EnumContext->Names[i].Name.Buffer,
@@ -1631,7 +1631,7 @@ NetLocalGroupGetMembers(
 
                 MembersInfo2->lgrmi2_sidusage = EnumContext->Names[i].Use;
 
-                MembersInfo2->lgrmi2_domainandname = (LPWSTR)Ptr;
+                MembersInfo2->lgrmi2_domainandname = Ptr;
 
                 if (EnumContext->Names[i].DomainIndex >= 0)
                 {
@@ -1654,7 +1654,7 @@ NetLocalGroupGetMembers(
                 break;
 
             case 3:
-                MembersInfo3->lgrmi3_domainandname = (PSID)Ptr;
+                MembersInfo3->lgrmi3_domainandname = Ptr;
 
                 if (EnumContext->Names[i].DomainIndex >= 0)
                 {
@@ -1880,7 +1880,9 @@ done:
 /************************************************************
  *                NetLocalGroupSetMember (NETAPI32.@)
  */
-NET_API_STATUS WINAPI NetLocalGroupSetMembers(
+NET_API_STATUS
+WINAPI
+NetLocalGroupSetMembers(
     LPCWSTR servername,
     LPCWSTR groupname,
     DWORD level,

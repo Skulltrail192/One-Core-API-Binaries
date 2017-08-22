@@ -22,6 +22,8 @@
 #include "setupapi_private.h"
 
 #include <wingdi.h>
+#include <shellapi.h>
+#include <strsafe.h>
 
 /* Unicode constants */
 static const WCHAR BackSlash[] = {'\\',0};
@@ -76,6 +78,7 @@ static const INSTALL_PARAMS_DATA InstallParamsData[] = {
 };
 #undef ADD_PARAM_HANDLER
 
+#define UNKNOWN_ICON_INDEX 18
 
 /***********************************************************************
  *		SetupDiDestroyClassImageList(SETUPAPI.@)
@@ -99,10 +102,17 @@ SetupDiDestroyClassImageList(
         SetLastError(ERROR_INVALID_USER_BUFFER);
     else
     {
-        //DestroyIcon()
-        //ImageList_Destroy();
-        FIXME("Stub %p\n", ClassImageListData);
-        SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+        /* If Reserved wasn't NULL, then this is valid too */
+        if (ClassImageListData->ImageList)
+        {
+            ImageList_Destroy(ClassImageListData->ImageList);
+            ClassImageListData->ImageList = NULL;
+        }
+
+        MyFree(list);
+        ClassImageListData->Reserved = 0;
+
+        ret = TRUE;
     }
 
     TRACE("Returning %d\n", ret);
@@ -155,10 +165,16 @@ SETUP_CreateDevicesListFromEnumerator(
         rc = RegOpenKeyExW(hEnumeratorKey, KeyBuffer, 0, KEY_ENUMERATE_SUB_KEYS, &hDeviceIdKey);
         if (rc != ERROR_SUCCESS)
             goto cleanup;
-        strcpyW(InstancePath, Enumerator);
-        strcatW(InstancePath, BackSlash);
-        strcatW(InstancePath, KeyBuffer);
-        strcatW(InstancePath, BackSlash);
+
+        if (FAILED(StringCchCopyW(InstancePath, _countof(InstancePath), Enumerator)) ||
+            FAILED(StringCchCatW(InstancePath, _countof(InstancePath), BackSlash))  ||
+            FAILED(StringCchCatW(InstancePath, _countof(InstancePath), KeyBuffer))  ||
+            FAILED(StringCchCatW(InstancePath, _countof(InstancePath), BackSlash)))
+        {
+            rc = ERROR_GEN_FAILURE;
+            goto cleanup;
+        }
+
         pEndOfInstancePath = &InstancePath[strlenW(InstancePath)];
 
         /* Enumerate instance IDs (subkeys of hDeviceIdKey) */
@@ -330,9 +346,6 @@ cleanup:
     return rc;
 }
 
-/***********************************************************************
- *		SetupDiGetClassImageIndex (SETUPAPI.@)
- */
 static BOOL
 SETUP_GetIconIndex(
     IN HKEY hClassKey,
@@ -378,6 +391,9 @@ cleanup:
     return ret;
 }
 
+/***********************************************************************
+ *		SetupDiGetClassImageIndex (SETUPAPI.@)
+ */
 BOOL WINAPI
 SetupDiGetClassImageIndex(
     IN PSP_CLASSIMAGELIST_DATA ClassImageListData,
@@ -397,8 +413,6 @@ SetupDiGetClassImageIndex(
         SetLastError(ERROR_INVALID_USER_BUFFER);
     else if (list->magic != SETUP_CLASS_IMAGE_LIST_MAGIC)
         SetLastError(ERROR_INVALID_USER_BUFFER);
-    else if (!ImageIndex)
-        SetLastError(ERROR_INVALID_PARAMETER);
     else
     {
         DWORD i;
@@ -457,6 +471,105 @@ SetupDiGetClassImageListExA(
 
     return ret;
 }
+
+static BOOL WINAPI 
+SETUP_GetClassIconInfo(IN CONST GUID *ClassGuid, OUT PINT OutIndex, OUT LPWSTR *OutDllName)
+{
+    LPWSTR Buffer = NULL;
+    INT iconIndex = -UNKNOWN_ICON_INDEX;
+    HKEY hKey = INVALID_HANDLE_VALUE;
+    BOOL ret = FALSE;
+
+    if (ClassGuid)
+    {
+        hKey = SetupDiOpenClassRegKey(ClassGuid, KEY_QUERY_VALUE);
+        if (hKey != INVALID_HANDLE_VALUE)
+        {
+            SETUP_GetIconIndex(hKey, &iconIndex);
+        }
+    }
+
+    if (iconIndex > 0)
+    {
+        /* Look up icon in dll specified by Installer32 or EnumPropPages32 key */
+        PWCHAR Comma;
+        LONG rc;
+        DWORD dwRegType, dwLength;
+        rc = RegQueryValueExW(hKey, REGSTR_VAL_INSTALLER_32, NULL, &dwRegType, NULL, &dwLength);
+        if (rc == ERROR_SUCCESS && dwRegType == REG_SZ)
+        {
+            Buffer = MyMalloc(dwLength + sizeof(WCHAR));
+            if (Buffer == NULL)
+            {
+                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+                goto cleanup;
+            }
+            rc = RegQueryValueExW(hKey, REGSTR_VAL_INSTALLER_32, NULL, NULL, (LPBYTE)Buffer, &dwLength);
+            if (rc != ERROR_SUCCESS)
+            {
+                SetLastError(rc);
+                goto cleanup;
+            }
+            /* make sure the returned buffer is NULL-terminated */
+            Buffer[dwLength / sizeof(WCHAR)] = 0;
+        }
+        else if
+            (ERROR_SUCCESS == (rc = RegQueryValueExW(hKey, REGSTR_VAL_ENUMPROPPAGES_32, NULL, &dwRegType, NULL, &dwLength))
+            && dwRegType == REG_SZ)
+        {
+            Buffer = MyMalloc(dwLength + sizeof(WCHAR));
+            if (Buffer == NULL)
+            {
+                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+                goto cleanup;
+            }
+            rc = RegQueryValueExW(hKey, REGSTR_VAL_ENUMPROPPAGES_32, NULL, NULL, (LPBYTE)Buffer, &dwLength);
+            if (rc != ERROR_SUCCESS)
+            {
+                SetLastError(rc);
+                goto cleanup;
+            }
+            /* make sure the returned buffer is NULL-terminated */
+            Buffer[dwLength / sizeof(WCHAR)] = 0;
+        }
+        else
+        {
+            /* Unable to find where to load the icon */
+            SetLastError(ERROR_FILE_NOT_FOUND);
+            goto cleanup;
+        }
+        Comma = strchrW(Buffer, ',');
+        if (!Comma)
+        {
+            SetLastError(ERROR_GEN_FAILURE);
+            goto cleanup;
+        }
+        *Comma = '\0';
+        *OutDllName = Buffer;
+    }
+    else
+    {
+        /* Look up icon in setupapi.dll */
+        iconIndex = -iconIndex;
+        *OutDllName = NULL;
+    }
+
+    *OutIndex = iconIndex;
+    ret = TRUE;
+
+    TRACE("Icon index %d, dll name %s\n", iconIndex, debugstr_w(*OutDllName ? *OutDllName : SetupapiDll));
+
+cleanup:
+
+    if (hKey != INVALID_HANDLE_VALUE)
+        RegCloseKey(hKey);
+
+    if (Buffer && !ret)
+        MyFree(Buffer);
+
+    return ret;
+}
+
 
 /***********************************************************************
  *		SetupDiGetClassImageListExW(SETUPAPI.@)
@@ -570,35 +683,43 @@ SetupDiGetClassImageListExW(
         for (i = 0; i < list->NumberOfGuids; i++)
         {
             INT miniIconIndex;
+            LPWSTR DllName = NULL;
 
-            ret = SetupDiLoadClassIcon(
-                &list->Guids[i],
-                NULL,
-                &miniIconIndex);
-            if (ret)
+            if (SETUP_GetClassIconInfo(&list->Guids[i], &miniIconIndex, &DllName))
             {
-                hIcon = LoadImage(hInstance, MAKEINTRESOURCE(miniIconIndex), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
-                if (hIcon)
+                if (DllName && ExtractIconExW(DllName, -miniIconIndex, NULL, &hIcon, 1) == 1)
                 {
                     list->IconIndexes[i] = ImageList_AddIcon(ClassImageListData->ImageList, hIcon);
-                    DestroyIcon(hIcon);
                 }
+                else if(!DllName)
+                {
+                    hIcon = LoadImage(hInstance, MAKEINTRESOURCE(miniIconIndex), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+                    list->IconIndexes[i] = ImageList_AddIcon(ClassImageListData->ImageList, hIcon);
+                }
+
+                if(hIcon)
+                    DestroyIcon(hIcon);
                 else
                     list->IconIndexes[i] = -1;
+
+                if(DllName)
+                    MyFree(DllName);
             }
             else
+            {
                 list->IconIndexes[i] = -1; /* Special value to indicate that the icon is unavailable */
+            }
         }
 
         /* Finally, add the overlay icons to the image list */
-        for (i = 0; i < 2; i++)
+        for (i = 0; i <= 2; i++)
         {
             hIcon = LoadImage(hInstance, MAKEINTRESOURCE(500 + i), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
             if (hIcon)
             {
                 idx = ImageList_AddIcon(ClassImageListData->ImageList, hIcon);
                 if (idx != -1)
-                    ImageList_SetOverlayImage(ClassImageListData->ImageList, idx, i);
+                    ImageList_SetOverlayImage(ClassImageListData->ImageList, idx, i + 1);
                 DestroyIcon(hIcon);
             }
         }
@@ -660,105 +781,40 @@ SetupDiLoadClassIcon(
     OUT HICON *LargeIcon OPTIONAL,
     OUT PINT MiniIconIndex OPTIONAL)
 {
-    LPWSTR Buffer = NULL;
-    LPCWSTR DllName;
-    INT iconIndex = -18;
-    HKEY hKey = INVALID_HANDLE_VALUE;
-
+    INT iconIndex = 0;
+    LPWSTR DllName = NULL;
     BOOL ret = FALSE;
+    HICON hIcon = NULL;
 
-    if (ClassGuid)
-    {
-        hKey = SetupDiOpenClassRegKey(ClassGuid, KEY_QUERY_VALUE);
-        if (hKey != INVALID_HANDLE_VALUE)
-            SETUP_GetIconIndex(hKey, &iconIndex);
-    }
-
-    if (iconIndex > 0)
-    {
-        /* Look up icon in dll specified by Installer32 or EnumPropPages32 key */
-        PWCHAR Comma;
-        LONG rc;
-        DWORD dwRegType, dwLength;
-        rc = RegQueryValueExW(hKey, REGSTR_VAL_INSTALLER_32, NULL, &dwRegType, NULL, &dwLength);
-        if (rc == ERROR_SUCCESS && dwRegType == REG_SZ)
-        {
-            Buffer = MyMalloc(dwLength + sizeof(WCHAR));
-            if (Buffer == NULL)
-            {
-                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-                goto cleanup;
-            }
-            rc = RegQueryValueExW(hKey, REGSTR_VAL_INSTALLER_32, NULL, NULL, (LPBYTE)Buffer, &dwLength);
-            if (rc != ERROR_SUCCESS)
-            {
-                SetLastError(rc);
-                goto cleanup;
-            }
-            /* make sure the returned buffer is NULL-terminated */
-            Buffer[dwLength / sizeof(WCHAR)] = 0;
-        }
-        else if
-            (ERROR_SUCCESS == (rc = RegQueryValueExW(hKey, REGSTR_VAL_ENUMPROPPAGES_32, NULL, &dwRegType, NULL, &dwLength))
-            && dwRegType == REG_SZ)
-        {
-            Buffer = MyMalloc(dwLength + sizeof(WCHAR));
-            if (Buffer == NULL)
-            {
-                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-                goto cleanup;
-            }
-            rc = RegQueryValueExW(hKey, REGSTR_VAL_ENUMPROPPAGES_32, NULL, NULL, (LPBYTE)Buffer, &dwLength);
-            if (rc != ERROR_SUCCESS)
-            {
-                SetLastError(rc);
-                goto cleanup;
-            }
-            /* make sure the returned buffer is NULL-terminated */
-            Buffer[dwLength / sizeof(WCHAR)] = 0;
-        }
-        else
-        {
-            /* Unable to find where to load the icon */
-            SetLastError(ERROR_FILE_NOT_FOUND);
-            goto cleanup;
-        }
-        Comma = strchrW(Buffer, ',');
-        if (!Comma)
-        {
-            SetLastError(ERROR_GEN_FAILURE);
-            goto cleanup;
-        }
-        *Comma = '\0';
-        DllName = Buffer;
-    }
-    else
-    {
-        /* Look up icon in setupapi.dll */
-        DllName = SetupapiDll;
-        iconIndex = -iconIndex;
-    }
-
-    TRACE("Icon index %d, dll name %s\n", iconIndex, debugstr_w(DllName));
     if (LargeIcon)
     {
-        *LargeIcon = LoadImage(hInstance, MAKEINTRESOURCE(iconIndex), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
-        if (!*LargeIcon)
-        {
-            SetLastError(ERROR_INVALID_INDEX);
+        if(!SETUP_GetClassIconInfo(ClassGuid, &iconIndex, &DllName))
             goto cleanup;
+
+        if (!DllName || ExtractIconExW(DllName, -iconIndex, &hIcon, NULL, 1) != 1 || hIcon == NULL)
+        {
+            /* load the default unknown device icon if ExtractIcon failed */
+            if(DllName)
+                iconIndex = UNKNOWN_ICON_INDEX;
+
+            hIcon = LoadImage(hInstance, MAKEINTRESOURCE(iconIndex), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
+
+            if(!hIcon)
+                goto cleanup;
         }
+
+        *LargeIcon = hIcon;
     }
+
     if (MiniIconIndex)
         *MiniIconIndex = iconIndex;
+
     ret = TRUE;
 
 cleanup:
-    if (hKey != INVALID_HANDLE_VALUE)
-        RegCloseKey(hKey);
 
-    if (Buffer != NULL)
-        MyFree(Buffer);
+    if(DllName)
+        MyFree(DllName);
 
     TRACE("Returning %d\n", ret);
     return ret;
@@ -816,6 +872,7 @@ SetupDiInstallClassExW(
         InstallParams.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
         if (!SetupDiGetDeviceInstallParamsW(hDeviceInfo, NULL, &InstallParams))
             goto cleanup;
+
         InstallParams.Flags &= ~(DI_NOVCP | DI_NOBROWSE | DI_QUIETINSTALL);
         InstallParams.Flags |= Flags & (DI_NOVCP | DI_NOBROWSE | DI_QUIETINSTALL);
         if (Flags & DI_NOVCP)
@@ -895,9 +952,9 @@ SetupDiInstallClassExW(
             if (!ret)
                 goto cleanup;
 
-            /* Install .Services section */
+            /* OPTIONAL: Install .Services section */
             lstrcatW(SectionName, DotServices);
-            ret = SetupInstallServicesFromInfSectionExW(
+            SetupInstallServicesFromInfSectionExW(
                 hInf,
                 SectionName,
                 0,
@@ -905,9 +962,6 @@ SetupDiInstallClassExW(
                 NULL,
                 NULL,
                 NULL);
-            if (!ret)
-                goto cleanup;
-
             ret = TRUE;
         }
 
@@ -1128,9 +1182,12 @@ SetupDiGetClassDevPropertySheetsA(
         PropertySheetHeader, PropertySheetHeaderPageListSize,
         RequiredSize, PropertySheetType);
 
-    psh.dwFlags = PropertySheetHeader->dwFlags;
-    psh.phpage = PropertySheetHeader->phpage;
-    psh.nPages = PropertySheetHeader->nPages;
+    if(PropertySheetHeader)
+    {
+        psh.dwFlags = PropertySheetHeader->dwFlags;
+        psh.phpage = PropertySheetHeader->phpage;
+        psh.nPages = PropertySheetHeader->nPages;
+    }
 
     ret = SetupDiGetClassDevPropertySheetsW(DeviceInfoSet, DeviceInfoData, PropertySheetHeader ? &psh : NULL,
                                             PropertySheetHeaderPageListSize, RequiredSize,

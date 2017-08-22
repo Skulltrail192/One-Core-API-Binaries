@@ -12,12 +12,14 @@
 #include <ntoskrnl.h>
 #define NDEBUG
 #include <debug.h>
-#include "../ARM3/miarm.h"
+#include <mm/ARM3/miarm.h>
 
 #if defined (ALLOC_PRAGMA)
 #pragma alloc_text(INIT, MmInitGlobalKernelPageDirectory)
 #endif
 
+#define ADDR_TO_PDE_OFFSET MiAddressToPdeOffset
+#define ADDR_TO_PAGE_TABLE(v)  (((ULONG)(v)) / (1024 * PAGE_SIZE))
 
 /* GLOBALS *****************************************************************/
 
@@ -43,6 +45,8 @@
 
 #define PTE_TO_PFN(X)  ((X) >> PAGE_SHIFT)
 #define PFN_TO_PTE(X)  ((X) << PAGE_SHIFT)
+
+#define PAGE_MASK(x)		((x)&(~0xfff))
 
 const
 ULONG
@@ -761,7 +765,7 @@ MmCreateVirtualMappingUnsafe(PEPROCESS Process,
         /* There should not be anything valid here */
         if (Pte != 0)
         {
-            DPRINT1("Bad PTE %lx\n", Pte);
+            DPRINT1("Bad PTE %lx at %p for %p + %lu\n", Pte, Pt, Address, i);
             KeBugCheck(MEMORY_MANAGEMENT);
         }
 

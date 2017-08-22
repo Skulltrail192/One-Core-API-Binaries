@@ -1,7 +1,7 @@
-diff -prudN e:\Wine\dlls\winhttp/net.c e:\reactos-clean\dll\win32\winhttp/net.c
---- e:\Wine\dlls\winhttp/net.c	2013-03-16 11:54:52.602606100 +0100
-+++ e:\reactos-clean\dll\win32\winhttp/net.c	2013-05-21 20:25:32.595598100 +0100
-@@ -73,6 +77,7 @@ static CRITICAL_SECTION cs_gethostbyname
+diff -pudN e:\wine\dlls\winhttp/net.c e:\reactos\dll\win32\winhttp/net.c
+--- e:\wine\dlls\winhttp/net.c	2016-11-16 17:36:37 +0100
++++ e:\reactos\dll\win32\winhttp/net.c	2016-10-13 11:15:39 +0100
+@@ -50,6 +50,7 @@ static CRITICAL_SECTION cs_gethostbyname
  #endif
  
  /* translate a unix error code into a winsock error code */
@@ -9,7 +9,7 @@ diff -prudN e:\Wine\dlls\winhttp/net.c e:\reactos-clean\dll\win32\winhttp/net.c
  static int sock_get_error( int err )
  {
  #if !defined(__MINGW32__) && !defined (_MSC_VER)
-@@ -138,6 +143,15 @@ static int sock_get_error( int err )
+@@ -115,6 +116,15 @@ static int sock_get_error( int err )
  #endif
      return err;
  }
@@ -23,20 +23,57 @@ diff -prudN e:\Wine\dlls\winhttp/net.c e:\reactos-clean\dll\win32\winhttp/net.c
 +#define ioctlsocket unix_ioctl
 +#endif
  
- static DWORD netconn_verify_cert( PCCERT_CONTEXT cert, WCHAR *server, DWORD security_flags )
+ static int sock_send(int fd, const void *msg, size_t len, int flags)
  {
-@@ -344,11 +358,17 @@ BOOL netconn_connect( netconn_t *conn, c
+@@ -266,6 +276,28 @@ static BOOL ensure_cred_handle(void)
+     return ret;
+ }
+ 
++#ifdef __REACTOS__
++static BOOL winsock_initialized = FALSE;
++BOOL netconn_init_winsock()
++{
++    WSADATA wsaData;
++    int error;
++    if (!winsock_initialized)
++    {
++        error = WSAStartup(MAKEWORD(1, 1), &wsaData);
++        if (error)
++        {
++            ERR("WSAStartup failed: %d\n", error);
++            return FALSE;
++        }
++        else
++            winsock_initialized = TRUE;
++    }
++    return winsock_initialized;
++}
++
++#endif
++
+ BOOL netconn_init( netconn_t *conn )
+ {
+     memset(conn, 0, sizeof(*conn));
+@@ -281,6 +313,10 @@ void netconn_unload( void )
+ #ifndef HAVE_GETADDRINFO
+     DeleteCriticalSection(&cs_gethostbyname);
+ #endif
++#ifdef __REACTOS__
++    if(winsock_initialized)
++        WSACleanup();
++#endif
+ }
+ 
+ BOOL netconn_connected( netconn_t *conn )
+@@ -343,11 +379,25 @@ BOOL netconn_connect( netconn_t *conn, c
          res = sock_get_error( errno );
          if (res == WSAEWOULDBLOCK || res == WSAEINPROGRESS)
          {
--            struct pollfd pfd;
-+            // ReactOS: use select instead of poll
++#ifdef __REACTOS__
++            /* ReactOS: use select instead of poll */
 +            fd_set outfd;
 +            struct timeval tv;
- 
--            pfd.fd = conn->socket;
--            pfd.events = POLLOUT;
--            if (poll( &pfd, 1, timeout ) > 0)
++
 +            FD_ZERO(&outfd);
 +            FD_SET(conn->socket, &outfd);
 +
@@ -44,61 +81,28 @@ diff -prudN e:\Wine\dlls\winhttp/net.c e:\reactos-clean\dll\win32\winhttp/net.c
 +            tv.tv_usec = timeout * 1000;
 +
 +            if (select( 0, NULL, &outfd, NULL, &tv ) > 0)
++#else
+             struct pollfd pfd;
+ 
+             pfd.fd = conn->socket;
+             pfd.events = POLLOUT;
+             if (poll( &pfd, 1, timeout ) > 0)
++#endif
                  ret = TRUE;
              else
                  res = sock_get_error( errno );
-@@ -442,7 +462,7 @@ BOOL netconn_secure_connect( netconn_t *
-             read_buf_size += 1024;
-         }
+diff -pudN e:\wine\dlls\winhttp/request.c e:\reactos\dll\win32\winhttp/request.c
+--- e:\wine\dlls\winhttp/request.c	2016-11-16 17:36:37 +0100
++++ e:\reactos\dll\win32\winhttp/request.c	2016-02-27 16:08:59 +0100
+@@ -1258,6 +1258,7 @@ BOOL WINAPI WinHttpSendRequest( HINTERNE
+     return ret;
+ }
  
--        size = recv(conn->socket, read_buf+in_bufs[0].cbBuffer, read_buf_size-in_bufs[0].cbBuffer, 0);
-+        size = recv(conn->socket, (char *)(read_buf+in_bufs[0].cbBuffer), read_buf_size-in_bufs[0].cbBuffer, 0);
-         if(size < 1) {
-             WARN("recv error\n");
-             status = ERROR_WINHTTP_SECURE_CHANNEL_ERROR;
-@@ -754,7 +774,8 @@ BOOL netconn_query_data_available( netco
++#undef ARRAYSIZE
+ #define ARRAYSIZE(array) (sizeof(array) / sizeof((array)[0]))
  
- BOOL netconn_get_next_line( netconn_t *conn, char *buffer, DWORD *buflen )
- {
--    struct pollfd pfd;
-+    // ReactOS: use select instead of poll
-+    fd_set infd;
-     BOOL ret = FALSE;
-     DWORD recvd = 0;
- 
-@@ -786,19 +807,21 @@ BOOL netconn_get_next_line( netconn_t *c
-         return ret;
-     }
- 
--    pfd.fd = conn->socket;
--    pfd.events = POLLIN;
-+    FD_ZERO(&infd);
-+    FD_SET(conn->socket, &infd);
-+
-     while (recvd < *buflen)
-     {
--        int timeout, res;
--        struct timeval tv;
-+        int res;
-+        struct timeval tv, *ptv;
-         socklen_t len = sizeof(tv);
- 
-         if ((res = getsockopt( conn->socket, SOL_SOCKET, SO_RCVTIMEO, (void*)&tv, &len ) != -1))
--            timeout = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-+            ptv = &tv;
-         else
--            timeout = -1;
--        if (poll( &pfd, 1, timeout ) > 0)
-+            ptv = NULL;
-+
-+        if (select( 0, &infd, NULL, NULL, ptv ) > 0)
-         {
-             if ((res = recv( conn->socket, &buffer[recvd], 1, 0 )) <= 0)
-             {
-diff -prudN e:\Wine\dlls\winhttp/request.c e:\reactos-clean\dll\win32\winhttp/request.c
---- e:\Wine\dlls\winhttp/request.c	2013-03-16 11:54:52.603606700 +0100
-+++ e:\reactos-clean\dll\win32\winhttp/request.c	2013-05-21 20:05:12.642413600 +0100
-@@ -2254,8 +2260,8 @@ static void free_request( struct winhttp
+ static const WCHAR basicW[]     = {'B','a','s','i','c',0};
+@@ -2758,8 +2759,8 @@ static void free_request( struct winhttp
      CloseHandle( request->thread );
      CloseHandle( request->wait );
      CloseHandle( request->cancel );
@@ -109,7 +113,7 @@ diff -prudN e:\Wine\dlls\winhttp/request.c e:\reactos-clean\dll\win32\winhttp/re
      heap_free( request->buffer );
      heap_free( request->verb );
      VariantClear( &request->data );
-@@ -2446,16 +2452,16 @@ static HRESULT WINAPI winhttp_request_Se
+@@ -3005,16 +3006,16 @@ static HRESULT WINAPI winhttp_request_Se
      {
      case HTTPREQUEST_PROXYSETTING_DEFAULT:
          request->proxy.dwAccessType = WINHTTP_ACCESS_TYPE_DEFAULT_PROXY;
@@ -130,7 +134,7 @@ diff -prudN e:\Wine\dlls\winhttp/request.c e:\reactos-clean\dll\win32\winhttp/re
          request->proxy.lpszProxy = NULL;
          request->proxy.lpszProxyBypass = NULL;
          break;
-@@ -2464,12 +2470,12 @@ static HRESULT WINAPI winhttp_request_Se
+@@ -3023,12 +3024,12 @@ static HRESULT WINAPI winhttp_request_Se
          request->proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
          if (V_VT( &proxy_server ) == VT_BSTR)
          {
@@ -145,48 +149,30 @@ diff -prudN e:\Wine\dlls\winhttp/request.c e:\reactos-clean\dll\win32\winhttp/re
              request->proxy.lpszProxyBypass = strdupW( V_BSTR( &bypass_list ) );
          }
          break;
-diff -prudN e:\Wine\dlls\winhttp/rsrc.rc e:\reactos-clean\dll\win32\winhttp/rsrc.rc
---- e:\Wine\dlls\winhttp/rsrc.rc	2011-11-24 17:55:02.335439900 +0100
-+++ e:\reactos-clean\dll\win32\winhttp/rsrc.rc	2012-07-20 21:40:58.173741700 +0100
-@@ -16,6 +16,12 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
-  */
+diff -pudN e:\wine\dlls\winhttp/session.c e:\reactos\dll\win32\winhttp/session.c
+--- e:\wine\dlls\winhttp/session.c	2016-11-16 17:36:37 +0100
++++ e:\reactos\dll\win32\winhttp/session.c	2016-11-17 00:14:49 +0100
+@@ -197,6 +197,9 @@ static const object_vtbl_t session_vtbl 
+     session_set_option
+ };
  
-+/* @makedep: winhttp_tlb.tlb */
-+1 TYPELIB winhttp_tlb.tlb
-+
-+/* @makedep: winhttp_tlb.rgs */
-+1 WINE_REGISTRY winhttp_tlb.rgs
-+
- /* @makedep: pac.js */
- pac.js 40 "pac.js"
- 
-diff -prudN e:\Wine\dlls\winhttp/session.c e:\reactos-clean\dll\win32\winhttp/session.c
---- e:\Wine\dlls\winhttp/session.c	2013-03-16 11:54:52.604607400 +0100
-+++ e:\reactos-clean\dll\win32\winhttp/session.c	2013-05-21 20:19:52.231665900 +0100
-@@ -100,6 +100,9 @@ static void session_destroy( object_head
-     heap_free( session->proxy_username );
-     heap_free( session->proxy_password );
-     heap_free( session );
 +#ifdef __REACTOS__
-+    WSACleanup();
-+#endif
- }
- 
- static BOOL session_query_option( object_header_t *hdr, DWORD option, LPVOID buffer, LPDWORD buflen )
-@@ -211,6 +214,11 @@ HINTERNET WINAPI WinHttpOpen( LPCWSTR ag
++BOOL netconn_init_winsock();
++#endif /* __REACTOS__ */
+ /***********************************************************************
+  *          WinHttpOpen (winhttp.@)
+  */
+@@ -204,6 +207,9 @@ HINTERNET WINAPI WinHttpOpen( LPCWSTR ag
  {
      session_t *session;
      HINTERNET handle = NULL;
 +#ifdef __REACTOS__
-+    WSADATA wsaData;
-+    int error = WSAStartup(MAKEWORD(2, 2), &wsaData);
-+    if (error) ERR("WSAStartup failed: %d\n", error);
++    if (!netconn_init_winsock()) return NULL;
 +#endif
  
      TRACE("%s, %u, %s, %s, 0x%08x\n", debugstr_w(agent), access, debugstr_w(proxy), debugstr_w(bypass), flags);
  
-@@ -237,14 +245,14 @@ HINTERNET WINAPI WinHttpOpen( LPCWSTR ag
+@@ -230,14 +236,14 @@ HINTERNET WINAPI WinHttpOpen( LPCWSTR ag
          session->access = info.dwAccessType;
          if (info.lpszProxy && !(session->proxy_server = strdupW( info.lpszProxy )))
          {
@@ -205,7 +191,7 @@ diff -prudN e:\Wine\dlls\winhttp/session.c e:\reactos-clean\dll\win32\winhttp/se
              goto end;
          }
      }
-@@ -594,7 +602,7 @@ static WCHAR *blob_to_str( DWORD encodin
+@@ -610,7 +616,7 @@ static WCHAR *blob_to_str( DWORD encodin
  
  static BOOL convert_sockaddr( const struct sockaddr *addr, SOCKADDR_STORAGE *addr_storage )
  {

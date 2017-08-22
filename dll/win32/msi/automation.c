@@ -273,7 +273,8 @@ static HRESULT WINAPI AutomationObject_GetIDsOfNames(
     ITypeInfo *ti;
     HRESULT hr;
 
-    TRACE("(%p/%p)->(%p,%p,%d,%d,%p)\n", iface, This, riid, rgszNames, cNames, lcid, rgDispId);
+    TRACE("(%p/%p)->(%s, %p, %d, %d, %p)\n", iface, This,
+            debugstr_guid(riid), rgszNames, cNames, lcid, rgDispId);
 
     if (!IsEqualGUID(riid, &IID_NULL)) return E_INVALIDARG;
 
@@ -316,7 +317,9 @@ static HRESULT WINAPI AutomationObject_Invoke(
     BSTR bstrName = NULL;
     ITypeInfo *ti;
 
-    TRACE("(%p/%p)->(%d,%p,%d,%d,%p,%p,%p,%p)\n", iface, This, dispIdMember, riid, lcid, wFlags, pDispParams, pVarResult, pExcepInfo, puArgErr);
+    TRACE("(%p/%p)->(%d, %s, %d, %d, %p, %p, %p, %p)\n", iface, This,
+            dispIdMember, debugstr_guid(riid), lcid, wFlags,
+            pDispParams, pVarResult, pExcepInfo, puArgErr);
 
     if (!IsEqualIID(riid, &IID_NULL))
     {
@@ -1012,7 +1015,7 @@ static HRESULT list_invoke(
         EXCEPINFO* pExcepInfo,
         UINT* puArgErr)
 {
-    ListObject *list = (ListObject*)This;
+    ListObject *list = CONTAINING_RECORD(This, ListObject, autoobj);
     IUnknown *pUnk = NULL;
     HRESULT hr;
 
@@ -1060,7 +1063,7 @@ static HRESULT list_invoke(
 
 static void list_free(AutomationObject *This)
 {
-    ListObject *list = (ListObject*)This;
+    ListObject *list = CONTAINING_RECORD(This, ListObject, autoobj);
     int i;
 
     for (i = 0; i < list->count; i++)
@@ -1348,9 +1351,9 @@ static HRESULT session_invoke(
         EXCEPINFO* pExcepInfo,
         UINT* puArgErr)
 {
-    SessionObject *session = (SessionObject*)This;
+    SessionObject *session = CONTAINING_RECORD(This, SessionObject, autoobj);
     WCHAR *szString;
-    DWORD dwLen;
+    DWORD dwLen = 0;
     MSIHANDLE msiHandle;
     LANGID langId;
     UINT ret;
@@ -1421,7 +1424,7 @@ static HRESULT session_invoke(
                 hr = DispGetParam(pDispParams, 0, VT_I4, &varg0, puArgErr);
                 if (FAILED(hr)) return hr;
                 V_VT(pVarResult) = VT_BOOL;
-                V_BOOL(pVarResult) = MsiGetMode(This->msiHandle, V_I4(&varg0));
+                V_BOOL(pVarResult) = MsiGetMode(This->msiHandle, V_I4(&varg0)) ? VARIANT_TRUE : VARIANT_FALSE;
             } else if (wFlags & DISPATCH_PROPERTYPUT) {
                 hr = DispGetParam(pDispParams, 0, VT_I4, &varg0, puArgErr);
                 if (FAILED(hr)) return hr;
@@ -1816,12 +1819,36 @@ static HRESULT InstallerImpl_SummaryInformation(WORD wFlags,
                                                 EXCEPINFO* pExcepInfo,
                                                 UINT* puArgErr)
 {
-    if (!(wFlags & DISPATCH_METHOD))
+    UINT ret;
+    HRESULT hr;
+    MSIHANDLE hsuminfo;
+    IDispatch *dispatch;
+    VARIANTARG varg0, varg1;
+
+    if (!(wFlags & DISPATCH_PROPERTYGET))
         return DISP_E_MEMBERNOTFOUND;
 
-    FIXME("\n");
+    VariantInit(&varg1);
+    hr = DispGetParam(pDispParams, 1, VT_I4, &varg1, puArgErr);
+    if (FAILED(hr))
+        return hr;
 
-    VariantInit(pVarResult);
+    VariantInit(&varg0);
+    hr = DispGetParam(pDispParams, 0, VT_BSTR, &varg0, puArgErr);
+    if (FAILED(hr))
+        return hr;
+
+    ret = MsiGetSummaryInformationW(0, V_BSTR(&varg0), V_I4(&varg1), &hsuminfo);
+    VariantClear(&varg0);
+    if (ret != ERROR_SUCCESS)
+        return DISP_E_EXCEPTION;
+
+    hr = create_summaryinfo(hsuminfo, &dispatch);
+    if (FAILED(hr))
+        return hr;
+
+    V_VT(pVarResult) = VT_DISPATCH;
+    V_DISPATCH(pVarResult) = dispatch;
     return S_OK;
 }
 
@@ -2013,7 +2040,7 @@ static HRESULT InstallerImpl_RegistryValue(WORD wFlags,
         /* Return VT_BOOL clarifying whether registry key exists or not. */
         case VT_EMPTY:
             V_VT(pVarResult) = VT_BOOL;
-            V_BOOL(pVarResult) = (ret == ERROR_SUCCESS);
+            V_BOOL(pVarResult) = (ret == ERROR_SUCCESS) ? VARIANT_TRUE : VARIANT_FALSE;
             break;
 
         /* Return the value of specified key if it exists. */

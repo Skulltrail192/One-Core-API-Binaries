@@ -16,9 +16,9 @@
 
 /* FUNCTIONS *****************************************************************/
 
+//INIT_FUNCTION
 PSECURITY_DESCRIPTOR
 NTAPI
-INIT_FUNCTION
 CmpHiveRootSecurityDescriptor(VOID)
 {
     NTSTATUS Status;
@@ -34,11 +34,11 @@ CmpHiveRootSecurityDescriptor(VOID)
 
     /* Phase 1: Allocate SIDs */
     SidLength = RtlLengthRequiredSid(1);
-    Sid[0] = ExAllocatePoolWithTag(PagedPool, SidLength, TAG_CM);
-    Sid[1] = ExAllocatePoolWithTag(PagedPool, SidLength, TAG_CM);
-    Sid[2] = ExAllocatePoolWithTag(PagedPool, SidLength, TAG_CM);
+    Sid[0] = ExAllocatePoolWithTag(PagedPool, SidLength, TAG_CMSD);
+    Sid[1] = ExAllocatePoolWithTag(PagedPool, SidLength, TAG_CMSD);
+    Sid[2] = ExAllocatePoolWithTag(PagedPool, SidLength, TAG_CMSD);
     SidLength = RtlLengthRequiredSid(2);
-    Sid[3] = ExAllocatePoolWithTag(PagedPool, SidLength, TAG_CM);
+    Sid[3] = ExAllocatePoolWithTag(PagedPool, SidLength, TAG_CMSD);
 
     /* Make sure all SIDs were allocated */
     if (!(Sid[0]) || !(Sid[1]) || !(Sid[2]) || !(Sid[3]))
@@ -78,7 +78,7 @@ CmpHiveRootSecurityDescriptor(VOID)
     }
 
     /* Phase 3: Allocate the ACL */
-    Acl = ExAllocatePoolWithTag(PagedPool, AclLength, TAG_CM);
+    Acl = ExAllocatePoolWithTag(PagedPool, AclLength, TAG_CMSD);
     if (!Acl) KeBugCheckEx(REGISTRY_ERROR, 11, 3, 0, 0);
 
     /* Phase 4: Create the ACL */
@@ -86,14 +86,14 @@ CmpHiveRootSecurityDescriptor(VOID)
     if (!NT_SUCCESS(Status)) KeBugCheckEx(REGISTRY_ERROR, 11, 4, Status, 0);
 
     /* Phase 5: Build the ACL */
-    Status = RtlAddAccessAllowedAce(Acl, ACL_REVISION, KEY_ALL_ACCESS, Sid[0]);
-    Status |= RtlAddAccessAllowedAce(Acl, ACL_REVISION, KEY_ALL_ACCESS, Sid[1]);
-    Status |= RtlAddAccessAllowedAce(Acl, ACL_REVISION, KEY_READ, Sid[2]);
-    Status |= RtlAddAccessAllowedAce(Acl, ACL_REVISION, KEY_READ, Sid[3]);
+    Status = RtlAddAccessAllowedAce(Acl, ACL_REVISION, KEY_ALL_ACCESS, Sid[2]);
+    Status |= RtlAddAccessAllowedAce(Acl, ACL_REVISION, KEY_ALL_ACCESS, Sid[3]);
+    Status |= RtlAddAccessAllowedAce(Acl, ACL_REVISION, KEY_READ, Sid[0]);
+    Status |= RtlAddAccessAllowedAce(Acl, ACL_REVISION, KEY_READ, Sid[1]);
     if (!NT_SUCCESS(Status)) KeBugCheckEx(REGISTRY_ERROR, 11, 5, Status, 0);
 
     /* Phase 5: Make the ACEs inheritable */
-    Status = RtlGetAce(Acl, 0,( PVOID*)&AceHeader);
+    Status = RtlGetAce(Acl, 0, (PVOID*)&AceHeader);
     ASSERT(NT_SUCCESS(Status));
     AceHeader->AceFlags |= CONTAINER_INHERIT_ACE;
     Status = RtlGetAce(Acl, 1, (PVOID*)&AceHeader);
@@ -110,7 +110,7 @@ CmpHiveRootSecurityDescriptor(VOID)
     SecurityDescriptor = ExAllocatePoolWithTag(PagedPool,
                                                sizeof(SECURITY_DESCRIPTOR) +
                                                AclLength,
-                                               TAG_CM);
+                                               TAG_CMSD);
     if (!SecurityDescriptor) KeBugCheckEx(REGISTRY_ERROR, 11, 6, 0, 0);
 
     /* Phase 6: Make a copy of the ACL */
@@ -130,15 +130,15 @@ CmpHiveRootSecurityDescriptor(VOID)
     if (!NT_SUCCESS(Status)) KeBugCheckEx(REGISTRY_ERROR, 11, 8, Status, 0);
 
     /* Free the SIDs and original ACL */
-    for (i = 0; i < 4; i++) ExFreePoolWithTag(Sid[i], TAG_CM);
-    ExFreePoolWithTag(Acl, TAG_CM);
+    for (i = 0; i < 4; i++) ExFreePoolWithTag(Sid[i], TAG_CMSD);
+    ExFreePoolWithTag(Acl, TAG_CMSD);
 
     /* Return the security descriptor */
     return SecurityDescriptor;
 }
 
 NTSTATUS
-CmpQuerySecurityDescriptor(IN PCM_KEY_BODY KeyBody,
+CmpQuerySecurityDescriptor(IN PCM_KEY_CONTROL_BLOCK Kcb,
                            IN SECURITY_INFORMATION SecurityInformation,
                            OUT PSECURITY_DESCRIPTOR SecurityDescriptor,
                            IN OUT PULONG BufferLength)
@@ -153,7 +153,9 @@ CmpQuerySecurityDescriptor(IN PCM_KEY_BODY KeyBody,
     ULONG Group = 0;
     ULONG Dacl = 0;
 
-    DBG_UNREFERENCED_PARAMETER(KeyBody);
+    DBG_UNREFERENCED_PARAMETER(Kcb);
+
+    DPRINT("CmpQuerySecurityDescriptor()\n");
 
     if (SecurityInformation == 0)
     {
@@ -236,6 +238,26 @@ CmpQuerySecurityDescriptor(IN PCM_KEY_BODY KeyBody,
 }
 
 NTSTATUS
+CmpSetSecurityDescriptor(IN PCM_KEY_CONTROL_BLOCK Kcb,
+                         IN PSECURITY_INFORMATION SecurityInformation,
+                         IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+                         IN POOL_TYPE PoolType,
+                         IN PGENERIC_MAPPING GenericMapping)
+{
+    DPRINT("CmpSetSecurityDescriptor()\n");
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS
+CmpAssignSecurityDescriptor(IN PCM_KEY_CONTROL_BLOCK Kcb,
+                            IN PSECURITY_DESCRIPTOR SecurityDescriptor)
+{
+    DPRINT("CmpAssignSecurityDescriptor(%p %p)\n",
+           Kcb, SecurityDescriptor);
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS
 NTAPI
 CmpSecurityMethod(IN PVOID ObjectBody,
                   IN SECURITY_OPERATION_CODE OperationCode,
@@ -246,23 +268,57 @@ CmpSecurityMethod(IN PVOID ObjectBody,
                   IN POOL_TYPE PoolType,
                   IN PGENERIC_MAPPING GenericMapping)
 {
+    PCM_KEY_CONTROL_BLOCK Kcb;
+    NTSTATUS Status = STATUS_SUCCESS;
+
     DBG_UNREFERENCED_PARAMETER(OldSecurityDescriptor);
     DBG_UNREFERENCED_PARAMETER(GenericMapping);
+
+    Kcb = ((PCM_KEY_BODY)ObjectBody)->KeyControlBlock;
+
+    /* Acquire the hive lock */
+    CmpLockRegistry();
+
+    /* Acquire the KCB lock */
+    if (OperationCode == QuerySecurityDescriptor)
+    {
+        CmpAcquireKcbLockShared(Kcb);
+    }
+    else
+    {
+        CmpAcquireKcbLockExclusive(Kcb);
+    }
+
+    /* Don't touch deleted keys */
+    if (Kcb->Delete)
+    {
+        /* Release the KCB lock */
+        CmpReleaseKcbLock(Kcb);
+
+        /* Release the hive lock */
+        CmpUnlockRegistry();
+        return STATUS_KEY_DELETED;
+    }
 
     switch (OperationCode)
     {
         case SetSecurityDescriptor:
             DPRINT("Set security descriptor\n");
             ASSERT((PoolType == PagedPool) || (PoolType == NonPagedPool));
-            /* HACK */
+            Status = CmpSetSecurityDescriptor(Kcb,
+                                              SecurityInformation,
+                                              SecurityDescriptor,
+                                              PoolType,
+                                              GenericMapping);
             break;
 
         case QuerySecurityDescriptor:
             DPRINT("Query security descriptor\n");
-            return CmpQuerySecurityDescriptor(ObjectBody,
-                                              *SecurityInformation,
-                                              SecurityDescriptor,
-                                              BufferLength);
+            Status = CmpQuerySecurityDescriptor(Kcb,
+                                                *SecurityInformation,
+                                                SecurityDescriptor,
+                                                BufferLength);
+            break;
 
         case DeleteSecurityDescriptor:
             DPRINT("Delete security descriptor\n");
@@ -271,13 +327,19 @@ CmpSecurityMethod(IN PVOID ObjectBody,
 
         case AssignSecurityDescriptor:
             DPRINT("Assign security descriptor\n");
-            /* HACK */
+            Status = CmpAssignSecurityDescriptor(Kcb,
+                                                 SecurityDescriptor);
             break;
 
         default:
             KeBugCheckEx(SECURITY_SYSTEM, 0, STATUS_INVALID_PARAMETER, 0, 0);
     }
 
-    /* HACK */
-    return STATUS_SUCCESS;
+    /* Release the KCB lock */
+    CmpReleaseKcbLock(Kcb);
+
+    /* Release the hive lock */
+    CmpUnlockRegistry();
+
+    return Status;
 }

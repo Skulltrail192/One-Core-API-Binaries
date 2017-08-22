@@ -268,7 +268,7 @@ Arguments:
     PortDeviceObject - to connect to SCSI port driver.
     DeviceCount - Number of previously installed CDROMs.
     PortCapabilities - Pointer to structure returned by SCSI port
-        driver describing adapter capabilites (and limitations).
+        driver describing adapter capabilities (and limitations).
     LunInfo - Pointer to configuration information for this device.
 
 Return Value:
@@ -537,8 +537,10 @@ Return Value:
 {
     PFUNCTIONAL_DEVICE_EXTENSION fdoExtension = Fdo->DeviceExtension;
     PCOMMON_DEVICE_EXTENSION commonExtension = Fdo->DeviceExtension;
+#if 0
     PCLASS_DRIVER_EXTENSION driverExtension = ClassGetDriverExtension(
                                                 Fdo->DriverObject);
+#endif
 
     PVOID senseData = NULL;
 
@@ -747,7 +749,7 @@ Return Value:
 
             //
             // the drive is target defect managed, and supports random writes
-            // on sector-aligment.  allow writes to occur by setting the error
+            // on sector-alignment.  allow writes to occur by setting the error
             // handler to point to a private media change detection handler.
             //
 
@@ -1476,7 +1478,7 @@ CdRomStartIo(
             Irp->IoStatus.Status = STATUS_VERIFY_REQUIRED;
 
             TraceLog((CdromDebugTrace,
-                        "CdRomStartIo: [%p] Calling UpdateCapcity - "
+                        "CdRomStartIo: [%p] Calling UpdateCapacity - "
                         "ioctl event = %p\n",
                         Irp,
                         nextIrpStack->Parameters.Others.Argument1
@@ -2760,8 +2762,10 @@ CdRomStartIo(
 
         case IOCTL_CDROM_READ_Q_CHANNEL: {
 
+#if 0
             PSUB_Q_CHANNEL_DATA userChannelData =
                              Irp->AssociatedIrp.SystemBuffer;
+#endif
             PCDROM_SUB_Q_DATA_FORMAT inputBuffer =
                              Irp->AssociatedIrp.SystemBuffer;
 
@@ -2828,7 +2832,7 @@ CdRomStartIo(
             cdb->SUBCHANNEL.SubQ = CDB_SUBCHANNEL_BLOCK;
 
             //
-            // Specify format of informatin to return
+            // Specify format of information to return
             //
 
             cdb->SUBCHANNEL.Format = inputBuffer->Format;
@@ -2951,7 +2955,7 @@ CdRomStartIo(
         case IOCTL_CDROM_GET_CONTROL: {
 
             //PAUDIO_OUTPUT audioOutput;
-            PCDROM_AUDIO_CONTROL audioControl = Irp->AssociatedIrp.SystemBuffer;
+            //PCDROM_AUDIO_CONTROL audioControl = Irp->AssociatedIrp.SystemBuffer;
 
             //
             // Allocate buffer for volume control information.
@@ -3317,10 +3321,10 @@ Return Value:
     ULONG               transferByteCount = currentIrpStack->Parameters.Read.Length;
     LARGE_INTEGER       startingOffset = currentIrpStack->Parameters.Read.ByteOffset;
 
-    PCDROM_DATA         cdData = (PCDROM_DATA)(commonExtension->DriverData);
+    //PCDROM_DATA         cdData = (PCDROM_DATA)(commonExtension->DriverData);
 
-    SCSI_REQUEST_BLOCK  srb;
-    PCDB                cdb = (PCDB)srb.Cdb;
+    //SCSI_REQUEST_BLOCK  srb;
+    //PCDB                cdb = (PCDB)srb.Cdb;
     //NTSTATUS            status;
 
     PAGED_CODE();
@@ -3388,7 +3392,7 @@ CdRomSwitchModeCompletion(
     PCOMMON_DEVICE_EXTENSION commonExtension = DeviceObject->DeviceExtension;
     PCDROM_DATA         cdData = (PCDROM_DATA)(commonExtension->DriverData);
     PIO_STACK_LOCATION  irpStack = IoGetCurrentIrpStackLocation(Irp);
-    BOOLEAN             use6Byte = TEST_FLAG(cdData->XAFlags, XA_USE_6_BYTE);
+    //BOOLEAN             use6Byte = TEST_FLAG(cdData->XAFlags, XA_USE_6_BYTE);
     ULONG retryCount;
 
     //
@@ -5621,7 +5625,7 @@ CdRomCreateWellKnownName(
 Routine Description:
 
     This routine creates a symbolic link to the cdrom device object
-    under \dosdevices.  The number of the cdrom device does not neccessarily
+    under \dosdevices.  The number of the cdrom device does not necessarily
     match between \dosdevices and \device, but usually will be the same.
 
     Saves the buffer
@@ -5763,7 +5767,7 @@ Arguments:
 
     ParameterName - parameter name to look up
 
-    ParameterValuse - default parameter value
+    ParameterValue - default parameter value
 
 Return Value:
 
@@ -5839,7 +5843,7 @@ Arguments:
 
     ParameterName - parameter name
 
-    ParameterValuse - parameter value
+    ParameterValue - parameter value
 
 Return Value:
 
@@ -6444,7 +6448,7 @@ CdRomMmcErrorHandler(
     )
 {
     PCOMMON_DEVICE_EXTENSION commonExtension = Fdo->DeviceExtension;
-    BOOLEAN queryCapabilities = FALSE;
+    //BOOLEAN queryCapabilities = FALSE;
 
     if (TEST_FLAG(Srb->SrbStatus, SRB_STATUS_AUTOSENSE_VALID)) {
         
@@ -6637,7 +6641,7 @@ CdRomErrorHandler(
         //      SCSI_SENSE_NOT_READY/SCSI_ADSENSE_NO_MEDIA_IN_DEVICE
         //
         //  These drives should not pass WHQL certification due
-        //  to this discrepency.
+        //  to this discrepancy.
         //
         //  However, we have to retry on 2/4/0 (Not ready, LUN not ready,
         //  no info) and also 3/2/0 (no seek complete).
@@ -6649,7 +6653,7 @@ CdRomErrorHandler(
         //  (0x01) in order to comply with WHQL standards.
         //
         //  The default retry timeout of one second is acceptable to balance
-        //  these discrepencies.  don't modify the status, though....
+        //  these discrepancies.  don't modify the status, though....
         //
 
         if (((sense->SenseKey & 0xf) == SCSI_SENSE_NOT_READY) &&

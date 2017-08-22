@@ -12,8 +12,13 @@
 #define NDEBUG
 #include <debug.h>
 
-VOID KiFastCallEntry(VOID);
-VOID KiFastCallEntryWithSingleStep(VOID);
+VOID __cdecl KiFastCallEntry(VOID);
+VOID __cdecl KiFastCallEntryWithSingleStep(VOID);
+
+extern PVOID KeUserPopEntrySListFault;
+extern PVOID KeUserPopEntrySListResume;
+extern PVOID FrRestore;
+VOID FASTCALL Ke386LoadFpuState(IN PFX_SAVE_AREA SaveArea);
 
 /* GLOBALS ********************************************************************/
 
@@ -49,11 +54,11 @@ UCHAR KiTrapIoTable[] =
 };
 
 PFAST_SYSTEM_CALL_EXIT KiFastCallExitHandler;
-#if DBG && !defined(_WINKD_)
+#if DBG && defined(_M_IX86) && !defined(_WINKD_)
 PKDBG_PRESERVICEHOOK KeWin32PreServiceHook = NULL;
 PKDBG_POSTSERVICEHOOK KeWin32PostServiceHook = NULL;
 #endif
-#if TRAP_DEBUG
+#if DBG
 BOOLEAN StopChecking = FALSE;
 #endif
 
@@ -170,6 +175,7 @@ KiServiceExit(IN PKTRAP_FRAME TrapFrame,
         {
             /* We can use the sysexit handler */
             KiFastCallExitHandler(TrapFrame);
+            UNREACHABLE;
         }
     }
 
@@ -251,16 +257,16 @@ KiNpxHandler(IN PKTRAP_FRAME TrapFrame,
         SaveArea->Cr0NpxState |= CR0_TS;
 
         /* Only valid if it happened during a restore */
-        //if ((PVOID)TrapFrame->Eip == FrRestore)
+        if ((PVOID)TrapFrame->Eip == FrRestore)
         {
             /* It did, so just skip the instruction */
-            //TrapFrame->Eip += 3; /* sizeof(FRSTOR) */
-            //KiEoiHelper(TrapFrame);
+            TrapFrame->Eip += 3; /* Size of FRSTOR instruction */
+            KiEoiHelper(TrapFrame);
         }
     }
 
-    /* User or kernel trap -- get ready to issue an exception */
-    //if (Thread->NpxState == NPX_STATE_NOT_LOADED)
+    /* User or kernel trap -- check if we need to unload the current state */
+    if (Thread->NpxState == NPX_STATE_LOADED)
     {
         /* Update CR0 */
         Cr0 = __readcr0();
@@ -307,8 +313,6 @@ KiNpxHandler(IN PKTRAP_FRAME TrapFrame,
     }
 
     /* Get legal exceptions that software should handle */
-    /* We do this by first masking off from the Mask the bits we need, */
-    /* This is done so we can keep the FSW_STACK_FAULT bit in Error. */
     Mask &= (FSW_INVALID_OPERATION |
              FSW_DENORMAL |
              FSW_ZERO_DIVIDE |
@@ -320,9 +324,10 @@ KiNpxHandler(IN PKTRAP_FRAME TrapFrame,
     /* Check for invalid operation */
     if (Error & FSW_INVALID_OPERATION)
     {
-        /* NOTE: Stack fault is handled differently than any other case. */
-        /* 1. It's only raised for invalid operation. */
-        /* 2. It's only raised if invalid operation is not masked. */
+        /*
+         * Now check if this is actually a Stack Fault. This is needed because
+         * on x86 the Invalid Operation error is set for Stack Check faults as well.
+         */
         if (Error & FSW_STACK_FAULT)
         {
             /* Issue stack check fault */
@@ -332,12 +337,14 @@ KiNpxHandler(IN PKTRAP_FRAME TrapFrame,
                                      DataOffset,
                                      TrapFrame);
         }
-
-        /* Issue fault */
-        KiDispatchException1Args(STATUS_FLOAT_INVALID_OPERATION,
-                                 ErrorOffset,
-                                 0,
-                                 TrapFrame);
+        else
+        {
+            /* This is an invalid operation fault after all, so raise that instead */
+            KiDispatchException1Args(STATUS_FLOAT_INVALID_OPERATION,
+                                     ErrorOffset,
+                                     0,
+                                     TrapFrame);
+        }
     }
 
     /* Check for divide by zero */
@@ -524,7 +531,7 @@ KiTrap02(VOID)
     TrapFrame.Edi = Tss->Edi;
     TrapFrame.SegFs = Tss->Fs;
     TrapFrame.ExceptionList = PCR->NtTib.ExceptionList;
-    TrapFrame.PreviousPreviousMode = -1;
+    TrapFrame.PreviousPreviousMode = (ULONG)-1;
     TrapFrame.Eax = Tss->Eax;
     TrapFrame.Ecx = Tss->Ecx;
     TrapFrame.Edx = Tss->Edx;
@@ -678,7 +685,7 @@ KiTrap06Handler(IN PKTRAP_FRAME TrapFrame)
         }
 
         /* Go to APC level */
-        OldIrql = KfRaiseIrql(APC_LEVEL);
+        KeRaiseIrql(APC_LEVEL, &OldIrql);
         _enable();
 
         /* Check for BOP */
@@ -689,7 +696,7 @@ KiTrap06Handler(IN PKTRAP_FRAME TrapFrame)
         }
 
         /* Bring IRQL back */
-        KfLowerIrql(OldIrql);
+        KeLowerIrql(OldIrql);
         _disable();
 
         /* Do a quick V86 exit if possible */
@@ -744,7 +751,7 @@ KiTrap07Handler(IN PKTRAP_FRAME TrapFrame)
     KiEnterTrap(TrapFrame);
 
     /* Try to handle NPX delay load */
-    while (TRUE)
+    for (;;)
     {
         /* Get the current thread */
         Thread = KeGetCurrentThread();
@@ -775,15 +782,14 @@ KiTrap07Handler(IN PKTRAP_FRAME TrapFrame)
                 NpxSaveArea = KiGetThreadNpxArea(NpxThread);
 
                 /* Save FPU state */
-                DPRINT("FIXME: Save FPU state: %p\n", NpxSaveArea);
-                //Ke386SaveFpuState(NpxSaveArea);
+                Ke386SaveFpuState(NpxSaveArea);
 
                 /* Update NPX state */
                 NpxThread->NpxState = NPX_STATE_NOT_LOADED;
            }
 
             /* Load FPU state */
-            //Ke386LoadFpuState(SaveArea);
+            Ke386LoadFpuState(SaveArea);
 
             /* Update NPX state */
             Thread->NpxState = NPX_STATE_LOADED;
@@ -823,7 +829,7 @@ KiTrap07Handler(IN PKTRAP_FRAME TrapFrame)
     {
         /*
          * If it's incorrectly set, then maybe the state is actually still valid
-         * but we could've lock track of that due to a BIOS call.
+         * but we could have lost track of that due to a BIOS call.
          * Make sure MP is still set, which should verify the theory.
          */
         if (Cr0 & CR0_MP)
@@ -934,7 +940,7 @@ KiTrap0DHandler(IN PKTRAP_FRAME TrapFrame)
         }
 
         /* Go to APC level */
-        OldIrql = KfRaiseIrql(APC_LEVEL);
+        KeRaiseIrql(APC_LEVEL, &OldIrql);
         _enable();
 
         /* Handle the V86 opcode */
@@ -945,7 +951,7 @@ KiTrap0DHandler(IN PKTRAP_FRAME TrapFrame)
         }
 
         /* Bring IRQL back */
-        KfLowerIrql(OldIrql);
+        KeLowerIrql(OldIrql);
         _disable();
 
         /* Do a quick V86 exit if possible */
@@ -1193,6 +1199,8 @@ FASTCALL
 KiTrap0EHandler(IN PKTRAP_FRAME TrapFrame)
 {
     PKTHREAD Thread;
+    BOOLEAN Present;
+    BOOLEAN StoreInstruction;
     ULONG_PTR Cr2;
     NTSTATUS Status;
 
@@ -1215,8 +1223,12 @@ KiTrap0EHandler(IN PKTRAP_FRAME TrapFrame)
     /* Save CR2 */
     Cr2 = __readcr2();
 
-    /* Enable interupts */
+    /* Enable interrupts */
     _enable();
+
+    /* Interpret the error code */
+    Present = (TrapFrame->ErrCode & 1) != 0;
+    StoreInstruction = (TrapFrame->ErrCode & 2) != 0;
 
     /* Check if we came in with interrupts disabled */
     if (!(TrapFrame->EFlags & EFLAGS_INTERRUPT_MASK))
@@ -1224,16 +1236,52 @@ KiTrap0EHandler(IN PKTRAP_FRAME TrapFrame)
         /* This is completely illegal, bugcheck the system */
         KeBugCheckWithTf(IRQL_NOT_LESS_OR_EQUAL,
                          Cr2,
-                         -1,
-                         TrapFrame->ErrCode & 2 ? TRUE : FALSE,
+                         (ULONG_PTR)-1,
+                         StoreInstruction,
                          TrapFrame->Eip,
                          TrapFrame);
     }
 
-    /* Check for S-LIST fault in kernel mode */
-    if (TrapFrame->Eip == (ULONG_PTR)ExpInterlockedPopEntrySListFault)
+    /* Check for S-List fault
+
+       Explanation: An S-List fault can occur due to a race condition between 2
+       threads simultaneously trying to pop an element from the S-List. After
+       thread 1 has read the pointer to the top element on the S-List it is
+       preempted and thread 2 calls InterlockedPopEntrySlist on the same S-List,
+       removing the top element and freeing it's memory. After that thread 1
+       resumes and tries to read the address of the Next pointer from the top
+       element, which it assumes will be the next top element.
+       But since that memory has been freed, we get a page fault. To handle this
+       race condition, we let thread 1 repeat the operation.
+       We do NOT invoke the page fault handler in this case, since we do not
+       want to trigger any side effects, like paging or a guard page fault.
+
+       Sequence of operations:
+
+           Thread 1 : mov eax, [ebp] <= eax now points to the first element
+           Thread 1 : mov edx, [ebp + 4] <= edx is loaded with Depth and Sequence
+            *** preempted ***
+           Thread 2 : calls InterlockedPopEntrySlist, changing the top element
+           Thread 2 : frees the memory of the element that was popped
+            *** preempted ***
+           Thread 1 : checks if eax is NULL
+           Thread 1 : InterlockedPopEntrySListFault: mov ebx, [eax] <= faults
+
+        To be sure that we are dealing with exactly the case described above, we
+        check whether the ListHeader has changed. If Thread 2 only popped one
+        entry, the Next field in the S-List-header has changed.
+        If after thread 1 has faulted, thread 2 allocates a new element, by
+        chance getting the same address as the previously freed element and
+        pushes it on the list again, we will see the same top element, but the
+        Sequence member of the S-List header has changed. Therefore we check
+        both fields to make sure we catch any concurrent modification of the
+        S-List-header.
+    */
+    if ((TrapFrame->Eip == (ULONG_PTR)ExpInterlockedPopEntrySListFault) ||
+        (TrapFrame->Eip == (ULONG_PTR)KeUserPopEntrySListFault))
     {
-        PSLIST_HEADER SListHeader;
+        ULARGE_INTEGER SListHeader;
+        PVOID ResumeAddress;
 
         /* Sanity check that the assembly is correct:
            This must be mov ebx, [eax]
@@ -1245,37 +1293,65 @@ KiTrap0EHandler(IN PKTRAP_FRAME TrapFrame)
                (((UCHAR*)TrapFrame->Eip)[4] == 0x4D) &&
                (((UCHAR*)TrapFrame->Eip)[5] == 0x00));
 
-        /* Get the pointer to the SLIST_HEADER */
-        SListHeader = (PSLIST_HEADER)TrapFrame->Ebp;
-
-        /* Check if the Next member of the SLIST_HEADER was changed */
-        if (SListHeader->Next.Next != (PSLIST_ENTRY)TrapFrame->Eax)
+        /* Check if this is a user fault */
+        if (TrapFrame->Eip == (ULONG_PTR)KeUserPopEntrySListFault)
         {
+            /* EBP points to the S-List-header. Copy it inside SEH, to protect
+               against a bogus pointer from user mode */
+            _SEH2_TRY
+            {
+                ProbeForRead((PVOID)TrapFrame->Ebp,
+                             sizeof(ULARGE_INTEGER),
+                             TYPE_ALIGNMENT(SLIST_HEADER));
+                SListHeader = *(PULARGE_INTEGER)TrapFrame->Ebp;
+            }
+            _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+            {
+                /* The S-List pointer is not valid! */
+                goto NotSListFault;
+            }
+            _SEH2_END;
+            ResumeAddress = KeUserPopEntrySListResume;
+        }
+        else
+        {
+            SListHeader = *(PULARGE_INTEGER)TrapFrame->Ebp;
+            ResumeAddress = ExpInterlockedPopEntrySListResume;
+        }
+
+        /* Check if either the Next pointer or the Sequence member in the
+           S-List-header has changed. If any of these has changed, we restart
+           the operation. Otherwise we only have a bogus pointer and let the
+           page fault handler deal with it. */
+        if ((SListHeader.LowPart != TrapFrame->Eax) ||
+            (SListHeader.HighPart != TrapFrame->Edx))
+        {
+            DPRINT1("*** Got an S-List-Fault ***\n");
+            KeGetCurrentThread()->SListFaultCount++;
+
             /* Restart the operation */
-            TrapFrame->Eip = (ULONG_PTR)ExpInterlockedPopEntrySListResume;
+            TrapFrame->Eip = (ULONG_PTR)ResumeAddress;
 
             /* Continue execution */
             KiEoiHelper(TrapFrame);
         }
-        else
-        {
-#if 0
-            /* Do what windows does and issue an invalid access violation */
-            KiDispatchException2Args(KI_EXCEPTION_ACCESS_VIOLATION,
-                                     TrapFrame->Eip,
-                                     TrapFrame->ErrCode & 2 ? TRUE : FALSE,
-                                     Cr2,
-                                     TrapFrame);
-#endif
-        }
     }
+NotSListFault:
 
     /* Call the access fault handler */
-    Status = MmAccessFault(TrapFrame->ErrCode & 1,
+    Status = MmAccessFault(Present,
                            (PVOID)Cr2,
                            KiUserTrap(TrapFrame),
                            TrapFrame);
-    if (NT_SUCCESS(Status)) KiEoiHelper(TrapFrame);
+    if (NT_SUCCESS(Status))
+    {
+#ifdef _WINKD_
+        /* Check whether the kernel debugger has owed breakpoints to be inserted */
+        KdSetOwedBreakpoints();
+#endif
+        /* We succeeded, return */
+        KiEoiHelper(TrapFrame);
+    }
 
     /* Check for syscall fault */
 #if 0
@@ -1286,8 +1362,20 @@ KiTrap0EHandler(IN PKTRAP_FRAME TrapFrame)
         UNIMPLEMENTED_FATAL();
     }
 #endif
+
     /* Check for VDM trap */
-    ASSERT((KiVdmTrap(TrapFrame)) == FALSE);
+    if (KiVdmTrap(TrapFrame))
+    {
+        DPRINT1("VDM PAGE FAULT at %lx:%lx for address %lx\n",
+                TrapFrame->SegCs, TrapFrame->Eip, Cr2);
+        if (VdmDispatchPageFault(TrapFrame))
+        {
+            /* Return and end VDM execution */
+            DPRINT1("VDM page fault with status 0x%lx resolved\n", Status);
+            KiEoiHelper(TrapFrame);
+        }
+        DPRINT1("VDM page fault with status 0x%lx NOT resolved\n", Status);
+    }
 
     /* Either kernel or user trap (non VDM) so dispatch exception */
     if (Status == STATUS_ACCESS_VIOLATION)
@@ -1295,7 +1383,7 @@ KiTrap0EHandler(IN PKTRAP_FRAME TrapFrame)
         /* This status code is repurposed so we can recognize it later */
         KiDispatchException2Args(KI_EXCEPTION_ACCESS_VIOLATION,
                                  TrapFrame->Eip,
-                                 TrapFrame->ErrCode & 2 ? TRUE : FALSE,
+                                 StoreInstruction,
                                  Cr2,
                                  TrapFrame);
     }
@@ -1305,7 +1393,7 @@ KiTrap0EHandler(IN PKTRAP_FRAME TrapFrame)
         /* These faults only have two parameters */
         KiDispatchException2Args(Status,
                                  TrapFrame->Eip,
-                                 TrapFrame->ErrCode & 2 ? TRUE : FALSE,
+                                 StoreInstruction,
                                  Cr2,
                                  TrapFrame);
     }
@@ -1315,7 +1403,7 @@ KiTrap0EHandler(IN PKTRAP_FRAME TrapFrame)
                                      0,
                                      TrapFrame->Eip,
                                      3,
-                                     TrapFrame->ErrCode & 2 ? TRUE : FALSE,
+                                     StoreInstruction,
                                      Cr2,
                                      Status,
                                      TrapFrame);
@@ -1510,14 +1598,34 @@ VOID
 FASTCALL
 KiGetTickCountHandler(IN PKTRAP_FRAME TrapFrame)
 {
-    UNIMPLEMENTED_DBGBREAK();
+    /* Save trap frame */
+    KiEnterTrap(TrapFrame);
+
+    /*
+     * Just fail the request
+     */
+    DbgPrint("INT 0x2A attempted, returning 0 tick count\n");
+    TrapFrame->Eax = 0;
+
+    /* Exit the trap */
+    KiEoiHelper(TrapFrame);
 }
 
 VOID
 FASTCALL
 KiCallbackReturnHandler(IN PKTRAP_FRAME TrapFrame)
 {
+    PKTHREAD Thread;
     NTSTATUS Status;
+
+    /* Save the SEH chain, NtCallbackReturn will restore this */
+    TrapFrame->ExceptionList = KeGetPcr()->NtTib.ExceptionList;
+
+    /* Set thread fields */
+    Thread = KeGetCurrentThread();
+    Thread->TrapFrame = TrapFrame;
+    Thread->PreviousMode = KiUserTrap(TrapFrame);
+    ASSERT(Thread->PreviousMode != KernelMode);
 
     /* Pass the register parameters to NtCallbackReturn.
        Result pointer is in ecx, result length in edx, status in eax */
@@ -1591,7 +1699,8 @@ KiSystemServiceHandler(IN PKTRAP_FRAME TrapFrame,
 {
     PKTHREAD Thread;
     PKSERVICE_TABLE_DESCRIPTOR DescriptorTable;
-    ULONG Id, Offset, StackBytes, Result;
+    ULONG Id, Offset, StackBytes;
+    NTSTATUS Status;
     PVOID Handler;
     ULONG SystemCallNumber = TrapFrame->Eax;
 
@@ -1649,21 +1758,20 @@ KiSystemServiceHandler(IN PKTRAP_FRAME TrapFrame,
         if (!(Offset & SERVICE_TABLE_TEST))
         {
             /* Fail the call */
-            Result = STATUS_INVALID_SYSTEM_SERVICE;
+            Status = STATUS_INVALID_SYSTEM_SERVICE;
             goto ExitCall;
         }
 
         /* Convert us to a GUI thread -- must wrap in ASM to get new EBP */
-        Result = KiConvertToGuiThread();
+        Status = KiConvertToGuiThread();
 
         /* Reload trap frame and descriptor table pointer from new stack */
         TrapFrame = *(volatile PVOID*)&Thread->TrapFrame;
         DescriptorTable = (PVOID)(*(volatile ULONG_PTR*)&Thread->ServiceTable + Offset);
 
-        if (!NT_SUCCESS(Result))
+        if (!NT_SUCCESS(Status))
         {
             /* Set the last error and fail */
-            //SetLastWin32Error(RtlNtStatusToDosError(Result));
             goto ExitCall;
         }
 
@@ -1671,7 +1779,7 @@ KiSystemServiceHandler(IN PKTRAP_FRAME TrapFrame,
         if (Id >= DescriptorTable->Limit)
         {
             /* Fail the call */
-            Result = STATUS_INVALID_SYSTEM_SERVICE;
+            Status = STATUS_INVALID_SYSTEM_SERVICE;
             goto ExitCall;
         }
     }
@@ -1704,10 +1812,10 @@ KiSystemServiceHandler(IN PKTRAP_FRAME TrapFrame,
 
     /* Get the handler and make the system call */
     Handler = (PVOID)DescriptorTable->Base[Id];
-    Result = KiSystemCallTrampoline(Handler, Arguments, StackBytes);
+    Status = KiSystemCallTrampoline(Handler, Arguments, StackBytes);
 
     /* Call post-service debug hook */
-    Result = KiDbgPostServiceHook(SystemCallNumber, Result);
+    Status = KiDbgPostServiceHook(SystemCallNumber, Status);
 
     /* Make sure we're exiting correctly */
     KiExitSystemCallDebugChecks(Id, TrapFrame);
@@ -1717,7 +1825,14 @@ ExitCall:
     Thread->TrapFrame = (PKTRAP_FRAME)TrapFrame->Edx;
 
     /* Exit from system call */
-    KiServiceExit(TrapFrame, Result);
+    KiServiceExit(TrapFrame, Status);
+}
+
+VOID
+FASTCALL
+KiCheckForSListAddress(IN PKTRAP_FRAME TrapFrame)
+{
+    UNIMPLEMENTED;
 }
 
 /*
@@ -1728,7 +1843,7 @@ NTAPI
 Kei386EoiHelper(VOID)
 {
     /* We should never see this call happening */
-    ERROR_FATAL("Mismatched NT/HAL version");
+    KeBugCheck(MISMATCHED_HAL);
 }
 
 /* EOF */

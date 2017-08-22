@@ -1,11 +1,11 @@
 
 include_directories(
     ${REACTOS_SOURCE_DIR}
-    ${REACTOS_SOURCE_DIR}/lib/cmlib
+    ${REACTOS_SOURCE_DIR}/sdk/lib/cmlib
     include
     ${CMAKE_CURRENT_BINARY_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/include/internal
-    ${REACTOS_SOURCE_DIR}/include/reactos/drivers)
+    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/drivers)
 
 add_definitions(
     -D__NTOSKRNL__
@@ -56,13 +56,10 @@ list(APPEND SOURCE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmdelay.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmhook.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmhvlist.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmindex.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cminit.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmkcbncb.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmkeydel.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmlazy.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmmapvw.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmname.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmnotify.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmparse.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmquota.c
@@ -70,7 +67,6 @@ list(APPEND SOURCE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmsecach.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmsysini.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmvalche.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmvalue.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/cmwraprs.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/config/ntapi.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/dbgk/dbgkobj.c
@@ -229,6 +225,7 @@ list(APPEND SOURCE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/mm/region.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/mm/rmap.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/mm/section.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ob/devicemap.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ob/obdir.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ob/obhandle.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ob/obinit.c
@@ -244,6 +241,7 @@ list(APPEND SOURCE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/po/poshtdwn.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/po/povolume.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/po/power.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/ps/apphelp.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ps/debug.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ps/job.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/ps/kill.c
@@ -262,14 +260,17 @@ list(APPEND SOURCE
     ${REACTOS_SOURCE_DIR}/ntoskrnl/se/accesschk.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/se/acl.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/se/audit.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/se/lsa.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/se/priv.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/se/sd.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/se/semgr.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/se/sid.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/se/srm.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/se/token.c
     ${REACTOS_SOURCE_DIR}/ntoskrnl/vf/driver.c
-    ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/wmi.c)
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/guidobj.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/smbios.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/wmi.c
+    ${REACTOS_SOURCE_DIR}/ntoskrnl/wmi/wmidrv.c)
 
 list(APPEND ASM_SOURCE ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/zw.S)
 
@@ -324,14 +325,17 @@ elseif(ARCH STREQUAL "amd64")
         ${REACTOS_SOURCE_DIR}/ntoskrnl/ps/amd64/psctx.c)
 elseif(ARCH STREQUAL "arm")
     list(APPEND ASM_SOURCE
+        ${REACTOS_SOURCE_DIR}/ntoskrnl/ex/arm/ioport.s
         ${REACTOS_SOURCE_DIR}/ntoskrnl/ke/arm/boot.s
         ${REACTOS_SOURCE_DIR}/ntoskrnl/ke/arm/ctxswtch.s
         ${REACTOS_SOURCE_DIR}/ntoskrnl/ke/arm/stubs_asm.s
         ${REACTOS_SOURCE_DIR}/ntoskrnl/ke/arm/trap.s)
     list(APPEND SOURCE
         ${REACTOS_SOURCE_DIR}/ntoskrnl/config/arm/cmhardwr.c
+        ${REACTOS_SOURCE_DIR}/ntoskrnl/kd/arm/kdbg.c
         ${REACTOS_SOURCE_DIR}/ntoskrnl/ke/arm/cpu.c
         ${REACTOS_SOURCE_DIR}/ntoskrnl/ke/arm/exp.c
+        ${REACTOS_SOURCE_DIR}/ntoskrnl/ke/arm/interrupt.c
         ${REACTOS_SOURCE_DIR}/ntoskrnl/ke/arm/kiinit.c
         ${REACTOS_SOURCE_DIR}/ntoskrnl/ke/arm/thrdini.c
         ${REACTOS_SOURCE_DIR}/ntoskrnl/ke/arm/trapc.c

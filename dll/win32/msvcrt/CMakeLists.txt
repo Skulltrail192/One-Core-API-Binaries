@@ -1,5 +1,5 @@
 
-include_directories(${REACTOS_SOURCE_DIR}/lib/sdk/crt/include)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/lib/crt/include)
 spec2def(msvcrt.dll msvcrt.spec ADD_IMPORTLIB)
 
 add_definitions(
@@ -27,7 +27,7 @@ target_link_libraries(msvcrt crt wine ${PSEH_LIB})
 if(MSVC)
     # export of deleting destructor "name"
     add_target_link_flags(msvcrt "/ignore:4102")
-    add_target_link_flags(libmsvcrt "/ignore:4102")
+    add_target_property(libmsvcrt STATIC_LIBRARY_FLAGS "/ignore:4102")
 endif()
 
 add_importlibs(msvcrt kernel32 ntdll)

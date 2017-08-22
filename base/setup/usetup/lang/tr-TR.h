@@ -1,4 +1,4 @@
-/* TRANSLATOR: 2013 Erdem Ersoy (eersoy93) (erdemersoy@live.com) */
+/* TRANSLATOR: 2013-2015 Erdem Ersoy (eersoy93) (erdemersoy@live.com) */
 
 #pragma once
 
@@ -97,7 +97,7 @@ static MUI_ENTRY trTRWelcomePageEntries[] =
     {
         8,
         19,
-        "\x07  ReactOS Ruhsatlama Istçlahlarç ve Koüullarç'nç gîrÅntÅlemek iáin L'ye basçnçz.",
+        "\x07  ReactOS Ruhsatlama Istçlahlarç ve ûartlarç'nç gîrÅntÅlemek iáin L'ye basçnçz.",
         TEXT_STYLE_NORMAL
     },
     {
@@ -161,42 +161,12 @@ static MUI_ENTRY trTRIntroPageEntries[] =
     {
         8,
         13,
-        "- Kur, bir diskte birden áok ana bîlÅmÅ yînetemez.",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        14,
-        "- Kur, bir diskte geniületilmiü bîlÅmler oldußu sÅrece",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        15,
-        "  o diskten bir ana bîlÅm silemez.",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        16,
-        "- Kur, bir diskte baüka geniületilmiü bîlÅmlerin oldußu sÅrece",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        17,
-        "  o diskten ilk geniületilmiü bîlÅmÅ silemez.",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        8,
-        18,
         "- Kur, yalnçzca FAT kÅtÅk dizgelerini destekler.",
         TEXT_STYLE_NORMAL
     },
     {
         8,
-        19,
+        14,
         "- KÅtÅk dizgesi denetimi daha bitirilmemiütir.",
         TEXT_STYLE_NORMAL
     },
@@ -255,7 +225,7 @@ static MUI_ENTRY trTRLicensePageEntries[] =
     {
         8,
         10,
-        "kçsçmlarçn koüullarç altçnda ruhsatlanmçütçr.",
+        "kçsçmlarçn üartlarç altçnda ruhsatlanmçütçr.",
         TEXT_STYLE_NORMAL
     },
     {
@@ -267,7 +237,7 @@ static MUI_ENTRY trTRLicensePageEntries[] =
     {
         8,
         12,
-        "îzgÅn ruhsatçyla birlikte GNU GPL altçnda yayçnlançr.",
+        "îzgÅn ruhsatçyla birlikte GNU GPL altçnda yayçmlançr.",
         TEXT_STYLE_NORMAL
     },
     {
@@ -315,7 +285,7 @@ static MUI_ENTRY trTRLicensePageEntries[] =
     {
         8,
         23,
-        "Bu îzgÅr yazçlçmdçr, áoßaltma koüullarç iáin kaynaßa bakçnçz.",
+        "Bu îzgÅr yazçlçmdçr, áoßaltma üartlarç iáin kaynaßa bakçnçz.",
         TEXT_STYLE_NORMAL
     },
     {
@@ -391,7 +361,7 @@ static MUI_ENTRY trTRDevicePageEntries[] =
     {
         25,
         16,
-		"Bu aygçt ayarlarçnç doßrula.",
+        "Bu aygçt ayarlarçnç doßrula.",
         TEXT_STYLE_NORMAL
     },
     {
@@ -406,7 +376,7 @@ static MUI_ENTRY trTRDevicePageEntries[] =
         "basarak deßiütirebilirsiniz. Sonra baüka ayarlar seámek iáin Giriü",
         TEXT_STYLE_NORMAL
     },
-	{
+    {
         6,
         21,
         "dÅßmesine basçnçz.",
@@ -825,6 +795,12 @@ static MUI_ENTRY trTRSelectPartitionEntries[] =
     {
         8,
         19,
+        "\x07  Mantçklçk bir bîlÅm oluüturmak iáin L'ye basçnçz.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        21,
         "\x07  Var olan bir bîlÅm silmek iáin D'ye basçnçz.",
         TEXT_STYLE_NORMAL
     },
@@ -832,6 +808,94 @@ static MUI_ENTRY trTRSelectPartitionEntries[] =
         0,
         0,
         "LÅtfen bekleyiniz...",
+        TEXT_TYPE_STATUS | TEXT_PADDING_BIG
+    },
+    {
+        0,
+        0,
+        NULL,
+        0
+    }
+};
+
+static MUI_ENTRY trTRConfirmDeleteSystemPartitionEntries[] =
+{
+    {
+        4,
+        3,
+        " ReactOS " KERNEL_VERSION_STR " Kur ",
+        TEXT_STYLE_UNDERLINE
+    },
+    {
+        6,
+        8,
+        "Kur'a dizge bîlÅmÅnÅ silmeyi sordunuz.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        10,
+        "Dizge bîlÅmleri; tançlama izlenceleri, donançm yapçlandçrma",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        11,
+        "izlenceleri, ReactOS gibi bir iületim dizgesini baülatmak iáin izlenceler",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        12,
+        "veyÉ donançm Åreticisi eliyle saßlanan baüka izlenceler iáerebilir.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        14,
+        "Yalnçzca bîlÅmde bîyle izlencelerin olmadçßçndan emin oldußunuzda ya da",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        15,
+        "onlarç silmek istedißinizden emin oldußunuzda bir dizge bîlÅmÅnÅ siliniz.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        16,
+        "BîlÅmÅ sildißinizde ReactOS Kur'u bitirene dek bilgisayarç sÉbit diskten",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        6,
+        17,
+        "în yÅkleyemeyebilirsiniz.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        20,
+        "\x07  Dizge bîlÅmÅnÅ silmek iáin Giriü'e basçnçz.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        21,
+        "Sonra bîlÅmÅ silmeyi onaylamak iáin yeniden sorulacaksçnçz.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        8,
+        24,
+        "\x07  Bir înceki sayfaya dînmek iáin Äçkçü'a basçnçz. BîlÅm silinmeyecek.",
+        TEXT_STYLE_NORMAL
+    },
+    {
+        0,
+        0,
+        "Giriü = SÅrdÅr  Äçkçü = òptal",
         TEXT_TYPE_STATUS | TEXT_PADDING_BIG
     },
     {
@@ -856,7 +920,7 @@ static MUI_ENTRY trTRFormatPartitionEntries[] =
         "BîlÅm Biáimlendirme",
         TEXT_STYLE_NORMAL
     },
-	{
+    {
         6,
         10,
         "Kur, üimdi bîlÅmÅ biáimlendirecek. SÅrdÅrmek iáin Giriü'e basçnçz.",
@@ -936,7 +1000,7 @@ static MUI_ENTRY trTRFileCopyEntries[] =
         "ReactOS Kur, ReactOS kurulum dizininize kÅtÅkleri áoßaltçrken",
         TEXT_STYLE_NORMAL | TEXT_ALIGN_CENTER
     },
-	{
+    {
         0,
         13,
         " lÅtfen bekleyiniz.",
@@ -1344,7 +1408,7 @@ MUI_ERROR trTRErrorEntries[] =
     {
         //ERROR_WARN_PARTITION,
         "Kur, dÅzgÅn yînetilemeyen bir uyumsuz bîlÅm tablosu iáeren en az\n"
-		"bir sÉbit disk buldu!\n"
+        "bir sÉbit disk buldu!\n"
         "\n"         
         "BîlÅmleri oluüturmak veyÉ silmek bîlÅm tablosunu yok edebilir.\n"
         "\n"
@@ -1481,15 +1545,23 @@ MUI_ERROR trTRErrorEntries[] =
         "Giriü = Bilgisayarç Yeniden Baülat"
     },
     {
-        //ERROR_INSUFFICIENT_DISKSPACE,
-        "Seáili bîlÅmde yeterli boü alan yok.\n"
+        //ERROR_DIRECTORY_NAME,
+        "Geáersiz dizin adç.\n"
+        "\n"
+        "  * SÅrdÅrmek iáin bir dÅßmeye basçnçz."
+    },
+    {
+        //ERROR_INSUFFICIENT_PARTITION_SIZE,
+        "Seáili bîlÅm ReactOS'u kurmak iáin yetecek îláÅde bÅyÅk deßil.\n"
+        "Kurulum bîlÅmÅ en az %lu MB bÅyÅklÅßÅnde olmalç.\n"
+        "\n"
         "  * SÅrdÅrmek iáin bir dÅßmeye basçnçz.",
         NULL
     },
     {
         //ERROR_PARTITION_TABLE_FULL,
-        "BîlÅm tablosu dolu oldußundan dolayç bu diskin bîlÅm tablosunda\n"
-        "yeni bir ana bîlÅm ya da geniületilmiü bîlÅm oluüturamazsçnçz.\n"
+        "BîlÅm tablosu dolu oldußundan dolayç bu diskin bîlÅm tablosunda yeni bir ana bîlÅm\n"
+        "ya da yeni bir geniületilmiü bîlÅm oluüturamazsçnçz.\n"
         "\n"
         "  * SÅrdÅrmek iáin bir dÅßmeye basçnçz."
     },
@@ -1498,6 +1570,13 @@ MUI_ERROR trTRErrorEntries[] =
         "Bir diskte birden áok geniületilmiü bîlÅm oluüturamazsçnçz.\n"
         "\n"
         "  * SÅrdÅrmek iáin bir dÅßmeye basçnçz."
+    },
+    {
+        //ERROR_FORMATTING_PARTITION,
+        "Kur, bîlÅmÅ biáimlendiremez::\n"
+        " %S\n"
+        "\n"
+        "Giriü = Bilgisayarç Yeniden Baülat"
     },
     {
         NULL,
@@ -1546,6 +1625,10 @@ MUI_PAGE trTRPages[] =
     {
         SELECT_PARTITION_PAGE,
         trTRSelectPartitionEntries
+    },
+    {
+        CONFIRM_DELETE_SYSTEM_PARTITION_PAGE,
+        trTRConfirmDeleteSystemPartitionEntries
     },
     {
         SELECT_FILE_SYSTEM_PAGE,
@@ -1633,10 +1716,16 @@ MUI_STRING trTRStrings[] =
     "Bu bîlÅm ileride biáimlendirilecektir."},
     {STRING_NONFORMATTEDPART,
     "ReactOS'u yeni ya da biáimlendirilmemiü bir bîlÅme kurmayç seátiniz."},
+    {STRING_NONFORMATTEDSYSTEMPART,
+    "Dizge bîlÅmÅ daha biáimlendirilmemiü."},
+    {STRING_NONFORMATTEDOTHERPART,
+    "Yeni bîlÅm daha biáimlendirilmemiü."},
     {STRING_INSTALLONPART,
     "Kur, ReactOS'u bîlÅm Åzerine kurar."},
     {STRING_CHECKINGPART,
     "Kur, üimdi seáili bîlÅmÅ gîzden geáiriyor."},
+    {STRING_CONTINUE,
+    "Giriü = SÅrdÅr"},
     {STRING_QUITCONTINUE,
     "F3 = Äçk   Giriü = SÅrdÅr"},
     {STRING_REBOOTCOMPUTER,
@@ -1680,27 +1769,27 @@ MUI_STRING trTRStrings[] =
     {STRING_KEEPFORMAT,
     " ûimdiki kÅtÅk dizgesini koru. (Deßiüiklik yok.) "},
     {STRING_HDINFOPARTCREATE,
-    "%I64u %s  SÉbit Disk %lu  (Giriü=%hu, Veri Yolu=%hu, Kimlik=%hu), %wZ Åzerinde."},
+    "%I64u %s  SÉbit Disk %lu  (Giriü=%hu, Veriyolu=%hu, Kimlik=%hu), %wZ Åzerinde."},
     {STRING_HDDINFOUNK1,
-    "%I64u %s  SÉbit Disk %lu  (Giriü=%hu, Veri Yolu=%hu, Kimlik=%hu)."},
+    "%I64u %s  SÉbit Disk %lu  (Giriü=%hu, Veriyolu=%hu, Kimlik=%hu)."},
     {STRING_HDDINFOUNK2,
-    "   %c%c  TÅr  %lu    %I64u %s"},
+    "   %c%c  TÅr  0x%02X    %I64u %s"},
     {STRING_HDINFOPARTDELETE,
-    "özerinde: %I64u %s  SÉbit Disk %lu  (Giriü=%hu, Veri Yolu=%hu, Kimlik=%hu), %wZ Åzerinde."},
+    "özerinde: %I64u %s  SÉbit Disk %lu  (Giriü=%hu, Veriyolu=%hu, Kimlik=%hu), %wZ Åzerinde."},
     {STRING_HDDINFOUNK3,
-    "özerinde: %I64u %s  SÉbit Disk %lu  (Giriü=%hu, Veri Yolu=%hu, Kimlik=%hu)."},
+    "özerinde: %I64u %s  SÉbit Disk %lu  (Giriü=%hu, Veriyolu=%hu, Kimlik=%hu)."},
     {STRING_HDINFOPARTZEROED,
-    "SÉbit Disk %lu (%I64u %s), Giriü=%hu, Veri Yolu=%hu, Kimlik=%hu (%wZ)."},
+    "SÉbit Disk %lu (%I64u %s), Giriü=%hu, Veriyolu=%hu, Kimlik=%hu (%wZ)."},
     {STRING_HDDINFOUNK4,
-    "%c%c  TÅr  %lu    %I64u %s"},
+    "%c%c  TÅr  0x%02X    %I64u %s"},
     {STRING_HDINFOPARTEXISTS,
-    "özerinde: SÉbit Disk %lu (%I64u %s), Giriü=%hu, Veri Yolu=%hu, Kimlik=%hu (%wZ)."},
+    "özerinde: SÉbit Disk %lu (%I64u %s), Giriü=%hu, Veriyolu=%hu, Kimlik=%hu (%wZ)."},
     {STRING_HDDINFOUNK5,
-    "%c%c  %sTÅr  %-3u%s                       %6lu %s"},
+    "%c%c %c %sTÅr  %-3u%s                      %6lu %s"},
     {STRING_HDINFOPARTSELECT,
-    "%6lu %s  SÉbit Disk %lu  (Giriü=%hu, Veri Yolu=%hu, Kimlik=%hu), %S Åzerinde"},
+    "%6lu %s  SÉbit Disk %lu  (Giriü=%hu, Veriyolu=%hu, Kimlik=%hu), %S Åzerinde"},
     {STRING_HDDINFOUNK6,
-    "%6lu %s  SÉbit Disk %lu  (Giriü=%hu, Veri Yolu=%hu, Kimlik=%hu)"},
+    "%6lu %s  SÉbit Disk %lu  (Giriü=%hu, Veriyolu=%hu, Kimlik=%hu)"},
     {STRING_NEWPARTITION,
     "Kur, Åzerinde bir yeni bîlÅm oluüturdu:"},
     {STRING_UNPSPACE,

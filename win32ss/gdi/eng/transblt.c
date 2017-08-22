@@ -2,7 +2,7 @@
  * COPYRIGHT:        See COPYING in the top level directory
  * PROJECT:          ReactOS kernel
  * PURPOSE:          GDI TransparentBlt Function
- * FILE:             subsys/win32k/eng/transblt.c
+ * FILE:             win32ss/gdi/eng/transblt.c
  * PROGRAMER:        Thomas Weidenmueller (w3seek@users.sourceforge.net)
  */
 
@@ -232,7 +232,7 @@ IntEngTransparentBlt(
     ASSERT(psurfSource);
 
     /* If no clip object is given, use trivial one */
-    if (!Clip) Clip = &gxcoTrivial.ClipObj;
+    if (!Clip) Clip = (CLIPOBJ *)&gxcoTrivial;
 
     InputClippedRect = *DestRect;
     if (InputClippedRect.right < InputClippedRect.left)

@@ -1,10 +1,11 @@
+
 add_definitions(
     -DNDIS50
     -D_NTDRIVER_)
 
 include_directories(
     BEFORE include
-    ${REACTOS_SOURCE_DIR}/include/reactos/drivers/ndisuio)
+    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/drivers/ndisuio)
 
 list(APPEND SOURCE
     createclose.c

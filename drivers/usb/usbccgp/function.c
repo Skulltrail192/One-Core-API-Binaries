@@ -639,6 +639,7 @@ USBCCGP_LegacyEnum(
     //
     // init function descriptors
     //
+    FDODeviceExtension->FunctionDescriptorCount = 0;
     for (Index = 0; Index < FDODeviceExtension->ConfigurationDescriptor->bNumInterfaces; Index++)
     {
         // get interface descriptor
@@ -701,7 +702,7 @@ NTSTATUS
 USBCCGP_EnumWithUnionFunctionDescriptors(
     IN PDEVICE_OBJECT DeviceObject)
 {
-    UNIMPLEMENTED
+    UNIMPLEMENTED;
     return STATUS_NOT_IMPLEMENTED;
 }
 

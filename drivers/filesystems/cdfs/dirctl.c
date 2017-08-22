@@ -19,7 +19,7 @@
 /*
  * COPYRIGHT:        See COPYING in the top level directory
  * PROJECT:          ReactOS kernel
- * FILE:             services/fs/cdfs/dirctl.c
+ * FILE:             drivers/filesystems/cdfs/dirctl.c
  * PURPOSE:          CDROM (ISO 9660) filesystem driver
  * PROGRAMMER:       Art Yerkes
  *                   Eric Kohl
@@ -75,14 +75,16 @@ CdfsGetEntryName(PDEVICE_EXTENSION DeviceExt,
                 CcUnpinData(*Context);
                 StreamOffset->QuadPart += BLOCKSIZE;
                 *CurrentOffset = ROUND_UP(*CurrentOffset, BLOCKSIZE);
-                if (!CcMapData(DeviceExt->StreamFileObject,
-                    StreamOffset,
-                    BLOCKSIZE, TRUE,
-                    Context, Block))
+                _SEH2_TRY
+                {
+                    CcMapData(DeviceExt->StreamFileObject, StreamOffset, BLOCKSIZE, MAP_WAIT, Context, Block);
+                }
+                _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
                 {
                     DPRINT("CcMapData() failed\n");
-                    return(STATUS_UNSUCCESSFUL);
+                    _SEH2_YIELD(return _SEH2_GetExceptionCode());
                 }
+                _SEH2_END;
                 *Ptr = *Block;
                 Record = (PDIR_RECORD)*Ptr;
             }
@@ -99,14 +101,16 @@ CdfsGetEntryName(PDEVICE_EXTENSION DeviceExt,
         CcUnpinData(*Context);
         StreamOffset->QuadPart += BLOCKSIZE;
         *CurrentOffset = ROUND_UP(*CurrentOffset, BLOCKSIZE);
-        if (!CcMapData(DeviceExt->StreamFileObject,
-            StreamOffset,
-            BLOCKSIZE, TRUE,
-            Context, Block))
+        _SEH2_TRY
+        {
+            CcMapData(DeviceExt->StreamFileObject, StreamOffset, BLOCKSIZE, MAP_WAIT, Context, Block);
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
         {
             DPRINT("CcMapData() failed\n");
-            return(STATUS_UNSUCCESSFUL);
+            _SEH2_YIELD(return _SEH2_GetExceptionCode());
         }
+        _SEH2_END;
         *Ptr = *Block;
         Record = (PDIR_RECORD)*Ptr;
     }
@@ -117,31 +121,13 @@ CdfsGetEntryName(PDEVICE_EXTENSION DeviceExt,
     DPRINT("Index %lu  RecordLength %lu  Offset %lu\n",
         *pIndex, Record->RecordLength, *CurrentOffset);
 
-    if (Record->FileIdLength == 1 && Record->FileId[0] == 0)
+    if (!CdfsIsRecordValid(DeviceExt, Record))
     {
-        wcscpy(Name, L".");
-    }
-    else if (Record->FileIdLength == 1 && Record->FileId[0] == 1)
-    {
-        wcscpy(Name, L"..");
-    }
-    else
-    {
-        if (DeviceExt->CdInfo.JolietLevel == 0)
-        {
-            ULONG i;
-
-            for (i = 0; i < Record->FileIdLength && Record->FileId[i] != ';'; i++)
-                Name[i] = (WCHAR)Record->FileId[i];
-            Name[i] = 0;
-        }
-        else
-        {
-            CdfsSwapString(Name, Record->FileId, Record->FileIdLength);
-        }
+        CcUnpinData(*Context);
+        return STATUS_DISK_CORRUPT_ERROR;
     }
 
-    DPRINT("Name '%S'\n", Name);
+    CdfsGetDirEntryName(DeviceExt, Record, Name);
 
     *Ptr = Record;
 
@@ -249,12 +235,16 @@ CdfsFindFile(PDEVICE_EXTENSION DeviceExt,
         StreamOffset.QuadPart += ROUND_DOWN(Offset, BLOCKSIZE);
     }
 
-    if (!CcMapData(DeviceExt->StreamFileObject, &StreamOffset,
-        BLOCKSIZE, TRUE, &Context, &Block))
+    _SEH2_TRY
+    {
+        CcMapData(DeviceExt->StreamFileObject, &StreamOffset, BLOCKSIZE, MAP_WAIT, &Context, &Block);
+    }
+    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
     {
         DPRINT("CcMapData() failed\n");
-        return STATUS_UNSUCCESSFUL;
+        _SEH2_YIELD(return _SEH2_GetExceptionCode());
     }
+    _SEH2_END;
 
     Record = (PDIR_RECORD) ((ULONG_PTR)Block + Offset % BLOCKSIZE);
     if (Offset)
@@ -283,7 +273,7 @@ CdfsFindFile(PDEVICE_EXTENSION DeviceExt,
         {
             break;
         }
-        else if (Status == STATUS_UNSUCCESSFUL)
+        else if (Status == STATUS_UNSUCCESSFUL || Status == STATUS_DISK_CORRUPT_ERROR)
         {
             /* Note: the directory cache has already been unpinned */
             RtlFreeUnicodeString(&FileToFindUpcase);
@@ -293,6 +283,7 @@ CdfsFindFile(PDEVICE_EXTENSION DeviceExt,
         DPRINT("Name '%S'\n", name);
 
         RtlInitUnicodeString(&LongName, name);
+
         ShortName.Length = 0;
         ShortName.MaximumLength = 26;
         ShortName.Buffer = ShortNameBuffer;
@@ -610,7 +601,7 @@ CdfsQueryDirectory(PDEVICE_OBJECT DeviceObject,
         {
             First = TRUE;
             Ccb->DirectorySearchPattern.Buffer =
-                ExAllocatePoolWithTag(NonPagedPool, SearchPattern->Length + sizeof(WCHAR), TAG_CCB);
+                ExAllocatePoolWithTag(NonPagedPool, SearchPattern->Length + sizeof(WCHAR), CDFS_SEARCH_PATTERN_TAG);
             if (Ccb->DirectorySearchPattern.Buffer == NULL)
             {
                 return STATUS_INSUFFICIENT_RESOURCES;
@@ -623,7 +614,7 @@ CdfsQueryDirectory(PDEVICE_OBJECT DeviceObject,
     else if (Ccb->DirectorySearchPattern.Buffer == NULL)
     {
         First = TRUE;
-        Ccb->DirectorySearchPattern.Buffer = ExAllocatePoolWithTag(NonPagedPool, 2 * sizeof(WCHAR), TAG_CCB);
+        Ccb->DirectorySearchPattern.Buffer = ExAllocatePoolWithTag(NonPagedPool, 2 * sizeof(WCHAR), CDFS_SEARCH_PATTERN_TAG);
         if (Ccb->DirectorySearchPattern.Buffer == NULL)
         {
             return STATUS_INSUFFICIENT_RESOURCES;
@@ -698,20 +689,11 @@ CdfsQueryDirectory(PDEVICE_OBJECT DeviceObject,
 
             if (Status == STATUS_BUFFER_OVERFLOW)
             {
-                if (Buffer0)
-                {
-                    Buffer0->NextEntryOffset = 0;
-                }
                 break;
             }
         }
         else
         {
-            if (Buffer0)
-            {
-                Buffer0->NextEntryOffset = 0;
-            }
-
             if (First)
             {
                 Status = STATUS_NO_SUCH_FILE;
@@ -726,12 +708,13 @@ CdfsQueryDirectory(PDEVICE_OBJECT DeviceObject,
         Buffer0 = (PFILE_NAMES_INFORMATION)Buffer;
         Buffer0->FileIndex = FileIndex++;
         Ccb->Entry++;
+        BufferLength -= Buffer0->NextEntryOffset;
 
         if (Stack->Flags & SL_RETURN_SINGLE_ENTRY)
         {
             break;
         }
-        BufferLength -= Buffer0->NextEntryOffset;
+
         Buffer += Buffer0->NextEntryOffset;
     }
 
@@ -743,6 +726,7 @@ CdfsQueryDirectory(PDEVICE_OBJECT DeviceObject,
     if (FileIndex > 0)
     {
         Status = STATUS_SUCCESS;
+        Irp->IoStatus.Information = Stack->Parameters.QueryDirectory.Length - BufferLength;
     }
 
     return(Status);
@@ -751,7 +735,8 @@ CdfsQueryDirectory(PDEVICE_OBJECT DeviceObject,
 
 static NTSTATUS
 CdfsNotifyChangeDirectory(PDEVICE_OBJECT DeviceObject,
-                          PIRP Irp)
+                          PIRP Irp,
+                          PCDFS_IRP_CONTEXT IrpContext)
 {
     PDEVICE_EXTENSION DeviceExtension;
     PFCB Fcb;
@@ -779,23 +764,31 @@ CdfsNotifyChangeDirectory(PDEVICE_OBJECT DeviceObject,
                                    NULL,
                                    NULL);
 
+    /* We won't handle IRP completion */
+    IrpContext->Flags &= ~IRPCONTEXT_COMPLETE;
+
     return STATUS_PENDING;
 }
 
 
 NTSTATUS NTAPI
-CdfsDirectoryControl(PDEVICE_OBJECT DeviceObject,
-                     PIRP Irp)
+CdfsDirectoryControl(
+    PCDFS_IRP_CONTEXT IrpContext)
 {
-    PIO_STACK_LOCATION Stack;
+    PIRP Irp;
+    PDEVICE_OBJECT DeviceObject;
     NTSTATUS Status;
 
     DPRINT("CdfsDirectoryControl() called\n");
-    FsRtlEnterFileSystem();
 
-    Stack = IoGetCurrentIrpStackLocation(Irp);
+    ASSERT(IrpContext);
 
-    switch (Stack->MinorFunction)
+    Irp = IrpContext->Irp;
+    DeviceObject = IrpContext->DeviceObject;
+
+    Irp->IoStatus.Information = 0;
+
+    switch (IrpContext->MinorFunction)
     {
     case IRP_MN_QUERY_DIRECTORY:
         Status = CdfsQueryDirectory(DeviceObject,
@@ -804,23 +797,14 @@ CdfsDirectoryControl(PDEVICE_OBJECT DeviceObject,
 
     case IRP_MN_NOTIFY_CHANGE_DIRECTORY:
         Status = CdfsNotifyChangeDirectory(DeviceObject,
-            Irp);
+            Irp, IrpContext);
         break;
 
     default:
-        DPRINT1("CDFS: MinorFunction %u\n", Stack->MinorFunction);
+        DPRINT1("CDFS: MinorFunction %u\n", IrpContext->MinorFunction);
         Status = STATUS_INVALID_DEVICE_REQUEST;
         break;
     }
-
-    Irp->IoStatus.Status = Status;
-    Irp->IoStatus.Information = 0;
-
-    if (Status != STATUS_PENDING)
-    {
-        IoCompleteRequest(Irp, IO_NO_INCREMENT);
-    }
-    FsRtlExitFileSystem();
 
     return(Status);
 }

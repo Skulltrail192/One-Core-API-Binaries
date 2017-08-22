@@ -306,7 +306,7 @@ SeCaptureObjectTypeList(
     {
         ExFreePoolWithTag(*CapturedObjectTypeList, TAG_SEPA);
         *CapturedObjectTypeList = NULL;
-        return _SEH2_GetExceptionCode();
+        _SEH2_YIELD(return _SEH2_GetExceptionCode());
     }
     _SEH2_END;
 
@@ -501,7 +501,7 @@ SepAccessCheckAndAuditAlarm(
     {
         Status = _SEH2_GetExceptionCode();
         DPRINT1("Exception while probing parameters: 0x%lx\n", Status);
-        goto Cleanup;
+        _SEH2_YIELD(goto Cleanup);
     }
     _SEH2_END;
 
@@ -644,7 +644,7 @@ SepAccessCheckAndAuditAlarm(
     _SEH2_TRY
     {
         /* Loop all result entries (only 1 when no list was requested) */
-        NT_ASSERT(UseResultList || (ResultListLength == 1));
+        ASSERT(UseResultList || (ResultListLength == 1));
         for (i = 0; i < ResultListLength; i++)
         {
             AccessStatusList[i] = SafeAccessStatusList[i];
@@ -1101,7 +1101,7 @@ NtOpenObjectAuditAlarm(
             if (PrivilegeCount > SEP_PRIVILEGE_SET_MAX_COUNT)
             {
                 Status = STATUS_INVALID_PARAMETER;
-                goto Cleanup;
+                _SEH2_YIELD(goto Cleanup);
             }
 
             /* Calculate the size of the PrivilegeSet structure */
@@ -1113,12 +1113,12 @@ NtOpenObjectAuditAlarm(
             /* Allocate a temp buffer */
             CapturedPrivilegeSet = ExAllocatePoolWithTag(PagedPool,
                                                          PrivilegeSetSize,
-                                                         'rPeS');
+                                                         TAG_PRIVILEGE_SET);
             if (CapturedPrivilegeSet == NULL)
             {
                 DPRINT1("Failed to allocate %u bytes\n", PrivilegeSetSize);
                 Status = STATUS_INSUFFICIENT_RESOURCES;
-                goto Cleanup;
+                _SEH2_YIELD(goto Cleanup);
             }
 
             /* Copy the privileges */
@@ -1137,7 +1137,7 @@ NtOpenObjectAuditAlarm(
     {
         Status = _SEH2_GetExceptionCode();
         DPRINT1("Exception while probing parameters: 0x%lx\n", Status);
-        goto Cleanup;
+        _SEH2_YIELD(goto Cleanup);
     }
     _SEH2_END;
 
@@ -1215,7 +1215,7 @@ Cleanup:
         SeReleaseSecurityDescriptor(CapturedSecurityDescriptor, UserMode, FALSE);
 
     if (CapturedPrivilegeSet != NULL)
-        ExFreePoolWithTag(CapturedPrivilegeSet, 'rPeS');
+        ExFreePoolWithTag(CapturedPrivilegeSet, TAG_PRIVILEGE_SET);
 
     /* Release the security subject context */
     SeReleaseSubjectContext(&SubjectContext);
@@ -1324,7 +1324,7 @@ NtPrivilegedServiceAuditAlarm(
         if (PrivilegeCount > SEP_PRIVILEGE_SET_MAX_COUNT)
         {
             Status = STATUS_INVALID_PARAMETER;
-            goto Cleanup;
+            _SEH2_YIELD(goto Cleanup);
         }
 
         /* Calculate the size of the Privileges structure */
@@ -1336,12 +1336,12 @@ NtPrivilegedServiceAuditAlarm(
         /* Allocate a temp buffer */
         CapturedPrivileges = ExAllocatePoolWithTag(PagedPool,
                                                    PrivilegesSize,
-                                                   'rPeS');
+                                                   TAG_PRIVILEGE_SET);
         if (CapturedPrivileges == NULL)
         {
             DPRINT1("Failed to allocate %u bytes\n", PrivilegesSize);
             Status = STATUS_INSUFFICIENT_RESOURCES;
-            goto Cleanup;
+            _SEH2_YIELD(goto Cleanup);
         }
 
         /* Copy the privileges */
@@ -1351,7 +1351,7 @@ NtPrivilegedServiceAuditAlarm(
     {
         Status = _SEH2_GetExceptionCode();
         DPRINT1("Got exception 0x%lx\n", Status);
-        goto Cleanup;
+        _SEH2_YIELD(goto Cleanup);
     }
     _SEH2_END;
 
@@ -1375,7 +1375,7 @@ Cleanup:
         ReleaseCapturedUnicodeString(&CapturedServiceName, PreviousMode);
 
     if (CapturedPrivileges != NULL)
-        ExFreePoolWithTag(CapturedPrivileges, 'rPeS');
+        ExFreePoolWithTag(CapturedPrivileges, TAG_PRIVILEGE_SET);
 
     /* Release the security subject context */
     SeReleaseSubjectContext(&SubjectContext);

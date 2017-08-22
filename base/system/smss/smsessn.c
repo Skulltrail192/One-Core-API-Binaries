@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS Windows-Compatible Session Manager
  * LICENSE:         BSD 2-Clause License
- * FILE:            base/system/smss/smss.c
+ * FILE:            base/system/smss/smsessn.c
  * PURPOSE:         Main SMSS Code
  * PROGRAMMERS:     Alex Ionescu
  */
@@ -14,6 +14,14 @@
 #include <debug.h>
 
 /* GLOBALS ********************************************************************/
+
+typedef struct _SMP_SESSION
+{
+    LIST_ENTRY Entry;
+    ULONG SessionId;
+    PSMP_SUBSYSTEM Subsystem;
+    PSMP_SUBSYSTEM OtherSubsystem;
+} SMP_SESSION, *PSMP_SESSION;
 
 RTL_CRITICAL_SECTION SmpSessionListLock;
 LIST_ENTRY SmpSessionListHead;
@@ -147,7 +155,7 @@ SmpAllocateSessionId(IN PSMP_SUBSYSTEM Subsystem,
     }
     else
     {
-        DbgPrint("SMSS: Unable to keep track of session ID -- no memory available\n");
+        DPRINT1("SMSS: Unable to keep track of session ID -- no memory available\n");
     }
 
     /* Release the session lock */
@@ -177,7 +185,7 @@ SmpGetProcessMuSessionId(IN HANDLE ProcessHandle,
     else
     {
         /* Failure -- assume session zero */
-        DbgPrint("SMSS: GetProcessMuSessionId, Process=%p, Status=%x\n",
+        DPRINT1("SMSS: GetProcessMuSessionId, Process=%p, Status=%x\n",
                 ProcessHandle, Status);
         *SessionId = 0;
     }
@@ -200,7 +208,7 @@ SmpSetProcessMuSessionId(IN HANDLE ProcessHandle,
                                      sizeof(SessionId));
     if (!NT_SUCCESS(Status))
     {
-        DbgPrint("SMSS: SetProcessMuSessionId, Process=%p, Status=%x\n",
+        DPRINT1("SMSS: SetProcessMuSessionId, Process=%p, Status=%x\n",
                 ProcessHandle, Status);
     }
 

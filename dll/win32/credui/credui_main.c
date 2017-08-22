@@ -27,6 +27,7 @@
 //#include "winnt.h"
 #include <winuser.h>
 #include <wincred.h>
+#include <sspi.h>
 #include <commctrl.h>
 
 #include "credui_resources.h"
@@ -216,7 +217,7 @@ static void CredDialogCreateBalloonTip(HWND hwndDlg, struct cred_dialog_params *
     toolinfo.uFlags = TTF_TRACK;
     toolinfo.hwnd = hwndDlg;
     toolinfo.uId = TOOLID_INCORRECTPASSWORD;
-    memset(&toolinfo.rect, 0, sizeof(toolinfo.rect));
+    SetRectEmpty(&toolinfo.rect);
     toolinfo.hinst = NULL;
     toolinfo.lpszText = wszText;
     toolinfo.lParam = 0;
@@ -560,7 +561,8 @@ static BOOL find_existing_credential(const WCHAR *target, WCHAR *username, ULONG
     if (!CredEnumerateW(target, 0, &count, &credentials)) return FALSE;
     for (i = 0; i < count; i++)
     {
-        if (credentials[i]->Type != CRED_TYPE_DOMAIN_PASSWORD)
+        if (credentials[i]->Type != CRED_TYPE_DOMAIN_PASSWORD &&
+            credentials[i]->Type != CRED_TYPE_GENERIC)
         {
             FIXME("no support for type %u credentials\n", credentials[i]->Type);
             continue;
@@ -850,4 +852,145 @@ BOOL WINAPI CredUIInitControls(void)
 {
     FIXME("() stub\n");
     return TRUE;
+}
+
+/******************************************************************************
+ * SspiPromptForCredentialsW [CREDUI.@]
+ */
+ULONG SEC_ENTRY SspiPromptForCredentialsW( PCWSTR target, void *info,
+                                           DWORD error, PCWSTR package,
+                                           PSEC_WINNT_AUTH_IDENTITY_OPAQUE input_id,
+                                           PSEC_WINNT_AUTH_IDENTITY_OPAQUE *output_id,
+                                           BOOL *save, DWORD sspi_flags )
+{
+    static const WCHAR basicW[] = {'B','a','s','i','c',0};
+    static const WCHAR ntlmW[] = {'N','T','L','M',0};
+    static const WCHAR negotiateW[] = {'N','e','g','o','t','i','a','t','e',0};
+    WCHAR username[CREDUI_MAX_USERNAME_LENGTH + 1] = {0};
+    WCHAR password[CREDUI_MAX_PASSWORD_LENGTH + 1] = {0};
+    DWORD len_username = sizeof(username) / sizeof(username[0]);
+    DWORD len_password = sizeof(password) / sizeof(password[0]);
+    DWORD ret, flags;
+    CREDUI_INFOW *cred_info = info;
+    SEC_WINNT_AUTH_IDENTITY_W *id = input_id;
+
+    FIXME( "(%s, %p, %u, %s, %p, %p, %p, %x) stub\n", debugstr_w(target), info,
+           error, debugstr_w(package), input_id, output_id, save, sspi_flags );
+
+    if (!target) return ERROR_INVALID_PARAMETER;
+    if (!package || (strcmpiW( package, basicW ) && strcmpiW( package, ntlmW ) &&
+                     strcmpiW( package, negotiateW )))
+    {
+        FIXME( "package %s not supported\n", debugstr_w(package) );
+        return ERROR_NO_SUCH_PACKAGE;
+    }
+
+    flags = CREDUI_FLAGS_ALWAYS_SHOW_UI | CREDUI_FLAGS_GENERIC_CREDENTIALS;
+
+    if (sspi_flags & SSPIPFC_CREDPROV_DO_NOT_SAVE)
+        flags |= CREDUI_FLAGS_DO_NOT_PERSIST;
+
+    if (!(sspi_flags & SSPIPFC_NO_CHECKBOX))
+        flags |= CREDUI_FLAGS_SHOW_SAVE_CHECK_BOX;
+
+    if (!id) find_existing_credential( target, username, len_username, password, len_password );
+    else
+    {
+        if (id->User && id->UserLength > 0 && id->UserLength <= CREDUI_MAX_USERNAME_LENGTH)
+        {
+            memcpy( username, id->User, id->UserLength * sizeof(WCHAR) );
+            username[id->UserLength] = 0;
+        }
+        if (id->Password && id->PasswordLength > 0 && id->PasswordLength <= CREDUI_MAX_PASSWORD_LENGTH)
+        {
+            memcpy( password, id->Password, id->PasswordLength * sizeof(WCHAR) );
+            password[id->PasswordLength] = 0;
+        }
+    }
+
+    if (!(ret = CredUIPromptForCredentialsW( cred_info, target, NULL, error, username,
+                                             len_username, password, len_password, save, flags )))
+    {
+        DWORD size = sizeof(*id), len_domain = 0;
+        WCHAR *ptr, *user = username, *domain = NULL;
+
+        if ((ptr = strchrW( username, '\\' )))
+        {
+            user = ptr + 1;
+            len_username = strlenW( user );
+            if (!strcmpiW( package, ntlmW ) || !strcmpiW( package, negotiateW ))
+            {
+                domain = username;
+                len_domain = ptr - username;
+            }
+            *ptr = 0;
+        }
+        else len_username = strlenW( username );
+        len_password = strlenW( password );
+
+        size += (len_username + 1) * sizeof(WCHAR);
+        size += (len_domain + 1) * sizeof(WCHAR);
+        size += (len_password + 1) * sizeof(WCHAR);
+        if (!(id = HeapAlloc( GetProcessHeap(), 0, size ))) return ERROR_OUTOFMEMORY;
+        ptr = (WCHAR *)(id + 1);
+
+        memcpy( ptr, user, (len_username + 1) * sizeof(WCHAR) );
+        id->User           = ptr;
+        id->UserLength     = len_username;
+        ptr += len_username + 1;
+        if (len_domain)
+        {
+            memcpy( ptr, domain, (len_domain + 1) * sizeof(WCHAR) );
+            id->Domain         = ptr;
+            id->DomainLength   = len_domain;
+            ptr += len_domain + 1;
+        }
+        else
+        {
+            id->Domain         = NULL;
+            id->DomainLength   = 0;
+        }
+        memcpy( ptr, password, (len_password + 1) * sizeof(WCHAR) );
+        id->Password       = ptr;
+        id->PasswordLength = len_password;
+        id->Flags          = 0;
+
+        *output_id = id;
+    }
+
+    return ret;
+}
+
+/******************************************************************************
+ * CredUIPromptForWindowsCredentialsW [CREDUI.@]
+ */
+DWORD WINAPI CredUIPromptForWindowsCredentialsW( CREDUI_INFOW *info, DWORD error, ULONG *package,
+                                                 const void *in_buf, ULONG in_buf_size, void **out_buf,
+                                                 ULONG *out_buf_size, BOOL *save, DWORD flags )
+{
+    FIXME( "(%p, %u, %p, %p, %u, %p, %p, %p, %08x) stub\n", info, error, package, in_buf, in_buf_size,
+           out_buf, out_buf_size, save, flags );
+    return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+/******************************************************************************
+ * CredPackAuthenticationBufferW [CREDUI.@]
+ */
+BOOL  WINAPI CredPackAuthenticationBufferW( DWORD flags, WCHAR *username, WCHAR *password, BYTE *buf,
+                                            DWORD *size )
+{
+    FIXME( "(%08x, %s, %p, %p, %p) stub\n", flags, debugstr_w(username), password, buf, size );
+    return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+/******************************************************************************
+ * CredUnPackAuthenticationBufferW [CREDUI.@]
+ */
+BOOL  WINAPI CredUnPackAuthenticationBufferW( DWORD flags, void *buf, DWORD size, WCHAR *username,
+                                              DWORD *len_username, WCHAR *domain, DWORD *len_domain,
+                                              WCHAR *password, DWORD *len_password )
+{
+    FIXME( "(%08x, %p, %u, %p, %p, %p, %p, %p, %p) stub\n", flags, buf, size, username, len_username,
+           domain, len_domain, password, len_password );
+    return ERROR_CALL_NOT_IMPLEMENTED;
 }

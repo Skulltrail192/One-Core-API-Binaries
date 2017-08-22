@@ -9,7 +9,7 @@
 
 LANGUAGE LANG_POLISH, SUBLANG_DEFAULT
 
-IDD_FIRSTPAGE DIALOGEX 0, 0, PROPSHEETWIDTH, PROPSHEETHEIGHT
+IDD_FIRSTPAGE DIALOGEX 0, 0, 380, 228
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Utwórz łącze"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
@@ -18,7 +18,7 @@ BEGIN
     LTEXT "Text2", -1, 115, 35, 160, 17
 END
 
-IDD_SUBMIT_REPORT DIALOGEX 0, 0, PROPSHEETWIDTH, PROPSHEETHEIGHT
+IDD_SUBMIT_REPORT DIALOGEX 0, 0, 380, 228
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Utwórz łącze"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
@@ -50,23 +50,20 @@ BEGIN
     LTEXT "Naciśnij Zakończ by utworzyć skrót.", -1, 118, 97, 178, 17
 END
 
-STRINGTABLE
+IDD_CONFIG_STARTMENU DIALOGEX 0, 0, 212, 200
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Remove Shortcuts/Folders"
+FONT 8, "MS Shell Dlg"
 BEGIN
-    IDS_CPLSYSTEMNAME "Dodaj/Usuń Programy"
-    IDS_CPLSYSTEMDESCRIPTION "Instaluje bądź usuwa programy oraz tworzy skróty."
-    IDS_CREATE_SHORTCUT "Utwórz skrót"
-    IDS_ERROR_NOT_FOUND "Plik %s nie został znaleziony."
+    LTEXT "&To remove an item from the Start menu, select the item and click Remove.", -1, 10, 10, 192, 16
+    CONTROL "List1", IDC_STARTMENU_TREE, "SysListView32", LVS_REPORT | LVS_SHOWSELALWAYS |
+            LVS_SORTASCENDING | WS_BORDER | WS_TABSTOP, 10, 32, 192, 138
+    PUSHBUTTON "&Remove", IDC_REMOVE_ENTRIES, 98, 176, 50, 14, WS_GROUP | WS_TABSTOP
+    DEFPUSHBUTTON "Close", IDOK, 152, 176, 50, 14, WS_GROUP | WS_TABSTOP
 END
 
-STRINGTABLE
-BEGIN
-    IDS_DOWNLOADING     "Ściąganie..."
-    IDS_INSTALLING      "Instalowanie..."
-    IDS_INVALID_SHA     "Nieoczekiwana suma kontrolna ściągniętego pliku. Przerwanie instalacji uszkodzonego pliku."
-END
-
-ID_DWL_GECKO_DIALOG DIALOG  0, 0, 260, 95
-STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+ID_DWL_GECKO_DIALOG DIALOGEX  0, 0, 260, 95
+STYLE DS_SHELLFONT | DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 CAPTION "Instalator Wine Gecko"
 FONT 8, "MS Shell Dlg"
 BEGIN
@@ -75,4 +72,19 @@ BEGIN
     CONTROL "", ID_DWL_PROGRESS, PROGRESS_CLASSA, WS_BORDER | PBS_SMOOTH, 10, 40, 240, 12
     DEFPUSHBUTTON "&Instaluj", ID_DWL_INSTALL, 200, 76, 50, 14, WS_GROUP | WS_TABSTOP
     PUSHBUTTON "Anuluj", IDCANCEL, 144, 76, 50, 14, WS_GROUP | WS_TABSTOP
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CPLSYSTEMNAME "Dodaj lub usuń programy"
+    IDS_CPLSYSTEMDESCRIPTION "Instaluje bądź usuwa programy oraz tworzy skróty."
+    IDS_CREATE_SHORTCUT "Utwórz skrót"
+    IDS_ERROR_NOT_FOUND "Plik %s nie został znaleziony."
+END
+
+STRINGTABLE
+BEGIN
+    IDS_DOWNLOADING "Ściąganie..."
+    IDS_INSTALLING "Instalowanie..."
+    IDS_INVALID_SHA "Nieoczekiwana suma kontrolna ściągniętego pliku. Przerwanie instalacji uszkodzonego pliku."
 END

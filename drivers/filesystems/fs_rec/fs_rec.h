@@ -20,11 +20,13 @@
 #define UDFS_AVDP_SECTOR       256
 
 /* Non-standard rounding macros */
+#ifndef ROUND_UP
 #define ROUND_UP(n, align) \
     ROUND_DOWN(((ULONG)n) + (align) - 1, (align))
 
 #define ROUND_DOWN(n, align) \
     (((ULONG)n) & ~((align) - 1l))
+#endif
 
 /* Conversion types and macros taken from internal ntifs headers */
 typedef union _UCHAR1
@@ -172,6 +174,9 @@ typedef enum _FILE_SYSTEM_TYPE
     FS_TYPE_CDFS,
     FS_TYPE_UDFS,
     FS_TYPE_EXT2,
+    FS_TYPE_BTRFS,
+    FS_TYPE_REISERFS,
+    FS_TYPE_FFS,
 } FILE_SYSTEM_TYPE, *PFILE_SYSTEM_TYPE;
 
 /* FS Recognizer State */
@@ -222,6 +227,27 @@ FsRecUdfsFsControl(
 NTSTATUS
 NTAPI
 FsRecExt2FsControl(
+    IN PDEVICE_OBJECT DeviceObject,
+    IN PIRP Irp
+);
+
+NTSTATUS
+NTAPI
+FsRecBtrfsFsControl(
+    IN PDEVICE_OBJECT DeviceObject,
+    IN PIRP Irp
+);
+
+NTSTATUS
+NTAPI
+FsRecReiserfsFsControl(
+    IN PDEVICE_OBJECT DeviceObject,
+    IN PIRP Irp
+);
+
+NTSTATUS
+NTAPI
+FsRecFfsFsControl(
     IN PDEVICE_OBJECT DeviceObject,
     IN PIRP Irp
 );

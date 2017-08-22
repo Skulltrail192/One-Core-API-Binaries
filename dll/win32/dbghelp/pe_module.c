@@ -311,16 +311,6 @@ const char* pe_map_directory(struct module* module, int dirno, DWORD* size)
                            nth->OptionalHeader.DataDirectory[dirno].VirtualAddress, NULL);
 }
 
-/******************************************************************
- *		pe_unmap_directory
- *
- * Unmaps a directory content
- */
-void pe_unmap_directory(struct image_file_map* fmap, int dirno)
-{
-    pe_unmap_full(fmap);
-}
-
 static void pe_module_remove(struct process* pcs, struct module_format* modfmt)
 {
     pe_unmap_file(&modfmt->u.pe_info->fmap);
@@ -368,7 +358,7 @@ static BOOL pe_locate_with_coff_symbol_table(struct module* module)
             hash_table_iter_init(&module->ht_symbols, &hti, name);
             while ((ptr = hash_table_iter_up(&hti)))
             {
-                sym = GET_ENTRY(ptr, struct symt_data, hash_elt);
+                sym = CONTAINING_RECORD(ptr, struct symt_data, hash_elt);
                 if (sym->symt.tag == SymTagData &&
                     (sym->kind == DataIsGlobal || sym->kind == DataIsFileStatic) &&
                     sym->u.var.kind == loc_absolute &&
@@ -504,7 +494,7 @@ static BOOL pe_load_stabs(const struct process* pcs, struct module* module)
 static BOOL pe_load_dwarf(struct module* module)
 {
     struct image_file_map*      fmap = &module->format_info[DFI_PE]->u.pe_info->fmap;
-    BOOL                        ret = FALSE;
+    BOOL                        ret;
 
     ret = dwarf2_parse(module,
                        module->module.BaseOfImage - fmap->u.pe.ntheader.OptionalHeader.ImageBase,
@@ -516,6 +506,32 @@ static BOOL pe_load_dwarf(struct module* module)
 }
 
 #ifndef DBGHELP_STATIC_LIB
+/******************************************************************
+ *		pe_load_rsym
+ *
+ * look for ReactOS's own rsym format
+ */
+static BOOL pe_load_rsym(struct module* module)
+{
+    struct image_file_map*      fmap = &module->format_info[DFI_PE]->u.pe_info->fmap;
+    struct image_section_map    sect_rsym;
+    BOOL                        ret = FALSE;
+
+    if (pe_find_section(fmap, ".rossym", &sect_rsym))
+    {
+        const char* rsym = image_map_section(&sect_rsym);
+        if (rsym != IMAGE_NO_MAP)
+        {
+            ret = rsym_parse(module, module->module.BaseOfImage,
+                             rsym, image_get_map_size(&sect_rsym));
+        }
+        image_unmap_section(&sect_rsym);
+    }
+    TRACE("%s the RSYM debug info\n", ret ? "successfully loaded" : "failed to load");
+
+    return ret;
+}
+
 /******************************************************************
  *		pe_load_dbg_file
  *
@@ -714,7 +730,9 @@ BOOL pe_load_debug_info(const struct process* pcs, struct module* module)
         ret = pe_load_dwarf(module) || ret;
         #ifndef DBGHELP_STATIC_LIB
         ret = pe_load_msc_debug_info(pcs, module) || ret;
+        ret = pe_load_rsym(module) || ret;
         #endif
+
         ret = ret || pe_load_coff_symbol_table(module); /* FIXME */
         /* if we still have no debug info (we could only get SymExport at this
          * point), then do the SymExport except if we have an ELF container,

@@ -1,4 +1,6 @@
+
 list(APPEND FONT_FILES
+    DejaVuMathTeXGyre.ttf
     DejaVuSans-Bold.ttf
     DejaVuSans-BoldOblique.ttf
     DejaVuSans-ExtraLight.ttf
@@ -42,10 +44,32 @@ list(APPEND FONT_FILES
     LiberationSans-BoldItalic.ttf
     LiberationSans-Italic.ttf
     LiberationSans-Regular.ttf
+    LiberationSansNarrow-Bold.ttf
+    LiberationSansNarrow-BoldItalic.ttf
+    LiberationSansNarrow-Italic.ttf
+    LiberationSansNarrow-Regular.ttf
     LiberationSerif-Bold.ttf
     LiberationSerif-BoldItalic.ttf
     LiberationSerif-Italic.ttf
     LiberationSerif-Regular.ttf
+    LibreFranklin-Black.ttf
+    LibreFranklin-BlackItalic.ttf
+    LibreFranklin-Bold.ttf
+    LibreFranklin-BoldItalic.ttf
+    LibreFranklin-ExtraBold.ttf
+    LibreFranklin-ExtraBoldItalic.ttf
+    LibreFranklin-ExtraLight.ttf
+    LibreFranklin-ExtraLightItalic.ttf
+    LibreFranklin-Italic.ttf
+    LibreFranklin-Light.ttf
+    LibreFranklin-LightItalic.ttf
+    LibreFranklin-Medium.ttf
+    LibreFranklin-MediumItalic.ttf
+    LibreFranklin-Regular.ttf
+    LibreFranklin-SemiBold.ttf
+    LibreFranklin-SemiBoldItalic.ttf
+    LibreFranklin-Thin.ttf
+    LibreFranklin-ThinItalic.ttf
     Marlett.ttf
     OpenSans-Bold.ttf
     OpenSans-BoldItalic.ttf
@@ -76,8 +100,7 @@ list(APPEND FONT_FILES
     UbuntuMono-RI.ttf
     Ubuntu-R.ttf
     Ubuntu-RI.ttf
-    UniVGA16.ttf
-)
+    UniVGA16.ttf)
 
 foreach(item ${FONT_FILES})
     add_cd_file(FILE "${CMAKE_CURRENT_SOURCE_DIR}/${item}" DESTINATION reactos/Fonts FOR all)

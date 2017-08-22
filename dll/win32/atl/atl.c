@@ -28,9 +28,9 @@ HINSTANCE atl_instance;
 
 typedef unsigned char cpp_bool;
 
-static inline void *heap_alloc(size_t len)
+static inline void* __WINE_ALLOC_SIZE(1) heap_alloc(size_t size)
 {
-    return HeapAlloc(GetProcessHeap(), 0, len);
+    return HeapAlloc(GetProcessHeap(), 0, size);
 }
 
 static inline BOOL heap_free(void *mem)
@@ -276,6 +276,18 @@ HRESULT WINAPI AtlIPersistPropertyBag_Load(LPPROPERTYBAG pPropBag, LPERRORLOG pE
                                            IUnknown *pUnk)
 {
     FIXME("(%p, %p, %p, %p, %p)\n", pPropBag, pErrorLog, pMap, pThis, pUnk);
+
+    return S_OK;
+}
+
+/***********************************************************************
+ *           AtlIPersistPropertyBag_Save     [atl100.@]
+ */
+HRESULT WINAPI AtlIPersistPropertyBag_Save(LPPROPERTYBAG pPropBag, BOOL fClearDirty,
+                                           BOOL fSaveAll, ATL_PROPMAP_ENTRY *pMap,
+                                           void *pThis, IUnknown *pUnk)
+{
+    FIXME("(%p, %d, %d, %p, %p, %p)\n", pPropBag, fClearDirty, fSaveAll, pMap, pThis, pUnk);
 
     return S_OK;
 }

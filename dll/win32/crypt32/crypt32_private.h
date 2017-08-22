@@ -365,7 +365,11 @@ WINECRYPT_CERTSTORE *CRYPT_FileNameOpenStoreA(HCRYPTPROV hCryptProv,
  DWORD dwFlags, const void *pvPara) DECLSPEC_HIDDEN;
 WINECRYPT_CERTSTORE *CRYPT_FileNameOpenStoreW(HCRYPTPROV hCryptProv,
  DWORD dwFlags, const void *pvPara) DECLSPEC_HIDDEN;
-WINECRYPT_CERTSTORE *CRYPT_RootOpenStore(HCRYPTPROV hCryptProv, DWORD dwFlags) DECLSPEC_HIDDEN;
+
+void CRYPT_ImportSystemRootCertsToReg(void) DECLSPEC_HIDDEN;
+BOOL CRYPT_SerializeContextsToReg(HKEY key, DWORD flags, const WINE_CONTEXT_INTERFACE *contextInterface,
+    HCERTSTORE memStore) DECLSPEC_HIDDEN;
+
 BOOL CRYPT_IsCertificateSelfSigned(PCCERT_CONTEXT cert) DECLSPEC_HIDDEN;
 
 /* Allocates and initializes a certificate chain engine, but without creating
@@ -459,7 +463,7 @@ void ContextPropertyList_Copy(CONTEXT_PROPERTY_LIST *to,
 
 void ContextPropertyList_Free(CONTEXT_PROPERTY_LIST *list) DECLSPEC_HIDDEN;
 
-extern WINECRYPT_CERTSTORE empty_store;
+extern WINECRYPT_CERTSTORE empty_store DECLSPEC_HIDDEN;
 void init_empty_store(void) DECLSPEC_HIDDEN;
 
 /**

@@ -19,14 +19,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
-#include "wine/port.h"
-
-#include <stdio.h>
-#ifdef HAVE_FLOAT_H
-# include <float.h>
-#endif
-
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
@@ -156,12 +148,6 @@ static void context_attach_gl_texture_fbo(struct wined3d_context *context,
         gl_info->fbo_ops.glFramebufferTexture1D(fbo_target, attachment,
                 resource->target, resource->object, resource->level);
         checkGLcall("glFramebufferTexture1D()");
-    }
-    else if (resource->target == GL_TEXTURE_3D)
-    {
-        GL_EXTCALL(glFramebufferTexture(fbo_target, attachment,
-                resource->object, resource->level));
-        checkGLcall("glFramebufferTexture3D()");
     }
     else
     {
@@ -807,63 +793,63 @@ void context_free_occlusion_query(struct wined3d_occlusion_query *query)
 }
 
 /* Context activation is done by the caller. */
-void context_alloc_fence(struct wined3d_context *context, struct wined3d_fence *fence)
+void context_alloc_event_query(struct wined3d_context *context, struct wined3d_event_query *query)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
 
-    if (context->free_fence_count)
+    if (context->free_event_query_count)
     {
-        fence->object = context->free_fences[--context->free_fence_count];
+        query->object = context->free_event_queries[--context->free_event_query_count];
     }
     else
     {
         if (gl_info->supported[ARB_SYNC])
         {
             /* Using ARB_sync, not much to do here. */
-            fence->object.sync = NULL;
-            TRACE("Allocated sync object in context %p.\n", context);
+            query->object.sync = NULL;
+            TRACE("Allocated event query %p in context %p.\n", query->object.sync, context);
         }
         else if (gl_info->supported[APPLE_FENCE])
         {
-            GL_EXTCALL(glGenFencesAPPLE(1, &fence->object.id));
+            GL_EXTCALL(glGenFencesAPPLE(1, &query->object.id));
             checkGLcall("glGenFencesAPPLE");
 
-            TRACE("Allocated fence %u in context %p.\n", fence->object.id, context);
+            TRACE("Allocated event query %u in context %p.\n", query->object.id, context);
         }
         else if(gl_info->supported[NV_FENCE])
         {
-            GL_EXTCALL(glGenFencesNV(1, &fence->object.id));
+            GL_EXTCALL(glGenFencesNV(1, &query->object.id));
             checkGLcall("glGenFencesNV");
 
-            TRACE("Allocated fence %u in context %p.\n", fence->object.id, context);
+            TRACE("Allocated event query %u in context %p.\n", query->object.id, context);
         }
         else
         {
-            WARN("Fences not supported, not allocating fence.\n");
-            fence->object.id = 0;
+            WARN("Event queries not supported, not allocating query id.\n");
+            query->object.id = 0;
         }
     }
 
-    fence->context = context;
-    list_add_head(&context->fences, &fence->entry);
+    query->context = context;
+    list_add_head(&context->event_queries, &query->entry);
 }
 
-void context_free_fence(struct wined3d_fence *fence)
+void context_free_event_query(struct wined3d_event_query *query)
 {
-    struct wined3d_context *context = fence->context;
+    struct wined3d_context *context = query->context;
 
-    list_remove(&fence->entry);
-    fence->context = NULL;
+    list_remove(&query->entry);
+    query->context = NULL;
 
-    if (!wined3d_array_reserve((void **)&context->free_fences,
-            &context->free_fence_size, context->free_fence_count + 1,
-            sizeof(*context->free_fences)))
+    if (!wined3d_array_reserve((void **)&context->free_event_queries,
+            &context->free_event_query_size, context->free_event_query_count + 1,
+            sizeof(*context->free_event_queries)))
     {
-        ERR("Failed to grow free list, leaking fence %u in context %p.\n", fence->object.id, context);
+        ERR("Failed to grow free list, leaking query %u in context %p.\n", query->object.id, context);
         return;
     }
 
-    context->free_fences[context->free_fence_count++] = fence->object;
+    context->free_event_queries[context->free_event_query_count++] = query->object;
 }
 
 /* Context activation is done by the caller. */
@@ -1115,9 +1101,6 @@ static BOOL context_set_pixel_format(struct wined3d_context *context, HDC dc, BO
     if (dc == context->hdc && context->hdc_is_private && context->hdc_has_format)
         return TRUE;
 
-    if (dc == context->hdc && !private && WindowFromDC(dc) != context->win_handle)
-        return FALSE;
-
     current = gl_info->gl_ops.wgl.p_wglGetPixelFormat(dc);
     if (current == format) goto success;
 
@@ -1276,13 +1259,13 @@ static void context_update_window(struct wined3d_context *context)
 
 static void context_destroy_gl_resources(struct wined3d_context *context)
 {
-    struct wined3d_pipeline_statistics_query *pipeline_statistics_query;
     const struct wined3d_gl_info *gl_info = context->gl_info;
     struct wined3d_so_statistics_query *so_statistics_query;
+    struct wined3d_pipeline_statistics_query *pipeline_statistics_query;
     struct wined3d_timestamp_query *timestamp_query;
     struct wined3d_occlusion_query *occlusion_query;
+    struct wined3d_event_query *event_query;
     struct fbo_entry *entry, *entry2;
-    struct wined3d_fence *fence;
     HGLRC restore_ctx;
     HDC restore_dc;
     unsigned int i;
@@ -1325,25 +1308,18 @@ static void context_destroy_gl_resources(struct wined3d_context *context)
         occlusion_query->context = NULL;
     }
 
-    LIST_FOR_EACH_ENTRY(fence, &context->fences, struct wined3d_fence, entry)
+    LIST_FOR_EACH_ENTRY(event_query, &context->event_queries, struct wined3d_event_query, entry)
     {
         if (context->valid)
         {
             if (gl_info->supported[ARB_SYNC])
             {
-                if (fence->object.sync)
-                    GL_EXTCALL(glDeleteSync(fence->object.sync));
+                if (event_query->object.sync) GL_EXTCALL(glDeleteSync(event_query->object.sync));
             }
-            else if (gl_info->supported[APPLE_FENCE])
-            {
-                GL_EXTCALL(glDeleteFencesAPPLE(1, &fence->object.id));
-            }
-            else if (gl_info->supported[NV_FENCE])
-            {
-                GL_EXTCALL(glDeleteFencesNV(1, &fence->object.id));
-            }
+            else if (gl_info->supported[APPLE_FENCE]) GL_EXTCALL(glDeleteFencesAPPLE(1, &event_query->object.id));
+            else if (gl_info->supported[NV_FENCE]) GL_EXTCALL(glDeleteFencesNV(1, &event_query->object.id));
         }
-        fence->context = NULL;
+        event_query->context = NULL;
     }
 
     LIST_FOR_EACH_ENTRY_SAFE(entry, entry2, &context->fbo_destroy_list, struct fbo_entry, entry)
@@ -1391,23 +1367,23 @@ static void context_destroy_gl_resources(struct wined3d_context *context)
 
         if (gl_info->supported[ARB_SYNC])
         {
-            for (i = 0; i < context->free_fence_count; ++i)
+            for (i = 0; i < context->free_event_query_count; ++i)
             {
-                GL_EXTCALL(glDeleteSync(context->free_fences[i].sync));
+                GL_EXTCALL(glDeleteSync(context->free_event_queries[i].sync));
             }
         }
         else if (gl_info->supported[APPLE_FENCE])
         {
-            for (i = 0; i < context->free_fence_count; ++i)
+            for (i = 0; i < context->free_event_query_count; ++i)
             {
-                GL_EXTCALL(glDeleteFencesAPPLE(1, &context->free_fences[i].id));
+                GL_EXTCALL(glDeleteFencesAPPLE(1, &context->free_event_queries[i].id));
             }
         }
         else if (gl_info->supported[NV_FENCE])
         {
-            for (i = 0; i < context->free_fence_count; ++i)
+            for (i = 0; i < context->free_event_query_count; ++i)
             {
-                GL_EXTCALL(glDeleteFencesNV(1, &context->free_fences[i].id));
+                GL_EXTCALL(glDeleteFencesNV(1, &context->free_event_queries[i].id));
             }
         }
 
@@ -1418,7 +1394,7 @@ static void context_destroy_gl_resources(struct wined3d_context *context)
     HeapFree(GetProcessHeap(), 0, context->free_pipeline_statistics_queries);
     HeapFree(GetProcessHeap(), 0, context->free_timestamp_queries);
     HeapFree(GetProcessHeap(), 0, context->free_occlusion_queries);
-    HeapFree(GetProcessHeap(), 0, context->free_fences);
+    HeapFree(GetProcessHeap(), 0, context->free_event_queries);
 
     context_restore_pixel_format(context);
     if (restore_ctx)
@@ -1876,10 +1852,11 @@ struct wined3d_context *context_create(struct wined3d_swapchain *swapchain,
         goto out;
     list_init(&ret->occlusion_queries);
 
-    ret->free_fence_size = 4;
-    if (!(ret->free_fences = wined3d_calloc(ret->free_fence_size, sizeof(*ret->free_fences))))
+    ret->free_event_query_size = 4;
+    if (!(ret->free_event_queries = wined3d_calloc(ret->free_event_query_size,
+            sizeof(*ret->free_event_queries))))
         goto out;
-    list_init(&ret->fences);
+    list_init(&ret->event_queries);
 
     list_init(&ret->so_statistics_queries);
 
@@ -2237,7 +2214,7 @@ out:
     device->shader_backend->shader_free_context_data(ret);
     device->adapter->fragment_pipe->free_context_data(ret);
     HeapFree(GetProcessHeap(), 0, ret->texture_type);
-    HeapFree(GetProcessHeap(), 0, ret->free_fences);
+    HeapFree(GetProcessHeap(), 0, ret->free_event_queries);
     HeapFree(GetProcessHeap(), 0, ret->free_occlusion_queries);
     HeapFree(GetProcessHeap(), 0, ret->free_timestamp_queries);
     HeapFree(GetProcessHeap(), 0, ret->fbo_key);
@@ -2320,10 +2297,6 @@ const DWORD *context_get_tex_unit_mapping(const struct wined3d_context *context,
         case WINED3D_SHADER_TYPE_VERTEX:
             *base = MAX_FRAGMENT_SAMPLERS;
             *count = MAX_VERTEX_SAMPLERS;
-            break;
-        case WINED3D_SHADER_TYPE_GEOMETRY:
-            *base = MAX_FRAGMENT_SAMPLERS + MAX_VERTEX_SAMPLERS;
-            *count = MAX_GEOMETRY_SAMPLERS;
             break;
         default:
             ERR("Unhandled shader type %#x.\n", shader_version->type);
@@ -2531,8 +2504,10 @@ static void SetupForBlit(const struct wined3d_device *device, struct wined3d_con
     }
     gl_info->gl_ops.gl.p_glColorMask(GL_TRUE, GL_TRUE,GL_TRUE,GL_TRUE);
     checkGLcall("glColorMask");
-    for (i = 0; i < MAX_RENDER_TARGETS; ++i)
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITE(i)));
+    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE));
+    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1));
+    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2));
+    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3));
     if (gl_info->supported[EXT_SECONDARY_COLOR])
     {
         gl_info->gl_ops.gl.p_glDisable(GL_COLOR_SUM_EXT);
@@ -2739,13 +2714,12 @@ void context_bind_texture(struct wined3d_context *context, GLenum target, GLuint
 void *context_map_bo_address(struct wined3d_context *context,
         const struct wined3d_bo_address *data, size_t size, GLenum binding, DWORD flags)
 {
-    const struct wined3d_gl_info *gl_info;
+    const struct wined3d_gl_info *gl_info = context->gl_info;
     BYTE *memory;
 
     if (!data->buffer_object)
         return data->addr;
 
-    gl_info = context->gl_info;
     context_bind_bo(context, binding, data->buffer_object);
 
     if (gl_info->supported[ARB_MAP_BUFFER_RANGE])
@@ -2768,12 +2742,11 @@ void *context_map_bo_address(struct wined3d_context *context,
 void context_unmap_bo_address(struct wined3d_context *context,
         const struct wined3d_bo_address *data, GLenum binding)
 {
-    const struct wined3d_gl_info *gl_info;
+    const struct wined3d_gl_info *gl_info = context->gl_info;
 
     if (!data->buffer_object)
         return;
 
-    gl_info = context->gl_info;
     context_bind_bo(context, binding, data->buffer_object);
     GL_EXTCALL(glUnmapBuffer(binding));
     context_bind_bo(context, binding, 0);
@@ -3327,88 +3300,11 @@ static void context_map_vsamplers(struct wined3d_context *context, BOOL ps, cons
     }
 }
 
-static BOOL context_unit_free_for_gs(const struct wined3d_context *context,
-        const struct wined3d_state *state, DWORD unit)
-{
-    const struct wined3d_shader_resource_info *ps_resource_info = NULL, *vs_resource_info = NULL;
-    DWORD current_mapping = context->rev_tex_unit_map[unit];
-
-    if (use_ps(state))
-        ps_resource_info = state->shader[WINED3D_SHADER_TYPE_PIXEL]->reg_maps.resource_info;
-    if (use_vs(state))
-        vs_resource_info = state->shader[WINED3D_SHADER_TYPE_VERTEX]->reg_maps.resource_info;
-
-    /* Not currently used */
-    if (current_mapping == WINED3D_UNMAPPED_STAGE)
-        return TRUE;
-
-    if (current_mapping < MAX_FRAGMENT_SAMPLERS)
-    {
-        /* Used by a fragment sampler */
-        if (!ps_resource_info)
-        {
-            /* No pixel shader, check fixed function */
-            return current_mapping >= MAX_TEXTURES || !(context->fixed_function_usage_map & (1u << current_mapping));
-        }
-
-        /* Pixel shader, check the shader's sampler map */
-        return !ps_resource_info[current_mapping].type;
-    }
-
-    current_mapping -= MAX_FRAGMENT_SAMPLERS;
-    if (current_mapping < MAX_VERTEX_SAMPLERS)
-    {
-        /* Used by a vertex sampler, check the shader's sampler map */
-        return !vs_resource_info || !vs_resource_info[current_mapping].type;
-    }
-
-    return TRUE;
-}
-
-static void context_map_gsamplers(struct wined3d_context *context, const struct wined3d_state *state)
-{
-    const struct wined3d_shader_resource_info *gs_resource_info =
-            state->shader[WINED3D_SHADER_TYPE_GEOMETRY]->reg_maps.resource_info;
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-    int start = min(MAX_FRAGMENT_SAMPLERS + MAX_VERTEX_SAMPLERS, gl_info->limits.combined_samplers) - 1;
-    int i;
-
-    if (gl_info->limits.combined_samplers >= MAX_COMBINED_SAMPLERS)
-        return;
-
-    for (i = 0; i < MAX_GEOMETRY_SAMPLERS; ++i)
-    {
-        DWORD gsampler_idx = i + MAX_FRAGMENT_SAMPLERS + MAX_VERTEX_SAMPLERS;
-        if (gs_resource_info[i].type)
-        {
-            while (start >= 0)
-            {
-                if (context_unit_free_for_gs(context, state, start))
-                {
-                    if (context->tex_unit_map[gsampler_idx] != start)
-                    {
-                        context_map_stage(context, gsampler_idx, start);
-                        context_invalidate_state(context, STATE_SAMPLER(gsampler_idx));
-                    }
-
-                    --start;
-                    break;
-                }
-
-                --start;
-            }
-            if (context->tex_unit_map[gsampler_idx] == WINED3D_UNMAPPED_STAGE)
-                WARN("Couldn't find a free texture unit for vertex sampler %u.\n", i);
-        }
-    }
-}
-
 static void context_update_tex_unit_map(struct wined3d_context *context, const struct wined3d_state *state)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
     BOOL vs = use_vs(state);
     BOOL ps = use_ps(state);
-    BOOL gs = use_gs(state);
 
     if (!ps)
         context_update_fixed_function_usage_map(context, state);
@@ -3428,9 +3324,6 @@ static void context_update_tex_unit_map(struct wined3d_context *context, const s
 
     if (vs)
         context_map_vsamplers(context, ps, state);
-
-    if (gs)
-        context_map_gsamplers(context, state);
 }
 
 /* Context activation is done by the caller. */
@@ -3599,7 +3492,7 @@ static void context_update_stream_info(struct wined3d_context *context, const st
     wined3d_stream_info_from_declaration(stream_info, state, gl_info, d3d_info);
 
     stream_info->all_vbo = 1;
-    context->buffer_fence_count = 0;
+    context->num_buffer_queries = 0;
     for (i = 0, map = stream_info->use_map; map; map >>= 1, ++i)
     {
         struct wined3d_stream_info_element *element;
@@ -3640,8 +3533,8 @@ static void context_update_stream_info(struct wined3d_context *context, const st
         if (!element->data.buffer_object)
             stream_info->all_vbo = 0;
 
-        if (buffer->fence)
-            context->buffer_fences[context->buffer_fence_count++] = buffer->fence;
+        if (buffer->query)
+            context->buffer_queries[context->num_buffer_queries++] = buffer->query;
 
         TRACE("Load array %u {%#x:%p}.\n", i, element->data.buffer_object, element->data.addr);
     }
@@ -3690,15 +3583,6 @@ static void context_preload_texture(struct wined3d_context *context,
 static void context_preload_textures(struct wined3d_context *context, const struct wined3d_state *state)
 {
     unsigned int i;
-
-    if (use_gs(state))
-    {
-        for (i = 0; i < MAX_GEOMETRY_SAMPLERS; ++i)
-        {
-            if (state->shader[WINED3D_SHADER_TYPE_GEOMETRY]->reg_maps.resource_info[i].type)
-                context_preload_texture(context, state, MAX_FRAGMENT_SAMPLERS + MAX_VERTEX_SAMPLERS + i);
-        }
-    }
 
     if (use_vs(state))
     {

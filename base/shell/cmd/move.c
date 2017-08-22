@@ -100,7 +100,7 @@ INT cmd_move (LPTSTR param)
     HANDLE hFile;
 
     /* used only when source and destination  directories are on different volume */
-    HANDLE hDestFile;
+    HANDLE hDestFile = NULL;
     WIN32_FIND_DATA findDestBuffer;
     TCHAR szMoveDest[MAX_PATH];
     TCHAR szMoveSrc[MAX_PATH];
@@ -127,7 +127,7 @@ INT cmd_move (LPTSTR param)
             "\n"
             "  [drive:][path]filename1  Specifies the location and name of the file\n"
             "                           or files you want to move.\n"
-            "  /N                       Nothing. Don everthing but move files or direcories.\n"
+            "  /N                       Nothing. Don everthing but move files or directories.\n"
             "  /Y\n"
             "  /-Y\n"
             "..."));
@@ -504,6 +504,9 @@ INT cmd_move (LPTSTR param)
             !(dwMoveStatusFlags & MOVE_SOURCE_IS_DIR) &&
             FindNextFile (hFile, &findBuffer));
     FindClose (hFile);
+
+    if(hDestFile && hDestFile != INVALID_HANDLE_VALUE)
+        FindClose(hDestFile);
 
     freep (arg);
     return 0;

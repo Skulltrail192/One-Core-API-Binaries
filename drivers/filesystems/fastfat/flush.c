@@ -33,9 +33,9 @@ VfatFlushFile(
         IoStatus.Status = STATUS_SUCCESS;
     }
 
-    if (Fcb->Flags & FCB_IS_DIRTY)
+    if (BooleanFlagOn(Fcb->Flags, FCB_IS_DIRTY))
     {
-        Status = VfatUpdateEntry(Fcb);
+        Status = VfatUpdateEntry(Fcb, vfatVolumeIsFatX(DeviceExt));
         if (!NT_SUCCESS(Status))
         {
             IoStatus.Status = Status;
@@ -52,6 +52,9 @@ VfatFlushVolume(
     PLIST_ENTRY ListEntry;
     PVFATFCB Fcb;
     NTSTATUS Status, ReturnStatus = STATUS_SUCCESS;
+    PIRP Irp;
+    KEVENT Event;
+    IO_STATUS_BLOCK IoStatusBlock;
 
     DPRINT("VfatFlushVolume(DeviceExt %p, FatFcb %p)\n", DeviceExt, VolumeFcb);
 
@@ -99,7 +102,34 @@ VfatFlushVolume(
     Status = VfatFlushFile(DeviceExt, Fcb);
     ExReleaseResourceLite(&DeviceExt->FatResource);
 
-    /* FIXME: Flush the buffers from storage device */
+    /* Prepare an IRP to flush device buffers */
+    Irp = IoBuildSynchronousFsdRequest(IRP_MJ_FLUSH_BUFFERS,
+                                       DeviceExt->StorageDevice,
+                                       NULL, 0, NULL, &Event,
+                                       &IoStatusBlock);
+    if (Irp != NULL)
+    {
+        KeInitializeEvent(&Event, NotificationEvent, FALSE);
+
+        Status = IoCallDriver(DeviceExt->StorageDevice, Irp);
+        if (Status == STATUS_PENDING)
+        {
+            KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
+            Status = IoStatusBlock.Status;
+        }
+
+        /* Ignore device not supporting flush operation */
+        if (Status == STATUS_INVALID_DEVICE_REQUEST)
+        {
+            DPRINT1("Flush not supported, ignored\n");
+            Status = STATUS_SUCCESS;
+
+        }
+    }
+    else
+    {
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+    }
 
     if (!NT_SUCCESS(Status))
     {
@@ -120,14 +150,14 @@ VfatFlush(
     /* This request is not allowed on the main device object. */
     if (IrpContext->DeviceObject == VfatGlobalData->DeviceObject)
     {
-        Status = STATUS_INVALID_DEVICE_REQUEST;
-        goto ByeBye;
+        IrpContext->Irp->IoStatus.Information = 0;
+        return STATUS_INVALID_DEVICE_REQUEST;
     }
 
     Fcb = (PVFATFCB)IrpContext->FileObject->FsContext;
     ASSERT(Fcb);
 
-    if (Fcb->Flags & FCB_IS_VOLUME)
+    if (BooleanFlagOn(Fcb->Flags, FCB_IS_VOLUME))
     {
         ExAcquireResourceExclusiveLite(&IrpContext->DeviceExt->DirResource, TRUE);
         Status = VfatFlushVolume(IrpContext->DeviceExt, Fcb);
@@ -140,12 +170,7 @@ VfatFlush(
         ExReleaseResourceLite (&Fcb->MainResource);
     }
 
-ByeBye:
-    IrpContext->Irp->IoStatus.Status = Status;
     IrpContext->Irp->IoStatus.Information = 0;
-    IoCompleteRequest (IrpContext->Irp, IO_NO_INCREMENT);
-    VfatFreeIrpContext(IrpContext);
-
     return Status;
 }
 

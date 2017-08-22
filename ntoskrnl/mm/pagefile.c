@@ -239,7 +239,7 @@ MmWriteToSwapPage(SWAPENTRY SwapEntry, PFN_NUMBER Page)
     }
 
     i = FILE_FROM_ENTRY(SwapEntry);
-    offset = OFFSET_FROM_ENTRY(SwapEntry);
+    offset = OFFSET_FROM_ENTRY(SwapEntry) - 1;
 
     if (PagingFileList[i]->FileObject == NULL ||
             PagingFileList[i]->FileObject->DeviceObject == NULL)
@@ -279,7 +279,7 @@ NTSTATUS
 NTAPI
 MmReadFromSwapPage(SWAPENTRY SwapEntry, PFN_NUMBER Page)
 {
-    return MiReadPageFile(Page, FILE_FROM_ENTRY(SwapEntry), OFFSET_FROM_ENTRY(SwapEntry));
+    return MiReadPageFile(Page, FILE_FROM_ENTRY(SwapEntry), OFFSET_FROM_ENTRY(SwapEntry) - 1);
 }
 
 NTSTATUS
@@ -396,7 +396,7 @@ MmFreeSwapPage(SWAPENTRY Entry)
     KIRQL oldIrql;
 
     i = FILE_FROM_ENTRY(Entry);
-    off = OFFSET_FROM_ENTRY(Entry);
+    off = OFFSET_FROM_ENTRY(Entry) - 1;
 
     KeAcquireSpinLock(&PagingFileListLock, &oldIrql);
     if (PagingFileList[i] == NULL)
@@ -450,7 +450,7 @@ MmAllocSwapPage(VOID)
             MiFreeSwapPages--;
             KeReleaseSpinLock(&PagingFileListLock, oldIrql);
 
-            entry = ENTRY_FROM_FILE_OFFSET(i, off);
+            entry = ENTRY_FROM_FILE_OFFSET(i, off + 1);
             return(entry);
         }
     }
@@ -559,7 +559,7 @@ NtCreatePagingFile(IN PUNICODE_STRING FileName,
 
     InitializeObjectAttributes(&ObjectAttributes,
                                &CapturedFileName,
-                               0,
+                               OBJ_KERNEL_HANDLE,
                                NULL,
                                NULL);
 
@@ -625,7 +625,7 @@ NtCreatePagingFile(IN PUNICODE_STRING FileName,
     Status = ObReferenceObjectByHandle(FileHandle,
                                        FILE_ALL_ACCESS,
                                        IoFileObjectType,
-                                       PreviousMode,
+                                       KernelMode,
                                        (PVOID*)&FileObject,
                                        NULL);
     if (!NT_SUCCESS(Status))

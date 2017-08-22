@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS kernel
- * FILE:            ntoskrnl/ke/i386/thread.c
+ * FILE:            ntoskrnl/ke/i386/thrdini.c
  * PURPOSE:         i386 Thread Context Creation
  * PROGRAMMER:      Alex Ionescu (alex@relsoft.net)
  */
@@ -270,15 +270,15 @@ KiIdleLoop(VOID)
     PKPRCB Prcb = KeGetCurrentPrcb();
     PKTHREAD OldThread, NewThread;
 
-    /* Initialize the idle loop: disable interrupts */
-    _enable();
-    YieldProcessor();
-    YieldProcessor();
-    _disable();
-
     /* Now loop forever */
     while (TRUE)
     {
+        /* Start of the idle loop: disable interrupts */
+        _enable();
+        YieldProcessor();
+        YieldProcessor();
+        _disable();
+
         /* Check for pending timers, pending DPCs, or pending ready threads */
         if ((Prcb->DpcData[0].DpcQueueDepth) ||
             (Prcb->TimerRequest) ||
@@ -294,7 +294,7 @@ KiIdleLoop(VOID)
         /* Check if a new thread is scheduled for execution */
         if (Prcb->NextThread)
         {
-            /* Enable interupts */
+            /* Enable interrupts */
             _enable();
 
             /* Capture current thread data */
@@ -310,12 +310,6 @@ KiIdleLoop(VOID)
 
             /* Switch away from the idle thread */
             KiSwapContext(APC_LEVEL, OldThread);
-
-            /* We are back in the idle thread -- disable interrupts again */
-            _enable();
-            YieldProcessor();
-            YieldProcessor();
-            _disable();
         }
         else
         {
@@ -345,8 +339,17 @@ KiSwapContextExit(IN PKTHREAD OldThread,
         /* Check if there is a different LDT */
         if (*(PULONGLONG)&OldProcess->LdtDescriptor != *(PULONGLONG)&NewProcess->LdtDescriptor)
         {
-            DPRINT1("LDT switch not implemented\n");
-            ASSERT(FALSE);
+            if (NewProcess->LdtDescriptor.LimitLow)
+            {
+                KeSetGdtSelector(KGDT_LDT,
+                                 ((PULONG)&NewProcess->LdtDescriptor)[0],
+                                 ((PULONG)&NewProcess->LdtDescriptor)[1]);
+                Ke386SetLocalDescriptorTable(KGDT_LDT);
+            }
+            else
+            {
+                Ke386SetLocalDescriptorTable(0);
+            }
         }
 
         /* Switch address space and flush TLB */

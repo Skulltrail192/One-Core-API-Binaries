@@ -130,7 +130,7 @@ _tWinMain(HINSTANCE hInstance,
     text2_rect.right = REFRESHB_CX;
     text2_rect.bottom = REFRESHB_CY;
 
-    /* Retrieving defaul system font, and others system informations */
+    /* Retrieving default system font, and others system informations */
     SystemParametersInfo(SPI_GETNONCLIENTMETRICS,
                          sizeof(NONCLIENTMETRICS),
                          &s_info,
@@ -211,7 +211,7 @@ _tWinMain(HINSTANCE hInstance,
     /* Starts main loop */
     while (GetMessage(&msg, NULL, 0, 0))
     {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        if (!TranslateAccelerator(main_win, hAccelTable, &msg))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
@@ -317,17 +317,18 @@ InitInstance_wave(HWND f,
 
     hInst = hInstance;
 
-    hWnd = CreateWindow(TEXT("sndrec32_wave"),
-                        TEXT(""),
-                        WS_DLGFRAME | WS_VISIBLE | WS_CHILD,
-                        WAVEBAR_X,
-                        WAVEBAR_Y,
-                        WAVEBAR_CX,
-                        WAVEBAR_CY,
-                        f,
-                        (HMENU)8,
-                        hInstance,
-                        0);
+    hWnd = CreateWindowEx(WS_EX_STATICEDGE,
+                          TEXT("sndrec32_wave"),
+                          TEXT(""),
+                          WS_VISIBLE | WS_CHILD,
+                          WAVEBAR_X,
+                          WAVEBAR_Y,
+                          WAVEBAR_CX,
+                          WAVEBAR_CY,
+                          f,
+                          (HMENU)8,
+                          hInstance,
+                          0);
 
     if (!hWnd )
     {
@@ -352,6 +353,7 @@ WndProc_wave(HWND hWnd,
     PAINTSTRUCT ps;
     HDC hdc;
     HPEN pen;
+    HPEN oldpen;
 
     unsigned int max_h = (cli.bottom / 2);
     unsigned int samples;
@@ -362,11 +364,12 @@ WndProc_wave(HWND hWnd,
         case WM_CREATE:
             GetClientRect(hWnd, &cli);
             break;
+
         case WM_PAINT:
             /* Initialize hdc objects */
             hdc = BeginPaint(hWnd, &ps);
             pen = (HPEN)CreatePen(PS_SOLID, 1, WAVEBAR_COLOR);
-            SelectObject(hdc, (HBRUSH)pen);
+            oldpen = (HPEN) SelectObject(hdc, (HBRUSH)pen);
             if (AUD_OUT->current_status() == snd::WAVEOUT_PLAYING)
             {
                 samples = AUD_OUT->tot_samples_buf();
@@ -412,12 +415,14 @@ WndProc_wave(HWND hWnd,
                 LineTo(hdc, WAVEBAR_CX, cli.bottom  / 2);
             }
 
+            SelectObject(hdc, oldpen);
             DeleteObject( pen );
             EndPaint( hWnd, &ps );
             break;
 
         case WM_USER:
             break;
+
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -437,6 +442,7 @@ WndProc(HWND hWnd,
     PAINTSTRUCT ps;
     HDC hdc;
     HFONT font;
+    HFONT oldfont;
     long long slid_samp = 0;
 
     /* Checking for global pointers to buffer and io audio devices */
@@ -774,7 +780,7 @@ WndProc(HWND hWnd,
         case WM_PAINT:
             hdc = BeginPaint(hWnd, &ps);
             font = CreateFontIndirect(&s_info.lfMenuFont);
-            SelectObject(hdc, font);
+            oldfont = (HFONT) SelectObject(hdc, font);
             SetBkMode(hdc, TRANSPARENT);
 
             if (AUD_IN->current_status() == snd::WAVEIN_RECORDING)
@@ -877,6 +883,7 @@ WndProc(HWND hWnd,
                        _tcslen(str_tmp),
                        0);
 
+            SelectObject(hdc, oldfont);
             DeleteObject(font);
             EndPaint(hWnd, &ps);
             break;

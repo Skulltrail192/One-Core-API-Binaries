@@ -1,1 +1,0 @@
-Este código fonte requer que seja comentada a seção "NTSTATUS" no arquivo bcrypt.h

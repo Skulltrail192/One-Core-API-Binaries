@@ -1,24 +1,22 @@
 /*
  * PROJECT:         ReactOS Boot Loader
  * LICENSE:         BSD - See COPYING.ARM in the top level directory
- * FILE:            boot/freeldr/arch/arm/boot.s
+ * FILE:            boot/freeldr/freeldr/arch/arm/boot.S
  * PURPOSE:         Implements the entry point for ARM machines
  * PROGRAMMERS:     ReactOS Portable Systems Group
  */
 
-#include "ksarm.h"
-
-    //.title "ARM FreeLDR Entry Point"
-    //.include "ntoskrnl/include/internal/arm/kxarm.h"
-    //.include "ntoskrnl/include/internal/arm/ksarm.h"
-    //.section .init
+#include <ksarm.h>
 
     NESTED_ENTRY _start
     PROLOG_END _start
 
-    b ArmInit
+    __assertfail
 
-    ENTRY_END _start
+    NESTED_END _start
 
-L_ArmInit:
-    .long ArmInit
+//L_ArmInit:
+//    .long ArmInit
+
+    END
+/* EOF */

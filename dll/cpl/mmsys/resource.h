@@ -8,6 +8,7 @@
 #define IDI_JOY_ICON        4361
 #define IDI_CAMERA_ICON     4364
 #define IDI_SHUTDOWN_ICON   3009
+#define IDI_NO_HW           4390
 #define IDI_MUTED_ICON      4393
 #define IDI_MICROPHONE_ICON 4378
 
@@ -68,6 +69,8 @@
 #define IDS_REACTOS_LOGOFF         5852
 #define IDS_REACTOS_LOGON          5853
 #define IDS_REACTOS_DEFAULT_SCHEME 5856
+#define IDS_BROWSE_FOR_SOUND       6144
+#define IDS_WAVE_FILES_FILTER      6166
 
 /* Strings */
 #define IDS_CPLNAME        1000

@@ -177,12 +177,13 @@ ScreenSaverThreadMain(
     }
 
 cleanup:
-    RevertToSelf();
     if (Session->hUserActivity)
         CloseHandle(Session->hUserActivity);
 
     if (Session->hEndOfScreenSaver)
         CloseHandle(Session->hEndOfScreenSaver);
+
+    RevertToSelf();
 
 #ifndef USE_GETLASTINPUTINFO
     if (Session->KeyboardHook)
@@ -194,6 +195,7 @@ cleanup:
 
     CloseHandle(Session->hEndOfScreenSaverThread);
     CloseHandle(Session->hScreenSaverParametersChanged);
+
     return 0;
 }
 
@@ -277,7 +279,7 @@ StartScreenSaver(
                             &hCurrentUser);
     if (rc != ERROR_SUCCESS)
     {
-        ERR("WL: RegOpenCurrentUser Error!\n");
+        ERR("WL: RegOpenCurrentUser error %lu\n", rc);
         goto cleanup;
     }
 
@@ -288,7 +290,7 @@ StartScreenSaver(
                        &hKey);
     if (rc != ERROR_SUCCESS)
     {
-        ERR("WL: RegOpenKeyEx Error!\n");
+        ERR("WL: RegOpenKeyEx error %lu\n", rc);
         goto cleanup;
     }
 
@@ -300,7 +302,8 @@ StartScreenSaver(
                           &bufferSize);
     if (rc != ERROR_SUCCESS || dwType != REG_SZ)
     {
-        ERR("WL: RegQueryValueEx Error!\n");
+        if (rc != ERROR_FILE_NOT_FOUND)
+            ERR("WL: RegQueryValueEx error %lu\n", rc);
         goto cleanup;
     }
 
@@ -347,6 +350,8 @@ StartScreenSaver(
 
     SystemParametersInfoW(SPI_SETSCREENSAVERRUNNING, TRUE, NULL, 0);
 
+    CallNotificationDlls(Session, StartScreenSaverHandler);
+
     /* Wait the end of the process or some other activity */
     ResetEvent(Session->hUserActivity);
     HandleArray[0] = ProcessInformation.hProcess;
@@ -362,13 +367,16 @@ StartScreenSaver(
 
     CloseHandle(ProcessInformation.hProcess);
 
+    CallNotificationDlls(Session, StopScreenSaverHandler);
+
 cleanup:
-    RevertToSelf();
     if (hKey)
         RegCloseKey(hKey);
 
     if (hCurrentUser)
         RegCloseKey(hCurrentUser);
+
+    RevertToSelf();
 
     if (!ret)
     {

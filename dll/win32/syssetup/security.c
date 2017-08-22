@@ -21,8 +21,10 @@
 /* FUNCTIONS ****************************************************************/
 
 NTSTATUS
-SetAccountDomain(LPCWSTR DomainName,
-                 PSID DomainSid)
+WINAPI
+SetAccountsDomainSid(
+    PSID DomainSid,
+    LPCWSTR DomainName)
 {
     PPOLICY_ACCOUNT_DOMAIN_INFO OrigInfo = NULL;
     POLICY_ACCOUNT_DOMAIN_INFO Info;
@@ -35,7 +37,7 @@ SetAccountDomain(LPCWSTR DomainName,
 
     NTSTATUS Status;
 
-    DPRINT1("SYSSETUP: SetAccountDomain\n");
+    DPRINT("SYSSETUP: SetAccountsDomainSid\n");
 
     memset(&ObjectAttributes, 0, sizeof(LSA_OBJECT_ATTRIBUTES));
     ObjectAttributes.Length = sizeof(LSA_OBJECT_ATTRIBUTES);
@@ -132,6 +134,81 @@ SetAccountDomain(LPCWSTR DomainName,
 }
 
 
+/* Hack */
+static
+NTSTATUS
+SetPrimaryDomain(LPCWSTR DomainName,
+                 PSID DomainSid)
+{
+    PPOLICY_PRIMARY_DOMAIN_INFO OrigInfo = NULL;
+    POLICY_PRIMARY_DOMAIN_INFO Info;
+    LSA_OBJECT_ATTRIBUTES ObjectAttributes;
+    LSA_HANDLE PolicyHandle;
+    NTSTATUS Status;
+
+    DPRINT1("SYSSETUP: SetPrimaryDomain()\n");
+
+    memset(&ObjectAttributes, 0, sizeof(LSA_OBJECT_ATTRIBUTES));
+    ObjectAttributes.Length = sizeof(LSA_OBJECT_ATTRIBUTES);
+
+    Status = LsaOpenPolicy(NULL,
+                           &ObjectAttributes,
+                           POLICY_VIEW_LOCAL_INFORMATION | POLICY_TRUST_ADMIN,
+                           &PolicyHandle);
+    if (Status != STATUS_SUCCESS)
+    {
+        DPRINT("LsaOpenPolicy failed (Status: 0x%08lx)\n", Status);
+        return Status;
+    }
+
+    Status = LsaQueryInformationPolicy(PolicyHandle,
+                                       PolicyPrimaryDomainInformation,
+                                       (PVOID *)&OrigInfo);
+    if (Status == STATUS_SUCCESS && OrigInfo != NULL)
+    {
+        if (DomainName == NULL)
+        {
+            Info.Name.Buffer = OrigInfo->Name.Buffer;
+            Info.Name.Length = OrigInfo->Name.Length;
+            Info.Name.MaximumLength = OrigInfo->Name.MaximumLength;
+        }
+        else
+        {
+            Info.Name.Buffer = (LPWSTR)DomainName;
+            Info.Name.Length = wcslen(DomainName) * sizeof(WCHAR);
+            Info.Name.MaximumLength = Info.Name.Length + sizeof(WCHAR);
+        }
+
+        if (DomainSid == NULL)
+            Info.Sid = OrigInfo->Sid;
+        else
+            Info.Sid = DomainSid;
+    }
+    else
+    {
+        Info.Name.Buffer = (LPWSTR)DomainName;
+        Info.Name.Length = wcslen(DomainName) * sizeof(WCHAR);
+        Info.Name.MaximumLength = Info.Name.Length + sizeof(WCHAR);
+        Info.Sid = DomainSid;
+    }
+
+    Status = LsaSetInformationPolicy(PolicyHandle,
+                                     PolicyPrimaryDomainInformation,
+                                     (PVOID)&Info);
+    if (Status != STATUS_SUCCESS)
+    {
+        DPRINT("LsaSetInformationPolicy failed (Status: 0x%08lx)\n", Status);
+    }
+
+    if (OrigInfo != NULL)
+        LsaFreeMemory(OrigInfo);
+
+    LsaClose(PolicyHandle);
+
+    return Status;
+}
+
+
 static
 VOID
 InstallBuiltinAccounts(VOID)
@@ -202,11 +279,11 @@ InstallPrivileges(VOID)
     WCHAR szSidString[256];
     INFCONTEXT InfContext;
     DWORD i;
-    PRIVILEGE_SET PrivilegeSet;
-    PSID AccountSid;
+    PSID AccountSid = NULL;
     NTSTATUS Status;
     LSA_HANDLE PolicyHandle = NULL;
-    LSA_HANDLE AccountHandle;
+    LSA_UNICODE_STRING RightString;
+    PLSA_TRANSLATED_SID2 Sids = NULL;
 
     DPRINT("InstallPrivileges()\n");
 
@@ -224,7 +301,7 @@ InstallPrivileges(VOID)
 
     Status = LsaOpenPolicy(NULL,
                            &ObjectAttributes,
-                           POLICY_CREATE_ACCOUNT,
+                           POLICY_CREATE_ACCOUNT | POLICY_LOOKUP_NAMES,
                            &PolicyHandle);
     if (!NT_SUCCESS(Status))
     {
@@ -241,9 +318,6 @@ InstallPrivileges(VOID)
         goto done;
     }
 
-    PrivilegeSet.PrivilegeCount = 1;
-    PrivilegeSet.Control = 0;
-
     do
     {
         /* Retrieve the privilege name */
@@ -258,16 +332,6 @@ InstallPrivileges(VOID)
         }
         DPRINT("Privilege: %S\n", szPrivilegeString);
 
-        if (!LookupPrivilegeValueW(NULL,
-                                   szPrivilegeString,
-                                   &(PrivilegeSet.Privilege[0].Luid)))
-        {
-            DPRINT1("LookupPrivilegeNameW() failed\n");
-            goto done;
-        }
-
-        PrivilegeSet.Privilege[0].Attributes = 0;
-
         for (i = 0; i < SetupGetFieldCount(&InfContext); i++)
         {
             if (!SetupGetStringFieldW(&InfContext,
@@ -281,29 +345,47 @@ InstallPrivileges(VOID)
             }
             DPRINT("SID: %S\n", szSidString);
 
-            if (!ConvertStringSidToSid(szSidString, &AccountSid))
-            {
-                DPRINT1("ConvertStringSidToSid(%S) failed: %lu\n", szSidString, GetLastError());
+            if (szSidString[0] == UNICODE_NULL)
                 continue;
-            }
 
-            Status = LsaOpenAccount(PolicyHandle,
-                                    AccountSid,
-                                    ACCOUNT_VIEW | ACCOUNT_ADJUST_PRIVILEGES,
-                                    &AccountHandle);
-            if (NT_SUCCESS(Status))
+            if (szSidString[0] == L'*')
             {
-                Status = LsaAddPrivilegesToAccount(AccountHandle,
-                                                   &PrivilegeSet);
-                if (!NT_SUCCESS(Status))
-                {
-                    DPRINT1("LsaAddPrivilegesToAccount() failed (Status %08lx)\n", Status);
-                }
+                DPRINT("Account Sid: %S\n", &szSidString[1]);
 
-                LsaClose(AccountHandle);
+                if (!ConvertStringSidToSid(&szSidString[1], &AccountSid))
+                {
+                    DPRINT1("ConvertStringSidToSid(%S) failed: %lu\n", szSidString, GetLastError());
+                    continue;
+                }
+            }
+            else
+            {
+                DPRINT("Account name: %S\n", szSidString);
+                continue;
+ 
             }
 
-            LocalFree(AccountSid);
+            RtlInitUnicodeString(&RightString, szPrivilegeString);
+            Status = LsaAddAccountRights(PolicyHandle,
+                                         (AccountSid != NULL) ? AccountSid : Sids[0].Sid,
+                                         &RightString,
+                                         1);
+            if (!NT_SUCCESS(Status))
+            {
+                DPRINT1("LsaAddAccountRights() failed (Status %08lx)\n", Status);
+            }
+
+            if (Sids != NULL)
+            {
+                LsaFreeMemory(Sids);
+                Sids = NULL;
+            }
+
+            if (AccountSid != NULL)
+            {
+                LocalFree(AccountSid);
+                AccountSid = NULL;
+            }
         }
 
     }
@@ -317,11 +399,15 @@ done:
         SetupCloseInfFile(hSecurityInf);
 }
 
+
 VOID
 InstallSecurity(VOID)
 {
     InstallBuiltinAccounts();
     InstallPrivileges();
+
+    /* Hack */
+    SetPrimaryDomain(L"WORKGROUP", NULL);
 }
 
 

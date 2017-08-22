@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS user32.dll
- * FILE:            lib/user32/windows/window.c
+ * FILE:            win32ss/user/user32/windows/window.c
  * PURPOSE:         Window management
  * PROGRAMMER:      Casper S. Hornstrup (chorns@users.sourceforge.net)
  * UPDATE HISTORY:
@@ -15,8 +15,8 @@
 #include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(user32);
 
-LRESULT DefWndNCPaint(HWND hWnd, HRGN hRgn, BOOL Active);
 void MDI_CalcDefaultChildPos( HWND hwndClient, INT total, LPPOINT lpPos, INT delta, UINT *id );
+extern LPCWSTR FASTCALL ClassNameToVersion(const void *lpszClass, LPCWSTR lpszMenuName, LPCWSTR *plpLibFileName, HANDLE *pContext, BOOL bAnsi);
 
 /* FUNCTIONS *****************************************************************/
 
@@ -166,13 +166,18 @@ User32CreateWindowEx(DWORD dwExStyle,
 {
     LARGE_STRING WindowName;
     LARGE_STRING lstrClassName, *plstrClassName;
+    LARGE_STRING lstrClassVersion, *plstrClassVersion;
     UNICODE_STRING ClassName;
+    UNICODE_STRING ClassVersion;
     WNDCLASSEXA wceA;
     WNDCLASSEXW wceW;
     HMODULE hLibModule = NULL;
-    DWORD save_error;
+    DWORD dwLastError;
     BOOL Unicode, ClassFound = FALSE;
     HWND Handle = NULL;
+    LPCWSTR lpszClsVersion;
+    LPCWSTR lpLibFileName = NULL;
+    HANDLE pCtx = NULL;
 
 #if 0
     DbgPrint("[window] User32CreateWindowEx style %d, exstyle %d, parent %d\n", dwStyle, dwExStyle, hWndParent);
@@ -180,8 +185,8 @@ User32CreateWindowEx(DWORD dwExStyle,
 
     if (!RegisterDefaultClasses)
     {
-       TRACE("RegisterSystemControls\n");
-       RegisterSystemControls();
+        TRACE("RegisterSystemControls\n");
+        RegisterSystemControls();
     }
 
     Unicode = !(dwFlags & NUCWE_ANSI);
@@ -192,17 +197,19 @@ User32CreateWindowEx(DWORD dwExStyle,
     }
     else
     {
-        if(Unicode)
+        if (Unicode)
+        {
             RtlInitUnicodeString(&ClassName, (PCWSTR)lpClassName);
+        }
         else
         {
             if (!RtlCreateUnicodeStringFromAsciiz(&ClassName, (PCSZ)lpClassName))
             {
                 SetLastError(ERROR_OUTOFMEMORY);
-                return (HWND)0;
+                return NULL;
             }
         }
-        
+
         /* Copy it to a LARGE_STRING */
         lstrClassName.Buffer = ClassName.Buffer;
         lstrClassName.Length = ClassName.Length;
@@ -219,7 +226,7 @@ User32CreateWindowEx(DWORD dwExStyle,
         NTSTATUS Status;
         PSTR AnsiBuffer = WindowName.Buffer;
         ULONG AnsiLength = WindowName.Length;
-        
+
         WindowName.Length = 0;
         WindowName.MaximumLength = AnsiLength * sizeof(WCHAR);
         WindowName.Buffer = RtlAllocateHeap(RtlGetProcessHeap(),
@@ -242,20 +249,20 @@ User32CreateWindowEx(DWORD dwExStyle,
         }
     }
 
-    if(!hMenu && (dwStyle & (WS_OVERLAPPEDWINDOW | WS_POPUP)))
+    if (!hMenu && (dwStyle & (WS_OVERLAPPEDWINDOW | WS_POPUP)))
     {
-        if(Unicode)
+        if (Unicode)
         {
-            wceW.cbSize = sizeof(WNDCLASSEXW);
-            if(GetClassInfoExW(hInstance, (LPCWSTR)lpClassName, &wceW) && wceW.lpszMenuName)
+            wceW.cbSize = sizeof(wceW);
+            if (GetClassInfoExW(hInstance, (LPCWSTR)lpClassName, &wceW) && wceW.lpszMenuName)
             {
                 hMenu = LoadMenuW(hInstance, wceW.lpszMenuName);
             }
         }
         else
         {
-            wceA.cbSize = sizeof(WNDCLASSEXA);
-            if(GetClassInfoExA(hInstance, lpClassName, &wceA) && wceA.lpszMenuName)
+            wceA.cbSize = sizeof(wceA);
+            if (GetClassInfoExA(hInstance, lpClassName, &wceA) && wceA.lpszMenuName)
             {
                 hMenu = LoadMenuA(hInstance, wceA.lpszMenuName);
             }
@@ -264,54 +271,68 @@ User32CreateWindowEx(DWORD dwExStyle,
 
     if (!Unicode) dwExStyle |= WS_EX_SETANSICREATOR;
 
-    for(;;)
+    lpszClsVersion = ClassNameToVersion(lpClassName, NULL, &lpLibFileName, &pCtx, !Unicode);
+    if (!lpszClsVersion)
     {
-       Handle = NtUserCreateWindowEx(dwExStyle,
-                                     plstrClassName,
-                                     NULL,
-                                     &WindowName,
-                                     dwStyle,
-                                     x,
-                                     y,
-                                     nWidth,
-                                     nHeight,
-                                     hWndParent,
-                                     hMenu,
-                                     hInstance,
-                                     lpParam,
-                                     dwFlags,
-                                     NULL);
-       if (Handle) break;
-       if (!ClassFound)
-       {
-          save_error = GetLastError();
-          if ( save_error == ERROR_CANNOT_FIND_WND_CLASS )
-          {
-              ClassFound = VersionRegisterClass(ClassName.Buffer, NULL, NULL, &hLibModule);
-              if (ClassFound) continue;
-          }
-       }
-       if (hLibModule)
-       {
-          save_error = GetLastError();
-          FreeLibrary(hLibModule);
-          SetLastError(save_error);
-          hLibModule = 0;
-       }
-       break;
+        plstrClassVersion = plstrClassName;
+    }
+    else
+    {
+        RtlInitUnicodeString(&ClassVersion, lpszClsVersion);
+        lstrClassVersion.Buffer = ClassVersion.Buffer;
+        lstrClassVersion.Length = ClassVersion.Length;
+        lstrClassVersion.MaximumLength = ClassVersion.MaximumLength;
+        plstrClassVersion = &lstrClassVersion;
+    }
+
+    for (;;)
+    {
+        Handle = NtUserCreateWindowEx(dwExStyle,
+                                      plstrClassName,
+                                      plstrClassVersion,
+                                      &WindowName,
+                                      dwStyle,
+                                      x,
+                                      y,
+                                      nWidth,
+                                      nHeight,
+                                      hWndParent,
+                                      hMenu,
+                                      hInstance,
+                                      lpParam,
+                                      dwFlags,
+                                      NULL);
+        if (Handle) break;
+        if (!lpLibFileName) break;
+        if (!ClassFound)
+        {
+            dwLastError = GetLastError();
+            if (dwLastError == ERROR_CANNOT_FIND_WND_CLASS)
+            {
+                ClassFound = VersionRegisterClass(ClassName.Buffer, lpLibFileName, pCtx, &hLibModule);
+                if (ClassFound) continue;
+            }
+        }
+        if (hLibModule)
+        {
+            dwLastError = GetLastError();
+            FreeLibrary(hLibModule);
+            SetLastError(dwLastError);
+            hLibModule = NULL;
+        }
+        break;
     }
 
 #if 0
     DbgPrint("[window] NtUserCreateWindowEx() == %d\n", Handle);
 #endif
+
 cleanup:
-    if(!Unicode)
+    if (!Unicode)
     {
         if (!IS_ATOM(lpClassName))
-        {
             RtlFreeUnicodeString(&ClassName);
-        }
-        
+
         RtlFreeLargeString(&WindowName);
     }
 
@@ -343,7 +364,7 @@ CreateWindowExA(DWORD dwExStyle,
 
     if (!RegisterDefaultClasses)
     {
-       ERR("CreateWindowExA RegisterSystemControls\n");
+       TRACE("CreateWindowExA RegisterSystemControls\n");
        RegisterSystemControls();
     }
 
@@ -488,7 +509,7 @@ CreateWindowExW(DWORD dwExStyle,
            WARN("WS_EX_MDICHILD, but parent %p is not MDIClient\n", hWndParent);
            return NULL;
         }
-        
+
         /* lpParams of WM_[NC]CREATE is different for MDI children.
         * MDICREATESTRUCT members have the originally passed values.
         */
@@ -553,8 +574,8 @@ CreateWindowExW(DWORD dwExStyle,
     }
 
     hwnd = User32CreateWindowEx(dwExStyle,
-                                (LPCSTR) lpClassName,
-                                (LPCSTR) lpWindowName,
+                                (LPCSTR)lpClassName,
+                                (LPCSTR)lpWindowName,
                                 dwStyle,
                                 x,
                                 y,
@@ -653,6 +674,14 @@ User32EnumWindows(HDESK hDesktop,
     if (!NT_SUCCESS(Status))
         return FALSE;
 
+    if (!dwCount)
+    {
+       if (!dwThreadId)
+          return FALSE;
+       else
+          return TRUE;
+    }
+
     /* allocate buffer to receive HWND handles */
     hHeap = GetProcessHeap();
     pHwnd = HeapAlloc(hHeap, 0, sizeof(HWND)*(dwCount+1));
@@ -677,14 +706,6 @@ User32EnumWindows(HDESK hDesktop,
         return FALSE;
     }
 
-    if (!dwCount)
-    {
-       if (!dwThreadId)
-          return FALSE; 
-       else
-          return TRUE;
-    }
-
     /* call the user's callback function until we're done or
        they tell us to quit */
     for ( i = 0; i < dwCount; i++ )
@@ -692,7 +713,7 @@ User32EnumWindows(HDESK hDesktop,
         /* FIXME I'm only getting NULLs from Thread Enumeration, and it's
          * probably because I'm not doing it right in NtUserBuildHwndList.
          * Once that's fixed, we shouldn't have to check for a NULL HWND
-         * here 
+         * here
          * This is now fixed in revision 50205. (jt)
          */
         if (!pHwnd[i]) /* don't enumerate a NULL HWND */
@@ -907,7 +928,7 @@ GetAncestor(HWND hwnd, UINT gaFlags)
 {
     HWND Ret = NULL;
     PWND Ancestor, Wnd;
-    
+
     Wnd = ValidateHwnd(hwnd);
     if (!Wnd)
         return NULL;
@@ -960,7 +981,7 @@ GetClientRect(HWND hWnd, LPRECT lpRect)
        lpRect->bottom = GetSystemMetrics(SM_CYMINIMIZED);
        return TRUE;
     }
-    if ( hWnd != GetDesktopWindow()) // Wnd->fnid != FNID_DESKTOP ) 
+    if ( hWnd != GetDesktopWindow()) // Wnd->fnid != FNID_DESKTOP )
     {
 /*        lpRect->left = lpRect->top = 0;
         lpRect->right = Wnd->rcClient.right - Wnd->rcClient.left;
@@ -977,7 +998,7 @@ GetClientRect(HWND hWnd, LPRECT lpRect)
 /* Do this until Init bug is fixed. This sets 640x480, see InitMetrics.
         lpRect->right = GetSystemMetrics(SM_CXSCREEN);
         lpRect->bottom = GetSystemMetrics(SM_CYSCREEN);
-*/    } 
+*/    }
     return TRUE;
 }
 
@@ -1103,7 +1124,7 @@ GetWindow(HWND hWnd,
                 if (Wnd->spwndPrev != NULL)
                     FoundWnd = DesktopPtrToUser(Wnd->spwndPrev);
                 break;
-   
+
             case GW_CHILD:
                 if (Wnd->spwndChild != NULL)
                     FoundWnd = DesktopPtrToUser(Wnd->spwndChild);
@@ -1370,7 +1391,7 @@ GetWindowThreadProcessId(HWND hWnd,
     if (!pWnd) return Ret;
 
     ti = pWnd->head.pti;
- 
+
     if (ti)
     {
         if (ti == GetW32ThreadInfo())
@@ -1713,8 +1734,11 @@ UpdateLayeredWindow( HWND hwnd,
                      BLENDFUNCTION *pbl,
                      DWORD dwFlags)
 {
-  if ( dwFlags & ULW_EX_NORESIZE)
-     dwFlags = ~(ULW_EX_NORESIZE|ULW_OPAQUE|ULW_ALPHA|ULW_COLORKEY);
+  if (dwFlags & ULW_EX_NORESIZE)  /* only valid for UpdateLayeredWindowIndirect */
+  {
+     SetLastError( ERROR_INVALID_PARAMETER );
+     return FALSE;
+  }
   return NtUserUpdateLayeredWindow( hwnd,
                                     hdcDst,
                                     pptDst,

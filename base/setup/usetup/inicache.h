@@ -19,7 +19,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS text-mode setup
- * FILE:            subsys/system/usetup/inicache.h
+ * FILE:            base/setup/usetup/inicache.h
  * PURPOSE:         INI file parser that caches contents of INI file in memory
  * PROGRAMMER:      Royce Mitchell III
  *                  Eric Kohl
@@ -69,14 +69,14 @@ typedef enum
     INSERT_BEFORE,
     INSERT_AFTER,
     INSERT_LAST
-} INSERTATION_TYPE;
+} INSERTION_TYPE;
 
 /* FUNCTIONS ****************************************************************/
 
 NTSTATUS
 IniCacheLoad(
     PINICACHE *Cache,
-    PUNICODE_STRING FileName,
+    PWCHAR FileName,
     BOOLEAN String);
 
 VOID
@@ -115,7 +115,7 @@ PINICACHEKEY
 IniCacheInsertKey(
     PINICACHESECTION Section,
     PINICACHEKEY AnchorKey,
-    INSERTATION_TYPE InsertationType,
+    INSERTION_TYPE InsertionType,
     PWCHAR Name,
     PWCHAR Data);
 

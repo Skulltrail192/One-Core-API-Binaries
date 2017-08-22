@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS net command
- * FILE:
+ * FILE:            base/applications/network/net/main.c
  * PURPOSE:
  *
  * PROGRAMMERS:     Magnus Olsen (greatlord@reactos.org)
@@ -28,7 +28,7 @@ COMMAND cmds[] =
     {L"group",      unimplemented},
     {L"help",       cmdHelp},
     {L"helpmsg",    cmdHelpMsg},
-    {L"localgroup", unimplemented},
+    {L"localgroup", cmdLocalGroup},
     {L"name",       unimplemented},
     {L"pause",      cmdPause},
     {L"print",      unimplemented},
@@ -39,25 +39,77 @@ COMMAND cmds[] =
     {L"statistics", unimplemented},
     {L"stop",       cmdStop},
     {L"time",       unimplemented},
-    {L"use",        unimplemented},
-    {L"user",       unimplemented},
+    {L"use",        cmdUse},
+    {L"user",       cmdUser},
     {L"view",       unimplemented},
     {NULL,          NULL}
 };
 
 
-VOID
-PrintResourceString(
-    INT resID,
-    ...)
-{
-    WCHAR szMsgBuf[MAX_BUFFER_SIZE];
-    va_list arg_ptr;
 
-    va_start(arg_ptr, resID);
-    LoadStringW(GetModuleHandle(NULL), resID, szMsgBuf, MAX_BUFFER_SIZE);
-    vwprintf(szMsgBuf, arg_ptr);
-    va_end(arg_ptr);
+VOID
+PrintPaddedResourceString(
+    UINT uID,
+    INT nPaddedLength)
+{
+    INT nLength;
+
+    nLength = ConResPuts(StdOut, uID);
+    if (nLength < nPaddedLength)
+        PrintPadding(L' ', nPaddedLength - nLength);
+}
+
+
+VOID
+PrintPadding(
+    WCHAR chr,
+    INT nPaddedLength)
+{
+    INT i;
+    WCHAR szMsgBuffer[MAX_BUFFER_SIZE];
+
+    for (i = 0; i < nPaddedLength; i++)
+         szMsgBuffer[i] = chr;
+    szMsgBuffer[nPaddedLength] = UNICODE_NULL;
+
+    ConPuts(StdOut, szMsgBuffer);
+}
+
+
+VOID
+ReadFromConsole(
+    LPWSTR lpInput,
+    DWORD dwLength,
+    BOOL bEcho)
+{
+    DWORD dwOldMode;
+    DWORD dwRead = 0;
+    HANDLE hFile;
+    LPWSTR p;
+    PCHAR pBuf;
+
+    pBuf = HeapAlloc(GetProcessHeap(), 0, dwLength - 1);
+    ZeroMemory(lpInput, dwLength * sizeof(WCHAR));
+    hFile = GetStdHandle(STD_INPUT_HANDLE);
+    GetConsoleMode(hFile, &dwOldMode);
+
+    SetConsoleMode(hFile, ENABLE_LINE_INPUT | (bEcho ? ENABLE_ECHO_INPUT : 0));
+
+    ReadFile(hFile, (PVOID)pBuf, dwLength - 1, &dwRead, NULL);
+
+    MultiByteToWideChar(CP_OEMCP, 0, pBuf, dwRead, lpInput, dwLength - 1);
+    HeapFree(GetProcessHeap(), 0, pBuf);
+
+    for (p = lpInput; *p; p++)
+    {
+        if (*p == L'\x0d')
+        {
+            *p = L'\0';
+            break;
+        }
+    }
+
+    SetConsoleMode(hFile, dwOldMode);
 }
 
 
@@ -65,9 +117,12 @@ int wmain(int argc, WCHAR **argv)
 {
     PCOMMAND cmdptr;
 
+    /* Initialize the Console Standard Streams */
+    ConInitStdStreams();
+
     if (argc < 2)
     {
-        PrintResourceString(IDS_NET_SYNTAX);
+        ConResPuts(StdOut, IDS_NET_SYNTAX);
         return 1;
     }
 
@@ -80,13 +135,13 @@ int wmain(int argc, WCHAR **argv)
         }
     }
 
-    PrintResourceString(IDS_NET_SYNTAX);
+    ConResPuts(StdOut, IDS_NET_SYNTAX);
 
     return 1;
 }
 
 INT unimplemented(INT argc, WCHAR **argv)
 {
-    puts("This command is not implemented yet");
+    ConPuts(StdOut, L"This command is not implemented yet\n");
     return 1;
 }

@@ -294,18 +294,8 @@ void ddrawformat_from_wined3dformat(DDPIXELFORMAT *DDPixelFormat, enum wined3d_f
             DDPixelFormat->u5.dwLuminanceAlphaBitMask = 0x00000000;
             break;
 
-        case WINED3DFMT_R16G16_SNORM:
-            DDPixelFormat->dwFlags = DDPF_BUMPDUDV;
-            DDPixelFormat->dwFourCC = 0;
-            DDPixelFormat->u1.dwBumpBitCount = 32;
-            DDPixelFormat->u2.dwBumpDuBitMask =         0x0000ffff;
-            DDPixelFormat->u3.dwBumpDvBitMask =         0xffff0000;
-            DDPixelFormat->u4.dwBumpLuminanceBitMask =  0x00000000;
-            DDPixelFormat->u5.dwLuminanceAlphaBitMask = 0x00000000;
-            break;
-
         case WINED3DFMT_R5G5_SNORM_L6_UNORM:
-            DDPixelFormat->dwFlags = DDPF_BUMPDUDV;
+            DDPixelFormat->dwFlags = DDPF_BUMPDUDV | DDPF_BUMPLUMINANCE;
             DDPixelFormat->dwFourCC = 0;
             DDPixelFormat->u1.dwBumpBitCount = 16;
             DDPixelFormat->u2.dwBumpDuBitMask =         0x0000001f;
@@ -315,7 +305,7 @@ void ddrawformat_from_wined3dformat(DDPIXELFORMAT *DDPixelFormat, enum wined3d_f
             break;
 
         case WINED3DFMT_R8G8_SNORM_L8X8_UNORM:
-            DDPixelFormat->dwFlags = DDPF_BUMPDUDV;
+            DDPixelFormat->dwFlags = DDPF_BUMPDUDV | DDPF_BUMPLUMINANCE;
             DDPixelFormat->dwFourCC = 0;
             DDPixelFormat->u1.dwBumpBitCount = 32;
             DDPixelFormat->u2.dwBumpDuBitMask =         0x000000ff;
@@ -491,19 +481,19 @@ enum wined3d_format_id wined3dformat_from_ddrawformat(const DDPIXELFORMAT *DDPix
             {
                 case 16:
                     if (DDPixelFormat->u2.dwStencilBitDepth == 1) return WINED3DFMT_S1_UINT_D15_UNORM;
-                    WARN("Unknown depth stenil format: 16 z bits, %u stencil bits\n",
+                    WARN("Unknown depth stencil format: 16 z bits, %u stencil bits.\n",
                             DDPixelFormat->u2.dwStencilBitDepth);
                     return WINED3DFMT_UNKNOWN;
 
                 case 32:
                     if (DDPixelFormat->u2.dwStencilBitDepth == 8) return WINED3DFMT_D24_UNORM_S8_UINT;
                     else if (DDPixelFormat->u2.dwStencilBitDepth == 4) return WINED3DFMT_S4X4_UINT_D24_UNORM;
-                    WARN("Unknown depth stenil format: 32 z bits, %u stencil bits\n",
+                    WARN("Unknown depth stencil format: 32 z bits, %u stencil bits.\n",
                             DDPixelFormat->u2.dwStencilBitDepth);
                     return WINED3DFMT_UNKNOWN;
 
                 default:
-                    WARN("Unknown depth stenil format: %u z bits, %u stencil bits\n",
+                    WARN("Unknown depth stencil format: %u z bits, %u stencil bits.\n",
                             DDPixelFormat->u1.dwZBufferBitDepth, DDPixelFormat->u2.dwStencilBitDepth);
                     return WINED3DFMT_UNKNOWN;
             }
@@ -546,13 +536,6 @@ enum wined3d_format_id wined3dformat_from_ddrawformat(const DDPIXELFORMAT *DDPix
         {
             return WINED3DFMT_R8G8_SNORM;
         }
-        else if ( (DDPixelFormat->u1.dwBumpBitCount         == 32        ) &&
-                  (DDPixelFormat->u2.dwBumpDuBitMask        == 0x0000ffff) &&
-                  (DDPixelFormat->u3.dwBumpDvBitMask        == 0xffff0000) &&
-                  (DDPixelFormat->u4.dwBumpLuminanceBitMask == 0x00000000) )
-        {
-            return WINED3DFMT_R16G16_SNORM;
-        }
         else if ( (DDPixelFormat->u1.dwBumpBitCount         == 16        ) &&
                   (DDPixelFormat->u2.dwBumpDuBitMask        == 0x0000001f) &&
                   (DDPixelFormat->u3.dwBumpDvBitMask        == 0x000003e0) &&
@@ -571,6 +554,92 @@ enum wined3d_format_id wined3dformat_from_ddrawformat(const DDPIXELFORMAT *DDPix
 
     WARN("Unknown Pixelformat.\n");
     return WINED3DFMT_UNKNOWN;
+}
+
+static float colour_to_float(DWORD colour, DWORD mask)
+{
+    if (!mask)
+        return 0.0f;
+    return (float)(colour & mask) / (float)mask;
+}
+
+BOOL wined3d_colour_from_ddraw_colour(const DDPIXELFORMAT *pf, const struct ddraw_palette *palette,
+        DWORD colour, struct wined3d_color *wined3d_colour)
+{
+    if (pf->dwFlags & DDPF_ALPHA)
+    {
+        DWORD size, mask;
+
+        size = pf->u1.dwAlphaBitDepth;
+        mask = size < 32 ? (1u << size) - 1 : ~0u;
+        wined3d_colour->r = 0.0f;
+        wined3d_colour->g = 0.0f;
+        wined3d_colour->b = 0.0f;
+        wined3d_colour->a = colour_to_float(colour, mask);
+        return TRUE;
+    }
+
+    if (pf->dwFlags & DDPF_FOURCC)
+    {
+        WARN("FourCC formats not supported.\n");
+        goto fail;
+    }
+
+    if (pf->dwFlags & DDPF_PALETTEINDEXED8)
+    {
+        PALETTEENTRY entry;
+
+        colour &= 0xff;
+        if (!palette || FAILED(wined3d_palette_get_entries(palette->wined3d_palette, 0, colour, 1, &entry)))
+        {
+            wined3d_colour->r = 0.0f;
+            wined3d_colour->g = 0.0f;
+            wined3d_colour->b = 0.0f;
+        }
+        else
+        {
+            wined3d_colour->r = entry.peRed / 255.0f;
+            wined3d_colour->g = entry.peGreen / 255.0f;
+            wined3d_colour->b = entry.peBlue / 255.0f;
+        }
+        wined3d_colour->a = colour / 255.0f;
+        return TRUE;
+    }
+
+    if (pf->dwFlags & DDPF_RGB)
+    {
+        wined3d_colour->r = colour_to_float(colour, pf->u2.dwRBitMask);
+        wined3d_colour->g = colour_to_float(colour, pf->u3.dwGBitMask);
+        wined3d_colour->b = colour_to_float(colour, pf->u4.dwBBitMask);
+        if (pf->dwFlags & DDPF_ALPHAPIXELS)
+            wined3d_colour->a = colour_to_float(colour, pf->u5.dwRGBAlphaBitMask);
+        else
+            wined3d_colour->a = 0.0f;
+        return TRUE;
+    }
+
+    if (pf->dwFlags & DDPF_ZBUFFER)
+    {
+        wined3d_colour->r = colour_to_float(colour, pf->u3.dwZBitMask);
+        if (pf->dwFlags & DDPF_STENCILBUFFER)
+            wined3d_colour->g = colour_to_float(colour, pf->u4.dwStencilBitMask);
+        else
+            wined3d_colour->g = 0.0f;
+        wined3d_colour->b = 0.0f;
+        wined3d_colour->a = 0.0f;
+        return TRUE;
+    }
+
+    FIXME("Unhandled pixel format.\n");
+    DDRAW_dump_pixelformat(pf);
+
+fail:
+    wined3d_colour->r = 0.0f;
+    wined3d_colour->g = 0.0f;
+    wined3d_colour->b = 0.0f;
+    wined3d_colour->a = 0.0f;
+
+    return FALSE;
 }
 
 /*****************************************************************************

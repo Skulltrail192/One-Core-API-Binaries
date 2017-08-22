@@ -173,7 +173,7 @@ xHalpGetRDiskCount(VOID)
         NULL);
 
     Status = ZwOpenDirectoryObject (&DirectoryHandle,
-        SYMBOLIC_LINK_ALL_ACCESS,
+        DIRECTORY_ALL_ACCESS,
         &ObjectAttributes);
     if (!NT_SUCCESS(Status))
     {
@@ -186,7 +186,7 @@ xHalpGetRDiskCount(VOID)
     Skip = 0;
     while (NT_SUCCESS(Status))
     {
-        Status = NtQueryDirectoryObject (DirectoryHandle,
+        Status = ZwQueryDirectoryObject (DirectoryHandle,
             DirectoryInfo,
             2 * PAGE_SIZE,
             FALSE,
@@ -223,6 +223,9 @@ xHalpGetRDiskCount(VOID)
             }
         }
     }
+
+    ZwClose(DirectoryHandle);
+
     ExFreePoolWithTag(DirectoryInfo, TAG_FILE_SYSTEM);
     return RDiskCount;
 }
@@ -672,7 +675,7 @@ xHalIoAssignDriveLetters(IN PLOADER_PARAMETER_BLOCK LoaderBlock,
             /* Search for bootable partition */
             for (j = 0; j < NUM_PARTITION_TABLE_ENTRIES && j < LayoutArray[DiskNumber]->PartitionCount; j++)
             {
-                if ((LayoutArray[DiskNumber]->PartitionEntry[j].BootIndicator == TRUE) &&
+                if ((LayoutArray[DiskNumber]->PartitionEntry[j].BootIndicator != FALSE) &&
                     IsRecognizedPartition(LayoutArray[DiskNumber]->PartitionEntry[j].PartitionType))
                 {
                     if (LayoutArray[DiskNumber]->PartitionEntry[j].RewritePartition == FALSE)
@@ -1009,6 +1012,9 @@ HalpGetFullGeometry(IN PDEVICE_OBJECT DeviceObject,
             ExFreePoolWithTag(Event, TAG_FILE_SYSTEM);
             return STATUS_INSUFFICIENT_RESOURCES;
         }
+
+        /* Reset event */
+        KeResetEvent(Event);
 
         /* Call the driver and check if it's pending */
         Status = IoCallDriver(DeviceObject, Irp);
@@ -1655,9 +1661,8 @@ xHalIoReadPartitionTable(IN PDEVICE_OBJECT DeviceObject,
                     UInt32x32To64(GET_PARTITION_LENGTH(PartitionDescriptor),
                                   SectorSize);
 
-                // BUGBUGBUG: The correct partition numbers seem to cause boot failures!!!
-//                PartitionInfo->PartitionNumber = (!IsContainerPartition(PartitionType)) ? i : 0;
-                PartitionInfo->PartitionNumber = i + 1;
+                /* Get the partition number */
+                PartitionInfo->PartitionNumber = (!IsContainerPartition(PartitionType)) ? i + 1 : 0;
             }
             else
             {

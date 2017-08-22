@@ -19,7 +19,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS text-mode setup
- * FILE:            subsys/system/usetup/usetup.h
+ * FILE:            base/setup/usetup/usetup.h
  * PURPOSE:         Text-mode setup
  * PROGRAMMER:      Eric Kohl
  */
@@ -39,6 +39,8 @@
 #include <winuser.h>
 #include <wincon.h>
 
+#include <strsafe.h>
+
 #define NTOS_MODE_USER
 #include <ndk/cmfuncs.h>
 #include <ndk/exfuncs.h>
@@ -51,12 +53,13 @@
 #include <ndk/setypes.h>
 
 /* Filesystem headers */
-#include <fslib/ext2lib.h>
+#include <reactos/rosioctl.h>
 #include <fslib/vfatlib.h>
+#include <fslib/ext2lib.h>
+// #include <fslib/ntfslib.h>
 
 /* Internal Headers */
 #include "interface/consup.h"
-#include "partlist.h"
 #include "inffile.h"
 #include "inicache.h"
 #include "progress.h"
@@ -66,6 +69,7 @@
 #endif
 #include "registry.h"
 #include "fslist.h"
+#include "partlist.h"
 #include "cabinet.h"
 #include "filesup.h"
 #include "genlist.h"
@@ -132,6 +136,7 @@ typedef enum _PAGE_NUMBER
     CREATE_PRIMARY_PARTITION_PAGE,
     CREATE_EXTENDED_PARTITION_PAGE,
     CREATE_LOGICAL_PARTITION_PAGE,
+    CONFIRM_DELETE_SYSTEM_PARTITION_PAGE,
     DELETE_PARTITION_PAGE,
 
     SELECT_FILE_SYSTEM_PAGE,
@@ -153,6 +158,7 @@ typedef enum _PAGE_NUMBER
     QUIT_PAGE,
     FLUSH_PAGE,
     REBOOT_PAGE,		/* virtual page */
+    RECOVERY_PAGE,		/* virtual page */
 } PAGE_NUMBER, *PPAGE_NUMBER;
 #endif
 

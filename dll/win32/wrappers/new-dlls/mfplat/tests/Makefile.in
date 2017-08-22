@@ -1,5 +1,0 @@
-TESTDLL   = mfplat.dll
-IMPORTS   = ole32 mfplat
-
-C_SRCS = \
-	mfplat.c

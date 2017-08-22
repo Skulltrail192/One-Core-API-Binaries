@@ -19,10 +19,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
 #include "d3d9_private.h"
-
-WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
 
 static const struct
 {
@@ -45,8 +42,8 @@ d3d_dtype_lookup[] =
     /* D3DDECLTYPE_SHORT4N   */ {WINED3DFMT_R16G16B16A16_SNORM, 4, sizeof(short int)},
     /* D3DDECLTYPE_USHORT2N  */ {WINED3DFMT_R16G16_UNORM,       2, sizeof(short int)},
     /* D3DDECLTYPE_USHORT4N  */ {WINED3DFMT_R16G16B16A16_UNORM, 4, sizeof(short int)},
-    /* D3DDECLTYPE_UDEC3     */ {WINED3DFMT_R10G10B10A2_UINT,   3, sizeof(short int)},
-    /* D3DDECLTYPE_DEC3N     */ {WINED3DFMT_R10G10B10A2_SNORM,  3, sizeof(short int)},
+    /* D3DDECLTYPE_UDEC3     */ {WINED3DFMT_R10G10B10X2_UINT,   3, sizeof(short int)},
+    /* D3DDECLTYPE_DEC3N     */ {WINED3DFMT_R10G10B10X2_SNORM,  3, sizeof(short int)},
     /* D3DDECLTYPE_FLOAT16_2 */ {WINED3DFMT_R16G16_FLOAT,       2, sizeof(short int)},
     /* D3DDECLTYPE_FLOAT16_4 */ {WINED3DFMT_R16G16B16A16_FLOAT, 4, sizeof(short int)}
 };
@@ -326,7 +323,7 @@ static HRESULT convert_to_wined3d_declaration(const D3DVERTEXELEMENT9 *d3d9_elem
     UINT count = 1;
     UINT i;
 
-    TRACE("d3d9_elements %p, wined3d_elements %p\n", d3d9_elements, wined3d_elements);
+    TRACE("d3d9_elements %p, wined3d_elements %p, element_count %p\n", d3d9_elements, wined3d_elements, element_count);
 
     element = d3d9_elements;
     while (element++->Stream != 0xff && count++ < 128);

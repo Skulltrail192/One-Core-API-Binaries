@@ -2,6 +2,13 @@
 #define NTFS_H
 
 #include <ntifs.h>
+#include <pseh/pseh2.h>
+
+#ifdef __GNUC__
+#define INIT_SECTION __attribute__((section ("INIT")))
+#else
+#define INIT_SECTION /* Done via alloc_text for MSC */
+#endif
 
 #define CACHEPAGESIZE(pDeviceExt) \
 	((pDeviceExt)->NtfsInfo.UCHARsPerCluster > PAGE_SIZE ? \
@@ -10,6 +17,7 @@
 #define TAG_NTFS 'SFTN'
 
 #define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
+#define ROUND_DOWN(N, S) ((N) - ((N) % (S)))
 
 #define DEVICE_NAME L"\\Ntfs"
 
@@ -60,6 +68,7 @@ typedef struct _NTFS_INFO
     ULONG SectorsPerCluster;
     ULONG BytesPerCluster;
     ULONGLONG SectorCount;
+    ULONGLONG ClusterCount;
     ULARGE_INTEGER MftStart;
     ULARGE_INTEGER MftMirrStart;
     ULONG BytesPerFileRecord;
@@ -72,12 +81,13 @@ typedef struct _NTFS_INFO
     UCHAR MinorVersion;
     USHORT Flags;
 
+    ULONG MftZoneReservation;
 } NTFS_INFO, *PNTFS_INFO;
 
 #define NTFS_TYPE_CCB         '20SF'
 #define NTFS_TYPE_FCB         '30SF'
-#define	NTFS_TYPE_VCB         '50SF'
-#define NTFS_TYPE_IRP_CONTEST '60SF'
+#define NTFS_TYPE_VCB         '50SF'
+#define NTFS_TYPE_IRP_CONTEXT '60SF'
 #define NTFS_TYPE_GLOBAL_DATA '70SF'
 
 typedef struct
@@ -106,7 +116,12 @@ typedef struct
 
     NTFS_INFO NtfsInfo;
 
+    ULONG Flags;
+    ULONG OpenHandleCount;
+
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION, NTFS_VCB, *PNTFS_VCB;
+
+#define VCB_VOLUME_LOCKED       0x0001
 
 typedef struct
 {
@@ -123,6 +138,7 @@ typedef struct
 } NTFS_CCB, *PNTFS_CCB;
 
 #define TAG_CCB 'BCCI'
+#define TAG_FCB 'BCFI'
 
 typedef struct
 {
@@ -132,6 +148,9 @@ typedef struct
     PDEVICE_OBJECT DeviceObject;
     CACHE_MANAGER_CALLBACKS CacheMgrCallbacks;
     ULONG Flags;
+    FAST_IO_DISPATCH FastIoDispatch;
+    NPAGED_LOOKASIDE_LIST IrpContextLookasideList;
+    NPAGED_LOOKASIDE_LIST FcbLookasideList;
 } NTFS_GLOBAL_DATA, *PNTFS_GLOBAL_DATA;
 
 
@@ -194,6 +213,7 @@ typedef enum
 #define NTFS_FILE_TYPE_HIDDEN     0x2
 #define NTFS_FILE_TYPE_SYSTEM     0x4
 #define NTFS_FILE_TYPE_ARCHIVE    0x20
+#define NTFS_FILE_TYPE_REPARSE    0x400
 #define NTFS_FILE_TYPE_COMPRESSED 0x800
 #define NTFS_FILE_TYPE_DIRECTORY  0x10000000
 
@@ -207,6 +227,7 @@ typedef struct
 
 /* NTFS_RECORD_HEADER.Type */
 #define NRH_FILE_TYPE  0x454C4946  /* 'FILE' */
+#define NRH_INDX_TYPE  0x58444E49  /* 'INDX' */
 
 
 typedef struct _FILE_RECORD_HEADER
@@ -220,7 +241,7 @@ typedef struct _FILE_RECORD_HEADER
     ULONG BytesAllocated;         /* Allocated size of the FILE record */
     ULONGLONG BaseFileRecord;     /* File reference to the base FILE record */
     USHORT NextAttributeNumber;   /* Next Attribute Id */
-    USHORT Pading;                /* Align to 4 UCHAR boundary (XP) */
+    USHORT Padding;               /* Align to 4 UCHAR boundary (XP) */
     ULONG MFTRecordNumber;        /* Number of this MFT Record (XP) */
 } FILE_RECORD_HEADER, *PFILE_RECORD_HEADER;
 
@@ -306,7 +327,15 @@ typedef struct
     ULONGLONG AllocatedSize;
     ULONGLONG DataSize;
     ULONG FileAttributes;
-    ULONG AlignmentOrReserved;
+    union
+    {
+        struct
+        {
+            USHORT PackedEaSize;
+            USHORT AlignmentOrReserved;
+        } EaInfo;
+        ULONG ReparseTag;
+    } Extended;
     UCHAR NameLength;
     UCHAR NameType;
     WCHAR Name[1];
@@ -369,17 +398,31 @@ typedef struct
     ULONG Unknown2;
 } VOLINFO_ATTRIBUTE, *PVOLINFO_ATTRIBUTE;
 
+typedef struct {
+    ULONG ReparseTag;
+    USHORT DataLength;
+    USHORT Reserved;
+    UCHAR Data[1];
+} REPARSE_POINT_ATTRIBUTE, *PREPARSE_POINT_ATTRIBUTE;
+
+#define IRPCONTEXT_CANWAIT 0x1
+#define IRPCONTEXT_COMPLETE 0x2
+#define IRPCONTEXT_QUEUE 0x4
+
 typedef struct
 {
     NTFSIDENTIFIER Identifier;
     ULONG Flags;
+    PIO_STACK_LOCATION Stack;
     UCHAR MajorFunction;
     UCHAR MinorFunction;
     WORK_QUEUE_ITEM WorkQueueItem;
     PIRP Irp;
     BOOLEAN IsTopLevel;
     PDEVICE_OBJECT DeviceObject;
+    PFILE_OBJECT FileObject;
     NTSTATUS SavedExceptionCode;
+    CCHAR PriorityBoost;
 } NTFS_IRP_CONTEXT, *PNTFS_IRP_CONTEXT;
 
 typedef struct _NTFS_ATTR_CONTEXT
@@ -408,6 +451,7 @@ typedef struct _FCB
     PFILE_OBJECT FileObject;
     PNTFS_VCB Vcb;
 
+    WCHAR Stream[MAX_PATH];
     WCHAR *ObjectName;		/* point on filename (250 chars max) in PathName */
     WCHAR PathName[MAX_PATH];	/* path+filename 260 max */
 
@@ -421,18 +465,39 @@ typedef struct _FCB
 
     LONG RefCount;
     ULONG Flags;
+    ULONG OpenHandleCount;
 
     ULONGLONG MFTIndex;
+    USHORT LinkCount;
 
     FILENAME_ATTRIBUTE Entry;
 
 } NTFS_FCB, *PNTFS_FCB;
 
+typedef struct _FIND_ATTR_CONTXT
+{
+    PDEVICE_EXTENSION Vcb;
+    BOOLEAN OnlyResident;
+    PNTFS_ATTR_RECORD FirstAttr;
+    PNTFS_ATTR_RECORD CurrAttr;
+    PNTFS_ATTR_RECORD LastAttr;
+    PNTFS_ATTR_RECORD NonResidentStart;
+    PNTFS_ATTR_RECORD NonResidentEnd;
+} FIND_ATTR_CONTXT, *PFIND_ATTR_CONTXT;
+
 extern PNTFS_GLOBAL_DATA NtfsGlobalData;
 
-//int CdfsStrcmpi( wchar_t *str1, wchar_t *str2 );
-//void CdfsWstrcpy( wchar_t *str1, wchar_t *str2, int max );
+FORCEINLINE
+NTSTATUS
+NtfsMarkIrpContextForQueue(PNTFS_IRP_CONTEXT IrpContext)
+{
+    PULONG Flags = &IrpContext->Flags;
 
+    *Flags &= ~IRPCONTEXT_COMPLETE;
+    *Flags |= IRPCONTEXT_QUEUE;
+
+    return STATUS_PENDING;
+}
 
 /* attrib.c */
 
@@ -445,10 +510,35 @@ DecodeRun(PUCHAR DataRun,
           ULONGLONG *DataRunLength);
 
 VOID
-NtfsDumpFileAttributes(PFILE_RECORD_HEADER FileRecord);
+NtfsDumpFileAttributes(PDEVICE_EXTENSION Vcb,
+                       PFILE_RECORD_HEADER FileRecord);
+
+PSTANDARD_INFORMATION
+GetStandardInformationFromRecord(PDEVICE_EXTENSION Vcb,
+                                 PFILE_RECORD_HEADER FileRecord);
 
 PFILENAME_ATTRIBUTE
-GetFileNameFromRecord(PFILE_RECORD_HEADER FileRecord, UCHAR NameType);
+GetFileNameFromRecord(PDEVICE_EXTENSION Vcb,
+                      PFILE_RECORD_HEADER FileRecord,
+                      UCHAR NameType);
+
+PFILENAME_ATTRIBUTE
+GetBestFileNameFromRecord(PDEVICE_EXTENSION Vcb,
+                          PFILE_RECORD_HEADER FileRecord);
+
+NTSTATUS
+FindFirstAttribute(PFIND_ATTR_CONTXT Context,
+                   PDEVICE_EXTENSION Vcb,
+                   PFILE_RECORD_HEADER FileRecord,
+                   BOOLEAN OnlyResident,
+                   PNTFS_ATTR_RECORD * Attribute);
+
+NTSTATUS
+FindNextAttribute(PFIND_ATTR_CONTXT Context,
+                  PNTFS_ATTR_RECORD * Attribute);
+
+VOID
+FindCloseAttribute(PFIND_ATTR_CONTXT Context);
 
 /* blockdev.c */
 
@@ -456,6 +546,7 @@ NTSTATUS
 NtfsReadDisk(IN PDEVICE_OBJECT DeviceObject,
              IN LONGLONG StartingOffset,
              IN ULONG Length,
+             IN ULONG SectorSize,
              IN OUT PUCHAR Buffer,
              IN BOOLEAN Override);
 
@@ -480,29 +571,42 @@ NtfsDeviceIoControl(IN PDEVICE_OBJECT DeviceObject,
 /* close.c */
 
 NTSTATUS
+NtfsCleanup(PNTFS_IRP_CONTEXT IrpContext);
+
+
+/* close.c */
+
+NTSTATUS
 NtfsCloseFile(PDEVICE_EXTENSION DeviceExt,
               PFILE_OBJECT FileObject);
 
-DRIVER_DISPATCH NtfsFsdClose;
-NTSTATUS NTAPI
-NtfsFsdClose(PDEVICE_OBJECT DeviceObject,
-             PIRP Irp);
+NTSTATUS
+NtfsClose(PNTFS_IRP_CONTEXT IrpContext);
 
 
 /* create.c */
 
-DRIVER_DISPATCH NtfsFsdCreate;
-NTSTATUS NTAPI
-NtfsFsdCreate(PDEVICE_OBJECT DeviceObject,
-              PIRP Irp);
+NTSTATUS
+NtfsCreate(PNTFS_IRP_CONTEXT IrpContext);
+
+
+/* devctl.c */
+
+NTSTATUS
+NtfsDeviceControl(PNTFS_IRP_CONTEXT IrpContext);
 
 
 /* dirctl.c */
 
-DRIVER_DISPATCH NtfsFsdDirectoryControl;
-NTSTATUS NTAPI
-NtfsFsdDirectoryControl(PDEVICE_OBJECT DeviceObject,
-                        PIRP Irp);
+ULONGLONG
+NtfsGetFileSize(PDEVICE_EXTENSION DeviceExt,
+                PFILE_RECORD_HEADER FileRecord,
+                PCWSTR Stream,
+                ULONG StreamLength,
+                PULONGLONG AllocatedSize);
+
+NTSTATUS
+NtfsDirectoryControl(PNTFS_IRP_CONTEXT IrpContext);
 
 
 /* dispatch.c */
@@ -529,11 +633,16 @@ NtfsAcqReadAhead(PVOID Context,
 VOID NTAPI
 NtfsRelReadAhead(PVOID Context);
 
+FAST_IO_CHECK_IF_POSSIBLE NtfsFastIoCheckIfPossible;
+FAST_IO_READ NtfsFastIoRead;
+FAST_IO_WRITE NtfsFastIoWrite;
+
 
 /* fcb.c */
 
 PNTFS_FCB
 NtfsCreateFCB(PCWSTR FileName,
+              PCWSTR Stream,
               PNTFS_VCB Vcb);
 
 VOID
@@ -541,6 +650,12 @@ NtfsDestroyFCB(PNTFS_FCB Fcb);
 
 BOOLEAN
 NtfsFCBIsDirectory(PNTFS_FCB Fcb);
+
+BOOLEAN
+NtfsFCBIsReparsePoint(PNTFS_FCB Fcb);
+
+BOOLEAN
+NtfsFCBIsCompressed(PNTFS_FCB Fcb);
 
 BOOLEAN
 NtfsFCBIsRoot(PNTFS_FCB Fcb);
@@ -582,24 +697,43 @@ NtfsGetFCBForFile(PNTFS_VCB Vcb,
                   PNTFS_FCB *pFCB,
                   const PWSTR pFileName);
 
+NTSTATUS
+NtfsReadFCBAttribute(PNTFS_VCB Vcb,
+                     PNTFS_FCB pFCB,
+                     ULONG Type, 
+                     PCWSTR Name,
+                     ULONG NameLength,
+                     PVOID * Data);
+
+NTSTATUS
+NtfsMakeFCBFromDirEntry(PNTFS_VCB Vcb,
+                        PNTFS_FCB DirectoryFCB,
+                        PUNICODE_STRING Name,
+                        PCWSTR Stream,
+                        PFILE_RECORD_HEADER Record,
+                        ULONGLONG MFTIndex,
+                        PNTFS_FCB * fileFCB);
+
 
 /* finfo.c */
 
-DRIVER_DISPATCH NtfsFsdQueryInformation;
-NTSTATUS NTAPI
-NtfsFsdQueryInformation(PDEVICE_OBJECT DeviceObject,
-                        PIRP Irp);
+NTSTATUS
+NtfsQueryInformation(PNTFS_IRP_CONTEXT IrpContext);
 
 
 /* fsctl.c */
 
-DRIVER_DISPATCH NtfsFsdFileSystemControl;
-NTSTATUS NTAPI
-NtfsFsdFileSystemControl(PDEVICE_OBJECT DeviceObject,
-                         PIRP Irp);
+NTSTATUS
+NtfsFileSystemControl(PNTFS_IRP_CONTEXT IrpContext);
 
 
 /* mft.c */
+PNTFS_ATTR_CONTEXT
+PrepareAttributeContext(PNTFS_ATTR_RECORD AttrRecord);
+
+VOID
+ReleaseAttributeContext(PNTFS_ATTR_CONTEXT Context);
+
 ULONG
 ReadAttribute(PDEVICE_EXTENSION Vcb,
               PNTFS_ATTR_CONTEXT Context,
@@ -653,14 +787,12 @@ NTSTATUS
 NtfsLookupFile(PDEVICE_EXTENSION Vcb,
                PUNICODE_STRING PathName,
                PFILE_RECORD_HEADER *FileRecord,
-               PNTFS_ATTR_CONTEXT *DataContext,
                PULONGLONG MFTIndex);
 
 NTSTATUS
 NtfsLookupFileAt(PDEVICE_EXTENSION Vcb,
                  PUNICODE_STRING PathName,
                  PFILE_RECORD_HEADER *FileRecord,
-                 PNTFS_ATTR_CONTEXT *DataContext,
                  PULONGLONG MFTIndex,
                  ULONGLONG CurrentMFTIndex);
 
@@ -669,7 +801,6 @@ NtfsFindFileAt(PDEVICE_EXTENSION Vcb,
                PUNICODE_STRING SearchPattern,
                PULONG FirstEntry,
                PFILE_RECORD_HEADER *FileRecord,
-               PNTFS_ATTR_CONTEXT *DataContext,
                PULONGLONG MFTIndex,
                ULONGLONG CurrentMFTIndex);
 
@@ -682,15 +813,9 @@ PNTFS_IRP_CONTEXT
 NtfsAllocateIrpContext(PDEVICE_OBJECT DeviceObject,
                        PIRP Irp);
 
-#if 0
-BOOLEAN
-wstrcmpjoki(PWSTR s1, PWSTR s2);
-
-VOID
-CdfsSwapString(PWCHAR Out,
-	       PUCHAR In,
-	       ULONG Count);
-#endif
+PVOID
+NtfsGetUserBuffer(PIRP Irp,
+                  BOOLEAN Paging);
 
 VOID
 NtfsFileFlagsToAttributes(ULONG NtfsAttributes,
@@ -699,18 +824,17 @@ NtfsFileFlagsToAttributes(ULONG NtfsAttributes,
 
 /* rw.c */
 
-DRIVER_DISPATCH NtfsFsdRead;
-NTSTATUS NTAPI
-NtfsFsdRead(PDEVICE_OBJECT DeviceObject,
-            PIRP Irp);
+NTSTATUS
+NtfsRead(PNTFS_IRP_CONTEXT IrpContext);
 
-DRIVER_DISPATCH NtfsFsdWrite;
-NTSTATUS NTAPI
-NtfsFsdWrite(PDEVICE_OBJECT DeviceObject,
-             PIRP Irp);
+NTSTATUS
+NtfsWrite(PNTFS_IRP_CONTEXT IrpContext);
 
 
 /* volinfo.c */
+
+ULONGLONG
+NtfsGetFreeClusters(PDEVICE_EXTENSION DeviceExt);
 
 NTSTATUS
 NtfsQueryVolumeInformation(PNTFS_IRP_CONTEXT IrpContext);

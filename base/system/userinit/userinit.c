@@ -19,42 +19,27 @@
 /*
  * COPYRIGHT:   See COPYING in the top level directory
  * PROJECT:     ReactOS Userinit Logon Application
- * FILE:        subsys/system/userinit/userinit.c
+ * FILE:        base/system/userinit/userinit.c
  * PROGRAMMERS: Thomas Weidenmueller (w3seek@users.sourceforge.net)
  *              Hervé Poussineau (hpoussin@reactos.org)
  */
 
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
-#include <stdarg.h>
-#include <windef.h>
-#include <winbase.h>
-#include <winreg.h>
-#include <wingdi.h>
-#include <wincon.h>
-#include <shellapi.h>
-#include <regstr.h>
-#include <shlobj.h>
-#include <shlwapi.h>
-#include <undocuser.h>
-#include <wine/debug.h>
-
-#include "resource.h"
-
-WINE_DEFAULT_DEBUG_CHANNEL(userinit);
+#include "userinit.h"
 
 #define CMP_MAGIC  0x01234567
 
 /* GLOBALS ******************************************************************/
 
+HINSTANCE hInstance;
+
+
 /* FUNCTIONS ****************************************************************/
 
-static LONG
+LONG
 ReadRegSzKey(
     IN HKEY hKey,
     IN LPCWSTR pszKey,
-    OUT LPWSTR* pValue)
+    OUT LPWSTR *pValue)
 {
     LONG rc;
     DWORD dwType;
@@ -88,14 +73,14 @@ ReadRegSzKey(
         return rc;
     }
     /* NULL-terminate the string */
-    Value[cbData / sizeof(WCHAR)] = '\0';
+    Value[cbData / sizeof(WCHAR)] = L'\0';
 
     *pValue = Value;
     return ERROR_SUCCESS;
 }
 
-static
-BOOL IsConsoleShell(VOID)
+static BOOL
+IsConsoleShell(VOID)
 {
     HKEY ControlKey = NULL;
     LPWSTR SystemStartOptions = NULL;
@@ -148,15 +133,14 @@ cleanup:
     return ret;
 }
 
-static
-BOOL GetShell(
+static BOOL
+GetShell(
     OUT WCHAR *CommandLine, /* must be at least MAX_PATH long */
     IN HKEY hRootKey)
 {
     HKEY hKey;
     DWORD Type, Size;
     WCHAR Shell[MAX_PATH];
-    BOOL Ret = FALSE;
     BOOL ConsoleShell = IsConsoleShell();
     LONG rc;
 
@@ -164,34 +148,38 @@ BOOL GetShell(
 
     rc = RegOpenKeyExW(hRootKey, L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon",
                        0, KEY_QUERY_VALUE, &hKey);
-    if (rc == ERROR_SUCCESS)
+    if (rc != ERROR_SUCCESS)
     {
-        Size = MAX_PATH * sizeof(WCHAR);
-        rc = RegQueryValueExW(hKey,
-                              ConsoleShell ? L"ConsoleShell" : L"Shell",
-                              NULL,
-                              &Type,
-                              (LPBYTE)Shell,
-                              &Size);
-        if (rc == ERROR_SUCCESS)
-        {
-            if ((Type == REG_SZ) || (Type == REG_EXPAND_SZ))
-            {
-                TRACE("Found command line %s\n", debugstr_w(Shell));
-                wcscpy(CommandLine, Shell);
-                Ret = TRUE;
-            }
-            else
-                WARN("Wrong type %lu (expected %u or %u)\n", Type, REG_SZ, REG_EXPAND_SZ);
-        }
-        else
-            WARN("RegQueryValueEx() failed with error %lu\n", rc);
-        RegCloseKey(hKey);
+        WARN("RegOpenKeyEx() failed with error %lu\n", rc);
+        return FALSE;
+    }
+
+    Size = sizeof(Shell);
+    rc = RegQueryValueExW(hKey,
+                          ConsoleShell ? L"ConsoleShell" : L"Shell",
+                          NULL,
+                          &Type,
+                          (LPBYTE)Shell,
+                          &Size);
+    RegCloseKey(hKey);
+
+    if (rc != ERROR_SUCCESS)
+    {
+        WARN("RegQueryValueEx() failed with error %lu\n", rc);
+        return FALSE;
+    }
+
+    if ((Type == REG_SZ) || (Type == REG_EXPAND_SZ))
+    {
+        TRACE("Found command line %s\n", debugstr_w(Shell));
+        wcscpy(CommandLine, Shell);
+        return TRUE;
     }
     else
-        WARN("RegOpenKeyEx() failed with error %lu\n", rc);
-
-    return Ret;
+    {
+        WARN("Wrong type %lu (expected %u or %u)\n", Type, REG_SZ, REG_EXPAND_SZ);
+        return FALSE;
+    }
 }
 
 static VOID
@@ -227,7 +215,7 @@ StartAutoApplications(
     {
         if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (findData.nFileSizeHigh || findData.nFileSizeLow))
         {
-            ZeroMemory(&ExecInfo, sizeof(SHELLEXECUTEINFOW));
+            ZeroMemory(&ExecInfo, sizeof(ExecInfo));
             ExecInfo.cbSize = sizeof(ExecInfo);
             wcscpy(&szPath[len+1], findData.cFileName);
             ExecInfo.lpVerb = L"open";
@@ -257,18 +245,18 @@ TryToStartShell(
     si.wShowWindow = SW_SHOWNORMAL;
     ZeroMemory(&pi, sizeof(pi));
 
-    ExpandEnvironmentStrings(Shell, ExpandedShell, MAX_PATH);
+    ExpandEnvironmentStringsW(Shell, ExpandedShell, ARRAYSIZE(ExpandedShell));
 
-    if (!CreateProcess(NULL,
-                      ExpandedShell,
-                      NULL,
-                      NULL,
-                      FALSE,
-                      NORMAL_PRIORITY_CLASS,
-                      NULL,
-                      NULL,
-                      &si,
-                      &pi))
+    if (!CreateProcessW(NULL,
+                        ExpandedShell,
+                        NULL,
+                        NULL,
+                        FALSE,
+                        NORMAL_PRIORITY_CLASS,
+                        NULL,
+                        NULL,
+                        &si,
+                        &pi))
     {
         WARN("CreateProcess() failed with error %lu\n", GetLastError());
         return FALSE;
@@ -281,11 +269,11 @@ TryToStartShell(
     return TRUE;
 }
 
-static
-VOID StartShell(VOID)
+static BOOL
+StartShell(VOID)
 {
     WCHAR Shell[MAX_PATH];
-    TCHAR szMsg[RC_STRING_MAX_SIZE];
+    WCHAR szMsg[RC_STRING_MAX_SIZE];
     DWORD Type, Size;
     DWORD Value = 0;
     LONG rc;
@@ -297,38 +285,41 @@ VOID StartShell(VOID)
     rc = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
                        L"SYSTEM\\CurrentControlSet\\Control\\SafeBoot\\Option",
                        0, KEY_QUERY_VALUE, &hKey);
-    if(rc == ERROR_SUCCESS)
+    if (rc == ERROR_SUCCESS)
     {
         Size = sizeof(Value);
         rc = RegQueryValueExW(hKey, L"UseAlternateShell", NULL,
                               &Type, (LPBYTE)&Value, &Size);
-        if(rc == ERROR_SUCCESS)
+        RegCloseKey(hKey);
+
+        if (rc == ERROR_SUCCESS)
         {
-            RegCloseKey(hKey);
-            if(Type == REG_DWORD)
+            if (Type == REG_DWORD)
             {
-                if(Value)
+                if (Value)
                 {
                     /* Safe Mode Alternate Shell required */
                     rc = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
                                        L"SYSTEM\\CurrentControlSet\\Control\\SafeBoot",
                                        0, KEY_READ, &hKey);
-                    if(rc == ERROR_SUCCESS)
+                    if (rc == ERROR_SUCCESS)
                     {
-                        Size = MAX_PATH * sizeof(WCHAR);
+                        Size = sizeof(Shell);
                         rc = RegQueryValueExW(hKey, L"AlternateShell", NULL,
                                               &Type, (LPBYTE)Shell, &Size);
-                        if(rc == ERROR_SUCCESS)
+                        RegCloseKey(hKey);
+
+                        if (rc == ERROR_SUCCESS)
                         {
-                            RegCloseKey(hKey);
                             if ((Type == REG_SZ) || (Type == REG_EXPAND_SZ))
                             {
                                 TRACE("Key located - %s\n", debugstr_w(Shell));
+
                                 /* Try to run alternate shell */
                                 if (TryToStartShell(Shell))
                                 {
                                     TRACE("Alternate shell started (Safe Mode)\n");
-                                    return;
+                                    return TRUE;
                                 }
                             }
                             else
@@ -350,41 +341,45 @@ VOID StartShell(VOID)
             }
         }
     }
+
     /* Try to run shell in user key */
     if (GetShell(Shell, HKEY_CURRENT_USER) && TryToStartShell(Shell))
     {
         TRACE("Started shell from HKEY_CURRENT_USER\n");
-        return;
+        return TRUE;
     }
 
     /* Try to run shell in local machine key */
     if (GetShell(Shell, HKEY_LOCAL_MACHINE) && TryToStartShell(Shell))
     {
         TRACE("Started shell from HKEY_LOCAL_MACHINE\n");
-        return;
+        return TRUE;
     }
 
     /* Try default shell */
     if (IsConsoleShell())
     {
-        if (GetSystemDirectory(Shell, MAX_PATH - 8))
+        if (GetSystemDirectoryW(Shell, ARRAYSIZE(Shell) - 8))
             wcscat(Shell, L"\\cmd.exe");
         else
             wcscpy(Shell, L"cmd.exe");
     }
     else
     {
-        if (GetWindowsDirectory(Shell, MAX_PATH - 13))
+        if (GetWindowsDirectoryW(Shell, ARRAYSIZE(Shell) - 13))
             wcscat(Shell, L"\\explorer.exe");
         else
             wcscpy(Shell, L"explorer.exe");
     }
+
     if (!TryToStartShell(Shell))
     {
         WARN("Failed to start default shell %s\n", debugstr_w(Shell));
-        LoadString( GetModuleHandle(NULL), STRING_USERINIT_FAIL, szMsg, sizeof(szMsg) / sizeof(szMsg[0]));
-        MessageBox(0, szMsg, NULL, 0);
+        LoadStringW(GetModuleHandle(NULL), IDS_SHELL_FAIL, szMsg, ARRAYSIZE(szMsg));
+        MessageBoxW(NULL, szMsg, NULL, MB_OK);
+        return FALSE;
     }
+    return TRUE;
 }
 
 const WCHAR g_RegColorNames[][32] = {
@@ -420,10 +415,9 @@ const WCHAR g_RegColorNames[][32] = {
     L"MenuHilight",           /* 29 = COLOR_MENUHILIGHT */
     L"MenuBar"                /* 30 = COLOR_MENUBAR */
 };
-#define NUM_SYSCOLORS (sizeof(g_RegColorNames) / sizeof(g_RegColorNames[0]))
 
-static
-COLORREF StrToColorref(
+static COLORREF
+StrToColorref(
     IN LPWSTR lpszCol)
 {
     BYTE rgb[3];
@@ -436,8 +430,8 @@ COLORREF StrToColorref(
     return RGB(rgb[0], rgb[1], rgb[2]);
 }
 
-static
-VOID SetUserSysColors(VOID)
+static VOID
+SetUserSysColors(VOID)
 {
     HKEY hKey;
     INT i;
@@ -448,32 +442,36 @@ VOID SetUserSysColors(VOID)
 
     TRACE("()\n");
 
-    rc = RegOpenKeyEx(HKEY_CURRENT_USER, REGSTR_PATH_COLORS,
-                      0, KEY_QUERY_VALUE, &hKey);
+    rc = RegOpenKeyExW(HKEY_CURRENT_USER, REGSTR_PATH_COLORS,
+                       0, KEY_QUERY_VALUE, &hKey);
     if (rc != ERROR_SUCCESS)
     {
         WARN("RegOpenKeyEx() failed with error %lu\n", rc);
         return;
     }
-    for(i = 0; i < NUM_SYSCOLORS; i++)
+
+    for (i = 0; i < ARRAYSIZE(g_RegColorNames); i++)
     {
         Size = sizeof(szColor);
-        rc = RegQueryValueEx(hKey, g_RegColorNames[i], NULL, &Type,
-                             (LPBYTE)szColor, &Size);
+        rc = RegQueryValueExW(hKey, g_RegColorNames[i], NULL, &Type,
+                              (LPBYTE)szColor, &Size);
         if (rc == ERROR_SUCCESS && Type == REG_SZ)
         {
             crColor = StrToColorref(szColor);
             SetSysColors(1, &i, &crColor);
         }
         else
+        {
             WARN("RegQueryValueEx(%s) failed with error %lu\n",
                 debugstr_w(g_RegColorNames[i]), rc);
+        }
     }
+
     RegCloseKey(hKey);
 }
 
-static
-VOID SetUserWallpaper(VOID)
+static VOID
+SetUserWallpaper(VOID)
 {
     HKEY hKey;
     DWORD Type, Size;
@@ -482,39 +480,41 @@ VOID SetUserWallpaper(VOID)
 
     TRACE("()\n");
 
-    rc = RegOpenKeyEx(HKEY_CURRENT_USER, REGSTR_PATH_DESKTOP,
-                      0, KEY_QUERY_VALUE, &hKey);
-    if (rc == ERROR_SUCCESS)
+    rc = RegOpenKeyExW(HKEY_CURRENT_USER, REGSTR_PATH_DESKTOP,
+                       0, KEY_QUERY_VALUE, &hKey);
+    if (rc != ERROR_SUCCESS)
     {
-        Size = sizeof(szWallpaper);
-        rc = RegQueryValueEx(hKey,
-                             L"Wallpaper",
-                             NULL,
-                             &Type,
-                             (LPBYTE)szWallpaper,
-                             &Size);
-        if (rc == ERROR_SUCCESS && Type == REG_SZ)
-        {
-            ExpandEnvironmentStrings(szWallpaper, szWallpaper, MAX_PATH);
-            TRACE("Using wallpaper %s\n", debugstr_w(szWallpaper));
+        WARN("RegOpenKeyEx() failed with error %lu\n", rc);
+        return;
+    }
 
-            /* Load and change the wallpaper */
-            SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, szWallpaper, SPIF_SENDCHANGE);
-        }
-        else
-        {
-            /* remove the wallpaper */
-            TRACE("No wallpaper set in registry (error %lu)\n", rc);
-            SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, NULL, SPIF_SENDCHANGE);
-        }
-        RegCloseKey(hKey);
+    Size = sizeof(szWallpaper);
+    rc = RegQueryValueExW(hKey,
+                          L"Wallpaper",
+                          NULL,
+                          &Type,
+                          (LPBYTE)szWallpaper,
+                          &Size);
+    RegCloseKey(hKey);
+
+    if (rc == ERROR_SUCCESS && Type == REG_SZ)
+    {
+        ExpandEnvironmentStringsW(szWallpaper, szWallpaper, ARRAYSIZE(szWallpaper));
+        TRACE("Using wallpaper %s\n", debugstr_w(szWallpaper));
+
+        /* Load and change the wallpaper */
+        SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, szWallpaper, SPIF_SENDCHANGE);
     }
     else
-        WARN("RegOpenKeyEx() failed with error %lu\n", rc);
+    {
+        /* Remove the wallpaper */
+        TRACE("No wallpaper set in registry (error %lu)\n", rc);
+        SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, NULL, SPIF_SENDCHANGE);
+    }
 }
 
-static
-VOID SetUserSettings(VOID)
+static VOID
+SetUserSettings(VOID)
 {
     TRACE("()\n");
 
@@ -533,24 +533,71 @@ NotifyLogon(VOID)
 
     TRACE("()\n");
 
-    hModule = LoadLibrary(L"setupapi.dll");
-    if (hModule)
+    hModule = LoadLibraryW(L"setupapi.dll");
+    if (!hModule)
     {
-        CMP_Report_LogOn = (PCMP_REPORT_LOGON)GetProcAddress(hModule, "CMP_Report_LogOn");
-        if (CMP_Report_LogOn)
-            CMP_Report_LogOn(CMP_MAGIC, GetCurrentProcessId());
-        else
-            WARN("GetProcAddress() failed\n");
-
-        FreeLibrary(hModule);
-    }
-    else
         WARN("LoadLibrary() failed with error %lu\n", GetLastError());
+        return;
+    }
+
+    CMP_Report_LogOn = (PCMP_REPORT_LOGON)GetProcAddress(hModule, "CMP_Report_LogOn");
+    if (CMP_Report_LogOn)
+        CMP_Report_LogOn(CMP_MAGIC, GetCurrentProcessId());
+    else
+        WARN("GetProcAddress() failed\n");
+
+    FreeLibrary(hModule);
 }
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4100)
-#endif /* _MSC_VER */
+static BOOL
+StartInstaller(VOID)
+{
+    WCHAR Shell[MAX_PATH];
+    WCHAR szMsg[RC_STRING_MAX_SIZE];
+
+    if (GetWindowsDirectoryW(Shell, ARRAYSIZE(Shell) - 12))
+        wcscat(Shell, L"\\reactos.exe");
+    else
+        wcscpy(Shell, L"reactos.exe");
+
+    if (!TryToStartShell(Shell))
+    {
+        WARN("Failed to start the installer: %s\n", debugstr_w(Shell));
+        LoadStringW(GetModuleHandle(NULL), IDS_INSTALLER_FAIL, szMsg, ARRAYSIZE(szMsg));
+        MessageBoxW(NULL, szMsg, NULL, MB_OK);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+/* Used to get the shutdown privilege */
+static BOOL
+EnablePrivilege(LPCWSTR lpszPrivilegeName, BOOL bEnablePrivilege)
+{
+    BOOL   Success;
+    HANDLE hToken;
+    TOKEN_PRIVILEGES tp;
+
+    Success = OpenProcessToken(GetCurrentProcess(),
+                               TOKEN_ADJUST_PRIVILEGES,
+                               &hToken);
+    if (!Success) return Success;
+
+    Success = LookupPrivilegeValueW(NULL,
+                                    lpszPrivilegeName,
+                                    &tp.Privileges[0].Luid);
+    if (!Success) goto Quit;
+
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Attributes = (bEnablePrivilege ? SE_PRIVILEGE_ENABLED : 0);
+
+    Success = AdjustTokenPrivileges(hToken, FALSE, &tp, 0, NULL, NULL);
+
+Quit:
+    CloseHandle(hToken);
+    return Success;
+}
+
 
 int WINAPI
 wWinMain(IN HINSTANCE hInst,
@@ -558,9 +605,65 @@ wWinMain(IN HINSTANCE hInst,
          IN LPWSTR lpszCmdLine,
          IN int nCmdShow)
 {
+    BOOL bIsLiveCD, Success = TRUE;
+    STATE State;
+
+    hInstance = hInst;
+
+    bIsLiveCD = IsLiveCD();
+
+Restart:
     SetUserSettings();
-    StartShell();
-    NotifyLogon();
+
+    if (bIsLiveCD)
+    {
+        State.NextPage = LOCALEPAGE;
+        State.Run = SHELL;
+    }
+    else
+    {
+        State.NextPage = DONE;
+        State.Run = SHELL;
+    }
+
+    if (State.NextPage != DONE) // && bIsLiveCD
+    {
+        RunLiveCD(&State);
+    }
+
+    switch (State.Run)
+    {
+        case SHELL:
+            Success = StartShell();
+            if (Success)
+                NotifyLogon();
+            break;
+
+        case INSTALLER:
+            Success = StartInstaller();
+            break;
+
+        case REBOOT:
+        {
+            EnablePrivilege(SE_SHUTDOWN_NAME, TRUE);
+            ExitWindowsEx(EWX_REBOOT, 0);
+            EnablePrivilege(SE_SHUTDOWN_NAME, FALSE);
+            Success = TRUE;
+            break;
+        }
+
+        default:
+            Success = FALSE;
+            break;
+    }
+
+    /*
+     * In LiveCD mode, go back to the main menu if we failed
+     * to either start the shell or the installer.
+     */
+    if (bIsLiveCD && !Success)
+        goto Restart;
+
     return 0;
 }
 

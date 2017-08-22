@@ -188,8 +188,7 @@ Bus_FDO_PnP (
         length = sizeof(DEVICE_RELATIONS) +
                 (((numPdosPresent + prevcount) - 1) * sizeof (PDEVICE_OBJECT));
 
-        relations = (PDEVICE_RELATIONS) ExAllocatePoolWithTag (PagedPool,
-                                        length, 'IPCA');
+        relations = ExAllocatePoolWithTag(PagedPool, length, 'IpcA');
 
         if (NULL == relations) {
             //
@@ -237,7 +236,7 @@ Bus_FDO_PnP (
         // one.
         //
         if (oldRelations) {
-            ExFreePool (oldRelations);
+            ExFreePoolWithTag(oldRelations, 0);
         }
         Irp->IoStatus.Information = (ULONG_PTR) relations;
 
@@ -269,7 +268,7 @@ Bus_StartFdo (
     PFDO_DEVICE_DATA            FdoData,
     PIRP   Irp )
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    NTSTATUS status;
     POWER_STATE powerState;
     ACPI_STATUS AcpiStatus;
 
@@ -286,11 +285,10 @@ Bus_StartFdo (
         DPRINT1("Unable to AcpiInitializeSubsystem\n");
         return STATUS_UNSUCCESSFUL;
     }
-    
-    
-	AcpiStatus = AcpiInitializeTables(NULL, 16, 0);
-    if (ACPI_FAILURE(status)){
-        DPRINT1("Unable to AcpiInitializeSubsystem\n");
+
+    AcpiStatus = AcpiInitializeTables(NULL, 16, 0);
+    if (ACPI_FAILURE(AcpiStatus)){
+        DPRINT1("Unable to AcpiInitializeTables\n");
 		return STATUS_UNSUCCESSFUL;
     }
 
@@ -299,6 +297,12 @@ Bus_StartFdo (
         DPRINT1("Unable to AcpiLoadTables\n");
         AcpiTerminate();
         return STATUS_UNSUCCESSFUL;
+    }
+
+    status = acpi_create_volatile_registry_tables();
+    if (!NT_SUCCESS(status))
+    {
+        DPRINT1("Unable to create ACPI tables in registry\n");
     }
 
 	DPRINT("Acpi subsystem init\n");
@@ -399,7 +403,7 @@ Bus_DestroyPdo (
     //
 
     if (PdoData->HardwareIDs) {
-        ExFreePoolWithTag (PdoData->HardwareIDs, 'IPCA');
+        ExFreePoolWithTag(PdoData->HardwareIDs, 'DpcA');
         PdoData->HardwareIDs = NULL;
     }
 
@@ -463,8 +467,6 @@ Bus_InitializePdo (
 
     pdoData->Common.DevicePowerState = ntState;
     pdoData->Common.SystemPowerState = FdoData->Common.SystemPowerState;
-
-    Pdo->Flags |= DO_POWER_PAGABLE;
 
     ExAcquireFastMutex (&FdoData->Mutex);
     InsertTailList(&FdoData->ListOfPDOs, &pdoData->Link);

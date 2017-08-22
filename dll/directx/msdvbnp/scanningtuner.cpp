@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS Network Provider for MPEG2 based networks
- * FILE:            dll/directx/msdvbnp/networkprovider.cpp
+ * FILE:            dll/directx/msdvbnp/scanningtuner.cpp
  * PURPOSE:         IScanningTunner interface
  *
  * PROGRAMMERS:     Johannes Anderwald (johannes.anderwald@reactos.org)
@@ -574,14 +574,14 @@ CScanningTunner::SetLnbInfo(
 {
     HRESULT hr;
 
-    hr = pLnbInfo->put_LocalOscilatorFrequencyLowBand(ulLOFLow);
+    hr = pLnbInfo->put_LocalOscillatorFrequencyLowBand(ulLOFLow);
     if (hr == MAKE_HRESULT(SEVERITY_ERROR, FACILITY_WIN32, ERROR_NOT_FOUND) || hr == MAKE_HRESULT(SEVERITY_ERROR, FACILITY_WIN32, ERROR_SET_NOT_FOUND))
         hr = NOERROR;
 
     if (FAILED(hr))
         return hr;
 
-    hr = pLnbInfo->put_LocalOscilatorFrequencyHighBand(ulLOFHigh);
+    hr = pLnbInfo->put_LocalOscillatorFrequencyHighBand(ulLOFHigh);
     if (hr == MAKE_HRESULT(SEVERITY_ERROR, FACILITY_WIN32, ERROR_NOT_FOUND) || hr == MAKE_HRESULT(SEVERITY_ERROR, FACILITY_WIN32, ERROR_SET_NOT_FOUND))
         hr = NOERROR;
 

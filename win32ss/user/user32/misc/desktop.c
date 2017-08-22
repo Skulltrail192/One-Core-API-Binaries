@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS user32.dll
- * FILE:            lib/user32/misc/desktop.c
+ * FILE:            win32ss/user/user32/misc/desktop.c
  * PURPOSE:         Desktops
  * PROGRAMMER:      Casper S. Hornstrup (chorns@users.sourceforge.net)
  * UPDATE HISTORY:
@@ -128,7 +128,6 @@ LogFontW2A(LPLOGFONTA pA, CONST LOGFONTW *pW)
 int WINAPI
 RealGetSystemMetrics(int nIndex)
 {
-  //GetConnected();
   //FIXME("Global Server Data -> %x\n",gpsi);
   if (nIndex < 0 || nIndex >= SM_CMETRICS) return 0;
   return gpsi->aiSysMet[nIndex];
@@ -307,10 +306,8 @@ RealSystemParametersInfoA(UINT uiAction,
 
         Ret = NtUserSystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, awc, fWinIni);
         RtlInitUnicodeString(&ustrWallpaper, awc);
-        RtlUnicodeStringToAnsiString(&astrWallpaper, &ustrWallpaper, TRUE);
-
-        RtlCopyMemory(pvParam, astrWallpaper.Buffer, uiParam);
-        RtlFreeAnsiString(&astrWallpaper);
+        RtlInitEmptyAnsiString(&astrWallpaper, pvParam, uiParam);
+        RtlUnicodeStringToAnsiString(&astrWallpaper, &ustrWallpaper, FALSE);
         return Ret;
       }
 
@@ -330,7 +327,10 @@ RealSystemParametersInfoA(UINT uiAction,
           }
 
           Ret = NtUserSystemParametersInfo(SPI_SETDESKWALLPAPER, uiParam, pvParam, fWinIni);
-          RtlFreeUnicodeString(&ustrWallpaper);
+
+          if (pvParam)
+            RtlFreeUnicodeString(&ustrWallpaper);
+
           return Ret;
       }
     }
@@ -545,7 +545,23 @@ WINAPI
 GetThreadDesktop(
   DWORD dwThreadId)
 {
-  return NtUserGetThreadDesktop(dwThreadId, 0);
+    USER_API_MESSAGE ApiMessage;
+    PUSER_GET_THREAD_CONSOLE_DESKTOP GetThreadConsoleDesktopRequest = &ApiMessage.Data.GetThreadConsoleDesktopRequest;
+
+    GetThreadConsoleDesktopRequest->ThreadId = dwThreadId;
+
+    CsrClientCallServer((PCSR_API_MESSAGE)&ApiMessage,
+                        NULL,
+                        CSR_CREATE_API_NUMBER(USERSRV_SERVERDLL_INDEX, UserpGetThreadConsoleDesktop),
+                        sizeof(*GetThreadConsoleDesktopRequest));
+    if (!NT_SUCCESS(ApiMessage.Status))
+    {
+        UserSetLastNTError(ApiMessage.Status);
+        return NULL;
+    }
+
+    return NtUserGetThreadDesktop(dwThreadId,
+                                  (DWORD)GetThreadConsoleDesktopRequest->ConsoleDesktop);
 }
 
 
@@ -607,7 +623,7 @@ OpenDesktopW(
                              GetProcessWindowStation(),
                              0);
 
-  if( fInherit == TRUE )
+  if( fInherit )
   {
       ObjectAttributes.Attributes |= OBJ_INHERIT;
   }

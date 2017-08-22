@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS DbgPrint Utility
  * LICENSE:         GPL - See COPYING in the top level directory
- * FILE:            tools/dbgprint/dbgprint.c
+ * FILE:            base/applications/cmdutils/dbgprint/dbgprint.c
  * PURPOSE:         outputs a text via DbgPrint API
  * PROGRAMMERS:     Johannes Anderwald (johannes.anderwald@reactos.org)
  *                  Christoph von Wittich (Christoph_vW@ReactOS.org)
@@ -44,7 +44,7 @@ int _tmain(int argc, TCHAR ** argv)
 
         /* get available tests */
         strcpy(cmd, argv[2]);
-        strcat(cmd, " --list");        
+        strcat(cmd, " --list");
         pPipe = _tpopen(cmd, "r");
         if (pPipe != NULL)
         {
@@ -68,6 +68,8 @@ int _tmain(int argc, TCHAR ** argv)
                             if (nlptr2)
                                 *nlptr2 = '\0';
                             puts(psBuffer2);
+                            if (nlptr2)
+                                *nlptr2 = '\n';
                             OutputDebugStringA(psBuffer2);
                         }
                         _pclose(pPipe2);

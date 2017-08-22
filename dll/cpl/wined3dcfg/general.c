@@ -32,13 +32,13 @@ WINED3D_SETTINGS gwd3dsOffscreen[] =
 WINED3D_SETTINGS gwd3dsVidMem[] =
 {
     {VALUE_DEFAULT, REG_NONE, 0},
-    {L"8", REG_SZ, 8},
-    {L"16", REG_SZ, 16},
-    {L"32", REG_SZ, 32},
-    {L"64", REG_SZ, 64},
-    {L"128", REG_SZ, 128},
-    {L"256", REG_SZ, 256},
-    {L"512", REG_SZ, 512},
+    {L"8 MB", REG_SZ, 8},
+    {L"16 MB", REG_SZ, 16},
+    {L"32 MB", REG_SZ, 32},
+    {L"64 MB", REG_SZ, 64},
+    {L"128 MB", REG_SZ, 128},
+    {L"256 MB", REG_SZ, 256},
+    {L"512 MB", REG_SZ, 512},
 };
 
 WINED3D_SETTINGS gwd3dsDdRender[] =
@@ -51,7 +51,7 @@ WINED3D_SETTINGS gwd3dsDdRender[] =
 void InitControl(HWND hWndDlg, HKEY hKey, PWCHAR szKey, PWINED3D_SETTINGS pSettings, INT iControlId, INT iCount)
 {
     WCHAR szBuffer[MAX_KEY_LENGTH];
-    DWORD dwSize = MAX_KEY_LENGTH;
+    DWORD dwSize = sizeof(szBuffer);
     DWORD dwType = 0;
     INT iCurrent;
     INT iActive = 0;

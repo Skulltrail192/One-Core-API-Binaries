@@ -3,7 +3,7 @@
  * FILE:    dll/win32/msgina/lang/ro-RO.rc
  * PURPOSE: Romanian Language File for ReactOS Logon GINA DLL
  * TRANSLATORS:
- *          Petru Dumitriu (petrimetri at gmail dot com)
+ *          Petru Dimitriu (petrimetri at gmail dot com)
  *          Ștefan Fulea (stefan dot fulea at mail dot md)
  */
 
@@ -24,7 +24,7 @@ CAPTION "Bun venit în ReactOS"
 FONT 8, "MS Shell Dlg", 400, 0, 1
 BEGIN
     CONTROL IDI_ROSLOGO,IDC_ROSLOGO, "Static", SS_BITMAP, 0, 0, 275, 54
-    ICON IDI_LOCKICON, IDC_STATIC, 7, 55, 32, 32
+    ICON IDI_KEYBOARD, IDC_STATIC, 7, 55, 32, 32
     LTEXT "Apasați simultan «Ctrl»+«Alt»+«Del»", IDC_STATIC, 38, 60, 144, 14
 END
 
@@ -39,7 +39,7 @@ BEGIN
     LTEXT "Parola:", IDC_STATIC, 6, 78, 52, 8
     EDITTEXT IDC_PASSWORD, 60, 76, 155, 14, ES_AUTOHSCROLL | ES_PASSWORD
     LTEXT "Vă autentificați la:", IDC_STATIC, 6, 96, 52, 8
-    COMBOBOX IDC_LOGON_TO, 60, 95, 155, 14, CBS_DROPDOWNLIST | WS_VSCROLL
+    COMBOBOX IDC_LOGON_TO, 60, 95, 155, 14, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON "Con&firmă", IDOK, 106, 122, 50, 14, BS_DEFPUSHBUTTON
     PUSHBUTTON "A&nulează", IDCANCEL, 160, 122, 50, 14
     PUSHBUTTON "&Oprește", IDC_SHUTDOWN, 214, 122, 50, 14
@@ -101,7 +101,7 @@ BEGIN
     LTEXT "Nume utilizator:", IDC_STATIC, 7, 61, 78, 8
     EDITTEXT IDC_CHANGEPWD_USERNAME, 90, 59, 127, 12, ES_AUTOHSCROLL
     LTEXT "Autentificat pe:", IDC_STATIC, 7, 78, 78, 8
-    COMBOBOX IDC_CHANGEPWD_DOMAIN, 90, 75, 127, 144, CBS_DROPDOWNLIST | CBS_SORT
+    COMBOBOX IDC_CHANGEPWD_DOMAIN, 90, 75, 127, 144, CBS_DROPDOWNLIST | CBS_SORT | WS_TABSTOP
     LTEXT "Parola veche:", IDC_STATIC, 7, 95, 78, 8
     EDITTEXT IDC_CHANGEPWD_OLDPWD, 90, 92, 127, 12, ES_AUTOHSCROLL | ES_PASSWORD
     LTEXT "Parola nouă:", IDC_STATIC, 7, 111, 78, 8
@@ -117,7 +117,7 @@ STYLE NOT WS_VISIBLE | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_BORDER | WS
 CAPTION "Deautentificare ReactOS"
 FONT 8, "MS Shell Dlg", 400, 0, 1
 BEGIN
-    ICON IDI_LOCKICON, -1, 7, 7, 20, 20
+    ICON IDI_LOGOFF, -1, 7, 7, 20, 20
     LTEXT "Sigur doriți să vă deautentificați?", IDC_STATIC, 35, 16, 146, 8
     PUSHBUTTON "D&a", IDYES, 41, 39, 50, 14, BS_DEFPUSHBUTTON
     PUSHBUTTON "N&u", IDNO, 95, 39, 50, 14
@@ -129,12 +129,16 @@ CAPTION "Închidere ReactOS"
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL IDI_ROSLOGO, IDC_ROSLOGO, "Static", SS_BITMAP, 0, 0, 275, 54
-    ICON IDI_SHELL_SHUTDOWN, IDI_SHELL_SHUTDOWN, 9, 57, 21, 20, WS_GROUP
+    ICON IDI_SHUTDOWN, IDI_SHUTDOWN, 9, 57, 21, 20, WS_GROUP
     LTEXT "&Ce doriți să se întâmple?", IDC_STATIC, 39, 57, 167, 10
-    COMBOBOX IDC_SHUTDOWN_LIST, 39, 70, 165, 210, CBS_DROPDOWNLIST | WS_VSCROLL
+    COMBOBOX IDC_SHUTDOWN_LIST, 39, 70, 165, 210, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT "", IDC_SHUTDOWN_DESCRIPTION, 39, 93, 187, 27
     DEFPUSHBUTTON "Con&firmă", IDOK, 143, 122, 55, 14, WS_GROUP
     PUSHBUTTON "A&nulează", IDCANCEL, 204, 122, 55, 14
+
+    // DEFPUSHBUTTON "Con&firmă", IDOK, 80, 122, 55, 14, WS_GROUP
+    // PUSHBUTTON "A&nulează", IDCANCEL, 143, 122, 55, 14
+    // PUSHBUTTON "&Manual…", IDHELP, 204, 122, 55, 14
 END
 
 IDD_LEGALNOTICE_DLG DIALOGEX 0, 0, 280, 200
@@ -144,6 +148,14 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     EDITTEXT IDC_LEGALNOTICE_TEXT, 7, 7, 266, 165, ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP
     DEFPUSHBUTTON "Î&nchide", IDOK, 115, 179, 50, 14
+END
+
+IDD_SHUTDOWN_FANCY DIALOGEX 0, 0, 275, 146
+STYLE NOT WS_VISIBLE | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP
+CAPTION "Luna-XP-style Shut Down dialog"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    DEFPUSHBUTTON "Con&firmă", IDOK, 80, 122, 55, 14, WS_GROUP
 END
 
 STRINGTABLE
@@ -164,7 +176,7 @@ BEGIN
     IDS_NONMATCHINGPASSWORDS "Parolele tastate nu corespund. Tastați aceiași parolă în ambele câmpuri de intrpducere."
     IDS_PASSWORDCHANGED "Parola dumneavoastră a fost modificată."
     IDS_LOGONTITLE "Mesaj de autentificare"
-    IDS_LOGONWRONGUSERORPWD "Sistemul nu vă poate autentifica. Asigurați-vă că numele și domeniul sunt corecte apoi tastați din nou parola. În parolă se face distincție între majuscule și minuscule."
+    IDS_LOGONWRONGUSERORPWD "Sistemul nu vă poate autentifica. Asigurați-vă că numele și domeniul sunt corecte apoi tastați din nou parola. În parolă este făcută distincție între majuscule și minuscule."
     IDS_LOGONUSERDISABLED "Contul dumneavoastră a fost dezactivat. Contactați administratorul de sistem."
     IDS_PASSWORDMUSTCHANGE "Este imperativ să vă schimbați parola la prima autentificare."
     IDS_PASSWORDEXPIRED "Parola v-a expirat și trebuie schimbată."
@@ -173,7 +185,7 @@ END
 /* Shutdown Dialog Strings */
 STRINGTABLE
 BEGIN
-    IDS_SHUTDOWN_LOGOFF "Deautentificare ""%s"""
+    IDS_SHUTDOWN_LOGOFF "Deautentificare „%s”"
     IDS_SHUTDOWN_SHUTDOWN "Închidere"
     IDS_SHUTDOWN_RESTART "Repornire"
     IDS_SHUTDOWN_SLEEP "Stare de veghe"

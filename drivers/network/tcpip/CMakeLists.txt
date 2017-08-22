@@ -1,8 +1,8 @@
 
 include_directories(
     BEFORE include
-    ${REACTOS_SOURCE_DIR}/lib/drivers/lwip/src/include
-    ${REACTOS_SOURCE_DIR}/lib/drivers/lwip/src/include/ipv4)
+    ${REACTOS_SOURCE_DIR}/sdk/lib/drivers/lwip/src/include
+    ${REACTOS_SOURCE_DIR}/sdk/lib/drivers/lwip/src/include/ipv4)
 
 add_definitions(
     -DNDIS40
@@ -32,15 +32,8 @@ add_library(tcpip SHARED
     tcpip.rc
     ${CMAKE_CURRENT_BINARY_DIR}/tcpip.def)
 
-target_link_libraries(tcpip
-    ip
-    lwip
-    ${PSEH_LIB}
-    chew)
-
+target_link_libraries(tcpip ip lwip ${PSEH_LIB} chew)
 set_module_type(tcpip kernelmodedriver)
 add_importlibs(tcpip ndis ntoskrnl hal)
-
 add_pch(tcpip include/precomp.h SOURCE)
-
 add_cd_file(TARGET tcpip DESTINATION reactos/system32/drivers FOR all)

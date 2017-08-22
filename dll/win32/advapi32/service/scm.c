@@ -133,6 +133,7 @@ ScmRpcStatusToWinError(RPC_STATUS Status)
 {
     switch (Status)
     {
+        case STATUS_ACCESS_VIOLATION:
         case RPC_S_INVALID_BINDING:
         case RPC_X_SS_IN_NULL_CONTEXT:
             return ERROR_INVALID_HANDLE;
@@ -167,17 +168,16 @@ ChangeServiceConfig2A(SC_HANDLE hService,
 
     if (lpInfo == NULL) return TRUE;
 
-    /* Fill relevent field of the Info structure */
+    /* Fill relevant field of the Info structure */
     Info.dwInfoLevel = dwInfoLevel;
     switch (dwInfoLevel)
     {
         case SERVICE_CONFIG_DESCRIPTION:
-            Info.psd = (LPSERVICE_DESCRIPTIONA)&lpInfo;
-            Info.lpDescription = ((LPSERVICE_DESCRIPTIONA)lpInfo)->lpDescription; //HACK
+            Info.psd = lpInfo;
             break;
 
         case SERVICE_CONFIG_FAILURE_ACTIONS:
-            Info.psfa = (LPSERVICE_FAILURE_ACTIONSA)lpInfo;
+            Info.psfa = lpInfo;
             break;
 
         default:
@@ -225,16 +225,16 @@ ChangeServiceConfig2W(SC_HANDLE hService,
 
     if (lpInfo == NULL) return TRUE;
 
-    /* Fill relevent field of the Info structure */
+    /* Fill relevant field of the Info structure */
     Info.dwInfoLevel = dwInfoLevel;
     switch (dwInfoLevel)
     {
         case SERVICE_CONFIG_DESCRIPTION:
-            Info.psd = (LPSERVICE_DESCRIPTIONW)lpInfo;
+            Info.psd = lpInfo;
             break;
 
         case SERVICE_CONFIG_FAILURE_ACTIONS:
-            Info.psfa = (LPSERVICE_FAILURE_ACTIONSW)lpInfo;
+            Info.psfa = lpInfo;
             break;
 
         default:
@@ -288,6 +288,7 @@ ChangeServiceConfigA(SC_HANDLE hService,
     SIZE_T cchLength;
     LPCSTR lpStr;
     DWORD dwPasswordLength = 0;
+    LPWSTR lpPasswordW = NULL;
     LPBYTE lpEncryptedPassword = NULL;
 
     TRACE("ChangeServiceConfigA() called\n");
@@ -305,9 +306,29 @@ ChangeServiceConfigA(SC_HANDLE hService,
         dwDependenciesLength++;
     }
 
-    /* FIXME: Encrypt the password */
-    lpEncryptedPassword = (LPBYTE)lpPassword;
-    dwPasswordLength = (DWORD)(lpPassword ? (strlen(lpPassword) + 1) * sizeof(CHAR) : 0);
+    if (lpPassword != NULL)
+    {
+        /* Convert the password to unicode */
+        lpPasswordW = HeapAlloc(GetProcessHeap(),
+                                HEAP_ZERO_MEMORY,
+                                (strlen(lpPassword) + 1) * sizeof(WCHAR));
+        if (lpPasswordW == NULL)
+        {
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            return FALSE;
+        }
+
+        MultiByteToWideChar(CP_ACP,
+                            0,
+                            lpPassword,
+                            -1,
+                            lpPasswordW,
+                            (int)(strlen(lpPassword) + 1));
+
+        /* FIXME: Encrypt the password */
+        lpEncryptedPassword = (LPBYTE)lpPasswordW;
+        dwPasswordLength = (wcslen(lpPasswordW) + 1) * sizeof(WCHAR);
+    }
 
     RpcTryExcept
     {
@@ -331,6 +352,9 @@ ChangeServiceConfigA(SC_HANDLE hService,
         dwError = ScmRpcStatusToWinError(RpcExceptionCode());
     }
     RpcEndExcept;
+
+    if (lpPasswordW != NULL)
+        HeapFree(GetProcessHeap(), 0, lpPasswordW);
 
     if (dwError != ERROR_SUCCESS)
     {
@@ -384,9 +408,12 @@ ChangeServiceConfigW(SC_HANDLE hService,
         dwDependenciesLength *= sizeof(WCHAR);
     }
 
-    /* FIXME: Encrypt the password */
-    lpEncryptedPassword = (LPBYTE)lpPassword;
-    dwPasswordLength = (lpPassword ? (wcslen(lpPassword) + 1) * sizeof(WCHAR) : 0);
+    if (lpPassword != NULL)
+    {
+        /* FIXME: Encrypt the password */
+        lpEncryptedPassword = (LPBYTE)lpPassword;
+        dwPasswordLength = (wcslen(lpPassword) + 1) * sizeof(WCHAR);
+    }
 
     RpcTryExcept
     {
@@ -549,6 +576,7 @@ CreateServiceA(SC_HANDLE hSCManager,
     SIZE_T cchLength;
     LPCSTR lpStr;
     DWORD dwPasswordLength = 0;
+    LPWSTR lpPasswordW = NULL;
     LPBYTE lpEncryptedPassword = NULL;
 
     TRACE("CreateServiceA() called\n");
@@ -574,9 +602,29 @@ CreateServiceA(SC_HANDLE hSCManager,
         dwDependenciesLength++;
     }
 
-    /* FIXME: Encrypt the password */
-    lpEncryptedPassword = (LPBYTE)lpPassword;
-    dwPasswordLength = (DWORD)(lpPassword ? (strlen(lpPassword) + 1) * sizeof(CHAR) : 0);
+    if (lpPassword != NULL)
+    {
+        /* Convert the password to unicode */
+        lpPasswordW = HeapAlloc(GetProcessHeap(),
+                                HEAP_ZERO_MEMORY,
+                                (strlen(lpPassword) + 1) * sizeof(WCHAR));
+        if (lpPasswordW == NULL)
+        {
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            return FALSE;
+        }
+
+        MultiByteToWideChar(CP_ACP,
+                            0,
+                            lpPassword,
+                            -1,
+                            lpPasswordW,
+                            (int)(strlen(lpPassword) + 1));
+
+        /* FIXME: Encrypt the password */
+        lpEncryptedPassword = (LPBYTE)lpPasswordW;
+        dwPasswordLength = (wcslen(lpPasswordW) + 1) * sizeof(WCHAR);
+    }
 
     RpcTryExcept
     {
@@ -604,10 +652,13 @@ CreateServiceA(SC_HANDLE hSCManager,
     }
     RpcEndExcept;
 
+    if (lpPasswordW != NULL)
+        HeapFree(GetProcessHeap(), 0, lpPasswordW);
+
+    SetLastError(dwError);
     if (dwError != ERROR_SUCCESS)
     {
         TRACE("RCreateServiceA() failed (Error %lu)\n", dwError);
-        SetLastError(dwError);
         return NULL;
     }
 
@@ -667,9 +718,12 @@ CreateServiceW(SC_HANDLE hSCManager,
         dwDependenciesLength *= sizeof(WCHAR);
     }
 
-    /* FIXME: Encrypt the password */
-    lpEncryptedPassword = (LPBYTE)lpPassword;
-    dwPasswordLength = (DWORD)(lpPassword ? (wcslen(lpPassword) + 1) * sizeof(WCHAR) : 0);
+    if (lpPassword != NULL)
+    {
+        /* FIXME: Encrypt the password */
+        lpEncryptedPassword = (LPBYTE)lpPassword;
+        dwPasswordLength = (wcslen(lpPassword) + 1) * sizeof(WCHAR);
+    }
 
     RpcTryExcept
     {
@@ -697,10 +751,10 @@ CreateServiceW(SC_HANDLE hSCManager,
     }
     RpcEndExcept;
 
+    SetLastError(dwError);
     if (dwError != ERROR_SUCCESS)
     {
         TRACE("RCreateServiceW() failed (Error %lu)\n", dwError);
-        SetLastError(dwError);
         return NULL;
     }
 
@@ -1628,6 +1682,42 @@ GetServiceKeyNameW(SC_HANDLE hSCManager,
 
 
 /**********************************************************************
+ *  I_ScGetCurrentGroupStateW
+ *
+ * @implemented
+ */
+DWORD WINAPI
+I_ScGetCurrentGroupStateW(SC_HANDLE hSCManager,
+                          LPWSTR pszGroupName,
+                          LPDWORD pdwGroupState)
+{
+    DWORD dwError;
+
+    TRACE("I_ScGetCurrentGroupStateW() called\n");
+
+    RpcTryExcept
+    {
+        dwError = RI_ScGetCurrentGroupStateW((SC_RPC_HANDLE)hSCManager,
+                                             pszGroupName,
+                                             pdwGroupState);
+    }
+    RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+    {
+        dwError = ScmRpcStatusToWinError(RpcExceptionCode());
+    }
+    RpcEndExcept
+
+    if (dwError != ERROR_SUCCESS)
+    {
+        TRACE("RI_ScGetCurrentGroupStateW() failed (Error %lu)\n", dwError);
+        SetLastError(dwError);
+    }
+
+    return dwError;
+}
+
+
+/**********************************************************************
  *  LockServiceDatabase
  *
  * @implemented
@@ -1817,10 +1907,10 @@ OpenServiceA(SC_HANDLE hSCManager,
     }
     RpcEndExcept;
 
+    SetLastError(dwError);
     if (dwError != ERROR_SUCCESS)
     {
         TRACE("ROpenServiceA() failed (Error %lu)\n", dwError);
-        SetLastError(dwError);
         return NULL;
     }
 
@@ -1866,10 +1956,10 @@ OpenServiceW(SC_HANDLE hSCManager,
     }
     RpcEndExcept;
 
+    SetLastError(dwError);
     if (dwError != ERROR_SUCCESS)
     {
         TRACE("ROpenServiceW() failed (Error %lu)\n", dwError);
-        SetLastError(dwError);
         return NULL;
     }
 
@@ -2708,6 +2798,9 @@ UnlockServiceDatabase(SC_LOCK ScLock)
         dwError = ScmRpcStatusToWinError(RpcExceptionCode());
     }
     RpcEndExcept;
+
+    if (dwError == ERROR_INVALID_HANDLE)
+        dwError = ERROR_INVALID_SERVICE_LOCK;
 
     if (dwError != ERROR_SUCCESS)
     {

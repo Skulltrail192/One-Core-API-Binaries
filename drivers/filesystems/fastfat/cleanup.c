@@ -24,6 +24,8 @@ VfatCleanupFile(
     PVFAT_IRP_CONTEXT IrpContext)
 {
     PVFATFCB pFcb;
+    PVFATCCB pCcb;
+    PDEVICE_EXTENSION DeviceExt = IrpContext->DeviceExt;
     PFILE_OBJECT FileObject = IrpContext->FileObject;
 
     DPRINT("VfatCleanupFile(DeviceExt %p, FileObject %p)\n",
@@ -34,7 +36,7 @@ VfatCleanupFile(
     if (!pFcb)
         return STATUS_SUCCESS;
 
-    if (pFcb->Flags & FCB_IS_VOLUME)
+    if (BooleanFlagOn(pFcb->Flags, FCB_IS_VOLUME))
     {
         pFcb->OpenHandleCount--;
 
@@ -46,15 +48,21 @@ VfatCleanupFile(
     else
     {
         if(!ExAcquireResourceExclusiveLite(&pFcb->MainResource,
-                                           (BOOLEAN)(IrpContext->Flags & IRPCONTEXT_CANWAIT)))
+                                           BooleanFlagOn(IrpContext->Flags, IRPCONTEXT_CANWAIT)))
         {
             return STATUS_PENDING;
         }
         if(!ExAcquireResourceExclusiveLite(&pFcb->PagingIoResource,
-                                           (BOOLEAN)(IrpContext->Flags & IRPCONTEXT_CANWAIT)))
+                                           BooleanFlagOn(IrpContext->Flags, IRPCONTEXT_CANWAIT)))
         {
             ExReleaseResourceLite(&pFcb->MainResource);
             return STATUS_PENDING;
+        }
+
+        pCcb = FileObject->FsContext2;
+        if (BooleanFlagOn(pCcb->Flags, CCB_DELETE_ON_CLOSE))
+        {
+            pFcb->Flags |= FCB_DELETE_PENDING;
         }
 
         /* Notify about the cleanup */
@@ -63,8 +71,9 @@ VfatCleanupFile(
                            FileObject->FsContext2);
 
         pFcb->OpenHandleCount--;
+        DeviceExt->OpenHandleCount--;
 
-        if (!(*pFcb->Attributes & FILE_ATTRIBUTE_DIRECTORY) &&
+        if (!vfatFCBIsDirectory(pFcb) &&
             FsRtlAreThereCurrentFileLocks(&pFcb->FileLock))
         {
             /* remove all locks this process have on this file */
@@ -74,28 +83,55 @@ VfatCleanupFile(
                                NULL);
         }
 
-        if (pFcb->Flags & FCB_IS_DIRTY)
+        if (BooleanFlagOn(pFcb->Flags, FCB_IS_DIRTY))
         {
-            VfatUpdateEntry (pFcb);
+            VfatUpdateEntry (pFcb, vfatVolumeIsFatX(DeviceExt));
         }
 
-        if (pFcb->Flags & FCB_DELETE_PENDING &&
+        if (BooleanFlagOn(pFcb->Flags, FCB_DELETE_PENDING) &&
             pFcb->OpenHandleCount == 0)
         {
-            PFILE_OBJECT tmpFileObject;
-            tmpFileObject = pFcb->FileObject;
-            if (tmpFileObject != NULL)
+            if (vfatFCBIsDirectory(pFcb) &&
+                !VfatIsDirectoryEmpty(DeviceExt, pFcb))
             {
-                pFcb->FileObject = NULL;
-                CcUninitializeCacheMap(tmpFileObject, NULL, NULL);
-                ObDereferenceObject(tmpFileObject);
+                pFcb->Flags &= ~FCB_DELETE_PENDING;
             }
+            else
+            {
+                PFILE_OBJECT tmpFileObject;
+                tmpFileObject = pFcb->FileObject;
+                if (tmpFileObject != NULL)
+                {
+                    pFcb->FileObject = NULL;
+                    CcUninitializeCacheMap(tmpFileObject, NULL, NULL);
+                    ObDereferenceObject(tmpFileObject);
+                }
 
-            CcPurgeCacheSection(FileObject->SectionObjectPointer, NULL, 0, FALSE);
+                pFcb->RFCB.ValidDataLength.QuadPart = 0;
+                pFcb->RFCB.FileSize.QuadPart = 0;
+                pFcb->RFCB.AllocationSize.QuadPart = 0;
+            }
         }
 
         /* Uninitialize the cache (should be done even if caching was never initialized) */
         CcUninitializeCacheMap(FileObject, &pFcb->RFCB.FileSize, NULL);
+
+        if (BooleanFlagOn(pFcb->Flags, FCB_DELETE_PENDING) &&
+            pFcb->OpenHandleCount == 0)
+        {
+            VfatDelEntry(DeviceExt, pFcb, NULL);
+
+            FsRtlNotifyFullReportChange(DeviceExt->NotifySync,
+                                        &(DeviceExt->NotifyList),
+                                        (PSTRING)&pFcb->PathNameU,
+                                        pFcb->PathNameU.Length - pFcb->LongNameU.Length,
+                                        NULL,
+                                        NULL,
+                                        vfatFCBIsDirectory(pFcb) ?
+                                        FILE_NOTIFY_CHANGE_DIR_NAME : FILE_NOTIFY_CHANGE_FILE_NAME,
+                                        FILE_ACTION_REMOVED,
+                                        NULL);
+        }
 
         if (pFcb->OpenHandleCount != 0)
         {
@@ -107,6 +143,13 @@ VfatCleanupFile(
         ExReleaseResourceLite(&pFcb->PagingIoResource);
         ExReleaseResourceLite(&pFcb->MainResource);
     }
+
+#ifdef ENABLE_SWAPOUT
+    if (BooleanFlagOn(DeviceExt->Flags, VCB_DISMOUNT_PENDING))
+    {
+        VfatCheckForDismount(DeviceExt, FALSE);
+    }
+#endif
 
     return STATUS_SUCCESS;
 }
@@ -124,14 +167,14 @@ VfatCleanup(
 
     if (IrpContext->DeviceObject == VfatGlobalData->DeviceObject)
     {
-        Status = STATUS_SUCCESS;
-        goto ByeBye;
+        IrpContext->Irp->IoStatus.Information = 0;
+        return STATUS_SUCCESS;
     }
 
     if (!ExAcquireResourceExclusiveLite(&IrpContext->DeviceExt->DirResource,
-                                        (BOOLEAN)(IrpContext->Flags & IRPCONTEXT_CANWAIT)))
+                                        BooleanFlagOn(IrpContext->Flags, IRPCONTEXT_CANWAIT)))
     {
-        return VfatQueueRequest(IrpContext);
+        return VfatMarkIrpContextForQueue(IrpContext);
     }
 
     Status = VfatCleanupFile(IrpContext);
@@ -140,15 +183,10 @@ VfatCleanup(
 
     if (Status == STATUS_PENDING)
     {
-        return VfatQueueRequest(IrpContext);
+        return VfatMarkIrpContextForQueue(IrpContext);
     }
 
-ByeBye:
-    IrpContext->Irp->IoStatus.Status = Status;
     IrpContext->Irp->IoStatus.Information = 0;
-
-    IoCompleteRequest(IrpContext->Irp, IO_NO_INCREMENT);
-    VfatFreeIrpContext(IrpContext);
     return Status;
 }
 

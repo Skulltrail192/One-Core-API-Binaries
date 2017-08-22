@@ -40,13 +40,13 @@ EX_PUSH_LOCK CmpHiveListHeadLock, CmpLoadHiveLock;
 
 HIVE_LIST_ENTRY CmpMachineHiveList[] =
 {
-    { L"HARDWARE", L"MACHINE\\", NULL, HIVE_VOLATILE    , 0                         ,   NULL,   FALSE,  FALSE,  FALSE},
-    { L"SECURITY", L"MACHINE\\", NULL, 0                , 0                         ,   NULL,   FALSE,  FALSE,  FALSE},
-    { L"SOFTWARE", L"MACHINE\\", NULL, 0                , 0                         ,   NULL,   FALSE,  FALSE,  FALSE},
-    { L"SYSTEM",   L"MACHINE\\", NULL, 0                , 0                         ,   NULL,   FALSE,  FALSE,  FALSE},
-    { L"DEFAULT",  L"USER\\.DEFAULT", NULL, 0           , 0   ,   NULL,   FALSE,  FALSE,  FALSE},
-    { L"SAM",      L"MACHINE\\", NULL, HIVE_NOLAZYFLUSH , 0                         ,   NULL,   FALSE,  FALSE,  FALSE},
-    { NULL,        NULL,         0, 0                   , 0                         ,   NULL,   FALSE,  FALSE,  FALSE}
+    { L"HARDWARE", L"MACHINE\\", NULL, HIVE_VOLATILE    , 0 ,   NULL,   FALSE,  FALSE,  FALSE},
+    { L"SECURITY", L"MACHINE\\", NULL, 0                , 0 ,   NULL,   FALSE,  FALSE,  FALSE},
+    { L"SOFTWARE", L"MACHINE\\", NULL, 0                , 0 ,   NULL,   FALSE,  FALSE,  FALSE},
+    { L"SYSTEM",   L"MACHINE\\", NULL, 0                , 0 ,   NULL,   FALSE,  FALSE,  FALSE},
+    { L"DEFAULT",  L"USER\\.DEFAULT", NULL, 0           , 0 ,   NULL,   FALSE,  FALSE,  FALSE},
+    { L"SAM",      L"MACHINE\\", NULL, HIVE_NOLAZYFLUSH , 0 ,   NULL,   FALSE,  FALSE,  FALSE},
+    { NULL,        NULL,         0, 0                   , 0 ,   NULL,   FALSE,  FALSE,  FALSE}
 };
 
 UNICODE_STRING CmSymbolicLinkValueName =
@@ -341,7 +341,7 @@ INIT_FUNCTION CM_SYSTEM_CONTROL_VECTOR CmControlVector[] =
     {
         L"Session Manager\\Memory Management",
         L"LargeStackSize",
-        &DummyData,
+        &MmLargeStackSize,
         NULL,
         NULL
     },
@@ -699,6 +699,14 @@ INIT_FUNCTION CM_SYSTEM_CONTROL_VECTOR CmControlVector[] =
     },
 
     {
+        L"Windows",
+        L"CSDReleaseType",
+        &CmNtCSDReleaseType,
+        NULL,
+        NULL
+    },
+
+    {
         L"Nls\\Language",
         L"Default",
         CmDefaultLanguageId,
@@ -757,7 +765,7 @@ INIT_FUNCTION CM_SYSTEM_CONTROL_VECTOR CmControlVector[] =
     {
         L"PriorityControl",
         L"Win32PrioritySeparation",
-        &DummyData,
+        &PsRawPrioritySeparation,
         NULL,
         NULL
     },

@@ -54,11 +54,9 @@ public:
     VOID FreeDescriptor(IN PUHCI_TRANSFER_DESCRIPTOR Descriptor);
     NTSTATUS BuildTransferDescriptorChain(IN PVOID TransferBuffer, IN ULONG TransferBufferLength, IN UCHAR PidCode, IN UCHAR InitialDataToggle, OUT PUHCI_TRANSFER_DESCRIPTOR * OutFirstDescriptor, OUT PUHCI_TRANSFER_DESCRIPTOR * OutLastDescriptor, OUT PULONG OutTransferBufferOffset, OUT PUCHAR OutDataToggle);
 
-
-
     // constructor / destructor
-    CUSBRequest(IUnknown *OuterUnknown){}
-    virtual ~CUSBRequest(){}
+    CUSBRequest(IUnknown *OuterUnknown);
+    virtual ~CUSBRequest();
 
 protected:
     LONG m_Ref;
@@ -134,6 +132,22 @@ protected:
     PVOID m_Base;
 
 };
+
+//----------------------------------------------------------------------------------------
+CUSBRequest::CUSBRequest(IUnknown *OuterUnknown) :
+    m_CompletionEvent(NULL)
+{
+    UNREFERENCED_PARAMETER(OuterUnknown);
+}
+
+//----------------------------------------------------------------------------------------
+CUSBRequest::~CUSBRequest()
+{
+    if (m_CompletionEvent != NULL)
+    {
+        ExFreePoolWithTag(m_CompletionEvent, TAG_USBUHCI);
+    }
+}
 
 //----------------------------------------------------------------------------------------
 NTSTATUS
@@ -1008,7 +1022,7 @@ CUSBRequest::BuildBulkInterruptTransferDescriptor(
     Status = BuildQueueHead(&QueueHead);
     if (!NT_SUCCESS(Status))
     {
-        // failed to allocate descriptor
+        // failed to allocate queue head
         DPRINT1("[UHCI] Failed to create queue head\n");
         return Status;
     }
@@ -1040,6 +1054,15 @@ CUSBRequest::BuildBulkInterruptTransferDescriptor(
                                           &LastDescriptor,
                                           &ChainDescriptorLength,
                                            NULL);
+    if (!NT_SUCCESS(Status))
+    {
+        //
+        // failed to allocate descriptor
+        //
+        DPRINT1("[UHCI] Failed to create descriptor chain\n");
+        m_DmaManager->Release(QueueHead, sizeof(UHCI_QUEUE_HEAD));
+        return Status;
+    }
 
     // adjust buffer offset
     m_TransferBufferLengthCompleted += ChainDescriptorLength;
@@ -1076,7 +1099,7 @@ CUSBRequest::BuildControlTransferDescriptor(
     if (!NT_SUCCESS(Status))
     {
         //
-        // failed to allocate descriptor
+        // failed to allocate queue head
         //
         DPRINT1("[UHCI] Failed to create queue head\n");
         return Status;

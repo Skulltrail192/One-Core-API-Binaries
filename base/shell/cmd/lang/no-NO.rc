@@ -64,7 +64,7 @@ ERRORLEVEL settes til nummer for knappen brukeren velger.\n"
     STRING_CMD_HELP2 "\nFunksjoner tilgjengelig:"
     STRING_CMD_HELP3 "  [aliaser]"
     STRING_CMD_HELP4 "  [historikk]"
-    STRING_CMD_HELP5 "  [unix filnavnfullføring]"
+    STRING_CMD_HELP5 "  [Bash filnavnfullføring]"
     STRING_CMD_HELP6 "  [mappeliste]"
     STRING_CMD_HELP7 "  [omadressering og datakanaler]"
     STRING_CMD_HELP8 "Start et nytt eksempel av ReactOS kommandotolk.\n\n\
@@ -143,7 +143,7 @@ DELAY [/m]n\n\n\
   /m          spesifiserer at n er mikrosekunder\n\
               ellers er n sekunder\n"
     STRING_DIR_HELP1 "DIR [stasjon:][mappe][filnavn] [/A[[:]attributter]] [/B] [/C] [/D] [/L] [/N]\n\
-  [/O[[:]sortering]] [/P] [/Q] [/S] [/T[[:]tidsfelt]] [/W] [/X] [/4]\n\n\
+  [/O[[:]sortering]] [/P] [/Q] [/R] [/S] [/T[[:]tidsfelt]] [/W] [/X] [/4]\n\n\
   [stasjon:][mappe][filnavn]\n\
               Spesifisere stasjon, mappe, og/eller filer som skal listes.\n\n\
   /A          Vis filer ved å spesifisere attributter.\n\
@@ -162,6 +162,7 @@ DELAY [/m]n\n\n\
                G  Gruppere mapper først    -  Prefiks for å reversere orden\n\
   /P          Pause etter hvert hele skjermbilde.\n\
   /Q          Viser hvem som eier filen.\n\
+  /R          Displays alternate data streams of the files.\n\
   /S          Viser alle filer i angitt mappe og alle undermapper.\n\
   /T          Styrer hvilket tidsfelt som vises eller blir brukt for sortering\n\
   timefelt    C  Opprettet \n\
@@ -252,15 +253,15 @@ MKLINK [/D | /H | /J] linkname target\n\n\
   /H  Create a hard link.\n\
   /J  Create a directory junction.\n\n\
 If neither /H or /J is specified, a symbolic link is created."
-    STRING_MEMMORY_HELP1 "Vis mengde av system minne.\n\nMEMORY"
-    STRING_MEMMORY_HELP2 "\n  %12s%% benyttet minne.\n\n\
+    STRING_MEMORY_HELP1 "Vis mengde av system minne.\n\nMEMORY"
+    STRING_MEMORY_HELP2 "\n  %12s%% benyttet minne.\n\n\
   %13s byte totalt fysisk RAM.\n\
   %13s byte tilgjengelig fysisk RAM.\n\n\
   %13s byte total sidevekslingsfil.\n\
   %13s byte tilgjengelig sidevekslingsfil.\n\n\
   %13s byte totalt virtuell minne.\n\
   %13s byte tilgjengelig virtuell minne.\n"
-    STRING_MISC_HELP1 "Trykk en tast for å fortsette...\n"
+    STRING_MISC_HELP1 "Trykk en tast for å fortsette..."
     STRING_MOVE_HELP1 "Overskrive %s (Ja/Nei/Alle)? "
     STRING_MOVE_HELP2 "Flytt filer, og gi nytt navn på filer og mapper.\n\n\
 For å flytte en eller flere filer:\n\
@@ -374,9 +375,18 @@ SET [variabel[=][streng]]\n\n\
   string    Spesifisere en serie av tegn til bestemme variabel.\n\n\
 Skriv SET uten parameter for å vise gjeldende miljøvariabler.\n"
     STRING_START_HELP1 "Start en kommando.\n\n\
-START kommando\n\n\
-  kommando     Spesifisere kommando for å kjøre.\n\n\
-NB; for øyeblikket blir alle kommandoer startet asynkront.\n"
+START [""title""] [/D path] [/I] [/B] [/MIN] [/MAX] [/WAIT]\n\
+      [command/program] [parameters]\n\n\
+  ""title""     Title of the window.\n\
+  path        Specifies the startup directory.\n\
+  I           Uses the original environment given to cmd.exe,\n\
+              instead of the current environment.\n\
+  B           Starts the command or program without creating any window.\n\
+  MIN         Starts with a minimized window.\n\
+  MAX         Starts with a maximized window.\n\
+  WAIT        Starts the command or program and waits for its termination.\n\
+  kommando     Spesifisere kommando for å kjøre.\n\
+  parameters  Specifies the parameters to be given to the command or program.\n"
     STRING_TITLE_HELP "Velg vindustittel for kommandotolkvindu.\n\n\
 TITLE [streng]\n\n\
 streng       Spesifisere tittel for kommandotolkvindu.\n"
@@ -411,7 +421,7 @@ VERIFY [ON | OFF]\n\n\
 Skriv VERIFY uten parametre for å vise gjeldende VERIFY innstillinger.\n"
     STRING_VERIFY_HELP2 "VERIFY er %s.\n"
     STRING_VERIFY_HELP3 "Må spesifisere ON eller OFF."
-    STRING_VERSION_HELP1 "Vis Reactos versjonen\n\n\
+    STRING_VERSION_HELP1 "Vis ReactOS versjonen\n\n\
 VER [/C][/R][/W]\n\n\
   /C  Vis anerkjennelse.\n\
   /R  Vis videreformidlingsinformasjon.\n\
@@ -494,7 +504,6 @@ tittel        ny tittel\n"
     STRING_MOVE_ERROR1 "[OK]\n"
     STRING_MOVE_ERROR2 "[Feil]\n"
     STRING_REN_ERROR1 "MoveFile() mislykkes. Feil: %lu\n"
-    STRING_START_ERROR1 "Ingen satsvis støtte for øyeblikket!"
     STRING_TIME_ERROR1 "Ugyldig tid."
     STRING_TYPE_ERROR1 "Ugyldig alternativ '/%s'\n"
     STRING_WINDOW_ERROR1 "vinduet ble ikke funnet"
@@ -519,9 +528,11 @@ tittel        ny tittel\n"
     STRING_REPLACE_ERROR5 "Tilgang nektet - %s\n"
     STRING_REPLACE_ERROR6 "Ingen filer ble funnet - %s\n"
     STRING_REPLACE_ERROR7 "Extended Error 32\n"
-    STRING_REACTOS_VERSION "ReactOS Operativsystem [Versjon %s-%s]\n"
+    STRING_CMD_INFOLINE "  ReactOS Command Prompt                                      Type HELP = Help  "
+    STRING_REACTOS_VERSION "ReactOS Operativsystem [Versjon %s %s]\n"
     STRING_CMD_SHELLINFO "\nReactOS Kommandotolk\nVersjon %s %s"
-    STRING_VERSION_RUNVER " kjører på %s"
+    STRING_VERSION_RUNNING_ON "Kjører på: "
+    STRING_VERSION_RUNVER "%s [Version %d.%d.%d] %s"
     STRING_COPY_FILE "        %d file(r) kopiert\n"
     STRING_DELETE_WIPE "slettet"
     STRING_FOR_ERROR "ugyldig variabel spesifikasjon."

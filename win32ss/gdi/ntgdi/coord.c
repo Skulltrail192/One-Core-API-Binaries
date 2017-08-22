@@ -2,7 +2,7 @@
  * COPYRIGHT:        GNU GPL, See COPYING in the top level directory
  * PROJECT:          ReactOS kernel
  * PURPOSE:          Coordinate systems
- * FILE:             subsystems/win32/win32k/objects/coord.c
+ * FILE:             win32ss/gdi/ntgdi/coord.c
  * PROGRAMER:        Timo Kreuzer (timo.kreuzer@rectos.org)
  */
 
@@ -517,7 +517,13 @@ NtGdiModifyWorldTransform(
     /* The xform is permitted to be NULL for MWT_IDENTITY.
      * However, if it is not NULL, then it must be valid even
      * though it is not used. */
-    if ((pxformUnsafe != NULL) || (dwMode != MWT_IDENTITY))
+    if ((dwMode != MWT_IDENTITY) && (pxformUnsafe == NULL))
+    {
+        DC_UnlockDc(pdc);
+        return FALSE;
+    }
+
+    if (pxformUnsafe != NULL)
     {
         _SEH2_TRY
         {
@@ -888,6 +894,38 @@ IntGdiSetMapMode(
     return iPrevMapMode;
 }
 
+BOOL
+FASTCALL
+GreSetViewportOrgEx(
+    HDC hDC,
+    int X,
+    int Y,
+    LPPOINT Point)
+{
+    PDC dc;
+    PDC_ATTR pdcattr;
+
+    dc = DC_LockDc(hDC);
+    if (!dc)
+    {
+        EngSetLastError(ERROR_INVALID_HANDLE);
+        return FALSE;
+    }
+    pdcattr = dc->pdcattr;
+
+    if (Point)
+    {
+       Point->x = pdcattr->ptlViewportOrg.x;
+       Point->y = pdcattr->ptlViewportOrg.y;
+    }
+
+    pdcattr->ptlViewportOrg.x = X;
+    pdcattr->ptlViewportOrg.y = Y;
+    pdcattr->flXform |= PAGE_XLATE_CHANGED;
+
+    DC_UnlockDc(dc);
+    return TRUE;
+}
 
 BOOL
 APIENTRY
@@ -1233,14 +1271,13 @@ DC_vGetAspectRatioFilter(PDC pDC, LPSIZE AspectRatio)
 }
 
 BOOL APIENTRY
-NtGdiGetDCPoint(
+GreGetDCPoint(
     HDC hDC,
     UINT iPoint,
     PPOINTL Point)
 {
     BOOL Ret = TRUE;
     DC *pdc;
-    POINTL SafePoint;
     SIZE Size;
     PSIZEL pszlViewportExt;
 
@@ -1261,31 +1298,31 @@ NtGdiGetDCPoint(
     {
         case GdiGetViewPortExt:
             pszlViewportExt = DC_pszlViewportExt(pdc);
-            SafePoint.x = pszlViewportExt->cx;
-            SafePoint.y = pszlViewportExt->cy;
+            Point->x = pszlViewportExt->cx;
+            Point->y = pszlViewportExt->cy;
             break;
 
         case GdiGetWindowExt:
-            SafePoint.x = pdc->pdcattr->szlWindowExt.cx;
-            SafePoint.y = pdc->pdcattr->szlWindowExt.cy;
+            Point->x = pdc->pdcattr->szlWindowExt.cx;
+            Point->y = pdc->pdcattr->szlWindowExt.cy;
             break;
 
         case GdiGetViewPortOrg:
-            SafePoint = pdc->pdcattr->ptlViewportOrg;
+            *Point = pdc->pdcattr->ptlViewportOrg;
             break;
 
         case GdiGetWindowOrg:
-            SafePoint = pdc->pdcattr->ptlWindowOrg;
+            *Point = pdc->pdcattr->ptlWindowOrg;
             break;
 
         case GdiGetDCOrg:
-            SafePoint = pdc->ptlDCOrig;
+            *Point = pdc->ptlDCOrig;
             break;
 
         case GdiGetAspectRatioFilter:
             DC_vGetAspectRatioFilter(pdc, &Size);
-            SafePoint.x = Size.cx;
-            SafePoint.y = Size.cy;
+            Point->x = Size.cx;
+            Point->y = Size.cy;
             break;
 
         default:
@@ -1294,6 +1331,94 @@ NtGdiGetDCPoint(
             break;
     }
 
+    DC_UnlockDc(pdc);
+    return Ret;
+}
+
+BOOL
+WINAPI
+GreSetDCOrg(
+    _In_ HDC hdc,
+    _In_ LONG x,
+    _In_ LONG y,
+    _In_opt_ PRECTL Rect)
+{
+    PDC dc;
+
+    dc = DC_LockDc(hdc);
+    if (!dc) return FALSE;
+
+    /* Set DC Origin */
+    dc->ptlDCOrig.x = x;
+    dc->ptlDCOrig.y = y;
+
+    /* Recalculate Fill Origin */
+    dc->ptlFillOrigin.x = dc->dclevel.ptlBrushOrigin.x + x;
+    dc->ptlFillOrigin.y = dc->dclevel.ptlBrushOrigin.y + y;
+
+    /* Set DC Window Rectangle */
+    if (Rect)
+        dc->erclWindow = *Rect;
+
+    DC_UnlockDc(dc);
+    return TRUE;
+}
+
+BOOL
+WINAPI
+GreGetDCOrgEx(
+    _In_ HDC hdc,
+    _Out_ PPOINTL Point,
+    _Out_ PRECTL Rect)
+{
+    PDC dc;
+
+    dc = DC_LockDc(hdc);
+    if (!dc) return FALSE;
+
+    /* Retrieve DC Window Rectangle without a check */
+    *Rect = dc->erclWindow;
+
+    DC_UnlockDc(dc);
+
+    /* Use default call for DC Origin and parameter checking */
+    return GreGetDCPoint( hdc, GdiGetDCOrg, Point);
+}
+
+BOOL
+WINAPI
+GreGetWindowExtEx(
+    _In_ HDC hdc,
+    _Out_ LPSIZE lpSize)
+{
+    return GreGetDCPoint(hdc, GdiGetWindowExt, (PPOINTL)lpSize);
+}
+
+BOOL
+WINAPI
+GreGetViewportExtEx(
+    _In_ HDC hdc,
+    _Out_ LPSIZE lpSize)
+{
+    return GreGetDCPoint(hdc, GdiGetViewPortExt, (PPOINTL)lpSize);
+}
+
+BOOL APIENTRY
+NtGdiGetDCPoint(
+    HDC hDC,
+    UINT iPoint,
+    PPOINTL Point)
+{
+    BOOL Ret;
+    POINTL SafePoint;
+
+    if (!Point)
+    {
+        EngSetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    Ret = GreGetDCPoint(hDC, iPoint, &SafePoint);
     if (Ret)
     {
         _SEH2_TRY
@@ -1308,7 +1433,6 @@ NtGdiGetDCPoint(
         _SEH2_END;
     }
 
-    DC_UnlockDc(pdc);
     return Ret;
 }
 
