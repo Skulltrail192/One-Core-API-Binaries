@@ -37,7 +37,7 @@ LdrInitialize(
     if (dwReason == DLL_PROCESS_ATTACH)
     {
 		//RtlInitializeCriticalSection(&TIME_tz_section);
-        //LdrDisableThreadCalloutsForDll(hDll);
+        LdrDisableThreadCalloutsForDll(hDll);
         RtlpInitializeKeyedEvent();
     }
     else if (dwReason == DLL_PROCESS_DETACH)

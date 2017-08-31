@@ -1,5 +1,5 @@
 
-spec2def(icmp.dll icmp.spec)
+spec2def(icmp.dll icmp.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
     icmp.rc

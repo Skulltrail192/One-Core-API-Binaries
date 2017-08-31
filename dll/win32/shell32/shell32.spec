@@ -464,3 +464,11 @@
 754 stub -noname SHLimitInputEditWithFlags
 755 stdcall -noname PathIsEqualOrSubFolder(wstr wstr)
 756 stub -noname DeleteFileThumbnail
+
+@ stdcall SHGetIDListFromObject(ptr ptr)
+@ stdcall SHCreateShellItemArray(ptr ptr long ptr ptr)
+@ stdcall SHCreateShellItemArrayFromShellItem(ptr long ptr)
+@ stub SHGetKnownFolderPath
+@ stub SHSetKnownFolderPath
+@ stub GetCurrentProcessExplicitAppUserModelID
+@ stub SetCurrentProcessExplicitAppUserModelID

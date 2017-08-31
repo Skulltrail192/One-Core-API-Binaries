@@ -1453,6 +1453,18 @@ typedef struct _FILE_ID_DESCRIPTOR {
     } DUMMYUNIONNAME;
 } FILE_ID_DESCRIPTOR, *LPFILE_ID_DESCRIPTOR;
 
+typedef enum
+{
+     INVALID_PATH = 0,
+     UNC_PATH,              /* "//foo" */
+     ABSOLUTE_DRIVE_PATH,   /* "c:/foo" */
+     RELATIVE_DRIVE_PATH,   /* "c:foo" */
+     ABSOLUTE_PATH,         /* "/foo" */
+     RELATIVE_PATH,         /* "foo" */
+     DEVICE_PATH,           /* "//./foo" */
+     UNC_DOT_PATH           /* "//." */
+} DOS_PATHNAME_TYPE;
+
 // typedef struct _TIME_DYNAMIC_ZONE_INFORMATION
 // {
      // LONG Bias;

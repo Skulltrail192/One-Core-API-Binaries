@@ -24,6 +24,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+#include "wine/port.h"
+
+#include <stdio.h>
+#ifdef HAVE_FLOAT_H
+# include <float.h>
+#endif
+
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
@@ -374,10 +382,8 @@ void device_clear_render_targets(struct wined3d_device *device, UINT rt_count, c
         }
 
         gl_info->gl_ops.gl.p_glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE));
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1));
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2));
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3));
+        for (i = 0; i < MAX_RENDER_TARGETS; ++i)
+            context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITE(i)));
         gl_info->gl_ops.gl.p_glClearColor(color->r, color->g, color->b, color->a);
         checkGLcall("glClearColor");
         clear_mask = clear_mask | GL_COLOR_BUFFER_BIT;
@@ -1182,6 +1188,15 @@ HRESULT CDECL wined3d_device_init_gdi(struct wined3d_device *device,
         goto err_out;
     }
     device->swapchains[0] = swapchain;
+
+    if (!(device->blitter = wined3d_cpu_blitter_create()))
+    {
+        ERR("Failed to create CPU blitter.\n");
+        HeapFree(GetProcessHeap(), 0, device->swapchains);
+        device->swapchain_count = 0;
+        goto err_out;
+    }
+
     return WINED3D_OK;
 
 err_out:
@@ -1272,6 +1287,8 @@ HRESULT CDECL wined3d_device_uninit_3d(struct wined3d_device *device)
 HRESULT CDECL wined3d_device_uninit_gdi(struct wined3d_device *device)
 {
     unsigned int i;
+
+    device->blitter->ops->blitter_destroy(device->blitter, NULL);
 
     for (i = 0; i < device->swapchain_count; ++i)
     {
@@ -2985,7 +3002,8 @@ struct wined3d_sampler * CDECL wined3d_device_get_cs_sampler(const struct wined3
 }
 
 static void wined3d_device_set_pipeline_unordered_access_view(struct wined3d_device *device,
-        enum wined3d_pipeline pipeline, unsigned int idx, struct wined3d_unordered_access_view *uav)
+        enum wined3d_pipeline pipeline, unsigned int idx, struct wined3d_unordered_access_view *uav,
+        unsigned int initial_count)
 {
     struct wined3d_unordered_access_view *prev;
 
@@ -2996,14 +3014,14 @@ static void wined3d_device_set_pipeline_unordered_access_view(struct wined3d_dev
     }
 
     prev = device->update_state->unordered_access_view[pipeline][idx];
-    if (uav == prev)
+    if (uav == prev && initial_count == ~0u)
         return;
 
     if (uav)
         wined3d_unordered_access_view_incref(uav);
     device->update_state->unordered_access_view[pipeline][idx] = uav;
     if (!device->recording)
-        wined3d_cs_emit_set_unordered_access_view(device->cs, pipeline, idx, uav);
+        wined3d_cs_emit_set_unordered_access_view(device->cs, pipeline, idx, uav, initial_count);
     if (prev)
         wined3d_unordered_access_view_decref(prev);
 }
@@ -3021,11 +3039,11 @@ static struct wined3d_unordered_access_view *wined3d_device_get_pipeline_unorder
 }
 
 void CDECL wined3d_device_set_cs_uav(struct wined3d_device *device, unsigned int idx,
-        struct wined3d_unordered_access_view *uav)
+        struct wined3d_unordered_access_view *uav, unsigned int initial_count)
 {
-    TRACE("device %p, idx %u, uav %p.\n", device, idx, uav);
+    TRACE("device %p, idx %u, uav %p, initial_count %#x.\n", device, idx, uav, initial_count);
 
-    wined3d_device_set_pipeline_unordered_access_view(device, WINED3D_PIPELINE_COMPUTE, idx, uav);
+    wined3d_device_set_pipeline_unordered_access_view(device, WINED3D_PIPELINE_COMPUTE, idx, uav, initial_count);
 }
 
 struct wined3d_unordered_access_view * CDECL wined3d_device_get_cs_uav(const struct wined3d_device *device,
@@ -3037,11 +3055,11 @@ struct wined3d_unordered_access_view * CDECL wined3d_device_get_cs_uav(const str
 }
 
 void CDECL wined3d_device_set_unordered_access_view(struct wined3d_device *device,
-        unsigned int idx, struct wined3d_unordered_access_view *uav)
+        unsigned int idx, struct wined3d_unordered_access_view *uav, unsigned int initial_count)
 {
-    TRACE("device %p, idx %u, uav %p.\n", device, idx, uav);
+    TRACE("device %p, idx %u, uav %p, initial_count %#x.\n", device, idx, uav, initial_count);
 
-    wined3d_device_set_pipeline_unordered_access_view(device, WINED3D_PIPELINE_GRAPHICS, idx, uav);
+    wined3d_device_set_pipeline_unordered_access_view(device, WINED3D_PIPELINE_GRAPHICS, idx, uav, initial_count);
 }
 
 struct wined3d_unordered_access_view * CDECL wined3d_device_get_unordered_access_view(
@@ -3510,82 +3528,6 @@ struct wined3d_texture * CDECL wined3d_device_get_texture(const struct wined3d_d
     return device->state.textures[stage];
 }
 
-void CDECL wined3d_check_device_format_support(struct wined3d_device *device,
-        enum wined3d_format_id check_format_id, UINT *support)
-{
-    const struct wined3d_format *format = wined3d_get_format(&device->adapter->gl_info, check_format_id, 0);
-    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
-
-    UINT support_flags = 0;
-
-    if (format->flags[WINED3D_GL_RES_TYPE_BUFFER] & WINED3DFMT_FLAG_TEXTURE)
-    {
-        support_flags |= WINED3D_FORMAT_SUPPORT_BUFFER;
-        support_flags |= WINED3D_FORMAT_SUPPORT_IA_VERTEX_BUFFER;
-        support_flags |= WINED3D_FORMAT_SUPPORT_IA_INDEX_BUFFER;
-        support_flags |= WINED3D_FORMAT_SUPPORT_SO_BUFFER;
-    }
-
-    if (format->flags[WINED3D_GL_RES_TYPE_TEX_1D] & WINED3DFMT_FLAG_TEXTURE)
-        support_flags |= WINED3D_FORMAT_SUPPORT_TEXTURE1D;
-
-    if (format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & WINED3DFMT_FLAG_TEXTURE)
-    {
-        support_flags |= WINED3D_FORMAT_SUPPORT_TEXTURE2D;
-
-        if (gl_info->supported[EXT_TEXTURE_ARRAY])
-            support_flags |= WINED3D_FORMAT_SUPPORT_TEXTURECUBE;
-
-        /* OpenGL requires that all officially supported formats support mip mapping */
-        support_flags |= WINED3D_FORMAT_SUPPORT_MIP;
-
-        if (support_flags & gl_info->supported[SGIS_GENERATE_MIPMAP])
-            support_flags |= WINED3D_FORMAT_SUPPORT_MIP_AUTOGEN;
-
-        /* For the following flags it should be sufficient to check only 2d textures  */
-        if (format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & WINED3DFMT_FLAG_RENDERTARGET)
-            support_flags |= WINED3D_FORMAT_SUPPORT_RENDER_TARGET;
-
-        if (format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & WINED3DFMT_FLAG_POSTPIXELSHADER_BLENDING)
-            support_flags |= WINED3D_FORMAT_SUPPORT_BLENDABLE;
-
-        if ((format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & WINED3DFMT_FLAG_DEPTH) &&
-            (format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & WINED3DFMT_FLAG_STENCIL))
-            support_flags |= WINED3D_FORMAT_SUPPORT_DEPTH_STENCIL;
-
-        if (format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & WINED3DFMT_FLAG_POSTPIXELSHADER_BLENDING)
-            support_flags |= WINED3D_FORMAT_SUPPORT_BLENDABLE;
-
-        /* not sure how to test the following flags - assuming yes */
-        support_flags |= WINED3D_FORMAT_SUPPORT_SHADER_LOAD;
-        support_flags |= WINED3D_FORMAT_SUPPORT_SHADER_SAMPLE;
-        support_flags |= WINED3D_FORMAT_SUPPORT_SHADER_SAMPLE_COMPARISON;
-        support_flags |= WINED3D_FORMAT_SUPPORT_SHADER_GATHER;
-        support_flags |= WINED3D_FORMAT_SUPPORT_SHADER_GATHER_COMPARISON;
-
-        support_flags |= WINED3D_FORMAT_SUPPORT_CPU_LOCKABLE;
-        support_flags |= WINED3D_FORMAT_SUPPORT_DISPLAY;
-        support_flags |= WINED3D_FORMAT_SUPPORT_BACK_BUFFER_CAST;
-        support_flags |= WINED3D_FORMAT_SUPPORT_TYPED_UNORDERED_ACCESS_VIEW;
-        support_flags |= WINED3D_FORMAT_SUPPORT_SHADER_GATHER_COMPARISON;
-    }
-
-    if (format->flags[WINED3D_GL_RES_TYPE_TEX_3D] & WINED3DFMT_FLAG_TEXTURE)
-        support_flags |= WINED3D_FORMAT_SUPPORT_TEXTURE3D;
-
-    if (gl_info->supported[ARB_MULTISAMPLE])
-    {
-        /* TODO: check if multisampling for this format is supported */
-        support_flags |= WINED3D_FORMAT_SUPPORT_MULTISAMPLE_LOAD;
-        support_flags |= WINED3D_FORMAT_SUPPORT_MULTISAMPLE_RESOLVE;
-
-        if (support_flags & WINED3D_FORMAT_SUPPORT_RENDER_TARGET)
-            support_flags |= WINED3D_FORMAT_SUPPORT_MULTISAMPLE_RENDERTARGET;
-    }
-
-    *support = support_flags;
-}
-
 HRESULT CDECL wined3d_device_get_device_caps(const struct wined3d_device *device, WINED3DCAPS *caps)
 {
     TRACE("device %p, caps %p.\n", device, caps);
@@ -3762,6 +3704,14 @@ void CDECL wined3d_device_dispatch_compute(struct wined3d_device *device,
     wined3d_cs_emit_dispatch(device->cs, group_count_x, group_count_y, group_count_z);
 }
 
+void CDECL wined3d_device_dispatch_compute_indirect(struct wined3d_device *device,
+        struct wined3d_buffer *buffer, unsigned int offset)
+{
+    TRACE("device %p, buffer %p, offset %u.\n", device, buffer, offset);
+
+    wined3d_cs_emit_dispatch_indirect(device->cs, buffer, offset);
+}
+
 void CDECL wined3d_device_set_primitive_type(struct wined3d_device *device,
         enum wined3d_primitive_type primitive_type, unsigned int patch_vertex_count)
 {
@@ -3805,6 +3755,15 @@ void CDECL wined3d_device_draw_primitive_instanced(struct wined3d_device *device
             0, start_vertex, vertex_count, start_instance, instance_count, FALSE);
 }
 
+void CDECL wined3d_device_draw_primitive_instanced_indirect(struct wined3d_device *device,
+        struct wined3d_buffer *buffer, unsigned int offset)
+{
+    TRACE("device %p, buffer %p, offset %u.\n", device, buffer, offset);
+
+    wined3d_cs_emit_draw_indirect(device->cs, device->state.gl_primitive_type, device->state.gl_patch_vertices,
+            buffer, offset, FALSE);
+}
+
 HRESULT CDECL wined3d_device_draw_indexed_primitive(struct wined3d_device *device, UINT start_idx, UINT index_count)
 {
     TRACE("device %p, start_idx %u, index_count %u.\n", device, start_idx, index_count);
@@ -3833,6 +3792,15 @@ void CDECL wined3d_device_draw_indexed_primitive_instanced(struct wined3d_device
 
     wined3d_cs_emit_draw(device->cs, device->state.gl_primitive_type, device->state.gl_patch_vertices,
             device->state.base_vertex_index, start_idx, index_count, start_instance, instance_count, TRUE);
+}
+
+void CDECL wined3d_device_draw_indexed_primitive_instanced_indirect(struct wined3d_device *device,
+        struct wined3d_buffer *buffer, unsigned int offset)
+{
+    TRACE("device %p, buffer %p, offset %u.\n", device, buffer, offset);
+
+    wined3d_cs_emit_draw_indirect(device->cs, device->state.gl_primitive_type, device->state.gl_patch_vertices,
+            buffer, offset, TRUE);
 }
 
 HRESULT CDECL wined3d_device_update_texture(struct wined3d_device *device,
@@ -4070,6 +4038,21 @@ float CDECL wined3d_device_get_npatch_mode(const struct wined3d_device *device)
     return 0.0f;
 }
 
+void CDECL wined3d_device_copy_uav_counter(struct wined3d_device *device,
+        struct wined3d_buffer *dst_buffer, unsigned int offset, struct wined3d_unordered_access_view *uav)
+{
+    TRACE("device %p, dst_buffer %p, offset %u, uav %p.\n",
+            device, dst_buffer, offset, uav);
+
+    if (offset + sizeof(GLuint) > dst_buffer->resource.size)
+    {
+        WARN("Offset %u too large.\n", offset);
+        return;
+    }
+
+    wined3d_cs_emit_copy_uav_counter(device->cs, dst_buffer, offset, uav);
+}
+
 void CDECL wined3d_device_copy_resource(struct wined3d_device *device,
         struct wined3d_resource *dst_resource, struct wined3d_resource *src_resource)
 {
@@ -4103,7 +4086,10 @@ void CDECL wined3d_device_copy_resource(struct wined3d_device *device,
         return;
     }
 
-    if (src_resource->format->id != dst_resource->format->id)
+    if (src_resource->format->id != dst_resource->format->id &&
+            (src_resource->format->typeless_id != dst_resource->format->typeless_id ||
+            src_resource->format->gl_view_class != dst_resource->format->gl_view_class ||
+            !src_resource->format->typeless_id))
     {
         WARN("Resource formats (%s / %s) don't match.\n",
                 debug_d3dformat(dst_resource->format->id),
@@ -4114,8 +4100,7 @@ void CDECL wined3d_device_copy_resource(struct wined3d_device *device,
     if (dst_resource->type == WINED3D_RTYPE_BUFFER)
     {
         wined3d_box_set(&box, 0, 0, src_resource->size, 1, 0, 1);
-        wined3d_cs_emit_blt_sub_resource(device->cs, dst_resource, 0, &box,
-                src_resource, 0, &box, 0, NULL, WINED3D_TEXF_POINT);
+        wined3d_cs_emit_copy_sub_resource(device->cs, dst_resource, 0, &box, src_resource, 0, &box);
         return;
     }
 
@@ -4141,8 +4126,7 @@ void CDECL wined3d_device_copy_resource(struct wined3d_device *device,
         {
             unsigned int idx = j * dst_texture->level_count + i;
 
-            wined3d_cs_emit_blt_sub_resource(device->cs, dst_resource, idx, &box,
-                    src_resource, idx, &box, 0, NULL, WINED3D_TEXF_POINT);
+            wined3d_cs_emit_copy_sub_resource(device->cs, dst_resource, idx, &box, src_resource, idx, &box);
         }
     }
 }
@@ -4173,7 +4157,10 @@ HRESULT CDECL wined3d_device_copy_sub_resource_region(struct wined3d_device *dev
         return WINED3DERR_INVALIDCALL;
     }
 
-    if (src_resource->format->id != dst_resource->format->id)
+    if (src_resource->format->id != dst_resource->format->id &&
+            (src_resource->format->typeless_id != dst_resource->format->typeless_id ||
+            src_resource->format->gl_view_class != dst_resource->format->gl_view_class ||
+            !src_resource->format->typeless_id))
     {
         WARN("Resource formats (%s / %s) don't match.\n",
                 debug_d3dformat(dst_resource->format->id),
@@ -4289,8 +4276,8 @@ HRESULT CDECL wined3d_device_copy_sub_resource_region(struct wined3d_device *dev
         return WINED3DERR_INVALIDCALL;
     }
 
-    wined3d_cs_emit_blt_sub_resource(device->cs, dst_resource, dst_sub_resource_idx, &dst_box,
-            src_resource, src_sub_resource_idx, src_box, 0, NULL, WINED3D_TEXF_POINT);
+    wined3d_cs_emit_copy_sub_resource(device->cs, dst_resource, dst_sub_resource_idx, &dst_box,
+            src_resource, src_sub_resource_idx, src_box);
 
     return WINED3D_OK;
 }
@@ -4353,6 +4340,10 @@ void CDECL wined3d_device_update_sub_resource(struct wined3d_device *device, str
         return;
     }
 
+#if !defined(STAGING_CSMT)
+    wined3d_resource_wait_idle(resource);
+
+#endif /* STAGING_CSMT */
     wined3d_cs_emit_update_sub_resource(device->cs, resource, sub_resource_idx, box, data, row_pitch, depth_pitch);
 }
 
@@ -4370,6 +4361,71 @@ HRESULT CDECL wined3d_device_clear_rendertarget_view(struct wined3d_device *devi
         return WINED3D_OK;
 
     resource = view->resource;
+    if (resource->type == WINED3D_RTYPE_TEXTURE_3D)
+    {
+        const struct wined3d_gl_info *gl_info;
+        struct wined3d_context *context;
+        struct wined3d_texture *texture = texture_from_resource(resource);
+        struct gl_texture *gl_texture = wined3d_texture_get_gl_texture(texture, FALSE);
+        unsigned int i;
+        GLuint fbo;
+        GLenum draw_buffer = GL_COLOR_ATTACHMENT0;
+
+        ERR("Clearing 3D target, flags=%x\n", flags);
+
+        context = context_acquire(device, NULL, 0);
+        gl_info = context->gl_info;
+
+        wined3d_texture_prepare_texture(texture, context, FALSE);
+
+        if (flags & WINED3DCLEAR_TARGET)
+        {
+            gl_info->gl_ops.gl.p_glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE));
+            context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1));
+            context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2));
+            context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3));
+            gl_info->gl_ops.gl.p_glClearColor(color->r, color->g, color->b, color->a);
+            checkGLcall("glClearColor");
+        }
+
+        if (rect)
+            ERR("ignoring rect\n");
+
+        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_SCISSORTESTENABLE));
+        gl_info->gl_ops.gl.p_glDisable(GL_SCISSOR_TEST);
+
+        gl_info->fbo_ops.glGenFramebuffers(1, &fbo);
+        checkGLcall("glGenFramebuffers()");
+
+        gl_info->fbo_ops.glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        checkGLcall("glBindFramebuffer()");
+
+        for (i = 0; i < view->layer_count; i++)
+        {
+            gl_info->fbo_ops.glFramebufferTexture3D(GL_FRAMEBUFFER, draw_buffer,
+                    GL_TEXTURE_3D, gl_texture->name, gl_texture->base_level, i);
+            checkGLcall("glFramebufferTexture3D()");
+
+            GL_EXTCALL(glDrawBuffers(1, &draw_buffer));
+            checkGLcall("glDrawBuffers()");
+
+            gl_info->gl_ops.gl.p_glClear(GL_COLOR_BUFFER_BIT);
+            checkGLcall("glClear");
+        }
+
+        gl_info->fbo_ops.glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        checkGLcall("glBindFramebuffer()");
+        gl_info->fbo_ops.glDeleteFramebuffers(1, &fbo);
+        checkGLcall("glDeleteFramebuffer()");
+
+        if (wined3d_settings.strict_draw_ordering)
+            gl_info->gl_ops.gl.p_glFlush();
+
+        context_release(context);
+        return WINED3D_OK;
+    }
+
     if (resource->type != WINED3D_RTYPE_TEXTURE_2D)
     {
         FIXME("Not implemented for %s resources.\n", debug_d3dresourcetype(resource->type));

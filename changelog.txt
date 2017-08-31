@@ -1,0 +1,25 @@
+Version 0.2:
+-Fixed GetLogicicalProcessorInformationEx
+-Remade shell32 functions
+-Added ole32 wrapper
+-Added shlwapi wrapper
+-Add new wine's dlls:
+ - API-MS-WIN-SECURITY-SYSTEMFUNCTIONS-L1-1-0
+ - API-MS-WIN-CORE-QUIRKS-L1-1-0
+ - API-MS-WIN-CORE-REGISTRY-L2-1-0
+ - API-MS-WIN-CORE-WINRT-ROPARAMETERIZEDIID-L1-1-0
+ - API-MS-WIN-MM-MISC-L1-1-1
+ - API-MS-WIN-MM-MME-L1-1-0 
+ - API-MS-WIN-SECURITY-ACTIVEDIRECTORYCLIENT-L1-1-0
+ - API-MS-WIN-SECURITY-GROUPPOLICY-L1-1-0
+ - ext-ms-win-authz-context-l1-1-0
+ - ext-ms-win-domainjoin-netjoin-l1-1-0
+ - explorerframe.dll
+ - gameux.dll
+ - wpc.dll
+ - mmdevapi.dll
+
+
+- Updated dlls:
+ - vhlpapi
+ - vtdll.dll

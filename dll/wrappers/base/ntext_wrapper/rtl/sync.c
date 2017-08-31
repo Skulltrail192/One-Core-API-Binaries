@@ -73,6 +73,22 @@
 
 #define RtlpSetKeyedEventHandle(xxHandle) ((HANDLE)(((ULONG_PTR)xxHandle)|1))
 
+VOID
+NTAPI
+RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock);
+
+VOID
+NTAPI
+RtlAcquireSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock);
+
+VOID
+NTAPI
+RtlReleaseSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock);
+
+VOID
+NTAPI
+RtlAcquireSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock);
+
 ULONG ExPushLockSpinCount = 0;
 
 typedef struct _RTL_BACKOFF {
@@ -845,710 +861,710 @@ typedef struct _EX_PUSH_LOCK_WAIT_BLOCK
   // }
 // }
 
-VOID
-FASTCALL
-ExfWakePushLock (
-    IN PEX_PUSH_LOCK PushLock,
-    IN EX_PUSH_LOCK TopValue
-    )
-/*++
+// VOID
+// FASTCALL
+// ExfWakePushLock (
+    // IN PEX_PUSH_LOCK PushLock,
+    // IN EX_PUSH_LOCK TopValue
+    // )
+// /*++
 
-Routine Description:
+// Routine Description:
 
-    Walks the pushlock waiting list and wakes waiters if the lock is still unacquired.
+    // Walks the pushlock waiting list and wakes waiters if the lock is still unacquired.
 
-Arguments:
+// Arguments:
 
-    PushLock - Push lock to be walked
+    // PushLock - Push lock to be walked
 
-    TopValue - Start of the chain (*PushLock)
+    // TopValue - Start of the chain (*PushLock)
 
-Return Value:
+// Return Value:
 
-    None
+    // None
 
---*/
-{
-    EX_PUSH_LOCK OldValue, NewValue;
-    PEX_PUSH_LOCK_WAIT_BLOCK WaitBlock, NextWaitBlock, FirstWaitBlock, PreviousWaitBlock;
-    //KIRQL OldIrql;
+// --*/
+// {
+    // EX_PUSH_LOCK OldValue, NewValue;
+    // PEX_PUSH_LOCK_WAIT_BLOCK WaitBlock, NextWaitBlock, FirstWaitBlock, PreviousWaitBlock;
+    // //KIRQL OldIrql;
 
-    OldValue = TopValue;
-
-    while (1) {
+    // OldValue = TopValue;
 
-        //
-        // Nobody should be walking the list while we manipulate it.
-        //
-
-        ASSERT (!OldValue.MultipleShared);
-
-        //
-        // No point waking somebody to find a locked lock. Just clear the waking bit
-        //
-
-        while (OldValue.Locked) {
-            NewValue.Value = OldValue.Value - EX_PUSH_LOCK_WAKING;
-            ASSERT (!NewValue.Waking);
-            ASSERT (NewValue.Locked);
-            ASSERT (NewValue.Waiting);
-            if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                                   NewValue.Ptr,
-                                                                   OldValue.Ptr)) == OldValue.Ptr) {
-                return;
-            }
-            OldValue = NewValue;
-        }
+    // while (1) {
 
-        WaitBlock = (PEX_PUSH_LOCK_WAIT_BLOCK)
-           (OldValue.Value & ~(ULONG_PTR)EX_PUSH_LOCK_PTR_BITS);
+        // //
+        // // Nobody should be walking the list while we manipulate it.
+        // //
 
-        FirstWaitBlock = WaitBlock;
+        // ASSERT (!OldValue.MultipleShared);
 
-        while (1) {
+        // //
+        // // No point waking somebody to find a locked lock. Just clear the waking bit
+        // //
 
-            NextWaitBlock = WaitBlock->Last;
-            if (NextWaitBlock != NULL) {
-                WaitBlock = NextWaitBlock;
-                break;
-            }
+        // while (OldValue.Locked) {
+            // NewValue.Value = OldValue.Value - EX_PUSH_LOCK_WAKING;
+            // ASSERT (!NewValue.Waking);
+            // ASSERT (NewValue.Locked);
+            // ASSERT (NewValue.Waiting);
+            // if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                                   // NewValue.Ptr,
+                                                                   // OldValue.Ptr)) == OldValue.Ptr) {
+                // return;
+            // }
+            // OldValue = NewValue;
+        // }
 
-            PreviousWaitBlock = WaitBlock;
-            WaitBlock = WaitBlock->Next;
-            WaitBlock->Previous = PreviousWaitBlock;
-        }
+        // WaitBlock = (PEX_PUSH_LOCK_WAIT_BLOCK)
+           // (OldValue.Value & ~(ULONG_PTR)EX_PUSH_LOCK_PTR_BITS);
 
-        if (WaitBlock->Flags&EX_PUSH_LOCK_FLAGS_EXCLUSIVE &&
-            (PreviousWaitBlock = WaitBlock->Previous) != NULL) {
+        // FirstWaitBlock = WaitBlock;
 
-            FirstWaitBlock->Last = PreviousWaitBlock;
+        // while (1) {
 
-            WaitBlock->Previous = NULL;
+            // NextWaitBlock = WaitBlock->Last;
+            // if (NextWaitBlock != NULL) {
+                // WaitBlock = NextWaitBlock;
+                // break;
+            // }
 
-            ASSERT (FirstWaitBlock != WaitBlock);
+            // PreviousWaitBlock = WaitBlock;
+            // WaitBlock = WaitBlock->Next;
+            // WaitBlock->Previous = PreviousWaitBlock;
+        // }
 
-            ASSERT (PushLock->Waiting);
+        // if (WaitBlock->Flags&EX_PUSH_LOCK_FLAGS_EXCLUSIVE &&
+            // (PreviousWaitBlock = WaitBlock->Previous) != NULL) {
 
-#if defined (_WIN64)
-            InterlockedAnd64 ((LONG64 *)&PushLock->Value, ~EX_PUSH_LOCK_WAKING);
-#else
-            InterlockedAnd ((LONG *)&PushLock->Value, ~EX_PUSH_LOCK_WAKING);
-#endif
+            // FirstWaitBlock->Last = PreviousWaitBlock;
 
-            break;
-        } else {
-            NewValue.Value = 0;
-            ASSERT (!NewValue.Waking);
-            if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                                   NewValue.Ptr,
-                                                                   OldValue.Ptr)) == OldValue.Ptr) {
-                break;
-            }
-            OldValue = NewValue;
-        }
-    }
-
-    //
-    // If we are waking more than one thread then raise to DPC level to prevent us
-    // getting rescheduled part way through the operation
-    //
+            // WaitBlock->Previous = NULL;
 
-    // OldIrql = DISPATCH_LEVEL;
-    // if (WaitBlock->Previous != NULL) {
-        // KeRaiseIrql (DISPATCH_LEVEL, &OldIrql);
-    // }
+            // ASSERT (FirstWaitBlock != WaitBlock);
 
-    while (1) {
+            // ASSERT (PushLock->Waiting);
 
-        NextWaitBlock = WaitBlock->Previous;
-        if (!InterlockedBitTestAndReset (&WaitBlock->Flags, EX_PUSH_LOCK_FLAGS_SPINNING_V)) {
-            NtReleaseKeyedEvent(GlobalKeyedEventHandle, &WaitBlock, 0, 0);
-        }
-
-        WaitBlock = NextWaitBlock;
-        if (WaitBlock == NULL) {
-            break;
-        }
-    }
-
-    // if (OldIrql != DISPATCH_LEVEL) {
-        // KeLowerIrql (OldIrql);
-    // }
-}
-
-VOID
-FASTCALL
-ExpOptimizePushLockList (
-    IN PEX_PUSH_LOCK PushLock,
-    IN EX_PUSH_LOCK TopValue
-    )
-/*++
-
-Routine Description:
-
-    Walks the pushlock waiting list during contention and optimizes it
-
-Arguments:
-
-    PushLock - Push lock to be walked
-
-    TopValue - Start of the chain (*PushLock)
-
-Return Value:
-
-    None
-
---*/
-{
-    EX_PUSH_LOCK OldValue, NewValue;
-    PEX_PUSH_LOCK_WAIT_BLOCK WaitBlock, PreviousWaitBlock, FirstWaitBlock, NextWaitBlock;
-
-    OldValue = TopValue;
-    while (1) {
-        if (!OldValue.Locked) {
-            ExfWakePushLock (PushLock, OldValue);
-            break;
-        }
-
-        WaitBlock = (PEX_PUSH_LOCK_WAIT_BLOCK)(OldValue.Value & ~(EX_PUSH_LOCK_PTR_BITS));
-
-        FirstWaitBlock = WaitBlock;
-
-        while (1) {
-
-            NextWaitBlock = WaitBlock->Last;
-            if (NextWaitBlock != NULL) {
-                FirstWaitBlock->Last = NextWaitBlock;
-                break;
-            }
-
-            PreviousWaitBlock = WaitBlock;
-            WaitBlock = WaitBlock->Next;
-            WaitBlock->Previous = PreviousWaitBlock;
-        }
-
-        NewValue.Value = OldValue.Value - EX_PUSH_LOCK_WAKING;
-        ASSERT (NewValue.Locked);
-        ASSERT (!NewValue.Waking);
-        if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                               NewValue.Ptr,
-                                                               OldValue.Ptr)) == OldValue.Ptr) {
-            break;
-        }
-        OldValue = NewValue;
-    }
-}
-
-VOID
-NTAPI
-RtlAcquireSRWLockShared (
-     __inout PEX_PUSH_LOCK PushLock
-     )
-/*++
-
-Routine Description:
-
-    Acquire a push lock shared
-
-Arguments:
-
-    PushLock - Push lock to be acquired
-
-Return Value:
-
-    None
-
---*/
-{
-    EX_PUSH_LOCK OldValue, NewValue, TopValue;
-    EX_PUSH_LOCK_WAIT_BLOCK WaitBlock;
-    BOOLEAN Optimize;
-    RTL_BACKOFF Backoff = {0};
-
-    OldValue = ReadForWriteAccess (PushLock);
-
-    while (1) {
-        //
-        // If the lock is already held we need to wait if its not held shared
-        //
-        if (!OldValue.Locked || (!OldValue.Waiting && OldValue.Shared > 0)) {
-
-            if (OldValue.Waiting) {
-                NewValue.Value = OldValue.Value + EX_PUSH_LOCK_LOCK;
-            } else {
-                NewValue.Value = (OldValue.Value + EX_PUSH_LOCK_SHARE_INC) | EX_PUSH_LOCK_LOCK;
-            }
-            ASSERT (NewValue.Locked);
-            NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                              NewValue.Ptr,
-                                                              OldValue.Ptr);
-            if (NewValue.Ptr == OldValue.Ptr) {
-                break;
-            }
-
-            //
-            // Use backof to limit memory bandwidth
-            //
-            RtlBackoff (&Backoff);
-
-            NewValue = *PushLock;
-
-        } else {
-            WaitBlock.Flags = EX_PUSH_LOCK_FLAGS_SPINNING;
-            WaitBlock.ShareCount = 0;
-            Optimize = FALSE;
-            WaitBlock.Previous = NULL;
- 
-            //
-            // Move the sharecount to our wait block if need be.
-            //
-            if (OldValue.Waiting) {
-                WaitBlock.Last = NULL;
-                WaitBlock.Next = (PEX_PUSH_LOCK_WAIT_BLOCK)
-                                     (OldValue.Value & ~EX_PUSH_LOCK_PTR_BITS);
-                NewValue.Ptr = (PVOID)(((ULONG_PTR) &WaitBlock) |
-                                    (OldValue.Value & (EX_PUSH_LOCK_LOCK | EX_PUSH_LOCK_MULTIPLE_SHARED)) |
-                                    EX_PUSH_LOCK_WAITING | EX_PUSH_LOCK_WAKING);
-                if (!OldValue.Waking) {
-                    Optimize = TRUE;
-                }
-            } else {
-                WaitBlock.Last = &WaitBlock;
-                NewValue.Ptr = (PVOID)(((ULONG_PTR) &WaitBlock) |
-                                    (OldValue.Value & EX_PUSH_LOCK_PTR_BITS) |
-                                    EX_PUSH_LOCK_WAITING);
-            }
-             
-            ASSERT (NewValue.Waiting);
-            TopValue = NewValue;
-            NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                              NewValue.Ptr,
-                                                              OldValue.Ptr);
-
-            if (NewValue.Ptr == OldValue.Ptr) {
-                ULONG i;
-
-                //
-                // If we set the waiting bit then optimize the list
-                //
-                if (Optimize) {
-                    ExpOptimizePushLockList (PushLock, TopValue);
-                }
-
-                //
-                // It is safe to initialize the gate here, as the interlocked operation below forces 
-                // a gate signal to always follow gate initialization.
-                //
-                //KeInitializeGate (&WaitBlock.WakeGate);
-
-                for (i = ExPushLockSpinCount; i > 0; i--) {
-                    if (((*(volatile LONG *)&WaitBlock.Flags)&EX_PUSH_LOCK_FLAGS_SPINNING) == 0) {
-                        break;
-                    }
-                    YieldProcessor ();
-                }
-
-                if (InterlockedBitTestAndReset ((LONG*)&WaitBlock.Flags, EX_PUSH_LOCK_FLAGS_SPINNING_V)) {
-					NtWaitForKeyedEvent(GlobalKeyedEventHandle, &WaitBlock, 0, 0);
-                }
-
-            } else {
-
-                //
-                // Use backof to limit memory bandwidth
-                //
-                RtlBackoff (&Backoff);
-
-                NewValue = *PushLock;
-            }
-
-        }
-        OldValue = NewValue;
-    }
-
-}
-
-VOID
-NTAPI
-RtlAcquireSRWLockExclusive (
-     __inout PEX_PUSH_LOCK PushLock
-     )
-/*++
-
-Routine Description:
-
-    Acquire a push lock exclusively
-
-Arguments:
-
-    PushLock - Push lock to be acquired
-
-Return Value:
-
-    None
-
---*/
-{
-    EX_PUSH_LOCK OldValue, NewValue, TopValue;
-    EX_PUSH_LOCK_WAIT_BLOCK WaitBlock;
-    BOOLEAN Optimize;
-//#if defined (USE_EXP_BACKOFF)
-    RTL_BACKOFF Backoff = {0};
-//#endif
-
-    OldValue = ReadForWriteAccess (PushLock);
-
-    while (1) {
-        //
-        // If the lock is already held exclusively/shared or there are waiters then
-        // we need to wait.
-        //
-        if ((OldValue.Value&EX_PUSH_LOCK_LOCK) == 0) {
-            NewValue.Value = OldValue.Value + EX_PUSH_LOCK_LOCK;
-
-            ASSERT (NewValue.Locked);
-
-            NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                              NewValue.Ptr,
-                                                              OldValue.Ptr);
-            if (NewValue.Ptr == OldValue.Ptr) {
-                break;
-            }
-
-//#if defined (USE_EXP_BACKOFF)
-
-            //
-            // Use backof to limit memory bandwidth
-            //
-            RtlBackoff (&Backoff);
-
-            NewValue = *PushLock;
-
-//#endif
-        } else {
-            WaitBlock.Flags = EX_PUSH_LOCK_FLAGS_EXCLUSIVE | EX_PUSH_LOCK_FLAGS_SPINNING;
-            WaitBlock.Previous = NULL;
-            Optimize = FALSE;
- 
-            //
-            // Move the sharecount to our wait block if need be.
-            //
-            if (OldValue.Waiting) {
-                WaitBlock.Last = NULL;
-                WaitBlock.Next = (PEX_PUSH_LOCK_WAIT_BLOCK)
-                                     (OldValue.Value & ~EX_PUSH_LOCK_PTR_BITS);
-                WaitBlock.ShareCount = 0;
-                NewValue.Ptr = (PVOID)(((ULONG_PTR) &WaitBlock) |
-                                    (OldValue.Value & EX_PUSH_LOCK_PTR_BITS) |
-                                    EX_PUSH_LOCK_WAITING | EX_PUSH_LOCK_WAKING |
-                                    EX_PUSH_LOCK_LOCK);
-                if (!OldValue.Waking) {
-                    Optimize = TRUE;
-                }
-            } else {
-                WaitBlock.Last = &WaitBlock;
-                WaitBlock.ShareCount = (ULONG) OldValue.Shared;
-                if (WaitBlock.ShareCount > 1) {
-                    NewValue.Ptr = (PVOID)(((ULONG_PTR) &WaitBlock) | EX_PUSH_LOCK_WAITING |
-                                                                      EX_PUSH_LOCK_LOCK |
-                                                                      EX_PUSH_LOCK_MULTIPLE_SHARED);
-                } else {
-                    WaitBlock.ShareCount = 0;
-                    NewValue.Ptr = (PVOID)(((ULONG_PTR) &WaitBlock) | EX_PUSH_LOCK_WAITING |
-                                                                      EX_PUSH_LOCK_LOCK);
-                }
-            }
-             
-// #if DBG
-            // WaitBlock.Signaled = FALSE;
-            // WaitBlock.OldValue = OldValue.Ptr;
-            // WaitBlock.NewValue = NewValue.Ptr;
-            // WaitBlock.PushLock = PushLock;
+// #if defined (_WIN64)
+            // InterlockedAnd64 ((LONG64 *)&PushLock->Value, ~EX_PUSH_LOCK_WAKING);
+// #else
+            // InterlockedAnd ((LONG *)&PushLock->Value, ~EX_PUSH_LOCK_WAKING);
 // #endif
-            ASSERT (NewValue.Waiting);
-            ASSERT (OldValue.Locked);
-            ASSERT (NewValue.Locked);
-
-            TopValue = NewValue;
-            NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                              NewValue.Ptr,
-                                                              OldValue.Ptr);
-            if (NewValue.Ptr == OldValue.Ptr) {
-                ULONG i;
-
-                //
-                // If we set the waiting bit then optimize the list
-                //
-                if (Optimize) {
-                    ExpOptimizePushLockList (PushLock, TopValue);
-                }
-
-                //KeInitializeGate (&WaitBlock.WakeGate);
-
-                for (i = ExPushLockSpinCount; i > 0; i--) {
-                    if (((*(volatile LONG *)&WaitBlock.Flags)&EX_PUSH_LOCK_FLAGS_SPINNING) == 0) {
-                        break;
-                    }
-                    YieldProcessor ();
-                }
-
-                if (InterlockedBitTestAndReset (&WaitBlock.Flags, EX_PUSH_LOCK_FLAGS_SPINNING_V)) {
 
-					NtWaitForKeyedEvent(GlobalKeyedEventHandle, &WaitBlock, 0, 0);
-                    //KeWaitForGate (&WaitBlock.WakeGate, WrPushLock, KernelMode);
-
-                }
-                ASSERT ((WaitBlock.ShareCount == 0));
-            } else {
-
-                //
-                // Use backof to limit memory bandwidth
-                //
-                RtlBackoff (&Backoff);
-
-                NewValue = *PushLock;
-            }
-        }
-        OldValue = NewValue;
-    }
-
-}
-
-VOID
-NTAPI
-RtlReleaseSRWLockExclusive (
-     __inout PEX_PUSH_LOCK PushLock
-     )
-/*++
-
-Routine Description:
-
-    Release a push lock that was acquired exclusive
-
-Arguments:
-
-    PushLock - Push lock to be released
-
-Return Value:
-
-    None
-
---*/
-{
-    EX_PUSH_LOCK OldValue, NewValue, TopValue;
-
-    OldValue = ReadForWriteAccess (PushLock);
-
-    while (1) {
-
-        ASSERT (OldValue.Locked);
-        ASSERT (OldValue.Waiting || OldValue.Shared == 0);
-
-        if (OldValue.Waiting && !OldValue.Waking) {
-            NewValue.Value = OldValue.Value - EX_PUSH_LOCK_LOCK + EX_PUSH_LOCK_WAKING;
-            ASSERT (NewValue.Waking && !NewValue.Locked);
-            TopValue = NewValue;
-            if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                                   NewValue.Ptr,
-                                                                   OldValue.Ptr)) == OldValue.Ptr) {
-                ExfWakePushLock (PushLock, TopValue);
-                break;
-            }
-        } else {
-            NewValue.Value = OldValue.Value - EX_PUSH_LOCK_LOCK;
-            ASSERT (NewValue.Waking || !NewValue.Waiting);
-            if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                                   NewValue.Ptr,
-                                                                   OldValue.Ptr)) == OldValue.Ptr) {
-                break;
-            }
-        }
-        OldValue = NewValue;
-    }
-}
-
-VOID
-NTAPI
-RtlReleaseSRWLockShared (
-     __inout PEX_PUSH_LOCK PushLock
-     )
-/*++
-
-Routine Description:
-
-    Release a push lock that was acquired shared
-
-Arguments:
-
-    PushLock - Push lock to be released
-
-Return Value:
-
-    None
-
---*/
-{
-    EX_PUSH_LOCK OldValue, NewValue, TopValue;
-    PEX_PUSH_LOCK_WAIT_BLOCK WaitBlock, NextWaitBlock;
-
-    OldValue = ReadForWriteAccess (PushLock);
-
-    while (!OldValue.Waiting) {
-
-        if (OldValue.Shared > 1) {
-            NewValue.Value = OldValue.Value - EX_PUSH_LOCK_SHARE_INC;
-        } else {
-            NewValue.Value = 0;
-        }
-
-        if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                               NewValue.Ptr,
-                                                               OldValue.Ptr)) == OldValue.Ptr) {
-            return;
-        }
-        OldValue = NewValue;
-    }
-
-    if (OldValue.MultipleShared) {
-        WaitBlock = (PEX_PUSH_LOCK_WAIT_BLOCK) (OldValue.Value & ~(ULONG_PTR)EX_PUSH_LOCK_PTR_BITS);
-
-        while (1) {
-
-            NextWaitBlock = WaitBlock->Last;
-            if (NextWaitBlock != NULL) {
-                WaitBlock = NextWaitBlock;
-                break;
-            }
-
-            WaitBlock = WaitBlock->Next;
-        }
-
-        ASSERT (WaitBlock->ShareCount > 0);
-        ASSERT (WaitBlock->Flags&EX_PUSH_LOCK_FLAGS_EXCLUSIVE);
-
-        if (InterlockedDecrement (&WaitBlock->ShareCount) > 0) {
-            return;
-        }
-    }
-
-    while (1) {
-
-        if (OldValue.Waking) {
-            NewValue.Value = OldValue.Value & ~(EX_PUSH_LOCK_LOCK|EX_PUSH_LOCK_MULTIPLE_SHARED);
-            ASSERT (NewValue.Waking && !NewValue.Locked && !NewValue.MultipleShared);
-            if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                                   NewValue.Ptr,
-                                                                   OldValue.Ptr)) == OldValue.Ptr) {
-                return;
-            }
-        } else {
-            NewValue.Value = (OldValue.Value & ~(EX_PUSH_LOCK_LOCK |
-                                                 EX_PUSH_LOCK_MULTIPLE_SHARED)) |
-                                      EX_PUSH_LOCK_WAKING;
-            ASSERT (NewValue.Waking && !NewValue.Locked && !NewValue.MultipleShared);
-            TopValue = NewValue;
-            if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                                   NewValue.Ptr,
-                                                                   OldValue.Ptr)) == OldValue.Ptr) {
-                ExfWakePushLock (PushLock, TopValue);
-                return;
-            }
-        }
-
-        OldValue = NewValue;
-    }
-}
-
-VOID
-NTAPI
-RtlInitializeSRWLock(PEX_PUSH_LOCK Lock)
-{
-    *(PULONG_PTR)Lock = 0;
-}
-
-BOOLEAN
-NTAPI
-RtlTryAcquireSRWLockExclusive (
-     IN PEX_PUSH_LOCK PushLock
-     )
-/*++
-
-Routine Description:
-
-    Try and acquire a push lock exclusively
-
-Arguments:
-
-    PushLock - Push lock to be acquired
-
-Return Value:
-
-    BOOLEAN - TRUE: Acquire was successful, FALSE: Lock was already acquired
-
---*/
-{
-#if defined (_WIN64)
-    if (!InterlockedBitTestAndSet64 ((LONG64 *)&PushLock->Value, EX_PUSH_LOCK_LOCK_V)) {
-#else
-    if (!InterlockedBitTestAndSet ((LONG *)&PushLock->Value, EX_PUSH_LOCK_LOCK_V)) {
-#endif
-        ASSERT (PushLock->Locked);
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-}	
-
-BOOLEAN
-NTAPI
-RtlTryAcquireSRWLockShared (
-     __inout PEX_PUSH_LOCK PushLock
-     )
-/*++
-
-Routine Description:
-
-    Try to acquire a push lock shared without blocking
-
-Arguments:
-
-    PushLock - Push lock to be acquired
-
-Return Value:
-
-    BOOLEAN - TRUE, The lock was acquired, FALSE otherwise
-
---*/
-{
-    EX_PUSH_LOCK OldValue, NewValue;
-
-    OldValue = ReadForWriteAccess (PushLock);
-
-    while (1) {
-        //
-        // If the lock is already held we need to wait if its not held shared
-        //
-        if (!OldValue.Locked || (!OldValue.Waiting && OldValue.Shared > 0)) {
-
-            if (OldValue.Waiting) {
-                NewValue.Value = OldValue.Value + EX_PUSH_LOCK_LOCK;
-            } else {
-                NewValue.Value = (OldValue.Value + EX_PUSH_LOCK_SHARE_INC) | EX_PUSH_LOCK_LOCK;
-            }
-            ASSERT (NewValue.Locked);
-            NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
-                                                              NewValue.Ptr,
-                                                              OldValue.Ptr);
-            if (NewValue.Ptr == OldValue.Ptr) {
-                return TRUE;
-            }
-        } else {
-            return FALSE;
-        }
-        OldValue = NewValue;
-    }
-
-}	
+            // break;
+        // } else {
+            // NewValue.Value = 0;
+            // ASSERT (!NewValue.Waking);
+            // if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                                   // NewValue.Ptr,
+                                                                   // OldValue.Ptr)) == OldValue.Ptr) {
+                // break;
+            // }
+            // OldValue = NewValue;
+        // }
+    // }
+
+    // //
+    // // If we are waking more than one thread then raise to DPC level to prevent us
+    // // getting rescheduled part way through the operation
+    // //
+
+    // // OldIrql = DISPATCH_LEVEL;
+    // // if (WaitBlock->Previous != NULL) {
+        // // KeRaiseIrql (DISPATCH_LEVEL, &OldIrql);
+    // // }
+
+    // while (1) {
+
+        // NextWaitBlock = WaitBlock->Previous;
+        // if (!InterlockedBitTestAndReset (&WaitBlock->Flags, EX_PUSH_LOCK_FLAGS_SPINNING_V)) {
+            // NtReleaseKeyedEvent(GlobalKeyedEventHandle, &WaitBlock, 0, 0);
+        // }
+
+        // WaitBlock = NextWaitBlock;
+        // if (WaitBlock == NULL) {
+            // break;
+        // }
+    // }
+
+    // // if (OldIrql != DISPATCH_LEVEL) {
+        // // KeLowerIrql (OldIrql);
+    // // }
+// }
+
+// VOID
+// FASTCALL
+// ExpOptimizePushLockList (
+    // IN PEX_PUSH_LOCK PushLock,
+    // IN EX_PUSH_LOCK TopValue
+    // )
+// /*++
+
+// Routine Description:
+
+    // Walks the pushlock waiting list during contention and optimizes it
+
+// Arguments:
+
+    // PushLock - Push lock to be walked
+
+    // TopValue - Start of the chain (*PushLock)
+
+// Return Value:
+
+    // None
+
+// --*/
+// {
+    // EX_PUSH_LOCK OldValue, NewValue;
+    // PEX_PUSH_LOCK_WAIT_BLOCK WaitBlock, PreviousWaitBlock, FirstWaitBlock, NextWaitBlock;
+
+    // OldValue = TopValue;
+    // while (1) {
+        // if (!OldValue.Locked) {
+            // ExfWakePushLock (PushLock, OldValue);
+            // break;
+        // }
+
+        // WaitBlock = (PEX_PUSH_LOCK_WAIT_BLOCK)(OldValue.Value & ~(EX_PUSH_LOCK_PTR_BITS));
+
+        // FirstWaitBlock = WaitBlock;
+
+        // while (1) {
+
+            // NextWaitBlock = WaitBlock->Last;
+            // if (NextWaitBlock != NULL) {
+                // FirstWaitBlock->Last = NextWaitBlock;
+                // break;
+            // }
+
+            // PreviousWaitBlock = WaitBlock;
+            // WaitBlock = WaitBlock->Next;
+            // WaitBlock->Previous = PreviousWaitBlock;
+        // }
+
+        // NewValue.Value = OldValue.Value - EX_PUSH_LOCK_WAKING;
+        // ASSERT (NewValue.Locked);
+        // ASSERT (!NewValue.Waking);
+        // if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                               // NewValue.Ptr,
+                                                               // OldValue.Ptr)) == OldValue.Ptr) {
+            // break;
+        // }
+        // OldValue = NewValue;
+    // }
+// }
+
+// VOID
+// NTAPI
+// RtlAcquireSRWLockShared (
+     // __inout PEX_PUSH_LOCK PushLock
+     // )
+// /*++
+
+// Routine Description:
+
+    // Acquire a push lock shared
+
+// Arguments:
+
+    // PushLock - Push lock to be acquired
+
+// Return Value:
+
+    // None
+
+// --*/
+// {
+    // EX_PUSH_LOCK OldValue, NewValue, TopValue;
+    // EX_PUSH_LOCK_WAIT_BLOCK WaitBlock;
+    // BOOLEAN Optimize;
+    // RTL_BACKOFF Backoff = {0};
+
+    // OldValue = ReadForWriteAccess (PushLock);
+
+    // while (1) {
+        // //
+        // // If the lock is already held we need to wait if its not held shared
+        // //
+        // if (!OldValue.Locked || (!OldValue.Waiting && OldValue.Shared > 0)) {
+
+            // if (OldValue.Waiting) {
+                // NewValue.Value = OldValue.Value + EX_PUSH_LOCK_LOCK;
+            // } else {
+                // NewValue.Value = (OldValue.Value + EX_PUSH_LOCK_SHARE_INC) | EX_PUSH_LOCK_LOCK;
+            // }
+            // ASSERT (NewValue.Locked);
+            // NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                              // NewValue.Ptr,
+                                                              // OldValue.Ptr);
+            // if (NewValue.Ptr == OldValue.Ptr) {
+                // break;
+            // }
+
+            // //
+            // // Use backof to limit memory bandwidth
+            // //
+            // RtlBackoff (&Backoff);
+
+            // NewValue = *PushLock;
+
+        // } else {
+            // WaitBlock.Flags = EX_PUSH_LOCK_FLAGS_SPINNING;
+            // WaitBlock.ShareCount = 0;
+            // Optimize = FALSE;
+            // WaitBlock.Previous = NULL;
+ 
+            // //
+            // // Move the sharecount to our wait block if need be.
+            // //
+            // if (OldValue.Waiting) {
+                // WaitBlock.Last = NULL;
+                // WaitBlock.Next = (PEX_PUSH_LOCK_WAIT_BLOCK)
+                                     // (OldValue.Value & ~EX_PUSH_LOCK_PTR_BITS);
+                // NewValue.Ptr = (PVOID)(((ULONG_PTR) &WaitBlock) |
+                                    // (OldValue.Value & (EX_PUSH_LOCK_LOCK | EX_PUSH_LOCK_MULTIPLE_SHARED)) |
+                                    // EX_PUSH_LOCK_WAITING | EX_PUSH_LOCK_WAKING);
+                // if (!OldValue.Waking) {
+                    // Optimize = TRUE;
+                // }
+            // } else {
+                // WaitBlock.Last = &WaitBlock;
+                // NewValue.Ptr = (PVOID)(((ULONG_PTR) &WaitBlock) |
+                                    // (OldValue.Value & EX_PUSH_LOCK_PTR_BITS) |
+                                    // EX_PUSH_LOCK_WAITING);
+            // }
+             
+            // ASSERT (NewValue.Waiting);
+            // TopValue = NewValue;
+            // NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                              // NewValue.Ptr,
+                                                              // OldValue.Ptr);
+
+            // if (NewValue.Ptr == OldValue.Ptr) {
+                // ULONG i;
+
+                // //
+                // // If we set the waiting bit then optimize the list
+                // //
+                // if (Optimize) {
+                    // ExpOptimizePushLockList (PushLock, TopValue);
+                // }
+
+                // //
+                // // It is safe to initialize the gate here, as the interlocked operation below forces 
+                // // a gate signal to always follow gate initialization.
+                // //
+                // //KeInitializeGate (&WaitBlock.WakeGate);
+
+                // for (i = ExPushLockSpinCount; i > 0; i--) {
+                    // if (((*(volatile LONG *)&WaitBlock.Flags)&EX_PUSH_LOCK_FLAGS_SPINNING) == 0) {
+                        // break;
+                    // }
+                    // YieldProcessor ();
+                // }
+
+                // if (InterlockedBitTestAndReset ((LONG*)&WaitBlock.Flags, EX_PUSH_LOCK_FLAGS_SPINNING_V)) {
+					// NtWaitForKeyedEvent(GlobalKeyedEventHandle, &WaitBlock, 0, 0);
+                // }
+
+            // } else {
+
+                // //
+                // // Use backof to limit memory bandwidth
+                // //
+                // RtlBackoff (&Backoff);
+
+                // NewValue = *PushLock;
+            // }
+
+        // }
+        // OldValue = NewValue;
+    // }
+
+// }
+
+// VOID
+// NTAPI
+// RtlAcquireSRWLockExclusive (
+     // __inout PEX_PUSH_LOCK PushLock
+     // )
+// /*++
+
+// Routine Description:
+
+    // Acquire a push lock exclusively
+
+// Arguments:
+
+    // PushLock - Push lock to be acquired
+
+// Return Value:
+
+    // None
+
+// --*/
+// {
+    // EX_PUSH_LOCK OldValue, NewValue, TopValue;
+    // EX_PUSH_LOCK_WAIT_BLOCK WaitBlock;
+    // BOOLEAN Optimize;
+// //#if defined (USE_EXP_BACKOFF)
+    // RTL_BACKOFF Backoff = {0};
+// //#endif
+
+    // OldValue = ReadForWriteAccess (PushLock);
+
+    // while (1) {
+        // //
+        // // If the lock is already held exclusively/shared or there are waiters then
+        // // we need to wait.
+        // //
+        // if ((OldValue.Value&EX_PUSH_LOCK_LOCK) == 0) {
+            // NewValue.Value = OldValue.Value + EX_PUSH_LOCK_LOCK;
+
+            // ASSERT (NewValue.Locked);
+
+            // NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                              // NewValue.Ptr,
+                                                              // OldValue.Ptr);
+            // if (NewValue.Ptr == OldValue.Ptr) {
+                // break;
+            // }
+
+// //#if defined (USE_EXP_BACKOFF)
+
+            // //
+            // // Use backof to limit memory bandwidth
+            // //
+            // RtlBackoff (&Backoff);
+
+            // NewValue = *PushLock;
+
+// //#endif
+        // } else {
+            // WaitBlock.Flags = EX_PUSH_LOCK_FLAGS_EXCLUSIVE | EX_PUSH_LOCK_FLAGS_SPINNING;
+            // WaitBlock.Previous = NULL;
+            // Optimize = FALSE;
+ 
+            // //
+            // // Move the sharecount to our wait block if need be.
+            // //
+            // if (OldValue.Waiting) {
+                // WaitBlock.Last = NULL;
+                // WaitBlock.Next = (PEX_PUSH_LOCK_WAIT_BLOCK)
+                                     // (OldValue.Value & ~EX_PUSH_LOCK_PTR_BITS);
+                // WaitBlock.ShareCount = 0;
+                // NewValue.Ptr = (PVOID)(((ULONG_PTR) &WaitBlock) |
+                                    // (OldValue.Value & EX_PUSH_LOCK_PTR_BITS) |
+                                    // EX_PUSH_LOCK_WAITING | EX_PUSH_LOCK_WAKING |
+                                    // EX_PUSH_LOCK_LOCK);
+                // if (!OldValue.Waking) {
+                    // Optimize = TRUE;
+                // }
+            // } else {
+                // WaitBlock.Last = &WaitBlock;
+                // WaitBlock.ShareCount = (ULONG) OldValue.Shared;
+                // if (WaitBlock.ShareCount > 1) {
+                    // NewValue.Ptr = (PVOID)(((ULONG_PTR) &WaitBlock) | EX_PUSH_LOCK_WAITING |
+                                                                      // EX_PUSH_LOCK_LOCK |
+                                                                      // EX_PUSH_LOCK_MULTIPLE_SHARED);
+                // } else {
+                    // WaitBlock.ShareCount = 0;
+                    // NewValue.Ptr = (PVOID)(((ULONG_PTR) &WaitBlock) | EX_PUSH_LOCK_WAITING |
+                                                                      // EX_PUSH_LOCK_LOCK);
+                // }
+            // }
+             
+// // #if DBG
+            // // WaitBlock.Signaled = FALSE;
+            // // WaitBlock.OldValue = OldValue.Ptr;
+            // // WaitBlock.NewValue = NewValue.Ptr;
+            // // WaitBlock.PushLock = PushLock;
+// // #endif
+            // ASSERT (NewValue.Waiting);
+            // ASSERT (OldValue.Locked);
+            // ASSERT (NewValue.Locked);
+
+            // TopValue = NewValue;
+            // NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                              // NewValue.Ptr,
+                                                              // OldValue.Ptr);
+            // if (NewValue.Ptr == OldValue.Ptr) {
+                // ULONG i;
+
+                // //
+                // // If we set the waiting bit then optimize the list
+                // //
+                // if (Optimize) {
+                    // ExpOptimizePushLockList (PushLock, TopValue);
+                // }
+
+                // //KeInitializeGate (&WaitBlock.WakeGate);
+
+                // for (i = ExPushLockSpinCount; i > 0; i--) {
+                    // if (((*(volatile LONG *)&WaitBlock.Flags)&EX_PUSH_LOCK_FLAGS_SPINNING) == 0) {
+                        // break;
+                    // }
+                    // YieldProcessor ();
+                // }
+
+                // if (InterlockedBitTestAndReset (&WaitBlock.Flags, EX_PUSH_LOCK_FLAGS_SPINNING_V)) {
+
+					// NtWaitForKeyedEvent(GlobalKeyedEventHandle, &WaitBlock, 0, 0);
+                    // //KeWaitForGate (&WaitBlock.WakeGate, WrPushLock, KernelMode);
+
+                // }
+                // ASSERT ((WaitBlock.ShareCount == 0));
+            // } else {
+
+                // //
+                // // Use backof to limit memory bandwidth
+                // //
+                // RtlBackoff (&Backoff);
+
+                // NewValue = *PushLock;
+            // }
+        // }
+        // OldValue = NewValue;
+    // }
+
+// }
+
+// VOID
+// NTAPI
+// RtlReleaseSRWLockExclusive (
+     // __inout PEX_PUSH_LOCK PushLock
+     // )
+// /*++
+
+// Routine Description:
+
+    // Release a push lock that was acquired exclusive
+
+// Arguments:
+
+    // PushLock - Push lock to be released
+
+// Return Value:
+
+    // None
+
+// --*/
+// {
+    // EX_PUSH_LOCK OldValue, NewValue, TopValue;
+
+    // OldValue = ReadForWriteAccess (PushLock);
+
+    // while (1) {
+
+        // ASSERT (OldValue.Locked);
+        // ASSERT (OldValue.Waiting || OldValue.Shared == 0);
+
+        // if (OldValue.Waiting && !OldValue.Waking) {
+            // NewValue.Value = OldValue.Value - EX_PUSH_LOCK_LOCK + EX_PUSH_LOCK_WAKING;
+            // ASSERT (NewValue.Waking && !NewValue.Locked);
+            // TopValue = NewValue;
+            // if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                                   // NewValue.Ptr,
+                                                                   // OldValue.Ptr)) == OldValue.Ptr) {
+                // ExfWakePushLock (PushLock, TopValue);
+                // break;
+            // }
+        // } else {
+            // NewValue.Value = OldValue.Value - EX_PUSH_LOCK_LOCK;
+            // ASSERT (NewValue.Waking || !NewValue.Waiting);
+            // if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                                   // NewValue.Ptr,
+                                                                   // OldValue.Ptr)) == OldValue.Ptr) {
+                // break;
+            // }
+        // }
+        // OldValue = NewValue;
+    // }
+// }
+
+// VOID
+// NTAPI
+// RtlReleaseSRWLockShared (
+     // __inout PEX_PUSH_LOCK PushLock
+     // )
+// /*++
+
+// Routine Description:
+
+    // Release a push lock that was acquired shared
+
+// Arguments:
+
+    // PushLock - Push lock to be released
+
+// Return Value:
+
+    // None
+
+// --*/
+// {
+    // EX_PUSH_LOCK OldValue, NewValue, TopValue;
+    // PEX_PUSH_LOCK_WAIT_BLOCK WaitBlock, NextWaitBlock;
+
+    // OldValue = ReadForWriteAccess (PushLock);
+
+    // while (!OldValue.Waiting) {
+
+        // if (OldValue.Shared > 1) {
+            // NewValue.Value = OldValue.Value - EX_PUSH_LOCK_SHARE_INC;
+        // } else {
+            // NewValue.Value = 0;
+        // }
+
+        // if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                               // NewValue.Ptr,
+                                                               // OldValue.Ptr)) == OldValue.Ptr) {
+            // return;
+        // }
+        // OldValue = NewValue;
+    // }
+
+    // if (OldValue.MultipleShared) {
+        // WaitBlock = (PEX_PUSH_LOCK_WAIT_BLOCK) (OldValue.Value & ~(ULONG_PTR)EX_PUSH_LOCK_PTR_BITS);
+
+        // while (1) {
+
+            // NextWaitBlock = WaitBlock->Last;
+            // if (NextWaitBlock != NULL) {
+                // WaitBlock = NextWaitBlock;
+                // break;
+            // }
+
+            // WaitBlock = WaitBlock->Next;
+        // }
+
+        // ASSERT (WaitBlock->ShareCount > 0);
+        // ASSERT (WaitBlock->Flags&EX_PUSH_LOCK_FLAGS_EXCLUSIVE);
+
+        // if (InterlockedDecrement (&WaitBlock->ShareCount) > 0) {
+            // return;
+        // }
+    // }
+
+    // while (1) {
+
+        // if (OldValue.Waking) {
+            // NewValue.Value = OldValue.Value & ~(EX_PUSH_LOCK_LOCK|EX_PUSH_LOCK_MULTIPLE_SHARED);
+            // ASSERT (NewValue.Waking && !NewValue.Locked && !NewValue.MultipleShared);
+            // if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                                   // NewValue.Ptr,
+                                                                   // OldValue.Ptr)) == OldValue.Ptr) {
+                // return;
+            // }
+        // } else {
+            // NewValue.Value = (OldValue.Value & ~(EX_PUSH_LOCK_LOCK |
+                                                 // EX_PUSH_LOCK_MULTIPLE_SHARED)) |
+                                      // EX_PUSH_LOCK_WAKING;
+            // ASSERT (NewValue.Waking && !NewValue.Locked && !NewValue.MultipleShared);
+            // TopValue = NewValue;
+            // if ((NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                                   // NewValue.Ptr,
+                                                                   // OldValue.Ptr)) == OldValue.Ptr) {
+                // ExfWakePushLock (PushLock, TopValue);
+                // return;
+            // }
+        // }
+
+        // OldValue = NewValue;
+    // }
+// }
+
+// VOID
+// NTAPI
+// RtlInitializeSRWLock(PEX_PUSH_LOCK Lock)
+// {
+    // *(PULONG_PTR)Lock = 0;
+// }
+
+// BOOLEAN
+// NTAPI
+// RtlTryAcquireSRWLockExclusive (
+     // IN PEX_PUSH_LOCK PushLock
+     // )
+// /*++
+
+// Routine Description:
+
+    // Try and acquire a push lock exclusively
+
+// Arguments:
+
+    // PushLock - Push lock to be acquired
+
+// Return Value:
+
+    // BOOLEAN - TRUE: Acquire was successful, FALSE: Lock was already acquired
+
+// --*/
+// {
+// #if defined (_WIN64)
+    // if (!InterlockedBitTestAndSet64 ((LONG64 *)&PushLock->Value, EX_PUSH_LOCK_LOCK_V)) {
+// #else
+    // if (!InterlockedBitTestAndSet ((LONG *)&PushLock->Value, EX_PUSH_LOCK_LOCK_V)) {
+// #endif
+        // ASSERT (PushLock->Locked);
+        // return TRUE;
+    // } else {
+        // return FALSE;
+    // }
+// }	
+
+// BOOLEAN
+// NTAPI
+// RtlTryAcquireSRWLockShared (
+     // __inout PEX_PUSH_LOCK PushLock
+     // )
+// /*++
+
+// Routine Description:
+
+    // Try to acquire a push lock shared without blocking
+
+// Arguments:
+
+    // PushLock - Push lock to be acquired
+
+// Return Value:
+
+    // BOOLEAN - TRUE, The lock was acquired, FALSE otherwise
+
+// --*/
+// {
+    // EX_PUSH_LOCK OldValue, NewValue;
+
+    // OldValue = ReadForWriteAccess (PushLock);
+
+    // while (1) {
+        // //
+        // // If the lock is already held we need to wait if its not held shared
+        // //
+        // if (!OldValue.Locked || (!OldValue.Waiting && OldValue.Shared > 0)) {
+
+            // if (OldValue.Waiting) {
+                // NewValue.Value = OldValue.Value + EX_PUSH_LOCK_LOCK;
+            // } else {
+                // NewValue.Value = (OldValue.Value + EX_PUSH_LOCK_SHARE_INC) | EX_PUSH_LOCK_LOCK;
+            // }
+            // ASSERT (NewValue.Locked);
+            // NewValue.Ptr = InterlockedCompareExchangePointer (&PushLock->Ptr,
+                                                              // NewValue.Ptr,
+                                                              // OldValue.Ptr);
+            // if (NewValue.Ptr == OldValue.Ptr) {
+                // return TRUE;
+            // }
+        // } else {
+            // return FALSE;
+        // }
+        // OldValue = NewValue;
+    // }
+
+// }	
 
 /***********************************************************************
  *           RtlSleepConditionVariableSRW   (NTDLL.@)

@@ -27,6 +27,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+#include "wine/port.h"
+
+#include <math.h>
+#include <stdio.h>
+
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_shader);
@@ -1188,6 +1194,8 @@ static void shader_arb_get_register_name(const struct wined3d_shader_instruction
                 sprintf(register_name, "%s", rastout_reg_names[reg->idx[0].offset]);
             break;
 
+        case WINED3DSPR_DEPTHOUT_GREATER_EQUAL:
+        case WINED3DSPR_DEPTHOUT_LESS_EQUAL:
         case WINED3DSPR_DEPTHOUT:
             strcpy(register_name, "result.depth");
             break;
@@ -4971,21 +4979,8 @@ static void shader_arb_get_caps(const struct wined3d_gl_info *gl_info, struct sh
 
 static BOOL shader_arb_color_fixup_supported(struct color_fixup_desc fixup)
 {
-    if (TRACE_ON(d3d_shader) && TRACE_ON(d3d))
-    {
-        TRACE("Checking support for color_fixup:\n");
-        dump_color_fixup_desc(fixup);
-    }
-
     /* We support everything except complex conversions. */
-    if (!is_complex_fixup(fixup))
-    {
-        TRACE("[OK]\n");
-        return TRUE;
-    }
-
-    TRACE("[FAILED]\n");
-    return FALSE;
+    return !is_complex_fixup(fixup);
 }
 
 static void shader_arb_add_instruction_modifiers(const struct wined3d_shader_instruction *ins) {

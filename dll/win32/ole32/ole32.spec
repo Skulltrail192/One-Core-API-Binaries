@@ -323,3 +323,8 @@
 @ stdcall WriteFmtUserTypeStg(ptr long ptr)
 @ stub WriteOleStg
 @ stub WriteStringStream
+
+
+@ stub CoTestCancel
+@ stub CoInvalidateRemoteMachineBindings
+@ stub CoSetCancelObject

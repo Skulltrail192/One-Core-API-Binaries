@@ -1,0 +1,4 @@
+MODULE    = fwpuclnt.dll
+
+C_SRCS = \
+	main.c

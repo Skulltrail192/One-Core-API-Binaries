@@ -1037,8 +1037,8 @@
 @ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
 
 ; #Vista Functions 
-@ stdcall AcquireSRWLockExclusive(ptr) ntdll_vista.RtlAcquireSRWLockExclusive
-@ stdcall AcquireSRWLockShared(ptr) ntdll_vista.RtlAcquireSRWLockShared
+@ stdcall AcquireSRWLockExclusive(ptr) ntext.RtlAcquireSRWLockExclusive
+@ stdcall AcquireSRWLockShared(ptr) ntext.RtlAcquireSRWLockShared
 @ stdcall ApplicationRecoveryFinished(long)
 @ stdcall ApplicationRecoveryInProgress(ptr)
 @ stdcall CancelIoEx(long ptr)
@@ -1118,7 +1118,7 @@
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
 @ stdcall InitializeConditionVariable(ptr)
 @ stdcall InitializeCriticalSectionEx(ptr long long) 
-@ stdcall InitializeSRWLock(ptr) ntdll_vista.RtlInitializeSRWLock
+@ stdcall InitializeSRWLock(ptr) ntext.RtlInitializeSRWLock
 @ stdcall InitOnceBeginInitialize(ptr long ptr ptr)
 @ stdcall InitOnceComplete(ptr long ptr)
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
@@ -1138,8 +1138,8 @@
 @ stdcall QueryProcessCycleTime(ptr ptr)
 @ stdcall QueryProcessAffinityUpdateMode(ptr long)
 @ stdcall QueryThreadCycleTime(ptr ptr)
-@ stdcall ReleaseSRWLockExclusive(ptr) ntdll_vista.RtlReleaseSRWLockExclusive
-@ stdcall ReleaseSRWLockShared(ptr) ntdll_vista.RtlReleaseSRWLockShared
+@ stdcall ReleaseSRWLockExclusive(ptr) ntext.RtlReleaseSRWLockExclusive
+@ stdcall ReleaseSRWLockShared(ptr) ntext.RtlReleaseSRWLockShared
 @ stdcall SetConsoleHistoryInfo(ptr)
 @ stdcall SetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall SetCurrentConsoleFontEx(ptr long ptr)
@@ -1155,7 +1155,7 @@
 @ stdcall SetThreadpoolTimer(ptr ptr long long) ntext.TpSetTimer
 @ stdcall SetThreadpoolWait(ptr ptr ptr) ntext.TpSetWait
 @ stdcall SleepConditionVariableCS(ptr ptr long) 
-;@ stdcall SleepConditionVariableSRW(ptr ptr long long) ntdll_vista.RtlSleepConditionVariableSRW
+;@ stdcall SleepConditionVariableSRW(ptr ptr long long) ntext.RtlSleepConditionVariableSRW
 @ stdcall SubmitThreadpoolWork(ptr) ntext.TpPostWork
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) ntext.TpWaitForTimer
@@ -1208,8 +1208,8 @@
 @ stdcall RegisterApplicationRecoveryCallback(long ptr long long)
 @ stdcall RegisterApplicationRestart(wstr long)
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
-@ stdcall TryAcquireSRWLockExclusive(ptr) ntdll_vista.RtlTryAcquireSRWLockExclusive
-@ stdcall TryAcquireSRWLockShared(ptr) ntdll_vista.RtlTryAcquireSRWLockShared
+@ stdcall TryAcquireSRWLockExclusive(ptr) ntext.RtlTryAcquireSRWLockExclusive
+@ stdcall TryAcquireSRWLockShared(ptr) ntext.RtlTryAcquireSRWLockShared
 
 #Win8 Functions 
 @ stdcall GetCurrentPackageId(ptr ptr)

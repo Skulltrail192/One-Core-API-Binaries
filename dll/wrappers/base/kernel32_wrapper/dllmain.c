@@ -26,6 +26,7 @@ PPEB Peb;
 HMODULE kernel32_handle = 0;
 
 void InitializeCriticalForSRW();
+void InitializeCriticalForDirectories();
 
 BOOL
 WINAPI
@@ -42,6 +43,7 @@ BaseDllInitialize(HANDLE hDll,
         {
             /* Insert more dll attach stuff here! */
 			kernel32_handle = GetModuleHandleW(L"kernelfull");
+			InitializeCriticalForDirectories();
 			//InitializeCriticalForSRW();
             DllInitialized = TRUE;
             break;

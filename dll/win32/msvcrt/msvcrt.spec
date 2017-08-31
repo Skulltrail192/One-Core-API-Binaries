@@ -987,3 +987,8 @@
 @ cdecl wctomb(ptr long)
 @ varargs wprintf(wstr)
 @ varargs wscanf(wstr)
+
+@ stub _initterm_e
+@ stub _invalid_parameter
+@ stub setjmp
+@ cdecl strnlen(str long) MSVCRT_strnlen

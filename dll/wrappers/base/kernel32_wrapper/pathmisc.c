@@ -19,12 +19,25 @@ Revision History:
 --*/
 
 #include "main.h"
+#include "wine/list.h"
+
+static RTL_CRITICAL_SECTION dlldir_section;
 
 WINE_DEFAULT_DEBUG_CHANNEL(kernel32file);
 
 #define FS_VOLUME_BUFFER_SIZE (MAX_PATH * sizeof(WCHAR) + sizeof(FILE_FS_VOLUME_INFORMATION))
 
 #define FS_ATTRIBUTE_BUFFER_SIZE (MAX_PATH * sizeof(WCHAR) + sizeof(FILE_FS_ATTRIBUTE_INFORMATION))
+
+struct dll_dir_entry
+{
+    struct list entry;
+    WCHAR       dir[1];
+};
+
+void InitializeCriticalForDirectories(){
+	 RtlInitializeCriticalSection(&dlldir_section);
+}
 
 /*
  * @implemented
@@ -126,4 +139,49 @@ GetVolumeInformationByHandle(
 	}
     }
   return TRUE;
+}
+
+/****************************************************************************
+ *              AddDllDirectory   (KERNEL32.@)
+ */
+DLL_DIRECTORY_COOKIE WINAPI AddDllDirectory( const WCHAR *dir )
+{
+    WCHAR path[MAX_PATH];
+    DWORD len;
+    struct dll_dir_entry *ptr;
+    DOS_PATHNAME_TYPE type = RtlDetermineDosPathNameType_U( dir );
+
+    if (type != ABSOLUTE_PATH && type != ABSOLUTE_DRIVE_PATH)
+    {
+        SetLastError( ERROR_INVALID_PARAMETER );
+        return NULL;
+    }
+    if (!(len = GetFullPathNameW( dir, MAX_PATH, path, NULL ))) return NULL;
+    if (GetFileAttributesW( path ) == INVALID_FILE_ATTRIBUTES) return NULL;
+
+    if (!(ptr = HeapAlloc( GetProcessHeap(), 0, offsetof(struct dll_dir_entry, dir[++len] )))) return NULL;
+    memcpy( ptr->dir, path, len * sizeof(WCHAR) );
+    TRACE( "%s\n", debugstr_w( ptr->dir ));
+
+    RtlEnterCriticalSection( &dlldir_section );
+    list_add_head( &dll_dir_list, &ptr->entry );
+    RtlLeaveCriticalSection( &dlldir_section );
+    return ptr;
+}
+
+
+/****************************************************************************
+ *              RemoveDllDirectory   (KERNEL32.@)
+ */
+BOOL WINAPI RemoveDllDirectory( DLL_DIRECTORY_COOKIE cookie )
+{
+    struct dll_dir_entry *ptr = cookie;
+
+    TRACE( "%s\n", debugstr_w( ptr->dir ));
+
+    RtlEnterCriticalSection( &dlldir_section );
+    list_remove( &ptr->entry );
+    HeapFree( GetProcessHeap(), 0, ptr );
+    RtlLeaveCriticalSection( &dlldir_section );
+    return TRUE;
 }

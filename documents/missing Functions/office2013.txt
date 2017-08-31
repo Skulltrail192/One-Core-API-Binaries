@@ -1,0 +1,13 @@
+EnumCalendarInfoExEx
+EnumDateFormatsExEx
+EnumSystemLocalesEx
+EnumTimeFormatsEx
+GetCalendarInfoEx
+GetDateFormatEx
+GetTimeFormatEx
+K32EnumProcessModules
+K32EnumProcesses
+K32GetModuleFileNameExW
+RaiseFailFastException
+SetWaitableTimerEx
+TryAcquireSRWLockShared

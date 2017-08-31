@@ -748,3 +748,26 @@
 739 varargs wsprintfW(wstr wstr)
 740 stdcall wvsprintfA(ptr str ptr)
 741 stdcall wvsprintfW(ptr wstr ptr)
+
+
+#Vista Functions
+@ stub CancelShutdown
+@ stub CreateWindowInBand
+@ stub IsThreadDesktopComposited
+@ stub SetWindowCompositionAttribute
+@ stub SwitchDesktopWithFade
+@ stub GetWindowBand
+@ stub GetWindowDisplayAffinity
+@ stub LogicalToPhysicalPoint
+@ stub SetWindowDisplayAffinity
+@ stub WindowFromPhysicalPoint
+@ stub SoundSentry
+@ stub DisplayConfigGetDeviceInfo
+@ stub DisplayConfigSetDeviceInfo
+@ stub GetDisplayConfigBufferSizes
+@ stub IsProcessDPIAware
+@ stub QueryDisplayConfig
+@ stub SetProcessDPIAware
+
+@ stub RegisterSessionPort
+@ stub UnregisterSessionPort

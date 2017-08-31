@@ -1,0 +1,2 @@
+add_subdirectory(bootanim)
+add_subdirectory(videoprtbase)

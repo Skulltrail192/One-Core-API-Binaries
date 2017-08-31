@@ -111,7 +111,7 @@ set_subsystem(kernelfull console)
 ################# END  HACK #################
 
 target_link_libraries(kernelfull wine chkstk ${PSEH_LIB})
-add_importlibs(kernelfull ntdll)
+add_importlibs(kernelfull ntext ntdll)
 add_pch(kernelfull k32.h SOURCE)
 add_dependencies(kernelfull psdk errcodes asm)
 add_cd_file(TARGET kernelfull DESTINATION reactos/system32 FOR all)

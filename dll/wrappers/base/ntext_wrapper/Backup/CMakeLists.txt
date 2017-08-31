@@ -5,9 +5,9 @@ add_definitions(
     -DCRTDLL)
 remove_definitions(-D_WIN32_WINNT=0x502)
 add_definitions(-D_WIN32_WINNT=0x600)	
-include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
-include_directories(${REACTOS_SOURCE_DIR}/lib/rtl)
-include_directories(${REACTOS_SOURCE_DIR}/include/ndk)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/lib/rtl)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/ndk)
 
 spec2def(ntdllbase.dll ntdllbase.spec ADD_IMPORTLIB)
 

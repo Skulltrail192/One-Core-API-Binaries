@@ -316,8 +316,7 @@ WINAPI
 NtUnmapViewOfSectionEx(
 	HANDLE handle, 
 	PVOID MemoryCache, 
-	ULONG number
-)
+	ULONG number)
 {
 	return NtUnmapViewOfSection(handle, MemoryCache);	
 }
@@ -351,7 +350,7 @@ NTSTATUS
 NTAPI
 NtRemoveIoCompletionEx(
     __in HANDLE IoCompletionHandle,
-    __out PFILE_IO_COMPLETION_INFORMATION IoCompletionInformation,
+    __out FILE_IO_COMPLETION_INFORMATION IoCompletionInformation,
     __in ULONG Count,
     __out PVOID NumEntriesRemoved,
     __in_opt PLARGE_INTEGER Timeout,
@@ -359,9 +358,9 @@ NtRemoveIoCompletionEx(
 )
 {
 	return NtRemoveIoCompletion(IoCompletionHandle,
-								&IoCompletionInformation->KeyContext,
-								&IoCompletionInformation->ApcContext,
-								&IoCompletionInformation->IoStatusBlock,
+								NULL,
+								NULL,
+								NULL,
 								Timeout);
 }
 
@@ -613,7 +612,6 @@ NtpQueryInformationToken(
 										   tokeninfolength,
 										   retlen);
 	}
-	return STATUS_SUCCESS;
 }
 
 VOID 
@@ -623,7 +621,6 @@ NtFlushProcessWriteBuffers()
 	;
 }
 
-NTSTATUS
 NTAPI 
 NtSetSystemPowerState( 	
 	IN POWER_ACTION  	SystemAction,
@@ -745,9 +742,33 @@ WINAPI
 NtOpenKeyEx( 
 	PHANDLE retkey, 
 	ACCESS_MASK access, 
-	POBJECT_ATTRIBUTES attr, 
+	const OBJECT_ATTRIBUTES *attr, 
 	ULONG options 
 )
 {
     return NtOpenKey( retkey, access, attr);
+}
+
+NTSTATUS
+NTAPI
+NtQuerySectionInternal(
+  IN HANDLE               SectionHandle,
+  IN SECTION_INFORMATION_CLASS InformationClass,
+  OUT PVOID               InformationBuffer,
+  IN SIZE_T               InformationBufferSize,
+  OUT PSIZE_T             ResultLength OPTIONAL 
+)
+{
+	NTSTATUS Status;
+	PSECTION_IMAGE_INFORMATION Sii;
+	
+	Status = NtQuerySection(SectionHandle, InformationClass, InformationBuffer, InformationBufferSize, ResultLength);
+	if(NT_SUCCESS(Status) && InformationClass == SectionImageInformation)
+	{
+		Sii = (PSECTION_IMAGE_INFORMATION)InformationBuffer;
+		Sii->SubSystemMajorVersion = 5;
+		Sii->SubSystemMinorVersion = 0;
+		InformationBuffer = Sii;
+	}	
+	return Status;
 }

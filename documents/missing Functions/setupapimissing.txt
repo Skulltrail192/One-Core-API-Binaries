@@ -1,0 +1,6 @@
+SetupConfigureWmiFromInfSectionA
+SetupConfigureWmiFromInfSectionW
+SetupDiGetActualModelsSectionA
+SetupDiGetActualModelsSectionW
+SetupDiRestartDevices
+pSetupIsLocalSystem

@@ -73,6 +73,7 @@ list(APPEND SOURCE
     CFolder.cpp
     CFolderItems.cpp
     CFolderItemVerbs.cpp
+	unimplemented.cpp
     precomp.h)
 
 file(GLOB_RECURSE shell32_rc_deps res/*.*)

@@ -1,0 +1,24 @@
+body		{font:normal 68% verdana,arial,helvetica; color:#000000; }
+
+A:link { color:#003399; text-decoration:none; }
+A:visited { color:#800080; text-decoration:none; }
+A:hover { text-decoration:underline; color:#FF6600 }
+
+
+H1 { font:normal 165% verdana,arial,helvetica; margin:5 0; margin-top:0px; }
+
+H2 { font:bold 125% verdana,arial,helvetica; margin-top:1em; margin-bottom:0.5em; }
+
+H3 { font:bold 115% verdana,arial,helvetica; margin-bottom:0.5em; }
+
+H4, H5, H6 { font:bold 100% verdana,arial,helvetica; margin-bottom:0.5em; }
+
+ol		{font-size: 100%; margin-top: .5em; margin-bottom: 0em; margin-left: 4em;}
+ul		{font-size: 100%; margin-top: .5em; margin-bottom: 0em;}
+ol ul	{list-style: disc; margin-top: .5em;}
+ul ul	{list-style: disc; margin-top: .5em;}
+li		{margin-bottom: .7em; margin-left: -2em;}
+
+TD, TH { font-size:68%; }
+
+P { line-height:1.5em; margin-top:0.5em; margin-bottom:1.0em; }

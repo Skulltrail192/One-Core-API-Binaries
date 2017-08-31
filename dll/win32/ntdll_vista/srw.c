@@ -797,8 +797,7 @@ RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock)
  */
 BOOLEAN WINAPI RtlTryAcquireSRWLockExclusive( RTL_SRWLOCK *lock )
 {
-	lock = NULL;
-	return FALSE;
+	return InterlockedBitTestAndSet((LONG volatile *)lock, 0) == 0;
     // return InterlockedCompareExchange( (int *)&lock->Ptr, SRWLOCK_MASK_IN_EXCLUSIVE |
                                 // SRWLOCK_RES_EXCLUSIVE, 0 ) == 0;
 }

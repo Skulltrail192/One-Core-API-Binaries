@@ -31,6 +31,7 @@ list(APPEND SOURCE
     client/toolhelp.c
     client/utils.c
     client/thread.c
+	client/unimplemented.c
     client/vdm.c
     client/version.c
     client/virtmem.c

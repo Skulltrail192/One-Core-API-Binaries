@@ -48,6 +48,7 @@ list(APPEND SOURCE
 	rtl/processor.c
 	rtl/profiling.c
 	rtl/sid.c
+	rtl/srw.c		
 	rtl/sync.c		
 	rtl/sysinfo.c
 	rtl/time.c

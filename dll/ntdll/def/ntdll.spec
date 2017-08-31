@@ -583,7 +583,7 @@
 581 stdcall RtlDuplicateUnicodeString(long ptr ptr)
 582 stdcall RtlEmptyAtomTable(ptr long)
 # stdcall RtlEnableEarlyCriticalSectionEventCreation
-;584 stdcall RtlEncodePointer(ptr) ;Commented for ntext Wrapper
+584 stdcall RtlEncodePointer(ptr) ;Commented for ntext Wrapper
 585 stdcall RtlEncodeSystemPointer(ptr)
 586 stdcall -arch=win32 -ret64 RtlEnlargedIntegerMultiply(long long)
 587 stdcall -arch=win32 RtlEnlargedUnsignedDivide(double long ptr)
@@ -651,7 +651,7 @@
 649 stdcall RtlGetCriticalSectionRecursionCount(ptr)
 650 stdcall RtlGetCurrentDirectory_U(long ptr)
 651 stdcall RtlGetCurrentPeb()
-;652 stdcall RtlGetCurrentProcessorNumber() ; 5.2 SP1 and higher ;Commented for ntext wrapper
+652 stdcall RtlGetCurrentProcessorNumber() ; 5.2 SP1 and higher ;Commented for ntext wrapper
 653 stdcall RtlGetDaclSecurityDescriptor(ptr ptr ptr ptr)
 654 stdcall RtlGetElementGenericTable(ptr long)
 655 stdcall RtlGetElementGenericTableAvl(ptr long)
