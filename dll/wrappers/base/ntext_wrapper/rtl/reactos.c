@@ -44,39 +44,11 @@
                              RTL_SRWLOCK_SHARED | RTL_SRWLOCK_CONTENTION_LOCK)
 #define RTL_SRWLOCK_BITS    4
 
-// typedef struct _RTLP_SRWLOCK_SHARED_WAKE
-// {
-    // LONG Wake;
-    // volatile struct _RTLP_SRWLOCK_SHARED_WAKE *Next;
-// } volatile RTLP_SRWLOCK_SHARED_WAKE, *PRTLP_SRWLOCK_SHARED_WAKE;
-
-// typedef struct _RTLP_SRWLOCK_WAITBLOCK
-// {
-    // /* SharedCount is the number of shared acquirers. */
-    // LONG SharedCount;
-
-    // /* Last points to the last wait block in the chain. The value
-       // is only valid when read from the first wait block. */
-    // volatile struct _RTLP_SRWLOCK_WAITBLOCK *Last;
-
-    // /* Next points to the next wait block in the chain. */
-    // volatile struct _RTLP_SRWLOCK_WAITBLOCK *Next;
-
-    // union
-    // {
-        // /* Wake is only valid for exclusive wait blocks */
-        // LONG Wake;
-        // /* The wake chain is only valid for shared wait blocks */
-        // struct
-        // {
-            // PRTLP_SRWLOCK_SHARED_WAKE SharedWakeChain;
-            // PRTLP_SRWLOCK_SHARED_WAKE LastSharedWake;
-        // };
-    // };
-
-    // BOOLEAN Exclusive;
-// } volatile RTLP_SRWLOCK_WAITBLOCK, *PRTLP_SRWLOCK_WAITBLOCK;
-
+#define SRWLOCK_MASK_IN_EXCLUSIVE     0x80000000
+#define SRWLOCK_MASK_EXCLUSIVE_QUEUE  0x7fff0000
+#define SRWLOCK_MASK_SHARED_QUEUE     0x0000ffff
+#define SRWLOCK_RES_EXCLUSIVE         0x00010000
+#define SRWLOCK_RES_SHARED            0x00000001
 
 static VOID
 NTAPI
@@ -190,7 +162,6 @@ RtlpReleaseWaitBlockLock(IN OUT PRTL_SRWLOCK SRWLock)
     InterlockedAndPointer(&SRWLock->Ptr,
                           ~RTL_SRWLOCK_CONTENTION_LOCK);
 }
-
 
 static PRTLP_SRWLOCK_WAITBLOCK
 NTAPI
@@ -316,7 +287,6 @@ RtlInitializeSRWLock(OUT PRTL_SRWLOCK SRWLock)
 {
     SRWLock->Ptr = NULL;
 }
-
 
 VOID
 NTAPI
@@ -761,33 +731,6 @@ RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock)
     }
 }
 
-// VOID 
-// NTAPI 
-// RtlReleaseSRWLockExclusive(PRTL_SRWLOCK SRWLock)
-// {
-  // signed __int32 increment; // ecx@1
-  // PRTLP_SRWLOCK_WAITBLOCK Shared; // ecx@6
-
-  // increment = _InterlockedExchangeAdd((volatile signed __int32 *)SRWLock, 0xFFFFFFFF);
-  // if ( !(increment & 1) )
-    // RtlRaiseStatus(0xC0000264);
-  // if ( increment & 2 && !(increment & 4) )
-  // {
-    // Shared = (PRTLP_SRWLOCK_WAITBLOCK)(increment - 1);
-    // if ( (PRTLP_SRWLOCK_WAITBLOCK)_InterlockedCompareExchange(
-                                    // (volatile signed __int32 *)SRWLock,
-                                    // (signed __int32)&Shared->Last,
-                                    // (signed __int32)Shared) == Shared )
-      // RtlpReleaseWaitBlockLockExclusive(SRWLock, &Shared->Last);
-  // }
-// }
-
-#define SRWLOCK_MASK_IN_EXCLUSIVE     0x80000000
-#define SRWLOCK_MASK_EXCLUSIVE_QUEUE  0x7fff0000
-#define SRWLOCK_MASK_SHARED_QUEUE     0x0000ffff
-#define SRWLOCK_RES_EXCLUSIVE         0x00010000
-#define SRWLOCK_RES_SHARED            0x00000001
-
 /***********************************************************************
  *              RtlTryAcquireSRWLockExclusive (NTDLL.@)
  *
@@ -797,9 +740,8 @@ RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock)
  */
 BOOLEAN WINAPI RtlTryAcquireSRWLockExclusive( RTL_SRWLOCK *lock )
 {
-	return InterlockedBitTestAndSet((LONG volatile *)lock, 0) == 0;
-    // return InterlockedCompareExchange( (int *)&lock->Ptr, SRWLOCK_MASK_IN_EXCLUSIVE |
-                                // SRWLOCK_RES_EXCLUSIVE, 0 ) == 0;
+    return InterlockedCompareExchange( (int *)&lock->Ptr, SRWLOCK_MASK_IN_EXCLUSIVE |
+                                 SRWLOCK_RES_EXCLUSIVE, 0 ) == 0;
 }
 
 /***********************************************************************

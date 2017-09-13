@@ -29,6 +29,10 @@ WINE_DEFAULT_DEBUG_CHANNEL(kernel32file);
 
 #define FS_ATTRIBUTE_BUFFER_SIZE (MAX_PATH * sizeof(WCHAR) + sizeof(FILE_FS_ATTRIBUTE_INFORMATION))
 
+static struct list dll_dir_list = LIST_INIT( dll_dir_list ); 
+
+static DWORD default_search_flags;  /* default flags set by SetDefaultDllDirectories */
+
 struct dll_dir_entry
 {
     struct list entry;
@@ -183,5 +187,25 @@ BOOL WINAPI RemoveDllDirectory( DLL_DIRECTORY_COOKIE cookie )
     list_remove( &ptr->entry );
     HeapFree( GetProcessHeap(), 0, ptr );
     RtlLeaveCriticalSection( &dlldir_section );
+    return TRUE;
+}
+
+/*************************************************************************
+ *           SetDefaultDllDirectories   (KERNEL32.@)
+ */
+BOOL WINAPI SetDefaultDllDirectories( DWORD flags )
+{
+    /* LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR doesn't make sense in default dirs */
+    const DWORD load_library_search_flags = (LOAD_LIBRARY_SEARCH_APPLICATION_DIR |
+                                             LOAD_LIBRARY_SEARCH_USER_DIRS |
+                                             LOAD_LIBRARY_SEARCH_SYSTEM32 |
+                                             LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+
+    if (!flags || (flags & ~load_library_search_flags))
+    {
+        SetLastError( ERROR_INVALID_PARAMETER );
+        return FALSE;
+    }
+    default_search_flags = flags;
     return TRUE;
 }

@@ -252,7 +252,7 @@ HBITMAP WINAPI Convert1BppToMonoBitmap(HDC hdc, HBITMAP ho)
       DeleteObject(ho);
     }
     DeleteDC(localHdc);
-  }
+  }PrivateSetDbgTag
   return localBitmap;
 }
 
@@ -389,23 +389,23 @@ HGDIOBJ WINAPI BitmapFromDIB(LONG DestWidth, LONG cy, COLORREF color, UINT16 num
   return hbm;
 }*/
 
-// BOOL 
-// WINAPI 
-// PrivateRegisterICSProc(RegisterCallback registrator)
-// {
-  // BOOL result; // eax@2
+BOOL 
+WINAPI 
+PrivateRegisterICSProc(RegisterCallback registrator)
+{
+  BOOL result; // eax@2
 
-  // if ( gpICSProc )
-  // {
-    // result = FALSE;
-  // }
-  // else
-  // {
-    // gpICSProc = registrator;
-    // result = TRUE;
-  // }
-  // return result;
-// }
+  if ( gpICSProc )
+  {
+    result = FALSE;
+  }
+  else
+  {
+    gpICSProc = registrator;
+    result = TRUE;
+  }
+  return result;
+}
 
 /**********************************************************************
  *              GetIconInfoExW (USER32.@)

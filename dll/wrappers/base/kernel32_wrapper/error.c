@@ -52,3 +52,32 @@ Return Value:
     SetLastError( dwErrorCode );
     return( dwErrorCode );
 }
+
+UINT
+WINAPI
+GetErrorMode()
+{
+
+    UINT PreviousMode;
+    NTSTATUS Status;
+
+    Status = NtQueryInformationProcess(
+                NtCurrentProcess(),
+                ProcessDefaultHardErrorMode,
+                (PVOID) &PreviousMode,
+                sizeof(PreviousMode),
+                NULL
+                );
+    if ( !NT_SUCCESS(Status) ) {
+        BaseSetLastNTError(Status);
+        return 0;
+        }
+
+    if (PreviousMode & 1) {
+        PreviousMode &= ~SEM_FAILCRITICALERRORS;
+        }
+    else {
+        PreviousMode |= SEM_FAILCRITICALERRORS;
+        }
+    return PreviousMode;
+}

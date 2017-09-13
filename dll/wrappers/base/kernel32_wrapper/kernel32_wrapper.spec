@@ -402,7 +402,7 @@
 @ stdcall GetPrivateProfileStructA (str str ptr long str)
 @ stdcall GetPrivateProfileStructW(wstr wstr ptr long wstr)
 @ stdcall GetProcAddress(long str)
-@ stdcall GetProcessAffinityMask(long ptr ptr)
+@ stdcall GetProcessAffinityMask(ptr ptr ptr)
 @ stdcall GetProcessHandleCount(long ptr)
 @ stdcall -norelay GetProcessHeap()
 @ stdcall GetProcessHeaps(long ptr)
@@ -1079,8 +1079,10 @@
 @ stdcall GetConsoleOriginalTitleW(wstr long)
 @ stdcall GetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall GetCurrentConsoleFontEx(ptr long ptr) 
+@ stdcall GetCurrencyFormatEx(wstr long wstr ptr wstr long)
 @ stdcall GetDateFormatEx(wstr long ptr wstr ptr long wstr)
 @ stdcall GetDynamicTimeZoneInformation(ptr)
+@ stdcall GetErrorMode()
 @ stdcall GetFileInformationByHandleEx(ptr long ptr long) fileextd.GetFileInformationByHandleEx
 @ stdcall GetFileInformationByHandleExW(ptr long ptr long) fileextd.GetFileInformationByHandleEx
 @ stdcall GetFinalPathNameByHandleA(ptr str long long)
@@ -1155,7 +1157,7 @@
 @ stdcall SetThreadpoolTimer(ptr ptr long long) ntext.TpSetTimer
 @ stdcall SetThreadpoolWait(ptr ptr ptr) ntext.TpSetWait
 @ stdcall SleepConditionVariableCS(ptr ptr long) 
-;@ stdcall SleepConditionVariableSRW(ptr ptr long long) ntext.RtlSleepConditionVariableSRW
+;@ stdcall SleepConditionVariableSRW(ptr ptr long long)
 @ stdcall SubmitThreadpoolWork(ptr) ntext.TpPostWork
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) ntext.TpWaitForTimer
@@ -1212,11 +1214,14 @@
 @ stdcall TryAcquireSRWLockShared(ptr) ntext.RtlTryAcquireSRWLockShared
 
 #Win8 Functions 
+@ stdcall AddDllDirectory(wstr)
 @ stdcall GetCurrentPackageId(ptr ptr)
 @ stdcall GetCurrentPackageFamilyName(ptr ptr)
 @ stdcall GetCurrentPackageFullName(ptr ptr)
 @ stdcall GetPackageFullName(long ptr ptr)
 @ stdcall GetSystemTimePreciseAsFileTime(ptr)
+@ stdcall RemoveDllDirectory(ptr)
+@ stdcall SetDefaultDllDirectories(long)
 @ stdcall WerpNotifyLoadStringResourceWorker(ptr wstr ptr long) WerpNotifyLoadStringResource
 @ stdcall WerpNotifyUseStringResourceWorker(ptr) WerpNotifyUseStringResource
 

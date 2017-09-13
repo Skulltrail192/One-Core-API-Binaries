@@ -748,3 +748,8 @@
 739 varargs wsprintfW(wstr wstr)
 740 stdcall wvsprintfA(ptr str ptr)
 741 stdcall wvsprintfW(ptr wstr ptr)
+
+
+@ stub PrivateSetDbgTag
+@ stub PrivateSetRipFlags
+@ stub ResolveDesktopForWOW

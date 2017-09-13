@@ -148,10 +148,9 @@ LdrGetProcedureAddress(
 VOID
 NTAPI
 LdrInitializeThunk(
-    ULONG Unknown1,
-    ULONG Unknown2,
-    ULONG Unknown3,
-    ULONG Unknown4
+    PVOID Unknown1,
+    PVOID Unknown2,
+    PVOID Unknown3
 );
 
 NTSTATUS

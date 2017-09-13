@@ -798,15 +798,7 @@ typedef struct _D3DKMT_DESTROYDCFROMMEMORY
     // DeleteDC( dc );
     // return STATUS_INVALID_PARAMETER;
 // }
-HBITMAP
-APIENTRY
-EngCreateBitmap(
-     IN SIZEL sizl,
-     IN LONG lWidth,
-     IN ULONG iFormat,
-     IN FLONG fl,
-     IN OPTIONAL PVOID pvBits);
-	 
+
 /* DEVINFO.iDitherFormat constants */
    #define BMF_1BPP       1L
    #define BMF_4BPP       2L
@@ -846,29 +838,14 @@ BitmapFormat(ULONG cBits, ULONG iCompression)
     }
 }	 
 
-HBITMAP 
-WINAPI 
-SelectBitmap( 	
-	_In_ HDC  	hdc,
-	_In_ HBITMAP  	hbmp 
-);	
-
-VOID
-APIENTRY
-EngUnlockSurface(
-  IN PVOID pso);
-
 #define BMF_TOPDOWN   0x0001
 #define BMF_NOZEROINIT   0x0002
 
-DWORD
-APIENTRY
-D3DKMTCreateDCFromMemory(D3DKMT_CREATEDCFROMMEMORY *desc)
+/***********************************************************************
+ *           D3DKMTCreateDCFromMemory    (GDI32.@)
+ */
+NTSTATUS WINAPI D3DKMTCreateDCFromMemory( D3DKMT_CREATEDCFROMMEMORY *desc )
 {
-    HBITMAP bitmap;
-    HDC hDC;
-	SIZEL sizl;
-
     const struct d3dddi_format_info
     {
         D3DDDIFORMAT format;
@@ -877,7 +854,11 @@ D3DKMTCreateDCFromMemory(D3DKMT_CREATEDCFROMMEMORY *desc)
         unsigned int palette_size;
         DWORD mask_r, mask_g, mask_b;
     } *format = NULL;
+    BITMAPINFO *bmpInfo = NULL;
+    BITMAPV5HEADER *bmpHeader = NULL;
+    HBITMAP bitmap;
     unsigned int i;
+    HDC dc;
 
     static const struct d3dddi_format_info format_info[] =
     {
@@ -892,13 +873,11 @@ D3DKMTCreateDCFromMemory(D3DKMT_CREATEDCFROMMEMORY *desc)
         { D3DDDIFMT_P8,       8,  BI_RGB,       256, 0x00000000, 0x00000000, 0x00000000 },
     };
 
-    if (!desc) 
-        return STATUS_INVALID_PARAMETER;
+    if (!desc) return STATUS_INVALID_PARAMETER;
 
-    if (!desc->pMemory) 
-        return STATUS_INVALID_PARAMETER;
+    if (!desc->pMemory) return STATUS_INVALID_PARAMETER;
 
-    for (i = 0; i < sizeof(format_info) / sizeof(*format_info); ++i)
+    for (i = 0; i < sizeof(format_info) / sizeof(*format_info); i)
     {
         if (format_info[i].format == desc->Format)
         {
@@ -906,56 +885,61 @@ D3DKMTCreateDCFromMemory(D3DKMT_CREATEDCFROMMEMORY *desc)
             break;
         }
     }
-
-    if (!format) 
-        return STATUS_INVALID_PARAMETER;
+    if (!format) return STATUS_INVALID_PARAMETER;
 
     if (desc->Width > (UINT_MAX & ~3) / (format->bit_count / 8) ||
         !desc->Pitch || desc->Pitch < (((desc->Width * format->bit_count + 31) >> 3) & ~3) ||
-        !desc->Height || desc->Height > UINT_MAX / desc->Pitch)
+        !desc->Height || desc->Height > UINT_MAX / desc->Pitch) return STATUS_INVALID_PARAMETER;
+
+    if (!desc->hDeviceDc || !(dc = CreateCompatibleDC( desc->hDeviceDc ))) return STATUS_INVALID_PARAMETER;
+
+    if (!(bmpInfo = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*bmpInfo) + (format->palette_size * sizeof(RGBQUAD)) ))) goto  error;
+    if (!(bmpHeader = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*bmpHeader) ))) goto error;
+
+    bmpHeader->bV5Size        = sizeof(*bmpHeader);
+    bmpHeader->bV5Width       = desc->Width;
+    bmpHeader->bV5Height      = desc->Height;
+    bmpHeader->bV5SizeImage   = desc->Pitch;
+    bmpHeader->bV5Planes      = 1;
+    bmpHeader->bV5BitCount    = format->bit_count;
+    bmpHeader->bV5Compression = BI_BITFIELDS;
+    bmpHeader->bV5RedMask     = format->mask_r;
+    bmpHeader->bV5GreenMask   = format->mask_g;
+    bmpHeader->bV5BlueMask    = format->mask_b;
+
+    bmpInfo->bmiHeader.biSize         = sizeof(BITMAPINFOHEADER);
+    bmpInfo->bmiHeader.biWidth        = desc->Width;
+    bmpInfo->bmiHeader.biHeight       = -(LONG)desc->Height;
+    bmpInfo->bmiHeader.biPlanes       = 1;
+    bmpInfo->bmiHeader.biBitCount     = format->bit_count;
+    bmpInfo->bmiHeader.biCompression  = format->compression;
+    bmpInfo->bmiHeader.biClrUsed      = format->palette_size;
+    bmpInfo->bmiHeader.biClrImportant = format->palette_size;
+
+    if (desc->pColorTable)
     {
-        return STATUS_INVALID_PARAMETER;
+        for (i = 0; i < format->palette_size; i)
+        {
+             bmpInfo->bmiColors[i].rgbRed   = desc->pColorTable[i].peRed;
+             bmpInfo->bmiColors[i].rgbGreen = desc->pColorTable[i].peGreen;
+             bmpInfo->bmiColors[i].rgbGreen = desc->pColorTable[i].peBlue;
+             bmpInfo->bmiColors[i].rgbReserved = 0;
+        }
     }
 
-    if (!desc->hDeviceDc || !(hDC = CreateCompatibleDC(desc->hDeviceDc)))
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
+    if (!(bitmap = CreateDIBitmap(dc, (BITMAPINFOHEADER*)bmpHeader, CBM_INIT, desc->pMemory, bmpInfo, DIB_RGB_COLORS))) goto error;
 
-	sizl.cx = desc->Width;
-	sizl.cy = desc->Height;
-	
-    /* Allocate a surface */
-    bitmap = EngCreateBitmap(sizl,
-									  desc->Pitch,
-									  BitmapFormat(format->bit_count, format->compression),
-									  BMF_TOPDOWN | BMF_NOZEROINIT,
-									  desc->pMemory);
-	
-	
-	// SURFACE_AllocSurface(STYPE_BITMAP,
-                                 // desc->Width,
-                                 // desc->Height,
-                                 // BitmapFormat(format->bit_count, format->compression),
-                                 // BMF_TOPDOWN | BMF_NOZEROINIT,
-                                 // desc->Pitch,
-                                 // 0,
-                                 // desc->pMemory);
-
-    /* Mark as API bitmap */
-    //psurf->flags |= (DDB_SURFACE | API_BITMAP);
-
-    desc->hDc = hDC;
-    /* Get the handle for the bitmap */
-    desc->hBitmap = (HBITMAP)bitmap;//psurf->SurfObj.hsurf;
-
-    /* Unlock the surface and return */
-    //SURFACE_UnlockSurface(psurf);
-	EngUnlockSurface(bitmap);
-
-    SelectObject(desc->hDc, desc->hBitmap);
-
+    desc->hDc = dc;
+    desc->hBitmap = bitmap;
+    SelectObject( dc, bitmap );
     return STATUS_SUCCESS;
+
+error:
+    if (bmpInfo)  HeapFree( GetProcessHeap(), 0, bmpInfo );
+    if (bmpHeader) HeapFree( GetProcessHeap(), 0, bmpHeader );
+
+    DeleteDC( dc );
+    return STATUS_INVALID_PARAMETER;
 }
 
 NTSTATUS WINAPI D3DKMTDestroyDCFromMemory( const D3DKMT_DESTROYDCFROMMEMORY *desc )

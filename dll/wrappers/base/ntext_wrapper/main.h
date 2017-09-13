@@ -846,3 +846,5 @@ typedef struct _RTL_SYSTEM_TIME {
 } RTL_SYSTEM_TIME, *PRTL_SYSTEM_TIME;
 
 RTL_CRITICAL_SECTION TIME_tz_section;
+
+HANDLE GlobalKeyedEventHandle;

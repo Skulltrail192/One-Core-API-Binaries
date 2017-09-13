@@ -21,6 +21,8 @@
 
 WINCOMPATTRDATA WindowAttribute;
 
+static BOOL (WINAPI *pUpdateLayeredWindowIndirect)(HWND, const UPDATELAYEREDWINDOWINFO *);
+
 BOOL 
 WINAPI 
 ChangeWindowMessageFilter(
@@ -275,4 +277,39 @@ GetWindowBand(
 {
 	*pdwBand = 0;
 	hWnd = GetWindow(hWnd, GW_CHILD);
+	if(hWnd){
+		return TRUE;
+	}else{
+		return FALSE;
+	}
+}
+
+
+BOOL 
+WINAPI
+UpdateLayeredWindowIndirect(
+  _In_       HWND                    hwnd,
+  _In_ const UPDATELAYEREDWINDOWINFO *pULWInfo
+)
+{
+	HMODULE huser32 = GetModuleHandleA("userbase.dll");
+	pUpdateLayeredWindowIndirect = (void *)GetProcAddress(huser32, "UpdateLayeredWindowIndirect");
+	if(pUpdateLayeredWindowIndirect){
+		return pUpdateLayeredWindowIndirect(hwnd, pULWInfo);
+	}else{
+		if (pULWInfo && pULWInfo->cbSize == sizeof(*pULWInfo))
+		{
+			return UpdateLayeredWindow(hwnd,
+									   pULWInfo->hdcDst,
+									   (POINT *)pULWInfo->pptDst,
+									   (SIZE *)pULWInfo->psize,
+									   pULWInfo->hdcSrc,
+									   (POINT *)pULWInfo->pptSrc,
+									   pULWInfo->crKey,
+									   (BLENDFUNCTION *)pULWInfo->pblend,
+									   pULWInfo->dwFlags);
+	    }
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return FALSE;		
+	}    	
 }

@@ -8,5 +8,3 @@
 @ stdcall RtlReleaseSRWLockShared(ptr)
 @ stdcall RtlAcquireSRWLockExclusive(ptr)
 @ stdcall RtlReleaseSRWLockExclusive(ptr)
-@ stdcall RtlTryAcquireSRWLockExclusive(ptr)
-@ stdcall RtlTryAcquireSRWLockShared(ptr)

@@ -103,7 +103,7 @@
 103 stdcall LdrGetProcedureAddress(ptr ptr long ptr)
 # stdcall LdrHotPatchRoutine
 # stdcall LdrInitShimEngineDynamic
-106 stdcall LdrInitializeThunk(long long long long)
+106 stdcall LdrInitializeThunk(ptr ptr ptr)
 107 stdcall LdrLoadAlternateResourceModule(ptr ptr)
 108 stdcall LdrLoadDll(wstr long ptr ptr)
 109 stdcall LdrLockLoaderLock(long ptr ptr)

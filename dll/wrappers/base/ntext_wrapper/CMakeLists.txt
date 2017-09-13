@@ -42,14 +42,16 @@ list(APPEND SOURCE
 	rtl/misc.c
 	rtl/nls.c
 	rtl/notification.c
+	#rtl/newsrw.c
 	# rtl/message.c
 	rtl/path.c
 	rtl/pointer.c
 	rtl/processor.c
 	rtl/profiling.c
+	#rtl/pushlock.c
 	rtl/sid.c
-	rtl/srw.c		
-	rtl/sync.c		
+	#rtl/reactos.c		
+	rtl/synch.c		
 	rtl/sysinfo.c
 	rtl/time.c
 	rtl/transaction.c
@@ -57,6 +59,7 @@ list(APPEND SOURCE
 	rtl/unicode.c
 	rtl/wer.c
 	rtl/wow64.c
+	rtl/wine.c
     version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/ntext_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/ntext.def)
@@ -64,14 +67,14 @@ list(APPEND SOURCE
 add_library(ntext SHARED ${SOURCE})
 
 set_module_type(ntext win32dll ENTRYPOINT LdrInitialize 12)
-#############################################
-## HACK FOR MSVC COMPILATION WITH win32dll ##
-set_subsystem(ntext console)
-################# END  HACK #################
+# #############################################
+# ## HACK FOR MSVC COMPILATION WITH win32dll ##
+# set_subsystem(ntext console)
+# ################# END  HACK #################
 
-if(MSVC)
-    add_target_link_flags(ntext "/RELEASE")
-endif()
+# if(MSVC)
+    # add_target_link_flags(ntext "/RELEASE")
+# endif()
 
 target_link_libraries(ntext libcntpr uuid ${PSEH_LIB})
 

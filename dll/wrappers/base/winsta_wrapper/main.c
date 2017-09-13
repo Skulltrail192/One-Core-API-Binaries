@@ -41,8 +41,3 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 
     return TRUE;
 }
-/*
-BOOL WINAPI WinStationCanLogonProceed(int a1, LPCWSTR lpString, LPWSTR a3)
-{
-	return TRUE;
-}*/

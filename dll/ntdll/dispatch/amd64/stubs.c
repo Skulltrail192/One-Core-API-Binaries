@@ -19,10 +19,9 @@
  */
 VOID
 NTAPI
-LdrInitializeThunk(ULONG Unknown1, // FIXME: Parameters!
-                   ULONG Unknown2,
-                   ULONG Unknown3,
-                   ULONG Unknown4)
+LdrInitializeThunk(PVOID Unknown1, // FIXME: Parameters!
+                   PVOID Unknown2,
+                   PVOID Unknown3)
 {
     UNIMPLEMENTED;
     return;

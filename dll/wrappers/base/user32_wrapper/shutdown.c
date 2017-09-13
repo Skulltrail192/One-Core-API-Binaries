@@ -85,7 +85,7 @@ BOOL WINAPI ShutdownBlockReasonDestroy(HWND hWnd)
   BOOL result; // eax@2
   BOOL verification; // edi@3
   DWORD flags; // eax@4
-  PCSR_API_MESSAGE message = NULL; // [sp+4h] [bp-50h]@3
+  //PCSR_API_MESSAGE message = NULL; // [sp+4h] [bp-50h]@3
   NTSTATUS NtStatus = STATUS_SUCCESS; // [sp+24h] [bp-30h]@3
 
   if (hWnd)
@@ -113,7 +113,7 @@ BOOL WINAPI ShutdownBlockReasonCreate(HWND hWnd, LPCWSTR pwszReason)
   size_t size; // esi@5
   PCSR_CAPTURE_BUFFER buffer; // ebx@5
   DWORD flags; // [sp-10h] [bp-68h]@7
-  PCSR_API_MESSAGE message = NULL; // [sp+0h] [bp-58h]@6
+  //PCSR_API_MESSAGE message = NULL; // [sp+0h] [bp-58h]@6
   NTSTATUS NtStatus = STATUS_SUCCESS; // [sp+20h] [bp-38h]@6
   HWND window; // [sp+2Ch] [bp-2Ch]@6
   size_t cchDest; // [sp+30h] [bp-28h]@6

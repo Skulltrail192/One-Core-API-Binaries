@@ -41,3 +41,24 @@ GetNumberFormatEx(
 
   return GetNumberFormatW(lcid, flags, value, format, number, numout);
 }
+
+
+int 
+WINAPI
+GetCurrencyFormatEx(
+  _In_opt_        LPCWSTR     lpLocaleName,
+  _In_            DWORD       dwFlags,
+  _In_            LPCWSTR     lpValue,
+  _In_opt_  const CURRENCYFMT *lpFormat,
+  _Out_opt_       LPWSTR      lpCurrencyStr,
+  _In_            int         cchCurrency
+)
+{
+  LCID lcid  = 0x0409;	
+
+  lcid = LocaleNameToLCID(lpLocaleName, 0);
+  if (!lcid)
+    return 0;
+
+  return GetCurrencyFormatW(lcid, dwFlags, lpValue, (const CURRENCYFMTW *)lpFormat, lpCurrencyStr, cchCurrency);
+}

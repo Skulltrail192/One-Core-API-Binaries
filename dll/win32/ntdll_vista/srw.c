@@ -518,6 +518,7 @@ RtlAcquireSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock)
     }
 }
 
+
 VOID
 NTAPI
 RtlReleaseSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock)
@@ -581,6 +582,7 @@ RtlReleaseSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock)
         YieldProcessor();
     }
 }
+
 
 VOID
 NTAPI
@@ -700,6 +702,7 @@ AddWaitBlock:
     }
 }
 
+
 VOID
 NTAPI
 RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock)
@@ -759,61 +762,4 @@ RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock)
 
         YieldProcessor();
     }
-}
-
-// VOID 
-// NTAPI 
-// RtlReleaseSRWLockExclusive(PRTL_SRWLOCK SRWLock)
-// {
-  // signed __int32 increment; // ecx@1
-  // PRTLP_SRWLOCK_WAITBLOCK Shared; // ecx@6
-
-  // increment = _InterlockedExchangeAdd((volatile signed __int32 *)SRWLock, 0xFFFFFFFF);
-  // if ( !(increment & 1) )
-    // RtlRaiseStatus(0xC0000264);
-  // if ( increment & 2 && !(increment & 4) )
-  // {
-    // Shared = (PRTLP_SRWLOCK_WAITBLOCK)(increment - 1);
-    // if ( (PRTLP_SRWLOCK_WAITBLOCK)_InterlockedCompareExchange(
-                                    // (volatile signed __int32 *)SRWLock,
-                                    // (signed __int32)&Shared->Last,
-                                    // (signed __int32)Shared) == Shared )
-      // RtlpReleaseWaitBlockLockExclusive(SRWLock, &Shared->Last);
-  // }
-// }
-
-#define SRWLOCK_MASK_IN_EXCLUSIVE     0x80000000
-#define SRWLOCK_MASK_EXCLUSIVE_QUEUE  0x7fff0000
-#define SRWLOCK_MASK_SHARED_QUEUE     0x0000ffff
-#define SRWLOCK_RES_EXCLUSIVE         0x00010000
-#define SRWLOCK_RES_SHARED            0x00000001
-
-/***********************************************************************
- *              RtlTryAcquireSRWLockExclusive (NTDLL.@)
- *
- * NOTES
- *  Similar to AcquireSRWLockExclusive recusive calls are not allowed
- *  and will fail with return value FALSE.
- */
-BOOLEAN WINAPI RtlTryAcquireSRWLockExclusive( RTL_SRWLOCK *lock )
-{
-	return InterlockedBitTestAndSet((LONG volatile *)lock, 0) == 0;
-    // return InterlockedCompareExchange( (int *)&lock->Ptr, SRWLOCK_MASK_IN_EXCLUSIVE |
-                                // SRWLOCK_RES_EXCLUSIVE, 0 ) == 0;
-}
-
-/***********************************************************************
- *              RtlTryAcquireSRWLockShared (NTDLL.@)
- */
-BOOLEAN WINAPI RtlTryAcquireSRWLockShared( RTL_SRWLOCK *lock )
-{
-    unsigned int val, tmp;
-    for (val = *(unsigned int *)&lock->Ptr;; val = tmp)
-    {
-        if (val & SRWLOCK_MASK_EXCLUSIVE_QUEUE)
-            return FALSE;
-        if ((tmp = InterlockedCompareExchange( (int *)&lock->Ptr, val + SRWLOCK_RES_SHARED, val )) == val)
-            break;
-    }
-    return TRUE;
 }
