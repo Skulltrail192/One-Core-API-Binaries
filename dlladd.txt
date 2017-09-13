@@ -2,3 +2,8 @@ traffic
 evr.dll
 qwave.dll
 wevtapi.dll
+
+
+To Add:
+Dxva2 (from win7)
+schannel and all security dlls
