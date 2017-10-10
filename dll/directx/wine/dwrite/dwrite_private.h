@@ -175,7 +175,7 @@ extern HRESULT clone_localizedstring(IDWriteLocalizedStrings *iface, IDWriteLoca
 extern void    set_en_localizedstring(IDWriteLocalizedStrings*,const WCHAR*) DECLSPEC_HIDDEN;
 extern HRESULT get_system_fontcollection(IDWriteFactory5*,IDWriteFontCollection1**) DECLSPEC_HIDDEN;
 extern HRESULT get_eudc_fontcollection(IDWriteFactory5*,IDWriteFontCollection1**) DECLSPEC_HIDDEN;
-extern HRESULT get_textanalyzer(IDWriteTextAnalyzer**) DECLSPEC_HIDDEN;
+extern IDWriteTextAnalyzer *get_text_analyzer(void) DECLSPEC_HIDDEN;
 extern HRESULT create_font_file(IDWriteFontFileLoader *loader, const void *reference_key, UINT32 key_size, IDWriteFontFile **font_file) DECLSPEC_HIDDEN;
 extern HRESULT create_localfontfileloader(IDWriteLocalFontFileLoader** iface) DECLSPEC_HIDDEN;
 extern HRESULT create_fontface(const struct fontface_desc*,struct list*,IDWriteFontFace4**) DECLSPEC_HIDDEN;
@@ -273,11 +273,11 @@ struct dwrite_glyphbitmap {
     DWORD simulations;
     FLOAT emsize;
     BOOL nohint;
+    BOOL aliased;
     UINT16 index;
     INT pitch;
     RECT bbox;
     BYTE *buf;
-    DWRITE_TEXTURE_TYPE type;
     DWRITE_MATRIX *m;
 };
 
@@ -345,3 +345,8 @@ struct scriptshaping_ops
 
 extern const struct scriptshaping_ops default_shaping_ops DECLSPEC_HIDDEN;
 extern const struct scriptshaping_ops latn_shaping_ops DECLSPEC_HIDDEN;
+
+
+BOOL IsValidLocaleName(
+  _In_ LPCWSTR lpLocaleName
+);

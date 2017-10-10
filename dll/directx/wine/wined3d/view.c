@@ -557,7 +557,8 @@ static HRESULT wined3d_rendertarget_view_init(struct wined3d_rendertarget_view *
         struct wined3d_texture *texture = texture_from_resource(resource);
 
         view->sub_resource_idx = desc->u.texture.level_idx;
-        view->sub_resource_idx += desc->u.texture.layer_idx * texture->level_count;
+        if (resource->type != WINED3D_RTYPE_TEXTURE_3D)
+            view->sub_resource_idx += desc->u.texture.layer_idx * texture->level_count;
         view->layer_count = desc->u.texture.layer_count;
         view->width = wined3d_texture_get_level_width(texture, desc->u.texture.level_idx);
         view->height = wined3d_texture_get_level_height(texture, desc->u.texture.level_idx);

@@ -25,6 +25,7 @@
 
 #include "dwrite_private.h"
 #include "scripts.h"
+#include <winnls.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(dwrite);
 
@@ -1832,10 +1833,9 @@ static const struct IDWriteTextAnalyzer2Vtbl textanalyzervtbl = {
 
 static IDWriteTextAnalyzer2 textanalyzer = { &textanalyzervtbl };
 
-HRESULT get_textanalyzer(IDWriteTextAnalyzer **ret)
+IDWriteTextAnalyzer *get_text_analyzer(void)
 {
-    *ret = (IDWriteTextAnalyzer*)&textanalyzer;
-    return S_OK;
+    return (IDWriteTextAnalyzer *)&textanalyzer;
 }
 
 static HRESULT WINAPI dwritenumbersubstitution_QueryInterface(IDWriteNumberSubstitution *iface, REFIID riid, void **obj)

@@ -52,6 +52,7 @@
 @ cdecl wined3d_device_end_scene(ptr)
 @ cdecl wined3d_device_end_stateblock(ptr ptr)
 @ cdecl wined3d_device_evict_managed_resources(ptr)
+@ cdecl wined3d_device_generate_mips_view(ptr ptr)
 @ cdecl wined3d_device_get_available_texture_mem(ptr)
 @ cdecl wined3d_device_get_base_vertex_index(ptr)
 @ cdecl wined3d_device_get_clip_plane(ptr long ptr)
@@ -226,6 +227,7 @@
 @ cdecl wined3d_resource_set_parent(ptr ptr)
 @ cdecl wined3d_resource_set_priority(ptr long)
 @ cdecl wined3d_resource_unmap(ptr long)
+@ cdecl wined3d_resource_update_info(ptr long ptr long long)
 
 @ cdecl wined3d_rendertarget_view_create(ptr ptr ptr ptr ptr)
 @ cdecl wined3d_rendertarget_view_create_from_sub_resource(ptr long ptr ptr ptr)

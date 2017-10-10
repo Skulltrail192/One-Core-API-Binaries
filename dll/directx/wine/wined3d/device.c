@@ -3530,10 +3530,17 @@ struct wined3d_texture * CDECL wined3d_device_get_texture(const struct wined3d_d
 
 HRESULT CDECL wined3d_device_get_device_caps(const struct wined3d_device *device, WINED3DCAPS *caps)
 {
+    HRESULT hr;
+
     TRACE("device %p, caps %p.\n", device, caps);
 
-    return wined3d_get_device_caps(device->wined3d, device->adapter->ordinal,
+    hr = wined3d_get_device_caps(device->wined3d, device->adapter->ordinal,
             device->create_parms.device_type, caps);
+
+    if (SUCCEEDED(hr) && use_software_vertex_processing(device))
+        caps->MaxVertexBlendMatrixIndex = 255;
+
+    return hr;
 }
 
 HRESULT CDECL wined3d_device_get_display_mode(const struct wined3d_device *device, UINT swapchain_idx,
@@ -3963,30 +3970,14 @@ HRESULT CDECL wined3d_device_validate_device(const struct wined3d_device *device
 
 void CDECL wined3d_device_set_software_vertex_processing(struct wined3d_device *device, BOOL software)
 {
-    static BOOL warned;
-
     TRACE("device %p, software %#x.\n", device, software);
-
-    if (!warned)
-    {
-        FIXME("device %p, software %#x stub!\n", device, software);
-        warned = TRUE;
-    }
 
     device->softwareVertexProcessing = software;
 }
 
 BOOL CDECL wined3d_device_get_software_vertex_processing(const struct wined3d_device *device)
 {
-    static BOOL warned;
-
     TRACE("device %p.\n", device);
-
-    if (!warned)
-    {
-        TRACE("device %p stub!\n", device);
-        warned = TRUE;
-    }
 
     return device->softwareVertexProcessing;
 }
@@ -4347,6 +4338,13 @@ void CDECL wined3d_device_update_sub_resource(struct wined3d_device *device, str
     wined3d_cs_emit_update_sub_resource(device->cs, resource, sub_resource_idx, box, data, row_pitch, depth_pitch);
 }
 
+void CDECL wined3d_device_generate_mips_view(struct wined3d_device *device, struct wined3d_shader_resource_view *view)
+{
+    TRACE("device %p, view %p.\n", device, view);
+
+    wined3d_cs_emit_generate_mips(device->cs, view);
+}
+
 HRESULT CDECL wined3d_device_clear_rendertarget_view(struct wined3d_device *device,
         struct wined3d_rendertarget_view *view, const RECT *rect, DWORD flags,
         const struct wined3d_color *color, float depth, DWORD stencil)
@@ -4361,71 +4359,6 @@ HRESULT CDECL wined3d_device_clear_rendertarget_view(struct wined3d_device *devi
         return WINED3D_OK;
 
     resource = view->resource;
-    if (resource->type == WINED3D_RTYPE_TEXTURE_3D)
-    {
-        const struct wined3d_gl_info *gl_info;
-        struct wined3d_context *context;
-        struct wined3d_texture *texture = texture_from_resource(resource);
-        struct gl_texture *gl_texture = wined3d_texture_get_gl_texture(texture, FALSE);
-        unsigned int i;
-        GLuint fbo;
-        GLenum draw_buffer = GL_COLOR_ATTACHMENT0;
-
-        ERR("Clearing 3D target, flags=%x\n", flags);
-
-        context = context_acquire(device, NULL, 0);
-        gl_info = context->gl_info;
-
-        wined3d_texture_prepare_texture(texture, context, FALSE);
-
-        if (flags & WINED3DCLEAR_TARGET)
-        {
-            gl_info->gl_ops.gl.p_glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-            context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE));
-            context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1));
-            context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2));
-            context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3));
-            gl_info->gl_ops.gl.p_glClearColor(color->r, color->g, color->b, color->a);
-            checkGLcall("glClearColor");
-        }
-
-        if (rect)
-            ERR("ignoring rect\n");
-
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_SCISSORTESTENABLE));
-        gl_info->gl_ops.gl.p_glDisable(GL_SCISSOR_TEST);
-
-        gl_info->fbo_ops.glGenFramebuffers(1, &fbo);
-        checkGLcall("glGenFramebuffers()");
-
-        gl_info->fbo_ops.glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        checkGLcall("glBindFramebuffer()");
-
-        for (i = 0; i < view->layer_count; i++)
-        {
-            gl_info->fbo_ops.glFramebufferTexture3D(GL_FRAMEBUFFER, draw_buffer,
-                    GL_TEXTURE_3D, gl_texture->name, gl_texture->base_level, i);
-            checkGLcall("glFramebufferTexture3D()");
-
-            GL_EXTCALL(glDrawBuffers(1, &draw_buffer));
-            checkGLcall("glDrawBuffers()");
-
-            gl_info->gl_ops.gl.p_glClear(GL_COLOR_BUFFER_BIT);
-            checkGLcall("glClear");
-        }
-
-        gl_info->fbo_ops.glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        checkGLcall("glBindFramebuffer()");
-        gl_info->fbo_ops.glDeleteFramebuffers(1, &fbo);
-        checkGLcall("glDeleteFramebuffer()");
-
-        if (wined3d_settings.strict_draw_ordering)
-            gl_info->gl_ops.gl.p_glFlush();
-
-        context_release(context);
-        return WINED3D_OK;
-    }
-
     if (resource->type != WINED3D_RTYPE_TEXTURE_2D)
     {
         FIXME("Not implemented for %s resources.\n", debug_d3dresourcetype(resource->type));

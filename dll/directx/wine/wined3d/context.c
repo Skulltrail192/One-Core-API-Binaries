@@ -157,12 +157,6 @@ static void context_attach_gl_texture_fbo(struct wined3d_context *context,
                 resource->target, resource->object, resource->level);
         checkGLcall("glFramebufferTexture1D()");
     }
-    else if (resource->target == GL_TEXTURE_3D)
-    {
-        GL_EXTCALL(glFramebufferTexture(fbo_target, attachment,
-                resource->object, resource->level));
-        checkGLcall("glFramebufferTexture3D()");
-    }
     else
     {
         gl_info->fbo_ops.glFramebufferTexture2D(fbo_target, attachment,
@@ -2320,10 +2314,6 @@ const DWORD *context_get_tex_unit_mapping(const struct wined3d_context *context,
             *base = MAX_FRAGMENT_SAMPLERS;
             *count = MAX_VERTEX_SAMPLERS;
             break;
-        case WINED3D_SHADER_TYPE_GEOMETRY:
-            *base = MAX_FRAGMENT_SAMPLERS + MAX_VERTEX_SAMPLERS;
-            *count = MAX_GEOMETRY_SAMPLERS;
-            break;
         default:
             ERR("Unhandled shader type %#x.\n", shader_version->type);
             *base = 0;
@@ -3382,88 +3372,11 @@ static void context_map_vsamplers(struct wined3d_context *context, BOOL ps, cons
     }
 }
 
-static BOOL context_unit_free_for_gs(const struct wined3d_context *context,
-        const struct wined3d_state *state, DWORD unit)
-{
-    const struct wined3d_shader_resource_info *ps_resource_info = NULL, *vs_resource_info = NULL;
-    DWORD current_mapping = context->rev_tex_unit_map[unit];
-
-    if (use_ps(state))
-        ps_resource_info = state->shader[WINED3D_SHADER_TYPE_PIXEL]->reg_maps.resource_info;
-    if (use_vs(state))
-        vs_resource_info = state->shader[WINED3D_SHADER_TYPE_VERTEX]->reg_maps.resource_info;
-
-    /* Not currently used */
-    if (current_mapping == WINED3D_UNMAPPED_STAGE)
-        return TRUE;
-
-    if (current_mapping < MAX_FRAGMENT_SAMPLERS)
-    {
-        /* Used by a fragment sampler */
-        if (!ps_resource_info)
-        {
-            /* No pixel shader, check fixed function */
-            return current_mapping >= MAX_TEXTURES || !(context->fixed_function_usage_map & (1u << current_mapping));
-        }
-
-        /* Pixel shader, check the shader's sampler map */
-        return !ps_resource_info[current_mapping].type;
-    }
-
-    current_mapping -= MAX_FRAGMENT_SAMPLERS;
-    if (current_mapping < MAX_VERTEX_SAMPLERS)
-    {
-        /* Used by a vertex sampler, check the shader's sampler map */
-        return !vs_resource_info || !vs_resource_info[current_mapping].type;
-    }
-
-    return TRUE;
-}
-
-static void context_map_gsamplers(struct wined3d_context *context, const struct wined3d_state *state)
-{
-    const struct wined3d_shader_resource_info *gs_resource_info =
-            state->shader[WINED3D_SHADER_TYPE_GEOMETRY]->reg_maps.resource_info;
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-    int start = min(MAX_FRAGMENT_SAMPLERS + MAX_VERTEX_SAMPLERS, gl_info->limits.combined_samplers) - 1;
-    int i;
-
-    if (gl_info->limits.combined_samplers >= MAX_COMBINED_SAMPLERS)
-        return;
-
-    for (i = 0; i < MAX_GEOMETRY_SAMPLERS; ++i)
-    {
-        DWORD gsampler_idx = i + MAX_FRAGMENT_SAMPLERS + MAX_VERTEX_SAMPLERS;
-        if (gs_resource_info[i].type)
-        {
-            while (start >= 0)
-            {
-                if (context_unit_free_for_gs(context, state, start))
-                {
-                    if (context->tex_unit_map[gsampler_idx] != start)
-                    {
-                        context_map_stage(context, gsampler_idx, start);
-                        context_invalidate_state(context, STATE_SAMPLER(gsampler_idx));
-                    }
-
-                    --start;
-                    break;
-                }
-
-                --start;
-            }
-            if (context->tex_unit_map[gsampler_idx] == WINED3D_UNMAPPED_STAGE)
-                WARN("Couldn't find a free texture unit for vertex sampler %u.\n", i);
-        }
-    }
-}
-
 static void context_update_tex_unit_map(struct wined3d_context *context, const struct wined3d_state *state)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
     BOOL vs = use_vs(state);
     BOOL ps = use_ps(state);
-    BOOL gs = use_gs(state);
 
     if (!ps)
         context_update_fixed_function_usage_map(context, state);
@@ -3483,9 +3396,6 @@ static void context_update_tex_unit_map(struct wined3d_context *context, const s
 
     if (vs)
         context_map_vsamplers(context, ps, state);
-
-    if (gs)
-        context_map_gsamplers(context, state);
 }
 
 /* Context activation is done by the caller. */
@@ -3745,15 +3655,6 @@ static void context_preload_texture(struct wined3d_context *context,
 static void context_preload_textures(struct wined3d_context *context, const struct wined3d_state *state)
 {
     unsigned int i;
-
-    if (use_gs(state))
-    {
-        for (i = 0; i < MAX_GEOMETRY_SAMPLERS; ++i)
-        {
-            if (state->shader[WINED3D_SHADER_TYPE_GEOMETRY]->reg_maps.resource_info[i].type)
-                context_preload_texture(context, state, MAX_FRAGMENT_SAMPLERS + MAX_VERTEX_SAMPLERS + i);
-        }
-    }
 
     if (use_vs(state))
     {

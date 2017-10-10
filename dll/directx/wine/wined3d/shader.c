@@ -1077,16 +1077,6 @@ static HRESULT shader_get_registers_used(struct wined3d_shader *shader, const st
                     break;
             }
         }
-        else if (ins.handler_idx == WINED3DSIH_DCL_INPUT_PS)
-        {
-            unsigned int reg_idx = ins.declaration.dst.reg.idx[0].offset;
-            reg_maps->input_registers |= 1u << reg_idx;
-            if (shader_version.type == WINED3D_SHADER_TYPE_PIXEL)
-                shader->u.ps.interpolation_mode[reg_idx] = ins.flags;
-            else
-                FIXME("Invalid instruction %#x for shader type %#x.\n",
-                        ins.handler_idx, shader_version.type);
-        }
         else if (ins.handler_idx == WINED3DSIH_DCL_CONSTANT_BUFFER)
         {
             struct wined3d_shader_register *reg = &ins.declaration.src.reg;
@@ -1160,14 +1150,30 @@ static HRESULT shader_get_registers_used(struct wined3d_shader *shader, const st
         }
         else if (ins.handler_idx == WINED3DSIH_DCL_OUTPUT)
         {
-            if (ins.declaration.dst.reg.type == WINED3DSPR_DEPTHOUT_GREATER_EQUAL ||
-                ins.declaration.dst.reg.type == WINED3DSPR_DEPTHOUT_LESS_EQUAL)
+            if (ins.declaration.dst.reg.type == WINED3DSPR_DEPTHOUT
+                    || ins.declaration.dst.reg.type == WINED3DSPR_DEPTHOUTGE
+                    || ins.declaration.dst.reg.type == WINED3DSPR_DEPTHOUTLE)
             {
                 if (shader_version.type == WINED3D_SHADER_TYPE_PIXEL)
-                    shader->u.ps.depth_compare = ins.declaration.dst.reg.type;
+                    shader->u.ps.depth_output = ins.declaration.dst.reg.type;
                 else
-                    FIXME("Invalid instruction depth declaration for shader type %#x.\n", shader_version.type);
+                    FIXME("Invalid instruction %#x for shader type %#x.\n",
+                            ins.handler_idx, shader_version.type);
             }
+        }
+        else if (ins.handler_idx == WINED3DSIH_DCL_INPUT_PS)
+        {
+            unsigned int reg_idx = ins.declaration.dst.reg.idx[0].offset;
+            if (reg_idx >= ARRAY_SIZE(shader->u.ps.interpolation_mode))
+            {
+                ERR("Invalid register index %u.\n", reg_idx);
+                break;
+            }
+            if (shader_version.type == WINED3D_SHADER_TYPE_PIXEL)
+                shader->u.ps.interpolation_mode[reg_idx] = ins.flags;
+            else
+                FIXME("Invalid instruction %#x for shader type %#x.\n",
+                        ins.handler_idx, shader_version.type);
         }
         else if (ins.handler_idx == WINED3DSIH_DCL_OUTPUT_CONTROL_POINT_COUNT)
         {
@@ -2160,16 +2166,16 @@ static void shader_dump_register(struct wined3d_string_buffer *buffer,
             shader_addline(buffer, "oC");
             break;
 
-        case WINED3DSPR_DEPTHOUT_GREATER_EQUAL:
-            shader_addline(buffer, "oDepth_greater_equal");
-            break;
-
-        case WINED3DSPR_DEPTHOUT_LESS_EQUAL:
-            shader_addline(buffer, "oDepth_less_equal");
-            break;
-
         case WINED3DSPR_DEPTHOUT:
             shader_addline(buffer, "oDepth");
+            break;
+
+        case WINED3DSPR_DEPTHOUTGE:
+            shader_addline(buffer, "oDepthGE");
+            break;
+
+        case WINED3DSPR_DEPTHOUTLE:
+            shader_addline(buffer, "oDepthLE");
             break;
 
         case WINED3DSPR_ATTROUT:
@@ -3397,8 +3403,6 @@ HRESULT CDECL wined3d_shader_set_local_constants_float(struct wined3d_shader *sh
 void find_vs_compile_args(const struct wined3d_state *state, const struct wined3d_shader *shader,
         WORD swizzle_map, struct vs_compile_args *args, const struct wined3d_d3d_info *d3d_info)
 {
-    unsigned int i;
-
     args->fog_src = state->render_states[WINED3D_RS_FOGTABLEMODE]
             == WINED3D_FOG_NONE ? VS_FOG_COORD : VS_FOG_Z;
     args->clip_enabled = state->render_states[WINED3D_RS_CLIPPING]
@@ -3422,12 +3426,6 @@ void find_vs_compile_args(const struct wined3d_state *state, const struct wined3
         args->flatshading = state->render_states[WINED3D_RS_SHADEMODE] == WINED3D_SHADE_FLAT;
     else
         args->flatshading = 0;
-
-    for (i = 0; i < args->next_shader_input_count; i++)
-    {
-        args->interpolation_mode[i] = state->shader[WINED3D_SHADER_TYPE_PIXEL]
-                ? state->shader[WINED3D_SHADER_TYPE_PIXEL]->u.ps.interpolation_mode[i] : 0;
-    }
 }
 
 static BOOL match_usage(BYTE usage1, BYTE usage_idx1, BYTE usage2, BYTE usage_idx2)
@@ -3697,7 +3695,6 @@ static HRESULT geometry_shader_init(struct wined3d_shader *shader, struct wined3
 void find_ds_compile_args(const struct wined3d_state *state, const struct wined3d_shader *shader,
         struct ds_compile_args *args, const struct wined3d_context *context)
 {
-    unsigned int i;
     const struct wined3d_shader *hull_shader = state->shader[WINED3D_SHADER_TYPE_HULL];
 
     args->tessellator_output_primitive = hull_shader->u.hs.tessellator_output_primitive;
@@ -3713,24 +3710,13 @@ void find_ds_compile_args(const struct wined3d_state *state, const struct wined3
     args->render_offscreen = context->render_offscreen;
 
     args->padding = 0;
-    for (i = 0; i < args->output_count; i++)
-    {
-        args->interpolation_mode[i] = state->shader[WINED3D_SHADER_TYPE_PIXEL]
-                ? state->shader[WINED3D_SHADER_TYPE_PIXEL]->u.ps.interpolation_mode[i] : 0;
-    }
 }
 
 void find_gs_compile_args(const struct wined3d_state *state, const struct wined3d_shader *shader,
         struct gs_compile_args *args)
 {
-    unsigned int i;
     args->output_count = state->shader[WINED3D_SHADER_TYPE_PIXEL]
             ? state->shader[WINED3D_SHADER_TYPE_PIXEL]->limits->packed_input : shader->limits->packed_output;
-    for (i = 0; i < args->output_count; i++)
-    {
-        args->interpolation_mode[i] = state->shader[WINED3D_SHADER_TYPE_PIXEL]
-                ? state->shader[WINED3D_SHADER_TYPE_PIXEL]->u.ps.interpolation_mode[i] : 0;
-    }
 }
 
 void find_ps_compile_args(const struct wined3d_state *state, const struct wined3d_shader *shader,
