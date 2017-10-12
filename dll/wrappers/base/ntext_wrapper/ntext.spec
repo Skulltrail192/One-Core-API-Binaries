@@ -511,7 +511,6 @@
 @ stdcall RtlDoesFileExists_U(wstr)
 @ stdcall RtlDosApplyFileIsolationRedirection_Ustr(long ptr ptr ptr ptr ptr ptr ptr ptr)
 @ stdcall RtlDosPathNameToNtPathName_U(wstr ptr ptr ptr)
-@ stdcall RtlDosPathNameToRelativeNtPathName_U(ptr ptr ptr ptr)
 @ stdcall RtlDosSearchPath_U(wstr wstr wstr long ptr ptr)
 @ stdcall RtlDosSearchPath_Ustr(long ptr ptr ptr ptr ptr ptr ptr ptr)
 @ stdcall RtlDowncaseUnicodeChar(long)
@@ -749,7 +748,6 @@
 @ stdcall RtlRegisterWait(ptr ptr ptr ptr long long)
 @ stdcall RtlReleaseActivationContext(ptr)
 @ stdcall RtlReleasePebLock()
-@ stdcall RtlReleaseRelativeName(ptr)
 @ stdcall RtlReleaseResource(ptr)
 @ stdcall RtlRemoteCall(ptr ptr ptr long ptr long long)
 @ stdcall RtlRemoveVectoredExceptionHandler(ptr)
@@ -1353,6 +1351,10 @@
 @ stdcall ZwSetDriverEntryOrder(ptr ptr) ntdll.ZwSetDriverEntryOrder
 @ stdcall ZwUnloadKey2(ptr long) ntdll.ZwUnloadKey2
 @ stdcall ZwWaitForMultipleObjects32(long ptr long long ptr) ntdll.ZwWaitForMultipleObjects32
+
+#Missing XP
+@ stdcall RtlDosPathNameToRelativeNtPathName_U(ptr ptr ptr ptr)
+@ stdcall RtlReleaseRelativeName(ptr)
 
 #Missing function on Server 2003 RTM
 @ stdcall -arch=i386,x86_64 ExpInterlockedPopEntrySListEnd() ntdll.ExpInterlockedPopEntrySListEnd

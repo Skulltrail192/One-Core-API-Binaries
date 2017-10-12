@@ -852,3 +852,49 @@ BOOL WINAPI GetNLSVersion(
     lpVersionInformation->dwDefinedVersion = 1;
 	return TRUE;
 }
+
+int 
+WINAPI 
+FindNLSString(
+  _In_ 		 LCID Locale,
+  _In_       DWORD dwFindNLSStringFlags,
+  _In_       LPCWSTR lpStringSource,
+  _In_       int cchSource,
+  _In_       LPCWSTR lpStringValue,
+  _In_       int cchValue,
+  _Out_opt_  LPINT pcchFound
+)
+{
+	SetLastError(50);
+	return 0;
+}
+
+int 
+WINAPI 
+FindNLSStringEx(
+  _In_opt_   LPCWSTR lpLocaleName,
+  _In_       DWORD dwFindNLSStringFlags,
+  _In_       LPCWSTR lpStringSource,
+  _In_       int cchSource,
+  _In_       LPCWSTR lpStringValue,
+  _In_       int cchValue,
+  _Out_opt_  LPINT pcchFound,
+  _In_opt_   LPNLSVERSIONINFO lpVersionInformation,
+  _In_opt_   LPVOID lpReserved,
+  _In_opt_   LPARAM sortHandle
+)
+{
+  return 0;
+}	
+
+/******************************************************************************
+ *           ResolveLocaleName (KERNEL32.@)
+ */
+
+INT WINAPI ResolveLocaleName(LPCWSTR name, LPWSTR localename, INT len)
+{
+    FIXME("stub: %s, %p, %d\n", wine_dbgstr_w(name), localename, len);
+
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return 0;
+}

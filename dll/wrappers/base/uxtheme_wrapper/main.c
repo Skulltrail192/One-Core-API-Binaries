@@ -234,3 +234,28 @@ BOOL WINAPI IsCompositionActive(void)
 {
 	return FALSE;
 }
+
+BOOL WINAPI BeginPanningFeedback(
+  _In_ HWND hwnd
+)
+{
+	return FALSE;
+}
+
+BOOL WINAPI UpdatePanningFeedback(
+  _In_ HWND hwnd,
+  _In_ LONG lTotalOverpanOffsetX,
+  _In_ LONG lTotalOverpanOffsetY,
+  _In_ BOOL fInInertia
+)
+{
+	return FALSE;
+}
+
+BOOL WINAPI EndPanningFeedback(
+  _In_ HWND hwnd,
+       BOOL fAnimateBack
+)
+{
+	return FALSE;
+}

@@ -1069,6 +1069,8 @@
 @ stdcall EnumDateFormatsExEx(ptr wstr long ptr)
 @ stdcall EnumSystemLocalesEx(ptr long ptr ptr)
 @ stdcall EnumTimeFormatsEx(ptr wstr long ptr)
+@ stdcall FindNLSString(long long ptr long wstr long ptr)
+@ stdcall FindNLSStringEx(wstr long wstr long wstr long ptr ptr ptr ptr)
 @ stdcall FlushProcessWriteBuffers()
 @ stdcall FreeLibraryWhenCallbackReturns(ptr ptr) ntext.TpCallbackUnloadDllOnCompletion
 @ stdcall GetApplicationRestartSettings(ptr wstr ptr ptr)
@@ -1081,6 +1083,8 @@
 @ stdcall GetCurrentConsoleFontEx(ptr long ptr) 
 @ stdcall GetCurrencyFormatEx(wstr long wstr ptr wstr long)
 @ stdcall GetDateFormatEx(wstr long ptr wstr ptr long wstr)
+@ stdcall GetDurationFormat(long long ptr long long ptr ptr long) ;need test
+@ stdcall GetDurationFormatEx(wstr long ptr long long ptr ptr long) ;need test
 @ stdcall GetDynamicTimeZoneInformation(ptr)
 @ stdcall GetErrorMode()
 @ stdcall GetFileInformationByHandleEx(ptr long ptr long) fileextd.GetFileInformationByHandleEx
@@ -1115,6 +1119,7 @@
 @ stdcall GetUserDefaultLocaleName(wstr long)
 ;@ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetVolumeInformationW(ptr ptr long ptr ptr ptr ptr long)
+@ stdcall GetVolumeInformationByHandleW(ptr ptr long ptr ptr ptr ptr long)
 @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
 @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
@@ -1124,6 +1129,7 @@
 @ stdcall InitOnceBeginInitialize(ptr long ptr ptr)
 @ stdcall InitOnceComplete(ptr long ptr)
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
+@ stdcall IsThreadAFiber()
 @ stdcall IsValidLocaleName(wstr)
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
 @ stdcall LCIDToLocaleName(long ptr long long)
@@ -1157,7 +1163,7 @@
 @ stdcall SetThreadpoolTimer(ptr ptr long long) ntext.TpSetTimer
 @ stdcall SetThreadpoolWait(ptr ptr ptr) ntext.TpSetWait
 @ stdcall SleepConditionVariableCS(ptr ptr long) 
-;@ stdcall SleepConditionVariableSRW(ptr ptr long long)
+@ stdcall SleepConditionVariableSRW(ptr ptr long long)
 @ stdcall SubmitThreadpoolWork(ptr) ntext.TpPostWork
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) ntext.TpWaitForTimer
@@ -1174,6 +1180,7 @@
 @ stdcall WerSetFlags(long)
 
 #Win7 Functions
+@ stub BaseThreadInitThunk
 @ stdcall CreateRemoteThreadEx(long ptr long ptr long long ptr ptr)
 @ stdcall GetCurrentProcessorNumberEx(ptr) ntext.RtlGetCurrentProcessorNumberEx
 @ stdcall GetTimeFormatWWorker(long long ptr wstr ptr long) GetTimeFormatW
@@ -1209,6 +1216,7 @@
 @ stdcall RaiseFailFastException(ptr ptr long)
 @ stdcall RegisterApplicationRecoveryCallback(long ptr long long)
 @ stdcall RegisterApplicationRestart(wstr long)
+@ stdcall ResolveLocaleName(wstr ptr long)
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
 @ stdcall TryAcquireSRWLockExclusive(ptr) ntext.RtlTryAcquireSRWLockExclusive
 @ stdcall TryAcquireSRWLockShared(ptr) ntext.RtlTryAcquireSRWLockShared

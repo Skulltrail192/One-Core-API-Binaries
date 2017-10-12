@@ -547,3 +547,11 @@ CreateRemoteThreadEx(
 	//TODO create Thread with ThreadAttibutesList
 	return handle;	
 }
+
+/***********************************************************************
+ *           IsThreadAFiber   (KERNEL32.@)
+ */
+BOOL WINAPI IsThreadAFiber(void)
+{
+    return NtCurrentTeb()->NtTib.FiberData != NULL;
+}

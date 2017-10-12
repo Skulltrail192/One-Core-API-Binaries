@@ -48,7 +48,7 @@ void InitializeCriticalForDirectories(){
  */
 BOOL
 WINAPI
-GetVolumeInformationByHandle(
+GetVolumeInformationByHandleW(
 	IN HANDLE hFile,
     IN LPWSTR lpVolumeNameBuffer,
     IN DWORD nVolumeNameSize,
