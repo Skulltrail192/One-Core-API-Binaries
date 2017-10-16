@@ -1123,7 +1123,7 @@
 @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
 @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
-@ stdcall InitializeConditionVariable(ptr)
+@ stdcall InitializeConditionVariable(ptr) ntext.RtlInitializeConditionVariable
 @ stdcall InitializeCriticalSectionEx(ptr long long) 
 @ stdcall InitializeSRWLock(ptr) ntext.RtlInitializeSRWLock
 @ stdcall InitOnceBeginInitialize(ptr long ptr ptr)
@@ -1131,6 +1131,7 @@
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stdcall IsThreadAFiber()
 @ stdcall IsValidLocaleName(wstr)
+@ stdcall LeaveCriticalSectionWhenCallbackReturns(ptr ptr) ntdll.TpCallbackLeaveCriticalSectionOnCompletion
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
 @ stdcall LCIDToLocaleName(long ptr long long)
 @ stdcall LocaleNameToLCID(wstr long)
@@ -1146,8 +1147,11 @@
 @ stdcall QueryProcessCycleTime(ptr ptr)
 @ stdcall QueryProcessAffinityUpdateMode(ptr long)
 @ stdcall QueryThreadCycleTime(ptr ptr)
+@ stdcall ReleaseMutexWhenCallbackReturns(ptr long) ntdll.TpCallbackReleaseMutexOnCompletion
+@ stdcall ReleaseSemaphoreWhenCallbackReturns(ptr long long) ntdll.TpCallbackReleaseSemaphoreOnCompletion
 @ stdcall ReleaseSRWLockExclusive(ptr) ntext.RtlReleaseSRWLockExclusive
 @ stdcall ReleaseSRWLockShared(ptr) ntext.RtlReleaseSRWLockShared
+@ stdcall ResolveDelayLoadedAPI(ptr ptr ptr ptr ptr long) ntdll.LdrResolveDelayLoadedAPI
 @ stdcall SetConsoleHistoryInfo(ptr)
 @ stdcall SetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall SetCurrentConsoleFontEx(ptr long ptr)
@@ -1163,13 +1167,13 @@
 @ stdcall SetThreadpoolTimer(ptr ptr long long) ntext.TpSetTimer
 @ stdcall SetThreadpoolWait(ptr ptr ptr) ntext.TpSetWait
 @ stdcall SleepConditionVariableCS(ptr ptr long) 
-@ stdcall SleepConditionVariableSRW(ptr ptr long long)
+@ stdcall SleepConditionVariableSRW(ptr ptr long long) 
 @ stdcall SubmitThreadpoolWork(ptr) ntext.TpPostWork
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) ntext.TpWaitForTimer
 @ stdcall WaitForThreadpoolWorkCallbacks(ptr long) ntext.TpWaitForWork
-@ stdcall WakeAllConditionVariable(ptr) 
-@ stdcall WakeConditionVariable(ptr) 
+@ stdcall WakeAllConditionVariable(ptr) ntext.RtlWakeAllConditionVariable
+@ stdcall WakeConditionVariable(ptr) ntext.RtlWakeConditionVariable
 @ stdcall WerpNotifyLoadStringResource(ptr wstr ptr long)
 @ stub WerpNotifyLoadStringResourceEx
 @ stdcall WerpNotifyUseStringResource(ptr)

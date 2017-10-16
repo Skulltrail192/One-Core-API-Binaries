@@ -29,6 +29,7 @@ list(APPEND SOURCE
 	handle.c 
     locale.c
 	mem.c
+	module.c
 	namepipe.c
 	nls.c
 	number.c
@@ -74,7 +75,7 @@ set_module_type(kernel32_wrapper win32dll ENTRYPOINT BaseDllInitialize 12)
 target_link_libraries(kernel32_wrapper wine ${PSEH_LIB})
 
 if(ARCH STREQUAL "i386")
-	add_importlibs(kernel32_wrapper kernelfull ntext ntdll_vista normaliz psapi advapi32 user32 version)
+	add_importlibs(kernel32_wrapper kernelfull kernel32_vista ntext ntdll_vista normaliz psapi advapi32 user32 version)
 
 elseif(ARCH STREQUAL "amd64")
 	add_importlibs(kernel32_wrapper kernel32 ntext psapi advapi32 user32 version)

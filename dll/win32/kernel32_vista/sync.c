@@ -49,52 +49,23 @@ VOID
 NTAPI
 RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock);
 
-// ULONG
-// NTAPI
-// RtlNtStatusToDosError(IN NTSTATUS Status);
+ULONG
+NTAPI
+RtlNtStatusToDosError(IN NTSTATUS Status);
 
-// VOID
-// WINAPI
-// AcquireSRWLockExclusive(PSRWLOCK Lock)
-// {
-    // RtlAcquireSRWLockExclusive((PRTL_SRWLOCK)Lock);
-// }
+VOID
+WINAPI
+AcquireSRWLockExclusive(PSRWLOCK Lock)
+{
+    RtlAcquireSRWLockExclusive((PRTL_SRWLOCK)Lock);
+}
 
-// VOID
-// WINAPI
-// AcquireSRWLockShared(PSRWLOCK Lock)
-// {
-    // RtlAcquireSRWLockShared((PRTL_SRWLOCK)Lock);
-// }
-
-// VOID
-// WINAPI
-// InitializeConditionVariable(PCONDITION_VARIABLE ConditionVariable)
-// {
-    // RtlInitializeConditionVariable((PRTL_CONDITION_VARIABLE)ConditionVariable);
-// }
-
-// VOID
-// WINAPI
-// InitializeSRWLock(PSRWLOCK Lock)
-// {
-    // RtlInitializeSRWLock((PRTL_SRWLOCK)Lock);
-// }
-
-// VOID
-// WINAPI
-// ReleaseSRWLockExclusive(PSRWLOCK Lock)
-// {
-    // RtlReleaseSRWLockExclusive((PRTL_SRWLOCK)Lock);
-// }
-
-// VOID
-// WINAPI
-// ReleaseSRWLockShared(PSRWLOCK Lock)
-// {
-    // RtlReleaseSRWLockShared((PRTL_SRWLOCK)Lock);
-// }
-
+VOID
+WINAPI
+AcquireSRWLockShared(PSRWLOCK Lock)
+{
+    RtlAcquireSRWLockShared((PRTL_SRWLOCK)Lock);
+}
 
 VOID
 WINAPI
@@ -105,67 +76,25 @@ InitializeConditionVariable(PCONDITION_VARIABLE ConditionVariable)
 
 VOID
 WINAPI
-InitializeSRWLock_XP(PRTL_CRITICAL_SECTION crit)
+InitializeSRWLock(PSRWLOCK Lock)
 {
-	RtlInitializeCriticalSectionAndSpinCount(crit, 1024);
-}
-
-void 
-WINAPI
-checkIsCriticalNotInitialized(PRTL_CRITICAL_SECTION crit)
-{
-	if(!crit){
-		InitializeSRWLock_XP(crit);
-	}
+    RtlInitializeSRWLock((PRTL_SRWLOCK)Lock);
 }
 
 VOID
 WINAPI
-AcquireSRWLockExclusive_XP(PRTL_CRITICAL_SECTION crit)
+ReleaseSRWLockExclusive(PSRWLOCK Lock)
 {
-    checkIsCriticalNotInitialized(crit);	
-	RtlEnterCriticalSection(crit);
+    RtlReleaseSRWLockExclusive((PRTL_SRWLOCK)Lock);
 }
 
 VOID
 WINAPI
-AcquireSRWLockShared_XP(PRTL_CRITICAL_SECTION crit)
+ReleaseSRWLockShared(PSRWLOCK Lock)
 {
-    checkIsCriticalNotInitialized(crit);	
-    RtlEnterCriticalSection(crit);
+    RtlReleaseSRWLockShared((PRTL_SRWLOCK)Lock);
 }
 
-BOOL
-WINAPI
-TryAcquireSRWLockExclusive_XP(PRTL_CRITICAL_SECTION crit)
-{
-    checkIsCriticalNotInitialized(crit);	
-	return RtlTryEnterCriticalSection(crit);
-}
-
-BOOL
-WINAPI
-TryAcquireSRWLockShared_XP(PRTL_CRITICAL_SECTION crit)
-{
-    checkIsCriticalNotInitialized(crit);	
-    return RtlTryEnterCriticalSection(crit);
-}
-
-VOID
-WINAPI
-ReleaseSRWLockExclusive_XP(PRTL_CRITICAL_SECTION crit)
-{
-   checkIsCriticalNotInitialized(crit);
-   RtlLeaveCriticalSection(crit);
-}
-
-VOID
-WINAPI
-ReleaseSRWLockShared_XP(PRTL_CRITICAL_SECTION crit)
-{
-    checkIsCriticalNotInitialized(crit);	
-	RtlLeaveCriticalSection(crit);
-}
 
 FORCEINLINE
 PLARGE_INTEGER

@@ -44,7 +44,6 @@ BaseDllInitialize(HANDLE hDll,
             /* Insert more dll attach stuff here! */
 			kernel32_handle = GetModuleHandleW(L"kernelfull");
 			InitializeCriticalForDirectories();
-			//InitializeCriticalForSRW();
             DllInitialized = TRUE;
             break;
         }

@@ -1,25 +1,22 @@
- /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
-Copyright (c) 2015  Microsoft Corporation 
- 
+/*++
+
+Copyright (c) 2017 Shorthorn Project
+
 Module Name:
 
-    ldrrsrc.c
- 
- */
+    ldrssrc.c
+
+Abstract:
+
+    This module implements Windows Store APIs
+
+Author:
+
+    Skulltrail 15-October-2017
+
+Revision History:
+
+--*/
  
 #define NDEBUG
 
@@ -193,10 +190,6 @@ LdrLoadAlternateResourceModuleEx(
     UNICODE_STRING AltModulePathList[5];
     UNICODE_STRING NtSystemRoot;
 	UNICODE_STRING LocaleName;
-
-    if (!LdrAlternateResourcesEnabled()) {
-        return NULL;
-    }
 
     RtlEnterCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
 
@@ -493,12 +486,9 @@ error_exit:
     return NULL;
 }
 
-#undef LdrLoadAlternateResourceModule
-
-#define LdrLoadAlternateResourceModule(x,y) LdrLoadAlternateResourceModuleExt(x, y) 
 PVOID
 NTAPI
-LdrLoadAlternateResourceModuleExt(
+LdrLoadAlternateResourceModule(
     IN PVOID Module,
     IN LPCWSTR PathToAlternateModule OPTIONAL
     )
@@ -1632,13 +1622,9 @@ SearchResourceSection:
     return Status;
 }
 
-#undef LdrFindResource_U
-
-#define LdrFindResource_U(x, y, w, z) LdrFindResource_U_Ext(x, y, w, z) 
-
 NTSTATUS
 NTAPI
-LdrFindResource_U_Ext(
+LdrFindResource_U(
     IN PVOID DllHandle,
     IN const ULONG_PTR* ResourceIdPath,
     IN ULONG ResourceIdPathLength,
@@ -1677,13 +1663,9 @@ LdrFindResourceEx_U(
       );
 }
 
-#undef LdrLoadAlternateResourceModule
-
-#define LdrFindResourceDirectory_U(x, y, w, z) LdrFindResourceDirectory_U_EX(x, y, w, z) 
-
 NTSTATUS
 NTAPI
-LdrFindResourceDirectory_U_EX(
+LdrFindResourceDirectory_U(
     IN PVOID DllHandle,
     IN const ULONG_PTR* ResourceIdPath,
     IN ULONG ResourceIdPathLength,

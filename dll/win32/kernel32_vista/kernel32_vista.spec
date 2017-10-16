@@ -3,13 +3,13 @@
 @ stdcall GetFileInformationByHandleEx(long long ptr long)
 @ stdcall -ret64 GetTickCount64()
 
-@ stdcall InitializeSRWLock(ptr) InitializeSRWLock_XP
-@ stdcall AcquireSRWLockExclusive(ptr) AcquireSRWLockExclusive_XP
-@ stdcall AcquireSRWLockShared(ptr) AcquireSRWLockShared_XP
-@ stdcall ReleaseSRWLockExclusive(ptr) ReleaseSRWLockExclusive_XP
-@ stdcall ReleaseSRWLockShared(ptr) ReleaseSRWLockShared_XP
-@ stdcall TryAcquireSRWLockExclusive(ptr) TryAcquireSRWLockExclusive_XP
-@ stdcall TryAcquireSRWLockShared(ptr) TryAcquireSRWLockShared_XP
+@ stdcall InitializeSRWLock(ptr) 
+@ stdcall AcquireSRWLockExclusive(ptr) 
+@ stdcall AcquireSRWLockShared(ptr) 
+@ stdcall ReleaseSRWLockExclusive(ptr) 
+@ stdcall ReleaseSRWLockShared(ptr) 
+;@ stdcall TryAcquireSRWLockExclusive(ptr) 
+;@ stdcall TryAcquireSRWLockShared(ptr) 
 
 @ stdcall InitializeConditionVariable(ptr)
 @ stdcall SleepConditionVariableCS(ptr ptr long)

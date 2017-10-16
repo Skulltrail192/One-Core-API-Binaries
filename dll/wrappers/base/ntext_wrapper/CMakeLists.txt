@@ -59,7 +59,7 @@ list(APPEND SOURCE
 	rtl/unicode.c
 	rtl/wer.c
 	rtl/wow64.c
-	rtl/wine.c
+	#rtl/wine.c
     version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/ntext_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/ntext.def)
