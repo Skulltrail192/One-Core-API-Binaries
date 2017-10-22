@@ -78,3 +78,30 @@ Added Follow functions on ntdll XP SP3:
 
 - New App
  - wusa.exe
+
+Version 0.3:
+ Added:
+   - API-MS-WIN-APPMODEL-RUNTIME-L1-1-2
+   - API-MS-WIN-CORE-CRT-L1-1-0 - waiting
+   - API-MS-WIN-CORE-ERRORHANDLING-L1-1-3 
+   - API-MS-WIN-CORE-FILE-L2-1-2
+   - API-MS-WIN-CORE-HEAP-L2-1-0
+   - API-MS-WIN-CORE-LOCALIZATION-OBSOLETE-L1-3-0
+   - API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-2-0
+   - API-MS-WIN-CORE-SYNCH-L1-2-1
+   - API-MS-WIN-CORE-VERSION-L1-1-1
+   - API-MS-WIN-CORE-WOW64-L1-1-1
+   - API-MS-WIN-MM-JOYSTICK-L1-1-0
+   - API-MS-WIN-NTUSER-RECTANGLE-L1-1-0
+   - API-MS-WIN-CORE-FILE-L1-2-2
+   - API-MS-WIN-CORE-LIBRARYLOADER-L1-2-1
+   - API-MS-WIN-CORE-SYNCH-ANSI-L1-1-0
+   - API-MS-WIN-SHCORE-SCALING-L1-1-1
+
+ Updated:
+   - kernel32_wrapper.dll
+   - Uxtheme_wrapper.dll
+   - Ntext.dll
+   - API-MS-WIN-CORE-SYSINFO-L1-2-0
+   - Advapi32_wrapper.dll
+   - Rpcrt4_wrapper.dll

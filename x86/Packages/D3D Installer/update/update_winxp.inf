@@ -90,6 +90,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 
 [CopyAlways.System32.Files]
     d2d1.dll
+	d2dx.dll
 	d3d9.dll
 	d3d9ex.dll
 	d3d10.dll
@@ -100,11 +101,13 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	dxgi.dll
 	libwine.dll
 	wined3d.dll
+	wineft2.dll
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
 [SourceDisksFiles]
     d2d1.dll = 1
+	d2dx.dll = 1
 	d3d9.dll = 1
 	d3d9ex.dll = 1
 	d3d10.dll = 1
@@ -115,6 +118,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	dxgi.dll = 1
 	libwine.dll = 1
 	wined3d.dll = 1
+	wineft2.dll = 1	
 	
 [Add.Reg.Uninstall]
 
