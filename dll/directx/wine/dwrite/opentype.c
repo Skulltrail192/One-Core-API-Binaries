@@ -37,15 +37,20 @@ WINE_DEFAULT_DEBUG_CHANNEL(dwrite);
 #define MS_NAME_TAG DWRITE_MAKE_OPENTYPE_TAG('n','a','m','e')
 #define MS_GLYF_TAG DWRITE_MAKE_OPENTYPE_TAG('g','l','y','f')
 #define MS_CFF__TAG DWRITE_MAKE_OPENTYPE_TAG('C','F','F',' ')
+#define MS_CFF2_TAG DWRITE_MAKE_OPENTYPE_TAG('C','F','F','2')
 #define MS_COLR_TAG DWRITE_MAKE_OPENTYPE_TAG('C','O','L','R')
 #define MS_SVG__TAG DWRITE_MAKE_OPENTYPE_TAG('S','V','G',' ')
 #define MS_SBIX_TAG DWRITE_MAKE_OPENTYPE_TAG('s','b','i','x')
 #define MS_MAXP_TAG DWRITE_MAKE_OPENTYPE_TAG('m','a','x','p')
+#define MS_CBLC_TAG DWRITE_MAKE_OPENTYPE_TAG('C','B','L','C')
 
 /* 'sbix' formats */
 #define MS_PNG__TAG DWRITE_MAKE_OPENTYPE_TAG('p','n','g',' ')
 #define MS_JPG__TAG DWRITE_MAKE_OPENTYPE_TAG('j','p','g',' ')
 #define MS_TIFF_TAG DWRITE_MAKE_OPENTYPE_TAG('t','i','f','f')
+
+#define MS_WOFF_TAG DWRITE_MAKE_OPENTYPE_TAG('w','O','F','F')
+#define MS_WOF2_TAG DWRITE_MAKE_OPENTYPE_TAG('w','O','F','2')
 
 #ifdef WORDS_BIGENDIAN
 #define GET_BE_WORD(x) (x)
@@ -71,7 +76,7 @@ typedef struct {
 } TTC_SFNT_V1;
 
 typedef struct {
-    CHAR tag[4];
+    DWORD tag;
     DWORD checkSum;
     DWORD offset;
     DWORD length;
@@ -259,6 +264,30 @@ typedef struct {
     WORD numGlyphs;
 } maxp;
 
+typedef struct {
+    WORD majorVersion;
+    WORD minorVersion;
+    DWORD numSizes;
+} CBLCHeader;
+
+typedef struct {
+    BYTE res[12];
+} sbitLineMetrics;
+
+typedef struct {
+    DWORD indexSubTableArrayOffset;
+    DWORD indexTablesSize;
+    DWORD numberofIndexSubTables;
+    DWORD colorRef;
+    sbitLineMetrics hori;
+    sbitLineMetrics vert;
+    WORD startGlyphIndex;
+    WORD endGlyphIndex;
+    BYTE ppemX;
+    BYTE ppemY;
+    BYTE bitDepth;
+    BYTE flags;
+} CBLCBitmapSizeTable;
 #include "poppack.h"
 
 enum OS2_FSSELECTION {
@@ -1000,7 +1029,8 @@ static HRESULT opentype_type1_analyzer(IDWriteFontFileStream *stream, UINT32 *fo
     return *file_type != DWRITE_FONT_FILE_TYPE_UNKNOWN ? S_OK : S_FALSE;
 }
 
-HRESULT opentype_analyze_font(IDWriteFontFileStream *stream, UINT32* font_count, DWRITE_FONT_FILE_TYPE *file_type, DWRITE_FONT_FACE_TYPE *face_type, BOOL *supported)
+HRESULT opentype_analyze_font(IDWriteFontFileStream *stream, BOOL *supported, DWRITE_FONT_FILE_TYPE *file_type,
+        DWRITE_FONT_FACE_TYPE *face_type, UINT32 *face_count)
 {
     static dwrite_fontfile_analyzer fontfile_analyzers[] = {
         opentype_ttf_analyzer,
@@ -1018,10 +1048,10 @@ HRESULT opentype_analyze_font(IDWriteFontFileStream *stream, UINT32* font_count,
 
     *file_type = DWRITE_FONT_FILE_TYPE_UNKNOWN;
     *face_type = DWRITE_FONT_FACE_TYPE_UNKNOWN;
-    *font_count = 0;
+    *face_count = 0;
 
     while (*analyzer) {
-        hr = (*analyzer)(stream, font_count, file_type, face_type);
+        hr = (*analyzer)(stream, face_count, file_type, face_type);
         if (FAILED(hr))
             return hr;
 
@@ -1038,13 +1068,12 @@ HRESULT opentype_analyze_font(IDWriteFontFileStream *stream, UINT32* font_count,
 HRESULT opentype_get_font_table(struct file_stream_desc *stream_desc, UINT32 tag, const void **table_data,
     void **table_context, UINT32 *table_size, BOOL *found)
 {
-    HRESULT hr;
-    TTC_SFNT_V1 *font_header = NULL;
-    void *sfnt_context;
+    void *table_directory_context, *sfnt_context;
     TT_TableRecord *table_record = NULL;
-    void *table_record_context;
-    int table_count, table_offset = 0;
-    int i;
+    TTC_SFNT_V1 *font_header = NULL;
+    UINT32 table_offset = 0;
+    UINT16 table_count;
+    HRESULT hr;
 
     if (found) *found = FALSE;
     if (table_size) *table_size = 0;
@@ -1074,27 +1103,31 @@ HRESULT opentype_get_font_table(struct file_stream_desc *stream_desc, UINT32 tag
 
     table_count = GET_BE_WORD(font_header->numTables);
     table_offset += sizeof(*font_header);
-    for (i = 0; i < table_count; i++)
-    {
-        hr = IDWriteFontFileStream_ReadFileFragment(stream_desc->stream, (const void**)&table_record, table_offset, sizeof(*table_record), &table_record_context);
-        if (FAILED(hr))
-            break;
-        if (DWRITE_MAKE_OPENTYPE_TAG(table_record->tag[0], table_record->tag[1], table_record->tag[2], table_record->tag[3]) == tag)
-            break;
-        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, table_record_context);
-        table_offset += sizeof(*table_record);
-    }
 
     IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, sfnt_context);
-    if (SUCCEEDED(hr) && i < table_count)
-    {
-        int offset = GET_BE_DWORD(table_record->offset);
-        int length = GET_BE_DWORD(table_record->length);
-        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, table_record_context);
 
-        if (found) *found = TRUE;
-        if (table_size) *table_size = length;
-        hr = IDWriteFontFileStream_ReadFileFragment(stream_desc->stream, table_data, offset, length, table_context);
+    hr = IDWriteFontFileStream_ReadFileFragment(stream_desc->stream, (const void **)&table_record, table_offset,
+            table_count * sizeof(*table_record), &table_directory_context);
+    if (hr == S_OK) {
+        UINT16 i;
+
+        for (i = 0; i < table_count; i++) {
+            if (table_record->tag == tag) {
+                UINT32 offset = GET_BE_DWORD(table_record->offset);
+                UINT32 length = GET_BE_DWORD(table_record->length);
+
+                if (found)
+                    *found = TRUE;
+                if (table_size)
+                    *table_size = length;
+                hr = IDWriteFontFileStream_ReadFileFragment(stream_desc->stream, table_data, offset,
+                        length, table_context);
+                break;
+            }
+            table_record++;
+        }
+
+        IDWriteFontFileStream_ReleaseFileFragment(stream_desc->stream, table_directory_context);
     }
 
     return hr;
@@ -2145,6 +2178,40 @@ static DWORD opentype_get_sbix_formats(IDWriteFontFace4 *fontface)
     return ret;
 }
 
+static UINT32 opentype_get_cblc_formats(IDWriteFontFace4 *fontface)
+{
+    CBLCBitmapSizeTable *sizes;
+    UINT32 num_sizes, size, s;
+    BOOL exists = FALSE;
+    CBLCHeader *header;
+    UINT32 ret = 0;
+    void *context;
+    HRESULT hr;
+
+    if (FAILED(hr = IDWriteFontFace4_TryGetFontTable(fontface, MS_CBLC_TAG, (const void **)&header, &size,
+            &context, &exists)))
+        return 0;
+
+    if (!exists)
+        return 0;
+
+    num_sizes = GET_BE_DWORD(header->numSizes);
+    sizes = (CBLCBitmapSizeTable *)(header + 1);
+
+    for (s = 0; s < num_sizes; s++) {
+        BYTE bpp = sizes->bitDepth;
+
+        if (bpp == 1 || bpp == 2 || bpp == 4 || bpp == 8)
+            ret |= DWRITE_GLYPH_IMAGE_FORMATS_PNG;
+        else if (bpp == 32)
+            ret |= DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8;
+    }
+
+    IDWriteFontFace4_ReleaseFontTable(fontface, context);
+
+    return ret;
+}
+
 UINT32 opentype_get_glyph_image_formats(IDWriteFontFace4 *fontface)
 {
     UINT32 ret = DWRITE_GLYPH_IMAGE_FORMATS_NONE;
@@ -2152,7 +2219,8 @@ UINT32 opentype_get_glyph_image_formats(IDWriteFontFace4 *fontface)
     if (opentype_has_font_table(fontface, MS_GLYF_TAG))
         ret |= DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE;
 
-    if (opentype_has_font_table(fontface, MS_CFF__TAG))
+    if (opentype_has_font_table(fontface, MS_CFF__TAG) ||
+            opentype_has_font_table(fontface, MS_CFF2_TAG))
         ret |= DWRITE_GLYPH_IMAGE_FORMATS_CFF;
 
     if (opentype_has_font_table(fontface, MS_COLR_TAG))
@@ -2164,6 +2232,29 @@ UINT32 opentype_get_glyph_image_formats(IDWriteFontFace4 *fontface)
     if (opentype_has_font_table(fontface, MS_SBIX_TAG))
         ret |= opentype_get_sbix_formats(fontface);
 
-    /* TODO: handle embedded bitmaps tables */
+    if (opentype_has_font_table(fontface, MS_CBLC_TAG))
+        ret |= opentype_get_cblc_formats(fontface);
+
     return ret;
+}
+
+DWRITE_CONTAINER_TYPE opentype_analyze_container_type(void const *data, UINT32 data_size)
+{
+    DWORD signature;
+
+    if (data_size < sizeof(DWORD))
+        return DWRITE_CONTAINER_TYPE_UNKNOWN;
+
+    /* Both WOFF and WOFF2 start with 4 bytes signature. */
+    signature = *(DWORD *)data;
+
+    switch (signature)
+    {
+    case MS_WOFF_TAG:
+        return DWRITE_CONTAINER_TYPE_WOFF;
+    case MS_WOF2_TAG:
+        return DWRITE_CONTAINER_TYPE_WOFF2;
+    default:
+        return DWRITE_CONTAINER_TYPE_UNKNOWN;
+    }
 }

@@ -21,7 +21,9 @@
 
 HANDLE section = NULL;
 
-UINT_PTR WINAPI SetCoalescableTimer(
+UINT_PTR 
+WINAPI 
+SetCoalescableTimer(
   _In_opt_  HWND hwnd,
   _In_      UINT_PTR nIDEvent,
   _In_      UINT uElapse,
@@ -29,7 +31,7 @@ UINT_PTR WINAPI SetCoalescableTimer(
   _In_      ULONG uToleranceDelay
 )
 {
-	return 0;
+	return SetTimer(hwnd, nIDEvent, uElapse, lpTimerFunc);
 }
 
 BOOL WINAPI IsSETEnabled()

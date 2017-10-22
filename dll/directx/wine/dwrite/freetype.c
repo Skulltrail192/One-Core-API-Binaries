@@ -62,7 +62,7 @@ typedef struct
     FT_Int patch;
 } FT_Version_t;
 
-#define MAKE_FUNCPTR(f) static typeof(f) * p##f
+#define MAKE_FUNCPTR(f) static typeof(f) * p##f = NULL
 MAKE_FUNCPTR(FT_Done_FreeType);
 MAKE_FUNCPTR(FT_Done_Glyph);
 MAKE_FUNCPTR(FT_Get_First_Char);

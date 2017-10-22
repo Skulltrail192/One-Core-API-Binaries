@@ -753,3 +753,4 @@
 @ stub PrivateSetDbgTag
 @ stub PrivateSetRipFlags
 @ stub ResolveDesktopForWOW
+@ stub QueryUserCounters

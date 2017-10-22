@@ -1626,6 +1626,7 @@
 @ stdcall RtlTryAcquireSRWLockShared(ptr)
 @ stdcall NtOpenKeyEx(ptr long ptr long)
 @ stdcall ZwOpenKeyEx(ptr long ptr long) NtOpenKeyEx
+@ stdcall WinSqmAddToAverageDWORD(long long long)
 
 #win8
 @ stdcall LdrAddDllDirectory(wstr)

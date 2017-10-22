@@ -42,6 +42,8 @@ list(APPEND SOURCE
 	dxgi1_2.idl
 	d3dx10core.idl
 	d3dx11core.idl
+	dxgiformat.idl
+	dcommon.idl
 	dwrite.idl
 	dwrite_1.idl
 	dwrite_2.idl
@@ -176,7 +178,7 @@ add_iid_library(d2d1_uuids d2d1.idl)
 add_iid_library(d3d10_uuids d3d10.idl d3d10sdklayers.idl)
 add_iid_library(d3d10_1_uuids d3d10_1.idl)
 add_iid_library(d3d11_uuids d3d11.idl d3d11_1.idl d3d11sdklayers.idl)
-add_iid_library(dwrite_uuids dwrite.idl dwrite_1.idl dwrite_2.idl)	
+add_iid_library(dwrite_uuids dwrite.idl dwrite_1.idl dwrite_2.idl dwrite_3.idl)	
 
 add_iid_library(wuguid wuapi.idl)
 add_iid_library(xml_uuids msxml2.idl)

@@ -540,3 +540,52 @@ InitOnceComplete(
      if (status != STATUS_SUCCESS) SetLastError( RtlNtStatusToDosError(status) );
      return !status;
 }
+
+/***********************************************************************
+ *           CreateWaitableTimerExW    (KERNEL32.@)
+ */
+HANDLE WINAPI CreateWaitableTimerExW( SECURITY_ATTRIBUTES *sa, LPCWSTR name, DWORD flags, DWORD access )
+{
+    HANDLE handle;
+    NTSTATUS status;
+    UNICODE_STRING nameW;
+    OBJECT_ATTRIBUTES attr;
+
+    attr.Length                   = sizeof(attr);
+    attr.RootDirectory            = 0;
+    attr.ObjectName               = NULL;
+    attr.Attributes               = OBJ_OPENIF | ((sa && sa->bInheritHandle) ? OBJ_INHERIT : 0);
+    attr.SecurityDescriptor       = sa ? sa->lpSecurityDescriptor : NULL;
+    attr.SecurityQualityOfService = NULL;
+    if (name)
+    {
+        RtlInitUnicodeString( &nameW, name );
+        attr.ObjectName = &nameW;
+        attr.RootDirectory = get_BaseNamedObjects_handle();
+    }
+
+    status = NtCreateTimer( &handle, access, &attr,
+                 (flags & CREATE_WAITABLE_TIMER_MANUAL_RESET) ? NotificationTimer : SynchronizationTimer );
+    if (status == STATUS_OBJECT_NAME_EXISTS)
+        SetLastError( ERROR_ALREADY_EXISTS );
+    else
+        SetLastError( RtlNtStatusToDosError(status) );
+    return handle;
+}
+
+/***********************************************************************
+ *           CreateWaitableTimerExA    (KERNEL32.@)
+ */
+HANDLE WINAPI CreateWaitableTimerExA( SECURITY_ATTRIBUTES *sa, LPCSTR name, DWORD flags, DWORD access )
+{
+    WCHAR buffer[MAX_PATH];
+
+    if (!name) return CreateWaitableTimerExW( sa, NULL, flags, access );
+
+    if (!MultiByteToWideChar( CP_ACP, 0, name, -1, buffer, MAX_PATH ))
+    {
+        SetLastError( ERROR_FILENAME_EXCED_RANGE );
+        return 0;
+    }
+    return CreateWaitableTimerExW( sa, buffer, flags, access );
+}

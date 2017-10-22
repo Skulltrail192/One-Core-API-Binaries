@@ -141,3 +141,15 @@ WinSqmIsOptedInEx(ULONG number)
 	DbgPrint("UNIMPLEMENTED: WinSqmIsOptedInEx");	
 	return TRUE;
 }
+
+int 
+NTAPI 
+WinSqmAddToAverageDWORD(
+	DWORD unknown1, 
+	DWORD unknown2, 
+	DWORD unknown3
+)
+{
+	DbgPrint("UNIMPLEMENTED: WinSqmSetIfMaxDWORD");		
+	return 0;
+}

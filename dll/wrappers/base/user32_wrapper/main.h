@@ -51,7 +51,6 @@
 #define WH_MAX   14
 #define WH_MINHOOK   WH_MIN
 #define WH_MAXHOOK   WH_MAX
-#define NB_HOOKS (WH_MAXHOOK-WH_MINHOOK+1)
 
 typedef void *(WINAPI *RegisterCallback)(SIZE_T sizeOne, SIZE_T sizeTwo, int flags);
 

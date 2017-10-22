@@ -44,6 +44,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD reason, LPVOID reserved)
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls( hinstDLL );
         init_freetype();
+        init_local_fontfile_loader();
         break;
     case DLL_PROCESS_DETACH:
         if (reserved) break;
@@ -542,7 +543,7 @@ struct dwritefactory {
     IDWriteGdiInterop1 *gdiinterop;
     IDWriteFontFallback *fallback;
 
-    IDWriteLocalFontFileLoader* localfontfileloader;
+    IDWriteFontFileLoader *localfontfileloader;
     struct list localfontfaces;
 
     struct list collection_loaders;
@@ -579,9 +580,6 @@ static void release_dwritefactory(struct dwritefactory *factory)
 {
     struct fileloader *fileloader, *fileloader2;
     struct collectionloader *loader, *loader2;
-
-    if (factory->localfontfileloader)
-        IDWriteLocalFontFileLoader_Release(factory->localfontfileloader);
 
     EnterCriticalSection(&factory->cs);
     release_fontface_cache(&factory->localfontfaces);
@@ -806,19 +804,12 @@ static HRESULT WINAPI dwritefactory_CreateFontFileReference(IDWriteFactory5 *ifa
 
     *font_file = NULL;
 
-    if (!This->localfontfileloader)
-    {
-        hr = create_localfontfileloader(&This->localfontfileloader);
-        if (FAILED(hr))
-            return hr;
-    }
-
-    /* get a reference key used by local loader */
+    /* Get a reference key in local file loader format. */
     hr = get_local_refkey(path, writetime, &key, &key_size);
     if (FAILED(hr))
         return hr;
 
-    hr = create_font_file((IDWriteFontFileLoader*)This->localfontfileloader, key, key_size, font_file);
+    hr = create_font_file(This->localfontfileloader, key, key_size, font_file);
     heap_free(key);
 
     return hr;
@@ -833,9 +824,7 @@ static HRESULT WINAPI dwritefactory_CreateCustomFontFileReference(IDWriteFactory
 
     *font_file = NULL;
 
-    /* local loader is accepted as well */
-    if (!loader || !(factory_get_file_loader(This, loader) ||
-        (IDWriteFontFileLoader*)This->localfontfileloader == loader))
+    if (!loader || !(factory_get_file_loader(This, loader) || This->localfontfileloader == loader))
         return E_INVALIDARG;
 
     return create_font_file(loader, reference_key, key_size, font_file);
@@ -875,7 +864,7 @@ HRESULT factory_get_cached_fontface(IDWriteFactory5 *iface, IDWriteFontFile * co
     if (FAILED(hr))
         return hr;
 
-    if (loader == (IDWriteFontFileLoader*)factory->localfontfileloader) {
+    if (loader == factory->localfontfileloader) {
         fontfaces = &factory->localfontfaces;
         IDWriteFontFileLoader_Release(loader);
     }
@@ -954,10 +943,11 @@ static HRESULT WINAPI dwritefactory_CreateFontFace(IDWriteFactory5 *iface, DWRIT
     struct dwritefactory *This = impl_from_IDWriteFactory5(iface);
     DWRITE_FONT_FILE_TYPE file_type;
     DWRITE_FONT_FACE_TYPE face_type;
+    IDWriteFontFileStream *stream;
     struct fontface_desc desc;
     struct list *fontfaces;
     BOOL is_supported;
-    UINT32 count;
+    UINT32 face_count;
     HRESULT hr;
 
     TRACE("(%p)->(%d %u %p %u 0x%x %p)\n", This, req_facetype, files_number, font_files, index,
@@ -974,32 +964,44 @@ static HRESULT WINAPI dwritefactory_CreateFontFace(IDWriteFactory5 *iface, DWRIT
     if (!is_simulation_valid(simulations))
         return E_INVALIDARG;
 
+    if (FAILED(hr = get_filestream_from_file(*font_files, &stream)))
+        return hr;
+
     /* check actual file/face type */
     is_supported = FALSE;
     face_type = DWRITE_FONT_FACE_TYPE_UNKNOWN;
-    hr = IDWriteFontFile_Analyze(*font_files, &is_supported, &file_type, &face_type, &count);
+    hr = opentype_analyze_font(stream, &is_supported, &file_type, &face_type, &face_count);
     if (FAILED(hr))
-        return hr;
+        goto failed;
 
-    if (!is_supported)
-        return E_FAIL;
+    if (!is_supported) {
+        hr = E_FAIL;
+        goto failed;
+    }
 
-    if (face_type != req_facetype)
-        return DWRITE_E_FILEFORMAT;
+    if (face_type != req_facetype) {
+        hr = DWRITE_E_FILEFORMAT;
+        goto failed;
+    }
 
     hr = factory_get_cached_fontface(iface, font_files, index, simulations, &fontfaces,
             &IID_IDWriteFontFace, (void **)fontface);
     if (hr != S_FALSE)
-        return hr;
+        goto failed;
 
     desc.factory = iface;
     desc.face_type = req_facetype;
     desc.files = font_files;
+    desc.stream = stream;
     desc.files_number = files_number;
     desc.index = index;
     desc.simulations = simulations;
     desc.font_data = NULL;
-    return create_fontface(&desc, fontfaces, (IDWriteFontFace4 **)fontface);
+    hr = create_fontface(&desc, fontfaces, (IDWriteFontFace4 **)fontface);
+
+failed:
+    IDWriteFontFileStream_Release(stream);
+    return hr;
 }
 
 static HRESULT WINAPI dwritefactory_CreateRenderingParams(IDWriteFactory5 *iface, IDWriteRenderingParams **params)
@@ -1066,9 +1068,6 @@ static HRESULT WINAPI dwritefactory_RegisterFontFileLoader(IDWriteFactory5 *ifac
     if (!loader)
         return E_INVALIDARG;
 
-    if ((IDWriteFontFileLoader*)This->localfontfileloader == loader)
-        return S_OK;
-
     if (factory_get_file_loader(This, loader))
         return DWRITE_E_ALREADYREGISTERED;
 
@@ -1093,9 +1092,6 @@ static HRESULT WINAPI dwritefactory_UnregisterFontFileLoader(IDWriteFactory5 *if
 
     if (!loader)
         return E_INVALIDARG;
-
-    if ((IDWriteFontFileLoader*)This->localfontfileloader == loader)
-        return S_OK;
 
     found = factory_get_file_loader(This, loader);
     if (!found)
@@ -1329,8 +1325,10 @@ static HRESULT WINAPI dwritefactory2_CreateFontFallbackBuilder(IDWriteFactory5 *
         IDWriteFontFallbackBuilder **fallbackbuilder)
 {
     struct dwritefactory *This = impl_from_IDWriteFactory5(iface);
-    FIXME("(%p)->(%p): stub\n", This, fallbackbuilder);
-    return E_NOTIMPL;
+
+    TRACE("(%p)->(%p)\n", This, fallbackbuilder);
+
+    return create_fontfallback_builder(iface, fallbackbuilder);
 }
 
 static HRESULT WINAPI dwritefactory2_TranslateColorGlyphRun(IDWriteFactory5 *iface, FLOAT originX, FLOAT originY,
@@ -1632,9 +1630,9 @@ static HRESULT WINAPI dwritefactory5_CreateInMemoryFontFileLoader(IDWriteFactory
 {
     struct dwritefactory *This = impl_from_IDWriteFactory5(iface);
 
-    FIXME("(%p)->(%p): stub\n", This, loader);
+    TRACE("(%p)->(%p)\n", This, loader);
 
-    return E_NOTIMPL;
+    return create_inmemory_fileloader(loader);
 }
 
 static HRESULT WINAPI dwritefactory5_CreateHttpFontFileLoader(IDWriteFactory5 *iface, WCHAR const *referrer_url, WCHAR const *extra_headers,
@@ -1651,9 +1649,9 @@ static DWRITE_CONTAINER_TYPE WINAPI dwritefactory5_AnalyzeContainerType(IDWriteF
 {
     struct dwritefactory *This = impl_from_IDWriteFactory5(iface);
 
-    FIXME("(%p)->(%p %u): stub\n", This, data, data_size);
+    TRACE("(%p)->(%p %u)\n", This, data, data_size);
 
-    return DWRITE_CONTAINER_TYPE_UNKNOWN;
+    return opentype_analyze_container_type(data, data_size);
 }
 
 static HRESULT WINAPI dwritefactory5_UnpackFontFile(IDWriteFactory5 *iface, DWRITE_CONTAINER_TYPE container_type, void const *data,
@@ -1787,7 +1785,7 @@ static void init_dwritefactory(struct dwritefactory *factory, DWRITE_FACTORY_TYP
     factory->IDWriteFactory5_iface.lpVtbl = type == DWRITE_FACTORY_TYPE_SHARED ?
             &shareddwritefactoryvtbl : &dwritefactoryvtbl;
     factory->ref = 1;
-    factory->localfontfileloader = NULL;
+    factory->localfontfileloader = get_local_fontfile_loader();
     factory->system_collection = NULL;
     factory->eudc_collection = NULL;
     factory->gdiinterop = NULL;

@@ -21,6 +21,6 @@ set_module_type(advapi32_wrapper win32dll ENTRYPOINT 0)
 
 target_link_libraries(advapi32_wrapper wine)
 
-add_importlibs(advapi32_wrapper advapibase advapinew advapilong wevtapibase ntdll ntext)
+add_importlibs(advapi32_wrapper advapinew advapibase advapilong wevtapibase ntdll ntext)
 
 add_cd_file(TARGET advapi32_wrapper DESTINATION reactos/system32 FOR all)

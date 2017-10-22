@@ -42,15 +42,11 @@ list(APPEND SOURCE
 	rtl/misc.c
 	rtl/nls.c
 	rtl/notification.c
-	#rtl/newsrw.c
-	# rtl/message.c
 	rtl/path.c
 	rtl/pointer.c
 	rtl/processor.c
 	rtl/profiling.c
-	#rtl/pushlock.c
-	rtl/sid.c
-	#rtl/reactos.c		
+	rtl/sid.c	
 	rtl/synch.c		
 	rtl/sysinfo.c
 	rtl/time.c
@@ -59,7 +55,6 @@ list(APPEND SOURCE
 	rtl/unicode.c
 	rtl/wer.c
 	rtl/wow64.c
-	#rtl/wine.c
     version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/ntext_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/ntext.def)

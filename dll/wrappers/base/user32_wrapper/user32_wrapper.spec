@@ -427,17 +427,14 @@
 @ stdcall IsHungAppWindow(long)
 @ stdcall IsIconic(long)
 @ stdcall IsMenu(long)
-@ stdcall -stub IsProcess16Bit()
 @ stdcall IsRectEmpty(ptr)
 @ stdcall IsServerSideWindow(long)
-@ stdcall IsSETEnabled()
 @ stdcall IsWinEventHookInstalled(long)
 @ stdcall IsWindow(ptr)
 @ stdcall IsWindowEnabled(ptr)
 @ stdcall IsWindowInDestroy(long)
 @ stdcall IsWindowUnicode(long)
 @ stdcall IsWindowVisible(ptr)
-@ stdcall -stub IsWow64Message()
 @ stdcall IsZoomed(long)
 @ stdcall KillSystemTimer(long long) ;Server 2003 RTM don't has this function
 @ stdcall KillTimer(ptr long) ;NtUserKillTimer
@@ -705,7 +702,7 @@
 @ stdcall UnregisterMessagePumpHook()
 @ stdcall UnregisterUserApiHook() ;NtUserUnregisterUserApiHook
 @ stdcall UpdateLayeredWindow(long long ptr ptr long ptr long ptr long)
-@ stdcall UpdateLayeredWindowIndirect(long ptr)
+#@ stdcall UpdateLayeredWindowIndirect(long ptr)
 @ stdcall UpdatePerUserSystemParameters(long long)
 @ stdcall UpdateWindow(long)
 @ stdcall User32InitializeImmEntryTable(ptr)
@@ -742,6 +739,12 @@
 #Only for XP
 @ stdcall PrivateSetDbgTag(ptr ptr) userbase.PrivateSetDbgTag
 @ stdcall PrivateSetRipFlags(long) userbase.PrivateSetRipFlags
+@ stdcall QueryUserCounters(long ptr long ptr long) userbase.QueryUserCounters
+
+#Only Srv2k3
+@ stdcall IsSETEnabled()
+@ stdcall -stub IsProcess16Bit()
+@ stdcall -stub IsWow64Message()
 
 #Functions exported by Win Vista and 7
 @ stdcall AddClipboardFormatListener(ptr)

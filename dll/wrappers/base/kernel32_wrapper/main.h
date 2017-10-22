@@ -1625,3 +1625,26 @@ SleepConditionVariableCS(
 	PCRITICAL_SECTION CriticalSection, 
 	DWORD Timeout
 );
+
+void 
+WINAPI 
+TpSetTimer(
+	TP_TIMER *, 
+	LARGE_INTEGER *,
+	LONG,
+	LONG
+);
+
+void 
+WINAPI 
+TpSetWait(
+	TP_WAIT *,
+	HANDLE,
+	LARGE_INTEGER *
+);
+
+NTSTATUS 
+WINAPI 
+TpCallbackMayRunLong(
+	TP_CALLBACK_INSTANCE *
+);

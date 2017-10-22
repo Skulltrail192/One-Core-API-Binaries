@@ -22,6 +22,8 @@ Revision History:
 
 #include "main.h"
 
+WINE_DEFAULT_DEBUG_CHANNEL(kernel32_wrapper);
+
 static BOOL (WINAPI *pSetThreadStackGuarantee)(PULONG);
 static DWORD (WINAPI *pConsoleIMERoutine)(LPVOID);
 static DWORD (WINAPI *pCtrlRoutine)(LPVOID);
@@ -270,6 +272,30 @@ GetThreadInformation(
       BaseSetLastNTError(status);
   }
   return result;
+}
+
+/***********************************************************************
+ *              CreateThreadpool (KERNEL32.@)
+ */
+PTP_POOL 
+WINAPI 
+CreateThreadpool( 
+	PVOID reserved 
+)
+{
+    TP_POOL *pool;
+    NTSTATUS status;
+
+    TRACE( "%p\n", reserved );
+
+    status = TpAllocPool( &pool, reserved );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return NULL;
+    }
+
+    return pool;
 }
 
 /***********************************************************************
@@ -554,4 +580,105 @@ CreateRemoteThreadEx(
 BOOL WINAPI IsThreadAFiber(void)
 {
     return NtCurrentTeb()->NtTib.FiberData != NULL;
+}
+
+/***********************************************************************
+ *              SetThreadpoolTimer (KERNEL32.@)
+ */
+VOID WINAPI SetThreadpoolTimer( TP_TIMER *timer, FILETIME *due_time,
+                                DWORD period, DWORD window_length )
+{
+    LARGE_INTEGER timeout;
+
+    TRACE( "%p, %p, %u, %u\n", timer, due_time, period, window_length );
+
+    if (due_time)
+    {
+        timeout.u.LowPart = due_time->dwLowDateTime;
+        timeout.u.HighPart = due_time->dwHighDateTime;
+    }
+
+    TpSetTimer( timer, due_time ? &timeout : NULL, period, window_length );
+}
+
+
+/***********************************************************************
+ *              SetThreadpoolWait (KERNEL32.@)
+ */
+VOID WINAPI SetThreadpoolWait( TP_WAIT *wait, HANDLE handle, FILETIME *due_time )
+{
+    LARGE_INTEGER timeout;
+
+    TRACE( "%p, %p, %p\n", wait, handle, due_time );
+
+    if (!handle)
+    {
+        due_time = NULL;
+    }
+    else if (due_time)
+    {
+        timeout.u.LowPart = due_time->dwLowDateTime;
+        timeout.u.HighPart = due_time->dwHighDateTime;
+    }
+
+    TpSetWait( wait, handle, due_time ? &timeout : NULL );
+}
+
+/***********************************************************************
+ *              TrySubmitThreadpoolCallback (KERNEL32.@)
+ */
+BOOL WINAPI TrySubmitThreadpoolCallback( PTP_SIMPLE_CALLBACK callback, PVOID userdata,
+                                         TP_CALLBACK_ENVIRON *environment )
+{
+    NTSTATUS status;
+
+    TRACE( "%p, %p, %p\n", callback, userdata, environment );
+
+    status = TpSimpleTryPost( callback, userdata, environment );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/***********************************************************************
+ *              CallbackMayRunLong (KERNEL32.@)
+ */
+BOOL WINAPI CallbackMayRunLong( TP_CALLBACK_INSTANCE *instance )
+{
+    NTSTATUS status;
+
+    TRACE( "%p\n", instance );
+
+    status = TpCallbackMayRunLong( instance );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/***********************************************************************
+ *              CreateThreadpoolCleanupGroup (KERNEL32.@)
+ */
+PTP_CLEANUP_GROUP WINAPI CreateThreadpoolCleanupGroup( void )
+{
+    TP_CLEANUP_GROUP *group;
+    NTSTATUS status;
+
+    TRACE( "\n" );
+
+    status = TpAllocCleanupGroup( &group );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return NULL;
+    }
+
+    return group;
 }

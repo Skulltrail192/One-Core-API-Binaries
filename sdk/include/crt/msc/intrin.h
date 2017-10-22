@@ -345,15 +345,15 @@ void  __forceinline __invlpg_fixed(void * Address)
 #if (_MSC_VER >= 1800)
 #pragma intrinsic(_sgdt)
 #else
-__forceinline
-void _sgdt(void *Destination)
-{
-    __asm
-    {
-        mov eax, Destination
-        sgdt [eax]
-    }
-}
+// __forceinline
+// void _sgdt(void *Destination)
+// {
+    // __asm
+    // {
+        // mov eax, Destination
+        // sgdt [eax]
+    // }
+// }
 #endif
 #pragma intrinsic(_mm_pause)
 #endif

@@ -540,6 +540,9 @@
 @ stdcall tree_peek_ndr() rpcrtbase.tree_peek_ndr
 @ stdcall tree_size_ndr() rpcrtbase.tree_size_ndr
 
+#Missing on Win 2k3 with Updates
+@ stdcall I_RpcBindingIsServerLocal(ptr ptr) rpcrtbase.I_RpcBindingIsServerLocal
+
 #From Longhorn/Vista
 @ stdcall DllRegisterServer()
 @ stdcall I_RpcBindingCreateNP(wstr wstr wstr ptr)

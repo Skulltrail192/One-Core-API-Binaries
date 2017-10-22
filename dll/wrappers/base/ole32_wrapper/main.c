@@ -50,7 +50,7 @@
 #include "wtypes.h"
 #include "dcom_p.h"
 #include "winreg.h"
-#include "winternl.h"
+#include "ntndk.h"
 
 struct apartment;
 typedef struct apartment APARTMENT;
@@ -119,14 +119,14 @@ struct oletls
     IUnknown        *cancel_object; /* cancel object set by CoSetCancelObject (+F8h on x86) */
 };
 
-typedef enum  { 
-  APTTYPEQUALIFIER_NONE                = 0,
-  APTTYPEQUALIFIER_IMPLICIT_MTA        = 1,
-  APTTYPEQUALIFIER_NA_ON_MTA           = 2,
-  APTTYPEQUALIFIER_NA_ON_STA           = 3,
-  APTTYPEQUALIFIER_NA_ON_IMPLICIT_MTA  = 4,
-  APTTYPEQUALIFIER_NA_ON_MAINSTA       = 5
-} APTTYPEQUALIFIER;
+// typedef enum  { 
+  // APTTYPEQUALIFIER_NONE                = 0,
+  // APTTYPEQUALIFIER_IMPLICIT_MTA        = 1,
+  // APTTYPEQUALIFIER_NA_ON_MTA           = 2,
+  // APTTYPEQUALIFIER_NA_ON_STA           = 3,
+  // APTTYPEQUALIFIER_NA_ON_IMPLICIT_MTA  = 4,
+  // APTTYPEQUALIFIER_NA_ON_MAINSTA       = 5
+// } APTTYPEQUALIFIER;
 
 /* will create if necessary */
 static inline struct oletls *COM_CurrentInfo(void)

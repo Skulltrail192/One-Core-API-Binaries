@@ -1041,10 +1041,14 @@
 @ stdcall AcquireSRWLockShared(ptr) ntext.RtlAcquireSRWLockShared
 @ stdcall ApplicationRecoveryFinished(long)
 @ stdcall ApplicationRecoveryInProgress(ptr)
+@ stdcall CallbackMayRunLong(ptr)
 @ stdcall CancelIoEx(long ptr)
 @ stdcall CancelSynchronousIo(ptr)
 @ stdcall CheckElevation(wstr long ptr long long)
 @ stdcall CheckElevationEnabled(ptr) 
+@ stdcall CloseThreadpool(ptr) ntdll.TpReleasePool
+@ stdcall CloseThreadpoolCleanupGroup(ptr) ntdll.TpReleaseCleanupGroup
+@ stdcall CloseThreadpoolCleanupGroupMembers(ptr long ptr) ntdll.TpReleaseCleanupGroupMembers
 @ stdcall CloseThreadpoolTimer(ptr) ntext.TpReleaseTimer
 @ stdcall CloseThreadpoolWait(ptr) ntext.TpReleaseWait
 @ stdcall CloseThreadpoolWork(ptr) ntext.TpReleaseWork
@@ -1059,6 +1063,8 @@
 @ stdcall CreateSemaphoreExW(ptr long long wstr ptr long)  
 @ stdcall CreateSymbolicLinkA(str str long)
 @ stdcall CreateSymbolicLinkW(wstr wstr long)
+@ stdcall CreateThreadpool(ptr)
+@ stdcall CreateThreadpoolCleanupGroup()
 @ stdcall CreateThreadpoolTimer(ptr ptr ptr)
 @ stdcall CreateThreadpoolWait(ptr ptr ptr) 
 @ stdcall CreateThreadpoolWork(ptr ptr ptr)
@@ -1164,11 +1170,12 @@
 @ stdcall SetThreadGroupAffinity(long ptr ptr)
 @ stdcall SetThreadpoolThreadMaximum(ptr long) ntext.TpSetPoolMaxThreads
 @ stdcall SetThreadpoolThreadMinimum(ptr long) ntext.TpSetPoolMinThreads
-@ stdcall SetThreadpoolTimer(ptr ptr long long) ntext.TpSetTimer
-@ stdcall SetThreadpoolWait(ptr ptr ptr) ntext.TpSetWait
+@ stdcall SetThreadpoolTimer(ptr ptr long long)
+@ stdcall SetThreadpoolWait(ptr ptr ptr)
 @ stdcall SleepConditionVariableCS(ptr ptr long) 
 @ stdcall SleepConditionVariableSRW(ptr ptr long long) 
 @ stdcall SubmitThreadpoolWork(ptr) ntext.TpPostWork
+@ stdcall TrySubmitThreadpoolCallback(ptr ptr ptr)
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) ntext.TpWaitForTimer
 @ stdcall WaitForThreadpoolWorkCallbacks(ptr long) ntext.TpWaitForWork

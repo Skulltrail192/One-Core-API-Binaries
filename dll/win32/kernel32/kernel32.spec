@@ -1296,3 +1296,7 @@
 @ stub GetNamedPipeAttribute
 @ stub ImpersonateNamedPipeClient
 @ stub CompareStringEx
+@ stub GetThreadErrorMode
+@ stub SetThreadErrorMode
+@ stub CreateSemaphoreExA
+@ stub CreateWaitableTimerExA

@@ -1477,3 +1477,11 @@
 @ stdcall RtlTraceDatabaseValidate(ptr)
 @ stdcall RtlUnhandledExceptionFilter2(long long)
 @ stdcall RtlpNotOwnerCriticalSection(ptr)
+
+@ stub -arch=x86_64 LdrGetKnownDllSectionHandle
+@ stub -arch=x86_64 LdrProcessInitializationComplete
+@ stub -arch=x86_64 RtlLookupFunctionTable
+@ stub -arch=x86_64 RtlCopyMemory
+@ stub -arch=x86_64 RtlCopyMemoryNonTemporal
+@ stub -arch=x86_64 RtlGetFunctionTableListHead
+@ stub -arch=x86_64 __misaligned_access
