@@ -1,0 +1,3 @@
+
+- Cabinet.dll need a "must replace" and not copy to system32
+- crypt32 not replaced

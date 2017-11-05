@@ -105,3 +105,12 @@ Version 0.3:
    - API-MS-WIN-CORE-SYSINFO-L1-2-0
    - Advapi32_wrapper.dll
    - Rpcrt4_wrapper.dll
+
+ Version 21-10-2017
+  Updated:
+   - crypt32 for Windows XP
+   - winsta_wrapper.dll
+   - ole32_wrapper.dll
+  Replaced:
+   - bcrypt (from windows to wine)
+
