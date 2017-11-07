@@ -533,6 +533,7 @@
 @ stdcall SHGetItemFromObject(ptr long ptr)
 @ stdcall SHGetItemFromDataObject(ptr long ptr ptr)
 @ stdcall SHGetPropertyStoreForWindow(ptr long ptr)
+682 stdcall -noname StgMakeUniqueName(ptr wstr long long ptr)
 
 #Unknown 
 ;705 stdcall -noname IsEnabled()

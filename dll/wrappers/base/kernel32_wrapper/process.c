@@ -900,175 +900,6 @@ BOOL WINAPI GetLogicalProcessorInformationEx(LOGICAL_PROCESSOR_RELATIONSHIP rela
     }
     return TRUE;
 }
-	
-// BOOL 
-// WINAPI 
-// GetLogicalProcessorInformationEx(
-  // _In_       LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType,
-  // _Out_opt_  SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX SystemInformation,
-  // _Inout_    PDWORD ReturnedLength
-// )
-// {
-	
-	// return TRUE;
-// }	
-
-// BOOL 
-// WINAPI 
-// GetLogicalProcessorInformationEx(
-  // _In_       LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType,
-  // _Out_opt_  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX SystemInformation,
-  // _Inout_    PDWORD ReturnedLength
-// )
-// {
-    // LPFN_GLPI glpi;
-    // BOOL done = FALSE;
-    // PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer = NULL;
-    // PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = NULL;
-    // DWORD returnLength = 0;
-    // DWORD byteOffset = 0;
-    // PCACHE_DESCRIPTOR Cache;
-	// ULONG CurrentLength = 0;
-	// PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Output;
-	// SYSTEM_INFO sysinfo;
-	
-	// Output = SystemInformation;
-
-    // glpi = (LPFN_GLPI) GetProcAddress(
-                            // GetModuleHandle(TEXT("kernelfull")),
-                            // "GetLogicalProcessorInformation");
-    // if (NULL == glpi) 
-    // {
-        // DbgPrint(TEXT("\nGetLogicalProcessorInformation is not supported.\n"));
-        // return FALSE;
-    // }
-
-    // while (!done)
-    // {
-        // DWORD rc = glpi(buffer, &returnLength);
-
-        // if (FALSE == rc) 
-        // {
-            // if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) 
-            // {
-                // if (buffer) 
-					// RtlFreeHeap(GetProcessHeap(),0,buffer);
-
-                // buffer = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)RtlAllocateHeap(GetProcessHeap(), HEAP_ZERO_MEMORY, returnLength);
-
-                // if (NULL == buffer) 
-                // {
-                    // DbgPrint(TEXT("\nError: Allocation failure\n"));
-                    // //return (2);
-                // }
-            // } 
-            // else 
-            // {
-                // DbgPrint(TEXT("\nError %d\n"), GetLastError());
-                // //return (3);
-            // }
-        // } 
-        // else
-        // {
-            // done = TRUE;
-        // }
-    // }
-
-    // ptr = buffer;
-
-    // while (byteOffset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= returnLength) 
-    // {
-        // switch (ptr->Relationship) 
-        // {
-        // case RelationNumaNode:
-			// if(RelationshipType == RelationNumaNode || RelationshipType == RelationAll){
-				            // //Non-NUMA systems report a single record of this type.
-				// //numaNodeCount++;
-				// CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
-				// if (CurrentLength <= Output->Size) {
-					// Output->NumaNode.GroupMask.Mask = ptr->ProcessorMask;
-					// Output->NumaNode.GroupMask.Group = 0;
-					// Output->NumaNode.Reserved[0] = 0;
-					// Output->NumaNode.NodeNumber = ptr->NumaNode.NodeNumber;
-					// Output += 1;			
-				// }
-			// }
-            // break;
-        // case RelationProcessorCore:
-			// if(RelationshipType == RelationProcessorCore || RelationshipType == RelationAll){
-				// CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
-				// if (CurrentLength <= Output->Size) {
-					// Output->Processor.GroupMask[0].Mask = ptr->ProcessorMask;
-					// Output->Processor.GroupMask[0].Group = 0;
-					// Output->Processor.Reserved[0] = 0;
-					// Output->Processor.EfficiencyClass = 0;
-					// Output->Processor.Flags = ptr->ProcessorCore.Flags;
-					// Output += 1;    
-				// } 			
-			// }		
-            // //processorCoreCount++;
-
-            // //A hyperthreaded core supplies more than one logical processor.
-            // //logicalProcessorCount += CountSetBits(ptr->ProcessorMask);
-            // break;
-
-        // case RelationCache:
-			// if(RelationshipType == RelationCache || RelationshipType == RelationAll){
-            // //Cache data is in ptr->Cache, one CACHE_DESCRIPTOR structure for each cache. 
-				// Cache = &ptr->Cache;
-		
-				// CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
-				// if (CurrentLength <= Output->Size) {
-					// Output->Cache.Level = Cache->Level;
-					// Output->Cache.Associativity = Cache->Associativity;
-					// Output->Cache.LineSize = Cache->LineSize;
-					// Output->Cache.CacheSize = Cache->Size;
-					// Output->Cache.Type = Cache->Type;	
-					// Output->Cache.GroupMask.Mask = ptr->ProcessorMask;				
-					// Output += 1;    
-				// } 			
-			// }			
-            // break;
-
-        // case RelationProcessorPackage:
-			// if(RelationshipType == RelationProcessorPackage || RelationshipType == RelationAll){
-				// //Logical processors share a physical package.
-				// CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
-				// if (CurrentLength <= Output->Size) {
-					// Output->Processor.GroupMask[0].Mask = ptr->ProcessorMask;
-					// Output->Processor.GroupMask[0].Group = 0;
-					// Output->Processor.Reserved[0] = 0;
-					// Output->Processor.EfficiencyClass = 0;
-					// Output->Processor.Flags = 0;
-					// Output += 1;    
-				// } 	
-			// }
-            // break;	
-        // default:
-            // DbgPrint(TEXT("\nError: Unsupported LOGICAL_PROCESSOR_RELATIONSHIP value.\n"));
-            // break;
-        // }
-		
-		// if(RelationshipType == RelationGroup || RelationshipType == RelationAll){
-			// GetSystemInfo( &sysinfo );
-            // CurrentLength += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
-            // if (CurrentLength <= Output->Size) {			
-				// Output->Group.MaximumGroupCount = 1;
-				// Output->Group.ActiveGroupCount = 1;
-				// Output->Group.GroupInfo[0].MaximumProcessorCount = sysinfo.dwNumberOfProcessors;
-				// Output->Group.GroupInfo[0].ActiveProcessorCount = sysinfo.dwNumberOfProcessors;
-				// Output->Group.GroupInfo[0].ActiveProcessorMask = ptr->ProcessorMask;
-                // Output += 1;    
-            // } 			
-		// }	
-		
-        // byteOffset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
-        // ptr++;
-    // }
-	
-    // *ReturnedLength = CurrentLength;	
-	// return TRUE;
-// }
  
 /***********************************************************************
  *           InitializeProcThreadAttributeList       (KERNEL32.@)
@@ -1221,6 +1052,22 @@ RegisterApplicationRestart(
 {
     UNIMPLEMENTED;
     return S_OK;
+}
+
+HRESULT 
+WINAPI 
+UnregisterApplicationRestart(void)
+{
+	SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+	return 0;
+}
+
+HRESULT 
+WINAPI 
+UnregisterApplicationRecoveryCallback(void)
+{
+	SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+	return 0;	
 }
 
 /**********************************************************************

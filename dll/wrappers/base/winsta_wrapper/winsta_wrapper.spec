@@ -57,7 +57,6 @@
 @ stdcall WinStationQueryUpdateRequired(ptr ptr)
 @ stdcall WinStationRegisterConsoleNotification(ptr ptr ptr)
 @ stdcall WinStationRegisterConsoleNotificationEx(ptr ptr ptr ptr) winstabase.WinStationRegisterConsoleNotificationEx
-@ stdcall WinStationRegisterNotificationEvent(ptr ptr ptr ptr) winstabase.WinStationRegisterNotificationEvent
 @ stdcall WinStationRemoveLicense(ptr ptr ptr)
 @ stdcall WinStationRenameA(ptr ptr ptr)
 @ stdcall WinStationRenameW(ptr ptr ptr)
@@ -74,7 +73,6 @@
 @ stdcall WinStationShutdownSystem(ptr ptr)
 @ stdcall WinStationTerminateProcess(ptr ptr ptr)
 @ stdcall WinStationUnRegisterConsoleNotification(ptr ptr)
-@ stdcall WinStationUnRegisterNotificationEvent(ptr) winstabase.WinStationUnRegisterNotificationEvent
 @ stdcall WinStationVirtualOpen(ptr ptr ptr)
 @ stdcall WinStationWaitSystemEvent(ptr ptr ptr)
 @ stdcall _NWLogonQueryAdmin(ptr ptr ptr)
@@ -105,6 +103,10 @@
 @ stdcall _WinStationOpenSessionDirectory(long long) winstabase._WinStationOpenSessionDirectory 
 @ stdcall WinStationRedirectErrorMessage(ptr ptr) winstabase.WinStationRedirectErrorMessage
 @ stdcall WinStationRequestSessionsList(ptr ptr ptr) winstabase.WinStationRequestSessionsList ;for Windows XP
+
+#missing on Windows XP
+@ stdcall WinStationUnRegisterNotificationEvent(ptr) 
+@ stdcall WinStationRegisterNotificationEvent(ptr ptr ptr ptr)
 
 #Vista Functions
 @ stdcall WinStationEnumerateExW(ptr ptr ptr)

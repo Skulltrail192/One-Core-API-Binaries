@@ -146,7 +146,8 @@ void CDECL wined3d_swapchain_set_window(struct wined3d_swapchain *swapchain, HWN
 }
 
 HRESULT CDECL wined3d_swapchain_present(struct wined3d_swapchain *swapchain,
-        const RECT *src_rect, const RECT *dst_rect, HWND dst_window_override, DWORD flags)
+        const RECT *src_rect, const RECT *dst_rect, HWND dst_window_override,
+        DWORD swap_interval, DWORD flags)
 {
     static DWORD notified_flags = 0;
     RECT s, d;
@@ -181,7 +182,7 @@ HRESULT CDECL wined3d_swapchain_present(struct wined3d_swapchain *swapchain,
     }
 
     wined3d_cs_emit_present(swapchain->device->cs, swapchain, src_rect,
-            dst_rect, dst_window_override, flags);
+            dst_rect, dst_window_override, swap_interval, flags);
 
     return WINED3D_OK;
 }

@@ -480,7 +480,6 @@ static void state_blend(struct wined3d_context *context, const struct wined3d_st
 
     if (enable_blend && !enable_dual_blend)
     {
-        rt_format = state->fb->render_targets[0]->format;
         rt_fmt_flags = state->fb->render_targets[0]->format_flags;
 
         /* Disable blending in all cases even without pixelshaders.
@@ -507,6 +506,7 @@ static void state_blend(struct wined3d_context *context, const struct wined3d_st
     gl_info->gl_ops.gl.p_glEnable(GL_BLEND);
     checkGLcall("glEnable(GL_BLEND)");
 
+    rt_format = state->fb->render_targets[0]->format;
     gl_blend_from_d3d(&src_blend, &dst_blend,
             state->render_states[WINED3D_RS_SRCBLEND],
             state->render_states[WINED3D_RS_DESTBLEND], rt_format);
@@ -1725,10 +1725,11 @@ static void state_depthbias(struct wined3d_context *context, const struct wined3
             DWORD d;
             INT   i;
             float f;
-        } scale_bias, const_bias;
+        } scale_bias, const_bias, bias_clamp;
 
         scale_bias.d = state->render_states[WINED3D_RS_SLOPESCALEDEPTHBIAS];
         const_bias.d = state->render_states[WINED3D_RS_DEPTHBIAS];
+        bias_clamp.d = state->render_states[WINED3D_RS_DEPTHBIASCLAMP];
 
         gl_info->gl_ops.gl.p_glEnable(GL_POLYGON_OFFSET_FILL);
         checkGLcall("glEnable(GL_POLYGON_OFFSET_FILL)");
@@ -1741,8 +1742,19 @@ static void state_depthbias(struct wined3d_context *context, const struct wined3
         }
         else if (context->d3d_info->wined3d_creation_flags & WINED3D_FORWARD_DEPTH_BIAS)
         {
-            gl_info->gl_ops.gl.p_glPolygonOffset(scale_bias.f, const_bias.i);
-            checkGLcall("glPolygonOffset(...)");
+            if (gl_info->supported[EXT_POLYGON_OFFSET_CLAMP])
+            {
+                GL_EXTCALL(glPolygonOffsetClampEXT(scale_bias.f, const_bias.i, bias_clamp.f));
+                checkGLcall("glPolygonOffsetClampEXT(...)");
+            }
+            else
+            {
+                if (bias_clamp.f)
+                    WARN("EXT_polygon_offset_clamp extension missing, no support for depth bias clamping.\n");
+
+                gl_info->gl_ops.gl.p_glPolygonOffset(scale_bias.f, const_bias.i);
+                checkGLcall("glPolygonOffset(...)");
+            }
         }
         else
         {
@@ -5251,6 +5263,7 @@ const struct StateEntryTemplate misc_state_template[] =
     { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               state_blendfactor   }, EXT_BLEND_COLOR                 },
     { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               state_blendfactor_w }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 state_depthbias     }, WINED3D_GL_EXT_NONE             },
+    { STATE_RENDER(WINED3D_RS_DEPTHBIASCLAMP),            { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 NULL                }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_ZVISIBLE),                  { STATE_RENDER(WINED3D_RS_ZVISIBLE),                  state_zvisible      }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 state_depthclip     }, ARB_DEPTH_CLAMP                 },
     { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 state_depthclip_w   }, WINED3D_GL_EXT_NONE             },

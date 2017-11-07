@@ -259,3 +259,13 @@ BOOL WINAPI EndPanningFeedback(
 {
 	return FALSE;
 }
+
+HRESULT DrawThemeParentBackgroundEx(
+  _In_       HWND  hwnd,
+  _In_       HDC   hdc,
+  _In_       DWORD dwFlags,
+  _In_ const RECT  *prc
+)
+{
+	return DrawThemeParentBackground(hwnd, hdc, prc);
+}

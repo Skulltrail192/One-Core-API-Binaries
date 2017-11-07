@@ -384,10 +384,11 @@ enum wined3d_render_state
     WINED3D_RS_DESTBLENDALPHA               = 208,
     WINED3D_RS_BLENDOPALPHA                 = 209,
     WINED3D_RS_DEPTHCLIP                    = 210,
-    WINED3D_RS_COLORWRITEENABLE4            = 211,
-    WINED3D_RS_COLORWRITEENABLE5            = 212,
-    WINED3D_RS_COLORWRITEENABLE6            = 213,
-    WINED3D_RS_COLORWRITEENABLE7            = 214,
+    WINED3D_RS_DEPTHBIASCLAMP               = 211,
+    WINED3D_RS_COLORWRITEENABLE4            = 212,
+    WINED3D_RS_COLORWRITEENABLE5            = 213,
+    WINED3D_RS_COLORWRITEENABLE6            = 214,
+    WINED3D_RS_COLORWRITEENABLE7            = 215,
 };
 #define WINEHIGHEST_RENDER_STATE                                WINED3D_RS_COLORWRITEENABLE7
 
@@ -2668,7 +2669,7 @@ HRESULT __cdecl wined3d_swapchain_get_raster_status(const struct wined3d_swapcha
         struct wined3d_raster_status *raster_status);
 ULONG __cdecl wined3d_swapchain_incref(struct wined3d_swapchain *swapchain);
 HRESULT __cdecl wined3d_swapchain_present(struct wined3d_swapchain *swapchain,
-        const RECT *src_rect, const RECT *dst_rect, HWND dst_window_override, DWORD flags);
+        const RECT *src_rect, const RECT *dst_rect, HWND dst_window_override, DWORD swap_interval, DWORD flags);
 HRESULT __cdecl wined3d_swapchain_resize_buffers(struct wined3d_swapchain *swapchain, unsigned int buffer_count,
         unsigned int width, unsigned int height, enum wined3d_format_id format_id,
         enum wined3d_multisample_type multisample_type, unsigned int multisample_quality);

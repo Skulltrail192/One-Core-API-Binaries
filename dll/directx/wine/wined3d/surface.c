@@ -3876,8 +3876,8 @@ HRESULT wined3d_surface_blt(struct wined3d_surface *dst_surface, const RECT *dst
     {
         blit_op = WINED3D_BLIT_OP_COLOR_BLIT_ALPHATEST;
     }
-    else if ((src_sub_resource->locations & WINED3D_LOCATION_SYSMEM)
-            && !(dst_sub_resource->locations & WINED3D_LOCATION_SYSMEM))
+    else if ((src_sub_resource->locations & surface_simple_locations)
+            && !(dst_sub_resource->locations & surface_simple_locations))
     {
         /* Upload */
         if (scale)
@@ -3920,7 +3920,7 @@ HRESULT wined3d_surface_blt(struct wined3d_surface *dst_surface, const RECT *dst
         /* Set the swap effect to COPY, we don't want the backbuffer to become
          * undefined. */
         dst_swapchain->desc.swap_effect = WINED3D_SWAP_EFFECT_COPY;
-        wined3d_swapchain_present(dst_swapchain, NULL, NULL, dst_swapchain->win_handle, 0);
+        wined3d_swapchain_present(dst_swapchain, NULL, NULL, dst_swapchain->win_handle, 0, 0);
         dst_swapchain->desc.swap_effect = swap_effect;
 
         return WINED3D_OK;

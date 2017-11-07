@@ -110,3 +110,14 @@ HRESULT WINAPI SHFormatForDisplay(
 {
 	return PSFormatForDisplay(propkey, propvar, pdfFlags, pwszText, cchText);
 }
+
+HRESULT WINAPI StgMakeUniqueName(
+  _In_  IStorage *pstgParent,
+  _In_  PCWSTR   pszFileSpec,
+  _In_  DWORD    grfMode,
+  _In_  REFIID   riid,
+  _Out_ void     **ppv
+)
+{
+	return S_OK;
+}

@@ -324,3 +324,23 @@
 @ stub WriteOleStg
 @ stub WriteStringStream
 @ stub UpdateProcessTracing
+
+@ stub ComPs_CStdStubBuffer_AddRef 	
+@ stub ComPs_CStdStubBuffer_Connect 			
+@ stub ComPs_CStdStubBuffer_CountRefs 			
+@ stub ComPs_CStdStubBuffer_DebugServerQueryInterface 			
+@ stub ComPs_CStdStubBuffer_DebugServerRelease 			
+@ stub ComPs_CStdStubBuffer_Disconnect 			
+@ stub ComPs_CStdStubBuffer_Invoke 			
+@ stub ComPs_CStdStubBuffer_IsIIDSupported 			
+@ stub ComPs_CStdStubBuffer_QueryInterface 			
+@ stub ComPs_IUnknown_AddRef_Proxy 			
+@ stub ComPs_IUnknown_QueryInterface_Proxy 			
+@ stub ComPs_IUnknown_Release_Proxy 			
+@ stub ComPs_NdrClientCall2 			
+@ stub ComPs_NdrClientCall2_va 			
+@ stub ComPs_NdrCStdStubBuffer2_Release 			
+@ stub ComPs_NdrCStdStubBuffer_Release 
+@ stub ComPs_NdrStubCall2
+@ stub ComPs_NdrStubForwardingFunction
+@ stub CoRegisterActivationFilter

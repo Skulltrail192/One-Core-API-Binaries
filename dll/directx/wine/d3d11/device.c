@@ -367,6 +367,62 @@ struct deferred_call
     };
 };
 
+/* Replace with D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT as soon as wined3d supports >= 32 streams */
+#define MAX_WINED3D_STREAMS 16
+
+struct d3d11_state
+{
+    ID3D11ShaderResourceView *vs_resources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    ID3D11SamplerState *vs_samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+    ID3D11Buffer *vs_cbs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+    ID3D11VertexShader *vs;
+
+    ID3D11ShaderResourceView *gs_resources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    ID3D11SamplerState *gs_samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+    ID3D11Buffer *gs_cbs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+    ID3D11GeometryShader *gs;
+
+    ID3D11ShaderResourceView *ps_resources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    ID3D11SamplerState *ps_samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+    ID3D11Buffer *ps_cbs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+    ID3D11PixelShader *ps;
+
+    ID3D11ShaderResourceView *hs_resources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    ID3D11SamplerState *hs_samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+    ID3D11Buffer *hs_cbs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+    ID3D11HullShader *hs;
+
+    ID3D11ShaderResourceView *ds_resources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    ID3D11SamplerState *ds_samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+    ID3D11Buffer *ds_cbs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+    ID3D11DomainShader *ds;
+
+    ID3D11Buffer *vbs[MAX_WINED3D_STREAMS];
+    UINT vb_strides[MAX_WINED3D_STREAMS];
+    UINT vb_offsets[MAX_WINED3D_STREAMS];
+    D3D11_PRIMITIVE_TOPOLOGY topology;
+    ID3D11InputLayout *il;
+    DXGI_FORMAT ib_format;
+    ID3D11Buffer *ib;
+    UINT ib_offset;
+
+    ID3D11RenderTargetView *rtvs[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+    ID3D11DepthStencilView *dsv;
+    ID3D11DepthStencilState *dss;
+    float blend_factor[4];
+    ID3D11BlendState *bs;
+    UINT stencil_ref;
+    UINT sample_mask;
+
+    D3D11_RECT scissor_rects[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+    D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+    ID3D11Buffer *so_buffers[D3D11_SO_BUFFER_SLOT_COUNT];
+    UINT so_offsets[D3D11_SO_BUFFER_SLOT_COUNT];
+    ID3D11Predicate *predicate;
+    ID3D11RasterizerState *rs;
+    BOOL predicate_value;
+};
+
 /* ID3D11CommandList - command list */
 struct d3d11_command_list
 {
@@ -2227,7 +2283,7 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_RSSetState(ID3D11DeviceCon
     struct d3d_device *device = device_from_immediate_ID3D11DeviceContext(iface);
     struct d3d_rasterizer_state *rasterizer_state_impl;
     const D3D11_RASTERIZER_DESC *desc;
-    union {DWORD d; float f;} slope;
+    union {DWORD d; float f;} tmpfloat;
 
     TRACE("iface %p, rasterizer_state %p.\n", iface, rasterizer_state);
 
@@ -2241,6 +2297,8 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_RSSetState(ID3D11DeviceCon
         wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_MULTISAMPLEANTIALIAS, FALSE);
         wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_ANTIALIASEDLINEENABLE, FALSE);
         wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHBIAS, 0);
+        tmpfloat.f = 0.0f;
+        wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHBIASCLAMP, tmpfloat.d);
         wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_SLOPESCALEDEPTHBIAS, 0);
         wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHCLIP, TRUE);
         wined3d_mutex_unlock();
@@ -2254,12 +2312,12 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_RSSetState(ID3D11DeviceCon
     wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_CULLMODE, desc->CullMode);
 
     /* OpenGL style depth bias. */
-    slope.f = desc->SlopeScaledDepthBias;
     wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHBIAS, desc->DepthBias);
-    wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_SLOPESCALEDEPTHBIAS, slope.d);
+    tmpfloat.f = desc->DepthBiasClamp;
+    wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHBIASCLAMP, tmpfloat.d);
+    tmpfloat.f = desc->SlopeScaledDepthBias;
+    wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_SLOPESCALEDEPTHBIAS, tmpfloat.d);
     wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHCLIP, (desc->DepthClipEnable != FALSE));
-    if (desc->DepthBiasClamp)
-        FIXME("Ignoring DepthBiasClamp %f.\n", desc->DepthBiasClamp);
 
     wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_SCISSORTESTENABLE, desc->ScissorEnable);
     wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_MULTISAMPLEANTIALIAS, desc->MultisampleEnable);
@@ -2515,22 +2573,191 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_ResolveSubresource(ID3D11D
     wined3d_mutex_unlock();
 }
 
+static struct d3d11_state *state_capture(ID3D11DeviceContext *context)
+{
+    struct d3d_device *device = device_from_immediate_ID3D11DeviceContext(context);
+    unsigned int vp_count = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    struct d3d11_state *stateblock;
+    int i;
+
+    if (!(stateblock = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*stateblock))))
+        return NULL;
+
+    ID3D11DeviceContext_VSGetShader(context, &stateblock->vs, NULL, 0);
+    ID3D11DeviceContext_VSGetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->vs_samplers);
+    ID3D11DeviceContext_VSGetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->vs_resources);
+    ID3D11DeviceContext_VSGetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->vs_cbs);
+
+    ID3D11DeviceContext_GSGetShader(context, &stateblock->gs, NULL, 0);
+    ID3D11DeviceContext_GSGetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->gs_samplers);
+    ID3D11DeviceContext_GSGetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->gs_resources);
+    ID3D11DeviceContext_GSGetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->gs_cbs);
+
+    ID3D11DeviceContext_PSGetShader(context, &stateblock->ps, NULL, 0);
+    ID3D11DeviceContext_PSGetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->ps_samplers);
+    ID3D11DeviceContext_PSGetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->ps_resources);
+    ID3D11DeviceContext_PSGetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->ps_cbs);
+
+    ID3D11DeviceContext_HSGetShader(context, &stateblock->hs, NULL, 0);
+    ID3D11DeviceContext_HSGetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->hs_samplers);
+    ID3D11DeviceContext_HSGetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->hs_resources);
+    ID3D11DeviceContext_HSGetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->hs_cbs);
+
+    ID3D11DeviceContext_DSGetShader(context, &stateblock->ds, NULL, 0);
+    ID3D11DeviceContext_DSGetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->ds_samplers);
+    ID3D11DeviceContext_DSGetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->ds_resources);
+    ID3D11DeviceContext_DSGetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->ds_cbs);
+
+    ID3D11DeviceContext_IAGetVertexBuffers(context, 0, MAX_WINED3D_STREAMS, stateblock->vbs, stateblock->vb_strides, stateblock->vb_offsets);
+    ID3D11DeviceContext_IAGetIndexBuffer(context, &stateblock->ib, &stateblock->ib_format, &stateblock->ib_offset);
+    ID3D11DeviceContext_IAGetInputLayout(context, &stateblock->il);
+    ID3D11DeviceContext_IAGetPrimitiveTopology(context, &stateblock->topology);
+
+    ID3D11DeviceContext_OMGetRenderTargets(context, D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, stateblock->rtvs, &stateblock->dsv);
+    ID3D11DeviceContext_OMGetDepthStencilState(context, &stateblock->dss, &stateblock->stencil_ref);
+    ID3D11DeviceContext_OMGetBlendState(context, &stateblock->bs, stateblock->blend_factor, &stateblock->sample_mask);
+
+    ID3D11DeviceContext_RSGetViewports(context, &vp_count, stateblock->vps);
+    ID3D11DeviceContext_RSGetScissorRects(context, &vp_count, stateblock->scissor_rects);
+    ID3D11DeviceContext_RSGetState(context, &stateblock->rs);
+
+    ID3D11DeviceContext_SOGetTargets(context, D3D11_SO_BUFFER_SLOT_COUNT, stateblock->so_buffers);
+    /* For some reason the d3d11 get function is missing the offset parameter */
+    for (i = 0; i < D3D11_SO_BUFFER_SLOT_COUNT; i++)
+        wined3d_device_get_stream_output(device->wined3d_device, i, &stateblock->so_offsets[i]);
+
+    ID3D11DeviceContext_GetPredication(context, &stateblock->predicate, &stateblock->predicate_value);
+
+    return stateblock;
+}
+
+static void state_apply(ID3D11DeviceContext *context, struct d3d11_state *stateblock)
+{
+    static DWORD warn_once;
+    int i;
+
+    if (!stateblock)
+        return;
+
+    if (!warn_once++) FIXME("restoring state is potentially slow and incomplete!\n");
+
+    ID3D11DeviceContext_VSSetShader(context, stateblock->vs, NULL, 0);
+    ID3D11DeviceContext_VSSetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->vs_samplers);
+    ID3D11DeviceContext_VSSetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->vs_resources);
+    ID3D11DeviceContext_VSSetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->vs_cbs);
+
+    if (stateblock->vs) ID3D11VertexShader_Release(stateblock->vs);
+    for (i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; i++)
+        if (stateblock->vs_samplers[i]) ID3D11SamplerState_Release(stateblock->vs_samplers[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+        if (stateblock->vs_resources[i]) ID3D11ShaderResourceView_Release(stateblock->vs_resources[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
+        if (stateblock->vs_cbs[i]) ID3D11Buffer_Release(stateblock->vs_cbs[i]);
+
+    ID3D11DeviceContext_GSSetShader(context, stateblock->gs, NULL, 0);
+    ID3D11DeviceContext_GSSetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->gs_samplers);
+    ID3D11DeviceContext_GSSetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->gs_resources);
+    ID3D11DeviceContext_GSSetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->gs_cbs);
+
+    if (stateblock->gs) ID3D11GeometryShader_Release(stateblock->gs);
+    for (i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; i++)
+        if (stateblock->gs_samplers[i]) ID3D11SamplerState_Release(stateblock->gs_samplers[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+        if (stateblock->gs_resources[i]) ID3D11ShaderResourceView_Release(stateblock->gs_resources[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
+        if (stateblock->gs_cbs[i]) ID3D11Buffer_Release(stateblock->gs_cbs[i]);
+
+    ID3D11DeviceContext_PSSetShader(context, stateblock->ps, NULL, 0);
+    ID3D11DeviceContext_PSSetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->ps_samplers);
+    ID3D11DeviceContext_PSSetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->ps_resources);
+    ID3D11DeviceContext_PSSetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->ps_cbs);
+
+    if (stateblock->ps) ID3D11PixelShader_Release(stateblock->ps);
+    for (i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; i++)
+        if (stateblock->ps_samplers[i]) ID3D11SamplerState_Release(stateblock->ps_samplers[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+        if (stateblock->ps_resources[i]) ID3D11ShaderResourceView_Release(stateblock->ps_resources[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
+        if (stateblock->ps_cbs[i]) ID3D11Buffer_Release(stateblock->ps_cbs[i]);
+
+    ID3D11DeviceContext_HSSetShader(context, stateblock->hs, NULL, 0);
+    ID3D11DeviceContext_HSSetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->hs_samplers);
+    ID3D11DeviceContext_HSSetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->hs_resources);
+    ID3D11DeviceContext_HSSetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->hs_cbs);
+
+    if (stateblock->hs) ID3D11HullShader_Release(stateblock->hs);
+    for (i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; i++)
+        if (stateblock->hs_samplers[i]) ID3D11SamplerState_Release(stateblock->hs_samplers[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+        if (stateblock->hs_resources[i]) ID3D11ShaderResourceView_Release(stateblock->hs_resources[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
+        if (stateblock->hs_cbs[i]) ID3D11Buffer_Release(stateblock->hs_cbs[i]);
+
+    ID3D11DeviceContext_DSSetShader(context, stateblock->ds, NULL, 0);
+    ID3D11DeviceContext_DSSetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->ds_samplers);
+    ID3D11DeviceContext_DSSetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->ds_resources);
+    ID3D11DeviceContext_DSSetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->ds_cbs);
+
+    if (stateblock->ds) ID3D11DomainShader_Release(stateblock->ds);
+    for (i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; i++)
+        if (stateblock->ds_samplers[i]) ID3D11SamplerState_Release(stateblock->ds_samplers[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+        if (stateblock->ds_resources[i]) ID3D11ShaderResourceView_Release(stateblock->ds_resources[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
+        if (stateblock->ds_cbs[i]) ID3D11Buffer_Release(stateblock->ds_cbs[i]);
+
+    ID3D11DeviceContext_IASetVertexBuffers(context, 0, MAX_WINED3D_STREAMS, stateblock->vbs, stateblock->vb_strides, stateblock->vb_offsets);
+    ID3D11DeviceContext_IASetIndexBuffer(context, stateblock->ib, stateblock->ib_format, stateblock->ib_offset);
+    ID3D11DeviceContext_IASetInputLayout(context, stateblock->il);
+    ID3D11DeviceContext_IASetPrimitiveTopology(context, stateblock->topology);
+
+    for (i = 0; i < MAX_WINED3D_STREAMS; i++)
+        if (stateblock->vbs[i]) ID3D11Buffer_Release(stateblock->vbs[i]);
+    if (stateblock->ib) ID3D11Buffer_Release(stateblock->ib);
+    if (stateblock->il) ID3D11InputLayout_Release(stateblock->il);
+
+    ID3D11DeviceContext_OMSetRenderTargets(context, D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, stateblock->rtvs, stateblock->dsv);
+    ID3D11DeviceContext_OMSetDepthStencilState(context, stateblock->dss, stateblock->stencil_ref);
+    ID3D11DeviceContext_OMSetBlendState(context, stateblock->bs, stateblock->blend_factor, stateblock->sample_mask);
+
+    for (i = 0; i < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
+        if (stateblock->rtvs[i]) ID3D11RenderTargetView_Release(stateblock->rtvs[i]);
+    if (stateblock->dsv) ID3D11DepthStencilView_Release(stateblock->dsv);
+    if (stateblock->dss) ID3D11DepthStencilState_Release(stateblock->dss);
+    if (stateblock->bs)  ID3D11BlendState_Release(stateblock->bs);
+
+    ID3D11DeviceContext_RSSetViewports(context, D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE, stateblock->vps);
+    ID3D11DeviceContext_RSSetScissorRects(context, D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE, stateblock->scissor_rects);
+    ID3D11DeviceContext_RSSetState(context, stateblock->rs);
+
+    if (stateblock->rs) ID3D11RasterizerState_Release(stateblock->rs);
+
+    ID3D11DeviceContext_SOSetTargets(context, D3D11_SO_BUFFER_SLOT_COUNT, stateblock->so_buffers, stateblock->so_offsets);
+    ID3D11DeviceContext_SetPredication(context, stateblock->predicate, stateblock->predicate_value);
+
+    for (i = 0; i < D3D11_SO_BUFFER_SLOT_COUNT; i++)
+        if (stateblock->so_buffers[i]) ID3D11Buffer_Release(stateblock->so_buffers[i]);
+    if (stateblock->predicate) ID3D11Predicate_Release(stateblock->predicate);
+
+    HeapFree(GetProcessHeap(), 0, stateblock);
+}
+
 static void STDMETHODCALLTYPE d3d11_immediate_context_ExecuteCommandList(ID3D11DeviceContext *iface,
         ID3D11CommandList *command_list, BOOL restore_state)
 {
     struct d3d11_command_list *cmdlist = unsafe_impl_from_ID3D11CommandList(command_list);
+    struct d3d11_state *stateblock = NULL;
 
     TRACE("iface %p, command_list %p, restore_state %#x.\n", iface, command_list, restore_state);
 
     if (!cmdlist)
         return;
 
-    if (restore_state)
-        FIXME("restoring state not supported!\n");
-
     wined3d_mutex_lock();
+    if (restore_state) stateblock = state_capture(iface);
     exec_deferred_calls(iface, &cmdlist->commands);
-    ID3D11DeviceContext_ClearState(iface);
+    if (restore_state) state_apply(iface, stateblock);
+    else ID3D11DeviceContext_ClearState(iface);
     wined3d_mutex_unlock();
 }
 
@@ -4635,8 +4862,8 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_OMSetRenderTargetsAndUnorde
     call->render_targets_and_unordered_access_views_info.render_target_views = (void *)(call + 1);
     call->render_targets_and_unordered_access_views_info.unordered_access_views =
             (void *)&call->render_targets_and_unordered_access_views_info.render_target_views[render_target_view_count];
-    call->render_targets_and_unordered_access_views_info.initial_counts =
-            (void *)&call->render_targets_and_unordered_access_views_info.unordered_access_views[unordered_access_view_count];
+    call->render_targets_and_unordered_access_views_info.initial_counts = initial_counts ?
+            (void *)&call->render_targets_and_unordered_access_views_info.unordered_access_views[unordered_access_view_count] : NULL;
 
     for (i = 0; i < render_target_view_count; i++)
     {
@@ -4647,7 +4874,7 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_OMSetRenderTargetsAndUnorde
     {
         if (unordered_access_views[i]) ID3D11UnorderedAccessView_AddRef(unordered_access_views[i]);
         call->render_targets_and_unordered_access_views_info.unordered_access_views[i] = unordered_access_views[i];
-        call->render_targets_and_unordered_access_views_info.initial_counts[i] = initial_counts[i];
+        if (initial_counts) call->render_targets_and_unordered_access_views_info.initial_counts[i] = initial_counts[i];
     }
 }
 
@@ -5263,12 +5490,13 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_CSSetUnorderedAccessViews(I
     call->unordered_view.start_slot = start_slot;
     call->unordered_view.num_views = view_count;
     call->unordered_view.views = (void *)(call + 1);
-    call->unordered_view.initial_counts = (void *)&call->unordered_view.views[view_count];
+    call->unordered_view.initial_counts = initial_counts ?
+        (void *)&call->unordered_view.views[view_count] : NULL;
     for (i = 0; i < view_count; i++)
     {
         if (views[i]) ID3D11UnorderedAccessView_AddRef(views[i]);
         call->unordered_view.views[i] = views[i];
-        call->unordered_view.initial_counts[i] = initial_counts[i];
+        if (initial_counts) call->unordered_view.initial_counts[i] = initial_counts[i];
     }
 }
 
@@ -7305,7 +7533,17 @@ static void STDMETHODCALLTYPE d3d10_device_ClearDepthStencilView(ID3D10Device1 *
 static void STDMETHODCALLTYPE d3d10_device_GenerateMips(ID3D10Device1 *iface,
         ID3D10ShaderResourceView *shader_resource_view)
 {
-    FIXME("iface %p, shader_resource_view %p stub!\n", iface, shader_resource_view);
+    struct d3d_device *device = impl_from_ID3D10Device(iface);
+    struct d3d_shader_resource_view *view = unsafe_impl_from_ID3D10ShaderResourceView(shader_resource_view);
+
+    TRACE("iface %p, shader_resource_view %p.\n", iface, shader_resource_view);
+
+    if (!view)
+        return;
+
+    wined3d_mutex_lock();
+    wined3d_device_generate_mips_view(device->wined3d_device, view->wined3d_view);
+    wined3d_mutex_unlock();
 }
 
 static void STDMETHODCALLTYPE d3d10_device_ResolveSubresource(ID3D10Device1 *iface,

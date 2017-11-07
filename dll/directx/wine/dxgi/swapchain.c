@@ -166,11 +166,22 @@ static HRESULT STDMETHODCALLTYPE dxgi_swapchain_GetDevice(IDXGISwapChain *iface,
 static HRESULT STDMETHODCALLTYPE dxgi_swapchain_Present(IDXGISwapChain *iface, UINT sync_interval, UINT flags)
 {
     struct dxgi_swapchain *This = impl_from_IDXGISwapChain(iface);
+    DWORD swap_interval = 0;
     HRESULT hr;
 
     TRACE("iface %p, sync_interval %u, flags %#x\n", iface, sync_interval, flags);
 
-    if (sync_interval) FIXME("Unimplemented sync interval %u\n", sync_interval);
+    switch (sync_interval)
+    {
+        case 0:
+            swap_interval = WINED3DPRESENT_INTERVAL_IMMEDIATE;
+            break;
+        case 1:
+            swap_interval = WINED3DPRESENT_INTERVAL_ONE;
+            break;
+        default:
+            FIXME("Unimplemented sync interval %u.\n", sync_interval);
+    }
 
     if (flags == DXGI_PRESENT_TEST)
     {
@@ -181,7 +192,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_swapchain_Present(IDXGISwapChain *iface, U
     if (flags) FIXME("Unimplemented flags %#x\n", flags);
 
     wined3d_mutex_lock();
-    hr = wined3d_swapchain_present(This->wined3d_swapchain, NULL, NULL, NULL, 0);
+    hr = wined3d_swapchain_present(This->wined3d_swapchain, NULL, NULL, NULL, swap_interval, 0);
     wined3d_mutex_unlock();
 
     return hr;

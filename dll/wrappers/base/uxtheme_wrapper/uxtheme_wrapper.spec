@@ -103,6 +103,7 @@
 @ stdcall BufferedPaintUnInit()
 @ stdcall BufferedPaintInit()
 @ stdcall BufferedPaintClear(ptr ptr)
+@ stdcall DrawThemeParentBackground(ptr ptr long ptr)
 @ stdcall DrawThemeTextEx(ptr ptr long long wstr long long ptr ptr)
 @ stdcall EndBufferedPaint(ptr long)
 @ stdcall GetBufferedPaintBits(ptr ptr ptr)

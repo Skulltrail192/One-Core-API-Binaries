@@ -994,7 +994,7 @@
 @ stdcall ReOpenFile(ptr long long long)
 @ stdcall GetNLSVersion(long long ptr) 
 @ stdcall IsNLSDefinedString(long long ptr long long) kernelfull.IsNLSDefinedString
-@ stdcall SetFileCompletionNotificationModes(ptr long) kernelfull.SetFileCompletionNotificationModes
+@ stdcall SetFileCompletionNotificationModes(ptr long)
 
 #Missing on XP and 2003 RTM
 @ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernelfull.BaseCheckRunApp
@@ -1046,9 +1046,9 @@
 @ stdcall CancelSynchronousIo(ptr)
 @ stdcall CheckElevation(wstr long ptr long long)
 @ stdcall CheckElevationEnabled(ptr) 
-@ stdcall CloseThreadpool(ptr) ntdll.TpReleasePool
-@ stdcall CloseThreadpoolCleanupGroup(ptr) ntdll.TpReleaseCleanupGroup
-@ stdcall CloseThreadpoolCleanupGroupMembers(ptr long ptr) ntdll.TpReleaseCleanupGroupMembers
+@ stdcall CloseThreadpool(ptr) ntext.TpReleasePool
+@ stdcall CloseThreadpoolCleanupGroup(ptr) ntext.TpReleaseCleanupGroup
+@ stdcall CloseThreadpoolCleanupGroupMembers(ptr long ptr) ntext.TpReleaseCleanupGroupMembers
 @ stdcall CloseThreadpoolTimer(ptr) ntext.TpReleaseTimer
 @ stdcall CloseThreadpoolWait(ptr) ntext.TpReleaseWait
 @ stdcall CloseThreadpoolWork(ptr) ntext.TpReleaseWork
@@ -1070,7 +1070,6 @@
 @ stdcall CreateThreadpoolWork(ptr ptr ptr)
 @ stdcall DeleteFileTransactedW(wstr ptr)
 @ stdcall DeleteProcThreadAttributeList(ptr)
-@ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long long)
 @ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long long)
 @ stdcall EnumDateFormatsExEx(ptr wstr long ptr)
 @ stdcall EnumSystemLocalesEx(ptr long ptr ptr)
@@ -1123,7 +1122,7 @@
 @ stdcall GetTimeFormatEx(wstr long ptr wstr ptr long)
 @ stdcall GetTimeZoneInformationForYear(long ptr ptr)
 @ stdcall GetUserDefaultLocaleName(wstr long)
-;@ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
+@ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetVolumeInformationW(ptr ptr long ptr ptr ptr ptr long)
 @ stdcall GetVolumeInformationByHandleW(ptr ptr long ptr ptr ptr ptr long)
 @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
@@ -1137,7 +1136,7 @@
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stdcall IsThreadAFiber()
 @ stdcall IsValidLocaleName(wstr)
-@ stdcall LeaveCriticalSectionWhenCallbackReturns(ptr ptr) ntdll.TpCallbackLeaveCriticalSectionOnCompletion
+@ stdcall LeaveCriticalSectionWhenCallbackReturns(ptr ptr) ntext.TpCallbackLeaveCriticalSectionOnCompletion
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
 @ stdcall LCIDToLocaleName(long ptr long long)
 @ stdcall LocaleNameToLCID(wstr long)
@@ -1153,11 +1152,11 @@
 @ stdcall QueryProcessCycleTime(ptr ptr)
 @ stdcall QueryProcessAffinityUpdateMode(ptr long)
 @ stdcall QueryThreadCycleTime(ptr ptr)
-@ stdcall ReleaseMutexWhenCallbackReturns(ptr long) ntdll.TpCallbackReleaseMutexOnCompletion
-@ stdcall ReleaseSemaphoreWhenCallbackReturns(ptr long long) ntdll.TpCallbackReleaseSemaphoreOnCompletion
+@ stdcall ReleaseMutexWhenCallbackReturns(ptr long) ntext.TpCallbackReleaseMutexOnCompletion
+@ stdcall ReleaseSemaphoreWhenCallbackReturns(ptr long long) ntext.TpCallbackReleaseSemaphoreOnCompletion
 @ stdcall ReleaseSRWLockExclusive(ptr) ntext.RtlReleaseSRWLockExclusive
 @ stdcall ReleaseSRWLockShared(ptr) ntext.RtlReleaseSRWLockShared
-@ stdcall ResolveDelayLoadedAPI(ptr ptr ptr ptr ptr long) ntdll.LdrResolveDelayLoadedAPI
+@ stdcall ResolveDelayLoadedAPI(ptr ptr ptr ptr ptr long) ntext.LdrResolveDelayLoadedAPI
 @ stdcall SetConsoleHistoryInfo(ptr)
 @ stdcall SetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall SetCurrentConsoleFontEx(ptr long ptr)
@@ -1172,12 +1171,16 @@
 @ stdcall SetThreadpoolThreadMinimum(ptr long) ntext.TpSetPoolMinThreads
 @ stdcall SetThreadpoolTimer(ptr ptr long long)
 @ stdcall SetThreadpoolWait(ptr ptr ptr)
+@ stdcall SetThreadPreferredUILanguages(long wstr ptr)
 @ stdcall SleepConditionVariableCS(ptr ptr long) 
 @ stdcall SleepConditionVariableSRW(ptr ptr long long) 
 @ stdcall SubmitThreadpoolWork(ptr) ntext.TpPostWork
 @ stdcall TrySubmitThreadpoolCallback(ptr ptr ptr)
+@ stdcall UnregisterApplicationRestart()
+@ stdcall UnregisterApplicationRecoveryCallback()
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) ntext.TpWaitForTimer
+@ stdcall WaitForThreadpoolWaitCallbacks(ptr long) ntext.TpWaitForWait
 @ stdcall WaitForThreadpoolWorkCallbacks(ptr long) ntext.TpWaitForWork
 @ stdcall WakeAllConditionVariable(ptr) ntext.RtlWakeAllConditionVariable
 @ stdcall WakeConditionVariable(ptr) ntext.RtlWakeConditionVariable
@@ -1234,6 +1237,7 @@
 
 #Win8 Functions 
 @ stdcall AddDllDirectory(wstr)
+@ stdcall BaseFormatObjectAttributes(ptr ptr ptr)
 @ stdcall GetCurrentPackageId(ptr ptr)
 @ stdcall GetCurrentPackageFamilyName(ptr ptr)
 @ stdcall GetCurrentPackageFullName(ptr ptr)
@@ -1345,8 +1349,8 @@
 @ stdcall VerQueryValueW(ptr wstr ptr ptr) version.VerQueryValueW
 
 #Import from user32
-@ stdcall LoadStringA(ptr long ptr long)
-@ stdcall LoadStringW(ptr long ptr long)
+@ stdcall LoadStringA(ptr long ptr long) user32.LoadStringA
+@ stdcall LoadStringW(ptr long ptr long) user32.LoadStringW
 
 #API-SET functions
 @ stdcall QuirkIsEnabled3(ptr ptr)

@@ -94,6 +94,7 @@ struct wined3d_cs_present
     struct wined3d_swapchain *swapchain;
     RECT src_rect;
     RECT dst_rect;
+    DWORD swap_interval;
     DWORD flags;
 };
 
@@ -461,6 +462,12 @@ static void wined3d_cs_exec_present(struct wined3d_cs *cs, const void *data)
     swapchain = op->swapchain;
     wined3d_swapchain_set_window(swapchain, op->dst_window_override);
 
+    if (op->swap_interval && swapchain->desc.swap_interval != op->swap_interval)
+    {
+        swapchain->desc.swap_interval = op->swap_interval;
+        swapchain_update_swap_interval(swapchain);
+    }
+
     swapchain->swapchain_ops->swapchain_present(swapchain, &op->src_rect, &op->dst_rect, op->flags);
 
     wined3d_resource_release(&swapchain->front_buffer->resource);
@@ -473,7 +480,8 @@ static void wined3d_cs_exec_present(struct wined3d_cs *cs, const void *data)
 }
 
 void wined3d_cs_emit_present(struct wined3d_cs *cs, struct wined3d_swapchain *swapchain,
-        const RECT *src_rect, const RECT *dst_rect, HWND dst_window_override, DWORD flags)
+        const RECT *src_rect, const RECT *dst_rect, HWND dst_window_override,
+        DWORD swap_interval, DWORD flags)
 {
     struct wined3d_cs_present *op;
     unsigned int i;
@@ -485,6 +493,7 @@ void wined3d_cs_emit_present(struct wined3d_cs *cs, struct wined3d_swapchain *sw
     op->swapchain = swapchain;
     op->src_rect = *src_rect;
     op->dst_rect = *dst_rect;
+    op->swap_interval = swap_interval;
     op->flags = flags;
 
     pending = InterlockedIncrement(&cs->pending_presents);
@@ -1063,6 +1072,7 @@ static void wined3d_cs_exec_set_depth_stencil_view(struct wined3d_cs *cs, const 
         device_invalidate_state(device, STATE_RENDER(WINED3D_RS_STENCILENABLE));
         device_invalidate_state(device, STATE_RENDER(WINED3D_RS_STENCILWRITEMASK));
         device_invalidate_state(device, STATE_RENDER(WINED3D_RS_DEPTHBIAS));
+        device_invalidate_state(device, STATE_RENDER(WINED3D_RS_DEPTHBIASCLAMP));
     }
     else if (prev && (prev->format_flags & WINED3DFMT_FLAG_FLOAT)
             != (op->view->format_flags & WINED3DFMT_FLAG_FLOAT))
@@ -2187,6 +2197,8 @@ void wined3d_cs_emit_blt_sub_resource(struct wined3d_cs *cs, struct wined3d_reso
     op->flags = flags;
     if (fx)
         op->fx = *fx;
+    else
+        memset(&op->fx, 0, sizeof(op->fx));
     op->filter = filter;
 
     wined3d_resource_acquire(dst_resource);
@@ -2893,8 +2905,8 @@ static void *wined3d_cs_mt_require_space(struct wined3d_cs *cs, size_t size, enu
 static void wined3d_cs_mt_finish(struct wined3d_cs *cs, enum wined3d_cs_queue_id queue_id)
 {
     if (cs->thread_id == GetCurrentThreadId())
-	{
-		wined3d_cs_st_finish(cs, queue_id);
+    {
+		wined3d_cs_st_finish(cs, queue_id);		
 		return;
 	}
 

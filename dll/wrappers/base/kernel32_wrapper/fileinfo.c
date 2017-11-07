@@ -22,6 +22,8 @@ Revision History:
 
 BOOL bIsFileApiAnsi = TRUE; // set the file api to ansi or oem
 
+static BOOL (WINAPI *pSetFileCompletionNotificationModes)(HANDLE, UCHAR);
+
 PWCHAR
 FilenameA2W(
 	LPCSTR NameA, 
@@ -60,6 +62,12 @@ FilenameA2W(
  */
 BOOL WINAPI SetFileCompletionNotificationModes( HANDLE handle, UCHAR flags )
 {
-    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-    return FALSE;
+	HMODULE hkernel32 = GetModuleHandleA("kernelfull.dll");
+	pSetFileCompletionNotificationModes = (void *)GetProcAddress(hkernel32, "SetThreadStackGuarantee");
+	if(pSetFileCompletionNotificationModes){
+		return pSetFileCompletionNotificationModes(handle, flags);
+	}else{
+		SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+		return FALSE;
+	}
 }

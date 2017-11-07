@@ -1,6 +1,3 @@
-@ stdcall CoVrfCheckThreadState(ptr) olebase.CoVrfCheckThreadState
-@ stdcall CoVrfGetThreadState(ptr) olebase.CoVrfGetThreadState
-@ stdcall CoVrfReleaseThreadState(ptr) olebase.CoVrfReleaseThreadState
 @ stdcall PropVariantChangeType(ptr ptr long long)
 @ stdcall BindMoniker(ptr long ptr ptr)
 @ stdcall CLIPFORMAT_UserFree(ptr ptr)
@@ -50,7 +47,6 @@
 @ stdcall CoGetInterfaceAndReleaseStream(ptr ptr ptr)
 @ stdcall CoGetMalloc(long ptr)
 @ stdcall CoGetMarshalSizeMax(ptr ptr ptr long ptr long)
-@ stdcall CoGetModuleType(wstr ptr) olebase.CoGetModuleType
 @ stdcall CoGetObject(wstr ptr ptr ptr)
 @ stdcall CoGetObjectContext(ptr ptr)
 @ stdcall CoGetPSClsid(ptr ptr)
@@ -323,14 +319,42 @@
 @ stdcall WriteFmtUserTypeStg(ptr long ptr)
 @ stdcall WriteOleStg(ptr ptr long ptr)
 @ stdcall WriteStringStream(ptr str)
+
+#missing on XP
+@ stdcall CoVrfCheckThreadState(ptr) olebase.CoVrfCheckThreadState
+@ stdcall CoVrfGetThreadState(ptr) olebase.CoVrfGetThreadState
+@ stdcall CoVrfReleaseThreadState(ptr) olebase.CoVrfReleaseThreadState
 @ stdcall UpdateProcessTracing(ptr ptr) olebase.UpdateProcessTracing
+@ stdcall CoGetModuleType(wstr ptr) olebase.CoGetModuleType
 
 #win Vista functions
 @ stdcall CoDisconnectContext(long)
-@ stdcall PropVariantToVariant(ptr ptr)
-@ stdcall StgDeserializePropVariant(ptr long ptr)
-@ stdcall StgSerializePropVariant(ptr ptr ptr)
-@ stdcall VariantToPropVariant(ptr ptr)
+#Comment because link with propsys cause a error on Office 2010 installation
+; @ stdcall PropVariantToVariant(ptr ptr) propsys.PropVariantToVariant
+; @ stdcall StgDeserializePropVariant(ptr long ptr) propsys.StgDeserializePropVariant
+; @ stdcall StgSerializePropVariant(ptr ptr ptr) propsys.StgSerializePropVariant
+; @ stdcall VariantToPropVariant(ptr ptr) propsys.VariantToPropVariant
 
 #win7 functions
 @ stdcall CoGetApartmentType(ptr ptr)
+
+#for WinXP
+@ stdcall ComPs_CStdStubBuffer_AddRef(ptr) olebase.ComPs_CStdStubBuffer_AddRef
+@ stdcall ComPs_CStdStubBuffer_Connect(ptr ptr) olebase.ComPs_CStdStubBuffer_Connect
+@ stdcall ComPs_CStdStubBuffer_CountRefs(ptr) olebase.ComPs_CStdStubBuffer_CountRefs
+@ stdcall ComPs_CStdStubBuffer_DebugServerQueryInterface(ptr ptr) olebase.ComPs_CStdStubBuffer_DebugServerQueryInterface
+@ stdcall ComPs_CStdStubBuffer_DebugServerRelease(ptr ptr) olebase.ComPs_CStdStubBuffer_DebugServerRelease
+@ stdcall ComPs_CStdStubBuffer_Disconnect(ptr) olebase.ComPs_CStdStubBuffer_Disconnect
+@ stdcall ComPs_CStdStubBuffer_Invoke(ptr ptr ptr) olebase.ComPs_CStdStubBuffer_Invoke
+@ stdcall ComPs_CStdStubBuffer_IsIIDSupported(ptr long) olebase.ComPs_CStdStubBuffer_IsIIDSupported
+@ stdcall ComPs_CStdStubBuffer_QueryInterface(ptr long ptr) olebase.ComPs_CStdStubBuffer_QueryInterface
+@ stdcall ComPs_IUnknown_AddRef_Proxy(ptr) olebase.ComPs_IUnknown_AddRef_Proxy
+@ stdcall ComPs_IUnknown_QueryInterface_Proxy(ptr long ptr) olebase.ComPs_IUnknown_QueryInterface_Proxy 
+@ stdcall ComPs_IUnknown_Release_Proxy(ptr) olebase.ComPs_IUnknown_Release_Proxy 
+@ stdcall ComPs_NdrClientCall2(ptr ptr ptr) olebase.ComPs_NdrClientCall2 
+@ stdcall ComPs_NdrClientCall2_va(ptr ptr ptr) olebase.ComPs_NdrClientCall2_va
+@ stdcall ComPs_NdrCStdStubBuffer2_Release(ptr ptr) olebase.ComPs_NdrCStdStubBuffer2_Release
+@ stdcall ComPs_NdrCStdStubBuffer_Release(ptr ptr) olebase.ComPs_NdrCStdStubBuffer_Release
+@ stdcall ComPs_NdrStubCall2(ptr ptr ptr ptr) olebase.ComPs_NdrStubCall2
+@ stdcall ComPs_NdrStubForwardingFunction(ptr ptr ptr ptr) olebase.ComPs_NdrStubForwardingFunction 
+@ stdcall CoRegisterActivationFilter(ptr) olebase.CoRegisterActivationFilter

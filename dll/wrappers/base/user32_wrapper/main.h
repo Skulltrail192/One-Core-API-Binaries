@@ -29,6 +29,7 @@
 #include <winsafer.h>
 #include <sddl.h>
 #define NTOS_MODE_USER
+#include <ntsecapi.h>
 #include <ndk/cmfuncs.h>
 #include <ndk/exfuncs.h>
 #include <ndk/iofuncs.h>

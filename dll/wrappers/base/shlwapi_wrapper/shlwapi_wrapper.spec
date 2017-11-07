@@ -857,6 +857,9 @@
 857 stdcall wvnsprintfA(ptr long str ptr)
 858 stdcall wvnsprintfW(ptr long wstr ptr)
 
+@ stdcall ShellMessageBoxA(ptr str str long) user32.MessageBoxA
+@ stdcall ShellMessageBoxW(ptr str str long) user32.MessageBoxW
+
 #Windows Vista Functions
 @ stdcall PathMatchSpecExA(str str long)
 @ stdcall PathMatchSpecExW(wstr wstr long)

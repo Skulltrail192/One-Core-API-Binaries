@@ -5,8 +5,6 @@ spec2def(bcrypt.dll bcrypt.spec)
 
 list(APPEND SOURCE
     bcrypt_main.c
-	sha256.c
-	sha512.c
     version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/bcrypt_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/bcrypt.def)
