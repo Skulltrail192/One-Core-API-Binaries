@@ -114,3 +114,9 @@ Version 0.3:
   Replaced:
    - bcrypt (from windows to wine)
 
+ Version 15-11-2017
+   Updated:
+    - kernel32_wrapper
+    - advapi32_wrapper
+   Replaced:
+    - httpapi.dll (cause error with visual studio)
