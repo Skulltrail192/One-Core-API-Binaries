@@ -37,7 +37,6 @@
 #include <ndk/psfuncs.h>
 #include <ndk/rtlfuncs.h>
 #include <ndk/setypes.h>
-#include <ndk/sefuncs.h>
 #include <evntprov.h>
 #include <strsafe.h>
 #include <wine/debug.h>

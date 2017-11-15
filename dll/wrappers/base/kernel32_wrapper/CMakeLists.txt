@@ -47,11 +47,7 @@ list(APPEND SOURCE
 	time.c	
 	wer.c
 	utils.c
-	winnls/ansi.c	
-    # GetFileInformationByHandleEx.c
-    # GetTickCount64.c
-    # InitOnceExecuteOnce.c
-    # sync.c
+	winnls/ansi.c
     kernel32_wrapper.rc
     ${CMAKE_CURRENT_BINARY_DIR}/kernel32_wrapper_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/kernel32_wrapper.def)

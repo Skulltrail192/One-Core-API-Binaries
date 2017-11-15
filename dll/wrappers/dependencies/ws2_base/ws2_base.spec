@@ -119,3 +119,16 @@
 @ stdcall getaddrinfo(str str ptr ptr)
 @ stdcall getnameinfo(ptr long ptr long ptr long long)
 @ stdcall GetNameInfoW(ptr long wstr long wstr long long)
+
+#Only for x64
+@ stdcall -arch=x86_64 WSCDeinstallProvider32(ptr ptr)
+@ stdcall -arch=x86_64 WSCEnableNSProvider32(ptr long)
+@ stdcall -arch=x86_64 WSCEnumNameSpaceProviders32(ptr ptr)
+@ stdcall -arch=x86_64 WSCEnumProtocols32(ptr ptr ptr ptr)
+@ stdcall -arch=x86_64 WSCGetProviderPath32(ptr wstr ptr ptr)
+@ stdcall -arch=x86_64 WSCInstallNameSpace32(wstr wstr long long ptr)
+@ stdcall -arch=x86_64 WSCInstallProvider64_32(ptr wstr ptr long ptr)
+@ stdcall -arch=x86_64 WSCUnInstallNameSpace32(ptr)
+@ stdcall -arch=x86_64 WSCWriteNameSpaceOrder32(ptr long)
+@ stdcall -arch=x86_64 WSCWriteProviderOrder32(ptr long)
+@ stdcall -arch=x86_64 WSCUpdateProvider32(ptr wstr ptr long ptr)

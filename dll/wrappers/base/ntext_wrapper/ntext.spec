@@ -1161,7 +1161,6 @@
 @ cdecl -arch=i386 _CIpow()
 @ cdecl -arch=i386 _CIsin()
 @ cdecl -arch=i386 _CIsqrt()
-@ cdecl -arch=x86_64 __C_specific_handler(ptr long ptr ptr)
 @ cdecl __isascii(long)
 @ cdecl __iscsym(long)
 @ cdecl __iscsymf(long)
@@ -1422,14 +1421,15 @@
 @ stdcall EtwReceiveNotificationsW(long long long long)
 
 #Only on XP/2003 x64
-@ cdecl -arch=x86_64 __misaligned_access() 
-@ cdecl -arch=x86_64 __chkstk()
-@ stdcall -arch=x86_64 LdrGetKnownDllSectionHandle(wstr long ptr)
-@ stdcall -arch=x86_64 LdrProcessInitializationComplete()
-@ stdcall -arch=x86_64 RtlLookupFunctionTable(int64 ptr ptr)
-@ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr long)
-@ stdcall -arch=x86_64 RtlCopyMemoryNonTemporal(ptr ptr long)
-@ stdcall -arch=x86_64 RtlGetFunctionTableListHead()
+@ cdecl -arch=x86_64 __C_specific_handler(ptr long ptr ptr) ntdll.__C_specific_handler
+@ cdecl -arch=x86_64 __misaligned_access() ntdll.__misaligned_access
+@ cdecl -arch=x86_64 __chkstk() ntdll.__chkstk
+@ stdcall -arch=x86_64 LdrGetKnownDllSectionHandle(wstr long ptr) ntdll.LdrGetKnownDllSectionHandle
+@ stdcall -arch=x86_64 LdrProcessInitializationComplete() ntdll.LdrProcessInitializationComplete
+@ stdcall -arch=x86_64 RtlLookupFunctionTable(int64 ptr ptr) ntdll.RtlLookupFunctionTable
+@ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr long) ntdll.RtlCopyMemory
+@ stdcall -arch=x86_64 RtlCopyMemoryNonTemporal(ptr ptr long) ntdll.RtlCopyMemoryNonTemporal
+@ stdcall -arch=x86_64 RtlGetFunctionTableListHead() ntdll.RtlGetFunctionTableListHead
 
 #XP x64 syscalls
 @ stdcall NtWow64CsrAllocateCaptureBuffer(long long) ntdll.NtWow64CsrAllocateCaptureBuffer

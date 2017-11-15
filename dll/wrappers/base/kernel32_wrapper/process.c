@@ -1283,3 +1283,57 @@ QueryProcessAffinityUpdateMode(
 	lpdwFlags = 0;
 	return TRUE;	
 }
+
+DWORD 
+WINAPI 
+GetMaximumProcessorCount(
+  _In_  WORD GroupNumber
+)
+{
+	SYSTEM_INFO sysinfo;
+	//Windows XP/2003 don't support more than 64 processors, so, we have only one processor group
+	//return 64;
+	//We don't support really groups, so, we emulate to support ALL_PROCESSOR_GROUPS	
+    if (GroupNumber && GroupNumber != ALL_PROCESSOR_GROUPS)
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return 0;
+    }
+		
+	GetSystemInfo( &sysinfo );
+	return sysinfo.dwNumberOfProcessors;	
+}
+
+WORD 
+WINAPI 
+GetMaximumProcessorGroupCount(void)
+{
+	//Windows XP/2003 don't support more than 64 processors, so, we have only one processor group
+	return 1;
+}
+
+WORD 
+WINAPI 
+GetActiveProcessorGroupCount(void)
+{
+	//Windows XP/2003 don't support more than 64 processors, so, we have only one processor group
+	return 1;
+}
+
+DWORD 
+WINAPI 
+GetActiveProcessorCount(
+  _In_  WORD GroupNumber
+)
+{
+	SYSTEM_INFO sysinfo;
+	//We don't support really groups, so, we emulate to support ALL_PROCESSOR_GROUPS	
+    if (GroupNumber && GroupNumber != ALL_PROCESSOR_GROUPS)
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return 0;
+    }	
+		
+	GetSystemInfo( &sysinfo );
+	return sysinfo.dwNumberOfProcessors;
+}

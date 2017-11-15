@@ -380,22 +380,23 @@ GetThreadGroupAffinity(
 	GROUP_AFFINITY *affinity 
 )
 {
-    NTSTATUS status;
+    NTSTATUS Status;
+    THREAD_BASIC_INFORMATION ThreadBasic;
 
-    if (!affinity)
+    Status = NtQueryInformationThread(thread,
+                                      ThreadBasicInformation,
+                                      &ThreadBasic,
+                                      sizeof(THREAD_BASIC_INFORMATION),
+                                      NULL);								
+									  
+    if (!NT_SUCCESS(Status))
     {
-        SetLastError( ERROR_INVALID_PARAMETER );
+        BaseSetLastNTError(Status);
         return FALSE;
     }
-
-    status = NtQueryInformationThread( thread, MaxThreadInfoClass|ThreadPriorityBoost,
-                                       affinity, sizeof(*affinity), NULL );
-    if (status)
-    {
-        SetLastError( RtlNtStatusToDosError(status) );
-        return FALSE;
-    }
-
+	
+	affinity->Group = 0; //we only support 64 processors
+	affinity->Mask =  ThreadBasic.AffinityMask;
     return TRUE;
 }
 
@@ -405,25 +406,39 @@ GetThreadGroupAffinity(
 BOOL 
 WINAPI 
 SetThreadGroupAffinity( 
-	HANDLE thread, 
+	HANDLE hThread, 
 	const GROUP_AFFINITY *affinity_new,
     GROUP_AFFINITY *affinity_old 
 )
 {
-    NTSTATUS status;
+    THREAD_BASIC_INFORMATION ThreadBasic;
+    KAFFINITY AffinityMask;
+    NTSTATUS Status;
 
-    if (affinity_old && !GetThreadGroupAffinity( thread, affinity_old ))
-        return FALSE;
+    AffinityMask = (KAFFINITY)affinity_new->Mask;
 
-    status = NtSetInformationThread( thread, MaxThreadInfoClass|ThreadPriorityBoost,
-                                     (PVOID)affinity_new, sizeof(*affinity_new) );
-    if (status)
+    Status = NtQueryInformationThread(hThread,
+                                      ThreadBasicInformation,
+                                      &ThreadBasic,
+                                      sizeof(THREAD_BASIC_INFORMATION),
+                                      NULL);
+    if (!NT_SUCCESS(Status))
     {
-        SetLastError( RtlNtStatusToDosError(status) );
-        return FALSE;
+        BaseSetLastNTError(Status);
+        return 0;
     }
 
-    return TRUE;
+    Status = NtSetInformationThread(hThread,
+                                    ThreadAffinityMask,
+                                    &AffinityMask,
+                                    sizeof(KAFFINITY));
+    if (!NT_SUCCESS(Status))
+    {
+        BaseSetLastNTError(Status);
+        ThreadBasic.AffinityMask = 0;
+    }
+
+	return TRUE;	
 }
 
 /*************************************************************************
@@ -681,4 +696,33 @@ PTP_CLEANUP_GROUP WINAPI CreateThreadpoolCleanupGroup( void )
     }
 
     return group;
+}
+
+/**********************************************************************
+*           SetThreadIdealProcessorEx   (KERNEL32.@)
+*/
+BOOL 
+WINAPI 
+SetThreadIdealProcessorEx(
+	HANDLE thread, 
+	PROCESSOR_NUMBER *processor, 
+	PROCESSOR_NUMBER *previous
+)
+{
+
+
+    if (!processor || processor->Group > 0 || processor->Number > MAXIMUM_PROCESSORS)
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    if (previous)
+    {
+        previous->Group = 0;
+        previous->Number = 0;
+        previous->Reserved = 0;
+    }
+
+    return TRUE;
 }

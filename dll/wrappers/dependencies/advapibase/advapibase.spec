@@ -298,7 +298,7 @@
 @ stdcall GetUserNameA(ptr ptr)
 @ stdcall GetUserNameW(ptr ptr)
 @ stdcall GetWindowsAccountDomainSid(ptr ptr ptr)
-@ stdcall I_QueryTagInformation(long long long)
+@ stdcall I_QueryTagInformation(long long ptr)
 @ stdcall I_ScGetCurrentGroupStateW(ptr ptr ptr)
 @ stdcall I_ScIsSecurityProcess()
 @ stdcall I_ScPnPGetServiceName(long str long)
@@ -508,8 +508,8 @@
 @ stdcall RegNotifyChangeKeyValue(long long long long long)
 @ stdcall RegOpenCurrentUser(long ptr)
 @ stdcall RegOpenKeyA(long str ptr)
-;@ stdcall RegOpenKeyExA(long str long long ptr)
-;@ stdcall RegOpenKeyExW(long wstr long long ptr)
+;@ stdcall RegOpenKeyExA(long str long long ptr) ;Comment here
+;@ stdcall RegOpenKeyExW(long wstr long long ptr) ;Comment here
 @ stdcall RegOpenKeyW(long wstr ptr)
 @ stdcall RegOpenUserClassesRoot(ptr long long ptr)
 @ stdcall RegOverridePredefKey(long long)
@@ -519,8 +519,8 @@
 @ stdcall RegQueryMultipleValuesW(long ptr long ptr ptr)
 @ stdcall RegQueryReflectionKey(ptr ptr)
 @ stdcall RegQueryValueA(long str ptr ptr)
-;@ stdcall RegQueryValueExA(long str ptr ptr ptr ptr)
-;@ stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr)
+;@ stdcall RegQueryValueExA(long str ptr ptr ptr ptr) ;Comment here
+;@ stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr) ;Comment here
 @ stdcall RegQueryValueW(long wstr ptr ptr)
 @ stdcall RegReplaceKeyA(long str str str)
 @ stdcall RegReplaceKeyW(long wstr wstr wstr)
@@ -704,3 +704,5 @@
 @ stdcall WmiSetSingleItemW(long wstr long long long ptr)
 @ stdcall Wow64Win32ApiEntry(long long long)
 @ stdcall WriteEncryptedFileRaw(ptr ptr ptr)
+
+@ stdcall LogonUserExExW(str str str long long ptr ptr ptr ptr ptr ptr)

@@ -86,7 +86,7 @@
 86 stdcall LdrAccessOutOfProcessResource(ptr ptr ptr ptr ptr)
 87 stdcall LdrAccessResource(long ptr ptr ptr)
 88 stdcall LdrAddRefDll(long ptr)
-# 89 stdcall LdrAlternateResourcesEnabled
+@ stdcall LdrAlternateResourcesEnabled()
 90 stdcall LdrCreateOutOfProcessImage(long ptr ptr ptr)
 91 stdcall LdrDestroyOutOfProcessImage(ptr)
 92 stdcall LdrDisableThreadCalloutsForDll(long)
@@ -95,7 +95,7 @@
 95 stdcall LdrFindCreateProcessManifest(long ptr ptr long ptr) ; 5.1 and 5.2 only
 96 stdcall LdrFindEntryForAddress(ptr ptr)
 97 stdcall LdrFindResourceDirectory_U(long ptr long ptr)
-# stdcall LdrFindResourceEx_U ; 5.1 and higher
+@ stdcall LdrFindResourceEx_U(long ptr long ptr ptr) ; 5.1 and higher
 99 stdcall LdrFindResource_U(long ptr long ptr)
 100 stdcall LdrFlushAlternateResourceModules()
 101 stdcall LdrGetDllHandle(wstr long ptr ptr)
@@ -110,7 +110,7 @@
 110 stdcall LdrOpenImageFileOptionsKey(ptr long ptr) ; 5.2 SP1 and higher
 111 stdcall LdrProcessRelocationBlock(ptr long ptr long)
 112 stdcall LdrQueryImageFileExecutionOptions(ptr str long ptr long ptr)
-# stdcall LdrQueryImageFileExecutionOptionsEx(ptr ptr long ptr long ptr long)
+@ stdcall LdrQueryImageFileExecutionOptionsEx(ptr ptr long ptr long ptr long)
 114 stdcall LdrQueryImageFileKeyOption(ptr ptr long ptr long ptr)
 115 stdcall LdrQueryProcessModuleInformation(ptr long ptr)
 # stdcall LdrSetAppCompatDllRedirectionCallback
@@ -453,7 +453,7 @@
 452 stdcall RtlAddRefMemoryStream(ptr)
 453 stdcall RtlAddVectoredContinueHandler(long ptr)
 454 stdcall RtlAddVectoredExceptionHandler(long ptr)
-# stdcall RtlAddressInSectionTable
+@ stdcall RtlAddressInSectionTable(ptr ptr long)
 456 stdcall RtlAdjustPrivilege(long long long ptr)
 457 stdcall RtlAllocateActivationContextStack(ptr) ; CHECKME
 458 stdcall RtlAllocateAndInitializeSid(ptr long long long long long long long long long ptr)
@@ -709,8 +709,8 @@
 706 stdcall RtlInitializeSid(ptr ptr long)
 707 stdcall RtlInsertElementGenericTable(ptr ptr long ptr)
 708 stdcall RtlInsertElementGenericTableAvl(ptr ptr long ptr)
-# RtlInsertElementGenericTableFull
-# stdcall RtlInsertElementGenericTableFullAvl(ptr ptr long ptr ptr long)
+@ stdcall RtlInsertElementGenericTableFull(ptr ptr long ptr ptr long)
+@ stdcall RtlInsertElementGenericTableFullAvl(ptr ptr long ptr ptr long)
 @ stdcall -arch=x86_64 RtlInstallFunctionTableCallback(double double long ptr ptr ptr)
 711 stdcall RtlInt64ToUnicodeString(double long ptr)
 712 stdcall RtlIntegerToChar(long long long ptr)
@@ -766,8 +766,8 @@
 762 stdcall RtlLookupAtomInAtomTable(ptr wstr ptr)
 763 stdcall RtlLookupElementGenericTable(ptr ptr)
 764 stdcall RtlLookupElementGenericTableAvl(ptr ptr)
-# RtlLookupElementGenericTableFull
-# RtlLookupElementGenericTableFullAvl
+@ stdcall RtlLookupElementGenericTableFull(ptr ptr ptr ptr)
+@ stdcall RtlLookupElementGenericTableFullAvl(ptr ptr ptr ptr)
 @ stdcall -arch=x86_64 RtlLookupFunctionEntry(long ptr ptr)
 767 stdcall RtlMakeSelfRelativeSD(ptr ptr ptr)
 768 stdcall RtlMapGenericMask(long ptr)

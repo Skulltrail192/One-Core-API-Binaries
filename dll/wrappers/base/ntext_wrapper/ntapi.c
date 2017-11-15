@@ -378,73 +378,6 @@ NtCreateSemaphoreEx(
 	return STATUS_SUCCESS;
 }
 
-// /******************************************************************************
- // * NtQuerySystemInformationEx [NTDLL.@]
- // * ZwQuerySystemInformationEx [NTDLL.@]
- // */
-// NTSTATUS 
-// WINAPI 
-// NtQuerySystemInformationEx(SYSTEM_INFORMATION_CLASS SystemInformationClass,
-    // void *Query, ULONG QueryLength, void *SystemInformation, ULONG Length, ULONG *ResultLength)
-// {
-    // ULONG len = 0;
-    // NTSTATUS ret = STATUS_NOT_IMPLEMENTED;
-
-    // switch (SystemInformationClass) {
-    // case SystemLogicalProcessorInformationEx:
-        // {
-            // SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *buf;
-
-            // if (!Query || QueryLength < sizeof(DWORD))
-            // {
-                // ret = STATUS_INVALID_PARAMETER;
-                // break;
-            // }
-
-            // if (*(DWORD*)Query != RelationAll)
-                // FIXME("Relationship filtering not implemented: 0x%x\n", *(DWORD*)Query);
-
-            // len = 3 * sizeof(*buf);
-            // buf = RtlAllocateHeap(GetProcessHeap(), 0, len);
-            // if (!buf)
-            // {
-                // ret = STATUS_NO_MEMORY;
-                // break;
-            // }
-
-            // ret = create_logical_proc_info(NULL, &buf, &len);
-            // if (ret != STATUS_SUCCESS)
-            // {
-                // RtlFreeHeap(GetProcessHeap(), 0, buf);
-                // break;
-            // }
-
-            // if (Length >= len)
-            // {
-                // if (!SystemInformation)
-                    // ret = STATUS_ACCESS_VIOLATION;
-                // else
-                    // memcpy( SystemInformation, buf, len);
-            // }
-            // else
-                // ret = STATUS_INFO_LENGTH_MISMATCH;
-
-            // RtlFreeHeap(GetProcessHeap(), 0, buf);
-
-            // break;
-        // }
-    // default:
-        // FIXME("(0x%08x,%p,%u,%p,%u,%p) stub\n", SystemInformationClass, Query, QueryLength, SystemInformation,
-            // Length, ResultLength);
-        // break;
-    // }
-
-    // if (ResultLength)
-        // *ResultLength = len;
-
-    // return ret;
-// }
-
 NTSTATUS 
 NTAPI 
 NtQuerySystemInformationEx(
@@ -771,4 +704,25 @@ NtQuerySectionInternal(
 		InformationBuffer = Sii;
 	}	
 	return Status;
+}
+
+/******************************************************************************
+ *              NtQueryInformationThread  (NTDLL.@)
+ *              ZwQueryInformationThread  (NTDLL.@)
+ */
+NTSTATUS 
+WINAPI 
+NtQueryInformationThreadInternal( 
+	HANDLE handle, 
+	THREADINFOCLASS class,
+    void *data, 
+	ULONG length, 
+	ULONG *ret_len 
+)
+{
+	switch(class)
+	{
+		case ThreadGroupInformation:
+			
+	}
 }

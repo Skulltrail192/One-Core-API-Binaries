@@ -1017,8 +1017,8 @@
 @ stdcall SetProcessDEPPolicy(long) 
 
 #Onwn implementation only for support
-@ stdcall SetFileApisToANSI() ;SetpFileApisToANSI
-@ stdcall SetFileApisToOEM() ;SetpFileApisToOEM
+@ stdcall SetFileApisToANSI() SetpFileApisToANSI
+@ stdcall SetFileApisToOEM() SetpFileApisToOEM
 
 #Needed functions for Server 2003 RTM and XP
 @ stdcall CreateVirtualBuffer(ptr long long) kernelfull.CreateVirtualBuffer
@@ -1036,7 +1036,7 @@
 @ stdcall GetNumaProcessorMap(ptr long ptr) kernelfull.GetNumaProcessorMap
 @ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
 
-; #Vista Functions 
+#Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) ntext.RtlAcquireSRWLockExclusive
 @ stdcall AcquireSRWLockShared(ptr) ntext.RtlAcquireSRWLockShared
 @ stdcall ApplicationRecoveryFinished(long)
@@ -1114,7 +1114,6 @@
 @ stdcall GetSystemDefaultLocaleName(ptr long)
 @ stdcall GetSystemPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetThreadErrorMode()
-@ stdcall GetThreadGroupAffinity(long ptr)
 @ stdcall GetThreadInformation(ptr long ptr long)
 @ stdcall GetThreadPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetThreadUILanguage()
@@ -1134,6 +1133,7 @@
 @ stdcall InitOnceBeginInitialize(ptr long ptr ptr)
 @ stdcall InitOnceComplete(ptr long ptr)
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
+@ stdcall InitOnceInitialize(ptr) ntext.RtlRunOnceInitialize
 @ stdcall IsThreadAFiber()
 @ stdcall IsValidLocaleName(wstr)
 @ stdcall LeaveCriticalSectionWhenCallbackReturns(ptr ptr) ntext.TpCallbackLeaveCriticalSectionOnCompletion
@@ -1166,7 +1166,6 @@
 @ stdcall SetProcessAffinityUpdateMode(ptr long)
 @ stdcall SetStdHandleEx(long ptr ptr)
 @ stdcall SetThreadErrorMode(long ptr)
-@ stdcall SetThreadGroupAffinity(long ptr ptr)
 @ stdcall SetThreadpoolThreadMaximum(ptr long) ntext.TpSetPoolMaxThreads
 @ stdcall SetThreadpoolThreadMinimum(ptr long) ntext.TpSetPoolMinThreads
 @ stdcall SetThreadpoolTimer(ptr ptr long long)
@@ -1196,9 +1195,14 @@
 #Win7 Functions
 @ stub BaseThreadInitThunk
 @ stdcall CreateRemoteThreadEx(long ptr long ptr long long ptr ptr)
+@ stdcall GetActiveProcessorCount(long)
+@ stdcall GetActiveProcessorGroupCount()
 @ stdcall GetCurrentProcessorNumberEx(ptr) ntext.RtlGetCurrentProcessorNumberEx
+@ stdcall GetMaximumProcessorCount(long)
+@ stdcall GetMaximumProcessorGroupCount()
 @ stdcall GetTimeFormatWWorker(long long ptr wstr ptr long) GetTimeFormatW
 @ stdcall GetLogicalProcessorInformationEx(long ptr ptr)
+@ stdcall GetThreadGroupAffinity(long ptr)
 @ stdcall K32EmptyWorkingSet(ptr) EmptyWorkingSet
 @ stdcall K32EnumDeviceDrivers(ptr long ptr) EnumDeviceDrivers
 @ stdcall K32EnumPageFilesA(ptr ptr) EnumPageFilesA
@@ -1231,6 +1235,8 @@
 @ stdcall RegisterApplicationRecoveryCallback(long ptr long long)
 @ stdcall RegisterApplicationRestart(wstr long)
 @ stdcall ResolveLocaleName(wstr ptr long)
+@ stdcall SetThreadGroupAffinity(long ptr ptr)
+@ stdcall SetThreadIdealProcessorEx(ptr ptr ptr)
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
 @ stdcall TryAcquireSRWLockExclusive(ptr) ntext.RtlTryAcquireSRWLockExclusive
 @ stdcall TryAcquireSRWLockShared(ptr) ntext.RtlTryAcquireSRWLockShared

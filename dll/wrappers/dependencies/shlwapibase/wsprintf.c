@@ -563,3 +563,29 @@ int WINAPIV wnsprintfW(LPWSTR lpOut, int cchLimitIn, LPCWSTR lpFmt, ...)
     __ms_va_end( valist );
     return res;
 }
+
+
+WCHAR ualstrcpynW(WCHAR *lpString1, const WCHAR *lpString2, int iMaxLength)
+{
+	return L"resp";
+}
+
+int SHLWAPI_501(LPCWSTR lpString1, void *Src)
+{
+	return 0;
+}
+
+size_t ualstrlenW(const WCHAR *wcs)
+{
+	return 0;
+}
+
+int SHLWAPI_502(LPCWSTR lpString2, LPCWSTR lpString1)
+{
+	return 0;
+}
+
+WCHAR ualstrcpyW(WCHAR *dst, const WCHAR *src)
+{
+	return L"resp";
+}

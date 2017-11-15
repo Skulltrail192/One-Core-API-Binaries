@@ -856,3 +856,9 @@
 856 varargs wnsprintfW(ptr long wstr)
 857 stdcall wvnsprintfA(ptr long str ptr)
 858 stdcall wvnsprintfW(ptr long wstr ptr)
+
+500 stdcall -arch=x86_64 -noname ualstrcpynW(wstr wstr long)
+501 stdcall -arch=x86_64 -noname SHLWAPI_501(wstr wstr)
+502 stdcall -arch=x86_64 -noname SHLWAPI_502(wstr wstr)
+503 stdcall -arch=x86_64 -noname ualstrlenW(wstr)
+504 stdcall -arch=x86_64 -noname ualstrcpyW(wstr wstr)

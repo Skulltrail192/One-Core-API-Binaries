@@ -95,7 +95,7 @@ NtAccessCheck(
     _Out_ PPRIVILEGE_SET PrivilegeSet,
     _Out_ PULONG ReturnLength,
     _Out_ PACCESS_MASK GrantedAccess,
-    _Out_ PNTSTATUS AccessStatus
+    _Out_ NTSTATUS* AccessStatus
 );
 
 NTSTATUS
@@ -111,7 +111,7 @@ NtAccessCheckByType(
     _In_ PPRIVILEGE_SET PrivilegeSet,
     _Inout_ PULONG PrivilegeSetLength,
     _Out_ PACCESS_MASK GrantedAccess,
-    _Out_ PNTSTATUS AccessStatus
+    _Out_ NTSTATUS* AccessStatus
 );
 
 NTSTATUS
@@ -127,7 +127,7 @@ NtAccessCheckByTypeResultList(
     _In_ PPRIVILEGE_SET PrivilegeSet,
     _Inout_ PULONG PrivilegeSetLength,
     _Out_ PACCESS_MASK GrantedAccess,
-    _Out_ PNTSTATUS AccessStatus
+    _Out_ NTSTATUS* AccessStatus
 );
 
 _Must_inspect_result_
@@ -144,7 +144,7 @@ NtAccessCheckAndAuditAlarm(
     _In_ PGENERIC_MAPPING GenericMapping,
     _In_ BOOLEAN ObjectCreation,
     _Out_ PACCESS_MASK GrantedAccess,
-    _Out_ PNTSTATUS AccessStatus,
+    _Out_ NTSTATUS* AccessStatus,
     _Out_ PBOOLEAN GenerateOnClose
 );
 
@@ -343,7 +343,7 @@ ZwAccessCheck(
     _Out_ PPRIVILEGE_SET PrivilegeSet,
     _Out_ PULONG ReturnLength,
     _Out_ PACCESS_MASK GrantedAccess,
-    _Out_ PNTSTATUS AccessStatus
+    _Out_ NTSTATUS* AccessStatus
 );
 
 NTSYSAPI

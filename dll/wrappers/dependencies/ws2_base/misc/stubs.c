@@ -946,5 +946,103 @@ GetAddrInfoW(IN PCWSTR pszNodeName,
     return EAI_FAIL;
 }
 
+int WSPAPI WSCDeinstallProvider32(
+  _In_  LPGUID lpProviderId,
+  _Out_ LPINT  lpErrno
+)
+{
+	return 0;
+}
 
+int WSPAPI WSCEnableNSProvider32(
+  _In_ LPGUID lpProviderId,
+  _In_ BOOL   fEnable
+)
+{
+	return 0;
+}
+
+INT WSPAPI WSCEnumNameSpaceProviders32(
+  _Inout_ LPDWORD              lpdwBufferLength,
+  _Out_   LPWSANAMESPACE_INFOW lpnspBuffer
+)
+{
+	return 0;
+}
+
+int WSPAPI WSCEnumProtocols32(
+  _In_    LPINT               lpiProtocols,
+  _Out_   LPWSAPROTOCOL_INFOW lpProtocolBuffer,
+  _Inout_ LPDWORD             lpdwBufferLength,
+  _Out_   LPINT               lpErrno
+)
+{
+	return 0;
+}
+
+int WSPAPI WSCGetProviderPath32(
+  _In_    LPGUID lpProviderId,
+  _Out_   LPWSTR lpszProviderDllPath,
+  _Inout_ LPINT  lpProviderDllPathLen,
+  _Out_   LPINT  lpErrno
+)
+{
+	return 0;
+}
+
+int WSAAPI WSCInstallNameSpace32(
+  _In_ LPWSTR lpszIdentifier,
+  _In_ LPWSTR lpszPathName,
+  _In_ DWORD  dwNameSpace,
+  _In_ DWORD  dwVersion,
+  _In_ LPGUID lpProviderId
+)
+{
+	return 0;
+}
+
+int WSPAPI WSCInstallProvider64_32(
+  _In_  const LPGUID             lpProviderId,
+  _In_  const LPWSTR             lpszProviderDllPath,
+  _In_  const LPWSAPROTOCOL_INFO lpProtocolInfoList,
+  _In_        DWORD              dwNumberOfEntries,
+  _Out_       LPINT              lpErrno
+)
+{
+	return 0;
+}
+
+int WSPAPI WSCUnInstallNameSpace32(
+  _In_ LPGUID lpProviderId
+)
+{
+	return 0;
+}
+
+int WSPAPI WSCWriteNameSpaceOrder32(
+  _In_ LPGUID lpProviderId,
+  _In_ DWORD  dwNumberOfEntries
+)
+{
+	return 0;
+}
+
+int WSPAPI WSCWriteProviderOrder32(
+  _In_ LPDWORD lpwdCatalogEntryId,
+  _In_ DWORD   dwNumberOfEntries
+)
+{
+	return 0;
+}
+
+int WSAAPI WSCUpdateProvider32(
+  _In_        LPGUID             lpProviderId,
+  _In_  const WCHAR              *lpszProviderDllPath,
+  _In_  const LPWSAPROTOCOL_INFO lpProtocolInfoList,
+  _In_        DWORD              dwNumberOfEntries,
+  _Out_       LPINT              lpErrno
+)
+{
+	return 0;
+}
 /* EOF */

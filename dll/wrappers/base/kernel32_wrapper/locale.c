@@ -59,144 +59,51 @@ struct enum_locale_ex_data
     LPARAM            lparam;
 };
 
+static BOOL get_dummy_preferred_ui_language( DWORD flags, ULONG *count, WCHAR *buffer, ULONG *size )
+{
+    LCTYPE type;
+    int lsize;
 
-// static WORD get_default_sublang(LCID lang)
-// {
-    // switch (PRIMARYLANGID(lang))
-    // {
-    // case LANG_SPANISH:
-        // return SUBLANG_SPANISH_MODERN;
-    // case LANG_CHINESE:
-        // return SUBLANG_CHINESE_SIMPLIFIED;
-    // default:
-        // return SUBLANG_DEFAULT;
-    // }
-// }
+    FIXME("(0x%x %p %p %p) returning a dummy value (current locale)\n", flags, count, buffer, size);
 
-/***********************************************************************
- *           find_locale_id_callback
- */
-//static BOOL CALLBACK find_locale_id_callback( HMODULE hModule, LPCWSTR type,
-                                              // LPCWSTR name, WORD LangID, LPARAM lParam )
-// {
-    // struct locale_name *data = (struct locale_name *)lParam;
-    // WCHAR buffer[128];
-    // int matches = 0;
-    // LCID lcid = MAKELCID( LangID, SORT_DEFAULT );  /* FIXME: handle sort order */
+    if (flags & MUI_LANGUAGE_ID)
+        type = LOCALE_ILANGUAGE;
+    else
+        type = LOCALE_SNAME;
 
-    // if (PRIMARYLANGID(LangID) == LANG_NEUTRAL) return TRUE; /* continue search */
+    lsize = GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, type, NULL, 0);
+    if (!lsize)
+    {
+        /* keep last error from callee */
+        return FALSE;
+    }
+    lsize++;
+    if (!*size)
+    {
+        *size = lsize;
+        *count = 1;
+        return TRUE;
+    }
 
-    // /* first check exact name */
-    // if (data->win_name[0] &&
-        // GetLocaleInfoW( lcid, LOCALE_SNAME | LOCALE_NOUSEROVERRIDE,
-                        // buffer, sizeof(buffer)/sizeof(WCHAR) ))
-    // {
-        // if (!strcmpiW( data->win_name, buffer ))
-        // {
-            // matches = 4;  /* everything matches */
-            // goto done;
-        // }
-    // }
+    if (lsize > *size)
+    {
+        SetLastError(ERROR_INSUFFICIENT_BUFFER);
+        return FALSE;
+    }
 
-    // if (!GetLocaleInfoW( lcid, LOCALE_SISO639LANGNAME | LOCALE_NOUSEROVERRIDE,
-                         // buffer, sizeof(buffer)/sizeof(WCHAR) ))
-        // return TRUE;
-    // if (strcmpiW( buffer, data->lang )) return TRUE;
-    // matches++;  /* language name matched */
+    if (!GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, type, buffer, *size))
+    {
+        /* keep last error from callee */
+        return FALSE;
+    }
 
-    // if (data->country)
-    // {
-        // if (GetLocaleInfoW( lcid, LOCALE_SISO3166CTRYNAME|LOCALE_NOUSEROVERRIDE,
-                            // buffer, sizeof(buffer)/sizeof(WCHAR) ))
-        // {
-            // if (strcmpiW( buffer, data->country )) goto done;
-            // matches++;  /* country name matched */
-        // }
-    // }
-    // else  /* match default language */
-    // {
-        // if (SUBLANGID(LangID) == get_default_sublang( LangID )) matches++;
-    // }
+    buffer[lsize-1] = 0;
+    *size = lsize;
+    *count = 1;
+    TRACE("returned variable content: %d, \"%s\", %d\n", *count, debugstr_w(buffer), *size);
+    return TRUE;
 
-    // if (data->codepage)
-    // {
-        // UINT unix_cp;
-        // if (GetLocaleInfoW( lcid, LOCALE_IDEFAULTUNIXCODEPAGE | LOCALE_RETURN_NUMBER,
-                            // (LPWSTR)&unix_cp, sizeof(unix_cp)/sizeof(WCHAR) ))
-        // {
-            // if (unix_cp == data->codepage) matches++;
-        // }
-    // }
-
-    // /* FIXME: check sort order */
-
-// done:
-    // if (matches > data->matches)
-    // {
-        // data->lcid = lcid;
-        // data->matches = matches;
-    // }
-    // return (data->matches < 4);  /* no need to continue for perfect match */
-// }
-
-/***********************************************************************
- *		parse_locale_name
- *
- * Parse a locale name into a struct locale_name, handling both Windows and Unix formats.
- * Unix format is: lang[_country][.charset][@modifier]
- * Windows format is: lang[-script][-country][_modifier]
- */
-// static void parse_locale_name( const WCHAR *str, struct locale_name *name )
-// {
-    // static const WCHAR sepW[] = {'-','_','.','@',0};
-    // static const WCHAR winsepW[] = {'-','_',0};
-    // static const WCHAR posixW[] = {'P','O','S','I','X',0};
-    // static const WCHAR cW[] = {'C',0};
-    // WCHAR *p;
-
-    // name->country = name->charset = name->script = name->modifier = NULL;
-    // name->lcid = MAKELCID( MAKELANGID(LANG_ENGLISH,SUBLANG_DEFAULT), SORT_DEFAULT );
-    // name->matches = 0;
-    // name->codepage = 0;
-    // name->win_name[0] = 0;
-    // lstrcpynW( name->lang, str, sizeof(name->lang)/sizeof(WCHAR) );
-
-    // if (!*name->lang)
-    // {
-        // name->lcid = LOCALE_INVARIANT;
-        // name->matches = 4;
-        // return;
-    // }
-
-    // if (!(p = strpbrkW( name->lang, sepW )))
-    // {
-        // if (!strcmpW( name->lang, posixW ) || !strcmpW( name->lang, cW ))
-        // {
-            // name->matches = 4;  /* perfect match for default English lcid */
-            // return;
-        // }
-        // strcpyW( name->win_name, name->lang );
-    // }
-    // else if (*p == '-')  /* Windows format */
-    // {
-        // strcpyW( name->win_name, name->lang );
-        // *p++ = 0;
-        // name->country = p;
-        // if (!(p = strpbrkW( p, winsepW ))) goto done;
-        // if (*p == '-')
-        // {
-            // *p++ = 0;
-            // name->script = name->country;
-            // name->country = p;
-            // if (!(p = strpbrkW( p, winsepW ))) goto done;
-        // }
-        // *p++ = 0;
-        // name->modifier = p;
-    // }
-// done:
-    // EnumResourceLanguagesW( NULL, (LPCWSTR)RT_STRING, (LPCWSTR)LOCALE_ILANGUAGE,
-                            // find_locale_id_callback, (LPARAM)name );
-// }
+}
 
 /***********************************************************************
  *           LocaleNameToLCID  (KERNEL32.@)
@@ -247,6 +154,142 @@ LCIDToLocaleName(
 		}
 	}
 	return length;
+}
+
+//TODO MUI_LANGUAGE_ID
+BOOL
+WINAPI
+EnumPreferredUserUILanguages(
+  _In_      DWORD   dwFlags,
+  _Out_     PULONG  pulNumLanguages,
+  _Out_opt_ PZZWSTR pwszLanguagesBuffer,
+  _Inout_   PULONG  pcchLanguagesBuffer
+)
+{
+	  LCID Locale;
+	  ULONG lenght; 
+	  BOOL result; 
+	  ULONG buffer;
+	  LCID LocaleLcid;
+	  const wchar_t *DefaultLocale = L"en-US"; // eax
+	  wchar_t LocalePointer; // cx
+
+	  if ( pwszLanguagesBuffer )
+	  {
+		if ( dwFlags & 4 )
+		{
+		  result = FALSE;
+		}
+		else
+		{
+		  *pulNumLanguages = 2;
+		  buffer = *pcchLanguagesBuffer;
+		  LocaleLcid = GetUserDefaultLCID();
+		  LCIDToLocaleName(LocaleLcid, DefaultLocale, buffer, 0);
+		  wcscpy(pwszLanguagesBuffer, DefaultLocale);
+		  memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0en-US\0\0", sizeof(WCHAR)*(7));
+		  result = TRUE;
+		}
+	  }
+	  else
+	  {
+		*pulNumLanguages = 2;
+		Locale = GetUserDefaultLCID();
+		lenght = 2 * LCIDToLocaleName(Locale, 0, 0, 0) + 1;
+		result = 1;
+		*pcchLanguagesBuffer = lenght;
+	  }
+	return result;		
+}
+
+BOOL
+WINAPI
+EnumPreferredThreadUILanguages(
+  _In_      DWORD   dwFlags,
+  _Out_     PULONG  pulNumLanguages,
+  _Out_opt_ PZZWSTR pwszLanguagesBuffer,
+  _Inout_   PULONG  pcchLanguagesBuffer
+)
+{
+	  LCID Locale;
+	  ULONG lenght; 
+	  BOOL result; 
+	  ULONG buffer;
+	  LCID LocaleLcid;
+	  const wchar_t *DefaultLocale = L"en-US"; // eax
+	  wchar_t LocalePointer; // cx
+
+	  if ( pwszLanguagesBuffer )
+	  {
+		if ( dwFlags & 4 )
+		{
+		  result = FALSE;
+		}
+		else
+		{
+		  *pulNumLanguages = 2;
+		  buffer = *pcchLanguagesBuffer;
+		  LocaleLcid = GetThreadLocale();
+		  LCIDToLocaleName(LocaleLcid, DefaultLocale, buffer, 0);
+		  wcscpy(pwszLanguagesBuffer, DefaultLocale);
+		  memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0en-US\0\0", sizeof(WCHAR)*(7));
+		  result = TRUE;
+		}
+	  }
+	  else
+	  {
+		*pulNumLanguages = 2;
+		Locale = GetThreadLocale();
+		lenght = 2 * LCIDToLocaleName(Locale, 0, 0, 0) + 1;
+		result = 1;
+		*pcchLanguagesBuffer = lenght;
+	  }
+	return result;		
+}
+
+BOOL
+WINAPI
+EnumPreferredSystemUILanguages(
+  _In_      DWORD   dwFlags,
+  _Out_     PULONG  pulNumLanguages,
+  _Out_opt_ PZZWSTR pwszLanguagesBuffer,
+  _Inout_   PULONG  pcchLanguagesBuffer
+)
+{
+	  LCID Locale;
+	  ULONG lenght; 
+	  BOOL result; 
+	  ULONG buffer;
+	  LCID LocaleLcid;
+	  const wchar_t *DefaultLocale = L"en-US"; // eax
+	  wchar_t LocalePointer; // cx
+
+	  if ( pwszLanguagesBuffer )
+	  {
+		if ( dwFlags & 4 )
+		{
+		  result = FALSE;
+		}
+		else
+		{
+		  *pulNumLanguages = 2;
+		  buffer = *pcchLanguagesBuffer;
+		  LocaleLcid = GetSystemDefaultLCID();
+		  LCIDToLocaleName(LocaleLcid, DefaultLocale, buffer, 0);
+		  wcscpy(pwszLanguagesBuffer, DefaultLocale);
+		  memcpy(pwszLanguagesBuffer+wcslen(pwszLanguagesBuffer), L"\0en-US\0\0", sizeof(WCHAR)*(7));
+		  result = TRUE;
+		}
+	  }
+	  else
+	  {
+		*pulNumLanguages = 2;
+		Locale = GetSystemDefaultLCID();
+		lenght = 2 * LCIDToLocaleName(Locale, 0, 0, 0) + 1;
+		result = 1;
+		*pcchLanguagesBuffer = lenght;
+	  }
+	return result;		
 }
 
 /***********************************************************************
@@ -678,64 +721,150 @@ GetLocaleInfoEx(
     return GetpLocaleInfoW(lcid, info, buffer, len);
 }
 
+/*
+ * @unimplemented
+*/
+BOOL 
+WINAPI 
+GetNLSVersionEx(
+  _In_      NLS_FUNCTION function,
+  _In_opt_  LPCWSTR lpLocaleName,
+  _Inout_   LPNLSVERSIONINFOEX lpVersionInformation
+)
+{
+	NLSVERSIONINFO lpVersionInformationOld;
+	LCID lcid = LocaleNameToLCID(lpLocaleName, 0);
+	
+	lpVersionInformationOld.dwNLSVersionInfoSize = sizeof(LPNLSVERSIONINFO);
+	
+	if(GetNLSVersion(function, lcid , &lpVersionInformationOld))
+	{
+		lpVersionInformation->dwNLSVersionInfoSize = sizeof(LPNLSVERSIONINFOEX);
+		lpVersionInformation->dwNLSVersion = lpVersionInformationOld.dwNLSVersion;
+		lpVersionInformation->dwDefinedVersion = lpVersionInformationOld.dwDefinedVersion;
+		lpVersionInformation->dwEffectiveId = LocaleNameToLCID(lpLocaleName, 0);		
+		return TRUE;
+	}else{
+		return FALSE;
+	}	
+}
+
+BOOL WINAPI GetNLSVersion(
+    NLS_FUNCTION     function,
+    LCID             locale,
+    LPNLSVERSIONINFO lpVersionInformation)
+{
+	pGetNLSVersion nlsVersion;
+	
+	nlsVersion = (pGetNLSVersion) GetProcAddress(
+                            GetModuleHandleW(L"kernelfull"),
+                            "GetNLSVersion");
+							
+	if(nlsVersion!=NULL){
+		return nlsVersion(function, locale, lpVersionInformation);
+	}
+	
+	lpVersionInformation->dwNLSVersionInfoSize = sizeof(NLSVERSIONINFO);
+	lpVersionInformation->dwNLSVersion = 1;
+    lpVersionInformation->dwDefinedVersion = 1;
+	return TRUE;
+}
+
+int 
+WINAPI 
+FindNLSString(
+  _In_ 		 LCID Locale,
+  _In_       DWORD dwFindNLSStringFlags,
+  _In_       LPCWSTR lpStringSource,
+  _In_       int cchSource,
+  _In_       LPCWSTR lpStringValue,
+  _In_       int cchValue,
+  _Out_opt_  LPINT pcchFound
+)
+{
+	SetLastError(50);
+	return 0;
+}
+
+int 
+WINAPI 
+FindNLSStringEx(
+  _In_opt_   LPCWSTR lpLocaleName,
+  _In_       DWORD dwFindNLSStringFlags,
+  _In_       LPCWSTR lpStringSource,
+  _In_       int cchSource,
+  _In_       LPCWSTR lpStringValue,
+  _In_       int cchValue,
+  _Out_opt_  LPINT pcchFound,
+  _In_opt_   LPNLSVERSIONINFO lpVersionInformation,
+  _In_opt_   LPVOID lpReserved,
+  _In_opt_   LPARAM sortHandle
+)
+{
+  return 0;
+}
+
+/******************************************************************************
+ *           ResolveLocaleName (KERNEL32.@)
+ */
+
+INT WINAPI ResolveLocaleName(LPCWSTR name, LPWSTR localename, INT len)
+{
+    FIXME("stub: %s, %p, %d\n", wine_dbgstr_w(name), localename, len);
+
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return 0;
+}
+
+/******************************************************************************
+ *             GetUserPreferredUILanguages (KERNEL32.@)
+ */
+BOOL 
+WINAPI 
+GetUserPreferredUILanguages( 
+  _In_      DWORD   dwFlags,
+  _Out_     PULONG  pulNumLanguages,
+  _Out_opt_ PZZWSTR pwszLanguagesBuffer,
+  _Inout_   PULONG  pcchLanguagesBuffer
+)
+{
+	return EnumPreferredUserUILanguages(dwFlags,
+									pulNumLanguages,
+									pwszLanguagesBuffer,
+									pcchLanguagesBuffer);
+}
+
+BOOL 
+WINAPI 
+GetThreadPreferredUILanguages(
+	DWORD dwFlags, 
+	PULONG pulNumLanguages, 
+	PZZWSTR pwszLanguagesBuffer, 
+	PULONG pcchLanguagesBuffer
+)
+{
+	return EnumPreferredThreadUILanguages(dwFlags,
+									pulNumLanguages,
+									pwszLanguagesBuffer,
+									pcchLanguagesBuffer);
+}
+
 /***********************************************************************
  *             GetSystemPreferredUILanguages (KERNEL32.@)
  */
 BOOL 
 WINAPI 
 GetSystemPreferredUILanguages(
-  _In_       DWORD dwFlags,
-  _Out_      PULONG pulNumLanguages,
-  _Out_opt_  PZZWSTR pwszLanguagesBuffer,
-  _Inout_    PULONG pcchLanguagesBuffer
+  _In_       DWORD flags,
+  _Out_      PULONG count,
+  _Out_opt_  PZZWSTR buffer,
+  _Inout_    PULONG size
 )
 {
-	  NTSTATUS status;
-	  BOOL result;
-	  DWORD error; 
-
-	  status = RtlGetSystemPreferredUILanguages(dwFlags, pulNumLanguages, pwszLanguagesBuffer, pcchLanguagesBuffer);
-	  if (!NT_SUCCESS(status) )
-	  {
-		error = RtlNtStatusToDosError(status);
-		SetLastError(error);
-		result = FALSE;
-	  }
-	  else
-	  {
-		result = TRUE;
-	  }
-	  return result;
-}
-
-/***********************************************************************
- *              GetThreadPreferredUILanguages (KERNEL32.@)
- */
-BOOL 
-WINAPI 
-GetThreadPreferredUILanguages( 
-  _In_       DWORD dwFlags,
-  _Out_      PULONG pulNumLanguages,
-  _Out_opt_  PZZWSTR pwszLanguagesBuffer,
-  _Inout_    PULONG pcchLanguagesBuffer
-)
-{
-	  NTSTATUS status;
-	  BOOL result;
-	  DWORD error; 
-
-	  status = RtlGetThreadPreferredUILanguages(dwFlags, pulNumLanguages, pwszLanguagesBuffer, pcchLanguagesBuffer);
-	  if (!NT_SUCCESS(status) )
-	  {
-		error = RtlNtStatusToDosError(status);
-		SetLastError(error);
-		result = FALSE;
-	  }
-	  else
-	  {
-		result = TRUE;
-	  }
-	  return result;
+	return EnumPreferredSystemUILanguages(flags,
+									count,
+									buffer,
+									size);
 }
 
 /***********************************************************************
@@ -798,187 +927,6 @@ GetThreadPreferredUILanguages(
 // }
 
 /*
- * @unimplemented
-*/
-BOOL 
-WINAPI 
-GetNLSVersionEx(
-  _In_      NLS_FUNCTION function,
-  _In_opt_  LPCWSTR lpLocaleName,
-  _Inout_   LPNLSVERSIONINFOEX lpVersionInformation
-)
-{
-	NLSVERSIONINFO lpVersionInformationOld;
-	LCID lcid = LocaleNameToLCID(lpLocaleName, 0);
-	
-	lpVersionInformationOld.dwNLSVersionInfoSize = sizeof(LPNLSVERSIONINFO);
-	
-	if(GetNLSVersion(function, lcid , &lpVersionInformationOld))
-	{
-		lpVersionInformation->dwNLSVersionInfoSize = sizeof(LPNLSVERSIONINFOEX);
-		lpVersionInformation->dwNLSVersion = lpVersionInformationOld.dwNLSVersion;
-		lpVersionInformation->dwDefinedVersion = lpVersionInformationOld.dwDefinedVersion;
-		lpVersionInformation->dwEffectiveId = LocaleNameToLCID(lpLocaleName, 0);		
-		return TRUE;
-	}else{
-		return FALSE;
-	}	
-}
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  GetNLSVersion
-//
-//  Return the version of a specific NLS function.
-//
-////////////////////////////////////////////////////////////////////////////
-BOOL WINAPI GetNLSVersion(
-    NLS_FUNCTION     function,
-    LCID             locale,
-    LPNLSVERSIONINFO lpVersionInformation)
-{
-	pGetNLSVersion nlsVersion;
-	
-	nlsVersion = (pGetNLSVersion) GetProcAddress(
-                            GetModuleHandleW(L"kernelfull"),
-                            "GetNLSVersion");
-							
-	if(nlsVersion!=NULL){
-		return nlsVersion(function, locale, lpVersionInformation);
-	}
-	
-	lpVersionInformation->dwNLSVersionInfoSize = sizeof(NLSVERSIONINFO);
-	lpVersionInformation->dwNLSVersion = 1;
-    lpVersionInformation->dwDefinedVersion = 1;
-	return TRUE;
-}
-
-int 
-WINAPI 
-FindNLSString(
-  _In_ 		 LCID Locale,
-  _In_       DWORD dwFindNLSStringFlags,
-  _In_       LPCWSTR lpStringSource,
-  _In_       int cchSource,
-  _In_       LPCWSTR lpStringValue,
-  _In_       int cchValue,
-  _Out_opt_  LPINT pcchFound
-)
-{
-	SetLastError(50);
-	return 0;
-}
-
-int 
-WINAPI 
-FindNLSStringEx(
-  _In_opt_   LPCWSTR lpLocaleName,
-  _In_       DWORD dwFindNLSStringFlags,
-  _In_       LPCWSTR lpStringSource,
-  _In_       int cchSource,
-  _In_       LPCWSTR lpStringValue,
-  _In_       int cchValue,
-  _Out_opt_  LPINT pcchFound,
-  _In_opt_   LPNLSVERSIONINFO lpVersionInformation,
-  _In_opt_   LPVOID lpReserved,
-  _In_opt_   LPARAM sortHandle
-)
-{
-  return 0;
-}	
-
-static BOOL get_dummy_preferred_ui_language( DWORD flags, ULONG *count, WCHAR *buffer, ULONG *size )
-{
-    LCTYPE type;
-    int lsize;
-
-    FIXME("(0x%x %p %p %p) returning a dummy value (current locale)\n", flags, count, buffer, size);
-
-    if (flags & MUI_LANGUAGE_ID)
-        type = LOCALE_ILANGUAGE;
-    else
-        type = LOCALE_SNAME;
-
-    lsize = GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, type, NULL, 0);
-    if (!lsize)
-    {
-        /* keep last error from callee */
-        return FALSE;
-    }
-    lsize++;
-    if (!*size)
-    {
-        *size = lsize;
-        *count = 1;
-        return TRUE;
-    }
-
-    if (lsize > *size)
-    {
-        SetLastError(ERROR_INSUFFICIENT_BUFFER);
-        return FALSE;
-    }
-
-    if (!GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, type, buffer, *size))
-    {
-        /* keep last error from callee */
-        return FALSE;
-    }
-
-    buffer[lsize-1] = 0;
-    *size = lsize;
-    *count = 1;
-    TRACE("returned variable content: %d, \"%s\", %d\n", *count, debugstr_w(buffer), *size);
-    return TRUE;
-
-}
-
-/******************************************************************************
- *           ResolveLocaleName (KERNEL32.@)
- */
-
-INT WINAPI ResolveLocaleName(LPCWSTR name, LPWSTR localename, INT len)
-{
-    FIXME("stub: %s, %p, %d\n", wine_dbgstr_w(name), localename, len);
-
-    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-    return 0;
-}
-
-/******************************************************************************
- *             GetUserPreferredUILanguages (KERNEL32.@)
- */
-BOOL 
-WINAPI 
-GetUserPreferredUILanguages( 
-	DWORD flags, 
-	ULONG *count, 
-	WCHAR *buffer, 
-	ULONG *size 
-)
-{
-    TRACE( "%u %p %p %p\n", flags, count, buffer, size );
-
-    if (flags & ~(MUI_LANGUAGE_NAME | MUI_LANGUAGE_ID))
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
-    if ((flags & MUI_LANGUAGE_NAME) && (flags & MUI_LANGUAGE_ID))
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
-    if (*size && !buffer)
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
-
-    return get_dummy_preferred_ui_language( flags, count, buffer, size );
-}
-
-/*
  * @unimplemented - need reimplementation
  */
 BOOL 
@@ -989,6 +937,5 @@ SetThreadPreferredUILanguages(
   _Out_opt_  PULONG pulNumLanguages
 )
 {
-	*pulNumLanguages = 1;
-	return TRUE;
+	return FALSE;
 }
