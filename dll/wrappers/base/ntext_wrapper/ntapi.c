@@ -706,23 +706,23 @@ NtQuerySectionInternal(
 	return Status;
 }
 
-/******************************************************************************
- *              NtQueryInformationThread  (NTDLL.@)
- *              ZwQueryInformationThread  (NTDLL.@)
- */
-NTSTATUS 
-WINAPI 
-NtQueryInformationThreadInternal( 
-	HANDLE handle, 
-	THREADINFOCLASS class,
-    void *data, 
-	ULONG length, 
-	ULONG *ret_len 
-)
-{
-	switch(class)
-	{
-		case ThreadGroupInformation:
+// /******************************************************************************
+ // *              NtQueryInformationThread  (NTDLL.@)
+ // *              ZwQueryInformationThread  (NTDLL.@)
+ // */
+// NTSTATUS 
+// WINAPI 
+// NtQueryInformationThreadInternal( 
+	// HANDLE handle, 
+	// THREADINFOCLASS class,
+    // void *data, 
+	// ULONG length, 
+	// ULONG *ret_len 
+// )
+// {
+	// switch(class)
+	// {
+		// case ThreadGroupInformation:
 			
-	}
-}
+	// }
+// }

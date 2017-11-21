@@ -1,26 +1,27 @@
-/*++
-
-Copyright (c) 2017 Shorthorn Project
-
+ /*
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+ *
+Copyright (c) 2015  Microsoft Corporation 
+ 
 Module Name:
 
-    ldrssrc.c
-
-Abstract:
-
-    This module implements Windows Store APIs
-
-Author:
-
-    Skulltrail 15-October-2017
-
-Revision History:
-
---*/
+    ldrrsrc.c
  
-#define NDEBUG
-
+ */
 #include <main.h>
+
 
 #define DOS_MAX_PATH_LENGTH   (260)
 
@@ -28,20 +29,13 @@ Revision History:
 
 #define LDR_RESOURCE_ID_NAME_MASK ((~(ULONG_PTR)0) << 16) /* lower 16bits clear */
 
+#define  USE_FIRSTAVAILABLE_LANGID   (0xFFFFFFFF)
+
 #define  MEMBLOCKSIZE 32
 
 #define  RESMODSIZE sizeof(ALT_RESOURCE_MODULE)
 
 #define LDR_DATAFILE_TO_VIEW(x) ((PVOID)(((ULONG_PTR)(x)) & ~(ULONG_PTR)1))
-
-#define LDR_FIND_RESOURCE_LANGUAGE_EXACT (0x00000004)
-
-#define LDR_FIND_RESOURCE_LANGUAGE_REDIRECT_VERSION (0x00000008)
-
-#define LDRP_FIND_RESOURCE_DIRECTORY (0x00000002)
-
-#define MUI_NEUTRAL_LANGID  MAKELANGID( LANG_ENGLISH, SUBLANG_ENGLISH_US )
-
 
 LANGID UILangId, InstallLangId, DefaultLangId, ImpersonateLangId;
 
@@ -51,45 +45,36 @@ ULONG AltResMemBlockCount;
 
 PALT_RESOURCE_MODULE AlternateResourceModules;
 
-//
-// This macro ensures that correct UI language will be retrieved.
-//
-#define GET_UI_LANGID()                                                            \
-{                                                                                                       \
-    if (!UILangId ||                                                                         \
-        ImpersonateLangId ||                                                             \
-        NtCurrentTeb()->IsImpersonating)                                          \
-    {                                                                                                   \
-        if (NT_SUCCESS( NtQueryDefaultUILanguage( &UILangId ) ))                    \
-        {                                                                                                \
-            ImpersonateLangId = NtCurrentTeb()->IsImpersonating? UILangId : 0;          \
-        }                                                                                                \
-    }                                                                                                    \
-}       
-
-NTSTATUS 
+BOOLEAN 
 NTAPI
-LdrpLoadResourceFromAlternativeModule(
-   IN PVOID DllHandle,
-   IN ULONG_PTR* ResourceIdPath,
-   IN ULONG ResourceIdPathLength,
-   IN ULONG Flags,
-   OUT PVOID *ResourceDirectoryOrData );
-
-BOOLEAN
-NTAPI
-LdrAlternateResourcesEnabled(
-    VOID
-    )
+LdrAlternateResourcesEnabled(void)
 {
-    return TRUE;
+  if ( (!UILangId || ImpersonateLangId || NtCurrentTeb()->IsImpersonating) && NtQueryDefaultUILanguage(&UILangId) >= 0 )
+    ImpersonateLangId = NtCurrentTeb()->IsImpersonating != 0 ? UILangId : 0;
+  return UILangId && (InstallLangId || NtQueryInstallUILanguage(&InstallLangId) >= 0);
 }
 
 PVOID
-NTAPI
 LdrGetAlternateResourceModuleHandle(
     IN PVOID Module
     )
+/*++
+
+Routine Description:
+
+    This function gets the alternate resource module from the table
+    containing the handle.
+
+Arguments:
+
+    Module - Module of which alternate resource module needs to loaded.
+
+Return Value:
+
+   Handle of the alternate resource module.
+
+--*/
+
 {
     ULONG ModuleIndex;
 
@@ -109,6 +94,25 @@ LdrpSetAlternateResourceModuleHandle(
     IN PVOID Module,
     IN PVOID AlternateModule
     )
+
+/*++
+
+Routine Description:
+
+    This function records the handle of the base module and alternate
+    resource module in an array.
+
+Arguments:
+
+    Module - The handle of the base module.
+    AlternateModule - The handle of the alternate resource module
+
+Return Value:
+
+    TBD.
+
+--*/
+
 {
     PALT_RESOURCE_MODULE NewModules;
 
@@ -163,6 +167,25 @@ LdrLoadAlternateResourceModuleEx(
     IN PVOID Module,
     IN LPCWSTR PathToAlternateModule OPTIONAL
     )
+
+/*++
+
+Routine Description:
+
+    This function does the acutally loading into memory of the alternate
+    resource module, or loads from the table if it was loaded before.
+
+Arguments:
+
+    Module - The handle of the base module.
+    PathToAlternateModule - Optional path from which module is being loaded.
+
+Return Value:
+
+    Handle to the alternate resource module.
+
+--*/
+
 {
     PVOID AlternateModule, DllBase;
     PLDR_DATA_TABLE_ENTRY Entry;
@@ -174,7 +197,7 @@ LdrLoadAlternateResourceModuleEx(
     PVOID FreeBuffer;
     LPWSTR BaseDllName, p;
     WCHAR DllPathName[DOS_MAX_PATH_LENGTH];
-    ULONG DllPathNameLength, CopyCount;//,BaseDllNameLength;
+    ULONG DllPathNameLength, BaseDllNameLength, CopyCount;
     ULONG Digit;
     int i, RetryCount;
     WCHAR AltModulePath[DOS_MAX_PATH_LENGTH];
@@ -190,6 +213,12 @@ LdrLoadAlternateResourceModuleEx(
     UNICODE_STRING AltModulePathList[5];
     UNICODE_STRING NtSystemRoot;
 	UNICODE_STRING LocaleName;
+	
+	NtQueryDefaultUILanguage(&UILangId);
+
+    /*if (!LdrAlternateResourcesEnabled()) {
+        return NULL;
+        }*/
 
     RtlEnterCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
 
@@ -197,8 +226,8 @@ LdrLoadAlternateResourceModuleEx(
 	if(!CustomLangId)
 	{
 		if ( (!UILangId || ImpersonateLangId || NtCurrentTeb()->IsImpersonating) && ZwQueryDefaultUILanguage(&UILangId) >= 0 )
-			ImpersonateLangId = NtCurrentTeb()->IsImpersonating != 0 ? UILangId : 0;
-		CustomLangId = UILangId;
+				ImpersonateLangId = NtCurrentTeb()->IsImpersonating != 0 ? UILangId : 0;
+			CustomLangId = UILangId;
 	}
 	//AlternateModule = LdrGetAlternateResourceModuleHandle(Module, CustomLangId);
     if (AlternateModule == NO_ALTERNATE_RESOURCE_MODULE){
@@ -247,7 +276,7 @@ LdrLoadAlternateResourceModuleEx(
             );
 
         BaseDllName = p ;
-        //BaseDllNameLength = CopyCount * sizeof(WCHAR) - DllPathNameLength;
+        BaseDllNameLength = CopyCount * sizeof(WCHAR) - DllPathNameLength;
 
         }
     else{
@@ -268,7 +297,7 @@ LdrLoadAlternateResourceModuleEx(
             DllPathNameLength);
 
         BaseDllName = Entry->BaseDllName.Buffer;
-        //BaseDllNameLength = Entry->BaseDllName.Length;
+        BaseDllNameLength = Entry->BaseDllName.Length;
         }
 
     DllPathName[DllPathNameLength / sizeof(WCHAR)] = UNICODE_NULL;
@@ -554,7 +583,7 @@ Return Value:
             );
     }
 
-     _SEH2_TRY {
+    __try {
         if (ModuleIndex != AlternateResourceModuleCount - 1){
             //
             //  Consolidate the array.  Skip this if unloaded item
@@ -567,11 +596,11 @@ Return Value:
                 );
             }
         }
-    _SEH2_EXCEPT (EXCEPTION_EXECUTE_HANDLER) {
+    __except (EXCEPTION_EXECUTE_HANDLER) {
         RtlLeaveCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
         return FALSE;
         }
-	_SEH2_END 
+
     AlternateResourceModuleCount --;
 
     if (AlternateResourceModuleCount == 0){
@@ -676,6 +705,16 @@ Return Value:
     return TRUE;
 }
 
+/**********************************************************************
+ *  is_data_file_module
+ *
+ * Check if a module handle is for a LOAD_LIBRARY_AS_DATAFILE module.
+ */
+static int is_data_file_module( PVOID BaseAddress )
+{
+    return (ULONG_PTR)BaseAddress & 1;
+}
+
 int page_fault(ULONG ExceptionCode) 	
 {
     if (ExceptionCode == EXCEPTION_ACCESS_VIOLATION ||
@@ -727,7 +766,7 @@ Arguments:
     PIMAGE_SECTION_HEADER NtSection;
     NTSTATUS Status = STATUS_SUCCESS;
 
-    RTL_PAGED_CODE;
+    RTL_PAGED_CODE();
 
     _SEH2_TRY {
         ResourceDirectory = (PIMAGE_RESOURCE_DIRECTORY)
@@ -799,10 +838,9 @@ Arguments:
             *Size = ResourceDataEntry->Size;
         }
 
-    }_SEH2_EXCEPT (EXCEPTION_EXECUTE_HANDLER) {
-        Status = _SEH2_GetExceptionCode();
+    }    _SEH2_EXCEPT (EXCEPTION_EXECUTE_HANDLER) {
+        Status = GetExceptionCode();
     }
-	_SEH2_END
 
     return Status;
 }
@@ -814,13 +852,41 @@ LdrpAccessResourceData(
     OUT PVOID *Address OPTIONAL,
     OUT PULONG Size OPTIONAL
     )
+
+/*++
+
+Routine Description:
+
+    This function returns the data necessary to actually examine the
+    contents of a particular resource.
+
+Arguments:
+
+    DllHandle - Supplies a handle to the image file that the resource is
+        contained in.
+
+    ResourceDataEntry - Supplies a pointer to the resource data entry in
+   the resource data directory of the image file specified by the
+        DllHandle parameter.  This pointer should have been one returned
+        by the LdrFindResource function.
+
+    Address - Optional pointer to a variable that will receive the
+        address of the resource specified by the first two parameters.
+
+    Size - Optional pointer to a variable that will receive the size of
+        the resource specified by the first two parameters.
+
+--*/
+
 {
     PIMAGE_RESOURCE_DIRECTORY ResourceDirectory;
     ULONG ResourceSize;
     PIMAGE_NT_HEADERS NtHeaders;
-    NTSTATUS Status = STATUS_SUCCESS;
+    ULONG_PTR VirtualAddressOffset;
+    PIMAGE_SECTION_HEADER NtSection;
+	NTSTATUS Status = STATUS_SUCCESS;
 
-    RTL_PAGED_CODE;
+    RTL_PAGED_CODE();
 
     ResourceDirectory = (PIMAGE_RESOURCE_DIRECTORY)
         RtlImageDirectoryEntryToData(DllHandle,
@@ -830,49 +896,35 @@ LdrpAccessResourceData(
                                      );
     if (!ResourceDirectory) {
         Status = STATUS_RESOURCE_DATA_NOT_FOUND;
-        goto Exit;
     }
 
     if ((ULONG_PTR)ResourceDataEntry < (ULONG_PTR) ResourceDirectory ){
         DllHandle = LdrLoadAlternateResourceModule (DllHandle, NULL);
-        if (!DllHandle){
-            if (!InstallLangId){
-               Status = NtQueryInstallUILanguage (&InstallLangId);
-
-               if (!NT_SUCCESS( Status )) {
-                goto Exit;
-                }
-            }
-            if (InstallLangId != UILangId) {
-                DllHandle = LdrLoadAlternateResourceModuleEx (InstallLangId, DllHandle, NULL);
-            }
-        }
     } else{
-        NtHeaders = RtlImageNtHeader(LDR_DATAFILE_TO_VIEW(DllHandle));
+        NtHeaders = RtlImageNtHeader(
+                        (PVOID)((ULONG_PTR)DllHandle & ~0x00000001)
+                        );
         if (NtHeaders) {
             // Find the bounds of the image so we can see if this resource entry is in an alternate
             // resource dll.
 
-            ULONG_PTR ImageStart = (ULONG_PTR)LDR_DATAFILE_TO_VIEW(DllHandle);
+            ULONG_PTR ImageStart = (ULONG_PTR)DllHandle & ~0x00000001;
             SIZE_T ImageSize = 0;
 
-            if (LDR_IS_DATAFILE(DllHandle)) {
-
+            if ((ULONG_PTR)DllHandle & 0x00000001) {
                 // mapped as datafile.  Ask mm for the size
-
-                NTSTATUS xStatus;
                 MEMORY_BASIC_INFORMATION MemInfo;
 
-                xStatus = NtQueryVirtualMemory(
+                Status = NtQueryVirtualMemory(
                             NtCurrentProcess(),
                             (PVOID) ImageStart,
                             MemoryBasicInformation,
-                            &MemInfo,
+                            (PVOID)&MemInfo,
                             sizeof(MemInfo),
                             NULL
                             );
 
-                if ( !NT_SUCCESS(xStatus) ) {
+                if ( !NT_SUCCESS(Status) ) {
                     ImageSize = 0;
                 } else {
                     ImageSize = MemInfo.RegionSize;
@@ -883,36 +935,18 @@ LdrpAccessResourceData(
 
             if (!(((ULONG_PTR)ResourceDataEntry >= ImageStart) && ((ULONG_PTR)ResourceDataEntry < (ImageStart + ImageSize)))) {
                 // Doesn't fall within the specified image.  Must be an alternate dll.
-            DllHandle = LdrLoadAlternateResourceModule (DllHandle, NULL);
-            if (!DllHandle) {
-                if (!InstallLangId){
-                   Status = NtQueryInstallUILanguage (&InstallLangId);
-                   if (!NT_SUCCESS( Status )) {
-                        goto Exit;
-                        }
-                    }
-                if (InstallLangId != UILangId) {
-                    DllHandle = LdrLoadAlternateResourceModuleEx (InstallLangId, DllHandle, NULL);
-                    }
-                }
+                DllHandle = LdrLoadAlternateResourceModule (DllHandle, NULL);
             }
         }
     }
 
-    if (!DllHandle){
+	if ( DllHandle )
+	{
+		Status = LdrpAccessResourceDataNoMultipleLanguage(DllHandle, ResourceDataEntry, Address, Size);
+	}else{
         Status = STATUS_RESOURCE_DATA_NOT_FOUND;
-        goto Exit;
     }
-    Status =
-        LdrpAccessResourceDataNoMultipleLanguage(
-            DllHandle,
-            ResourceDataEntry,
-            Address,
-            Size
-            );
-
-Exit:
-    return Status;
+	return Status;
 }
 
 
@@ -925,8 +959,37 @@ LdrAccessResource(
     OUT PULONG Size OPTIONAL
     )
 
+/*++
+
+Routine Description:
+
+    This function locates the address of the specified resource in the
+    specified DLL and returns its address.
+
+Arguments:
+
+    DllHandle - Supplies a handle to the image file that the resource is
+        contained in.
+
+    ResourceDataEntry - Supplies a pointer to the resource data entry in
+        the resource data section of the image file specified by the
+        DllHandle parameter.  This pointer should have been one returned
+        by the LdrFindResource function.
+
+    Address - Optional pointer to a variable that will receive the
+        address of the resource specified by the first two parameters.
+
+    Size - Optional pointer to a variable that will receive the size of
+        the resource specified by the first two parameters.
+
+Return Value:
+
+    TBD
+
+--*/
+
 {
-    RTL_PAGED_CODE;
+    RTL_PAGED_CODE();
 
     return LdrpAccessResourceData(
       DllHandle,
@@ -936,11 +999,26 @@ LdrAccessResource(
       );
 }
 
+int 
+push_language( 	
+	USHORT *  	list,
+	ULONG  	pos,
+	WORD  	lang 
+) 		
+{
+    ULONG i;
+    for (i = 0; i < pos; i++) 
+		if (list[i] == lang) 
+			return pos;
+    list[pos++] = lang;
+    return pos;
+}
+
 LONG
 LdrpCompareResourceNames_U(
     IN ULONG_PTR ResourceName,
-    IN const IMAGE_RESOURCE_DIRECTORY* ResourceDirectory,
-    IN const IMAGE_RESOURCE_DIRECTORY_ENTRY* ResourceDirectoryEntry
+    IN PIMAGE_RESOURCE_DIRECTORY ResourceDirectory,
+    IN PIMAGE_RESOURCE_DIRECTORY_ENTRY ResourceDirectoryEntry
     )
 {
     LONG li;
@@ -974,711 +1052,276 @@ LdrpCompareResourceNames_U(
         }
 }
 
-// Language ids are 16bits so any value with any bits
-// set above 16 should be ok, and this value only has
-// to fit in a ULONG_PTR. 0x10000 should be sufficient.
-// The value used is actually 0xFFFF regardless of 32bit or 64bit,
-// I guess assuming this is not an actual langid, which it isn't,
-// due to the relatively small number of languages, around 70.
-#define  USE_FIRSTAVAILABLE_LANGID   (0xFFFFFFFF & ~LDR_RESOURCE_ID_NAME_MASK)
-NTSTATUS
-LdrpSearchResourceSection_U(
-    IN PVOID DllHandle,
-    IN const ULONG_PTR* ResourceIdPath,
-    IN ULONG ResourceIdPathLength,
-    IN ULONG Flags,
-    OUT PVOID *ResourceDirectoryOrData
-    )
+PIMAGE_RESOURCE_DIRECTORY 
+LdrpSearchResourceSection_U_by_id( 	
+	PIMAGE_RESOURCE_DIRECTORY  	dir,
+	WORD  	id,
+	PVOID  	root,
+	int  	want_dir 
+) 		
 {
-    NTSTATUS Status;
-    PIMAGE_RESOURCE_DIRECTORY LanguageResourceDirectory, ResourceDirectory, TopResourceDirectory;
-    PIMAGE_RESOURCE_DIRECTORY_ENTRY ResourceDirEntLow;
-    PIMAGE_RESOURCE_DIRECTORY_ENTRY ResourceDirEntMiddle;
-    PIMAGE_RESOURCE_DIRECTORY_ENTRY ResourceDirEntHigh;
-    PIMAGE_RESOURCE_DATA_ENTRY ResourceEntry;
-    USHORT n, half;
-    LONG dir;
-    ULONG size;
-    ULONG_PTR ResourceIdRetry;
-    ULONG RetryCount;
-    LANGID NewLangId;
-    const ULONG_PTR* IdPath = ResourceIdPath;
-    ULONG IdPathLength = ResourceIdPathLength;
-    BOOLEAN fIsNeutral = FALSE;
-    LANGID GivenLanguage;
-    LCID DefaultThreadLocale, DefaultSystemLocale;
-    PVOID AltResourceDllHandle = NULL;
-    ULONG_PTR UIResourceIdPath[3];
-	
-    RTL_PAGED_CODE;
+    const IMAGE_RESOURCE_DIRECTORY_ENTRY *entry;
+    int min, max, pos;
 
-    _SEH2_TRY {
-        TopResourceDirectory = (PIMAGE_RESOURCE_DIRECTORY)
-            RtlImageDirectoryEntryToData(DllHandle,
-                                         TRUE,
-                                         IMAGE_DIRECTORY_ENTRY_RESOURCE,
-                                         &size
-                                         );
-        if (!TopResourceDirectory) {
-            return( STATUS_RESOURCE_DATA_NOT_FOUND );
+    entry = (const IMAGE_RESOURCE_DIRECTORY_ENTRY *)(dir + 1);
+    min = dir->NumberOfNamedEntries;
+    max = min + dir->NumberOfIdEntries - 1;
+    while (min <= max)
+    {
+        pos = (min + max) / 2;
+        if (entry[pos].Id == id)
+        {
+            if (!entry[pos].DataIsDirectory == !want_dir)
+            {
+                DbgPrint("root %p dir %p id %04x ret %p\n",
+                       root, dir, id, (const char*)root + entry[pos].OffsetToDirectory);
+                return (IMAGE_RESOURCE_DIRECTORY *)((char *)root + entry[pos].OffsetToDirectory);
+            }
+            break;
         }
+        if (entry[pos].Id > id) max = pos - 1;
+        else min = pos + 1;
+    }
+    DbgPrint("root %p dir %p id %04x not found\n", root, dir, id );
+    return NULL;
+}
 
-        ResourceDirectory = TopResourceDirectory;
-        ResourceIdRetry = USE_FIRSTAVAILABLE_LANGID;
-        RetryCount = 0;
-        ResourceEntry = NULL;
-        LanguageResourceDirectory = NULL;
-        while (ResourceDirectory != NULL && ResourceIdPathLength--) {
-            //
-            // If search path includes a language id, then attempt to
-            // match the following language ids in this order:
-            //
-            //   (0)  use given language id
-            //   (1)  use primary language of given language id
-            //   (2)  use id 0  (neutral resource)
-            //   (4)  use user UI language
-            //
-            // If the PRIMARY language id is ZERO, then ALSO attempt to
-            // match the following language ids in this order:
-            //
-            //   (3)  use thread language id for console app
-            //   (4)  use user UI language
-            //   (5)  use lang id of TEB for windows app if it is different from user locale
-            //   (6)  use UI lang from exe resource
-            //   (7)  use primary UI lang from exe resource
-            //   (8)  use Install Language
-            //   (9)  use lang id from user's locale id
-            //   (10)  use primary language of user's locale id
-            //   (11) use lang id from system default locale id
-            //   (12) use lang id of system default locale id
-            //   (13) use primary language of system default locale id
-            //   (14) use US English lang id
-            //   (15) use any lang id that matches requested info
-            //
-            if (ResourceIdPathLength == 0 && IdPathLength == 3) {
-                LanguageResourceDirectory = ResourceDirectory;
-                }
+PIMAGE_RESOURCE_DIRECTORY 
+LdrpSearchResourceSection_U_by_name( 	
+	PIMAGE_RESOURCE_DIRECTORY  	dir,
+	LPCWSTR  	name,
+	PVOID  	root,
+	int  want_dir 
+) 		
+{
+    const IMAGE_RESOURCE_DIRECTORY_ENTRY *entry;
+    const IMAGE_RESOURCE_DIR_STRING_U *str;
+    int min, max, res, pos;
+    size_t namelen;
 
-            if (LanguageResourceDirectory != NULL) {
-                GivenLanguage = (LANGID)IdPath[ 2 ];
-                fIsNeutral = (PRIMARYLANGID( GivenLanguage ) == LANG_NEUTRAL);
-TryNextLangId:
-                switch( RetryCount++ ) {
-                    case 0:     // Use given language id
-                        NewLangId = GivenLanguage;
-                        break;
-
-                    case 1:     // Use primary language of given language id
-                        if ( Flags & LDR_FIND_RESOURCE_LANGUAGE_EXACT) {
-                            //
-                            //  Did not find an exact language match.
-                            //  Stop looking.
-                            //
-                            goto ReturnFailure;
-                        }
-                        NewLangId = PRIMARYLANGID( GivenLanguage );
-                        break;
-
-                    case 2:     // Use id 0  (neutral resource)
-                        NewLangId = 0;
-                        break;
-
-                    case 3:     // Use thread langid if caller is a console app
-                        if ( !fIsNeutral ) {
-                            // Stop looking - Not in the neutral case
-                            NewLangId = (LANGID)ResourceIdRetry;
-                            break;
-                        }
-
-                        if (NtCurrentPeb()->ProcessParameters->ConsoleHandle)
-                        {
-                            NewLangId = LANGIDFROMLCID(NtCurrentTeb()->CurrentLocale);
-                        }
-                        else
-                        {
-                            NewLangId = (LANGID)ResourceIdRetry;
-                        }
-                        break;
-
-                    case 4:     // Use user's default UI language
-                        GET_UI_LANGID();
-                        if (!UILangId){
-                            NewLangId = (LANGID)ResourceIdRetry;
-                            break;
-                        }
-
-                        // Don't load alternative modules for console process if UI language doesn't match system locale
-                        if (NtCurrentPeb()->ProcessParameters->ConsoleHandle &&
-                            LANGIDFROMLCID(NtCurrentTeb()->CurrentLocale) != UILangId)
-                        {
-                            NewLangId = (LANGID)ResourceIdRetry;
-                            break;
-                        }
-
-                        NewLangId = UILangId;
-
-                        //
-                        // Arabic/Hebrew MUI files may contain resources with LANG ID different than 401/40d.
-                        // e.g. Comdlg32.dll has two sets of Arabic/Hebrew resources one mirrored (401/40d)
-                        // and one flipped (801/80d).
-                        //
-                        if( !fIsNeutral &&
-                            ((PRIMARYLANGID (GivenLanguage) == LANG_ARABIC) || (PRIMARYLANGID (GivenLanguage) == LANG_HEBREW)) &&
-                            (PRIMARYLANGID (GivenLanguage) == PRIMARYLANGID (NewLangId))) {
-                                NewLangId = GivenLanguage;
-                        }
-
-                            //
-                            // Bug #246044 WeiWu 12/07/00
-                            // BiDi modules use version block FileDescription field to store LRM markers,
-                            // LDR_FIND_RESOURCE_LANGUAGE_REDIRECT_VERSION will allow lpk.dll to get version resource from MUI alternative modules.
-                            //
-                        if ( ( (IdPath[0] != (ULONG_PTR)RT_VERSION) && (IdPath[0] != (ULONG_PTR)RT_MANIFEST) ) ||
-                            (Flags & LDR_FIND_RESOURCE_LANGUAGE_REDIRECT_VERSION)) {
-                            //
-                            //  Load alternate resource dll when:
-                            //      1. language is neutral
-                            //         or
-                            //         Given language is not tried.
-                            //      and
-                            //      2. the resource to load is not a version info.
-                            //
-                            AltResourceDllHandle=LdrLoadAlternateResourceModule(
-                                                    DllHandle,
-                                                    NULL);
-
-                            if (!AltResourceDllHandle){
-                                //
-                                //  Alternate resource dll not available.
-                                //  Skip this lookup.
-                                //
-                                NewLangId = (LANGID)ResourceIdRetry;
-                                break;
-                            }
-
-                            //
-                            //  Map to alternate resource dll and search
-                            //  it instead.
-                            //
-
-                            UIResourceIdPath[0]=IdPath[0];
-                            UIResourceIdPath[1]=IdPath[1];
-                            UIResourceIdPath[2]=NewLangId;
-
-                            Status = LdrpSearchResourceSection_U(
-                                        AltResourceDllHandle,
-                                        UIResourceIdPath,
-                                        3,
-                                        Flags | LDR_FIND_RESOURCE_LANGUAGE_EXACT,
-                                        (PVOID *)ResourceDirectoryOrData
-                                        );
-
-                            if (NT_SUCCESS(Status)){
-                                //
-                                // We sucessfully found alternate resource,
-                                // return it.
-                                //
-                                return Status;
-                            }
-                        }
-                        //
-                        //  Caller does not want alternate resource, or
-                        //  alternate resource not found.
-                        //
-                        NewLangId = (LANGID)ResourceIdRetry;
-                        break;
-
-                    case 5:     // Use langid of the thread locale if caller is a Windows app and thread locale is different from user locale
-                        if ( !fIsNeutral ) {
-                            // Stop looking - Not in the neutral case
-                            goto ReturnFailure;
-                            break;
-                        }
-
-                        if (!NtCurrentPeb()->ProcessParameters->ConsoleHandle && NtCurrentTeb()){
-                            Status = NtQueryDefaultLocale(
-                                        TRUE,
-                                        &DefaultThreadLocale
-                                        );
-                            if (NT_SUCCESS( Status ) &&
-                                DefaultThreadLocale !=
-                                NtCurrentTeb()->CurrentLocale) {
-                                //
-                                // Thread locale is different from
-                                // default locale.
-                                //
-                                NewLangId = LANGIDFROMLCID(NtCurrentTeb()->CurrentLocale);
-                                break;
-                            }
-                        }
-
-
-                        NewLangId = (LANGID)ResourceIdRetry;
-                        break;
-
-                    case 6:   // UI language from the executable resource
-
-                        if (!UILangId){
-                            NewLangId = (LANGID)ResourceIdRetry;
-                        } else {
-                            NewLangId = UILangId;
-                        }
-                        break;
-
-                    case 7:   // Parimary lang of UI language from the executable resource
-
-                        if (!UILangId){
-                            NewLangId = (LANGID)ResourceIdRetry;
-                        } else {
-                            NewLangId = PRIMARYLANGID( (LANGID) UILangId );
-                        }
-                        break;
-
-                    case 8:   // Use install -native- language
-                        //
-                        // Thread locale is the same as the user locale, then let's
-                        // try loading the native (install) ui language resources.
-                        //
-                        if (!InstallLangId){
-                            Status = NtQueryInstallUILanguage(&InstallLangId);
-                            if (!NT_SUCCESS( Status )) {
-                                //
-                                // Failed reading key.  Skip this lookup.
-                                //
-                                NewLangId = (LANGID)ResourceIdRetry;
-                                break;
-
-                            }
-                        }
-
-                        NewLangId = InstallLangId;
-                        break;
-
-                    case 9:     // Use lang id from locale in TEB
-                        if (SUBLANGID( GivenLanguage ) == SUBLANG_SYS_DEFAULT) {
-                            // Skip over all USER locale options
-                            DefaultThreadLocale = 0;
-                            RetryCount += 2;
-                            break;
-                        }
-
-                        if (NtCurrentTeb() != NULL) {
-                            NewLangId = LANGIDFROMLCID(NtCurrentTeb()->CurrentLocale);
-                        }
-                        break;
-
-                    case 10:     // Use User's default locale
-                        Status = NtQueryDefaultLocale( TRUE, &DefaultThreadLocale );
-                        if (NT_SUCCESS( Status )) {
-                            NewLangId = LANGIDFROMLCID(DefaultThreadLocale);
-                            break;
-                            }
-
-                        RetryCount++;
-                        break;
-
-                    case 11:     // Use primary language of User's default locale
-                        NewLangId = PRIMARYLANGID( (LANGID)ResourceIdRetry );
-                        break;
-
-                    case 12:     // Use System default locale
-                        Status = NtQueryDefaultLocale( FALSE, &DefaultSystemLocale );
-                        if (!NT_SUCCESS( Status )) {
-                            RetryCount++;
-                            break;
-                        }
-                        if (DefaultSystemLocale != DefaultThreadLocale) {
-                            NewLangId = LANGIDFROMLCID(DefaultSystemLocale);
-                            break;
-                        }
-
-                        RetryCount += 2;
-                        // fall through
-
-                    case 14:     // Use US English language
-                        NewLangId = MAKELANGID( LANG_ENGLISH, SUBLANG_ENGLISH_US );
-                        break;
-
-                    case 13:     // Use primary language of System default locale
-                        NewLangId = PRIMARYLANGID( (LANGID)ResourceIdRetry );
-                        break;
-
-                    case 15:     // Take any lang id that matches
-                        NewLangId = USE_FIRSTAVAILABLE_LANGID;
-                        break;
-                    default:    // No lang ids to match
-                        goto ReturnFailure;
-                        break;
-                }
-
-                //
-                // If looking for a specific language id and same as the
-                // one we just looked up, then skip it.
-                //
-                if (NewLangId != USE_FIRSTAVAILABLE_LANGID &&
-                    NewLangId == ResourceIdRetry
-                   ) {
-                    goto TryNextLangId;
-                    }
-
-                //
-                // Try this new language Id
-                //
-                ResourceIdRetry = (ULONG_PTR)NewLangId;
-                ResourceIdPath = &ResourceIdRetry;
-                ResourceDirectory = LanguageResourceDirectory;
-                }
-
-            n = ResourceDirectory->NumberOfNamedEntries;
-            ResourceDirEntLow = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(ResourceDirectory+1);
-            if (!(*ResourceIdPath & LDR_RESOURCE_ID_NAME_MASK)) { // No string(name),so we need ID
-                ResourceDirEntLow += n;
-                n = ResourceDirectory->NumberOfIdEntries;
-                }
-
-            if (!n) {
-                ResourceDirectory = NULL;
-                goto NotFound;  // Resource directory contains zero types or names or langID.
-                }
-
-            if (LanguageResourceDirectory != NULL &&
-                *ResourceIdPath == USE_FIRSTAVAILABLE_LANGID
-               ) {
-                ResourceDirectory = NULL;
-                ResourceIdRetry = ResourceDirEntLow->Name;
-                ResourceEntry = (PIMAGE_RESOURCE_DATA_ENTRY)
-                    ((PCHAR)TopResourceDirectory +
-                            ResourceDirEntLow->OffsetToData
-                    );
-
-                break;
-                }
-
-            ResourceDirectory = NULL;
-            ResourceDirEntHigh = ResourceDirEntLow + n - 1;
-            while (ResourceDirEntLow <= ResourceDirEntHigh) {
-                if ((half = (n >> 1)) != 0) {
-                    ResourceDirEntMiddle = ResourceDirEntLow;
-                    if (*(PUCHAR)&n & 1) {
-                        ResourceDirEntMiddle += half;
-                        }
-                    else {
-                        ResourceDirEntMiddle += half - 1;
-                        }
-                    dir = LdrpCompareResourceNames_U( *ResourceIdPath,
-                                                      TopResourceDirectory,
-                                                      ResourceDirEntMiddle
-                                                    );
-                    if (!dir) {
-                        if (ResourceDirEntMiddle->DataIsDirectory) {
-                            ResourceDirectory = (PIMAGE_RESOURCE_DIRECTORY)
-                    ((PCHAR)TopResourceDirectory +
-                                    ResourceDirEntMiddle->OffsetToDirectory
-                                );
-                            }
-                        else {
-                            ResourceDirectory = NULL;
-                            ResourceEntry = (PIMAGE_RESOURCE_DATA_ENTRY)
-                                ((PCHAR)TopResourceDirectory +
-                                 ResourceDirEntMiddle->OffsetToData
-                                );
-                            }
-
-                        break;
-                        }
-                    else {
-                        if (dir < 0) {  // Order in the resource: Name, ID.
-                            ResourceDirEntHigh = ResourceDirEntMiddle - 1;
-                            if (*(PUCHAR)&n & 1) {
-                                n = half;
-                                }
-                            else {
-                                n = half - 1;
-                                }
-                            }
-                        else {
-                            ResourceDirEntLow = ResourceDirEntMiddle + 1;
-                            n = half;
-                            }
-                        }
-                    }
-                else {
-                    if (n != 0) {
-                        dir = LdrpCompareResourceNames_U( *ResourceIdPath,
-                          TopResourceDirectory,
-                                                          ResourceDirEntLow
-                                                        );
-                        if (!dir) {   // find, or it fail to set ResourceDirectory so go to NotFound.
-                            if (ResourceDirEntLow->DataIsDirectory) {
-                                ResourceDirectory = (PIMAGE_RESOURCE_DIRECTORY)
-                                    ((PCHAR)TopResourceDirectory +
-                                        ResourceDirEntLow->OffsetToDirectory
-                                    );
-                                }
-                            else {
-                                ResourceEntry = (PIMAGE_RESOURCE_DATA_ENTRY)
-                                    ((PCHAR)TopResourceDirectory +
-                      ResourceDirEntLow->OffsetToData
-                                    );
-                                }
-                            }
-                        }
-
-                    break;
-                    }
-                }
-
-            ResourceIdPath++;
+    if (!((ULONG_PTR)name & 0xFFFF0000)) return LdrpSearchResourceSection_U_by_id( dir, (ULONG_PTR)name & 0xFFFF, root, want_dir );
+    entry = (const IMAGE_RESOURCE_DIRECTORY_ENTRY *)(dir + 1);
+    namelen = wcslen(name);
+    min = 0;
+    max = dir->NumberOfNamedEntries - 1;
+    while (min <= max)
+    {
+        pos = (min + max) / 2;
+        str = (const IMAGE_RESOURCE_DIR_STRING_U *)((const char *)root + entry[pos].NameOffset);
+        res = _wcsnicmp( name, str->NameString, str->Length );
+        if (!res && namelen == str->Length)
+        {
+            if (!entry[pos].DataIsDirectory == !want_dir)
+            {
+                DbgPrint("root %p dir %p name %ws ret %p\n",
+                       root, dir, name, (const char*)root + entry[pos].OffsetToDirectory);
+                return (IMAGE_RESOURCE_DIRECTORY *)((PCHAR)root + entry[pos].OffsetToDirectory);
             }
-
-        if (ResourceEntry != NULL && !(Flags & LDRP_FIND_RESOURCE_DIRECTORY)) {
-            *ResourceDirectoryOrData = (PVOID)ResourceEntry;
-            Status = STATUS_SUCCESS;
-            }
-        else
-        if (ResourceDirectory != NULL && (Flags & LDRP_FIND_RESOURCE_DIRECTORY)) {
-            *ResourceDirectoryOrData = (PVOID)ResourceDirectory;
-            Status = STATUS_SUCCESS;
-            }
-        else {
-NotFound:
-            switch( IdPathLength - ResourceIdPathLength) {
-                case 3:     Status = STATUS_RESOURCE_LANG_NOT_FOUND; break;
-                case 2:     Status = STATUS_RESOURCE_NAME_NOT_FOUND; break;
-                case 1:     Status = STATUS_RESOURCE_TYPE_NOT_FOUND; break;
-                default:    Status = STATUS_INVALID_PARAMETER; break;
-                }
-            }
-
-        if (Status == STATUS_RESOURCE_LANG_NOT_FOUND &&
-            LanguageResourceDirectory != NULL
-           ) {
-            ResourceEntry = NULL;
-            goto TryNextLangId;
-ReturnFailure: ;
-            Status = STATUS_RESOURCE_LANG_NOT_FOUND;
-            }
-        //
-        // Load resource from alternative modules if
-        // resource type doesn't exist in the main DLL.
-        //
-        else if (Status == STATUS_RESOURCE_TYPE_NOT_FOUND &&
-            3 == IdPathLength ) {
-                GET_UI_LANGID();
-
-                if (UILangId) {
-                    UIResourceIdPath[0]=IdPath[0];
-                    UIResourceIdPath[1]=IdPath[1];
-                    UIResourceIdPath[2]=UILangId;
-
-//                  ASSERT (IdPath[0] != RT_VERSION);
-                    if (IdPath[0] != (ULONG_PTR)RT_MANIFEST && IdPath[0] != (ULONG_PTR)RT_VERSION) {
-                        Status = LdrpLoadResourceFromAlternativeModule(DllHandle,
-                                    UIResourceIdPath,
-                                    3,
-                                    Flags,
-                                    ResourceDirectoryOrData );
-                    } else {
-                        }
-
-                }
-            }
+            break;
         }
-    _SEH2_EXCEPT (EXCEPTION_EXECUTE_HANDLER) {
-        Status = _SEH2_GetExceptionCode();
-        }
+        if (res < 0) max = pos - 1;
+        else min = pos + 1;
+    }
+    DbgPrint("root %p dir %p name %ws not found\n", root, dir, name);
+    return NULL;
+}
 
-	_SEH2_END
-    return Status;
+PIMAGE_RESOURCE_DIRECTORY 
+find_first_entry( 	
+	PIMAGE_RESOURCE_DIRECTORY  	dir,
+	PVOID root,
+	int want_dir 
+) 		
+{
+    const IMAGE_RESOURCE_DIRECTORY_ENTRY *entry = (const IMAGE_RESOURCE_DIRECTORY_ENTRY *)(dir + 1);
+    int pos;
+
+    for (pos = 0; pos < dir->NumberOfNamedEntries + dir->NumberOfIdEntries; pos++)
+    {
+        if (!entry[pos].DataIsDirectory == !want_dir)
+            return (IMAGE_RESOURCE_DIRECTORY *)((PCHAR)root + entry[pos].OffsetToDirectory);
+    }
+    return NULL;
 }
 
 NTSTATUS 
-NTAPI
-LdrpLoadResourceFromAlternativeModule(
-   IN PVOID DllHandle,
-   IN ULONG_PTR* ResourceIdPath,
-   IN ULONG ResourceIdPathLength,
-   IN ULONG Flags,
-   OUT PVOID *ResourceDirectoryOrData )
+LdrpSearchResourceSection_U( 	
+	PVOID  	BaseAddress,
+	LDR_RESOURCE_INFO *  	info,
+	ULONG  	level,
+	PVOID *  	ret,
+	int  	want_dir 
+) 		
 {
-    NTSTATUS Status = STATUS_RESOURCE_DATA_NOT_FOUND;
-    PVOID AltResourceDllHandle = NULL;
-    LANGID MUIDirLang;
+    ULONG size;
+    PVOID root;
+    PIMAGE_RESOURCE_DIRECTORY resdirptr;
+    USHORT list[9];  /* list of languages to try */
+    int i, pos = 0;
+    LCID user_lcid, system_lcid;
+	PVOID AlternateModule;
+	NTSTATUS Status;
 
-    if (3 != ResourceIdPathLength)
-        return Status;
+    root = RtlImageDirectoryEntryToData( BaseAddress, TRUE, IMAGE_DIRECTORY_ENTRY_RESOURCE, &size );
+	
+	AlternateModule = LdrLoadAlternateResourceModule(BaseAddress, NULL);
+	if(AlternateModule)
+	{
+		Status = LdrpSearchResourceSection_U(AlternateModule,
+							info,
+							level,
+							ret,
+							want_dir);
+		if(NT_SUCCESS(Status))
+		{
+			return Status;
+		}
+	}
+	
+    if (!root) 
+		return STATUS_RESOURCE_DATA_NOT_FOUND;
+    if (size < sizeof(*resdirptr)) 
+		return STATUS_RESOURCE_DATA_NOT_FOUND;
+    resdirptr = root;
 
-    GET_UI_LANGID();
+    if (!level--) 
+		goto done;
+    if (!(*ret = LdrpSearchResourceSection_U_by_name( resdirptr, (LPCWSTR)info->Type, root, want_dir || level )))
+        return STATUS_RESOURCE_TYPE_NOT_FOUND;
+    if (!level--) 
+		return STATUS_SUCCESS;
 
-    if (!UILangId){
-        return Status;
-    }
+    resdirptr = *ret;
+    if (!(*ret = LdrpSearchResourceSection_U_by_name( resdirptr, (LPCWSTR)info->Name, root, want_dir || level )))
+        return STATUS_RESOURCE_NAME_NOT_FOUND;
+    if (!level--) 
+		return STATUS_SUCCESS;
+    if (level) 
+		return STATUS_INVALID_PARAMETER;  /* level > 3 */
 
-    if (!InstallLangId){
-        Status = NtQueryInstallUILanguage (&InstallLangId);
-        if (!NT_SUCCESS( Status )) {
-            //
-            //  Failed to get Install LangID.  AltResource not enabled.
-            //
-            return FALSE;
-        }
-    }
+    /* 1. specified language */
+    pos = push_language( list, pos, info->Language );
 
+    /* 2. specified language with neutral sublanguage */
+    pos = push_language( list, pos, MAKELANGID( PRIMARYLANGID(info->Language), SUBLANG_NEUTRAL ) );
 
-    if (ResourceIdPath[2]) {
-        //
-        // Arabic/Hebrew MUI files may contain resources with LANG ID different than 401/40d.
-        // e.g. Comdlg32.dll has two sets of Arabic/Hebrew resources one mirrored (401/40d)
-        // and one flipped (801/80d).
-        //
-        if( (ResourceIdPath[2] != UILangId) &&
-            ((PRIMARYLANGID ( UILangId) == LANG_ARABIC) || (PRIMARYLANGID ( UILangId) == LANG_HEBREW)) &&
-            (PRIMARYLANGID (ResourceIdPath[2]) == PRIMARYLANGID (UILangId))
-          ) {
-            ResourceIdPath[2] = UILangId;
-        }
-    }
-    else {
-        ResourceIdPath[2] = UILangId;
-    }
+    /* 3. neutral language with neutral sublanguage */
+    pos = push_language( list, pos, MAKELANGID( LANG_NEUTRAL, SUBLANG_NEUTRAL ) );
 
-    // Don't load alternative modules for console process if UI language doesn't match system locale
-    // In this case, we always load English
-    if (NtCurrentPeb()->ProcessParameters->ConsoleHandle &&
-        LANGIDFROMLCID(NtCurrentTeb()->CurrentLocale) != ResourceIdPath[2])
+    /* if no explicitly specified language, try some defaults */
+    if (PRIMARYLANGID(info->Language) == LANG_NEUTRAL)
     {
-        ResourceIdPath[2] = MUI_NEUTRAL_LANGID;
-        UILangId = MUI_NEUTRAL_LANGID;
-    }
+        /* user defaults, unless SYS_DEFAULT sublanguage specified  */
+        if (SUBLANGID(info->Language) != SUBLANG_SYS_DEFAULT)
+        {
+            /* 4. current thread locale language */
+            pos = push_language( list, pos, LANGIDFROMLCID(NtCurrentTeb()->CurrentLocale) );
 
-        //
-        // Bug #246044 WeiWu 12/07/00
-        // BiDi modules use version block FileDescription field to store LRM markers,
-        // LDR_FIND_RESOURCE_LANGUAGE_REDIRECT_VERSION will allow lpk.dll to get version resource from MUI alternative modules.
-        //
-    if ((ResourceIdPath[0] != (ULONG_PTR)RT_VERSION) ||
-        (Flags & LDR_FIND_RESOURCE_LANGUAGE_REDIRECT_VERSION)) {
+            if (NT_SUCCESS(NtQueryDefaultLocale(TRUE, &user_lcid)))
+            {
+                /* 5. user locale language */
+                pos = push_language( list, pos, LANGIDFROMLCID(user_lcid) );
 
-RESOURCE_TRY_AGAIN:
-        //
-        //  Load alternate resource dll when:
-        //      1. language is neutral
-        //         or
-        //         Given language is not tried.
-        //      and
-        //      2. the resource to load is not a version info.
-        //
-        AltResourceDllHandle=LdrLoadAlternateResourceModuleEx(
-                                (LANGID) ResourceIdPath[2],
-                                DllHandle,
-                                NULL);
-
-        if (!AltResourceDllHandle){
-            //
-            //  Alternate resource dll not available.
-            //  Skip this lookup.
-            //
-            if ((LANGID) ResourceIdPath[2] != InstallLangId){
-                ResourceIdPath[2] = InstallLangId;
-                //UILangId = InstallLangId;
-                goto RESOURCE_TRY_AGAIN;
-                }
-            else {
-               return Status;
+                /* 6. user locale language with neutral sublanguage  */
+                pos = push_language( list, pos, MAKELANGID( PRIMARYLANGID(user_lcid), SUBLANG_NEUTRAL ) );
             }
         }
-        //
-        // Add fallback steps here for alternative module search
-        // 1) Given langid
-        // 2) Primary langid of given langid if 2 != 1
-        // 3) System installed langid if 3 != 1
-        //
-        MUIDirLang = (LANGID)ResourceIdPath[2];
 
-SearchResourceSection:
-        Status = LdrpSearchResourceSection_U(
-                    AltResourceDllHandle,
-                    ResourceIdPath,
-                    3,
-                    Flags | LDR_FIND_RESOURCE_LANGUAGE_EXACT,
-                    (PVOID *)ResourceDirectoryOrData
-                    );
-        if (!NT_SUCCESS(Status) ) {
-               if ((LANGID) ResourceIdPath[2] != 0x409) {
-                    // some English components are not localized. but this unlocalized mui file
-                    // is saved under \mui\fallback\%LocalizedLang%\ so we just repeat search.
-                    // this is a temporary hack, we'll have a better solution
-                    ResourceIdPath[2] = 0x409;
-                    goto SearchResourceSection;
-               }
+        /* now system defaults */
 
-               if ( (LANGID) MUIDirLang != InstallLangId) {
-                    ResourceIdPath[2] = InstallLangId;
-                    goto RESOURCE_TRY_AGAIN;
-                }
-            }
-       }
+        if (NT_SUCCESS(NtQueryDefaultLocale(FALSE, &system_lcid)))
+        {
+            /* 7. system locale language */
+            pos = push_language( list, pos, LANGIDFROMLCID( system_lcid ) );
 
-    return Status;
+            /* 8. system locale language with neutral sublanguage */
+            pos = push_language( list, pos, MAKELANGID( PRIMARYLANGID(system_lcid), SUBLANG_NEUTRAL ) );
+        }
+
+        /* 9. English */
+        pos = push_language( list, pos, MAKELANGID( LANG_ENGLISH, SUBLANG_DEFAULT ) );
+    }
+
+    resdirptr = *ret;
+    for (i = 0; i < pos; i++)
+        if ((*ret = LdrpSearchResourceSection_U_by_id( resdirptr, list[i], root, want_dir ))) return STATUS_SUCCESS;
+
+    /* if no explicitly specified language, return the first entry */
+    if (PRIMARYLANGID(info->Language) == LANG_NEUTRAL)
+    {
+        if ((*ret = find_first_entry( resdirptr, root, want_dir ))) return STATUS_SUCCESS;
+    }
+    return STATUS_RESOURCE_LANG_NOT_FOUND;
+
+done:
+    *ret = resdirptr;
+    return STATUS_SUCCESS;
 }
 
-NTSTATUS
-NTAPI
-LdrFindResource_U(
-    IN PVOID DllHandle,
-    IN const ULONG_PTR* ResourceIdPath,
-    IN ULONG ResourceIdPathLength,
-    OUT PIMAGE_RESOURCE_DATA_ENTRY *ResourceDataEntry
-    )
+NTSTATUS 
+NTAPI 
+LdrpFindResource_U( 	
+	PVOID  	BaseAddress,
+	PLDR_RESOURCE_INFO  ResourceInfo,
+	ULONG  	Level,
+	PIMAGE_RESOURCE_DATA_ENTRY *  ResourceDataEntry 
+) 		
 {
-    RTL_PAGED_CODE;
+    PVOID res;
+    NTSTATUS status = STATUS_SUCCESS;
 
-    return LdrpSearchResourceSection_U(
-      DllHandle,
-      ResourceIdPath,
-      ResourceIdPathLength,
-      0,                // Look for a leaf node, ineaxt lang match
-      (PVOID *)ResourceDataEntry
-      );
+    _SEH2_TRY
+    {
+        if (ResourceInfo)
+        {
+            DbgPrint( "module %p type %lx name %lx lang %04lx level %lu\n",
+                     BaseAddress, ResourceInfo->Type, 
+                     Level > 1 ? ResourceInfo->Name : 0,
+                     Level > 2 ? ResourceInfo->Language : 0, Level );
+        }
+
+        status = LdrpSearchResourceSection_U( BaseAddress, ResourceInfo, Level, &res, FALSE );
+        if (NT_SUCCESS(status))
+            *ResourceDataEntry = res;
+    }
+    _SEH2_EXCEPT(page_fault(_SEH2_GetExceptionCode()))
+    {
+        status = _SEH2_GetExceptionCode();
+    }
+    _SEH2_END;
+    return status;
 }
 
-NTSTATUS
-NTAPI
-LdrFindResourceEx_U(
-    IN ULONG Flags,
-    IN PVOID DllHandle,
-    IN const ULONG_PTR* ResourceIdPath,
-    IN ULONG ResourceIdPathLength,
-    OUT PIMAGE_RESOURCE_DATA_ENTRY *ResourceDataEntry
-    )
+NTSTATUS 
+NTAPI 
+LdrFindResourceDirectory_U( 	
+	IN PVOID  	BaseAddress,
+	IN PLDR_RESOURCE_INFO  	info,
+	IN ULONG  	level,
+	OUT PIMAGE_RESOURCE_DIRECTORY *  	addr 
+) 	
 {
-    RTL_PAGED_CODE;
+    PVOID res;
+    NTSTATUS status = STATUS_SUCCESS;
 
-    return LdrpSearchResourceSection_U(
-      DllHandle,
-      ResourceIdPath,
-      ResourceIdPathLength,
-      Flags,
-      (PVOID *)ResourceDataEntry
-      );
-}
+    _SEH2_TRY
+    {
+        if (info)
+        {
+            DbgPrint( "module %p type %ws name %ws lang %04lx level %lu\n",
+                     BaseAddress, (LPCWSTR)info->Type,
+                     level > 1 ? (LPCWSTR)info->Name : L"",
+                     level > 2 ? info->Language : 0, level );
+        }
 
-NTSTATUS
-NTAPI
-LdrFindResourceDirectory_U(
-    IN PVOID DllHandle,
-    IN const ULONG_PTR* ResourceIdPath,
-    IN ULONG ResourceIdPathLength,
-    OUT PIMAGE_RESOURCE_DIRECTORY *ResourceDirectory
-    )
-{
-    RTL_PAGED_CODE;
-
-    return LdrpSearchResourceSection_U(
-      DllHandle,
-      ResourceIdPath,
-      ResourceIdPathLength,
-      LDRP_FIND_RESOURCE_DIRECTORY,                 // Look for a directory node
-      (PVOID *)ResourceDirectory
-      );
+        status = LdrpSearchResourceSection_U( BaseAddress, info, level, &res, TRUE );
+        if (NT_SUCCESS(status))
+            *addr = res;
+    }
+    _SEH2_EXCEPT(page_fault(_SEH2_GetExceptionCode()))
+    {
+        status = _SEH2_GetExceptionCode();
+    }
+    _SEH2_END;
+    return status;
 }

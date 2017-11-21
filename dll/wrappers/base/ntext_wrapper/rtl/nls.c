@@ -44,6 +44,8 @@ RtlCompareUnicodeStrings(
 {
     LONG ret = 0;
     SIZE_T len = min( len1, len2 );
+	
+	NtCurrentTeb()->CurrentTransactionHandle;
 
     if (case_insensitive)
     {
@@ -56,3 +58,4 @@ RtlCompareUnicodeStrings(
     if (!ret) ret = len1 - len2;
     return ret;
 }
+

@@ -20,7 +20,6 @@ list(APPEND SOURCE
 	etw/etw.c	
     etw/trace.c	####### this is a only test ########
 	ldr/ldrapi.c
-	ldr/ldrinit.c
 	ldr/loader.c
 	rtl/acl.c
 	rtl/actctx.c
@@ -42,7 +41,7 @@ list(APPEND SOURCE
 	rtl/misc.c
 	rtl/nls.c
 	rtl/notification.c
-	rtl/path.c
+    rtl/path.c
 	rtl/pointer.c
 	rtl/processor.c
 	rtl/profiling.c

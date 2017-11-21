@@ -970,7 +970,7 @@
 @ stdcall ConsoleIMERoutine(ptr)
 
 #missing on XP 
-@ stdcall BaseIsAppcompatInfrastructureDisabled() 
+@ stdcall BaseIsAppcompatInfrastructureDisabled() IsShimInfrastructureDisabled ;kernelfull.BaseIsAppcompatInfrastructureDisabled
 @ stdcall ConvertThreadToFiberEx(ptr long)
 @ stdcall FindFirstStreamW(wstr ptr ptr long)
 @ stdcall FindNextStreamW(ptr ptr)

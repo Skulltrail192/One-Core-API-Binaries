@@ -563,47 +563,47 @@ HRESULT WINAPI IShellItem_Constructor(IUnknown *pUnkOuter, REFIID riid, void **p
     return ret;
 }
 
-HRESULT WINAPI SHCreateItemFromParsingName(PCWSTR pszPath,
-    IBindCtx *pbc, REFIID riid, void **ppv)
-{
-    LPITEMIDLIST pidl;
-    HRESULT ret;
+// HRESULT WINAPI SHCreateItemFromParsingName(PCWSTR pszPath,
+    // IBindCtx *pbc, REFIID riid, void **ppv)
+// {
+    // LPITEMIDLIST pidl;
+    // HRESULT ret;
 
-    *ppv = NULL;
+    // *ppv = NULL;
 
-    ret = SHParseDisplayName(pszPath, pbc, &pidl, 0, NULL);
-    if(SUCCEEDED(ret))
-    {
-        ret = SHCreateItemFromIDList(pidl, riid, ppv);
-        ILFree(pidl);
-    }
-    return ret;
-}
+    // ret = SHParseDisplayName(pszPath, pbc, &pidl, 0, NULL);
+    // if(SUCCEEDED(ret))
+    // {
+        // ret = SHCreateItemFromIDList(pidl, riid, ppv);
+        // ILFree(pidl);
+    // }
+    // return ret;
+// }
 
-HRESULT WINAPI SHCreateItemFromIDList(PCIDLIST_ABSOLUTE pidl, REFIID riid, void **ppv)
-{
-    IPersistIDList *persist;
-    HRESULT ret;
+// HRESULT WINAPI SHCreateItemFromIDList(PCIDLIST_ABSOLUTE pidl, REFIID riid, void **ppv)
+// {
+    // IPersistIDList *persist;
+    // HRESULT ret;
 
-    if(!pidl)
-        return E_INVALIDARG;
+    // if(!pidl)
+        // return E_INVALIDARG;
 
-    *ppv = NULL;
-    ret = IShellItem_Constructor(NULL, &IID_IPersistIDList, (void**)&persist);
-    if(FAILED(ret))
-        return ret;
+    // *ppv = NULL;
+    // ret = IShellItem_Constructor(NULL, &IID_IPersistIDList, (void**)&persist);
+    // if(FAILED(ret))
+        // return ret;
 
-    ret = IPersistIDList_SetIDList(persist, pidl);
-    if(FAILED(ret))
-    {
-        IPersistIDList_Release(persist);
-        return ret;
-    }
+    // ret = IPersistIDList_SetIDList(persist, pidl);
+    // if(FAILED(ret))
+    // {
+        // IPersistIDList_Release(persist);
+        // return ret;
+    // }
 
-    ret = IPersistIDList_QueryInterface(persist, riid, ppv);
-    IPersistIDList_Release(persist);
-    return ret;
-}
+    // ret = IPersistIDList_QueryInterface(persist, riid, ppv);
+    // IPersistIDList_Release(persist);
+    // return ret;
+// }
 
 HRESULT WINAPI SHGetItemFromDataObject(IDataObject *pdtobj,
     DATAOBJ_GET_ITEM_FLAGS dwFlags, REFIID riid, void **ppv)
@@ -1115,192 +1115,192 @@ static HRESULT create_shellitemarray(IShellItem **items, DWORD count, IShellItem
     return S_OK;
 }
 
-HRESULT 
-WINAPI 
-SHCreateShellItemArray(
-	PCIDLIST_ABSOLUTE pidlParent,
-    IShellFolder *psf,
-    UINT cidl,
-    PCUITEMID_CHILD_ARRAY ppidl,
-    IShellItemArray **ppsiItemArray
-)
-{
-    IShellItem **array;
-    HRESULT ret = E_FAIL;
-    UINT i;
+// HRESULT 
+// WINAPI 
+// SHCreateShellItemArray(
+	// PCIDLIST_ABSOLUTE pidlParent,
+    // IShellFolder *psf,
+    // UINT cidl,
+    // PCUITEMID_CHILD_ARRAY ppidl,
+    // IShellItemArray **ppsiItemArray
+// )
+// {
+    // IShellItem **array;
+    // HRESULT ret = E_FAIL;
+    // UINT i;
 
-    TRACE("%p, %p, %d, %p, %p\n", pidlParent, psf, cidl, ppidl, ppsiItemArray);
+    // TRACE("%p, %p, %d, %p, %p\n", pidlParent, psf, cidl, ppidl, ppsiItemArray);
 
-    *ppsiItemArray = NULL;
+    // *ppsiItemArray = NULL;
 
-    if(!pidlParent && !psf)
-        return E_POINTER;
+    // if(!pidlParent && !psf)
+        // return E_POINTER;
 
-    if(!ppidl)
-        return E_INVALIDARG;
+    // if(!ppidl)
+        // return E_INVALIDARG;
 
-    array = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cidl*sizeof(IShellItem*));
-    if(!array)
-        return E_OUTOFMEMORY;
+    // array = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cidl*sizeof(IShellItem*));
+    // if(!array)
+        // return E_OUTOFMEMORY;
 
-    for(i = 0; i < cidl; i++)
-    {
-        ret = SHCreateShellItem(pidlParent, psf, ppidl[i], &array[i]);
-        if(FAILED(ret)) break;
-    }
+    // for(i = 0; i < cidl; i++)
+    // {
+        // ret = SHCreateShellItem(pidlParent, psf, ppidl[i], &array[i]);
+        // if(FAILED(ret)) break;
+    // }
 
-    if(SUCCEEDED(ret))
-    {
-        ret = create_shellitemarray(array, cidl, ppsiItemArray);
-        HeapFree(GetProcessHeap(), 0, array);
-        if(SUCCEEDED(ret))
-            return ret;
-    }
+    // if(SUCCEEDED(ret))
+    // {
+        // ret = create_shellitemarray(array, cidl, ppsiItemArray);
+        // HeapFree(GetProcessHeap(), 0, array);
+        // if(SUCCEEDED(ret))
+            // return ret;
+    // }
 
-    /* Something failed, clean up. */
-    for(i = 0; i < cidl; i++)
-        if(array[i]) IShellItem_Release(array[i]);
-    HeapFree(GetProcessHeap(), 0, array);
-    return ret;
-}
+    // /* Something failed, clean up. */
+    // for(i = 0; i < cidl; i++)
+        // if(array[i]) IShellItem_Release(array[i]);
+    // HeapFree(GetProcessHeap(), 0, array);
+    // // return ret;
+// // }
 
-HRESULT WINAPI SHCreateShellItemArrayFromShellItem(IShellItem *item, REFIID riid, void **ppv)
-{
-    IShellItemArray *array;
-    HRESULT ret;
+// HRESULT WINAPI SHCreateShellItemArrayFromShellItem(IShellItem *item, REFIID riid, void **ppv)
+// {
+    // IShellItemArray *array;
+    // HRESULT ret;
 
-    TRACE("%p, %s, %p\n", item, shdebugstr_guid(riid), ppv);
+    // TRACE("%p, %s, %p\n", item, shdebugstr_guid(riid), ppv);
 
-    *ppv = NULL;
+    // *ppv = NULL;
 
-    IShellItem_AddRef(item);
-    ret = create_shellitemarray(&item, 1, &array);
-    if(FAILED(ret))
-    {
-        IShellItem_Release(item);
-        return ret;
-    }
+    // IShellItem_AddRef(item);
+    // ret = create_shellitemarray(&item, 1, &array);
+    // if(FAILED(ret))
+    // {
+        // IShellItem_Release(item);
+        // return ret;
+    // }
 
-    ret = IShellItemArray_QueryInterface(array, riid, ppv);
-    IShellItemArray_Release(array);
-    return ret;
-}
+    // ret = IShellItemArray_QueryInterface(array, riid, ppv);
+    // IShellItemArray_Release(array);
+    // return ret;
+// }
 
-HRESULT 
-WINAPI 
-SHCreateShellItemArrayFromDataObject(IDataObject *pdo, REFIID riid, void **ppv)
-{
-    IShellItemArray *psia;
-    FORMATETC fmt;
-    STGMEDIUM medium;
-    HRESULT ret;
+// HRESULT 
+// WINAPI 
+// SHCreateShellItemArrayFromDataObject(IDataObject *pdo, REFIID riid, void **ppv)
+// {
+    // IShellItemArray *psia;
+    // FORMATETC fmt;
+    // STGMEDIUM medium;
+    // HRESULT ret;
 
-    TRACE("%p, %s, %p\n", pdo, shdebugstr_guid(riid), ppv);
+    // TRACE("%p, %s, %p\n", pdo, shdebugstr_guid(riid), ppv);
 
-    if(!pdo)
-        return E_INVALIDARG;
+    // if(!pdo)
+        // return E_INVALIDARG;
 
-    *ppv = NULL;
+    // *ppv = NULL;
 
-    fmt.cfFormat = RegisterClipboardFormatW(CFSTR_SHELLIDLISTW);
-    fmt.ptd = NULL;
-    fmt.dwAspect = DVASPECT_CONTENT;
-    fmt.lindex = -1;
-    fmt.tymed = TYMED_HGLOBAL;
+    // fmt.cfFormat = RegisterClipboardFormatW(CFSTR_SHELLIDLISTW);
+    // fmt.ptd = NULL;
+    // fmt.dwAspect = DVASPECT_CONTENT;
+    // fmt.lindex = -1;
+    // fmt.tymed = TYMED_HGLOBAL;
 
-    ret = IDataObject_GetData(pdo, &fmt, &medium);
-    if(SUCCEEDED(ret))
-    {
-        LPIDA pida = GlobalLock(medium.u.hGlobal);
-        LPCITEMIDLIST parent_pidl;
-        LPCITEMIDLIST *children;
-        UINT i;
-        TRACE("Converting %d objects.\n", pida->cidl);
+    // ret = IDataObject_GetData(pdo, &fmt, &medium);
+    // if(SUCCEEDED(ret))
+    // {
+        // LPIDA pida = GlobalLock(medium.u.hGlobal);
+        // LPCITEMIDLIST parent_pidl;
+        // LPCITEMIDLIST *children;
+        // UINT i;
+        // TRACE("Converting %d objects.\n", pida->cidl);
 
-        parent_pidl = (LPCITEMIDLIST) ((LPBYTE)pida+pida->aoffset[0]);
+        // parent_pidl = (LPCITEMIDLIST) ((LPBYTE)pida+pida->aoffset[0]);
 
-        children = HeapAlloc(GetProcessHeap(), 0, sizeof(LPCITEMIDLIST)*pida->cidl);
-        for(i = 0; i < pida->cidl; i++)
-            children[i] = (LPCITEMIDLIST) ((LPBYTE)pida+pida->aoffset[i+1]);
+        // children = HeapAlloc(GetProcessHeap(), 0, sizeof(LPCITEMIDLIST)*pida->cidl);
+        // for(i = 0; i < pida->cidl; i++)
+            // children[i] = (LPCITEMIDLIST) ((LPBYTE)pida+pida->aoffset[i+1]);
 
-        ret = SHCreateShellItemArray(parent_pidl, NULL, pida->cidl, children, &psia);
+        // ret = SHCreateShellItemArray(parent_pidl, NULL, pida->cidl, children, &psia);
 
-        HeapFree(GetProcessHeap(), 0, children);
+        // HeapFree(GetProcessHeap(), 0, children);
 
-        GlobalUnlock(medium.u.hGlobal);
-        GlobalFree(medium.u.hGlobal);
-    }
+        // GlobalUnlock(medium.u.hGlobal);
+        // GlobalFree(medium.u.hGlobal);
+    // }
 
-    if(SUCCEEDED(ret))
-    {
-        ret = IShellItemArray_QueryInterface(psia, riid, ppv);
-        IShellItemArray_Release(psia);
-    }
+    // if(SUCCEEDED(ret))
+    // {
+        // ret = IShellItemArray_QueryInterface(psia, riid, ppv);
+        // IShellItemArray_Release(psia);
+    // }
 
-    return ret;
-}
+    // return ret;
+// }
 
-HRESULT 
-WINAPI 
-SHCreateShellItemArrayFromIDLists(
-	UINT cidl,
-    PCIDLIST_ABSOLUTE_ARRAY pidl_array,
-    IShellItemArray **psia
-)
-{
-    IShellItem **array;
-    HRESULT ret;
-    UINT i;
-    TRACE("%d, %p, %p\n", cidl, pidl_array, psia);
+// HRESULT 
+// WINAPI 
+// SHCreateShellItemArrayFromIDLists(
+	// UINT cidl,
+    // PCIDLIST_ABSOLUTE_ARRAY pidl_array,
+    // IShellItemArray **psia
+// )
+// {
+    // IShellItem **array;
+    // HRESULT ret;
+    // UINT i;
+    // TRACE("%d, %p, %p\n", cidl, pidl_array, psia);
 
-    *psia = NULL;
+    // *psia = NULL;
 
-    if(cidl == 0)
-        return E_INVALIDARG;
+    // if(cidl == 0)
+        // return E_INVALIDARG;
 
-    array = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cidl*sizeof(IShellItem*));
-    if(!array)
-        return E_OUTOFMEMORY;
+    // array = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cidl*sizeof(IShellItem*));
+    // if(!array)
+        // return E_OUTOFMEMORY;
 
-    for(i = 0; i < cidl; i++)
-    {
-        ret = SHCreateShellItem(NULL, NULL, pidl_array[i], &array[i]);
-        if(FAILED(ret))
-            break;
-    }
+    // for(i = 0; i < cidl; i++)
+    // {
+        // ret = SHCreateShellItem(NULL, NULL, pidl_array[i], &array[i]);
+        // if(FAILED(ret))
+            // break;
+    // }
 
-    if(SUCCEEDED(ret))
-    {
-        ret = create_shellitemarray(array, cidl, psia);
-        HeapFree(GetProcessHeap(), 0, array);
-        if(SUCCEEDED(ret))
-            return ret;
-    }
+    // if(SUCCEEDED(ret))
+    // {
+        // ret = create_shellitemarray(array, cidl, psia);
+        // HeapFree(GetProcessHeap(), 0, array);
+        // if(SUCCEEDED(ret))
+            // return ret;
+    // }
 
-    for(i = 0; i < cidl; i++)
-        if(array[i]) IShellItem_Release(array[i]);
-    HeapFree(GetProcessHeap(), 0, array);
-    *psia = NULL;
-    return ret;
-}
+    // for(i = 0; i < cidl; i++)
+        // if(array[i]) IShellItem_Release(array[i]);
+    // HeapFree(GetProcessHeap(), 0, array);
+    // *psia = NULL;
+    // return ret;
+// }
 
-HRESULT WINAPI SHGetPropertyStoreFromParsingName(const WCHAR *path, IBindCtx *pbc, GETPROPERTYSTOREFLAGS flags,
-    REFIID riid, void **ppv)
-{
-    IShellItem2 *item;
-    HRESULT hr;
+// HRESULT WINAPI SHGetPropertyStoreFromParsingName(const WCHAR *path, IBindCtx *pbc, GETPROPERTYSTOREFLAGS flags,
+    // REFIID riid, void **ppv)
+// {
+    // IShellItem2 *item;
+    // HRESULT hr;
 
-    TRACE("(%s %p %#x %p %p)\n", debugstr_w(path), pbc, flags, riid, ppv);
+    // TRACE("(%s %p %#x %p %p)\n", debugstr_w(path), pbc, flags, riid, ppv);
 
-    hr = SHCreateItemFromParsingName(path, pbc, &IID_IShellItem2, (void **)&item);
-    if(SUCCEEDED(hr))
-    {
-        hr = IShellItem2_GetPropertyStore(item, flags, riid, ppv);
-        IShellItem2_Release(item);
-    }
+    // hr = SHCreateItemFromParsingName(path, pbc, &IID_IShellItem2, (void **)&item);
+    // if(SUCCEEDED(hr))
+    // {
+        // hr = IShellItem2_GetPropertyStore(item, flags, riid, ppv);
+        // IShellItem2_Release(item);
+    // }
 
-    return hr;
-}
+    // return hr;
+// }
 
 static HRESULT WINAPI CustomDestinationList_QueryInterface(ICustomDestinationList *iface, REFIID riid, void **obj)
 {
@@ -1463,22 +1463,22 @@ HRESULT WINAPI CustomDestinationList_Constructor(IUnknown *outer, REFIID riid, v
     return hr;
 }
 
-HRESULT 
-WINAPI 
-SHCreateItemWithParent(
-  _In_   PCIDLIST_ABSOLUTE pidlParent,
-  _In_   IShellFolder *psfParent,
-  _In_   PCUITEMID_CHILD pidl,
-  _In_   REFIID riid,
-  _Out_  void **ppvItem
-)
-{
-	HRESULT ret;
-	*ppvItem = NULL;
-	ret = SHCreateShellItem(NULL, NULL, pidl, (IShellItem **) ppvItem);
-    if(!SUCCEEDED(ret))
-    {
-		ILFree(pidl);
-    }
-	return ret;
-}
+// HRESULT 
+// WINAPI 
+// SHCreateItemWithParent(
+  // _In_   PCIDLIST_ABSOLUTE pidlParent,
+  // _In_   IShellFolder *psfParent,
+  // _In_   PCUITEMID_CHILD pidl,
+  // _In_   REFIID riid,
+  // _Out_  void **ppvItem
+// )
+// {
+	// HRESULT ret;
+	// *ppvItem = NULL;
+	// ret = SHCreateShellItem(NULL, NULL, pidl, (IShellItem **) ppvItem);
+    // if(!SUCCEEDED(ret))
+    // {
+		// ILFree(pidl);
+    // }
+	// return ret;
+// }

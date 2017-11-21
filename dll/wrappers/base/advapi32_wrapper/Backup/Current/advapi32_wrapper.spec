@@ -487,189 +487,189 @@
 498 stdcall RegQueryInfoKeyA(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapibase.RegQueryInfoKeyA
 499 stdcall RegQueryInfoKeyW(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapibase.RegQueryInfoKeyW
 500 stdcall RegQueryMultipleValuesA(long ptr long ptr ptr) advapibase.RegQueryMultipleValuesA
-501 stdcall RegQueryMultipleValuesW(long ptr long ptr ptr)
-503 stdcall RegQueryValueA(long str ptr ptr)
-504 stdcall RegQueryValueExA(long str ptr ptr ptr ptr)
-505 stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr)
-506 stdcall RegQueryValueW(long wstr ptr ptr)
-507 stdcall RegReplaceKeyA(long str str str)
-508 stdcall RegReplaceKeyW(long wstr wstr wstr)
-509 stdcall RegRestoreKeyA(long str long)
-510 stdcall RegRestoreKeyW(long wstr long)
-511 stdcall RegSaveKeyA(long ptr ptr)
-512 stdcall RegSaveKeyExA(long str ptr long)
-513 stdcall RegSaveKeyExW(long str ptr long)
-514 stdcall RegSaveKeyW(long ptr ptr)
-515 stdcall RegSetKeySecurity(long long ptr)
-516 stdcall RegSetValueA(long str long ptr long)
-517 stdcall RegSetValueExA(long str long long ptr long)
-518 stdcall RegSetValueExW(long wstr long long ptr long)
-519 stdcall RegSetValueW(long wstr long ptr long)
-520 stdcall RegUnLoadKeyA(long str)
-521 stdcall RegUnLoadKeyW(long wstr)
-522 stdcall RegisterEventSourceA(ptr ptr)
-523 stdcall RegisterEventSourceW(ptr ptr)
-524 stdcall RegisterIdleTask(long long ptr ptr)
-525 stdcall RegisterServiceCtrlHandlerA(str ptr)
-526 stdcall RegisterServiceCtrlHandlerExA(str ptr ptr)
-527 stdcall RegisterServiceCtrlHandlerExW(wstr ptr ptr)
-528 stdcall RegisterServiceCtrlHandlerW(wstr ptr)
-529 stdcall RegisterTraceGuidsA(ptr ptr ptr long ptr str str ptr) ;ntdll.EtwRegisterTraceGuidsA
-530 stdcall RegisterTraceGuidsW(ptr ptr ptr long ptr wstr wstr ptr) ;ntdll.EtwRegisterTraceGuidsW
-531 stdcall RemoveTraceCallback(ptr)
-532 stdcall RemoveUsersFromEncryptedFile(wstr ptr)
-533 stdcall ReportEventA(long long long long ptr long long str ptr)
-534 stdcall ReportEventW(long long long long ptr long long wstr ptr)
-535 stdcall RevertToSelf()
-536 stdcall SaferCloseLevel(ptr)
-537 stdcall SaferComputeTokenFromLevel(ptr ptr ptr long ptr)
-538 stdcall SaferCreateLevel(long long long ptr ptr)
-539 stdcall SaferGetLevelInformation(ptr long ptr long ptr)
-540 stdcall SaferGetPolicyInformation(long long long ptr ptr ptr)
-541 stdcall SaferIdentifyLevel(long ptr ptr ptr)
-542 stdcall SaferRecordEventLogEntry(ptr wstr ptr)
-543 stdcall SaferSetLevelInformation(ptr long ptr long)
-544 stdcall SaferSetPolicyInformation(long long long ptr ptr)
-545 stdcall SaferiChangeRegistryScope(ptr long)
-546 stdcall SaferiCompareTokenLevels(long long long)
-547 stdcall SaferiIsExecutableFileType(wstr long)
-548 stdcall SaferiPopulateDefaultsInRegistry(ptr long)
-549 stdcall SaferiRecordEventLogEntry()
-550 stdcall SaferiReplaceProcessThreadTokens(ptr ptr ptr)
-551 stdcall SaferiSearchMatchingHashRules(long ptr long long ptr ptr)
-552 stdcall SetAclInformation(ptr ptr long long)
-553 stdcall SetEntriesInAccessListA(long ptr long str ptr ptr)
-554 stdcall SetEntriesInAccessListW(long ptr long wstr ptr ptr)
-555 stdcall SetEntriesInAclA(long ptr ptr ptr)
-556 stdcall SetEntriesInAclW(long ptr ptr ptr)
-557 stdcall SetEntriesInAuditListA(long ptr long str ptr ptr)
-558 stdcall SetEntriesInAuditListW(long ptr long wstr ptr ptr)
-559 stdcall SetFileSecurityA(str long ptr)
-560 stdcall SetFileSecurityW(wstr long ptr)
-561 stdcall SetInformationCodeAuthzLevelW()
-562 stdcall SetInformationCodeAuthzPolicyW()
-563 stdcall SetKernelObjectSecurity(long long ptr)
-564 stdcall SetNamedSecurityInfoA(str long ptr ptr ptr ptr ptr)
-565 stdcall SetNamedSecurityInfoExA(str long long str ptr ptr str str ptr)
-566 stdcall SetNamedSecurityInfoExW(wstr long long wstr ptr ptr wstr wstr ptr)
-567 stdcall SetNamedSecurityInfoW(wstr long ptr ptr ptr ptr ptr)
-568 stdcall SetPrivateObjectSecurity(long ptr ptr ptr long)
-569 stdcall SetPrivateObjectSecurityEx(long ptr ptr long ptr ptr)
-570 stdcall SetSecurityDescriptorControl(ptr long long)
-571 stdcall SetSecurityDescriptorDacl(ptr long ptr long)
-572 stdcall SetSecurityDescriptorGroup(ptr ptr long)
-573 stdcall SetSecurityDescriptorOwner(ptr ptr long)
-574 stdcall SetSecurityDescriptorRMControl(ptr ptr)
-575 stdcall SetSecurityDescriptorSacl(ptr long ptr long)
-576 stdcall SetSecurityInfo(long long long ptr ptr ptr ptr)
-577 stdcall SetSecurityInfoExA(ptr long long str ptr ptr str str ptr)
-578 stdcall SetSecurityInfoExW(ptr long long wstr ptr ptr wstr wstr ptr)
-579 stdcall SetServiceBits(long long long long)
-580 stdcall SetServiceObjectSecurity(long long ptr)
-581 stdcall SetServiceStatus(long long)
-582 stdcall SetThreadToken(ptr ptr)
-583 stdcall SetTokenInformation(long long ptr long)
-584 stdcall SetTraceCallback(ptr ptr)
-585 stdcall SetUserFileEncryptionKey(ptr)
-586 stdcall StartServiceA(long long ptr)
-587 stdcall StartServiceCtrlDispatcherA(ptr)
-588 stdcall StartServiceCtrlDispatcherW(ptr)
-589 stdcall StartServiceW(long long ptr)
-590 stdcall StartTraceA(ptr str ptr) ;ntdll.EtwStartTraceA
-591 stdcall StartTraceW(ptr wstr ptr) ;ntdll.EtwStartTraceW
-592 stdcall StopTraceA(double str ptr) ;ntdll.EtwStopTraceA
-593 stdcall StopTraceW(double wstr ptr) ;ntdll.EtwStopTraceA
-594 stdcall SystemFunction001(ptr ptr ptr)
-595 stdcall SystemFunction002(ptr ptr ptr)
-596 stdcall SystemFunction003(ptr ptr)
-597 stdcall SystemFunction004(ptr ptr ptr)
-598 stdcall SystemFunction005(ptr ptr ptr)
-599 stdcall SystemFunction006(ptr ptr)
-600 stdcall SystemFunction007(ptr ptr)
-601 stdcall SystemFunction008(ptr ptr ptr)
-602 stdcall SystemFunction009(ptr ptr ptr)
-603 stdcall SystemFunction010(ptr ptr ptr)
-604 stdcall SystemFunction011(ptr ptr ptr) SystemFunction010
-605 stdcall SystemFunction012(ptr ptr ptr)
-606 stdcall SystemFunction013(ptr ptr ptr)
-607 stdcall SystemFunction014(ptr ptr ptr) SystemFunction012
-608 stdcall SystemFunction015(ptr ptr ptr) SystemFunction013
-609 stdcall SystemFunction016(ptr ptr ptr) SystemFunction012
-610 stdcall SystemFunction017(ptr ptr ptr) SystemFunction013
-611 stdcall SystemFunction018(ptr ptr ptr) SystemFunction012
-612 stdcall SystemFunction019(ptr ptr ptr) SystemFunction013
-613 stdcall SystemFunction020(ptr ptr ptr) SystemFunction012
-614 stdcall SystemFunction021(ptr ptr ptr) SystemFunction013
-615 stdcall SystemFunction022(ptr ptr ptr) SystemFunction012
-616 stdcall SystemFunction023(ptr ptr ptr) SystemFunction013
-617 stdcall SystemFunction024(ptr ptr ptr)
-618 stdcall SystemFunction025(ptr ptr ptr)
-619 stdcall SystemFunction026(ptr ptr ptr) SystemFunction024
-620 stdcall SystemFunction027(ptr ptr ptr) SystemFunction025
-621 stdcall SystemFunction028(long long)
-622 stdcall SystemFunction029(long long)
-623 stdcall SystemFunction030(ptr ptr)
-624 stdcall SystemFunction031(ptr ptr) SystemFunction030
-625 stdcall SystemFunction032(ptr ptr)
-626 stdcall SystemFunction033(long long)
-627 stdcall SystemFunction034(long long)
-628 stdcall SystemFunction035(str)
-629 stdcall SystemFunction036(ptr long) # RtlGenRandom
-630 stdcall SystemFunction040(ptr long long) # RtlEncryptMemory
-631 stdcall SystemFunction041(ptr long long) # RtlDecryptMemory
-632 stdcall TraceEvent(double ptr) ;ntdll.EtwTraceEvent
-633 stdcall TraceEventInstance(double ptr ptr ptr) ;ntdll.EtwTraceEventInstance
-634 varargs TraceMessage(ptr long ptr long) ;ntdll.EtwTraceMessage
-635 stdcall TraceMessageVa(double long ptr long ptr) ;ntdll.EtwTraceMessageVa
-636 stdcall TreeResetNamedSecurityInfoA(str ptr ptr ptr ptr ptr ptr long ptr ptr ptr)
-637 stdcall TreeResetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr long ptr long ptr)
-638 stdcall TrusteeAccessToObjectA(str long str ptr long ptr)
-639 stdcall TrusteeAccessToObjectW(wstr long wstr ptr long ptr)
-640 stdcall UninstallApplication(ptr long)
-641 stdcall UnlockServiceDatabase(ptr)
-642 stdcall UnregisterIdleTask(long ptr ptr)
-643 stdcall UnregisterTraceGuids(double) ;ntdll.EtwUnregisterTraceGuids
-644 stdcall UpdateTraceA(double str ptr) ;ntdll.EtwUpdateTraceA
-645 stdcall UpdateTraceW(double wstr ptr) ;ntdll.EtwUpdateTraceW
-646 stdcall WdmWmiServiceMain(ptr long)
-647 stdcall WmiCloseBlock(ptr)
-648 stdcall WmiCloseTraceWithCursor(ptr)
-649 stdcall WmiConvertTimestamp(long long long)
-650 stdcall WmiDevInstToInstanceNameA(ptr long str long)
-651 stdcall WmiDevInstToInstanceNameW(ptr long wstr long)
-652 stdcall WmiEnumerateGuids(long long)
-653 stdcall WmiExecuteMethodA(long str long long long long long)
-654 stdcall WmiExecuteMethodW(long wstr long long long long long)
-655 stdcall WmiFileHandleToInstanceNameA(long long ptr long)
-656 stdcall WmiFileHandleToInstanceNameW(long long ptr long)
-657 stdcall WmiFreeBuffer(ptr)
-658 stdcall WmiGetFirstTraceOffset(long long)
-659 stdcall WmiGetNextEvent(long)
-660 stdcall WmiGetTraceHeader(long long long)
-661 stdcall WmiMofEnumerateResourcesA(long long long)
-662 stdcall WmiMofEnumerateResourcesW(long long long)
-663 stdcall WmiNotificationRegistrationA(ptr long ptr long long) ;ntdll.EtwNotificationRegistrationA
-664 stdcall WmiNotificationRegistrationW(ptr long ptr long long) ;ntdll.EtwNotificationRegistrationW
-665 stdcall WmiOpenBlock(long long long)
-666 stdcall WmiOpenTraceWithCursor(long long) 
-667 stdcall WmiParseTraceEvent(long long long long long)
-668 stdcall WmiQueryAllDataA(long ptr ptr)
-669 stdcall WmiQueryAllDataMultipleA(long long long ptr)
-670 stdcall WmiQueryAllDataMultipleW(long long long ptr)
-671 stdcall WmiQueryAllDataW(long ptr ptr)
-672 stdcall WmiQueryGuidInformation(ptr ptr)
-673 stdcall WmiQuerySingleInstanceA(long str ptr ptr)
-674 stdcall WmiQuerySingleInstanceMultipleA(long long long long long)
-675 stdcall WmiQuerySingleInstanceMultipleW(long long long long long)
-676 stdcall WmiQuerySingleInstanceW(long wstr ptr ptr)
-677 stdcall WmiReceiveNotificationsA(long long long long) ;ntdll.EtwReceiveNotificationsA
-678 stdcall WmiReceiveNotificationsW(long long long long) ;ntdll.EtwReceiveNotificationsW
-679 stdcall WmiSetSingleInstanceA(long str long long ptr)
-680 stdcall WmiSetSingleInstanceW(long wstr long long ptr)
-681 stdcall WmiSetSingleItemA(long str long long long ptr)
-682 stdcall WmiSetSingleItemW(long wstr long long long ptr)
-683 stdcall Wow64Win32ApiEntry(long long long)
-684 stdcall WriteEncryptedFileRaw(ptr ptr ptr)
+501 stdcall RegQueryMultipleValuesW(long ptr long ptr ptr) advapibase.RegQueryMultipleValuesW
+503 stdcall RegQueryValueA(long str ptr ptr) advapibase.RegQueryValueA
+504 stdcall RegQueryValueExA(long str ptr ptr ptr ptr) advapibase.RegQueryValueExA
+505 stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr) advapibase.RegQueryValueExW
+506 stdcall RegQueryValueW(long wstr ptr ptr) advapibase.RegQueryValueW
+507 stdcall RegReplaceKeyA(long str str str) advapibase.RegReplaceKeyA
+508 stdcall RegReplaceKeyW(long wstr wstr wstr) advapibase.RegReplaceKeyW
+509 stdcall RegRestoreKeyA(long str long) advapibase.RegRestoreKeyA
+510 stdcall RegRestoreKeyW(long wstr long) advapibase.RegRestoreKeyW
+511 stdcall RegSaveKeyA(long ptr ptr) advapibase.RegSaveKeyA
+512 stdcall RegSaveKeyExA(long str ptr long) advapibase.RegSaveKeyExA
+513 stdcall RegSaveKeyExW(long str ptr long) advapibase.RegSaveKeyExW
+514 stdcall RegSaveKeyW(long ptr ptr) advapibase.RegSaveKeyW
+515 stdcall RegSetKeySecurity(long long ptr) advapibase.RegSetKeySecurity
+516 stdcall RegSetValueA(long str long ptr long) advapibase.RegSetValueA
+517 stdcall RegSetValueExA(long str long long ptr long) advapibase.RegSetValueExA
+518 stdcall RegSetValueExW(long wstr long long ptr long) advapibase.RegSetValueExW
+519 stdcall RegSetValueW(long wstr long ptr long) advapibase.RegSetValueW
+520 stdcall RegUnLoadKeyA(long str) advapibase.RegUnLoadKeyA
+521 stdcall RegUnLoadKeyW(long wstr) advapibase.RegUnLoadKeyW
+522 stdcall RegisterEventSourceA(ptr ptr) advapibase.RegisterEventSourceA
+523 stdcall RegisterEventSourceW(ptr ptr) advapibase.RegisterEventSourceW
+524 stdcall RegisterIdleTask(long long ptr ptr) advapibase.RegisterIdleTask
+525 stdcall RegisterServiceCtrlHandlerA(str ptr) advapibase.RegisterServiceCtrlHandlerA
+526 stdcall RegisterServiceCtrlHandlerExA(str ptr ptr) advapibase.RegisterServiceCtrlHandlerExA
+527 stdcall RegisterServiceCtrlHandlerExW(wstr ptr ptr) advapibase.RegisterServiceCtrlHandlerExW
+528 stdcall RegisterServiceCtrlHandlerW(wstr ptr) advapibase.RegisterServiceCtrlHandlerW
+529 stdcall RegisterTraceGuidsA(ptr ptr ptr long ptr str str ptr) advapibase.RegisterTraceGuidsA ;ntdll.EtwRegisterTraceGuidsA
+530 stdcall RegisterTraceGuidsW(ptr ptr ptr long ptr wstr wstr ptr) advapibase.RegisterTraceGuidsW ;ntdll.EtwRegisterTraceGuidsW
+531 stdcall RemoveTraceCallback(ptr) advapibase.RemoveTraceCallback
+532 stdcall RemoveUsersFromEncryptedFile(wstr ptr) advapibase.RemoveUsersFromEncryptedFile
+533 stdcall ReportEventA(long long long long ptr long long str ptr) advapibase.ReportEventA
+534 stdcall ReportEventW(long long long long ptr long long wstr ptr) advapibase.ReportEventW
+535 stdcall RevertToSelf() advapibase.RevertToSelf
+536 stdcall SaferCloseLevel(ptr) advapibase.SaferCloseLevel
+537 stdcall SaferComputeTokenFromLevel(ptr ptr ptr long ptr) advapibase.SaferComputeTokenFromLevel
+538 stdcall SaferCreateLevel(long long long ptr ptr) advapibase.SaferCreateLevel
+539 stdcall SaferGetLevelInformation(ptr long ptr long ptr) advapibase.SaferGetLevelInformation
+540 stdcall SaferGetPolicyInformation(long long long ptr ptr ptr) advapibase.SaferGetPolicyInformation
+541 stdcall SaferIdentifyLevel(long ptr ptr ptr) advapibase.SaferIdentifyLevel
+542 stdcall SaferRecordEventLogEntry(ptr wstr ptr) advapibase.SaferRecordEventLogEntry
+543 stdcall SaferSetLevelInformation(ptr long ptr long) advapibase.SaferSetLevelInformation
+544 stdcall SaferSetPolicyInformation(long long long ptr ptr) advapibase.SaferSetPolicyInformation
+545 stdcall SaferiChangeRegistryScope(ptr long) advapibase.SaferiChangeRegistryScope
+546 stdcall SaferiCompareTokenLevels(long long long) advapibase.SaferiCompareTokenLevels
+547 stdcall SaferiIsExecutableFileType(wstr long) advapibase.SaferiIsExecutableFileType
+548 stdcall SaferiPopulateDefaultsInRegistry(ptr long) advapibase.SaferiPopulateDefaultsInRegistry
+549 stdcall SaferiRecordEventLogEntry() advapibase.SaferiRecordEventLogEntry
+550 stdcall SaferiReplaceProcessThreadTokens(ptr ptr ptr) advapibase.SaferiReplaceProcessThreadTokens
+551 stdcall SaferiSearchMatchingHashRules(long ptr long long ptr ptr) advapibase.SaferiSearchMatchingHashRules
+552 stdcall SetAclInformation(ptr ptr long long) advapibase.SetAclInformation
+553 stdcall SetEntriesInAccessListA(long ptr long str ptr ptr) advapibase.SetEntriesInAccessListA
+554 stdcall SetEntriesInAccessListW(long ptr long wstr ptr ptr) advapibase.SetEntriesInAccessListW
+555 stdcall SetEntriesInAclA(long ptr ptr ptr) advapibase.SetEntriesInAclA
+556 stdcall SetEntriesInAclW(long ptr ptr ptr) advapibase.SetEntriesInAclW
+557 stdcall SetEntriesInAuditListA(long ptr long str ptr ptr) advapibase.SetEntriesInAuditListA
+558 stdcall SetEntriesInAuditListW(long ptr long wstr ptr ptr) advapibase.SetEntriesInAuditListW
+559 stdcall SetFileSecurityA(str long ptr) advapibase.SetFileSecurityA
+560 stdcall SetFileSecurityW(wstr long ptr) advapibase.SetFileSecurityW
+561 stdcall SetInformationCodeAuthzLevelW() advapibase.SetInformationCodeAuthzLevelW
+562 stdcall SetInformationCodeAuthzPolicyW() advapibase.SetInformationCodeAuthzPolicyW
+563 stdcall SetKernelObjectSecurity(long long ptr) advapibase.SetKernelObjectSecurity
+564 stdcall SetNamedSecurityInfoA(str long ptr ptr ptr ptr ptr) advapibase.SetNamedSecurityInfoA
+565 stdcall SetNamedSecurityInfoExA(str long long str ptr ptr str str ptr) advapibase.SetNamedSecurityInfoExA
+566 stdcall SetNamedSecurityInfoExW(wstr long long wstr ptr ptr wstr wstr ptr) advapibase.SetNamedSecurityInfoExW
+567 stdcall SetNamedSecurityInfoW(wstr long ptr ptr ptr ptr ptr) advapibase.SetNamedSecurityInfoW
+568 stdcall SetPrivateObjectSecurity(long ptr ptr ptr long) advapibase.SetPrivateObjectSecurity
+569 stdcall SetPrivateObjectSecurityEx(long ptr ptr long ptr ptr) advapibase.SetPrivateObjectSecurityEx
+570 stdcall SetSecurityDescriptorControl(ptr long long) advapibase.SetSecurityDescriptorControl
+571 stdcall SetSecurityDescriptorDacl(ptr long ptr long) advapibase.SetSecurityDescriptorDacl
+572 stdcall SetSecurityDescriptorGroup(ptr ptr long) advapibase.SetSecurityDescriptorGroup
+573 stdcall SetSecurityDescriptorOwner(ptr ptr long) advapibase.SetSecurityDescriptorOwner
+574 stdcall SetSecurityDescriptorRMControl(ptr ptr) advapibase.SetSecurityDescriptorRMControl
+575 stdcall SetSecurityDescriptorSacl(ptr long ptr long) advapibase.SetSecurityDescriptorSacl
+576 stdcall SetSecurityInfo(long long long ptr ptr ptr ptr) advapibase.SetSecurityInfo
+577 stdcall SetSecurityInfoExA(ptr long long str ptr ptr str str ptr) advapibase.SetSecurityInfoExA
+578 stdcall SetSecurityInfoExW(ptr long long wstr ptr ptr wstr wstr ptr) advapibase.SetSecurityInfoExW
+579 stdcall SetServiceBits(long long long long) advapibase.SetServiceBits
+580 stdcall SetServiceObjectSecurity(long long ptr) advapibase.SetServiceObjectSecurity
+581 stdcall SetServiceStatus(long long) advapibase.SetServiceStatus
+582 stdcall SetThreadToken(ptr ptr) advapibase.SetThreadToken
+583 stdcall SetTokenInformation(long long ptr long) advapibase.SetTokenInformation
+584 stdcall SetTraceCallback(ptr ptr) advapibase.SetTraceCallback
+585 stdcall SetUserFileEncryptionKey(ptr) advapibase.SetUserFileEncryptionKey
+586 stdcall StartServiceA(long long ptr) advapibase.StartServiceA
+587 stdcall StartServiceCtrlDispatcherA(ptr) advapibase.StartServiceCtrlDispatcherA
+588 stdcall StartServiceCtrlDispatcherW(ptr) advapibase.StartServiceCtrlDispatcherW
+589 stdcall StartServiceW(long long ptr) advapibase.StartServiceW
+590 stdcall StartTraceA(ptr str ptr) advapibase.StartTraceA ;ntdll.EtwStartTraceA
+591 stdcall StartTraceW(ptr wstr ptr) advapibase.StartTraceW ;ntdll.EtwStartTraceW
+592 stdcall StopTraceA(double str ptr) advapibase.StopTraceA ;ntdll.EtwStopTraceA
+593 stdcall StopTraceW(double wstr ptr) advapibase.StopTraceW ;ntdll.EtwStopTraceA
+594 stdcall SystemFunction001(ptr ptr ptr) advapibase.SystemFunction001
+595 stdcall SystemFunction002(ptr ptr ptr) advapibase.SystemFunction002
+596 stdcall SystemFunction003(ptr ptr) advapibase.SystemFunction003
+597 stdcall SystemFunction004(ptr ptr ptr) advapibase.SystemFunction004
+598 stdcall SystemFunction005(ptr ptr ptr) advapibase.SystemFunction005
+599 stdcall SystemFunction006(ptr ptr) advapibase.SystemFunction006
+600 stdcall SystemFunction007(ptr ptr) advapibase.SystemFunction007
+601 stdcall SystemFunction008(ptr ptr ptr) advapibase.SystemFunction008
+602 stdcall SystemFunction009(ptr ptr ptr) advapibase.SystemFunction009
+603 stdcall SystemFunction010(ptr ptr ptr) advapibase.SystemFunction010
+604 stdcall SystemFunction011(ptr ptr ptr) advapibase.SystemFunction011 ;SystemFunction010
+605 stdcall SystemFunction012(ptr ptr ptr) advapibase.SystemFunction012
+606 stdcall SystemFunction013(ptr ptr ptr) advapibase.SystemFunction013
+607 stdcall SystemFunction014(ptr ptr ptr) advapibase.SystemFunction014 ;SystemFunction012
+608 stdcall SystemFunction015(ptr ptr ptr) advapibase.SystemFunction015 ;SystemFunction013
+609 stdcall SystemFunction016(ptr ptr ptr) advapibase.SystemFunction016 ;SystemFunction012
+610 stdcall SystemFunction017(ptr ptr ptr) advapibase.SystemFunction017 ;SystemFunction013
+611 stdcall SystemFunction018(ptr ptr ptr) advapibase.SystemFunction018 ;SystemFunction012
+612 stdcall SystemFunction019(ptr ptr ptr) advapibase.SystemFunction019 ;SystemFunction013
+613 stdcall SystemFunction020(ptr ptr ptr) advapibase.SystemFunction020 ;SystemFunction012
+614 stdcall SystemFunction021(ptr ptr ptr) advapibase.SystemFunction021 ;SystemFunction013
+615 stdcall SystemFunction022(ptr ptr ptr) advapibase.SystemFunction022 ;SystemFunction012
+616 stdcall SystemFunction023(ptr ptr ptr) advapibase.SystemFunction023 ;SystemFunction013
+617 stdcall SystemFunction024(ptr ptr ptr) advapibase.SystemFunction024
+618 stdcall SystemFunction025(ptr ptr ptr) advapibase.SystemFunction025
+619 stdcall SystemFunction026(ptr ptr ptr) advapibase.SystemFunction026 ;SystemFunction024
+620 stdcall SystemFunction027(ptr ptr ptr) advapibase.SystemFunction027 ;SystemFunction025
+621 stdcall SystemFunction028(long long) advapibase.SystemFunction028
+622 stdcall SystemFunction029(long long) advapibase.SystemFunction029
+623 stdcall SystemFunction030(ptr ptr) advapibase.SystemFunction030
+624 stdcall SystemFunction031(ptr ptr) advapibase.SystemFunction031 ;SystemFunction030
+625 stdcall SystemFunction032(ptr ptr) advapibase.SystemFunction032
+626 stdcall SystemFunction033(long long) advapibase.SystemFunction033
+627 stdcall SystemFunction034(long long) advapibase.SystemFunction034
+628 stdcall SystemFunction035(str) advapibase.SystemFunction035
+629 stdcall SystemFunction036(ptr long) advapibase.SystemFunction036 ;# RtlGenRandom
+630 stdcall SystemFunction040(ptr long long) advapibase.SystemFunction040 ;# RtlEncryptMemory
+631 stdcall SystemFunction041(ptr long long) advapibase.SystemFunction041 ;# RtlDecryptMemory
+632 stdcall TraceEvent(double ptr) advapibase.TraceEvent ;ntdll.EtwTraceEvent
+633 stdcall TraceEventInstance(double ptr ptr ptr) advapibase.TraceEventInstance ;ntdll.EtwTraceEventInstance
+634 varargs TraceMessage(ptr long ptr long) advapibase.TraceMessage ;ntdll.EtwTraceMessage
+635 stdcall TraceMessageVa(double long ptr long ptr) advapibase.TraceMessageVa ;ntdll.EtwTraceMessageVa
+636 stdcall TreeResetNamedSecurityInfoA(str ptr ptr ptr ptr ptr ptr long ptr ptr ptr) advapibase.TreeResetNamedSecurityInfoA
+637 stdcall TreeResetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr long ptr long ptr) advapibase.TreeResetNamedSecurityInfoW
+638 stdcall TrusteeAccessToObjectA(str long str ptr long ptr) advapibase.TrusteeAccessToObjectA
+639 stdcall TrusteeAccessToObjectW(wstr long wstr ptr long ptr) advapibase.TrusteeAccessToObjectW
+640 stdcall UninstallApplication(ptr long) advapibase.UninstallApplication
+641 stdcall UnlockServiceDatabase(ptr) advapibase.UnlockServiceDatabase
+642 stdcall UnregisterIdleTask(long ptr ptr) advapibase.UnregisterIdleTask
+643 stdcall UnregisterTraceGuids(double) advapibase.UnregisterTraceGuids ;ntdll.EtwUnregisterTraceGuids
+644 stdcall UpdateTraceA(double str ptr) advapibase.UpdateTraceA ;ntdll.EtwUpdateTraceA
+645 stdcall UpdateTraceW(double wstr ptr) advapibase.UpdateTraceW ;ntdll.EtwUpdateTraceW
+646 stdcall WdmWmiServiceMain(ptr long) advapibase.WdmWmiServiceMain
+647 stdcall WmiCloseBlock(ptr) advapibase.WmiCloseBlock
+648 stdcall WmiCloseTraceWithCursor(ptr) advapibase.WmiCloseTraceWithCursor
+649 stdcall WmiConvertTimestamp(long long long) advapibase.WmiConvertTimestamp
+650 stdcall WmiDevInstToInstanceNameA(ptr long str long) advapibase.WmiDevInstToInstanceNameA
+651 stdcall WmiDevInstToInstanceNameW(ptr long wstr long) advapibase.WmiDevInstToInstanceNameW
+652 stdcall WmiEnumerateGuids(long long) advapibase.WmiEnumerateGuids
+653 stdcall WmiExecuteMethodA(long str long long long long long) advapibase.WmiExecuteMethodA
+654 stdcall WmiExecuteMethodW(long wstr long long long long long) advapibase.WmiExecuteMethodW
+655 stdcall WmiFileHandleToInstanceNameA(long long ptr long) advapibase.WmiFileHandleToInstanceNameA
+656 stdcall WmiFileHandleToInstanceNameW(long long ptr long) advapibase.WmiFileHandleToInstanceNameW
+657 stdcall WmiFreeBuffer(ptr) advapibase.WmiFreeBuffer
+658 stdcall WmiGetFirstTraceOffset(long long) advapibase.WmiGetFirstTraceOffset
+659 stdcall WmiGetNextEvent(long) advapibase.WmiGetNextEvent
+660 stdcall WmiGetTraceHeader(long long long) advapibase.WmiGetTraceHeader
+661 stdcall WmiMofEnumerateResourcesA(long long long) advapibase.WmiMofEnumerateResourcesA
+662 stdcall WmiMofEnumerateResourcesW(long long long) advapibase.WmiMofEnumerateResourcesW
+663 stdcall WmiNotificationRegistrationA(ptr long ptr long long) advapibase.WmiNotificationRegistrationA ;ntdll.EtwNotificationRegistrationA
+664 stdcall WmiNotificationRegistrationW(ptr long ptr long long) advapibase.WmiNotificationRegistrationW ;ntdll.EtwNotificationRegistrationW
+665 stdcall WmiOpenBlock(long long long) advapibase.WmiOpenBlock
+666 stdcall WmiOpenTraceWithCursor(long long) advapibase.WmiOpenTraceWithCursor 
+667 stdcall WmiParseTraceEvent(long long long long long) advapibase.WmiParseTraceEvent
+668 stdcall WmiQueryAllDataA(long ptr ptr) advapibase.WmiQueryAllDataA
+669 stdcall WmiQueryAllDataMultipleA(long long long ptr) advapibase.WmiQueryAllDataMultipleA
+670 stdcall WmiQueryAllDataMultipleW(long long long ptr) advapibase.WmiQueryAllDataMultipleW
+671 stdcall WmiQueryAllDataW(long ptr ptr) advapibase.WmiQueryAllDataW
+672 stdcall WmiQueryGuidInformation(ptr ptr) advapibase.WmiQueryGuidInformation
+673 stdcall WmiQuerySingleInstanceA(long str ptr ptr) advapibase.WmiQuerySingleInstanceA
+674 stdcall WmiQuerySingleInstanceMultipleA(long long long long long) advapibase.WmiQuerySingleInstanceMultipleA
+675 stdcall WmiQuerySingleInstanceMultipleW(long long long long long) advapibase.WmiQuerySingleInstanceMultipleW
+676 stdcall WmiQuerySingleInstanceW(long wstr ptr ptr) advapibase.WmiQuerySingleInstanceW
+677 stdcall WmiReceiveNotificationsA(long long long long) advapibase.WmiReceiveNotificationsA ;ntdll.EtwReceiveNotificationsA
+678 stdcall WmiReceiveNotificationsW(long long long long) advapibase.WmiReceiveNotificationsW ;ntdll.EtwReceiveNotificationsW
+679 stdcall WmiSetSingleInstanceA(long str long long ptr) advapibase.WmiSetSingleInstanceA
+680 stdcall WmiSetSingleInstanceW(long wstr long long ptr) advapibase.WmiSetSingleInstanceW
+681 stdcall WmiSetSingleItemA(long str long long long ptr) advapibase.WmiSetSingleItemA
+682 stdcall WmiSetSingleItemW(long wstr long long long ptr) advapibase.WmiSetSingleItemW
+683 stdcall Wow64Win32ApiEntry(long long long) advapibase.Wow64Win32ApiEntry
+684 stdcall WriteEncryptedFileRaw(ptr ptr ptr) advapibase.WriteEncryptedFileRaw
 
 #Only on XP
 @ stdcall CreateProcessAsUserSecure(ptr str str ptr ptr long long ptr str ptr ptr) advapibase.CreateProcessAsUserSecure;only on XP (needed for synchronization)
@@ -677,23 +677,23 @@
 @ stdcall SynchronizeWindows31FilesAndWindowsNTRegistry(long long long long) advapibase.SynchronizeWindows31FilesAndWindowsNTRegistry  ;only on XP (needed for synchronization)
 
 #Missing on XP
-100 stdcall CreateProcessWithTokenW(ptr long wstr wstr long ptr wstr ptr ptr) ;advapinew.CreateProcessWithTokenW
-202 stdcall ElfReportEventAndSourceW(long long ptr long long long ptr ptr long long ptr ptr long ptr ptr) ;advapinew.ElfReportEventAndSourceW
-297 stdcall I_QueryTagInformation(long long ptr)
-462 stdcall RegConnectRegistryExA(str ptr long ptr)
-463 stdcall RegConnectRegistryExW(wstr ptr long ptr)	
-470 stdcall RegDeleteKeyExA(long str long long)
-471 stdcall RegDeleteKeyExW(long wstr long long) 
-476 stdcall RegDisableReflectionKey(ptr)
-477 stdcall RegEnableReflectionKey(ptr)	
-502 stdcall RegQueryReflectionKey(ptr ptr)	 ;native on Server 2003, but, missing on XP (needed for synchronization) 
+100 stdcall CreateProcessWithTokenW(ptr long wstr wstr long ptr wstr ptr ptr) advapibase.CreateProcessWithTokenW ;advapinew.CreateProcessWithTokenW
+202 stdcall ElfReportEventAndSourceW(long long ptr long long long ptr ptr long long ptr ptr long ptr ptr) advapibase.ElfReportEventAndSourceW ;advapinew.ElfReportEventAndSourceW
+297 stdcall I_QueryTagInformation(long long ptr) advapibase.I_QueryTagInformation
+462 stdcall RegConnectRegistryExA(str ptr long ptr) advapibase.RegConnectRegistryExA
+463 stdcall RegConnectRegistryExW(wstr ptr long ptr) advapibase.RegConnectRegistryExW
+470 stdcall RegDeleteKeyExA(long str long long) advapibase.RegDeleteKeyExA
+471 stdcall RegDeleteKeyExW(long wstr long long) advapibase.RegDeleteKeyExW
+476 stdcall RegDisableReflectionKey(ptr) advapibase.RegDisableReflectionKey
+477 stdcall RegEnableReflectionKey(ptr)	advapibase.RegEnableReflectionKey
+502 stdcall RegQueryReflectionKey(ptr ptr)	advapibase.RegQueryReflectionKey ;native on Server 2003, but, missing on XP (needed for synchronization) 
 
 #Missing on Server 2003 RTM
-@ stdcall RegDisablePredefinedCacheEx() advapinew.RegDisablePredefinedCacheEx
-486 stdcall RegGetValueA(long str str long ptr ptr ptr) advapinew.RegGetValueA
-487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapinew.RegGetValueW
+@ stdcall RegDisablePredefinedCacheEx() advapibase.RegDisablePredefinedCacheEx ;advapinew.RegDisablePredefinedCacheEx
+486 stdcall RegGetValueA(long str str long ptr ptr ptr) advapibase.RegGetValueA ;advapinew.RegGetValueA
+487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapibase.RegGetValueW ;advapinew.RegGetValueW
 
-@ stdcall LogonUserExExW(str str str long long ptr ptr ptr ptr ptr ptr)
+@ stdcall LogonUserExExW(str str str long long ptr ptr ptr ptr ptr ptr) advapibase.LogonUserExExW
 
 #Vista Functions implemented (without redirection)
 @ stdcall EventActivityIdControl(long ptr)
@@ -825,6 +825,10 @@
 @ stdcall UsePinForEncryptedFilesA(long long long)
 @ stdcall UsePinForEncryptedFilesW(long long long)
 
+#Win7+
+@ stdcall EnableTraceEx2(int64 ptr long long int64 int64 long ptr)
+@ stdcall LsaLookupSids2(ptr long long ptr ptr ptr)
+
 #Imports from wevtapibase (wevtapi from Longhorn Pre-Reset)
 @ stdcall EvtAssertConfig() wevtapibase.EvtIntAssertConfig
 @ stdcall EvtClearLog() wevtapibase.EvtIntClearLog
@@ -871,7 +875,3 @@
 @ stdcall EvtReportText()
 @ stdcall EvtScopePublisher()
 @ stdcall EvtSetThreadCorrelationId()
-
-#Win7+
-@ stdcall EnableTraceEx2(int64 ptr long long int64 int64 long ptr)
-@ stdcall LsaLookupSids2(ptr long long ptr ptr ptr)

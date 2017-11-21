@@ -20,9 +20,6 @@ Module Name:
     ldrrsrc.c
  
  */
- 
-#define NDEBUG
-
 #include <main.h>
 
 

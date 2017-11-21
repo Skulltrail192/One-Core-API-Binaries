@@ -27,72 +27,72 @@ typedef enum tagGPFIDL_FLAGS {
 	GPFIDL_UNCPRINTER = 0x0002, // include UNC printer names too (non file system item) 
 }GPFIDL_FLAGS;
 
-HRESULT 
-WINAPI 
-PathComparePaths(
-	LPWSTR external, 
-	LPCWSTR lpString
-)
-{
-  HRESULT resp; // eax@2
-  int other; // ebx@5
-  int one; // edi@5
-  LPWSTR string; // esi@6
-  int hum; // eax@10
-  __int16 compare; // cx@10
-  HRESULT respResult; // [sp+8h] [bp-20A0h]@1
-  LPWSTR path = L""; // [sp+Ch] [bp-209Ch]@2
+// HRESULT 
+// WINAPI 
+// PathComparePaths(
+	// LPWSTR external, 
+	// LPCWSTR lpString
+// )
+// {
+  // HRESULT resp; // eax@2
+  // int other; // ebx@5
+  // int one; // edi@5
+  // LPWSTR string; // esi@6
+  // int hum; // eax@10
+  // __int16 compare; // cx@10
+  // HRESULT respResult; // [sp+8h] [bp-20A0h]@1
+  // LPWSTR path = L""; // [sp+Ch] [bp-209Ch]@2
 
-  respResult = 1;
-  if ( (int)external & 0xFFFF0000 )
-    resp = StringCchCopyW(path, 0x825u, external);
-  else
-    resp = SHGetFolderPathW(0, (int)external | 0x4000, 0, 0, path);
-  if ( resp >= 0 )
-  {
-    if ( StringCchCopyW(path, 0x825u, lpString) >= 0 )
-    {
-      PathRemoveBackslashW(&path[2086]);
-      PathRemoveBackslashW(path);
-      other = lstrlenW(&path[2086]);
-      one = lstrlenW(lpString);
-      if ( other <= one )
-      {
-        string = path;
-        if ( *string == 92 || 
-		*path == 92)
-          *string = 0;
-        if ( 1)
-        {
-          if ( other >= one )
-          {
-            respResult = 2;
-          }
-          else
-          {
-            hum = (int)(string + 2);
-            compare = *(string + 1);
-            respResult = 8;
-            if ( !compare )
-              goto LABEL_23;
-            do
-            {
-              if ( compare == 92 )
-                break;
-              hum += 2;
-              compare = hum;
-            }
-            while ( hum );
-            if ( !hum )
-LABEL_23:
-              respResult = 12;
-          }
-        }
-      }
-    }
-  }
-  return respResult;
-}
+  // respResult = 1;
+  // if ( (int)external & 0xFFFF0000 )
+    // resp = StringCchCopyW(path, 0x825u, external);
+  // else
+    // resp = SHGetFolderPathW(0, (int)external | 0x4000, 0, 0, path);
+  // if ( resp >= 0 )
+  // {
+    // if ( StringCchCopyW(path, 0x825u, lpString) >= 0 )
+    // {
+      // PathRemoveBackslashW(&path[2086]);
+      // PathRemoveBackslashW(path);
+      // other = lstrlenW(&path[2086]);
+      // one = lstrlenW(lpString);
+      // if ( other <= one )
+      // {
+        // string = path;
+        // if ( *string == 92 || 
+		// *path == 92)
+          // *string = 0;
+        // if ( 1)
+        // {
+          // if ( other >= one )
+          // {
+            // respResult = 2;
+          // }
+          // else
+          // {
+            // hum = (int)(string + 2);
+            // compare = *(string + 1);
+            // respResult = 8;
+            // if ( !compare )
+              // goto LABEL_23;
+            // do
+            // {
+              // if ( compare == 92 )
+                // break;
+              // hum += 2;
+              // compare = hum;
+            // }
+            // while ( hum );
+            // if ( !hum )
+// LABEL_23:
+              // respResult = 12;
+          // }
+        // }
+      // }
+    // }
+  // }
+  // return respResult;
+// }
 
 HRESULT WINAPI _AccountName2PictureName(LPWSTR other, LPWSTR string, size_t size)
 {
@@ -604,14 +604,14 @@ LABEL_14:
   return result;
 }
 
-BOOL 
-WINAPI 
-SHGetPathFromIDListEx(
-  _In_   PCIDLIST_ABSOLUTE pidl,
-  _Out_  PWSTR pszPath,
-  DWORD cchPath,
-  GPFIDL_FLAGS uOpts
-)
-{
-	return SHGetPathFromIDListW(pidl, pszPath);
-}
+// BOOL 
+// WINAPI 
+// SHGetPathFromIDListEx(
+  // _In_   PCIDLIST_ABSOLUTE pidl,
+  // _Out_  PWSTR pszPath,
+  // DWORD cchPath,
+  // GPFIDL_FLAGS uOpts
+// )
+// {
+	// return SHGetPathFromIDListW(pidl, pszPath);
+// }

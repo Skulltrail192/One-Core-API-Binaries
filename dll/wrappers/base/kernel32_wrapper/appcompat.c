@@ -22,9 +22,21 @@ Revision History:
 
 ULONG g_ShimsEnabled;
 
+ULONG g_ShimsDisabled = -1;
+static BOOL g_ApphelpInitialized = FALSE;
+static PVOID g_pApphelpCheckRunAppEx;
+static PVOID g_pSdbPackAppCompatData;
+
+#define APPHELP_VALID_RESULT        0x10000
+#define APPHELP_RESULT_NOTFOUND     0x20000
+#define APPHELP_RESULT_FOUND        0x40000
+
+
+/* FUNCTIONS ******************************************************************/
+
 BOOLEAN
 WINAPI
-BaseIsAppcompatInfrastructureDisabled(VOID)
+IsShimInfrastructureDisabled(VOID)
 {
     HANDLE KeyHandle;
     NTSTATUS Status;
@@ -44,10 +56,12 @@ BaseIsAppcompatInfrastructureDisabled(VOID)
      * This is a TROOLEAN, -1 means we haven't yet figured it out.
      * 0 means shims are enabled, and 1 means shims are disabled!
      */
-    if (g_ShimsEnabled == -1)
+    if (g_ShimsDisabled == -1)
     {
+        ULONG DisableShims = FALSE;
+
         /* Open the safe mode key */
-        Status = NtOpenKey(&KeyHandle, 1, &OptionKeyAttributes);
+        Status = NtOpenKey(&KeyHandle, KEY_QUERY_VALUE, &OptionKeyAttributes);
         if (NT_SUCCESS(Status))
         {
             /* Check if this is safemode */
@@ -61,67 +75,64 @@ BaseIsAppcompatInfrastructureDisabled(VOID)
             if ((NT_SUCCESS(Status)) &&
                  (KeyInfo.Type == REG_DWORD) &&
                  (KeyInfo.DataLength == sizeof(ULONG)) &&
-                 (KeyInfo.Data[0] == TRUE))
+                 (KeyInfo.Data[0] != FALSE))
             {
                 /* It is, so disable shims! */
-                g_ShimsEnabled = TRUE;
+                DisableShims = TRUE;
             }
-            else
+        }
+
+        if (!DisableShims)
+        {
+            /* Open the app compatibility engine settings key */
+            Status = NtOpenKey(&KeyHandle, KEY_QUERY_VALUE, &AppCompatKeyAttributes);
+            if (NT_SUCCESS(Status))
             {
-                /* Open the app compatibility engine settings key */
-                Status = NtOpenKey(&KeyHandle, 1, &AppCompatKeyAttributes);
-                if (NT_SUCCESS(Status))
+                /* Check if the app compat engine is turned off */
+                Status = NtQueryValueKey(KeyHandle,
+                                         &DisableAppCompat,
+                                         KeyValuePartialInformation,
+                                         &KeyInfo,
+                                         sizeof(KeyInfo),
+                                         &ResultLength);
+                NtClose(KeyHandle);
+                if ((NT_SUCCESS(Status)) &&
+                    (KeyInfo.Type == REG_DWORD) &&
+                    (KeyInfo.DataLength == sizeof(ULONG)) &&
+                    (KeyInfo.Data[0] == TRUE))
                 {
-                    /* Check if the app compat engine is turned off */
-                    Status = NtQueryValueKey(KeyHandle,
-                                             &DisableAppCompat,
-                                             KeyValuePartialInformation,
-                                             &KeyInfo,
-                                             sizeof(KeyInfo),
-                                             &ResultLength);
-                    NtClose(KeyHandle);
-                    if ((NT_SUCCESS(Status)) &&
-                        (KeyInfo.Type == REG_DWORD) &&
-                        (KeyInfo.DataLength == sizeof(ULONG)) &&
-                        (KeyInfo.Data[0] == TRUE))
-                    {
-                        /* It is, so disable shims! */
-                        g_ShimsEnabled = TRUE;
-                    }
-                    else
-                    {
-                        /* Finally, open the app compatibility policy key */
-                        Status = NtOpenKey(&KeyHandle, 1, &PolicyKeyAttributes);
-                        if (NT_SUCCESS(Status))
-                        {
-                            /* Check if the system policy disables app compat */
-                            Status = NtQueryValueKey(KeyHandle,
-                                                     &DisableEngine,
-                                                     KeyValuePartialInformation,
-                                                     &KeyInfo,
-                                                     sizeof(KeyInfo),
-                                                     &ResultLength),
-                                                     NtClose(KeyHandle);
-                            if ((NT_SUCCESS(Status)) &&
-                                (KeyInfo.Type == REG_DWORD) &&
-                                (KeyInfo.DataLength == sizeof(ULONG)) &&
-                                (KeyInfo.Data[0] == TRUE))
-                            {
-                                /* It does, so disable shims! */
-                                g_ShimsEnabled = TRUE;
-                            }
-                            else
-                            {
-                                /* No keys are set, so enable shims! */
-                                g_ShimsEnabled = FALSE;
-                            }
-                        }
-                    }
+                    /* It is, so disable shims! */
+                    DisableShims = TRUE;
                 }
             }
         }
+        if (!DisableShims)
+        {
+            /* Finally, open the app compatibility policy key */
+            Status = NtOpenKey(&KeyHandle, KEY_QUERY_VALUE, &PolicyKeyAttributes);
+            if (NT_SUCCESS(Status))
+            {
+                /* Check if the system policy disables app compat */
+                Status = NtQueryValueKey(KeyHandle,
+                                         &DisableEngine,
+                                         KeyValuePartialInformation,
+                                         &KeyInfo,
+                                         sizeof(KeyInfo),
+                                         &ResultLength);
+                NtClose(KeyHandle);
+                if ((NT_SUCCESS(Status)) &&
+                    (KeyInfo.Type == REG_DWORD) &&
+                    (KeyInfo.DataLength == sizeof(ULONG)) &&
+                    (KeyInfo.Data[0] == TRUE))
+                {
+                    /* It does, so disable shims! */
+                    DisableShims = TRUE;
+                }
+            }
+        }
+        g_ShimsDisabled = DisableShims;
     }
 
     /* Return if shims are disabled or not ("Enabled == 1" means disabled!) */
-    return g_ShimsEnabled ? TRUE : FALSE;
+    return g_ShimsDisabled ? TRUE : FALSE;
 }

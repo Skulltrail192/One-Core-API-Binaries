@@ -27,12 +27,15 @@
 #define COBJMACROS
 
 #include <main.h>
+#include <userenv.h>
+
+#define MAX_PATH 512
 
 typedef enum{ 
   KF_FLAG_DEFAULT                      = 0x00000000,
   KF_FLAG_SIMPLE_IDLIST                = 0x00000100,
   KF_FLAG_NOT_PARENT_RELATIVE          = 0x00000200,
-  KF_FLAG_DEFAULT_PATH                 = 0x00000400,
+  //KF_FLAG_DEFAULT_PATH                 = 0x00000400, //Reactos already definition for this constant
   KF_FLAG_INIT                         = 0x00000800,
   KF_FLAG_NO_ALIAS                     = 0x00001000,
   KF_FLAG_DONT_UNEXPAND                = 0x00002000,
@@ -45,11 +48,30 @@ typedef enum{
 static const GUID CLSID_UnixDosFolder = 
 {0x9d20aae8, 0x0625, 0x44b0, {0x9c, 0xa7, 0x71, 0x88, 0x9c, 0x22, 0x54, 0xd9}};
 
+const GUID FOLDERID_ApplicationShortcuts;
+const GUID FOLDERID_AppsFolder;
+const GUID FOLDERID_CameraRoll;
+const GUID FOLDERID_HomeGroupCurrentUser;
+const GUID FOLDERID_PublicUserTiles;
+const GUID FOLDERID_SearchHistory;
+const GUID FOLDERID_SearchTemplates;
+const GUID FOLDERID_RoamedTileImages;
+const GUID FOLDERID_RoamingTiles;
+const GUID FOLDERID_SavedPicturesLibrary;
+const GUID OLDERID_Screenshots;
+const GUID FOLDERID_SkyDrive;
+const GUID FOLDERID_SkyDriveCameraRoll;
+const GUID FOLDERID_SkyDriveDocuments;
+const GUID FOLDERID_SkyDrivePictures;
+const GUID FOLDERID_TreeProperties;
+const GUID FOLDERID_Screenshots;
+const GUID FOLDERID_AccountPictures;
 const GUID FOLDERID_VideosLibrary;
 const GUID FOLDERID_UsersLibraries;
 const GUID FOLDERID_UsersFiles;
 const GUID FOLDERID_UserProgramFilesCommon;
 const GUID FOLDERID_UserProgramFiles;
+const GUID FOLDERID_UserProgramFiles_XP = {0xce4a5e9, 0xe4eb, 0x479d, {0xb8,0x9f,0x13,0x0c,0x02,0x88,0x61,0x55}};;
 const GUID FOLDERID_UserProfiles;
 const GUID FOLDERID_UserPinned;
 const GUID FOLDERID_SyncSetupFolder;
@@ -2965,6 +2987,165 @@ HRESULT WINAPI KnownFolderManager_Constructor( IUnknown *punk, REFIID riid, void
 }
 
 static int convertWinVistaFolderToWinXPFolder(KNOWNFOLDERID *id){
+	// if(IsEqualGUID( id , &FOLDERID_AccountPictures ) 
+	   // || IsEqualGUID(id, &FOLDERID_AddNewPrograms) 
+       // || IsEqualGUID(id, &FOLDERID_ApplicationShortcuts)
+	   // || IsEqualGUID(id, &FOLDERID_AppsFolder)
+	   // || IsEqualGUID(id, &FOLDERID_AppUpdates)   
+	   // || IsEqualGUID(id, &FOLDERID_CameraRoll)
+	   // || IsEqualGUID(id, &FOLDERID_ChangeRemovePrograms)	   
+	   // || IsEqualGUID(id, &FOLDERID_ConflictFolder)   
+	   // || IsEqualGUID(id, &FOLDERID_Contacts)	
+	   // || IsEqualGUID(id, &FOLDERID_DeviceMetadataStore)
+	   // || IsEqualGUID(id, &FOLDERID_Games)	 
+	   // || IsEqualGUID(id, &FOLDERID_GameTasks)		
+	   // || IsEqualGUID(id, &FOLDERID_HomeGroup)	
+	   // || IsEqualGUID(id, &FOLDERID_HomeGroupCurrentUser)
+	   // || IsEqualGUID(id, &FOLDERID_ImplicitAppShortcuts)	
+	   // || IsEqualGUID(id, &FOLDERID_Libraries)
+	   // || IsEqualGUID(id, &FOLDERID_Links)	   
+	   // || IsEqualGUID(id, &FOLDERID_OriginalImages)
+	   // || IsEqualGUID(id, &FOLDERID_Playlists)	   
+	   // || IsEqualGUID(id, &FOLDERID_PhotoAlbums)
+	   // || IsEqualGUID(id, &FOLDERID_PublicGameTasks)	   
+	   // || IsEqualGUID(id, &FOLDERID_PublicLibraries)	 
+	   // || IsEqualGUID(id, &FOLDERID_PublicRingtones)	
+	   // || IsEqualGUID(id, &FOLDERID_PublicUserTiles)	
+	   // || IsEqualGUID(id, &FOLDERID_RecordedTV)	
+	   // || IsEqualGUID(id, &FOLDERID_Ringtones)	
+	   // || IsEqualGUID(id, &FOLDERID_SEARCH_CSC)	
+	   // || IsEqualGUID(id, &FOLDERID_SearchHistory)	
+	   // || IsEqualGUID(id, &FOLDERID_SearchHome)	   
+	   // || IsEqualGUID(id, &FOLDERID_SEARCH_MAPI)	
+	   // || IsEqualGUID(id, &FOLDERID_SearchTemplates)	   
+	   // || IsEqualGUID(id, &FOLDERID_RecordedTVLibrary)	 	
+	   // || IsEqualGUID(id, &FOLDERID_RoamedTileImages)
+	   // || IsEqualGUID(id, &FOLDERID_RoamingTiles)	
+	   // || IsEqualGUID(id, &FOLDERID_SamplePlaylists)		
+	   // || IsEqualGUID(id, &FOLDERID_SavedPicturesLibrary)
+	   // || IsEqualGUID(id, &FOLDERID_SavedSearches)	
+	   // || IsEqualGUID(id, &FOLDERID_Screenshots)	
+	   // || IsEqualGUID(id, &FOLDERID_SidebarDefaultParts) 	
+	   // || IsEqualGUID(id, &FOLDERID_SidebarParts) 	
+	   // || IsEqualGUID(id, &FOLDERID_SkyDrive) 	
+	   // || IsEqualGUID(id, &FOLDERID_SkyDriveCameraRoll) 	   
+	   // || IsEqualGUID(id, &FOLDERID_SkyDriveDocuments) 	   
+	   // || IsEqualGUID(id, &FOLDERID_SkyDrivePictures)
+	   // || IsEqualGUID(id, &FOLDERID_SyncManagerFolder)	   
+	   // || IsEqualGUID(id, &FOLDERID_SyncResultsFolder)	   
+	   // || IsEqualGUID(id, &FOLDERID_UserPinned)	   
+	   // || IsEqualGUID(id, &FOLDERID_SyncSetupFolder)	   
+	   // || IsEqualGUID(id, &FOLDERID_TreeProperties)	   
+	   // || IsEqualGUID(id, &FOLDERID_UsersFiles)	   
+	   // || IsEqualGUID(id, &FOLDERID_UsersLibraries)	   
+	   // || IsEqualGUID(id, &FOLDERID_PublicDownloads))	   
+		// return E_FAIL;
+	if(IsEqualGUID( id , &FOLDERID_Windows ))
+		return CSIDL_WINDOWS;			
+	if(IsEqualGUID( id , &FOLDERID_Videos ))
+		return CSIDL_MYVIDEO;			
+	if(IsEqualGUID( id , &FOLDERID_Templates ))
+		return CSIDL_TEMPLATES;			
+	if(IsEqualGUID( id , &FOLDERID_SystemX86 ))
+		return CSIDL_SYSTEMX86;			
+	if(IsEqualGUID( id , &FOLDERID_System ))
+		return CSIDL_SYSTEM;		
+	if(IsEqualGUID( id , &FOLDERID_Startup ))
+		return CSIDL_STARTUP;			
+	if(IsEqualGUID( id , &FOLDERID_StartMenu ))
+		return CSIDL_STARTMENU;			
+	if(IsEqualGUID( id , &FOLDERID_SendTo ))
+		return CSIDL_SENDTO;			
+	if(IsEqualGUID( id , &FOLDERID_RoamingAppData ))
+		return CSIDL_APPDATA;			
+	if(IsEqualGUID( id , &FOLDERID_ResourceDir ))
+		return CSIDL_RESOURCES;			
+	if(IsEqualGUID( id , &FOLDERID_RecycleBinFolder ))
+		return CSIDL_BITBUCKET;			
+	if(IsEqualGUID( id , &FOLDERID_Recent ))
+		return CSIDL_RECENT;			
+	if(IsEqualGUID( id , &FOLDERID_PublicVideos ))
+		return CSIDL_COMMON_VIDEO;			
+	if(IsEqualGUID( id , &FOLDERID_PublicPictures ))
+		return CSIDL_COMMON_PICTURES;			
+	if(IsEqualGUID( id , &FOLDERID_PublicMusic ))
+		return CSIDL_COMMON_MUSIC;		
+	if(IsEqualGUID( id , &FOLDERID_PublicDocuments ))
+		return CSIDL_COMMON_DOCUMENTS;			
+	if(IsEqualGUID( id , &FOLDERID_PublicDesktop ))
+		return CSIDL_COMMON_DESKTOPDIRECTORY;			
+	if(IsEqualGUID( id , &FOLDERID_Programs ))
+		return CSIDL_PROGRAMS;		
+	if(IsEqualGUID( id , &FOLDERID_ProgramFilesCommonX86 ))
+		return CSIDL_PROGRAM_FILES_COMMONX86;			
+	if(IsEqualGUID( id , &FOLDERID_ProgramFilesCommon ))
+		return CSIDL_PROGRAM_FILES_COMMON;			
+	if(IsEqualGUID( id , &FOLDERID_ProgramFilesCommonX64 ))
+		return CSIDL_PROGRAM_FILES_COMMON;			
+	if(IsEqualGUID( id , &FOLDERID_ProgramFilesX86 ))
+		return CSIDL_PROGRAM_FILESX86;			
+	if(IsEqualGUID( id , &FOLDERID_ProgramFilesX64 ))
+		return CSIDL_PROGRAM_FILES;			
+	if(IsEqualGUID( id , &FOLDERID_ProgramFiles ))
+		return CSIDL_PROGRAM_FILES;		
+	if(IsEqualGUID( id , &FOLDERID_Profile ))
+		return CSIDL_PROFILE;				
+	if(IsEqualGUID( id , &FOLDERID_PrintHood ))
+		return CSIDL_PRINTHOOD;			
+	if(IsEqualGUID( id , &FOLDERID_PrintersFolder ))
+		return CSIDL_PRINTERS;		
+	if(IsEqualGUID( id , &FOLDERID_Pictures ))
+		return CSIDL_MYPICTURES;		
+	if(IsEqualGUID( id , &FOLDERID_NetworkFolder ))
+		return CSIDL_NETWORK;			
+	if(IsEqualGUID( id , &FOLDERID_NetHood ))
+		return CSIDL_NETHOOD;			
+	if(IsEqualGUID( id , &FOLDERID_Music ))
+		return CSIDL_MYMUSIC;			
+	if(IsEqualGUID( id , &FOLDERID_LocalizedResourcesDir ))
+		return CSIDL_RESOURCES_LOCALIZED;		
+	if(IsEqualGUID( id , &FOLDERID_LocalAppDataLow ))
+		return CSIDL_LOCAL_APPDATA;			
+	if(IsEqualGUID( id , &FOLDERID_InternetCache ))
+		return CSIDL_INTERNET_CACHE;	
+	if(IsEqualGUID( id , &FOLDERID_InternetFolder ))
+		return CSIDL_INTERNET;		
+	if(IsEqualGUID( id , &FOLDERID_History ))
+		return CSIDL_HISTORY;			
+	if(IsEqualGUID( id , &FOLDERID_Fonts ))
+		return CSIDL_FONTS;		
+	if(IsEqualGUID( id , &FOLDERID_Favorites ))
+		return CSIDL_FAVORITES;		
+	if(IsEqualGUID( id , &FOLDERID_Documents ))
+		return CSIDL_MYDOCUMENTS;			
+	if(IsEqualGUID( id , &FOLDERID_ControlPanelFolder ))
+		return CSIDL_CONTROLS;		
+	if(IsEqualGUID( id , &FOLDERID_Desktop ))
+		return CSIDL_DESKTOP;	
+	if(IsEqualGUID( id , &FOLDERID_Cookies ))
+		return CSIDL_COOKIES;	
+	if(IsEqualGUID( id , &FOLDERID_CommonPrograms ))
+		return CSIDL_COMMON_PROGRAMS;
+	if(IsEqualGUID( id , &FOLDERID_CommonStartMenu ))
+		return CSIDL_COMMON_STARTMENU;	
+	if(IsEqualGUID( id , &FOLDERID_CommonStartup ))
+		return CSIDL_COMMON_STARTUP;	
+	if(IsEqualGUID( id , &FOLDERID_CommonTemplates ))
+		return CSIDL_COMMON_TEMPLATES;
+	if(IsEqualGUID( id , &FOLDERID_ComputerFolder ))
+		return CSIDL_DRIVES;
+	if(IsEqualGUID( id , &FOLDERID_ConnectionsFolder ))
+		return CSIDL_CONNECTIONS;		
+	if(IsEqualGUID( id , &FOLDERID_CommonOEMLinks ))
+		return CSIDL_COMMON_OEM_LINKS;	
+	if(IsEqualGUID( id , &FOLDERID_CDBurning ))
+		return CSIDL_CDBURN_AREA;
+	if(IsEqualGUID( id , &FOLDERID_CommonAdminTools ))
+		return CSIDL_COMMON_ADMINTOOLS;	
+	if(IsEqualGUID( id , &FOLDERID_ProgramData ))
+		return CSIDL_COMMON_APPDATA;
+	if(IsEqualGUID( id , &FOLDERID_LocalAppData ))
+		return CSIDL_LOCAL_APPDATA;
 	if(IsEqualGUID( id , &FOLDERID_UserProgramFiles ))
 		return CSIDL_LOCAL_APPDATA;
 	if(IsEqualGUID( id , &FOLDERID_VideosLibrary ))
@@ -2992,15 +3173,16 @@ static int csidl_from_id( const KNOWNFOLDERID *id )
 {
     int i;
 	int special;
-    for (i = 0; i < sizeof(CSIDL_Data) / sizeof(CSIDL_Data[0]); i++)
-	{
-		special = convertWinVistaFolderToWinXPFolder(id);
-		if(special)
-			return special;			
-        if (IsEqualGUID( CSIDL_Data[i].id, id )) 
-			return i;		
-	}
-    return -1;
+	return convertWinVistaFolderToWinXPFolder(id);
+    // for (i = 0; i < sizeof(CSIDL_Data) / sizeof(CSIDL_Data[0]); i++)
+	// {
+		// special = convertWinVistaFolderToWinXPFolder(id);
+		// if(special)
+			// return special;			
+        // if (IsEqualGUID( CSIDL_Data[i].id, id )) 
+			// return i;		
+	// }
+    //return -1;
 }
 
 HRESULT 
@@ -3092,13 +3274,16 @@ SHSetKnownFolderPath(
   _In_  PCWSTR pszPath
 )
 {
-     int index = csidl_from_id( rfid );
-	 LPCWSTR allusers = L"";
+    int index = csidl_from_id( rfid );
 	 
     if (index < 0)
         return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );	
 	return SHSetFolderPathW(index, hToken, dwFlags, pszPath);
 }
+
+#define GUID_FORMAT "%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX"
+#define GUID_ARG(guid) guid->Data1, guid->Data2, guid->Data3, guid->Data4[0], guid->Data4[1], guid->Data4[2], guid->Data4[3], guid->Data4[4], guid->Data4[5], guid->Data4[6], guid->Data4[7]
+#define GUID_ARG_NO_POINTER(guid) guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]
 
 /*************************************************************************
  * SHGetKnownFolderPath           [SHELL32.@]
@@ -3112,9 +3297,20 @@ SHGetKnownFolderPath(
 	PWSTR *path
 )
 {
-     wchar_t folder[MAX_PATH+1] = {0};
+     wchar_t folder[512+1] = {0};
      int index = csidl_from_id( id );
 	 LPCWSTR allusers = L"";
+	 LPCWSTR userfolder = L"";
+	 
+	 // if(IsEqualGUID(id, &FOLDERID_UserProgramFiles))
+	 // {
+		 // index = CSIDL_LOCAL_APPDATA;
+	 // }//convertWinVistaFolderToWinXPFolder(&FOLDERID_Windows);//csidl_from_id( id );
+	 
+	 
+	 //*path = NULL;
+	 DbgPrint("SHGetKnownFolderPath FOLDERID_UserProgramFiles GUID is = {" GUID_FORMAT "}\n",  GUID_ARG_NO_POINTER(FOLDERID_UserProgramFiles));
+     DbgPrint("SHGetKnownFolderPath REFKNOWNFOLDERID GUID = {" GUID_FORMAT "}\n",  GUID_ARG(id));	 
 	 
     if (index < 0)
         return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
@@ -3137,18 +3333,28 @@ SHGetKnownFolderPath(
         return E_INVALIDARG;
     }
 	
+	//FOLDERID_QuickLaunch
+	//FOLDERID_SampleMusic
+	//FOLDERID_SamplePictures
+	//FOLDERID_SampleVideos
+	//FOLDERID_SavedGames
+	//FOLDERID_UserProfiles -> GetProfilesDirectory
+	//DbgPrint("SHGetKnownFolderPath the CSLD is %d\n",index);
 	SHGetFolderPathW(NULL, index, token, 0, folder);
-	TRACE("Folder path: %s\n", folder);
+	//DbgPrint("SHGetKnownFolderPath: Folder is: %s\n",folder);
 	if(IsEqualGUID( id , &FOLDERID_Public ))
 	{
 		ExpandEnvironmentStringsW(L"%ALLUSERSPROFILE%", allusers, MAX_PATH);
 		*path = allusers;
+	}else if(IsEqualGUID( id , &FOLDERID_UserProfiles )){
+		GetProfilesDirectory(userfolder, NULL);
+		*path = userfolder;
 	}else if(IsEqualGUID( id , &FOLDERID_Downloads )){
-		StringCbCatW(*path, _countof(folder), L"\\Downloads");
-		//*path = PathCombine(*path, folder, L"\\Downloads");		
+		return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
 	}else{
 		*path = folder;
-	}	
+	}
+    //*path = folder;///L"C:\\Windows";	
     return S_OK;
 }
 
