@@ -70,6 +70,7 @@ typedef struct
     INT       iHotItem;		/* index of hot item (cursor is over this item) */
     INT       iHotDivider;      /* index of the hot divider (used while dragging an item or by HDM_SETHOTDIVIDER) */
     INT       iMargin;          /* width of the margin that surrounds a bitmap */
+    INT       filter_change_timeout; /* change timeout set with HDM_SETFILTERCHANGETIMEOUT */
 
     HIMAGELIST  himl;		/* handle to an image list (may be 0) */
     HEADER_ITEM *items;		/* pointer to array of HEADER_ITEM's */
@@ -311,6 +312,48 @@ HEADER_DrawItemFrame(HEADER_INFO *infoPtr, HDC hdc, RECT *r, const HEADER_ITEM *
     }
 }
 
+/* Create a region for the sort arrow with its bounding rect's top-left
+   co-ord x,y and its height h. */
+static HRGN create_sort_arrow( INT x, INT y, INT h, BOOL is_up )
+{
+    char buffer[256];
+    RGNDATA *data = (RGNDATA *)buffer;
+    DWORD size = FIELD_OFFSET(RGNDATA, Buffer[h * sizeof(RECT)]);
+    INT i, yinc = 1;
+    HRGN rgn;
+
+    if (size > sizeof(buffer))
+    {
+        data = HeapAlloc( GetProcessHeap(), 0, size );
+        if (!data) return NULL;
+    }
+    data->rdh.dwSize = sizeof(data->rdh);
+    data->rdh.iType = RDH_RECTANGLES;
+    data->rdh.nCount = 0;
+    data->rdh.nRgnSize = h * sizeof(RECT);
+
+    if (!is_up)
+    {
+        y += h - 1;
+        yinc = -1;
+    }
+
+    x += h - 1; /* set x to the centre */
+
+    for (i = 0; i < h; i++, y += yinc)
+    {
+        RECT *rect = (RECT *)data->Buffer + data->rdh.nCount;
+        rect->left   = x - i;
+        rect->top    = y;
+        rect->right  = x + i + 1;
+        rect->bottom = y + 1;
+        data->rdh.nCount++;
+    }
+    rgn = ExtCreateRegion( NULL, size, data );
+    if (data != (RGNDATA *)buffer) HeapFree( GetProcessHeap(), 0, data );
+    return rgn;
+}
+
 static INT
 HEADER_DrawItem (HEADER_INFO *infoPtr, HDC hdc, INT iItem, BOOL bHotTrack, LRESULT lCDFlags)
 {
@@ -319,12 +362,16 @@ HEADER_DrawItem (HEADER_INFO *infoPtr, HDC hdc, INT iItem, BOOL bHotTrack, LRESU
     INT  oldBkMode;
     HTHEME theme = GetWindowTheme (infoPtr->hwndSelf);
     NMCUSTOMDRAW nmcd;
+    int state = 0;
 
     TRACE("DrawItem(iItem %d bHotTrack %d unicode flag %d)\n", iItem, bHotTrack, (infoPtr->nNotifyFormat == NFR_UNICODE));
 
     r = phdi->rect;
     if (r.right - r.left == 0)
 	return phdi->rect.right;
+
+    if (theme)
+        state = (phdi->bDown) ? HIS_PRESSED : (bHotTrack ? HIS_HOT : HIS_NORMAL);
 
     /* Set the colors before sending NM_CUSTOMDRAW so that it can change them */
     SetTextColor(hdc, (bHotTrack && !theme) ? COLOR_HIGHLIGHT : COLOR_BTNTEXT);
@@ -378,10 +425,7 @@ HEADER_DrawItem (HEADER_INFO *infoPtr, HDC hdc, INT iItem, BOOL bHotTrack, LRESU
         if (ret) return phdi->rect.right;
     }
     else
-    {
-        HEADER_FillItemFrame(infoPtr, hdc, &r, phdi, bHotTrack);
         HEADER_DrawItemFrame(infoPtr, hdc, &r, phdi);
-    }
 
     if (phdi->bDown) {
         r.left += 2;
@@ -390,16 +434,18 @@ HEADER_DrawItem (HEADER_INFO *infoPtr, HDC hdc, INT iItem, BOOL bHotTrack, LRESU
 
     /* Now text and image */
     {
-	UINT rw, rh, /* width and height of r */
-	     *x = NULL, *w = NULL; /* x and width of the pic (bmp or img) which is part of cnt */
+	INT rw, rh; /* width and height of r */
+        INT *x = NULL; /* x and ... */
+        UINT *w = NULL; /* ...  width of the pic (bmp or img) which is part of cnt */
 	  /* cnt,txt,img,bmp */
-	UINT cx, tx, ix, bx,
-	     cw, tw, iw, bw;
+        INT  cx, tx, ix, bx;
+	UINT cw, tw, iw, bw;
         INT img_cx, img_cy;
+        INT sort_w, sort_x, sort_h;
 	BITMAP bmp;
 
         HEADER_PrepareCallbackItems(infoPtr, iItem, HDI_TEXT|HDI_IMAGE);
-	cw = tw = iw = bw = 0;
+        cw = iw = bw = sort_w = sort_h = 0;
 	rw = r.right - r.left;
 	rh = r.bottom - r.top;
 
@@ -407,28 +453,39 @@ HEADER_DrawItem (HEADER_INFO *infoPtr, HDC hdc, INT iItem, BOOL bHotTrack, LRESU
 	    RECT textRect;
 
             SetRectEmpty(&textRect);
-	    DrawTextW (hdc, phdi->pszText, -1,
-	               &textRect, DT_LEFT|DT_VCENTER|DT_SINGLELINE|DT_CALCRECT);
+
+	    if (theme) {
+		GetThemeTextExtent(theme, hdc, HP_HEADERITEM, state, phdi->pszText, -1,
+		    DT_LEFT|DT_VCENTER|DT_SINGLELINE, NULL, &textRect);
+	    } else {
+		DrawTextW (hdc, phdi->pszText, -1,
+			&textRect, DT_LEFT|DT_VCENTER|DT_SINGLELINE|DT_CALCRECT);
+	    }
 	    cw = textRect.right - textRect.left + 2 * infoPtr->iMargin;
 	}
 
-	if ((phdi->fmt & HDF_IMAGE) && ImageList_GetIconSize( infoPtr->himl, &img_cx, &img_cy )) {
-	    iw = img_cx + 2 * infoPtr->iMargin;
-	    x = &ix;
-	    w = &iw;
-	}
+        if (phdi->fmt & (HDF_SORTUP | HDF_SORTDOWN)) {
+            sort_h = MulDiv( infoPtr->nHeight - VERT_BORDER, 4, 13 );
+            sort_w = 2 * sort_h - 1 + infoPtr->iMargin * 2;
+            cw += sort_w;
+        } else { /* sort arrows take precedent over images/bitmaps */
+            if ((phdi->fmt & HDF_IMAGE) && ImageList_GetIconSize( infoPtr->himl, &img_cx, &img_cy )) {
+                iw = img_cx + 2 * infoPtr->iMargin;
+                x = &ix;
+                w = &iw;
+            }
 
-	if ((phdi->fmt & HDF_BITMAP) && (phdi->hbm)) {
-            GetObjectW (phdi->hbm, sizeof(BITMAP), &bmp);
-	    bw = bmp.bmWidth + 2 * infoPtr->iMargin;
-	    if (!iw) {
-		x = &bx;
-		w = &bw;
-	    }
-	}
-
-	if (bw || iw)
-	    cw += *w; 
+            if ((phdi->fmt & HDF_BITMAP) && (phdi->hbm)) {
+                GetObjectW (phdi->hbm, sizeof(BITMAP), &bmp);
+                bw = bmp.bmWidth + 2 * infoPtr->iMargin;
+                if (!iw) {
+                    x = &bx;
+                    w = &bw;
+                }
+            }
+            if (bw || iw)
+                cw += *w;
+        }
 
 	/* align cx using the unclipped cw */
 	if ((phdi->fmt & HDF_JUSTIFYMASK) == HDF_LEFT)
@@ -447,7 +504,10 @@ HEADER_DrawItem (HEADER_INFO *infoPtr, HDC hdc, INT iItem, BOOL bHotTrack, LRESU
 	tx = cx + infoPtr->iMargin;
 	/* since cw might have changed we have to recalculate tw */
 	tw = cw - infoPtr->iMargin * 2;
-			
+
+        tw -= sort_w;
+        sort_x = cx + tw + infoPtr->iMargin * 3;
+
 	if (iw || bw) {
 	    tw -= *w;
 	    if (phdi->fmt & HDF_BITMAP_ON_RIGHT) {
@@ -471,22 +531,31 @@ HEADER_DrawItem (HEADER_INFO *infoPtr, HDC hdc, INT iItem, BOOL bHotTrack, LRESU
 	        bx = cx + cw + infoPtr->iMargin;
 	}
 
-	if (iw || bw) {
+	if (sort_w || iw || bw) {
 	    HDC hClipDC = GetDC(infoPtr->hwndSelf);
 	    HRGN hClipRgn = CreateRectRgn(r.left, r.top, r.right, r.bottom);
 	    SelectClipRgn(hClipDC, hClipRgn);
 	    
+            if (sort_w) {
+                HRGN arrow = create_sort_arrow( sort_x, r.top + (rh - sort_h) / 2,
+                                                sort_h, phdi->fmt & HDF_SORTUP );
+                if (arrow) {
+                    FillRgn( hClipDC, arrow, GetSysColorBrush( COLOR_GRAYTEXT ) );
+                    DeleteObject( arrow );
+                }
+            }
+
 	    if (bw) {
 	        HDC hdcBitmap = CreateCompatibleDC (hClipDC);
 	        SelectObject (hdcBitmap, phdi->hbm);
-	        BitBlt (hClipDC, bx, r.top + ((INT)rh - bmp.bmHeight) / 2, 
+	        BitBlt (hClipDC, bx, r.top + (rh - bmp.bmHeight) / 2,
 		        bmp.bmWidth, bmp.bmHeight, hdcBitmap, 0, 0, SRCCOPY);
 	        DeleteDC (hdcBitmap);
 	    }
 
 	    if (iw) {
 	        ImageList_DrawEx (infoPtr->himl, phdi->iImage, hClipDC, 
-	                          ix, r.top + ((INT)rh - img_cy) / 2,
+	                          ix, r.top + (rh - img_cy) / 2,
 	                          img_cx, img_cy, CLR_DEFAULT, CLR_DEFAULT, 0);
 	    }
 
@@ -501,8 +570,14 @@ HEADER_DrawItem (HEADER_INFO *infoPtr, HDC hdc, INT iItem, BOOL bHotTrack, LRESU
 	    oldBkMode = SetBkMode(hdc, TRANSPARENT);
 	    r.left  = tx;
 	    r.right = tx + tw;
-	    DrawTextW (hdc, phdi->pszText, -1,
-	               &r, DT_LEFT|DT_END_ELLIPSIS|DT_VCENTER|DT_SINGLELINE);
+	    if (theme) {
+		DrawThemeText(theme, hdc, HP_HEADERITEM, state, phdi->pszText,
+			    -1, DT_LEFT|DT_END_ELLIPSIS|DT_VCENTER|DT_SINGLELINE,
+			    0, &r);
+	    } else {
+		DrawTextW (hdc, phdi->pszText, -1,
+			&r, DT_LEFT|DT_END_ELLIPSIS|DT_VCENTER|DT_SINGLELINE);
+	    }
 	    if (oldBkMode != TRANSPARENT)
 	        SetBkMode(hdc, oldBkMode);
         }
@@ -978,7 +1053,7 @@ HEADER_FreeCallbackItems(HEADER_ITEM *lpItem)
         lpItem->iImage = I_IMAGECALLBACK;
 }
 
-static LRESULT
+static HIMAGELIST
 HEADER_CreateDragImage (HEADER_INFO *infoPtr, INT iItem)
 {
     HEADER_ITEM *lpItem;
@@ -992,7 +1067,7 @@ HEADER_CreateDragImage (HEADER_INFO *infoPtr, INT iItem)
     HFONT hFont;
     
     if (iItem >= infoPtr->uNumItem)
-        return FALSE;
+        return NULL;
 
     if (!infoPtr->bRectsValid)
         HEADER_SetItemBounds(infoPtr);
@@ -1020,12 +1095,12 @@ HEADER_CreateDragImage (HEADER_INFO *infoPtr, INT iItem)
     DeleteDC(hMemoryDC);
     
     if (hMemory == NULL)    /* if anything failed */
-        return FALSE;
-    
+        return NULL;
+
     himl = ImageList_Create(width, height, ILC_COLORDDB, 1, 1);
     ImageList_Add(himl, hMemory, NULL);
     DeleteObject(hMemory);
-    return (LRESULT)himl;
+    return himl;
 }
 
 static LRESULT
@@ -1513,6 +1588,7 @@ HEADER_Create (HWND hwnd, const CREATESTRUCTW *lpcs)
     infoPtr->iMargin = 3*GetSystemMetrics(SM_CXEDGE);
     infoPtr->nNotifyFormat =
 	SendMessageW (infoPtr->hwndNotify, WM_NOTIFYFORMAT, (WPARAM)hwnd, NF_QUERY);
+    infoPtr->filter_change_timeout = 1000;
 
     hdc = GetDC (0);
     hOldFont = SelectObject (hdc, GetStockObject (SYSTEM_FONT));
@@ -1809,7 +1885,7 @@ HEADER_MouseMove (HEADER_INFO *infoPtr, LPARAM lParam)
 	{
             if (!HEADER_SendNotifyWithHDItemT(infoPtr, HDN_BEGINDRAG, infoPtr->iMoveItem, NULL))
 	    {
-		HIMAGELIST hDragItem = (HIMAGELIST)HEADER_CreateDragImage(infoPtr, infoPtr->iMoveItem);
+		HIMAGELIST hDragItem = HEADER_CreateDragImage(infoPtr, infoPtr->iMoveItem);
 		if (hDragItem != NULL)
 		{
 		    HEADER_ITEM *lpItem = &infoPtr->items[infoPtr->iMoveItem];
@@ -2027,6 +2103,14 @@ static LRESULT HEADER_ThemeChanged(const HEADER_INFO *infoPtr)
     return 0;
 }
 
+static INT HEADER_SetFilterChangeTimeout(HEADER_INFO *infoPtr, INT timeout)
+{
+    INT old_timeout = infoPtr->filter_change_timeout;
+
+    if (timeout != 0)
+        infoPtr->filter_change_timeout = timeout;
+    return old_timeout;
+}
 
 static LRESULT WINAPI
 HEADER_WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -2040,7 +2124,7 @@ HEADER_WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 /*	case HDM_CLEARFILTER: */
 
 	case HDM_CREATEDRAGIMAGE:
-	    return HEADER_CreateDragImage (infoPtr, (INT)wParam);
+	    return (LRESULT)HEADER_CreateDragImage (infoPtr, (INT)wParam);
 
 	case HDM_DELETEITEM:
 	    return HEADER_DeleteItem (infoPtr, (INT)wParam);
@@ -2085,7 +2169,8 @@ HEADER_WindowProc (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case HDM_SETBITMAPMARGIN:
 	    return HEADER_SetBitmapMargin(infoPtr, (INT)wParam);
 
-/*	case HDM_SETFILTERCHANGETIMEOUT: */
+        case HDM_SETFILTERCHANGETIMEOUT:
+            return HEADER_SetFilterChangeTimeout(infoPtr, (INT)lParam);
 
         case HDM_SETHOTDIVIDER:
             return HEADER_SetHotDivider(infoPtr, wParam, lParam);

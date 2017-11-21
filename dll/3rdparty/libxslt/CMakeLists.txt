@@ -1,6 +1,6 @@
 
-include_directories(${REACTOS_SOURCE_DIR}/include/reactos/libs/libxslt
-                    ${REACTOS_SOURCE_DIR}/lib/3rdparty/libwin-iconv)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/libs/libxslt
+                    ${REACTOS_SOURCE_DIR}/sdk/lib/3rdparty/libwin-iconv)
 
 add_definitions(
     -DHAVE_CONFIG_H
@@ -39,11 +39,11 @@ add_library(libxslt SHARED ${SOURCE})
 set_module_type(libxslt win32dll)
 target_link_libraries(libxslt libxml2 iconv-static zlib)
 add_importlibs(libxslt msvcrt ws2_32 kernel32)
+
 if(MSVC)
     add_importlibs(libxslt ntdll)
 endif()
 
-add_dependencies(libxslt psdk)
 add_pch(libxslt precomp.h SOURCE)
 add_cd_file(TARGET libxslt DESTINATION reactos/system32 FOR all)
 

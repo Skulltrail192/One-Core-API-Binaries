@@ -1,5 +1,9 @@
 @ stdcall GetFileVersionInfoA(str long long ptr)
+@ stdcall GetFileVersionInfoExA(long str long long ptr)
+@ stdcall GetFileVersionInfoExW(long wstr long long ptr)
 @ stdcall GetFileVersionInfoSizeA(str ptr)
+@ stdcall GetFileVersionInfoSizeExA(long str ptr)
+@ stdcall GetFileVersionInfoSizeExW(long wstr ptr)
 @ stdcall GetFileVersionInfoSizeW(wstr ptr)
 @ stdcall GetFileVersionInfoW(wstr long long ptr)
 @ stdcall VerFindFileA(long str str str ptr ptr ptr ptr)
@@ -10,9 +14,3 @@
 @ stdcall VerLanguageNameW(long wstr long) kernel32.VerLanguageNameW
 @ stdcall VerQueryValueA(ptr str ptr ptr)
 @ stdcall VerQueryValueW(ptr wstr ptr ptr)
-
-
-@ stub GetFileVersionInfoExW
-@ stub GetFileVersionInfoSizeExW
-@ stub GetFileVersionInfoExA
-@ stub GetFileVersionInfoSizeExA

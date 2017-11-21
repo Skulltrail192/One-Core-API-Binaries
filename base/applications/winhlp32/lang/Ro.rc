@@ -44,6 +44,7 @@ MAIN_MENU MENU
    MENUITEM "&Definire…", MNID_BKMK_DEFINE
  }
  POPUP "&Opțiuni" {
+  MENUITEM "Î&ntotdeauna deasupra", MNID_HELP_HELPTOP
   MENUITEM "Ist&oric",		MNID_OPTS_HISTORY
   POPUP    "&Font"
   BEGIN
@@ -52,9 +53,8 @@ MAIN_MENU MENU
     MENUITEM "M&are",     	MNID_OPTS_FONTS_LARGE
   END
  }
- POPUP "&?" {
+ POPUP "Aj&utor" {
    MENUITEM "&Despre…", MNID_HELP_HELPON
-   MENUITEM "Î&ntotdeauna deasupra", MNID_HELP_HELPTOP
    MENUITEM "In&formații…", MNID_HELP_ABOUT
  }
 }
@@ -77,7 +77,7 @@ END
 
 STRINGTABLE
 {
-STID_WINE_HELP, 	"Manual"
+STID_WINE_HELP, 	"Manual ReactOS"
 STID_WHERROR, 		"EROARE"
 STID_WARNING,  		"AVERTISMENT"
 STID_INFO,  		"Informație"
@@ -89,20 +89,20 @@ STID_BACK, 		"Înap&oi"
 STID_ALL_FILES, 	"Toate fișierele (*.*)"
 STID_HELP_FILES_HLP, 	"Fișierele manual (*.hlp)"
 STID_FILE_NOT_FOUND_s	"Fișierul „%s” nu poate fi găsit. Doriți să-l căutați?"
-STID_NO_RICHEDIT	"Nu s-a găsit o implementare pentru richedit… Operația este abandonată"
+STID_NO_RICHEDIT	"Nu a fost găsită o implementare pentru richedit… Operație abandonată."
 STID_PSH_INDEX,		"Subiecte în manual:"
 }
 
-IDD_INDEX DIALOG 0, 0, 200, 190
-STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+IDD_INDEX DIALOGEX 0, 0, 200, 190
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
 FONT 8, "MS Shell Dlg"
 CAPTION "Index"
 {
     LISTBOX IDC_INDEXLIST, 10, 10, 180, 150, LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_BORDER
 }
 
-IDD_SEARCH DIALOG 0, 0, 200, 190
-STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+IDD_SEARCH DIALOGEX 0, 0, 200, 190
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
 FONT 8, "MS Shell Dlg"
 CAPTION "Căutare"
 {

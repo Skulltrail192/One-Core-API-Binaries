@@ -338,12 +338,14 @@ SeUnlockSubjectContext(IN PSECURITY_SUBJECT_CONTEXT SubjectContext)
     PrimaryToken = SubjectContext->PrimaryToken;
     ClientToken = SubjectContext->ClientToken;
 
+    /* Unlock the impersonation one if it's there */
+    if (ClientToken)
+    {
+        SepReleaseTokenLock(ClientToken);
+    }
+
     /* Always unlock the primary one */
     SepReleaseTokenLock(PrimaryToken);
-
-    /* Unlock the impersonation one if it's there */
-    if (!ClientToken) return;
-    SepReleaseTokenLock(ClientToken);
 }
 
 /*
@@ -403,7 +405,7 @@ SeCreateAccessStateEx(IN PETHREAD Thread,
     /* Set Access State Data */
     AccessState->RemainingDesiredAccess = AccessMask;
     AccessState->OriginalDesiredAccess = AccessMask;
-    ExpAllocateLocallyUniqueId(&AccessState->OperationID);
+    ExAllocateLocallyUniqueId(&AccessState->OperationID);
 
     /* Get the Token to use */
     Token = SeQuerySubjectContextToken(&AccessState->SubjectSecurityContext);
@@ -460,7 +462,8 @@ SeDeleteAccessState(IN PACCESS_STATE AccessState)
     AuxData = AccessState->AuxData;
 
     /* Deallocate Privileges */
-    if (AccessState->PrivilegesAllocated) ExFreePool(AuxData->PrivilegeSet);
+    if (AccessState->PrivilegesAllocated)
+        ExFreePoolWithTag(AuxData->PrivilegeSet, TAG_PRIVILEGE_SET);
 
     /* Deallocate Name and Type Name */
     if (AccessState->ObjectName.Buffer)

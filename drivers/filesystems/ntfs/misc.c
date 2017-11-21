@@ -1,6 +1,6 @@
 /*
  *  ReactOS kernel
- *  Copyright (C) 2008 ReactOS Team
+ *  Copyright (C) 2008, 2014 ReactOS Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -67,31 +67,35 @@ NtfsAllocateIrpContext(PDEVICE_OBJECT DeviceObject,
                        PIRP Irp)
 {
     PNTFS_IRP_CONTEXT IrpContext;
-    PIO_STACK_LOCATION IoStackLocation;
 
     TRACE_(NTFS, "NtfsAllocateIrpContext()\n");
 
-    IrpContext = (PNTFS_IRP_CONTEXT)ExAllocatePoolWithTag(NonPagedPool,
-                                                          sizeof(NTFS_IRP_CONTEXT),
-                                                          'PRIN');
+    IrpContext = (PNTFS_IRP_CONTEXT)ExAllocateFromNPagedLookasideList(&NtfsGlobalData->IrpContextLookasideList);
     if (IrpContext == NULL)
         return NULL;
 
     RtlZeroMemory(IrpContext, sizeof(NTFS_IRP_CONTEXT));
 
-    IrpContext->Identifier.Type = NTFS_TYPE_IRP_CONTEST;
+    IrpContext->Identifier.Type = NTFS_TYPE_IRP_CONTEXT;
     IrpContext->Identifier.Size = sizeof(NTFS_IRP_CONTEXT);
     IrpContext->Irp = Irp;
     IrpContext->DeviceObject = DeviceObject;
+    IrpContext->Stack = IoGetCurrentIrpStackLocation(Irp);
+    IrpContext->MajorFunction = IrpContext->Stack->MajorFunction;
+    IrpContext->MinorFunction = IrpContext->Stack->MinorFunction;
+    IrpContext->FileObject = IrpContext->Stack->FileObject;
+    IrpContext->IsTopLevel = (IoGetTopLevelIrp() == Irp);
+    IrpContext->PriorityBoost = IO_NO_INCREMENT;
+    IrpContext->Flags = IRPCONTEXT_COMPLETE;
 
-    if (Irp)
+    if (IrpContext->MajorFunction == IRP_MJ_FILE_SYSTEM_CONTROL ||
+        IrpContext->MajorFunction == IRP_MJ_DEVICE_CONTROL ||
+        IrpContext->MajorFunction == IRP_MJ_SHUTDOWN ||
+        (IrpContext->MajorFunction != IRP_MJ_CLEANUP &&
+         IrpContext->MajorFunction != IRP_MJ_CLOSE &&
+         IoIsOperationSynchronous(Irp)))
     {
-        IoStackLocation = IoGetCurrentIrpStackLocation(Irp);
-        ASSERT(IoStackLocation);
-
-        IrpContext->MajorFunction = IoStackLocation->MajorFunction;
-        IrpContext->MinorFunction = IoStackLocation->MinorFunction;
-        IrpContext->IsTopLevel = (IoGetTopLevelIrp() == Irp);
+        IrpContext->Flags |= IRPCONTEXT_CANWAIT;
     }
 
     return IrpContext;
@@ -110,6 +114,20 @@ NtfsFileFlagsToAttributes(ULONG NtfsAttributes,
 
     if (NtfsAttributes == 0)
         *FileAttributes = FILE_ATTRIBUTE_NORMAL;
+}
+
+PVOID
+NtfsGetUserBuffer(PIRP Irp,
+                  BOOLEAN Paging)
+{
+    if (Irp->MdlAddress != NULL)
+    {
+        return MmGetSystemAddressForMdlSafe(Irp->MdlAddress, (Paging ? HighPagePriority : NormalPagePriority));
+    }
+    else
+    {
+        return Irp->UserBuffer;
+    }
 }
 
 /* EOF */

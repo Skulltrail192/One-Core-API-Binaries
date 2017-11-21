@@ -17,10 +17,11 @@
 /* GLOBALS *******************************************************************/
 
 LIST_ENTRY LdrpUnloadHead;
-LONG LdrpLoaderLockAcquisitonCount;
+LONG LdrpLoaderLockAcquisitionCount;
 BOOLEAN LdrpShowRecursiveLoads, LdrpBreakOnRecursiveDllLoads;
 UNICODE_STRING LdrApiDefaultExtension = RTL_CONSTANT_STRING(L".DLL");
 ULONG AlternateResourceModuleCount;
+extern PLDR_MANIFEST_PROBER_ROUTINE LdrpManifestProberRoutine;
 
 /* FUNCTIONS *****************************************************************/
 
@@ -69,9 +70,10 @@ LdrAccessOutOfProcessResource(IN PVOID Unknown,
 
 VOID
 NTAPI
-LdrSetDllManifestProber(IN PVOID ProberFunction)
+LdrSetDllManifestProber(
+    _In_ PLDR_MANIFEST_PROBER_ROUTINE Routine)
 {
-    UNIMPLEMENTED;
+    LdrpManifestProberRoutine = Routine;
 }
 
 BOOLEAN
@@ -88,7 +90,7 @@ LdrpMakeCookie(VOID)
 {
     /* Generate a cookie */
     return (((ULONG_PTR)NtCurrentTeb()->RealClientId.UniqueThread & 0xFFF) << 16) |
-                        (_InterlockedIncrement(&LdrpLoaderLockAcquisitonCount) & 0xFFFF);
+            (_InterlockedIncrement(&LdrpLoaderLockAcquisitionCount) & 0xFFFF);
 }
 
 /*
@@ -474,7 +476,7 @@ LdrFindEntryForAddress(PVOID Address,
     while (NextEntry != ListHead)
     {
         /* Get the entry and NT Headers */
-        LdrEntry = CONTAINING_RECORD(NextEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderModuleList);
+        LdrEntry = CONTAINING_RECORD(NextEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
         NtHeader = RtlImageNtHeader(LdrEntry->DllBase);
         if (NtHeader)
         {
@@ -578,7 +580,7 @@ LdrGetDllHandleEx(IN ULONG Flags,
     }
     else if (Status != STATUS_SXS_KEY_NOT_FOUND)
     {
-        /* Unrecoverable SxS failure; */
+        /* Unrecoverable SxS failure */
         goto Quickie;
     }
     else
@@ -1034,7 +1036,7 @@ LdrQueryProcessModuleInformationEx(IN ULONG ProcessId,
 
                 while (InitEntry != InitListHead)
                 {
-                    InitModule = CONTAINING_RECORD(InitEntry, LDR_DATA_TABLE_ENTRY, InInitializationOrderModuleList);
+                    InitModule = CONTAINING_RECORD(InitEntry, LDR_DATA_TABLE_ENTRY, InInitializationOrderLinks);
 
                     /* Increase the index */
                     ModulePtr->InitOrderIndex++;
@@ -1382,7 +1384,7 @@ LdrUnloadDll(IN PVOID BaseAddress)
         /* Get the entry */
         LdrEntry = CONTAINING_RECORD(NextEntry,
                                      LDR_DATA_TABLE_ENTRY,
-                                     InInitializationOrderModuleList);
+                                     InInitializationOrderLinks);
         NextEntry = NextEntry->Blink;
 
         /* Remove flag */
@@ -1402,12 +1404,17 @@ LdrUnloadDll(IN PVOID BaseAddress)
                         LdrEntry->EntryPoint);
             }
 
-            /* FIXME: Call Shim Engine and notify */
+            /* Call Shim Engine and notify */
+            if (g_ShimsEnabled)
+            {
+                VOID (NTAPI* SE_DllUnloaded)(PVOID) = RtlDecodeSystemPointer(g_pfnSE_DllUnloaded);
+                SE_DllUnloaded(LdrEntry);
+            }
 
             /* Unlink it */
             CurrentEntry = LdrEntry;
-            RemoveEntryList(&CurrentEntry->InInitializationOrderModuleList);
-            RemoveEntryList(&CurrentEntry->InMemoryOrderModuleList);
+            RemoveEntryList(&CurrentEntry->InInitializationOrderLinks);
+            RemoveEntryList(&CurrentEntry->InMemoryOrderLinks);
             RemoveEntryList(&CurrentEntry->HashLinks);
 
             /* If there's more then one active unload */
@@ -1415,7 +1422,7 @@ LdrUnloadDll(IN PVOID BaseAddress)
             {
                 /* Flush the cached DLL handle and clear the list */
                 LdrpLoadedDllHandleCache = NULL;
-                CurrentEntry->InMemoryOrderModuleList.Flink = NULL;
+                CurrentEntry->InMemoryOrderLinks.Flink = NULL;
             }
 
             /* Add the entry on the unload list */
@@ -1441,7 +1448,7 @@ LdrUnloadDll(IN PVOID BaseAddress)
         /* Set the entry and clear it from the list */
         CurrentEntry = LdrEntry;
         LdrpLoadedDllHandleCache = NULL;
-        CurrentEntry->InMemoryOrderModuleList.Flink = NULL;
+        CurrentEntry->InMemoryOrderLinks.Flink = NULL;
 
         /* Move it from the global to the local list */
         RemoveEntryList(&CurrentEntry->HashLinks);
@@ -1593,7 +1600,7 @@ LdrLoadAlternateResourceModule(IN PVOID Module,
                                IN PWSTR Buffer)
 {
     /* Is MUI Support enabled? */
-    if (!LdrAlternateResourcesEnabled()) return STATUS_SUCCESS;
+    if (!LdrAlternateResourcesEnabled()) return NULL;
 
     UNIMPLEMENTED;
     return NULL;

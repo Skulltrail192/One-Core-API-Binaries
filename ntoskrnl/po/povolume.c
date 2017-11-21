@@ -20,12 +20,14 @@ typedef struct _POP_FLUSH_VOLUME
     LONG Count;
     KEVENT Wait;
 } POP_FLUSH_VOLUME, *PPOP_FLUSH_VOLUME;
- 
+
 ULONG PopFlushPolicy = 0;
 
 KGUARDED_MUTEX PopVolumeLock;
 LIST_ENTRY PopVolumeDevices;
 KSPIN_LOCK PopDopeGlobalLock;
+
+#define TAG_PO_DOPE 'EPOD'
 
 /* PRIVATE FUNCTIONS *********************************************************/
 
@@ -45,7 +47,7 @@ PopGetDope(IN PDEVICE_OBJECT DeviceObject)
     /* Allocate some dope for the device */
     Dope = ExAllocatePoolWithTag(NonPagedPool,
                                  sizeof(DEVICE_OBJECT_POWER_EXTENSION),
-                                 'Dope');
+                                 TAG_PO_DOPE);
     if (!Dope) goto Return;
 
     /* Initialize the initial contents of the dope */
@@ -56,7 +58,7 @@ PopGetDope(IN PDEVICE_OBJECT DeviceObject)
 
     /* Make sure only one caller can assign dope to a device */
     KeAcquireSpinLock(&PopDopeGlobalLock, &OldIrql);
-    
+
     /* Make sure the device still has no dope */
     if (!DeviceExtension->Dope)
     {
@@ -67,9 +69,9 @@ PopGetDope(IN PDEVICE_OBJECT DeviceObject)
 
     /* Allow other dope transactions now */
     KeReleaseSpinLock(&PopDopeGlobalLock, OldIrql);
-    
+
     /* Check if someone other than us already assigned the dope, so free ours */
-    if (Dope) ExFreePoolWithTag(Dope, 'Dope');
+    if (Dope) ExFreePoolWithTag(Dope, TAG_PO_DOPE);
 
     /* Return the dope to the caller */
 Return:
@@ -92,7 +94,7 @@ PoVolumeDevice(IN PDEVICE_OBJECT DeviceObject)
 
         /* Add this volume into the list of power-manager volumes */
         if (!Dope->Volume.Flink) InsertTailList(&PopVolumeDevices, &Dope->Volume);
-        
+
         /* Allow flushes to go through */
         KeReleaseGuardedMutex(&PopVolumeLock);
     }
@@ -140,7 +142,7 @@ PoRemoveVolumeDevice(IN PDEVICE_OBJECT DeviceObject)
     KeReleaseSpinLock(&PopDopeGlobalLock, OldIrql);
 
     /* Free dope */
-    ExFreePoolWithTag(Dope, 'Dope');
+    ExFreePoolWithTag(Dope, TAG_PO_DOPE);
 }
 
 VOID
@@ -167,10 +169,10 @@ PopFlushVolumeWorker(IN PVOID Context)
         /* Grab the next (ie: current) entry and remove it */
         NextEntry = FlushContext->List.Flink;
         RemoveEntryList(NextEntry);
-        
+
         /* Add it back on the volume list */
         InsertTailList(&PopVolumeDevices, NextEntry);
-        
+
         /* Done touching the volume list */
         KeReleaseGuardedMutex(&PopVolumeLock);
 
@@ -185,7 +187,7 @@ PopFlushVolumeWorker(IN PVOID Context)
         if ((NT_SUCCESS(Status)) && (NameInfo->Name.Buffer))
         {
             /* Open the volume */
-            DPRINT1("Opening: %wZ\n", &NameInfo->Name);
+            DPRINT("Opening: %wZ\n", &NameInfo->Name);
             InitializeObjectAttributes(&ObjectAttributes,
                                        &NameInfo->Name,
                                        OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
@@ -205,7 +207,7 @@ PopFlushVolumeWorker(IN PVOID Context)
             if (NT_SUCCESS(Status))
             {
                 /* Flush it and close it */
-                DPRINT1("Sending flush to: %p\n", VolumeHandle);
+                DPRINT("Sending flush to: %p\n", VolumeHandle);
                 ZwFlushBuffersFile(VolumeHandle, &IoStatusBlock);
                 ZwClose(VolumeHandle);
             }
@@ -232,7 +234,7 @@ PopFlushVolumes(IN BOOLEAN ShuttingDown)
     OBJECT_ATTRIBUTES ObjectAttributes;
     HANDLE RegistryHandle;
     PLIST_ENTRY NextEntry;
-    PDEVICE_OBJECT_POWER_EXTENSION  Dope;    
+    PDEVICE_OBJECT_POWER_EXTENSION  Dope;
     ULONG VolumeCount = 0;
     NTSTATUS Status;
     HANDLE ThreadHandle;
@@ -247,7 +249,7 @@ PopFlushVolumes(IN BOOLEAN ShuttingDown)
     if ((FlushPolicy & 1))
     {
         /* Registry flush requested, so open it */
-        DPRINT1("Opening registry\n");
+        DPRINT("Opening registry\n");
         InitializeObjectAttributes(&ObjectAttributes,
                                    &RegistryName,
                                    OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
@@ -257,7 +259,7 @@ PopFlushVolumes(IN BOOLEAN ShuttingDown)
         if (NT_SUCCESS(Status))
         {
             /* Flush the registry */
-            DPRINT1("Flushing registry\n");
+            DPRINT("Flushing registry\n");
             ZwFlushKey(RegistryHandle);
             ZwClose(RegistryHandle);
         }
@@ -265,14 +267,14 @@ PopFlushVolumes(IN BOOLEAN ShuttingDown)
 
     /* Serialize with other flushes */
     KeAcquireGuardedMutex(&PopVolumeLock);
-    
+
     /* Scan the volume list */
     NextEntry = PopVolumeDevices.Flink;
     while (NextEntry != &PopVolumeDevices)
     {
         /* Get the dope from the link */
         Dope = CONTAINING_RECORD(NextEntry, DEVICE_OBJECT_POWER_EXTENSION, Volume);
-        
+
         /* Grab the next entry now, since we'll be modifying the list */
         NextEntry = NextEntry->Flink;
 
@@ -290,7 +292,7 @@ PopFlushVolumes(IN BOOLEAN ShuttingDown)
         /* Remove it from the dope and add it to the flush context list */
         RemoveEntryList(&Dope->Volume);
         InsertTailList(&FlushContext.List, &Dope->Volume);
-        
+
         /* Next */
         VolumeCount++;
     }
@@ -321,13 +323,13 @@ PopFlushVolumes(IN BOOLEAN ShuttingDown)
     /* We will ourselves become a flusher thread */
     FlushContext.Count = 1;
     ThreadCount--;
-    
+
     /* Look for any extra ones we might need */
     while (ThreadCount > 0)
     {
         /* Create a new one */
         ThreadCount--;
-        DPRINT1("Creating flush thread\n");
+        DPRINT("Creating flush thread\n");
         Status = PsCreateSystemThread(&ThreadHandle,
                                       THREAD_ALL_ACCESS,
                                       &ObjectAttributes,
@@ -347,13 +349,13 @@ PopFlushVolumes(IN BOOLEAN ShuttingDown)
     KeReleaseGuardedMutex(&PopVolumeLock);
 
     /* Enter the flush work */
-    DPRINT1("Local flush\n");
+    DPRINT("Local flush\n");
     PopFlushVolumeWorker(&FlushContext);
-    
+
     /* Wait for all flushes to be over */
-    DPRINT1("Waiting for flushes\n");
+    DPRINT("Waiting for flushes\n");
     KeWaitForSingleObject(&FlushContext.Wait, Executive, KernelMode, FALSE, NULL);
-    DPRINT1("Flushes have completed\n");
+    DPRINT("Flushes have completed\n");
 }
 
 VOID

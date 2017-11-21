@@ -59,6 +59,7 @@ NtfsCloseFile(PDEVICE_EXTENSION DeviceExt,
     FileObject->FsContext2 = NULL;
     FileObject->FsContext = NULL;
     FileObject->SectionObjectPointer = NULL;
+    DeviceExt->OpenHandleCount--;
 
     if (FileObject->FileName.Buffer)
     {
@@ -79,35 +80,43 @@ NtfsCloseFile(PDEVICE_EXTENSION DeviceExt,
 }
 
 
-NTSTATUS NTAPI
-NtfsFsdClose(PDEVICE_OBJECT DeviceObject,
-             PIRP Irp)
+NTSTATUS
+NtfsClose(PNTFS_IRP_CONTEXT IrpContext)
 {
     PDEVICE_EXTENSION DeviceExtension;
-    PIO_STACK_LOCATION Stack;
     PFILE_OBJECT FileObject;
     NTSTATUS Status;
+    PDEVICE_OBJECT DeviceObject;
 
     DPRINT("NtfsClose() called\n");
 
+    DeviceObject = IrpContext->DeviceObject;
     if (DeviceObject == NtfsGlobalData->DeviceObject)
     {
         DPRINT("Closing file system\n");
-        Status = STATUS_SUCCESS;
-        goto ByeBye;
+        IrpContext->Irp->IoStatus.Information = 0;
+        return STATUS_SUCCESS;
     }
 
-    Stack = IoGetCurrentIrpStackLocation(Irp);
-    FileObject = Stack->FileObject;
+    FileObject = IrpContext->FileObject;
     DeviceExtension = DeviceObject->DeviceExtension;
 
-    Status = NtfsCloseFile(DeviceExtension,FileObject);
+    if (!ExAcquireResourceExclusiveLite(&DeviceExtension->DirResource,
+                                        BooleanFlagOn(IrpContext->Flags, IRPCONTEXT_CANWAIT)))
+    {
+        return NtfsMarkIrpContextForQueue(IrpContext);
+    }
 
-ByeBye:
-    Irp->IoStatus.Status = Status;
-    Irp->IoStatus.Information = 0;
+    Status = NtfsCloseFile(DeviceExtension, FileObject);
 
-    IoCompleteRequest(Irp, IO_NO_INCREMENT);
+    ExReleaseResourceLite(&DeviceExtension->DirResource);
+
+    if (Status == STATUS_PENDING)
+    {
+        return NtfsMarkIrpContextForQueue(IrpContext);
+    }
+
+    IrpContext->Irp->IoStatus.Information = 0;
     return Status;
 }
 

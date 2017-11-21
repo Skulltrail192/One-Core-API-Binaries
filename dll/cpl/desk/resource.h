@@ -1,15 +1,5 @@
 #pragma once
 
-/* Metrics */
-#define PROPSHEETWIDTH   246
-#define PROPSHEETHEIGHT  228
-#define PROPSHEETPADDING 6
-
-#define SYSTEM_COLUMN (18 * PROPSHEETPADDING)
-#define LABELLINE(x)  (((PROPSHEETPADDING + 2) * x) + (x + 2))
-
-#define ICONSIZE 16
-
 /* ids */
 #define IDC_DESK_ICON  40
 #define IDC_DESK_ICON2 100 /* Needed for theme compatability with Windows. */
@@ -24,6 +14,7 @@
 #define IDD_ADVAPPEARANCE    104
 #define IDD_EFFAPPEARANCE    105
 #define IDD_ADVANCED_GENERAL 200
+#define IDD_CONFIRMSETTINGS  201
 
 /* Background Page */
 #define IDC_BACKGROUND_LIST          1000
@@ -33,7 +24,6 @@
 #define IDC_COLOR_BUTTON             1004
 #define IDC_PLACEMENT_COMBO          1005
 #define IDS_BACKGROUND_COMDLG_FILTER 1006
-#define IDS_SUPPORTED_EXT            1007
 
 /* Screensaver Page */
 #define IDC_SCREENS_PREVIEW      1010
@@ -148,12 +138,7 @@
 #define IDS_ELEMENT_15 3215
 #define IDS_ELEMENT_16 3216
 #define IDS_ELEMENT_17 3217
-#define IDS_ELEMENT_18 3218
-#define IDS_ELEMENT_19 3219
-#define IDS_ELEMENT_20 3220
-#define IDS_ELEMENT_21 3221
-#define IDS_ELEMENT_22 3222
-#define IDS_ELEMENT_23 3223
+// #define IDS_ELEMENT_18 3218
 
 #define IDS_MULTIPLEMONITORS 3300
 #define IDS_UNKNOWNMONITOR   3301
@@ -186,3 +171,7 @@
 #define IDC_RESTART_RB       5002
 #define IDC_WITHOUTREBOOT_RB 5003
 #define IDC_ASKME_RB         5004
+
+/* Confirm Settings Dialog */
+#define IDC_TIMEOUTTEXT      5100
+#define IDS_TIMEOUTTEXT      3800

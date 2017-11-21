@@ -46,7 +46,6 @@ static VOID RefillSocketBuffer( PAFD_FCB FCB )
                 TDI_RECEIVE_NORMAL,
                 FCB->Recv.Window + FCB->Recv.Content,
                 FCB->Recv.Size - FCB->Recv.Content,
-                &FCB->ReceiveIrp.Iosb,
                 ReceiveComplete,
                 FCB );
 }
@@ -154,7 +153,7 @@ static NTSTATUS ReceiveActivity( PAFD_FCB FCB, PIRP Irp ) {
     PIRP NextIrp;
     PIO_STACK_LOCATION NextIrpSp;
     PAFD_RECV_INFO RecvReq;
-    UINT TotalBytesCopied = 0, RetBytesCopied = 0;
+    UINT TotalBytesCopied = 0;
     NTSTATUS Status = STATUS_SUCCESS, RetStatus = STATUS_PENDING;
 
     AFD_DbgPrint(MID_TRACE,("%p %p\n", FCB, Irp));
@@ -183,7 +182,7 @@ static NTSTATUS ReceiveActivity( PAFD_FCB FCB, PIRP Irp ) {
             }
             else
             {
-                /* Unexpected disconnect by the remote host or initial read after a graceful disconnnect */
+                /* Unexpected disconnect by the remote host or initial read after a graceful disconnect */
                 Status = FCB->LastReceiveStatus;
             }
             NextIrp->IoStatus.Status = Status;
@@ -228,7 +227,6 @@ static NTSTATUS ReceiveActivity( PAFD_FCB FCB, PIRP Irp ) {
                 NextIrp->IoStatus.Information = TotalBytesCopied;
                 if( NextIrp == Irp ) {
                     RetStatus = Status;
-                    RetBytesCopied = TotalBytesCopied;
                 }
                 if( NextIrp->MdlAddress ) UnlockRequest( NextIrp, IoGetCurrentIrpStackLocation( NextIrp ) );
                 (void)IoSetCancelRoutine(NextIrp, NULL);
@@ -264,12 +262,6 @@ static NTSTATUS ReceiveActivity( PAFD_FCB FCB, PIRP Irp ) {
     }
 
     AFD_DbgPrint(MID_TRACE,("RetStatus for irp %p is %x\n", Irp, RetStatus));
-
-    /* Sometimes we're called with a NULL Irp */
-    if( Irp ) {
-        Irp->IoStatus.Status = RetStatus;
-        Irp->IoStatus.Information = RetBytesCopied;
-    }
 
     return RetStatus;
 }
@@ -691,7 +683,6 @@ PacketSocketRecvComplete(
               FCB->Recv.Window,
               FCB->Recv.Size,
               FCB->AddressFrom,
-              &FCB->ReceiveIrp.Iosb,
               PacketSocketRecvComplete,
               FCB );
     }

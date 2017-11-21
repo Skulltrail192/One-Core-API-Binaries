@@ -854,7 +854,7 @@ CdRomUpdateMmcDriveCapabilitiesCompletion(
     )
 {
     PFUNCTIONAL_DEVICE_EXTENSION fdoExtension = Fdo->DeviceExtension;
-    PCOMMON_DEVICE_EXTENSION commonExtension = Fdo->DeviceExtension;
+    //PCOMMON_DEVICE_EXTENSION commonExtension = Fdo->DeviceExtension;
     PCDROM_DATA cdData = fdoExtension->CommonExtension.DriverData;
     PCDROM_MMC_EXTENSION mmcData = &(cdData->Mmc);
     PSCSI_REQUEST_BLOCK srb = &(mmcData->CapabilitiesSrb);
@@ -865,7 +865,7 @@ CdRomUpdateMmcDriveCapabilitiesCompletion(
     LARGE_INTEGER delay;
 
     
-    // completion routine should retry as neccessary.
+    // completion routine should retry as necessary.
     // when success, clear the flag to allow startio to proceed.
     // else fail original request when retries are exhausted.
 
@@ -980,7 +980,7 @@ CdRomPrepareUpdateCapabilitiesIrp(
     )
 {
     PFUNCTIONAL_DEVICE_EXTENSION fdoExtension = Fdo->DeviceExtension;
-    PCOMMON_DEVICE_EXTENSION commonExtension = Fdo->DeviceExtension;
+    //PCOMMON_DEVICE_EXTENSION commonExtension = Fdo->DeviceExtension;
     PCDROM_DATA cdData = fdoExtension->CommonExtension.DriverData;
     PCDROM_MMC_EXTENSION mmcData = &(cdData->Mmc);
     PIO_STACK_LOCATION nextStack;
@@ -1087,7 +1087,7 @@ CdRomUpdateMmcDriveCapabilities(
     ASSERT(Context == NULL);
 
     //
-    // NOTE: a remove lock is unneccessary, since the delayed irp
+    // NOTE: a remove lock is unnecessary, since the delayed irp
     // will have said lock held for itself, preventing a remove.
     //
     CdRomPrepareUpdateCapabilitiesIrp(Fdo);

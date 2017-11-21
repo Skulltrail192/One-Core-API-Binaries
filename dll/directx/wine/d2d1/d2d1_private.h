@@ -465,4 +465,33 @@ static inline void d2d_rect_expand(D2D1_RECT_F *dst, const D2D1_POINT_2F *point)
         dst->bottom = point->y;
 }
 
+static inline const char *debug_d2d_rect_f(const D2D1_RECT_F *rect)
+{
+    if (!rect) return "(null)";
+    return wine_dbg_sprintf("(%.8e,%.8e)-(%.8e,%.8e)", rect->left, rect->top, rect->right, rect->bottom );
+}
+
+//This is a hack, for gain time
+FORCEINLINE D2D1_PIXEL_FORMAT ID2D1RenderTarget_GetPixelFormat(ID2D1RenderTarget* This) {
+    D2D1_PIXEL_FORMAT __ret;
+    return *This->lpVtbl->GetPixelFormat(This,&__ret);
+}
+
+/*** ID2D1Bitmap methods ***/
+FORCEINLINE D2D1_SIZE_F ID2D1Bitmap_GetSize(ID2D1Bitmap* This) {
+    D2D1_SIZE_F __ret;
+    return *This->lpVtbl->GetSize(This,&__ret);
+}
+
+FORCEINLINE D2D1_SIZE_F ID2D1RenderTarget_GetSize(ID2D1RenderTarget* This) {
+    D2D1_SIZE_F __ret;
+    return *This->lpVtbl->GetSize(This,&__ret);
+}
+
+FORCEINLINE D2D1_SIZE_U ID2D1RenderTarget_GetPixelSize(ID2D1RenderTarget* This) {
+    D2D1_SIZE_U __ret;
+    return *This->lpVtbl->GetPixelSize(This,&__ret);
+}
+
 #endif /* __WINE_D2D1_PRIVATE_H */
+

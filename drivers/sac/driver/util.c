@@ -434,7 +434,7 @@ GetRegistryValueBuffer(IN PCWSTR KeyName,
     *Buffer = SacAllocatePool(ResultLength, GLOBAL_BLOCK_TAG);
     if (!*Buffer)
     {
-        SAC_DBG(1, "SAC GetRegistryValueBuffer: failed allocation\n");
+        SAC_DBG(SAC_DBG_ENTRY_EXIT, "SAC GetRegistryValueBuffer: failed allocation\n");
         return Status;
     }
 
@@ -497,7 +497,7 @@ SetRegistryValue(IN PCWSTR KeyName,
     if (!NT_SUCCESS(Status))
     {
         /* Print error on failure */
-        SAC_DBG(1, "SAC SetRegistryValue: failed ZwSetValueKey: %X.\n", Status);
+        SAC_DBG(SAC_DBG_ENTRY_EXIT, "SAC SetRegistryValue: failed ZwSetValueKey: %X.\n", Status);
     }
 
     /* Close the handle and exit */
@@ -621,7 +621,7 @@ TranslateMachineInformationXML(IN PWCHAR *Buffer,
     if (!p) return STATUS_NO_MEMORY;
 
     wcscpy(p, L"<machine-info>\r\n");
-    p += wcslen(L"<machine-info>\r\n");;
+    p += wcslen(L"<machine-info>\r\n");
 
     if (MachineInformation->MachineName)
     {
@@ -699,10 +699,10 @@ InitializeMachineInformation(VOID)
     RTL_OSVERSIONINFOEXW VersionInformation;
     SAC_DBG(SAC_DBG_ENTRY_EXIT, "SAC Initialize Machine Information : Entering.\n");
 
-    /* Don't do anything if we already quried this */
+    /* Don't do anything if we already queried this */
     if (MachineInformation)
     {
-        SAC_DBG(SAC_DBG_MACHINE, "SAC Initialize Machine Information:: MachineInformationBuffer already initialzied.\n");
+        SAC_DBG(SAC_DBG_MACHINE, "SAC Initialize Machine Information:: MachineInformationBuffer already initialized.\n");
         return;
     }
 
@@ -893,7 +893,7 @@ InitializeMachineInformation(VOID)
         SuiteTypeMessage = SAC_NO_SUITE_MSG;
     }
 
-    /* Get the string that correponds to the SKU type */
+    /* Get the string that corresponds to the SKU type */
     MessageBuffer = GetMessage(SuiteTypeMessage);
     if (!MessageBuffer)
     {
@@ -1058,7 +1058,7 @@ VOID
 NTAPI
 InitializeCmdEventInfo(VOID)
 {
-    /* Check if we were already initailized */
+    /* Check if we were already initialized */
     if (HaveUserModeServiceCmdEventInfo)
     {
         /* Full state expected */
@@ -1236,7 +1236,7 @@ GetMessageLineCount(IN ULONG MessageIndex)
     Buffer = GetMessage(MessageIndex);
     if (Buffer)
     {
-        /* Scan it looking for new lines, and increment the conut each time */
+        /* Scan it looking for new lines, and increment the count each time */
         while (*Buffer) if (*Buffer++ == L'\n') ++LineCount;
     }
 

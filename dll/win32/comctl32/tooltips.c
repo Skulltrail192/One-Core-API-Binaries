@@ -91,6 +91,8 @@
 
 #include "comctl32.h"
 
+#include <wine/exception.h>
+
 WINE_DEFAULT_DEBUG_CHANNEL(tooltips);
 
 static HICON hTooltipIcons[TTI_ERROR+1];
@@ -98,6 +100,7 @@ static HICON hTooltipIcons[TTI_ERROR+1];
 typedef struct
 {
     UINT      uFlags;
+    UINT      uInternalFlags;
     HWND      hwnd;
     BOOL      bNotifyUnicode;
     UINT_PTR  uId;
@@ -221,7 +224,7 @@ TOOLTIPS_customdraw_fill(const TOOLTIPS_INFO *infoPtr, NMTTCUSTOMDRAW *lpnmttcd,
 static inline DWORD
 TOOLTIPS_notify_customdraw (DWORD dwDrawStage, NMTTCUSTOMDRAW *lpnmttcd)
 {
-    LRESULT result = CDRF_DODEFAULT;
+    LRESULT result;
     lpnmttcd->nmcd.dwDrawStage = dwDrawStage;
 
     TRACE("Notifying stage %d, flags %x, id %x\n", lpnmttcd->nmcd.dwDrawStage,
@@ -471,12 +474,12 @@ TOOLTIPS_GetTipText (const TOOLTIPS_INFO *infoPtr, INT nTool, WCHAR *buffer)
 {
     TTTOOL_INFO *toolPtr = &infoPtr->tools[nTool];
 
-    if (IS_INTRESOURCE(toolPtr->lpszText) && toolPtr->hinst) {
+    if (IS_INTRESOURCE(toolPtr->lpszText)) {
 	/* load a resource */
 	TRACE("load res string %p %x\n",
 	       toolPtr->hinst, LOWORD(toolPtr->lpszText));
-	LoadStringW (toolPtr->hinst, LOWORD(toolPtr->lpszText),
-		       buffer, INFOTIPSIZE);
+	if (!LoadStringW (toolPtr->hinst, LOWORD(toolPtr->lpszText), buffer, INFOTIPSIZE))
+	    buffer[0] = '\0';
     }
     else if (toolPtr->lpszText) {
 	if (toolPtr->lpszText == LPSTR_TEXTCALLBACKW) {
@@ -493,6 +496,12 @@ TOOLTIPS_GetTipText (const TOOLTIPS_INFO *infoPtr, INT nTool, WCHAR *buffer)
     else {
 	/* no text available */
         buffer[0] = '\0';
+    }
+
+    if (!(GetWindowLongW(infoPtr->hwndSelf, GWL_STYLE) & TTS_NOPREFIX)) {
+        WCHAR *ptrW;
+        if ((ptrW = strchrW(buffer, '\t')))
+            *ptrW = 0;
     }
 
     TRACE("%s\n", debugstr_w(buffer));
@@ -1044,11 +1053,12 @@ TOOLTIPS_AddToolT (TOOLTIPS_INFO *infoPtr, const TTTOOLINFOW *ti, BOOL isW)
     infoPtr->uNumTools++;
 
     /* copy tool data */
-    toolPtr->uFlags = ti->uFlags;
-    toolPtr->hwnd   = ti->hwnd;
-    toolPtr->uId    = ti->uId;
-    toolPtr->rect   = ti->rect;
-    toolPtr->hinst  = ti->hinst;
+    toolPtr->uFlags         = ti->uFlags;
+    toolPtr->uInternalFlags = (ti->uFlags & (TTF_SUBCLASS | TTF_IDISHWND));
+    toolPtr->hwnd           = ti->hwnd;
+    toolPtr->uId            = ti->uId;
+    toolPtr->rect           = ti->rect;
+    toolPtr->hinst          = ti->hinst;
 
     if (ti->cbSize >= TTTOOLINFOW_V1_SIZE) {
         if (IS_INTRESOURCE(ti->lpszText)) {
@@ -1061,10 +1071,19 @@ TOOLTIPS_AddToolT (TOOLTIPS_INFO *infoPtr, const TTTOOLINFOW *ti, BOOL isW)
                 toolPtr->lpszText = LPSTR_TEXTCALLBACKW;
             }
             else if (isW) {
-                INT len = lstrlenW (ti->lpszText);
-                TRACE("add text %s!\n", debugstr_w(ti->lpszText));
-                toolPtr->lpszText =	Alloc ((len + 1)*sizeof(WCHAR));
-                strcpyW (toolPtr->lpszText, ti->lpszText);
+                __TRY
+                {
+                    INT len = lstrlenW (ti->lpszText);
+                    TRACE("add text %s!\n", debugstr_w(ti->lpszText));
+                    toolPtr->lpszText =	Alloc ((len + 1)*sizeof(WCHAR));
+                    strcpyW (toolPtr->lpszText, ti->lpszText);
+                }
+                __EXCEPT_PAGE_FAULT
+                {
+                    WARN("Invalid lpszText.\n");
+                    return FALSE;
+                }
+                __ENDTRY
             }
             else {
                 INT len = MultiByteToWideChar(CP_ACP, 0, (LPSTR)ti->lpszText, -1, NULL, 0);
@@ -1079,8 +1098,8 @@ TOOLTIPS_AddToolT (TOOLTIPS_INFO *infoPtr, const TTTOOLINFOW *ti, BOOL isW)
 	toolPtr->lParam = ti->lParam;
 
     /* install subclassing hook */
-    if (toolPtr->uFlags & TTF_SUBCLASS) {
-	if (toolPtr->uFlags & TTF_IDISHWND) {
+    if (toolPtr->uInternalFlags & TTF_SUBCLASS) {
+	if (toolPtr->uInternalFlags & TTF_IDISHWND) {
 	    SetWindowSubclass((HWND)toolPtr->uId, TOOLTIPS_SubclassProc, 1,
 			      (DWORD_PTR)infoPtr->hwndSelf);
 	}
@@ -1139,8 +1158,8 @@ TOOLTIPS_DelToolT (TOOLTIPS_INFO *infoPtr, const TTTOOLINFOW *ti, BOOL isW)
     }
 
     /* remove subclassing */
-    if (toolPtr->uFlags & TTF_SUBCLASS) {
-	if (toolPtr->uFlags & TTF_IDISHWND) {
+    if (toolPtr->uInternalFlags & TTF_SUBCLASS) {
+	if (toolPtr->uInternalFlags & TTF_IDISHWND) {
 	    RemoveWindowSubclass((HWND)toolPtr->uId, TOOLTIPS_SubclassProc, 1);
 	}
 	else {
@@ -1302,12 +1321,10 @@ TOOLTIPS_GetDelayTime (const TOOLTIPS_INFO *infoPtr, DWORD duration)
 
 
 static LRESULT
-TOOLTIPS_GetMargin (const TOOLTIPS_INFO *infoPtr, LPRECT lpRect)
+TOOLTIPS_GetMargin (const TOOLTIPS_INFO *infoPtr, RECT *rect)
 {
-    lpRect->left   = infoPtr->rcMargin.left;
-    lpRect->right  = infoPtr->rcMargin.right;
-    lpRect->bottom = infoPtr->rcMargin.bottom;
-    lpRect->top    = infoPtr->rcMargin.top;
+    if (rect)
+        *rect = infoPtr->rcMargin;
 
     return 0;
 }
@@ -1504,7 +1521,7 @@ TOOLTIPS_RelayEvent (TOOLTIPS_INFO *infoPtr, LPMSG lpMsg)
 						       &pt);
 	    TRACE("tool (%p) %d %d %d\n", infoPtr->hwndSelf, nOldTool,
 		  infoPtr->nTool, infoPtr->nCurrentTool);
-            TRACE("WM_MOUSEMOVE (%p %d %d)\n", infoPtr->hwndSelf, pt.x, pt.y);
+            TRACE("WM_MOUSEMOVE (%p %s)\n", infoPtr->hwndSelf, wine_dbgstr_point(&pt));
 
 	    if (infoPtr->nTool != nOldTool) {
 	        if(infoPtr->nTool == -1) { /* Moved out of all tools */
@@ -1579,12 +1596,10 @@ TOOLTIPS_SetDelayTime (TOOLTIPS_INFO *infoPtr, DWORD duration, INT nTime)
 
 
 static LRESULT
-TOOLTIPS_SetMargin (TOOLTIPS_INFO *infoPtr, const RECT *lpRect)
+TOOLTIPS_SetMargin (TOOLTIPS_INFO *infoPtr, const RECT *rect)
 {
-    infoPtr->rcMargin.left   = lpRect->left;
-    infoPtr->rcMargin.right  = lpRect->right;
-    infoPtr->rcMargin.bottom = lpRect->bottom;
-    infoPtr->rcMargin.top    = lpRect->top;
+    if (rect)
+        infoPtr->rcMargin = *rect;
 
     return 0;
 }
@@ -1905,8 +1920,8 @@ TOOLTIPS_Destroy (TOOLTIPS_INFO *infoPtr)
 	    }
 
 	    /* remove subclassing */
-        if (toolPtr->uFlags & TTF_SUBCLASS) {
-            if (toolPtr->uFlags & TTF_IDISHWND) {
+        if (toolPtr->uInternalFlags & TTF_SUBCLASS) {
+            if (toolPtr->uInternalFlags & TTF_IDISHWND) {
                 RemoveWindowSubclass((HWND)toolPtr->uId, TOOLTIPS_SubclassProc, 1);
             }
             else {
@@ -1994,6 +2009,7 @@ TOOLTIPS_NCHitTest (const TOOLTIPS_INFO *infoPtr, WPARAM wParam, LPARAM lParam)
 static LRESULT
 TOOLTIPS_NotifyFormat (TOOLTIPS_INFO *infoPtr, WPARAM wParam, LPARAM lParam)
 {
+#ifdef __REACTOS__
     TTTOOL_INFO *toolPtr = infoPtr->tools;
     LRESULT nResult;
 
@@ -2020,6 +2036,9 @@ TOOLTIPS_NotifyFormat (TOOLTIPS_INFO *infoPtr, WPARAM wParam, LPARAM lParam)
         }
         return nResult;
     }
+#else
+    FIXME ("hwnd=%p wParam=%lx lParam=%lx\n", infoPtr->hwndSelf, wParam, lParam);
+#endif
 
     return 0;
 }

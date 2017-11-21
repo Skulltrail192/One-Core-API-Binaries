@@ -198,11 +198,12 @@ enum wined3d_fence_result wined3d_fence_wait(const struct wined3d_fence *fence,
 
     if (gl_info->supported[ARB_SYNC])
     {
-        /* Apple seems to be into arbitrary limits, and timeouts larger than
-         * 0xfffffffffffffbff immediately return GL_TIMEOUT_EXPIRED. We don't
-         * really care and can live with waiting a few μs less. (OS X 10.7.4). */
+        /* Timeouts near 0xffffffffffffffff may immediately return GL_TIMEOUT_EXPIRED,
+         * possibly because macOS internally adds some slop to the timer. To avoid this,
+         * we use a large number that isn't near the point of overflow (macOS 10.12.5).
+         */
         GLenum gl_ret = GL_EXTCALL(glClientWaitSync(fence->object.sync,
-                GL_SYNC_FLUSH_COMMANDS_BIT, ~(GLuint64)0xffff));
+                GL_SYNC_FLUSH_COMMANDS_BIT, ~(GLuint64)0 >> 1));
         checkGLcall("glClientWaitSync");
 
         switch (gl_ret)
@@ -212,7 +213,7 @@ enum wined3d_fence_result wined3d_fence_wait(const struct wined3d_fence *fence,
                 ret = WINED3D_FENCE_OK;
                 break;
 
-                /* We don't expect a timeout for a ~584 year wait */
+                /* We don't expect a timeout for a ~292 year wait */
             default:
                 ERR("glClientWaitSync returned %#x.\n", gl_ret);
                 ret = WINED3D_FENCE_ERROR;
@@ -388,7 +389,7 @@ HRESULT CDECL wined3d_query_get_data(struct wined3d_query *query,
     }
     else if (query->counter_main != query->counter_retrieved)
     {
-        if (flags & WINED3DGETDATA_FLUSH)
+        if (flags & WINED3DGETDATA_FLUSH && !query->device->cs->queries_flushed)
             wined3d_cs_emit_flush(query->device->cs);
         return S_FALSE;
     }

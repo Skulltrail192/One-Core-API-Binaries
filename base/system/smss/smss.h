@@ -69,14 +69,6 @@ typedef struct _SMP_SUBSYSTEM
     ULONG ReferenceCount;
 } SMP_SUBSYSTEM, *PSMP_SUBSYSTEM;
 
-typedef struct _SMP_SESSION
-{
-    LIST_ENTRY Entry;
-    ULONG SessionId;
-    PSMP_SUBSYSTEM Subsystem;
-    PSMP_SUBSYSTEM OtherSubsystem;
-} SMP_SESSION, *PSMP_SESSION;
-
 /* EXTERNALS ******************************************************************/
 
 extern RTL_CRITICAL_SECTION SmpKnownSubSysLock;

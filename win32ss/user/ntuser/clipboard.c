@@ -25,7 +25,7 @@ IntGetWinStaForCbAccess(VOID)
     NTSTATUS Status;
 
     hWinSta = UserGetProcessWindowStation();
-    Status = IntValidateWindowStationHandle(hWinSta, KernelMode, WINSTA_ACCESSCLIPBOARD, &pWinStaObj);
+    Status = IntValidateWindowStationHandle(hWinSta, UserMode, WINSTA_ACCESSCLIPBOARD, &pWinStaObj, 0);
     if (!NT_SUCCESS(Status))
     {
         ERR("Cannot open winsta\n");
@@ -36,19 +36,25 @@ IntGetWinStaForCbAccess(VOID)
     return pWinStaObj;
 }
 
-/* If format exists, returns a non zero value (pointing to formated object) */
+/* If format exists, returns a non-null value (pointing to formated object) */
 static PCLIP FASTCALL
-IntIsFormatAvailable(PWINSTATION_OBJECT pWinStaObj, UINT fmt)
+IntGetFormatElement(PWINSTATION_OBJECT pWinStaObj, UINT fmt)
 {
-    unsigned i = 0;
+    DWORD i;
 
     for (i = 0; i < pWinStaObj->cNumClipFormats; ++i)
     {
-	    if (pWinStaObj->pClipBase[i].fmt == fmt)
+        if (pWinStaObj->pClipBase[i].fmt == fmt)
             return &pWinStaObj->pClipBase[i];
     }
 
     return NULL;
+}
+
+static BOOL FASTCALL
+IntIsFormatAvailable(PWINSTATION_OBJECT pWinStaObj, UINT fmt)
+{
+    return IntGetFormatElement(pWinStaObj, fmt) != NULL;
 }
 
 static VOID FASTCALL
@@ -74,9 +80,9 @@ IntAddFormatedData(PWINSTATION_OBJECT pWinStaObj, UINT fmt, HANDLE hData, BOOLEA
 {
     PCLIP pElement = NULL;
 
-    /* Use exisiting entry with specified format */
+    /* Use existing entry with specified format */
     if (!bEnd)
-        pElement = IntIsFormatAvailable(pWinStaObj, fmt);
+        pElement = IntGetFormatElement(pWinStaObj, fmt);
 
     /* Put new entry at the end if nothing was found */
     if (!pElement)
@@ -124,14 +130,9 @@ IntAddFormatedData(PWINSTATION_OBJECT pWinStaObj, UINT fmt, HANDLE hData, BOOLEA
 static BOOL FASTCALL
 IntIsClipboardOpenByMe(PWINSTATION_OBJECT pWinSta)
 {
-    /* Check if current thread has opened the clipboard */
-    if (pWinSta->ptiClipLock &&
-        pWinSta->ptiClipLock == PsGetCurrentThreadWin32Thread())
-    {
-        return TRUE;
-    }
-
-    return FALSE;
+    /* Check if the current thread has opened the clipboard */
+    return (pWinSta->ptiClipLock &&
+            pWinSta->ptiClipLock == PsGetCurrentThreadWin32Thread());
 }
 
 static VOID NTAPI
@@ -159,6 +160,7 @@ IntSynthesizeDib(
     }
 
     /* Get information about the bitmap format */
+    pbmi->bmiHeader.biSize = sizeof(bmiBuffer.bmih);
     iResult = GreGetDIBitsInternal(hdc,
                                    hbm,
                                    0,
@@ -185,7 +187,7 @@ IntSynthesizeDib(
                                                       NULL,
                                                       &hMem,
                                                       TYPE_CLIPDATA,
-                                                      cjDataSize);
+                                                      sizeof(CLIPBOARDDATA) + cjDataSize);
     if (!pClipboardData)
     {
         goto cleanup;
@@ -230,16 +232,16 @@ IntSynthesizeBitmap(PWINSTATION_OBJECT pWinStaObj, PCLIP pBmEl)
 
     TRACE("IntSynthesizeBitmap(%p, %p)\n", pWinStaObj, pBmEl);
 
-    pDibEl = IntIsFormatAvailable(pWinStaObj, CF_DIB);
+    pDibEl = IntGetFormatElement(pWinStaObj, CF_DIB);
     ASSERT(pDibEl && !IS_DATA_SYNTHESIZED(pDibEl));
-    if(!pDibEl->fGlobalHandle)
+    if (!pDibEl->fGlobalHandle)
         return;
 
     pMemObj = (PCLIPBOARDDATA)UserGetObject(gHandleTable, pDibEl->hData, TYPE_CLIPDATA);
     if (!pMemObj)
         return;
 
-	pBmi = (BITMAPINFO*)pMemObj->Data;
+    pBmi = (BITMAPINFO*)pMemObj->Data;
 
     if (pMemObj->cbData < sizeof(DWORD) && pMemObj->cbData < pBmi->bmiHeader.biSize)
         goto cleanup;
@@ -282,17 +284,17 @@ cleanup:
 static VOID NTAPI
 IntAddSynthesizedFormats(PWINSTATION_OBJECT pWinStaObj)
 {
-    PCLIP pTextEl, pUniTextEl, pOemTextEl, pLocaleEl, pBmEl, pDibEl;
+    BOOL bHaveText, bHaveUniText, bHaveOemText, bHaveLocale, bHaveBm, bHaveDib;
 
-    pTextEl = IntIsFormatAvailable(pWinStaObj, CF_TEXT);
-    pOemTextEl = IntIsFormatAvailable(pWinStaObj, CF_OEMTEXT);
-    pUniTextEl = IntIsFormatAvailable(pWinStaObj, CF_UNICODETEXT);
-    pLocaleEl = IntIsFormatAvailable(pWinStaObj, CF_LOCALE);
-    pBmEl = IntIsFormatAvailable(pWinStaObj, CF_BITMAP);
-    pDibEl = IntIsFormatAvailable(pWinStaObj, CF_DIB);
+    bHaveText = IntIsFormatAvailable(pWinStaObj, CF_TEXT);
+    bHaveOemText = IntIsFormatAvailable(pWinStaObj, CF_OEMTEXT);
+    bHaveUniText = IntIsFormatAvailable(pWinStaObj, CF_UNICODETEXT);
+    bHaveLocale = IntIsFormatAvailable(pWinStaObj, CF_LOCALE);
+    bHaveBm = IntIsFormatAvailable(pWinStaObj, CF_BITMAP);
+    bHaveDib = IntIsFormatAvailable(pWinStaObj, CF_DIB);
 
     /* Add CF_LOCALE format if we have CF_TEXT */
-    if (!pLocaleEl && pTextEl)
+    if (!bHaveLocale && bHaveText)
     {
         PCLIPBOARDDATA pMemObj;
         HANDLE hMem;
@@ -311,43 +313,81 @@ IntAddSynthesizedFormats(PWINSTATION_OBJECT pWinStaObj)
     }
 
     /* Add CF_TEXT. Note: it is synthesized in user32.dll */
-    if (!pTextEl && (pUniTextEl || pOemTextEl))
+    if (!bHaveText && (bHaveUniText || bHaveOemText))
         IntAddFormatedData(pWinStaObj, CF_TEXT, DATA_SYNTH_USER, FALSE, TRUE);
 
     /* Add CF_OEMTEXT. Note: it is synthesized in user32.dll */
-    if (!pOemTextEl && (pUniTextEl || pTextEl))
+    if (!bHaveOemText && (bHaveUniText || bHaveText))
         IntAddFormatedData(pWinStaObj, CF_OEMTEXT, DATA_SYNTH_USER, FALSE, TRUE);
 
     /* Add CF_UNICODETEXT. Note: it is synthesized in user32.dll */
-    if (!pUniTextEl && (pTextEl || pOemTextEl))
+    if (!bHaveUniText && (bHaveText || bHaveOemText))
         IntAddFormatedData(pWinStaObj, CF_UNICODETEXT, DATA_SYNTH_USER, FALSE, TRUE);
 
     /* Add CF_BITMAP. Note: it is synthesized on demand */
-    if (!pBmEl && pDibEl)
+    if (!bHaveBm && bHaveDib)
         IntAddFormatedData(pWinStaObj, CF_BITMAP, DATA_SYNTH_KRNL, FALSE, TRUE);
 
     /* Note: We need to render the DIB or DIBV5 format as soon as possible
        because pallette information may change */
-    if (!pDibEl && pBmEl)
-        IntSynthesizeDib(pWinStaObj, pBmEl->hData);
+    if (!bHaveDib && bHaveBm)
+        IntSynthesizeDib(pWinStaObj, IntGetFormatElement(pWinStaObj, CF_BITMAP)->hData);
 }
 
 VOID NTAPI
 UserEmptyClipboardData(PWINSTATION_OBJECT pWinSta)
 {
-    unsigned i;
+    DWORD i;
     PCLIP pElement;
 
     for (i = 0; i < pWinSta->cNumClipFormats; ++i)
     {
         pElement = &pWinSta->pClipBase[i];
-		IntFreeElementData(pElement);
+        IntFreeElementData(pElement);
     }
 
-    if(pWinSta->pClipBase)
+    if (pWinSta->pClipBase)
         ExFreePoolWithTag(pWinSta->pClipBase, USERTAG_CLIPBOARD);
+
     pWinSta->pClipBase = NULL;
     pWinSta->cNumClipFormats = 0;
+}
+
+/* UserClipboardRelease is called from IntSendDestroyMsg in window.c */
+VOID FASTCALL
+UserClipboardRelease(PWND pWindow)
+{
+    PWINSTATION_OBJECT pWinStaObj;
+
+    pWinStaObj = IntGetWinStaForCbAccess();
+    if (!pWinStaObj)
+        return;
+
+    co_IntSendMessage(pWinStaObj->spwndClipOwner->head.h, WM_RENDERALLFORMATS, 0, 0);
+
+    /* If the window being destroyed is the current clipboard owner... */
+    if (pWindow == pWinStaObj->spwndClipOwner)
+    {
+        /* ... make it release the clipboard */
+        pWinStaObj->spwndClipOwner = NULL;
+    }
+
+    if (pWinStaObj->fClipboardChanged)
+    {
+        /* Add synthesized formats - they are rendered later */
+        IntAddSynthesizedFormats(pWinStaObj);
+
+        /* Notify viewer windows in chain */
+        pWinStaObj->fClipboardChanged = FALSE;
+        if (pWinStaObj->spwndClipViewer)
+        {
+            TRACE("Clipboard: sending WM_DRAWCLIPBOARD to %p\n", pWinStaObj->spwndClipViewer->head.h);
+            // For 32-bit applications this message is sent as a notification
+            co_IntSendMessageNoWait(pWinStaObj->spwndClipViewer->head.h, WM_DRAWCLIPBOARD, 0, 0);
+        }
+    }
+
+    ObDereferenceObject(pWinStaObj);
 }
 
 /* UserClipboardFreeWindow is called from co_UserFreeWindow in window.c */
@@ -360,17 +400,18 @@ UserClipboardFreeWindow(PWND pWindow)
     if (!pWinStaObj)
         return;
 
+    if (pWindow == pWinStaObj->spwndClipOwner)
+    {
+        /* The owner window was destroyed */
+        pWinStaObj->spwndClipOwner = NULL;
+    }
+
     /* Check if clipboard is not locked by this window, if yes, unlock it */
     if (pWindow == pWinStaObj->spwndClipOpen)
     {
         /* The window that opens the clipboard was destroyed */
         pWinStaObj->spwndClipOpen = NULL;
         pWinStaObj->ptiClipLock = NULL;
-    }
-    if (pWindow == pWinStaObj->spwndClipOwner)
-    {
-        /* The owner window was destroyed */
-        pWinStaObj->spwndClipOwner = NULL;
     }
     /* Remove window from window chain */
     if (pWindow == pWinStaObj->spwndClipViewer)
@@ -384,13 +425,13 @@ UserEnumClipboardFormats(UINT fmt)
 {
     UINT Ret = 0;
     PCLIP pElement;
-    PWINSTATION_OBJECT pWinStaObj = NULL;
+    PWINSTATION_OBJECT pWinStaObj;
 
     pWinStaObj = IntGetWinStaForCbAccess();
     if (!pWinStaObj)
         goto cleanup;
 
-    /* Check if clipboard has been opened */
+    /* Check if the clipboard has been opened */
     if (!IntIsClipboardOpenByMe(pWinStaObj))
     {
         EngSetLastError(ERROR_CLIPBOARD_NOT_OPEN);
@@ -406,14 +447,19 @@ UserEnumClipboardFormats(UINT fmt)
     else
     {
         /* Return next format */
-        pElement = IntIsFormatAvailable(pWinStaObj, fmt);
-        ++pElement;
-        if (pElement < &pWinStaObj->pClipBase[pWinStaObj->cNumClipFormats])
-            Ret = pElement->fmt;
+        pElement = IntGetFormatElement(pWinStaObj, fmt);
+        if (pElement != NULL)
+        {
+            ++pElement;
+            if (pElement < &pWinStaObj->pClipBase[pWinStaObj->cNumClipFormats])
+            {
+                Ret = pElement->fmt;
+            }
+        }
     }
 
 cleanup:
-    if(pWinStaObj)
+    if (pWinStaObj)
         ObDereferenceObject(pWinStaObj);
 
     return Ret;
@@ -437,18 +483,22 @@ UserOpenClipboard(HWND hWnd)
     if (!pWinStaObj)
         goto cleanup;
 
-    if (pWinStaObj->ptiClipLock)
+    /* Check if we already opened the clipboard */
+    if ((pWindow == pWinStaObj->spwndClipOpen) && IntIsClipboardOpenByMe(pWinStaObj))
     {
-        /* Clipboard is already open */
-        if (pWinStaObj->spwndClipOpen != pWindow)
-        {
-            EngSetLastError(ERROR_ACCESS_DENIED);
-            ERR("Access denied!\n");
-            goto cleanup;
-        }
+        bRet = TRUE;
+        goto cleanup;
     }
 
-    /* Open clipboard */
+    /* If the clipboard was already opened by somebody else, bail out */
+    if ((pWindow != pWinStaObj->spwndClipOpen) && pWinStaObj->ptiClipLock)
+    {
+        ERR("Access denied!\n");
+        EngSetLastError(ERROR_ACCESS_DENIED);
+        goto cleanup;
+    }
+
+    /* Open the clipboard */
     pWinStaObj->spwndClipOpen = pWindow;
     pWinStaObj->ptiClipLock = PsGetCurrentThreadWin32Thread();
     bRet = TRUE;
@@ -476,12 +526,13 @@ BOOL NTAPI
 UserCloseClipboard(VOID)
 {
     BOOL bRet = FALSE;
-    PWINSTATION_OBJECT pWinStaObj = NULL;
+    PWINSTATION_OBJECT pWinStaObj;
 
     pWinStaObj = IntGetWinStaForCbAccess();
     if (!pWinStaObj)
         goto cleanup;
 
+    /* Check if the clipboard has been opened */
     if (!IntIsClipboardOpenByMe(pWinStaObj))
     {
         EngSetLastError(ERROR_CLIPBOARD_NOT_OPEN);
@@ -499,13 +550,13 @@ UserCloseClipboard(VOID)
         IntAddSynthesizedFormats(pWinStaObj);
 
         /* Notify viewer windows in chain */
+        pWinStaObj->fClipboardChanged = FALSE;
         if (pWinStaObj->spwndClipViewer)
         {
             TRACE("Clipboard: sending WM_DRAWCLIPBOARD to %p\n", pWinStaObj->spwndClipViewer->head.h);
-            co_IntSendMessage(pWinStaObj->spwndClipViewer->head.h, WM_DRAWCLIPBOARD, 0, 0);
+            // For 32-bit applications this message is sent as a notification
+            co_IntSendMessageNoWait(pWinStaObj->spwndClipViewer->head.h, WM_DRAWCLIPBOARD, 0, 0);
         }
-
-        pWinStaObj->fClipboardChanged = FALSE;
     }
 
 cleanup:
@@ -569,10 +620,10 @@ NtUserChangeClipboardChain(HWND hWndRemove, HWND hWndNewNext)
 
     if (pWindowRemove && pWinStaObj->spwndClipViewer)
     {
-        if(pWindowRemove == pWinStaObj->spwndClipViewer)
+        if (pWindowRemove == pWinStaObj->spwndClipViewer)
             pWinStaObj->spwndClipViewer = UserGetWindowObject(hWndNewNext);
 
-        if(pWinStaObj->spwndClipViewer)
+        if (pWinStaObj->spwndClipViewer)
             bRet = (BOOL)co_IntSendMessage(pWinStaObj->spwndClipViewer->head.h, WM_CHANGECBCHAIN, (WPARAM)hWndRemove, (LPARAM)hWndNewNext);
     }
 
@@ -588,7 +639,7 @@ DWORD APIENTRY
 NtUserCountClipboardFormats(VOID)
 {
     DWORD cFormats = 0;
-    PWINSTATION_OBJECT pWinStaObj = NULL;
+    PWINSTATION_OBJECT pWinStaObj;
 
     UserEnterShared();
 
@@ -616,29 +667,34 @@ UserEmptyClipboard(VOID)
     if (!pWinStaObj)
         return FALSE;
 
-    if (IntIsClipboardOpenByMe(pWinStaObj))
-    {
-        UserEmptyClipboardData(pWinStaObj);
-
-        if (pWinStaObj->spwndClipOwner)
-        {
-            TRACE("Clipboard: WM_DESTROYCLIPBOARD to %p\n", pWinStaObj->spwndClipOwner->head.h);
-            co_IntSendMessageNoWait(pWinStaObj->spwndClipOwner->head.h, WM_DESTROYCLIPBOARD, 0, 0);
-        }
-
-        pWinStaObj->spwndClipOwner = pWinStaObj->spwndClipOpen;
-
-        pWinStaObj->iClipSequenceNumber++;
-
-        bRet = TRUE;
-    }
-    else
+    /* Check if the clipboard has been opened */
+    if (!IntIsClipboardOpenByMe(pWinStaObj))
     {
         EngSetLastError(ERROR_CLIPBOARD_NOT_OPEN);
-        ERR("Access denied!\n");
+        goto cleanup;
     }
 
-    ObDereferenceObject(pWinStaObj);
+    UserEmptyClipboardData(pWinStaObj);
+
+    if (pWinStaObj->spwndClipOwner)
+    {
+        TRACE("Clipboard: WM_DESTROYCLIPBOARD to %p\n", pWinStaObj->spwndClipOwner->head.h);
+        // For 32-bit applications this message is sent as a notification
+        co_IntSendMessageNoWait(pWinStaObj->spwndClipOwner->head.h, WM_DESTROYCLIPBOARD, 0, 0);
+    }
+
+    pWinStaObj->spwndClipOwner = pWinStaObj->spwndClipOpen;
+
+    pWinStaObj->iClipSerialNumber++;
+    pWinStaObj->iClipSequenceNumber++;
+    pWinStaObj->fClipboardChanged = TRUE;
+    pWinStaObj->fInDelayedRendering = FALSE;
+
+    bRet = TRUE;
+
+cleanup:
+    if (pWinStaObj)
+        ObDereferenceObject(pWinStaObj);
 
     return bRet;
 }
@@ -665,7 +721,7 @@ NtUserGetClipboardFormatName(UINT fmt, LPWSTR lpszFormatName, INT cchMaxCount)
     UserEnterShared();
 
     /* If the format is built-in we fail */
-    if (fmt < 0xc000)
+    if (fmt < 0xc000 || fmt > 0xffff)
     {
         /* Registetrated formats are >= 0xc000 */
         goto cleanup;
@@ -730,7 +786,7 @@ NtUserGetClipboardViewer(VOID)
     UserEnterShared();
 
     pWinStaObj = IntGetWinStaForCbAccess();
-    if(!pWinStaObj)
+    if (!pWinStaObj)
         goto cleanup;
 
     if (pWinStaObj->spwndClipViewer)
@@ -823,7 +879,7 @@ NtUserGetClipboardData(UINT fmt, PGETCLIPBDATA pgcd)
 {
     HANDLE hRet = NULL;
     PCLIP pElement;
-    PWINSTATION_OBJECT pWinStaObj = NULL;
+    PWINSTATION_OBJECT pWinStaObj;
 
     TRACE("NtUserGetClipboardData(%x, %p)\n", fmt, pgcd);
 
@@ -833,13 +889,14 @@ NtUserGetClipboardData(UINT fmt, PGETCLIPBDATA pgcd)
     if (!pWinStaObj)
         goto cleanup;
 
+    /* Check if the clipboard has been opened */
     if (!IntIsClipboardOpenByMe(pWinStaObj))
     {
         EngSetLastError(ERROR_CLIPBOARD_NOT_OPEN);
         goto cleanup;
     }
 
-    pElement = IntIsFormatAvailable(pWinStaObj, fmt);
+    pElement = IntGetFormatElement(pWinStaObj, fmt);
     if (pElement && IS_DATA_DELAYED(pElement) && pWinStaObj->spwndClipOwner)
     {
         /* Send WM_RENDERFORMAT message */
@@ -848,12 +905,11 @@ NtUserGetClipboardData(UINT fmt, PGETCLIPBDATA pgcd)
         pWinStaObj->fInDelayedRendering = FALSE;
 
         /* Data should be in clipboard now */
-        pElement = IntIsFormatAvailable(pWinStaObj, fmt);
+        pElement = IntGetFormatElement(pWinStaObj, fmt);
     }
 
     if (!pElement || IS_DATA_DELAYED(pElement))
         goto cleanup;
-
 
     if (IS_DATA_SYNTHESIZED(pElement))
     {
@@ -864,11 +920,11 @@ NtUserGetClipboardData(UINT fmt, PGETCLIPBDATA pgcd)
             case CF_UNICODETEXT:
             case CF_TEXT:
             case CF_OEMTEXT:
-                pElement = IntIsFormatAvailable(pWinStaObj, CF_UNICODETEXT);
+                pElement = IntGetFormatElement(pWinStaObj, CF_UNICODETEXT);
                 if (IS_DATA_SYNTHESIZED(pElement))
-                    pElement = IntIsFormatAvailable(pWinStaObj, CF_TEXT);
+                    pElement = IntGetFormatElement(pWinStaObj, CF_TEXT);
                 if (IS_DATA_SYNTHESIZED(pElement))
-                    pElement = IntIsFormatAvailable(pWinStaObj, CF_OEMTEXT);
+                    pElement = IntGetFormatElement(pWinStaObj, CF_OEMTEXT);
                 break;
             case CF_BITMAP:
                 IntSynthesizeBitmap(pWinStaObj, pElement);
@@ -889,7 +945,7 @@ NtUserGetClipboardData(UINT fmt, PGETCLIPBDATA pgcd)
         {
             PCLIP pLocaleEl;
 
-            pLocaleEl = IntIsFormatAvailable(pWinStaObj, CF_LOCALE);
+            pLocaleEl = IntGetFormatElement(pWinStaObj, CF_LOCALE);
             if (pLocaleEl && !IS_DATA_DELAYED(pLocaleEl))
                 pgcd->hLocale = pLocaleEl->hData;
         }
@@ -897,7 +953,7 @@ NtUserGetClipboardData(UINT fmt, PGETCLIPBDATA pgcd)
         {
             PCLIP pPaletteEl;
 
-            pPaletteEl = IntIsFormatAvailable(pWinStaObj, CF_PALETTE);
+            pPaletteEl = IntGetFormatElement(pWinStaObj, CF_PALETTE);
             if (pPaletteEl && !IS_DATA_DELAYED(pPaletteEl))
                 pgcd->hPalette = pPaletteEl->hData;
         }
@@ -911,7 +967,7 @@ NtUserGetClipboardData(UINT fmt, PGETCLIPBDATA pgcd)
     _SEH2_END;
 
 cleanup:
-    if(pWinStaObj)
+    if (pWinStaObj)
         ObDereferenceObject(pWinStaObj);
 
     UserLeave();
@@ -925,16 +981,13 @@ HANDLE NTAPI
 UserSetClipboardData(UINT fmt, HANDLE hData, PSETCLIPBDATA scd)
 {
     HANDLE hRet = NULL;
-    PWINSTATION_OBJECT pWinStaObj = NULL;
+    PWINSTATION_OBJECT pWinStaObj;
 
     pWinStaObj = IntGetWinStaForCbAccess();
     if (!pWinStaObj)
         goto cleanup;
 
-    /* If it's delayed rendering we don't have to open clipboard */
-    if ((pWinStaObj->fInDelayedRendering &&
-        pWinStaObj->spwndClipOwner->head.pti != PsGetCurrentThreadWin32Thread()) ||
-        !IntIsClipboardOpenByMe(pWinStaObj))
+    if (!fmt || !pWinStaObj->ptiClipLock)
     {
         ERR("Access denied!\n");
         EngSetLastError(ERROR_CLIPBOARD_NOT_OPEN);
@@ -944,7 +997,7 @@ UserSetClipboardData(UINT fmt, HANDLE hData, PSETCLIPBDATA scd)
     if (scd->fIncSerialNumber)
         pWinStaObj->iClipSerialNumber++;
 
-    /* Is it a delayed render? */
+    /* Is it a delayed rendering? */
     if (hData)
     {
         /* Is it a bitmap? */
@@ -958,14 +1011,17 @@ UserSetClipboardData(UINT fmt, HANDLE hData, PSETCLIPBDATA scd)
         IntAddFormatedData(pWinStaObj, fmt, hData, scd->fGlobalHandle, FALSE);
         TRACE("hData stored\n");
 
-        pWinStaObj->iClipSequenceNumber++;
+        /* If the serial number was increased, increase also the sequence number */
+        if (scd->fIncSerialNumber)
+            pWinStaObj->iClipSequenceNumber++;
+
         pWinStaObj->fClipboardChanged = TRUE;
 
         /* Note: Synthesized formats are added in NtUserCloseClipboard */
     }
     else
     {
-        /* This is a delayed render */
+        /* This is a delayed rendering */
         IntAddFormatedData(pWinStaObj, fmt, DATA_DELAYED, FALSE, FALSE);
         TRACE("SetClipboardData delayed format: %u\n", fmt);
     }
@@ -976,7 +1032,7 @@ UserSetClipboardData(UINT fmt, HANDLE hData, PSETCLIPBDATA scd)
 cleanup:
     TRACE("NtUserSetClipboardData returns: %p\n", hRet);
 
-    if(pWinStaObj)
+    if (pWinStaObj)
         ObDereferenceObject(pWinStaObj);
 
     return hRet;
@@ -1016,7 +1072,7 @@ HWND APIENTRY
 NtUserSetClipboardViewer(HWND hWndNewViewer)
 {
     HWND hWndNext = NULL;
-    PWINSTATION_OBJECT pWinStaObj = NULL;
+    PWINSTATION_OBJECT pWinStaObj;
     PWND pWindow;
 
     UserEnterExclusive();
@@ -1040,8 +1096,17 @@ NtUserSetClipboardViewer(HWND hWndNewViewer)
     /* Set new viewer window */
     pWinStaObj->spwndClipViewer = pWindow;
 
+    /* Notify viewer windows in chain */
+    pWinStaObj->fClipboardChanged = FALSE;
+    if (pWinStaObj->spwndClipViewer)
+    {
+        TRACE("Clipboard: sending WM_DRAWCLIPBOARD to %p\n", pWinStaObj->spwndClipViewer->head.h);
+        // For 32-bit applications this message is sent as a notification
+        co_IntSendMessageNoWait(pWinStaObj->spwndClipViewer->head.h, WM_DRAWCLIPBOARD, 0, 0);
+    }
+
 cleanup:
-    if(pWinStaObj)
+    if (pWinStaObj)
         ObDereferenceObject(pWinStaObj);
 
     UserLeave();

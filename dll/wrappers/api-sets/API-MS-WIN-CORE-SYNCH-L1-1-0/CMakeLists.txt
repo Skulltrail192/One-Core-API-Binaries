@@ -1,4 +1,6 @@
 
+include_directories(BEFORE ${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
+
 spec2def(API-MS-WIN-CORE-SYNCH-L1-1-0.dll API-MS-WIN-CORE-SYNCH-L1-1-0.spec)
 
 list(APPEND SOURCE

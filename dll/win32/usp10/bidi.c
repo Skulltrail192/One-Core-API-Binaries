@@ -47,7 +47,7 @@
 
 #include "usp10_internal.h"
 
-extern const unsigned short bidi_bracket_table[];
+extern const unsigned short bidi_bracket_table[] DECLSPEC_HIDDEN;
 
 WINE_DEFAULT_DEBUG_CHANNEL(bidi);
 
@@ -150,7 +150,7 @@ static inline void dump_types(const char* header, WORD *types, int start, int en
 }
 
 /* Convert the libwine information to the direction enum */
-static void classify(LPCWSTR lpString, WORD *chartype, DWORD uCount, const SCRIPT_CONTROL *c)
+static void classify(const WCHAR *string, WORD *chartype, DWORD count, const SCRIPT_CONTROL *c)
 {
     static const enum directions dir_map[16] =
     {
@@ -174,14 +174,14 @@ static void classify(LPCWSTR lpString, WORD *chartype, DWORD uCount, const SCRIP
 
     unsigned i;
 
-    for (i = 0; i < uCount; ++i)
+    for (i = 0; i < count; ++i)
     {
-        chartype[i] = dir_map[get_char_typeW(lpString[i]) >> 12];
+        chartype[i] = dir_map[get_char_typeW(string[i]) >> 12];
         switch (chartype[i])
         {
         case ES:
             if (!c->fLegacyBidiClass) break;
-            switch (lpString[i])
+            switch (string[i])
             {
             case '-':
             case '+': chartype[i] = NI; break;
@@ -189,7 +189,7 @@ static void classify(LPCWSTR lpString, WORD *chartype, DWORD uCount, const SCRIP
             }
             break;
         case PDF:
-            switch (lpString[i])
+            switch (string[i])
             {
             case 0x202A: chartype[i] = LRE; break;
             case 0x202B: chartype[i] = RLE; break;
@@ -258,7 +258,7 @@ typedef struct tagStackItem {
 
 #define valid_level(x) (x <= MAX_DEPTH && overflow_isolate_count == 0 && overflow_embedding_count == 0)
 
-static void resolveExplicit(int level, WORD *pclass, WORD *poutLevel, int count)
+static void resolveExplicit(int level, WORD *pclass, WORD *poutLevel, WORD *poutOverrides, int count, BOOL initialOverride)
 {
     /* X1 */
     int overflow_isolate_count = 0;
@@ -273,8 +273,18 @@ static void resolveExplicit(int level, WORD *pclass, WORD *poutLevel, int count)
     stack[stack_top].override = NI;
     stack[stack_top].isolate = FALSE;
 
+    if (initialOverride)
+    {
+        if (odd(level))
+            push_stack(level, R, FALSE);
+        else
+            push_stack(level, L, FALSE);
+    }
+
     for (i = 0; i < count; i++)
     {
+        poutOverrides[i] = stack[stack_top].override;
+
         /* X2 */
         if (pclass[i] == RLE)
         {
@@ -496,12 +506,6 @@ static inline int iso_previousValidChar(IsolatedRun *iso_run, int index)
     return index;
 }
 
-static inline int iso_previousChar(IsolatedRun *iso_run, int index)
-{
-    if (index <= 0) return -1;
-    return index --;
-}
-
 static inline void iso_dump_types(const char* header, IsolatedRun *iso_run)
 {
     int i, len = 0;
@@ -682,8 +686,8 @@ static BracketPair *computeBracketPairs(IsolatedRun *iso_run)
     int pair_count = 0;
     int i;
 
-    open_stack = HeapAlloc(GetProcessHeap(), 0, sizeof(WCHAR) * iso_run->length);
-    stack_index = HeapAlloc(GetProcessHeap(), 0, sizeof(int) * iso_run->length);
+    open_stack = heap_alloc(iso_run->length * sizeof(*open_stack));
+    stack_index = heap_alloc(iso_run->length * sizeof(*stack_index));
 
     for (i = 0; i < iso_run->length; i++)
     {
@@ -692,7 +696,7 @@ static BracketPair *computeBracketPairs(IsolatedRun *iso_run)
         {
             if (!out)
             {
-                out = HeapAlloc(GetProcessHeap(),0,sizeof(BracketPair));
+                out = heap_alloc(sizeof(*out));
                 out[0].start = -1;
             }
 
@@ -729,14 +733,14 @@ static BracketPair *computeBracketPairs(IsolatedRun *iso_run)
     }
     if (pair_count == 0)
     {
-        HeapFree(GetProcessHeap(),0,out);
+        heap_free(out);
         out = NULL;
     }
     else if (pair_count > 1)
         qsort(out, pair_count, sizeof(BracketPair), compr);
 
-    HeapFree(GetProcessHeap(), 0, open_stack);
-    HeapFree(GetProcessHeap(), 0, stack_index);
+    heap_free(open_stack);
+    heap_free(stack_index);
     return out;
 }
 
@@ -835,7 +839,7 @@ static void resolveNeutrals(IsolatedRun *iso_run)
             i++;
             p = &pairs[i];
         }
-        HeapFree(GetProcessHeap(),0,pairs);
+        heap_free(pairs);
     }
 
     /* N1 */
@@ -956,6 +960,11 @@ static void resolveResolved(unsigned baselevel, const WORD * pcls, WORD *plevel,
                 plevel[j--] = baselevel;
             plevel[i] = baselevel;
         }
+        else if (pcls[i] == LRE || pcls[i] == RLE || pcls[i] == LRO || pcls[i] == RLO ||
+                 pcls[i] == PDF || pcls[i] == BN)
+        {
+            plevel[i] = i ? plevel[i - 1] : baselevel;
+        }
         if (i == eos &&
             (pcls[i] == WS || pcls[i] == FSI || pcls[i] == LRI || pcls[i] == RLI ||
              pcls[i] == PDI || pcls[i] == LRE || pcls[i] == RLE || pcls[i] == LRO ||
@@ -970,15 +979,16 @@ static void resolveResolved(unsigned baselevel, const WORD * pcls, WORD *plevel,
     }
 }
 
-static void computeIsolatingRunsSet(unsigned baselevel, WORD *pcls, WORD *pLevel, LPCWSTR lpString, int uCount, struct list *set)
+static void computeIsolatingRunsSet(unsigned baselevel, WORD *pcls, const WORD *pLevel,
+        const WCHAR *string, unsigned int uCount, struct list *set)
 {
     int run_start, run_end, i;
     int run_count = 0;
     Run *runs;
     IsolatedRun *current_isolated;
 
-    runs = HeapAlloc(GetProcessHeap(), 0, uCount * sizeof(Run));
-    if (!runs) return;
+    if (!(runs = heap_alloc(uCount * sizeof(*runs))))
+        return;
 
     list_init(set);
 
@@ -1005,8 +1015,9 @@ static void computeIsolatingRunsSet(unsigned baselevel, WORD *pcls, WORD *pLevel
         {
             int type_fence, real_end;
             int j;
-            current_isolated = HeapAlloc(GetProcessHeap(), 0, sizeof(IsolatedRun) + sizeof(RunChar)*uCount);
-            if (!current_isolated) break;
+
+            if (!(current_isolated = heap_alloc(FIELD_OFFSET(IsolatedRun, item[uCount]))))
+                break;
 
             run_start = runs[k].start;
             current_isolated->e = runs[k].e;
@@ -1015,7 +1026,7 @@ static void computeIsolatingRunsSet(unsigned baselevel, WORD *pcls, WORD *pLevel
             for (j = 0; j < current_isolated->length;  j++)
             {
                 current_isolated->item[j].pcls = &pcls[runs[k].start+j];
-                current_isolated->item[j].ch = lpString[runs[k].start+j];
+                current_isolated->item[j].ch = string[runs[k].start + j];
             }
 
             run_end = runs[k].end;
@@ -1045,7 +1056,7 @@ search:
                     for (m = 0; l < current_isolated->length; l++, m++)
                     {
                         current_isolated->item[l].pcls = &pcls[runs[j].start+m];
-                        current_isolated->item[l].ch = lpString[runs[j].start+m];
+                        current_isolated->item[l].ch = string[runs[j].start + m];
                     }
 
                     TRACE("[%i -- %i]",runs[j].start, runs[j].end);
@@ -1101,18 +1112,19 @@ search:
         i++;
     }
 
-    HeapFree(GetProcessHeap(), 0, runs);
+    heap_free(runs);
 }
 
 /*************************************************************
  *    BIDI_DeterminLevels
  */
 BOOL BIDI_DetermineLevels(
-                LPCWSTR lpString,       /* [in] The string for which information is to be returned */
-                INT uCount,     /* [in] Number of WCHARs in string. */
+                const WCHAR *lpString,  /* [in] The string for which information is to be returned */
+                unsigned int uCount,    /* [in] Number of WCHARs in string. */
                 const SCRIPT_STATE *s,
                 const SCRIPT_CONTROL *c,
-                WORD *lpOutLevels /* [out] final string levels */
+                WORD *lpOutLevels, /* [out] final string levels */
+                WORD *lpOutOverrides /* [out] final string overrides */
     )
 {
     WORD *chartype;
@@ -1122,8 +1134,7 @@ BOOL BIDI_DetermineLevels(
 
     TRACE("%s, %d\n", debugstr_wn(lpString, uCount), uCount);
 
-    chartype = HeapAlloc(GetProcessHeap(), 0, uCount * sizeof(WORD));
-    if (!chartype)
+    if (!(chartype = heap_alloc(uCount * sizeof(*chartype))))
     {
         WARN("Out of memory\n");
         return FALSE;
@@ -1134,8 +1145,10 @@ BOOL BIDI_DetermineLevels(
     classify(lpString, chartype, uCount, c);
     if (TRACE_ON(bidi)) dump_types("Start ", chartype, 0, uCount);
 
+    memset(lpOutOverrides, 0, sizeof(WORD) * uCount);
+
     /* resolve explicit */
-    resolveExplicit(baselevel, chartype, lpOutLevels, uCount);
+    resolveExplicit(baselevel, chartype, lpOutLevels, lpOutOverrides, uCount, s->fOverrideDirection);
     if (TRACE_ON(bidi)) dump_types("After Explicit", chartype, 0, uCount);
 
     /* X10/BD13: Computer Isolating runs */
@@ -1154,7 +1167,7 @@ BOOL BIDI_DetermineLevels(
         if (TRACE_ON(bidi)) iso_dump_types("After Neutrals", iso_run);
 
         list_remove(&iso_run->entry);
-        HeapFree(GetProcessHeap(),0,iso_run);
+        heap_free(iso_run);
     }
 
     if (TRACE_ON(bidi)) dump_types("Before Implicit", chartype, 0, uCount);
@@ -1165,7 +1178,7 @@ BOOL BIDI_DetermineLevels(
     classify(lpString, chartype, uCount, c);
     resolveResolved(baselevel, chartype, lpOutLevels, 0, uCount-1);
 
-    HeapFree(GetProcessHeap(), 0, chartype);
+    heap_free(chartype);
     return TRUE;
 }
 
@@ -1266,15 +1279,14 @@ int BIDI_ReorderL2vLevel(int level, int *pIndexs, const BYTE* plevel, int cch, B
     return ich;
 }
 
-BOOL BIDI_GetStrengths(LPCWSTR lpString, INT uCount, const SCRIPT_CONTROL *c,
-                      WORD* lpStrength)
+BOOL BIDI_GetStrengths(const WCHAR *string, unsigned int count, const SCRIPT_CONTROL *c, WORD *strength)
 {
-    int i;
-    classify(lpString, lpStrength, uCount, c);
+    unsigned int i;
 
-    for ( i = 0; i < uCount; i++)
+    classify(string, strength, count, c);
+    for (i = 0; i < count; i++)
     {
-        switch(lpStrength[i])
+        switch (strength[i])
         {
             case L:
             case LRE:
@@ -1283,7 +1295,7 @@ BOOL BIDI_GetStrengths(LPCWSTR lpString, INT uCount, const SCRIPT_CONTROL *c,
             case AL:
             case RLE:
             case RLO:
-                lpStrength[i] = BIDI_STRONG;
+                strength[i] = BIDI_STRONG;
                 break;
             case PDF:
             case EN:
@@ -1292,14 +1304,14 @@ BOOL BIDI_GetStrengths(LPCWSTR lpString, INT uCount, const SCRIPT_CONTROL *c,
             case AN:
             case CS:
             case BN:
-                lpStrength[i] = BIDI_WEAK;
+                strength[i] = BIDI_WEAK;
                 break;
             case B:
             case S:
             case WS:
             case ON:
             default: /* Neutrals and NSM */
-                lpStrength[i] = BIDI_NEUTRAL;
+                strength[i] = BIDI_NEUTRAL;
         }
     }
     return TRUE;

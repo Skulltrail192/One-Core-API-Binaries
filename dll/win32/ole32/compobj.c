@@ -308,7 +308,8 @@ static NTSTATUS create_key( HKEY *retkey, ACCESS_MASK access, OBJECT_ATTRIBUTES 
 static const WCHAR classes_rootW[] = L"\\REGISTRY\\Machine\\Software\\Classes";
 #else
 static const WCHAR classes_rootW[] =
-    {'M','a','c','h','i','n','e','\\','S','o','f','t','w','a','r','e','\\','C','l','a','s','s','e','s',0};
+    {'\\','R','e','g','i','s','t','r','y','\\','M','a','c','h','i','n','e',
+     '\\','S','o','f','t','w','a','r','e','\\','C','l','a','s','s','e','s',0};
 #endif
 
 static HKEY classes_root_hkey;
@@ -443,8 +444,7 @@ struct apartment_loaded_dll
     BOOL multi_threaded;
 };
 
-static const WCHAR wszAptWinClass[] = {'O','l','e','M','a','i','n','T','h','r','e','a','d','W','n','d','C','l','a','s','s',' ',
-                                       '0','x','#','#','#','#','#','#','#','#',' ',0};
+static const WCHAR wszAptWinClass[] = {'O','l','e','M','a','i','n','T','h','r','e','a','d','W','n','d','C','l','a','s','s',0};
 
 /*****************************************************************************
  * This section contains OpenDllList implementation
@@ -1003,7 +1003,7 @@ static HRESULT get_local_server_stream(APARTMENT *apt, IStream **ret)
  * SEE ALSO
  *  CoRegisterClassObject
  */
-HRESULT WINAPI CoRevokeClassObject(
+HRESULT WINAPI DECLSPEC_HOTPATCH CoRevokeClassObject(
         DWORD dwRegister)
 {
   HRESULT hr = E_INVALIDARG;
@@ -1628,7 +1628,6 @@ static HRESULT apartment_hostobject_in_hostapt(
     return hr;
 }
 
-#ifndef __REACTOS__
 static BOOL WINAPI register_class( INIT_ONCE *once, void *param, void **context )
 {
     WNDCLASSW wclass;
@@ -1649,33 +1648,24 @@ static BOOL WINAPI register_class( INIT_ONCE *once, void *param, void **context 
     RegisterClassW(&wclass);
     return TRUE;
 }
-#endif
 
 /* create a window for the apartment or return the current one if one has
  * already been created */
 HRESULT apartment_createwindowifneeded(struct apartment *apt)
 {
-#ifndef __REACTOS__
     static INIT_ONCE class_init_once = INIT_ONCE_STATIC_INIT;
-#endif
 
     if (apt->multi_threaded)
         return S_OK;
 
     if (!apt->win)
     {
-#ifndef __REACTOS__
         HWND hwnd;
 
         InitOnceExecuteOnce( &class_init_once, register_class, NULL, NULL );
 
         hwnd = CreateWindowW(wszAptWinClass, NULL, 0, 0, 0, 0, 0,
                              HWND_MESSAGE, 0, hProxyDll, NULL);
-#else
-        HWND hwnd = CreateWindowW(wszAptWinClass, NULL, 0,
-                                  0, 0, 0, 0,
-                                  HWND_MESSAGE, 0, hProxyDll, NULL);
-#endif
         if (!hwnd)
         {
             ERR("CreateWindow failed with error %d\n", GetLastError());
@@ -1701,35 +1691,6 @@ void apartment_joinmta(void)
     apartment_addref(MTA);
     COM_CurrentInfo()->apt = MTA;
 }
-
-#ifdef __REACTOS__
-
-static void COMPOBJ_InitProcess( void )
-{
-    WNDCLASSW wclass;
-
-    /* Dispatching to the correct thread in an apartment is done through
-     * window messages rather than RPC transports. When an interface is
-     * marshalled into another apartment in the same process, a window of the
-     * following class is created. The *caller* of CoMarshalInterface (i.e., the
-     * application) is responsible for pumping the message loop in that thread.
-     * The WM_USER messages which point to the RPCs are then dispatched to
-     * apartment_wndproc by the user's code from the apartment in which the
-     * interface was unmarshalled.
-     */
-    memset(&wclass, 0, sizeof(wclass));
-    wclass.lpfnWndProc = apartment_wndproc;
-    wclass.hInstance = hProxyDll;
-    wclass.lpszClassName = wszAptWinClass;
-    RegisterClassW(&wclass);
-}
-
-static void COMPOBJ_UninitProcess( void )
-{
-    UnregisterClassW(wszAptWinClass, hProxyDll);
-}
-
-#endif
 
 static void COM_TlsDestroy(void)
 {
@@ -1890,7 +1851,7 @@ HRESULT WINAPI CoInitialize(LPVOID lpReserved)
  * SEE ALSO
  *   CoUninitialize
  */
-HRESULT WINAPI CoInitializeEx(LPVOID lpReserved, DWORD dwCoInit)
+HRESULT WINAPI DECLSPEC_HOTPATCH CoInitializeEx(LPVOID lpReserved, DWORD dwCoInit)
 {
   struct oletls *info = COM_CurrentInfo();
   HRESULT hr = S_OK;
@@ -1964,7 +1925,7 @@ HRESULT WINAPI CoInitializeEx(LPVOID lpReserved, DWORD dwCoInit)
  * SEE ALSO
  *   CoInitializeEx
  */
-void WINAPI CoUninitialize(void)
+void WINAPI DECLSPEC_HOTPATCH CoUninitialize(void)
 {
   struct oletls * info = COM_CurrentInfo();
   LONG lCOMRefCnt;
@@ -1989,6 +1950,8 @@ void WINAPI CoUninitialize(void)
 
   if (!--info->inits)
   {
+    if (info->ole_inits)
+      WARN("uninitializing apartment while Ole is still initialized\n");
     apartment_release(info->apt);
     info->apt = NULL;
   }
@@ -2036,6 +1999,7 @@ void WINAPI CoUninitialize(void)
  */
 HRESULT WINAPI CoDisconnectObject( LPUNKNOWN lpUnk, DWORD reserved )
 {
+    struct stub_manager *manager;
     HRESULT hr;
     IMarshal *marshal;
     APARTMENT *apt;
@@ -2056,7 +2020,13 @@ HRESULT WINAPI CoDisconnectObject( LPUNKNOWN lpUnk, DWORD reserved )
     if (!apt)
         return CO_E_NOTINITIALIZED;
 
-    apartment_disconnectobject(apt, lpUnk);
+    manager = get_stub_manager_from_object(apt, lpUnk, FALSE);
+    if (manager) {
+        stub_manager_disconnect(manager);
+        /* Release stub manager twice, to remove the apartment reference. */
+        stub_manager_int_release(manager);
+        stub_manager_int_release(manager);
+    }
 
     /* Note: native is pretty broken here because it just silently
      * fails, without returning an appropriate error code if the object was
@@ -2235,7 +2205,7 @@ HRESULT WINAPI CLSIDFromString(LPCOLESTR idstr, LPCLSID id )
 /******************************************************************************
  *		IIDFromString   [OLE32.@]
  *
- * Converts a interface identifier from its string representation into
+ * Converts an interface identifier from its string representation to
  * the IID struct.
  *
  * PARAMS
@@ -3004,6 +2974,8 @@ HRESULT WINAPI DECLSPEC_HOTPATCH CoGetClassObject(
             if (release_apt) apartment_release(apt);
             return FTMarshalCF_Create(iid, ppv);
         }
+        if (IsEqualCLSID(rclsid, &CLSID_GlobalOptions))
+            return IClassFactory_QueryInterface(&GlobalOptionsCF, iid, ppv);
     }
 
     if (CLSCTX_INPROC & dwClsContext)
@@ -3197,10 +3169,8 @@ HRESULT WINAPI DECLSPEC_HOTPATCH CoCreateInstance(
     REFIID iid,
     LPVOID *ppv)
 {
+    MULTI_QI multi_qi = { iid };
     HRESULT hres;
-    LPCLASSFACTORY lpclf = 0;
-    APARTMENT *apt;
-    CLSID clsid;
 
     TRACE("(rclsid=%s, pUnkOuter=%p, dwClsContext=%08x, riid=%s, ppv=%p)\n", debugstr_guid(rclsid),
           pUnkOuter, dwClsContext, debugstr_guid(iid), ppv);
@@ -3208,91 +3178,42 @@ HRESULT WINAPI DECLSPEC_HOTPATCH CoCreateInstance(
     if (ppv==0)
         return E_POINTER;
 
-    hres = CoGetTreatAsClass(rclsid, &clsid);
-    if(FAILED(hres))
-        clsid = *rclsid;
-
-    *ppv = 0;
-
-    if (!(apt = COM_CurrentApt()))
-    {
-        if (!(apt = apartment_find_multi_threaded()))
-        {
-            ERR("apartment not initialised\n");
-            return CO_E_NOTINITIALIZED;
-        }
-        apartment_release(apt);
-    }
-
-    /*
-     * The Standard Global Interface Table (GIT) object is a process-wide singleton.
-     */
-    if (IsEqualIID(&clsid, &CLSID_StdGlobalInterfaceTable))
-    {
-        IGlobalInterfaceTable *git = get_std_git();
-        hres = IGlobalInterfaceTable_QueryInterface(git, iid, ppv);
-        if (hres != S_OK) return hres;
-
-        TRACE("Retrieved GIT (%p)\n", *ppv);
-        return S_OK;
-    }
-
-    if (IsEqualCLSID(&clsid, &CLSID_ManualResetEvent))
-        return ManualResetEvent_Construct(pUnkOuter, iid, ppv);
-
-    /*
-     * Get a class factory to construct the object we want.
-     */
-    hres = CoGetClassObject(&clsid,
-                            dwClsContext,
-                            NULL,
-                            &IID_IClassFactory,
-                            (LPVOID)&lpclf);
-
-    if (FAILED(hres))
-        return hres;
-
-    /*
-     * Create the object and don't forget to release the factory
-     */
-    hres = IClassFactory_CreateInstance(lpclf, pUnkOuter, iid, ppv);
-    IClassFactory_Release(lpclf);
-    if (FAILED(hres))
-    {
-        if (hres == CLASS_E_NOAGGREGATION && pUnkOuter)
-            FIXME("Class %s does not support aggregation\n", debugstr_guid(&clsid));
-        else
-            FIXME("no instance created for interface %s of class %s, hres is 0x%08x\n",
-                  debugstr_guid(iid),
-                  debugstr_guid(&clsid),hres);
-    }
-
+    hres = CoCreateInstanceEx(rclsid, pUnkOuter, dwClsContext, NULL, 1, &multi_qi);
+    *ppv = multi_qi.pItf;
     return hres;
 }
 
-static void init_multi_qi(DWORD count, MULTI_QI *mqi)
+static void init_multi_qi(DWORD count, MULTI_QI *mqi, HRESULT hr)
 {
   ULONG i;
 
   for (i = 0; i < count; i++)
   {
       mqi[i].pItf = NULL;
-      mqi[i].hr = E_NOINTERFACE;
+      mqi[i].hr = hr;
   }
 }
 
-static HRESULT return_multi_qi(IUnknown *unk, DWORD count, MULTI_QI *mqi)
+static HRESULT return_multi_qi(IUnknown *unk, DWORD count, MULTI_QI *mqi, BOOL include_unk)
 {
-  ULONG index, fetched = 0;
+  ULONG index = 0, fetched = 0;
 
-  for (index = 0; index < count; index++)
+  if (include_unk)
+  {
+    mqi[0].hr = S_OK;
+    mqi[0].pItf = unk;
+    index = fetched = 1;
+  }
+
+  for (; index < count; index++)
   {
     mqi[index].hr = IUnknown_QueryInterface(unk, mqi[index].pIID, (void**)&mqi[index].pItf);
     if (mqi[index].hr == S_OK)
       fetched++;
   }
 
-  IUnknown_Release(unk);
+  if (!include_unk)
+      IUnknown_Release(unk);
 
   if (fetched == 0)
     return E_NOINTERFACE;
@@ -3311,39 +3232,83 @@ HRESULT WINAPI DECLSPEC_HOTPATCH CoCreateInstanceEx(
   ULONG         cmq,
   MULTI_QI*     pResults)
 {
-  IUnknown* pUnk = NULL;
-  HRESULT   hr;
+    IUnknown *unk = NULL;
+    IClassFactory *cf;
+    APARTMENT *apt;
+    CLSID clsid;
+    HRESULT hres;
 
-  /*
-   * Sanity check
-   */
-  if ( (cmq==0) || (pResults==NULL))
-    return E_INVALIDARG;
+    TRACE("(%s %p %x %p %u %p)\n", debugstr_guid(rclsid), pUnkOuter, dwClsContext, pServerInfo, cmq, pResults);
 
-  if (pServerInfo!=NULL)
-    FIXME("() non-NULL pServerInfo not supported!\n");
+    if (!cmq || !pResults)
+        return E_INVALIDARG;
 
-  init_multi_qi(cmq, pResults);
+    if (pServerInfo)
+        FIXME("() non-NULL pServerInfo not supported!\n");
 
-  /*
-   * Get the object and get its IUnknown pointer.
-   */
-  hr = CoCreateInstance(rclsid,
-			pUnkOuter,
-			dwClsContext,
-			&IID_IUnknown,
-			(VOID**)&pUnk);
+    init_multi_qi(cmq, pResults, E_NOINTERFACE);
 
-  if (hr != S_OK)
-    return hr;
+    hres = CoGetTreatAsClass(rclsid, &clsid);
+    if(FAILED(hres))
+        clsid = *rclsid;
 
-  return return_multi_qi(pUnk, cmq, pResults);
+    if (!(apt = COM_CurrentApt()))
+    {
+        if (!(apt = apartment_find_multi_threaded()))
+        {
+            ERR("apartment not initialised\n");
+            return CO_E_NOTINITIALIZED;
+        }
+        apartment_release(apt);
+    }
+
+    /*
+     * The Standard Global Interface Table (GIT) object is a process-wide singleton.
+     */
+    if (IsEqualIID(&clsid, &CLSID_StdGlobalInterfaceTable))
+    {
+        IGlobalInterfaceTable *git = get_std_git();
+        TRACE("Retrieving GIT\n");
+        return return_multi_qi((IUnknown*)git, cmq, pResults, FALSE);
+    }
+
+    if (IsEqualCLSID(&clsid, &CLSID_ManualResetEvent)) {
+        hres = ManualResetEvent_Construct(pUnkOuter, pResults[0].pIID, (void**)&unk);
+        if (FAILED(hres))
+            return hres;
+        return return_multi_qi(unk, cmq, pResults, TRUE);
+    }
+
+    /*
+     * Get a class factory to construct the object we want.
+     */
+    hres = CoGetClassObject(&clsid, dwClsContext, NULL, &IID_IClassFactory, (void**)&cf);
+    if (FAILED(hres))
+        return hres;
+
+    /*
+     * Create the object and don't forget to release the factory
+     */
+    hres = IClassFactory_CreateInstance(cf, pUnkOuter, pResults[0].pIID, (void**)&unk);
+    IClassFactory_Release(cf);
+    if (FAILED(hres))
+    {
+        if (hres == CLASS_E_NOAGGREGATION && pUnkOuter)
+            FIXME("Class %s does not support aggregation\n", debugstr_guid(&clsid));
+        else
+            FIXME("no instance created for interface %s of class %s, hres is 0x%08x\n",
+                  debugstr_guid(pResults[0].pIID),
+                  debugstr_guid(&clsid),hres);
+        return hres;
+    }
+
+    return return_multi_qi(unk, cmq, pResults, TRUE);
 }
 
 /***********************************************************************
  *           CoGetInstanceFromFile [OLE32.@]
  */
-HRESULT WINAPI CoGetInstanceFromFile(
+HRESULT WINAPI DECLSPEC_HOTPATCH CoGetInstanceFromFile(
   COSERVERINFO *server_info,
   CLSID        *rclsid,
   IUnknown     *outer,
@@ -3365,7 +3330,7 @@ HRESULT WINAPI CoGetInstanceFromFile(
   if (server_info)
     FIXME("() non-NULL server_info not supported\n");
 
-  init_multi_qi(count, results);
+  init_multi_qi(count, results, E_NOINTERFACE);
 
   /* optionally get CLSID from a file */
   if (!rclsid)
@@ -3387,20 +3352,30 @@ HRESULT WINAPI CoGetInstanceFromFile(
 			(void**)&unk);
 
   if (hr != S_OK)
-    return hr;
+  {
+      init_multi_qi(count, results, hr);
+      return hr;
+  }
 
   /* init from file */
   hr = IUnknown_QueryInterface(unk, &IID_IPersistFile, (void**)&pf);
   if (FAILED(hr))
-      ERR("failed to get IPersistFile\n");
-
-  if (pf)
   {
-      IPersistFile_Load(pf, filename, grfmode);
-      IPersistFile_Release(pf);
+      init_multi_qi(count, results, hr);
+      IUnknown_Release(unk);
+      return hr;
   }
 
-  return return_multi_qi(unk, count, results);
+  hr = IPersistFile_Load(pf, filename, grfmode);
+  IPersistFile_Release(pf);
+  if (SUCCEEDED(hr))
+      return return_multi_qi(unk, count, results, FALSE);
+  else
+  {
+      init_multi_qi(count, results, hr);
+      IUnknown_Release(unk);
+      return hr;
+  }
 }
 
 /***********************************************************************
@@ -3427,7 +3402,7 @@ HRESULT WINAPI CoGetInstanceFromIStorage(
   if (server_info)
     FIXME("() non-NULL server_info not supported\n");
 
-  init_multi_qi(count, results);
+  init_multi_qi(count, results, E_NOINTERFACE);
 
   /* optionally get CLSID from a file */
   if (!rclsid)
@@ -3463,7 +3438,7 @@ HRESULT WINAPI CoGetInstanceFromIStorage(
       IPersistStorage_Release(ps);
   }
 
-  return return_multi_qi(unk, count, results);
+  return return_multi_qi(unk, count, results, FALSE);
 }
 
 /***********************************************************************
@@ -3622,32 +3597,8 @@ HRESULT WINAPI CoLockObjectExternal(
     apt = COM_CurrentApt();
     if (!apt) return CO_E_NOTINITIALIZED;
 
-    stubmgr = get_stub_manager_from_object(apt, pUnk);
-    
-    if (stubmgr)
-    {
-        if (fLock)
-            stub_manager_ext_addref(stubmgr, 1, FALSE);
-        else
-            stub_manager_ext_release(stubmgr, 1, FALSE, fLastUnlockReleases);
-        
-        stub_manager_int_release(stubmgr);
-
-        return S_OK;
-    }
-    else if (fLock)
-    {
-        stubmgr = new_stub_manager(apt, pUnk);
-
-        if (stubmgr)
-        {
-            stub_manager_ext_addref(stubmgr, 1, FALSE);
-            stub_manager_int_release(stubmgr);
-        }
-
-        return S_OK;
-    }
-    else
+    stubmgr = get_stub_manager_from_object(apt, pUnk, fLock);
+    if (!stubmgr)
     {
         WARN("stub object not found %p\n", pUnk);
         /* Note: native is pretty broken here because it just silently
@@ -3655,6 +3606,14 @@ HRESULT WINAPI CoLockObjectExternal(
          * think that the object was disconnected, when it actually wasn't */
         return S_OK;
     }
+
+    if (fLock)
+        stub_manager_ext_addref(stubmgr, 1, FALSE);
+    else
+        stub_manager_ext_release(stubmgr, 1, FALSE, fLastUnlockReleases);
+
+    stub_manager_int_release(stubmgr);
+    return S_OK;
 }
 
 /***********************************************************************
@@ -3879,6 +3838,20 @@ done:
 DWORD WINAPI CoGetCurrentProcess(void)
 {
 	return GetCurrentProcessId();
+}
+
+/***********************************************************************
+ *              CoGetCurrentLogicalThreadId        [OLE32.@]
+ */
+HRESULT WINAPI CoGetCurrentLogicalThreadId(GUID *id)
+{
+    TRACE("(%p)\n", id);
+
+    if (!id)
+        return E_INVALIDARG;
+
+    *id = COM_CurrentCausalityId();
+    return S_OK;
 }
 
 /******************************************************************************
@@ -4405,7 +4378,7 @@ HRESULT WINAPI CoRevertToSelf(void)
 static BOOL COM_PeekMessage(struct apartment *apt, MSG *msg)
 {
     /* first try to retrieve messages for incoming COM calls to the apartment window */
-    return PeekMessageW(msg, apt->win, 0, 0, PM_REMOVE|PM_NOYIELD) ||
+    return (apt->win && PeekMessageW(msg, apt->win, 0, 0, PM_REMOVE|PM_NOYIELD)) ||
            /* next retrieve other messages necessary for the app to remain responsive */
            PeekMessageW(msg, NULL, WM_DDE_FIRST, WM_DDE_LAST, PM_REMOVE|PM_NOYIELD) ||
            PeekMessageW(msg, NULL, 0, 0, PM_QS_PAINT|PM_QS_SENDMESSAGE|PM_REMOVE|PM_NOYIELD);
@@ -4443,9 +4416,21 @@ HRESULT WINAPI CoWaitForMultipleHandles(DWORD dwFlags, DWORD dwTimeout,
     DWORD start_time = GetTickCount();
     APARTMENT *apt = COM_CurrentApt();
     BOOL message_loop = apt && !apt->multi_threaded;
+    BOOL check_apc = (dwFlags & COWAIT_ALERTABLE) != 0;
 
     TRACE("(0x%08x, 0x%08x, %d, %p, %p)\n", dwFlags, dwTimeout, cHandles,
         pHandles, lpdwindex);
+
+    if (!lpdwindex)
+        return E_INVALIDARG;
+
+    *lpdwindex = 0;
+
+    if (!pHandles)
+        return E_INVALIDARG;
+
+    if (!cHandles)
+        return RPC_E_NO_SYNC;
 
     while (TRUE)
     {
@@ -4465,9 +4450,19 @@ HRESULT WINAPI CoWaitForMultipleHandles(DWORD dwFlags, DWORD dwTimeout,
 
             TRACE("waiting for rpc completion or window message\n");
 
-            res = MsgWaitForMultipleObjectsEx(cHandles, pHandles,
-                (dwTimeout == INFINITE) ? INFINITE : start_time + dwTimeout - now,
-                QS_SENDMESSAGE | QS_ALLPOSTMESSAGE | QS_PAINT, wait_flags);
+            res = WAIT_TIMEOUT;
+
+            if (check_apc)
+            {
+                res = WaitForMultipleObjectsEx(cHandles, pHandles,
+                    (dwFlags & COWAIT_WAITALL) != 0, 0, TRUE);
+                check_apc = FALSE;
+            }
+
+            if (res == WAIT_TIMEOUT)
+                res = MsgWaitForMultipleObjectsEx(cHandles, pHandles,
+                    (dwTimeout == INFINITE) ? INFINITE : start_time + dwTimeout - now,
+                    QS_SENDMESSAGE | QS_ALLPOSTMESSAGE | QS_PAINT, wait_flags);
 
             if (res == WAIT_OBJECT_0 + cHandles)  /* messages available */
             {
@@ -4626,7 +4621,6 @@ typedef struct Context
     IContextCallback IContextCallback_iface;
     IObjContext IObjContext_iface;
     LONG refs;
-    APTTYPE apttype;
 } Context;
 
 static inline Context *impl_from_IComThreadingInfo( IComThreadingInfo *iface )
@@ -4679,10 +4673,15 @@ static ULONG Context_AddRef(Context *This)
 
 static ULONG Context_Release(Context *This)
 {
-    ULONG refs = InterlockedDecrement(&This->refs);
-    if (!refs)
+    /* Context instance is initially created with CoGetContextToken() with refcount set to 0,
+       releasing context while refcount is at 0 destroys it. */
+    if (!This->refs)
+    {
         HeapFree(GetProcessHeap(), 0, This);
-    return refs;
+        return 0;
+    }
+
+    return InterlockedDecrement(&This->refs);
 }
 
 static HRESULT WINAPI Context_CTI_QueryInterface(IComThreadingInfo *iface, REFIID riid, LPVOID *ppv)
@@ -4705,21 +4704,26 @@ static ULONG WINAPI Context_CTI_Release(IComThreadingInfo *iface)
 
 static HRESULT WINAPI Context_CTI_GetCurrentApartmentType(IComThreadingInfo *iface, APTTYPE *apttype)
 {
-    Context *This = impl_from_IComThreadingInfo(iface);
+    APTTYPEQUALIFIER qualifier;
 
     TRACE("(%p)\n", apttype);
 
-    *apttype = This->apttype;
-    return S_OK;
+    return CoGetApartmentType(apttype, &qualifier);
 }
 
 static HRESULT WINAPI Context_CTI_GetCurrentThreadType(IComThreadingInfo *iface, THDTYPE *thdtype)
 {
-    Context *This = impl_from_IComThreadingInfo(iface);
+    APTTYPEQUALIFIER qualifier;
+    APTTYPE apttype;
+    HRESULT hr;
+
+    hr = CoGetApartmentType(&apttype, &qualifier);
+    if (FAILED(hr))
+        return hr;
 
     TRACE("(%p)\n", thdtype);
 
-    switch (This->apttype)
+    switch (apttype)
     {
     case APTTYPE_STA:
     case APTTYPE_MAINSTA:
@@ -4734,8 +4738,8 @@ static HRESULT WINAPI Context_CTI_GetCurrentThreadType(IComThreadingInfo *iface,
 
 static HRESULT WINAPI Context_CTI_GetCurrentLogicalThreadId(IComThreadingInfo *iface, GUID *logical_thread_id)
 {
-    FIXME("(%p): stub\n", logical_thread_id);
-    return E_NOTIMPL;
+    TRACE("(%p)\n", logical_thread_id);
+    return CoGetCurrentLogicalThreadId(logical_thread_id);
 }
 
 static HRESULT WINAPI Context_CTI_SetCurrentLogicalThreadId(IComThreadingInfo *iface, REFGUID logical_thread_id)
@@ -4915,44 +4919,18 @@ static const IObjContextVtbl Context_Object_Vtbl =
  */
 HRESULT WINAPI CoGetObjectContext(REFIID riid, void **ppv)
 {
-    APARTMENT *apt = COM_CurrentApt();
-    Context *context;
+    IObjContext *context;
     HRESULT hr;
 
     TRACE("(%s, %p)\n", debugstr_guid(riid), ppv);
 
     *ppv = NULL;
-    if (!apt)
-    {
-        if (!(apt = apartment_find_multi_threaded()))
-        {
-            ERR("apartment not initialised\n");
-            return CO_E_NOTINITIALIZED;
-        }
-        apartment_release(apt);
-    }
+    hr = CoGetContextToken((ULONG_PTR*)&context);
+    if (FAILED(hr))
+        return hr;
 
-    context = HeapAlloc(GetProcessHeap(), 0, sizeof(*context));
-    if (!context)
-        return E_OUTOFMEMORY;
-
-    context->IComThreadingInfo_iface.lpVtbl = &Context_Threading_Vtbl;
-    context->IContextCallback_iface.lpVtbl = &Context_Callback_Vtbl;
-    context->IObjContext_iface.lpVtbl = &Context_Object_Vtbl;
-    context->refs = 1;
-    if (apt->multi_threaded)
-        context->apttype = APTTYPE_MTA;
-    else if (apt->main)
-        context->apttype = APTTYPE_MAINSTA;
-    else
-        context->apttype = APTTYPE_STA;
-
-    hr = IUnknown_QueryInterface((IUnknown *)&context->IComThreadingInfo_iface, riid, ppv);
-    IUnknown_Release((IUnknown *)&context->IComThreadingInfo_iface);
-
-    return hr;
+    return IObjContext_QueryInterface(context, riid, ppv);
 }
-
 
 /***********************************************************************
  *           CoGetContextToken [OLE32.@]
@@ -4982,16 +4960,24 @@ HRESULT WINAPI CoGetContextToken( ULONG_PTR *token )
 
     if (!info->context_token)
     {
-        HRESULT hr;
-        IObjContext *ctx;
+        Context *context;
 
-        hr = CoGetObjectContext(&IID_IObjContext, (void **)&ctx);
-        if (FAILED(hr)) return hr;
-        info->context_token = ctx;
+        context = HeapAlloc(GetProcessHeap(), 0, sizeof(*context));
+        if (!context)
+            return E_OUTOFMEMORY;
+
+        context->IComThreadingInfo_iface.lpVtbl = &Context_Threading_Vtbl;
+        context->IContextCallback_iface.lpVtbl = &Context_Callback_Vtbl;
+        context->IObjContext_iface.lpVtbl = &Context_Object_Vtbl;
+        /* Context token does not take a reference, it's always zero until the
+           interface is explicitly requested with CoGetObjectContext(). */
+        context->refs = 0;
+
+        info->context_token = &context->IObjContext_iface;
     }
 
     *token = (ULONG_PTR)info->context_token;
-    TRACE("apt->context_token=%p\n", info->context_token);
+    TRACE("context_token=%p\n", info->context_token);
 
     return S_OK;
 }
@@ -5038,6 +5024,151 @@ HRESULT Handler_DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 }
 
 /***********************************************************************
+ *           CoGetApartmentType [OLE32.@]
+ */
+HRESULT WINAPI CoGetApartmentType(APTTYPE *type, APTTYPEQUALIFIER *qualifier)
+{
+    struct oletls *info = COM_CurrentInfo();
+
+    FIXME("(%p, %p): semi-stub\n", type, qualifier);
+
+    if (!type || !qualifier)
+        return E_INVALIDARG;
+
+    if (!info)
+        return E_OUTOFMEMORY;
+
+    if (!info->apt)
+        *type = APTTYPE_CURRENT;
+    else if (info->apt->multi_threaded)
+        *type = APTTYPE_MTA;
+    else if (info->apt->main)
+        *type = APTTYPE_MAINSTA;
+    else
+        *type = APTTYPE_STA;
+
+    *qualifier = APTTYPEQUALIFIER_NONE;
+
+    return info->apt ? S_OK : CO_E_NOTINITIALIZED;
+}
+
+/***********************************************************************
+ *           CoRegisterSurrogate [OLE32.@]
+ */
+HRESULT WINAPI CoRegisterSurrogate(ISurrogate *surrogate)
+{
+    FIXME("(%p): stub\n", surrogate);
+
+    return E_NOTIMPL;
+}
+
+/***********************************************************************
+ *           CoRegisterSurrogateEx [OLE32.@]
+ */
+HRESULT WINAPI CoRegisterSurrogateEx(REFGUID guid, void *reserved)
+{
+    FIXME("(%s %p): stub\n", debugstr_guid(guid), reserved);
+
+    return E_NOTIMPL;
+}
+
+typedef struct {
+    IGlobalOptions IGlobalOptions_iface;
+    LONG ref;
+} GlobalOptions;
+
+static inline GlobalOptions *impl_from_IGlobalOptions(IGlobalOptions *iface)
+{
+    return CONTAINING_RECORD(iface, GlobalOptions, IGlobalOptions_iface);
+}
+
+static HRESULT WINAPI GlobalOptions_QueryInterface(IGlobalOptions *iface, REFIID riid, void **ppv)
+{
+    GlobalOptions *This = impl_from_IGlobalOptions(iface);
+
+    TRACE("(%p)->(%s %p)\n", This, debugstr_guid(riid), ppv);
+
+    if (IsEqualGUID(&IID_IGlobalOptions, riid) || IsEqualGUID(&IID_IUnknown, riid))
+    {
+        *ppv = iface;
+    }
+    else
+    {
+        *ppv = NULL;
+        return E_NOINTERFACE;
+    }
+
+    IUnknown_AddRef((IUnknown*)*ppv);
+    return S_OK;
+}
+
+static ULONG WINAPI GlobalOptions_AddRef(IGlobalOptions *iface)
+{
+    GlobalOptions *This = impl_from_IGlobalOptions(iface);
+    LONG ref = InterlockedIncrement(&This->ref);
+
+    TRACE("(%p) ref=%d\n", This, ref);
+
+    return ref;
+}
+
+static ULONG WINAPI GlobalOptions_Release(IGlobalOptions *iface)
+{
+    GlobalOptions *This = impl_from_IGlobalOptions(iface);
+    LONG ref = InterlockedDecrement(&This->ref);
+
+    TRACE("(%p) ref=%d\n", This, ref);
+
+    if (!ref)
+        heap_free(This);
+
+    return ref;
+}
+
+static HRESULT WINAPI GlobalOptions_Set(IGlobalOptions *iface, GLOBALOPT_PROPERTIES property, ULONG_PTR value)
+{
+    GlobalOptions *This = impl_from_IGlobalOptions(iface);
+    FIXME("(%p)->(%u %lx)\n", This, property, value);
+    return S_OK;
+}
+
+static HRESULT WINAPI GlobalOptions_Query(IGlobalOptions *iface, GLOBALOPT_PROPERTIES property, ULONG_PTR *value)
+{
+    GlobalOptions *This = impl_from_IGlobalOptions(iface);
+    FIXME("(%p)->(%u %p)\n", This, property, value);
+    return E_NOTIMPL;
+}
+
+static const IGlobalOptionsVtbl GlobalOptionsVtbl = {
+    GlobalOptions_QueryInterface,
+    GlobalOptions_AddRef,
+    GlobalOptions_Release,
+    GlobalOptions_Set,
+    GlobalOptions_Query
+};
+
+HRESULT WINAPI GlobalOptions_CreateInstance(IClassFactory *iface, IUnknown *outer, REFIID riid, void **ppv)
+{
+    GlobalOptions *global_options;
+    HRESULT hres;
+
+    TRACE("(%p %s %p)\n", outer, debugstr_guid(riid), ppv);
+
+    if (outer)
+        return E_INVALIDARG;
+
+    global_options = heap_alloc(sizeof(*global_options));
+    if (!global_options)
+        return E_OUTOFMEMORY;
+    global_options->IGlobalOptions_iface.lpVtbl = &GlobalOptionsVtbl;
+    global_options->ref = 1;
+
+    hres = IGlobalOptions_QueryInterface(&global_options->IGlobalOptions_iface, riid, ppv);
+    IGlobalOptions_Release(&global_options->IGlobalOptions_iface);
+    return hres;
+}
+
+/***********************************************************************
  *		DllMain (OLE32.@)
  */
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID reserved)
@@ -5047,19 +5178,12 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID reserved)
     switch(fdwReason) {
     case DLL_PROCESS_ATTACH:
         hProxyDll = hinstDLL;
-#ifdef __REACTOS__
-        COMPOBJ_InitProcess();
-#endif
 	break;
 
     case DLL_PROCESS_DETACH:
         if (reserved) break;
         release_std_git();
-#ifdef __REACTOS__
-        COMPOBJ_UninitProcess();
-#else
         UnregisterClassW( wszAptWinClass, hProxyDll );
-#endif
         RPC_UnregisterAllChannelHooks();
         COMPOBJ_DllList_Free();
         DeleteCriticalSection(&csRegisteredClassList);

@@ -1,4 +1,4 @@
-/* TRANSLATOR: 2013, 2014 Erdem Ersoy (eersoy93) (erdemersoy@live.com) */
+/* TRANSLATOR: 2013-2015 Erdem Ersoy (eersoy93) (erdemersoy@live.com) */
 
 LANGUAGE LANG_TURKISH, SUBLANG_DEFAULT
 
@@ -22,7 +22,7 @@ BEGIN
     END
     POPUP "&Yardım"
     BEGIN
-        MENUITEM "&Üzerine...", ID_HELP_ABOUT
+        MENUITEM "&Üzerine", ID_HELP_ABOUT
     END
 END
 
@@ -39,7 +39,7 @@ BEGIN
         MENUITEM "A&ğdaki Değer Defteri'ne Bağlan...", ID_REGISTRY_CONNECTNETWORKREGISTRY
         MENUITEM "Ağ&daki Değer Defteri'ne Bağlantıyı Kes...", ID_REGISTRY_DISCONNECTNETWORKREGISTRY, GRAYED
         MENUITEM SEPARATOR
-        MENUITEM "Ya&zdır...\tCtrl+P", ID_REGISTRY_PRINT, GRAYED
+        MENUITEM "Ya&zdır...\tDenetim+P", ID_REGISTRY_PRINT, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "&Çıkış", ID_REGISTRY_EXIT
     END
@@ -60,13 +60,13 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "&İzinler...", ID_EDIT_PERMISSIONS
         MENUITEM SEPARATOR
-        MENUITEM "&Sil\tDel", ID_EDIT_DELETE
+        MENUITEM "&Sil\tSil", ID_EDIT_DELETE
         MENUITEM "&Adını Değiştir", ID_EDIT_RENAME
         MENUITEM SEPARATOR
         MENUITEM "Di&zin Yolunu Çoğalt", ID_EDIT_COPYKEYNAME
         MENUITEM SEPARATOR
-        MENUITEM "A&ra...\tCtrl+F", ID_EDIT_FIND
-        MENUITEM "S&onrakini Ara\tF3", ID_EDIT_FINDNEXT
+        MENUITEM "&Bul...\tDenetim+F", ID_EDIT_FIND
+        MENUITEM "S&onrakini Bul\tF3...", ID_EDIT_FINDNEXT
     END
     POPUP "&Görünüm"
     BEGIN
@@ -85,7 +85,7 @@ BEGIN
     BEGIN
         MENUITEM "&Yardım Konuları\tF1", ID_HELP_HELPTOPICS
         MENUITEM SEPARATOR
-        MENUITEM "&Üzerine...", ID_HELP_ABOUT
+        MENUITEM "&Değer Defteri Düzenleyicisi Üzerine", ID_HELP_ABOUT
     END
 END
 
@@ -96,7 +96,7 @@ BEGIN
         MENUITEM "&Değiştir...", ID_EDIT_MODIFY
         MENUITEM "&İkili Veriyi Değiştir...", ID_EDIT_MODIFY_BIN
         MENUITEM SEPARATOR
-        MENUITEM "&Sil\tDel", ID_EDIT_DELETE
+        MENUITEM "&Sil\tSil", ID_EDIT_DELETE
         MENUITEM "&Adını Değiştir", ID_EDIT_RENAME
     END
     POPUP ""
@@ -125,7 +125,7 @@ BEGIN
             MENUITEM "&Çok Dizeli Dizgi Değeri", ID_EDIT_NEW_MULTISTRINGVALUE
             MENUITEM "&Genişletilebilir Dizgi Değeri", ID_EDIT_NEW_EXPANDABLESTRINGVALUE
         END
-        MENUITEM "A&ra...", ID_EDIT_FIND
+        MENUITEM "&Bul...", ID_EDIT_FIND
         MENUITEM SEPARATOR
         MENUITEM "&Sil", ID_TREE_DELETE
         MENUITEM "&Adını Değiştir", ID_TREE_RENAME
@@ -506,10 +506,10 @@ END
 
 IDD_FIND DIALOGEX 0, 0, 254, 82
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Ara"
+CAPTION "Bul"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    DEFPUSHBUTTON "&Sonrakini Ara", IDOK, 197, 7, 50, 14
+    DEFPUSHBUTTON "&Sonrakini Bul", IDOK, 197, 7, 50, 14
     PUSHBUTTON "İptal", IDCANCEL, 197, 24, 50, 14
     GROUPBOX "Bak", IDC_STATIC, 7, 25, 63, 51
     LTEXT "Bakılacaklar", IDC_STATIC, 7, 8, 37, 10
@@ -527,7 +527,7 @@ BEGIN
 END
 
 IDD_FINDING DIALOGEX 0, 0, 145, 50
-STYLE DS_SHELLFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Arama"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN

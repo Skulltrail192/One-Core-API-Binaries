@@ -8,7 +8,6 @@
  *      19990322 EA created
  *      19990515 EA stubs
  *      20030202 KJK compressed stubs
- *
  */
 
 #include <advapi32.h>
@@ -597,7 +596,7 @@ LsaEnumeratePrivilegesOfAccount(IN LSA_HANDLE AccountHandle,
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 NTSTATUS
 WINAPI
@@ -607,19 +606,45 @@ LsaEnumerateTrustedDomains(IN LSA_HANDLE PolicyHandle,
                            IN ULONG PreferedMaximumLength,
                            OUT PULONG CountReturned)
 {
-    FIXME("LsaEnumerateTrustedDomains(%p %p %p %lu %p) stub\n",
+    LSAPR_TRUSTED_ENUM_BUFFER TrustedEnumBuffer;
+    NTSTATUS Status;
+
+    TRACE("LsaEnumerateTrustedDomains(%p %p %p %lu %p)\n",
           PolicyHandle, EnumerationContext, Buffer,
           PreferedMaximumLength, CountReturned);
 
-    if (CountReturned)
-        *CountReturned = 0;
+    if (Buffer == NULL)
+        return STATUS_INVALID_PARAMETER;
 
-    return STATUS_SUCCESS;
+    TrustedEnumBuffer.EntriesRead = 0;
+    TrustedEnumBuffer.Information = NULL;
+
+    RpcTryExcept
+    {
+        Status = LsarEnumerateTrustedDomains((LSAPR_HANDLE)PolicyHandle,
+                                             EnumerationContext,
+                                             &TrustedEnumBuffer,
+                                             PreferedMaximumLength);
+
+        *Buffer = TrustedEnumBuffer.Information;
+        *CountReturned = TrustedEnumBuffer.EntriesRead;
+
+    }
+    RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+    {
+        if (TrustedEnumBuffer.Information != NULL)
+            MIDL_user_free(TrustedEnumBuffer.Information);
+
+        Status = I_RpcMapWin32Status(RpcExceptionCode());
+    }
+    RpcEndExcept;
+
+    return Status;
 }
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 NTSTATUS
 WINAPI
@@ -629,14 +654,40 @@ LsaEnumerateTrustedDomainsEx(IN LSA_HANDLE PolicyHandle,
                              IN ULONG PreferedMaximumLength,
                              OUT PULONG CountReturned)
 {
-    FIXME("LsaEnumerateTrustedDomainsEx(%p %p %p %lu %p) stub\n",
+    LSAPR_TRUSTED_ENUM_BUFFER_EX TrustedEnumBuffer;
+    NTSTATUS Status;
+
+    TRACE("LsaEnumerateTrustedDomainsEx(%p %p %p %lu %p)\n",
           PolicyHandle, EnumerationContext, Buffer,
           PreferedMaximumLength, CountReturned);
 
-    if (CountReturned)
-        *CountReturned = 0;
+    if (Buffer == NULL)
+        return STATUS_INVALID_PARAMETER;
 
-    return STATUS_SUCCESS;
+    TrustedEnumBuffer.EntriesRead = 0;
+    TrustedEnumBuffer.EnumerationBuffer = NULL;
+
+    RpcTryExcept
+    {
+        Status = LsarEnumerateTrustedDomainsEx((LSAPR_HANDLE)PolicyHandle,
+                                               EnumerationContext,
+                                               &TrustedEnumBuffer,
+                                               PreferedMaximumLength);
+
+        *Buffer = TrustedEnumBuffer.EnumerationBuffer;
+        *CountReturned = TrustedEnumBuffer.EntriesRead;
+
+    }
+    RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+    {
+        if (TrustedEnumBuffer.EnumerationBuffer != NULL)
+            MIDL_user_free(TrustedEnumBuffer.EnumerationBuffer);
+
+        Status = I_RpcMapWin32Status(RpcExceptionCode());
+    }
+    RpcEndExcept;
+
+    return Status;
 }
 
 
@@ -681,7 +732,7 @@ LsaGetQuotasForAccount(IN LSA_HANDLE AccountHandle,
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 NTSTATUS
 WINAPI
@@ -900,18 +951,42 @@ LsaLookupNames2(IN LSA_HANDLE PolicyHandle,
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 NTSTATUS
 WINAPI
 LsaLookupPrivilegeDisplayName(IN LSA_HANDLE PolicyHandle,
                               IN PLSA_UNICODE_STRING Name,
                               OUT PLSA_UNICODE_STRING *DisplayName,
-                              OUT PSHORT LanguageReturned)
+                              OUT PUSHORT LanguageReturned)
 {
-    FIXME("LsaLookupPrivilegeDisplayName(%p %p %p %p)\n",
+    PRPC_UNICODE_STRING DisplayNameBuffer = NULL;
+    NTSTATUS Status;
+
+    TRACE("LsaLookupPrivilegeDisplayName(%p %p %p %p)\n",
           PolicyHandle, Name, DisplayName, LanguageReturned);
-    return STATUS_NOT_IMPLEMENTED;
+
+    RpcTryExcept
+    {
+        Status = LsarLookupPrivilegeDisplayName(PolicyHandle,
+                                                (PRPC_UNICODE_STRING)Name,
+                                                GetUserDefaultUILanguage(),
+                                                GetSystemDefaultUILanguage(),
+                                                &DisplayNameBuffer,
+                                                LanguageReturned);
+
+        *DisplayName = (PUNICODE_STRING)DisplayNameBuffer;
+    }
+    RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+    {
+        if (DisplayNameBuffer != NULL)
+            MIDL_user_free(DisplayNameBuffer);
+
+        Status = I_RpcMapWin32Status(RpcExceptionCode());
+    }
+    RpcEndExcept;
+
+    return Status;
 }
 
 
@@ -1140,7 +1215,7 @@ LsaOpenPolicy(IN PLSA_UNICODE_STRING SystemName OPTIONAL,
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 NTSTATUS
 WINAPI
@@ -1149,10 +1224,34 @@ LsaOpenPolicySce(IN PLSA_UNICODE_STRING SystemName OPTIONAL,
                  IN ACCESS_MASK DesiredAccess,
                  OUT PLSA_HANDLE PolicyHandle)
 {
-    FIXME("LsaOpenPolicySce(%s %p 0x%08lx %p)\n",
+    NTSTATUS Status;
+
+    TRACE("LsaOpenPolicySce(%s %p 0x%08lx %p)\n",
           SystemName ? debugstr_w(SystemName->Buffer) : "(null)",
           ObjectAttributes, DesiredAccess, PolicyHandle);
-    return STATUS_NOT_IMPLEMENTED;
+
+    /* FIXME: RPC should take care of this */
+    if (!LsapIsLocalComputer(SystemName))
+        return RPC_NT_SERVER_UNAVAILABLE;
+
+    RpcTryExcept
+    {
+        *PolicyHandle = NULL;
+
+        Status = LsarOpenPolicySce(SystemName ? SystemName->Buffer : NULL,
+                                   (PLSAPR_OBJECT_ATTRIBUTES)ObjectAttributes,
+                                   DesiredAccess,
+                                   PolicyHandle);
+    }
+    RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+    {
+        Status = I_RpcMapWin32Status(RpcExceptionCode());
+    }
+    RpcEndExcept;
+
+    TRACE("LsaOpenPolicySce() done (Status: 0x%08lx)\n", Status);
+
+    return Status;
 }
 
 
@@ -1324,7 +1423,7 @@ LsaQueryForestTrustInformation(IN LSA_HANDLE PolicyHandle,
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 NTSTATUS
 WINAPI
@@ -1332,9 +1431,35 @@ LsaQueryInfoTrustedDomain(IN LSA_HANDLE TrustedDomainHandle,
                           IN TRUSTED_INFORMATION_CLASS InformationClass,
                           OUT PVOID *Buffer)
 {
-    FIXME("LsaQueryInfoTrustedDomain(%p %d %p) stub\n",
+    PLSAPR_TRUSTED_DOMAIN_INFO TrustedDomainInformation = NULL;
+    NTSTATUS Status;
+
+    TRACE("LsaQueryInfoTrustedDomain(%p %d %p) stub\n",
           TrustedDomainHandle, InformationClass, Buffer);
-    return STATUS_NOT_IMPLEMENTED;
+
+    if (InformationClass == TrustedDomainAuthInformationInternal ||
+        InformationClass == TrustedDomainFullInformationInternal)
+        return STATUS_INVALID_INFO_CLASS;
+
+    RpcTryExcept
+    {
+        Status = LsarQueryInfoTrustedDomain((LSAPR_HANDLE)TrustedDomainHandle,
+                                            InformationClass,
+                                            &TrustedDomainInformation);
+        *Buffer = TrustedDomainInformation;
+    }
+    RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+    {
+        if (TrustedDomainInformation != NULL)
+            MIDL_user_free(TrustedDomainInformation);
+
+        Status = I_RpcMapWin32Status(RpcExceptionCode());
+    }
+    RpcEndExcept;
+
+    TRACE("Done (Status: 0x%08x)\n", Status);
+
+    return Status;
 }
 
 
@@ -1376,7 +1501,7 @@ LsaQueryInformationPolicy(IN LSA_HANDLE PolicyHandle,
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 NTSTATUS
 WINAPI
@@ -1544,7 +1669,7 @@ LsaQuerySecurityObject(IN LSA_HANDLE ObjectHandle,
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 NTSTATUS
 WINAPI
@@ -1553,9 +1678,29 @@ LsaQueryTrustedDomainInfo(IN LSA_HANDLE PolicyHandle,
                           IN TRUSTED_INFORMATION_CLASS InformationClass,
                           OUT PVOID *Buffer)
 {
-    FIXME("LsaQueryTrustedDomainInfo(%p %p %d %p) stub\n",
+    NTSTATUS Status;
+
+    TRACE("LsaQueryTrustedDomainInfo(%p %p %d %p) stub\n",
           PolicyHandle, TrustedDomainSid, InformationClass, Buffer);
-    return STATUS_OBJECT_NAME_NOT_FOUND;
+
+    if (InformationClass == TrustedDomainAuthInformationInternal ||
+        InformationClass == TrustedDomainFullInformationInternal)
+        return STATUS_INVALID_INFO_CLASS;
+
+    RpcTryExcept
+    {
+        Status = LsarQueryTrustedDomainInfo((LSAPR_HANDLE)PolicyHandle,
+                                            (PRPC_SID)TrustedDomainSid,
+                                            InformationClass,
+                                            (PLSAPR_TRUSTED_DOMAIN_INFO *)Buffer);
+    }
+    RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+    {
+        Status = I_RpcMapWin32Status(RpcExceptionCode());
+    }
+    RpcEndExcept;
+
+    return Status;
 }
 
 
@@ -1606,6 +1751,7 @@ LsaRemoveAccountRights(IN LSA_HANDLE PolicyHandle,
                        IN PLSA_UNICODE_STRING UserRights,
                        IN ULONG CountOfRights)
 {
+    NTSTATUS Status;
     LSAPR_USER_RIGHT_SET UserRightSet;
 
     TRACE("LsaRemoveAccountRights(%p %p %d %p %lu)\n",
@@ -1616,18 +1762,18 @@ LsaRemoveAccountRights(IN LSA_HANDLE PolicyHandle,
 
     RpcTryExcept
     {
-        LsarRemoveAccountRights((LSAPR_HANDLE)PolicyHandle,
-                                (PRPC_SID)AccountSid,
-                                AllRights,
-                                &UserRightSet);
+        Status = LsarRemoveAccountRights((LSAPR_HANDLE)PolicyHandle,
+                                         (PRPC_SID)AccountSid,
+                                         AllRights,
+                                         &UserRightSet);
     }
     RpcExcept(EXCEPTION_EXECUTE_HANDLER)
     {
-        I_RpcMapWin32Status(RpcExceptionCode());
+        Status = I_RpcMapWin32Status(RpcExceptionCode());
     }
     RpcEndExcept;
 
-    return STATUS_SUCCESS;
+    return Status;
 }
 
 
@@ -1659,7 +1805,7 @@ LsaRemovePrivilegesFromAccount(IN LSA_HANDLE AccountHandle,
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 NTSTATUS
 WINAPI
@@ -1667,9 +1813,63 @@ LsaRetrievePrivateData(IN LSA_HANDLE PolicyHandle,
                        IN PLSA_UNICODE_STRING KeyName,
                        OUT PLSA_UNICODE_STRING *PrivateData)
 {
-    FIXME("LsaRetrievePrivateData(%p %p %p) stub\n",
+    PLSAPR_CR_CIPHER_VALUE EncryptedData = NULL;
+    PLSA_UNICODE_STRING DecryptedData = NULL;
+    SIZE_T BufferSize;
+    NTSTATUS Status;
+
+    TRACE("LsaRetrievePrivateData(%p %p %p)\n",
           PolicyHandle, KeyName, PrivateData);
-    return STATUS_OBJECT_NAME_NOT_FOUND;
+
+    RpcTryExcept
+    {
+        Status = LsarRetrievePrivateData((LSAPR_HANDLE)PolicyHandle,
+                                         (PRPC_UNICODE_STRING)KeyName,
+                                         &EncryptedData);
+    }
+    RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+    {
+        Status = I_RpcMapWin32Status(RpcExceptionCode());
+    }
+    RpcEndExcept;
+
+    if (EncryptedData == NULL)
+    {
+        *PrivateData = NULL;
+    }
+    else
+    {
+        BufferSize = sizeof(LSA_UNICODE_STRING) + EncryptedData->MaximumLength;
+        DecryptedData = midl_user_allocate(BufferSize);
+        if (DecryptedData == NULL)
+        {
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+            goto done;
+        }
+
+        DecryptedData->Length = (USHORT)EncryptedData->Length;
+        DecryptedData->MaximumLength = (USHORT)EncryptedData->MaximumLength;
+        DecryptedData->Buffer = (PWSTR)(DecryptedData + 1);
+        RtlCopyMemory(DecryptedData->Buffer,
+                      EncryptedData->Buffer,
+                      EncryptedData->Length);
+
+        *PrivateData = DecryptedData;
+    }
+
+done:
+    if (!NT_SUCCESS(Status))
+    {
+        if (DecryptedData != NULL)
+            midl_user_free(DecryptedData);
+
+        *PrivateData = NULL;
+    }
+
+    if (EncryptedData != NULL)
+        midl_user_free(EncryptedData);
+
+    return Status;
 }
 
 
@@ -1711,7 +1911,7 @@ WINAPI
 LsaSetForestTrustInformation(IN LSA_HANDLE PolicyHandle,
                              IN PLSA_UNICODE_STRING TrustedDomainName,
                              IN PLSA_FOREST_TRUST_INFORMATION ForestTrustInfo,
-                             IN BOOL CheckOnly,
+                             IN BOOLEAN CheckOnly,
                              OUT PLSA_FOREST_TRUST_COLLISION_INFORMATION *CollisionInfo)
 {
     NTSTATUS Status;
@@ -2000,7 +2200,7 @@ LsaSetTrustedDomainInformation(IN LSA_HANDLE PolicyHandle,
 
 
 /*
- * @unimplemented
+ * @implemented
  */
 NTSTATUS
 WINAPI
@@ -2008,9 +2208,49 @@ LsaStorePrivateData(IN LSA_HANDLE PolicyHandle,
                     IN PLSA_UNICODE_STRING KeyName,
                     IN PLSA_UNICODE_STRING PrivateData OPTIONAL)
 {
-    FIXME("LsaStorePrivateData(%p %p %p) stub\n",
+    PLSAPR_CR_CIPHER_VALUE EncryptedData = NULL;
+    SIZE_T BufferSize;
+    NTSTATUS Status;
+
+    TRACE("LsaStorePrivateData(%p %p %p)\n",
           PolicyHandle, KeyName, PrivateData);
-    return STATUS_OBJECT_NAME_NOT_FOUND;
+
+    if (PrivateData != NULL)
+    {
+        BufferSize = sizeof(LSAPR_CR_CIPHER_VALUE) + PrivateData->MaximumLength;
+        EncryptedData = midl_user_allocate(BufferSize);
+        if (EncryptedData == NULL)
+        {
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+            goto done;
+        }
+
+        EncryptedData->Length = PrivateData->Length;
+        EncryptedData->MaximumLength = PrivateData->MaximumLength;
+        EncryptedData->Buffer = (BYTE *)(EncryptedData + 1);
+        if (EncryptedData->Buffer != NULL)
+            RtlCopyMemory(EncryptedData->Buffer,
+                          PrivateData->Buffer,
+                          PrivateData->Length);
+    }
+
+    RpcTryExcept
+    {
+        Status = LsarStorePrivateData((LSAPR_HANDLE)PolicyHandle,
+                                      (PRPC_UNICODE_STRING)KeyName,
+                                      EncryptedData);
+    }
+    RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+    {
+        Status = I_RpcMapWin32Status(RpcExceptionCode());
+    }
+    RpcEndExcept;
+
+done:
+    if (EncryptedData != NULL)
+        midl_user_free(EncryptedData);
+
+    return Status;
 }
 
 /* EOF */

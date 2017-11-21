@@ -10,7 +10,7 @@
 /* INCLUDES *****************************************************************/
 
 #include <ntoskrnl.h>
-#include "../cache/section/newmm.h"
+#include <cache/section/newmm.h>
 #define NDEBUG
 #include <debug.h>
 
@@ -137,7 +137,7 @@ MmPageOutPhysicalAddress(PFN_NUMBER Page)
     {
         ULONG_PTR Entry;
         Offset = MemoryArea->Data.SectionData.ViewOffset.QuadPart +
-                 ((ULONG_PTR)Address - (ULONG_PTR)MemoryArea->StartingAddress);
+                 ((ULONG_PTR)Address - MA_GetStartingAddress(MemoryArea));
 
         MmLockSectionSegment(MemoryArea->Data.SectionData.Segment);
 
@@ -146,7 +146,7 @@ MmPageOutPhysicalAddress(PFN_NUMBER Page)
          */
         Entry = MmGetPageEntrySectionSegment(MemoryArea->Data.SectionData.Segment,
                                              (PLARGE_INTEGER)&Offset);
-        if (Entry && IS_SWAP_FROM_SSE(Entry) && SWAPENTRY_FROM_SSE(Entry) == MM_WAIT_ENTRY)
+        if (Entry && MM_IS_WAIT_PTE(Entry))
         {
             MmUnlockSectionSegment(MemoryArea->Data.SectionData.Segment);
             MmUnlockAddressSpace(AddressSpace);

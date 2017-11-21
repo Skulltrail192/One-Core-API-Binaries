@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS win32 kernel mode subsystem
  * LICENSE:         GPL - See COPYING in the top level directory
- * FILE:            subsystems/win32/win32k/objects/text.c
+ * FILE:            win32ss/gdi/ntgdi/text.c
  * PURPOSE:         Text/Font
  * PROGRAMMER:
  */
@@ -23,7 +23,7 @@ GreTextOutW(
     LPCWSTR  lpString,
     int  cchString)
 {
-    return GreExtTextOutW(hdc, nXStart, nYStart, 0, NULL, (LPWSTR)lpString, cchString, NULL, 0);
+    return GreExtTextOutW(hdc, nXStart, nYStart, 0, NULL, lpString, cchString, NULL, 0);
 }
 
 /*
@@ -35,7 +35,7 @@ BOOL
 FASTCALL
 GreGetTextExtentW(
     HDC hDC,
-    LPWSTR lpwsz,
+    LPCWSTR lpwsz,
     INT cwc,
     LPSIZE psize,
     UINT flOpts)
@@ -92,7 +92,7 @@ BOOL
 FASTCALL
 GreGetTextExtentExW(
     HDC hDC,
-    LPWSTR String,
+    LPCWSTR String,
     ULONG Count,
     ULONG MaxExtent,
     PULONG Fit,
@@ -144,6 +144,18 @@ GreGetTextExtentExW(
 
     DC_UnlockDc(pdc);
     return Result;
+}
+
+BOOL 
+WINAPI
+GreGetTextMetricsW(
+    _In_  HDC hdc,
+    _Out_ LPTEXTMETRICW lptm)
+{
+   TMW_INTERNAL tmwi;
+   if (!ftGdiGetTextMetricsW(hdc, &tmwi)) return FALSE;
+   *lptm = tmwi.TextMetric;
+   return TRUE;
 }
 
 DWORD

@@ -318,7 +318,7 @@ static HRESULT dxgi_factory_init(struct dxgi_factory *factory, BOOL extended)
     wined3d_private_store_init(&factory->private_store);
 
     wined3d_mutex_lock();
-    factory->wined3d = wined3d_create(0);
+    factory->wined3d = wined3d_create(WINED3D_FORWARD_DEPTH_BIAS | WINED3D_REQUEST_D3D10);
     wined3d_mutex_unlock();
     if (!factory->wined3d)
     {

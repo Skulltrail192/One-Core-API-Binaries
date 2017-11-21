@@ -76,31 +76,7 @@
 #define AHCI_Global_Port_CAP_NCS(x)         (((x) & 0xF00) >> 8)
 
 #define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
-#ifdef DBG
-    #define AhciDebugPrint(format, ...) StorPortDebugPrint(0, format, __VA_ARGS__)
-#endif
-
-/* Deferred procedure call buffer */
-// typedef struct _DPC_BUFFER {
-    // CSHORT  Type;
-    // UCHAR   Number;
-    // UCHAR   Importance;
-    // struct {
-        // PVOID   F;
-        // PVOID   B;
-    // };
-    // PVOID   DeferredRoutine;
-    // PVOID   DeferredContext;
-    // PVOID   SystemArgument1;
-    // PVOID   SystemArgument2;
-    // PVOID   DpcData;
-// } DPC_BUFFER;
-
-// /* Storage deferred procedure call */
-// typedef struct _STOR_DPC {
-    // DPC_BUFFER  Dpc;
-    // ULONG_PTR   Lock;
-// } STOR_DPC, *PSTOR_DPC;
+#define AhciDebugPrint(format, ...) StorPortDebugPrint(0, format, __VA_ARGS__)
 
 typedef
 VOID
@@ -476,15 +452,6 @@ typedef struct _AHCI_MEMORY_REGISTERS
     AHCI_PORT PortList[MAXIMUM_AHCI_PORT_COUNT];
 } AHCI_MEMORY_REGISTERS, *PAHCI_MEMORY_REGISTERS;
 
-typedef enum _STOR_DEVICE_POWER_STATE {
-    StorPowerDeviceUnspecified = 0,
-    StorPowerDeviceD0,
-    StorPowerDeviceD1,
-    StorPowerDeviceD2,
-    StorPowerDeviceD3,
-    StorPowerDeviceMaximum
-} STOR_DEVICE_POWER_STATE, *PSTOR_DEVICE_POWER_STATE;
-
 // Holds information for each attached attached port to a given adapter.
 typedef struct _AHCI_PORT_EXTENSION
 {
@@ -503,9 +470,9 @@ typedef struct _AHCI_PORT_EXTENSION
         LARGE_INTEGER MaxLba;
         ULONG BytesPerLogicalSector;
         ULONG BytesPerPhysicalSector;
-        // UCHAR VendorId[41];
-        // UCHAR RevisionID[9];
-        // UCHAR SerialNumber[21];
+        UCHAR VendorId[41];
+        UCHAR RevisionID[9];
+        UCHAR SerialNumber[21];
     } DeviceParams;
 
     STOR_DPC CommandCompletion;
@@ -742,25 +709,3 @@ C_ASSERT(FIELD_OFFSET(AHCI_COMMAND_TABLE, CFIS) == 0x00);
 C_ASSERT(FIELD_OFFSET(AHCI_COMMAND_TABLE, ACMD) == 0x40);
 C_ASSERT(FIELD_OFFSET(AHCI_COMMAND_TABLE, RSV0) == 0x50);
 C_ASSERT(FIELD_OFFSET(AHCI_COMMAND_TABLE, PRDT) == 0x80);
-
-#ifndef _NTDDK_
-#define SCSIPORT_API DECLSPEC_IMPORT
-#else
-#define SCSIPORT_API
-#endif
-
-SCSIPORT_API
-VOID NTAPI
-ScsiPortFreeDeviceBase(
-    IN PVOID HwDeviceExtension,
-    IN PVOID MappedAddress
-    );
-	
-STORPORT_API
-VOID
-StorPortWriteRegisterUlong(
-    IN PVOID HwDeviceExtension,
-    IN PULONG Register,
-    IN ULONG Value
-    );
-	

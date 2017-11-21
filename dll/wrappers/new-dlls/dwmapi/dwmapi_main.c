@@ -44,15 +44,6 @@ typedef enum _DWM_SOURCE_FRAME_SAMPLING {
   DWM_SOURCE_FRAME_SAMPLING_LAST
 } DWM_SOURCE_FRAME_SAMPLING;
 
-typedef struct _DWM_THUMBNAIL_PROPERTIES {
-  DWORD dwFlags;
-  RECT  rcDestination;
-  RECT  rcSource;
-  BYTE  opacity;
-  BOOL  fVisible;
-  BOOL  fSourceClientAreaOnly;
-} DWM_THUMBNAIL_PROPERTIES, *PDWM_THUMBNAIL_PROPERTIES;
-
 typedef struct _DWM_PRESENT_PARAMETERS {
   UINT32                    cbSize;
   BOOL                      fQueue;

@@ -326,7 +326,7 @@ Arguments:
 
     Srb - Supplies a Pointer to the SCSI request block to be retied.
 
-    Assocaiated - Indicates this is an assocatied Irp created by split request.
+    Associated - Indicates this is an associated Irp created by split request.
 
     RetryInterval - How long, in seconds, before retrying the request.
 
@@ -870,7 +870,7 @@ Return Value:
         ClasspFreeSrb(FdoExtension, Srb);
     }
     else {
-        DBGERR(("ClassFreeOrReuseSrb: someone is trying to use an uninitialized SrbLookasideList !!!"));;
+        DBGERR(("ClassFreeOrReuseSrb: someone is trying to use an uninitialized SrbLookasideList !!!"));
         ExFreePool(Srb);
     }
 }

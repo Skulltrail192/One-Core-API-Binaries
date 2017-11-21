@@ -72,6 +72,7 @@ typedef struct {
 
 typedef struct {
     IHlinkFrame    IHlinkFrame_iface;
+    ITargetFrame   ITargetFrame_iface;
     ITargetFrame2  ITargetFrame2_iface;
     ITargetFramePriv2 ITargetFramePriv2_iface;
     IWebBrowserPriv2IE9 IWebBrowserPriv2IE9_iface;
@@ -120,10 +121,10 @@ typedef struct _IDocHostContainerVtbl
 {
     ULONG (*addref)(DocHost*);
     ULONG (*release)(DocHost*);
-    void (WINAPI* GetDocObjRect)(DocHost*,RECT*);
-    HRESULT (WINAPI* SetStatusText)(DocHost*,LPCWSTR);
-    void (WINAPI* SetURL)(DocHost*,LPCWSTR);
-    HRESULT (*exec)(DocHost*,const GUID*,DWORD,DWORD,VARIANT*,VARIANT*);
+    void (*get_docobj_rect)(DocHost*,RECT*);
+    HRESULT (*set_status_text)(DocHost*,const WCHAR*);
+    void (*on_command_state_change)(DocHost*,LONG,BOOL);
+    void (*set_url)(DocHost*,const WCHAR*);
 } IDocHostContainerVtbl;
 
 struct DocHost {
@@ -145,6 +146,7 @@ struct DocHost {
     IDispatch *client_disp;
     IDocHostUIHandler *hostui;
     IOleInPlaceFrame *frame;
+    IOleCommandTarget *olecmd;
 
     IUnknown *document;
     IOleDocumentView *view;
@@ -205,8 +207,13 @@ struct WebBrowser {
     INT version;
 
     IOleClientSite *client;
+    IOleClientSite *client_closed;
     IOleContainer *container;
     IOleInPlaceSiteEx *inplace;
+
+    IAdviseSink *sink;
+    DWORD sink_aspects;
+    DWORD sink_flags;
 
     /* window context */
 
@@ -243,6 +250,7 @@ struct InternetExplorer {
 
     HWND frame_hwnd;
     HWND status_hwnd;
+    HWND toolbar_hwnd;
     HMENU menu;
     BOOL nohome;
 
@@ -281,7 +289,7 @@ HRESULT navigate_url(DocHost*,LPCWSTR,const VARIANT*,const VARIANT*,VARIANT*,VAR
 HRESULT go_home(DocHost*) DECLSPEC_HIDDEN;
 HRESULT go_back(DocHost*) DECLSPEC_HIDDEN;
 HRESULT go_forward(DocHost*) DECLSPEC_HIDDEN;
-HRESULT refresh_document(DocHost*) DECLSPEC_HIDDEN;
+HRESULT refresh_document(DocHost*,const VARIANT*) DECLSPEC_HIDDEN;
 HRESULT get_location_url(DocHost*,BSTR*) DECLSPEC_HIDDEN;
 HRESULT set_dochost_url(DocHost*,const WCHAR*) DECLSPEC_HIDDEN;
 void handle_navigation_error(DocHost*,HRESULT,BSTR,IHTMLWindow2*) DECLSPEC_HIDDEN;
@@ -289,6 +297,9 @@ HRESULT dochost_object_available(DocHost*,IUnknown*) DECLSPEC_HIDDEN;
 void set_doc_state(DocHost*,READYSTATE) DECLSPEC_HIDDEN;
 void deactivate_document(DocHost*) DECLSPEC_HIDDEN;
 void create_doc_view_hwnd(DocHost*) DECLSPEC_HIDDEN;
+void on_commandstate_change(DocHost*,LONG,BOOL) DECLSPEC_HIDDEN;
+void notify_download_state(DocHost*,BOOL) DECLSPEC_HIDDEN;
+void update_navigation_commands(DocHost *dochost) DECLSPEC_HIDDEN;
 
 #define WM_DOCHOSTTASK (WM_USER+0x300)
 void push_dochost_task(DocHost*,task_header_t*,task_proc_t,task_destr_t,BOOL) DECLSPEC_HIDDEN;
@@ -337,19 +348,19 @@ static inline void unlock_module(void) {
     InterlockedDecrement(&module_ref);
 }
 
-static inline void *heap_alloc(size_t len)
+static inline void* __WINE_ALLOC_SIZE(1) heap_alloc(size_t size)
 {
-    return HeapAlloc(GetProcessHeap(), 0, len);
+    return HeapAlloc(GetProcessHeap(), 0, size);
 }
 
-static inline void *heap_alloc_zero(size_t len)
+static inline void* __WINE_ALLOC_SIZE(1) heap_alloc_zero(size_t size)
 {
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, len);
+    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
 }
 
-static inline void *heap_realloc(void *mem, size_t len)
+static inline void* __WINE_ALLOC_SIZE(2) heap_realloc(void *mem, size_t size)
 {
-    return HeapReAlloc(GetProcessHeap(), 0, mem, len);
+    return HeapReAlloc(GetProcessHeap(), 0, mem, size);
 }
 
 static inline BOOL heap_free(void *mem)

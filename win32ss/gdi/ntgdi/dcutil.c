@@ -46,6 +46,21 @@ GreGetBkMode(HDC hdc)
    return lBkMode;
 }
 
+COLORREF FASTCALL
+GreGetBkColor(HDC hdc)
+{
+   PDC dc;
+   COLORREF crBk;
+   if (!(dc = DC_LockDc(hdc)))
+   {
+      EngSetLastError(ERROR_INVALID_HANDLE);
+      return CLR_INVALID;
+   }
+   crBk = dc->pdcattr->ulBackgroundClr;
+   DC_UnlockDc(dc);
+   return crBk;
+}
+
 int FASTCALL
 GreGetMapMode(HDC hdc)
 {
@@ -90,10 +105,15 @@ IntGdiSetBkColor(HDC hDC, COLORREF color)
         return CLR_INVALID;
     }
     pdcattr = dc->pdcattr;
-    oldColor = pdcattr->crBackgroundClr;
-    pdcattr->crBackgroundClr = color;
-    pdcattr->ulBackgroundClr = (ULONG)color;
-    pdcattr->ulDirty_ |= DIRTY_BACKGROUND|DIRTY_LINE|DIRTY_FILL; // Clear Flag if set.
+
+    oldColor = pdcattr->ulBackgroundClr;
+    pdcattr->ulBackgroundClr = color;
+
+    if (pdcattr->crBackgroundClr != color)
+    {
+        pdcattr->ulDirty_ |= (DIRTY_BACKGROUND|DIRTY_LINE|DIRTY_FILL); // Clear Flag if set.
+        pdcattr->crBackgroundClr = color;
+    }
     hBrush = pdcattr->hbrush;
     DC_UnlockDc(dc);
     NtGdiSelectBrush(hDC, hBrush);
@@ -159,10 +179,18 @@ IntGdiSetTextColor(HDC hDC,
     }
     pdcattr = pdc->pdcattr;
 
-    // What about ulForegroundClr, like in gdi32?
-    crOldColor = pdcattr->crForegroundClr;
-    pdcattr->crForegroundClr = color;
+    crOldColor = (COLORREF) pdcattr->ulForegroundClr;
+    pdcattr->ulForegroundClr = (ULONG)color;
+
+    if (pdcattr->crForegroundClr != color)
+    {
+        pdcattr->ulDirty_ |= (DIRTY_TEXT|DIRTY_LINE|DIRTY_FILL);
+        pdcattr->crForegroundClr = color;
+    }
+
     DC_vUpdateTextBrush(pdc);
+    DC_vUpdateLineBrush(pdc);
+    DC_vUpdateFillBrush(pdc);
 
     DC_UnlockDc(pdc);
 
@@ -192,6 +220,34 @@ IntSetDCBrushColor(HDC hdc, COLORREF crColor)
    }
    DC_UnlockDc(dc);
    return OldColor;
+}
+
+BOOL FASTCALL
+GreSetBrushOrg(
+    HDC hdc,
+    INT x,
+    INT y,
+    LPPOINT pptOut)
+{
+    PDC pdc = DC_LockDc(hdc);
+    if (pdc == NULL)
+    {
+        EngSetLastError(ERROR_INVALID_HANDLE);
+        return FALSE;
+    }
+
+    if (pptOut != NULL)
+    {
+        *pptOut = pdc->pdcattr->ptlBrushOrigin;
+    }
+
+    pdc->pdcattr->ptlBrushOrigin.x = x;
+    pdc->pdcattr->ptlBrushOrigin.y = y;
+
+    DC_vSetBrushOrigin(pdc, x, y);
+
+    DC_UnlockDc(pdc);
+    return TRUE;
 }
 
 COLORREF FASTCALL
@@ -241,6 +297,21 @@ GreSetStretchBltMode(HDC hDC, int iStretchMode)
     return oSMode;
 }
 
+int FASTCALL
+GreGetGraphicsMode(HDC hdc)
+{
+   PDC dc;
+   int GraphicsMode;
+   if (!(dc = DC_LockDc(hdc)))
+   {
+      EngSetLastError(ERROR_INVALID_HANDLE);
+      return CLR_INVALID;
+   }
+   GraphicsMode = dc->pdcattr->iGraphicsMode;
+   DC_UnlockDc(dc);
+   return GraphicsMode;
+}
+
 VOID
 FASTCALL
 DCU_SetDcUndeletable(HDC  hDC)
@@ -274,7 +345,7 @@ FASTCALL
 IntSetDefaultRegion(PDC pdc)
 {
     PSURFACE pSurface;
-    PROSRGNDATA prgn;
+    PREGION prgn;
     RECTL rclWnd, rclClip;
 
     IntGdiReleaseRaoRgn(pdc);
@@ -325,8 +396,8 @@ IntSetDefaultRegion(PDC pdc)
         pdc->erclWindow = rclWnd;
         pdc->erclClip = rclClip;
         /* Might be an InitDC or DCE... */
-        pdc->ptlFillOrigin.x = pdc->dcattr.VisRectRegion.Rect.right;
-        pdc->ptlFillOrigin.y = pdc->dcattr.VisRectRegion.Rect.bottom;
+        pdc->ptlFillOrigin.x = pdc->dcattr.ptlBrushOrigin.x;
+        pdc->ptlFillOrigin.y = pdc->dcattr.ptlBrushOrigin.y;
         return TRUE;
     }
 
@@ -429,6 +500,7 @@ NtGdiGetDCDword(
             break;
 
         case GdiGetEMFRestorDc:
+            SafeResult = pdc->dclevel.lSaveDepth;
             break;
 
         case GdiGetFontLanguageInfo:
@@ -608,6 +680,20 @@ NtGdiGetAndSetDCDword(
     return Ret;
 }
 
+VOID
+FASTCALL
+IntUpdateBoundsRect(PDC pdc, PRECTL pRect)
+{
+   if (pdc->fs & DC_ACCUM_APP)
+   {
+      RECTL_bUnionRect(&pdc->erclBoundsApp, &pdc->erclBoundsApp, pRect);
+   }
+   if (pdc->fs & DC_ACCUM_WMGR)
+   {
+      RECTL_bUnionRect(&pdc->erclBounds, &pdc->erclBounds, pRect);
+   }
+}
+
 DWORD
 APIENTRY
 NtGdiGetBoundsRect(
@@ -617,19 +703,52 @@ NtGdiGetBoundsRect(
 {
     DWORD ret;
     PDC pdc;
+    RECT rc;
 
     /* Lock the DC */
     if (!(pdc = DC_LockDc(hdc))) return 0;
 
-    /* Get the return value */
-    ret = pdc->fs & DC_ACCUM_APP ? DCB_ENABLE : DCB_DISABLE;
-    ret |= RECTL_bIsEmptyRect(&pdc->erclBoundsApp) ? DCB_RESET : DCB_SET;
+    if (!(flags & DCB_WINDOWMGR))
+    {
+       rc = pdc->erclBoundsApp;
+
+       if (RECTL_bIsEmptyRect(&rc))
+       {
+          rc.left = rc.top = rc.right = rc.bottom = 0;
+          ret = DCB_RESET;
+       }
+       else
+       {
+          RECTL rcRgn;
+          if (pdc->fs & DC_FLAG_DIRTY_RAO) CLIPPING_UpdateGCRegion(pdc);
+          if(!REGION_GetRgnBox(pdc->prgnRao, &rcRgn))
+          {
+             REGION_GetRgnBox(pdc->prgnVis, &rcRgn);
+          }
+          rc.left   = max( rc.left, 0 );
+          rc.top    = max( rc.top, 0 );
+          rc.right  = min( rc.right,  rcRgn.right - rcRgn.left );
+          rc.bottom = min( rc.bottom, rcRgn.bottom - rcRgn.top );
+          DPRINT("Rao dc %p r %d b %d\n",pdc,rcRgn.right - rcRgn.left, rcRgn.bottom - rcRgn.top);
+          DPRINT("rc  l %d t %d\n",rc.left,rc.top);
+          DPRINT("    r %d b %d\n",rc.right,rc.bottom);
+          ret = DCB_SET;
+       }
+       IntDPtoLP( pdc, &rc, 2 );
+       DPRINT("rc1 l %d t %d\n",rc.left,rc.top);
+       DPRINT("    r %d b %d\n",rc.right,rc.bottom);
+    }
+    else
+    {
+       rc = pdc->erclBounds;
+       ret = DCB_SET;
+    }
 
     /* Copy the rect to the caller */
     _SEH2_TRY
     {
         ProbeForWrite(prc, sizeof(RECT), 1);
-        *prc = pdc->erclBoundsApp;
+        *prc = rc;
     }
     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
     {
@@ -639,13 +758,21 @@ NtGdiGetBoundsRect(
 
     if (flags & DCB_RESET)
     {
-        RECTL_vSetEmptyRect(&pdc->erclBoundsApp);
+        if (!(flags & DCB_WINDOWMGR))
+        {
+           pdc->erclBoundsApp.left = pdc->erclBoundsApp.top = INT_MAX;
+           pdc->erclBoundsApp.right = pdc->erclBoundsApp.bottom = INT_MIN;
+        }
+        else
+        {
+           pdc->erclBounds.left = pdc->erclBounds.top = INT_MAX;
+           pdc->erclBounds.right = pdc->erclBounds.bottom = INT_MIN;
+        }
     }
 
     DC_UnlockDc(pdc);
     return ret;
 }
-
 
 DWORD
 APIENTRY
@@ -665,15 +792,26 @@ NtGdiSetBoundsRect(
     if (!(pdc = DC_LockDc(hdc))) return 0;
 
     /* Get the return value */
-    ret = pdc->fs & DC_ACCUM_APP ? DCB_ENABLE : DCB_DISABLE;
-    ret |= RECTL_bIsEmptyRect(&pdc->erclBoundsApp) ? DCB_RESET : DCB_SET;
+    ret = DCB_RESET; /* we don't have device-specific bounds */
+    ret = (pdc->fs & (DC_ACCUM_APP|DC_ACCUM_WMGR) ? DCB_ENABLE : DCB_DISABLE) |
+          (RECTL_bIsEmptyRect(&pdc->erclBoundsApp) ? ret & DCB_SET : DCB_SET );
+    ret |= (flags & DCB_WINDOWMGR);
 
     if (flags & DCB_RESET)
     {
-        RECTL_vSetEmptyRect(&pdc->erclBoundsApp);
+        if (!(flags & DCB_WINDOWMGR))
+        {
+           pdc->erclBoundsApp.left = pdc->erclBoundsApp.top = INT_MAX;
+           pdc->erclBoundsApp.right = pdc->erclBoundsApp.bottom = INT_MIN;
+        }
+        else
+        {
+           pdc->erclBounds.left = pdc->erclBounds.top = INT_MAX;
+           pdc->erclBounds.right = pdc->erclBounds.bottom = INT_MIN;
+        }
     }
 
-    if (flags & DCB_ACCUMULATE)
+    if (flags & DCB_ACCUMULATE && prc != NULL)
     {
         /* Capture the rect */
         _SEH2_TRY
@@ -689,11 +827,30 @@ NtGdiSetBoundsRect(
         _SEH2_END;
 
         RECTL_vMakeWellOrdered(&rcl);
-        RECTL_bUnionRect(&pdc->erclBoundsApp, &pdc->erclBoundsApp, &rcl);
+
+        if (!(flags & DCB_WINDOWMGR))
+        {           
+           IntLPtoDP( pdc, (POINT *)&rcl, 2 );
+           RECTL_bUnionRect(&pdc->erclBoundsApp, &pdc->erclBoundsApp, &rcl);
+        }
+        else
+           RECTL_bUnionRect(&pdc->erclBounds, &pdc->erclBounds, &rcl);
     }
 
-    if (flags & DCB_ENABLE) pdc->fs |= DC_ACCUM_APP;
-    if (flags & DCB_DISABLE) pdc->fs &= ~DC_ACCUM_APP;
+    if (flags & DCB_ENABLE)
+    {
+       if (!(flags & DCB_WINDOWMGR))
+          pdc->fs |= DC_ACCUM_APP;
+       else
+          pdc->fs |= DC_ACCUM_WMGR;
+    }
+    if (flags & DCB_DISABLE)
+    {
+       if (!(flags & DCB_WINDOWMGR))
+          pdc->fs &= ~DC_ACCUM_APP;
+       else
+          pdc->fs &= ~DC_ACCUM_WMGR;
+    }
     DC_UnlockDc(pdc);
     return ret;
 }

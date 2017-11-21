@@ -30,32 +30,6 @@ BOOL WINAPI pSetupRegistryDelnode(DWORD x, DWORD y)
 }
 
 /***********************************************************************
- *      SetupCloseLog(SETUPAPI.@)
- */
-void WINAPI SetupCloseLog(void)
-{
-    FIXME("() stub\n");
-}
-
-/***********************************************************************
- *      SetupLogErrorW(SETUPAPI.@)
- */
-BOOL WINAPI SetupLogErrorW(LPCWSTR MessageString, LogSeverity Severity)
-{
-    FIXME("(%s, %d) stub\n", debugstr_w(MessageString), Severity);
-    return TRUE;
-}
-
-/***********************************************************************
- *      SetupOpenLog(SETUPAPI.@)
- */
-BOOL WINAPI SetupOpenLog(BOOL Reserved)
-{
-    FIXME("(%d) stub\n", Reserved);
-    return TRUE;
-}
-
-/***********************************************************************
  *      SetupPromptReboot(SETUPAPI.@)
  */
 INT WINAPI SetupPromptReboot( HSPFILEQ file_queue, HWND owner, BOOL scan_only )
@@ -82,33 +56,6 @@ BOOL WINAPI SetupSetSourceListW(DWORD flags, PCWSTR *list, UINT count)
     return FALSE;
 }
 
-/***********************************************************************
- *      SetupPromptForDiskA (SETUPAPI.@)
- */
-UINT WINAPI SetupPromptForDiskA(HWND hwndParent, PCSTR DialogTitle, PCSTR DiskName,
-        PCSTR PathToSource, PCSTR FileSought, PCSTR TagFile, DWORD DiskPromptStyle,
-        PSTR PathBuffer, DWORD PathBufferSize, PDWORD PathRequiredSize)
-{
-    FIXME("%p %s %s %s %s %s %d %p %d %p: stub\n", hwndParent, debugstr_a(DialogTitle),
-          debugstr_a(DiskName), debugstr_a(PathToSource), debugstr_a(FileSought),
-          debugstr_a(TagFile), DiskPromptStyle, PathBuffer, PathBufferSize,
-          PathRequiredSize);
-    return 0;
-}
-
-/***********************************************************************
- *      SetupPromptForDiskW (SETUPAPI.@)
- */
-UINT WINAPI SetupPromptForDiskW(HWND hwndParent, PCWSTR DialogTitle, PCWSTR DiskName,
-        PCWSTR PathToSource, PCWSTR FileSought, PCWSTR TagFile, DWORD DiskPromptStyle,
-        PWSTR PathBuffer, DWORD PathBufferSize, PDWORD PathRequiredSize)
-{
-    FIXME("%p %s %s %s %s %s %d %p %d %p: stub\n", hwndParent, debugstr_w(DialogTitle),
-          debugstr_w(DiskName), debugstr_w(PathToSource), debugstr_w(FileSought),
-          debugstr_w(TagFile), DiskPromptStyle, PathBuffer, PathBufferSize,
-          PathRequiredSize);
-    return 0;
-}
 
 /***********************************************************************
  *      SetupDiRemoveDevice(SETUPAPI.@)
@@ -133,6 +80,17 @@ SetupDiUnremoveDevice(
     IN PSP_DEVINFO_DATA DeviceInfoData)
 {
     FIXME ("Stub %p %p\n", DeviceInfoSet, DeviceInfoData);
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return FALSE;
+}
+
+
+/***********************************************************************
+ *              SetupDiRemoveDeviceInterface (SETUPAPI.@)
+ */
+BOOL WINAPI SetupDiRemoveDeviceInterface(HDEVINFO info, PSP_DEVICE_INTERFACE_DATA data)
+{
+    FIXME("(%p, %p): stub\n", info, data);
     SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
     return FALSE;
 }

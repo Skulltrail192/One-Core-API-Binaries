@@ -71,6 +71,42 @@ static void _dump_cooperativelevel_DI(DWORD dwFlags) {
     }
 }
 
+static void _dump_ObjectDataFormat_flags(DWORD dwFlags) {
+    unsigned int   i;
+    static const struct {
+        DWORD       mask;
+        const char  *name;
+    } flags[] = {
+#define FE(x) { x, #x}
+        FE(DIDOI_FFACTUATOR),
+        FE(DIDOI_FFEFFECTTRIGGER),
+        FE(DIDOI_POLLED),
+        FE(DIDOI_GUIDISUSAGE)
+#undef FE
+    };
+
+    if (!dwFlags) return;
+
+    TRACE("Flags:");
+
+    /* First the flags */
+    for (i = 0; i < (sizeof(flags) / sizeof(flags[0])); i++) {
+        if (flags[i].mask & dwFlags)
+        TRACE(" %s",flags[i].name);
+    }
+
+    /* Now specific values */
+#define FE(x) case x: TRACE(" "#x); break
+    switch (dwFlags & DIDOI_ASPECTMASK) {
+        FE(DIDOI_ASPECTACCEL);
+        FE(DIDOI_ASPECTFORCE);
+        FE(DIDOI_ASPECTPOSITION);
+        FE(DIDOI_ASPECTVELOCITY);
+    }
+#undef FE
+
+}
+
 static void _dump_EnumObjects_flags(DWORD dwFlags) {
     if (TRACE_ON(dinput)) {
 	unsigned int   i;
@@ -215,6 +251,7 @@ void _dump_DIDATAFORMAT(const DIDATAFORMAT *df) {
         TRACE("      * dwType: 0x%08x\n", df->rgodf[i].dwType);
 	TRACE("        "); _dump_EnumObjects_flags(df->rgodf[i].dwType); TRACE("\n");
         TRACE("      * dwFlags: 0x%08x\n", df->rgodf[i].dwFlags);
+	TRACE("        "); _dump_ObjectDataFormat_flags(df->rgodf[i].dwFlags); TRACE("\n");
     }
 }
 
@@ -431,16 +468,20 @@ static HRESULT create_DataFormat(LPCDIDATAFORMAT asked_format, DataFormat *forma
 		      debugstr_guid(asked_format->rgodf[j].pguid),
 		      _dump_dinput_GUID(asked_format->rgodf[j].pguid));
                 TRACE("       * Offset: %3d\n", asked_format->rgodf[j].dwOfs);
-                TRACE("       * dwType: %08x\n", asked_format->rgodf[j].dwType);
+                TRACE("       * dwType: 0x%08x\n", asked_format->rgodf[j].dwType);
 		TRACE("         "); _dump_EnumObjects_flags(asked_format->rgodf[j].dwType); TRACE("\n");
+                TRACE("       * dwFlags: 0x%08x\n", asked_format->rgodf[j].dwFlags);
+		TRACE("         "); _dump_ObjectDataFormat_flags(asked_format->rgodf[j].dwFlags); TRACE("\n");
 		
 		TRACE("   - Wine  (%d) :\n", i);
 		TRACE("       * GUID: %s ('%s')\n",
                       debugstr_guid(format->wine_df->rgodf[i].pguid),
                       _dump_dinput_GUID(format->wine_df->rgodf[i].pguid));
                 TRACE("       * Offset: %3d\n", format->wine_df->rgodf[i].dwOfs);
-                TRACE("       * dwType: %08x\n", format->wine_df->rgodf[i].dwType);
+                TRACE("       * dwType: 0x%08x\n", format->wine_df->rgodf[i].dwType);
                 TRACE("         "); _dump_EnumObjects_flags(format->wine_df->rgodf[i].dwType); TRACE("\n");
+                TRACE("       * dwFlags: 0x%08x\n", format->wine_df->rgodf[i].dwFlags);
+                TRACE("         "); _dump_ObjectDataFormat_flags(format->wine_df->rgodf[i].dwFlags); TRACE("\n");
 		
                 if (format->wine_df->rgodf[i].dwType & DIDFT_BUTTON)
 		    dt[index].size = sizeof(BYTE);
@@ -469,8 +510,10 @@ static HRESULT create_DataFormat(LPCDIDATAFORMAT asked_format, DataFormat *forma
 		  debugstr_guid(asked_format->rgodf[j].pguid),
 		  _dump_dinput_GUID(asked_format->rgodf[j].pguid));
             TRACE("       * Offset: %3d\n", asked_format->rgodf[j].dwOfs);
-            TRACE("       * dwType: %08x\n", asked_format->rgodf[j].dwType);
+            TRACE("       * dwType: 0x%08x\n", asked_format->rgodf[j].dwType);
 	    TRACE("         "); _dump_EnumObjects_flags(asked_format->rgodf[j].dwType); TRACE("\n");
+            TRACE("       * dwFlags: 0x%08x\n", asked_format->rgodf[j].dwFlags);
+	    TRACE("         "); _dump_ObjectDataFormat_flags(asked_format->rgodf[j].dwFlags); TRACE("\n");
 	    
 	    if (asked_format->rgodf[j].dwType & DIDFT_BUTTON)
 		dt[index].size = sizeof(BYTE);
@@ -512,7 +555,7 @@ failed:
     return DIERR_OUTOFMEMORY;
 }
 
-/* find an object by it's offset in a data format */
+/* find an object by its offset in a data format */
 static int offset_to_object(const DataFormat *df, int offset)
 {
     int i;
@@ -769,6 +812,7 @@ HRESULT _set_action_map(LPDIRECTINPUTDEVICE8W iface, LPDIACTIONFORMATW lpdiaf, L
     DIOBJECTDATAFORMAT *obj_df = NULL;
     DIPROPDWORD dp;
     DIPROPRANGE dpr;
+    DIPROPSTRING dps;
     WCHAR username[MAX_PATH];
     DWORD username_size = MAX_PATH;
     int i, action = 0, num_actions = 0;
@@ -849,10 +893,20 @@ HRESULT _set_action_map(LPDIRECTINPUTDEVICE8W iface, LPDIACTIONFORMATW lpdiaf, L
     else
         lstrcpynW(username, lpszUserName, MAX_PATH);
 
+    dps.diph.dwSize = sizeof(dps);
+    dps.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+    dps.diph.dwObj = 0;
+    dps.diph.dwHow = DIPH_DEVICE;
+    if (dwFlags & DIDSAM_NOUSER)
+        dps.wsz[0] = '\0';
+    else
+        lstrcpynW(dps.wsz, username, sizeof(dps.wsz)/sizeof(WCHAR));
+    IDirectInputDevice8_SetProperty(iface, DIPROP_USERNAME, &dps.diph);
+
     /* Save the settings to disk */
     save_mapping_settings(iface, lpdiaf, username);
 
-    return IDirectInputDevice8WImpl_SetActionMap(iface, lpdiaf, lpszUserName, dwFlags);
+    return DI_OK;
 }
 
 /******************************************************************************
@@ -1014,10 +1068,10 @@ HRESULT WINAPI IDirectInputDevice2WImpl_SetCooperativeLevel(LPDIRECTINPUTDEVICE8
 
     if (hwnd && GetWindowLongW(hwnd, GWL_STYLE) & WS_CHILD) return E_HANDLE;
 
-    if (dwflags == (DISCL_NONEXCLUSIVE | DISCL_BACKGROUND))
+    if (!hwnd && dwflags == (DISCL_NONEXCLUSIVE | DISCL_BACKGROUND))
         hwnd = GetDesktopWindow();
 
-    if (!hwnd) return E_HANDLE;
+    if (!IsWindow(hwnd)) return E_HANDLE;
 
     /* For security reasons native does not allow exclusive background level
        for mouse and keyboard only */
@@ -1237,6 +1291,28 @@ HRESULT WINAPI IDirectInputDevice2WImpl_GetProperty(LPDIRECTINPUTDEVICE8W iface,
             TRACE("buffersize = %d\n", pd->dwData);
             break;
         }
+        case (DWORD_PTR) DIPROP_USERNAME:
+        {
+            LPDIPROPSTRING ps = (LPDIPROPSTRING)pdiph;
+            struct DevicePlayer *device_player;
+
+            if (pdiph->dwSize != sizeof(DIPROPSTRING)) return DIERR_INVALIDPARAM;
+
+            LIST_FOR_EACH_ENTRY(device_player, &This->dinput->device_players,
+                struct DevicePlayer, entry)
+            {
+                if (IsEqualGUID(&device_player->instance_guid, &This->guid))
+                {
+                    if (*device_player->username)
+                    {
+                        lstrcpynW(ps->wsz, device_player->username, sizeof(ps->wsz)/sizeof(WCHAR));
+                        return DI_OK;
+                    }
+                    else break;
+                }
+            }
+            return S_FALSE;
+        }
         case (DWORD_PTR) DIPROP_VIDPID:
             FIXME("DIPROP_VIDPID not implemented\n");
             return DIERR_UNSUPPORTED;
@@ -1308,6 +1384,34 @@ HRESULT WINAPI IDirectInputDevice2WImpl_SetProperty(
             This->queue_len  = pd->dwData;
 
             LeaveCriticalSection(&This->crit);
+            break;
+        }
+        case (DWORD_PTR) DIPROP_USERNAME:
+        {
+            LPCDIPROPSTRING ps = (LPCDIPROPSTRING)pdiph;
+            struct DevicePlayer *device_player;
+            BOOL found = FALSE;
+
+            if (pdiph->dwSize != sizeof(DIPROPSTRING)) return DIERR_INVALIDPARAM;
+
+            LIST_FOR_EACH_ENTRY(device_player, &This->dinput->device_players,
+                struct DevicePlayer, entry)
+            {
+                if (IsEqualGUID(&device_player->instance_guid, &This->guid))
+                {
+                    found = TRUE;
+                    break;
+                }
+            }
+            if (!found && (device_player =
+                    HeapAlloc(GetProcessHeap(), 0, sizeof(struct DevicePlayer))))
+            {
+                list_add_tail(&This->dinput->device_players, &device_player->entry);
+                device_player->instance_guid = This->guid;
+            }
+            if (device_player)
+                lstrcpynW(device_player->username, ps->wsz,
+                    sizeof(device_player->username)/sizeof(WCHAR));
             break;
         }
         default:
@@ -1508,7 +1612,10 @@ HRESULT WINAPI IDirectInputDevice2WImpl_CreateEffect(LPDIRECTINPUTDEVICE8W iface
                                                      LPDIRECTINPUTEFFECT *ppdef, LPUNKNOWN pUnkOuter)
 {
     FIXME("(this=%p,%s,%p,%p,%p): stub!\n", iface, debugstr_guid(rguid), lpeff, ppdef, pUnkOuter);
-    return DI_OK;
+
+    FIXME("not available in the generic implementation\n");
+    *ppdef = NULL;
+    return DIERR_UNSUPPORTED;
 }
 
 HRESULT WINAPI IDirectInputDevice2AImpl_CreateEffect(LPDIRECTINPUTDEVICE8A iface, REFGUID rguid, LPCDIEFFECT lpeff,
@@ -1617,8 +1724,9 @@ HRESULT WINAPI IDirectInputDevice2WImpl_Poll(LPDIRECTINPUTDEVICE8W iface)
     IDirectInputDeviceImpl *This = impl_from_IDirectInputDevice8W(iface);
 
     if (!This->acquired) return DIERR_NOTACQUIRED;
-    /* Because wine devices do not need to be polled, just return DI_NOEFFECT */
-    return DI_NOEFFECT;
+
+    check_dinput_events();
+    return DI_OK;
 }
 
 HRESULT WINAPI IDirectInputDevice2AImpl_Poll(LPDIRECTINPUTDEVICE8A iface)
@@ -1702,16 +1810,6 @@ HRESULT WINAPI IDirectInputDevice8WImpl_BuildActionMap(LPDIRECTINPUTDEVICE8W ifa
 	X(DIDBAM_HWDEFAULTS)
 #undef X
   
-    return DI_OK;
-}
-
-HRESULT WINAPI IDirectInputDevice8WImpl_SetActionMap(LPDIRECTINPUTDEVICE8W iface,
-                                                     LPDIACTIONFORMATW lpdiaf,
-                                                     LPCWSTR lpszUserName,
-                                                     DWORD dwFlags)
-{
-    FIXME("(%p)->(%p,%s,%08x): semi-stub !\n", iface, lpdiaf, debugstr_w(lpszUserName), dwFlags);
-
     return DI_OK;
 }
 

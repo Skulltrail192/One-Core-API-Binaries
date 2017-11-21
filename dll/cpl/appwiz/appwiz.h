@@ -43,6 +43,10 @@ FinishDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LONG CALLBACK
 NewLinkHere(HWND hwndCPl, UINT uMsg, LPARAM lParam1, LPARAM lParam2);
 
+/* removestartmenuitems.c */
+LONG CALLBACK
+ConfigStartMenu(HWND hwndCPl, UINT uMsg, LPARAM lParam1, LPARAM lParam2);
+
 void ShowLastWin32Error(HWND hWndOwner);
 
 typedef enum {
@@ -50,7 +54,7 @@ typedef enum {
     ADDON_MONO
 } addon_t;
 
-BOOL install_addon(addon_t) DECLSPEC_HIDDEN;
+BOOL install_addon(addon_t, HWND hwnd_parent) DECLSPEC_HIDDEN;
 
 extern HINSTANCE hInst DECLSPEC_HIDDEN;
 

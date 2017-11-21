@@ -1,4 +1,5 @@
-/* PROJECT:         ReactOS Kernel
+/*
+ * PROJECT:         ReactOS Kernel
  * LICENSE:         GPL - See COPYING in the top level directory
  * FILE:            base/system/autochk/autochk.c
  * PURPOSE:         Filesystem checker
@@ -264,6 +265,24 @@ LoadProvider(
     {
       RtlInitUnicodeString(&ProviderDll, L"ufat.dll");
     }
+    else if (wcscmp(FileSystem, L"EXT2") == 0
+             || wcscmp(FileSystem, L"EXT3") == 0
+             || wcscmp(FileSystem, L"EXT4") == 0)
+    {
+      RtlInitUnicodeString(&ProviderDll, L"uext2.dll");
+    }
+    else if (wcscmp(FileSystem, L"Btrfs") == 0)
+    {
+      RtlInitUnicodeString(&ProviderDll, L"ubtrfs.dll");
+    }
+    else if (wcscmp(FileSystem, L"RFSD") == 0)
+    {
+      RtlInitUnicodeString(&ProviderDll, L"ureiserfs.dll");
+    }
+    else if (wcscmp(FileSystem, L"FFS") == 0)
+    {
+      RtlInitUnicodeString(&ProviderDll, L"uffs.dll");
+    }
     else
     {
       return NULL;
@@ -290,7 +309,7 @@ CheckVolume(
     /* Get the file system */
     Status = GetFileSystem(DrivePath,
                            FileSystem,
-                           sizeof(FileSystem) / sizeof(FileSystem[0]));
+                           ARRAYSIZE(FileSystem));
     if (!NT_SUCCESS(Status))
     {
         DPRINT1("GetFileSystem() failed with status 0x%08lx\n", Status);
@@ -327,7 +346,7 @@ CheckVolume(
     NtDrivePath[wcslen(NtDrivePath)-1] = 0;
     RtlInitUnicodeString(&DrivePathU, NtDrivePath);
 
-    DPRINT("AUTOCHK: Checking %wZ\n", &DrivePathU);
+    DPRINT1("AUTOCHK: Checking %wZ\n", &DrivePathU);
     Status = ChkdskFunc(&DrivePathU,
                         TRUE, // FixErrors
                         TRUE, // Verbose

@@ -35,7 +35,7 @@ SetLrgFont(PMAP infoPtr)
         {
             SendMessageW(hCombo,
                          WM_GETTEXT,
-                         31,
+                         Len + 1,
                          (LPARAM)lpFontName);
 
             ZeroMemory(&lf,
@@ -140,6 +140,7 @@ LrgCellWndProc(HWND hwnd,
             EndPaint(hwnd,
                      &ps);
 
+            UpdateStatusBar(infoPtr->pActiveCell->ch);
             break;
         }
 

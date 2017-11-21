@@ -1,11 +1,13 @@
-// fdebug.cpp : Defines the entry point for the application.
-//
+/* fdebug.c : Defines the entry point for the application. */
 
-#include <windows.h>
+#include <tchar.h>
+
+#include <windef.h>
+#include <winbase.h>
+#include <wingdi.h>
+#include <winuser.h>
 #include <commdlg.h>
 #include <process.h>
-#include <stdio.h>
-#include <tchar.h>
 
 #include "resource.h"
 #include "rs232.h"
@@ -28,7 +30,7 @@ BOOL        bLocalEcho = FALSE;                            // Tells us if local 
 HANDLE        hCaptureFile;                                // Handle to the capture file
 DWORD        dwThreadId = 0;                                // Thread id of RS232 communication thread
 
-// Foward declarations of functions included in this code module:
+// Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -37,7 +39,7 @@ LRESULT CALLBACK    ConnectionDialogProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK    CaptureDialogProc(HWND, UINT, WPARAM, LPARAM);
 VOID                EnableFileMenuItemByID(UINT Id, BOOL Enable);
 VOID                CheckLocalEchoMenuItem(BOOL Checked);
-VOID                Rs232Thread(VOID* Parameter);
+VOID __cdecl        Rs232Thread(VOID* Parameter);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                        HINSTANCE hPrevInstance,
@@ -67,7 +69,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
     // Main message loop:
     while (GetMessage(&msg, NULL, 0, 0))
     {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        if (!TranslateAccelerator(hMainWnd, hAccelTable, &msg))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
@@ -437,7 +439,7 @@ VOID CheckLocalEchoMenuItem(BOOL Checked)
     CheckMenuItem(hFileMenu, IDM_FILE_LOCALECHO, MF_BYCOMMAND|(Checked ? MF_CHECKED : MF_UNCHECKED));
 }
 
-VOID Rs232Thread(VOID* Parameter)
+VOID __cdecl Rs232Thread(VOID* Parameter)
 {
     BYTE    Byte;
     TCHAR    String[MAX_PATH];

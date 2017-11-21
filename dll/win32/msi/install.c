@@ -573,7 +573,7 @@ UINT MSI_SetTargetPathW( MSIPACKAGE *package, LPCWSTR szFolder, LPCWSTR szFolder
         const WCHAR *dir;
         MSICOMPONENT *comp = file->Component;
 
-        if (!comp->Enabled || (comp->assembly && !comp->assembly->application)) continue;
+        if (!comp->Enabled || msi_is_global_assembly( comp )) continue;
 
         dir = msi_get_target_folder( package, comp->Directory );
         msi_free( file->TargetPath );
@@ -1174,11 +1174,11 @@ UINT WINAPI MsiGetFeatureCostA(MSIHANDLE hInstall, LPCSTR szFeature,
 static INT feature_cost( MSIFEATURE *feature )
 {
     INT cost = 0;
-    MSICOMPONENT *comp;
+    ComponentList *cl;
 
-    LIST_FOR_EACH_ENTRY( comp, &feature->Components, MSICOMPONENT, entry )
+    LIST_FOR_EACH_ENTRY( cl, &feature->Components, ComponentList, entry )
     {
-        cost += comp->Cost;
+        cost += cl->component->Cost;
     }
     return cost;
 }

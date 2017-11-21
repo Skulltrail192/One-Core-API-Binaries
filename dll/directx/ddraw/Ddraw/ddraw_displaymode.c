@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:            See COPYING in the top level directory
  * PROJECT:              ReactOS DirectX
- * FILE:                 ddraw/ddraw/ddraw_displaymode.c
+ * FILE:                 dll/directx/ddraw/Ddraw/ddraw_displaymode.c
  * PURPOSE:              IDirectDraw7 Implementation
  * PROGRAMMER:           Maarten Bosma, Magnus Olsen (add seh support)
  *
@@ -380,7 +380,7 @@ Main_DirectDraw_GetDisplayMode (LPDDRAWI_DIRECTDRAW_INT This, LPDDSURFACEDESC pD
         }
         else
         {
-            // FIXME: More stucture members might need to be filled
+            // FIXME: More structure members might need to be filled
 
             pDDSD->dwFlags |= DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_PITCH | DDSD_REFRESHRATE;
             pDDSD->dwHeight = This->lpLcl->lpGbl->vmiData.dwDisplayHeight;
@@ -416,7 +416,7 @@ Main_DirectDraw_GetDisplayMode4 (LPDDRAWI_DIRECTDRAW_INT This, LPDDSURFACEDESC2 
         }
         else
         {
-            // FIXME: More stucture members might need to be filled
+            // FIXME: More structure members might need to be filled
 
             pDDSD->dwFlags |= DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_PITCH | DDSD_REFRESHRATE;
             pDDSD->dwHeight = This->lpLcl->lpGbl->vmiData.dwDisplayHeight;

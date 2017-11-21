@@ -22,6 +22,9 @@
 
 #include <shellapi.h>
 #include <htiframe.h>
+#include <strsafe.h>
+
+extern HRESULT IUnknown_ShowDW(IUnknown * punk, BOOL fShow);
 
 #include "newatlinterfaces.h"
 
@@ -113,15 +116,8 @@ TODO:
     "language='*'\"")
 #endif // __GNUC__
 
-struct categoryCacheHeader
-{
-    long                dwSize;         // size of header only
-    long                version;        // currently 1
-    SYSTEMTIME          writeTime;      // time we were written to registry
-    long                classCount;     // number of classes following
-};
-
 static const unsigned int                   folderOptionsPageCountMax = 20;
+static const long                           BTP_DONT_UPDATE_HISTORY = 0;
 static const long                           BTP_UPDATE_CUR_HISTORY = 1;
 static const long                           BTP_UPDATE_NEXT_HISTORY = 2;
 
@@ -130,42 +126,6 @@ BOOL                                        createNewStuff = false;
 
 // this class is private to browseui.dll and is not registered externally?
 //DEFINE_GUID(CLSID_ShellFldSetExt, 0x6D5313C0, 0x8C62, 0x11D1, 0xB2, 0xCD, 0x00, 0x60, 0x97, 0xDF, 0x8C, 0x11);
-
-
-extern HRESULT CreateTravelLog(REFIID riid, void **ppv);
-extern HRESULT CreateBaseBar(REFIID riid, void **ppv);
-extern HRESULT CreateBaseBarSite(REFIID riid, void **ppv);
-
-// temporary
-extern HRESULT CreateInternetToolbar(REFIID riid, void **ppv);
-
-
-HMENU SHGetMenuFromID(HMENU topMenu, int theID)
-{
-    MENUITEMINFO                            menuItemInfo;
-
-    menuItemInfo.cbSize = sizeof(menuItemInfo);
-    menuItemInfo.fMask = MIIM_SUBMENU;
-    if (!GetMenuItemInfo(topMenu, theID, FALSE, &menuItemInfo))
-        return NULL;
-    return menuItemInfo.hSubMenu;
-}
-
-void SHCheckMenuItem(HMENU theMenu, int theID, BOOL checked)
-{
-    MENUITEMINFO                            menuItemInfo;
-
-    menuItemInfo.cbSize = sizeof(menuItemInfo);
-    menuItemInfo.fMask = MIIM_STATE;
-    if (GetMenuItemInfo(theMenu, theID, FALSE, &menuItemInfo))
-    {
-        if (checked)
-            menuItemInfo.fState |= MF_CHECKED;
-        else
-            menuItemInfo.fState &= ~MF_CHECKED;
-        SetMenuItemInfo(theMenu, theID, FALSE, &menuItemInfo);
-    }
-}
 
 void DeleteMenuItems(HMENU theMenu, unsigned int firstIDToDelete, unsigned int lastIDToDelete)
 {
@@ -194,8 +154,8 @@ HRESULT WINAPI SHBindToFolder(LPCITEMIDLIST path, IShellFolder **newFolder)
 {
     CComPtr<IShellFolder>                   desktop;
 
-    ::SHGetDesktopFolder(&desktop);
-    if (desktop == NULL)
+    HRESULT hr = ::SHGetDesktopFolder(&desktop);
+    if (FAILED_UNEXPECTEDLY(hr))
         return E_FAIL;
     if (path == NULL || path->mkid.cb == 0)
     {
@@ -203,11 +163,11 @@ HRESULT WINAPI SHBindToFolder(LPCITEMIDLIST path, IShellFolder **newFolder)
         desktop.p->AddRef ();
         return S_OK;
     }
-    return desktop->BindToObject (path, NULL, IID_IShellFolder, reinterpret_cast<void **>(newFolder));
+    return desktop->BindToObject (path, NULL, IID_PPV_ARG(IShellFolder, newFolder));
 }
 
-static const TCHAR szCabinetWndClass[] = TEXT("CabinetWClassX");
-static const TCHAR szExploreWndClass[] = TEXT("ExploreWClassX");
+static const TCHAR szCabinetWndClass[] = TEXT("CabinetWClass");
+static const TCHAR szExploreWndClass[] = TEXT("ExploreWClass");
 
 class CDockManager;
 class CShellBrowser;
@@ -219,7 +179,7 @@ private:
     CComPtr<IExplorerToolbar>               fExplorerToolbar;
 public:
     void Initialize(HWND parent, IUnknown *explorerToolbar);
-
+    void Destroy();
 private:
 
     // message handlers
@@ -243,8 +203,14 @@ void CToolbarProxy::Initialize(HWND parent, IUnknown *explorerToolbar)
         SubclassWindow(myWindow);
         SetWindowPos(NULL, -32000, -32000, 0, 0, SWP_NOOWNERZORDER | SWP_NOZORDER);
         hResult = explorerToolbar->QueryInterface(
-            IID_IExplorerToolbar, reinterpret_cast<void **>(&fExplorerToolbar));
+            IID_PPV_ARG(IExplorerToolbar, &fExplorerToolbar));
     }
+}
+
+void CToolbarProxy::Destroy()
+{
+    DestroyWindow();
+    fExplorerToolbar = NULL;
 }
 
 LRESULT CToolbarProxy::OnAddBitmap(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
@@ -280,8 +246,13 @@ Switch to a new bar when it receives an Exec(CGID_IDeskBand, 1, 1, vaIn, NULL);
     rebar
 */
 
+struct MenuBandInfo {
+    GUID barGuid;
+    BOOL fVertical;
+};
+
 class CShellBrowser :
-    public CWindowImpl<CShellBrowser, CWindow, CControlWinTraits>,
+    public CWindowImpl<CShellBrowser, CWindow, CFrameWinTraits>,
     public CComObjectRootEx<CComMultiThreadModelNoCS>,
     public IShellBrowser,
     public IDropTarget,
@@ -326,6 +297,8 @@ private:
     IOleObject                              *fHistoryObject;
     IStream                                 *fHistoryStream;
     IBindCtx                                *fHistoryBindContext;
+    HDSA menuDsa;
+    HACCEL m_hAccel;
 public:
 #if 0
     ULONG InternalAddRef()
@@ -342,18 +315,22 @@ public:
 
     CShellBrowser();
     ~CShellBrowser();
-    HRESULT Initialize(LPITEMIDLIST pidl, long b, long c, long d);
+    HRESULT Initialize(LPITEMIDLIST pidl, DWORD dwFlags);
 public:
     HRESULT BrowseToPIDL(LPCITEMIDLIST pidl, long flags);
     HRESULT BrowseToPath(IShellFolder *newShellFolder, LPCITEMIDLIST absolutePIDL,
         FOLDERSETTINGS *folderSettings, long flags);
     HRESULT GetMenuBand(REFIID riid, void **shellMenu);
-    HRESULT GetBaseBar(bool vertical, IUnknown **theBaseBar);
+    HRESULT GetBaseBar(bool vertical, REFIID riid, void **theBaseBar);
+    BOOL IsBandLoaded(const CLSID clsidBand, bool verticali, DWORD *pdwBandID);
     HRESULT ShowBand(const CLSID &classID, bool vertical);
     HRESULT NavigateToParent();
     HRESULT DoFolderOptions();
     static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     void RepositionBars();
+    HRESULT BuildExplorerBandMenu();
+    HRESULT BuildExplorerBandCategory(HMENU hBandsMenu, CATID category, DWORD dwPos, UINT *nbFound);
+    BOOL IsBuiltinBand(CLSID &bandID);
     virtual WNDPROC GetWindowProc()
     {
         return WindowProc;
@@ -363,6 +340,7 @@ public:
     HRESULT FireCommandStateChange(bool newState, int commandID);
     HRESULT FireCommandStateChangeAll();
     HRESULT UpdateForwardBackState();
+    HRESULT UpdateUpState();
     void UpdateGotoMenu(HMENU theMenu);
     void UpdateViewMenu(HMENU theMenu);
 
@@ -609,10 +587,13 @@ public:
     virtual HRESULT STDMETHODCALLTYPE GetPositionCookie(DWORD *pdwPositioncookie);
 
     // message handlers
+    LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnInitMenuPopup(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnSetFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT RelayMsgToShellView(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT PropagateMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnClose(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
     LRESULT OnFolderOptions(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
     LRESULT OnMapNetworkDrive(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
@@ -621,8 +602,9 @@ public:
     LRESULT OnGoBack(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
     LRESULT OnGoForward(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
     LRESULT OnGoUpLevel(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
+    LRESULT OnBackspace(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
     LRESULT OnGoHome(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
-    LRESULT OnIsThisLegal(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
+    LRESULT OnOrganizeFavorites(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
     LRESULT OnToggleStatusBarVisible(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
     LRESULT OnToggleToolbarLock(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
     LRESULT OnToggleToolbarBandVisible(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
@@ -631,7 +613,10 @@ public:
     LRESULT OnToggleTextLabels(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
     LRESULT OnToolbarCustomize(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
     LRESULT OnGoTravel(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
+    LRESULT OnRefresh(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
+    LRESULT OnExplorerBar(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled);
     LRESULT RelayCommands(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    HRESULT OnSearch();
 
     static ATL::CWndClassInfo& GetWndClassInfo()
     {
@@ -646,12 +631,15 @@ public:
     }
 
     BEGIN_MSG_MAP(CShellBrowser)
+        MESSAGE_HANDLER(WM_CREATE, OnCreate)
         MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
         MESSAGE_HANDLER(WM_SIZE, OnSize)
         MESSAGE_HANDLER(WM_INITMENUPOPUP, OnInitMenuPopup)
+        MESSAGE_HANDLER(WM_SETFOCUS, OnSetFocus)
         MESSAGE_HANDLER(WM_MEASUREITEM, RelayMsgToShellView)
         MESSAGE_HANDLER(WM_DRAWITEM, RelayMsgToShellView)
         MESSAGE_HANDLER(WM_MENUSELECT, RelayMsgToShellView)
+        MESSAGE_HANDLER(WM_WININICHANGE, PropagateMessage)
         COMMAND_ID_HANDLER(IDM_FILE_CLOSE, OnClose)
         COMMAND_ID_HANDLER(IDM_TOOLS_FOLDEROPTIONS, OnFolderOptions)
         COMMAND_ID_HANDLER(IDM_TOOLS_MAPNETWORKDRIVE, OnMapNetworkDrive)
@@ -661,15 +649,22 @@ public:
         COMMAND_ID_HANDLER(IDM_GOTO_FORWARD, OnGoForward)
         COMMAND_ID_HANDLER(IDM_GOTO_UPONELEVEL, OnGoUpLevel)
         COMMAND_ID_HANDLER(IDM_GOTO_HOMEPAGE, OnGoHome)
-        COMMAND_ID_HANDLER(IDM_HELP_ISTHISCOPYLEGAL, OnIsThisLegal)
+        COMMAND_ID_HANDLER(IDM_FAVORITES_ORGANIZEFAVORITES, OnOrganizeFavorites)
         COMMAND_ID_HANDLER(IDM_VIEW_STATUSBAR, OnToggleStatusBarVisible)
+        COMMAND_ID_HANDLER(IDM_VIEW_REFRESH, OnRefresh)
         COMMAND_ID_HANDLER(IDM_TOOLBARS_LOCKTOOLBARS, OnToggleToolbarLock)
         COMMAND_ID_HANDLER(IDM_TOOLBARS_STANDARDBUTTONS, OnToggleToolbarBandVisible)
         COMMAND_ID_HANDLER(IDM_TOOLBARS_ADDRESSBAR, OnToggleAddressBandVisible)
         COMMAND_ID_HANDLER(IDM_TOOLBARS_LINKSBAR, OnToggleLinksBandVisible)
         COMMAND_ID_HANDLER(IDM_TOOLBARS_TEXTLABELS, OnToggleTextLabels)
         COMMAND_ID_HANDLER(IDM_TOOLBARS_CUSTOMIZE, OnToolbarCustomize)
+        COMMAND_ID_HANDLER(IDM_EXPLORERBAR_SEARCH, OnExplorerBar)
+        COMMAND_ID_HANDLER(IDM_EXPLORERBAR_FOLDERS, OnExplorerBar)
+        COMMAND_ID_HANDLER(IDM_EXPLORERBAR_HISTORY, OnExplorerBar)
+        COMMAND_ID_HANDLER(IDM_EXPLORERBAR_FAVORITES, OnExplorerBar)
+        COMMAND_ID_HANDLER(IDM_BACKSPACE, OnBackspace)
         COMMAND_RANGE_HANDLER(IDM_GOTO_TRAVEL_FIRSTTARGET, IDM_GOTO_TRAVEL_LASTTARGET, OnGoTravel)
+        COMMAND_RANGE_HANDLER(IDM_EXPLORERBAND_BEGINCUSTOM, IDM_EXPLORERBAND_ENDCUSTOM, OnExplorerBar)
         MESSAGE_HANDLER(WM_COMMAND, RelayCommands)
     END_MSG_MAP()
 
@@ -708,8 +703,7 @@ CShellBrowser::CShellBrowser()
     fCurrentDirectoryPIDL = NULL;
     fStatusBar = NULL;
     fStatusBarVisible = true;
-    for (INT x = 0; x < 3; x++)
-        fClientBars[x].hwnd = NULL;
+    memset(fClientBars, 0, sizeof(fClientBars));
     fCurrentMenuBar = NULL;
     fHistoryObject = NULL;
     fHistoryStream = NULL;
@@ -718,19 +712,21 @@ CShellBrowser::CShellBrowser()
 
 CShellBrowser::~CShellBrowser()
 {
+    if (menuDsa)
+        DSA_Destroy(menuDsa);
 }
 
-HRESULT CShellBrowser::Initialize(LPITEMIDLIST pidl, long b, long c, long d)
+HRESULT CShellBrowser::Initialize(LPITEMIDLIST pidl, DWORD dwFlags)
 {
-    CComPtr<IDockingWindow>                 dockingWindow;
-    CComPtr<IStream>                        settingsStream;
     CComPtr<IPersistStreamInit>             persistStreamInit;
-    CComPtr<IOleCommandTarget>              commandTarget;
-    CComPtr<IObjectWithSite>                objectSite;
-    RECT                                    bounds = {0, 0, 800, 591};
     HRESULT                                 hResult;
+    CComPtr<IUnknown> clientBar;
 
     _AtlInitialConstruct();
+
+    menuDsa = DSA_Create(sizeof(MenuBandInfo), 5);
+    if (!menuDsa)
+        return E_OUTOFMEMORY;
 
     fCabinetState.cLength = sizeof(fCabinetState);
     if (ReadCabinetState(&fCabinetState, sizeof(fCabinetState)) == FALSE)
@@ -738,64 +734,49 @@ HRESULT CShellBrowser::Initialize(LPITEMIDLIST pidl, long b, long c, long d)
     }
 
     // create window
-    Create(HWND_DESKTOP, bounds, NULL, WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, 0, 0U);
+    Create(HWND_DESKTOP);
     if (m_hWnd == NULL)
         return E_FAIL;
 
-#if 0
-    hResult = CoCreateInstance(CLSID_InternetToolbar, NULL, CLSCTX_INPROC_SERVER, IID_IUnknown, (void **)&fClientBars[BIInternetToolbar].clientBar);
-    if (FAILED(hResult))
+    hResult = CInternetToolbar_CreateInstance(IID_PPV_ARG(IUnknown, &clientBar));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
-#else
-    hResult = CreateInternetToolbar(IID_IUnknown, (void **)&fClientBars[BIInternetToolbar].clientBar);
-    if (FAILED(hResult))
-        return hResult;
-#endif
+
+    fClientBars[BIInternetToolbar].clientBar = clientBar;
 
     // create interfaces
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IDockingWindow, reinterpret_cast<void **>(&dockingWindow));
-    if (FAILED(hResult))
-        return hResult;
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IPersistStreamInit, reinterpret_cast<void **>(&persistStreamInit));
-    if (FAILED(hResult))
-        return hResult;
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IOleCommandTarget, reinterpret_cast<void **>(&commandTarget));
-    if (FAILED(hResult))
-        return hResult;
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IObjectWithSite, reinterpret_cast<void **>(&objectSite));
-    if (FAILED(hResult))
+    hResult = clientBar->QueryInterface(IID_PPV_ARG(IPersistStreamInit, &persistStreamInit));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
 
-    hResult = objectSite->SetSite(static_cast<IShellBrowser *>(this));
-    if (FAILED(hResult))
+    hResult = IUnknown_SetSite(clientBar, static_cast<IShellBrowser *>(this));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
 
-    hResult = commandTarget->Exec(&CGID_PrivCITCommands, 1, 1 /* or 0 */, NULL, NULL);
-    if (FAILED(hResult))
+    hResult = IUnknown_Exec(clientBar, CGID_PrivCITCommands, 1, 1 /* or 0 */, NULL, NULL);
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
 
     // TODO: create settingsStream from registry entry
-    if (settingsStream.p == NULL)
+    //if (settingsStream.p)
+    //{
+    //    hResult = persistStreamInit->Load(settingsStream);
+    //    if (FAILED_UNEXPECTEDLY(hResult))
+    //        return hResult;
+    //}
+    //else
     {
         hResult = persistStreamInit->InitNew();
-        if (FAILED(hResult))
+        if (FAILED_UNEXPECTEDLY(hResult))
             return hResult;
     }
-    else
-    {
-        hResult = persistStreamInit->Load(settingsStream);
-        if (FAILED(hResult))
-            return hResult;
-    }
-    hResult = dockingWindow->ShowDW(TRUE);
-    if (FAILED(hResult))
+
+    hResult = IUnknown_ShowDW(clientBar, TRUE);
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
 
-    fToolbarProxy.Initialize(m_hWnd, fClientBars[BIInternetToolbar].clientBar);
+    fToolbarProxy.Initialize(m_hWnd, clientBar);
+
 
     // create status bar
     fStatusBar = CreateWindow(STATUSCLASSNAMEW, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS |
@@ -803,39 +784,16 @@ HRESULT CShellBrowser::Initialize(LPITEMIDLIST pidl, long b, long c, long d)
                     _AtlBaseModule.GetModuleInstance(), 0);
     fStatusBarVisible = true;
 
-    FOLDERSETTINGS                          newFolderSettings;
 
     // browse 
-    newFolderSettings.ViewMode = FVM_LIST;
-    newFolderSettings.fFlags = 0;
     hResult = BrowseToPIDL(pidl, BTP_UPDATE_NEXT_HISTORY);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
 
+    if ((dwFlags & SBSP_EXPLOREMODE) != NULL)
+        ShowBand(CLSID_ExplorerBand, true);
+
     ShowWindow(SW_SHOWNORMAL);
-
-
-    // test code to make brand band animate
-    {
-        CComPtr<IOleCommandTarget>              oleCommandTarget;
-        CComPtr<IServiceProvider>               serviceProvider;
-        CComPtr<IBandSite>                      bandSite;
-        CComPtr<IDeskBand>                      deskBand;
-        CComPtr<IWinEventHandler>               winEventHandler;
-        HRESULT                                 hResult;
-
-        if (fClientBars[BIInternetToolbar].clientBar.p == NULL)
-            return 0;
-        hResult = fClientBars[BIInternetToolbar].clientBar->
-            QueryInterface(IID_IServiceProvider, reinterpret_cast<void **>(&serviceProvider));
-        hResult = serviceProvider->QueryService(SID_IBandSite, IID_IBandSite, reinterpret_cast<void **>(&bandSite));
-        hResult = bandSite->QueryBand(5, &deskBand, NULL, NULL, 0);
-        deskBand->QueryInterface(IID_IWinEventHandler, reinterpret_cast<void **>(&winEventHandler));
-        winEventHandler->IsWindowOwner(NULL);
-        deskBand->QueryInterface(IID_IOleCommandTarget, reinterpret_cast<void **>(&oleCommandTarget));
-        oleCommandTarget->QueryStatus(&CGID_BrandCmdGroup, 0, NULL, NULL);
-        oleCommandTarget->Exec(&CGID_BrandCmdGroup, BBID_STARTANIMATION, 0, NULL, NULL);
-    }
 
     return S_OK;
 }
@@ -849,10 +807,13 @@ HRESULT CShellBrowser::BrowseToPIDL(LPCITEMIDLIST pidl, long flags)
     // called by shell view to browse to new folder
     // also called by explorer band to navigate to new folder
     hResult = SHBindToFolder(pidl, &newFolder);
-    newFolderSettings.ViewMode = FVM_LIST;
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return hResult;
+
+    newFolderSettings.ViewMode = FVM_ICON;
     newFolderSettings.fFlags = 0;
     hResult = BrowseToPath(newFolder, pidl, &newFolderSettings, flags);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     return S_OK;
 }
@@ -922,18 +883,32 @@ HRESULT IEGetNameAndFlagsEx(LPITEMIDLIST pidl, SHGDNF uFlags, long param10,
     LPWSTR pszBuf, UINT cchBuf, SFGAOF *rgfInOut)
 {
     CComPtr<IShellFolder>                   parentFolder;
-    LPITEMIDLIST                            childPIDL;
+    LPITEMIDLIST                            childPIDL = NULL;
     STRRET                                  L108;
     HRESULT                                 hResult;
 
-    hResult = SHBindToFolderIDListParent(NULL, pidl, &IID_IShellFolder,
-        reinterpret_cast<void **>(&parentFolder), &childPIDL);
+    hResult = SHBindToFolderIDListParent(NULL, pidl, &IID_PPV_ARG(IShellFolder, &parentFolder), &childPIDL);
+    if (FAILED(hResult))
+        goto cleanup;
+
     hResult = parentFolder->GetDisplayNameOf(childPIDL, uFlags, &L108);
+    if (FAILED(hResult))
+        goto cleanup;
+
     StrRetToBufW(&L108, childPIDL, pszBuf, cchBuf);
     if (rgfInOut)
+    {
         hResult = parentFolder->GetAttributesOf(1, const_cast<LPCITEMIDLIST *>(&childPIDL), rgfInOut);
-    ILFree(childPIDL);
-    return S_OK;
+        if (FAILED(hResult))
+            goto cleanup;
+    }
+
+    hResult = S_OK;
+
+cleanup:
+    if (childPIDL)
+        ILFree(childPIDL);
+    return hResult;
 }
 
 long IEGetNameAndFlags(LPITEMIDLIST pidl, SHGDNF uFlags, LPWSTR pszBuf, UINT cchBuf, SFGAOF *rgfInOut)
@@ -944,7 +919,6 @@ long IEGetNameAndFlags(LPITEMIDLIST pidl, SHGDNF uFlags, LPWSTR pszBuf, UINT cch
 HRESULT CShellBrowser::BrowseToPath(IShellFolder *newShellFolder,
     LPCITEMIDLIST absolutePIDL, FOLDERSETTINGS *folderSettings, long flags)
 {
-    CComPtr<IOleCommandTarget>              oleCommandTarget;
     CComPtr<IObjectWithSite>                objectWithSite;
     CComPtr<IShellFolder>                   saveCurrentShellFolder;
     CComPtr<IShellView>                     saveCurrentShellView;
@@ -963,7 +937,7 @@ HRESULT CShellBrowser::BrowseToPath(IShellFolder *newShellFolder,
         return E_INVALIDARG;
 
     hResult = GetTravelLog(&travelLog);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
 
     // update history
@@ -974,9 +948,14 @@ HRESULT CShellBrowser::BrowseToPath(IShellFolder *newShellFolder,
         // what to do with error? Do we want to halt browse because state save failed?
     }
 
+    if (fCurrentShellView)
+    {
+        fCurrentShellView->UIActivate(SVUIA_DEACTIVATE);
+    }
+
     // create view object
-    hResult = newShellFolder->CreateViewObject(m_hWnd, IID_IShellView, reinterpret_cast<void **>(&newShellView));
-    if (FAILED(hResult))
+    hResult = newShellFolder->CreateViewObject(m_hWnd, IID_PPV_ARG(IShellView, &newShellView));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     previousView = fCurrentShellViewWindow;
 
@@ -987,9 +966,7 @@ HRESULT CShellBrowser::BrowseToPath(IShellFolder *newShellFolder,
         ::SendMessage(fCurrentShellViewWindow, WM_SETREDRAW, 0, 0);
 
     // set site
-    hResult = newShellView->QueryInterface(IID_IObjectWithSite, reinterpret_cast<void **>(&objectWithSite));
-    if (SUCCEEDED(hResult) && objectWithSite.p != NULL)
-        hResult = objectWithSite->SetSite(static_cast<IDropTarget *>(this));
+    hResult = IUnknown_SetSite(newShellView, static_cast<IDropTarget *>(this));
 
     // update folder and view
     saveCurrentShellFolder = fCurrentShellFolder;
@@ -1007,7 +984,7 @@ HRESULT CShellBrowser::BrowseToPath(IShellFolder *newShellFolder,
     // create view window
     hResult = newShellView->CreateViewWindow(saveCurrentShellView, folderSettings,
         this, &shellViewWindowBounds, &newShellViewWindow);
-    if (FAILED(hResult) || newShellViewWindow == NULL)
+    if (FAILED_UNEXPECTEDLY(hResult) || newShellViewWindow == NULL)
     {
         fCurrentShellView = saveCurrentShellView;
         fCurrentShellFolder = saveCurrentShellFolder;
@@ -1030,10 +1007,6 @@ HRESULT CShellBrowser::BrowseToPath(IShellFolder *newShellFolder,
         saveCurrentShellView->DestroyViewWindow();
     fCurrentShellViewWindow = newShellViewWindow;
 
-    // get command target
-    oleCommandTarget.Release();
-    hResult = newShellView->QueryInterface(IID_IOleCommandTarget, reinterpret_cast<void **>(&oleCommandTarget));
-
     // no use
     saveCurrentShellView.Release();
     saveCurrentShellFolder.Release();
@@ -1053,7 +1026,18 @@ HRESULT CShellBrowser::BrowseToPath(IShellFolder *newShellFolder,
     }
 
     // completed
-    FireNavigateComplete(L"c:\\temp");      // TODO: use real path here
+    nameFlags = SHGDN_FORADDRESSBAR | SHGDN_FORPARSING;
+    hResult = IEGetNameAndFlags(fCurrentDirectoryPIDL, nameFlags, newTitle,
+        sizeof(newTitle) / sizeof(wchar_t), NULL);
+    if (SUCCEEDED(hResult))
+    {
+        FireNavigateComplete(newTitle);
+    }
+    else
+    {
+        FireNavigateComplete(L"ERROR");
+    }
+
     if (fCabinetState.fFullPathTitle)
         nameFlags = SHGDN_FORADDRESSBAR | SHGDN_FORPARSING;
     else
@@ -1061,43 +1045,68 @@ HRESULT CShellBrowser::BrowseToPath(IShellFolder *newShellFolder,
     hResult = IEGetNameAndFlags(fCurrentDirectoryPIDL, nameFlags, newTitle,
         sizeof(newTitle) / sizeof(wchar_t), NULL);
     if (SUCCEEDED(hResult))
+    {
         SetWindowText(newTitle);
 
-    // TODO: Update the window icon
+        LPCITEMIDLIST pidlChild;
+        INT index, indexOpen;
+        HIMAGELIST himlSmall, himlLarge;
+
+        CComPtr<IShellFolder> sf;
+        hResult = SHBindToParent(absolutePIDL, IID_PPV_ARG(IShellFolder, &sf), &pidlChild);
+        if (SUCCEEDED(hResult))
+        {
+            index = SHMapPIDLToSystemImageListIndex(sf, pidlChild, &indexOpen);
+
+            Shell_GetImageLists(&himlLarge, &himlSmall);
+
+            HICON icSmall = ImageList_GetIcon(himlSmall, indexOpen, 0);
+            HICON icLarge = ImageList_GetIcon(himlLarge, indexOpen, 0);
+
+            /* Hack to make it possible to release the old icons */
+            /* Something seems to go wrong with WM_SETICON */
+            HICON oldSmall = (HICON)SendMessage(WM_GETICON, ICON_SMALL, 0);
+            HICON oldLarge = (HICON)SendMessage(WM_GETICON, ICON_BIG,   0);
+
+            SendMessage(WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(icSmall));
+            SendMessage(WM_SETICON, ICON_BIG,   reinterpret_cast<LPARAM>(icLarge));
+
+            DestroyIcon(oldSmall);
+            DestroyIcon(oldLarge);
+        }
+    }
 
     FireCommandStateChangeAll();
     hResult = UpdateForwardBackState();
+    hResult = UpdateUpState();
     return S_OK;
 }
 
 HRESULT CShellBrowser::GetMenuBand(REFIID riid, void **shellMenu)
 {
-    CComPtr<IServiceProvider>               serviceProvider;
     CComPtr<IBandSite>                      bandSite;
     CComPtr<IDeskBand>                      deskBand;
     HRESULT                                 hResult;
 
-    if (fClientBars[BIInternetToolbar].clientBar.p == NULL)
+    if (!fClientBars[BIInternetToolbar].clientBar)
         return E_FAIL;
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IServiceProvider, reinterpret_cast<void **>(&serviceProvider));
-    if (FAILED(hResult))
+
+    hResult = IUnknown_QueryService(fClientBars[BIInternetToolbar].clientBar, SID_IBandSite, IID_PPV_ARG(IBandSite, &bandSite));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
-    hResult = serviceProvider->QueryService(SID_IBandSite, IID_IBandSite, reinterpret_cast<void **>(&bandSite));
-    if (FAILED(hResult))
-        return hResult;
+
     hResult = bandSite->QueryBand(1, &deskBand, NULL, NULL, 0);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
+
     return deskBand->QueryInterface(riid, shellMenu);
 }
 
-HRESULT CShellBrowser::GetBaseBar(bool vertical, IUnknown **theBaseBar)
+HRESULT CShellBrowser::GetBaseBar(bool vertical, REFIID riid, void **theBaseBar)
 {
     CComPtr<IUnknown>                       newBaseBar;
     CComPtr<IDeskBar>                       deskBar;
     CComPtr<IUnknown>                       newBaseBarSite;
-    CComPtr<IObjectWithSite>                objectWithSite;
     CComPtr<IDeskBarClient>                 deskBarClient;
     IUnknown                                **cache;
     HRESULT                                 hResult;
@@ -1108,104 +1117,188 @@ HRESULT CShellBrowser::GetBaseBar(bool vertical, IUnknown **theBaseBar)
         cache = &fClientBars[BIHorizontalBaseBar].clientBar.p;
     if (*cache == NULL)
     {
-        hResult = CreateBaseBar(IID_IUnknown, reinterpret_cast<void **>(&newBaseBar));
-        if (FAILED(hResult))
+        hResult = CBaseBar_CreateInstance(IID_PPV_ARG(IUnknown, &newBaseBar), vertical);
+        if (FAILED_UNEXPECTEDLY(hResult))
             return hResult;
-        hResult = CreateBaseBarSite(IID_IUnknown, reinterpret_cast<void **>(&newBaseBarSite));
-        if (FAILED(hResult))
+        hResult = CBaseBarSite_CreateInstance(IID_PPV_ARG(IUnknown, &newBaseBarSite), vertical);
+        if (FAILED_UNEXPECTEDLY(hResult))
             return hResult;
-
+    
+        // we have to store our basebar into cache now
+        *cache = newBaseBar;
+        newBaseBar->AddRef();
+        
         // tell the new base bar about the shell browser
-        hResult = newBaseBar->QueryInterface(IID_IObjectWithSite, reinterpret_cast<void **>(&objectWithSite));
-        if (FAILED(hResult))
-            return hResult;
-        hResult = objectWithSite->SetSite(static_cast<IDropTarget *>(this));
-        if (FAILED(hResult))
+        hResult = IUnknown_SetSite(newBaseBar, static_cast<IDropTarget *>(this));
+        if (FAILED_UNEXPECTEDLY(hResult))
             return hResult;
 
         // tell the new base bar about the new base bar site
-        hResult = newBaseBar->QueryInterface(IID_IDeskBar, reinterpret_cast<void **>(&deskBar));
-        if (FAILED(hResult))
+        hResult = newBaseBar->QueryInterface(IID_PPV_ARG(IDeskBar, &deskBar));
+        if (FAILED_UNEXPECTEDLY(hResult))
             return hResult;
         hResult = deskBar->SetClient(newBaseBarSite);
-        if (FAILED(hResult))
+        if (FAILED_UNEXPECTEDLY(hResult))
             return hResult;
 
         // tell the new base bar site about the new base bar
-        hResult = newBaseBarSite->QueryInterface(IID_IDeskBarClient, reinterpret_cast<void **>(&deskBarClient));
-        if (FAILED(hResult))
+        hResult = newBaseBarSite->QueryInterface(IID_PPV_ARG(IDeskBarClient, &deskBarClient));
+        if (FAILED_UNEXPECTEDLY(hResult))
             return hResult;
         hResult = deskBarClient->SetDeskBarSite(newBaseBar);
-        if (FAILED(hResult))
+        if (FAILED_UNEXPECTEDLY(hResult))
             return hResult;
 
-        *cache = newBaseBar.Detach();
     }
-    return (*cache)->QueryInterface(IID_IUnknown, reinterpret_cast<void **>(theBaseBar));
+    return (*cache)->QueryInterface(riid, theBaseBar);
+}
+
+BOOL CShellBrowser::IsBandLoaded(const CLSID clsidBand, bool vertical, DWORD *pdwBandID)
+{
+    HRESULT                                 hResult;
+    CComPtr<IDeskBar>                       deskBar;
+    CComPtr<IUnknown>                       baseBarSite;
+    CComPtr<IBandSite>                      bandSite;
+    CLSID                                   clsidTmp;
+    DWORD                                   numBands;
+    DWORD                                   dwBandID;
+    DWORD                                   i;
+
+    /* Get our basebarsite to be able to enumerate bands */
+    hResult = GetBaseBar(vertical, IID_PPV_ARG(IDeskBar, &deskBar));
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return FALSE;
+    hResult = deskBar->GetClient(&baseBarSite);
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return FALSE;
+    hResult = baseBarSite->QueryInterface(IID_PPV_ARG(IBandSite, &bandSite));
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return FALSE;
+
+    hResult = bandSite->EnumBands(-1, &numBands);
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return FALSE;
+
+    for(i = 0; i < numBands; i++)
+    {
+        CComPtr<IPersist> bandPersist;
+
+        hResult = bandSite->EnumBands(i, &dwBandID);
+        if (FAILED_UNEXPECTEDLY(hResult))
+            return FALSE;
+
+        hResult = bandSite->GetBandObject(dwBandID, IID_PPV_ARG(IPersist, &bandPersist));
+        if (FAILED_UNEXPECTEDLY(hResult))
+            return FALSE;
+        hResult = bandPersist->GetClassID(&clsidTmp);
+        if (FAILED_UNEXPECTEDLY(hResult))
+            return FALSE;
+        if (IsEqualGUID(clsidBand, clsidTmp))
+        {
+            if (pdwBandID) *pdwBandID = dwBandID;
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 HRESULT CShellBrowser::ShowBand(const CLSID &classID, bool vertical)
 {
     CComPtr<IDockingWindow>                 dockingWindow;
-    CComPtr<IOleCommandTarget>              oleCommandTarget;
     CComPtr<IUnknown>                       baseBarSite;
     CComPtr<IUnknown>                       newBand;
-    CComPtr<IUnknown>                       theBaseBar;
     CComPtr<IDeskBar>                       deskBar;
     VARIANT                                 vaIn;
     HRESULT                                 hResult;
+    DWORD                                   dwBandID;
 
-    hResult = GetBaseBar(vertical, (IUnknown **)&theBaseBar);
-    if (FAILED(hResult))
+    hResult = GetBaseBar(vertical, IID_PPV_ARG(IDeskBar, &deskBar));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
-    hResult = CoCreateInstance(classID, NULL, CLSCTX_INPROC_SERVER, IID_IUnknown,
-        reinterpret_cast<void **>(&newBand));
-    if (FAILED(hResult))
-        return hResult;
-    hResult = theBaseBar->QueryInterface(IID_IDeskBar, reinterpret_cast<void **>(&deskBar));
-    if (FAILED(hResult))
-        return hResult;
+    
     hResult = deskBar->GetClient(&baseBarSite);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
-    hResult = theBaseBar->QueryInterface(IID_IDockingWindow, reinterpret_cast<void **>(&dockingWindow));
-    if (FAILED(hResult))
+
+    hResult = deskBar->QueryInterface(IID_PPV_ARG(IDockingWindow, &dockingWindow));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
-    hResult = baseBarSite->QueryInterface(IID_IOleCommandTarget, reinterpret_cast<void **>(&oleCommandTarget));
-    if (FAILED(hResult))
-        return hResult;
+    
+    if (!IsBandLoaded(classID, vertical, &dwBandID))
+    {
+        TRACE("ShowBand called for CLSID %s, vertical=%d...\n", wine_dbgstr_guid(&classID), vertical);
+        if (IsEqualCLSID(CLSID_ExplorerBand, classID))
+        {
+            TRACE("CLSID_ExplorerBand requested, building internal band.\n");
+            hResult = CExplorerBand_CreateInstance(IID_PPV_ARG(IUnknown, &newBand));
+            if (FAILED_UNEXPECTEDLY(hResult))
+                return hResult;
+        }
+        else
+        {
+            TRACE("A different CLSID requested, using CoCreateInstance.\n");
+            hResult = CoCreateInstance(classID, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARG(IUnknown, &newBand));
+            if (FAILED_UNEXPECTEDLY(hResult))
+                return hResult;
+        }
+    }
+    else
+    {
+        CComPtr<IBandSite>                  pBandSite;
+
+        hResult = baseBarSite->QueryInterface(IID_PPV_ARG(IBandSite, &pBandSite));
+        if (!SUCCEEDED(hResult))
+        {
+            ERR("Can't get IBandSite interface\n");
+            return E_FAIL;
+        }
+        hResult = pBandSite->GetBandObject(dwBandID, IID_PPV_ARG(IUnknown, &newBand));
+        if (!SUCCEEDED(hResult))
+        {
+            ERR("Can't find band object\n");
+            return E_FAIL;
+        }
+
+        // It's hackish, but we should be able to show the wanted band until we
+        // find the proper way to do this (but it seems to work to add a new band)
+        // Here we'll just re-add the existing band to the site, causing it to display.
+    }
     V_VT(&vaIn) = VT_UNKNOWN;
     V_UNKNOWN(&vaIn) = newBand.p;
-    hResult = oleCommandTarget->Exec(&CGID_IDeskBand, 1, 1, &vaIn, NULL);
-    if (FAILED(hResult))
+    hResult = IUnknown_Exec(baseBarSite, CGID_IDeskBand, 1, 1, &vaIn, NULL);
+    if (FAILED_UNEXPECTEDLY(hResult))
+    {
         return hResult;
+    }
+
     hResult = dockingWindow->ShowDW(TRUE);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
+
     return S_OK;
 }
 
 HRESULT CShellBrowser::NavigateToParent()
 {
-    LPITEMIDLIST                            newDirectory;
-    HRESULT                                 hResult;
-
-    newDirectory = ILClone(fCurrentDirectoryPIDL);
+    LPITEMIDLIST newDirectory = ILClone(fCurrentDirectoryPIDL);
     if (newDirectory == NULL)
         return E_OUTOFMEMORY;
+    if (_ILIsDesktop(newDirectory))
+    {
+        ILFree(newDirectory);
+        return E_INVALIDARG;
+    }
     ILRemoveLastID(newDirectory);
-    hResult = BrowseToPIDL(newDirectory, BTP_UPDATE_CUR_HISTORY | BTP_UPDATE_NEXT_HISTORY);
+    HRESULT hResult = BrowseToPIDL(newDirectory, BTP_UPDATE_CUR_HISTORY | BTP_UPDATE_NEXT_HISTORY);
     ILFree(newDirectory);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     return S_OK;
 }
 
 BOOL CALLBACK AddFolderOptionsPage(HPROPSHEETPAGE thePage, LPARAM lParam)
 {
-    PROPSHEETHEADER                         *sheetInfo;
-
-    sheetInfo = (PROPSHEETHEADER *)lParam;
+    PROPSHEETHEADER* sheetInfo = reinterpret_cast<PROPSHEETHEADER*>(lParam);
     if (sheetInfo->nPages >= folderOptionsPageCountMax)
         return FALSE;
     sheetInfo->phpage[sheetInfo->nPages] = thePage;
@@ -1216,7 +1309,6 @@ BOOL CALLBACK AddFolderOptionsPage(HPROPSHEETPAGE thePage, LPARAM lParam)
 HRESULT CShellBrowser::DoFolderOptions()
 {
     CComPtr<IShellPropSheetExt>             folderOptionsSheet;
-    CComPtr<IObjectWithSite>                objectWithSite;
     PROPSHEETHEADER                         m_PropSheet;
     HPROPSHEETPAGE                          m_psp[folderOptionsPageCountMax];
 //    CComPtr<IGlobalFolderSettings>          globalSettings;
@@ -1228,37 +1320,39 @@ HRESULT CShellBrowser::DoFolderOptions()
 
     // create sheet object
     hResult = CoCreateInstance(CLSID_ShellFldSetExt, NULL, CLSCTX_INPROC_SERVER,
-        IID_IShellPropSheetExt, reinterpret_cast<void **>(&folderOptionsSheet));
-    if (FAILED(hResult))
+        IID_PPV_ARG(IShellPropSheetExt, &folderOptionsSheet));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return E_FAIL;
 
     // must set site in order for Apply to all Folders on Advanced page to be enabled
-    hResult = folderOptionsSheet->QueryInterface(IID_IObjectWithSite, reinterpret_cast<void **>(&objectWithSite));
-    if (SUCCEEDED(hResult) && objectWithSite.p != NULL)
-        hResult = objectWithSite->SetSite(static_cast<IDispatch *>(this));
+    hResult = IUnknown_SetSite(folderOptionsSheet, static_cast<IDispatch *>(this));
     m_PropSheet.phpage = m_psp;
 
 #if 0
-    hResult = CoCreateInstance(CLSID_GlobalFolderSettings, NULL, CLSCTX_INPROC_SERVER, IID_IGlobalFolderSettings, (void **)&globalSettings);
-    if (FAILED(hResult))
+    hResult = CoCreateInstance(CLSID_GlobalFolderSettings, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARG(IGlobalFolderSettings, &globalSettings));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return E_FAIL;
     hResult = globalSettings->Get(&shellState, sizeof(shellState));
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return E_FAIL;
 #endif
 
     // add pages
     hResult = folderOptionsSheet->AddPages(AddFolderOptionsPage, reinterpret_cast<LPARAM>(&m_PropSheet));
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return E_FAIL;
 
+// CORE-11140 : Disabled this bit, because it prevents the folder options from showing.
+//              It returns 'E_NOTIMPL'
+#if 0
     if (fCurrentShellView != NULL)
     {
         hResult = fCurrentShellView->AddPropertySheetPages(
             0, AddFolderOptionsPage, reinterpret_cast<LPARAM>(&m_PropSheet));
-        if (FAILED(hResult))
+        if (FAILED_UNEXPECTEDLY(hResult))
             return E_FAIL;
     }
+#endif
 
     // show sheet
     m_PropSheet.dwSize = sizeof(PROPSHEETHEADER);
@@ -1276,7 +1370,6 @@ LRESULT CALLBACK CShellBrowser::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, 
     CShellBrowser                           *pThis = reinterpret_cast<CShellBrowser *>(hWnd);
     _ATL_MSG                                msg(pThis->m_hWnd, uMsg, wParam, lParam);
     LRESULT                                 lResult;
-    CComPtr<IMenuBand>                      menuBand;
     const _ATL_MSG                          *previousMessage;
     BOOL                                    handled;
     WNDPROC                                 saveWindowProc;
@@ -1286,7 +1379,8 @@ LRESULT CALLBACK CShellBrowser::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, 
     previousMessage = pThis->m_pCurrentMsg;
     pThis->m_pCurrentMsg = &msg;
 
-    hResult = pThis->GetMenuBand(IID_IMenuBand, reinterpret_cast<void **>(&menuBand));
+    CComPtr<IMenuBand> menuBand;
+    hResult = pThis->GetMenuBand(IID_PPV_ARG(IMenuBand, &menuBand));
     if (SUCCEEDED(hResult) && menuBand.p != NULL)
     {
         hResult = menuBand->TranslateMenuMessage(&msg, &lResult);
@@ -1296,6 +1390,7 @@ LRESULT CALLBACK CShellBrowser::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, 
         wParam = msg.wParam;
         lParam = msg.lParam;
     }
+    menuBand.Release();
 
     handled = pThis->ProcessWindowMessage(hWnd, uMsg, wParam, lParam, lResult, 0);
     ATLASSERT(pThis->m_pCurrentMsg == &msg);
@@ -1303,10 +1398,10 @@ LRESULT CALLBACK CShellBrowser::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, 
     {
         if (uMsg == WM_NCDESTROY)
         {
-            saveWindowProc = reinterpret_cast<WNDPROC>(GetWindowLongPtr(hWnd, GWL_WNDPROC));
+            saveWindowProc = reinterpret_cast<WNDPROC>(::GetWindowLongPtr(hWnd, GWL_WNDPROC));
             lResult = pThis->DefWindowProc(uMsg, wParam, lParam);
-            if (saveWindowProc == reinterpret_cast<WNDPROC>(GetWindowLongPtr(hWnd, GWL_WNDPROC)))
-                SetWindowLongPtr(hWnd, GWL_WNDPROC, (LONG_PTR)pThis->m_pfnSuperWindowProc);
+            if (saveWindowProc == reinterpret_cast<WNDPROC>(::GetWindowLongPtr(hWnd, GWL_WNDPROC)))
+                ::SetWindowLongPtr(hWnd, GWL_WNDPROC, (LONG_PTR)pThis->m_pfnSuperWindowProc);
             pThis->m_dwState |= WINSTATE_DESTROYED;
         }
         else
@@ -1326,13 +1421,11 @@ void CShellBrowser::RepositionBars()
 {
     RECT                                    clientRect;
     RECT                                    statusRect;
-    RECT                                    toolbarRect;
     int                                     x;
-    HRESULT                                 hResult;
 
     GetClientRect(&clientRect);
 
-    if (fStatusBarVisible)
+    if (fStatusBarVisible && fStatusBar)
     {
         ::GetWindowRect(fStatusBar, &statusRect);
         ::SetWindowPos(fStatusBar, NULL, clientRect.left, clientRect.bottom - (statusRect.bottom - statusRect.top),
@@ -1343,33 +1436,56 @@ void CShellBrowser::RepositionBars()
 
     for (x = 0; x < 3; x++)
     {
-        CComPtr<IOleWindow>                 oleWindow;
-
-        if (fClientBars[x].hwnd == NULL && fClientBars[x].clientBar != NULL)
+        HWND hwnd = fClientBars[x].hwnd;
+        RECT borderSpace = fClientBars[x].borderSpace;
+        if (hwnd == NULL && fClientBars[x].clientBar != NULL)
         {
-            hResult = fClientBars[x].clientBar->QueryInterface(
-                IID_IOleWindow, reinterpret_cast<void **>(&oleWindow));
-            if (SUCCEEDED(hResult))
-                hResult = oleWindow->GetWindow(&fClientBars[x].hwnd);
+            IUnknown_GetWindow(fClientBars[x].clientBar, &hwnd);
+            fClientBars[x].hwnd = hwnd;
         }
-        if (fClientBars[x].hwnd != NULL)
+        if (hwnd != NULL)
         {
-            toolbarRect = clientRect;
-            if (fClientBars[x].borderSpace.top != 0)
-                toolbarRect.bottom = toolbarRect.top + fClientBars[x].borderSpace.top;
-            else if (fClientBars[x].borderSpace.bottom != 0)
-                toolbarRect.top = toolbarRect.bottom - fClientBars[x].borderSpace.bottom;
-            if (fClientBars[x].borderSpace.left != 0)
-                toolbarRect.right = toolbarRect.left + fClientBars[x].borderSpace.left;
-            else if (fClientBars[x].borderSpace.right != 0)
-                toolbarRect.left = toolbarRect.right - fClientBars[x].borderSpace.right;
-            ::SetWindowPos(fClientBars[x].hwnd, NULL, toolbarRect.left, toolbarRect.top,
-                                toolbarRect.right - toolbarRect.left,
-                                toolbarRect.bottom - toolbarRect.top, SWP_NOOWNERZORDER | SWP_NOZORDER);
-            clientRect.top += fClientBars[x].borderSpace.top;
-            clientRect.left += fClientBars[x].borderSpace.left;
-            clientRect.bottom += fClientBars[x].borderSpace.bottom;
-            clientRect.right += fClientBars[x].borderSpace.right;
+            RECT toolbarRect = clientRect;
+            if (borderSpace.top != 0)
+            {
+                toolbarRect.bottom = toolbarRect.top + borderSpace.top;
+            }
+            else if (borderSpace.bottom != 0)
+            {
+                toolbarRect.top = toolbarRect.bottom - borderSpace.bottom;
+            }
+            else if (borderSpace.left != 0)
+            {
+                toolbarRect.right = toolbarRect.left + borderSpace.left;
+            }
+            else if (borderSpace.right != 0)
+            {
+                toolbarRect.left = toolbarRect.right - borderSpace.right;
+            }
+
+            ::SetWindowPos(hwnd, NULL,
+                toolbarRect.left,
+                toolbarRect.top,
+                toolbarRect.right - toolbarRect.left,
+                toolbarRect.bottom - toolbarRect.top,
+                SWP_NOOWNERZORDER | SWP_NOZORDER);
+
+            if (borderSpace.top != 0)
+            {
+                clientRect.top = toolbarRect.bottom;
+            }
+            else if (borderSpace.bottom != 0)
+            {
+                clientRect.bottom = toolbarRect.top;
+            }
+            else if (borderSpace.left != 0)
+            {
+                clientRect.left = toolbarRect.right;
+            }
+            else if (borderSpace.right != 0)
+            {
+                clientRect.right = toolbarRect.left;
+            }
         }
     }
     ::SetWindowPos(fCurrentShellViewWindow, NULL, clientRect.left, clientRect.top,
@@ -1395,7 +1511,7 @@ HRESULT CShellBrowser::FireEvent(DISPID dispIdMember, int argCount, VARIANT *arg
         {
             CComPtr<IDispatch>          theDispatch;
 
-            hResult = (*pp)->QueryInterface(IID_IDispatch, reinterpret_cast<void **>(&theDispatch));
+            hResult = (*pp)->QueryInterface(IID_PPV_ARG(IDispatch, &theDispatch));
             hResult = theDispatch->Invoke(dispIdMember, GUID_NULL, 0, DISPATCH_METHOD, &params, NULL, NULL, NULL);
         }
         pp++;
@@ -1407,7 +1523,7 @@ HRESULT CShellBrowser::FireEvent(DISPID dispIdMember, int argCount, VARIANT *arg
         {
             CComPtr<IDispatch>          theDispatch;
 
-            hResult = (*pp)->QueryInterface(IID_IDispatch, reinterpret_cast<void **>(&theDispatch));
+            hResult = (*pp)->QueryInterface(IID_PPV_ARG(IDispatch, &theDispatch));
             hResult = theDispatch->Invoke(dispIdMember, GUID_NULL, 0, DISPATCH_METHOD, &params, NULL, NULL, NULL);
         }
         pp++;
@@ -1462,7 +1578,7 @@ HRESULT CShellBrowser::UpdateForwardBackState()
     canGoBack = false;
     canGoForward = false;
     hResult = GetTravelLog(&travelLog);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     hResult = travelLog->GetTravelEntry(static_cast<IDropTarget *>(this), TLOG_BACK, &unusedEntry);
     if (SUCCEEDED(hResult))
@@ -1481,9 +1597,22 @@ HRESULT CShellBrowser::UpdateForwardBackState()
     return S_OK;
 }
 
+HRESULT CShellBrowser::UpdateUpState()
+{
+    bool canGoUp;
+    HRESULT hResult;
+
+    canGoUp = true;
+    if (_ILIsDesktop(fCurrentDirectoryPIDL))
+        canGoUp = false;
+    hResult = FireCommandStateChange(canGoUp, 3);
+    return S_OK;
+}
+
 void CShellBrowser::UpdateGotoMenu(HMENU theMenu)
 {
     CComPtr<ITravelLog>                     travelLog;
+    CComPtr<ITravelEntry>                   unusedEntry;
     int                                     position;
     MENUITEMINFO                            menuItemInfo;
     HRESULT                                 hResult;
@@ -1492,8 +1621,37 @@ void CShellBrowser::UpdateGotoMenu(HMENU theMenu)
 
     position = GetMenuItemCount(theMenu);
     hResult = GetTravelLog(&travelLog);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return;
+
+    hResult = travelLog->GetTravelEntry(static_cast<IDropTarget *>(this),
+                                        TLOG_BACK,
+                                        &unusedEntry);
+
+    if (SUCCEEDED(hResult))
+    {
+        SHEnableMenuItem(theMenu, IDM_GOTO_BACK, TRUE);
+        unusedEntry.Release();
+    }
+    else
+        SHEnableMenuItem(theMenu, IDM_GOTO_BACK, FALSE);
+
+    hResult = travelLog->GetTravelEntry(static_cast<IDropTarget *>(this),
+                                        TLOG_FORE,
+                                        &unusedEntry);
+
+    if (SUCCEEDED(hResult))
+    {
+        SHEnableMenuItem(theMenu, IDM_GOTO_FORWARD, TRUE);
+        unusedEntry.Release();
+    }
+    else
+        SHEnableMenuItem(theMenu, IDM_GOTO_FORWARD, FALSE);
+
+    SHEnableMenuItem(theMenu,
+                     IDM_GOTO_UPONELEVEL,
+                     !_ILIsDesktop(fCurrentDirectoryPIDL));
+
     hResult = travelLog->InsertMenuEntries(static_cast<IDropTarget *>(this), theMenu, position,
         IDM_GOTO_TRAVEL_FIRSTTARGET, IDM_GOTO_TRAVEL_LASTTARGET, TLMENUF_BACKANDFORTH | TLMENUF_CHECKCURRENT);
     if (SUCCEEDED(hResult))
@@ -1508,7 +1666,6 @@ void CShellBrowser::UpdateGotoMenu(HMENU theMenu)
 
 void CShellBrowser::UpdateViewMenu(HMENU theMenu)
 {
-    CComPtr<IOleCommandTarget>              oleCommandTarget;
     CComPtr<ITravelLog>                     travelLog;
     HMENU                                   gotoMenu;
     OLECMD                                  commandList[5];
@@ -1527,21 +1684,32 @@ void CShellBrowser::UpdateViewMenu(HMENU theMenu)
     commandList[3].cmdID = ITID_TOOLBARLOCKED;
     commandList[4].cmdID = ITID_CUSTOMIZEENABLED;
 
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IOleCommandTarget, reinterpret_cast<void **>(&oleCommandTarget));
-    if (SUCCEEDED(hResult))
-        hResult = oleCommandTarget->QueryStatus(&CGID_PrivCITCommands, 5, commandList, NULL);
-    if (FAILED(hResult))
+    hResult = IUnknown_QueryStatus(fClientBars[BIInternetToolbar].clientBar,
+                                   CGID_PrivCITCommands, 5, commandList, NULL);
+    if (FAILED_UNEXPECTEDLY(hResult))
         DeleteMenu(theMenu, IDM_VIEW_TOOLBARS, MF_BYCOMMAND);
     else
     {
+        menuItemInfo.cbSize = sizeof(menuItemInfo);
+        menuItemInfo.fMask = MIIM_SUBMENU;
+        GetMenuItemInfo(theMenu, IDM_VIEW_TOOLBARS, FALSE, &menuItemInfo);
+        DestroyMenu(menuItemInfo.hSubMenu);
+
         toolbarMenuBar = LoadMenu(_AtlBaseModule.GetResourceInstance(), MAKEINTRESOURCE(IDM_CABINET_CONTEXTMENU));
         toolbarMenu = GetSubMenu(toolbarMenuBar, 0);
+        RemoveMenu(toolbarMenuBar, 0, MF_BYPOSITION);
+        DestroyMenu(toolbarMenuBar);
 
-        SHCheckMenuItem(toolbarMenu, IDM_TOOLBARS_STANDARDBUTTONS, commandList[0].cmdf);
-        SHCheckMenuItem(toolbarMenu, IDM_TOOLBARS_ADDRESSBAR, commandList[1].cmdf & OLECMDF_ENABLED);
-        SHCheckMenuItem(toolbarMenu, IDM_TOOLBARS_LINKSBAR, commandList[2].cmdf & OLECMDF_ENABLED);
-        SHCheckMenuItem(toolbarMenu, IDM_TOOLBARS_LOCKTOOLBARS, commandList[3].cmdf & OLECMDF_ENABLED);
+        // TODO: Implement
+        SHEnableMenuItem(toolbarMenu, IDM_TOOLBARS_STANDARDBUTTONS, commandList[0].cmdf & OLECMDF_ENABLED);
+        SHEnableMenuItem(toolbarMenu, IDM_TOOLBARS_ADDRESSBAR, commandList[1].cmdf & OLECMDF_ENABLED);
+        SHEnableMenuItem(toolbarMenu, IDM_TOOLBARS_LINKSBAR, commandList[2].cmdf & OLECMDF_ENABLED);
+        SHEnableMenuItem(toolbarMenu, IDM_TOOLBARS_CUSTOMIZE, commandList[4].cmdf & OLECMDF_ENABLED);
+
+        SHCheckMenuItem(toolbarMenu, IDM_TOOLBARS_STANDARDBUTTONS, commandList[0].cmdf & OLECMDF_LATCHED);
+        SHCheckMenuItem(toolbarMenu, IDM_TOOLBARS_ADDRESSBAR, commandList[1].cmdf & OLECMDF_LATCHED);
+        SHCheckMenuItem(toolbarMenu, IDM_TOOLBARS_LINKSBAR, commandList[2].cmdf & OLECMDF_LATCHED);
+        SHCheckMenuItem(toolbarMenu, IDM_TOOLBARS_LOCKTOOLBARS, commandList[3].cmdf & OLECMDF_LATCHED);
         if ((commandList[4].cmdf & OLECMDF_ENABLED) == 0)
             DeleteMenu(toolbarMenu, IDM_TOOLBARS_CUSTOMIZE, MF_BYCOMMAND);
         DeleteMenu(toolbarMenu, IDM_TOOLBARS_TEXTLABELS, MF_BYCOMMAND);
@@ -1555,6 +1723,124 @@ void CShellBrowser::UpdateViewMenu(HMENU theMenu)
     SHCheckMenuItem(theMenu, IDM_VIEW_STATUSBAR, fStatusBarVisible ? TRUE : FALSE);
 }
 
+HRESULT CShellBrowser::BuildExplorerBandMenu()
+{
+    HMENU                                   hBandsMenu;
+    UINT                                    nbFound;
+
+    hBandsMenu = SHGetMenuFromID(fCurrentMenuBar, IDM_VIEW_EXPLORERBAR);
+    if (!hBandsMenu)
+    {
+        OutputDebugString(L"No menu !\n");
+        return E_FAIL;
+    }
+    DSA_DeleteAllItems(menuDsa);
+    BuildExplorerBandCategory(hBandsMenu, CATID_InfoBand, 4, NULL);
+    BuildExplorerBandCategory(hBandsMenu, CATID_CommBand, 20, &nbFound);
+    if (!nbFound)
+    {
+        // Remove separator
+        DeleteMenu(hBandsMenu, IDM_EXPLORERBAR_SEPARATOR, MF_BYCOMMAND); 
+    }
+    // Remove media menu since XP does it (according to API Monitor)
+    DeleteMenu(hBandsMenu, IDM_EXPLORERBAR_MEDIA, MF_BYCOMMAND);
+    return S_OK;
+}
+
+HRESULT CShellBrowser::BuildExplorerBandCategory(HMENU hBandsMenu, CATID category, DWORD dwPos, UINT *nbFound)
+{
+    HRESULT                                 hr;
+    CComPtr<IEnumGUID>                      pEnumGUID;
+    WCHAR                                   wszBandName[MAX_PATH];
+    WCHAR                                   wszBandGUID[MAX_PATH];
+    WCHAR                                   wRegKey[MAX_PATH];
+    UINT                                    cBands;
+    DWORD                                   dwRead;
+    DWORD                                   dwDataSize;
+    GUID                                    iter;
+    MenuBandInfo                            mbi;
+
+    mbi.fVertical = IsEqualGUID(category, CATID_InfoBand);
+    cBands = 0;
+    hr = SHEnumClassesOfCategories(1, &category, 0, NULL, &pEnumGUID);
+    if (FAILED_UNEXPECTEDLY(hr))
+    {
+        return hr;
+    }
+    do
+    {
+        pEnumGUID->Next(1, &iter, &dwRead);
+        if (dwRead)
+        {
+            // Get the band name
+            if (IsBuiltinBand(iter))
+                continue;
+            if (!StringFromGUID2(iter, wszBandGUID, MAX_PATH))
+                continue;
+            StringCchPrintfW(wRegKey, MAX_PATH, L"CLSID\\%s", wszBandGUID);
+            dwDataSize = MAX_PATH;
+            SHGetValue(HKEY_CLASSES_ROOT, wRegKey, NULL, NULL, wszBandName, &dwDataSize);
+
+            mbi.barGuid = iter;
+            InsertMenu(hBandsMenu, dwPos + cBands, MF_BYPOSITION, IDM_EXPLORERBAND_BEGINCUSTOM + DSA_GetItemCount(menuDsa), wszBandName);
+            DSA_AppendItem(menuDsa, &mbi);
+            cBands++;
+        }
+    }
+    while (dwRead > 0);
+    if (nbFound)
+        *nbFound = cBands;
+    return S_OK;
+}
+
+BOOL CShellBrowser::IsBuiltinBand(CLSID &bandID)
+{
+    if (IsEqualCLSID(bandID, CLSID_ExplorerBand))
+        return TRUE;
+    if (IsEqualCLSID(bandID, CLSID_SH_SearchBand) || IsEqualCLSID(bandID, CLSID_SearchBand))
+        return TRUE;
+    if (IsEqualCLSID(bandID, CLSID_IE_SearchBand) || IsEqualCLSID(bandID, CLSID_FileSearchBand))
+        return TRUE;
+    if (IsEqualCLSID(bandID, CLSID_SH_HistBand))
+        return TRUE;
+    if (IsEqualCLSID(bandID, CLSID_SH_FavBand))
+        return TRUE;
+    if (IsEqualCLSID(bandID, CLSID_ChannelsBand))
+        return TRUE;
+    return FALSE;
+}
+
+HRESULT CShellBrowser::OnSearch()
+{
+    CComPtr<IObjectWithSite>                objectWithSite;
+    CComPtr<IContextMenu>                   contextMenu;
+    CMINVOKECOMMANDINFO                     commandInfo;
+    const char                              *searchGUID = "{169A0691-8DF9-11d1-A1C4-00C04FD75D13}";
+    HRESULT                                 hResult;
+
+    // TODO: Query shell if this command is enabled first
+
+    memset(&commandInfo, 0, sizeof(commandInfo));
+    commandInfo.cbSize = sizeof(commandInfo);
+    commandInfo.hwnd = m_hWnd;
+    commandInfo.lpParameters = searchGUID;
+    commandInfo.nShow = SW_SHOWNORMAL;
+
+    hResult = CoCreateInstance(CLSID_ShellSearchExt, NULL, CLSCTX_INPROC_SERVER,
+        IID_PPV_ARG(IContextMenu, &contextMenu));
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return 0;
+    hResult = contextMenu->QueryInterface(IID_PPV_ARG(IObjectWithSite, &objectWithSite));
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return 0;
+    hResult = objectWithSite->SetSite(dynamic_cast<IShellBrowser*>(this));
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return 0;
+    hResult = contextMenu->InvokeCommand(&commandInfo);
+    hResult = objectWithSite->SetSite(NULL);
+    return hResult;
+}
+
 bool IUnknownIsEqual(IUnknown *int1, IUnknown *int2)
 {
     CComPtr<IUnknown>                       int1Retry;
@@ -1565,11 +1851,11 @@ bool IUnknownIsEqual(IUnknown *int1, IUnknown *int2)
         return true;
     if (int1 == NULL || int2 == NULL)
         return false;
-    hResult = int1->QueryInterface(IID_IUnknown, reinterpret_cast<void **>(&int1Retry));
-    if (FAILED(hResult))
+    hResult = int1->QueryInterface(IID_PPV_ARG(IUnknown, &int1Retry));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return false;
-    hResult = int2->QueryInterface(IID_IUnknown, reinterpret_cast<void **>(&int2Retry));
-    if (FAILED(hResult))
+    hResult = int2->QueryInterface(IID_PPV_ARG(IUnknown, &int2Retry));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return false;
     if (int1Retry == int2Retry)
         return true;
@@ -1578,8 +1864,9 @@ bool IUnknownIsEqual(IUnknown *int1, IUnknown *int2)
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::GetBorderDW(IUnknown *punkObj, LPRECT prcBorder)
 {
-    RECT                                    availableBounds;
-    static const INT                        excludeItems[] = {1, 1, 1, 0xa001, 0, 0};
+    static const INT excludeItems[] = { 1, 1, 1, 0xa001, 0, 0 };
+
+    RECT availableBounds;
 
     GetEffectiveClientRect(m_hWnd, &availableBounds, excludeItems);
     for (INT x = 0; x < 3; x++)
@@ -1628,8 +1915,7 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::QueryStatus(const GUID *pguidCmdGroup,
     {
         if (fCurrentShellView.p != NULL)
         {
-            hResult = fCurrentShellView->QueryInterface(IID_IOleCommandTarget,
-                reinterpret_cast<void **>(&commandTarget));
+            hResult = fCurrentShellView->QueryInterface(IID_PPV_ARG(IOleCommandTarget, &commandTarget));
             if (SUCCEEDED(hResult) && commandTarget.p != NULL)
                 return commandTarget->QueryStatus(NULL, 1, prgCmds, pCmdText);
         }
@@ -1690,6 +1976,11 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::Exec(const GUID *pguidCmdGroup, DWORD n
 {
     HRESULT                                 hResult;
 
+    if (!pguidCmdGroup)
+    {
+        TRACE("Unhandled null CGID %d %d %p %p\n", nCmdID, nCmdexecopt, pvaIn, pvaOut);
+        return E_NOTIMPL;
+    }
     if (IsEqualIID(*pguidCmdGroup, CGID_Explorer))
     {
         switch (nCmdID)
@@ -1753,6 +2044,9 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::Exec(const GUID *pguidCmdGroup, DWORD n
             case 0x12:
                 // refresh on toolbar clicked
                 return S_OK;
+            case 0x26:
+                // called for unknown bands ?
+                return S_OK;
             case 0x4d:
                 // tell the view if it should hide the task pane or not
                 return (fClientBars[BIVerticalBaseBar].clientBar.p == NULL) ? S_FALSE : S_OK;
@@ -1783,6 +2077,20 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::Exec(const GUID *pguidCmdGroup, DWORD n
                 break;
         }
     }
+    else if (IsEqualIID(*pguidCmdGroup, CLSID_CommonButtons))
+    {
+        // Windows seems to use this as proxy for toolbar buttons.
+        // We use it for search band for now to remove code duplication,
+        // let's see if it could be useful in the future.
+        switch (nCmdID)
+        {
+            case 0x123:
+                // Show search band from toolbar
+                OnSearch();
+                return S_OK;
+        }
+        return E_NOTIMPL;
+    }
     else
     {
         return E_NOTIMPL;
@@ -1806,10 +2114,13 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::ContextSensitiveHelp(BOOL fEnterMode)
 HRESULT STDMETHODCALLTYPE CShellBrowser::InsertMenusSB(HMENU hmenuShared, LPOLEMENUGROUPWIDTHS lpMenuWidths)
 {
     HMENU mainMenu = LoadMenu(_AtlBaseModule.GetResourceInstance(), MAKEINTRESOURCE(IDM_CABINET_MAINMENU));
+
     Shell_MergeMenus(hmenuShared, mainMenu, 0, 0, FCIDM_BROWSERLAST, MM_SUBMENUSHAVEIDS);
 
     int GCCU(itemCount3) = GetMenuItemCount(hmenuShared);
     Unused(itemCount3);
+
+    DestroyMenu(mainMenu);
 
     lpMenuWidths->width[0] = 2;
     lpMenuWidths->width[2] = 3;
@@ -1822,28 +2133,53 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::SetMenuSB(HMENU hmenuShared, HOLEMENU h
     CComPtr<IShellMenu>                     shellMenu;
     HRESULT                                 hResult;
 
-    if (IsMenu(hmenuShared) == FALSE)
+    if (hmenuShared && IsMenu(hmenuShared) == FALSE)
         return E_FAIL;
-    hResult = GetMenuBand(IID_IShellMenu, reinterpret_cast<void **>(&shellMenu));
-    if (FAILED(hResult))
+    hResult = GetMenuBand(IID_PPV_ARG(IShellMenu, &shellMenu));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
-    hResult = shellMenu->SetMenu(hmenuShared, NULL, SMSET_DONTOWN);
-    if (FAILED(hResult))
+
+    if (!hmenuShared)
+    {
+        hmenuShared = LoadMenu(_AtlBaseModule.GetResourceInstance(), MAKEINTRESOURCE(IDM_CABINET_MAINMENU));
+    }
+    // FIXME: Figure out the proper way to do this.
+    HMENU hMenuFavs = GetSubMenu(hmenuShared, 3);
+    if (hMenuFavs)
+    {
+        DeleteMenu(hMenuFavs, IDM_FAVORITES_EMPTY, MF_BYCOMMAND);
+    }
+
+    hResult = shellMenu->SetMenu(hmenuShared, m_hWnd, SMSET_DONTOWN);
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     fCurrentMenuBar = hmenuShared;
+    BuildExplorerBandMenu();
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::RemoveMenusSB(HMENU hmenuShared)
 {
     if (hmenuShared == fCurrentMenuBar)
-        fCurrentMenuBar = NULL;
+    {
+        //DestroyMenu(fCurrentMenuBar);
+        SetMenuSB(NULL, NULL, NULL);
+    }
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::SetStatusTextSB(LPCOLESTR pszStatusText)
 {
-    return E_NOTIMPL;
+    //
+    if (pszStatusText)
+    {
+        ::SetWindowText(fStatusBar, pszStatusText);
+    }
+    else
+    {
+
+    }
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::EnableModelessSB(BOOL fEnable)
@@ -1853,11 +2189,16 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::EnableModelessSB(BOOL fEnable)
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::TranslateAcceleratorSB(MSG *pmsg, WORD wID)
 {
-    return E_NOTIMPL;
+    if (!::TranslateAcceleratorW(m_hWnd, m_hAccel, pmsg))
+        return S_FALSE;
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::BrowseObject(LPCITEMIDLIST pidl, UINT wFlags)
 {
+    if ((wFlags & SBSP_EXPLOREMODE) != NULL)
+        ShowBand(CLSID_ExplorerBand, true);
+
     return BrowseToPIDL(pidl, BTP_UPDATE_CUR_HISTORY | BTP_UPDATE_NEXT_HISTORY);
 }
 
@@ -1871,7 +2212,7 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::GetControlWindow(UINT id, HWND *lphwnd)
     if (lphwnd == NULL)
         return E_POINTER;
     *lphwnd = NULL;
-    switch(id)
+    switch (id)
     {
         case FCW_TOOLBAR:
             *lphwnd = fToolbarProxy.m_hWnd;
@@ -1897,7 +2238,7 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::SendControlMsg(
 
     if (pret != NULL)
         *pret = 0;
-    switch(id)
+    switch (id)
     {
         case FCW_TOOLBAR:
             result = fToolbarProxy.SendMessage(uMsg, wParam, lParam);
@@ -1971,6 +2312,8 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::QueryService(REFGUID guidService, REFII
         return this->QueryInterface(riid, ppvObject);
     if (IsEqualIID(guidService, SID_IExplorerToolbar))
         return fClientBars[BIInternetToolbar].clientBar->QueryInterface(riid, ppvObject);
+    if (IsEqualIID(riid, IID_IShellBrowser))
+        return this->QueryInterface(riid, ppvObject);
     return E_NOINTERFACE;
 }
 
@@ -2029,12 +2372,14 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::GetTravelLog(ITravelLog **pptl)
     HRESULT                                 hResult;
 
     // called by toolbar when displaying tooltips
-    if (pptl != NULL)
-        *pptl = NULL;
+    if (pptl == NULL)
+        return E_FAIL;
+
+    *pptl = NULL;
     if (fTravelLog.p == NULL)
     {
-        hResult = CreateTravelLog(IID_ITravelLog, reinterpret_cast<void **>(&fTravelLog));
-        if (FAILED(hResult))
+        hResult = CTravelLog_CreateInstance(IID_PPV_ARG(ITravelLog, &fTravelLog));
+        if (FAILED_UNEXPECTEDLY(hResult))
             return hResult;
     }
     *pptl = fTravelLog.p;
@@ -2210,7 +2555,8 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::OnSize(WPARAM wParam)
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::OnCreate(struct tagCREATESTRUCTW *pcs)
 {
-    return E_NOTIMPL;
+    m_hAccel = LoadAcceleratorsW(GetModuleHandle(L"browseui.dll"), MAKEINTRESOURCEW(256));
+    return S_OK;
 }
 
 LRESULT STDMETHODCALLTYPE CShellBrowser::OnCommand(WPARAM wParam, LPARAM lParam)
@@ -2489,7 +2835,16 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::_SetFocus(LPTOOLBARITEM ptbi, HWND hwnd
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::v_MayTranslateAccelerator(MSG *pmsg)
 {
-    return E_NOTIMPL;
+    for (int i = 0; i < 3; i++)
+    {
+        if (IUnknown_TranslateAcceleratorIO(fClientBars[i].clientBar, pmsg) == S_OK)
+            return S_OK;
+    }
+
+    if (!fCurrentShellView)
+        return S_FALSE;
+
+    return fCurrentShellView->TranslateAcceleratorW(pmsg);
 }
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::_GetBorderDWHelper(IUnknown *punkSrc, LPRECT lprectBorder, BOOL bUseHmonitor)
@@ -2504,22 +2859,18 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::v_CheckZoneCrossing(LPCITEMIDLIST pidl)
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::GoBack()
 {
-    CComPtr<ITravelLog>                     travelLog;
-    HRESULT                                 hResult;
-
-    hResult = GetTravelLog(&travelLog);
-    if (FAILED(hResult))
+    CComPtr<ITravelLog> travelLog;
+    HRESULT hResult = GetTravelLog(&travelLog);
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     return travelLog->Travel(static_cast<IDropTarget *>(this), TLOG_BACK);
 }
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::GoForward()
 {
-    CComPtr<ITravelLog>                     travelLog;
-    HRESULT                                 hResult;
-
-    hResult = GetTravelLog(&travelLog);
-    if (FAILED(hResult))
+    CComPtr<ITravelLog> travelLog;
+    HRESULT hResult = GetTravelLog(&travelLog);
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     return travelLog->Travel(static_cast<IDropTarget *>(this), TLOG_FORE);
 }
@@ -2537,7 +2888,17 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::GoSearch()
 HRESULT STDMETHODCALLTYPE CShellBrowser::Navigate(BSTR URL, VARIANT *Flags,
     VARIANT *TargetFrameName, VARIANT *PostData, VARIANT *Headers)
 {
-    return E_NOTIMPL;
+    CComHeapPtr<ITEMIDLIST> pidl;
+    HRESULT hResult;
+    CComPtr<IShellFolder> pDesktop;
+
+    hResult = SHGetDesktopFolder(&pDesktop);
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return hResult;
+    hResult = pDesktop->ParseDisplayName(NULL, NULL, URL, NULL, &pidl, NULL);
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return hResult;
+    return BrowseObject(pidl, 1);
 }
 
 HRESULT STDMETHODCALLTYPE CShellBrowser::Refresh()
@@ -2554,8 +2915,8 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::Refresh2(VARIANT *Level)
     CComPtr<IOleCommandTarget>              oleCommandTarget;
     HRESULT                                 hResult;
 
-    hResult = fCurrentShellView->QueryInterface(IID_IOleCommandTarget, reinterpret_cast<void **>(&oleCommandTarget));
-    if (FAILED(hResult))
+    hResult = fCurrentShellView->QueryInterface(IID_PPV_ARG(IOleCommandTarget, &oleCommandTarget));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     return oleCommandTarget->Exec(NULL, 22, 1, Level, NULL);
 }
@@ -2757,17 +3118,24 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::put_FullScreen(VARIANT_BOOL bFullScreen
 HRESULT STDMETHODCALLTYPE CShellBrowser::Navigate2(VARIANT *URL, VARIANT *Flags,
     VARIANT *TargetFrameName, VARIANT *PostData, VARIANT *Headers)
 {
-    LPITEMIDLIST                            pidl;
-    HRESULT                                 hResult;
-
+    LPITEMIDLIST pidl = NULL;
+    HRESULT hResult;
     // called from drive combo box to navigate to a directory
-    if (V_VT(URL) != (VT_ARRAY | VT_UI1))
-        return E_INVALIDARG;
-    if (V_ARRAY(URL)->cDims != 1 || V_ARRAY(URL)->cbElements != 1)
-        return E_INVALIDARG;
-    pidl = (LPITEMIDLIST)V_ARRAY(URL)->pvData;
-    hResult = BrowseToPIDL((LPITEMIDLIST)pidl, BTP_UPDATE_CUR_HISTORY | BTP_UPDATE_NEXT_HISTORY);
-    if (FAILED(hResult))
+    // Also called by search band to display shell results folder view
+
+    if (V_VT(URL) == VT_BSTR)
+    {
+        return this->Navigate(V_BSTR(URL), Flags, TargetFrameName, PostData, Headers);
+    }
+    if (V_VT(URL) == (VT_ARRAY | VT_UI1))
+    {
+        if (V_ARRAY(URL)->cDims != 1 || V_ARRAY(URL)->cbElements != 1)
+            return E_INVALIDARG;
+
+        pidl = static_cast<LPITEMIDLIST>(V_ARRAY(URL)->pvData);
+    }
+    hResult = BrowseToPIDL(pidl, BTP_UPDATE_CUR_HISTORY | BTP_UPDATE_NEXT_HISTORY);
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     return S_OK;
 }
@@ -2911,7 +3279,7 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::LoadHistory(IStream *pStream, IBindCtx 
     HRESULT                                 hResult;
 
     hResult = pStream->Read(&oldState, sizeof(oldState), &numRead);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     if (numRead != sizeof(oldState) || oldState.dwSize != sizeof(oldState))
         return E_FAIL;
@@ -2921,7 +3289,7 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::LoadHistory(IStream *pStream, IBindCtx 
     if (pidl == NULL)
         return E_OUTOFMEMORY;
     hResult = pStream->Read(pidl, oldState.pidlSize, &numRead);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
     {
         ILFree(pidl);
         return hResult;
@@ -2932,16 +3300,16 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::LoadHistory(IStream *pStream, IBindCtx 
         return E_FAIL;
     }
     hResult = CoCreateInstance(oldState.persistClass, NULL, CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
-        IID_IOleObject, reinterpret_cast<void **>(&viewHistoryObject));
+        IID_PPV_ARG(IOleObject, &viewHistoryObject));
     fHistoryObject = viewHistoryObject;
     fHistoryStream = pStream;
     fHistoryBindContext = pbc;
-    hResult = BrowseToPIDL(pidl, BTP_UPDATE_CUR_HISTORY);
+    hResult = BrowseToPIDL(pidl, BTP_DONT_UPDATE_HISTORY);
     fHistoryObject = NULL;
     fHistoryStream = NULL;
     fHistoryBindContext = NULL;
     ILFree(pidl);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     return S_OK;
 }
@@ -2953,7 +3321,7 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::SaveHistory(IStream *pStream)
     HRESULT                                 hResult;
 
     hResult = fCurrentShellView->GetItemObject(
-        SVGIO_BACKGROUND, IID_IPersistHistory, reinterpret_cast<void **>(&viewPersistHistory));
+        SVGIO_BACKGROUND, IID_PPV_ARG(IPersistHistory, &viewPersistHistory));
     memset(&newState, 0, sizeof(newState));
     newState.dwSize = sizeof(newState);
     newState.browseType = 2;
@@ -2961,20 +3329,20 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::SaveHistory(IStream *pStream)
     if (viewPersistHistory.p != NULL)
     {
         hResult = viewPersistHistory->GetClassID(&newState.persistClass);
-        if (FAILED(hResult))
+        if (FAILED_UNEXPECTEDLY(hResult))
             return hResult;
     }
     newState.pidlSize = ILGetSize(fCurrentDirectoryPIDL);
     hResult = pStream->Write(&newState, sizeof(newState), NULL);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     hResult = pStream->Write(fCurrentDirectoryPIDL, newState.pidlSize, NULL);
-    if (FAILED(hResult))
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     if (viewPersistHistory.p != NULL)
     {
         hResult = viewPersistHistory->SaveHistory(pStream);
-        if (FAILED(hResult))
+        if (FAILED_UNEXPECTEDLY(hResult))
             return hResult;
     }
     return S_OK;
@@ -2990,9 +3358,68 @@ HRESULT STDMETHODCALLTYPE CShellBrowser::GetPositionCookie(DWORD *pdwPositioncoo
     return E_NOTIMPL;
 }
 
+LRESULT CShellBrowser::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+{
+    OnCreate(reinterpret_cast<LPCREATESTRUCT> (lParam));
+    return 0;
+}
+
 LRESULT CShellBrowser::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
+    HRESULT hr;
+
+    /* The current thread is about to go down so render any IDataObject that may be left in the clipboard */
+    OleFlushClipboard();
+
     // TODO: rip down everything
+    {
+        fToolbarProxy.Destroy();
+
+        fCurrentShellView->DestroyViewWindow();
+        fCurrentShellView->UIActivate(SVUIA_DEACTIVATE);
+
+        for (int i = 0; i < 3; i++)
+        {
+            CComPtr<IDockingWindow> pdw;
+            CComPtr<IDeskBar> bar;
+            CComPtr<IUnknown> pBarSite;
+            CComPtr<IDeskBarClient> pClient;
+ 
+            if (fClientBars[i].clientBar == NULL)
+                continue;
+
+            hr = fClientBars[i].clientBar->QueryInterface(IID_PPV_ARG(IDockingWindow, &pdw));
+            if (FAILED_UNEXPECTEDLY(hr))
+                continue;
+            
+            /* We should destroy our basebarsite too */
+            hr = pdw->QueryInterface(IID_PPV_ARG(IDeskBar, &bar));
+            if (SUCCEEDED(hr))
+            {
+                hr = bar->GetClient(&pBarSite);
+                if (SUCCEEDED(hr) && pBarSite)
+                {
+                    hr = pBarSite->QueryInterface(IID_PPV_ARG(IDeskBarClient, &pClient));
+                    if (SUCCEEDED(hr))
+                        pClient->SetDeskBarSite(NULL);
+                }
+            }
+            pdw->CloseDW(0);
+
+            pClient = NULL;
+            pBarSite = NULL;
+            pdw = NULL;
+            bar = NULL;
+            ReleaseCComPtrExpectZero(fClientBars[i].clientBar);
+        }
+        ReleaseCComPtrExpectZero(fCurrentShellView);
+        ReleaseCComPtrExpectZero(fTravelLog);
+
+        fCurrentShellFolder.Release();
+        ILFree(fCurrentDirectoryPIDL);
+        ::DestroyWindow(fStatusBar);
+        DestroyMenu(fCurrentMenuBar);
+    }
     PostQuitMessage(0);
     return 0;
 }
@@ -3012,7 +3439,7 @@ LRESULT CShellBrowser::OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHa
             if (fClientBars[x].clientBar != NULL)
             {
                 hResult = fClientBars[x].clientBar->QueryInterface(
-                    IID_IDockingWindow, reinterpret_cast<void **>(&dockingWindow));
+                    IID_PPV_ARG(IDockingWindow, &dockingWindow));
                 if (SUCCEEDED(hResult) && dockingWindow != NULL)
                 {
                     hResult = dockingWindow->ResizeBorderDW(
@@ -3028,12 +3455,52 @@ LRESULT CShellBrowser::OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHa
 
 LRESULT CShellBrowser::OnInitMenuPopup(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
-    HMENU                                   theMenu;
+    HMENU  theMenu;
+    LPARAM menuIndex = lParam;
 
     theMenu = reinterpret_cast<HMENU>(wParam);
-    if (theMenu == SHGetMenuFromID(fCurrentMenuBar, FCIDM_MENU_VIEW))
+
+    if (theMenu == SHGetMenuFromID(fCurrentMenuBar, FCIDM_MENU_FILE))
+    {
+        menuIndex = 0;
+    }
+    else if (theMenu == SHGetMenuFromID(fCurrentMenuBar, FCIDM_MENU_EDIT))
+    {
+        menuIndex = 1;
+    }
+    else if (theMenu == SHGetMenuFromID(fCurrentMenuBar, FCIDM_MENU_VIEW))
+    {
         UpdateViewMenu(theMenu);
-    return RelayMsgToShellView(uMsg, wParam, lParam, bHandled);
+        menuIndex = 2;
+    }
+    else if (theMenu == SHGetMenuFromID(fCurrentMenuBar, FCIDM_MENU_FAVORITES))
+    {
+        menuIndex = 3;
+    }
+    else if (theMenu == SHGetMenuFromID(fCurrentMenuBar, FCIDM_MENU_TOOLS))
+    {
+        // FIXME: Remove once implemented
+        SHEnableMenuItem(theMenu, IDM_TOOLS_MAPNETWORKDRIVE, FALSE);
+        SHEnableMenuItem(theMenu, IDM_TOOLS_DISCONNECTNETWORKDRIVE, FALSE);
+        SHEnableMenuItem(theMenu, IDM_TOOLS_SYNCHRONIZE, FALSE);
+        FIXME("Folder options dialog is stubbed: CORE-11141\n");
+        SHEnableMenuItem(theMenu, IDM_TOOLS_FOLDEROPTIONS, FALSE);  // Remove when CORE-11141 is fixed.
+        menuIndex = 4;
+    }
+    else if (theMenu == SHGetMenuFromID(fCurrentMenuBar, FCIDM_MENU_HELP))
+    {
+        menuIndex = 5;
+    }
+
+    LRESULT ret = RelayMsgToShellView(uMsg, wParam, menuIndex, bHandled);
+
+    return ret;
+}
+
+LRESULT CShellBrowser::OnSetFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+{
+    ::SetFocus(fCurrentShellViewWindow);
+    return 0;
 }
 
 LRESULT CShellBrowser::RelayMsgToShellView(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
@@ -3043,16 +3510,22 @@ LRESULT CShellBrowser::RelayMsgToShellView(UINT uMsg, WPARAM wParam, LPARAM lPar
     return 0;
 }
 
+LRESULT CShellBrowser::PropagateMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+{
+    SHPropagateMessage(m_hWnd, uMsg, wParam, lParam, TRUE);
+    return 0;
+}
+
 LRESULT CShellBrowser::OnClose(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    return 0;
+    return SendMessage(WM_CLOSE);
 }
 
 LRESULT CShellBrowser::OnFolderOptions(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    HRESULT                                 hResult;
-
-    hResult = DoFolderOptions();
+    HRESULT hResult = DoFolderOptions();
+    if (FAILED(hResult))
+        TRACE("DoFolderOptions failed with hResult=%08lx\n", hResult);
     return 0;
 }
 
@@ -3080,150 +3553,172 @@ LRESULT CShellBrowser::OnAboutReactOS(WORD wNotifyCode, WORD wID, HWND hWndCtl, 
 
 LRESULT CShellBrowser::OnGoBack(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    HRESULT                                 hResult;
-
-    hResult = GoBack();
+    HRESULT hResult = GoBack();
+    if (FAILED(hResult))
+        TRACE("GoBack failed with hResult=%08lx\n", hResult);
     return 0;
 }
 
 LRESULT CShellBrowser::OnGoForward(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    HRESULT                                 hResult;
-
-    hResult = GoForward();
+    HRESULT hResult = GoForward();
+    if (FAILED(hResult))
+        TRACE("GoForward failed with hResult=%08lx\n", hResult);
     return 0;
 }
 
 LRESULT CShellBrowser::OnGoUpLevel(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    HRESULT                                 hResult;
-
-    hResult = NavigateToParent();
+    HRESULT hResult = NavigateToParent();
+    if (FAILED(hResult))
+        TRACE("NavigateToParent failed with hResult=%08lx\n", hResult);
     return 0;
 }
 
 LRESULT CShellBrowser::OnGoHome(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    HRESULT                                 hResult;
-
-    hResult = GoHome();
+    HRESULT hResult = GoHome();
+    if (FAILED(hResult))
+        TRACE("GoHome failed with hResult=%08lx\n", hResult);
     return 0;
 }
 
-LRESULT CShellBrowser::OnIsThisLegal(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
+LRESULT CShellBrowser::OnBackspace(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    HRESULT                                 hResult;
+    // FIXME: This does not appear to be what windows does.
+    HRESULT hResult = NavigateToParent();
+    if (FAILED(hResult))
+        TRACE("NavigateToParent failed with hResult=%08lx\n", hResult);
+    return 0;
+}
 
-    typedef HRESULT (WINAPI *PSHOpenNewFrame)(LPITEMIDLIST pidl, IUnknown *b, long c, long d);
-    PSHOpenNewFrame Func;
-    HMODULE hShlwapi;
-
-    hShlwapi = LoadLibrary(TEXT("browseui.dll"));
-    if (hShlwapi != NULL)
-        Func = reinterpret_cast<PSHOpenNewFrame>(GetProcAddress(hShlwapi, (LPCSTR)103));
-    else
-        Func = NULL;
-    if (Func != NULL)
+LRESULT CShellBrowser::OnOrganizeFavorites(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
+{
+    CComPtr<IShellFolder> psfDesktop;
+    LPITEMIDLIST pidlFavs;
+    HRESULT hr;
+    hr = SHGetSpecialFolderLocation(m_hWnd, CSIDL_FAVORITES, &pidlFavs);
+    if (FAILED(hr))
     {
-        LPITEMIDLIST                        desktopPIDL;
-
-        hResult = SHGetFolderLocation(NULL, CSIDL_DESKTOP, NULL, 0, &desktopPIDL);
-        if (SUCCEEDED(hResult))
-        {
-            hResult = Func(desktopPIDL, NULL, -1, 1);
-        }
+        hr = SHGetSpecialFolderLocation(m_hWnd, CSIDL_COMMON_FAVORITES, &pidlFavs);
+        if (FAILED(hr))
+            return 0;
     }
+
+    hr = SHGetDesktopFolder(&psfDesktop);
+    if (FAILED_UNEXPECTEDLY(hr))
+        return 0;
+
+    hr = SHInvokeDefaultCommand(m_hWnd, psfDesktop, pidlFavs);
+    if (FAILED_UNEXPECTEDLY(hr))
+        return 0;
+
     return 0;
 }
 
 LRESULT CShellBrowser::OnToggleStatusBarVisible(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
     fStatusBarVisible = !fStatusBarVisible;
-    // TODO: trigger a relayout of contained items
+    if (fStatusBar)
+    {
+        ::ShowWindow(fStatusBar, fStatusBarVisible ? SW_SHOW : SW_HIDE);
+        RepositionBars();
+    }
     return 0;
 }
 
 LRESULT CShellBrowser::OnToggleToolbarLock(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    CComPtr<IOleCommandTarget>              commandTarget;
-    HRESULT                                 hResult;
-
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IOleCommandTarget, reinterpret_cast<void **>(&commandTarget));
-    if (FAILED(hResult))
-        return 0;
-    hResult = commandTarget->Exec(&CGID_PrivCITCommands, ITID_TOOLBARLOCKED, 0, NULL, NULL);
+    HRESULT hResult;
+    hResult = IUnknown_Exec(fClientBars[BIInternetToolbar].clientBar,
+                            CGID_PrivCITCommands, ITID_TOOLBARLOCKED, 0, NULL, NULL);
     return 0;
 }
 
 LRESULT CShellBrowser::OnToggleToolbarBandVisible(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    CComPtr<IOleCommandTarget>              commandTarget;
-    HRESULT                                 hResult;
-
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IOleCommandTarget, reinterpret_cast<void **>(&commandTarget));
-    if (FAILED(hResult))
-        return 0;
-    hResult = commandTarget->Exec(&CGID_PrivCITCommands, ITID_TOOLBARBANDSHOWN, 0, NULL, NULL);
+    HRESULT hResult;
+    hResult = IUnknown_Exec(fClientBars[BIInternetToolbar].clientBar,
+                            CGID_PrivCITCommands, ITID_TOOLBARBANDSHOWN, 0, NULL, NULL);
     return 0;
 }
 
 LRESULT CShellBrowser::OnToggleAddressBandVisible(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    CComPtr<IOleCommandTarget>              commandTarget;
-    HRESULT                                 hResult;
-
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IOleCommandTarget, reinterpret_cast<void **>(&commandTarget));
-    if (FAILED(hResult))
-        return 0;
-    hResult = commandTarget->Exec(&CGID_PrivCITCommands, ITID_ADDRESSBANDSHOWN, 0, NULL, NULL);
+    HRESULT hResult;
+    hResult = IUnknown_Exec(fClientBars[BIInternetToolbar].clientBar,
+                            CGID_PrivCITCommands, ITID_ADDRESSBANDSHOWN, 0, NULL, NULL);
     return 0;
 }
 
 LRESULT CShellBrowser::OnToggleLinksBandVisible(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    CComPtr<IOleCommandTarget>              commandTarget;
-    HRESULT                                 hResult;
-
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IOleCommandTarget, reinterpret_cast<void **>(&commandTarget));
-    if (FAILED(hResult))
-        return 0;
-    hResult = commandTarget->Exec(&CGID_PrivCITCommands, ITID_LINKSBANDSHOWN, 0, NULL, NULL);
+    HRESULT hResult;
+    hResult = IUnknown_Exec(fClientBars[BIInternetToolbar].clientBar,
+                            CGID_PrivCITCommands, ITID_LINKSBANDSHOWN, 0, NULL, NULL);
     return 0;
 }
 
 LRESULT CShellBrowser::OnToggleTextLabels(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    CComPtr<IOleCommandTarget>              commandTarget;
-    HRESULT                                 hResult;
-
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IOleCommandTarget, reinterpret_cast<void **>(&commandTarget));
-    if (FAILED(hResult))
-        return 0;
-    hResult = commandTarget->Exec(&CGID_PrivCITCommands, ITID_TEXTLABELS, 0, NULL, NULL);
+    HRESULT hResult;
+    hResult = IUnknown_Exec(fClientBars[BIInternetToolbar].clientBar,
+                            CGID_PrivCITCommands, ITID_TEXTLABELS, 0, NULL, NULL);
     return 0;
 }
 
 LRESULT CShellBrowser::OnToolbarCustomize(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    CComPtr<IOleCommandTarget>              commandTarget;
-    HRESULT                                 hResult;
+    HRESULT hResult;
+    hResult = IUnknown_Exec(fClientBars[BIInternetToolbar].clientBar,
+                            CGID_PrivCITCommands, ITID_CUSTOMIZEENABLED, 0, NULL, NULL);
+    return 0;
+}
 
-    hResult = fClientBars[BIInternetToolbar].clientBar->QueryInterface(
-        IID_IOleCommandTarget, reinterpret_cast<void **>(&commandTarget));
-    if (FAILED(hResult))
-        return 0;
-    hResult = commandTarget->Exec(&CGID_PrivCITCommands, ITID_CUSTOMIZEENABLED, 0, NULL, NULL);
+LRESULT CShellBrowser::OnRefresh(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
+{
+    if (fCurrentShellView)
+        fCurrentShellView->Refresh();
     return 0;
 }
 
 LRESULT CShellBrowser::OnGoTravel(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
     return 0;
+}
+
+LRESULT CShellBrowser::OnExplorerBar(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
+{
+    // TODO: HACK ! use the proper mechanism to show the band (i.e. pass the BSTR to basebar)
+    if (wID >= IDM_EXPLORERBAND_BEGINCUSTOM && wID <= IDM_EXPLORERBAND_ENDCUSTOM)
+    {
+        MenuBandInfo *mbi;
+        mbi = (MenuBandInfo*)DSA_GetItemPtr(menuDsa, (wID - IDM_EXPLORERBAND_BEGINCUSTOM));
+        if (!mbi)
+            return 0;
+        ShowBand(mbi->barGuid, mbi->fVertical);
+        bHandled = TRUE;
+        return 1;
+    }
+    switch (wID)
+    {
+    case IDM_EXPLORERBAR_SEARCH:
+        Exec(&CLSID_CommonButtons, 0x123, 1, NULL, NULL);
+        break;
+    case IDM_EXPLORERBAR_FOLDERS:
+        ShowBand(CLSID_ExplorerBand, true);
+        break;
+    case IDM_EXPLORERBAR_HISTORY:
+        ShowBand(CLSID_SH_HistBand, true);
+        break;
+    case IDM_EXPLORERBAR_FAVORITES:
+        ShowBand(CLSID_SH_FavBand, true);
+        break;
+    default:
+        WARN("Unknown id %x\n", wID);
+    }
+    bHandled = TRUE;
+    return 1;
 }
 
 LRESULT CShellBrowser::RelayCommands(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
@@ -3233,53 +3728,7 @@ LRESULT CShellBrowser::RelayCommands(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
     return 0;
 }
 
-//static LRESULT CALLBACK ExplorerWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-//{
-//    return DefWindowProc(hwnd, uMsg, wParam, lParam);
-//}
-
-static void ExplorerMessageLoop()
+HRESULT CShellBrowser_CreateInstance(LPITEMIDLIST pidl, DWORD dwFlags, REFIID riid, void **ppv)
 {
-    MSG Msg;
-    BOOL Ret;
-
-    while (1)
-    {
-        Ret = (GetMessage(&Msg, NULL, 0, 0) != 0);
-
-        if (Ret != -1)
-        {
-            if (!Ret)
-                break;
-
-            TranslateMessage(&Msg);
-            DispatchMessage(&Msg);
-        }
-    }
-}
-
-DWORD WINAPI BrowserThreadProc(LPVOID lpThreadParameter)
-{
-    CComPtr<IShellBrowser>                  shellBrowser;
-    CComObject<CShellBrowser>               *theCabinet;
-    IEThreadParamBlock                      *parameters;
-    HRESULT                                 hResult;
-
-    parameters = (IEThreadParamBlock *)lpThreadParameter;
-    OleInitialize(NULL);
-    ATLTRY (theCabinet = new CComObject<CShellBrowser>);
-    if (theCabinet == NULL)
-        return E_OUTOFMEMORY;
-    hResult = theCabinet->QueryInterface(IID_IShellBrowser, reinterpret_cast<void **>(&shellBrowser));
-    if (FAILED(hResult))
-    {
-        delete theCabinet;
-        return hResult;
-    }
-    hResult = theCabinet->Initialize(parameters->directoryPIDL, 0, 0, 0);
-    if (FAILED(hResult))
-        return hResult;
-    ExplorerMessageLoop();
-    OleUninitialize();
-    return 0;
+    return ShellObjectCreatorInit<CShellBrowser>(pidl, dwFlags, riid, ppv);
 }

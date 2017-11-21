@@ -150,7 +150,7 @@ void UpdateStatusBar(void)
     TCHAR szStatusText[128];
     TCHAR szTempText[64];
 
-    ZeroMemory(szStatusText, sizeof(szStatusText) / sizeof(TCHAR));
+    ZeroMemory(szStatusText, sizeof(szStatusText));
 
     if (GetScoreMode() != SCORE_NONE)
     {
@@ -243,6 +243,8 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrev, LPTSTR szCmdLine, int iCm
                 NULL,                     // use window class menu
                 hInst,                    // program instance handle
                 NULL);                    // creation parameters
+    if (hwnd == NULL)
+        return 1;
 
     hwndMain = hwnd;
 
@@ -608,7 +610,7 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
             SendMessage(hwndStatus, SB_SETPARTS, 2, (LPARAM)parts);
             SendMessage(hwndStatus, SB_SETTEXT, 0 | SBT_NOBORDERS, (LPARAM)"");
 
-            SolWnd.Create(hwnd, WS_EX_CLIENTEDGE, WS_CHILD|WS_VISIBLE, 0, 0, 0, 0);
+            SolWnd.Create(hwnd, 0, WS_CHILD | WS_VISIBLE, 0, 0, 100, 100);
 
             CreateSol();
 

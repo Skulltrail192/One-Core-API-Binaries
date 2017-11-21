@@ -20,3 +20,14 @@ BEGIN
     IDS_TOOLTIP_PRINT "Tisk (Ctrl+P)"
     IDS_TOOLTIP_SAVEAS "Uložit jako... (Ctrl+S)"
 END
+
+STRINGTABLE
+BEGIN
+    IDS_EMF_FILE    "Obrázek EMF"
+    IDS_GIF_FILE    "Obrázek GIF"
+    IDS_JPG_FILE    "Obrázek JPEG"
+    IDS_BMP_FILE    "Obrázek Bitmap"
+    IDS_PNG_FILE    "Obrázek PNG"
+    IDS_TIF_FILE    "Obrázek TIF"
+    IDS_WMF_FILE    "Obrázek WMF"
+END

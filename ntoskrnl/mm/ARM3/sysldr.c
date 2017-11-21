@@ -14,10 +14,10 @@
 #include <debug.h>
 
 #define MODULE_INVOLVED_IN_ARM3
-#include "../ARM3/miarm.h"
+#include <mm/ARM3/miarm.h>
 
-/* GCC's incompetence strikes again */
-__inline
+static
+inline
 VOID
 sprintf_nt(IN PCHAR Buffer,
            IN PCHAR Format,
@@ -178,25 +178,25 @@ MiLoadImageSection(IN OUT PVOID *SectionPtr,
     /* Lock the PFN database */
     OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
 
-    /* Some debug stuff */
-    MI_SET_USAGE(MI_USAGE_DRIVER_PAGE);
-#if MI_TRACE_PFNS
-    if (FileName->Buffer)
-    {
-        PWCHAR pos = NULL;
-        ULONG len = 0;
-        pos = wcsrchr(FileName->Buffer, '\\');
-        len = wcslen(pos) * sizeof(WCHAR);
-        if (pos) snprintf(MI_PFN_CURRENT_PROCESS_NAME, min(16, len), "%S", pos);
-    }
-#endif
-
     /* Loop the new driver PTEs */
     TempPte = ValidKernelPte;
     while (PointerPte < LastPte)
     {
         /* Make sure the PTE is not valid for whatever reason */
         ASSERT(PointerPte->u.Hard.Valid == 0);
+
+        /* Some debug stuff */
+        MI_SET_USAGE(MI_USAGE_DRIVER_PAGE);
+#if MI_TRACE_PFNS
+        if (FileName->Buffer)
+        {
+            PWCHAR pos = NULL;
+            ULONG len = 0;
+            pos = wcsrchr(FileName->Buffer, '\\');
+            len = wcslen(pos) * sizeof(WCHAR);
+            if (pos) snprintf(MI_PFN_CURRENT_PROCESS_NAME, min(16, len), "%S", pos);
+        }
+#endif
 
         /* Grab a page */
         PageFrameIndex = MiRemoveAnyPage(MI_GET_NEXT_COLOR());
@@ -445,9 +445,9 @@ MiDereferenceImports(IN PLOAD_IMPORTS ImportList)
                 MiDereferenceImports(CurrentImports);
 
                 /* Check if we had valid imports */
-                if ((CurrentImports != MM_SYSLDR_BOOT_LOADED) ||
-                    (CurrentImports != MM_SYSLDR_NO_IMPORTS) ||
-                    !((ULONG_PTR)LdrEntry->LoadedImports & MM_SYSLDR_SINGLE_ENTRY))
+                if ((CurrentImports != MM_SYSLDR_BOOT_LOADED) &&
+                    (CurrentImports != MM_SYSLDR_NO_IMPORTS) &&
+                    !((ULONG_PTR)CurrentImports & MM_SYSLDR_SINGLE_ENTRY))
                 {
                     /* Free them */
                     ExFreePoolWithTag(CurrentImports, TAG_LDR_IMPORTS);
@@ -554,8 +554,9 @@ MiFindExportedRoutineByName(IN PVOID DllBase,
     Function = (PVOID)((ULONG_PTR)DllBase + ExportTable[Ordinal]);
 
     /* We found it! */
-    ASSERT(!(Function > (PVOID)ExportDirectory) &&
-           (Function < (PVOID)((ULONG_PTR)ExportDirectory + ExportSize)));
+    ASSERT((Function < (PVOID)ExportDirectory) ||
+           (Function > (PVOID)((ULONG_PTR)ExportDirectory + ExportSize)));
+
     return Function;
 }
 

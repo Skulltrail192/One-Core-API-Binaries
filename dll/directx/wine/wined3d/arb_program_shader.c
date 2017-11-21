@@ -1194,8 +1194,6 @@ static void shader_arb_get_register_name(const struct wined3d_shader_instruction
                 sprintf(register_name, "%s", rastout_reg_names[reg->idx[0].offset]);
             break;
 
-        case WINED3DSPR_DEPTHOUT_GREATER_EQUAL:
-        case WINED3DSPR_DEPTHOUT_LESS_EQUAL:
         case WINED3DSPR_DEPTHOUT:
             strcpy(register_name, "result.depth");
             break;
@@ -7784,7 +7782,7 @@ static BOOL arbfp_blit_supported(const struct wined3d_gl_info *gl_info,
     }
 }
 
-static void arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_op op,
+static DWORD arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_op op,
         struct wined3d_context *context, struct wined3d_surface *src_surface, DWORD src_location,
         const RECT *src_rect, struct wined3d_surface *dst_surface, DWORD dst_location, const RECT *dst_rect,
         const struct wined3d_color_key *color_key, enum wined3d_texture_filter_type filter)
@@ -7802,9 +7800,8 @@ static void arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_bli
             dst_texture->resource.pool, dst_texture->resource.format, dst_location))
     {
         if ((next = blitter->next))
-            next->ops->blitter_blit(next, op, context, src_surface, src_location,
+            return next->ops->blitter_blit(next, op, context, src_surface, src_location,
                     src_rect, dst_surface, dst_location, dst_rect, color_key, filter);
-        return;
     }
 
     arbfp_blitter = CONTAINING_RECORD(blitter, struct wined3d_arbfp_blitter, blitter);
@@ -7879,6 +7876,8 @@ static void arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_bli
     if (wined3d_settings.strict_draw_ordering
             || (dst_texture->swapchain && (dst_texture->swapchain->front_buffer == dst_texture)))
         context->gl_info->gl_ops.gl.p_glFlush(); /* Flush to ensure ordering across contexts. */
+
+    return dst_location;
 }
 
 static void arbfp_blitter_clear(struct wined3d_blitter *blitter, struct wined3d_device *device,
@@ -7909,6 +7908,9 @@ void wined3d_arbfp_blitter_create(struct wined3d_blitter **next, const struct wi
         return;
 
     if (!gl_info->supported[ARB_FRAGMENT_PROGRAM])
+        return;
+
+    if (!gl_info->supported[WINED3D_GL_LEGACY_CONTEXT])
         return;
 
     if (!(blitter = HeapAlloc(GetProcessHeap(), 0, sizeof(*blitter))))

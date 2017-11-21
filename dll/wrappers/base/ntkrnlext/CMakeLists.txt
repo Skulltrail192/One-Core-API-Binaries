@@ -1,6 +1,6 @@
 
 spec2def(ntkrnlext.dll ntkrnlext.spec ADD_IMPORTLIB)
-include_directories(${REACTOS_SOURCE_DIR}/lib/rtl)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/lib/rtl)
 
 list(APPEND SOURCE
 	etw.c

@@ -108,6 +108,7 @@ IopGetInterfaceTypeString(INTERFACE_TYPE IfType)
 }
 
 VOID
+NTAPI
 IopReportTargetDeviceChangeAsyncWorker(PVOID Context)
 {
   PINTERNAL_WORK_QUEUE_ITEM Item;
@@ -231,7 +232,7 @@ IoReportDetectedDevice(IN PDRIVER_OBJECT DriverObject,
 
     /* We're enumerated already */
     IopDeviceNodeSetFlag(DeviceNode, DNF_ENUMERATED);
-    
+
     /* We don't call AddDevice for devices reported this way */
     IopDeviceNodeSetFlag(DeviceNode, DNF_ADDED);
 
@@ -350,7 +351,7 @@ IoReportDetectedDevice(IN PDRIVER_OBJECT DriverObject,
     IopQueueTargetDeviceEvent(&GUID_DEVICE_ARRIVAL,
                               &DeviceNode->InstancePath);
 
-    DPRINT1("Reported device: %S (%wZ)\n", HardwareId, &DeviceNode->InstancePath);
+    DPRINT("Reported device: %S (%wZ)\n", HardwareId, &DeviceNode->InstancePath);
 
     /* Return the PDO */
     if (DeviceObject) *DeviceObject = Pdo;
@@ -509,7 +510,7 @@ IoReportTargetDeviceChangeAsynchronous(IN PDEVICE_OBJECT PhysicalDeviceObject,
     Item->PhysicalDeviceObject = PhysicalDeviceObject;
     Item->Callback = Callback;
     Item->Context = Context;
-    ExInitializeWorkItem(&(Item->WorkItem), (PWORKER_THREAD_ROUTINE)IopReportTargetDeviceChangeAsyncWorker, Item);
+    ExInitializeWorkItem(&(Item->WorkItem), IopReportTargetDeviceChangeAsyncWorker, Item);
 
     /* Finally, queue the item, our work here is done */
     ExQueueWorkItem(&(Item->WorkItem), DelayedWorkQueue);

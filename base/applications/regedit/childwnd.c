@@ -40,7 +40,7 @@ extern LPCWSTR get_root_key_name(HKEY hRootKey)
 
 extern void ResizeWnd(int cx, int cy)
 {
-    HDWP hdwp = BeginDeferWindowPos(3);
+    HDWP hdwp = BeginDeferWindowPos(4);
     RECT rt, rs, rb;
     const int tHeight = 22;
     SetRect(&rt, 0, 0, cx, cy);
@@ -52,11 +52,11 @@ extern void ResizeWnd(int cx, int cy)
     }
     GetWindowRect(g_pChildWnd->hAddressBtnWnd, &rb);
     cx = g_pChildWnd->nSplitPos + SPLIT_WIDTH/2;
-    DeferWindowPos(hdwp, g_pChildWnd->hAddressBarWnd, 0, rt.left, rt.top, rt.right-rt.left - 2*tHeight, tHeight, SWP_NOZORDER|SWP_NOACTIVATE);
-    DeferWindowPos(hdwp, g_pChildWnd->hAddressBtnWnd, 0, rt.right - 2*tHeight, rt.top, 2*tHeight, tHeight, SWP_NOZORDER|SWP_NOACTIVATE);
-    DeferWindowPos(hdwp, g_pChildWnd->hTreeWnd, 0, rt.left, rt.top + tHeight+2, g_pChildWnd->nSplitPos-SPLIT_WIDTH/2-rt.left, rt.bottom-rt.top-cy, SWP_NOZORDER|SWP_NOACTIVATE);
-    DeferWindowPos(hdwp, g_pChildWnd->hListWnd, 0, rt.left+cx, rt.top + tHeight+2, rt.right-cx, rt.bottom-rt.top-cy, SWP_NOZORDER|SWP_NOACTIVATE);
-    EndDeferWindowPos(hdwp);
+    if (hdwp) hdwp = DeferWindowPos(hdwp, g_pChildWnd->hAddressBarWnd, 0, rt.left, rt.top, rt.right-rt.left - 2*tHeight, tHeight, SWP_NOZORDER|SWP_NOACTIVATE);
+    if (hdwp) hdwp = DeferWindowPos(hdwp, g_pChildWnd->hAddressBtnWnd, 0, rt.right - 2*tHeight, rt.top, 2*tHeight, tHeight, SWP_NOZORDER|SWP_NOACTIVATE);
+    if (hdwp) hdwp = DeferWindowPos(hdwp, g_pChildWnd->hTreeWnd, 0, rt.left, rt.top + tHeight+2, g_pChildWnd->nSplitPos-SPLIT_WIDTH/2-rt.left, rt.bottom-rt.top-cy, SWP_NOZORDER|SWP_NOACTIVATE);
+    if (hdwp) hdwp = DeferWindowPos(hdwp, g_pChildWnd->hListWnd, 0, rt.left+cx, rt.top + tHeight+2, rt.right-cx, rt.bottom-rt.top-cy, SWP_NOZORDER|SWP_NOACTIVATE);
+    if (hdwp) EndDeferWindowPos(hdwp);
 }
 
 /*******************************************************************************
@@ -309,6 +309,15 @@ UpdateAddress(HTREEITEM hItem, HKEY hRootKey, LPCWSTR pszPath)
     LPCWSTR keyPath, rootName;
     LPWSTR fullPath;
 
+    /* Wipe the listview, the status bar and the address bar if the root key was selected */
+    if (TreeView_GetParent(g_pChildWnd->hTreeWnd, hItem) == NULL)
+    {
+        (void)ListView_DeleteAllItems(g_pChildWnd->hListWnd);
+        SendMessageW(hStatusBar, SB_SETTEXTW, 0, (LPARAM)NULL);
+        SendMessageW(g_pChildWnd->hAddressBarWnd, WM_SETTEXT, 0, (LPARAM)NULL);
+        return;
+    }
+
     if (pszPath == NULL)
         keyPath = GetItemPath(g_pChildWnd->hTreeWnd, hItem, &hRootKey);
     else
@@ -385,7 +394,7 @@ LRESULT CALLBACK ChildWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
         g_pChildWnd->hAddressBarWnd = CreateWindowExW(WS_EX_CLIENTEDGE, L"Edit", NULL, WS_CHILD | WS_VISIBLE | WS_CHILDWINDOW | WS_TABSTOP,
                                                       CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
                                                       hWnd, (HMENU)0, hInst, 0);
-        g_pChildWnd->hAddressBtnWnd = CreateWindowExW(0, L"Button", L"»", WS_CHILD | WS_VISIBLE | WS_CHILDWINDOW | WS_TABSTOP | BS_TEXT | BS_CENTER | BS_VCENTER | BS_FLAT | BS_DEFPUSHBUTTON,
+        g_pChildWnd->hAddressBtnWnd = CreateWindowExW(0, L"Button", L"\x00BB", WS_CHILD | WS_VISIBLE | WS_CHILDWINDOW | WS_TABSTOP | BS_TEXT | BS_CENTER | BS_VCENTER | BS_FLAT | BS_DEFPUSHBUTTON,
                                                       CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
                                                       hWnd, (HMENU)0, hInst, 0);
         g_pChildWnd->hTreeWnd = CreateTreeView(hWnd, g_pChildWnd->szPath, (HMENU) TREE_WINDOW);

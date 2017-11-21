@@ -482,7 +482,7 @@ HRESULT WINAPI CoInternetQueryInfo(LPCWSTR pwzUrl, QUERYOPTION QueryOption,
     IInternetProtocolInfo *protocol_info;
     HRESULT hres;
 
-    TRACE("(%s, %x, %x, %p, %x, %p, %x): stub\n", debugstr_w(pwzUrl),
+    TRACE("(%s, %x, %x, %p, %x, %p, %x)\n", debugstr_w(pwzUrl),
           QueryOption, dwQueryFlags, pvBuffer, cbBuffer, pcbBuffer, dwReserved);
 
     protocol_info = get_protocol_info(pwzUrl);
@@ -530,10 +530,8 @@ static HRESULT set_internet_feature(INTERNETFEATURELIST feature, DWORD flags, BO
     if(feature >= FEATURE_ENTRY_COUNT)
         return E_FAIL;
 
-    if(flags & ~supported_flags) {
+    if(flags & ~supported_flags)
         FIXME("Unsupported flags: %08x\n", flags & ~supported_flags);
-        return E_NOTIMPL;
-    }
 
     if(flags & SET_FEATURE_ON_PROCESS)
         set_feature_on_process(feature, enable);

@@ -19,6 +19,47 @@
 
 #include "gdiplus_private.h"
 
+const GpStringFormat default_drawstring_format =
+{
+    0,
+    LANG_NEUTRAL,
+    LANG_NEUTRAL,
+    StringAlignmentNear,
+    StringTrimmingCharacter,
+    HotkeyPrefixNone,
+    StringAlignmentNear,
+    StringDigitSubstituteUser,
+    0,
+    0.0,
+    NULL,
+    NULL,
+    0,
+    FALSE
+};
+
+static GpStringFormat generic_default_format;
+static GpStringFormat generic_typographic_format;
+
+void init_generic_string_formats(void)
+{
+    memcpy(&generic_default_format, &default_drawstring_format, sizeof(generic_default_format));
+
+    memcpy(&generic_typographic_format, &default_drawstring_format, sizeof(generic_typographic_format));
+    generic_typographic_format.attr = StringFormatFlagsNoFitBlackBox | StringFormatFlagsLineLimit |
+        StringFormatFlagsNoClip;
+    generic_typographic_format.trimming = StringTrimmingNone;
+    generic_typographic_format.generic_typographic = TRUE;
+}
+
+void free_generic_string_formats(void)
+{
+    heap_free(generic_default_format.character_ranges);
+    heap_free(generic_default_format.tabs);
+
+    heap_free(generic_typographic_format.character_ranges);
+    heap_free(generic_typographic_format.tabs);
+}
+
 GpStatus WINGDIPAPI GdipCreateStringFormat(INT attr, LANGID lang,
     GpStringFormat **format)
 {
@@ -27,7 +68,7 @@ GpStatus WINGDIPAPI GdipCreateStringFormat(INT attr, LANGID lang,
     if(!format)
         return InvalidParameter;
 
-    *format = GdipAlloc(sizeof(GpStringFormat));
+    *format = heap_alloc_zero(sizeof(GpStringFormat));
     if(!*format)   return OutOfMemory;
 
     (*format)->attr = attr;
@@ -53,26 +94,22 @@ GpStatus WINGDIPAPI GdipDeleteStringFormat(GpStringFormat *format)
     if(!format)
         return InvalidParameter;
 
-    GdipFree(format->character_ranges);
-    GdipFree(format->tabs);
-    GdipFree(format);
+    if (format == &generic_default_format || format == &generic_typographic_format)
+        return Ok;
+
+    heap_free(format->character_ranges);
+    heap_free(format->tabs);
+    heap_free(format);
 
     return Ok;
 }
 
 GpStatus WINGDIPAPI GdipStringFormatGetGenericDefault(GpStringFormat **format)
 {
-    GpStatus stat;
-
     if (!format)
         return InvalidParameter;
 
-    stat = GdipCreateStringFormat(0, LANG_NEUTRAL, format);
-    if(stat != Ok)
-        return stat;
-
-    (*format)->align     = StringAlignmentNear;
-    (*format)->vertalign = StringAlignmentNear;
+    *format = &generic_default_format;
 
     return Ok;
 }
@@ -128,7 +165,7 @@ GpStatus WINGDIPAPI GdipGetStringFormatLineAlign(GpStringFormat *format,
     if(!format || !align)
         return InvalidParameter;
 
-    *align = format->vertalign;
+    *align = format->line_align;
 
     return Ok;
 }
@@ -232,7 +269,7 @@ GpStatus WINGDIPAPI GdipSetStringFormatLineAlign(GpStringFormat *format,
     if(!format)
         return InvalidParameter;
 
-    format->vertalign = align;
+    format->line_align = align;
 
     return Ok;
 }
@@ -247,11 +284,11 @@ GpStatus WINGDIPAPI GdipSetStringFormatMeasurableCharacterRanges(
 
     TRACE("%p, %d, %p\n", format, rangeCount, ranges);
 
-    new_ranges = GdipAlloc(rangeCount * sizeof(CharacterRange));
+    new_ranges = heap_alloc_zero(rangeCount * sizeof(CharacterRange));
     if (!new_ranges)
         return OutOfMemory;
 
-    GdipFree(format->character_ranges);
+    heap_free(format->character_ranges);
     format->character_ranges = new_ranges;
     memcpy(format->character_ranges, ranges, sizeof(CharacterRange) * rangeCount);
     format->range_count = rangeCount;
@@ -271,14 +308,14 @@ GpStatus WINGDIPAPI GdipSetStringFormatTabStops(GpStringFormat *format, REAL fir
         if(firsttab < 0.0)  return NotImplemented;
         /* first time allocation */
         if(format->tabcount == 0){
-            format->tabs = GdipAlloc(sizeof(REAL)*count);
+            format->tabs = heap_alloc_zero(sizeof(REAL)*count);
             if(!format->tabs)
                 return OutOfMemory;
         }
         /* reallocation */
         if((format->tabcount < count) && (format->tabcount > 0)){
             REAL *ptr;
-            ptr = HeapReAlloc(GetProcessHeap(), 0, format->tabs, sizeof(REAL)*count);
+            ptr = heap_realloc(format->tabs, sizeof(REAL)*count);
             if(!ptr)
                 return OutOfMemory;
             format->tabs = ptr;
@@ -321,15 +358,15 @@ GpStatus WINGDIPAPI GdipCloneStringFormat(GDIPCONST GpStringFormat *format, GpSt
     if(!format || !newFormat)
         return InvalidParameter;
 
-    *newFormat = GdipAlloc(sizeof(GpStringFormat));
+    *newFormat = heap_alloc_zero(sizeof(GpStringFormat));
     if(!*newFormat)    return OutOfMemory;
 
     **newFormat = *format;
 
     if(format->tabcount > 0){
-        (*newFormat)->tabs = GdipAlloc(sizeof(REAL) * format->tabcount);
+        (*newFormat)->tabs = heap_alloc_zero(sizeof(REAL) * format->tabcount);
         if(!(*newFormat)->tabs){
-            GdipFree(*newFormat);
+            heap_free(*newFormat);
             return OutOfMemory;
         }
         memcpy((*newFormat)->tabs, format->tabs, sizeof(REAL) * format->tabcount);
@@ -338,10 +375,10 @@ GpStatus WINGDIPAPI GdipCloneStringFormat(GDIPCONST GpStringFormat *format, GpSt
         (*newFormat)->tabs = NULL;
 
     if(format->range_count > 0){
-        (*newFormat)->character_ranges = GdipAlloc(sizeof(CharacterRange) * format->range_count);
+        (*newFormat)->character_ranges = heap_alloc_zero(sizeof(CharacterRange) * format->range_count);
         if(!(*newFormat)->character_ranges){
-            GdipFree((*newFormat)->tabs);
-            GdipFree(*newFormat);
+            heap_free((*newFormat)->tabs);
+            heap_free(*newFormat);
             return OutOfMemory;
         }
         memcpy((*newFormat)->character_ranges, format->character_ranges,
@@ -357,24 +394,10 @@ GpStatus WINGDIPAPI GdipCloneStringFormat(GDIPCONST GpStringFormat *format, GpSt
 
 GpStatus WINGDIPAPI GdipStringFormatGetGenericTypographic(GpStringFormat **format)
 {
-    GpStatus stat;
-
     if(!format)
         return InvalidParameter;
 
-    stat = GdipCreateStringFormat(StringFormatFlagsNoFitBlackBox |
-                                  StringFormatFlagsLineLimit |
-                                  StringFormatFlagsNoClip, LANG_NEUTRAL, format);
-    if(stat != Ok)
-        return stat;
-
-    (*format)->digitlang = LANG_NEUTRAL;
-    (*format)->digitsub  = StringDigitSubstituteUser;
-    (*format)->trimming  = StringTrimmingNone;
-    (*format)->hkprefix  = HotkeyPrefixNone;
-    (*format)->align     = StringAlignmentNear;
-    (*format)->vertalign = StringAlignmentNear;
-    (*format)->generic_typographic = TRUE;
+    *format = &generic_typographic_format;
 
     TRACE("%p => %p\n", format, *format);
 

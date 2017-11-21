@@ -23,6 +23,7 @@
 #include <regstr.h>
 #include <dll/desk/deskcplx.h>
 #include <strsafe.h>
+#include <gdiplus.h>
 
 #include "appearance.h"
 #include "preview.h"
@@ -41,11 +42,10 @@ typedef struct _APPLET
 
 typedef struct _DIBITMAP
 {
-    BITMAPFILEHEADER *header;
     BITMAPINFO       *info;
     BYTE             *bits;
-    int               width;
-    int               height;
+    UINT              width;
+    UINT              height;
 } DIBITMAP, *PDIBITMAP;
 
 extern HINSTANCE hApplet;
@@ -104,6 +104,8 @@ typedef struct _DISPLAY_DEVICE_ENTRY
 typedef struct _GLOBAL_DATA
 {
     COLORREF desktop_color;
+    LPCWSTR pwszFile;
+    LPCWSTR pwszAction;
 } GLOBAL_DATA, *PGLOBAL_DATA;
 
 extern GLOBAL_DATA g_GlobalData;
@@ -120,7 +122,7 @@ HPSXA WINAPI SHCreatePropSheetExtArrayEx(HKEY,LPCWSTR,UINT,IDataObject*);
 INT_PTR CALLBACK
 AdvGeneralPageProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-LONG 
+LONG
 RegLoadMUIStringW(IN HKEY hKey,
                   IN LPCWSTR pszValue  OPTIONAL,
                   OUT LPWSTR pszOutBuf,

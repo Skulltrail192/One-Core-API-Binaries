@@ -2,7 +2,7 @@
  * COPYRIGHT:         See COPYING in the top level directory
  * PROJECT:           ReactOS kernel
  * PURPOSE:           GDI Driver Device Functions
- * FILE:              subsys/win32k/eng/device.c
+ * FILE:              win32ss/gdi/eng/device.c
  * PROGRAMER:         Jason Filby
  *                    Timo Kreuzer
  */
@@ -21,7 +21,7 @@ static ULONG giDevNum = 1;
 INIT_FUNCTION
 NTSTATUS
 NTAPI
-InitDeviceImpl()
+InitDeviceImpl(VOID)
 {
     ghsemGraphicsDeviceList = EngCreateSemaphore();
     if (!ghsemGraphicsDeviceList)
@@ -30,27 +30,149 @@ InitDeviceImpl()
     return STATUS_SUCCESS;
 }
 
+BOOLEAN
+EngpPopulateDeviceModeList(
+    _Inout_ PGRAPHICS_DEVICE pGraphicsDevice,
+    _In_ PDEVMODEW pdmDefault)
+{
+    PWSTR pwsz;
+    PLDEVOBJ pldev;
+    PDEVMODEINFO pdminfo;
+    PDEVMODEW pdm, pdmEnd;
+    ULONG i, cModes = 0;
+    BOOLEAN bModeMatch = FALSE;
+
+    ASSERT(pGraphicsDevice->pdevmodeInfo == NULL);
+    ASSERT(pGraphicsDevice->pDevModeList == NULL);
+
+    pwsz = pGraphicsDevice->pDiplayDrivers;
+
+    /* Loop through the driver names
+     * This is a REG_MULTI_SZ string */
+    for (; *pwsz; pwsz += wcslen(pwsz) + 1)
+    {
+        TRACE("trying driver: %ls\n", pwsz);
+        /* Try to load the display driver */
+        pldev = EngLoadImageEx(pwsz, LDEV_DEVICE_DISPLAY);
+        if (!pldev)
+        {
+            ERR("Could not load driver: '%ls'\n", pwsz);
+            continue;
+        }
+
+        /* Get the mode list from the driver */
+        pdminfo = LDEVOBJ_pdmiGetModes(pldev, pGraphicsDevice->DeviceObject);
+        if (!pdminfo)
+        {
+            ERR("Could not get mode list for '%ls'\n", pwsz);
+            continue;
+        }
+
+        /* Attach the mode info to the device */
+        pdminfo->pdmiNext = pGraphicsDevice->pdevmodeInfo;
+        pGraphicsDevice->pdevmodeInfo = pdminfo;
+
+        /* Loop all DEVMODEs */
+        pdmEnd = (DEVMODEW*)((PCHAR)pdminfo->adevmode + pdminfo->cbdevmode);
+        for (pdm = pdminfo->adevmode;
+             (pdm + 1 <= pdmEnd) && (pdm->dmSize != 0);
+             pdm = (DEVMODEW*)((PCHAR)pdm + pdm->dmSize + pdm->dmDriverExtra))
+        {
+            /* Count this DEVMODE */
+            cModes++;
+
+            /* Some drivers like the VBox driver don't fill the dmDeviceName
+               with the name of the display driver. So fix that here. */
+            wcsncpy(pdm->dmDeviceName, pwsz, CCHDEVICENAME);
+            pdm->dmDeviceName[CCHDEVICENAME - 1] = 0;
+        }
+
+        // FIXME: release the driver again until it's used?
+    }
+
+    if (!pGraphicsDevice->pdevmodeInfo || cModes == 0)
+    {
+        ERR("No devmodes\n");
+        return FALSE;
+    }
+
+    /* Allocate an index buffer */
+    pGraphicsDevice->cDevModes = cModes;
+    pGraphicsDevice->pDevModeList = ExAllocatePoolWithTag(PagedPool,
+                                                          cModes * sizeof(DEVMODEENTRY),
+                                                          GDITAG_GDEVICE);
+    if (!pGraphicsDevice->pDevModeList)
+    {
+        ERR("No devmode list\n");
+        return FALSE;
+    }
+
+    TRACE("Looking for mode %lux%lux%lu(%lu Hz)\n",
+        pdmDefault->dmPelsWidth,
+        pdmDefault->dmPelsHeight,
+        pdmDefault->dmBitsPerPel,
+        pdmDefault->dmDisplayFrequency);
+
+    /* Loop through all DEVMODEINFOs */
+    for (pdminfo = pGraphicsDevice->pdevmodeInfo, i = 0;
+         pdminfo;
+         pdminfo = pdminfo->pdmiNext)
+    {
+        /* Calculate End of the DEVMODEs */
+        pdmEnd = (DEVMODEW*)((PCHAR)pdminfo->adevmode + pdminfo->cbdevmode);
+
+        /* Loop through the DEVMODEs */
+        for (pdm = pdminfo->adevmode;
+             (pdm + 1 <= pdmEnd) && (pdm->dmSize != 0);
+             pdm = (PDEVMODEW)((PCHAR)pdm + pdm->dmSize + pdm->dmDriverExtra))
+        {
+            TRACE("    %S has mode %lux%lux%lu(%lu Hz)\n",
+                  pdm->dmDeviceName,
+                  pdm->dmPelsWidth,
+                  pdm->dmPelsHeight,
+                  pdm->dmBitsPerPel,
+                  pdm->dmDisplayFrequency);
+            /* Compare with the default entry */
+            if (!bModeMatch &&
+                pdm->dmBitsPerPel == pdmDefault->dmBitsPerPel &&
+                pdm->dmPelsWidth == pdmDefault->dmPelsWidth &&
+                pdm->dmPelsHeight == pdmDefault->dmPelsHeight)
+            {
+                pGraphicsDevice->iDefaultMode = i;
+                pGraphicsDevice->iCurrentMode = i;
+                TRACE("Found default entry: %lu '%ls'\n", i, pdm->dmDeviceName);
+                if (pdm->dmDisplayFrequency == pdmDefault->dmDisplayFrequency)
+                {
+                    /* Uh oh, even the display frequency matches. */
+                    bModeMatch = TRUE;
+                }
+            }
+
+            /* Initialize the entry */
+            pGraphicsDevice->pDevModeList[i].dwFlags = 0;
+            pGraphicsDevice->pDevModeList[i].pdm = pdm;
+            i++;
+        }
+    }
+    return TRUE;
+}
 
 PGRAPHICS_DEVICE
 NTAPI
 EngpRegisterGraphicsDevice(
-    PUNICODE_STRING pustrDeviceName,
-    PUNICODE_STRING pustrDiplayDrivers,
-    PUNICODE_STRING pustrDescription,
-    PDEVMODEW pdmDefault)
+    _In_ PUNICODE_STRING pustrDeviceName,
+    _In_ PUNICODE_STRING pustrDiplayDrivers,
+    _In_ PUNICODE_STRING pustrDescription,
+    _In_ PDEVMODEW pdmDefault)
 {
     PGRAPHICS_DEVICE pGraphicsDevice;
     PDEVICE_OBJECT pDeviceObject;
     PFILE_OBJECT pFileObject;
     NTSTATUS Status;
     PWSTR pwsz;
-    ULONG i, cj, cModes = 0;
+    ULONG cj;
     SIZE_T cjWritten;
     BOOL bEnable = TRUE;
-    PDEVMODEINFO pdminfo;
-    PDEVMODEW pdm, pdmEnd;
-    PLDEVOBJ pldev;
-    BOOLEAN bModeMatch = FALSE;
 
     TRACE("EngpRegisterGraphicsDevice(%wZ)\n", pustrDeviceName);
 
@@ -124,115 +246,13 @@ EngpRegisterGraphicsDevice(
     // FIXME: initialize state flags
     pGraphicsDevice->StateFlags = 0;
 
-    /* Loop through the driver names
-     * This is a REG_MULTI_SZ string */
-    for (; *pwsz; pwsz += wcslen(pwsz) + 1)
+    /* Create the mode list */
+    pGraphicsDevice->pDevModeList = NULL;
+    if (!EngpPopulateDeviceModeList(pGraphicsDevice, pdmDefault))
     {
-        TRACE("trying driver: %ls\n", pwsz);
-        /* Try to load the display driver */
-        pldev = EngLoadImageEx(pwsz, LDEV_DEVICE_DISPLAY);
-        if (!pldev)
-        {
-            ERR("Could not load driver: '%ls'\n", pwsz);
-            continue;
-        }
-
-        /* Get the mode list from the driver */
-        pdminfo = LDEVOBJ_pdmiGetModes(pldev, pDeviceObject);
-        if (!pdminfo)
-        {
-            ERR("Could not get mode list for '%ls'\n", pwsz);
-            continue;
-        }
-
-        /* Attach the mode info to the device */
-        pdminfo->pdmiNext = pGraphicsDevice->pdevmodeInfo;
-        pGraphicsDevice->pdevmodeInfo = pdminfo;
-
-        /* Loop all DEVMODEs */
-        pdmEnd = (DEVMODEW*)((PCHAR)pdminfo->adevmode + pdminfo->cbdevmode);
-        for (pdm = pdminfo->adevmode;
-             (pdm + 1 <= pdmEnd) && (pdm->dmSize != 0);
-             pdm = (DEVMODEW*)((PCHAR)pdm + pdm->dmSize + pdm->dmDriverExtra))
-        {
-            /* Count this DEVMODE */
-            cModes++;
-
-            /* Some drivers like the VBox driver don't fill the dmDeviceName
-               with the name of the display driver. So fix that here. */
-            wcsncpy(pdm->dmDeviceName, pwsz, CCHDEVICENAME);
-            pdm->dmDeviceName[CCHDEVICENAME - 1] = 0;
-        }
-
-        // FIXME: release the driver again until it's used?
-    }
-
-    if (!pGraphicsDevice->pdevmodeInfo || cModes == 0)
-    {
-        ERR("No devmodes\n");
         ExFreePoolWithTag(pGraphicsDevice, GDITAG_GDEVICE);
         return NULL;
     }
-
-    /* Allocate an index buffer */
-    pGraphicsDevice->cDevModes = cModes;
-    pGraphicsDevice->pDevModeList = ExAllocatePoolWithTag(PagedPool,
-                                                          cModes * sizeof(DEVMODEENTRY),
-                                                          GDITAG_GDEVICE);
-    if (!pGraphicsDevice->pDevModeList)
-    {
-        ERR("No devmode list\n");
-        ExFreePoolWithTag(pGraphicsDevice, GDITAG_GDEVICE);
-        return NULL;
-    }
-
-    TRACE("Looking for mode %lux%lux%lu(%lu Hz)\n",
-        pdmDefault->dmPelsWidth,
-        pdmDefault->dmPelsHeight,
-        pdmDefault->dmBitsPerPel,
-        pdmDefault->dmDisplayFrequency);
-
-    /* Loop through all DEVMODEINFOs */
-    for (pdminfo = pGraphicsDevice->pdevmodeInfo, i = 0;
-         pdminfo;
-         pdminfo = pdminfo->pdmiNext)
-    {
-        /* Calculate End of the DEVMODEs */
-        pdmEnd = (DEVMODEW*)((PCHAR)pdminfo->adevmode + pdminfo->cbdevmode);
-
-        /* Loop through the DEVMODEs */
-        for (pdm = pdminfo->adevmode;
-             (pdm + 1 <= pdmEnd) && (pdm->dmSize != 0);
-             pdm = (PDEVMODEW)((PCHAR)pdm + pdm->dmSize + pdm->dmDriverExtra))
-        {
-            TRACE("    %S has mode %lux%lux%lu(%lu Hz)\n",
-                  pdm->dmDeviceName,
-                  pdm->dmPelsWidth,
-                  pdm->dmPelsHeight,
-                  pdm->dmBitsPerPel,
-                  pdm->dmDisplayFrequency);
-            /* Compare with the default entry */
-            if (!bModeMatch && 
-                pdm->dmBitsPerPel == pdmDefault->dmBitsPerPel &&
-                pdm->dmPelsWidth == pdmDefault->dmPelsWidth &&
-                pdm->dmPelsHeight == pdmDefault->dmPelsHeight)
-            {
-                pGraphicsDevice->iDefaultMode = i;
-                pGraphicsDevice->iCurrentMode = i;
-                TRACE("Found default entry: %lu '%ls'\n", i, pdm->dmDeviceName);
-                if (pdm->dmDisplayFrequency == pdmDefault->dmDisplayFrequency)
-                {
-                    /* Uh oh, even the display frequency matches. */
-                    bModeMatch = TRUE;
-                }
-            }
-
-            /* Initialize the entry */
-            pGraphicsDevice->pDevModeList[i].dwFlags = 0;
-            pGraphicsDevice->pDevModeList[i].pdm = pdm;
-            i++;
-        }
-     }
 
     /* Lock loader */
     EngAcquireSemaphore(ghsemGraphicsDeviceList);
@@ -250,7 +270,7 @@ EngpRegisterGraphicsDevice(
 
     /* Unlock loader */
     EngReleaseSemaphore(ghsemGraphicsDeviceList);
-    TRACE("Prepared %lu modes for %ls\n", cModes, pGraphicsDevice->pwszDescription);
+    TRACE("Prepared %lu modes for %ls\n", pGraphicsDevice->cDevModes, pGraphicsDevice->pwszDescription);
 
     return pGraphicsDevice;
 }
@@ -259,9 +279,9 @@ EngpRegisterGraphicsDevice(
 PGRAPHICS_DEVICE
 NTAPI
 EngpFindGraphicsDevice(
-    PUNICODE_STRING pustrDevice,
-    ULONG iDevNum,
-    DWORD dwFlags)
+    _In_opt_ PUNICODE_STRING pustrDevice,
+    _In_ ULONG iDevNum,
+    _In_ DWORD dwFlags)
 {
     UNICODE_STRING ustrCurrent;
     PGRAPHICS_DEVICE pGraphicsDevice;
@@ -305,12 +325,12 @@ EngpFindGraphicsDevice(
 static
 NTSTATUS
 EngpFileIoRequest(
-    PFILE_OBJECT pFileObject,
-    ULONG ulMajorFunction,
-    LPVOID lpBuffer,
-    SIZE_T nBufferSize,
-    ULONGLONG ullStartOffset,
-    OUT PULONG_PTR lpInformation)
+    _In_ PFILE_OBJECT pFileObject,
+    _In_ ULONG ulMajorFunction,
+    _In_reads_(nBufferSize) PVOID lpBuffer,
+    _In_ SIZE_T nBufferSize,
+    _In_ ULONGLONG ullStartOffset,
+    _Out_ PULONG_PTR lpInformation)
 {
     PDEVICE_OBJECT pDeviceObject;
     KEVENT Event;
@@ -363,29 +383,36 @@ EngpFileIoRequest(
 VOID
 APIENTRY
 EngFileWrite(
-    IN PFILE_OBJECT pFileObject,
-    IN PVOID lpBuffer,
-    IN SIZE_T nLength,
-    IN PSIZE_T lpBytesWritten)
+    _In_ PFILE_OBJECT pFileObject,
+    _In_reads_(nLength) PVOID lpBuffer,
+    _In_ SIZE_T nLength,
+    _Out_ PSIZE_T lpBytesWritten)
 {
-    EngpFileIoRequest(pFileObject,
-                      IRP_MJ_WRITE,
-                      lpBuffer,
-                      nLength,
-                      0,
-                      lpBytesWritten);
+    NTSTATUS status;
+
+    status = EngpFileIoRequest(pFileObject,
+                               IRP_MJ_WRITE,
+                               lpBuffer,
+                               nLength,
+                               0,
+                               lpBytesWritten);
+    if (!NT_SUCCESS(status))
+    {
+        *lpBytesWritten = 0;
+    }
 }
 
+_Success_(return>=0)
 NTSTATUS
 APIENTRY
 EngFileIoControl(
-    IN PFILE_OBJECT pFileObject,
-    IN DWORD dwIoControlCode,
-    IN PVOID lpInBuffer,
-    IN SIZE_T nInBufferSize,
-    OUT PVOID lpOutBuffer,
-    IN SIZE_T nOutBufferSize,
-    OUT PULONG_PTR lpInformation)
+    _In_ PFILE_OBJECT pFileObject,
+    _In_ DWORD dwIoControlCode,
+    _In_reads_(nInBufferSize) PVOID lpInBuffer,
+    _In_ SIZE_T nInBufferSize,
+    _Out_writes_(nOutBufferSize) PVOID lpOutBuffer,
+    _In_ SIZE_T nOutBufferSize,
+    _Out_ PULONG_PTR lpInformation)
 {
     PDEVICE_OBJECT pDeviceObject;
     KEVENT Event;
@@ -438,13 +465,15 @@ EngFileIoControl(
 /*
  * @implemented
  */
-DWORD APIENTRY
+_Success_(return==0)
+DWORD
+APIENTRY
 EngDeviceIoControl(
     _In_ HANDLE hDevice,
     _In_ DWORD dwIoControlCode,
-    _In_opt_bytecount_(cjInBufferSize) LPVOID lpInBuffer,
+    _In_reads_bytes_opt_(cjInBufferSize) LPVOID lpInBuffer,
     _In_ DWORD cjInBufferSize,
-    _Out_opt_bytecap_(cjOutBufferSize) LPVOID lpOutBuffer,
+    _Out_writes_bytes_opt_(cjOutBufferSize) LPVOID lpOutBuffer,
     _In_ DWORD cjOutBufferSize,
     _Out_ LPDWORD lpBytesReturned)
 {

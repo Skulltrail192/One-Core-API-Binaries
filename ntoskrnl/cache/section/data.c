@@ -17,7 +17,7 @@
  *
  *
  * PROJECT:         ReactOS kernel
- * FILE:            ntoskrnl/mm/section.c
+ * FILE:            ntoskrnl/cache/section/data.c
  * PURPOSE:         Implements section objects
  *
  * PROGRAMMERS:     Rex Jolliff
@@ -76,10 +76,10 @@ entry.
 
 #include <ntoskrnl.h>
 #include "newmm.h"
-#include "../newcc.h"
+#include <cache/newcc.h>
 #define NDEBUG
 #include <debug.h>
-#include "../mm/ARM3/miarm.h"
+#include <mm/ARM3/miarm.h>
 
 #define DPRINTC DPRINT
 
@@ -160,8 +160,8 @@ _MiFlushMappedSection(PVOID BaseAddress,
         DPRINT("STATUS_NOT_MAPPED_DATA\n");
         return STATUS_NOT_MAPPED_DATA;
     }
-    BeginningAddress = PAGE_ROUND_DOWN((ULONG_PTR)MemoryArea->StartingAddress);
-    EndingAddress = PAGE_ROUND_UP((ULONG_PTR)MemoryArea->EndingAddress);
+    BeginningAddress = PAGE_ROUND_DOWN(MA_GetStartingAddress(MemoryArea));
+    EndingAddress = PAGE_ROUND_UP(MA_GetEndingAddress(MemoryArea));
     Segment = MemoryArea->Data.SectionData.Segment;
     ViewOffset.QuadPart = MemoryArea->Data.SectionData.ViewOffset.QuadPart;
 
@@ -340,6 +340,7 @@ MmCreateCacheSection(PROS_SECTION_OBJECT *SectionObject,
     if (!NT_SUCCESS(Status))
     {
         DPRINT("Failed: %x\n", Status);
+        ObDereferenceObject(FileObject);
         return Status;
     }
 
@@ -382,6 +383,7 @@ MmCreateCacheSection(PROS_SECTION_OBJECT *SectionObject,
         {
             DPRINT("Status %x\n", Status);
             ObDereferenceObject(Section);
+            ObDereferenceObject(FileObject);
             return Status;
         }
         ASSERT(Status != STATUS_PENDING);
@@ -389,7 +391,7 @@ MmCreateCacheSection(PROS_SECTION_OBJECT *SectionObject,
         FileSizes.ValidDataLength = FileInfo.EndOfFile;
         FileSizes.FileSize = FileInfo.EndOfFile;
     }
-    DPRINT("Got %08x\n", FileSizes.ValidDataLength.u.LowPart);
+    DPRINT("Got %I64x\n", FileSizes.ValidDataLength.QuadPart);
 
     /*
     * FIXME: Revise this once a locking order for file size changes is
@@ -399,15 +401,12 @@ MmCreateCacheSection(PROS_SECTION_OBJECT *SectionObject,
     */
     if (UMaximumSize != NULL && UMaximumSize->QuadPart)
     {
-        DPRINT("Taking maximum %x\n", UMaximumSize->LowPart);
+        DPRINT("Taking maximum %I64x\n", UMaximumSize->QuadPart);
         MaximumSize.QuadPart = UMaximumSize->QuadPart;
     }
     else
     {
-        DPRINT("Got file size %08x%08x\n",
-               FileSizes.FileSize.u.HighPart,
-               FileSizes.FileSize.u.LowPart);
-
+        DPRINT("Got file size %I64x\n", FileSizes.FileSize.QuadPart);
         MaximumSize.QuadPart = FileSizes.FileSize.QuadPart;
     }
 
@@ -416,6 +415,7 @@ MmCreateCacheSection(PROS_SECTION_OBJECT *SectionObject,
     {
         DPRINT("Zero size file\n");
         ObDereferenceObject(Section);
+        ObDereferenceObject(FileObject);
         return STATUS_FILE_INVALID;
     }
 
@@ -426,6 +426,7 @@ MmCreateCacheSection(PROS_SECTION_OBJECT *SectionObject,
     {
         DPRINT("Failed: STATUS_NO_MEMORY\n");
         ObDereferenceObject(Section);
+        ObDereferenceObject(FileObject);
         return STATUS_NO_MEMORY;
     }
 
@@ -554,7 +555,6 @@ _MiMapViewOfSegment(PMMSUPPORT AddressSpace,
                                 ViewSize,
                                 Protect,
                                 &MArea,
-                                FALSE,
                                 AllocationType,
                                 *BaseAddress ?
                                 PAGE_SIZE : MM_ALLOCATION_GRANULARITY);
@@ -684,7 +684,7 @@ MmFreeCacheSectionPage(PVOID Context,
     Process = MmGetAddressSpaceOwner(AddressSpace);
     Address = (PVOID)PAGE_ROUND_DOWN(Address);
     Segment = ContextData[1];
-    Offset.QuadPart = (ULONG_PTR)Address - (ULONG_PTR)MemoryArea->StartingAddress +
+    Offset.QuadPart = (ULONG_PTR)Address - MA_GetStartingAddress(MemoryArea) +
                       MemoryArea->Data.SectionData.ViewOffset.QuadPart;
 
     Entry = MmGetPageEntrySectionSegment(Segment, &Offset);
@@ -735,7 +735,7 @@ MmUnmapViewOfCacheSegment(PMMSUPPORT AddressSpace,
 
     DPRINT("MmFreeMemoryArea(%p,%p)\n",
            MmGetAddressSpaceOwner(AddressSpace),
-           MemoryArea->StartingAddress);
+           MA_GetStartingAddress(MemoryArea));
 
     MmLockAddressSpace(AddressSpace);
 

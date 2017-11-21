@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS Console Server DLL
- * FILE:            condrv/dummyterm.c
+ * FILE:            win32ss/user/winsrv/consrv/condrv/dummyterm.c
  * PURPOSE:         Dummy Terminal used when no terminal
  *                  is attached to the specified console.
  * PROGRAMMERS:     Hermes Belusca-Maito (hermes.belusca@sfr.fr)
@@ -31,11 +31,11 @@ DummyDeinitTerminal(IN OUT PTERMINAL This)
 
 static NTSTATUS NTAPI
 DummyReadStream(IN OUT PTERMINAL This,
-                /**/IN PUNICODE_STRING ExeName /**/OPTIONAL/**/,/**/
                 IN BOOLEAN Unicode,
                 /**PWCHAR Buffer,**/
                 OUT PVOID Buffer,
                 IN OUT PCONSOLE_READCONSOLE_CONTROL ReadControl,
+                IN PVOID Parameter OPTIONAL,
                 IN ULONG NumCharsToRead,
                 OUT PULONG NumCharsRead OPTIONAL)
 {
@@ -112,6 +112,10 @@ static VOID NTAPI
 DummyGetLargestConsoleWindowSize(IN OUT PTERMINAL This,
                                  PCOORD pSize)
 {
+    /* Return a standard size */
+    if (!pSize) return;
+    pSize->X = 80;
+    pSize->Y = 25;
 }
 
 static BOOL NTAPI

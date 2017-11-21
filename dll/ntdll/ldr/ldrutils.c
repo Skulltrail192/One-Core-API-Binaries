@@ -17,33 +17,18 @@
 /* GLOBALS *******************************************************************/
 
 PLDR_DATA_TABLE_ENTRY LdrpLoadedDllHandleCache, LdrpGetModuleHandleCache;
+
 BOOLEAN g_ShimsEnabled;
+PVOID g_pShimEngineModule;
+PVOID g_pfnSE_DllLoaded;
+PVOID g_pfnSE_DllUnloaded;
+PVOID g_pfnSE_InstallBeforeInit;
+PVOID g_pfnSE_InstallAfterInit;
+PVOID g_pfnSE_ProcessDying;
 
 /* FUNCTIONS *****************************************************************/
 
-/* NOTE: Remove those two once our actctx support becomes better */
-NTSTATUS create_module_activation_context( LDR_DATA_TABLE_ENTRY *module )
-{
-    NTSTATUS status;
-    LDR_RESOURCE_INFO info;
-    IMAGE_RESOURCE_DATA_ENTRY *entry;
-
-    info.Type = (ULONG)RT_MANIFEST;
-    info.Name = (ULONG)ISOLATIONAWARE_MANIFEST_RESOURCE_ID;
-    info.Language = 0;
-    if (!(status = LdrFindResource_U( module->DllBase, &info, 3, &entry )))
-    {
-        ACTCTXW ctx;
-        ctx.cbSize   = sizeof(ctx);
-        ctx.lpSource = NULL;
-        ctx.dwFlags  = ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_HMODULE_VALID;
-        ctx.hModule  = module->DllBase;
-        ctx.lpResourceName = (LPCWSTR)ISOLATIONAWARE_MANIFEST_RESOURCE_ID;
-        status = RtlCreateActivationContext(0, (PVOID)&ctx, 0, NULL, NULL, &module->EntryPointActivationContext);
-    }
-    return status;
-}
-
+/* NOTE: Remove this one once our actctx support becomes better */
 NTSTATUS find_actctx_dll( LPCWSTR libname, WCHAR *fullname )
 {
     static const WCHAR winsxsW[] = {'\\','w','i','n','s','x','s','\\'};
@@ -204,6 +189,7 @@ LdrpFreeUnicodeString(IN PUNICODE_STRING StringIn)
     /* Zero it out */
     RtlInitEmptyUnicodeString(StringIn, NULL, 0);
 }
+
 BOOLEAN
 NTAPI
 LdrpCallInitRoutine(IN PDLL_INIT_ROUTINE EntryPoint,
@@ -223,6 +209,7 @@ LdrpUpdateLoadCount3(IN PLDR_DATA_TABLE_ENTRY LdrEntry,
                      OUT PUNICODE_STRING UpdateString)
 {
     PIMAGE_BOUND_FORWARDER_REF NewImportForwarder;
+    PIMAGE_BOUND_IMPORT_DESCRIPTOR FirstEntry;
     PIMAGE_BOUND_IMPORT_DESCRIPTOR BoundEntry;
     PIMAGE_IMPORT_DESCRIPTOR ImportEntry;
     PIMAGE_THUNK_DATA FirstThunk;
@@ -256,12 +243,12 @@ LdrpUpdateLoadCount3(IN PLDR_DATA_TABLE_ENTRY LdrEntry,
     ImportNameUnic = &NtCurrentTeb()->StaticUnicodeString;
 
     /* Try to get the new import entry */
-    BoundEntry = (PIMAGE_BOUND_IMPORT_DESCRIPTOR)RtlImageDirectoryEntryToData(LdrEntry->DllBase,
-                                                                              TRUE,
-                                                                              IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT,
-                                                                              &ImportSize);
+    FirstEntry = RtlImageDirectoryEntryToData(LdrEntry->DllBase,
+                                              TRUE,
+                                              IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT,
+                                              &ImportSize);
 
-    if (BoundEntry)
+    if (FirstEntry)
     {
         /* Set entry flags if refing/derefing */
         if (Flags == LDRP_UPDATE_REFCOUNT)
@@ -269,10 +256,11 @@ LdrpUpdateLoadCount3(IN PLDR_DATA_TABLE_ENTRY LdrEntry,
         else if (Flags == LDRP_UPDATE_DEREFCOUNT)
             LdrEntry->Flags |= LDRP_UNLOAD_IN_PROGRESS;
 
+        BoundEntry = FirstEntry;
         while (BoundEntry->OffsetModuleName)
         {
             /* Get pointer to the current import name */
-            ImportName = (PCHAR)BoundEntry + BoundEntry->OffsetModuleName;
+            ImportName = (LPSTR)FirstEntry + BoundEntry->OffsetModuleName;
 
             RtlInitAnsiString(&ImportNameAnsi, ImportName);
             Status = RtlAnsiStringToUnicodeString(ImportNameUnic, &ImportNameAnsi, FALSE);
@@ -315,9 +303,9 @@ LdrpUpdateLoadCount3(IN PLDR_DATA_TABLE_ENTRY LdrEntry,
 
             /* Go through forwarders */
             NewImportForwarder = (PIMAGE_BOUND_FORWARDER_REF)(BoundEntry + 1);
-            for (i=0; i<BoundEntry->NumberOfModuleForwarderRefs; i++)
+            for (i = 0; i < BoundEntry->NumberOfModuleForwarderRefs; i++)
             {
-                ImportName = (PCHAR)BoundEntry + NewImportForwarder->OffsetModuleName;
+                ImportName = (LPSTR)FirstEntry + NewImportForwarder->OffsetModuleName;
 
                 RtlInitAnsiString(&ImportNameAnsi, ImportName);
                 Status = RtlAnsiStringToUnicodeString(ImportNameUnic, &ImportNameAnsi, FALSE);
@@ -1270,7 +1258,7 @@ SkipCheck:
         {
             /* Remove the DLL from the lists */
             RemoveEntryList(&LdrEntry->InLoadOrderLinks);
-            RemoveEntryList(&LdrEntry->InMemoryOrderModuleList);
+            RemoveEntryList(&LdrEntry->InMemoryOrderLinks);
             RemoveEntryList(&LdrEntry->HashLinks);
 
             /* Remove the LDR Entry */
@@ -1320,7 +1308,7 @@ SkipCheck:
         ImageBase = (ULONG_PTR)NtHeaders->OptionalHeader.ImageBase;
         ImageEnd = ImageBase + ViewSize;
 
-        DPRINT1("LDR: LdrpMapDll Relocating Image Name %ws (%p -> %p)\n", DllName, (PVOID)ImageBase, ViewBase);
+        DPRINT1("LDR: LdrpMapDll Relocating Image Name %ws (%p-%p -> %p)\n", DllName, (PVOID)ImageBase, (PVOID)ImageEnd, ViewBase);
 
         /* Scan all the modules */
         ListHead = &Peb->Ldr->InLoadOrderModuleList;
@@ -1338,7 +1326,7 @@ SkipCheck:
             CandidateEnd = CandidateBase + CandidateEntry->SizeOfImage;
 
             /* Make sure this entry isn't unloading */
-            if (!CandidateEntry->InMemoryOrderModuleList.Flink) continue;
+            if (!CandidateEntry->InMemoryOrderLinks.Flink) continue;
 
             /* Check if our regions are colliding */
             if ((ImageBase >= CandidateBase && ImageBase <= CandidateEnd) ||
@@ -1418,7 +1406,7 @@ SkipCheck:
 
                 /* Don't do relocation */
                 Status = STATUS_CONFLICTING_ADDRESSES;
-                goto NoRelocNeeded;
+                goto FailRelocate;
             }
 
             /* Change the protection to prepare for relocation */
@@ -1456,13 +1444,13 @@ SkipCheck:
                     Status = LdrpSetProtection(ViewBase, TRUE);
                 }
             }
-//FailRelocate:
+FailRelocate:
             /* Handle any kind of failure */
             if (!NT_SUCCESS(Status))
             {
                 /* Remove it from the lists */
                 RemoveEntryList(&LdrEntry->InLoadOrderLinks);
-                RemoveEntryList(&LdrEntry->InMemoryOrderModuleList);
+                RemoveEntryList(&LdrEntry->InMemoryOrderLinks);
                 RemoveEntryList(&LdrEntry->HashLinks);
 
                 /* Unmap it, clear the entry */
@@ -1573,7 +1561,7 @@ LdrpInsertMemoryTableEntry(IN PLDR_DATA_TABLE_ENTRY LdrEntry)
 
     /* Insert into other lists */
     InsertTailList(&PebData->InLoadOrderModuleList, &LdrEntry->InLoadOrderLinks);
-    InsertTailList(&PebData->InMemoryOrderModuleList, &LdrEntry->InMemoryOrderModuleList);
+    InsertTailList(&PebData->InMemoryOrderModuleList, &LdrEntry->InMemoryOrderLinks);
 }
 
 VOID
@@ -1627,7 +1615,7 @@ LdrpCheckForLoadedDllHandle(IN PVOID Base,
                                     InLoadOrderLinks);
 
         /* Make sure it's not unloading and check for a match */
-        if ((Current->InMemoryOrderModuleList.Flink) && (Base == Current->DllBase))
+        if ((Current->InMemoryOrderLinks.Flink) && (Base == Current->DllBase))
         {
             /* Save in cache */
             LdrpLoadedDllHandleCache = Current;
@@ -2080,6 +2068,8 @@ lookinhash:
     }
 
     /* FIXME: Warning, activation context missing */
+    DPRINT("Warning, activation context missing\n");
+
     /* NOTE: From here on down, everything looks good */
 
     /* Loop the module list */
@@ -2094,7 +2084,7 @@ lookinhash:
         ListEntry = ListEntry->Flink;
 
         /* Check if it's being unloaded */
-        if (!CurEntry->InMemoryOrderModuleList.Flink) continue;
+        if (!CurEntry->InMemoryOrderLinks.Flink) continue;
 
         /* Check if name matches */
         if (RtlEqualUnicodeString(&FullDllName,
@@ -2192,7 +2182,7 @@ lookinhash:
         ListEntry = ListEntry->Flink;
 
         /* Check if it's in the process of being unloaded */
-        if (!CurEntry->InMemoryOrderModuleList.Flink) continue;
+        if (!CurEntry->InMemoryOrderLinks.Flink) continue;
 
         /* The header is untrusted, use SEH */
         _SEH2_TRY
@@ -2307,7 +2297,7 @@ LdrpGetProcedureAddress(IN PVOID BaseAddress,
             return STATUS_INVALID_PARAMETER;
         }
 
-        /* Set the orginal flag in the thunk */
+        /* Set the original flag in the thunk */
         Thunk.u1.Ordinal = Ordinal | IMAGE_ORDINAL_FLAG;
     }
 
@@ -2359,7 +2349,7 @@ LdrpGetProcedureAddress(IN PVOID BaseAddress,
             Entry = NtCurrentPeb()->Ldr->InInitializationOrderModuleList.Blink;
             LdrEntry = CONTAINING_RECORD(Entry,
                                          LDR_DATA_TABLE_ENTRY,
-                                         InInitializationOrderModuleList);
+                                         InInitializationOrderLinks);
 
             /* Make sure we didn't process it yet*/
             if (!(LdrEntry->Flags & LDRP_ENTRY_PROCESSED))
@@ -2533,7 +2523,7 @@ LdrpLoadDll(IN BOOLEAN Redirected,
                 /* Clear entrypoint, and insert into list */
                 LdrEntry->EntryPoint = NULL;
                 InsertTailList(&Peb->Ldr->InInitializationOrderModuleList,
-                               &LdrEntry->InInitializationOrderModuleList);
+                               &LdrEntry->InInitializationOrderLinks);
 
                 /* Cancel the load */
                 LdrpClearLoadInProgress();
@@ -2542,7 +2532,7 @@ LdrpLoadDll(IN BOOLEAN Redirected,
                 if (ShowSnaps)
                 {
                     DbgPrint("LDR: Unloading %wZ due to error %x walking "
-                             "import descriptors",
+                             "import descriptors\n",
                              DllName,
                              Status);
                 }
@@ -2560,17 +2550,16 @@ LdrpLoadDll(IN BOOLEAN Redirected,
 
         /* Insert it into the list */
         InsertTailList(&Peb->Ldr->InInitializationOrderModuleList,
-                       &LdrEntry->InInitializationOrderModuleList);
+                       &LdrEntry->InInitializationOrderLinks);
 
         /* If we have to run the entrypoint, make sure the DB is ready */
         if (CallInit && LdrpLdrDatabaseIsSetup)
         {
-            /* FIXME: Notify Shim Engine */
+            /* Notify Shim Engine */
             if (g_ShimsEnabled)
             {
-                /* Call it */
-                //ShimLoadCallback = RtlDecodeSystemPointer(g_pfnSE_DllLoaded);
-                //ShimLoadCallback(LdrEntry);
+                VOID (NTAPI* SE_DllLoaded)(PLDR_DATA_TABLE_ENTRY) = RtlDecodeSystemPointer(g_pfnSE_DllLoaded);
+                SE_DllLoaded(LdrEntry);
             }
 
             /* Run the init routine */
@@ -2650,7 +2639,7 @@ LdrpClearLoadInProgress(VOID)
         /* Get the loader entry */
         LdrEntry = CONTAINING_RECORD(Entry,
                                      LDR_DATA_TABLE_ENTRY,
-                                     InInitializationOrderModuleList);
+                                     InInitializationOrderLinks);
 
         /* Clear load in progress flag */
         LdrEntry->Flags &= ~LDRP_LOAD_IN_PROGRESS;
@@ -2669,6 +2658,74 @@ LdrpClearLoadInProgress(VOID)
 
     /* Return final count */
     return ModulesCount;
+}
+
+PVOID LdrpGetShimEngineFunction(PCSZ FunctionName)
+{
+    ANSI_STRING Function;
+    NTSTATUS Status;
+    PVOID Address;
+    RtlInitAnsiString(&Function, FunctionName);
+    Status = LdrGetProcedureAddress(g_pShimEngineModule, &Function, 0, &Address);
+    return NT_SUCCESS(Status) ? Address : NULL;
+}
+
+VOID
+NTAPI
+LdrpGetShimEngineInterface()
+{
+    PVOID SE_DllLoaded = LdrpGetShimEngineFunction("SE_DllLoaded");
+    PVOID SE_DllUnloaded = LdrpGetShimEngineFunction("SE_DllUnloaded");
+    PVOID SE_InstallBeforeInit = LdrpGetShimEngineFunction("SE_InstallBeforeInit");
+    PVOID SE_InstallAfterInit = LdrpGetShimEngineFunction("SE_InstallAfterInit");
+    PVOID SE_ProcessDying = LdrpGetShimEngineFunction("SE_ProcessDying");
+
+    if (SE_DllLoaded && SE_DllUnloaded && SE_InstallBeforeInit && SE_InstallAfterInit && SE_ProcessDying)
+    {
+        g_pfnSE_DllLoaded = RtlEncodeSystemPointer(SE_DllLoaded);
+        g_pfnSE_DllUnloaded = RtlEncodeSystemPointer(SE_DllUnloaded);
+        g_pfnSE_InstallBeforeInit = RtlEncodeSystemPointer(SE_InstallBeforeInit);
+        g_pfnSE_InstallAfterInit = RtlEncodeSystemPointer(SE_InstallAfterInit);
+        g_pfnSE_ProcessDying = RtlEncodeSystemPointer(SE_ProcessDying);
+        g_ShimsEnabled = TRUE;
+    }
+    else
+    {
+        LdrpUnloadShimEngine();
+    }
+}
+
+
+VOID
+NTAPI
+LdrpLoadShimEngine(IN PWSTR ImageName, IN PUNICODE_STRING ProcessImage, IN PVOID pShimData)
+{
+    UNICODE_STRING ShimLibraryName;
+    PVOID ShimLibrary;
+    NTSTATUS Status;
+    RtlInitUnicodeString(&ShimLibraryName, ImageName);
+    Status = LdrpLoadDll(FALSE, NULL, NULL, &ShimLibraryName, &ShimLibrary, TRUE);
+    if (NT_SUCCESS(Status))
+    {
+        g_pShimEngineModule = ShimLibrary;
+        LdrpGetShimEngineInterface();
+        if (g_ShimsEnabled)
+        {
+            VOID(NTAPI *SE_InstallBeforeInit)(PUNICODE_STRING, PVOID);
+            SE_InstallBeforeInit = RtlDecodeSystemPointer(g_pfnSE_InstallBeforeInit);
+            SE_InstallBeforeInit(ProcessImage, pShimData);
+        }
+    }
+}
+
+VOID
+NTAPI
+LdrpUnloadShimEngine()
+{
+    /* Make sure we do not call into the shim engine anymore */
+    g_ShimsEnabled = FALSE;
+    LdrUnloadDll(g_pShimEngineModule);
+    g_pShimEngineModule = NULL;
 }
 
 /* EOF */

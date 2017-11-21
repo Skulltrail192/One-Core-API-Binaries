@@ -28,11 +28,12 @@ BEGIN
     END
     POPUP "&Dispozitiv"
     BEGIN
+        MENUITEM SEPARATOR
         MENUITEM "&Proprietăți…", IDM_DEVPROPS
         MENUITEM SEPARATOR
         MENUITEM "Control &volum…", IDM_VOLUMECTL
     END
-    POPUP "&?"
+    POPUP "Aj&utor"
     BEGIN
         MENUITEM "&Despre…", IDM_ABOUT
     END
@@ -49,16 +50,24 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_ALL_TYPES_FILTER "Toate admisibile (*.wav, *.cda, *.midi, *.mid, *.avi)\0*.wav;*.cda;*.midi;*.mid;*.avi\0"
+    IDS_MODE_UNKNOWN "Nespecificat"
+    IDS_MODE_OPEN "Deschis"
+    IDS_MODE_STOP "Oprit"
+    IDS_MODE_PLAY "În lectură"
+    IDS_MODE_PAUSE "Întrerupt"
+    IDS_MODE_RECORD "Înregistrare"
+    IDS_MODE_SEEK "Derulare"
+    IDS_MODE_NOT_READY "Nepregătit"
+    IDS_ALL_TYPES_FILTER "Toate admisibile"
     IDS_TOOLTIP_PLAY "Redare conținut multimedia"
-    IDS_TOOLTIP_STOP "Oprirea lecturii"
-    IDS_TOOLTIP_EJECT "Scoate"
+    IDS_TOOLTIP_STOP "Oprire lectură"
+    IDS_TOOLTIP_EJECT "Scoatere"
     IDS_TOOLTIP_BACKWARD "Salt la precedent"
-    IDS_TOOLTIP_SEEKBACK "Derulează înapoi"
-    IDS_TOOLTIP_SEEKFORW "Derulează înainte"
+    IDS_TOOLTIP_SEEKBACK "Derulare înapoi"
+    IDS_TOOLTIP_SEEKFORW "Derulare înainte"
     IDS_TOOLTIP_FORWARD "Salt la următor"
+    IDS_TOOLTIP_PAUSE "Întrerupere"
     IDS_APPTITLE "Lector multimedia"
     IDS_PLAY "Lecturare"
     IDS_DEFAULTMCIERRMSG "Nu există descriere pentru această eroare."
-    IDS_UNKNOWNFILEEXT "Nu se poate determina tipul dispozitivului din extensia fișierului."
 END

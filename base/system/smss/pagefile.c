@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS Windows-Compatible Session Manager
  * LICENSE:         BSD 2-Clause License
- * FILE:            base/system/smss/smss.c
+ * FILE:            base/system/smss/pagefile.c
  * PURPOSE:         Main SMSS Code
  * PROGRAMMERS:     Alex Ionescu
  */
@@ -22,7 +22,6 @@
 #define STANDARD_DRIVE_LETTER_OFFSET    4
 #define MEGABYTE                        0x100000UL
 #define MAXIMUM_PAGEFILE_SIZE           (4095 * MEGABYTE)
-#define MAXIMUM_PAGEFILE_SIZE_64        (4095 * MEGABYTE)
 /* This should be 32 MB, but we need more than that for 2nd stage setup */
 #define MINIMUM_TO_KEEP_FREE            (64 * MEGABYTE)
 #define FUZZ_FACTOR                     (16 * MEGABYTE)
@@ -96,13 +95,13 @@ SmpCreatePagingFileDescriptor(IN PUNICODE_STRING PageFileToken)
     /* Make sure we don't have too many */
     if (SmpNumberOfPagingFiles >= 16)
     {
-        DbgPrint("SMSS:PFILE: Too many paging files specified - %lu\n",
+        DPRINT1("SMSS:PFILE: Too many paging files specified - %lu\n",
                 SmpNumberOfPagingFiles);
         return STATUS_TOO_MANY_PAGING_FILES;
     }
 
     /* Parse the specified and get the name and arguments out of it */
-    DbgPrint("SMSS:PFILE: Paging file specifier `%wZ'\n", PageFileToken);
+    DPRINT("SMSS:PFILE: Paging file specifier `%wZ'\n", PageFileToken);
     Status = SmpParseCommandLine(PageFileToken,
                                  NULL,
                                  &PageFileName,
@@ -111,7 +110,7 @@ SmpCreatePagingFileDescriptor(IN PUNICODE_STRING PageFileToken)
     if (!NT_SUCCESS(Status))
     {
         /* Fail */
-        DbgPrint("SMSS:PFILE: SmpParseCommandLine( %wZ ) failed - Status == %lx\n",
+        DPRINT1("SMSS:PFILE: SmpParseCommandLine( %wZ ) failed - Status == %lx\n",
                 PageFileToken, Status);
         return Status;
     }
@@ -217,7 +216,7 @@ SmpCreatePagingFileDescriptor(IN PUNICODE_STRING PageFileToken)
             /* This means no duplicates exist, so insert our descriptor! */
             InsertTailList(&SmpPagingFileDescriptorList, &Descriptor->Entry);
             SmpNumberOfPagingFiles++;
-            DbgPrint("SMSS:PFILE: Created descriptor for `%wZ' (`%wZ')\n",
+            DPRINT("SMSS:PFILE: Created descriptor for `%wZ' (`%wZ')\n",
                     PageFileToken, &Descriptor->Name);
             return STATUS_SUCCESS;
         }
@@ -229,7 +228,7 @@ SmpCreatePagingFileDescriptor(IN PUNICODE_STRING PageFileToken)
              !(Descriptor->Flags & SMP_PAGEFILE_ON_ANY_DRIVE));
 
     /* We found a duplicate, so skip this descriptor/pagefile and fail */
-    DbgPrint("SMSS:PFILE: Skipping duplicate specifier `%wZ'\n", PageFileToken);
+    DPRINT1("SMSS:PFILE: Skipping duplicate specifier `%wZ'\n", PageFileToken);
     RtlFreeUnicodeString(&PageFileName);
     RtlFreeHeap(RtlGetProcessHeap(), 0, Descriptor);
     return STATUS_INVALID_PARAMETER;
@@ -246,7 +245,7 @@ SmpGetPagingFileSize(IN PUNICODE_STRING FileName,
     HANDLE FileHandle;
     FILE_STANDARD_INFORMATION StandardInfo;
 
-    DbgPrint("SMSS:PFILE: Trying to get size for `%wZ'\n", FileName);
+    DPRINT("SMSS:PFILE: Trying to get size for `%wZ'\n", FileName);
     Size->QuadPart = 0;
 
     InitializeObjectAttributes(&ObjectAttributes,
@@ -269,7 +268,7 @@ SmpGetPagingFileSize(IN PUNICODE_STRING FileName,
                                     FileStandardInformation);
     if (!NT_SUCCESS(Status))
     {
-        DbgPrint("SMSS:PFILE: Failed query for size potential pagefile `%wZ' with status %X\n",
+        DPRINT1("SMSS:PFILE: Failed query for size potential pagefile `%wZ' with status %X\n",
                 FileName, Status);
         NtClose(FileHandle);
         return Status;
@@ -313,12 +312,12 @@ SmpDeletePagingFile(IN PUNICODE_STRING FileName)
                                       FileDispositionInformation);
         if (!NT_SUCCESS(Status))
         {
-            DbgPrint("SMSS:PFILE: Failed to delete page file `%wZ' (status %X)\n",
+            DPRINT1("SMSS:PFILE: Failed to delete page file `%wZ' (status %X)\n",
                     FileName, Status);
         }
         else
         {
-            DbgPrint("SMSS:PFILE: Deleted stale paging file - %wZ\n", FileName);
+            DPRINT("SMSS:PFILE: Deleted stale paging file - %wZ\n", FileName);
         }
 
         /* Close the handle */
@@ -326,7 +325,7 @@ SmpDeletePagingFile(IN PUNICODE_STRING FileName)
     }
     else
     {
-        DbgPrint("SMSS:PFILE: Failed to open for deletion page file `%wZ' (status %X)\n",
+        DPRINT1("SMSS:PFILE: Failed to open for deletion page file `%wZ' (status %X)\n",
                 FileName, Status);
     }
 
@@ -352,7 +351,7 @@ SmpGetVolumeFreeSpace(IN PSMP_VOLUME_DESCRIPTOR Volume)
     wcscpy(PathString, L"\\??\\A:\\");
     RtlInitUnicodeString(&VolumeName, PathString);
     VolumeName.Buffer[STANDARD_DRIVE_LETTER_OFFSET] = Volume->DriveLetter;
-    DbgPrint("SMSS:PFILE: Querying volume `%wZ' for free space\n", &VolumeName);
+    DPRINT("SMSS:PFILE: Querying volume `%wZ' for free space\n", &VolumeName);
 
     /* Open the volume */
     InitializeObjectAttributes(&ObjectAttributes,
@@ -368,7 +367,7 @@ SmpGetVolumeFreeSpace(IN PSMP_VOLUME_DESCRIPTOR Volume)
                         FILE_SYNCHRONOUS_IO_NONALERT | FILE_DIRECTORY_FILE);
     if (!NT_SUCCESS(Status))
     {
-        DbgPrint("SMSS:PFILE: Open volume `%wZ' failed with status %X\n", &VolumeName, Status);
+        DPRINT1("SMSS:PFILE: Open volume `%wZ' failed with status %X\n", &VolumeName, Status);
         return Status;
     }
 
@@ -381,7 +380,7 @@ SmpGetVolumeFreeSpace(IN PSMP_VOLUME_DESCRIPTOR Volume)
     if (!NT_SUCCESS(Status))
     {
         /* We failed */
-        DbgPrint("SMSS:PFILE: Query volume `%wZ' (handle %p) for size failed"
+        DPRINT1("SMSS:PFILE: Query volume `%wZ' (handle %p) for size failed"
                 " with status %X\n",
                 &VolumeName,
                 VolumeHandle,
@@ -457,14 +456,14 @@ SmpCreatePagingFile(IN PUNICODE_STRING Name,
     Status = NtCreatePagingFile(Name, MinSize, MaxSize, Priority);
     if (NT_SUCCESS(Status))
     {
-        DbgPrint("SMSS:PFILE: NtCreatePagingFile (%wZ, %I64X, %I64X) succeeded.\n",
+        DPRINT("SMSS:PFILE: NtCreatePagingFile (%wZ, %I64X, %I64X) succeeded.\n",
                 Name,
                 MinSize->QuadPart,
                 MaxSize->QuadPart);
     }
     else
     {
-        DbgPrint("SMSS:PFILE: NtCreatePagingFile (%wZ, %I64X, %I64X) failed with %X\n",
+        DPRINT1("SMSS:PFILE: NtCreatePagingFile (%wZ, %I64X, %I64X) failed with %X\n",
                 Name,
                 MinSize->QuadPart,
                 MaxSize->QuadPart,
@@ -493,7 +492,7 @@ SmpCreatePagingFileOnFixedDrive(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor,
     if (!Volume)
     {
         /* Couldn't find it, fail */
-        DbgPrint("SMSS:PFILE: No volume descriptor for `%wZ'\n",
+        DPRINT1("SMSS:PFILE: No volume descriptor for `%wZ'\n",
                 &Descriptor->Name);
         return STATUS_INVALID_PARAMETER;
     }
@@ -505,7 +504,7 @@ SmpCreatePagingFileOnFixedDrive(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor,
         if (!(Descriptor->Flags & SMP_PAGEFILE_DUMP_PROCESSED))
         {
             /* Try to find a crash dump and extract it */
-            DbgPrint("SMSS:PFILE: Checking for crash dump in `%wZ' on boot volume\n",
+            DPRINT("SMSS:PFILE: Checking for crash dump in `%wZ' on boot volume\n",
                     &Descriptor->Name);
             SmpCheckForCrashDump(&Descriptor->Name);
 
@@ -513,12 +512,12 @@ SmpCreatePagingFileOnFixedDrive(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor,
             Status = SmpGetVolumeFreeSpace(Volume);
             if (!NT_SUCCESS(Status))
             {
-                DbgPrint("SMSS:PFILE: Failed to query free space for boot volume `%wC'\n",
+                DPRINT1("SMSS:PFILE: Failed to query free space for boot volume `%wC'\n",
                         Volume->DriveLetter);
             }
             else
             {
-                DbgPrint("Queried free space for boot volume `%wC: %I64x'\n",
+                DPRINT("Queried free space for boot volume `%wC: %I64x'\n",
                         Volume->DriveLetter, Volume->FreeSpace.QuadPart);
             }
 
@@ -529,7 +528,7 @@ SmpCreatePagingFileOnFixedDrive(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor,
     else
     {
         /* Crashdumps can only be on the boot volume */
-        DbgPrint("SMSS:PFILE: Skipping crash dump checking for `%wZ' on non boot"
+        DPRINT("SMSS:PFILE: Skipping crash dump checking for `%wZ' on non boot"
                 "volume `%wC'\n",
                 &Descriptor->Name,
                 Volume->DriveLetter);
@@ -542,10 +541,10 @@ SmpCreatePagingFileOnFixedDrive(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor,
     /* Check how big we can make the pagefile */
     Status = SmpGetPagingFileSize(&Descriptor->Name, &PageFileSize);
     if (NT_SUCCESS(Status) && PageFileSize.QuadPart > 0) ShouldDelete = TRUE;
-    DbgPrint("SMSS:PFILE: Detected size %I64X for future paging file `%wZ'\n",
+    DPRINT("SMSS:PFILE: Detected size %I64X for future paging file `%wZ'\n",
             PageFileSize,
             &Descriptor->Name);
-    DbgPrint("SMSS:PFILE: Free space on volume `%wC' is %I64X\n",
+    DPRINT("SMSS:PFILE: Free space on volume `%wC' is %I64X\n",
             Volume->DriveLetter,
             Volume->FreeSpace.QuadPart);
 
@@ -559,7 +558,7 @@ SmpCreatePagingFileOnFixedDrive(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor,
     {
         Descriptor->ActualMaxSize = PageFileSize;
     }
-    DbgPrint("SMSS:PFILE: min %I64X, max %I64X, real min %I64X\n",
+    DPRINT("SMSS:PFILE: min %I64X, max %I64X, real min %I64X\n",
             Descriptor->ActualMinSize.QuadPart,
             Descriptor->ActualMaxSize.QuadPart,
             MinimumSize->QuadPart);
@@ -581,7 +580,7 @@ SmpCreatePagingFileOnFixedDrive(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor,
             break;
         }
 
-        /* We failed, try a slighly smaller pagefile */
+        /* We failed, try a slightly smaller pagefile */
         Descriptor->ActualMinSize.QuadPart -= FuzzFactor->QuadPart;
     }
 
@@ -596,7 +595,7 @@ SmpCreatePagingFileOnFixedDrive(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor,
             /* FIXFIX: Windows Vista does this, and it seems like we should too, so try to see if this fixes KVM */
             Volume->FreeSpace.QuadPart = PageFileSize.QuadPart;
         }
-        DbgPrint("SMSS:PFILE: Failing for min %I64X, max %I64X, real min %I64X\n",
+        DPRINT1("SMSS:PFILE: Failing for min %I64X, max %I64X, real min %I64X\n",
                 Descriptor->ActualMinSize.QuadPart,
                 Descriptor->ActualMaxSize.QuadPart,
                 MinimumSize->QuadPart);
@@ -671,7 +670,7 @@ SmpMakeSystemManagedPagingFileDescriptor(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor)
     if (!NT_SUCCESS(Status))
     {
         /* If we failed, use defaults since we have no idea otherwise */
-        DbgPrint("SMSS:PFILE: NtQuerySystemInformation failed with %x\n", Status);
+        DPRINT1("SMSS:PFILE: NtQuerySystemInformation failed with %x\n", Status);
         SmpMakeDefaultPagingFileDescriptor(Descriptor);
         return;
     }
@@ -700,7 +699,7 @@ SmpValidatePagingFileSizes(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor)
     /* Capture the min and max */
     MinSize = Descriptor->MinSize.QuadPart;
     MaxSize = Descriptor->MaxSize.QuadPart;
-    DbgPrint("SMSS:PFILE: Validating sizes for `%wZ' %I64X %I64X\n",
+    DPRINT("SMSS:PFILE: Validating sizes for `%wZ' %I64X %I64X\n",
              &Descriptor->Name, MinSize, MaxSize);
 
     /* Don't let minimum be bigger than maximum */
@@ -710,22 +709,7 @@ SmpValidatePagingFileSizes(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor)
     if (SharedUserData->ProcessorFeatures[PF_PAE_ENABLED])
     {
         /* But we don't support that yet */
-        DbgPrint("ReactOS does not support PAE yet... assuming sizes OK This is hack\n");
-		/* Check if the minimum is more then 4095 MB */
-        if (MinSize > MAXIMUM_PAGEFILE_SIZE)
-        {
-            /* Trim it, this isn't allowed */
-            WasTooBig = TRUE;
-            MinSize = MAXIMUM_PAGEFILE_SIZE;
-        }
-
-        /* Check if the maximum is more then 4095 MB */
-        if (MaxSize > MAXIMUM_PAGEFILE_SIZE)
-        {
-            /* Trim it, this isn't allowed */
-            WasTooBig = TRUE;
-            MaxSize = MAXIMUM_PAGEFILE_SIZE;
-        }
+        DPRINT1("ReactOS does not support PAE yet... assuming sizes OK\n");
     }
     else
     {
@@ -750,7 +734,7 @@ SmpValidatePagingFileSizes(IN PSMP_PAGEFILE_DESCRIPTOR Descriptor)
     if (WasTooBig)
     {
         /* Notify debugger output and write a flag in the descriptor */
-        DbgPrint("SMSS:PFILE: Trimmed size of `%wZ' to maximum allowed\n",
+        DPRINT("SMSS:PFILE: Trimmed size of `%wZ' to maximum allowed\n",
                 &Descriptor->Name);
         Descriptor->Flags |= SMP_PAGEFILE_WAS_TOO_BIG;
     }
@@ -854,15 +838,11 @@ SmpCreateVolumeDescriptors(VOID)
     Status = NtQueryInformationProcess(NtCurrentProcess(),
                                        ProcessDeviceMap,
                                        &ProcessInformation,
-#ifdef _M_AMD64									   
-                                       36i64,//sizeof(ProcessInformation),
-#else
                                        sizeof(ProcessInformation),
-#endif	
                                        NULL);
     if (!NT_SUCCESS(Status))
     {
-        DbgPrint("SMSS:PFILE: Query(ProcessDeviceMap) failed with status %X\n",
+        DPRINT1("SMSS:PFILE: Query(ProcessDeviceMap) failed with status %X\n",
                 Status);
         return Status;
     }
@@ -894,7 +874,7 @@ SmpCreateVolumeDescriptors(VOID)
         if (!NT_SUCCESS(Status))
         {
             /* Skip the volume if we failed */
-            DbgPrint("SMSS:PFILE: Open volume `%wZ' failed with status %X\n",
+            DPRINT1("SMSS:PFILE: Open volume `%wZ' failed with status %X\n",
                     &VolumePath, Status);
             continue;
         }
@@ -908,7 +888,7 @@ SmpCreateVolumeDescriptors(VOID)
         if (!NT_SUCCESS(Status))
         {
             /* Move to the next volume if we failed */
-            DbgPrint("SMSS:PFILE: Query volume `%wZ' (handle %p) for device info"
+            DPRINT1("SMSS:PFILE: Query volume `%wZ' (handle %p) for device info"
                     " failed with status %X\n",
                     &VolumePath,
                     VolumeHandle,
@@ -924,7 +904,7 @@ SmpCreateVolumeDescriptors(VOID)
                                           FILE_REMOVABLE_MEDIA))
         {
             /* It isn't, so skip it */
-            DbgPrint("SMSS:PFILE: Volume `%wZ' (%X) cannot store a paging file\n",
+            DPRINT1("SMSS:PFILE: Volume `%wZ' (%X) cannot store a paging file\n",
                     &VolumePath,
                     DeviceInfo.Characteristics);
             NtClose(VolumeHandle);
@@ -938,7 +918,7 @@ SmpCreateVolumeDescriptors(VOID)
         if (!Volume)
         {
             /* Failed to allocate memory, try the next disk */
-            DbgPrint("SMSS:PFILE: Failed to allocate a volume descriptor (%u bytes)\n",
+            DPRINT1("SMSS:PFILE: Failed to allocate a volume descriptor (%u bytes)\n",
                     sizeof(SMP_VOLUME_DESCRIPTOR));
             NtClose(VolumeHandle);
             continue;
@@ -967,7 +947,7 @@ SmpCreateVolumeDescriptors(VOID)
         if (!NT_SUCCESS(Status))
         {
             /* We failed -- keep going */
-            DbgPrint("SMSS:PFILE: Query volume `%wZ' (handle %p) for size failed"
+            DPRINT1("SMSS:PFILE: Query volume `%wZ' (handle %p) for size failed"
                     " with status %X\n",
                     &VolumePath,
                     VolumeHandle,
@@ -1001,7 +981,7 @@ SmpCreateVolumeDescriptors(VOID)
         /* All done, add this volume to our descriptor list */
         InsertTailList(&SmpVolumeDescriptorList, &Volume->Entry);
         Volume->Flags |= SMP_VOLUME_INSERTED;
-        DbgPrint("SMSS:PFILE: Created volume descriptor for`%wZ'\n", &VolumePath);
+        DPRINT("SMSS:PFILE: Created volume descriptor for`%wZ'\n", &VolumePath);
     }
 
     /* We must've found at least the boot volume */
@@ -1028,7 +1008,7 @@ SmpCreatePagingFiles(VOID)
     {
         /* The list should be empty -- nothing to do */
         ASSERT(IsListEmpty(&SmpPagingFileDescriptorList));
-        DbgPrint("SMSS:PFILE: No paging file was requested\n");
+        DPRINT1("SMSS:PFILE: No paging file was requested\n");
         return STATUS_SUCCESS;
     }
 
@@ -1037,7 +1017,7 @@ SmpCreatePagingFiles(VOID)
     if (!NT_SUCCESS(Status))
     {
         /* We can't make decisions without this, so fail */
-        DbgPrint("SMSS:PFILE: Failed to create volume descriptors (status %X)\n",
+        DPRINT1("SMSS:PFILE: Failed to create volume descriptors (status %X)\n",
                 Status);
         return Status;
     }
@@ -1054,13 +1034,13 @@ SmpCreatePagingFiles(VOID)
         if (Descriptor->Flags & SMP_PAGEFILE_SYSTEM_MANAGED)
         {
             /* This is a system-managed descriptor. Create the correct file */
-            DbgPrint("SMSS:PFILE: Creating a system managed paging file (`%wZ')\n",
+            DPRINT("SMSS:PFILE: Creating a system managed paging file (`%wZ')\n",
                     &Descriptor->Name);
             Status = SmpCreateSystemManagedPagingFile(Descriptor, FALSE);
             if (!NT_SUCCESS(Status))
             {
                 /* We failed -- try again, with size minimization this time */
-                DbgPrint("SMSS:PFILE: Trying lower sizes for (`%wZ')\n",
+                DPRINT("SMSS:PFILE: Trying lower sizes for (`%wZ')\n",
                         &Descriptor->Name);
                 Status = SmpCreateSystemManagedPagingFile(Descriptor, TRUE);
             }
@@ -1071,7 +1051,7 @@ SmpCreatePagingFiles(VOID)
             SmpValidatePagingFileSizes(Descriptor);
 
             /* Check if this is an ANY pagefile or a FIXED pagefile */
-            DbgPrint("SMSS:PFILE: Creating a normal paging file (`%wZ')\n",
+            DPRINT("SMSS:PFILE: Creating a normal paging file (`%wZ')\n",
                     &Descriptor->Name);
             if (Descriptor->Name.Buffer[STANDARD_DRIVE_LETTER_OFFSET] == L'?')
             {
@@ -1083,7 +1063,7 @@ SmpCreatePagingFiles(VOID)
                 if (!NT_SUCCESS(Status))
                 {
                     /* We failed to create it. Try again with a smaller size */
-                    DbgPrint("SMSS:PFILE: Trying lower sizes for (`%wZ')\n",
+                    DPRINT("SMSS:PFILE: Trying lower sizes for (`%wZ')\n",
                             &Descriptor->Name);
                     Size.QuadPart = 16 * MEGABYTE;
                     Status = SmpCreatePagingFileOnAnyDrive(Descriptor,
@@ -1110,7 +1090,7 @@ SmpCreatePagingFiles(VOID)
     if (!Created)
     {
         /* Build an emergency pagefile ourselves */
-        DbgPrint("SMSS:PFILE: Creating emergency paging file.\n");
+        DPRINT1("SMSS:PFILE: Creating emergency paging file.\n");
         Status = SmpCreateEmergencyPagingFile();
     }
 

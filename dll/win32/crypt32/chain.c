@@ -2286,7 +2286,10 @@ static BOOL CRYPT_BuildCandidateChainFromCert(CertificateChainEngine *engine,
             chain->context.dwRevocationFreshnessTime = 0;
         }
         else
+        {
+            CRYPT_FreeSimpleChain(simpleChain);
             ret = FALSE;
+        }
         *ppChain = chain;
     }
     return ret;
@@ -2694,10 +2697,20 @@ static void CRYPT_VerifyChainRevocation(PCERT_CHAIN_CONTEXT chain,
                     revocationPara.pIssuerCert =
                      chain->rgpChain[i]->rgpElement[j + 1]->pCertContext;
                 else
-                    revocationPara.pIssuerCert = NULL;
+                    revocationPara.pIssuerCert = certToCheck;
+
                 ret = CertVerifyRevocation(X509_ASN_ENCODING,
                  CERT_CONTEXT_REVOCATION_TYPE, 1, (void **)&certToCheck,
                  revocationFlags, &revocationPara, &revocationStatus);
+
+                if (!ret && revocationStatus.dwError == CRYPT_E_NO_REVOCATION_CHECK &&
+                    revocationPara.pIssuerCert == certToCheck)
+                {
+                    FIXME("Unable to find CRL for CA certificate\n");
+                    ret = TRUE;
+                    revocationStatus.dwError = 0;
+                }
+
                 if (!ret)
                 {
                     PCERT_CHAIN_ELEMENT element = CRYPT_FindIthElementInChain(

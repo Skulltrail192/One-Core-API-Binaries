@@ -9,8 +9,8 @@
  *  use, modify or distribute it freely.
  *
  *  This code is distributed in the hope that it will be useful but
- *  WITHOUT ANY WARRANTY. ALL WARRENTIES, EXPRESS OR IMPLIED ARE HEREBY
- *  DISCLAMED. This includes but is not limited to warrenties of
+ *  WITHOUT ANY WARRANTY. ALL WARRANTIES, EXPRESS OR IMPLIED ARE HEREBY
+ *  DISCLAMED. This includes but is not limited to warranties of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
  */
@@ -160,6 +160,8 @@ DllMain(PVOID hinstDll, ULONG dwReason, PVOID reserved)
         TRACE("Detach\n");
         /* Deinit of the WINE code */
         msvcrt_free_io();
+        if (reserved) break;
+        msvcrt_free_popen_data();
         msvcrt_free_mt_locks();
         //msvcrt_free_console();
         //msvcrt_free_args();
@@ -169,12 +171,12 @@ DllMain(PVOID hinstDll, ULONG dwReason, PVOID reserved)
           return FALSE;
         //MSVCRT__free_locale(MSVCRT_locale);
 
-    if (__winitenv && __winitenv != _wenviron)
+        if (__winitenv && __winitenv != _wenviron)
             FreeEnvironment((char**)__winitenv);
         if (_wenviron)
             FreeEnvironment((char**)_wenviron);
 
-    if (__initenv && __initenv != _environ)
+        if (__initenv && __initenv != _environ)
             FreeEnvironment(__initenv);
         if (_environ)
             FreeEnvironment(_environ);

@@ -202,15 +202,4 @@ ULONG WINAPI EtwQueryAllTracesA( PEVENT_TRACE_PROPERTIES * parray, ULONG arrayco
     return ERROR_SUCCESS;
 }
 
-/*Unknow prototype*/
-ULONG WINAPI EtwpGetTraceBuffer( int a, int b, int c, int d)
-{
-    return ERROR_SUCCESS;
-}
-
-ULONG WINAPI EtwpSetHWConfigFunction( PEVENT_TRACE_PROPERTIES * parray, ULONG arraycount)
-{
-    FIXME("(%p, %d) stub\n", parray, arraycount);
-    return ERROR_SUCCESS;
-}
 /* EOF */

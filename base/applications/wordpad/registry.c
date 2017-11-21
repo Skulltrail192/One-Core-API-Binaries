@@ -116,12 +116,7 @@ void registry_read_winrect(RECT* rc)
     if(registry_get_handle(&hKey, 0, key_options) != ERROR_SUCCESS ||
        RegQueryValueExW(hKey, var_framerect, 0, NULL, (LPBYTE)rc, &size) !=
        ERROR_SUCCESS || size != sizeof(RECT))
-    {
-        rc->top = 0;
-        rc->left = 0;
-        rc->bottom = 300;
-        rc->right = 600;
-    }
+        SetRect(rc, 0, 0, 600, 300);
 
     RegCloseKey(hKey);
 }
@@ -156,9 +151,9 @@ static void format_filelist_filename(LPWSTR file, LPWSTR out)
 {
     LPWSTR pos_basename;
     LPWSTR truncpos1, truncpos2;
-    WCHAR myDocs[MAX_STRING_LEN];
+    WCHAR myDocs[MAX_PATH];
 
-    SHGetFolderPathW(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, (LPWSTR)&myDocs);
+    SHGetFolderPathW(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, myDocs);
     pos_basename = file_basename(file);
     truncpos1 = NULL;
     truncpos2 = NULL;
@@ -295,12 +290,12 @@ void registry_set_filelist(LPCWSTR newFile, HWND hMainWnd)
 
         if(lstrcmpiW(newFile, pFiles[0]))
         {
-            for(i = 0; pFiles[i] && i < FILELIST_ENTRIES; i++)
+            for(i = 0; i < FILELIST_ENTRIES && pFiles[i]; i++)
             {
                 if(!lstrcmpiW(pFiles[i], newFile))
                 {
                     int j;
-                    for(j = 0; pFiles[j] && j < i; j++)
+                    for(j = 0; j < i; j++)
                     {
                         pFiles[i-j] = pFiles[i-j-1];
                     }
@@ -320,7 +315,7 @@ void registry_set_filelist(LPCWSTR newFile, HWND hMainWnd)
                 pFiles[0] = newFile;
             }
 
-            for(i = 0; pFiles[i] && i < FILELIST_ENTRIES; i++)
+            for(i = 0; i < FILELIST_ENTRIES && pFiles[i]; i++)
             {
                 wsprintfW(buffer, var_file, i+1);
                 RegSetValueExW(hKey, (LPWSTR)&buffer, 0, REG_SZ, (const BYTE*)pFiles[i],

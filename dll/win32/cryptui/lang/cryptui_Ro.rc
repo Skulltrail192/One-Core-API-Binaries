@@ -4,6 +4,7 @@
  * Copyright 2008 Juan Lang
  * Copyright 2010 Claudia Cotună
  *                Michael Stefaniuc
+ *           2014 Ștefan Fulea
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,7 +29,7 @@ STRINGTABLE
 {
     IDS_CERTIFICATE "Certificat"
     IDS_CERTIFICATEINFORMATION "Informații certificat"
-    IDS_CERT_INFO_BAD_SIG "Acest certificat are o semnătură nevalidă.  Se poate ca certificatul să fi fost alterat sau corupt."
+    IDS_CERT_INFO_BAD_SIG "Acest certificat are o semnătură nevalidă.  Este posibil ca certificatul să fi fost alterat sau corupt."
     IDS_CERT_INFO_UNTRUSTED_CA "Acest certificat rădăcină nu este acreditat.  Pentru a-l acredita, adăugați-l în depozitul de certificate rădăcină acreditate al sistemului."
     IDS_CERT_INFO_UNTRUSTED_ROOT "Acest certificat nu a putut fi validat față de un certificat rădăcină acreditat."
     IDS_CERT_INFO_PARTIAL_CHAIN "Emitentul acestui certificat nu a putut fi aflat."
@@ -82,7 +83,7 @@ STRINGTABLE
     IDS_IMPORT_FILTER_ALL "Toate fișierele (*.*)"
     IDS_IMPORT_EMPTY_FILE "Selectați un fișier."
     IDS_IMPORT_BAD_FORMAT "Formatul fișierului nu este recunoscut.  Selectați alt fișier."
-    IDS_IMPORT_OPEN_FAILED "Nu s-a putut deschide "
+    IDS_IMPORT_OPEN_FAILED "Nu a putut fi deschis"
     IDS_IMPORT_DEST_DETERMINED "Determinat de program"
     IDS_IMPORT_SELECT_STORE "Selectați un depozit"
     IDS_IMPORT_STORE_SELECTION "Depozitul de certificate selectat"
@@ -95,7 +96,7 @@ STRINGTABLE
     IDS_IMPORT_CONTENT_CMS "Mesaj CMS/PKCS #7"
     IDS_IMPORT_CONTENT_PFX "Schimb de informații personale"
     IDS_IMPORT_CONTENT_STORE "Depozit de certificate"
-    IDS_IMPORT_SUCCEEDED "Importarea s-a realizat cu succes."
+    IDS_IMPORT_SUCCEEDED "Importarea a fost realizată cu succes."
     IDS_IMPORT_FAILED "Importarea a eșuat."
     IDS_WIZARD_TITLE_FONT "Arial"
     IDS_PURPOSE_ALL "<Toate>"
@@ -122,14 +123,14 @@ STRINGTABLE
     IDS_FRIENDLY_NAME_NONE "<Niciunul>"
     IDS_PURPOSE_SERVER_AUTH "Asigură identificarea unui calculator de la distanță"
     IDS_PURPOSE_CLIENT_AUTH "Vă dovedește identitatea pentru un calculator de la distanță"
-    IDS_PURPOSE_CODE_SIGNING "Garantează că aplicația provine de la un anumit editor de software\nProtejează aplicația de alterări după publicare"
+    IDS_PURPOSE_CODE_SIGNING "Garantează că aplicația provine de la un anumit autor\nProtejează aplicația de alterări după publicare"
     IDS_PURPOSE_EMAIL_PROTECTION "Protejează mesajele de email"
     IDS_PURPOSE_IPSEC "Permite comunicarea securizată pe Internet"
     IDS_PURPOSE_TIMESTAMP_SIGNING "Permite semnarea datelor cu ora curentă"
     IDS_PURPOSE_CTL_USAGE_SIGNING "Vă permite să semnați digital o listă de certificate acreditate"
     IDS_PURPOSE_EFS "Permite criptarea datelor de pe disc"
     IDS_PURPOSE_EFS_RECOVERY "Recupererea fișierelor"
-    IDS_PURPOSE_WHQL "Verificarea modulelor pilot din Windows"
+    IDS_PURPOSE_WHQL "Verificarea modulelor-pilot din Windows"
     IDS_PURPOSE_NT5 "Verificarea componentelor de sistem din Windows"
     IDS_PURPOSE_OEM_WHQL "Verificarea componentelor de sistem din Windows OEM"
     IDS_PURPOSE_EMBEDDED_NT "Verificarea componentelor de sistem din Windows Embedded"
@@ -164,7 +165,7 @@ STRINGTABLE
     IDS_EXPORT_KEYS "Exportă cheile"
     IDS_YES "Da"
     IDS_NO "Nu"
-    IDS_EXPORT_SUCCEEDED "Exportarea s-a realizat cu succes."
+    IDS_EXPORT_SUCCEEDED "Exportarea a fost realizată cu succes."
     IDS_EXPORT_FAILED "Exportarea a eșuat."
     IDS_EXPORT_PRIVATE_KEY_TITLE "Exportare cheie privată"
     IDS_EXPORT_PRIVATE_KEY_SUBTITLE "Certificatul conține o cheie privată care poate fi exportată odată cu certificatul."
@@ -175,9 +176,9 @@ STRINGTABLE
     IDS_EXPORT_PRIVATE_KEY_NON_EXPORTABLE "Notă: Cheia privată pentru acest certificat nu este exportabilă."
 }
 
-IDD_GENERAL DIALOG 0, 0, 255, 236
-CAPTION "General"
-STYLE WS_VISIBLE
+IDD_GENERAL DIALOGEX 0, 0, 255, 236
+CAPTION "Generale"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   CONTROL "", -1, "Static", WS_BORDER|SS_WHITERECT, 6,10,241,200
@@ -191,9 +192,9 @@ BEGIN
   PUSHBUTTON "&Declarația emitentului", IDC_ISSUERSTATEMENT,152,216,95,14
 END
 
-IDD_DETAIL DIALOG 0, 0, 255, 236
+IDD_DETAIL DIALOGEX 0, 0, 255, 236
 CAPTION "Detalii"
-STYLE WS_VISIBLE
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT "&Afișează:", -1, 6,12,40,14
@@ -205,9 +206,9 @@ BEGIN
   PUSHBUTTON "&Copiere în fișier…", IDC_EXPORT,152,216,95,14
 END
 
-IDD_HIERARCHY DIALOG 0, 0, 255, 236
+IDD_HIERARCHY DIALOGEX 0, 0, 255, 236
 CAPTION "Cale de certificare"
-STYLE WS_VISIBLE
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   GROUPBOX "&Cale certificate", -1,6,10,245,165, BS_GROUPBOX
@@ -219,9 +220,9 @@ BEGIN
     WS_BORDER|ES_READONLY|ES_MULTILINE|WS_DISABLED,6,195,245,36
 END
 
-IDD_USERNOTICE DIALOG 0, 0, 255, 256
+IDD_USERNOTICE DIALOGEX 0, 0, 255, 256
 CAPTION "Exonerare"
-STYLE WS_VISIBLE
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   CONTROL "", IDC_USERNOTICE,"RichEdit20W",
@@ -230,9 +231,9 @@ BEGIN
   PUSHBUTTON "&Alte informații", IDC_CPS,162,216,85,14
 END
 
-IDD_CERT_PROPERTIES_GENERAL DIALOG 0, 0, 255, 236
+IDD_CERT_PROPERTIES_GENERAL DIALOGEX 0, 0, 255, 236
 CAPTION "Generale"
-STYLE WS_VISIBLE
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT "N&ume uzual:", -1, 6,14,60,14
@@ -252,8 +253,9 @@ BEGIN
   PUSHBUTTON "Adăugare &rol…", IDC_ADD_PURPOSE,174,212,70,14
 END
 
-IDD_ADD_CERT_PURPOSE DIALOG 0,0,200,68
+IDD_ADD_CERT_PURPOSE DIALOGEX 0,0,200,68
 CAPTION "Adăugare rol"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT "Adăugați identificatorul de obiect (OID) pentru rolul de certificat pe care doriți să-l adăugați:",
@@ -263,8 +265,9 @@ BEGIN
   PUSHBUTTON "A&nulează", IDCANCEL, 100,48,60,14
 END
 
-IDD_SELECT_STORE DIALOG 0,0,200,136
+IDD_SELECT_STORE DIALOGEX 0,0,200,136
 CAPTION "Depozit de certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT "Selectați depozitul de certificate pe care doriți să-l utilizați:", IDC_STORE_TEXT, 6,6,190,28
@@ -275,8 +278,9 @@ BEGIN
   PUSHBUTTON "A&nulează", IDCANCEL, 144,118,50,14
 END
 
-IDD_IMPORT_WELCOME DIALOG 0,0,317,143
+IDD_IMPORT_WELCOME DIALOGEX 0,0,317,143
 CAPTION "Importare certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT  "Bun venit la Asistentul de importare a certificatelor", IDC_IMPORT_TITLE, 115,7,195,30
@@ -286,8 +290,9 @@ Pentru a continua, apăsați pe „Înainte”.",
     -1, 115,40,195,120
 END
 
-IDD_IMPORT_FILE DIALOG 0,0,317,178
+IDD_IMPORT_FILE DIALOGEX 0,0,317,178
 CAPTION "Importare certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT "N&ume fișier:", -1, 21,1,195,10
@@ -303,8 +308,9 @@ BEGIN
     -1, 31,83,265,10
 END
 
-IDD_IMPORT_STORE DIALOG 0,0,317,143
+IDD_IMPORT_STORE DIALOGEX 0,0,317,143
 CAPTION "Importare certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT "Wine poate selecta automat depozitul de certificate sau puteți să specificați o locație pentru certificate.",
@@ -317,11 +323,12 @@ BEGIN
   PUSHBUTTON "&Căutare…", IDC_IMPORT_BROWSE_STORE, 236,61,60,14
 END
 
-IDD_IMPORT_FINISH DIALOG 0,0,317,178
+IDD_IMPORT_FINISH DIALOGEX 0,0,317,178
 CAPTION "Importare certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
-  LTEXT "Se finalizează importarea certificatelor", IDC_IMPORT_TITLE,
+  LTEXT "Finalizare import de certificate", IDC_IMPORT_TITLE,
     115,1,195,40
   LTEXT "Ați finalizat cu succes procedura de importare a certificatelor.",
     -1, 115,33,195,24
@@ -332,8 +339,9 @@ BEGIN
     115,67,174,100
 END
 
-IDD_CERT_MGR DIALOG 0,0,335,270
+IDD_CERT_MGR DIALOGEX 0,0,335,270
 CAPTION "Certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT "&Rolul intenționat:", -1, 7,9,100,12
@@ -350,12 +358,13 @@ BEGIN
   PUSHBUTTON "Î&nchide", IDCANCEL, 277,249,51,14, BS_DEFPUSHBUTTON
 END
 
-IDD_CERT_MGR_ADVANCED DIALOG 0,0,248,176
+IDD_CERT_MGR_ADVANCED DIALOGEX 0,0,248,176
 CAPTION "Opțiuni avansate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   GROUPBOX "Rolul certificatului", -1, 7,7,234,141, BS_GROUPBOX
-  LTEXT "Alegeți unul sau mai multe roluri pentru a fi afișate când se va selecta Roluri avansate.",
+  LTEXT "Alegeți unul sau mai multe roluri pentru a fi afișate când va fi selectat „Roluri avansate”.",
     -1, 14,18,220,16
   LTEXT "&Rolurile certificatului:", -1, 14,41,90,12, WS_TABSTOP
   CONTROL "", IDC_CERTIFICATE_USAGES,"SysListView32",
@@ -365,8 +374,9 @@ BEGIN
   PUSHBUTTON "A&nulează", IDCANCEL, 190,155,51,14
 END
 
-IDD_EXPORT_WELCOME DIALOG 0,0,317,143
+IDD_EXPORT_WELCOME DIALOGEX 0,0,317,143
 CAPTION "Exportare certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT  "Bun venit la Asistentul de exportare a certificatelor", IDC_EXPORT_TITLE, 115,7,195,30
@@ -376,11 +386,12 @@ Pentru a continua, apăsați pe „Înainte”.",
     -1, 115,40,195,120
 END
 
-IDD_EXPORT_PRIVATE_KEY DIALOG 0,0,317,143
+IDD_EXPORT_PRIVATE_KEY DIALOGEX 0,0,317,143
 CAPTION "Exportare certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
-  LTEXT "Dacă alegeți să exportați cheia privată, vi se va solicita pe o pagină următoare o parolă pentru a proteja această cheie privată.", -1, 21,1,195,25
+  LTEXT "Dacă alegeți să exportați cheia privată, vă va fi solicitată pe o pagină următoare o parolă pentru a proteja această cheie privată.", -1, 21,1,195,25
   LTEXT "Doriți să exportați cheia privată?", -1, 21,27,195,10
   AUTORADIOBUTTON "D&a, exportă cheia privată",
     IDC_EXPORT_PRIVATE_KEY_YES, 31,36,200,12, BS_AUTORADIOBUTTON|WS_TABSTOP
@@ -389,8 +400,9 @@ BEGIN
   LTEXT "", IDC_EXPORT_PRIVATE_KEY_UNAVAILABLE, 21,60,200,24
 END
 
-IDD_EXPORT_PASSWORD DIALOG 0,0,317,143
+IDD_EXPORT_PASSWORD DIALOGEX 0,0,317,143
 CAPTION "Exportare certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT "&Parolă:", -1, 21,1,195,10
@@ -399,8 +411,9 @@ BEGIN
   EDITTEXT IDC_EXPORT_PASSWORD_CONFIRM, 21,45,208,14, ES_AUTOHSCROLL|WS_TABSTOP
 END
 
-IDD_EXPORT_FORMAT DIALOG 0,0,317,143
+IDD_EXPORT_FORMAT DIALOGEX 0,0,317,143
 CAPTION "Exportare certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT "Selectați formatul pe care doriți să îl utilizați:", -1, 21,1,195,10
@@ -422,8 +435,9 @@ BEGIN
     IDC_EXPORT_PFX_DELETE_PRIVATE_KEY, 44,117,280,8, BS_AUTOCHECKBOX|WS_TABSTOP|WS_DISABLED
 END
 
-IDD_EXPORT_FILE DIALOG 0,0,317,143
+IDD_EXPORT_FILE DIALOGEX 0,0,317,143
 CAPTION "Exportare certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
   LTEXT "N&ume fișier:", -1, 21,1,195,10
@@ -431,11 +445,12 @@ BEGIN
   PUSHBUTTON  "&Căutare…", IDC_EXPORT_BROWSE_FILE, 236,11,60,14
 END
 
-IDD_EXPORT_FINISH DIALOG 0,0,317,178
+IDD_EXPORT_FINISH DIALOGEX 0,0,317,178
 CAPTION "Exportare certificate"
+STYLE DS_SHELLFONT | WS_VISIBLE | DS_MODALFRAME
 FONT 8, "MS Shell Dlg"
 BEGIN
-  LTEXT "Se finalizează exportarea certificatelor", IDC_EXPORT_TITLE,
+  LTEXT "Finalizare export de certificate", IDC_EXPORT_TITLE,
     115,1,195,40
   LTEXT "Ați finalizat cu succes procedura de exportare a certificatelor",
     -1, 115,33,195,24

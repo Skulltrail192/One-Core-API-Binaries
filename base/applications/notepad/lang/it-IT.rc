@@ -28,8 +28,7 @@ BEGIN
         MENUITEM "Sal&va con nome...", CMD_SAVE_AS
         MENUITEM SEPARATOR
         MENUITEM "I&mposta pagina...", CMD_PAGE_SETUP
-        MENUITEM "S&tampa\tCtrl+P", CMD_PRINT
-        MENUITEM "&Configurazione stampante...", CMD_PRINTER_SETUP
+        MENUITEM "S&tampa...\tCtrl+P", CMD_PRINT
         MENUITEM SEPARATOR
         MENUITEM "&Esci", CMD_EXIT
     END
@@ -44,7 +43,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Tr&ova\tCtrl+F", CMD_SEARCH
         MENUITEM "T&rova successivo\tF3", CMD_SEARCH_NEXT
-        MENUITEM "Sostituisci\tCtrl+H", CMD_REPLACE
+        MENUITEM "Sostituisci...\tCtrl+H", CMD_REPLACE
         MENUITEM "Vai a...\tCtrl+G", CMD_GOTO
         MENUITEM SEPARATOR
         MENUITEM "Sele&ziona tutto\tCtrl+A", CMD_SELECT_ALL
@@ -62,36 +61,47 @@ BEGIN
     POPUP "&?"
     BEGIN
         MENUITEM "&Guida in linea", CMD_HELP_CONTENTS
-        MENUITEM "&Trova...", CMD_HELP_SEARCH
-        MENUITEM "&Aiuto sulla Guida", CMD_HELP_ON_HELP
         MENUITEM SEPARATOR
         MENUITEM "Informazioni &su blocco note", CMD_ABOUT
-        MENUITEM "Inf&o...", CMD_ABOUT_WINE
+        MENUITEM "Inf&o...", CMD_HELP_ABOUT_NOTEPAD
     END
 END
 
 /* Dialog 'Page setup' */
-DIALOG_PAGESETUP DIALOGEX 0, 0, 225, 95
-STYLE DS_SHELLFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+DIALOG_PAGESETUP DIALOGEX 0, 0, 390, 190
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU | DS_CONTEXTHELP
 FONT 8, "MS Shell Dlg"
 CAPTION "Imposta pagina"
 BEGIN
-    LTEXT "&Intestazione:", 0x140, 10, 07, 40, 15
-    EDITTEXT 0x141, 60, 05, 110, 12, WS_BORDER | WS_TABSTOP
-    LTEXT "&Piè di pagina:", 0x142, 10, 24, 40, 15
-    EDITTEXT 0x143, 60, 22, 110, 12, WS_BORDER | WS_TABSTOP
-    GROUPBOX "&Margini:", 0x144, 10, 43,160, 45
-    LTEXT "Si&nistro:", 0x145, 20, 55, 30, 10, WS_CHILD
-    EDITTEXT /*STRING_PAGESETUP_LEFTVALUE,*/ 0x147, 50, 55, 35, 11, WS_CHILD | WS_BORDER | WS_TABSTOP
-    LTEXT "S&uperiore:", 0x148, 20, 73, 30, 10, WS_CHILD
-    EDITTEXT /*STRING_PAGESETUP_TOPVALUE,*/ 0x14A, 50, 73, 35, 11, WS_CHILD | WS_BORDER | WS_TABSTOP
-    LTEXT "D&estro:", 0x14B, 100, 55, 30, 10, WS_CHILD
-    EDITTEXT /*STRING_PAGESETUP_RIGHTVALUE,*/ 0x14D, 130, 55, 35, 11, WS_CHILD | WS_BORDER | WS_TABSTOP
-    LTEXT "In&feriore:", 0x14E, 100, 73, 30, 10, WS_CHILD
-    EDITTEXT /*STRING_PAGESETUP_BOTTOMVALUE,*/ 0x150, 130, 73, 35, 11, WS_CHILD | WS_BORDER | WS_TABSTOP
-    DEFPUSHBUTTON "OK", IDOK, 180, 3, 40, 15, WS_TABSTOP
-    PUSHBUTTON "Annulla", IDCANCEL, 180, 21, 40, 15, WS_TABSTOP
-    PUSHBUTTON "&Aiuto", IDHELP, 180, 39, 40, 15, WS_TABSTOP
+    GROUPBOX "Anteprima", 0, 269, 6, 115, 153, BS_GROUPBOX
+    CONTROL "", rct1, "Static", SS_WHITERECT, 284, 40, 80, 80
+    CONTROL "", rct2, "Static", SS_GRAYRECT, 364, 44, 4, 80
+    CONTROL "", rct3, "Static", SS_GRAYRECT, 288, 120, 80, 4
+    GROUPBOX "Foglio", grp2, 8, 8, 256, 56, BS_GROUPBOX
+    LTEXT "&Dimensioni:", stc2, 16, 20, 68, 12, SS_CENTERIMAGE
+    COMBOBOX cmb2, 88, 20, 168, 160, CBS_SIMPLE | CBS_DROPDOWN | CBS_SORT | WS_GROUP | WS_TABSTOP | WS_VSCROLL
+    LTEXT "&Alimentazione:", stc3, 16, 42, 68, 12, SS_CENTERIMAGE
+    COMBOBOX cmb3, 88, 40, 168, 160, CBS_SIMPLE | CBS_DROPDOWN | CBS_SORT | WS_GROUP | WS_TABSTOP | WS_VSCROLL
+    GROUPBOX "Orientamento", grp1, 8, 68, 68, 56, BS_GROUPBOX
+    AUTORADIOBUTTON "&Verticale", rad1, 16, 80, 56, 12, BS_AUTORADIOBUTTON
+    AUTORADIOBUTTON "&Orizzontale", rad2, 16, 100, 56, 12, BS_AUTORADIOBUTTON
+    GROUPBOX "Margini", grp4, 84, 68, 180, 56, BS_GROUPBOX
+    LTEXT "&Sinistro:", stc15, 92, 80, 36, 12, SS_CENTERIMAGE
+    EDITTEXT edt4, 132, 80, 36, 12, WS_TABSTOP | WS_GROUP | WS_BORDER
+    LTEXT "&Destro:", stc16, 180, 80, 32, 12, SS_CENTERIMAGE
+    EDITTEXT edt6, 216, 80, 36, 12, WS_TABSTOP | WS_GROUP | WS_BORDER
+    LTEXT "S&uperiore:", stc17, 92, 100, 36, 12, SS_CENTERIMAGE
+    EDITTEXT edt5, 132, 100, 36, 12, WS_TABSTOP | WS_GROUP | WS_BORDER
+    LTEXT "I&nferiore:", stc18, 180, 100, 32, 8, SS_CENTERIMAGE
+    EDITTEXT edt7, 216, 100, 36, 12, WS_TABSTOP | WS_GROUP | WS_BORDER
+    LTEXT "&Intestazione:", 0x140, 8, 132, 56, 12, SS_CENTERIMAGE
+    EDITTEXT 0x141, 68, 132, 193, 12, WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL
+    LTEXT "&Piè di pagina:", 0x142, 8, 148, 56, 12, SS_CENTERIMAGE
+    EDITTEXT 0x143, 68, 148, 193, 12, WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL
+    PUSHBUTTON "Aiuto", IDHELP, 8, 168, 52, 16
+    DEFPUSHBUTTON "OK", IDOK, 212, 168, 52, 16, BS_PUSHBUTTON
+    PUSHBUTTON "Annulla", IDCANCEL, 272, 168, 52, 16
+    PUSHBUTTON "S&tampante...", psh3, 332, 168, 52, 16
 END
 
 /* Dialog 'Encoding' */
@@ -123,7 +133,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
 CAPTION "Informazioni su blocco note ReactOS"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    CONTROL "ReactOS Notepad v1.0\r\nCopyright 1997,98 Marcel Baur <mbaur@g26.ethz.ch>\r\nCopyright 2000 Mike McCormack <Mike_McCormack@looksmart.com.au>\r\nCopyright 2002 Sylvain Petreolle <spetreolle@yahoo.fr>\r\nCopyright 2002 Andriy Palamarchuk\r\n", -1, "Static", SS_LEFTNOWORDWRAP | WS_GROUP, 46, 7, 232, 39
+    CONTROL "ReactOS Notepad v1.0\r\nCopyright 1997,98 Marcel Baur\r\nCopyright 2000 Mike McCormack\r\nCopyright 2002 Sylvain Petreolle\r\nCopyright 2002 Andriy Palamarchuk\r\n", -1, "Static", SS_LEFTNOWORDWRAP | WS_GROUP, 46, 7, 232, 39
     CONTROL " ", -1, "Static", 0x50000000, 8, 48, 272, 11
     DEFPUSHBUTTON "Chiudi", IDOK, 114, 149, 44, 15, WS_GROUP
     ICON IDI_NPICON, -1, 12, 9, 20, 30
@@ -171,4 +181,7 @@ di memoria libera."
     STRING_LF "Unix (LF)"
     STRING_CR "Mac (CR)"
     STRING_LINE_COLUMN "Linea %d, colonna %d"
+    STRING_PRINTERROR "Impossibile stampare il file '%s'.\n\nControllare che la stampante sia accesa e impostata correttamente."
+
+    STRING_TEXT_DOCUMENT "Documento di testo"
 END

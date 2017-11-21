@@ -263,7 +263,7 @@ CreateHKCRKey(
     }
 
     /* See if the subkey already exists in HKCU. */
-    ErrorCode = RegOpenKeyExW(QueriedKey, lpSubKey, 0, 0, &TestKey);
+    ErrorCode = RegOpenKeyExW(QueriedKey, lpSubKey, 0, READ_CONTROL, &TestKey);
     if (ErrorCode != ERROR_FILE_NOT_FOUND)
     {
         if (ErrorCode == ERROR_SUCCESS)
@@ -711,11 +711,12 @@ EnumHKCRKey(
         goto Exit;
     }
 
+    MaxFallbackSubKeyLen++;
     TRACE("Maxfallbacksubkeylen: %d\n", MaxFallbackSubKeyLen);
 
     /* Allocate our buffer */
     FallbackSubKeyName = RtlAllocateHeap(
-        RtlGetProcessHeap(), 0, (MaxFallbackSubKeyLen + 1) * sizeof(WCHAR));
+        RtlGetProcessHeap(), 0, MaxFallbackSubKeyLen * sizeof(WCHAR));
     if (!FallbackSubKeyName)
     {
         ErrorCode = ERROR_NOT_ENOUGH_MEMORY;
@@ -745,8 +746,8 @@ EnumHKCRKey(
             NULL);
         if (ErrorCode != ERROR_SUCCESS)
         {
-            /* Most likely ERROR_NO_MORE_ITEMS */
-            ERR("Returning %d.\n", ErrorCode);
+            if (ErrorCode != ERROR_NO_MORE_ITEMS)
+                ERR("Returning %d.\n", ErrorCode);
             goto Exit;
         }
         FallbackSubKeyName[FallbackSubkeyLen] = L'\0';
@@ -756,7 +757,7 @@ EnumHKCRKey(
             PreferredKey,
             FallbackSubKeyName,
             0,
-            0,
+            READ_CONTROL,
             &PreferredSubKey);
 
         if (ErrorCode == ERROR_SUCCESS)
@@ -925,11 +926,12 @@ EnumHKCRValue(
         goto Exit;
     }
 
+    MaxFallbackValueNameLen++;
     TRACE("Maxfallbacksubkeylen: %d\n", MaxFallbackValueNameLen);
 
     /* Allocate our buffer */
     FallbackValueName = RtlAllocateHeap(
-        RtlGetProcessHeap(), 0, (MaxFallbackValueNameLen + 1) * sizeof(WCHAR));
+        RtlGetProcessHeap(), 0, MaxFallbackValueNameLen * sizeof(WCHAR));
     if (!FallbackValueName)
     {
         ErrorCode = ERROR_NOT_ENOUGH_MEMORY;

@@ -1,7 +1,7 @@
 /*
-Translators: Petru Dumitriu (petrimetri at gmail dot com)
-             Ștefan Fulea (stefan dot fulea at mail dot md)
-*/
+ * Translators: Petru Dimitriu (petrimetri at gmail dot com)
+ *              Ștefan Fulea (stefan dot fulea at mail dot md)
+ */
 
 LANGUAGE LANG_ROMANIAN, SUBLANG_NEUTRAL
 
@@ -100,16 +100,16 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL "Aplică &efect de tranziție pentru meniuri și ponturi:",
             IDC_EFFAPPEARANCE_ANIMATION, "button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 5, 267, 19
-    COMBOBOX IDC_EFFAPPEARANCE_ANIMATIONTYPE, 20, 25, 80, 19, CBS_DROPDOWNLIST |
+    COMBOBOX IDC_EFFAPPEARANCE_ANIMATIONTYPE, 20, 25, 95, 19, CBS_DROPDOWNLIST |
              CBS_HASSTRINGS | WS_CHILD | WS_VSCROLL | WS_TABSTOP
     CONTROL "&Rotunjește marginile de text folosind metoda:", IDC_EFFAPPEARANCE_SMOOTHING,
-            "button", BS_AUTOCHECKBOX | WS_TABSTOP | WS_DISABLED, 10, 42, 267, 19
-    COMBOBOX IDC_EFFAPPEARANCE_SMOOTHINGTYPE, 20, 62, 80, 19, CBS_DROPDOWNLIST |
-             CBS_HASSTRINGS | CBS_SORT | WS_VSCROLL | WS_TABSTOP | WS_DISABLED
+            "button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 42, 267, 19
+    COMBOBOX IDC_EFFAPPEARANCE_SMOOTHINGTYPE, 20, 62, 95, 19, CBS_DROPDOWNLIST |
+             CBS_HASSTRINGS | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     CONTROL "&Pictograme mari", IDC_EFFAPPEARANCE_LARGEICONS, "button",
             BS_AUTOCHECKBOX | WS_TABSTOP | WS_DISABLED, 10, 80, 267, 19
     CONTROL "Afișează &umbre sub meniuri", IDC_EFFAPPEARANCE_SETDROPSHADOW,
-            "button", BS_AUTOCHECKBOX | WS_TABSTOP | WS_DISABLED, 10, 95, 267, 19
+            "button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 95, 267, 19
     CONTROL "Afișează ferestrele și în timpul &mișcării lor", IDC_EFFAPPEARANCE_DRAGFULLWINDOWS,
             "button", BS_AUTOCHECKBOX | WS_TABSTOP, 10, 110, 267, 19
     CONTROL "&Amână sublinierea literelor navigării din tastatură până la apăsarea tastei «Alt»",
@@ -127,11 +127,11 @@ BEGIN
     CONTROL "", IDC_SETTINGS_MONSEL, "MONITORSELWNDCLASS", WS_CHILD | WS_VISIBLE |
             WS_TABSTOP, 3, 23, 240, 82, WS_EX_CLIENTEDGE
     LTEXT "&Dispozitive de afișare", 1820, 3, 107, 70, 9
-    LTEXT "<nespecificat>", IDC_SETTINGS_DEVICE, 9, 116, 224, 9
+    LTEXT "<nespecificat>", IDC_SETTINGS_DEVICE, 3, 116, 224, 9
     GROUPBOX "Re&zoluție ecran", 1818, 3, 127, 115, 43
     CONTROL "", IDC_SETTINGS_RESOLUTION, "msctls_trackbar32", TBS_AUTOTICKS | WS_TABSTOP, 30, 137, 58, 17
     LTEXT "Mică", 1815, 9, 137, 25, 9, NOT WS_GROUP
-    LTEXT "Mare", 1816, 93, 137, 25, 9, NOT WS_GROUP
+    LTEXT "Mare", 1816, 93, 137, 20, 9, NOT WS_GROUP
     LTEXT "", IDC_SETTINGS_RESOLUTION_TEXT, 10, 157, 100, 10, NOT WS_GROUP | SS_CENTER
     GROUPBOX "Amplitudine &culoare", 1817, 125, 127, 115, 43
     COMBOBOX IDC_SETTINGS_BPP, 131, 137, 103, 80, CBS_DROPDOWNLIST | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
@@ -155,6 +155,17 @@ BEGIN
     AUTORADIOBUTTON "Solicită-mi &decizia la momentul aplicării noii configurații", IDC_ASKME_RB, 14, 146, 228, 10
 END
 
+IDD_CONFIRMSETTINGS DIALOGEX 20, 30, 233, 57
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+CAPTION "Display Settings"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "Do you want to keep these display settings?", IDC_STATIC, 7, 7, 219, 8
+    LTEXT "", IDC_TIMEOUTTEXT, 7, 20, 219, 8
+    PUSHBUTTON "&Yes", IDYES, 121, 36, 50, 14
+    DEFPUSHBUTTON "&No", IDNO, 175, 36, 50, 14
+END
+
 IDR_PREVIEW_MENU MENU
 BEGIN
     MENUITEM "Normal", ID_MENU_NORMAL
@@ -169,7 +180,7 @@ BEGIN
         MENUITEM "&Atașat", ID_MENU_ATTACHED
         MENUITEM "&Primar", ID_MENU_PRIMARY
         MENUITEM SEPARATOR
-        MENUITEM "&Identificare", ID_MENU_IDENTIFY
+        MENUITEM "I&dentificare", ID_MENU_IDENTIFY
         MENUITEM "P&roprietăți", ID_MENU_PROPERTIES
     END
 END
@@ -183,7 +194,7 @@ END
 STRINGTABLE
 BEGIN
     IDS_STANDARDEFFECT "Standard"
-    IDS_CLEARTYPEEFFECT "ClearType"
+    IDS_CLEARTYPEEFFECT "FreeType Antialiased"
 END
 
 STRINGTABLE
@@ -215,8 +226,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_BACKGROUND_COMDLG_FILTER "Imagini (*.bmp;*.dib)\0*.bmp;*.dib\0"
-    IDS_SUPPORTED_EXT "*.bmp;*.dib"
+    IDS_BACKGROUND_COMDLG_FILTER "Imagini"
 END
 
 STRINGTABLE
@@ -232,28 +242,25 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_ELEMENT_1 "Fundal"
-    IDS_ELEMENT_2 "Titlul ferestrelor inactive"
-    IDS_ELEMENT_3 "Chenarul ferestrelor inactive"
-    IDS_ELEMENT_4 "Titlul ferestrelor active"
-    IDS_ELEMENT_5 "Chenarul ferestrelor active"
-    IDS_ELEMENT_6 "Meniu"
-    IDS_ELEMENT_7 "Elemente selectate"
-    IDS_ELEMENT_8 "Ferestre"
-    IDS_ELEMENT_9 "Bare de defilare"
-    IDS_ELEMENT_10 "Obiecte 3D"
-    IDS_ELEMENT_11 "Titlu paletă"
-    IDS_ELEMENT_12 "Titlu simbol"
-    IDS_ELEMENT_13 "Bară de titlu"
-    IDS_ELEMENT_14 "Elemente meniu dezactivate"
-    IDS_ELEMENT_15 "Fereastră de dialog"
-    IDS_ELEMENT_16 "Controale bară de defilare"
-    IDS_ELEMENT_17 "Fundal aplicație"
-    IDS_ELEMENT_18 "Bară de defilare mică"
-    IDS_ELEMENT_19 "Distanță simbol (orizontal)"
-    IDS_ELEMENT_20 "Distanță simbol (vertical)"
-    IDS_ELEMENT_21 "Pont"
-    IDS_ELEMENT_22 "Simbol"
+    IDS_ELEMENT_0 "Fundal"
+    IDS_ELEMENT_1 "Titlul ferestrelor inactive"
+    IDS_ELEMENT_2 "Chenarul ferestrelor inactive"
+    IDS_ELEMENT_3 "Titlul ferestrelor active"
+    IDS_ELEMENT_4 "Chenarul ferestrelor active"
+    IDS_ELEMENT_5 "Meniu"
+    IDS_ELEMENT_6 "Elemente selectate"
+    IDS_ELEMENT_7 "Ferestre"
+    IDS_ELEMENT_8 "Bare de defilare"
+    IDS_ELEMENT_9 "Obiecte 3D"
+    IDS_ELEMENT_10 "Titlu paletă"
+    IDS_ELEMENT_11 "Bară de titlu"
+    IDS_ELEMENT_12 "Fereastră de dialog"
+    IDS_ELEMENT_13 "Fundal aplicație"
+    IDS_ELEMENT_14 "Distanță simbol (orizontal)"
+    IDS_ELEMENT_15 "Distanță simbol (vertical)"
+    IDS_ELEMENT_16 "Pont"
+    IDS_ELEMENT_17 "Simbol"
+//  IDS_ELEMENT_18 "Elemente meniu dezactivate"
 END
 
 STRINGTABLE
@@ -261,4 +268,5 @@ BEGIN
     IDS_DISPLAY_SETTINGS "Configurare afișare"
     IDS_APPLY_FAILED "Modificările aduse nu au putut fi aplicate."
     IDS_APPLY_NEEDS_RESTART "Pentru a aplica noua configurație este necesară repornirea calculatorului."
+    IDS_TIMEOUTTEXT "Revert to previous settings in %d seconds."
 END

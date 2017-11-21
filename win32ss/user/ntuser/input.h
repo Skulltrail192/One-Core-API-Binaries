@@ -35,7 +35,7 @@ typedef struct tagKL
     UINT iBaseCharset;
     USHORT CodePage;
     WCHAR wchDiacritic;
-    //PIMEINFOEX piiex;
+    PIMEINFOEX piiex;
 } KL, *PKL;
 
 typedef struct _ATTACHINFO
@@ -75,12 +75,19 @@ VOID NTAPI UserProcessKeyboardInput(PKEYBOARD_INPUT_DATA pKeyInput);
 BOOL NTAPI UserSendKeyboardInput(KEYBDINPUT *pKbdInput, BOOL bInjected);
 PKL NTAPI UserHklToKbl(HKL hKl);
 BOOL NTAPI UserSetDefaultInputLang(HKL hKl);
+extern int gLanguageToggleKeyState;
+extern DWORD gdwLanguageToggleKey;
 
 /* Mouse */
 WORD FASTCALL UserGetMouseButtonsState(VOID);
 VOID NTAPI UserProcessMouseInput(PMOUSE_INPUT_DATA pMouseInputData);
 BOOL NTAPI UserSendMouseInput(MOUSEINPUT *pMouseInput, BOOL bInjected);
 
+/* IMM */
+UINT FASTCALL IntImmProcessKey(PUSER_MESSAGE_QUEUE, PWND, UINT, WPARAM, LPARAM);
+
+extern DWORD gSystemFS;
+extern UINT gSystemCPCharSet; 
 extern HANDLE ghKeyboardDevice;
 extern PTHREADINFO ptiRawInput;
 extern BYTE gafAsyncKeyState[256 * 2 / 8]; // 2 bits per key

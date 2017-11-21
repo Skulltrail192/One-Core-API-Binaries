@@ -2379,7 +2379,8 @@ static HRESULT STDMETHODCALLTYPE d3d11_unordered_access_view_QueryInterface(ID3D
             || IsEqualGUID(riid, &IID_ID3D11DeviceChild)
             || IsEqualGUID(riid, &IID_IUnknown))
     {
-        ID3D11UnorderedAccessView_AddRef(*object = iface);
+		*object = iface;
+        ID3D11UnorderedAccessView_AddRef((ID3D11UnorderedAccessView *)object);
         return S_OK;
     }
 

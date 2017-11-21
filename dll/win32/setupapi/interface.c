@@ -155,7 +155,7 @@ SETUP_CreateInterfaceList(
             list->HKLM,
             REGSTR_PATH_SYSTEMENUM,
             0, /* Options */
-            0,
+            READ_CONTROL,
             &hEnumKey);
         if (rc != ERROR_SUCCESS)
             goto cleanup;
@@ -232,7 +232,7 @@ SETUP_CreateInterfaceList(
 
             /* Step 2. Create an interface list for this element */
             HeapFree(GetProcessHeap(), 0, pSymbolicLink);
-            pSymbolicLink = HeapAlloc(GetProcessHeap(), 0, (dwLength + 1) * sizeof(WCHAR));
+            pSymbolicLink = HeapAlloc(GetProcessHeap(), 0, dwLength + sizeof(WCHAR));
             if (!pSymbolicLink)
             {
                 rc = ERROR_NOT_ENOUGH_MEMORY;
@@ -586,6 +586,7 @@ SetupDiOpenDeviceInterfaceRegKey(
         Slash = wcsrchr(Path, '\\');
         if (!Guid || !Slash)
         {
+            HeapFree(GetProcessHeap(), 0, Path);
             SetLastError(ERROR_INVALID_PARAMETER);
             return INVALID_HANDLE_VALUE;
         }

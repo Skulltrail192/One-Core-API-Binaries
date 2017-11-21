@@ -25,6 +25,7 @@
 @ stdcall GetWindowsDirectoryA(ptr long) kernel32.GetWindowsDirectoryA
 @ stdcall GetWindowsDirectoryW(ptr long) kernel32.GetWindowsDirectoryW
 @ stdcall GlobalMemoryStatusEx(ptr) kernel32.GlobalMemoryStatusEx
+@ stdcall InitializeCriticalSectionEx(ptr long long) kernel32.InitializeCriticalSectionEx
 @ stdcall SetComputerNameExW(long wstr) kernel32.SetComputerNameExW
 @ stdcall SetLocalTime(ptr) kernel32.SetLocalTime
 @ stdcall SetSystemTime(ptr) kernel32.SetSystemTime

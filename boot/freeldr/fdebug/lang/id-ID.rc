@@ -21,7 +21,7 @@ BEGIN
     END
     POPUP "&Bantuan"
     BEGIN
-        MENUITEM "&Tentang ...", IDM_ABOUT
+        MENUITEM "&Tentang...", IDM_ABOUT
     END
 END
 
@@ -74,7 +74,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_APP_TITLE "fdebug"
+    IDS_APP_TITLE "FreeLoader Debugger"
     IDS_HELLO "Halo Dunia!"
     IDC_FDEBUG "FDEBUG"
 END

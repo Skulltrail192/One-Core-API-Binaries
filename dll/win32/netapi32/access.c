@@ -246,24 +246,3 @@ NetQueryDisplayInformation(
     }
     return NERR_Success;
 }
-
-/************************************************************
- *                NetGetDCName  (NETAPI32.@)
- *
- *  Return the name of the primary domain controller (PDC)
- */
-
-NET_API_STATUS WINAPI
-NetGetDCName(LPCWSTR servername, LPCWSTR domainname, LPBYTE *bufptr)
-{
-  FIXME("(%s, %s, %p) stub!\n", debugstr_w(servername),
-                 debugstr_w(domainname), bufptr);
-  return NERR_DCNotFound; /* say we can't find a domain controller */  
-}
-
-
-NET_API_STATUS WINAPI NetUseAdd(LMSTR servername, DWORD level, LPBYTE bufptr, LPDWORD parm_err)
-{
-    FIXME("%s %d %p %p stub\n", debugstr_w(servername), level, bufptr, parm_err);
-    return NERR_Success;
-}

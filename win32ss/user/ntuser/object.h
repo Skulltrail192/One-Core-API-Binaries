@@ -17,9 +17,9 @@ PVOID UserGetObjectNoErr(PUSER_HANDLE_TABLE, HANDLE, HANDLE_TYPE);
 BOOL FASTCALL UserCreateHandleTable(VOID);
 BOOL FASTCALL UserObjectInDestroy(HANDLE);
 void DbgUserDumpHandleTable();
-VOID FASTCALL UserSetObjectOwner(PVOID obj, HANDLE_TYPE type, PVOID owner);
 PVOID FASTCALL ValidateHandle(HANDLE handle, HANDLE_TYPE type);
 BOOLEAN UserDestroyObjectsForOwner(PUSER_HANDLE_TABLE Table, PVOID Owner);
+BOOL FASTCALL UserMarkObjectDestroy(PVOID);
 
 static __inline VOID
 UserRefObjectCo(PVOID obj, PUSER_REFERENCE_ENTRY UserReferenceEntry)
@@ -53,5 +53,7 @@ UserDerefObjectCo(PVOID obj)
     ASSERT(obj == UserReferenceEntry->obj);
     UserDereferenceObject(obj);
 }
+
+void FreeProcMarkObject(_In_ PVOID Object);
 
 /* EOF */

@@ -56,8 +56,8 @@ public:
     VOID DumpQueueHead(IN PQUEUE_HEAD QueueHead);
 
     // constructor / destructor
-    CUSBRequest(IUnknown *OuterUnknown){}
-    virtual ~CUSBRequest(){}
+    CUSBRequest(IUnknown *OuterUnknown);
+    virtual ~CUSBRequest();
 
 protected:
     LONG m_Ref;
@@ -136,6 +136,22 @@ protected:
     USB_DEVICE_SPEED m_Speed;
 
 };
+
+//----------------------------------------------------------------------------------------
+CUSBRequest::CUSBRequest(IUnknown *OuterUnknown) :
+    m_CompletionEvent(NULL)
+{
+    UNREFERENCED_PARAMETER(OuterUnknown);
+}
+
+//----------------------------------------------------------------------------------------
+CUSBRequest::~CUSBRequest()
+{
+    if (m_CompletionEvent != NULL)
+    {
+        ExFreePoolWithTag(m_CompletionEvent, TAG_USBEHCI);
+    }
+}
 
 //----------------------------------------------------------------------------------------
 NTSTATUS
@@ -391,7 +407,7 @@ CUSBRequest::CompletionCallback(
         }
 
         //
-        // check if the request was successfull
+        // check if the request was successful
         //
         if (!NT_SUCCESS(NtStatusCode))
         {
@@ -599,8 +615,9 @@ CUSBRequest::InitDescriptor(
     do
     {
         //
-        // get address
+        // get address (HACK)
         //
+        *(volatile char *)TransferBuffer;
         Address = MmGetPhysicalAddress(TransferBuffer);
 
         //
@@ -836,13 +853,14 @@ CUSBRequest::BuildControlTransferQueueHead(
     //
     // first allocate the queue head
     //
-    Status  = CreateQueueHead(&QueueHead);
+    Status = CreateQueueHead(&QueueHead);
     if (!NT_SUCCESS(Status))
     {
         //
         // failed to allocate queue head
         //
-        return STATUS_INSUFFICIENT_RESOURCES;
+        DPRINT1("[EHCI] Failed to create queue head\n");
+        return Status;
     }
 
     //
@@ -856,11 +874,12 @@ CUSBRequest::BuildControlTransferQueueHead(
     Status = BuildSetupPacket();
     if (!NT_SUCCESS(Status))
     {
-        //
-        // failed to allocate setup packet
-        //
-        ASSERT(FALSE);
-        return STATUS_INSUFFICIENT_RESOURCES;
+        // failed to create setup packet
+        DPRINT1("[EHCI] Failed to create setup packet\n");
+
+        // release queue head
+        m_DmaManager->Release(QueueHead, sizeof(QUEUE_HEAD));
+        return Status;
     }
 
     //
@@ -869,10 +888,17 @@ CUSBRequest::BuildControlTransferQueueHead(
     Status = CreateDescriptor(&SetupDescriptor);
     if (!NT_SUCCESS(Status))
     {
-        //
-        // failed to allocate transfer descriptor
-        //
-        ASSERT(FALSE);
+        // failed to create setup transfer descriptor
+        DPRINT1("[EHCI] Failed to create setup descriptor\n");
+
+        if (m_DescriptorPacket)
+        {
+            // release packet descriptor
+            m_DmaManager->Release(m_DescriptorPacket, sizeof(USB_DEFAULT_PIPE_SETUP_PACKET));
+        }
+
+        // release queue head
+        m_DmaManager->Release(QueueHead, sizeof(QUEUE_HEAD));
         return Status;
     }
 
@@ -882,10 +908,20 @@ CUSBRequest::BuildControlTransferQueueHead(
     Status = CreateDescriptor(&StatusDescriptor);
     if (!NT_SUCCESS(Status))
     {
-        //
-        // failed to allocate transfer descriptor
-        //
-        ASSERT(FALSE);
+        // failed to create status transfer descriptor
+        DPRINT1("[EHCI] Failed to create status descriptor\n");
+
+        // release setup transfer descriptor
+        m_DmaManager->Release(SetupDescriptor, sizeof(QUEUE_TRANSFER_DESCRIPTOR));
+
+        if (m_DescriptorPacket)
+        {
+            // release packet descriptor
+            m_DmaManager->Release(m_DescriptorPacket, sizeof(USB_DEFAULT_PIPE_SETUP_PACKET));
+        }
+
+        // release queue head
+        m_DmaManager->Release(QueueHead, sizeof(QUEUE_HEAD));
         return Status;
     }
 
@@ -928,11 +964,28 @@ CUSBRequest::BuildControlTransferQueueHead(
                                               &LastDescriptor,
                                               NULL,
                                               &DescriptorChainLength);
+        if (!NT_SUCCESS(Status))
+        {
+            // failed to create descriptor chain
+            DPRINT1("[EHCI] Failed to create descriptor chain\n");
 
-        //
-        // FIXME handle errors
-        //
-        ASSERT(Status == STATUS_SUCCESS);
+            // release status transfer descriptor
+            m_DmaManager->Release(StatusDescriptor, sizeof(QUEUE_TRANSFER_DESCRIPTOR));
+
+            // release setup transfer descriptor
+            m_DmaManager->Release(SetupDescriptor, sizeof(QUEUE_TRANSFER_DESCRIPTOR));
+
+            if (m_DescriptorPacket)
+            {
+                // release packet descriptor
+                m_DmaManager->Release(m_DescriptorPacket, sizeof(USB_DEFAULT_PIPE_SETUP_PACKET));
+            }
+
+            // release queue head
+            m_DmaManager->Release(QueueHead, sizeof(QUEUE_HEAD));
+            return Status;
+        }
+
         if (m_TransferBufferLength != DescriptorChainLength)
         {
             DPRINT1("DescriptorChainLength %x\n", DescriptorChainLength);
@@ -1075,13 +1128,13 @@ CUSBRequest::BuildBulkInterruptTransferQueueHead(
     // Allocate the queue head
     //
     Status = CreateQueueHead(&QueueHead);
-
     if (!NT_SUCCESS(Status))
     {
         //
-        // failed to allocate queue heads
+        // failed to allocate queue head
         //
-        return STATUS_INSUFFICIENT_RESOURCES;
+        DPRINT1("[EHCI] Failed to create queue head\n");
+        return Status;
     }
 
     //
@@ -1128,13 +1181,20 @@ CUSBRequest::BuildBulkInterruptTransferQueueHead(
                                           &LastDescriptor,
                                           &m_EndpointDescriptor->DataToggle,
                                           &ChainDescriptorLength);
+    if (!NT_SUCCESS(Status))
+    {
+        //
+        // failed to build transfer descriptor chain
+        //
+        DPRINT1("[EHCI] Failed to create descriptor chain\n");
+        m_DmaManager->Release(QueueHead, sizeof(QUEUE_HEAD));
+        return Status;
+    }
 
     //
     // move to next offset
     //
     m_TransferBufferLengthCompleted += ChainDescriptorLength;
-
-    ASSERT(Status == STATUS_SUCCESS);
 
     //
     // init queue head
@@ -1228,7 +1288,6 @@ CUSBRequest::CreateQueueHead(
     // allocate queue head
     //
     Status = m_DmaManager->Allocate(sizeof(QUEUE_HEAD), (PVOID*)&QueueHead, &QueueHeadPhysicalAddress);
-
     if (!NT_SUCCESS(Status))
     {
         //
@@ -1413,7 +1472,7 @@ CUSBRequest::BuildSetupPacketFromURB()
         case URB_FUNCTION_CLEAR_FEATURE_TO_DEVICE:
         case URB_FUNCTION_CLEAR_FEATURE_TO_INTERFACE:
         case URB_FUNCTION_CLEAR_FEATURE_TO_ENDPOINT:
-            UNIMPLEMENTED
+            UNIMPLEMENTED;
             break;
 
     /* GET CONFIG */
@@ -1481,7 +1540,7 @@ CUSBRequest::BuildSetupPacketFromURB()
         case URB_FUNCTION_SET_DESCRIPTOR_TO_DEVICE:
         case URB_FUNCTION_SET_DESCRIPTOR_TO_INTERFACE:
         case URB_FUNCTION_SET_DESCRIPTOR_TO_ENDPOINT:
-            UNIMPLEMENTED
+            UNIMPLEMENTED;
             break;
 
     /* SET FEATURE */
@@ -1517,10 +1576,10 @@ CUSBRequest::BuildSetupPacketFromURB()
 
     /* SYNC FRAME */
         case URB_FUNCTION_SYNC_RESET_PIPE_AND_CLEAR_STALL:
-            UNIMPLEMENTED
+            UNIMPLEMENTED;
             break;
         default:
-            UNIMPLEMENTED
+            UNIMPLEMENTED;
             break;
     }
 

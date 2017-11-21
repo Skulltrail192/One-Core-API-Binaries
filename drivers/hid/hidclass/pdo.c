@@ -636,7 +636,7 @@ HidClassPDO_CreatePDO(
     OUT PDEVICE_RELATIONS *OutDeviceRelations)
 {
     PHIDCLASS_FDO_EXTENSION FDODeviceExtension;
-    NTSTATUS Status;
+    NTSTATUS Status = STATUS_SUCCESS;
     PDEVICE_OBJECT PDODeviceObject;
     PHIDCLASS_PDO_DEVICE_EXTENSION PDODeviceExtension;
     ULONG Index;
@@ -652,8 +652,8 @@ HidClassPDO_CreatePDO(
     //
     // first allocate device relations
     //
-    Length = sizeof(DEVICE_RELATIONS) + sizeof(PDEVICE_OBJECT) * FDODeviceExtension->Common.DeviceDescription.CollectionDescLength;
-    DeviceRelations = ExAllocatePoolWithTag(NonPagedPool, Length, HIDCLASS_TAG);
+    Length = FIELD_OFFSET(DEVICE_RELATIONS, Objects) + sizeof(PDEVICE_OBJECT) * FDODeviceExtension->Common.DeviceDescription.CollectionDescLength;
+    DeviceRelations = ExAllocatePoolWithTag(PagedPool, Length, HIDCLASS_TAG);
     if (!DeviceRelations)
     {
         //
@@ -671,7 +671,7 @@ HidClassPDO_CreatePDO(
     // let's create a PDO for top level collection
     //
     Index = 0;
-    do
+    while (Index < FDODeviceExtension->Common.DeviceDescription.CollectionDescLength)
     {
         //
         // let's create the device object
@@ -742,7 +742,7 @@ HidClassPDO_CreatePDO(
         //
         Index++;
 
-    } while(Index < FDODeviceExtension->Common.DeviceDescription.CollectionDescLength);
+    }
 
 
     //

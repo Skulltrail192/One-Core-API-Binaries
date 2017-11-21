@@ -2,7 +2,7 @@
 spec2def(user32.dll user32.spec ADD_IMPORTLIB)
 
 include_directories(
-    ${REACTOS_SOURCE_DIR}/include/reactos/subsys
+    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys
     include
     ${REACTOS_SOURCE_DIR}/win32ss/include)
 
@@ -18,6 +18,7 @@ list(APPEND SOURCE
     controls/static.c
     misc/dde.c
     misc/ddeclient.c
+    misc/ddemisc.c
     misc/ddeserver.c
     misc/desktop.c
     misc/display.c
@@ -25,6 +26,7 @@ list(APPEND SOURCE
     misc/exit.c
     misc/exticon.c
     misc/imm.c
+    misc/logon.c
     misc/misc.c
     misc/object.c
     misc/resources.c
@@ -38,7 +40,7 @@ list(APPEND SOURCE
     windows/caret.c
     windows/class.c
     windows/clipboard.c
-#   windows/cursoricon.c
+    windows/cursoricon.c
     windows/dc.c
     windows/defwnd.c
     windows/dialog.c
@@ -58,22 +60,26 @@ list(APPEND SOURCE
     windows/text.c
     windows/window.c
     windows/winpos.c
+    ${REACTOS_SOURCE_DIR}/win32ss/user/rtl/text.c
     ${CMAKE_CURRENT_BINARY_DIR}/user32_stubs.c
     include/user32.h)
 
-if(USE_NEW_CURSORICON)
-    list(APPEND SOURCE windows/cursoricon_new.c)
-else()
-    list(APPEND SOURCE windows/cursoricon.c)
+if(ARCH STREQUAL "i386")
+    list(APPEND ASM_SOURCE
+        windows/wndproc_fixup.S)
 endif()
+
+add_asm_files(user32_asm ${ASM_SOURCE})
 
 add_library(user32 SHARED
     ${SOURCE}
+    ${user32_asm}
     user32.rc
     ${CMAKE_CURRENT_BINARY_DIR}/user32.def)
 
-set_module_type(user32 win32dll ENTRYPOINT DllMain 12 UNICODE HOTPATCHABLE)
+set_module_type(user32 win32dll ENTRYPOINT DllMain 12 UNICODE)
 target_link_libraries(user32 user32_wsprintf wine win32ksys ${PSEH_LIB})
+add_dependencies(user32 asm)
 
 if(MSVC)
     # for __ftol2_sse, float to int cast helper

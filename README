@@ -1,5 +1,5 @@
 ========================
-One-Core-API source code based on Reactos 3.x source code, wine and others improviments.
+One-Core-API source code based on Reactos 0.4.x source code, wine and others improviments.
 ========================
 
 1. What is One-Core-API?
@@ -13,7 +13,7 @@ More information is available at http://www.reactos.org/.
 2. Building One-Core-API
 
 Because the source is based on Reactos, you need cmake and visual studio to compile. See Reactos visual studio build video on: 
-https://vimeo.com/58933587 .Wrappers dlls's name starts with a "v", like "vernel32" or "vtdll"
+https://vimeo.com/58933587 .Wrappers dlls's name ends with a "wrapper", like "kernel32_wrapper" or "ntext_wrapper"
 
 3. More information
 

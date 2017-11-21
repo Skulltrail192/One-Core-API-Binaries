@@ -15,11 +15,21 @@ BEGIN
         MENUITEM "Neu\tStrg+N", IDM_FILENEW
         MENUITEM "Öffnen...\tStrg+O", IDM_FILEOPEN
         MENUITEM "Speichern\tStrg+S", IDM_FILESAVE
-        MENUITEM "Speichern unter...", IDM_FILESAVEAS
+        MENUITEM "Speichern &unter...", IDM_FILESAVEAS
+        MENUITEM SEPARATOR
+        MENUITEM "Von Scanner oder Kamera...", IDM_FILEFROMSCANNERORCAMERA
+        MENUITEM SEPARATOR
+        MENUITEM "Seitenansicht", IDM_FILEPAGEVIEW
+        MENUITEM "Seite einrichten...", IDM_FILEPAGESETUP
+        MENUITEM "&Drucken...\tStrg+P", IDM_FILEPRINT
+        MENUITEM SEPARATOR
+        MENUITEM "Senden...", IDM_FILESEND
         MENUITEM SEPARATOR
         MENUITEM "Als Hintergrund (Fläche)", IDM_FILEASWALLPAPERPLANE
         MENUITEM "Als Hintergrund (Zentriert)", IDM_FILEASWALLPAPERCENTERED
         MENUITEM "Als Hintergrund (Gestreckt)", IDM_FILEASWALLPAPERSTRETCHED
+        MENUITEM SEPARATOR
+        MENUITEM "Zuletzt verwendete Datei", IDM_FILEMOSTRECENTLYUSEDFILE, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "Beenden\tAlt+F4", IDM_FILEEXIT
     END
@@ -33,7 +43,7 @@ BEGIN
         MENUITEM "Einfügen\tStrg+V", IDM_EDITPASTE
         MENUITEM "Auswahl löschen\tEntf", IDM_EDITDELETESELECTION
         MENUITEM "Markierung umkehren", IDM_EDITINVERTSELECTION
-        MENUITEM "Alles markieren\tStrg+A", IDM_EDITSELECTALL
+        MENUITEM "Alles &markieren\tStrg+A", IDM_EDITSELECTALL
         MENUITEM SEPARATOR
         MENUITEM "Kopieren nach...", IDM_EDITCOPYTO
         MENUITEM "Einfügen aus...", IDM_EDITPASTEFROM
@@ -80,7 +90,7 @@ BEGIN
         MENUITEM "Moderne Palette", IDM_COLORSMODERNPALETTE
         MENUITEM "Alte Palette", IDM_COLORSOLDPALETTE
     END
-    POPUP "&?"
+    POPUP "&Hilfe"
     BEGIN
         MENUITEM "Hilfethemen", IDM_HELPHELPTOPICS
         MENUITEM SEPARATOR
@@ -206,12 +216,13 @@ BEGIN
     IDS_TOOLTIP14 "Polygon"
     IDS_TOOLTIP15 "Ellipse"
     IDS_TOOLTIP16 "Abgerundetes Rechteck"
-    IDS_OPENFILTER "Bitmapdateien (*.bmp;*.dib)\1*.bmp;*.dib\1Alle Dateien (*.*)\1*.*\1"
-    IDS_SAVEFILTER "24-Bit-Bitmap (*.bmp;*.dib)\1*.bmp;*.dib\1"
+    IDS_ALLFILES "Alle Dateien"
+    IDS_ALLPICTUREFILES "Alle Bilddateien"
     IDS_FILESIZE "%d Bytes"
     IDS_PRINTRES "%d x %d Pixel pro Meter"
     IDS_INTNUMBERS "Bitte geben Sie nur ganze Zahlen ein!"
     IDS_PERCENTAGE "Der Prozentsatz muss zwischen 1 und 500 liegen."
     IDS_ANGLE "Der Winkel muss zwischen -89 und 89 liegen."
     IDS_LOADERRORTEXT "Die Datei %s konnte nicht geladen werden."
+    IDS_ENLARGEPROMPTTEXT "Das Bild in der Zwischenablage ist größer als die Bitmap.\nSoll die Bitmap vergrößert werden?"
 END

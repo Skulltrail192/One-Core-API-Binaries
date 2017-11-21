@@ -49,19 +49,19 @@ static CRITICAL_SECTION_DEBUG pdh_handle_cs_debug =
 };
 static CRITICAL_SECTION pdh_handle_cs = { &pdh_handle_cs_debug, -1, 0, 0, 0, 0 };
 
-static inline void *heap_alloc( SIZE_T size )
+static inline void* __WINE_ALLOC_SIZE(1) heap_alloc(size_t size)
 {
-    return HeapAlloc( GetProcessHeap(), 0, size );
+    return HeapAlloc(GetProcessHeap(), 0, size);
 }
 
-static inline void *heap_alloc_zero( SIZE_T size )
+static inline void* __WINE_ALLOC_SIZE(1) heap_alloc_zero(size_t size)
 {
-    return HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, size );
+    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
 }
 
-static inline void heap_free( LPVOID mem )
+static inline BOOL heap_free(void *mem)
 {
-    HeapFree( GetProcessHeap(), 0, mem );
+    return HeapFree(GetProcessHeap(), 0, mem);
 }
 
 static inline WCHAR *pdh_strdup( const WCHAR *src )
@@ -1270,4 +1270,40 @@ PDH_STATUS WINAPI PdhSetDefaultRealTimeDataSource( DWORD source )
 {
     FIXME("%u\n", source);
     return ERROR_SUCCESS;
+}
+
+/***********************************************************************
+ *              PdhGetLogFileTypeA   (PDH.@)
+ */
+PDH_STATUS WINAPI PdhGetLogFileTypeA(const char *log, DWORD *type)
+{
+    FIXME("%s, %p: stub\n", debugstr_a(log), type);
+    return PDH_NOT_IMPLEMENTED;
+}
+
+/***********************************************************************
+ *              PdhGetLogFileTypeW   (PDH.@)
+ */
+PDH_STATUS WINAPI PdhGetLogFileTypeW(const WCHAR *log, DWORD *type)
+{
+    FIXME("%s, %p: stub\n", debugstr_w(log), type);
+    return PDH_NOT_IMPLEMENTED;
+}
+
+/***********************************************************************
+ *              PdhBindInputDataSourceA   (PDH.@)
+ */
+PDH_STATUS WINAPI PdhBindInputDataSourceA(PDH_HLOG *source, const char *filenamelist)
+{
+    FIXME("%p %s: stub\n", source, debugstr_a(filenamelist));
+    return PDH_NOT_IMPLEMENTED;
+}
+
+/***********************************************************************
+ *              PdhBindInputDataSourceW   (PDH.@)
+ */
+PDH_STATUS WINAPI PdhBindInputDataSourceW(PDH_HLOG *source, const WCHAR *filenamelist)
+{
+    FIXME("%p %s: stub\n", source, debugstr_w(filenamelist));
+    return PDH_NOT_IMPLEMENTED;
 }

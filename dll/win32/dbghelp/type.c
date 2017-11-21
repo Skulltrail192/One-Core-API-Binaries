@@ -159,7 +159,7 @@ static struct symt* symt_find_type_by_name(const struct module* module,
     hash_table_iter_init(&module->ht_types, &hti, typename);
     while ((ptr = hash_table_iter_up(&hti)))
     {
-        type = GET_ENTRY(ptr, struct symt_ht, hash_elt);
+        type = CONTAINING_RECORD(ptr, struct symt_ht, hash_elt);
 
         if ((sym_tag == SymTagNull || type->symt.tag == sym_tag) &&
             type->hash_elt.name && !strcmp(type->hash_elt.name, typename))
@@ -460,7 +460,7 @@ BOOL WINAPI SymEnumTypes(HANDLE hProcess, ULONG64 BaseOfDll,
     {
         type = *(struct symt**)vector_at(&pair.effective->vtypes, i);
         sym_info->TypeIndex = symt_ptr2index(pair.effective, type);
-        sym_info->info = 0; /* FIXME */
+        sym_info->Index = 0; /* FIXME */
         symt_get_info(pair.effective, type, TI_GET_LENGTH, &size);
         sym_info->Size = size;
         sym_info->ModBase = pair.requested->module.BaseOfImage;

@@ -514,8 +514,8 @@ static void STDMETHODCALLTYPE d2d_d3d_render_target_DrawRectangle(ID2D1RenderTar
     ID2D1RectangleGeometry *geometry;
     HRESULT hr;
 
-    TRACE("iface %p, rect %p, brush %p, stroke_width %.8e, stroke_style %p.\n",
-            iface, rect, brush, stroke_width, stroke_style);
+    TRACE("iface %p, rect %s, brush %p, stroke_width %.8e, stroke_style %p.\n",
+            iface, debug_d2d_rect_f(rect), brush, stroke_width, stroke_style);
 
     if (FAILED(hr = ID2D1Factory_CreateRectangleGeometry(render_target->factory, rect, &geometry)))
     {
@@ -534,7 +534,7 @@ static void STDMETHODCALLTYPE d2d_d3d_render_target_FillRectangle(ID2D1RenderTar
     ID2D1RectangleGeometry *geometry;
     HRESULT hr;
 
-    TRACE("iface %p, rect %p, brush %p.\n", iface, rect, brush);
+    TRACE("iface %p, rect %s, brush %p.\n", iface, debug_d2d_rect_f(rect), brush);
 
     if (FAILED(hr = ID2D1Factory_CreateRectangleGeometry(render_target->factory, rect, &geometry)))
     {
@@ -766,7 +766,7 @@ static void STDMETHODCALLTYPE d2d_d3d_render_target_DrawGeometry(ID2D1RenderTarg
             iface, geometry, brush, stroke_width, stroke_style);
 
     if (stroke_style)
-        FIXME("Ignoring stoke style %p.\n", stroke_style);
+        FIXME("Ignoring stroke style %p.\n", stroke_style);
 
     d2d_rt_draw_geometry(render_target, geometry_impl, brush_impl, stroke_width);
 }
@@ -917,8 +917,8 @@ static void STDMETHODCALLTYPE d2d_d3d_render_target_FillOpacityMask(ID2D1RenderT
         ID2D1Bitmap *mask, ID2D1Brush *brush, D2D1_OPACITY_MASK_CONTENT content,
         const D2D1_RECT_F *dst_rect, const D2D1_RECT_F *src_rect)
 {
-    FIXME("iface %p, mask %p, brush %p, content %#x, dst_rect %p, src_rect %p stub!\n",
-            iface, mask, brush, content, dst_rect, src_rect);
+    FIXME("iface %p, mask %p, brush %p, content %#x, dst_rect %s, src_rect %s stub!\n",
+            iface, mask, brush, content, debug_d2d_rect_f(dst_rect), debug_d2d_rect_f(src_rect));
 }
 
 static void STDMETHODCALLTYPE d2d_d3d_render_target_DrawBitmap(ID2D1RenderTarget *iface,
@@ -931,8 +931,8 @@ static void STDMETHODCALLTYPE d2d_d3d_render_target_DrawBitmap(ID2D1RenderTarget
     D2D1_RECT_F s, d;
     HRESULT hr;
 
-    TRACE("iface %p, bitmap %p, dst_rect %p, opacity %.8e, interpolation_mode %#x, src_rect %p.\n",
-            iface, bitmap, dst_rect, opacity, interpolation_mode, src_rect);
+    TRACE("iface %p, bitmap %p, dst_rect %s, opacity %.8e, interpolation_mode %#x, src_rect %s.\n",
+            iface, bitmap, debug_d2d_rect_f(dst_rect), opacity, interpolation_mode, debug_d2d_rect_f(src_rect));
 
     if (src_rect)
     {
@@ -993,9 +993,9 @@ static void STDMETHODCALLTYPE d2d_d3d_render_target_DrawText(ID2D1RenderTarget *
     D2D1_POINT_2F origin;
     HRESULT hr;
 
-    TRACE("iface %p, string %s, string_len %u, text_format %p, layout_rect %p, "
+    TRACE("iface %p, string %s, string_len %u, text_format %p, layout_rect %s, "
             "brush %p, options %#x, measuring_mode %#x.\n",
-            iface, debugstr_wn(string, string_len), string_len, text_format, layout_rect,
+            iface, debugstr_wn(string, string_len), string_len, text_format, debug_d2d_rect_f(layout_rect),
             brush, options, measuring_mode);
 
     if (FAILED(hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED,
@@ -1042,10 +1042,19 @@ static void STDMETHODCALLTYPE d2d_d3d_render_target_DrawTextLayout(ID2D1RenderTa
         FIXME("Failed to draw text layout, hr %#x.\n", hr);
 }
 
+static D2D1_ANTIALIAS_MODE d2d_d3d_render_target_set_aa_mode_from_text_aa_mode(struct d2d_d3d_render_target *rt)
+{
+    D2D1_ANTIALIAS_MODE prev_antialias_mode = rt->drawing_state.antialiasMode;
+    rt->drawing_state.antialiasMode = rt->drawing_state.textAntialiasMode == D2D1_TEXT_ANTIALIAS_MODE_ALIASED ?
+            D2D1_ANTIALIAS_MODE_ALIASED : D2D1_ANTIALIAS_MODE_PER_PRIMITIVE;
+    return prev_antialias_mode;
+}
+
 static void d2d_rt_draw_glyph_run_outline(struct d2d_d3d_render_target *render_target,
         D2D1_POINT_2F baseline_origin, const DWRITE_GLYPH_RUN *glyph_run, ID2D1Brush *brush)
 {
     D2D1_MATRIX_3X2_F *transform, prev_transform;
+    D2D1_ANTIALIAS_MODE prev_antialias_mode;
     ID2D1PathGeometry *geometry;
     ID2D1GeometrySink *sink;
     HRESULT hr;
@@ -1081,8 +1090,10 @@ static void d2d_rt_draw_glyph_run_outline(struct d2d_d3d_render_target *render_t
     prev_transform = *transform;
     transform->_31 += baseline_origin.x * transform->_11 + baseline_origin.y * transform->_21;
     transform->_32 += baseline_origin.x * transform->_12 + baseline_origin.y * transform->_22;
+    prev_antialias_mode = d2d_d3d_render_target_set_aa_mode_from_text_aa_mode(render_target);
     d2d_rt_fill_geometry(render_target, unsafe_impl_from_ID2D1Geometry((ID2D1Geometry *)geometry),
             unsafe_impl_from_ID2D1Brush(brush), NULL);
+    render_target->drawing_state.antialiasMode = prev_antialias_mode;
     *transform = prev_transform;
 
     ID2D1PathGeometry_Release(geometry);
@@ -1090,7 +1101,8 @@ static void d2d_rt_draw_glyph_run_outline(struct d2d_d3d_render_target *render_t
 
 static void d2d_rt_draw_glyph_run_bitmap(struct d2d_d3d_render_target *render_target,
         D2D1_POINT_2F baseline_origin, const DWRITE_GLYPH_RUN *glyph_run, ID2D1Brush *brush,
-        float ppd, DWRITE_RENDERING_MODE rendering_mode, DWRITE_MEASURING_MODE measuring_mode)
+        float ppd, DWRITE_RENDERING_MODE rendering_mode, DWRITE_MEASURING_MODE measuring_mode,
+        DWRITE_TEXT_ANTIALIAS_MODE antialias_mode)
 {
     D2D1_MATRIX_3X2_F prev_transform, *transform;
     ID2D1RectangleGeometry *geometry = NULL;
@@ -1100,7 +1112,8 @@ static void d2d_rt_draw_glyph_run_bitmap(struct d2d_d3d_render_target *render_ta
     IDWriteGlyphRunAnalysis *analysis;
     DWRITE_TEXTURE_TYPE texture_type;
     D2D1_BRUSH_PROPERTIES brush_desc;
-    IDWriteFactory *dwrite_factory;
+    IDWriteFactory2 *dwrite_factory;
+    DWRITE_GLYPH_RUN scaled_run;
     void *opacity_values = NULL;
     size_t opacity_values_size;
     D2D1_SIZE_U bitmap_size;
@@ -1109,16 +1122,19 @@ static void d2d_rt_draw_glyph_run_bitmap(struct d2d_d3d_render_target *render_ta
     HRESULT hr;
 
     if (FAILED(hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED,
-            &IID_IDWriteFactory, (IUnknown **)&dwrite_factory)))
+            &IID_IDWriteFactory2, (IUnknown **)&dwrite_factory)))
     {
         ERR("Failed to create dwrite factory, hr %#x.\n", hr);
         return;
     }
 
-    hr = IDWriteFactory_CreateGlyphRunAnalysis(dwrite_factory, glyph_run, ppd,
+    scaled_run = *glyph_run;
+    scaled_run.fontEmSize *= ppd;
+    hr = IDWriteFactory2_CreateGlyphRunAnalysis(dwrite_factory, &scaled_run,
             (DWRITE_MATRIX *)&render_target->drawing_state.transform, rendering_mode, measuring_mode,
-            baseline_origin.x, baseline_origin.y, &analysis);
-    IDWriteFactory_Release(dwrite_factory);
+            DWRITE_GRID_FIT_MODE_DEFAULT, antialias_mode, baseline_origin.x,
+            baseline_origin.y, &analysis);
+    IDWriteFactory2_Release(dwrite_factory);
     if (FAILED(hr))
     {
         ERR("Failed to create glyph run analysis, hr %#x.\n", hr);
@@ -1216,6 +1232,7 @@ static void STDMETHODCALLTYPE d2d_d3d_render_target_DrawGlyphRun(ID2D1RenderTarg
         DWRITE_MEASURING_MODE measuring_mode)
 {
     struct d2d_d3d_render_target *render_target = impl_from_ID2D1RenderTarget(iface);
+    DWRITE_TEXT_ANTIALIAS_MODE antialias_mode = DWRITE_TEXT_ANTIALIAS_MODE_GRAYSCALE;
     IDWriteRenderingParams *rendering_params;
     DWRITE_RENDERING_MODE rendering_mode;
     HRESULT hr;
@@ -1224,27 +1241,73 @@ static void STDMETHODCALLTYPE d2d_d3d_render_target_DrawGlyphRun(ID2D1RenderTarg
     TRACE("iface %p, baseline_origin {%.8e, %.8e}, glyph_run %p, brush %p, measuring_mode %#x.\n",
             iface, baseline_origin.x, baseline_origin.y, glyph_run, brush, measuring_mode);
 
+    rendering_params = render_target->text_rendering_params ? render_target->text_rendering_params
+            : render_target->default_text_rendering_params;
+
+    rendering_mode = IDWriteRenderingParams_GetRenderingMode(rendering_params);
+
+    switch (render_target->drawing_state.textAntialiasMode)
+    {
+    case D2D1_TEXT_ANTIALIAS_MODE_ALIASED:
+        if (rendering_mode == DWRITE_RENDERING_MODE_CLEARTYPE_NATURAL
+                || rendering_mode == DWRITE_RENDERING_MODE_CLEARTYPE_NATURAL_SYMMETRIC
+                || rendering_mode == DWRITE_RENDERING_MODE_CLEARTYPE_GDI_NATURAL
+                || rendering_mode == DWRITE_RENDERING_MODE_CLEARTYPE_GDI_CLASSIC)
+        {
+            render_target->error.code = E_INVALIDARG;
+        }
+        break;
+    case D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE:
+        if (rendering_mode == DWRITE_RENDERING_MODE_ALIASED
+                || rendering_mode == DWRITE_RENDERING_MODE_OUTLINE)
+        {
+            render_target->error.code = E_INVALIDARG;
+        }
+        break;
+    case D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE:
+        if (rendering_mode == DWRITE_RENDERING_MODE_ALIASED)
+            render_target->error.code = E_INVALIDARG;
+        break;
+    default:
+        ;
+    }
+
     if (FAILED(render_target->error.code))
         return;
 
-    if (render_target->drawing_state.textAntialiasMode != D2D1_TEXT_ANTIALIAS_MODE_DEFAULT)
-        FIXME("Ignoring text antialiasing mode %#x.\n", render_target->drawing_state.textAntialiasMode);
+    rendering_mode = DWRITE_RENDERING_MODE_DEFAULT;
+    switch (render_target->drawing_state.textAntialiasMode)
+    {
+    case D2D1_TEXT_ANTIALIAS_MODE_DEFAULT:
+        if (IDWriteRenderingParams_GetClearTypeLevel(rendering_params) > 0.0f)
+            antialias_mode = DWRITE_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+        break;
+    case D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE:
+        antialias_mode = DWRITE_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+        break;
+    case D2D1_TEXT_ANTIALIAS_MODE_ALIASED:
+        rendering_mode = DWRITE_RENDERING_MODE_ALIASED;
+        break;
+    default:
+        ;
+    }
 
     ppd = max(render_target->desc.dpiX, render_target->desc.dpiY) / 96.0f;
-    rendering_params = render_target->text_rendering_params ? render_target->text_rendering_params
-            : render_target->default_text_rendering_params;
-    if (FAILED(hr = IDWriteFontFace_GetRecommendedRenderingMode(glyph_run->fontFace, glyph_run->fontEmSize,
-            ppd, measuring_mode, rendering_params, &rendering_mode)))
+    if (rendering_mode == DWRITE_RENDERING_MODE_DEFAULT)
     {
-        ERR("Failed to get recommended rendering mode, hr %#x.\n", hr);
-        rendering_mode = DWRITE_RENDERING_MODE_OUTLINE;
+        if (FAILED(hr = IDWriteFontFace_GetRecommendedRenderingMode(glyph_run->fontFace, glyph_run->fontEmSize,
+                ppd, measuring_mode, rendering_params, &rendering_mode)))
+        {
+            ERR("Failed to get recommended rendering mode, hr %#x.\n", hr);
+            rendering_mode = DWRITE_RENDERING_MODE_OUTLINE;
+        }
     }
 
     if (rendering_mode == DWRITE_RENDERING_MODE_OUTLINE)
         d2d_rt_draw_glyph_run_outline(render_target, baseline_origin, glyph_run, brush);
     else
         d2d_rt_draw_glyph_run_bitmap(render_target, baseline_origin, glyph_run, brush,
-                ppd, rendering_mode, measuring_mode);
+                ppd, rendering_mode, measuring_mode, antialias_mode);
 }
 
 static void STDMETHODCALLTYPE d2d_d3d_render_target_SetTransform(ID2D1RenderTarget *iface,
@@ -1408,7 +1471,7 @@ static void STDMETHODCALLTYPE d2d_d3d_render_target_PushAxisAlignedClip(ID2D1Ren
     float x_scale, y_scale;
     D2D1_POINT_2F point;
 
-    TRACE("iface %p, clip_rect %p, antialias_mode %#x.\n", iface, clip_rect, antialias_mode);
+    TRACE("iface %p, clip_rect %s, antialias_mode %#x.\n", iface, debug_d2d_rect_f(clip_rect), antialias_mode);
 
     if (antialias_mode != D2D1_ANTIALIAS_MODE_ALIASED)
         FIXME("Ignoring antialias_mode %#x.\n", antialias_mode);
@@ -1856,6 +1919,7 @@ static HRESULT STDMETHODCALLTYPE d2d_text_renderer_DrawUnderline(IDWriteTextRend
     struct d2d_d3d_render_target *render_target = impl_from_IDWriteTextRenderer(iface);
     const D2D1_MATRIX_3X2_F *m = &render_target->drawing_state.transform;
     struct d2d_draw_text_layout_ctx *context = ctx;
+    D2D1_ANTIALIAS_MODE prev_antialias_mode;
     D2D1_POINT_2F start, end;
     ID2D1Brush *brush;
     float thickness;
@@ -1873,7 +1937,9 @@ static HRESULT STDMETHODCALLTYPE d2d_text_renderer_DrawUnderline(IDWriteTextRend
     start.y = baseline_origin_y + underline->offset + thickness / 2.0f;
     end.x = start.x + underline->width;
     end.y = start.y;
+    prev_antialias_mode = d2d_d3d_render_target_set_aa_mode_from_text_aa_mode(render_target);
     d2d_d3d_render_target_DrawLine(&render_target->ID2D1RenderTarget_iface, start, end, brush, thickness, NULL);
+    render_target->drawing_state.antialiasMode = prev_antialias_mode;
 
     ID2D1Brush_Release(brush);
 
@@ -1886,6 +1952,7 @@ static HRESULT STDMETHODCALLTYPE d2d_text_renderer_DrawStrikethrough(IDWriteText
     struct d2d_d3d_render_target *render_target = impl_from_IDWriteTextRenderer(iface);
     const D2D1_MATRIX_3X2_F *m = &render_target->drawing_state.transform;
     struct d2d_draw_text_layout_ctx *context = ctx;
+    D2D1_ANTIALIAS_MODE prev_antialias_mode;
     D2D1_POINT_2F start, end;
     ID2D1Brush *brush;
     float thickness;
@@ -1903,7 +1970,9 @@ static HRESULT STDMETHODCALLTYPE d2d_text_renderer_DrawStrikethrough(IDWriteText
     start.y = baseline_origin_y + strikethrough->offset + thickness / 2.0f;
     end.x = start.x + strikethrough->width;
     end.y = start.y;
+    prev_antialias_mode = d2d_d3d_render_target_set_aa_mode_from_text_aa_mode(render_target);
     d2d_d3d_render_target_DrawLine(&render_target->ID2D1RenderTarget_iface, start, end, brush, thickness, NULL);
+    render_target->drawing_state.antialiasMode = prev_antialias_mode;
 
     ID2D1Brush_Release(brush);
 
@@ -2738,7 +2807,7 @@ static HRESULT d2d_d3d_render_target_init(struct d2d_d3d_render_target *render_t
     }
 
     if (FAILED(hr = ID3D10Device_CreateInputLayout(render_target->device, il_desc_outline,
-            sizeof(il_desc_outline) / sizeof(*il_desc_outline), vs_code_outline, sizeof(vs_code_outline),
+            ARRAY_SIZE(il_desc_outline), vs_code_outline, sizeof(vs_code_outline),
             &render_target->shape_resources[D2D_SHAPE_TYPE_OUTLINE].il)))
     {
         WARN("Failed to create outline input layout, hr %#x.\n", hr);
@@ -2746,7 +2815,7 @@ static HRESULT d2d_d3d_render_target_init(struct d2d_d3d_render_target *render_t
     }
 
     if (FAILED(hr = ID3D10Device_CreateInputLayout(render_target->device, il_desc_triangle,
-            sizeof(il_desc_triangle) / sizeof(*il_desc_triangle), vs_code_triangle, sizeof(vs_code_triangle),
+            ARRAY_SIZE(il_desc_triangle), vs_code_triangle, sizeof(vs_code_triangle),
             &render_target->shape_resources[D2D_SHAPE_TYPE_TRIANGLE].il)))
     {
         WARN("Failed to create triangle input layout, hr %#x.\n", hr);
@@ -2754,8 +2823,7 @@ static HRESULT d2d_d3d_render_target_init(struct d2d_d3d_render_target *render_t
     }
 
     if (FAILED(hr = ID3D10Device_CreateInputLayout(render_target->device, il_desc_bezier_outline,
-            sizeof(il_desc_bezier_outline) / sizeof(*il_desc_bezier_outline),
-            vs_code_bezier_outline, sizeof(vs_code_bezier_outline),
+            ARRAY_SIZE(il_desc_bezier_outline), vs_code_bezier_outline, sizeof(vs_code_bezier_outline),
             &render_target->shape_resources[D2D_SHAPE_TYPE_BEZIER_OUTLINE].il)))
     {
         WARN("Failed to create bezier outline input layout, hr %#x.\n", hr);
@@ -2763,7 +2831,7 @@ static HRESULT d2d_d3d_render_target_init(struct d2d_d3d_render_target *render_t
     }
 
     if (FAILED(hr = ID3D10Device_CreateInputLayout(render_target->device, il_desc_bezier,
-            sizeof(il_desc_bezier) / sizeof(*il_desc_bezier), vs_code_bezier, sizeof(vs_code_bezier),
+            ARRAY_SIZE(il_desc_bezier), vs_code_bezier, sizeof(vs_code_bezier),
             &render_target->shape_resources[D2D_SHAPE_TYPE_BEZIER].il)))
     {
         WARN("Failed to create bezier input layout, hr %#x.\n", hr);
@@ -2798,7 +2866,7 @@ static HRESULT d2d_d3d_render_target_init(struct d2d_d3d_render_target *render_t
         goto err;
     }
 
-    for (i = 0; i < sizeof(brush_shaders) / sizeof(*brush_shaders); ++i)
+    for (i = 0; i < ARRAY_SIZE(brush_shaders); ++i)
     {
         const struct brush_shader *bs = &brush_shaders[i];
         if (FAILED(hr = ID3D10Device_CreatePixelShader(render_target->device, bs->byte_code, bs->byte_code_size,

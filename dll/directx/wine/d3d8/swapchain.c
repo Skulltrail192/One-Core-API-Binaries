@@ -83,7 +83,7 @@ static ULONG WINAPI d3d8_swapchain_Release(IDirect3DSwapChain8 *iface)
     return ref;
 }
 
-static HRESULT WINAPI d3d8_swapchain_Present(IDirect3DSwapChain8 *iface,
+static HRESULT WINAPI DECLSPEC_HOTPATCH d3d8_swapchain_Present(IDirect3DSwapChain8 *iface,
         const RECT *src_rect, const RECT *dst_rect, HWND dst_window_override,
         const RGNDATA *dirty_region)
 {
@@ -97,9 +97,12 @@ static HRESULT WINAPI d3d8_swapchain_Present(IDirect3DSwapChain8 *iface,
     if (device->device_state != D3D8_DEVICE_STATE_OK)
         return D3DERR_DEVICELOST;
 
+    if (dirty_region)
+        FIXME("Ignoring dirty_region %p.\n", dirty_region);
+
     wined3d_mutex_lock();
-    hr = wined3d_swapchain_present(swapchain->wined3d_swapchain, src_rect,
-            dst_rect, dst_window_override, dirty_region, 0);
+    hr = wined3d_swapchain_present(swapchain->wined3d_swapchain,
+            src_rect, dst_rect, dst_window_override, 0);
     wined3d_mutex_unlock();
 
     return hr;
@@ -109,23 +112,31 @@ static HRESULT WINAPI d3d8_swapchain_GetBackBuffer(IDirect3DSwapChain8 *iface,
         UINT backbuffer_idx, D3DBACKBUFFER_TYPE backbuffer_type, IDirect3DSurface8 **backbuffer)
 {
     struct d3d8_swapchain *swapchain = impl_from_IDirect3DSwapChain8(iface);
-    struct wined3d_surface *wined3d_surface = NULL;
+    struct wined3d_texture *wined3d_texture;
     struct d3d8_surface *surface_impl;
     HRESULT hr = D3D_OK;
 
     TRACE("iface %p, backbuffer_idx %u, backbuffer_type %#x, backbuffer %p.\n",
             iface, backbuffer_idx, backbuffer_type, backbuffer);
 
-    wined3d_mutex_lock();
-    if ((wined3d_surface = wined3d_swapchain_get_back_buffer(swapchain->wined3d_swapchain,
-            backbuffer_idx, (enum wined3d_backbuffer_type)backbuffer_type)))
+    /* backbuffer_type is ignored by native. */
+
+    if (!backbuffer)
     {
-        surface_impl = wined3d_surface_get_parent(wined3d_surface);
+        WARN("The output pointer is NULL, returning D3DERR_INVALIDCALL.\n");
+        return D3DERR_INVALIDCALL;
+    }
+
+    wined3d_mutex_lock();
+    if ((wined3d_texture = wined3d_swapchain_get_back_buffer(swapchain->wined3d_swapchain, backbuffer_idx)))
+    {
+        surface_impl = wined3d_texture_get_sub_resource_parent(wined3d_texture, 0);
         *backbuffer = &surface_impl->IDirect3DSurface8_iface;
         IDirect3DSurface8_AddRef(*backbuffer);
     }
     else
     {
+        /* Do not set *backbuffer = NULL, see tests/device.c, test_swapchain(). */
         hr = D3DERR_INVALIDCALL;
     }
     wined3d_mutex_unlock();

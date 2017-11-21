@@ -18,7 +18,7 @@
  */
 /* COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS text-mode setup
- * FILE:            subsys/system/usetup/fslist.h
+ * FILE:            base/setup/usetup/fslist.h
  * PURPOSE:         Filesystem list functions
  * PROGRAMMER:      Eric Kohl
  *                  Casper S. Hornstrup (chorns@users.sourceforge.net)
@@ -31,7 +31,7 @@
 typedef struct _FILE_SYSTEM_ITEM
 {
     LIST_ENTRY ListEntry;
-    LPCWSTR FileSystem; /* Not owned by the item */
+    LPCWSTR FileSystemName; /* Not owned by the item */
     FORMATEX FormatFunc;
     CHKDSKEX ChkdskFunc;
     BOOLEAN QuickFormat;
@@ -48,9 +48,20 @@ typedef struct _FILE_SYSTEM_LIST
 VOID
 FS_AddProvider(
     IN OUT PFILE_SYSTEM_LIST List,
-    IN LPCWSTR FileSystem,
+    IN LPCWSTR FileSystemName,
     IN FORMATEX FormatFunc,
     IN CHKDSKEX ChkdskFunc);
+
+PFILE_SYSTEM_ITEM
+GetFileSystemByName(
+    IN PFILE_SYSTEM_LIST List,
+    IN LPWSTR FileSystemName);
+
+struct _PARTENTRY; // Defined in partlist.h
+PFILE_SYSTEM_ITEM
+GetFileSystem(
+    IN PFILE_SYSTEM_LIST FileSystemList,
+    IN struct _PARTENTRY* PartEntry);
 
 PFILE_SYSTEM_LIST
 CreateFileSystemList(

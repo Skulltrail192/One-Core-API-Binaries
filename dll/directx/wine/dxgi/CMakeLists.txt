@@ -1,6 +1,6 @@
 
 add_definitions(-D__WINESRC__)
-include_directories(BEFORE ${REACTOS_SOURCE_DIR}/include/reactos/wine)
+include_directories(BEFORE ${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 
 spec2def(dxgi.dll dxgi.spec ADD_IMPORTLIB)
 
@@ -21,8 +21,7 @@ add_library(dxgi SHARED
     ${CMAKE_CURRENT_BINARY_DIR}/dxgi.def)
 
 set_module_type(dxgi win32dll)
-target_link_libraries(dxgi dxguid uuid dxgi_uuids d3d10_uuids d3d10_1_uuids wine)
+target_link_libraries(dxgi dxguid uuid wine dxgi_uuids d3d10_uuids d3d10_1_uuids)
 add_importlibs(dxgi wined3d gdi32 user32 msvcrt kernel32 ntdll)
-add_dependencies(dxgi wineheaders)
-add_pch(dxgi dxgi_private.h SOURCE)
+add_dependencies(dxgi wineheaders d3d_idl_headers)
 add_cd_file(TARGET dxgi DESTINATION reactos/system32 FOR all)

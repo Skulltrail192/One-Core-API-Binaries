@@ -136,11 +136,9 @@ static void concat_W( WCHAR *buffer, const WCHAR *src1, const WCHAR *src2, const
         if (buffer[-1] != '\\') *buffer++ = '\\';
         if (src3) while (*src3 == '\\') src3++;
     }
+
     if (src3)
-    {
         strcpyW( buffer, src3 );
-        buffer += strlenW(buffer );
-    }
 }
 
 
@@ -459,6 +457,7 @@ BOOL WINAPI SetupQueueCopyIndirectA( PSP_FILE_COPY_PARAMS_A params )
     op->src_tag    = strdupAtoW( params->SourceTagfile );
     op->dst_path   = strdupAtoW( params->TargetDirectory );
     op->dst_file   = strdupAtoW( params->TargetFilename );
+    op->dst_sd     = NULL;
 
     /* some defaults */
     if (!op->src_file) op->src_file = op->dst_file;
@@ -632,6 +631,7 @@ BOOL WINAPI SetupQueueDeleteA( HSPFILEQ handle, PCSTR part1, PCSTR part2 )
     op->src_tag    = NULL;
     op->dst_path   = strdupAtoW( part1 );
     op->dst_file   = strdupAtoW( part2 );
+    op->dst_sd     = NULL;
     queue_file_op( &queue->delete_queue, op );
     return TRUE;
 }
@@ -654,6 +654,7 @@ BOOL WINAPI SetupQueueDeleteW( HSPFILEQ handle, PCWSTR part1, PCWSTR part2 )
     op->src_tag    = NULL;
     op->dst_path   = strdupW( part1 );
     op->dst_file   = strdupW( part2 );
+    op->dst_sd     = NULL;
     queue_file_op( &queue->delete_queue, op );
     return TRUE;
 }
@@ -677,6 +678,7 @@ BOOL WINAPI SetupQueueRenameA( HSPFILEQ handle, PCSTR SourcePath, PCSTR SourceFi
     op->src_tag    = NULL;
     op->dst_path   = strdupAtoW( TargetPath );
     op->dst_file   = strdupAtoW( TargetFilename );
+    op->dst_sd     = NULL;
     queue_file_op( &queue->rename_queue, op );
     return TRUE;
 }
@@ -700,6 +702,7 @@ BOOL WINAPI SetupQueueRenameW( HSPFILEQ handle, PCWSTR SourcePath, PCWSTR Source
     op->src_tag    = NULL;
     op->dst_path   = strdupW( TargetPath );
     op->dst_file   = strdupW( TargetFilename );
+    op->dst_sd     = NULL;
     queue_file_op( &queue->rename_queue, op );
     return TRUE;
 }
@@ -984,8 +987,52 @@ static BOOL do_file_copyW( LPCWSTR source, LPCWSTR target, DWORD style,
 {
     BOOL rc = FALSE;
     BOOL docopy = TRUE;
+    WCHAR TempFile[MAX_PATH];
+    INT hSource, hTemp;
+    OFSTRUCT OfStruct;
+    WCHAR TempPath[MAX_PATH];
 
     TRACE("copy %s to %s style 0x%x\n",debugstr_w(source),debugstr_w(target),style);
+
+    /* Get a temp file name */
+    if (!GetTempPathW(sizeof(TempPath) / sizeof(WCHAR), TempPath))
+    {
+        ERR("GetTempPathW error\n");
+        return FALSE;
+    }
+    if (!GetTempFileNameW(TempPath, L"", 0, TempFile))
+    {
+        ERR("GetTempFileNameW(%s) error\n", debugstr_w(TempPath));
+        return FALSE;
+    }
+
+    /* Try to open the source file */
+    hSource = LZOpenFileW((LPWSTR)source, &OfStruct, OF_READ);
+    if (hSource < 0)
+    {
+        ERR("LZOpenFileW(1) error %d %s\n", (int)hSource, debugstr_w(source));
+        return FALSE;
+    }
+
+    /* Extract the compressed file to a temp location */
+    hTemp = LZOpenFileW(TempFile, &OfStruct, OF_CREATE);
+    if (hTemp < 0)
+    {
+        DWORD dwLastError = GetLastError();
+
+        ERR("LZOpenFileW(2) error %d %s\n", (int)hTemp, debugstr_w(TempFile));
+
+        /* Close the source handle */
+        LZClose(hSource);
+
+        /* Restore error condition triggered by LZOpenFileW */
+        SetLastError(dwLastError);
+        return FALSE;
+    }
+
+    LZCopy(hSource, hTemp);
+    LZClose(hSource);
+    LZClose(hTemp);
 
     /* before copy processing */
     if (style & SP_COPY_REPLACEONLY)
@@ -1010,9 +1057,9 @@ static BOOL do_file_copyW( LPCWSTR source, LPCWSTR target, DWORD style,
          * we just basically unconditionally replace the builtin versions.
          */
         if ((GetFileAttributesW(target) != INVALID_FILE_ATTRIBUTES) &&
-            (GetFileAttributesW(source) != INVALID_FILE_ATTRIBUTES))
+            (GetFileAttributesW(TempFile) != INVALID_FILE_ATTRIBUTES))
         {
-            VersionSizeSource = GetFileVersionInfoSizeW((LPWSTR)source,&zero);
+            VersionSizeSource = GetFileVersionInfoSizeW(TempFile,&zero);
             VersionSizeTarget = GetFileVersionInfoSizeW((LPWSTR)target,&zero);
         }
 
@@ -1032,7 +1079,7 @@ static BOOL do_file_copyW( LPCWSTR source, LPCWSTR target, DWORD style,
             VersionSource = HeapAlloc(GetProcessHeap(),0,VersionSizeSource);
             VersionTarget = HeapAlloc(GetProcessHeap(),0,VersionSizeTarget);
 
-            ret = GetFileVersionInfoW((LPWSTR)source,0,VersionSizeSource,VersionSource);
+            ret = GetFileVersionInfoW(TempFile,0,VersionSizeSource,VersionSource);
             if (ret)
               ret = GetFileVersionInfoW((LPWSTR)target, 0, VersionSizeTarget,
                     VersionTarget);
@@ -1107,7 +1154,7 @@ static BOOL do_file_copyW( LPCWSTR source, LPCWSTR target, DWORD style,
 
     if (docopy)
     {
-        rc = CopyFileW(source,target,FALSE);
+        rc = MoveFileExW(TempFile,target,MOVEFILE_REPLACE_EXISTING);
         TRACE("Did copy... rc was %i\n",rc);
     }
 
@@ -1193,7 +1240,11 @@ BOOL WINAPI SetupInstallFileW( HINF hinf, PINFCONTEXT inf_context, PCWSTR source
             SetLastError( ERROR_NOT_ENOUGH_MEMORY );
             return FALSE;
         }
-        if (!SetupGetStringFieldW( inf_context, 1, inf_source, len, NULL )) return FALSE;
+        if (!SetupGetStringFieldW( inf_context, 1, inf_source, len, NULL ))
+        {
+            HeapFree( GetProcessHeap(), 0, inf_source );
+            return FALSE;
+        }
         source = inf_source;
     }
     else if (!source)

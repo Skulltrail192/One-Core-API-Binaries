@@ -1,6 +1,6 @@
 
 add_definitions(-D_KERNEL32_)
-include_directories(${REACTOS_SOURCE_DIR}/include/reactos/subsys)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys)
 spec2def(kernel32.dll kernel32.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
@@ -31,6 +31,7 @@ list(APPEND SOURCE
     client/toolhelp.c
     client/utils.c
     client/thread.c
+	client/unimplemented.c
     client/vdm.c
     client/version.c
     client/virtmem.c
@@ -90,6 +91,10 @@ elseif(ARCH STREQUAL "amd64")
     list(APPEND ASM_SOURCE
         client/amd64/fiber.S
         client/amd64/thread.S)
+elseif(ARCH STREQUAL "arm")
+    list(APPEND ASM_SOURCE
+        client/arm/fiber.S
+        client/arm/thread.S)
 endif()
 
 add_asm_files(kernel32_asm ${ASM_SOURCE})
@@ -99,18 +104,13 @@ add_library(kernel32 SHARED
     kernel32.rc
     ${CMAKE_CURRENT_BINARY_DIR}/kernel32.def)
 
-set_module_type(kernel32 win32dll HOTPATCHABLE ENTRYPOINT 0)
+set_module_type(kernel32 win32dll ENTRYPOINT DllMain 12)
 #############################################
 ## HACK FOR MSVC COMPILATION WITH win32dll ##
 set_subsystem(kernel32 console)
 ################# END  HACK #################
 
 target_link_libraries(kernel32 wine chkstk ${PSEH_LIB})
-
-if(RUNTIME_CHECKS)
-    target_link_libraries(kernel32 RunTmChk.lib)
-endif()
-
 add_importlibs(kernel32 ntdll)
 add_pch(kernel32 k32.h SOURCE)
 add_dependencies(kernel32 psdk errcodes asm)

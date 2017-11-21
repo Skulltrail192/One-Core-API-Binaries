@@ -68,7 +68,7 @@ ERRORLEVEL është vendosur për të kompensuar e shtyn përdoruesit kryesorë n
     STRING_CMD_HELP2 "\nTiparet në dispozicion:"
     STRING_CMD_HELP3 "  [pseudonimet]"
     STRING_CMD_HELP4 "  [historia]"
-    STRING_CMD_HELP5 "  [Përfundimi i dokumentave të sistemit unix]"
+    STRING_CMD_HELP5 "  [Përfundimi i dokumentave të sistemit Bash]"
     STRING_CMD_HELP6 "  [raftet e skedave]"
     STRING_CMD_HELP7 "  [drejtimi i ri dhe udherrefyesi]"
     STRING_CMD_HELP8 "Fillon një shembull të ri të përkthyesit së Komandave të ReactOS.\n\n\
@@ -147,7 +147,7 @@ DELAY [/m]n\n\n\
   /m          specifikoni se n janë millisekonda\n\
               ndryshe n janë sekonda\n"
     STRING_DIR_HELP1 "DIR [drive:][rrugë][emer] [/A[[:]attributes]] [/B] [/C] [/D] [/L] [/N]\n\
-  [/O[[:]radhitje]] [/P] [/Q] [/S] [/T[[:]koha]] [/W] [/X] [/4]\n\n\
+  [/O[[:]radhitje]] [/P] [/Q] [/R] [/S] [/T[[:]koha]] [/W] [/X] [/4]\n\n\
   [drive:][rrugë][emer]\n\
               Përcakton, Drejtorin, dhe / ose dokumentin në listë.\n\n\
   /A          Shfaq dokumentat me atributet e specifikuara.\n\
@@ -166,6 +166,7 @@ DELAY [/m]n\n\n\
                G  Grupi skedave se pari      -  Parashtese të kthejë renditjen\n\
   /P          Pauzo pas çdo informacioni në ekran.\n\
   /Q          Shfaq zotëruesin e dosjes.\n\
+  /R          Displays alternate data streams of the files.\n\
   /S          Shfaq dokumentet në skedën e specifikuar dhe të gjitha nën-skedat.\n\
   /T          Kontrollon secilen fushë kohohore e shfaqura ose e përdorur për klasifikimin\n\
   timefield   C  Krijim\n\
@@ -257,15 +258,15 @@ MKLINK [/D | /H | /J] objektivi i lidhjes së emrit\n\n\
   /H  Krijon një lidhjë të fortë.\n\
   /J  Krijo një kryqëzim në skedë.\n\n\
 Nëse anjëra nga /H ose /J nuk speficikohet, një lidhje simboli do të krijohet."
-    STRING_MEMMORY_HELP1 "Paraqet sasinë e memories së sistemit.\n\nMEMORIA"
-    STRING_MEMMORY_HELP2 "\n  %12s%% ngarkimi i memories.\n\n\
+    STRING_MEMORY_HELP1 "Paraqet sasinë e memories së sistemit.\n\nMEMORIA"
+    STRING_MEMORY_HELP2 "\n  %12s%% ngarkimi i memories.\n\n\
   %13s bytes totali i RAM'it fizik.\n\
   %13s bytes RAM'i fizik ne dispozicion.\n\n\
   %13s bytes totali i faqeve i dokumentave.\n\
   %13s bytes dokumentat dhe faqet ne dispozicion.\n\n\
   %13s bytes memoria totale virtuale.\n\
   %13s bytes memoria virtuale ne dispozicion.\n"
-    STRING_MISC_HELP1 "Shtypni një buton për të vazhduar...\n"
+    STRING_MISC_HELP1 "Shtypni një buton për të vazhduar..."
     STRING_MOVE_HELP1 "Mbishkruaj %s (Po/Jo/Të Gjith)? "
     STRING_MOVE_HELP2 "Lëviz dokumentet dhe emero ato dhe skedat.\n\n\
 Për të lëvizur një ose më shumë dokumenta:\n\
@@ -379,9 +380,18 @@ SET [variable[=][string]]\n\n\
   string    Specifikon një seri karakteresh që i përkasim variablave.\n\n\
 Shkuaj SET pa parametra te paraqitura ne ekran për variablet e mjedisit.\n"
     STRING_START_HELP1 "Fillon në komandë.\n\n\
-START komande\n\n\
-  command     Specifiko komandën për të filluar.\n\n\
-Në këtë moment të gjithë komandat janë nisur sipas sinkronizimit.\n"
+START [""title""] [/D path] [/I] [/B] [/MIN] [/MAX] [/WAIT]\n\
+      [command/program] [parameters]\n\n\
+  ""title""     Title of the window.\n\
+  path        Specifies the startup directory.\n\
+  I           Uses the original environment given to cmd.exe,\n\
+              instead of the current environment.\n\
+  B           Starts the command or program without creating any window.\n\
+  MIN         Starts with a minimized window.\n\
+  MAX         Starts with a maximized window.\n\
+  WAIT        Starts the command or program and waits for its termination.\n\
+  komande     Specifiko komandën për të filluar.\n\
+  parameters  Specifies the parameters to be given to the command or program.\n"
     STRING_TITLE_HELP "Vendos titullin e dritares për dritaren e komandëns se shpejtë.\n\n\
 TITLE [string]\n\n\
 string       Specifikon titullin e dritares për dritaren e komandëns se shpejtë.\n"
@@ -500,7 +510,6 @@ title         titull i ri\n"
     STRING_MOVE_ERROR1 "[OK]\n"
     STRING_MOVE_ERROR2 "[Error]\n"
     STRING_REN_ERROR1 "MoveFile() dështoj. Error: %lu\n"
-    STRING_START_ERROR1 "Nuk ka mbështetje në këtë moment bër dokumentin batch!"
     STRING_TIME_ERROR1 "Ora invalide."
     STRING_TYPE_ERROR1 "opsion ivalid '/%s'\n"
     STRING_WINDOW_ERROR1 "dritaria nuk i gjend"
@@ -525,9 +534,11 @@ title         titull i ri\n"
     STRING_REPLACE_ERROR5 "Refuzot hyrja - %s\n"
     STRING_REPLACE_ERROR6 "Nuk u gjet dokumenti - %s\n"
     STRING_REPLACE_ERROR7 "Error i zgjatur 32\n"
-    STRING_REACTOS_VERSION "Sistemi Operativ ReactOS [Versioni %s-%s]\n"
+    STRING_CMD_INFOLINE "  ReactOS Command Prompt                                      Type HELP = Help  "
+    STRING_REACTOS_VERSION "Sistemi Operativ ReactOS [Versioni %s %s]\n"
     STRING_CMD_SHELLINFO "\nReactOS Interpretuesi i komandave\nVersioni %s %s"
-    STRING_VERSION_RUNVER " funksionon në %s"
+    STRING_VERSION_RUNNING_ON "Funksionon në: "
+    STRING_VERSION_RUNVER "%s [Version %d.%d.%d] %s"
     STRING_COPY_FILE "        %d file(s) copied\n"
     STRING_DELETE_WIPE "spastruar"
     STRING_FOR_ERROR "specifikimi i varibleve i keq."

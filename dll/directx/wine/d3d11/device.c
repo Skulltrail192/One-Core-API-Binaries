@@ -35,10 +35,19 @@ enum deferred_cmd
 
     DEFERRED_RSSETSTATE,                /* rstate_info */
     DEFERRED_RSSETVIEWPORTS,            /* viewport_info */
+    DEFERRED_RSSETSCISSORRECTS,         /* rs_set_scissor_rects_info */
 
     DEFERRED_OMSETDEPTHSTENCILSTATE,    /* stencil_state_info */
     DEFERRED_OMSETBLENDSTATE,           /* blend_state_info */
     DEFERRED_OMSETRENDERTARGETS,        /* render_target_info */
+    DEFERRED_OMSETRENDERTARGETSANDUNORDEREDACCESVIEWS,  /* render_targets_and_unordered_access_views_info */
+
+    DEFERRED_COPYRESOURCE,              /* copy_resource_info */
+    DEFERRED_SETRESOURCEMINLOD,         /* set_resource_min_lod_info */
+    DEFERRED_COPYSUBRESOURCEREGION,     /* copy_subresource_region_info */
+    DEFERRED_UPDATESUBRESOURCE,         /* update_subresource_info */
+    DEFERRED_RESOLVESUBRESOURCE,        /* resolve_subresource_info */
+    DEFERRED_COPYSTRUCTURECOUNT,        /* copy_structure_count_info */
 
     DEFERRED_CSSETSHADER,               /* cs_info */
     DEFERRED_DSSETSHADER,               /* ds_info */
@@ -69,17 +78,27 @@ enum deferred_cmd
     DEFERRED_VSSETCONSTANTBUFFERS,      /* constant_buffers_info */
 
     DEFERRED_CSSETUNORDEREDACCESSVIEWS, /* unordered_view */
+    DEFERRED_SOSETTARGETS,              /* so_set_targets_info */
+    DEFERRED_GENERATEMIPS,              /* generate_mips_info */
 
     DEFERRED_DRAW,                      /* draw_info */
     DEFERRED_DRAWINDEXED,               /* draw_indexed_info */
     DEFERRED_DRAWINDEXEDINSTANCED,      /* draw_indexed_inst_info */
+    DEFERRED_DRAWAUTO,
+    DEFERRED_DRAWINSTANCED,                 /* draw_instanced_info */
+    DEFERRED_DRAWINSTANCEDINDIRECT,         /* draw_instanced_indirect_info */
+    DEFERRED_DRAWINDEXEDINSTANCEDINDIRECT,  /* draw_instanced_indirect_info */
 
     DEFERRED_MAP,                       /* map_info */
     DEFERRED_DISPATCH,                  /* dispatch_info */
+    DEFERRED_DISPATCHINDIRECT,          /* dispatch_indirect_info */
+    DEFERRED_SETPREDICATION,            /* set_predication_info */
 
     DEFERRED_CLEARSTATE,
     DEFERRED_CLEARRENDERTARGETVIEW,     /* clear_rtv_info */
     DEFERRED_CLEARDEPTHSTENCILVIEW,     /* clear_depth_info */
+    DEFERRED_CLEARUNORDEREDACCESSVIEWUINT,  /* clear_unordered_access_view_uint */
+    DEFERRED_CLEARUNORDEREDACCESSVIEWFLOAT, /* clear_unordered_access_view_float */
 
     DEFERRED_BEGIN,                     /* async_info */
     DEFERRED_END,                       /* async_info */
@@ -119,6 +138,11 @@ struct deferred_call
         } rstate_info;
         struct
         {
+            UINT rect_count;
+            D3D11_RECT *rects;
+        } rs_set_scissor_rects_info;
+        struct
+        {
             UINT num_viewports;
             D3D11_VIEWPORT *viewports;
         } viewport_info;
@@ -139,6 +163,66 @@ struct deferred_call
             ID3D11RenderTargetView **render_targets;
             ID3D11DepthStencilView *depth_stencil;
         } render_target_info;
+        struct
+        {
+            ID3D11Resource *dst_resource;
+            ID3D11Resource *src_resource;
+        } copy_resource_info;
+        struct
+        {
+            ID3D11Resource *resource;
+            FLOAT min_lod;
+        } set_resource_min_lod_info;
+        struct
+        {
+            ID3D11Resource *dst_resource;
+            UINT dst_subresource_idx;
+            UINT dst_x;
+            UINT dst_y;
+            UINT dst_z;
+            ID3D11Resource *src_resource;
+            UINT src_subresource_idx;
+            D3D11_BOX *src_box;
+        } copy_subresource_region_info;
+        struct
+        {
+            ID3D11Resource *resource;
+            UINT subresource_idx;
+            D3D11_BOX *box;
+            void *data;
+            UINT row_pitch;
+            UINT depth_pitch;
+        } update_subresource_info;
+        struct
+        {
+            ID3D11Resource *dst_resource;
+            UINT dst_subresource_idx;
+            ID3D11Resource *src_resource;
+            UINT src_subresource_idx;
+            DXGI_FORMAT format;
+        } resolve_subresource_info;
+        struct
+        {
+            ID3D11Buffer *dst_buffer;
+            UINT dst_offset;
+            ID3D11UnorderedAccessView *src_view;
+        } copy_structure_count_info;
+        struct
+        {
+            UINT render_target_view_count;
+            ID3D11RenderTargetView **render_target_views;
+            ID3D11DepthStencilView *depth_stencil_view;
+            UINT unordered_access_view_start_slot;
+            UINT unordered_access_view_count;
+            ID3D11UnorderedAccessView **unordered_access_views;
+            UINT *initial_counts;
+        } render_targets_and_unordered_access_views_info;
+        struct
+        {
+            UINT buffer_count;
+            ID3D11Buffer **buffers;
+            UINT *offsets;
+        } so_set_targets_info;
         struct
         {
             ID3D11ComputeShader *shader;
@@ -215,6 +299,18 @@ struct deferred_call
         } draw_indexed_inst_info;
         struct
         {
+            UINT instance_vertex_count;
+            UINT instance_count;
+            UINT start_vertex_location;
+            UINT start_instance_location;
+        } draw_instanced_info;
+        struct
+        {
+            ID3D11Buffer *buffer;
+            UINT offset;
+        } draw_instanced_indirect_info;
+        struct
+        {
             ID3D11Resource *resource;
             UINT subresource_idx;
             D3D11_MAP map_type;
@@ -230,6 +326,20 @@ struct deferred_call
         } dispatch_info;
         struct
         {
+            ID3D11Buffer *buffer;
+            UINT offset;
+        } dispatch_indirect_info;
+        struct
+        {
+            ID3D11Predicate *predicate;
+            BOOL value;
+        } set_predication_info;
+        struct
+        {
+            ID3D11ShaderResourceView *view;
+        } generate_mips_info;
+        struct
+        {
             ID3D11RenderTargetView *rtv;
             float color[4];
         } clear_rtv_info;
@@ -242,9 +352,75 @@ struct deferred_call
         } clear_depth_info;
         struct
         {
+            ID3D11UnorderedAccessView *unordered_access_view;
+            UINT values[4];
+        } clear_unordered_access_view_uint;
+        struct
+        {
+            ID3D11UnorderedAccessView *unordered_access_view;
+            float values[4];
+        } clear_unordered_access_view_float;
+        struct
+        {
             ID3D11Asynchronous *asynchronous;
         } async_info;
     };
+};
+
+/* Replace with D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT as soon as wined3d supports >= 32 streams */
+#define MAX_WINED3D_STREAMS 16
+
+struct d3d11_state
+{
+    ID3D11ShaderResourceView *vs_resources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    ID3D11SamplerState *vs_samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+    ID3D11Buffer *vs_cbs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+    ID3D11VertexShader *vs;
+
+    ID3D11ShaderResourceView *gs_resources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    ID3D11SamplerState *gs_samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+    ID3D11Buffer *gs_cbs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+    ID3D11GeometryShader *gs;
+
+    ID3D11ShaderResourceView *ps_resources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    ID3D11SamplerState *ps_samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+    ID3D11Buffer *ps_cbs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+    ID3D11PixelShader *ps;
+
+    ID3D11ShaderResourceView *hs_resources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    ID3D11SamplerState *hs_samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+    ID3D11Buffer *hs_cbs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+    ID3D11HullShader *hs;
+
+    ID3D11ShaderResourceView *ds_resources[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT];
+    ID3D11SamplerState *ds_samplers[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
+    ID3D11Buffer *ds_cbs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
+    ID3D11DomainShader *ds;
+
+    ID3D11Buffer *vbs[MAX_WINED3D_STREAMS];
+    UINT vb_strides[MAX_WINED3D_STREAMS];
+    UINT vb_offsets[MAX_WINED3D_STREAMS];
+    D3D11_PRIMITIVE_TOPOLOGY topology;
+    ID3D11InputLayout *il;
+    DXGI_FORMAT ib_format;
+    ID3D11Buffer *ib;
+    UINT ib_offset;
+
+    ID3D11RenderTargetView *rtvs[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+    ID3D11DepthStencilView *dsv;
+    ID3D11DepthStencilState *dss;
+    float blend_factor[4];
+    ID3D11BlendState *bs;
+    UINT stencil_ref;
+    UINT sample_mask;
+
+    D3D11_RECT scissor_rects[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+    D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+    ID3D11Buffer *so_buffers[D3D11_SO_BUFFER_SLOT_COUNT];
+    UINT so_offsets[D3D11_SO_BUFFER_SLOT_COUNT];
+    ID3D11Predicate *predicate;
+    ID3D11RasterizerState *rs;
+    BOOL predicate_value;
 };
 
 /* ID3D11CommandList - command list */
@@ -393,6 +569,10 @@ static void free_deferred_calls(struct list *commands)
             {
                 break; /* nothing to do */
             }
+            case DEFERRED_RSSETSCISSORRECTS:
+            {
+                break; /* nothing to do */
+            }
             case DEFERRED_OMSETDEPTHSTENCILSTATE:
             {
                 if (call->stencil_state_info.state)
@@ -414,6 +594,66 @@ static void free_deferred_calls(struct list *commands)
                 }
                 if (call->render_target_info.depth_stencil)
                     ID3D11DepthStencilView_Release(call->render_target_info.depth_stencil);
+                break;
+            }
+            case DEFERRED_OMSETRENDERTARGETSANDUNORDEREDACCESVIEWS:
+            {
+                for (i = 0; i < call->render_targets_and_unordered_access_views_info.render_target_view_count; i++)
+                {
+                    if (call->render_targets_and_unordered_access_views_info.render_target_views[i])
+                        ID3D11RenderTargetView_Release(call->render_targets_and_unordered_access_views_info.render_target_views[i]);
+                }
+                if (call->render_targets_and_unordered_access_views_info.depth_stencil_view)
+                    ID3D11DepthStencilView_Release(call->render_targets_and_unordered_access_views_info.depth_stencil_view);
+                for (i = 0; i < call->render_targets_and_unordered_access_views_info.unordered_access_view_count; i++)
+                {
+                    if (call->render_targets_and_unordered_access_views_info.unordered_access_views[i])
+                        ID3D11UnorderedAccessView_Release(call->render_targets_and_unordered_access_views_info.unordered_access_views[i]);
+                }
+                break;
+            }
+            case DEFERRED_COPYRESOURCE:
+            {
+                if (call->copy_resource_info.dst_resource)
+                    ID3D11Resource_Release(call->copy_resource_info.dst_resource);
+                if (call->copy_resource_info.src_resource)
+                    ID3D11Resource_Release(call->copy_resource_info.src_resource);
+                break;
+            }
+            case DEFERRED_SETRESOURCEMINLOD:
+            {
+                if (call->set_resource_min_lod_info.resource)
+                    ID3D11Resource_Release(call->set_resource_min_lod_info.resource);
+                break;
+            }
+            case DEFERRED_COPYSUBRESOURCEREGION:
+            {
+                if (call->copy_subresource_region_info.dst_resource)
+                    ID3D11Resource_Release(call->copy_subresource_region_info.dst_resource);
+                if (call->copy_subresource_region_info.src_resource)
+                    ID3D11Resource_Release(call->copy_subresource_region_info.src_resource);
+                break;
+            }
+            case DEFERRED_UPDATESUBRESOURCE:
+            {
+                if (call->update_subresource_info.resource)
+                    ID3D11Resource_Release(call->update_subresource_info.resource);
+                break;
+            }
+            case DEFERRED_RESOLVESUBRESOURCE:
+            {
+                if (call->resolve_subresource_info.dst_resource)
+                    ID3D11Resource_Release(call->resolve_subresource_info.dst_resource);
+                if (call->resolve_subresource_info.src_resource)
+                    ID3D11Resource_Release(call->resolve_subresource_info.src_resource);
+                break;
+            }
+            case DEFERRED_COPYSTRUCTURECOUNT:
+            {
+                if (call->copy_structure_count_info.dst_buffer)
+                    ID3D11Buffer_Release(call->copy_structure_count_info.dst_buffer);
+                if (call->copy_structure_count_info.src_view)
+                    ID3D11UnorderedAccessView_Release(call->copy_structure_count_info.src_view);
                 break;
             }
             case DEFERRED_CSSETSHADER:
@@ -503,11 +743,41 @@ static void free_deferred_calls(struct list *commands)
                 }
                 break;
             }
+            case DEFERRED_SOSETTARGETS:
+            {
+                for (i = 0; i < call->so_set_targets_info.buffer_count; i++)
+                {
+                    if (call->so_set_targets_info.buffers[i])
+                        ID3D11Buffer_Release(call->so_set_targets_info.buffers[i]);
+                }
+                break;
+            }
+            case DEFERRED_GENERATEMIPS:
+            {
+                if (call->generate_mips_info.view)
+                    ID3D11ShaderResourceView_Release(call->generate_mips_info.view);
+                break;
+            }
             case DEFERRED_DRAW:
             case DEFERRED_DRAWINDEXED:
             case DEFERRED_DRAWINDEXEDINSTANCED:
             {
                 break; /* nothing to do */
+            }
+            case DEFERRED_DRAWAUTO:
+            {
+                break; /* nothing to do */
+            }
+            case DEFERRED_DRAWINSTANCED:
+            {
+                break; /* nothing to do */
+            }
+            case DEFERRED_DRAWINSTANCEDINDIRECT:
+            case DEFERRED_DRAWINDEXEDINSTANCEDINDIRECT:
+            {
+                if (call->draw_instanced_indirect_info.buffer)
+                    ID3D11Buffer_Release(call->draw_instanced_indirect_info.buffer);
+                break;
             }
             case DEFERRED_MAP:
             {
@@ -517,6 +787,18 @@ static void free_deferred_calls(struct list *commands)
             case DEFERRED_DISPATCH:
             {
                 break; /* nothing to do */
+            }
+            case DEFERRED_DISPATCHINDIRECT:
+            {
+                if (call->dispatch_indirect_info.buffer)
+                    ID3D11Buffer_Release(call->dispatch_indirect_info.buffer);
+                break;
+            }
+            case DEFERRED_SETPREDICATION:
+            {
+                if (call->set_predication_info.predicate)
+                    ID3D11Predicate_Release(call->set_predication_info.predicate);
+                break;
             }
             case DEFERRED_CLEARSTATE:
             {
@@ -532,6 +814,18 @@ static void free_deferred_calls(struct list *commands)
             {
                 if (call->clear_depth_info.view)
                     ID3D11DepthStencilView_Release(call->clear_depth_info.view);
+                break;
+            }
+            case DEFERRED_CLEARUNORDEREDACCESSVIEWUINT:
+            {
+                if (call->clear_unordered_access_view_uint.unordered_access_view)
+                    ID3D11UnorderedAccessView_Release(call->clear_unordered_access_view_uint.unordered_access_view);
+                break;
+            }
+            case DEFERRED_CLEARUNORDEREDACCESSVIEWFLOAT:
+            {
+                if (call->clear_unordered_access_view_float.unordered_access_view)
+                    ID3D11UnorderedAccessView_Release(call->clear_unordered_access_view_float.unordered_access_view);
                 break;
             }
             case DEFERRED_BEGIN:
@@ -595,6 +889,13 @@ static void exec_deferred_calls(ID3D11DeviceContext *iface, struct list *command
                         call->viewport_info.viewports);
                 break;
             }
+            case DEFERRED_RSSETSCISSORRECTS:
+            {
+                ID3D11DeviceContext_RSSetScissorRects(iface,
+                        call->rs_set_scissor_rects_info.rect_count,
+                        call->rs_set_scissor_rects_info.rects);
+                break;
+            }
             case DEFERRED_OMSETDEPTHSTENCILSTATE:
             {
                 ID3D11DeviceContext_OMSetDepthStencilState(iface, call->stencil_state_info.state,
@@ -611,6 +912,74 @@ static void exec_deferred_calls(ID3D11DeviceContext *iface, struct list *command
             {
                 ID3D11DeviceContext_OMSetRenderTargets(iface, call->render_target_info.num_views,
                         call->render_target_info.render_targets, call->render_target_info.depth_stencil);
+                break;
+            }
+            case DEFERRED_OMSETRENDERTARGETSANDUNORDEREDACCESVIEWS:
+            {
+                ID3D11DeviceContext_OMSetRenderTargetsAndUnorderedAccessViews(iface,
+                        call->render_targets_and_unordered_access_views_info.render_target_view_count,
+                        call->render_targets_and_unordered_access_views_info.render_target_views,
+                        call->render_targets_and_unordered_access_views_info.depth_stencil_view,
+                        call->render_targets_and_unordered_access_views_info.unordered_access_view_start_slot,
+                        call->render_targets_and_unordered_access_views_info.unordered_access_view_count,
+                        call->render_targets_and_unordered_access_views_info.unordered_access_views,
+                        call->render_targets_and_unordered_access_views_info.initial_counts);
+                break;
+            }
+            case DEFERRED_COPYRESOURCE:
+            {
+                ID3D11DeviceContext_CopyResource(iface,
+                        call->copy_resource_info.dst_resource,
+                        call->copy_resource_info.src_resource);
+                break;
+            }
+            case DEFERRED_SETRESOURCEMINLOD:
+            {
+                ID3D11DeviceContext_SetResourceMinLOD(iface,
+                        call->set_resource_min_lod_info.resource,
+                        call->set_resource_min_lod_info.min_lod);
+                break;
+            }
+            case DEFERRED_COPYSUBRESOURCEREGION:
+            {
+                ID3D11DeviceContext_CopySubresourceRegion(iface,
+                        call->copy_subresource_region_info.dst_resource,
+                        call->copy_subresource_region_info.dst_subresource_idx,
+                        call->copy_subresource_region_info.dst_x,
+                        call->copy_subresource_region_info.dst_y,
+                        call->copy_subresource_region_info.dst_z,
+                        call->copy_subresource_region_info.src_resource,
+                        call->copy_subresource_region_info.src_subresource_idx,
+                        call->copy_subresource_region_info.src_box);
+                break;
+            }
+            case DEFERRED_RESOLVESUBRESOURCE:
+            {
+                ID3D11DeviceContext_ResolveSubresource(iface,
+                        call->resolve_subresource_info.dst_resource,
+                        call->resolve_subresource_info.dst_subresource_idx,
+                        call->resolve_subresource_info.src_resource,
+                        call->resolve_subresource_info.src_subresource_idx,
+                        call->resolve_subresource_info.format);
+                break;
+            }
+            case DEFERRED_COPYSTRUCTURECOUNT:
+            {
+                ID3D11DeviceContext_CopyStructureCount(iface,
+                        call->copy_structure_count_info.dst_buffer,
+                        call->copy_structure_count_info.dst_offset,
+                        call->copy_structure_count_info.src_view);
+                break;
+            }
+            case DEFERRED_UPDATESUBRESOURCE:
+            {
+                ID3D11DeviceContext_UpdateSubresource(iface,
+                        call->update_subresource_info.resource,
+                        call->update_subresource_info.subresource_idx,
+                        call->update_subresource_info.box,
+                        call->update_subresource_info.data,
+                        call->update_subresource_info.row_pitch,
+                        call->update_subresource_info.depth_pitch);
                 break;
             }
             case DEFERRED_CSSETSHADER:
@@ -757,6 +1126,20 @@ static void exec_deferred_calls(ID3D11DeviceContext *iface, struct list *command
                         call->unordered_view.num_views, call->unordered_view.views, call->unordered_view.initial_counts);
                 break;
             }
+            case DEFERRED_SOSETTARGETS:
+            {
+                ID3D11DeviceContext_SOSetTargets(iface,
+                        call->so_set_targets_info.buffer_count,
+                        call->so_set_targets_info.buffers,
+                        call->so_set_targets_info.offsets);
+                break;
+            }
+            case DEFERRED_GENERATEMIPS:
+            {
+                ID3D11DeviceContext_GenerateMips(iface,
+                        call->generate_mips_info.view);
+                break;
+            }
             case DEFERRED_DRAW:
             {
                 ID3D11DeviceContext_Draw(iface, call->draw_info.count, call->draw_info.start);
@@ -773,6 +1156,34 @@ static void exec_deferred_calls(ID3D11DeviceContext *iface, struct list *command
                 ID3D11DeviceContext_DrawIndexedInstanced(iface, call->draw_indexed_inst_info.count_per_instance,
                         call->draw_indexed_inst_info.instance_count, call->draw_indexed_inst_info.start_index,
                         call->draw_indexed_inst_info.base_vertex, call->draw_indexed_inst_info.start_instance);
+                break;
+            }
+            case DEFERRED_DRAWAUTO:
+            {
+                ID3D11DeviceContext_DrawAuto(iface);
+                break;
+            }
+            case DEFERRED_DRAWINSTANCED:
+            {
+                ID3D11DeviceContext_DrawInstanced(iface,
+                        call->draw_instanced_info.instance_vertex_count,
+                        call->draw_instanced_info.instance_count,
+                        call->draw_instanced_info.start_vertex_location,
+                        call->draw_instanced_info.start_instance_location);
+                break;
+            }
+            case DEFERRED_DRAWINSTANCEDINDIRECT:
+            {
+                ID3D11DeviceContext_DrawInstancedIndirect(iface,
+                        call->draw_instanced_indirect_info.buffer,
+                        call->draw_instanced_indirect_info.offset);
+                break;
+            }
+            case DEFERRED_DRAWINDEXEDINSTANCEDINDIRECT:
+            {
+                ID3D11DeviceContext_DrawIndexedInstancedIndirect(iface,
+                        call->draw_instanced_indirect_info.buffer,
+                        call->draw_instanced_indirect_info.offset);
                 break;
             }
             case DEFERRED_MAP:
@@ -798,6 +1209,20 @@ static void exec_deferred_calls(ID3D11DeviceContext *iface, struct list *command
                         call->dispatch_info.count_y, call->dispatch_info.count_z);
                 break;
             }
+            case DEFERRED_DISPATCHINDIRECT:
+            {
+                ID3D11DeviceContext_DispatchIndirect(iface,
+                        call->dispatch_indirect_info.buffer,
+                        call->dispatch_indirect_info.offset);
+                break;
+            }
+            case DEFERRED_SETPREDICATION:
+            {
+                ID3D11DeviceContext_SetPredication(iface,
+                        call->set_predication_info.predicate,
+                        call->set_predication_info.value);
+                break;
+            }
             case DEFERRED_CLEARSTATE:
             {
                 ID3D11DeviceContext_ClearState(iface);
@@ -814,6 +1239,20 @@ static void exec_deferred_calls(ID3D11DeviceContext *iface, struct list *command
                 ID3D11DeviceContext_ClearDepthStencilView(iface, call->clear_depth_info.view,
                         call->clear_depth_info.flags, call->clear_depth_info.depth,
                         call->clear_depth_info.stencil);
+                break;
+            }
+            case DEFERRED_CLEARUNORDEREDACCESSVIEWUINT:
+            {
+                ID3D11DeviceContext_ClearUnorderedAccessViewUint(iface,
+                        call->clear_unordered_access_view_uint.unordered_access_view,
+                        call->clear_unordered_access_view_uint.values);
+                break;
+            }
+            case DEFERRED_CLEARUNORDEREDACCESSVIEWFLOAT:
+            {
+                ID3D11DeviceContext_ClearUnorderedAccessViewFloat(iface,
+                        call->clear_unordered_access_view_float.unordered_access_view,
+                        call->clear_unordered_access_view_float.values);
                 break;
             }
             case DEFERRED_BEGIN:
@@ -1608,16 +2047,9 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_OMSetRenderTargetsAndUnord
             struct d3d11_unordered_access_view *view
                     = unsafe_impl_from_ID3D11UnorderedAccessView(unordered_access_views[i]);
 
-        if (initial_counts && view && view->desc.ViewDimension == D3D11_UAV_DIMENSION_BUFFER
-                && (view->desc.u.Buffer.Flags & (D3D11_BUFFER_UAV_FLAG_APPEND | D3D11_BUFFER_UAV_FLAG_COUNTER))
-                && initial_counts[i] != ~(UINT)0)
-            FIXME("Ignoring initial count %u for slot %u.\n",
-                    initial_counts[i], unordered_access_view_start_slot + i);
-
             wined3d_device_set_unordered_access_view(device->wined3d_device,
                     unordered_access_view_start_slot + i,
-                    view ? view->wined3d_view : NULL,
-                    initial_counts ? initial_counts[i] : ~0u);
+                    view ? view->wined3d_view : NULL, initial_counts ? initial_counts[i] : ~0u);
         }
         for (; unordered_access_view_start_slot + i < D3D11_PS_CS_UAV_REGISTER_COUNT; ++i)
         {
@@ -1833,15 +2265,15 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_DispatchIndirect(ID3D11Dev
         ID3D11Buffer *buffer, UINT offset)
 {
     struct d3d_device *device = device_from_immediate_ID3D11DeviceContext(iface);
-    struct d3d_buffer *d3d_buffer;
+    struct d3d_buffer *buffer_impl;
 
     TRACE("iface %p, buffer %p, offset %u.\n", iface, buffer, offset);
 
-    d3d_buffer = unsafe_impl_from_ID3D11Buffer(buffer);
+    buffer_impl = unsafe_impl_from_ID3D11Buffer(buffer);
 
     wined3d_mutex_lock();
     wined3d_device_dispatch_compute_indirect(device->wined3d_device,
-            d3d_buffer->wined3d_buffer, offset);
+            buffer_impl->wined3d_buffer, offset);
     wined3d_mutex_unlock();
 }
 
@@ -1851,7 +2283,7 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_RSSetState(ID3D11DeviceCon
     struct d3d_device *device = device_from_immediate_ID3D11DeviceContext(iface);
     struct d3d_rasterizer_state *rasterizer_state_impl;
     const D3D11_RASTERIZER_DESC *desc;
-    union {DWORD d; float f;} slope;
+    union {DWORD d; float f;} tmpfloat;
 
     TRACE("iface %p, rasterizer_state %p.\n", iface, rasterizer_state);
 
@@ -1865,6 +2297,8 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_RSSetState(ID3D11DeviceCon
         wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_MULTISAMPLEANTIALIAS, FALSE);
         wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_ANTIALIASEDLINEENABLE, FALSE);
         wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHBIAS, 0);
+        tmpfloat.f = 0.0f;
+        wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHBIASCLAMP, tmpfloat.d);
         wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_SLOPESCALEDEPTHBIAS, 0);
         wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHCLIP, TRUE);
         wined3d_mutex_unlock();
@@ -1878,12 +2312,12 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_RSSetState(ID3D11DeviceCon
     wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_CULLMODE, desc->CullMode);
 
     /* OpenGL style depth bias. */
-    slope.f = desc->SlopeScaledDepthBias;
     wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHBIAS, desc->DepthBias);
-    wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_SLOPESCALEDEPTHBIAS, slope.d);
+    tmpfloat.f = desc->DepthBiasClamp;
+    wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHBIASCLAMP, tmpfloat.d);
+    tmpfloat.f = desc->SlopeScaledDepthBias;
+    wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_SLOPESCALEDEPTHBIAS, tmpfloat.d);
     wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_DEPTHCLIP, (desc->DepthClipEnable != FALSE));
-    if (desc->DepthBiasClamp)
-        FIXME("Ignoring DepthBiasClamp %f.\n", desc->DepthBiasClamp);
 
     wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_SCISSORTESTENABLE, desc->ScissorEnable);
     wined3d_device_set_render_state(device->wined3d_device, WINED3D_RS_MULTISAMPLEANTIALIAS, desc->MultisampleEnable);
@@ -2001,8 +2435,8 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_CopyStructureCount(ID3D11D
         ID3D11Buffer *dst_buffer, UINT dst_offset, ID3D11UnorderedAccessView *src_view)
 {
     struct d3d_device *device = device_from_immediate_ID3D11DeviceContext(iface);
-    struct d3d11_unordered_access_view *view;
-    struct d3d_buffer *buffer;
+    struct d3d11_unordered_access_view *uav;
+    struct d3d_buffer *buffer_impl;
 
     TRACE("iface %p, dst_buffer %p, dst_offset %u, src_view %p.\n",
             iface, dst_buffer, dst_offset, src_view);
@@ -2010,11 +2444,12 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_CopyStructureCount(ID3D11D
     if (!dst_buffer || !src_view)
         return;
 
-    buffer = unsafe_impl_from_ID3D11Buffer(dst_buffer);
-    view = unsafe_impl_from_ID3D11UnorderedAccessView(src_view);
+    buffer_impl = unsafe_impl_from_ID3D11Buffer(dst_buffer);
+    uav = unsafe_impl_from_ID3D11UnorderedAccessView(src_view);
 
     wined3d_mutex_lock();
-    wined3d_device_copy_structure_count(device->wined3d_device, buffer->wined3d_buffer, dst_offset, view->wined3d_view);
+    wined3d_device_copy_uav_counter(device->wined3d_device,
+            buffer_impl->wined3d_buffer, dst_offset, uav->wined3d_view);
     wined3d_mutex_unlock();
 }
 
@@ -2086,9 +2521,19 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_ClearDepthStencilView(ID3D
 }
 
 static void STDMETHODCALLTYPE d3d11_immediate_context_GenerateMips(ID3D11DeviceContext *iface,
-        ID3D11ShaderResourceView *view)
+        ID3D11ShaderResourceView *shader_view)
 {
-    FIXME("iface %p, view %p stub!\n", iface, view);
+    struct d3d_device *device = device_from_immediate_ID3D11DeviceContext(iface);
+    struct d3d_shader_resource_view *view = unsafe_impl_from_ID3D11ShaderResourceView(shader_view);
+
+    TRACE("iface %p, shader_view %p.\n", iface, shader_view);
+
+    if (!view)
+        return;
+
+    wined3d_mutex_lock();
+    wined3d_device_generate_mips_view(device->wined3d_device, view->wined3d_view);
+    wined3d_mutex_unlock();
 }
 
 static void STDMETHODCALLTYPE d3d11_immediate_context_SetResourceMinLOD(ID3D11DeviceContext *iface,
@@ -2128,22 +2573,191 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_ResolveSubresource(ID3D11D
     wined3d_mutex_unlock();
 }
 
+static struct d3d11_state *state_capture(ID3D11DeviceContext *context)
+{
+    struct d3d_device *device = device_from_immediate_ID3D11DeviceContext(context);
+    unsigned int vp_count = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    struct d3d11_state *stateblock;
+    int i;
+
+    if (!(stateblock = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*stateblock))))
+        return NULL;
+
+    ID3D11DeviceContext_VSGetShader(context, &stateblock->vs, NULL, 0);
+    ID3D11DeviceContext_VSGetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->vs_samplers);
+    ID3D11DeviceContext_VSGetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->vs_resources);
+    ID3D11DeviceContext_VSGetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->vs_cbs);
+
+    ID3D11DeviceContext_GSGetShader(context, &stateblock->gs, NULL, 0);
+    ID3D11DeviceContext_GSGetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->gs_samplers);
+    ID3D11DeviceContext_GSGetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->gs_resources);
+    ID3D11DeviceContext_GSGetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->gs_cbs);
+
+    ID3D11DeviceContext_PSGetShader(context, &stateblock->ps, NULL, 0);
+    ID3D11DeviceContext_PSGetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->ps_samplers);
+    ID3D11DeviceContext_PSGetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->ps_resources);
+    ID3D11DeviceContext_PSGetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->ps_cbs);
+
+    ID3D11DeviceContext_HSGetShader(context, &stateblock->hs, NULL, 0);
+    ID3D11DeviceContext_HSGetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->hs_samplers);
+    ID3D11DeviceContext_HSGetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->hs_resources);
+    ID3D11DeviceContext_HSGetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->hs_cbs);
+
+    ID3D11DeviceContext_DSGetShader(context, &stateblock->ds, NULL, 0);
+    ID3D11DeviceContext_DSGetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->ds_samplers);
+    ID3D11DeviceContext_DSGetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->ds_resources);
+    ID3D11DeviceContext_DSGetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->ds_cbs);
+
+    ID3D11DeviceContext_IAGetVertexBuffers(context, 0, MAX_WINED3D_STREAMS, stateblock->vbs, stateblock->vb_strides, stateblock->vb_offsets);
+    ID3D11DeviceContext_IAGetIndexBuffer(context, &stateblock->ib, &stateblock->ib_format, &stateblock->ib_offset);
+    ID3D11DeviceContext_IAGetInputLayout(context, &stateblock->il);
+    ID3D11DeviceContext_IAGetPrimitiveTopology(context, &stateblock->topology);
+
+    ID3D11DeviceContext_OMGetRenderTargets(context, D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, stateblock->rtvs, &stateblock->dsv);
+    ID3D11DeviceContext_OMGetDepthStencilState(context, &stateblock->dss, &stateblock->stencil_ref);
+    ID3D11DeviceContext_OMGetBlendState(context, &stateblock->bs, stateblock->blend_factor, &stateblock->sample_mask);
+
+    ID3D11DeviceContext_RSGetViewports(context, &vp_count, stateblock->vps);
+    ID3D11DeviceContext_RSGetScissorRects(context, &vp_count, stateblock->scissor_rects);
+    ID3D11DeviceContext_RSGetState(context, &stateblock->rs);
+
+    ID3D11DeviceContext_SOGetTargets(context, D3D11_SO_BUFFER_SLOT_COUNT, stateblock->so_buffers);
+    /* For some reason the d3d11 get function is missing the offset parameter */
+    for (i = 0; i < D3D11_SO_BUFFER_SLOT_COUNT; i++)
+        wined3d_device_get_stream_output(device->wined3d_device, i, &stateblock->so_offsets[i]);
+
+    ID3D11DeviceContext_GetPredication(context, &stateblock->predicate, &stateblock->predicate_value);
+
+    return stateblock;
+}
+
+static void state_apply(ID3D11DeviceContext *context, struct d3d11_state *stateblock)
+{
+    static DWORD warn_once;
+    int i;
+
+    if (!stateblock)
+        return;
+
+    if (!warn_once++) FIXME("restoring state is potentially slow and incomplete!\n");
+
+    ID3D11DeviceContext_VSSetShader(context, stateblock->vs, NULL, 0);
+    ID3D11DeviceContext_VSSetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->vs_samplers);
+    ID3D11DeviceContext_VSSetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->vs_resources);
+    ID3D11DeviceContext_VSSetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->vs_cbs);
+
+    if (stateblock->vs) ID3D11VertexShader_Release(stateblock->vs);
+    for (i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; i++)
+        if (stateblock->vs_samplers[i]) ID3D11SamplerState_Release(stateblock->vs_samplers[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+        if (stateblock->vs_resources[i]) ID3D11ShaderResourceView_Release(stateblock->vs_resources[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
+        if (stateblock->vs_cbs[i]) ID3D11Buffer_Release(stateblock->vs_cbs[i]);
+
+    ID3D11DeviceContext_GSSetShader(context, stateblock->gs, NULL, 0);
+    ID3D11DeviceContext_GSSetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->gs_samplers);
+    ID3D11DeviceContext_GSSetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->gs_resources);
+    ID3D11DeviceContext_GSSetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->gs_cbs);
+
+    if (stateblock->gs) ID3D11GeometryShader_Release(stateblock->gs);
+    for (i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; i++)
+        if (stateblock->gs_samplers[i]) ID3D11SamplerState_Release(stateblock->gs_samplers[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+        if (stateblock->gs_resources[i]) ID3D11ShaderResourceView_Release(stateblock->gs_resources[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
+        if (stateblock->gs_cbs[i]) ID3D11Buffer_Release(stateblock->gs_cbs[i]);
+
+    ID3D11DeviceContext_PSSetShader(context, stateblock->ps, NULL, 0);
+    ID3D11DeviceContext_PSSetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->ps_samplers);
+    ID3D11DeviceContext_PSSetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->ps_resources);
+    ID3D11DeviceContext_PSSetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->ps_cbs);
+
+    if (stateblock->ps) ID3D11PixelShader_Release(stateblock->ps);
+    for (i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; i++)
+        if (stateblock->ps_samplers[i]) ID3D11SamplerState_Release(stateblock->ps_samplers[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+        if (stateblock->ps_resources[i]) ID3D11ShaderResourceView_Release(stateblock->ps_resources[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
+        if (stateblock->ps_cbs[i]) ID3D11Buffer_Release(stateblock->ps_cbs[i]);
+
+    ID3D11DeviceContext_HSSetShader(context, stateblock->hs, NULL, 0);
+    ID3D11DeviceContext_HSSetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->hs_samplers);
+    ID3D11DeviceContext_HSSetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->hs_resources);
+    ID3D11DeviceContext_HSSetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->hs_cbs);
+
+    if (stateblock->hs) ID3D11HullShader_Release(stateblock->hs);
+    for (i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; i++)
+        if (stateblock->hs_samplers[i]) ID3D11SamplerState_Release(stateblock->hs_samplers[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+        if (stateblock->hs_resources[i]) ID3D11ShaderResourceView_Release(stateblock->hs_resources[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
+        if (stateblock->hs_cbs[i]) ID3D11Buffer_Release(stateblock->hs_cbs[i]);
+
+    ID3D11DeviceContext_DSSetShader(context, stateblock->ds, NULL, 0);
+    ID3D11DeviceContext_DSSetSamplers(context, 0, D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT, stateblock->ds_samplers);
+    ID3D11DeviceContext_DSSetShaderResources(context, 0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, stateblock->ds_resources);
+    ID3D11DeviceContext_DSSetConstantBuffers(context, 0, D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT, stateblock->ds_cbs);
+
+    if (stateblock->ds) ID3D11DomainShader_Release(stateblock->ds);
+    for (i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; i++)
+        if (stateblock->ds_samplers[i]) ID3D11SamplerState_Release(stateblock->ds_samplers[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT; i++)
+        if (stateblock->ds_resources[i]) ID3D11ShaderResourceView_Release(stateblock->ds_resources[i]);
+    for (i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; i++)
+        if (stateblock->ds_cbs[i]) ID3D11Buffer_Release(stateblock->ds_cbs[i]);
+
+    ID3D11DeviceContext_IASetVertexBuffers(context, 0, MAX_WINED3D_STREAMS, stateblock->vbs, stateblock->vb_strides, stateblock->vb_offsets);
+    ID3D11DeviceContext_IASetIndexBuffer(context, stateblock->ib, stateblock->ib_format, stateblock->ib_offset);
+    ID3D11DeviceContext_IASetInputLayout(context, stateblock->il);
+    ID3D11DeviceContext_IASetPrimitiveTopology(context, stateblock->topology);
+
+    for (i = 0; i < MAX_WINED3D_STREAMS; i++)
+        if (stateblock->vbs[i]) ID3D11Buffer_Release(stateblock->vbs[i]);
+    if (stateblock->ib) ID3D11Buffer_Release(stateblock->ib);
+    if (stateblock->il) ID3D11InputLayout_Release(stateblock->il);
+
+    ID3D11DeviceContext_OMSetRenderTargets(context, D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, stateblock->rtvs, stateblock->dsv);
+    ID3D11DeviceContext_OMSetDepthStencilState(context, stateblock->dss, stateblock->stencil_ref);
+    ID3D11DeviceContext_OMSetBlendState(context, stateblock->bs, stateblock->blend_factor, stateblock->sample_mask);
+
+    for (i = 0; i < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
+        if (stateblock->rtvs[i]) ID3D11RenderTargetView_Release(stateblock->rtvs[i]);
+    if (stateblock->dsv) ID3D11DepthStencilView_Release(stateblock->dsv);
+    if (stateblock->dss) ID3D11DepthStencilState_Release(stateblock->dss);
+    if (stateblock->bs)  ID3D11BlendState_Release(stateblock->bs);
+
+    ID3D11DeviceContext_RSSetViewports(context, D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE, stateblock->vps);
+    ID3D11DeviceContext_RSSetScissorRects(context, D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE, stateblock->scissor_rects);
+    ID3D11DeviceContext_RSSetState(context, stateblock->rs);
+
+    if (stateblock->rs) ID3D11RasterizerState_Release(stateblock->rs);
+
+    ID3D11DeviceContext_SOSetTargets(context, D3D11_SO_BUFFER_SLOT_COUNT, stateblock->so_buffers, stateblock->so_offsets);
+    ID3D11DeviceContext_SetPredication(context, stateblock->predicate, stateblock->predicate_value);
+
+    for (i = 0; i < D3D11_SO_BUFFER_SLOT_COUNT; i++)
+        if (stateblock->so_buffers[i]) ID3D11Buffer_Release(stateblock->so_buffers[i]);
+    if (stateblock->predicate) ID3D11Predicate_Release(stateblock->predicate);
+
+    HeapFree(GetProcessHeap(), 0, stateblock);
+}
+
 static void STDMETHODCALLTYPE d3d11_immediate_context_ExecuteCommandList(ID3D11DeviceContext *iface,
         ID3D11CommandList *command_list, BOOL restore_state)
 {
     struct d3d11_command_list *cmdlist = unsafe_impl_from_ID3D11CommandList(command_list);
+    struct d3d11_state *stateblock = NULL;
 
     TRACE("iface %p, command_list %p, restore_state %#x.\n", iface, command_list, restore_state);
 
     if (!cmdlist)
         return;
 
-    if (restore_state)
-        FIXME("restoring state not supported!\n");
-
     wined3d_mutex_lock();
+    if (restore_state) stateblock = state_capture(iface);
     exec_deferred_calls(iface, &cmdlist->commands);
-    ID3D11DeviceContext_ClearState(iface);
+    if (restore_state) state_apply(iface, stateblock);
+    else ID3D11DeviceContext_ClearState(iface);
     wined3d_mutex_unlock();
 }
 
@@ -2334,11 +2948,6 @@ static void STDMETHODCALLTYPE d3d11_immediate_context_CSSetUnorderedAccessViews(
     for (i = 0; i < view_count; ++i)
     {
         struct d3d11_unordered_access_view *view = unsafe_impl_from_ID3D11UnorderedAccessView(views[i]);
-
-        if (initial_counts && view && view->desc.ViewDimension == D3D11_UAV_DIMENSION_BUFFER
-                && (view->desc.u.Buffer.Flags & (D3D11_BUFFER_UAV_FLAG_APPEND | D3D11_BUFFER_UAV_FLAG_COUNTER))
-                && initial_counts[i] != ~(UINT)0)
-            FIXME("Ignoring initial count %u for slot %u.\n", initial_counts[i], start_slot + i);
 
         wined3d_device_set_cs_uav(device->wined3d_device, start_slot + i,
                 view ? view->wined3d_view : NULL, initial_counts ? initial_counts[i] : ~0u);
@@ -4030,10 +4639,22 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_DrawIndexedInstanced(ID3D11
 static void STDMETHODCALLTYPE d3d11_deferred_context_DrawInstanced(ID3D11DeviceContext *iface,
         UINT instance_vertex_count, UINT instance_count, UINT start_vertex_location, UINT start_instance_location)
 {
-    FIXME("iface %p, instance_vertex_count %u, instance_count %u, start_vertex_location %u, "
-            "start_instance_location %u stub!\n",
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, instance_vertex_count %u, instance_count %u, start_vertex_location %u, "
+            "start_instance_location %u.\n",
             iface, instance_vertex_count, instance_count, start_vertex_location,
             start_instance_location);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    call->cmd = DEFERRED_DRAWINSTANCED;
+    call->draw_instanced_info.instance_vertex_count = instance_vertex_count;
+    call->draw_instanced_info.instance_count = instance_count;
+    call->draw_instanced_info.start_vertex_location = start_vertex_location;
+    call->draw_instanced_info.start_instance_location = start_instance_location;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_GSSetConstantBuffers(ID3D11DeviceContext *iface,
@@ -4145,7 +4766,18 @@ static HRESULT STDMETHODCALLTYPE d3d11_deferred_context_GetData(ID3D11DeviceCont
 static void STDMETHODCALLTYPE d3d11_deferred_context_SetPredication(ID3D11DeviceContext *iface,
         ID3D11Predicate *predicate, BOOL value)
 {
-    FIXME("iface %p, predicate %p, value %#x stub!\n", iface, predicate, value);
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, predicate %p, value %#x.\n", iface, predicate, value);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    call->cmd = DEFERRED_SETPREDICATION;
+    if (predicate) ID3D11Predicate_AddRef(predicate);
+    call->set_predication_info.predicate = predicate;
+    call->set_predication_info.value = value;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_GSSetShaderResources(ID3D11DeviceContext *iface,
@@ -4204,12 +4836,46 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_OMSetRenderTargetsAndUnorde
         UINT unordered_access_view_start_slot, UINT unordered_access_view_count,
         ID3D11UnorderedAccessView *const *unordered_access_views, const UINT *initial_counts)
 {
-    FIXME("iface %p, render_target_view_count %u, render_target_views %p, depth_stencil_view %p, "
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+    UINT i;
+
+    TRACE("iface %p, render_target_view_count %u, render_target_views %p, depth_stencil_view %p, "
             "unordered_access_view_start_slot %u, unordered_access_view_count %u, unordered_access_views %p, "
-            "initial_counts %p stub!\n",
+            "initial_counts %p.\n",
             iface, render_target_view_count, render_target_views, depth_stencil_view,
             unordered_access_view_start_slot, unordered_access_view_count, unordered_access_views,
             initial_counts);
+
+    if (!(call = add_deferred_call(context, sizeof(ID3D11RenderTargetView *) * render_target_view_count +
+                                   (sizeof(ID3D11UnorderedAccessView *) + sizeof(UINT)) * unordered_access_view_count)))
+        return;
+
+    call->cmd = DEFERRED_OMSETRENDERTARGETSANDUNORDEREDACCESVIEWS;
+    call->render_targets_and_unordered_access_views_info.render_target_view_count = render_target_view_count;
+    call->render_targets_and_unordered_access_views_info.unordered_access_view_start_slot = unordered_access_view_start_slot;
+    call->render_targets_and_unordered_access_views_info.unordered_access_view_count = unordered_access_view_count;
+
+    if (depth_stencil_view) ID3D11DepthStencilView_AddRef(depth_stencil_view);
+    call->render_targets_and_unordered_access_views_info.depth_stencil_view = depth_stencil_view;
+
+    call->render_targets_and_unordered_access_views_info.render_target_views = (void *)(call + 1);
+    call->render_targets_and_unordered_access_views_info.unordered_access_views =
+            (void *)&call->render_targets_and_unordered_access_views_info.render_target_views[render_target_view_count];
+    call->render_targets_and_unordered_access_views_info.initial_counts = initial_counts ?
+            (void *)&call->render_targets_and_unordered_access_views_info.unordered_access_views[unordered_access_view_count] : NULL;
+
+    for (i = 0; i < render_target_view_count; i++)
+    {
+        if (render_target_views[i]) ID3D11RenderTargetView_AddRef(render_target_views[i]);
+        call->render_targets_and_unordered_access_views_info.render_target_views[i] = render_target_views[i];
+    }
+    for (i = 0; i < unordered_access_view_count; i++)
+    {
+        if (unordered_access_views[i]) ID3D11UnorderedAccessView_AddRef(unordered_access_views[i]);
+        call->render_targets_and_unordered_access_views_info.unordered_access_views[i] = unordered_access_views[i];
+        if (initial_counts) call->render_targets_and_unordered_access_views_info.initial_counts[i] = initial_counts[i];
+    }
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_OMSetBlendState(ID3D11DeviceContext *iface,
@@ -4255,27 +4921,75 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_OMSetDepthStencilState(ID3D
     call->stencil_state_info.stencil_ref = stencil_ref;
 }
 
-static void STDMETHODCALLTYPE d3d11_deferred_context_SOSetTargets(ID3D11DeviceContext *iface, UINT buffer_count,
-        ID3D11Buffer *const *buffers, const UINT *offsets)
+static void STDMETHODCALLTYPE d3d11_deferred_context_SOSetTargets(ID3D11DeviceContext *iface,
+        UINT buffer_count, ID3D11Buffer *const *buffers, const UINT *offsets)
 {
-    FIXME("iface %p, buffer_count %u, buffers %p, offsets %p stub!\n", iface, buffer_count, buffers, offsets);
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+    UINT i;
+
+    TRACE("iface %p, buffer_count %u, buffers %p, offsets %p.\n", iface, buffer_count, buffers, offsets);
+
+    if (!(call = add_deferred_call(context, (sizeof(ID3D11Buffer *) + sizeof(UINT)) * buffer_count)))
+        return;
+
+    call->cmd = DEFERRED_SOSETTARGETS;
+    call->so_set_targets_info.buffers = (void *)(call + 1);
+    call->so_set_targets_info.offsets = (void *)&call->so_set_targets_info.buffers[buffer_count];
+
+    for (i = 0; i < buffer_count; i++)
+    {
+        if (buffers[i]) ID3D11Buffer_AddRef(buffers[i]);
+        call->so_set_targets_info.buffers[i] = buffers[i];
+        call->so_set_targets_info.offsets[i] = offsets[i];
+    }
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_DrawAuto(ID3D11DeviceContext *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p.\n", iface);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    call->cmd = DEFERRED_DRAWAUTO;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_DrawIndexedInstancedIndirect(ID3D11DeviceContext *iface,
         ID3D11Buffer *buffer, UINT offset)
 {
-    FIXME("iface %p, buffer %p, offset %u stub!\n", iface, buffer, offset);
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, buffer %p, offset %u.\n", iface, buffer, offset);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    call->cmd = DEFERRED_DRAWINDEXEDINSTANCEDINDIRECT;
+    if (buffer) ID3D11Buffer_AddRef(buffer);
+    call->draw_instanced_indirect_info.buffer = buffer;
+    call->draw_instanced_indirect_info.offset = offset;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_DrawInstancedIndirect(ID3D11DeviceContext *iface,
         ID3D11Buffer *buffer, UINT offset)
 {
-    FIXME("iface %p, buffer %p, offset %u stub!\n", iface, buffer, offset);
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, buffer %p, offset %u.\n", iface, buffer, offset);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    call->cmd = DEFERRED_DRAWINSTANCEDINDIRECT;
+    if (buffer) ID3D11Buffer_AddRef(buffer);
+    call->draw_instanced_indirect_info.buffer = buffer;
+    call->draw_instanced_indirect_info.offset = offset;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_Dispatch(ID3D11DeviceContext *iface,
@@ -4299,7 +5013,18 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_Dispatch(ID3D11DeviceContex
 static void STDMETHODCALLTYPE d3d11_deferred_context_DispatchIndirect(ID3D11DeviceContext *iface,
         ID3D11Buffer *buffer, UINT offset)
 {
-    FIXME("iface %p, buffer %p, offset %u stub!\n", iface, buffer, offset);
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, buffer %p, offset %u.\n", iface, buffer, offset);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    call->cmd = DEFERRED_DISPATCHINDIRECT;
+    if (buffer) ID3D11Buffer_AddRef(buffer);
+    call->dispatch_indirect_info.buffer = buffer;
+    call->dispatch_indirect_info.offset = offset;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_RSSetState(ID3D11DeviceContext *iface,
@@ -4338,38 +5063,149 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_RSSetViewports(ID3D11Device
 static void STDMETHODCALLTYPE d3d11_deferred_context_RSSetScissorRects(ID3D11DeviceContext *iface,
         UINT rect_count, const D3D11_RECT *rects)
 {
-    FIXME("iface %p, rect_count %u, rects %p stub!\n", iface, rect_count, rects);
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, rect_count %u, rects %p.\n", iface, rect_count, rects);
+
+    if (!(call = add_deferred_call(context, sizeof(D3D11_RECT) * rect_count)))
+        return;
+
+    call->cmd = DEFERRED_RSSETSCISSORRECTS;
+    call->rs_set_scissor_rects_info.rects = (void *)(call + 1);
+    call->rs_set_scissor_rects_info.rect_count = rect_count;
+    memcpy(call->rs_set_scissor_rects_info.rects, rects, sizeof(D3D11_RECT) * rect_count);
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_CopySubresourceRegion(ID3D11DeviceContext *iface,
         ID3D11Resource *dst_resource, UINT dst_subresource_idx, UINT dst_x, UINT dst_y, UINT dst_z,
         ID3D11Resource *src_resource, UINT src_subresource_idx, const D3D11_BOX *src_box)
 {
-    FIXME("iface %p, dst_resource %p, dst_subresource_idx %u, dst_x %u, dst_y %u, dst_z %u, "
-            "src_resource %p, src_subresource_idx %u, src_box %p stub!\n",
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, dst_resource %p, dst_subresource_idx %u, dst_x %u, dst_y %u, dst_z %u, "
+            "src_resource %p, src_subresource_idx %u, src_box %p.\n",
             iface, dst_resource, dst_subresource_idx, dst_x, dst_y, dst_z,
             src_resource, src_subresource_idx, src_box);
+
+    if (!(call = add_deferred_call(context, src_box ? sizeof(D3D11_BOX) : 0)))
+        return;
+
+    if (dst_resource) ID3D11Resource_AddRef(dst_resource);
+    if (src_resource) ID3D11Resource_AddRef(src_resource);
+
+    call->cmd = DEFERRED_COPYSUBRESOURCEREGION;
+    call->copy_subresource_region_info.dst_resource = dst_resource;
+    call->copy_subresource_region_info.dst_subresource_idx = dst_subresource_idx;
+    call->copy_subresource_region_info.dst_x = dst_x;
+    call->copy_subresource_region_info.dst_y = dst_y;
+    call->copy_subresource_region_info.dst_z = dst_z;
+    call->copy_subresource_region_info.src_resource = src_resource;
+    call->copy_subresource_region_info.src_subresource_idx = src_subresource_idx;
+    if (src_box)
+    {
+        call->copy_subresource_region_info.src_box = (void *)(call + 1);
+        *call->copy_subresource_region_info.src_box = *src_box;
+    }
+    else
+    {
+        call->copy_subresource_region_info.src_box = NULL;
+    }
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_CopyResource(ID3D11DeviceContext *iface,
         ID3D11Resource *dst_resource, ID3D11Resource *src_resource)
 {
-    FIXME("iface %p, dst_resource %p, src_resource %p stub!\n", iface, dst_resource, src_resource);
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, dst_resource %p, src_resource %p.\n", iface, dst_resource, src_resource);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    if (dst_resource) ID3D11Resource_AddRef(dst_resource);
+    if (src_resource) ID3D11Resource_AddRef(src_resource);
+
+    call->cmd = DEFERRED_COPYRESOURCE;
+    call->copy_resource_info.dst_resource = dst_resource;
+    call->copy_resource_info.src_resource = src_resource;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_UpdateSubresource(ID3D11DeviceContext *iface,
         ID3D11Resource *resource, UINT subresource_idx, const D3D11_BOX *box,
         const void *data, UINT row_pitch, UINT depth_pitch)
 {
-    FIXME("iface %p, resource %p, subresource_idx %u, box %p, data %p, row_pitch %u, depth_pitch %u stub!\n",
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct wined3d_resource *wined3d_resource;
+    struct wined3d_box wined3d_box;
+    struct deferred_call *call;
+    UINT size;
+
+    TRACE("iface %p, resource %p, subresource_idx %u, box %p, data %p, row_pitch %u, depth_pitch %u.\n",
             iface, resource, subresource_idx, box, data, row_pitch, depth_pitch);
+
+    if (box)
+        wined3d_box_set(&wined3d_box, box->left, box->top, box->right, box->bottom, box->front, box->back);
+
+    wined3d_resource = wined3d_resource_from_d3d11_resource(resource);
+    wined3d_mutex_lock();
+    size = wined3d_resource_update_info(wined3d_resource, subresource_idx,
+            box ? &wined3d_box : NULL, row_pitch, depth_pitch);
+    wined3d_mutex_unlock();
+
+    if (!size)
+    {
+        FIXME("Failed to calculate size of data\n");
+        return;
+    }
+
+    if (!(call = add_deferred_call(context, size + (box ? sizeof(D3D11_BOX) : 0))))
+        return;
+
+    call->cmd = DEFERRED_UPDATESUBRESOURCE;
+    call->update_subresource_info.resource = resource;
+    call->update_subresource_info.subresource_idx = subresource_idx;
+    call->update_subresource_info.row_pitch = row_pitch;
+    call->update_subresource_info.depth_pitch = depth_pitch;
+
+    ID3D11Resource_AddRef(resource);
+
+    if (box)
+    {
+        call->update_subresource_info.box  = (void *)(call + 1);
+        call->update_subresource_info.data = (void *)(call->update_subresource_info.box + 1);
+        *call->update_subresource_info.box = *box;
+    }
+    else
+    {
+        call->update_subresource_info.box  = NULL;
+        call->update_subresource_info.data = (void *)(call + 1);
+    }
+
+    memcpy(call->update_subresource_info.data, data, size);
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_CopyStructureCount(ID3D11DeviceContext *iface,
         ID3D11Buffer *dst_buffer, UINT dst_offset, ID3D11UnorderedAccessView *src_view)
 {
-    FIXME("iface %p, dst_buffer %p, dst_offset %u, src_view %p stub!\n",
-            iface, dst_buffer, dst_offset, src_view);
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, dst_buffer %p, dst_offset %u, src_view %p.\n",
+          iface, dst_buffer, dst_offset, src_view);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    if (dst_buffer) ID3D11Buffer_AddRef(dst_buffer);
+    if (src_view) ID3D11UnorderedAccessView_AddRef(src_view);
+
+    call->cmd = DEFERRED_COPYSTRUCTURECOUNT;
+    call->copy_structure_count_info.dst_buffer = dst_buffer;
+    call->copy_structure_count_info.dst_offset = dst_offset;
+    call->copy_structure_count_info.src_view = src_view;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_ClearRenderTargetView(ID3D11DeviceContext *iface,
@@ -4395,15 +5231,41 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_ClearRenderTargetView(ID3D1
 static void STDMETHODCALLTYPE d3d11_deferred_context_ClearUnorderedAccessViewUint(ID3D11DeviceContext *iface,
         ID3D11UnorderedAccessView *unordered_access_view, const UINT values[4])
 {
-    FIXME("iface %p, unordered_access_view %p, values {%u %u %u %u} stub!\n",
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+    int i;
+
+    TRACE("iface %p, unordered_access_view %p, values {%u %u %u %u}.\n",
             iface, unordered_access_view, values[0], values[1], values[2], values[3]);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    call->cmd = DEFERRED_CLEARUNORDEREDACCESSVIEWUINT;
+    if (unordered_access_view) ID3D11UnorderedAccessView_AddRef(unordered_access_view);
+    call->clear_unordered_access_view_uint.unordered_access_view = unordered_access_view;
+    for (i = 0; i < 4; i++)
+        call->clear_unordered_access_view_uint.values[i] = values[i];
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_ClearUnorderedAccessViewFloat(ID3D11DeviceContext *iface,
         ID3D11UnorderedAccessView *unordered_access_view, const float values[4])
 {
-    FIXME("iface %p, unordered_access_view %p, values %s stub!\n",
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+    int i;
+
+    TRACE("iface %p, unordered_access_view %p, values %s.\n",
             iface, unordered_access_view, debug_float4(values));
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    call->cmd = DEFERRED_CLEARUNORDEREDACCESSVIEWFLOAT;
+    if (unordered_access_view) ID3D11UnorderedAccessView_AddRef(unordered_access_view);
+    call->clear_unordered_access_view_float.unordered_access_view = unordered_access_view;
+    for (i = 0; i < 4; i++)
+        call->clear_unordered_access_view_float.values[i] = values[i];
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_ClearDepthStencilView(ID3D11DeviceContext *iface,
@@ -4429,13 +5291,34 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_ClearDepthStencilView(ID3D1
 static void STDMETHODCALLTYPE d3d11_deferred_context_GenerateMips(ID3D11DeviceContext *iface,
         ID3D11ShaderResourceView *view)
 {
-    FIXME("iface %p, view %p stub!\n", iface, view);
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, view %p.\n", iface, view);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    call->cmd = DEFERRED_GENERATEMIPS;
+    if (view) ID3D11ShaderResourceView_AddRef(view);
+    call->generate_mips_info.view = view;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_SetResourceMinLOD(ID3D11DeviceContext *iface,
         ID3D11Resource *resource, FLOAT min_lod)
 {
-    FIXME("iface %p, resource %p, min_lod %f stub!\n", iface, resource, min_lod);
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, resource %p, min_lod %f.\n", iface, resource, min_lod);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    call->cmd = DEFERRED_SETRESOURCEMINLOD;
+    if (resource) ID3D11Resource_AddRef(resource);
+    call->set_resource_min_lod_info.resource = resource;
+    call->set_resource_min_lod_info.min_lod = min_lod;
 }
 
 static FLOAT STDMETHODCALLTYPE d3d11_deferred_context_GetResourceMinLOD(ID3D11DeviceContext *iface,
@@ -4451,10 +5334,26 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_ResolveSubresource(ID3D11De
         ID3D11Resource *src_resource, UINT src_subresource_idx,
         DXGI_FORMAT format)
 {
-    FIXME("iface %p, dst_resource %p, dst_subresource_idx %u, src_resource %p, src_subresource_idx %u, "
-            "format %s stub!\n",
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, dst_resource %p, dst_subresource_idx %u, src_resource %p, src_subresource_idx %u, "
+            "format %s.\n",
             iface, dst_resource, dst_subresource_idx, src_resource, src_subresource_idx,
             debug_dxgi_format(format));
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    if (dst_resource) ID3D11Resource_AddRef(dst_resource);
+    if (src_resource) ID3D11Resource_AddRef(src_resource);
+
+    call->cmd = DEFERRED_RESOLVESUBRESOURCE;
+    call->resolve_subresource_info.dst_resource = dst_resource;
+    call->resolve_subresource_info.dst_subresource_idx = dst_subresource_idx;
+    call->resolve_subresource_info.src_resource = src_resource;
+    call->resolve_subresource_info.src_subresource_idx = src_subresource_idx;
+    call->resolve_subresource_info.format = format;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_ExecuteCommandList(ID3D11DeviceContext *iface,
@@ -4591,12 +5490,13 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_CSSetUnorderedAccessViews(I
     call->unordered_view.start_slot = start_slot;
     call->unordered_view.num_views = view_count;
     call->unordered_view.views = (void *)(call + 1);
-    call->unordered_view.initial_counts = (void *)&call->unordered_view.views[view_count];
+    call->unordered_view.initial_counts = initial_counts ?
+        (void *)&call->unordered_view.views[view_count] : NULL;
     for (i = 0; i < view_count; i++)
     {
         if (views[i]) ID3D11UnorderedAccessView_AddRef(views[i]);
         call->unordered_view.views[i] = views[i];
-        call->unordered_view.initial_counts[i] = initial_counts[i];
+        if (initial_counts) call->unordered_view.initial_counts[i] = initial_counts[i];
     }
 }
 
@@ -6633,7 +7533,17 @@ static void STDMETHODCALLTYPE d3d10_device_ClearDepthStencilView(ID3D10Device1 *
 static void STDMETHODCALLTYPE d3d10_device_GenerateMips(ID3D10Device1 *iface,
         ID3D10ShaderResourceView *shader_resource_view)
 {
-    FIXME("iface %p, shader_resource_view %p stub!\n", iface, shader_resource_view);
+    struct d3d_device *device = impl_from_ID3D10Device(iface);
+    struct d3d_shader_resource_view *view = unsafe_impl_from_ID3D10ShaderResourceView(shader_resource_view);
+
+    TRACE("iface %p, shader_resource_view %p.\n", iface, shader_resource_view);
+
+    if (!view)
+        return;
+
+    wined3d_mutex_lock();
+    wined3d_device_generate_mips_view(device->wined3d_device, view->wined3d_view);
+    wined3d_mutex_unlock();
 }
 
 static void STDMETHODCALLTYPE d3d10_device_ResolveSubresource(ID3D10Device1 *iface,

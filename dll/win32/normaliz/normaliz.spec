@@ -1,5 +1,0 @@
-@ stdcall NormalizeString(long wstr long wstr long)
-@ stdcall IsNormalizedString(long wstr long)
-@ stdcall IdnToAscii(long wstr long wstr long)
-@ stdcall IdnToNameprepUnicode(long wstr long wstr long)
-@ stdcall IdnToUnicode(long wstr long wstr long)

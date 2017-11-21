@@ -1,7 +1,7 @@
 /*
  * PROJECT:          ReactOS Win32 Subsystem
  * LICENSE:          GPL - See COPYING in the top level directory
- * FILE:             subsystems/win32/win32k/ntddraw/dxeng.c
+ * FILE:             win32ss/reactx/ntddraw/dxeng.c
  * PURPOSE:          Implementation of DxEng functions
  * PROGRAMMERS:      Magnus Olsen (magnus@greatlord.com)
  */
@@ -12,7 +12,7 @@
 HSEMAPHORE  ghsemShareDevLock = NULL;
 
 ULONG gcEngFuncs = DXENG_INDEX_DxEngLoadImage + 1;
-DRVFN gaEngFuncs [] =
+DRVFN gaEngFuncs[] =
 {
     {0, (PFN) NULL},
     {DXENG_INDEX_DxEngNUIsTermSrv, (PFN)DxEngNUIsTermSrv},
@@ -75,7 +75,7 @@ DRVFN gaEngFuncs [] =
 *--*/
 ULONG
 APIENTRY
-DxEngDispUniq()
+DxEngDispUniq(VOID)
 {
     DPRINT1("ReactX Calling : DxEngDispUniq\n");
     return GdiHandleTable->flDeviceUniq;
@@ -176,11 +176,11 @@ DxEngUnlockDC(PDC pDC)
 *--*/
 BOOLEAN
 APIENTRY
-DxEngLockShareSem()
+DxEngLockShareSem(VOID)
 {
     DPRINT1("ReactX Calling : DxEngLockShareSem\n");
     if(!ghsemShareDevLock) ghsemShareDevLock = EngCreateSemaphore(); // Hax, should be in dllmain.c
-    IntGdiAcquireSemaphore(ghsemShareDevLock);
+    EngAcquireSemaphore(ghsemShareDevLock);
     return TRUE;
 }
 
@@ -199,10 +199,10 @@ DxEngLockShareSem()
 *--*/
 BOOLEAN
 APIENTRY
-DxEngUnlockShareSem()
+DxEngUnlockShareSem(VOID)
 {
     DPRINT1("ReactX Calling : DxEngUnlockShareSem\n");
-    IntGdiReleaseSemaphore(ghsemShareDevLock);
+    EngReleaseSemaphore(ghsemShareDevLock);
     return TRUE;
 }
 
@@ -249,7 +249,7 @@ DxEngSetDeviceGammaRamp(HDEV hPDev, PGAMMARAMP Ramp, BOOL Test)
 * The following typs are supported
 * Type                                            Purpose
 * DxEGShDevData_Surface      Retrieve pointer to Surface handle.
-* DxEGShDevData_hSpooler     See if the device is a spooler driver.
+* DxEGShDevData_hSpooler     Device object of graphics driver.
 * DxEGShDevData_DitherFmt    Retrieve the device iDitherFormat
 * DxEGShDevData_FxCaps       Retrieve the device flGraphicsCaps
 * DxEGShDevData_FxCaps2      Retrieve the device flGraphicsCaps2
@@ -297,7 +297,7 @@ DxEngGetHdevData(HDEV hDev,
         break;
       case DxEGShDevData_hSpooler:
         DPRINT1("requested DXEGSHDEVDATA DxEGShDevData_hSpooler\n");
-        retVal = 0; // (DWORD_PTR) PDev->hSpooler; // If the device is a spooler driver.
+        retVal = (DWORD_PTR) PDev->hSpooler;
         break;
       case DxEGShDevData_DitherFmt:
         DPRINT1("requested DXEGSHDEVDATA DxEGShDevData_DitherFmt\n");
@@ -356,9 +356,8 @@ DxEngGetHdevData(HDEV hDev,
         retVal = (DWORD_PTR) PDev->gdiinfo.flRaster & RC_PALETTE;
         break;
       case DxEGShDevData_ldev:
-          DPRINT1("DxEGShDevData_ldev not supported yet\n");
-      // ATM we do not support the Loader Device driver structure.
-//        retVal = (DWORD) PDev->pldev;
+        DPRINT1("requested DXEGSHDEVDATA DxEGShDevData_ldev\n");
+        retVal = (DWORD) PDev->pldev;
         break;
       case DxEGShDevData_GDev:
         DPRINT1("requested DXEGSHDEVDATA DxEGShDevData_GDev\n");
@@ -498,7 +497,7 @@ DxEngGetDCState(HDC hDC,
 *--*/
 BOOLEAN
 APIENTRY
-DxEngIncDispUniq()
+DxEngIncDispUniq(VOID)
 {
     DPRINT1("ReactX Calling : DxEngIncDispUniq \n");
 
@@ -596,7 +595,7 @@ DxEngReferenceHdev(HDEV hDev)
 /* Notes: Check if terminal server got connections or not */
 BOOLEAN
 APIENTRY
-DxEngNUIsTermSrv()
+DxEngNUIsTermSrv(VOID)
 {
     /* FIXME: ReactOS does not suport terminal server yet, we can not check if we got connections or not */
     UNIMPLEMENTED;
@@ -611,7 +610,7 @@ DxEngNUIsTermSrv()
    (redraws current desktop) */
 BOOLEAN
 APIENTRY
-DxEngRedrawDesktop()
+DxEngRedrawDesktop(VOID)
 {
     UserRedrawDesktop();
     return TRUE;
@@ -626,7 +625,7 @@ ULONG gulVisRgnUniqueness; // Increase count everytime client region is updated.
 /* Notes: returns the VisRgnUniq counter for win32k */
 ULONG
 APIENTRY
-DxEngVisRgnUniq()
+DxEngVisRgnUniq(VOID)
 {
     DPRINT1("ReactX Calling : DxEngVisRgnUniq \n");
 
@@ -659,7 +658,7 @@ DxEngCreateMemoryDC(HDEV hDev)
 /************************************************************************/
 /* DxEngScreenAccessCheck                                               */
 /************************************************************************/
-DWORD APIENTRY DxEngScreenAccessCheck()
+DWORD APIENTRY DxEngScreenAccessCheck(VOID)
 {
     UNIMPLEMENTED;
 

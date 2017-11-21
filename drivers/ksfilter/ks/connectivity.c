@@ -73,6 +73,7 @@ KspValidateConnectRequest(
     ULONG Count;
     BOOLEAN Found;
     PKSPIN_DESCRIPTOR Descriptor;
+    UNICODE_STRING GuidString2;
 
     /* did the caller miss the connect parameter */
     if (!Connect)
@@ -93,7 +94,10 @@ KspValidateConnectRequest(
 
     /* is pin id out of bounds */
     if (ConnectDetails->PinId >= DescriptorsCount)
+    {
+        FreeItem(ConnectDetails);
         return STATUS_INVALID_PARAMETER;
+    }
 
     if (DescriptorSize == sizeof(KSPIN_DESCRIPTOR))
     {
@@ -124,14 +128,16 @@ KspValidateConnectRequest(
     /* now check the interface */
     Found = FALSE;
     Index = 0;
+    RtlStringFromGUID(&ConnectDetails->Interface.Set, &GuidString2);
     do
     {
-        UNICODE_STRING GuidString, GuidString2;
+        UNICODE_STRING GuidString;
         RtlStringFromGUID(&Interface[Index].Set, &GuidString);
-        RtlStringFromGUID(&ConnectDetails->Interface.Set, &GuidString2);
 
         DPRINT("Driver Interface %S Id %u\n", GuidString.Buffer, Interface[Index].Id);
         DPRINT("Connect Interface %S Id %u\n", GuidString2.Buffer, ConnectDetails->Interface.Id);
+
+        RtlFreeUnicodeString(&GuidString);
 
         if (IsEqualGUIDAligned(&Interface[Index].Set, &ConnectDetails->Interface.Set) &&
                                Interface[Index].Id == ConnectDetails->Interface.Id)
@@ -143,10 +149,12 @@ KspValidateConnectRequest(
         /* iterate to next interface */
         Index++;
     }while(Index < Count);
+    RtlFreeUnicodeString(&GuidString2);
 
     if (!Found)
     {
         /* pin doesnt support this interface */
+        FreeItem(ConnectDetails);
         return STATUS_NO_MATCH;
     }
 
@@ -167,15 +175,16 @@ KspValidateConnectRequest(
     /* now check the interface */
     Found = FALSE;
     Index = 0;
+    RtlStringFromGUID(&ConnectDetails->Medium.Set, &GuidString2);
     do
     {
-        UNICODE_STRING GuidString, GuidString2;
+        UNICODE_STRING GuidString;
         RtlStringFromGUID(&Medium[Index].Set, &GuidString);
-        RtlStringFromGUID(&ConnectDetails->Medium.Set, &GuidString2);
 
         DPRINT("Driver Medium %S Id %u\n", GuidString.Buffer, Medium[Index].Id);
         DPRINT("Connect Medium %S Id %u\n", GuidString2.Buffer, ConnectDetails->Medium.Id);
 
+        RtlFreeUnicodeString(&GuidString);
 
         if (IsEqualGUIDAligned(&Medium[Index].Set, &ConnectDetails->Medium.Set) &&
                                Medium[Index].Id == ConnectDetails->Medium.Id)
@@ -185,15 +194,15 @@ KspValidateConnectRequest(
             break;
         }
 
-
-
         /* iterate to next medium */
         Index++;
     }while(Index < Count);
+    RtlFreeUnicodeString(&GuidString2);
 
     if (!Found)
     {
         /* pin doesnt support this medium */
+        FreeItem(ConnectDetails);
         return STATUS_NO_MATCH;
     }
 
@@ -350,6 +359,13 @@ KspPinPropertyHandler(
             return STATUS_INVALID_PARAMETER;
         }
     }
+    else
+    {
+        (*(PULONG)Buffer) = DescriptorsCount;
+        Irp->IoStatus.Information = sizeof(ULONG);
+        return STATUS_SUCCESS;
+    }
+
 
     if (DescriptorSize == sizeof(KSPIN_DESCRIPTOR))
     {
@@ -364,11 +380,6 @@ KspPinPropertyHandler(
 
     switch(Property->Id)
     {
-        case KSPROPERTY_PIN_CTYPES:
-            (*(PULONG)Buffer) = DescriptorsCount;
-            Irp->IoStatus.Information = sizeof(ULONG);
-            Status = STATUS_SUCCESS;
-            break;
         case KSPROPERTY_PIN_DATAFLOW:
 
             Size = sizeof(KSPIN_DATAFLOW);
@@ -577,10 +588,10 @@ KspPinPropertyHandler(
             }
 
             /* copy result */
-            RtlMoveMemory(Irp->UserBuffer, &KeyInfo->Data, KeyInfo->DataLength);
+            RtlMoveMemory(Irp->AssociatedIrp.SystemBuffer, &KeyInfo->Data, KeyInfo->DataLength);
 
             /* null terminate name */
-            ((LPWSTR)Irp->UserBuffer)[KeyInfo->DataLength / sizeof(WCHAR)] = L'\0';
+            ((LPWSTR)Irp->AssociatedIrp.SystemBuffer)[KeyInfo->DataLength / sizeof(WCHAR)] = L'\0';
 
             /* free key info */
             FreeItem(KeyInfo);
@@ -595,7 +606,7 @@ KspPinPropertyHandler(
             }
             if (IoStack->Parameters.DeviceIoControl.OutputBufferLength != sizeof(KSDATAFORMAT_WAVEFORMATEX))
             {
-                UNIMPLEMENTED
+                UNIMPLEMENTED;
                 Status = STATUS_NOT_IMPLEMENTED;
                 Irp->IoStatus.Information = 0;
                 break;
@@ -613,7 +624,7 @@ KspPinPropertyHandler(
             {
                 if (WaveFormatOut[Index]->DataRange.FormatSize != sizeof(KSDATARANGE_AUDIO))
                 {
-                    UNIMPLEMENTED
+                    UNIMPLEMENTED;
                     continue;
                 }
 

@@ -7,7 +7,7 @@
  *        started.
  *
  *    16 Jul 1998 (John P Price)
- *        Seperated commands into individual files.
+ *        Separated commands into individual files.
  *
  *    27-Jul-1998 (John P Price <linux-guru@gcfl.net>)
  *        added config.h include
@@ -85,7 +85,7 @@ INT cmd_goto (LPTSTR param)
         /* Strip out any trailing spaces or control chars */
         tmp = textline + _tcslen (textline) - 1;
 
-        while (_istcntrl (*tmp) || _istspace (*tmp) ||  (*tmp == _T(':')))
+        while (tmp > textline && (_istcntrl (*tmp) || _istspace (*tmp) ||  (*tmp == _T(':'))))
             tmp--;
         *(tmp + 1) = _T('\0');
 

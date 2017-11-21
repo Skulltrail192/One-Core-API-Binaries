@@ -228,7 +228,8 @@ static void append_multi_sz_value( HKEY hkey, const WCHAR *value, const WCHAR *s
     if (RegQueryValueExW( hkey, value, NULL, &type, NULL, &size )) return;
     if (type != REG_MULTI_SZ) return;
 
-    if (!(buffer = HeapAlloc( GetProcessHeap(), 0, (size + str_size) * sizeof(WCHAR) ))) return;
+    size = size + str_size * sizeof(WCHAR) ;
+    if (!(buffer = HeapAlloc( GetProcessHeap(), 0, size))) return;
     if (RegQueryValueExW( hkey, value, NULL, NULL, (BYTE *)buffer, &size )) goto done;
 
     /* compare each string against all the existing ones */
@@ -244,7 +245,7 @@ static void append_multi_sz_value( HKEY hkey, const WCHAR *value, const WCHAR *s
         {
             memcpy( p, strings, len * sizeof(WCHAR) );
             p[len] = 0;
-            total += len;
+            total += len * sizeof(WCHAR);
         }
         strings += len;
     }
@@ -271,7 +272,7 @@ static void delete_multi_sz_value( HKEY hkey, const WCHAR *value, const WCHAR *s
     if (RegQueryValueExW( hkey, value, NULL, &type, NULL, &size )) return;
     if (type != REG_MULTI_SZ) return;
     /* allocate double the size, one for value before and one for after */
-    if (!(buffer = HeapAlloc( GetProcessHeap(), 0, size * 2 * sizeof(WCHAR) ))) return;
+    if (!(buffer = HeapAlloc( GetProcessHeap(), 0, size * 2))) return;
     if (RegQueryValueExW( hkey, value, NULL, NULL, (BYTE *)buffer, &size )) goto done;
     src = buffer;
     dst = buffer + size;
@@ -1079,7 +1080,9 @@ profile_items_callback(
             hr = IShellLinkW_QueryInterface(psl, &IID_IPersistFile, (LPVOID*)&ppf);
             if (SUCCEEDED(hr))
             {
-                Required = (MAX_PATH + wcslen(LinkSubDir) + 1 + wcslen(LinkName)) * sizeof(WCHAR);
+                Required = (MAX_PATH + 1 +
+                           ((LinkSubDir != NULL) ? wcslen(LinkSubDir) : 0) +
+                           ((LinkName != NULL) ? wcslen(LinkName) : 0)) * sizeof(WCHAR);
                 FullLinkName = MyMalloc(Required);
                 if (!FullLinkName)
                     hr = E_OUTOFMEMORY;
@@ -1457,25 +1460,25 @@ BOOL WINAPI SetupInstallFromInfSectionW( HWND owner, HINF hinf, PCWSTR section, 
  */
 void WINAPI InstallHinfSectionW( HWND hwnd, HINSTANCE handle, LPCWSTR cmdline, INT show )
 {
+    BOOL ret = FALSE;
     WCHAR *s, *path, section[MAX_PATH];
     void *callback_context = NULL;
     DWORD SectionNameLength;
     UINT mode;
     HINF hinf = INVALID_HANDLE_VALUE;
     BOOL bRebootRequired = FALSE;
-    BOOL ret;
 
     TRACE("hwnd %p, handle %p, cmdline %s\n", hwnd, handle, debugstr_w(cmdline));
 
     lstrcpynW( section, cmdline, MAX_PATH );
 
-    if (!(s = strchrW( section, ' ' ))) return;
+    if (!(s = strchrW( section, ' ' ))) goto cleanup;
     *s++ = 0;
     while (*s == ' ') s++;
     mode = atoiW( s );
 
     /* quoted paths are not allowed on native, the rest of the command line is taken as the path */
-    if (!(s = strchrW( s, ' ' ))) return;
+    if (!(s = strchrW( s, ' ' ))) goto cleanup;
     while (*s == ' ') s++;
     path = s;
 
@@ -1574,6 +1577,14 @@ cleanup:
         SetupTermDefaultQueueCallback( callback_context );
     if ( hinf != INVALID_HANDLE_VALUE )
         SetupCloseInfFile( hinf );
+
+#ifdef CORE_11689_IS_FIXED
+    // TODO: Localize the error string.
+    if (!ret && !(GlobalSetupFlags & PSPGF_NONINTERACTIVE))
+    {
+        MessageBoxW(hwnd, section, L"setupapi.dll: An error happened...", MB_ICONERROR | MB_OK);
+    }
+#endif
 }
 
 
@@ -1722,11 +1733,11 @@ static VOID FixupServiceBinaryPath(
     IN OUT LPWSTR *ServiceBinary)
 {
     LPWSTR Buffer;
-    WCHAR ReactosDir[MAX_PATH];
+    WCHAR ReactOSDir[MAX_PATH];
     DWORD RosDirLength, ServiceLength, Win32Length;
 
-    GetWindowsDirectoryW(ReactosDir, MAX_PATH);
-    RosDirLength = strlenW(ReactosDir);
+    GetWindowsDirectoryW(ReactOSDir, MAX_PATH);
+    RosDirLength = strlenW(ReactOSDir);
     ServiceLength = strlenW(*ServiceBinary);
 
     /* Check and fix two things:
@@ -1737,7 +1748,7 @@ static VOID FixupServiceBinaryPath(
     if (ServiceLength < RosDirLength)
         return;
 
-    if (!wcsnicmp(*ServiceBinary, ReactosDir, RosDirLength))
+    if (!wcsnicmp(*ServiceBinary, ReactOSDir, RosDirLength))
     {
         /* Yes, the first part is the C:\ReactOS\, just skip it */
         MoveMemory(*ServiceBinary, *ServiceBinary + RosDirLength + 1,
@@ -1746,10 +1757,8 @@ static VOID FixupServiceBinaryPath(
         /* Handle Win32-services differently */
         if (ServiceType & SERVICE_WIN32)
         {
-            Win32Length = (ServiceLength -
-                RosDirLength - 1 + 13) * sizeof(WCHAR);
-            /* -1 to not count the separator after C:\ReactOS
-               wcslen(L"%SystemRoot%\\") = 13*sizeof(wchar_t) */
+            Win32Length = (ServiceLength - RosDirLength) * sizeof(WCHAR)
+                        - sizeof(L'\\') + sizeof(L"%SystemRoot%\\");
             Buffer = MyMalloc(Win32Length);
 
             wcscpy(Buffer, L"%SystemRoot%\\");
@@ -1790,11 +1799,20 @@ static BOOL InstallOneService(
     BOOL useTag;
 
     if (!GetIntField(hInf, ServiceSection, ServiceTypeKey, &ServiceType))
+    {
+        SetLastError( ERROR_BAD_SERVICE_INSTALLSECT );
         goto cleanup;
+    }
     if (!GetIntField(hInf, ServiceSection, StartTypeKey, &StartType))
+    {
+        SetLastError( ERROR_BAD_SERVICE_INSTALLSECT );
         goto cleanup;
+    }
     if (!GetIntField(hInf, ServiceSection, ErrorControlKey, &ErrorControl))
+    {
+        SetLastError( ERROR_BAD_SERVICE_INSTALLSECT );
         goto cleanup;
+    }
     useTag = (ServiceType == SERVICE_BOOT_START || ServiceType == SERVICE_SYSTEM_START);
 
     hSCManager = OpenSCManagerW(NULL, SERVICES_ACTIVE_DATABASE, SC_MANAGER_CREATE_SERVICE);
@@ -1802,7 +1820,10 @@ static BOOL InstallOneService(
         goto cleanup;
 
     if (!GetLineText(hInf, ServiceSection, ServiceBinaryKey, &ServiceBinary))
+    {
+        SetLastError( ERROR_BAD_SERVICE_INSTALLSECT );
         goto cleanup;
+    }
 
     /* Adjust binary path according to the service type */
     FixupServiceBinaryPath(ServiceType, &ServiceBinary);
@@ -1985,7 +2006,7 @@ static BOOL InstallOneService(
         list ? list->HKLM : HKEY_LOCAL_MACHINE,
         REGSTR_PATH_SERVICES,
         0,
-        0,
+        READ_CONTROL,
         &hServicesKey);
     if (rc != ERROR_SUCCESS)
     {
@@ -2096,21 +2117,27 @@ BOOL WINAPI SetupInstallServicesFromInfSectionExW( HINF hinf, PCWSTR sectionname
             SERVICE_STATUS ServiceStatus;
             ret = ControlService(hService, SERVICE_CONTROL_STOP, &ServiceStatus);
             if (!ret && GetLastError() != ERROR_SERVICE_NOT_ACTIVE)
-                goto cleanup;
+                goto done;
             if (ServiceStatus.dwCurrentState != SERVICE_STOP_PENDING && ServiceStatus.dwCurrentState != SERVICE_STOPPED)
             {
                 SetLastError(ERROR_INSTALL_SERVICE_FAILURE);
-                goto cleanup;
+                goto done;
             }
 #endif
             flags &= ~SPSVCINST_STOPSERVICE;
+        }
+
+        if (!(ret = SetupFindFirstLineW( hinf, sectionname, NULL, &ContextService )))
+        {
+            SetLastError( ERROR_SECTION_NOT_FOUND );
+            goto done;
         }
 
         ret = SetupFindFirstLineW(hinf, sectionname, AddService, &ContextService);
         while (ret)
         {
             if (!GetStringField(&ContextService, 1, &ServiceName))
-                goto nextservice;
+                goto done;
 
             ret = SetupGetIntField(
                 &ContextService,
@@ -2123,20 +2150,19 @@ BOOL WINAPI SetupInstallServicesFromInfSectionExW( HINF hinf, PCWSTR sectionname
             }
 
             if (!GetStringField(&ContextService, 3, &ServiceSection))
-                goto nextservice;
+                goto done;
 
             ret = InstallOneService(list, hinf, ServiceSection, ServiceName, (ServiceFlags & ~SPSVCINST_ASSOCSERVICE) | flags);
             if (!ret)
-                goto nextservice;
+                goto done;
 
             if (ServiceFlags & SPSVCINST_ASSOCSERVICE)
             {
                 ret = SetupDiSetDeviceRegistryPropertyW(DeviceInfoSet, DeviceInfoData, SPDRP_SERVICE, (LPBYTE)ServiceName, (strlenW(ServiceName) + 1) * sizeof(WCHAR));
                 if (!ret)
-                    goto nextservice;
+                    goto done;
             }
 
-nextservice:
             HeapFree(GetProcessHeap(), 0, ServiceName);
             HeapFree(GetProcessHeap(), 0, ServiceSection);
             ServiceName = ServiceSection = NULL;
@@ -2149,7 +2175,7 @@ nextservice:
             SetLastError(ERROR_SUCCESS);
         ret = TRUE;
     }
-
+done:
     TRACE("Returning %d\n", ret);
     return ret;
 }
@@ -2212,7 +2238,7 @@ BOOL WINAPI SetupCopyOEMInfA(
             if (RequiredSize) *RequiredSize = size;
             goto cleanup;
         }
-            
+
         if (DestinationInfFileNameSize != 0)
         {
             if (WideCharToMultiByte(CP_ACP, 0, DestinationInfFileNameW, -1,

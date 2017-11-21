@@ -71,7 +71,7 @@ BOOLEAN NTAPI ServiceRoutine(
   NDIS_DbgPrint(MAX_TRACE, ("MiniportInitialize executing: %s\n", (Initializing ? "yes" : "no")));
 
   /* MiniportISR is always called for interrupts during MiniportInitialize */
-  if ((Initializing) || (NdisInterrupt->IsrRequested)) {
+  if ((Initializing) || (NdisInterrupt->IsrRequested) || (NdisInterrupt->SharedInterrupt)) {
       NDIS_DbgPrint(MAX_TRACE, ("Calling MiniportISR\n"));
       (*NdisMiniportBlock->DriverHandle->MiniportCharacteristics.ISRHandler)(
           &InterruptRecognized,
@@ -86,8 +86,9 @@ BOOLEAN NTAPI ServiceRoutine(
        InterruptRecognized = TRUE;
   }
 
-  /* MiniportHandleInterrupt is never called for an interrupt during MiniportInitialize */
-  if ((QueueMiniportHandleInterrupt) && (!Initializing))
+  /* TODO: Figure out if we should call this or not if Initializing is true. It appears
+   * that calling it fixes some NICs, but documentation is contradictory on it.  */
+  if (QueueMiniportHandleInterrupt)
   {
       NDIS_DbgPrint(MAX_TRACE, ("Queuing DPC.\n"));
       KeInsertQueueDpc(&NdisInterrupt->InterruptDpc, NULL, NULL);
@@ -190,7 +191,7 @@ IO_ALLOCATION_ACTION NTAPI NdisSubordinateMapRegisterCallback (
 /*
  * FUNCTION: Called back during reservation of map registers
  * ARGUMENTS:
- *     DeviceObject: Device object of the deivce setting up DMA
+ *     DeviceObject: Device object of the device setting up DMA
  *     Irp: Reserved; must be ignored
  *     MapRegisterBase: Map registers assigned for transfer
  *     Context: LOGICAL_ADAPTER object of the requesting miniport
@@ -220,7 +221,7 @@ IO_ALLOCATION_ACTION NTAPI NdisBusMasterMapRegisterCallback (
 /*
  * FUNCTION: Called back during reservation of map registers
  * ARGUMENTS:
- *     DeviceObject: Device object of the deivce setting up DMA
+ *     DeviceObject: Device object of the device setting up DMA
  *     Irp: Reserved; must be ignored
  *     MapRegisterBase: Map registers assigned for transfer
  *     Context: LOGICAL_ADAPTER object of the requesting miniport
@@ -594,7 +595,7 @@ NdisMStartBufferPhysicalMapping(
  * NOTES:
  *     - Must be called at IRQL <= DISPATCH_LEVEL
  *     - The basic idea:  call IoMapTransfer() in a loop as many times as it takes
- *       in order to map all of the virtual memory to physical memoroy readable
+ *       in order to map all of the virtual memory to physical memory readable
  *       by the device
  *     - The caller supplies storage for the physical address array.
  */
@@ -649,7 +650,7 @@ NdisMCompleteBufferPhysicalMapping(
  * ARGUMENTS:
  *     - MiniportAdapterHandle: handle originally input to MiniportInitialize
  *     - Buffer: NDIS_BUFFER to complete the mapping on
- *     - PhyscialMapRegister: the chosen map register
+ *     - PhysicalMapRegister: the chosen map register
  * NOTES:
  *     - May be called at IRQL <= DISPATCH_LEVEL
  */

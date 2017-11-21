@@ -606,7 +606,7 @@ CmpQueryKeyData(IN PHHIVE Hive,
                 }
 
                 /* Copy the class data */
-                NT_ASSERT(Length > Offset);
+                ASSERT(Length >= Offset);
                 RtlCopyMemory(Info->KeyFullInformation.Class,
                               ClassData,
                               min(Node->ClassLength, Length - Offset));
@@ -993,7 +993,7 @@ CmDeleteValueKey(IN PCM_KEY_CONTROL_BLOCK Kcb,
             goto Quickie;
         }
 
-        /* Ssanity checks */
+        /* Sanity checks */
         ASSERT(HvIsCellDirty(Hive, Parent->ValueList.List));
         ASSERT(HvIsCellDirty(Hive, ChildCell));
 
@@ -1543,13 +1543,18 @@ CmpQueryNameInformation(
 
     _SEH2_TRY
     {
-        *ResultLength = NeededLength + FIELD_OFFSET(KEY_NAME_INFORMATION, Name[0]);
+        *ResultLength = FIELD_OFFSET(KEY_NAME_INFORMATION, Name) + NeededLength;
+        if (Length < RTL_SIZEOF_THROUGH_FIELD(KEY_NAME_INFORMATION, NameLength))
+            _SEH2_YIELD(return STATUS_BUFFER_TOO_SMALL);
         if (Length < *ResultLength)
-            return STATUS_BUFFER_TOO_SMALL;
+        {
+            KeyNameInfo->NameLength = NeededLength;
+            _SEH2_YIELD(return STATUS_BUFFER_OVERFLOW);
+        }
     }
     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
     {
-        return _SEH2_GetExceptionCode();
+        _SEH2_YIELD(return _SEH2_GetExceptionCode());
     }
     _SEH2_END;
 
@@ -1592,7 +1597,7 @@ CmpQueryNameInformation(
     }
     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
     {
-        return _SEH2_GetExceptionCode();
+        _SEH2_YIELD(return _SEH2_GetExceptionCode());
     }
     _SEH2_END;
 
@@ -1632,69 +1637,88 @@ CmQueryKey(_In_ PCM_KEY_CONTROL_BLOCK Kcb,
         goto Quickie;
     }
 
-    /* Check what class we got */
-    switch (KeyInformationClass)
+    /* Data can be user-mode, use SEH */
+    _SEH2_TRY
     {
-        /* Typical information */
-        case KeyFullInformation:
-        case KeyBasicInformation:
-        case KeyNodeInformation:
-
-            /* Get the hive and parent */
-            Hive = Kcb->KeyHive;
-            Parent = (PCM_KEY_NODE)HvGetCell(Hive, Kcb->KeyCell);
-            ASSERT(Parent);
-
-            /* Track cell references */
-            if (!HvTrackCellRef(&CellReferences, Hive, Kcb->KeyCell))
+        /* Check what class we got */
+        switch (KeyInformationClass)
+        {
+            /* Typical information */
+            case KeyFullInformation:
+            case KeyBasicInformation:
+            case KeyNodeInformation:
             {
-                /* Not enough memory to track references */
-                Status = STATUS_INSUFFICIENT_RESOURCES;
-            }
-            else
-            {
-                /* Call the internal API */
-                Status = CmpQueryKeyData(Hive,
-                                         Parent,
-                                         KeyInformationClass,
-                                         KeyInformation,
-                                         Length,
-                                         ResultLength);
-            }
-            break;
+                /* Get the hive and parent */
+                Hive = Kcb->KeyHive;
+                Parent = (PCM_KEY_NODE)HvGetCell(Hive, Kcb->KeyCell);
+                ASSERT(Parent);
 
-        case KeyCachedInformation:
-            /* Call the internal API */
-            Status = CmpQueryKeyDataFromCache(Kcb,
-                                              KeyInformation,
-                                              Length,
-                                              ResultLength);
-            break;
-
-        case KeyFlagsInformation:
-            /* Call the internal API */
-            Status = CmpQueryFlagsInformation(Kcb,
-                                              KeyInformation,
-                                              Length,
-                                              ResultLength);
-            break;
-
-        case KeyNameInformation:
-            /* Call the internal API */
-            Status = CmpQueryNameInformation(Kcb,
+                /* Track cell references */
+                if (!HvTrackCellRef(&CellReferences, Hive, Kcb->KeyCell))
+                {
+                    /* Not enough memory to track references */
+                    Status = STATUS_INSUFFICIENT_RESOURCES;
+                }
+                else
+                {
+                    /* Call the internal API */
+                    Status = CmpQueryKeyData(Hive,
+                                             Parent,
+                                             KeyInformationClass,
                                              KeyInformation,
                                              Length,
                                              ResultLength);
-            break;
+                }
+                break;
+            }
 
-        /* Illegal classes */
-        default:
+            case KeyCachedInformation:
+            {
+                /* Call the internal API */
+                Status = CmpQueryKeyDataFromCache(Kcb,
+                                                  KeyInformation,
+                                                  Length,
+                                                  ResultLength);
+                break;
+            }
 
-            /* Print message and fail */
-            DPRINT1("Unsupported class: %d!\n", KeyInformationClass);
-            Status = STATUS_INVALID_INFO_CLASS;
-            break;
+            case KeyFlagsInformation:
+            {
+                /* Call the internal API */
+                Status = CmpQueryFlagsInformation(Kcb,
+                                                  KeyInformation,
+                                                  Length,
+                                                  ResultLength);
+                break;
+            }
+
+            case KeyNameInformation:
+            {
+                /* Call the internal API */
+                Status = CmpQueryNameInformation(Kcb,
+                                                 KeyInformation,
+                                                 Length,
+                                                 ResultLength);
+                break;
+            }
+
+            /* Illegal classes */
+            default:
+            {
+                /* Print message and fail */
+                DPRINT1("Unsupported class: %d!\n", KeyInformationClass);
+                Status = STATUS_INVALID_INFO_CLASS;
+                break;
+            }
+        }
     }
+    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+    {
+        /* Fail with exception code */
+        Status = _SEH2_GetExceptionCode();
+        _SEH2_YIELD(goto Quickie);
+    }
+    _SEH2_END;
 
 Quickie:
     /* Release references */
@@ -1962,7 +1986,7 @@ CmFlushKey(IN PCM_KEY_CONTROL_BLOCK Kcb,
         }
 
         /* Release the flush lock */
-        CmpUnlockHiveFlusher((PCMHIVE)Hive);
+        CmpUnlockHiveFlusher(CmHive);
     }
 
     /* Return the status */
@@ -2008,9 +2032,6 @@ CmLoadKey(IN POBJECT_ATTRIBUTES TargetKey,
     }
 
     /* Open the target key */
-#if 0
-    Status = ZwOpenKey(&KeyHandle, KEY_READ, TargetKey);
-#else
     RtlZeroMemory(&ParseContext, sizeof(ParseContext));
     ParseContext.CreateOperation = FALSE;
     Status = ObOpenObjectByName(TargetKey,
@@ -2020,7 +2041,6 @@ CmLoadKey(IN POBJECT_ATTRIBUTES TargetKey,
                                 KEY_READ,
                                 &ParseContext,
                                 &KeyHandle);
-#endif
     if (!NT_SUCCESS(Status)) KeyHandle = NULL;
 
     /* Open the hive */
@@ -2107,7 +2127,7 @@ CmLoadKey(IN POBJECT_ATTRIBUTES TargetKey,
     }
 
     /* Is this first profile load? */
-    if (!(CmpProfileLoaded) && !(CmpWasSetupBoot))
+    if (!CmpProfileLoaded && !CmpWasSetupBoot)
     {
         /* User is now logged on, set quotas */
         CmpProfileLoaded = TRUE;
@@ -2122,13 +2142,156 @@ CmLoadKey(IN POBJECT_ATTRIBUTES TargetKey,
     return Status;
 }
 
+static
+BOOLEAN
+NTAPI
+CmpUnlinkHiveFromMaster(IN PCMHIVE CmHive,
+                        IN HCELL_INDEX Cell)
+{
+    PCELL_DATA CellData;
+    HCELL_INDEX LinkCell;
+    NTSTATUS Status;
+
+    DPRINT("CmpUnlinkHiveFromMaster()\n");
+
+    /* Get the cell data */
+    CellData = HvGetCell(&CmHive->Hive, Cell);
+    if (CellData == NULL)
+        return FALSE;
+
+    /* Get the link cell and release the current cell */
+    LinkCell = CellData->u.KeyNode.Parent;
+    HvReleaseCell(&CmHive->Hive, Cell);
+
+    /* Remove the link cell from the master hive */
+    CmpLockHiveFlusherExclusive(CmiVolatileHive);
+    Status = CmpFreeKeyByCell((PHHIVE)CmiVolatileHive,
+                              LinkCell,
+                              TRUE);
+    CmpUnlockHiveFlusher(CmiVolatileHive);
+    if (!NT_SUCCESS(Status))
+    {
+        DPRINT1("CmpFreeKeyByCell() failed (Status 0x%08lx)\n", Status);
+        return FALSE;
+    }
+
+    /* Remove the hive from the list */
+    ExAcquirePushLockExclusive(&CmpHiveListHeadLock);
+    RemoveEntryList(&CmHive->HiveList);
+    ExReleasePushLock(&CmpHiveListHeadLock);
+
+    return TRUE;
+}
+
 NTSTATUS
 NTAPI
 CmUnloadKey(IN PCM_KEY_CONTROL_BLOCK Kcb,
             IN ULONG Flags)
 {
-    UNIMPLEMENTED;
-    return STATUS_NOT_IMPLEMENTED;
+    PHHIVE Hive;
+    PCMHIVE CmHive;
+    HCELL_INDEX Cell;
+
+    DPRINT("CmUnloadKey(%p, %lx)\n", Kcb, Flags);
+
+    /* Get the hive */
+    Hive = Kcb->KeyHive;
+    Cell = Kcb->KeyCell;
+    CmHive = (PCMHIVE)Hive;
+
+    /* Fail if the key is not a hive root key */
+    if (Cell != Hive->BaseBlock->RootCell)
+    {
+        DPRINT1("Key is not a hive root key!\n");
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    /* Fail if we try to unload the master hive */
+    if (CmHive == CmiVolatileHive)
+    {
+        DPRINT1("Do not try to unload the master hive!\n");
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    /* Mark this hive as being unloaded */
+    Hive->HiveFlags |= HIVE_IS_UNLOADING;
+
+    /* Search for any opened keys in this hive, and take an appropriate action */
+    if (Kcb->RefCount > 1)
+    {
+        if (Flags != REG_FORCE_UNLOAD)
+        {
+            if (CmCountOpenSubKeys(Kcb, FALSE) != 0)
+            {
+                /* There are open subkeys but we don't force hive unloading, fail */
+                Hive->HiveFlags &= ~HIVE_IS_UNLOADING;
+                return STATUS_CANNOT_DELETE;
+            }
+        }
+        else
+        {
+            DPRINT1("CmUnloadKey: Force unloading is UNIMPLEMENTED, expect dangling KCBs problems!\n");
+        }
+    }
+
+    /* Flush the hive */
+    CmFlushKey(Kcb, TRUE);
+
+    /* Unlink the hive from the master hive */
+    if (!CmpUnlinkHiveFromMaster(CmHive, Cell))
+    {
+        DPRINT("CmpUnlinkHiveFromMaster() failed!\n");
+
+        /* Remove the unloading flag and return failure */
+        Hive->HiveFlags &= ~HIVE_IS_UNLOADING;
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    /* Clean up information we have on the subkey */
+    CmpCleanUpSubKeyInfo(Kcb->ParentKcb);
+
+    /* Set the KCB in delete mode and remove it */
+    Kcb->Delete = TRUE;
+    CmpRemoveKeyControlBlock(Kcb);
+
+    if (Flags != REG_FORCE_UNLOAD)
+    {
+        /* Release the KCB locks */
+        CmpReleaseTwoKcbLockByKey(Kcb->ConvKey, Kcb->ParentKcb->ConvKey);
+
+        /* Release the hive loading lock */
+        ExReleasePushLockExclusive(&CmpLoadHiveLock);
+    }
+
+    /* Release hive lock */
+    CmpUnlockRegistry();
+
+    /* Close file handles */
+    CmpCloseHiveFiles(CmHive);
+
+    /* Remove the hive from the hive file list */
+    CmpRemoveFromHiveFileList(CmHive);
+
+    /* Destroy the security descriptor cache */
+    CmpDestroySecurityCache(CmHive);
+
+    /* Destroy the view list */
+    CmpDestroyHiveViewList(CmHive);
+
+    /* Delete the flusher lock */
+    ExDeleteResourceLite(CmHive->FlusherLock);
+    ExFreePoolWithTag(CmHive->FlusherLock, TAG_CMHIVE);
+
+    /* Delete the view lock */
+    ExFreePoolWithTag(CmHive->ViewLock, TAG_CMHIVE);
+
+    /* Free the hive storage */
+    HvFree(Hive);
+
+    /* Free the hive */
+    CmpFree(CmHive, TAG_CM);
+
+    return STATUS_SUCCESS;
 }
 
 ULONG
@@ -2148,7 +2311,7 @@ CmCountOpenSubKeys(IN PCM_KEY_CONTROL_BLOCK RootKcb,
     /* The root key is the only referenced key. There are no refereced sub keys. */
     if (RootKcb->RefCount == 1)
     {
-        DPRINT("open sub keys: 0\n");
+        DPRINT("Open sub keys: 0\n");
         return 0;
     }
 
@@ -2180,15 +2343,14 @@ CmCountOpenSubKeys(IN PCM_KEY_CONTROL_BLOCK RootKcb,
                 /* Check whether the parent is the root key */
                 if (ParentKcb == RootKcb)
                 {
-                    DPRINT("Found a sub key \n");
-                    DPRINT("RefCount = %u\n", CachedKcb->RefCount);
+                    DPRINT("Found a sub key, RefCount = %u\n", CachedKcb->RefCount);
 
                     if (CachedKcb->RefCount > 0)
                     {
                         /* Count the current hash entry if it is in use */
                         SubKeys++;
                     }
-                    else if ((CachedKcb->RefCount == 0) && (RemoveEmptyCacheEntries == TRUE))
+                    else if ((CachedKcb->RefCount == 0) && (RemoveEmptyCacheEntries != FALSE))
                     {
                         /* Remove the current key from the delayed close list */
                         CmpRemoveFromDelayedClose(CachedKcb);
@@ -2208,54 +2370,12 @@ CmCountOpenSubKeys(IN PCM_KEY_CONTROL_BLOCK RootKcb,
         }
     }
 
-    DPRINT("open sub keys: %u\n", SubKeys);
-
+    DPRINT("Open sub keys: %u\n", SubKeys);
     return SubKeys;
-}
-
-HCELL_INDEX
-NTAPI
-CmpCopyCell(IN PHHIVE SourceHive,
-            IN HCELL_INDEX SourceCell,
-            IN PHHIVE DestinationHive,
-            IN HSTORAGE_TYPE StorageType)
-{
-    PCELL_DATA SourceData;
-    PCELL_DATA DestinationData = NULL;
-    HCELL_INDEX DestinationCell = HCELL_NIL;
-    LONG DataSize;
-    PAGED_CODE();
-
-    /* Get the data and the size of the source cell */
-    SourceData = HvGetCell(SourceHive, SourceCell);
-    DataSize = HvGetCellSize(SourceHive, SourceData);
-
-    /* Allocate a new cell in the destination hive */
-    DestinationCell = HvAllocateCell(DestinationHive,
-                                     DataSize,
-                                     StorageType,
-                                     HCELL_NIL);
-    if (DestinationCell == HCELL_NIL) goto Cleanup;
-
-    /* Get the data of the destination cell */
-    DestinationData = HvGetCell(DestinationHive, DestinationCell);
-
-    /* Copy the data from the source cell to the destination cell */
-    RtlMoveMemory(DestinationData, SourceData, DataSize);
-
-Cleanup:
-
-    /* Release the cells */
-    if (SourceData) HvReleaseCell(SourceHive, SourceCell);
-    if (DestinationData) HvReleaseCell(DestinationHive, DestinationCell);
-
-    /* Return the destination cell index */
-    return DestinationCell;
 }
 
 static
 NTSTATUS
-NTAPI
 CmpDeepCopyKeyInternal(IN PHHIVE SourceHive,
                        IN HCELL_INDEX SrcKeyCell,
                        IN PHHIVE DestinationHive,
@@ -2266,8 +2386,11 @@ CmpDeepCopyKeyInternal(IN PHHIVE SourceHive,
     NTSTATUS Status;
     PCM_KEY_NODE SrcNode;
     PCM_KEY_NODE DestNode = NULL;
-    HCELL_INDEX NewKeyCell, SubKey, NewSubKey;
+    HCELL_INDEX NewKeyCell = HCELL_NIL;
+    HCELL_INDEX NewClassCell = HCELL_NIL, NewSecCell = HCELL_NIL;
+    HCELL_INDEX SubKey, NewSubKey;
     ULONG Index, SubKeyCount;
+
     PAGED_CODE();
 
     DPRINT("CmpDeepCopyKeyInternal(0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X, 0x%08X)\n",
@@ -2280,6 +2403,7 @@ CmpDeepCopyKeyInternal(IN PHHIVE SourceHive,
 
     /* Get the source cell node */
     SrcNode = HvGetCell(SourceHive, SrcKeyCell);
+    ASSERT(SrcNode);
 
     /* Sanity check */
     ASSERT(SrcNode->Signature == CM_KEY_NODE_SIGNATURE);
@@ -2298,12 +2422,55 @@ CmpDeepCopyKeyInternal(IN PHHIVE SourceHive,
 
     /* Get the destination cell node */
     DestNode = HvGetCell(DestinationHive, NewKeyCell);
+    ASSERT(DestNode);
 
-    /* Set the parent */
+    /* Set the parent and copy the flags */
     DestNode->Parent = Parent;
+    DestNode->Flags  = (SrcNode->Flags & KEY_COMP_NAME); // Keep only the single permanent flag
+    if (Parent == HCELL_NIL)
+    {
+        /* This is the new root node */
+        DestNode->Flags |= KEY_HIVE_ENTRY | KEY_NO_DELETE;
+    }
 
-    // TODO: These should also be copied!
-    DestNode->Security = DestNode->Class = HCELL_NIL;
+    /* Copy the class cell */
+    if (SrcNode->ClassLength > 0)
+    {
+        NewClassCell = CmpCopyCell(SourceHive,
+                                   SrcNode->Class,
+                                   DestinationHive,
+                                   StorageType);
+        if (NewClassCell == HCELL_NIL)
+        {
+            /* Not enough storage space */
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+            goto Cleanup;
+        }
+
+        DestNode->Class = NewClassCell;
+        DestNode->ClassLength = SrcNode->ClassLength;
+    }
+    else
+    {
+        DestNode->Class = HCELL_NIL;
+        DestNode->ClassLength = 0;
+    }
+
+    /* Copy the security cell (FIXME: HACKish poor-man version) */
+    if (SrcNode->Security != HCELL_NIL)
+    {
+        NewSecCell = CmpCopyCell(SourceHive,
+                                 SrcNode->Security,
+                                 DestinationHive,
+                                 StorageType);
+        if (NewSecCell == HCELL_NIL)
+        {
+            /* Not enough storage space */
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+            goto Cleanup;
+        }
+    }
+    DestNode->Security = NewSecCell;
 
     /* Copy the value list */
     Status = CmpCopyKeyValueList(SourceHive,
@@ -2311,7 +2478,8 @@ CmpDeepCopyKeyInternal(IN PHHIVE SourceHive,
                                  DestinationHive,
                                  &DestNode->ValueList,
                                  StorageType);
-    if (!NT_SUCCESS(Status)) goto Cleanup;
+    if (!NT_SUCCESS(Status))
+        goto Cleanup;
 
     /* Clear the invalid subkey index */
     DestNode->SubKeyCounts[Stable] = DestNode->SubKeyCounts[Volatile] = 0;
@@ -2328,34 +2496,57 @@ CmpDeepCopyKeyInternal(IN PHHIVE SourceHive,
         ASSERT(SubKey != HCELL_NIL);
 
         /* Call the function recursively for the subkey */
+        //
+        // FIXME: Danger!! Kernel stack exhaustion!!
+        //
         Status = CmpDeepCopyKeyInternal(SourceHive,
                                         SubKey,
                                         DestinationHive,
                                         NewKeyCell,
                                         StorageType,
                                         &NewSubKey);
-        if (!NT_SUCCESS(Status)) goto Cleanup;
+        if (!NT_SUCCESS(Status))
+            goto Cleanup;
 
         /* Add the copy of the subkey to the new key */
         if (!CmpAddSubKey(DestinationHive,
                           NewKeyCell,
                           NewSubKey))
         {
+            /* Cleanup allocated cell */
+            HvFreeCell(DestinationHive, NewSubKey);
+
             Status = STATUS_INSUFFICIENT_RESOURCES;
             goto Cleanup;
         }
     }
 
-    /* Set the cell index if requested and return success */
-    if (DestKeyCell) *DestKeyCell = NewKeyCell;
+    /* Set success */
     Status = STATUS_SUCCESS;
 
 Cleanup:
 
     /* Release the cells */
-    if (SrcNode) HvReleaseCell(SourceHive, SrcKeyCell);
     if (DestNode) HvReleaseCell(DestinationHive, NewKeyCell);
+    if (SrcNode) HvReleaseCell(SourceHive, SrcKeyCell);
 
+    /* Cleanup allocated cells in case of failure */
+    if (!NT_SUCCESS(Status))
+    {
+        if (NewSecCell != HCELL_NIL)
+            HvFreeCell(DestinationHive, NewSecCell);
+
+        if (NewClassCell != HCELL_NIL)
+            HvFreeCell(DestinationHive, NewClassCell);
+
+        if (NewKeyCell != HCELL_NIL)
+            HvFreeCell(DestinationHive, NewKeyCell);
+
+        NewKeyCell = HCELL_NIL;
+    }
+
+    /* Set the cell index if requested and return status */
+    if (DestKeyCell) *DestKeyCell = NewKeyCell;
     return Status;
 }
 
@@ -2440,6 +2631,82 @@ Cleanup:
 
     /* Release the locks */
     CmpReleaseKcbLock(Kcb);
+    CmpUnlockRegistry();
+
+    return Status;
+}
+
+NTSTATUS
+NTAPI
+CmSaveMergedKeys(IN PCM_KEY_CONTROL_BLOCK HighKcb,
+                 IN PCM_KEY_CONTROL_BLOCK LowKcb,
+                 IN HANDLE FileHandle)
+{
+    PCMHIVE KeyHive = NULL;
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    PAGED_CODE();
+
+    DPRINT("CmSaveKey(%p, %p, %p)\n", HighKcb, LowKcb, FileHandle);
+
+    /* Lock the registry and the KCBs */
+    CmpLockRegistry();
+    CmpAcquireKcbLockShared(HighKcb);
+    CmpAcquireKcbLockShared(LowKcb);
+
+    if (LowKcb->Delete || HighKcb->Delete)
+    {
+        /* The source key has been deleted, do nothing */
+        Status = STATUS_KEY_DELETED;
+        goto done;
+    }
+
+    /* Create a new hive that will hold the key */
+    Status = CmpInitializeHive(&KeyHive,
+                               HINIT_CREATE,
+                               HIVE_VOLATILE,
+                               HFILE_TYPE_PRIMARY,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL,
+                               0);
+    if (!NT_SUCCESS(Status))
+        goto done;
+
+    /* Copy the low precedence key recursively into the new hive */
+    Status = CmpDeepCopyKey(LowKcb->KeyHive,
+                            LowKcb->KeyCell,
+                            &KeyHive->Hive,
+                            Stable,
+                            &KeyHive->Hive.BaseBlock->RootCell);
+    if (!NT_SUCCESS(Status))
+        goto done;
+
+    /* Copy the high precedence key recursively into the new hive */
+    Status = CmpDeepCopyKey(HighKcb->KeyHive,
+                            HighKcb->KeyCell,
+                            &KeyHive->Hive,
+                            Stable,
+                            &KeyHive->Hive.BaseBlock->RootCell);
+    if (!NT_SUCCESS(Status))
+        goto done;
+
+    /* Set the primary handle of the hive */
+    KeyHive->FileHandles[HFILE_TYPE_PRIMARY] = FileHandle;
+
+    /* Dump the hive into the file */
+    HvWriteHive(&KeyHive->Hive);
+
+done:
+    /* Free the hive */
+    if (KeyHive)
+        CmpDestroyHive(KeyHive);
+
+    /* Release the locks */
+    CmpReleaseKcbLock(LowKcb);
+    CmpReleaseKcbLock(HighKcb);
     CmpUnlockRegistry();
 
     return Status;

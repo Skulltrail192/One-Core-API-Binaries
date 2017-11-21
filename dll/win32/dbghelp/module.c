@@ -23,8 +23,6 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(dbghelp);
 
-#define DLLPREFIX ""
-
 const WCHAR        S_ElfW[]         = {'<','e','l','f','>','\0'};
 const WCHAR        S_WineLoaderW[]  = {'<','w','i','n','e','-','l','o','a','d','e','r','>','\0'};
 static const WCHAR S_DotSoW[]       = {'.','s','o','\0'};
@@ -221,7 +219,7 @@ struct module* module_new(struct process* pcs, const WCHAR* name,
     module->sources_used      = 0;
     module->sources_alloc     = 0;
     module->sources           = 0;
-    wine_rb_init(&module->sources_offsets_tree, &source_rb_functions);
+    wine_rb_init(&module->sources_offsets_tree, source_rb_compare);
 
     return module;
 }
@@ -365,7 +363,7 @@ BOOL module_get_debug(struct module_pair* pair)
             break;
 #ifndef DBGHELP_STATIC_LIB
         case DMT_MACHO:
-            ret = macho_load_debug_info(pair->effective, NULL);
+            ret = macho_load_debug_info(pair->effective);
             break;
 #endif
         default:
@@ -422,16 +420,6 @@ static BOOL module_is_container_loaded(const struct process* pcs,
     size_t              len;
     struct module*      module;
     PCWSTR              filename, modname;
-    static WCHAR*       dll_prefix;
-    static int          dll_prefix_len;
-
-    if (!dll_prefix)
-    {
-        dll_prefix_len = MultiByteToWideChar( CP_UNIXCP, 0, DLLPREFIX, -1, NULL, 0 );
-        dll_prefix = HeapAlloc( GetProcessHeap(), 0, dll_prefix_len * sizeof(WCHAR) );
-        MultiByteToWideChar( CP_UNIXCP, 0, DLLPREFIX, -1, dll_prefix, dll_prefix_len );
-        dll_prefix_len--;
-    }
 
     if (!base) return FALSE;
     filename = get_filename(ImageName, NULL);
@@ -444,7 +432,6 @@ static BOOL module_is_container_loaded(const struct process* pcs,
             base < module->module.BaseOfImage + module->module.ImageSize)
         {
             modname = get_filename(module->module.LoadedImageName, NULL);
-            if (dll_prefix_len && !strncmpW( modname, dll_prefix, dll_prefix_len )) modname += dll_prefix_len;
             if (!strncmpiW(modname, filename, len) &&
                 !memcmp(modname + len, S_DotSoW, 3 * sizeof(WCHAR)))
             {
@@ -472,7 +459,7 @@ enum module_type module_get_type_by_name(const WCHAR* name)
     {
         int i = len;
 
-        while (i && isdigit(name[i - 1])) i--;
+        while (i && name[i - 1] >= '0' && name[i - 1] <= '9') i--;
 
         if (i && name[i - 1] == '.')
             len = i - 1;
@@ -696,7 +683,6 @@ BOOL module_remove(struct process* pcs, struct module* module)
     }
     hash_table_destroy(&module->ht_symbols);
     hash_table_destroy(&module->ht_types);
-    wine_rb_destroy(&module->sources_offsets_tree, NULL, NULL);
     HeapFree(GetProcessHeap(), 0, module->sources);
     HeapFree(GetProcessHeap(), 0, module->addr_sorttab);
     pool_destroy(&module->pool);
@@ -937,6 +923,7 @@ BOOL  WINAPI EnumerateLoadedModulesW64(HANDLE hProcess,
 
     return sz != 0 && i == sz;
 }
+
 #endif /* DBGHELP_STATIC_LIB */
 
 /******************************************************************

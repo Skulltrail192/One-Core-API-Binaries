@@ -5,6 +5,7 @@
  * PURPOSE:         GUI controls
  * PROGRAMMERS:     Eric Kohl
  *                  Pierre Schweitzer <heis_spiter@hotmail.com>
+ *                  Ismael Ferreras Morezuelas <swyterzone+ros@gmail.com>
  */
 
 /* INCLUDES *****************************************************************/
@@ -18,8 +19,6 @@
 
 #define NDEBUG
 #include <debug.h>
-
-#define VMWINST
 
 #define PM_REGISTRATION_NOTIFY (WM_APP + 1)
 /* Private Message used to communicate progress from the background
@@ -44,10 +43,6 @@ typedef struct _REGISTRATIONDATA
     PVOID DefaultContext;
 } REGISTRATIONDATA, *PREGISTRATIONDATA;
 
-/* GLOBALS ******************************************************************/
-
-SETUPDATA SetupData;
-
 
 /* FUNCTIONS ****************************************************************/
 
@@ -56,47 +51,6 @@ extern void WINAPI Control_RunDLLW(HWND hWnd, HINSTANCE hInst, LPCWSTR cmd, DWOR
 BOOL
 GetRosInstallCD(WCHAR *pwszPath, DWORD cchPathMax);
 
-#ifdef VMWINST
-static BOOL
-RunVMWInstall(HWND hWnd)
-{
-    PROCESS_INFORMATION ProcInfo;
-    MSG msg;
-    DWORD ret;
-    STARTUPINFOW si;
-    WCHAR InstallName[] = L"vmwinst.exe";
-
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-
-    if(CreateProcessW(NULL, InstallName, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS,
-                      NULL, NULL, &si, &ProcInfo))
-    {
-        EnableWindow(hWnd, FALSE);
-        for (;;)
-        {
-            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-            {
-                if (msg.message == WM_QUIT)
-                    goto done;
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-            }
-
-            ret = MsgWaitForMultipleObjects(1, &ProcInfo.hProcess, FALSE, INFINITE, QS_ALLEVENTS | QS_ALLINPUT);
-            if (ret == WAIT_OBJECT_0)
-                break;
-        }
-done:
-        EnableWindow(hWnd, TRUE);
-
-        CloseHandle(ProcInfo.hThread);
-        CloseHandle(ProcInfo.hProcess);
-        return TRUE;
-    }
-    return FALSE;
-}
-#endif
 
 static VOID
 CenterWindow(HWND hWnd)
@@ -125,28 +79,44 @@ CenterWindow(HWND hWnd)
 static HFONT
 CreateTitleFont(VOID)
 {
-    NONCLIENTMETRICSW ncm;
-    LOGFONTW LogFont;
+    LOGFONTW LogFont = {0};
     HDC hdc;
-    INT FontSize;
     HFONT hFont;
 
-    ncm.cbSize = sizeof(NONCLIENTMETRICSW);
-    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, 0, &ncm, 0);
-
-    LogFont = ncm.lfMessageFont;
-    LogFont.lfWeight = FW_BOLD;
+    LogFont.lfWeight = FW_HEAVY;
     wcscpy(LogFont.lfFaceName, L"MS Shell Dlg");
 
     hdc = GetDC(NULL);
-    FontSize = 12;
-    LogFont.lfHeight = 0 - GetDeviceCaps(hdc, LOGPIXELSY) * FontSize / 72;
+    LogFont.lfHeight = -MulDiv(12, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+
     hFont = CreateFontIndirectW(&LogFont);
+
     ReleaseDC(NULL, hdc);
 
     return hFont;
 }
 
+
+static HFONT
+CreateBoldFont(VOID)
+{
+    LOGFONTW tmpFont = {0};
+    HFONT hBoldFont;
+    HDC hDc;
+
+    /* Grabs the Drawing Context */
+    hDc = GetDC(NULL);
+
+    tmpFont.lfHeight = -MulDiv(8, GetDeviceCaps(hDc, LOGPIXELSY), 72);
+    tmpFont.lfWeight = FW_HEAVY;
+    wcscpy(tmpFont.lfFaceName, L"MS Shell Dlg");
+
+    hBoldFont = CreateFontIndirectW(&tmpFont);
+
+    ReleaseDC(NULL, hDc);
+
+    return hBoldFont;
+}
 
 static INT_PTR CALLBACK
 GplDlgProc(HWND hwndDlg,
@@ -223,16 +193,20 @@ WelcomeDlgProc(HWND hwndDlg,
                WPARAM wParam,
                LPARAM lParam)
 {
+    PSETUPDATA pSetupData;
+
+    pSetupData = (PSETUPDATA)GetWindowLongPtr(hwndDlg, DWLP_USER);
+
     switch (uMsg)
     {
         case WM_INITDIALOG:
         {
-            PSETUPDATA SetupData;
             HWND hwndControl;
             DWORD dwStyle;
 
             /* Get pointer to the global setup data */
-            SetupData = (PSETUPDATA)((LPPROPSHEETPAGE)lParam)->lParam;
+            pSetupData = (PSETUPDATA)((LPPROPSHEETPAGE)lParam)->lParam;
+            SetWindowLongPtr(hwndDlg, DWLP_USER, (LONG_PTR)pSetupData);
 
             hwndControl = GetParent(hwndDlg);
 
@@ -252,7 +226,7 @@ WelcomeDlgProc(HWND hwndDlg,
             SendDlgItemMessage(hwndDlg,
                                IDC_WELCOMETITLE,
                                WM_SETFONT,
-                               (WPARAM)SetupData->hTitleFont,
+                               (WPARAM)pSetupData->hTitleFont,
                                (LPARAM)TRUE);
         }
         break;
@@ -265,17 +239,22 @@ WelcomeDlgProc(HWND hwndDlg,
             switch (lpnm->code)
             {
                 case PSN_SETACTIVE:
+                    LogItem(L"BEGIN", L"WelcomePage");
                     /* Enable the Next button */
                     PropSheet_SetWizButtons(GetParent(hwndDlg), PSWIZB_NEXT);
-                    if (SetupData.UnattendSetup)
+                    if (pSetupData->UnattendSetup)
                     {
                         SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_ACKPAGE);
                         return TRUE;
                     }
                     break;
 
+                case PSN_WIZNEXT:
+                    LogItem(L"END", L"WelcomePage");
+                    break;
+
                 case PSN_WIZBACK:
-                    SetupData.UnattendSetup = FALSE;
+                    pSetupData->UnattendSetup = FALSE;
                     break;
 
                 default:
@@ -302,11 +281,17 @@ AckPageDlgProc(HWND hwndDlg,
     PWCHAR Projects;
     PWCHAR End, CurrentProject;
     INT ProjectsSize, ProjectsCount;
+    PSETUPDATA pSetupData;
+
+    pSetupData = (PSETUPDATA)GetWindowLongPtr(hwndDlg, DWLP_USER);
 
     switch (uMsg)
     {
         case WM_INITDIALOG:
         {
+            pSetupData = (PSETUPDATA)((LPPROPSHEETPAGE)lParam)->lParam;
+            SetWindowLongPtr(hwndDlg, DWLP_USER, (LONG_PTR)pSetupData);
+
             Projects = NULL;
             ProjectsSize = 256;
             do
@@ -369,7 +354,7 @@ AckPageDlgProc(HWND hwndDlg,
                 case PSN_SETACTIVE:
                     /* Enable the Back and Next buttons */
                     PropSheet_SetWizButtons(GetParent(hwndDlg), PSWIZB_BACK | PSWIZB_NEXT);
-                    if (SetupData.UnattendSetup)
+                    if (pSetupData->UnattendSetup)
                     {
                         SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_LOCALEPAGE);
                         return TRUE;
@@ -377,7 +362,7 @@ AckPageDlgProc(HWND hwndDlg,
                     break;
 
                 case PSN_WIZBACK:
-                    SetupData.UnattendSetup = FALSE;
+                    pSetupData->UnattendSetup = FALSE;
                     break;
 
                 default:
@@ -449,16 +434,31 @@ OwnerPageDlgProc(HWND hwndDlg,
     WCHAR Title[64];
     WCHAR ErrorName[256];
     LPNMHDR lpnm;
+    PSETUPDATA pSetupData;
+
+    pSetupData = (PSETUPDATA)GetWindowLongPtr(hwndDlg, DWLP_USER);
 
     switch (uMsg)
     {
         case WM_INITDIALOG:
         {
+            pSetupData = (PSETUPDATA)((LPPROPSHEETPAGE)lParam)->lParam;
+            SetWindowLongPtr(hwndDlg, DWLP_USER, (LONG_PTR)pSetupData);
+
+            /* set a localized ('Owner') placeholder string as default */
+            if (LoadStringW(hDllInstance, IDS_MACHINE_OWNER_NAME, OwnerName, _countof(OwnerName)))
+            {
+                SendDlgItemMessage(hwndDlg, IDC_OWNERNAME, WM_SETTEXT, 0, (LPARAM)OwnerName);
+            }
+
             SendDlgItemMessage(hwndDlg, IDC_OWNERNAME, EM_LIMITTEXT, 50, 0);
             SendDlgItemMessage(hwndDlg, IDC_OWNERORGANIZATION, EM_LIMITTEXT, 50, 0);
 
             /* Set focus to owner name */
             SetFocus(GetDlgItem(hwndDlg, IDC_OWNERNAME));
+
+            /* Select the default text to quickly overwrite it by typing */
+            SendDlgItemMessage(hwndDlg, IDC_OWNERNAME, EM_SETSEL, 0, -1);
         }
         break;
 
@@ -472,11 +472,11 @@ OwnerPageDlgProc(HWND hwndDlg,
                 case PSN_SETACTIVE:
                     /* Enable the Back and Next buttons */
                     PropSheet_SetWizButtons(GetParent(hwndDlg), PSWIZB_BACK | PSWIZB_NEXT);
-                    if (SetupData.UnattendSetup)
+                    if (pSetupData->UnattendSetup)
                     {
-                        SendMessage(GetDlgItem(hwndDlg, IDC_OWNERNAME), WM_SETTEXT, 0, (LPARAM)SetupData.OwnerName);
-                        SendMessage(GetDlgItem(hwndDlg, IDC_OWNERORGANIZATION), WM_SETTEXT, 0, (LPARAM)SetupData.OwnerOrganization);
-                        if (WriteOwnerSettings(SetupData.OwnerName, SetupData.OwnerOrganization))
+                        SendMessage(GetDlgItem(hwndDlg, IDC_OWNERNAME), WM_SETTEXT, 0, (LPARAM)pSetupData->OwnerName);
+                        SendMessage(GetDlgItem(hwndDlg, IDC_OWNERORGANIZATION), WM_SETTEXT, 0, (LPARAM)pSetupData->OwnerOrganization);
+                        if (WriteOwnerSettings(pSetupData->OwnerName, pSetupData->OwnerOrganization))
                         {
                             SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_COMPUTERPAGE);
                             return TRUE;
@@ -515,7 +515,7 @@ OwnerPageDlgProc(HWND hwndDlg,
                     }
 
                 case PSN_WIZBACK:
-                    SetupData.UnattendSetup = FALSE;
+                    pSetupData->UnattendSetup = FALSE;
                     break;
 
                 default:
@@ -560,8 +560,8 @@ WriteComputerSettings(WCHAR * ComputerName, HWND hwndDlg)
     /* Try to also set DNS hostname */
     SetComputerNameExW(ComputerNamePhysicalDnsHostname, ComputerName);
 
-    /* Set the account domain name */
-    SetAccountDomain(ComputerName, NULL);
+    /* Set the accounts domain name */
+    SetAccountsDomainSid(NULL, ComputerName);
 
     return TRUE;
 }
@@ -651,6 +651,9 @@ ComputerPageDlgProc(HWND hwndDlg,
     WCHAR Title[64];
     WCHAR EmptyComputerName[256], NotMatchPassword[256], WrongPassword[256];
     LPNMHDR lpnm;
+    PSETUPDATA pSetupData;
+
+    pSetupData = (PSETUPDATA)GetWindowLongPtr(hwndDlg, DWLP_USER);
 
     if (0 == LoadStringW(hDllInstance, IDS_REACTOS_SETUP, Title, sizeof(Title) / sizeof(Title[0])))
     {
@@ -660,6 +663,9 @@ ComputerPageDlgProc(HWND hwndDlg,
     switch (uMsg)
     {
         case WM_INITDIALOG:
+            pSetupData = (PSETUPDATA)((LPPROPSHEETPAGE)lParam)->lParam;
+            SetWindowLongPtr(hwndDlg, DWLP_USER, (LONG_PTR)pSetupData);
+
             /* Generate a new pseudo-random computer name */
             GenerateComputerName(ComputerName);
 
@@ -673,17 +679,17 @@ ComputerPageDlgProc(HWND hwndDlg,
 
             /* Set focus to computer name */
             SetFocus(GetDlgItem(hwndDlg, IDC_COMPUTERNAME));
-            if (SetupData.UnattendSetup)
+            if (pSetupData->UnattendSetup)
             {
-                SendMessage(GetDlgItem(hwndDlg, IDC_COMPUTERNAME), WM_SETTEXT, 0, (LPARAM)SetupData.ComputerName);
-                SendMessage(GetDlgItem(hwndDlg, IDC_ADMINPASSWORD1), WM_SETTEXT, 0, (LPARAM)SetupData.AdminPassword);
-                SendMessage(GetDlgItem(hwndDlg, IDC_ADMINPASSWORD2), WM_SETTEXT, 0, (LPARAM)SetupData.AdminPassword);
-                WriteComputerSettings(SetupData.ComputerName, NULL);
-                SetAdministratorPassword(SetupData.AdminPassword);
+                SendMessage(GetDlgItem(hwndDlg, IDC_COMPUTERNAME), WM_SETTEXT, 0, (LPARAM)pSetupData->ComputerName);
+                SendMessage(GetDlgItem(hwndDlg, IDC_ADMINPASSWORD1), WM_SETTEXT, 0, (LPARAM)pSetupData->AdminPassword);
+                SendMessage(GetDlgItem(hwndDlg, IDC_ADMINPASSWORD2), WM_SETTEXT, 0, (LPARAM)pSetupData->AdminPassword);
+                WriteComputerSettings(pSetupData->ComputerName, NULL);
+                SetAdministratorPassword(pSetupData->AdminPassword);
             }
 
             /* Store the administrator account name as the default user name */
-            WriteDefaultLogonData(SetupData.ComputerName);
+            WriteDefaultLogonData(pSetupData->ComputerName);
             break;
 
 
@@ -696,7 +702,7 @@ ComputerPageDlgProc(HWND hwndDlg,
                 case PSN_SETACTIVE:
                     /* Enable the Back and Next buttons */
                     PropSheet_SetWizButtons(GetParent(hwndDlg), PSWIZB_BACK | PSWIZB_NEXT);
-                    if (SetupData.UnattendSetup && WriteComputerSettings(SetupData.ComputerName, hwndDlg))
+                    if (pSetupData->UnattendSetup && WriteComputerSettings(pSetupData->ComputerName, hwndDlg))
                     {
                         SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_DATETIMEPAGE);
                         return TRUE;
@@ -781,7 +787,7 @@ ComputerPageDlgProc(HWND hwndDlg,
                     break;
 
                 case PSN_WIZBACK:
-                    SetupData.UnattendSetup = FALSE;
+                    pSetupData->UnattendSetup = FALSE;
                     break;
 
                 default:
@@ -858,6 +864,7 @@ SetKeyboardLayoutName(HWND hwnd)
 static BOOL
 RunControlPanelApplet(HWND hwnd, PCWSTR pwszCPLParameters)
 {
+    MSG msg;
     if (pwszCPLParameters)
     {
         STARTUPINFOW StartupInfo;
@@ -885,7 +892,14 @@ RunControlPanelApplet(HWND hwnd, PCWSTR pwszCPLParameters)
             return FALSE;
         }
 
-        WaitForSingleObject(ProcessInformation.hProcess, INFINITE);
+        while((MsgWaitForMultipleObjects(1, &ProcessInformation.hProcess, FALSE, INFINITE, QS_ALLINPUT|QS_ALLPOSTMESSAGE )) != WAIT_OBJECT_0)
+        { 
+           while(PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
+           {
+               TranslateMessage(&msg);
+               DispatchMessageW(&msg);
+           }
+        }
         CloseHandle(ProcessInformation.hThread);
         CloseHandle(ProcessInformation.hProcess);
         return TRUE;
@@ -1219,27 +1233,36 @@ GetTimeZoneListIndex(LPDWORD lpIndex)
     BOOL bFound = FALSE;
     unsigned long iLanguageID;
 
-    if (RegOpenKeyExW(HKEY_LOCAL_MACHINE,
-                      L"SYSTEM\\CurrentControlSet\\Control\\NLS\\Language",
-                      0,
-                      KEY_ALL_ACCESS,
-                      &hKey))
-        return FALSE;
-
-    dwValueSize = 9 * sizeof(WCHAR);
-    if (RegQueryValueExW(hKey,
-                         L"Default",
-                         NULL,
-                         NULL,
-                         (LPBYTE)szLanguageIdString,
-                         &dwValueSize))
+    if (*lpIndex == -1)
     {
-        RegCloseKey(hKey);
-        return FALSE;
-    }
+        *lpIndex = 85; /* fallback to GMT time zone */
 
-    iLanguageID = wcstoul(szLanguageIdString, NULL, 16);
-    RegCloseKey(hKey);
+        if (RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                          L"SYSTEM\\CurrentControlSet\\Control\\NLS\\Language",
+                          0,
+                          KEY_ALL_ACCESS,
+                          &hKey))
+            return FALSE;
+
+        dwValueSize = 9 * sizeof(WCHAR);
+        if (RegQueryValueExW(hKey,
+                             L"Default",
+                             NULL,
+                             NULL,
+                             (LPBYTE)szLanguageIdString,
+                             &dwValueSize))
+        {
+            RegCloseKey(hKey);
+            return FALSE;
+        }
+
+        iLanguageID = wcstoul(szLanguageIdString, NULL, 16);
+        RegCloseKey(hKey);
+    }
+    else
+    {
+        iLanguageID = *lpIndex;
+    }
 
     if (RegOpenKeyExW(HKEY_LOCAL_MACHINE,
                       L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones",
@@ -1453,11 +1476,24 @@ SetSystemLocalTime(HWND hwnd, PSETUPDATA SetupData)
     return Ret;
 }
 
+
+static VOID
+UpdateLocalSystemTime(HWND hwnd)
+{
+    SYSTEMTIME LocalTime;
+
+    GetLocalTime(&LocalTime);
+    DateTime_SetSystemtime(GetDlgItem(hwnd, IDC_DATEPICKER), GDT_VALID, &LocalTime);
+    DateTime_SetSystemtime(GetDlgItem(hwnd, IDC_TIMEPICKER), GDT_VALID, &LocalTime);
+}
+
+
 static BOOL
 WriteDateTimeSettings(HWND hwndDlg, PSETUPDATA SetupData)
 {
     WCHAR Title[64];
     WCHAR ErrorLocalTime[256];
+
     GetLocalSystemTime(hwndDlg, SetupData);
     SetLocalTimeZone(GetDlgItem(hwndDlg, IDC_TIMEZONELIST),
                      SetupData);
@@ -1481,6 +1517,7 @@ WriteDateTimeSettings(HWND hwndDlg, PSETUPDATA SetupData)
     return TRUE;
 }
 
+
 static INT_PTR CALLBACK
 DateTimePageDlgProc(HWND hwndDlg,
                     UINT uMsg,
@@ -1495,7 +1532,6 @@ DateTimePageDlgProc(HWND hwndDlg,
     switch (uMsg)
     {
         case WM_INITDIALOG:
-        {
             /* Save pointer to the global setup data */
             SetupData = (PSETUPDATA)((LPPROPSHEETPAGE)lParam)->lParam;
             SetWindowLongPtr(hwndDlg, GWL_USERDATA, (DWORD_PTR)SetupData);
@@ -1515,36 +1551,38 @@ DateTimePageDlgProc(HWND hwndDlg,
             else
             {
                 ShowTimeZoneList(GetDlgItem(hwndDlg, IDC_TIMEZONELIST),
-                                 SetupData, 85 /* GMT time zone */);
+                                 SetupData, -1);
 
                 SendDlgItemMessage(hwndDlg, IDC_AUTODAYLIGHT, BM_SETCHECK, (WPARAM)BST_CHECKED, 0);
             }
+            break;
 
-        }
-        break;
-
+        case WM_TIMER:
+            UpdateLocalSystemTime(hwndDlg);
+            break;
 
         case WM_NOTIFY:
-        {
-            LPNMHDR lpnm = (LPNMHDR)lParam;
-
-            switch (lpnm->code)
+            switch (((LPNMHDR)lParam)->code)
             {
                 case PSN_SETACTIVE:
                     /* Enable the Back and Next buttons */
                     PropSheet_SetWizButtons(GetParent(hwndDlg), PSWIZB_BACK | PSWIZB_NEXT);
                     if (SetupData->UnattendSetup && WriteDateTimeSettings(hwndDlg, SetupData))
                     {
-                        SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_PROCESSPAGE);
+                        SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, SetupData->uFirstNetworkWizardPage);
                         return TRUE;
                     }
+                    SetTimer(hwndDlg, 1, 1000, NULL);
+                    break;
+
+                case PSN_KILLACTIVE:
+                case DTN_DATETIMECHANGE:
+                    KillTimer(hwndDlg, 1);
                     break;
 
                 case PSN_WIZNEXT:
-                {
                     WriteDateTimeSettings(hwndDlg, SetupData);
-                }
-                break;
+                    break;
 
                 case PSN_WIZBACK:
                     SetupData->UnattendSetup = FALSE;
@@ -1553,8 +1591,7 @@ DateTimePageDlgProc(HWND hwndDlg,
                 default:
                     break;
             }
-        }
-        break;
+            break;
 
         case WM_DESTROY:
             DestroyTimeZoneList(SetupData);
@@ -1807,7 +1844,7 @@ StartComponentRegistration(HWND hwndDlg, PULONG MaxProgress)
         RegistrationData->hwndDlg = hwndDlg;
         RegistrationData->DllCount = DllCount;
         RegistrationThread = CreateThread(NULL, 0, RegistrationProc,
-                                          (LPVOID) RegistrationData, 0, NULL);
+                                          RegistrationData, 0, NULL);
         if (RegistrationThread != NULL)
         {
             CloseHandle(RegistrationThread);
@@ -1920,11 +1957,6 @@ ProcessPageDlgProc(HWND hwndDlg,
 
             if (wParam)
             {
-#ifdef VMWINST
-                if(!SetupData->UnattendSetup && !SetupData->DisableVmwInst)
-                    RunVMWInstall(GetParent(hwndDlg));
-#endif
-
                 /* Enable the Back and Next buttons */
                 PropSheet_SetWizButtons(GetParent(hwndDlg), PSWIZB_NEXT);
                 PropSheet_PressButton(GetParent(hwndDlg), PSBTN_NEXT);
@@ -1983,8 +2015,11 @@ FinishDlgProc(HWND hwndDlg,
             /* Get pointer to the global setup data */
             PSETUPDATA SetupData = (PSETUPDATA)((LPPROPSHEETPAGE)lParam)->lParam;
 
-            /* Run the Wine Gecko prompt */
-            Control_RunDLLW(GetDesktopWindow(), 0, L"appwiz.cpl install_gecko", SW_SHOW);
+            if (!SetupData->UnattendSetup || !SetupData->DisableGeckoInst)
+            {
+                /* Run the Wine Gecko prompt */
+                Control_RunDLLW(hwndDlg, 0, L"appwiz.cpl install_gecko", SW_SHOW);
+            }
 
             /* Set title font */
             SendDlgItemMessage(hwndDlg,
@@ -2061,8 +2096,9 @@ FinishDlgProc(HWND hwndDlg,
 }
 
 
-BOOL
-ProcessUnattendInf(HINF hUnattendedInf)
+VOID
+ProcessUnattendInf(
+    PSETUPDATA pSetupData)
 {
     INFCONTEXT InfContext;
     WCHAR szName[256];
@@ -2070,13 +2106,13 @@ ProcessUnattendInf(HINF hUnattendedInf)
     DWORD LineLength;
     HKEY hKey;
 
-    if (!SetupFindFirstLineW(hUnattendedInf,
+    if (!SetupFindFirstLineW(pSetupData->hUnattendedInf,
                              L"Unattend",
                              L"UnattendSetupEnabled",
                              &InfContext))
     {
         DPRINT1("Error: Cant find UnattendSetupEnabled Key! %d\n", GetLastError());
-        return FALSE;
+        return;
     }
 
     if (!SetupGetStringFieldW(&InfContext,
@@ -2086,24 +2122,25 @@ ProcessUnattendInf(HINF hUnattendedInf)
                               &LineLength))
     {
         DPRINT1("Error: SetupGetStringField failed with %d\n", GetLastError());
-        return FALSE;
+        return;
     }
 
     if (wcscmp(szValue, L"yes") != 0)
     {
         DPRINT("Unattend setup was disabled by UnattendSetupEnabled key.\n");
-        return FALSE;
+        return;
     }
 
-    if (!SetupFindFirstLineW(hUnattendedInf,
+    pSetupData->UnattendSetup = TRUE;
+
+    if (!SetupFindFirstLineW(pSetupData->hUnattendedInf,
                              L"Unattend",
                              NULL,
                              &InfContext))
     {
         DPRINT1("Error: SetupFindFirstLine failed %d\n", GetLastError());
-        return FALSE;
+        return;
     }
-
 
     do
     {
@@ -2114,7 +2151,7 @@ ProcessUnattendInf(HINF hUnattendedInf)
                                   &LineLength))
         {
             DPRINT1("Error: SetupGetStringField failed with %d\n", GetLastError());
-            return FALSE;
+            return;
         }
 
         if (!SetupGetStringFieldW(&InfContext,
@@ -2124,55 +2161,119 @@ ProcessUnattendInf(HINF hUnattendedInf)
                                   &LineLength))
         {
             DPRINT1("Error: SetupGetStringField failed with %d\n", GetLastError());
-            return FALSE;
+            return;
         }
         DPRINT1("Name %S Value %S\n", szName, szValue);
         if (!wcscmp(szName, L"FullName"))
         {
-            if ((sizeof(SetupData.OwnerName) / sizeof(TCHAR)) > LineLength)
+            if ((sizeof(pSetupData->OwnerName) / sizeof(TCHAR)) > LineLength)
             {
-                wcscpy(SetupData.OwnerName, szValue);
+                wcscpy(pSetupData->OwnerName, szValue);
             }
         }
         else if (!wcscmp(szName, L"OrgName"))
         {
-            if ((sizeof(SetupData.OwnerOrganization) / sizeof(WCHAR)) > LineLength)
+            if ((sizeof(pSetupData->OwnerOrganization) / sizeof(WCHAR)) > LineLength)
             {
-                wcscpy(SetupData.OwnerOrganization, szValue);
+                wcscpy(pSetupData->OwnerOrganization, szValue);
             }
         }
         else if (!wcscmp(szName, L"ComputerName"))
         {
-            if ((sizeof(SetupData.ComputerName) / sizeof(WCHAR)) > LineLength)
+            if ((sizeof(pSetupData->ComputerName) / sizeof(WCHAR)) > LineLength)
             {
-                wcscpy(SetupData.ComputerName, szValue);
+                wcscpy(pSetupData->ComputerName, szValue);
             }
         }
         else if (!wcscmp(szName, L"AdminPassword"))
         {
-            if ((sizeof(SetupData.AdminPassword) / sizeof(WCHAR)) > LineLength)
+            if ((sizeof(pSetupData->AdminPassword) / sizeof(WCHAR)) > LineLength)
             {
-                wcscpy(SetupData.AdminPassword, szValue);
+                wcscpy(pSetupData->AdminPassword, szValue);
             }
         }
         else if (!wcscmp(szName, L"TimeZoneIndex"))
         {
-            SetupData.TimeZoneIndex = _wtoi(szValue);
+            pSetupData->TimeZoneIndex = _wtoi(szValue);
         }
         else if (!wcscmp(szName, L"DisableAutoDaylightTimeSet"))
         {
-            SetupData.DisableAutoDaylightTimeSet = _wtoi(szValue);
+            pSetupData->DisableAutoDaylightTimeSet = _wtoi(szValue);
         }
-        else if (!wcscmp(szName, L"DisableVmwInst"))
+        else if (!wcscmp(szName, L"DisableGeckoInst"))
         {
             if(!wcscmp(szValue, L"yes"))
-                SetupData.DisableVmwInst = 1;
+                pSetupData->DisableGeckoInst = 1;
             else
-                SetupData.DisableVmwInst = 0;
+                pSetupData->DisableGeckoInst = 0;
         }
 
     }
     while (SetupFindNextLine(&InfContext, &InfContext));
+
+    if (SetupFindFirstLineW(pSetupData->hUnattendedInf,
+                            L"Display",
+                            NULL,
+                            &InfContext))
+    {
+        DEVMODEW dm = { { 0 } };
+        dm.dmSize = sizeof(dm);
+        if (EnumDisplaySettingsW(NULL, ENUM_CURRENT_SETTINGS, &dm))
+        {
+            do
+            {
+                int iValue;
+                if (!SetupGetStringFieldW(&InfContext,
+                                          0,
+                                          szName,
+                                          sizeof(szName) / sizeof(WCHAR),
+                                          &LineLength))
+                {
+                    DPRINT1("Error: SetupGetStringField failed with %d\n", GetLastError());
+                    return;
+                }
+
+                if (!SetupGetStringFieldW(&InfContext,
+                                          1,
+                                          szValue,
+                                          sizeof(szValue) / sizeof(WCHAR),
+                                          &LineLength))
+                {
+                    DPRINT1("Error: SetupGetStringField failed with %d\n", GetLastError());
+                    return;
+                }
+                iValue = _wtoi(szValue);
+                DPRINT1("Name %S Value %i\n", szName, iValue);
+
+                if (!iValue)
+                    continue;
+
+                if (!wcscmp(szName, L"BitsPerPel"))
+                {
+                    dm.dmFields |= DM_BITSPERPEL;
+                    dm.dmBitsPerPel = iValue;
+                }
+                else if (!wcscmp(szName, L"XResolution"))
+                {
+                    dm.dmFields |= DM_PELSWIDTH;
+                    dm.dmPelsWidth = iValue;
+                }
+                else if (!wcscmp(szName, L"YResolution"))
+                {
+                    dm.dmFields |= DM_PELSHEIGHT;
+                    dm.dmPelsHeight = iValue;
+                }
+                else if (!wcscmp(szName, L"VRefresh"))
+                {
+                    dm.dmFields |= DM_DISPLAYFREQUENCY;
+                    dm.dmDisplayFrequency = iValue;
+                }
+            }
+            while (SetupFindNextLine(&InfContext, &InfContext));
+
+            ChangeDisplaySettingsW(&dm, CDS_UPDATEREGISTRY);
+        }
+    }
 
     if (RegOpenKeyExW(HKEY_LOCAL_MACHINE,
                       L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
@@ -2181,11 +2282,10 @@ ProcessUnattendInf(HINF hUnattendedInf)
                       &hKey) != ERROR_SUCCESS)
     {
         DPRINT1("Error: failed to open HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce\n");
-        return TRUE;
+        return;
     }
 
-
-    if (SetupFindFirstLineW(hUnattendedInf,
+    if (SetupFindFirstLineW(pSetupData->hUnattendedInf,
                             L"GuiRunOnce",
                             NULL,
                             &InfContext))
@@ -2222,7 +2322,6 @@ ProcessUnattendInf(HINF hUnattendedInf)
     }
 
     RegCloseKey(hKey);
-    return TRUE;
 }
 
 /*
@@ -2247,7 +2346,7 @@ GetRosInstallCD(WCHAR *pwszPath, DWORD cchPathMax)
     if (cchDrives == 0 || cchDrives >= _countof(wszDrives))
     {
         /* buffer too small or failure */
-        LogItem(SYSSETUP_SEVERITY_INFORMATION, L"GetLogicalDriveStringsW failed");
+        LogItem(NULL, L"GetLogicalDriveStringsW failed");
         return FALSE;
     }
 
@@ -2257,7 +2356,7 @@ GetRosInstallCD(WCHAR *pwszPath, DWORD cchPathMax)
         {
             WCHAR wszBuf[MAX_PATH];
             wsprintf(wszBuf, L"%sreactos\\system32\\ntoskrnl.exe", pwszDrive);
-            LogItem(SYSSETUP_SEVERITY_INFORMATION, wszBuf);
+            LogItem(NULL, wszBuf);
             if (GetFileAttributesW(wszBuf) != INVALID_FILE_ATTRIBUTES)
             {
                 /* the file exists, so this is the right drive */
@@ -2272,10 +2371,10 @@ GetRosInstallCD(WCHAR *pwszPath, DWORD cchPathMax)
 
 
 VOID
-ProcessUnattendSetup(VOID)
+ProcessUnattendSetup(
+    PSETUPDATA pSetupData)
 {
     WCHAR szPath[MAX_PATH];
-    HINF hUnattendedInf;
     DWORD dwLength;
 
     if (!GetRosInstallCD(szPath, MAX_PATH))
@@ -2295,42 +2394,88 @@ ProcessUnattendSetup(VOID)
 
     wcscat(szPath, L"reactos\\unattend.inf");
 
-    hUnattendedInf = SetupOpenInfFileW(szPath,
-                                       NULL,
-                                       INF_STYLE_OLDNT,
-                                       NULL);
-
-    if (hUnattendedInf != INVALID_HANDLE_VALUE)
+    pSetupData->hUnattendedInf = SetupOpenInfFileW(szPath,
+                                                   NULL,
+                                                   INF_STYLE_OLDNT,
+                                                   NULL);
+    if (pSetupData->hUnattendedInf != INVALID_HANDLE_VALUE)
     {
-        SetupData.UnattendSetup = ProcessUnattendInf(hUnattendedInf);
-        SetupCloseInfFile(hUnattendedInf);
+        ProcessUnattendInf(pSetupData);
     }
 }
 
+typedef DWORD(WINAPI *PFNREQUESTWIZARDPAGES)(PDWORD, HPROPSHEETPAGE *, PSETUPDATA);
 
 VOID
 InstallWizard(VOID)
 {
     PROPSHEETHEADER psh;
-    HPROPSHEETPAGE ahpsp[8];
+    HPROPSHEETPAGE *phpage = NULL;
     PROPSHEETPAGE psp = {0};
     UINT nPages = 0;
     HWND hWnd;
     MSG msg;
+    PSETUPDATA pSetupData = NULL;
+    HMODULE hNetShell = NULL;
+    PFNREQUESTWIZARDPAGES pfn = NULL;
+    DWORD dwPageCount = 8, dwNetworkPageCount = 0;
 
-    /* Clear setup data */
-    ZeroMemory(&SetupData, sizeof(SETUPDATA));
+    LogItem(L"BEGIN_SECTION", L"InstallWizard");
 
-    ProcessUnattendSetup();
+    /* Allocate setup data */
+    pSetupData = HeapAlloc(GetProcessHeap(),
+                           HEAP_ZERO_MEMORY,
+                           sizeof(SETUPDATA));
+    if (pSetupData == NULL)
+    {
+        LogItem(NULL, L"SetupData allocation failed!");
+        MessageBoxW(NULL,
+                    L"Setup failed to allocate global data!",
+                    L"ReactOS Setup",
+                    MB_ICONERROR | MB_OK);
+        goto done;
+    }
+
+    hNetShell = LoadLibraryW(L"netshell.dll");
+    if (hNetShell != NULL)
+    {
+        DPRINT("Netshell.dll loaded!\n");
+
+        pfn = (PFNREQUESTWIZARDPAGES)GetProcAddress(hNetShell,
+                                                    "NetSetupRequestWizardPages");
+        if (pfn != NULL)
+        {
+            pfn(&dwNetworkPageCount, NULL, NULL);
+            dwPageCount += dwNetworkPageCount;
+        }
+    }
+
+    DPRINT("PageCount: %lu\n", dwPageCount);
+
+    phpage = HeapAlloc(GetProcessHeap(),
+                       HEAP_ZERO_MEMORY,
+                       dwPageCount * sizeof(HPROPSHEETPAGE));
+    if (phpage == NULL)
+    {
+        LogItem(NULL, L"Page array allocation failed!");
+        MessageBoxW(NULL,
+                    L"Setup failed to allocate page array!",
+                    L"ReactOS Setup",
+                    MB_ICONERROR | MB_OK);
+        goto done;
+    }
+
+    pSetupData->hUnattendedInf = INVALID_HANDLE_VALUE;
+    ProcessUnattendSetup(pSetupData);
 
     /* Create the Welcome page */
     psp.dwSize = sizeof(PROPSHEETPAGE);
     psp.dwFlags = PSP_DEFAULT | PSP_HIDEHEADER;
     psp.hInstance = hDllInstance;
-    psp.lParam = (LPARAM)&SetupData;
+    psp.lParam = (LPARAM)pSetupData;
     psp.pfnDlgProc = WelcomeDlgProc;
     psp.pszTemplate = MAKEINTRESOURCE(IDD_WELCOMEPAGE);
-    ahpsp[nPages++] = CreatePropertySheetPage(&psp);
+    phpage[nPages++] = CreatePropertySheetPage(&psp);
 
     /* Create the Acknowledgements page */
     psp.dwFlags = PSP_DEFAULT | PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE;
@@ -2338,7 +2483,7 @@ InstallWizard(VOID)
     psp.pszHeaderSubTitle = MAKEINTRESOURCE(IDS_ACKSUBTITLE);
     psp.pszTemplate = MAKEINTRESOURCE(IDD_ACKPAGE);
     psp.pfnDlgProc = AckPageDlgProc;
-    ahpsp[nPages++] = CreatePropertySheetPage(&psp);
+    phpage[nPages++] = CreatePropertySheetPage(&psp);
 
     /* Create the Locale page */
     psp.dwFlags = PSP_DEFAULT | PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE;
@@ -2346,7 +2491,7 @@ InstallWizard(VOID)
     psp.pszHeaderSubTitle = MAKEINTRESOURCE(IDS_LOCALESUBTITLE);
     psp.pfnDlgProc = LocalePageDlgProc;
     psp.pszTemplate = MAKEINTRESOURCE(IDD_LOCALEPAGE);
-    ahpsp[nPages++] = CreatePropertySheetPage(&psp);
+    phpage[nPages++] = CreatePropertySheetPage(&psp);
 
 
     /* Create the Owner page */
@@ -2355,7 +2500,7 @@ InstallWizard(VOID)
     psp.pszHeaderSubTitle = MAKEINTRESOURCE(IDS_OWNERSUBTITLE);
     psp.pszTemplate = MAKEINTRESOURCE(IDD_OWNERPAGE);
     psp.pfnDlgProc = OwnerPageDlgProc;
-    ahpsp[nPages++] = CreatePropertySheetPage(&psp);
+    phpage[nPages++] = CreatePropertySheetPage(&psp);
 
     /* Create the Computer page */
     psp.dwFlags = PSP_DEFAULT | PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE;
@@ -2363,7 +2508,7 @@ InstallWizard(VOID)
     psp.pszHeaderSubTitle = MAKEINTRESOURCE(IDS_COMPUTERSUBTITLE);
     psp.pfnDlgProc = ComputerPageDlgProc;
     psp.pszTemplate = MAKEINTRESOURCE(IDD_COMPUTERPAGE);
-    ahpsp[nPages++] = CreatePropertySheetPage(&psp);
+    phpage[nPages++] = CreatePropertySheetPage(&psp);
 
 
     /* Create the DateTime page */
@@ -2372,8 +2517,17 @@ InstallWizard(VOID)
     psp.pszHeaderSubTitle = MAKEINTRESOURCE(IDS_DATETIMESUBTITLE);
     psp.pfnDlgProc = DateTimePageDlgProc;
     psp.pszTemplate = MAKEINTRESOURCE(IDD_DATETIMEPAGE);
-    ahpsp[nPages++] = CreatePropertySheetPage(&psp);
+    phpage[nPages++] = CreatePropertySheetPage(&psp);
 
+
+    pSetupData->uFirstNetworkWizardPage = IDD_PROCESSPAGE;
+    pSetupData->uPostNetworkWizardPage = IDD_PROCESSPAGE;
+
+    if (pfn)
+    {
+        pfn(&dwNetworkPageCount, &phpage[nPages], pSetupData);
+        nPages += dwNetworkPageCount;
+    }
 
     /* Create the Process page */
     psp.dwFlags = PSP_DEFAULT | PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE;
@@ -2381,14 +2535,14 @@ InstallWizard(VOID)
     psp.pszHeaderSubTitle = MAKEINTRESOURCE(IDS_PROCESSSUBTITLE);
     psp.pfnDlgProc = ProcessPageDlgProc;
     psp.pszTemplate = MAKEINTRESOURCE(IDD_PROCESSPAGE);
-    ahpsp[nPages++] = CreatePropertySheetPage(&psp);
+    phpage[nPages++] = CreatePropertySheetPage(&psp);
 
 
     /* Create the Finish page */
     psp.dwFlags = PSP_DEFAULT | PSP_HIDEHEADER;
     psp.pfnDlgProc = FinishDlgProc;
     psp.pszTemplate = MAKEINTRESOURCE(IDD_FINISHPAGE);
-    ahpsp[nPages++] = CreatePropertySheetPage(&psp);
+    phpage[nPages++] = CreatePropertySheetPage(&psp);
 
     /* Create the property sheet */
     psh.dwSize = sizeof(PROPSHEETHEADER);
@@ -2397,12 +2551,13 @@ InstallWizard(VOID)
     psh.hwndParent = NULL;
     psh.nPages = nPages;
     psh.nStartPage = 0;
-    psh.phpage = ahpsp;
+    psh.phpage = phpage;
     psh.pszbmWatermark = MAKEINTRESOURCE(IDB_WATERMARK);
     psh.pszbmHeader = MAKEINTRESOURCE(IDB_HEADER);
 
     /* Create title font */
-    SetupData.hTitleFont = CreateTitleFont();
+    pSetupData->hTitleFont = CreateTitleFont();
+    pSetupData->hBoldFont = CreateBoldFont();
 
     /* Display the wizard */
     hWnd = (HWND)PropertySheet(&psh);
@@ -2410,14 +2565,31 @@ InstallWizard(VOID)
 
     while (GetMessage(&msg, NULL, 0, 0))
     {
-        if(!IsDialogMessage(hWnd, &msg))
+        if (!IsDialogMessage(hWnd, &msg))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
     }
 
-    DeleteObject(SetupData.hTitleFont);
+    if (pSetupData->hUnattendedInf != INVALID_HANDLE_VALUE)
+        SetupCloseInfFile(pSetupData->hUnattendedInf);
+
+done:
+    if (phpage != NULL)
+        HeapFree(GetProcessHeap(), 0, phpage);
+
+    if (hNetShell != NULL)
+        FreeLibrary(hNetShell);
+
+    if (pSetupData != NULL)
+    {
+        DeleteObject(pSetupData->hBoldFont);
+        DeleteObject(pSetupData->hTitleFont);
+        HeapFree(GetProcessHeap(), 0, pSetupData);
+    }
+
+    LogItem(L"END_SECTION", L"InstallWizard");
 }
 
 /* EOF */

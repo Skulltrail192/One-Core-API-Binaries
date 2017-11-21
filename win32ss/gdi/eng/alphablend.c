@@ -2,7 +2,7 @@
  * COPYRIGHT:        See COPYING in the top level directory
  * PROJECT:          ReactOS kernel
  * PURPOSE:          GDI alpha blending functions
- * FILE:             subsystems/win32/win32k/eng/alphablend.c
+ * FILE:             win32ss/gdi/eng/alphablend.c
  * PROGRAMER:        Jason Filby
  */
 
@@ -212,7 +212,7 @@ IntEngAlphaBlend(
     //ASSERT(pBlendObj);
 
     /* If no clip object is given, use trivial one */
-    if (!pco) pco = &gxcoTrivial.ClipObj;
+    if (!pco) pco = (CLIPOBJ *)&gxcoTrivial;
 
     /* Check if there is anything to draw */
     if ((pco->rclBounds.left >= pco->rclBounds.right) ||

@@ -437,13 +437,13 @@ static HRESULT WINAPI AsyncReader_QueryInterface(IBaseFilter * iface, REFIID rii
     *ppv = NULL;
 
     if (IsEqualIID(riid, &IID_IUnknown))
-        *ppv = This;
+        *ppv = &This->filter.IBaseFilter_iface;
     else if (IsEqualIID(riid, &IID_IPersist))
-        *ppv = This;
+        *ppv = &This->filter.IBaseFilter_iface;
     else if (IsEqualIID(riid, &IID_IMediaFilter))
-        *ppv = This;
+        *ppv = &This->filter.IBaseFilter_iface;
     else if (IsEqualIID(riid, &IID_IBaseFilter))
-        *ppv = This;
+        *ppv = &This->filter.IBaseFilter_iface;
     else if (IsEqualIID(riid, &IID_IFileSourceFilter))
         *ppv = &This->IFileSourceFilter_iface;
     else if (IsEqualIID(riid, &IID_IAMFilterMiscFlags))
@@ -521,7 +521,7 @@ static HRESULT WINAPI AsyncReader_Run(IBaseFilter * iface, REFERENCE_TIME tStart
 {
     AsyncReader *This = impl_from_IBaseFilter(iface);
 
-    TRACE("(%x%08x)\n", (ULONG)(tStart >> 32), (ULONG)tStart);
+    TRACE("(%s)\n", wine_dbgstr_longlong(tStart));
 
     This->filter.state = State_Running;
 
@@ -598,6 +598,9 @@ static HRESULT WINAPI FileSource_Load(IFileSourceFilter * iface, LPCOLESTR pszFi
 
     TRACE("(%s, %p)\n", debugstr_w(pszFileName), pmt);
 
+    if (!pszFileName)
+        return E_POINTER;
+
     /* open file */
     /* FIXME: check the sharing values that native uses */
     hFile = CreateFileW(pszFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
@@ -637,8 +640,9 @@ static HRESULT WINAPI FileSource_Load(IFileSourceFilter * iface, LPCOLESTR pszFi
             hr = GetClassMediaFile(pReader, pszFileName, &This->pmt->majortype, &This->pmt->subtype, NULL);
             if (FAILED(hr))
             {
-                CoTaskMemFree(This->pmt);
-                This->pmt = NULL;
+                This->pmt->majortype = MEDIATYPE_Stream;
+                This->pmt->subtype = MEDIASUBTYPE_NULL;
+                hr = S_OK;
             }
         }
         else
@@ -750,7 +754,7 @@ static inline FileAsyncReader *impl_from_BaseOutputPin(BaseOutputPin *iface)
     return CONTAINING_RECORD(iface, FileAsyncReader, pin);
 }
 
-static inline BaseOutputPin *impl_BaseOututPin_from_BasePin(BasePin *iface)
+static inline BaseOutputPin *impl_BaseOutputPin_from_BasePin(BasePin *iface)
 {
     return CONTAINING_RECORD(iface, BaseOutputPin, pin);
 }
@@ -795,20 +799,18 @@ static HRESULT WINAPI FileAsyncReaderPin_QueryInterface(IPin * iface, REFIID rii
 
     *ppv = NULL;
 
-    if (IsEqualIID(riid, &IID_IUnknown))
-        *ppv = This;
-    else if (IsEqualIID(riid, &IID_IPin))
-        *ppv = This;
+    if (IsEqualIID(riid, &IID_IUnknown) || IsEqualIID(riid, &IID_IPin))
+        *ppv = &This->pin.pin.IPin_iface;
     else if (IsEqualIID(riid, &IID_IAsyncReader))
         *ppv = &This->IAsyncReader_iface;
 
     if (*ppv)
     {
-        IUnknown_AddRef((IUnknown *)(*ppv));
+        IUnknown_AddRef((IUnknown *)*ppv);
         return S_OK;
     }
 
-    if (!IsEqualIID(riid, &IID_IPin) && !IsEqualIID(riid, &IID_IMediaSeeking))
+    if (!IsEqualIID(riid, &IID_IMediaSeeking))
         FIXME("No interface for %s!\n", qzdebugstr_guid(riid));
 
     return E_NOINTERFACE;
@@ -868,7 +870,7 @@ static const IPinVtbl FileAsyncReaderPin_Vtbl =
  * doesn't need the IMemInputPin interface on the receiving pin */
 static HRESULT WINAPI FileAsyncReaderPin_AttemptConnection(BasePin * iface, IPin * pReceivePin, const AM_MEDIA_TYPE * pmt)
 {
-    BaseOutputPin *This = impl_BaseOututPin_from_BasePin(iface);
+    BaseOutputPin *This = impl_BaseOutputPin_from_BasePin(iface);
     HRESULT hr;
 
     TRACE("(%p, %p)\n", pReceivePin, pmt);
@@ -1417,17 +1419,17 @@ static const IAsyncReaderVtbl FileAsyncReader_Vtbl =
 
 static HRESULT WINAPI AMFilterMiscFlags_QueryInterface(IAMFilterMiscFlags *iface, REFIID riid, void **ppv) {
     AsyncReader *This = impl_from_IAMFilterMiscFlags(iface);
-    return IUnknown_QueryInterface((IUnknown*)This, riid, ppv);
+    return IBaseFilter_QueryInterface(&This->filter.IBaseFilter_iface, riid, ppv);
 }
 
 static ULONG WINAPI AMFilterMiscFlags_AddRef(IAMFilterMiscFlags *iface) {
     AsyncReader *This = impl_from_IAMFilterMiscFlags(iface);
-    return IUnknown_AddRef((IUnknown*)This);
+    return IBaseFilter_AddRef(&This->filter.IBaseFilter_iface);
 }
 
 static ULONG WINAPI AMFilterMiscFlags_Release(IAMFilterMiscFlags *iface) {
     AsyncReader *This = impl_from_IAMFilterMiscFlags(iface);
-    return IUnknown_Release((IUnknown*)This);
+    return IBaseFilter_Release(&This->filter.IBaseFilter_iface);
 }
 
 static ULONG WINAPI AMFilterMiscFlags_GetMiscFlags(IAMFilterMiscFlags *iface) {

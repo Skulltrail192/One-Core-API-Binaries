@@ -1,10 +1,10 @@
 
 add_subdirectory(autochk)
 add_subdirectory(bootok)
+add_subdirectory(chkdsk)
 add_subdirectory(diskpart)
 add_subdirectory(expand)
 add_subdirectory(format)
-add_subdirectory(logonui)
 add_subdirectory(lsass)
 add_subdirectory(msiexec)
 add_subdirectory(regsvr32)

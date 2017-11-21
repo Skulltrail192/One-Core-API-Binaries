@@ -419,20 +419,15 @@ static BOOL application_octet_stream_filter(const BYTE *b, DWORD size)
     return TRUE;
 }
 
-static HRESULT find_mime_from_url(const WCHAR *url, WCHAR **ret)
+HRESULT find_mime_from_ext(const WCHAR *ext, WCHAR **ret)
 {
-    const WCHAR *ptr;
     DWORD res, size;
     WCHAR mime[64];
     HKEY hkey;
 
     static const WCHAR content_typeW[] = {'C','o','n','t','e','n','t',' ','T','y','p','e','\0'};
 
-    ptr = strrchrW(url, '.');
-    if(!ptr)
-        return E_FAIL;
-
-    res = RegOpenKeyW(HKEY_CLASSES_ROOT, ptr, &hkey);
+    res = RegOpenKeyW(HKEY_CLASSES_ROOT, ext, &hkey);
     if(res != ERROR_SUCCESS)
         return HRESULT_FROM_WIN32(res);
 
@@ -447,6 +442,41 @@ static HRESULT find_mime_from_url(const WCHAR *url, WCHAR **ret)
     *ret = CoTaskMemAlloc(size);
     memcpy(*ret, mime, size);
     return S_OK;
+}
+
+static HRESULT find_mime_from_url(const WCHAR *url, WCHAR **ret)
+{
+    const WCHAR *ptr, *end_ptr;
+    WCHAR *ext = NULL;
+    HRESULT hres;
+
+    for(end_ptr = url; *end_ptr; end_ptr++) {
+        if(*end_ptr == '?' || *end_ptr == '#')
+            break;
+    }
+
+    for(ptr = end_ptr; ptr >= url; ptr--) {
+        if(*ptr == '.')
+            break;
+    }
+
+    if(ptr < url)
+        return E_FAIL;
+
+    if(*end_ptr) {
+        unsigned len = end_ptr-ptr;
+
+        ext = heap_alloc((len+1)*sizeof(WCHAR));
+        if(!ext)
+            return E_OUTOFMEMORY;
+
+        memcpy(ext, ptr, len*sizeof(WCHAR));
+        ext[len] = 0;
+    }
+
+    hres = find_mime_from_ext(ext ? ext : ptr, ret);
+    heap_free(ext);
+    return hres;
 }
 
 static const WCHAR text_htmlW[] = {'t','e','x','t','/','h','t','m','l',0};
@@ -656,7 +686,7 @@ HRESULT WINAPI FindMimeFromData(LPBC pBC, LPCWSTR pwzUrl, LPVOID pBuffer,
     if(dwReserved)
         WARN("dwReserved=%d\n", dwReserved);
 
-    /* pBC seams to not be used */
+    /* pBC seems to not be used */
 
     if(!ppwzMimeOut || (!pwzUrl && !pBuffer))
         return E_INVALIDARG;
@@ -664,8 +694,5 @@ HRESULT WINAPI FindMimeFromData(LPBC pBC, LPCWSTR pwzUrl, LPVOID pBuffer,
     if(pwzMimeProposed || pBuffer)
         return find_mime_from_buffer(pBuffer, cbSize, pwzMimeProposed, pwzUrl, ppwzMimeOut);
 
-    if(pwzUrl)
-        return find_mime_from_url(pwzUrl, ppwzMimeOut);
-
-    return E_FAIL;
+    return find_mime_from_url(pwzUrl, ppwzMimeOut);
 }

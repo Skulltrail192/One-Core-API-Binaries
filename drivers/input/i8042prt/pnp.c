@@ -147,7 +147,7 @@ i8042DetectKeyboard(
         WARN_(I8042PRT, "Warning: can't write SET_LEDS (0x%08lx)\n", Status);
     }
 
-    /* Turn on translation and SF (Some machines don't reboot if SF is not set, see ReactOS bug #1842) */
+    /* Turn on translation and SF (Some machines don't reboot if SF is not set, see ReactOS bug CORE-1713) */
     if (!i8042ChangeMode(DeviceExtension, 0, CCB_TRANSLATE | CCB_SYSTEM_FLAG))
         return;
 
@@ -476,13 +476,16 @@ StartProcedure(
         {
             WARN_(I8042PRT, "i8042ConnectMouseInterrupt failed: %lx\n", Status);
         }
-        
+
         /* Start the mouse */
         Irql = KeAcquireInterruptSpinLock(DeviceExtension->HighestDIRQLInterrupt);
         /* HACK: the mouse has already been reset in i8042DetectMouse. This second
            reset prevents some touchpads/mice from working (Dell D531, D600).
-           See CORE-6901
-        i8042IsrWritePort(DeviceExtension, MOU_CMD_RESET, CTRL_WRITE_MOUSE); */
+           See CORE-6901 */
+        if (!(i8042HwFlags & FL_INITHACK))
+        {
+            i8042IsrWritePort(DeviceExtension, MOU_CMD_RESET, CTRL_WRITE_MOUSE);
+        }
         KeReleaseInterruptSpinLock(DeviceExtension->HighestDIRQLInterrupt, Irql);
     }
 
@@ -654,13 +657,13 @@ i8042RemoveDevice(
 
     DriverExtension = (PI8042_DRIVER_EXTENSION)IoGetDriverObjectExtension(DeviceObject->DriverObject, DeviceObject->DriverObject);
     DeviceExtension = (PFDO_DEVICE_EXTENSION)DeviceObject->DeviceExtension;
-    
+
     KeAcquireSpinLock(&DriverExtension->DeviceListLock, &OldIrql);
     RemoveEntryList(&DeviceExtension->ListEntry);
     KeReleaseSpinLock(&DriverExtension->DeviceListLock, OldIrql);
-    
+
     IoDetachDevice(DeviceExtension->LowerDevice);
-    
+
     IoDeleteDevice(DeviceObject);
 }
 
@@ -720,12 +723,17 @@ i8042Pnp(
             }
             break;
         }
+        case IRP_MN_QUERY_CAPABILITIES: /* (optional) 0x09 */
+        {
+            TRACE_(I8042PRT, "IRP_MJ_PNP / IRP_MN_QUERY_CAPABILITIES\n");
+            return ForwardIrpAndForget(DeviceObject, Irp);
+        }
         case IRP_MN_FILTER_RESOURCE_REQUIREMENTS: /* (optional) 0x0d */
         {
             TRACE_(I8042PRT, "IRP_MJ_PNP / IRP_MN_FILTER_RESOURCE_REQUIREMENTS\n");
             return ForwardIrpAndForget(DeviceObject, Irp);
         }
-        case IRP_MN_QUERY_PNP_DEVICE_STATE: /* 0x14 */
+        case IRP_MN_QUERY_PNP_DEVICE_STATE: /* (optional) 0x14 */
         {
             TRACE_(I8042PRT, "IRP_MJ_PNP / IRP_MN_QUERY_PNP_DEVICE_STATE\n");
             return ForwardIrpAndForget(DeviceObject, Irp);

@@ -1244,6 +1244,8 @@ static void state_init_default(struct wined3d_state *state, const struct wined3d
     state->render_states[WINED3D_RS_BLENDFACTOR] = 0xffffffff;
     state->render_states[WINED3D_RS_SRGBWRITEENABLE] = 0;
     state->render_states[WINED3D_RS_DEPTHBIAS] = 0;
+    tmpfloat.f = 0.0f;
+    state->render_states[WINED3D_RS_DEPTHBIASCLAMP] = tmpfloat.d;
     state->render_states[WINED3D_RS_DEPTHCLIP] = TRUE;
     state->render_states[WINED3D_RS_WRAP8] = 0;
     state->render_states[WINED3D_RS_WRAP9] = 0;

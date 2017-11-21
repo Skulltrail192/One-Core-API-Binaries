@@ -21,6 +21,10 @@
 
 #include "precomp.h"
 
+#ifdef __REACTOS__
+int WINAPI IsNetDrive(int drive);
+#else
+
 /* Get a function pointer from a DLL handle */
 #define GET_FUNC(func, module, name, fail) \
   do { \
@@ -37,6 +41,9 @@ static HMODULE SHLWAPI_hshell32;
 /* Function pointers for GET_FUNC macro; these need to be global because of gcc bug */
 typedef BOOL (WINAPI *fnpIsNetDrive)(int);
 static  fnpIsNetDrive pIsNetDrive;
+
+#endif /* __REACTOS__ */
+
 
 HRESULT WINAPI SHGetWebFolderFilePathW(LPCWSTR,LPWSTR,DWORD);
 
@@ -643,7 +650,7 @@ void WINAPI PathStripPathA(LPSTR lpszPath)
   if (lpszPath)
   {
     LPSTR lpszFileName = PathFindFileNameA(lpszPath);
-    if(lpszFileName)
+    if(lpszFileName != lpszPath)
       RtlMoveMemory(lpszPath, lpszFileName, strlen(lpszFileName)+1);
   }
 }
@@ -659,7 +666,7 @@ void WINAPI PathStripPathW(LPWSTR lpszPath)
 
   TRACE("(%s)\n", debugstr_w(lpszPath));
   lpszFileName = PathFindFileNameW(lpszPath);
-  if(lpszFileName)
+  if(lpszFileName != lpszPath)
     RtlMoveMemory(lpszPath, lpszFileName, (strlenW(lpszFileName)+1)*sizeof(WCHAR));
 }
 
@@ -2190,7 +2197,16 @@ BOOL WINAPI PathIsUNCA(LPCSTR lpszPath)
 {
   TRACE("(%s)\n",debugstr_a(lpszPath));
 
+/*
+ * On Windows 2003, tests show that strings starting with "\\?" are
+ * considered UNC, while on Windows Vista+ this is not the case anymore.
+ */
+// #ifdef __REACTOS__
+#if (WINVER >= _WIN32_WINNT_VISTA)
   if (lpszPath && (lpszPath[0]=='\\') && (lpszPath[1]=='\\') && (lpszPath[2]!='?'))
+#else
+  if (lpszPath && (lpszPath[0]=='\\') && (lpszPath[1]=='\\'))
+#endif
     return TRUE;
   return FALSE;
 }
@@ -2204,7 +2220,16 @@ BOOL WINAPI PathIsUNCW(LPCWSTR lpszPath)
 {
   TRACE("(%s)\n",debugstr_w(lpszPath));
 
+/*
+ * On Windows 2003, tests show that strings starting with "\\?" are
+ * considered UNC, while on Windows Vista+ this is not the case anymore.
+ */
+// #ifdef __REACTOS__
+#if (WINVER >= _WIN32_WINNT_VISTA)
   if (lpszPath && (lpszPath[0]=='\\') && (lpszPath[1]=='\\') && (lpszPath[2]!='?'))
+#else
+  if (lpszPath && (lpszPath[0]=='\\') && (lpszPath[1]=='\\'))
+#endif
     return TRUE;
   return FALSE;
 }
@@ -3295,6 +3320,9 @@ HRESULT WINAPI PathCreateFromUrlW(LPCWSTR pszUrl, LPWSTR pszPath,
     if (!pszUrl || !pszPath || !pcchPath || !*pcchPath)
         return E_INVALIDARG;
 
+    if (lstrlenW(pszUrl) < 5)
+        return E_INVALIDARG;
+
     if (CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, pszUrl, 5,
                        file_colon, 5) != CSTR_EQUAL)
         return E_INVALIDARG;
@@ -3336,9 +3364,8 @@ HRESULT WINAPI PathCreateFromUrlW(LPCWSTR pszUrl, LPWSTR pszPath,
             src -= 1;
         break;
     case 2:
-        if (CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, src, 9,
-                           localhost, 9) == CSTR_EQUAL &&
-            (src[9] == '/' || src[9] == '\\'))
+        if (lstrlenW(src) >= 10 && CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE,
+            src, 9, localhost, 9) == CSTR_EQUAL && (src[9] == '/' || src[9] == '\\'))
         {
             /* 'file://localhost/' + escaped DOS path */
             src += 10;
@@ -3699,8 +3726,12 @@ BOOL WINAPI PathIsNetworkPathA(LPCSTR lpszPath)
   dwDriveNum = PathGetDriveNumberA(lpszPath);
   if (dwDriveNum == -1)
     return FALSE;
+#ifdef __REACTOS__
+  return IsNetDrive(dwDriveNum);
+#else
   GET_FUNC(pIsNetDrive, shell32, (LPCSTR)66, FALSE); /* ord 66 = shell32.IsNetDrive */
   return pIsNetDrive(dwDriveNum);
+#endif
 }
 
 /*************************************************************************
@@ -3721,8 +3752,12 @@ BOOL WINAPI PathIsNetworkPathW(LPCWSTR lpszPath)
   dwDriveNum = PathGetDriveNumberW(lpszPath);
   if (dwDriveNum == -1)
     return FALSE;
+#ifdef __REACTOS__
+  return IsNetDrive(dwDriveNum);
+#else
   GET_FUNC(pIsNetDrive, shell32, (LPCSTR)66, FALSE); /* ord 66 = shell32.IsNetDrive */
   return pIsNetDrive(dwDriveNum);
+#endif
 }
 
 /*************************************************************************
@@ -3852,13 +3887,13 @@ BOOL WINAPI PathIsDirectoryEmptyW(LPCWSTR lpszPath)
   WCHAR szSearch[MAX_PATH];
   DWORD dwLen;
   HANDLE hfind;
-  BOOL retVal = FALSE;
+  BOOL retVal = TRUE;
   WIN32_FIND_DATAW find_data;
 
   TRACE("(%s)\n",debugstr_w(lpszPath));
 
   if (!lpszPath || !PathIsDirectoryW(lpszPath))
-      return FALSE;
+    return FALSE;
 
   lstrcpynW(szSearch, lpszPath, MAX_PATH);
   PathAddBackslashW(szSearch);
@@ -3868,14 +3903,23 @@ BOOL WINAPI PathIsDirectoryEmptyW(LPCWSTR lpszPath)
 
   strcpyW(szSearch + dwLen, szAllFiles);
   hfind = FindFirstFileW(szSearch, &find_data);
-  if (hfind != INVALID_HANDLE_VALUE)
-  {
-    if (find_data.cFileName[0] == '.' && find_data.cFileName[1] == '.')
-      /* The only directory entry should be the parent */
-      retVal = !FindNextFileW(hfind, &find_data);
-    FindClose(hfind);
-  }
+  if (hfind == INVALID_HANDLE_VALUE)
+    return FALSE;
 
+  do
+  {
+    if (find_data.cFileName[0] == '.')
+    {
+      if (find_data.cFileName[1] == '\0') continue;
+      if (find_data.cFileName[1] == '.' && find_data.cFileName[2] == '\0') continue;
+    }
+
+    retVal = FALSE;
+    break;
+  }
+  while (FindNextFileW(hfind, &find_data));
+
+  FindClose(hfind);
   return retVal;
 }
 

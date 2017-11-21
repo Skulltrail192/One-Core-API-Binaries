@@ -13,7 +13,7 @@
 #include <debug.h>
 
 #define MODULE_INVOLVED_IN_ARM3
-#include "../ARM3/miarm.h"
+#include <mm/ARM3/miarm.h>
 
 #undef ExAllocatePoolWithQuota
 #undef ExAllocatePoolWithQuotaTag
@@ -464,7 +464,7 @@ ExpComputePartialHashForAddress(IN PVOID BaseAddress)
 
 VOID
 NTAPI
-INIT_FUNCTION
+INIT_SECTION
 ExpSeedHotTags(VOID)
 {
     ULONG i, Key, Hash, Index;
@@ -794,7 +794,7 @@ ExpInsertPoolTracker(IN ULONG Key,
 
 VOID
 NTAPI
-INIT_FUNCTION
+INIT_SECTION
 ExInitializePoolDescriptor(IN PPOOL_DESCRIPTOR PoolDescriptor,
                            IN POOL_TYPE PoolType,
                            IN ULONG PoolIndex,
@@ -845,7 +845,7 @@ ExInitializePoolDescriptor(IN PPOOL_DESCRIPTOR PoolDescriptor,
 
 VOID
 NTAPI
-INIT_FUNCTION
+INIT_SECTION
 InitializePool(IN POOL_TYPE PoolType,
                IN ULONG Threshold)
 {
@@ -932,13 +932,18 @@ InitializePool(IN POOL_TYPE PoolType,
         }
 
         //
-        // Finally, add one entry, compute the hash, and zero the table
+        // Add one entry, compute the hash, and zero the table
         //
         PoolTrackTableSize++;
         PoolTrackTableMask = PoolTrackTableSize - 2;
 
         RtlZeroMemory(PoolTrackTable,
                       PoolTrackTableSize * sizeof(POOL_TRACKER_TABLE));
+
+        //
+        // Finally, add the most used tags to speed up those allocations
+        //
+        ExpSeedHotTags();
 
         //
         // We now do the exact same thing with the tracker table for big pages
@@ -1504,6 +1509,53 @@ ExQueryPoolUsage(OUT PULONG PagedPoolPages,
     *PagedPoolLookasideHits += 0;
 }
 
+VOID
+NTAPI
+ExReturnPoolQuota(IN PVOID P)
+{
+    PPOOL_HEADER Entry;
+    POOL_TYPE PoolType;
+    USHORT BlockSize;
+    PEPROCESS Process;
+
+    if ((ExpPoolFlags & POOL_FLAG_SPECIAL_POOL) &&
+        (MmIsSpecialPoolAddress(P)))
+    {
+        return;
+    }
+
+    Entry = P;
+    Entry--;
+    ASSERT((ULONG_PTR)Entry % POOL_BLOCK_SIZE == 0);
+
+    PoolType = Entry->PoolType - 1;
+    BlockSize = Entry->BlockSize;
+
+    if (PoolType & QUOTA_POOL_MASK)
+    {
+        Process = ((PVOID *)POOL_NEXT_BLOCK(Entry))[-1];
+        ASSERT(Process != NULL);
+        if (Process)
+        {
+            if (Process->Pcb.Header.Type != ProcessObject)
+            {
+                DPRINT1("Object %p is not a process. Type %u, pool type 0x%x, block size %u\n",
+                        Process, Process->Pcb.Header.Type, Entry->PoolType, BlockSize);
+                KeBugCheckEx(BAD_POOL_CALLER,
+                             0x0D,
+                             (ULONG_PTR)P,
+                             Entry->PoolTag,
+                             (ULONG_PTR)Process);
+            }
+            ((PVOID *)POOL_NEXT_BLOCK(Entry))[-1] = NULL;
+            PsReturnPoolQuota(Process,
+                              PoolType & BASE_POOL_TYPE_MASK,
+                              BlockSize * POOL_BLOCK_SIZE);
+            ObDereferenceObject(Process);
+        }
+    }
+}
+
 /* PUBLIC FUNCTIONS ***********************************************************/
 
 /*
@@ -1627,6 +1679,8 @@ ExAllocatePoolWithTag(IN POOL_TYPE PoolType,
             {
                 ExRaiseStatus(STATUS_INSUFFICIENT_RESOURCES);
             }
+
+            return NULL;
         }
 
         //
@@ -2041,10 +2095,25 @@ NTAPI
 ExAllocatePool(POOL_TYPE PoolType,
                SIZE_T NumberOfBytes)
 {
-    //
-    // Use a default tag of "None"
-    //
-    return ExAllocatePoolWithTag(PoolType, NumberOfBytes, TAG_NONE);
+    ULONG Tag = TAG_NONE;
+#if 0 && DBG
+    PLDR_DATA_TABLE_ENTRY LdrEntry;
+
+    /* Use the first four letters of the driver name, or "None" if unavailable */
+    LdrEntry = KeGetCurrentIrql() <= APC_LEVEL
+                ? MiLookupDataTableEntry(_ReturnAddress())
+                : NULL;
+    if (LdrEntry)
+    {
+        ULONG i;
+        Tag = 0;
+        for (i = 0; i < min(4, LdrEntry->BaseDllName.Length / sizeof(WCHAR)); i++)
+            Tag = Tag >> 8 | (LdrEntry->BaseDllName.Buffer[i] & 0xff) << 24;
+        for (; i < 4; i++)
+            Tag = Tag >> 8 | ' ' << 24;
+    }
+#endif
+    return ExAllocatePoolWithTag(PoolType, NumberOfBytes, Tag);
 }
 
 /*
@@ -2263,7 +2332,6 @@ ExFreePoolWithTag(IN PVOID P,
     if ((Entry->PoolType - 1) & QUOTA_POOL_MASK)
     {
         Process = ((PVOID *)POOL_NEXT_BLOCK(Entry))[-1];
-        ASSERT(Process != NULL);
         if (Process)
         {
             if (Process->Pcb.Header.Type != ProcessObject)
@@ -2508,7 +2576,7 @@ ExAllocatePoolWithQuota(IN POOL_TYPE PoolType,
     //
     // Allocate the pool
     //
-    return ExAllocatePoolWithQuotaTag(PoolType, NumberOfBytes, 'enoN');
+    return ExAllocatePoolWithQuotaTag(PoolType, NumberOfBytes, TAG_NONE);
 }
 
 /*
@@ -2521,11 +2589,18 @@ ExAllocatePoolWithTagPriority(IN POOL_TYPE PoolType,
                               IN ULONG Tag,
                               IN EX_POOL_PRIORITY Priority)
 {
+    PVOID Buffer;
+
     //
     // Allocate the pool
     //
-    UNIMPLEMENTED;
-    return ExAllocatePoolWithTag(PoolType, NumberOfBytes, Tag);
+    Buffer = ExAllocatePoolWithTag(PoolType, NumberOfBytes, Tag);
+    if (Buffer == NULL)
+    {
+        UNIMPLEMENTED;
+    }
+
+    return Buffer;
 }
 
 /*
@@ -2647,7 +2722,7 @@ ExAllocatePoolWithQuotaTag(IN POOL_TYPE PoolType,
     return Buffer;
 }
 
-#if DBG && KDBG
+#if DBG && defined(KDBG)
 
 BOOLEAN
 ExpKdbgExtPool(

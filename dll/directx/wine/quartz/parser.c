@@ -133,16 +133,20 @@ HRESULT WINAPI Parser_QueryInterface(IBaseFilter * iface, REFIID riid, LPVOID * 
       || IsEqualIID(riid, &IID_IPersist)
       || IsEqualIID(riid, &IID_IMediaFilter)
       || IsEqualIID(riid, &IID_IBaseFilter) )
-        *ppv = This;
+        *ppv = &This->filter.IBaseFilter_iface;
 
     if (*ppv)
     {
-        IUnknown_AddRef((IUnknown *)(*ppv));
+        IUnknown_AddRef((IUnknown *)*ppv);
         return S_OK;
     }
 
-    if (!IsEqualIID(riid, &IID_IPin) && !IsEqualIID(riid, &IID_IVideoWindow))
+    if (!IsEqualIID(riid, &IID_IPin) &&
+        !IsEqualIID(riid, &IID_IVideoWindow) &&
+        !IsEqualIID(riid, &IID_IAMFilterMiscFlags))
+    {
         FIXME("No interface for %s!\n", qzdebugstr_guid(riid));
+    }
 
     return E_NOINTERFACE;
 }
@@ -441,7 +445,7 @@ HRESULT Parser_AddPin(ParserImpl * This, const PIN_INFO * piOutput, ALLOCATOR_PR
         CopyMediaType(pin->pmt, amt);
         pin->dwSamplesProcessed = 0;
 
-        pin->pin.pin.pinInfo.pFilter = (LPVOID)This;
+        pin->pin.pin.pinInfo.pFilter = &This->filter.IBaseFilter_iface;
         pin->allocProps = *props;
         This->cStreams++;
         BaseFilterImpl_IncrementPinVersion(&This->filter);
@@ -507,21 +511,21 @@ static HRESULT WINAPI Parser_Seeking_QueryInterface(IMediaSeeking * iface, REFII
 {
     ParserImpl *This = impl_from_IMediaSeeking(iface);
 
-    return IUnknown_QueryInterface((IUnknown *)This, riid, ppv);
+    return IBaseFilter_QueryInterface(&This->filter.IBaseFilter_iface, riid, ppv);
 }
 
 static ULONG WINAPI Parser_Seeking_AddRef(IMediaSeeking * iface)
 {
     ParserImpl *This = impl_from_IMediaSeeking(iface);
 
-    return IUnknown_AddRef((IUnknown *)This);
+    return IBaseFilter_AddRef(&This->filter.IBaseFilter_iface);
 }
 
 static ULONG WINAPI Parser_Seeking_Release(IMediaSeeking * iface)
 {
     ParserImpl *This = impl_from_IMediaSeeking(iface);
 
-    return IUnknown_Release((IUnknown *)This);
+    return IBaseFilter_Release(&This->filter.IBaseFilter_iface);
 }
 
 static const IMediaSeekingVtbl Parser_Seeking_Vtbl =

@@ -14,7 +14,7 @@
  * TODO:
  * - PrintAllAssociations might could be optimized to not fetch all registry subkeys under 'Classes', just the ones that start with '.'
  * - Make sure that non-administrator users can list associations, and get appropriate error messages when they don't have sufficient
- *   priveleges to perform an operation
+ *   privileges to perform an operation
  */
 
 #include "precomp.h"
@@ -116,6 +116,7 @@ PrintAllAssociations()
         return -2;
     }
 
+    extLength++;
     extName = cmd_alloc(extLength * sizeof(TCHAR));
 
     for(keyCtr = 0; keyCtr < numKeys; keyCtr++)

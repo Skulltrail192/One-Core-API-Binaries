@@ -29,39 +29,14 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(variant);
 
-static const char * const variant_types[] =
+static CRITICAL_SECTION cache_cs;
+static CRITICAL_SECTION_DEBUG critsect_debug =
 {
-  "VT_EMPTY","VT_NULL","VT_I2","VT_I4","VT_R4","VT_R8","VT_CY","VT_DATE",
-  "VT_BSTR","VT_DISPATCH","VT_ERROR","VT_BOOL","VT_VARIANT","VT_UNKNOWN",
-  "VT_DECIMAL","15","VT_I1","VT_UI1","VT_UI2","VT_UI4","VT_I8","VT_UI8",
-  "VT_INT","VT_UINT","VT_VOID","VT_HRESULT","VT_PTR","VT_SAFEARRAY",
-  "VT_CARRAY","VT_USERDEFINED","VT_LPSTR","VT_LPWSTR","32","33","34","35",
-  "VT_RECORD","VT_INT_PTR","VT_UINT_PTR","39","40","41","42","43","44","45",
-  "46","47","48","49","50","51","52","53","54","55","56","57","58","59","60",
-  "61","62","63","VT_FILETIME","VT_BLOB","VT_STREAM","VT_STORAGE",
-  "VT_STREAMED_OBJECT","VT_STORED_OBJECT","VT_BLOB_OBJECT","VT_CF","VT_CLSID",
-  "VT_VERSIONED_STREAM"
+    0, 0, &cache_cs,
+    { &critsect_debug.ProcessLocksList, &critsect_debug.ProcessLocksList },
+      0, 0, { (DWORD_PTR)(__FILE__ ": cache_cs") }
 };
-
-static const char * const variant_flags[16] =
-{
- "",
- "|VT_VECTOR",
- "|VT_ARRAY",
- "|VT_VECTOR|VT_ARRAY",
- "|VT_BYREF",
- "|VT_VECTOR|VT_ARRAY",
- "|VT_ARRAY|VT_BYREF",
- "|VT_VECTOR|VT_ARRAY|VT_BYREF",
- "|VT_RESERVED",
- "|VT_VECTOR|VT_RESERVED",
- "|VT_ARRAY|VT_RESERVED",
- "|VT_VECTOR|VT_ARRAY|VT_RESERVED",
- "|VT_BYREF|VT_RESERVED",
- "|VT_VECTOR|VT_ARRAY|VT_RESERVED",
- "|VT_ARRAY|VT_BYREF|VT_RESERVED",
- "|VT_VECTOR|VT_ARRAY|VT_BYREF|VT_RESERVED",
-};
+static CRITICAL_SECTION cache_cs = { &critsect_debug, -1, 0, 0, 0, 0 };
 
 /* Convert a variant from one type to another */
 static inline HRESULT VARIANT_Coerce(VARIANTARG* pd, LCID lcid, USHORT wFlags,
@@ -478,7 +453,10 @@ static inline HRESULT VARIANT_Coerce(VARIANTARG* pd, LCID lcid, USHORT wFlags,
     {
     case VT_DISPATCH:
       if (V_DISPATCH(ps) == NULL)
+      {
         V_UNKNOWN(pd) = NULL;
+        res = S_OK;
+      }
       else
         res = IDispatch_QueryInterface(V_DISPATCH(ps), &IID_IUnknown, (LPVOID*)&V_UNKNOWN(pd));
       break;
@@ -490,7 +468,10 @@ static inline HRESULT VARIANT_Coerce(VARIANTARG* pd, LCID lcid, USHORT wFlags,
     {
     case VT_UNKNOWN:
       if (V_UNKNOWN(ps) == NULL)
+      {
         V_DISPATCH(pd) = NULL;
+        res = S_OK;
+      }
       else
         res = IUnknown_QueryInterface(V_UNKNOWN(ps), &IID_IDispatch, (LPVOID*)&V_DISPATCH(pd));
       break;
@@ -1508,7 +1489,6 @@ HRESULT WINAPI VarUdateFromDate(DATE dateIn, ULONG dwFlags, UDATE *lpUdate)
 static void VARIANT_GetLocalisedNumberChars(VARIANT_NUMBER_CHARS *lpChars, LCID lcid, DWORD dwFlags)
 {
   static const VARIANT_NUMBER_CHARS defaultChars = { '-','+','.',',','$',0,'.',',' };
-  static CRITICAL_SECTION csLastChars = { NULL, -1, 0, 0, 0, 0 };
   static VARIANT_NUMBER_CHARS lastChars;
   static LCID lastLcid = -1;
   static DWORD lastFlags = 0;
@@ -1516,14 +1496,14 @@ static void VARIANT_GetLocalisedNumberChars(VARIANT_NUMBER_CHARS *lpChars, LCID 
   WCHAR buff[4];
 
   /* To make caching thread-safe, a critical section is needed */
-  EnterCriticalSection(&csLastChars);
+  EnterCriticalSection(&cache_cs);
 
   /* Asking for default locale entries is very expensive: It is a registry
      server call. So cache one locally, as Microsoft does it too */
   if(lcid == lastLcid && dwFlags == lastFlags)
   {
     memcpy(lpChars, &lastChars, sizeof(defaultChars));
-    LeaveCriticalSection(&csLastChars);
+    LeaveCriticalSection(&cache_cs);
     return;
   }
 
@@ -1550,7 +1530,7 @@ static void VARIANT_GetLocalisedNumberChars(VARIANT_NUMBER_CHARS *lpChars, LCID 
   memcpy(&lastChars, lpChars, sizeof(defaultChars));
   lastLcid = lcid;
   lastFlags = dwFlags;
-  LeaveCriticalSection(&csLastChars);
+  LeaveCriticalSection(&cache_cs);
 }
 
 /* Number Parsing States */
@@ -1754,9 +1734,8 @@ HRESULT WINAPI VarParseNumFromStr(OLECHAR *lpszStr, LCID lcid, ULONG dwFlags,
         }
         else
         {
-          if ((dwState & B_PROCESSING_OCT) && ((*lpszStr == '8') || (*lpszStr == '9'))) {
-            return DISP_E_TYPEMISMATCH;
-          }
+          if ((dwState & B_PROCESSING_OCT) && ((*lpszStr == '8') || (*lpszStr == '9')))
+            break;
 
           if (pNumprs->dwOutFlags & NUMPRS_DECIMAL)
             pNumprs->nPwr10--; /* Count decimal points in nPwr10 */
@@ -2508,18 +2487,11 @@ HRESULT WINAPI VarCat(LPVARIANT left, LPVARIANT right, LPVARIANT out)
 {
     VARTYPE leftvt,rightvt,resultvt;
     HRESULT hres;
-    static WCHAR str_true[32];
-    static WCHAR str_false[32];
     static const WCHAR sz_empty[] = {'\0'};
     leftvt = V_VT(left);
     rightvt = V_VT(right);
 
     TRACE("%s,%s,%p)\n", debugstr_variant(left), debugstr_variant(right), out);
-
-    if (!str_true[0]) {
-        VARIANT_GetLocalisedText(LOCALE_USER_DEFAULT, IDS_FALSE, str_false);
-        VARIANT_GetLocalisedText(LOCALE_USER_DEFAULT, IDS_TRUE, str_true);
-    }
 
     /* when both left and right are NULL the result is NULL */
     if (leftvt == VT_NULL && rightvt == VT_NULL)
@@ -2601,38 +2573,18 @@ HRESULT WINAPI VarCat(LPVARIANT left, LPVARIANT right, LPVARIANT out)
         /* Convert left side variant to string */
         if (leftvt != VT_BSTR)
         {
-            if (leftvt == VT_BOOL)
-            {
-                /* Bools are handled as localized True/False strings instead of 0/-1 as in MSDN */
-                V_VT(&bstrvar_left) = VT_BSTR;
-                if (V_BOOL(left))
-                    V_BSTR(&bstrvar_left) = SysAllocString(str_true);
-                else
-                    V_BSTR(&bstrvar_left) = SysAllocString(str_false);
-            }
             /* Fill with empty string for later concat with right side */
-            else if (leftvt == VT_NULL)
+            if (leftvt == VT_NULL)
             {
                 V_VT(&bstrvar_left) = VT_BSTR;
                 V_BSTR(&bstrvar_left) = SysAllocString(sz_empty);
             }
             else
             {
-                hres = VariantChangeTypeEx(&bstrvar_left,left,0,0,VT_BSTR);
+                hres = VariantChangeTypeEx(&bstrvar_left,left,0,VARIANT_ALPHABOOL|VARIANT_LOCALBOOL,VT_BSTR);
                 if (hres != S_OK) {
                     VariantClear(&bstrvar_left);
                     VariantClear(&bstrvar_right);
-                    if (leftvt == VT_NULL && (rightvt == VT_EMPTY ||
-                        rightvt == VT_NULL || rightvt ==  VT_I2 ||
-                        rightvt == VT_I4 || rightvt == VT_R4 ||
-                        rightvt == VT_R8 || rightvt == VT_CY ||
-                        rightvt == VT_DATE || rightvt == VT_BSTR ||
-                        rightvt == VT_BOOL ||  rightvt == VT_DECIMAL ||
-                        rightvt == VT_I1 || rightvt == VT_UI1 ||
-                        rightvt == VT_UI2 || rightvt == VT_UI4 ||
-                        rightvt == VT_I8 || rightvt == VT_UI8 ||
-                        rightvt == VT_INT || rightvt == VT_UINT))
-                        return DISP_E_BADVARTYPE;
                     return hres;
                 }
             }
@@ -2641,38 +2593,18 @@ HRESULT WINAPI VarCat(LPVARIANT left, LPVARIANT right, LPVARIANT out)
         /* convert right side variant to string */
         if (rightvt != VT_BSTR)
         {
-            if (rightvt == VT_BOOL)
-            {
-                /* Bools are handled as localized True/False strings instead of 0/-1 as in MSDN */
-                V_VT(&bstrvar_right) = VT_BSTR;
-                if (V_BOOL(right))
-                    V_BSTR(&bstrvar_right) = SysAllocString(str_true);
-                else
-                    V_BSTR(&bstrvar_right) = SysAllocString(str_false);
-            }
             /* Fill with empty string for later concat with right side */
-            else if (rightvt == VT_NULL)
+            if (rightvt == VT_NULL)
             {
                 V_VT(&bstrvar_right) = VT_BSTR;
                 V_BSTR(&bstrvar_right) = SysAllocString(sz_empty);
             }
             else
             {
-                hres = VariantChangeTypeEx(&bstrvar_right,right,0,0,VT_BSTR);
+                hres = VariantChangeTypeEx(&bstrvar_right,right,0,VARIANT_ALPHABOOL|VARIANT_LOCALBOOL,VT_BSTR);
                 if (hres != S_OK) {
                     VariantClear(&bstrvar_left);
                     VariantClear(&bstrvar_right);
-                    if (rightvt == VT_NULL && (leftvt == VT_EMPTY ||
-                        leftvt == VT_NULL || leftvt ==  VT_I2 ||
-                        leftvt == VT_I4 || leftvt == VT_R4 ||
-                        leftvt == VT_R8 || leftvt == VT_CY ||
-                        leftvt == VT_DATE || leftvt == VT_BSTR ||
-                        leftvt == VT_BOOL ||  leftvt == VT_DECIMAL ||
-                        leftvt == VT_I1 || leftvt == VT_UI1 ||
-                        leftvt == VT_UI2 || leftvt == VT_UI4 ||
-                        leftvt == VT_I8 || leftvt == VT_UI8 ||
-                        leftvt == VT_INT || leftvt == VT_UINT))
-                        return DISP_E_BADVARTYPE;
                     return hres;
                 }
             }
@@ -3625,7 +3557,7 @@ HRESULT WINAPI VarDiv(LPVARIANT left, LPVARIANT right, LPVARIANT result)
     }
 
     /* Determine return type */
-    if (!(rightvt == VT_EMPTY))
+    if (rightvt != VT_EMPTY)
     {
         if (leftvt == VT_NULL || rightvt == VT_NULL)
         {
@@ -3658,7 +3590,7 @@ HRESULT WINAPI VarDiv(LPVARIANT left, LPVARIANT right, LPVARIANT result)
         else if (leftvt == VT_R4 || rightvt == VT_R4)
             resvt = VT_R4;
     }
-    else if (leftvt == VT_NULL && rightvt == VT_EMPTY)
+    else if (leftvt == VT_NULL)
     {
         V_VT(result) = VT_NULL;
         hres = S_OK;
@@ -3965,9 +3897,6 @@ HRESULT WINAPI VarSub(LPVARIANT left, LPVARIANT right, LPVARIANT result)
     break;
     case VT_I2:
     V_I2(result) = V_I2(&lv) - V_I2(&rv);
-    break;
-    case VT_I1:
-    V_I1(result) = V_I1(&lv) - V_I1(&rv);
     break;
     case VT_UI1:
     V_UI1(result) = V_UI2(&lv) - V_UI1(&rv);

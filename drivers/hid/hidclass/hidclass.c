@@ -126,7 +126,7 @@ NTAPI
 HidClassDriverUnload(
     IN PDRIVER_OBJECT DriverObject)
 {
-    UNIMPLEMENTED
+    UNIMPLEMENTED;
 }
 
 NTSTATUS
@@ -146,23 +146,12 @@ HidClass_Create(
     CommonDeviceExtension = DeviceObject->DeviceExtension;
     if (CommonDeviceExtension->IsFDO)
     {
-#ifndef __REACTOS__
-
          //
          // only supported for PDO
          //
          Irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
          IoCompleteRequest(Irp, IO_NO_INCREMENT);
          return STATUS_UNSUCCESSFUL;
-#else
-         //
-         // ReactOS PnP manager [...]
-         //
-         DPRINT1("[HIDCLASS] PnP HACK\n");
-         Irp->IoStatus.Status = STATUS_SUCCESS;
-         IoCompleteRequest(Irp, IO_NO_INCREMENT);
-         return STATUS_SUCCESS;
-#endif
     }
 
     //
@@ -812,7 +801,7 @@ HidClass_Write(
     IN PDEVICE_OBJECT DeviceObject,
     IN PIRP Irp)
 {
-    UNIMPLEMENTED
+    UNIMPLEMENTED;
     ASSERT(FALSE);
     Irp->IoStatus.Status = STATUS_NOT_IMPLEMENTED;
     IoCompleteRequest(Irp, IO_NO_INCREMENT);
@@ -961,7 +950,7 @@ HidClass_InternalDeviceControl(
     IN PDEVICE_OBJECT DeviceObject,
     IN PIRP Irp)
 {
-    UNIMPLEMENTED
+    UNIMPLEMENTED;
     ASSERT(FALSE);
     Irp->IoStatus.Status = STATUS_NOT_IMPLEMENTED;
     IoCompleteRequest(Irp, IO_NO_INCREMENT);

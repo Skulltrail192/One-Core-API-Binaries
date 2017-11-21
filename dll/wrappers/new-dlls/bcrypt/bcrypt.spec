@@ -4,34 +4,35 @@
 @ stub BCryptConfigureContext
 @ stub BCryptConfigureContextFunction
 @ stub BCryptCreateContext
-@ stub BCryptCreateHash
-@ stub BCryptDecrypt
+@ stdcall BCryptCreateHash(ptr ptr ptr long ptr long long)
+@ stdcall BCryptDecrypt(ptr ptr long ptr ptr long ptr long ptr long)
 @ stub BCryptDeleteContext
 @ stub BCryptDeriveKey
-@ stub BCryptDestroyHash
-@ stub BCryptDestroyKey
+@ stdcall BCryptDestroyHash(ptr)
+@ stdcall BCryptDestroyKey(ptr)
 @ stub BCryptDestroySecret
-@ stub BCryptDuplicateHash
-@ stub BCryptDuplicateKey
-@ stub BCryptEncrypt
+@ stdcall BCryptDuplicateHash(ptr ptr ptr long long)
+@ stdcall BCryptDuplicateKey(ptr ptr ptr long long)
+@ stdcall BCryptEncrypt(ptr ptr long ptr ptr long ptr long ptr long)
 @ stdcall BCryptEnumAlgorithms(long ptr ptr long)
 @ stub BCryptEnumContextFunctionProviders
 @ stub BCryptEnumContextFunctions
 @ stub BCryptEnumContexts
 @ stub BCryptEnumProviders
 @ stub BCryptEnumRegisteredProviders
-@ stub BCryptExportKey
+@ stdcall BCryptExportKey(ptr ptr wstr ptr long ptr long)
 @ stub BCryptFinalizeKeyPair
-@ stub BCryptFinishHash
+@ stdcall BCryptFinishHash(ptr ptr long long)
 @ stub BCryptFreeBuffer
 @ stdcall BCryptGenRandom(ptr ptr long long)
 @ stub BCryptGenerateKeyPair
-@ stub BCryptGenerateSymmetricKey
+@ stdcall BCryptGenerateSymmetricKey(ptr ptr ptr long ptr long long)
 @ stdcall BCryptGetFipsAlgorithmMode(ptr)
-@ stub BCryptGetProperty
-@ stub BCryptHashData
-@ stub BCryptImportKey
-@ stub BCryptImportKeyPair
+@ stdcall BCryptGetProperty(ptr wstr ptr long ptr long)
+@ stdcall BCryptHash(ptr ptr long ptr long ptr long)
+@ stdcall BCryptHashData(ptr ptr long long)
+@ stdcall BCryptImportKey(ptr ptr wstr ptr ptr long ptr long long)
+@ stdcall BCryptImportKeyPair(ptr ptr wstr ptr ptr long long)
 @ stdcall BCryptOpenAlgorithmProvider(ptr wstr wstr long)
 @ stub BCryptQueryContextConfiguration
 @ stub BCryptQueryContextFunctionConfiguration
@@ -45,11 +46,11 @@
 @ stub BCryptSecretAgreement
 @ stub BCryptSetAuditingInterface
 @ stub BCryptSetContextFunctionProperty
-@ stub BCryptSetProperty
+@ stdcall BCryptSetProperty(ptr wstr ptr long long)
 @ stub BCryptSignHash
 @ stub BCryptUnregisterConfigChangeNotify
 @ stub BCryptUnregisterProvider
-@ stub BCryptVerifySignature
+@ stdcall BCryptVerifySignature(ptr ptr ptr long ptr long long)
 @ stub GetAsymmetricEncryptionInterface
 @ stub GetCipherInterface
 @ stub GetHashInterface

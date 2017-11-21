@@ -1,15 +1,30 @@
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.12)
 
 if(POLICY CMP0017)
     # Shadow cmake provided modules
     cmake_policy(SET CMP0017 OLD)
 endif()
 
+if(POLICY CMP0026)
+    # Allow use of the LOCATION property
+    cmake_policy(SET CMP0026 OLD)
+endif()
+
+if(POLICY CMP0051)
+    # List TARGET_OBJECTS in SOURCES target property
+    cmake_policy(SET CMP0051 NEW)
+endif()
+
+if(POLICY CMP0058)
+    # Ninja requires custom command byproducts to be explicit
+    cmake_policy(SET CMP0058 OLD)
+endif()
+
 project(REACTOS)
 
 # Versioning
-include(include/reactos/version.cmake)
+include(sdk/include/reactos/version.cmake)
 
 # Don't escape preprocessor definition values added via add_definitions
 cmake_policy(SET CMP0005 OLD)
@@ -25,10 +40,9 @@ set(CMAKE_SKIP_PREPROCESSED_SOURCE_RULES TRUE)
 set(CMAKE_SKIP_ASSEMBLY_SOURCE_RULES TRUE)
 set(CMAKE_COLOR_MAKEFILE OFF)
 #set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
-set(CMAKE_SKIP_INSTALL_RULES ON)
 
-if(NOT CMAKE_VERSION STREQUAL "2.8.12.1-ReactOS")
-    set(CMAKE_DISABLE_NINJA_DEPSLOG TRUE)
+if(NOT DEFINED NEW_STYLE_BUILD)
+    set(NEW_STYLE_BUILD TRUE)
 endif()
 
 if(NOT ARCH)
@@ -43,19 +57,36 @@ string(TOLOWER ${ARCH} ARCH)
 
 # Compile options
 if(ARCH STREQUAL "i386")
-    include(cmake/config.cmake)
+    include(sdk/cmake/config.cmake)
 elseif(ARCH STREQUAL "amd64")
-    include(cmake/config-amd64.cmake)
+    include(sdk/cmake/config-amd64.cmake)
 elseif(ARCH STREQUAL "arm")
-    include(cmake/config-arm.cmake)
+    include(sdk/cmake/config-arm.cmake)
 endif()
 
 # Compiler flags handling
-include(cmake/compilerflags.cmake)
+include(sdk/cmake/compilerflags.cmake)
 
 add_definitions(-D__REACTOS__)
 
+if(MSVC_IDE)
+    add_compile_flags("/MP")
+endif()
+
+# We don't need CMake importlib handling.
+# FIXME: Remove the MSVC_IDE condition when the upcoming RosBE lands.
+if(NOT MSVC_IDE)
+    unset(CMAKE_IMPORT_LIBRARY_SUFFIX)
+endif()
+
+# Bison and Flex support
+# include(sdk/cmake/bison-flex.cmake)
+
 if(NOT CMAKE_CROSSCOMPILING)
+
+    if(NEW_STYLE_BUILD)
+        set(TOOLS_FOLDER ${CMAKE_CURRENT_BINARY_DIR})
+    endif()
 
     add_definitions(-DTARGET_${ARCH})
 
@@ -67,25 +98,32 @@ if(NOT CMAKE_CROSSCOMPILING)
             add_definitions(/D_ALLOW_KEYWORD_MACROS)
         endif()
         add_definitions(/Dinline=__inline)
-    else()
-        add_compile_flags("-fshort-wchar -Wno-multichar")
     endif()
 
-    include_directories(include/host)
+    include_directories(sdk/include/host)
 
     if(NOT MSVC)
         add_subdirectory(dll/win32/dbghelp)
     endif()
-    add_subdirectory(tools)
-    add_subdirectory(lib)
+    add_subdirectory(sdk/tools)
+    add_subdirectory(sdk/lib)
 
-    if(NOT MSVC)
-        export(TARGETS bin2c widl gendib cabman cdmake mkhive obj2bin spec2def geninc rsym mkshelllink utf16le FILE ${CMAKE_BINARY_DIR}/ImportExecutables.cmake NAMESPACE native- )
-    else()
-        export(TARGETS bin2c widl gendib cabman cdmake mkhive obj2bin spec2def geninc mkshelllink utf16le FILE ${CMAKE_BINARY_DIR}/ImportExecutables.cmake NAMESPACE native- )
+    if(NOT NEW_STYLE_BUILD)
+        if(NOT MSVC)
+            export(TARGETS bin2c widl gendib cabman fatten hpp isohybrid mkhive mkisofs obj2bin spec2def geninc rsym mkshelllink utf16le xml2sdb FILE ${CMAKE_BINARY_DIR}/ImportExecutables.cmake NAMESPACE native- )
+        else()
+            export(TARGETS bin2c widl gendib cabman fatten hpp isohybrid mkhive mkisofs obj2bin spec2def geninc mkshelllink utf16le xml2sdb FILE ${CMAKE_BINARY_DIR}/ImportExecutables.cmake NAMESPACE native- )
+        endif()
     endif()
 
 else()
+
+    if(NEW_STYLE_BUILD)
+        include(sdk/cmake/host-tools.cmake)
+    endif()
+
+    # Print build type
+    message("-- Build Type: ${CMAKE_BUILD_TYPE}")
 
     # adjust the default behaviour of the FIND_XXX() commands:
     # search headers and libraries in the target environment, search
@@ -97,15 +135,6 @@ else()
     #useful stuff!
     include(CMakeParseArguments)
 
-    if(ENABLE_CCACHE)
-        set(CMAKE_C_USE_RESPONSE_FILE_FOR_INCLUDES OFF)
-        set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES OFF)
-    endif()
-
-    # Default to Debug for the build type
-    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING
-"Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
-
     # Do some cleanup
     file(REMOVE
         ${REACTOS_BINARY_DIR}/dependencies.graphml
@@ -116,12 +145,13 @@ else()
         ${REACTOS_BINARY_DIR}/boot/ros_cab.txt
         ${REACTOS_BINARY_DIR}/boot/ros_cab_target.txt)
 
-    if(NOT DEFINED REACTOS_BUILD_TOOLS_DIR)
-        set(REACTOS_BUILD_TOOLS_DIR ${REACTOS_SOURCE_DIR}/build)
+    if(NOT NEW_STYLE_BUILD)
+        if(NOT DEFINED REACTOS_BUILD_TOOLS_DIR)
+            set(REACTOS_BUILD_TOOLS_DIR ${REACTOS_SOURCE_DIR}/build)
+        endif()
+        set(IMPORT_EXECUTABLES "${REACTOS_BUILD_TOOLS_DIR}/ImportExecutables.cmake" CACHE FILEPATH "Host executables")
+        include(${IMPORT_EXECUTABLES})
     endif()
-
-    set(IMPORT_EXECUTABLES "${REACTOS_BUILD_TOOLS_DIR}/ImportExecutables.cmake" CACHE FILEPATH "Host executables")
-    include(${IMPORT_EXECUTABLES})
 
     if(DBG)
         add_definitions(-DDBG=1 -D_SEH_ENABLE_TRACE)
@@ -137,7 +167,7 @@ else()
         add_definitions(-D_WINKD_=1)
     endif()
 
-    if(CMAKE_VERSION STREQUAL "2.8.12.1-ReactOS")
+    if(CMAKE_VERSION MATCHES "ReactOS")
         set(PCH 1 CACHE BOOL "Whether to use precompiled headers")
     else()
         set(PCH 0 CACHE BOOL "Whether to use precompiled headers")
@@ -157,7 +187,10 @@ else()
         add_definitions(-D_M_AMD64 -D_AMD64_ -D__x86_64__ -D_WIN64)
     elseif(ARCH STREQUAL "arm")
         # _M_ARM is already defined by toolchain
-        add_definitions(-D_ARM_ -D__arm__)
+        add_definitions(-D_ARM_ -D__arm__ -DWIN32)
+        if(SARCH STREQUAL "omap-zoom2")
+            add_definitions(-D_ZOOM2_)
+        endif()
     endif()
 
     # Other
@@ -166,7 +199,7 @@ else()
     elseif(ARCH STREQUAL "amd64")
         add_definitions(-DUSE_COMPILER_EXCEPTIONS -DNO_UNDERSCORE_PREFIX)
     elseif(ARCH STREQUAL "arm")
-        add_definitions(-DUSE_COMPILER_EXCEPTIONS)
+        add_definitions(-DUSE_COMPILER_EXCEPTIONS -DNO_UNDERSCORE_PREFIX)
     endif()
 
     # Activate support for assembly source files
@@ -176,55 +209,60 @@ else()
     enable_language(RC)
 
     # Localization definitions
-    include(cmake/localization.cmake)
+    include(sdk/cmake/localization.cmake)
     set(I18N_DEFS "")
     # This will set I18N_DEFS for later use
     set_i18n_language(${I18N_LANG})
 
     # Compiler specific definitions and macros
     if(MSVC)
-        include(cmake/msvc.cmake)
+        include(sdk/cmake/msvc.cmake)
     else()
-        include(cmake/gcc.cmake)
+        include(sdk/cmake/gcc.cmake)
     endif()
 
     # Generic macros
-    include(cmake/CMakeMacros.cmake)
+    include(sdk/cmake/CMakeMacros.cmake)
 
     # IDL macros for widl/midl
     # We're using widl now for both MSVC and GCC builds
-    include(cmake/widl-support.cmake)
+    include(sdk/cmake/widl-support.cmake)
 
     include_directories(
-        include
-        include/psdk
-        include/dxsdk
-        ${REACTOS_BINARY_DIR}/include
-        ${REACTOS_BINARY_DIR}/include/psdk
-        ${REACTOS_BINARY_DIR}/include/dxsdk
-        ${REACTOS_BINARY_DIR}/include/reactos
-        include/crt
-        include/ddk
-        include/ndk
-        include/reactos
-        include/reactos/libs)
+        sdk/include
+        sdk/include/psdk
+        sdk/include/dxsdk
+        ${REACTOS_BINARY_DIR}/sdk/include
+        ${REACTOS_BINARY_DIR}/sdk/include/psdk
+        ${REACTOS_BINARY_DIR}/sdk/include/dxsdk
+        ${REACTOS_BINARY_DIR}/sdk/include/ddk
+        ${REACTOS_BINARY_DIR}/sdk/include/reactos
+        ${REACTOS_BINARY_DIR}/sdk/include/reactos/mc
+        sdk/include/crt
+        sdk/include/ddk
+        sdk/include/ndk
+        sdk/include/reactos
+        sdk/include/reactos/libs)
 
     if(ARCH STREQUAL "arm")
-        include_directories(${REACTOS_SOURCE_DIR}/include/reactos/arm)
+        include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/arm)
     endif()
 
     add_dependency_header()
 
-    add_subdirectory(include/psdk)
-    add_subdirectory(include/dxsdk)
-    add_subdirectory(include/reactos/wine)
-    add_subdirectory(include/reactos/mc)
-    add_subdirectory(include/asm)
+    add_subdirectory(sdk/include/xdk)
+    add_subdirectory(sdk/include/psdk)
+    add_subdirectory(sdk/include/dxsdk)
+    add_subdirectory(sdk/include/reactos/wine)
+    add_subdirectory(sdk/include/reactos/mc)
+    add_subdirectory(sdk/include/asm)
 
     if(NO_ROSSYM)
-        include(cmake/baseaddress_dwarf.cmake)
+        include(sdk/cmake/baseaddress_dwarf.cmake)
+    elseif(MSVC)
+        include(sdk/cmake/baseaddress_msvc.cmake)
     else()
-        include(cmake/baseaddress.cmake)
+        include(sdk/cmake/baseaddress.cmake)
     endif()
 
     # For MSVC builds, this puts all debug symbols file in the same directory.
@@ -236,17 +274,21 @@ else()
     add_subdirectory(dll)
     add_subdirectory(drivers)
     add_subdirectory(hal)
-    add_subdirectory(lib)
+    add_subdirectory(sdk/lib)
     add_subdirectory(media)
+    add_subdirectory(modules)
     add_subdirectory(ntoskrnl)
     add_subdirectory(subsystems)
-    add_subdirectory(tools/wpp)
+    add_subdirectory(sdk/tools/wpp)
     add_subdirectory(win32ss)
+
+    # Create the registry hives
+    create_registry_hives()
 
     # Create {bootcd, livecd, bootcdregtest}.lst
     create_iso_lists()
 
-    file(MAKE_DIRECTORY ${REACTOS_BINARY_DIR}/include/reactos)
+    file(MAKE_DIRECTORY ${REACTOS_BINARY_DIR}/sdk/include/reactos)
 
     add_dependency_footer()
 endif()

@@ -161,9 +161,6 @@ VOID
 WinLdrpDumpArcDisks(PLOADER_PARAMETER_BLOCK LoaderBlock);
 
 BOOLEAN
-MempAllocatePageTables();
-
-BOOLEAN
 MempSetupPaging(IN PFN_NUMBER StartPage,
                 IN PFN_NUMBER NumberOfPages,
                 IN BOOLEAN KernelMapping);
@@ -191,4 +188,3 @@ WinLdrSetupMachineDependent(PLOADER_PARAMETER_BLOCK LoaderBlock);
 
 VOID
 WinLdrSetProcessorContext(VOID);
-

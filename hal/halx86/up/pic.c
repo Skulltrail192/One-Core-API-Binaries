@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS HAL
  * LICENSE:         BSD - See COPYING.ARM in the top level directory
- * FILE:            hal/halx86/generic/pic.c
+ * FILE:            hal/halx86/up/pic.c
  * PURPOSE:         HAL PIC Management and Control Code
  * PROGRAMMERS:     ReactOS Portable Systems Group
  */
@@ -11,6 +11,11 @@
 #include <hal.h>
 #define NDEBUG
 #include <debug.h>
+
+VOID
+NTAPI
+HalpEndSoftwareInterrupt(IN KIRQL OldIrql,
+                         IN PKTRAP_FRAME TrapFrame);
 
 /* GLOBALS ********************************************************************/
 
@@ -263,7 +268,7 @@ ULONG FindHigherIrqlMask[32] =
      * so it will always preempt until we reach PROFILE_LEVEL.
      */
     0b00000000000000000001011111110000, /* IRQL 20 */
-    0b00000000000000000001001111110000, /* IRQL 20 */
+    0b00000000000000000001001111110000, /* IRQL 21 */
     0b00000000000000000001000111110000, /* IRQL 22 */
     0b00000000000000000001000011110000, /* IRQL 23 */
     0b00000000000000000001000001110000, /* IRQL 24 */
@@ -330,8 +335,9 @@ KIRQL SWInterruptLookUpTable[8] =
 #if defined(__GNUC__)
 
 #define HalpDelayedHardwareInterrupt(x)                             \
-    VOID HalpHardwareInterrupt##x(VOID);                            \
+    VOID __cdecl HalpHardwareInterrupt##x(VOID);                    \
     VOID                                                            \
+    __cdecl                                                         \
     HalpHardwareInterrupt##x(VOID)                                  \
     {                                                               \
         asm volatile ("int $%c0\n"::"i"(PRIMARY_VECTOR_BASE + x));  \
@@ -340,8 +346,9 @@ KIRQL SWInterruptLookUpTable[8] =
 #elif defined(_MSC_VER)
 
 #define HalpDelayedHardwareInterrupt(x)                             \
-    VOID HalpHardwareInterrupt##x(VOID);                            \
+    VOID __cdecl HalpHardwareInterrupt##x(VOID);                    \
     VOID                                                            \
+    __cdecl                                                         \
     HalpHardwareInterrupt##x(VOID)                                  \
     {                                                               \
         __asm                                                       \
@@ -375,10 +382,10 @@ HalpDelayedHardwareInterrupt(15);
 /* Handlers for pending interrupts */
 PHAL_SW_INTERRUPT_HANDLER SWInterruptHandlerTable[20] =
 {
-    KiUnexpectedInterrupt,
+    (PHAL_SW_INTERRUPT_HANDLER)KiUnexpectedInterrupt,
     HalpApcInterrupt,
     HalpDispatchInterrupt2,
-    KiUnexpectedInterrupt,
+    (PHAL_SW_INTERRUPT_HANDLER)KiUnexpectedInterrupt,
     HalpHardwareInterrupt0,
     HalpHardwareInterrupt1,
     HalpHardwareInterrupt2,
@@ -730,14 +737,16 @@ HalClearSoftwareInterrupt(IN KIRQL Irql)
     KeGetPcr()->IRR &= ~(1 << Irql);
 }
 
-VOID
+PHAL_SW_INTERRUPT_HANDLER_2ND_ENTRY
 NTAPI
-HalpEndSoftwareInterrupt(IN KIRQL OldIrql,
-                         IN PKTRAP_FRAME TrapFrame)
+HalpEndSoftwareInterrupt2(IN KIRQL OldIrql,
+                          IN PKTRAP_FRAME TrapFrame)
 {
     ULONG PendingIrql, PendingIrqlMask, PendingIrqMask;
     PKPCR Pcr = KeGetPcr();
     PIC_MASK Mask;
+
+    UNREFERENCED_PARAMETER(TrapFrame);
 
     /* Set old IRQL */
     Pcr->Irql = OldIrql;
@@ -747,10 +756,10 @@ HalpEndSoftwareInterrupt(IN KIRQL OldIrql,
     {
         /* Check for pending software interrupts and compare with current IRQL */
         PendingIrqlMask = Pcr->IRR & FindHigherIrqlMask[OldIrql];
-        if (!PendingIrqlMask) return;
+        if (!PendingIrqlMask) return NULL;
 
         /* Check for in-service delayed interrupt */
-        if (Pcr->IrrActive & 0xFFFFFFF0) return;
+        if (Pcr->IrrActive & 0xFFFFFFF0) return NULL;
 
         /* Check if pending IRQL affects hardware state */
         BitScanReverse(&PendingIrql, PendingIrqlMask);
@@ -775,9 +784,11 @@ HalpEndSoftwareInterrupt(IN KIRQL OldIrql,
         else
         {
             /* No need to loop checking for hardware interrupts */
-            SWInterruptHandlerTable2[PendingIrql](TrapFrame);
+            return SWInterruptHandlerTable2[PendingIrql];
         }
     }
+
+    return NULL;
 }
 
 /* EDGE INTERRUPT DISMISSAL FUNCTIONS *****************************************/
@@ -808,7 +819,7 @@ _HalpDismissIrqGeneric(IN KIRQL Irql,
         Ocw2.EoiMode = SpecificEoi;
 
         /* Check which PIC needs the EOI */
-        if (Irq > 8)
+        if (Irq >= 8)
         {
             /* Send the EOI for the IRQ */
             __outbyte(PIC2_CONTROL_PORT, Ocw2.Bits | ((Irq - 8) & 0xFF));
@@ -840,7 +851,7 @@ _HalpDismissIrqGeneric(IN KIRQL Irql,
 }
 
 BOOLEAN
-REGISTERCALL
+NTAPI
 HalpDismissIrqGeneric(IN KIRQL Irql,
                       IN ULONG Irq,
                       OUT PKIRQL OldIrql)
@@ -850,7 +861,7 @@ HalpDismissIrqGeneric(IN KIRQL Irql,
 }
 
 BOOLEAN
-REGISTERCALL
+NTAPI
 HalpDismissIrq15(IN KIRQL Irql,
                  IN ULONG Irq,
                  OUT PKIRQL OldIrql)
@@ -886,7 +897,7 @@ HalpDismissIrq15(IN KIRQL Irql,
 
 
 BOOLEAN
-REGISTERCALL
+NTAPI
 HalpDismissIrq13(IN KIRQL Irql,
                  IN ULONG Irq,
                  OUT PKIRQL OldIrql)
@@ -899,7 +910,7 @@ HalpDismissIrq13(IN KIRQL Irql,
 }
 
 BOOLEAN
-REGISTERCALL
+NTAPI
 HalpDismissIrq07(IN KIRQL Irql,
                  IN ULONG Irq,
                  OUT PKIRQL OldIrql)
@@ -952,7 +963,7 @@ _HalpDismissIrqLevel(IN KIRQL Irql,
     Ocw2.EoiMode = SpecificEoi;
 
     /* Check which PIC needs the EOI */
-    if (Irq > 8)
+    if (Irq >= 8)
     {
         /* Send the EOI for the IRQ */
         __outbyte(PIC2_CONTROL_PORT, Ocw2.Bits | ((Irq - 8) & 0xFF));
@@ -983,7 +994,7 @@ _HalpDismissIrqLevel(IN KIRQL Irql,
 }
 
 BOOLEAN
-REGISTERCALL
+NTAPI
 HalpDismissIrqLevel(IN KIRQL Irql,
                     IN ULONG Irq,
                     OUT PKIRQL OldIrql)
@@ -993,7 +1004,7 @@ HalpDismissIrqLevel(IN KIRQL Irql,
 }
 
 BOOLEAN
-REGISTERCALL
+NTAPI
 HalpDismissIrq15Level(IN KIRQL Irql,
                       IN ULONG Irq,
                       OUT PKIRQL OldIrql)
@@ -1028,7 +1039,7 @@ HalpDismissIrq15Level(IN KIRQL Irql,
 }
 
 BOOLEAN
-REGISTERCALL
+NTAPI
 HalpDismissIrq13Level(IN KIRQL Irql,
                       IN ULONG Irq,
                       OUT PKIRQL OldIrql)
@@ -1041,7 +1052,7 @@ HalpDismissIrq13Level(IN KIRQL Irql,
 }
 
 BOOLEAN
-REGISTERCALL
+NTAPI
 HalpDismissIrq07Level(IN KIRQL Irql,
                       IN ULONG Irq,
                       OUT PKIRQL OldIrql)
@@ -1066,6 +1077,7 @@ HalpDismissIrq07Level(IN KIRQL Irql,
 }
 
 VOID
+__cdecl
 HalpHardwareInterruptLevel(VOID)
 {
     PKPCR Pcr = KeGetPcr();
@@ -1241,6 +1253,7 @@ HalEndSystemInterrupt(IN KIRQL OldIrql,
             {
                 /* Now handle pending software interrupt */
                 SWInterruptHandlerTable2[PendingIrql](TrapFrame);
+                UNREACHABLE;
             }
         }
     }
@@ -1249,8 +1262,8 @@ HalEndSystemInterrupt(IN KIRQL OldIrql,
 /* SOFTWARE INTERRUPT TRAPS ***************************************************/
 
 FORCEINLINE
-VOID
 DECLSPEC_NORETURN
+VOID
 _HalpApcInterruptHandler(IN PKTRAP_FRAME TrapFrame)
 {
     KIRQL CurrentIrql;
@@ -1278,8 +1291,8 @@ _HalpApcInterruptHandler(IN PKTRAP_FRAME TrapFrame)
     KiEoiHelper(TrapFrame);
 }
 
-VOID
 DECLSPEC_NORETURN
+VOID
 FASTCALL
 HalpApcInterrupt2ndEntry(IN PKTRAP_FRAME TrapFrame)
 {
@@ -1287,8 +1300,8 @@ HalpApcInterrupt2ndEntry(IN PKTRAP_FRAME TrapFrame)
     _HalpApcInterruptHandler(TrapFrame);
 }
 
-VOID
 DECLSPEC_NORETURN
+VOID
 FASTCALL
 HalpApcInterruptHandler(IN PKTRAP_FRAME TrapFrame)
 {
@@ -1327,8 +1340,8 @@ _HalpDispatchInterruptHandler(VOID)
     return CurrentIrql;
 }
 
-VOID
 DECLSPEC_NORETURN
+VOID
 FASTCALL
 HalpDispatchInterrupt2ndEntry(IN PKTRAP_FRAME TrapFrame)
 {
@@ -1345,6 +1358,7 @@ HalpDispatchInterrupt2ndEntry(IN PKTRAP_FRAME TrapFrame)
 }
 
 VOID
+__cdecl
 HalpDispatchInterrupt2(VOID)
 {
     ULONG PendingIrqlMask, PendingIrql;

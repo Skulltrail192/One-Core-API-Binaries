@@ -1,6 +1,6 @@
 /*
  *  ReactOS kernel
- *  Copyright (C) 2002 ReactOS Team
+ *  Copyright (C) 2002, 2014 ReactOS Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@
  * PROJECT:          ReactOS kernel
  * FILE:             drivers/filesystem/ntfs/volume.c
  * PURPOSE:          NTFS filesystem driver
- * PROGRAMMER:       Eric Kohl
+ * PROGRAMMERS:      Eric Kohl
+ *                   Pierre Schweitzer (pierre@reactos.org)
  */
 
 /* INCLUDES *****************************************************************/
@@ -32,12 +33,70 @@
 
 /* FUNCTIONS ****************************************************************/
 
-static
 ULONGLONG
 NtfsGetFreeClusters(PDEVICE_EXTENSION DeviceExt)
 {
-    UNIMPLEMENTED;
-    return 0;
+    NTSTATUS Status;
+    PFILE_RECORD_HEADER BitmapRecord;
+    PNTFS_ATTR_CONTEXT DataContext;
+    ULONGLONG BitmapDataSize;
+    PCHAR BitmapData;
+    ULONGLONG FreeClusters = 0;
+    ULONG Read = 0;
+    RTL_BITMAP Bitmap;
+
+    DPRINT1("NtfsGetFreeClusters(%p)\n", DeviceExt);
+
+    BitmapRecord = ExAllocatePoolWithTag(NonPagedPool,
+                                         DeviceExt->NtfsInfo.BytesPerFileRecord,
+                                         TAG_NTFS);
+    if (BitmapRecord == NULL)
+    {
+        return 0;
+    }
+
+    Status = ReadFileRecord(DeviceExt, NTFS_FILE_BITMAP, BitmapRecord);
+    if (!NT_SUCCESS(Status))
+    {
+        ExFreePoolWithTag(BitmapRecord, TAG_NTFS);
+        return 0;
+    }
+
+    Status = FindAttribute(DeviceExt, BitmapRecord, AttributeData, L"", 0, &DataContext);
+    if (!NT_SUCCESS(Status))
+    {
+        ExFreePoolWithTag(BitmapRecord, TAG_NTFS);
+        return 0;
+    }
+
+    BitmapDataSize = AttributeDataLength(&DataContext->Record);
+    ASSERT((BitmapDataSize * 8) >= DeviceExt->NtfsInfo.ClusterCount);
+    BitmapData = ExAllocatePoolWithTag(NonPagedPool, ROUND_UP(BitmapDataSize, DeviceExt->NtfsInfo.BytesPerSector), TAG_NTFS);
+    if (BitmapData == NULL)
+    {
+        ReleaseAttributeContext(DataContext);
+        ExFreePoolWithTag(BitmapRecord, TAG_NTFS);
+        return 0;
+    }
+
+    /* FIXME: Totally underoptimized! */
+    for (; Read < BitmapDataSize; Read += DeviceExt->NtfsInfo.BytesPerSector)
+    {
+        ReadAttribute(DeviceExt, DataContext, Read, (PCHAR)((ULONG_PTR)BitmapData + Read), DeviceExt->NtfsInfo.BytesPerSector);
+    }
+    ReleaseAttributeContext(DataContext);
+
+    DPRINT1("Total clusters: %I64x\n", DeviceExt->NtfsInfo.ClusterCount);
+    DPRINT1("Total clusters in bitmap: %I64x\n", BitmapDataSize * 8);
+    DPRINT1("Diff in size: %I64d B\n", ((BitmapDataSize * 8) - DeviceExt->NtfsInfo.ClusterCount) * DeviceExt->NtfsInfo.SectorsPerCluster * DeviceExt->NtfsInfo.BytesPerSector);
+
+    RtlInitializeBitMap(&Bitmap, (PULONG)BitmapData, DeviceExt->NtfsInfo.ClusterCount);
+    FreeClusters = RtlNumberOfClearBits(&Bitmap);
+
+    ExFreePoolWithTag(BitmapData, TAG_NTFS);
+    ExFreePoolWithTag(BitmapRecord, TAG_NTFS);
+
+    return FreeClusters;
 }
 
 static
@@ -56,7 +115,7 @@ NtfsGetFsVolumeInformation(PDEVICE_OBJECT DeviceObject,
            sizeof(FILE_FS_VOLUME_INFORMATION) + DeviceObject->Vpb->VolumeLabelLength);
     DPRINT("LabelLength %hu\n",
            DeviceObject->Vpb->VolumeLabelLength);
-    DPRINT("Label %*.S\n",
+    DPRINT("Label %.*S\n",
            DeviceObject->Vpb->VolumeLabelLength / sizeof(WCHAR),
            DeviceObject->Vpb->VolumeLabel);
 
@@ -106,7 +165,7 @@ NtfsGetFsAttributeInformation(PDEVICE_EXTENSION DeviceExt,
         return STATUS_BUFFER_OVERFLOW;
 
     FsAttributeInfo->FileSystemAttributes =
-        FILE_CASE_PRESERVED_NAMES | FILE_UNICODE_ON_DISK;
+        FILE_CASE_PRESERVED_NAMES | FILE_UNICODE_ON_DISK | FILE_READ_ONLY_VOLUME;
     FsAttributeInfo->MaximumComponentNameLength = 255;
     FsAttributeInfo->FileSystemNameLength = 8;
 
@@ -139,7 +198,7 @@ NtfsGetFsSizeInformation(PDEVICE_OBJECT DeviceObject,
     DeviceExt = DeviceObject->DeviceExtension;
 
     FsSizeInfo->AvailableAllocationUnits.QuadPart = NtfsGetFreeClusters(DeviceExt);
-    FsSizeInfo->TotalAllocationUnits.QuadPart = DeviceExt->NtfsInfo.SectorCount / DeviceExt->NtfsInfo.SectorsPerCluster;
+    FsSizeInfo->TotalAllocationUnits.QuadPart = DeviceExt->NtfsInfo.ClusterCount;
     FsSizeInfo->SectorsPerAllocationUnit = DeviceExt->NtfsInfo.SectorsPerCluster;
     FsSizeInfo->BytesPerSector = DeviceExt->NtfsInfo.BytesPerSector;
 
@@ -187,6 +246,7 @@ NtfsQueryVolumeInformation(PNTFS_IRP_CONTEXT IrpContext)
     NTSTATUS Status = STATUS_SUCCESS;
     PVOID SystemBuffer;
     ULONG BufferLength;
+    PDEVICE_EXTENSION DeviceExt;
 
     DPRINT("NtfsQueryVolumeInformation() called\n");
 
@@ -194,7 +254,15 @@ NtfsQueryVolumeInformation(PNTFS_IRP_CONTEXT IrpContext)
 
     Irp = IrpContext->Irp;
     DeviceObject = IrpContext->DeviceObject;
-    Stack = IoGetCurrentIrpStackLocation(Irp);
+    DeviceExt = DeviceObject->DeviceExtension;
+    Stack = IrpContext->Stack;
+
+    if (!ExAcquireResourceSharedLite(&DeviceExt->DirResource,
+                                     BooleanFlagOn(IrpContext->Flags, IRPCONTEXT_CANWAIT)))
+    {
+        return NtfsMarkIrpContextForQueue(IrpContext);
+    }
+
     FsInformationClass = Stack->Parameters.QueryVolume.FsInformationClass;
     BufferLength = Stack->Parameters.QueryVolume.Length;
     SystemBuffer = Irp->AssociatedIrp.SystemBuffer;
@@ -232,6 +300,8 @@ NtfsQueryVolumeInformation(PNTFS_IRP_CONTEXT IrpContext)
         default:
             Status = STATUS_NOT_SUPPORTED;
     }
+
+    ExReleaseResourceLite(&DeviceExt->DirResource);
 
     if (NT_SUCCESS(Status))
         Irp->IoStatus.Information =

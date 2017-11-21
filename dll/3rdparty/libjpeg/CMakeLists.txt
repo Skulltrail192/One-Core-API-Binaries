@@ -7,8 +7,8 @@ add_definitions(
     -Dmain=mainptr)
 
 include_directories(
-    ${REACTOS_SOURCE_DIR}/include/reactos/libs/libjpeg
-    ${REACTOS_SOURCE_DIR}/include/reactos/libs/zlib)
+    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/libs/libjpeg
+    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/libs/zlib)
 
 add_library(libjpeg SHARED
     jaricom.c
@@ -60,5 +60,4 @@ add_library(libjpeg SHARED
 
 set_module_type(libjpeg win32dll)
 add_importlibs(libjpeg msvcrt kernel32)
-add_dependencies(libjpeg psdk)
 add_cd_file(TARGET libjpeg DESTINATION reactos/system32 FOR all)

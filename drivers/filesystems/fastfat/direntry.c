@@ -27,7 +27,7 @@ vfatDirEntryGetFirstCluster(
         cluster = pFatDirEntry->Fat.FirstCluster |
                  (pFatDirEntry->Fat.FirstClusterHigh << 16);
     }
-    else if (pDeviceExt->Flags & VCB_IS_FATX)
+    else if (vfatVolumeIsFatX(pDeviceExt))
     {
         cluster = pFatDirEntry->FatX.FirstCluster;
     }
@@ -39,7 +39,6 @@ vfatDirEntryGetFirstCluster(
     return  cluster;
 }
 
-static
 BOOLEAN
 FATIsDirectoryEmpty(
     PVFATFCB Fcb)
@@ -70,10 +69,15 @@ FATIsDirectoryEmpty(
                 CcUnpinData(Context);
             }
 
-            if (!CcMapData(Fcb->FileObject, &FileOffset, sizeof(FAT_DIR_ENTRY), TRUE, &Context, (PVOID*)&FatDirEntry))
+            _SEH2_TRY
             {
-                return TRUE;
+                CcMapData(Fcb->FileObject, &FileOffset, sizeof(FAT_DIR_ENTRY), MAP_WAIT, &Context, (PVOID*)&FatDirEntry);
             }
+            _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+            {
+                _SEH2_YIELD(return TRUE);
+            }
+            _SEH2_END;
 
             FatDirEntry += Index % FAT_ENTRIES_PER_PAGE;
             FileOffset.QuadPart += PAGE_SIZE;
@@ -103,7 +107,6 @@ FATIsDirectoryEmpty(
     return TRUE;
 }
 
-static
 BOOLEAN
 FATXIsDirectoryEmpty(
     PVFATFCB Fcb)
@@ -125,10 +128,15 @@ FATXIsDirectoryEmpty(
                 CcUnpinData(Context);
             }
 
-            if (!CcMapData(Fcb->FileObject, &FileOffset, sizeof(FATX_DIR_ENTRY), TRUE, &Context, (PVOID*)&FatXDirEntry))
+            _SEH2_TRY
             {
-                return TRUE;
+                CcMapData(Fcb->FileObject, &FileOffset, sizeof(FATX_DIR_ENTRY), MAP_WAIT, &Context, (PVOID*)&FatXDirEntry);
             }
+            _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+            {
+                _SEH2_YIELD(return TRUE);
+            }
+            _SEH2_END;
 
             FatXDirEntry += Index % FATX_ENTRIES_PER_PAGE;
             FileOffset.QuadPart += PAGE_SIZE;
@@ -156,16 +164,6 @@ FATXIsDirectoryEmpty(
     }
 
     return TRUE;
-}
-
-BOOLEAN
-VfatIsDirectoryEmpty(
-    PVFATFCB Fcb)
-{
-    if (Fcb->Flags & FCB_IS_FATX_ENTRY)
-        return FATXIsDirectoryEmpty(Fcb);
-    else
-        return FATIsDirectoryEmpty(Fcb);
 }
 
 NTSTATUS
@@ -201,12 +199,22 @@ FATGetNextDirEntry(
             CcUnpinData(*pContext);
         }
 
-        if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart ||
-            !CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, TRUE, pContext, pPage))
+        if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart)
         {
             *pContext = NULL;
             return STATUS_NO_MORE_ENTRIES;
         }
+
+        _SEH2_TRY
+        {
+            CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, MAP_WAIT, pContext, pPage);
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+        {
+            *pContext = NULL;
+            _SEH2_YIELD(return STATUS_NO_MORE_ENTRIES);
+        }
+        _SEH2_END;
     }
 
     fatDirEntry = (PFAT_DIR_ENTRY)(*pPage) + DirContext->DirIndex % FAT_ENTRIES_PER_PAGE;
@@ -232,12 +240,22 @@ FATGetNextDirEntry(
                 CcUnpinData(*pContext);
                 FileOffset.u.LowPart -= PAGE_SIZE;
 
-                if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart ||
-                    !CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, TRUE, pContext, pPage))
+                if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart)
                 {
                     *pContext = NULL;
                     return STATUS_NO_MORE_ENTRIES;
                 }
+
+                _SEH2_TRY
+                {
+                    CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, MAP_WAIT, pContext, pPage);
+                }
+                _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+                {
+                    *pContext = NULL;
+                    _SEH2_YIELD(return STATUS_NO_MORE_ENTRIES);
+                }
+                _SEH2_END;
 
                 fatDirEntry = (PFAT_DIR_ENTRY)(*pPage) + DirContext->DirIndex % FAT_ENTRIES_PER_PAGE;
                 longNameEntry = (slot*) fatDirEntry;
@@ -259,12 +277,22 @@ FATGetNextDirEntry(
                 CcUnpinData(*pContext);
                 FileOffset.u.LowPart += PAGE_SIZE;
 
-                if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart ||
-                   !CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, TRUE, pContext, pPage))
+                if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart)
                 {
                     *pContext = NULL;
                     return STATUS_NO_MORE_ENTRIES;
                 }
+
+                _SEH2_TRY
+                {
+                    CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, MAP_WAIT, pContext, pPage);
+                }
+                _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+                {
+                    *pContext = NULL;
+                    _SEH2_YIELD(return STATUS_NO_MORE_ENTRIES);
+                }
+                _SEH2_END;
 
                 fatDirEntry = (PFAT_DIR_ENTRY)*pPage;
                 longNameEntry = (slot*) *pPage;
@@ -314,7 +342,7 @@ FATGetNextDirEntry(
 
                 index = longNameEntry->id & 0x3f; // Note: it can be 0 for corrupted FS
                 
-                /* Make sure index is valid and we have enaugh space in buffer
+                /* Make sure index is valid and we have enough space in buffer
                   (we count one char for \0) */
                 if (index > 0 &&
                     index * 13 < DirContext->LongNameU.MaximumLength / sizeof(WCHAR))
@@ -379,12 +407,22 @@ FATGetNextDirEntry(
             CcUnpinData(*pContext);
             FileOffset.u.LowPart += PAGE_SIZE;
 
-            if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart ||
-                !CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, TRUE, pContext, pPage))
+            if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart)
             {
                 *pContext = NULL;
                 return STATUS_NO_MORE_ENTRIES;
             }
+
+            _SEH2_TRY
+            {
+                CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, MAP_WAIT, pContext, pPage);
+            }
+            _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+            {
+                *pContext = NULL;
+                _SEH2_YIELD(return STATUS_NO_MORE_ENTRIES);
+            }
+            _SEH2_END;
 
             fatDirEntry = (PFAT_DIR_ENTRY)*pPage;
             longNameEntry = (slot*) *pPage;
@@ -467,12 +505,22 @@ FATXGetNextDirEntry(
             CcUnpinData(*pContext);
         }
         FileOffset.u.LowPart = ROUND_DOWN(DirIndex * sizeof(FATX_DIR_ENTRY), PAGE_SIZE);
-        if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart ||
-            !CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, TRUE, pContext, pPage))
+        if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart)
         {
             *pContext = NULL;
             return STATUS_NO_MORE_ENTRIES;
         }
+
+        _SEH2_TRY
+        {
+            CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, MAP_WAIT, pContext, pPage);
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+        {
+            *pContext = NULL;
+            _SEH2_YIELD(return STATUS_NO_MORE_ENTRIES);
+        }
+        _SEH2_END;
     }
 
     fatxDirEntry = (PFATX_DIR_ENTRY)(*pPage) + DirIndex % FATX_ENTRIES_PER_PAGE;
@@ -500,12 +548,23 @@ FATXGetNextDirEntry(
         {
             CcUnpinData(*pContext);
             FileOffset.u.LowPart += PAGE_SIZE;
-            if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart ||
-                !CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, TRUE, pContext, pPage))
+            if (FileOffset.u.LowPart >= pDirFcb->RFCB.FileSize.u.LowPart)
             {
                 *pContext = NULL;
                 return STATUS_NO_MORE_ENTRIES;
             }
+
+            _SEH2_TRY
+            {
+                CcMapData(pDirFcb->FileObject, &FileOffset, PAGE_SIZE, MAP_WAIT, pContext, pPage);
+            }
+            _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+            {
+                *pContext = NULL;
+                _SEH2_YIELD(return STATUS_NO_MORE_ENTRIES);
+            }
+            _SEH2_END;
+
             fatxDirEntry = (PFATX_DIR_ENTRY)*pPage;
         }
         else

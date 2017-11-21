@@ -17,9 +17,19 @@ BEGIN
         MENUITEM "&Ruaj\tCtrl+S", IDM_FILESAVE
         MENUITEM "Ruaj &si...", IDM_FILESAVEAS
         MENUITEM SEPARATOR
+        MENUITEM "From Scanner or Camera...", IDM_FILEFROMSCANNERORCAMERA
+        MENUITEM SEPARATOR
+        MENUITEM "Page View", IDM_FILEPAGEVIEW
+        MENUITEM "Page Setup...", IDM_FILEPAGESETUP
+        MENUITEM "Print...\tCtrl+P", IDM_FILEPRINT
+        MENUITEM SEPARATOR
+        MENUITEM "Send...", IDM_FILESEND
+        MENUITEM SEPARATOR
         MENUITEM "Vere si wallpaper (tiled)", IDM_FILEASWALLPAPERPLANE
         MENUITEM "Vere si wallpaper (centered)", IDM_FILEASWALLPAPERCENTERED
         MENUITEM "Vere si wallpaper (stretched)", IDM_FILEASWALLPAPERSTRETCHED
+        MENUITEM SEPARATOR
+        MENUITEM "Most recently used file", IDM_FILEMOSTRECENTLYUSEDFILE, GRAYED
         MENUITEM SEPARATOR
         MENUITEM "&Dil\tAlt+F4", IDM_FILEEXIT
     END
@@ -80,7 +90,7 @@ BEGIN
         MENUITEM "Paleta moderne", IDM_COLORSMODERNPALETTE
         MENUITEM "Paleta te vjetra", IDM_COLORSOLDPALETTE
     END
-    POPUP "&?"
+    POPUP "&Ndihmë"
     BEGIN
         MENUITEM "Ndihmë me temë", IDM_HELPHELPTOPICS
         MENUITEM SEPARATOR
@@ -206,12 +216,13 @@ BEGIN
     IDS_TOOLTIP14 "Polygon"
     IDS_TOOLTIP15 "Elips"
     IDS_TOOLTIP16 "Drejtkëndësh rrumbullak"
-    IDS_OPENFILTER "Bitmap files (*.bmp;*.dib)\1*.bmp;*.dib\1All files (*.*)\1*.*\1"
-    IDS_SAVEFILTER "24 bit bitmap (*.bmp;*.dib)\1*.bmp;*.dib\1"
+    IDS_ALLFILES "All Files"
+    IDS_ALLPICTUREFILES "All Picture Files"
     IDS_FILESIZE "%d bytes"
     IDS_PRINTRES "%d x %d pixels per meter"
     IDS_INTNUMBERS "Ju lutem shkruani numra integrale vetëm!"
     IDS_PERCENTAGE "Përqindja duhet të jetë në mes 1 dhe 500."
     IDS_ANGLE "Këndi duhet të jetë në mes -89 dhe 89."
     IDS_LOADERRORTEXT "Dokumenti %s nuk mund te ngarkohej."
+    IDS_ENLARGEPROMPTTEXT "The image in the clipboard is larger than the bitmap.\nWould you like the bitmap enlarged?"
 END

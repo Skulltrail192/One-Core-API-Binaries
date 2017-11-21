@@ -16,8 +16,8 @@ add_library(d3d10core SHARED
     ${CMAKE_CURRENT_BINARY_DIR}/d3d10core_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/d3d10core.def)
 
-set_module_type(d3d10core win32dll UNICODE HOTPATCHABLE)
-target_link_libraries(d3d10core wine uuid dxguid d3d10_uuids d3d10_1_uuids dxgi_uuids)
+set_module_type(d3d10core win32dll)
+target_link_libraries(d3d10core wine uuid dxguid)
 add_dependencies(d3d10core d3d_idl_headers)
 add_importlibs(d3d10core wined3d d3d11 msvcrt dxgi kernel32 ntdll)
 add_cd_file(TARGET d3d10core DESTINATION reactos/system32 FOR all)

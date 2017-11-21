@@ -124,7 +124,7 @@ WaitForLsass(VOID)
     if (hEvent == NULL)
     {
         dwError = GetLastError();
-        TRACE("WL: Failed to create the notication event (Error %lu)\n", dwError);
+        TRACE("WL: Failed to create the notification event (Error %lu)\n", dwError);
 
         if (dwError == ERROR_ALREADY_EXISTS)
         {
@@ -160,7 +160,7 @@ InitKeyboardLayouts(VOID)
     /* Open registry key with preloaded layouts */
     if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Keyboard Layout\\Preload", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
     {
-        while(TRUE)
+        while (TRUE)
         {
             /* Read values with integer names only */
             swprintf(wszKeyName, L"%d", i++);
@@ -318,6 +318,10 @@ WinMain(
 
     hAppInstance = hInstance;
 
+    /* Make us critical */
+    RtlSetProcessIsCritical(TRUE, NULL, FALSE);
+    RtlSetThreadIsCritical(TRUE, NULL, FALSE);
+
     if (!RegisterLogonProcess(GetCurrentProcessId(), TRUE))
     {
         ERR("WL: Could not register logon process\n");
@@ -380,6 +384,9 @@ WinMain(
     /* Wait for the LSA server */
     WaitForLsass();
 
+    /* Init Notifications */
+    InitNotifications();
+
     /* Load and initialize gina */
     if (!GinaInit(WLSession))
     {
@@ -427,6 +434,8 @@ WinMain(
     }
 #endif
 
+    CallNotificationDlls(WLSession, StartupHandler);
+
     /* Create a hidden window to get SAS notifications */
     if (!InitializeSAS(WLSession))
     {
@@ -434,8 +443,8 @@ WinMain(
         ExitProcess(2);
     }
 
-    //DisplayStatusMessage(Session, Session->WinlogonDesktop, IDS_PREPARENETWORKCONNECTIONS);
-    //DisplayStatusMessage(Session, Session->WinlogonDesktop, IDS_APPLYINGCOMPUTERSETTINGS);
+    // DisplayStatusMessage(Session, Session->WinlogonDesktop, IDS_PREPARENETWORKCONNECTIONS);
+    // DisplayStatusMessage(Session, Session->WinlogonDesktop, IDS_APPLYINGCOMPUTERSETTINGS);
 
     /* Display logged out screen */
     WLSession->LogonState = STATE_INIT;
@@ -453,6 +462,8 @@ WinMain(
     else
         PostMessageW(WLSession->SASWindow, WLX_WM_SAS, WLX_SAS_TYPE_CTRL_ALT_DEL, 0);
 
+    (void)LoadLibraryW(L"sfc_os.dll");
+
     /* Tell kernel that CurrentControlSet is good (needed
      * to support Last good known configuration boot) */
     NtInitializeRegistry(CM_BOOT_FLAG_ACCEPTED | 1);
@@ -463,6 +474,8 @@ WinMain(
         TranslateMessage(&Msg);
         DispatchMessageW(&Msg);
     }
+
+    CleanupNotifications();
 
     /* We never go there */
 

@@ -23,16 +23,14 @@ Implements the navigation band of the cabinet window
 */
 
 #include "precomp.h"
+#include <commoncontrols.h>
+#include <shlwapi_undoc.h>
+#include <shellapi.h>
 
 /*
 TODO:
-****Add command handler for show/hide Go button to OnWinEvent
 ****Add tooltip notify handler
   **Properly implement GetBandInfo
-  **Add support for showing/hiding Go button
-  **Fix so Go button will be shown/hidden properly on load
-  **Add correct text to Go button
-  **Implement TranslateAcceleratorIO
     Implement Exec
     Implement QueryService
     Implement Load
@@ -68,7 +66,7 @@ HRESULT STDMETHODCALLTYPE CAddressBand::GetBandInfo(DWORD dwBandID, DWORD dwView
 {
     if (pdbi->dwMask & DBIM_MINSIZE)
     {
-        pdbi->ptMinSize.x = 400;
+        pdbi->ptMinSize.x = 100;
         pdbi->ptMinSize.y = 22;
     }
     if (pdbi->dwMask & DBIM_MAXSIZE)
@@ -83,11 +81,15 @@ HRESULT STDMETHODCALLTYPE CAddressBand::GetBandInfo(DWORD dwBandID, DWORD dwView
     }
     if (pdbi->dwMask & DBIM_ACTUAL)
     {
-        pdbi->ptActual.x = 400;
+        pdbi->ptActual.x = 100;
         pdbi->ptActual.y = 22;
     }
     if (pdbi->dwMask & DBIM_TITLE)
-        wcscpy(pdbi->wszTitle, L"Address");
+    {
+        if (!LoadStringW(_AtlBaseModule.GetResourceInstance(), IDS_ADDRESSBANDLABEL, pdbi->wszTitle, _countof(pdbi->wszTitle)))
+            return HRESULT_FROM_WIN32(GetLastError());
+    }
+
     if (pdbi->dwMask & DBIM_MODEFLAGS)
         pdbi->dwModeFlags = DBIMF_UNDELETEABLE;
     if (pdbi->dwMask & DBIM_BKCOLOR)
@@ -98,87 +100,70 @@ HRESULT STDMETHODCALLTYPE CAddressBand::GetBandInfo(DWORD dwBandID, DWORD dwView
 HRESULT STDMETHODCALLTYPE CAddressBand::SetSite(IUnknown *pUnkSite)
 {
     CComPtr<IShellService>                  shellService;
-    CComPtr<IUnknown>                       offset34;
     HWND                                    parentWindow;
-    IOleWindow                              *oleWindow;
-    HWND                                    toolbar;
-    static const TBBUTTON                   buttonInfo[] = { {0, 1, TBSTATE_ENABLED, 0} };
-    HIMAGELIST                              normalImagelist;
-    HIMAGELIST                              hotImageList;
-    HINSTANCE                               shellInstance;
+    HWND                                    combobox;
     HRESULT                                 hResult;
+    IImageList                              *piml;
+
+    if (pUnkSite == NULL)
+    {
+        fSite.Release();
+        return S_OK;
+    }
 
     fSite.Release();
-    if (pUnkSite == NULL)
-        return S_OK;
 
-    hResult = pUnkSite->QueryInterface(IID_IDockingWindowSite, reinterpret_cast<void **>(&fSite));
-    if (FAILED(hResult))
+    hResult = pUnkSite->QueryInterface(IID_PPV_ARG(IDockingWindowSite, &fSite));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
 
     // get window handle of parent
     parentWindow = NULL;
-    hResult = pUnkSite->QueryInterface(IID_IOleWindow, reinterpret_cast<void **>(&oleWindow));
-    if (SUCCEEDED(hResult))
-    {
-        oleWindow->GetWindow(&parentWindow);
-        oleWindow->Release();
-    }
+    hResult = IUnknown_GetWindow(fSite, &parentWindow);
+
     if (!::IsWindow(parentWindow))
         return E_FAIL;
 
     // create combo box ex
-    toolbar = CreateWindowEx(WS_EX_TOOLWINDOW, WC_COMBOBOXEXW, NULL, WS_CHILD | WS_VISIBLE |
-                    WS_CLIPCHILDREN | WS_TABSTOP | CCS_NODIVIDER | CCS_NOMOVEY,
-                    0, 0, 500, 250, parentWindow, (HMENU)0xa205, _AtlBaseModule.GetModuleInstance(), 0);
-    if (toolbar == NULL)
+    combobox = CreateWindowEx(WS_EX_TOOLWINDOW, WC_COMBOBOXEXW, NULL, WS_CHILD | WS_VISIBLE |
+        WS_CLIPCHILDREN | WS_TABSTOP | CCS_NODIVIDER | CCS_NOMOVEY | CBS_OWNERDRAWFIXED,
+                    0, 0, 500, 250, parentWindow, (HMENU)IDM_TOOLBARS_ADDRESSBAR, _AtlBaseModule.GetModuleInstance(), 0);
+    if (combobox == NULL)
         return E_FAIL;
-    SubclassWindow(toolbar);
+    SubclassWindow(combobox);
+
+    HRESULT hr = SHGetImageList(SHIL_SMALL, IID_PPV_ARG(IImageList, &piml));
+    if (FAILED_UNEXPECTEDLY(hr))
+    {
+        SendMessageW(combobox, CBEM_SETIMAGELIST, 0, 0);
+    }
+    else
+    {
+        SendMessageW(combobox, CBEM_SETIMAGELIST, 0, reinterpret_cast<LPARAM>(piml));
+    }
 
     SendMessage(CBEM_SETEXTENDEDSTYLE,
         CBES_EX_CASESENSITIVE | CBES_EX_NOSIZELIMIT, CBES_EX_CASESENSITIVE | CBES_EX_NOSIZELIMIT);
 
     fEditControl = reinterpret_cast<HWND>(SendMessage(CBEM_GETEDITCONTROL, 0, 0));
     fComboBox = reinterpret_cast<HWND>(SendMessage(CBEM_GETCOMBOCONTROL, 0, 0));
-#if 1
-    hResult = CoCreateInstance(CLSID_AddressEditBox, NULL, CLSCTX_INPROC_SERVER,
-        IID_IAddressEditBox, reinterpret_cast<void **>(&fAddressEditBox));
-    if (FAILED(hResult))
-        return hResult;
-#else
-    // instantiate new version
-#endif
-
-    hResult = fAddressEditBox->QueryInterface(IID_IShellService, reinterpret_cast<void **>(&shellService));
-    if (FAILED(hResult))
-        return hResult;
-    hResult = fAddressEditBox->Init(toolbar, fEditControl, 8, pUnkSite /*(IAddressBand *)this*/ );
-    if (FAILED(hResult))
-        return hResult;
-    hResult = shellService->SetOwner(pUnkSite);
-    if (FAILED(hResult))
+    hResult = CAddressEditBox_CreateInstance(IID_PPV_ARG(IAddressEditBox, &fAddressEditBox));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
 
-    // TODO: properly initialize this from registry
-    fGoButtonShown = true;
+    hResult = fAddressEditBox->QueryInterface(IID_PPV_ARG(IShellService, &shellService));
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return hResult;
+    hResult = fAddressEditBox->Init(combobox, fEditControl, 8, fSite /*(IAddressBand *)this*/);
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return hResult;
+    hResult = shellService->SetOwner(fSite);
+    if (FAILED_UNEXPECTEDLY(hResult))
+        return hResult;
 
-    shellInstance = GetModuleHandle(_T("shell32.dll"));
-    normalImagelist = ImageList_LoadImageW(shellInstance, MAKEINTRESOURCE(IDB_GOBUTTON_NORMAL),
-        20, 0, RGB(255, 0, 255), IMAGE_BITMAP, LR_CREATEDIBSECTION);
-    hotImageList = ImageList_LoadImageW(shellInstance, MAKEINTRESOURCE(IDB_GOBUTTON_HOT),
-        20, 0, RGB(255, 0, 255), IMAGE_BITMAP, LR_CREATEDIBSECTION);
-
-    fGoButton = CreateWindowEx(WS_EX_TOOLWINDOW, TOOLBARCLASSNAMEW, 0, WS_CHILD | WS_CLIPSIBLINGS |
-        WS_CLIPCHILDREN | TBSTYLE_LIST | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | CCS_NODIVIDER |
-        CCS_NOPARENTALIGN | CCS_NORESIZE,
-        0, 0, 0, 0, m_hWnd, NULL, _AtlBaseModule.GetModuleInstance(), NULL);
-    SendMessage(fGoButton, TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON), 0);
-    SendMessage(fGoButton, TB_SETMAXTEXTROWS, 1, 0);
-    SendMessage(fGoButton, TB_SETIMAGELIST, 0, reinterpret_cast<LPARAM>(normalImagelist));
-    SendMessage(fGoButton, TB_SETHOTIMAGELIST, 0, reinterpret_cast<LPARAM>(hotImageList));
-    SendMessage(fGoButton, TB_ADDSTRINGW,
-        reinterpret_cast<WPARAM>(_AtlBaseModule.GetResourceInstance()), IDS_GOBUTTONLABEL);
-    SendMessage(fGoButton, TB_ADDBUTTONSW, 1, (LPARAM)&buttonInfo);
+    fGoButtonShown = SHRegGetBoolUSValueW(L"Software\\Microsoft\\Internet Explorer\\Main", L"ShowGoButton", FALSE, TRUE);
+    if (fGoButtonShown)
+        CreateGoButton();
 
     return hResult;
 }
@@ -212,6 +197,20 @@ HRESULT STDMETHODCALLTYPE CAddressBand::CloseDW(DWORD dwReserved)
 
     m_hWnd = NULL;
 
+    CComPtr<IShellService> pservice;
+    HRESULT hres = fAddressEditBox->QueryInterface(IID_PPV_ARG(IShellService, &pservice));
+    if (SUCCEEDED(hres ))
+        pservice->SetOwner(NULL);
+
+    if (fAddressEditBox) fAddressEditBox.Release();
+    if (fSite) fSite.Release();
+
+    if (m_himlNormal)
+        ImageList_Destroy(m_himlNormal);
+
+    if (m_himlHot)
+        ImageList_Destroy(m_himlHot);
+
     return S_OK;
 }
 
@@ -236,13 +235,7 @@ HRESULT STDMETHODCALLTYPE CAddressBand::ShowDW(BOOL fShow)
 HRESULT STDMETHODCALLTYPE CAddressBand::QueryStatus(
     const GUID *pguidCmdGroup, ULONG cCmds, OLECMD prgCmds[  ], OLECMDTEXT *pCmdText)
 {
-    CComPtr<IOleCommandTarget>              oleCommandTarget;
-    HRESULT                                 hResult;
-
-    hResult = fAddressEditBox->QueryInterface(IID_IOleCommandTarget, reinterpret_cast<void **>(&oleCommandTarget));
-    if (FAILED(hResult))
-        return hResult;
-    return oleCommandTarget->QueryStatus(pguidCmdGroup, cCmds, prgCmds, pCmdText);
+    return IUnknown_QueryStatus(fAddressEditBox, *pguidCmdGroup, cCmds, prgCmds, pCmdText);
 }
 
 HRESULT STDMETHODCALLTYPE CAddressBand::Exec(const GUID *pguidCmdGroup,
@@ -261,21 +254,30 @@ HRESULT STDMETHODCALLTYPE CAddressBand::HasFocusIO()
 
 HRESULT STDMETHODCALLTYPE CAddressBand::TranslateAcceleratorIO(LPMSG lpMsg)
 {
-    // incomplete
+    if (lpMsg->hwnd == fEditControl)
+    {
+        switch (lpMsg->message)
+        {
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+        case WM_SYSCOMMAND:
+        case WM_SYSDEADCHAR:
+        case WM_SYSCHAR:
+            return S_FALSE;
+        }
+
+        TranslateMessage(lpMsg);
+        DispatchMessage(lpMsg);
+        return S_OK;
+    }
     return S_FALSE;
 }
 
 HRESULT STDMETHODCALLTYPE CAddressBand::UIActivateIO(BOOL fActivate, LPMSG lpMsg)
 {
-    CComPtr<IInputObjectSite>               inputObjectSite;
-    HRESULT                                 hResult;
-
     if (fActivate)
     {
-        hResult = fSite->QueryInterface(IID_IInputObjectSite, reinterpret_cast<void **>(&inputObjectSite));
-        if (FAILED(hResult))
-            return hResult;
-        hResult = inputObjectSite->OnFocusChangeIS(static_cast<IDeskBand *>(this), fActivate);
+        IUnknown_OnFocusChangeIS(fSite, static_cast<IDeskBand *>(this), fActivate);
         SetFocus();
     }
     return S_OK;
@@ -286,6 +288,9 @@ HRESULT STDMETHODCALLTYPE CAddressBand::OnWinEvent(
 {
     CComPtr<IWinEventHandler>               winEventHandler;
     HRESULT                                 hResult;
+    RECT                                    rect;
+
+    *theResult = 0;
 
     switch (uMsg)
     {
@@ -294,14 +299,19 @@ HRESULT STDMETHODCALLTYPE CAddressBand::OnWinEvent(
         case WM_COMMAND:
             if (wParam == IDM_TOOLBARS_GOBUTTON)
             {
-                // toggle whether the Go button is displayed
-                // setting is Yes or No, stored in key "Software\Microsoft\Internet Explorer\Main" in value ShowGoButton
+                fGoButtonShown = !SHRegGetBoolUSValueW(L"Software\\Microsoft\\Internet Explorer\\Main", L"ShowGoButton", FALSE, TRUE);
+                SHRegSetUSValueW(L"Software\\Microsoft\\Internet Explorer\\Main", L"ShowGoButton", REG_SZ, fGoButtonShown ? (LPVOID)L"yes" : (LPVOID)L"no", fGoButtonShown ? 8 : 6, SHREGSET_FORCE_HKCU);
+                if (!fGoButton)
+                    CreateGoButton();
+                ::ShowWindow(fGoButton,fGoButtonShown ? SW_HIDE : SW_SHOW);
+                GetWindowRect(&rect);
+                SendMessage(m_hWnd,WM_SIZE,0,MAKELPARAM(rect.right-rect.left,rect.bottom-rect.top));
                 // broadcast change notification to all explorer windows
             }
             break;
     }
-    hResult = fAddressEditBox->QueryInterface(IID_IWinEventHandler, reinterpret_cast<void **>(&winEventHandler));
-    if (FAILED(hResult))
+    hResult = fAddressEditBox->QueryInterface(IID_PPV_ARG(IWinEventHandler, &winEventHandler));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     return winEventHandler->OnWinEvent(hWnd, uMsg, wParam, lParam, theResult);
 }
@@ -311,10 +321,14 @@ HRESULT STDMETHODCALLTYPE CAddressBand::IsWindowOwner(HWND hWnd)
     CComPtr<IWinEventHandler>               winEventHandler;
     HRESULT                                 hResult;
 
-    hResult = fAddressEditBox->QueryInterface(IID_IWinEventHandler, reinterpret_cast<void **>(&winEventHandler));
-    if (FAILED(hResult))
-        return hResult;
-    return winEventHandler->IsWindowOwner(hWnd);
+    if (fAddressEditBox)
+    {
+        hResult = fAddressEditBox->QueryInterface(IID_PPV_ARG(IWinEventHandler, &winEventHandler));
+        if (FAILED_UNEXPECTEDLY(hResult))
+            return hResult;
+        return winEventHandler->IsWindowOwner(hWnd);
+    }
+    return S_FALSE;
 }
 
 HRESULT STDMETHODCALLTYPE CAddressBand::FileSysChange(long param8, long paramC)
@@ -322,8 +336,8 @@ HRESULT STDMETHODCALLTYPE CAddressBand::FileSysChange(long param8, long paramC)
     CComPtr<IAddressBand>                   addressBand;
     HRESULT                                 hResult;
 
-    hResult = fAddressEditBox->QueryInterface(IID_IAddressBand, reinterpret_cast<void **>(&addressBand));
-    if (FAILED(hResult))
+    hResult = fAddressEditBox->QueryInterface(IID_PPV_ARG(IAddressBand, &addressBand));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     return addressBand->FileSysChange(param8, paramC);
 }
@@ -333,8 +347,8 @@ HRESULT STDMETHODCALLTYPE CAddressBand::Refresh(long param8)
     CComPtr<IAddressBand>                   addressBand;
     HRESULT                                 hResult;
 
-    hResult = fAddressEditBox->QueryInterface(IID_IAddressBand, reinterpret_cast<void **>(&addressBand));
-    if (FAILED(hResult))
+    hResult = fAddressEditBox->QueryInterface(IID_PPV_ARG(IAddressBand, &addressBand));
+    if (FAILED_UNEXPECTEDLY(hResult))
         return hResult;
     return addressBand->Refresh(param8);
 }
@@ -384,8 +398,7 @@ LRESULT CAddressBand::OnNotifyClick(WPARAM wParam, NMHDR *notifyHeader, BOOL &bH
 {
     if (notifyHeader->hwndFrom == fGoButton)
     {
-        SendMessage(fEditControl, WM_KEYDOWN, 13, 0);
-        SendMessage(fEditControl, WM_KEYUP, 13, 0);
+        fAddressEditBox->Execute(0);
     }
     return 0;
 }
@@ -446,6 +459,9 @@ LRESULT CAddressBand::OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHan
     newHeight = HIWORD(lParam);
     newWidth = LOWORD(lParam);
 
+    if (!fGoButton)
+        CreateGoButton();
+
     SendMessage(fGoButton, TB_GETITEMRECT, 0, reinterpret_cast<LPARAM>(&buttonBounds));
     buttonWidth = buttonBounds.right - buttonBounds.left;
     buttonHeight = buttonBounds.bottom - buttonBounds.top;
@@ -482,6 +498,9 @@ LRESULT CAddressBand::OnWindowPosChanging(UINT uMsg, WPARAM wParam, LPARAM lPara
         return 0;
     }
 
+    if (!fGoButton)
+        CreateGoButton();
+
     positionInfoCopy = *reinterpret_cast<WINDOWPOS *>(lParam);
     newHeight = positionInfoCopy.cy;
     newWidth = positionInfoCopy.cx;
@@ -505,22 +524,28 @@ LRESULT CAddressBand::OnWindowPosChanging(UINT uMsg, WPARAM wParam, LPARAM lPara
     return 0;
 }
 
-HRESULT CreateAddressBand(REFIID riid, void **ppv)
+void CAddressBand::CreateGoButton()
 {
-    CComObject<CAddressBand>                *theMenuBar;
-    HRESULT                                 hResult;
+    const TBBUTTON buttonInfo [] = { { 0, 1, TBSTATE_ENABLED, 0 } };
+    HINSTANCE             shellInstance;
 
-    if (ppv == NULL)
-        return E_POINTER;
-    *ppv = NULL;
-    ATLTRY (theMenuBar = new CComObject<CAddressBand>);
-    if (theMenuBar == NULL)
-        return E_OUTOFMEMORY;
-    hResult = theMenuBar->QueryInterface(riid, reinterpret_cast<void **>(ppv));
-    if (FAILED(hResult))
-    {
-        delete theMenuBar;
-        return hResult;
-    }
-    return S_OK;
+    shellInstance = GetModuleHandle(_T("shell32.dll"));
+    m_himlNormal = ImageList_LoadImageW(shellInstance, MAKEINTRESOURCE(IDB_GOBUTTON_NORMAL),
+                                           20, 0, RGB(255, 0, 255), IMAGE_BITMAP, LR_CREATEDIBSECTION);
+    m_himlHot = ImageList_LoadImageW(shellInstance, MAKEINTRESOURCE(IDB_GOBUTTON_HOT),
+                                        20, 0, RGB(255, 0, 255), IMAGE_BITMAP, LR_CREATEDIBSECTION);
+
+    fGoButton = CreateWindowEx(WS_EX_TOOLWINDOW, TOOLBARCLASSNAMEW, 0, WS_CHILD | WS_CLIPSIBLINGS |
+                               WS_CLIPCHILDREN | TBSTYLE_LIST | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | CCS_NODIVIDER |
+                               CCS_NOPARENTALIGN | CCS_NORESIZE,
+                               0, 0, 0, 0, m_hWnd, NULL, _AtlBaseModule.GetModuleInstance(), NULL);
+    SendMessage(fGoButton, TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON), 0);
+    SendMessage(fGoButton, TB_SETMAXTEXTROWS, 1, 0);
+    if (m_himlNormal)
+        SendMessage(fGoButton, TB_SETIMAGELIST, 0, reinterpret_cast<LPARAM>(m_himlNormal));
+    if (m_himlHot)
+        SendMessage(fGoButton, TB_SETHOTIMAGELIST, 0, reinterpret_cast<LPARAM>(m_himlHot));
+    SendMessage(fGoButton, TB_ADDSTRINGW,
+                reinterpret_cast<WPARAM>(_AtlBaseModule.GetResourceInstance()), IDS_GOBUTTONLABEL);
+    SendMessage(fGoButton, TB_ADDBUTTONSW, 1, (LPARAM) &buttonInfo);
 }

@@ -8,7 +8,7 @@
  */
 #define PUTPIXEL(x,y,BrushInst)        \
   ret = ret && IntEngLineTo(&psurf->SurfObj, \
-       &dc->co.ClipObj,                         \
+       (CLIPOBJ *)&dc->co,                       \
        &BrushInst.BrushObject,                   \
        x, y, (x)+1, y,                           \
        &RectBounds,                              \
@@ -16,14 +16,11 @@
 
 #define PUTLINE(x1,y1,x2,y2,BrushInst) \
   ret = ret && IntEngLineTo(&psurf->SurfObj, \
-       &dc->co.ClipObj,                         \
+       (CLIPOBJ *)&dc->co,                       \
        &BrushInst.BrushObject,                   \
        x1, y1, x2, y2,                           \
        &RectBounds,                              \
        ROP2_TO_MIX(pdcattr->jROP2));
-
-#define Rsin(d) ((d) == 0.0 ? 0.0 : ((d) == 90.0 ? 1.0 : sin(d*M_PI/180.0)))
-#define Rcos(d) ((d) == 0.0 ? 1.0 : ((d) == 90.0 ? 0.0 : cos(d*M_PI/180.0)))
 
 static
 BOOL
@@ -46,8 +43,7 @@ IntArc( DC *dc,
     BOOL ret = TRUE;
     LONG PenWidth, PenOrigWidth;
     double AngleStart, AngleEnd;
-    LONG RadiusX, RadiusY, CenterX, CenterY;
-    LONG SfCx, SfCy, EfCx, EfCy;
+    LONG CenterX, CenterY;
 
     if (Right < Left)
     {
@@ -79,7 +75,7 @@ IntArc( DC *dc,
         return FALSE;
     }
 
-    PenOrigWidth = PenWidth = pbrPen->ptPenWidth.x;
+    PenOrigWidth = PenWidth = pbrPen->lWidth;
     if (pbrPen->ulPenStyle == PS_NULL) PenWidth = 0;
 
     if (pbrPen->ulPenStyle == PS_INSIDEFRAME)
@@ -93,7 +89,7 @@ IntArc( DC *dc,
     }
 
     if (!PenWidth) PenWidth = 1;
-    pbrPen->ptPenWidth.x = PenWidth;
+    pbrPen->lWidth = PenWidth;
 
     RectBounds.left   = Left;
     RectBounds.right  = Right;
@@ -124,8 +120,6 @@ IntArc( DC *dc,
     DPRINT("1: Left: %d, Top: %d, Right: %d, Bottom: %d\n",
                RectBounds.left,RectBounds.top,RectBounds.right,RectBounds.bottom);
 
-    RadiusX = max((RectBounds.right - RectBounds.left) / 2, 1);
-    RadiusY = max((RectBounds.bottom - RectBounds.top) / 2, 1);
     CenterX = (RectBounds.right + RectBounds.left) / 2;
     CenterY = (RectBounds.bottom + RectBounds.top) / 2;
     AngleEnd   = atan2((RectSEpts.bottom - CenterY), RectSEpts.right - CenterX)*(360.0/(M_PI*2));
@@ -136,11 +130,6 @@ IntArc( DC *dc,
     {
         AngleStart = AngleEnd + 360.0; // Arc(), ArcTo(), Pie() and Chord() are counterclockwise APIs.
     }
-
-    SfCx = (LONG)(Rcos(AngleStart) * RadiusX);
-    SfCy = (LONG)(Rsin(AngleStart) * RadiusY);
-    EfCx = (LONG)(Rcos(AngleEnd) * RadiusX);
-    EfCy = (LONG)(Rsin(AngleEnd) * RadiusY);
 
     if ((arctype == GdiTypePie) || (arctype == GdiTypeChord))
     {
@@ -154,15 +143,18 @@ IntArc( DC *dc,
               arctype);
     }
 
-    ret = IntDrawArc( dc,
-              RectBounds.left,
-              RectBounds.top,
-              abs(RectBounds.right-RectBounds.left), // Width
-              abs(RectBounds.bottom-RectBounds.top), // Height
-              AngleStart,
-              AngleEnd,
-              arctype,
-              pbrPen);
+    if(ret)
+    {
+        ret = IntDrawArc( dc,
+                  RectBounds.left,
+                  RectBounds.top,
+                  abs(RectBounds.right-RectBounds.left), // Width
+                  abs(RectBounds.bottom-RectBounds.top), // Height
+                  AngleStart,
+                  AngleEnd,
+                  arctype,
+                  pbrPen);
+    }
 
     psurf = dc->dclevel.pSurface;
     if (NULL == psurf)
@@ -175,13 +167,13 @@ IntArc( DC *dc,
 
     if (arctype == GdiTypePie)
     {
-       PUTLINE(CenterX, CenterY, SfCx + CenterX, SfCy + CenterY, dc->eboLine);
-       PUTLINE(EfCx + CenterX, EfCy + CenterY, CenterX, CenterY, dc->eboLine);
+        PUTLINE(CenterX, CenterY, RectSEpts.left, RectSEpts.top, dc->eboLine);
+        PUTLINE(RectSEpts.right, RectSEpts.bottom, CenterX, CenterY, dc->eboLine);
     }
     if (arctype == GdiTypeChord)
-        PUTLINE(EfCx + CenterX, EfCy + CenterY, SfCx + CenterX, SfCy + CenterY, dc->eboLine);
+        PUTLINE(RectSEpts.right, RectSEpts.bottom, RectSEpts.left, RectSEpts.top, dc->eboLine);
 
-    pbrPen->ptPenWidth.x = PenOrigWidth;
+    pbrPen->lWidth = PenOrigWidth;
     PEN_ShareUnlockPen(pbrPen);
     DPRINT("IntArc Exit.\n");
     return ret;
@@ -222,6 +214,7 @@ IntGdiArcInternal(
                YStartArc,
                  XEndArc,
                  YEndArc,
+                       0,
                  arctype);
   }
 
@@ -249,9 +242,9 @@ IntGdiArcInternal(
   if (arctype == GdiTypeArcTo)
   {
      if (dc->dclevel.flPath & DCPATH_CLOCKWISE)
-       IntGdiMoveToEx(dc, XStartArc, YStartArc, NULL, TRUE);
+       IntGdiMoveToEx(dc, XStartArc, YStartArc, NULL);
      else
-       IntGdiMoveToEx(dc, XEndArc, YEndArc, NULL, TRUE);
+       IntGdiMoveToEx(dc, XEndArc, YEndArc, NULL);
   }
   return Ret;
 }
@@ -296,7 +289,7 @@ IntGdiAngleArc( PDC pDC,
 
   if (result)
   {
-     IntGdiMoveToEx(pDC, x2, y2, NULL, TRUE);
+     IntGdiMoveToEx(pDC, x2, y2, NULL);
   }
   return result;
 }
@@ -317,6 +310,7 @@ NtGdiAngleArc(
   BOOL Ret = FALSE;
   gxf_long worker, worker1;
   KFLOATING_SAVE FloatSave;
+  NTSTATUS status;
 
   pDC = DC_LockDc (hDC);
   if(!pDC)
@@ -324,14 +318,13 @@ NtGdiAngleArc(
     EngSetLastError(ERROR_INVALID_HANDLE);
     return FALSE;
   }
-  if (pDC->dctype == DC_TYPE_INFO)
-  {
-    DC_UnlockDc(pDC);
-    /* Yes, Windows really returns TRUE in this case */
-    return TRUE;
-  }
 
-  KeSaveFloatingPointState(&FloatSave);
+  status = KeSaveFloatingPointState(&FloatSave);
+  if (!NT_SUCCESS(status))
+  {
+      DC_UnlockDc( pDC );
+      return FALSE;
+  }
 
   worker.l  = dwStartAngle;
   worker1.l = dwSweepAngle;
@@ -366,6 +359,7 @@ NtGdiArcInternal(
   DC *dc;
   BOOL Ret;
   KFLOATING_SAVE FloatSave;
+  NTSTATUS status;
 
   dc = DC_LockDc (hDC);
   if(!dc)
@@ -373,11 +367,11 @@ NtGdiArcInternal(
     EngSetLastError(ERROR_INVALID_HANDLE);
     return FALSE;
   }
-  if (dc->dctype == DC_TYPE_INFO)
+  if (arctype > GdiTypePie)
   {
     DC_UnlockDc(dc);
-    /* Yes, Windows really returns TRUE in this case */
-    return TRUE;
+    EngSetLastError(ERROR_INVALID_PARAMETER);
+    return FALSE;
   }
 
   DC_vPrepareDCsForBlit(dc, NULL, NULL, NULL);
@@ -388,7 +382,12 @@ NtGdiArcInternal(
   if (dc->pdcattr->ulDirty_ & (DIRTY_LINE | DC_PEN_DIRTY))
     DC_vUpdateLineBrush(dc);
 
-  KeSaveFloatingPointState(&FloatSave);
+  status = KeSaveFloatingPointState(&FloatSave);
+  if (!NT_SUCCESS(status))
+  {
+      DC_UnlockDc( dc );
+      return FALSE;
+  }
 
   Ret = IntGdiArcInternal(
                   arctype,

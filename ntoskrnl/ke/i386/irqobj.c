@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS Kernel
  * LICENSE:         GPL - See COPYING in the top level directory
- * FILE:            ntoskrnl/ke/i386/irq.c
+ * FILE:            ntoskrnl/ke/i386/irqobj.c
  * PURPOSE:         Manages the Kernel's IRQ support for external drivers,
  *                  for the purposes of connecting, disconnecting and setting
  *                  up ISRs for drivers. The backend behind the Io* Interrupt
@@ -148,7 +148,9 @@ KiExitInterrupt(IN PKTRAP_FRAME TrapFrame,
     KiEoiHelper(TrapFrame);
 }
 
+DECLSPEC_NORETURN
 VOID
+__cdecl
 KiUnexpectedInterrupt(VOID)
 {
     /* Crash the machine */
@@ -447,8 +449,14 @@ KeConnectInterrupt(IN PKINTERRUPT Interrupt)
             /* The vector is shared and the interrupts are compatible */
             Interrupt->Connected = Connected = TRUE;
 
-            /* FIXME */
-            // ASSERT(Irql <= SYNCH_LEVEL);
+            /*
+             * Verify the IRQL for chained connect,
+             */
+#if defined(CONFIG_SMP)
+            ASSERT(Irql <= SYNCH_LEVEL);
+#else
+            ASSERT(Irql <= (IPI_LEVEL - 2));
+#endif
 
             /* Check if this is the first chain */
             if (Dispatch.Type != ChainConnect)
@@ -516,7 +524,11 @@ KeDisconnectInterrupt(IN PKINTERRUPT Interrupt)
         if (Dispatch.Type == ChainConnect)
         {
             /* Check if the top-level interrupt is being removed */
+#if defined(CONFIG_SMP)
             ASSERT(Irql <= SYNCH_LEVEL);
+#else
+            ASSERT(Irql <= (IPI_LEVEL - 2));
+#endif
             if (Interrupt == Dispatch.Interrupt)
             {
                 /* Get the next one */
@@ -577,7 +589,8 @@ KeSynchronizeExecution(IN OUT PKINTERRUPT Interrupt,
     KIRQL OldIrql;
 
     /* Raise IRQL */
-    OldIrql = KfRaiseIrql(Interrupt->SynchronizeIrql);
+    KeRaiseIrql(Interrupt->SynchronizeIrql,
+                &OldIrql);
 
     /* Acquire interrupt spinlock */
     KeAcquireSpinLockAtDpcLevel(Interrupt->ActualLock);
@@ -589,7 +602,7 @@ KeSynchronizeExecution(IN OUT PKINTERRUPT Interrupt,
     KeReleaseSpinLockFromDpcLevel(Interrupt->ActualLock);
 
     /* Lower IRQL */
-    KfLowerIrql(OldIrql);
+    KeLowerIrql(OldIrql);
 
     /* Return status */
     return Success;

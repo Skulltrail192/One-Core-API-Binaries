@@ -14,11 +14,11 @@
 #include <debug.h>
 
 #define MODULE_INVOLVED_IN_ARM3
-#include "../ARM3/miarm.h"
+#include <mm/ARM3/miarm.h>
 
 /* Include Mm version of AVL support */
-#include "../ARM3/miavl.h"
-#include "../../../lib/rtl/avlsupp.c"
+#include "miavl.h"
+#include <sdk/lib/rtl/avlsupp.c>
 
 /* GLOBALS ********************************************************************/
 
@@ -146,13 +146,19 @@ MiInsertNode(IN PMM_AVL_TABLE Table,
         PVOID AllocatedBase = (PVOID)(Vad->StartingVpn << PAGE_SHIFT);
 
         Size = ((Vad->EndingVpn + 1) - Vad->StartingVpn) << PAGE_SHIFT;
+
+        if (AllocatedBase == NULL)
+        {
+            AllocatedBase = (PVOID)(ULONG_PTR)1;
+            Size -= 1;
+        }
+
         Status = MmCreateMemoryArea(&Process->Vm,
                                     MEMORY_AREA_OWNED_BY_ARM3,
                                     &AllocatedBase,
                                     Size,
                                     PAGE_READWRITE,
                                     &MemoryArea,
-                                    TRUE,
                                     0,
                                     PAGE_SIZE);
         ASSERT(NT_SUCCESS(Status));
@@ -175,24 +181,22 @@ MiInsertNode(IN PMM_AVL_TABLE Table,
 VOID
 NTAPI
 MiInsertVad(IN PMMVAD Vad,
-            IN PEPROCESS Process)
+            IN PMM_AVL_TABLE VadRoot)
 {
     TABLE_SEARCH_RESULT Result;
     PMMADDRESS_NODE Parent = NULL;
 
     /* Validate the VAD and set it as the current hint */
     ASSERT(Vad->EndingVpn >= Vad->StartingVpn);
-    Process->VadRoot.NodeHint = Vad;
+    VadRoot->NodeHint = Vad;
 
     /* Find the parent VAD and where this child should be inserted */
-    Result = RtlpFindAvlTableNodeOrParent(&Process->VadRoot, (PVOID)Vad->StartingVpn, &Parent);
+    Result = RtlpFindAvlTableNodeOrParent(VadRoot, (PVOID)Vad->StartingVpn, &Parent);
     ASSERT(Result != TableFoundNode);
     ASSERT((Parent != NULL) || (Result == TableEmptyTree));
 
     /* Do the actual insert operation */
-    MiLockProcessWorkingSetUnsafe(PsGetCurrentProcess(), PsGetCurrentThread());
-    MiInsertNode(&Process->VadRoot, (PVOID)Vad, Parent, Result);
-    MiUnlockProcessWorkingSetUnsafe(PsGetCurrentProcess(), PsGetCurrentThread());
+    MiInsertNode(VadRoot, (PVOID)Vad, Parent, Result);
 }
 
 NTSTATUS
@@ -374,7 +378,7 @@ MiRemoveNode(IN PMMADDRESS_NODE Node,
 
     /* Free the node from ReactOS view as well */
     Vad = (PMMVAD_LONG)Node;
-    if (Vad->u.VadFlags.Spare == 0)
+    if ((Table != &MmSectionBasedRoot) && (Vad->u.VadFlags.Spare == 0))
     {
         PMEMORY_AREA MemoryArea;
         PEPROCESS Process;
@@ -502,13 +506,19 @@ MiFindEmptyAddressRangeInTree(IN SIZE_T Length,
                               OUT PULONG_PTR Base)
 {
     PMMADDRESS_NODE Node, PreviousNode;
-    ULONG_PTR PageCount, AlignmentVpn, LowVpn, HighVpn;
+    ULONG_PTR PageCount, AlignmentVpn, LowVpn, HighestVpn;
     ASSERT(Length != 0);
 
     /* Calculate page numbers for the length, alignment, and starting address */
     PageCount = BYTES_TO_PAGES(Length);
     AlignmentVpn = Alignment >> PAGE_SHIFT;
     LowVpn = ALIGN_UP_BY((ULONG_PTR)MM_LOWEST_USER_ADDRESS >> PAGE_SHIFT, AlignmentVpn);
+
+    /* Check for kernel mode table (memory areas) */
+    if (Table->Unused == 1)
+    {
+        LowVpn = ALIGN_UP_BY((ULONG_PTR)MmSystemRangeStart >> PAGE_SHIFT, AlignmentVpn);
+    }
 
     /* Check if the table is empty */
     if (Table->NumberGenericTableElements == 0)
@@ -562,8 +572,15 @@ MiFindEmptyAddressRangeInTree(IN SIZE_T Length,
     }
 
     /* We're up to the highest VAD, will this allocation fit above it? */
-    HighVpn = ((ULONG_PTR)MM_HIGHEST_VAD_ADDRESS + 1) / PAGE_SIZE;
-    if (HighVpn >= LowVpn + PageCount)
+    HighestVpn = ((ULONG_PTR)MM_HIGHEST_VAD_ADDRESS + 1) / PAGE_SIZE;
+
+    /* Check for kernel mode table (memory areas) */
+    if (Table->Unused == 1)
+    {
+        HighestVpn = ALIGN_UP_BY((ULONG_PTR)(LONG_PTR)-1 >> PAGE_SHIFT, AlignmentVpn);
+    }
+
+    if (HighestVpn >= LowVpn + PageCount)
     {
         /* Yes! Use this VAD to store the allocation */
         *PreviousVad = PreviousNode;
@@ -598,9 +615,18 @@ MiFindEmptyAddressRangeDownTree(IN SIZE_T Length,
     PageCount = Length >> PAGE_SHIFT;
     AlignmentVpn = Alignment / PAGE_SIZE;
 
+    /* Check for kernel mode table (memory areas) */
+    if (Table->Unused == 1)
+    {
+        LowVpn = ALIGN_UP_BY((ULONG_PTR)MmSystemRangeStart >> PAGE_SHIFT, AlignmentVpn);
+    }
+    else
+    {
+        LowVpn = ALIGN_UP_BY((ULONG_PTR)MM_LOWEST_USER_ADDRESS, Alignment);
+    }
+
     /* Check if there is enough space below the boundary */
-    if ((ALIGN_UP_BY((ULONG_PTR)MM_LOWEST_USER_ADDRESS, Alignment) + Length) >
-        (BoundaryAddress + 1))
+    if ((LowVpn + Length) > (BoundaryAddress + 1))
     {
         return TableFoundNode;
     }

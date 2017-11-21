@@ -218,33 +218,3 @@ cleanup:
 
     return result;
 }
-
-
-HRESULT SHGetIDListFromObject(
-  _In_  IUnknown         *punk,
-  _Out_ PIDLIST_ABSOLUTE *ppidl
-)
-{
-	return S_OK;
-}
-
-HRESULT SHCreateShellItemArray(
-  _In_  PCIDLIST_ABSOLUTE     pidlParent,
-  _In_  IShellFolder          *psf,
-  _In_  UINT                  cidl,
-  _In_  PCUITEMID_CHILD_ARRAY ppidl,
-  _Out_ IShellItemArray       **ppsiItemArray
-)
-{
-	return S_OK;
-}
-
-HRESULT SHCreateShellItemArrayFromShellItem(
-  _In_  IShellItem *psi,
-  _In_  REFIID     riid,
-  _Out_ void       **ppv
-)
-)
-{
-	return S_OK;
-}

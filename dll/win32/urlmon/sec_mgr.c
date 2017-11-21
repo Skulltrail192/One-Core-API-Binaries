@@ -729,7 +729,7 @@ static HRESULT generate_security_id(IUri *uri, BYTE *secid, DWORD *secid_len, DW
 
         if(len+sizeof(DWORD) > *secid_len) {
             SysFreeString(display_uri);
-            return HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
+            return E_NOT_SUFFICIENT_BUFFER;
         }
 
         WideCharToMultiByte(CP_ACP, 0, display_uri, -1, (LPSTR)secid, len, NULL, NULL);
@@ -765,7 +765,7 @@ static HRESULT generate_security_id(IUri *uri, BYTE *secid, DWORD *secid_len, DW
         if(len+sizeof(DWORD) > *secid_len) {
             SysFreeString(host);
             SysFreeString(scheme);
-            return HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
+            return E_NOT_SUFFICIENT_BUFFER;
         }
 
         WideCharToMultiByte(CP_ACP, 0, scheme, -1, (LPSTR)secid, len, NULL, NULL);
@@ -884,7 +884,7 @@ static ULONG WINAPI SecManagerImpl_Release(IInternetSecurityManagerEx2* iface)
 
     TRACE("(%p) ref=%u\n", This, refCount);
 
-    /* destroy the object if there's no more reference on it */
+    /* destroy the object if there are no more references on it */
     if (!refCount){
         if(This->mgrsite)
             IInternetSecurityMgrSite_Release(This->mgrsite);
@@ -1820,7 +1820,7 @@ HRESULT ZoneMgrImpl_Construct(IUnknown *pUnkOuter, LPVOID *ppobj)
     TRACE("(%p %p)\n", pUnkOuter, ppobj);
     ret->IInternetZoneManagerEx2_iface.lpVtbl = &ZoneMgrImplVtbl;
     ret->ref = 1;
-    *ppobj = (IInternetZoneManagerEx*)ret;
+    *ppobj = &ret->IInternetZoneManagerEx2_iface;
 
     URLMON_LockModule();
 

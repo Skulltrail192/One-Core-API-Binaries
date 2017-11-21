@@ -3,7 +3,7 @@ add_definitions(
     -DANONYMOUSUNIONS
     -D_DEBUG_MEM)
 
-include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 
 list(APPEND SOURCE
     alias.c
@@ -67,6 +67,7 @@ list(APPEND SOURCE
     window.c
     precomp.h)
 
+add_rc_deps(cmd.rc ${CMAKE_CURRENT_SOURCE_DIR}/res/terminal.ico)
 add_executable(cmd ${SOURCE} cmd.rc)
 target_link_libraries(cmd wine)
 set_module_type(cmd win32cui UNICODE)

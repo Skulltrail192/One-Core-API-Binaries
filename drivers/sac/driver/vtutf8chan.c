@@ -887,7 +887,7 @@ VTUTF8ChannelOFlush(IN PSAC_CHANNEL Channel)
         Overflow = TRUE;
     }
 
-    /* Everything is done, set the positition one last time */
+    /* Everything is done, set the position one last time */
     Position[1] = Channel->CursorRow;
     Position[0] = Channel->CursorCol;
     Status = VTUTF8ChannelAnsiDispatch(Channel,
@@ -1088,7 +1088,7 @@ VTUTF8ChannelOEcho(IN PSAC_CHANNEL Channel,
     /* Return success if there's nothing to echo */
     if (!(Size / sizeof(WCHAR))) return Status;
 
-    /* Start with the input string*/
+    /* Start with the input string */
     pwch = (PWCHAR)String;
 
     /* First, figure out how much is outside of the block length alignment */

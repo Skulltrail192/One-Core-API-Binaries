@@ -193,15 +193,18 @@ IrpStub(
 	IN PIRP Irp)
 {
 	NTSTATUS Status = STATUS_NOT_SUPPORTED;
+	PPORT_DEVICE_EXTENSION DeviceExtension;
 
-	if (!((PCOMMON_DEVICE_EXTENSION)DeviceObject->DeviceExtension)->IsClassDO)
+	DeviceExtension = DeviceObject->DeviceExtension;
+	if (!DeviceExtension->Common.IsClassDO)
 	{
 		/* Forward some IRPs to lower device */
 		switch (IoGetCurrentIrpStackLocation(Irp)->MajorFunction)
 		{
-			case IRP_MJ_PNP:
-			case IRP_MJ_INTERNAL_DEVICE_CONTROL:
-				return ForwardIrpAndForget(DeviceObject, Irp);
+			case IRP_MJ_POWER:
+				PoStartNextPowerIrp(Irp);
+				IoSkipCurrentIrpStackLocation(Irp);
+				return PoCallDriver(DeviceExtension->LowerDevice, Irp);
 			default:
 			{
 				ERR_(CLASS_NAME, "Port DO stub for major function 0x%lx\n",
@@ -704,7 +707,7 @@ ClassAddDevice(
 	Fdo->Flags &= ~DO_DEVICE_INITIALIZING;
 
 	/* Register interface ; ignore the error (if any) as having
-	 * a registred interface is not so important... */
+	 * a registered interface is not so important... */
 	Status = IoRegisterDeviceInterface(
 		Pdo,
 		&GUID_DEVINTERFACE_KEYBOARD,

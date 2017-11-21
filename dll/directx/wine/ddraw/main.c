@@ -6,9 +6,6 @@
  * Copyright 2006 Stefan Dösinger
  * Copyright 2008 Denver Gingerich
  *
- * This file contains the (internal) driver registration functions,
- * driver enumeration APIs and DirectDraw creation functions.
- *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -45,7 +42,7 @@ struct callback_info
 };
 
 /* Enumeration callback for converting DirectDrawEnumerateA to DirectDrawEnumerateExA */
-static HRESULT CALLBACK enum_callback(GUID *guid, char *description, char *driver_name,
+static BOOL CALLBACK enum_callback(GUID *guid, char *description, char *driver_name,
                                       void *context, HMONITOR monitor)
 {
     const struct callback_info *info = context;
@@ -57,6 +54,7 @@ static void ddraw_enumerate_secondary_devices(struct wined3d *wined3d, LPDDENUMC
                                               void *context)
 {
     struct wined3d_adapter_identifier adapter_id;
+    struct wined3d_output_desc output_desc;
     BOOL cont_enum = TRUE;
     HRESULT hr = S_OK;
     UINT adapter = 0;
@@ -73,13 +71,14 @@ static void ddraw_enumerate_secondary_devices(struct wined3d *wined3d, LPDDENUMC
         adapter_id.description = DriverDescription;
         adapter_id.description_size = sizeof(DriverDescription);
         wined3d_mutex_lock();
-        hr = wined3d_get_adapter_identifier(wined3d, adapter, 0x0, &adapter_id);
+        if (SUCCEEDED(hr = wined3d_get_adapter_identifier(wined3d, adapter, 0x0, &adapter_id)))
+            hr = wined3d_get_output_desc(wined3d, adapter, &output_desc);
         wined3d_mutex_unlock();
         if (SUCCEEDED(hr))
         {
             TRACE("Interface %d: %s\n", adapter, wine_dbgstr_guid(&adapter_id.device_identifier));
             cont_enum = callback(&adapter_id.device_identifier, adapter_id.description,
-                    adapter_id.device_name, context, wined3d_get_adapter_monitor(wined3d, adapter));
+                    adapter_id.device_name, context, output_desc.monitor);
         }
     }
 }
@@ -195,6 +194,40 @@ void *ddraw_get_object(struct ddraw_handle_table *t, DWORD handle, enum ddraw_ha
     return entry->object;
 }
 
+HRESULT WINAPI GetSurfaceFromDC(HDC dc, IDirectDrawSurface4 **surface, HDC *device_dc)
+{
+    struct ddraw *ddraw;
+
+    TRACE("dc %p, surface %p, device_dc %p.\n", dc, surface, device_dc);
+
+    if (!surface)
+        return E_INVALIDARG;
+
+    if (!device_dc)
+    {
+        *surface = NULL;
+
+        return E_INVALIDARG;
+    }
+
+    wined3d_mutex_lock();
+    LIST_FOR_EACH_ENTRY(ddraw, &global_ddraw_list, struct ddraw, ddraw_list_entry)
+    {
+        if (FAILED(IDirectDraw4_GetSurfaceFromDC(&ddraw->IDirectDraw4_iface, dc, surface)))
+            continue;
+
+        *device_dc = NULL; /* FIXME */
+        wined3d_mutex_unlock();
+        return DD_OK;
+    }
+    wined3d_mutex_unlock();
+
+    *surface = NULL;
+    *device_dc = NULL;
+
+    return DDERR_NOTFOUND;
+}
+
 /***********************************************************************
  *
  * Helper function for DirectDrawCreate and friends
@@ -227,15 +260,13 @@ DDRAW_Create(const GUID *guid,
     enum wined3d_device_type device_type;
     struct ddraw *ddraw;
     HRESULT hr;
+    DWORD flags = 0;
 
     TRACE("driver_guid %s, ddraw %p, outer_unknown %p, interface_iid %s.\n",
             debugstr_guid(guid), DD, UnkOuter, debugstr_guid(iid));
 
     *DD = NULL;
 
-    /* We don't care about this guids. Well, there's no special guid anyway
-     * OK, we could
-     */
     if (guid == (GUID *) DDCREATE_EMULATIONONLY)
     {
         /* Use the reference device id. This doesn't actually change anything,
@@ -257,6 +288,9 @@ DDRAW_Create(const GUID *guid,
     if (UnkOuter != NULL)
         return CLASS_E_NOAGGREGATION;
 
+    if (!IsEqualGUID(iid, &IID_IDirectDraw7))
+        flags = WINED3D_LEGACY_FFP_LIGHTING;
+
     /* DirectDraw creation comes here */
     ddraw = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*ddraw));
     if (!ddraw)
@@ -265,7 +299,7 @@ DDRAW_Create(const GUID *guid,
         return E_OUTOFMEMORY;
     }
 
-    hr = ddraw_init(ddraw, device_type);
+    hr = ddraw_init(ddraw, flags, device_type);
     if (FAILED(hr))
     {
         WARN("Failed to initialize ddraw object, hr %#x.\n", hr);
@@ -402,9 +436,9 @@ HRESULT WINAPI DirectDrawEnumerateExA(LPDDENUMCALLBACKEXA callback, void *contex
         FIXME("flags 0x%08x not handled\n", flags & ~DDENUM_ATTACHEDSECONDARYDEVICES);
 
     TRACE("Enumerating ddraw interfaces\n");
-    if (!(wined3d = wined3d_create(WINED3D_LEGACY_DEPTH_BIAS)))
+    if (!(wined3d = wined3d_create(DDRAW_WINED3D_FLAGS)))
     {
-        if (!(wined3d = wined3d_create(WINED3D_LEGACY_DEPTH_BIAS | WINED3D_NO3D)))
+        if (!(wined3d = wined3d_create(DDRAW_WINED3D_FLAGS | WINED3D_NO3D)))
         {
             WARN("Failed to create a wined3d object.\n");
             return E_FAIL;
@@ -424,7 +458,7 @@ HRESULT WINAPI DirectDrawEnumerateExA(LPDDENUMCALLBACKEXA callback, void *contex
         cont_enum = callback(NULL, driver_desc, driver_name, context, 0);
 
         /* The Battle.net System Checker expects both a NULL device and a GUID-based device */
-        if (cont_enum && (flags & ~DDENUM_ATTACHEDSECONDARYDEVICES))
+        if (cont_enum && (flags & DDENUM_ATTACHEDSECONDARYDEVICES))
             ddraw_enumerate_secondary_devices(wined3d, callback, context);
     }
     __EXCEPT_PAGE_FAULT
@@ -742,66 +776,14 @@ HRESULT WINAPI DllCanUnloadNow(void)
 }
 
 
-/***********************************************************************
- *		DllRegisterServer (DDRAW.@)
- */
 HRESULT WINAPI DllRegisterServer(void)
 {
     return __wine_register_resources( instance );
 }
 
-/***********************************************************************
- *		DllUnregisterServer (DDRAW.@)
- */
 HRESULT WINAPI DllUnregisterServer(void)
 {
     return __wine_unregister_resources( instance );
-}
-
-/*******************************************************************************
- * DestroyCallback
- *
- * Callback function for the EnumSurfaces call in DllMain.
- * Dumps some surface info and releases the surface
- *
- * Params:
- *  surf: The enumerated surface
- *  desc: it's description
- *  context: Pointer to the ddraw impl
- *
- * Returns:
- *  DDENUMRET_OK;
- *******************************************************************************/
-static HRESULT WINAPI
-DestroyCallback(IDirectDrawSurface7 *surf,
-                DDSURFACEDESC2 *desc,
-                void *context)
-{
-    struct ddraw_surface *Impl = impl_from_IDirectDrawSurface7(surf);
-    ULONG ref7, ref4, ref3, ref2, ref1, gamma_count, iface_count;
-
-    ref7 = IDirectDrawSurface7_Release(surf);  /* For the EnumSurfaces */
-    ref4 = Impl->ref4;
-    ref3 = Impl->ref3;
-    ref2 = Impl->ref2;
-    ref1 = Impl->ref1;
-    gamma_count = Impl->gamma_count;
-
-    WARN("Surface %p has an reference counts of 7: %u 4: %u 3: %u 2: %u 1: %u gamma: %u\n",
-            Impl, ref7, ref4, ref3, ref2, ref1, gamma_count);
-
-    /* Skip surfaces which are attached somewhere or which are
-     * part of a complex compound. They will get released when destroying
-     * the root
-     */
-    if( (!Impl->is_complex_root) || (Impl->first_attached != Impl) )
-        return DDENUMRET_OK;
-
-    /* Destroy the surface */
-    iface_count = ddraw_surface_release_iface(Impl);
-    while (iface_count) iface_count = ddraw_surface_release_iface(Impl);
-
-    return DDENUMRET_OK;
 }
 
 /***********************************************************************
@@ -891,66 +873,26 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, void *reserved)
     }
 
     case DLL_PROCESS_DETACH:
-        if(!list_empty(&global_ddraw_list))
+        if (WARN_ON(ddraw))
         {
-            struct list *entry, *entry2;
-            WARN("There are still existing DirectDraw interfaces. Wine bug or buggy application?\n");
+            struct ddraw *ddraw;
 
-            /* We remove elements from this loop */
-            LIST_FOR_EACH_SAFE(entry, entry2, &global_ddraw_list)
+            LIST_FOR_EACH_ENTRY(ddraw, &global_ddraw_list, struct ddraw, ddraw_list_entry)
             {
-                struct ddraw *ddraw = LIST_ENTRY(entry, struct ddraw, ddraw_list_entry);
-                HRESULT hr;
-                DDSURFACEDESC2 desc;
-                int i;
+                struct ddraw_surface *surface;
 
-                WARN("DDraw %p has a refcount of %d\n", ddraw, ddraw->ref7 + ddraw->ref4 + ddraw->ref3 + ddraw->ref2 + ddraw->ref1);
+                WARN("DirectDraw object %p has reference counts {%u, %u, %u, %u, %u}.\n",
+                        ddraw, ddraw->ref7, ddraw->ref4, ddraw->ref3, ddraw->ref2, ddraw->ref1);
 
-                /* Add references to each interface to avoid freeing them unexpectedly */
-                IDirectDraw_AddRef(&ddraw->IDirectDraw_iface);
-                IDirectDraw2_AddRef(&ddraw->IDirectDraw2_iface);
-                IDirectDraw4_AddRef(&ddraw->IDirectDraw4_iface);
-                IDirectDraw7_AddRef(&ddraw->IDirectDraw7_iface);
+                if (ddraw->d3ddevice)
+                    WARN("DirectDraw object %p has Direct3D device %p attached.\n", ddraw, ddraw->d3ddevice);
 
-                /* Does a D3D device exist? Destroy it
-                    * TODO: Destroy all Vertex buffers, Lights, Materials
-                    * and execute buffers too
-                    */
-                if(ddraw->d3ddevice)
+                LIST_FOR_EACH_ENTRY(surface, &ddraw->surface_list, struct ddraw_surface, surface_list_entry)
                 {
-                    WARN("DDraw %p has d3ddevice %p attached\n", ddraw, ddraw->d3ddevice);
-                    while(IDirect3DDevice7_Release(&ddraw->d3ddevice->IDirect3DDevice7_iface));
+                    WARN("Surface %p has reference counts {%u, %u, %u, %u, %u, %u}.\n",
+                            surface, surface->ref7, surface->ref4, surface->ref3,
+                            surface->ref2, surface->ref1, surface->gamma_count);
                 }
-
-                /* Destroy the swapchain after any 3D device. The 3D device
-                 * cleanup code needs a swapchain. Specifically, it tries to
-                 * set the current render target to the front buffer. */
-                if (ddraw->wined3d_swapchain)
-                    ddraw_destroy_swapchain(ddraw);
-
-                /* Try to release the objects
-                    * Do an EnumSurfaces to find any hanging surfaces
-                    */
-                memset(&desc, 0, sizeof(desc));
-                desc.dwSize = sizeof(desc);
-                for(i = 0; i <= 1; i++)
-                {
-                    hr = IDirectDraw7_EnumSurfaces(&ddraw->IDirectDraw7_iface, DDENUMSURFACES_ALL,
-                            &desc, ddraw, DestroyCallback);
-                    if(hr != D3D_OK)
-                        ERR("(%p) EnumSurfaces failed, prepare for trouble\n", ddraw);
-                }
-
-                if (!list_empty(&ddraw->surface_list))
-                    ERR("DDraw %p still has surfaces attached.\n", ddraw);
-
-                /* Release all hanging references to destroy the objects. This
-                    * restores the screen mode too
-                    */
-                while(IDirectDraw_Release(&ddraw->IDirectDraw_iface));
-                while(IDirectDraw2_Release(&ddraw->IDirectDraw2_iface));
-                while(IDirectDraw4_Release(&ddraw->IDirectDraw4_iface));
-                while(IDirectDraw7_Release(&ddraw->IDirectDraw7_iface));
             }
         }
 

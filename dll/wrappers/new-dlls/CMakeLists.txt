@@ -1,3 +1,4 @@
+add_subdirectory(avrt)
 add_subdirectory(bcrypt)
 add_subdirectory(combase)
 add_subdirectory(cryptsp)

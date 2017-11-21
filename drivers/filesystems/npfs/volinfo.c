@@ -27,8 +27,7 @@ NpQueryFsVolumeInfo(IN PVOID Buffer,
 
     *Length -= FIELD_OFFSET(FILE_FS_VOLUME_INFORMATION, VolumeLabel);
 
-    InfoBuffer->VolumeCreationTime.LowPart = 0;
-    InfoBuffer->VolumeCreationTime.HighPart = 0;
+    InfoBuffer->VolumeCreationTime.QuadPart = 0;
     InfoBuffer->VolumeSerialNumber = 0;
     InfoBuffer->SupportsObjects = 0;
 
@@ -191,11 +190,11 @@ NpFsdQueryVolumeInformation(IN PDEVICE_OBJECT DeviceObject,
     TRACE("Entered\n");
 
     FsRtlEnterFileSystem();
-    ExAcquireResourceSharedLite(&NpVcb->Lock, TRUE);
+    NpAcquireSharedVcb();
 
     Status = NpCommonQueryVolumeInformation(DeviceObject, Irp);
 
-    ExReleaseResourceLite(&NpVcb->Lock);
+    NpReleaseVcb();
     FsRtlExitFileSystem();
 
     if (Status != STATUS_PENDING)

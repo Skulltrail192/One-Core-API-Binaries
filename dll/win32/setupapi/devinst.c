@@ -23,8 +23,6 @@
 
 /* Unicode constants */
 static const WCHAR BackSlash[] = {'\\',0};
-static const WCHAR ClassGUID[]  = {'C','l','a','s','s','G','U','I','D',0};
-static const WCHAR Class[]  = {'C','l','a','s','s',0};
 static const WCHAR DateFormat[]  = {'%','u','-','%','u','-','%','u',0};
 static const WCHAR DotCoInstallers[]  = {'.','C','o','I','n','s','t','a','l','l','e','r','s',0};
 static const WCHAR DotHW[]  = {'.','H','W',0};
@@ -459,21 +457,16 @@ SetupDiGetActualSectionToInstallExW(
             if (CurrentPlatform.cbSize != sizeof(SP_ALTPLATFORM_INFO))
             {
                 /* That's the first time we go here. We need to fill in the structure */
-                OSVERSIONINFOEX VersionInfo;
                 SYSTEM_INFO SystemInfo;
-                VersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-                ret = GetVersionExW((OSVERSIONINFO*)&VersionInfo);
-                if (!ret)
-                    goto done;
                 GetSystemInfo(&SystemInfo);
                 CurrentPlatform.cbSize = sizeof(SP_ALTPLATFORM_INFO);
-                CurrentPlatform.Platform = VersionInfo.dwPlatformId;
-                CurrentPlatform.MajorVersion = VersionInfo.dwMajorVersion;
-                CurrentPlatform.MinorVersion = VersionInfo.dwMinorVersion;
+                CurrentPlatform.Platform = OsVersionInfo.dwPlatformId;
+                CurrentPlatform.MajorVersion = OsVersionInfo.dwMajorVersion;
+                CurrentPlatform.MinorVersion = OsVersionInfo.dwMinorVersion;
                 CurrentPlatform.ProcessorArchitecture = SystemInfo.wProcessorArchitecture;
                 CurrentPlatform.Reserved = 0;
-                CurrentProductType = VersionInfo.wProductType;
-                CurrentSuiteMask = VersionInfo.wSuiteMask;
+                CurrentProductType = OsVersionInfo.wProductType;
+                CurrentSuiteMask = OsVersionInfo.wSuiteMask;
             }
             ProductType = CurrentProductType;
             SuiteMask = CurrentSuiteMask;
@@ -489,6 +482,7 @@ SetupDiGetActualSectionToInstallExW(
         CallbackInfo.BestScore4 = ULONG_MAX;
         CallbackInfo.BestScore5 = ULONG_MAX;
         strcpyW(CallbackInfo.BestSection, InfSectionName);
+        TRACE("EnumerateSectionsStartingWith(InfSectionName = %S)\n", InfSectionName);
         if (!EnumerateSectionsStartingWith(
             InfHandle,
             InfSectionName,
@@ -498,6 +492,7 @@ SetupDiGetActualSectionToInstallExW(
             SetLastError(ERROR_GEN_FAILURE);
             goto done;
         }
+        TRACE("CallbackInfo.BestSection = %S\n", CallbackInfo.BestSection);
 
         dwFullLength = lstrlenW(CallbackInfo.BestSection);
         if (RequiredSize != NULL)
@@ -661,7 +656,7 @@ BOOL WINAPI SetupDiBuildClassInfoList(
  *              SetupDiBuildClassInfoListExA  (SETUPAPI.@)
  *
  * Returns a list of setup class GUIDs that identify the classes
- * that are installed on a local or remote macine.
+ * that are installed on a local or remote machine.
  *
  * PARAMS
  *   Flags [I] control exclusion of classes from the list.
@@ -708,7 +703,7 @@ BOOL WINAPI SetupDiBuildClassInfoListExA(
  *              SetupDiBuildClassInfoListExW  (SETUPAPI.@)
  *
  * Returns a list of setup class GUIDs that identify the classes
- * that are installed on a local or remote macine.
+ * that are installed on a local or remote machine.
  *
  * PARAMS
  *   Flags [I] control exclusion of classes from the list.
@@ -1011,7 +1006,7 @@ BOOL WINAPI SetupDiClassGuidsFromNameExW(
 
             dwLength = MAX_CLASS_NAME_LEN * sizeof(WCHAR);
             if (!RegQueryValueExW(hClassKey,
-                                  Class,
+                                  REGSTR_VAL_CLASS,
                                   NULL,
                                   NULL,
                                   (LPBYTE)szClassName,
@@ -1163,7 +1158,7 @@ BOOL WINAPI SetupDiClassNameFromGuidExW(
         return FALSE;
 
     /* Retrieve the class name data and close the key */
-    rc = QueryRegistryValue(hKey, Class, (LPBYTE *) &Buffer, &dwRegType, &dwLength);
+    rc = QueryRegistryValue(hKey, REGSTR_VAL_CLASS, (LPBYTE *) &Buffer, &dwRegType, &dwLength);
     RegCloseKey(hKey);
 
     /* Make sure we got the data */
@@ -1258,7 +1253,7 @@ SetupDiCreateDeviceInfoListExA(const GUID *ClassGuid,
  * Create an empty DeviceInfoSet list.
  *
  * PARAMS
- *   ClassGuid [I] if not NULL only devices with GUID ClcassGuid are associated
+ *   ClassGuid [I] if not NULL only devices with GUID ClassGuid are associated
  *                 with this list.
  *   hwndParent [I] hwnd needed for interface related actions.
  *   MachineName [I] name of machine to create emtpy DeviceInfoSet list, if NULL
@@ -3604,60 +3599,74 @@ SetupDiInstallClassExA(
 
 HKEY SETUP_CreateClassKey(HINF hInf)
 {
-    static const WCHAR slash[] = { '\\',0 };
     WCHAR FullBuffer[MAX_PATH];
     WCHAR Buffer[MAX_PATH];
     DWORD RequiredSize;
     HKEY hClassKey;
+    DWORD Disposition;
 
+    /* Obtain the Class GUID for this class */
     if (!SetupGetLineTextW(NULL,
                            hInf,
                            Version,
-                           ClassGUID,
+                           REGSTR_VAL_CLASSGUID,
                            Buffer,
-                           MAX_PATH,
+                           sizeof(Buffer) / sizeof(WCHAR),
                            &RequiredSize))
     {
         return INVALID_HANDLE_VALUE;
     }
 
+    /* Build the corresponding registry key name */
     lstrcpyW(FullBuffer, REGSTR_PATH_CLASS_NT);
-    lstrcatW(FullBuffer, slash);
+    lstrcatW(FullBuffer, BackSlash);
     lstrcatW(FullBuffer, Buffer);
 
+    /* Obtain the Class name for this class */
+    if (!SetupGetLineTextW(NULL,
+                           hInf,
+                           Version,
+                           REGSTR_VAL_CLASS,
+                           Buffer,
+                           sizeof(Buffer) / sizeof(WCHAR),
+                           &RequiredSize))
+    {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    /* Try to open or create the registry key */
+    TRACE("Opening class key %s\n", debugstr_w(FullBuffer));
+#if 0 // I keep this for reference...
     if (RegOpenKeyExW(HKEY_LOCAL_MACHINE,
                       FullBuffer,
                       0,
                       KEY_SET_VALUE,
                       &hClassKey))
     {
-        if (!SetupGetLineTextW(NULL,
-                               hInf,
-                               Version,
-                               Class,
-                               Buffer,
-                               MAX_PATH,
-                               &RequiredSize))
-        {
-            return INVALID_HANDLE_VALUE;
-        }
-
-        if (RegCreateKeyExW(HKEY_LOCAL_MACHINE,
-                            FullBuffer,
-                            0,
-                            NULL,
-                            REG_OPTION_NON_VOLATILE,
-                            KEY_SET_VALUE,
-                            NULL,
-                            &hClassKey,
-                            NULL))
-        {
-            return INVALID_HANDLE_VALUE;
-        }
+        /* Use RegCreateKeyExW */
     }
+#endif
+    if (RegCreateKeyExW(HKEY_LOCAL_MACHINE,
+                        FullBuffer,
+                        0,
+                        NULL,
+                        REG_OPTION_NON_VOLATILE,
+                        KEY_SET_VALUE,
+                        NULL,
+                        &hClassKey,
+                        &Disposition))
+    {
+        ERR("RegCreateKeyExW(%s) failed\n", debugstr_w(FullBuffer));
+        return INVALID_HANDLE_VALUE;
+    }
+    if (Disposition == REG_CREATED_NEW_KEY)
+        TRACE("The class key %s was successfully created\n", debugstr_w(FullBuffer));
+    else
+        TRACE("The class key %s was successfully opened\n", debugstr_w(FullBuffer));
 
+    TRACE( "setting value %s to %s\n", debugstr_w(REGSTR_VAL_CLASS), debugstr_w(Buffer) );
     if (RegSetValueExW(hClassKey,
-                       Class,
+                       REGSTR_VAL_CLASS,
                        0,
                        REG_SZ,
                        (LPBYTE)Buffer,
@@ -4719,7 +4728,7 @@ OpenHardwareProfileKey(
     rc = RegOpenKeyExW(HKLM,
                        REGSTR_PATH_HWPROFILES,
                        0,
-                       0,
+                       READ_CONTROL,
                        &hHWProfilesKey);
     if (rc != ERROR_SUCCESS)
     {
@@ -4909,7 +4918,7 @@ SetupDiOpenDeviceInfoW(
                 list->HKLM,
                 REGSTR_PATH_SYSTEMENUM,
                 0, /* Options */
-                0,
+                READ_CONTROL,
                 &hEnumKey);
             if (rc != ERROR_SUCCESS)
             {
@@ -5697,7 +5706,7 @@ static HKEY SETUPDI_OpenDevKey(HKEY RootKey, struct DeviceInfo *devInfo, REGSAM 
     HKEY enumKey, key = INVALID_HANDLE_VALUE;
     LONG l;
 
-    l = RegOpenKeyExW(RootKey, REGSTR_PATH_SYSTEMENUM, 0, 0, &enumKey);
+    l = RegOpenKeyExW(RootKey, REGSTR_PATH_SYSTEMENUM, 0, READ_CONTROL, &enumKey);
     if (!l)
     {
         l = RegOpenKeyExW(enumKey, devInfo->instanceId, 0, samDesired, &key);
@@ -5752,7 +5761,7 @@ static HKEY SETUPDI_OpenDrvKey(HKEY RootKey, struct DeviceInfo *devInfo, REGSAM 
         RootKey,
         REGSTR_PATH_CLASS_NT,
         0, /* Options */
-        0,
+        READ_CONTROL,
         &hEnumKey);
     if (rc != ERROR_SUCCESS)
     {
@@ -5777,6 +5786,8 @@ cleanup:
         RegCloseKey(hEnumKey);
     if (hKey != NULL && hKey != key)
         RegCloseKey(hKey);
+    if (DriverKey)
+        HeapFree(GetProcessHeap(), 0, DriverKey);
     return key;
 }
 

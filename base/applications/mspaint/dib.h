@@ -1,7 +1,7 @@
 /*
  * PROJECT:     PAINT for ReactOS
  * LICENSE:     LGPL
- * FILE:        base/applications/paint/dib.h
+ * FILE:        base/applications/mspaint/dib.h
  * PURPOSE:     Some DIB related functions
  * PROGRAMMERS: Benedikt Freisen
  */
@@ -15,6 +15,6 @@ int GetDIBHeight(HBITMAP hbm);
 void SaveDIBToFile(HBITMAP hBitmap, LPTSTR FileName, HDC hDC, LPSYSTEMTIME time, int *size, int hRes,
                    int vRes);
 
-void LoadDIBFromFile(HBITMAP *hBitmap, LPTSTR name, LPSYSTEMTIME time, int *size, int *hRes, int *vRes);
+void LoadDIBFromFile(HBITMAP *hBitmap, LPCTSTR name, LPSYSTEMTIME time, int *size, int *hRes, int *vRes);
 
-void ShowFileLoadError(LPTSTR name);
+void ShowFileLoadError(LPCTSTR name);

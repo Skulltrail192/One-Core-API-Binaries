@@ -61,20 +61,13 @@ DiShowUpdateDevice(
     IN DWORD Flags,
     OUT PBOOL NeedReboot OPTIONAL)
 {
-	DWORD ReturnValue;
     if (Flags != 0)
     {
         SetLastError(ERROR_INVALID_FLAGS);
         return FALSE;
     }
-	
-	ReturnValue = DevInstallW(NULL, NULL, DeviceInstance, ShowWizard ? SW_SHOWNOACTIVATE : SW_HIDE);
  
-    if(!ReturnValue)
-	{
-		SetLastError(ERROR_GEN_FAILURE);
-		return FALSE;
-	}else{
-		return TRUE;
-	}
+    UNIMPLEMENTED;
+    SetLastError(ERROR_GEN_FAILURE);
+    return FALSE;
 }

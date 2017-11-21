@@ -1,9 +1,12 @@
 #include <windef.h>
+#include <winuser.h>
 #include <scrnsave.h>
 
 #include "resource.h"
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+IDI_ICON  ICON  DISCARDABLE  "res/icon_logon.ico"
 
 #define REACTOS_VERSION_DLL
 #define REACTOS_STR_FILE_DESCRIPTION  "ReactOS Logon ScreenSaver"
@@ -22,6 +25,9 @@ IDB_SERVER BITMAP "res/1.bmp"
 
 #ifdef LANGUAGE_BG_BG
     #include "lang/bg-BG.rc"
+#endif
+#ifdef LANGUAGE_CS_CZ
+    #include "lang/cs-CZ.rc"
 #endif
 #ifdef LANGUAGE_DE_DE
     #include "lang/de-DE.rc"

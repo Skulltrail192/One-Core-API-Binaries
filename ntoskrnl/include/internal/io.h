@@ -1,16 +1,17 @@
 /*
 * PROJECT:         ReactOS Kernel
 * LICENSE:         GPL - See COPYING in the top level directory
-* FILE:            ntoskrnl/include/io.h
+* FILE:            ntoskrnl/include/internal/io.h
 * PURPOSE:         Internal header for the I/O Manager
 * PROGRAMMERS:     Alex Ionescu (alex.ionescu@reactos.org)
 */
+
 #include "ntdddisk.h"
 
 //
 // Define this if you want debugging support
 //
-#define _IO_DEBUG_                                      0x01
+#define _IO_DEBUG_                                      0x00
 
 //
 // These define the Debug Masks Supported
@@ -79,6 +80,26 @@
 // Unable to create symbolic link pointing to the RAM disk device
 //
 #define RD_SYMLINK_CREATE_FAILED 5
+
+//
+// Max traversal of reparse points for a single open in IoParseDevice
+//
+#define IOP_MAX_REPARSE_TRAVERSAL 0x20
+
+//
+// Private flags for IoCreateFile / IoParseDevice
+//
+#define IOP_USE_TOP_LEVEL_DEVICE_HINT       0x01
+#define IOP_CREATE_FILE_OBJECT_EXTENSION    0x02
+
+
+typedef struct _FILE_OBJECT_EXTENSION
+{
+    PDEVICE_OBJECT TopDeviceObjectHint;
+
+} FILE_OBJECT_EXTENSION, *PFILE_OBJECT_EXTENSION;
+
+
 
 //
 // We can call the Ob Inlined API, it's the same thing
@@ -313,16 +334,6 @@ typedef struct _ERROR_LOG_ENTRY
 } ERROR_LOG_ENTRY, *PERROR_LOG_ENTRY;
 
 //
-// Event Log LPC Message
-//
-typedef struct _ELF_API_MSG
-{
-    PORT_MESSAGE h;
-    ULONG Unknown[2];
-    IO_ERROR_LOG_MESSAGE IoErrorMessage;
-} ELF_API_MSG, *PELF_API_MSG;
-
-//
 // To simplify matters, the kernel is made to support both the checked and free
 // version of the I/O Remove Lock in the same binary. This structure includes
 // both, since the DDK has the structure with a compile-time #ifdef.
@@ -385,7 +396,7 @@ typedef struct _OPEN_PACKET
 typedef struct _LOAD_UNLOAD_PARAMS
 {
     NTSTATUS Status;
-    PUNICODE_STRING ServiceName;
+    PCUNICODE_STRING RegistryPath;
     WORK_QUEUE_ITEM WorkItem;
     KEVENT Event;
     PDRIVER_OBJECT DriverObject;
@@ -657,7 +668,6 @@ IoDestroyDriverList(
 );
 
 NTSTATUS
-INIT_FUNCTION
 IopInitPlugPlayEvents(VOID);
 
 NTSTATUS
@@ -1083,10 +1093,11 @@ IopLoadServiceModule(
     OUT PLDR_DATA_TABLE_ENTRY *ModuleObject
 );
 
-VOID
+NTSTATUS
 NTAPI
 IopLoadUnloadDriver(
-    IN OUT PLOAD_UNLOAD_PARAMS LoadParams
+    _In_opt_ PCUNICODE_STRING RegistryPath,
+    _Inout_ PDRIVER_OBJECT *DriverObject
 );
 
 NTSTATUS
@@ -1103,6 +1114,8 @@ NTSTATUS
 FASTCALL
 IopAttachFilterDrivers(
     IN PDEVICE_NODE DeviceNode,
+    IN HANDLE EnumSubKey,
+    IN HANDLE ClassKey,
     IN BOOLEAN Lower
 );
 
@@ -1163,7 +1176,7 @@ IopDeleteFile(
 
 NTSTATUS
 NTAPI
-IopSecurityFile(
+IopGetSetSecurityObject(
     IN PVOID ObjectBody,
     IN SECURITY_OPERATION_CODE OperationCode,
     IN PSECURITY_INFORMATION SecurityInformation,
@@ -1209,6 +1222,14 @@ IoChangeFileObjectFilterContext(
     IN BOOLEAN Define
 );
 
+VOID
+NTAPI
+IopDoNameTransmogrify(
+    IN PIRP Irp,
+    IN PFILE_OBJECT FileObject,
+    IN PREPARSE_DATA_BUFFER DataBuffer
+);
+
 //
 // I/O Timer Routines
 //
@@ -1231,6 +1252,17 @@ VOID
 NTAPI
 IopDeleteIoCompletion(
     PVOID ObjectBody
+);
+
+NTSTATUS
+NTAPI
+IoSetIoCompletion(
+    IN PVOID IoCompletion,
+    IN PVOID KeyContext,
+    IN PVOID ApcContext,
+    IN NTSTATUS IoStatus,
+    IN ULONG_PTR IoStatusInformation,
+    IN BOOLEAN Quota 
 );
 
 //
@@ -1276,6 +1308,8 @@ extern ULONG IopNumTriageDumpDataBlocks;
 extern PVOID IopTriageDumpDataBlocks[64];
 extern PIO_BUS_TYPE_GUID_LIST PnpBusTypeGuidList;
 extern PDRIVER_OBJECT IopRootDriverObject;
+extern KSPIN_LOCK IopDeviceRelationsSpinLock;
+extern LIST_ENTRY IopDeviceRelationsRequestList;
 
 //
 // Inlined Functions

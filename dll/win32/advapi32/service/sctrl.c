@@ -6,7 +6,6 @@
  * COPYRIGHT:   Copyright 1999 Emanuele Aliberti
  *              Copyright 2007 Ged Murphy <gedmurphy@reactos.org>
  *                             Gregor Brunmar <gregor.brunmar@home.se>
- *
  */
 
 
@@ -40,9 +39,9 @@ typedef struct _ACTIVE_SERVICE
     UNICODE_STRING ServiceName;
     union
     {
-        SERVICE_THREAD_PARAMSA A;
-        SERVICE_THREAD_PARAMSW W;
-    } ThreadParams;
+        LPSERVICE_MAIN_FUNCTIONA A;
+        LPSERVICE_MAIN_FUNCTIONW W;
+    } ServiceMain;
     LPHANDLER_FUNCTION HandlerFunction;
     LPHANDLER_FUNCTION_EX HandlerFunctionEx;
     LPVOID HandlerContext;
@@ -165,43 +164,42 @@ ScLookupServiceByServiceName(LPCWSTR lpServiceName)
 
 
 static DWORD WINAPI
-ScServiceMainStub(LPVOID Context)
+ScServiceMainStubA(LPVOID Context)
 {
-    PACTIVE_SERVICE lpService = (PACTIVE_SERVICE)Context;
+    PSERVICE_THREAD_PARAMSA ThreadParams = Context;
 
-    TRACE("ScServiceMainStub() called\n");
+    TRACE("ScServiceMainStubA() called\n");
 
     /* Call the main service routine and free the arguments vector */
-    if (lpService->bUnicode)
+    (ThreadParams->lpServiceMain)(ThreadParams->dwArgCount,
+                                  ThreadParams->lpArgVector);
+
+    if (ThreadParams->lpArgVector != NULL)
     {
-        (lpService->ThreadParams.W.lpServiceMain)(lpService->ThreadParams.W.dwArgCount,
-                                                  lpService->ThreadParams.W.lpArgVector);
-
-        if (lpService->ThreadParams.W.lpArgVector != NULL)
-        {
-            HeapFree(GetProcessHeap(),
-                     0,
-                     lpService->ThreadParams.W.lpArgVector);
-
-            lpService->ThreadParams.W.lpArgVector = NULL;
-            lpService->ThreadParams.W.dwArgCount = 0;
-        }
+        HeapFree(GetProcessHeap(), 0, ThreadParams->lpArgVector);
     }
-    else
+    HeapFree(GetProcessHeap(), 0, ThreadParams);
+
+    return ERROR_SUCCESS;
+}
+
+
+static DWORD WINAPI
+ScServiceMainStubW(LPVOID Context)
+{
+    PSERVICE_THREAD_PARAMSW ThreadParams = Context;
+
+    TRACE("ScServiceMainStubW() called\n");
+
+    /* Call the main service routine and free the arguments vector */
+    (ThreadParams->lpServiceMain)(ThreadParams->dwArgCount,
+                                  ThreadParams->lpArgVector);
+
+    if (ThreadParams->lpArgVector != NULL)
     {
-        (lpService->ThreadParams.A.lpServiceMain)(lpService->ThreadParams.A.dwArgCount,
-                                                  lpService->ThreadParams.A.lpArgVector);
-
-        if (lpService->ThreadParams.A.lpArgVector != NULL)
-        {
-            HeapFree(GetProcessHeap(),
-                     0,
-                     lpService->ThreadParams.A.lpArgVector);
-
-            lpService->ThreadParams.A.lpArgVector = NULL;
-            lpService->ThreadParams.A.dwArgCount = 0;
-        }
+        HeapFree(GetProcessHeap(), 0, ThreadParams->lpArgVector);
     }
+    HeapFree(GetProcessHeap(), 0, ThreadParams);
 
     return ERROR_SUCCESS;
 }
@@ -281,58 +279,88 @@ ScConnectControlPipe(HANDLE *hPipe)
 }
 
 
+/*
+ * Ansi/Unicode argument layout of the vector passed to a service at startup,
+ * depending on the different versions of Windows considered:
+ *
+ * - XP/2003:
+ *   [argv array of pointers][parameter 1][parameter 2]...[service name]
+ *
+ * - Vista:
+ *   [argv array of pointers][align to 8 bytes]
+ *   [parameter 1][parameter 2]...[service name]
+ *
+ * - Win7/8:
+ *   [argv array of pointers][service name]
+ *   [parameter 1][align to 4 bytes][parameter 2][align to 4 bytes]...
+ *
+ * Space for parameters and service name is always enough to store
+ * both the Ansi and the Unicode versions including NULL terminator.
+ */
+
 static DWORD
 ScBuildUnicodeArgsVector(PSCM_CONTROL_PACKET ControlPacket,
                          LPDWORD lpArgCount,
                          LPWSTR **lpArgVector)
 {
-    LPWSTR *lpVector;
-    LPWSTR *lpArg;
-    LPWSTR pszServiceName;
+    PWSTR *lpVector;
+    PWSTR pszServiceName;
     DWORD cbServiceName;
+    DWORD cbArguments;
     DWORD cbTotal;
     DWORD i;
 
     if (ControlPacket == NULL || lpArgCount == NULL || lpArgVector == NULL)
         return ERROR_INVALID_PARAMETER;
 
-    *lpArgCount = 0;
+    *lpArgCount  = 0;
     *lpArgVector = NULL;
 
-    pszServiceName = (PWSTR)((PBYTE)ControlPacket + ControlPacket->dwServiceNameOffset);
-    cbServiceName = lstrlenW(pszServiceName) * sizeof(WCHAR) + sizeof(UNICODE_NULL);
+    /* Retrieve and count the start command line (NULL-terminated) */
+    pszServiceName = (PWSTR)((ULONG_PTR)ControlPacket + ControlPacket->dwServiceNameOffset);
+    cbServiceName  = lstrlenW(pszServiceName) * sizeof(WCHAR) + sizeof(UNICODE_NULL);
 
-    cbTotal = cbServiceName + sizeof(LPWSTR);
+    /*
+     * The total size of the argument vector is equal to the entry for
+     * the service name, plus the size of the original argument vector.
+     */
+    cbTotal = sizeof(PWSTR) + cbServiceName;
     if (ControlPacket->dwArgumentsCount > 0)
-        cbTotal += ControlPacket->dwSize - ControlPacket->dwArgumentsOffset;
+        cbArguments = ControlPacket->dwSize - ControlPacket->dwArgumentsOffset;
+    else
+        cbArguments = 0;
+    cbTotal += cbArguments;
 
-    lpVector = HeapAlloc(GetProcessHeap(),
-                         HEAP_ZERO_MEMORY,
-                         cbTotal);
+    /* Allocate the new argument vector */
+    lpVector = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cbTotal);
     if (lpVector == NULL)
-        return ERROR_OUTOFMEMORY;
+        return ERROR_NOT_ENOUGH_MEMORY;
 
-    lpArg = lpVector;
-    *lpArg = (LPWSTR)(lpArg + 1);
-    lpArg++;
+    /*
+     * The first argument is reserved for the service name, which
+     * will be appended to the end of the argument string list.
+     */
 
-    memcpy(lpArg, pszServiceName, cbServiceName);
-    lpArg = (LPWSTR*)((ULONG_PTR)lpArg + cbServiceName);
-
+    /* Copy the remaining arguments */
     if (ControlPacket->dwArgumentsCount > 0)
     {
-        memcpy(lpArg,
-               ((PBYTE)ControlPacket + ControlPacket->dwArgumentsOffset),
-               ControlPacket->dwSize - ControlPacket->dwArgumentsOffset);
+        memcpy(&lpVector[1],
+               (PWSTR)((ULONG_PTR)ControlPacket + ControlPacket->dwArgumentsOffset),
+               cbArguments);
 
         for (i = 0; i < ControlPacket->dwArgumentsCount; i++)
         {
-            *lpArg = (LPWSTR)((ULONG_PTR)lpArg + (ULONG_PTR)*lpArg);
-            lpArg++;
+            lpVector[i + 1] = (PWSTR)((ULONG_PTR)&lpVector[1] + (ULONG_PTR)lpVector[i + 1]);
+            TRACE("Unicode lpVector[%lu] = '%ls'\n", i + 1, lpVector[i + 1]);
         }
     }
 
-    *lpArgCount = ControlPacket->dwArgumentsCount + 1;
+    /* Now copy the service name */
+    lpVector[0] = (PWSTR)((ULONG_PTR)&lpVector[1] + cbArguments);
+    memcpy(lpVector[0], pszServiceName, cbServiceName);
+    TRACE("Unicode lpVector[%lu] = '%ls'\n", 0, lpVector[0]);
+
+    *lpArgCount  = ControlPacket->dwArgumentsCount + 1;
     *lpArgVector = lpVector;
 
     return ERROR_SUCCESS;
@@ -344,101 +372,48 @@ ScBuildAnsiArgsVector(PSCM_CONTROL_PACKET ControlPacket,
                       LPDWORD lpArgCount,
                       LPSTR **lpArgVector)
 {
-    LPSTR *lpVector;
-    LPSTR *lpPtr;
-    LPWSTR lpUnicodeString;
-    LPWSTR pszServiceName;
-    LPSTR lpAnsiString;
-    DWORD cbServiceName;
-    DWORD dwVectorSize;
-    DWORD dwUnicodeSize;
-    DWORD dwAnsiSize = 0;
-    DWORD dwAnsiNameSize = 0;
-    DWORD i;
+    DWORD dwError;
+    NTSTATUS Status;
+    DWORD ArgCount, i;
+    PWSTR *lpVectorW;
+    PSTR  *lpVectorA;
+    UNICODE_STRING UnicodeString;
+    ANSI_STRING AnsiString;
 
     if (ControlPacket == NULL || lpArgCount == NULL || lpArgVector == NULL)
         return ERROR_INVALID_PARAMETER;
 
-    *lpArgCount = 0;
+    *lpArgCount  = 0;
     *lpArgVector = NULL;
 
-    pszServiceName = (PWSTR)((PBYTE)ControlPacket + ControlPacket->dwServiceNameOffset);
-    cbServiceName = lstrlenW(pszServiceName) * sizeof(WCHAR) + sizeof(UNICODE_NULL);
+    /* Build the UNICODE arguments vector */
+    dwError = ScBuildUnicodeArgsVector(ControlPacket, &ArgCount, &lpVectorW);
+    if (dwError != ERROR_SUCCESS)
+        return dwError;
 
-    dwAnsiNameSize = WideCharToMultiByte(CP_ACP,
-                                         0,
-                                         pszServiceName,
-                                         cbServiceName,
-                                         NULL,
-                                         0,
-                                         NULL,
-                                         NULL);
-
-    dwVectorSize = ControlPacket->dwArgumentsCount * sizeof(LPWSTR);
-    if (ControlPacket->dwArgumentsCount > 0)
+    /* Convert the vector to ANSI in place */
+    lpVectorA = (PSTR*)lpVectorW;
+    for (i = 0; i < ArgCount; i++)
     {
-        lpUnicodeString = (LPWSTR)((PBYTE)ControlPacket +
-                                   ControlPacket->dwArgumentsOffset +
-                                   dwVectorSize);
-        dwUnicodeSize = (ControlPacket->dwSize -
-                         ControlPacket->dwArgumentsOffset -
-                         dwVectorSize) / sizeof(WCHAR);
+        RtlInitUnicodeString(&UnicodeString, lpVectorW[i]);
+        RtlInitEmptyAnsiString(&AnsiString, lpVectorA[i], UnicodeString.MaximumLength);
+        Status = RtlUnicodeStringToAnsiString(&AnsiString, &UnicodeString, FALSE);
+        if (!NT_SUCCESS(Status))
+        {
+            /* Failed to convert to ANSI; free the allocated vector and return */
+            dwError = RtlNtStatusToDosError(Status);
+            HeapFree(GetProcessHeap(), 0, lpVectorW);
+            return dwError;
+        }
 
-        dwAnsiSize = WideCharToMultiByte(CP_ACP,
-                                         0,
-                                         lpUnicodeString,
-                                         dwUnicodeSize,
-                                         NULL,
-                                         0,
-                                         NULL,
-                                         NULL);
+        /* NULL-terminate the string */
+        AnsiString.Buffer[AnsiString.Length / sizeof(CHAR)] = ANSI_NULL;
+
+        TRACE("Ansi lpVector[%lu] = '%s'\n", i, lpVectorA[i]);
     }
 
-    dwVectorSize += sizeof(LPWSTR);
-
-    lpVector = HeapAlloc(GetProcessHeap(),
-                         HEAP_ZERO_MEMORY,
-                         dwVectorSize + dwAnsiNameSize + dwAnsiSize);
-    if (lpVector == NULL)
-        return ERROR_OUTOFMEMORY;
-
-    lpPtr = (LPSTR*)lpVector;
-    lpAnsiString = (LPSTR)((ULONG_PTR)lpVector + dwVectorSize);
-
-    WideCharToMultiByte(CP_ACP,
-                        0,
-                        pszServiceName,
-                        cbServiceName,
-                        lpAnsiString,
-                        dwAnsiNameSize,
-                        NULL,
-                        NULL);
-
-    if (ControlPacket->dwArgumentsCount > 0)
-    {
-        lpAnsiString = (LPSTR)((ULONG_PTR)lpAnsiString + dwAnsiNameSize);
-
-        WideCharToMultiByte(CP_ACP,
-                            0,
-                            lpUnicodeString,
-                            dwUnicodeSize,
-                            lpAnsiString,
-                            dwAnsiSize,
-                            NULL,
-                            NULL);
-    }
-
-    lpAnsiString = (LPSTR)((ULONG_PTR)lpVector + dwVectorSize);
-    for (i = 0; i < ControlPacket->dwArgumentsCount + 1; i++)
-    {
-        *lpPtr = lpAnsiString;
-
-        lpPtr++;
-        lpAnsiString += (strlen(lpAnsiString) + 1);
-    }
-
-    *lpArgCount = ControlPacket->dwArgumentsCount + 1;
-    *lpArgVector = lpVector;
+    *lpArgCount  = ArgCount;
+    *lpArgVector = lpVectorA;
 
     return ERROR_SUCCESS;
 }
@@ -451,6 +426,8 @@ ScStartService(PACTIVE_SERVICE lpService,
     HANDLE ThreadHandle;
     DWORD ThreadId;
     DWORD dwError;
+    PSERVICE_THREAD_PARAMSA ThreadParamsA;
+    PSERVICE_THREAD_PARAMSW ThreadParamsW;
 
     if (lpService == NULL || ControlPacket == NULL)
         return ERROR_INVALID_PARAMETER;
@@ -465,54 +442,65 @@ ScStartService(PACTIVE_SERVICE lpService,
     /* Build the arguments vector */
     if (lpService->bUnicode == TRUE)
     {
+        ThreadParamsW = HeapAlloc(GetProcessHeap(), 0, sizeof(*ThreadParamsW));
+        if (ThreadParamsW == NULL)
+            return ERROR_NOT_ENOUGH_MEMORY;
         dwError = ScBuildUnicodeArgsVector(ControlPacket,
-                                           &lpService->ThreadParams.W.dwArgCount,
-                                           &lpService->ThreadParams.W.lpArgVector);
+                                           &ThreadParamsW->dwArgCount,
+                                           &ThreadParamsW->lpArgVector);
+        if (dwError != ERROR_SUCCESS)
+        {
+            HeapFree(GetProcessHeap(), 0, ThreadParamsW);
+            return dwError;
+        }
+        ThreadParamsW->lpServiceMain = lpService->ServiceMain.W;
+        ThreadHandle = CreateThread(NULL,
+                                    0,
+                                    ScServiceMainStubW,
+                                    ThreadParamsW,
+                                    CREATE_SUSPENDED,
+                                    &ThreadId);
+        if (ThreadHandle == NULL)
+        {
+            if (ThreadParamsW->lpArgVector != NULL)
+            {
+                HeapFree(GetProcessHeap(),
+                         0,
+                         ThreadParamsW->lpArgVector);
+            }
+            HeapFree(GetProcessHeap(), 0, ThreadParamsW);
+        }
     }
     else
     {
+        ThreadParamsA = HeapAlloc(GetProcessHeap(), 0, sizeof(*ThreadParamsA));
+        if (ThreadParamsA == NULL)
+            return ERROR_NOT_ENOUGH_MEMORY;
         dwError = ScBuildAnsiArgsVector(ControlPacket,
-                                        &lpService->ThreadParams.A.dwArgCount,
-                                        &lpService->ThreadParams.A.lpArgVector);
-    }
-
-    if (dwError != ERROR_SUCCESS)
-        return dwError;
-
-    /* Invoke the services entry point and implement the command loop */
-    ThreadHandle = CreateThread(NULL,
-                                0,
-                                ScServiceMainStub,
-                                lpService,
-                                CREATE_SUSPENDED,
-                                &ThreadId);
-    if (ThreadHandle == NULL)
-    {
-        /* Free the arguments vector */
-        if (lpService->bUnicode)
+                                        &ThreadParamsA->dwArgCount,
+                                        &ThreadParamsA->lpArgVector);
+        if (dwError != ERROR_SUCCESS)
         {
-            if (lpService->ThreadParams.W.lpArgVector != NULL)
+            HeapFree(GetProcessHeap(), 0, ThreadParamsA);
+            return dwError;
+        }
+        ThreadParamsA->lpServiceMain = lpService->ServiceMain.A;
+        ThreadHandle = CreateThread(NULL,
+                                    0,
+                                    ScServiceMainStubA,
+                                    ThreadParamsA,
+                                    CREATE_SUSPENDED,
+                                    &ThreadId);
+        if (ThreadHandle == NULL)
+        {
+            if (ThreadParamsA->lpArgVector != NULL)
             {
                 HeapFree(GetProcessHeap(),
                          0,
-                         lpService->ThreadParams.W.lpArgVector);
-                lpService->ThreadParams.W.lpArgVector = NULL;
-                lpService->ThreadParams.W.dwArgCount = 0;
+                         ThreadParamsA->lpArgVector);
             }
+            HeapFree(GetProcessHeap(), 0, ThreadParamsA);
         }
-        else
-        {
-            if (lpService->ThreadParams.A.lpArgVector != NULL)
-            {
-                HeapFree(GetProcessHeap(),
-                         0,
-                         lpService->ThreadParams.A.lpArgVector);
-                lpService->ThreadParams.A.lpArgVector = NULL;
-                lpService->ThreadParams.A.dwArgCount = 0;
-            }
-        }
-
-        return ERROR_SERVICE_NO_THREAD;
     }
 
     ResumeThread(ThreadHandle);
@@ -756,6 +744,48 @@ RegisterServiceCtrlHandlerExW(LPCWSTR lpServiceName,
 
 
 /**********************************************************************
+ *	I_ScIsSecurityProcess
+ *
+ * Undocumented
+ *
+ * @unimplemented
+ */
+VOID
+WINAPI
+I_ScIsSecurityProcess(VOID)
+{
+}
+
+
+/**********************************************************************
+ *	I_ScPnPGetServiceName
+ *
+ * Undocumented
+ *
+ * @implemented
+ */
+DWORD
+WINAPI
+I_ScPnPGetServiceName(IN SERVICE_STATUS_HANDLE hServiceStatus,
+                      OUT LPWSTR lpServiceName,
+                      IN DWORD cchServiceName)
+{
+    DWORD i;
+
+    for (i = 0; i < dwActiveServiceCount; i++)
+    {
+        if (lpActiveServices[i].hServiceStatus == hServiceStatus)
+        {
+            wcscpy(lpServiceName, lpActiveServices[i].ServiceName.Buffer);
+            return ERROR_SUCCESS;
+        }
+    }
+
+    return ERROR_SERVICE_NOT_IN_EXE;
+}
+
+
+/**********************************************************************
  *	I_ScSetServiceBitsA
  *
  * Undocumented
@@ -922,7 +952,7 @@ StartServiceCtrlDispatcherA(const SERVICE_TABLE_ENTRYA *lpServiceStartTable)
     {
         RtlCreateUnicodeStringFromAsciiz(&lpActiveServices[i].ServiceName,
                                          lpServiceStartTable[i].lpServiceName);
-        lpActiveServices[i].ThreadParams.A.lpServiceMain = lpServiceStartTable[i].lpServiceProc;
+        lpActiveServices[i].ServiceMain.A = lpServiceStartTable[i].lpServiceProc;
         lpActiveServices[i].hServiceStatus = 0;
         lpActiveServices[i].bUnicode = FALSE;
         lpActiveServices[i].bOwnProcess = FALSE;
@@ -1009,7 +1039,7 @@ StartServiceCtrlDispatcherW(const SERVICE_TABLE_ENTRYW *lpServiceStartTable)
     {
         RtlCreateUnicodeString(&lpActiveServices[i].ServiceName,
                                lpServiceStartTable[i].lpServiceName);
-        lpActiveServices[i].ThreadParams.W.lpServiceMain = lpServiceStartTable[i].lpServiceProc;
+        lpActiveServices[i].ServiceMain.W = lpServiceStartTable[i].lpServiceProc;
         lpActiveServices[i].hServiceStatus = 0;
         lpActiveServices[i].bUnicode = TRUE;
         lpActiveServices[i].bOwnProcess = FALSE;

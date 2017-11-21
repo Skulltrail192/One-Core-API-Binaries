@@ -30,7 +30,7 @@ KDSTATUS
 NTAPI
 gdb_receive_packet(_Inout_ PKD_CONTEXT KdContext)
 {
-    char* ByteBuffer = gdb_input;
+    UCHAR* ByteBuffer = (UCHAR*)gdb_input;
     UCHAR Byte;
     KDSTATUS Status;
     CHAR CheckSum = 0, ReceivedCheckSum;
@@ -42,6 +42,7 @@ gdb_receive_packet(_Inout_ PKD_CONTEXT KdContext)
             return Status;
         if (Byte == 0x03)
         {
+            KDDBGPRINT("BREAK!");
             KdContext->KdpControlCPending = TRUE;
             return KdPacketNeedsResend;
         }
@@ -59,16 +60,25 @@ gdb_receive_packet(_Inout_ PKD_CONTEXT KdContext)
             *ByteBuffer = '\0';
             break;
         }
-
-        *ByteBuffer++ = Byte;
         CheckSum += (CHAR)Byte;
+        
+        /* See if we should escape */
+        if (Byte == 0x7d)
+        {
+            Status = KdpReceiveByte(&Byte);
+            if (Status != KdPacketReceived)
+                return Status;         
+            CheckSum += (CHAR)Byte;
+            Byte ^= 0x20;
+        }
+        *ByteBuffer++ = Byte;
     }
 
     /* Get Check sum (two bytes) */
     Status = KdpReceiveByte(&Byte);
     if (Status != KdPacketReceived)
         goto end;
-    ReceivedCheckSum = hex_value(Byte) << 4;;
+    ReceivedCheckSum = hex_value(Byte) << 4;
 
     Status = KdpReceiveByte(&Byte);
     if (Status != KdPacketReceived)
@@ -79,6 +89,7 @@ end:
     if (ReceivedCheckSum != CheckSum)
     {
         /* Do not acknowledge to GDB */
+        KDDBGPRINT("Check sums don't match!");
         KdpSendByte('-');
         return KdPacketNeedsResend;
     }

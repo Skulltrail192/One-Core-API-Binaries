@@ -270,14 +270,3 @@ ScsiPortWriteRegisterUlong(
 {
     WRITE_REGISTER_ULONG(Register, Value);
 }
-
-VOID
-NTAPI
-teste(
-    IN PVOID HwDeviceExtension,
-    IN PULONG Register,
-    IN ULONG Value
-    )
-{
-	;
-}

@@ -63,8 +63,6 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
-#define HANDLE_ERROR(err) do { hr = err; TRACE("(HRESULT=%x)\n", (HRESULT)err); goto CLEANUP; } while (0)
-
 /* Structure of 'Ole Private Data' clipboard format */
 typedef struct
 {
@@ -157,6 +155,15 @@ typedef struct PresentationDataHeader
  */
 static ole_clipbrd* theOleClipboard;
 
+static CRITICAL_SECTION latest_snapshot_cs;
+static CRITICAL_SECTION_DEBUG latest_snapshot_cs_debug =
+{
+        0, 0, &latest_snapshot_cs,
+        { &latest_snapshot_cs_debug.ProcessLocksList, &latest_snapshot_cs_debug.ProcessLocksList },
+        0, 0, { (DWORD_PTR)(__FILE__ ": clipboard last snapshot") }
+};
+static CRITICAL_SECTION latest_snapshot_cs = { &latest_snapshot_cs_debug, -1, 0, 0, 0, 0 };
+
 static inline HRESULT get_ole_clipbrd(ole_clipbrd **clipbrd)
 {
     struct oletls *info = COM_CurrentInfo();
@@ -174,8 +181,6 @@ static inline HRESULT get_ole_clipbrd(ole_clipbrd **clipbrd)
  */
 static const WCHAR clipbrd_wndclass[] = {'C','L','I','P','B','R','D','W','N','D','C','L','A','S','S',0};
 
-static const WCHAR wine_marshal_dataobject[] = {'W','i','n','e',' ','m','a','r','s','h','a','l',' ','d','a','t','a','o','b','j','e','c','t',0};
-
 UINT ownerlink_clipboard_format = 0;
 UINT filename_clipboard_format = 0;
 UINT filenameW_clipboard_format = 0;
@@ -190,13 +195,11 @@ UINT ole_private_data_clipboard_format = 0;
 
 static UINT wine_marshal_clipboard_format;
 
-static inline char *dump_fmtetc(FORMATETC *fmt)
+static inline const char *dump_fmtetc(FORMATETC *fmt)
 {
-    static char buf[100];
-
-    snprintf(buf, sizeof(buf), "cf %04x ptd %p aspect %x lindex %d tymed %x",
-             fmt->cfFormat, fmt->ptd, fmt->dwAspect, fmt->lindex, fmt->tymed);
-    return buf;
+    if (!fmt) return "(null)";
+    return wine_dbg_sprintf("cf %04x ptd %p aspect %x lindex %d tymed %x",
+                            fmt->cfFormat, fmt->ptd, fmt->dwAspect, fmt->lindex, fmt->tymed);
 }
 
 /*---------------------------------------------------------------------*
@@ -308,14 +311,8 @@ static HRESULT WINAPI OLEClipbrd_IEnumFORMATETC_Next
 
     for(i = 0; i < cfetch; i++)
     {
-      rgelt[i] = This->data->entries[This->pos++].fmtetc;
-      if(rgelt[i].ptd)
-      {
-        DVTARGETDEVICE *target = rgelt[i].ptd;
-        rgelt[i].ptd = CoTaskMemAlloc(target->tdSize);
-        if(!rgelt[i].ptd) return E_OUTOFMEMORY;
-        memcpy(rgelt[i].ptd, target, target->tdSize);
-      }
+      hres = copy_formatetc(rgelt + i, &This->data->entries[This->pos++].fmtetc);
+      if(FAILED(hres)) return hres;
     }
   }
   else
@@ -563,6 +560,12 @@ static HRESULT render_embed_source_hack(IDataObject *data, LPFORMATETC fmt)
     hStorage = GlobalAlloc(GMEM_SHARE|GMEM_MOVEABLE, 0);
     if (hStorage == NULL) return E_OUTOFMEMORY;
     hr = CreateILockBytesOnHGlobal(hStorage, FALSE, &ptrILockBytes);
+    if (FAILED(hr))
+    {
+        GlobalFree(hStorage);
+        return hr;
+    }
+
     hr = StgCreateDocfileOnILockBytes(ptrILockBytes, STGM_SHARE_EXCLUSIVE|STGM_READWRITE, 0, &std.u.pstg);
     ILockBytes_Release(ptrILockBytes);
 
@@ -713,7 +716,7 @@ static HRESULT get_data_from_storage(IDataObject *data, FORMATETC *fmt, HGLOBAL 
     hr = IDataObject_GetDataHere(data, &stg_fmt, &med);
     if(FAILED(hr))
     {
-        med.u.pstg = NULL;
+        memset(&med, 0, sizeof(med));
         hr = IDataObject_GetData(data, &stg_fmt, &med);
         if(FAILED(hr)) goto end;
 
@@ -761,7 +764,7 @@ static HRESULT get_data_from_stream(IDataObject *data, FORMATETC *fmt, HGLOBAL *
         LARGE_INTEGER offs;
         ULARGE_INTEGER pos;
 
-        med.u.pstm = NULL;
+        memset(&med, 0, sizeof(med));
         hr = IDataObject_GetData(data, &stm_fmt, &med);
         if(FAILED(hr)) goto error;
 
@@ -798,6 +801,7 @@ static HRESULT get_data_from_global(IDataObject *data, FORMATETC *fmt, HGLOBAL *
 
     mem_fmt = *fmt;
     mem_fmt.tymed = TYMED_HGLOBAL;
+    memset(&med, 0, sizeof(med));
 
     hr = IDataObject_GetData(data, &mem_fmt, &med);
     if(FAILED(hr)) return hr;
@@ -825,6 +829,7 @@ static HRESULT get_data_from_enhmetafile(IDataObject *data, FORMATETC *fmt, HGLO
 
     mem_fmt = *fmt;
     mem_fmt.tymed = TYMED_ENHMF;
+    memset(&med, 0, sizeof(med));
 
     hr = IDataObject_GetData(data, &mem_fmt, &med);
     if(FAILED(hr)) return hr;
@@ -852,6 +857,7 @@ static HRESULT get_data_from_metafilepict(IDataObject *data, FORMATETC *fmt, HGL
 
     mem_fmt = *fmt;
     mem_fmt.tymed = TYMED_MFPICT;
+    memset(&med, 0, sizeof(med));
 
     hr = IDataObject_GetData(data, &mem_fmt, &med);
     if(FAILED(hr)) return hr;
@@ -881,6 +887,7 @@ static HRESULT get_data_from_bitmap(IDataObject *data, FORMATETC *fmt, HBITMAP *
 
     mem_fmt = *fmt;
     mem_fmt.tymed = TYMED_GDI;
+    memset(&med, 0, sizeof(med));
 
     hr = IDataObject_GetData(data, &mem_fmt, &med);
     if(FAILED(hr)) return hr;
@@ -1023,13 +1030,17 @@ static ULONG WINAPI snapshot_Release(IDataObject *iface)
 
     if (ref == 0)
     {
-        ole_clipbrd *clipbrd;
-        HRESULT hr = get_ole_clipbrd(&clipbrd);
+        EnterCriticalSection(&latest_snapshot_cs);
+        if (This->ref)
+        {
+            LeaveCriticalSection(&latest_snapshot_cs);
+            return ref;
+        }
+        if (theOleClipboard->latest_snapshot == This)
+            theOleClipboard->latest_snapshot = NULL;
+        LeaveCriticalSection(&latest_snapshot_cs);
 
         if(This->data) IDataObject_Release(This->data);
-
-        if(SUCCEEDED(hr) && clipbrd->latest_snapshot == This)
-            clipbrd->latest_snapshot = NULL;
         HeapFree(GetProcessHeap(), 0, This);
     }
 
@@ -1078,7 +1089,7 @@ static HRESULT get_current_dataobject(IDataObject **data)
 
     h = GetClipboardData(wine_marshal_clipboard_format);
     if(!h) return S_FALSE;
-    if(GlobalSize(h) == 0) return S_FALSE;
+    if(GlobalSize(h) <= 1) return S_FALSE;
     ptr = GlobalLock(h);
     if(!ptr) return S_FALSE;
 
@@ -1113,6 +1124,8 @@ static DWORD get_tymed_from_nonole_cf(UINT cf)
         return TYMED_ENHMF;
     case CF_METAFILEPICT:
         return TYMED_MFPICT;
+    case CF_BITMAP:
+        return TYMED_GDI;
     default:
         FIXME("returning TYMED_NULL for cf %04x\n", cf);
         return TYMED_NULL;
@@ -1164,9 +1177,11 @@ static HRESULT get_priv_data(ole_priv_data **data)
 
         for(cf = 0; (cf = EnumClipboardFormats(cf)) != 0; count++)
         {
-            char buf[100];
-            GetClipboardFormatNameA(cf, buf, sizeof(buf));
-            TRACE("cf %04x %s\n", cf, buf);
+            WCHAR buf[256];
+            if (GetClipboardFormatNameW(cf, buf, sizeof(buf) / sizeof(WCHAR)))
+                TRACE("cf %04x %s\n", cf, debugstr_w(buf));
+            else
+                TRACE("cf %04x\n", cf);
         }
         TRACE("count %d\n", count);
         size += count * sizeof(ret->entries[0]);
@@ -1290,6 +1305,27 @@ static HRESULT get_stgmed_for_emf(HENHMETAFILE hemf, STGMEDIUM *med)
     return S_OK;
 }
 
+/************************************************************************
+ *                    get_stgmed_for_bitmap
+ *
+ * Returns a stg medium with a bitmap based on the handle
+ */
+static HRESULT get_stgmed_for_bitmap(HBITMAP hbmp, STGMEDIUM *med)
+{
+    HRESULT hr;
+
+    med->pUnkForRelease = NULL;
+    med->tymed = TYMED_NULL;
+
+    hr = dup_bitmap(hbmp, &med->u.hBitmap);
+
+    if (FAILED(hr))
+        return hr;
+
+    med->tymed = TYMED_GDI;
+    return S_OK;
+}
+
 static inline BOOL string_off_equal(const DVTARGETDEVICE *t1, WORD off1, const DVTARGETDEVICE *t2, WORD off2)
 {
     const WCHAR *str1, *str2;
@@ -1337,6 +1373,8 @@ static HRESULT WINAPI snapshot_GetData(IDataObject *iface, FORMATETC *fmt,
 
     if ( !fmt || !med ) return E_INVALIDARG;
 
+    memset(med, 0, sizeof(*med));
+
     if ( !OpenClipboard(NULL)) return CLIPBRD_E_CANT_OPEN;
 
     if(!This->data)
@@ -1381,6 +1419,8 @@ static HRESULT WINAPI snapshot_GetData(IDataObject *iface, FORMATETC *fmt,
         hr = get_stgmed_for_stream(h, med);
     else if(mask & TYMED_ENHMF)
         hr = get_stgmed_for_emf((HENHMETAFILE)h, med);
+    else if(mask & TYMED_GDI)
+        hr = get_stgmed_for_bitmap((HBITMAP)h, med);
     else
     {
         FIXME("Unhandled tymed - mask %x req tymed %x\n", mask, fmt->tymed);
@@ -1727,41 +1767,12 @@ void OLEClipbrd_Initialize(void)
     }
 }
 
-/***********************************************************************
- * OLEClipbrd_UnInitialize()
- * Un-Initializes the OLE clipboard
- */
-void OLEClipbrd_UnInitialize(void)
-{
-    ole_clipbrd *clipbrd = theOleClipboard;
-
-    TRACE("()\n");
-
-    if ( clipbrd )
-    {
-        static const WCHAR ole32W[] = {'o','l','e','3','2',0};
-        HINSTANCE hinst = GetModuleHandleW(ole32W);
-
-        if ( clipbrd->window )
-        {
-            DestroyWindow(clipbrd->window);
-            UnregisterClassW( clipbrd_wndclass, hinst );
-        }
-
-        IStream_Release(clipbrd->marshal_data);
-        if (clipbrd->src_data) IDataObject_Release(clipbrd->src_data);
-        HeapFree(GetProcessHeap(), 0, clipbrd->cached_enum);
-        HeapFree(GetProcessHeap(), 0, clipbrd);
-        theOleClipboard = NULL;
-    }
-}
-
 /*********************************************************************
  *          set_clipboard_formats
  *
  * Enumerate all formats supported by the source and make
  * those formats available using delayed rendering using SetClipboardData.
- * Cache the enumeration list and make that list visibile as the
+ * Cache the enumeration list and make that list visible as the
  * 'Ole Private Data' format on the clipboard.
  *
  */
@@ -1900,7 +1911,7 @@ static HRESULT expose_marshalled_dataobject(ole_clipbrd *clipbrd, IDataObject *d
         dup_global_mem(h_stm, GMEM_DDESHARE|GMEM_MOVEABLE, &h);
     }
     else /* flushed */
-        h = GlobalAlloc(GMEM_DDESHARE|GMEM_MOVEABLE, 0);
+        h = GlobalAlloc(GMEM_DDESHARE|GMEM_MOVEABLE, 1);
 
     if(!h) return E_OUTOFMEMORY;
 
@@ -1956,6 +1967,41 @@ static HRESULT set_src_dataobject(ole_clipbrd *clipbrd, IDataObject *data)
 }
 
 /***********************************************************************
+ * OLEClipbrd_UnInitialize()
+ * Un-Initializes the OLE clipboard
+ */
+void OLEClipbrd_UnInitialize(void)
+{
+    ole_clipbrd *clipbrd = theOleClipboard;
+
+    TRACE("()\n");
+
+    if ( clipbrd )
+    {
+        static const WCHAR ole32W[] = {'o','l','e','3','2',0};
+        HINSTANCE hinst = GetModuleHandleW(ole32W);
+
+        /* OleUninitialize() does not release the reference to the dataobject, so
+           take an additional reference here.  This reference is then leaked. */
+        if (clipbrd->src_data)
+        {
+            IDataObject_AddRef(clipbrd->src_data);
+            set_src_dataobject(clipbrd, NULL);
+        }
+
+        if ( clipbrd->window )
+        {
+            DestroyWindow(clipbrd->window);
+            UnregisterClassW( clipbrd_wndclass, hinst );
+        }
+
+        IStream_Release(clipbrd->marshal_data);
+        HeapFree(GetProcessHeap(), 0, clipbrd);
+        theOleClipboard = NULL;
+    }
+}
+
+/***********************************************************************
  *                   clipbrd_wndproc
  */
 static LRESULT CALLBACK clipbrd_wndproc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
@@ -1963,6 +2009,10 @@ static LRESULT CALLBACK clipbrd_wndproc(HWND hwnd, UINT message, WPARAM wparam, 
     ole_clipbrd *clipbrd;
 
     get_ole_clipbrd(&clipbrd);
+#ifdef __REACTOS__
+    if(clipbrd == NULL)
+        return DefWindowProcW(hwnd, message, wparam, lparam);
+#endif
 
     switch (message)
     {
@@ -1983,10 +2033,12 @@ static LRESULT CALLBACK clipbrd_wndproc(HWND hwnd, UINT message, WPARAM wparam, 
     case WM_RENDERALLFORMATS:
     {
         DWORD i;
-        ole_priv_data_entry *entries = clipbrd->cached_enum->entries;
+        ole_priv_data_entry *entries;
 
         TRACE("(): WM_RENDERALLFORMATS\n");
 
+        if (!clipbrd || !clipbrd->cached_enum) break;
+        entries = clipbrd->cached_enum->entries;
         for(i = 0; i < clipbrd->cached_enum->count; i++)
         {
             if(entries[i].first_use)
@@ -2037,8 +2089,7 @@ static HWND create_clipbrd_window(void)
     RegisterClassExW(&class);
 
     return CreateWindowW(clipbrd_wndclass, title, WS_POPUP | WS_CLIPSIBLINGS | WS_OVERLAPPED,
-                         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                         NULL, NULL, hinst, 0);
+                         0, 0, 0, 0, HWND_MESSAGE, NULL, hinst, 0);
 }
 
 /*********************************************************************
@@ -2144,21 +2195,28 @@ HRESULT WINAPI OleGetClipboard(IDataObject **obj)
     TRACE("(%p)\n", obj);
 
     if(!obj) return E_INVALIDARG;
+    *obj = NULL;
 
     if(FAILED(hr = get_ole_clipbrd(&clipbrd))) return hr;
 
     seq_no = GetClipboardSequenceNumber();
+    EnterCriticalSection(&latest_snapshot_cs);
     if(clipbrd->latest_snapshot && clipbrd->latest_snapshot->seq_no != seq_no)
         clipbrd->latest_snapshot = NULL;
 
     if(!clipbrd->latest_snapshot)
     {
         clipbrd->latest_snapshot = snapshot_construct(seq_no);
-        if(!clipbrd->latest_snapshot) return E_OUTOFMEMORY;
+        if(!clipbrd->latest_snapshot)
+        {
+            LeaveCriticalSection(&latest_snapshot_cs);
+            return E_OUTOFMEMORY;
+        }
     }
 
     *obj = &clipbrd->latest_snapshot->IDataObject_iface;
     IDataObject_AddRef(*obj);
+    LeaveCriticalSection(&latest_snapshot_cs);
 
     return S_OK;
 }

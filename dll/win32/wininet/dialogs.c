@@ -397,8 +397,6 @@ static INT_PTR WINAPI WININET_InvalidCertificateDialog(
     case WM_COMMAND:
         if( wParam == IDOK )
         {
-            BOOL res = TRUE;
-
             if( params->dwFlags & FLAGS_ERROR_UI_FLAGS_CHANGE_OPTIONS )
             {
                 http_request_t *req = params->req;
@@ -437,7 +435,7 @@ static INT_PTR WINAPI WININET_InvalidCertificateDialog(
                     req->netconn->security_flags |= flags;
             }
 
-            EndDialog( hdlg, res ? ERROR_SUCCESS : ERROR_NOT_SUPPORTED );
+            EndDialog( hdlg, ERROR_SUCCESS );
             return TRUE;
         }
         if( wParam == IDCANCEL )
@@ -554,6 +552,15 @@ BOOL WINAPI InternetShowSecurityInfoByURLW(LPCWSTR url, HWND window)
 {
    FIXME("stub: %s %p\n", debugstr_w(url), window);
    return FALSE;
+}
+
+/***********************************************************************
+ *           ParseX509EncodedCertificateForListBoxEntry (@)
+ */
+DWORD WINAPI ParseX509EncodedCertificateForListBoxEntry(LPBYTE cert, DWORD len, LPSTR szlistbox, LPDWORD listbox)
+{
+   FIXME("stub: %p %d %s %p\n", cert, len, debugstr_a(szlistbox), listbox);
+   return ERROR_CALL_NOT_IMPLEMENTED;
 }
 
 /***********************************************************************

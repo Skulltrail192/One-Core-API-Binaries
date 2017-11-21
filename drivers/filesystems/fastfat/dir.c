@@ -127,7 +127,7 @@ VfatGetFileDirectoryInformation(
                   DirContext->LongNameU.Buffer,
                   DirContext->LongNameU.Length);
 
-    if (DeviceExt->Flags & VCB_IS_FATX)
+    if (vfatVolumeIsFatX(DeviceExt))
     {
         FsdDosDateTimeToSystemTime(DeviceExt,
                                    DirContext->DirEntry.FatX.CreationDate,
@@ -144,7 +144,7 @@ VfatGetFileDirectoryInformation(
 
         pInfo->ChangeTime = pInfo->LastWriteTime;
 
-        if (DirContext->DirEntry.FatX.Attrib & FILE_ATTRIBUTE_DIRECTORY)
+        if (BooleanFlagOn(DirContext->DirEntry.FatX.Attrib, FILE_ATTRIBUTE_DIRECTORY))
         {
             pInfo->EndOfFile.QuadPart = 0;
             pInfo->AllocationSize.QuadPart = 0;
@@ -158,7 +158,7 @@ VfatGetFileDirectoryInformation(
             pInfo->AllocationSize.u.LowPart = ROUND_UP(DirContext->DirEntry.FatX.FileSize,
                                                        DeviceExt->FatInfo.BytesPerCluster);
         }
-    
+
         pInfo->FileAttributes = DirContext->DirEntry.FatX.Attrib & 0x3f;
     }
     else
@@ -178,7 +178,7 @@ VfatGetFileDirectoryInformation(
 
         pInfo->ChangeTime = pInfo->LastWriteTime;
 
-        if (DirContext->DirEntry.Fat.Attrib & FILE_ATTRIBUTE_DIRECTORY)
+        if (BooleanFlagOn(DirContext->DirEntry.Fat.Attrib, FILE_ATTRIBUTE_DIRECTORY))
         {
             pInfo->EndOfFile.QuadPart = 0;
             pInfo->AllocationSize.QuadPart = 0;
@@ -220,7 +220,7 @@ VfatGetFileFullDirectoryInformation(
                   DirContext->LongNameU.Buffer,
                   DirContext->LongNameU.Length);
 
-    if (DeviceExt->Flags & VCB_IS_FATX)
+    if (vfatVolumeIsFatX(DeviceExt))
     {
         FsdDosDateTimeToSystemTime(DeviceExt,
                                    DirContext->DirEntry.FatX.CreationDate,
@@ -285,7 +285,7 @@ VfatGetFileBothInformation(
 
     pInfo->EaSize = 0;
 
-    if (DeviceExt->Flags & VCB_IS_FATX)
+    if (vfatVolumeIsFatX(DeviceExt))
     {
         pInfo->FileNameLength = DirContext->LongNameU.Length;
 
@@ -314,7 +314,7 @@ VfatGetFileBothInformation(
 
         pInfo->ChangeTime = pInfo->LastWriteTime;
 
-        if (DirContext->DirEntry.FatX.Attrib & FILE_ATTRIBUTE_DIRECTORY)
+        if (BooleanFlagOn(DirContext->DirEntry.FatX.Attrib, FILE_ATTRIBUTE_DIRECTORY))
         {
             pInfo->EndOfFile.QuadPart = 0;
             pInfo->AllocationSize.QuadPart = 0;
@@ -364,7 +364,7 @@ VfatGetFileBothInformation(
 
         pInfo->ChangeTime = pInfo->LastWriteTime;
 
-        if (DirContext->DirEntry.Fat.Attrib & FILE_ATTRIBUTE_DIRECTORY)
+        if (BooleanFlagOn(DirContext->DirEntry.Fat.Attrib, FILE_ATTRIBUTE_DIRECTORY))
         {
             pInfo->EndOfFile.QuadPart = 0;
             pInfo->AllocationSize.QuadPart = 0;
@@ -419,11 +419,22 @@ DoQuery(
         ProbeForWrite(IrpContext->Irp->UserBuffer, BufferLength, 1);
     }
 #endif
-    Buffer = VfatGetUserBuffer(IrpContext->Irp);
+    Buffer = VfatGetUserBuffer(IrpContext->Irp, FALSE);
+
+    if (!ExAcquireResourceExclusiveLite(&IrpContext->DeviceExt->DirResource,
+                                        BooleanFlagOn(IrpContext->Flags, IRPCONTEXT_CANWAIT)))
+    {
+        Status = VfatLockUserBuffer(IrpContext->Irp, BufferLength, IoWriteAccess);
+        if (NT_SUCCESS(Status))
+            Status = STATUS_PENDING;
+
+        return Status;
+    }
 
     if (!ExAcquireResourceSharedLite(&pFcb->MainResource,
-                                     (BOOLEAN)(IrpContext->Flags & IRPCONTEXT_CANWAIT)))
+                                     BooleanFlagOn(IrpContext->Flags, IRPCONTEXT_CANWAIT)))
     {
+        ExReleaseResourceLite(&IrpContext->DeviceExt->DirResource);
         Status = VfatLockUserBuffer(IrpContext->Irp, BufferLength, IoWriteAccess);
         if (NT_SUCCESS(Status))
             Status = STATUS_PENDING;
@@ -447,7 +458,7 @@ DoQuery(
      * -> The pattern length is not null
      * -> The pattern buffer is not null
      * Otherwise, we'll fall later and allocate a match all (*) pattern
-     */ 
+     */
     if (pSearchPattern &&
         pSearchPattern->Length != 0 && pSearchPattern->Buffer != NULL)
     {
@@ -461,6 +472,7 @@ DoQuery(
             if (!pCcb->SearchPattern.Buffer)
             {
                 ExReleaseResourceLite(&pFcb->MainResource);
+                ExReleaseResourceLite(&IrpContext->DeviceExt->DirResource);
                 return STATUS_INSUFFICIENT_RESOURCES;
             }
             RtlCopyUnicodeString(&pCcb->SearchPattern, pSearchPattern);
@@ -477,6 +489,7 @@ DoQuery(
         if (!pCcb->SearchPattern.Buffer)
         {
             ExReleaseResourceLite(&pFcb->MainResource);
+            ExReleaseResourceLite(&IrpContext->DeviceExt->DirResource);
             return STATUS_INSUFFICIENT_RESOURCES;
         }
         pCcb->SearchPattern.Buffer[0] = L'*';
@@ -484,11 +497,11 @@ DoQuery(
         pCcb->SearchPattern.Length = sizeof(WCHAR);
     }
 
-    if (IrpContext->Stack->Flags & SL_INDEX_SPECIFIED)
+    if (BooleanFlagOn(IrpContext->Stack->Flags, SL_INDEX_SPECIFIED))
     {
         DirContext.DirIndex = pCcb->Entry = Stack->Parameters.QueryDirectory.FileIndex;
     }
-    else if (FirstQuery || (IrpContext->Stack->Flags & SL_RESTART_SCAN))
+    else if (FirstQuery || BooleanFlagOn(IrpContext->Stack->Flags, SL_RESTART_SCAN))
     {
         DirContext.DirIndex = pCcb->Entry = 0;
     }
@@ -566,7 +579,7 @@ DoQuery(
         pCcb->Entry = ++DirContext.DirIndex;
         BufferLength -= Buffer0->NextEntryOffset;
 
-        if (IrpContext->Stack->Flags & SL_RETURN_SINGLE_ENTRY)
+        if (BooleanFlagOn(IrpContext->Stack->Flags, SL_RETURN_SINGLE_ENTRY))
             break;
 
         Buffer += Buffer0->NextEntryOffset;
@@ -580,33 +593,33 @@ DoQuery(
     }
 
     ExReleaseResourceLite(&pFcb->MainResource);
+    ExReleaseResourceLite(&IrpContext->DeviceExt->DirResource);
 
     return Status;
 }
 
-NTSTATUS VfatNotifyChangeDirectory(PVFAT_IRP_CONTEXT * IrpContext)
+NTSTATUS VfatNotifyChangeDirectory(PVFAT_IRP_CONTEXT IrpContext)
 {
     PVCB pVcb;
     PVFATFCB pFcb;
     PIO_STACK_LOCATION Stack;
-    Stack = (*IrpContext)->Stack;
-    pVcb = (*IrpContext)->DeviceExt;
-    pFcb = (PVFATFCB) (*IrpContext)->FileObject->FsContext;
- 
+    Stack = IrpContext->Stack;
+    pVcb = IrpContext->DeviceExt;
+    pFcb = (PVFATFCB) IrpContext->FileObject->FsContext;
+
     FsRtlNotifyFullChangeDirectory(pVcb->NotifySync,
                                    &(pVcb->NotifyList),
-                                   (*IrpContext)->FileObject->FsContext2,
+                                   IrpContext->FileObject->FsContext2,
                                    (PSTRING)&(pFcb->PathNameU),
                                    BooleanFlagOn(Stack->Flags, SL_WATCH_TREE),
                                    FALSE,
                                    Stack->Parameters.NotifyDirectory.CompletionFilter,
-                                   (*IrpContext)->Irp,
+                                   IrpContext->Irp,
                                    NULL,
                                    NULL);
 
-    /* We don't need the IRP context as we won't handle IRP completion */
-    VfatFreeIrpContext(*IrpContext);
-    *IrpContext = NULL;
+    /* We won't handle IRP completion */
+    IrpContext->Flags &= ~IRPCONTEXT_COMPLETE;
 
     return STATUS_PENDING;
 }
@@ -629,7 +642,7 @@ VfatDirectoryControl(
             break;
 
         case IRP_MN_NOTIFY_CHANGE_DIRECTORY:
-            Status = VfatNotifyChangeDirectory(&IrpContext);
+            Status = VfatNotifyChangeDirectory(IrpContext);
             break;
 
         default:
@@ -640,19 +653,9 @@ VfatDirectoryControl(
             break;
     }
 
-    if (Status == STATUS_PENDING)
+    if (Status == STATUS_PENDING && BooleanFlagOn(IrpContext->Flags, IRPCONTEXT_COMPLETE))
     {
-        /* Only queue if there's IRP context */
-        if (IrpContext)
-        {
-            Status = VfatQueueRequest(IrpContext);
-        }
-    }
-    else
-    {
-        IrpContext->Irp->IoStatus.Status = Status;
-        IoCompleteRequest (IrpContext->Irp, IO_NO_INCREMENT);
-        VfatFreeIrpContext(IrpContext);
+        return VfatMarkIrpContextForQueue(IrpContext);
     }
 
     return Status;

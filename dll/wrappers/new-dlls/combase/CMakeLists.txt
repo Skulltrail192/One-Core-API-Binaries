@@ -1,5 +1,5 @@
 
-include_directories(BEFORE ${REACTOS_SOURCE_DIR}/include/reactos/wine)
+include_directories(BEFORE ${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 spec2def(combase.dll combase.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
@@ -16,5 +16,4 @@ set_module_type(combase win32dll UNICODE)
 target_link_libraries(combase uuid wine ${PSEH_LIB})
 add_delay_importlibs(combase winmm uxtheme)
 add_importlibs(combase user32 gdi32 advapi32 msvcrt kernel32 ole32 ntdll)
-add_pch(combase combase.h SOURCE)
 add_cd_file(TARGET combase DESTINATION reactos/system32 FOR all)

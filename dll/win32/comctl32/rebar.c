@@ -714,8 +714,7 @@ REBAR_CalcHorzBand (const REBAR_INFO *infoPtr, UINT rstart, UINT rend)
 	  lpBand->fDraw |= DRAW_GRIPPER;
 	  lpBand->rcGripper.left   += REBAR_PRE_GRIPPER;
 	  lpBand->rcGripper.right  = lpBand->rcGripper.left + GRIPPER_WIDTH;
-	  lpBand->rcGripper.top    += 2;
-	  lpBand->rcGripper.bottom -= 2;
+          InflateRect(&lpBand->rcGripper, 0, -2);
 
 	  SetRect (&lpBand->rcCapImage,
 		   lpBand->rcGripper.right+REBAR_ALWAYS_SPACE, lpBand->rcBand.top,
@@ -790,15 +789,11 @@ REBAR_CalcHorzBand (const REBAR_INFO *infoPtr, UINT rstart, UINT rend)
 
       /* flag if notify required and invalidate rectangle */
       if (lpBand->fDraw & NTF_INVALIDATE) {
-          TRACE("invalidating (%d,%d)-(%d,%d)\n",
-		lpBand->rcBand.left,
-		lpBand->rcBand.top,
-		lpBand->rcBand.right + SEP_WIDTH,
-		lpBand->rcBand.bottom + SEP_WIDTH);
 	  lpBand->fDraw &= ~NTF_INVALIDATE;
 	  work = lpBand->rcBand;
 	  work.right += SEP_WIDTH;
 	  work.bottom += SEP_WIDTH;
+	  TRACE("invalidating %s\n", wine_dbgstr_rect(&work));
 	  InvalidateRect(infoPtr->hwndSelf, &work, TRUE);
 	  if (lpBand->hwndChild) InvalidateRect(lpBand->hwndChild, NULL, TRUE);
       }
@@ -847,8 +842,7 @@ REBAR_CalcVertBand (const REBAR_INFO *infoPtr, UINT rstart, UINT rend)
 	    }
 	    else {
 		/*  horizontal gripper  */
-		lpBand->rcGripper.left   += 2;
-		lpBand->rcGripper.right  -= 2;
+                InflateRect(&lpBand->rcGripper, -2, 0);
 		lpBand->rcGripper.top    += REBAR_PRE_GRIPPER;
 		lpBand->rcGripper.bottom  = lpBand->rcGripper.top + GRIPPER_WIDTH;
 
@@ -911,15 +905,11 @@ REBAR_CalcVertBand (const REBAR_INFO *infoPtr, UINT rstart, UINT rend)
 	}
 
 	if (lpBand->fDraw & NTF_INVALIDATE) {
-            TRACE("invalidating (%d,%d)-(%d,%d)\n",
-                  rcBand.left,
-                  rcBand.top,
-                  rcBand.right + SEP_WIDTH,
-                  rcBand.bottom + SEP_WIDTH);
 	    lpBand->fDraw &= ~NTF_INVALIDATE;
 	    work = rcBand;
 	    work.bottom += SEP_WIDTH;
 	    work.right += SEP_WIDTH;
+	    TRACE("invalidating %s\n", wine_dbgstr_rect(&work));
 	    InvalidateRect(infoPtr->hwndSelf, &work, TRUE);
 	    if (lpBand->hwndChild) InvalidateRect(lpBand->hwndChild, NULL, TRUE);
 	}
@@ -1380,7 +1370,7 @@ REBAR_Layout(REBAR_INFO *infoPtr)
     adjcx = get_rect_cx(infoPtr, &rcAdj);
 
     if (infoPtr->uNumBands == 0) {
-        TRACE("No bands - setting size to (0,%d), vert: %x\n", adjcx, infoPtr->dwStyle & CCS_VERT);
+        TRACE("No bands - setting size to (0,%d), style: %x\n", adjcx, infoPtr->dwStyle);
         infoPtr->calcSize.cx = adjcx;
         /* the calcSize.cy won't change for a 0 band rebar */
         infoPtr->uNumRows = 0;
@@ -1565,7 +1555,7 @@ REBAR_AutoSize(REBAR_INFO *infoPtr, BOOL needsLayout)
     GetClientRect(infoPtr->hwndSelf, &rcNew);
 
     GetClientRect(infoPtr->hwndSelf, &autosize.rcTarget);
-    autosize.fChanged = (memcmp(&rc, &rcNew, sizeof(RECT)) == 0);
+    autosize.fChanged = EqualRect(&rc, &rcNew);
     autosize.rcTarget = rc;
     autosize.rcActual = rcNew;
     REBAR_Notify((NMHDR *)&autosize, infoPtr, RBN_AUTOSIZE);
@@ -1828,15 +1818,42 @@ static LRESULT REBAR_EraseBkGnd (const REBAR_INFO *infoPtr, HDC hdc)
     RECT cr;
     COLORREF old = CLR_NONE, new;
     HTHEME theme = GetWindowTheme (infoPtr->hwndSelf);
+#ifdef __REACTOS__
+    HRGN hrgn;
+#endif
 
     GetClientRect (infoPtr->hwndSelf, &cr);
+
+#ifdef __REACTOS__
+
+    if (theme)
+    {
+        if (IsThemeBackgroundPartiallyTransparent(theme, RP_BACKGROUND, 0))
+        {
+            DrawThemeParentBackground (infoPtr->hwndSelf, hdc, &cr);
+        }
+        DrawThemeBackground (theme, hdc, 0, 0, &cr, NULL);
+    }
+
+    hrgn = CreateRectRgn(cr.left, cr.top, cr.right, cr.bottom);
+
+#endif
 
     oldrow = -1;
     for(i=0; i<infoPtr->uNumBands; i++) {
         RECT rcBand;
+#ifdef __REACTOS__
+        RECT rcBandReal;
+        HRGN hrgnBand;
+#endif
+
         lpBand = REBAR_GetBand(infoPtr, i);
 	if (HIDDENBAND(lpBand)) continue;
         translate_rect(infoPtr, &rcBand, &lpBand->rcBand);
+
+#ifdef __REACTOS__
+        rcBandReal = rcBand;
+#endif
 
 	/* draw band separator between rows */
 	if (lpBand->iRow != oldrow) {
@@ -1862,6 +1879,9 @@ static LRESULT REBAR_EraseBkGnd (const REBAR_INFO *infoPtr, HDC hdc)
 		}
                 TRACE ("drawing band separator bottom (%s)\n",
                        wine_dbgstr_rect(&rcRowSep));
+#ifdef __REACTOS__
+        rcBandReal = rcRowSep;
+#endif
 	    }
 	}
 
@@ -1872,6 +1892,9 @@ static LRESULT REBAR_EraseBkGnd (const REBAR_INFO *infoPtr, HDC hdc)
 	    if (infoPtr->dwStyle & CCS_VERT) {
                 rcSep.bottom = rcSep.top;
 		rcSep.top -= SEP_WIDTH_SIZE;
+#ifdef __REACTOS__
+        rcBandReal.top -= SEP_WIDTH_SIZE;
+#endif
                 if (theme)
                     DrawThemeEdge (theme, hdc, RP_BAND, 0, &rcSep, EDGE_ETCHED, BF_BOTTOM, NULL);
                 else
@@ -1880,6 +1903,9 @@ static LRESULT REBAR_EraseBkGnd (const REBAR_INFO *infoPtr, HDC hdc)
 	    else {
                 rcSep.right = rcSep.left;
 		rcSep.left -= SEP_WIDTH_SIZE;
+#ifdef __REACTOS__
+        rcBandReal.left -= SEP_WIDTH_SIZE;
+#endif
                 if (theme)
                     DrawThemeEdge (theme, hdc, RP_BAND, 0, &rcSep, EDGE_ETCHED, BF_RIGHT, NULL);
                 else
@@ -1910,6 +1936,9 @@ static LRESULT REBAR_EraseBkGnd (const REBAR_INFO *infoPtr, HDC hdc)
 #endif
 	}
 
+#ifdef __REACTOS__
+        if (!theme)
+#else
         if (theme)
         {
             /* When themed, the background color is ignored (but not a
@@ -1917,6 +1946,7 @@ static LRESULT REBAR_EraseBkGnd (const REBAR_INFO *infoPtr, HDC hdc)
             DrawThemeBackground (theme, hdc, 0, 0, &cr, &rcBand);
         }
         else
+#endif
         {
             old = SetBkColor (hdc, new);
             TRACE("%s background color=0x%06x, band %s\n",
@@ -1927,7 +1957,26 @@ static LRESULT REBAR_EraseBkGnd (const REBAR_INFO *infoPtr, HDC hdc)
             if (lpBand->clrBack != CLR_NONE)
                 SetBkColor (hdc, old);
         }
+
+#ifdef __REACTOS__
+        hrgnBand = CreateRectRgn(rcBandReal.left, rcBandReal.top, rcBandReal.right, rcBandReal.bottom);
+        CombineRgn(hrgn, hrgn, hrgnBand, RGN_DIFF);
+        DeleteObject(hrgnBand);
+#endif
     }
+
+#if 1
+#ifdef __REACTOS__
+    if (!theme)
+#endif
+    {
+        //FIXME: Apparently painting the remaining area is a v6 feature
+        HBRUSH hbrush = CreateSolidBrush(new);
+        FillRgn(hdc, hrgn, hbrush);
+        DeleteObject(hbrush);
+    }
+    DeleteObject(hrgn);
+#endif
     return TRUE;
 }
 
@@ -2278,7 +2327,7 @@ REBAR_GetBandInfoT(const REBAR_INFO *infoPtr, UINT uIndex, LPREBARBANDINFOW lprb
     if (lprbbi->fMask & RBBIM_CHILDSIZE) {
 	lprbbi->cxMinChild = lpBand->cxMinChild;
 	lprbbi->cyMinChild = lpBand->cyMinChild;
-        /* to make tests pass we follow Windows behaviour and allow to read these fields only
+        /* to make tests pass we follow Windows' behaviour and allow reading these fields only
          * for RBBS_VARIABLEHEIGHTS bands */
         if (lprbbi->cbSize >= REBARBANDINFOW_V6_SIZE && (lpBand->fStyle & RBBS_VARIABLEHEIGHT)) {
 	    lprbbi->cyChild    = lpBand->cyChild;
@@ -2383,7 +2432,7 @@ REBAR_GetRect (const REBAR_INFO *infoPtr, INT iBand, RECT *lprc)
 
     lpBand = REBAR_GetBand(infoPtr, iBand);
     /* For CCS_VERT the coordinates will be swapped - like on Windows */
-    CopyRect (lprc, &lpBand->rcBand);
+    *lprc = lpBand->rcBand;
 
     TRACE("band %d, (%s)\n", iBand, wine_dbgstr_rect(lprc));
 
@@ -2896,7 +2945,11 @@ REBAR_ShowBand (REBAR_INFO *infoPtr, INT iBand, BOOL show)
 
 
 static LRESULT
+#ifdef __REACTOS__
 REBAR_SizeToRect (REBAR_INFO *infoPtr, WPARAM flags, RECT *lpRect)
+#else
+REBAR_SizeToRect (REBAR_INFO *infoPtr, const RECT *lpRect)
+#endif
 {
     if (!lpRect) return FALSE;
 
@@ -3218,7 +3271,11 @@ REBAR_NCCalcSize (const REBAR_INFO *infoPtr, RECT *rect)
     else if ((theme = GetWindowTheme (infoPtr->hwndSelf)))
     {
         /* FIXME: should use GetThemeInt */
+#ifdef __REACTOS__
+        rect->top = (rect->top + 1 < rect->bottom) ? rect->top : rect->bottom;
+#else
         rect->top = min(rect->top + 1, rect->bottom);
+#endif
     }
     TRACE("new client=(%s)\n", wine_dbgstr_rect(rect));
     return 0;
@@ -3319,13 +3376,17 @@ REBAR_NCHitTest (const REBAR_INFO *infoPtr, LPARAM lParam)
 			   (INT *)&nmmouse.dwItemSpec);
     nmmouse.dwItemData = 0;
     nmmouse.pt = clpt;
+#ifdef __REACTOS__
+    nmmouse.dwHitInfo = scrap;
+#else
     nmmouse.dwHitInfo = 0;
+#endif
     if ((i = REBAR_Notify((NMHDR *) &nmmouse, infoPtr, NM_NCHITTEST))) {
 	TRACE("notify changed return value from %ld to %d\n",
 	      ret, i);
 	ret = (LRESULT) i;
     }
-    TRACE("returning %ld, client point (%d,%d)\n", ret, clpt.x, clpt.y);
+    TRACE("returning %ld, client point %s\n", ret, wine_dbgstr_point(&clpt));
     return ret;
 }
 
@@ -3391,6 +3452,9 @@ REBAR_Paint (const REBAR_INFO *infoPtr, HDC hdc)
 {
     if (hdc) {
         TRACE("painting\n");
+#ifdef __REACTOS__
+        REBAR_EraseBkGnd (infoPtr, hdc);
+#endif
         REBAR_Refresh (infoPtr, hdc);
     } else {
         PAINTSTRUCT ps;
@@ -3669,7 +3733,11 @@ REBAR_WindowProc (HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	    return REBAR_ShowBand (infoPtr, wParam, lParam);
 
 	case RB_SIZETORECT:
+#ifdef __REACTOS__
 	    return REBAR_SizeToRect (infoPtr, wParam, (LPRECT)lParam);
+#else
+	    return REBAR_SizeToRect (infoPtr, (LPCRECT)lParam);
+#endif
 
 
 /*    Messages passed to parent */

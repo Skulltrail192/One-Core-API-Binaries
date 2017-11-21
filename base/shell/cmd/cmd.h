@@ -65,7 +65,6 @@ extern BOOL   bDelayedExpansion;
 extern INT    nErrorLevel;
 extern SHORT  maxx;
 extern SHORT  maxy;
-extern OSVERSIONINFO osvi;
 extern BOOL bUnicodeOutput;
 
 
@@ -101,7 +100,7 @@ INT cmd_cls (LPTSTR);
 
 
 /* Prototypes for CMD.C */
-INT ConvertULargeInteger(ULONGLONG num, LPTSTR des, UINT len, BOOL bPutSeperator);
+INT ConvertULargeInteger(ULONGLONG num, LPTSTR des, UINT len, BOOL bPutSeparator);
 HANDLE RunFile(DWORD, LPTSTR, LPTSTR, LPTSTR, INT);
 INT ParseCommandLine(LPTSTR);
 struct _PARSED_COMMAND;
@@ -472,7 +471,8 @@ INT cmd_type (LPTSTR);
 
 
 /* Prototypes for VER.C */
-VOID ShortVersion (VOID);
+VOID InitOSVersion(VOID);
+VOID PrintOSVersion(VOID);
 INT  cmd_ver (LPTSTR);
 
 

@@ -1,7 +1,7 @@
 /*
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS text-mode setup
- * FILE:            subsys/system/usetup/interface/devinst.c
+ * FILE:            base/setup/usetup/interface/devinst.c
  * PURPOSE:         Device installation
  * PROGRAMMER:      Hervé Poussineau (hpoussin@reactos.org)
  */
@@ -163,7 +163,7 @@ InstallDriver(
         (wcslen(Driver) + 1) * sizeof(WCHAR));
     if (NT_SUCCESS(Status))
     {
-        /* Restart the device, so it will use the driver we registred */
+        /* Restart the device, so it will use the driver we registered */
         deviceInstalled = ResetDevice(DeviceId);
     }
 
@@ -341,7 +341,7 @@ EventThread(IN LPVOID lpParameter)
     }
 
     InitializeObjectAttributes(&ObjectAttributes, &ServicesU, OBJ_CASE_INSENSITIVE, NULL, NULL);
-    Status = NtCreateKey(&hServices, 0, &ObjectAttributes, 0, NULL, 0, NULL);
+    Status = NtCreateKey(&hServices, KEY_ALL_ACCESS, &ObjectAttributes, 0, NULL, 0, NULL);
     if (!NT_SUCCESS(Status))
     {
         DPRINT1("NtCreateKey('%wZ') failed with status 0x%08lx\n", &ServicesU, Status);

@@ -20,10 +20,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
 #include "d3d9_private.h"
-
-WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
 
 static inline struct d3d9_query *impl_from_IDirect3DQuery9(IDirect3DQuery9 *iface)
 {
@@ -32,7 +29,7 @@ static inline struct d3d9_query *impl_from_IDirect3DQuery9(IDirect3DQuery9 *ifac
 
 static HRESULT WINAPI d3d9_query_QueryInterface(IDirect3DQuery9 *iface, REFIID riid, void **out)
 {
-    TRACE("iface %p, riid %s, object %p.\n", iface, debugstr_guid(riid), out);
+    TRACE("iface %p, riid %s, out %p.\n", iface, debugstr_guid(riid), out);
 
     if (IsEqualGUID(riid, &IID_IDirect3DQuery9)
             || IsEqualGUID(riid, &IID_IUnknown))
@@ -108,20 +105,10 @@ static D3DQUERYTYPE WINAPI d3d9_query_GetType(IDirect3DQuery9 *iface)
 static DWORD WINAPI d3d9_query_GetDataSize(IDirect3DQuery9 *iface)
 {
     struct d3d9_query *query = impl_from_IDirect3DQuery9(iface);
-    enum wined3d_query_type type;
-    DWORD ret;
 
     TRACE("iface %p.\n", iface);
 
-    wined3d_mutex_lock();
-    type = wined3d_query_get_type(query->wined3d_query);
-    if (type == WINED3D_QUERY_TYPE_TIMESTAMP_DISJOINT)
-        ret = sizeof(BOOL);
-    else
-        ret = wined3d_query_get_data_size(query->wined3d_query);
-    wined3d_mutex_unlock();
-
-    return ret;
+    return query->data_size;
 }
 
 static HRESULT WINAPI d3d9_query_Issue(IDirect3DQuery9 *iface, DWORD flags)
@@ -157,7 +144,8 @@ static HRESULT WINAPI d3d9_query_GetData(IDirect3DQuery9 *iface, void *data, DWO
             size = sizeof(data_disjoint.disjoint);
 
         hr = wined3d_query_get_data(query->wined3d_query, &data_disjoint, sizeof(data_disjoint), flags);
-        memcpy(data, &data_disjoint.disjoint, size);
+        if (SUCCEEDED(hr))
+            memcpy(data, &data_disjoint.disjoint, size);
     }
     else
     {
@@ -165,6 +153,15 @@ static HRESULT WINAPI d3d9_query_GetData(IDirect3DQuery9 *iface, void *data, DWO
     }
     wined3d_mutex_unlock();
 
+    if (hr == D3DERR_INVALIDCALL)
+    {
+        if (data)
+        {
+            memset(data, 0, size);
+            memset(data, 0xdd, min(size, query->data_size));
+        }
+        return S_OK;
+    }
     return hr;
 }
 
@@ -185,17 +182,31 @@ HRESULT query_init(struct d3d9_query *query, struct d3d9_device *device, D3DQUER
 {
     HRESULT hr;
 
+    if (type > D3DQUERYTYPE_MEMORYPRESSURE)
+    {
+        WARN("Invalid query type %#x.\n", type);
+        return D3DERR_NOTAVAILABLE;
+    }
+
     query->IDirect3DQuery9_iface.lpVtbl = &d3d9_query_vtbl;
     query->refcount = 1;
 
     wined3d_mutex_lock();
-    hr = wined3d_query_create(device->wined3d_device, type, query, &query->wined3d_query);
-    wined3d_mutex_unlock();
-    if (FAILED(hr))
+    if (FAILED(hr = wined3d_query_create(device->wined3d_device, type,
+            query, &d3d9_null_wined3d_parent_ops, &query->wined3d_query)))
     {
+        wined3d_mutex_unlock();
         WARN("Failed to create wined3d query, hr %#x.\n", hr);
         return hr;
     }
+
+    if (type == D3DQUERYTYPE_OCCLUSION)
+        query->data_size = sizeof(DWORD);
+    else if (type == D3DQUERYTYPE_TIMESTAMPDISJOINT)
+        query->data_size = sizeof(BOOL);
+    else
+        query->data_size = wined3d_query_get_data_size(query->wined3d_query);
+    wined3d_mutex_unlock();
 
     query->parent_device = &device->IDirect3DDevice9Ex_iface;
     IDirect3DDevice9Ex_AddRef(query->parent_device);

@@ -1,15 +1,13 @@
 
 add_definitions(-D__WINESRC__)
-include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
-
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 add_definitions(-DWINE_REGISTER_DLL -DPROXY_DELEGATION)
-
 spec2def(actxprxy.dll actxprxy.spec)
 
 add_rpcproxy_files(
-    #actxprxy_activscp.idl
-    #actxprxy_comcat.idl
-    #actxprxy_docobj.idl
+    actxprxy_activscp.idl
+    actxprxy_comcat.idl
+    actxprxy_docobj.idl
     actxprxy_hlink.idl
     actxprxy_htiface.idl
     actxprxy_htiframe.idl
@@ -23,16 +21,16 @@ add_rpcproxy_files(
 list(APPEND SOURCE
     usrmarshal.c
     actxprxy.rc
-    #${CMAKE_CURRENT_BINARY_DIR}/actxprxy_activscp_p.c
-    #${CMAKE_CURRENT_BINARY_DIR}/actxprxy_comcat_p.c
-    #${CMAKE_CURRENT_BINARY_DIR}/actxprxy_docobj_p.c
-    #${CMAKE_CURRENT_BINARY_DIR}/actxprxy_hlink_p.c
-    #${CMAKE_CURRENT_BINARY_DIR}/actxprxy_htiface_p.c
-    #${CMAKE_CURRENT_BINARY_DIR}/actxprxy_htiframe_p.c
-    #${CMAKE_CURRENT_BINARY_DIR}/actxprxy_objsafe_p.c
-    #${CMAKE_CURRENT_BINARY_DIR}/actxprxy_ocmm_p.c
-    #${CMAKE_CURRENT_BINARY_DIR}/actxprxy_servprov_p.c
-    #${CMAKE_CURRENT_BINARY_DIR}/actxprxy_shldisp_p.c
+    ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_activscp_p.c
+    ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_comcat_p.c
+    ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_docobj_p.c
+    ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_hlink_p.c
+    ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_htiface_p.c
+    ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_htiframe_p.c
+    ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_objsafe_p.c
+    ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_ocmm_p.c
+    ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_servprov_p.c
+    ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_shldisp_p.c
     ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_shobjidl_p.c
     ${CMAKE_CURRENT_BINARY_DIR}/actxprxy_urlhist_p.c
     ${CMAKE_CURRENT_BINARY_DIR}/proxy.dlldata.c

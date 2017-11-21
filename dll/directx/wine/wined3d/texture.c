@@ -805,8 +805,7 @@ void wined3d_texture_bind(struct wined3d_texture *texture,
 }
 
 /* Context activation is done by the caller. */
-void wined3d_texture_bind_and_dirtify(struct wined3d_texture *texture,
-        struct wined3d_context *context, BOOL srgb)
+void wined3d_texture_dirtify(struct wined3d_context *context)
 {
     /* We don't need a specific texture unit, but after binding the texture
      * the current unit is dirty. Read the unit back instead of switching to
@@ -827,7 +826,13 @@ void wined3d_texture_bind_and_dirtify(struct wined3d_texture *texture,
      * a shader. */
     context_invalidate_compute_state(context, STATE_COMPUTE_SHADER_RESOURCE_BINDING);
     context_invalidate_state(context, STATE_GRAPHICS_SHADER_RESOURCE_BINDING);
+}
 
+/* Context activation is done by the caller. */
+void wined3d_texture_bind_and_dirtify(struct wined3d_texture *texture,
+        struct wined3d_context *context, BOOL srgb)
+{
+    wined3d_texture_dirtify(context);
     wined3d_texture_bind(texture, context, srgb);
 }
 
@@ -896,8 +901,8 @@ void wined3d_texture_apply_sampler_desc(struct wined3d_texture *texture,
     state = sampler_desc->max_anisotropy;
     if (state != gl_tex->sampler_desc.max_anisotropy)
     {
-        if (gl_info->supported[EXT_TEXTURE_FILTER_ANISOTROPIC])
-            gl_info->gl_ops.gl.p_glTexParameteri(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, state);
+        if (gl_info->supported[ARB_TEXTURE_FILTER_ANISOTROPIC])
+            gl_info->gl_ops.gl.p_glTexParameteri(target, GL_TEXTURE_MAX_ANISOTROPY, state);
         else
             WARN("Anisotropic filtering not supported.\n");
         gl_tex->sampler_desc.max_anisotropy = state;
@@ -3166,13 +3171,12 @@ static const struct wined3d_texture_ops texture3d_ops =
 };
 
 static HRESULT volumetexture_init(struct wined3d_texture *texture, const struct wined3d_resource_desc *desc,
-        UINT layer_count, UINT level_count, struct wined3d_device *device, void *parent,
+        UINT layer_count, UINT level_count, DWORD flags, struct wined3d_device *device, void *parent,
         const struct wined3d_parent_ops *parent_ops)
 {
     struct wined3d_device_parent *device_parent = device->device_parent;
-    struct wined3d_surface *surfaces;
     const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
-    unsigned int i, j, depth = desc->depth;
+    unsigned int i;
     HRESULT hr;
 
     if (layer_count != 1)
@@ -3236,7 +3240,7 @@ static HRESULT volumetexture_init(struct wined3d_texture *texture, const struct 
     }
 
     if (FAILED(hr = wined3d_texture_init(texture, &texture3d_ops, 1, level_count, desc,
-            0, device, parent, parent_ops, &texture_resource_ops)))
+            flags, device, parent, parent_ops, &texture_resource_ops)))
     {
         WARN("Failed to initialize texture, returning %#x.\n", hr);
         return hr;
@@ -3254,52 +3258,26 @@ static HRESULT volumetexture_init(struct wined3d_texture *texture, const struct 
         texture->resource.map_binding = WINED3D_LOCATION_BUFFER;
     }
 
-    if (level_count > ~(SIZE_T)0 / depth
-            || !(surfaces = wined3d_calloc(level_count * depth, sizeof(*surfaces))))
-    {
-        wined3d_texture_cleanup_sync(texture);
-        return E_OUTOFMEMORY;
-    }
-
     /* Generate all the surfaces. */
     for (i = 0; i < texture->level_count; ++i)
     {
-        for (j = 0; j < depth; ++j)
+        struct wined3d_texture_sub_resource *sub_resource;
+
+        sub_resource = &texture->sub_resources[i];
+        sub_resource->locations = WINED3D_LOCATION_DISCARDED;
+
+        if (FAILED(hr = device_parent->ops->volume_created(device_parent,
+                texture, i, &sub_resource->parent, &sub_resource->parent_ops)))
         {
-            struct wined3d_texture_sub_resource *sub_resource;
-            unsigned int idx = j * texture->level_count + i;
-            struct wined3d_surface *surface;
-
-            surface = &surfaces[idx];
-            surface->container = texture;
-            surface->texture_target = texture->target;
-            surface->texture_level = i;
-            surface->texture_layer = j;
-            list_init(&surface->renderbuffers);
-            list_init(&surface->overlays);
-
-            sub_resource = &texture->sub_resources[idx];
-            sub_resource->locations = WINED3D_LOCATION_DISCARDED;
-            sub_resource->u.surface = surface;
-            if (!(texture->resource.usage & WINED3DUSAGE_DEPTHSTENCIL))
-            {
-                wined3d_texture_validate_location(texture, idx, WINED3D_LOCATION_SYSMEM);
-                wined3d_texture_invalidate_location(texture, idx, ~WINED3D_LOCATION_SYSMEM);
-            }
-
-            if (FAILED(hr = device_parent->ops->surface_created(device_parent,
-                    texture, idx, &sub_resource->parent, &sub_resource->parent_ops)))
-            {
-                WARN("Failed to create surface parent, hr %#x.\n", hr);
-                sub_resource->parent = NULL;
-                wined3d_texture_cleanup_sync(texture);
-                return hr;
-            }
-
-            TRACE("parent %p, parent_ops %p.\n", sub_resource->parent, sub_resource->parent_ops);
-
-            TRACE("Created 3D surface level %u, layer %u @ %p.\n", i, j, surface);
+            WARN("Failed to create volume parent, hr %#x.\n", hr);
+            sub_resource->parent = NULL;
+            wined3d_texture_cleanup_sync(texture);
+            return hr;
         }
+
+        TRACE("parent %p, parent_ops %p.\n", parent, parent_ops);
+
+        TRACE("Created volume level %u.\n", i);
     }
 
     return WINED3D_OK;
@@ -3557,7 +3535,6 @@ HRESULT CDECL wined3d_texture_create(struct wined3d_device *device, const struct
         void *parent, const struct wined3d_parent_ops *parent_ops, struct wined3d_texture **texture)
 {
     struct wined3d_texture *object;
-    unsigned int depth_or_layer_count;
     HRESULT hr;
 
     TRACE("device %p, desc %p, layer_count %u, level_count %u, flags %#x, data %p, "
@@ -3603,13 +3580,8 @@ HRESULT CDECL wined3d_texture_create(struct wined3d_device *device, const struct
         }
     }
 
-    if (desc->resource_type == WINED3D_RTYPE_TEXTURE_3D)
-        depth_or_layer_count = desc->depth;
-    else
-        depth_or_layer_count = layer_count;
-
     if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY,
-            FIELD_OFFSET(struct wined3d_texture, sub_resources[level_count * depth_or_layer_count]))))
+            FIELD_OFFSET(struct wined3d_texture, sub_resources[level_count * layer_count]))))
         return E_OUTOFMEMORY;
 
     switch (desc->resource_type)
@@ -3623,7 +3595,7 @@ HRESULT CDECL wined3d_texture_create(struct wined3d_device *device, const struct
             break;
 
         case WINED3D_RTYPE_TEXTURE_3D:
-            hr = volumetexture_init(object, desc, layer_count, level_count, device, parent, parent_ops);
+            hr = volumetexture_init(object, desc, layer_count, level_count, flags, device, parent, parent_ops);
             break;
 
         default:

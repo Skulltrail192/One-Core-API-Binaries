@@ -13,12 +13,15 @@
 #include <wincon.h>
 #include <shlobj.h>
 #include <stdio.h>
+#include <wincrypt.h>
 
 #include "rdesktop.h"
 #include "resource.h"
 
 #ifndef __TODO_MSTSC_H
 #define __TODO_MSTSC_H
+
+#define RDP_LOGON_NORMAL (RDP_INFO_MOUSE | RDP_INFO_DISABLECTRLALTDEL | RDP_INFO_UNICODE | RDP_INFO_MAXIMIZESHELL)
 
 #define IS_PERSISTENT(id) (id < 8 && g_pstcache_fd[id] > 0)
 

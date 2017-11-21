@@ -1,6 +1,6 @@
 /*
  *  ReactOS kernel
- *  Copyright (C) 2002 ReactOS Team
+ *  Copyright (C) 2002, 2014 ReactOS Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,8 @@
  * PROJECT:          ReactOS kernel
  * FILE:             drivers/filesystem/ntfs/create.c
  * PURPOSE:          NTFS filesystem driver
- * PROGRAMMER:       Eric Kohl
+ * PROGRAMMERS:      Eric Kohl
+ *                   Pierre Schweitzer (pierre@reactos.org)
  */
 
 /* INCLUDES *****************************************************************/
@@ -29,6 +30,21 @@
 
 #define NDEBUG
 #include <debug.h>
+
+static PCWSTR MftIdToName[] = {
+    L"$MFT",
+    L"$MFTMirr",
+    L"$LogFile",
+    L"$Volume",
+    L"AttrDef",
+    L".",
+    L"$Bitmap",
+    L"$Boot",
+    L"$BadClus",
+    L"$Quota",
+    L"$UpCase",
+    L"$Extended",
+};
 
 /* FUNCTIONS ****************************************************************/
 
@@ -44,6 +60,18 @@ NtfsMakeAbsoluteFilename(PFILE_OBJECT pFileObject,
     DPRINT("try related for %S\n", pRelativeFileName);
     Fcb = pFileObject->FsContext;
     ASSERT(Fcb);
+
+    if (Fcb->Flags & FCB_IS_VOLUME)
+    {
+        /* This is likely to be an opening by ID, return ourselves */
+        if (pRelativeFileName[0] == L'\\')
+        {
+            *pAbsoluteFilename = NULL;
+            return STATUS_SUCCESS;
+        }
+
+        return STATUS_INVALID_PARAMETER;
+    }
 
     /* verify related object is a directory and target name
        don't start with \. */
@@ -71,6 +99,145 @@ NtfsMakeAbsoluteFilename(PFILE_OBJECT pFileObject,
 }
 
 
+static
+NTSTATUS
+NtfsMoonWalkID(PDEVICE_EXTENSION DeviceExt,
+               ULONGLONG Id,
+               PUNICODE_STRING OutPath)
+{
+    NTSTATUS Status;
+    PFILE_RECORD_HEADER MftRecord;
+    PFILENAME_ATTRIBUTE FileName;
+    WCHAR FullPath[MAX_PATH];
+    ULONG WritePosition = MAX_PATH - 1;
+
+    DPRINT1("NtfsMoonWalkID(%p, %I64x, %p)\n", DeviceExt, Id, OutPath);
+
+    RtlZeroMemory(FullPath, sizeof(FullPath));
+    MftRecord = ExAllocatePoolWithTag(NonPagedPool,
+                                      DeviceExt->NtfsInfo.BytesPerFileRecord,
+                                      TAG_NTFS);
+    if (MftRecord == NULL)
+    {
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    while (TRUE)
+    {
+        Status = ReadFileRecord(DeviceExt, Id, MftRecord);
+        if (!NT_SUCCESS(Status))
+            break;
+
+        ASSERT(MftRecord->Ntfs.Type == NRH_FILE_TYPE);
+        if (!(MftRecord->Flags & FRH_IN_USE))
+        {
+            Status = STATUS_OBJECT_PATH_NOT_FOUND;
+            break;
+        }
+
+        FileName = GetBestFileNameFromRecord(DeviceExt, MftRecord);
+        if (FileName == NULL)
+        {
+            DPRINT1("$FILE_NAME attribute not found for %I64x\n", Id);
+            Status = STATUS_OBJECT_PATH_NOT_FOUND;
+            break;
+        }
+
+        WritePosition -= FileName->NameLength;
+        ASSERT(WritePosition < MAX_PATH);
+        RtlCopyMemory(FullPath + WritePosition, FileName->Name, FileName->NameLength * sizeof(WCHAR));
+        WritePosition -= 1;
+        ASSERT(WritePosition < MAX_PATH);
+        FullPath[WritePosition] = L'\\';
+
+        Id = FileName->DirectoryFileReferenceNumber & NTFS_MFT_MASK;
+        if (Id == NTFS_FILE_ROOT)
+            break;
+    }
+
+    ExFreePoolWithTag(MftRecord, TAG_NTFS);
+
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    OutPath->Length = (MAX_PATH - WritePosition - 1) * sizeof(WCHAR);
+    OutPath->MaximumLength = (MAX_PATH - WritePosition) * sizeof(WCHAR);
+    OutPath->Buffer = ExAllocatePoolWithTag(NonPagedPool, OutPath->MaximumLength, TAG_NTFS);
+    if (OutPath->Buffer == NULL)
+    {
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+    RtlCopyMemory(OutPath->Buffer, FullPath + WritePosition, OutPath->MaximumLength);
+
+    return Status;
+}
+
+static
+NTSTATUS
+NtfsOpenFileById(PDEVICE_EXTENSION DeviceExt,
+                 PFILE_OBJECT FileObject,
+                 ULONGLONG MftId,
+                 PNTFS_FCB * FoundFCB)
+{
+    NTSTATUS Status;
+    PNTFS_FCB FCB;
+    PFILE_RECORD_HEADER MftRecord;
+
+    DPRINT1("NtfsOpenFileById(%p, %p, %I64x, %p)\n", DeviceExt, FileObject, MftId, FoundFCB);
+
+    ASSERT(MftId < 0x10);
+    if (MftId > 0xb) /* No entries are used yet beyond this */
+    {
+        return STATUS_OBJECT_NAME_NOT_FOUND;
+    }
+
+    MftRecord = ExAllocatePoolWithTag(NonPagedPool,
+                                      DeviceExt->NtfsInfo.BytesPerFileRecord,
+                                      TAG_NTFS);
+    if (MftRecord == NULL)
+    {
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    Status = ReadFileRecord(DeviceExt, MftId, MftRecord);
+    if (!NT_SUCCESS(Status))
+    {
+        ExFreePoolWithTag(MftRecord, TAG_NTFS);
+        return Status;
+    }
+
+    if (!(MftRecord->Flags & FRH_IN_USE))
+    {
+        ExFreePoolWithTag(MftRecord, TAG_NTFS);
+        return STATUS_OBJECT_PATH_NOT_FOUND;
+    }
+
+    FCB = NtfsGrabFCBFromTable(DeviceExt, MftIdToName[MftId]);
+    if (FCB == NULL)
+    {
+        UNICODE_STRING Name;
+
+        RtlInitUnicodeString(&Name, MftIdToName[MftId]);
+        Status = NtfsMakeFCBFromDirEntry(DeviceExt, NULL, &Name, NULL, MftRecord, MftId, &FCB);
+        if (!NT_SUCCESS(Status))
+        {
+            ExFreePoolWithTag(MftRecord, TAG_NTFS);
+            return Status;
+        }
+    }
+
+    ASSERT(FCB != NULL);
+
+    ExFreePoolWithTag(MftRecord, TAG_NTFS);
+
+    Status = NtfsAttachFCBToFileObject(DeviceExt,
+                                       FCB,
+                                       FileObject);
+    *FoundFCB = FCB;
+
+    return Status;
+}
+
 /*
  * FUNCTION: Opens a file
  */
@@ -97,16 +264,14 @@ NtfsOpenFile(PDEVICE_EXTENSION DeviceExt,
         Status = NtfsMakeAbsoluteFilename(FileObject->RelatedFileObject,
                                           FileName,
                                           &AbsFileName);
-        FileName = AbsFileName;
+        if (AbsFileName) FileName = AbsFileName;
         if (!NT_SUCCESS(Status))
         {
             return Status;
         }
-
-        return STATUS_UNSUCCESSFUL;
     }
 
-    //FIXME: Get cannonical path name (remove .'s, ..'s and extra separators)
+    //FIXME: Get canonical path name (remove .'s, ..'s and extra separators)
 
     DPRINT("PathName to open: %S\n", FileName);
 
@@ -165,9 +330,10 @@ NtfsCreateFile(PDEVICE_OBJECT DeviceObject,
     PFILE_OBJECT FileObject;
     ULONG RequestedDisposition;
     ULONG RequestedOptions;
-    PNTFS_FCB Fcb;
+    PNTFS_FCB Fcb = NULL;
 //    PWSTR FileName;
     NTSTATUS Status;
+    UNICODE_STRING FullPath;
 
     DPRINT1("NtfsCreateFile(%p, %p) called\n", DeviceObject, Irp);
 
@@ -185,13 +351,37 @@ NtfsCreateFile(PDEVICE_OBJECT DeviceObject,
         return STATUS_INVALID_PARAMETER;
     }
 
-    FileObject = Stack->FileObject;
-
-    if (RequestedDisposition == FILE_CREATE ||
-        RequestedDisposition == FILE_OVERWRITE_IF ||
-        RequestedDisposition == FILE_SUPERSEDE)
+    /* Deny create if the volume is locked */
+    if (DeviceExt->Flags & VCB_VOLUME_LOCKED)
     {
         return STATUS_ACCESS_DENIED;
+    }
+
+    FileObject = Stack->FileObject;
+
+    if ((RequestedOptions & FILE_OPEN_BY_FILE_ID) == FILE_OPEN_BY_FILE_ID)
+    {
+        ULONGLONG MFTId;
+
+        if (FileObject->FileName.Length != sizeof(ULONGLONG))
+            return STATUS_INVALID_PARAMETER;
+
+        MFTId = (*(PULONGLONG)FileObject->FileName.Buffer) & NTFS_MFT_MASK;
+        if (MFTId < 0x10)
+        {
+            Status = NtfsOpenFileById(DeviceExt, FileObject, MFTId, &Fcb);
+        }
+        else
+        {
+            Status = NtfsMoonWalkID(DeviceExt, MFTId, &FullPath);
+        }
+
+        if (!NT_SUCCESS(Status))
+        {
+            return Status;
+        }
+
+        DPRINT1("Open by ID: %I64x -> %wZ\n", (*(PULONGLONG)FileObject->FileName.Buffer) & NTFS_MFT_MASK, &FullPath);
     }
 
     /* This a open operation for the volume itself */
@@ -216,10 +406,18 @@ NtfsCreateFile(PDEVICE_OBJECT DeviceObject,
         return STATUS_SUCCESS;
     }
 
-    Status = NtfsOpenFile(DeviceExt,
-                          FileObject,
-                          FileObject->FileName.Buffer,
-                          &Fcb);
+    if (Fcb == NULL)
+    {
+        Status = NtfsOpenFile(DeviceExt,
+                              FileObject,
+                              ((RequestedOptions & FILE_OPEN_BY_FILE_ID) ? FullPath.Buffer : FileObject->FileName.Buffer),
+                              &Fcb);
+
+        if (RequestedOptions & FILE_OPEN_BY_FILE_ID)
+        {
+            ExFreePoolWithTag(FullPath.Buffer, TAG_NTFS);
+        }
+    }
 
     if (NT_SUCCESS(Status))
     {
@@ -242,6 +440,40 @@ NtfsCreateFile(PDEVICE_OBJECT DeviceObject,
         {
             NtfsCloseFile(DeviceExt, FileObject);
             return STATUS_NOT_A_DIRECTORY;
+        }
+
+        /*
+         * If it is a reparse point & FILE_OPEN_REPARSE_POINT, then allow opening it
+         * as a normal file.
+         * Otherwise, attempt to read reparse data and hand them to the Io manager
+         * with status reparse to force a reparse.
+         */
+        if (NtfsFCBIsReparsePoint(Fcb) &&
+            ((RequestedOptions & FILE_OPEN_REPARSE_POINT) != FILE_OPEN_REPARSE_POINT))
+        {
+            PREPARSE_DATA_BUFFER ReparseData = NULL;
+
+            Status = NtfsReadFCBAttribute(DeviceExt, Fcb,
+                                          AttributeReparsePoint, L"", 0,
+                                          (PVOID *)&Irp->Tail.Overlay.AuxiliaryBuffer);
+            if (NT_SUCCESS(Status))
+            {
+                ReparseData = (PREPARSE_DATA_BUFFER)Irp->Tail.Overlay.AuxiliaryBuffer;
+                if (ReparseData->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT)
+                {
+                    Status = STATUS_REPARSE;
+                }
+                else
+                {
+                    Status = STATUS_NOT_IMPLEMENTED;
+                    ExFreePoolWithTag(ReparseData, TAG_NTFS);
+                }
+            }
+
+            Irp->IoStatus.Information = ((Status == STATUS_REPARSE) ? ReparseData->ReparseTag : 0);
+
+            NtfsCloseFile(DeviceExt, FileObject);
+            return Status;
         }
 
         /* HUGLY HACK: remain RO so far... */
@@ -267,48 +499,50 @@ NtfsCreateFile(PDEVICE_OBJECT DeviceObject,
         }
     }
 
+    if (NT_SUCCESS(Status))
+    {
+        Fcb->OpenHandleCount++;
+        DeviceExt->OpenHandleCount++;
+    }
+
     /*
      * If the directory containing the file to open doesn't exist then
      * fail immediately
      */
     Irp->IoStatus.Information = (NT_SUCCESS(Status)) ? FILE_OPENED : 0;
-    Irp->IoStatus.Status = Status;
 
     return Status;
 }
 
 
 NTSTATUS
-NTAPI
-NtfsFsdCreate(PDEVICE_OBJECT DeviceObject,
-              PIRP Irp)
+NtfsCreate(PNTFS_IRP_CONTEXT IrpContext)
 {
     PDEVICE_EXTENSION DeviceExt;
     NTSTATUS Status;
+    PDEVICE_OBJECT DeviceObject;
 
+    DeviceObject = IrpContext->DeviceObject;
     if (DeviceObject == NtfsGlobalData->DeviceObject)
     {
         /* DeviceObject represents FileSystem instead of logical volume */
         DPRINT("Opening file system\n");
-        Irp->IoStatus.Information = FILE_OPENED;
-        Status = STATUS_SUCCESS;
-        goto ByeBye;
+        IrpContext->Irp->IoStatus.Information = FILE_OPENED;
+        return STATUS_SUCCESS;
     }
 
     DeviceExt = DeviceObject->DeviceExtension;
 
-    FsRtlEnterFileSystem();
+    if (!(IrpContext->Flags & IRPCONTEXT_CANWAIT))
+    {
+        return NtfsMarkIrpContextForQueue(IrpContext);
+    }
+
     ExAcquireResourceExclusiveLite(&DeviceExt->DirResource,
                                    TRUE);
     Status = NtfsCreateFile(DeviceObject,
-                            Irp);
+                            IrpContext->Irp);
     ExReleaseResourceLite(&DeviceExt->DirResource);
-    FsRtlExitFileSystem();
-
-ByeBye:
-    Irp->IoStatus.Status = Status;
-    IoCompleteRequest(Irp,
-                      NT_SUCCESS(Status) ? IO_DISK_INCREMENT : IO_NO_INCREMENT);
 
     return Status;
 }

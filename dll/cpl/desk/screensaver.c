@@ -175,10 +175,18 @@ WaitForSettingsDialog(HWND hwndDlg,
                     DispatchMessage(&msg);
                 }
             }
+            else
+            {
+                return FALSE;
+            }
+        }
+        else if (dwResult == WAIT_OBJECT_0)
+        {
+            return TRUE;
         }
         else
         {
-            return TRUE;
+            return FALSE;
         }
     }
 }
@@ -206,7 +214,7 @@ ScreensaverConfig(HWND hwndDlg, PDATA pData)
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
-    if(CreateProcess(NULL,
+    if (CreateProcess(NULL,
                      szCmdline,
                      NULL,
                      NULL,
@@ -262,7 +270,7 @@ ScreensaverPreview(HWND hwndDlg, PDATA pData)
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
-    if(CreateProcess(NULL,
+    if (CreateProcess(NULL,
                      szCmdline,
                      NULL,
                      NULL,
@@ -520,12 +528,13 @@ SetScreenSaver(HWND hwndDlg, PDATA pData)
         /* Set the screensaver */
         if (pData->ScreenSaverItems[pData->Selection].bIsScreenSaver)
         {
+            SIZE_T Length = _tcslen(pData->ScreenSaverItems[pData->Selection].szFilename) * sizeof(TCHAR);
             RegSetValueEx(regKey,
                           _T("SCRNSAVE.EXE"),
                           0,
                           REG_SZ,
                           (PBYTE)pData->ScreenSaverItems[pData->Selection].szFilename,
-                          _tcslen(pData->ScreenSaverItems[pData->Selection].szFilename) * sizeof(TCHAR));
+                          (DWORD)Length);
 
             SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, TRUE, 0, SPIF_UPDATEINIFILE);
         }
@@ -751,7 +760,7 @@ ScreenSaverPageProc(HWND hwndDlg,
 
                 case IDC_SCREENS_TESTSC: // Screensaver Preview
                 {
-                    if(command == BN_CLICKED)
+                    if (command == BN_CLICKED)
                     {
                         ScreensaverPreview(hwndDlg, pData);
                         SetScreenSaverPreviewBox(hwndDlg, pData);

@@ -1,7 +1,7 @@
 /*
 * PROJECT:         ReactOS Kernel
 * LICENSE:         GPL - See COPYING in the top level directory
-* FILE:            ntoskrnl/include/io_x.h
+* FILE:            ntoskrnl/include/internal/io_x.h
 * PURPOSE:         Internal Inlined Functions for the I/O Manager
 * PROGRAMMERS:     Alex Ionescu (alex.ionescu@reactos.org)
 */
@@ -11,7 +11,7 @@ __inline
 VOID
 IopLockFileObject(IN PFILE_OBJECT FileObject)
 {
-	/* Lock the FO and check for contention */
+    /* Lock the FO and check for contention */
     InterlockedIncrement((PLONG)&FileObject->Waiters);
     while (InterlockedCompareExchange((PLONG)&FileObject->Busy, TRUE, FALSE) != FALSE)
     {
@@ -51,6 +51,8 @@ VOID
 IopUnQueueIrpFromThread(IN PIRP Irp)
 {
     /* Remove it from the list and reset it */
+    if (IsListEmpty(&Irp->ThreadListEntry))
+        return;
     RemoveEntryList(&Irp->ThreadListEntry);
     InitializeListHead(&Irp->ThreadListEntry);
 }

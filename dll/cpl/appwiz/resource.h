@@ -1,10 +1,5 @@
 #pragma once
 
-/* Metrics */
-#define PROPSHEETWIDTH  	380
-#define PROPSHEETHEIGHT 	228
-#define PROPSHEETPADDING 	6
-
 /* Icons */
 #define IDI_CPLSYSTEM	1500
 #define IDI_APPICO		1501
@@ -16,9 +11,11 @@
 /* Dialogs */
 #define IDD_SHORTCUT_LOCATION	203
 #define IDD_SHORTCUT_FINISH		204
+#define IDD_CONFIG_STARTMENU    400
 
 /* Bitmaps */
 #define IDB_WATERMARK	5001
+#define IDB_SHORTCUT	5002
 
 /* Strings */
 #define IDS_CPLSYSTEMNAME			1001
@@ -34,6 +31,8 @@
 #define IDC_SHORTCUT_LOCATION	107
 #define IDC_SHORTCUT_BROWSE		108
 #define IDC_SHORTCUT_NAME		109
+#define IDC_STARTMENU_TREE      110
+#define IDC_REMOVE_ENTRIES      111
 
 #define ID_DWL_GECKO_DIALOG 1200
 #define ID_DWL_PROGRESS     1201

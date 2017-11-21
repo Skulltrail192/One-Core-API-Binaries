@@ -23,30 +23,43 @@ FsdGetFsVolumeInformation(
     PFILE_FS_VOLUME_INFORMATION FsVolumeInfo,
     PULONG BufferLength)
 {
+    NTSTATUS Status;
     PDEVICE_EXTENSION DeviceExt;
 
     DPRINT("FsdGetFsVolumeInformation()\n");
     DPRINT("FsVolumeInfo = %p\n", FsVolumeInfo);
     DPRINT("BufferLength %lu\n", *BufferLength);
 
-    DPRINT("Required length %lu\n", (sizeof(FILE_FS_VOLUME_INFORMATION) + DeviceObject->Vpb->VolumeLabelLength));
+    DPRINT("Required length %lu\n", FIELD_OFFSET(FILE_FS_VOLUME_INFORMATION, VolumeLabel) + DeviceObject->Vpb->VolumeLabelLength);
     DPRINT("LabelLength %hu\n", DeviceObject->Vpb->VolumeLabelLength);
-    DPRINT("Label %*.S\n", DeviceObject->Vpb->VolumeLabelLength / sizeof(WCHAR), DeviceObject->Vpb->VolumeLabel);
+    DPRINT("Label %.*S\n", DeviceObject->Vpb->VolumeLabelLength / sizeof(WCHAR), DeviceObject->Vpb->VolumeLabel);
 
-    if (*BufferLength < sizeof(FILE_FS_VOLUME_INFORMATION))
-        return STATUS_INFO_LENGTH_MISMATCH;
-
-    if (*BufferLength < (sizeof(FILE_FS_VOLUME_INFORMATION) + DeviceObject->Vpb->VolumeLabelLength))
-        return STATUS_BUFFER_OVERFLOW;
+    ASSERT(*BufferLength >= sizeof(FILE_FS_VOLUME_INFORMATION));
+    *BufferLength -= FIELD_OFFSET(FILE_FS_VOLUME_INFORMATION, VolumeLabel);
 
     DeviceExt = DeviceObject->DeviceExtension;
 
     /* valid entries */
     FsVolumeInfo->VolumeSerialNumber = DeviceObject->Vpb->SerialNumber;
     FsVolumeInfo->VolumeLabelLength = DeviceObject->Vpb->VolumeLabelLength;
-    RtlCopyMemory(FsVolumeInfo->VolumeLabel, DeviceObject->Vpb->VolumeLabel, FsVolumeInfo->VolumeLabelLength);
+    if (*BufferLength < DeviceObject->Vpb->VolumeLabelLength)
+    {
+        Status =  STATUS_BUFFER_OVERFLOW;
+        RtlCopyMemory(FsVolumeInfo->VolumeLabel,
+                      DeviceObject->Vpb->VolumeLabel,
+                      *BufferLength);
+        *BufferLength = 0;
+    }
+    else
+    {
+        Status =  STATUS_SUCCESS;
+        RtlCopyMemory(FsVolumeInfo->VolumeLabel,
+                      DeviceObject->Vpb->VolumeLabel,
+                      FsVolumeInfo->VolumeLabelLength);
+        *BufferLength -= DeviceObject->Vpb->VolumeLabelLength;
+    }
 
-    if (DeviceExt->VolumeFcb->Flags & FCB_IS_FATX_ENTRY)
+    if (vfatVolumeIsFatX(DeviceExt))
     {
         FsdDosDateTimeToSystemTime(DeviceExt,
                                    DeviceExt->VolumeFcb->entry.FatX.CreationDate,
@@ -64,12 +77,9 @@ FsdGetFsVolumeInformation(
     FsVolumeInfo->SupportsObjects = FALSE;
 
     DPRINT("Finished FsdGetFsVolumeInformation()\n");
-
-    *BufferLength -= (sizeof(FILE_FS_VOLUME_INFORMATION) + DeviceObject->Vpb->VolumeLabelLength);
-
     DPRINT("BufferLength %lu\n", *BufferLength);
 
-    return STATUS_SUCCESS;
+    return Status;
 }
 
 
@@ -80,29 +90,38 @@ FsdGetFsAttributeInformation(
     PFILE_FS_ATTRIBUTE_INFORMATION FsAttributeInfo,
     PULONG BufferLength)
 {
-    PCWSTR pName; ULONG Length;
+    NTSTATUS Status;
+    PCWSTR pName;
+    ULONG Length;
+
     DPRINT("FsdGetFsAttributeInformation()\n");
     DPRINT("FsAttributeInfo = %p\n", FsAttributeInfo);
     DPRINT("BufferLength %lu\n", *BufferLength);
 
-    if (*BufferLength < sizeof (FILE_FS_ATTRIBUTE_INFORMATION))
-        return STATUS_INFO_LENGTH_MISMATCH;
+    ASSERT(*BufferLength >= sizeof(FILE_FS_ATTRIBUTE_INFORMATION));
+    *BufferLength -= FIELD_OFFSET(FILE_FS_ATTRIBUTE_INFORMATION, FileSystemName);
 
     if (DeviceExt->FatInfo.FatType == FAT32)
     {
-        Length = 10;
         pName = L"FAT32";
     }
     else
     {
-        Length = 6;
         pName = L"FAT";
     }
 
-    DPRINT("Required length %lu\n", (sizeof(FILE_FS_ATTRIBUTE_INFORMATION) + Length));
+    Length = wcslen(pName) * sizeof(WCHAR);
+    DPRINT("Required length %lu\n", (FIELD_OFFSET(FILE_FS_ATTRIBUTE_INFORMATION, FileSystemName) + Length));
 
-    if (*BufferLength < (sizeof(FILE_FS_ATTRIBUTE_INFORMATION) + Length))
-        return STATUS_BUFFER_OVERFLOW;
+    if (*BufferLength < Length)
+    {
+        Status = STATUS_BUFFER_OVERFLOW;
+        Length = *BufferLength;
+    }
+    else
+    {
+        Status = STATUS_SUCCESS;
+    }
 
     FsAttributeInfo->FileSystemAttributes =
         FILE_CASE_PRESERVED_NAMES | FILE_UNICODE_ON_DISK;
@@ -115,10 +134,10 @@ FsdGetFsAttributeInformation(
 
     DPRINT("Finished FsdGetFsAttributeInformation()\n");
 
-    *BufferLength -= (sizeof(FILE_FS_ATTRIBUTE_INFORMATION) + Length);
+    *BufferLength -= Length;
     DPRINT("BufferLength %lu\n", *BufferLength);
 
-    return STATUS_SUCCESS;
+    return Status;
 }
 
 
@@ -135,8 +154,7 @@ FsdGetFsSizeInformation(
     DPRINT("FsdGetFsSizeInformation()\n");
     DPRINT("FsSizeInfo = %p\n", FsSizeInfo);
 
-    if (*BufferLength < sizeof(FILE_FS_SIZE_INFORMATION))
-        return STATUS_BUFFER_OVERFLOW;
+    ASSERT(*BufferLength >= sizeof(FILE_FS_SIZE_INFORMATION));
 
     DeviceExt = DeviceObject->DeviceExtension;
     Status = CountAvailableClusters(DeviceExt, &FsSizeInfo->AvailableAllocationUnits);
@@ -165,8 +183,7 @@ FsdGetFsDeviceInformation(
     DPRINT("BufferLength %lu\n", *BufferLength);
     DPRINT("Required length %lu\n", sizeof(FILE_FS_DEVICE_INFORMATION));
 
-    if (*BufferLength < sizeof(FILE_FS_DEVICE_INFORMATION))
-        return STATUS_BUFFER_OVERFLOW;
+    ASSERT(*BufferLength >= sizeof(FILE_FS_DEVICE_INFORMATION));
 
     FsDeviceInfo->DeviceType = FILE_DEVICE_DISK;
     FsDeviceInfo->Characteristics = DeviceObject->Characteristics;
@@ -177,6 +194,37 @@ FsdGetFsDeviceInformation(
     DPRINT("BufferLength %lu\n", *BufferLength);
 
     return STATUS_SUCCESS;
+}
+
+
+static
+NTSTATUS
+FsdGetFsFullSizeInformation(
+    PDEVICE_OBJECT DeviceObject,
+    PFILE_FS_FULL_SIZE_INFORMATION FsSizeInfo,
+    PULONG BufferLength)
+{
+    PDEVICE_EXTENSION DeviceExt;
+    NTSTATUS Status;
+
+    DPRINT("FsdGetFsFullSizeInformation()\n");
+    DPRINT("FsSizeInfo = %p\n", FsSizeInfo);
+
+    ASSERT(*BufferLength >= sizeof(FILE_FS_FULL_SIZE_INFORMATION));
+
+    DeviceExt = DeviceObject->DeviceExtension;
+    Status = CountAvailableClusters(DeviceExt, &FsSizeInfo->CallerAvailableAllocationUnits);
+
+    FsSizeInfo->TotalAllocationUnits.QuadPart = DeviceExt->FatInfo.NumberOfClusters;
+    FsSizeInfo->ActualAvailableAllocationUnits.QuadPart = FsSizeInfo->CallerAvailableAllocationUnits.QuadPart;
+    FsSizeInfo->SectorsPerAllocationUnit = DeviceExt->FatInfo.SectorsPerCluster;
+    FsSizeInfo->BytesPerSector = DeviceExt->FatInfo.BytesPerSector;
+
+    DPRINT("Finished FsdGetFsFullSizeInformation()\n");
+    if (NT_SUCCESS(Status))
+        *BufferLength -= sizeof(FILE_FS_FULL_SIZE_INFORMATION);
+
+    return Status;
 }
 
 
@@ -202,17 +250,19 @@ FsdSetFsLabelInformation(
     CHAR cString[43];
     ULONG SizeDirEntry;
     ULONG EntriesPerPage;
+    BOOLEAN IsFatX;
 
     DPRINT("FsdSetFsLabelInformation()\n");
 
     DeviceExt = (PDEVICE_EXTENSION)DeviceObject->DeviceExtension;
+    IsFatX = vfatVolumeIsFatX(DeviceExt);
 
     if (sizeof(DeviceObject->Vpb->VolumeLabel) < FsLabelInfo->VolumeLabelLength)
     {
         return STATUS_NAME_TOO_LONG;
     }
 
-    if (DeviceExt->Flags & VCB_IS_FATX)
+    if (IsFatX)
     {
         if (FsLabelInfo->VolumeLabelLength / sizeof(WCHAR) > 42)
             return STATUS_NAME_TOO_LONG;
@@ -241,7 +291,7 @@ FsdSetFsLabelInformation(
     if (!NT_SUCCESS(Status))
         return Status;
 
-    if (DeviceExt->Flags & VCB_IS_FATX)
+    if (IsFatX)
     {
         RtlCopyMemory(VolumeLabelDirEntry.FatX.Filename, cString, LabelLen);
         memset(&VolumeLabelDirEntry.FatX.Filename[LabelLen], ' ', 42 - LabelLen);
@@ -266,11 +316,21 @@ FsdSetFsLabelInformation(
 
     /* Search existing volume entry on disk */
     FileOffset.QuadPart = 0;
-    if (CcPinRead(pRootFcb->FileObject, &FileOffset, SizeDirEntry, TRUE, &Context, (PVOID*)&Entry))
+    _SEH2_TRY
+    {
+        CcPinRead(pRootFcb->FileObject, &FileOffset, SizeDirEntry, PIN_WAIT, &Context, (PVOID*)&Entry);
+    }
+    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+    {
+        Status = _SEH2_GetExceptionCode();
+    }
+    _SEH2_END;
+
+    if (NT_SUCCESS(Status))
     {
         while (TRUE)
         {
-            if (ENTRY_VOLUME(DeviceExt, Entry))
+            if (ENTRY_VOLUME(IsFatX, Entry))
             {
                 /* Update entry */
                 LabelFound = TRUE;
@@ -280,7 +340,7 @@ FsdSetFsLabelInformation(
                 break;
             }
 
-            if (ENTRY_END(DeviceExt, Entry))
+            if (ENTRY_END(IsFatX, Entry))
             {
                 break;
             }
@@ -291,7 +351,17 @@ FsdSetFsLabelInformation(
             {
                 CcUnpinData(Context);
                 FileOffset.u.LowPart += PAGE_SIZE;
-                if (!CcPinRead(pRootFcb->FileObject, &FileOffset, SizeDirEntry, TRUE, &Context, (PVOID*)&Entry))
+                _SEH2_TRY
+                {
+                    CcPinRead(pRootFcb->FileObject, &FileOffset, SizeDirEntry, PIN_WAIT, &Context, (PVOID*)&Entry);
+                }
+                _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+                {
+                    Status = _SEH2_GetExceptionCode();
+                }
+                _SEH2_END;
+
+                if (!NT_SUCCESS(Status))
                 {
                     Context = NULL;
                     break;
@@ -314,12 +384,19 @@ FsdSetFsLabelInformation(
         {
             FileOffset.u.HighPart = 0;
             FileOffset.u.LowPart = VolumeLabelDirIndex * SizeDirEntry;
-            if (!CcPinRead(pRootFcb->FileObject, &FileOffset, SizeDirEntry,
-                           TRUE, &Context, (PVOID*)&Entry))
+
+            Status = STATUS_SUCCESS;
+            _SEH2_TRY
             {
-                Status = STATUS_UNSUCCESSFUL;
+                CcPinRead(pRootFcb->FileObject, &FileOffset, SizeDirEntry, PIN_WAIT, &Context, (PVOID*)&Entry);
             }
-            else
+            _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+            {
+                Status = _SEH2_GetExceptionCode();
+            }
+            _SEH2_END;
+
+            if (NT_SUCCESS(Status))
             {
                 RtlCopyMemory(Entry, &VolumeLabelDirEntry, SizeDirEntry);
                 CcSetDirtyPinnedData(Context, NULL);
@@ -361,9 +438,10 @@ VfatQueryVolumeInformation(
     DPRINT("VfatQueryVolumeInformation(IrpContext %p)\n", IrpContext);
 
     if (!ExAcquireResourceSharedLite(&((PDEVICE_EXTENSION)IrpContext->DeviceObject->DeviceExtension)->DirResource,
-                                     (BOOLEAN)(IrpContext->Flags & IRPCONTEXT_CANWAIT)))
+                                     BooleanFlagOn(IrpContext->Flags, IRPCONTEXT_CANWAIT)))
     {
-        return VfatQueueRequest(IrpContext);
+        DPRINT1("DirResource failed!\n");
+        return VfatMarkIrpContextForQueue(IrpContext);
     }
 
     /* INITIALIZATION */
@@ -400,19 +478,20 @@ VfatQueryVolumeInformation(
                                            &BufferLength);
             break;
 
+        case FileFsFullSizeInformation:
+            RC = FsdGetFsFullSizeInformation(IrpContext->DeviceObject,
+                                             SystemBuffer,
+                                             &BufferLength);
+            break;
+
         default:
             RC = STATUS_NOT_SUPPORTED;
     }
 
     ExReleaseResourceLite(&((PDEVICE_EXTENSION)IrpContext->DeviceObject->DeviceExtension)->DirResource);
-    IrpContext->Irp->IoStatus.Status = RC;
-    if (NT_SUCCESS(RC))
-        IrpContext->Irp->IoStatus.Information =
-            IrpContext->Stack->Parameters.QueryVolume.Length - BufferLength;
-    else
-        IrpContext->Irp->IoStatus.Information = 0;
-    IoCompleteRequest(IrpContext->Irp, IO_NO_INCREMENT);
-    VfatFreeIrpContext(IrpContext);
+
+    IrpContext->Irp->IoStatus.Information =
+        IrpContext->Stack->Parameters.QueryVolume.Length - BufferLength;
 
     return RC;
 }
@@ -437,9 +516,9 @@ VfatSetVolumeInformation(
     DPRINT("VfatSetVolumeInformation(IrpContext %p)\n", IrpContext);
 
     if (!ExAcquireResourceExclusiveLite(&((PDEVICE_EXTENSION)IrpContext->DeviceObject->DeviceExtension)->DirResource,
-                                        (BOOLEAN)(IrpContext->Flags & IRPCONTEXT_CANWAIT)))
+                                        BooleanFlagOn(IrpContext->Flags, IRPCONTEXT_CANWAIT)))
     {
-        return VfatQueueRequest(IrpContext);
+        return VfatMarkIrpContextForQueue(IrpContext);
     }
 
     FsInformationClass = Stack->Parameters.SetVolume.FsInformationClass;
@@ -462,10 +541,7 @@ VfatSetVolumeInformation(
     }
 
     ExReleaseResourceLite(&((PDEVICE_EXTENSION)IrpContext->DeviceObject->DeviceExtension)->DirResource);
-    IrpContext->Irp->IoStatus.Status = Status;
     IrpContext->Irp->IoStatus.Information = 0;
-    IoCompleteRequest(IrpContext->Irp, IO_NO_INCREMENT);
-    VfatFreeIrpContext(IrpContext);
 
     return Status;
 }

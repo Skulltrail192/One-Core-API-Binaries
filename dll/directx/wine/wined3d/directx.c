@@ -179,6 +179,7 @@ static const struct wined3d_extension_map gl_extension_map[] =
     {"GL_ARB_texture_cube_map_array",       ARB_TEXTURE_CUBE_MAP_ARRAY    },
     {"GL_ARB_texture_env_combine",          ARB_TEXTURE_ENV_COMBINE       },
     {"GL_ARB_texture_env_dot3",             ARB_TEXTURE_ENV_DOT3          },
+    {"GL_ARB_texture_filter_anisotropic",   ARB_TEXTURE_FILTER_ANISOTROPIC},
     {"GL_ARB_texture_float",                ARB_TEXTURE_FLOAT             },
     {"GL_ARB_texture_gather",               ARB_TEXTURE_GATHER            },
     {"GL_ARB_texture_mirrored_repeat",      ARB_TEXTURE_MIRRORED_REPEAT   },
@@ -222,12 +223,12 @@ static const struct wined3d_extension_map gl_extension_map[] =
     {"GL_EXT_framebuffer_blit",             EXT_FRAMEBUFFER_BLIT          },
     {"GL_EXT_framebuffer_multisample",      EXT_FRAMEBUFFER_MULTISAMPLE   },
     {"GL_EXT_framebuffer_object",           EXT_FRAMEBUFFER_OBJECT        },
-    {"GL_EXT_geometry_shader4",             EXT_GEOMETRY_SHADER4          },
     {"GL_EXT_gpu_program_parameters",       EXT_GPU_PROGRAM_PARAMETERS    },
     {"GL_EXT_gpu_shader4",                  EXT_GPU_SHADER4               },
     {"GL_EXT_packed_depth_stencil",         EXT_PACKED_DEPTH_STENCIL      },
     {"GL_EXT_packed_float",                 EXT_PACKED_FLOAT              },
     {"GL_EXT_point_parameters",             EXT_POINT_PARAMETERS          },
+    {"GL_EXT_polygon_offset_clamp",         EXT_POLYGON_OFFSET_CLAMP      },
     {"GL_EXT_provoking_vertex",             EXT_PROVOKING_VERTEX          },
     {"GL_EXT_secondary_color",              EXT_SECONDARY_COLOR           },
     {"GL_EXT_stencil_two_side",             EXT_STENCIL_TWO_SIDE          },
@@ -238,7 +239,7 @@ static const struct wined3d_extension_map gl_extension_map[] =
     {"GL_EXT_texture_compression_s3tc",     EXT_TEXTURE_COMPRESSION_S3TC  },
     {"GL_EXT_texture_env_combine",          EXT_TEXTURE_ENV_COMBINE       },
     {"GL_EXT_texture_env_dot3",             EXT_TEXTURE_ENV_DOT3          },
-    {"GL_EXT_texture_filter_anisotropic",   EXT_TEXTURE_FILTER_ANISOTROPIC},
+    {"GL_EXT_texture_filter_anisotropic",   ARB_TEXTURE_FILTER_ANISOTROPIC},
     {"GL_EXT_texture_integer",              EXT_TEXTURE_INTEGER           },
     {"GL_EXT_texture_lod_bias",             EXT_TEXTURE_LOD_BIAS          },
     {"GL_EXT_texture_mirror_clamp",         EXT_TEXTURE_MIRROR_CLAMP      },
@@ -943,6 +944,92 @@ static BOOL match_broken_viewport_subpixel_bits(const struct wined3d_gl_info *gl
     return !wined3d_caps_gl_ctx_test_viewport_subpixel_bits(ctx);
 }
 
+static GLuint compile_glsl_shader(const struct wined3d_gl_info *gl_info, GLenum type, const GLchar *src)
+{
+    GLchar log[4096];
+    GLuint shader;
+    GLint status;
+
+    shader = GL_EXTCALL(glCreateShader(type));
+    if (!shader)
+    {
+        ERR("Failed to create shader\n");
+        return 0;
+    }
+
+    GL_EXTCALL(glShaderSource(shader, 1, &src, NULL));
+    GL_EXTCALL(glCompileShader(shader));
+
+    GL_EXTCALL(glGetShaderiv(shader, GL_COMPILE_STATUS, &status));
+    if (!status)
+    {
+        GL_EXTCALL(glGetShaderInfoLog(shader, sizeof(log), NULL, log));
+        ERR("Failed to compile inferface matching shader %x: %s\n", type, (char *)log);
+        GL_EXTCALL(glDeleteShader(shader));
+        return 0;
+    }
+    return shader;
+}
+
+/* Context activation is done by the caller. */
+static BOOL match_broken_interface_matching(const struct wined3d_gl_info *gl_info,
+        struct wined3d_caps_gl_ctx *ctx, const char *gl_renderer, enum wined3d_gl_vendor gl_vendor,
+        enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
+{
+    static const char vertex_src[] =
+        "#version 440\n"
+        "in vec4 vs_in0;\n"
+        "out shader_in_out { vec4 reg0; } shader_out;\n"
+        "void main()\n"
+        "{\n"
+        "   shader_out.reg0 = (vs_in0.xyzw);\n"
+        "}";
+    static const char frag_src[] =
+        "#version 440\n"
+        "in shader_in_out { centroid vec4 reg0; } shader_in;\n"
+        "out vec4 ps_out0;\n"
+        "void main()\n"
+        "{\n"
+        "   ps_out0 = vec4(1.0, 0.0, 1.0, 1.0);\n"
+        "}";
+
+    GLuint vs = 0, ps = 0, prog = 0;
+    GLchar log[4096];
+    BOOL ret = TRUE;
+    GLint status;
+
+    if (!wined3d_settings.glslRequested || gl_info->glsl_version < MAKEDWORD_VERSION(4, 40))
+        return FALSE;
+
+    if (!(vs = compile_glsl_shader(gl_info, GL_VERTEX_SHADER, vertex_src)))
+        return TRUE;
+
+    if (!(ps = compile_glsl_shader(gl_info, GL_FRAGMENT_SHADER, frag_src)))
+        goto done;
+
+    prog = GL_EXTCALL(glCreateProgram());
+    if (!prog) goto done;
+
+    GL_EXTCALL(glAttachShader(prog, vs));
+    GL_EXTCALL(glAttachShader(prog, ps));
+
+    GL_EXTCALL(glLinkProgram(prog));
+    GL_EXTCALL(glGetProgramiv(prog, GL_LINK_STATUS, &status));
+    if (!status)
+    {
+        GL_EXTCALL(glGetProgramInfoLog(prog, sizeof(log), NULL, log));
+        WARN("OpenGL implementation has broken matching for storage qualifiers: %s\n", log);
+    }
+    else
+        ret = FALSE;
+
+done:
+    if (prog) GL_EXTCALL(glDeleteProgram(prog));
+    if (vs) GL_EXTCALL(glDeleteShader(vs));
+    if (ps) GL_EXTCALL(glDeleteShader(ps));
+    return ret;
+}
+
 static void quirk_apple_glsl_constants(struct wined3d_gl_info *gl_info)
 {
     /* MacOS needs uniforms for relative addressing offsets. This can accumulate to quite a few uniforms.
@@ -1080,6 +1167,11 @@ static void quirk_broken_viewport_subpixel_bits(struct wined3d_gl_info *gl_info)
     }
 }
 
+static void quirk_broken_interface_matching(struct wined3d_gl_info *gl_info)
+{
+    gl_info->quirks |= WINED3D_QUIRK_BROKEN_STORAGE_MATCHING;
+}
+
 struct driver_quirk
 {
     BOOL (*match)(const struct wined3d_gl_info *gl_info, struct wined3d_caps_gl_ctx *ctx,
@@ -1175,6 +1267,11 @@ static const struct driver_quirk quirk_table[] =
         match_broken_viewport_subpixel_bits,
         quirk_broken_viewport_subpixel_bits,
         "Nvidia viewport subpixel bits bug"
+    },
+    {
+        match_broken_interface_matching,
+        quirk_broken_interface_matching,
+        "Mesa broken shader interface matching"
     },
 };
 
@@ -1833,6 +1930,8 @@ static enum wined3d_pci_vendor wined3d_guess_card_vendor(const char *gl_vendor_s
             || strstr(gl_vendor_string, "Advanced Micro Devices, Inc.")
             || strstr(gl_vendor_string, "X.Org R300 Project")
             || strstr(gl_renderer, "AMD")
+            || strstr(gl_renderer, "FirePro")
+            || strstr(gl_renderer, "Radeon")
             || strstr(gl_renderer, "R100")
             || strstr(gl_renderer, "R200")
             || strstr(gl_renderer, "R300")
@@ -3117,6 +3216,8 @@ static void load_gl_funcs(struct wined3d_gl_info *gl_info)
     /* GL_EXT_point_parameters */
     USE_GL_FUNC(glPointParameterfEXT)
     USE_GL_FUNC(glPointParameterfvEXT)
+    /* GL_EXT_polygon_offset_clamp */
+    USE_GL_FUNC(glPolygonOffsetClampEXT)
     /* GL_EXT_provoking_vertex */
     USE_GL_FUNC(glProvokingVertexEXT)
     /* GL_EXT_secondary_color */
@@ -3526,6 +3627,12 @@ static void wined3d_adapter_init_limits(struct wined3d_gl_info *gl_info)
         gl_info->limits.buffers = gl_max;
         TRACE("Max draw buffers: %u.\n", gl_max);
     }
+    if (gl_info->supported[ARB_BLEND_FUNC_EXTENDED])
+    {
+        gl_info->gl_ops.gl.p_glGetIntegerv(GL_MAX_DUAL_SOURCE_DRAW_BUFFERS, &gl_max);
+        gl_info->limits.dual_buffers = gl_max;
+        TRACE("Max dual source draw buffers: %u.\n", gl_max);
+    }
     if (gl_info->supported[ARB_MULTITEXTURE])
     {
         if (gl_info->supported[WINED3D_GL_LEGACY_CONTEXT])
@@ -3621,9 +3728,9 @@ static void wined3d_adapter_init_limits(struct wined3d_gl_info *gl_info)
         gl_info->limits.texture3d_size = gl_max;
         TRACE("Max texture3D size: %d.\n", gl_info->limits.texture3d_size);
     }
-    if (gl_info->supported[EXT_TEXTURE_FILTER_ANISOTROPIC])
+    if (gl_info->supported[ARB_TEXTURE_FILTER_ANISOTROPIC])
     {
-        gl_info->gl_ops.gl.p_glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &gl_max);
+        gl_info->gl_ops.gl.p_glGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &gl_max);
         gl_info->limits.anisotropy = gl_max;
         TRACE("Max anisotropy: %d.\n", gl_info->limits.anisotropy);
     }
@@ -3902,6 +4009,7 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter,
         {ARB_ES2_COMPATIBILITY,            MAKEDWORD_VERSION(4, 1)},
         {ARB_VIEWPORT_ARRAY,               MAKEDWORD_VERSION(4, 1)},
 
+        {ARB_CONSERVATIVE_DEPTH,           MAKEDWORD_VERSION(4, 2)},
         {ARB_INTERNALFORMAT_QUERY,         MAKEDWORD_VERSION(4, 2)},
         {ARB_MAP_BUFFER_ALIGNMENT,         MAKEDWORD_VERSION(4, 2)},
         {ARB_SHADER_ATOMIC_COUNTERS,       MAKEDWORD_VERSION(4, 2)},
@@ -3929,6 +4037,9 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter,
 
         {ARB_CLIP_CONTROL,                 MAKEDWORD_VERSION(4, 5)},
         {ARB_DERIVATIVE_CONTROL,           MAKEDWORD_VERSION(4, 5)},
+
+        {ARB_PIPELINE_STATISTICS_QUERY,    MAKEDWORD_VERSION(4, 6)},
+        {ARB_TEXTURE_FILTER_ANISOTROPIC,   MAKEDWORD_VERSION(4, 6)},
     };
     struct wined3d_driver_info *driver_info = &adapter->driver_info;
     const char *gl_vendor_str, *gl_renderer_str, *gl_version_str;
@@ -4286,6 +4397,10 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter,
     adapter->d3d_info.valid_rt_mask = 0;
     for (i = 0; i < gl_info->limits.buffers; ++i)
         adapter->d3d_info.valid_rt_mask |= (1u << i);
+
+    adapter->d3d_info.valid_dual_rt_mask = 0;
+    for (i = 0; i < gl_info->limits.dual_buffers; ++i)
+        adapter->d3d_info.valid_dual_rt_mask |= (1u << i);
 
     if (!adapter->d3d_info.shader_color_key)
     {
@@ -5247,6 +5362,13 @@ static BOOL wined3d_check_surface_capability(const struct wined3d_format *format
         return TRUE;
     }
 
+    if ((format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & (WINED3DFMT_FLAG_EXTENSION | WINED3DFMT_FLAG_TEXTURE))
+            == (WINED3DFMT_FLAG_EXTENSION | WINED3DFMT_FLAG_TEXTURE))
+    {
+        TRACE("[OK]\n");
+        return TRUE;
+    }
+
     /* Reject other formats */
     TRACE("[FAILED]\n");
     return FALSE;
@@ -5399,7 +5521,9 @@ HRESULT CDECL wined3d_check_device_format(const struct wined3d *wined3d, UINT ad
         return WINED3DERR_NOTAVAILABLE;
     }
 
-    if ((usage & WINED3DUSAGE_AUTOGENMIPMAP) && !gl_info->supported[SGIS_GENERATE_MIPMAP])
+    if ((usage & WINED3DUSAGE_AUTOGENMIPMAP) && (!gl_info->supported[SGIS_GENERATE_MIPMAP]
+            || (format->flags[gl_type] & (WINED3DFMT_FLAG_RENDERTARGET | WINED3DFMT_FLAG_FILTERING))
+            != (WINED3DFMT_FLAG_RENDERTARGET | WINED3DFMT_FLAG_FILTERING)))
     {
         TRACE("No WINED3DUSAGE_AUTOGENMIPMAP support, returning WINED3DOK_NOAUTOGEN.\n");
         return WINED3DOK_NOAUTOGEN;
@@ -5668,7 +5792,7 @@ HRESULT CDECL wined3d_get_device_caps(const struct wined3d *wined3d, UINT adapte
                                      WINED3DPRASTERCAPS_SLOPESCALEDEPTHBIAS |
                                      WINED3DPRASTERCAPS_DEPTHBIAS;
 
-    if (gl_info->supported[EXT_TEXTURE_FILTER_ANISOTROPIC])
+    if (gl_info->supported[ARB_TEXTURE_FILTER_ANISOTROPIC])
     {
         caps->RasterCaps  |= WINED3DPRASTERCAPS_ANISOTROPY    |
                              WINED3DPRASTERCAPS_ZBIAS         |
@@ -5787,7 +5911,7 @@ HRESULT CDECL wined3d_get_device_caps(const struct wined3d *wined3d, UINT adapte
                                WINED3DPTFILTERCAPS_MIPNEAREST       |
                                WINED3DPTFILTERCAPS_NEAREST;
 
-    if (gl_info->supported[EXT_TEXTURE_FILTER_ANISOTROPIC])
+    if (gl_info->supported[ARB_TEXTURE_FILTER_ANISOTROPIC])
     {
         caps->TextureFilterCaps  |= WINED3DPTFILTERCAPS_MAGFANISOTROPIC |
                                     WINED3DPTFILTERCAPS_MINFANISOTROPIC;
@@ -5808,7 +5932,7 @@ HRESULT CDECL wined3d_get_device_caps(const struct wined3d *wined3d, UINT adapte
                                        WINED3DPTFILTERCAPS_MIPNEAREST       |
                                        WINED3DPTFILTERCAPS_NEAREST;
 
-        if (gl_info->supported[EXT_TEXTURE_FILTER_ANISOTROPIC])
+        if (gl_info->supported[ARB_TEXTURE_FILTER_ANISOTROPIC])
         {
             caps->CubeTextureFilterCaps  |= WINED3DPTFILTERCAPS_MAGFANISOTROPIC |
                                             WINED3DPTFILTERCAPS_MINFANISOTROPIC;
@@ -5968,7 +6092,10 @@ HRESULT CDECL wined3d_get_device_caps(const struct wined3d *wined3d, UINT adapte
     caps->MaxUserClipPlanes                = vertex_caps.max_user_clip_planes;
     caps->MaxActiveLights                  = vertex_caps.max_active_lights;
     caps->MaxVertexBlendMatrices           = vertex_caps.max_vertex_blend_matrices;
-    caps->MaxVertexBlendMatrixIndex        = vertex_caps.max_vertex_blend_matrix_index;
+    if (device_type == WINED3D_DEVICE_TYPE_HAL)
+        caps->MaxVertexBlendMatrixIndex    = vertex_caps.max_vertex_blend_matrix_index;
+    else
+        caps->MaxVertexBlendMatrixIndex    = 255;
     caps->VertexProcessingCaps             = vertex_caps.vertex_processing_caps;
     caps->FVFCaps                          = vertex_caps.fvf_caps;
     caps->RasterCaps                      |= vertex_caps.raster_caps;

@@ -32,6 +32,15 @@ struct hstring_private
     LONG   refcount;
 };
 
+
+int WINAPI CompareStringOrdinal(
+  _In_ LPCWSTR lpString1,
+  _In_ int     cchCount1,
+  _In_ LPCWSTR lpString2,
+  _In_ int     cchCount2,
+  _In_ BOOL    bIgnoreCase
+);
+
 static const WCHAR empty[1];
 
 C_ASSERT(sizeof(struct hstring_private) <= sizeof(HSTRING_HEADER));

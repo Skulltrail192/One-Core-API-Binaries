@@ -115,6 +115,7 @@ INT_PTR CALLBACK modify_string_dlgproc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
             SetDlgItemTextW(hwndDlg, IDC_VALUE_NAME, buffer);
         }
         SetDlgItemTextW(hwndDlg, IDC_VALUE_DATA, stringValueData);
+        SendMessage(GetDlgItem(hwndDlg, IDC_VALUE_DATA), EM_SETSEL, 0, -1);
         SetFocus(GetDlgItem(hwndDlg, IDC_VALUE_DATA));
         return FALSE;
     case WM_COMMAND:
@@ -305,6 +306,7 @@ INT_PTR CALLBACK modify_dword_dlgproc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
         CheckRadioButton (hwndDlg, IDC_FORMAT_HEX, IDC_FORMAT_DEC, IDC_FORMAT_HEX);
         swprintf(ValueString, L"%lx", dwordValueData);
         SetDlgItemTextW(hwndDlg, IDC_VALUE_DATA, ValueString);
+        SendMessage(GetDlgItem(hwndDlg, IDC_VALUE_DATA), EM_SETSEL, 0, -1);
         SetFocus(GetDlgItem(hwndDlg, IDC_VALUE_DATA));
         return FALSE;
 
@@ -671,7 +673,12 @@ ParseResources(HWND hwnd)
     LVITEMW item;
     INT iItem;
 
-    pFullDescriptor = &resourceValueData->List[fullResourceIndex];
+    pFullDescriptor = &resourceValueData->List[0];
+    for (i = 0; i < fullResourceIndex; i++)
+    {
+        pFullDescriptor = (PVOID)(pFullDescriptor->PartialResourceList.PartialDescriptors +
+                                  pFullDescriptor->PartialResourceList.Count);
+    }
     pPartialResourceList = &pFullDescriptor->PartialResourceList;
 
     /* Interface type */
@@ -697,7 +704,7 @@ ParseResources(HWND hwnd)
                 hwndLV = GetDlgItem(hwnd, IDC_PORT_LIST);
 
 #ifdef _M_AMD64
-                wsprintf(buffer, L"0x%16I64x", pDescriptor->u.Port.Start.QuadPart);
+                wsprintf(buffer, L"0x%016I64x", pDescriptor->u.Port.Start.QuadPart);
 #else
                 wsprintf(buffer, L"0x%08lx", pDescriptor->u.Port.Start.u.LowPart);
 #endif
@@ -761,7 +768,7 @@ ParseResources(HWND hwnd)
                 hwndLV = GetDlgItem(hwnd, IDC_MEMORY_LIST);
 
 #ifdef _M_AMD64
-                wsprintf(buffer, L"0x%16I64x", pDescriptor->u.Memory.Start.QuadPart);
+                wsprintf(buffer, L"0x%016I64x", pDescriptor->u.Memory.Start.QuadPart);
 #else
                 wsprintf(buffer, L"0x%08lx", pDescriptor->u.Memory.Start.u.LowPart);
 #endif
@@ -975,10 +982,9 @@ static VOID AddFullResourcesToList(HWND hwnd)
     ULONG i;
     INT iItem;
 
+    pFullDescriptor = &resourceValueData->List[0];
     for (i = 0; i < resourceValueData->Count; i++)
     {
-        pFullDescriptor = &resourceValueData->List[i];
-
         wsprintf(buffer, L"%lu", pFullDescriptor->BusNumber);
 
         item.mask = LVIF_TEXT;
@@ -995,6 +1001,8 @@ static VOID AddFullResourcesToList(HWND hwnd)
             GetInterfaceType(pFullDescriptor->InterfaceType, buffer, 80);
             ListView_SetItemText(hwnd, iItem, 1, buffer);
         }
+        pFullDescriptor = (PVOID)(pFullDescriptor->PartialResourceList.PartialDescriptors +
+                                  pFullDescriptor->PartialResourceList.Count);
     }
 }
 
@@ -1073,7 +1081,7 @@ BOOL ModifyValue(HWND hwnd, HKEY hKey, LPCWSTR valueName, BOOL EditBin)
     editValueName = valueName;
 
     lRet = RegQueryValueExW(hKey, valueName, 0, &type, 0, &valueDataLen);
-    if (lRet != ERROR_SUCCESS && (!wcscmp(valueName, L"") || valueName == NULL))
+    if (lRet != ERROR_SUCCESS && (valueName == NULL || !valueName[0]))
     {
         lRet = ERROR_SUCCESS; /* Allow editing of (Default) values which don't exist */
         type = REG_SZ;

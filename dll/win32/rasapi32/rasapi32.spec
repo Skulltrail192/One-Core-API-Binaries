@@ -127,7 +127,6 @@
 568 stub	RnaUICallbackDialog
 569 stub	RnaUIUsernamePassword
 
-
 @ stub RasAutoDialSharedConnection
 @ stub RasGetConnectionStatistics
 @ stub RasGetEntryHrasconnW

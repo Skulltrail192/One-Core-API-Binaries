@@ -1,11 +1,18 @@
 #include <windef.h>
+#include <winuser.h>
 
 #include "resource.h"
 
-#define REACTOS_STR_FILE_DESCRIPTION  "Userinit Logon Application"
-#define REACTOS_STR_INTERNAL_NAME     "userinit"
-#define REACTOS_STR_ORIGINAL_FILENAME "userinit.dll"
+#define REACTOS_STR_FILE_DESCRIPTION    "Userinit Logon Application"
+#define REACTOS_STR_INTERNAL_NAME       "userinit"
+#define REACTOS_STR_ORIGINAL_FILENAME   "userinit.exe"
 #include <reactos/version.rc>
+
+#include <reactos/manifest_exe.rc>
+
+/* Bitmaps */
+IDB_ROSLOGO BITMAP "res/rosbitmap.bmp"
+IDB_ROSMASK BITMAP "res/rosbitmap_mask.bmp"
 
 /* UTF-8 */
 #pragma code_page(65001)
@@ -87,4 +94,7 @@
 #endif
 #ifdef LANGUAGE_ZH_CN
     #include "lang/zh-CN.rc"
+#endif
+#ifdef LANGUAGE_ZH_TW
+    #include "lang/zh-TW.rc"
 #endif

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2007 Google (Evan Stade)
- * Copyright (C) 2012 Dmitry Timoshkov
+ * Copyright (C) 2012,2016 Dmitry Timoshkov
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,10 @@
 #include <ole2.h>
 #include <olectl.h>
 
+HRESULT WINAPI WICCreateImagingFactory_Proxy(UINT, IWICImagingFactory**);
+
 #define PIXELFORMATBPP(x) ((x) ? ((x) >> 8) & 255 : 24)
+#define WMF_PLACEABLE_KEY 0x9ac6cdd7
 
 static const struct
 {
@@ -35,13 +38,19 @@ static const struct
 {
     { &GUID_WICPixelFormatBlackWhite, PixelFormat1bppIndexed, WICBitmapPaletteTypeFixedBW },
     { &GUID_WICPixelFormat1bppIndexed, PixelFormat1bppIndexed, WICBitmapPaletteTypeFixedBW },
+    { &GUID_WICPixelFormat4bppIndexed, PixelFormat4bppIndexed, WICBitmapPaletteTypeFixedHalftone8 },
     { &GUID_WICPixelFormat8bppGray, PixelFormat8bppIndexed, WICBitmapPaletteTypeFixedGray256 },
     { &GUID_WICPixelFormat8bppIndexed, PixelFormat8bppIndexed, WICBitmapPaletteTypeFixedHalftone256 },
     { &GUID_WICPixelFormat16bppBGR555, PixelFormat16bppRGB555, WICBitmapPaletteTypeFixedHalftone256 },
     { &GUID_WICPixelFormat24bppBGR, PixelFormat24bppRGB, WICBitmapPaletteTypeFixedHalftone256 },
     { &GUID_WICPixelFormat32bppBGR, PixelFormat32bppRGB, WICBitmapPaletteTypeFixedHalftone256 },
+    { &GUID_WICPixelFormat48bppRGB, PixelFormat48bppRGB, WICBitmapPaletteTypeFixedHalftone256 },
     { &GUID_WICPixelFormat32bppBGRA, PixelFormat32bppARGB, WICBitmapPaletteTypeFixedHalftone256 },
     { &GUID_WICPixelFormat32bppPBGRA, PixelFormat32bppPARGB, WICBitmapPaletteTypeFixedHalftone256 },
+    { &GUID_WICPixelFormat32bppCMYK, PixelFormat32bppCMYK, WICBitmapPaletteTypeFixedHalftone256 },
+    { &GUID_WICPixelFormat32bppGrayFloat, PixelFormat32bppARGB, WICBitmapPaletteTypeFixedGray256 },
+    { &GUID_WICPixelFormat64bppCMYK, PixelFormat48bppRGB, WICBitmapPaletteTypeFixedHalftone256 },
+    { &GUID_WICPixelFormat64bppRGBA, PixelFormat48bppRGB, WICBitmapPaletteTypeFixedHalftone256 },
     { NULL }
 };
 
@@ -52,8 +61,7 @@ static ColorPalette *get_palette(IWICBitmapFrameDecode *frame, WICBitmapPaletteT
     IWICPalette *wic_palette;
     ColorPalette *palette = NULL;
 
-    hr = CoCreateInstance(&CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER,
-                          &IID_IWICImagingFactory, (void **)&factory);
+    hr = WICCreateImagingFactory_Proxy(WINCODEC_SDK_VERSION, &factory);
     if (hr != S_OK) return NULL;
 
     hr = IWICImagingFactory_CreatePalette(factory, &wic_palette);
@@ -69,55 +77,41 @@ static ColorPalette *get_palette(IWICBitmapFrameDecode *frame, WICBitmapPaletteT
         }
         if (hr == S_OK)
         {
+            WICBitmapPaletteType type;
+            BOOL alpha;
             UINT count;
-            BOOL mono, gray;
-
-            IWICPalette_IsBlackWhite(wic_palette, &mono);
-            IWICPalette_IsGrayscale(wic_palette, &gray);
 
             IWICPalette_GetColorCount(wic_palette, &count);
-            palette = HeapAlloc(GetProcessHeap(), 0, 2 * sizeof(UINT) + count * sizeof(ARGB));
+            palette = heap_alloc(2 * sizeof(UINT) + count * sizeof(ARGB));
             IWICPalette_GetColors(wic_palette, count, palette->Entries, &palette->Count);
 
-            if (mono)
-                palette->Flags = 0;
-            else if (gray)
-                palette->Flags = PaletteFlagsGrayScale;
-            else
-                palette->Flags = PaletteFlagsHalftone;
+            IWICPalette_GetType(wic_palette, &type);
+            switch(type) {
+                case WICBitmapPaletteTypeFixedGray4:
+                case WICBitmapPaletteTypeFixedGray16:
+                case WICBitmapPaletteTypeFixedGray256:
+                    palette->Flags = PaletteFlagsGrayScale;
+                    break;
+                case WICBitmapPaletteTypeFixedHalftone8:
+                case WICBitmapPaletteTypeFixedHalftone27:
+                case WICBitmapPaletteTypeFixedHalftone64:
+                case WICBitmapPaletteTypeFixedHalftone125:
+                case WICBitmapPaletteTypeFixedHalftone216:
+                case WICBitmapPaletteTypeFixedHalftone252:
+                case WICBitmapPaletteTypeFixedHalftone256:
+                    palette->Flags = PaletteFlagsHalftone;
+                    break;
+                default:
+                    palette->Flags = 0;
+            }
+            IWICPalette_HasAlpha(wic_palette, &alpha);
+            if(alpha)
+                palette->Flags |= PaletteFlagsHasAlpha;
         }
         IWICPalette_Release(wic_palette);
     }
     IWICImagingFactory_Release(factory);
     return palette;
-}
-
-static INT ipicture_pixel_height(IPicture *pic)
-{
-    HDC hdcref;
-    OLE_YSIZE_HIMETRIC y;
-
-    IPicture_get_Height(pic, &y);
-
-    hdcref = CreateCompatibleDC(0);
-    y = MulDiv(y, GetDeviceCaps(hdcref, LOGPIXELSY), INCH_HIMETRIC);
-    DeleteDC(hdcref);
-
-    return y;
-}
-
-static INT ipicture_pixel_width(IPicture *pic)
-{
-    HDC hdcref;
-    OLE_XSIZE_HIMETRIC x;
-
-    IPicture_get_Width(pic, &x);
-
-    hdcref = CreateCompatibleDC(0);
-    x = MulDiv(x, GetDeviceCaps(hdcref, LOGPIXELSX), INCH_HIMETRIC);
-    DeleteDC(hdcref);
-
-    return x;
 }
 
 GpStatus WINGDIPAPI GdipBitmapApplyEffect(GpBitmap* bitmap, CGpEffect* effect,
@@ -565,8 +559,8 @@ GpStatus convert_pixels(INT width, INT height,
     }
 
 #define convert_indexed_to_rgb(getpixel_function, setpixel_function) do { \
-    for (x=0; x<width; x++) \
-        for (y=0; y<height; y++) { \
+    for (y=0; y<height; y++) \
+        for (x=0; x<width; x++) { \
             BYTE index; \
             ARGB argb; \
             BYTE *color = (BYTE *)&argb; \
@@ -578,8 +572,8 @@ GpStatus convert_pixels(INT width, INT height,
 } while (0);
 
 #define convert_rgb_to_rgb(getpixel_function, setpixel_function) do { \
-    for (x=0; x<width; x++) \
-        for (y=0; y<height; y++) { \
+    for (y=0; y<height; y++) \
+        for (x=0; x<width; x++) { \
             BYTE r, g, b, a; \
             getpixel_function(&r, &g, &b, &a, src_bits+src_stride*y, x); \
             setpixel_function(r, g, b, a, dst_bits+dst_stride*y, x); \
@@ -588,8 +582,8 @@ GpStatus convert_pixels(INT width, INT height,
 } while (0);
 
 #define convert_rgb_to_indexed(getpixel_function, setpixel_function) do { \
-    for (x=0; x<width; x++) \
-        for (y=0; y<height; y++) { \
+    for (y=0; y<height; y++) \
+        for (x=0; x<width; x++) { \
             BYTE r, g, b, a; \
             getpixel_function(&r, &g, &b, &a, src_bits+src_stride*y, x); \
             setpixel_function(r, g, b, a, dst_bits+dst_stride*y, x, palette); \
@@ -1022,16 +1016,22 @@ GpStatus WINGDIPAPI GdipBitmapLockBits(GpBitmap* bitmap, GDIPCONST GpRect* rect,
     INT bitspp = PIXELFORMATBPP(format);
     GpRect act_rect; /* actual rect to be used */
     GpStatus stat;
+    BOOL unlock;
 
     TRACE("%p %p %d 0x%x %p\n", bitmap, rect, flags, format, lockeddata);
 
     if(!lockeddata || !bitmap)
         return InvalidParameter;
+    if(!image_lock(&bitmap->image, &unlock))
+        return ObjectBusy;
 
     if(rect){
         if(rect->X < 0 || rect->Y < 0 || (rect->X + rect->Width > bitmap->width) ||
           (rect->Y + rect->Height > bitmap->height) || !flags)
+        {
+            image_unlock(&bitmap->image, unlock);
             return InvalidParameter;
+        }
 
         act_rect = *rect;
     }
@@ -1044,6 +1044,7 @@ GpStatus WINGDIPAPI GdipBitmapLockBits(GpBitmap* bitmap, GDIPCONST GpRect* rect,
     if(bitmap->lockmode)
     {
         WARN("bitmap is already locked and cannot be locked again\n");
+        image_unlock(&bitmap->image, unlock);
         return WrongState;
     }
 
@@ -1059,8 +1060,8 @@ GpStatus WINGDIPAPI GdipBitmapLockBits(GpBitmap* bitmap, GDIPCONST GpRect* rect,
                             bitmap->stride * act_rect.Y;
 
         bitmap->lockmode = flags | ImageLockModeRead;
-        bitmap->numlocks++;
 
+        image_unlock(&bitmap->image, unlock);
         return Ok;
     }
 
@@ -1071,6 +1072,7 @@ GpStatus WINGDIPAPI GdipBitmapLockBits(GpBitmap* bitmap, GDIPCONST GpRect* rect,
         if (stat == NotImplemented)
         {
             FIXME("cannot read bitmap from %x to %x\n", bitmap->format, format);
+            image_unlock(&bitmap->image, unlock);
             return NotImplemented;
         }
     }
@@ -1083,6 +1085,7 @@ GpStatus WINGDIPAPI GdipBitmapLockBits(GpBitmap* bitmap, GDIPCONST GpRect* rect,
         if (stat == NotImplemented)
         {
             FIXME("cannot write bitmap from %x to %x\n", format, bitmap->format);
+            image_unlock(&bitmap->image, unlock);
             return NotImplemented;
         }
     }
@@ -1096,9 +1099,13 @@ GpStatus WINGDIPAPI GdipBitmapLockBits(GpBitmap* bitmap, GDIPCONST GpRect* rect,
     {
         lockeddata->Stride = (((act_rect.Width * bitspp + 7) / 8) + 3) & ~3;
 
-        bitmap->bitmapbits = GdipAlloc(lockeddata->Stride * act_rect.Height);
+        bitmap->bitmapbits = heap_alloc_zero(lockeddata->Stride * act_rect.Height);
 
-        if (!bitmap->bitmapbits) return OutOfMemory;
+        if (!bitmap->bitmapbits)
+        {
+            image_unlock(&bitmap->image, unlock);
+            return OutOfMemory;
+        }
 
         lockeddata->Scan0  = bitmap->bitmapbits;
     }
@@ -1121,17 +1128,18 @@ GpStatus WINGDIPAPI GdipBitmapLockBits(GpBitmap* bitmap, GDIPCONST GpRect* rect,
 
         if (stat != Ok)
         {
-            GdipFree(bitmap->bitmapbits);
+            heap_free(bitmap->bitmapbits);
             bitmap->bitmapbits = NULL;
+            image_unlock(&bitmap->image, unlock);
             return stat;
         }
     }
 
     bitmap->lockmode = flags | ImageLockModeRead;
-    bitmap->numlocks++;
     bitmap->lockx = act_rect.X;
     bitmap->locky = act_rect.Y;
 
+    image_unlock(&bitmap->image, unlock);
     return Ok;
 }
 
@@ -1153,21 +1161,26 @@ GpStatus WINGDIPAPI GdipBitmapUnlockBits(GpBitmap* bitmap,
 {
     GpStatus stat;
     static BOOL fixme = FALSE;
+    BOOL unlock;
 
     TRACE("(%p,%p)\n", bitmap, lockeddata);
 
     if(!bitmap || !lockeddata)
         return InvalidParameter;
+    if(!image_lock(&bitmap->image, &unlock))
+        return ObjectBusy;
 
     if(!bitmap->lockmode)
+    {
+        image_unlock(&bitmap->image, unlock);
         return WrongState;
+    }
 
     if(!(lockeddata->Reserved & ImageLockModeWrite)){
-        if(!(--bitmap->numlocks))
-            bitmap->lockmode = 0;
-
-        GdipFree(bitmap->bitmapbits);
+        bitmap->lockmode = 0;
+        heap_free(bitmap->bitmapbits);
         bitmap->bitmapbits = NULL;
+        image_unlock(&bitmap->image, unlock);
         return Ok;
     }
 
@@ -1175,7 +1188,7 @@ GpStatus WINGDIPAPI GdipBitmapUnlockBits(GpBitmap* bitmap,
     {
         /* we passed a direct reference; no need to do anything */
         bitmap->lockmode = 0;
-        bitmap->numlocks = 0;
+        image_unlock(&bitmap->image, unlock);
         return Ok;
     }
 
@@ -1196,11 +1209,11 @@ GpStatus WINGDIPAPI GdipBitmapUnlockBits(GpBitmap* bitmap,
         ERR("failed to convert pixels; this should never happen\n");
     }
 
-    GdipFree(bitmap->bitmapbits);
+    heap_free(bitmap->bitmapbits);
     bitmap->bitmapbits = NULL;
     bitmap->lockmode = 0;
-    bitmap->numlocks = 0;
 
+    image_unlock(&bitmap->image, unlock);
     return stat;
 }
 
@@ -1242,7 +1255,7 @@ GpStatus WINGDIPAPI GdipCloneBitmapArea(REAL x, REAL y, REAL width, REAL height,
 
             src_palette = srcBitmap->image.palette;
 
-            dst_palette = GdipAlloc(sizeof(UINT) * 2 + sizeof(ARGB) * src_palette->Count);
+            dst_palette = heap_alloc_zero(sizeof(UINT) * 2 + sizeof(ARGB) * src_palette->Count);
 
             if (dst_palette)
             {
@@ -1250,7 +1263,7 @@ GpStatus WINGDIPAPI GdipCloneBitmapArea(REAL x, REAL y, REAL width, REAL height,
                 dst_palette->Count = src_palette->Count;
                 memcpy(dst_palette->Entries, src_palette->Entries, sizeof(ARGB) * src_palette->Count);
 
-                GdipFree((*dstBitmap)->image.palette);
+                heap_free((*dstBitmap)->image.palette);
                 (*dstBitmap)->image.palette = dst_palette;
             }
             else
@@ -1258,7 +1271,7 @@ GpStatus WINGDIPAPI GdipCloneBitmapArea(REAL x, REAL y, REAL width, REAL height,
         }
 
         if (stat != Ok)
-            GdipDisposeImage((GpImage*)*dstBitmap);
+            GdipDisposeImage(&(*dstBitmap)->image);
     }
 
     if (stat != Ok)
@@ -1277,45 +1290,12 @@ GpStatus WINGDIPAPI GdipCloneBitmapAreaI(INT x, INT y, INT width, INT height,
 
 GpStatus WINGDIPAPI GdipCloneImage(GpImage *image, GpImage **cloneImage)
 {
-    GpStatus stat = GenericError;
-
     TRACE("%p, %p\n", image, cloneImage);
 
     if (!image || !cloneImage)
         return InvalidParameter;
 
-    if (image->picture)
-    {
-        IStream* stream;
-        HRESULT hr;
-        INT size;
-        LARGE_INTEGER move;
-
-        hr = CreateStreamOnHGlobal(0, TRUE, &stream);
-        if (FAILED(hr))
-            return GenericError;
-
-        hr = IPicture_SaveAsFile(image->picture, stream, FALSE, &size);
-        if(FAILED(hr))
-        {
-            WARN("Failed to save image on stream\n");
-            goto out;
-        }
-
-        /* Set seek pointer back to the beginning of the picture */
-        move.QuadPart = 0;
-        hr = IStream_Seek(stream, move, STREAM_SEEK_SET, NULL);
-        if (FAILED(hr))
-            goto out;
-
-        stat = GdipLoadImageFromStream(stream, cloneImage);
-        if (stat != Ok) WARN("Failed to load image from stream\n");
-
-    out:
-        IStream_Release(stream);
-        return stat;
-    }
-    else if (image->type == ImageTypeBitmap)
+    if (image->type == ImageTypeBitmap)
     {
         GpBitmap *bitmap = (GpBitmap *)image;
 
@@ -1328,7 +1308,7 @@ GpStatus WINGDIPAPI GdipCloneImage(GpImage *image, GpImage **cloneImage)
 
         metafile = (GpMetafile*)image;
 
-        result = GdipAlloc(sizeof(*result));
+        result = heap_alloc_zero(sizeof(*result));
         if (!result)
             return OutOfMemory;
 
@@ -1345,7 +1325,7 @@ GpStatus WINGDIPAPI GdipCloneImage(GpImage *image, GpImage **cloneImage)
 
         if (!result->hemf)
         {
-            GdipFree(result);
+            heap_free(result);
             return OutOfMemory;
         }
 
@@ -1466,6 +1446,18 @@ GpStatus WINGDIPAPI GdipCreateBitmapFromResource(HINSTANCE hInstance,
     return stat;
 }
 
+static inline DWORD blend_argb_no_bkgnd_alpha(DWORD src, DWORD bkgnd)
+{
+    BYTE b = (BYTE)src;
+    BYTE g = (BYTE)(src >> 8);
+    BYTE r = (BYTE)(src >> 16);
+    DWORD alpha  = (BYTE)(src >> 24);
+    return ((b     + ((BYTE)bkgnd         * (255 - alpha) + 127) / 255) |
+            (g     + ((BYTE)(bkgnd >> 8)  * (255 - alpha) + 127) / 255) << 8 |
+            (r     + ((BYTE)(bkgnd >> 16) * (255 - alpha) + 127) / 255) << 16 |
+            (alpha << 24));
+}
+
 GpStatus WINGDIPAPI GdipCreateHBITMAPFromBitmap(GpBitmap* bitmap,
     HBITMAP* hbmReturn, ARGB background)
 {
@@ -1474,13 +1466,15 @@ GpStatus WINGDIPAPI GdipCreateHBITMAPFromBitmap(GpBitmap* bitmap,
     UINT width, height;
     BITMAPINFOHEADER bih;
     LPBYTE bits;
-    BitmapData lockeddata;
+    BOOL unlock;
+
     TRACE("(%p,%p,%x)\n", bitmap, hbmReturn, background);
 
     if (!bitmap || !hbmReturn) return InvalidParameter;
+    if (!image_lock(&bitmap->image, &unlock)) return ObjectBusy;
 
-    GdipGetImageWidth((GpImage*)bitmap, &width);
-    GdipGetImageHeight((GpImage*)bitmap, &height);
+    GdipGetImageWidth(&bitmap->image, &width);
+    GdipGetImageHeight(&bitmap->image, &height);
 
     bih.biSize = sizeof(bih);
     bih.biWidth = width;
@@ -1495,30 +1489,36 @@ GpStatus WINGDIPAPI GdipCreateHBITMAPFromBitmap(GpBitmap* bitmap,
     bih.biClrImportant = 0;
 
     result = CreateDIBSection(0, (BITMAPINFO*)&bih, DIB_RGB_COLORS, (void**)&bits, NULL, 0);
-
-    if (result)
+    if (!result)
     {
-        lockeddata.Stride = -width * 4;
-        lockeddata.Scan0 = bits + (width * 4 * (height - 1));
-
-        stat = GdipBitmapLockBits(bitmap, NULL, ImageLockModeRead|ImageLockModeUserInputBuf,
-            PixelFormat32bppPARGB, &lockeddata);
-
-        if (stat == Ok)
-            stat = GdipBitmapUnlockBits(bitmap, &lockeddata);
+        image_unlock(&bitmap->image, unlock);
+        return GenericError;
     }
-    else
-        stat = GenericError;
 
-    if (stat != Ok && result)
+    stat = convert_pixels(width, height, -width*4,
+            bits + (width * 4 * (height - 1)), PixelFormat32bppPARGB,
+            bitmap->stride, bitmap->bits, bitmap->format, bitmap->image.palette);
+    if (stat != Ok)
     {
         DeleteObject(result);
-        result = NULL;
+        image_unlock(&bitmap->image, unlock);
+        return stat;
+    }
+
+    if (background & 0xffffff)
+    {
+        DWORD *ptr;
+        UINT i;
+        for (ptr = (DWORD*)bits, i = 0; i < width * height; ptr++, i++)
+        {
+            if ((*ptr & 0xff000000) == 0xff000000) continue;
+            *ptr = blend_argb_no_bkgnd_alpha(*ptr, background);
+        }
     }
 
     *hbmReturn = result;
-
-    return stat;
+    image_unlock(&bitmap->image, unlock);
+    return Ok;
 }
 
 GpStatus WINGDIPAPI GdipCreateBitmapFromGraphics(INT width, INT height,
@@ -1593,7 +1593,7 @@ GpStatus WINGDIPAPI GdipCreateBitmapFromHICON(HICON hicon, GpBitmap** bitmap)
     if (stat != Ok) {
         DeleteObject(iinfo.hbmColor);
         DeleteObject(iinfo.hbmMask);
-        GdipDisposeImage((GpImage*)*bitmap);
+        GdipDisposeImage(&(*bitmap)->image);
         return stat;
     }
 
@@ -1637,7 +1637,7 @@ GpStatus WINGDIPAPI GdipCreateBitmapFromHICON(HICON hicon, GpBitmap** bitmap)
     {
         if (iinfo.hbmMask)
         {
-            BYTE *bits = HeapAlloc(GetProcessHeap(), 0, height * stride);
+            BYTE *bits = heap_alloc(height * stride);
 
             /* read alpha data from the mask */
             if (iinfo.hbmColor)
@@ -1661,7 +1661,7 @@ GpStatus WINGDIPAPI GdipCreateBitmapFromHICON(HICON hicon, GpBitmap** bitmap)
                 dst_row += lockeddata.Stride;
             }
 
-            HeapFree(GetProcessHeap(), 0, bits);
+            heap_free(bits);
         }
         else
         {
@@ -1802,7 +1802,7 @@ GpStatus WINGDIPAPI GdipCreateBitmapFromScan0(INT width, INT height, INT stride,
         {
             INT size = abs(stride) * height;
 
-            own_bits = bits = GdipAlloc(size);
+            own_bits = bits = heap_alloc_zero(size);
             if (!own_bits) return OutOfMemory;
 
             if (stride < 0)
@@ -1810,11 +1810,11 @@ GpStatus WINGDIPAPI GdipCreateBitmapFromScan0(INT width, INT height, INT stride,
         }
     }
 
-    *bitmap = GdipAlloc(sizeof(GpBitmap));
+    *bitmap = heap_alloc_zero(sizeof(GpBitmap));
     if(!*bitmap)
     {
         DeleteObject(hbitmap);
-        GdipFree(own_bits);
+        heap_free(own_bits);
         return OutOfMemory;
     }
 
@@ -1829,8 +1829,7 @@ GpStatus WINGDIPAPI GdipCreateBitmapFromScan0(INT width, INT height, INT stride,
     (*bitmap)->width = width;
     (*bitmap)->height = height;
     (*bitmap)->format = format;
-    (*bitmap)->image.picture = NULL;
-    (*bitmap)->image.stream = NULL;
+    (*bitmap)->image.decoder = NULL;
     (*bitmap)->hbitmap = hbitmap;
     (*bitmap)->hdc = NULL;
     (*bitmap)->bits = bits;
@@ -1848,7 +1847,7 @@ GpStatus WINGDIPAPI GdipCreateBitmapFromScan0(INT width, INT height, INT stride,
         format == PixelFormat4bppIndexed ||
         format == PixelFormat8bppIndexed)
     {
-        (*bitmap)->image.palette = GdipAlloc(sizeof(UINT) * 2 + sizeof(ARGB) * (1 << PIXELFORMATBPP(format)));
+        (*bitmap)->image.palette = heap_alloc_zero(sizeof(UINT) * 2 + sizeof(ARGB) * (1 << PIXELFORMATBPP(format)));
 
         if (!(*bitmap)->image.palette)
         {
@@ -1920,13 +1919,13 @@ GpStatus WINGDIPAPI GdipCreateCachedBitmap(GpBitmap *bitmap, GpGraphics *graphic
     if(!bitmap || !graphics || !cachedbmp)
         return InvalidParameter;
 
-    *cachedbmp = GdipAlloc(sizeof(GpCachedBitmap));
+    *cachedbmp = heap_alloc_zero(sizeof(GpCachedBitmap));
     if(!*cachedbmp)
         return OutOfMemory;
 
     stat = GdipCloneImage(&(bitmap->image), &(*cachedbmp)->image);
     if(stat != Ok){
-        GdipFree(*cachedbmp);
+        heap_free(*cachedbmp);
         return stat;
     }
 
@@ -1954,7 +1953,7 @@ GpStatus WINGDIPAPI GdipCreateHICONFromBitmap(GpBitmap *bitmap, HICON *hicon)
         xorstride = lockeddata.Width*4;
         bitssize = (andstride + xorstride) * lockeddata.Height;
 
-        andbits = GdipAlloc(bitssize);
+        andbits = heap_alloc_zero(bitssize);
 
         if (andbits)
         {
@@ -1976,7 +1975,7 @@ GpStatus WINGDIPAPI GdipCreateHICONFromBitmap(GpBitmap *bitmap, HICON *hicon)
             *hicon = CreateIcon(NULL, lockeddata.Width, lockeddata.Height, 1, 32,
                 andbits, xorbits);
 
-            GdipFree(andbits);
+            heap_free(andbits);
         }
         else
             stat = OutOfMemory;
@@ -1995,7 +1994,7 @@ GpStatus WINGDIPAPI GdipDeleteCachedBitmap(GpCachedBitmap *cachedbmp)
         return InvalidParameter;
 
     GdipDisposeImage(cachedbmp->image);
-    GdipFree(cachedbmp);
+    heap_free(cachedbmp);
 
     return Ok;
 }
@@ -2018,18 +2017,18 @@ static void move_bitmap(GpBitmap *dst, GpBitmap *src, BOOL clobber_palette)
     assert(src->image.type == ImageTypeBitmap);
     assert(dst->image.type == ImageTypeBitmap);
 
-    GdipFree(dst->bitmapbits);
-    GdipFree(dst->own_bits);
+    heap_free(dst->bitmapbits);
+    heap_free(dst->own_bits);
     DeleteDC(dst->hdc);
     DeleteObject(dst->hbitmap);
 
     if (clobber_palette)
     {
-        GdipFree(dst->image.palette);
+        heap_free(dst->image.palette);
         dst->image.palette = src->image.palette;
     }
     else
-        GdipFree(src->image.palette);
+        heap_free(src->image.palette);
 
     dst->image.xres = src->image.xres;
     dst->image.yres = src->image.yres;
@@ -2044,18 +2043,18 @@ static void move_bitmap(GpBitmap *dst, GpBitmap *src, BOOL clobber_palette)
     if (dst->metadata_reader)
         IWICMetadataReader_Release(dst->metadata_reader);
     dst->metadata_reader = src->metadata_reader;
-    GdipFree(dst->prop_item);
+    heap_free(dst->prop_item);
     dst->prop_item = src->prop_item;
     dst->prop_count = src->prop_count;
-    if (dst->image.stream)
-        IStream_Release(dst->image.stream);
-    dst->image.stream = src->image.stream;
+    if (dst->image.decoder)
+        IWICBitmapDecoder_Release(dst->image.decoder);
+    dst->image.decoder = src->image.decoder;
     dst->image.frame_count = src->image.frame_count;
     dst->image.current_frame = src->image.current_frame;
     dst->image.format = src->image.format;
 
     src->image.type = ~0;
-    GdipFree(src);
+    heap_free(src);
 }
 
 static GpStatus free_image_data(GpImage *image)
@@ -2065,18 +2064,18 @@ static GpStatus free_image_data(GpImage *image)
 
     if (image->type == ImageTypeBitmap)
     {
-        GdipFree(((GpBitmap*)image)->bitmapbits);
-        GdipFree(((GpBitmap*)image)->own_bits);
+        heap_free(((GpBitmap*)image)->bitmapbits);
+        heap_free(((GpBitmap*)image)->own_bits);
         DeleteDC(((GpBitmap*)image)->hdc);
         DeleteObject(((GpBitmap*)image)->hbitmap);
         if (((GpBitmap*)image)->metadata_reader)
             IWICMetadataReader_Release(((GpBitmap*)image)->metadata_reader);
-        GdipFree(((GpBitmap*)image)->prop_item);
+        heap_free(((GpBitmap*)image)->prop_item);
     }
     else if (image->type == ImageTypeMetafile)
     {
         GpMetafile *metafile = (GpMetafile*)image;
-        GdipFree(metafile->comment_data);
+        heap_free(metafile->comment_data);
         DeleteEnhMetaFile(CloseEnhMetaFile(metafile->record_dc));
         if (!metafile->preserve_hemf)
             DeleteEnhMetaFile(metafile->hemf);
@@ -2087,17 +2086,19 @@ static GpStatus free_image_data(GpImage *image)
             metafile->record_graphics->image = NULL;
             metafile->record_graphics->busy = TRUE;
         }
+        if (metafile->record_stream)
+        {
+            IStream_Release(metafile->record_stream);
+        }
     }
     else
     {
         WARN("invalid image: %p\n", image);
         return ObjectBusy;
     }
-    if (image->picture)
-        IPicture_Release(image->picture);
-    if (image->stream)
-        IStream_Release(image->stream);
-    GdipFree(image->palette);
+    if (image->decoder)
+        IWICBitmapDecoder_Release(image->decoder);
+    heap_free(image->palette);
 
     return Ok;
 }
@@ -2111,7 +2112,7 @@ GpStatus WINGDIPAPI GdipDisposeImage(GpImage *image)
     status = free_image_data(image);
     if (status != Ok) return status;
     image->type = ~0;
-    GdipFree(image);
+    heap_free(image);
 
     return Ok;
 }
@@ -2161,10 +2162,8 @@ GpStatus WINGDIPAPI GdipGetImageBounds(GpImage *image, GpRectF *srcRect,
         *srcUnit = UnitPixel;
     }
     else{
-        srcRect->X = srcRect->Y = 0.0;
-        srcRect->Width = ipicture_pixel_width(image->picture);
-        srcRect->Height = ipicture_pixel_height(image->picture);
-        *srcUnit = UnitPixel;
+        WARN("GpImage with no image data\n");
+        return InvalidParameter;
     }
 
     TRACE("returning (%f, %f) (%f, %f) unit type %d\n", srcRect->X, srcRect->Y,
@@ -2190,8 +2189,8 @@ GpStatus WINGDIPAPI GdipGetImageDimension(GpImage *image, REAL *width,
         *width = ((GpBitmap*)image)->width;
     }
     else{
-        *height = ipicture_pixel_height(image->picture);
-        *width = ipicture_pixel_width(image->picture);
+        WARN("GpImage with no image data\n");
+        return InvalidParameter;
     }
 
     TRACE("returning (%f, %f)\n", *height, *width);
@@ -2248,7 +2247,10 @@ GpStatus WINGDIPAPI GdipGetImageHeight(GpImage *image, UINT *height)
     else if(image->type == ImageTypeBitmap)
         *height = ((GpBitmap*)image)->height;
     else
-        *height = ipicture_pixel_height(image->picture);
+    {
+        WARN("GpImage with no image data\n");
+        return InvalidParameter;
+    }
 
     TRACE("returning %d\n", *height);
 
@@ -2348,7 +2350,10 @@ GpStatus WINGDIPAPI GdipGetImageWidth(GpImage *image, UINT *width)
     else if(image->type == ImageTypeBitmap)
         *width = ((GpBitmap*)image)->width;
     else
-        *width = ipicture_pixel_width(image->picture);
+    {
+        WARN("GpImage with no image data\n");
+        return InvalidParameter;
+    }
 
     TRACE("returning %d\n", *width);
 
@@ -2819,7 +2824,7 @@ GpStatus WINGDIPAPI GdipGetAllPropertyItems(GpImage *image, UINT size,
         item_size = propvariant_size(&value);
         if (item_size)
         {
-            item = HeapAlloc(GetProcessHeap(), 0, item_size + sizeof(*item));
+            item = heap_alloc(item_size + sizeof(*item));
 
             propvariant_to_item(&value, item, item_size + sizeof(*item), id.u.uiVal);
             buf[i].id = item->id;
@@ -2829,7 +2834,7 @@ GpStatus WINGDIPAPI GdipGetAllPropertyItems(GpImage *image, UINT size,
             memcpy(item_value, item->value, item_size);
             item_value += item_size;
 
-            HeapFree(GetProcessHeap(), 0, item);
+            heap_free(item);
         }
 
         PropVariantClear(&id);
@@ -2960,7 +2965,7 @@ static void add_property(GpBitmap *bitmap, PropertyItem *item)
     if (bitmap->prop_item == NULL)
     {
         prop_size = prop_count = 0;
-        prop_item = GdipAlloc(item->length + sizeof(PropertyItem));
+        prop_item = heap_alloc_zero(item->length + sizeof(PropertyItem));
         if (!prop_item) return;
     }
     else
@@ -2968,9 +2973,9 @@ static void add_property(GpBitmap *bitmap, PropertyItem *item)
         UINT i;
         char *item_value;
 
-        GdipGetPropertySize((GpImage *)bitmap, &prop_size, &prop_count);
+        GdipGetPropertySize(&bitmap->image, &prop_size, &prop_count);
 
-        prop_item = GdipAlloc(prop_size + item->length + sizeof(PropertyItem));
+        prop_item = heap_alloc_zero(prop_size + item->length + sizeof(PropertyItem));
         if (!prop_item) return;
         memcpy(prop_item, bitmap->prop_item, sizeof(PropertyItem) * bitmap->prop_count);
         prop_size -= sizeof(PropertyItem) * bitmap->prop_count;
@@ -2991,7 +2996,7 @@ static void add_property(GpBitmap *bitmap, PropertyItem *item)
     prop_item[prop_count].value = (char *)(prop_item + prop_count + 1) + prop_size;
     memcpy(prop_item[prop_count].value, item->value, item->length);
 
-    GdipFree(bitmap->prop_item);
+    heap_free(bitmap->prop_item);
     bitmap->prop_item = prop_item;
     bitmap->prop_count++;
 }
@@ -3003,14 +3008,14 @@ static BOOL get_bool_property(IWICMetadataReader *reader, const GUID *guid, cons
     PROPVARIANT id, value;
     BOOL ret = FALSE;
 
-    IWICMetadataReader_GetMetadataFormat(reader, &format);
-    if (!IsEqualGUID(&format, guid)) return FALSE;
+    hr = IWICMetadataReader_GetMetadataFormat(reader, &format);
+    if (FAILED(hr) || !IsEqualGUID(&format, guid)) return FALSE;
 
     PropVariantInit(&id);
     PropVariantInit(&value);
 
     id.vt = VT_LPWSTR;
-    id.u.pwszVal = HeapAlloc(GetProcessHeap(), 0, (lstrlenW(prop_name) + 1) * sizeof(WCHAR));
+    id.u.pwszVal = CoTaskMemAlloc((lstrlenW(prop_name) + 1) * sizeof(WCHAR));
     if (!id.u.pwszVal) return FALSE;
     lstrcpyW(id.u.pwszVal, prop_name);
     hr = IWICMetadataReader_GetValue(reader, NULL, &id, &value);
@@ -3030,14 +3035,14 @@ static PropertyItem *get_property(IWICMetadataReader *reader, const GUID *guid, 
     PROPVARIANT id, value;
     PropertyItem *item = NULL;
 
-    IWICMetadataReader_GetMetadataFormat(reader, &format);
-    if (!IsEqualGUID(&format, guid)) return NULL;
+    hr = IWICMetadataReader_GetMetadataFormat(reader, &format);
+    if (FAILED(hr) || !IsEqualGUID(&format, guid)) return NULL;
 
     PropVariantInit(&id);
     PropVariantInit(&value);
 
     id.vt = VT_LPWSTR;
-    id.u.pwszVal = HeapAlloc(GetProcessHeap(), 0, (lstrlenW(prop_name) + 1) * sizeof(WCHAR));
+    id.u.pwszVal = CoTaskMemAlloc((lstrlenW(prop_name) + 1) * sizeof(WCHAR));
     if (!id.u.pwszVal) return NULL;
     lstrcpyW(id.u.pwszVal, prop_name);
     hr = IWICMetadataReader_GetValue(reader, NULL, &id, &value);
@@ -3047,10 +3052,10 @@ static PropertyItem *get_property(IWICMetadataReader *reader, const GUID *guid, 
         if (item_size)
         {
             item_size += sizeof(*item);
-            item = GdipAlloc(item_size);
+            item = heap_alloc_zero(item_size);
             if (propvariant_to_item(&value, item, item_size, 0) != Ok)
             {
-                GdipFree(item);
+                heap_free(item);
                 item = NULL;
             }
         }
@@ -3094,7 +3099,7 @@ static PropertyItem *get_gif_loopcount(IWICMetadataReader *reader)
                     BYTE *data = appdata->value;
                     if (data[0] == 3 && data[1] == 1)
                     {
-                        loop = GdipAlloc(sizeof(*loop) + sizeof(SHORT));
+                        loop = heap_alloc_zero(sizeof(*loop) + sizeof(SHORT));
                         if (loop)
                         {
                             loop->type = PropertyTagTypeShort;
@@ -3109,8 +3114,8 @@ static PropertyItem *get_gif_loopcount(IWICMetadataReader *reader)
         }
     }
 
-    GdipFree(appext);
-    GdipFree(appdata);
+    heap_free(appext);
+    heap_free(appdata);
 
     return loop;
 }
@@ -3139,8 +3144,7 @@ static PropertyItem *get_gif_palette(IWICBitmapDecoder *decoder, IWICMetadataRea
     if (!get_bool_property(reader, &GUID_MetadataFormatLSD, global_flagW))
         return NULL;
 
-    hr = CoCreateInstance(&CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER,
-                          &IID_IWICImagingFactory, (void **)&factory);
+    hr = WICCreateImagingFactory_Proxy(WINCODEC_SDK_VERSION, &factory);
     if (hr != S_OK) return NULL;
 
     hr = IWICImagingFactory_CreatePalette(factory, &palette);
@@ -3161,7 +3165,7 @@ static PropertyItem *get_gif_palette(IWICBitmapDecoder *decoder, IWICMetadataRea
         UINT i;
         BYTE *rgb;
 
-        pal = GdipAlloc(sizeof(*pal) + count * 3);
+        pal = heap_alloc_zero(sizeof(*pal) + count * 3);
         if (!pal) return NULL;
         pal->type = PropertyTagTypeByte;
         pal->id = PropertyTagGlobalPalette;
@@ -3198,14 +3202,13 @@ static PropertyItem *get_gif_transparent_idx(IWICMetadataReader *reader)
     return index;
 }
 
-static LONG get_gif_frame_delay(IWICBitmapFrameDecode *frame)
+static LONG get_gif_frame_property(IWICBitmapFrameDecode *frame, const GUID *format, const WCHAR *property)
 {
-    static const WCHAR delayW[] = { 'D','e','l','a','y',0 };
     HRESULT hr;
     IWICMetadataBlockReader *block_reader;
     IWICMetadataReader *reader;
     UINT block_count, i;
-    PropertyItem *delay;
+    PropertyItem *prop;
     LONG value = 0;
 
     hr = IWICBitmapFrameDecode_QueryInterface(frame, &IID_IWICMetadataBlockReader, (void **)&block_reader);
@@ -3219,13 +3222,15 @@ static LONG get_gif_frame_delay(IWICBitmapFrameDecode *frame)
                 hr = IWICMetadataBlockReader_GetReaderByIndex(block_reader, i, &reader);
                 if (hr == S_OK)
                 {
-                    delay = get_property(reader, &GUID_MetadataFormatGCE, delayW);
-                    if (delay)
+                    prop = get_property(reader, format, property);
+                    if (prop)
                     {
-                        if (delay->type == PropertyTagTypeShort && delay->length == 2)
-                            value = *(SHORT *)delay->value;
+                        if (prop->type == PropertyTagTypeByte && prop->length == 1)
+                            value = *(BYTE *)prop->value;
+                        else if (prop->type == PropertyTagTypeShort && prop->length == 2)
+                            value = *(SHORT *)prop->value;
 
-                        GdipFree(delay);
+                        heap_free(prop);
                     }
                     IWICMetadataReader_Release(reader);
                 }
@@ -3239,6 +3244,7 @@ static LONG get_gif_frame_delay(IWICBitmapFrameDecode *frame)
 
 static void gif_metadata_reader(GpBitmap *bitmap, IWICBitmapDecoder *decoder, UINT active_frame)
 {
+    static const WCHAR delayW[] = { 'D','e','l','a','y',0 };
     HRESULT hr;
     IWICBitmapFrameDecode *frame;
     IWICMetadataBlockReader *block_reader;
@@ -3250,7 +3256,7 @@ static void gif_metadata_reader(GpBitmap *bitmap, IWICBitmapDecoder *decoder, UI
     IWICBitmapDecoder_GetFrameCount(decoder, &frame_count);
     if (frame_count > 1)
     {
-        delay = GdipAlloc(sizeof(*delay) + frame_count * sizeof(LONG));
+        delay = heap_alloc_zero(sizeof(*delay) + frame_count * sizeof(LONG));
         if (delay)
         {
             LONG *value;
@@ -3267,7 +3273,7 @@ static void gif_metadata_reader(GpBitmap *bitmap, IWICBitmapDecoder *decoder, UI
                 hr = IWICBitmapDecoder_GetFrame(decoder, i, &frame);
                 if (hr == S_OK)
                 {
-                    value[i] = get_gif_frame_delay(frame);
+                    value[i] = get_gif_frame_property(frame, &GUID_MetadataFormatGCE, delayW);
                     IWICBitmapFrameDecode_Release(frame);
                 }
                 else value[i] = 0;
@@ -3307,7 +3313,7 @@ static void gif_metadata_reader(GpBitmap *bitmap, IWICBitmapDecoder *decoder, UI
 
     if (frame_count > 1 && !loop)
     {
-        loop = GdipAlloc(sizeof(*loop) + sizeof(SHORT));
+        loop = heap_alloc_zero(sizeof(*loop) + sizeof(SHORT));
         if (loop)
         {
             loop->type = PropertyTagTypeShort;
@@ -3324,11 +3330,11 @@ static void gif_metadata_reader(GpBitmap *bitmap, IWICBitmapDecoder *decoder, UI
     if (palette) add_property(bitmap, palette);
     if (background) add_property(bitmap, background);
 
-    GdipFree(delay);
-    GdipFree(comment);
-    GdipFree(loop);
-    GdipFree(palette);
-    GdipFree(background);
+    heap_free(delay);
+    heap_free(comment);
+    heap_free(loop);
+    heap_free(palette);
+    heap_free(background);
 
     /* Win7 gdiplus always returns transparent color index from frame 0 */
     hr = IWICBitmapDecoder_GetFrame(decoder, 0, &frame);
@@ -3356,20 +3362,230 @@ static void gif_metadata_reader(GpBitmap *bitmap, IWICBitmapDecoder *decoder, UI
     }
 
     if (transparent_idx) add_property(bitmap, transparent_idx);
-    GdipFree(transparent_idx);
+    heap_free(transparent_idx);
 
     IWICBitmapFrameDecode_Release(frame);
 }
 
+static PropertyItem* create_prop(PROPID propid, PROPVARIANT* value)
+{
+    PropertyItem *item = NULL;
+    UINT item_size = propvariant_size(value);
+
+    if (item_size)
+    {
+        item_size += sizeof(*item);
+        item = heap_alloc_zero(item_size);
+        if (propvariant_to_item(value, item, item_size, propid) != Ok)
+        {
+            heap_free(item);
+            item = NULL;
+        }
+    }
+
+    return item;
+}
+
+static ULONG get_ulong_by_index(IWICMetadataReader* reader, ULONG index)
+{
+    PROPVARIANT value;
+    HRESULT hr;
+    ULONG result=0;
+
+    hr = IWICMetadataReader_GetValueByIndex(reader, index, NULL, NULL, &value);
+    if (SUCCEEDED(hr))
+    {
+        switch (value.vt)
+        {
+        case VT_UI4:
+            result = value.u.ulVal;
+            break;
+        default:
+            ERR("unhandled case %u\n", value.vt);
+            break;
+        }
+        PropVariantClear(&value);
+    }
+    return result;
+}
+
+static void png_metadata_reader(GpBitmap *bitmap, IWICBitmapDecoder *decoder, UINT active_frame)
+{
+    HRESULT hr;
+    IWICBitmapFrameDecode *frame;
+    IWICMetadataBlockReader *block_reader;
+    IWICMetadataReader *reader;
+    UINT block_count, i, j;
+    struct keyword_info {
+        const char* name;
+        PROPID propid;
+        BOOL seen;
+    } keywords[] = {
+        { "Title", PropertyTagImageTitle },
+        { "Author", PropertyTagArtist },
+        { "Description", PropertyTagImageDescription },
+        { "Copyright", PropertyTagCopyright },
+        { "Software", PropertyTagSoftwareUsed },
+        { "Source", PropertyTagEquipModel },
+        { "Comment", PropertyTagExifUserComment },
+    };
+    BOOL seen_gamma=FALSE, seen_whitepoint=FALSE, seen_chrm=FALSE;
+
+    hr = IWICBitmapDecoder_GetFrame(decoder, active_frame, &frame);
+    if (hr != S_OK) return;
+
+    hr = IWICBitmapFrameDecode_QueryInterface(frame, &IID_IWICMetadataBlockReader, (void **)&block_reader);
+    if (hr == S_OK)
+    {
+        hr = IWICMetadataBlockReader_GetCount(block_reader, &block_count);
+        if (hr == S_OK)
+        {
+            for (i = 0; i < block_count; i++)
+            {
+                hr = IWICMetadataBlockReader_GetReaderByIndex(block_reader, i, &reader);
+                if (hr == S_OK)
+                {
+                    GUID format;
+
+                    hr = IWICMetadataReader_GetMetadataFormat(reader, &format);
+                    if (SUCCEEDED(hr) && IsEqualGUID(&GUID_MetadataFormatChunktEXt, &format))
+                    {
+                        PROPVARIANT name, value;
+                        PropertyItem* item;
+
+                        hr = IWICMetadataReader_GetValueByIndex(reader, 0, NULL, &name, &value);
+
+                        if (SUCCEEDED(hr))
+                        {
+                            if (name.vt == VT_LPSTR)
+                            {
+                                for (j=0; j<sizeof(keywords)/sizeof(keywords[0]); j++)
+                                    if (!strcmp(keywords[j].name, name.u.pszVal))
+                                        break;
+                                if (j < sizeof(keywords)/sizeof(keywords[0]) && !keywords[j].seen)
+                                {
+                                    keywords[j].seen = TRUE;
+                                    item = create_prop(keywords[j].propid, &value);
+                                    if (item)
+                                        add_property(bitmap, item);
+                                    heap_free(item);
+                                }
+                            }
+
+                            PropVariantClear(&name);
+                            PropVariantClear(&value);
+                        }
+                    }
+                    else if (SUCCEEDED(hr) && IsEqualGUID(&GUID_MetadataFormatChunkgAMA, &format))
+                    {
+                        PropertyItem* item;
+
+                        if (!seen_gamma)
+                        {
+                            item = heap_alloc_zero(sizeof(PropertyItem) + sizeof(ULONG) * 2);
+                            if (item)
+                            {
+                                ULONG *rational;
+                                item->length = sizeof(ULONG) * 2;
+                                item->type = PropertyTagTypeRational;
+                                item->id = PropertyTagGamma;
+                                rational = item->value = item + 1;
+                                rational[0] = 100000;
+                                rational[1] = get_ulong_by_index(reader, 0);
+                                add_property(bitmap, item);
+                                seen_gamma = TRUE;
+                                heap_free(item);
+                            }
+                        }
+                    }
+                    else if (SUCCEEDED(hr) && IsEqualGUID(&GUID_MetadataFormatChunkcHRM, &format))
+                    {
+                        PropertyItem* item;
+
+                        if (!seen_whitepoint)
+                        {
+                            item = GdipAlloc(sizeof(PropertyItem) + sizeof(ULONG) * 4);
+                            if (item)
+                            {
+                                ULONG *rational;
+                                item->length = sizeof(ULONG) * 4;
+                                item->type = PropertyTagTypeRational;
+                                item->id = PropertyTagWhitePoint;
+                                rational = item->value = item + 1;
+                                rational[0] = get_ulong_by_index(reader, 0);
+                                rational[1] = 100000;
+                                rational[2] = get_ulong_by_index(reader, 1);
+                                rational[3] = 100000;
+                                add_property(bitmap, item);
+                                seen_whitepoint = TRUE;
+                                GdipFree(item);
+                            }
+                        }
+                        if (!seen_chrm)
+                        {
+                            item = GdipAlloc(sizeof(PropertyItem) + sizeof(ULONG) * 12);
+                            if (item)
+                            {
+                                ULONG *rational;
+                                item->length = sizeof(ULONG) * 12;
+                                item->type = PropertyTagTypeRational;
+                                item->id = PropertyTagPrimaryChromaticities;
+                                rational = item->value = item + 1;
+                                rational[0] = get_ulong_by_index(reader, 2);
+                                rational[1] = 100000;
+                                rational[2] = get_ulong_by_index(reader, 3);
+                                rational[3] = 100000;
+                                rational[4] = get_ulong_by_index(reader, 4);
+                                rational[5] = 100000;
+                                rational[6] = get_ulong_by_index(reader, 5);
+                                rational[7] = 100000;
+                                rational[8] = get_ulong_by_index(reader, 6);
+                                rational[9] = 100000;
+                                rational[10] = get_ulong_by_index(reader, 7);
+                                rational[11] = 100000;
+                                add_property(bitmap, item);
+                                seen_chrm = TRUE;
+                                GdipFree(item);
+                            }
+                        }
+                    }
+
+                    IWICMetadataReader_Release(reader);
+                }
+            }
+        }
+        IWICMetadataBlockReader_Release(block_reader);
+    }
+
+    IWICBitmapFrameDecode_Release(frame);
+}
+
+static GpStatus initialize_decoder_wic(IStream *stream, REFGUID container, IWICBitmapDecoder **decoder)
+{
+    IWICImagingFactory *factory;
+    HRESULT hr;
+
+    TRACE("%p,%s\n", stream, wine_dbgstr_guid(container));
+
+    hr = WICCreateImagingFactory_Proxy(WINCODEC_SDK_VERSION, &factory);
+    if (FAILED(hr)) return hresult_to_status(hr);
+    hr = IWICImagingFactory_CreateDecoder(factory, container, NULL, decoder);
+    IWICImagingFactory_Release(factory);
+    if (FAILED(hr)) return hresult_to_status(hr);
+
+    hr = IWICBitmapDecoder_Initialize(*decoder, stream, WICDecodeMetadataCacheOnLoad);
+    if (FAILED(hr)) return hresult_to_status(hr);
+    return Ok;
+}
+
 typedef void (*metadata_reader_func)(GpBitmap *bitmap, IWICBitmapDecoder *decoder, UINT frame);
 
-static GpStatus decode_image_wic(IStream *stream, GDIPCONST CLSID *clsid,
+static GpStatus decode_frame_wic(IWICBitmapDecoder *decoder, BOOL force_conversion,
     UINT active_frame, metadata_reader_func metadata_reader, GpImage **image)
 {
     GpStatus status=Ok;
     GpBitmap *bitmap;
     HRESULT hr;
-    IWICBitmapDecoder *decoder;
     IWICBitmapFrameDecode *frame;
     IWICBitmapSource *source=NULL;
     IWICMetadataBlockReader *block_reader;
@@ -3381,48 +3597,36 @@ static GpStatus decode_image_wic(IStream *stream, GDIPCONST CLSID *clsid,
     UINT width, height, frame_count;
     BitmapData lockeddata;
     WICRect wrc;
-    HRESULT initresult;
 
-    TRACE("%p,%s,%u,%p\n", stream, wine_dbgstr_guid(clsid), active_frame, image);
+    TRACE("%p,%u,%p\n", decoder, active_frame, image);
 
-    initresult = CoInitialize(NULL);
-
-    hr = CoCreateInstance(clsid, NULL, CLSCTX_INPROC_SERVER,
-        &IID_IWICBitmapDecoder, (void**)&decoder);
-    if (FAILED(hr)) goto end;
-
-    hr = IWICBitmapDecoder_Initialize(decoder, stream, WICDecodeMetadataCacheOnLoad);
-    if (SUCCEEDED(hr))
-    {
-        IWICBitmapDecoder_GetFrameCount(decoder, &frame_count);
-        hr = IWICBitmapDecoder_GetFrame(decoder, active_frame, &frame);
-    }
-
+    IWICBitmapDecoder_GetFrameCount(decoder, &frame_count);
+    hr = IWICBitmapDecoder_GetFrame(decoder, active_frame, &frame);
     if (SUCCEEDED(hr)) /* got frame */
     {
         hr = IWICBitmapFrameDecode_GetPixelFormat(frame, &wic_format);
 
         if (SUCCEEDED(hr))
         {
-            IWICBitmapSource *bmp_source;
-            IWICBitmapFrameDecode_QueryInterface(frame, &IID_IWICBitmapSource, (void **)&bmp_source);
-
-            for (i=0; pixel_formats[i].wic_format; i++)
+            if (!force_conversion)
             {
-                if (IsEqualGUID(&wic_format, pixel_formats[i].wic_format))
+                for (i=0; pixel_formats[i].wic_format; i++)
                 {
-                    source = bmp_source;
-                    gdip_format = pixel_formats[i].gdip_format;
-                    palette_type = pixel_formats[i].palette_type;
-                    break;
+                    if (IsEqualGUID(&wic_format, pixel_formats[i].wic_format))
+                    {
+                        source = (IWICBitmapSource*)frame;
+                        IWICBitmapSource_AddRef(source);
+                        gdip_format = pixel_formats[i].gdip_format;
+                        palette_type = pixel_formats[i].palette_type;
+                        break;
+                    }
                 }
             }
             if (!source)
             {
                 /* unknown format; fall back on 32bppARGB */
-                hr = WICConvertBitmapSource(&GUID_WICPixelFormat32bppBGRA, bmp_source, &source);
+                hr = WICConvertBitmapSource(&GUID_WICPixelFormat32bppBGRA, (IWICBitmapSource*)frame, &source);
                 gdip_format = PixelFormat32bppARGB;
-                IWICBitmapSource_Release(bmp_source);
             }
             TRACE("%s => %#x\n", wine_dbgstr_guid(&wic_format), gdip_format);
         }
@@ -3456,11 +3660,11 @@ static GpStatus decode_image_wic(IStream *stream, GDIPCONST CLSID *clsid,
                 }
 
                 if (SUCCEEDED(hr) && status == Ok)
-                    *image = (GpImage*)bitmap;
+                    *image = &bitmap->image;
                 else
                 {
                     *image = NULL;
-                    GdipDisposeImage((GpImage*)bitmap);
+                    GdipDisposeImage(&bitmap->image);
                 }
 
                 if (SUCCEEDED(hr) && status == Ok)
@@ -3497,23 +3701,26 @@ static GpStatus decode_image_wic(IStream *stream, GDIPCONST CLSID *clsid,
         }
     }
 
-    IWICBitmapDecoder_Release(decoder);
-
-end:
-    if (SUCCEEDED(initresult)) CoUninitialize();
-
     if (FAILED(hr) && status == Ok) status = hresult_to_status(hr);
 
     if (status == Ok)
     {
         /* Native GDI+ used to be smarter, but since Win7 it just sets these flags. */
-        bitmap->image.flags |= ImageFlagsReadOnly|ImageFlagsHasRealPixelSize|ImageFlagsHasRealDPI|ImageFlagsColorSpaceRGB;
+        bitmap->image.flags |= ImageFlagsReadOnly|ImageFlagsHasRealPixelSize|ImageFlagsHasRealDPI;
+        if (IsEqualGUID(&wic_format, &GUID_WICPixelFormat2bppGray) ||
+            IsEqualGUID(&wic_format, &GUID_WICPixelFormat4bppGray) ||
+            IsEqualGUID(&wic_format, &GUID_WICPixelFormat8bppGray) ||
+            IsEqualGUID(&wic_format, &GUID_WICPixelFormat16bppGray))
+            bitmap->image.flags |= ImageFlagsColorSpaceGRAY;
+        else
+            bitmap->image.flags |= ImageFlagsColorSpaceRGB;
         bitmap->image.frame_count = frame_count;
         bitmap->image.current_frame = active_frame;
-        bitmap->image.stream = stream;
+        bitmap->image.decoder = decoder;
+        IWICBitmapDecoder_AddRef(decoder);
         if (palette)
         {
-            GdipFree(bitmap->image.palette);
+            heap_free(bitmap->image.palette);
             bitmap->image.palette = palette;
         }
         else
@@ -3521,25 +3728,215 @@ end:
             if (IsEqualGUID(&wic_format, &GUID_WICPixelFormatBlackWhite))
                 bitmap->image.palette->Flags = 0;
         }
-        /* Pin the source stream */
-        IStream_AddRef(stream);
         TRACE("=> %p\n", *image);
     }
 
     return status;
 }
 
-static GpStatus decode_image_icon(IStream* stream, REFCLSID clsid, UINT active_frame, GpImage **image)
+static GpStatus decode_image_wic(IStream *stream, REFGUID container,
+        metadata_reader_func metadata_reader, GpImage **image)
 {
-    return decode_image_wic(stream, &CLSID_WICIcoDecoder, active_frame, NULL, image);
+    IWICBitmapDecoder *decoder;
+    GpStatus status;
+
+    status = initialize_decoder_wic(stream, container, &decoder);
+    if(status != Ok)
+        return status;
+
+    status = decode_frame_wic(decoder, FALSE, 0, metadata_reader, image);
+    IWICBitmapDecoder_Release(decoder);
+    return status;
 }
 
-static GpStatus decode_image_bmp(IStream* stream, REFCLSID clsid, UINT active_frame, GpImage **image)
+static GpStatus select_frame_wic(GpImage *image, UINT active_frame)
+{
+    GpImage *new_image;
+    GpStatus status;
+
+    status = decode_frame_wic(image->decoder, FALSE, active_frame, NULL, &new_image);
+    if(status != Ok)
+        return status;
+
+    new_image->busy = image->busy;
+    memcpy(&new_image->format, &image->format, sizeof(GUID));
+    free_image_data(image);
+    if (image->type == ImageTypeBitmap)
+        *(GpBitmap *)image = *(GpBitmap *)new_image;
+    else if (image->type == ImageTypeMetafile)
+        *(GpMetafile *)image = *(GpMetafile *)new_image;
+    new_image->type = ~0;
+    heap_free(new_image);
+    return Ok;
+}
+
+static HRESULT get_gif_frame_rect(IWICBitmapFrameDecode *frame,
+        UINT *left, UINT *top, UINT *width, UINT *height)
+{
+    static const WCHAR leftW[] = {'L','e','f','t',0};
+    static const WCHAR topW[] = {'T','o','p',0};
+
+    *left = get_gif_frame_property(frame, &GUID_MetadataFormatIMD, leftW);
+    *top = get_gif_frame_property(frame, &GUID_MetadataFormatIMD, topW);
+
+    return IWICBitmapFrameDecode_GetSize(frame, width, height);
+}
+
+static HRESULT blit_gif_frame(GpBitmap *bitmap, IWICBitmapFrameDecode *frame, BOOL first_frame)
+{
+    UINT i, j, left, top, width, height;
+    IWICBitmapSource *source;
+    BYTE *new_bits;
+    HRESULT hr;
+
+    hr = get_gif_frame_rect(frame, &left, &top, &width, &height);
+    if(FAILED(hr))
+        return hr;
+
+    hr = WICConvertBitmapSource(&GUID_WICPixelFormat32bppBGRA, (IWICBitmapSource*)frame, &source);
+    if(FAILED(hr))
+        return hr;
+
+    new_bits = heap_alloc_zero(width*height*4);
+    if(!new_bits)
+        return E_OUTOFMEMORY;
+
+    hr = IWICBitmapSource_CopyPixels(source, NULL, width*4, width*height*4, new_bits);
+    IWICBitmapSource_Release(source);
+    if(FAILED(hr)) {
+        heap_free(new_bits);
+        return hr;
+    }
+
+    for(i=0; i<height && i+top<bitmap->height; i++) {
+        for(j=0; j<width && j+left<bitmap->width; j++) {
+            DWORD *src = (DWORD*)(new_bits+i*width*4+j*4);
+            DWORD *dst = (DWORD*)(bitmap->bits+(i+top)*bitmap->stride+(j+left)*4);
+
+            if(first_frame || *src>>24 != 0)
+                *dst = *src;
+        }
+    }
+    heap_free(new_bits);
+    return hr;
+}
+
+static DWORD get_gif_background_color(GpBitmap *bitmap)
+{
+    BYTE bgcolor_idx = 0;
+    UINT i;
+
+    for(i=0; i<bitmap->prop_count; i++) {
+        if(bitmap->prop_item[i].id == PropertyTagIndexBackground) {
+            bgcolor_idx = *(BYTE*)bitmap->prop_item[i].value;
+            break;
+        }
+    }
+
+    for(i=0; i<bitmap->prop_count; i++) {
+        if(bitmap->prop_item[i].id == PropertyTagIndexTransparent) {
+            BYTE transparent_idx;
+            transparent_idx = *(BYTE*)bitmap->prop_item[i].value;
+
+            if(transparent_idx == bgcolor_idx)
+                return 0;
+        }
+    }
+
+    for(i=0; i<bitmap->prop_count; i++) {
+        if(bitmap->prop_item[i].id == PropertyTagGlobalPalette) {
+            if(bitmap->prop_item[i].length/3 > bgcolor_idx) {
+                BYTE *color = ((BYTE*)bitmap->prop_item[i].value)+bgcolor_idx*3;
+                return color[2] + (color[1]<<8) + (color[0]<<16) + (0xffu<<24);
+            }
+            break;
+        }
+    }
+
+    FIXME("can't get gif background color\n");
+    return 0xffffffff;
+}
+
+static GpStatus select_frame_gif(GpImage* image, UINT active_frame)
+{
+    static const WCHAR disposalW[] = {'D','i','s','p','o','s','a','l',0};
+
+    GpBitmap *bitmap = (GpBitmap*)image;
+    IWICBitmapFrameDecode *frame;
+    int cur_frame=0, disposal;
+    BOOL bgcolor_set = FALSE;
+    DWORD bgcolor = 0;
+    HRESULT hr;
+
+    if(active_frame > image->current_frame) {
+        hr = IWICBitmapDecoder_GetFrame(bitmap->image.decoder, image->current_frame, &frame);
+        if(FAILED(hr))
+            return hresult_to_status(hr);
+        disposal = get_gif_frame_property(frame, &GUID_MetadataFormatGCE, disposalW);
+        IWICBitmapFrameDecode_Release(frame);
+
+        if(disposal == GIF_DISPOSE_RESTORE_TO_BKGND)
+            cur_frame = image->current_frame;
+        else if(disposal != GIF_DISPOSE_RESTORE_TO_PREV)
+            cur_frame = image->current_frame+1;
+    }
+
+    while(cur_frame != active_frame) {
+        hr = IWICBitmapDecoder_GetFrame(bitmap->image.decoder, cur_frame, &frame);
+        if(FAILED(hr))
+            return hresult_to_status(hr);
+        disposal = get_gif_frame_property(frame, &GUID_MetadataFormatGCE, disposalW);
+
+        if(disposal==GIF_DISPOSE_UNSPECIFIED || disposal==GIF_DISPOSE_DO_NOT_DISPOSE) {
+            hr = blit_gif_frame(bitmap, frame, cur_frame==0);
+            if(FAILED(hr))
+                return hresult_to_status(hr);
+        }else if(disposal == GIF_DISPOSE_RESTORE_TO_BKGND) {
+            UINT left, top, width, height, i, j;
+
+            if(!bgcolor_set) {
+                bgcolor = get_gif_background_color(bitmap);
+                bgcolor_set = TRUE;
+            }
+
+            hr = get_gif_frame_rect(frame, &left, &top, &width, &height);
+            if(FAILED(hr))
+                return hresult_to_status(hr);
+            for(i=top; i<top+height && i<bitmap->height; i++) {
+                DWORD *bits = (DWORD*)(bitmap->bits+i*bitmap->stride);
+                for(j=left; j<left+width && j<bitmap->width; j++)
+                    bits[j] = bgcolor;
+            }
+        }
+
+        IWICBitmapFrameDecode_Release(frame);
+        cur_frame++;
+    }
+
+    hr = IWICBitmapDecoder_GetFrame(bitmap->image.decoder, active_frame, &frame);
+    if(FAILED(hr))
+        return hresult_to_status(hr);
+
+    hr = blit_gif_frame(bitmap, frame, cur_frame==0);
+    IWICBitmapFrameDecode_Release(frame);
+    if(FAILED(hr))
+        return hresult_to_status(hr);
+
+    image->current_frame = active_frame;
+    return Ok;
+}
+
+static GpStatus decode_image_icon(IStream* stream, GpImage **image)
+{
+    return decode_image_wic(stream, &GUID_ContainerFormatIco, NULL, image);
+}
+
+static GpStatus decode_image_bmp(IStream* stream, GpImage **image)
 {
     GpStatus status;
     GpBitmap* bitmap;
 
-    status = decode_image_wic(stream, &CLSID_WICBmpDecoder, active_frame, NULL, image);
+    status = decode_image_wic(stream, &GUID_ContainerFormatBmp, NULL, image);
 
     bitmap = (GpBitmap*)*image;
 
@@ -3552,52 +3949,216 @@ static GpStatus decode_image_bmp(IStream* stream, REFCLSID clsid, UINT active_fr
     return status;
 }
 
-static GpStatus decode_image_jpeg(IStream* stream, REFCLSID clsid, UINT active_frame, GpImage **image)
+static GpStatus decode_image_jpeg(IStream* stream, GpImage **image)
 {
-    return decode_image_wic(stream, &CLSID_WICJpegDecoder, active_frame, NULL, image);
+    return decode_image_wic(stream, &GUID_ContainerFormatJpeg, NULL, image);
 }
 
-static GpStatus decode_image_png(IStream* stream, REFCLSID clsid, UINT active_frame, GpImage **image)
+static GpStatus decode_image_png(IStream* stream, GpImage **image)
 {
-    return decode_image_wic(stream, &CLSID_WICPngDecoder, active_frame, NULL, image);
+    IWICBitmapDecoder *decoder;
+    IWICBitmapFrameDecode *frame;
+    GpStatus status;
+    HRESULT hr;
+    GUID format;
+    BOOL force_conversion = FALSE;
+
+    status = initialize_decoder_wic(stream, &GUID_ContainerFormatPng, &decoder);
+    if (status != Ok)
+        return status;
+
+    hr = IWICBitmapDecoder_GetFrame(decoder, 0, &frame);
+    if (hr == S_OK)
+    {
+        hr = IWICBitmapFrameDecode_GetPixelFormat(frame, &format);
+        if (hr == S_OK)
+        {
+            if (IsEqualGUID(&format, &GUID_WICPixelFormat8bppGray))
+                force_conversion = TRUE;
+            status = decode_frame_wic(decoder, force_conversion, 0, png_metadata_reader, image);
+        }
+        else
+            status = hresult_to_status(hr);
+
+        IWICBitmapFrameDecode_Release(frame);
+    }
+    else
+        status = hresult_to_status(hr);
+
+    IWICBitmapDecoder_Release(decoder);
+    return status;
 }
 
-static GpStatus decode_image_gif(IStream* stream, REFCLSID clsid, UINT active_frame, GpImage **image)
+static GpStatus decode_image_gif(IStream* stream, GpImage **image)
 {
-    return decode_image_wic(stream, &CLSID_WICGifDecoder, active_frame, gif_metadata_reader, image);
+    IWICBitmapDecoder *decoder;
+    UINT frame_count;
+    GpStatus status;
+    HRESULT hr;
+
+    status = initialize_decoder_wic(stream, &GUID_ContainerFormatGif, &decoder);
+    if(status != Ok)
+        return status;
+
+    hr = IWICBitmapDecoder_GetFrameCount(decoder, &frame_count);
+    if(FAILED(hr))
+        return hresult_to_status(hr);
+
+    status = decode_frame_wic(decoder, frame_count > 1, 0, gif_metadata_reader, image);
+    IWICBitmapDecoder_Release(decoder);
+    if(status != Ok)
+        return status;
+
+    if(frame_count > 1) {
+        heap_free((*image)->palette);
+        (*image)->palette = NULL;
+    }
+    return Ok;
 }
 
-static GpStatus decode_image_tiff(IStream* stream, REFCLSID clsid, UINT active_frame, GpImage **image)
+static GpStatus decode_image_tiff(IStream* stream, GpImage **image)
 {
-    return decode_image_wic(stream, &CLSID_WICTiffDecoder, active_frame, NULL, image);
+    return decode_image_wic(stream, &GUID_ContainerFormatTiff, NULL, image);
 }
 
-static GpStatus decode_image_olepicture_metafile(IStream* stream, REFCLSID clsid, UINT active_frame, GpImage **image)
+static GpStatus load_wmf(IStream *stream, GpMetafile **metafile)
 {
-    IPicture *pic;
+    WmfPlaceableFileHeader pfh;
+    BOOL is_placeable = FALSE;
+    LARGE_INTEGER seek;
+    GpStatus status;
+    METAHEADER mh;
+    HMETAFILE hmf;
+    HRESULT hr;
+    UINT size;
+    void *buf;
 
-    TRACE("%p %p\n", stream, image);
+    hr = IStream_Read(stream, &mh, sizeof(mh), &size);
+    if (hr != S_OK || size != sizeof(mh))
+        return GenericError;
 
-    if(!stream || !image)
-        return InvalidParameter;
+    if (((WmfPlaceableFileHeader *)&mh)->Key == WMF_PLACEABLE_KEY)
+    {
+        seek.QuadPart = 0;
+        hr = IStream_Seek(stream, seek, STREAM_SEEK_SET, NULL);
+        if (FAILED(hr)) return hresult_to_status(hr);
 
-    if(OleLoadPicture(stream, 0, FALSE, &IID_IPicture,
-        (LPVOID*) &pic) != S_OK){
-        TRACE("Could not load picture\n");
+        hr = IStream_Read(stream, &pfh, sizeof(pfh), &size);
+        if (hr != S_OK || size != sizeof(pfh))
+            return GenericError;
+
+        hr = IStream_Read(stream, &mh, sizeof(mh), &size);
+        if (hr != S_OK || size != sizeof(mh))
+            return GenericError;
+
+        is_placeable = TRUE;
+    }
+
+    seek.QuadPart = is_placeable ? sizeof(pfh) : 0;
+    hr = IStream_Seek(stream, seek, STREAM_SEEK_SET, NULL);
+    if (FAILED(hr)) return hresult_to_status(hr);
+
+    buf = heap_alloc(mh.mtSize * 2);
+    if (!buf) return OutOfMemory;
+
+    hr = IStream_Read(stream, buf, mh.mtSize * 2, &size);
+    if (hr != S_OK || size != mh.mtSize * 2)
+    {
+        heap_free(buf);
         return GenericError;
     }
 
-    /* FIXME: missing initialization code */
-    *image = GdipAlloc(sizeof(GpMetafile));
-    if(!*image) return OutOfMemory;
-    (*image)->type = ImageTypeMetafile;
-    (*image)->stream = NULL;
-    (*image)->picture = pic;
-    (*image)->flags   = ImageFlagsNone;
-    (*image)->frame_count = 1;
-    (*image)->current_frame = 0;
-    (*image)->palette = NULL;
+    hmf = SetMetaFileBitsEx(mh.mtSize * 2, buf);
+    heap_free(buf);
+    if (!hmf)
+        return GenericError;
 
+    status = GdipCreateMetafileFromWmf(hmf, TRUE, is_placeable ? &pfh : NULL, metafile);
+    if (status != Ok)
+        DeleteMetaFile(hmf);
+    return status;
+}
+
+static GpStatus decode_image_wmf(IStream *stream, GpImage **image)
+{
+    GpMetafile *metafile;
+    GpStatus status;
+
+    TRACE("%p %p\n", stream, image);
+
+    if (!stream || !image)
+        return InvalidParameter;
+
+    status = load_wmf(stream, &metafile);
+    if (status != Ok)
+    {
+        TRACE("Could not load metafile\n");
+        return status;
+    }
+
+    *image = (GpImage *)metafile;
+    TRACE("<-- %p\n", *image);
+
+    return Ok;
+}
+
+static GpStatus load_emf(IStream *stream, GpMetafile **metafile)
+{
+    LARGE_INTEGER seek;
+    ENHMETAHEADER emh;
+    HENHMETAFILE hemf;
+    GpStatus status;
+    HRESULT hr;
+    UINT size;
+    void *buf;
+
+    hr = IStream_Read(stream, &emh, sizeof(emh), &size);
+    if (hr != S_OK || size != sizeof(emh) || emh.dSignature != ENHMETA_SIGNATURE)
+        return GenericError;
+
+    seek.QuadPart = 0;
+    hr = IStream_Seek(stream, seek, STREAM_SEEK_SET, NULL);
+    if (FAILED(hr)) return hresult_to_status(hr);
+
+    buf = heap_alloc(emh.nBytes);
+    if (!buf) return OutOfMemory;
+
+    hr = IStream_Read(stream, buf, emh.nBytes, &size);
+    if (hr != S_OK || size != emh.nBytes)
+    {
+        heap_free(buf);
+        return GenericError;
+    }
+
+    hemf = SetEnhMetaFileBits(emh.nBytes, buf);
+    heap_free(buf);
+    if (!hemf)
+        return GenericError;
+
+    status = GdipCreateMetafileFromEmf(hemf, TRUE, metafile);
+    if (status != Ok)
+        DeleteEnhMetaFile(hemf);
+    return status;
+}
+
+static GpStatus decode_image_emf(IStream *stream, GpImage **image)
+{
+    GpMetafile *metafile;
+    GpStatus status;
+
+    TRACE("%p %p\n", stream, image);
+
+    if (!stream || !image)
+        return InvalidParameter;
+
+    status = load_emf(stream, &metafile);
+    if (status != Ok)
+    {
+        TRACE("Could not load metafile\n");
+        return status;
+    }
+
+    *image = (GpImage *)metafile;
     TRACE("<-- %p\n", *image);
 
     return Ok;
@@ -3606,12 +4167,15 @@ static GpStatus decode_image_olepicture_metafile(IStream* stream, REFCLSID clsid
 typedef GpStatus (*encode_image_func)(GpImage *image, IStream* stream,
     GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params);
 
-typedef GpStatus (*decode_image_func)(IStream *stream, REFCLSID clsid, UINT active_frame, GpImage **image);
+typedef GpStatus (*decode_image_func)(IStream *stream, GpImage **image);
+
+typedef GpStatus (*select_image_func)(GpImage *image, UINT active_frame);
 
 typedef struct image_codec {
     ImageCodecInfo info;
     encode_image_func encode_func;
     decode_image_func decode_func;
+    select_image_func select_func;
 } image_codec;
 
 typedef enum {
@@ -3676,71 +4240,75 @@ static GpStatus get_decoder_info(IStream* stream, const struct image_codec **res
     return GenericError;
 }
 
+static GpStatus get_decoder_info_from_image(GpImage *image, const struct image_codec **result)
+{
+    int i;
+
+    for (i = 0; i < NUM_CODECS; i++) {
+        if ((codecs[i].info.Flags & ImageCodecFlagsDecoder) &&
+                IsEqualIID(&codecs[i].info.FormatID, &image->format))
+        {
+            *result = &codecs[i];
+            return Ok;
+        }
+    }
+
+    TRACE("no match for format: %s\n", wine_dbgstr_guid(&image->format));
+    return GenericError;
+}
+
 GpStatus WINGDIPAPI GdipImageSelectActiveFrame(GpImage *image, GDIPCONST GUID *dimensionID,
                                                UINT frame)
 {
     GpStatus stat;
-    LARGE_INTEGER seek;
-    HRESULT hr;
     const struct image_codec *codec = NULL;
-    GpImage *new_image;
+    BOOL unlock;
 
     TRACE("(%p,%s,%u)\n", image, debugstr_guid(dimensionID), frame);
 
     if (!image || !dimensionID)
         return InvalidParameter;
+    if(!image_lock(image, &unlock))
+        return ObjectBusy;
 
     if (frame >= image->frame_count)
     {
         WARN("requested frame %u, but image has only %u\n", frame, image->frame_count);
+        image_unlock(image, unlock);
         return InvalidParameter;
     }
 
     if (image->type != ImageTypeBitmap && image->type != ImageTypeMetafile)
     {
         WARN("invalid image type %d\n", image->type);
+        image_unlock(image, unlock);
         return InvalidParameter;
     }
 
     if (image->current_frame == frame)
-        return Ok;
-
-    if (!image->stream)
     {
-        TRACE("image doesn't have an associated stream\n");
+        image_unlock(image, unlock);
+        return Ok;
+    }
+
+    if (!image->decoder)
+    {
+        TRACE("image doesn't have an associated decoder\n");
+        image_unlock(image, unlock);
         return Ok;
     }
 
     /* choose an appropriate image decoder */
-    stat = get_decoder_info(image->stream, &codec);
+    stat = get_decoder_info_from_image(image, &codec);
     if (stat != Ok)
     {
         WARN("can't find decoder info\n");
+        image_unlock(image, unlock);
         return stat;
     }
 
-    /* seek to the start of the stream */
-    seek.QuadPart = 0;
-    hr = IStream_Seek(image->stream, seek, STREAM_SEEK_SET, NULL);
-    if (FAILED(hr))
-        return hresult_to_status(hr);
-
-    /* call on the image decoder to do the real work */
-    stat = codec->decode_func(image->stream, &codec->info.Clsid, frame, &new_image);
-
-    if (stat == Ok)
-    {
-        memcpy(&new_image->format, &codec->info.FormatID, sizeof(GUID));
-        free_image_data(image);
-        if (image->type == ImageTypeBitmap)
-            *(GpBitmap *)image = *(GpBitmap *)new_image;
-        else if (image->type == ImageTypeMetafile)
-            *(GpMetafile *)image = *(GpMetafile *)new_image;
-        new_image->type = ~0;
-        GdipFree(new_image);
-        return Ok;
-    }
-
+    stat = codec->select_func(image, frame);
+    image_unlock(image, unlock);
     return stat;
 }
 
@@ -3761,7 +4329,7 @@ GpStatus WINGDIPAPI GdipLoadImageFromStream(IStream *stream, GpImage **image)
     if (FAILED(hr)) return hresult_to_status(hr);
 
     /* call on the image decoder to do the real work */
-    stat = codec->decode_func(stream, &codec->info.Clsid, 0, image);
+    stat = codec->decode_func(stream, image);
 
     /* take note of the original data format */
     if (stat == Ok)
@@ -3836,17 +4404,13 @@ GpStatus WINGDIPAPI GdipSaveImageToFile(GpImage *image, GDIPCONST WCHAR* filenam
  * Encoding functions -
  *   These functions encode an image in different image file formats.
  */
-#define BITMAP_FORMAT_BMP   0x4d42 /* "BM" */
-#define BITMAP_FORMAT_JPEG  0xd8ff
-#define BITMAP_FORMAT_GIF   0x4947
-#define BITMAP_FORMAT_PNG   0x5089
-#define BITMAP_FORMAT_APM   0xcdd7
 
-static GpStatus encode_image_WIC(GpImage *image, IStream* stream,
-    GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params)
+static GpStatus encode_image_wic(GpImage *image, IStream* stream,
+    REFGUID container, GDIPCONST EncoderParameters* params)
 {
     GpStatus stat;
     GpBitmap *bitmap;
+    IWICImagingFactory *factory;
     IWICBitmapEncoder *encoder;
     IWICBitmapFrameEncode *frameencode;
     IPropertyBag2 *encoderoptions;
@@ -3857,7 +4421,6 @@ static GpStatus encode_image_WIC(GpImage *image, IStream* stream,
     WICPixelFormatGUID wicformat;
     GpRect rc;
     BitmapData lockeddata;
-    HRESULT initresult;
     UINT i;
 
     if (image->type != ImageTypeBitmap)
@@ -3873,15 +4436,13 @@ static GpStatus encode_image_WIC(GpImage *image, IStream* stream,
     rc.Width = width;
     rc.Height = height;
 
-    initresult = CoInitialize(NULL);
-
-    hr = CoCreateInstance(clsid, NULL, CLSCTX_INPROC_SERVER,
-        &IID_IWICBitmapEncoder, (void**)&encoder);
+    hr = WICCreateImagingFactory_Proxy(WINCODEC_SDK_VERSION, &factory);
     if (FAILED(hr))
-    {
-        if (SUCCEEDED(initresult)) CoUninitialize();
         return hresult_to_status(hr);
-    }
+    hr = IWICImagingFactory_CreateEncoder(factory, container, NULL, &encoder);
+    IWICImagingFactory_Release(factory);
+    if (FAILED(hr))
+        return hresult_to_status(hr);
 
     hr = IWICBitmapEncoder_Initialize(encoder, stream, WICBitmapEncoderNoCache);
 
@@ -3976,34 +4537,37 @@ static GpStatus encode_image_WIC(GpImage *image, IStream* stream,
         hr = IWICBitmapEncoder_Commit(encoder);
 
     IWICBitmapEncoder_Release(encoder);
-
-    if (SUCCEEDED(initresult)) CoUninitialize();
-
     return hresult_to_status(hr);
 }
 
 static GpStatus encode_image_BMP(GpImage *image, IStream* stream,
     GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params)
 {
-    return encode_image_WIC(image, stream, &CLSID_WICBmpEncoder, params);
+    return encode_image_wic(image, stream, &GUID_ContainerFormatBmp, params);
 }
 
 static GpStatus encode_image_tiff(GpImage *image, IStream* stream,
     GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params)
 {
-    return encode_image_WIC(image, stream, &CLSID_WICTiffEncoder, params);
+    return encode_image_wic(image, stream, &GUID_ContainerFormatTiff, params);
 }
 
 static GpStatus encode_image_png(GpImage *image, IStream* stream,
     GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params)
 {
-    return encode_image_WIC(image, stream, &CLSID_WICPngEncoder, params);
+    return encode_image_wic(image, stream, &GUID_ContainerFormatPng, params);
 }
 
 static GpStatus encode_image_jpeg(GpImage *image, IStream* stream,
     GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params)
 {
-    return encode_image_WIC(image, stream, &CLSID_WICJpegEncoder, params);
+    return encode_image_wic(image, stream, &GUID_ContainerFormatJpeg, params);
+}
+
+static GpStatus encode_image_gif(GpImage *image, IStream* stream,
+    GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params)
+{
+    return encode_image_wic(image, stream, &GUID_ContainerFormatGif, params);
 }
 
 /*****************************************************************************
@@ -4016,7 +4580,7 @@ GpStatus WINGDIPAPI GdipSaveImageToStream(GpImage *image, IStream* stream,
     encode_image_func encode_image;
     int i;
 
-    TRACE("%p %p %p %p\n", image, stream, clsid, params);
+    TRACE("%p %p %s %p\n", image, stream, wine_dbgstr_guid(clsid), params);
 
     if(!image || !stream)
         return InvalidParameter;
@@ -4092,10 +4656,10 @@ GpStatus WINGDIPAPI GdipSetImagePalette(GpImage *image,
     if(!image || !palette || palette->Count > 256)
         return InvalidParameter;
 
-    new_palette = GdipAlloc(2 * sizeof(UINT) + palette->Count * sizeof(ARGB));
+    new_palette = heap_alloc_zero(2 * sizeof(UINT) + palette->Count * sizeof(ARGB));
     if (!new_palette) return OutOfMemory;
 
-    GdipFree(image->palette);
+    heap_free(image->palette);
     image->palette = new_palette;
     image->palette->Flags = palette->Flags;
     image->palette->Count = palette->Count;
@@ -4184,7 +4748,8 @@ static const struct image_codec codecs[NUM_CODECS] = {
             /* SigMask */            bmp_sig_mask,
         },
         encode_image_BMP,
-        decode_image_bmp
+        decode_image_bmp,
+        select_frame_wic
     },
     {
         { /* JPEG */
@@ -4203,7 +4768,8 @@ static const struct image_codec codecs[NUM_CODECS] = {
             /* SigMask */            jpeg_sig_mask,
         },
         encode_image_jpeg,
-        decode_image_jpeg
+        decode_image_jpeg,
+        select_frame_wic
     },
     {
         { /* GIF */
@@ -4214,15 +4780,16 @@ static const struct image_codec codecs[NUM_CODECS] = {
             /* FormatDescription */  gif_format,
             /* FilenameExtension */  gif_extension,
             /* MimeType */           gif_mimetype,
-            /* Flags */              ImageCodecFlagsDecoder | ImageCodecFlagsSupportBitmap | ImageCodecFlagsBuiltin,
+            /* Flags */              ImageCodecFlagsDecoder | ImageCodecFlagsEncoder | ImageCodecFlagsSupportBitmap | ImageCodecFlagsBuiltin,
             /* Version */            1,
             /* SigCount */           2,
             /* SigSize */            6,
             /* SigPattern */         gif_sig_pattern,
             /* SigMask */            gif_sig_mask,
         },
-        NULL,
-        decode_image_gif
+        encode_image_gif,
+        decode_image_gif,
+        select_frame_gif
     },
     {
         { /* TIFF */
@@ -4241,7 +4808,8 @@ static const struct image_codec codecs[NUM_CODECS] = {
             /* SigMask */            tiff_sig_mask,
         },
         encode_image_tiff,
-        decode_image_tiff
+        decode_image_tiff,
+        select_frame_wic
     },
     {
         { /* EMF */
@@ -4260,7 +4828,8 @@ static const struct image_codec codecs[NUM_CODECS] = {
             /* SigMask */            emf_sig_mask,
         },
         NULL,
-        decode_image_olepicture_metafile
+        decode_image_emf,
+        NULL
     },
     {
         { /* WMF */
@@ -4279,7 +4848,8 @@ static const struct image_codec codecs[NUM_CODECS] = {
             /* SigMask */            wmf_sig_mask,
         },
         NULL,
-        decode_image_olepicture_metafile
+        decode_image_wmf,
+        NULL
     },
     {
         { /* PNG */
@@ -4298,7 +4868,8 @@ static const struct image_codec codecs[NUM_CODECS] = {
             /* SigMask */            png_sig_mask,
         },
         encode_image_png,
-        decode_image_png
+        decode_image_png,
+        select_frame_wic
     },
     {
         { /* ICO */
@@ -4317,7 +4888,8 @@ static const struct image_codec codecs[NUM_CODECS] = {
             /* SigMask */            ico_sig_mask,
         },
         NULL,
-        decode_image_icon
+        decode_image_icon,
+        select_frame_wic
     },
 };
 
@@ -4568,7 +5140,7 @@ GpStatus WINGDIPAPI GdipCreateBitmapFromHBITMAP(HBITMAP hbm, HPALETTE hpal, GpBi
             if (!num_palette_entries)
                 retval = GenericError;
 
-            palette = GdipAlloc(sizeof(ColorPalette) + sizeof(ARGB) * (num_palette_entries-1));
+            palette = heap_alloc_zero(sizeof(ColorPalette) + sizeof(ARGB) * (num_palette_entries-1));
             if (!palette)
                 retval = OutOfMemory;
 
@@ -4583,15 +5155,15 @@ GpStatus WINGDIPAPI GdipCreateBitmapFromHBITMAP(HBITMAP hbm, HPALETTE hpal, GpBi
                                           entry[i].peGreen << 8 | entry[i].peBlue;
                 }
 
-                retval = GdipSetImagePalette((GpImage*)*bitmap, palette);
+                retval = GdipSetImagePalette(&(*bitmap)->image, palette);
             }
 
-            GdipFree(palette);
+            heap_free(palette);
         }
 
         if (retval != Ok)
         {
-            GdipDisposeImage((GpImage*)*bitmap);
+            GdipDisposeImage(&(*bitmap)->image);
             *bitmap = NULL;
         }
     }
@@ -4599,6 +5171,24 @@ GpStatus WINGDIPAPI GdipCreateBitmapFromHBITMAP(HBITMAP hbm, HPALETTE hpal, GpBi
     return retval;
 }
 
+/*****************************************************************************
+ * GdipCreateEffect [GDIPLUS.@]
+ */
+GpStatus WINGDIPAPI GdipCreateEffect(const GUID guid, CGpEffect **effect)
+{
+    FIXME("(%s, %p): stub\n", debugstr_guid(&guid), effect);
+
+    if(!effect)
+        return InvalidParameter;
+
+    *effect = NULL;
+
+    return NotImplemented;
+}
+
+/*****************************************************************************
+ * GdipDeleteEffect [GDIPLUS.@]
+ */
 GpStatus WINGDIPAPI GdipDeleteEffect(CGpEffect *effect)
 {
     FIXME("(%p): stub\n", effect);
@@ -4729,11 +5319,14 @@ GpStatus WINGDIPAPI GdipImageRotateFlip(GpImage *image, RotateFlipType type)
     UINT x, y, width, height;
     BitmapData src_lock, dst_lock;
     GpStatus stat;
+    BOOL unlock;
 
     TRACE("(%p, %u)\n", image, type);
 
     if (!image)
         return InvalidParameter;
+    if (!image_lock(image, &unlock))
+        return ObjectBusy;
 
     rotate_90 = type&1;
     flip_x = (type&6) == 2 || (type&6) == 4;
@@ -4742,6 +5335,7 @@ GpStatus WINGDIPAPI GdipImageRotateFlip(GpImage *image, RotateFlipType type)
     if (image->type != ImageTypeBitmap)
     {
         FIXME("Not implemented for type %i\n", image->type);
+        image_unlock(image, unlock);
         return NotImplemented;
     }
 
@@ -4751,6 +5345,7 @@ GpStatus WINGDIPAPI GdipImageRotateFlip(GpImage *image, RotateFlipType type)
     if (bpp < 8)
     {
         FIXME("Not implemented for %i bit images\n", bpp);
+        image_unlock(image, unlock);
         return NotImplemented;
     }
 
@@ -4770,7 +5365,10 @@ GpStatus WINGDIPAPI GdipImageRotateFlip(GpImage *image, RotateFlipType type)
     stat = GdipCreateBitmapFromScan0(width, height, 0, bitmap->format, NULL, &new_bitmap);
 
     if (stat != Ok)
+    {
+        image_unlock(image, unlock);
         return stat;
+    }
 
     stat = GdipBitmapLockBits(bitmap, NULL, ImageLockModeRead, bitmap->format, &src_lock);
 
@@ -4828,7 +5426,279 @@ GpStatus WINGDIPAPI GdipImageRotateFlip(GpImage *image, RotateFlipType type)
     if (stat == Ok)
         move_bitmap(bitmap, new_bitmap, FALSE);
     else
-        GdipDisposeImage((GpImage*)new_bitmap);
+        GdipDisposeImage(&new_bitmap->image);
 
+    image_unlock(image, unlock);
     return stat;
+}
+
+/*****************************************************************************
+ * GdipImageSetAbort [GDIPLUS.@]
+ */
+GpStatus WINGDIPAPI GdipImageSetAbort(GpImage *image, GdiplusAbort *pabort)
+{
+    TRACE("(%p, %p)\n", image, pabort);
+
+    if (!image)
+        return InvalidParameter;
+
+    if (pabort)
+        FIXME("Abort callback is not supported.\n");
+
+    return Ok;
+}
+
+/*****************************************************************************
+ * GdipBitmapConvertFormat [GDIPLUS.@]
+ */
+GpStatus WINGDIPAPI GdipBitmapConvertFormat(GpBitmap *bitmap, PixelFormat format, DitherType dithertype,
+    PaletteType palettetype, ColorPalette *palette, REAL alphathreshold)
+{
+    FIXME("(%p, 0x%08x, %d, %d, %p, %f): stub\n", bitmap, format, dithertype, palettetype, palette, alphathreshold);
+    return NotImplemented;
+}
+
+static void set_histogram_point_argb(ARGB color, UINT *ch0, UINT *ch1, UINT *ch2, UINT *ch3)
+{
+    ch0[ color >> 24        ]++;
+    ch1[(color >> 16) & 0xff]++;
+    ch2[(color >>  8) & 0xff]++;
+    ch3[ color        & 0xff]++;
+}
+
+static void set_histogram_point_pargb(ARGB color, UINT *ch0, UINT *ch1, UINT *ch2, UINT *ch3)
+{
+    BYTE alpha = color >> 24;
+
+    ch0[alpha]++;
+    ch1[(((color >> 16) & 0xff) * alpha) / 0xff]++;
+    ch2[(((color >>  8) & 0xff) * alpha) / 0xff]++;
+    ch3[(( color        & 0xff) * alpha) / 0xff]++;
+}
+
+static void set_histogram_point_rgb(ARGB color, UINT *ch0, UINT *ch1, UINT *ch2, UINT *ch3)
+{
+    ch0[(color >> 16) & 0xff]++;
+    ch1[(color >>  8) & 0xff]++;
+    ch2[ color        & 0xff]++;
+}
+
+static void set_histogram_point_gray(ARGB color, UINT *ch0, UINT *ch1, UINT *ch2, UINT *ch3)
+{
+    ch0[(76 * ((color >> 16) & 0xff) + 150 * ((color >> 8) & 0xff) + 29 * (color & 0xff)) / 0xff]++;
+}
+
+static void set_histogram_point_b(ARGB color, UINT *ch0, UINT *ch1, UINT *ch2, UINT *ch3)
+{
+    ch0[color & 0xff]++;
+}
+
+static void set_histogram_point_g(ARGB color, UINT *ch0, UINT *ch1, UINT *ch2, UINT *ch3)
+{
+    ch0[(color >> 8) & 0xff]++;
+}
+
+static void set_histogram_point_r(ARGB color, UINT *ch0, UINT *ch1, UINT *ch2, UINT *ch3)
+{
+    ch0[(color >> 16) & 0xff]++;
+}
+
+static void set_histogram_point_a(ARGB color, UINT *ch0, UINT *ch1, UINT *ch2, UINT *ch3)
+{
+    ch0[(color >> 24) & 0xff]++;
+}
+
+/*****************************************************************************
+ * GdipBitmapGetHistogram [GDIPLUS.@]
+ */
+GpStatus WINGDIPAPI GdipBitmapGetHistogram(GpBitmap *bitmap, HistogramFormat format, UINT num_of_entries,
+    UINT *ch0, UINT *ch1, UINT *ch2, UINT *ch3)
+{
+    static void (* const set_histogram_point[])(ARGB color, UINT *ch0, UINT *ch1, UINT *ch2, UINT *ch3) =
+    {
+        set_histogram_point_argb,
+        set_histogram_point_pargb,
+        set_histogram_point_rgb,
+        set_histogram_point_gray,
+        set_histogram_point_b,
+        set_histogram_point_g,
+        set_histogram_point_r,
+        set_histogram_point_a,
+    };
+    UINT width, height, x, y;
+
+    TRACE("(%p, %d, %u, %p, %p, %p, %p)\n", bitmap, format, num_of_entries,
+        ch0, ch1, ch2, ch3);
+
+    if (!bitmap || num_of_entries != 256)
+        return InvalidParameter;
+
+    /* Make sure passed channel pointers match requested format */
+    switch (format)
+    {
+    case HistogramFormatARGB:
+    case HistogramFormatPARGB:
+        if (!ch0 || !ch1 || !ch2 || !ch3)
+            return InvalidParameter;
+        memset(ch0, 0, num_of_entries * sizeof(UINT));
+        memset(ch1, 0, num_of_entries * sizeof(UINT));
+        memset(ch2, 0, num_of_entries * sizeof(UINT));
+        memset(ch3, 0, num_of_entries * sizeof(UINT));
+        break;
+    case HistogramFormatRGB:
+        if (!ch0 || !ch1 || !ch2 || ch3)
+            return InvalidParameter;
+        memset(ch0, 0, num_of_entries * sizeof(UINT));
+        memset(ch1, 0, num_of_entries * sizeof(UINT));
+        memset(ch2, 0, num_of_entries * sizeof(UINT));
+        break;
+    case HistogramFormatGray:
+    case HistogramFormatB:
+    case HistogramFormatG:
+    case HistogramFormatR:
+    case HistogramFormatA:
+        if (!ch0 || ch1 || ch2 || ch3)
+            return InvalidParameter;
+        memset(ch0, 0, num_of_entries * sizeof(UINT));
+        break;
+    default:
+        WARN("Invalid histogram format requested, %d\n", format);
+        return InvalidParameter;
+    }
+
+    GdipGetImageWidth(&bitmap->image, &width);
+    GdipGetImageHeight(&bitmap->image, &height);
+
+    for (y = 0; y < height; y++)
+        for (x = 0; x < width; x++)
+        {
+            ARGB color;
+
+            GdipBitmapGetPixel(bitmap, x, y, &color);
+            set_histogram_point[format](color, ch0, ch1, ch2, ch3);
+        }
+
+    return Ok;
+}
+
+/*****************************************************************************
+ * GdipBitmapGetHistogramSize [GDIPLUS.@]
+ */
+GpStatus WINGDIPAPI GdipBitmapGetHistogramSize(HistogramFormat format, UINT *num_of_entries)
+{
+    TRACE("(%d, %p)\n", format, num_of_entries);
+
+    if (!num_of_entries)
+        return InvalidParameter;
+
+    *num_of_entries = 256;
+    return Ok;
+}
+
+static GpStatus create_optimal_palette(ColorPalette *palette, INT desired,
+    BOOL transparent, GpBitmap *bitmap)
+{
+    GpStatus status;
+    BitmapData data;
+    HRESULT hr;
+    IWICImagingFactory *factory;
+    IWICPalette *wic_palette;
+
+    if (!bitmap) return InvalidParameter;
+    if (palette->Count < desired) return GenericError;
+
+    status = GdipBitmapLockBits(bitmap, NULL, ImageLockModeRead, PixelFormat24bppRGB, &data);
+    if (status != Ok) return status;
+
+    hr = WICCreateImagingFactory_Proxy(WINCODEC_SDK_VERSION, &factory);
+    if (hr != S_OK)
+    {
+        GdipBitmapUnlockBits(bitmap, &data);
+        return hresult_to_status(hr);
+    }
+
+    hr = IWICImagingFactory_CreatePalette(factory, &wic_palette);
+    if (hr == S_OK)
+    {
+        IWICBitmap *bitmap;
+
+        /* PixelFormat24bppRGB actually stores the bitmap bits as BGR. */
+        hr = IWICImagingFactory_CreateBitmapFromMemory(factory, data.Width, data.Height,
+                &GUID_WICPixelFormat24bppBGR, data.Stride, data.Stride * data.Width, data.Scan0, &bitmap);
+        if (hr == S_OK)
+        {
+            hr = IWICPalette_InitializeFromBitmap(wic_palette, (IWICBitmapSource *)bitmap, desired, transparent);
+            if (hr == S_OK)
+            {
+                palette->Flags = 0;
+                IWICPalette_GetColorCount(wic_palette, &palette->Count);
+                IWICPalette_GetColors(wic_palette, palette->Count, palette->Entries, &palette->Count);
+            }
+
+            IWICBitmap_Release(bitmap);
+        }
+
+        IWICPalette_Release(wic_palette);
+    }
+
+    IWICImagingFactory_Release(factory);
+    GdipBitmapUnlockBits(bitmap, &data);
+
+    return hresult_to_status(hr);
+}
+
+/*****************************************************************************
+ * GdipInitializePalette [GDIPLUS.@]
+ */
+GpStatus WINGDIPAPI GdipInitializePalette(ColorPalette *palette,
+    PaletteType type, INT desired, BOOL transparent, GpBitmap *bitmap)
+{
+    TRACE("(%p,%d,%d,%d,%p)\n", palette, type, desired, transparent, bitmap);
+
+    if (!palette) return InvalidParameter;
+
+    switch (type)
+    {
+    case PaletteTypeCustom:
+        return Ok;
+
+    case PaletteTypeOptimal:
+        return create_optimal_palette(palette, desired, transparent, bitmap);
+
+    /* WIC palette type enumeration matches these gdiplus enums */
+    case PaletteTypeFixedBW:
+    case PaletteTypeFixedHalftone8:
+    case PaletteTypeFixedHalftone27:
+    case PaletteTypeFixedHalftone64:
+    case PaletteTypeFixedHalftone125:
+    case PaletteTypeFixedHalftone216:
+    case PaletteTypeFixedHalftone252:
+    case PaletteTypeFixedHalftone256:
+    {
+        ColorPalette *wic_palette;
+        GpStatus status = Ok;
+
+        wic_palette = get_palette(NULL, type);
+        if (!wic_palette) return OutOfMemory;
+
+        if (palette->Count >= wic_palette->Count)
+        {
+            palette->Flags = wic_palette->Flags;
+            palette->Count = wic_palette->Count;
+            memcpy(palette->Entries, wic_palette->Entries, wic_palette->Count * sizeof(wic_palette->Entries[0]));
+        }
+        else
+            status = GenericError;
+
+        heap_free(wic_palette);
+
+        return status;
+    }
+
+    default:
+        FIXME("unknown palette type %d\n", type);
+        break;
+    }
+
+    return InvalidParameter;
 }

@@ -9,5 +9,4 @@
 @ stub RegisterScmCallback
 @ stub RegisterServiceNotification
 @ stdcall ServiceMain(long ptr) ;; If using SvcHost.exe (Vista+)
-#@ stdcall SvcEntry_PlugPlay(long long long long) ;; If using services.exe (<= 2k3)
-@ stub SvcEntry_PlugPlay
+;@ stdcall SvcEntry_PlugPlay(long long long long) ;; If using services.exe (<= 2k3)

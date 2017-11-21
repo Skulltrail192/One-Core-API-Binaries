@@ -14,7 +14,7 @@
 @ stdcall CoAddRefServerProcess()
 @ stdcall CoAllowSetForegroundWindow(ptr ptr)
 @ stdcall CoBuildVersion()
-@ stub CoCancelCall
+@ stdcall -stub CoCancelCall(long long)
 @ stdcall CoCopyProxy(ptr ptr)
 @ stdcall CoCreateFreeThreadedMarshaler(ptr ptr)
 @ stdcall CoCreateGuid(ptr)
@@ -22,10 +22,10 @@
 @ stdcall CoCreateInstanceEx(ptr ptr long ptr long ptr)
 # CoCreateObjectInContext
 # CoDeactivateObject
-@ stub CoDisableCallCancellation
+@ stdcall -stub CoDisableCallCancellation(ptr)
 @ stdcall CoDisconnectObject(ptr long)
 @ stdcall CoDosDateTimeToFileTime(long long ptr) kernel32.DosDateTimeToFileTime
-@ stub CoEnableCallCancellation
+@ stdcall -stub CoEnableCallCancellation(ptr)
 @ stdcall CoFileTimeNow(ptr)
 @ stdcall CoFileTimeToDosDateTime(ptr ptr ptr) kernel32.FileTimeToDosDateTime
 @ stdcall CoFreeAllLibraries()
@@ -35,7 +35,7 @@
 # CoGetApartmentID
 @ stdcall CoGetCallContext(ptr ptr)
 @ stdcall CoGetCallerTID(ptr)
-@ stub CoGetCancelObject
+@ stdcall -stub CoGetCancelObject(long ptr ptr)
 @ stdcall CoGetClassObject(ptr long ptr ptr ptr)
 # CoGetClassVersion
 # CoGetComCatalog
@@ -45,7 +45,7 @@
 @ stdcall CoGetDefaultContext(long ptr ptr)
 @ stdcall CoGetInstanceFromFile(ptr ptr ptr long long wstr long ptr)
 @ stdcall CoGetInstanceFromIStorage(ptr ptr ptr long ptr long ptr)
-# CoGetInterceptor
+@ stdcall -stub CoGetInterceptor(ptr ptr ptr ptr)
 # CoGetInterceptorFromTypeInfo
 @ stdcall CoGetInterfaceAndReleaseStream(ptr ptr ptr)
 @ stdcall CoGetMalloc(long ptr)
@@ -87,8 +87,8 @@
 @ stdcall CoRegisterMallocSpy (ptr)
 @ stdcall CoRegisterMessageFilter(ptr ptr)
 @ stdcall CoRegisterPSClsid(ptr ptr)
-@ stub CoRegisterSurrogate
-@ stub CoRegisterSurrogateEx
+@ stdcall CoRegisterSurrogate(ptr)
+@ stdcall CoRegisterSurrogateEx(ptr ptr)
 @ stdcall CoReleaseMarshalData(ptr)
 @ stdcall CoReleaseServerProcess()
 @ stdcall CoResumeClassObjects()
@@ -97,7 +97,7 @@
 @ stdcall CoRevokeClassObject(long)
 @ stdcall CoRevokeInitializeSpy(int64)
 @ stdcall CoRevokeMallocSpy()
-@ stub CoSetCancelObject
+# CoSetCancelObject
 @ stdcall CoSetProxyBlanket(ptr long long ptr long long ptr long)
 @ stdcall CoSetState(ptr)
 @ stdcall CoSuspendClassObjects()
@@ -105,7 +105,7 @@
 @ stdcall CoTaskMemAlloc(long)
 @ stdcall CoTaskMemFree(ptr)
 @ stdcall CoTaskMemRealloc(ptr long)
-@ stub CoTestCancel
+# CoTestCancel
 @ stdcall CoTreatAsClass(ptr ptr)
 @ stdcall CoUninitialize()
 @ stub CoUnloadingWOW
@@ -156,10 +156,10 @@
 @ stdcall HBITMAP_UserMarshal(ptr ptr ptr)
 @ stdcall HBITMAP_UserSize(ptr long ptr)
 @ stdcall HBITMAP_UserUnmarshal(ptr ptr ptr)
-@ stub HBRUSH_UserFree
-@ stub HBRUSH_UserMarshal
-@ stub HBRUSH_UserSize
-@ stub HBRUSH_UserUnmarshal
+@ stdcall HBRUSH_UserFree(ptr ptr)
+@ stdcall HBRUSH_UserMarshal(ptr ptr ptr)
+@ stdcall HBRUSH_UserSize(ptr long ptr)
+@ stdcall HBRUSH_UserUnmarshal(ptr ptr ptr)
 @ stdcall HDC_UserFree(ptr ptr)
 @ stdcall HDC_UserMarshal(ptr ptr ptr)
 @ stdcall HDC_UserSize(ptr long ptr)
@@ -218,8 +218,8 @@
 @ stub OleCreateEx
 @ stdcall OleCreateFromData(ptr ptr long ptr ptr ptr ptr)
 @ stdcall OleCreateFromDataEx(ptr ptr long long long ptr ptr ptr ptr ptr ptr ptr)
-@ stdcall OleCreateFromFile(ptr ptr ptr long ptr ptr ptr ptr)
-@ stub OleCreateFromFileEx
+@ stdcall OleCreateFromFile(ptr wstr ptr long ptr ptr ptr ptr)
+@ stdcall OleCreateFromFileEx(ptr wstr ptr long long long ptr ptr ptr ptr ptr ptr ptr)
 @ stdcall OleCreateLink(ptr ptr long ptr ptr ptr ptr)
 @ stub OleCreateLinkEx
 @ stdcall OleCreateLinkFromData(ptr ptr long ptr ptr ptr ptr)
@@ -236,7 +236,7 @@
 @ stdcall OleGetAutoConvert(ptr ptr)
 @ stdcall OleGetClipboard(ptr)
 @ stdcall OleGetIconOfClass(ptr ptr long)
-@ stub OleGetIconOfFile
+@ stdcall OleGetIconOfFile(ptr long)
 @ stdcall OleInitialize(ptr)
 @ stdcall OleInitializeWOW(long long)
 @ stdcall OleIsCurrentClipboard(ptr)
@@ -292,14 +292,14 @@
 @ stdcall StgCreateDocfile(wstr long long ptr)
 @ stdcall StgCreateDocfileOnILockBytes(ptr long long ptr)
 @ stdcall StgCreatePropSetStg(ptr long ptr)
-# StgCreatePropStg
+@ stdcall StgCreatePropStg(ptr ptr ptr long long ptr)
 @ stdcall StgCreateStorageEx(wstr long long long ptr ptr ptr ptr)
 @ stub StgGetIFillLockBytesOnFile
 @ stub StgGetIFillLockBytesOnILockBytes
 @ stdcall StgIsStorageFile(wstr)
 @ stdcall StgIsStorageILockBytes(ptr)
 @ stub StgOpenAsyncDocfileOnIFillLockBytes
-# StgOpenPropStg
+@ stdcall StgOpenPropStg(ptr ptr long long ptr)
 @ stdcall StgOpenStorage(wstr ptr long ptr long ptr)
 @ stdcall StgOpenStorageEx(wstr long long long ptr ptr ptr ptr)
 # StgOpenStorageOnHandle
@@ -323,4 +323,8 @@
 @ stdcall WriteFmtUserTypeStg(ptr long ptr)
 @ stub WriteOleStg
 @ stub WriteStringStream
+
+
+@ stub CoTestCancel
 @ stub CoInvalidateRemoteMachineBindings
+@ stub CoSetCancelObject

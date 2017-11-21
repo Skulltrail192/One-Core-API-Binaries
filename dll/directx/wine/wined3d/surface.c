@@ -2565,7 +2565,7 @@ static void fbo_blitter_clear(struct wined3d_blitter *blitter, struct wined3d_de
                 clear_rects, draw_rect, flags, colour, depth, stencil);
 }
 
-static void fbo_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_op op,
+static DWORD fbo_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_op op,
         struct wined3d_context *context, struct wined3d_surface *src_surface, DWORD src_location,
         const RECT *src_rect, struct wined3d_surface *dst_surface, DWORD dst_location, const RECT *dst_rect,
         const struct wined3d_color_key *colour_key, enum wined3d_texture_filter_type filter)
@@ -2580,9 +2580,8 @@ static void fbo_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_
             src_resource->usage, dst_resource->pool, dst_resource->format, dst_location))
     {
         if ((next = blitter->next))
-            next->ops->blitter_blit(next, op, context, src_surface, src_location,
+            return next->ops->blitter_blit(next, op, context, src_surface, src_location,
                     src_rect, dst_surface, dst_location, dst_rect, colour_key, filter);
-        return;
     }
 
     if (op == WINED3D_BLIT_OP_COLOR_BLIT)
@@ -2590,17 +2589,18 @@ static void fbo_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_
         TRACE("Colour blit.\n");
         surface_blt_fbo(device, context, filter, src_surface, src_location,
                 src_rect, dst_surface, dst_location, dst_rect);
-        return;
+        return dst_location;
     }
 
     if (op == WINED3D_BLIT_OP_DEPTH_BLIT)
     {
         TRACE("Depth/stencil blit.\n");
         surface_depth_blt_fbo(device, src_surface, src_location, src_rect, dst_surface, dst_location, dst_rect);
-        return;
+        return dst_location;
     }
 
     ERR("This blitter does not implement blit op %#x.\n", op);
+    return dst_location;
 }
 
 static const struct wined3d_blitter_ops fbo_blitter_ops =
@@ -2766,7 +2766,7 @@ static void ffp_blitter_clear(struct wined3d_blitter *blitter, struct wined3d_de
                 clear_rects, draw_rect, next_flags, colour, depth, stencil);
 }
 
-static void ffp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_op op,
+static DWORD ffp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_op op,
         struct wined3d_context *context, struct wined3d_surface *src_surface, DWORD src_location,
         const RECT *src_rect, struct wined3d_surface *dst_surface, DWORD dst_location, const RECT *dst_rect,
         const struct wined3d_color_key *color_key, enum wined3d_texture_filter_type filter)
@@ -2790,9 +2790,8 @@ static void ffp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_
             dst_resource->usage, dst_resource->pool, dst_resource->format, dst_location))
     {
         if ((next = blitter->next))
-            next->ops->blitter_blit(next, op, context, src_surface, src_location,
+            return next->ops->blitter_blit(next, op, context, src_surface, src_location,
                     src_rect, dst_surface, dst_location, dst_rect, color_key, filter);
-        return;
     }
 
     TRACE("Blt from surface %p to rendertarget %p\n", src_surface, dst_surface);
@@ -2887,6 +2886,8 @@ static void ffp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_
     /* Restore the color key parameters */
     wined3d_texture_set_color_key(src_texture, WINED3D_CKEY_SRC_BLT,
             (old_color_key_flags & WINED3D_CKEY_SRC_BLT) ? &old_blt_key : NULL);
+
+    return dst_location;
 }
 
 static const struct wined3d_blitter_ops ffp_blitter_ops =
@@ -3658,7 +3659,7 @@ static void cpu_blitter_clear(struct wined3d_blitter *blitter, struct wined3d_de
     }
 }
 
-static void cpu_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_op op,
+static DWORD cpu_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_op op,
         struct wined3d_context *context, struct wined3d_surface *src_surface, DWORD src_location,
         const RECT *src_rect, struct wined3d_surface *dst_surface, DWORD dst_location, const RECT *dst_rect,
         const struct wined3d_color_key *color_key, enum wined3d_texture_filter_type filter)
@@ -3694,6 +3695,9 @@ static void cpu_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_
             src_texture, src_sub_resource_idx, &src_box, flags, &fx, filter)))
         ERR("Failed to blit.\n");
     wined3d_texture_load_location(dst_texture, dst_sub_resource_idx, context, dst_location);
+
+    return dst_location | (dst_texture->sub_resources[dst_sub_resource_idx].locations
+            & dst_texture->resource.map_binding);
 }
 
 static const struct wined3d_blitter_ops cpu_blitter_ops =
@@ -3732,11 +3736,11 @@ HRESULT wined3d_surface_blt(struct wined3d_surface *dst_surface, const RECT *dst
     struct wined3d_device *device = dst_texture->resource.device;
     struct wined3d_swapchain *src_swapchain, *dst_swapchain;
     const struct wined3d_color_key *colour_key = NULL;
+    DWORD dst_location, valid_locations;
     DWORD src_ds_flags, dst_ds_flags;
     struct wined3d_context *context;
     enum wined3d_blit_op blit_op;
     BOOL scale, convert;
-    DWORD dst_location;
 
     static const DWORD simple_blit = WINED3D_BLT_SRC_CKEY
             | WINED3D_BLT_SRC_CKEY_OVERRIDE
@@ -3775,6 +3779,16 @@ HRESULT wined3d_surface_blt(struct wined3d_surface *dst_surface, const RECT *dst
     if (!device->d3d_initialized)
     {
         WARN("D3D not initialized, using fallback.\n");
+        goto cpu;
+    }
+
+    /* We want to avoid invalidating the sysmem location for converted
+     * surfaces, since otherwise we'd have to convert the data back when
+     * locking them. */
+    if (dst_texture->flags & WINED3D_TEXTURE_CONVERTED || dst_texture->resource.format->convert
+            || wined3d_format_get_color_key_conversion(dst_texture, TRUE))
+    {
+        WARN_(d3d_perf)("Converted surface, using CPU blit.\n");
         goto cpu;
     }
 
@@ -3817,13 +3831,14 @@ HRESULT wined3d_surface_blt(struct wined3d_surface *dst_surface, const RECT *dst
             dst_location = dst_texture->resource.draw_binding;
 
         context = context_acquire(device, dst_texture, dst_sub_resource_idx);
-        device->blitter->ops->blitter_blit(device->blitter, WINED3D_BLIT_OP_DEPTH_BLIT, context,
+        valid_locations = device->blitter->ops->blitter_blit(device->blitter,
+                WINED3D_BLIT_OP_DEPTH_BLIT, context,
                 src_surface, src_texture->resource.draw_binding, src_rect,
                 dst_surface, dst_location, dst_rect, NULL, filter);
         context_release(context);
 
-        wined3d_texture_validate_location(dst_texture, dst_sub_resource_idx, dst_location);
-        wined3d_texture_invalidate_location(dst_texture, dst_sub_resource_idx, ~dst_location);
+        wined3d_texture_validate_location(dst_texture, dst_sub_resource_idx, valid_locations);
+        wined3d_texture_invalidate_location(dst_texture, dst_sub_resource_idx, ~valid_locations);
 
         return WINED3D_OK;
     }
@@ -3861,14 +3876,16 @@ HRESULT wined3d_surface_blt(struct wined3d_surface *dst_surface, const RECT *dst
     {
         blit_op = WINED3D_BLIT_OP_COLOR_BLIT_ALPHATEST;
     }
-    else if ((src_sub_resource->locations & WINED3D_LOCATION_SYSMEM)
-            && !(dst_sub_resource->locations & WINED3D_LOCATION_SYSMEM))
+    else if ((src_sub_resource->locations & surface_simple_locations)
+            && !(dst_sub_resource->locations & surface_simple_locations))
     {
         /* Upload */
         if (scale)
             TRACE("Not doing upload because of scaling.\n");
         else if (convert)
             TRACE("Not doing upload because of format conversion.\n");
+        else if (dst_texture->resource.format->convert)
+            TRACE("Not doing upload because the destination format needs conversion.\n");
         else
         {
             POINT dst_point = {dst_rect->left, dst_rect->top};
@@ -3903,7 +3920,7 @@ HRESULT wined3d_surface_blt(struct wined3d_surface *dst_surface, const RECT *dst
         /* Set the swap effect to COPY, we don't want the backbuffer to become
          * undefined. */
         dst_swapchain->desc.swap_effect = WINED3D_SWAP_EFFECT_COPY;
-        wined3d_swapchain_present(dst_swapchain, NULL, NULL, dst_swapchain->win_handle, 0);
+        wined3d_swapchain_present(dst_swapchain, NULL, NULL, dst_swapchain->win_handle, 0, 0);
         dst_swapchain->desc.swap_effect = swap_effect;
 
         return WINED3D_OK;
@@ -3915,13 +3932,13 @@ HRESULT wined3d_surface_blt(struct wined3d_surface *dst_surface, const RECT *dst
         dst_location = dst_texture->resource.draw_binding;
 
     context = context_acquire(device, dst_texture, dst_sub_resource_idx);
-    device->blitter->ops->blitter_blit(device->blitter, blit_op, context,
+    valid_locations = device->blitter->ops->blitter_blit(device->blitter, blit_op, context,
             src_surface, src_texture->resource.draw_binding, src_rect,
             dst_surface, dst_location, dst_rect, colour_key, filter);
     context_release(context);
 
-    wined3d_texture_validate_location(dst_texture, dst_sub_resource_idx, dst_location);
-    wined3d_texture_invalidate_location(dst_texture, dst_sub_resource_idx, ~dst_location);
+    wined3d_texture_validate_location(dst_texture, dst_sub_resource_idx, valid_locations);
+    wined3d_texture_invalidate_location(dst_texture, dst_sub_resource_idx, ~valid_locations);
 
     return WINED3D_OK;
 

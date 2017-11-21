@@ -40,11 +40,11 @@
 @ stdcall CertEnumPhysicalStore(ptr long ptr ptr)
 @ stdcall CertEnumSystemStore(long ptr ptr ptr)
 @ stdcall CertFindAttribute(str long ptr)
-@ stdcall CertFindChainInStore(ptr long long long ptr ptr)
 @ stdcall CertFindCRLInStore(ptr long long long ptr ptr)
 @ stdcall CertFindCTLInStore(ptr long long long ptr ptr)
-@ stdcall CertFindCertificateInStore(ptr long long long ptr ptr)
 @ stdcall CertFindCertificateInCRL(ptr ptr long ptr ptr)
+@ stdcall CertFindCertificateInStore(ptr long long long ptr ptr)
+@ stdcall CertFindChainInStore(ptr long long long ptr ptr)
 @ stdcall CertFindExtension(str long ptr)
 @ stdcall CertFindRDNAttr(str ptr)
 @ stub CertFindSubjectInCTL
@@ -78,6 +78,7 @@
 @ stdcall CertRDNValueToStrA(long ptr ptr long)
 @ stdcall CertRDNValueToStrW(long ptr ptr long)
 @ stdcall CertRegisterPhysicalStore(ptr long wstr ptr ptr)
+@ stdcall CertRegisterSystemStore(ptr long ptr ptr)
 @ stdcall CertRemoveEnhancedKeyUsageIdentifier(ptr str)
 @ stdcall CertRemoveStoreFromCollection(ptr ptr)
 @ stdcall CertSaveStore(ptr long long long ptr long)
@@ -91,21 +92,20 @@
 @ stdcall CertSetStoreProperty(ptr long long ptr)
 @ stdcall CertStrToNameA(long str long ptr ptr ptr ptr)
 @ stdcall CertStrToNameW(long wstr long ptr ptr ptr ptr)
-@ stdcall CertVerifyCertificateChainPolicy(str ptr ptr ptr)
+@ stdcall CertUnregisterSystemStore(ptr long)
 @ stdcall CertVerifyCRLRevocation(long ptr long ptr)
 @ stdcall CertVerifyCRLTimeValidity(ptr ptr)
 @ stdcall CertVerifyCTLUsage(long long ptr ptr long ptr ptr)
+@ stdcall CertVerifyCertificateChainPolicy(str ptr ptr ptr)
 @ stdcall CertVerifyRevocation(long long long ptr long ptr ptr)
 @ stdcall CertVerifySubjectCertificateContext(ptr ptr ptr)
 @ stdcall CertVerifyTimeValidity(ptr ptr)
 @ stdcall CertVerifyValidityNesting(ptr ptr)
 @ stdcall CreateFileU(wstr long long ptr long long ptr) kernel32.CreateFileW
+@ stdcall CryptAcquireCertificatePrivateKey(ptr long ptr ptr ptr ptr)
+@ stdcall CryptAcquireContextU(ptr wstr wstr long long) advapi32.CryptAcquireContextW
 @ stdcall CryptBinaryToStringA(ptr long long ptr ptr)
 @ stdcall CryptBinaryToStringW(ptr long long ptr ptr)
-@ stdcall CryptStringToBinaryA(str long long ptr ptr ptr ptr)
-@ stdcall CryptStringToBinaryW (wstr long long ptr ptr ptr ptr)
-@ stdcall CryptAcquireContextU(ptr wstr wstr long long) advapi32.CryptAcquireContextW
-@ stdcall CryptAcquireCertificatePrivateKey(ptr long ptr ptr ptr ptr)
 @ stub CryptCloseAsyncHandle
 @ stub CryptCreateAsyncHandle
 @ stub CryptDecodeMessage
@@ -160,9 +160,10 @@
 @ stdcall CryptMsgOpenToEncode(long long long ptr str ptr)
 @ stdcall CryptMsgSignCTL(long ptr long ptr long ptr ptr)
 @ stdcall CryptMsgUpdate(ptr ptr long long)
-@ stub CryptMsgVerifyCountersignatureEncoded
+@ stdcall CryptMsgVerifyCountersignatureEncoded(ptr long ptr long ptr long ptr)
 @ stdcall CryptMsgVerifyCountersignatureEncodedEx(ptr long ptr long ptr long long ptr long ptr)
 @ stdcall CryptProtectData(ptr wstr ptr ptr ptr long ptr)
+@ stdcall CryptProtectMemory(ptr long long)
 @ stdcall CryptQueryObject(long ptr long long long ptr ptr ptr ptr ptr ptr)
 @ stdcall CryptRegisterDefaultOIDFunction(long str long wstr)
 @ stdcall CryptRegisterOIDFunction(long str str wstr str)
@@ -185,7 +186,10 @@
 @ stub CryptSignHashU
 @ stdcall CryptSignMessage(ptr long long ptr ptr ptr ptr)
 @ stub CryptSignMessageWithKey
+@ stdcall CryptStringToBinaryA(str long long ptr ptr ptr ptr)
+@ stdcall CryptStringToBinaryW (wstr long long ptr ptr ptr ptr)
 @ stdcall CryptUnprotectData(ptr ptr ptr ptr ptr long ptr)
+@ stdcall CryptUnprotectMemory(ptr long long)
 @ stdcall CryptUnregisterDefaultOIDFunction(long str wstr)
 @ stdcall CryptUnregisterOIDFunction(long str str)
 @ stub CryptUnregisterOIDInfo

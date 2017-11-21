@@ -7,7 +7,7 @@ add_definitions(
     -DWINE_REGISTER_DLL
     -DPROXY_CLSID_IS="{0x79EAC9F1,0xBAF9,0x11CE,{0x8C,0x82,0x00,0xAA,0x00,0x4B,0xA9,0x0B}}")
 
-include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 spec2def(urlmon.dll urlmon.spec ADD_IMPORTLIB)
 add_rpcproxy_files(urlmon_urlmon.idl)
 
@@ -45,6 +45,6 @@ add_library(urlmon SHARED
 
 set_module_type(urlmon win32dll)
 target_link_libraries(urlmon uuid wine ${PSEH_LIB})
-add_importlibs(urlmon rpcrt4 propsys ole32 oleaut32 shlwapi shell32 wininet user32 advapi32 advpack msvcrt kernel32 ntdll)
+add_importlibs(urlmon rpcrt4 propsys ole32 oleaut32 shlwapi shell32 wininet user32 advapi32 advpack kernel32_vista msvcrt kernel32 ntdll)
 add_pch(urlmon urlmon_main.h SOURCE)
 add_cd_file(TARGET urlmon DESTINATION reactos/system32 FOR all)

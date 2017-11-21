@@ -86,7 +86,8 @@ typedef struct _RpcConnection
   /* The active interface bound to server. */
   RPC_SYNTAX_IDENTIFIER ActiveInterface;
   USHORT NextCallId;
-  struct _RpcConnection* Next;
+  struct list protseq_entry;
+  struct _RpcServerProtseq *protseq;
   struct _RpcBinding *server_binding;
 } RpcConnection;
 
@@ -99,7 +100,9 @@ struct connection_ops {
   int (*read)(RpcConnection *conn, void *buffer, unsigned int len);
   int (*write)(RpcConnection *conn, const void *buffer, unsigned int len);
   int (*close)(RpcConnection *conn);
+  void (*close_read)(RpcConnection *conn);
   void (*cancel_call)(RpcConnection *conn);
+  RPC_STATUS (*is_server_listening)(const char *endpoint);
   int (*wait_for_incoming_data)(RpcConnection *conn);
   size_t (*get_top_of_tower)(unsigned char *tower_data, const char *networkaddr, const char *endpoint);
   RPC_STATUS (*parse_top_of_tower)(const unsigned char *tower_data, size_t tower_size, char **networkaddr, char **endpoint);
@@ -158,6 +161,7 @@ RpcConnection *RPCRT4_GrabConnection( RpcConnection *conn ) DECLSPEC_HIDDEN;
 RPC_STATUS RPCRT4_ReleaseConnection(RpcConnection* Connection) DECLSPEC_HIDDEN;
 RPC_STATUS RPCRT4_OpenClientConnection(RpcConnection* Connection) DECLSPEC_HIDDEN;
 RPC_STATUS RPCRT4_CloseConnection(RpcConnection* Connection) DECLSPEC_HIDDEN;
+RPC_STATUS RPCRT4_IsServerListening(const char *protseq, const char *endpoint) DECLSPEC_HIDDEN;
 
 RPC_STATUS RPCRT4_ResolveBinding(RpcBinding* Binding, LPCSTR Endpoint) DECLSPEC_HIDDEN;
 RPC_STATUS RPCRT4_SetBindingObject(RpcBinding* Binding, const UUID* ObjectUuid) DECLSPEC_HIDDEN;
@@ -188,6 +192,11 @@ static inline int rpcrt4_conn_write(RpcConnection *Connection,
 static inline int rpcrt4_conn_close(RpcConnection *Connection)
 {
   return Connection->ops->close(Connection);
+}
+
+static inline void rpcrt4_conn_close_read(RpcConnection *connection)
+{
+  connection->ops->close_read(connection);
 }
 
 static inline void rpcrt4_conn_cancel_call(RpcConnection *Connection)

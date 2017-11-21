@@ -25,9 +25,15 @@
 
 #include <winbase.h>
 #include <subauth.h>
-#include <rtlfuncs.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(bcrypt);
+
+NTSTATUS
+NTAPI
+RtlInitializeCriticalSectionAndSpinCount(
+     _In_ PRTL_CRITICAL_SECTION CriticalSection,
+     _In_ ULONG SpinCount
+);
 
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 {

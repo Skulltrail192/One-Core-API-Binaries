@@ -2,3 +2,4 @@
 @ stdcall CreateDXGIFactory1(ptr ptr)
 @ stdcall DXGID3D10CreateDevice(ptr ptr ptr long ptr long ptr)
 @ stdcall DXGID3D10RegisterLayers(ptr long)
+@ stdcall DXGID3D10GetLayeredDeviceSize(ptr long)

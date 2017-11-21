@@ -25,7 +25,6 @@
 
 #include <winbase.h>
 #include <subauth.h>
-#include <rtlfuncs.h>
 #include <shlwapi.h>
 
 HRESULT 

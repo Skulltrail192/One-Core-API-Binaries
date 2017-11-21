@@ -62,6 +62,7 @@ struct IDirectInputImpl
     DWORD                       evsequence;     /* unique sequence number for events */
     DWORD                       dwVersion;      /* direct input version number */
     struct list                 devices_list;   /* list of all created dinput devices */
+    struct list                 device_players; /* device instance guid to player name */
 };
 
 /* Function called by all devices that Wine supports */
@@ -72,6 +73,12 @@ struct dinput_device {
     HRESULT (*create_device)(IDirectInputImpl *dinput, REFGUID rguid, REFIID riid, LPVOID *pdev, int unicode);
 };
 
+struct DevicePlayer {
+    GUID instance_guid;
+    WCHAR username[MAX_PATH];
+    struct list entry;
+};
+
 extern const struct dinput_device mouse_device DECLSPEC_HIDDEN;
 extern const struct dinput_device keyboard_device DECLSPEC_HIDDEN;
 extern const struct dinput_device joystick_linux_device DECLSPEC_HIDDEN;
@@ -79,6 +86,7 @@ extern const struct dinput_device joystick_linuxinput_device DECLSPEC_HIDDEN;
 extern const struct dinput_device joystick_osx_device DECLSPEC_HIDDEN;
 
 extern void check_dinput_hooks(LPDIRECTINPUTDEVICE8W) DECLSPEC_HIDDEN;
+extern void check_dinput_events(void) DECLSPEC_HIDDEN;
 typedef int (*DI_EVENT_PROC)(LPDIRECTINPUTDEVICE8A, WPARAM, LPARAM);
 
 extern void _copy_diactionformatAtoW(LPDIACTIONFORMATW, LPDIACTIONFORMATA) DECLSPEC_HIDDEN;

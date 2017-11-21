@@ -1,11 +1,12 @@
 
 add_definitions(
     -D__WINESRC__
+	-DSTAGING_CSMT
     -D_USE_MATH_DEFINES
     -DUSE_WIN32_OPENGL
     -Dcopysignf=_copysignf)
 
-include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
+include_directories(BEFORE ${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 
 # We name this wined3d.dll, because the Virtualbox additions ship with a custom wined3d.dll
 # and it breaks everything if it is installed.
@@ -20,7 +21,7 @@ list(APPEND SOURCE
     device.c
     directx.c
     drawprim.c
-	dxtn.c
+    dxtn.c
     gl_compat.c
     glsl_shader.c
     nvidia_texture_shader.c
@@ -47,7 +48,7 @@ add_library(wined3d SHARED
     version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/wined3d.def)
 
-set_module_type(wined3d win32dll ENTRYPOINT 0)
+set_module_type(wined3d win32dll)
 target_link_libraries(wined3d wine)
 add_importlibs(wined3d user32 opengl32 gdi32 advapi32 msvcrt kernel32 ntdll)
 add_pch(wined3d wined3d_private.h SOURCE)

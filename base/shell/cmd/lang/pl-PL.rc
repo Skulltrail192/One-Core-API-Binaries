@@ -73,7 +73,7 @@ ERRORLEVEL ustawiony jest na kompensowanie wyboru użytkownika domyślnym.\n"
     STRING_CMD_HELP2 "\nDostępne opcje:"
     STRING_CMD_HELP3 "  [aliasy]"
     STRING_CMD_HELP4 "  [historia]"
-    STRING_CMD_HELP5 "  [dopełnianie nazw unixa]"
+    STRING_CMD_HELP5 "  [dopełnianie nazw Bash]"
     STRING_CMD_HELP6 "  [stos katalogu]"
     STRING_CMD_HELP7 "  [przekierowania i potoki]"
     STRING_CMD_HELP8 "Uruchamia nowe okno konsoli ReactOS (interpreter linii poleceń).\n\n\
@@ -151,7 +151,7 @@ DELAY [/m]n\n\n\
   /m          wymusza traktowanie n jako milisekund,\n\
               w innym wypadku będzie traktowane jako sekundy\n"
     STRING_DIR_HELP1 "DIR [napęd:][ścieżka][pliki] [/A[[:]atrybuty]] [/B] [/C] [/D] [/L] [/N]\n\
-  [/O[[:]porządek]] [/P] [/Q] [/S] [/T[[:]czas]] [/W] [/X] [/4]\n\n\
+  [/O[[:]porządek]] [/P] [/Q] [/R] [/S] [/T[[:]czas]] [/W] [/X] [/4]\n\n\
   [napęd:][ścieżka][nazwa_pliku]\n\
               Wyznacza literę napędu, katalog, i/lub pliki do wyświetlenia.\n\n\
   /A          Wyświetla pliki o określonych atrybutach.\n\
@@ -170,6 +170,7 @@ DELAY [/m]n\n\n\
                G  Wyświetla najpierw katalogi      -  Odwraca kolejność\n\
   /P          Pauza po każdym pełnym ekranie.\n\
   /Q          Wyświetla właściciela plików\n\
+  /R          Displays alternate data streams of the files.\n\
   /S          Wyświetla pliki w danym katalogu i wszystkich podkatalogach.\n\
   /T          Pole czasu, odpowiedzialne za wyświetlanie/sortowanie \n\
   czas        C  Utworzenia\n\
@@ -259,15 +260,15 @@ MKLINK [/D | /H | /J] nazwa_linku element_docelowy\n\n\
   /H  Tworzy dowiązanie twarde.\n\
   /J  Tworzy punkt połączenia katalogów.\n\n\
 Jeśli nie zostały użyte zarówno /H jak i /J, zostanie utworzone dowiązanie symboliczne."
-    STRING_MEMMORY_HELP1 "Wyświetla ilość pamięci systemowej.\n\nMEMORY"
-    STRING_MEMMORY_HELP2 "\n  %12s%% pamięci zajętej.\n\n\
+    STRING_MEMORY_HELP1 "Wyświetla ilość pamięci systemowej.\n\nMEMORY"
+    STRING_MEMORY_HELP2 "\n  %12s%% pamięci zajętej.\n\n\
   %13s bajtów pamięci RAM ogółem.\n\
   %13s bajtów pamięci RAM dostępne.\n\n\
   %13s bajtów w pliku stronicowania ogółem.\n\
   %13s bajtów dostępnych w pliku stronicowania.\n\n\
   %13s bajtów pamięci wirtualnej ogółem.\n\
   %13s bajtów pamięci wirtualnej dostępne.\n"
-    STRING_MISC_HELP1 "Naciśnij dowolny klawisz, aby kontynuować...\n"
+    STRING_MISC_HELP1 "Naciśnij dowolny klawisz, aby kontynuować..."
     STRING_MOVE_HELP1 "Nadpisać %s (Tak/Nie/Zawsze)? "
     STRING_MOVE_HELP2 "Przenosi, a także zmienia nazwy plików i katalogów.\n\n\
 Aby przenieść jeden lub więcej plików:\n\
@@ -380,9 +381,18 @@ SET [zmienna[=][parametry]]\n\n\
   parametry    Określa parametry przypisane do tej zmiennej.\n\n\
 Wpisz SET bez żadnych parametrów, by wyświetlić obecne ustawienia zmiennych.\n"
     STRING_START_HELP1 "Wywołuje komendę.\n\n\
-START komenda\n\n\
-  komenda     Określa komendę, jaka ma być wywołana.\n\n\
-Obecnie wszystkie komendy są uruchamiane asynchronicznie.\n"
+START [""title""] [/D path] [/I] [/B] [/MIN] [/MAX] [/WAIT]\n\
+      [command/program] [parameters]\n\n\
+  ""title""     Title of the window.\n\
+  path        Specifies the startup directory.\n\
+  I           Uses the original environment given to cmd.exe,\n\
+              instead of the current environment.\n\
+  B           Starts the command or program without creating any window.\n\
+  MIN         Starts with a minimized window.\n\
+  MAX         Starts with a maximized window.\n\
+  WAIT        Starts the command or program and waits for its termination.\n\
+  komenda     Określa komendę, jaka ma być wywołana.\n\
+  parameters  Specifies the parameters to be given to the command or program.\n"
     STRING_TITLE_HELP "Ustawia tytuł dla okna ze znakiem zachęty.\n\n\
 TITLE [tytuł]\n\n\
 tytuł       Określa tytuł dla okna.\n"
@@ -500,7 +510,6 @@ title         nowy tytuł okna\n"
     STRING_MOVE_ERROR1 "[OK]\n"
     STRING_MOVE_ERROR2 "[Błąd]\n"
     STRING_REN_ERROR1 "MoveFile() nieudane. Błąd: %lu\n"
-    STRING_START_ERROR1 "Programy wsadowe nie zostały jeszcze zaimplementowane!"
     STRING_TIME_ERROR1 "Nieprawidłowy czas."
     STRING_TYPE_ERROR1 "Nieprawidłowa opcja '/%s'\n"
     STRING_WINDOW_ERROR1 "Okno nie zostało odnalezione"
@@ -525,9 +534,11 @@ title         nowy tytuł okna\n"
     STRING_REPLACE_ERROR5 "Dostęp zabroniony - %s\n"
     STRING_REPLACE_ERROR6 "Nie znaleziono plików - %s\n"
     STRING_REPLACE_ERROR7 "Extended Error 32 -  Błąd współdzielenia\n"
-    STRING_REACTOS_VERSION "ReactOS Operating System [Version %s-%s]\n"
+    STRING_CMD_INFOLINE "  ReactOS Command Prompt                                      Type HELP = Help  "
+    STRING_REACTOS_VERSION "ReactOS Operating System [Version %s %s]\n"
     STRING_CMD_SHELLINFO "\nInterpreter linii poleceń ReactOS\nVersion %s %s"
-    STRING_VERSION_RUNVER " działający na %s"
+    STRING_VERSION_RUNNING_ON "Działający na: "
+    STRING_VERSION_RUNVER "%s [Version %d.%d.%d] %s"
     STRING_COPY_FILE "        %d plik(ów) skopiowano\n"
     STRING_DELETE_WIPE "skasowano"
     STRING_FOR_ERROR "złe określenie zmiennej."

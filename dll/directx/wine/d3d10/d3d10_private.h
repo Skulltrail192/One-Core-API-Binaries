@@ -28,6 +28,7 @@
 #include "objbase.h"
 
 #include "d3d10.h"
+#include "d3d10effect.h"
 #include "d3dcompiler.h"
 
 /*

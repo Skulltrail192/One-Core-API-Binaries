@@ -42,10 +42,10 @@ BOOLEAN CacheInitializeDrive(UCHAR DriveNumber)
     // If we already have a cache for this drive then
     // by all means lets keep it, unless it is a removable
     // drive, in which case we'll invalidate the cache
-    if ((CacheManagerInitialized == TRUE) &&
+    if ((CacheManagerInitialized) &&
         (DriveNumber == CacheManagerDrive.DriveNumber) &&
         (DriveNumber >= 0x80) &&
-        (CacheManagerDataInvalid != TRUE))
+        (!CacheManagerDataInvalid))
     {
         return TRUE;
     }
@@ -133,7 +133,7 @@ BOOLEAN CacheReadDiskSectors(UCHAR DiskNumber, ULONGLONG StartSector, ULONG Sect
     }
 
     //
-    // Caculate which blocks we must cache
+    // Calculate which blocks we must cache
     //
     StartBlock = (ULONG)(StartSector / CacheManagerDrive.BlockSize);
     SectorOffsetInStartBlock = (ULONG)(StartSector % CacheManagerDrive.BlockSize);
@@ -263,7 +263,7 @@ BOOLEAN CacheForceDiskSectorsIntoCache(UCHAR DiskNumber, ULONGLONG StartSector, 
     }
 
     //
-    // Caculate which blocks we must cache
+    // Calculate which blocks we must cache
     //
     StartBlock = StartSector / CacheManagerDrive.BlockSize;
     EndBlock = (StartSector + SectorCount) / CacheManagerDrive.BlockSize;

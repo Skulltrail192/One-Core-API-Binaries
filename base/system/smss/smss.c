@@ -71,7 +71,7 @@ SmpExecuteImage(IN PUNICODE_STRING FileName,
     {
         /* This is a pretty bad failure. ASSERT on checked builds and exit */
         ASSERTMSG("RtlCreateProcessParameters", NT_SUCCESS(Status));
-        DbgPrint("SMSS: RtlCreateProcessParameters failed for %wZ - Status == %lx\n",
+        DPRINT1("SMSS: RtlCreateProcessParameters failed for %wZ - Status == %lx\n",
                 FileName, Status);
         return Status;
     }
@@ -115,7 +115,7 @@ SmpExecuteImage(IN PUNICODE_STRING FileName,
     if (!NT_SUCCESS(Status))
     {
         /* If we couldn't create it, fail back to the caller */
-        DbgPrint("SMSS: Failed load of %wZ - Status  == %lx\n",
+        DPRINT1("SMSS: Failed load of %wZ - Status  == %lx\n",
                 FileName, Status);
         return Status;
     }
@@ -149,7 +149,7 @@ SmpExecuteImage(IN PUNICODE_STRING FileName,
         NtWaitForSingleObject(ProcessInfo->ThreadHandle, 0, 0);
         NtClose(ProcessInfo->ThreadHandle);
         NtClose(ProcessInfo->ProcessHandle);
-        DbgPrint("SMSS: Not an NT image - %wZ\n", FileName);
+        DPRINT1("SMSS: Not an NT image - %wZ\n", FileName);
     }
 
     /* Return the outcome of the process create */
@@ -238,7 +238,7 @@ SmpExecuteCommand(IN PUNICODE_STRING CommandLine,
     if (!NT_SUCCESS(Status))
     {
         /* Fail if we couldn't do that */
-        DbgPrint("SMSS: SmpParseCommandLine( %wZ ) failed - Status == %lx\n",
+        DPRINT1("SMSS: SmpParseCommandLine( %wZ ) failed - Status == %lx\n",
                 CommandLine, Status);
         return Status;
     }
@@ -261,7 +261,7 @@ SmpExecuteCommand(IN PUNICODE_STRING CommandLine,
     else if (Flags & SMP_INVALID_PATH)
     {
         /* An invalid image was specified, fail */
-        DbgPrint("SMSS: Image file (%wZ) not found\n", &FileName);
+        DPRINT1("SMSS: Image file (%wZ) not found\n", &FileName);
         Status = STATUS_OBJECT_NAME_NOT_FOUND;
     }
     else
@@ -283,7 +283,7 @@ SmpExecuteCommand(IN PUNICODE_STRING CommandLine,
     /* Return to the caller */
     if (!NT_SUCCESS(Status))
     {
-        DbgPrint("SMSS: Command '%wZ' failed - Status == %x\n",
+        DPRINT1("SMSS: Command '%wZ' failed - Status == %x\n",
                 CommandLine, Status);
     }
     return Status;
@@ -308,12 +308,11 @@ SmpExecuteInitialCommand(IN ULONG MuSessionId,
         Status = SmConnectToSm(0, 0, 0, &SmApiPort);
         if (!NT_SUCCESS(Status))
         {
-            DbgPrint("SMSS: Unable to connect to SM - Status == %lx\n", Status);
+            DPRINT1("SMSS: Unable to connect to SM - Status == %lx\n", Status);
             return Status;
         }
     }
 
-	DbgPrint("SMSS: SmpExecuteInitialCommand has InitialCommand Buffer: %ws\n",InitialCommand->Buffer);
     /* Parse the initial command line */
     Status = SmpParseCommandLine(InitialCommand,
                                  &Flags,
@@ -323,7 +322,7 @@ SmpExecuteInitialCommand(IN ULONG MuSessionId,
     if (Flags & SMP_INVALID_PATH)
     {
         /* Fail if it doesn't exist */
-        DbgPrint("SMSS: Initial command image (%wZ) not found\n", &ImageFileName);
+        DPRINT1("SMSS: Initial command image (%wZ) not found\n", &ImageFileName);
         if (ImageFileName.Buffer) RtlFreeHeap(RtlGetProcessHeap(), 0, ImageFileName.Buffer);
         return STATUS_OBJECT_NAME_NOT_FOUND;
     }
@@ -331,7 +330,7 @@ SmpExecuteInitialCommand(IN ULONG MuSessionId,
     /* And fail if any other reason is also true */
     if (!NT_SUCCESS(Status))
     {
-        DbgPrint("SMSS: SmpParseCommandLine( %wZ ) failed - Status == %lx\n",
+        DPRINT1("SMSS: SmpParseCommandLine( %wZ ) failed - Status == %lx\n",
                 InitialCommand, Status);
         return Status;
     }
@@ -369,7 +368,7 @@ SmpExecuteInitialCommand(IN ULONG MuSessionId,
     if (!NT_SUCCESS(Status))
     {
         /* Kill it utterly if duplication failed */
-        DbgPrint("SMSS: DupObject Failed. Status == %lx\n", Status);
+        DPRINT1("SMSS: DupObject Failed. Status == %lx\n", Status);
         NtTerminateProcess(ProcessInfo.ProcessHandle, Status);
         NtResumeThread(ProcessInfo.ThreadHandle, NULL);
         NtClose(ProcessInfo.ThreadHandle);
@@ -383,7 +382,7 @@ SmpExecuteInitialCommand(IN ULONG MuSessionId,
 
     /* Now call our server execution function to wrap up its initialization */
     Status = SmExecPgm(SmApiPort, &ProcessInfo, FALSE);
-    if (!NT_SUCCESS(Status)) DbgPrint("SMSS: SmExecPgm Failed. Status == %lx\n", Status);
+    if (!NT_SUCCESS(Status)) DPRINT1("SMSS: SmExecPgm Failed. Status == %lx\n", Status);
     return Status;
 }
 
@@ -446,6 +445,7 @@ SmpUnhandledExceptionFilter(IN PEXCEPTION_POINTERS ExceptionInfo)
 }
 
 NTSTATUS
+__cdecl
 _main(IN INT argc,
       IN PCHAR argv[],
       IN PCHAR envp[],
@@ -486,7 +486,7 @@ _main(IN INT argc,
         Status = SmpInit(&InitialCommand, Handles);
         if (!NT_SUCCESS(Status))
         {
-            DbgPrint("SMSS: SmpInit return failure - Status == %x\n", Status);
+            DPRINT1("SMSS: SmpInit return failure - Status == %x\n", Status);
             RtlInitUnicodeString(&DbgString, L"Session Manager Initialization");
             Parameters[1] = Status;
             _SEH2_LEAVE;
@@ -503,7 +503,7 @@ _main(IN INT argc,
         if (Flags & (FLG_DEBUG_INITIAL_COMMAND | FLG_DEBUG_INITIAL_COMMAND_EX))
         {
             /* SMSS should launch ntsd with a few parameters at this point */
-            DbgPrint("Global Flags Set to SMSS Debugging: Not yet supported\n");
+            DPRINT1("Global Flags Set to SMSS Debugging: Not yet supported\n");
         }
 
         /* Execute the initial command (Winlogon.exe) */
@@ -511,7 +511,7 @@ _main(IN INT argc,
         if (!NT_SUCCESS(Status))
         {
             /* Fail and raise a hard error */
-            DbgPrint("SMSS: Execute Initial Command failed\n");
+            DPRINT1("SMSS: Execute Initial Command failed\n");
             RtlInitUnicodeString(&DbgString,
                                  L"Session Manager ExecuteInitialCommand");
             Parameters[1] = Status;
@@ -546,7 +546,7 @@ _main(IN INT argc,
                                                &ProcessInfo,
                                                sizeof(ProcessInfo),
                                                NULL);
-            DbgPrint("SMSS: Windows subsystem terminated when it wasn't supposed to.\n");
+            DPRINT1("SMSS: Windows subsystem terminated when it wasn't supposed to.\n");
         }
         else
         {
@@ -567,7 +567,7 @@ _main(IN INT argc,
                 ProcessInfo.ExitStatus = Status;
                 Status = STATUS_SUCCESS;
             }
-            DbgPrint("SMSS: Initial command '%wZ' terminated when it wasn't supposed to.\n",
+            DPRINT1("SMSS: Initial command '%wZ' terminated when it wasn't supposed to.\n",
                     &InitialCommand);
         }
 

@@ -29,7 +29,7 @@ DisplayClassInstaller(
     HKEY hServicesKey = NULL;
     HKEY hServiceKey = NULL;
     HKEY hDeviceSubKey = NULL;
-    DWORD disposition;
+    DWORD disposition, cchMax, cbData;
     BOOL result;
     LONG rc;
     HRESULT hr;
@@ -38,7 +38,7 @@ DisplayClassInstaller(
         return ERROR_DI_DO_DEFAULT;
 
     /* Set DI_DONOTCALLCONFIGMG flag */
-    InstallParams.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
+    InstallParams.cbSize = sizeof(InstallParams);
     result = SetupDiGetDeviceInstallParams(DeviceInfoSet, DeviceInfoData, &InstallParams);
     if (!result)
     {
@@ -67,7 +67,7 @@ DisplayClassInstaller(
     }
 
     /* Get .inf file name and section name */
-    DriverInfoData.cbSize = sizeof(SP_DRVINFO_DATA);
+    DriverInfoData.cbSize = sizeof(DriverInfoData);
     result = SetupDiGetSelectedDriver(DeviceInfoSet, DeviceInfoData, &DriverInfoData);
     if (!result)
     {
@@ -76,11 +76,10 @@ DisplayClassInstaller(
         goto cleanup;
     }
 
-    DriverInfoDetailData.cbSize = sizeof(SP_DRVINFO_DETAIL_DATA);
-    result = SetupDiGetDriverInfoDetail(
-        DeviceInfoSet, DeviceInfoData,
-        &DriverInfoData, &DriverInfoDetailData,
-        sizeof(SP_DRVINFO_DETAIL_DATA), NULL);
+    DriverInfoDetailData.cbSize = sizeof(DriverInfoDetailData);
+    result = SetupDiGetDriverInfoDetail(DeviceInfoSet, DeviceInfoData,
+                                        &DriverInfoData, &DriverInfoDetailData,
+                                        sizeof(DriverInfoDetailData), NULL);
     if (!result && GetLastError() != ERROR_INSUFFICIENT_BUFFER)
     {
         rc = GetLastError();
@@ -96,9 +95,13 @@ DisplayClassInstaller(
         goto cleanup;
     }
 
-    result = SetupDiGetActualSectionToInstall(
-        hInf, DriverInfoDetailData.SectionName,
-        SectionName, MAX_PATH - _tcslen(_T(".SoftwareSettings")), NULL, NULL);
+    cchMax = MAX_PATH - (sizeof(_T(".SoftwareSettings")) / sizeof(TCHAR));
+    result = SetupDiGetActualSectionToInstall(hInf,
+                                              DriverInfoDetailData.SectionName,
+                                              SectionName,
+                                              cchMax,
+                                              NULL,
+                                              NULL);
     if (!result)
     {
         rc = GetLastError();
@@ -211,10 +214,15 @@ DisplayClassInstaller(
         DPRINT("SetupInstallFromInfSection() failed with error 0x%lx\n", rc);
         goto cleanup;
     }
+
     /* Add Device Description string */
-    rc = RegSetValueEx(hDeviceSubKey, _T("Device Description"), 0,
-        REG_SZ, (const BYTE*)DriverInfoData.Description,
-        (_tcslen(DriverInfoData.Description) + 1) * sizeof(TCHAR));
+    cbData = (DWORD)(_tcslen(DriverInfoData.Description) + 1) * sizeof(TCHAR);
+    rc = RegSetValueEx(hDeviceSubKey,
+                       _T("Device Description"),
+                       0,
+                       REG_SZ,
+                       (const BYTE*)DriverInfoData.Description,
+                       cbData);
     if (rc != ERROR_SUCCESS)
     {
         DPRINT("RegSetValueEx() failed with error 0x%lx\n", rc);

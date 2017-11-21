@@ -239,3 +239,8 @@ HRESULT WINAPI DXGID3D10RegisterLayers(const struct dxgi_device_layer *layers, U
 
     return S_OK;
 }
+
+HRESULT WINAPI DXGID3D10GetLayeredDeviceSize(const struct dxgi_device_layer *layers, UINT layer_count)
+{
+	return E_NOTIMPL;
+}

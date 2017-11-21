@@ -19,10 +19,9 @@
  */
 VOID
 NTAPI
-LdrInitializeThunk(ULONG Unknown1, // FIXME: Parameters!
-                   ULONG Unknown2,
-                   ULONG Unknown3,
-                   ULONG Unknown4)
+LdrInitializeThunk(PVOID Unknown1, // FIXME: Parameters!
+                   PVOID Unknown2,
+                   PVOID Unknown3)
 {
     UNIMPLEMENTED;
     return;
@@ -44,7 +43,7 @@ KiUserApcDispatcher(IN PVOID NormalRoutine,
 
 VOID
 NTAPI
-KiRaiseUserExceptionDispatcher()
+KiRaiseUserExceptionDispatcher(VOID)
 {
     UNIMPLEMENTED;
     return;
@@ -52,7 +51,7 @@ KiRaiseUserExceptionDispatcher()
 
 VOID
 NTAPI
-KiUserCallbackDispatcher()
+KiUserCallbackDispatcher(VOID)
 {
     UNIMPLEMENTED;
     return;
@@ -60,7 +59,7 @@ KiUserCallbackDispatcher()
 
 VOID
 NTAPI
-KiUserExceptionDispatcher()
+KiUserExceptionDispatcher(VOID)
 {
     UNIMPLEMENTED;
     return;

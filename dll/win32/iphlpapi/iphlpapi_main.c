@@ -113,10 +113,15 @@ DWORD WINAPI AllocateAndGetIfTableFromStack(PMIB_IFTABLE *ppIfTable,
   else {
     DWORD dwSize = 0;
 
+    *ppIfTable = NULL;
     ret = GetIfTable(*ppIfTable, &dwSize, bOrder);
     if (ret == ERROR_INSUFFICIENT_BUFFER) {
       *ppIfTable = (PMIB_IFTABLE)HeapAlloc(heap, flags, dwSize);
       ret = GetIfTable(*ppIfTable, &dwSize, bOrder);
+      if (ret != NO_ERROR) {
+        HeapFree(heap, flags, *ppIfTable);
+        *ppIfTable = NULL;
+      }
     }
   }
   TRACE("returning %ld\n", ret);
@@ -152,10 +157,15 @@ DWORD WINAPI AllocateAndGetIpAddrTableFromStack(PMIB_IPADDRTABLE *ppIpAddrTable,
   else {
     DWORD dwSize = 0;
 
+    *ppIpAddrTable = NULL;
     ret = GetIpAddrTable(*ppIpAddrTable, &dwSize, bOrder);
     if (ret == ERROR_INSUFFICIENT_BUFFER) {
       *ppIpAddrTable = (PMIB_IPADDRTABLE)HeapAlloc(heap, flags, dwSize);
       ret = GetIpAddrTable(*ppIpAddrTable, &dwSize, bOrder);
+      if (ret != NO_ERROR) {
+        HeapFree(heap, flags, *ppIpAddrTable);
+        *ppIpAddrTable = NULL;
+      }
     }
   }
   TRACE("returning %ld\n", ret);
@@ -189,10 +199,15 @@ DWORD WINAPI AllocateAndGetIpForwardTableFromStack(PMIB_IPFORWARDTABLE *
   else {
     DWORD dwSize = 0;
 
+    *ppIpForwardTable = NULL;
     ret = GetIpForwardTable(*ppIpForwardTable, &dwSize, bOrder);
     if (ret == ERROR_INSUFFICIENT_BUFFER) {
       *ppIpForwardTable = (PMIB_IPFORWARDTABLE)HeapAlloc(heap, flags, dwSize);
       ret = GetIpForwardTable(*ppIpForwardTable, &dwSize, bOrder);
+      if (ret != NO_ERROR) {
+        HeapFree(heap, flags, *ppIpForwardTable);
+        *ppIpForwardTable = NULL;
+      }
     }
   }
   TRACE("returning %ld\n", ret);
@@ -228,10 +243,15 @@ DWORD WINAPI AllocateAndGetIpNetTableFromStack(PMIB_IPNETTABLE *ppIpNetTable,
   else {
     DWORD dwSize = 0;
 
+    *ppIpNetTable = NULL;
     ret = GetIpNetTable(*ppIpNetTable, &dwSize, bOrder);
     if (ret == ERROR_INSUFFICIENT_BUFFER) {
       *ppIpNetTable = (PMIB_IPNETTABLE)HeapAlloc(heap, flags, dwSize);
       ret = GetIpNetTable(*ppIpNetTable, &dwSize, bOrder);
+      if (ret != NO_ERROR) {
+        HeapFree(heap, flags, *ppIpNetTable);
+        *ppIpNetTable = NULL;
+      }
     }
   }
   TRACE("returning %ld\n", ret);
@@ -267,10 +287,15 @@ DWORD WINAPI AllocateAndGetTcpTableFromStack(PMIB_TCPTABLE *ppTcpTable,
   else {
     DWORD dwSize = 0;
 
+    *ppTcpTable = NULL;
     ret = GetTcpTable(*ppTcpTable, &dwSize, bOrder);
     if (ret == ERROR_INSUFFICIENT_BUFFER) {
       *ppTcpTable = (PMIB_TCPTABLE)HeapAlloc(heap, flags, dwSize);
       ret = GetTcpTable(*ppTcpTable, &dwSize, bOrder);
+      if (ret != NO_ERROR) {
+        HeapFree(heap, flags, *ppTcpTable);
+        *ppTcpTable = NULL;
+      }
     }
   }
   TRACE("returning %ld\n", ret);
@@ -306,10 +331,15 @@ DWORD WINAPI AllocateAndGetUdpTableFromStack(PMIB_UDPTABLE *ppUdpTable,
   else {
     DWORD dwSize = 0;
 
+    *ppUdpTable = NULL;
     ret = GetUdpTable(*ppUdpTable, &dwSize, bOrder);
     if (ret == ERROR_INSUFFICIENT_BUFFER) {
       *ppUdpTable = (PMIB_UDPTABLE)HeapAlloc(heap, flags, dwSize);
       ret = GetUdpTable(*ppUdpTable, &dwSize, bOrder);
+      if (ret != NO_ERROR) {
+        HeapFree(heap, flags, *ppUdpTable);
+        *ppUdpTable = NULL;
+      }
     }
   }
   TRACE("returning %ld\n", ret);
@@ -781,11 +811,24 @@ DWORD WINAPI GetBestRoute(DWORD dwDestAddr, DWORD dwSourceAddr, PMIB_IPFORWARDRO
  *
  * NOTES
  */
+
 DWORD WINAPI GetExtendedTcpTable(PVOID pTcpTable, PDWORD pdwSize, BOOL bOrder, ULONG ulAf, TCP_TABLE_CLASS TableClass, ULONG Reserved)
 {
 	DWORD ret = NO_ERROR;
-	UNIMPLEMENTED;
-	return ret;	
+
+  if (TableClass == TCP_TABLE_OWNER_PID_ALL) {
+    if (*pdwSize == 0) {
+      *pdwSize = sizeof(MIB_TCPTABLE_OWNER_PID);
+      return ERROR_INSUFFICIENT_BUFFER; 
+    } else {
+      ZeroMemory(pTcpTable, sizeof(MIB_TCPTABLE_OWNER_PID));
+      return NO_ERROR;
+    }
+  }
+
+
+    UNIMPLEMENTED;
+    return ret;	
 }
 
 
@@ -1361,7 +1404,7 @@ DWORD WINAPI GetIpStatisticsEx(PMIB_IPSTATS pStats, DWORD dwFamily)
  */
 DWORD WINAPI GetNetworkParams(PFIXED_INFO pFixedInfo, PULONG pOutBufLen)
 {
-  DWORD ret, size;
+  DWORD ret, size, type;
   LONG regReturn;
   HKEY hKey;
   PIPHLP_RES_INFO resInfo;
@@ -1383,10 +1426,59 @@ DWORD WINAPI GetNetworkParams(PFIXED_INFO pFixedInfo, PULONG pOutBufLen)
   }
 
   memset(pFixedInfo, 0, size);
-  size = sizeof(pFixedInfo->HostName);
-  GetComputerNameExA(ComputerNameDnsHostname, pFixedInfo->HostName, &size);
-  size = sizeof(pFixedInfo->DomainName);
-  GetComputerNameExA(ComputerNameDnsDomain, pFixedInfo->DomainName, &size);
+  /* Check for DhcpHostname and DhcpDomain first */
+  regReturn = RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+                            "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters",
+                            0,
+                            KEY_READ,
+                            &hKey);
+  if (regReturn == ERROR_SUCCESS) {
+      /* Windows doesn't honor DHCP option 12 even if RFC requires it if it is returned by DHCP server! */
+#if 0
+      type = REG_SZ;
+      size = sizeof(pFixedInfo->HostName);
+      regReturn = RegQueryValueExA(hKey,
+                                      "DhcpHostname",
+                                      NULL,
+                                      &type,
+                                      (LPBYTE)pFixedInfo->HostName,
+                                      &size);
+      if (regReturn == ERROR_FILE_NOT_FOUND || (regReturn == ERROR_SUCCESS && size < 1))
+      {
+#endif
+          type = REG_SZ;
+          size = sizeof(pFixedInfo->HostName);
+          regReturn = RegQueryValueExA(hKey,
+                                          "Hostname",
+                                          NULL,
+                                          &type,
+                                          (LPBYTE)pFixedInfo->HostName,
+                                          &size);
+#if 0
+      }
+#endif
+
+      type = REG_SZ;
+      size = sizeof(pFixedInfo->DomainName);
+      regReturn = RegQueryValueExA(hKey,
+                                      "DhcpDomain",
+                                      NULL,
+                                      &type,
+                                      (LPBYTE)pFixedInfo->DomainName,
+                                      &size);
+      if (regReturn == ERROR_FILE_NOT_FOUND || (regReturn == ERROR_SUCCESS && size < 1))
+      {
+          type = REG_SZ;
+          size = sizeof(pFixedInfo->DomainName);
+          regReturn = RegQueryValueExA(hKey,
+                                          "Domain",
+                                          NULL,
+                                          &type,
+                                          (LPBYTE)pFixedInfo->DomainName,
+                                          &size);
+      }
+      RegCloseKey(hKey);
+  }
 
   TRACE("GetComputerNameExA: %s\n", pFixedInfo->DomainName);
 
@@ -1504,22 +1596,6 @@ DWORD WINAPI GetOwnerModuleFromTcpEntry( PMIB_TCPROW_OWNER_MODULE pTcpEntry, TCP
 	return ret;	
 }
 
-
-/******************************************************************
- *    GetPerAdapterInfo (IPHLPAPI.@)
- *
- *
- * PARAMS
- *
- *  IfIndex [In]
- *  pPerAdapterInfo [In/Out]
- *  pOutBufLen [In/Out]
- *
- * RETURNS
- *
- *  DWORD
- *
- */
 static void CreateNameServerListEnumNamesFunc( PWCHAR Interface, PWCHAR Server, PVOID Data)
 {
   IP_ADDR_STRING *pNext;
@@ -1550,6 +1626,21 @@ static void CreateNameServerListEnumNamesFunc( PWCHAR Interface, PWCHAR Server, 
   Context->NumServers++;
 }
 
+/******************************************************************
+ *    GetPerAdapterInfo (IPHLPAPI.@)
+ *
+ *
+ * PARAMS
+ *
+ *  IfIndex [In]
+ *  pPerAdapterInfo [In/Out]
+ *  pOutBufLen [In/Out]
+ *
+ * RETURNS
+ *
+ *  DWORD
+ *
+ */
 DWORD WINAPI GetPerAdapterInfo(ULONG IfIndex, PIP_PER_ADAPTER_INFO pPerAdapterInfo, PULONG pOutBufLen)
 {
   HKEY hkey;
@@ -1936,7 +2027,7 @@ DWORD WINAPI IpReleaseAddress(PIP_ADAPTER_INDEX_MAP AdapterInfo)
 {
   DWORD Status, Version = 0;
 
-  if (!AdapterInfo || !AdapterInfo->Name)
+  if (!AdapterInfo)
       return ERROR_INVALID_PARAMETER;
 
   /* Maybe we should do this in DllMain */
@@ -1970,7 +2061,7 @@ DWORD WINAPI IpRenewAddress(PIP_ADAPTER_INDEX_MAP AdapterInfo)
 {
   DWORD Status, Version = 0;
 
-  if (!AdapterInfo || !AdapterInfo->Name)
+  if (!AdapterInfo)
       return ERROR_INVALID_PARAMETER;
 
   /* Maybe we should do this in DllMain */
@@ -2035,7 +2126,6 @@ DWORD WINAPI NotifyRouteChange(PHANDLE Handle, LPOVERLAPPED overlapped)
   return ERROR_NOT_SUPPORTED;
 }
 
-
 /******************************************************************
  *    SendARP (IPHLPAPI.@)
  *
@@ -2050,15 +2140,19 @@ DWORD WINAPI NotifyRouteChange(PHANDLE Handle, LPOVERLAPPED overlapped)
  * RETURNS
  *  Success: NO_ERROR
  *  Failure: error code from winerror.h
- *
- * FIXME
- *  Stub, returns ERROR_NOT_SUPPORTED.
  */
 DWORD WINAPI SendARP(IPAddr DestIP, IPAddr SrcIP, PULONG pMacAddr, PULONG PhyAddrLen)
 {
-  FIXME("(DestIP 0x%08x, SrcIP 0x%08x, pMacAddr %p, PhyAddrLen %p): stub\n",
-   DestIP, SrcIP, pMacAddr, PhyAddrLen);
-  return ERROR_NOT_SUPPORTED;
+  IPAddr IPs[2];
+  ULONG Size;
+
+  if (IsBadWritePtr(pMacAddr, sizeof(ULONG)) || IsBadWritePtr(PhyAddrLen, sizeof(ULONG)))
+    return ERROR_INVALID_PARAMETER;
+
+  IPs[0] = DestIP;
+  IPs[1] = SrcIP;
+  Size = sizeof(IPs);
+  return TCPSendIoctl(INVALID_HANDLE_VALUE, IOCTL_QUERY_IP_HW_ADDRESS, IPs, &Size, pMacAddr, PhyAddrLen);
 }
 
 
@@ -2132,7 +2226,7 @@ DWORD WINAPI SetIpNetEntry(PMIB_IPNETROW pArpEntry)
   if (!pArpEntry)
       return ERROR_INVALID_PARAMETER;
 
-  if (!NT_SUCCESS(openTcpFile( &tcpFile )))
+  if (!NT_SUCCESS(openTcpFile( &tcpFile, FILE_READ_DATA | FILE_WRITE_DATA )))
       return ERROR_NOT_SUPPORTED;
 
   if (!NT_SUCCESS(getNthIpEntity( tcpFile, pArpEntry->dwIndex, &id )))
@@ -2281,9 +2375,9 @@ PIP_ADAPTER_ORDER_MAP WINAPI GetAdapterOrderMap(VOID)
 /*
  * @implemented
  */
+#ifdef GetAdaptersAddressesV1
 DWORD WINAPI DECLSPEC_HOTPATCH GetAdaptersAddresses(ULONG Family,ULONG Flags,PVOID Reserved,PIP_ADAPTER_ADDRESSES pAdapterAddresses,PULONG pOutBufLen)
 {
-#if 0
     InterfaceIndexTable *indexTable;
     IFInfo ifInfo;
     int i;
@@ -2295,11 +2389,11 @@ DWORD WINAPI DECLSPEC_HOTPATCH GetAdaptersAddresses(ULONG Family,ULONG Flags,PVO
     if (!pOutBufLen) return ERROR_INVALID_PARAMETER;
     if (Reserved) return ERROR_INVALID_PARAMETER;
 
-    indexTable = getNonLoopbackInterfaceIndexTable(); //I think we want non-loopback here
+    indexTable = getInterfaceIndexTable();
     if (!indexTable)
         return ERROR_NOT_ENOUGH_MEMORY;
 
-    ret = openTcpFile(&tcpFile);
+    ret = openTcpFile(&tcpFile, FILE_READ_DATA);
     if (!NT_SUCCESS(ret))
         return ERROR_NO_DATA;
 
@@ -2332,8 +2426,8 @@ DWORD WINAPI DECLSPEC_HOTPATCH GetAdaptersAddresses(ULONG Family,ULONG Flags,PVO
             /* We're only going to implement what's required for XP SP0 */
         }
     }
-
-    if (*pOutBufLen < requiredSize)
+    TRACE("size: %d, requiredSize: %d\n", *pOutBufLen, requiredSize);
+    if (!pAdapterAddresses || *pOutBufLen < requiredSize)
     {
         *pOutBufLen = requiredSize;
         closeTcpFile(tcpFile);
@@ -2384,16 +2478,15 @@ DWORD WINAPI DECLSPEC_HOTPATCH GetAdaptersAddresses(ULONG Family,ULONG Flags,PVO
             currentLocation += sizeof(WCHAR);
 
             currentAddress->Next = (PVOID)currentLocation;
+            /* Terminate the last address correctly */
+            if(i==0)
+                currentAddress->Next = NULL;
 
             /* We're only going to implement what's required for XP SP0 */
 
             currentAddress = currentAddress->Next;
         }
     }
-
-    /* Terminate the last address correctly */
-    if (currentAddress)
-        currentAddress->Next = NULL;
 
     /* Now again, for real this time */
 
@@ -2457,7 +2550,10 @@ DWORD WINAPI DECLSPEC_HOTPATCH GetAdaptersAddresses(ULONG Family,ULONG Flags,PVO
             currentAddress->IfType = ifInfo.if_info.ent.if_type;
 
             /* Operational status */
-            currentAddress->OperStatus = ifInfo.if_info.ent.if_operstatus;
+            if(ifInfo.if_info.ent.if_operstatus >= IF_OPER_STATUS_CONNECTING)
+                currentAddress->OperStatus = IfOperStatusUp;
+            else
+                currentAddress->OperStatus = IfOperStatusDown;
 
             /* We're only going to implement what's required for XP SP0 */
 
@@ -2470,16 +2566,8 @@ DWORD WINAPI DECLSPEC_HOTPATCH GetAdaptersAddresses(ULONG Family,ULONG Flags,PVO
     free(indexTable);
 
     return NO_ERROR;
-#else
-    if (!pOutBufLen) return ERROR_INVALID_PARAMETER;
-    if (!pAdapterAddresses || *pOutBufLen == 0)
-      return ERROR_BUFFER_OVERFLOW;
-    if (Reserved) return ERROR_INVALID_PARAMETER;
-
-    FIXME(":stub\n");
-    return ERROR_NO_DATA;
-#endif
 }
+#endif
 
 /*
  * @unimplemented
@@ -2514,6 +2602,13 @@ DWORD WINAPI NhpAllocateAndGetInterfaceInfoFromStack(IP_INTERFACE_NAME_INFO **pp
 DWORD WINAPI GetIcmpStatisticsEx(PMIB_ICMP_EX pStats,DWORD dwFamily)
 {
     FIXME(":stub\n");
+
+    if (!pStats)
+        return ERROR_INVALID_PARAMETER;
+
+    if (dwFamily != AF_INET && dwFamily != AF_INET6)
+        return ERROR_INVALID_PARAMETER;
+
     return 0L;
 }
 

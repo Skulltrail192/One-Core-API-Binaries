@@ -472,12 +472,14 @@ static void state_blend(struct wined3d_context *context, const struct wined3d_st
     const struct wined3d_format *rt_format;
     GLenum src_blend, dst_blend;
     unsigned int rt_fmt_flags;
+    BOOL enable_dual_blend;
     BOOL enable_blend;
 
     enable_blend = state->fb->render_targets[0] && state->render_states[WINED3D_RS_ALPHABLENDENABLE];
-    if (enable_blend)
+    enable_dual_blend = wined3d_dualblend_enabled(state, context->gl_info);
+
+    if (enable_blend && !enable_dual_blend)
     {
-        rt_format = state->fb->render_targets[0]->format;
         rt_fmt_flags = state->fb->render_targets[0]->format_flags;
 
         /* Disable blending in all cases even without pixelshaders.
@@ -485,6 +487,13 @@ static void state_blend(struct wined3d_context *context, const struct wined3d_st
          * The d3d9 visual test confirms the behavior. */
         if (context->render_offscreen && !(rt_fmt_flags & WINED3DFMT_FLAG_POSTPIXELSHADER_BLENDING))
             enable_blend = FALSE;
+    }
+
+    /* Dual state blending changes the assignment of the output variables */
+    if (context->last_was_dual_blend != enable_dual_blend)
+    {
+        context->shader_update_mask |= 1u << WINED3D_SHADER_TYPE_PIXEL;
+        context->last_was_dual_blend = enable_dual_blend;
     }
 
     if (!enable_blend)
@@ -497,6 +506,7 @@ static void state_blend(struct wined3d_context *context, const struct wined3d_st
     gl_info->gl_ops.gl.p_glEnable(GL_BLEND);
     checkGLcall("glEnable(GL_BLEND)");
 
+    rt_format = state->fb->render_targets[0]->format;
     gl_blend_from_d3d(&src_blend, &dst_blend,
             state->render_states[WINED3D_RS_SRCBLEND],
             state->render_states[WINED3D_RS_DESTBLEND], rt_format);
@@ -1715,10 +1725,11 @@ static void state_depthbias(struct wined3d_context *context, const struct wined3
             DWORD d;
             INT   i;
             float f;
-        } scale_bias, const_bias;
+        } scale_bias, const_bias, bias_clamp;
 
         scale_bias.d = state->render_states[WINED3D_RS_SLOPESCALEDEPTHBIAS];
         const_bias.d = state->render_states[WINED3D_RS_DEPTHBIAS];
+        bias_clamp.d = state->render_states[WINED3D_RS_DEPTHBIASCLAMP];
 
         gl_info->gl_ops.gl.p_glEnable(GL_POLYGON_OFFSET_FILL);
         checkGLcall("glEnable(GL_POLYGON_OFFSET_FILL)");
@@ -1731,8 +1742,19 @@ static void state_depthbias(struct wined3d_context *context, const struct wined3
         }
         else if (context->d3d_info->wined3d_creation_flags & WINED3D_FORWARD_DEPTH_BIAS)
         {
-            gl_info->gl_ops.gl.p_glPolygonOffset(scale_bias.f, const_bias.i);
-            checkGLcall("glPolygonOffset(...)");
+            if (gl_info->supported[EXT_POLYGON_OFFSET_CLAMP])
+            {
+                GL_EXTCALL(glPolygonOffsetClampEXT(scale_bias.f, const_bias.i, bias_clamp.f));
+                checkGLcall("glPolygonOffsetClampEXT(...)");
+            }
+            else
+            {
+                if (bias_clamp.f)
+                    WARN("EXT_polygon_offset_clamp extension missing, no support for depth bias clamping.\n");
+
+                gl_info->gl_ops.gl.p_glPolygonOffset(scale_bias.f, const_bias.i);
+                checkGLcall("glPolygonOffset(...)");
+            }
         }
         else
         {
@@ -4629,6 +4651,13 @@ static void viewport_miscpart(struct wined3d_context *context, const struct wine
 
     if (target)
     {
+        if (context->d3d_info->wined3d_creation_flags & WINED3D_LIMIT_VIEWPORT)
+        {
+            if (vp.width > target->width)
+                vp.width = target->width;
+            if (vp.height > target->height)
+                vp.height = target->height;
+        }
         wined3d_rendertarget_view_get_drawable_size(target, context, &width, &height);
     }
     else if (depth_stencil)
@@ -4670,6 +4699,14 @@ static void viewport_miscpart_cc(struct wined3d_context *context,
 
     if (target)
     {
+        if (context->d3d_info->wined3d_creation_flags & WINED3D_LIMIT_VIEWPORT)
+        {
+            if (vp.width > target->width)
+                vp.width = target->width;
+            if (vp.height > target->height)
+                vp.height = target->height;
+        }
+
         wined3d_rendertarget_view_get_drawable_size(target, context, &width, &height);
     }
     else if (depth_stencil)
@@ -4963,11 +5000,6 @@ static void state_cb_warn(struct wined3d_context *context, const struct wined3d_
     WARN("Constant buffers (%s) no supported.\n", debug_d3dstate(state_id));
 }
 
-static void state_basevertex(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
-{
-    context->constant_update_mask |= WINED3D_SHADER_CONST_BASE_VERTEX;
-}
-
 static void state_shader_resource_binding(struct wined3d_context *context,
         const struct wined3d_state *state, DWORD state_id)
 {
@@ -5231,6 +5263,7 @@ const struct StateEntryTemplate misc_state_template[] =
     { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               state_blendfactor   }, EXT_BLEND_COLOR                 },
     { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               state_blendfactor_w }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 state_depthbias     }, WINED3D_GL_EXT_NONE             },
+    { STATE_RENDER(WINED3D_RS_DEPTHBIASCLAMP),            { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 NULL                }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_ZVISIBLE),                  { STATE_RENDER(WINED3D_RS_ZVISIBLE),                  state_zvisible      }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 state_depthclip     }, ARB_DEPTH_CLAMP                 },
     { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 state_depthclip_w   }, WINED3D_GL_EXT_NONE             },
@@ -5255,7 +5288,7 @@ const struct StateEntryTemplate misc_state_template[] =
     { STATE_SAMPLER(17), /* Vertex sampler 1 */           { STATE_SAMPLER(17),                                  sampler             }, WINED3D_GL_EXT_NONE             },
     { STATE_SAMPLER(18), /* Vertex sampler 2 */           { STATE_SAMPLER(18),                                  sampler             }, WINED3D_GL_EXT_NONE             },
     { STATE_SAMPLER(19), /* Vertex sampler 3 */           { STATE_SAMPLER(19),                                  sampler             }, WINED3D_GL_EXT_NONE             },
-    { STATE_BASEVERTEXINDEX,                              { STATE_BASEVERTEXINDEX,                              state_basevertex,   }, ARB_DRAW_ELEMENTS_BASE_VERTEX   },
+    { STATE_BASEVERTEXINDEX,                              { STATE_BASEVERTEXINDEX,                              state_nop,          }, ARB_DRAW_ELEMENTS_BASE_VERTEX   },
     { STATE_BASEVERTEXINDEX,                              { STATE_STREAMSRC,                                    NULL,               }, WINED3D_GL_EXT_NONE             },
     { STATE_FRAMEBUFFER,                                  { STATE_FRAMEBUFFER,                                  context_state_fb    }, WINED3D_GL_EXT_NONE             },
     { STATE_SHADER(WINED3D_SHADER_TYPE_PIXEL),            { STATE_SHADER(WINED3D_SHADER_TYPE_PIXEL),            context_state_drawbuf},WINED3D_GL_EXT_NONE             },

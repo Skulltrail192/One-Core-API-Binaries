@@ -1,4 +1,4 @@
-/* Russian language resource file (Dmitry Chapyshev, 2007-06-10) */
+/* Russian language resource file by Dmitry Chapyshev, 2007-06-10, Kudratov Olimjon (olim98@bk.ru) */
 
 LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
 
@@ -6,13 +6,14 @@ IDM_CONSOLE_SMALL MENU
 BEGIN
     POPUP "&Файл"
     BEGIN
-        MENUITEM "New\tCtrl+N", IDM_FILE_NEW
+        MENUITEM "&Создать\tCtrl+N", IDM_FILE_NEW
+        MENUITEM "&Открыть...\tCtrl+O", IDM_FILE_OPEN
         MENUITEM SEPARATOR
         MENUITEM "&Выход\tAlt+F4", IDM_FILE_EXIT
     END
     POPUP "&Справка"
     BEGIN
-        MENUITEM "&О программе...", IDM_HELP_ABOUT
+        MENUITEM "&О программе", IDM_HELP_ABOUT
     END
 END
 
@@ -20,22 +21,25 @@ IDM_CONSOLE_LARGE MENU
 BEGIN
     POPUP "&Файл"
     BEGIN
-        MENUITEM "New\tCtrl+N", IDM_FILE_NEW
+        MENUITEM "&Создать\tCtrl+N", IDM_FILE_NEW
+        MENUITEM "&Открыть...\tCtrl+O", IDM_FILE_OPEN
+        MENUITEM "Со&хранить", IDM_FILE_SAVE
+        MENUITEM "Сохр&анить как...", IDM_FILE_SAVEAS
         MENUITEM SEPARATOR
         MENUITEM "&Выход\tAlt+F4", IDM_FILE_EXIT
     END
-    POPUP "&Windows"
+    POPUP "&Окно"
     BEGIN
-        MENUITEM "List", IDM_WINDOWS_LIST
+        MENUITEM "&Сверху вниз", IDM_WINDOWS_LIST
     END
     POPUP "&Справка"
     BEGIN
-        MENUITEM "&О программе...", IDM_HELP_ABOUT
+        MENUITEM "&О программе", IDM_HELP_ABOUT
     END
 END
 
 STRINGTABLE
 BEGIN
     IDS_APPTITLE "Консоль управления ReactOS"
-    IDS_CONSOLETITLE "Console%1!u!"
+    IDS_CONSOLETITLE "Консоль%1!u!"
 END
