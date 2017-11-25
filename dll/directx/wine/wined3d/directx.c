@@ -586,7 +586,7 @@ static void test_pbo_functionality(struct wined3d_gl_info *gl_info)
         0x00ffff00, 0x00ff00ff, 0x0000ffff, 0x000000ff,
         0x80ff00ff, 0x0000ffff, 0x00ff00ff, 0x40ff00ff
     };
-    unsigned int check[sizeof(pattern) / sizeof(pattern[0])];
+    unsigned int check[ARRAY_SIZE(pattern)];
 
     /* No PBO -> No point in testing them. */
     if (!gl_info->supported[ARB_PIXEL_BUFFER_OBJECT]) return;
@@ -944,92 +944,6 @@ static BOOL match_broken_viewport_subpixel_bits(const struct wined3d_gl_info *gl
     return !wined3d_caps_gl_ctx_test_viewport_subpixel_bits(ctx);
 }
 
-static GLuint compile_glsl_shader(const struct wined3d_gl_info *gl_info, GLenum type, const GLchar *src)
-{
-    GLchar log[4096];
-    GLuint shader;
-    GLint status;
-
-    shader = GL_EXTCALL(glCreateShader(type));
-    if (!shader)
-    {
-        ERR("Failed to create shader\n");
-        return 0;
-    }
-
-    GL_EXTCALL(glShaderSource(shader, 1, &src, NULL));
-    GL_EXTCALL(glCompileShader(shader));
-
-    GL_EXTCALL(glGetShaderiv(shader, GL_COMPILE_STATUS, &status));
-    if (!status)
-    {
-        GL_EXTCALL(glGetShaderInfoLog(shader, sizeof(log), NULL, log));
-        ERR("Failed to compile inferface matching shader %x: %s\n", type, (char *)log);
-        GL_EXTCALL(glDeleteShader(shader));
-        return 0;
-    }
-    return shader;
-}
-
-/* Context activation is done by the caller. */
-static BOOL match_broken_interface_matching(const struct wined3d_gl_info *gl_info,
-        struct wined3d_caps_gl_ctx *ctx, const char *gl_renderer, enum wined3d_gl_vendor gl_vendor,
-        enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
-{
-    static const char vertex_src[] =
-        "#version 440\n"
-        "in vec4 vs_in0;\n"
-        "out shader_in_out { vec4 reg0; } shader_out;\n"
-        "void main()\n"
-        "{\n"
-        "   shader_out.reg0 = (vs_in0.xyzw);\n"
-        "}";
-    static const char frag_src[] =
-        "#version 440\n"
-        "in shader_in_out { centroid vec4 reg0; } shader_in;\n"
-        "out vec4 ps_out0;\n"
-        "void main()\n"
-        "{\n"
-        "   ps_out0 = vec4(1.0, 0.0, 1.0, 1.0);\n"
-        "}";
-
-    GLuint vs = 0, ps = 0, prog = 0;
-    GLchar log[4096];
-    BOOL ret = TRUE;
-    GLint status;
-
-    if (!wined3d_settings.glslRequested || gl_info->glsl_version < MAKEDWORD_VERSION(4, 40))
-        return FALSE;
-
-    if (!(vs = compile_glsl_shader(gl_info, GL_VERTEX_SHADER, vertex_src)))
-        return TRUE;
-
-    if (!(ps = compile_glsl_shader(gl_info, GL_FRAGMENT_SHADER, frag_src)))
-        goto done;
-
-    prog = GL_EXTCALL(glCreateProgram());
-    if (!prog) goto done;
-
-    GL_EXTCALL(glAttachShader(prog, vs));
-    GL_EXTCALL(glAttachShader(prog, ps));
-
-    GL_EXTCALL(glLinkProgram(prog));
-    GL_EXTCALL(glGetProgramiv(prog, GL_LINK_STATUS, &status));
-    if (!status)
-    {
-        GL_EXTCALL(glGetProgramInfoLog(prog, sizeof(log), NULL, log));
-        WARN("OpenGL implementation has broken matching for storage qualifiers: %s\n", log);
-    }
-    else
-        ret = FALSE;
-
-done:
-    if (prog) GL_EXTCALL(glDeleteProgram(prog));
-    if (vs) GL_EXTCALL(glDeleteShader(vs));
-    if (ps) GL_EXTCALL(glDeleteShader(ps));
-    return ret;
-}
-
 static void quirk_apple_glsl_constants(struct wined3d_gl_info *gl_info)
 {
     /* MacOS needs uniforms for relative addressing offsets. This can accumulate to quite a few uniforms.
@@ -1167,11 +1081,6 @@ static void quirk_broken_viewport_subpixel_bits(struct wined3d_gl_info *gl_info)
     }
 }
 
-static void quirk_broken_interface_matching(struct wined3d_gl_info *gl_info)
-{
-    gl_info->quirks |= WINED3D_QUIRK_BROKEN_STORAGE_MATCHING;
-}
-
 struct driver_quirk
 {
     BOOL (*match)(const struct wined3d_gl_info *gl_info, struct wined3d_caps_gl_ctx *ctx,
@@ -1267,11 +1176,6 @@ static const struct driver_quirk quirk_table[] =
         match_broken_viewport_subpixel_bits,
         quirk_broken_viewport_subpixel_bits,
         "Nvidia viewport subpixel bits bug"
-    },
-    {
-        match_broken_interface_matching,
-        quirk_broken_interface_matching,
-        "Mesa broken shader interface matching"
     },
 };
 
@@ -1628,7 +1532,7 @@ static const struct driver_version_information *get_driver_version_info(enum win
     unsigned int i;
 
     TRACE("Looking up version info for driver=%d driver_model=%d\n", driver, driver_model);
-    for (i = 0; i < (sizeof(driver_version_table) / sizeof(driver_version_table[0])); i++)
+    for (i = 0; i < ARRAY_SIZE(driver_version_table); ++i)
     {
         const struct driver_version_information *entry = &driver_version_table[i];
 
@@ -1648,7 +1552,7 @@ static const struct gpu_description *get_gpu_description(enum wined3d_pci_vendor
 {
     unsigned int i;
 
-    for (i = 0; i < (sizeof(gpu_description_table) / sizeof(*gpu_description_table)); ++i)
+    for (i = 0; i < ARRAY_SIZE(gpu_description_table); ++i)
     {
         if (vendor == gpu_description_table[i].vendor && device == gpu_description_table[i].card)
             return &gpu_description_table[i];
@@ -1845,7 +1749,7 @@ static void fixup_extensions(struct wined3d_gl_info *gl_info, struct wined3d_cap
 {
     unsigned int i;
 
-    for (i = 0; i < (sizeof(quirk_table) / sizeof(*quirk_table)); ++i)
+    for (i = 0; i < ARRAY_SIZE(quirk_table); ++i)
     {
         if (!quirk_table[i].match(gl_info, ctx, gl_renderer, gl_vendor, card_vendor, device)) continue;
         TRACE("Applying driver quirk \"%s\".\n", quirk_table[i].description);
@@ -2595,16 +2499,16 @@ static const struct
 card_vendor_table[] =
 {
     {HW_VENDOR_AMD,         "AMD",      amd_gl_vendor_table,
-            sizeof(amd_gl_vendor_table) / sizeof(*amd_gl_vendor_table),
+            ARRAY_SIZE(amd_gl_vendor_table),
             card_fallback_amd},
     {HW_VENDOR_NVIDIA,      "Nvidia",   nvidia_gl_vendor_table,
-            sizeof(nvidia_gl_vendor_table) / sizeof(*nvidia_gl_vendor_table),
+            ARRAY_SIZE(nvidia_gl_vendor_table),
             card_fallback_nvidia},
     {HW_VENDOR_VMWARE,      "VMware",   vmware_gl_vendor_table,
-            sizeof(vmware_gl_vendor_table) / sizeof(*vmware_gl_vendor_table),
+            ARRAY_SIZE(vmware_gl_vendor_table),
             card_fallback_amd},
     {HW_VENDOR_INTEL,       "Intel",    intel_gl_vendor_table,
-            sizeof(intel_gl_vendor_table) / sizeof(*intel_gl_vendor_table),
+            ARRAY_SIZE(intel_gl_vendor_table),
             card_fallback_intel},
 };
 
@@ -2666,7 +2570,7 @@ static enum wined3d_pci_device wined3d_guess_card(const struct shader_caps *shad
     enum wined3d_d3d_level d3d_level = d3d_level_from_caps(shader_caps, fragment_caps, glsl_version);
     enum wined3d_pci_device device;
 
-    for (i = 0; i < (sizeof(card_vendor_table) / sizeof(*card_vendor_table)); ++i)
+    for (i = 0; i < ARRAY_SIZE(card_vendor_table); ++i)
     {
         if (card_vendor_table[i].card_vendor != *card_vendor)
             continue;
@@ -4109,13 +4013,11 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter,
             ERR("Received a NULL GL_EXTENSIONS.\n");
             return FALSE;
         }
-        parse_extension_string(gl_info, gl_extensions, gl_extension_map,
-                sizeof(gl_extension_map) / sizeof(*gl_extension_map));
+        parse_extension_string(gl_info, gl_extensions, gl_extension_map, ARRAY_SIZE(gl_extension_map));
     }
     else
     {
-        enumerate_gl_extensions(gl_info, gl_extension_map,
-                sizeof(gl_extension_map) / sizeof(*gl_extension_map));
+        enumerate_gl_extensions(gl_info, gl_extension_map, ARRAY_SIZE(gl_extension_map));
     }
 
     hdc = wglGetCurrentDC();
@@ -4125,8 +4027,7 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter,
     if (!WGL_Extensions)
         WARN("WGL extensions not supported.\n");
     else
-        parse_extension_string(gl_info, WGL_Extensions, wgl_extension_map,
-                sizeof(wgl_extension_map) / sizeof(*wgl_extension_map));
+        parse_extension_string(gl_info, WGL_Extensions, wgl_extension_map, ARRAY_SIZE(wgl_extension_map));
 
     for (i = 0; i < ARRAY_SIZE(core_extensions); ++i)
     {

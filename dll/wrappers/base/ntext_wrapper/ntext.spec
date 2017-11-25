@@ -256,7 +256,7 @@
 @ stdcall NtQueryPerformanceCounter(ptr ptr)
 @ stdcall NtQueryPortInformationProcess()
 @ stdcall NtQueryQuotaInformationFile(ptr ptr ptr long long ptr long ptr long)
-@ stdcall NtQuerySection(long long long long long) ;descomentarNtQuerySectionInternal
+@ stdcall NtQuerySection(long long long long long) NtQuerySectionInternal
 @ stdcall NtQuerySecurityObject (long long long long long)
 @ stdcall NtQuerySemaphore (long long ptr long ptr)
 @ stdcall NtQuerySymbolicLinkObject(long ptr ptr)
@@ -1359,7 +1359,7 @@
 @ stdcall -arch=i386,x86_64 ExpInterlockedPopEntrySListEnd() ntdll.ExpInterlockedPopEntrySListEnd
 @ stdcall -arch=i386,x86_64 ExpInterlockedPopEntrySListFault() ntdll.ExpInterlockedPopEntrySListFault
 @ stdcall -arch=i386,x86_64 ExpInterlockedPopEntrySListResume() ntdll.ExpInterlockedPopEntrySListResume
-@ stdcall RtlGetCurrentProcessorNumber() ;descomentar RtlpGetCurrentProcessorNumber ;Fix compilation error
+@ stdcall RtlGetCurrentProcessorNumber() RtlpGetCurrentProcessorNumber ;Fix compilation error
 @ stdcall RtlSetUnhandledExceptionFilter(ptr) ntdll.RtlSetUnhandledExceptionFilter
 @ stdcall RtlWow64EnableFsRedirection(long) ;is native on 2003 RTM, but, is better to see
 @ stdcall RtlWow64EnableFsRedirectionEx(long ptr) 

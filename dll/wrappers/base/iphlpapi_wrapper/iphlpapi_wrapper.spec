@@ -176,3 +176,4 @@
 @ stdcall NotifyUnicastIpAddressChange(long ptr ptr long ptr)
 @ stdcall NotifyRouteChange2(ptr ptr ptr long ptr)
 @ stdcall GetBestRoute2(ptr long ptr ptr long ptr ptr)
+@ stdcall NotifyIpInterfaceChange(long ptr ptr long ptr)

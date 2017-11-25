@@ -30,7 +30,6 @@
 #include "config.h"
 #include "wine/port.h"
 
-#include <math.h>
 #include <stdio.h>
 
 #include "wined3d_private.h"
@@ -4494,7 +4493,7 @@ static void find_arb_vs_compile_args(const struct wined3d_state *state,
     int i;
     WORD int_skip;
 
-    find_vs_compile_args(state, shader, context->stream_info.swizzle_map, &args->super, d3d_info);
+    find_vs_compile_args(state, shader, context->stream_info.swizzle_map, &args->super, context);
 
     args->clip.boolclip_compare = 0;
     if (use_ps(state))

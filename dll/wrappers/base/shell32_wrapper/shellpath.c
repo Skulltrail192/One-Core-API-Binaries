@@ -32,7 +32,7 @@ typedef enum{
   KF_FLAG_DEFAULT                      = 0x00000000,
   KF_FLAG_SIMPLE_IDLIST                = 0x00000100,
   KF_FLAG_NOT_PARENT_RELATIVE          = 0x00000200,
-  KF_FLAG_DEFAULT_PATH                 = 0x00000400,
+  //KF_FLAG_DEFAULT_PATH                 = 0x00000400,
   KF_FLAG_INIT                         = 0x00000800,
   KF_FLAG_NO_ALIAS                     = 0x00001000,
   KF_FLAG_DONT_UNEXPAND                = 0x00002000,
@@ -3092,8 +3092,8 @@ SHSetKnownFolderPath(
   _In_  PCWSTR pszPath
 )
 {
-     int index = csidl_from_id( rfid );
-	 LPCWSTR allusers = L"";
+    int index = csidl_from_id( rfid );
+	
 	 
     if (index < 0)
         return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );	

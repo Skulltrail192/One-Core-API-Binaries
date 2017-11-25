@@ -23,11 +23,7 @@
 
 #include "d3d10_private.h"
 
-#include <d3d10effect.h>
-
 WINE_DEFAULT_DEBUG_CHANNEL(d3d10);
-
-DEFINE_GUID(IID_ID3D10Effect, 0x51b0ca8b, 0xec0b, 0x4519, 0x87, 0x0d, 0x8e, 0xe1, 0xcb, 0x50, 0x17, 0xc7);
 
 /* IUnknown methods */
 

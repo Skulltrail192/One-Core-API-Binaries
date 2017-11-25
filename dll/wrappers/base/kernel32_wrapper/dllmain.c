@@ -25,8 +25,8 @@ static BOOL DllInitialized = FALSE;
 PPEB Peb;
 HMODULE kernel32_handle = 0;
 
-void InitializeCriticalForSRW();
 void InitializeCriticalForDirectories();
+void InitializeCriticalForLocaleInfo();
 
 BOOL
 WINAPI
@@ -44,6 +44,7 @@ BaseDllInitialize(HANDLE hDll,
             /* Insert more dll attach stuff here! */
 			kernel32_handle = GetModuleHandleW(L"kernelfull");
 			InitializeCriticalForDirectories();
+			InitializeCriticalForLocaleInfo();
             DllInitialized = TRUE;
             break;
         }

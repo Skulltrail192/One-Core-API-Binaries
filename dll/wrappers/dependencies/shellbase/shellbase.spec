@@ -505,5 +505,5 @@
 @ stdcall SHRegDeleteKeyW(long wstr)
 
 ;@ stdcall Shell_NotifyIcon(long ptr) Shell_NotifyIconA
-;@ stdcall Shell_NotifyIconA(long ptr)
-;@ stdcall Shell_NotifyIconW(long ptr)
+@ stdcall Shell_NotifyIconA(long ptr)
+@ stdcall Shell_NotifyIconW(long ptr)

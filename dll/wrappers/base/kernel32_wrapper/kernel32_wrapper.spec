@@ -1036,7 +1036,7 @@
 @ stdcall GetNumaProcessorMap(ptr long ptr) kernelfull.GetNumaProcessorMap
 @ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
 
-#Vista Functions 
+; #Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) ntext.RtlAcquireSRWLockExclusive
 @ stdcall AcquireSRWLockShared(ptr) ntext.RtlAcquireSRWLockShared
 @ stdcall ApplicationRecoveryFinished(long)
@@ -1115,7 +1115,7 @@
 @ stdcall GetSystemPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetThreadErrorMode()
 @ stdcall GetThreadInformation(ptr long ptr long)
-@ stdcall GetThreadPreferredUILanguages(long ptr wstr ptr)
+@ stdcall GetThreadPreferredUILanguages(long ptr wstr ptr) 
 @ stdcall GetThreadUILanguage()
 @ stdcall -ret64 GetTickCount64()
 @ stdcall GetTimeFormatEx(wstr long ptr wstr ptr long)

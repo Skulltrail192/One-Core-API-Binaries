@@ -426,7 +426,10 @@ typedef struct _MIB_IF_TABLE2 {
     MIB_IF_ROW2 Table[ANY_SIZE];
 } MIB_IF_TABLE2, *PMIB_IF_TABLE2;
 
-WINE_DEFAULT_DEBUG_CHANNEL(bcrypt);
+typedef VOID (WINAPI *PIPINTERFACE_CHANGE_CALLBACK)(PVOID, PMIB_IPINTERFACE_ROW,
+                                                          MIB_NOTIFICATION_TYPE);
+
+WINE_DEFAULT_DEBUG_CHANNEL(iphlpapi_wrapper);
 
 int Ipv4Mask[8];
 
@@ -739,4 +742,16 @@ NETIOAPI_API GetBestRoute2(
 )
 {
 	return ERROR_NOT_FOUND;
+}
+
+/******************************************************************
+*    NotifyIpInterfaceChange (IPHLPAPI.@)
+*/
+DWORD WINAPI NotifyIpInterfaceChange(ADDRESS_FAMILY family, PIPINTERFACE_CHANGE_CALLBACK callback,
+                                      PVOID context, BOOLEAN init_notify, PHANDLE handle)
+{
+     FIXME("(family %d, callback %p, context %p, init_notify %d, handle %p): stub\n",
+           family, callback, context, init_notify, handle);
+     if (handle) *handle = NULL;
+     return ERROR_NOT_SUPPORTED;
 }

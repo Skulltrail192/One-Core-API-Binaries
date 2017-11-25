@@ -21,7 +21,7 @@
 #ifndef _PROPSYS_PRIVATE_H_
 #define _PROPSYS_PRIVATE_H_
 
-#include <config.h>
+#include <wine/config.h>
 
 #include <stdarg.h>
 

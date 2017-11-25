@@ -25,8 +25,6 @@
 #ifndef __WINE_WINED3D_PRIVATE_H
 #define __WINE_WINED3D_PRIVATE_H
 
-#include <wine/config.h>
-
 #ifdef USE_WIN32_OPENGL
 #define WINE_GLAPI __stdcall
 #else
@@ -53,6 +51,7 @@
 #include "wine/unicode.h"
 
 #include "objbase.h"
+#include "wine/config.h"
 #include "wine/wined3d.h"
 #include "wined3d_gl.h"
 #include "wine/list.h"
@@ -62,6 +61,8 @@
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 #endif
+
+#define MAKEDWORD_VERSION(maj, min) (((maj & 0xffffu) << 16) | (min & 0xffffu))
 
 /* Driver quirks */
 #define WINED3D_QUIRK_ARB_VS_OFFSET_LIMIT       0x00000001
@@ -74,7 +75,6 @@
 #define WINED3D_QUIRK_INFO_LOG_SPAM             0x00000080
 #define WINED3D_QUIRK_LIMITED_TEX_FILTERING     0x00000100
 #define WINED3D_QUIRK_BROKEN_ARB_FOG            0x00000200
-#define WINED3D_QUIRK_BROKEN_STORAGE_MATCHING   0x00000400
 
 enum wined3d_ffp_idx
 {
@@ -565,6 +565,9 @@ enum wined3d_shader_interpolation_mode
     WINED3DSIM_LINEAR_SAMPLE = 6,
     WINED3DSIM_LINEAR_NOPERSPECTIVE_SAMPLE = 7,
 };
+
+#define WINED3D_PACKED_INTERPOLATION_SIZE 3
+#define WINED3D_PACKED_INTERPOLATION_BIT_COUNT 3
 
 enum wined3d_shader_global_flags
 {
@@ -1330,7 +1333,8 @@ enum wined3d_shader_tex_types
     WINED3D_SHADER_TEX_CUBE = 2,
 };
 
-struct ps_compile_args {
+struct ps_compile_args
+{
     struct color_fixup_desc     color_fixup[MAX_FRAGMENT_SAMPLERS];
     enum vertexprocessing_mode  vp_mode;
     enum wined3d_ffp_ps_fog_mode fog;
@@ -1351,7 +1355,8 @@ struct ps_compile_args {
     DWORD padding : 25;
 };
 
-enum fog_src_type {
+enum fog_src_type
+{
     VS_FOG_Z        = 0,
     VS_FOG_COORD    = 1
 };
@@ -1367,6 +1372,7 @@ struct vs_compile_args
     BYTE padding : 1;
     WORD swizzle_map;   /* MAX_ATTRIBS, 16 */
     unsigned int next_shader_input_count;
+    DWORD interpolation_mode[WINED3D_PACKED_INTERPOLATION_SIZE];
 };
 
 struct ds_compile_args
@@ -1377,11 +1383,13 @@ struct ds_compile_args
     unsigned int next_shader_type : 3;
     unsigned int render_offscreen : 1;
     unsigned int padding : 12;
+    DWORD interpolation_mode[WINED3D_PACKED_INTERPOLATION_SIZE];
 };
 
 struct gs_compile_args
 {
     unsigned int output_count;
+    DWORD interpolation_mode[WINED3D_PACKED_INTERPOLATION_SIZE];
 };
 
 struct wined3d_context;
@@ -3998,7 +4006,7 @@ struct wined3d_pixel_shader
 
     BOOL force_early_depth_stencil;
     enum wined3d_shader_register_type depth_output;
-    enum wined3d_shader_interpolation_mode interpolation_mode[MAX_REG_INPUT];
+    DWORD interpolation_mode[WINED3D_PACKED_INTERPOLATION_SIZE];
 };
 
 struct wined3d_compute_shader
@@ -4059,13 +4067,13 @@ BOOL vshader_get_input(const struct wined3d_shader *shader,
         BYTE usage_req, BYTE usage_idx_req, unsigned int *regnum) DECLSPEC_HIDDEN;
 void find_vs_compile_args(const struct wined3d_state *state, const struct wined3d_shader *shader,
         WORD swizzle_map, struct vs_compile_args *args,
-        const struct wined3d_d3d_info *d3d_info) DECLSPEC_HIDDEN;
+        const struct wined3d_context *context) DECLSPEC_HIDDEN;
 
 void find_ds_compile_args(const struct wined3d_state *state, const struct wined3d_shader *shader,
         struct ds_compile_args *args, const struct wined3d_context *context) DECLSPEC_HIDDEN;
 
 void find_gs_compile_args(const struct wined3d_state *state, const struct wined3d_shader *shader,
-        struct gs_compile_args *args) DECLSPEC_HIDDEN;
+        struct gs_compile_args *args, const struct wined3d_context *context) DECLSPEC_HIDDEN;
 
 void string_buffer_clear(struct wined3d_string_buffer *buffer) DECLSPEC_HIDDEN;
 BOOL string_buffer_init(struct wined3d_string_buffer *buffer) DECLSPEC_HIDDEN;
@@ -4394,6 +4402,53 @@ static inline BOOL can_use_texture_swizzle(const struct wined3d_gl_info *gl_info
             && !is_scaling_fixup(format->color_fixup);
 }
 
+static inline BOOL needs_interpolation_qualifiers_for_shader_outputs(const struct wined3d_gl_info *gl_info)
+{
+    /* In GLSL 4.40+ it is fine to specify interpolation qualifiers only in
+     * fragment shaders. In older GLSL versions interpolation qualifiers must
+     * match between shader stages.
+     */
+    return gl_info->glsl_version < MAKEDWORD_VERSION(4, 40);
+}
+
+static inline DWORD wined3d_extract_bits(const DWORD *bitstream,
+        unsigned int offset, unsigned int count)
+{
+    const unsigned int word_bit_count = sizeof(*bitstream) * CHAR_BIT;
+    const unsigned int idx = offset / word_bit_count;
+    const unsigned int shift = offset % word_bit_count;
+    DWORD mask = (1u << count) - 1;
+    DWORD ret;
+
+    ret = (bitstream[idx] >> shift) & mask;
+    if (shift + count > word_bit_count)
+    {
+        const unsigned int extracted_bit_count = word_bit_count - shift;
+        const unsigned int remaining_bit_count = count - extracted_bit_count;
+        mask = (1u << remaining_bit_count) - 1;
+        ret |= (bitstream[idx + 1] & mask) << extracted_bit_count;
+    }
+    return ret;
+}
+
+static inline void wined3d_insert_bits(DWORD *bitstream,
+        unsigned int offset, unsigned int count, DWORD bits)
+{
+    const unsigned int word_bit_count = sizeof(*bitstream) * CHAR_BIT;
+    const unsigned int idx = offset / word_bit_count;
+    const unsigned int shift = offset % word_bit_count;
+    DWORD mask = (1u << count) - 1;
+
+    bitstream[idx] |= (bits & mask) << shift;
+    if (shift + count > word_bit_count)
+    {
+        const unsigned int inserted_bit_count = word_bit_count - shift;
+        const unsigned int remaining_bit_count = count - inserted_bit_count;
+        mask = (1u << remaining_bit_count) - 1;
+        bitstream[idx + 1] |= (bits >> inserted_bit_count) & mask;
+    }
+}
+
 static inline struct wined3d_surface *context_get_rt_surface(const struct wined3d_context *context)
 {
     struct wined3d_texture *texture = context->current_rt.texture;
@@ -4419,7 +4474,5 @@ void wined3d_dxtn_free(void) DECLSPEC_HIDDEN;
 
 /* The WNDCLASS-Name for the fake window which we use to retrieve the GL capabilities */
 #define WINED3D_OPENGL_WINDOW_CLASS_NAME "WineD3D_OpenGL"
-
-#define MAKEDWORD_VERSION(maj, min) (((maj & 0xffffu) << 16) | (min & 0xffffu))
 
 #endif
