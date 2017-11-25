@@ -5105,6 +5105,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	explorerframe.dll,amd64/explorerframe.dll
 	feclient.dll,amd64/feclient.dll
 	httpapi.dll,amd64/httpapi.dll
+	httpapinew.dll,amd64/httpapinew.dll	
 	gameux.dll,amd64/gameux.dll
 	ktmw32.dll,amd64/ktmw32.dll
 	lsalookup.dll,amd64/lsalookup.dll
@@ -5163,6 +5164,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	evr.dll,i386/wevr.dll
 	explorerframe.dll,i386/wexplorerframe.dll
 	httpapi.dll,i386/whttpapi.dll
+	httpapinew.dll,i386/whttpapinew.dll	
 	gameux.dll,i386/wgameux.dll
 	ktmw32.dll,i386/wktmw32.dll
 	lsalookup.dll,i386/wlsalookup.dll
@@ -5229,6 +5231,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	amd64/evr.dll = 1
 	amd64/feclient.dll = 1
 	amd64/httpapi.dll = 1
+	amd64/httpapinew.dll = 1
 	amd64/gameux.dll = 1
 	amd64/ktmw32.dll = 1
 	amd64/lsalookup.dll = 1
@@ -5291,6 +5294,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	i386/wevr.dll = 1
 	i386/wfeclient.dll = 1
 	i386/whttpapi.dll = 1
+	i386/whttpapinew.dll = 1
 	i386/wgameux.dll = 1
 	i386/wktmw32.dll = 1
 	i386/wlsalookup.dll = 1

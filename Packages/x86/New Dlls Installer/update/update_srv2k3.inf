@@ -2647,6 +2647,7 @@ HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
 	"explorerframe.dll"
 	"gameux.dll"
 	"httpapi.dll"
+	"httpapinew.dll"
 	"ktmw32.dll"
 	"lsalookup.dll"
 	"mf.dll"
@@ -2707,6 +2708,7 @@ HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
 	"explorerframe.dll" = 1
 	"gameux.dll" = 1
 	"httpapi.dll" = 1
+	"httpapinew.dll" = 1
 	"ktmw32.dll" = 1
 	"lsalookup.dll" = 1
 	"mf.dll" = 1
@@ -2748,11 +2750,3 @@ HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
 	"WSDApi.dll" = 1
 	"wtsapi32.dll" = 1
 	"wusa.exe" = 1
-
-[Save.Reg.For.Uninstall]
-
-HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"

@@ -556,7 +556,7 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
     user32.dll
     uxtheme.dll
     vtdll.dll
-	wevtold.dll
+	wevtapibase.dll
     winsta.dll	
     winstanew.dll
     ws2_32.dll
@@ -642,7 +642,7 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
     user32.dll = 1
     uxtheme.dll = 1
     vtdll.dll = 1
-	wevtold.dll = 1	
+	wevtapibase.dll = 1	
     winsta.dll = 1	
     winstanew.dll = 1
     ws2_32.dll = 1
