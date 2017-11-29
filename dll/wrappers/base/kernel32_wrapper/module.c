@@ -429,31 +429,43 @@ done:
 HMODULE 
 WINAPI 
 DECLSPEC_HOTPATCH
-LoadLibraryExW(LPCWSTR libnameW, HANDLE hfile, DWORD flags)
+LoadLibraryExInternalW(LPCWSTR libnameW, HANDLE hfile, DWORD flags)
 {
     UNICODE_STRING      wstr;
     HMODULE             res;
+	
+	switch(flags){
+		case LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE:
+		case LOAD_LIBRARY_AS_IMAGE_RESOURCE:
+		case LOAD_LIBRARY_SEARCH_APPLICATION_DIR:
+		case LOAD_LIBRARY_SEARCH_DEFAULT_DIRS:
+		case LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR:
+		case LOAD_LIBRARY_SEARCH_SYSTEM32:
+		case LOAD_LIBRARY_SEARCH_USER_DIRS:
+			if (!libnameW)
+			{
+				SetLastError(ERROR_INVALID_PARAMETER);
+				return 0;
+			}
+			RtlInitUnicodeString( &wstr, libnameW );
+			if (wstr.Buffer[wstr.Length/sizeof(WCHAR) - 1] != ' ')
+				return load_library( &wstr, flags );
 
-    if (!libnameW)
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return 0;
-    }
-    RtlInitUnicodeString( &wstr, libnameW );
-    if (wstr.Buffer[wstr.Length/sizeof(WCHAR) - 1] != ' ')
-        return load_library( &wstr, flags );
-
-    /* Library name has trailing spaces */
-    RtlCreateUnicodeString( &wstr, libnameW );
-    while (wstr.Length > sizeof(WCHAR) &&
-           wstr.Buffer[wstr.Length/sizeof(WCHAR) - 1] == ' ')
-    {
-        wstr.Length -= sizeof(WCHAR);
-    }
-    wstr.Buffer[wstr.Length/sizeof(WCHAR)] = '\0';
-    res = load_library( &wstr, flags );
-    RtlFreeUnicodeString( &wstr );
-    return res;
+			/* Library name has trailing spaces */
+			RtlCreateUnicodeString( &wstr, libnameW );
+			while (wstr.Length > sizeof(WCHAR) &&
+				   wstr.Buffer[wstr.Length/sizeof(WCHAR) - 1] == ' ')
+			{
+				wstr.Length -= sizeof(WCHAR);
+			}
+			wstr.Buffer[wstr.Length/sizeof(WCHAR)] = '\0';
+			res = load_library( &wstr, flags );
+			RtlFreeUnicodeString( &wstr );
+			return res;	
+		default:
+			return LoadLibraryExW(libnameW, hfile, flags);
+			
+	}
 }
 
 /***********************************************************************
@@ -506,12 +518,12 @@ WCHAR *FILE_name_AtoW( LPCSTR name, BOOL alloc )
  * ignore the parameter because it would be extremely difficult to
  * integrate this with different types of module representations.
  */
-HMODULE WINAPI DECLSPEC_HOTPATCH LoadLibraryExA(LPCSTR libname, HANDLE hfile, DWORD flags)
+HMODULE WINAPI DECLSPEC_HOTPATCH LoadLibraryExInternalA(LPCSTR libname, HANDLE hfile, DWORD flags)
 {
     WCHAR *libnameW;
 
     if (!(libnameW = FILE_name_AtoW( libname, FALSE ))) return 0;
-    return LoadLibraryExW( libnameW, hfile, flags );
+    return LoadLibraryExInternalW( libnameW, hfile, flags );
 }
 
 /****************************************************************************

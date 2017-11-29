@@ -504,6 +504,6 @@
 @ stdcall SHRegQueryValueExW (long wstr ptr ptr ptr ptr)
 @ stdcall SHRegDeleteKeyW(long wstr)
 
-;@ stdcall Shell_NotifyIcon(long ptr) Shell_NotifyIconA
+@ stdcall Shell_NotifyIcon(long ptr) Shell_NotifyIconA
 @ stdcall Shell_NotifyIconA(long ptr)
 @ stdcall Shell_NotifyIconW(long ptr)

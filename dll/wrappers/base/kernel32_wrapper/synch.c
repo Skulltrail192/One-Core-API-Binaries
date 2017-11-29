@@ -270,54 +270,91 @@ InitOnceExecuteOnce(
     return !RtlRunOnceExecuteOnce( once, (PRTL_RUN_ONCE_INIT_FN)func, param, context );
 }
 
+    // NTSTATUS Status;
+    // OBJECT_ATTRIBUTES Obja;
+    // POBJECT_ATTRIBUTES pObja;
+    // HANDLE Handle;
+    // UNICODE_STRING ObjectName;
+
+    // if ( ARGUMENT_PRESENT(lpName) ) {
+        // RtlInitUnicodeString(&ObjectName,lpName);
+        // pObja = BaseFormatObjectAttributes(&Obja,lpEventAttributes,&ObjectName);
+        // }
+    // else {
+        // pObja = BaseFormatObjectAttributes(&Obja,lpEventAttributes,NULL);
+        // }
+
+    // Status = NtCreateEvent(
+                // &Handle,
+                // EVENT_ALL_ACCESS,
+                // pObja,
+                // bManualReset ? NotificationEvent : SynchronizationEvent,
+                // (BOOLEAN)bInitialState
+                // );
+
+    // if ( NT_SUCCESS(Status) ) {
+        // if ( Status == STATUS_OBJECT_NAME_EXISTS ) {
+            // SetLastError(ERROR_ALREADY_EXISTS);
+            // }
+        // else {
+            // SetLastError(0);
+            // }
+        // return Handle;
+        // }
+    // else {
+        // BaseSetLastNTError(Status);
+        // return NULL;
+        // }
+
 /***********************************************************************
  *           CreateEventExW    (KERNEL32.@)
  */
-HANDLE 
-WINAPI 
-DECLSPEC_HOTPATCH 
-CreateEventExW( 
-	SECURITY_ATTRIBUTES *sa, 
-	LPCWSTR name, 
-	DWORD flags, 
-	DWORD access 
+HANDLE WINAPI CreateEventExW(
+	LPSECURITY_ATTRIBUTES lpEventAttributes, 
+	PCWSTR lpName, 
+	DWORD dwFlags, 
+	ACCESS_MASK DesiredAccess
 )
 {
-    HANDLE ret = 0;
-    UNICODE_STRING nameW;
-    OBJECT_ATTRIBUTES attr;
-    NTSTATUS status;
+  HANDLE Handle; // esi
+  NTSTATUS Status; // eax
+  OBJECT_ATTRIBUTES Obja; // [esp+4h] [ebp-20h]
+  POBJECT_ATTRIBUTES pObja;
+  LSA_UNICODE_STRING ObjectName; // [esp+1Ch] [ebp-8h]
 
-    /* one buggy program needs this
-     * ("Van Dale Groot woordenboek der Nederlandse taal")
-     */
-    if (sa && IsBadReadPtr(sa,sizeof(SECURITY_ATTRIBUTES)))
-    {
-        SetLastError( ERROR_INVALID_PARAMETER);
-        return 0;
-    }
-
-    attr.Length                   = sizeof(attr);
-    attr.RootDirectory            = 0;
-    attr.ObjectName               = NULL;
-    attr.Attributes               = OBJ_OPENIF | ((sa && sa->bInheritHandle) ? OBJ_INHERIT : 0);
-    attr.SecurityDescriptor       = sa ? sa->lpSecurityDescriptor : NULL;
-    attr.SecurityQualityOfService = NULL;
-    if (name)
-    {
-        RtlInitUnicodeString( &nameW, name );
-        attr.ObjectName = &nameW;
-        attr.RootDirectory = get_BaseNamedObjects_handle();
-    }
-
-    status = NtCreateEvent( &ret, access, &attr,
-                            (flags & CREATE_EVENT_MANUAL_RESET) ? NotificationEvent : SynchronizationEvent,
-                            (flags & CREATE_EVENT_INITIAL_SET) != 0 );
-    if (status == STATUS_OBJECT_NAME_EXISTS)
-        SetLastError( ERROR_ALREADY_EXISTS );
-    else
-        SetLastError( RtlNtStatusToDosError(status) );
-    return ret;
+  if ( dwFlags & 0xFFFFFFFC )
+  {
+    BaseSetLastNTError(STATUS_INVALID_PARAMETER_3);
+    return NULL;
+  }
+  if ( ARGUMENT_PRESENT(lpName) )
+  {
+    RtlInitUnicodeString(&ObjectName, lpName);
+    pObja = BaseFormatObjectAttributes(&Obja, lpEventAttributes, &ObjectName);
+  }
+  else
+  {
+    pObja = BaseFormatObjectAttributes(&Obja, lpEventAttributes, NULL);
+  }
+  Status = NtCreateEvent(
+                   &Handle,
+                   DesiredAccess,
+                   pObja,
+                   dwFlags & CREATE_EVENT_MANUAL_RESET ? NotificationEvent : SynchronizationEvent,
+                   (BOOLEAN)dwFlags & CREATE_EVENT_INITIAL_SET);
+	if ( NT_SUCCESS(Status) ) {
+        if ( Status == STATUS_OBJECT_NAME_EXISTS ) {
+            SetLastError(ERROR_ALREADY_EXISTS);
+            }
+        else {
+            SetLastError(0);
+            }
+        return Handle;
+        }
+    else {
+        BaseSetLastNTError(Status);
+        return NULL;
+        }
 }
 
 /***********************************************************************
@@ -333,12 +370,12 @@ CreateEventExA(
 	DWORD access 
 )
 {
-    WCHAR buffer[MAX_PATH];
-
+	WCHAR buffer[MAX_PATH];
+	
     if (!name) return CreateEventExW( sa, NULL, flags, access );
 
-    if (!MultiByteToWideChar( CP_ACP, 0, name, -1, buffer, MAX_PATH ))
-    {
+	if (!MultiByteToWideChar( CP_ACP, 0, name, -1, buffer, MAX_PATH ))
+	{
         SetLastError( ERROR_FILENAME_EXCED_RANGE );
         return 0;
     }

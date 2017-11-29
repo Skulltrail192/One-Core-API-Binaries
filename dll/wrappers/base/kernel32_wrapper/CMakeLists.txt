@@ -58,7 +58,7 @@ if(ARCH STREQUAL "i386")
 	)
 elseif(ARCH STREQUAL "amd64")
     list(APPEND ASM_SOURCE
-        # asm/amd64/thread.S
+        #asm/amd64/thread.S
 	)
 endif()	
 	

@@ -442,7 +442,6 @@
 @ stdcall ShellExecuteExW(long)
 @ stdcall ShellExecuteW(long wstr wstr wstr wstr long)
 @ stdcall ShellHookProc(long ptr ptr)
-@ stdcall Shell_NotifyIcon(long ptr) Shell_NotifyIconInternal
 @ stdcall StrChrA(str long) 
 @ stdcall StrChrIA(str long) 
 @ stdcall StrChrIW(wstr long) 
@@ -533,5 +532,6 @@
 @ stdcall SHGetKnownFolderItem(ptr long long ptr ptr)
 
 #remake functions
-@ stdcall Shell_NotifyIconA(long ptr) Shell_NotifyIconInternalA
-@ stdcall Shell_NotifyIconW(long ptr) Shell_NotifyIconInternalW
+@ stdcall Shell_NotifyIcon(long ptr) ;Shell_NotifyIconInternal
+@ stdcall Shell_NotifyIconA(long ptr) ;Shell_NotifyIconInternalA
+@ stdcall Shell_NotifyIconW(long ptr) ;Shell_NotifyIconInternalW

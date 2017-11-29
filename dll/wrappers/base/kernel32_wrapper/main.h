@@ -110,6 +110,19 @@ typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 #define LOAD_LIBRARY_SEARCH_SYSTEM32        0x00000800
 #define LOAD_LIBRARY_SEARCH_DEFAULT_DIRS    0x00001000
 
+#define RESOURCE_ENUM_LN          0x0001
+#define RESOURCE_ENUM_MUI         0x0002
+#define RESOURCE_ENUM_MUI_SYSTEM  0x0004
+#define RESOURCE_ENUM_VALIDATE    0x0008
+
+#define LOCALE_ALL                  0x00
+#define LOCALE_WINDOWS              0x01
+#define LOCALE_SUPPLEMENTAL         0x02
+#define LOCALE_ALTERNATE_SORTS      0x04
+#define LOCALE_REPLACEMENT          0x08
+#define LOCALE_NEUTRALDATA          0x10
+#define LOCALE_SPECIFICDATA         0x20
+
 #ifndef FileIdInformation
 #define FileIdInformation (enum _FILE_INFORMATION_CLASS)59
 #endif
@@ -1648,3 +1661,9 @@ WINAPI
 TpCallbackMayRunLong(
 	TP_CALLBACK_INSTANCE *
 );
+
+NTSTATUS NTAPI LdrFindResourceDirectory_U 	( 	IN PVOID  	BaseAddress,
+		IN PLDR_RESOURCE_INFO  	info,
+		IN ULONG  	level,
+		OUT PIMAGE_RESOURCE_DIRECTORY *  	addr 
+	);

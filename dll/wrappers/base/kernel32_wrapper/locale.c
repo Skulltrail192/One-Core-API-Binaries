@@ -34,6 +34,8 @@ Revision History:
 
 #define LOCALE_LOCALEINFOFLAGSMASK (LOCALE_NOUSEROVERRIDE|LOCALE_USE_CP_ACP|\
                                     LOCALE_RETURN_NUMBER|LOCALE_RETURN_GENITIVE_NAMES)
+									
+static LPWSTR systemLocale;									
 
 /* locale ids corresponding to the various Unix locale parameters */
 static LCID lcid_LC_COLLATE;
@@ -1302,6 +1304,191 @@ static BOOL CALLBACK enum_locale_ex_proc( HMODULE module, LPCWSTR type,
     return data->proc( buffer, flags, data->lparam );
 }
 
+/* retrieve the resource name to pass to the ntdll functions */
+static NTSTATUS get_res_nameW( LPCWSTR name, UNICODE_STRING *str )
+{
+    if (IS_INTRESOURCE(name))
+    {
+        str->Buffer = ULongToPtr(LOWORD(name));
+        return STATUS_SUCCESS;
+    }
+    if (name[0] == '#')
+    {
+        ULONG value;
+        RtlInitUnicodeString( str, name + 1 );
+        if (RtlUnicodeStringToInteger( str, 10, &value ) != STATUS_SUCCESS || HIWORD(value))
+            return STATUS_INVALID_PARAMETER;
+        str->Buffer = ULongToPtr(value);
+        return STATUS_SUCCESS;
+    }
+    RtlCreateUnicodeString( str, name );
+    RtlUpcaseUnicodeString( str, str, FALSE );
+    return STATUS_SUCCESS;
+}
+
+/* retrieve the resource name to pass to the ntdll functions */
+static NTSTATUS get_res_nameA( LPCSTR name, UNICODE_STRING *str )
+{
+    if (IS_INTRESOURCE(name))
+    {
+        str->Buffer = ULongToPtr(LOWORD(name));
+        return STATUS_SUCCESS;
+    }
+    if (name[0] == '#')
+    {
+        ULONG value;
+        if (RtlCharToInteger( name + 1, 10, &value ) != STATUS_SUCCESS || HIWORD(value))
+            return STATUS_INVALID_PARAMETER;
+        str->Buffer = ULongToPtr(value);
+        return STATUS_SUCCESS;
+    }
+    RtlCreateUnicodeStringFromAsciiz( str, name );
+    RtlUpcaseUnicodeString( str, str, FALSE );
+    return STATUS_SUCCESS;
+}
+
+/**********************************************************************
+ *	EnumResourceLanguagesExA	(KERNEL32.@)
+ */
+BOOL WINAPI EnumResourceLanguagesExA( HMODULE hmod, LPCSTR type, LPCSTR name,
+                                      ENUMRESLANGPROCA lpfun, LONG_PTR lparam,
+                                      DWORD flags, LANGID lang )
+{
+    int i;
+    BOOL ret = FALSE;
+    NTSTATUS status;
+    UNICODE_STRING typeW, nameW;
+    LDR_RESOURCE_INFO info;
+    const IMAGE_RESOURCE_DIRECTORY *basedir, *resdir;
+    const IMAGE_RESOURCE_DIRECTORY_ENTRY *et;
+
+    TRACE( "%p %s %s %p %lx %x %d\n", hmod, debugstr_a(type), debugstr_a(name),
+           lpfun, lparam, flags, lang );
+
+    if (flags & (RESOURCE_ENUM_MUI | RESOURCE_ENUM_MUI_SYSTEM | RESOURCE_ENUM_VALIDATE))
+        FIXME( "unimplemented flags: %x\n", flags );
+
+    if (!flags) flags = RESOURCE_ENUM_LN | RESOURCE_ENUM_MUI;
+
+    if (!(flags & RESOURCE_ENUM_LN)) return ret;
+
+    if (!hmod) hmod = GetModuleHandleA( NULL );
+    typeW.Buffer = nameW.Buffer = NULL;
+    if ((status = LdrFindResourceDirectory_U( hmod, NULL, 0, &basedir )) != STATUS_SUCCESS)
+        goto done;
+    if ((status = get_res_nameA( type, &typeW )) != STATUS_SUCCESS)
+        goto done;
+    if ((status = get_res_nameA( name, &nameW )) != STATUS_SUCCESS)
+        goto done;
+    info.Type = (ULONG_PTR)typeW.Buffer;
+    info.Name = (ULONG_PTR)nameW.Buffer;
+    if ((status = LdrFindResourceDirectory_U( hmod, &info, 2, &resdir )) != STATUS_SUCCESS)
+        goto done;
+
+    et = (const IMAGE_RESOURCE_DIRECTORY_ENTRY *)(resdir + 1);
+    _SEH2_TRY
+    {
+        for (i = 0; i < resdir->NumberOfNamedEntries + resdir->NumberOfIdEntries; i++)
+        {
+            ret = lpfun( hmod, type, name, et[i].Id, lparam );
+            if (!ret) break;
+        }
+    }
+    _SEH2_EXCEPT(UnhandledExceptionFilter(_SEH2_GetExceptionInformation()))
+    {
+        ret = FALSE;
+        status = STATUS_ACCESS_VIOLATION;
+    }
+    _SEH2_END
+done:
+    if (!IS_INTRESOURCE(typeW.Buffer)) HeapFree( GetProcessHeap(), 0, typeW.Buffer );
+    if (!IS_INTRESOURCE(nameW.Buffer)) HeapFree( GetProcessHeap(), 0, nameW.Buffer );
+    if (status != STATUS_SUCCESS) SetLastError( RtlNtStatusToDosError(status) );
+    return ret;
+}
+
+/**********************************************************************
+ *	EnumResourceLanguagesExW	(KERNEL32.@)
+ */
+BOOL WINAPI EnumResourceLanguagesExW( 
+	HMODULE hmod, 
+	LPCWSTR type, 
+	LPCWSTR name,
+    ENUMRESLANGPROCW lpfun, 
+	LONG_PTR lparam,
+    DWORD flags, 
+	LANGID lang 
+)
+{
+    int i;
+    BOOL ret = FALSE;
+    NTSTATUS status;
+    UNICODE_STRING typeW, nameW;
+    LDR_RESOURCE_INFO info;
+    const IMAGE_RESOURCE_DIRECTORY *basedir, *resdir;
+    const IMAGE_RESOURCE_DIRECTORY_ENTRY *et;
+
+    TRACE( "%p %s %s %p %lx %x %d\n", hmod, debugstr_w(type), debugstr_w(name),
+           lpfun, lparam, flags, lang );
+
+    if (flags & (RESOURCE_ENUM_MUI | RESOURCE_ENUM_MUI_SYSTEM | RESOURCE_ENUM_VALIDATE))
+        FIXME( "unimplemented flags: %x\n", flags );
+
+    if (!flags) flags = RESOURCE_ENUM_LN | RESOURCE_ENUM_MUI;
+
+    if (!(flags & RESOURCE_ENUM_LN)) return ret;
+
+    if (!hmod) hmod = GetModuleHandleW( NULL );
+    typeW.Buffer = nameW.Buffer = NULL;
+    if ((status = LdrFindResourceDirectory_U( hmod, NULL, 0, &basedir )) != STATUS_SUCCESS)
+        goto done;
+    if ((status = get_res_nameW( type, &typeW )) != STATUS_SUCCESS)
+        goto done;
+    if ((status = get_res_nameW( name, &nameW )) != STATUS_SUCCESS)
+        goto done;
+    info.Type = (ULONG_PTR)typeW.Buffer;
+    info.Name = (ULONG_PTR)nameW.Buffer;
+    if ((status = LdrFindResourceDirectory_U( hmod, &info, 2, &resdir )) != STATUS_SUCCESS)
+        goto done;
+
+    et = (const IMAGE_RESOURCE_DIRECTORY_ENTRY *)(resdir + 1);
+    _SEH2_TRY
+    {
+        for (i = 0; i < resdir->NumberOfNamedEntries + resdir->NumberOfIdEntries; i++)
+        {
+            ret = lpfun( hmod, type, name, et[i].Id, lparam );
+            if (!ret) break;
+        }
+    }
+     _SEH2_EXCEPT(UnhandledExceptionFilter(_SEH2_GetExceptionInformation()))
+    {
+        ret = FALSE;
+        status = STATUS_ACCESS_VIOLATION;
+    }
+    _SEH2_END
+done:
+    if (!IS_INTRESOURCE(typeW.Buffer)) HeapFree( GetProcessHeap(), 0, typeW.Buffer );
+    if (!IS_INTRESOURCE(nameW.Buffer)) HeapFree( GetProcessHeap(), 0, nameW.Buffer );
+    if (status != STATUS_SUCCESS) SetLastError( RtlNtStatusToDosError(status) );
+    return ret;
+}
+
+BOOL CALLBACK EnumLocalesProc(
+  _In_ LPTSTR lpLocaleString
+)
+{
+	DbgPrint("EnumLocalesProc called\n");
+	
+	if(ARGUMENT_PRESENT(lpLocaleString))
+	{
+		DbgPrint("EnumLocalesProc:: lpLocaleString is %s\n", lpLocaleString);
+		LCIDToLocaleName((LCID)lpLocaleString, systemLocale, 0, 0);
+		return TRUE;
+	}	
+	return FALSE;
+}
+
+
 /******************************************************************************
  *           EnumSystemLocalesEx  (KERNEL32.@)
  */
@@ -1309,24 +1496,40 @@ BOOL
 WINAPI 
 EnumSystemLocalesEx( 
 	LOCALE_ENUMPROCEX proc, 
-	DWORD flags, 
+	DWORD dwFlags, 
 	LPARAM lparam, 
 	LPVOID reserved )
 {
-    struct enum_locale_ex_data data;
-
-    if (reserved)
-    {
-        SetLastError( ERROR_INVALID_PARAMETER );
-        return FALSE;
-    }
-    data.proc   = proc;
-    data.flags  = flags;
-    data.lparam = lparam;
-    EnumResourceLanguagesW( kernel32_handle, (LPCWSTR)RT_STRING,
-                            (LPCWSTR)MAKEINTRESOURCE((LOCALE_SNAME >> 4) + 1),
-                            enum_locale_ex_proc, (LONG_PTR)&data );
-    return TRUE;
+	DWORD flags = LCID_INSTALLED;
+	
+	if(flags & (LOCALE_NEUTRALDATA | LOCALE_SUPPLEMENTAL))
+	{
+		DbgPrint("EnumSystemLocalesEx called with unsupported flags\n");
+		return FALSE;
+	}		
+	
+	switch(dwFlags)
+	{
+		case LOCALE_ALL:
+			flags = LCID_INSTALLED || LCID_SUPPORTED || LCID_ALTERNATE_SORTS;
+			break;
+		case LOCALE_ALTERNATE_SORTS:
+			flags = LCID_ALTERNATE_SORTS; 
+			break;
+		case LOCALE_WINDOWS:
+			flags = LCID_INSTALLED;
+			break;
+		default:
+			flags = LCID_SUPPORTED;
+			break;
+	}	
+	EnumSystemLocalesW(EnumLocalesProc, flags);
+	
+	if(systemLocale){
+		DbgPrint("System Locale is %s\n", systemLocale);
+		return proc(systemLocale, dwFlags, lparam);
+	}	
+	return FALSE;
 }
 
 //Wrapper to special cases of GetLocaleInfoW
