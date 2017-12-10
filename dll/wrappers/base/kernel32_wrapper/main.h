@@ -122,6 +122,7 @@ typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 #define LOCALE_REPLACEMENT          0x08
 #define LOCALE_NEUTRALDATA          0x10
 #define LOCALE_SPECIFICDATA         0x20
+#define LOCALE_SPARENT 0x0000006d
 
 #ifndef FileIdInformation
 #define FileIdInformation (enum _FILE_INFORMATION_CLASS)59
@@ -140,6 +141,32 @@ typedef NTSTATUS(NTAPI * PRTL_CONVERT_STRING)(IN PUNICODE_STRING UnicodeString, 
 typedef DWORD (WINAPI *APPLICATION_RECOVERY_CALLBACK)(PVOID);
 
 /* STRUCTS DEFINITIONS ******************************************************/
+
+typedef enum AppPolicyProcessTerminationMethod
+{
+    AppPolicyProcessTerminationMethod_ExitProcess      = 0,
+    AppPolicyProcessTerminationMethod_TerminateProcess = 1,
+} AppPolicyProcessTerminationMethod;
+
+typedef enum AppPolicyThreadInitializationType
+{
+    AppPolicyThreadInitializationType_None            = 0,
+    AppPolicyThreadInitializationType_InitializeWinRT = 1,
+} AppPolicyThreadInitializationType;
+
+typedef enum AppPolicyShowDeveloperDiagnostic
+{
+    AppPolicyShowDeveloperDiagnostic_None   = 0,
+    AppPolicyShowDeveloperDiagnostic_ShowUI = 1,
+} AppPolicyShowDeveloperDiagnostic;
+
+typedef enum AppPolicyWindowingModel
+{
+    AppPolicyWindowingModel_None           = 0,
+    AppPolicyWindowingModel_Universal      = 1,
+    AppPolicyWindowingModel_ClassicDesktop = 2,
+    AppPolicyWindowingModel_ClassicPhone   = 3
+} AppPolicyWindowingModel;
 
 typedef enum _FIND_DATA_TYPE
 {

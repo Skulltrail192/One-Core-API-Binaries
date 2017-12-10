@@ -1307,7 +1307,7 @@
 @ stdcall NtApphelpCacheControl(long ptr) ntdll.NtApphelpCacheControl
 @ stdcall NtDeleteDriverEntry(long) ntdll.NtDeleteDriverEntry
 @ stdcall NtEnumerateDriverEntries(ptr ptr) ntdll.NtEnumerateDriverEntries
-@ stdcall NtGetCurrentProcessorNumber() ntdll.NtGetCurrentProcessorNumber; 5.2 and higher
+@ stdcall NtGetCurrentProcessorNumber() ;5.2 and higher
 @ stdcall NtGetTickCount() ntdll.NtGetTickCount
 @ stdcall NtLoadKeyEx(ptr ptr long ptr) 
 @ stdcall NtQueryDriverEntryOrder(ptr ptr) ntdll.NtQueryDriverEntryOrder

@@ -1300,3 +1300,8 @@
 @ stub SetThreadErrorMode
 @ stub CreateSemaphoreExA
 @ stub CreateWaitableTimerExA
+
+@ stub AppPolicyGetProcessTerminationMethod
+@ stub AppPolicyGetShowDeveloperDiagnostic
+@ stub AppPolicyGetThreadInitializationType
+@ stub AppPolicyGetWindowingModel

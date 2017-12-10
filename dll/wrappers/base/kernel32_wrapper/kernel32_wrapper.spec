@@ -1036,7 +1036,7 @@
 @ stdcall GetNumaProcessorMap(ptr long ptr) kernelfull.GetNumaProcessorMap
 @ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
 
-; ; #Vista Functions 
+#Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) ntext.RtlAcquireSRWLockExclusive
 @ stdcall AcquireSRWLockShared(ptr) ntext.RtlAcquireSRWLockShared
 @ stdcall ApplicationRecoveryFinished(long)
@@ -1052,13 +1052,12 @@
 @ stdcall CloseThreadpoolTimer(ptr) ntext.TpReleaseTimer
 @ stdcall CloseThreadpoolWait(ptr) ntext.TpReleaseWait
 @ stdcall CloseThreadpoolWork(ptr) ntext.TpReleaseWork
-
 @ stdcall CompareStringEx(wstr long wstr long wstr long ptr ptr long)
 @ stdcall CompareStringOrdinal(wstr long wstr long long)
+@ stdcall CopyFileTransactedA(str str ptr ptr ptr long ptr)
 @ stdcall CopyFileTransactedW(wstr wstr ptr ptr ptr long ptr)
 @ stdcall CreateEventExA(ptr str ptr long)
 @ stdcall CreateEventExW(ptr wstr ptr long) 
-
 @ stdcall CreateMutexExA(ptr str long long)
 @ stdcall CreateMutexExW(ptr wstr long long)
 @ stdcall CreateSemaphoreExA(ptr long long str ptr long) 
@@ -1070,6 +1069,7 @@
 @ stdcall CreateThreadpoolTimer(ptr ptr ptr)
 @ stdcall CreateThreadpoolWait(ptr ptr ptr) 
 @ stdcall CreateThreadpoolWork(ptr ptr ptr)
+@ stdcall DeleteFileTransactedA(str ptr)
 @ stdcall DeleteFileTransactedW(wstr ptr)
 @ stdcall DeleteProcThreadAttributeList(ptr)
 @ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long long)
@@ -1126,7 +1126,6 @@
 @ stdcall GetTimeZoneInformationForYear(long ptr ptr)
 @ stdcall GetUserDefaultLocaleName(wstr long)
 @ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
-@ stdcall GetVolumeInformationW(ptr ptr long ptr ptr ptr ptr long)
 @ stdcall GetVolumeInformationByHandleW(ptr ptr long ptr ptr ptr ptr long)
 @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
 @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
@@ -1144,6 +1143,7 @@
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
 @ stdcall LCIDToLocaleName(long ptr long long)
 @ stdcall LocaleNameToLCID(wstr long)
+@ stdcall MoveFileTransactedA(str str ptr ptr long ptr)
 @ stdcall MoveFileTransactedW(wstr wstr ptr ptr long ptr)
 @ stdcall PowerClearRequest(ptr ptr)
 @ stdcall PowerCreateRequest(ptr)
@@ -1247,6 +1247,10 @@
 
 #Win8 Functions 
 @ stdcall AddDllDirectory(wstr)
+@ stdcall AppPolicyGetProcessTerminationMethod(ptr ptr) 
+@ stdcall AppPolicyGetShowDeveloperDiagnostic(ptr ptr)
+@ stdcall AppPolicyGetThreadInitializationType(ptr ptr) 
+@ stdcall AppPolicyGetWindowingModel(ptr ptr)
 @ stdcall BaseFormatObjectAttributes(ptr ptr ptr)
 @ stdcall GetCurrentPackageId(ptr ptr)
 @ stdcall GetCurrentPackageFamilyName(ptr ptr)

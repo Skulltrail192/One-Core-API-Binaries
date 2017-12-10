@@ -24,8 +24,13 @@
 #include <winsvc.h>
 #include <evntprov.h>
 #include <ntsecapi.h>
-// #include <ntdllnew.h>
 #include <ndk/cmfuncs.h>
+#include <wine/config.h>
+
+#include <ntstatus.h>
+#define WIN32_NO_STATUS
+
+#include <wine/debug.h>
 
 
 /* DEFINES ******************************************************************/
@@ -43,6 +48,9 @@
 #define GetPredefKeyIndex(HKey)                                                \
     ((ULONG_PTR)(HKey) & 0x0FFFFFFF)
 
+	
+//WINE_DEFAULT_DEBUG_CHANNEL(advapi); 	
+
 /* PROTOTYPES ***************************************************************/
 	
 static NTSTATUS MapDefaultKey (PHANDLE ParentKey, HKEY Key);
@@ -52,6 +60,8 @@ static NTSTATUS OpenLocalMachineKey (PHANDLE KeyHandle);
 static NTSTATUS OpenUsersKey (PHANDLE KeyHandle);
 static NTSTATUS OpenCurrentConfigKey(PHANDLE KeyHandle);
 
+#define ARGUMENT_PRESENT(ArgumentPointer)((CHAR*)((ULONG_PTR)(ArgumentPointer)) != (CHAR*)NULL)
+
 /* GLOBALS ******************************************************************/
 
 static RTL_CRITICAL_SECTION HandleTableCS;
@@ -60,6 +70,7 @@ static HANDLE ProcessHeap;
 static BOOLEAN DefaultHandlesDisabled = FALSE;
 static BOOLEAN DefaultHandleHKUDisabled = FALSE;
 static BOOLEAN DllInitialized = FALSE; /* HACK */
+static const UNICODE_STRING HKLM_ClassesPath = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\Software\\Classes");
 
 typedef VOID( CALLBACK * PFN_SC_NOTIFY_CALLBACK ) (
     IN PVOID pParameter 
@@ -97,6 +108,23 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 }
 
 /*INTERNAL FUNCTIONS ********************************************/
+
+FORCEINLINE BOOL IsHKCRKey 	( 	_In_ HKEY  	hKey	) 	
+{
+	return ((ULONG_PTR)hKey & 0x2) != 0;	
+}
+
+FORCEINLINE void MakeHKCRKey 	( 	_Inout_ HKEY *  	hKey	) 	
+{
+	*hKey = (HKEY)((ULONG_PTR)(*hKey) | 0x2);
+}
+
+static __inline BOOL set_ntstatus 	( 	NTSTATUS  	status	) 	
+{
+	// if (!NT_SUCCESS(status)) 
+		// SetLastError( RtlNtStatusToDosError( status ));
+       return NT_SUCCESS(status);	
+}
 
 /************************************************************************
  *  RegInitDefaultHandles
@@ -137,7 +165,6 @@ CloseDefaultKeys(VOID)
     RtlLeaveCriticalSection(&HandleTableCS);
 }*/
 
-
 static NTSTATUS
 OpenClassesRootKey(PHANDLE KeyHandle)
 {
@@ -153,7 +180,6 @@ OpenClassesRootKey(PHANDLE KeyHandle)
                      MAXIMUM_ALLOWED,
                      &Attributes);
 }
-
 
 static NTSTATUS
 OpenLocalMachineKey(PHANDLE KeyHandle)
@@ -316,7 +342,9 @@ MapDefaultKey(OUT PHANDLE RealKey,
 }
 
 /* unimplemented*/
-ULONG WINAPI EventRegister(
+ULONG 
+WINAPI 
+EventRegister(
   _In_      LPCGUID ProviderId,
   _In_opt_  PENABLECALLBACK EnableCallback,
   _In_opt_  PVOID CallbackContext,
@@ -359,7 +387,8 @@ EventWriteEndScenario(
 	return ERROR_SUCCESS;
 }
 
-ULONG WINAPI
+ULONG 
+WINAPI
 EventWriteStartScenario(
     REGHANDLE RegHandle,
     PCEVENT_DESCRIPTOR EventDescriptor,
@@ -447,7 +476,6 @@ static int load_string(HINSTANCE hModule, UINT resId, LPWSTR pwszBuffer, INT cMa
     return cMaxChars;
 }
 
-/*
 ULONG WINAPI EnableTraceEx(
   _In_      LPCGUID ProviderId,
   _In_opt_  LPCGUID SourceId,
@@ -462,7 +490,7 @@ ULONG WINAPI EnableTraceEx(
 {
 	return ERROR_SUCCESS;	
 }
-*/
+
 /* unimplemented*/
 ULONG WINAPI EventActivityIdControl(
   _In_     ULONG ControlCode,
@@ -507,7 +535,6 @@ ULONG WINAPI EventWriteTransfer(
 {
 	return ERROR_SUCCESS;
 }
-
 
 /* implemented
 DWORD WINAPI InitiateShutdownW(
@@ -1036,3 +1063,4 @@ LsaLookupSids2(
 
     // return TRUE;
 // }
+

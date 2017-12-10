@@ -20,6 +20,13 @@
 #include <lpcfuncs.h>
 #include <cmfuncs.h>
 
+static UNICODE_STRING NtDllName = RTL_CONSTANT_STRING(L"ntdll.dll");
+static ANSI_STRING NtGetpCurrentProcessorNumberProcName = RTL_CONSTANT_STRING("NtGetCurrentProcessorNumber");
+
+ULONG NTAPI RtlpGetCurrentProcessorNumber();
+
+ULONG (NTAPI *NtGetpCurrentProcessorNumber)(IN VOID);
+
 /*subimplemented*/
 NTSTATUS 
 NTAPI
@@ -726,3 +733,29 @@ NtQuerySectionInternal(
 			
 	// }
 // }
+
+ULONG 
+NTAPI 
+NtGetCurrentProcessorNumber() 	
+{
+	NTSTATUS st;
+	PVOID ProcessorNumberHandle;
+		
+	st = LdrLoadDll(NULL, NULL, &NtDllName, &ProcessorNumberHandle);
+		
+	if (!NT_SUCCESS(st)) {
+		DbgPrint("NtGetCurrentProcessorNumber: Ntdll.dll not found.  Status=%x\n", st);
+		return st;
+	}	
+		
+	st = LdrGetProcedureAddress (ProcessorNumberHandle,
+								&NtGetpCurrentProcessorNumberProcName,
+								0,
+								(PVOID*)&NtGetpCurrentProcessorNumber);
+									
+	if (!NT_SUCCESS(st)) {
+		return RtlpGetCurrentProcessorNumber();
+	}	
+
+	return (*NtGetpCurrentProcessorNumber)();
+}

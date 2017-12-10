@@ -2,10 +2,10 @@
 @ stub AppPolicyGetCreateFileAccess
 @ stub AppPolicyGetLifecycleManagement
 @ stub AppPolicyGetMediaFoundationCodecLoading
-@ stub AppPolicyGetProcessTerminationMethod
-@ stub AppPolicyGetShowDeveloperDiagnostic
-@ stub AppPolicyGetThreadInitializationType
-@ stub AppPolicyGetWindowingModel
+@ stdcall AppPolicyGetProcessTerminationMethod(ptr ptr) kernelbase.AppPolicyGetProcessTerminationMethod
+@ stdcall AppPolicyGetShowDeveloperDiagnostic(ptr ptr) kernelbase.AppPolicyGetShowDeveloperDiagnostic
+@ stdcall AppPolicyGetThreadInitializationType(ptr ptr) kernelbase.AppPolicyGetThreadInitializationType
+@ stdcall AppPolicyGetWindowingModel(ptr ptr) kernelbase.AppPolicyGetWindowingModel
 @ stub GetApplicationUserModelIdFromToken
 @ stub GetPackageFamilyNameFromToken
 @ stub GetPackageFullNameFromToken

@@ -4,7 +4,7 @@
 4 stdcall A_SHAUpdate(ptr ptr long) advapibase.A_SHAUpdate
 5 stdcall AbortSystemShutdownA(ptr) advapibase.AbortSystemShutdownA
 6 stdcall AbortSystemShutdownW(ptr) advapibase.AbortSystemShutdownW
-7 stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr) advapibase.AccessCheck
+7 stdcall AccessCheck(ptr ptr long ptr ptr ptr ptr ptr) advapibase.AccessCheck
 8 stdcall AccessCheckAndAuditAlarmA(str ptr str str ptr long ptr long ptr ptr ptr) advapibase.AccessCheckAndAuditAlarmA
 9 stdcall AccessCheckAndAuditAlarmW(wstr ptr wstr wstr ptr long ptr long ptr ptr ptr) advapibase.AccessCheckAndAuditAlarmW
 10 stdcall AccessCheckByType(ptr ptr long long ptr long ptr ptr ptr ptr ptr) advapibase.AccessCheckByType
@@ -27,8 +27,8 @@
 27 stdcall AddAuditAccessObjectAce(ptr long long long ptr ptr ptr long long) advapibase.AddAuditAccessObjectAce
 28 stdcall AddUsersToEncryptedFile(wstr ptr) advapibase.AddUsersToEncryptedFile
 29 stdcall AdjustTokenGroups(long long ptr long ptr ptr) advapibase.AdjustTokenGroups
-30 stdcall AdjustTokenPrivileges(long long ptr long ptr ptr) advapibase.AdjustTokenPrivileges
-31 stdcall AllocateAndInitializeSid(ptr long long long long long long long long long ptr) advapibase.AllocateAndInitializeSid
+30 stdcall AdjustTokenPrivileges(ptr long ptr long ptr ptr) advapibase.AdjustTokenPrivileges
+31 stdcall AllocateAndInitializeSid(ptr long long long long long long long long long ptr) ;advapibase.AllocateAndInitializeSid
 32 stdcall AllocateLocallyUniqueId(ptr) advapibase.AllocateLocallyUniqueId
 33 stdcall AreAllAccessesGranted(long long) advapibase.AreAllAccessesGranted
 34 stdcall AreAnyAccessesGranted(long long) advapibase.AreAnyAccessesGranted
@@ -55,17 +55,17 @@
 55 stdcall ChangeServiceConfig2W(long long ptr) advapibase.ChangeServiceConfig2W
 56 stdcall ChangeServiceConfigA(long long long long wstr str ptr str str str str) advapibase.ChangeServiceConfigA
 57 stdcall ChangeServiceConfigW(long long long long wstr wstr ptr wstr wstr wstr wstr) advapibase.ChangeServiceConfigW
-58 stdcall CheckTokenMembership(long ptr ptr) advapibase.CheckTokenMembership
+58 stdcall CheckTokenMembership(ptr ptr ptr) ;advapibase.CheckTokenMembership
 59 stdcall ClearEventLogA(long str) advapibase.ClearEventLogA
 60 stdcall ClearEventLogW(long wstr) advapibase.ClearEventLogW
 61 stdcall CloseCodeAuthzLevel(ptr) advapibase.CloseCodeAuthzLevel
 62 stdcall CloseEncryptedFileRaw(ptr) advapibase.CloseEncryptedFileRaw
 63 stdcall CloseEventLog(long) advapibase.CloseEventLog
-64 stdcall CloseServiceHandle(long) advapibase.CloseServiceHandle
+64 stdcall CloseServiceHandle(ptr) advapibase.CloseServiceHandle
 65 stdcall CloseTrace(long long) advapibase.CloseTrace
 66 stdcall CommandLineFromMsiDescriptor(wstr ptr ptr) advapibase.CommandLineFromMsiDescriptor
 67 stdcall ComputeAccessTokenFromCodeAuthzLevel(ptr long) advapibase.ComputeAccessTokenFromCodeAuthzLevel
-68 stdcall ControlService(long long ptr) advapibase.ControlService
+68 stdcall ControlService(ptr long ptr) advapibase.ControlService
 69 stdcall ControlTraceA(double str ptr long) advapibase.ControlTraceA ;ntdll.EtwControlTraceA
 70 stdcall ControlTraceW(double wstr ptr long) advapibase.ControlTraceW ;ntdll.EtwControlTraceW
 71 stdcall ConvertAccessToSecurityDescriptorA(ptr ptr str str ptr) advapibase.ConvertAccessToSecurityDescriptorA
@@ -86,8 +86,8 @@
 86 stdcall ConvertStringSDToSDRootDomainW(long long long long long) advapibase.ConvertStringSDToSDRootDomainW
 87 stdcall ConvertStringSecurityDescriptorToSecurityDescriptorA(str long ptr ptr) advapibase.ConvertStringSecurityDescriptorToSecurityDescriptorA
 88 stdcall ConvertStringSecurityDescriptorToSecurityDescriptorW(wstr long ptr ptr) advapibase.ConvertStringSecurityDescriptorToSecurityDescriptorW
-89 stdcall ConvertStringSidToSidA(ptr ptr) advapibase.ConvertStringSidToSidA
-90 stdcall ConvertStringSidToSidW(ptr ptr) advapibase.ConvertStringSidToSidW
+89 stdcall ConvertStringSidToSidA(str ptr) advapibase.ConvertStringSidToSidA
+90 stdcall ConvertStringSidToSidW(wstr ptr) advapibase.ConvertStringSidToSidW
 91 stdcall ConvertToAutoInheritPrivateObjectSecurity(ptr ptr ptr ptr long ptr) advapibase.ConvertToAutoInheritPrivateObjectSecurity
 92 stdcall CopySid(long ptr ptr) advapibase.CopySid
 93 stdcall CreateCodeAuthzLevel() advapibase.CreateCodeAuthzLevel
@@ -98,8 +98,8 @@
 98 stdcall CreateProcessAsUserW(long str str ptr ptr long long ptr str ptr ptr) advapibase.CreateProcessAsUserW
 99 stdcall CreateProcessWithLogonW(wstr wstr wstr long wstr wstr long ptr wstr ptr ptr) advapibase.CreateProcessWithLogonW
 101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr) advapibase.CreateRestrictedToken
-102 stdcall CreateServiceA(long str str long long long long str str ptr str str str) advapibase.CreateServiceA
-103 stdcall CreateServiceW(long wstr wstr long long long long wstr wstr ptr wstr wstr wstr) advapibase.CreateServiceW
+102 stdcall CreateServiceA(ptr str str long long long long str str ptr str str str) advapibase.CreateServiceA
+103 stdcall CreateServiceW(ptr wstr wstr long long long long wstr wstr ptr wstr wstr wstr) advapibase.CreateServiceW
 104 stdcall CreateTraceInstanceId(ptr ptr) advapibase.CreateTraceInstanceId ;ntdll.EtwCreateTraceInstanceId
 105 stdcall CreateWellKnownSid(long ptr ptr ptr) advapibase.CreateWellKnownSid
 106 stdcall CredDeleteA(str long long) advapibase.CredDeleteA
@@ -148,7 +148,7 @@
 149 stdcall CryptEnumProvidersW(long ptr long ptr ptr ptr) advapibase.CryptEnumProvidersW
 150 stdcall CryptExportKey(long long long long ptr ptr) advapibase.CryptExportKey
 151 stdcall CryptGenKey(long long long ptr) advapibase.CryptGenKey
-152 stdcall CryptGenRandom(long long ptr) advapibase.CryptGenRandom
+152 stdcall CryptGenRandom(ptr long ptr) advapibase.CryptGenRandom
 153 stdcall CryptGetDefaultProviderA(long ptr long ptr ptr) advapibase.CryptGetDefaultProviderA
 154 stdcall CryptGetDefaultProviderW(long ptr long ptr ptr) advapibase.CryptGetDefaultProviderW
 155 stdcall CryptGetHashParam(long long ptr ptr long) advapibase.CryptGetHashParam
@@ -158,7 +158,7 @@
 159 stdcall CryptHashData(long ptr long long) advapibase.CryptHashData
 160 stdcall CryptHashSessionKey(long long long) advapibase.CryptHashSessionKey
 161 stdcall CryptImportKey(long ptr long long long ptr) advapibase.CryptImportKey
-162 stdcall CryptReleaseContext(long long) advapibase.CryptReleaseContext
+162 stdcall CryptReleaseContext(ptr long) advapibase.CryptReleaseContext
 163 stdcall CryptSetHashParam(long long ptr long) advapibase.CryptSetHashParam
 164 stdcall CryptSetKeyParam(long long ptr long) advapibase.CryptSetKeyParam
 165 stdcall CryptSetProvParam(long long ptr long) advapibase.CryptSetProvParam
@@ -173,7 +173,7 @@
 174 stdcall DecryptFileA(str long) advapibase.DecryptFileA
 175 stdcall DecryptFileW(wstr long) advapibase.DecryptFileW
 176 stdcall DeleteAce(ptr long) advapibase.DeleteAce
-177 stdcall DeleteService(long) advapibase.DeleteService
+177 stdcall DeleteService(ptr) advapibase.DeleteService
 178 stdcall DeregisterEventSource(long) advapibase.DeregisterEventSource
 179 stdcall DestroyPrivateObjectSecurity(ptr) advapibase.DestroyPrivateObjectSecurity
 180 stdcall DuplicateEncryptionInfoFile(wstr wstr long long ptr) advapibase.DuplicateEncryptionInfoFile
@@ -207,10 +207,10 @@
 209 stdcall EnumDependentServicesA(long long ptr long ptr ptr) advapibase.EnumDependentServicesA
 210 stdcall EnumDependentServicesW(long long ptr long ptr ptr) advapibase.EnumDependentServicesW
 211 stdcall EnumServiceGroupW(ptr long long ptr long ptr ptr ptr wstr) advapibase.EnumServiceGroupW
-212 stdcall EnumServicesStatusA(long long long ptr long ptr ptr ptr) advapibase.EnumServicesStatusA
-213 stdcall EnumServicesStatusExA(long long long long ptr long ptr ptr ptr str) advapibase.EnumServicesStatusExA
-214 stdcall EnumServicesStatusExW(long long long long ptr long ptr ptr ptr wstr) advapibase.EnumServicesStatusExW
-215 stdcall EnumServicesStatusW(long long long ptr long ptr ptr ptr) advapibase.EnumServicesStatusW
+212 stdcall EnumServicesStatusA(ptr long long ptr long ptr ptr ptr) advapibase.EnumServicesStatusA
+213 stdcall EnumServicesStatusExA(ptr long long long ptr long ptr ptr ptr str) advapibase.EnumServicesStatusExA
+214 stdcall EnumServicesStatusExW(ptr long long long ptr long ptr ptr ptr wstr) advapibase.EnumServicesStatusExW
+215 stdcall EnumServicesStatusW(ptr long long ptr long ptr ptr ptr) advapibase.EnumServicesStatusW
 216 stdcall EnumerateTraceGuids(ptr long ptr) advapibase.EnumerateTraceGuids ;ntdll.EtwEnumerateTraceGuids
 217 stdcall EqualDomainSid(ptr ptr ptr) advapibase.EqualDomainSid
 218 stdcall EqualPrefixSid(ptr ptr) advapibase.EqualPrefixSid
@@ -279,7 +279,7 @@
 281 stdcall GetSidLengthRequired(long) advapibase.GetSidLengthRequired
 282 stdcall GetSidSubAuthority(ptr long) advapibase.GetSidSubAuthority
 283 stdcall GetSidSubAuthorityCount(ptr) advapibase.GetSidSubAuthorityCount
-284 stdcall GetTokenInformation(long long ptr long ptr) advapibase.GetTokenInformation
+284 stdcall GetTokenInformation(ptr long ptr long ptr) advapibase.GetTokenInformation
 285 stdcall GetTraceEnableFlags(double) advapibase.GetTraceEnableFlags ;ntdll.EtwGetTraceEnableFlags
 286 stdcall GetTraceEnableLevel(double) advapibase.GetTraceEnableLevel ;ntdll.EtwGetTraceEnableLevel
 287 stdcall GetTraceLoggerHandle(ptr) advapibase.GetTraceLoggerHandle ;ntdll.EtwGetTraceLoggerHandle
@@ -289,8 +289,8 @@
 291 stdcall GetTrusteeNameW(ptr) advapibase.GetTrusteeNameW
 292 stdcall GetTrusteeTypeA(ptr) advapibase.GetTrusteeTypeA
 293 stdcall GetTrusteeTypeW(ptr) advapibase.GetTrusteeTypeW
-294 stdcall GetUserNameA(ptr ptr) advapibase.GetUserNameA
-295 stdcall GetUserNameW(ptr ptr) advapibase.GetUserNameW
+294 stdcall GetUserNameA(str ptr) advapibase.GetUserNameA
+295 stdcall GetUserNameW(wstr ptr) advapibase.GetUserNameW
 296 stdcall GetWindowsAccountDomainSid(ptr ptr ptr) advapibase.GetWindowsAccountDomainSid
 298 stdcall I_ScIsSecurityProcess() advapibase.I_ScIsSecurityProcess
 299 stdcall I_ScPnPGetServiceName(ptr wstr long) advapibase.I_ScPnPGetServiceName
@@ -324,14 +324,14 @@
 327 stdcall LogonUserW(wstr wstr wstr long long ptr) advapibase.LogonUserW
 328 stdcall LookupAccountNameA(str str ptr ptr ptr ptr ptr) advapibase.LookupAccountNameA
 329 stdcall LookupAccountNameW(wstr wstr ptr ptr ptr ptr ptr) advapibase.LookupAccountNameW
-330 stdcall LookupAccountSidA(ptr ptr ptr ptr ptr ptr ptr) advapibase.LookupAccountSidA
-331 stdcall LookupAccountSidW(ptr ptr ptr ptr ptr ptr ptr) advapibase.LookupAccountSidW
+330 stdcall LookupAccountSidA(str ptr str ptr str ptr ptr) advapibase.LookupAccountSidA
+331 stdcall LookupAccountSidW(wstr ptr wstr ptr wstr ptr ptr) advapibase.LookupAccountSidW
 332 stdcall LookupPrivilegeDisplayNameA(str str str ptr ptr) advapibase.LookupPrivilegeDisplayNameA
 333 stdcall LookupPrivilegeDisplayNameW(wstr wstr wstr ptr ptr) advapibase.LookupPrivilegeDisplayNameW
 334 stdcall LookupPrivilegeNameA(str ptr ptr long) advapibase.LookupPrivilegeNameA
 335 stdcall LookupPrivilegeNameW(wstr ptr ptr long) advapibase.LookupPrivilegeNameW
-336 stdcall LookupPrivilegeValueA(ptr ptr ptr) advapibase.LookupPrivilegeValueA
-337 stdcall LookupPrivilegeValueW(ptr ptr ptr) advapibase.LookupPrivilegeValueW
+336 stdcall LookupPrivilegeValueA(str str ptr) advapibase.LookupPrivilegeValueA
+337 stdcall LookupPrivilegeValueW(wstr wstr ptr) advapibase.LookupPrivilegeValueW
 338 stdcall LookupSecurityDescriptorPartsA(ptr ptr ptr ptr ptr ptr ptr) advapibase.LookupSecurityDescriptorPartsA
 339 stdcall LookupSecurityDescriptorPartsW(ptr ptr ptr ptr ptr ptr ptr) advapibase.LookupSecurityDescriptorPartsW
 340 stdcall LsaAddAccountRights(ptr ptr ptr long) advapibase.LsaAddAccountRights
@@ -423,12 +423,12 @@
 426 stdcall OpenEncryptedFileRawW(wstr long ptr) advapibase.OpenEncryptedFileRawW
 427 stdcall OpenEventLogA(str str) advapibase.OpenEventLogA
 428 stdcall OpenEventLogW(wstr wstr) advapibase.OpenEventLogW
-429 stdcall OpenProcessToken(long long ptr) advapibase.OpenProcessToken
+429 stdcall OpenProcessToken(ptr long ptr) advapibase.OpenProcessToken
 430 stdcall OpenSCManagerA(str str long) advapibase.OpenSCManagerA
 431 stdcall OpenSCManagerW(wstr wstr long) advapibase.OpenSCManagerW
-432 stdcall OpenServiceA(long str long) advapibase.OpenServiceA
-433 stdcall OpenServiceW(long wstr long) advapibase.OpenServiceW
-434 stdcall OpenThreadToken(long long long ptr) advapibase.OpenThreadToken
+432 stdcall OpenServiceA(ptr str long) advapibase.OpenServiceA
+433 stdcall OpenServiceW(ptr wstr long) advapibase.OpenServiceW
+434 stdcall OpenThreadToken(ptr long long ptr) advapibase.OpenThreadToken
 435 stdcall OpenTraceA(ptr) advapibase.OpenTraceA
 436 stdcall OpenTraceW(ptr) advapibase.OpenTraceW
 437 stdcall PrivilegeCheck(ptr ptr ptr) advapibase.PrivilegeCheck
@@ -441,8 +441,8 @@
 444 stdcall QueryRecoveryAgentsOnEncryptedFile(wstr ptr) advapibase.QueryRecoveryAgentsOnEncryptedFile
 445 stdcall QueryServiceConfig2A(long long ptr long ptr) advapibase.QueryServiceConfig2A
 446 stdcall QueryServiceConfig2W(long long ptr long ptr) advapibase.QueryServiceConfig2W
-447 stdcall QueryServiceConfigA(long ptr long ptr) advapibase.QueryServiceConfigA
-448 stdcall QueryServiceConfigW(long ptr long ptr) advapibase.QueryServiceConfigW
+447 stdcall QueryServiceConfigA(ptr ptr long ptr) advapibase.QueryServiceConfigA
+448 stdcall QueryServiceConfigW(ptr ptr long ptr) advapibase.QueryServiceConfigW
 449 stdcall QueryServiceLockStatusA(long ptr long ptr) advapibase.QueryServiceLockStatusA
 450 stdcall QueryServiceLockStatusW(long ptr long ptr) advapibase.QueryServiceLockStatusW
 451 stdcall QueryServiceObjectSecurity(long long ptr long ptr) advapibase.QueryServiceObjectSecurity
@@ -454,43 +454,39 @@
 457 stdcall ReadEncryptedFileRaw(ptr ptr ptr) advapibase.ReadEncryptedFileRaw
 458 stdcall ReadEventLogA(long long long ptr long ptr ptr) advapibase.ReadEventLogA
 459 stdcall ReadEventLogW(long long long ptr long ptr ptr) advapibase.ReadEventLogW
-460 stdcall RegCloseKey(long) advapibase.RegCloseKey
+460 stdcall RegCloseKey(ptr) advapibase.RegCloseKey
 461 stdcall RegConnectRegistryA(str long ptr) advapibase.RegConnectRegistryA
 464 stdcall RegConnectRegistryW(wstr long ptr) advapibase.RegConnectRegistryW
-465 stdcall RegCreateKeyA(long str ptr) advapibase.RegCreateKeyA
-466 stdcall RegCreateKeyExA(long str long ptr long long ptr ptr ptr) advapibase.RegCreateKeyExA
-467 stdcall RegCreateKeyExW(long wstr long ptr long long ptr ptr ptr) advapibase.RegCreateKeyExW
-468 stdcall RegCreateKeyW(long wstr ptr) advapibase.RegCreateKeyW
-469 stdcall RegDeleteKeyA(long str) advapibase.RegDeleteKeyA
-472 stdcall RegDeleteKeyW(long wstr) advapibase.RegDeleteKeyW
-473 stdcall RegDeleteValueA(long str) advapibase.RegDeleteValueA
-474 stdcall RegDeleteValueW(long wstr) advapibase.RegDeleteValueW
+465 stdcall RegCreateKeyA(ptr str ptr) advapibase.RegCreateKeyA
+468 stdcall RegCreateKeyW(ptr wstr ptr) advapibase.RegCreateKeyW
+469 stdcall RegDeleteKeyA(ptr str) advapibase.RegDeleteKeyA
+472 stdcall RegDeleteKeyW(ptr wstr) advapibase.RegDeleteKeyW
+473 stdcall RegDeleteValueA(ptr str) advapibase.RegDeleteValueA
+474 stdcall RegDeleteValueW(ptr wstr) advapibase.RegDeleteValueW
 475 stdcall RegDisablePredefinedCache() advapibase.RegDisablePredefinedCache
 478 stdcall RegEnumKeyA(long long ptr long) advapibase.RegEnumKeyA
-479 stdcall RegEnumKeyExA(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumKeyExA
-480 stdcall RegEnumKeyExW(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumKeyExW
+479 stdcall RegEnumKeyExA(ptr long str ptr ptr str ptr ptr) advapibase.RegEnumKeyExA
+480 stdcall RegEnumKeyExW(ptr long wstr ptr ptr wstr ptr ptr) advapibase.RegEnumKeyExW
 481 stdcall RegEnumKeyW(long long ptr long) advapibase.RegEnumKeyW
-482 stdcall RegEnumValueA(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumValueA
-483 stdcall RegEnumValueW(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumValueW
+482 stdcall RegEnumValueA(ptr long str ptr ptr ptr ptr ptr) advapibase.RegEnumValueA
+483 stdcall RegEnumValueW(ptr long wstr ptr ptr ptr ptr ptr) advapibase.RegEnumValueW
 484 stdcall RegFlushKey(long) advapibase.RegFlushKey
 485 stdcall RegGetKeySecurity(long long ptr ptr) advapibase.RegGetKeySecurity
-488 stdcall RegLoadKeyA(long str str) advapibase.RegLoadKeyA
-489 stdcall RegLoadKeyW(long wstr wstr) advapibase.RegLoadKeyW
 490 stdcall RegNotifyChangeKeyValue(long long long long long) advapibase.RegNotifyChangeKeyValue
 491 stdcall RegOpenCurrentUser(long ptr) advapibase.RegOpenCurrentUser
 492 stdcall RegOpenKeyA(long str ptr) advapibase.RegOpenKeyA
-493 stdcall RegOpenKeyExA(long str long long ptr) advapibase.RegOpenKeyExA
-494 stdcall RegOpenKeyExW(long wstr long long ptr) advapibase.RegOpenKeyExW
+493 stdcall RegOpenKeyExA(ptr str long long ptr) advapibase.RegOpenKeyExA
+494 stdcall RegOpenKeyExW(ptr wstr long long ptr) ;advapibase.RegOpenKeyExW
 495 stdcall RegOpenKeyW(long wstr ptr) advapibase.RegOpenKeyW
 496 stdcall RegOpenUserClassesRoot(ptr long long ptr) advapibase.RegOpenUserClassesRoot
 497 stdcall RegOverridePredefKey(long long) advapibase.RegOverridePredefKey
-498 stdcall RegQueryInfoKeyA(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapibase.RegQueryInfoKeyA
-499 stdcall RegQueryInfoKeyW(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapibase.RegQueryInfoKeyW
+498 stdcall RegQueryInfoKeyA(ptr str ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapibase.RegQueryInfoKeyA
+499 stdcall RegQueryInfoKeyW(ptr wstr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapibase.RegQueryInfoKeyW
 500 stdcall RegQueryMultipleValuesA(long ptr long ptr ptr) advapibase.RegQueryMultipleValuesA
 501 stdcall RegQueryMultipleValuesW(long ptr long ptr ptr)
 503 stdcall RegQueryValueA(long str ptr ptr)
-504 stdcall RegQueryValueExA(long str ptr ptr ptr ptr)
-505 stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr)
+504 stdcall RegQueryValueExA(ptr str ptr ptr ptr ptr)
+505 stdcall RegQueryValueExW(ptr wstr ptr ptr ptr ptr)
 506 stdcall RegQueryValueW(long wstr ptr ptr)
 507 stdcall RegReplaceKeyA(long str str str)
 508 stdcall RegReplaceKeyW(long wstr wstr wstr)
@@ -502,11 +498,11 @@
 514 stdcall RegSaveKeyW(long ptr ptr)
 515 stdcall RegSetKeySecurity(long long ptr)
 516 stdcall RegSetValueA(long str long ptr long)
-517 stdcall RegSetValueExA(long str long long ptr long)
-518 stdcall RegSetValueExW(long wstr long long ptr long)
+517 stdcall RegSetValueExA(ptr str long long ptr long)
+518 stdcall RegSetValueExW(ptr wstr long long ptr long)
 519 stdcall RegSetValueW(long wstr long ptr long)
-520 stdcall RegUnLoadKeyA(long str)
-521 stdcall RegUnLoadKeyW(long wstr)
+520 stdcall RegUnLoadKeyA(ptr str)
+521 stdcall RegUnLoadKeyW(ptr wstr)
 522 stdcall RegisterEventSourceA(ptr ptr)
 523 stdcall RegisterEventSourceW(ptr ptr)
 524 stdcall RegisterIdleTask(long long ptr ptr)
@@ -571,10 +567,10 @@
 583 stdcall SetTokenInformation(long long ptr long)
 584 stdcall SetTraceCallback(ptr ptr)
 585 stdcall SetUserFileEncryptionKey(ptr)
-586 stdcall StartServiceA(long long ptr)
+586 stdcall StartServiceA(ptr long str)
 587 stdcall StartServiceCtrlDispatcherA(ptr)
 588 stdcall StartServiceCtrlDispatcherW(ptr)
-589 stdcall StartServiceW(long long ptr)
+589 stdcall StartServiceW(ptr long wstr)
 590 stdcall StartTraceA(ptr str ptr) ;ntdll.EtwStartTraceA
 591 stdcall StartTraceW(ptr wstr ptr) ;ntdll.EtwStartTraceW
 592 stdcall StopTraceA(double str ptr) ;ntdll.EtwStopTraceA

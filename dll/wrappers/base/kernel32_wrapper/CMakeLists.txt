@@ -24,6 +24,7 @@ list(APPEND SOURCE
 	error.c
 	filehops.c
 	fileinfo.c
+	filemisc.c
 	fileopcr.c	
 	findfile.c
 	handle.c 
