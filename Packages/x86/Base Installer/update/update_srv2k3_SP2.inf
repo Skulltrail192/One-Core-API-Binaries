@@ -466,27 +466,26 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
 	
 [MustReplace.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
-	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23693_x-ww_F6E8B294\gdiplus.dll"
+	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591\gdiplus.dll
 	
 [CopyAlways.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
-	"WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23693_x-ww_F6E8B294\gdiplus.dll"	
+	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591\gdiplus.dll
 	
 [CopyAlways.WinSxS.Manifests.files]	
 	"WinSxS\manifests\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat"
 	"WinSxS\manifests\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest"
-	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23693_x-ww_F6E8B294.cat"
-	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23693_x-ww_F6E8B294.manifest"
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591.cat"
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591.manifest"
 	
 [CopyAlways.WinSxS.Policies.files]
 	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.policy"
 	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.cat"	
-	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.23693.cat"
-	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.23693.policy"
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.24064.cat"
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.24064.policy"
 
 [CopyAlways.System32.Files]
     advapibase.dll,2k3SP2\srvadvapibase.dll
-    browsebase.dll,2k3SP2\srvbrowsebase.dll
 	crypt32.dll,2k3SP2\srvcrypt32.dll			
     gdibase.dll,2k3SP2\srvgdibase.dll	
     kernelfull.dll,2k3SP2\srvkernelfull.dll
@@ -497,7 +496,6 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
     securbase.dll,2k3SP2\srvsecurbase.dll
     setupapibase.dll,2k3SP2\srvsetupapibase.dll
     shellbase.dll,2k3SP2\srvshellbase.dll	
-    shlwapibase.dll,2k3SP2\srvshlwapibase.dll		
     userbase.dll,2k3SP2\srvuserbase.dll
     uxthemebase.dll,2k3SP2\srvuxthemebase.dll
     winstabase.dll,2k3SP2\srvwinstabase.dll
@@ -506,60 +504,36 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
     advapilong.dll
     advapinew.dll	
     bcrypt.dll
-    combase.dll
     comctlext.dll
-	credui.dll
 	cryptnew.dll
-	cscapi.dll
-	dbgeng.dll
-	duser.dll
-	dwmapi.dll
-	efsadu.dll
-	feclient.dll
-	fileextd.dll
-	iertutil.dll	
-    msvcrt.dll
-    pdhbase.dll
-    winbrand.dll
-    xmllite.dll
-    xmlrw.dll
-    browseui.dll
-    combase.dll
+	fileextd.dll	
     gdi32.dll
     iphlpapi.dll
     iphlpapibase.dll
     idndl.dll
     kernel32.dll 
     kernelbase.dll	
-	msiltcfg.dll
-    Nlsdl.dll
-	ncrypt.dll	
-    normaliz.dll	
-    psapi.dll
+	msvcrt.dll	
     netapi32.dll
     netapinew.dll
+    Nlsdl.dll
+    normaliz.dll		
 	ntext.dll	
 	ole32.dll
     pdh.dll	
+    pdhbase.dll	
     powrprof.dll
-	query.dll	
+    propsys.dll	
+    psapi.dll	
     rpcrt4.dll
     secur32.dll
     securnew.dll
     setupapi.dll
-	synceng.dll 	
-    propsys.dll
     shell32.dll
-	shellnew.dll	
-	shlwapi.dll 
-	slc.dll
-	shlwnew.dll 	
-    ucrtbase.dll
-	urlmon.dll
     user32.dll
     uxtheme.dll
-    vtdll.dll
-	wevtapibase.dll	
+	wevtold.dll	
+    winbrand.dll	
     winsta.dll	
     winstanew.dll
     ws2_32.dll
@@ -569,7 +543,6 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
 
 [SourceDisksFiles]
     2k3SP2\srvadvapibase.dll = 1
-    2k3SP2\srvbrowsebase.dll = 1
     2k3SP2\srvgdibase.dll = 1	
     2k3SP2\srvkernelfull.dll = 1
     2k3SP2\srvnetapibase.dll = 1	
@@ -580,7 +553,6 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
     2k3SP2\srvsecurbase.dll = 1
     2k3SP2\srvsetupapibase.dll = 1
     2k3SP2\srvshellbase.dll = 1
-	2k3SP2\srvshlwapibase.dll = 1	
     2k3SP2\srvuserbase.dll = 1
     2k3SP2\srvuxthemebase.dll = 1
     2k3SP2\srvwinstabase.dll = 1
@@ -591,58 +563,35 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
     bcrypt.dll = 1
     combase.dll = 1
     comctlext.dll =1
-	credui.dll = 1	
 	cryptnew.dll = 1
-	cscapi.dll = 1	
-	dbgeng.dll = 1
-	duser.dll = 1
-	dwmapi.dll = 1	
-	efsadu.dll = 1	
-	feclient.dll = 1	
 	fileextd.dll = 1
-	iertutil = 1
-    msvcrt.dll = 1
-    winbrand.dll = 1
-    xmllite.dll = 1
-    xmlrw.dll = 1
-    browseui.dll = 1
-    combase.dll = 1
     gdi32.dll = 1
     iphlpapi.dll = 1
     iphlpapibase.dll = 1
     idndl.dll = 1
     kernel32.dll = 1
     kernelbase.dll = 1	
-	msiltcfg.dll = 1
-    Nlsdl.dll = 1
-	ncrypt.dll = 1	
-    normaliz.dll = 1
-	ntext.dll = 1
-    psapi.dll = 1
+	msvcrt.dll = 1	
     netapi32.dll = 1
     netapinew.dll = 1
+    Nlsdl.dll = 1
+    normaliz.dll = 1	
+	ntext.dll = 1	
 	ole32.dll = 1	
     pdh.dll = 1
     pdhbase.dll = 1
     powrprof.dll = 1
-	query.dll = 1
+    propsys.dll = 1	
+    psapi.dll = 1	
     rpcrt4.dll = 1
     secur32.dll = 1
     securnew.dll = 1
     setupapi.dll = 1
-	synceng.dll = 1
-    propsys.dll = 1
     shell32.dll = 1
-	shellnew.dll = 1	
-	shlwapi.dll =1 	
-	shlwnew.dll = 1	
-	slc.dll = 1	
-    ucrtbase.dll = 1
-	urlmon.dll = 1
     user32.dll = 1
     uxtheme.dll = 1
-    vtdll.dll = 1
-	wevtapibase.dll = 1	
+	wevtold.dll = 1	
+    winbrand.dll = 1	
     winsta.dll = 1	
     winstanew.dll = 1
     ws2_32.dll = 1
@@ -652,13 +601,13 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
 	WinSxS\6.0.3790.5190.policy = 1
 	WinSxS\6.0.3790.5190.cat = 1	
     WinSxS\gdiplus.dll =1
-    WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23693_x-ww_F6E8B294.cat =1
-	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.23693_x-ww_F6E8B294.manifest =1
+    WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591.cat =1
+	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591.manifest =1
 	WinSxS\1.0.6002.23693.cat =1
 	WinSxS\1.0.6002.23693.policy =1	
 [Strings]
-MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
-MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
+	MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
+	MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 
 [UninstallSections]
     GlobalRegistryChanges, GlobalRegistryChanges.UnInstall

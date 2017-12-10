@@ -309,6 +309,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll,amd64/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll
    ext-ms-win-security-credui-l1-1-0.dll,amd64/ext-ms-win-security-credui-l1-1-0.dll
    ext-ms-win-security-cryptui-l1-1-0.dll,amd64/ext-ms-win-security-cryptui-l1-1-0.dll
+   ucrtbase.dll,amd64/ucrtbase.dll
 
 [CopyAlways.SysWOW64.Files]
    API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll,i386/API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll
@@ -539,6 +540,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll,i386/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll
    ext-ms-win-security-credui-l1-1-0.dll,i386/ext-ms-win-security-credui-l1-1-0.dll
    ext-ms-win-security-cryptui-l1-1-0.dll,i386/ext-ms-win-security-cryptui-l1-1-0.dll
+   ucrtbase.dll,i386/wucrtbase.dll
    
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
@@ -772,6 +774,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "amd64/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll" = 1
    "amd64/ext-ms-win-security-credui-l1-1-0.dll" = 1
    "amd64/ext-ms-win-security-cryptui-l1-1-0.dll" = 1
+   "amd64/ucrtbase.dll" = 1
    "i386/API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll" = 1
    "i386/API-MS-WIN-APPMODEL-RUNTIME-L1-1-1.dll" = 1
    "i386/API-MS-WIN-APPMODEL-RUNTIME-L1-1-2.dll" = 1
@@ -1000,6 +1003,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "i386/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll" = 1
    "i386/ext-ms-win-security-credui-l1-1-0.dll" = 1
    "i386/ext-ms-win-security-cryptui-l1-1-0.dll" = 1
+   "i386/wucrtbase.dll" = 1
    
 [Save.Reg.For.Uninstall]
 

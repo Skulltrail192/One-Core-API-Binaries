@@ -293,7 +293,8 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll"
    "ext-ms-win-security-credui-l1-1-0.dll"
    "ext-ms-win-security-cryptui-l1-1-0.dll"
-
+   "ucrtbase.dll"
+   
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
@@ -526,6 +527,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%WIC_VERSION
    "ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll" = 1
    "ext-ms-win-security-credui-l1-1-0.dll" = 1
    "ext-ms-win-security-cryptui-l1-1-0.dll" = 1
+   "ucrtbase.dll" = 1   
 
 [Save.Reg.For.Uninstall]
 

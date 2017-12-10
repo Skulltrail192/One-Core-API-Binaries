@@ -51,6 +51,13 @@ CLSID_WIC                   = "{FAE3D380-FEA4-4623-8C75-C6B61110B681}"
 CLSID_WIC_Prefix            = "{BB5ACC38-F216-4CEC-A6C5-5F6E739763A9}"
 CLSID_WIC_Namespace         = "{22383CF1-ED17-4E2E-AF17-D85B8F6B30D0}"
 
+[Prerequisite]
+	condition=SingleOp,LatestUpdateCheck2.Section
+	
+[LatestUpdateCheck2.Section]
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
+    Display_String="%LatestUpdateFail%"	
+
 [UninstallSections]
     Add.Reg, Add.Reg.Uninstall
     Del.Reg, Del.Reg.Uninstall
@@ -2617,27 +2624,29 @@ HKCR,SystemFileAssociations\.ico,ExtendedTileInfo
 
 ; register our MSFT namespace in XMP
 HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%
-HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%	
+HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
 	
 [ProductInstall.DontDelayUntilReboot]
-    CopyFiles=MustReplace.System32.files	
+    CopyFiles=MustReplace.System32.files		
 
 [DestinationDirs]
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
 	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)	
 
 [MustReplace.System32.files]
-    cabinet.dll	
+    cabinet.dll		
 	
 [CopyAlways.System32.Files]
 	"avrt.dll"
 	"cabinet.dll"
+	"combase.dll"	
 	"cryptbase.dll"
 	"cryptsp.dll"
 	"dbghelp.dll"
+	"dbgeng.dll"
 	"dpx.dll"
 	"dui70.dll"
 	"dusex.dll"
@@ -2660,11 +2669,13 @@ HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
 	"msidcrl30.dll"
 	"mspatcha.dll"
 	"mtdll.dll"
+	"ncrypt.dll"
 	"ndfapi.dll"
 	"photometadatahandler.dll"
 	"RstrtMgr.dll"
 	"sddlbase.dll"
 	"secbase.dll"
+	"slc.dll"
 	"SLCExt.dll"
 	"sqmapi.dll"
 	"sspicli.dll"
@@ -2696,9 +2707,11 @@ HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
 [SourceDisksFiles]
 	"avrt.dll" = 1
 	"cabinet.dll" = 1
+	"combase.dll" = 1	
 	"cryptbase.dll" = 1
 	"cryptsp.dll" = 1
 	"dbghelp.dll" = 1
+	"dbgeng.dll" = 1
 	"dpx.dll" = 1
 	"dui70.dll" = 1
 	"dusex.dll" = 1
@@ -2721,11 +2734,13 @@ HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
 	"msidcrl30.dll" = 1
 	"mspatcha.dll" = 1
 	"mtdll.dll" = 1
+	"ncrypt.dll" = 1	
 	"ndfapi.dll" = 1
 	"photometadatahandler.dll" = 1
 	"RstrtMgr.dll" = 1
 	"sddlbase.dll" = 1
 	"secbase.dll" = 1
+	"slc.dll" = 1
 	"SLCExt.dll" = 1
 	"sqmapi.dll" = 1
 	"sspicli.dll" = 1

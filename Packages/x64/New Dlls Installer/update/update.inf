@@ -26,7 +26,7 @@ condition=SingleOp,LatestUpdateCheck2.Section
     AppFileinUseDetect        = 3
 	
 [LatestUpdateCheck2.Section]
-    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\KB3204724",Installed,0x10001,==,1
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
     Display_String="%LatestUpdateFail%"	
 
 [Strings]
@@ -5089,21 +5089,21 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 [CopyAlways.System32.Files]
 	avrt.dll,amd64/avrt.dll
 	cabinet.dll,amd64/cabinet.dll
+	combase.dll,amd64/combase.dll
 	credui.dll,amd64/credui.dll
 	cryptbase.dll,amd64/cryptbase.dll
 	cryptsp.dll,amd64/cryptsp.dll
 	dbghelp.dll,amd64/dbghelp.dll
+	dbgeng.dll,amd64/dbgeng.dll
 	dpx.dll,amd64/dpx.dll
 	dui70.dll,amd64/dui70.dll
-	dusex.dll,amd64/dusex.dll
 	duser.dll,amd64/duser.dll
+	dusex.dll,amd64/dusex.dll
 	dwmapi.dll,amd64/dwmapi.dll
 	dxva2.dll,amd64/dxva2.dll
-	efsadu.dll,amd64/efsadu.dll
 	esent.dll,amd64/esent.dll
 	evr.dll,amd64/evr.dll
 	explorerframe.dll,amd64/explorerframe.dll
-	feclient.dll,amd64/feclient.dll
 	httpapi.dll,amd64/httpapi.dll
 	httpapinew.dll,amd64/httpapinew.dll	
 	gameux.dll,amd64/gameux.dll
@@ -5153,12 +5153,16 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 [CopyAlways.SysWOW64.Files]	
 	avrt.dll,i386/wavrt.dll
 	cabinet.dll,i386/wcabinet.dll
+	combase.dll,i386/wcombase.dll
 	cryptbase.dll,i386/wcryptbase.dll
 	cryptsp.dll,i386/wcryptsp.dll
 	dbghelp.dll,i386/wdbghelp.dll
+	dbgeng.dll,i386/wdbgeng.dll
 	dpx.dll,i386/wdpx.dll
 	dui70.dll,i386/wdui70.dll
+	duser.dll,i386/wduser.dll
 	dusex.dll,i386/wdusex.dll
+	dwmapi.dll,i386/wdwmapi.dll
 	dxva2.dll,i386/wdxva2.dll
 	esent.dll,i386/wesent.dll
 	evr.dll,i386/wevr.dll
@@ -5215,10 +5219,12 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 [SourceDisksFiles]
 	amd64/avrt.dll = 1
 	amd64/cabinet = 1
+	amd64/combase.dll = 1
 	amd64/credui.dll = 1
 	amd64/cryptbase.dll = 1
 	amd64/cryptsp.dll = 1
 	amd64/dbghelp.dll = 1
+	amd64/dbgeng.dll = 1
 	amd64/dpx.dll = 1
 	amd64/duser.dll = 1
 	amd64/dui70.dll = 1
@@ -5226,10 +5232,8 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	amd64/dwmapi.dll = 1
 	amd64/dxva2.dll = 1
 	amd64/explorerframe.dll = 1
-	amd64/efsadu.dll = 1
 	amd64/esent.dll = 1
 	amd64/evr.dll = 1
-	amd64/feclient.dll = 1
 	amd64/httpapi.dll = 1
 	amd64/httpapinew.dll = 1
 	amd64/gameux.dll = 1
@@ -5278,10 +5282,12 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	amd64/wusa.exe = 1
 	i386/wavrt.dll = 1
 	i386/wcabinet = 1
+	i386/wcombase.dll = 1
 	i386/wcredui.dll = 1
 	i386/wcryptbase.dll = 1
 	i386/wcryptsp.dll = 1
 	i386/wdbghelp.dll = 1
+	i386/wdbgeng.dll = 1
 	i386/wdpx.dll = 1
 	i386/wduser.dll = 1
 	i386/wdui70.dll = 1
@@ -5289,10 +5295,8 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	i386/wdwmapi.dll = 1
 	i386/wdxva2.dll = 1
 	i386/wexplorerframe.dll = 1
-	i386/wefsadu.dll = 1
 	i386/wesent.dll = 1
 	i386/wevr.dll = 1
-	i386/wfeclient.dll = 1
 	i386/whttpapi.dll = 1
 	i386/whttpapinew.dll = 1
 	i386/wgameux.dll = 1
