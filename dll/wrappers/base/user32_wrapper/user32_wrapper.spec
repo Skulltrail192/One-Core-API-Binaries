@@ -702,7 +702,7 @@
 @ stdcall UnregisterMessagePumpHook()
 @ stdcall UnregisterUserApiHook() ;NtUserUnregisterUserApiHook
 @ stdcall UpdateLayeredWindow(long long ptr ptr long ptr long ptr long)
-#@ stdcall UpdateLayeredWindowIndirect(long ptr)
+@ stdcall UpdateLayeredWindowIndirect(long ptr)
 @ stdcall UpdatePerUserSystemParameters(long long)
 @ stdcall UpdateWindow(long)
 @ stdcall User32InitializeImmEntryTable(ptr)
