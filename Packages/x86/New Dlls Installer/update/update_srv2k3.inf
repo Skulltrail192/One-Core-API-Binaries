@@ -2651,6 +2651,7 @@ HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
 	"dui70.dll"
 	"dusex.dll"
 	"dxva2.dll"
+	"dwmapi.dll"
 	"esent.dll"
 	"evr.dll"
 	"explorerframe.dll"
@@ -2687,6 +2688,7 @@ HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
 	"version.dll"
 	"wdi.dll"
 	"wer.dll"
+	"wevtapi.dll"		
 	"wevtapibase.dll"
 	"wevtbase.dll"
 	"wfapi.dll"
@@ -2716,6 +2718,7 @@ HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
 	"dui70.dll" = 1
 	"dusex.dll" = 1
 	"dxva2.dll" = 1
+	"dwmapi.dll" = 1
 	"esent.dll" = 1
 	"evr.dll" = 1
 	"explorerframe.dll" = 1
@@ -2752,6 +2755,7 @@ HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
 	"version.dll" = 1
 	"wdi.dll" = 1
 	"wer.dll" = 1
+	"wevtapi.dll" = 1	
 	"wevtapibase.dll" = 1
 	"wevtbase.dll" = 1
 	"wfapi.dll" = 1

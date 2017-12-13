@@ -94,7 +94,9 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%SU_VERSION%
 	shellbase.dll,XPSP3\xpshellbase.dll
 	shlwapibase.dll,XPSP3\xpshlwapibase.dll
     browseui.dll
+	credui.dll
 	cscapi.dll
+	duser.dll
 	efsadu.dll
 	feclient.dll
 	iertutil.dll
@@ -116,8 +118,10 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%SU_VERSION%
     XPSP3\xpbrowsebase.dll = 1
 	XPSP3\xpshellbase.dll = 1
 	XPSP3\xpshlwapibase.dll = 1
-    browseui.dll = 1 
+    browseui.dll = 1
+	credui.dll = 1	
 	cscapi.dll = 1
+	duser.dll = 1
 	efsadu.dll = 1
 	feclient.dll = 1
 	iertutil.dll = 1
