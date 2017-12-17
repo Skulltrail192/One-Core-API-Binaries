@@ -51,13 +51,6 @@ CLSID_WIC                   = "{FAE3D380-FEA4-4623-8C75-C6B61110B681}"
 CLSID_WIC_Prefix            = "{BB5ACC38-F216-4CEC-A6C5-5F6E739763A9}"
 CLSID_WIC_Namespace         = "{22383CF1-ED17-4E2E-AF17-D85B8F6B30D0}"
 
-[Prerequisite]
-	condition=SingleOp,LatestUpdateCheck2.Section
-	
-[LatestUpdateCheck2.Section]
-    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
-    Display_String="%LatestUpdateFail%"	
-
 [UninstallSections]
     Add.Reg, Add.Reg.Uninstall
     Del.Reg, Del.Reg.Uninstall

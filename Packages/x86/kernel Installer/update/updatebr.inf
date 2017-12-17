@@ -1,29 +1,12 @@
-
 [Version]
 Signature="$Windows NT$"
 
-[DefaultBranchesServicePacks]
-2=SP2GDR
+[DefaultBranchesServicePacks.WinNt51]
+0=WinXP
+
+[DefaultBranchesServicePacks.WinNt52]
+0=Srv2k3
 
 [SourceInfsBranches]
-SP2GDR="update\update_SP2GDR.inf"
-SP2QFE="update\update_SP2QFE.inf"
-
-[SetupFiles.Common]
-spuninst.exe
-spmsg.dll
-update\spcustom.dll
-update\KB2393802.CAT
-"update\update.exe"
-update\updspapi.dll
-"update\update.ver"
-"update\updatebr.inf"
-update\eula.txt
-update\branches.inf
-
-[SetupFiles.SP2GDR]
-"update\update_SP2GDR.inf"
-
-[SetupFiles.SP2QFE]
-"update\update_SP2QFE.inf"
-
+WinXP=update\update_WinXP.inf
+Srv2k3=update\update_srv2k3.inf
