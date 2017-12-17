@@ -238,11 +238,6 @@ NTSTATUS WINAPI D3DKMTCreateDCFromMemory( D3DKMT_CREATEDCFROMMEMORY *desc )
     if (!(bmpInfo = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*bmpInfo) + (format->palette_size * sizeof(RGBQUAD)) ))) goto error;
     if (!(bmpHeader = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*bmpHeader) ))) goto error;
 
-	DbgPrint("D3DKMTCreateDCFromMemory:: Bitmap Width %d\n", desc->Width);
-	DbgPrint("D3DKMTCreateDCFromMemory:: Bitmap Height %d\n", desc->Height);
-	DbgPrint("D3DKMTCreateDCFromMemory:: Bitmap Pitch %d\n", desc->Pitch);
-	DbgPrint("D3DKMTCreateDCFromMemory:: Bitmap bit_count %d\n", format->bit_count);
-	DbgPrint("D3DKMTCreateDCFromMemory:: Bitmap palette_size %d\n", format->palette_size);	
 	
     bmpHeader->bV5Size        = sizeof(*bmpHeader);
     bmpHeader->bV5Width       = desc->Width;
@@ -275,7 +270,7 @@ NTSTATUS WINAPI D3DKMTCreateDCFromMemory( D3DKMT_CREATEDCFROMMEMORY *desc )
         }
     }
 
-    if (!(bitmap = CreateBitmap(desc->Width, desc->Height, 1, format->bit_count, desc->pMemory)/*CreateDIBitmap(dc, (BITMAPINFOHEADER*)bmpHeader, CBM_INIT, desc->pMemory, bmpInfo, DIB_RGB_COLORS)*/)) goto error;
+    if (!(bitmap = CreateBitmap(desc->Width, desc->Height, 1, format->bit_count, desc->pMemory))) goto error;
 
     desc->hDc = dc;
     desc->hBitmap = bitmap;

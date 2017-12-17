@@ -99,21 +99,28 @@
 95 stdcall ThemeInitApiHook(long ptr) uxthemebase.ThemeInitApiHook
 
 #From Vista
+@ stdcall BeginBufferedAnimation(ptr ptr ptr long ptr ptr ptr ptr)
 @ stdcall BeginBufferedPaint(ptr ptr long ptr ptr)
 @ stdcall BufferedPaintUnInit()
 @ stdcall BufferedPaintInit()
 @ stdcall BufferedPaintClear(ptr ptr)
+@ stdcall BufferedPaintRenderAnimation(ptr ptr)
+@ stdcall BufferedPaintSetAlpha(ptr ptr long)
+@ stdcall BufferedPaintStopAllAnimations(ptr)
 @ stdcall DrawThemeParentBackground(ptr ptr long ptr)
 @ stdcall DrawThemeTextEx(ptr ptr long long wstr long long ptr ptr)
+@ stdcall EndBufferedAnimation(ptr long)
 @ stdcall EndBufferedPaint(ptr long)
-@ stdcall GetBufferedPaintBits(ptr ptr ptr)
-@ stdcall GetThemeTransitionDuration(ptr long long long long ptr)
-@ stdcall GetThemeBitmap(ptr long long long long ptr)
 @ stdcall FreeThemePropertyValues(ptr)
 @ stdcall FreeThemeSymbols(ptr)
-@ stdcall SetWindowThemeAttribute(long long ptr long)
-@ stdcall BufferedPaintSetAlpha(ptr ptr long)
+@ stdcall GetBufferedPaintBits(ptr ptr ptr)
+@ stdcall GetBufferedPaintDC(ptr)
+@ stdcall GetBufferedPaintTargetDC(ptr)
+@ stdcall GetBufferedPaintTargetRect(ptr ptr)
+@ stdcall GetThemeTransitionDuration(ptr long long long long ptr)
+@ stdcall GetThemeBitmap(ptr long long long long ptr)
 @ stdcall IsCompositionActive()
+@ stdcall SetWindowThemeAttribute(long long ptr long)
 
 #From Win7
 @ stdcall BeginPanningFeedback(ptr)

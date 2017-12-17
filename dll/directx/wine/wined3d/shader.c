@@ -692,14 +692,6 @@ static void shader_set_limits(struct wined3d_shader *shader)
     }
 }
 
-static inline void set_bitmap_bit(DWORD *bitmap, DWORD bit)
-{
-    DWORD idx, shift;
-    idx = bit >> 5;
-    shift = bit & 0x1f;
-    bitmap[idx] |= (1u << shift);
-}
-
 static BOOL shader_record_register_usage(struct wined3d_shader *shader, struct wined3d_shader_reg_maps *reg_maps,
         const struct wined3d_shader_register *reg, enum wined3d_shader_type shader_type, unsigned int constf_size)
 {
@@ -767,7 +759,7 @@ static BOOL shader_record_register_usage(struct wined3d_shader *shader, struct w
                 }
                 else
                 {
-                    set_bitmap_bit(reg_maps->constf, reg->idx[0].offset);
+                    wined3d_insert_bits(reg_maps->constf, reg->idx[0].offset, 1, 0x1);
                 }
             }
             break;
@@ -3682,18 +3674,6 @@ static HRESULT vertex_shader_init(struct wined3d_shader *shader, struct wined3d_
     return WINED3D_OK;
 }
 
-static HRESULT domain_shader_init(struct wined3d_shader *shader, struct wined3d_device *device,
-        const struct wined3d_shader_desc *desc, void *parent, const struct wined3d_parent_ops *parent_ops)
-{
-    return shader_init(shader, device, desc, 0, WINED3D_SHADER_TYPE_DOMAIN, parent, parent_ops);
-}
-
-static HRESULT hull_shader_init(struct wined3d_shader *shader, struct wined3d_device *device,
-        const struct wined3d_shader_desc *desc, void *parent, const struct wined3d_parent_ops *parent_ops)
-{
-    return shader_init(shader, device, desc, 0, WINED3D_SHADER_TYPE_HULL, parent, parent_ops);
-}
-
 static HRESULT geometry_shader_init(struct wined3d_shader *shader, struct wined3d_device *device,
         const struct wined3d_shader_desc *desc, const struct wined3d_stream_output_desc *so_desc,
         void *parent, const struct wined3d_parent_ops *parent_ops)
@@ -4076,12 +4056,6 @@ void pixelshader_update_resource_types(struct wined3d_shader *shader, WORD tex_t
     }
 }
 
-static HRESULT compute_shader_init(struct wined3d_shader *shader, struct wined3d_device *device,
-        const struct wined3d_shader_desc *desc, void *parent, const struct wined3d_parent_ops *parent_ops)
-{
-    return shader_init(shader, device, desc, 0, WINED3D_SHADER_TYPE_COMPUTE, parent, parent_ops);
-}
-
 HRESULT CDECL wined3d_shader_create_cs(struct wined3d_device *device, const struct wined3d_shader_desc *desc,
         void *parent, const struct wined3d_parent_ops *parent_ops, struct wined3d_shader **shader)
 {
@@ -4094,7 +4068,7 @@ HRESULT CDECL wined3d_shader_create_cs(struct wined3d_device *device, const stru
     if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    if (FAILED(hr = compute_shader_init(object, device, desc, parent, parent_ops)))
+    if (FAILED(hr = shader_init(object, device, desc, 0, WINED3D_SHADER_TYPE_COMPUTE, parent, parent_ops)))
     {
         WARN("Failed to initialize compute shader, hr %#x.\n", hr);
         HeapFree(GetProcessHeap(), 0, object);
@@ -4119,7 +4093,7 @@ HRESULT CDECL wined3d_shader_create_ds(struct wined3d_device *device, const stru
     if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    if (FAILED(hr = domain_shader_init(object, device, desc, parent, parent_ops)))
+    if (FAILED(hr = shader_init(object, device, desc, 0, WINED3D_SHADER_TYPE_DOMAIN, parent, parent_ops)))
     {
         WARN("Failed to initialize domain shader, hr %#x.\n", hr);
         HeapFree(GetProcessHeap(), 0, object);
@@ -4170,7 +4144,7 @@ HRESULT CDECL wined3d_shader_create_hs(struct wined3d_device *device, const stru
     if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    if (FAILED(hr = hull_shader_init(object, device, desc, parent, parent_ops)))
+    if (FAILED(hr = shader_init(object, device, desc, 0, WINED3D_SHADER_TYPE_HULL, parent, parent_ops)))
     {
         WARN("Failed to initialize hull shader, hr %#x.\n", hr);
         HeapFree(GetProcessHeap(), 0, object);

@@ -33,31 +33,6 @@ GetLargePageMinimum (
 
 BOOL 
 WINAPI 
-SetSystemFileCacheSize(
-	SIZE_T MinimumFileCacheSize, 
-	SIZE_T MaximumFileCacheSize, 
-	int Flags
-)
-{
-  NTSTATUS status; // eax@1
-  BOOL result; // eax@2
-  char SystemInformation; // [sp+0h] [bp-24h]@1
-
-  status = NtSetSystemInformation(SystemObjectInformation|0x40, &SystemInformation, 0x24u);
-  if (!NT_SUCCESS(status) )
-  {
-    BaseSetLastNTError(status);
-    result = FALSE;
-  }
-  else
-  {
-    result = TRUE;
-  }
-  return result;
-}
-
-BOOL 
-WINAPI 
 GetPhysicallyInstalledSystemMemory(
   _Out_  PULONGLONG TotalMemoryInKilobytes
 )

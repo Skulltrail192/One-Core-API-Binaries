@@ -1005,7 +1005,7 @@
 @ stdcall BaseQueryModuleData(str str ptr ptr ptr) kernelfull.BaseQueryModuleData
 @ stdcall BasepCheckWinSaferRestrictions(long long long long long long) kernelfull.BasepCheckWinSaferRestrictions
 @ stdcall BasepFreeAppCompatData(ptr ptr)
-@ stdcall SetSystemFileCacheSize(long long long) kernelfull.SetSystemFileCacheSize
+@ stdcall SetSystemFileCacheSize(long long long) 
 @ stdcall SetThreadStackGuarantee(ptr)
 
 #Native in XP SP3 and Missing in Server 2003 SP2 with Updates
@@ -1058,6 +1058,8 @@
 @ stdcall CopyFileTransactedW(wstr wstr ptr ptr ptr long ptr)
 @ stdcall CreateEventExA(ptr str ptr long)
 @ stdcall CreateEventExW(ptr wstr ptr long) 
+@ stdcall CreateFileTransactedA(str long long ptr long long ptr ptr ptr ptr)
+@ stdcall CreateFileTransactedW(wstr long long ptr long long ptr ptr ptr ptr)
 @ stdcall CreateMutexExA(ptr str long long)
 @ stdcall CreateMutexExW(ptr wstr long long)
 @ stdcall CreateSemaphoreExA(ptr long long str ptr long) 
@@ -1244,6 +1246,8 @@
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
 @ stdcall TryAcquireSRWLockExclusive(ptr) ntext.RtlTryAcquireSRWLockExclusive
 @ stdcall TryAcquireSRWLockShared(ptr) ntext.RtlTryAcquireSRWLockShared
+@ stdcall WerRegisterRuntimeExceptionModule(wstr ptr)
+@ stdcall WerUnregisterRuntimeExceptionModule(wstr ptr)
 
 #Win8 Functions 
 @ stdcall AddDllDirectory(wstr)

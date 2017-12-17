@@ -267,6 +267,7 @@ struct glsl_context_data
 {
     struct glsl_shader_prog_link *glsl_program;
     GLenum vertex_color_clamp;
+    BOOL rasterization_disabled;
 };
 
 struct glsl_ps_compiled_shader
@@ -839,14 +840,23 @@ static void shader_glsl_generate_transform_feedback_varyings(const struct wined3
 
             if (e->component_idx || e->component_count != 4)
             {
-                FIXME("Unsupported component range %u-%u.\n", e->component_idx, e->component_count);
-                append_transform_feedback_skip_components(varyings, &count,
-                        &strings, &length, buffer, e->component_count);
-                continue;
-            }
+                if (so_desc->rasterizer_stream_idx != WINED3D_NO_RASTERIZER_STREAM)
+                {
+                    FIXME("Unsupported component range %u-%u.\n", e->component_idx, e->component_count);
+                    append_transform_feedback_skip_components(varyings, &count,
+                            &strings, &length, buffer, e->component_count);
+                    continue;
+                }
 
-            string_buffer_sprintf(buffer, "shader_in_out.reg%u", e->register_idx);
-            append_transform_feedback_varying(varyings, &count, &strings, &length, buffer);
+                string_buffer_sprintf(buffer, "shader_in_out.reg%u_%u_%u",
+                        e->register_idx, e->component_idx, e->component_idx + e->component_count - 1);
+                append_transform_feedback_varying(varyings, &count, &strings, &length, buffer);
+            }
+            else
+            {
+                string_buffer_sprintf(buffer, "shader_in_out.reg%u", e->register_idx);
+                append_transform_feedback_varying(varyings, &count, &strings, &length, buffer);
+            }
         }
 
         if (buffer_idx < so_desc->buffer_stride_count
@@ -5789,9 +5799,41 @@ static void shader_glsl_sample(const struct wined3d_shader_instruction *ins)
     shader_glsl_release_sample_function(ins->ctx, &sample_function);
 }
 
+/* GLSL doesn't provide a function to sample from level zero with depth
+ * comparison for array textures and cube textures. We use textureGrad*()
+ * to implement sample_c_lz.
+ */
+static void shader_glsl_gen_sample_c_lz(const struct wined3d_shader_instruction *ins,
+        unsigned int sampler_bind_idx, const struct glsl_sample_function *sample_function,
+        unsigned int coord_size, const char *coord_param, const char *ref_param)
+{
+    const struct wined3d_shader_version *version = &ins->ctx->reg_maps->shader_version;
+    unsigned int deriv_size = wined3d_popcount(sample_function->deriv_mask);
+    const struct wined3d_shader_texel_offset *offset = &ins->texel_offset;
+    struct wined3d_string_buffer *buffer = ins->ctx->buffer;
+    char dst_swizzle[6];
+
+    WARN("Emitting textureGrad() for sample_c_lz.\n");
+
+    shader_glsl_swizzle_to_str(WINED3DSP_NOSWIZZLE, FALSE, ins->dst[0].write_mask, dst_swizzle);
+    shader_glsl_append_dst_ext(buffer, ins, &ins->dst[0], sample_function->data_type);
+    shader_addline(buffer, "vec4(textureGrad%s(%s_sampler%u, vec%u(%s, %s), vec%u(0.0), vec%u(0.0)",
+            sample_function->offset_size ? "Offset" : "",
+            shader_glsl_get_prefix(version->type), sampler_bind_idx,
+            coord_size, coord_param, ref_param, deriv_size, deriv_size);
+    if (sample_function->offset_size)
+    {
+        int offset_immdata[4] = {offset->u, offset->v, offset->w};
+        shader_addline(buffer, ", ");
+        shader_glsl_append_imm_ivec(buffer, offset_immdata, sample_function->offset_size);
+    }
+    shader_addline(buffer, "))%s);\n", dst_swizzle);
+}
+
 static void shader_glsl_sample_c(const struct wined3d_shader_instruction *ins)
 {
     unsigned int resource_idx, sampler_idx, sampler_bind_idx;
+    const struct wined3d_shader_resource_info *resource_info;
     struct glsl_src_param coord_param, compare_param;
     struct glsl_sample_function sample_function;
     const char *lod_param = NULL;
@@ -5807,6 +5849,8 @@ static void shader_glsl_sample_c(const struct wined3d_shader_instruction *ins)
     if (wined3d_shader_instruction_has_texel_offset(ins))
         flags |= WINED3D_GLSL_SAMPLE_OFFSET;
 
+    if (!(resource_info = shader_glsl_get_resource_info(ins, &ins->src[1].reg)))
+        return;
     resource_idx = ins->src[1].reg.idx[0].offset;
     sampler_idx = ins->src[2].reg.idx[0].offset;
 
@@ -5815,9 +5859,19 @@ static void shader_glsl_sample_c(const struct wined3d_shader_instruction *ins)
     shader_glsl_add_src_param(ins, &ins->src[0], sample_function.coord_mask >> 1, &coord_param);
     shader_glsl_add_src_param(ins, &ins->src[3], WINED3DSP_WRITEMASK_0, &compare_param);
     sampler_bind_idx = shader_glsl_find_sampler(&ins->ctx->reg_maps->sampler_map, resource_idx, sampler_idx);
-    shader_glsl_gen_sample_code(ins, sampler_bind_idx, &sample_function, WINED3DSP_NOSWIZZLE,
-            NULL, NULL, lod_param, &ins->texel_offset, "vec%u(%s, %s)",
-            coord_size, coord_param.param_str, compare_param.param_str);
+    if (ins->handler_idx == WINED3DSIH_SAMPLE_C_LZ
+            && (resource_info->type == WINED3D_SHADER_RESOURCE_TEXTURE_2DARRAY
+            || resource_info->type == WINED3D_SHADER_RESOURCE_TEXTURE_CUBE))
+    {
+        shader_glsl_gen_sample_c_lz(ins, sampler_bind_idx, &sample_function,
+                coord_size, coord_param.param_str, compare_param.param_str);
+    }
+    else
+    {
+        shader_glsl_gen_sample_code(ins, sampler_bind_idx, &sample_function, WINED3DSP_NOSWIZZLE,
+                NULL, NULL, lod_param, &ins->texel_offset, "vec%u(%s, %s)",
+                coord_size, coord_param.param_str, compare_param.param_str);
+    }
     shader_glsl_release_sample_function(ins->ctx, &sample_function);
 }
 
@@ -6850,6 +6904,75 @@ static GLuint shader_glsl_generate_vs3_rasterizer_input_setup(struct shader_glsl
     return ret;
 }
 
+static void shader_glsl_generate_stream_output_setup(struct shader_glsl_priv *priv,
+        const struct wined3d_shader *shader, const struct wined3d_stream_output_desc *so_desc)
+{
+    struct wined3d_string_buffer *buffer = &priv->shader_buffer;
+    unsigned int i;
+
+    shader_addline(buffer, "out shader_in_out\n{\n");
+    for (i = 0; i < so_desc->element_count; ++i)
+    {
+        const struct wined3d_stream_output_element *e = &so_desc->elements[i];
+
+        if (e->stream_idx)
+        {
+            FIXME("Unhandled stream %u.\n", e->stream_idx);
+            continue;
+        }
+        if (e->register_idx == WINED3D_STREAM_OUTPUT_GAP)
+            continue;
+
+        if (e->component_idx || e->component_count != 4)
+        {
+            if (e->component_count == 1)
+                shader_addline(buffer, "float");
+            else
+                shader_addline(buffer, "vec%u", e->component_count);
+            shader_addline(buffer, " reg%u_%u_%u;\n",
+                    e->register_idx, e->component_idx, e->component_idx + e->component_count - 1);
+        }
+        else
+        {
+            shader_addline(buffer, "vec4 reg%u;\n", e->register_idx);
+        }
+    }
+    shader_addline(buffer, "} shader_out;\n");
+
+    shader_addline(buffer, "void setup_gs_output(in vec4 outputs[%u])\n{\n",
+            shader->limits->packed_output);
+    for (i = 0; i < so_desc->element_count; ++i)
+    {
+        const struct wined3d_stream_output_element *e = &so_desc->elements[i];
+
+        if (e->stream_idx)
+        {
+            FIXME("Unhandled stream %u.\n", e->stream_idx);
+            continue;
+        }
+        if (e->register_idx == WINED3D_STREAM_OUTPUT_GAP)
+            continue;
+
+        if (e->component_idx || e->component_count != 4)
+        {
+            DWORD write_mask;
+            char str_mask[6];
+
+            write_mask = ((1u << e->component_count) - 1) << e->component_idx;
+            shader_glsl_write_mask_to_str(write_mask, str_mask);
+            shader_addline(buffer, "shader_out.reg%u_%u_%u = outputs[%u]%s;\n",
+                    e->register_idx, e->component_idx, e->component_idx + e->component_count - 1,
+                    e->register_idx, str_mask);
+        }
+        else
+        {
+            shader_addline(buffer, "shader_out.reg%u = outputs[%u];\n",
+                    e->register_idx, e->register_idx);
+        }
+    }
+    shader_addline(buffer, "}\n");
+}
+
 static void shader_glsl_generate_sm4_output_setup(struct shader_glsl_priv *priv,
         const struct wined3d_shader *shader, unsigned int input_count,
         const struct wined3d_gl_info *gl_info, BOOL rasterizer_setup, const DWORD *interpolation_mode)
@@ -7759,8 +7882,15 @@ static GLuint shader_glsl_generate_geometry_shader(const struct wined3d_context 
     if (!gl_info->supported[ARB_CLIP_CONTROL])
         shader_addline(buffer, "uniform vec4 pos_fixup;\n");
 
-    shader_glsl_generate_sm4_output_setup(priv, shader, args->output_count,
-            gl_info, TRUE, args->interpolation_mode);
+    if (is_rasterization_disabled(shader))
+    {
+        shader_glsl_generate_stream_output_setup(priv, shader, &shader->u.gs.so_desc);
+    }
+    else
+    {
+        shader_glsl_generate_sm4_output_setup(priv, shader, args->output_count,
+                gl_info, TRUE, args->interpolation_mode);
+    }
     shader_addline(buffer, "void main()\n{\n");
     if (FAILED(shader_generate_code(shader, buffer, reg_maps, &priv_ctx, NULL, NULL)))
         return 0;
@@ -9692,7 +9822,13 @@ static void set_glsl_shader_program(const struct wined3d_context *context, const
         gs_id = find_glsl_geometry_shader(context, priv, gshader, &args);
     }
 
-    if (!(context->shader_update_mask & (1u << WINED3D_SHADER_TYPE_PIXEL)) && ctx_data->glsl_program)
+    /* A pixel shader is not used when rasterization is disabled. */
+    if (is_rasterization_disabled(gshader))
+    {
+        ps_id = 0;
+        ps_list = NULL;
+    }
+    else if (!(context->shader_update_mask & (1u << WINED3D_SHADER_TYPE_PIXEL)) && ctx_data->glsl_program)
     {
         ps_id = ctx_data->glsl_program->ps.id;
         ps_list = &ctx_data->glsl_program->ps.shader_entry;
@@ -10532,6 +10668,7 @@ static unsigned int shader_glsl_get_shader_model(const struct wined3d_gl_info *g
     if (shader_model_4
             && gl_info->supported[ARB_COMPUTE_SHADER]
             && gl_info->supported[ARB_DERIVATIVE_CONTROL]
+            && gl_info->supported[ARB_DRAW_INDIRECT]
             && gl_info->supported[ARB_GPU_SHADER5]
             && gl_info->supported[ARB_SHADER_ATOMIC_COUNTERS]
             && gl_info->supported[ARB_SHADER_IMAGE_LOAD_STORE]
@@ -11057,6 +11194,14 @@ static void glsl_vertex_pipe_hs(struct wined3d_context *context,
 static void glsl_vertex_pipe_geometry_shader(struct wined3d_context *context,
         const struct wined3d_state *state, DWORD state_id)
 {
+    struct glsl_context_data *ctx_data = context->shader_backend_data;
+    BOOL rasterization_disabled;
+
+    rasterization_disabled = is_rasterization_disabled(state->shader[WINED3D_SHADER_TYPE_GEOMETRY]);
+    if (ctx_data->rasterization_disabled != rasterization_disabled)
+        context->shader_update_mask |= 1u << WINED3D_SHADER_TYPE_PIXEL;
+    ctx_data->rasterization_disabled = rasterization_disabled;
+
     if (state->shader[WINED3D_SHADER_TYPE_DOMAIN])
         context->shader_update_mask |= 1u << WINED3D_SHADER_TYPE_DOMAIN;
     else if (state->shader[WINED3D_SHADER_TYPE_VERTEX]

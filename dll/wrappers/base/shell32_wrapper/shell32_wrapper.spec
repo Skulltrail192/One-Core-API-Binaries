@@ -497,7 +497,7 @@
 @ stdcall SHGetKnownFolderPath(ptr long ptr ptr)
 @ stdcall AssocCreateForClasses(ptr long long ptr)
 @ stdcall AssocGetDetailsOfPropKey(ptr ptr ptr ptr ptr)
-@ stdcall ILLoadFromStreamEx(ptr ptr)
+846 stdcall ILLoadFromStreamEx(ptr ptr)
 @ stdcall InitNetworkAddressControl()
 @ stdcall SHCreateDefaultContextMenu(ptr ptr ptr)
 @ stdcall SHCreateDefaultExtractIcon(ptr ptr)

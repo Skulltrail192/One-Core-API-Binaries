@@ -286,16 +286,17 @@ struct wined3d_typeless_format_depth_stencil_info
     enum wined3d_format_id depth_stencil_id;
     enum wined3d_format_id depth_view_id;
     enum wined3d_format_id stencil_view_id;
+    BOOL separate_depth_view_format;
 };
 
 static const struct wined3d_typeless_format_depth_stencil_info typeless_depth_stencil_formats[] =
 {
     {WINED3DFMT_R32G8X24_TYPELESS, WINED3DFMT_D32_FLOAT_S8X24_UINT,
-            WINED3DFMT_R32_FLOAT_X8X24_TYPELESS, WINED3DFMT_X32_TYPELESS_G8X24_UINT},
+            WINED3DFMT_R32_FLOAT_X8X24_TYPELESS, WINED3DFMT_X32_TYPELESS_G8X24_UINT, TRUE},
     {WINED3DFMT_R24G8_TYPELESS,    WINED3DFMT_D24_UNORM_S8_UINT,
-            WINED3DFMT_R24_UNORM_X8_TYPELESS,    WINED3DFMT_X24_TYPELESS_G8_UINT},
-    {WINED3DFMT_R32_TYPELESS,      WINED3DFMT_D32_FLOAT},
-    {WINED3DFMT_R16_TYPELESS,      WINED3DFMT_D16_UNORM},
+            WINED3DFMT_R24_UNORM_X8_TYPELESS,    WINED3DFMT_X24_TYPELESS_G8_UINT,    TRUE},
+    {WINED3DFMT_R32_TYPELESS,      WINED3DFMT_D32_FLOAT, WINED3DFMT_R32_FLOAT},
+    {WINED3DFMT_R16_TYPELESS,      WINED3DFMT_D16_UNORM, WINED3DFMT_R16_UNORM},
 };
 
 struct wined3d_format_ddi_info
@@ -406,6 +407,7 @@ static const struct wined3d_format_vertex_info format_vertex_info[] =
     {WINED3DFMT_R8G8B8A8_SNORM,     WINED3D_FFP_EMIT_INVALID,   4, GL_BYTE,                        GL_TRUE },
     {WINED3DFMT_R8G8B8A8_SINT,      WINED3D_FFP_EMIT_INVALID,   4, GL_BYTE,                        GL_FALSE},
     {WINED3DFMT_R16G16B16A16_UINT,  WINED3D_FFP_EMIT_INVALID,   4, GL_UNSIGNED_SHORT,              GL_FALSE},
+    {WINED3DFMT_R8_UNORM,           WINED3D_FFP_EMIT_INVALID,   1, GL_UNSIGNED_BYTE,               GL_TRUE},
     {WINED3DFMT_R8_UINT,            WINED3D_FFP_EMIT_INVALID,   1, GL_UNSIGNED_BYTE,               GL_FALSE},
     {WINED3DFMT_R8_SINT,            WINED3D_FFP_EMIT_INVALID,   1, GL_BYTE,                        GL_FALSE},
     {WINED3DFMT_R16_UINT,           WINED3D_FFP_EMIT_INVALID,   1, GL_UNSIGNED_SHORT,              GL_FALSE},
@@ -3540,7 +3542,8 @@ static BOOL init_typeless_formats(struct wined3d_gl_info *gl_info)
             typeless_format->flags[j] &= ~(WINED3DFMT_FLAG_DEPTH | WINED3DFMT_FLAG_STENCIL);
         }
 
-        if ((format_id = typeless_depth_stencil_formats[i].depth_view_id))
+        if ((format_id = typeless_depth_stencil_formats[i].depth_view_id)
+                && typeless_depth_stencil_formats[i].separate_depth_view_format)
         {
             if (!(depth_view_format = get_format_internal(gl_info, format_id)))
                 return FALSE;
@@ -3755,6 +3758,19 @@ const struct wined3d_format *wined3d_get_format(const struct wined3d_gl_info *gl
     }
 
     return format;
+}
+
+BOOL wined3d_format_is_depth_view(enum wined3d_format_id resource_format_id,
+        enum wined3d_format_id view_format_id)
+{
+    unsigned int i;
+
+    for (i = 0; i < ARRAY_SIZE(typeless_depth_stencil_formats); ++i)
+    {
+        if (typeless_depth_stencil_formats[i].typeless_id == resource_format_id)
+            return typeless_depth_stencil_formats[i].depth_view_id == view_format_id;
+    }
+    return FALSE;
 }
 
 void wined3d_format_calculate_pitch(const struct wined3d_format *format, unsigned int alignment,

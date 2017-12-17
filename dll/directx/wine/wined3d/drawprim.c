@@ -165,38 +165,6 @@ static void draw_primitive_arrays(struct wined3d_context *context, const struct 
     }
 }
 
-/* Context activation is done by the caller. */
-static void draw_primitive_arrays_indirect(struct wined3d_context *context, const struct wined3d_state *state,
-        const void *idx_data, unsigned int idx_size, struct wined3d_buffer *buffer, unsigned int offset)
-{
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-
-    if (!gl_info->supported[ARB_DRAW_INDIRECT])
-    {
-        FIXME("Indirect draw not supported.\n");
-        return;
-    }
-
-    wined3d_buffer_load(buffer, context, state);
-    GL_EXTCALL(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer->buffer_object));
-
-    if (idx_size)
-    {
-        GLenum idx_type = (idx_size == 2) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
-
-        GL_EXTCALL(glDrawElementsIndirect(state->gl_primitive_type, idx_type,
-                (const BYTE *)NULL + offset));
-    }
-    else
-    {
-        GL_EXTCALL(glDrawArraysIndirect(state->gl_primitive_type,
-                (const BYTE *)NULL + offset));
-    }
-
-    GL_EXTCALL(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0));
-    checkGLcall("draw indirect");
-}
-
 static const BYTE *software_vertex_blending(struct wined3d_context *context,
         const struct wined3d_state *state, const struct wined3d_stream_info *si,
         unsigned int element_idx, unsigned int stride_idx, float *result)
@@ -523,6 +491,40 @@ static void draw_primitive_immediate_mode(struct wined3d_context *context, const
     checkGLcall("glEnd and previous calls");
 }
 
+static void draw_indirect(struct wined3d_context *context, const struct wined3d_state *state,
+        const struct wined3d_indirect_draw_parameters *parameters, unsigned int idx_size)
+{
+    const struct wined3d_gl_info *gl_info = context->gl_info;
+    struct wined3d_buffer *buffer = parameters->buffer;
+
+    if (!gl_info->supported[ARB_DRAW_INDIRECT])
+    {
+        FIXME("OpenGL implementation does not support indirect draws.\n");
+        return;
+    }
+
+    wined3d_buffer_load(buffer, context, state);
+    GL_EXTCALL(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer->buffer_object));
+
+    if (idx_size)
+    {
+        GLenum idx_type = idx_size == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+        if (state->index_offset)
+            FIXME("Ignoring index offset %u.\n", state->index_offset);
+        GL_EXTCALL(glDrawElementsIndirect(state->gl_primitive_type, idx_type,
+                (void *)(GLintptr)parameters->offset));
+    }
+    else
+    {
+        GL_EXTCALL(glDrawArraysIndirect(state->gl_primitive_type,
+                (void *)(GLintptr)parameters->offset));
+    }
+
+    GL_EXTCALL(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0));
+
+    checkGLcall("draw indirect");
+}
+
 static void remove_vbos(struct wined3d_context *context,
         const struct wined3d_state *state, struct wined3d_stream_info *s)
 {
@@ -747,7 +749,7 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
     {
         const struct wined3d_shader *shader = state->shader[WINED3D_SHADER_TYPE_GEOMETRY];
 
-        if (shader->u.gs.so_desc.rasterizer_stream_idx == WINED3D_NO_RASTERIZER_STREAM)
+        if (is_rasterization_disabled(shader))
         {
             glEnable(GL_RASTERIZER_DISCARD);
             checkGLcall("enable rasterizer discard");
@@ -777,11 +779,10 @@ void draw_primitive(struct wined3d_device *device, const struct wined3d_state *s
 
     if (parameters->indirect)
     {
-        if (context->use_immediate_mode_draw || emulation)
-            FIXME("Indirect draw with immediate mode/emulation is not supported.\n");
+        if (!context->use_immediate_mode_draw && !emulation)
+            draw_indirect(context, state, &parameters->u.indirect, idx_size);
         else
-            draw_primitive_arrays_indirect(context, state, idx_data, idx_size,
-                    parameters->u.indirect.buffer, parameters->u.indirect.offset);
+            FIXME("Indirect draws with immediate mode/emulation are not supported.\n");
     }
     else
     {

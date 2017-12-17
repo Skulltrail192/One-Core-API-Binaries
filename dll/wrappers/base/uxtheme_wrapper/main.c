@@ -33,9 +33,22 @@
 #include <undocuser.h>
 #include <uxtheme.h>
 
-typedef int (WINAPI *DTT_CALLBACK_PROC)( HDC, LPWSTR, int, LPRECT, UINT, LPARAM );
+WINE_DEFAULT_DEBUG_CHANNEL(uxtheme_wrapper);
 
 HANDLE hHeap = 0;
+
+typedef HANDLE HANIMATIONBUFFER;
+
+typedef int (WINAPI *DTT_CALLBACK_PROC)( HDC, LPWSTR, int, LPRECT, UINT, LPARAM );
+
+struct paintbuffer
+{
+    HDC targetdc;
+    HDC memorydc;
+    HBITMAP bitmap;
+    RECT rect;
+    void *bits;
+};
 
 //unimplemented
 typedef struct _DTTOPTS {
@@ -56,7 +69,35 @@ typedef struct _DTTOPTS {
   LPARAM            lParam;
 } DTTOPTS, *PDTTOPTS;
 
-WINE_DEFAULT_DEBUG_CHANNEL(bcrypt);
+typedef enum _BP_ANIMATIONSTYLE
+{
+    BPAS_NONE,
+    BPAS_LINEAR,
+    BPAS_CUBIC,
+    BPAS_SINE
+} BP_ANIMATIONSTYLE;
+
+typedef struct _BP_ANIMATIONPARAMS
+{
+    DWORD cbSize;
+    DWORD dwFlags;
+    BP_ANIMATIONSTYLE style;
+    DWORD dwDuration;
+} BP_ANIMATIONPARAMS, *PBP_ANIMATIONPARAMS;
+
+static void free_paintbuffer(struct paintbuffer *buffer)
+{
+    DeleteObject(buffer->bitmap);
+    DeleteDC(buffer->memorydc);
+    HeapFree(GetProcessHeap(), 0, buffer);
+}
+
+static struct paintbuffer *get_buffer_obj(HPAINTBUFFER handle)
+{
+    if (!handle)
+        return NULL;
+    return handle;
+}
 
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 {
@@ -174,13 +215,30 @@ HRESULT WINAPI BufferedPaintInit()
 	return E_FAIL;
 }
 
-//unimplemented
-HRESULT WINAPI EndBufferedPaint(
-  HPAINTBUFFER hBufferedPaint,
-  BOOL fUpdateTarget
-)
+/***********************************************************************
+ *      EndBufferedPaint                                   (UXTHEME.@)
+ */
+HRESULT WINAPI EndBufferedPaint(HPAINTBUFFER bufferhandle, BOOL update)
 {
-	return E_FAIL;
+    struct paintbuffer *buffer = get_buffer_obj(bufferhandle);
+
+    TRACE("(%p %d)\n", bufferhandle, update);
+
+    if (!buffer)
+        return E_INVALIDARG;
+
+    if (update)
+    {
+        if (!BitBlt(buffer->targetdc, buffer->rect.left, buffer->rect.top,
+                buffer->rect.right - buffer->rect.left, buffer->rect.bottom - buffer->rect.top,
+                buffer->memorydc, buffer->rect.left, buffer->rect.top, SRCCOPY))
+        {
+            WARN("BitBlt() failed\n");
+        }
+    }
+
+    free_paintbuffer(buffer);
+    return S_OK;
 }
 
 //unimplemented
@@ -189,29 +247,100 @@ HRESULT WINAPI BufferedPaintClear(
   _In_  const RECT *prc
 )
 {
-	return E_FAIL;
+    FIXME("Stub (%p %p)\n", hBufferedPaint, prc);
+    return E_NOTIMPL;
 }
 
-//unimplemented
-HRESULT WINAPI GetBufferedPaintBits(
-  HPAINTBUFFER hBufferedPaint,
-  _Out_  RGBQUAD **ppbBuffer,
-  _Out_  int *pcxRow
-)
+/***********************************************************************
+ *      GetBufferedPaintBits                               (UXTHEME.@)
+ */
+HRESULT WINAPI GetBufferedPaintBits(HPAINTBUFFER bufferhandle, RGBQUAD **bits, int *width)
 {
-	return E_FAIL;
+    struct paintbuffer *buffer = get_buffer_obj(bufferhandle);
+
+    TRACE("(%p %p %p)\n", buffer, bits, width);
+
+    if (!bits || !width)
+        return E_POINTER;
+
+    if (!buffer || !buffer->bits)
+        return E_FAIL;
+
+    *bits = buffer->bits;
+    *width = buffer->rect.right - buffer->rect.left;
+
+    return S_OK;
 }
 
-//unimplemented
-HPAINTBUFFER WINAPI BeginBufferedPaint(
-  HDC hdcTarget,
-  const RECT *prcTarget,
-  BP_BUFFERFORMAT dwFormat,
-  _In_   BP_PAINTPARAMS *pPaintParams,
-  _Out_  HDC *phdc
-)
+/***********************************************************************
+ *      BeginBufferedPaint                                 (UXTHEME.@)
+ */
+HPAINTBUFFER WINAPI BeginBufferedPaint(HDC targetdc, const RECT *rect,
+        BP_BUFFERFORMAT format, BP_PAINTPARAMS *params, HDC *retdc)
 {
-	return NULL;
+	//FIELD_OFFSET(BITMAPINFO, bmiColors[256])
+    char bmibuf[1024]; //Hack for compile
+    BITMAPINFO *bmi = (BITMAPINFO *)bmibuf;
+    struct paintbuffer *buffer;
+
+    TRACE("(%p %s %d %p %p)\n", targetdc, wine_dbgstr_rect(rect), format,
+          params, retdc);
+
+    if (retdc)
+        *retdc = NULL;
+
+    if (!targetdc || IsRectEmpty(rect))
+        return NULL;
+
+    if (params)
+        FIXME("painting parameters are ignored\n");
+
+    buffer = HeapAlloc(GetProcessHeap(), 0, sizeof(*buffer));
+    buffer->targetdc = targetdc;
+    buffer->rect = *rect;
+    buffer->memorydc = CreateCompatibleDC(targetdc);
+
+    switch (format)
+    {
+    case BPBF_COMPATIBLEBITMAP:
+        buffer->bitmap = CreateCompatibleBitmap(targetdc, rect->right - rect->left, rect->bottom - rect->top);
+        buffer->bits = NULL;
+        break;
+    case BPBF_DIB:
+    case BPBF_TOPDOWNDIB:
+    case BPBF_TOPDOWNMONODIB:
+        /* create DIB section */
+        memset(bmi, 0, sizeof(bmibuf));
+        bmi->bmiHeader.biSize = sizeof(bmi->bmiHeader);
+        bmi->bmiHeader.biHeight = format == BPBF_DIB ? rect->bottom - rect->top :
+                -(rect->bottom - rect->top);
+        bmi->bmiHeader.biWidth = rect->right - rect->left;
+        bmi->bmiHeader.biBitCount = format == BPBF_TOPDOWNMONODIB ? 1 : 32;
+        bmi->bmiHeader.biPlanes = 1;
+        bmi->bmiHeader.biCompression = BI_RGB;
+        buffer->bitmap = CreateDIBSection(buffer->memorydc, bmi, DIB_RGB_COLORS, &buffer->bits, NULL, 0);
+        break;
+    default:
+        WARN("Unknown buffer format %d\n", format);
+        buffer->bitmap = NULL;
+        free_paintbuffer(buffer);
+        return NULL;
+    }
+
+    if (!buffer->bitmap)
+    {
+        WARN("Failed to create buffer bitmap\n");
+        free_paintbuffer(buffer);
+        return NULL;
+    }
+
+    SetWindowOrgEx(buffer->memorydc, rect->left, rect->top, NULL);
+    IntersectClipRect(buffer->memorydc, rect->left, rect->top, rect->right, rect->bottom);
+    DeleteObject(SelectObject(buffer->memorydc, buffer->bitmap));
+
+    *retdc = buffer->memorydc;
+
+    return (HPAINTBUFFER)buffer;
 }
 
 HRESULT 
@@ -219,6 +348,88 @@ WINAPI
 CheckThemeSignature(LPCWSTR  pszThemeFileName) 	
 {
     return S_OK;
+}
+
+/***********************************************************************
+ *      GetBufferedPaintDC                                 (UXTHEME.@)
+ */
+HDC WINAPI GetBufferedPaintDC(HPAINTBUFFER bufferhandle)
+{
+    struct paintbuffer *buffer = get_buffer_obj(bufferhandle);
+
+    TRACE("(%p)\n", buffer);
+
+    return buffer ? buffer->memorydc : NULL;
+}
+
+/***********************************************************************
+ *      GetBufferedPaintTargetDC                           (UXTHEME.@)
+ */
+HDC WINAPI GetBufferedPaintTargetDC(HPAINTBUFFER bufferhandle)
+{
+    struct paintbuffer *buffer = get_buffer_obj(bufferhandle);
+
+    TRACE("(%p)\n", buffer);
+
+    return buffer ? buffer->targetdc : NULL;
+}
+
+/***********************************************************************
+ *      GetBufferedPaintTargetRect                         (UXTHEME.@)
+ */
+HRESULT WINAPI GetBufferedPaintTargetRect(HPAINTBUFFER bufferhandle, RECT *rect)
+{
+    struct paintbuffer *buffer = get_buffer_obj(bufferhandle);
+
+    TRACE("(%p %p)\n", buffer, rect);
+
+    if (!rect)
+        return E_POINTER;
+
+    if (!buffer)
+        return E_FAIL;
+
+    *rect = buffer->rect;
+    return S_OK;
+}
+
+/***********************************************************************
+ *      BeginBufferedAnimation                             (UXTHEME.@)
+ */
+HANIMATIONBUFFER WINAPI BeginBufferedAnimation(HWND hwnd, HDC hdcTarget, const RECT *rcTarget,
+                                               BP_BUFFERFORMAT dwFormat, BP_PAINTPARAMS *pPaintParams,
+                                               BP_ANIMATIONPARAMS *pAnimationParams, HDC *phdcFrom,
+                                               HDC *phdcTo)
+{
+    FIXME("Stub (%p %p %p %u %p %p %p %p)\n", hwnd, hdcTarget, rcTarget, dwFormat,
+          pPaintParams, pAnimationParams, phdcFrom, phdcTo);
+
+    return NULL;
+}
+
+/***********************************************************************
+ *      BufferedPaintRenderAnimation                       (UXTHEME.@)
+ */
+BOOL WINAPI BufferedPaintRenderAnimation(HWND hwnd, HDC hdcTarget)
+{
+    FIXME("Stub (%p %p)\n", hwnd, hdcTarget);
+
+    return FALSE;
+}
+
+/***********************************************************************
+ *      EndBufferedAnimation                               (UXTHEME.@)
+ */
+HRESULT 
+WINAPI 
+EndBufferedAnimation(
+	HANIMATIONBUFFER hbpAnimation, 
+	BOOL fUpdateTarget
+)
+{
+    FIXME("Stub (%p %u)\n", hbpAnimation, fUpdateTarget);
+
+    return E_NOTIMPL;
 }
 
 /***********************************************************************
@@ -268,4 +479,10 @@ HRESULT DrawThemeParentBackgroundEx(
 )
 {
 	return DrawThemeParentBackground(hwnd, hdc, prc);
+}
+
+HRESULT WINAPI BufferedPaintStopAllAnimations(HWND hwnd)
+{
+	FIXME("Stub (%p)\n", hwnd);	
+	return E_NOTIMPL;
 }

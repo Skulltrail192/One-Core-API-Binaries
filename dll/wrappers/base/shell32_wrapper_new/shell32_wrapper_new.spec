@@ -492,7 +492,7 @@
 @ stdcall SHGetKnownFolderPath(ptr long ptr ptr)
 @ stdcall AssocCreateForClasses(ptr long long ptr) ;Redirected to Longhorn shell
 @ stdcall AssocGetDetailsOfPropKey(ptr ptr ptr ptr ptr) ;Redirected to Longhorn shell
-@ stdcall ILLoadFromStreamEx(ptr ptr) ;Redirected to Longhorn shell
+846 stdcall ILLoadFromStreamEx(ptr ptr) ;Redirected to Longhorn shell
 @ stdcall InitNetworkAddressControl() ;Redirected to Longhorn shell
 @ stdcall SHCreateDefaultContextMenu(ptr ptr ptr) ;Redirected to Longhorn shell
 @ stdcall SHCreateDefaultExtractIcon(ptr ptr) ;Redirected to Longhorn shell

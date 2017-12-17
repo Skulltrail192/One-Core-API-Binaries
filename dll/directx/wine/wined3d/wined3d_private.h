@@ -50,8 +50,8 @@
 #include "wine/debug.h"
 #include "wine/unicode.h"
 
-#include "objbase.h"
 #include "wine/config.h"
+#include "objbase.h"
 #include "wine/wined3d.h"
 #include "wined3d_gl.h"
 #include "wine/list.h"
@@ -1498,6 +1498,29 @@ void wined3d_stream_info_from_declaration(struct wined3d_stream_info *stream_inf
         const struct wined3d_state *state, const struct wined3d_gl_info *gl_info,
         const struct wined3d_d3d_info *d3d_info) DECLSPEC_HIDDEN;
 
+struct wined3d_direct_dispatch_parameters
+{
+    unsigned int group_count_x;
+    unsigned int group_count_y;
+    unsigned int group_count_z;
+};
+
+struct wined3d_indirect_dispatch_parameters
+{
+    struct wined3d_buffer *buffer;
+    unsigned int offset;
+};
+
+struct wined3d_dispatch_parameters
+{
+    BOOL indirect;
+    union
+    {
+        struct wined3d_direct_dispatch_parameters direct;
+        struct wined3d_indirect_dispatch_parameters indirect;
+    } u;
+};
+
 struct wined3d_direct_draw_parameters
 {
     int base_vertex_idx;
@@ -1522,29 +1545,6 @@ struct wined3d_draw_parameters
         struct wined3d_indirect_draw_parameters indirect;
     } u;
     BOOL indexed;
-};
-
-struct wined3d_direct_dispatch_parameters
-{
-    unsigned int group_count_x;
-    unsigned int group_count_y;
-    unsigned int group_count_z;
-};
-
-struct wined3d_indirect_dispatch_parameters
-{
-    struct wined3d_buffer *buffer;
-    unsigned int offset;
-};
-
-struct wined3d_dispatch_parameters
-{
-    BOOL indirect;
-    union
-    {
-        struct wined3d_direct_dispatch_parameters direct;
-        struct wined3d_indirect_dispatch_parameters indirect;
-    } u;
 };
 
 void draw_primitive(struct wined3d_device *device, const struct wined3d_state *state,
@@ -4304,6 +4304,8 @@ DWORD wined3d_format_convert_from_float(const struct wined3d_format *format,
         const struct wined3d_color *color) DECLSPEC_HIDDEN;
 void wined3d_format_get_float_color_key(const struct wined3d_format *format,
         const struct wined3d_color_key *key, struct wined3d_color *float_colors) DECLSPEC_HIDDEN;
+BOOL wined3d_format_is_depth_view(enum wined3d_format_id resource_format_id,
+        enum wined3d_format_id view_format_id) DECLSPEC_HIDDEN;
 const struct wined3d_color_key_conversion * wined3d_format_get_color_key_conversion(
         const struct wined3d_texture *texture, BOOL need_alpha_ck) DECLSPEC_HIDDEN;
 
@@ -4409,6 +4411,12 @@ static inline BOOL needs_interpolation_qualifiers_for_shader_outputs(const struc
      * match between shader stages.
      */
     return gl_info->glsl_version < MAKEDWORD_VERSION(4, 40);
+}
+
+static inline BOOL is_rasterization_disabled(const struct wined3d_shader *geometry_shader)
+{
+    return geometry_shader
+            && geometry_shader->u.gs.so_desc.rasterizer_stream_idx == WINED3D_NO_RASTERIZER_STREAM;
 }
 
 static inline DWORD wined3d_extract_bits(const DWORD *bitstream,

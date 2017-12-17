@@ -186,3 +186,45 @@ CopyFileTransactedA(
 {
     return CopyFileExA(lpExistingFileName, lpNewFileName, lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
 }
+
+HANDLE
+WINAPI
+CreateFileTransactedW(
+    LPCWSTR lpFileName,
+    DWORD dwDesiredAccess,
+    DWORD dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    DWORD dwCreationDisposition,
+    DWORD dwFlagsAndAttributes,
+    HANDLE hTemplateFile
+)
+{
+	return CreateFileW(lpFileName, 
+					   dwDesiredAccess, 
+					   dwShareMode, 
+					   lpSecurityAttributes, 
+					   dwCreationDisposition, 
+					   dwFlagsAndAttributes,
+					   hTemplateFile);
+}
+
+HANDLE
+WINAPI
+CreateFileTransactedA(
+    LPSTR lpFileName,
+    DWORD dwDesiredAccess,
+    DWORD dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    DWORD dwCreationDisposition,
+    DWORD dwFlagsAndAttributes,
+    HANDLE hTemplateFile
+)
+{
+	return CreateFileA(lpFileName, 
+					   dwDesiredAccess, 
+					   dwShareMode, 
+					   lpSecurityAttributes, 
+					   dwCreationDisposition, 
+					   dwFlagsAndAttributes,
+					   hTemplateFile);
+}

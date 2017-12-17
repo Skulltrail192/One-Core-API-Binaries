@@ -1,0 +1,4 @@
+MODULE = xpssvcs.dll
+
+C_SRCS = \
+	main.c

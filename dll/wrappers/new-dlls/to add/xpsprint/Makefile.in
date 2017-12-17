@@ -1,0 +1,6 @@
+MODULE = xpsprint.dll
+
+C_SRCS = \
+	main.c
+
+RC_SRCS = xpsprint.rc
