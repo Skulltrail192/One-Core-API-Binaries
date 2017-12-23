@@ -90,6 +90,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	d3d11.dll,amd64/d3d11.dll
 	dwrite.dll,amd64/dwrite.dll
 	dxgi.dll,amd64/dxgi.dll
+	fntcache.dll,amd64/fntcache.dll
 	libwine.dll,amd64/libwine.dll
 	wined3d.dll,amd64/wined3d.dll
 [CopyAlways.SysWOW64.Files]
@@ -102,6 +103,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	d3d11.dll,i386/wd3d11.dll
 	dwrite.dll,i386/wdwrite.dll
 	dxgi.dll,i386/wdxgi.dll
+	fntcache.dll,i386/wfntcache.dll	
 	libwine.dll,i386/wlibwine.dll
 	wined3d.dll,i386/wwined3d.dll
 	
@@ -118,6 +120,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	amd64/d3d11.dll = 1
 	amd64/dwrite.dll = 1
 	amd64/dxgi.dll = 1
+	amd64/fntcache.dll = 1
 	amd64/libwine.dll = 1
 	amd64/wined3d.dll = 1
     i386/wd2d1.dll = 1
@@ -129,6 +132,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	i386/wd3d11.dll = 1
 	i386/wdwrite.dll = 1
 	i386/wdxgi.dll = 1
+	i386/fntcache.dll = 1
 	i386/wlibwine.dll = 1
 	i386/wwined3d.dll = 1	
 

@@ -466,23 +466,23 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
 	
 [MustReplace.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
-	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591\gdiplus.dll
+	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396\gdiplus.dll
 	
 [CopyAlways.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
-	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591\gdiplus.dll
+	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396\gdiplus.dll
 	
 [CopyAlways.WinSxS.Manifests.files]	
 	"WinSxS\manifests\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat"
 	"WinSxS\manifests\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest"
-	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591.cat"
-	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591.manifest"
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396.cat"
+	"WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396.manifest"
 	
 [CopyAlways.WinSxS.Policies.files]
 	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.policy"
 	"WinSxS\Policies\x86_policy.6.0.Microsoft.Windows.Common-Controls_6595b64144ccf1df_x-ww_5DDAD775\6.0.3790.5190.cat"	
-	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.24064.cat"
-	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.24064.policy"
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.24102.cat"
+	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4e8510ac\1.0.6002.24102.policy"
 
 [CopyAlways.System32.Files]
     advapibase.dll,2k3SP2\srvadvapibase.dll
@@ -596,15 +596,15 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
     winstanew.dll = 1
     ws2_32.dll = 1
 	WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll = 1
-	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat = 1
-	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest = 1
+	WinSxS\manifest\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.cat = 1
+	WinSxS\manifest\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE.manifest = 1
 	WinSxS\6.0.3790.5190.policy = 1
 	WinSxS\6.0.3790.5190.cat = 1	
-    WinSxS\gdiplus.dll =1
-    WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591.cat =1
-	WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24064_x-ww_22782591.manifest =1
-	WinSxS\1.0.6002.23693.cat =1
-	WinSxS\1.0.6002.23693.policy =1	
+    WinSxS\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396\gdiplus.dll =1
+    WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396.cat =1
+	WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396.manifest =1
+	WinSxS\Polices\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24102.cat =1
+	WinSxS\Polices\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24102.policy =1	
 [Strings]
 	MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
 	MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
