@@ -64,7 +64,7 @@
 #define IDS_SENDTO               50
 #define IDS_STARTMENU            51
 #define IDS_MYMUSIC              52
-#define IDS_MYVIDEO              53
+#define IDS_MYVIDEOS             53
 #define IDS_DESKTOPDIRECTORY     54
 #define IDS_NETHOOD              55
 #define IDS_TEMPLATES            56

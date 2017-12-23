@@ -128,6 +128,10 @@ typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 #define FileIdInformation (enum _FILE_INFORMATION_CLASS)59
 #endif
 
+#define SYNCHRONIZATION_BARRIER_FLAGS_SPIN_ONLY		0x01
+#define SYNCHRONIZATION_BARRIER_FLAGS_BLOCK_ONLY	0x02
+#define SYNCHRONIZATION_BARRIER_FLAGS_NO_DELETE		0x04
+
 #define ARGUMENT_PRESENT(x) ((x) != NULL)
 
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
@@ -263,55 +267,6 @@ typedef struct _REPARSE_DATA_BUFFER {
     };
 } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 
-// typedef struct _PROCESSOR_RELATIONSHIP {
-  // BYTE           Flags;
-  // BYTE           EfficiencyClass;
-  // BYTE           Reserved[21];
-  // WORD           GroupCount;
-  // GROUP_AFFINITY GroupMask[ANYSIZE_ARRAY];
-// } PROCESSOR_RELATIONSHIP, *PPROCESSOR_RELATIONSHIP;
-
-// typedef struct _NUMA_NODE_RELATIONSHIP {
-  // DWORD          NodeNumber;
-  // BYTE           Reserved[20];
-  // GROUP_AFFINITY GroupMask;
-// } NUMA_NODE_RELATIONSHIP, *PNUMA_NODE_RELATIONSHIP;
-
-// typedef struct _PROCESSOR_GROUP_INFO {
-  // BYTE      MaximumProcessorCount;
-  // BYTE      ActiveProcessorCount;
-  // BYTE      Reserved[38];
-  // KAFFINITY ActiveProcessorMask;
-// } PROCESSOR_GROUP_INFO, *PPROCESSOR_GROUP_INFO;
-
-// typedef struct _GROUP_RELATIONSHIP {
-  // WORD                 MaximumGroupCount;
-  // WORD                 ActiveGroupCount;
-  // BYTE                 Reserved[20];
-  // PROCESSOR_GROUP_INFO GroupInfo[ANYSIZE_ARRAY];
-// } GROUP_RELATIONSHIP, *PGROUP_RELATIONSHIP;
-
-// typedef struct _CACHE_RELATIONSHIP {
-  // BYTE                 Level;
-  // BYTE                 Associativity;
-  // WORD                 LineSize;
-  // DWORD                CacheSize;
-  // PROCESSOR_CACHE_TYPE Type;
-  // BYTE                 Reserved[20];
-  // GROUP_AFFINITY       GroupMask;
-// } CACHE_RELATIONSHIP, *PCACHE_RELATIONSHIP;
-
-// typedef struct _SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX {
-  // LOGICAL_PROCESSOR_RELATIONSHIP Relationship;
-  // DWORD                          Size;
-  // union {
-    // PROCESSOR_RELATIONSHIP Processor;
-    // NUMA_NODE_RELATIONSHIP NumaNode;
-    // CACHE_RELATIONSHIP     Cache;
-    // GROUP_RELATIONSHIP     Group;
-  // };
-// } SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, *PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX;
-
 typedef struct _REASON_CONTEXT {
   ULONG Version;
   DWORD Flags;
@@ -342,23 +297,6 @@ typedef struct _PROC_THREAD_ATTRIBUTE_LIST
     DWORD_PTR unk;
     struct proc_thread_attr attrs[1];
 }PROC_THREAD_ATTRIBUTE_LIST, *PPROC_THREAD_ATTRIBUTE_LIST, *LPPROC_THREAD_ATTRIBUTE_LIST;
-
-// typedef enum _PROC_THREAD_ATTRIBUTE_NUM
-// {
-    // ProcThreadAttributeParentProcess = 0,
-    // ProcThreadAttributeHandleList = 2,
-    // ProcThreadAttributeGroupAffinity = 3,
-    // ProcThreadAttributeIdealProcessor = 5,
-    // ProcThreadAttributeUmsThread = 6,
-    // ProcThreadAttributeMitigationPolicy = 7,
-    // ProcThreadAttributeSecurityCapabilities = 9,
-    // ProcThreadAttributeProtectionLevel = 11,
-    // ProcThreadAttributeJobList = 13,
-    // ProcThreadAttributeChildProcessPolicy = 14,
-    // ProcThreadAttributeAllApplicationPackagesPolicy = 15,
-    // ProcThreadAttributeWin32kFilter = 16,
-    // ProcThreadAttributeSafeOpenPromptOriginClaim = 17,
-// } PROC_THREAD_ATTRIBUTE_NUM;
 
 typedef enum _WER_REGISTER_FILE_TYPE
 {
@@ -1467,6 +1405,15 @@ typedef enum _FILE_INFO_BY_HANDLE_CLASS {
     FileIdExtdDirectoryRestartInfo,
     MaximumFileInfoByHandlesClass
 } FILE_INFO_BY_HANDLE_CLASS, *PFILE_INFO_BY_HANDLE_CLASS;
+
+typedef struct _RTL_BARRIER
+{
+	DWORD Reserved1;
+	DWORD Reserved2;
+	ULONG_PTR Reserved3[2];
+	DWORD Reserved4;
+	DWORD Reserved5;
+} RTL_BARRIER, *PRTL_BARRIER, SYNCHRONIZATION_BARRIER, *PSYNCHRONIZATION_BARRIER, *LPSYNCHRONIZATION_BARRIER;
 
 typedef struct _FILE_REMOTE_PROTOCOL_INFO {
     USHORT StructureVersion;

@@ -573,8 +573,6 @@
 @ stdcall LZStart()
 @ stdcall LeaveCriticalSection(ptr) ntext.RtlLeaveCriticalSection
 @ stdcall LoadLibraryA(str)
-@ stdcall LoadLibraryExA( str long long)
-@ stdcall LoadLibraryExW(wstr long long)
 @ stdcall LoadLibraryW(wstr)
 @ stdcall LoadModule(str ptr)
 @ stdcall LoadResource(long long)
@@ -970,7 +968,7 @@
 @ stdcall ConsoleIMERoutine(ptr)
 
 #missing on XP 
-@ stdcall BaseIsAppcompatInfrastructureDisabled() IsShimInfrastructureDisabled ;kernelfull.BaseIsAppcompatInfrastructureDisabled
+@ stdcall BaseIsAppcompatInfrastructureDisabled() IsShimInfrastructureDisabled
 @ stdcall ConvertThreadToFiberEx(ptr long)
 @ stdcall FindFirstStreamW(wstr ptr ptr long)
 @ stdcall FindNextStreamW(ptr ptr)
@@ -1007,7 +1005,7 @@
 @ stdcall BaseQueryModuleData(str str ptr ptr ptr) kernelfull.BaseQueryModuleData
 @ stdcall BasepCheckWinSaferRestrictions(long long long long long long) kernelfull.BasepCheckWinSaferRestrictions
 @ stdcall BasepFreeAppCompatData(ptr ptr)
-@ stdcall SetSystemFileCacheSize(long long long) kernelfull.SetSystemFileCacheSize
+@ stdcall SetSystemFileCacheSize(long long long) 
 @ stdcall SetThreadStackGuarantee(ptr)
 
 #Native in XP SP3 and Missing in Server 2003 SP2 with Updates
@@ -1017,6 +1015,8 @@
 @ stdcall SetProcessDEPPolicy(long) 
 
 #Onwn implementation only for support
+@ stdcall LoadLibraryExA( str long long) LoadLibraryExInternalA
+@ stdcall LoadLibraryExW(wstr long long) LoadLibraryExInternalW
 @ stdcall SetFileApisToANSI() SetpFileApisToANSI
 @ stdcall SetFileApisToOEM() SetpFileApisToOEM
 
@@ -1052,13 +1052,14 @@
 ; @ stdcall CloseThreadpoolTimer(ptr) ntext.TpReleaseTimer
 ; @ stdcall CloseThreadpoolWait(ptr) ntext.TpReleaseWait
 ; @ stdcall CloseThreadpoolWork(ptr) ntext.TpReleaseWork
-
 ; @ stdcall CompareStringEx(wstr long wstr long wstr long ptr ptr long)
 ; @ stdcall CompareStringOrdinal(wstr long wstr long long)
+; @ stdcall CopyFileTransactedA(str str ptr ptr ptr long ptr)
 ; @ stdcall CopyFileTransactedW(wstr wstr ptr ptr ptr long ptr)
 ; @ stdcall CreateEventExA(ptr str ptr long)
 ; @ stdcall CreateEventExW(ptr wstr ptr long) 
-
+; @ stdcall CreateFileTransactedA(str long long ptr long long ptr ptr ptr ptr)
+; @ stdcall CreateFileTransactedW(wstr long long ptr long long ptr ptr ptr ptr)
 ; @ stdcall CreateMutexExA(ptr str long long)
 ; @ stdcall CreateMutexExW(ptr wstr long long)
 ; @ stdcall CreateSemaphoreExA(ptr long long str ptr long) 
@@ -1070,6 +1071,7 @@
 ; @ stdcall CreateThreadpoolTimer(ptr ptr ptr)
 ; @ stdcall CreateThreadpoolWait(ptr ptr ptr) 
 ; @ stdcall CreateThreadpoolWork(ptr ptr ptr)
+; @ stdcall DeleteFileTransactedA(str ptr)
 ; @ stdcall DeleteFileTransactedW(wstr ptr)
 ; @ stdcall DeleteProcThreadAttributeList(ptr)
 ; @ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long long)
@@ -1096,8 +1098,8 @@
 ; @ stdcall GetDurationFormatEx(wstr long ptr long long ptr ptr long) ;need test
 ; @ stdcall GetDynamicTimeZoneInformation(ptr)
 ; @ stdcall GetErrorMode()
-; @ stdcall GetFileInformationByHandleEx(ptr long ptr long) fileextd.GetFileInformationByHandleEx
-; @ stdcall GetFileInformationByHandleExW(ptr long ptr long) fileextd.GetFileInformationByHandleEx
+; @ stdcall GetFileInformationByHandleEx(long long ptr long) 
+; @ stdcall GetFileInformationByHandleExW(long long ptr long) GetFileInformationByHandleEx 
 ; @ stdcall GetFinalPathNameByHandleA(ptr str long long)
 ; @ stdcall GetFinalPathNameByHandleW(ptr wstr long long)
 ; @ stdcall GetLocaleInfoEx(wstr long ptr long)
@@ -1126,7 +1128,6 @@
 ; @ stdcall GetTimeZoneInformationForYear(long ptr ptr)
 ; @ stdcall GetUserDefaultLocaleName(wstr long)
 ; @ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
-; @ stdcall GetVolumeInformationW(ptr ptr long ptr ptr ptr ptr long)
 ; @ stdcall GetVolumeInformationByHandleW(ptr ptr long ptr ptr ptr ptr long)
 ; @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
 ; @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
@@ -1144,12 +1145,13 @@
 ; @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
 ; @ stdcall LCIDToLocaleName(long ptr long long)
 ; @ stdcall LocaleNameToLCID(wstr long)
+; @ stdcall MoveFileTransactedA(str str ptr ptr long ptr)
 ; @ stdcall MoveFileTransactedW(wstr wstr ptr ptr long ptr)
 ; @ stdcall PowerClearRequest(ptr ptr)
 ; @ stdcall PowerCreateRequest(ptr)
 ; @ stdcall PowerCreateRequestW(ptr) PowerCreateRequest
 ; @ stdcall PowerSetRequest(ptr long)
-; @ stdcall OpenFileById(long ptr long long ptr long) fileextd.OpenFileById
+; @ stdcall OpenFileById(long ptr long long ptr long) 
 ; @ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 
 ; @ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
 ; @ stdcall QueryIdleProcessorCycleTime(ptr ptr)
@@ -1164,8 +1166,8 @@
 ; @ stdcall SetConsoleHistoryInfo(ptr)
 ; @ stdcall SetConsoleScreenBufferInfoEx(ptr ptr)
 ; @ stdcall SetCurrentConsoleFontEx(ptr long ptr)
-; @ stdcall SetFileInformationByHandle(long long ptr long) fileextd.SetFileInformationByHandle
-; @ stdcall SetFileInformationByHandleW(long long ptr long) fileextd.SetFileInformationByHandle
+; @ stdcall SetFileInformationByHandle(long long ptr long) 
+; @ stdcall SetFileInformationByHandleW(long long ptr long) SetFileInformationByHandle
 ; @ stdcall SetNamedPipeAttribute(ptr long str ptr long)
 ; @ stdcall SetProcessAffinityUpdateMode(ptr long)
 ; @ stdcall SetStdHandleEx(long ptr ptr)
@@ -1193,6 +1195,7 @@
 ; @ stdcall WerRegisterFile(wstr long long)
 ; @ stdcall WerRegisterMemoryBlock(ptr long)
 ; @ stdcall WerRegisterMemoryBlockWorker(ptr long) WerRegisterMemoryBlock
+; @ stdcall WerUnregisterMemoryBlock(ptr)
 ; @ stdcall WerUnregisterFile(wstr)
 ; @ stdcall WerSetFlags(long)
 
@@ -1244,15 +1247,24 @@
 ; @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
 ; @ stdcall TryAcquireSRWLockExclusive(ptr) ntext.RtlTryAcquireSRWLockExclusive
 ; @ stdcall TryAcquireSRWLockShared(ptr) ntext.RtlTryAcquireSRWLockShared
+; @ stdcall WerRegisterRuntimeExceptionModule(wstr ptr)
+; @ stdcall WerUnregisterRuntimeExceptionModule(wstr ptr)
 
 ; #Win8 Functions 
 ; @ stdcall AddDllDirectory(wstr)
+; @ stdcall AppPolicyGetProcessTerminationMethod(ptr ptr) 
+; @ stdcall AppPolicyGetShowDeveloperDiagnostic(ptr ptr)
+; @ stdcall AppPolicyGetThreadInitializationType(ptr ptr) 
+; @ stdcall AppPolicyGetWindowingModel(ptr ptr)
 ; @ stdcall BaseFormatObjectAttributes(ptr ptr ptr)
+; @ stdcall DeleteSynchronizationBarrier(ptr)
+; @ stdcall EnterSynchronizationBarrier(ptr long)
 ; @ stdcall GetCurrentPackageId(ptr ptr)
 ; @ stdcall GetCurrentPackageFamilyName(ptr ptr)
 ; @ stdcall GetCurrentPackageFullName(ptr ptr)
 ; @ stdcall GetPackageFullName(long ptr ptr)
 ; @ stdcall GetSystemTimePreciseAsFileTime(ptr)
+; @ stdcall InitializeSynchronizationBarrier(ptr long long)
 ; @ stdcall RemoveDllDirectory(ptr)
 ; @ stdcall SetDefaultDllDirectories(long)
 ; @ stdcall WerpNotifyLoadStringResourceWorker(ptr wstr ptr long) WerpNotifyLoadStringResource

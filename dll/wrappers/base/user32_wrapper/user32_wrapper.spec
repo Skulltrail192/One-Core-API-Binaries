@@ -750,7 +750,7 @@
 @ stdcall AddClipboardFormatListener(ptr)
 @ stdcall CalculatePopupWindowPosition(ptr ptr long ptr ptr)
 @ stdcall CancelShutdown()
-@ stdcall ChangeWindowMessageFilter(long long) ;implemented
+@ stdcall ChangeWindowMessageFilter(long long) ;sub-implemented
 @ stdcall ChangeWindowMessageFilterEx(ptr long long ptr)
 @ stdcall CheckDesktopByThreadId(ptr)
 @ stdcall CheckWindowThreadDesktop(ptr ptr)

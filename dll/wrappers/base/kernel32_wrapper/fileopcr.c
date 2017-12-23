@@ -175,8 +175,8 @@ CopyFileTransactedW(
 BOOL 
 WINAPI 
 CopyFileTransactedA(
-	LPCWSTR lpExistingFileName, 
-	LPCWSTR lpNewFileName, 
+	LPCSTR lpExistingFileName, 
+	LPCSTR lpNewFileName, 
 	LPPROGRESS_ROUTINE lpProgressRoutine, 
 	LPVOID lpData, 
 	LPBOOL pbCancel, 

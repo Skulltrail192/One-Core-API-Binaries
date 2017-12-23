@@ -22,7 +22,7 @@ Revision History:
 
 #include "main.h"
 
-WINE_DEFAULT_DEBUG_CHANNEL(kernel32_wrapper);
+WINE_DEFAULT_DEBUG_CHANNEL(kernel32);
 
 static BOOL (WINAPI *pSetThreadStackGuarantee)(PULONG);
 static DWORD (WINAPI *pConsoleIMERoutine)(LPVOID);

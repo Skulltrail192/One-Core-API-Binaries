@@ -1073,8 +1073,6 @@ LdrpSearchResourceSection_U_by_id(
         {
             if (!entry[pos].DataIsDirectory == !want_dir)
             {
-                DbgPrint("root %p dir %p id %04x ret %p\n",
-                       root, dir, id, (const char*)root + entry[pos].OffsetToDirectory);
                 return (IMAGE_RESOURCE_DIRECTORY *)((char *)root + entry[pos].OffsetToDirectory);
             }
             break;

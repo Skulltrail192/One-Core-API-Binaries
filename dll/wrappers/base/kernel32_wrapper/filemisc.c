@@ -69,7 +69,7 @@ DeleteFileTransactedW(
 BOOL 
 WINAPI
 DeleteFileTransactedA(
-	LPCWSTR lpFileName, 
+	LPCSTR lpFileName, 
 	HANDLE hTransaction
 )
 {

@@ -35,7 +35,6 @@ FilenameA2W(
    PUNICODE_STRING pstrW;
    NTSTATUS Status;
 
-   //ASSERT(NtCurrentTeb()->StaticUnicodeString.Buffer == NtCurrentTeb()->StaticUnicodeBuffer);
    ASSERT(NtCurrentTeb()->StaticUnicodeString.MaximumLength == sizeof(NtCurrentTeb()->StaticUnicodeBuffer));
 
    RtlInitAnsiString(&str, NameA);
@@ -63,7 +62,7 @@ FilenameA2W(
 BOOL WINAPI SetFileCompletionNotificationModes( HANDLE handle, UCHAR flags )
 {
 	HMODULE hkernel32 = GetModuleHandleA("kernelfull.dll");
-	pSetFileCompletionNotificationModes = (void *)GetProcAddress(hkernel32, "SetThreadStackGuarantee");
+	pSetFileCompletionNotificationModes = (void *)GetProcAddress(hkernel32, "SetFileCompletionNotificationModes");
 	if(pSetFileCompletionNotificationModes){
 		return pSetFileCompletionNotificationModes(handle, flags);
 	}else{

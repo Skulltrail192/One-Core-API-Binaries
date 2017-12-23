@@ -49,7 +49,7 @@ static LCID lcid_LC_MEASUREMENT;
 static LCID lcid_LC_TELEPHONE;
 
 
-static CRITICAL_SECTION cache_section;
+static RTL_CRITICAL_SECTION cache_section;
 
 /* move to winnls*/
 
@@ -982,6 +982,67 @@ EnumPreferredSystemUILanguages(
     return TRUE; 	
 }
 
+BOOL
+WINAPI
+EnumPreferredProcessUILanguages(
+  _In_      DWORD   flags,
+  _Out_     PULONG  count,
+  _Out_opt_ PZZWSTR buffer,
+  _Inout_   PULONG  buffersize 
+)
+{
+    static const WCHAR formathexW[] = { '%','0','4','x',0 };
+
+    static const WCHAR formatstringW[] = { '%','.','2','s',0 };
+	
+
+    LANGID langid;
+
+    FIXME( "semi-stub %u, %p, %p %p\n", flags, count, buffer, buffersize );
+
+    if (!flags)
+        flags = MUI_LANGUAGE_NAME;
+
+	if ((flags & (MUI_LANGUAGE_ID | MUI_LANGUAGE_NAME )) == (MUI_LANGUAGE_ID | MUI_LANGUAGE_NAME ))
+    {
+            SetLastError(ERROR_INVALID_PARAMETER);
+            return FALSE;
+
+    }
+    /* FIXME should we check for too small buffersize too? */
+    if (!buffer)
+    {
+           SetLastError(ERROR_INSUFFICIENT_BUFFER);
+           *buffersize = 10;
+           *count=2;
+           return TRUE;
+    }
+
+    langid = GetSystemDefaultLangID();
+    memset((WCHAR *)buffer,0,*buffersize);
+    if ((flags & MUI_LANGUAGE_ID) == MUI_LANGUAGE_ID)  
+    { 
+           *buffersize = 11; 
+           *count=2;
+           sprintfW((WCHAR *)buffer, formathexW, langid);
+           sprintfW((WCHAR *)buffer+5, formathexW, PRIMARYLANGID(langid)); 
+           SetLastError(ERROR_SUCCESS);
+    }
+    else  
+    {
+           *buffersize = 10; 
+           *count=2;
+           //GetLocaleInfoW( MAKELCID(langid, SORT_DEFAULT), LOCALE_SNAME | LOCALE_NOUSEROVERRIDE, (WCHAR *)buffer, *buffersize);
+		   LCIDToLocaleName(MAKELCID(langid, SORT_DEFAULT), (WCHAR *)buffer, *buffersize, 0);
+           /* FIXME is there no better way to to this? I can't get GetLocaleInfo to return the neutral languagename :( */      
+           sprintfW((WCHAR *)buffer+6, formatstringW, buffer);
+           SetLastError(ERROR_SUCCESS);
+
+    }
+    return TRUE; 	
+}
+
+
 /***********************************************************************
  *		GetSystemDefaultLocaleName (KERNEL32.@)
  */
@@ -1526,7 +1587,6 @@ EnumSystemLocalesEx(
 	EnumSystemLocalesW(EnumLocalesProc, flags);
 	
 	if(systemLocale){
-		DbgPrint("System Locale is %s\n", systemLocale);
 		return proc(systemLocale, dwFlags, lparam);
 	}	
 	return FALSE;

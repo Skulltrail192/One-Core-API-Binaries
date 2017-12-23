@@ -37,7 +37,6 @@ LdrInitialize(
     if (dwReason == DLL_PROCESS_ATTACH)
     {
 		RtlInitializeCriticalSection(&TIME_tz_section);
-		DbgPrint("Ntext initialized\n");
         LdrDisableThreadCalloutsForDll(hDll);
         RtlpInitializeKeyedEvent();
     }

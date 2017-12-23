@@ -75,5 +75,10 @@ BaseDllInitialize(HANDLE hDll,
  */
 BOOL WINAPI QuirkIsEnabled3(void *unk1, void *unk2)
 {
+    static int once;
+
+    if (!once++)
+        DbgPrint("(%p, %p) stub!\n", unk1, unk2);
+	
     return FALSE;
 }

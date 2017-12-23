@@ -20,7 +20,7 @@ Revision History:
 
 #include <main.h>
 
-WINE_DEFAULT_DEBUG_CHANNEL(kernel32_wrapper);
+WINE_DEFAULT_DEBUG_CHANNEL(kernel32);
 
 static BOOL oem_file_apis;
 

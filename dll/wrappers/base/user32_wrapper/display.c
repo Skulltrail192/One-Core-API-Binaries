@@ -19,6 +19,8 @@
 
 #include <main.h>
 
+#define WDA_NONE 0x00000000
+
 BOOL WINAPI GetDisplayAutoRotationPreferences(
   _Out_  ORIENTATION_PREFERENCE *pOrientation
 )
@@ -97,7 +99,15 @@ BOOL WINAPI GetWindowDisplayAffinity(
   _Out_  DWORD *dwAffinity
 )
 {
-	DbgPrint("GetWindowDisplayAffinity is UNIMPLEMENTED\n");
+    DbgPrint("(%p, %p): stub\n", hWnd, dwAffinity);
+	
+	if (!hWnd || !dwAffinity)
+	    {
+	    SetLastError(hWnd ? ERROR_NOACCESS : ERROR_INVALID_WINDOW_HANDLE);
+	    return FALSE;
+	}
+	
+	*dwAffinity = WDA_NONE;
 	return TRUE;
 }
 
@@ -106,6 +116,14 @@ BOOL WINAPI SetWindowDisplayAffinity(
   _In_  DWORD dwAffinity
 )
 {
-	DbgPrint("SetWindowDisplayAffinity is UNIMPLEMENTED\n");
-	return TRUE;
+	    DbgPrint("(%p, %u): stub\n", hWnd, dwAffinity);
+	
+	    if (!hWnd)
+	    {
+	        SetLastError(ERROR_INVALID_WINDOW_HANDLE);
+	        return FALSE;
+	    }
+	
+	    SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+	    return FALSE;
 }

@@ -968,7 +968,7 @@
 @ stdcall ConsoleIMERoutine(ptr)
 
 #missing on XP 
-@ stdcall BaseIsAppcompatInfrastructureDisabled() IsShimInfrastructureDisabled ;kernelfull.BaseIsAppcompatInfrastructureDisabled
+@ stdcall BaseIsAppcompatInfrastructureDisabled() IsShimInfrastructureDisabled
 @ stdcall ConvertThreadToFiberEx(ptr long)
 @ stdcall FindFirstStreamW(wstr ptr ptr long)
 @ stdcall FindNextStreamW(ptr ptr)
@@ -1001,7 +1001,7 @@
 @ stdcall GetSystemFileCacheSize(ptr ptr ptr) kernelfull.GetSystemFileCacheSize
 @ stdcall GetSystemFirmwareTable(long long ptr long) kernelfull.GetSystemFirmwareTable
  
-#Missing on Server 2003 RTM (only available on 2003 SP1 and SP2)
+#Missing on Server 2003 RTM (only available on 2003 SP1 and SP2 and XP SP3)
 @ stdcall BaseQueryModuleData(str str ptr ptr ptr) kernelfull.BaseQueryModuleData
 @ stdcall BasepCheckWinSaferRestrictions(long long long long long long) kernelfull.BasepCheckWinSaferRestrictions
 @ stdcall BasepFreeAppCompatData(ptr ptr)
@@ -1098,8 +1098,8 @@
 @ stdcall GetDurationFormatEx(wstr long ptr long long ptr ptr long) ;need test
 @ stdcall GetDynamicTimeZoneInformation(ptr)
 @ stdcall GetErrorMode()
-@ stdcall GetFileInformationByHandleEx(ptr long ptr long) fileextd.GetFileInformationByHandleEx
-@ stdcall GetFileInformationByHandleExW(ptr long ptr long) fileextd.GetFileInformationByHandleEx
+@ stdcall GetFileInformationByHandleEx(long long ptr long) 
+@ stdcall GetFileInformationByHandleExW(long long ptr long) GetFileInformationByHandleEx 
 @ stdcall GetFinalPathNameByHandleA(ptr str long long)
 @ stdcall GetFinalPathNameByHandleW(ptr wstr long long)
 @ stdcall GetLocaleInfoEx(wstr long ptr long)
@@ -1140,6 +1140,7 @@
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stdcall InitOnceInitialize(ptr) ntext.RtlRunOnceInitialize
 @ stdcall IsThreadAFiber()
+@ stdcall IsThreadpoolTimerSet(ptr) ntext.TpIsTimerSet
 @ stdcall IsValidLocaleName(wstr)
 @ stdcall LeaveCriticalSectionWhenCallbackReturns(ptr ptr) ntext.TpCallbackLeaveCriticalSectionOnCompletion
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
@@ -1151,7 +1152,7 @@
 @ stdcall PowerCreateRequest(ptr)
 @ stdcall PowerCreateRequestW(ptr) PowerCreateRequest
 @ stdcall PowerSetRequest(ptr long)
-@ stdcall OpenFileById(long ptr long long ptr long) fileextd.OpenFileById
+@ stdcall OpenFileById(long ptr long long ptr long) 
 @ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 
 @ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
 @ stdcall QueryIdleProcessorCycleTime(ptr ptr)
@@ -1166,8 +1167,9 @@
 @ stdcall SetConsoleHistoryInfo(ptr)
 @ stdcall SetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall SetCurrentConsoleFontEx(ptr long ptr)
-@ stdcall SetFileInformationByHandle(long long ptr long) fileextd.SetFileInformationByHandle
-@ stdcall SetFileInformationByHandleW(long long ptr long) fileextd.SetFileInformationByHandle
+@ stdcall SetEventWhenCallbackReturns(ptr long) ntext.TpCallbackSetEventOnCompletion
+@ stdcall SetFileInformationByHandle(long long ptr long) 
+@ stdcall SetFileInformationByHandleW(long long ptr long) SetFileInformationByHandle
 @ stdcall SetNamedPipeAttribute(ptr long str ptr long)
 @ stdcall SetProcessAffinityUpdateMode(ptr long)
 @ stdcall SetStdHandleEx(long ptr ptr)
@@ -1195,6 +1197,7 @@
 @ stdcall WerRegisterFile(wstr long long)
 @ stdcall WerRegisterMemoryBlock(ptr long)
 @ stdcall WerRegisterMemoryBlockWorker(ptr long) WerRegisterMemoryBlock
+@ stdcall WerUnregisterMemoryBlock(ptr)
 @ stdcall WerUnregisterFile(wstr)
 @ stdcall WerSetFlags(long)
 
@@ -1256,11 +1259,14 @@
 @ stdcall AppPolicyGetThreadInitializationType(ptr ptr) 
 @ stdcall AppPolicyGetWindowingModel(ptr ptr)
 @ stdcall BaseFormatObjectAttributes(ptr ptr ptr)
+@ stdcall DeleteSynchronizationBarrier(ptr)
+@ stdcall EnterSynchronizationBarrier(ptr long)
 @ stdcall GetCurrentPackageId(ptr ptr)
 @ stdcall GetCurrentPackageFamilyName(ptr ptr)
 @ stdcall GetCurrentPackageFullName(ptr ptr)
 @ stdcall GetPackageFullName(long ptr ptr)
 @ stdcall GetSystemTimePreciseAsFileTime(ptr)
+@ stdcall InitializeSynchronizationBarrier(ptr long long)
 @ stdcall RemoveDllDirectory(ptr)
 @ stdcall SetDefaultDllDirectories(long)
 @ stdcall WerpNotifyLoadStringResourceWorker(ptr wstr ptr long) WerpNotifyLoadStringResource

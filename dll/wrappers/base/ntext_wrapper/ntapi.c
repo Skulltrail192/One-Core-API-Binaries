@@ -506,54 +506,6 @@ NtTraceControl(
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS 
-WINAPI 
-NtpQueryInformationToken(
-     HANDLE token,
-     TOKEN_INFORMATION_CLASS tokeninfoclass,
-     PVOID tokeninfo,
-     ULONG tokeninfolength,
-     PULONG retlen 
-)
-{
-	switch(tokeninfoclass){
-		case TokenIntegrityLevel:
-		    DbgPrint("IntegrityLevel token\n");
-			{
-				/* report always "S-1-16-12288" (high mandatory level) for now */
-				static const SID high_level = {SID_REVISION, 1, {SECURITY_MANDATORY_LABEL_AUTHORITY},
-																{SECURITY_MANDATORY_HIGH_RID}};
-
-				TOKEN_MANDATORY_LABEL *tml = tokeninfo;
-				PSID psid = tml + 1;
-
-				tml->Label.Sid = psid;
-				tml->Label.Attributes = SE_GROUP_INTEGRITY | SE_GROUP_INTEGRITY_ENABLED;
-				memcpy(psid, &high_level, sizeof(SID));
-			}
-			break;	
-		// case TokenAppContainerSid:
-			// {
-				// TOKEN_APPCONTAINER_INFORMATION *container = tokeninfo;
-				// FIXME("QueryInformationToken( ..., TokenAppContainerSid, ...) semi-stub\n");
-				// container->TokenAppContainer = NULL;
-			// }
-			// break;
-		// case TokenIsAppContainer:
-			// {
-				// TRACE("TokenIsAppContainer semi-stub\n");
-				// *(DWORD*)tokeninfo = 0;
-				// break;
-			// }			
-		default:
-			return NtQueryInformationToken(token,
-										   tokeninfoclass,
-										   tokeninfo,
-										   tokeninfolength,
-										   retlen);
-	}
-}
-
 VOID 
 NTAPI 
 NtFlushProcessWriteBuffers()	
@@ -711,6 +663,75 @@ NtQuerySectionInternal(
 		InformationBuffer = Sii;
 	}	
 	return Status;
+}
+
+/******************************************************************************
+*  NtQueryInformationToken		[NTDLL.@]
+*  ZwQueryInformationToken		[NTDLL.@]
+*
+* NOTES
+*  Buffer for TokenUser:
+*   0x00 TOKEN_USER the PSID field points to the SID
+*   0x08 SID
+*
+*/
+NTSTATUS 
+WINAPI 
+NtQueryInformationTokenInternal(
+	HANDLE token,
+	TOKEN_INFORMATION_CLASS tokeninfoclass,
+	PVOID tokeninfo,
+	ULONG tokeninfolength,
+	PULONG retlen )
+{
+	switch(tokeninfoclass){
+		case TokenIntegrityLevel:
+		    DbgPrint("IntegrityLevel token\n");
+			{
+				/* report always "S-1-16-12288" (high mandatory level) for now */
+				static const SID high_level = {SID_REVISION, 1, {SECURITY_MANDATORY_LABEL_AUTHORITY},
+																{SECURITY_MANDATORY_HIGH_RID}};
+
+				TOKEN_MANDATORY_LABEL *tml = tokeninfo;
+				PSID psid = tml + 1;
+
+				tml->Label.Sid = psid;
+				tml->Label.Attributes = SE_GROUP_INTEGRITY | SE_GROUP_INTEGRITY_ENABLED;
+				memcpy(psid, &high_level, sizeof(SID));
+			}
+			break;			
+		case TokenElevationType:
+            // const char *str = getenv("STAGING_ELEVATIONTYPE");
+	
+	            // TOKEN_ELEVATION_TYPE *elevation_type = tokeninfo;
+	            // FIXME("QueryInformationToken( ..., TokenElevationType, ...) semi-stub. If the application complains that\n"
+	                  // "it should be run as normal user, set the STAGING_ELEVATIONTYPE environmentvariable to Default\n");
+	
+	            // if( str && !strcmp(str, "Default"))
+	                // *elevation_type = TokenElevationTypeDefault;
+	            // else 
+	                // *elevation_type = TokenElevationTypeFull;	
+		    break;
+		case TokenAppContainerSid:
+			{
+				TOKEN_APPCONTAINER_INFORMATION *container = tokeninfo;
+				DbgPrint("QueryInformationToken( ..., TokenAppContainerSid, ...) semi-stub\n");
+				container->TokenAppContainer = NULL;
+			}
+			break;
+		case TokenIsAppContainer:
+			{
+				DbgPrint("TokenIsAppContainer semi-stub\n");
+				*(DWORD*)tokeninfo = 0;
+				break;
+			}			
+		default:
+			return NtQueryInformationToken(token,
+										   tokeninfoclass,
+										   tokeninfo,
+										   tokeninfolength,
+										   retlen);
+	}
 }
 
 // /******************************************************************************

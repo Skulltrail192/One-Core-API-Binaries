@@ -158,3 +158,12 @@ HRESULT WINAPI WerUnregisterRuntimeExceptionModule(
 	FIXME("(%s, %p) stub!\n", debugstr_w(pwszOutOfProcessCallbackDll), pContext);
 	return S_OK;
 }
+
+/***********************************************************************
+  * WerUnregisterMemoryBlock (KERNEL32.@)
+8  */
+HRESULT WINAPI WerUnregisterMemoryBlock(void *block)
+{
+     FIXME("(%p) stub\n", block);
+     return E_NOTIMPL;
+}
