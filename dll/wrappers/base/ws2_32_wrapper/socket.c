@@ -62,6 +62,8 @@
 #define WS_POLLOUT                 (WS_POLLWRNORM)
 #define WSA_NOT_ENOUGH_MEMORY      (ERROR_NOT_ENOUGH_MEMORY)
 
+#define WS_INET6_ADDRSTRLEN     65
+
 #define MAP_OPTION(opt) { WS_##opt, opt }
 
 static const unsigned __int64 epoch = ((unsigned __int64) 116444736000000000ULL);
@@ -362,5 +364,25 @@ INT WINAPI InetPtonW(INT family, PCWSTR addr, PVOID buffer)
     ret = WS_inet_pton(family, addrA, buffer);
 
     HeapFree(GetProcessHeap(), 0, addrA);
+    return ret;
+}
+
+/***********************************************************************
+ *              InetNtopW                      (WS2_32.@)
+ */
+PCWSTR WINAPI InetNtopW(INT family, PVOID addr, PWSTR buffer, SIZE_T len)
+{
+    char bufferA[WS_INET6_ADDRSTRLEN];
+    PWSTR ret = NULL;
+
+    TRACE("family %d, addr (%p), buffer (%p), len %ld\n", family, addr, buffer, len);
+
+    if (WS_inet_ntop(family, addr, bufferA, sizeof(bufferA)))
+    {
+        if (MultiByteToWideChar(CP_ACP, 0, bufferA, -1, buffer, len))
+            ret = buffer;
+        else
+            SetLastError(ERROR_INVALID_PARAMETER);
+    }
     return ret;
 }

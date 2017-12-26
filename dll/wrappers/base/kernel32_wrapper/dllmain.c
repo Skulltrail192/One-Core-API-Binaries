@@ -43,9 +43,10 @@ BaseDllInitialize(HANDLE hDll,
         {
             /* Insert more dll attach stuff here! */
 			kernel32_handle = GetModuleHandleW(L"kernelfull");
+			PVOID address = GetAddress
 			InitializeCriticalForDirectories();
 			InitializeCriticalForLocaleInfo();
-            DllInitialized = TRUE;
+            DllInitialized = TRUE;			
             break;
         }
 

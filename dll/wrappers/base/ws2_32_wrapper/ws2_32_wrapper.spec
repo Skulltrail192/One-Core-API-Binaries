@@ -136,6 +136,6 @@
 #Vista functions
 @ stdcall inet_ntop(long ptr ptr long) WS_inet_ntop
 @ stdcall inet_pton(long str ptr) WS_inet_pton
-#@ stdcall InetNtopW(long ptr wstr long)
+@ stdcall InetNtopW(long ptr wstr long)
 @ stdcall InetPtonW(long wstr ptr)
 @ stdcall WSAPoll(ptr long long)

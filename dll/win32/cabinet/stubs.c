@@ -16,5 +16,5 @@ WINAPI
 GetDllVersion(void)
 {
     /* This is what it returns on Windows XP SP3 */
-    return "5.1.2600.5512";
+    return "5.2.3790.3959";
 }

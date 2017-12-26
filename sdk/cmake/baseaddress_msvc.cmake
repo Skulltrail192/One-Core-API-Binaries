@@ -381,7 +381,11 @@ set(baseaddress_winstabase             0x70870000)
 set(baseaddress_advapibase             0x77c20000)
 set(baseaddress_advapinew              0x77c20000)
 
-set(baseaddress_user32_wrapper         0x7c3e0000)
+if(ARCH STREQUAL "amd64")
+	set(baseaddress_user32_wrapper     0x7c3e0000)
+elseif(ARCH STREQUAL "i386")
+	set(baseaddress_user32_wrapper     0x75a20000)
+endif()
 
 #wrappers or new dlls for One-Core-API project
 set(baseaddress_sspicli                0x78d80000)

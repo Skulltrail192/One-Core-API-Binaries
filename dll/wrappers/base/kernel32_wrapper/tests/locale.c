@@ -14,6 +14,8 @@ static int (WINAPI *pLCIDToLocaleName)(LCID, LPWSTR, int ,  DWORD);
 static int (WINAPI *pLocaleNameToLCID)(LPCWSTR, DWORD);
 static int (WINAPI *pGetSystemDefaultLocaleName)(LPCWSTR, int);
 static BOOL (WINAPI *pGetThreadPreferredUILanguages)(DWORD, PULONG, PZZWSTR, PULONG);
+static BOOL (WINAPI *pGetSystemPreferredUILanguages)(DWORD, PULONG, PZZWSTR, PULONG);
+static BOOL (WINAPI *pGetUserPreferredUILanguages)(DWORD, PULONG, PZZWSTR, PULONG);
 HMODULE hkernel32;
 
 void testLCIDToLocale(){
@@ -48,18 +50,72 @@ void testGetThreadPreferredUILanguages(){
 	BOOL ret;
 	ULONG count, size;	
 	if(pGetThreadPreferredUILanguages){
+		wprintf(L" --------------------------------------------------------------------- \n");
 		wprintf(L"We have GetThreadPreferredUILanguages\n");
 			        
 	    size = count = 0;
 	    
-	    ret = pGetThreadPreferredUILanguages(MUI_UI_FALLBACK, &count, NULL, &size);	
+	    ret = pGetThreadPreferredUILanguages(MUI_LANGUAGE_NAME, &count, NULL, &size);	
 			
 	    count = 0;
 	    buf = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size * sizeof(WCHAR));
-	    ret = pGetThreadPreferredUILanguages(MUI_LANGUAGE_ID, &count, buf, &size);
+	    ret = pGetThreadPreferredUILanguages(MUI_LANGUAGE_NAME, &count, buf, &size);
 	    wprintf(L"Count langs: %d\n", count);	    
 	    wprintf(L"Buffer Size is %d\n",size);
     	wprintf(L"Lang is %s\n", buf);
+		wprintf(L"\n\n");
+	    HeapFree(GetProcessHeap(), 0, buf);
+	}	
+}
+
+void testGetSystemPreferredUILanguages(){
+	ULONG numLang = 0;
+	pGetSystemPreferredUILanguages = (void *)GetProcAddress(hkernel32, "GetSystemPreferredUILanguages"); 
+	DWORD byteOffset = 0;
+	WCHAR *buf;
+	BOOL ret;
+	ULONG count, size;	
+	if(pGetSystemPreferredUILanguages){
+		wprintf(L" --------------------------------------------------------------------- \n");
+		wprintf(L"We have GetSystemPreferredUILanguages\n");
+			        
+	    size = count = 0;
+	    
+	    ret = pGetSystemPreferredUILanguages(MUI_LANGUAGE_NAME, &count, NULL, &size);	
+			
+	    count = 0;
+	    buf = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size * sizeof(WCHAR));
+	    ret = pGetSystemPreferredUILanguages(MUI_LANGUAGE_NAME, &count, buf, &size);
+	    wprintf(L"Count langs: %d\n", count);	    
+	    wprintf(L"Buffer Size is %d\n",size);
+    	wprintf(L"Lang is %s\n", buf);	
+		wprintf(L"\n\n");
+	    HeapFree(GetProcessHeap(), 0, buf);
+	}	
+}
+
+void testGetUserPreferredUILanguages(){
+	ULONG numLang = 0;
+	pGetUserPreferredUILanguages = (void *)GetProcAddress(hkernel32, "GetUserPreferredUILanguages"); 
+	DWORD byteOffset = 0;
+	WCHAR *buf;
+	BOOL ret;
+	ULONG count, size;	
+	if(pGetUserPreferredUILanguages){
+		wprintf(L" --------------------------------------------------------------------- \n");
+		wprintf(L"We have GetUserPreferredUILanguages\n");
+			        
+	    size = count = 0;
+	    
+	    ret = pGetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &count, NULL, &size);	
+			
+	    count = 0;
+	    buf = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size * sizeof(WCHAR));
+	    ret = pGetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &count, buf, &size);
+	    wprintf(L"Count langs: %d\n", count);	    
+	    wprintf(L"Buffer Size is %d\n",size);
+    	wprintf(L"Lang is %s\n", buf);
+		wprintf(L"\n\n");
 	    HeapFree(GetProcessHeap(), 0, buf);
 	}	
 }
@@ -89,11 +145,13 @@ void testCopyWchar(){
 
 int main(int argc, char *argv[]) {	
 	int i;			
-	hkernel32 = LoadLibraryA("vernel32.dll");
+	hkernel32 = LoadLibraryA("kernel32.dll");
 
 	//testLCIDToLocale();
 
 	testGetThreadPreferredUILanguages();
+	testGetUserPreferredUILanguages();
+	testGetSystemPreferredUILanguages();	
 
 	system("PAUSE");
 	return 0;

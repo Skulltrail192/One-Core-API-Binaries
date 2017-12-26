@@ -161,6 +161,7 @@
 @ stdcall ConvertLengthToIpv4Mask(long ptr)
 @ stdcall ConvertInterfaceGuidToLuid(ptr ptr)
 @ stdcall ConvertInterfaceLuidToIndex(ptr ptr)
+@ stdcall CreateSortedAddressPairs(ptr long ptr long long ptr ptr)
 @ stdcall FreeMibTable(ptr)
 @ stdcall GetIfEntry2(ptr)
 @ stdcall GetIpNetEntry2(ptr)
