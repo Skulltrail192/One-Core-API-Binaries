@@ -39,7 +39,7 @@ MSFT_Namespace          = "http://ns.microsoft.com/photo/1.0"
 LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 
 [Prerequisite]
-	;condition=SingleOp,LatestUpdateCheck2.Section
+	condition=SingleOp,LatestUpdateCheck2.Section
 	
 [LatestUpdateCheck2.Section]
     EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
@@ -50,21 +50,21 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
     Del.Reg, Del.Reg.Uninstall
 	
 [Product.Add.Reg]
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Backup Dir",0,""
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed By",0,""
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed On",0,""
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Service Pack",0x10001,%SERVICE_PACK_NUMBER%
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Valid",0x10001,1
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Flags",0,""
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New File",0,""
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New Link Date",0,""
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Old Link Date",0,""
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%D3DR_VERSION%
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
-HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSION%"	
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Backup Dir",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed By",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed On",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Service Pack",0x10001,%SERVICE_PACK_NUMBER%
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Valid",0x10001,1
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Flags",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New File",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New Link Date",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Old Link Date",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%D3DR_VERSION%
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSION%"	
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
@@ -140,8 +140,8 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 
 [Save.Reg.For.Uninstall]
 
-HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"

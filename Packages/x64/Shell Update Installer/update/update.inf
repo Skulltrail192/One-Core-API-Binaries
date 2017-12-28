@@ -86,7 +86,9 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	shellbase.dll,amd64\shellbase.dll
 	shlwapibase.dll,amd64\shlwapibase.dll
     browseui.dll,amd64\browseui.dll
+	credui.dll,amd64\credui.dll
 	cscapi.dll,amd64\cscapi.dll
+	duser.dll,amd64\duser.dll
 	efsadu.dll,amd64\efsadu.dll
 	feclient.dll,amd64\feclient.dll
 	iertutil.dll,amd64\iertutil.dll
@@ -105,7 +107,9 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	shellbase.dll,i386\wshellbase.dll
 	shlwapibase.dll,i386\wshlwapibase.dll
     browseui.dll,i386\wbrowseui.dll
+	credui.dll,i386\wcredui.dll
 	cscapi.dll,i386\wcscapi.dll
+	duser.dll,i386\wduser.dll
 	efsadu.dll,i386\wefsadu.dll
 	feclient.dll,i386\wfeclient.dll
 	iertutil.dll,i386\wiertutil.dll
@@ -128,8 +132,10 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	amd64\shellbase.dll = 1
 	amd64\shlwapibase.dll = 1
     amd64\browseui.dll = 1
+	amd64\credui.dll = 1
 	amd64\cscapi.dll = 1
 	amd64\efsadu.dll = 1
+	amd64\duser.dll = 1
 	amd64\feclient.dll = 1
 	amd64\iertutil.dll = 1
 	amd64\msiltcfg.dll = 1
@@ -146,7 +152,9 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	i386\wshellbase.dll = 1
 	i386\wshlwapibase.dll = 1
     i386\wbrowseui.dll = 1
+	i386\wcredui.dll = 1
 	i386\wcscapi.dll = 1
+	i386\wduser.dll = 1
 	i386\wefsadu.dll = 1
 	i386\wfeclient.dll = 1
 	i386\wiertutil.dll = 1

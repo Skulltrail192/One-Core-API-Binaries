@@ -29,20 +29,20 @@ Signature                 = "$Windows NT$"
     Display_String="%LatestUpdateFail%"		
 	
 [Strings]
-D3DR_FILE_VERSION       = "6.0.6000.16385"
-D3DR_VERSION             = "3.0.0.0"
-SP_TITLE                = "One-Core-API D3D Runtime"
-LANGTYPEVALUE           = 0x0
-SP_SHORT_TITLE          = "OCAD3DR"
-SERVICE_PACK_NUMBER     = 3
-COMMENT                 = "One-Core-API D3D Runtime [See Q100000 for more information]"
-SERVICEPACKSOURCEFILES  = "One-Core-API D3D Runtime"
-Msft                    = "Microsoft"
-ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
-PARENT_DISPLAY_NAME     = "Windows Updates"
-MSFT_Prefix                 = "MicrosoftOneCoreAPID3dRuntime"
-MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
-LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
+	D3DR_FILE_VERSION       = "6.0.6000.16385"
+	D3DR_VERSION             = "3.0.0.0"
+	SP_TITLE                = "One-Core-API D3D Runtime"
+	LANGTYPEVALUE           = 0x0
+	SP_SHORT_TITLE          = "OCAD3DR"
+	SERVICE_PACK_NUMBER     = 3
+	COMMENT                 = "One-Core-API D3D Runtime [See Q100000 for more information]"
+	SERVICEPACKSOURCEFILES  = "One-Core-API D3D Runtime"
+	Msft                    = "Microsoft"
+	ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+	PARENT_DISPLAY_NAME     = "Windows Updates"
+	MSFT_Prefix                 = "MicrosoftOneCoreAPID3dRuntime"
+	MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
+	LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 
 [UninstallSections]
     Add.Reg, Add.Reg.Uninstall
@@ -60,13 +60,9 @@ HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New Link Date",0,""
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Old Link Date",0,""
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%BASE_VERSION%
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%D3DR_VERSION%
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
 HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSION%"
 	
 

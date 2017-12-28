@@ -1,18 +1,15 @@
 [Version]
-LanguageType 		  = %LANGTYPEVALUE%
-MaxNtBuildToUpdate        = 3790
-MaxNtMajorVersionToUpdate = 5
-MaxNtMinorVersionToUpdate = 2
-MaxNtServicePackVersion   = 512
-MinNtServicePackVersion   = 256
-NtBuildToUpdate           = 3790
-NtMajorVersionToUpdate    = 5
-NtMinorVersionToUpdate    = 2
-Signature                 = "$Windows NT$"
-MachineType=64
-
-[Prerequisite]
-condition=SingleOp,LatestUpdateCheck2.Section
+	LanguageType 		  = %LANGTYPEVALUE%
+	MaxNtBuildToUpdate        = 3790
+	MaxNtMajorVersionToUpdate = 5
+	MaxNtMinorVersionToUpdate = 2
+	MaxNtServicePackVersion   = 512
+	MinNtServicePackVersion   = 256
+	NtBuildToUpdate           = 3790
+	NtMajorVersionToUpdate    = 5
+	NtMinorVersionToUpdate    = 2
+	Signature                 = "$Windows NT$"
+	MachineType=64
 
 [Configuration]
     InstallationType     = Hotfix
@@ -25,56 +22,52 @@ condition=SingleOp,LatestUpdateCheck2.Section
     ServiceFileInUseDetect    = 1
     AppFileinUseDetect        = 3
 	
-[LatestUpdateCheck2.Section]
-    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
-    Display_String="%LatestUpdateFail%"	
-
 [Strings]
-OCAAD_FILE_VERSION       = "6.0.6000.16385"
-OCAAD_VERSION             = "3.0.0.0"
-SP_TITLE                = "One-Core-API Additional Dlls"
-LANGTYPEVALUE           = 0x0
-SP_SHORT_TITLE          = "OCAAD"
-SERVICE_PACK_NUMBER     = 3
-COMMENT                 = "One-Core-API Additional Dlls [See Q100000 for more information]"
-SERVICEPACKSOURCEFILES  = "One-Core-API Additional Dlls"
-Msft                    = "Microsoft"
-ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
-PARENT_DISPLAY_NAME     = "Windows Updates"
-CLSID_WIC_Prefix        = "{BB5ACC38-F216-4CEC-A6C5-5F6E739763A9}"
-LatestUpdateFail        = "Please Install One-Core-API Base first!"
-MSFT_Prefix             = "OneCoreAPIAdditionalDlls"
-MSFT_Namespace          = "http://ns.microsoft.com/photo/1.0"
+	OCAAD_FILE_VERSION      = "6.0.6000.16385"
+	OCAAD_VERSION           = "1.0.0.0"
+	SP_TITLE                = "One-Core-API Additional Dlls"
+	LANGTYPEVALUE           = 0x0
+	SP_SHORT_TITLE          = "OCAAD"
+	SERVICE_PACK_NUMBER     = 3
+	COMMENT                 = "One-Core-API Additional Dlls [See Q100000 for more information]"
+	SERVICEPACKSOURCEFILES  = "One-Core-API Additional Dlls"
+	Msft                    = "Microsoft"
+	ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+	PARENT_DISPLAY_NAME     = "Windows Updates"
+	CLSID_WIC_Prefix        = "{BB5ACC38-F216-4CEC-A6C5-5F6E739763A9}" 
+	LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
+	MSFT_Prefix             = "OneCoreAPIAdditionalDlls"
+	MSFT_Namespace          = "http://ns.microsoft.com/photo/1.0"	
 
 [Prerequisite]
 	condition=SingleOp,LatestUpdateCheck2.Section
 	
 [LatestUpdateCheck2.Section]
     EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
-    Display_String="%LatestUpdateFail%"	
+    Display_String="%LatestUpdateFail%"		
 
 [UninstallSections]
     Add.Reg, Add.Reg.Uninstall
     Del.Reg, Del.Reg.Uninstall
 	
 [Product.Add.Reg]
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed",0x10001,1
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Comments",0,%SP_TITLE%
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Backup Dir",0,""
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Fix Description",0,%SP_TITLE%
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed By",0,""
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Installed On",0,""
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Service Pack",0x10001,%SERVICE_PACK_NUMBER%
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%,"Valid",0x10001,1
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"Flags",0,""
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"New File",0,""
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"New Link Date",0,""
-    HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\,"Old Link Date",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed",0x10001,1
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Comments",0,%SP_TITLE%
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Backup Dir",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Fix Description",0,%SP_TITLE% 
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed By",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Installed On",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Service Pack",0x10001,%SERVICE_PACK_NUMBER%
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%","Valid",0x10001,1
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Flags",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New File",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","New Link Date",0,""
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%\File 1\","Old Link Date",0,""
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayName",0x00000000,"%SP_TITLE%"
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","DisplayVersion",0x00000000,%OCAAD_VERSION%
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ParentKeyName",0x00000000,"OperatingSystem"
 	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%SP_SHORT_TITLE%","ReleaseType",0x00000000,"HotFix"
-	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%OCAAD_VERSION%"
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%OCAAD_VERSION%"	
 	
 ;-------------------------------------------------------------------------
 ; WindowsCodec.dll
@@ -4187,18 +4180,29 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
     HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%,,%MSFT_Namespace%
     HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%,,%MSFT_Namespace%
     HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%,,%MSFT_Namespace%
-    HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%,,%MSFT_Namespace%
+    HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%,,%MSFT_Namespace%	
 
+[ProductInstall.CopyFilesAlways]
+    CopyFiles                  = CopyAlways.System32.files
+	CopyFiles                  = CopyAlways.SysWOW64.files
+	
+[ProductInstall.GlobalRegistryChanges.Install]
+    AddReg=Product.Add.Reg
+
+[ProductInstall.GlobalRegistryChanges.ReInstall]
+    AddReg=Product.Add.Reg
+	
+[Add.Reg.Uninstall]
 
 [Save.Reg.For.Uninstall]
 
-    HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
-    HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
-    HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
-
-    HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"
-    HKLM,"SOFTWARE\Wow6432Node\Microsoft\%SP_TITLE%","InstalledVersion"
-
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"	
+	HKLM,"SOFTWARE\Wow6432Node\Microsoft\%SP_TITLE%","InstalledVersion" 
+	
 ;-------------------------------------------------------------------------
 ; WindowsCodec.dll
 
@@ -5064,31 +5068,19 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
     HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%
     HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%
     HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
-    HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%	
+    HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%		
+
+[DestinationDirs]
+    CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+	CopyAlways.SysWOW64.files=10,SysWOW64  ; %windir%\system32 (don't delay until reboot)
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
 	CopyFiles                  = CopyAlways.SysWOW64.files
 	
-[ProductInstall.DontDelayUntilReboot]
-    CopyFiles=MustReplace.System32.files
-	CopyFiles=MustReplace.SysWOW64.files
-
-[DestinationDirs]
-    CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
-	CopyAlways.SysWOW64.files=10,SysWOW64  ; %windir%\system32 (don't delay until reboot)
-	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
-	MustReplace.SysWOW64.files=10,SysWOW64  ; %windir%\system32 (don't delay until reboot)	
-
-[MustReplace.System32.files]
-    cabinet.dll,amd64/cabinet.dll
-	
-[MustReplace.SysWOW64.files]
-    cabinet.dll,i386/wcabinet.dll	
-	
 [CopyAlways.System32.Files]
 	avrt.dll,amd64/avrt.dll
-	cabinet.dll,amd64/cabinet.dll
+	cabiext.dll,amd64/cabiext.dll
 	combase.dll,amd64/combase.dll
 	cryptbase.dll,amd64/cryptbase.dll
 	cryptsp.dll,amd64/cryptsp.dll
@@ -5151,7 +5143,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	wusa.exe,amd64/wusa.exe
 [CopyAlways.SysWOW64.Files]	
 	avrt.dll,i386/wavrt.dll
-	cabinet.dll,i386/wcabinet.dll
+	cabiext.dll,i386/wcabiext.dll
 	combase.dll,i386/wcombase.dll
 	cryptbase.dll,i386/wcryptbase.dll
 	cryptsp.dll,i386/wcryptsp.dll
@@ -5217,7 +5209,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 
 [SourceDisksFiles]
 	amd64/avrt.dll = 1
-	amd64/cabinet = 1
+	amd64/cabiext = 1
 	amd64/combase.dll = 1
 	amd64/cryptbase.dll = 1
 	amd64/cryptsp.dll = 1
@@ -5279,7 +5271,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	amd64/wtsapi32.dll = 1
 	amd64/wusa.exe = 1
 	i386/wavrt.dll = 1
-	i386/wcabinet = 1
+	i386/wcabiext = 1
 	i386/wcombase.dll = 1
 	i386/wcryptbase.dll = 1
 	i386/wcryptsp.dll = 1
@@ -5340,11 +5332,3 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	i386/wWSDApi.dll = 1
 	i386/wwtsapi32.dll = 1
 	i386/wwusa.exe = 1
-	
-[Save.Reg.For.Uninstall]
-
-    HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
-    HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
-    HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
-    HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
-    HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"
