@@ -1364,7 +1364,7 @@
 @ stdcall RtlWow64EnableFsRedirection(long) ;is native on 2003 RTM, but, is better to see
 @ stdcall RtlWow64EnableFsRedirectionEx(long ptr) 
 
-#Missing on XP x64 ntdll wow
+#Needed for XP x64 ntdll wow
 @ stdcall RtlAddRefMemoryStream(ptr) ntdll.RtlAddRefMemoryStream
 @ stdcall RtlCloneMemoryStream(ptr ptr) ntdll.RtlCloneMemoryStream
 @ stdcall RtlCommitMemoryStream(ptr long) ntdll.RtlCommitMemoryStream

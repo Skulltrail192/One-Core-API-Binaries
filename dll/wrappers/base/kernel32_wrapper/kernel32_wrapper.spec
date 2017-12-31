@@ -1074,6 +1074,7 @@
 @ stdcall DeleteFileTransactedA(str ptr)
 @ stdcall DeleteFileTransactedW(wstr ptr)
 @ stdcall DeleteProcThreadAttributeList(ptr)
+@ stdcall DisassociateCurrentThreadFromCallback(ptr) ntext.TpDisassociateCallback
 @ stdcall EnumCalendarInfoExEx(ptr wstr long wstr long long)
 @ stdcall EnumDateFormatsExEx(ptr wstr long ptr)
 @ stdcall EnumResourceLanguagesExA(long str str ptr long long long)

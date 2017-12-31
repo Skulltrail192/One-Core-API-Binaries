@@ -1,5 +1,0 @@
-MODULE    = fntcache.dll
-IMPORTS   = advapi32
-
-C_SRCS = \
-	main.c
