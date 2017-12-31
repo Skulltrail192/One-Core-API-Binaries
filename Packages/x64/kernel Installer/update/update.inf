@@ -29,14 +29,7 @@
     Display_String="%LatestUpdateFail%"			
 	
 [Strings]
-    CMAKRegkey=SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Cmak.exe
-    ProxyRegKey=SYSTEM\CurrentControlSet\Services\WSPSrv\Parameters
-    IeRegKey=Software\Microsoft\Windows\CurrentVersion\App Paths\iexplore.exe
-    HyperRegKey=SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\hypertrm.exe
-    EudcRegKey=Software\Microsoft\Windows\CurrentVersion\App Paths\eudcedit.exe
-    AdmtRegKey=SOFTWARE\Microsoft\ADMT
-    TsclientRegKey=SOFTWARE\Classes\conman.exe\DefaultIcon
-    PATH_ZONES="Software\Microsoft\Windows\CurrentVersion\Internet Settings\Zones"
+	LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
     UDDIRegKey=Software\Microsoft\UDDI
     HELPLINK = http://support.microsoft.com/?kbid=2393802
     URLInfoAbout = "http://support.microsoft.com"
@@ -47,7 +40,7 @@
     HOTFIX                = "Hotfix"
     SECURITY_UPDATE       = "Security Update"
     PACKAGE_ARCHITECTURE = x86
-    LangTypeValue           = 0x09
+    LangTypeValue           = 0x0
     WSEDIR                  = "1033"
     TSCLIENTDIR             = "Terminal Services Client"
     PORTUGAL                = "Portugal"
@@ -57,7 +50,7 @@
     ACCESSDIR               = "accessories"
     ACCESSDIRNAME           = "accessories" ;; accessories folder name is different from the display name in case of PLK, FIN and ELL
     ServicePackSourceFiles  = "Windows Server 2003 Hotfix Source Files"
-    SP_SHORT_TITLE          = "KB2393802"
+    SP_SHORT_TITLE          = "One-Core-API Kernel Update"
     SP_TITLE                = "One-Core-API Kernel Update"
     SP_TITLE_XP             = "One-Core-API Kernel Update"
     SP_TITLE_WS03           = "One-Core-API Kernel Update"
