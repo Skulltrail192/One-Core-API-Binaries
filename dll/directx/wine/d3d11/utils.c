@@ -438,6 +438,21 @@ unsigned int wined3d_getdata_flags_from_d3d11_async_getdata_flags(unsigned int d
     return WINED3DGETDATA_FLUSH;
 }
 
+UINT d3d11_bind_flags_from_wined3d_usage(DWORD wined3d_usage)
+{
+    UINT bind_flags = 0;
+
+    if (wined3d_usage & WINED3DUSAGE_TEXTURE)
+        bind_flags |= D3D11_BIND_SHADER_RESOURCE;
+    if (wined3d_usage & WINED3DUSAGE_RENDERTARGET)
+        bind_flags |= D3D11_BIND_RENDER_TARGET;
+
+    wined3d_usage &= ~(WINED3DUSAGE_TEXTURE | WINED3DUSAGE_RENDERTARGET);
+    if (wined3d_usage)
+        FIXME("Unhandled wined3d usage %#x.\n", wined3d_usage);
+    return bind_flags;
+}
+
 DWORD wined3d_usage_from_d3d11(UINT bind_flags, enum D3D11_USAGE usage)
 {
     static const DWORD handled = D3D11_BIND_SHADER_RESOURCE
@@ -595,6 +610,94 @@ UINT d3d10_resource_misc_flags_from_d3d11_resource_misc_flags(UINT resource_misc
     return d3d10_resource_misc_flags;
 }
 
+static BOOL d3d11_bind_flags_are_gpu_read_only(UINT bind_flags)
+{
+    static const BOOL read_only_bind_flags = D3D11_BIND_VERTEX_BUFFER
+            | D3D11_BIND_INDEX_BUFFER | D3D11_BIND_CONSTANT_BUFFER
+            | D3D11_BIND_SHADER_RESOURCE;
+
+    return !(bind_flags & ~read_only_bind_flags);
+}
+
+BOOL validate_d3d11_resource_access_flags(D3D11_RESOURCE_DIMENSION resource_dimension,
+        D3D11_USAGE usage, UINT bind_flags, UINT cpu_access_flags, D3D_FEATURE_LEVEL feature_level)
+{
+    const BOOL is_texture = resource_dimension != D3D11_RESOURCE_DIMENSION_BUFFER;
+
+    switch (usage)
+    {
+        case D3D11_USAGE_DEFAULT:
+            if ((bind_flags == D3D11_BIND_SHADER_RESOURCE && feature_level >= D3D_FEATURE_LEVEL_11_0)
+                    || (is_texture && bind_flags == D3D11_BIND_RENDER_TARGET)
+                    || bind_flags == D3D11_BIND_UNORDERED_ACCESS)
+                break;
+            if (cpu_access_flags)
+            {
+                WARN("Default resources are not CPU accessible.\n");
+                return FALSE;
+            }
+            break;
+
+        case D3D11_USAGE_IMMUTABLE:
+            if (!bind_flags)
+            {
+                WARN("Bind flags must be non-zero for immutable resources.\n");
+                return FALSE;
+            }
+            if (!d3d11_bind_flags_are_gpu_read_only(bind_flags))
+            {
+                WARN("Immutable resources cannot be writable by GPU.\n");
+                return FALSE;
+            }
+
+            if (cpu_access_flags)
+            {
+                WARN("Immutable resources are not CPU accessible.\n");
+                return FALSE;
+            }
+            break;
+
+        case D3D11_USAGE_DYNAMIC:
+            if (!bind_flags)
+            {
+                WARN("Bind flags must be non-zero for dynamic resources.\n");
+                return FALSE;
+            }
+            if (!d3d11_bind_flags_are_gpu_read_only(bind_flags))
+            {
+                WARN("Dynamic resources cannot be writable by GPU.\n");
+                return FALSE;
+            }
+
+            if (cpu_access_flags != D3D11_CPU_ACCESS_WRITE)
+            {
+                WARN("CPU access must be D3D11_CPU_ACCESS_WRITE for dynamic resources.\n");
+                return FALSE;
+            }
+            break;
+
+        case D3D11_USAGE_STAGING:
+            if (bind_flags)
+            {
+                WARN("Invalid bind flags %#x for staging resources.\n", bind_flags);
+                return FALSE;
+            }
+
+            if (!cpu_access_flags)
+            {
+                WARN("CPU access must be non-zero for staging resources.\n");
+                return FALSE;
+            }
+            break;
+
+        default:
+            WARN("Invalid usage %#x.\n", usage);
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
 struct wined3d_resource *wined3d_resource_from_d3d11_resource(ID3D11Resource *resource)
 {
     D3D11_RESOURCE_DIMENSION dimension;
@@ -606,10 +709,6 @@ struct wined3d_resource *wined3d_resource_from_d3d11_resource(ID3D11Resource *re
         case D3D11_RESOURCE_DIMENSION_BUFFER:
             return wined3d_buffer_get_resource(unsafe_impl_from_ID3D11Buffer(
                     (ID3D11Buffer *)resource)->wined3d_buffer);
-
-        case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
-            return wined3d_texture_get_resource(unsafe_impl_from_ID3D11Texture1D(
-                    (ID3D11Texture1D *)resource)->wined3d_texture);
 
         case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
             return wined3d_texture_get_resource(unsafe_impl_from_ID3D11Texture2D(
@@ -637,13 +736,13 @@ struct wined3d_resource *wined3d_resource_from_d3d10_resource(ID3D10Resource *re
             return wined3d_buffer_get_resource(unsafe_impl_from_ID3D10Buffer(
                     (ID3D10Buffer *)resource)->wined3d_buffer);
 
-        case D3D10_RESOURCE_DIMENSION_TEXTURE1D:
-            return wined3d_texture_get_resource(unsafe_impl_from_ID3D10Texture1D(
-                    (ID3D10Texture1D *)resource)->wined3d_texture);
-
         case D3D10_RESOURCE_DIMENSION_TEXTURE2D:
             return wined3d_texture_get_resource(unsafe_impl_from_ID3D10Texture2D(
                     (ID3D10Texture2D *)resource)->wined3d_texture);
+
+        case D3D10_RESOURCE_DIMENSION_TEXTURE3D:
+            return wined3d_texture_get_resource(unsafe_impl_from_ID3D10Texture3D(
+                    (ID3D10Texture3D *)resource)->wined3d_texture);
 
         default:
             FIXME("Unhandled resource dimension %#x.\n", dimension);
@@ -793,6 +892,7 @@ HRESULT parse_dxbc(const char *data, SIZE_T data_size,
     DWORD chunk_count;
     DWORD total_size;
     unsigned int i;
+    DWORD version;
     DWORD tag;
 
     read_dword(&ptr, &tag);
@@ -807,7 +907,13 @@ HRESULT parse_dxbc(const char *data, SIZE_T data_size,
     WARN("Ignoring DXBC checksum.\n");
     skip_dword_unknown(&ptr, 4);
 
-    skip_dword_unknown(&ptr, 1); /* It seems to always be 0x00000001. */
+    read_dword(&ptr, &version);
+    TRACE("version: %#x.\n", version);
+    if (version != 0x00000001)
+    {
+        WARN("Got unexpected DXBC version %#x.\n", version);
+        return E_INVALIDARG;
+    }
 
     read_dword(&ptr, &total_size);
     TRACE("total size: %#x\n", total_size);

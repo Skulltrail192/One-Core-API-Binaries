@@ -22,8 +22,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
-#include "wine/port.h"
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_decl);
@@ -114,15 +112,6 @@ static BOOL declaration_element_valid_ffp(const struct wined3d_vertex_element *e
                 case WINED3DFMT_R16G16B16A16_SINT:
                 case WINED3DFMT_R16G16_FLOAT:
                 case WINED3DFMT_R16G16B16A16_FLOAT:
-                    return TRUE;
-                default:
-                    return FALSE;
-            }
-
-        case WINED3D_DECL_USAGE_BLEND_INDICES:
-            switch(element->format)
-            {
-                case WINED3DFMT_R8G8B8A8_UINT:
                     return TRUE;
                 default:
                     return FALSE;

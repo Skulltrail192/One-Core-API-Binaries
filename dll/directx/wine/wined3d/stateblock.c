@@ -22,8 +22,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
-#include "wine/port.h"
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
@@ -45,10 +43,6 @@ static const DWORD pixel_states_render[] =
     WINED3D_RS_COLORWRITEENABLE1,
     WINED3D_RS_COLORWRITEENABLE2,
     WINED3D_RS_COLORWRITEENABLE3,
-    WINED3D_RS_COLORWRITEENABLE4,
-    WINED3D_RS_COLORWRITEENABLE5,
-    WINED3D_RS_COLORWRITEENABLE6,
-    WINED3D_RS_COLORWRITEENABLE7,
     WINED3D_RS_DEPTHBIAS,
     WINED3D_RS_DESTBLEND,
     WINED3D_RS_DESTBLENDALPHA,
@@ -94,7 +88,6 @@ static const DWORD pixel_states_render[] =
     WINED3D_RS_ZENABLE,
     WINED3D_RS_ZFUNC,
     WINED3D_RS_ZWRITEENABLE,
-    WINED3D_RS_DEPTHCLIP,
 };
 
 static const DWORD pixel_states_texture[] =
@@ -223,7 +216,7 @@ static void stateblock_savedstates_set_all(struct wined3d_saved_states *states, 
     stateblock_set_bits(states->renderState, WINEHIGHEST_RENDER_STATE + 1);
     for (i = 0; i < MAX_TEXTURES; ++i) states->textureState[i] = 0x3ffff;
     for (i = 0; i < MAX_COMBINED_SAMPLERS; ++i) states->samplerState[i] = 0x3ffe;
-    states->clipplane = 0xffffffff;
+    states->clipplane = (1u << MAX_CLIP_DISTANCES) - 1;
     states->pixelShaderConstantsB = 0xffff;
     states->pixelShaderConstantsI = 0xffff;
     states->vertexShaderConstantsB = 0xffff;
@@ -1216,6 +1209,7 @@ static void state_init_default(struct wined3d_state *state, const struct wined3d
     tmpfloat.f = gl_info->limits.pointsize_max;
     state->render_states[WINED3D_RS_POINTSIZE_MAX] = tmpfloat.d;
     state->render_states[WINED3D_RS_INDEXEDVERTEXBLENDENABLE] = FALSE;
+    state->render_states[WINED3D_RS_COLORWRITEENABLE] = 0x0000000f;
     tmpfloat.f = 0.0f;
     state->render_states[WINED3D_RS_TWEENFACTOR] = tmpfloat.d;
     state->render_states[WINED3D_RS_BLENDOP] = WINED3D_BLEND_OP_ADD;
@@ -1241,12 +1235,12 @@ static void state_init_default(struct wined3d_state *state, const struct wined3d
     state->render_states[WINED3D_RS_BACK_STENCILZFAIL] = WINED3D_STENCIL_OP_KEEP;
     state->render_states[WINED3D_RS_BACK_STENCILPASS] = WINED3D_STENCIL_OP_KEEP;
     state->render_states[WINED3D_RS_BACK_STENCILFUNC] = WINED3D_CMP_ALWAYS;
+    state->render_states[WINED3D_RS_COLORWRITEENABLE1] = 0x0000000f;
+    state->render_states[WINED3D_RS_COLORWRITEENABLE2] = 0x0000000f;
+    state->render_states[WINED3D_RS_COLORWRITEENABLE3] = 0x0000000f;
     state->render_states[WINED3D_RS_BLENDFACTOR] = 0xffffffff;
     state->render_states[WINED3D_RS_SRGBWRITEENABLE] = 0;
     state->render_states[WINED3D_RS_DEPTHBIAS] = 0;
-    tmpfloat.f = 0.0f;
-    state->render_states[WINED3D_RS_DEPTHBIASCLAMP] = tmpfloat.d;
-    state->render_states[WINED3D_RS_DEPTHCLIP] = TRUE;
     state->render_states[WINED3D_RS_WRAP8] = 0;
     state->render_states[WINED3D_RS_WRAP9] = 0;
     state->render_states[WINED3D_RS_WRAP10] = 0;
@@ -1259,8 +1253,6 @@ static void state_init_default(struct wined3d_state *state, const struct wined3d
     state->render_states[WINED3D_RS_SRCBLENDALPHA] = WINED3D_BLEND_ONE;
     state->render_states[WINED3D_RS_DESTBLENDALPHA] = WINED3D_BLEND_ZERO;
     state->render_states[WINED3D_RS_BLENDOPALPHA] = WINED3D_BLEND_OP_ADD;
-    for (i = 0; i < MAX_RENDER_TARGETS; ++i)
-        state->render_states[WINED3D_RS_COLORWRITE(i)] = 0x0000000f;
 
     /* Texture Stage States - Put directly into state block, we will call function below */
     for (i = 0; i < MAX_TEXTURES; ++i)

@@ -27,11 +27,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
-#include "wine/port.h"
-
-#include <stdio.h>
-
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_shader);
@@ -5089,6 +5084,7 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_DSY                              */ shader_hw_dsy,
     /* WINED3DSIH_DSY_COARSE                       */ NULL,
     /* WINED3DSIH_DSY_FINE                         */ NULL,
+    /* WINED3DSIH_EVAL_SAMPLE_INDEX                */ NULL,
     /* WINED3DSIH_ELSE                             */ shader_hw_else,
     /* WINED3DSIH_EMIT                             */ NULL,
     /* WINED3DSIH_EMIT_STREAM                      */ NULL,
@@ -7704,6 +7700,14 @@ static BOOL arbfp_blit_supported(const struct wined3d_gl_info *gl_info,
 
     if (!gl_info->supported[ARB_FRAGMENT_PROGRAM])
         return FALSE;
+
+    if (blit_op == WINED3D_BLIT_OP_RAW_BLIT && dst_format->id == src_format->id)
+    {
+        if (dst_format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & (WINED3DFMT_FLAG_DEPTH | WINED3DFMT_FLAG_STENCIL))
+            blit_op = WINED3D_BLIT_OP_DEPTH_BLIT;
+        else
+            blit_op = WINED3D_BLIT_OP_COLOR_BLIT;
+    }
 
     switch (blit_op)
     {

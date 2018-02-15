@@ -20,6 +20,7 @@
 #define __WINE_D3D11_PRIVATE_H
 
 #include "wine/debug.h"
+#include "wine/heap.h"
 
 #include <assert.h>
 
@@ -29,7 +30,7 @@
 #include "winuser.h"
 #include "objbase.h"
 
-#include "d3d11_1.h"
+#include "d3d11_4.h"
 #ifdef D3D11_INIT_GUID
 #include "initguid.h"
 #endif
@@ -67,6 +68,7 @@ void d3d11_primitive_topology_from_wined3d_primitive_type(enum wined3d_primitive
 void wined3d_primitive_type_from_d3d11_primitive_topology(D3D11_PRIMITIVE_TOPOLOGY topology,
         enum wined3d_primitive_type *type, unsigned int *patch_vertex_count) DECLSPEC_HIDDEN;
 unsigned int wined3d_getdata_flags_from_d3d11_async_getdata_flags(unsigned int d3d11_flags) DECLSPEC_HIDDEN;
+UINT d3d11_bind_flags_from_wined3d_usage(DWORD wined3d_usage) DECLSPEC_HIDDEN;
 DWORD wined3d_usage_from_d3d11(UINT bind_flags, enum D3D11_USAGE usage) DECLSPEC_HIDDEN;
 struct wined3d_resource *wined3d_resource_from_d3d11_resource(ID3D11Resource *resource) DECLSPEC_HIDDEN;
 struct wined3d_resource *wined3d_resource_from_d3d10_resource(ID3D10Resource *resource) DECLSPEC_HIDDEN;
@@ -82,19 +84,16 @@ UINT d3d10_cpu_access_flags_from_d3d11_cpu_access_flags(UINT cpu_access_flags) D
 UINT d3d11_resource_misc_flags_from_d3d10_resource_misc_flags(UINT resource_misc_flags) DECLSPEC_HIDDEN;
 UINT d3d10_resource_misc_flags_from_d3d11_resource_misc_flags(UINT resource_misc_flags) DECLSPEC_HIDDEN;
 
+BOOL validate_d3d11_resource_access_flags(D3D11_RESOURCE_DIMENSION resource_dimension,
+        D3D11_USAGE usage, UINT bind_flags, UINT cpu_access_flags,
+        D3D_FEATURE_LEVEL feature_level) DECLSPEC_HIDDEN;
+
 HRESULT d3d_get_private_data(struct wined3d_private_store *store,
         REFGUID guid, UINT *data_size, void *data) DECLSPEC_HIDDEN;
 HRESULT d3d_set_private_data(struct wined3d_private_store *store,
         REFGUID guid, UINT data_size, const void *data) DECLSPEC_HIDDEN;
 HRESULT d3d_set_private_data_interface(struct wined3d_private_store *store,
         REFGUID guid, const IUnknown *object) DECLSPEC_HIDDEN;
-
-static inline void *d3d11_calloc(SIZE_T count, SIZE_T size)
-{
-    if (count > ~(SIZE_T)0 / size)
-        return NULL;
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, count * size);
-}
 
 static inline void read_dword(const char **ptr, DWORD *d)
 {
@@ -112,30 +111,6 @@ void skip_dword_unknown(const char **ptr, unsigned int count) DECLSPEC_HIDDEN;
 HRESULT parse_dxbc(const char *data, SIZE_T data_size,
         HRESULT (*chunk_handler)(const char *data, DWORD data_size, DWORD tag, void *ctx), void *ctx) DECLSPEC_HIDDEN;
 
-/* ID3D11Texture1D, ID3D10Texture1D */
-struct d3d_texture1d
-{
-    ID3D11Texture1D ID3D11Texture1D_iface;
-    ID3D10Texture1D ID3D10Texture1D_iface;
-    LONG refcount;
-
-    struct wined3d_private_store private_store;
-    IUnknown *dxgi_surface;
-    struct wined3d_texture *wined3d_texture;
-    D3D11_TEXTURE1D_DESC desc;
-    ID3D11Device *device;
-};
-
-static inline struct d3d_texture1d *impl_from_ID3D10Texture1D(ID3D10Texture1D *iface)
-{
-    return CONTAINING_RECORD(iface, struct d3d_texture1d, ID3D10Texture1D_iface);
-}
-
-HRESULT d3d_texture1d_create(struct d3d_device *device, const D3D11_TEXTURE1D_DESC *desc,
-        const D3D11_SUBRESOURCE_DATA *data, struct d3d_texture1d **texture) DECLSPEC_HIDDEN;
-struct d3d_texture1d *unsafe_impl_from_ID3D11Texture1D(ID3D11Texture1D *iface) DECLSPEC_HIDDEN;
-struct d3d_texture1d *unsafe_impl_from_ID3D10Texture1D(ID3D10Texture1D *iface) DECLSPEC_HIDDEN;
-
 /* ID3D11Texture2D, ID3D10Texture2D */
 struct d3d_texture2d
 {
@@ -150,9 +125,9 @@ struct d3d_texture2d
     ID3D11Device *device;
 };
 
-static inline struct d3d_texture2d *impl_from_ID3D10Texture2D(ID3D10Texture2D *iface)
+static inline struct d3d_texture2d *impl_from_ID3D11Texture2D(ID3D11Texture2D *iface)
 {
-    return CONTAINING_RECORD(iface, struct d3d_texture2d, ID3D10Texture2D_iface);
+    return CONTAINING_RECORD(iface, struct d3d_texture2d, ID3D11Texture2D_iface);
 }
 
 HRESULT d3d_texture2d_create(struct d3d_device *device, const D3D11_TEXTURE2D_DESC *desc,
@@ -176,6 +151,7 @@ struct d3d_texture3d
 HRESULT d3d_texture3d_create(struct d3d_device *device, const D3D11_TEXTURE3D_DESC *desc,
         const D3D11_SUBRESOURCE_DATA *data, struct d3d_texture3d **texture) DECLSPEC_HIDDEN;
 struct d3d_texture3d *unsafe_impl_from_ID3D11Texture3D(ID3D11Texture3D *iface) DECLSPEC_HIDDEN;
+struct d3d_texture3d *unsafe_impl_from_ID3D10Texture3D(ID3D10Texture3D *iface) DECLSPEC_HIDDEN;
 
 /* ID3D11Buffer, ID3D10Buffer */
 struct d3d_buffer
@@ -416,6 +392,7 @@ struct d3d_blend_state
     LONG refcount;
 
     struct wined3d_private_store private_store;
+    struct wined3d_blend_state *wined3d_state;
     D3D11_BLEND_DESC desc;
     struct wine_rb_entry entry;
     ID3D11Device *device;
@@ -546,7 +523,6 @@ struct d3d_device
     struct wine_rb_tree rasterizer_states;
     struct wine_rb_tree sampler_states;
 
-    struct d3d_blend_state *blend_state;
     float blend_factor[4];
     struct d3d_depthstencil_state *depth_stencil_state;
     UINT stencil_ref;
