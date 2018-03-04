@@ -23,16 +23,17 @@ Revision History:
 
 static BOOL DllInitialized = FALSE;
 PPEB Peb;
-HMODULE kernel32_handle = 0;
+HMODULE kernel32_handle = NULL;
 
 void InitializeCriticalForDirectories();
 void InitializeCriticalForLocaleInfo();
 
 BOOL
 WINAPI
-BaseDllInitialize(HANDLE hDll,
-        DWORD dwReason,
-        LPVOID lpReserved)
+BaseDllInitialize(
+	HANDLE hDll,
+    DWORD dwReason,
+    LPVOID lpReserved)
 {
     /* Cache the PEB and Session ID */
     //Peb = NtCurrentPeb();
@@ -43,7 +44,6 @@ BaseDllInitialize(HANDLE hDll,
         {
             /* Insert more dll attach stuff here! */
 			kernel32_handle = GetModuleHandleW(L"kernelfull");
-			PVOID address = GetAddress
 			InitializeCriticalForDirectories();
 			InitializeCriticalForLocaleInfo();
             DllInitialized = TRUE;			

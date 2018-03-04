@@ -1268,6 +1268,8 @@
 @ stdcall GetPackageFullName(long ptr ptr)
 @ stdcall GetSystemTimePreciseAsFileTime(ptr)
 @ stdcall InitializeSynchronizationBarrier(ptr long long)
+@ stdcall PathCchAddBackslash(wstr long) 
+@ stdcall PathCchAddBackslashEx(wstr long ptr ptr) 
 @ stdcall RemoveDllDirectory(ptr)
 @ stdcall SetDefaultDllDirectories(long)
 @ stdcall WerpNotifyLoadStringResourceWorker(ptr wstr ptr long) WerpNotifyLoadStringResource

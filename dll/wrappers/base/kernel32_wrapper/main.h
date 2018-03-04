@@ -1337,6 +1337,39 @@ OpenRegKey(
 
 extern HANDLE           hAltSortsKey;       // handle to Locale\Alternate Sorts key
 
+#define PATHCCH_NONE                            0x00
+#define PATHCCH_ALLOW_LONG_PATHS                0x01
+#define PATHCCH_FORCE_ENABLE_LONG_NAME_PROCESS  0x02
+#define PATHCCH_FORCE_DISABLE_LONG_NAME_PROCESS 0x04
+#define PATHCCH_DO_NOT_NORMALIZE_SEGMENTS       0x08
+#define PATHCCH_ENSURE_IS_EXTENDED_LENGTH_PATH  0x10
+
+HRESULT 
+WINAPI 
+PathCchAddBackslash(
+	WCHAR *path, 
+	SIZE_T size
+);
+
+HRESULT 
+WINAPI 
+PathCchAddBackslashEx(
+	WCHAR *path, 
+	SIZE_T size, 
+	WCHAR **end, 
+	SIZE_T *remaining
+);
+
+HRESULT 
+WINAPI 
+PathCchCombineEx(
+	WCHAR *out, 
+	SIZE_T size, 
+	const WCHAR *path1, 
+	const WCHAR *path2, 
+	DWORD flags
+);
+
 typedef struct _nlsversioninfoex {
   DWORD dwNLSVersionInfoSize;
   DWORD dwNLSVersion;

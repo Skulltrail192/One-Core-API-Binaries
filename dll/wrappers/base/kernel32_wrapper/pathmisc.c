@@ -127,3 +127,41 @@ GetVolumeInformationByHandleW(
     }
   return TRUE;
 }
+
+HRESULT WINAPI PathCchAddBackslash(WCHAR *path, SIZE_T size)
+{
+    return PathCchAddBackslashEx(path, size, NULL, NULL);
+}
+
+HRESULT WINAPI PathCchAddBackslashEx(WCHAR *path, SIZE_T size, WCHAR **endptr, SIZE_T *remaining)
+{
+    BOOL needs_termination;
+    SIZE_T length;
+
+    TRACE("%s, %lu, %p, %p\n", debugstr_w(path), size, endptr, remaining);
+
+    length = strlenW(path);
+    needs_termination = size && length && path[length - 1] != '\\';
+
+    if (length >= (needs_termination ? size - 1 : size))
+    {
+        if (endptr) *endptr = NULL;
+        if (remaining) *remaining = 0;
+        return STRSAFE_E_INSUFFICIENT_BUFFER;
+    }
+
+    if (!needs_termination)
+    {
+        if (endptr) *endptr = path + length;
+        if (remaining) *remaining = size - length;
+        return S_FALSE;
+    }
+
+    path[length++] = '\\';
+    path[length] = 0;
+
+    if (endptr) *endptr = path + length;
+    if (remaining) *remaining = size - length;
+
+    return S_OK;
+}
