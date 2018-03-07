@@ -1299,3 +1299,27 @@ RegQueryValueExAW(
 {
 	return 0;
 }
+
+BOOL WINAPI CreateRestrictedToken(
+  _In_     HANDLE               ExistingTokenHandle,
+  _In_     DWORD                Flags,
+  _In_     DWORD                DisableSidCount,
+  _In_opt_ PSID_AND_ATTRIBUTES  SidsToDisable,
+  _In_     DWORD                DeletePrivilegeCount,
+  _In_opt_ PLUID_AND_ATTRIBUTES PrivilegesToDelete,
+  _In_     DWORD                RestrictedSidCount,
+  _In_opt_ PSID_AND_ATTRIBUTES  SidsToRestrict,
+  _Out_    PHANDLE              NewTokenHandle
+)
+{
+	return FALSE;
+}
+
+
+BOOL WINAPI SetThreadToken(
+  _In_opt_ PHANDLE Thread,
+  _In_opt_ HANDLE  Token
+)
+{
+	return FALSE;
+}

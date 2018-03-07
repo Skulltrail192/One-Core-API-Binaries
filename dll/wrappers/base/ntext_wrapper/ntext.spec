@@ -85,8 +85,8 @@
 @ extern NlsAnsiCodePage
 @ extern NlsMbCodePageTag
 @ extern NlsMbOemCodePageTag
-@ stdcall NtAcceptConnectPort(ptr long ptr long long ptr)
-@ stdcall NtAccessCheck(ptr long long ptr ptr ptr ptr ptr)
+@ stdcall NtAcceptConnectPort(ptr long ptr long long ptr) NtAcceptConnectPortInternal
+@ stdcall NtAccessCheck(ptr long long ptr ptr ptr ptr ptr) NtAccessCheckInternal
 @ stdcall NtAccessCheckAndAuditAlarm(ptr long ptr ptr ptr long ptr long ptr ptr ptr)
 @ stdcall NtAccessCheckByType(ptr ptr ptr long ptr long ptr ptr long ptr ptr)
 @ stdcall NtAccessCheckByTypeAndAuditAlarm(ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr)
@@ -872,8 +872,8 @@
 @ stdcall RtlxUnicodeStringToAnsiSize(ptr)
 @ stdcall RtlxUnicodeStringToOemSize(ptr) ; RtlUnicodeStringToOemSize
 @ stdcall -ret64 VerSetConditionMask(double long long)
-@ stdcall ZwAcceptConnectPort(ptr long ptr long long ptr) NtAcceptConnectPort
-@ stdcall ZwAccessCheck(ptr long long ptr ptr ptr ptr ptr) NtAccessCheck
+@ stdcall ZwAcceptConnectPort(ptr long ptr long long ptr) NtAcceptConnectPortInternal
+@ stdcall ZwAccessCheck(ptr long long ptr ptr ptr ptr ptr) NtAccessCheckInternal
 @ stdcall ZwAccessCheckAndAuditAlarm(ptr long ptr ptr ptr long ptr long ptr ptr ptr) NtAccessCheckAndAuditAlarm
 @ stdcall ZwAccessCheckByType(ptr ptr ptr long ptr long ptr ptr long ptr ptr) NtAccessCheckByType
 @ stdcall ZwAccessCheckByTypeAndAuditAlarm(ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr) NtAccessCheckByTypeAndAuditAlarm
@@ -1481,6 +1481,9 @@
 @ stdcall RtlParseDefinitionIdentity(ptr ptr long)
 
 #Vista Functions
+@ stdcall A_SHAFinal(ptr ptr)
+@ stdcall A_SHAInit(ptr)
+@ stdcall A_SHAUpdate(ptr ptr long)
 @ stdcall AlpcGetMessageAttribute(ptr long)
 @ stdcall AlpcInitializeMessageAttribute(long ptr long ptr)
 @ stdcall EtwDeliverDataBlock(long)

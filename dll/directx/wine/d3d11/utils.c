@@ -150,6 +150,7 @@ const char *debug_dxgi_format(DXGI_FORMAT format)
         WINE_D3D_TO_STR(DXGI_FORMAT_BC7_TYPELESS);
         WINE_D3D_TO_STR(DXGI_FORMAT_BC7_UNORM);
         WINE_D3D_TO_STR(DXGI_FORMAT_BC7_UNORM_SRGB);
+        WINE_D3D_TO_STR(DXGI_FORMAT_B4G4R4A4_UNORM);
         default:
             FIXME("Unrecognized DXGI_FORMAT %#x.\n", format);
             return "unrecognized";
@@ -311,6 +312,7 @@ DXGI_FORMAT dxgi_format_from_wined3dformat(enum wined3d_format_id format)
         case WINED3DFMT_BC7_TYPELESS: return DXGI_FORMAT_BC7_TYPELESS;
         case WINED3DFMT_BC7_UNORM: return DXGI_FORMAT_BC7_UNORM;
         case WINED3DFMT_BC7_UNORM_SRGB: return DXGI_FORMAT_BC7_UNORM_SRGB;
+        case WINED3DFMT_B4G4R4A4_UNORM: return DXGI_FORMAT_B4G4R4A4_UNORM;
         default:
             FIXME("Unhandled wined3d format %#x.\n", format);
             return DXGI_FORMAT_UNKNOWN;
@@ -421,6 +423,7 @@ enum wined3d_format_id wined3dformat_from_dxgi_format(DXGI_FORMAT format)
         case DXGI_FORMAT_BC7_TYPELESS: return WINED3DFMT_BC7_TYPELESS;
         case DXGI_FORMAT_BC7_UNORM: return WINED3DFMT_BC7_UNORM;
         case DXGI_FORMAT_BC7_UNORM_SRGB: return WINED3DFMT_BC7_UNORM_SRGB;
+        case DXGI_FORMAT_B4G4R4A4_UNORM: return WINED3DFMT_B4G4R4A4_UNORM;
         default:
             FIXME("Unhandled DXGI_FORMAT %#x.\n", format);
             return WINED3DFMT_UNKNOWN;
@@ -710,6 +713,10 @@ struct wined3d_resource *wined3d_resource_from_d3d11_resource(ID3D11Resource *re
             return wined3d_buffer_get_resource(unsafe_impl_from_ID3D11Buffer(
                     (ID3D11Buffer *)resource)->wined3d_buffer);
 
+        case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
+            return wined3d_texture_get_resource(unsafe_impl_from_ID3D11Texture1D(
+                    (ID3D11Texture1D *)resource)->wined3d_texture);
+
         case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
             return wined3d_texture_get_resource(unsafe_impl_from_ID3D11Texture2D(
                     (ID3D11Texture2D *)resource)->wined3d_texture);
@@ -736,6 +743,10 @@ struct wined3d_resource *wined3d_resource_from_d3d10_resource(ID3D10Resource *re
             return wined3d_buffer_get_resource(unsafe_impl_from_ID3D10Buffer(
                     (ID3D10Buffer *)resource)->wined3d_buffer);
 
+        case D3D10_RESOURCE_DIMENSION_TEXTURE1D:
+            return wined3d_texture_get_resource(unsafe_impl_from_ID3D10Texture1D(
+                    (ID3D10Texture1D *)resource)->wined3d_texture);
+
         case D3D10_RESOURCE_DIMENSION_TEXTURE2D:
             return wined3d_texture_get_resource(unsafe_impl_from_ID3D10Texture2D(
                     (ID3D10Texture2D *)resource)->wined3d_texture);
@@ -755,21 +766,23 @@ DWORD wined3d_map_flags_from_d3d11_map_type(D3D11_MAP map_type)
     switch (map_type)
     {
         case D3D11_MAP_WRITE:
+            return WINED3D_MAP_WRITE;
+
         case D3D11_MAP_READ_WRITE:
-            return 0;
+            return WINED3D_MAP_READ | WINED3D_MAP_WRITE;
 
         case D3D11_MAP_READ:
-            return WINED3D_MAP_READONLY;
+            return WINED3D_MAP_READ;
 
         case D3D11_MAP_WRITE_DISCARD:
-            return WINED3D_MAP_DISCARD;
+            return WINED3D_MAP_WRITE | WINED3D_MAP_DISCARD;
 
         case D3D11_MAP_WRITE_NO_OVERWRITE:
-            return WINED3D_MAP_NOOVERWRITE;
+            return WINED3D_MAP_WRITE | WINED3D_MAP_NOOVERWRITE;
 
         default:
             FIXME("Unhandled map_type %#x.\n", map_type);
-            return 0;
+            return WINED3D_MAP_READ | WINED3D_MAP_WRITE;
     }
 }
 
@@ -789,6 +802,21 @@ DWORD wined3d_clear_flags_from_d3d11_clear_flags(UINT clear_flags)
     }
 
     return wined3d_clear_flags;
+}
+
+unsigned int wined3d_access_from_d3d11(D3D11_USAGE usage, UINT cpu_access)
+{
+    unsigned int access;
+
+    access = usage == D3D11_USAGE_STAGING ? WINED3D_RESOURCE_ACCESS_CPU : WINED3D_RESOURCE_ACCESS_GPU;
+    if (cpu_access & D3D11_CPU_ACCESS_WRITE)
+        access |= WINED3D_RESOURCE_ACCESS_MAP_W;
+    if (cpu_access & D3D11_CPU_ACCESS_READ)
+        access |= WINED3D_RESOURCE_ACCESS_MAP_R;
+    if (cpu_access &= ~(D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ))
+        FIXME("Unhandled CPU access flags %#x.\n", cpu_access);
+
+    return access;
 }
 
 HRESULT d3d_get_private_data(struct wined3d_private_store *store,

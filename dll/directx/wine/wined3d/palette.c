@@ -18,7 +18,8 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-
+#include "config.h"
+#include "wine/port.h"
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
@@ -34,7 +35,7 @@ ULONG CDECL wined3d_palette_incref(struct wined3d_palette *palette)
 
 static void wined3d_palette_destroy_object(void *object)
 {
-    HeapFree(GetProcessHeap(), 0, object);
+    heap_free(object);
 }
 
 ULONG CDECL wined3d_palette_decref(struct wined3d_palette *palette)
@@ -85,15 +86,7 @@ HRESULT CDECL wined3d_palette_get_entries(const struct wined3d_palette *palette,
 void CDECL wined3d_palette_apply_to_dc(const struct wined3d_palette *palette, HDC dc)
 {
     if (SetDIBColorTable(dc, 0, 256, palette->colors) != 256)
-#ifdef __REACTOS__
-    {
-        static int warn_once;
-        if (!warn_once++)
-            ERR("Failed to set DIB color table. (Only printing once)\n");
-    }
-#else
         ERR("Failed to set DIB color table.\n");
-#endif
 }
 
 HRESULT CDECL wined3d_palette_set_entries(struct wined3d_palette *palette,
@@ -167,14 +160,13 @@ HRESULT CDECL wined3d_palette_create(struct wined3d_device *device, DWORD flags,
     TRACE("device %p, flags %#x, entry_count %u, entries %p, palette %p.\n",
             device, flags, entry_count, entries, palette);
 
-    object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object));
-    if (!object)
+    if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
 
     if (FAILED(hr = wined3d_palette_init(object, device, flags, entry_count, entries)))
     {
         WARN("Failed to initialize palette, hr %#x.\n", hr);
-        HeapFree(GetProcessHeap(), 0, object);
+        heap_free(object);
         return hr;
     }
 

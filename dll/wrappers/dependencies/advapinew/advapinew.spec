@@ -131,3 +131,6 @@
 @ stdcall RegOpenKeyExW(long wstr long long ptr)
 @ stdcall RegQueryValueExA(long str ptr ptr ptr ptr)
 @ stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr)
+101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr)
+582 stdcall SetThreadToken(ptr ptr)
+284 stdcall GetTokenInformation(long long ptr long ptr)

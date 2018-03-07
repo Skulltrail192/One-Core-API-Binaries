@@ -3,6 +3,7 @@ add_definitions(
     -D__WINESRC__
     -D_USE_MATH_DEFINES
     -DUSE_WIN32_OPENGL
+	-DSTAGING_CSMT
     -Dcopysignf=_copysignf)
 
 include_directories(BEFORE ${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
@@ -19,7 +20,6 @@ list(APPEND SOURCE
     cs.c
     device.c
     directx.c
-    drawprim.c
     dxtn.c
     gl_compat.c
     glsl_shader.c

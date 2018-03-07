@@ -34,6 +34,8 @@
 #include <limits.h>
 #include <list.h>
 #include <wmistr.h>
+#include <lpcfuncs.h>
+#include <cmfuncs.h>
 //#include "ntdll_misc.h"
 
 /* Use intrinsics for x86 and x64 */

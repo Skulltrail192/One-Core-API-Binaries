@@ -74,6 +74,7 @@ struct wined3d_resource *wined3d_resource_from_d3d11_resource(ID3D11Resource *re
 struct wined3d_resource *wined3d_resource_from_d3d10_resource(ID3D10Resource *resource) DECLSPEC_HIDDEN;
 DWORD wined3d_map_flags_from_d3d11_map_type(D3D11_MAP map_type) DECLSPEC_HIDDEN;
 DWORD wined3d_clear_flags_from_d3d11_clear_flags(UINT clear_flags) DECLSPEC_HIDDEN;
+unsigned int wined3d_access_from_d3d11(D3D11_USAGE usage, UINT cpu_access) DECLSPEC_HIDDEN;
 
 enum D3D11_USAGE d3d11_usage_from_d3d10_usage(enum D3D10_USAGE usage) DECLSPEC_HIDDEN;
 enum D3D10_USAGE d3d10_usage_from_d3d11_usage(enum D3D11_USAGE usage) DECLSPEC_HIDDEN;
@@ -110,6 +111,30 @@ void skip_dword_unknown(const char **ptr, unsigned int count) DECLSPEC_HIDDEN;
 
 HRESULT parse_dxbc(const char *data, SIZE_T data_size,
         HRESULT (*chunk_handler)(const char *data, DWORD data_size, DWORD tag, void *ctx), void *ctx) DECLSPEC_HIDDEN;
+
+/* ID3D11Texture1D, ID3D10Texture1D */
+struct d3d_texture1d
+{
+    ID3D11Texture1D ID3D11Texture1D_iface;
+    ID3D10Texture1D ID3D10Texture1D_iface;
+    LONG refcount;
+
+    struct wined3d_private_store private_store;
+    IUnknown *dxgi_surface;
+    struct wined3d_texture *wined3d_texture;
+    D3D11_TEXTURE1D_DESC desc;
+    ID3D11Device *device;
+};
+
+static inline struct d3d_texture1d *impl_from_ID3D10Texture1D(ID3D10Texture1D *iface)
+{
+    return CONTAINING_RECORD(iface, struct d3d_texture1d, ID3D10Texture1D_iface);
+}
+
+HRESULT d3d_texture1d_create(struct d3d_device *device, const D3D11_TEXTURE1D_DESC *desc,
+        const D3D11_SUBRESOURCE_DATA *data, struct d3d_texture1d **texture) DECLSPEC_HIDDEN;
+struct d3d_texture1d *unsafe_impl_from_ID3D11Texture1D(ID3D11Texture1D *iface) DECLSPEC_HIDDEN;
+struct d3d_texture1d *unsafe_impl_from_ID3D10Texture1D(ID3D10Texture1D *iface) DECLSPEC_HIDDEN;
 
 /* ID3D11Texture2D, ID3D10Texture2D */
 struct d3d_texture2d

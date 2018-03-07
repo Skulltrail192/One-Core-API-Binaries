@@ -1336,3 +1336,21 @@ GetActiveProcessorCount(
 	GetSystemInfo( &sysinfo );
 	return sysinfo.dwNumberOfProcessors;
 }
+
+/***********************************************************************
+  *          IsProcessorFeaturePresent   [KERNEL32.@]
+  *
+  * Determine if the cpu supports a given feature.
+  * 
+  * RETURNS
+  *  TRUE, If the processor supports feature,
+  *  FALSE otherwise.
+  */
+BOOL 
+WINAPI 
+IsProcessorFeaturePresent (
+	DWORD feature  
+)
+{
+	return TRUE;
+}

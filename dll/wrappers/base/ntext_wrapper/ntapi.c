@@ -1,21 +1,23 @@
-/*
- * Copyright 2009 Henri Verbeet for CodeWeavers
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- */
+/*++
+
+Copyright (c) 2018 Shorthorn Project
+
+Module Name:
+
+    ntapi.c
+
+Abstract:
+
+    Implement User Mode Nt functions
+
+Author:
+
+    Skulltrail 06-March-2018
+
+Revision History:
+
+--*/
+
 #include <main.h>
 #include <lpcfuncs.h>
 #include <cmfuncs.h>
@@ -27,271 +29,13 @@ ULONG NTAPI RtlpGetCurrentProcessorNumber();
 
 ULONG (NTAPI *NtGetpCurrentProcessorNumber)(IN VOID);
 
-/*subimplemented*/
-NTSTATUS 
-NTAPI
-NtAlpcAcceptConnectPort(
-    __out HANDLE                         PortHandle,
-    __in HANDLE                          ConnectionPortHandle,
-    __in ULONG                           Flags,
-    __in POBJECT_ATTRIBUTES              ObjectAttributes,
-    __in PALPC_PORT_ATTRIBUTES           PortAttributes,
-    __in_opt PVOID                       PortContext, // opaque value
-    __in PPORT_MESSAGE                   ConnectionRequest,
-    __inout_opt PALPC_MESSAGE_ATTRIBUTES MessageAttributes,
-    __in BOOLEAN                         AcceptConnection
-    )
-{
-	NTSTATUS status;						   
-	DbgPrint("A syscall numero 296 NtAlpcAcceptConnectPort foi chamada\n");	
-	status = NtAcceptConnectPort(PortHandle, 
-							   PortContext, 
-							   ConnectionRequest, 
-							   AcceptConnection,
-							   NULL,
-							   NULL);
-	DbgPrint("Status: %08x\n",status);
-	return status;
-}
+static ULONG execute_flags = MEM_EXECUTE_OPTION_DISABLE;
 
-/*subimplemented*/
-NTSTATUS 
-NTAPI 
-NtAlpcCancelMessage(
-		__in HANDLE  	PortHandle,
-		__in ULONG  	Flags,
-		__in PALPC_CONTEXT_ATTR  	MessageContext 
-	) 	
+ULONG_PTR get_system_affinity_mask(void)
 {
-	return STATUS_SUCCESS;
-}
-
-/*subimplemented*/
-NTSTATUS 
-NTAPI 
-NtAlpcConnectPort( 	
-		__out PHANDLE  	PortHandle,
-		__in PUNICODE_STRING  	PortName,
-		__in POBJECT_ATTRIBUTES  	ObjectAttributes,
-		__in_opt PALPC_PORT_ATTRIBUTES  	PortAttributes,
-		__in ULONG  	Flags,
-		__in_opt PSID  	RequiredServerSid,
-		__inout PPORT_MESSAGE  	ConnectionMessage,
-		__inout_opt PULONG  	BufferLength,
-		__inout_opt PALPC_MESSAGE_ATTRIBUTES  	OutMessageAttributes,
-		__inout_opt PALPC_MESSAGE_ATTRIBUTES  	InMessageAttributes,
-		__in_opt PLARGE_INTEGER  	Timeout 
-	) 	
-{
-	NTSTATUS status;
-	DbgPrint("A syscall numero 298 NtAlpcConnectPort foi chamada\n");	
-	status =  NtConnectPort(PortHandle, 
-						 PortName, 
-						 &PortAttributes->SecurityQos, 
-						 NULL, 
-						 NULL, 
-						 &PortAttributes->MaxMessageLength,
-						 NULL,
-						 NULL);
-	DbgPrint("Status: %08x\n",status);
-	return status;
-}
-
-/*subimplemented*/
-NTSTATUS 
-NTAPI 
-NtAlpcCreatePort( 	
-		__out PHANDLE  	PortHandle,
-		__in POBJECT_ATTRIBUTES  	ObjectAttributes,
-		__in_opt PALPC_PORT_ATTRIBUTES  	PortAttributes 
-	) 		
-{
-	NTSTATUS status;
-	DbgPrint("A syscall numero 299 NtAlpcCreatePort foi chamada\n");	
-	status = NtCreatePort(PortHandle, 
-						  ObjectAttributes, 
-						  sizeof(PortAttributes->MaxViewSize), 
-						  sizeof(PortAttributes->MaxMessageLength), 
-						  PortAttributes->MaxPoolUsage);	
-	DbgPrint("Status: %08x\n",status);
-	return status;
-}
-
-/*subimplemented*/
-NTSTATUS NTAPI NtAlpcCreatePortSection( 	
-		__in HANDLE  	PortHandle,
-		__in ULONG  	Flags,
-		__in_opt HANDLE  	SectionHandle,
-		__in SIZE_T  	SectionSize,
-		__out PALPC_HANDLE  	AlpcSectionHandle,
-		__out PSIZE_T  	ActualSectionSize 
-	) 	
-{
-	NTSTATUS status;						   
-	DbgPrint("A syscall numero 300 NtAlpcCreatePortSection foi chamada\n");
-	status = NtCreateSection(&PortHandle, Flags, NULL, NULL, 1, 1, AlpcSectionHandle);
-	DbgPrint("Status: %08x\n",status);	
-	return status;
-}
-
-NTSTATUS NTAPI NtAlpcCreateResourceReserve(
-		__in HANDLE PortHandle, 
-		__reserved ULONG Flags, 
-		__in SIZE_T MessageSize, 
-		__out PALPC_HANDLE ResourceId)
-{
-	DbgPrint("A syscall numero 301 NtAlpcCreateResourceReserve foi chamada\n");	
-	return STATUS_SUCCESS;
-}
-
-/*subimplemented*/
-NTSTATUS NTAPI NtAlpcCreateSectionView( 	
-		__in HANDLE  	PortHandle,
-		__reserved ULONG  	Flags,
-		__inout PALPC_DATA_VIEW_ATTR  	ViewAttributes 
-	) 	
-{
-	NTSTATUS status;						   
-	DbgPrint("A syscall numero 302 NtAlpcCreateSectionView foi chamada\n");
-	status = NtMapViewOfSection(ViewAttributes->SectionHandle, PortHandle, ViewAttributes->ViewBase, 0, 0, 0, (PULONG)ViewAttributes->ViewSize, 0, 0, 0);
-	DbgPrint("Status: %08x\n",status);	
-	return status;	
-}
-
-/*subimplemented*/
-NTSTATUS NTAPI NtAlpcCreateSecurityContext( 	
-		__in HANDLE  	PortHandle,
-		__reserved ULONG  	Flags,
-		__inout PALPC_SECURITY_ATTR  	SecurityAttribute 
-	) 	
-{
-	return STATUS_SUCCESS;
-}
-
-/*subimplemented*/
-NTSTATUS NTAPI NtAlpcDeletePortSection( 	
-		__in HANDLE  	PortHandle,
-		__reserved ULONG  	Flags,
-		__in ALPC_HANDLE  	SectionHandle 
-	) 	
-{
-	return STATUS_SUCCESS;
-}
-
-NTSTATUS NTAPI NtAlpcDeleteResourceReserve(	
-		__in HANDLE 	PortHandle,
-		__reserved ULONG 	Flags,
-		__in ALPC_HANDLE 	ResourceId 
-)
-{
-	return STATUS_SUCCESS;
-}
-
-/*subimplemented*/
-NTSTATUS NTAPI NtAlpcDeleteSectionView( 	
-		__in HANDLE  	PortHandle,
-		__reserved ULONG  	Flags,
-		__in PVOID  	ViewBase 
-	) 	
-{
-	DbgPrint("A syscall numero 306 NtAlpcDeleteSectionView foi chamada\n");	
-	return STATUS_SUCCESS;
-}
-
-/*subimplemented*/
-NTSTATUS NTAPI NtAlpcDeleteSecurityContext( 	
-		__in HANDLE  	PortHandle,
-		__reserved ULONG  	Flags,
-		__in ALPC_HANDLE  	ContextHandle 
-	) 	
-{
-	ContextHandle = NULL;
-	DbgPrint("A syscall numero 307 NtAlpcDeleteSecurityContext foi chamada\n");	
-	return STATUS_SUCCESS;
-}
-
-NTSTATUS NTAPI NtAlpcDisconnectPort(
-		__in HANDLE PortHandle, 
-		__in ULONG Flags)
-{
-	DbgPrint("A syscall numero 308 NtAlpcDisconnectPort foi chamada\n");	
-	PortHandle = NULL;
-	return STATUS_SUCCESS;
-}
-
-/*subimplemented*/
-NTSTATUS NTAPI NtAlpcImpersonateClientOfPort( 	
-		__in HANDLE  	PortHandle,
-		__in PPORT_MESSAGE  	PortMessage,
-		__reserved PVOID  	Reserved 
-	) 	
-{
-	NTSTATUS status;						   
-	DbgPrint("A syscall numero 309 NtAlpcImpersonateClientOfPort foi chamada\n");
-	status = NtImpersonateClientOfPort(PortHandle, PortMessage);
-	DbgPrint("Status: %08x\n",status);	
-	return status;	
-}
-
-/*subimplemented*/
-NTSTATUS NTAPI NtAlpcQueryInformation( 	
-		__in HANDLE  	PortHandle,
-		__in ALPC_PORT_INFORMATION_CLASS  	PortInformationClass,
-		__out_bcount(Length) PVOID  	PortInformation,
-		__in ULONG  	Length,
-		__out_opt PULONG  	ReturnLength 
-	) 	
-{
-	NTSTATUS status;						   
-	DbgPrint("A syscall numero 310 NtAlpcQueryInformation foi chamada\n");	
-	status = NtQueryInformationPort(PortHandle, 
-								  PortInformationClass, 
-								  PortInformation, 
-								  Length, 
-								  ReturnLength);
-	DbgPrint("Status: %08x\n",status);	
-	return status;	
-}
-
-/*subimplemented*/
-NTSTATUS 
-NTAPI 
-NtAlpcSendWaitReceivePort( 	
-	__in HANDLE  	PortHandle,
-	__in ULONG  	Flags,
-	__in_opt PPORT_MESSAGE  	SendMessage,
-	__in_opt PALPC_MESSAGE_ATTRIBUTES  	SendMessageAttributes,
-	__inout_opt PPORT_MESSAGE  	ReceiveMessage,
-	__inout_opt PULONG  	BufferLength,
-	__inout_opt PALPC_MESSAGE_ATTRIBUTES  	ReceiveMessageAttributes,
-	__in_opt PLARGE_INTEGER  	Timeout 
-) 	
-{
-	NTSTATUS status;
-	DbgPrint("A syscall numero 311 NtAlpcSendWaitReceivePort foi chamada\n");	
-	status = NtReplyWaitReceivePort(PortHandle, NULL, SendMessage, ReceiveMessage);//NtReplyWaitReceivePortEx(PortHandle, NULL, SendMessage, ReceiveMessage, Timeout);
-	DbgPrint("Status: %08x\n", status);	
-	return status;
-}
-
-/*subimplemented*/
-NTSTATUS 
-NTAPI 
-NtAlpcSetInformation( 	
-	__in HANDLE  	PortHandle,
-	__in ALPC_PORT_INFORMATION_CLASS  	PortInformationClass,
-	__in_bcount(Length) PVOID  	PortInformation,
-	__in ULONG  	Length 
-) 	
-{
-	//status = NtSetInformationObject(PortHandle, PortInformationClass, PortInformation, Length);
-	//status = NtSetInformationThread(PortHandle, ThreadImpersonationToken, PortInformation, sizeof(HANDLE));
-	//DbgPrint("Status: %08x\n", status);	
-	NTSTATUS status;
-	DbgPrint("A syscall numero 312 NtAlpcSetInformation foi chamada\n");	
-	status = NtQueryInformationPort(PortHandle, PortInformationClass, PortInformation, Length, NULL);
-	DbgPrint("Status: %08x\n", status);	
-	return status;
+    ULONG num_cpus = NtCurrentTeb()->ProcessEnvironmentBlock->NumberOfProcessors;
+    if (num_cpus >= sizeof(ULONG_PTR) * 8) return ~(ULONG_PTR)0;
+    return ((ULONG_PTR)1 << num_cpus) - 1;
 }
 
 NTSTATUS 
@@ -686,9 +430,8 @@ NtQueryInformationTokenInternal(
 {
 	switch(tokeninfoclass){
 		case TokenIntegrityLevel:
-		    DbgPrint("IntegrityLevel token\n");
 			{
-				/* report always "S-1-16-12288" (high mandatory level) for now */
+					/* report always "S-1-16-12288" (high mandatory level) for now */
 				static const SID high_level = {SID_REVISION, 1, {SECURITY_MANDATORY_LABEL_AUTHORITY},
 																{SECURITY_MANDATORY_HIGH_RID}};
 
@@ -698,19 +441,25 @@ NtQueryInformationTokenInternal(
 				tml->Label.Sid = psid;
 				tml->Label.Attributes = SE_GROUP_INTEGRITY | SE_GROUP_INTEGRITY_ENABLED;
 				memcpy(psid, &high_level, sizeof(SID));
+			DbgPrint("QueryInformationToken (IntegrityLevel) token\n");
 			}
 			break;			
 		case TokenElevationType:
-            // const char *str = getenv("STAGING_ELEVATIONTYPE");
-	
-	            // TOKEN_ELEVATION_TYPE *elevation_type = tokeninfo;
-	            // FIXME("QueryInformationToken( ..., TokenElevationType, ...) semi-stub. If the application complains that\n"
-	                  // "it should be run as normal user, set the STAGING_ELEVATIONTYPE environmentvariable to Default\n");
-	
-	            // if( str && !strcmp(str, "Default"))
-	                // *elevation_type = TokenElevationTypeDefault;
-	            // else 
-	                // *elevation_type = TokenElevationTypeFull;	
+			{
+				// const char *str = getenv("STAGING_ELEVATIONTYPE");
+		
+					// TOKEN_ELEVATION_TYPE *elevation_type = tokeninfo;
+					// FIXME("QueryInformationToken( ..., TokenElevationType, ...) semi-stub. If the application complains that\n"
+						  // "it should be run as normal user, set the STAGING_ELEVATIONTYPE environmentvariable to Default\n");
+		
+					// if( str && !strcmp(str, "Default"))
+						// *elevation_type = TokenElevationTypeDefault;
+					// else 
+						// *elevation_type = TokenElevationTypeFull;	
+				TOKEN_ELEVATION_TYPE *elevation_type = tokeninfo;
+				DbgPrint("QueryInformationToken( ..., TokenElevationType, ...) semi-stub\n");
+				*elevation_type = TokenElevationTypeFull;
+			}			
 		    break;
 		case TokenAppContainerSid:
 			{
@@ -721,8 +470,8 @@ NtQueryInformationTokenInternal(
 			break;
 		case TokenIsAppContainer:
 			{
-				DbgPrint("TokenIsAppContainer semi-stub\n");
 				*(DWORD*)tokeninfo = 0;
+				DbgPrint("TokenIsAppContainer semi-stub\n");				
 				break;
 			}			
 		default:
@@ -734,26 +483,119 @@ NtQueryInformationTokenInternal(
 	}
 }
 
-// /******************************************************************************
- // *              NtQueryInformationThread  (NTDLL.@)
- // *              ZwQueryInformationThread  (NTDLL.@)
- // */
-// NTSTATUS 
-// WINAPI 
-// NtQueryInformationThreadInternal( 
-	// HANDLE handle, 
-	// THREADINFOCLASS class,
-    // void *data, 
-	// ULONG length, 
-	// ULONG *ret_len 
-// )
-// {
-	// switch(class)
-	// {
-		// case ThreadGroupInformation:
-			
-	// }
-// }
+/******************************************************************************
+*  NtSetInformationToken		[NTDLL.@]
+*  ZwSetInformationToken		[NTDLL.@]
+*/
+NTSTATUS 
+WINAPI 
+NtSetInformationTokenInternal(
+    HANDLE TokenHandle,
+    TOKEN_INFORMATION_CLASS TokenInformationClass,
+    PVOID TokenInformation,
+    ULONG TokenInformationLength
+)
+{
+	switch(TokenInformationClass){	
+    case TokenIntegrityLevel:
+        DbgPrint("TokenIntegrityLevel stub!\n");
+        return STATUS_SUCCESS;
+        	
+    default:
+	return NtSetInformationToken(TokenHandle,
+								 TokenInformationClass,
+								 TokenInformation,
+								 TokenInformationLength);		
+	}
+}
+
+/******************************************************************************
+ *              NtQueryInformationThread  (NTDLL.@)
+ *              ZwQueryInformationThread  (NTDLL.@)
+ */
+NTSTATUS 
+WINAPI 
+NtQueryInformationThreadInternal( 
+	HANDLE handle, 
+	THREADINFOCLASS class,
+    void *data, 
+	ULONG length, 
+	ULONG *ret_len 
+)
+{
+	NTSTATUS Status = STATUS_SUCCESS;
+	
+	switch(class)
+	{
+    case ThreadGroupInformation:
+        {
+            const ULONG_PTR affinity_mask = get_system_affinity_mask();
+            GROUP_AFFINITY affinity;
+
+            memset(&affinity, 0, sizeof(affinity));
+            affinity.Group = 0; /* Wine only supports max 64 processors */
+
+			affinity.Mask = affinity_mask;
+            if (data) memcpy( data, &affinity, min( length, sizeof(affinity) ));
+            if (ret_len) *ret_len = min( length, sizeof(affinity) );
+		}
+        return Status;	
+	default:
+		return NtQueryInformationThread(handle,
+										class,
+										data,
+										length,
+										ret_len);
+	}
+}
+
+/******************************************************************************
+ * NtSetInformationProcess [NTDLL.@]
+ * ZwSetInformationProcess [NTDLL.@]
+ */
+NTSTATUS 
+WINAPI 
+NtSetInformationProcess(
+	IN HANDLE ProcessHandle,
+	IN PROCESSINFOCLASS ProcessInformationClass,
+	IN PVOID ProcessInformation,
+	IN ULONG ProcessInformationLength)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+	
+    switch (ProcessInformationClass)
+    {
+    case ProcessExecuteFlags:
+        if (ProcessInformationLength != sizeof(ULONG))
+            return STATUS_INVALID_PARAMETER;
+        else if (execute_flags & MEM_EXECUTE_OPTION_PERMANENT)
+            return STATUS_ACCESS_DENIED;
+        else
+        {
+            BOOL enable;
+            switch (*(ULONG *)ProcessInformation & (MEM_EXECUTE_OPTION_ENABLE|MEM_EXECUTE_OPTION_DISABLE))
+            {
+            case MEM_EXECUTE_OPTION_ENABLE:
+                enable = TRUE;
+                break;
+            case MEM_EXECUTE_OPTION_DISABLE:
+                enable = FALSE;
+                break;
+            default:
+                return STATUS_INVALID_PARAMETER;
+            }
+            execute_flags = *(ULONG *)ProcessInformation;
+        }
+        break;
+	default:
+		return NtSetInformationProcess(ProcessHandle,
+									  ProcessInformationClass,
+									  ProcessInformation,
+									  ProcessInformationLength);
+	}
+	
+	return Status;
+}
 
 ULONG 
 NTAPI 
@@ -779,4 +621,61 @@ NtGetCurrentProcessorNumber()
 	}	
 
 	return (*NtGetpCurrentProcessorNumber)();
+}
+
+//
+// This section is made for better debugging experience
+
+NTSYSCALLAPI 
+NTSTATUS 
+NTAPI 	
+NtAcceptConnectPortInternal(
+	_Out_ PHANDLE PortHandle, 
+	_In_opt_ PVOID PortContext, 
+	_In_ PPORT_MESSAGE ConnectionRequest,
+	_In_ BOOLEAN AcceptConnection, 
+	_Inout_opt_ PPORT_VIEW ServerView, 
+	_Out_opt_ PREMOTE_PORT_VIEW ClientView
+)
+{
+	NTSTATUS Status;
+	Status = NtAcceptConnectPort(PortHandle,
+								 PortContext,
+								 ConnectionRequest,
+								 AcceptConnection,
+								 ServerView,
+								 ClientView);
+								 
+	DbgPrint("NtAcceptConnectPort :: Status: %08x\n",Status);							
+						
+	return Status;
+}
+
+NTSYSCALLAPI 
+NTSTATUS 
+NTAPI 	
+NtAccessCheckInternal(
+	_In_ PSECURITY_DESCRIPTOR SecurityDescriptor, 
+	_In_ HANDLE ClientToken, 
+	_In_ ACCESS_MASK DesiredAccess, 
+	_In_ PGENERIC_MAPPING GenericMapping, 
+	_Out_writes_bytes_(*PrivilegeSetLength) PPRIVILEGE_SET PrivilegeSet, 
+	_Inout_ PULONG PrivilegeSetLength, 
+	_Out_ PACCESS_MASK GrantedAccess, 
+	_Out_ PNTSTATUS AccessStatus
+)
+{
+	NTSTATUS Status;
+	Status = NtAccessCheck(SecurityDescriptor,
+							ClientToken,
+							DesiredAccess,
+							GenericMapping,
+							PrivilegeSet,
+							PrivilegeSetLength,
+							GrantedAccess,
+							AccessStatus);
+							
+	DbgPrint("NtAccessCheck :: Status: %08x\n",Status);							
+							
+	return Status;
 }

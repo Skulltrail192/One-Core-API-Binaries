@@ -528,6 +528,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_swapchain_Present1(IDXGISwapChain1 *iface,
         UINT sync_interval, UINT flags, const DXGI_PRESENT_PARAMETERS *present_parameters)
 {
     struct dxgi_swapchain *swapchain = impl_from_IDXGISwapChain1(iface);
+    DWORD swap_interval = 0;
     HRESULT hr;
 
     TRACE("iface %p, sync_interval %u, flags %#x, present_parameters %p.\n",
@@ -541,13 +542,22 @@ static HRESULT STDMETHODCALLTYPE dxgi_swapchain_Present1(IDXGISwapChain1 *iface,
         return S_OK;
     }
 
-    if (sync_interval)
-        FIXME("Unimplemented sync interval %u.\n", sync_interval);
+    switch (sync_interval)
+    {
+        case 0:
+            swap_interval = WINED3DPRESENT_INTERVAL_IMMEDIATE;
+            break;
+        case 1:
+            swap_interval = WINED3DPRESENT_INTERVAL_ONE;
+            break;
+        default:
+            FIXME("Unimplemented sync interval %u.\n", sync_interval);
+    }
     if (present_parameters)
         FIXME("Ignored present parameters %p.\n", present_parameters);
 
     wined3d_mutex_lock();
-    hr = wined3d_swapchain_present(swapchain->wined3d_swapchain, NULL, NULL, NULL, 0);
+    hr = wined3d_swapchain_present(swapchain->wined3d_swapchain, NULL, NULL, NULL, swap_interval, 0);
     wined3d_mutex_unlock();
 
     return hr;
