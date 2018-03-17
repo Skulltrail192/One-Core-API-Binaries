@@ -1,7 +1,6 @@
-Note
-directx.c
------------
-gdi32.dll to opengl32.dll
-comment out line 186 as well in function
-WineD3D_ReleaseFakeGLContext 
-row pwglDeleteContext(glCtx);
+Add custom d2d_functions.h on d2d1_private.h if can't define these functions:
+
+ID2D1RenderTarget_GetPixelFormat
+ID2D1RenderTarget_GetSize
+ID2D1RenderTarget_GetPixelSize	
+ID2D1Bitmap_GetSize
