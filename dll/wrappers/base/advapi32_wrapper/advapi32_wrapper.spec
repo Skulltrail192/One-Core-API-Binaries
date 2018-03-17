@@ -97,7 +97,6 @@
 97 stdcall CreateProcessAsUserA(long str str ptr ptr long long ptr str ptr ptr)
 98 stdcall CreateProcessAsUserW(long str str ptr ptr long long ptr str ptr ptr)
 99 stdcall CreateProcessWithLogonW(wstr wstr wstr long wstr wstr long ptr wstr ptr ptr)
-101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr)
 102 stdcall CreateServiceA(long str str long long long long str str ptr str str str)
 103 stdcall CreateServiceW(long wstr wstr long long long long wstr wstr ptr wstr wstr wstr)
 104 stdcall CreateTraceInstanceId(ptr ptr) ;ntdll.EtwCreateTraceInstanceId
@@ -279,7 +278,6 @@
 281 stdcall GetSidLengthRequired(long)
 282 stdcall GetSidSubAuthority(ptr long)
 283 stdcall GetSidSubAuthorityCount(ptr)
-284 stdcall GetTokenInformation(long long ptr long ptr)
 285 stdcall GetTraceEnableFlags(double) ;ntdll.EtwGetTraceEnableFlags
 286 stdcall GetTraceEnableLevel(double) ;ntdll.EtwGetTraceEnableLevel
 287 stdcall GetTraceLoggerHandle(ptr) ;ntdll.EtwGetTraceLoggerHandle
@@ -423,12 +421,10 @@
 426 stdcall OpenEncryptedFileRawW(wstr long ptr)
 427 stdcall OpenEventLogA(str str)
 428 stdcall OpenEventLogW(wstr wstr)
-429 stdcall OpenProcessToken(long long ptr)
 430 stdcall OpenSCManagerA(str str long)
 431 stdcall OpenSCManagerW(wstr wstr long)
 432 stdcall OpenServiceA(long str long)
 433 stdcall OpenServiceW(long wstr long)
-434 stdcall OpenThreadToken(long long long ptr)
 435 stdcall OpenTraceA(ptr)
 436 stdcall OpenTraceW(ptr)
 437 stdcall PrivilegeCheck(ptr ptr ptr)
@@ -568,7 +564,6 @@
 580 stdcall SetServiceObjectSecurity(long long ptr)
 581 stdcall SetServiceStatus(long long)
 582 stdcall SetThreadToken(ptr ptr)
-583 stdcall SetTokenInformation(long long ptr long)
 584 stdcall SetTraceCallback(ptr ptr)
 585 stdcall SetUserFileEncryptionKey(ptr)
 586 stdcall StartServiceA(long long ptr)
@@ -875,3 +870,9 @@
 #Win7+
 @ stdcall EnableTraceEx2(int64 ptr long long int64 int64 long ptr)
 @ stdcall LsaLookupSids2(ptr long long ptr ptr ptr)
+
+101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr) CreateRestrictedTokenInternal
+284 stdcall GetTokenInformation(ptr long ptr long ptr) GetTokenInformationInternal
+429 stdcall OpenProcessToken(long long ptr) OpenProcessTokenInternal
+434 stdcall OpenThreadToken(ptr long long ptr) OpenThreadTokenInternal
+583 stdcall SetTokenInformation(ptr long ptr long) SetTokenInformationInternal

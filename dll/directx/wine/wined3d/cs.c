@@ -2601,9 +2601,9 @@ static void wined3d_cs_mt_submit(struct wined3d_cs *cs, enum wined3d_cs_queue_id
     if (cs->thread_id == GetCurrentThreadId())
 	{
 		wined3d_cs_st_submit(cs, queue_id);
-        return;
-	}
-		
+		return;
+	} 
+	
     wined3d_cs_queue_submit(&cs->queue[queue_id], cs);
 }
 
@@ -2704,11 +2704,11 @@ static void *wined3d_cs_mt_require_space(struct wined3d_cs *cs, size_t size, enu
 static void wined3d_cs_mt_finish(struct wined3d_cs *cs, enum wined3d_cs_queue_id queue_id)
 {
     if (cs->thread_id == GetCurrentThreadId())
-	{
-        wined3d_cs_st_finish(cs, queue_id);
+    {
+		wined3d_cs_st_finish(cs, queue_id);
 		return;
-	}
-		
+	}    
+
     while (cs->queue[queue_id].head != *(volatile LONG *)&cs->queue[queue_id].tail)
         wined3d_pause();
 }

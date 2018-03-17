@@ -18,24 +18,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#ifndef __WIDL__
+
 #ifndef __WINE_MMREG_H
 #define __WINE_MMREG_H
 
-#ifndef RC_INVOKED
 #include <pshpack1.h>
-#endif
-
 
 /***********************************************************************
  * Defines/Enums
  */
-
-#define  MM_MSFT_WDMAUDIO_WAVEOUT 0x64
-#define  MM_MSFT_WDMAUDIO_WAVEIN 0x65
-#define  MM_MSFT_WDMAUDIO_MIDIOUT 0x66
-#define  MM_MSFT_WDMAUDIO_MIDIIN 0x67
-#define  MM_MSFT_WDMAUDIO_MIXER 0x68
-#define  MM_MSFT_WDMAUDIO_AUX 0x69
 
 #ifndef _ACM_WAVEFILTER
 #define _ACM_WAVEFILTER
@@ -81,13 +73,7 @@ typedef struct _WAVEFORMATEX {
   WORD   wBitsPerSample;
   WORD   cbSize;
 } WAVEFORMATEX, *PWAVEFORMATEX, *NPWAVEFORMATEX, *LPWAVEFORMATEX;
-
-typedef const struct _WAVEFORMATEX *LPCWAVEFORMATEX;
 #endif /* _WAVEFORMATEX_ */
-
-#ifndef WAVE_FORMAT_PCM
-#define WAVE_FORMAT_PCM					0x0001
-#endif
 
 /* WAVE form wFormatTag IDs */
 #define  WAVE_FORMAT_UNKNOWN			0x0000	/*  Microsoft Corporation  */
@@ -124,7 +110,6 @@ typedef const struct _WAVEFORMATEX *LPCWAVEFORMATEX;
 #define  WAVE_FORMAT_MPEG			0x0050	/*  Microsoft Corporation  */
 #define  WAVE_FORMAT_MPEGLAYER3			0x0055
 #define  WAVE_FORMAT_MSRT24			0x0082  /*  Microsoft Corporation */
-#define  WAVE_FORMAT_DOLBY_AC3_SPDIF	0x0092 /* Sonic Foundry */
 #define  WAVE_FORMAT_CREATIVE_ADPCM		0x0200	/*  Creative Labs, Inc  */
 #define  WAVE_FORMAT_CREATIVE_FASTSPEECH8	0x0202	/*  Creative Labs, Inc  */
 #define  WAVE_FORMAT_CREATIVE_FASTSPEECH10	0x0203	/*  Creative Labs, Inc  */
@@ -134,9 +119,6 @@ typedef const struct _WAVEFORMATEX *LPCWAVEFORMATEX;
 #define  WAVE_FORMAT_OLICELP			0x1002	/*  Ing C. Olivetti & C., S.p.A.  */
 #define  WAVE_FORMAT_OLISBC			0x1003	/*  Ing C. Olivetti & C., S.p.A.  */
 #define  WAVE_FORMAT_OLIOPR			0x1004	/*  Ing C. Olivetti & C., S.p.A.  */
-
-#define   MM_UNMAPPED                   0xffff
-#define   MM_PID_UNMAPPED               MM_UNMAPPED
 
 #ifndef MM_MICROSOFT
 #define MM_MICROSOFT 0x01
@@ -532,8 +514,40 @@ typedef struct tagEXBMINFOHEADER {
 
 #endif
 
-#ifndef RC_INVOKED
 #include <poppack.h>
-#endif
 
 #endif /* __WINE_MMREG_H */
+
+#else /* __WIDL__ */
+
+cpp_quote("#if 0")
+#pragma pack(push, 1)
+
+typedef struct tWAVEFORMATEX {
+    WORD wFormatTag;
+    WORD nChannels;
+    DWORD nSamplesPerSec;
+    DWORD nAvgBytesPerSec;
+    WORD nBlockAlign;
+    WORD wBitsPerSample;
+    WORD cbSize;
+    [size_is(cbSize)] BYTE pExtraBytes[];
+} WAVEFORMATEX, *PWAVEFORMATEX, *NPWAVEFORMATEX, *LPWAVEFORMATEX;
+
+typedef struct {
+    WORD wFormatTag;
+    WORD nChannels;
+    DWORD nSamplesPerSec;
+    DWORD nAvgBytesPerSec;
+    WORD nBlockAlign;
+    WORD wBitsPerSample;
+    WORD cbSize;
+    WORD wValidBitsPerSample;
+    DWORD dwChannelMask;
+    GUID SubFormat;
+} WAVEFORMATEXTENSIBLE, *PWAVEFORMATEXTENSIBLE;
+
+#pragma pack(pop)
+cpp_quote("#endif")
+
+#endif /* __WIDL__ */

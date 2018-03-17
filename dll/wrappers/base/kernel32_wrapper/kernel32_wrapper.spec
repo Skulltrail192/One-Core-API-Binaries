@@ -22,7 +22,7 @@
 @ stdcall BaseDumpAppcompatCache()
 @ stdcall BaseFlushAppcompatCache()
 @ stdcall BaseInitAppcompatCacheSupport()
-@ stdcall BaseProcessInitPostImport() ; missing in Win 7
+@ stdcall BaseProcessInitPostImport() kernelfull.BaseProcessInitPostImport; missing in Win 7
 @ stdcall -arch=x86_64 BaseProcessStart()
 @ stdcall -arch=x86_64 BaseThreadStart()
 @ stdcall BaseUpdateAppcompatCache(long long long)
@@ -94,12 +94,8 @@
 @ stdcall CreateMutexW(ptr long wstr)
 @ stdcall CreateNamedPipeA(str long long long long long long ptr)
 @ stdcall CreateNamedPipeW(wstr long long long long long long ptr)
-@ stdcall CreateNlsSecurityDescriptor(ptr long long) ; missing in Win 7
+@ stdcall CreateNlsSecurityDescriptor(ptr long long) kernelfull.CreateNlsSecurityDescriptor ; missing in Win 7
 @ stdcall CreatePipe(ptr ptr ptr long)
-@ stdcall CreateProcessA(str str ptr ptr long long ptr str ptr ptr)
-@ stdcall CreateProcessInternalA(ptr str str ptr ptr long long ptr str ptr ptr long)
-@ stdcall CreateProcessInternalW(ptr wstr wstr ptr ptr long long ptr wstr ptr ptr long)
-@ stdcall CreateProcessW(wstr wstr ptr ptr long long ptr wstr ptr ptr)
 @ stdcall CreateRemoteThread(long ptr long ptr long long ptr)
 @ stdcall CreateSemaphoreA(ptr long long str)
 @ stdcall CreateSemaphoreW(ptr long long wstr)
@@ -318,7 +314,7 @@
 @ stdcall GetDateFormatW(long long ptr wstr ptr long)
 @ stdcall GetDefaultCommConfigA(str ptr long)
 @ stdcall GetDefaultCommConfigW(wstr ptr long)
-@ stdcall GetDefaultSortkeySize(ptr) ; missing in Win 7
+@ stdcall GetDefaultSortkeySize(ptr) kernelfull.GetDefaultSortkeySize ; missing in Win 7
 @ stdcall GetDevicePowerState(long ptr)
 @ stdcall GetDiskFreeSpaceA(str ptr ptr ptr ptr)
 @ stdcall GetDiskFreeSpaceExA (str ptr ptr ptr)
@@ -356,7 +352,7 @@
 @ stdcall GetHandleInformation(long ptr)
 @ stdcall GetLargestConsoleWindowSize(long)
 @ stdcall GetLastError() ntext.RtlGetLastWin32Error
-@ stdcall GetLinguistLangSize(ptr) ; missing in Win 7
+@ stdcall GetLinguistLangSize(ptr) kernelfull.GetLinguistLangSize ; missing in Win 7
 @ stdcall GetLocalTime(ptr)
 @ stdcall GetLocaleInfoA(long long ptr long) ;GeptLocaleInfoA
 @ stdcall GetLocaleInfoW(long long ptr long) ;GetpLocaleInfoW
@@ -378,7 +374,7 @@
 @ stdcall GetNamedPipeInfo(long ptr ptr ptr ptr)
 @ stdcall GetNativeSystemInfo(ptr)
 @ stdcall GetNextVDMCommand(long)
-@ stdcall GetNlsSectionName(long long long str str long) ; missing in Win 7
+@ stdcall GetNlsSectionName(long long long str str long) kernelfull.GetNlsSectionName ; missing in Win 7
 @ stdcall GetNumaAvailableMemoryNode(long ptr)
 @ stdcall GetNumaHighestNodeNumber(ptr)
 @ stdcall GetNumaNodeProcessorMask(long ptr)
@@ -511,19 +507,18 @@
 @ stdcall HeapAlloc(long long long) ntext.RtlAllocateHeap
 @ stdcall HeapCompact(long long)
 @ stdcall HeapCreate(long long long)
-@ stdcall HeapCreateTagsW(long long wstr wstr) ; missing in Win 7
+@ stdcall HeapCreateTagsW(long long wstr wstr) kernelfull.HeapCreateTagsW ; missing in Win 7
 @ stdcall HeapDestroy(long)
-@ stdcall HeapExtend(long long ptr long) ; missing in Win 7
+@ stdcall HeapExtend(long long ptr long) kernelfull.HeapExtend ; missing in Win 7
 @ stdcall HeapFree(long long long) ntext.RtlFreeHeap
 @ stdcall HeapLock(long)
 @ stdcall HeapQueryInformation(long long ptr long ptr)
-@ stdcall HeapQueryTagW(long long long long ptr) ; missing in Win 7
+@ stdcall HeapQueryTagW(long long long long ptr) kernelfull.HeapQueryTagW ; missing in Win 7
 @ stdcall HeapReAlloc(long long ptr long) ntext.RtlReAllocateHeap
-@ stdcall HeapSetInformation(ptr long ptr long)
 @ stdcall HeapSize(long long ptr) ntext.RtlSizeHeap
 @ stdcall HeapSummary(long long ptr)
 @ stdcall HeapUnlock(long)
-@ stdcall HeapUsage(long long long long ptr) ; missing in Win 7
+@ stdcall HeapUsage(long long long long ptr) kernelfull.HeapUsage ; missing in Win 7
 @ stdcall HeapValidate(long long ptr)
 @ stdcall HeapWalk(long ptr)
 @ stdcall InitAtomTable(long)
@@ -556,7 +551,7 @@
 @ stdcall IsValidCodePage(long)
 @ stdcall IsValidLanguageGroup(long long)
 @ stdcall IsValidLocale(long long)
-@ stdcall IsValidUILanguage(long) ; missing in Win 7
+@ stdcall IsValidUILanguage(long) kernelfull.IsValidUILanguage ; missing in Win 7
 @ stdcall IsWow64Process(ptr ptr)
 @ stdcall LCMapStringA(long long str long ptr long)
 @ stdcall LCMapStringW(long long wstr long ptr long)
@@ -608,9 +603,9 @@
 @ stdcall MultiByteToWideChar(long long str long ptr long)
 @ stdcall NlsConvertIntegerToString(long long long wstr long) ; missing in Win 7
 @ stdcall NlsGetCacheUpdateCount()
-@ stdcall NlsResetProcessLocale()
+@ stdcall NlsResetProcessLocale() kernelfull.NlsResetProcessLocale
 @ stdcall OpenConsoleW(wstr long long long)
-@ stdcall OpenDataFile(long long) ; missing in Win 7
+@ stdcall OpenDataFile(long long) kernelfull.OpenDataFile ; missing in Win 7
 @ stdcall OpenEventA(long long str)
 @ stdcall OpenEventW(long long wstr)
 @ stdcall OpenFile(str ptr long)
@@ -717,7 +712,7 @@
 @ stdcall ScrollConsoleScreenBufferW(long ptr ptr ptr ptr)
 @ stdcall SearchPathA(str str str long ptr ptr)
 @ stdcall SearchPathW(wstr wstr wstr long ptr ptr)
-@ stdcall SetCPGlobal(long) ; missing in Win 7
+@ stdcall SetCPGlobal(long) kernelfull.SetCPGlobal ; missing in Win 7
 @ stdcall SetCalendarInfoA(long long long str)
 @ stdcall SetCalendarInfoW(long long long wstr)
 @ stdcall SetClientTimeZoneInformation(ptr)
@@ -733,7 +728,7 @@
 @ stdcall SetComputerNameW(wstr)
 @ stdcall SetConsoleActiveScreenBuffer(long)
 @ stdcall SetConsoleCP(long)
-@ stdcall SetConsoleCommandHistoryMode(long) ; missing in win 7
+@ stdcall SetConsoleCommandHistoryMode(long) kernelfull.SetConsoleCommandHistoryMode ; missing in win 7
 @ stdcall SetConsoleCtrlHandler(ptr long)
 @ stdcall SetConsoleCursor(long long)
 @ stdcall SetConsoleCursorInfo(long ptr)
@@ -814,7 +809,6 @@
 @ stdcall SetThreadExecutionState(long)
 @ stdcall SetThreadIdealProcessor(long long)
 @ stdcall SetThreadLocale(long)
-@ stdcall SetThreadPriority(long long)
 @ stdcall SetThreadPriorityBoost(long long)
 @ stdcall SetThreadUILanguage(long)
 @ stdcall SetTimeZoneInformation(ptr)
@@ -866,8 +860,8 @@
 @ stdcall UpdateResourceW(long wstr wstr long ptr long)
 @ stdcall VDMConsoleOperation(long long)
 @ stdcall VDMOperationStarted(long)
-@ stdcall ValidateLCType(long long ptr ptr)
-@ stdcall ValidateLocale(long)
+@ stdcall ValidateLCType(long long ptr ptr) kernelfull.ValidateLCType
+@ stdcall ValidateLocale(long) kernelfull.ValidateLocale
 @ stdcall VerLanguageNameA(long str long)
 @ stdcall VerLanguageNameW(long wstr long)
 @ stdcall -ret64 VerSetConditionMask(long long long long) ntext.VerSetConditionMask
@@ -961,14 +955,14 @@
 @ stdcall -arch=x86_64 uaw_wcslen(wstr)
 @ stdcall -arch=x86_64 uaw_wcsrchr(wstr long)
 
-#functions for XP x64 WOW
-@ stdcall -arch=i386 BaseProcessStartThunk(ptr ptr)
-@ stdcall -arch=i386 BaseThreadStartThunk(ptr ptr) 
-@ stdcall CtrlRoutine(ptr) 
-@ stdcall ConsoleIMERoutine(ptr)
+; #functions for XP x64 WOW
+; @ stdcall -arch=i386 BaseProcessStartThunk(ptr ptr)
+; @ stdcall -arch=i386 BaseThreadStartThunk(ptr ptr) 
+; @ stdcall CtrlRoutine(ptr) 
+; @ stdcall ConsoleIMERoutine(ptr)
 
 #missing on XP 
-@ stdcall BaseIsAppcompatInfrastructureDisabled() IsShimInfrastructureDisabled
+@ stdcall BaseIsAppcompatInfrastructureDisabled() ;IsShimInfrastructureDisabled
 @ stdcall ConvertThreadToFiberEx(ptr long)
 @ stdcall FindFirstStreamW(wstr ptr ptr long)
 @ stdcall FindNextStreamW(ptr ptr)
@@ -1015,10 +1009,16 @@
 @ stdcall SetProcessDEPPolicy(long) 
 
 #Onwn implementation only for support
+@ stdcall CreateProcessA(str str ptr ptr long long ptr str ptr ptr) CreateProcessExA
+@ stdcall CreateProcessInternalA(ptr str str ptr ptr long long ptr str ptr ptr long) CreateProcessInternalExA
+@ stdcall CreateProcessInternalW(ptr wstr wstr ptr ptr long long ptr wstr ptr ptr long) CreateProcessInternalExW
+@ stdcall CreateProcessW(wstr wstr ptr ptr long long ptr wstr ptr ptr) CreateProcessExW
 @ stdcall LoadLibraryExA( str long long) LoadLibraryExInternalA
 @ stdcall LoadLibraryExW(wstr long long) LoadLibraryExInternalW
 @ stdcall SetFileApisToANSI() SetpFileApisToANSI
 @ stdcall SetFileApisToOEM() SetpFileApisToOEM
+@ stdcall HeapSetInformation(ptr long ptr long) HeapSetInformationInternal
+@ stdcall SetThreadPriority(ptr long) SetThreadPriorityInternal
 
 #Needed functions for Server 2003 RTM and XP
 @ stdcall CreateVirtualBuffer(ptr long long) kernelfull.CreateVirtualBuffer
@@ -1036,7 +1036,7 @@
 @ stdcall GetNumaProcessorMap(ptr long ptr) kernelfull.GetNumaProcessorMap
 @ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
 
-#Vista Functions 
+; #Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) ntext.RtlAcquireSRWLockExclusive
 @ stdcall AcquireSRWLockShared(ptr) ntext.RtlAcquireSRWLockShared
 @ stdcall ApplicationRecoveryFinished(long)

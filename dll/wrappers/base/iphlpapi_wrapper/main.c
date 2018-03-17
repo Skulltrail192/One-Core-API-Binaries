@@ -169,7 +169,8 @@ VOID WINAPI FreeMibTable(
   _In_  PVOID Memory
 )
 {
-	;
+	TRACE("(%p)\n", Memory);
+	HeapFree(GetProcessHeap(), 0, Memory);
 }
 
 DWORD WINAPI GetTeredoPort(

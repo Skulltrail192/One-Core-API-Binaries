@@ -31,5 +31,5 @@ add_library(d2d1 SHARED
 
 set_module_type(d2d1 win32dll)
 target_link_libraries(d2d1 wine d3d10_uuids d3d10_1_uuids dwrite_uuids d2d1_uuids dxguid dxgi_uuids uuid)
-add_importlibs(d2d1 d3d10_1 msvcrt dwrite gdi32 user32 kernel32 ntdll)
+add_importlibs(d2d1 d3d10_1 msvcrt dwrite gdi32 user32 kernel32 ntdll advapi32)
 add_cd_file(TARGET d2d1 DESTINATION reactos/system32 FOR all)

@@ -428,7 +428,33 @@ NtQueryInformationTokenInternal(
 	ULONG tokeninfolength,
 	PULONG retlen )
 {
+	NTSTATUS status;
+	
 	switch(tokeninfoclass){
+		case TokenElevationType:
+			{
+				// const char *str = getenv("STAGING_ELEVATIONTYPE");
+		
+					// TOKEN_ELEVATION_TYPE *elevation_type = tokeninfo;
+					// FIXME("QueryInformationToken( ..., TokenElevationType, ...) semi-stub. If the application complains that\n"
+						  // "it should be run as normal user, set the STAGING_ELEVATIONTYPE environmentvariable to Default\n");
+		
+					// if( str && !strcmp(str, "Default"))
+						// *elevation_type = TokenElevationTypeDefault;
+					// else 
+						// *elevation_type = TokenElevationTypeFull;	
+				TOKEN_ELEVATION_TYPE *elevation_type = tokeninfo;
+				DbgPrint("NtQueryInformationTokenInternal( ..., TokenElevationType, ...) semi-stub\n");
+				*elevation_type = TokenElevationTypeFull;
+			}			
+		    break;		
+		case TokenElevation:
+            {
+                TOKEN_ELEVATION *elevation = tokeninfo;
+                DbgPrint("QueryInformationToken( ..., TokenElevation, ...) semi-stub\n");
+                elevation->TokenIsElevated = TRUE;
+            }
+            break;		
 		case TokenIntegrityLevel:
 			{
 					/* report always "S-1-16-12288" (high mandatory level) for now */
@@ -443,24 +469,8 @@ NtQueryInformationTokenInternal(
 				memcpy(psid, &high_level, sizeof(SID));
 			DbgPrint("QueryInformationToken (IntegrityLevel) token\n");
 			}
-			break;			
-		case TokenElevationType:
-			{
-				// const char *str = getenv("STAGING_ELEVATIONTYPE");
-		
-					// TOKEN_ELEVATION_TYPE *elevation_type = tokeninfo;
-					// FIXME("QueryInformationToken( ..., TokenElevationType, ...) semi-stub. If the application complains that\n"
-						  // "it should be run as normal user, set the STAGING_ELEVATIONTYPE environmentvariable to Default\n");
-		
-					// if( str && !strcmp(str, "Default"))
-						// *elevation_type = TokenElevationTypeDefault;
-					// else 
-						// *elevation_type = TokenElevationTypeFull;	
-				TOKEN_ELEVATION_TYPE *elevation_type = tokeninfo;
-				DbgPrint("QueryInformationToken( ..., TokenElevationType, ...) semi-stub\n");
-				*elevation_type = TokenElevationTypeFull;
-			}			
-		    break;
+			break;		
+
 		case TokenAppContainerSid:
 			{
 				TOKEN_APPCONTAINER_INFORMATION *container = tokeninfo;
@@ -473,7 +483,39 @@ NtQueryInformationTokenInternal(
 				*(DWORD*)tokeninfo = 0;
 				DbgPrint("TokenIsAppContainer semi-stub\n");				
 				break;
-			}			
+			}	
+		case TokenLogonSid:
+			{
+				TOKEN_GROUPS * groups = tokeninfo;
+				TOKEN_GROUPS * receiveToken = NULL;
+				//PSID sid = groups + 1;
+				DWORD sid_len = tokeninfolength < sizeof(TOKEN_GROUPS) ? 0 : tokeninfolength - sizeof(TOKEN_GROUPS);
+				PVOID tokenGroupInfo = NULL;
+				
+				status = NtQueryInformationToken(token,
+												 TokenGroups,
+												 tokenGroupInfo,
+										         sid_len,
+												 retlen);
+												 
+												 
+				DbgPrint("NtQueryInformationTokenInternal :: NtQueryInformationToken Status: %08x\n",status);										 
+
+				//req->handle = wine_server_obj_handle( token );
+				//req->which_sid = tokeninfoclass;
+				//wine_server_set_reply( req, sid, sid_len );
+				//status = wine_server_call( req );
+				// if (retlen) 
+					// *retlen = reply->sid_len + sizeof(TOKEN_GROUPS);
+				if (status == STATUS_SUCCESS)
+				{
+					receiveToken = (TOKEN_GROUPS *)tokenGroupInfo;
+					groups->GroupCount = 1;
+					groups->Groups[0].Sid = receiveToken->Groups[0].Sid;
+					groups->Groups[0].Attributes = 0;
+				}
+			}	
+			break;
 		default:
 			return NtQueryInformationToken(token,
 										   tokeninfoclass,
@@ -481,6 +523,8 @@ NtQueryInformationTokenInternal(
 										   tokeninfolength,
 										   retlen);
 	}
+	
+	return STATUS_SUCCESS;
 }
 
 /******************************************************************************
@@ -555,7 +599,7 @@ NtQueryInformationThreadInternal(
  */
 NTSTATUS 
 WINAPI 
-NtSetInformationProcess(
+NtSetInformationProcessInternal(
 	IN HANDLE ProcessHandle,
 	IN PROCESSINFOCLASS ProcessInformationClass,
 	IN PVOID ProcessInformation,

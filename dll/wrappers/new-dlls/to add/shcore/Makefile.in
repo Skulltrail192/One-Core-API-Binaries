@@ -1,5 +1,0 @@
-MODULE    = shcore.dll
-IMPORTS   = gdi32 user32
-
-C_SRCS = \
-	main.c

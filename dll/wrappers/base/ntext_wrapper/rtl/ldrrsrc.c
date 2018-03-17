@@ -1080,7 +1080,6 @@ LdrpSearchResourceSection_U_by_id(
         if (entry[pos].Id > id) max = pos - 1;
         else min = pos + 1;
     }
-    DbgPrint("root %p dir %p id %04x not found\n", root, dir, id );
     return NULL;
 }
 
@@ -1111,8 +1110,6 @@ LdrpSearchResourceSection_U_by_name(
         {
             if (!entry[pos].DataIsDirectory == !want_dir)
             {
-                DbgPrint("root %p dir %p name %ws ret %p\n",
-                       root, dir, name, (const char*)root + entry[pos].OffsetToDirectory);
                 return (IMAGE_RESOURCE_DIRECTORY *)((PCHAR)root + entry[pos].OffsetToDirectory);
             }
             break;
@@ -1120,7 +1117,6 @@ LdrpSearchResourceSection_U_by_name(
         if (res < 0) max = pos - 1;
         else min = pos + 1;
     }
-    DbgPrint("root %p dir %p name %ws not found\n", root, dir, name);
     return NULL;
 }
 
@@ -1258,7 +1254,7 @@ done:
 
 NTSTATUS 
 NTAPI 
-LdrpFindResource_U( 	
+LdrFindResource_U( 	
 	PVOID  	BaseAddress,
 	PLDR_RESOURCE_INFO  ResourceInfo,
 	ULONG  	Level,
@@ -1270,13 +1266,13 @@ LdrpFindResource_U(
 
     _SEH2_TRY
     {
-        if (ResourceInfo)
-        {
-            DbgPrint( "module %p type %lx name %lx lang %04lx level %lu\n",
-                     BaseAddress, ResourceInfo->Type, 
-                     Level > 1 ? ResourceInfo->Name : 0,
-                     Level > 2 ? ResourceInfo->Language : 0, Level );
-        }
+        // if (ResourceInfo)
+        // {
+            // DbgPrint( "module %p type %lx name %lx lang %04lx level %lu\n",
+                     // BaseAddress, ResourceInfo->Type, 
+                     // Level > 1 ? ResourceInfo->Name : 0,
+                     // Level > 2 ? ResourceInfo->Language : 0, Level );
+        // }
 
         status = LdrpSearchResourceSection_U( BaseAddress, ResourceInfo, Level, &res, FALSE );
         if (NT_SUCCESS(status))
@@ -1288,6 +1284,42 @@ LdrpFindResource_U(
     }
     _SEH2_END;
     return status;
+}
+
+NTSTATUS
+NTAPI
+LdrFindResourceEx_U(
+    IN ULONG Flags,
+    IN PVOID BaseAddress,
+    IN PLDR_RESOURCE_INFO ResourceInfo,
+    IN ULONG Level,
+    OUT PIMAGE_RESOURCE_DATA_ENTRY *ResourceDataEntry
+    )
+{
+    PVOID res;
+    NTSTATUS status = STATUS_SUCCESS;
+
+    _SEH2_TRY
+    {
+        // if (ResourceInfo)
+        // {
+            // DbgPrint( "module %p type %lx name %lx lang %04lx level %lu\n",
+                     // BaseAddress, ResourceInfo->Type, 
+                     // Level > 1 ? ResourceInfo->Name : 0,
+                     // Level > 2 ? ResourceInfo->Language : 0, Level );
+        // }
+
+        status = LdrpSearchResourceSection_U( BaseAddress, ResourceInfo, Level, &res, FALSE );
+        if (NT_SUCCESS(status))
+            *ResourceDataEntry = res;
+    }
+    _SEH2_EXCEPT(page_fault(_SEH2_GetExceptionCode()))
+    {
+        status = _SEH2_GetExceptionCode();
+    }
+    _SEH2_END;
+    return status;	  
+	  
 }
 
 NTSTATUS 
@@ -1304,13 +1336,13 @@ LdrFindResourceDirectory_U(
 
     _SEH2_TRY
     {
-        if (info)
-        {
-            DbgPrint( "module %p type %ws name %ws lang %04lx level %lu\n",
-                     BaseAddress, (LPCWSTR)info->Type,
-                     level > 1 ? (LPCWSTR)info->Name : L"",
-                     level > 2 ? info->Language : 0, level );
-        }
+        // if (info)
+        // {
+            // DbgPrint( "module %p type %ws name %ws lang %04lx level %lu\n",
+                     // BaseAddress, (LPCWSTR)info->Type,
+                     // level > 1 ? (LPCWSTR)info->Name : L"",
+                     // level > 2 ? info->Language : 0, level );
+        // }
 
         status = LdrpSearchResourceSection_U( BaseAddress, info, level, &res, TRUE );
         if (NT_SUCCESS(status))

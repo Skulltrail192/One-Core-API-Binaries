@@ -531,6 +531,16 @@ enum wined3d_swap_effect
     WINED3D_SWAP_EFFECT_OVERLAY,
 };
 
+enum wined3d_swap_interval
+{
+    WINED3D_SWAP_INTERVAL_IMMEDIATE = 0,
+    WINED3D_SWAP_INTERVAL_ONE       = 1,
+    WINED3D_SWAP_INTERVAL_TWO       = 2,
+    WINED3D_SWAP_INTERVAL_THREE     = 3,
+    WINED3D_SWAP_INTERVAL_FOUR      = 4,
+    WINED3D_SWAP_INTERVAL_DEFAULT   = ~0u,
+};
+
 enum wined3d_sampler_state
 {
     WINED3D_SAMP_ADDRESS_U                  = 1,

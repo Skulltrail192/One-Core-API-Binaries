@@ -726,3 +726,21 @@ SetThreadIdealProcessorEx(
 
     return TRUE;
 }
+
+BOOL
+WINAPI
+SetThreadPriorityInternal(
+    HANDLE hThread,
+    int nPriority
+)
+{
+	BOOL ret;
+	
+	ret = SetThreadPriority(hThread,
+							nPriority);
+	
+	
+	DbgPrint("SetThreadPriorityInternal :: SetThreadPriority returned: %d\n", ret);
+	
+	return ret;
+}

@@ -4263,7 +4263,7 @@ static HRESULT WINAPI dwritetextformat_layout_SetIncrementalTabStop(IDWriteTextF
 {
     struct dwrite_textlayout *This = impl_layout_from_IDWriteTextFormat1(iface);
     FIXME("(%p)->(%f): stub\n", This, tabstop);
-    return E_NOTIMPL;
+    return S_OK;
 }
 
 static HRESULT WINAPI dwritetextformat_layout_SetTrimming(IDWriteTextFormat1 *iface, DWRITE_TRIMMING const *trimming,
@@ -5272,7 +5272,7 @@ static HRESULT WINAPI dwritetextformat_SetIncrementalTabStop(IDWriteTextFormat2 
 {
     struct dwrite_textformat *This = impl_from_IDWriteTextFormat2(iface);
     FIXME("(%p)->(%f): stub\n", This, tabstop);
-    return E_NOTIMPL;
+    return S_OK;
 }
 
 static HRESULT WINAPI dwritetextformat_SetTrimming(IDWriteTextFormat2 *iface, DWRITE_TRIMMING const *trimming,
@@ -5568,7 +5568,7 @@ static const IDWriteTextFormat2Vtbl dwritetextformatvtbl = {
 static struct dwrite_textformat *unsafe_impl_from_IDWriteTextFormat(IDWriteTextFormat *iface)
 {
     return (iface->lpVtbl == (IDWriteTextFormatVtbl*)&dwritetextformatvtbl) ?
-        CONTAINING_RECORD(iface, struct dwrite_textformat, IDWriteTextFormat2_iface) : NULL;
+        CONTAINING_RECORD((IDWriteTextFormat2 *)iface, struct dwrite_textformat, IDWriteTextFormat2_iface) : NULL;
 }
 
 HRESULT create_textformat(const WCHAR *family_name, IDWriteFontCollection *collection, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STYLE style,

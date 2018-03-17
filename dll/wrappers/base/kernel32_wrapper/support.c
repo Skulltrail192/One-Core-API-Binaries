@@ -101,10 +101,10 @@ Return Value:
         // WARNING WARNING DO NOT CHANGE INIT OF NtTib.Version. There is
         // external code depending on this initialization !
         //
-		CsrNewThread();
+		//CsrNewThread();
         if ( NtCurrentTeb()->NtTib.Version == 7680 ) {
             if ( !BaseRunningInServerProcess ) {
-                CsrNewThread();
+                //CsrNewThread();
                 }
         }
         ExitThread((lpStartAddress)(lpParameter));

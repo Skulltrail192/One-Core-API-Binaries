@@ -11,10 +11,15 @@ list(APPEND SOURCE
     ddstream.idl
     devenum.idl
     dmodshow.idl
+    dxva2api.idl
     #dshowasf.idl
     #dyngraph.idl
+	evr.idl
     mediaobj.idl
     medparam.idl
+    mfidl.idl	
+    mfobjects.idl	
+    mftransform.idl	
     mixerocx.idl
     mmstream.idl
     qedit.idl

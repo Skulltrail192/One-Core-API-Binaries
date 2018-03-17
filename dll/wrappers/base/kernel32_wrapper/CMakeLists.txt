@@ -12,6 +12,7 @@ include_directories(
 	${REACTOS_SOURCE_DIR}/dll/wrappers/base/ntext_wrapper)	
 spec2def(kernel32_wrapper.dll kernel32_wrapper.spec ADD_IMPORTLIB)
 
+
 list(APPEND SOURCE
 	ahcache.c
 	appcompat.c
@@ -28,6 +29,7 @@ list(APPEND SOURCE
 	fileopcr.c	
 	findfile.c
 	handle.c 
+	heap.c
     locale.c
 	mem.c
 	module.c

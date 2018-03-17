@@ -878,7 +878,7 @@ EnumPreferredThreadUILanguages(
 
     LANGID langid;
 
-    FIXME( "semi-stub %u, %p, %p %p\n", flags, count, buffer, buffersize );
+    FIXME( "EnumPreferredThreadUILanguages :: semi-stub %u, %p, %p %p\n", flags, count, buffer, buffersize );
 
     if (!flags)
         flags = MUI_LANGUAGE_NAME;
@@ -1339,10 +1339,17 @@ GetUserDefaultLocaleName(
 	int buffersize
 )
 {
-     LCID userlcid;
+    LCID userlcid;
+	int ret;
    
 	userlcid = GetUserDefaultLCID();
-    return LCIDToLocaleName(userlcid, localename, buffersize, 0);
+    ret = LCIDToLocaleName(userlcid, localename, buffersize, 0);
+	
+	DbgPrint("GetUserDefaultLocaleName :: Default Locale: %s\n", localename);
+	
+	DbgPrint("GetUserDefaultLocaleName :: Return value: %d\n", ret);
+	
+	return ret;
 }
 
 static BOOL CALLBACK enum_locale_ex_proc( HMODULE module, LPCWSTR type,
@@ -1708,7 +1715,9 @@ GetNLSVersionEx(
 	}	
 }
 
-BOOL WINAPI GetNLSVersion(
+BOOL 
+WINAPI 
+GetNLSVersion(
     NLS_FUNCTION     function,
     LCID             locale,
     LPNLSVERSIONINFO lpVersionInformation)
@@ -1745,24 +1754,66 @@ FindNLSString(
 	return 0;
 }
 
-int 
+/******************************************************************************
+ *           FindNLSStringEx (KERNEL32.@)
+ */
+
+INT 
 WINAPI 
 FindNLSStringEx(
-  _In_opt_   LPCWSTR lpLocaleName,
-  _In_       DWORD dwFindNLSStringFlags,
-  _In_       LPCWSTR lpStringSource,
-  _In_       int cchSource,
-  _In_       LPCWSTR lpStringValue,
-  _In_       int cchValue,
-  _Out_opt_  LPINT pcchFound,
-  _In_opt_   LPNLSVERSIONINFO lpVersionInformation,
-  _In_opt_   LPVOID lpReserved,
-  _In_opt_   LPARAM sortHandle
+	const WCHAR *localename, 
+	DWORD flags, 
+	const WCHAR *src,
+    INT src_size, 
+	const WCHAR *value, 
+	INT value_size,
+    INT *found, 
+	NLSVERSIONINFO *version_info, 
+	void *reserved,
+    LPARAM sort_handle
 )
 {
-  return 0;
-}
 
+    /* FIXME: this function should normalize strings before calling CompareStringEx() */
+    DWORD mask = flags;
+    int offset, inc, count;
+
+    TRACE("%s %x %s %d %s %d %p %p %p %ld\n", wine_dbgstr_w(localename), flags,
+          wine_dbgstr_w(src), src_size, wine_dbgstr_w(value), value_size, found,
+          version_info, reserved, sort_handle);
+
+    if (version_info != NULL || reserved != NULL || sort_handle != 0 ||
+        !IsValidLocaleName(localename) || src == NULL || src_size == 0 ||
+        src_size < -1 || value == NULL || value_size == 0 || value_size < -1)
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return -1;
+    }
+    if (src_size == -1)
+        src_size = strlenW(src);
+    if (value_size == -1)
+        value_size = strlenW(value);
+
+    src_size -= value_size;
+    if (src_size < 0) return -1;
+
+    mask = flags & ~(FIND_FROMSTART | FIND_FROMEND | FIND_STARTSWITH | FIND_ENDSWITH);
+    count = flags & (FIND_FROMSTART | FIND_FROMEND) ? src_size + 1 : 1;
+    offset = flags & (FIND_FROMSTART | FIND_STARTSWITH) ? 0 : src_size;
+    inc = flags & (FIND_FROMSTART | FIND_STARTSWITH) ? 1 : -1;
+    while (count--)
+    {
+        if (CompareStringEx(localename, mask, src + offset, value_size, value, value_size, NULL, NULL, 0) == CSTR_EQUAL)
+        {
+            if (found)
+                *found = value_size;
+            return offset;
+        }
+        offset += inc;
+    }
+
+    return -1;
+}
 /******************************************************************************
  *           ResolveLocaleName (KERNEL32.@)
  */

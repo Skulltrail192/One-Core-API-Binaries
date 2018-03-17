@@ -234,7 +234,7 @@
 @ stdcall NtQueryDefaultLocale(long ptr)
 @ stdcall NtQueryDefaultUILanguage(ptr)
 @ stdcall NtQueryDirectoryFile(long long ptr ptr ptr ptr long long long ptr long)
-@ stdcall NtQueryDirectoryObject(long ptr long long long ptr ptr)
+@ stdcall NtQueryDirectoryObject(long ptr long long long ptr ptr) 
 @ stdcall NtQueryEaFile(long ptr ptr long long ptr long ptr long)
 @ stdcall NtQueryEvent(long long ptr long ptr)
 @ stdcall NtQueryFullAttributesFile(ptr ptr)
@@ -318,7 +318,7 @@
 @ stdcall NtSetInformationJobObject(long long ptr long)
 @ stdcall NtSetInformationKey(long long ptr long)
 @ stdcall NtSetInformationObject(long long ptr long)
-@ stdcall NtSetInformationProcess(long long long long)
+@ stdcall NtSetInformationProcess(long long long long) NtSetInformationProcessInternal
 @ stdcall NtSetInformationThread(long long ptr long)
 @ stdcall NtSetInformationToken(long long ptr long)
 @ stdcall NtSetIntervalProfile(long long)

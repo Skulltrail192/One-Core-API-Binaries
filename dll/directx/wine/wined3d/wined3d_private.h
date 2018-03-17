@@ -52,9 +52,7 @@
 #include "wine/unicode.h"
 
 #include "objbase.h"
-#include "wine/config.h"
 #include "wine/wined3d.h"
-#include "wine/port.h"
 #include "wined3d_gl.h"
 #include "wine/list.h"
 #include "wine/rbtree.h"
@@ -2142,10 +2140,6 @@ void context_alloc_occlusion_query(struct wined3d_context *context,
 void context_apply_blit_state(struct wined3d_context *context, const struct wined3d_device *device) DECLSPEC_HIDDEN;
 BOOL context_apply_clear_state(struct wined3d_context *context, const struct wined3d_state *state,
         UINT rt_count, const struct wined3d_fb_state *fb) DECLSPEC_HIDDEN;
-void context_apply_compute_state(struct wined3d_context *context,
-          const struct wined3d_device *device, const struct wined3d_state *state) DECLSPEC_HIDDEN;		
-BOOL context_apply_draw_state(struct wined3d_context *context,
-          const struct wined3d_device *device, const struct wined3d_state *state) DECLSPEC_HIDDEN;		  
 void context_apply_fbo_state_blit(struct wined3d_context *context, GLenum target,
         struct wined3d_surface *render_target, struct wined3d_surface *depth_stencil, DWORD location) DECLSPEC_HIDDEN;
 void context_active_texture(struct wined3d_context *context, const struct wined3d_gl_info *gl_info,

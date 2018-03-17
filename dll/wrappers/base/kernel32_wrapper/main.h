@@ -134,6 +134,12 @@ typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 
 #define ARGUMENT_PRESENT(x) ((x) != NULL)
 
+#define NORM_LINGUISTIC_CASING     0x08000000
+#define FIND_STARTSWITH            0x00100000
+#define FIND_ENDSWITH              0x00200000
+#define FIND_FROMSTART             0x00400000
+#define FIND_FROMEND               0x00800000
+
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 extern BOOL bIsFileApiAnsi;
 extern HMODULE kernel32_handle DECLSPEC_HIDDEN;
@@ -1493,6 +1499,11 @@ typedef enum
      UNC_DOT_PATH           /* "//." */
 } DOS_PATHNAME_TYPE;
 
+typedef struct _STARTUPINFOEX {
+  STARTUPINFO                 StartupInfo;
+  PPROC_THREAD_ATTRIBUTE_LIST lpAttributeList;
+} STARTUPINFOEX, *LPSTARTUPINFOEX;
+
 // typedef struct _TIME_DYNAMIC_ZONE_INFORMATION
 // {
      // LONG Bias;
@@ -1674,3 +1685,38 @@ NTSTATUS NTAPI LdrFindResourceDirectory_U 	( 	IN PVOID  	BaseAddress,
 		IN ULONG  	level,
 		OUT PIMAGE_RESOURCE_DIRECTORY *  	addr 
 	);
+	
+BOOL
+WINAPI
+CreateProcessInternalW(
+    HANDLE hUserToken,
+    LPCWSTR lpApplicationName,
+    LPWSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCWSTR lpCurrentDirectory,
+    LPSTARTUPINFOW lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation,
+    PHANDLE hRestrictedUserToken
+    );	
+	
+BOOL
+WINAPI
+CreateProcessInternalA(
+    HANDLE hUserToken,
+    LPCSTR lpApplicationName,
+    LPSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCSTR lpCurrentDirectory,
+    LPSTARTUPINFOA lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation,
+    PHANDLE hRestrictedUserToken
+);	
+	

@@ -461,11 +461,12 @@ LoadLibraryExInternalW(LPCWSTR libnameW, HANDLE hfile, DWORD flags)
 			wstr.Buffer[wstr.Length/sizeof(WCHAR)] = '\0';
 			res = load_library( &wstr, flags );
 			RtlFreeUnicodeString( &wstr );
-			return res;	
+			break;
 		default:
 			return LoadLibraryExW(libnameW, hfile, flags);
 			
 	}
+	return res;
 }
 
 /***********************************************************************
@@ -581,12 +582,16 @@ BOOL WINAPI SetDefaultDllDirectories( DWORD flags )
                                              LOAD_LIBRARY_SEARCH_USER_DIRS |
                                              LOAD_LIBRARY_SEARCH_SYSTEM32 |
                                              LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+											 
+	DbgPrint("SetDefaultDllDirectories :: is called\n");
 
     if (!flags || (flags & ~load_library_search_flags))
     {
         SetLastError( ERROR_INVALID_PARAMETER );
+		DbgPrint("SetDefaultDllDirectories :: invalid parameter, return is FALSE\n");		
         return FALSE;
     }
     default_search_flags = flags;
+	DbgPrint("SetDefaultDllDirectories :: setting flags, return is TRUE\n");		
     return TRUE;
 }
