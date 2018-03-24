@@ -17,7 +17,7 @@
  */
 
 
-#include "config.h"
+#include "wine/config.h"
 
 #include <stdarg.h>
 

@@ -1,3 +1,4 @@
+; 1 stub @
 @ stdcall CommandLineToArgvW(wstr ptr) shell32.CommandLineToArgvW
 @ stub CreateRandomAccessStreamOnFile
 @ stub CreateRandomAccessStreamOverStream
@@ -38,7 +39,7 @@
 @ stdcall SHCreateStreamOnFileW(wstr long ptr) shlwapi.SHCreateStreamOnFileW
 @ stdcall SHCreateThread(ptr ptr long ptr) shlwapi.SHCreateThread
 @ stdcall SHCreateThreadRef(ptr ptr) shlwapi.SHCreateThreadRef
-@ stub SHCreateThreadWithHandle
+@ stdcall SHCreateThreadWithHandle(ptr ptr long ptr ptr) shlwapinew.SHCreateThreadWithHandle
 @ stdcall SHDeleteEmptyKeyA(long ptr) shlwapi.SHDeleteEmptyKeyA
 @ stdcall SHDeleteEmptyKeyW(long ptr) shlwapi.SHDeleteEmptyKeyW
 @ stdcall SHDeleteKeyA(long str) shlwapi.SHDeleteKeyA
@@ -65,7 +66,6 @@
 @ stdcall SHRegGetPathA(long str str ptr long) shlwapi.SHRegGetPathA
 @ stdcall SHRegGetPathW(long wstr wstr ptr long) shlwapi.SHRegGetPathW
 @ stdcall SHRegGetValueA( long str str long ptr ptr ptr ) shlwapi.SHRegGetValueA
-@ stub SHRegGetValueFromHKCUHKLM
 @ stdcall SHRegGetValueW( long wstr wstr long ptr ptr ptr ) shlwapi.SHRegGetValueW
 @ stdcall SHRegSetPathA(long str str str long) shlwapi.SHRegSetPathA
 @ stdcall SHRegSetPathW(long wstr wstr wstr long) shlwapi.SHRegSetPathW
@@ -81,3 +81,101 @@
 @ stdcall SetProcessDpiAwareness(long)
 @ stub SetProcessReference
 @ stub UnregisterScaleChangeEvent
+
+; 100 stub @
+; 101 stub @
+; 102 stub @
+; 103 stub @
+; 104 stub @
+; 105 stub @
+; 106 stub @
+; 107 stub @
+; 108 stub @
+; 109 stub @
+; 110 stub @
+; 111 stub @
+; 115 stub @
+; 116 stub @
+; 117 stub @
+; 120 stub @
+; 121 stub @
+122 stub SHRegGetValueFromHKCUHKLM
+; 123 stub @
+; 124 stub @
+; 125 stub @
+; 126 stub @
+; 127 stub @
+; 130 stub @
+; 131 stub @
+; 132 stub @
+; 133 stub @
+; 140 stub @
+; 141 stub @
+; 142 stub @
+; 143 stub @
+; 144 stub @
+; 145 stub @
+; 150 stub @
+; 151 stub @
+; 152 stub @
+; 153 stub @
+; 160 stub @
+; 161 stub @
+; 162 stub @
+; 170 stub @
+; 171 stub @
+; 172 stub @
+; 173 stub @
+; 181 stub @
+; 182 stub @
+; 183 stub @
+; 184 stub @
+; 185 stub @
+; 186 stub @
+; 187 stub @
+; 188 stub @
+; 190 stub @
+; 191 stub @
+; 192 stub @
+; 193 stub @
+; 200 stub @
+; 220 stub @
+; 221 stub @
+; 222 stub @
+; 223 stub @
+; 224 stub @
+; 225 stub @
+; 226 stub @
+; 227 stub @
+; 228 stub @
+; 230 stub @
+; 231 stub @
+; 232 stub @
+; 233 stub @
+; 234 stub @
+; 240 stub @
+; 241 stub @
+; 242 stub @
+; 243 stub @
+; 244 stub @
+; 245 stub @
+; 246 stub @
+; 247 stub @
+; 248 stub @
+; 250 stub @
+; 251 stub @
+; 252 stub @
+; 253 stub @
+; 254 stub @
+; 255 stub @
+; 260 stub @
+; 261 stub @
+; 270 stub @
+; 280 stub @
+; 281 stub @
+; 282 stub @
+; 283 stub @
+; 284 stub @
+; 290 stub @
+; 291 stub @
+; 292 stub @

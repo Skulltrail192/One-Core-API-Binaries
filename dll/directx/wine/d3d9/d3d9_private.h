@@ -29,6 +29,7 @@
 #define NONAMELESSUNION
 #define NONAMELESSSTRUCT
 #define COBJMACROS
+#include "wine/config.h"
 #include "windef.h"
 #include "winbase.h"
 #include "wingdi.h"
@@ -38,7 +39,6 @@
 #include "wine/unicode.h"
 
 #include "d3d9.h"
-#include "wine/config.h"
 #include "wine/wined3d.h"
 
 #define D3D9_MAX_VERTEX_SHADER_CONSTANTF 256

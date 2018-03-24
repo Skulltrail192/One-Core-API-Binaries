@@ -166,8 +166,16 @@ InitOnceExecuteOnce(
 	void *param, 
 	void **context 
 )
-{
-    return !RtlRunOnceExecuteOnce( once, (PRTL_RUN_ONCE_INIT_FN)func, param, context );
+{	
+	BOOL ret;
+	
+	DbgPrint("InitOnceExecuteOnce called\n");
+	
+	ret = !RtlRunOnceExecuteOnce( once, (PRTL_RUN_ONCE_INIT_FN)func, param, context );
+	
+	DbgPrint("InitOnceExecuteOnce:: ret is %d\n", ret);
+	
+    return ret;
 }
 
 /***********************************************************************
@@ -282,6 +290,9 @@ CreateSemaphoreExW(
     }
 
     status = NtCreateSemaphore( &ret, access, &attr, initial, max );
+	
+	DbgPrint("CreateSemaphoreExW :: NtCreateSemaphore Status: %0x%08x\n", status);
+	
     if (status == STATUS_OBJECT_NAME_EXISTS)
         SetLastError( ERROR_ALREADY_EXISTS );
     else

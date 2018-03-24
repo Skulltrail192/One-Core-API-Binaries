@@ -691,6 +691,6 @@
 487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapinew.RegGetValueW
 
 @ stdcall LogonUserExExW(str str str long long ptr ptr ptr ptr ptr ptr)
-;101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr)
-;582 stdcall SetThreadToken(ptr ptr)
-;284 stdcall GetTokenInformation(long long ptr long ptr)
+101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr)
+582 stdcall SetThreadToken(ptr ptr)
+284 stdcall GetTokenInformation(long long ptr long ptr)

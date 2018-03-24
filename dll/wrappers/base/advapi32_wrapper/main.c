@@ -879,7 +879,9 @@ GetTokenInformationInternal (
 							  TokenInformationLength,
 							  ReturnLength);
 							  
-	DbgPrint("GetTokenInformation :: ret is %d\n",ret);	
+	if(!ret){
+		//DbgPrint("GetTokenInformation :: returned False\n");	
+	}
 
 	return ret;		
 	
@@ -918,7 +920,9 @@ SetTokenInformationInternal (
 							  TokenInformation,
 							  TokenInformationLength);
 							  
-	DbgPrint("SetTokenInformation :: ret is %d\n",ret);	
+	if(!ret){
+		DbgPrint("SetTokenInformation :: returned False\n");	
+	}
 
 	return ret;							  
 }
@@ -963,8 +967,10 @@ OpenThreadTokenInternal(
 							  OpenAsSelf,
 							  TokenHandle);
 							  
-	DbgPrint("OpenThreadToken :: ret is %d\n",ret);	
-
+	if(!ret){
+		//DbgPrint("OpenThreadToken :: returned False\n");	
+	}
+	
 	return ret;			
 }
 
@@ -1013,7 +1019,9 @@ OpenProcessTokenInternal(
 							  DesiredAccess,
 							  TokenHandle);
 							  
-	DbgPrint("OpenProcessToken :: ret is %d\n",ret);	
+	if(!ret){
+		DbgPrint("OpenProcessToken :: returned False\n");	
+	}	
 
 	return ret;			
 }
@@ -1068,4 +1076,14 @@ BOOL WINAPI CreateRestrictedTokenInternal(
             return FALSE;
     }
     return DuplicateTokenEx( baseToken, MAXIMUM_ALLOWED, NULL, level, type, newToken );
+}
+
+//DELETE ME
+
+LONG WINAPI RegDeleteTreeW(
+  _In_     HKEY    hKey,
+  _In_opt_ LPCWSTR lpSubKey
+)
+{
+	return ERROR_SUCCESS;
 }

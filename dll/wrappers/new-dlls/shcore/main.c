@@ -16,7 +16,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
+#include "wine/config.h"
 #include <stdarg.h>
 
 #include "windef.h"
@@ -44,12 +44,6 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, void *reserved)
     return TRUE;
 }
 
-HRESULT WINAPI SetProcessDpiAwareness(PROCESS_DPI_AWARENESS value)
-{
-    FIXME("(%u): stub\n", value);
-    return E_NOTIMPL;
-}
-
 HRESULT WINAPI GetProcessDpiAwareness(HANDLE process, PROCESS_DPI_AWARENESS *value)
 {
     FIXME("(%p, %p): stub\n", process, value);
@@ -57,11 +51,17 @@ HRESULT WINAPI GetProcessDpiAwareness(HANDLE process, PROCESS_DPI_AWARENESS *val
     return S_OK;
 }
 
+HRESULT WINAPI SetProcessDpiAwareness(PROCESS_DPI_AWARENESS value)
+{
+    FIXME("(%u): stub\n", value);
+    return E_NOTIMPL;
+}
+
 HRESULT WINAPI GetDpiForMonitor(HMONITOR monitor, MONITOR_DPI_TYPE type, UINT *x, UINT *y)
 {
     HDC hDC;
 
-    TRACE("(%p, %u, %p, %p): semi-stub\n", monitor, type, x, y);
+    FIXME("(%p, %u, %p, %p): semi-stub\n", monitor, type, x, y);
 
     hDC = GetDC(0);
     if (x) *x = GetDeviceCaps(hDC, LOGPIXELSX);

@@ -452,3 +452,22 @@ DWORD WINAPI CreateSortedAddressPairs( const PSOCKADDR_IN6 src_list, DWORD src_c
     HeapFree( GetProcessHeap(), 0, &table );
     return NO_ERROR;
 }
+
+// /******************************************************************
+ // *    ConvertLengthToIpv4Mask (IPHLPAPI.@)
+ // */
+// DWORD WINAPI ConvertLengthToIpv4Mask(ULONG mask_len, ULONG *mask)
+// {
+    // if (mask_len > 32)
+    // {
+        // *mask = INADDR_NONE;
+        // return ERROR_INVALID_PARAMETER;
+    // }
+
+    // if (mask_len == 0)
+        // *mask = 0;
+    // else
+        // *mask = htonl(~0u << (32 - mask_len));
+
+    // return NO_ERROR;
+// }

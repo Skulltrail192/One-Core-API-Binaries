@@ -220,7 +220,7 @@ Return Value:
         return NULL;
         }*/
 
-    RtlEnterCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+    RtlEnterCriticalSection(&LocaleCritSection);
 
     AlternateModule = LdrGetAlternateResourceModuleHandle(Module);
 	if(!CustomLangId)
@@ -235,16 +235,14 @@ Return Value:
         //  We tried to load this module before but failed. Don't try
         //  again in the future.
         //
-        RtlLeaveCriticalSection(
-            (PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+        RtlLeaveCriticalSection(&LocaleCritSection);
         return NULL;
         }
     else if (AlternateModule > 0){
         //
         //  We found the previously loaded match
         //
-        RtlLeaveCriticalSection(
-            (PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+        RtlLeaveCriticalSection(&LocaleCritSection);
         return AlternateModule;
         }
 
@@ -506,12 +504,12 @@ Return Value:
     AlternateModule = (HANDLE)((ULONG_PTR)DllBase | 0x00000001);
 
     LdrpSetAlternateResourceModuleHandle(Module, AlternateModule);
-    RtlLeaveCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+    RtlLeaveCriticalSection(&LocaleCritSection);
     return AlternateModule;
 
 error_exit:
     LdrpSetAlternateResourceModuleHandle(Module, NO_ALTERNATE_RESOURCE_MODULE);
-    RtlLeaveCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+    RtlLeaveCriticalSection(&LocaleCritSection);
     return NULL;
 }
 
@@ -552,9 +550,9 @@ Return Value:
     ULONG ModuleIndex;
     PALT_RESOURCE_MODULE AltModule;
 
-    RtlEnterCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+    RtlEnterCriticalSection(&LocaleCritSection);
     if (AlternateResourceModuleCount == 0){
-        RtlLeaveCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+        RtlLeaveCriticalSection(&LocaleCritSection);
         return TRUE;
         }
 
@@ -567,7 +565,7 @@ Return Value:
     }
 
     if (ModuleIndex == 0){
-        RtlLeaveCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+        RtlLeaveCriticalSection(&LocaleCritSection);
         return FALSE;
         }
     //
@@ -597,7 +595,7 @@ Return Value:
             }
         }
     __except (EXCEPTION_EXECUTE_HANDLER) {
-        RtlLeaveCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+        RtlLeaveCriticalSection(&LocaleCritSection);
         return FALSE;
         }
 
@@ -621,14 +619,14 @@ Return Value:
                         (AltResMemBlockCount - MEMBLOCKSIZE) * RESMODSIZE);
 
         if (!AltModule){
-            RtlLeaveCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+            RtlLeaveCriticalSection(&LocaleCritSection);
             return FALSE;
             }
 
         AlternateResourceModules = AltModule;
         AltResMemBlockCount -= MEMBLOCKSIZE;
         }
-    RtlLeaveCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+    RtlLeaveCriticalSection(&LocaleCritSection);
     return TRUE;
 }
 
@@ -666,7 +664,7 @@ Return Value:
     //
     // Grab the loader lock
     //
-    RtlEnterCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+    RtlEnterCriticalSection(&LocaleCritSection);
 
     if (AlternateResourceModuleCount > 0) {
         //
@@ -700,7 +698,7 @@ Return Value:
     // and leave the LoaderLock
     //
     UILangId = 0;
-    RtlLeaveCriticalSection((PRTL_CRITICAL_SECTION)NtCurrentPeb()->LoaderLock);
+    RtlLeaveCriticalSection(&LocaleCritSection);
 
     return TRUE;
 }

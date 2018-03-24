@@ -168,3 +168,19 @@ CoDisconnectContext(
 {
 	return S_OK;
 }
+
+/***********************************************************************
+ *      CoGetActivationState (ole32.@)
+ */
+HRESULT WINAPI CoGetActivationState(GUID guid, DWORD unknown, DWORD *unknown2)
+{
+    return E_NOTIMPL;
+}
+
+/***********************************************************************
+ *      CoGetCallState (ole32.@)
+ */
+HRESULT WINAPI CoGetCallState(int unknown, PULONG unknown2)
+{
+    return E_NOTIMPL;
+}

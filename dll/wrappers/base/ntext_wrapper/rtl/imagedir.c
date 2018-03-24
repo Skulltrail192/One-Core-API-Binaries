@@ -162,7 +162,7 @@ RtlImageNtHeaderEx(IN ULONG Flags,
     if (DosHeader->e_magic != IMAGE_DOS_SIGNATURE)
     {
         /* Not a valid COFF */
-        DbgPrint("Not an MZ file\n");
+        //DbgPrint("Not an MZ file\n");
         return STATUS_INVALID_IMAGE_FORMAT;
     }
 

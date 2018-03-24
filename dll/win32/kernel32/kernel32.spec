@@ -1304,3 +1304,7 @@
 @ stub AppPolicyGetShowDeveloperDiagnostic
 @ stub AppPolicyGetThreadInitializationType
 @ stub AppPolicyGetWindowingModel
+
+@ stdcall PathCchAddBackslash(wstr long)
+@ stdcall PathCchAddBackslashEx(wstr long ptr ptr) 
+@ stdcall PathCchCombineEx(ptr long ptr ptr long)

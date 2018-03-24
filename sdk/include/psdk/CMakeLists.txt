@@ -5,6 +5,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 list(APPEND SOURCE
 #   access.idl
+	activation.idl
     activaut.idl
     activdbg.idl
     activscp.idl
@@ -79,6 +80,7 @@ list(APPEND SOURCE
     htiface.idl
     htiframe.idl
     httprequest.idl
+	hstring.idl
 	gameux.idl
     iads.idl
     icftypes.idl
@@ -87,6 +89,7 @@ list(APPEND SOURCE
     indexsrv.idl
     inputscope.idl
     inseng.idl
+	inspectable.idl
     metahost.idl
     mimeinfo.idl
     mimeole.idl
@@ -120,6 +123,7 @@ list(APPEND SOURCE
     propsys.idl
     pstore.idl
     richole.idl
+	roparameterizediid.idl
 #   row.idl
 #   rowchg.idl
 #   rstbas.idl

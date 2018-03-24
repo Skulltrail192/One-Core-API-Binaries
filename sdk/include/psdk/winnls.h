@@ -680,7 +680,9 @@ CompareStringW(
   _In_ int cchCount1,
   _In_reads_(cchCount2) LPCWSTR lpString2,
   _In_ int cchCount2);
-
+  
+  
+INT WINAPI CompareStringOrdinal(const WCHAR *,INT,const WCHAR *,INT,BOOL);
 LCID WINAPI ConvertDefaultLocale(_In_ LCID);
 BOOL WINAPI EnumCalendarInfoA(_In_ CALINFO_ENUMPROCA, _In_ LCID, _In_ CALID, _In_ CALTYPE);
 BOOL WINAPI EnumCalendarInfoW(_In_ CALINFO_ENUMPROCW, _In_ LCID, _In_ CALID, _In_ CALTYPE);

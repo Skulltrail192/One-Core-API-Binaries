@@ -853,4 +853,26 @@ typedef struct _TOKEN_APPCONTAINER_INFORMATION {
 
 RTL_CRITICAL_SECTION TIME_tz_section;
 
+RTL_CRITICAL_SECTION LocaleCritSection;
+
 HANDLE GlobalKeyedEventHandle;
+
+NTSTATUS
+NTAPI
+NtAccessCheckByTypeAndAuditAlarm(
+    _In_ PUNICODE_STRING SubsystemName,
+    _In_opt_ PVOID HandleId,
+    _In_ PUNICODE_STRING ObjectTypeName,
+    _In_ PUNICODE_STRING ObjectName,
+    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
+    _In_opt_ PSID PrincipalSelfSid,
+    _In_ ACCESS_MASK DesiredAccess,
+    _In_ AUDIT_EVENT_TYPE AuditType,
+    _In_ ULONG Flags,
+    _In_reads_opt_(ObjectTypeLength) POBJECT_TYPE_LIST ObjectTypeList,
+    _In_ ULONG ObjectTypeLength,
+    _In_ PGENERIC_MAPPING GenericMapping,
+    _In_ BOOLEAN ObjectCreation,
+    _Out_ PACCESS_MASK GrantedAccess,
+    _Out_ PNTSTATUS AccessStatus,
+    _Out_ PBOOLEAN GenerateOnClose);

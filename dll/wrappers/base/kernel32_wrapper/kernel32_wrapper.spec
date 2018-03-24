@@ -365,10 +365,10 @@
 @ stdcall GetMailslotInfo(long ptr ptr ptr ptr)
 @ stdcall GetModuleFileNameA(long ptr long)
 @ stdcall GetModuleFileNameW(long ptr long)
-@ stdcall GetModuleHandleA(str)
+@ stdcall GetModuleHandleA(str) GetModuleHandleInternalA
 @ stdcall GetModuleHandleExA(long str ptr)
 @ stdcall GetModuleHandleExW(long wstr ptr)
-@ stdcall GetModuleHandleW(wstr)
+@ stdcall GetModuleHandleW(wstr) GetModuleHandleInternalW
 @ stdcall GetNamedPipeHandleStateA(long ptr ptr ptr ptr str long)
 @ stdcall GetNamedPipeHandleStateW(long ptr ptr ptr ptr wstr long)
 @ stdcall GetNamedPipeInfo(long ptr ptr ptr ptr)
@@ -397,7 +397,7 @@
 @ stdcall GetPrivateProfileStringW(wstr wstr wstr ptr long wstr)
 @ stdcall GetPrivateProfileStructA (str str ptr long str)
 @ stdcall GetPrivateProfileStructW(wstr wstr ptr long wstr)
-@ stdcall GetProcAddress(long str)
+@ stdcall GetProcAddress(long str) GetProcAddressInternal
 @ stdcall GetProcessAffinityMask(ptr ptr ptr)
 @ stdcall GetProcessHandleCount(long ptr)
 @ stdcall -norelay GetProcessHeap()
@@ -567,8 +567,8 @@
 @ stdcall LZSeek(long long long)
 @ stdcall LZStart()
 @ stdcall LeaveCriticalSection(ptr) ntext.RtlLeaveCriticalSection
-@ stdcall LoadLibraryA(str)
-@ stdcall LoadLibraryW(wstr)
+@ stdcall LoadLibraryA(str) LoadLibraryInternalA
+@ stdcall LoadLibraryW(wstr) LoadLibraryInternalW
 @ stdcall LoadModule(str ptr)
 @ stdcall LoadResource(long long)
 @ stdcall LocalAlloc(long long)
@@ -1036,7 +1036,7 @@
 @ stdcall GetNumaProcessorMap(ptr long ptr) kernelfull.GetNumaProcessorMap
 @ stdcall NumaVirtualQueryNode(long long long long) kernelfull.NumaVirtualQueryNode
 
-; #Vista Functions 
+#Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) ntext.RtlAcquireSRWLockExclusive
 @ stdcall AcquireSRWLockShared(ptr) ntext.RtlAcquireSRWLockShared
 @ stdcall ApplicationRecoveryFinished(long)
@@ -1065,7 +1065,7 @@
 @ stdcall CreateSemaphoreExA(ptr long long str ptr long) 
 @ stdcall CreateSemaphoreExW(ptr long long wstr ptr long)  
 @ stdcall CreateSymbolicLinkA(str str long)
-@ stdcall CreateSymbolicLinkW(wstr wstr long)
+@ stdcall CreateSymbolicLinkW(wstr wstr long) ;EXPERIMENTAL
 @ stdcall CreateThreadpool(ptr)
 @ stdcall CreateThreadpoolCleanupGroup()
 @ stdcall CreateThreadpoolTimer(ptr ptr ptr)
@@ -1118,6 +1118,7 @@
 @ stdcall GetOSProductNameW(wstr long long)
 @ stdcall GetPhysicallyInstalledSystemMemory(ptr)
 @ stdcall GetProductInfo(long long long long ptr) 
+@ stub GetStringScripts
 @ stdcall GetSystemDefaultLocaleName(ptr long)
 @ stdcall GetSystemPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetThreadErrorMode()
@@ -1134,7 +1135,7 @@
 @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
 @ stdcall InitializeConditionVariable(ptr) ntext.RtlInitializeConditionVariable
-@ stdcall InitializeCriticalSectionEx(ptr long long) 
+@ stdcall InitializeCriticalSectionEx(ptr long long) ;EXPERIMENTAL
 @ stdcall InitializeSRWLock(ptr) ntext.RtlInitializeSRWLock
 @ stdcall InitOnceBeginInitialize(ptr long ptr ptr)
 @ stdcall InitOnceComplete(ptr long ptr)
@@ -1268,8 +1269,15 @@
 @ stdcall GetPackageFullName(long ptr ptr)
 @ stdcall GetSystemTimePreciseAsFileTime(ptr)
 @ stdcall InitializeSynchronizationBarrier(ptr long long)
-@ stdcall PathCchAddBackslash(wstr long) 
+@ stdcall PathCchAddBackslash(wstr long)
 @ stdcall PathCchAddBackslashEx(wstr long ptr ptr) 
+@ stub PathCchAddExtension
+@ stub PathCchAppend
+@ stub PathCchAppendEx
+@ stub PathCchCanonicalize
+@ stub PathCchCanonicalizeEx
+@ stub PathCchCombine
+@ stdcall PathCchCombineEx(ptr long ptr ptr long)
 @ stdcall RemoveDllDirectory(ptr)
 @ stdcall SetDefaultDllDirectories(long)
 @ stdcall WerpNotifyLoadStringResourceWorker(ptr wstr ptr long) WerpNotifyLoadStringResource

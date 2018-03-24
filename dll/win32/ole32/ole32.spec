@@ -328,3 +328,6 @@
 @ stub CoTestCancel
 @ stub CoInvalidateRemoteMachineBindings
 @ stub CoSetCancelObject
+@ stdcall CoGetApartmentType(ptr ptr)
+@ stdcall CoGetActivationState(int128 long ptr)
+@ stdcall CoGetCallState(long ptr)f

@@ -165,3 +165,28 @@ HRESULT WINAPI PathCchAddBackslashEx(WCHAR *path, SIZE_T size, WCHAR **endptr, S
 
     return S_OK;
 }
+
+/***********************************************************************
+ *          PathCchCombineEx (KERNELBASE.@)
+ */
+HRESULT WINAPI PathCchCombineEx(WCHAR *out, SIZE_T size, const WCHAR *path1, const WCHAR *path2, DWORD flags)
+{
+    WCHAR result[MAX_PATH];
+
+    FIXME("(%p, %lu, %s, %s, %x): semi-stub\n", out, size, wine_dbgstr_w(path1), wine_dbgstr_w(path2), flags);
+
+    if (!out || !size) return E_INVALIDARG;
+    if (flags) FIXME("Flags %x not supported\n", flags);
+
+    // if (!PathCombineW(result, path1, path2))
+        // return E_INVALIDARG;
+
+    if (strlenW(result) + 1 > size)
+    {
+        out[0] = 0;
+        return STRSAFE_E_INSUFFICIENT_BUFFER;
+    }
+
+    strcpyW(out, result);
+    return S_OK;
+}

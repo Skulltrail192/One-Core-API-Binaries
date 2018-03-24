@@ -1,3 +1,23 @@
+/*++
+
+Copyright (c) 2018 Shorthorn Project
+
+Module Name:
+
+    locale.c
+
+Abstract:
+
+    Test for locale functions
+
+Author:
+
+    Skulltrail 17-March-2018
+
+Revision History:
+
+--*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>

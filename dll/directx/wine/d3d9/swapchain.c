@@ -137,7 +137,7 @@ static HRESULT WINAPI DECLSPEC_HOTPATCH d3d9_swapchain_Present(IDirect3DSwapChai
 
     wined3d_mutex_lock();
     hr = wined3d_swapchain_present(swapchain->wined3d_swapchain,
-            src_rect, dst_rect, dst_window_override, flags);
+            src_rect, dst_rect, dst_window_override, 0, flags);
     wined3d_mutex_unlock();
 
     return hr;

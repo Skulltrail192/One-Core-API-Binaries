@@ -1243,8 +1243,8 @@ LCMapStringEx(
 
         if (srclen < 0) srclen = strlenW(src);
 
-        DbgPrint("(%s,0x%08x,%s,%d,%p,%d)\n",
-              debugstr_w(name), flags, debugstr_wn(src, srclen), srclen, dst, dstlen);
+        // DbgPrint("(%s,0x%08x,%s,%d,%p,%d)\n",
+              // debugstr_w(name), flags, debugstr_wn(src, srclen), srclen, dst, dstlen);
 
         ret = wine_get_sortkey(flags, src, srclen, (char *)dst, dstlen);
         if (ret == 0)
@@ -1556,7 +1556,7 @@ BOOL CALLBACK EnumLocalesProc(
 	return FALSE;
 }
 
-
+//MAYBE REMAKE
 /******************************************************************************
  *           EnumSystemLocalesEx  (KERNEL32.@)
  */
@@ -1738,6 +1738,21 @@ GetNLSVersion(
 	return TRUE;
 }
 
+INT 
+WINAPI 
+FindNLSStringEx(
+	const WCHAR *localename, 
+	DWORD flags, 
+	const WCHAR *src,
+    INT src_size, 
+	const WCHAR *value, 
+	INT value_size,
+    INT *found, 
+	NLSVERSIONINFO *version_info, 
+	void *reserved,
+    LPARAM sort_handle
+);
+
 int 
 WINAPI 
 FindNLSString(
@@ -1750,8 +1765,19 @@ FindNLSString(
   _Out_opt_  LPINT pcchFound
 )
 {
-	SetLastError(50);
-	return 0;
+	const WCHAR localename;
+	
+	LCIDToLocaleName(Locale, &localename, MAX_STRING_LEN, 0);
+	return FindNLSStringEx(&localename,
+						   dwFindNLSStringFlags,
+						   lpStringSource,
+						   cchSource,
+						   lpStringValue,
+						   cchValue,
+						   pcchFound,
+						   NULL,
+						   NULL,
+						   0);
 }
 
 /******************************************************************************

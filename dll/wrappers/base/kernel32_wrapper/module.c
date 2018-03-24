@@ -429,10 +429,16 @@ done:
 HMODULE 
 WINAPI 
 DECLSPEC_HOTPATCH
-LoadLibraryExInternalW(LPCWSTR libnameW, HANDLE hfile, DWORD flags)
+LoadLibraryExInternalW(
+	LPCWSTR libnameW, 
+	HANDLE hfile, 
+	DWORD flags
+)
 {
     UNICODE_STRING      wstr;
     HMODULE             res;
+	
+	DbgPrint("LoadLibraryExInternalW:: Module Name: %ws\n",libnameW);
 	
 	switch(flags){
 		case LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE:
@@ -519,11 +525,21 @@ WCHAR *FILE_name_AtoW( LPCSTR name, BOOL alloc )
  * ignore the parameter because it would be extremely difficult to
  * integrate this with different types of module representations.
  */
-HMODULE WINAPI DECLSPEC_HOTPATCH LoadLibraryExInternalA(LPCSTR libname, HANDLE hfile, DWORD flags)
+HMODULE 
+WINAPI 
+DECLSPEC_HOTPATCH 
+LoadLibraryExInternalA(
+	LPCSTR libname, 
+	HANDLE hfile, 
+	DWORD flags
+)
 {
     WCHAR *libnameW;
 
     if (!(libnameW = FILE_name_AtoW( libname, FALSE ))) return 0;
+	
+	DbgPrint("LoadLibraryExInternalA:: Module Name: %s\n",libname);	
+	
     return LoadLibraryExInternalW( libnameW, hfile, flags );
 }
 
@@ -594,4 +610,55 @@ BOOL WINAPI SetDefaultDllDirectories( DWORD flags )
     default_search_flags = flags;
 	DbgPrint("SetDefaultDllDirectories :: setting flags, return is TRUE\n");		
     return TRUE;
+}
+
+FARPROC 
+WINAPI 
+GetProcAddressInternal(
+  _In_ HMODULE hModule,
+  _In_ LPCSTR  lpProcName
+)
+{
+	DbgPrint("GetProcAddress::Function name: %s\n", lpProcName);
+	return GetProcAddress(hModule, lpProcName);
+}
+
+HMODULE 
+WINAPI 
+GetModuleHandleInternalA(
+  _In_opt_ LPCTSTR lpModuleName
+)
+{
+	DbgPrint("GetModuleHandleA::Module name: %s\n", lpModuleName);
+	return GetModuleHandleA(lpModuleName);
+}
+
+HMODULE 
+WINAPI 
+GetModuleHandleInternalW(
+  _In_opt_ LPCWSTR lpModuleName
+)
+{
+	DbgPrint("GetModuleHandleW::Module name: %ws\n", lpModuleName);
+	return GetModuleHandleW(lpModuleName);
+}
+
+HMODULE 
+WINAPI 
+LoadLibraryInternalA(
+  _In_ LPCTSTR lpFileName
+)
+{
+	DbgPrint("LoadLibraryA::File name: %s\n", lpFileName);
+	return LoadLibraryA(lpFileName);
+}
+
+HMODULE 
+WINAPI 
+LoadLibraryInternalW(
+  _In_ LPCWSTR lpFileName
+)
+{
+	DbgPrint("LoadLibraryW::File name: %ws\n", lpFileName);
+	return LoadLibraryW(lpFileName);
 }

@@ -176,3 +176,18 @@ BOOL WINAPI InitOnceExecuteOnce(
 {
 	return FALSE;
 }
+
+HRESULT WINAPI PathCchAddBackslash(WCHAR *path, SIZE_T size)
+{
+	return S_OK;
+}
+
+HRESULT WINAPI PathCchAddBackslashEx(WCHAR *path, SIZE_T size, WCHAR **endptr, SIZE_T *remaining)
+{
+	return S_OK;
+}
+
+HRESULT WINAPI PathCchCombineEx(WCHAR *out, SIZE_T size, const WCHAR *path1, const WCHAR *path2, DWORD flags)
+{
+	return S_OK;	
+}

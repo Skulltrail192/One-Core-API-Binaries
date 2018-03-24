@@ -672,8 +672,8 @@
 @ stdcall SynchronizeWindows31FilesAndWindowsNTRegistry(long long long long) advapibase.SynchronizeWindows31FilesAndWindowsNTRegistry  ;only on XP (needed for synchronization)
 
 #Missing on XP
-100 stdcall CreateProcessWithTokenW(ptr long wstr wstr long ptr wstr ptr ptr) ;advapinew.CreateProcessWithTokenW
-202 stdcall ElfReportEventAndSourceW(long long ptr long long long ptr ptr long long ptr ptr long ptr ptr) ;advapinew.ElfReportEventAndSourceW
+100 stdcall CreateProcessWithTokenW(ptr long wstr wstr long ptr wstr ptr ptr) ;advapibase.CreateProcessWithTokenW
+202 stdcall ElfReportEventAndSourceW(long long ptr long long long ptr ptr long long ptr ptr long ptr ptr) ;advapibase.ElfReportEventAndSourceW
 297 stdcall I_QueryTagInformation(long long ptr)
 462 stdcall RegConnectRegistryExA(str ptr long ptr)
 463 stdcall RegConnectRegistryExW(wstr ptr long ptr)	
@@ -684,9 +684,9 @@
 502 stdcall RegQueryReflectionKey(ptr ptr)	 ;native on Server 2003, but, missing on XP (needed for synchronization) 
 
 #Missing on Server 2003 RTM
-@ stdcall RegDisablePredefinedCacheEx() advapinew.RegDisablePredefinedCacheEx
-486 stdcall RegGetValueA(long str str long ptr ptr ptr) advapinew.RegGetValueA
-487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapinew.RegGetValueW
+@ stdcall RegDisablePredefinedCacheEx() advapibase.RegDisablePredefinedCacheEx
+486 stdcall RegGetValueA(long str str long ptr ptr ptr) advapibase.RegGetValueA
+487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapibase.RegGetValueW
 
 @ stdcall LogonUserExExW(str str str long long ptr ptr ptr ptr ptr ptr)
 
@@ -705,171 +705,171 @@
 @ stdcall AddMandatoryAce(ptr long long long ptr)
 @ stdcall ProcessIdleTasksW() ProcessIdleTasks
 
-#from Vista/Longhorn advapi32 (advapinew) 
-@ stdcall AddUsersToEncryptedFileEx(long long long long)
-@ stdcall AuditComputeEffectivePolicyBySid(ptr ptr long ptr)
-@ stdcall AuditComputeEffectivePolicyByToken(ptr ptr long ptr)
-@ stdcall AuditEnumerateCategories(ptr ptr)
-@ stdcall AuditEnumeratePerUserPolicy(ptr)
-@ stdcall AuditEnumerateSubCategories(ptr long ptr ptr)
-@ stdcall AuditFree(ptr)
-@ stdcall AuditLookupCategoryGuidFromCategoryId(ptr ptr)
-@ stdcall AuditLookupCategoryIdFromCategoryGuid(ptr ptr)
-@ stdcall AuditLookupCategoryNameA(ptr str)
-@ stdcall AuditLookupCategoryNameW(ptr wstr)
-@ stdcall AuditLookupSubCategoryNameA(ptr str)
-@ stdcall AuditLookupSubCategoryNameW(ptr str)
-@ stdcall AuditQueryPerUserPolicy(ptr ptr long ptr)
-@ stdcall AuditQuerySecurity(long ptr)
-@ stdcall AuditQuerySystemPolicy(ptr long ptr)
-@ stdcall AuditSetPerUserPolicy(ptr ptr long)
-@ stdcall AuditSetSecurity(ptr long)
-@ stdcall AuditSetSystemPolicy(ptr long)
-@ stdcall CheckAppInitBlockedServiceIdentity(long)
-@ stdcall CloseThreadWaitChainSession(ptr)
-@ stdcall ControlServiceExA(ptr long long ptr)
-@ stdcall ControlServiceExW(ptr long long ptr)
-@ stdcall CredBackupCredentials(long ptr ptr long long)
-@ stdcall CredEncryptAndMarshalBinaryBlob(long long long)
-@ stdcall CredFindBestCredentialA(str long long ptr) 
-@ stdcall CredFindBestCredentialW(wstr long long ptr)
-@ stdcall CredIsProtectedA(str ptr)
-@ stdcall CredIsProtectedW(wstr ptr)
-@ stdcall CredpConvertOneCredentialSize(long long)
-@ stdcall CredpEncodeSecret(long ptr long long long)
-@ stdcall CredProfileUnloaded()
-@ stdcall CredProtectA(long str long str long ptr)
-@ stdcall CredProtectW(long wstr long wstr long ptr)
-@ stdcall CredReadByTokenHandle(long ptr long long long)
-@ stdcall CredRestoreCredentials(ptr ptr long long)
-@ stdcall CredUnprotectA(long str long str ptr)
-@ stdcall CredUnprotectW(long wstr long wstr ptr)
-@ stdcall EnableTraceEx(ptr ptr int64 long long long long long long long ptr) 
-@ stdcall EnumerateTraceGuidsEx(long ptr long ptr long ptr)
-@ stdcall EventAccessControl(ptr long ptr long long)
-@ stdcall EventAccessQuery(ptr ptr ptr)
-@ stdcall EventAccessRemove(ptr)
-@ stdcall FlushEfsCache(ptr)
-@ stdcall FreeEncryptedFileMetadata(ptr)
-@ stdcall GetEncryptedFileMetadata(wstr ptr ptr)
-@ stdcall GetThreadWaitChain(ptr long long long ptr ptr ptr)
-@ stdcall I_ScQueryServiceConfig(long long long)
-@ stdcall I_ScSendPnPMessage(long long long long long)
-@ stdcall I_ScValidatePnPService(long long long)
-@ stdcall InitiateShutdownA(str str long long long)
-@ stdcall InitiateShutdownW(wstr wstr long long long)
-@ stdcall IsValidRelativeSecurityDescriptor(ptr long long)
-@ stdcall LsaManageSidNameMapping(long ptr ptr)
-@ stdcall NotifyServiceStatusChange(ptr long ptr) 
-@ stdcall NotifyServiceStatusChangeA(ptr long ptr) 
-@ stdcall NotifyServiceStatusChangeW(ptr long ptr) NotifyServiceStatusChange
-@ stdcall PerfAddCounters(ptr ptr long)
-@ stdcall PerfCloseQueryHandle(ptr)
-@ stdcall PerfCreateInstance(ptr ptr wstr long)
-@ stdcall PerfDecrementULongCounterValue(ptr ptr long long)
-@ stdcall PerfDecrementULongLongCounterValue(ptr ptr long long long)
-@ stdcall PerfDeleteCounters(ptr ptr long)
-@ stdcall PerfDeleteInstance(ptr ptr)
-@ stdcall PerfEnumerateCounterSet(long ptr long long)
-@ stdcall PerfEnumerateCounterSetInstances(long ptr ptr long long)
-@ stdcall PerfIncrementULongCounterValue(ptr ptr long long)
-@ stdcall PerfIncrementULongLongCounterValue(ptr ptr long long long)
-@ stdcall PerfQueryInstance(ptr ptr wstr long)
-@ stdcall PerfOpenQueryHandle(long ptr)
-@ stdcall PerfQueryCounterData(ptr ptr long long)
-@ stdcall PerfQueryCounterInfo(ptr ptr long long)
-@ stdcall PerfQueryCounterSetRegistrationInfo(long long long long long long long)
-@ stdcall PerfSetCounterSetInfo(ptr ptr long)
-@ stdcall PerfSetCounterRefValue(ptr ptr long ptr)
-@ stdcall PerfSetULongCounterValue(ptr ptr long long)
-@ stdcall PerfSetULongLongCounterValue(ptr ptr long long long)
-@ stdcall PerfStartProvider(ptr ptr ptr)
-@ stdcall PerfStartProviderEx(ptr ptr ptr)
-@ stdcall PerfStopProvider(ptr)
-@ stdcall QuerySecurityAccessMask(long ptr)
-@ stdcall OpenThreadWaitChainSession(long ptr)
-@ stdcall RegCopyTreeA(ptr str ptr)
-@ stdcall RegCopyTreeW(ptr str ptr)
-@ stdcall RegCreateKeyExA(ptr str long ptr long long ptr ptr ptr) 
-@ stdcall RegCreateKeyExW(ptr wstr long ptr long long ptr ptr ptr) 
-@ stdcall RegCreateKeyTransactedA(ptr str long str long long ptr ptr ptr ptr ptr)
-@ stdcall RegCreateKeyTransactedW(ptr wstr long wstr long long ptr ptr ptr ptr ptr)
-@ stdcall RegDeleteKeyTransactedA(ptr str long long ptr ptr)
-@ stdcall RegDeleteKeyTransactedW(ptr wstr long long ptr ptr)
-@ stdcall RegDeleteKeyValueA(ptr str str)
-@ stdcall RegDeleteKeyValueW(ptr wstr wstr) 
-@ stdcall RegDeleteTreeA(long str)
+; #from Vista/Longhorn advapi32 (advapinew) 
+; @ stdcall AddUsersToEncryptedFileEx(long long long long)
+; @ stdcall AuditComputeEffectivePolicyBySid(ptr ptr long ptr)
+; @ stdcall AuditComputeEffectivePolicyByToken(ptr ptr long ptr)
+; @ stdcall AuditEnumerateCategories(ptr ptr)
+; @ stdcall AuditEnumeratePerUserPolicy(ptr)
+; @ stdcall AuditEnumerateSubCategories(ptr long ptr ptr)
+; @ stdcall AuditFree(ptr)
+; @ stdcall AuditLookupCategoryGuidFromCategoryId(ptr ptr)
+; @ stdcall AuditLookupCategoryIdFromCategoryGuid(ptr ptr)
+; @ stdcall AuditLookupCategoryNameA(ptr str)
+; @ stdcall AuditLookupCategoryNameW(ptr wstr)
+; @ stdcall AuditLookupSubCategoryNameA(ptr str)
+; @ stdcall AuditLookupSubCategoryNameW(ptr str)
+; @ stdcall AuditQueryPerUserPolicy(ptr ptr long ptr)
+; @ stdcall AuditQuerySecurity(long ptr)
+; @ stdcall AuditQuerySystemPolicy(ptr long ptr)
+; @ stdcall AuditSetPerUserPolicy(ptr ptr long)
+; @ stdcall AuditSetSecurity(ptr long)
+; @ stdcall AuditSetSystemPolicy(ptr long)
+; @ stdcall CheckAppInitBlockedServiceIdentity(long)
+; @ stdcall CloseThreadWaitChainSession(ptr)
+; @ stdcall ControlServiceExA(ptr long long ptr)
+; @ stdcall ControlServiceExW(ptr long long ptr)
+; @ stdcall CredBackupCredentials(long ptr ptr long long)
+; @ stdcall CredEncryptAndMarshalBinaryBlob(long long long)
+; @ stdcall CredFindBestCredentialA(str long long ptr) 
+; @ stdcall CredFindBestCredentialW(wstr long long ptr)
+; @ stdcall CredIsProtectedA(str ptr)
+; @ stdcall CredIsProtectedW(wstr ptr)
+; @ stdcall CredpConvertOneCredentialSize(long long)
+; @ stdcall CredpEncodeSecret(long ptr long long long)
+; @ stdcall CredProfileUnloaded()
+; @ stdcall CredProtectA(long str long str long ptr)
+; @ stdcall CredProtectW(long wstr long wstr long ptr)
+; @ stdcall CredReadByTokenHandle(long ptr long long long)
+; @ stdcall CredRestoreCredentials(ptr ptr long long)
+; @ stdcall CredUnprotectA(long str long str ptr)
+; @ stdcall CredUnprotectW(long wstr long wstr ptr)
+; @ stdcall EnableTraceEx(ptr ptr int64 long long long long long long long ptr) 
+; @ stdcall EnumerateTraceGuidsEx(long ptr long ptr long ptr)
+; @ stdcall EventAccessControl(ptr long ptr long long)
+; @ stdcall EventAccessQuery(ptr ptr ptr)
+; @ stdcall EventAccessRemove(ptr)
+; @ stdcall FlushEfsCache(ptr)
+; @ stdcall FreeEncryptedFileMetadata(ptr)
+; @ stdcall GetEncryptedFileMetadata(wstr ptr ptr)
+; @ stdcall GetThreadWaitChain(ptr long long long ptr ptr ptr)
+; @ stdcall I_ScQueryServiceConfig(long long long)
+; @ stdcall I_ScSendPnPMessage(long long long long long)
+; @ stdcall I_ScValidatePnPService(long long long)
+; @ stdcall InitiateShutdownA(str str long long long)
+; @ stdcall InitiateShutdownW(wstr wstr long long long)
+; @ stdcall IsValidRelativeSecurityDescriptor(ptr long long)
+; @ stdcall LsaManageSidNameMapping(long ptr ptr)
+; @ stdcall NotifyServiceStatusChange(ptr long ptr) 
+; @ stdcall NotifyServiceStatusChangeA(ptr long ptr) 
+; @ stdcall NotifyServiceStatusChangeW(ptr long ptr) NotifyServiceStatusChange
+; @ stdcall PerfAddCounters(ptr ptr long)
+; @ stdcall PerfCloseQueryHandle(ptr)
+; @ stdcall PerfCreateInstance(ptr ptr wstr long)
+; @ stdcall PerfDecrementULongCounterValue(ptr ptr long long)
+; @ stdcall PerfDecrementULongLongCounterValue(ptr ptr long long long)
+; @ stdcall PerfDeleteCounters(ptr ptr long)
+; @ stdcall PerfDeleteInstance(ptr ptr)
+; @ stdcall PerfEnumerateCounterSet(long ptr long long)
+; @ stdcall PerfEnumerateCounterSetInstances(long ptr ptr long long)
+; @ stdcall PerfIncrementULongCounterValue(ptr ptr long long)
+; @ stdcall PerfIncrementULongLongCounterValue(ptr ptr long long long)
+; @ stdcall PerfQueryInstance(ptr ptr wstr long)
+; @ stdcall PerfOpenQueryHandle(long ptr)
+; @ stdcall PerfQueryCounterData(ptr ptr long long)
+; @ stdcall PerfQueryCounterInfo(ptr ptr long long)
+; @ stdcall PerfQueryCounterSetRegistrationInfo(long long long long long long long)
+; @ stdcall PerfSetCounterSetInfo(ptr ptr long)
+; @ stdcall PerfSetCounterRefValue(ptr ptr long ptr)
+; @ stdcall PerfSetULongCounterValue(ptr ptr long long)
+; @ stdcall PerfSetULongLongCounterValue(ptr ptr long long long)
+; @ stdcall PerfStartProvider(ptr ptr ptr)
+; @ stdcall PerfStartProviderEx(ptr ptr ptr)
+; @ stdcall PerfStopProvider(ptr)
+; @ stdcall QuerySecurityAccessMask(long ptr)
+; @ stdcall OpenThreadWaitChainSession(long ptr)
+; @ stdcall RegCopyTreeA(ptr str ptr)
+; @ stdcall RegCopyTreeW(ptr str ptr)
+; @ stdcall RegCreateKeyExA(ptr str long ptr long long ptr ptr ptr) 
+; @ stdcall RegCreateKeyExW(ptr wstr long ptr long long ptr ptr ptr) 
+; @ stdcall RegCreateKeyTransactedA(ptr str long str long long ptr ptr ptr ptr ptr)
+; @ stdcall RegCreateKeyTransactedW(ptr wstr long wstr long long ptr ptr ptr ptr ptr)
+; @ stdcall RegDeleteKeyTransactedA(ptr str long long ptr ptr)
+; @ stdcall RegDeleteKeyTransactedW(ptr wstr long long ptr ptr)
+; @ stdcall RegDeleteKeyValueA(ptr str str)
+; @ stdcall RegDeleteKeyValueW(ptr wstr wstr) 
+; @ stdcall RegDeleteTreeA(long str)
 @ stdcall RegDeleteTreeW(long wstr)
-@ stdcall RegisterWaitChainCOMCallback(ptr ptr)
-@ stdcall RegLoadAppKeyA(str ptr long long long)
-@ stdcall RegLoadAppKeyW(wstr ptr long long long)
-@ stdcall RegLoadKeyA(ptr str str)
-@ stdcall RegLoadKeyW(ptr wstr wstr)
-@ stdcall RegLoadMUIStringA(ptr str str long ptr long str)
-@ stdcall RegLoadMUIStringW(ptr str str long ptr long str)
-@ stdcall RegOpenKeyTransactedA(ptr str long long ptr ptr ptr)
-@ stdcall RegOpenKeyTransactedW(ptr wstr long long ptr ptr ptr)
-@ stdcall RegRenameKey(ptr wstr wstr)
-@ stdcall RegSetKeyValueA(ptr str str long ptr long)
-@ stdcall RegSetKeyValueW(ptr wstr wstr long ptr long)
-@ stdcall SetEncryptedFileMetadata(wstr ptr ptr ptr long ptr)
-@ stdcall SetSecurityAccessMask(long ptr)
-@ stdcall SetUserFileEncryptionKeyEx(ptr long long ptr)
-@ stdcall TreeSetNamedSecurityInfoA(str long long ptr ptr ptr ptr long)
-@ stdcall TreeSetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr long)
-@ stdcall UsePinForEncryptedFilesA(long long long)
-@ stdcall UsePinForEncryptedFilesW(long long long)
+; @ stdcall RegisterWaitChainCOMCallback(ptr ptr)
+; @ stdcall RegLoadAppKeyA(str ptr long long long)
+; @ stdcall RegLoadAppKeyW(wstr ptr long long long)
+; @ stdcall RegLoadKeyA(ptr str str)
+; @ stdcall RegLoadKeyW(ptr wstr wstr)
+; @ stdcall RegLoadMUIStringA(ptr str str long ptr long str)
+; @ stdcall RegLoadMUIStringW(ptr str str long ptr long str)
+; @ stdcall RegOpenKeyTransactedA(ptr str long long ptr ptr ptr)
+; @ stdcall RegOpenKeyTransactedW(ptr wstr long long ptr ptr ptr)
+; @ stdcall RegRenameKey(ptr wstr wstr)
+; @ stdcall RegSetKeyValueA(ptr str str long ptr long)
+; @ stdcall RegSetKeyValueW(ptr wstr wstr long ptr long)
+; @ stdcall SetEncryptedFileMetadata(wstr ptr ptr ptr long ptr)
+; @ stdcall SetSecurityAccessMask(long ptr)
+; @ stdcall SetUserFileEncryptionKeyEx(ptr long long ptr)
+; @ stdcall TreeSetNamedSecurityInfoA(str long long ptr ptr ptr ptr long)
+; @ stdcall TreeSetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr long)
+; @ stdcall UsePinForEncryptedFilesA(long long long)
+; @ stdcall UsePinForEncryptedFilesW(long long long)
 
-#Imports from wevtapibase (wevtapi from Longhorn Pre-Reset)
-@ stdcall EvtAssertConfig() wevtapibase.EvtIntAssertConfig
-@ stdcall EvtClearLog() wevtapibase.EvtIntClearLog
-@ stdcall EvtClose() wevtapibase.EvtIntClose
-@ stdcall EvtCompileTemplate() wevtapibase.EvtIntCompileTemplate
-@ stdcall EvtCreateBookmark() wevtapibase.EvtIntCreateBookmark
-@ stdcall EvtCreateMessageRenderContext() wevtapibase.EvtIntCreateMessageRenderContext
-@ stdcall EvtCreateValuesRenderContext() wevtapibase.EvtIntCreateValuesRenderContext
-@ stdcall EvtDeleteChannelConfig() wevtapibase.EvtIntDeleteChannelConfig
-@ stdcall EvtExportLog() wevtapibase.EvtIntExportLog
-@ stdcall EvtGetChannelConfigProperty() wevtapibase.EvtIntGetChannelConfigProperty
-@ stdcall EvtGetEventMetadataProperty() wevtapibase.EvtIntGetEventMetadataProperty
-@ stdcall EvtGetExtendedStatus() wevtapibase.EvtIntGetExtendedStatus
-@ stdcall EvtGetMatchedQueryIds() wevtapibase.EvtIntGetMatchedQueryIds
-@ stdcall EvtGetNamedObjectInformation() wevtapibase.EvtIntGetNamedObjectInformation
-@ stdcall EvtGetPublisherMetadataProperty() wevtapibase.EvtIntGetPublisherMetadataProperty
-@ stdcall EvtNext() wevtapibase.EvtIntNext
-@ stdcall EvtNextBatch() wevtapibase.EvtIntNextBatch
-@ stdcall EvtNextChannelPath() wevtapibase.EvtIntNextChannelPath
-@ stdcall EvtNextEventMetadata() wevtapibase.EvtIntNextEventMetadata
-@ stdcall EvtNextPublisherId() wevtapibase.EvtIntNextPublisherId
-@ stdcall EvtOpenChannelConfig() wevtapibase.EvtIntOpenChannelConfig
-@ stdcall EvtOpenChannelEnum() wevtapibase.EvtIntOpenChannelEnum
-@ stdcall EvtOpenEventMetadataEnum() wevtapibase.EvtIntOpenEventMetadataEnum
-@ stdcall EvtOpenPublisherEnum() wevtapibase.EvtIntOpenPublisherEnum
-@ stdcall EvtOpenPublisherMetadata() wevtapibase.EvtIntOpenPublisherMetadata
-@ stdcall EvtQueryLog() wevtapibase.EvtIntQueryLog
-@ stdcall EvtRegisterSubscription() wevtapibase.EvtIntRegisterSubscription
-@ stdcall EvtRender() wevtapibase.EvtIntRender
-@ stdcall EvtRenderBookmark() wevtapibase.EvtIntRenderBookmark
-@ stdcall EvtRetractConfig() wevtapibase.EvtIntRetractConfig
-@ stdcall EvtSaveChannelConfig() wevtapibase.EvtIntSaveChannelConfig
-@ stdcall EvtSeek() wevtapibase.EvtIntSeek
-@ stdcall EvtSetChannelConfigProperty() wevtapibase.EvtIntSetChannelConfigProperty
-@ stdcall EvtUpdateBookmark() wevtapibase.EvtIntUpdateBookmark
-@ stdcall EvtUpdateSubscription() wevtapibase.EvtIntUpdateSubscription
+; #Imports from wevtapibase (wevtapi from Longhorn Pre-Reset)
+; @ stdcall EvtAssertConfig() wevtapibase.EvtIntAssertConfig
+; @ stdcall EvtClearLog() wevtapibase.EvtIntClearLog
+; @ stdcall EvtClose() wevtapibase.EvtIntClose
+; @ stdcall EvtCompileTemplate() wevtapibase.EvtIntCompileTemplate
+; @ stdcall EvtCreateBookmark() wevtapibase.EvtIntCreateBookmark
+; @ stdcall EvtCreateMessageRenderContext() wevtapibase.EvtIntCreateMessageRenderContext
+; @ stdcall EvtCreateValuesRenderContext() wevtapibase.EvtIntCreateValuesRenderContext
+; @ stdcall EvtDeleteChannelConfig() wevtapibase.EvtIntDeleteChannelConfig
+; @ stdcall EvtExportLog() wevtapibase.EvtIntExportLog
+; @ stdcall EvtGetChannelConfigProperty() wevtapibase.EvtIntGetChannelConfigProperty
+; @ stdcall EvtGetEventMetadataProperty() wevtapibase.EvtIntGetEventMetadataProperty
+; @ stdcall EvtGetExtendedStatus() wevtapibase.EvtIntGetExtendedStatus
+; @ stdcall EvtGetMatchedQueryIds() wevtapibase.EvtIntGetMatchedQueryIds
+; @ stdcall EvtGetNamedObjectInformation() wevtapibase.EvtIntGetNamedObjectInformation
+; @ stdcall EvtGetPublisherMetadataProperty() wevtapibase.EvtIntGetPublisherMetadataProperty
+; @ stdcall EvtNext() wevtapibase.EvtIntNext
+; @ stdcall EvtNextBatch() wevtapibase.EvtIntNextBatch
+; @ stdcall EvtNextChannelPath() wevtapibase.EvtIntNextChannelPath
+; @ stdcall EvtNextEventMetadata() wevtapibase.EvtIntNextEventMetadata
+; @ stdcall EvtNextPublisherId() wevtapibase.EvtIntNextPublisherId
+; @ stdcall EvtOpenChannelConfig() wevtapibase.EvtIntOpenChannelConfig
+; @ stdcall EvtOpenChannelEnum() wevtapibase.EvtIntOpenChannelEnum
+; @ stdcall EvtOpenEventMetadataEnum() wevtapibase.EvtIntOpenEventMetadataEnum
+; @ stdcall EvtOpenPublisherEnum() wevtapibase.EvtIntOpenPublisherEnum
+; @ stdcall EvtOpenPublisherMetadata() wevtapibase.EvtIntOpenPublisherMetadata
+; @ stdcall EvtQueryLog() wevtapibase.EvtIntQueryLog
+; @ stdcall EvtRegisterSubscription() wevtapibase.EvtIntRegisterSubscription
+; @ stdcall EvtRender() wevtapibase.EvtIntRender
+; @ stdcall EvtRenderBookmark() wevtapibase.EvtIntRenderBookmark
+; @ stdcall EvtRetractConfig() wevtapibase.EvtIntRetractConfig
+; @ stdcall EvtSaveChannelConfig() wevtapibase.EvtIntSaveChannelConfig
+; @ stdcall EvtSeek() wevtapibase.EvtIntSeek
+; @ stdcall EvtSetChannelConfigProperty() wevtapibase.EvtIntSetChannelConfigProperty
+; @ stdcall EvtUpdateBookmark() wevtapibase.EvtIntUpdateBookmark
+; @ stdcall EvtUpdateSubscription() wevtapibase.EvtIntUpdateSubscription
 
-#Imports from advapilong (advapi32 from Longhorn Pre-Reset)
-@ stdcall EvtGetThreadCorrelationId()
-@ stdcall EvtIsActive()
-@ stdcall EvtRegisterPublisher()
-@ stdcall EvtRegisterSubscriber()
-@ stdcall EvtReport()
-@ stdcall EvtReportText()
-@ stdcall EvtScopePublisher()
-@ stdcall EvtSetThreadCorrelationId()
+; #Imports from advapilong (advapi32 from Longhorn Pre-Reset)
+; @ stdcall EvtGetThreadCorrelationId()
+; @ stdcall EvtIsActive()
+; @ stdcall EvtRegisterPublisher()
+; @ stdcall EvtRegisterSubscriber()
+; @ stdcall EvtReport()
+; @ stdcall EvtReportText()
+; @ stdcall EvtScopePublisher()
+; @ stdcall EvtSetThreadCorrelationId()
 
-#Win7+
-@ stdcall EnableTraceEx2(int64 ptr long long int64 int64 long ptr)
-@ stdcall LsaLookupSids2(ptr long long ptr ptr ptr)
+; #Win7+
+; @ stdcall EnableTraceEx2(int64 ptr long long int64 int64 long ptr)
+; @ stdcall LsaLookupSids2(ptr long long ptr ptr ptr)
 
 101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr) CreateRestrictedTokenInternal
 284 stdcall GetTokenInformation(ptr long ptr long ptr) GetTokenInformationInternal

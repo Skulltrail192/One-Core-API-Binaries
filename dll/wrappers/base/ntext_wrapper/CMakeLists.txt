@@ -11,14 +11,15 @@ include_directories(${REACTOS_SOURCE_DIR}/sdk/include/ndk)
 spec2def(ntext.dll ntext.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
-	alpc.c
 	crypt.c
     main.c
-	ntapi.c
 	sqm.c
 	misc.c
 	etw/etw.c	
     etw/trace.c	####### this is a only test ########
+	ntapi/alpc.c	
+	ntapi/hooks.c	
+	ntapi/ntapi.c	
 	ldr/ldrapi.c
 	ldr/loader.c
 	rtl/acl.c

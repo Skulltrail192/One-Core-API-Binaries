@@ -1,4 +1,0 @@
-MODULE    = rstrtmgr.dll
-
-C_SRCS = \
-	main.c

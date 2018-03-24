@@ -337,6 +337,8 @@
 
 #win7 functions
 @ stdcall CoGetApartmentType(ptr ptr)
+@ stdcall CoGetActivationState(int128 long ptr)
+@ stdcall CoGetCallState(long ptr)
 
 #for WinXP
 @ stdcall ComPs_CStdStubBuffer_AddRef(ptr) olebase.ComPs_CStdStubBuffer_AddRef
