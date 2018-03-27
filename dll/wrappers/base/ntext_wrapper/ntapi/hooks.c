@@ -81,103 +81,143 @@ NtQueryInformationTokenInternal(
 	ULONG tokeninfolength,
 	PULONG retlen )
 {
-	return NtQueryInformationToken(token,
-										   tokeninfoclass,
-										   tokeninfo,
-										   tokeninfolength,
-										   retlen);
-	// NTSTATUS status = STATUS_SUCCESS;
+    static const ULONG info_len [] =
+    {
+        0,
+        0,    /* TokenUser */
+        0,    /* TokenGroups */
+        0,    /* TokenPrivileges */
+        0,    /* TokenOwner */
+        0,    /* TokenPrimaryGroup */
+        0,    /* TokenDefaultDacl */
+        sizeof(TOKEN_SOURCE), /* TokenSource */
+        sizeof(TOKEN_TYPE),  /* TokenType */
+        sizeof(SECURITY_IMPERSONATION_LEVEL), /* TokenImpersonationLevel */
+        sizeof(TOKEN_STATISTICS), /* TokenStatistics */
+        0,    /* TokenRestrictedSids */
+        sizeof(DWORD), /* TokenSessionId */
+        0,    /* TokenGroupsAndPrivileges */
+        0,    /* TokenSessionReference */
+        0,    /* TokenSandBoxInert */
+        0,    /* TokenAuditPolicy */
+        0,    /* TokenOrigin */
+        sizeof(TOKEN_ELEVATION_TYPE), /* TokenElevationType */
+        0,    /* TokenLinkedToken */
+        sizeof(TOKEN_ELEVATION), /* TokenElevation */
+        0,    /* TokenHasRestrictions */
+        0,    /* TokenAccessInformation */
+        0,    /* TokenVirtualizationAllowed */
+        0,    /* TokenVirtualizationEnabled */
+        sizeof(TOKEN_MANDATORY_LABEL) + sizeof(SID), /* TokenIntegrityLevel [sizeof(SID) includes one SubAuthority] */
+        0,    /* TokenUIAccess */
+        0,    /* TokenMandatoryPolicy */
+        0,    /* TokenLogonSid */
+        sizeof(DWORD), /* TokenIsAppContainer */
+        0,    /* TokenCapabilities */
+        sizeof(TOKEN_APPCONTAINER_INFORMATION) + sizeof(SID), /* TokenAppContainerSid */
+        0,    /* TokenAppContainerNumber */
+        0,    /* TokenUserClaimAttributes*/
+        0,    /* TokenDeviceClaimAttributes */
+        0,    /* TokenRestrictedUserClaimAttributes */
+        0,    /* TokenRestrictedDeviceClaimAttributes */
+        0,    /* TokenDeviceGroups */
+        0,    /* TokenRestrictedDeviceGroups */
+        0,    /* TokenSecurityAttributes */
+        0,    /* TokenIsRestricted */
+        0     /* TokenProcessTrustLevel */
+    };
+
+    ULONG len = 0;
+    NTSTATUS status = STATUS_SUCCESS;
+
+    if (tokeninfoclass < MaxTokenInfoClass)
+        len = info_len[tokeninfoclass];
+
+    if (retlen) *retlen = len;
+
+    if (tokeninfolength < len)
+        return STATUS_BUFFER_TOO_SMALL;
 	
-	// switch(tokeninfoclass){
-		// case TokenElevationType:
-			// {
-				// // const char *str = getenv("STAGING_ELEVATIONTYPE");
-		
-					// // TOKEN_ELEVATION_TYPE *elevation_type = tokeninfo;
-					// // FIXME("QueryInformationToken( ..., TokenElevationType, ...) semi-stub. If the application complains that\n"
-						  // // "it should be run as normal user, set the STAGING_ELEVATIONTYPE environmentvariable to Default\n");
-		
-					// // if( str && !strcmp(str, "Default"))
-						// // *elevation_type = TokenElevationTypeDefault;
-					// // else 
-						// // *elevation_type = TokenElevationTypeFull;	
-				// TOKEN_ELEVATION_TYPE *elevation_type = tokeninfo;
-				// DbgPrint("NtQueryInformationTokenInternal( ..., TokenElevationType, ...) semi-stub\n");
-				// *elevation_type = TokenElevationTypeFull;
-			// }			
-		    // break;		
-		// case TokenElevation:
-            // {
-                // TOKEN_ELEVATION *elevation = tokeninfo;
-                // DbgPrint("QueryInformationToken( ..., TokenElevation, ...) semi-stub\n");
-                // elevation->TokenIsElevated = TRUE;
-            // }
-            // break;		
-		// case TokenIntegrityLevel:
-			// {
-					// /* report always "S-1-16-12288" (high mandatory level) for now */
-				// static const SID high_level = {SID_REVISION, 1, {SECURITY_MANDATORY_LABEL_AUTHORITY},
-																// {SECURITY_MANDATORY_HIGH_RID}};
+	switch(tokeninfoclass){
+		case TokenElevationType:
+			{	
+				TOKEN_ELEVATION_TYPE *elevation_type = tokeninfo;
+				DbgPrint("NtQueryInformationTokenInternal( ..., TokenElevationType, ...) semi-stub\n");
+				*elevation_type = TokenElevationTypeFull;
+			}			
+			break;
+		case TokenElevation:
+            {
+                TOKEN_ELEVATION *elevation = tokeninfo;
+                DbgPrint("QueryInformationToken( ..., TokenElevation, ...) semi-stub\n");
+                elevation->TokenIsElevated = TRUE;
+            }
+            break;		
+		case TokenIntegrityLevel:
+			{
+				/* report always "S-1-16-12288" (high mandatory level) for now */
+				static const SID high_level = {SID_REVISION, 1, {SECURITY_MANDATORY_LABEL_AUTHORITY},
+																{SECURITY_MANDATORY_HIGH_RID}};
 
-				// TOKEN_MANDATORY_LABEL *tml = tokeninfo;
-				// PSID psid = tml + 1;
+				TOKEN_MANDATORY_LABEL *tml = tokeninfo;
+				PSID psid = tml + 1;
 
-				// tml->Label.Sid = psid;
-				// tml->Label.Attributes = SE_GROUP_INTEGRITY | SE_GROUP_INTEGRITY_ENABLED;
-				// memcpy(psid, &high_level, sizeof(SID));
-				// DbgPrint("QueryInformationToken (IntegrityLevel) token\n");
-			// }
-			// break;		
-
-		// case TokenAppContainerSid:
-			// {
-				// TOKEN_APPCONTAINER_INFORMATION *container = tokeninfo;
-				// DbgPrint("QueryInformationToken( ..., TokenAppContainerSid, ...) semi-stub\n");
-				// container->TokenAppContainer = NULL;
-			// }
-			// break;
-		 // // case TokenIsAppContainer:
-			// // {
-				// // *(DWORD*)tokeninfo = 0;
-				// // DbgPrint("NtQueryInformationTokenInternal :: TokenIsAppContainer semi-stub\n");				
-				// // break;
-			// // }	
-		// case TokenLogonSid:
-			// {
-				// TOKEN_GROUPS * groups = tokeninfo;
-				// TOKEN_GROUPS * receiveToken = NULL;
-				// //PSID sid = groups + 1;
-				// DWORD sid_len = tokeninfolength < sizeof(TOKEN_GROUPS) ? 0 : tokeninfolength - sizeof(TOKEN_GROUPS);
-				// PVOID tokenGroupInfo = NULL;
+				tml->Label.Sid = psid;
+				tml->Label.Attributes = SE_GROUP_INTEGRITY | SE_GROUP_INTEGRITY_ENABLED;
+				memcpy(psid, &high_level, sizeof(SID));
+			}
+			break;	
+		case TokenAppContainerSid:
+			{
+				TOKEN_APPCONTAINER_INFORMATION *container = tokeninfo;
+				DbgPrint("QueryInformationToken( ..., TokenAppContainerSid, ...) semi-stub\n");
+				container->TokenAppContainer = NULL;
+			}
+			break;
+		 case TokenIsAppContainer:
+			{
+				*(DWORD*)tokeninfo = 0;
+				DbgPrint("NtQueryInformationTokenInternal :: TokenIsAppContainer semi-stub\n");				
+				break;
+			}				
+		case TokenLogonSid:
+			{
+				TOKEN_GROUPS * groups = tokeninfo;
+				TOKEN_GROUPS * receiveToken = NULL;
+				//PSID sid = groups + 1;
+				DWORD sid_len = tokeninfolength < sizeof(TOKEN_GROUPS) ? 0 : tokeninfolength - sizeof(TOKEN_GROUPS);
+				PVOID tokenGroupInfo = NULL;
 				
-				// status = NtQueryInformationToken(token,
-												 // TokenGroups,
-												 // tokenGroupInfo,
-										         // sid_len,
-												 // retlen);
+				status = NtQueryInformationToken(token,
+												 TokenGroups,
+												 tokenGroupInfo,
+										         sid_len,
+												 retlen);
 												 
 												 
-				// DbgPrint("NtQueryInformationTokenInternal :: NtQueryInformationToken Status: %08x\n",status);										 
+				DbgPrint("NtQueryInformationTokenInternal :: NtQueryInformationToken Status: %08x\n",status);										 
 
-				// if (status == STATUS_SUCCESS)
-				// {
-					// receiveToken = (TOKEN_GROUPS *)tokenGroupInfo;
-					// groups->GroupCount = 1;
-					// groups->Groups[0].Sid = receiveToken->Groups[0].Sid;
-					// groups->Groups[0].Attributes = 0;
-				// }
-			// }	
-			// break;
-		// default:
-			// status = NtQueryInformationToken(token,
-										   // tokeninfoclass,
-										   // tokeninfo,
-										   // tokeninfolength,
-										   // retlen);
-			// break;
-	// }
+				if (status == STATUS_SUCCESS)
+				{
+					receiveToken = (TOKEN_GROUPS *)tokenGroupInfo;
+					groups->GroupCount = 1;
+					groups->Groups[0].Sid = receiveToken->Groups[0].Sid;
+					groups->Groups[0].Attributes = 0;
+				}
+			}	
+			break;			
+		default:
+			{
+				status =  NtQueryInformationToken(token,
+											   tokeninfoclass,
+											   tokeninfo,
+											   tokeninfolength,
+											   retlen);			
+			}
+			break;
+	}
 	
-	// return status;
+	 return status;
 }
 
 /******************************************************************************

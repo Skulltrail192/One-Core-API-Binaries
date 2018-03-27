@@ -10,6 +10,7 @@ list(APPEND SOURCE
 add_library(ext-ms-win-appmodel-usercontext-l1-1-0 SHARED ${SOURCE})
 
 set_module_type(ext-ms-win-appmodel-usercontext-l1-1-0 win32dll ENTRYPOINT 0)
+target_link_libraries(ext-ms-win-appmodel-usercontext-l1-1-0 wine)
 add_importlibs(ext-ms-win-appmodel-usercontext-l1-1-0 kernel32 ntdll)
 add_dependencies(ext-ms-win-appmodel-usercontext-l1-1-0 psdk)
 add_cd_file(TARGET ext-ms-win-appmodel-usercontext-l1-1-0 DESTINATION reactos/system32 FOR all)

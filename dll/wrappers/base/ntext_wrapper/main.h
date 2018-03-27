@@ -99,6 +99,9 @@ typedef RTL_RUN_ONCE_INIT_FN *PRTL_RUN_ONCE_INIT_FN;
 
 #define STATUS_INCOMPATIBLE_DRIVER_BLOCKED 0xC0000424
 
+#define ACTIVATION_CONTEXT_SECTION_APPLICATION_SETTINGS          10
+#define ACTIVATION_CONTEXT_SECTION_COMPATIBILITY_INFO            11
+
 /* Enumarations ****************************************/
 
 /* Structs *********************************************/
@@ -846,6 +849,56 @@ typedef struct _RTL_SYSTEM_TIME {
     WORD wSecond;
     WORD wMilliseconds;
 } RTL_SYSTEM_TIME, *PRTL_SYSTEM_TIME;
+
+typedef struct _ASSEMBLY_STORAGE_MAP_ENTRY
+{
+    ULONG Flags;
+    UNICODE_STRING DosPath;
+    HANDLE Handle;
+} ASSEMBLY_STORAGE_MAP_ENTRY, *PASSEMBLY_STORAGE_MAP_ENTRY;
+
+typedef struct _ASSEMBLY_STORAGE_MAP
+{
+    ULONG Flags;
+    ULONG AssemblyCount;
+    PASSEMBLY_STORAGE_MAP_ENTRY *AssemblyArray;
+} ASSEMBLY_STORAGE_MAP, *PASSEMBLY_STORAGE_MAP;
+
+ struct file_info
+{
+     ULONG               type;
+     WCHAR              *info;
+};
+
+typedef struct _ACTIVATION_CONTEXT
+{
+    LONG RefCount;
+    ULONG Flags;
+    LIST_ENTRY Links;
+    PACTIVATION_CONTEXT_DATA ActivationContextData;
+    PVOID NotificationRoutine;
+    PVOID NotificationContext;
+    ULONG SentNotifications[8];
+    ULONG DisabledNotifications[8];
+    ASSEMBLY_STORAGE_MAP StorageMap;
+    PASSEMBLY_STORAGE_MAP_ENTRY InlineStorageMapEntries;
+    ULONG StackTraceIndex;
+    PVOID StackTraces[4][4];
+    struct file_info config;
+    struct file_info appdir;
+    struct assembly *assemblies;
+    unsigned int num_assemblies;
+    unsigned int allocated_assemblies;
+    /* section data */
+    DWORD sections;
+    struct strsection_header *wndclass_section;
+    struct strsection_header *dllredirect_section;
+    struct strsection_header *progid_section;
+    struct guidsection_header *tlib_section;
+    struct guidsection_header *comserver_section;
+    struct guidsection_header *ifaceps_section;
+    struct guidsection_header *clrsurrogate_section;
+} ACTIVATION_CONTEXT, *PIACTIVATION_CONTEXT;
 
 typedef struct _TOKEN_APPCONTAINER_INFORMATION {
   	PSID TokenAppContainer;

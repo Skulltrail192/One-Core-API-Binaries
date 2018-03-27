@@ -955,14 +955,14 @@
 @ stdcall -arch=x86_64 uaw_wcslen(wstr)
 @ stdcall -arch=x86_64 uaw_wcsrchr(wstr long)
 
-; #functions for XP x64 WOW
-; @ stdcall -arch=i386 BaseProcessStartThunk(ptr ptr)
-; @ stdcall -arch=i386 BaseThreadStartThunk(ptr ptr) 
-; @ stdcall CtrlRoutine(ptr) 
-; @ stdcall ConsoleIMERoutine(ptr)
+#functions for XP x64 WOW
+@ stdcall -arch=i386 BaseProcessStartThunk(ptr ptr)
+@ stdcall -arch=i386 BaseThreadStartThunk(ptr ptr) 
+@ stdcall CtrlRoutine(ptr) 
+@ stdcall ConsoleIMERoutine(ptr)
 
 #missing on XP 
-@ stdcall BaseIsAppcompatInfrastructureDisabled() ;IsShimInfrastructureDisabled
+@ stdcall BaseIsAppcompatInfrastructureDisabled() IsShimInfrastructureDisabled
 @ stdcall ConvertThreadToFiberEx(ptr long)
 @ stdcall FindFirstStreamW(wstr ptr ptr long)
 @ stdcall FindNextStreamW(ptr ptr)
