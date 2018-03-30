@@ -312,16 +312,76 @@ RtlGetProductInfo(
     return TRUE;
 }
 
+/*************************************************************************
+ * NtQueryLicenseValue   [NTDLL.@]
+ *
+ * NOTES
+ *  On Windows all license properties are stored in a single key, but
+ *  unless there is some app which explicitly depends on that, there is
+ *  no good reason to reproduce that.
+ */
 NTSTATUS 
 WINAPI 
-NtQueryLicenseValue(
-    PUNICODE_STRING Name,
-    ULONG *Type,
-    PVOID Buffer,
-    ULONG Length,
-    ULONG *DataLength)
+NtQueryLicenseValue( 
+	const UNICODE_STRING *name, 
+	ULONG *result_type,
+    PVOID data, 
+	ULONG length, 
+	ULONG *result_len 
+)
 {
-    return STATUS_SUCCESS;	
+    static const WCHAR LicenseInformationW[] = {'M','a','c','h','i','n','e','\\',
+                                                'S','o','f','t','w','a','r','e','\\',
+												'M','i','c','r','o','s','o','f','t','\\',
+                                                'W','i','n','d','o','w','s','\\','L','i','c','e','n','s','e',
+                                                'I','n','f','o','r','m','a','t','i','o','n',0};
+    KEY_VALUE_PARTIAL_INFORMATION *info;
+    NTSTATUS status = STATUS_OBJECT_NAME_NOT_FOUND;
+    DWORD info_length, count;
+    OBJECT_ATTRIBUTES attr;
+    UNICODE_STRING keyW;
+    HANDLE hkey;
+
+    if (!name || !name->Buffer || !name->Length || !result_len)
+        return STATUS_INVALID_PARAMETER;
+
+    info_length = FIELD_OFFSET(KEY_VALUE_PARTIAL_INFORMATION, Data) + length;
+    info = RtlAllocateHeap( RtlProcessHeap(), 0, info_length );
+    if (!info) return STATUS_NO_MEMORY;
+
+    attr.Length = sizeof(attr);
+    attr.RootDirectory = 0;
+    attr.ObjectName = &keyW;
+    attr.Attributes = 0;
+    attr.SecurityDescriptor = NULL;
+    attr.SecurityQualityOfService = NULL;
+    RtlInitUnicodeString( &keyW, LicenseInformationW );
+
+    /* @@ Wine registry key: HKLM\Software\Microsoft\Windows\LicenseInformation */
+    if (!NtOpenKey( &hkey, KEY_READ, &attr ))
+    {
+        status = NtQueryValueKey( hkey, name, KeyValuePartialInformation,
+                                  info, info_length, &count );
+        if (!status || status == STATUS_BUFFER_OVERFLOW)
+        {
+            if (result_type)
+                *result_type = info->Type;
+
+            *result_len = info->DataLength;
+
+            if (status == STATUS_BUFFER_OVERFLOW)
+                status = STATUS_BUFFER_TOO_SMALL;
+            else
+                memcpy( data, info->Data, info->DataLength );
+        }
+        NtClose( hkey );
+    }
+
+    if (status == STATUS_OBJECT_NAME_NOT_FOUND)
+        DbgPrint( "License key %s not found\n",name->Buffer );
+
+    RtlFreeHeap( RtlProcessHeap(), 0, info );
+    return status;
 }
 
 void 

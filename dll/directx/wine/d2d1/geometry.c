@@ -406,11 +406,6 @@ static void d2d_point_calculate_bezier(D2D1_POINT_2F *out, const D2D1_POINT_2F *
     out->y = t_c * (t_c * p0->y + t * p1->y) + t * (t_c * p1->y + t * p2->y);
 }
 
-static float d2d_point_dot(const D2D1_POINT_2F *p0, const D2D1_POINT_2F *p1)
-{
-    return p0->x * p1->x + p0->y * p1->y;
-}
-
 static void d2d_point_normalise(D2D1_POINT_2F *p)
 {
     float l;
@@ -503,6 +498,14 @@ static float d2d_point_ccw(const D2D1_POINT_2F *a, const D2D1_POINT_2F *b, const
     return det_d[det_d_len - 1];
 }
 
+static void d2d_rect_union(D2D1_RECT_F *l, const D2D1_RECT_F *r)
+{
+    l->left   = min(l->left, r->left);
+    l->top    = min(l->top, r->top);
+    l->right  = max(l->right, r->right);
+    l->bottom = max(l->bottom, r->bottom);
+}
+
 static BOOL d2d_rect_check_overlap(const D2D_RECT_F *p, const D2D_RECT_F *q)
 {
     return p->left < q->right && p->top < q->bottom && p->right > q->left && p->bottom > q->top;
@@ -557,38 +560,6 @@ static void d2d_rect_get_bezier_segment_bounds(D2D_RECT_F *bounds, const D2D1_PO
     d2d_point_lerp(&q[2], &q[1], &r[0], end);
 
     d2d_rect_get_bezier_bounds(bounds, &q[0], &q[1], &q[2]);
-}
-
-static BOOL d2d_array_reserve(void **elements, size_t *capacity, size_t element_count, size_t element_size)
-{
-    size_t new_capacity, max_capacity;
-    void *new_elements;
-
-    if (element_count <= *capacity)
-        return TRUE;
-
-    max_capacity = ~(size_t)0 / element_size;
-    if (max_capacity < element_count)
-        return FALSE;
-
-    new_capacity = max(*capacity, 4);
-    while (new_capacity < element_count && new_capacity <= max_capacity / 2)
-        new_capacity *= 2;
-
-    if (new_capacity < element_count)
-        new_capacity = max_capacity;
-
-    if (*elements)
-        new_elements = HeapReAlloc(GetProcessHeap(), 0, *elements, new_capacity * element_size);
-    else
-        new_elements = HeapAlloc(GetProcessHeap(), 0, new_capacity * element_size);
-
-    if (!new_elements)
-        return FALSE;
-
-    *elements = new_elements;
-    *capacity = new_capacity;
-    return TRUE;
 }
 
 static BOOL d2d_figure_insert_vertex(struct d2d_figure *figure, size_t idx, D2D1_POINT_2F vertex)
@@ -1435,7 +1406,7 @@ static BOOL d2d_cdt_generate_faces(const struct d2d_cdt *cdt, struct d2d_geometr
     return TRUE;
 
 fail:
-    HeapFree(GetProcessHeap(), 0, geometry->fill.faces);
+    heap_free(geometry->fill.faces);
     geometry->fill.faces = NULL;
     geometry->fill.faces_size = 0;
     geometry->fill.face_count = 0;
@@ -2032,7 +2003,7 @@ static BOOL d2d_geometry_intersect_self(struct d2d_geometry *geometry)
     ret = d2d_geometry_apply_intersections(geometry, &intersections);
 
 done:
-    HeapFree(GetProcessHeap(), 0, intersections.intersections);
+    heap_free(intersections.intersections);
     return ret;
 }
 
@@ -2054,7 +2025,7 @@ static HRESULT d2d_path_geometry_triangulate(struct d2d_geometry *geometry)
         return S_OK;
     }
 
-    if (!(vertices = HeapAlloc(GetProcessHeap(), 0, vertex_count * sizeof(*vertices))))
+    if (!(vertices = heap_calloc(vertex_count, sizeof(*vertices))))
         return E_OUTOFMEMORY;
 
     for (i = 0, j = 0; i < geometry->u.path.figure_count; ++i)
@@ -2088,14 +2059,14 @@ static HRESULT d2d_path_geometry_triangulate(struct d2d_geometry *geometry)
     if (!d2d_cdt_generate_faces(&cdt, geometry))
         goto fail;
 
-    HeapFree(GetProcessHeap(), 0, cdt.edges);
+    heap_free(cdt.edges);
     return S_OK;
 
 fail:
     geometry->fill.vertices = NULL;
     geometry->fill.vertex_count = 0;
-    HeapFree(GetProcessHeap(), 0, vertices);
-    HeapFree(GetProcessHeap(), 0, cdt.edges);
+    heap_free(vertices);
+    heap_free(cdt.edges);
     return E_FAIL;
 }
 
@@ -2365,13 +2336,13 @@ static BOOL d2d_geometry_add_figure_outline(struct d2d_geometry *geometry,
 
 static void d2d_geometry_cleanup(struct d2d_geometry *geometry)
 {
-    HeapFree(GetProcessHeap(), 0, geometry->outline.bezier_faces);
-    HeapFree(GetProcessHeap(), 0, geometry->outline.beziers);
-    HeapFree(GetProcessHeap(), 0, geometry->outline.faces);
-    HeapFree(GetProcessHeap(), 0, geometry->outline.vertices);
-    HeapFree(GetProcessHeap(), 0, geometry->fill.bezier_vertices);
-    HeapFree(GetProcessHeap(), 0, geometry->fill.faces);
-    HeapFree(GetProcessHeap(), 0, geometry->fill.vertices);
+    heap_free(geometry->outline.bezier_faces);
+    heap_free(geometry->outline.beziers);
+    heap_free(geometry->outline.faces);
+    heap_free(geometry->outline.vertices);
+    heap_free(geometry->fill.bezier_vertices);
+    heap_free(geometry->fill.faces);
+    heap_free(geometry->fill.vertices);
     ID2D1Factory_Release(geometry->factory);
 }
 
@@ -2527,12 +2498,17 @@ static void STDMETHODCALLTYPE d2d_geometry_sink_AddBeziers(ID2D1GeometrySink *if
 
     for (i = 0; i < count; ++i)
     {
+        D2D1_RECT_F bezier_bounds;
+
         /* FIXME: This tries to approximate a cubic bezier with a quadratic one. */
         p.x = (beziers[i].point1.x + beziers[i].point2.x) * 0.75f;
         p.y = (beziers[i].point1.y + beziers[i].point2.y) * 0.75f;
         p.x -= (figure->vertices[figure->vertex_count - 1].x + beziers[i].point3.x) * 0.25f;
         p.y -= (figure->vertices[figure->vertex_count - 1].y + beziers[i].point3.y) * 0.25f;
         figure->vertex_types[figure->vertex_count - 1] = D2D_VERTEX_TYPE_BEZIER;
+
+        d2d_rect_get_bezier_bounds(&bezier_bounds, &figure->vertices[figure->vertex_count - 1],
+                &p, &beziers[i].point3);
 
         if (!d2d_figure_add_bezier_control(figure, &p))
         {
@@ -2547,6 +2523,8 @@ static void STDMETHODCALLTYPE d2d_geometry_sink_AddBeziers(ID2D1GeometrySink *if
             geometry->u.path.state = D2D_GEOMETRY_STATE_ERROR;
             return;
         }
+
+        d2d_rect_union(&figure->bounds, &bezier_bounds);
     }
 
     geometry->u.path.segment_count += count;
@@ -2594,11 +2572,11 @@ static void d2d_path_geometry_free_figures(struct d2d_geometry *geometry)
 
     for (i = 0; i < geometry->u.path.figure_count; ++i)
     {
-        HeapFree(GetProcessHeap(), 0, geometry->u.path.figures[i].bezier_controls);
-        HeapFree(GetProcessHeap(), 0, geometry->u.path.figures[i].original_bezier_controls);
-        HeapFree(GetProcessHeap(), 0, geometry->u.path.figures[i].vertices);
+        heap_free(geometry->u.path.figures[i].bezier_controls);
+        heap_free(geometry->u.path.figures[i].original_bezier_controls);
+        heap_free(geometry->u.path.figures[i].vertices);
     }
-    HeapFree(GetProcessHeap(), 0, geometry->u.path.figures);
+    heap_free(geometry->u.path.figures);
     geometry->u.path.figures = NULL;
     geometry->u.path.figures_size = 0;
 }
@@ -2814,8 +2792,8 @@ static HRESULT d2d_geometry_resolve_beziers(struct d2d_geometry *geometry)
         geometry->fill.bezier_vertex_count += 3 * geometry->u.path.figures[i].bezier_control_count;
     }
 
-    if (!(geometry->fill.bezier_vertices = HeapAlloc(GetProcessHeap(), 0,
-            geometry->fill.bezier_vertex_count * sizeof(*geometry->fill.bezier_vertices))))
+    if (!(geometry->fill.bezier_vertices = heap_calloc(geometry->fill.bezier_vertex_count,
+            sizeof(*geometry->fill.bezier_vertices))))
     {
         ERR("Failed to allocate bezier vertices array.\n");
         geometry->fill.bezier_vertex_count = 0;
@@ -2879,7 +2857,7 @@ static HRESULT STDMETHODCALLTYPE d2d_geometry_sink_Close(ID2D1GeometrySink *ifac
     {
         struct d2d_figure *figure = &geometry->u.path.figures[i];
         size_t size = figure->bezier_control_count * sizeof(*figure->original_bezier_controls);
-        if (!(figure->original_bezier_controls = HeapAlloc(GetProcessHeap(), 0, size)))
+        if (!(figure->original_bezier_controls = heap_alloc(size)))
             goto done;
         memcpy(figure->original_bezier_controls, figure->bezier_controls, size);
     }
@@ -2894,7 +2872,7 @@ static HRESULT STDMETHODCALLTYPE d2d_geometry_sink_Close(ID2D1GeometrySink *ifac
 done:
     if (FAILED(hr))
     {
-        HeapFree(GetProcessHeap(), 0, geometry->fill.bezier_vertices);
+        heap_free(geometry->fill.bezier_vertices);
         geometry->fill.bezier_vertex_count = 0;
         d2d_path_geometry_free_figures(geometry);
         geometry->u.path.state = D2D_GEOMETRY_STATE_ERROR;
@@ -2941,6 +2919,11 @@ static void STDMETHODCALLTYPE d2d_geometry_sink_AddQuadraticBeziers(ID2D1Geometr
 
     for (i = 0; i < bezier_count; ++i)
     {
+        D2D1_RECT_F bezier_bounds;
+
+        d2d_rect_get_bezier_bounds(&bezier_bounds, &figure->vertices[figure->vertex_count - 1],
+                &beziers[i].point1, &beziers[i].point2);
+
         figure->vertex_types[figure->vertex_count - 1] = D2D_VERTEX_TYPE_BEZIER;
         if (!d2d_figure_add_bezier_control(figure, &beziers[i].point1))
         {
@@ -2955,6 +2938,8 @@ static void STDMETHODCALLTYPE d2d_geometry_sink_AddQuadraticBeziers(ID2D1Geometr
             geometry->u.path.state = D2D_GEOMETRY_STATE_ERROR;
             return;
         }
+
+        d2d_rect_union(&figure->bounds, &bezier_bounds);
     }
 
     geometry->u.path.segment_count += bezier_count;
@@ -3046,7 +3031,7 @@ static ULONG STDMETHODCALLTYPE d2d_path_geometry_Release(ID2D1PathGeometry *ifac
     {
         d2d_path_geometry_free_figures(geometry);
         d2d_geometry_cleanup(geometry);
-        HeapFree(GetProcessHeap(), 0, geometry);
+        heap_free(geometry);
     }
 
     return refcount;
@@ -3064,9 +3049,106 @@ static void STDMETHODCALLTYPE d2d_path_geometry_GetFactory(ID2D1PathGeometry *if
 static HRESULT STDMETHODCALLTYPE d2d_path_geometry_GetBounds(ID2D1PathGeometry *iface,
         const D2D1_MATRIX_3X2_F *transform, D2D1_RECT_F *bounds)
 {
-    FIXME("iface %p, transform %p, bounds %p stub!\n", iface, transform, bounds);
+    struct d2d_geometry *geometry = impl_from_ID2D1PathGeometry(iface);
+    size_t i;
 
-    return E_NOTIMPL;
+    TRACE("iface %p, transform %p, bounds %p.\n", iface, transform, bounds);
+
+    if (geometry->u.path.state != D2D_GEOMETRY_STATE_CLOSED)
+        return D2DERR_WRONG_STATE;
+
+    bounds->left = FLT_MAX;
+    bounds->top = FLT_MAX;
+    bounds->right = -FLT_MAX;
+    bounds->bottom = -FLT_MAX;
+
+    if (!transform)
+    {
+        if (geometry->u.path.bounds.left > geometry->u.path.bounds.right)
+        {
+            for (i = 0; i < geometry->u.path.figure_count; ++i)
+                d2d_rect_union(&geometry->u.path.bounds, &geometry->u.path.figures[i].bounds);
+        }
+
+        *bounds = geometry->u.path.bounds;
+        return S_OK;
+    }
+
+    for (i = 0; i < geometry->u.path.figure_count; ++i)
+    {
+        const struct d2d_figure *figure = &geometry->u.path.figures[i];
+        enum d2d_vertex_type type = D2D_VERTEX_TYPE_NONE;
+        D2D1_RECT_F bezier_bounds;
+        D2D1_POINT_2F p, p1, p2;
+        size_t j, bezier_idx;
+
+        /* Single vertex figures are reduced by CloseFigure(). */
+        if (figure->vertex_count == 0)
+        {
+            d2d_point_transform(&p, transform, figure->bounds.left, figure->bounds.top);
+            d2d_rect_expand(bounds, &p);
+            continue;
+        }
+
+        for (j = 0; j < figure->vertex_count; ++j)
+        {
+            if (figure->vertex_types[j] == D2D_VERTEX_TYPE_NONE)
+                continue;
+
+            p = figure->vertices[j];
+            type = figure->vertex_types[j];
+            d2d_point_transform(&p, transform, p.x, p.y);
+            d2d_rect_expand(bounds, &p);
+            break;
+        }
+
+        for (bezier_idx = 0, ++j; j < figure->vertex_count; ++j)
+        {
+            if (figure->vertex_types[j] == D2D_VERTEX_TYPE_NONE
+                    || figure->vertex_types[j] == D2D_VERTEX_TYPE_SPLIT_BEZIER)
+                continue;
+
+            switch (type)
+            {
+                case D2D_VERTEX_TYPE_LINE:
+                    p = figure->vertices[j];
+                    d2d_point_transform(&p, transform, p.x, p.y);
+                    d2d_rect_expand(bounds, &p);
+                    break;
+
+                case D2D_VERTEX_TYPE_BEZIER:
+                    p1 = figure->original_bezier_controls[bezier_idx++];
+                    d2d_point_transform(&p1, transform, p1.x, p1.y);
+                    p2 = figure->vertices[j];
+                    d2d_point_transform(&p2, transform, p2.x, p2.y);
+                    d2d_rect_get_bezier_bounds(&bezier_bounds, &p, &p1, &p2);
+                    d2d_rect_union(bounds, &bezier_bounds);
+                    p = p2;
+                    break;
+
+                default:
+                    FIXME("Unhandled vertex type %#x.\n", type);
+                    p = figure->vertices[j];
+                    d2d_point_transform(&p, transform, p.x, p.y);
+                    d2d_rect_expand(bounds, &p);
+                    break;
+            }
+
+            type = figure->vertex_types[j];
+        }
+
+        if (type == D2D_VERTEX_TYPE_BEZIER)
+        {
+            p1 = figure->original_bezier_controls[bezier_idx++];
+            d2d_point_transform(&p1, transform, p1.x, p1.y);
+            p2 = figure->vertices[0];
+            d2d_point_transform(&p2, transform, p2.x, p2.y);
+            d2d_rect_get_bezier_bounds(&bezier_bounds, &p, &p1, &p2);
+            d2d_rect_union(bounds, &bezier_bounds);
+        }
+    }
+
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE d2d_path_geometry_GetWidenedBounds(ID2D1PathGeometry *iface, float stroke_width,
@@ -3413,6 +3495,10 @@ void d2d_path_geometry_init(struct d2d_geometry *geometry, ID2D1Factory *factory
 {
     d2d_geometry_init(geometry, factory, &identity, (ID2D1GeometryVtbl *)&d2d_path_geometry_vtbl);
     geometry->u.path.ID2D1GeometrySink_iface.lpVtbl = &d2d_geometry_sink_vtbl;
+    geometry->u.path.bounds.left = FLT_MAX;
+    geometry->u.path.bounds.right = -FLT_MAX;
+    geometry->u.path.bounds.top = FLT_MAX;
+    geometry->u.path.bounds.bottom = -FLT_MAX;
 }
 
 static inline struct d2d_geometry *impl_from_ID2D1RectangleGeometry(ID2D1RectangleGeometry *iface)
@@ -3461,7 +3547,7 @@ static ULONG STDMETHODCALLTYPE d2d_rectangle_geometry_Release(ID2D1RectangleGeom
     if (!refcount)
     {
         d2d_geometry_cleanup(geometry);
-        HeapFree(GetProcessHeap(), 0, geometry);
+        heap_free(geometry);
     }
 
     return refcount;
@@ -3703,7 +3789,7 @@ HRESULT d2d_rectangle_geometry_init(struct d2d_geometry *geometry, ID2D1Factory 
     d2d_geometry_init(geometry, factory, &identity, (ID2D1GeometryVtbl *)&d2d_rectangle_geometry_vtbl);
     geometry->u.rectangle.rect = *rect;
 
-    if (!(geometry->fill.vertices = HeapAlloc(GetProcessHeap(), 0, 4 * sizeof(*geometry->fill.vertices))))
+    if (!(geometry->fill.vertices = heap_alloc(4 * sizeof(*geometry->fill.vertices))))
         goto fail;
     if (!d2d_array_reserve((void **)&geometry->fill.faces,
             &geometry->fill.faces_size, 2, sizeof(*geometry->fill.faces)))
@@ -3805,7 +3891,7 @@ static ULONG STDMETHODCALLTYPE d2d_transformed_geometry_Release(ID2D1Transformed
         geometry->fill.vertices = NULL;
         ID2D1Geometry_Release(geometry->u.transformed.src_geometry);
         d2d_geometry_cleanup(geometry);
-        HeapFree(GetProcessHeap(), 0, geometry);
+        heap_free(geometry);
     }
 
     return refcount;

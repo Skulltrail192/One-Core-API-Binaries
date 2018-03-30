@@ -200,6 +200,7 @@ list(APPEND SOURCE
 #    bthguid.c
 #    cluscfgguids.c
     cmdtreeiid.c
+	d2d.c
 #    ctffunc_g.c
 #    ctfspui_g.c
 #    hnclsid.c

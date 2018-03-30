@@ -29,6 +29,6 @@ add_library(d3d11 SHARED
 
 set_module_type(d3d11 win32dll)
 target_link_libraries(d3d11 wine uuid dxguid d3d11_uuids d3d10_uuids d3d10_1_uuids dxgi_uuids)
-add_importlibs(d3d11 wined3d msvcrt dxgi kernel32 ntdll)
+add_importlibs(d3d11 d3dwine msvcrt dxgi kernel32 ntdll)
 add_dependencies(d3d11 wineheaders)
 add_cd_file(TARGET d3d11 DESTINATION reactos/system32 FOR all)

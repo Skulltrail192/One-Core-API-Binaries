@@ -85,11 +85,11 @@
 @ extern NlsAnsiCodePage
 @ extern NlsMbCodePageTag
 @ extern NlsMbOemCodePageTag
-@ stdcall NtAcceptConnectPort(ptr long ptr long long ptr)
-@ stdcall NtAccessCheck(ptr long long ptr ptr ptr ptr ptr)
-@ stdcall NtAccessCheckAndAuditAlarm(ptr long ptr ptr ptr long ptr long ptr ptr ptr)
-@ stdcall NtAccessCheckByType(ptr ptr ptr long ptr long ptr ptr long ptr ptr)
-@ stdcall NtAccessCheckByTypeAndAuditAlarm(ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr)
+@ stdcall NtAcceptConnectPort(ptr long ptr long long ptr) NtAcceptConnectPortInternal
+@ stdcall NtAccessCheck(ptr long long ptr ptr ptr ptr ptr) NtAccessCheckInternal
+@ stdcall NtAccessCheckAndAuditAlarm(ptr long ptr ptr ptr long ptr long ptr ptr ptr) NtAccessCheckAndAuditAlarmInternal
+@ stdcall NtAccessCheckByType(ptr ptr ptr long ptr long ptr ptr long ptr ptr) NtAccessCheckByTypeInternal
+@ stdcall NtAccessCheckByTypeAndAuditAlarm(ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr) NtAccessCheckByTypeAndAuditAlarmInternal
 @ stdcall NtAccessCheckByTypeResultList(ptr ptr ptr long ptr long ptr ptr long ptr ptr)
 @ stdcall NtAccessCheckByTypeResultListAndAuditAlarm(ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr)
 @ stdcall NtAccessCheckByTypeResultListAndAuditAlarmByHandle(ptr ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr)
@@ -234,7 +234,7 @@
 @ stdcall NtQueryDefaultLocale(long ptr)
 @ stdcall NtQueryDefaultUILanguage(ptr)
 @ stdcall NtQueryDirectoryFile(long long ptr ptr ptr ptr long long long ptr long)
-@ stdcall NtQueryDirectoryObject(long ptr long long long ptr ptr)
+@ stdcall NtQueryDirectoryObject(long ptr long long long ptr ptr) 
 @ stdcall NtQueryEaFile(long ptr ptr long long ptr long ptr long)
 @ stdcall NtQueryEvent(long long ptr long ptr)
 @ stdcall NtQueryFullAttributesFile(ptr ptr)
@@ -244,7 +244,7 @@
 @ stdcall NtQueryInformationPort(ptr long ptr long ptr)
 @ stdcall NtQueryInformationProcess(long long ptr long ptr)
 @ stdcall NtQueryInformationThread(long long ptr long ptr)
-@ stdcall NtQueryInformationToken(long long ptr long ptr) ;NtpQueryInformationToken #Wrapper needed for Integrity Level Introduzed on Vista
+@ stdcall NtQueryInformationToken(long long ptr long ptr) NtQueryInformationTokenInternal #Wrapper needed for Integrity Level Introduzed on Vista
 @ stdcall NtQueryInstallUILanguage(ptr)
 @ stdcall NtQueryIntervalProfile(long ptr)
 @ stdcall NtQueryIoCompletion(long long ptr long ptr)
@@ -256,7 +256,7 @@
 @ stdcall NtQueryPerformanceCounter(ptr ptr)
 @ stdcall NtQueryPortInformationProcess()
 @ stdcall NtQueryQuotaInformationFile(ptr ptr ptr long long ptr long ptr long)
-@ stdcall NtQuerySection(long long long long long) ;descomentarNtQuerySectionInternal
+@ stdcall NtQuerySection(long long long long long) NtQuerySectionInternal
 @ stdcall NtQuerySecurityObject (long long long long long)
 @ stdcall NtQuerySemaphore (long long ptr long ptr)
 @ stdcall NtQuerySymbolicLinkObject(long ptr ptr)
@@ -318,7 +318,7 @@
 @ stdcall NtSetInformationJobObject(long long ptr long)
 @ stdcall NtSetInformationKey(long long ptr long)
 @ stdcall NtSetInformationObject(long long ptr long)
-@ stdcall NtSetInformationProcess(long long long long)
+@ stdcall NtSetInformationProcess(long long long long) NtSetInformationProcessInternal
 @ stdcall NtSetInformationThread(long long ptr long)
 @ stdcall NtSetInformationToken(long long ptr long)
 @ stdcall NtSetIntervalProfile(long long)
@@ -872,8 +872,8 @@
 @ stdcall RtlxUnicodeStringToAnsiSize(ptr)
 @ stdcall RtlxUnicodeStringToOemSize(ptr) ; RtlUnicodeStringToOemSize
 @ stdcall -ret64 VerSetConditionMask(double long long)
-@ stdcall ZwAcceptConnectPort(ptr long ptr long long ptr) NtAcceptConnectPort
-@ stdcall ZwAccessCheck(ptr long long ptr ptr ptr ptr ptr) NtAccessCheck
+@ stdcall ZwAcceptConnectPort(ptr long ptr long long ptr) NtAcceptConnectPortInternal
+@ stdcall ZwAccessCheck(ptr long long ptr ptr ptr ptr ptr) NtAccessCheckInternal
 @ stdcall ZwAccessCheckAndAuditAlarm(ptr long ptr ptr ptr long ptr long ptr ptr ptr) NtAccessCheckAndAuditAlarm
 @ stdcall ZwAccessCheckByType(ptr ptr ptr long ptr long ptr ptr long ptr ptr) NtAccessCheckByType
 @ stdcall ZwAccessCheckByTypeAndAuditAlarm(ptr ptr ptr ptr ptr ptr long long long ptr long ptr long ptr ptr ptr) NtAccessCheckByTypeAndAuditAlarm
@@ -1307,7 +1307,7 @@
 @ stdcall NtApphelpCacheControl(long ptr) ntdll.NtApphelpCacheControl
 @ stdcall NtDeleteDriverEntry(long) ntdll.NtDeleteDriverEntry
 @ stdcall NtEnumerateDriverEntries(ptr ptr) ntdll.NtEnumerateDriverEntries
-@ stdcall NtGetCurrentProcessorNumber() ntdll.NtGetCurrentProcessorNumber; 5.2 and higher
+@ stdcall NtGetCurrentProcessorNumber() ;5.2 and higher
 @ stdcall NtGetTickCount() ntdll.NtGetTickCount
 @ stdcall NtLoadKeyEx(ptr ptr long ptr) 
 @ stdcall NtQueryDriverEntryOrder(ptr ptr) ntdll.NtQueryDriverEntryOrder
@@ -1359,12 +1359,12 @@
 @ stdcall -arch=i386,x86_64 ExpInterlockedPopEntrySListEnd() ntdll.ExpInterlockedPopEntrySListEnd
 @ stdcall -arch=i386,x86_64 ExpInterlockedPopEntrySListFault() ntdll.ExpInterlockedPopEntrySListFault
 @ stdcall -arch=i386,x86_64 ExpInterlockedPopEntrySListResume() ntdll.ExpInterlockedPopEntrySListResume
-@ stdcall RtlGetCurrentProcessorNumber() ;descomentar RtlpGetCurrentProcessorNumber ;Fix compilation error
+@ stdcall RtlGetCurrentProcessorNumber() RtlpGetCurrentProcessorNumber ;Fix compilation error
 @ stdcall RtlSetUnhandledExceptionFilter(ptr) ntdll.RtlSetUnhandledExceptionFilter
 @ stdcall RtlWow64EnableFsRedirection(long) ;is native on 2003 RTM, but, is better to see
 @ stdcall RtlWow64EnableFsRedirectionEx(long ptr) 
 
-#Missing on XP x64 ntdll wow
+#Needed for XP x64 ntdll wow
 @ stdcall RtlAddRefMemoryStream(ptr) ntdll.RtlAddRefMemoryStream
 @ stdcall RtlCloneMemoryStream(ptr ptr) ntdll.RtlCloneMemoryStream
 @ stdcall RtlCommitMemoryStream(ptr long) ntdll.RtlCommitMemoryStream
@@ -1481,6 +1481,9 @@
 @ stdcall RtlParseDefinitionIdentity(ptr ptr long)
 
 #Vista Functions
+@ stdcall A_SHAFinal(ptr ptr)
+@ stdcall A_SHAInit(ptr)
+@ stdcall A_SHAUpdate(ptr ptr long)
 @ stdcall AlpcGetMessageAttribute(ptr long)
 @ stdcall AlpcInitializeMessageAttribute(long ptr long ptr)
 @ stdcall EtwDeliverDataBlock(long)
@@ -1489,6 +1492,7 @@
 @ stdcall EtwEventRegister(ptr ptr ptr ptr)
 @ stdcall EtwEventUnregister(long long)
 @ stdcall EtwEventWrite(int64 ptr long ptr)
+@ stdcall EtwEventWriteFull(int64 ptr long ptr ptr long ptr)
 @ stdcall EtwEventWriteEndScenario(long long ptr long ptr)
 @ stdcall EtwEventWriteStartScenario(long long ptr long ptr)
 @ stdcall EtwLogTraceEvent(long ptr)
@@ -1502,6 +1506,7 @@
 @ stdcall EtwSendNotification(long long long long long)
 @ stdcall EtwReplyNotification(long)
 @ stdcall EtwTraceDiagnosticEvent(long long long long long)
+@ stdcall EtwWriteUMSecurityEvent(ptr long long ptr)
 @ stdcall LdrLoadAlternateResourceModuleEx(long ptr ptr)
 @ stdcall NtAlpcAcceptConnectPort(ptr ptr long ptr ptr ptr ptr ptr long) 
 @ stdcall NtAlpcCancelMessage(ptr long ptr)	

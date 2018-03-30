@@ -429,31 +429,50 @@ done:
 HMODULE 
 WINAPI 
 DECLSPEC_HOTPATCH
-LoadLibraryExW(LPCWSTR libnameW, HANDLE hfile, DWORD flags)
+LoadLibraryExInternalW(
+	LPCWSTR libnameW, 
+	HANDLE hfile, 
+	DWORD flags
+)
 {
     UNICODE_STRING      wstr;
     HMODULE             res;
+	
+	DbgPrint("LoadLibraryExInternalW:: Module Name: %ws\n",libnameW);
+	
+	switch(flags){
+		case LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE:
+		case LOAD_LIBRARY_AS_IMAGE_RESOURCE:
+		case LOAD_LIBRARY_SEARCH_APPLICATION_DIR:
+		case LOAD_LIBRARY_SEARCH_DEFAULT_DIRS:
+		case LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR:
+		case LOAD_LIBRARY_SEARCH_SYSTEM32:
+		case LOAD_LIBRARY_SEARCH_USER_DIRS:
+			if (!libnameW)
+			{
+				SetLastError(ERROR_INVALID_PARAMETER);
+				return 0;
+			}
+			RtlInitUnicodeString( &wstr, libnameW );
+			if (wstr.Buffer[wstr.Length/sizeof(WCHAR) - 1] != ' ')
+				return load_library( &wstr, flags );
 
-    if (!libnameW)
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return 0;
-    }
-    RtlInitUnicodeString( &wstr, libnameW );
-    if (wstr.Buffer[wstr.Length/sizeof(WCHAR) - 1] != ' ')
-        return load_library( &wstr, flags );
-
-    /* Library name has trailing spaces */
-    RtlCreateUnicodeString( &wstr, libnameW );
-    while (wstr.Length > sizeof(WCHAR) &&
-           wstr.Buffer[wstr.Length/sizeof(WCHAR) - 1] == ' ')
-    {
-        wstr.Length -= sizeof(WCHAR);
-    }
-    wstr.Buffer[wstr.Length/sizeof(WCHAR)] = '\0';
-    res = load_library( &wstr, flags );
-    RtlFreeUnicodeString( &wstr );
-    return res;
+			/* Library name has trailing spaces */
+			RtlCreateUnicodeString( &wstr, libnameW );
+			while (wstr.Length > sizeof(WCHAR) &&
+				   wstr.Buffer[wstr.Length/sizeof(WCHAR) - 1] == ' ')
+			{
+				wstr.Length -= sizeof(WCHAR);
+			}
+			wstr.Buffer[wstr.Length/sizeof(WCHAR)] = '\0';
+			res = load_library( &wstr, flags );
+			RtlFreeUnicodeString( &wstr );
+			break;
+		default:
+			return LoadLibraryExW(libnameW, hfile, flags);
+			
+	}
+	return res;
 }
 
 /***********************************************************************
@@ -506,12 +525,22 @@ WCHAR *FILE_name_AtoW( LPCSTR name, BOOL alloc )
  * ignore the parameter because it would be extremely difficult to
  * integrate this with different types of module representations.
  */
-HMODULE WINAPI DECLSPEC_HOTPATCH LoadLibraryExA(LPCSTR libname, HANDLE hfile, DWORD flags)
+HMODULE 
+WINAPI 
+DECLSPEC_HOTPATCH 
+LoadLibraryExInternalA(
+	LPCSTR libname, 
+	HANDLE hfile, 
+	DWORD flags
+)
 {
     WCHAR *libnameW;
 
     if (!(libnameW = FILE_name_AtoW( libname, FALSE ))) return 0;
-    return LoadLibraryExW( libnameW, hfile, flags );
+	
+	DbgPrint("LoadLibraryExInternalA:: Module Name: %s\n",libname);	
+	
+    return LoadLibraryExInternalW( libnameW, hfile, flags );
 }
 
 /****************************************************************************
@@ -569,12 +598,67 @@ BOOL WINAPI SetDefaultDllDirectories( DWORD flags )
                                              LOAD_LIBRARY_SEARCH_USER_DIRS |
                                              LOAD_LIBRARY_SEARCH_SYSTEM32 |
                                              LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+											 
+	DbgPrint("SetDefaultDllDirectories :: is called\n");
 
     if (!flags || (flags & ~load_library_search_flags))
     {
         SetLastError( ERROR_INVALID_PARAMETER );
+		DbgPrint("SetDefaultDllDirectories :: invalid parameter, return is FALSE\n");		
         return FALSE;
     }
     default_search_flags = flags;
+	DbgPrint("SetDefaultDllDirectories :: setting flags, return is TRUE\n");		
     return TRUE;
+}
+
+FARPROC 
+WINAPI 
+GetProcAddressInternal(
+  _In_ HMODULE hModule,
+  _In_ LPCSTR  lpProcName
+)
+{
+	DbgPrint("GetProcAddress::Function name: %s\n", lpProcName);
+	return GetProcAddress(hModule, lpProcName);
+}
+
+HMODULE 
+WINAPI 
+GetModuleHandleInternalA(
+  _In_opt_ LPCTSTR lpModuleName
+)
+{
+	DbgPrint("GetModuleHandleA::Module name: %s\n", lpModuleName);
+	return GetModuleHandleA(lpModuleName);
+}
+
+HMODULE 
+WINAPI 
+GetModuleHandleInternalW(
+  _In_opt_ LPCWSTR lpModuleName
+)
+{
+	DbgPrint("GetModuleHandleW::Module name: %ws\n", lpModuleName);
+	return GetModuleHandleW(lpModuleName);
+}
+
+HMODULE 
+WINAPI 
+LoadLibraryInternalA(
+  _In_ LPCTSTR lpFileName
+)
+{
+	DbgPrint("LoadLibraryA::File name: %s\n", lpFileName);
+	return LoadLibraryA(lpFileName);
+}
+
+HMODULE 
+WINAPI 
+LoadLibraryInternalW(
+  _In_ LPCWSTR lpFileName
+)
+{
+	DbgPrint("LoadLibraryW::File name: %ws\n", lpFileName);
+	return LoadLibraryW(lpFileName);
 }

@@ -363,7 +363,7 @@ GetLogicalProcessorInformation(
     if (Status == STATUS_INFO_LENGTH_MISMATCH) Status = STATUS_BUFFER_TOO_SMALL;
     if (!NT_SUCCESS(Status))
     {
-        BaseSetLastNTError(Status);
+        //BaseSetLastNTError(Status);
         return FALSE;
     }
 
@@ -694,12 +694,11 @@ SYSTEM_LOGICAL_INFORMATION_FILLED _cdecl GetLogicalInfo()
 static NTSTATUS create_logical_proc_info(SYSTEM_LOGICAL_PROCESSOR_INFORMATION **data,
         SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX **dataex, DWORD *max_len)
 {
-    DWORD pkgs_no, cores_no, lcpu_no, lcpu_per_core, cores_per_package, assoc, len = 0;
+    DWORD pkgs_no, cores_no, lcpu_no, lcpu_per_core, cores_per_package, len = 0;
     DWORD cache_ctrs[10] = {0};
     ULONG_PTR all_cpus_mask = 0;
     CACHE_DESCRIPTOR cache[10];
-    LONGLONG cache_size, cache_line_size, cache_sharing[10];
-    size_t size;
+    LONGLONG cache_sharing[10];
     DWORD p,i,j,k;
 	SYSTEM_LOGICAL_INFORMATION_FILLED fill;
 	
@@ -915,8 +914,13 @@ InitializeProcThreadAttributeList(
 {
     SIZE_T needed;
     BOOL ret = FALSE;
+	
+	DbgPrint("InitializeProcThreadAttributeList called!\n");
 
     needed = FIELD_OFFSET(PROC_THREAD_ATTRIBUTE_LIST, attrs[count]);
+	
+	DbgPrint("InitializeProcThreadAttributeList :: needed: %d\n", needed);
+	
     if (list && *size >= needed)
     {
         list->mask = 0;
@@ -924,11 +928,13 @@ InitializeProcThreadAttributeList(
         list->count = 0;
         list->unk = 0;
         ret = TRUE;
+		DbgPrint("InitializeProcThreadAttributeList :: initialized: %d\n", needed);		
     }
     else
         SetLastError(ERROR_INSUFFICIENT_BUFFER);
 
-    *size = needed;
+    *size = needed;	
+	
     return ret;
 }
 
@@ -946,9 +952,12 @@ UpdateProcThreadAttribute(
 {
     DWORD mask;
     struct proc_thread_attr *entry;
+	
+	DbgPrint("UpdateProcThreadAttribute called!\n");
 
     if (list->count >= list->size)
     {
+		DbgPrint("UpdateProcThreadAttribute :: list->count is bigger than list->size! - ERROR_GEN_FAILURE\n");
         SetLastError(ERROR_GEN_FAILURE);
         return FALSE;
     }
@@ -958,6 +967,7 @@ UpdateProcThreadAttribute(
     case PROC_THREAD_ATTRIBUTE_PARENT_PROCESS:
         if (size != sizeof(HANDLE))
         {
+			DbgPrint("UpdateProcThreadAttribute :: size != sizeof(HANDLE)! - ERROR_BAD_LENGTH\n");
             SetLastError(ERROR_BAD_LENGTH);
             return FALSE;
         }
@@ -1013,15 +1023,6 @@ DeleteProcThreadAttributeList(
 )
 {
     return;
-}
-
-BOOL
-BasepIsImageVersionOk(
-    IN ULONG ImageMajorVersion,
-    IN ULONG ImageMinorVersion
-    )
-{
-	return TRUE;
 }
 
 /*
@@ -1336,4 +1337,280 @@ GetActiveProcessorCount(
 		
 	GetSystemInfo( &sysinfo );
 	return sysinfo.dwNumberOfProcessors;
+}
+
+/***********************************************************************
+  *          IsProcessorFeaturePresent   [KERNEL32.@]
+  *
+  * Determine if the cpu supports a given feature.
+  * 
+  * RETURNS
+  *  TRUE, If the processor supports feature,
+  *  FALSE otherwise.
+  */
+BOOL 
+WINAPI 
+IsProcessorFeaturePresent (
+	DWORD feature  
+)
+{
+	return TRUE;
+}
+
+BOOL
+WINAPI
+CreateProcessInternalExW(
+    HANDLE hUserToken,
+    LPCWSTR lpApplicationName,
+    LPWSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCWSTR lpCurrentDirectory,
+    LPSTARTUPINFOW lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation,
+    PHANDLE hRestrictedUserToken
+    )
+{
+	// STARTUPINFOW startupInfo;
+	
+	BOOL resp;
+	
+	 if(lpStartupInfo->cb == sizeof(STARTUPINFOEX))
+	 {
+		
+		// LPSTARTUPINFOEX startupInfoEx = (LPSTARTUPINFOEX)lpStartupInfo;
+		
+		// startupInfo.cb = sizeof(STARTUPINFOEX);
+		// startupInfo.lpReserved = startupInfoEx->StartupInfo.lpReserved;
+		// startupInfo.lpDesktop = startupInfoEx->StartupInfo.lpDesktop;
+		// startupInfo.lpTitle = startupInfoEx->StartupInfo.lpTitle;
+		// startupInfo.dwX = startupInfoEx->StartupInfo.dwX;
+		// startupInfo.dwY = startupInfoEx->StartupInfo.dwY;
+		// startupInfo.dwXSize = startupInfoEx->StartupInfo.dwXSize;
+		// startupInfo.dwYSize = startupInfoEx->StartupInfo.dwYSize;
+		// startupInfo.dwXCountChars = startupInfoEx->StartupInfo.dwXCountChars;
+		// startupInfo.dwYCountChars = startupInfoEx->StartupInfo.dwYCountChars;
+		// startupInfo.dwFillAttribute = startupInfoEx->StartupInfo.dwFillAttribute;
+		// startupInfo.dwFlags = startupInfoEx->StartupInfo.dwFlags;
+		// startupInfo.wShowWindow = startupInfoEx->StartupInfo.wShowWindow;
+		// startupInfo.cbReserved2 = startupInfoEx->StartupInfo.cbReserved2;
+		// startupInfo.lpReserved2 = startupInfoEx->StartupInfo.lpReserved2;
+		// startupInfo.hStdInput = startupInfoEx->StartupInfo.hStdInput;
+		// startupInfo.hStdOutput = startupInfoEx->StartupInfo.hStdOutput;
+		// startupInfo.hStdError = startupInfoEx->StartupInfo.hStdError;
+		
+		 DbgPrint("CreateProcessInternalExW :: lpStartupInfo is STARTUPINFOEX structure\n");
+	 }
+	
+	resp = CreateProcessInternalW(hUserToken,
+								  lpApplicationName,
+								  lpCommandLine,
+								  lpProcessAttributes,
+								  lpThreadAttributes,
+								  bInheritHandles,
+								  dwCreationFlags,
+								  lpEnvironment,
+								  lpCurrentDirectory,
+								  lpStartupInfo,//&startupInfo,
+								  lpProcessInformation,
+								  hRestrictedUserToken);
+								  
+	DbgPrint("CreateProcessInternalW :: returned value is %d\n", resp);	
+
+	return resp;
+								  
+}
+
+BOOL
+WINAPI
+CreateProcessExW(
+    LPCWSTR lpApplicationName,
+    LPWSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCWSTR lpCurrentDirectory,
+    LPSTARTUPINFOW lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation
+)
+{
+	STARTUPINFOW startupInfo;
+	BOOL resp;
+	
+	startupInfo = *lpStartupInfo;
+	
+	if(startupInfo.cb == sizeof(STARTUPINFOEX))
+	{
+		
+		LPSTARTUPINFOEX startupInfoEx = (LPSTARTUPINFOEX)lpStartupInfo;
+		
+		startupInfo.cb = sizeof(STARTUPINFOEX);
+		startupInfo.lpReserved = startupInfoEx->StartupInfo.lpReserved;
+		startupInfo.lpDesktop = startupInfoEx->StartupInfo.lpDesktop;
+		startupInfo.lpTitle = startupInfoEx->StartupInfo.lpTitle;
+		startupInfo.dwX = startupInfoEx->StartupInfo.dwX;
+		startupInfo.dwY = startupInfoEx->StartupInfo.dwY;
+		startupInfo.dwXSize = startupInfoEx->StartupInfo.dwXSize;
+		startupInfo.dwYSize = startupInfoEx->StartupInfo.dwYSize;
+		startupInfo.dwXCountChars = startupInfoEx->StartupInfo.dwXCountChars;
+		startupInfo.dwYCountChars = startupInfoEx->StartupInfo.dwYCountChars;
+		startupInfo.dwFillAttribute = startupInfoEx->StartupInfo.dwFillAttribute;
+		startupInfo.dwFlags = startupInfoEx->StartupInfo.dwFlags;
+		startupInfo.wShowWindow = startupInfoEx->StartupInfo.wShowWindow;
+		startupInfo.cbReserved2 = startupInfoEx->StartupInfo.cbReserved2;
+		startupInfo.lpReserved2 = startupInfoEx->StartupInfo.lpReserved2;
+		startupInfo.hStdInput = startupInfoEx->StartupInfo.hStdInput;
+		startupInfo.hStdOutput = startupInfoEx->StartupInfo.hStdOutput;
+		startupInfo.hStdError = startupInfoEx->StartupInfo.hStdError;
+		
+		 DbgPrint("CreateProcessExW :: lpStartupInfo is STARTUPINFOEX structure\n");
+	}
+	
+	resp = CreateProcessW(lpApplicationName,
+						  lpCommandLine,
+						  lpProcessAttributes,
+						  lpThreadAttributes,
+						  bInheritHandles,
+						  dwCreationFlags,
+						  lpEnvironment,
+						  lpCurrentDirectory,
+						  &startupInfo,
+						  lpProcessInformation);
+						  
+	DbgPrint("CreateProcessW :: returned value is %d\n", resp);	
+
+	return resp;
+								  
+}
+
+BOOL
+WINAPI
+CreateProcessInternalExA(
+    HANDLE hUserToken,
+    LPCSTR lpApplicationName,
+    LPSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCSTR lpCurrentDirectory,
+    LPSTARTUPINFOA lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation,
+    PHANDLE hRestrictedUserToken
+)
+{
+	// STARTUPINFOA startupInfo;
+	
+	BOOL resp;
+	
+	 if(lpStartupInfo->cb == sizeof(STARTUPINFOEX))
+	 {
+		
+		// LPSTARTUPINFOEX startupInfoEx = (LPSTARTUPINFOEX)lpStartupInfo;
+		
+		// startupInfo.cb = sizeof(STARTUPINFOEX);
+		// startupInfo.lpReserved = startupInfoEx->StartupInfo.lpReserved;
+		// startupInfo.lpDesktop = startupInfoEx->StartupInfo.lpDesktop;
+		// startupInfo.lpTitle = startupInfoEx->StartupInfo.lpTitle;
+		// startupInfo.dwX = startupInfoEx->StartupInfo.dwX;
+		// startupInfo.dwY = startupInfoEx->StartupInfo.dwY;
+		// startupInfo.dwXSize = startupInfoEx->StartupInfo.dwXSize;
+		// startupInfo.dwYSize = startupInfoEx->StartupInfo.dwYSize;
+		// startupInfo.dwXCountChars = startupInfoEx->StartupInfo.dwXCountChars;
+		// startupInfo.dwYCountChars = startupInfoEx->StartupInfo.dwYCountChars;
+		// startupInfo.dwFillAttribute = startupInfoEx->StartupInfo.dwFillAttribute;
+		// startupInfo.dwFlags = startupInfoEx->StartupInfo.dwFlags;
+		// startupInfo.wShowWindow = startupInfoEx->StartupInfo.wShowWindow;
+		// startupInfo.cbReserved2 = startupInfoEx->StartupInfo.cbReserved2;
+		// startupInfo.lpReserved2 = startupInfoEx->StartupInfo.lpReserved2;
+		// startupInfo.hStdInput = startupInfoEx->StartupInfo.hStdInput;
+		// startupInfo.hStdOutput = startupInfoEx->StartupInfo.hStdOutput;
+		// startupInfo.hStdError = startupInfoEx->StartupInfo.hStdError;
+		
+		 DbgPrint("CreateProcessInternalExA :: lpStartupInfo is STARTUPINFOEX structure\n");
+	 }
+	
+	resp = CreateProcessInternalA(hUserToken,
+								  lpApplicationName,
+								  lpCommandLine,
+								  lpProcessAttributes,
+								  lpThreadAttributes,
+								  bInheritHandles,
+								  dwCreationFlags,
+								  lpEnvironment,
+								  lpCurrentDirectory,
+								  lpStartupInfo,//&startupInfo,
+								  lpProcessInformation,
+								  hRestrictedUserToken);	
+
+	DbgPrint("CreateProcessInternalA :: returned value is %d\n", resp);
+	return resp;	
+}
+
+BOOL
+WINAPI
+CreateProcessExA(
+    LPCSTR lpApplicationName,
+    LPSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCSTR lpCurrentDirectory,
+    LPSTARTUPINFOA lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation
+)
+{
+	// STARTUPINFOA startupInfo;
+	
+	BOOL resp;
+	
+	 if(lpStartupInfo->cb== sizeof(STARTUPINFOEX))
+	 {
+		
+		// LPSTARTUPINFOEX startupInfoEx = (LPSTARTUPINFOEX)lpStartupInfo;
+		
+		// startupInfo.cb = sizeof(STARTUPINFOEX);
+		// startupInfo.lpReserved = startupInfoEx->StartupInfo.lpReserved;
+		// startupInfo.lpDesktop = startupInfoEx->StartupInfo.lpDesktop;
+		// startupInfo.lpTitle = startupInfoEx->StartupInfo.lpTitle;
+		// startupInfo.dwX = startupInfoEx->StartupInfo.dwX;
+		// startupInfo.dwY = startupInfoEx->StartupInfo.dwY;
+		// startupInfo.dwXSize = startupInfoEx->StartupInfo.dwXSize;
+		// startupInfo.dwYSize = startupInfoEx->StartupInfo.dwYSize;
+		// startupInfo.dwXCountChars = startupInfoEx->StartupInfo.dwXCountChars;
+		// startupInfo.dwYCountChars = startupInfoEx->StartupInfo.dwYCountChars;
+		// startupInfo.dwFillAttribute = startupInfoEx->StartupInfo.dwFillAttribute;
+		// startupInfo.dwFlags = startupInfoEx->StartupInfo.dwFlags;
+		// startupInfo.wShowWindow = startupInfoEx->StartupInfo.wShowWindow;
+		// startupInfo.cbReserved2 = startupInfoEx->StartupInfo.cbReserved2;
+		// startupInfo.lpReserved2 = startupInfoEx->StartupInfo.lpReserved2;
+		// startupInfo.hStdInput = startupInfoEx->StartupInfo.hStdInput;
+		// startupInfo.hStdOutput = startupInfoEx->StartupInfo.hStdOutput;
+		// startupInfo.hStdError = startupInfoEx->StartupInfo.hStdError;
+		
+		 DbgPrint("CreateProcessExA :: lpStartupInfo is STARTUPINFOEX structure\n");
+	 }
+	
+	return CreateProcessA(lpApplicationName,
+						  lpCommandLine,
+						  lpProcessAttributes,
+						  lpThreadAttributes,
+						  bInheritHandles,
+						  dwCreationFlags,
+						  lpEnvironment,
+						  lpCurrentDirectory,
+						  lpStartupInfo,//&startupInfo,
+						  lpProcessInformation);	
+						 
+	DbgPrint("CreateProcessA :: returned value is %d\n", resp);		
+
+	return resp;
 }

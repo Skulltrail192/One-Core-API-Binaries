@@ -1375,6 +1375,7 @@ void opentype_get_font_properties(struct file_stream_desc *stream_desc, struct d
             props->style = DWRITE_FONT_STYLE_OBLIQUE;
         else if (fsSelection & OS2_FSSELECTION_ITALIC)
             props->style = DWRITE_FONT_STYLE_ITALIC;
+        props->lf.lfItalic = !!(fsSelection & OS2_FSSELECTION_ITALIC);
 
         memcpy(&props->panose, &tt_os2->panose, sizeof(props->panose));
 
@@ -1404,12 +1405,13 @@ void opentype_get_font_properties(struct file_stream_desc *stream_desc, struct d
         if (macStyle & TT_HEAD_MACSTYLE_BOLD)
             props->weight = DWRITE_FONT_WEIGHT_BOLD;
 
-        if (macStyle & TT_HEAD_MACSTYLE_ITALIC)
+        if (macStyle & TT_HEAD_MACSTYLE_ITALIC) {
             props->style = DWRITE_FONT_STYLE_ITALIC;
+            props->lf.lfItalic = 1;
+        }
     }
 
     props->lf.lfWeight = props->weight;
-    props->lf.lfItalic = props->style == DWRITE_FONT_STYLE_ITALIC;
 
     TRACE("stretch=%d, weight=%d, style %d\n", props->stretch, props->weight, props->style);
 
@@ -1551,7 +1553,7 @@ static BOOL opentype_decode_namerecord(const TT_NAME_V0 *header, BYTE *storage_a
         UINT codepage;
 
         codepage = get_name_record_codepage(platform, encoding);
-        get_name_record_locale(platform, lang_id, locale, sizeof(locale)/sizeof(WCHAR));
+        get_name_record_locale(platform, lang_id, locale, ARRAY_SIZE(locale));
 
         if (codepage) {
             DWORD len = MultiByteToWideChar(codepage, 0, (LPSTR)(storage_area + offset), length, NULL, 0);
@@ -1728,7 +1730,7 @@ HRESULT opentype_get_font_facename(struct file_stream_desc *stream_desc, WCHAR *
         BOOL exists;
 
         exists = FALSE;
-        if (GetSystemDefaultLocaleName(localeW, sizeof(localeW)/sizeof(WCHAR)))
+        if (GetSystemDefaultLocaleName(localeW, ARRAY_SIZE(localeW)))
             IDWriteLocalizedStrings_FindLocaleName(lfnames, localeW, &index, &exists);
 
         if (!exists)
@@ -1799,7 +1801,7 @@ HRESULT opentype_get_typographic_features(IDWriteFontFace *fontface, UINT32 scri
     UINT8 i;
 
     *count = 0;
-    for (i = 0; i < sizeof(tables)/sizeof(tables[0]); i++) {
+    for (i = 0; i < ARRAY_SIZE(tables); i++) {
         const OT_ScriptList *scriptlist;
         const GPOS_GSUB_Header *header;
         const OT_Script *script;

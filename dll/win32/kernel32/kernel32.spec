@@ -1011,14 +1011,14 @@
 @ stub GetCurrentPackageInfo
 @ stub GetDateFormatEx
 @ stub GetTimeFormatEx
-@ stub GetErrorMode
+@ stdcall GetErrorMode()
 @ stub RaiseFailFastException
-@ stub IsThreadAFiber
-@ stub SetFileInformationByHandle
+@ stdcall IsThreadAFiber()
+@ stdcall SetFileInformationByHandle(long long ptr long)
 @ stub CopyFile2
 @ stub CreateSymbolicLinkW
-@ stub GetFileInformationByHandleEx
-@ stub OpenFileById
+@ stdcall GetFileInformationByHandleEx(ptr long ptr long)
+@ stdcall OpenFileById(long ptr long long ptr long)
 @ stub CancelIoEx
 @ stub CancelSynchronousIo
 @ stub GetOverlappedResultEx
@@ -1067,27 +1067,27 @@
 @ stub SetDefaultDllDirectories
 @ stub GetCalendarInfoEx
 @ stub GetLocaleInfoEx
-@ stub GetThreadPreferredUILanguages
-@ stub GetThreadUILanguage
+@ stdcall GetThreadPreferredUILanguages(long ptr wstr ptr) 
+@ stdcall GetThreadUILanguage()
 @ stub GetUserDefaultLocaleName
-@ stub GetUserPreferredUILanguages
-@ stub IdnToAscii
-@ stub IdnToUnicode
+@ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
+@ stdcall IdnToAscii(long wstr long ptr long)
+@ stdcall IdnToUnicode(long wstr long ptr long)
 @ stub IsValidLocaleName
-@ stub LCMapStringEx
+@ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
 @ stub LocaleNameToLCID
-@ stub SetThreadPreferredUILanguages
+@ stdcall SetThreadPreferredUILanguages(long wstr ptr)
 @ stub FindNLSString
 @ stub FindNLSStringEx
-@ stub GetFileMUIInfo
-@ stub GetFileMUIPath
+@ stdcall GetFileMUIInfo(long wstr ptr ptr)
+@ stdcall GetFileMUIPath(long wstr wstr ptr wstr ptr ptr)
 @ stub GetNLSVersionEx
-@ stub GetProcessPreferredUILanguages
-@ stub GetSystemPreferredUILanguages
-@ stub GetUILanguageInfo
+@ stdcall GetProcessPreferredUILanguages(long ptr wstr ptr)
+@ stdcall GetSystemPreferredUILanguages(long ptr wstr ptr)
+@ stdcall GetUILanguageInfo(long wstr wstr ptr ptr)
 @ stub IsValidNLSVersion
 @ stub ResolveLocaleName
-@ stub SetProcessPreferredUILanguages
+@ stdcall SetProcessPreferredUILanguages(long wstr ptr)
 @ stub EnumSystemLocalesEx
 @ stub EnumCalendarInfoExEx
 @ stub EnumDateFormatsExEx
@@ -1124,7 +1124,7 @@
 @ stub NormalizeString
 @ stub VerifyScripts
 @ stub FlushProcessWriteBuffers
-@ stub CreateProcessAsUserW
+@ stdcall CreateProcessAsUserW(long wstr wstr ptr ptr long long ptr wstr ptr ptr)
 @ stub CreateRemoteThreadEx
 @ stub DeleteProcThreadAttributeList
 @ stub GetCurrentProcessorNumberEx
@@ -1132,13 +1132,13 @@
 @ stub GetProcessMitigationPolicy
 @ stub GetThreadIdealProcessorEx
 @ stub InitializeProcThreadAttributeList
-@ stub OpenProcessToken
-@ stub OpenThreadToken
+@ stdcall OpenProcessToken(ptr long ptr)
+@ stdcall OpenThreadToken(ptr long long ptr)
 @ stub QueryProcessAffinityUpdateMode
 @ stub SetProcessAffinityUpdateMode
 @ stub SetProcessMitigationPolicy
 @ stub SetThreadIdealProcessorEx
-@ stub SetThreadToken
+@ stdcall SetThreadToken(ptr ptr)
 @ stub UpdateProcThreadAttribute
 @ stub IsProcessCritical
 @ stub GetThreadInformation
@@ -1189,8 +1189,8 @@
 @ stub DeleteSynchronizationBarrier
 @ stub EnterSynchronizationBarrier
 @ stub InitOnceBeginInitialize
-@ stub InitOnceComplete
-;@ stub InitOnceExecuteOnce
+@ stdcall InitOnceComplete(ptr long ptr)
+@ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stub InitOnceInitialize
 @ stub InitializeConditionVariable
 @ stub InitializeCriticalSectionEx
@@ -1263,14 +1263,14 @@
 @ stub WerUnregisterRuntimeExceptionModule
 @ stub WerpNotifyLoadStringResource
 @ stub WerpNotifyUseStringResource
-@ stub BaseSetLastNTError
+@ stdcall BaseSetLastNTError(long)
 @ stub CheckElevation
 @ stub CheckElevationEnabled
 @ stub CompareCalendarDates
 @ stub GetCalendarMonthsInYear
 @ stub GetActiveProcessorCount
-@ stub BaseCleanupAppcompatCache
-@ stub BaseInitAppcompatCache
+@ stdcall BaseCleanupAppcompatCache()
+@ stdcall BaseInitAppcompatCache()
 @ stub CreateProcessInternalWSecure
 @ stub CreateVirtualBuffer
 @ stub ExtendVirtualBuffer
@@ -1291,12 +1291,20 @@
 @ stub uaw_wcslen
 @ stub uaw_wcsrchr
 
-@ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stub QuirkIsEnabled3
 @ stub GetNamedPipeAttribute
-@ stub ImpersonateNamedPipeClient
-@ stub CompareStringEx
+@ stdcall ImpersonateNamedPipeClient(long)
+@ stdcall CompareStringEx(wstr long wstr long wstr long ptr ptr long)
 @ stub GetThreadErrorMode
 @ stub SetThreadErrorMode
 @ stub CreateSemaphoreExA
 @ stub CreateWaitableTimerExA
+
+@ stub AppPolicyGetProcessTerminationMethod
+@ stub AppPolicyGetShowDeveloperDiagnostic
+@ stub AppPolicyGetThreadInitializationType
+@ stub AppPolicyGetWindowingModel
+
+@ stdcall PathCchAddBackslash(wstr long)
+@ stdcall PathCchAddBackslashEx(wstr long ptr ptr) 
+@ stdcall PathCchCombineEx(ptr long ptr ptr long)

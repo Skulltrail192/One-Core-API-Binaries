@@ -379,7 +379,7 @@ static void STDMETHODCALLTYPE d3d_buffer_wined3d_object_released(void *parent)
     struct d3d_buffer *buffer = parent;
 
     wined3d_private_store_cleanup(&buffer->private_store);
-    HeapFree(GetProcessHeap(), 0, parent);
+    heap_free(parent);
 }
 
 static const struct wined3d_parent_ops d3d_buffer_wined3d_parent_ops =
@@ -387,8 +387,12 @@ static const struct wined3d_parent_ops d3d_buffer_wined3d_parent_ops =
     d3d_buffer_wined3d_object_released,
 };
 
-static BOOL validate_buffer_desc(D3D11_BUFFER_DESC *desc)
+static BOOL validate_buffer_desc(D3D11_BUFFER_DESC *desc, D3D_FEATURE_LEVEL feature_level)
 {
+    if (!validate_d3d11_resource_access_flags(D3D11_RESOURCE_DIMENSION_BUFFER,
+            desc->Usage, desc->BindFlags, desc->CPUAccessFlags, feature_level))
+        return FALSE;
+
     if (desc->MiscFlags & D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS)
     {
         if (desc->MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED)
@@ -422,6 +426,12 @@ static BOOL validate_buffer_desc(D3D11_BUFFER_DESC *desc)
         desc->StructureByteStride = 0;
     }
 
+    if (desc->MiscFlags & D3D11_RESOURCE_MISC_GENERATE_MIPS)
+    {
+        WARN("Buffer with the D3D11_RESOURCE_MISC_GENERATE_MIPS flag.\n");
+        return FALSE;
+    }
+
     return TRUE;
 }
 
@@ -436,13 +446,13 @@ static HRESULT d3d_buffer_init(struct d3d_buffer *buffer, struct d3d_device *dev
     buffer->refcount = 1;
     buffer->desc = *desc;
 
-    if (!validate_buffer_desc(&buffer->desc))
+    if (!validate_buffer_desc(&buffer->desc, device->feature_level))
         return E_INVALIDARG;
 
     wined3d_desc.byte_width = buffer->desc.ByteWidth;
     wined3d_desc.usage = wined3d_usage_from_d3d11(0, buffer->desc.Usage);
     wined3d_desc.bind_flags = buffer->desc.BindFlags;
-    wined3d_desc.cpu_access_flags = buffer->desc.CPUAccessFlags;
+    wined3d_desc.access = wined3d_access_from_d3d11(buffer->desc.Usage, buffer->desc.CPUAccessFlags);
     wined3d_desc.misc_flags = buffer->desc.MiscFlags;
     wined3d_desc.structure_byte_stride = buffer->desc.StructureByteStride;
 
@@ -472,13 +482,13 @@ HRESULT d3d_buffer_create(struct d3d_device *device, const D3D11_BUFFER_DESC *de
     struct d3d_buffer *object;
     HRESULT hr;
 
-    if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object))))
+    if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
 
     if (FAILED(hr = d3d_buffer_init(object, device, desc, data)))
     {
         WARN("Failed to initialize buffer, hr %#x.\n", hr);
-        HeapFree(GetProcessHeap(), 0, object);
+        heap_free(object);
         return hr;
     }
 

@@ -130,3 +130,40 @@ WerUnregisterFile(
 {
 	return S_OK;
 }
+
+/***********************************************************************
+  * WerRegisterRuntimeExceptionModule (KERNEL32.@)
+  *
+  * Register a custom runtime exception handler.
+  */
+HRESULT WINAPI WerRegisterRuntimeExceptionModule(
+  _In_     PCWSTR pwszOutOfProcessCallbackDll,
+  _In_opt_ PVOID  pContext
+)
+{
+	FIXME("(%s, %p) stub!\n", debugstr_w(pwszOutOfProcessCallbackDll), pContext);
+	return S_OK;
+}
+
+/***********************************************************************
+  * WerUnRegisterRuntimeExceptionModule (KERNEL32.@)
+  *
+  * UnRegister a custom runtime exception handler.
+  */
+HRESULT WINAPI WerUnregisterRuntimeExceptionModule(
+  _In_     PCWSTR pwszOutOfProcessCallbackDll,
+  _In_opt_ PVOID  pContext
+)
+{
+	FIXME("(%s, %p) stub!\n", debugstr_w(pwszOutOfProcessCallbackDll), pContext);
+	return S_OK;
+}
+
+/***********************************************************************
+  * WerUnregisterMemoryBlock (KERNEL32.@)
+8  */
+HRESULT WINAPI WerUnregisterMemoryBlock(void *block)
+{
+     FIXME("(%p) stub\n", block);
+     return E_NOTIMPL;
+}

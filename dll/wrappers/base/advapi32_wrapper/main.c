@@ -24,8 +24,13 @@
 #include <winsvc.h>
 #include <evntprov.h>
 #include <ntsecapi.h>
-// #include <ntdllnew.h>
 #include <ndk/cmfuncs.h>
+#include <wine/config.h>
+
+#include <ntstatus.h>
+#define WIN32_NO_STATUS
+
+#include <wine/debug.h>
 
 
 /* DEFINES ******************************************************************/
@@ -43,6 +48,9 @@
 #define GetPredefKeyIndex(HKey)                                                \
     ((ULONG_PTR)(HKey) & 0x0FFFFFFF)
 
+	
+WINE_DEFAULT_DEBUG_CHANNEL(advapi); 	
+
 /* PROTOTYPES ***************************************************************/
 	
 static NTSTATUS MapDefaultKey (PHANDLE ParentKey, HKEY Key);
@@ -52,6 +60,8 @@ static NTSTATUS OpenLocalMachineKey (PHANDLE KeyHandle);
 static NTSTATUS OpenUsersKey (PHANDLE KeyHandle);
 static NTSTATUS OpenCurrentConfigKey(PHANDLE KeyHandle);
 
+#define ARGUMENT_PRESENT(ArgumentPointer)((CHAR*)((ULONG_PTR)(ArgumentPointer)) != (CHAR*)NULL)
+
 /* GLOBALS ******************************************************************/
 
 static RTL_CRITICAL_SECTION HandleTableCS;
@@ -60,6 +70,7 @@ static HANDLE ProcessHeap;
 static BOOLEAN DefaultHandlesDisabled = FALSE;
 static BOOLEAN DefaultHandleHKUDisabled = FALSE;
 static BOOLEAN DllInitialized = FALSE; /* HACK */
+static const UNICODE_STRING HKLM_ClassesPath = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\Software\\Classes");
 
 typedef VOID( CALLBACK * PFN_SC_NOTIFY_CALLBACK ) (
     IN PVOID pParameter 
@@ -97,6 +108,16 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 }
 
 /*INTERNAL FUNCTIONS ********************************************/
+
+FORCEINLINE BOOL IsHKCRKey 	( 	_In_ HKEY  	hKey	) 	
+{
+	return ((ULONG_PTR)hKey & 0x2) != 0;	
+}
+
+FORCEINLINE void MakeHKCRKey 	( 	_Inout_ HKEY *  	hKey	) 	
+{
+	*hKey = (HKEY)((ULONG_PTR)(*hKey) | 0x2);
+}
 
 /************************************************************************
  *  RegInitDefaultHandles
@@ -137,7 +158,6 @@ CloseDefaultKeys(VOID)
     RtlLeaveCriticalSection(&HandleTableCS);
 }*/
 
-
 static NTSTATUS
 OpenClassesRootKey(PHANDLE KeyHandle)
 {
@@ -153,7 +173,6 @@ OpenClassesRootKey(PHANDLE KeyHandle)
                      MAXIMUM_ALLOWED,
                      &Attributes);
 }
-
 
 static NTSTATUS
 OpenLocalMachineKey(PHANDLE KeyHandle)
@@ -316,7 +335,9 @@ MapDefaultKey(OUT PHANDLE RealKey,
 }
 
 /* unimplemented*/
-ULONG WINAPI EventRegister(
+ULONG 
+WINAPI 
+EventRegister(
   _In_      LPCGUID ProviderId,
   _In_opt_  PENABLECALLBACK EnableCallback,
   _In_opt_  PVOID CallbackContext,
@@ -359,7 +380,8 @@ EventWriteEndScenario(
 	return ERROR_SUCCESS;
 }
 
-ULONG WINAPI
+ULONG 
+WINAPI
 EventWriteStartScenario(
     REGHANDLE RegHandle,
     PCEVENT_DESCRIPTOR EventDescriptor,
@@ -447,7 +469,6 @@ static int load_string(HINSTANCE hModule, UINT resId, LPWSTR pwszBuffer, INT cMa
     return cMaxChars;
 }
 
-/*
 ULONG WINAPI EnableTraceEx(
   _In_      LPCGUID ProviderId,
   _In_opt_  LPCGUID SourceId,
@@ -462,7 +483,7 @@ ULONG WINAPI EnableTraceEx(
 {
 	return ERROR_SUCCESS;	
 }
-*/
+
 /* unimplemented*/
 ULONG WINAPI EventActivityIdControl(
   _In_     ULONG ControlCode,
@@ -507,7 +528,6 @@ ULONG WINAPI EventWriteTransfer(
 {
 	return ERROR_SUCCESS;
 }
-
 
 /* implemented
 DWORD WINAPI InitiateShutdownW(
@@ -822,96 +842,16 @@ LsaLookupSids2(
 						 Names);
 }
 
-// BOOL
-// APIENTRY
-// GetTokenInformation (
-    // HANDLE TokenHandle,
-    // TOKEN_INFORMATION_CLASS TokenInformationClass,
-    // PVOID TokenInformation,
-    // DWORD TokenInformationLength,
-    // PDWORD ReturnLength
-    // )
-// /*++
-
-
-// Routine Description:
-
-    // Retrieve information about a specified token.
-
-// Arguments:
-
-    // TokenHandle - Provides a handle to the token to operate on.
-
-    // TokenInformationClass - The token information class about which
-        // to retrieve information.
-
-    // TokenInformation - The buffer to receive the requested class of
-        // information.  The buffer must be aligned on at least a
-        // longword boundary.  The actual structures returned are
-        // dependent upon the information class requested, as defined in
-        // the TokenInformationClass parameter description.
-
-        // TokenInformation Format By Information Class:
-
-           // TokenUser => TOKEN_USER data structure.  TOKEN_QUERY
-           // access is needed to retrieve this information about a
-           // token.
-
-           // TokenGroups => TOKEN_GROUPS data structure.  TOKEN_QUERY
-           // access is needed to retrieve this information about a
-           // token.
-
-           // TokenPrivileges => TOKEN_PRIVILEGES data structure.
-           // TOKEN_QUERY access is needed to retrieve this information
-           // about a token.
-
-           // TokenOwner => TOKEN_OWNER data structure.  TOKEN_QUERY
-           // access is needed to retrieve this information about a
-           // token.
-
-           // TokenPrimaryGroup => TOKEN_PRIMARY_GROUP data structure.
-           // TOKEN_QUERY access is needed to retrieve this information
-           // about a token.
-
-           // TokenDefaultDacl => TOKEN_DEFAULT_DACL data structure.
-           // TOKEN_QUERY access is needed to retrieve this information
-           // about a token.
-
-           // TokenSource => TOKEN_SOURCE data structure.
-           // TOKEN_QUERY_SOURCE access is needed to retrieve this
-           // information about a token.
-
-           // TokenType => TOKEN_TYPE data structure.
-           // TOKEN_QUERY access is needed to retrieve this information
-           // about a token.
-
-           // TokenStatistics => TOKEN_STATISTICS data structure.
-           // TOKEN_QUERY access is needed to retrieve this
-           // information about a token.
-
-           // TokenSessionId => ULONG.  TOKEN_QUERY access is needed to 
-           // query the Session ID of the token.
-            
-    // TokenInformationLength - Indicates the length, in bytes, of the
-        // TokenInformation buffer.
-
-    // ReturnLength - This parameter receives the actual length of the
-        // requested information.  If this value is larger than that
-        // provided by the TokenInformationLength parameter, then the
-        // buffer provided to receive the requested information is not
-        // large enough to hold that data and no data is returned.
-
-        // If the queried class is TokenDefaultDacl and there is no
-        // default Dacl established for the token, then the return
-        // length will be returned as zero, and no data will be returned.
-
-// Return Value:
-
-    // Returns TRUE for success, FALSE for failure.  Extended error status
-    // is available using GetLastError.
-
-// --*/
-// {
+BOOL
+APIENTRY
+GetTokenInformationInternal (
+    HANDLE TokenHandle,
+    TOKEN_INFORMATION_CLASS TokenInformationClass,
+    PVOID TokenInformation,
+    DWORD TokenInformationLength,
+    PDWORD ReturnLength
+    )
+{
     // NTSTATUS Status;
 
     // Status = NtQueryInformationToken (
@@ -921,105 +861,41 @@ LsaLookupSids2(
         // TokenInformationLength,
         // ReturnLength
         // );
+	// DbgPrint("GetTokenInformationInternal :: NtQueryInformationToken Status: %08x\n",Status);			
+		
 
     // if ( !NT_SUCCESS(Status) ) {
-       // // BaseSetLastNTError(Status);
+        // //BaseSetLastNTError(Status);
+		// DbgPrint("GetTokenInformation :: return FALSE\n",Status);
         // return FALSE;
     // }
 
     // return TRUE;
-// }
+	BOOL ret;
+	
+	ret = GetTokenInformation(TokenHandle,
+							  TokenInformationClass,
+							  TokenInformation,
+							  TokenInformationLength,
+							  ReturnLength);
+							  
+	if(!ret){
+		//DbgPrint("GetTokenInformation :: returned False\n");	
+	}
 
+	return ret;		
+	
+}
 
-
-
-// BOOL
-// APIENTRY
-// SetTokenInformation (
-    // HANDLE TokenHandle,
-    // TOKEN_INFORMATION_CLASS TokenInformationClass,
-    // PVOID TokenInformation,
-    // DWORD TokenInformationLength
-    // )
-// /*++
-
-
-// Routine Description:
-
-    // Modify information in a specified token.
-
-// Arguments:
-
-    // TokenHandle - Provides a handle to the token to operate on.
-
-    // TokenInformationClass - The token information class being set.
-
-    // TokenInformation - The buffer containing the new values for the
-        // specified class of information.  The buffer must be aligned
-        // on at least a longword boundary.  The actual structures
-        // provided are dependent upon the information class specified,
-        // as defined in the TokenInformationClass parameter
-        // description.
-
-        // TokenInformation Format By Information Class:
-
-           // TokenUser => This value is not a valid value for this API.
-           // The User ID may not be replaced.
-
-           // TokenGroups => This value is not a valid value for this
-           // API.  The Group IDs may not be replaced.  However, groups
-           // may be enabled and disabled using NtAdjustGroupsToken().
-
-           // TokenPrivileges => This value is not a valid value for
-           // this API.  Privilege information may not be replaced.
-           // However, privileges may be explicitly enabled and disabled
-           // using the NtAdjustPrivilegesToken API.
-
-           // TokenOwner => TOKEN_OWNER data structure.
-           // TOKEN_ADJUST_DEFAULT access is needed to replace this
-           // information in a token.  The owner values that may be
-           // specified are restricted to the user and group IDs with an
-           // attribute indicating they may be assigned as the owner of
-           // objects.
-
-           // TokenPrimaryGroup => TOKEN_PRIMARY_GROUP data structure.
-           // TOKEN_ADJUST_DEFAULT access is needed to replace this
-           // information in a token.  The primary group values that may
-           // be specified are restricted to be one of the group IDs
-           // already in the token.
-
-           // TokenDefaultDacl => TOKEN_DEFAULT_DACL data structure.
-           // TOKEN_ADJUST_DEFAULT access is needed to replace this
-           // information in a token.  The ACL provided as a new default
-           // discretionary ACL is not validated for structural
-           // correctness or consistency.
-
-           // TokenSource => This value is not a valid value for this
-           // API.  The source name and context handle  may not be
-           // replaced.
-
-           // TokenStatistics => This value is not a valid value for this
-           // API.  The statistics of a token are read-only.
-
-           // TokenSessionId => ULONG to set the token session.  Must have
-           // TOKEN_ADJUST_SESSIONID and TCB privilege.
-
-           // TokenSessionReference => ULONG.  Must be zero.  Must have 
-           // TCB privilege to dereference the logon session.  This info class
-           // will remove a reference for the logon session, and mark the token
-           // as not referencing the session.
-              
-    // TokenInformationLength - Indicates the length, in bytes, of the
-        // TokenInformation buffer.  This is only the length of the primary
-        // buffer.  All extensions of the primary buffer are self describing.
-
-// Return Value:
-
-    // Returns TRUE for success, FALSE for failure.  Extended error status
-    // is available using GetLastError.
-
-// --*/
-// {
+BOOL
+APIENTRY
+SetTokenInformationInternal (
+    HANDLE TokenHandle,
+    TOKEN_INFORMATION_CLASS TokenInformationClass,
+    PVOID TokenInformation,
+    DWORD TokenInformationLength
+    )
+{ 
     // NTSTATUS Status;
 
     // Status = NtSetInformationToken (
@@ -1029,10 +905,185 @@ LsaLookupSids2(
         // TokenInformationLength
         // );
 
-    // if ( !NT_SUCCESS(Status) ) {
-        // //BaseSetLastNTError(Status);
-        // return FALSE;
-    // }
+	// DbgPrint("SetTokenInformation :: NtSetInformationToken Status: %08x\n",Status);
+	
+	// if(!NT_SUCCESS(Status)){
+		// DbgPrint("SetTokenInformation :: return FALSE\n",Status);
+		// return FALSE; 
+	// }
+	
+	// return TRUE;
+	BOOL ret;
+	
+	ret = SetTokenInformation(TokenHandle,
+							  TokenInformationClass,
+							  TokenInformation,
+							  TokenInformationLength);
+							  
+	if(!ret){
+		DbgPrint("SetTokenInformation :: returned False\n");	
+	}
 
-    // return TRUE;
-// }
+	return ret;							  
+}
+
+/* set last error code from NT status and get the proper boolean return value */
+ /* used for functions that are a simple wrapper around the corresponding ntdll API */
+ static inline BOOL set_ntstatus( NTSTATUS status )
+ {
+     if (status) SetLastError( RtlNtStatusToDosError( status ));
+     return !status;
+}
+
+BOOL 
+WINAPI 
+OpenThreadTokenInternal(
+  _In_  HANDLE  ThreadHandle,
+  _In_  DWORD   DesiredAccess,
+  _In_  BOOL    OpenAsSelf,
+  _Out_ PHANDLE TokenHandle
+)
+{
+	// BOOL ret;
+	// NTSTATUS status;
+	
+	// DbgPrint("OpenThreadTokenInternal :: caled\n");
+	
+	// status =  NtOpenThreadToken(ThreadHandle, DesiredAccess, OpenAsSelf, TokenHandle);
+	
+	// DbgPrint("OpenThreadToken :: Status: %08x\n",status);
+	
+	// if(!NT_SUCCESS(status)){
+		// DbgPrint("OpenThreadToken :: return FALSE\n",status);
+		// return FALSE; 
+	// }
+	
+	// return TRUE;
+
+	BOOL ret;
+	
+	ret = OpenThreadToken(ThreadHandle,
+							  DesiredAccess,
+							  OpenAsSelf,
+							  TokenHandle);
+							  
+	if(!ret){
+		//DbgPrint("OpenThreadToken :: returned False\n");	
+	}
+	
+	return ret;			
+}
+
+/******************************************************************************
+ * OpenProcessToken			[ADVAPI32.@]
+ * Opens the access token associated with a process handle.
+ *
+ * PARAMS
+ *   ProcessHandle [I] Handle to process
+ *   DesiredAccess [I] Desired access to process
+ *   TokenHandle   [O] Pointer to handle of open access token
+ *
+ * RETURNS
+ *  Success: TRUE. TokenHandle contains the access token.
+ *  Failure: FALSE.
+ *
+ * NOTES
+ *  See NtOpenProcessToken.
+ */
+BOOL 
+WINAPI
+OpenProcessTokenInternal( 
+	HANDLE ProcessHandle, 
+	DWORD DesiredAccess,
+    HANDLE *TokenHandle 
+)
+{
+	// BOOL ret;
+	// NTSTATUS status;
+	
+	// DbgPrint("OpenProcessTokenInternal :: caled\n");
+	
+	// status =  NtOpenProcessToken(ProcessHandle, DesiredAccess, TokenHandle);
+	
+	// DbgPrint("OpenProcessToken :: NtOpenProcessToken Status: %08x\n",status);
+	
+	// if(!NT_SUCCESS(status)){
+		// DbgPrint("OpenProcessToken :: return FALSE\n",status);
+		// return FALSE; 
+	// }
+	
+	// return TRUE;
+	BOOL ret;
+	
+	ret = OpenProcessToken(ProcessHandle,
+							  DesiredAccess,
+							  TokenHandle);
+							  
+	if(!ret){
+		DbgPrint("OpenProcessToken :: returned False\n");	
+	}	
+
+	return ret;			
+}
+
+/*************************************************************************
+ * CreateRestrictedToken [ADVAPI32.@]
+ *
+ * Create a new more restricted token from an existing token.
+ *
+ * PARAMS
+ *   baseToken       [I] Token to base the new restricted token on
+ *   flags           [I] Options
+ *   nDisableSids    [I] Length of disableSids array
+ *   disableSids     [I] Array of SIDs to disable in the new token
+ *   nDeletePrivs    [I] Length of deletePrivs array
+ *   deletePrivs     [I] Array of privileges to delete in the new token
+ *   nRestrictSids   [I] Length of restrictSids array
+ *   restrictSids    [I] Array of SIDs to restrict in the new token
+ *   newToken        [O] Address where the new token is stored
+ *
+ * RETURNS
+ *  Success: TRUE
+ *  Failure: FALSE
+ */
+BOOL WINAPI CreateRestrictedTokenInternal(
+    HANDLE baseToken,
+    DWORD flags,
+    DWORD nDisableSids,
+    PSID_AND_ATTRIBUTES disableSids,
+    DWORD nDeletePrivs,
+    PLUID_AND_ATTRIBUTES deletePrivs,
+    DWORD nRestrictSids,
+    PSID_AND_ATTRIBUTES restrictSids,
+    PHANDLE newToken)
+{
+    TOKEN_TYPE type;
+    SECURITY_IMPERSONATION_LEVEL level = SecurityAnonymous;
+    DWORD size;
+
+    FIXME("(%p, 0x%x, %u, %p, %u, %p, %u, %p, %p): stub\n",
+          baseToken, flags, nDisableSids, disableSids,
+          nDeletePrivs, deletePrivs,
+          nRestrictSids, restrictSids,
+          newToken);
+
+    size = sizeof(type);
+    if (!GetTokenInformation( baseToken, TokenType, &type, size, &size )) return FALSE;
+    if (type == TokenImpersonation)
+    {
+        size = sizeof(level);
+        if (!GetTokenInformation( baseToken, TokenImpersonationLevel, &level, size, &size ))
+            return FALSE;
+    }
+    return DuplicateTokenEx( baseToken, MAXIMUM_ALLOWED, NULL, level, type, newToken );
+}
+
+//DELETE ME
+
+LONG WINAPI RegDeleteTreeW(
+  _In_     HKEY    hKey,
+  _In_opt_ LPCWSTR lpSubKey
+)
+{
+	return ERROR_SUCCESS;
+}

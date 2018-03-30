@@ -19,41 +19,19 @@
  *
  */
 
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
-
-#include <config.h>
+#include "config.h"
 #include <stdarg.h>
 
-#define NONAMELESSUNION
-#define NONAMELESSSTRUCT
 #define COBJMACROS
-#include <windef.h>
-#include <winbase.h>
-#include <wingdi.h>
-#include <winuser.h>
-#include <dwmapi.h>
-#include <wine/debug.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "dwmapi.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(dwmapi);
 
-typedef enum _DWM_SOURCE_FRAME_SAMPLING { 
-  DWM_SOURCE_FRAME_SAMPLING_POINT     = 1,
-  DWM_SOURCE_FRAME_SAMPLING_COVERAGE,
-  DWM_SOURCE_FRAME_SAMPLING_LAST
-} DWM_SOURCE_FRAME_SAMPLING;
-
-typedef struct _DWM_PRESENT_PARAMETERS {
-  UINT32                    cbSize;
-  BOOL                      fQueue;
-  DWM_FRAME_COUNT           cRefreshStart;
-  UINT                      cBuffer;
-  BOOL                      fUseSourceRate;
-  UNSIGNED_RATIO            rateSource;
-  UINT                      cRefreshesPerFrame;
-  DWM_SOURCE_FRAME_SAMPLING eSampling;
-} DWM_PRESENT_PARAMETERS;
 
 /* At process attach */
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
@@ -148,7 +126,7 @@ HRESULT WINAPI DwmSetWindowAttribute(HWND hwnd, DWORD attributenum, LPCVOID attr
 
     if (!once++) FIXME("(%p, %x, %p, %x) stub\n", hwnd, attributenum, attribute, size);
 
-    return E_NOTIMPL;
+    return S_OK;
 }
 
 /**********************************************************************
@@ -278,6 +256,7 @@ HRESULT WINAPI DwmDetachMilContent(HWND hwnd)
  */
 HRESULT WINAPI DwmUpdateThumbnailProperties(HTHUMBNAIL thumbnail, const DWM_THUMBNAIL_PROPERTIES *props)
 {
+    FIXME("(%p, %p) stub\n", thumbnail, props);
     return E_NOTIMPL;
 }
 
@@ -288,51 +267,22 @@ HRESULT WINAPI DwmSetPresentParameters(HWND hwnd, DWM_PRESENT_PARAMETERS *params
 {
     FIXME("(%p %p) stub\n", hwnd, params);
     return S_OK;
-}
+};
 
-HRESULT WINAPI DwmSetDxFrameDuration(
-   HWND hwnd,
-   INT  cRefreshes
-)
+/**********************************************************************
+ *           DwmSetIconicLivePreviewBitmap         (DWMAPI.@)
+ */
+HRESULT WINAPI DwmSetIconicLivePreviewBitmap(HWND hwnd, HBITMAP hbmp, POINT *pos, DWORD flags)
 {
-    return E_NOTIMPL;
-}
+    FIXME("(%p %p %p %x) stub\n", hwnd, hbmp, pos, flags);
+    return S_OK;
+};
 
-HRESULT WINAPI DwmModifyPreviousDxFrameDuration(
-   HWND hwnd,
-   INT  cRefreshes,
-   BOOL fRelative
-)
+/**********************************************************************
+ *           DwmSetIconicThumbnail         (DWMAPI.@)
+ */
+HRESULT WINAPI DwmSetIconicThumbnail(HWND hwnd, HBITMAP hbmp, DWORD flags)
 {
-    return E_NOTIMPL;
-}
-
-HRESULT WINAPI DwmQueryThumbnailSourceSize(
-        HTHUMBNAIL hThumbnail,
-  _Out_ PSIZE      pSize
-)
-{
-    return E_NOTIMPL;
-}
-
-
-HRESULT 
-WINAPI 
-DwmSetIconicLivePreviewBitmap(
-           HWND    hwnd,
-           HBITMAP hbmp,
-  _In_opt_ POINT   *pptClient,
-           DWORD   dwSITFlags
-)
-{
-    return E_NOTIMPL;
-}
-
-HRESULT WINAPI DwmSetIconicThumbnail(
-  _In_ HWND    hwnd,
-  _In_ HBITMAP hbmp,
-  _In_ DWORD   dwSITFlags
-)
-{
-    return E_NOTIMPL;	
-}
+    FIXME("(%p %p %x) stub\n", hwnd, hbmp, flags);
+    return S_OK;
+};

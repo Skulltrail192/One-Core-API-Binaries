@@ -1,26 +1,29 @@
-/*
- * Copyright 2009 Henri Verbeet for CodeWeavers
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- */
+/*++
+
+Copyright (c) 2018 Shorthorn Project
+
+Module Name:
+
+    sqm.c
+
+Abstract:
+
+    Implement sqm related functions
+
+Author:
+
+    Skulltrail 06-March-2018
+
+Revision History:
+
+--*/
 
 #include <assert.h>
 #include <rtl.h>
 
-int WINAPI WinSqmEventEnabled()
+int 
+WINAPI
+WinSqmEventEnabled()
 {
   return 0;
 }
@@ -34,7 +37,7 @@ WinSqmEndSession(
 	HANDLE session
 )
 {
-    DbgPrint("NIMPLEMENTED: WinSqmEndSession");
+    DbgPrint("UNIMPLEMENTED: WinSqmEndSession");
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -47,7 +50,7 @@ WinSqmIsOptedIn(
 	void
 )
 {
-    DbgPrint("NIMPLEMENTED: WinSqmIsOptedIn");
+    DbgPrint("UNIMPLEMENTED: WinSqmIsOptedIn");
     return FALSE;
 }
 
@@ -62,7 +65,7 @@ WinSqmStartSession(
 	DWORD unknown1
 )
 {
-    DbgPrint("NIMPLEMENTED: WinSqmStartSession");
+    DbgPrint("UNIMPLEMENTED: WinSqmStartSession");
     return INVALID_HANDLE_VALUE;
 }
 
@@ -76,7 +79,7 @@ WinSqmAddToStream(
 	PVOID unknown3
 )
 {
-    DbgPrint("NIMPLEMENTED: WinSqmAddToStream");		
+    DbgPrint("UNIMPLEMENTED: WinSqmAddToStream");		
 	return NULL;
 }
 
@@ -91,7 +94,7 @@ WinSqmAddToStreamEx(
 	DWORD unknown5
 )
 {
-    DbgPrint("NIMPLEMENTED: WinSqmAddToStreamEx");	
+    DbgPrint("UNIMPLEMENTED: WinSqmAddToStreamEx");	
 	return TRUE;
 }
 
@@ -104,7 +107,7 @@ WinSqmSetDWORD(
 	DWORD unknown3
 )
 {
-	DbgPrint("UNIMPLEMENTED: WinSqmSetDWORD");		
+	DbgPrint("UUNIMPLEMENTED: WinSqmSetDWORD");		
   ;
 }
 
@@ -117,7 +120,7 @@ WinSqmIncrementDWORD(
 	DWORD unknown3
 )
 {
-	DbgPrint("UNIMPLEMENTED: WinSqmIncrementDWORD");		
+	DbgPrint("UUNIMPLEMENTED: WinSqmIncrementDWORD");		
 	return 0;
 }
 
@@ -130,7 +133,7 @@ WinSqmSetIfMaxDWORD(
 	DWORD unknown3
 )
 {
-	DbgPrint("UNIMPLEMENTED: WinSqmSetIfMaxDWORD");		
+	DbgPrint("UUNIMPLEMENTED: WinSqmSetIfMaxDWORD");		
 	return 0;
 }
 
@@ -138,7 +141,7 @@ BOOL
 NTAPI 
 WinSqmIsOptedInEx(ULONG number)
 {
-	DbgPrint("UNIMPLEMENTED: WinSqmIsOptedInEx");	
+	DbgPrint("UUNIMPLEMENTED: WinSqmIsOptedInEx");	
 	return TRUE;
 }
 
@@ -150,6 +153,6 @@ WinSqmAddToAverageDWORD(
 	DWORD unknown3
 )
 {
-	DbgPrint("UNIMPLEMENTED: WinSqmSetIfMaxDWORD");		
+	DbgPrint("UUNIMPLEMENTED: WinSqmSetIfMaxDWORD");		
 	return 0;
 }

@@ -20,11 +20,12 @@
 #define __WINE_D2D1_PRIVATE_H
 
 #include "wine/debug.h"
+#include "wine/heap.h"
 
 #include <assert.h>
 #include <limits.h>
 #define COBJMACROS
-#include "d2d1.h"
+#include "d2d1_1.h"
 #ifdef D2D1_INIT_GUID
 #include "initguid.h"
 #endif
@@ -34,10 +35,13 @@
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 #endif
 
+#include "d2d_functions.h"
+
 enum d2d_brush_type
 {
     D2D_BRUSH_TYPE_SOLID,
     D2D_BRUSH_TYPE_LINEAR,
+    D2D_BRUSH_TYPE_RADIAL,
     D2D_BRUSH_TYPE_BITMAP,
     D2D_BRUSH_TYPE_COUNT,
 };
@@ -51,11 +55,17 @@ enum d2d_shape_type
     D2D_SHAPE_TYPE_COUNT,
 };
 
+struct d2d_settings
+{
+    unsigned int max_version_factory;
+};
+extern struct d2d_settings d2d_settings DECLSPEC_HIDDEN;
+
 struct d2d_clip_stack
 {
     D2D1_RECT_F *stack;
-    unsigned int size;
-    unsigned int count;
+    size_t size;
+    size_t count;
 };
 
 struct d2d_error_state
@@ -68,7 +78,49 @@ struct d2d_shape_resources
 {
     ID3D10InputLayout *il;
     ID3D10VertexShader *vs;
-    ID3D10PixelShader *ps[D2D_BRUSH_TYPE_COUNT][D2D_BRUSH_TYPE_COUNT + 1];
+};
+
+struct d2d_brush_cb
+{
+    enum d2d_brush_type type;
+    float opacity;
+    unsigned int pad[2];
+    union
+    {
+        struct
+        {
+            D2D1_COLOR_F colour;
+        } solid;
+        struct
+        {
+            D2D1_POINT_2F start;
+            D2D1_POINT_2F end;
+            unsigned int stop_count;
+        } linear;
+        struct
+        {
+            D2D1_POINT_2F centre;
+            D2D1_POINT_2F offset;
+            D2D1_POINT_2F ra;
+            D2D1_POINT_2F rb;
+            unsigned int stop_count;
+            float pad[3];
+        } radial;
+        struct
+        {
+            float _11, _21, _31, pad;
+            float _12, _22, _32;
+            BOOL ignore_alpha;
+        } bitmap;
+    } u;
+};
+
+struct d2d_ps_cb
+{
+    BOOL outline;
+    BOOL pad[3];
+    struct d2d_brush_cb colour_brush;
+    struct d2d_brush_cb opacity_brush;
 };
 
 struct d2d_d3d_render_target
@@ -85,6 +137,7 @@ struct d2d_d3d_render_target
     ID3D10RenderTargetView *view;
     ID3D10StateBlock *stateblock;
     struct d2d_shape_resources shape_resources[D2D_SHAPE_TYPE_COUNT];
+    ID3D10PixelShader *ps;
     ID3D10Buffer *ib;
     unsigned int vb_stride;
     ID3D10Buffer *vb;
@@ -173,11 +226,12 @@ struct d2d_gradient
     LONG refcount;
 
     ID2D1Factory *factory;
+    ID3D10ShaderResourceView *view;
     D2D1_GRADIENT_STOP *stops;
     UINT32 stop_count;
 };
 
-HRESULT d2d_gradient_create(ID2D1Factory *factory, const D2D1_GRADIENT_STOP *stops,
+HRESULT d2d_gradient_create(ID2D1Factory *factory, ID3D10Device *device, const D2D1_GRADIENT_STOP *stops,
         UINT32 stop_count, D2D1_GAMMA gamma, D2D1_EXTEND_MODE extend_mode,
         struct d2d_gradient **gradient) DECLSPEC_HIDDEN;
 
@@ -199,30 +253,41 @@ struct d2d_brush
         } solid;
         struct
         {
+            struct d2d_gradient *gradient;
+            D2D1_POINT_2F start;
+            D2D1_POINT_2F end;
+        } linear;
+        struct
+        {
+            struct d2d_gradient *gradient;
+            D2D1_POINT_2F centre;
+            D2D1_POINT_2F offset;
+            D2D1_POINT_2F radius;
+        } radial;
+        struct
+        {
             struct d2d_bitmap *bitmap;
             D2D1_EXTEND_MODE extend_mode_x;
             D2D1_EXTEND_MODE extend_mode_y;
             D2D1_BITMAP_INTERPOLATION_MODE interpolation_mode;
             ID3D10SamplerState *sampler_state;
         } bitmap;
-        struct
-        {
-            D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES desc;
-            ID2D1GradientStopCollection *gradient;
-        } linear;
     } u;
 };
 
 HRESULT d2d_solid_color_brush_create(ID2D1Factory *factory, const D2D1_COLOR_F *color,
         const D2D1_BRUSH_PROPERTIES *desc, struct d2d_brush **brush) DECLSPEC_HIDDEN;
-HRESULT d2d_linear_gradient_brush_create(ID2D1Factory *factory, const D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES *gradient_brush_desc,
-        const D2D1_BRUSH_PROPERTIES *brush_desc, ID2D1GradientStopCollection *gradient,
+HRESULT d2d_linear_gradient_brush_create(ID2D1Factory *factory,
+        const D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES *gradient_desc, const D2D1_BRUSH_PROPERTIES *brush_desc,
+        ID2D1GradientStopCollection *gradient, struct d2d_brush **brush) DECLSPEC_HIDDEN;
+HRESULT d2d_radial_gradient_brush_create(ID2D1Factory *factory,
+        const D2D1_RADIAL_GRADIENT_BRUSH_PROPERTIES *gradient_desc, const D2D1_BRUSH_PROPERTIES *brush_desc,
+        ID2D1GradientStopCollection *gradient, struct d2d_brush **brush) DECLSPEC_HIDDEN;
+HRESULT d2d_bitmap_brush_create(ID2D1Factory *factory, ID2D1Bitmap *bitmap,
+        const D2D1_BITMAP_BRUSH_PROPERTIES *bitmap_brush_desc, const D2D1_BRUSH_PROPERTIES *brush_desc,
         struct d2d_brush **brush) DECLSPEC_HIDDEN;
-HRESULT d2d_bitmap_brush_create(ID2D1Factory *factory, ID2D1Bitmap *bitmap, const D2D1_BITMAP_BRUSH_PROPERTIES *bitmap_brush_desc,
-        const D2D1_BRUSH_PROPERTIES *brush_desc, struct d2d_brush **brush) DECLSPEC_HIDDEN;
-void d2d_brush_bind_resources(struct d2d_brush *brush, struct d2d_brush *opacity_brush,
-        struct d2d_d3d_render_target *render_target, enum d2d_shape_type shape_type) DECLSPEC_HIDDEN;
-HRESULT d2d_brush_get_ps_cb(struct d2d_brush *brush, struct d2d_brush *opacity_brush,
+void d2d_brush_bind_resources(struct d2d_brush *brush, ID3D10Device *device, unsigned int brush_idx) DECLSPEC_HIDDEN;
+HRESULT d2d_brush_get_ps_cb(struct d2d_brush *brush, struct d2d_brush *opacity_brush, BOOL outline,
         struct d2d_d3d_render_target *render_target, ID3D10Buffer **ps_cb) DECLSPEC_HIDDEN;
 struct d2d_brush *unsafe_impl_from_ID2D1Brush(ID2D1Brush *iface) DECLSPEC_HIDDEN;
 
@@ -392,6 +457,8 @@ struct d2d_geometry
             enum d2d_geometry_state state;
             D2D1_FILL_MODE fill_mode;
             UINT32 segment_count;
+
+            D2D1_RECT_F bounds;
         } path;
         struct
         {
@@ -411,6 +478,32 @@ HRESULT d2d_rectangle_geometry_init(struct d2d_geometry *geometry,
 void d2d_transformed_geometry_init(struct d2d_geometry *geometry, ID2D1Factory *factory,
         ID2D1Geometry *src_geometry, const D2D_MATRIX_3X2_F *transform) DECLSPEC_HIDDEN;
 struct d2d_geometry *unsafe_impl_from_ID2D1Geometry(ID2D1Geometry *iface) DECLSPEC_HIDDEN;
+
+static inline BOOL d2d_array_reserve(void **elements, size_t *capacity, size_t count, size_t size)
+{
+    size_t new_capacity, max_capacity;
+    void *new_elements;
+
+    if (count <= *capacity)
+        return TRUE;
+
+    max_capacity = ~(SIZE_T)0 / size;
+    if (count > max_capacity)
+        return FALSE;
+
+    new_capacity = max(4, *capacity);
+    while (new_capacity < count && new_capacity <= max_capacity / 2)
+        new_capacity *= 2;
+    if (new_capacity < count)
+        new_capacity = max_capacity;
+
+    if (!(new_elements = heap_realloc(*elements, new_capacity * size)))
+        return FALSE;
+
+    *elements = new_elements;
+    *capacity = new_capacity;
+    return TRUE;
+}
 
 static inline void d2d_matrix_multiply(D2D_MATRIX_3X2_F *a, const D2D_MATRIX_3X2_F *b)
 {
@@ -447,6 +540,11 @@ static inline void d2d_point_set(D2D1_POINT_2F *dst, float x, float y)
     dst->y = y;
 }
 
+static inline float d2d_point_dot(const D2D1_POINT_2F *p0, const D2D1_POINT_2F *p1)
+{
+    return p0->x * p1->x + p0->y * p1->y;
+}
+
 static inline void d2d_point_transform(D2D1_POINT_2F *dst, const D2D1_MATRIX_3X2_F *matrix, float x, float y)
 {
     dst->x = x * matrix->_11 + y * matrix->_21 + matrix->_31;
@@ -471,27 +569,4 @@ static inline const char *debug_d2d_rect_f(const D2D1_RECT_F *rect)
     return wine_dbg_sprintf("(%.8e,%.8e)-(%.8e,%.8e)", rect->left, rect->top, rect->right, rect->bottom );
 }
 
-//This is a hack, for gain time
-FORCEINLINE D2D1_PIXEL_FORMAT ID2D1RenderTarget_GetPixelFormat(ID2D1RenderTarget* This) {
-    D2D1_PIXEL_FORMAT __ret;
-    return *This->lpVtbl->GetPixelFormat(This,&__ret);
-}
-
-/*** ID2D1Bitmap methods ***/
-FORCEINLINE D2D1_SIZE_F ID2D1Bitmap_GetSize(ID2D1Bitmap* This) {
-    D2D1_SIZE_F __ret;
-    return *This->lpVtbl->GetSize(This,&__ret);
-}
-
-FORCEINLINE D2D1_SIZE_F ID2D1RenderTarget_GetSize(ID2D1RenderTarget* This) {
-    D2D1_SIZE_F __ret;
-    return *This->lpVtbl->GetSize(This,&__ret);
-}
-
-FORCEINLINE D2D1_SIZE_U ID2D1RenderTarget_GetPixelSize(ID2D1RenderTarget* This) {
-    D2D1_SIZE_U __ret;
-    return *This->lpVtbl->GetPixelSize(This,&__ret);
-}
-
 #endif /* __WINE_D2D1_PRIVATE_H */
-

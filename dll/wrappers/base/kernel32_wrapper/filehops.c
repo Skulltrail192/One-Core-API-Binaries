@@ -182,66 +182,31 @@ Wow64RevertWow64FsRedirection(IN PVOID OldValue)
 /***********************************************************************
 *             GetFileInformationByHandleEx (KERNEL32.@)
 */
-BOOL 
-WINAPI 
-GetFileInformationByHandleEx( 
-	HANDLE handle, 
-	FILE_INFO_BY_HANDLE_CLASS class,
-    LPVOID info, 
-	DWORD size 
-)
+BOOL WINAPI GetFileInformationByHandleEx( HANDLE handle, FILE_INFO_BY_HANDLE_CLASS class,
+                                          LPVOID info, DWORD size )
 {
-    NTSTATUS status;
+    NTSTATUS Status;
     IO_STATUS_BLOCK io;
 	PFILE_REMOTE_PROTOCOL_INFO remoteInfo = NULL;
 	
-	DbgPrint( "GetFileInformationByHandleEx called\n" );
-	
-	DbgPrint( "GetFileInformationByHandleEx Information Class is %02X\n",  class);
+	DbgPrint("GetFileInformationByHandleEx:: FileInfoClass is: %d\n",class);
+	DbgPrint("GetFileInformationByHandleEx:: FileName: ");
 
     switch (class)
     {
     case FileStreamInfo:
+		Status = NtQueryInformationFile( handle, &io, info, size, FileStreamInformation );
+		break;
     case FileCompressionInfo:
-    case FileAttributeTagInfo:    
-    case FileFullDirectoryInfo:
-    case FileFullDirectoryRestartInfo:
-    case FileStorageInfo:
-    case FileAlignmentInfo:
-    case FileIdExtdDirectoryInfo:
-    case FileIdExtdDirectoryRestartInfo:
-        DbgPrint( "GetFileInformationByHandleEx is UNIMPLEMENTED for FileIdExtdDirectoryRestartInfo option\n" );
-        SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
-        return FALSE;
-
-    case FileBasicInfo:
-        status = NtQueryInformationFile( handle, &io, info, size, FileBasicInformation );
-        break;
-
-    case FileStandardInfo:
-        status = NtQueryInformationFile( handle, &io, info, size, FileStandardInformation );
-        break;
-
-    case FileNameInfo:
-        status = NtQueryInformationFile( handle, &io, info, size, FileNameInformation );
-        break;
-
-    case FileIdInfo:
-        status = NtQueryInformationFile( handle, &io, info, size, FileIdInformation );
-        break;
-
-    case FileIdBothDirectoryRestartInfo:
-    case FileIdBothDirectoryInfo:
-        status = NtQueryDirectoryFile( handle, NULL, NULL, NULL, &io, info, size,
-                                       FileIdBothDirectoryInformation, FALSE, NULL,
-                                       (class == FileIdBothDirectoryRestartInfo) );
-        break;
-	case FileRemoteProtocolInfo:
-		DbgPrint( "GetFileInformationByHandleEx is UNIMPLEMENTED for FileRemoteProtocolInfo option\n" );
-		status = STATUS_SUCCESS;
+	    Status = NtQueryInformationFile( handle, &io, info, size, FileCompressionInformation);
+    case FileAttributeTagInfo:
+		Status = NtQueryInformationFile( handle, &io, info, size, FileAttributeTagInformation);
+    case FileRemoteProtocolInfo:
+		DbgPrint( "GetFileInformationByHandleEx is SUBIMPLEMENTED for FileRemoteProtocolInfo option\n" );
+		Status = STATUS_SUCCESS;
 		remoteInfo->StructureVersion = 1;
 		remoteInfo->StructureSize = sizeof(FILE_REMOTE_PROTOCOL_INFO);
-		remoteInfo->Protocol = WNNC_NET_GOOGLE;
+		remoteInfo->Protocol = WNNC_NET_SMB;
 		remoteInfo->ProtocolMajorVersion = 1;
 		remoteInfo->ProtocolMinorVersion = 0;
 		remoteInfo->ProtocolRevision = 0;
@@ -249,10 +214,39 @@ GetFileInformationByHandleEx(
 		remoteInfo->GenericReserved.Reserved[0] = 0;
 		remoteInfo->ProtocolSpecificReserved.Reserved[0] = 0;
 		info = remoteInfo;
-		return TRUE;
-		// remoteInfo->ProtocolSpecific.Smb2.Server.Capabilities = 0;
-		// remoteInfo->ProtocolSpecific.Smb2.Share.Capabilities = 0;
-		// remoteInfo->ProtocolSpecific.Smb2.Share.CachingFlags = 0;
+		return TRUE;	
+    case FileFullDirectoryInfo:
+    case FileFullDirectoryRestartInfo:
+    case FileStorageInfo:
+    case FileAlignmentInfo:
+    case FileIdExtdDirectoryInfo:
+    case FileIdExtdDirectoryRestartInfo:
+        FIXME( "%p, %u, %p, %u\n", handle, class, info, size );
+        SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+        return FALSE;
+
+    case FileBasicInfo:
+        Status = NtQueryInformationFile( handle, &io, info, size, FileBasicInformation );
+        break;
+
+    case FileStandardInfo:
+        Status = NtQueryInformationFile( handle, &io, info, size, FileStandardInformation );
+        break;
+
+    case FileNameInfo:
+        Status = NtQueryInformationFile( handle, &io, info, size, FileNameInformation );
+        break;
+
+    case FileIdInfo:
+        Status = NtQueryInformationFile( handle, &io, info, size, FileIdInformation );
+        break;
+
+    case FileIdBothDirectoryRestartInfo:
+    case FileIdBothDirectoryInfo:
+        Status = NtQueryDirectoryFile( handle, NULL, NULL, NULL, &io, info, size,
+                                       FileIdBothDirectoryInformation, FALSE, NULL,
+                                       (class == FileIdBothDirectoryRestartInfo) );
+        break;
     case FileRenameInfo:
     case FileDispositionInfo:
     case FileAllocationInfo:
@@ -263,9 +257,9 @@ GetFileInformationByHandleEx(
         return FALSE;
     }
 
-    if (status != STATUS_SUCCESS)
+    if (!NT_SUCCESS(Status))
     {
-        SetLastError( RtlNtStatusToDosError( status ) );
+        SetLastError( RtlNtStatusToDosError( Status ) );
         return FALSE;
     }
     return TRUE;
@@ -289,11 +283,20 @@ SetFileInformationByHandle(
     switch (class)
     {
 		case FileBasicInfo:
+			status = NtSetInformationFile( file, &io, &info, size, FileBasicInformation );
+			break;
 		case FileNameInfo:
 		case FileRenameInfo:
+			status = NtSetInformationFile( file, &io, &info, size, FileRenameInformation );
+			break;
 		case FileAllocationInfo:
+			status = NtSetInformationFile( file, &io, &info, size, FileAllocationInformation );
 		case FileEndOfFileInfo:
-		case FileStreamInfo:
+			status = NtSetInformationFile( file, &io, &info, size, FileEndOfFileInformation );
+			break;
+		case FileDispositionInfo:
+			status = NtSetInformationFile( file, &io, info, size, FileDispositionInformation );
+			break;		
 		case FileIdBothDirectoryInfo:
 		case FileIdBothDirectoryRestartInfo:
 		case FileIoPriorityHintInfo:
@@ -306,11 +309,7 @@ SetFileInformationByHandle(
 		case FileIdExtdDirectoryRestartInfo:
 			SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
 			return FALSE;
-
-		case FileDispositionInfo:
-			status = NtSetInformationFile( file, &io, info, size, FileDispositionInformation );
-			break;
-
+		case FileStreamInfo:	
 		case FileStandardInfo:
 		case FileCompressionInfo:
 		case FileAttributeTagInfo:

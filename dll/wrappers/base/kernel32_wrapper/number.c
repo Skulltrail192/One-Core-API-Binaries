@@ -365,7 +365,6 @@ LABEL_58:
   largeNumber = 36000000000i64;
   sixteen = twentyseven < 0x10 ? 0 : 24;
 LABEL_40:
-  sevenTeen = sixteen >> 32;
   sevenTeen = sixteen;
 LABEL_41:
   twentyfive = twentythree;

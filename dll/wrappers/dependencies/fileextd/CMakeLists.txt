@@ -4,6 +4,7 @@ include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 spec2def(fileextd.dll fileextd.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
+	main.c
     version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/fileextd_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/fileextd.def)

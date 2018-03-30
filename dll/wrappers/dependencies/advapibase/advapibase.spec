@@ -94,10 +94,9 @@
 94 stdcall CreatePrivateObjectSecurity(ptr ptr ptr long long ptr)
 95 stdcall CreatePrivateObjectSecurityEx(ptr ptr ptr ptr long long ptr ptr) 
 96 stdcall CreatePrivateObjectSecurityWithMultipleInheritance(ptr ptr ptr ptr long long long ptr ptr)
-97 stdcall CreateProcessAsUserA(long str str ptr ptr long long ptr str ptr ptr)
-98 stdcall CreateProcessAsUserW(long str str ptr ptr long long ptr str ptr ptr)
+97 stdcall CreateProcessAsUserA(long str str ptr ptr long long ptr str ptr ptr) 
+98 stdcall CreateProcessAsUserW(long str str ptr ptr long long ptr str ptr ptr) 
 99 stdcall CreateProcessWithLogonW(wstr wstr wstr long wstr wstr long ptr wstr ptr ptr) 
-101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr)
 102 stdcall CreateServiceA(long str str long long long long str str ptr str str str)
 103 stdcall CreateServiceW(long wstr wstr long long long long wstr wstr ptr wstr wstr wstr)
 104 stdcall CreateTraceInstanceId(ptr ptr) ntdll.EtwCreateTraceInstanceId
@@ -279,7 +278,6 @@
 281 stdcall GetSidLengthRequired(long)
 282 stdcall GetSidSubAuthority(ptr long)
 283 stdcall GetSidSubAuthorityCount(ptr)
-284 stdcall GetTokenInformation(long long ptr long ptr)
 285 stdcall GetTraceEnableFlags(double) ntdll.EtwGetTraceEnableFlags
 286 stdcall GetTraceEnableLevel(double) ntdll.EtwGetTraceEnableLevel
 287 stdcall GetTraceLoggerHandle(ptr) ntdll.EtwGetTraceLoggerHandle
@@ -567,7 +565,6 @@
 579 stdcall SetServiceBits(long long long long)
 580 stdcall SetServiceObjectSecurity(long long ptr)
 581 stdcall SetServiceStatus(long long)
-582 stdcall SetThreadToken(ptr ptr)
 583 stdcall SetTokenInformation(long long ptr long)
 584 stdcall SetTraceCallback(ptr ptr)
 585 stdcall SetUserFileEncryptionKey(ptr)
@@ -694,3 +691,6 @@
 487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapinew.RegGetValueW
 
 @ stdcall LogonUserExExW(str str str long long ptr ptr ptr ptr ptr ptr)
+101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr)
+582 stdcall SetThreadToken(ptr ptr)
+284 stdcall GetTokenInformation(long long ptr long ptr)

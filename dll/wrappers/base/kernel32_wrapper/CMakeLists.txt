@@ -12,6 +12,7 @@ include_directories(
 	${REACTOS_SOURCE_DIR}/dll/wrappers/base/ntext_wrapper)	
 spec2def(kernel32_wrapper.dll kernel32_wrapper.spec ADD_IMPORTLIB)
 
+
 list(APPEND SOURCE
 	ahcache.c
 	appcompat.c
@@ -24,9 +25,11 @@ list(APPEND SOURCE
 	error.c
 	filehops.c
 	fileinfo.c
+	filemisc.c
 	fileopcr.c	
 	findfile.c
 	handle.c 
+	heap.c
     locale.c
 	mem.c
 	module.c
@@ -58,7 +61,7 @@ if(ARCH STREQUAL "i386")
 	)
 elseif(ARCH STREQUAL "amd64")
     list(APPEND ASM_SOURCE
-        # asm/amd64/thread.S
+        #asm/amd64/thread.S
 	)
 endif()	
 	
@@ -68,13 +71,18 @@ add_library(kernel32_wrapper SHARED ${kernel32_wrapper_ASM} ${SOURCE})
 
 set_module_type(kernel32_wrapper win32dll ENTRYPOINT BaseDllInitialize 12)
 
+#############################################
+## HACK FOR MSVC COMPILATION WITH win32dll ##
+set_subsystem(kernel32 console)
+################# END  HACK #################
+
 target_link_libraries(kernel32_wrapper wine ${PSEH_LIB})
 
 if(ARCH STREQUAL "i386")
-	add_importlibs(kernel32_wrapper kernelfull kernel32_vista ntext ntdll_vista normaliz psapi advapi32 user32 version)
+	add_importlibs(kernel32_wrapper kernelfull ntext normaliz fileextd psapi advapi32 user32 version)
 
 elseif(ARCH STREQUAL "amd64")
-	add_importlibs(kernel32_wrapper kernel32 ntext psapi advapi32 user32 version)
+	add_importlibs(kernel32_wrapper kernel32 ntext normaliz psapi fileextd advapi32 user32 version)
 endif()
 
 add_cd_file(TARGET kernel32_wrapper DESTINATION reactos/system32 FOR all)

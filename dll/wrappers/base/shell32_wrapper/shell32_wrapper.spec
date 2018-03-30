@@ -99,7 +99,7 @@
 103 stdcall SignalFileOpen(ptr)
 119 stdcall IsLFNDrive(ptr) 
 121 stdcall SHFlushClipboard()
-122 stdcall -noname RunDLL_CallEntry16(long long long str long) # Fixme #name wrong?
+122 stdcall -noname RunDll_CallEntry16(long long long str long) # Fixme #name wrong?
 123 stdcall -noname SHFreeUnusedLibraries()
 126 stdcall -noname SHOutOfMemoryMessageBox(long long long) # Fixme
 127 stdcall -noname SHWinHelp(long long long long)
@@ -190,7 +190,7 @@
 241 stdcall -noname SHGetUserDisplayName(wstr ptr)
 242 stdcall -noname SHGetProcessDword(long long)
 243 stdcall -noname SHSetShellWindowEx(ptr ptr) 
-244 stdcall -noname SHInitRestricted(ptr ptr)
+244 stdcall -noname SHSettingsChanged(ptr ptr)
 245 stdcall SHTestTokenMembership(ptr ptr)
 246 stdcall -noname SHInvokePrivilegedFunctionW(wstr ptr ptr)
 247 stdcall -noname SHGetActiveConsoleSessionId()
@@ -442,7 +442,6 @@
 @ stdcall ShellExecuteExW(long)
 @ stdcall ShellExecuteW(long wstr wstr wstr wstr long)
 @ stdcall ShellHookProc(long ptr ptr)
-@ stdcall Shell_NotifyIcon(long ptr) Shell_NotifyIconInternal
 @ stdcall StrChrA(str long) 
 @ stdcall StrChrIA(str long) 
 @ stdcall StrChrIW(wstr long) 
@@ -482,8 +481,6 @@
 @ stdcall SHBindToObject(ptr ptr ptr ptr ptr) 
 @ stdcall Shell_GetCachedImageIndexA(ptr ptr long) Shell_GetCachedImageIndex
 @ stdcall Shell_GetCachedImageIndexW(ptr ptr long) Shell_GetCachedImageIndex
-@ stdcall Shell_NotifyIconA(long ptr)
-;@ stdcall Shell_NotifyIconW(long ptr)
 @ stdcall SHEvaluateSystemCommandTemplate(wstr wstr wstr wstr)
 @ stdcall SHFormatForDisplay(ptr ptr long wstr long) 
 @ stdcall SHGetPropertyStoreForWindow(ptr long ptr)
@@ -500,7 +497,7 @@
 @ stdcall SHGetKnownFolderPath(ptr long ptr ptr)
 @ stdcall AssocCreateForClasses(ptr long long ptr)
 @ stdcall AssocGetDetailsOfPropKey(ptr ptr ptr ptr ptr)
-@ stdcall ILLoadFromStreamEx(ptr ptr)
+846 stdcall ILLoadFromStreamEx(ptr ptr)
 @ stdcall InitNetworkAddressControl()
 @ stdcall SHCreateDefaultContextMenu(ptr ptr ptr)
 @ stdcall SHCreateDefaultExtractIcon(ptr ptr)
@@ -535,5 +532,6 @@
 @ stdcall SHGetKnownFolderItem(ptr long long ptr ptr)
 
 #remake functions
-@ stdcall Shell_NotifyIconA(long ptr) Shell_NotifyIconInternalA
-@ stdcall Shell_NotifyIconW(long ptr) Shell_NotifyIconInternalW
+@ stdcall Shell_NotifyIcon(long ptr) ;Shell_NotifyIconInternal
+@ stdcall Shell_NotifyIconA(long ptr) ;Shell_NotifyIconInternalA
+@ stdcall Shell_NotifyIconW(long ptr) ;Shell_NotifyIconInternalW

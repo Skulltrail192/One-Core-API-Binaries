@@ -34,6 +34,7 @@ static HRESULT STDMETHODCALLTYPE d2d_bitmap_QueryInterface(ID2D1Bitmap *iface, R
     TRACE("iface %p, iid %s, out %p.\n", iface, debugstr_guid(iid), out);
 
     if (IsEqualGUID(iid, &IID_ID2D1Bitmap)
+            || IsEqualGUID(iid, &IID_ID2D1Image)
             || IsEqualGUID(iid, &IID_ID2D1Resource)
             || IsEqualGUID(iid, &IID_IUnknown))
     {
@@ -69,7 +70,7 @@ static ULONG STDMETHODCALLTYPE d2d_bitmap_Release(ID2D1Bitmap *iface)
     {
         ID3D10ShaderResourceView_Release(bitmap->view);
         ID2D1Factory_Release(bitmap->factory);
-        HeapFree(GetProcessHeap(), 0, bitmap);
+        heap_free(bitmap);
     }
 
     return refcount;
@@ -285,7 +286,7 @@ HRESULT d2d_bitmap_create(ID2D1Factory *factory, ID3D10Device *device, D2D1_SIZE
         return hr;
     }
 
-    if ((*bitmap = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(**bitmap))))
+    if ((*bitmap = heap_alloc_zero(sizeof(**bitmap))))
     {
         d2d_bitmap_init(*bitmap, factory, view, size, desc);
         TRACE("Created bitmap %p.\n", *bitmap);
@@ -339,7 +340,7 @@ HRESULT d2d_bitmap_create_shared(ID2D1RenderTarget *render_target, ID3D10Device 
             goto failed;
         }
 
-        if (!(*bitmap = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(**bitmap))))
+        if (!(*bitmap = heap_alloc_zero(sizeof(**bitmap))))
         {
             hr = E_OUTOFMEMORY;
             goto failed;
@@ -385,7 +386,7 @@ HRESULT d2d_bitmap_create_shared(ID2D1RenderTarget *render_target, ID3D10Device 
             return hr;
         }
 
-        if (!(*bitmap = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(**bitmap))))
+        if (!(*bitmap = heap_alloc_zero(sizeof(**bitmap))))
         {
             ID3D10ShaderResourceView_Release(view);
             return E_OUTOFMEMORY;
@@ -508,9 +509,11 @@ HRESULT d2d_bitmap_create_from_wic_bitmap(ID2D1Factory *factory, ID3D10Device *d
     }
 
     pitch = ((bpp * size.width) + 15) & ~15;
-    data_size = pitch * size.height;
-    if (!(data = HeapAlloc(GetProcessHeap(), 0, data_size)))
+    if (pitch / bpp < size.width)
         return E_OUTOFMEMORY;
+    if (!(data = heap_calloc(size.height, pitch)))
+        return E_OUTOFMEMORY;
+    data_size = size.height * pitch;
 
     rect.X = 0;
     rect.Y = 0;
@@ -519,13 +522,13 @@ HRESULT d2d_bitmap_create_from_wic_bitmap(ID2D1Factory *factory, ID3D10Device *d
     if (FAILED(hr = IWICBitmapSource_CopyPixels(bitmap_source, &rect, pitch, data_size, data)))
     {
         WARN("Failed to copy bitmap pixels, hr %#x.\n", hr);
-        HeapFree(GetProcessHeap(), 0, data);
+        heap_free(data);
         return hr;
     }
 
     hr = d2d_bitmap_create(factory, device, size, data, pitch, &bitmap_desc, bitmap);
 
-    HeapFree(GetProcessHeap(), 0, data);
+    heap_free(data);
 
     return hr;
 }

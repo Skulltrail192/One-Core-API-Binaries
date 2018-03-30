@@ -49,11 +49,6 @@ typedef struct _ASSOCIATIONELEMENT {
   PCWSTR     pszClass;
 } ASSOCIATIONELEMENT;
 
-typedef enum _ASSOC_FILTER{
-  ASSOC_FILTER_NONE,
-  ASSOC_FILTER_RECOMMENDED
-}ASSOC_FILTER;
-
 HRESULT WINAPI SHGetPropertyStoreForWindow(
   _In_   HWND hwnd,
   _In_   REFIID riid,

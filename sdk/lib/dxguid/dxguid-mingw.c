@@ -15,6 +15,35 @@
 #include <basetyps.h>
 #include <guiddef.h>
 
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+
+#include "objbase.h"
+#include "oleauto.h"
+#include "olectl.h"
+#include "initguid.h"
+
+// #include "d3d.h"
+// #include "ddraw.h"
+// #include "mmsystem.h"
+// #include "dsound.h"
+// #include "dsconf.h"
+// #include "dmusics.h"
+// #include "dplay.h"
+// #include "dplay8.h"
+// #include "dplobby.h"
+// #include "dplobby8.h"
+// #include "dinput.h"
+// #include "ddrawi.h"
+// #include "dxdiag.h"
+// #include "dxfile.h"
+// #include "rmxfguid.h"
+
+
 /* FIXME - find a better place for these, needed for dsound */
 DEFINE_GUID(CLSID_DirectSoundPrivate, 0x11ab3ec0, 0x25ec, 0x11d1, 0xa4, 0xd8, 0x0, 0xc0, 0x4f, 0xc2, 0x8a, 0xca);
 DEFINE_GUID(DSPROPSETID_DirectSoundDevice, 0x84624f82, 0x25ec, 0x11d1, 0xa4, 0xd8, 0x0, 0xc0, 0x4f, 0xc2, 0x8a, 0xca);

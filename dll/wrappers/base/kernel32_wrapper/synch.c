@@ -119,106 +119,6 @@ InitializeCriticalSectionEx(
     return TRUE;
 }
 
-// void 
-// WINAPI 
-// InitializeConditionVariable(
-	// PCONDITION_VARIABLE cond
-// ) 
-// {
-    // win32_cond_t *win32_cond = NULL;
-    // win32_cond = (win32_cond_t *)LocalAlloc(0x40,sizeof(win32_cond_t));
-    // if (!win32_cond)
-        // return;
-    // cond->Ptr = win32_cond;
-    // win32_cond->semaphore = CreateSemaphore(NULL, 0, 0x7fffffff, NULL);
-    // if (!win32_cond->semaphore)
-        // return;
-    // win32_cond->waiters_done = CreateEvent(NULL, TRUE, FALSE, NULL);
-    // if (!win32_cond->waiters_done)
-        // return;
-    // InitializeCriticalSection(&win32_cond->mtx_waiter_count);
-    // InitializeCriticalSection(&win32_cond->mtx_broadcast);
-    // return;
-// }
-
-// void 
-// WINAPI 
-// WakeAllConditionVariable(
-	// PCONDITION_VARIABLE cond
-// ) 
-// {
-    // win32_cond_t *win32_cond = (win32_cond_t *)cond->Ptr;
-    // int have_waiter;
-    // EnterCriticalSection(&win32_cond->mtx_broadcast);
-    // EnterCriticalSection(&win32_cond->mtx_waiter_count);
-    // have_waiter = 0;
-    // if (win32_cond->waiter_count) {
-        // win32_cond->is_broadcast = 1;
-        // have_waiter = 1;
-    // }
-    // if (have_waiter) {
-        // ReleaseSemaphore(win32_cond->semaphore, win32_cond->waiter_count, NULL);
-        // LeaveCriticalSection(&win32_cond->mtx_waiter_count);
-        // WaitForSingleObject(win32_cond->waiters_done, INFINITE);
-        // ResetEvent(win32_cond->waiters_done);
-        // win32_cond->is_broadcast = 0;
-    // } else
-        // LeaveCriticalSection(&win32_cond->mtx_waiter_count);
-    // LeaveCriticalSection(&win32_cond->mtx_broadcast);
-// }
-
-// void 
-// WINAPI 
-// WakeConditionVariable(
-	// PCONDITION_VARIABLE cond
-// ) 
-// {
-    // win32_cond_t *win32_cond = (win32_cond_t *)cond->Ptr;
-    // int have_waiter;
-    // EnterCriticalSection(&win32_cond->mtx_broadcast);
-    // EnterCriticalSection(&win32_cond->mtx_waiter_count);
-    // have_waiter = win32_cond->waiter_count;
-    // LeaveCriticalSection(&win32_cond->mtx_waiter_count);
-    // if (have_waiter) {
-        // ReleaseSemaphore(win32_cond->semaphore, 1, NULL);
-        // WaitForSingleObject(win32_cond->waiters_done, INFINITE);
-        // ResetEvent(win32_cond->waiters_done);
-    // }
-    // LeaveCriticalSection(&win32_cond->mtx_broadcast);
-// }
-
-// int 
-// WINAPI 
-// SleepConditionVariableCS(
-	// PCONDITION_VARIABLE cond, 
-    // pthread_mutex_t *mutex, 
-	// DWORD slp
-// )
-// {
-    // win32_cond_t *win32_cond = (win32_cond_t *)cond->Ptr;
-    // int last_waiter;
-	// int i; 
-    // EnterCriticalSection(&win32_cond->mtx_broadcast);
-    // EnterCriticalSection(&win32_cond->mtx_waiter_count);
-    // win32_cond->waiter_count++;
-    // LeaveCriticalSection(&win32_cond->mtx_waiter_count);
-    // LeaveCriticalSection(&win32_cond->mtx_broadcast);
-
-    // LeaveCriticalSection(mutex);
-    
-	// i = WaitForSingleObject(win32_cond->semaphore, slp);
-    // if(i)
-        // SetLastError(i);
-    // EnterCriticalSection(&win32_cond->mtx_waiter_count);
-    // win32_cond->waiter_count--;
-    // last_waiter = !win32_cond->waiter_count || !win32_cond->is_broadcast;
-    // LeaveCriticalSection(&win32_cond->mtx_waiter_count);
-    // if (last_waiter)
-        // SetEvent(win32_cond->waiters_done);
-    // EnterCriticalSection(mutex);
-    // return (BOOL)(i==0);
-// }
-
 /***********************************************************************
  *           SleepConditionVariableCS   (KERNEL32.@)
  */
@@ -227,7 +127,7 @@ BOOL WINAPI SleepConditionVariableCS( CONDITION_VARIABLE *variable, CRITICAL_SEC
     NTSTATUS status;
     LARGE_INTEGER time;
 
-    status = RtlSleepConditionVariableCS( variable, crit, get_nt_timeout( &time, timeout ) );
+    status = RtlSleepConditionVariableCS( variable, (PRTL_CRITICAL_SECTION)crit, get_nt_timeout( &time, timeout ) );
 
     if (status != STATUS_SUCCESS)
     {
@@ -266,8 +166,16 @@ InitOnceExecuteOnce(
 	void *param, 
 	void **context 
 )
-{
-    return !RtlRunOnceExecuteOnce( once, (PRTL_RUN_ONCE_INIT_FN)func, param, context );
+{	
+	BOOL ret;
+	
+	DbgPrint("InitOnceExecuteOnce called\n");
+	
+	ret = !RtlRunOnceExecuteOnce( once, (PRTL_RUN_ONCE_INIT_FN)func, param, context );
+	
+	DbgPrint("InitOnceExecuteOnce:: ret is %d\n", ret);
+	
+    return ret;
 }
 
 /***********************************************************************
@@ -275,49 +183,52 @@ InitOnceExecuteOnce(
  */
 HANDLE 
 WINAPI 
-DECLSPEC_HOTPATCH 
-CreateEventExW( 
-	SECURITY_ATTRIBUTES *sa, 
-	LPCWSTR name, 
-	DWORD flags, 
-	DWORD access 
+CreateEventExW(
+	LPSECURITY_ATTRIBUTES lpEventAttributes, 
+	PCWSTR lpName, 
+	DWORD dwFlags, 
+	ACCESS_MASK DesiredAccess
 )
 {
-    HANDLE ret = 0;
-    UNICODE_STRING nameW;
-    OBJECT_ATTRIBUTES attr;
-    NTSTATUS status;
+  HANDLE Handle; // esi
+  NTSTATUS Status; // eax
+  OBJECT_ATTRIBUTES Obja; // [esp+4h] [ebp-20h]
+  POBJECT_ATTRIBUTES pObja;
+  LSA_UNICODE_STRING ObjectName; // [esp+1Ch] [ebp-8h]
 
-    /* one buggy program needs this
-     * ("Van Dale Groot woordenboek der Nederlandse taal")
-     */
-    if (sa && IsBadReadPtr(sa,sizeof(SECURITY_ATTRIBUTES)))
-    {
-        SetLastError( ERROR_INVALID_PARAMETER);
-        return 0;
-    }
-
-    attr.Length                   = sizeof(attr);
-    attr.RootDirectory            = 0;
-    attr.ObjectName               = NULL;
-    attr.Attributes               = OBJ_OPENIF | ((sa && sa->bInheritHandle) ? OBJ_INHERIT : 0);
-    attr.SecurityDescriptor       = sa ? sa->lpSecurityDescriptor : NULL;
-    attr.SecurityQualityOfService = NULL;
-    if (name)
-    {
-        RtlInitUnicodeString( &nameW, name );
-        attr.ObjectName = &nameW;
-        attr.RootDirectory = get_BaseNamedObjects_handle();
-    }
-
-    status = NtCreateEvent( &ret, access, &attr,
-                            (flags & CREATE_EVENT_MANUAL_RESET) ? NotificationEvent : SynchronizationEvent,
-                            (flags & CREATE_EVENT_INITIAL_SET) != 0 );
-    if (status == STATUS_OBJECT_NAME_EXISTS)
-        SetLastError( ERROR_ALREADY_EXISTS );
-    else
-        SetLastError( RtlNtStatusToDosError(status) );
-    return ret;
+  if ( dwFlags & 0xFFFFFFFC )
+  {
+    BaseSetLastNTError(STATUS_INVALID_PARAMETER_3);
+    return NULL;
+  }
+  if ( ARGUMENT_PRESENT(lpName) )
+  {
+    RtlInitUnicodeString(&ObjectName, lpName);
+    pObja = BaseFormatObjectAttributes(&Obja, lpEventAttributes, &ObjectName);
+  }
+  else
+  {
+    pObja = BaseFormatObjectAttributes(&Obja, lpEventAttributes, NULL);
+  }
+  Status = NtCreateEvent(
+                   &Handle,
+                   DesiredAccess,
+                   pObja,
+                   dwFlags & CREATE_EVENT_MANUAL_RESET ? NotificationEvent : SynchronizationEvent,
+                   (BOOLEAN)dwFlags & CREATE_EVENT_INITIAL_SET);
+	if ( NT_SUCCESS(Status) ) {
+        if ( Status == STATUS_OBJECT_NAME_EXISTS ) {
+            SetLastError(ERROR_ALREADY_EXISTS);
+            }
+        else {
+            SetLastError(0);
+            }
+        return Handle;
+        }
+    else {
+        BaseSetLastNTError(Status);
+        return NULL;
+        }
 }
 
 /***********************************************************************
@@ -333,12 +244,12 @@ CreateEventExA(
 	DWORD access 
 )
 {
-    WCHAR buffer[MAX_PATH];
-
+	WCHAR buffer[MAX_PATH];
+	
     if (!name) return CreateEventExW( sa, NULL, flags, access );
 
-    if (!MultiByteToWideChar( CP_ACP, 0, name, -1, buffer, MAX_PATH ))
-    {
+	if (!MultiByteToWideChar( CP_ACP, 0, name, -1, buffer, MAX_PATH ))
+	{
         SetLastError( ERROR_FILENAME_EXCED_RANGE );
         return 0;
     }
@@ -379,6 +290,9 @@ CreateSemaphoreExW(
     }
 
     status = NtCreateSemaphore( &ret, access, &attr, initial, max );
+	
+	DbgPrint("CreateSemaphoreExW :: NtCreateSemaphore Status: %0x%08x\n", status);
+	
     if (status == STATUS_OBJECT_NAME_EXISTS)
         SetLastError( ERROR_ALREADY_EXISTS );
     else
@@ -588,4 +502,171 @@ HANDLE WINAPI CreateWaitableTimerExA( SECURITY_ATTRIBUTES *sa, LPCSTR name, DWOR
         return 0;
     }
     return CreateWaitableTimerExW( sa, buffer, flags, access );
+}
+
+BOOL 
+WINAPI 
+InitializeSynchronizationBarrier(
+	LPSYNCHRONIZATION_BARRIER lpBarrier, 
+	LONG lTotalThreads, 
+	LONG lSpinCount
+)
+{
+	SYSTEM_INFO sysinfo;
+	HANDLE hEvent0;
+	HANDLE hEvent1;
+
+	if (!lpBarrier || lTotalThreads < 1 || lSpinCount < -1)
+	{
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return FALSE;
+	}
+
+	ZeroMemory(lpBarrier, sizeof(SYNCHRONIZATION_BARRIER));
+
+	if (lSpinCount == -1)
+		lSpinCount = 2000;
+
+	if (!(hEvent0 = CreateEvent(NULL, TRUE, FALSE, NULL)))
+		return FALSE;
+
+	if (!(hEvent1 = CreateEvent(NULL, TRUE, FALSE, NULL)))
+	{
+		CloseHandle(hEvent0);
+		return FALSE;
+	}
+
+	GetNativeSystemInfo(&sysinfo);
+
+	lpBarrier->Reserved1 = lTotalThreads;
+	lpBarrier->Reserved2 = lTotalThreads;
+	lpBarrier->Reserved3[0] = (ULONG_PTR)hEvent0;
+	lpBarrier->Reserved3[1] = (ULONG_PTR)hEvent1;
+	lpBarrier->Reserved4 = sysinfo.dwNumberOfProcessors;
+	lpBarrier->Reserved5 = lSpinCount;
+
+	return TRUE;
+}
+
+BOOL 
+WINAPI 
+EnterSynchronizationBarrier(
+	LPSYNCHRONIZATION_BARRIER lpBarrier, 
+	DWORD dwFlags
+)
+{
+	LONG remainingThreads;
+	HANDLE hCurrentEvent;
+	HANDLE hDormantEvent;
+
+	if (!lpBarrier)
+		return FALSE;
+
+	/**
+	 * dwFlags according to https://msdn.microsoft.com/en-us/library/windows/desktop/hh706889(v=vs.85).aspx
+	 *
+	 * SYNCHRONIZATION_BARRIER_FLAGS_BLOCK_ONLY (0x01)
+	 * Specifies that the thread entering the barrier should block
+	 * immediately until the last thread enters the barrier.
+	 *
+	 * SYNCHRONIZATION_BARRIER_FLAGS_SPIN_ONLY (0x02)
+	 * Specifies that the thread entering the barrier should spin until the
+	 * last thread enters the barrier, even if the spinning thread exceeds
+	 * the barrier's maximum spin count.
+	 *
+	 * SYNCHRONIZATION_BARRIER_FLAGS_NO_DELETE (0x04)
+	 * Specifies that the function can skip the work required to ensure
+	 * that it is safe to delete the barrier, which can improve
+	 * performance. All threads that enter this barrier must specify the
+	 * flag; otherwise, the flag is ignored. This flag should be used only
+	 * if the barrier will never be deleted.
+	 */
+
+	hCurrentEvent = (HANDLE)lpBarrier->Reserved3[0];
+	hDormantEvent = (HANDLE)lpBarrier->Reserved3[1];
+
+	remainingThreads = InterlockedDecrement((LONG*)&lpBarrier->Reserved1);
+
+	assert(remainingThreads >= 0);
+
+	if (remainingThreads > 0)
+	{
+		DWORD dwProcessors = lpBarrier->Reserved4;
+		BOOL spinOnly = dwFlags & SYNCHRONIZATION_BARRIER_FLAGS_SPIN_ONLY;
+		BOOL blockOnly = dwFlags & SYNCHRONIZATION_BARRIER_FLAGS_BLOCK_ONLY;
+		BOOL block = TRUE;
+
+		/**
+		 * If SYNCHRONIZATION_BARRIER_FLAGS_SPIN_ONLY is set we will
+		 * always spin and trust that the user knows what he/she/it
+		 * is doing. Otherwise we'll only spin if the flag
+		 * SYNCHRONIZATION_BARRIER_FLAGS_BLOCK_ONLY is not set and
+		 * the number of remaining threads is less than the number
+		 * of processors.
+		 */
+
+		if (spinOnly || (remainingThreads < dwProcessors && !blockOnly))
+		{
+			DWORD dwSpinCount = lpBarrier->Reserved5;
+			DWORD sp = 0;
+			/**
+			 * nb: we must let the compiler know that our comparand
+			 * can change between the iterations in the loop below
+			 */
+			volatile ULONG_PTR* cmp = &lpBarrier->Reserved3[0];
+			/* we spin until the last thread _completed_ the event switch */
+			while ((block = (*cmp == (ULONG_PTR)hCurrentEvent)))
+				if (!spinOnly && ++sp > dwSpinCount)
+					break;
+		}
+
+		if (block)
+			WaitForSingleObject(hCurrentEvent, INFINITE);
+
+		return FALSE;
+	}
+
+	/* reset the dormant event first */
+	ResetEvent(hDormantEvent);
+
+	/* reset the remaining counter */
+	lpBarrier->Reserved1 = lpBarrier->Reserved2;
+
+	/* switch events - this will also unblock the spinning threads */
+	lpBarrier->Reserved3[1] = (ULONG_PTR)hCurrentEvent;
+	lpBarrier->Reserved3[0] = (ULONG_PTR)hDormantEvent;
+
+	/* signal the blocked threads */
+	SetEvent(hCurrentEvent);
+
+	return TRUE;
+}
+
+BOOL 
+WINAPI 
+DeleteSynchronizationBarrier(
+	LPSYNCHRONIZATION_BARRIER lpBarrier
+)
+{
+	/**
+	 * According to https://msdn.microsoft.com/en-us/library/windows/desktop/hh706887(v=vs.85).aspx
+	 * Return value:
+	 * The DeleteSynchronizationBarrier function always returns TRUE.
+	 */
+
+	if (!lpBarrier)
+		return TRUE;
+
+	while (lpBarrier->Reserved1 != lpBarrier->Reserved2)
+		SwitchToThread();
+
+	if (lpBarrier->Reserved3[0])
+		CloseHandle((HANDLE)lpBarrier->Reserved3[0]);
+
+	if (lpBarrier->Reserved3[1])
+		CloseHandle((HANDLE)lpBarrier->Reserved3[1]);
+
+	ZeroMemory(lpBarrier, sizeof(SYNCHRONIZATION_BARRIER));
+
+	return TRUE;
 }

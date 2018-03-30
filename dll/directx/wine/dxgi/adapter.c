@@ -24,16 +24,19 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(dxgi);
 
-static inline struct dxgi_adapter *impl_from_IDXGIAdapter1(IDXGIAdapter1 *iface)
+static inline struct dxgi_adapter *impl_from_IWineDXGIAdapter(IWineDXGIAdapter *iface)
 {
-    return CONTAINING_RECORD(iface, struct dxgi_adapter, IDXGIAdapter1_iface);
+    return CONTAINING_RECORD(iface, struct dxgi_adapter, IWineDXGIAdapter_iface);
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_adapter_QueryInterface(IDXGIAdapter1 *iface, REFIID iid, void **out)
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_QueryInterface(IWineDXGIAdapter *iface, REFIID iid, void **out)
 {
     TRACE("iface %p, iid %s, out %p.\n", iface, debugstr_guid(iid), out);
 
-    if (IsEqualGUID(iid, &IID_IDXGIAdapter1)
+    if (IsEqualGUID(iid, &IID_IWineDXGIAdapter)
+            || IsEqualGUID(iid, &IID_IDXGIAdapter3)
+            || IsEqualGUID(iid, &IID_IDXGIAdapter2)
+            || IsEqualGUID(iid, &IID_IDXGIAdapter1)
             || IsEqualGUID(iid, &IID_IDXGIAdapter)
             || IsEqualGUID(iid, &IID_IDXGIObject)
             || IsEqualGUID(iid, &IID_IUnknown))
@@ -49,9 +52,9 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_QueryInterface(IDXGIAdapter1 *ifac
     return E_NOINTERFACE;
 }
 
-static ULONG STDMETHODCALLTYPE dxgi_adapter_AddRef(IDXGIAdapter1 *iface)
+static ULONG STDMETHODCALLTYPE dxgi_adapter_AddRef(IWineDXGIAdapter *iface)
 {
-    struct dxgi_adapter *adapter = impl_from_IDXGIAdapter1(iface);
+    struct dxgi_adapter *adapter = impl_from_IWineDXGIAdapter(iface);
     ULONG refcount = InterlockedIncrement(&adapter->refcount);
 
     TRACE("%p increasing refcount to %u.\n", iface, refcount);
@@ -59,9 +62,9 @@ static ULONG STDMETHODCALLTYPE dxgi_adapter_AddRef(IDXGIAdapter1 *iface)
     return refcount;
 }
 
-static ULONG STDMETHODCALLTYPE dxgi_adapter_Release(IDXGIAdapter1 *iface)
+static ULONG STDMETHODCALLTYPE dxgi_adapter_Release(IWineDXGIAdapter *iface)
 {
-    struct dxgi_adapter *adapter = impl_from_IDXGIAdapter1(iface);
+    struct dxgi_adapter *adapter = impl_from_IWineDXGIAdapter(iface);
     ULONG refcount = InterlockedDecrement(&adapter->refcount);
 
     TRACE("%p decreasing refcount to %u.\n", iface, refcount);
@@ -69,56 +72,56 @@ static ULONG STDMETHODCALLTYPE dxgi_adapter_Release(IDXGIAdapter1 *iface)
     if (!refcount)
     {
         wined3d_private_store_cleanup(&adapter->private_store);
-        IDXGIFactory1_Release(&adapter->factory->IDXGIFactory1_iface);
-        HeapFree(GetProcessHeap(), 0, adapter);
+        IWineDXGIFactory_Release(&adapter->factory->IWineDXGIFactory_iface);
+        heap_free(adapter);
     }
 
     return refcount;
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_adapter_SetPrivateData(IDXGIAdapter1 *iface,
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_SetPrivateData(IWineDXGIAdapter *iface,
         REFGUID guid, UINT data_size, const void *data)
 {
-    struct dxgi_adapter *adapter = impl_from_IDXGIAdapter1(iface);
+    struct dxgi_adapter *adapter = impl_from_IWineDXGIAdapter(iface);
 
     TRACE("iface %p, guid %s, data_size %u, data %p.\n", iface, debugstr_guid(guid), data_size, data);
 
     return dxgi_set_private_data(&adapter->private_store, guid, data_size, data);
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_adapter_SetPrivateDataInterface(IDXGIAdapter1 *iface,
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_SetPrivateDataInterface(IWineDXGIAdapter *iface,
         REFGUID guid, const IUnknown *object)
 {
-    struct dxgi_adapter *adapter = impl_from_IDXGIAdapter1(iface);
+    struct dxgi_adapter *adapter = impl_from_IWineDXGIAdapter(iface);
 
     TRACE("iface %p, guid %s, object %p.\n", iface, debugstr_guid(guid), object);
 
     return dxgi_set_private_data_interface(&adapter->private_store, guid, object);
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetPrivateData(IDXGIAdapter1 *iface,
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetPrivateData(IWineDXGIAdapter *iface,
         REFGUID guid, UINT *data_size, void *data)
 {
-    struct dxgi_adapter *adapter = impl_from_IDXGIAdapter1(iface);
+    struct dxgi_adapter *adapter = impl_from_IWineDXGIAdapter(iface);
 
     TRACE("iface %p, guid %s, data_size %p, data %p.\n", iface, debugstr_guid(guid), data_size, data);
 
     return dxgi_get_private_data(&adapter->private_store, guid, data_size, data);
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetParent(IDXGIAdapter1 *iface, REFIID iid, void **parent)
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetParent(IWineDXGIAdapter *iface, REFIID iid, void **parent)
 {
-    struct dxgi_adapter *adapter = impl_from_IDXGIAdapter1(iface);
+    struct dxgi_adapter *adapter = impl_from_IWineDXGIAdapter(iface);
 
     TRACE("iface %p, iid %s, parent %p.\n", iface, debugstr_guid(iid), parent);
 
-    return IDXGIFactory1_QueryInterface(&adapter->factory->IDXGIFactory1_iface, iid, parent);
+    return IWineDXGIFactory_QueryInterface(&adapter->factory->IWineDXGIFactory_iface, iid, parent);
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_adapter_EnumOutputs(IDXGIAdapter1 *iface,
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_EnumOutputs(IWineDXGIAdapter *iface,
         UINT output_idx, IDXGIOutput **output)
 {
-    struct dxgi_adapter *adapter = impl_from_IDXGIAdapter1(iface);
+    struct dxgi_adapter *adapter = impl_from_IWineDXGIAdapter(iface);
     struct dxgi_output *output_object;
     HRESULT hr;
 
@@ -136,16 +139,16 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_EnumOutputs(IDXGIAdapter1 *iface,
         return hr;
     }
 
-    *output = &output_object->IDXGIOutput_iface;
+    *output = (IDXGIOutput *)&output_object->IDXGIOutput4_iface;
 
     TRACE("Returning output %p.\n", *output);
 
     return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc1(IDXGIAdapter1 *iface, DXGI_ADAPTER_DESC1 *desc)
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc1(IWineDXGIAdapter *iface, DXGI_ADAPTER_DESC1 *desc)
 {
-    struct dxgi_adapter *adapter = impl_from_IDXGIAdapter1(iface);
+    struct dxgi_adapter *adapter = impl_from_IWineDXGIAdapter(iface);
     struct wined3d_adapter_identifier adapter_id;
     char description[128];
     HRESULT hr;
@@ -181,13 +184,13 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc1(IDXGIAdapter1 *iface, DXG
     desc->DedicatedVideoMemory = adapter_id.video_memory;
     desc->DedicatedSystemMemory = 0; /* FIXME */
     desc->SharedSystemMemory = 0; /* FIXME */
-    memcpy(&desc->AdapterLuid, &adapter_id.adapter_luid, sizeof(desc->AdapterLuid));
+    desc->AdapterLuid = adapter_id.adapter_luid;
     desc->Flags = 0;
 
     return hr;
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc(IDXGIAdapter1 *iface, DXGI_ADAPTER_DESC *desc)
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc(IWineDXGIAdapter *iface, DXGI_ADAPTER_DESC *desc)
 {
     DXGI_ADAPTER_DESC1 desc1;
     HRESULT hr;
@@ -204,11 +207,11 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc(IDXGIAdapter1 *iface, DXGI
     return hr;
 }
 
-static HRESULT STDMETHODCALLTYPE dxgi_adapter_CheckInterfaceSupport(IDXGIAdapter1 *iface,
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_CheckInterfaceSupport(IWineDXGIAdapter *iface,
         REFGUID guid, LARGE_INTEGER *umd_version)
 {
     static const D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_10_0;
-    struct dxgi_adapter *adapter = impl_from_IDXGIAdapter1(iface);
+    struct dxgi_adapter *adapter = impl_from_IWineDXGIAdapter(iface);
     struct wined3d_adapter_identifier adapter_id;
     HRESULT hr;
 
@@ -243,7 +246,60 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_CheckInterfaceSupport(IDXGIAdapter
     return S_OK;
 }
 
-static const struct IDXGIAdapter1Vtbl dxgi_adapter_vtbl =
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc2(IWineDXGIAdapter *iface, DXGI_ADAPTER_DESC2 *desc)
+{
+    FIXME("iface %p, desc %p stub!\n", iface, desc);
+
+    return E_NOTIMPL;
+}
+
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_RegisterHardwareContentProtectionTeardownStatusEvent(
+        IWineDXGIAdapter *iface, HANDLE event, DWORD *cookie)
+{
+    FIXME("iface %p, event %p, cookie %p stub!\n", iface, event, cookie);
+
+    return E_NOTIMPL;
+}
+
+static void STDMETHODCALLTYPE dxgi_adapter_UnregisterHardwareContentProtectionTeardownStatus(
+        IWineDXGIAdapter *iface, DWORD cookie)
+{
+    FIXME("iface %p, cookie %#x stub!\n", iface, cookie);
+}
+
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_QueryVideoMemoryInfo(IWineDXGIAdapter *iface,
+        UINT node_index, DXGI_MEMORY_SEGMENT_GROUP segment_group, DXGI_QUERY_VIDEO_MEMORY_INFO *memory_info)
+{
+    FIXME("iface %p, node_index %u, segment_group %#x, memory_info %p stub!\n",
+            iface, node_index, segment_group, memory_info);
+
+    return E_NOTIMPL;
+}
+
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_SetVideoMemoryReservation(IWineDXGIAdapter *iface,
+        UINT node_index, DXGI_MEMORY_SEGMENT_GROUP segment_group, UINT64 reservation)
+{
+    FIXME("iface %p, node_index %u, segment_group %#x, reservation %s stub!\n",
+            iface, node_index, segment_group, wine_dbgstr_longlong(reservation));
+
+    return S_OK;
+}
+
+static HRESULT STDMETHODCALLTYPE dxgi_adapter_RegisterVideoMemoryBudgetChangeNotificationEvent(
+        IWineDXGIAdapter *iface, HANDLE event, DWORD *cookie)
+{
+    FIXME("iface %p, event %p, cookie %p stub!\n", iface, event, cookie);
+
+    return E_NOTIMPL;
+}
+
+static void STDMETHODCALLTYPE dxgi_adapter_UnregisterVideoMemoryBudgetChangeNotification(
+        IWineDXGIAdapter *iface, DWORD cookie)
+{
+    FIXME("iface %p, cookie %#x stub!\n", iface, cookie);
+}
+
+static const struct IWineDXGIAdapterVtbl dxgi_adapter_vtbl =
 {
     dxgi_adapter_QueryInterface,
     dxgi_adapter_AddRef,
@@ -252,33 +308,55 @@ static const struct IDXGIAdapter1Vtbl dxgi_adapter_vtbl =
     dxgi_adapter_SetPrivateDataInterface,
     dxgi_adapter_GetPrivateData,
     dxgi_adapter_GetParent,
+    /* IDXGIAdapter methods */
     dxgi_adapter_EnumOutputs,
     dxgi_adapter_GetDesc,
     dxgi_adapter_CheckInterfaceSupport,
+    /* IDXGIAdapter1 methods */
     dxgi_adapter_GetDesc1,
+    /* IDXGIAdapter2 methods */
+    dxgi_adapter_GetDesc2,
+    /* IDXGIAdapter3 methods */
+    dxgi_adapter_RegisterHardwareContentProtectionTeardownStatusEvent,
+    dxgi_adapter_UnregisterHardwareContentProtectionTeardownStatus,
+    dxgi_adapter_QueryVideoMemoryInfo,
+    dxgi_adapter_SetVideoMemoryReservation,
+    dxgi_adapter_RegisterVideoMemoryBudgetChangeNotificationEvent,
+    dxgi_adapter_UnregisterVideoMemoryBudgetChangeNotification,
 };
 
-struct dxgi_adapter *unsafe_impl_from_IDXGIAdapter1(IDXGIAdapter1 *iface)
+struct dxgi_adapter *unsafe_impl_from_IDXGIAdapter(IDXGIAdapter *iface)
 {
+    IWineDXGIAdapter *wine_adapter;
+    struct dxgi_adapter *adapter;
+    HRESULT hr;
+
     if (!iface)
         return NULL;
-    assert(iface->lpVtbl == &dxgi_adapter_vtbl);
-    return CONTAINING_RECORD(iface, struct dxgi_adapter, IDXGIAdapter1_iface);
+    if (FAILED(hr = IDXGIAdapter_QueryInterface(iface, &IID_IWineDXGIAdapter, (void **)&wine_adapter)))
+    {
+        ERR("Failed to get IWineDXGIAdapter interface, hr %#x.\n", hr);
+        return NULL;
+    }
+    assert(wine_adapter->lpVtbl == &dxgi_adapter_vtbl);
+    adapter = CONTAINING_RECORD(wine_adapter, struct dxgi_adapter, IWineDXGIAdapter_iface);
+    IWineDXGIAdapter_Release(wine_adapter);
+    return adapter;
 }
 
 static void dxgi_adapter_init(struct dxgi_adapter *adapter, struct dxgi_factory *factory, UINT ordinal)
 {
-    adapter->IDXGIAdapter1_iface.lpVtbl = &dxgi_adapter_vtbl;
+    adapter->IWineDXGIAdapter_iface.lpVtbl = &dxgi_adapter_vtbl;
     adapter->refcount = 1;
     wined3d_private_store_init(&adapter->private_store);
     adapter->ordinal = ordinal;
     adapter->factory = factory;
-    IDXGIFactory1_AddRef(&adapter->factory->IDXGIFactory1_iface);
+    IWineDXGIFactory_AddRef(&adapter->factory->IWineDXGIFactory_iface);
 }
 
 HRESULT dxgi_adapter_create(struct dxgi_factory *factory, UINT ordinal, struct dxgi_adapter **adapter)
 {
-    if (!(*adapter = HeapAlloc(GetProcessHeap(), 0, sizeof(**adapter))))
+    if (!(*adapter = heap_alloc(sizeof(**adapter))))
         return E_OUTOFMEMORY;
 
     dxgi_adapter_init(*adapter, factory, ordinal);

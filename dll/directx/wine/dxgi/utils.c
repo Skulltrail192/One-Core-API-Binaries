@@ -148,6 +148,7 @@ const char *debug_dxgi_format(DXGI_FORMAT format)
         WINE_DXGI_TO_STR(DXGI_FORMAT_BC7_TYPELESS);
         WINE_DXGI_TO_STR(DXGI_FORMAT_BC7_UNORM);
         WINE_DXGI_TO_STR(DXGI_FORMAT_BC7_UNORM_SRGB);
+        WINE_DXGI_TO_STR(DXGI_FORMAT_B4G4R4A4_UNORM);
         default:
             FIXME("Unrecognized DXGI_FORMAT %#x.\n", format);
             return "unrecognized";
@@ -260,6 +261,7 @@ DXGI_FORMAT dxgi_format_from_wined3dformat(enum wined3d_format_id format)
         case WINED3DFMT_BC7_TYPELESS: return DXGI_FORMAT_BC7_TYPELESS;
         case WINED3DFMT_BC7_UNORM: return DXGI_FORMAT_BC7_UNORM;
         case WINED3DFMT_BC7_UNORM_SRGB: return DXGI_FORMAT_BC7_UNORM_SRGB;
+        case WINED3DFMT_B4G4R4A4_UNORM: return DXGI_FORMAT_B4G4R4A4_UNORM;
         default:
             FIXME("Unhandled wined3d format %#x.\n", format);
             return DXGI_FORMAT_UNKNOWN;
@@ -370,6 +372,7 @@ enum wined3d_format_id wined3dformat_from_dxgi_format(DXGI_FORMAT format)
         case DXGI_FORMAT_BC7_TYPELESS: return WINED3DFMT_BC7_TYPELESS;
         case DXGI_FORMAT_BC7_UNORM: return WINED3DFMT_BC7_UNORM;
         case DXGI_FORMAT_BC7_UNORM_SRGB: return WINED3DFMT_BC7_UNORM_SRGB;
+        case DXGI_FORMAT_B4G4R4A4_UNORM: return WINED3DFMT_B4G4R4A4_UNORM;
         default:
             FIXME("Unhandled DXGI_FORMAT %#x.\n", format);
             return WINED3DFMT_UNKNOWN;
@@ -451,6 +454,36 @@ void wined3d_display_mode_from_dxgi(struct wined3d_display_mode *wined3d_mode,
     wined3d_mode->refresh_rate = dxgi_rational_to_uint(&mode->RefreshRate);
     wined3d_mode->format_id = wined3dformat_from_dxgi_format(mode->Format);
     wined3d_mode->scanline_ordering = wined3d_scanline_ordering_from_dxgi(mode->ScanlineOrdering);
+}
+
+DXGI_USAGE dxgi_usage_from_wined3d_usage(DWORD wined3d_usage)
+{
+    DXGI_USAGE dxgi_usage = 0;
+
+    if (wined3d_usage & WINED3DUSAGE_TEXTURE)
+        dxgi_usage |= DXGI_USAGE_SHADER_INPUT;
+    if (wined3d_usage & WINED3DUSAGE_RENDERTARGET)
+        dxgi_usage |= DXGI_USAGE_RENDER_TARGET_OUTPUT;
+
+    wined3d_usage &= ~(WINED3DUSAGE_TEXTURE | WINED3DUSAGE_RENDERTARGET);
+    if (wined3d_usage)
+        FIXME("Unhandled wined3d usage %#x.\n", wined3d_usage);
+    return dxgi_usage;
+}
+
+DWORD wined3d_usage_from_dxgi_usage(DXGI_USAGE dxgi_usage)
+{
+    DWORD wined3d_usage = 0;
+
+    if (dxgi_usage & DXGI_USAGE_SHADER_INPUT)
+        wined3d_usage |= WINED3DUSAGE_TEXTURE;
+    if (dxgi_usage & DXGI_USAGE_RENDER_TARGET_OUTPUT)
+        wined3d_usage |= WINED3DUSAGE_RENDERTARGET;
+
+    dxgi_usage &= ~(DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_RENDER_TARGET_OUTPUT);
+    if (dxgi_usage)
+        FIXME("Unhandled DXGI usage %#x.\n", dxgi_usage);
+    return wined3d_usage;
 }
 
 #define DXGI_WINED3D_SWAPCHAIN_FLAGS \

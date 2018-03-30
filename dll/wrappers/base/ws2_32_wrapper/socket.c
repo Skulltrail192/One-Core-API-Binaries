@@ -60,6 +60,9 @@
 #define WS_POLLPRI                 0x0400
 #define WS_POLLIN                  (WS_POLLRDNORM|WS_POLLRDBAND)
 #define WS_POLLOUT                 (WS_POLLWRNORM)
+#define WSA_NOT_ENOUGH_MEMORY      (ERROR_NOT_ENOUGH_MEMORY)
+
+#define WS_INET6_ADDRSTRLEN     65
 
 #define MAP_OPTION(opt) { WS_##opt, opt }
 
@@ -330,5 +333,56 @@ int WINAPI WSAPoll(WSAPOLLFD *wfds, ULONG count, int timeout)
     }
 
     HeapFree(GetProcessHeap(), 0, ufds);
+    return ret;
+}
+
+/***********************************************************************
+*              InetPtonW                      (WS2_32.@)
+*/
+INT WINAPI InetPtonW(INT family, PCWSTR addr, PVOID buffer)
+{
+    char *addrA;
+    int len;
+    INT ret;
+
+    TRACE("family %d, addr %s, buffer (%p)\n", family, debugstr_w(addr), buffer);
+
+    if (!addr)
+    {
+        SetLastError(WSAEFAULT);
+        return SOCKET_ERROR;
+    }
+
+    len = WideCharToMultiByte(CP_ACP, 0, addr, -1, NULL, 0, NULL, NULL);
+    if (!(addrA = HeapAlloc(GetProcessHeap(), 0, len)))
+    {
+        SetLastError(WSA_NOT_ENOUGH_MEMORY);
+        return SOCKET_ERROR;
+    }
+    WideCharToMultiByte(CP_ACP, 0, addr, -1, addrA, len, NULL, NULL);
+
+    ret = WS_inet_pton(family, addrA, buffer);
+
+    HeapFree(GetProcessHeap(), 0, addrA);
+    return ret;
+}
+
+/***********************************************************************
+ *              InetNtopW                      (WS2_32.@)
+ */
+PCWSTR WINAPI InetNtopW(INT family, PVOID addr, PWSTR buffer, SIZE_T len)
+{
+    char bufferA[WS_INET6_ADDRSTRLEN];
+    PWSTR ret = NULL;
+
+    TRACE("family %d, addr (%p), buffer (%p), len %ld\n", family, addr, buffer, len);
+
+    if (WS_inet_ntop(family, addr, bufferA, sizeof(bufferA)))
+    {
+        if (MultiByteToWideChar(CP_ACP, 0, bufferA, -1, buffer, len))
+            ret = buffer;
+        else
+            SetLastError(ERROR_INVALID_PARAMETER);
+    }
     return ret;
 }

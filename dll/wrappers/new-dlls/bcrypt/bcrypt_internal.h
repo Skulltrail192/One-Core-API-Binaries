@@ -75,4 +75,5 @@ typedef struct
 VOID WINAPI A_SHAInit(SHA_CTX *ctx);
 VOID WINAPI A_SHAUpdate(SHA_CTX *ctx, const UCHAR *buffer, UINT size);
 VOID WINAPI A_SHAFinal(SHA_CTX *ctx, PULONG result);
+
 #endif /* __BCRYPT_INTERNAL_H */

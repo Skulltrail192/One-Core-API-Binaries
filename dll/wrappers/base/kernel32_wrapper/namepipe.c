@@ -20,6 +20,8 @@ Revision History:
 
 #include "main.h"
 
+WINE_DEFAULT_DEBUG_CHANNEL(kernel32namedpipe);
+
 BOOL 
 WINAPI 
 GetNamedPipeAttribute(
@@ -86,10 +88,17 @@ GetNamedPipeServerSessionId(
 	PULONG ServerSessionId
 )
 {
-  SIZE_T AttributeValueLength; // [sp+0h] [bp-4h]@1
+  SIZE_T AttributeValueLength; 
+  BOOL ret;
+  
+  DbgPrint("GetNamedPipeServerSessionId called\n");  
 
   AttributeValueLength = 4;
-  return GetNamedPipeAttribute(Pipe, 0, "ServerSessionId", ServerSessionId, &AttributeValueLength);
+  ret = GetNamedPipeAttribute(Pipe, 0, "ServerSessionId", ServerSessionId, &AttributeValueLength);
+  
+  DbgPrint("GetNamedPipeServerSessionId :: GetNamedPipeAttribute response with: %d\n", ret);   
+  
+  return ret;  
 }
 
 BOOL 
@@ -99,10 +108,17 @@ GetNamedPipeClientProcessId(
 	PULONG ClientProcessId
 )
 {
-  SIZE_T AttributeValueLength; // [sp+0h] [bp-4h]@1
+  SIZE_T AttributeValueLength; 
+  BOOL ret;
+  
+  DbgPrint("GetNamedPipeClientProcessId called\n");
 
   AttributeValueLength = 4;
-  return GetNamedPipeAttribute(Pipe, PipeConnectionAttribute, "ClientProcessId", ClientProcessId, &AttributeValueLength);
+  ret = GetNamedPipeAttribute(Pipe, PipeConnectionAttribute, "ClientProcessId", ClientProcessId, &AttributeValueLength);
+  
+  DbgPrint("GetNamedPipeClientProcessId :: GetNamedPipeAttribute response with: %d\n", ret); 
+  
+  return ret;
 }
 
 BOOL 
@@ -112,10 +128,18 @@ GetNamedPipeServerProcessId(
   _Out_  PULONG ServerProcessId
 )
 {
-  SIZE_T AttributeValueLength; // [sp+0h] [bp-4h]@1
+  SIZE_T AttributeValueLength;
+  BOOL ret;
+  
+  DbgPrint("GetNamedPipeServerProcessId called\n");  
 
   AttributeValueLength = 4;
-  return GetNamedPipeAttribute(Pipe, PipeConnectionAttribute, "ServerProcessId", ServerProcessId, &AttributeValueLength);
+  
+  ret = GetNamedPipeAttribute(Pipe, PipeConnectionAttribute, "ServerProcessId", ServerProcessId, &AttributeValueLength);
+  
+  DbgPrint("GetNamedPipeServerProcessId :: GetNamedPipeAttribute response with: %d\n", ret); 
+  
+  return ret;  
 }
 
 BOOL 
@@ -125,10 +149,17 @@ GetNamedPipeClientSessionId(
   _Out_  PULONG ClientSessionId
 )
 {
-  SIZE_T AttributeValueLength; // [sp+0h] [bp-4h]@1
+  SIZE_T AttributeValueLength;
+  BOOL ret;
+  
+  DbgPrint("GetNamedPipeClientSessionId called\n");    
 
   AttributeValueLength = 4;
-  return GetNamedPipeAttribute(Pipe, PipeConnectionAttribute, "ClientSessionId", ClientSessionId, &AttributeValueLength);	
+  ret = GetNamedPipeAttribute(Pipe, PipeConnectionAttribute, "ClientSessionId", ClientSessionId, &AttributeValueLength);
+
+  DbgPrint("GetNamedPipeClientSessionId :: GetNamedPipeAttribute response with: %d\n", ret); 
+  
+  return ret;    
 }
 
 BOOL 
@@ -175,16 +206,16 @@ SetNamedPipeAttribute(
 	SIZE_T AttributeValueLength
 )
 {
-  BOOL result; // eax@4
-  SIZE_T size; // ebx@8
-  size_t localSize; // esi@8
-  PVOID alloc; // eax@8
-  PVOID other; // edi@8
-  ULONG number; // eax@10
-  NTSTATUS status; // eax@12
-  struct _IO_STATUS_BLOCK IoStatusBlock; // [sp+0h] [bp-8h]@12
-  ULONG AttributeTypea; // [sp+14h] [bp+Ch]@5
-  ULONG AttributeValueLengtha; // [sp+20h] [bp+18h]@8
+  BOOL result;
+  SIZE_T size;
+  size_t localSize;
+  PVOID alloc;
+  PVOID other;
+  ULONG number;
+  NTSTATUS status; 
+  struct _IO_STATUS_BLOCK IoStatusBlock; 
+  ULONG AttributeTypea;
+  ULONG AttributeValueLengtha;
 
   if ( AttributeType )
   {

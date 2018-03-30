@@ -1,25 +1,23 @@
- /*
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- * Copyright (c) 2015  Microsoft Corporation 
- * 
- * Module Name:
- *
- *   actctx.c
- *
- */
+/*++
+
+Copyright (c) 2018 Shorthorn Project
+
+Module Name:
+
+    actctx.c
+
+Abstract:
+
+    Implement Activation Context functions
+
+Author:
+
+    Skulltrail 17-March-2018
+
+Revision History:
+
+--*/
+ 
 #include <main.h> 
 
 /*Maybe need for universal code*/
@@ -85,3 +83,55 @@ RtlAllocateActivationContextStack(IN PACTIVATION_CONTEXT_STACK *Stack)
 
     return STATUS_SUCCESS;
 }
+
+// static const WCHAR *find_app_settings( ACTIVATION_CONTEXT *actctx, const WCHAR *settings )
+// {
+    // unsigned int i, j;
+
+    // for (i = 0; i < actctx->num_assemblies; i++)
+    // {
+        // struct assembly *assembly = &actctx->assemblies[i];
+        // for (j = 0; j < assembly->entities.num; j++)
+        // {
+            // struct entity *entity = &assembly->entities.base[j];
+            // if (entity->kind == ACTIVATION_CONTEXT_SECTION_APPLICATION_SETTINGS &&
+                // !strcmpW( entity->u.settings.name, settings ))
+                // return entity->u.settings.value;
+        // }
+    // }
+    // return NULL;
+// }
+
+// /***********************************************************************
+ // *		RtlQueryActivationContextApplicationSettings (NTDLL.@)
+ // */
+// NTSTATUS WINAPI RtlQueryActivationContextApplicationSettings( DWORD flags, HANDLE handle, const WCHAR *ns,
+                                                              // const WCHAR *settings, WCHAR *buffer,
+                                                              // SIZE_T size, SIZE_T *written )
+// {
+    // static const WCHAR namespaceW[] = {'h','t','t','p',':','/','/','s','c','h','e','m','a','s','.','m','i','c','r','o','s','o','f','t','.','c','o','m','/','S','M','I','/','2','0',0};
+    // ACTIVATION_CONTEXT *actctx = check_actctx( handle );
+    // const WCHAR *res;
+
+    // if (flags)
+    // {
+        // WARN( "unknown flags %08x\n", flags );
+        // return STATUS_INVALID_PARAMETER;
+    // }
+
+    // if (ns && strncmpW( ns, namespaceW, strlenW(namespaceW) ))
+    // {
+        // WARN( "unknown namespace %s\n", debugstr_w(ns) );
+        // return STATUS_INVALID_PARAMETER;
+    // }
+
+    // if (!handle) handle = process_actctx;
+    // if (!(actctx = check_actctx( handle ))) return STATUS_INVALID_PARAMETER;
+
+    // if (!(res = find_app_settings( actctx, settings ))) return STATUS_SXS_KEY_NOT_FOUND;
+
+    // if (written) *written = strlenW(res) + 1;
+    // if (size < strlenW(res)) return STATUS_BUFFER_TOO_SMALL;
+    // strcpyW( buffer, res );
+    // return STATUS_SUCCESS;
+// }

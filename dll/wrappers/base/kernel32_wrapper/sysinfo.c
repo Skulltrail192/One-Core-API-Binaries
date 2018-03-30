@@ -20,6 +20,8 @@ Revision History:
 
 #include <main.h>
 
+static BOOL (WINAPI *pSetSystemFileCacheSize)(SIZE_T, SIZE_T,int Flags);
+
 /*
 * @unimplemented - need implementation
 */
@@ -68,4 +70,35 @@ GetProductInfo(
                              dwSpMajorVersion, 
 							 dwSpMinorVersion, 
 							 pdwReturnedProductType);
+}
+
+BOOL 
+WINAPI 
+SetSystemFileCacheSize(
+	SIZE_T MinimumFileCacheSize, 
+	SIZE_T MaximumFileCacheSize, 
+	int Flags
+)
+{
+	HMODULE hkernel32 = GetModuleHandleA("kernelfull.dll");
+	NTSTATUS status; 
+	BOOL result; 
+	char SystemInformation; 
+	
+	pSetSystemFileCacheSize = (void *)GetProcAddress(hkernel32, "SetSystemFileCacheSize");
+	if(pSetSystemFileCacheSize){
+		return pSetSystemFileCacheSize(MinimumFileCacheSize, MaximumFileCacheSize, Flags);
+	}else{
+		status = NtSetSystemInformation(SystemObjectInformation|0x40, &SystemInformation, 0x24u);
+		if ( status < 0 )
+		{
+			BaseSetLastNTError(status);
+			result = FALSE;
+		}
+		else
+		{
+			result = TRUE;
+		}
+		return result;
+	}	
 }

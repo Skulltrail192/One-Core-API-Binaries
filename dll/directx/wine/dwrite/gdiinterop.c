@@ -21,12 +21,12 @@
 
 #define COBJMACROS
 
-// #include <stdarg.h>
+#include <stdarg.h>
 
-// #include "windef.h"
-// #include "winbase.h"
-// #include "wingdi.h"
-// #include "dwrite_private.h"
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "dwrite_private.h"
 
 #include "wine/debug.h"
 

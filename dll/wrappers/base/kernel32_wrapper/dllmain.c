@@ -23,16 +23,17 @@ Revision History:
 
 static BOOL DllInitialized = FALSE;
 PPEB Peb;
-HMODULE kernel32_handle = 0;
+HMODULE kernel32_handle = NULL;
 
-void InitializeCriticalForSRW();
 void InitializeCriticalForDirectories();
+void InitializeCriticalForLocaleInfo();
 
 BOOL
 WINAPI
-BaseDllInitialize(HANDLE hDll,
-        DWORD dwReason,
-        LPVOID lpReserved)
+BaseDllInitialize(
+	HANDLE hDll,
+    DWORD dwReason,
+    LPVOID lpReserved)
 {
     /* Cache the PEB and Session ID */
     //Peb = NtCurrentPeb();
@@ -44,7 +45,8 @@ BaseDllInitialize(HANDLE hDll,
             /* Insert more dll attach stuff here! */
 			kernel32_handle = GetModuleHandleW(L"kernelfull");
 			InitializeCriticalForDirectories();
-            DllInitialized = TRUE;
+			InitializeCriticalForLocaleInfo();
+            DllInitialized = TRUE;			
             break;
         }
 
@@ -74,5 +76,10 @@ BaseDllInitialize(HANDLE hDll,
  */
 BOOL WINAPI QuirkIsEnabled3(void *unk1, void *unk2)
 {
+    static int once;
+
+    if (!once++)
+        DbgPrint("(%p, %p) stub!\n", unk1, unk2);
+	
     return FALSE;
 }

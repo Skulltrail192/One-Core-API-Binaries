@@ -166,72 +166,65 @@ CopyFileTransactedW(
 	HANDLE hTransaction
 )
 {
-  // BOOL resp = FALSE; // [sp+10h] [bp-1Ch]@4
-
-  // if ( hTransaction != (HANDLE)-1 && hTransaction )
-  // {
-    // if ( !GetCurrentTransaction() )
-    // {
-      // SetCurrentTransaction(hTransaction);
-       return CopyFileExW(lpExistingFileName, lpNewFileName, lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
-    // }
-    // SetLastError(6725u);
-  // }
-  // else
-  // {
-    // SetLastError(6700u);
-  // }
-  // return resp;
+    return CopyFileExW(lpExistingFileName, lpNewFileName, lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
 }
 
+/*
+ * @implemented - need test
+ */
 BOOL 
-WINAPI
-DeleteFileTransactedW(LPCWSTR lpFileName, HANDLE hTransaction)
+WINAPI 
+CopyFileTransactedA(
+	LPCSTR lpExistingFileName, 
+	LPCSTR lpNewFileName, 
+	LPPROGRESS_ROUTINE lpProgressRoutine, 
+	LPVOID lpData, 
+	LPBOOL pbCancel, 
+	DWORD dwCopyFlags, 
+	HANDLE hTransaction
+)
 {
-  // BOOL resp; // [sp+10h] [bp-1Ch]@6
-
-  // if ( hTransaction != (HANDLE)-1 && hTransaction )
-  // {
-    // if ( !GetCurrentTransaction() )
-    // {
-      // SetCurrentTransaction(hTransaction);
-      return DeleteFileW(lpFileName);
-      // return SetCurrentTransaction(0);
-    // }
-    // SetLastError(6725u);
-    // resp = 0;
-  // }
-  // else
-  // {
-    // SetLastError(6700u);
-    // resp = 0;
-  // }
-  // return resp;
+    return CopyFileExA(lpExistingFileName, lpNewFileName, lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
 }
 
-BOOL WINAPI MoveFileTransactedW(LPCWSTR lpExistingFileName, 
-								LPCWSTR lpNewFileName, 
-								LPPROGRESS_ROUTINE lpProgressRoutine, 
-								LPVOID lpData, 
-								DWORD dwFlags, 
-								HANDLE hTransaction)
+HANDLE
+WINAPI
+CreateFileTransactedW(
+    LPCWSTR lpFileName,
+    DWORD dwDesiredAccess,
+    DWORD dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    DWORD dwCreationDisposition,
+    DWORD dwFlagsAndAttributes,
+    HANDLE hTemplateFile
+)
 {
-  // DWORD error; // [sp-4h] [bp-30h]@4
+	return CreateFileW(lpFileName, 
+					   dwDesiredAccess, 
+					   dwShareMode, 
+					   lpSecurityAttributes, 
+					   dwCreationDisposition, 
+					   dwFlagsAndAttributes,
+					   hTemplateFile);
+}
 
-  // if ( hTransaction != (HANDLE)-1 && hTransaction )
-  // {
-    // if ( !RtlGetCurrentTransaction() )
-    // {
-      // RtlSetCurrentTransaction(hTransaction);
-      return MoveFileExW(lpExistingFileName, lpNewFileName, dwFlags);
-      // return RtlSetCurrentTransaction(0);
-    // }
-    // error = 6725;
-  // }
-  // else
-  // {
-    // error = 6700;
-  // }
-  // SetLastError(error);
-  // return FALSE;
+HANDLE
+WINAPI
+CreateFileTransactedA(
+    LPSTR lpFileName,
+    DWORD dwDesiredAccess,
+    DWORD dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    DWORD dwCreationDisposition,
+    DWORD dwFlagsAndAttributes,
+    HANDLE hTemplateFile
+)
+{
+	return CreateFileA(lpFileName, 
+					   dwDesiredAccess, 
+					   dwShareMode, 
+					   lpSecurityAttributes, 
+					   dwCreationDisposition, 
+					   dwFlagsAndAttributes,
+					   hTemplateFile);
 }

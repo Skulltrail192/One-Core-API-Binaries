@@ -702,7 +702,7 @@
 @ stdcall UnregisterMessagePumpHook()
 @ stdcall UnregisterUserApiHook() ;NtUserUnregisterUserApiHook
 @ stdcall UpdateLayeredWindow(long long ptr ptr long ptr long ptr long)
-#@ stdcall UpdateLayeredWindowIndirect(long ptr)
+@ stdcall UpdateLayeredWindowIndirect(long ptr)
 @ stdcall UpdatePerUserSystemParameters(long long)
 @ stdcall UpdateWindow(long)
 @ stdcall User32InitializeImmEntryTable(ptr)
@@ -750,7 +750,7 @@
 @ stdcall AddClipboardFormatListener(ptr)
 @ stdcall CalculatePopupWindowPosition(ptr ptr long ptr ptr)
 @ stdcall CancelShutdown()
-@ stdcall ChangeWindowMessageFilter(long long) ;implemented
+@ stdcall ChangeWindowMessageFilter(long long) ;sub-implemented
 @ stdcall ChangeWindowMessageFilterEx(ptr long long ptr)
 @ stdcall CheckDesktopByThreadId(ptr)
 @ stdcall CheckWindowThreadDesktop(ptr ptr)

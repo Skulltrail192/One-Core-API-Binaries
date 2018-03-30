@@ -72,11 +72,8 @@ static CRITICAL_SECTION wined3d_wndproc_cs = {&wined3d_wndproc_cs_debug, -1, 0, 
  * where appropriate. */
 struct wined3d_settings wined3d_settings =
 {
-#if !defined(STAGING_CSMT)
-    FALSE,          /* No multithreaded CS by default. */
-#else  /* STAGING_CSMT */
     TRUE,           /* Multithreaded CS by default. */
-#endif /* STAGING_CSMT */
+    FALSE,          /* explicit_gl_version */
     MAKEDWORD_VERSION(1, 0), /* Default to legacy OpenGL */
     TRUE,           /* Use of GLSL enabled by default */
     ORM_FBO,        /* Use FBOs to do offscreen rendering */
@@ -84,6 +81,7 @@ struct wined3d_settings wined3d_settings =
     PCI_DEVICE_NONE,/* PCI Device ID */
     0,              /* The default of memory is set in init_driver_info */
     NULL,           /* No wine logo by default */
+    TRUE,           /* Prefer multisample textures to multisample renderbuffers. */
     ~0u,            /* Don't force a specific sample count by default. */
     FALSE,          /* No strict draw ordering. */
     FALSE,          /* Don't range check relative addressing indices in float constants. */
@@ -101,8 +99,7 @@ struct wined3d * CDECL wined3d_create(DWORD flags)
     struct wined3d *object;
     HRESULT hr;
 
-    object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, FIELD_OFFSET(struct wined3d, adapters[1]));
-    if (!object)
+    if (!(object = heap_alloc_zero(FIELD_OFFSET(struct wined3d, adapters[1]))))
     {
         ERR("Failed to allocate wined3d object memory.\n");
         return NULL;
@@ -115,7 +112,7 @@ struct wined3d * CDECL wined3d_create(DWORD flags)
     if (FAILED(hr))
     {
         WARN("Failed to initialize wined3d object, hr %#x.\n", hr);
-        HeapFree(GetProcessHeap(), 0, object);
+        heap_free(object);
         return NULL;
     }
 
@@ -219,12 +216,10 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
             ERR_(winediag)("Setting multithreaded command stream to %#x.\n", wined3d_settings.cs_multithreaded);
         if (!get_config_key_dword(hkey, appkey, "MaxVersionGL", &tmpvalue))
         {
-            if (tmpvalue != wined3d_settings.max_gl_version)
-            {
-                ERR_(winediag)("Setting maximum allowed wined3d GL version to %u.%u.\n",
-                        tmpvalue >> 16, tmpvalue & 0xffff);
-                wined3d_settings.max_gl_version = tmpvalue;
-            }
+            ERR_(winediag)("Setting maximum allowed wined3d GL version to %u.%u.\n",
+                    tmpvalue >> 16, tmpvalue & 0xffff);
+            wined3d_settings.explicit_gl_version = TRUE;
+            wined3d_settings.max_gl_version = tmpvalue;
         }
         if ( !get_config_key( hkey, appkey, "UseGLSL", buffer, size) )
         {
@@ -285,10 +280,13 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
         {
             size_t len = strlen(buffer) + 1;
 
-            wined3d_settings.logo = HeapAlloc(GetProcessHeap(), 0, len);
-            if (!wined3d_settings.logo) ERR("Failed to allocate logo path memory.\n");
-            else memcpy(wined3d_settings.logo, buffer, len);
+            if (!(wined3d_settings.logo = heap_alloc(len)))
+                ERR("Failed to allocate logo path memory.\n");
+            else
+                memcpy(wined3d_settings.logo, buffer, len);
         }
+        if (!get_config_key_dword(hkey, appkey, "MultisampleTextures", &wined3d_settings.multisample_textures))
+            ERR_(winediag)("Setting multisample textures to %#x.\n", wined3d_settings.multisample_textures);
         if (!get_config_key_dword(hkey, appkey, "SampleCount", &wined3d_settings.sample_count))
             ERR_(winediag)("Forcing sample count to %u. This may not be compatible with all applications.\n",
                     wined3d_settings.sample_count);
@@ -354,9 +352,9 @@ static BOOL wined3d_dll_destroy(HINSTANCE hInstDLL)
          * these entries. */
         WARN("Leftover wndproc table entry %p.\n", &wndproc_table.entries[i]);
     }
-    HeapFree(GetProcessHeap(), 0, wndproc_table.entries);
+    heap_free(wndproc_table.entries);
 
-    HeapFree(GetProcessHeap(), 0, wined3d_settings.logo);
+    heap_free(wined3d_settings.logo);
     UnregisterClassA(WINED3D_OPENGL_WINDOW_CLASS_NAME, hInstDLL);
 
     DeleteCriticalSection(&wined3d_wndproc_cs);

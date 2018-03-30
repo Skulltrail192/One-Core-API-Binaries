@@ -120,22 +120,23 @@ RegisterPowerSettingNotification(
   _In_  DWORD Flags
 )
 {
-  LPVOID v4; // [sp+8h] [bp-20h]@1
-  int v5; // [sp+Ch] [bp-1Ch]@1
-  int v6; // [sp+10h] [bp-18h]@1
-  DWORD v7; // [sp+14h] [bp-14h]@1
-  int v8; // [sp+18h] [bp-10h]@1
-  int v9; // [sp+1Ch] [bp-Ch]@1
-  int v10; // [sp+20h] [bp-8h]@1
+	return (HPOWERNOTIFY)0xdeadbeef;	
+  // LPVOID v4; // [sp+8h] [bp-20h]@1
+  // int v5; // [sp+Ch] [bp-1Ch]@1
+  // int v6; // [sp+10h] [bp-18h]@1
+  // DWORD v7; // [sp+14h] [bp-14h]@1
+  // int v8; // [sp+18h] [bp-10h]@1
+  // int v9; // [sp+1Ch] [bp-Ch]@1
+  // int v10; // [sp+20h] [bp-8h]@1
 
-  v6 = 0;
-  v4 = (LPVOID)28;
-  v5 = -2147483647;
-  v7 = PowerSettingGuid->Data1;
-  v8 = *(DWORD *)&PowerSettingGuid->Data2;
-  v9 = *(DWORD *)&PowerSettingGuid->Data4[0];
-  v10 = *(DWORD *)&PowerSettingGuid->Data4[4];
-  return RegisterDeviceNotificationWorker(hRecipient, v4, Flags);
+  // v6 = 0;
+  // v4 = (LPVOID)28;
+  // v5 = -2147483647;
+  // v7 = PowerSettingGuid->Data1;
+  // v8 = *(DWORD *)&PowerSettingGuid->Data2;
+  // v9 = *(DWORD *)&PowerSettingGuid->Data4[0];
+  // v10 = *(DWORD *)&PowerSettingGuid->Data4[4];
+  // return RegisterDeviceNotificationWorker(hRecipient, v4, Flags);
 }
 
 BOOL WINAPI UnregisterDeviceNotification(HDEVNOTIFY Handle)
@@ -176,7 +177,8 @@ BOOL WINAPI UnregisterDeviceNotification(HDEVNOTIFY Handle)
 
 BOOL WINAPI UnregisterPowerSettingNotification(HDEVNOTIFY Handle)
 {
-  return UnregisterDeviceNotification(Handle);
+  //return UnregisterDeviceNotification(Handle);
+  return TRUE;
 }
 
 HDEVNOTIFY WINAPI RegisterDeviceNotificationW(HANDLE hRecipient, LPVOID NotificationFilter, DWORD Flags)

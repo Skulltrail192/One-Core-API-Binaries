@@ -110,11 +110,35 @@ typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 #define LOAD_LIBRARY_SEARCH_SYSTEM32        0x00000800
 #define LOAD_LIBRARY_SEARCH_DEFAULT_DIRS    0x00001000
 
+#define RESOURCE_ENUM_LN          0x0001
+#define RESOURCE_ENUM_MUI         0x0002
+#define RESOURCE_ENUM_MUI_SYSTEM  0x0004
+#define RESOURCE_ENUM_VALIDATE    0x0008
+
+#define LOCALE_ALL                  0x00
+#define LOCALE_WINDOWS              0x01
+#define LOCALE_SUPPLEMENTAL         0x02
+#define LOCALE_ALTERNATE_SORTS      0x04
+#define LOCALE_REPLACEMENT          0x08
+#define LOCALE_NEUTRALDATA          0x10
+#define LOCALE_SPECIFICDATA         0x20
+#define LOCALE_SPARENT 0x0000006d
+
 #ifndef FileIdInformation
 #define FileIdInformation (enum _FILE_INFORMATION_CLASS)59
 #endif
 
+#define SYNCHRONIZATION_BARRIER_FLAGS_SPIN_ONLY		0x01
+#define SYNCHRONIZATION_BARRIER_FLAGS_BLOCK_ONLY	0x02
+#define SYNCHRONIZATION_BARRIER_FLAGS_NO_DELETE		0x04
+
 #define ARGUMENT_PRESENT(x) ((x) != NULL)
+
+#define NORM_LINGUISTIC_CASING     0x08000000
+#define FIND_STARTSWITH            0x00100000
+#define FIND_ENDSWITH              0x00200000
+#define FIND_FROMSTART             0x00400000
+#define FIND_FROMEND               0x00800000
 
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 extern BOOL bIsFileApiAnsi;
@@ -127,6 +151,32 @@ typedef NTSTATUS(NTAPI * PRTL_CONVERT_STRING)(IN PUNICODE_STRING UnicodeString, 
 typedef DWORD (WINAPI *APPLICATION_RECOVERY_CALLBACK)(PVOID);
 
 /* STRUCTS DEFINITIONS ******************************************************/
+
+typedef enum AppPolicyProcessTerminationMethod
+{
+    AppPolicyProcessTerminationMethod_ExitProcess      = 0,
+    AppPolicyProcessTerminationMethod_TerminateProcess = 1,
+} AppPolicyProcessTerminationMethod;
+
+typedef enum AppPolicyThreadInitializationType
+{
+    AppPolicyThreadInitializationType_None            = 0,
+    AppPolicyThreadInitializationType_InitializeWinRT = 1,
+} AppPolicyThreadInitializationType;
+
+typedef enum AppPolicyShowDeveloperDiagnostic
+{
+    AppPolicyShowDeveloperDiagnostic_None   = 0,
+    AppPolicyShowDeveloperDiagnostic_ShowUI = 1,
+} AppPolicyShowDeveloperDiagnostic;
+
+typedef enum AppPolicyWindowingModel
+{
+    AppPolicyWindowingModel_None           = 0,
+    AppPolicyWindowingModel_Universal      = 1,
+    AppPolicyWindowingModel_ClassicDesktop = 2,
+    AppPolicyWindowingModel_ClassicPhone   = 3
+} AppPolicyWindowingModel;
 
 typedef enum _FIND_DATA_TYPE
 {
@@ -223,55 +273,6 @@ typedef struct _REPARSE_DATA_BUFFER {
     };
 } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 
-// typedef struct _PROCESSOR_RELATIONSHIP {
-  // BYTE           Flags;
-  // BYTE           EfficiencyClass;
-  // BYTE           Reserved[21];
-  // WORD           GroupCount;
-  // GROUP_AFFINITY GroupMask[ANYSIZE_ARRAY];
-// } PROCESSOR_RELATIONSHIP, *PPROCESSOR_RELATIONSHIP;
-
-// typedef struct _NUMA_NODE_RELATIONSHIP {
-  // DWORD          NodeNumber;
-  // BYTE           Reserved[20];
-  // GROUP_AFFINITY GroupMask;
-// } NUMA_NODE_RELATIONSHIP, *PNUMA_NODE_RELATIONSHIP;
-
-// typedef struct _PROCESSOR_GROUP_INFO {
-  // BYTE      MaximumProcessorCount;
-  // BYTE      ActiveProcessorCount;
-  // BYTE      Reserved[38];
-  // KAFFINITY ActiveProcessorMask;
-// } PROCESSOR_GROUP_INFO, *PPROCESSOR_GROUP_INFO;
-
-// typedef struct _GROUP_RELATIONSHIP {
-  // WORD                 MaximumGroupCount;
-  // WORD                 ActiveGroupCount;
-  // BYTE                 Reserved[20];
-  // PROCESSOR_GROUP_INFO GroupInfo[ANYSIZE_ARRAY];
-// } GROUP_RELATIONSHIP, *PGROUP_RELATIONSHIP;
-
-// typedef struct _CACHE_RELATIONSHIP {
-  // BYTE                 Level;
-  // BYTE                 Associativity;
-  // WORD                 LineSize;
-  // DWORD                CacheSize;
-  // PROCESSOR_CACHE_TYPE Type;
-  // BYTE                 Reserved[20];
-  // GROUP_AFFINITY       GroupMask;
-// } CACHE_RELATIONSHIP, *PCACHE_RELATIONSHIP;
-
-// typedef struct _SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX {
-  // LOGICAL_PROCESSOR_RELATIONSHIP Relationship;
-  // DWORD                          Size;
-  // union {
-    // PROCESSOR_RELATIONSHIP Processor;
-    // NUMA_NODE_RELATIONSHIP NumaNode;
-    // CACHE_RELATIONSHIP     Cache;
-    // GROUP_RELATIONSHIP     Group;
-  // };
-// } SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, *PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX;
-
 typedef struct _REASON_CONTEXT {
   ULONG Version;
   DWORD Flags;
@@ -302,23 +303,6 @@ typedef struct _PROC_THREAD_ATTRIBUTE_LIST
     DWORD_PTR unk;
     struct proc_thread_attr attrs[1];
 }PROC_THREAD_ATTRIBUTE_LIST, *PPROC_THREAD_ATTRIBUTE_LIST, *LPPROC_THREAD_ATTRIBUTE_LIST;
-
-// typedef enum _PROC_THREAD_ATTRIBUTE_NUM
-// {
-    // ProcThreadAttributeParentProcess = 0,
-    // ProcThreadAttributeHandleList = 2,
-    // ProcThreadAttributeGroupAffinity = 3,
-    // ProcThreadAttributeIdealProcessor = 5,
-    // ProcThreadAttributeUmsThread = 6,
-    // ProcThreadAttributeMitigationPolicy = 7,
-    // ProcThreadAttributeSecurityCapabilities = 9,
-    // ProcThreadAttributeProtectionLevel = 11,
-    // ProcThreadAttributeJobList = 13,
-    // ProcThreadAttributeChildProcessPolicy = 14,
-    // ProcThreadAttributeAllApplicationPackagesPolicy = 15,
-    // ProcThreadAttributeWin32kFilter = 16,
-    // ProcThreadAttributeSafeOpenPromptOriginClaim = 17,
-// } PROC_THREAD_ATTRIBUTE_NUM;
 
 typedef enum _WER_REGISTER_FILE_TYPE
 {
@@ -1359,6 +1343,39 @@ OpenRegKey(
 
 extern HANDLE           hAltSortsKey;       // handle to Locale\Alternate Sorts key
 
+#define PATHCCH_NONE                            0x00
+#define PATHCCH_ALLOW_LONG_PATHS                0x01
+#define PATHCCH_FORCE_ENABLE_LONG_NAME_PROCESS  0x02
+#define PATHCCH_FORCE_DISABLE_LONG_NAME_PROCESS 0x04
+#define PATHCCH_DO_NOT_NORMALIZE_SEGMENTS       0x08
+#define PATHCCH_ENSURE_IS_EXTENDED_LENGTH_PATH  0x10
+
+HRESULT 
+WINAPI 
+PathCchAddBackslash(
+	WCHAR *path, 
+	SIZE_T size
+);
+
+HRESULT 
+WINAPI 
+PathCchAddBackslashEx(
+	WCHAR *path, 
+	SIZE_T size, 
+	WCHAR **end, 
+	SIZE_T *remaining
+);
+
+HRESULT 
+WINAPI 
+PathCchCombineEx(
+	WCHAR *out, 
+	SIZE_T size, 
+	const WCHAR *path1, 
+	const WCHAR *path2, 
+	DWORD flags
+);
+
 typedef struct _nlsversioninfoex {
   DWORD dwNLSVersionInfoSize;
   DWORD dwNLSVersion;
@@ -1428,6 +1445,15 @@ typedef enum _FILE_INFO_BY_HANDLE_CLASS {
     MaximumFileInfoByHandlesClass
 } FILE_INFO_BY_HANDLE_CLASS, *PFILE_INFO_BY_HANDLE_CLASS;
 
+typedef struct _RTL_BARRIER
+{
+	DWORD Reserved1;
+	DWORD Reserved2;
+	ULONG_PTR Reserved3[2];
+	DWORD Reserved4;
+	DWORD Reserved5;
+} RTL_BARRIER, *PRTL_BARRIER, SYNCHRONIZATION_BARRIER, *PSYNCHRONIZATION_BARRIER, *LPSYNCHRONIZATION_BARRIER;
+
 typedef struct _FILE_REMOTE_PROTOCOL_INFO {
     USHORT StructureVersion;
     USHORT StructureSize;
@@ -1472,6 +1498,11 @@ typedef enum
      DEVICE_PATH,           /* "//./foo" */
      UNC_DOT_PATH           /* "//." */
 } DOS_PATHNAME_TYPE;
+
+typedef struct _STARTUPINFOEX {
+  STARTUPINFO                 StartupInfo;
+  PPROC_THREAD_ATTRIBUTE_LIST lpAttributeList;
+} STARTUPINFOEX, *LPSTARTUPINFOEX;
 
 // typedef struct _TIME_DYNAMIC_ZONE_INFORMATION
 // {
@@ -1648,3 +1679,44 @@ WINAPI
 TpCallbackMayRunLong(
 	TP_CALLBACK_INSTANCE *
 );
+
+NTSTATUS NTAPI LdrFindResourceDirectory_U 	( 	IN PVOID  	BaseAddress,
+		IN PLDR_RESOURCE_INFO  	info,
+		IN ULONG  	level,
+		OUT PIMAGE_RESOURCE_DIRECTORY *  	addr 
+	);
+	
+BOOL
+WINAPI
+CreateProcessInternalW(
+    HANDLE hUserToken,
+    LPCWSTR lpApplicationName,
+    LPWSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCWSTR lpCurrentDirectory,
+    LPSTARTUPINFOW lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation,
+    PHANDLE hRestrictedUserToken
+    );	
+	
+BOOL
+WINAPI
+CreateProcessInternalA(
+    HANDLE hUserToken,
+    LPCSTR lpApplicationName,
+    LPSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCSTR lpCurrentDirectory,
+    LPSTARTUPINFOA lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation,
+    PHANDLE hRestrictedUserToken
+);	
+	
