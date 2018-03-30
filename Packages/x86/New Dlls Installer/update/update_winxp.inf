@@ -2636,7 +2636,7 @@ Signature                 = "$Windows NT$"
 [CopyAlways.System32.Files]
 	"avrt.dll"
 	"cabiext.dll"
-	"combase.dll"	
+	;"combase.dll"	- Cause error with .net 4.5 application	
 	"cryptbase.dll"
 	"cryptsp.dll"
 	"dbghelp.dll"
@@ -2663,7 +2663,6 @@ Signature                 = "$Windows NT$"
 	"msdrm.dll"
 	"msidcrl30.dll"
 	"mspatcha.dll"
-	"mtdll.dll"
 	"ncrypt.dll"
 	"ndfapi.dll"
 	"photometadatahandler.dll"
@@ -2703,7 +2702,7 @@ Signature                 = "$Windows NT$"
 [SourceDisksFiles]
 	"avrt.dll" = 1
 	"cabiext.dll" = 1
-	"combase.dll" = 1	
+	;"combase.dll" = 1	- Cause error with .net 4.5 application	
 	"cryptbase.dll" = 1
 	"cryptsp.dll" = 1
 	"dbghelp.dll" = 1
@@ -2730,7 +2729,6 @@ Signature                 = "$Windows NT$"
 	"msdrm.dll" = 1
 	"msidcrl30.dll" = 1
 	"mspatcha.dll" = 1
-	"mtdll.dll" = 1
 	"ncrypt.dll" = 1	
 	"ndfapi.dll" = 1
 	"photometadatahandler.dll" = 1

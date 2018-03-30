@@ -5081,7 +5081,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 [CopyAlways.System32.Files]
 	avrt.dll,amd64/avrt.dll
 	cabiext.dll,amd64/cabiext.dll
-	combase.dll,amd64/combase.dll
+	;combase.dll,amd64/combase.dll	- Cause error with .net 4.5 application
 	cryptbase.dll,amd64/cryptbase.dll
 	cryptsp.dll,amd64/cryptsp.dll
 	dbghelp.dll,amd64/dbghelp.dll
@@ -5144,7 +5144,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 [CopyAlways.SysWOW64.Files]	
 	avrt.dll,i386/wavrt.dll
 	cabiext.dll,i386/wcabiext.dll
-	combase.dll,i386/wcombase.dll
+	;combase.dll,i386/wcombase.dll	- Cause error with .net 4.5 application
 	cryptbase.dll,i386/wcryptbase.dll
 	cryptsp.dll,i386/wcryptsp.dll
 	dbghelp.dll,i386/wdbghelp.dll
@@ -5210,7 +5210,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 [SourceDisksFiles]
 	amd64/avrt.dll = 1
 	amd64/cabiext = 1
-	amd64/combase.dll = 1
+	;amd64/combase.dll = 1	- Cause error with .net 4.5 application
 	amd64/cryptbase.dll = 1
 	amd64/cryptsp.dll = 1
 	amd64/dbghelp.dll = 1
@@ -5272,7 +5272,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	amd64/wusa.exe = 1
 	i386/wavrt.dll = 1
 	i386/wcabiext = 1
-	i386/wcombase.dll = 1
+	;i386/wcombase.dll = 1	- Cause error with .net 4.5 application
 	i386/wcryptbase.dll = 1
 	i386/wcryptsp.dll = 1
 	i386/wdbghelp.dll = 1

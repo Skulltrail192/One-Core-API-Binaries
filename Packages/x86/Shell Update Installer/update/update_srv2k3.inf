@@ -90,9 +90,9 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%SU_VERSION%
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
 
 [CopyAlways.System32.Files]
-    browsebase.dll,2k3SP2\xpbrowsebase.dll
-	shellbase.dll,2k3SP2\xpshellbase.dll
-	shlwapibase.dll,2k3SP2\xpshlwapibase.dll
+    browsebase.dll,2k3SP2\srvbrowsebase.dll
+	shellbase.dll,2k3SP2\srvshellbase.dll
+	shlwapibase.dll,2k3SP2\srvshlwapibase.dll
     browseui.dll
 	credui.dll
 	cscapi.dll
@@ -115,9 +115,9 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%SU_VERSION%
     1=%ServicePackSourceFiles%
 
 [SourceDisksFiles]
-    2k3SP2\xpbrowsebase.dll = 1
-	2k3SP2\xpshellbase.dll = 1
-	2k3SP2\xpshlwapibase.dll = 1
+    2k3SP2\srvbrowsebase.dll = 1
+	2k3SP2\srvshellbase.dll = 1
+	2k3SP2\srvshlwapibase.dll = 1
     browseui.dll = 1 
 	credui.dll = 1
 	cscapi.dll = 1
