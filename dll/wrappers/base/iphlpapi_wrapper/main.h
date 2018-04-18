@@ -1,43 +1,36 @@
-/*
- * Copyright (c) 1982, 1986, 1993
- *	The Regents of the University of California.  All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- *
- *	@(#)ip.h	8.2 (Berkeley) 6/1/94
- * $FreeBSD: src/sys/netinet/ip.h,v 1.16 1999/08/28 00:49:19 peter Exp $
- */
+/*++
+
+Copyright (c) 2018 Shorthorn Project.
+
+Module Name:
+
+    iphlpapi.h
+
+Abstract:
+
+    Header for functions related with iphpalpi for support
+    new applications designed for Vista or above.
+
+Revision History:
+
+    18-04-2018
+
+--*/
 
 #include "windef.h"
 #include "winbase.h"
+#include <iotypes.h>
 #include <iphlpapi.h>
 #include <icmpapi.h>
 #include <ifdef.h>
+#include <tcpioctl.h>
 #include <netioapi.h>
+#include <tdiinfo.h>
+#include <tdilib.h>
 #include <wine/debug.h>
 #include <wine/unicode.h>
+#include <ntstatus.h>
+#include <winsock.h>
 #define WIN32_NO_STATUS
 
 #define ScopeLevelCount 16
@@ -51,10 +44,10 @@
 #define WS_AF_INET                 2
 #define WS_AF_INET6                23
 
-typedef struct SOCKADDR {
-        USHORT  sa_family;
-        CHAR    sa_data[14];
-}SOCKADDR, *PSOCKADDR;
+#define NT_SUCCESS(StatCode) ((NTSTATUS)(StatCode) >= 0)
+
+#define TCP_REQUEST_QUERY_INFORMATION_INIT { { { 0 } } }
+#define TCP_REQUEST_SET_INFORMATION_INIT { { 0 } }
 
 typedef USHORT ADDRESS_FAMILY;
 
@@ -65,13 +58,6 @@ typedef enum _MIB_NOTIFICATION_TYPE
     MibDeleteInstance,
     MibInitialNotification,
 } MIB_NOTIFICATION_TYPE, *PMIB_NOTIFICATION_TYPE;
-
-typedef struct sockaddr_in{  
-    short sin_family;  
-    unsigned short sin_port;  
-struct in_addr sin_addr;  
-    char sin_zero[8];  
-}SOCKADDR_IN;  
 
 typedef struct sockaddr_in6 {
   short sin6_family;
@@ -147,14 +133,6 @@ typedef struct
         ULONG Value;
     } DUMMYUNIONNAME;
 } SCOPE_ID, *PSCOPE_ID;
-
-typedef struct _IO_STATUS_BLOCK {
-  union {
-    NTSTATUS Status;
-    PVOID    Pointer;
-  };
-  ULONG_PTR Information;
-} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
 
 typedef struct _MIB_UNICASTIPADDRESS_ROW
 {
@@ -415,6 +393,20 @@ typedef struct _MIB_IF_TABLE2 {
     ULONG NumEntries;
     MIB_IF_ROW2 Table[ANY_SIZE];
 } MIB_IF_TABLE2, *PMIB_IF_TABLE2;
+
+typedef union _IFEntrySafelySized {
+    CHAR MaxSize[sizeof(DWORD) +
+		 sizeof(IFEntry) +
+		 MAX_ADAPTER_DESCRIPTION_LENGTH + 1];
+    IFEntry ent;
+} IFEntrySafelySized;
+
+/* Encapsulates information about an interface */
+typedef struct _IFInfo {
+    TDIEntityID        entity_id;
+    IFEntrySafelySized if_info;
+    IPAddrEntry        ip_addr;
+} IFInfo;
 
 typedef VOID (WINAPI *PIPINTERFACE_CHANGE_CALLBACK)(PVOID, PMIB_IPINTERFACE_ROW,
                                                           MIB_NOTIFICATION_TYPE);

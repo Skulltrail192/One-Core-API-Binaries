@@ -347,27 +347,36 @@ GetLogicalProcessorInformation(
 )
 {
     NTSTATUS Status;
+	LPFN_GLPI glpi;
+	
+    glpi = (LPFN_GLPI) GetProcAddress(
+                            GetModuleHandle(TEXT("kernelfull")),
+                            "GetLogicalProcessorInformation");
+    if (NULL == glpi) 
+    {
+		Status = NtQuerySystemInformation(SystemLogicalProcessorInformation,
+										  Buffer,
+										  *ReturnLength,
+										  ReturnLength);
+
+		/* Normalize the error to what Win32 expects */
+		if (Status == STATUS_INFO_LENGTH_MISMATCH) Status = STATUS_BUFFER_TOO_SMALL;
+		if (!NT_SUCCESS(Status))
+		{
+			//BaseSetLastNTError(Status);
+			return FALSE;
+		}
+
+		return TRUE;
+    }else{
+		return (BOOL)glpi(Buffer, ReturnLength);
+	}
 
     if (!ReturnLength)
     {
         SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
-
-    Status = NtQuerySystemInformation(SystemLogicalProcessorInformation,
-                                      Buffer,
-                                      *ReturnLength,
-                                      ReturnLength);
-
-    /* Normalize the error to what Win32 expects */
-    if (Status == STATUS_INFO_LENGTH_MISMATCH) Status = STATUS_BUFFER_TOO_SMALL;
-    if (!NT_SUCCESS(Status))
-    {
-        //BaseSetLastNTError(Status);
-        return FALSE;
-    }
-
-    return TRUE;
 }
 
  /**********************************************************************
@@ -589,7 +598,7 @@ SYSTEM_LOGICAL_INFORMATION_FILLED _cdecl GetLogicalInfo()
     PCACHE_DESCRIPTOR Cache;
 
     glpi = (LPFN_GLPI) GetProcAddress(
-                            GetModuleHandle(TEXT("kernel32")),
+                            GetModuleHandle(TEXT("kernelfull")),
                             "GetLogicalProcessorInformation");
     if (NULL == glpi) 
     {

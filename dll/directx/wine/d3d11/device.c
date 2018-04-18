@@ -4950,6 +4950,7 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_SOSetTargets(ID3D11DeviceCo
         return;
 
     call->cmd = DEFERRED_SOSETTARGETS;
+    call->so_set_targets_info.buffer_count = buffer_count;
     call->so_set_targets_info.buffers = (void *)(call + 1);
     call->so_set_targets_info.offsets = (void *)&call->so_set_targets_info.buffers[buffer_count];
 
@@ -6522,17 +6523,10 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckFormatSupport(ID3D11Device *i
     }
     flag_mapping[] =
     {
-        {WINED3D_RTYPE_TEXTURE_1D, WINED3DUSAGE_TEXTURE,             D3D11_FORMAT_SUPPORT_TEXTURE1D | D3D11_FORMAT_SUPPORT_MIP},
-        {WINED3D_RTYPE_TEXTURE_2D, WINED3DUSAGE_TEXTURE,             D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_MIP},
-        {WINED3D_RTYPE_TEXTURE_3D, WINED3DUSAGE_TEXTURE,             D3D11_FORMAT_SUPPORT_TEXTURE3D | D3D11_FORMAT_SUPPORT_MIP},
-        {WINED3D_RTYPE_NONE,       WINED3DUSAGE_RENDERTARGET,        D3D11_FORMAT_SUPPORT_RENDER_TARGET | D3D11_FORMAT_SUPPORT_DISPLAY},
-        {WINED3D_RTYPE_NONE,       WINED3DUSAGE_DEPTHSTENCIL,        D3D11_FORMAT_SUPPORT_DEPTH_STENCIL},
-        {WINED3D_RTYPE_BUFFER,     WINED3DUSAGE_QUERY_VERTEXTEXTURE, D3D11_FORMAT_SUPPORT_BUFFER |
-            D3D11_FORMAT_SUPPORT_IA_VERTEX_BUFFER | D3D11_FORMAT_SUPPORT_IA_INDEX_BUFFER | D3D11_FORMAT_SUPPORT_SO_BUFFER
-        },
-        {WINED3D_RTYPE_TEXTURE_2D, WINED3DUSAGE_TEXTURE | WINED3DUSAGE_LEGACY_CUBEMAP, D3D11_FORMAT_SUPPORT_TEXTURECUBE},
-        {WINED3D_RTYPE_TEXTURE_2D, WINED3DUSAGE_TEXTURE | WINED3DUSAGE_QUERY_GENMIPMAP,  D3D11_FORMAT_SUPPORT_MIP_AUTOGEN},
-        {WINED3D_RTYPE_TEXTURE_2D, WINED3DUSAGE_TEXTURE | WINED3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING, D3D11_FORMAT_SUPPORT_BLENDABLE},
+        {WINED3D_RTYPE_TEXTURE_2D, WINED3DUSAGE_TEXTURE,      D3D11_FORMAT_SUPPORT_TEXTURE2D},
+        {WINED3D_RTYPE_TEXTURE_3D, WINED3DUSAGE_TEXTURE,      D3D11_FORMAT_SUPPORT_TEXTURE3D},
+        {WINED3D_RTYPE_NONE,       WINED3DUSAGE_RENDERTARGET, D3D11_FORMAT_SUPPORT_RENDER_TARGET},
+        {WINED3D_RTYPE_NONE,       WINED3DUSAGE_DEPTHSTENCIL, D3D11_FORMAT_SUPPORT_DEPTH_STENCIL},
     };
     HRESULT hr;
 
@@ -8296,28 +8290,9 @@ static HRESULT STDMETHODCALLTYPE d3d10_device_CreateBuffer(ID3D10Device1 *iface,
 static HRESULT STDMETHODCALLTYPE d3d10_device_CreateTexture1D(ID3D10Device1 *iface,
         const D3D10_TEXTURE1D_DESC *desc, const D3D10_SUBRESOURCE_DATA *data, ID3D10Texture1D **texture)
 {
-    struct d3d_device *device = impl_from_ID3D10Device(iface);
-    D3D11_TEXTURE1D_DESC d3d11_desc;
-    struct d3d_texture1d *object;
-    HRESULT hr;
+    FIXME("iface %p, desc %p, data %p, texture %p stub!\n", iface, desc, data, texture);
 
-    TRACE("iface %p, desc %p, data %p, texture %p.\n", iface, desc, data, texture);
-
-    d3d11_desc.Width = desc->Width;
-    d3d11_desc.MipLevels = desc->MipLevels;
-    d3d11_desc.ArraySize = desc->ArraySize;
-    d3d11_desc.Format = desc->Format;
-    d3d11_desc.Usage = d3d11_usage_from_d3d10_usage(desc->Usage);
-    d3d11_desc.BindFlags = d3d11_bind_flags_from_d3d10_bind_flags(desc->BindFlags);
-    d3d11_desc.CPUAccessFlags = d3d11_cpu_access_flags_from_d3d10_cpu_access_flags(desc->CPUAccessFlags);
-    d3d11_desc.MiscFlags = d3d11_resource_misc_flags_from_d3d10_resource_misc_flags(desc->MiscFlags);
-
-    if (FAILED(hr = d3d_texture1d_create(device, &d3d11_desc, (const D3D11_SUBRESOURCE_DATA *)data, &object)))
-        return hr;
-
-    *texture = &object->ID3D10Texture1D_iface;
-
-    return S_OK;
+    return E_NOTIMPL;
 }
 
 static HRESULT STDMETHODCALLTYPE d3d10_device_CreateTexture2D(ID3D10Device1 *iface,
@@ -9115,12 +9090,12 @@ static void CDECL device_parent_activate(struct wined3d_device_parent *device_pa
     TRACE("device_parent %p, activate %#x.\n", device_parent, activate);
 }
 
-static HRESULT CDECL device_parent_sub_resource_created(struct wined3d_device_parent *device_parent,
-        struct wined3d_texture *wined3d_texture, unsigned int sub_resource_idx, void **parent,
-        const struct wined3d_parent_ops **parent_ops)
+static HRESULT CDECL device_parent_texture_sub_resource_created(struct wined3d_device_parent *device_parent,
+        enum wined3d_resource_type type, struct wined3d_texture *wined3d_texture, unsigned int sub_resource_idx,
+        void **parent, const struct wined3d_parent_ops **parent_ops)
 {
-    TRACE("device_parent %p, wined3d_texture %p, sub_resource_idx %u, parent %p, parent_ops %p.\n",
-            device_parent, wined3d_texture, sub_resource_idx, parent, parent_ops);
+    TRACE("device_parent %p, type %#x, wined3d_texture %p, sub_resource_idx %u, parent %p, parent_ops %p.\n",
+            device_parent, type, wined3d_texture, sub_resource_idx, parent, parent_ops);
 
     *parent = NULL;
     *parent_ops = &d3d_null_wined3d_parent_ops;
@@ -9210,8 +9185,7 @@ static const struct wined3d_device_parent_ops d3d_wined3d_device_parent_ops =
     device_parent_wined3d_device_created,
     device_parent_mode_changed,
     device_parent_activate,
-    device_parent_sub_resource_created,
-    device_parent_sub_resource_created,
+    device_parent_texture_sub_resource_created,
     device_parent_create_swapchain_texture,
     device_parent_create_swapchain,
 };

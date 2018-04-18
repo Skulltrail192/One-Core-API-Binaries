@@ -81,85 +81,70 @@ GetNamedPipeAttribute(
   return result;
 }
 
+/***********************************************************************
+ *           GetNamedPipeClientProcessId  (KERNEL32.@)
+ */
 BOOL 
 WINAPI 
-GetNamedPipeServerSessionId(
-	HANDLE Pipe, 
-	PULONG ServerSessionId
-)
+GetNamedPipeClientProcessId( HANDLE pipe, ULONG *id )
 {
-  SIZE_T AttributeValueLength; 
-  BOOL ret;
-  
-  DbgPrint("GetNamedPipeServerSessionId called\n");  
+    IO_STATUS_BLOCK iosb;
+    NTSTATUS status;
 
-  AttributeValueLength = 4;
-  ret = GetNamedPipeAttribute(Pipe, 0, "ServerSessionId", ServerSessionId, &AttributeValueLength);
-  
-  DbgPrint("GetNamedPipeServerSessionId :: GetNamedPipeAttribute response with: %d\n", ret);   
-  
-  return ret;  
+    TRACE( "%p %p\n", pipe, id );
+
+    status = NtFsControlFile( pipe, NULL, NULL, NULL, &iosb, FSCTL_PIPE_GET_CONNECTION_ATTRIBUTE,
+                              (void *)"ClientProcessId", sizeof("ClientProcessId"), id, sizeof(*id) );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return FALSE;
+    }
+    return TRUE;
 }
 
-BOOL 
-WINAPI 
-GetNamedPipeClientProcessId(
-	HANDLE Pipe, 
-	PULONG ClientProcessId
-)
+/***********************************************************************
+ *           GetNamedPipeServerProcessId  (KERNEL32.@)
+ */
+BOOL WINAPI GetNamedPipeServerProcessId( HANDLE pipe, ULONG *id )
 {
-  SIZE_T AttributeValueLength; 
-  BOOL ret;
-  
-  DbgPrint("GetNamedPipeClientProcessId called\n");
+    IO_STATUS_BLOCK iosb;
+    NTSTATUS status;
 
-  AttributeValueLength = 4;
-  ret = GetNamedPipeAttribute(Pipe, PipeConnectionAttribute, "ClientProcessId", ClientProcessId, &AttributeValueLength);
-  
-  DbgPrint("GetNamedPipeClientProcessId :: GetNamedPipeAttribute response with: %d\n", ret); 
-  
-  return ret;
+    TRACE( "%p, %p\n", pipe, id );
+
+    status = NtFsControlFile( pipe, NULL, NULL, NULL, &iosb, FSCTL_PIPE_GET_CONNECTION_ATTRIBUTE,
+                              (void *)"ServerProcessId", sizeof("ServerProcessId"), id, sizeof(*id) );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return FALSE;
+    }
+    return TRUE;
 }
 
-BOOL 
-WINAPI 
-GetNamedPipeServerProcessId(
-  _In_   HANDLE Pipe,
-  _Out_  PULONG ServerProcessId
-)
+/***********************************************************************
+ *           GetNamedPipeClientSessionId  (KERNEL32.@)
+ */
+BOOL WINAPI GetNamedPipeClientSessionId( HANDLE pipe, ULONG *id )
 {
-  SIZE_T AttributeValueLength;
-  BOOL ret;
-  
-  DbgPrint("GetNamedPipeServerProcessId called\n");  
+    FIXME( "%p, %p\n", pipe, id );
 
-  AttributeValueLength = 4;
-  
-  ret = GetNamedPipeAttribute(Pipe, PipeConnectionAttribute, "ServerProcessId", ServerProcessId, &AttributeValueLength);
-  
-  DbgPrint("GetNamedPipeServerProcessId :: GetNamedPipeAttribute response with: %d\n", ret); 
-  
-  return ret;  
+    if (!id) return FALSE;
+    *id = NtCurrentTeb()->Peb->SessionId;
+    return TRUE;
 }
 
-BOOL 
-WINAPI 
-GetNamedPipeClientSessionId(
-  _In_   HANDLE Pipe,
-  _Out_  PULONG ClientSessionId
-)
+/***********************************************************************
+ *           GetNamedPipeServerSessionId  (KERNEL32.@)
+ */
+BOOL WINAPI GetNamedPipeServerSessionId( HANDLE pipe, ULONG *id )
 {
-  SIZE_T AttributeValueLength;
-  BOOL ret;
-  
-  DbgPrint("GetNamedPipeClientSessionId called\n");    
+    FIXME( "%p, %p\n", pipe, id );
 
-  AttributeValueLength = 4;
-  ret = GetNamedPipeAttribute(Pipe, PipeConnectionAttribute, "ClientSessionId", ClientSessionId, &AttributeValueLength);
-
-  DbgPrint("GetNamedPipeClientSessionId :: GetNamedPipeAttribute response with: %d\n", ret); 
-  
-  return ret;    
+    if (!id) return FALSE;
+    *id = NtCurrentTeb()->Peb->SessionId;
+    return TRUE;
 }
 
 BOOL 

@@ -174,16 +174,29 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumAdapters(IWineDXGIFactory *ifa
 static HRESULT STDMETHODCALLTYPE dxgi_factory_MakeWindowAssociation(IWineDXGIFactory *iface,
         HWND window, UINT flags)
 {
+    struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
+
     FIXME("iface %p, window %p, flags %#x stub!\n", iface, window, flags);
+
+    if (!window && flags)
+        return DXGI_ERROR_INVALID_CALL;
+
+    factory->assoc_window = window;
 
     return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_factory_GetWindowAssociation(IWineDXGIFactory *iface, HWND *window)
 {
+    struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
+
     FIXME("iface %p, window %p stub!\n", iface, window);
 
-    return E_NOTIMPL;
+    if (!window)
+        return DXGI_ERROR_INVALID_CALL;
+
+    *window = factory->assoc_window;
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChain(IWineDXGIFactory *iface,
@@ -333,7 +346,6 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForHwnd(IWineDXGIFa
     wined3d_desc.auto_depth_stencil_format = 0;
     wined3d_desc.flags = wined3d_swapchain_flags_from_dxgi(swapchain_desc->Flags);
     wined3d_desc.refresh_rate = fullscreen_desc ? dxgi_rational_to_uint(&fullscreen_desc->RefreshRate) : 0;
-    wined3d_desc.swap_interval = WINED3D_SWAP_INTERVAL_DEFAULT;
     wined3d_desc.auto_restore_display_mode = TRUE;
 
     hr = IWineDXGIDevice_create_swapchain(dxgi_device, &wined3d_desc, FALSE, &wined3d_swapchain);

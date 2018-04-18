@@ -126,11 +126,6 @@ struct d3d_texture1d
     ID3D11Device *device;
 };
 
-static inline struct d3d_texture1d *impl_from_ID3D10Texture1D(ID3D10Texture1D *iface)
-{
-    return CONTAINING_RECORD(iface, struct d3d_texture1d, ID3D10Texture1D_iface);
-}
-
 HRESULT d3d_texture1d_create(struct d3d_device *device, const D3D11_TEXTURE1D_DESC *desc,
         const D3D11_SUBRESOURCE_DATA *data, struct d3d_texture1d **texture) DECLSPEC_HIDDEN;
 struct d3d_texture1d *unsafe_impl_from_ID3D11Texture1D(ID3D11Texture1D *iface) DECLSPEC_HIDDEN;

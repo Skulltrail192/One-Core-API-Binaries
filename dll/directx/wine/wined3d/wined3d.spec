@@ -272,8 +272,6 @@
 @ cdecl wined3d_stateblock_decref(ptr)
 @ cdecl wined3d_stateblock_incref(ptr)
 
-@ cdecl wined3d_strictdrawing_set(long)
-
 @ cdecl wined3d_swapchain_create(ptr ptr ptr ptr ptr)
 @ cdecl wined3d_swapchain_decref(ptr)
 @ cdecl wined3d_swapchain_get_back_buffer(ptr long)

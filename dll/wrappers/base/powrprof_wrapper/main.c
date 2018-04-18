@@ -197,3 +197,15 @@ PowerWriteDCValueIndex(
 {
    return ERROR_CALL_NOT_IMPLEMENTED;
 }
+
+DWORD WINAPI PowerReadFriendlyName(
+  _In_opt_        HKEY    RootPowerKey,
+  _In_opt_  const GUID    *SchemeGuid,
+  _In_opt_  const GUID    *SubGroupOfPowerSettingsGuid,
+  _In_opt_  const GUID    *PowerSettingGuid,
+  _Out_opt_       PUCHAR  Buffer,
+  _Inout_         LPDWORD BufferSize
+)
+{
+   return ERROR_CALL_NOT_IMPLEMENTED;
+}

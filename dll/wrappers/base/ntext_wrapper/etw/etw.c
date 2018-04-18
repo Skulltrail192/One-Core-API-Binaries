@@ -111,6 +111,7 @@ EtwEventRegister(
   IN PVOID CallbackContext OPTIONAL,
   OUT PREGHANDLE RegHandle)
 {
+	*RegHandle = 0xdeadbeef;
 	return ERROR_SUCCESS;
 }
 

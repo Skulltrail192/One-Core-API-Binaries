@@ -344,8 +344,6 @@ static HRESULT normalize_rtv_desc(D3D11_RENDER_TARGET_VIEW_DESC *desc, ID3D11Res
 
         case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
         {
-            const struct d3d_texture1d *texture;
-
             if (desc->ViewDimension != D3D11_RTV_DIMENSION_TEXTURE1D
                     && desc->ViewDimension != D3D11_RTV_DIMENSION_TEXTURE1DARRAY)
             {
@@ -353,15 +351,8 @@ static HRESULT normalize_rtv_desc(D3D11_RENDER_TARGET_VIEW_DESC *desc, ID3D11Res
                 return E_INVALIDARG;
             }
 
-            if (!(texture = unsafe_impl_from_ID3D11Texture1D((ID3D11Texture1D *)resource)))
-            {
-                ERR("Cannot get implementation from ID3D11Texture1D.\n");
-                return E_FAIL;
-            }
-
-            format = texture->desc.Format;
-            layer_count = texture->desc.ArraySize;
-            break;
+            FIXME("Unhandled 1D texture resource.\n");
+            return S_OK;
         }
 
         case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
@@ -635,8 +626,6 @@ static HRESULT normalize_srv_desc(D3D11_SHADER_RESOURCE_VIEW_DESC *desc, ID3D11R
 
         case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
         {
-            const struct d3d_texture1d *texture;
-
             if (desc->ViewDimension != D3D11_SRV_DIMENSION_TEXTURE1D
                     && desc->ViewDimension != D3D11_SRV_DIMENSION_TEXTURE1DARRAY)
             {
@@ -644,16 +633,8 @@ static HRESULT normalize_srv_desc(D3D11_SHADER_RESOURCE_VIEW_DESC *desc, ID3D11R
                 return E_INVALIDARG;
             }
 
-            if (!(texture = unsafe_impl_from_ID3D11Texture1D((ID3D11Texture1D *)resource)))
-            {
-                ERR("Cannot get implementation from ID3D11Texture1D.\n");
-                return E_FAIL;
-            }
-
-            format = texture->desc.Format;
-            miplevel_count = texture->desc.MipLevels;
-            layer_count = texture->desc.ArraySize;
-            break;
+            FIXME("Unhandled 1D texture resource.\n");
+            return S_OK;
         }
 
         case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
@@ -2384,7 +2365,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_unordered_access_view_QueryInterface(ID3D
             || IsEqualGUID(riid, &IID_ID3D11DeviceChild)
             || IsEqualGUID(riid, &IID_IUnknown))
     {
-        ID3D11UnorderedAccessView_AddRef((ID3D11UnorderedAccessView*) *object = iface);
+        ID3D11UnorderedAccessView_AddRef((ID3D11UnorderedAccessView*)*object = iface);
         return S_OK;
     }
 

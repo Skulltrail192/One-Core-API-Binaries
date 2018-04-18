@@ -91,7 +91,6 @@ struct glsl_sample_function
     enum wined3d_data_type data_type;
     BOOL output_single_component;
     unsigned int offset_size;
-    enum wined3d_shader_resource_type emulate_lod;
 };
 
 enum heap_node_op
@@ -3243,7 +3242,6 @@ static void shader_glsl_get_sample_function(const struct wined3d_shader_context 
     enum wined3d_shader_resource_type resource_type = ctx->reg_maps->resource_info[resource_idx].type;
     struct shader_glsl_ctx_priv *priv = ctx->backend_data;
     const struct wined3d_gl_info *gl_info = ctx->gl_info;
-    BOOL legacy_syntax = needs_legacy_glsl_syntax(gl_info);
     BOOL shadow = glsl_is_shadow_sampler(ctx->shader, priv->cur_ps_args, resource_idx, sampler_idx);
     BOOL projected = flags & WINED3D_GLSL_SAMPLE_PROJECTED;
     BOOL texrect = ctx->reg_maps->shader_version.type == WINED3D_SHADER_TYPE_PIXEL
@@ -3256,7 +3254,6 @@ static void shader_glsl_get_sample_function(const struct wined3d_shader_context 
     unsigned int coord_size, deriv_size;
 
     sample_function->data_type = ctx->reg_maps->resource_info[resource_idx].data_type;
-    sample_function->emulate_lod = WINED3D_SHADER_RESOURCE_NONE;
 
     if (resource_type >= ARRAY_SIZE(resource_type_info))
     {
@@ -3268,30 +3265,7 @@ static void shader_glsl_get_sample_function(const struct wined3d_shader_context 
     if (resource_type == WINED3D_SHADER_RESOURCE_TEXTURE_CUBE)
         projected = FALSE;
 
-    if (shadow && lod)
-    {
-        switch (resource_type)
-        {
-            /* emulate textureLod(sampler2DArrayShadow, ...) using textureGradOffset */
-            case WINED3D_SHADER_RESOURCE_TEXTURE_2DARRAY:
-                sample_function->emulate_lod = resource_type;
-                grad = offset = TRUE;
-                lod = FALSE;
-                break;
-
-            /* emulate textureLod(samplerCubeShadow, ...) using shadowCubeGrad */
-            case WINED3D_SHADER_RESOURCE_TEXTURE_CUBE:
-                sample_function->emulate_lod = resource_type;
-                grad = legacy_syntax = TRUE;
-                lod = FALSE;
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    if (legacy_syntax)
+    if (needs_legacy_glsl_syntax(gl_info))
     {
         if (shadow)
             base = "shadow";
@@ -3331,7 +3305,7 @@ static void shader_glsl_get_sample_function(const struct wined3d_shader_context 
     sample_function->offset_size = offset ? deriv_size : 0;
     sample_function->coord_mask = (1u << coord_size) - 1;
     sample_function->deriv_mask = (1u << deriv_size) - 1;
-    sample_function->output_single_component = shadow && !legacy_syntax;
+    sample_function->output_single_component = shadow && !needs_legacy_glsl_syntax(gl_info);
 }
 
 static void shader_glsl_release_sample_function(const struct wined3d_shader_context *ctx,
@@ -3452,7 +3426,6 @@ static void PRINTF_ATTR(9, 10) shader_glsl_gen_sample_code(const struct wined3d_
         const char *dx, const char *dy, const char *bias, const struct wined3d_shader_texel_offset *offset,
         const char *coord_reg_fmt, ...)
 {
-    static const struct wined3d_shader_texel_offset dummy_offset = {0, 0, 0};
     const struct wined3d_shader_version *version = &ins->ctx->reg_maps->shader_version;
     char dst_swizzle[6];
     struct color_fixup_desc fixup;
@@ -3520,26 +3493,6 @@ static void PRINTF_ATTR(9, 10) shader_glsl_gen_sample_code(const struct wined3d_
                         idx >> 1, (idx % 2) ? "zw" : "xy");
                 break;
         }
-    }
-    if (sample_function->emulate_lod)
-    {
-        if (strcmp(bias, "0")) FIXME("Don't know how to emulate lod level %s\n", bias);
-        switch (sample_function->emulate_lod)
-        {
-            case WINED3D_SHADER_RESOURCE_TEXTURE_2DARRAY:
-                if (!dx) dx = "vec2(0.0, 0.0)";
-                if (!dy) dy = "vec2(0.0, 0.0)";
-                break;
-
-            case WINED3D_SHADER_RESOURCE_TEXTURE_CUBE:
-                if (!dx) dx = "vec3(0.0, 0.0, 0.0)";
-                if (!dy) dy = "vec3(0.0, 0.0, 0.0)";
-                break;
-
-            default:
-                break;
-        }
-        if (!offset) offset = &dummy_offset;
     }
     if (dx && dy)
         shader_addline(ins->ctx->buffer, ", %s, %s", dx, dy);
@@ -6498,7 +6451,7 @@ static void shader_glsl_input_pack(const struct wined3d_shader *shader, struct w
         semantic_idx = input->semantic_idx;
         shader_glsl_write_mask_to_str(input->mask, reg_mask);
 
-        if (args->vp_mode == vertexshader)
+        if (args->vp_mode == WINED3D_VP_MODE_SHADER)
         {
             if (input->sysval_semantic == WINED3D_SV_POSITION && !semantic_idx)
             {
@@ -6537,7 +6490,7 @@ static void shader_glsl_input_pack(const struct wined3d_shader *shader, struct w
             if (args->pointsprite)
                 shader_addline(buffer, "ps_in[%u] = vec4(gl_PointCoord.xy, 0.0, 0.0);\n",
                         shader->u.ps.input_reg_map[input->register_idx]);
-            else if (args->vp_mode == pretransformed && args->texcoords_initialized & (1u << semantic_idx))
+            else if (args->vp_mode == WINED3D_VP_MODE_NONE && args->texcoords_initialized & (1u << semantic_idx))
                 shader_addline(buffer, "ps_in[%u]%s = %s[%u]%s;\n",
                         shader->u.ps.input_reg_map[input->register_idx], reg_mask,
                         needs_legacy_glsl_syntax(gl_info)
@@ -7362,7 +7315,7 @@ static GLuint shader_glsl_generate_pshader(const struct wined3d_context *context
         shader_addline(buffer, "uniform vec4 %s_samplerNP2Fixup[%u];\n", prefix, fixup->num_consts);
     }
 
-    if (version->major < 3 || args->vp_mode != vertexshader)
+    if (version->major < 3 || args->vp_mode != WINED3D_VP_MODE_SHADER)
     {
         shader_addline(buffer, "uniform struct\n{\n");
         shader_addline(buffer, "    vec4 color;\n");
@@ -7396,7 +7349,7 @@ static GLuint shader_glsl_generate_pshader(const struct wined3d_context *context
     {
         unsigned int in_count = min(vec4_varyings(version->major, gl_info), shader->limits->packed_input);
 
-        if (args->vp_mode == vertexshader && reg_maps->input_registers)
+        if (args->vp_mode == WINED3D_VP_MODE_SHADER && reg_maps->input_registers)
             shader_glsl_declare_shader_inputs(gl_info, buffer, in_count,
                     shader->u.ps.interpolation_mode, version->major >= 4);
         shader_addline(buffer, "vec4 %s_in[%u];\n", prefix, in_count);
@@ -7510,7 +7463,7 @@ static GLuint shader_glsl_generate_pshader(const struct wined3d_context *context
                     "vpos = vec4(0, ycorrection[0], 0, 0) + gl_FragCoord * vec4(1, ycorrection[1], 1, 1);\n");
     }
 
-    if (reg_maps->shader_version.major < 3 || args->vp_mode != vertexshader)
+    if (reg_maps->shader_version.major < 3 || args->vp_mode != WINED3D_VP_MODE_SHADER)
     {
         unsigned int i;
         WORD map = reg_maps->texcoord;
@@ -8910,7 +8863,7 @@ static const char *shader_glsl_get_ffp_fragment_op_arg(struct wined3d_string_buf
 }
 
 static void shader_glsl_ffp_fragment_op(struct wined3d_string_buffer *buffer, unsigned int stage, BOOL color,
-        BOOL alpha, DWORD dst, DWORD op, DWORD dw_arg0, DWORD dw_arg1, DWORD dw_arg2)
+        BOOL alpha, BOOL tmp_dst, DWORD op, DWORD dw_arg0, DWORD dw_arg1, DWORD dw_arg2)
 {
     const char *dstmask, *dstreg, *arg0, *arg1, *arg2;
 
@@ -8921,10 +8874,7 @@ static void shader_glsl_ffp_fragment_op(struct wined3d_string_buffer *buffer, un
     else
         dstmask = ".w";
 
-    if (dst == tempreg)
-        dstreg = "temp_reg";
-    else
-        dstreg = "ret";
+    dstreg = tmp_dst ? "temp_reg" : "ret";
 
     arg0 = shader_glsl_get_ffp_fragment_op_arg(buffer, 0, stage, dw_arg0);
     arg1 = shader_glsl_get_ffp_fragment_op_arg(buffer, 1, stage, dw_arg1);
@@ -9094,7 +9044,7 @@ static GLuint shader_glsl_generate_ffp_fragment_shader(struct shader_glsl_priv *
             tfactor_used = TRUE;
         if (arg0 == WINED3DTA_TEMP || arg1 == WINED3DTA_TEMP || arg2 == WINED3DTA_TEMP)
             tempreg_used = TRUE;
-        if (settings->op[stage].dst == tempreg)
+        if (settings->op[stage].tmp_dst)
             tempreg_used = TRUE;
         if (arg0 == WINED3DTA_CONSTANT || arg1 == WINED3DTA_CONSTANT || arg2 == WINED3DTA_CONSTANT)
             tss_const_map |= 1u << stage;
@@ -9290,12 +9240,12 @@ static GLuint shader_glsl_generate_ffp_fragment_shader(struct shader_glsl_priv *
         if (!(tex_map & (1u << stage)))
             continue;
 
-        if (settings->op[stage].projected == proj_none)
+        if (settings->op[stage].projected == WINED3D_PROJECTION_NONE)
         {
             proj = FALSE;
         }
-        else if (settings->op[stage].projected == proj_count4
-                || settings->op[stage].projected == proj_count3)
+        else if (settings->op[stage].projected == WINED3D_PROJECTION_COUNT4
+                || settings->op[stage].projected == WINED3D_PROJECTION_COUNT3)
         {
             proj = TRUE;
         }
@@ -9378,12 +9328,12 @@ static GLuint shader_glsl_generate_ffp_fragment_shader(struct shader_glsl_priv *
             shader_addline(buffer, "ret.xy = bumpenv_mat%u * tex%u.xy;\n", stage - 1, stage - 1);
 
             /* With projective textures, texbem only divides the static
-             * texture coord, not the displacement, so multiply the
+             * texture coordinate, not the displacement, so multiply the
              * displacement with the dividing parameter before passing it to
              * TXP. */
-            if (settings->op[stage].projected != proj_none)
+            if (settings->op[stage].projected != WINED3D_PROJECTION_NONE)
             {
-                if (settings->op[stage].projected == proj_count4)
+                if (settings->op[stage].projected == WINED3D_PROJECTION_COUNT4)
                 {
                     shader_addline(buffer, "ret.xy = (ret.xy * ffp_texcoord[%u].w) + ffp_texcoord[%u].xy;\n",
                             stage, stage);
@@ -9408,7 +9358,7 @@ static GLuint shader_glsl_generate_ffp_fragment_shader(struct shader_glsl_priv *
                 shader_addline(buffer, "tex%u *= clamp(tex%u.z * bumpenv_lum_scale%u + bumpenv_lum_offset%u, 0.0, 1.0);\n",
                         stage, stage - 1, stage - 1, stage - 1);
         }
-        else if (settings->op[stage].projected == proj_count3)
+        else if (settings->op[stage].projected == WINED3D_PROJECTION_COUNT3)
         {
             shader_addline(buffer, "tex%u = %s(ps_sampler%u, ffp_texcoord[%u].xyz);\n",
                     stage, texture_function, stage, stage);
@@ -9460,23 +9410,23 @@ static GLuint shader_glsl_generate_ffp_fragment_shader(struct shader_glsl_priv *
 
         if (settings->op[stage].aop == WINED3D_TOP_DISABLE)
         {
-            shader_glsl_ffp_fragment_op(buffer, stage, TRUE, FALSE, settings->op[stage].dst,
+            shader_glsl_ffp_fragment_op(buffer, stage, TRUE, FALSE, settings->op[stage].tmp_dst,
                     settings->op[stage].cop, settings->op[stage].carg0,
                     settings->op[stage].carg1, settings->op[stage].carg2);
         }
         else if (op_equal)
         {
-            shader_glsl_ffp_fragment_op(buffer, stage, TRUE, TRUE, settings->op[stage].dst,
+            shader_glsl_ffp_fragment_op(buffer, stage, TRUE, TRUE, settings->op[stage].tmp_dst,
                     settings->op[stage].cop, settings->op[stage].carg0,
                     settings->op[stage].carg1, settings->op[stage].carg2);
         }
         else if (settings->op[stage].cop != WINED3D_TOP_BUMPENVMAP
                 && settings->op[stage].cop != WINED3D_TOP_BUMPENVMAP_LUMINANCE)
         {
-            shader_glsl_ffp_fragment_op(buffer, stage, TRUE, FALSE, settings->op[stage].dst,
+            shader_glsl_ffp_fragment_op(buffer, stage, TRUE, FALSE, settings->op[stage].tmp_dst,
                     settings->op[stage].cop, settings->op[stage].carg0,
                     settings->op[stage].carg1, settings->op[stage].carg2);
-            shader_glsl_ffp_fragment_op(buffer, stage, FALSE, TRUE, settings->op[stage].dst,
+            shader_glsl_ffp_fragment_op(buffer, stage, FALSE, TRUE, settings->op[stage].tmp_dst,
                     settings->op[stage].aop, settings->op[stage].aarg0,
                     settings->op[stage].aarg1, settings->op[stage].aarg2);
         }

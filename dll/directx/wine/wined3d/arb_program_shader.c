@@ -1061,7 +1061,7 @@ static void shader_arb_get_register_name(const struct wined3d_shader_instruction
                             /* This is better than nothing for now */
                             sprintf(register_name, "fragment.texcoord[%s + %u]", rel_reg, reg->idx[0].offset);
                         }
-                        else if(ctx->cur_ps_args->super.vp_mode != vertexshader)
+                        else if(ctx->cur_ps_args->super.vp_mode != WINED3D_VP_MODE_SHADER)
                         {
                             /* This is problematic because we'd have to consult the ctx->ps_input strings
                              * for where to find the varying. Some may be "0.0", others can be texcoords or
@@ -1416,9 +1416,6 @@ static void shader_hw_sample(const struct wined3d_shader_instruction *ins, DWORD
     struct shader_arb_ctx_priv *priv = ins->ctx->backend_data;
     const char *mod;
     BOOL pshader = shader_is_pshader_version(ins->ctx->reg_maps->shader_version.type);
-    const struct wined3d_shader *shader;
-    const struct wined3d_device *device;
-    const struct wined3d_gl_info *gl_info;
     const char *tex_dst = dst_str;
     struct color_fixup_masks masks;
 
@@ -1432,12 +1429,8 @@ static void shader_hw_sample(const struct wined3d_shader_instruction *ins, DWORD
             break;
 
         case WINED3D_SHADER_RESOURCE_TEXTURE_2D:
-            shader = ins->ctx->shader;
-            device = shader->device;
-            gl_info = &device->adapter->gl_info;
-
             if (pshader && priv->cur_ps_args->super.np2_fixup & (1u << sampler_idx)
-                    && gl_info->supported[ARB_TEXTURE_RECTANGLE])
+                    && ins->ctx->gl_info->supported[ARB_TEXTURE_RECTANGLE])
                 tex_type = "RECT";
             else
                 tex_type = "2D";
@@ -3422,73 +3415,68 @@ static void init_ps_input(const struct wined3d_shader *shader,
     const char *semantic_name;
     DWORD semantic_idx;
 
-    switch(args->super.vp_mode)
+    if (args->super.vp_mode == WINED3D_VP_MODE_SHADER)
     {
-        case pretransformed:
-        case fixedfunction:
-            /* The pixelshader has to collect the varyings on its own. In any case properly load
-             * color0 and color1. In the case of pretransformed vertices also load texcoords. Set
-             * other attribs to 0.0.
-             *
-             * For fixedfunction this behavior is correct, according to the tests. For pretransformed
-             * we'd either need a replacement shader that can load other attribs like BINORMAL, or
-             * load the texcoord attrib pointers to match the pixel shader signature
-             */
-            for (i = 0; i < shader->input_signature.element_count; ++i)
-            {
-                input = &shader->input_signature.elements[i];
-                if (!(semantic_name = input->semantic_name))
-                    continue;
-                semantic_idx = input->semantic_idx;
+        /* That one is easy. The vertex shaders provide v0-v7 in
+         * fragment.texcoord and v8 and v9 in fragment.color. */
+        for (i = 0; i < 8; ++i)
+        {
+            priv->ps_input[i] = texcoords[i];
+        }
+        priv->ps_input[8] = "fragment.color.primary";
+        priv->ps_input[9] = "fragment.color.secondary";
+        return;
+    }
 
-                if (shader_match_semantic(semantic_name, WINED3D_DECL_USAGE_COLOR))
-                {
-                    if (!semantic_idx)
-                        priv->ps_input[input->register_idx] = "fragment.color.primary";
-                    else if (semantic_idx == 1)
-                        priv->ps_input[input->register_idx] = "fragment.color.secondary";
-                    else
-                        priv->ps_input[input->register_idx] = "0.0";
-                }
-                else if (args->super.vp_mode == fixedfunction)
-                {
-                    priv->ps_input[input->register_idx] = "0.0";
-                }
-                else if (shader_match_semantic(semantic_name, WINED3D_DECL_USAGE_TEXCOORD))
-                {
-                    if (semantic_idx < 8)
-                        priv->ps_input[input->register_idx] = texcoords[semantic_idx];
-                    else
-                        priv->ps_input[input->register_idx] = "0.0";
-                }
-                else if (shader_match_semantic(semantic_name, WINED3D_DECL_USAGE_FOG))
-                {
-                    if (!semantic_idx)
-                        priv->ps_input[input->register_idx] = "fragment.fogcoord";
-                    else
-                        priv->ps_input[input->register_idx] = "0.0";
-                }
-                else
-                {
-                    priv->ps_input[input->register_idx] = "0.0";
-                }
+    /* The fragment shader has to collect the varyings on its own. In any case
+     * properly load color0 and color1. In the case of pre-transformed
+     * vertices also load texture coordinates. Set other attributes to 0.0.
+     *
+     * For fixed-function this behavior is correct, according to the tests.
+     * For pre-transformed we'd either need a replacement shader that can load
+     * other attributes like BINORMAL, or load the texture coordinate
+     * attribute pointers to match the fragment shader signature. */
+    for (i = 0; i < shader->input_signature.element_count; ++i)
+    {
+        input = &shader->input_signature.elements[i];
+        if (!(semantic_name = input->semantic_name))
+            continue;
+        semantic_idx = input->semantic_idx;
 
-                TRACE("v%u, semantic %s%u is %s\n", input->register_idx,
-                        semantic_name, semantic_idx, priv->ps_input[input->register_idx]);
-            }
-            break;
+        if (shader_match_semantic(semantic_name, WINED3D_DECL_USAGE_COLOR))
+        {
+            if (!semantic_idx)
+                priv->ps_input[input->register_idx] = "fragment.color.primary";
+            else if (semantic_idx == 1)
+                priv->ps_input[input->register_idx] = "fragment.color.secondary";
+            else
+                priv->ps_input[input->register_idx] = "0.0";
+        }
+        else if (args->super.vp_mode == WINED3D_VP_MODE_FF)
+        {
+            priv->ps_input[input->register_idx] = "0.0";
+        }
+        else if (shader_match_semantic(semantic_name, WINED3D_DECL_USAGE_TEXCOORD))
+        {
+            if (semantic_idx < 8)
+                priv->ps_input[input->register_idx] = texcoords[semantic_idx];
+            else
+                priv->ps_input[input->register_idx] = "0.0";
+        }
+        else if (shader_match_semantic(semantic_name, WINED3D_DECL_USAGE_FOG))
+        {
+            if (!semantic_idx)
+                priv->ps_input[input->register_idx] = "fragment.fogcoord";
+            else
+                priv->ps_input[input->register_idx] = "0.0";
+        }
+        else
+        {
+            priv->ps_input[input->register_idx] = "0.0";
+        }
 
-        case vertexshader:
-            /* That one is easy. The vertex shaders provide v0-v7 in fragment.texcoord and v8 and v9 in
-             * fragment.color
-             */
-            for(i = 0; i < 8; i++)
-            {
-                priv->ps_input[i] = texcoords[i];
-            }
-            priv->ps_input[8] = "fragment.color.primary";
-            priv->ps_input[9] = "fragment.color.secondary";
-            break;
+        TRACE("v%u, semantic %s%u is %s\n", input->register_idx,
+                semantic_name, semantic_idx, priv->ps_input[input->register_idx]);
     }
 }
 
@@ -6084,17 +6072,19 @@ static const char *get_argreg(struct wined3d_string_buffer *buffer, DWORD argnum
 }
 
 static void gen_ffp_instr(struct wined3d_string_buffer *buffer, unsigned int stage, BOOL color,
-        BOOL alpha, DWORD dst, DWORD op, DWORD dw_arg0, DWORD dw_arg1, DWORD dw_arg2)
+        BOOL alpha, BOOL tmp_dst, DWORD op, DWORD dw_arg0, DWORD dw_arg1, DWORD dw_arg2)
 {
     const char *dstmask, *dstreg, *arg0, *arg1, *arg2;
     unsigned int mul = 1;
 
-    if(color && alpha) dstmask = "";
-    else if(color) dstmask = ".xyz";
-    else dstmask = ".w";
+    if (color && alpha)
+        dstmask = "";
+    else if (color)
+        dstmask = ".xyz";
+    else
+        dstmask = ".w";
 
-    if(dst == tempreg) dstreg = "tempreg";
-    else dstreg = "ret";
+    dstreg = tmp_dst ? "tempreg" : "ret";
 
     arg0 = get_argreg(buffer, 0, stage, dw_arg0);
     arg1 = get_argreg(buffer, 1, stage, dw_arg1);
@@ -6273,7 +6263,7 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, con
 
         if (arg0 == WINED3DTA_TEXTURE || arg1 == WINED3DTA_TEXTURE || arg2 == WINED3DTA_TEXTURE)
             tex_read |= 1u << stage;
-        if (settings->op[stage].dst == tempreg)
+        if (settings->op[stage].tmp_dst)
             tempreg_used = TRUE;
         if (arg0 == WINED3DTA_TEMP || arg1 == WINED3DTA_TEMP || arg2 == WINED3DTA_TEMP)
             tempreg_used = TRUE;
@@ -6391,12 +6381,17 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, con
 
         textype = arbfp_texture_target(settings->op[stage].tex_type);
 
-        if(settings->op[stage].projected == proj_none) {
+        if (settings->op[stage].projected == WINED3D_PROJECTION_NONE)
+        {
             instr = "TEX";
-        } else if(settings->op[stage].projected == proj_count4 ||
-                  settings->op[stage].projected == proj_count3) {
+        }
+        else if (settings->op[stage].projected == WINED3D_PROJECTION_COUNT4
+                || settings->op[stage].projected == WINED3D_PROJECTION_COUNT3)
+        {
             instr = "TXP";
-        } else {
+        }
+        else
+        {
             FIXME("Unexpected projection mode %d\n", settings->op[stage].projected);
             instr = "TXP";
         }
@@ -6410,18 +6405,27 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, con
             shader_addline(&buffer, "SWZ arg1, bumpmat%u, y, w, 0, 0;\n", stage - 1);
             shader_addline(&buffer, "DP3 ret.y, arg1, tex%u;\n", stage - 1);
 
-            /* with projective textures, texbem only divides the static texture coord, not the displacement,
-             * so multiply the displacement with the dividing parameter before passing it to TXP
-             */
-            if (settings->op[stage].projected != proj_none) {
-                if(settings->op[stage].projected == proj_count4) {
+            /* With projective textures, texbem only divides the static
+             * texture coordinate, not the displacement, so multiply the
+             * displacement with the dividing parameter before passing it to
+             * TXP. */
+            if (settings->op[stage].projected != WINED3D_PROJECTION_NONE)
+            {
+                if (settings->op[stage].projected == WINED3D_PROJECTION_COUNT4)
+                {
                     shader_addline(&buffer, "MOV ret.w, fragment.texcoord[%u].w;\n", stage);
-                    shader_addline(&buffer, "MUL ret.xyz, ret, fragment.texcoord[%u].w, fragment.texcoord[%u];\n", stage, stage);
-                } else {
-                    shader_addline(&buffer, "MOV ret.w, fragment.texcoord[%u].z;\n", stage);
-                    shader_addline(&buffer, "MAD ret.xyz, ret, fragment.texcoord[%u].z, fragment.texcoord[%u];\n", stage, stage);
+                    shader_addline(&buffer, "MUL ret.xyz, ret, fragment.texcoord[%u].w, fragment.texcoord[%u];\n",
+                            stage, stage);
                 }
-            } else {
+                else
+                {
+                    shader_addline(&buffer, "MOV ret.w, fragment.texcoord[%u].z;\n", stage);
+                    shader_addline(&buffer, "MAD ret.xyz, ret, fragment.texcoord[%u].z, fragment.texcoord[%u];\n",
+                            stage, stage);
+                }
+            }
+            else
+            {
                 shader_addline(&buffer, "ADD ret, ret, fragment.texcoord[%u];\n", stage);
             }
 
@@ -6433,12 +6437,16 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, con
                                stage - 1, stage - 1, stage - 1);
                 shader_addline(&buffer, "MUL tex%u, tex%u, ret.x;\n", stage, stage);
             }
-        } else if(settings->op[stage].projected == proj_count3) {
+        }
+        else if (settings->op[stage].projected == WINED3D_PROJECTION_COUNT3)
+        {
             shader_addline(&buffer, "MOV ret, fragment.texcoord[%u];\n", stage);
             shader_addline(&buffer, "MOV ret.w, ret.z;\n");
             shader_addline(&buffer, "%s tex%u, ret, texture[%u], %s;\n",
                             instr, stage, stage, textype);
-        } else {
+        }
+        else
+        {
             shader_addline(&buffer, "%s tex%u, fragment.texcoord[%u], texture[%u], %s;\n",
                             instr, stage, stage, stage, textype);
         }
@@ -6487,23 +6495,23 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, con
 
         if (settings->op[stage].aop == WINED3D_TOP_DISABLE)
         {
-            gen_ffp_instr(&buffer, stage, TRUE, FALSE, settings->op[stage].dst,
+            gen_ffp_instr(&buffer, stage, TRUE, FALSE, settings->op[stage].tmp_dst,
                           settings->op[stage].cop, settings->op[stage].carg0,
                           settings->op[stage].carg1, settings->op[stage].carg2);
         }
         else if (op_equal)
         {
-            gen_ffp_instr(&buffer, stage, TRUE, TRUE, settings->op[stage].dst,
+            gen_ffp_instr(&buffer, stage, TRUE, TRUE, settings->op[stage].tmp_dst,
                           settings->op[stage].cop, settings->op[stage].carg0,
                           settings->op[stage].carg1, settings->op[stage].carg2);
         }
         else if (settings->op[stage].cop != WINED3D_TOP_BUMPENVMAP
                 && settings->op[stage].cop != WINED3D_TOP_BUMPENVMAP_LUMINANCE)
         {
-            gen_ffp_instr(&buffer, stage, TRUE, FALSE, settings->op[stage].dst,
+            gen_ffp_instr(&buffer, stage, TRUE, FALSE, settings->op[stage].tmp_dst,
                           settings->op[stage].cop, settings->op[stage].carg0,
                           settings->op[stage].carg1, settings->op[stage].carg2);
-            gen_ffp_instr(&buffer, stage, FALSE, TRUE, settings->op[stage].dst,
+            gen_ffp_instr(&buffer, stage, FALSE, TRUE, settings->op[stage].tmp_dst,
                           settings->op[stage].aop, settings->op[stage].aarg0,
                           settings->op[stage].aarg1, settings->op[stage].aarg2);
         }
@@ -7795,32 +7803,42 @@ static BOOL arbfp_blit_supported(enum wined3d_blit_op blit_op, const struct wine
 }
 
 static DWORD arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_op op,
-        struct wined3d_context *context, struct wined3d_surface *src_surface, DWORD src_location,
-        const RECT *src_rect, struct wined3d_surface *dst_surface, DWORD dst_location, const RECT *dst_rect,
+        struct wined3d_context *context, struct wined3d_texture *src_texture, unsigned int src_sub_resource_idx,
+        DWORD src_location, const RECT *src_rect, struct wined3d_texture *dst_texture,
+        unsigned int dst_sub_resource_idx, DWORD dst_location, const RECT *dst_rect,
         const struct wined3d_color_key *color_key, enum wined3d_texture_filter_type filter)
 {
-    unsigned int src_sub_resource_idx = surface_get_sub_resource_idx(src_surface);
-    struct wined3d_texture *src_texture = src_surface->container;
-    struct wined3d_texture *dst_texture = dst_surface->container;
     struct wined3d_device *device = dst_texture->resource.device;
     struct wined3d_arbfp_blitter *arbfp_blitter;
     struct wined3d_color_key alpha_test_key;
     struct wined3d_blitter *next;
     RECT s, d;
 
+    TRACE("blitter %p, op %#x, context %p, src_texture %p, src_sub_resource_idx %u, src_location %s, src_rect %s, "
+            "dst_texture %p, dst_sub_resource_idx %u, dst_location %s, dst_rect %s, colour_key %p, filter %s.\n",
+            blitter, op, context, src_texture, src_sub_resource_idx, wined3d_debug_location(src_location),
+            wine_dbgstr_rect(src_rect), dst_texture, dst_sub_resource_idx, wined3d_debug_location(dst_location),
+            wine_dbgstr_rect(dst_rect), color_key, debug_d3dtexturefiltertype(filter));
+
     if (!arbfp_blit_supported(op, context, &src_texture->resource, src_location,
             &dst_texture->resource, dst_location))
     {
-        if ((next = blitter->next))
-            return next->ops->blitter_blit(next, op, context, src_surface, src_location,
-                    src_rect, dst_surface, dst_location, dst_rect, color_key, filter);
+        if (!(next = blitter->next))
+        {
+            ERR("No blitter to handle blit op %#x.\n", op);
+            return dst_location;
+        }
+
+        TRACE("Forwarding to blitter %p.\n", next);
+        return next->ops->blitter_blit(next, op, context, src_texture, src_sub_resource_idx, src_location,
+                src_rect, dst_texture, dst_sub_resource_idx, dst_location, dst_rect, color_key, filter);
     }
 
     arbfp_blitter = CONTAINING_RECORD(blitter, struct wined3d_arbfp_blitter, blitter);
 
     /* Now load the surface */
     if (wined3d_settings.offscreen_rendering_mode != ORM_FBO
-            && (surface_get_sub_resource(src_surface)->locations
+            && (src_texture->sub_resources[src_sub_resource_idx].locations
             & (WINED3D_LOCATION_TEXTURE_RGB | WINED3D_LOCATION_DRAWABLE))
             == WINED3D_LOCATION_DRAWABLE
             && !wined3d_resource_is_offscreen(&src_texture->resource))
@@ -7832,7 +7850,7 @@ static DWORD arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_bl
          * flip in the blitter, we don't actually need that flip anyway. So we
          * use the surface's texture as scratch texture, and flip the source
          * rectangle instead. */
-        surface_load_fb_texture(src_surface, FALSE, context);
+        texture2d_load_fb_texture(src_texture, src_sub_resource_idx, FALSE, context);
 
         s = *src_rect;
         s.top = wined3d_texture_get_level_height(src_texture, src_level) - s.top;
@@ -7842,12 +7860,12 @@ static DWORD arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_bl
     else
         wined3d_texture_load(src_texture, context, FALSE);
 
-    context_apply_blit_state(context, device);
+    context_apply_ffp_blit_state(context, device);
 
     if (dst_location == WINED3D_LOCATION_DRAWABLE)
     {
         d = *dst_rect;
-        surface_translate_drawable_coords(dst_surface, context->win_handle, &d);
+        wined3d_texture_translate_drawable_coords(dst_texture, context->win_handle, &d);
         dst_rect = &d;
     }
 
@@ -7857,15 +7875,16 @@ static DWORD arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_bl
 
         if (dst_location == WINED3D_LOCATION_DRAWABLE)
         {
-            TRACE("Destination surface %p is onscreen.\n", dst_surface);
+            TRACE("Destination texture %p is onscreen.\n", dst_texture);
             buffer = wined3d_texture_get_gl_buffer(dst_texture);
         }
         else
         {
-            TRACE("Destination surface %p is offscreen.\n", dst_surface);
+            TRACE("Destination texture %p is offscreen.\n", dst_texture);
             buffer = GL_COLOR_ATTACHMENT0;
         }
-        context_apply_fbo_state_blit(context, GL_DRAW_FRAMEBUFFER, dst_surface, NULL, dst_location);
+        context_apply_fbo_state_blit(context, GL_DRAW_FRAMEBUFFER,
+                &dst_texture->resource, dst_sub_resource_idx, NULL, 0, dst_location);
         context_set_draw_buffer(context, buffer);
         context_check_fbo_status(context, GL_DRAW_FRAMEBUFFER);
         context_invalidate_state(context, STATE_FRAMEBUFFER);
@@ -7887,9 +7906,8 @@ static DWORD arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_bl
     /* Leave the opengl state valid for blitting */
     arbfp_blit_unset(context->gl_info);
 
-    if (wined3d_settings.strict_draw_ordering
-            || (dst_texture->swapchain && (dst_texture->swapchain->front_buffer == dst_texture)))
-        context->gl_info->gl_ops.gl.p_glFlush(); /* Flush to ensure ordering across contexts. */
+    if (dst_texture->swapchain && (dst_texture->swapchain->front_buffer == dst_texture))
+        context->gl_info->gl_ops.gl.p_glFlush();
 
     return dst_location;
 }

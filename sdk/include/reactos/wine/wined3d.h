@@ -600,7 +600,7 @@ enum wined3d_texture_stage_state
     WINED3D_TSS_ALPHA_ARG0                  = 15,
     WINED3D_TSS_RESULT_ARG                  = 16,
     WINED3D_TSS_CONSTANT                    = 17,
-    WINED3D_TSS_INVALID                     = ~0U,
+    WINED3D_TSS_INVALID                     = ~0u,
 };
 #define WINED3D_HIGHEST_TEXTURE_STATE                           WINED3D_TSS_CONSTANT
 
@@ -949,13 +949,6 @@ enum wined3d_shader_byte_code_format
 #define WINED3D_MAP_READ                                        0x80000000
 
 #define WINED3DPRESENT_RATE_DEFAULT                             0x00000000
-
-#define WINED3DPRESENT_INTERVAL_DEFAULT                         0x00000000
-#define WINED3DPRESENT_INTERVAL_ONE                             0x00000001
-#define WINED3DPRESENT_INTERVAL_TWO                             0x00000002
-#define WINED3DPRESENT_INTERVAL_THREE                           0x00000004
-#define WINED3DPRESENT_INTERVAL_FOUR                            0x00000008
-#define WINED3DPRESENT_INTERVAL_IMMEDIATE                       0x80000000
 
 #define WINED3DCLIPPLANE0                                       (1u << 0)
 #define WINED3DCLIPPLANE1                                       (1u << 1)
@@ -1336,8 +1329,7 @@ enum wined3d_shader_byte_code_format
 #define WINED3D_NO_PRIMITIVE_RESTART                            0x00000800
 #define WINED3D_LEGACY_CUBEMAP_FILTERING                        0x00001000
 #define WINED3D_NORMALIZED_DEPTH_BIAS                           0x00002000
-#define WINED3D_REQUEST_D3D10                                   0x00004000
-#define WINED3D_LIMIT_VIEWPORT                                  0x00008000
+#define WINED3D_LIMIT_VIEWPORT                                  0x00004000
 
 #define WINED3D_RESZ_CODE                                       0x7fa05000
 
@@ -1739,10 +1731,10 @@ struct wined3d_adapter_identifier
 
 struct wined3d_swapchain_desc
 {
-    UINT backbuffer_width;
-    UINT backbuffer_height;
+    unsigned int backbuffer_width;
+    unsigned int backbuffer_height;
     enum wined3d_format_id backbuffer_format;
-    UINT backbuffer_count;
+    unsigned int backbuffer_count;
     DWORD backbuffer_usage;
     enum wined3d_multisample_type multisample_type;
     DWORD multisample_quality;
@@ -1752,8 +1744,7 @@ struct wined3d_swapchain_desc
     BOOL enable_auto_depth_stencil;
     enum wined3d_format_id auto_depth_stencil_format;
     DWORD flags;
-    UINT refresh_rate;
-    UINT swap_interval;
+    unsigned int refresh_rate;
     BOOL auto_restore_display_mode;
 };
 
@@ -1899,7 +1890,6 @@ typedef struct _WINED3DCAPS
     DWORD Caps;
     DWORD Caps2;
     DWORD Caps3;
-    DWORD PresentationIntervals;
 
     DWORD CursorCaps;
     DWORD DevCaps;
@@ -2148,11 +2138,8 @@ struct wined3d_device_parent_ops
     void (__cdecl *wined3d_device_created)(struct wined3d_device_parent *device_parent, struct wined3d_device *device);
     void (__cdecl *mode_changed)(struct wined3d_device_parent *device_parent);
     void (__cdecl *activate)(struct wined3d_device_parent *device_parent, BOOL activate);
-    HRESULT (__cdecl *surface_created)(struct wined3d_device_parent *device_parent,
-            struct wined3d_texture *texture, unsigned int sub_resource_idx,
-            void **parent, const struct wined3d_parent_ops **parent_ops);
-    HRESULT (__cdecl *volume_created)(struct wined3d_device_parent *device_parent,
-            struct wined3d_texture *wined3d_texture, unsigned int sub_resource_idx,
+    HRESULT (__cdecl *texture_sub_resource_created)(struct wined3d_device_parent *device_parent,
+            enum wined3d_resource_type type, struct wined3d_texture *texture, unsigned int sub_resource_idx,
             void **parent, const struct wined3d_parent_ops **parent_ops);
     HRESULT (__cdecl *create_swapchain_texture)(struct wined3d_device_parent *device_parent, void *parent,
             const struct wined3d_resource_desc *desc, DWORD texture_flags, struct wined3d_texture **texture);
@@ -2695,8 +2682,8 @@ void __cdecl wined3d_swapchain_get_desc(const struct wined3d_swapchain *swapchai
 HRESULT __cdecl wined3d_swapchain_get_raster_status(const struct wined3d_swapchain *swapchain,
         struct wined3d_raster_status *raster_status);
 ULONG __cdecl wined3d_swapchain_incref(struct wined3d_swapchain *swapchain);
-HRESULT __cdecl wined3d_swapchain_present(struct wined3d_swapchain *swapchain,
-        const RECT *src_rect, const RECT *dst_rect, HWND dst_window_override, DWORD swap_interval, DWORD flags);
+HRESULT __cdecl wined3d_swapchain_present(struct wined3d_swapchain *swapchain, const RECT *src_rect,
+        const RECT *dst_rect, HWND dst_window_override, unsigned int swap_interval, DWORD flags);
 HRESULT __cdecl wined3d_swapchain_resize_buffers(struct wined3d_swapchain *swapchain, unsigned int buffer_count,
         unsigned int width, unsigned int height, enum wined3d_format_id format_id,
         enum wined3d_multisample_type multisample_type, unsigned int multisample_quality);
