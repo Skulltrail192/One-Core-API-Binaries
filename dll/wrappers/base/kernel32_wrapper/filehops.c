@@ -443,3 +443,63 @@ SetStdHandleEx(
 	oldHandle = GetStdHandle(nStdHandle);
 	return SetStdHandle(nStdHandle, hHandle);
 }
+
+DWORD 
+WINAPI 
+Wow64SuspendThread(
+	HANDLE hThread
+)
+{ 
+  #ifdef _M_IX86
+	BaseSetLastNTError(STATUS_NOT_IMPLEMENTED);
+	return -1;
+  #elif defined(_M_AMD64)
+	return SuspendThread(hThread);
+  #endif  
+}
+
+BOOL 
+WINAPI 
+Wow64SetThreadContext(
+  _In_  HANDLE hThread,
+  _In_  const WOW64_CONTEXT *lpContext
+)
+{ 
+  #ifdef _M_IX86
+	BaseSetLastNTError(STATUS_NOT_SUPPORTED);
+	return FALSE;
+  #elif defined(_M_AMD64)
+	return SetThreadContext(hThread, lpContext);
+  #endif  
+}
+
+BOOL 
+WINAPI 
+Wow64GetThreadContext(
+  _In_     HANDLE hThread,
+  _Inout_  PWOW64_CONTEXT lpContext
+)
+{ 
+  #ifdef _M_IX86
+	BaseSetLastNTError(STATUS_NOT_SUPPORTED);
+	return FALSE;
+  #elif defined(_M_AMD64)
+	return GetThreadContext(hThread, lpContext);
+  #endif  
+}
+
+BOOL 
+WINAPI 
+Wow64GetThreadSelectorEntry(
+  _In_   HANDLE hThread,
+  _In_   DWORD dwSelector,
+  _Out_  PWOW64_LDT_ENTRY lpSelectorEntry
+)
+{ 
+  #ifdef _M_IX86
+	BaseSetLastNTError(STATUS_NOT_SUPPORTED);
+	return FALSE;
+  #elif defined(_M_AMD64)
+	return GetThreadSelectorEntry(hThread, dwSelector, lpSelectorEntry);
+  #endif  
+}

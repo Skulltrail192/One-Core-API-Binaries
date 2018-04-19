@@ -75,3 +75,25 @@ DeleteFileTransactedA(
 {
     return DeleteFileA(lpFileName);
 }
+
+BOOL 
+WINAPI
+SetFileAttributesTransactedA(
+  _In_ LPCTSTR lpFileName,
+  _In_ DWORD   dwFileAttributes,
+  _In_ HANDLE  hTransaction
+)
+{
+	return SetFileAttributesA(lpFileName, dwFileAttributes);
+}
+
+BOOL 
+WINAPI
+SetFileAttributesTransactedW(
+  _In_ LPCWSTR lpFileName,
+  _In_ DWORD   dwFileAttributes,
+  _In_ HANDLE  hTransaction
+)
+{
+	return SetFileAttributesW(lpFileName, dwFileAttributes);
+}

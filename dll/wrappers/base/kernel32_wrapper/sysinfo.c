@@ -90,7 +90,7 @@ SetSystemFileCacheSize(
 		return pSetSystemFileCacheSize(MinimumFileCacheSize, MaximumFileCacheSize, Flags);
 	}else{
 		status = NtSetSystemInformation(SystemObjectInformation|0x40, &SystemInformation, 0x24u);
-		if ( status < 0 )
+		if ( !NT_SUCCESS(status) )
 		{
 			BaseSetLastNTError(status);
 			result = FALSE;

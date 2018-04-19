@@ -131,7 +131,7 @@ BOOL WINAPI GetNamedPipeClientSessionId( HANDLE pipe, ULONG *id )
     FIXME( "%p, %p\n", pipe, id );
 
     if (!id) return FALSE;
-    *id = NtCurrentTeb()->Peb->SessionId;
+    *id = NtCurrentTeb()->ProcessEnvironmentBlock->SessionId;
     return TRUE;
 }
 
@@ -143,7 +143,7 @@ BOOL WINAPI GetNamedPipeServerSessionId( HANDLE pipe, ULONG *id )
     FIXME( "%p, %p\n", pipe, id );
 
     if (!id) return FALSE;
-    *id = NtCurrentTeb()->Peb->SessionId;
+    *id = NtCurrentTeb()->ProcessEnvironmentBlock->SessionId;
     return TRUE;
 }
 

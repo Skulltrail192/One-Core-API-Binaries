@@ -162,8 +162,24 @@ HRESULT WINAPI WerUnregisterRuntimeExceptionModule(
 /***********************************************************************
   * WerUnregisterMemoryBlock (KERNEL32.@)
 8  */
-HRESULT WINAPI WerUnregisterMemoryBlock(void *block)
+HRESULT 
+WINAPI 
+WerUnregisterMemoryBlock(void *block)
 {
      FIXME("(%p) stub\n", block);
      return E_NOTIMPL;
+}
+
+/*
+* @unimplemented
+*/
+HRESULT 
+WINAPI 
+WerGetFlags(
+  _In_   HANDLE hProcess,
+  _Out_  PDWORD pdwFlags
+)
+{
+	*pdwFlags = WER_FAULT_REPORTING_FLAG_NOHEAP;	
+	return S_OK;
 }

@@ -38,7 +38,7 @@ GetProcessDEPPolicy(HANDLE ProcessInformation, LPDWORD lpFlags, PBOOL lpPermanen
   LPDWORD value; // ecx@3
 
   status = NtQueryInformationProcess(ProcessInformation, ProcessIoCounters, &ProcessInformation, 4u, 0);
-  if ( status >= 0 )
+  if ( NT_SUCCESS(status))
   {
     number = (ULONG)ProcessInformation;
     value = 0;

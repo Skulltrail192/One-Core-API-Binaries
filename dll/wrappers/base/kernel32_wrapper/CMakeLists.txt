@@ -21,6 +21,7 @@ list(APPEND SOURCE
 	console.c
 	datetime.c	
 	dep.c
+	dir.c
 	dllmain.c
 	error.c
 	filehops.c
@@ -35,6 +36,7 @@ list(APPEND SOURCE
 	module.c
 	namepipe.c
 	nls.c
+	numa.c
 	number.c
 	pathmisc.c
 	powrmgmt.c

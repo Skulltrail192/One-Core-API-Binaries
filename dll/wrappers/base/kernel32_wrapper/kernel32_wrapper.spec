@@ -1071,6 +1071,8 @@
 @ stdcall CreateThreadpoolTimer(ptr ptr ptr)
 @ stdcall CreateThreadpoolWait(ptr ptr ptr) 
 @ stdcall CreateThreadpoolWork(ptr ptr ptr)
+@ stdcall CreateWaitableTimerExA(ptr str ptr long)
+@ stdcall CreateWaitableTimerExW(ptr wstr ptr long)
 @ stdcall DeleteFileTransactedA(str ptr)
 @ stdcall DeleteFileTransactedW(wstr ptr)
 @ stdcall DeleteProcThreadAttributeList(ptr)
@@ -1141,6 +1143,8 @@
 @ stdcall InitOnceComplete(ptr long ptr)
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stdcall InitOnceInitialize(ptr) ntext.RtlRunOnceInitialize
+@ stdcall InterlockedPushListSList(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
+@ stdcall IsNormalizedString(long wstr long) normaliz.IsNormalizedString
 @ stdcall IsThreadAFiber()
 @ stdcall IsThreadpoolTimerSet(ptr) ntext.TpIsTimerSet
 @ stdcall IsValidLocaleName(wstr)
@@ -1165,11 +1169,15 @@
 @ stdcall ReleaseSemaphoreWhenCallbackReturns(ptr long long) ntext.TpCallbackReleaseSemaphoreOnCompletion
 @ stdcall ReleaseSRWLockExclusive(ptr) ntext.RtlReleaseSRWLockExclusive
 @ stdcall ReleaseSRWLockShared(ptr) ntext.RtlReleaseSRWLockShared
+@ stdcall RemoveDirectoryTransactedA(str ptr)
+@ stdcall RemoveDirectoryTransactedW(wstr ptr)
 @ stdcall ResolveDelayLoadedAPI(ptr ptr ptr ptr ptr long) ntext.LdrResolveDelayLoadedAPI
 @ stdcall SetConsoleHistoryInfo(ptr)
 @ stdcall SetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall SetCurrentConsoleFontEx(ptr long ptr)
 @ stdcall SetEventWhenCallbackReturns(ptr long) ntext.TpCallbackSetEventOnCompletion
+@ stdcall SetFileAttributesTransactedA(str long ptr)
+@ stdcall SetFileAttributesTransactedW(wstr long ptr)
 @ stdcall SetFileInformationByHandle(long long ptr long) 
 @ stdcall SetFileInformationByHandleW(long long ptr long) SetFileInformationByHandle
 @ stdcall SetNamedPipeAttribute(ptr long str ptr long)
@@ -1201,7 +1209,11 @@
 @ stdcall WerRegisterMemoryBlockWorker(ptr long) WerRegisterMemoryBlock
 @ stdcall WerUnregisterMemoryBlock(ptr)
 @ stdcall WerUnregisterFile(wstr)
+@ stdcall WerGetFlags(ptr ptr)
 @ stdcall WerSetFlags(long)
+@ stdcall Wow64GetThreadContext(ptr ptr)
+@ stdcall Wow64SetThreadContext(ptr ptr)
+@ stdcall Wow64SuspendThread(ptr)
 
 #Win7 Functions
 @ stub BaseThreadInitThunk
@@ -1253,6 +1265,7 @@
 @ stdcall TryAcquireSRWLockShared(ptr) ntext.RtlTryAcquireSRWLockShared
 @ stdcall WerRegisterRuntimeExceptionModule(wstr ptr)
 @ stdcall WerUnregisterRuntimeExceptionModule(wstr ptr)
+@ stdcall Wow64GetThreadSelectorEntry(ptr long ptr)
 
 #Win8 Functions 
 @ stdcall AddDllDirectory(wstr)

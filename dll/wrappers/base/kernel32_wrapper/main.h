@@ -140,6 +140,17 @@ typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 #define FIND_FROMSTART             0x00400000
 #define FIND_FROMEND               0x00800000
 
+
+//
+// Do not add heap dumps for reports for the process
+//
+#define WER_FAULT_REPORTING_FLAG_NOHEAP 1
+
+//
+// Fault reporting UI should always be shown. This is only applicable for interactive processes
+//
+#define WER_FAULT_REPORTING_ALWAYS_SHOW_UI          16
+
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 extern BOOL bIsFileApiAnsi;
 extern HMODULE kernel32_handle DECLSPEC_HIDDEN;
@@ -1504,6 +1515,75 @@ typedef struct _STARTUPINFOEX {
   PPROC_THREAD_ATTRIBUTE_LIST lpAttributeList;
 } STARTUPINFOEX, *LPSTARTUPINFOEX;
 
+#ifdef _M_AMD64
+typedef struct _FLOATING_SAVE_AREA
+{
+     ULONG ControlWord;
+     ULONG StatusWord;
+     ULONG TagWord;
+     ULONG ErrorOffset;
+     ULONG ErrorSelector;
+     ULONG DataOffset;
+     ULONG DataSelector;
+     UCHAR RegisterArea[80];
+     ULONG Cr0NpxState;
+} FLOATING_SAVE_AREA, *PFLOATING_SAVE_AREA;
+#endif
+
+typedef struct _WOW64_CONTEXT
+{
+     ULONGLONG ContextFlags;
+     ULONGLONG Dr0;
+     ULONGLONG Dr1;
+     ULONGLONG Dr2;
+     ULONGLONG Dr3;
+     ULONGLONG Dr6;
+     ULONGLONG Dr7;
+     FLOATING_SAVE_AREA FloatSave;
+     ULONGLONG SegGs;
+     ULONGLONG SegFs;
+     ULONGLONG SegEs;
+     ULONGLONG SegDs;
+     ULONGLONG Edi;
+     ULONGLONG Esi;
+     ULONGLONG Ebx;
+     ULONGLONG Edx;
+     ULONGLONG Ecx;
+     ULONGLONG Eax;
+     ULONGLONG Ebp;
+     ULONGLONG Eip;
+     ULONGLONG SegCs;
+     ULONGLONG EFlags;
+     ULONGLONG Esp;
+     ULONGLONG SegSs;
+     UCHAR ExtendedRegisters[512];
+} WOW64_CONTEXT, *PWOW64_CONTEXT;
+
+typedef struct _WOW64_LDT_ENTRY {
+  WORD  LimitLow;
+  WORD  BaseLow;
+  union {
+    struct {
+      BYTE BaseMid;
+      BYTE Flags1;
+      BYTE Flags2;
+      BYTE BaseHi;
+    } Bytes;
+    struct {
+      DWORD BaseMid  :8;
+      DWORD Type  :5;
+      DWORD Dpl  :2;
+      DWORD Pres  :1;
+      DWORD LimitHi  :4;
+      DWORD Sys  :1;
+      DWORD Reserved_0  :1;
+      DWORD Default_Big  :1;
+      DWORD Granularity  :1;
+      DWORD BaseHi  :8;
+    } Bits;
+  } HighWord;
+} WOW64_LDT_ENTRY, *PWOW64_LDT_ENTRY;
+
 // typedef struct _TIME_DYNAMIC_ZONE_INFORMATION
 // {
      // LONG Bias;
@@ -1720,3 +1800,9 @@ CreateProcessInternalA(
     PHANDLE hRestrictedUserToken
 );	
 	
+BOOL
+WINAPI
+GetNumaNodeProcessorMask(
+    UCHAR Node,
+    PULONGLONG ProcessorMask
+    );	

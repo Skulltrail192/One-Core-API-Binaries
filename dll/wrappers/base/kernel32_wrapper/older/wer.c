@@ -20,6 +20,14 @@
 #include <main.h>
 //#include <werapi.h>
 
+//
+// Do not add heap dumps for reports for the process
+//
+#define WER_FAULT_REPORTING_FLAG_NOHEAP 1
+
+//
+// Fault reporting UI should always be shown. This is only applicable for interactive processes
+//
 #define WER_FAULT_REPORTING_ALWAYS_SHOW_UI          16
 
 WINE_DEFAULT_DEBUG_CHANNEL(vernel32);

@@ -25,10 +25,20 @@ BOOL WINAPI GetDisplayAutoRotationPreferences(
   _Out_  ORIENTATION_PREFERENCE *pOrientation
 )
 {
-	*pOrientation = Orientation;
+	*pOrientation = ORIENTATION_PREFERENCE_NONE;
 	DbgPrint("GetDisplayAutoRotationPreferences is UNIMPLEMENTED\n");	
 	return TRUE;
 }
+
+/**********************************************************************
+  *              GetAutoRotationState [USER32.@]
+  */
+BOOL WINAPI GetAutoRotationState( AR_STATE *state )
+{
+    FIXME("(%p): stub\n", state);
+    *state = AR_NOT_SUPPORTED;
+    return TRUE;
+ }
 
 BOOL WINAPI SetDisplayAutoRotationPreferences(
   _In_  ORIENTATION_PREFERENCE pOrientation

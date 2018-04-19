@@ -241,34 +241,10 @@ GetNumaNodeProcessorMask(
     PULONGLONG ProcessorMask
     )
 
-/*++
-
-Routine Description:
-
-    This routine is used to obtain the bitmask of processors for a
-    given node.
-
-Arguments:
-
-    Node            Supplies the Node number for which the set of
-                    processors is returned.
-    ProcessorMask Pointer to a ULONGLONG to receivethe bitmask of 
-                    processors on this node.
-
-Return Value:
-
-    TRUE is the Node number was reasonable, FALSE otherwise.
-
---*/
-
 {
     NTSTATUS Status;
     ULONG ReturnedSize;
     SYSTEM_NUMA_INFORMATION Map;
-
-    //
-    // Get the node -> processor mask table from the system.
-    //
 
     Status = NtQuerySystemInformation(SystemNumaProcessorMap,
                                       &Map,
@@ -276,27 +252,14 @@ Return Value:
                                       &ReturnedSize);
     if (!NT_SUCCESS(Status)) {
 
-        //
-        // This can't possibly have happened.
-        //
-
         BaseSetLastNTError(Status);
         return FALSE;
     }
-
-    //
-    // If the requested node doesn't exist, return a zero processor
-    // mask.
-    //
 
     if (Node > Map.HighestNodeNumber) {
         SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
-
-    //
-    // Return the processor mask for the requested node.
-    //
 
     *ProcessorMask = Map.ActiveProcessorsAffinityMask[Node];
     return TRUE;

@@ -1305,12 +1305,12 @@ SetDynamicTimeZoneInformation(
 {
   BOOL verification; // esi@2
   NTSTATUS status; // eax@3
-  PDYNAMIC_TIME_ZONE_INFORMATION SystemInformation = NULL; // [sp+4h] [bp-1B4h]@1
+  DYNAMIC_TIME_ZONE_INFORMATION SystemInformation; // [sp+4h] [bp-1B4h]@1
 
-  DTZItoRTL_DTZI(lpTimeZoneInformation, SystemInformation);
+  DTZItoRTL_DTZI(lpTimeZoneInformation, &SystemInformation);
   if ( IsTimeZoneRedirectionEnabled() )
   {
-    verification = SetClientDynamicTimeZoneInformation(SystemInformation);
+    verification = SetClientDynamicTimeZoneInformation(&SystemInformation);
   }
   else
   {
