@@ -24,6 +24,7 @@ Revision History:
 static BOOL DllInitialized = FALSE;
 PPEB Peb;
 HMODULE kernel32_handle = NULL;
+ULONG BaseDllTag;
 
 void InitializeCriticalForDirectories();
 void InitializeCriticalForLocaleInfo();
@@ -46,6 +47,21 @@ BaseDllInitialize(
 			kernel32_handle = GetModuleHandleW(L"kernelfull");
 			InitializeCriticalForDirectories();
 			InitializeCriticalForLocaleInfo();
+			
+			BaseDllTag = RtlCreateTagHeap( RtlProcessHeap(),
+                                       0,
+                                       L"BASEDLL!",
+                                       L"TMP\0"
+                                       L"BACKUP\0"
+                                       L"INI\0"
+                                       L"FIND\0"
+                                       L"GMEM\0"
+                                       L"LMEM\0"
+                                       L"ENV\0"
+                                       L"RES\0"
+                                       L"VDM\0"
+                                     );			
+			
             DllInitialized = TRUE;			
             break;
         }

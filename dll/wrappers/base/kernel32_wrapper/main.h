@@ -22,7 +22,12 @@ typedef enum _NORM_FORM {
 } NORM_FORM;
 
 typedef RTL_SRWLOCK SRWLOCK, *PSRWLOCK;
+
 typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
+
+volatile long TzSpecificCache;
+
+extern ULONG BaseDllTag;
 
 #include <winuser.h>
 #include <cmfuncs.h>
@@ -50,6 +55,8 @@ typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 
 #include <winreg.h>
 #include <wingdi.h>
+
+#include "datetime.h"
 
 #define FIND_DATA_SIZE 0x4000
 #define BASESRV_SERVERDLL_INDEX 1
@@ -150,6 +157,8 @@ typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 // Fault reporting UI should always be shown. This is only applicable for interactive processes
 //
 #define WER_FAULT_REPORTING_ALWAYS_SHOW_UI          16
+
+#define KEY_LENGTH 1024
 
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 extern BOOL bIsFileApiAnsi;

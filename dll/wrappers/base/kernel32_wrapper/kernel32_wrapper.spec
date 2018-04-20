@@ -1039,6 +1039,7 @@
 #Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) ntext.RtlAcquireSRWLockExclusive
 @ stdcall AcquireSRWLockShared(ptr) ntext.RtlAcquireSRWLockShared
+@ stdcall AdjustCalendarDate(ptr long long) 
 @ stdcall ApplicationRecoveryFinished(long)
 @ stdcall ApplicationRecoveryInProgress(ptr)
 @ stdcall CallbackMayRunLong(ptr)
@@ -1052,8 +1053,12 @@
 @ stdcall CloseThreadpoolTimer(ptr) ntext.TpReleaseTimer
 @ stdcall CloseThreadpoolWait(ptr) ntext.TpReleaseWait
 @ stdcall CloseThreadpoolWork(ptr) ntext.TpReleaseWork
+@ stdcall CompareCalendarDates(ptr ptr long)
 @ stdcall CompareStringEx(wstr long wstr long wstr long ptr ptr long)
 @ stdcall CompareStringOrdinal(wstr long wstr long long)
+@ stdcall ConvertCalDateTimeToSystemTime(ptr ptr)
+@ stdcall ConvertNLSDayOfWeekToWin32DayOfWeek(long) 
+@ stdcall ConvertSystemTimeToCalDateTime(ptr long ptr) 
 @ stdcall CopyFileTransactedA(str str ptr ptr ptr long ptr)
 @ stdcall CopyFileTransactedW(wstr wstr ptr ptr ptr long ptr)
 @ stdcall CreateEventExA(ptr str ptr long)
@@ -1089,7 +1094,15 @@
 @ stdcall FreeLibraryWhenCallbackReturns(ptr ptr) ntext.TpCallbackUnloadDllOnCompletion
 @ stdcall GetApplicationRestartSettings(ptr wstr ptr ptr)
 @ stdcall GetApplicationRestartSettingsWorker(ptr wstr ptr ptr) GetApplicationRestartSettings
-@ stdcall GetCalendarInfoEx(wstr long wstr long wstr long ptr) 
+@ stdcall GetCalendarDateFormat(ptr long ptr ptr ptr long) ;unimplemented TODO
+@ stdcall GetCalendarDateFormatEx(wstr long ptr wstr wstr long) ;unimplemented TODO
+@ stdcall GetCalendarDaysInMonth(long long long long)
+@ stdcall GetCalendarDifferenceInDays(ptr ptr ptr)
+@ stdcall GetCalendarInfoEx(wstr long wstr long wstr long ptr)
+@ stdcall GetCalendarMonthsInYear(long long long)
+@ stdcall GetCalendarSupportedDateRange(long ptr ptr) 
+@ stdcall GetCalendarWeekNumber(ptr ptr ptr ptr) ;is really implemented?
+@ stdcall GetClientDynamicTimeZoneInformation(ptr) ;unimplemented TODOS
 @ stdcall GetConsoleHistoryInfo(ptr) 
 @ stdcall GetConsoleOriginalTitleA(str long)
 @ stdcall GetConsoleOriginalTitleW(wstr long)
@@ -1144,9 +1157,13 @@
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stdcall InitOnceInitialize(ptr) ntext.RtlRunOnceInitialize
 @ stdcall InterlockedPushListSList(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
+@ stdcall IsCalendarLeapDay(long long long long long)
+@ stdcall IsCalendarLeapMonth(long long long long)
+@ stdcall IsCalendarLeapYear(long long long)
 @ stdcall IsNormalizedString(long wstr long) normaliz.IsNormalizedString
 @ stdcall IsThreadAFiber()
 @ stdcall IsThreadpoolTimerSet(ptr) ntext.TpIsTimerSet
+@ stdcall IsValidCalDateTime(ptr long)
 @ stdcall IsValidLocaleName(wstr)
 @ stdcall LeaveCriticalSectionWhenCallbackReturns(ptr ptr) ntext.TpCallbackLeaveCriticalSectionOnCompletion
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
@@ -1175,6 +1192,7 @@
 @ stdcall SetConsoleHistoryInfo(ptr)
 @ stdcall SetConsoleScreenBufferInfoEx(ptr ptr)
 @ stdcall SetCurrentConsoleFontEx(ptr long ptr)
+@ stdcall SetDynamicTimeZoneInformation(ptr)
 @ stdcall SetEventWhenCallbackReturns(ptr long) ntext.TpCallbackSetEventOnCompletion
 @ stdcall SetFileAttributesTransactedA(str long ptr)
 @ stdcall SetFileAttributesTransactedW(wstr long ptr)
@@ -1195,6 +1213,7 @@
 @ stdcall TrySubmitThreadpoolCallback(ptr ptr ptr)
 @ stdcall UnregisterApplicationRestart()
 @ stdcall UnregisterApplicationRecoveryCallback()
+@ stdcall UpdateCalendarDayOfWeek(ptr) 
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) ntext.TpWaitForTimer
 @ stdcall WaitForThreadpoolWaitCallbacks(ptr long) ntext.TpWaitForWait
@@ -1253,6 +1272,8 @@
 @ stdcall K32InitializeProcessForWsWatch(ptr) InitializeProcessForWsWatch
 @ stdcall K32QueryWorkingSet(ptr ptr long) QueryWorkingSet
 @ stdcall K32QueryWorkingSetEx(ptr ptr long) QueryWorkingSetEx
+@ stdcall LoadAppInitDlls()
+@ stdcall QueryIdleProcessorCycleTimeEx(long ptr ptr)
 @ stdcall QueryUnbiasedInterruptTime(ptr)
 @ stdcall RaiseFailFastException(ptr ptr long)
 @ stdcall RegisterApplicationRecoveryCallback(long ptr long long)
@@ -1261,8 +1282,10 @@
 @ stdcall SetThreadGroupAffinity(long ptr ptr)
 @ stdcall SetThreadIdealProcessorEx(ptr ptr ptr)
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
+@ stdcall SystemTimeToTzSpecificLocalTimeEx(ptr ptr ptr)
 @ stdcall TryAcquireSRWLockExclusive(ptr) ntext.RtlTryAcquireSRWLockExclusive
 @ stdcall TryAcquireSRWLockShared(ptr) ntext.RtlTryAcquireSRWLockShared
+@ stdcall TzSpecificLocalTimeToSystemTimeEx(ptr ptr ptr)
 @ stdcall WerRegisterRuntimeExceptionModule(wstr ptr)
 @ stdcall WerUnregisterRuntimeExceptionModule(wstr ptr)
 @ stdcall Wow64GetThreadSelectorEntry(ptr long ptr)

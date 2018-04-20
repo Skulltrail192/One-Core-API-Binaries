@@ -1271,6 +1271,18 @@ QueryIdleProcessorCycleTime(
 	return resp;
 }
 
+
+BOOL 
+WINAPI 
+QueryIdleProcessorCycleTimeEx(
+  _In_    USHORT   Group,
+  _Inout_ PULONG   BufferLength,
+  _Out_   PULONG64 ProcessorIdleCycleTime
+)
+{
+	return QueryIdleProcessorCycleTime(BufferLength, ProcessorIdleCycleTime);
+}
+
 BOOL 
 WINAPI 
 SetProcessAffinityUpdateMode(

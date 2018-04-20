@@ -662,3 +662,136 @@ LoadLibraryInternalW(
 	DbgPrint("LoadLibraryW::File name: %ws\n", lpFileName);
 	return LoadLibraryW(lpFileName);
 }
+
+WCHAR szAppInit[KEY_LENGTH];
+
+BOOL
+GetDllList()
+{
+    NTSTATUS Status;
+    OBJECT_ATTRIBUTES Attributes;
+    BOOL bRet = FALSE;
+    BOOL bLoad;
+    HANDLE hKey = NULL;
+    DWORD dwSize;
+    PKEY_VALUE_PARTIAL_INFORMATION kvpInfo = NULL;
+
+    UNICODE_STRING szKeyName = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Windows");
+    UNICODE_STRING szLoadName = RTL_CONSTANT_STRING(L"LoadAppInit_DLLs");
+    UNICODE_STRING szDllsName = RTL_CONSTANT_STRING(L"AppInit_DLLs");
+
+    InitializeObjectAttributes(&Attributes, &szKeyName, OBJ_CASE_INSENSITIVE, NULL, NULL);
+    Status = NtOpenKey(&hKey, KEY_READ, &Attributes);
+    if (NT_SUCCESS(Status))
+    {
+        dwSize = sizeof(KEY_VALUE_PARTIAL_INFORMATION) + sizeof(DWORD);
+        kvpInfo = HeapAlloc(GetProcessHeap(), 0, dwSize);
+        if (!kvpInfo)
+            goto end;
+
+        Status = NtQueryValueKey(hKey,
+                                 &szLoadName,
+                                 KeyValuePartialInformation,
+                                 kvpInfo,
+                                 dwSize,
+                                 &dwSize);
+        if (!NT_SUCCESS(Status))
+            goto end;
+
+        RtlMoveMemory(&bLoad,
+                      kvpInfo->Data,
+                      kvpInfo->DataLength);
+
+        HeapFree(GetProcessHeap(), 0, kvpInfo);
+        kvpInfo = NULL;
+
+        if (bLoad)
+        {
+            Status = NtQueryValueKey(hKey,
+                                     &szDllsName,
+                                     KeyValuePartialInformation,
+                                     NULL,
+                                     0,
+                                     &dwSize);
+            if (Status != STATUS_BUFFER_TOO_SMALL)
+                goto end;
+
+            kvpInfo = HeapAlloc(GetProcessHeap(), 0, dwSize);
+            if (!kvpInfo)
+                goto end;
+
+            Status = NtQueryValueKey(hKey,
+                                     &szDllsName,
+                                     KeyValuePartialInformation,
+                                     kvpInfo,
+                                     dwSize,
+                                     &dwSize);
+            if (NT_SUCCESS(Status))
+            {
+                LPWSTR lpBuffer = (LPWSTR)kvpInfo->Data;
+                if (*lpBuffer != UNICODE_NULL)
+                {
+                    INT bytesToCopy, nullPos;
+
+                    bytesToCopy = min(kvpInfo->DataLength, KEY_LENGTH * sizeof(WCHAR));
+
+                    if (bytesToCopy != 0)
+                    {
+                        RtlMoveMemory(szAppInit,
+                                      kvpInfo->Data,
+                                      bytesToCopy);
+
+                        nullPos = (bytesToCopy / sizeof(WCHAR)) - 1;
+
+                        /* ensure string is terminated */
+                        szAppInit[nullPos] = UNICODE_NULL;
+
+                        bRet = TRUE;
+                    }
+                }
+            }
+        }
+    }
+
+end:
+    if (hKey)
+        NtClose(hKey);
+
+    if (kvpInfo)
+        HeapFree(GetProcessHeap(), 0, kvpInfo);
+
+    return bRet;
+}
+
+VOID
+LoadAppInitDlls()
+{
+    szAppInit[0] = UNICODE_NULL;
+
+    if (GetDllList())
+    {
+        WCHAR buffer[KEY_LENGTH];
+        LPWSTR ptr;
+		size_t i;
+
+        RtlCopyMemory(buffer, szAppInit, KEY_LENGTH * sizeof(WCHAR) );
+
+		for (i = 0; i < KEY_LENGTH; ++ i)
+		{
+			if(buffer[i] == L' ' || buffer[i] == L',')
+				buffer[i] = 0;
+		}
+
+		for (i = 0; i < KEY_LENGTH; )
+		{
+			if(buffer[i] == 0)
+				++ i;
+			else
+			{
+				ptr = buffer + i;
+				i += wcslen(ptr);
+				LoadLibraryW(ptr);
+			}
+		}
+    }
+}
