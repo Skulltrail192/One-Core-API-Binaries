@@ -169,6 +169,7 @@ typedef UINT(WINAPI * PPROCESS_START_ROUTINE)(VOID);
 typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 typedef NTSTATUS(NTAPI * PRTL_CONVERT_STRING)(IN PUNICODE_STRING UnicodeString, IN PANSI_STRING AnsiString, IN BOOLEAN AllocateMemory);
 typedef DWORD (WINAPI *APPLICATION_RECOVERY_CALLBACK)(PVOID);
+typedef VOID (CALLBACK *PTP_WIN32_IO_CALLBACK)(PTP_CALLBACK_INSTANCE,PVOID,PVOID,ULONG,ULONG_PTR,PTP_IO);
 
 /* STRUCTS DEFINITIONS ******************************************************/
 
@@ -861,6 +862,13 @@ typedef struct _BASEP_ACTCTX_BLOCK
      LPOVERLAPPED_COMPLETION_ROUTINE CompletionRoutine;
 } BASEP_ACTCTX_BLOCK, *PBASEP_ACTCTX_BLOCK;
 
+typedef struct _BASE_ACTIVATION_CONTEXT_ACTIVATION_BLOCK {
+    DWORD Flags;
+    PVOID CallbackFunction;
+    PVOID CallbackContext;
+    PACTIVATION_CONTEXT ActivationContext;
+} BASE_ACTIVATION_CONTEXT_ACTIVATION_BLOCK, *PBASE_ACTIVATION_CONTEXT_ACTIVATION_BLOCK;
+
 extern LCID             gSystemLocale;      // system locale value
 extern RTL_CRITICAL_SECTION gcsTblPtrs;     // critical section for tbl ptrs
 extern PLOC_HASH        gpInvLocHashN;      // ptr to invariant loc hash node
@@ -869,200 +877,8 @@ extern PTBL_PTRS  pTblPtrs;   // ptr to structure of table ptrs
 
 #define IS_INVALID_LOCALE(Locale)      ( Locale & ~NLS_VALID_LOCALE_MASK )
 
-////////////////////////////////////////////////////////////////////////////
-//
-//  EXIST_LOCALE_INFO
-//
-//  Checks to see if the locale tables have been added to the locale
-//  hash node.
-//
-//  Must check the FIXED locale pointer, since that value is set last in
-//  the hash node.
-//
-//  DEFINED AS A MACRO.
-//
-//  05-31-91    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
-
-#define EXIST_LOCALE_INFO(pHashN)           (pHashN->pLocaleFixed)
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  CHECK_SPECIAL_LOCALES
-//
-//  Checks for the special locale values and sets the Locale to the
-//  appropriate value.
-//
-//  DEFINED AS A MACRO.
-//
-//  05-31-91    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
-
-#define CHECK_SPECIAL_LOCALES(Locale, UseCachedLocaleId)                    \
-{                                                                           \
-    /*                                                                      \
-     *  Check for special locale values.                                    \
-     */                                                                     \
-    if (Locale == LOCALE_SYSTEM_DEFAULT)                                    \
-    {                                                                       \
-        /*                                                                  \
-         *  Get the System Default locale value.                            \
-         */                                                                 \
-        Locale = gSystemLocale;                                             \
-    }                                                                       \
-    else if ((Locale == LOCALE_NEUTRAL) || (Locale == LOCALE_USER_DEFAULT)) \
-    {                                                                       \
-        /*                                                                  \
-         *  Get the User locale value.                                      \
-         */                                                                 \
-        if (!UseCachedLocaleId)                                             \
-        {                                                                   \
-            Locale = GetUserDefaultLCID();                                  \
-        }                                                                   \
-        else                                                                \
-        {                                                                   \
-            Locale = pNlsUserInfo->UserLocaleId;                            \
-        }                                                                   \
-    }                                                                       \
-    /*                                                                      \
-     *  Check for a valid primary language and a neutral sublanguage.       \
-     */                                                                     \
-    else if (SUBLANGID(LANGIDFROMLCID(Locale)) == SUBLANG_NEUTRAL)          \
-    {                                                                       \
-        /*                                                                  \
-         *  Re-form the locale id using the primary language and the        \
-         *  default sublanguage.                                            \
-         */                                                                 \
-        Locale = MAKELCID(MAKELANGID(PRIMARYLANGID(LANGIDFROMLCID(Locale)), \
-                                     SUBLANG_DEFAULT),                      \
-                          SORTIDFROMLCID(Locale));                          \
-    }                                                                       \
-}
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  VALIDATE_LOCALE
-//
-//  Checks that the given LCID contains a valid locale id.  It does so
-//  by making sure the appropriate locale information is present.  If the
-//  locale is valid, pLocHashN will be non-NULL.  Otherwise, pLocHashN
-//  will be NULL.
-//
-//  DEFINED AS A MACRO.
-//
-//  05-31-91    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
-
-#define VALIDATE_LOCALE(Locale, pLocHashN, UseCachedLocaleId)              \
-{                                                                          \
-    /*                                                                     \
-     *  Check the system locale first for speed.  This is the most         \
-     *  likely one to be used.                                             \
-     */                                                                    \
-    if (Locale == gSystemLocale)                                           \
-    {                                                                      \
-        pLocHashN = gpSysLocHashN;                                         \
-    }                                                                      \
-    /*                                                                     \
-     *  Check the invariant locale second for speed.  This is the second   \
-     *  most likely one to be used.                                        \
-     */                                                                    \
-    else if (Locale == LOCALE_INVARIANT)                                   \
-    {                                                                      \
-        pLocHashN = gpInvLocHashN;                                         \
-    }                                                                      \
-    else                                                                   \
-    {                                                                      \
-        /*                                                                 \
-         *  Check special locale values.                                   \
-         */                                                                \
-        CHECK_SPECIAL_LOCALES(Locale, UseCachedLocaleId);                  \
-                                                                           \
-        /*                                                                 \
-         *  If the locale is the system default, then the hash node        \
-         *  is already stored in a global.                                 \
-         */                                                                \
-        if (Locale == gSystemLocale)                                       \
-        {                                                                  \
-            pLocHashN = gpSysLocHashN;                                     \
-        }                                                                  \
-        else if (IS_INVALID_LOCALE(Locale))                                \
-        {                                                                  \
-            pLocHashN = NULL;                                              \
-        }                                                                  \
-        else                                                               \
-        {                                                                  \
-            /*                                                             \
-             *  Get locale hash node to make sure the appropriate          \
-             *  locale table is in the system.                             \
-             *                                                             \
-             *  NOTE:  If the call fails, pLocHashN will be NULL.          \
-             */                                                            \
-            pLocHashN = GetLocHashNode(Locale);                            \
-        }                                                                  \
-    }                                                                      \
-}
-
-#define LOC_TBL_SIZE              197  // size of locale hash table (prime #)
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  GET_HASH_VALUE
-//
-//  Returns the hash value for given value and the given table size.
-//
-//  DEFINED AS A MACRO.
-//
-//  05-31-91    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
-
-#define GET_HASH_VALUE(Value, TblSize)      (Value % TblSize)
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  FIND_LOCALE_HASH_NODE
-//
-//  Searches for the locale hash node for the given locale.  The result is
-//  put in pHashN.  If no node exists, pHashN will be NULL.
-//
-//  DEFINED AS A MACRO.
-//
-//  05-31-91    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
-
-#define FIND_LOCALE_HASH_NODE( Locale,                                     \
-                               pHashN )                                    \
-{                                                                          \
-    UINT Index;                   /* hash value */                         \
-                                                                           \
-                                                                           \
-    /*                                                                     \
-     *  Get hash value.                                                    \
-     */                                                                    \
-    Index = GET_HASH_VALUE(Locale, LOC_TBL_SIZE);                          \
-                                                                           \
-    /*                                                                     \
-     *  Get hash node.                                                     \
-     */                                                                    \
-    pHashN = (pTblPtrs->pLocHashTbl)[Index];                               \
-    while ((pHashN != NULL) && (pHashN->Locale != Locale))                 \
-    {                                                                      \
-        pHashN = pHashN->pNext;                                            \
-    }                                                                      \
-}
-
 #define NLS_SECTION_LOCALE         L"\\NLS\\NlsSectionLocale"
 
-//
-//  Locale Information Structures.
-//
-//  This is the format in which the locale information is kept in the
-//  locale data file.  These structures are only used for offsets into
-//  the data file, not to store information.
-//
-
-//
-//  Header at the top of the locale.nls file.
 //
 typedef struct loc_cal_hdr_s
 {
@@ -1071,12 +887,7 @@ typedef struct loc_cal_hdr_s
     DWORD     CalOffset;               // offset to calendar info (words)
 } LOC_CAL_HDR, *PLOC_CAL_HDR;
 
-//
-//  Per entry locale header.
-//
-//  The locale header structure contains the information given in one entry
-//  of the header for the locale information.
-//
+
 typedef struct locale_hdr_s {
     DWORD     Locale;                  // locale ID
     DWORD     Offset;                  // offset to locale information
@@ -1084,159 +895,7 @@ typedef struct locale_hdr_s {
 
 #define LOCALE_HDR_OFFSET    (sizeof(LOC_CAL_HDR) / sizeof(WORD))
 
-// PVOID 
-// NTAPI 
-// RtlAllocateHeap( 	
-	// IN PVOID  	HeapHandle,
-	// IN ULONG  	Flags,
-	// IN SIZE_T  	Size 
-// );
-
 #define RtlProcessHeap() (NtCurrentPeb()->ProcessHeap)
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  NLS_ALLOC_MEM
-//
-//  Allocates the given number of bytes of memory from the process heap,
-//  zeros the memory buffer, and returns the handle.
-//
-//  DEFINED AS A MACRO.
-//
-//  05-31-91    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
-
-#define NLS_ALLOC_MEM(dwBytes)                                             \
-    ( RtlAllocateHeap( RtlProcessHeap(),                                   \
-                       HEAP_ZERO_MEMORY,                                   \
-                       dwBytes ) )
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  CREATE_LOCALE_HASH_NODE
-//
-//  Creates a locale hash node and stores the pointer to it in pHashN.
-//
-//  NOTE: This macro may return if an error is encountered.
-//
-//  DEFINED AS A MACRO.
-//
-//  05-31-91    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
-
-#define CREATE_LOCALE_HASH_NODE( Locale,                                   \
-                                 pHashN )                                  \
-{                                                                          \
-    /*                                                                     \
-     *  Allocate LOC_HASH structure.                                       \
-     */                                                                    \
-    if ((pHashN = (PLOC_HASH)NLS_ALLOC_MEM(sizeof(LOC_HASH))) == NULL)     \
-    {                                                                      \
-        return (ERROR_OUTOFMEMORY);                                        \
-    }                                                                      \
-                                                                           \
-    /*                                                                     \
-     *  Fill in the Locale value.                                          \
-     */                                                                    \
-    pHashN->Locale = Locale;                                               \
-}
-
-ULONG
-UnMapSection(
-    PVOID pBaseAddr);
-	
-#define SORTKEY_HEADER            2    // size of SORTKEY table header	
-	
-////////////////////////////////////////////////////////////////////////////
-//
-//  NLS_FREE_MEM
-//
-//  Frees the memory of the given handle from the process heap.
-//
-//  DEFINED AS A MACRO.
-//
-//  05-31-91    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
-
-#define NLS_FREE_MEM(hMem)                                                 \
-    ( (hMem) ? (RtlFreeHeap( RtlProcessHeap(),                             \
-                             0,                                            \
-                             (PVOID)hMem ))                                \
-             : 0 )	
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  INSERT_LOC_HASH_NODE
-//
-//  Inserts a LOC hash node into the global LOC hash table.  It assumes
-//  that all unused hash values in the table are pointing to NULL.  If
-//  there is a collision, the new node will be added FIRST in the list.
-//
-//  DEFINED AS A MACRO.
-//
-//  05-31-91    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
-
-#define INSERT_LOC_HASH_NODE( pHashN,                                      \
-                              pBaseAddr )                                  \
-{                                                                          \
-    UINT Index;                   /* hash value */                         \
-    PLOC_HASH pSearch;            /* ptr to LOC hash node for search */    \
-                                                                           \
-                                                                           \
-    /*                                                                     \
-     *  Get hash value.                                                    \
-     */                                                                    \
-    Index = GET_HASH_VALUE(pHashN->Locale, LOC_TBL_SIZE);                  \
-                                                                           \
-    /*                                                                     \
-     *  Enter table pointers critical section.                             \
-     */                                                                    \
-    RtlEnterCriticalSection(&gcsTblPtrs);                                  \
-                                                                           \
-    /*                                                                     \
-     *  Make sure the hash node still doesn't exist in the table.          \
-     */                                                                    \
-    pSearch = (pTblPtrs->pLocHashTbl)[Index];                              \
-    while ((pSearch != NULL) && (pSearch->Locale != pHashN->Locale))       \
-    {                                                                      \
-        pSearch = pSearch->pNext;                                          \
-    }                                                                      \
-                                                                           \
-    /*                                                                     \
-     *  If the hash node does not exist, insert the new one.               \
-     *  Otherwise, free it.                                                \
-     */                                                                    \
-    if (pSearch == NULL)                                                   \
-    {                                                                      \
-        /*                                                                 \
-         *  Insert hash node into hash table.                              \
-         */                                                                \
-        pHashN->pNext = (pTblPtrs->pLocHashTbl)[Index];                    \
-        (pTblPtrs->pLocHashTbl)[Index] = pHashN;                           \
-    }                                                                      \
-    else                                                                   \
-    {                                                                      \
-        /*                                                                 \
-         *  Free the resources allocated.                                  \
-         */                                                                \
-        if (pBaseAddr)                                                     \
-        {                                                                  \
-            UnMapSection(pBaseAddr);                                       \
-        }                                                                  \
-        if ((pHashN->pSortkey != pTblPtrs->pDefaultSortkey) &&             \
-            (pHashN->pSortkey != NULL))                                    \
-        {                                                                  \
-            UnMapSection(((LPWORD)(pHashN->pSortkey)) - SORTKEY_HEADER);   \
-        }                                                                  \
-        NLS_FREE_MEM(pHashN);                                              \
-    }                                                                      \
-                                                                           \
-    /*                                                                     \
-     *  Leave table pointers critical section.                             \
-     */                                                                    \
-    RtlLeaveCriticalSection(&gcsTblPtrs);                                  \
-}
 
 //
 //  String Constants.
@@ -1286,86 +945,6 @@ OpenRegKey(
 #define GET_WC_COUNT(bc)          ((bc) / sizeof(WCHAR))
 
 #define NLS_CHAR_ZERO           L'0'   // digit 0 character	
-	
-////////////////////////////////////////////////////////////////////////////
-//
-//  OPEN_ALT_SORTS_KEY
-//
-//  Opens the key for the alternate sorts section of the registry for read
-//  access.
-//
-//  DEFINED AS A MACRO.
-//
-//  11-15-96    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
-
-#define OPEN_ALT_SORTS_KEY(ReturnVal)                                      \
-{                                                                          \
-    /*                                                                     \
-     *  Make sure alternate sorts key is open.                             \
-     */                                                                    \
-    if (hAltSortsKey == NULL)                                              \
-    {                                                                      \
-        RtlEnterCriticalSection(&gcsTblPtrs);                              \
-        if (hAltSortsKey == NULL)                                          \
-        {                                                                  \
-            if (OpenRegKey( &hAltSortsKey,                                 \
-                            NLS_HKLM_SYSTEM,                               \
-                            NLS_ALT_SORTS_KEY,                             \
-                            KEY_READ ))                                    \
-            {                                                              \
-                SetLastError(ERROR_BADDB);                                 \
-                RtlLeaveCriticalSection(&gcsTblPtrs);                      \
-                return (ReturnVal);                                        \
-            }                                                              \
-        }                                                                  \
-        RtlLeaveCriticalSection(&gcsTblPtrs);                              \
-    }                                                                      \
-}	
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  NLS_REG_BUFFER_ALLOC
-//
-//  Allocates the buffer used by the registry enumeration and query calls
-//  and sets the pKeyValueFull variable to point at the newly created buffer.
-//
-//  NOTE: This macro may return if an error is encountered.
-//
-//  DEFINED AS A MACRO.
-//
-//  05-31-91    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
-
-#define NLS_REG_BUFFER_ALLOC( pKeyValueFull,                               \
-                              BufSize,                                     \
-                              pBuffer,                                     \
-                              CritSect )                                   \
-{                                                                          \
-    if ((pBuffer = (PVOID)NLS_ALLOC_MEM(BufSize)) == NULL)                 \
-    {                                                                      \
-        DbgPrint("NLSAPI: Could NOT Allocate Memory.\n");                  \
-        if (CritSect)                                                      \
-        {                                                                  \
-            RtlLeaveCriticalSection(&gcsTblPtrs);                          \
-        }                                                                  \
-        return ((ULONG)STATUS_NO_MEMORY);                                  \
-    }                                                                      \
-                                                                           \
-    pKeyValueFull = (PKEY_VALUE_FULL_INFORMATION)pBuffer;                  \
-}
-
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  NLS_REG_BUFFER_FREE
-//
-//  Frees the buffer used by the registry enumeration and query calls.
-//
-//  DEFINED AS A MACRO.
-//
-//  05-31-91    JulieB    Created.
-////////////////////////////////////////////////////////////////////////////
 
 #define NLS_REG_BUFFER_FREE(pBuffer)        (NLS_FREE_MEM(pBuffer))
 

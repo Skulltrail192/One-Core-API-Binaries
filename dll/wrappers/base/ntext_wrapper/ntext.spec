@@ -1580,6 +1580,7 @@
 @ stdcall TpReleasePool(ptr)
 @ stdcall TpReleaseCleanupGroup(ptr)
 @ stdcall TpAllocCleanupGroup(ptr)
+@ stdcall TpAllocIoCompletion(ptr ptr ptr ptr ptr)
 @ stdcall TpAllocTimer(ptr ptr ptr ptr)
 @ stdcall TpAllocWait(ptr ptr ptr ptr)
 @ stdcall TpAllocWork(ptr ptr ptr ptr)

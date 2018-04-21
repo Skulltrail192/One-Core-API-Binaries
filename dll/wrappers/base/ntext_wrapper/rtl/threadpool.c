@@ -2238,3 +2238,16 @@ TpCancelAsyncIoOperation(
 	DbgPrint("UNIMPLEMENTED: TpCancelAsyncIoOperation");		
 	;
 }
+
+NTSTATUS 
+NTAPI 	
+TpAllocIoCompletion(
+	_Out_ PTP_IO *IoReturn, 
+	_In_ HANDLE File, 
+	_In_ PTP_WIN32_IO_CALLBACK Callback, 
+	_Inout_opt_ PVOID Context, 
+	_In_opt_ PTP_CALLBACK_ENVIRON CallbackEnviron
+)
+{
+	return STATUS_NOT_IMPLEMENTED;
+}

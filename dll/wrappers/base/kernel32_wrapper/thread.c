@@ -818,3 +818,30 @@ BasepCheckForReadOnlyResource(
 
     return ReturnValue;
 }
+
+/***********************************************************************
+ *              CreateThreadpoolIo (KERNEL32.@)
+ */
+PTP_IO 
+WINAPI 
+CreateThreadpoolIo(
+    HANDLE                file,
+    PTP_WIN32_IO_CALLBACK pfnio,
+    PVOID                 pv,
+    PTP_CALLBACK_ENVIRON  pcbe
+)
+{
+    TP_IO *io;
+    NTSTATUS status;
+
+    TRACE( "%p, %p, %p\n", pfnio, pv, pcbe );
+
+    status = TpAllocIoCompletion( &io, file, pfnio, pv, pcbe );
+    if (status)
+    {
+        SetLastError( RtlNtStatusToDosError(status) );
+        return NULL;
+    }
+
+    return io;
+}

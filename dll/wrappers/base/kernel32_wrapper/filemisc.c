@@ -97,3 +97,53 @@ SetFileAttributesTransactedW(
 {
 	return SetFileAttributesW(lpFileName, dwFileAttributes);
 }
+
+DWORD 
+WINAPI 
+GetCompressedFileSizeTransactedW(
+	LPCWSTR lpFileName,
+	LPDWORD lpFileSizeHigh, 
+	HANDLE hTransaction
+)
+{
+	return GetCompressedFileSizeW(lpFileName, lpFileSizeHigh);
+}
+
+DWORD 
+WINAPI 
+GetCompressedFileSizeTransactedA(
+	LPCTSTR lpFileName, 
+	LPDWORD lpFileSizeHigh, 
+	HANDLE hTransaction
+)
+{
+	return GetCompressedFileSizeA(lpFileName, lpFileSizeHigh);
+}
+
+/*
+ * @implemented - need test
+ */
+BOOL 
+WINAPI 
+GetFileAttributesTransactedW(
+	LPCWSTR lpFileName, 
+	GET_FILEEX_INFO_LEVELS fInfoLevelId, 
+	LPVOID lpFileInformation,
+	HANDLE hTransaction
+)
+{
+    return GetFileAttributesExW(lpFileName, fInfoLevelId, lpFileInformation);
+}
+
+
+BOOL 
+WINAPI 
+GetFileAttributesTransactedA(
+	LPCSTR lpFileName, 
+	GET_FILEEX_INFO_LEVELS fInfoLevelId, 
+	LPVOID lpFileInformation, 
+	HANDLE hTransaction
+)
+{
+    return GetFileAttributesExA(lpFileName, fInfoLevelId, lpFileInformation);
+}

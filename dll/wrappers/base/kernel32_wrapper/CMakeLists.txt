@@ -19,6 +19,7 @@ list(APPEND SOURCE
 	appmodel.c
 	baseinit.c
 	console.c
+	curdir.c
 	datetime.c	
 	dep.c
 	dir.c
@@ -26,9 +27,10 @@ list(APPEND SOURCE
 	error.c
 	filehops.c
 	fileinfo.c
+	filemap.c
 	filemisc.c
 	fileopcr.c	
-	findfile.c
+	filefind.c
 	handle.c 
 	heap.c
     locale.c
@@ -54,6 +56,7 @@ list(APPEND SOURCE
 	wer.c
 	winlinks.c
 	utils.c
+	vdm.c
 	winnls/ansi.c
     kernel32_wrapper.rc
     ${CMAKE_CURRENT_BINARY_DIR}/kernel32_wrapper_stubs.c

@@ -184,6 +184,8 @@ typedef struct _TP_IO{
 	void * 	dummy;
 }TP_IO,*PTP_IO;
 
+typedef VOID (CALLBACK *PTP_WIN32_IO_CALLBACK)(PTP_CALLBACK_INSTANCE,PVOID,PVOID,ULONG,ULONG_PTR,PTP_IO);
+
 typedef enum _NORM_FORM { 
   NormalizationOther  = 0,
   NormalizationC      = 0x1,

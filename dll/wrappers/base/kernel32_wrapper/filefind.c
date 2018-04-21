@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2017 Shorthorn Project
+Copyright (c) 2018 Shorthorn Project
 
 Module Name:
 
@@ -12,13 +12,53 @@ Abstract:
 
 Author:
 
-    Skulltrail 19-March-2017
+    Skulltrail 21-April-2018
 
 Revision History:
 
 --*/
 
 #include "main.h"
+
+HANDLE 
+WINAPI 
+FindFirstFileTransactedW(
+	LPCWSTR lpFileName, 
+	FINDEX_INFO_LEVELS fInfoLevelId, 
+	LPVOID lpFindFileData, 
+	FINDEX_SEARCH_OPS fSearchOp, 
+	LPVOID lpSearchFilter,
+	DWORD dwAdditionalFlags, 
+	HANDLE hTransaction
+)
+{
+	return FindFirstFileExW(lpFileName,
+							fInfoLevelId,
+							lpFindFileData,
+							fSearchOp,
+							lpSearchFilter,
+							dwAdditionalFlags);
+}
+
+HANDLE 
+WINAPI 
+FindFirstFileTransactedA(
+	LPCSTR lpFileName, 
+	FINDEX_INFO_LEVELS fInfoLevelId, 
+	LPVOID lpFindFileData, 
+	FINDEX_SEARCH_OPS fSearchOp, 
+	LPVOID lpSearchFilter, 
+	DWORD dwAdditionalFlags, 
+	HANDLE hTransaction
+)
+{
+  return FindFirstFileExA(lpFileName, 
+						  fInfoLevelId, 
+						  lpFindFileData, 
+						  fSearchOp, 
+						  lpSearchFilter, 
+						  dwAdditionalFlags);
+}
 
 static 
 VOID
@@ -263,4 +303,20 @@ FindNextStreamW(IN HANDLE hFindStream,
         SetLastError(ERROR_HANDLE_EOF);
         return FALSE;
     }
+}
+
+HANDLE 
+WINAPI 
+FindFirstStreamTransactedW(
+	LPCWSTR lpFileName, 
+	STREAM_INFO_LEVELS InfoLevel, 
+	LPVOID lpFindStreamData, 
+	DWORD dwFlags, 
+	HANDLE hTransaction
+)
+{
+	return FindFirstStreamW(lpFileName,
+							InfoLevel,
+							lpFindStreamData,
+							dwFlags);
 }

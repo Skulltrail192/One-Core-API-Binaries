@@ -81,19 +81,13 @@ typedef BOOLEAN (*PSECURE_MEMORY_CACHE_CALLBACK)(
     _In_  SIZE_T Range
 );
 
-typedef PVOID PDELAYLOAD_FAILURE_SYSTEM_ROUTINE; 
-
 typedef struct _TP_IO{
 	void * 	dummy;
 }TP_IO,*PTP_IO;
 
-// typedef enum _NORM_FORM { 
-  // NormalizationOther  = 0,
-  // NormalizationC      = 0x1,
-  // NormalizationD      = 0x2,
-  // NormalizationKC     = 0x5,
-  // NormalizationKD     = 0x6
-// } NORM_FORM;
+typedef VOID (CALLBACK *PTP_WIN32_IO_CALLBACK)(PTP_CALLBACK_INSTANCE,PVOID,PVOID,ULONG,ULONG_PTR,PTP_IO);
+
+typedef PVOID PDELAYLOAD_FAILURE_SYSTEM_ROUTINE; 
 
 typedef struct _WIN32_MEMORY_RANGE_ENTRY {
   PVOID  VirtualAddress;
@@ -319,6 +313,17 @@ NTSTATUS NTAPI TpSimpleTryPost(
 		__inout_opt PVOID  	Context,
 		__in_opt PTP_CALLBACK_ENVIRON  	CallbackEnviron 
 );  
+
+
+NTSTATUS 
+NTAPI 	
+TpAllocIoCompletion(
+	_Out_ PTP_IO *IoReturn, 
+	_In_ HANDLE File, 
+	_In_ PTP_WIN32_IO_CALLBACK Callback, 
+	_Inout_opt_ PVOID Context, 
+	_In_opt_ PTP_CALLBACK_ENVIRON CallbackEnviron
+);
 
 NTSTATUS NTAPI NtQuerySystemInformationEx(SYSTEM_INFORMATION_CLASS information,
 										  PUSHORT Group, 

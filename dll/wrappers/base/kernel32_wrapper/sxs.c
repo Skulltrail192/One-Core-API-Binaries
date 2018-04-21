@@ -112,3 +112,17 @@ Quickie:
     if (ContextInfo.hActCtx) RtlReleaseActivationContext(ContextInfo.hActCtx);
     return Status;
 }
+
+VOID
+BasepFreeActivationContextActivationBlock(
+    PBASE_ACTIVATION_CONTEXT_ACTIVATION_BLOCK ActivationBlock
+    )
+{
+    if (ActivationBlock != NULL) {
+        if (ActivationBlock->ActivationContext != NULL) {
+            RtlReleaseActivationContext(ActivationBlock->ActivationContext);
+            ActivationBlock->ActivationContext = NULL;
+        }
+        RtlFreeHeap(RtlProcessHeap(), 0, ActivationBlock);
+    }
+}

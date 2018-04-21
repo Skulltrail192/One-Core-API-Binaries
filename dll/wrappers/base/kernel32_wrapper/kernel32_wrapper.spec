@@ -1045,11 +1045,13 @@
 @ stdcall CallbackMayRunLong(ptr)
 @ stdcall CancelIoEx(long ptr)
 @ stdcall CancelSynchronousIo(ptr)
+@ stdcall CancelThreadpoolIo(ptr) ntext.TpCancelAsyncIoOperation
 @ stdcall CheckElevation(wstr long ptr long long)
 @ stdcall CheckElevationEnabled(ptr) 
 @ stdcall CloseThreadpool(ptr) ntext.TpReleasePool
 @ stdcall CloseThreadpoolCleanupGroup(ptr) ntext.TpReleaseCleanupGroup
 @ stdcall CloseThreadpoolCleanupGroupMembers(ptr long ptr) ntext.TpReleaseCleanupGroupMembers
+@ stdcall CloseThreadpoolIo(ptr) ntext.TpReleaseIoCompletion
 @ stdcall CloseThreadpoolTimer(ptr) ntext.TpReleaseTimer
 @ stdcall CloseThreadpoolWait(ptr) ntext.TpReleaseWait
 @ stdcall CloseThreadpoolWork(ptr) ntext.TpReleaseWork
@@ -1065,6 +1067,8 @@
 @ stdcall CreateDirectoryTransactedW(wstr wstr ptr ptr)
 @ stdcall CreateEventExA(ptr str ptr long)
 @ stdcall CreateEventExW(ptr wstr ptr long) 
+@ stdcall CreateFileMappingNumaA(ptr ptr long long long str long)
+@ stdcall CreateFileMappingNumaW(ptr ptr long long long wstr long)
 @ stdcall CreateFileTransactedA(str long long ptr long long ptr ptr ptr ptr)
 @ stdcall CreateFileTransactedW(wstr long long ptr long long ptr ptr ptr ptr)
 @ stdcall CreateHardLinkTransactedA(str str ptr ptr)
@@ -1098,6 +1102,9 @@
 @ stdcall EnumResourceTypesExW(ptr ptr long long long)
 @ stdcall EnumSystemLocalesEx(ptr long ptr ptr)
 @ stdcall EnumTimeFormatsEx(ptr wstr long ptr)
+@ stdcall FindFirstFileTransactedA(str long ptr long ptr long ptr)
+@ stdcall FindFirstFileTransactedW(wstr long ptr long ptr long ptr)
+@ stdcall FindFirstStreamTransactedW(wstr long ptr long ptr)
 @ stdcall FindNLSString(long long ptr long wstr long ptr)
 @ stdcall FindNLSStringEx(wstr long wstr long wstr long ptr ptr ptr ptr)
 @ stdcall FlushProcessWriteBuffers()
@@ -1113,6 +1120,8 @@
 @ stdcall GetCalendarSupportedDateRange(long ptr ptr) 
 @ stdcall GetCalendarWeekNumber(ptr ptr ptr ptr) ;is really implemented?
 @ stdcall GetClientDynamicTimeZoneInformation(ptr) ;unimplemented TODOS
+@ stdcall GetCompressedFileSizeTransactedA(str ptr ptr)
+@ stdcall GetCompressedFileSizeTransactedW(wstr ptr ptr)
 @ stdcall GetConsoleHistoryInfo(ptr) 
 @ stdcall GetConsoleOriginalTitleA(str long)
 @ stdcall GetConsoleOriginalTitleW(wstr long)
@@ -1124,12 +1133,18 @@
 @ stdcall GetDurationFormatEx(wstr long ptr long long ptr ptr long) ;need test
 @ stdcall GetDynamicTimeZoneInformation(ptr)
 @ stdcall GetErrorMode()
+@ stdcall GetFileAttributesTransactedA(str long ptr ptr)
+@ stdcall GetFileAttributesTransactedW(wstr long ptr ptr)
 @ stdcall GetFileInformationByHandleEx(long long ptr long) 
 @ stdcall GetFileInformationByHandleExW(long long ptr long) GetFileInformationByHandleEx 
 @ stdcall GetFinalPathNameByHandleA(ptr str long long)
 @ stdcall GetFinalPathNameByHandleW(ptr wstr long long)
 @ stdcall GetLocaleInfoEx(wstr long ptr long)
 @ stdcall GetFileMUIPath(long wstr wstr ptr wstr ptr ptr)
+@ stdcall GetFullPathNameTransactedA(str long str str ptr)
+@ stdcall GetFullPathNameTransactedW(wstr long wstr wstr ptr)
+@ stdcall GetLongPathNameTransactedA(str str long ptr)
+@ stdcall GetLongPathNameTransactedW(wstr wstr long ptr)
 @ stdcall GetNamedPipeAttribute(ptr long str ptr ptr)
 @ stdcall GetNamedPipeClientComputerNameA(ptr str long)
 @ stdcall GetNamedPipeClientComputerNameW(ptr wstr long)
@@ -1247,6 +1262,7 @@
 #Win7 Functions
 @ stdcall BasepAllocateActivationContextActivationBlock(long ptr ptr ptr)
 @ stdcall BasepAnsiStringToDynamicUnicodeString(wstr str)
+@ stdcall BasepFreeActivationContextActivationBlock(ptr)
 @ stdcall BaseFormatTimeOut(int64 long)
 @ stdcall BaseGetNamedObjectDirectory()
 @ stdcall Basep8BitStringToDynamicUnicodeString(wstr str)
