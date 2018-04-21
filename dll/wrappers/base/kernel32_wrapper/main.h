@@ -853,6 +853,14 @@ typedef struct tbl_ptrs_s {
     LPWORD          pSortingTableFileBase;  // The base address of sorting table file
 } TBL_PTRS, *PTBL_PTRS;
 
+typedef struct _BASEP_ACTCTX_BLOCK
+{
+     ULONG Flags;
+     PVOID ActivationContext;
+     PVOID CompletionContext;
+     LPOVERLAPPED_COMPLETION_ROUTINE CompletionRoutine;
+} BASEP_ACTCTX_BLOCK, *PBASEP_ACTCTX_BLOCK;
+
 extern LCID             gSystemLocale;      // system locale value
 extern RTL_CRITICAL_SECTION gcsTblPtrs;     // critical section for tbl ptrs
 extern PLOC_HASH        gpInvLocHashN;      // ptr to invariant loc hash node

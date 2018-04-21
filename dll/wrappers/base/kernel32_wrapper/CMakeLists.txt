@@ -44,6 +44,7 @@ list(APPEND SOURCE
 	security.c
 	sortkey.c	
 	support.c
+	sxs.c
 	syblink.c	
 	synch.c
 	sysinfo.c
@@ -51,6 +52,7 @@ list(APPEND SOURCE
 	tick.c
 	time.c	
 	wer.c
+	winlinks.c
 	utils.c
 	winnls/ansi.c
     kernel32_wrapper.rc

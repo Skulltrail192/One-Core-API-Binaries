@@ -744,3 +744,77 @@ SetThreadPriorityInternal(
 	
 	return ret;
 }
+
+LONG
+BasepCheckForReadOnlyResource(
+    PVOID Va
+    )
+{
+    SIZE_T RegionSize;
+    ULONG OldProtect;
+    NTSTATUS Status;
+    MEMORY_BASIC_INFORMATION MemInfo;
+    PIMAGE_RESOURCE_DIRECTORY ResourceDirectory;
+    ULONG ResourceSize;
+    char *rbase, *va;
+    LONG ReturnValue;
+
+    //
+    // Locate the base address that continas this va
+    //
+
+    Status = NtQueryVirtualMemory(
+                NtCurrentProcess(),
+                Va,
+                MemoryBasicInformation,
+                (PVOID)&MemInfo,
+                sizeof(MemInfo),
+                NULL
+                );
+    if ( !NT_SUCCESS(Status) ) {
+        return EXCEPTION_CONTINUE_SEARCH;
+        }
+
+    //
+    // if the va is readonly and in an image then continue
+    //
+
+    if ( !((MemInfo.Protect == PAGE_READONLY) && (MemInfo.Type == MEM_IMAGE)) ){
+        return EXCEPTION_CONTINUE_SEARCH;
+        }
+
+    ReturnValue = EXCEPTION_CONTINUE_SEARCH;
+
+     _SEH2_TRY {
+        ResourceDirectory = (PIMAGE_RESOURCE_DIRECTORY)
+            RtlImageDirectoryEntryToData(MemInfo.AllocationBase,
+                                         TRUE,
+                                         IMAGE_DIRECTORY_ENTRY_RESOURCE,
+                                         &ResourceSize
+                                         );
+
+        rbase = (char *)ResourceDirectory;
+        va = (char *)Va;
+
+        if ( rbase && va >= rbase && va < rbase+ResourceSize ) {
+            RegionSize = 1;
+            Status = NtProtectVirtualMemory(
+                        NtCurrentProcess(),
+                        &va,
+                        &RegionSize,
+                        PAGE_READWRITE,
+                        &OldProtect
+                        );
+            if ( NT_SUCCESS(Status) ) {
+                ReturnValue = EXCEPTION_CONTINUE_EXECUTION;
+                }
+            }
+        }
+    _SEH2_EXCEPT (EXCEPTION_EXECUTE_HANDLER) {
+        ;
+        }
+		
+	_SEH2_END;	
+
+    return ReturnValue;
+}

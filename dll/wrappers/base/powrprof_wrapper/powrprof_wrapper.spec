@@ -33,3 +33,4 @@
 @ stdcall PowerWriteACValueIndex(ptr ptr ptr ptr long)
 @ stdcall PowerWriteDCValueIndex(ptr ptr ptr ptr long)
 @ stdcall PowerReadFriendlyName(ptr ptr ptr ptr ptr ptr)
+@ stdcall PowerReadACValue(ptr ptr ptr ptr ptr ptr ptr)

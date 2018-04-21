@@ -795,3 +795,70 @@ LoadAppInitDlls()
 		}
     }
 }
+
+PVOID 
+WINAPI 
+BasepMapModuleHandle( 	
+	HMODULE  	hModule,
+	BOOLEAN  	AsDataFile 
+)
+{
+    /* If no handle is provided - use current image base address */
+    if (!hModule) return NtCurrentPeb()->ImageBaseAddress;
+
+    /* Check if it's a normal or a datafile one */
+    if (LDR_IS_DATAFILE(hModule) && !AsDataFile)
+        return NULL;
+
+    /* It'a a normal DLL, just return its handle */
+    return hModule;
+}
+
+BOOL 
+WINAPI 
+EnumResourceNamesExW(
+	HMODULE hModule, 
+	LPCWSTR lpType, 
+	ENUMRESNAMEPROCW lpEnumFunc, 
+	LONG_PTR lParam, 
+	DWORD dwFlags, 
+	LANGID LangId
+)
+{
+	return EnumResourceNamesW(hModule, lpType, lpEnumFunc, lParam);
+}	
+
+BOOL 
+WINAPI 
+EnumResourceNamesExA(
+	HMODULE hModule, 
+	LPCSTR lpType, 
+	ENUMRESNAMEPROCA lpEnumFunc, 
+	LONG_PTR lParam, 
+	DWORD dwFlags, 
+	LANGID LangId)
+{
+	return EnumResourceNamesA(hModule, lpType, lpEnumFunc, lParam);
+}	
+
+BOOL WINAPI EnumResourceTypesExA(
+  _In_opt_  HMODULE hModule,
+  _In_      ENUMRESTYPEPROCA lpEnumFunc,
+  _In_      LONG_PTR lParam,
+  _In_      DWORD dwFlags,
+  _In_      LANGID LangId
+)	
+{
+	return EnumResourceTypesA(hModule, lpEnumFunc, lParam);
+}
+
+BOOL WINAPI EnumResourceTypesExW(
+  _In_opt_  HMODULE hModule,
+  _In_      ENUMRESTYPEPROCW lpEnumFunc,
+  _In_      LONG_PTR lParam,
+  _In_      DWORD dwFlags,
+  _In_      LANGID LangId
+)	
+{
+	return EnumResourceTypesW(hModule, lpEnumFunc, lParam);
+}	

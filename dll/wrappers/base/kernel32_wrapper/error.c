@@ -26,25 +26,6 @@ BaseSetLastNTError(
     IN NTSTATUS Status
     )
 
-/*++
-
-Routine Description:
-
-    This API sets the "last error value" and the "last error string"
-    based on the value of Status. For status codes that don't have
-    a corresponding error string, the string is set to null.
-
-Arguments:
-
-    Status - Supplies the status value to store as the last error value.
-
-Return Value:
-
-    The corresponding Win32 error code that was stored in the
-    "last error value" thread variable.
-
---*/
-
 {
     ULONG dwErrorCode;
 

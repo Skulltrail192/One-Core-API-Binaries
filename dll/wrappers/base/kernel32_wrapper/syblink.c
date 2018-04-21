@@ -258,3 +258,35 @@ CreateSymbolicLinkA(IN LPCSTR lpSymlinkFileName,
 
     return Ret;
 }
+
+
+/*
+ * @implemented
+ */
+BOOLEAN 
+WINAPI 
+CreateSymbolicLinkTransactedA(
+  _In_ LPTSTR lpSymlinkFileName,
+  _In_ LPTSTR lpTargetFileName,
+  _In_ DWORD  dwFlags,
+  _In_ HANDLE hTransaction
+)
+{
+	return CreateSymbolicLinkA(lpSymlinkFileName,
+							   lpTargetFileName,
+							   dwFlags);
+}
+
+BOOLEAN 
+WINAPI 
+CreateSymbolicLinkTransactedW(
+  _In_ LPWSTR lpSymlinkFileName,
+  _In_ LPWSTR lpTargetFileName,
+  _In_ DWORD  dwFlags,
+  _In_ HANDLE hTransaction
+)
+{
+	return CreateSymbolicLinkW(lpSymlinkFileName,
+							   lpTargetFileName,
+							   dwFlags);
+}

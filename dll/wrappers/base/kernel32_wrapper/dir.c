@@ -20,14 +20,48 @@ Revision History:
 
 #include "main.h"
 
-BOOL WINAPI RemoveDirectoryTransactedW(LPCWSTR lpPathName, HANDLE hTransaction)
+BOOL WINAPI RemoveDirectoryTransactedW(
+	LPCWSTR lpPathName, 
+	HANDLE hTransaction
+)
 {
   return RemoveDirectoryW(lpPathName);
 }
 
 BOOL
 WINAPI 
-RemoveDirectoryTransactedA(LPCTSTR lpPathName, HANDLE hTransaction)
+RemoveDirectoryTransactedA(
+	LPCTSTR lpPathName, 
+	HANDLE hTransaction
+)
 {
   return RemoveDirectoryA(lpPathName);
+}
+
+BOOL 
+WINAPI 
+CreateDirectoryTransactedA(
+	LPCTSTR lpTemplateDirectory, 
+	LPCTSTR lpNewDirectory, 
+	LPSECURITY_ATTRIBUTES lpSecurityAttributes, 
+	HANDLE hTransaction
+)
+{
+	return CreateDirectoryExA (lpTemplateDirectory, 
+							   lpNewDirectory,
+							   lpSecurityAttributes);
+}
+
+BOOL 
+WINAPI 
+CreateDirectoryTransactedW(
+	LPCWSTR lpTemplateDirectory, 
+	LPCWSTR lpNewDirectory, 
+	LPSECURITY_ATTRIBUTES lpSecurityAttributes, 
+	HANDLE hTransaction
+)
+{
+	return CreateDirectoryExW (lpTemplateDirectory, 
+							   lpNewDirectory,
+							   lpSecurityAttributes);
 }

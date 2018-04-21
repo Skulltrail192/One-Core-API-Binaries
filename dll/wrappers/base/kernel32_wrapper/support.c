@@ -206,3 +206,65 @@ BaseFormatObjectAttributes(
             Attributes, RootDirectory, SecurityDescriptor);
     return ObjectAttributes;
 }
+
+/*
+ * Converts an ANSI or OEM String to the TEB DynamicUnicodeString
+ */
+BOOLEAN 
+WINAPI 
+Basep8BitStringToDynamicUnicodeString(
+	OUT PUNICODE_STRING UnicodeString, 
+	IN LPCSTR String
+) 		
+{
+    ANSI_STRING AnsiString;
+    NTSTATUS Status;
+
+    /* Initialize an ANSI String */
+    Status = RtlInitAnsiStringEx(&AnsiString, String);
+    if (!NT_SUCCESS(Status))
+    {
+        Status = STATUS_BUFFER_OVERFLOW;
+    }
+    else
+    {
+        /* Convert it */
+        Status = Basep8BitStringToUnicodeString(UnicodeString, &AnsiString, TRUE);
+    }
+
+    if (NT_SUCCESS(Status)) return TRUE;
+
+    if (Status == STATUS_BUFFER_OVERFLOW)
+    {
+        SetLastError(ERROR_FILENAME_EXCED_RANGE);
+    }
+    else
+    {
+        BaseSetLastNTError(Status);
+    }
+
+    return FALSE;
+}
+
+BOOL 
+WINAPI 
+BasepAnsiStringToDynamicUnicodeString(
+	PUNICODE_STRING DestinationString, 
+	PCSZ SourceStringParameter
+)
+{
+  NTSTATUS status; 
+  STRING SourceString; 
+
+  if ( RtlInitAnsiStringEx(&SourceString, SourceStringParameter) < 0 )
+    goto LABEL_10;
+  status = RtlAnsiStringToUnicodeString(DestinationString, &SourceString, 1u);
+  if ( NT_SUCCESS(status) )
+    return TRUE;
+  if ( status == STATUS_BUFFER_OVERFLOW )
+LABEL_10:
+    SetLastError(206);
+  else
+    BaseSetLastNTError(status);
+  return FALSE;
+}
