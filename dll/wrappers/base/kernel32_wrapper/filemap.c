@@ -189,3 +189,77 @@ CreateFileMappingNumaA(
                 NameBuffer,
                 nndPreferred);
 }
+
+/*
+ * @implemented
+ */
+LPVOID
+NTAPI
+MapViewOfFileExNuma(
+	HANDLE hFileMappingObject,
+	DWORD dwDesiredAccess,
+	DWORD dwFileOffsetHigh,
+	DWORD dwFileOffsetLow,
+	SIZE_T dwNumberOfBytesToMap,
+	LPVOID lpBaseAddress,
+	DWORD nndPreferred
+)
+{
+    NTSTATUS Status;
+    LARGE_INTEGER SectionOffset;
+    SIZE_T ViewSize;
+    ULONG Protect;
+    LPVOID ViewBase;
+
+    /* Convert the offset */
+    SectionOffset.LowPart = dwFileOffsetLow;
+    SectionOffset.HighPart = dwFileOffsetHigh;
+
+    /* Save the size and base */
+    ViewBase = lpBaseAddress;
+    ViewSize = dwNumberOfBytesToMap;
+
+    /* Convert flags to NT Protection Attributes */
+    if (dwDesiredAccess == FILE_MAP_COPY)
+    {
+        Protect = PAGE_WRITECOPY;
+    }
+    else if (dwDesiredAccess & FILE_MAP_WRITE)
+    {
+        Protect = (dwDesiredAccess & FILE_MAP_EXECUTE) ?
+                   PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
+    }
+    else if (dwDesiredAccess & FILE_MAP_READ)
+    {
+        Protect = (dwDesiredAccess & FILE_MAP_EXECUTE) ?
+                   PAGE_EXECUTE_READ : PAGE_READONLY;
+    }
+    else
+    {
+        Protect = PAGE_NOACCESS;
+    }
+	
+	if ( nndPreferred != -1 )
+		Protect |= nndPreferred + 1;
+
+    /* Map the section */
+    Status = NtMapViewOfSection(hFileMappingObject,
+                                NtCurrentProcess(),
+                                &ViewBase,
+                                0,
+                                0,
+                                &SectionOffset,
+                                &ViewSize,
+                                ViewShare,
+                                0,
+                                Protect);
+    if (!NT_SUCCESS(Status))
+    {
+        /* We failed */
+        BaseSetLastNTError(Status);
+        return NULL;
+    }
+
+    /* Return the base */
+    return ViewBase;
+}

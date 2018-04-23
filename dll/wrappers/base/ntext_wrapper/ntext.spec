@@ -1556,6 +1556,7 @@
 @ stdcall RtlpQueryDefaultUILanguage(long long)
 @ stdcall RtlpSetCurrentUserUILanguage(long)
 @ stdcall RtlpSetDefaultUILanguage(long)
+@ stdcall RtlQueryActivationContextApplicationSettings(long ptr wstr wstr ptr long ptr)
 @ stdcall RtlRegisterThreadWithCsrss()
 @ stdcall RtlReleaseSRWLockExclusive(ptr) 
 @ stdcall RtlReleaseSRWLockShared(ptr) 

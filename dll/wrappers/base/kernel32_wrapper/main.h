@@ -1402,3 +1402,10 @@ GetNumaNodeProcessorMask(
     UCHAR Node,
     PULONGLONG ProcessorMask
     );	
+	
+BOOL 
+WINAPI 
+GetNumaAvailableMemoryNode(
+	UCHAR Node, 
+	PULONGLONG AvailableBytes
+);	

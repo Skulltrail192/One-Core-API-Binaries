@@ -59,3 +59,37 @@ GetNumaNodeProcessorMask(
 		return TRUE;
 	}	
 }
+
+BOOL 
+WINAPI 
+GetNumaAvailableMemoryNodeEx(
+	USHORT Node, 
+	PULONGLONG AvailableBytes
+)
+{
+	UCHAR newNode = 0xFF;
+	if(GetNumaAvailableMemoryNode(newNode, AvailableBytes)){
+		Node = strtoul(&newNode, NULL, 0);
+		return TRUE;
+	}else{
+		return FALSE;
+	}	
+}
+
+BOOL 
+WINAPI 
+GetNumaNodeProcessorMaskEx(
+	USHORT Node, 
+	PGROUP_AFFINITY ProcessorMask
+)
+{
+	ULONGLONG mask;
+	if(GetNumaNodeProcessorMask(Node, &mask)){
+		ProcessorMask->Group = 0;
+		ProcessorMask->Mask = mask;
+		ProcessorMask->Reserved[0] = 0;
+		return TRUE;
+	}else{
+		return FALSE;
+	}	
+}

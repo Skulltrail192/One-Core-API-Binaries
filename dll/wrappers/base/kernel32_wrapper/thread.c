@@ -845,3 +845,26 @@ CreateThreadpoolIo(
 
     return io;
 }
+
+BOOL  
+WINAPI
+GetThreadIdealProcessorEx(
+	HANDLE hThread, 
+	PPROCESSOR_NUMBER ThreadInformation
+)
+{
+  NTSTATUS Status; 
+
+  if ( hThread == (HANDLE)-2 )
+  {
+    ThreadInformation->Number = NtCurrentTeb()->IdealProcessor;
+	ThreadInformation->Group = 0;
+    ThreadInformation->Reserved = 0;
+    return TRUE;
+  }
+  Status = NtQueryInformationThread(hThread, (THREADINFOCLASS)33, ThreadInformation, 4u, 0);
+  if ( NT_SUCCESS(Status) )
+    return TRUE;
+  BaseSetLastNTError(Status);
+  return FALSE;
+}

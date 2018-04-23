@@ -872,8 +872,126 @@ typedef struct _ASSEMBLY_STORAGE_MAP
      WCHAR              *info;
 };
 
+struct assembly_version
+{
+    USHORT              major;
+    USHORT              minor;
+    USHORT              build;
+    USHORT              revision;
+};
+
+struct assembly_identity
+{
+    WCHAR                *name;
+    WCHAR                *arch;
+    WCHAR                *public_key;
+    WCHAR                *language;
+    WCHAR                *type;
+    struct assembly_version version;
+    BOOL                  optional;
+    BOOL                  delayed;
+};
+
+struct progids
+{
+    WCHAR        **progids;
+    unsigned int   num;
+    unsigned int   allocated;
+};
+
+struct entity
+{
+    DWORD kind;
+    union
+    {
+        struct
+        {
+            WCHAR *tlbid;
+            WCHAR *helpdir;
+            WORD   flags;
+            WORD   major;
+            WORD   minor;
+	} typelib;
+        struct
+        {
+            WCHAR *clsid;
+            WCHAR *tlbid;
+            WCHAR *progid;
+            WCHAR *name;    /* clrClass: class name */
+            WCHAR *version; /* clrClass: CLR runtime version */
+            DWORD  model;
+            DWORD  miscstatus;
+            DWORD  miscstatuscontent;
+            DWORD  miscstatusthumbnail;
+            DWORD  miscstatusicon;
+            DWORD  miscstatusdocprint;
+            struct progids progids;
+	} comclass;
+	struct {
+            WCHAR *iid;
+            WCHAR *base;
+            WCHAR *tlib;
+            WCHAR *name;
+            WCHAR *ps32; /* only stored for 'comInterfaceExternalProxyStub' */
+            DWORD  mask;
+            ULONG  nummethods;
+	} ifaceps;
+        struct
+        {
+            WCHAR *name;
+            BOOL   versioned;
+        } class;
+        struct
+        {
+            WCHAR *name;
+            WCHAR *clsid;
+            WCHAR *version;
+        } clrsurrogate;
+        struct
+        {
+            WCHAR *name;
+            WCHAR *value;
+        } settings;
+    } u;
+};
+
+struct entity_array
+{
+    struct entity        *base;
+    unsigned int          num;
+    unsigned int          allocated;
+};
+
+typedef enum {
+    ACTCX_COMPATIBILITY_ELEMENT_TYPE_UNKNOWN = 0,
+    ACTCX_COMPATIBILITY_ELEMENT_TYPE_OS
+} ACTCTX_COMPATIBILITY_ELEMENT_TYPE;
+
+ typedef struct _COMPATIBILITY_CONTEXT_ELEMENT {
+     GUID Id;
+     ACTCTX_COMPATIBILITY_ELEMENT_TYPE Type;
+} COMPATIBILITY_CONTEXT_ELEMENT, *PCOMPATIBILITY_CONTEXT_ELEMENT;
+
+struct assembly
+{
+    enum assembly_type             type;
+    struct assembly_identity       id;
+    struct file_info               manifest;
+    WCHAR                         *directory;
+    BOOL                           no_inherit;
+    struct dll_redirect           *dlls;
+    unsigned int                   num_dlls;
+    unsigned int                   allocated_dlls;
+    struct entity_array            entities;
+    COMPATIBILITY_CONTEXT_ELEMENT *compat_contexts;
+    ULONG                          num_compat_contexts;
+    ACTCTX_REQUESTED_RUN_LEVEL     run_level;
+    ULONG                          ui_access;
+};
+
 typedef struct _ACTIVATION_CONTEXT
 {
+	ULONG magic;
     LONG RefCount;
     ULONG Flags;
     LIST_ENTRY Links;

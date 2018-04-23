@@ -1906,6 +1906,19 @@ GetSystemPreferredUILanguages(
 									      size);
 }
 
+BOOL GetProcessPreferredUILanguages(
+  _In_      DWORD   dwFlags,
+  _Out_     PULONG  pulNumLanguages,
+  _Out_opt_ PZZWSTR pwszLanguagesBuffer,
+  _Inout_   PULONG  pcchLanguagesBuffer
+)
+{
+	return EnumPreferredProcessUILanguages(dwFlags,
+										  pulNumLanguages,
+										  pwszLanguagesBuffer,
+									      pcchLanguagesBuffer);
+}
+
 /*
  * @unimplemented - need reimplementation
  */
@@ -1917,5 +1930,29 @@ SetThreadPreferredUILanguages(
   _Out_opt_  PULONG pulNumLanguages
 )
 {
-	return FALSE;
+	return TRUE;
+}
+
+BOOL 
+WINAPI 
+SetProcessPreferredUILanguages(
+  _In_       DWORD dwFlags,
+  _In_opt_   PCZZWSTR pwszLanguagesBuffer,
+  _Out_opt_  PULONG pulNumLanguages
+)
+{
+	UNIMPLEMENTED;
+	return TRUE;	
+}
+
+/******************************************************************************
+  *           GetFileMUIInfo (KERNEL32.@)
+  */
+
+BOOL WINAPI GetFileMUIInfo(DWORD flags, PCWSTR path, FILEMUIINFO *info, DWORD *size)
+{
+    FIXME("stub: %u, %s, %p, %p\n", flags, debugstr_w(path), info, size);
+ 
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return FALSE;
 }

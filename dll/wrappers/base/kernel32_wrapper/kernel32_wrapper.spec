@@ -1039,7 +1039,8 @@
 #Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) ntext.RtlAcquireSRWLockExclusive
 @ stdcall AcquireSRWLockShared(ptr) ntext.RtlAcquireSRWLockShared
-@ stdcall AdjustCalendarDate(ptr long long) 
+@ stdcall AdjustCalendarDate(ptr long long)
+@ stdcall AllocateUserPhysicalPagesNuma(ptr ptr ptr long) 
 @ stdcall ApplicationRecoveryFinished(long)
 @ stdcall ApplicationRecoveryInProgress(ptr)
 @ stdcall CallbackMayRunLong(ptr)
@@ -1083,6 +1084,7 @@
 @ stdcall CreateSymbolicLinkTransactedW(wstr wstr long ptr)
 @ stdcall CreateThreadpool(ptr)
 @ stdcall CreateThreadpoolCleanupGroup()
+@ stdcall CreateThreadpoolIo(ptr)
 @ stdcall CreateThreadpoolTimer(ptr ptr ptr)
 @ stdcall CreateThreadpoolWait(ptr ptr ptr) 
 @ stdcall CreateThreadpoolWork(ptr ptr ptr)
@@ -1102,13 +1104,17 @@
 @ stdcall EnumResourceTypesExW(ptr ptr long long long)
 @ stdcall EnumSystemLocalesEx(ptr long ptr ptr)
 @ stdcall EnumTimeFormatsEx(ptr wstr long ptr)
+# @ stub FindFirstFileNameW
 @ stdcall FindFirstFileTransactedA(str long ptr long ptr long ptr)
 @ stdcall FindFirstFileTransactedW(wstr long ptr long ptr long ptr)
+# @ stub FindFirstFileNameTransactedW
 @ stdcall FindFirstStreamTransactedW(wstr long ptr long ptr)
+# @ stub FindNextFileNameW
 @ stdcall FindNLSString(long long ptr long wstr long ptr)
 @ stdcall FindNLSStringEx(wstr long wstr long wstr long ptr ptr ptr ptr)
 @ stdcall FlushProcessWriteBuffers()
 @ stdcall FreeLibraryWhenCallbackReturns(ptr ptr) ntext.TpCallbackUnloadDllOnCompletion
+# @ stub GetApplicationRecoveryCallback
 @ stdcall GetApplicationRestartSettings(ptr wstr ptr ptr)
 @ stdcall GetApplicationRestartSettingsWorker(ptr wstr ptr ptr) GetApplicationRestartSettings
 @ stdcall GetCalendarDateFormat(ptr long ptr ptr ptr long) ;unimplemented TODO
@@ -1132,6 +1138,7 @@
 @ stdcall GetDurationFormat(long long ptr long long ptr ptr long) ;need test
 @ stdcall GetDurationFormatEx(wstr long ptr long long ptr ptr long) ;need test
 @ stdcall GetDynamicTimeZoneInformation(ptr)
+# @ stub GetFileBandwidthReservation
 @ stdcall GetErrorMode()
 @ stdcall GetFileAttributesTransactedA(str long ptr ptr)
 @ stdcall GetFileAttributesTransactedW(wstr long ptr ptr)
@@ -1140,6 +1147,7 @@
 @ stdcall GetFinalPathNameByHandleA(ptr str long long)
 @ stdcall GetFinalPathNameByHandleW(ptr wstr long long)
 @ stdcall GetLocaleInfoEx(wstr long ptr long)
+@ stdcall GetFileMUIInfo(long wstr ptr ptr)
 @ stdcall GetFileMUIPath(long wstr wstr ptr wstr ptr ptr)
 @ stdcall GetFullPathNameTransactedA(str long str str ptr)
 @ stdcall GetFullPathNameTransactedW(wstr long wstr wstr ptr)
@@ -1153,10 +1161,12 @@
 @ stdcall GetNamedPipeServerProcessId(ptr ptr)
 @ stdcall GetNamedPipeServerSessionId(ptr ptr)
 @ stdcall GetNLSVersionEx(long wstr ptr)
+# @ stub GetNumaProximityNode
 @ stdcall GetNumberFormatEx(wstr long wstr ptr wstr long)
 @ stdcall GetOSProductNameA(str long long)
 @ stdcall GetOSProductNameW(wstr long long)
 @ stdcall GetPhysicallyInstalledSystemMemory(ptr)
+@ stdcall GetProcessPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetProductInfo(long long long long ptr) 
 @ stub GetStringScripts
 @ stdcall GetSystemDefaultLocaleName(ptr long)
@@ -1172,6 +1182,7 @@
 @ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetVolumeInformationByHandleW(ptr ptr long ptr ptr ptr ptr long)
 @ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
+@ stdcall IdnToNameprepUnicode(long wstr long ptr long) normaliz.IdnToNameprepUnicode
 @ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
 @ stdcall InitializeConditionVariable(ptr) ntext.RtlInitializeConditionVariable
@@ -1194,13 +1205,12 @@
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long)
 @ stdcall LCIDToLocaleName(long ptr long long)
 @ stdcall LocaleNameToLCID(wstr long)
+@ stdcall MapViewOfFileExNuma(ptr long long long long ptr long)
 @ stdcall MoveFileTransactedA(str str ptr ptr long ptr)
 @ stdcall MoveFileTransactedW(wstr wstr ptr ptr long ptr)
-@ stdcall PowerClearRequest(ptr ptr)
-@ stdcall PowerCreateRequest(ptr)
-@ stdcall PowerCreateRequestW(ptr) PowerCreateRequest
-@ stdcall PowerSetRequest(ptr long)
+@ stdcall NormalizeString(long wstr long wstr long) normaliz.NormalizeString
 @ stdcall OpenFileById(long ptr long long ptr long) 
+@ stdcall QueryActCtxSettingsW(long ptr wstr wstr ptr long ptr)
 @ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 
 @ stdcall QueryFullProcessImageNameW(ptr long ptr ptr)
 @ stdcall QueryIdleProcessorCycleTime(ptr ptr)
@@ -1225,6 +1235,7 @@
 @ stdcall SetFileInformationByHandleW(long long ptr long) SetFileInformationByHandle
 @ stdcall SetNamedPipeAttribute(ptr long str ptr long)
 @ stdcall SetProcessAffinityUpdateMode(ptr long)
+@ stdcall SetProcessPreferredUILanguages(long wstr ptr)
 @ stdcall SetStdHandleEx(long ptr ptr)
 @ stdcall SetThreadErrorMode(long ptr)
 @ stdcall SetThreadpoolThreadMaximum(ptr long) ntext.TpSetPoolMaxThreads
@@ -1233,13 +1244,15 @@
 @ stdcall SetThreadpoolWait(ptr ptr ptr)
 @ stdcall SetThreadPreferredUILanguages(long wstr ptr)
 @ stdcall SleepConditionVariableCS(ptr ptr long) 
-@ stdcall SleepConditionVariableSRW(ptr ptr long long) 
+@ stdcall SleepConditionVariableSRW(ptr ptr long long)
+@ stdcall StartThreadpoolIo(ptr) ntext.TpStartAsyncIoOperation 
 @ stdcall SubmitThreadpoolWork(ptr) ntext.TpPostWork
 @ stdcall TrySubmitThreadpoolCallback(ptr ptr ptr)
 @ stdcall UnregisterApplicationRestart()
 @ stdcall UnregisterApplicationRecoveryCallback()
 @ stdcall UpdateCalendarDayOfWeek(ptr) 
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
+@ stdcall WaitForThreadpoolIoCallbacks(ptr long) ntext.TpWaitForIoCompletion
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) ntext.TpWaitForTimer
 @ stdcall WaitForThreadpoolWaitCallbacks(ptr long) ntext.TpWaitForWait
 @ stdcall WaitForThreadpoolWorkCallbacks(ptr long) ntext.TpWaitForWork
@@ -1271,14 +1284,25 @@
 @ stub BaseThreadInitThunk
 @ stdcall CheckForReadOnlyResource(ptr) BasepCheckForReadOnlyResource
 @ stdcall CreateRemoteThreadEx(long ptr long ptr long long ptr ptr)
+# @ stub FindStringOrdinal
 @ stdcall GetActiveProcessorCount(long)
 @ stdcall GetActiveProcessorGroupCount()
 @ stdcall GetCurrentProcessorNumberEx(ptr) ntext.RtlGetCurrentProcessorNumberEx
+@ stdcall -ret64 -arch=i386,x86_64 GetEnabledXStateFeatures()
+# @ stub GetEraNameCountedString
 @ stdcall GetMaximumProcessorCount(long)
 @ stdcall GetMaximumProcessorGroupCount()
 @ stdcall GetTimeFormatWWorker(long long ptr wstr ptr long) GetTimeFormatW
 @ stdcall GetLogicalProcessorInformationEx(long ptr ptr)
+@ stdcall GetNumaAvailableMemoryNode(long ptr)
+@ stdcall GetNumaNodeProcessorMaskEx(long ptr)
+# @ stub GetNumaProximityNodeEx
 @ stdcall GetThreadGroupAffinity(long ptr)
+@ stdcall GetThreadIdealProcessorEx(ptr ptr)
+# @ stub GetXStateFeaturesMask
+# @ stub LoadStringBaseExW
+# @ stub LoadStringBaseW
+# @ stub LocateXStateFeature
 @ stdcall K32EmptyWorkingSet(ptr) EmptyWorkingSet
 @ stdcall K32EnumDeviceDrivers(ptr long ptr) EnumDeviceDrivers
 @ stdcall K32EnumPageFilesA(ptr ptr) EnumPageFilesA
@@ -1307,6 +1331,10 @@
 @ stdcall K32QueryWorkingSet(ptr ptr long) QueryWorkingSet
 @ stdcall K32QueryWorkingSetEx(ptr ptr long) QueryWorkingSetEx
 @ stdcall LoadAppInitDlls()
+@ stdcall PowerClearRequest(ptr ptr)
+@ stdcall PowerCreateRequest(ptr)
+@ stdcall PowerCreateRequestW(ptr) PowerCreateRequest
+@ stdcall PowerSetRequest(ptr long)
 @ stdcall QueryIdleProcessorCycleTimeEx(long ptr ptr)
 @ stdcall QueryUnbiasedInterruptTime(ptr)
 @ stdcall RaiseFailFastException(ptr ptr long)

@@ -126,3 +126,20 @@ BasepFreeActivationContextActivationBlock(
         RtlFreeHeap(RtlProcessHeap(), 0, ActivationBlock);
     }
 }
+
+/***********************************************************************
+ * QueryActCtxSettingsW (KERNEL32.@)
+ */
+BOOL WINAPI QueryActCtxSettingsW( DWORD flags, HANDLE ctx, const WCHAR *ns, const WCHAR *settings,
+                                  WCHAR *buffer, SIZE_T size, SIZE_T *written )
+{
+    NTSTATUS status;
+
+    if ((status = RtlQueryActivationContextApplicationSettings( flags, ctx, ns, settings,
+                                                                buffer, size, written )))
+    {
+        SetLastError( RtlNtStatusToDosError( status ));
+        return FALSE;
+    }
+    return TRUE;
+}

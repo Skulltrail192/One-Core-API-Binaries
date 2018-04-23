@@ -23,7 +23,6 @@ list(APPEND SOURCE
 	ldr/ldrapi.c
 	ldr/loader.c
 	rtl/acl.c
-	rtl/actctx.c
 	rtl/atom.c
 	rtl/avl.c	
 	rtl/boundary.c
@@ -47,6 +46,7 @@ list(APPEND SOURCE
 	rtl/processor.c
 	rtl/profiling.c
 	rtl/sid.c	
+	rtl/sxs.c
 	rtl/synch.c		
 	rtl/sysinfo.c
 	rtl/time.c

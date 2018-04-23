@@ -262,6 +262,18 @@ ULONG WINAPI EtwEventActivityIdControl(
   _Inout_  LPGUID ActivityId
 );
 
+NTSTATUS 
+WINAPI 
+RtlQueryActivationContextApplicationSettings( 
+	DWORD flags, 
+	HANDLE handle, 
+	const WCHAR *ns,
+    const WCHAR *settings, 
+	WCHAR *buffer,
+    SIZE_T size, 
+	SIZE_T *written 
+);
+
 NTSTATUS WINAPI RtlFlsAlloc(PFLS_CALLBACK_FUNCTION lpCallback, 
 							DWORD *lpCallbackPointer);
 
