@@ -365,10 +365,8 @@
 @ stdcall GetMailslotInfo(long ptr ptr ptr ptr)
 @ stdcall GetModuleFileNameA(long ptr long)
 @ stdcall GetModuleFileNameW(long ptr long)
-@ stdcall GetModuleHandleA(str) GetModuleHandleInternalA
 @ stdcall GetModuleHandleExA(long str ptr)
 @ stdcall GetModuleHandleExW(long wstr ptr)
-@ stdcall GetModuleHandleW(wstr) GetModuleHandleInternalW
 @ stdcall GetNamedPipeHandleStateA(long ptr ptr ptr ptr str long)
 @ stdcall GetNamedPipeHandleStateW(long ptr ptr ptr ptr wstr long)
 @ stdcall GetNamedPipeInfo(long ptr ptr ptr ptr)
@@ -397,7 +395,6 @@
 @ stdcall GetPrivateProfileStringW(wstr wstr wstr ptr long wstr)
 @ stdcall GetPrivateProfileStructA (str str ptr long str)
 @ stdcall GetPrivateProfileStructW(wstr wstr ptr long wstr)
-@ stdcall GetProcAddress(long str) GetProcAddressInternal
 @ stdcall GetProcessAffinityMask(ptr ptr ptr)
 @ stdcall GetProcessHandleCount(long ptr)
 @ stdcall -norelay GetProcessHeap()
@@ -567,8 +564,6 @@
 @ stdcall LZSeek(long long long)
 @ stdcall LZStart()
 @ stdcall LeaveCriticalSection(ptr) ntext.RtlLeaveCriticalSection
-@ stdcall LoadLibraryA(str) LoadLibraryInternalA
-@ stdcall LoadLibraryW(wstr) LoadLibraryInternalW
 @ stdcall LoadModule(str ptr)
 @ stdcall LoadResource(long long)
 @ stdcall LocalAlloc(long long)
@@ -1013,6 +1008,11 @@
 @ stdcall CreateProcessInternalA(ptr str str ptr ptr long long ptr str ptr ptr long) CreateProcessInternalExA
 @ stdcall CreateProcessInternalW(ptr wstr wstr ptr ptr long long ptr wstr ptr ptr long) CreateProcessInternalExW
 @ stdcall CreateProcessW(wstr wstr ptr ptr long long ptr wstr ptr ptr) CreateProcessExW
+@ stdcall GetModuleHandleA(str) GetModuleHandleInternalA
+@ stdcall GetModuleHandleW(wstr) GetModuleHandleInternalW
+@ stdcall GetProcAddress(long str) GetProcAddressInternal
+@ stdcall LoadLibraryA(str) LoadLibraryInternalA
+@ stdcall LoadLibraryW(wstr) LoadLibraryInternalW
 @ stdcall LoadLibraryExA( str long long) LoadLibraryExInternalA
 @ stdcall LoadLibraryExW(wstr long long) LoadLibraryExInternalW
 @ stdcall SetFileApisToANSI() SetpFileApisToANSI

@@ -6,6 +6,7 @@ add_definitions(
     -D_NTOSKRNL_
     -DCRTDLL)
 
+	
 include_directories(
     BEFORE include
     ${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys)

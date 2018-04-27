@@ -596,7 +596,7 @@
 ; Yes, Microsoft really misspelled this one!
 @ stdcall RtlGetLengthWithoutTrailingPathSeperators(long ptr ptr) 
 @ stdcall RtlGetLongestNtPathLength()
-@ stdcall RtlGetNativeSystemInformation(long long long long) NtQuerySystemInformation
+@ stdcall RtlGetNativeSystemInformation(long long long long) 
 @ stdcall RtlGetNtGlobalFlags()
 @ stdcall RtlGetNtProductType(ptr)
 @ stdcall RtlGetNtVersionNumbers(ptr ptr ptr)

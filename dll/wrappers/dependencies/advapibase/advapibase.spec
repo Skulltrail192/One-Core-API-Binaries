@@ -687,8 +687,8 @@
 
 #Missing on Server 2003 RTM
 @ stdcall RegDisablePredefinedCacheEx() advapinew.RegDisablePredefinedCacheEx
-486 stdcall RegGetValueA(long str str long ptr ptr ptr) advapinew.RegGetValueA
-487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapinew.RegGetValueW
+;486 stdcall RegGetValueA(long str str long ptr ptr ptr) advapinew.RegGetValueA
+;487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapinew.RegGetValueW
 
 @ stdcall LogonUserExExW(str str str long long ptr ptr ptr ptr ptr ptr)
 101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr)

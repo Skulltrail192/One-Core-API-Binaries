@@ -1,5 +1,5 @@
-@ stub BCryptAddContextFunction
-@ stub BCryptAddContextFunctionProvider
+@ stdcall BCryptAddContextFunction(long wstr long wstr long)
+@ stdcall BCryptAddContextFunctionProvider(long wstr long wstr wstr long)
 @ stdcall BCryptCloseAlgorithmProvider(ptr long)
 @ stub BCryptConfigureContext
 @ stub BCryptConfigureContextFunction
@@ -8,6 +8,7 @@
 @ stdcall BCryptDecrypt(ptr ptr long ptr ptr long ptr long ptr long)
 @ stub BCryptDeleteContext
 @ stub BCryptDeriveKey
+@ stdcall BCryptDeriveKeyPBKDF2(ptr ptr long ptr long int64 ptr long long)
 @ stdcall BCryptDestroyHash(ptr)
 @ stdcall BCryptDestroyKey(ptr)
 @ stub BCryptDestroySecret
@@ -39,9 +40,9 @@
 @ stub BCryptQueryContextFunctionProperty
 @ stub BCryptQueryProviderRegistration
 @ stub BCryptRegisterConfigChangeNotify
-@ stub BCryptRegisterProvider
-@ stub BCryptRemoveContextFunction
-@ stub BCryptRemoveContextFunctionProvider
+@ stdcall BCryptRegisterProvider(wstr long ptr)
+@ stdcall BCryptRemoveContextFunction(long wstr long wstr)
+@ stdcall BCryptRemoveContextFunctionProvider(long wstr long wstr wstr)
 @ stub BCryptResolveProviders
 @ stub BCryptSecretAgreement
 @ stub BCryptSetAuditingInterface
@@ -49,7 +50,7 @@
 @ stdcall BCryptSetProperty(ptr wstr ptr long long)
 @ stub BCryptSignHash
 @ stub BCryptUnregisterConfigChangeNotify
-@ stub BCryptUnregisterProvider
+@ stdcall BCryptUnregisterProvider(wstr)
 @ stdcall BCryptVerifySignature(ptr ptr ptr long ptr long long)
 @ stub GetAsymmetricEncryptionInterface
 @ stub GetCipherInterface

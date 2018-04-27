@@ -879,3 +879,5 @@
 @ stdcall HangrepUnregisterPort(ptr)
 @ stdcall ThemeGetCurrentSection(ptr)
 @ stdcall ThemeSetCurrentSection(ptr)
+
+@ stdcall GetAutoRotationState(ptr)

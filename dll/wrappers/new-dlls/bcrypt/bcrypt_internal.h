@@ -51,7 +51,27 @@ void sha384_init(SHA512_CTX *ctx) DECLSPEC_HIDDEN;
 #define sha384_update sha512_update
 void sha384_finalize(SHA512_CTX *ctx, UCHAR *buffer) DECLSPEC_HIDDEN;
 
+typedef struct {
+    unsigned char chksum[16], X[48], buf[16];
+    unsigned long curlen;
+} MD2_CTX;
+
+void md2_init(MD2_CTX *ctx) DECLSPEC_HIDDEN;
+void md2_update(MD2_CTX *ctx, const unsigned char *buf, ULONG len) DECLSPEC_HIDDEN;
+void md2_finalize(MD2_CTX *ctx, unsigned char *hash) DECLSPEC_HIDDEN;
+
 /* Definitions from advapi32 */
+typedef struct tagMD4_CTX {
+    unsigned int buf[4];
+    unsigned int i[2];
+    unsigned char in[64];
+    unsigned char digest[16];
+} MD4_CTX;
+
+VOID WINAPI MD4Init(MD4_CTX *ctx);
+VOID WINAPI MD4Update(MD4_CTX *ctx, const unsigned char *buf, unsigned int len);
+VOID WINAPI MD4Final(MD4_CTX *ctx);
+
 typedef struct
 {
     unsigned int i[2];

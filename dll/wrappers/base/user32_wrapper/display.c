@@ -21,6 +21,8 @@
 
 #define WDA_NONE 0x00000000
 
+WINE_DEFAULT_DEBUG_CHANNEL(user32);
+
 BOOL WINAPI GetDisplayAutoRotationPreferences(
   _Out_  ORIENTATION_PREFERENCE *pOrientation
 )
@@ -75,9 +77,8 @@ LONG WINAPI GetDisplayConfigBufferSizes(
 	pNumPathArrayElements = 0;
 	pNumModeInfoArrayElements = 0;
 	DbgPrint("GetDisplayConfigBufferSizes is UNIMPLEMENTED\n");	
-	return ERROR_SUCCESS;
+	return ERROR_NOT_SUPPORTED;
 }
-
 
 LONG WINAPI QueryDisplayConfig(
   _In_       UINT32 Flags,
@@ -89,10 +90,12 @@ LONG WINAPI QueryDisplayConfig(
 )
 {
 	DbgPrint("QueryDisplayConfig is UNIMPLEMENTED\n");	
-	return ERROR_SUCCESS;
+	return ERROR_CALL_NOT_IMPLEMENTED;
 }
 
-LONG WINAPI SetDisplayConfig(
+LONG 
+WINAPI 
+SetDisplayConfig(
   _In_      UINT32 numPathArrayElements,
   _In_opt_  DISPLAYCONFIG_PATH_INFO *pathArray,
   _In_      UINT32 numModeInfoArrayElements,

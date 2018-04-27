@@ -4,6 +4,7 @@ spec2def(bcrypt.dll bcrypt.spec)
 
 list(APPEND SOURCE
     bcrypt_main.c
+	md2.c
 	sha256.c
 	sha512.c
     version.rc

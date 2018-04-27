@@ -684,9 +684,9 @@
 502 stdcall RegQueryReflectionKey(ptr ptr)	 ;native on Server 2003, but, missing on XP (needed for synchronization) 
 
 #Missing on Server 2003 RTM
-@ stdcall RegDisablePredefinedCacheEx() advapibase.RegDisablePredefinedCacheEx
-486 stdcall RegGetValueA(long str str long ptr ptr ptr) advapibase.RegGetValueA
-487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapibase.RegGetValueW
+@ stdcall RegDisablePredefinedCacheEx() 
+486 stdcall RegGetValueA(long str str long ptr ptr ptr) 
+487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) 
 
 @ stdcall LogonUserExExW(str str str long long ptr ptr ptr ptr ptr ptr)
 
