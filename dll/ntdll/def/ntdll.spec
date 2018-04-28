@@ -878,7 +878,7 @@
 872 cdecl RtlSetThreadIsCritical(long ptr long)
 873 stdcall RtlSetThreadPoolStartFunc(ptr ptr)
 874 stdcall RtlSetTimeZoneInformation(ptr)
-# stdcall RtlSetTimer
+@ stdcall RtlSetTimer(ptr ptr ptr ptr long long long)
 876 stdcall RtlSetUnhandledExceptionFilter(ptr)
 # stdcall RtlSetUnicodeCallouts
 878 stdcall RtlSetUserFlagsHeap(ptr long ptr long long)

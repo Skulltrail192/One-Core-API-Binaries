@@ -593,7 +593,7 @@ SYSTEM_LOGICAL_INFORMATION_FILLED _cdecl GetLogicalInfo()
     DWORD processorL1CacheCount = 0;
     DWORD processorL2CacheCount = 0;
     DWORD processorL3CacheCount = 0;
-    DWORD processorPackageCount = 0;
+    DWORD processorPackageCount = 1;
     DWORD byteOffset = 0;
     PCACHE_DESCRIPTOR Cache;
 
@@ -678,6 +678,7 @@ SYSTEM_LOGICAL_INFORMATION_FILLED _cdecl GetLogicalInfo()
 
         case RelationProcessorPackage:
             // Logical processors share a physical package.
+			DbgPrint("processor Packages\n");
             processorPackageCount++;
             break;
 
@@ -693,6 +694,8 @@ SYSTEM_LOGICAL_INFORMATION_FILLED _cdecl GetLogicalInfo()
 	fill.PackagesNumber = processorPackageCount;
 	fill.CoresNumber = processorCoreCount;
 	fill.LogicalProcessorsNumber = logicalProcessorCount;
+	
+	DbgPrint("Number of processor packages is %d\n", processorPackageCount);
     
     RtlFreeHeap(GetProcessHeap(),0,buffer);
 

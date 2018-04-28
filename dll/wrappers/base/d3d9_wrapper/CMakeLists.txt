@@ -14,7 +14,7 @@ list(APPEND SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/d3d9_wrapper_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/d3d9_wrapper.def)
 
-add_library(d3d9_wrapper SHARED ${SOURCE})
+add_library(d3d9_wrapper SHARED ${SOURCE} guid.c)
 set_module_type(d3d9_wrapper win32dll ENTRYPOINT 0)
 
 target_link_libraries(d3d9_wrapper wine)

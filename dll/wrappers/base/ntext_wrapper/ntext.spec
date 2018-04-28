@@ -785,7 +785,7 @@
 @ cdecl RtlSetThreadIsCritical(long ptr long)
 @ stdcall RtlSetThreadPoolStartFunc(ptr ptr)
 @ stdcall RtlSetTimeZoneInformation(ptr)
-@ stdcall RtlSetTimer(ptr ptr ptr ptr long long long) RtlCreateTimer
+@ stdcall RtlSetTimer(ptr ptr ptr ptr long long long)
 @ stdcall RtlSetUnicodeCallouts(long)
 @ stdcall RtlSetUserFlagsHeap(ptr long ptr long long)
 @ stdcall RtlSetUserValueHeap(ptr long ptr ptr)
