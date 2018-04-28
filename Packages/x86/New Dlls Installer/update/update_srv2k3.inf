@@ -2621,6 +2621,9 @@
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
 	
+[ProductInstall.DontDelayUntilReboot]
+    CopyFiles=MustReplace.System32.files	
+	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
 
@@ -2632,6 +2635,10 @@
 
 [DestinationDirs]
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
+	
+[MustReplace.System32.files]	
+	"dbghelp.dll"	
 
 [CopyAlways.System32.Files]
 	"avrt.dll"
@@ -2639,7 +2646,6 @@
 	;"combase.dll" 	- Cause error with .net 4.5 application	
 	"cryptbase.dll"
 	"cryptsp.dll"
-	"dbghelp.dll"
 	"dbgeng.dll"
 	"dpx.dll"
 	"dui70.dll"
