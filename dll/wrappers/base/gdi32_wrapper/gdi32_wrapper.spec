@@ -455,8 +455,8 @@
 @ stdcall HT_Get8BPPMaskPalette(ptr long long long long long) 
 @ stdcall IntersectClipRect(long long long long long)
 @ stdcall InvertRgn(long long)
-@ stdcall IsValidEnhMetaRecord(long long)
-@ stdcall IsValidEnhMetaRecordOffExt(long long long long)
+@ stdcall IsValidEnhMetaRecord(long long) gdibase.IsValidEnhMetaRecord
+@ stdcall IsValidEnhMetaRecordOffExt(long long long long) gdibase.IsValidEnhMetaRecordOffExt
 @ stdcall LPtoDP(long ptr long)
 @ stdcall LineDDA(long long long long ptr long)
 @ stdcall LineTo(long long long)

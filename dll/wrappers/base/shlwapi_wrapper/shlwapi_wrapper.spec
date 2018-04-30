@@ -1176,3 +1176,5 @@
 @ stdcall StrFormatByteSizeEx(long long long wstr long)
 @ stdcall SHAutoCompGetPidl(ptr ptr long ptr)
 
+@ varargs ShellMessageBoxW(long long wstr wstr long) shell32.ShellMessageBoxW
+@ varargs ShellMessageBoxA(long long str str long) shell32.ShellMessageBoxA
