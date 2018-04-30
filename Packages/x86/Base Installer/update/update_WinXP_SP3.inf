@@ -612,7 +612,6 @@
 	WinSxS\polices\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24102.policy =1	
 [Strings]
 	MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
-	MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 
 [UninstallSections]
     GlobalRegistryChanges, GlobalRegistryChanges.UnInstall

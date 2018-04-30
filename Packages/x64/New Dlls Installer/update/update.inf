@@ -5141,6 +5141,9 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	WSDApi.dll,amd64/WSDApi.dll
 	wtsapi32.dll,amd64/wtsapi32.dll
 	wusa.exe,amd64/wusa.exe
+	onex.dll,amd64/onex.dll 
+	pkgmgr.exe,amd64/pkgmgr.exe
+	prntvpt.dll,amd64/prntvpt.dll		
 [CopyAlways.SysWOW64.Files]	
 	avrt.dll,i386/wavrt.dll
 	cabiext.dll,i386/wcabiext.dll
@@ -5204,6 +5207,11 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	WSDApi.dll,i386/wWSDApi.dll
 	wtsapi32.dll,i386/wwtsapi32.dll
 	wusa.exe,i386/wwusa.exe
+	eappcfg.dll,i386/weappcfg.dll 
+	eappprxy.dll,i386/weappprxy.dll 
+	onex.dll,i386/wonex.dll 
+	pkgmgr.exe,i386/wpkgmgr.exe
+	prntvpt.dll,i386/wprntvpt.dll	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
@@ -5270,6 +5278,10 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	amd64/WSDApi.dll = 1
 	amd64/wtsapi32.dll = 1
 	amd64/wusa.exe = 1
+	amd64/onex.dll = 1
+	amd64/pkgmgr.exe = 1
+	amd64/prntvpt.dll = 1		
+	
 	i386/wavrt.dll = 1
 	i386/wcabiext = 1
 	;i386/wcombase.dll = 1	- Cause error with .net 4.5 application
@@ -5332,3 +5344,8 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	i386/wWSDApi.dll = 1
 	i386/wwtsapi32.dll = 1
 	i386/wwusa.exe = 1
+	i386/weappcfg.dll = 1
+	i386/weappprxy.dll = 1
+	i386/wonex.dll = 1	
+	i386/wpkgmgr.exe =- 1	
+	i386/wprntvpt.dll = 1	

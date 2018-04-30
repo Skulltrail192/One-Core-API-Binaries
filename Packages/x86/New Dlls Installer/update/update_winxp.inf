@@ -2701,6 +2701,8 @@ Signature                 = "$Windows NT$"
 	"WSDApi.dll"
 	"wtsapi32.dll"
 	"wusa.exe"
+	"pkgmgr.exe"	
+	"prntvpt.dll" 	
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
@@ -2767,3 +2769,5 @@ Signature                 = "$Windows NT$"
 	"WSDApi.dll" = 1
 	"wtsapi32.dll" = 1
 	"wusa.exe" = 1
+	"pkgmgr.exe" = 1	
+	"prntvpt.dll" = 1	

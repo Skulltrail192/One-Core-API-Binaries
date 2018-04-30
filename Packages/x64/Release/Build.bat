@@ -1,6 +1,6 @@
 @echo off
 
-set root=F:\Develop\One-Core\One-Core-API-Binaries\Packages\x86
+set root=F:\Develop\One-Core\One-Core-API-Binaries\Packages\x64
 set api-set=API-SET Installer
 set base=Base Installer
 set compat=App Compat Installer
