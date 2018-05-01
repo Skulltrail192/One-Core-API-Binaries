@@ -127,39 +127,10 @@ static UINT WINAPI IDirect3D9Impl_GetAdapterModeCountEx(
     UINT AdapterModeCount;
 	
 	if(ppD3D!=NULL){
-		return ppD3D->GetAdapterModeCount(Adapter,pFilter->Format);
+		return IDirect3D9_GetAdapterModeCount(ppD3D,Adapter,pFilter->Format);
 	}
 
 	return D3DERR_INVALIDCALL;
-
-    // LPDIRECT3D9_INT This = IDirect3D9ToImpl(iface);
-    // LOCK_D3D9();
-
-    // if (Adapter >= This->NumDisplayAdapters)
-    // {
-        // DPRINT1("Invalid Adapter number specified");
-        // UNLOCK_D3D9();
-        // return D3DERR_INVALIDCALL;
-    // }
-
-    // if (Format != D3DFMT_A2R10G10B10)
-    // {
-        // AdapterModeCount = GetDisplayFormatCount(
-            // Format,
-            // This->DisplayAdapters[Adapter].pSupportedD3DFormats,
-            // This->DisplayAdapters[Adapter].NumSupportedD3DFormats);
-    // }
-    // else
-    // {
-        // AdapterModeCount = GetDisplayFormatCount(
-            // Format,
-            // This->DisplayAdapters[Adapter].pSupportedD3DExtendedFormats,
-            // This->DisplayAdapters[Adapter].NumSupportedD3DExtendedFormats);
-    // }
-
-    // UNLOCK_D3D9();
-    // return AdapterModeCount;
-	return 0;
 }
 
 HRESULT AlignedAlloc(IN OUT LPVOID *ppObject, IN SIZE_T dwSize)
