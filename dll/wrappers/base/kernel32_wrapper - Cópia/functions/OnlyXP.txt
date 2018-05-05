@@ -1,0 +1,15 @@
+BaseInitAppcompatCache
+BaseCleanupAppcompatCache
+CreateProcessInternalWSecure
+CreateVirtualBuffer
+ExtendVirtualBuffer
+FreeVirtualBuffer
+GetNumaAvailableMemory
+GetNumaProcessorMap
+GetProcessDEPPolicy
+GetSystemDEPPolicy
+NumaVirtualQueryNode
+QueryWin31IniFilesMappedToRegistry
+SetProcessDEPPolicy
+TrimVirtualBuffer
+VirtualBufferExceptionHandler

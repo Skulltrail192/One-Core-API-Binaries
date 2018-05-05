@@ -19,6 +19,6 @@ set_module_type(d3d9_wrapper win32dll ENTRYPOINT 0)
 
 target_link_libraries(d3d9_wrapper wine)
 
-add_importlibs(d3d9_wrapper d3d9 ntdll kernel32)
+add_importlibs(d3d9_wrapper d3d9base ntdll kernel32 user32 gdi32)
 
 add_cd_file(TARGET d3d9_wrapper DESTINATION reactos/system32 FOR all)
