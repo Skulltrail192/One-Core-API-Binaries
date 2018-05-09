@@ -265,7 +265,7 @@ NTSTATUS WINAPI D3DKMTCreateDCFromMemory( D3DKMT_CREATEDCFROMMEMORY *desc )
         {
              bmpInfo->bmiColors[i].rgbRed   = desc->pColorTable[i].peRed;
              bmpInfo->bmiColors[i].rgbGreen = desc->pColorTable[i].peGreen;
-             bmpInfo->bmiColors[i].rgbGreen = desc->pColorTable[i].peBlue;
+             bmpInfo->bmiColors[i].rgbBlue = desc->pColorTable[i].peBlue;
              bmpInfo->bmiColors[i].rgbReserved = 0;
         }
     }
