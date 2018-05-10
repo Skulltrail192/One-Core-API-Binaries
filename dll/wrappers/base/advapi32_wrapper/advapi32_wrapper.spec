@@ -242,7 +242,7 @@
 245 stdcall GetInformationCodeAuthzPolicyW()
 246 stdcall GetInheritanceSourceA(str long long long ptr long ptr ptr ptr ptr)
 247 stdcall GetInheritanceSourceW(wstr long long long ptr long ptr ptr ptr ptr)
-248 stdcall GetKernelObjectSecurity(long long ptr long ptr)
+248 stdcall GetKernelObjectSecurity(long long ptr long ptr) GetKernelObjectSecurityInternal
 249 stdcall GetLengthSid(ptr)
 250 stdcall GetLocalManagedApplicationData(wstr wstr wstr)
 251 stdcall GetLocalManagedApplications(long ptr ptr)
@@ -544,7 +544,7 @@
 560 stdcall SetFileSecurityW(wstr long ptr)
 561 stdcall SetInformationCodeAuthzLevelW()
 562 stdcall SetInformationCodeAuthzPolicyW()
-563 stdcall SetKernelObjectSecurity(long long ptr)
+563 stdcall SetKernelObjectSecurity(long long ptr) SetKernelObjectSecurityInternal
 564 stdcall SetNamedSecurityInfoA(str long ptr ptr ptr ptr ptr)
 565 stdcall SetNamedSecurityInfoExA(str long long str ptr ptr str str ptr)
 566 stdcall SetNamedSecurityInfoExW(wstr long long wstr ptr ptr wstr wstr ptr)

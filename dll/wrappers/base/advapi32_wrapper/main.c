@@ -1087,3 +1087,32 @@ LONG WINAPI RegDeleteTreeW(
 {
 	return ERROR_SUCCESS;
 }
+
+BOOL WINAPI GetKernelObjectSecurityInternal(
+  _In_      HANDLE               Handle,
+  _In_      SECURITY_INFORMATION RequestedInformation,
+  _Out_opt_ PSECURITY_DESCRIPTOR pSecurityDescriptor,
+  _In_      DWORD                nLength,
+  _Out_     LPDWORD              lpnLengthNeeded
+)
+{
+	if(RequestedInformation & LABEL_SECURITY_INFORMATION)
+	{
+		RequestedInformation = SACL_SECURITY_INFORMATION;
+	}
+	return GetKernelObjectSecurity(Handle, RequestedInformation, pSecurityDescriptor, nLength, lpnLengthNeeded);
+}
+
+
+BOOL WINAPI SetKernelObjectSecurityInternal(
+  _In_ HANDLE               Handle,
+  _In_ SECURITY_INFORMATION SecurityInformation,
+  _In_ PSECURITY_DESCRIPTOR SecurityDescriptor
+)
+{
+	if(SecurityInformation & LABEL_SECURITY_INFORMATION)
+	{
+		SecurityInformation = SACL_SECURITY_INFORMATION;
+	}
+	return SetKernelObjectSecurity(Handle, SecurityInformation, SecurityDescriptor);
+}

@@ -1,2 +1,0 @@
-BaseQueryModuleData
-BasepCheckWinSaferRestrictions
