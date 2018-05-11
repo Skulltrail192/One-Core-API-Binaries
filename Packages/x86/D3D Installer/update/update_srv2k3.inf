@@ -35,13 +35,13 @@ SP_TITLE                = "One-Core-API D3D Runtime"
 LANGTYPEVALUE           = 0x0
 SP_SHORT_TITLE          = "OCAD3DR"
 SERVICE_PACK_NUMBER     = 3
-COMMENT                 = "One-Core-API D3D Runtime [See Q100000 for more information]"
+COMMENT                 = "One-Core-API D3D Runtime [Experimental]"
 SERVICEPACKSOURCEFILES  = "One-Core-API D3D Runtime"
 Msft                    = "Microsoft"
 ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
 PARENT_DISPLAY_NAME     = "Windows Updates"
 MSFT_Prefix                 = "MicrosoftOneCoreAPID3dRuntime"
-MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
+MSFT_Namespace              = "http://ns.microsoft.com/d3d/1.0"
 LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 
 [UninstallSections]
@@ -94,10 +94,13 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	d3d11.dll
 	dwrite.dll
 	dxgi.dll
+	D3DCompiler_47.dll
 	fntcache.dll
-	libwine.dll
-	wined3d.dll
+	d3dwine.dll
 	wineft2.dll
+	winetxc.dll
+	vcruntime140.dll
+	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
@@ -112,10 +115,12 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	d3d11.dll = 1
 	dwrite.dll = 1
 	dxgi.dll = 1
+	D3DCompiler_47.dll = 1
 	fntcache.dll = 1
-	libwine.dll = 1
-	wined3d.dll = 1
+	d3dwine.dll = 1
 	wineft2.dll = 1
+	winetxc.dll = 1
+	vcruntime140.dll = 1
 
 [Add.Reg.Uninstall]
 

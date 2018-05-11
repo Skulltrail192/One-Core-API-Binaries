@@ -90,9 +90,12 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	d3d11.dll,amd64/d3d11.dll
 	dwrite.dll,amd64/dwrite.dll
 	dxgi.dll,amd64/dxgi.dll
+	d3dwine.dll,amd64/d3dwine.dll	
 	fntcache.dll,amd64/fntcache.dll
-	libwine.dll,amd64/libwine.dll
-	wined3d.dll,amd64/wined3d.dll
+	vcruntime140.dll,amd64/vcruntime140.dll
+	winetxc.dll,amd64/winetxc.dll	
+	wineft2.dll,amd64/wineft2.dll
+	
 [CopyAlways.SysWOW64.Files]
     d2d1.dll,i386/wd2d1.dll
 	d3d9.dll,i386/wd3d9.dll
@@ -103,9 +106,11 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	d3d11.dll,i386/wd3d11.dll
 	dwrite.dll,i386/wdwrite.dll
 	dxgi.dll,i386/wdxgi.dll
-	fntcache.dll,i386/wfntcache.dll	
-	libwine.dll,i386/wlibwine.dll
-	wined3d.dll,i386/wwined3d.dll
+	d3dwine.dll,i386/wd3dwine.dll
+	fntcache.dll,i386/wfntcache.dll
+	vcruntime140.dll,i386/wvcruntime140.dll	
+	winetxc.dll,i386/wwinetxc.dll	
+	wineft2.dll,i386/wwineft2.dll
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
