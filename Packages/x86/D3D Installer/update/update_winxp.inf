@@ -95,10 +95,13 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	d3d11.dll
 	dwrite.dll
 	dxgi.dll
+	D3DCompiler_47.dll
 	fntcache.dll
-	libwine.dll
-	wined3d.dll
+	d3dwine.dll
 	wineft2.dll
+	winetxc.dll
+	vcruntime140.dll
+	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
@@ -113,10 +116,12 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	d3d11.dll = 1
 	dwrite.dll = 1
 	dxgi.dll = 1
+	D3DCompiler_47.dll = 1
 	fntcache.dll = 1
-	libwine.dll = 1
-	wined3d.dll = 1
-	wineft2.dll = 1	
+	d3dwine.dll = 1
+	wineft2.dll = 1
+	winetxc.dll = 1
+	vcruntime140.dll = 1
 	
 [Add.Reg.Uninstall]
 
