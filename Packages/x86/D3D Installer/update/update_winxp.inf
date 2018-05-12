@@ -43,6 +43,9 @@ Signature                 = "$Windows NT$"
 	MSFT_Prefix                 = "MicrosoftOneCoreAPID3dRuntime"
 	MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 	LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
+	FNTCACHESVC_DISPLAY_NAME="Windows Driver Foundation - User-mode Driver Framework"
+	FNTCACHESVC_DESCRIPTION="Manages user-mode driver host processes"
+	SERVICE_DEMAND_START=0x3
 
 [UninstallSections]
     Add.Reg, Add.Reg.Uninstall
@@ -122,6 +125,30 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	wineft2.dll = 1
 	winetxc.dll = 1
 	vcruntime140.dll = 1
+	
+[DefaultInstall]	
+	
+[DefaultInstall.Services]
+AddService=WudfSvc,%NOCLOBBER_SERVICE%,WudfSvc_Install
+
+[FntCacheSvc_Install]
+DisplayName=%FNTCACHESVC_DISPLAY_NAME%
+Description=%FNTCACHESVC_DESCRIPTION%
+ServiceType=0x20
+StartType=%SERVICE_DEMAND_START%
+ErrorControl=0x01
+ServiceBinary=%10%\system32\svchost.exe -k netsvcs
+LoadOrderGroup=AudioGroup
+StartName = "LocalSystem"
+AddReg=FntCacheSvc_Registry
+
+[FntCacheSvc_Registry]
+HKR, "Parameters", "ServiceDll", %REG_EXPAND_SZ%, "%SystemRoot%\System32\fntcache.dll"
+HKR, "Parameters", "ServiceDllUnloadOnStop", %REG_DWORD%, 1
+HKR, ,             "FailureActions", %REG_BINARY%, 84,03,00,00,00,00,00,00,00,00,00,00,03,00,00,00,53,00,65,00,01,00,00,00,C0,D4,01,00,01,00,00,00,E0,93,04,00,00,00,00,00,00,00,00,00
+HKR, ,             "ServiceSidType", %REG_DWORD%, 1
+
+HKLM, "SOFTWARE\Microsoft\Windows NT\CurrentVersion\svchost", "netsvcs", 0x00010008, "FontCache"
 	
 [Add.Reg.Uninstall]
 
