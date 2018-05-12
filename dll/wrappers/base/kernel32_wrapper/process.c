@@ -1374,11 +1374,43 @@ GetActiveProcessorCount(
   */
 BOOL 
 WINAPI 
-IsProcessorFeaturePresent (
+IsProcessorFeaturePresentInternal (
 	DWORD feature  
 )
 {
-	return TRUE;
+	BOOL resp = FALSE;
+	//Hack, need implement on kernel
+	switch(feature){
+		case PF_SSE3_INSTRUCTIONS_AVAILABLE:
+		{
+			//Is Pentium or above Processor?
+			resp = TRUE;
+			break;
+		}
+		case PF_COMPARE_EXCHANGE128:
+		{
+			//Maybe get error on early AMD64 Processors
+			resp = TRUE;
+			break;
+		}
+		case PF_COMPARE64_EXCHANGE128:
+		{
+			//Is avaliable on AMD?
+			resp = TRUE;
+			break;
+		}
+		case PF_XSAVE_ENABLED:
+		{
+			resp = TRUE;
+			break;
+		}
+		default:
+		{
+			resp = IsProcessorFeaturePresent(feature);
+			break;
+		}
+	};
+	return resp;
 }
 
 BOOL

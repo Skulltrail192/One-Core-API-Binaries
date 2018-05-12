@@ -36,5 +36,43 @@
 #include <wine/debug.h>
 #include <wine/list.h>
 #include <wine/unicode.h>
+#include <ws2spi.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(ws2_32);
+
+typedef enum _WSC_PROVIDER_INFO_TYPE {
+   ProviderInfoLspCategories,
+   ProviderInfoAudit
+} WSC_PROVIDER_INFO_TYPE ;
+
+int WSCInstallProviderAndChains(
+  _In_      const LPGUID             lpProviderId,
+  _In_      const LPWSTR             lpszProviderDllPath,
+  _In_      const LPWSTR             lpszLspName,
+  _In_            DWORD              dwServiceFlags,
+  _In_      const LPWSAPROTOCOL_INFO lpProtocolInfoList,
+  _In_            DWORD              dwNumberOfEntries,
+  _Out_opt_       LPDWORD            lpdwCatalogEntryId,
+  _Out_           LPINT              lpErrno
+)
+{
+	//Hack, i don't know if work
+	return WSCInstallProvider(lpProviderId,
+							  lpszProviderDllPath,
+							  lpProtocolInfoList,
+							  dwNumberOfEntries,
+							  lpErrno);
+}
+
+int WSCSetProviderInfo(
+  _In_  LPGUID                 lpProviderId,
+  _In_  WSC_PROVIDER_INFO_TYPE InfoType,
+  _In_  PBYTE                  Info,
+  _In_  size_t                 InfoSize,
+  _In_  DWORD                  Flags,
+  _Out_ LPINT                  lpErrno
+)
+{
+	//Only stub
+	return ERROR_CALL_NOT_IMPLEMENTED;
+}

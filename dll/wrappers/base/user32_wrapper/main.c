@@ -178,7 +178,7 @@ BOOL WINAPI UnregisterDeviceNotification(HDEVNOTIFY Handle)
 BOOL WINAPI UnregisterPowerSettingNotification(HDEVNOTIFY Handle)
 {
   //return UnregisterDeviceNotification(Handle);
-  return TRUE;
+   return TRUE;
 }
 
 HDEVNOTIFY WINAPI RegisterDeviceNotificationW(HANDLE hRecipient, LPVOID NotificationFilter, DWORD Flags)

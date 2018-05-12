@@ -68,16 +68,19 @@ LONG WINAPI DisplayConfigSetDeviceInfo(
 	return ERROR_SUCCESS;
 }
 
-LONG WINAPI GetDisplayConfigBufferSizes(
-  _In_   UINT32 Flags,
-  _Out_  UINT32 *pNumPathArrayElements,
-  _Out_  UINT32 *pNumModeInfoArrayElements
-)
+/**********************************************************************
+  * GetDisplayConfigBufferSizes [USER32.@]
+  */
+LONG WINAPI GetDisplayConfigBufferSizes(UINT32 flags, UINT32 *num_path_info, UINT32 *num_mode_info)
 {
-	pNumPathArrayElements = 0;
-	pNumModeInfoArrayElements = 0;
-	DbgPrint("GetDisplayConfigBufferSizes is UNIMPLEMENTED\n");	
-	return ERROR_NOT_SUPPORTED;
+     DbgPrint("(0x%x %p %p): stub\n", flags, num_path_info, num_mode_info);
+ 
+     if (!num_path_info || !num_mode_info)
+         return ERROR_INVALID_PARAMETER;
+ 
+     *num_path_info = 0;
+     *num_mode_info = 0;
+    return ERROR_NOT_SUPPORTED;
 }
 
 LONG WINAPI QueryDisplayConfig(

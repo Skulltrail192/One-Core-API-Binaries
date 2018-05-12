@@ -507,7 +507,8 @@ BOOL WINAPI SetGestureConfig(
 {
 	pGestureConfig = NULL;
 	DbgPrint("SetGestureConfig is UNIMPLEMENTED\n");  
-	return TRUE;
+	SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+	return FALSE;
 }
 
 BOOL WINAPI GetGestureConfig(
@@ -521,7 +522,8 @@ BOOL WINAPI GetGestureConfig(
 {
 	pGestureConfig = NULL;
 	DbgPrint("GetGestureConfig is UNIMPLEMENTED\n");  
-	return TRUE;
+	SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+	return FALSE;
 }
 
 

@@ -33,3 +33,17 @@ ShipAssert(
 {
 	return 0;
 }
+
+ULONG 
+WINAPI 
+ShipAssertMsgA(DWORD a1, DWORD a2, LPCSTR a3)
+{
+	return ShipAssert(a1, a2);
+}
+
+ULONG 
+WINAPI 
+ShipAssertMsgW(DWORD a1, DWORD a2, LPWSTR a3)
+{
+	return ShipAssert(a1, a2);
+}

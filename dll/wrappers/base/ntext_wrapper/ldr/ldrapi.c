@@ -417,3 +417,20 @@ LdrQueryImageFileExecutionOptionsEx(
     /* Return to caller */
     return Status;
 }
+
+NTSTATUS
+NTAPI
+LdrGetProcedureAddressEx(
+    __in PVOID DllHandle,
+    __in_opt PANSI_STRING ProcedureName,
+    __in_opt ULONG ProcedureNumber,
+    __out PVOID *ProcedureAddress,
+    __in ULONG Flags
+)
+{
+	//The flags are unknown
+	return LdrGetProcedureAddress(DllHandle,
+								  ProcedureName,
+								  ProcedureNumber,
+								  ProcedureAddress);
+}

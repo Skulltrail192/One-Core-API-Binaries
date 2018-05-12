@@ -139,3 +139,5 @@
 @ stdcall InetNtopW(long ptr wstr long)
 @ stdcall InetPtonW(long wstr ptr)
 @ stdcall WSAPoll(ptr long long)
+@ stdcall WSCInstallProviderAndChains(ptr wstr wstr long ptr long ptr ptr)
+@ stdcall WSCSetProviderInfo(ptr long ptr long long ptr)

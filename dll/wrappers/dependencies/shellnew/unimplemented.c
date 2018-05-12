@@ -472,3 +472,24 @@ PathComparePaths(
 {
 	return S_OK;
 }
+
+HRESULT
+WINAPI
+StampIconForElevation(HICON icon, int x, int y){
+	return S_OK;
+}
+
+HRESULT WPC_InstallState (DWORD *pdwState)
+{
+	return S_OK;
+}
+
+BOOL IsElevationRequired(LPCWSTR pszPath)
+{
+	return FALSE;
+}
+
+HRESULT SHUserSetPasswordHint(LPCWSTR lpStart, LPCWSTR lpString)
+{
+	return S_OK;	
+}

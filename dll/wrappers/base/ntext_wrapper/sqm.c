@@ -156,3 +156,9 @@ WinSqmAddToAverageDWORD(
 	DbgPrint("UUNIMPLEMENTED: WinSqmSetIfMaxDWORD");		
 	return 0;
 }
+
+int NTAPI 
+WinSqmSetString(void *a1, char a2, const wchar_t *a3)
+{
+	return 0;
+}

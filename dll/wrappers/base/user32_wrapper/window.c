@@ -87,13 +87,6 @@ BOOL WINAPI GetWindowMinimizeRect (
 	return TRUE;
 }
 
-BOOL WINAPI IsWindowRedirectedForPrint(HWND windows)
-{
-	BOOL result; // eax@1
-	DbgPrint("IsWindowRedirectedForPrint is UNIMPLEMENTED\n");
-	return result = FALSE;
-}
-
 HWND WINAPI WindowFromPhysicalPoint(
   _In_  POINT Point
 )
@@ -312,4 +305,13 @@ UpdateLayeredWindowIndirect(
 		SetLastError(ERROR_INVALID_PARAMETER);
 		return FALSE;		
 	}    	
+}
+
+/**********************************************************************
+  * IsWindowRedirectedForPrint [USER32.@]
+  */
+BOOL WINAPI IsWindowRedirectedForPrint( HWND hwnd )
+{
+     DbgPrint("(%p): stub\n", hwnd);
+     return FALSE;
 }

@@ -520,7 +520,10 @@
 @ stdcall SHGetStockIconInfo(long long ptr)
 @ stdcall SHAssocEnumHandlers(wstr long ptr) ;Redirected to Longhorn shell
 @ stdcall SHSetDefaultProperties(ptr ptr long ptr) ;Redirected to Longhorn shell
-@ stdcall WPC_InstallState(ptr)
+813 stdcall -noname SHUserSetPasswordHint(wstr wstr)
+859 stdcall -noname WPC_InstallState(ptr)
+864 stdcall -noname StampIconForElevation(ptr long long)
+865 stdcall -noname IsElevationRequired(wstr)
 @ stdcall Shell_NotifyIcon(long ptr)  ;Redirected to Longhorn shell
 @ stdcall Shell_NotifyIconA(long ptr)  ;Redirected to Longhorn shell
 @ stdcall Shell_NotifyIconW(long ptr) ;Redirected to Longhorn shell

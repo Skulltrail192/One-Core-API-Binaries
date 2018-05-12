@@ -543,7 +543,6 @@
 @ stdcall IsDBCSLeadByteEx(long long)
 @ stdcall IsDebuggerPresent()
 @ stdcall IsProcessInJob(long long ptr)
-@ stdcall IsProcessorFeaturePresent(long)
 @ stdcall IsSystemResumeAutomatic()
 @ stdcall IsValidCodePage(long)
 @ stdcall IsValidLanguageGroup(long long)
@@ -1003,7 +1002,7 @@
 @ stdcall GetSystemDEPPolicy() 
 @ stdcall SetProcessDEPPolicy(long) 
 
-#Onwn implementation only for support
+#Own implementation only for support
 @ stdcall CreateProcessA(str str ptr ptr long long ptr str ptr ptr) CreateProcessExA
 @ stdcall CreateProcessInternalA(ptr str str ptr ptr long long ptr str ptr ptr long) CreateProcessInternalExA
 @ stdcall CreateProcessInternalW(ptr wstr wstr ptr ptr long long ptr wstr ptr ptr long) CreateProcessInternalExW
@@ -1011,6 +1010,7 @@
 @ stdcall GetModuleHandleA(str) GetModuleHandleInternalA
 @ stdcall GetModuleHandleW(wstr) GetModuleHandleInternalW
 @ stdcall GetProcAddress(long str) GetProcAddressInternal
+@ stdcall IsProcessorFeaturePresent(long) IsProcessorFeaturePresentInternal
 @ stdcall LoadLibraryA(str) LoadLibraryInternalA
 @ stdcall LoadLibraryW(wstr) LoadLibraryInternalW
 @ stdcall LoadLibraryExA( str long long) LoadLibraryExInternalA

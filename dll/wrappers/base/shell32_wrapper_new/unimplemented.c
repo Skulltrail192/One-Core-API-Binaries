@@ -289,13 +289,13 @@ EXTERN_C HANDLE WINAPI IsEnabled()
 	// return E_FAIL;	
 // }
 
-HRESULT 
-WPC_InstallState(
-	DWORD *pdwState
-){
-	*pdwState = 2;
-	return S_OK;
-}
+// HRESULT 
+// WPC_InstallState(
+	// DWORD *pdwState
+// ){
+	// *pdwState = 2;
+	// return S_OK;
+// }
 
 HRESULT 
 WINAPI

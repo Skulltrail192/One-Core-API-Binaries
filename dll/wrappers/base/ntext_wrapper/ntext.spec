@@ -1507,6 +1507,7 @@
 @ stdcall EtwReplyNotification(long)
 @ stdcall EtwTraceDiagnosticEvent(long long long long long)
 @ stdcall EtwWriteUMSecurityEvent(ptr long long ptr)
+@ stdcall LdrGetProcedureAddressEx(ptr ptr long ptr long)
 @ stdcall LdrLoadAlternateResourceModuleEx(long ptr ptr)
 @ stdcall NtAlpcAcceptConnectPort(ptr ptr long ptr ptr ptr ptr ptr long) 
 @ stdcall NtAlpcCancelMessage(ptr long ptr)	
@@ -1576,6 +1577,8 @@
 @ stdcall RtlWakeConditionVariable(ptr) 
 @ stdcall RtlAddMandatoryAce(ptr long long long long ptr) 
 @ stdcall ShipAssert(long long) 
+@ stdcall ShipAssertMsgA(long long str) 
+@ stdcall ShipAssertMsgW(long long wstr) 
 @ stdcall TpAllocPool(ptr ptr)
 @ stdcall TpCallbackLeaveCriticalSectionOnCompletion(ptr ptr)
 @ stdcall TpReleasePool(ptr)
@@ -1620,6 +1623,7 @@
 @ stdcall WinSqmEndSession(ptr)
 @ stdcall WinSqmIncrementDWORD(long long long)
 @ stdcall WinSqmSetIfMaxDWORD(long long long)
+@ stdcall WinSqmSetString(ptr str wstr)
 @ stdcall WinSqmStartSession(long long long)
 @ stdcall ZwQueryLicenseValue(ptr ptr ptr long ptr) NtQueryLicenseValue
 

@@ -1096,6 +1096,7 @@ BOOL WINAPI GetKernelObjectSecurityInternal(
   _Out_     LPDWORD              lpnLengthNeeded
 )
 {
+	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
 	if(RequestedInformation & LABEL_SECURITY_INFORMATION)
 	{
 		RequestedInformation = SACL_SECURITY_INFORMATION;
@@ -1110,6 +1111,7 @@ BOOL WINAPI SetKernelObjectSecurityInternal(
   _In_ PSECURITY_DESCRIPTOR SecurityDescriptor
 )
 {
+	//This is a hack, for now is enabled because need a truly implementation of LABEL_SECURITY_INFORMATION (for Chrome and Chromium Framework)
 	if(SecurityInformation & LABEL_SECURITY_INFORMATION)
 	{
 		SecurityInformation = SACL_SECURITY_INFORMATION;
