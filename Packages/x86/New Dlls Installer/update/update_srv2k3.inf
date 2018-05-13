@@ -2655,7 +2655,9 @@
 	"esent.dll"
 	"evr.dll"
 	"explorerframe.dll"
+	"FWPUCLNT.dll"
 	"gameux.dll"
+	"GameUXLegacyGDFs.dll"	
 	"httpapi.dll"
 	"httpapinew.dll"
 	"ktmw32.dll"
@@ -2726,7 +2728,9 @@
 	"esent.dll" = 1
 	"evr.dll" = 1
 	"explorerframe.dll" = 1
+	"FWPUCLNT.dll" = 1	
 	"gameux.dll" = 1
+	"GameUXLegacyGDFs.dll" = 1	
 	"httpapi.dll" = 1
 	"httpapinew.dll" = 1
 	"ktmw32.dll" = 1

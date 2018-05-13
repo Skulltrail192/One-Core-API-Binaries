@@ -5094,9 +5094,11 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	esent.dll,amd64/esent.dll
 	evr.dll,amd64/evr.dll
 	explorerframe.dll,amd64/explorerframe.dll
+	FWPUCLNT.dll,amd64/FWPUCLNT.dll
 	httpapi.dll,amd64/httpapi.dll
 	httpapinew.dll,amd64/httpapinew.dll	
 	gameux.dll,amd64/gameux.dll
+	GameUXLegacyGDFs.dll,amd64/GameUXLegacyGDFs.dll
 	ktmw32.dll,amd64/ktmw32.dll
 	lsalookup.dll,amd64/lsalookup.dll
 	mf.dll,amd64/mf.dll
@@ -5140,6 +5142,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	wmphoto.dll,amd64/wmphoto.dll
 	WSDApi.dll,amd64/WSDApi.dll
 	wtsapi32.dll,amd64/wtsapi32.dll
+	wmdrmsdk.dll,amd64/wmdrmsdk.dll	
 	wusa.exe,amd64/wusa.exe
 	onex.dll,amd64/onex.dll 
 	pkgmgr.exe,amd64/pkgmgr.exe
@@ -5160,9 +5163,11 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	esent.dll,i386/wesent.dll
 	evr.dll,i386/wevr.dll
 	explorerframe.dll,i386/wexplorerframe.dll
+	FWPUCLNT.dll,i386/wFWPUCLNT.dll	
 	httpapi.dll,i386/whttpapi.dll
 	httpapinew.dll,i386/whttpapinew.dll	
 	gameux.dll,i386/wgameux.dll
+	GameUXLegacyGDFs.dll,i386/wGameUXLegacyGDFs.dll	
 	ktmw32.dll,i386/wktmw32.dll
 	lsalookup.dll,i386/wlsalookup.dll
 	mf.dll,i386/wmf.dll
@@ -5206,12 +5211,14 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	wmphoto.dll,i386/wwmphoto.dll
 	WSDApi.dll,i386/wWSDApi.dll
 	wtsapi32.dll,i386/wwtsapi32.dll
+	wmdrmsdk.dll,i386/wwmdrmsdk.dll
 	wusa.exe,i386/wwusa.exe
 	eappcfg.dll,i386/weappcfg.dll 
 	eappprxy.dll,i386/weappprxy.dll 
 	onex.dll,i386/wonex.dll 
 	pkgmgr.exe,i386/wpkgmgr.exe
 	prntvpt.dll,i386/wprntvpt.dll	
+	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
