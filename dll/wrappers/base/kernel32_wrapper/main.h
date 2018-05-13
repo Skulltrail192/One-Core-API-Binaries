@@ -1180,18 +1180,14 @@ typedef struct _WOW64_LDT_ENTRY {
   } HighWord;
 } WOW64_LDT_ENTRY, *PWOW64_LDT_ENTRY;
 
-// typedef struct _TIME_DYNAMIC_ZONE_INFORMATION
-// {
-     // LONG Bias;
-     // WCHAR StandardName[32];
-     // SYSTEMTIME StandardDate;
-     // LONG StandardBias;
-     // WCHAR DaylightName[32];
-     // SYSTEMTIME DaylightDate;
-     // LONG DaylightBias;
-     // WCHAR TimeZoneKeyName[128];
-     // BOOLEAN DynamicDaylightTimeDisabled;
-// } DYNAMIC_TIME_ZONE_INFORMATION, *PDYNAMIC_TIME_ZONE_INFORMATION;
+typedef struct _CREATEFILE2_EXTENDED_PARAMETERS {
+  DWORD                 dwSize;
+  DWORD                 dwFileAttributes;
+  DWORD                 dwFileFlags;
+  DWORD                 dwSecurityQosFlags;
+  LPSECURITY_ATTRIBUTES lpSecurityAttributes;
+  HANDLE                hTemplateFile;
+} CREATEFILE2_EXTENDED_PARAMETERS, *PCREATEFILE2_EXTENDED_PARAMETERS, *LPCREATEFILE2_EXTENDED_PARAMETERS;
 
 typedef DYNAMIC_TIME_ZONE_INFORMATION RTL_DYNAMIC_TIME_ZONE_INFORMATION;
 

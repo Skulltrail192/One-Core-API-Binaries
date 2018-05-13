@@ -1359,6 +1359,7 @@
 @ stdcall AppPolicyGetThreadInitializationType(ptr ptr) 
 @ stdcall AppPolicyGetWindowingModel(ptr ptr)
 @ stdcall BaseFormatObjectAttributes(ptr ptr ptr)
+@ stdcall CreateFile2(wstr long long long ptr)
 @ stdcall DeleteSynchronizationBarrier(ptr)
 @ stdcall EnterSynchronizationBarrier(ptr long)
 @ stdcall GetCurrentPackageId(ptr ptr)

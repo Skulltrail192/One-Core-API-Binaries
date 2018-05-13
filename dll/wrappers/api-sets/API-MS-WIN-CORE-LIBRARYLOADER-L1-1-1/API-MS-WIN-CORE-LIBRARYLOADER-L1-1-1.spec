@@ -24,7 +24,7 @@
 @ stdcall LoadStringA(long long ptr long) user32.LoadStringA
 @ stdcall LoadStringW(long long ptr long) user32.LoadStringW
 @ stdcall LockResource(long) kernel32.LockResource
-@ stdcall QueryOptionalDelayLoadedAPI(ptr str str long)
+@ stub QueryOptionalDelayLoadedAPI
 @ stdcall RemoveDllDirectory(ptr) kernel32.RemoveDllDirectory
 @ stdcall SetDefaultDllDirectories(long) kernel32.SetDefaultDllDirectories
 @ stdcall SizeofResource(long long) kernel32.SizeofResource

@@ -228,3 +228,22 @@ CreateFileTransactedA(
 					   dwFlagsAndAttributes,
 					   hTemplateFile);
 }
+
+HANDLE 
+WINAPI 
+CreateFile2(
+  _In_      LPCWSTR lpFileName,
+  _In_      DWORD dwDesiredAccess,
+  _In_      DWORD dwShareMode,
+  _In_      DWORD dwCreationDisposition,
+  _In_opt_  LPCREATEFILE2_EXTENDED_PARAMETERS pCreateExParams
+)
+{
+	return CreateFileW(lpFileName, 
+					   dwDesiredAccess, 
+					   dwShareMode, 
+					   pCreateExParams->lpSecurityAttributes, 
+					   dwCreationDisposition, 
+					   pCreateExParams->dwFileFlags |  pCreateExParams->dwFileAttributes,
+					   pCreateExParams->hTemplateFile);
+}
