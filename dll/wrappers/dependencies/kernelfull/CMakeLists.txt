@@ -1,7 +1,7 @@
 
 add_definitions(-D_KERNEL32_)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys)
-spec2def(kernelfull.dll kernelfull.spec ADD_IMPORTLIB)
+spec2def(kernelex.dll kernelex.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
 	stubs.c
@@ -97,21 +97,21 @@ elseif(ARCH STREQUAL "arm")
         client/arm/thread.S)
 endif()
 
-add_asm_files(kernelfull_asm ${ASM_SOURCE})
-add_library(kernelfull SHARED
+add_asm_files(kernelex_asm ${ASM_SOURCE})
+add_library(kernelex SHARED
     ${SOURCE}
-    ${kernelfull_asm}
-    kernelfull.rc
-    ${CMAKE_CURRENT_BINARY_DIR}/kernelfull.def)
+    ${kernelex_asm}
+    kernelex.rc
+    ${CMAKE_CURRENT_BINARY_DIR}/kernelex.def)
 
-set_module_type(kernelfull win32dll ENTRYPOINT DllMain 12)
+set_module_type(kernelex win32dll ENTRYPOINT DllMain 12)
 #############################################
 ## HACK FOR MSVC COMPILATION WITH win32dll ##
-set_subsystem(kernelfull console)
+set_subsystem(kernelex console)
 ################# END  HACK #################
 
-target_link_libraries(kernelfull wine chkstk ${PSEH_LIB})
-add_importlibs(kernelfull ntext ntdll)
-add_pch(kernelfull k32.h SOURCE)
-add_dependencies(kernelfull psdk errcodes asm)
-add_cd_file(TARGET kernelfull DESTINATION reactos/system32 FOR all)
+target_link_libraries(kernelex wine chkstk ${PSEH_LIB})
+add_importlibs(kernelex ntext ntdll)
+add_pch(kernelex k32.h SOURCE)
+add_dependencies(kernelex psdk errcodes asm)
+add_cd_file(TARGET kernelex DESTINATION reactos/system32 FOR all)

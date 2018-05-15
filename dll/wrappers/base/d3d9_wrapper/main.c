@@ -193,7 +193,17 @@ static HRESULT WINAPI IDirect3D9ExImpl_CreateDevice(IDirect3D9Ex * iface, UINT A
                                                   D3DPRESENT_PARAMETERS* pPresentationParameters,
                                                   struct IDirect3DDevice9** ppReturnedDeviceInterface)	
 {
-	return S_OK;
+	if(ppD3D!=NULL){
+		return (ppD3D)->lpVtbl->CreateDevice(ppD3D, 
+											 Adapter,
+											 DeviceType,
+											 hFocusWindow,
+											 BehaviourFlags,
+											 pPresentationParameters,
+											 ppReturnedDeviceInterface);
+	}	
+
+	return D3DERR_INVALIDCALL;	
 }	
 
 static UINT WINAPI IDirect3D9ExImpl_GetAdapterModeCountEx(IDirect3D9Ex *iface,
@@ -264,8 +274,8 @@ static HRESULT WINAPI IDirect3D9ExImpl_GetAdapterLUID(IDirect3D9Ex *iface, UINT 
 {
 	return S_OK;
 }		
-
 static HRESULT WINAPI IDirect3D9ExImpl_CreateDeviceEx(IDirect3D9Ex *iface,
+
         UINT adapter, D3DDEVTYPE device_type, HWND focus_window, DWORD flags,
         D3DPRESENT_PARAMETERS *parameters, D3DDISPLAYMODEEX *mode, IDirect3DDevice9Ex **device)
 {
