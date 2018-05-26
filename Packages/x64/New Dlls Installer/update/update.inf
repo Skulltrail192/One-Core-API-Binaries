@@ -5068,8 +5068,26 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
     HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%
     HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%
     HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
-    HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%		
+    HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%	
 
+	;UIRibbon
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	
 [DestinationDirs]
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
 	CopyAlways.SysWOW64.files=10,SysWOW64  ; %windir%\system32 (don't delay until reboot)
@@ -5081,6 +5099,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 [CopyAlways.System32.Files]
 	avrt.dll,amd64/avrt.dll
 	cabiext.dll,amd64/cabiext.dll
+	CardGames.dll,amd64/CardGames.dll
 	;combase.dll,amd64/combase.dll	- Cause error with .net 4.5 application
 	cryptbase.dll,amd64/cryptbase.dll
 	cryptsp.dll,amd64/cryptsp.dll
@@ -5146,10 +5165,13 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	wusa.exe,amd64/wusa.exe
 	onex.dll,amd64/onex.dll 
 	pkgmgr.exe,amd64/pkgmgr.exe
-	prntvpt.dll,amd64/prntvpt.dll		
+	prntvpt.dll,amd64/prntvpt.dll	
+	XInput9_1_0.dll,amd64/XInput9_1_0.dll
+	
 [CopyAlways.SysWOW64.Files]	
 	avrt.dll,i386/wavrt.dll
 	cabiext.dll,i386/wcabiext.dll
+	CardGames.dll,i386/wCardGames.dll	
 	;combase.dll,i386/wcombase.dll	- Cause error with .net 4.5 application
 	cryptbase.dll,i386/wcryptbase.dll
 	cryptsp.dll,i386/wcryptsp.dll
@@ -5218,6 +5240,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	onex.dll,i386/wonex.dll 
 	pkgmgr.exe,i386/wpkgmgr.exe
 	prntvpt.dll,i386/wprntvpt.dll	
+	XInput9_1_0.dll,i386/wXInput9_1_0.dll	
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
@@ -5225,6 +5248,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 [SourceDisksFiles]
 	amd64/avrt.dll = 1
 	amd64/cabiext = 1
+	amd64/CardGames.dll = 1 
 	;amd64/combase.dll = 1	- Cause error with .net 4.5 application
 	amd64/cryptbase.dll = 1
 	amd64/cryptsp.dll = 1
@@ -5288,9 +5312,11 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	amd64/onex.dll = 1
 	amd64/pkgmgr.exe = 1
 	amd64/prntvpt.dll = 1		
+	amd64/XInput9_1_0.dll = 1		
 	
 	i386/wavrt.dll = 1
 	i386/wcabiext = 1
+	i386/wCardGames.dll = 1 	
 	;i386/wcombase.dll = 1	- Cause error with .net 4.5 application
 	i386/wcryptbase.dll = 1
 	i386/wcryptsp.dll = 1
@@ -5354,5 +5380,6 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	i386/weappcfg.dll = 1
 	i386/weappprxy.dll = 1
 	i386/wonex.dll = 1	
-	i386/wpkgmgr.exe =- 1	
+	i386/wpkgmgr.exe = 1	
 	i386/wprntvpt.dll = 1	
+	i386/wXInput9_1_0.dll = 1
