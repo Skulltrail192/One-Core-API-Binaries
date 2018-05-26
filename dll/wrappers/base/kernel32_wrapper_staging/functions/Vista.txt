@@ -1,2 +1,0 @@
-GetTickCount64
-InitializeCriticalSectionEx 

@@ -1,5 +1,4 @@
-add_subdirectory(kernel32_wrapper_stable)
-add_subdirectory(kernel32_wrapper_staging)
+add_subdirectory(kernel32_wrapper)
 add_subdirectory(ntext_wrapper)
 # add_subdirectory(halext)
 # add_subdirectory(ntkrnlext)
