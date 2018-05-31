@@ -5167,6 +5167,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	pkgmgr.exe,amd64/pkgmgr.exe
 	prntvpt.dll,amd64/prntvpt.dll	
 	XInput9_1_0.dll,amd64/XInput9_1_0.dll
+	WMDRMSDK.DLL,amd64/WMDRMSDK.DLL
 	
 [CopyAlways.SysWOW64.Files]	
 	avrt.dll,i386/wavrt.dll
@@ -5241,6 +5242,7 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	pkgmgr.exe,i386/wpkgmgr.exe
 	prntvpt.dll,i386/wprntvpt.dll	
 	XInput9_1_0.dll,i386/wXInput9_1_0.dll	
+	WMDRMSDK.DLL,i386/wWMDRMSDK.DLL
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
@@ -5312,7 +5314,8 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	amd64/onex.dll = 1
 	amd64/pkgmgr.exe = 1
 	amd64/prntvpt.dll = 1		
-	amd64/XInput9_1_0.dll = 1		
+	amd64/XInput9_1_0.dll = 1
+	amd64/WMDRMSDK.DLL = 1
 	
 	i386/wavrt.dll = 1
 	i386/wcabiext = 1
@@ -5383,3 +5386,4 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	i386/wpkgmgr.exe = 1	
 	i386/wprntvpt.dll = 1	
 	i386/wXInput9_1_0.dll = 1
+	i386/wWMDRMSDK.DLL = 1

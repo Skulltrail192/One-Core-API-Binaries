@@ -2794,6 +2794,7 @@
 	"eappprxy.dll"
 	"onex.dll"
 	"XInput9_1_0.dll"	
+	"WMDRMSDK.DLL"
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
@@ -2869,3 +2870,4 @@
 	"eappprxy.dll" = 1
 	"onex.dll" = 1
 	"XInput9_1_0.dll" = 1		
+	"WMDRMSDK.DLL" = 1
