@@ -147,6 +147,7 @@ extern ULONG BaseDllTag;
 #define FIND_FROMSTART             0x00400000
 #define FIND_FROMEND               0x00800000
 
+#define EXTENDED_STARTUPINFO_PRESENT 0x00080000
 
 //
 // Do not add heap dumps for reports for the process

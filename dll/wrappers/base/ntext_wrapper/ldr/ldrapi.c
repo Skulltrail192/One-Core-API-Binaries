@@ -434,3 +434,13 @@ LdrGetProcedureAddressEx(
 								  ProcedureNumber,
 								  ProcedureAddress);
 }
+
+NTSTATUS 
+LdrAddLoadAsDataTable(
+	PVOID Str2, 
+	PWSTR FilePath,
+	SIZE_T a3, 
+	int a4)
+{
+	return STATUS_NOT_IMPLEMENTED;
+}

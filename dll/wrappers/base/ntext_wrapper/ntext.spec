@@ -1507,6 +1507,7 @@
 @ stdcall EtwReplyNotification(long)
 @ stdcall EtwTraceDiagnosticEvent(long long long long long)
 @ stdcall EtwWriteUMSecurityEvent(ptr long long ptr)
+@ stdcall LdrAddLoadAsDataTable(ptr wstr long long)
 @ stdcall LdrGetProcedureAddressEx(ptr ptr long ptr long)
 @ stdcall LdrLoadAlternateResourceModuleEx(long ptr ptr)
 @ stdcall NtAlpcAcceptConnectPort(ptr ptr long ptr ptr ptr ptr ptr long) 
