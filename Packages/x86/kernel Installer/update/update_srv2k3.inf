@@ -342,15 +342,19 @@
 
 [MustReplace.System32.files]
     ntdll.dll,2k3SP2\ntdll.dll
-	basesrv.dll, 2k3SP2\basesrv.dll
+	;basesrv.dll, 2k3SP2\basesrv.dll
 	csrsrv.dll, 2k3SP2\csrsrv.dll
 	gdibase.dll, 2k3SP2\gdibase.dll
-	kernelfull.dll, 2k3SP2\kernelfull.dll
+	;kernelfull.dll, 2k3SP2\kernelfull.dll
 	userbase.dll, 2k3SP2\userbase.dll
-	uxthemebase.dll, 2k3SP2\uxthemebase.dll	
+	uxthemebase.dll, 2k3SP2\uxthemebase.dll
+	;winsta.dll, 2k3SP2\winsta.dll	
+	;msgina.dll, 2k3SP2\msgina.dll
+	winsrv.dll, 2k3SP2\winsrv.dll
+	themeui.dll, 2k3SP2\themeui.dll
+	;userenv.dll, 2k3SP2\userenv.dll
+	;winlogon.exe, 2k3SP2\winlogon.exe
 	win32k.sys, 2k3SP2\win32k.sys
-	winsta.dll, 2k3SP2\winsta.dll
-	winsrv.dll, 2k3SP2\winsrv.dll	
 	
 [System32.files]
 	win32k.sys, 2k3SP2\win32k.sys
@@ -360,14 +364,18 @@
 	
 [CopyAlways.System32.Files]
     ntdll.dll,2k3SP2\ntdll.dll
-	basesrv.dll, 2k3SP2\basesrv.dll
+	;basesrv.dll, 2k3SP2\basesrv.dll
 	csrsrv.dll, 2k3SP2\csrsrv.dll
 	gdibase.dll, 2k3SP2\gdibase.dll
 	kernelfull.dll, 2k3SP2\kernelfull.dll
 	userbase.dll, 2k3SP2\userbase.dll
 	uxthemebase.dll, 2k3SP2\uxthemebase.dll
-	winsta.dll, 2k3SP2\winsta.dll	
+	;winsta.dll, 2k3SP2\winsta.dll	
+	;msgina.dll, 2k3SP2\msgina.dll
 	winsrv.dll, 2k3SP2\winsrv.dll
+	themeui.dll, 2k3SP2\themeui.dll
+	;userenv.dll, 2k3SP2\userenv.dll
+	;winlogon.exe, 2k3SP2\winlogon.exe
 	win32k.sys, 2k3SP2\win32k.sys
 
 [CopyAlways.DriverCab.files]
@@ -375,16 +383,24 @@
     ntkrpamp.exe,2k3SP2\ntkrpamp.exe
     ntkrnlpa.exe,2k3SP2\ntkrnlpa.exe
     ntkrnlmp.exe,2k3SP2\ntkrnlmp.exe
+	hal.dll,2k3SP2\hal.dll
 	halaacpi.dll,2k3SP2\halaacpi.dll
+	halacpi.dll,2k3SP2\halacpi.dll
+	halapic.dll,2k3SP2\halapic.dll
 	halmacpi.dll,2k3SP2\halmacpi.dll
+	halmps.dll,2k3SP2\halmps.dll
 
 [CopyAlways.Cache.files]
     ntoskrnl.exe,2k3SP2\ntoskrnl.exe
     ntkrpamp.exe,2k3SP2\ntkrpamp.exe
     ntkrnlpa.exe,2k3SP2\ntkrnlpa.exe
     ntkrnlmp.exe,2k3SP2\ntkrnlmp.exe
+	hal.dll,2k3SP2\hal.dll
 	halaacpi.dll,2k3SP2\halaacpi.dll
+	halacpi.dll,2k3SP2\halacpi.dll
+	halapic.dll,2k3SP2\halapic.dll
 	halmacpi.dll,2k3SP2\halmacpi.dll
+	halmps.dll,2k3SP2\halmps.dll
 
 [Uniprocessor.Kernel.files]
     ntoskrnl.exe,2k3SP2\ntoskrnl.exe
