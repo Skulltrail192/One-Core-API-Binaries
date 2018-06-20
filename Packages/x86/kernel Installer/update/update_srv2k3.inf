@@ -322,7 +322,6 @@
 
 [SourceDisksFiles]
     2k3SP2\ntkrnlmp.exe=1
-    2k3SP2\ntdll.dll=1
     2k3SP2\ntkrpamp.exe=1
     2k3SP2\ntoskrnl.exe=1
     2k3SP2\ntkrnlpa.exe=1
@@ -341,7 +340,6 @@
 	CopyFiles = ntfs.CoreDriverFiles
 
 [MustReplace.System32.files]
-    ntdll.dll,2k3SP2\ntdll.dll
 	csrsrv.dll, 2k3SP2\csrsrv.dll
 	gdibase.dll, 2k3SP2\gdibase.dll
 	userbase.dll, 2k3SP2\userbase.dll
@@ -357,7 +355,6 @@
 	ntfs.sys, 2k3SP2\Drivers\ntfs.sys	
 	
 [CopyAlways.System32.Files]
-    ntdll.dll,2k3SP2\ntdll.dll
 	csrsrv.dll, 2k3SP2\csrsrv.dll
 	gdibase.dll, 2k3SP2\gdibase.dll
 	userbase.dll, 2k3SP2\userbase.dll
