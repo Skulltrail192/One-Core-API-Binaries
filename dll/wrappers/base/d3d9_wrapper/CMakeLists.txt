@@ -1,24 +1,35 @@
 
-add_definitions(-D_ADVAPI32_)
+add_definitions(
+    -D__WINESRC__
+    -DUSE_WIN32_OPENGL)
 
-remove_definitions(-D_WIN32_WINNT=0x502)
-add_definitions(-D_WIN32_WINNT=0x600)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
-include_directories(${REACTOS_SOURCE_DIR}/sdk/lib/rtl)
-
 spec2def(d3d9_wrapper.dll d3d9_wrapper.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
-    main.c
+    buffer.c
+    d3d9_main.c
+    device.c
+    directx.c
+    query.c
+    shader.c
+    stateblock.c
+    surface.c
+    swapchain.c
+    texture.c
+    vertexdeclaration.c
+    volume.c
+    d3d9_private.h)
+
+add_library(d3d9_wrapper SHARED
+    ${SOURCE}
+    guid.c
     version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/d3d9_wrapper_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/d3d9_wrapper.def)
 
-add_library(d3d9_wrapper SHARED ${SOURCE} guid.c)
-set_module_type(d3d9_wrapper win32dll ENTRYPOINT 0)
-
+set_module_type(d3d9_wrapper win32dll UNICODE)
 target_link_libraries(d3d9_wrapper wine)
-
-add_importlibs(d3d9_wrapper d3d9base ntdll kernel32 user32 gdi32)
-
+add_importlibs(d3d9_wrapper d3dwine d3d9base user32 msvcrt kernel32 ntdll)
+add_pch(d3d9_wrapper d3d9_private.h SOURCE)
 add_cd_file(TARGET d3d9_wrapper DESTINATION reactos/system32 FOR all)

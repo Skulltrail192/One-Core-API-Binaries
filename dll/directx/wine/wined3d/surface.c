@@ -36,208 +36,6 @@ WINE_DECLARE_DEBUG_CHANNEL(d3d_perf);
 static const DWORD surface_simple_locations = WINED3D_LOCATION_SYSMEM
         | WINED3D_LOCATION_USER_MEMORY | WINED3D_LOCATION_BUFFER;
 
-struct blt_info
-{
-    GLenum binding;
-    GLenum bind_target;
-    enum wined3d_gl_resource_type tex_type;
-    struct wined3d_vec3 texcoords[4];
-};
-
-struct float_rect
-{
-    float l;
-    float t;
-    float r;
-    float b;
-};
-
-static inline void cube_coords_float(const RECT *r, UINT w, UINT h, struct float_rect *f)
-{
-    f->l = ((r->left * 2.0f) / w) - 1.0f;
-    f->t = ((r->top * 2.0f) / h) - 1.0f;
-    f->r = ((r->right * 2.0f) / w) - 1.0f;
-    f->b = ((r->bottom * 2.0f) / h) - 1.0f;
-}
-
-static void texture2d_get_blt_info(const struct wined3d_texture *texture,
-        unsigned int sub_resource_idx, const RECT *rect, struct blt_info *info)
-{
-    struct wined3d_vec3 *coords = info->texcoords;
-    struct float_rect f;
-    unsigned int level;
-    GLenum target;
-    GLsizei w, h;
-
-    level = sub_resource_idx % texture->level_count;
-    w = wined3d_texture_get_level_pow2_width(texture, level);
-    h = wined3d_texture_get_level_pow2_height(texture, level);
-    target = wined3d_texture_get_sub_resource_target(texture, sub_resource_idx);
-
-    switch (target)
-    {
-        default:
-            FIXME("Unsupported texture target %#x.\n", target);
-            /* Fall back to GL_TEXTURE_2D */
-        case GL_TEXTURE_2D:
-            info->binding = GL_TEXTURE_BINDING_2D;
-            info->bind_target = GL_TEXTURE_2D;
-            info->tex_type = WINED3D_GL_RES_TYPE_TEX_2D;
-            coords[0].x = (float)rect->left / w;
-            coords[0].y = (float)rect->top / h;
-            coords[0].z = 0.0f;
-
-            coords[1].x = (float)rect->right / w;
-            coords[1].y = (float)rect->top / h;
-            coords[1].z = 0.0f;
-
-            coords[2].x = (float)rect->left / w;
-            coords[2].y = (float)rect->bottom / h;
-            coords[2].z = 0.0f;
-
-            coords[3].x = (float)rect->right / w;
-            coords[3].y = (float)rect->bottom / h;
-            coords[3].z = 0.0f;
-            break;
-
-        case GL_TEXTURE_RECTANGLE_ARB:
-            info->binding = GL_TEXTURE_BINDING_RECTANGLE_ARB;
-            info->bind_target = GL_TEXTURE_RECTANGLE_ARB;
-            info->tex_type = WINED3D_GL_RES_TYPE_TEX_RECT;
-            coords[0].x = rect->left;  coords[0].y = rect->top;    coords[0].z = 0.0f;
-            coords[1].x = rect->right; coords[1].y = rect->top;    coords[1].z = 0.0f;
-            coords[2].x = rect->left;  coords[2].y = rect->bottom; coords[2].z = 0.0f;
-            coords[3].x = rect->right; coords[3].y = rect->bottom; coords[3].z = 0.0f;
-            break;
-
-        case GL_TEXTURE_CUBE_MAP_POSITIVE_X:
-            info->binding = GL_TEXTURE_BINDING_CUBE_MAP_ARB;
-            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
-            info->tex_type = WINED3D_GL_RES_TYPE_TEX_CUBE;
-            cube_coords_float(rect, w, h, &f);
-
-            coords[0].x =  1.0f;   coords[0].y = -f.t;   coords[0].z = -f.l;
-            coords[1].x =  1.0f;   coords[1].y = -f.t;   coords[1].z = -f.r;
-            coords[2].x =  1.0f;   coords[2].y = -f.b;   coords[2].z = -f.l;
-            coords[3].x =  1.0f;   coords[3].y = -f.b;   coords[3].z = -f.r;
-            break;
-
-        case GL_TEXTURE_CUBE_MAP_NEGATIVE_X:
-            info->binding = GL_TEXTURE_BINDING_CUBE_MAP_ARB;
-            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
-            info->tex_type = WINED3D_GL_RES_TYPE_TEX_CUBE;
-            cube_coords_float(rect, w, h, &f);
-
-            coords[0].x = -1.0f;   coords[0].y = -f.t;   coords[0].z = f.l;
-            coords[1].x = -1.0f;   coords[1].y = -f.t;   coords[1].z = f.r;
-            coords[2].x = -1.0f;   coords[2].y = -f.b;   coords[2].z = f.l;
-            coords[3].x = -1.0f;   coords[3].y = -f.b;   coords[3].z = f.r;
-            break;
-
-        case GL_TEXTURE_CUBE_MAP_POSITIVE_Y:
-            info->binding = GL_TEXTURE_BINDING_CUBE_MAP_ARB;
-            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
-            info->tex_type = WINED3D_GL_RES_TYPE_TEX_CUBE;
-            cube_coords_float(rect, w, h, &f);
-
-            coords[0].x = f.l;   coords[0].y =  1.0f;   coords[0].z = f.t;
-            coords[1].x = f.r;   coords[1].y =  1.0f;   coords[1].z = f.t;
-            coords[2].x = f.l;   coords[2].y =  1.0f;   coords[2].z = f.b;
-            coords[3].x = f.r;   coords[3].y =  1.0f;   coords[3].z = f.b;
-            break;
-
-        case GL_TEXTURE_CUBE_MAP_NEGATIVE_Y:
-            info->binding = GL_TEXTURE_BINDING_CUBE_MAP_ARB;
-            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
-            info->tex_type = WINED3D_GL_RES_TYPE_TEX_CUBE;
-            cube_coords_float(rect, w, h, &f);
-
-            coords[0].x = f.l;   coords[0].y = -1.0f;   coords[0].z = -f.t;
-            coords[1].x = f.r;   coords[1].y = -1.0f;   coords[1].z = -f.t;
-            coords[2].x = f.l;   coords[2].y = -1.0f;   coords[2].z = -f.b;
-            coords[3].x = f.r;   coords[3].y = -1.0f;   coords[3].z = -f.b;
-            break;
-
-        case GL_TEXTURE_CUBE_MAP_POSITIVE_Z:
-            info->binding = GL_TEXTURE_BINDING_CUBE_MAP_ARB;
-            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
-            info->tex_type = WINED3D_GL_RES_TYPE_TEX_CUBE;
-            cube_coords_float(rect, w, h, &f);
-
-            coords[0].x = f.l;   coords[0].y = -f.t;   coords[0].z =  1.0f;
-            coords[1].x = f.r;   coords[1].y = -f.t;   coords[1].z =  1.0f;
-            coords[2].x = f.l;   coords[2].y = -f.b;   coords[2].z =  1.0f;
-            coords[3].x = f.r;   coords[3].y = -f.b;   coords[3].z =  1.0f;
-            break;
-
-        case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z:
-            info->binding = GL_TEXTURE_BINDING_CUBE_MAP_ARB;
-            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
-            info->tex_type = WINED3D_GL_RES_TYPE_TEX_CUBE;
-            cube_coords_float(rect, w, h, &f);
-
-            coords[0].x = -f.l;   coords[0].y = -f.t;   coords[0].z = -1.0f;
-            coords[1].x = -f.r;   coords[1].y = -f.t;   coords[1].z = -1.0f;
-            coords[2].x = -f.l;   coords[2].y = -f.b;   coords[2].z = -1.0f;
-            coords[3].x = -f.r;   coords[3].y = -f.b;   coords[3].z = -1.0f;
-            break;
-    }
-}
-
-/* Context activation is done by the caller. */
-void draw_textured_quad(struct wined3d_texture *texture, unsigned int sub_resource_idx,
-        struct wined3d_context *context, const RECT *src_rect, const RECT *dst_rect,
-        enum wined3d_texture_filter_type filter)
-{
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-    struct blt_info info;
-
-    texture2d_get_blt_info(texture, sub_resource_idx, src_rect, &info);
-
-    gl_info->gl_ops.gl.p_glEnable(info.bind_target);
-    checkGLcall("glEnable(bind_target)");
-
-    context_bind_texture(context, info.bind_target, texture->texture_rgb.name);
-
-    /* Filtering for StretchRect */
-    gl_info->gl_ops.gl.p_glTexParameteri(info.bind_target, GL_TEXTURE_MAG_FILTER, wined3d_gl_mag_filter(filter));
-    checkGLcall("glTexParameteri");
-    gl_info->gl_ops.gl.p_glTexParameteri(info.bind_target, GL_TEXTURE_MIN_FILTER,
-            wined3d_gl_min_mip_filter(filter, WINED3D_TEXF_NONE));
-    checkGLcall("glTexParameteri");
-    gl_info->gl_ops.gl.p_glTexParameteri(info.bind_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    gl_info->gl_ops.gl.p_glTexParameteri(info.bind_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    if (context->gl_info->supported[EXT_TEXTURE_SRGB_DECODE])
-        gl_info->gl_ops.gl.p_glTexParameteri(info.bind_target, GL_TEXTURE_SRGB_DECODE_EXT, GL_SKIP_DECODE_EXT);
-    gl_info->gl_ops.gl.p_glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    checkGLcall("glTexEnvi");
-
-    /* Draw a quad */
-    gl_info->gl_ops.gl.p_glBegin(GL_TRIANGLE_STRIP);
-    gl_info->gl_ops.gl.p_glTexCoord3fv(&info.texcoords[0].x);
-    gl_info->gl_ops.gl.p_glVertex2i(dst_rect->left, dst_rect->top);
-
-    gl_info->gl_ops.gl.p_glTexCoord3fv(&info.texcoords[1].x);
-    gl_info->gl_ops.gl.p_glVertex2i(dst_rect->right, dst_rect->top);
-
-    gl_info->gl_ops.gl.p_glTexCoord3fv(&info.texcoords[2].x);
-    gl_info->gl_ops.gl.p_glVertex2i(dst_rect->left, dst_rect->bottom);
-
-    gl_info->gl_ops.gl.p_glTexCoord3fv(&info.texcoords[3].x);
-    gl_info->gl_ops.gl.p_glVertex2i(dst_rect->right, dst_rect->bottom);
-    gl_info->gl_ops.gl.p_glEnd();
-
-    /* Unbind the texture */
-    context_bind_texture(context, info.bind_target, 0);
-
-    /* We changed the filtering settings on the texture. Inform the
-     * container about this to get the filters reset properly next draw. */
-    texture->texture_rgb.sampler_desc.mag_filter = WINED3D_TEXF_POINT;
-    texture->texture_rgb.sampler_desc.min_filter = WINED3D_TEXF_POINT;
-    texture->texture_rgb.sampler_desc.mip_filter = WINED3D_TEXF_NONE;
-    texture->texture_rgb.sampler_desc.srgb_decode = FALSE;
-}
-
 /* Works correctly only for <= 4 bpp formats. */
 static void get_color_masks(const struct wined3d_format *format, DWORD *masks)
 {
@@ -362,7 +160,6 @@ static void texture2d_blt_fbo(const struct wined3d_device *device, struct wined3
     GLenum gl_filter;
     GLenum buffer;
     RECT s, d;
-    int i;
 
     TRACE("device %p, context %p, filter %s, src_texture %p, src_sub_resource_idx %u, src_location %s, "
             "src_rect %s, dst_texture %p, dst_sub_resource_idx %u, dst_location %s, dst_rect %s.\n",
@@ -475,8 +272,10 @@ static void texture2d_blt_fbo(const struct wined3d_device *device, struct wined3
     context_invalidate_state(context, STATE_FRAMEBUFFER);
 
     gl_info->gl_ops.gl.p_glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    for (i = 0; i < MAX_RENDER_TARGETS; ++i)
-        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITE(i)));
+    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE));
+    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1));
+    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2));
+    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3));
 
     gl_info->gl_ops.gl.p_glDisable(GL_SCISSOR_TEST);
     context_invalidate_state(context, STATE_RENDER(WINED3D_RS_SCISSORTESTENABLE));
@@ -504,6 +303,9 @@ static BOOL fbo_blitter_supported(enum wined3d_blit_op blit_op, const struct win
 
     /* Source and/or destination need to be on the GL side */
     if (!(src_resource->access & dst_resource->access & WINED3D_RESOURCE_ACCESS_GPU))
+        return FALSE;
+
+    if (src_resource->type != WINED3D_RTYPE_TEXTURE_2D)
         return FALSE;
 
     switch (blit_op)
@@ -767,52 +569,6 @@ static void texture2d_download_data(struct wined3d_texture *texture, unsigned in
     heap_free(temporary_mem);
 }
 
-static HRESULT texture2d_upload_from_surface(struct wined3d_texture *dst_texture, unsigned int dst_sub_resource_idx,
-        unsigned int dst_x, unsigned int dst_y, struct wined3d_texture *src_texture,
-        unsigned int src_sub_resource_idx, const struct wined3d_box *src_box)
-{
-    unsigned int src_row_pitch, src_slice_pitch;
-    unsigned int src_level, dst_level;
-    struct wined3d_context *context;
-    struct wined3d_bo_address data;
-    UINT update_w, update_h;
-
-    TRACE("dst_texture %p, dst_sub_resource_idx %u, dst_x %u, dst_y %u, "
-            "src_texture %p, src_sub_resource_idx %u, src_box %s.\n",
-            dst_texture, dst_sub_resource_idx, dst_x, dst_y,
-            src_texture, src_sub_resource_idx, debug_box(src_box));
-
-    context = context_acquire(dst_texture->resource.device, NULL, 0);
-
-    /* Only load the sub-resource for partial updates. For newly allocated
-     * textures the texture wouldn't be the current location, and we'd upload
-     * zeroes just to overwrite them again. */
-    update_w = src_box->right - src_box->left;
-    update_h = src_box->bottom - src_box->top;
-    dst_level = dst_sub_resource_idx % dst_texture->level_count;
-    if (update_w == wined3d_texture_get_level_width(dst_texture, dst_level)
-            && update_h == wined3d_texture_get_level_height(dst_texture, dst_level))
-        wined3d_texture_prepare_texture(dst_texture, context, FALSE);
-    else
-        wined3d_texture_load_location(dst_texture, dst_sub_resource_idx, context, WINED3D_LOCATION_TEXTURE_RGB);
-    wined3d_texture_bind_and_dirtify(dst_texture, context, FALSE);
-
-    src_level = src_sub_resource_idx % src_texture->level_count;
-    wined3d_texture_get_memory(src_texture, src_sub_resource_idx, &data,
-            src_texture->sub_resources[src_sub_resource_idx].locations);
-    wined3d_texture_get_pitch(src_texture, src_level, &src_row_pitch, &src_slice_pitch);
-
-    wined3d_texture_upload_data(dst_texture, dst_sub_resource_idx, context, src_texture->resource.format,
-            src_box, wined3d_const_bo_address(&data), src_row_pitch, src_slice_pitch, dst_x, dst_y, 0, FALSE);
-
-    context_release(context);
-
-    wined3d_texture_validate_location(dst_texture, dst_sub_resource_idx, WINED3D_LOCATION_TEXTURE_RGB);
-    wined3d_texture_invalidate_location(dst_texture, dst_sub_resource_idx, ~WINED3D_LOCATION_TEXTURE_RGB);
-
-    return WINED3D_OK;
-}
-
 /* See also float_16_to_32() in wined3d_private.h */
 static inline unsigned short float_32_to_16(const float *in)
 {
@@ -1045,126 +801,6 @@ static void convert_yuy2_r5g6b5(const BYTE *src, BYTE *dst,
     }
 }
 
-static void convert_dxt1_a8r8g8b8(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt1_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8A8_UNORM, w, h);
-}
-
-static void convert_dxt1_x8r8g8b8(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt1_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8X8_UNORM, w, h);
-}
-
-static void convert_dxt1_a4r4g4b4(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt1_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B4G4R4A4_UNORM, w, h);
-}
-
-static void convert_dxt1_x4r4g4b4(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt1_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B4G4R4X4_UNORM, w, h);
-}
-
-static void convert_dxt1_a1r5g5b5(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt1_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B5G5R5A1_UNORM, w, h);
-}
-
-static void convert_dxt1_x1r5g5b5(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt1_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B5G5R5X1_UNORM, w, h);
-}
-
-static void convert_dxt3_a8r8g8b8(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt3_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8A8_UNORM, w, h);
-}
-
-static void convert_dxt3_x8r8g8b8(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt3_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8X8_UNORM, w, h);
-}
-
-static void convert_dxt3_a4r4g4b4(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt3_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B4G4R4A4_UNORM, w, h);
-}
-
-static void convert_dxt3_x4r4g4b4(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt3_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B4G4R4X4_UNORM, w, h);
-}
-
-static void convert_dxt5_a8r8g8b8(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt5_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8A8_UNORM, w, h);
-}
-
-static void convert_dxt5_x8r8g8b8(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt5_decode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8X8_UNORM, w, h);
-}
-
-static void convert_a8r8g8b8_dxt1(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt1_encode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8A8_UNORM, w, h);
-}
-
-static void convert_x8r8g8b8_dxt1(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt1_encode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8X8_UNORM, w, h);
-}
-
-static void convert_a1r5g5b5_dxt1(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt1_encode(src, dst, pitch_in, pitch_out, WINED3DFMT_B5G5R5A1_UNORM, w, h);
-}
-
-static void convert_x1r5g5b5_dxt1(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt1_encode(src, dst, pitch_in, pitch_out, WINED3DFMT_B5G5R5X1_UNORM, w, h);
-}
-
-static void convert_a8r8g8b8_dxt3(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt3_encode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8A8_UNORM, w, h);
-}
-
-static void convert_x8r8g8b8_dxt3(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt3_encode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8X8_UNORM, w, h);
-}
-
-static void convert_a8r8g8b8_dxt5(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt5_encode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8A8_UNORM, w, h);
-}
-
-static void convert_x8r8g8b8_dxt5(const BYTE *src, BYTE *dst,
-        DWORD pitch_in, DWORD pitch_out, unsigned int w, unsigned int h)
-{
-    wined3d_dxt5_encode(src, dst, pitch_in, pitch_out, WINED3DFMT_B8G8R8X8_UNORM, w, h);
-}
-
 struct d3dfmt_converter_desc
 {
     enum wined3d_format_id from, to;
@@ -1181,33 +817,6 @@ static const struct d3dfmt_converter_desc converters[] =
     {WINED3DFMT_YUY2,           WINED3DFMT_B5G6R5_UNORM,    convert_yuy2_r5g6b5},
 };
 
-static const struct d3dfmt_converter_desc dxtn_converters[] =
-{
-    /* decode DXT */
-    {WINED3DFMT_DXT1,           WINED3DFMT_B8G8R8A8_UNORM,  convert_dxt1_a8r8g8b8},
-    {WINED3DFMT_DXT1,           WINED3DFMT_B8G8R8X8_UNORM,  convert_dxt1_x8r8g8b8},
-    {WINED3DFMT_DXT1,           WINED3DFMT_B4G4R4A4_UNORM,  convert_dxt1_a4r4g4b4},
-    {WINED3DFMT_DXT1,           WINED3DFMT_B4G4R4X4_UNORM,  convert_dxt1_x4r4g4b4},
-    {WINED3DFMT_DXT1,           WINED3DFMT_B5G5R5A1_UNORM,  convert_dxt1_a1r5g5b5},
-    {WINED3DFMT_DXT1,           WINED3DFMT_B5G5R5X1_UNORM,  convert_dxt1_x1r5g5b5},
-    {WINED3DFMT_DXT3,           WINED3DFMT_B8G8R8A8_UNORM,  convert_dxt3_a8r8g8b8},
-    {WINED3DFMT_DXT3,           WINED3DFMT_B8G8R8X8_UNORM,  convert_dxt3_x8r8g8b8},
-    {WINED3DFMT_DXT3,           WINED3DFMT_B4G4R4A4_UNORM,  convert_dxt3_a4r4g4b4},
-    {WINED3DFMT_DXT3,           WINED3DFMT_B4G4R4X4_UNORM,  convert_dxt3_x4r4g4b4},
-    {WINED3DFMT_DXT5,           WINED3DFMT_B8G8R8A8_UNORM,  convert_dxt5_a8r8g8b8},
-    {WINED3DFMT_DXT5,           WINED3DFMT_B8G8R8X8_UNORM,  convert_dxt5_x8r8g8b8},
-
-    /* encode DXT */
-    {WINED3DFMT_B8G8R8A8_UNORM, WINED3DFMT_DXT1,            convert_a8r8g8b8_dxt1},
-    {WINED3DFMT_B8G8R8X8_UNORM, WINED3DFMT_DXT1,            convert_x8r8g8b8_dxt1},
-    {WINED3DFMT_B5G5R5A1_UNORM, WINED3DFMT_DXT1,            convert_a1r5g5b5_dxt1},
-    {WINED3DFMT_B5G5R5X1_UNORM, WINED3DFMT_DXT1,            convert_x1r5g5b5_dxt1},
-    {WINED3DFMT_B8G8R8A8_UNORM, WINED3DFMT_DXT3,            convert_a8r8g8b8_dxt3},
-    {WINED3DFMT_B8G8R8X8_UNORM, WINED3DFMT_DXT3,            convert_x8r8g8b8_dxt3},
-    {WINED3DFMT_B8G8R8A8_UNORM, WINED3DFMT_DXT5,            convert_a8r8g8b8_dxt5},
-    {WINED3DFMT_B8G8R8X8_UNORM, WINED3DFMT_DXT5,            convert_x8r8g8b8_dxt5}
-};
-
 static inline const struct d3dfmt_converter_desc *find_converter(enum wined3d_format_id from,
         enum wined3d_format_id to)
 {
@@ -1217,12 +826,6 @@ static inline const struct d3dfmt_converter_desc *find_converter(enum wined3d_fo
     {
         if (converters[i].from == from && converters[i].to == to)
             return &converters[i];
-    }
-
-    for (i = 0; i < (sizeof(dxtn_converters) / sizeof(*dxtn_converters)); ++i)
-    {
-        if (dxtn_converters[i].from == from && dxtn_converters[i].to == to)
-            return wined3d_dxtn_supported() ? &dxtn_converters[i] : NULL;
     }
 
     return NULL;
@@ -1909,6 +1512,12 @@ static HRESULT wined3d_texture_blt_special(struct wined3d_texture *dst_texture, 
             dst_texture, dst_sub_resource_idx, wine_dbgstr_rect(dst_rect), src_texture, src_sub_resource_idx,
             wine_dbgstr_rect(src_rect), flags, fx, debug_d3dtexturefiltertype(filter));
 
+    if (dst_texture->resource.type != WINED3D_RTYPE_TEXTURE_2D)
+    {
+        FIXME("Not implemented for %s resources.\n", debug_d3dresourcetype(dst_texture->resource.type));
+        return WINED3DERR_INVALIDCALL;
+    }
+
     /* Get the swapchain. One of the surfaces has to be a primary surface. */
     if (!(dst_texture->resource.access & WINED3D_RESOURCE_ACCESS_GPU))
     {
@@ -2571,6 +2180,9 @@ static BOOL ffp_blit_supported(enum wined3d_blit_op blit_op, const struct wined3
     const struct wined3d_format *dst_format = dst_resource->format;
     BOOL decompress;
 
+    if (src_resource->type != WINED3D_RTYPE_TEXTURE_2D)
+        return FALSE;
+
     decompress = src_format && (src_format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & WINED3DFMT_FLAG_COMPRESSED)
             && !(dst_format->flags[WINED3D_GL_RES_TYPE_TEX_2D] & WINED3DFMT_FLAG_COMPRESSED);
     if (!decompress && !(src_resource->access & dst_resource->access & WINED3D_RESOURCE_ACCESS_GPU))
@@ -2712,6 +2324,7 @@ static DWORD ffp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
     struct wined3d_resource *src_resource, *dst_resource;
+    struct wined3d_texture *staging_texture = NULL;
     struct wined3d_color_key old_blt_key;
     struct wined3d_device *device;
     struct wined3d_blitter *next;
@@ -2736,10 +2349,48 @@ static DWORD ffp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit
     old_color_key_flags = src_texture->async.color_key_flags;
     wined3d_texture_set_color_key(src_texture, WINED3D_CKEY_SRC_BLT, color_key);
 
-    /* Make sure the surface is up-to-date. This should probably use
-     * surface_load_location() and worry about the destination surface too,
-     * unless we're overwriting it completely. */
-    wined3d_texture_load(src_texture, context, FALSE);
+    if (!(src_texture->resource.access & WINED3D_RESOURCE_ACCESS_GPU))
+    {
+        struct wined3d_resource_desc desc;
+        struct wined3d_box upload_box;
+        unsigned int src_level;
+        HRESULT hr;
+
+        TRACE("Source texture is not GPU accessible, creating a staging texture.\n");
+
+        src_level = src_sub_resource_idx % src_texture->level_count;
+        desc.resource_type = WINED3D_RTYPE_TEXTURE_2D;
+        desc.format = src_texture->resource.format->id;
+        desc.multisample_type = src_texture->resource.multisample_type;
+        desc.multisample_quality = src_texture->resource.multisample_quality;
+        desc.usage = WINED3DUSAGE_PRIVATE;
+        desc.access = WINED3D_RESOURCE_ACCESS_GPU;
+        desc.width = wined3d_texture_get_level_width(src_texture, src_level);
+        desc.height = wined3d_texture_get_level_height(src_texture, src_level);
+        desc.depth = 1;
+        desc.size = 0;
+
+        if (FAILED(hr = wined3d_texture_create(device, &desc, 1, 1, 0,
+                NULL, NULL, &wined3d_null_parent_ops, &staging_texture)))
+        {
+            ERR("Failed to create staging texture, hr %#x.\n", hr);
+            return dst_location;
+        }
+
+        wined3d_box_set(&upload_box, 0, 0, desc.width, desc.height, 0, desc.depth);
+        wined3d_texture_upload_from_texture(staging_texture, 0, 0, 0, 0,
+                src_texture, src_sub_resource_idx, &upload_box);
+
+        src_texture = staging_texture;
+        src_sub_resource_idx = 0;
+    }
+    else
+    {
+        /* Make sure the surface is up-to-date. This should probably use
+         * surface_load_location() and worry about the destination surface
+         * too, unless we're overwriting it completely. */
+        wined3d_texture_load(src_texture, context, FALSE);
+    }
 
     context_apply_ffp_blit_state(context, device);
 
@@ -2793,7 +2444,7 @@ static DWORD ffp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit
         checkGLcall("glAlphaFunc");
     }
 
-    draw_textured_quad(src_texture, src_sub_resource_idx, context, src_rect, dst_rect, filter);
+    context_draw_textured_quad(context, src_texture, src_sub_resource_idx, src_rect, dst_rect, filter);
 
     if (op == WINED3D_BLIT_OP_COLOR_BLIT_ALPHATEST || color_key)
     {
@@ -2820,6 +2471,9 @@ static DWORD ffp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit
     /* Restore the color key parameters */
     wined3d_texture_set_color_key(src_texture, WINED3D_CKEY_SRC_BLT,
             (old_color_key_flags & WINED3D_CKEY_SRC_BLT) ? &old_blt_key : NULL);
+
+    if (staging_texture)
+        wined3d_texture_decref(staging_texture);
 
     return dst_location;
 }
@@ -3094,8 +2748,7 @@ static HRESULT surface_cpu_blt(struct wined3d_texture *dst_texture, unsigned int
             && (src_width != dst_width || src_height != dst_height))
     {
         /* Can happen when d3d9 apps do a StretchRect() call which isn't handled in GL. */
-        static int once;
-        if (!once++) FIXME("Filter %s not supported in software blit.\n", debug_d3dtexturefiltertype(filter));
+        FIXME("Filter %s not supported in software blit.\n", debug_d3dtexturefiltertype(filter));
     }
 
     xinc = (src_width << 16) / dst_width;
@@ -3814,18 +3467,16 @@ HRESULT texture2d_blt(struct wined3d_texture *dst_texture, unsigned int dst_sub_
             TRACE("Not doing upload because the destination format needs conversion.\n");
         else
         {
-            if (SUCCEEDED(texture2d_upload_from_surface(dst_texture, dst_sub_resource_idx,
-                    dst_box->left, dst_box->top, src_texture, src_sub_resource_idx, src_box)))
+            wined3d_texture_upload_from_texture(dst_texture, dst_sub_resource_idx, dst_box->left,
+                    dst_box->top, dst_box->front, src_texture, src_sub_resource_idx, src_box);
+            if (!wined3d_resource_is_offscreen(&dst_texture->resource))
             {
-                if (!wined3d_resource_is_offscreen(&dst_texture->resource))
-                {
-                    context = context_acquire(device, dst_texture, dst_sub_resource_idx);
-                    wined3d_texture_load_location(dst_texture, dst_sub_resource_idx,
-                            context, dst_texture->resource.draw_binding);
-                    context_release(context);
-                }
-                return WINED3D_OK;
+                context = context_acquire(device, dst_texture, dst_sub_resource_idx);
+                wined3d_texture_load_location(dst_texture, dst_sub_resource_idx,
+                        context, dst_texture->resource.draw_binding);
+                context_release(context);
             }
+            return WINED3D_OK;
         }
     }
     else if (dst_swapchain && dst_swapchain->back_buffers

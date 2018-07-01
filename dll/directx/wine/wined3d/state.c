@@ -36,7 +36,6 @@
 #include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
-WINE_DECLARE_DEBUG_CHANNEL(d3d_shader);
 
 ULONG CDECL wined3d_blend_state_incref(struct wined3d_blend_state *state)
 {
@@ -534,14 +533,12 @@ static void state_blend(struct wined3d_context *context, const struct wined3d_st
     const struct wined3d_format *rt_format;
     GLenum src_blend, dst_blend;
     unsigned int rt_fmt_flags;
-    BOOL enable_dual_blend;
     BOOL enable_blend;
 
     enable_blend = state->fb->render_targets[0] && state->render_states[WINED3D_RS_ALPHABLENDENABLE];
-    enable_dual_blend = wined3d_dualblend_enabled(state, context->gl_info);
-
-    if (enable_blend && !enable_dual_blend)
+    if (enable_blend)
     {
+        rt_format = state->fb->render_targets[0]->format;
         rt_fmt_flags = state->fb->render_targets[0]->format_flags;
 
         /* Disable blending in all cases even without pixelshaders.
@@ -549,13 +546,6 @@ static void state_blend(struct wined3d_context *context, const struct wined3d_st
          * The d3d9 visual test confirms the behavior. */
         if (context->render_offscreen && !(rt_fmt_flags & WINED3DFMT_FLAG_POSTPIXELSHADER_BLENDING))
             enable_blend = FALSE;
-    }
-
-    /* Dual state blending changes the assignment of the output variables */
-    if (context->last_was_dual_blend != enable_dual_blend)
-    {
-        context->shader_update_mask |= 1u << WINED3D_SHADER_TYPE_PIXEL;
-        context->last_was_dual_blend = enable_dual_blend;
     }
 
     if (!enable_blend)
@@ -568,7 +558,6 @@ static void state_blend(struct wined3d_context *context, const struct wined3d_st
     gl_info->gl_ops.gl.p_glEnable(GL_BLEND);
     checkGLcall("glEnable(GL_BLEND)");
 
-    rt_format = state->fb->render_targets[0]->format;
     gl_blend_from_d3d(&src_blend, &dst_blend,
             state->render_states[WINED3D_RS_SRCBLEND],
             state->render_states[WINED3D_RS_DESTBLEND], rt_format);
@@ -1014,7 +1003,7 @@ static void state_stencil(struct wined3d_context *context, const struct wined3d_
     }
 }
 
-static void state_stencilwrite2s(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
+static void state_stencilwrite2s_ext(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
     DWORD mask = state->fb->depth_stencil ? state->render_states[WINED3D_RS_STENCILWRITEMASK] : 0;
     const struct wined3d_gl_info *gl_info = context->gl_info;
@@ -1566,6 +1555,9 @@ static void state_debug_monitor(struct wined3d_context *context, const struct wi
 static void state_colorwrite(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
     DWORD mask0 = state->render_states[WINED3D_RS_COLORWRITEENABLE];
+    DWORD mask1 = state->render_states[WINED3D_RS_COLORWRITEENABLE1];
+    DWORD mask2 = state->render_states[WINED3D_RS_COLORWRITEENABLE2];
+    DWORD mask3 = state->render_states[WINED3D_RS_COLORWRITEENABLE3];
     const struct wined3d_gl_info *gl_info = context->gl_info;
 
     TRACE("Color mask: r(%d) g(%d) b(%d) a(%d)\n",
@@ -1579,7 +1571,13 @@ static void state_colorwrite(struct wined3d_context *context, const struct wined
             mask0 & WINED3DCOLORWRITEENABLE_ALPHA ? GL_TRUE : GL_FALSE);
     checkGLcall("glColorMask(...)");
 
-    /* FIXME: WINED3D_RS_COLORWRITEENABLE1 .. WINED3D_RS_COLORWRITEENABLE7 not implemented. */
+    if (!((mask1 == mask0 && mask2 == mask0 && mask3 == mask0)
+        || (mask1 == 0xf && mask2 == 0xf && mask3 == 0xf)))
+    {
+        FIXME("WINED3D_RS_COLORWRITEENABLE/1/2/3, %#x/%#x/%#x/%#x not yet implemented.\n",
+            mask0, mask1, mask2, mask3);
+        FIXME("Missing of cap D3DPMISCCAPS_INDEPENDENTWRITEMASKS wasn't honored?\n");
+    }
 }
 
 static void set_color_mask(const struct wined3d_gl_info *gl_info, UINT index, DWORD mask)
@@ -1592,20 +1590,24 @@ static void set_color_mask(const struct wined3d_gl_info *gl_info, UINT index, DW
     checkGLcall("glColorMaski");
 }
 
-static void state_colorwrite_i(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
+static void state_colorwrite0(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-    int index;
+    set_color_mask(context->gl_info, 0, state->render_states[WINED3D_RS_COLORWRITEENABLE]);
+}
 
-    if (state_id == WINED3D_RS_COLORWRITEENABLE) index = 0;
-    else if (state_id <= WINED3D_RS_COLORWRITEENABLE3) index = state_id - WINED3D_RS_COLORWRITEENABLE1 + 1;
-    else if (state_id <= WINED3D_RS_COLORWRITEENABLE7) index = state_id - WINED3D_RS_COLORWRITEENABLE4 + 4;
-    else return;
+static void state_colorwrite1(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
+{
+    set_color_mask(context->gl_info, 1, state->render_states[WINED3D_RS_COLORWRITEENABLE1]);
+}
 
-    if (index >= gl_info->limits.buffers)
-        WARN("Ignoring color write value for index %d, because gpu only supports %d render targets\n", index, gl_info->limits.buffers);
+static void state_colorwrite2(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
+{
+    set_color_mask(context->gl_info, 2, state->render_states[WINED3D_RS_COLORWRITEENABLE2]);
+}
 
-    set_color_mask(context->gl_info, index, state->render_states[state_id]);
+static void state_colorwrite3(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
+{
+    set_color_mask(context->gl_info, 3, state->render_states[WINED3D_RS_COLORWRITEENABLE3]);
 }
 
 static void state_localviewer(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
@@ -1779,11 +1781,10 @@ static void state_depthbias(struct wined3d_context *context, const struct wined3
         {
             DWORD d;
             float f;
-        } scale_bias, const_bias, bias_clamp;
+        } scale_bias, const_bias;
 
         scale_bias.d = state->render_states[WINED3D_RS_SLOPESCALEDEPTHBIAS];
         const_bias.d = state->render_states[WINED3D_RS_DEPTHBIAS];
-        bias_clamp.d = state->render_states[WINED3D_RS_DEPTHBIASCLAMP];
 
         if (context->d3d_info->wined3d_creation_flags & WINED3D_LEGACY_DEPTH_BIAS)
         {
@@ -1810,18 +1811,7 @@ static void state_depthbias(struct wined3d_context *context, const struct wined3
         }
 
         gl_info->gl_ops.gl.p_glEnable(GL_POLYGON_OFFSET_FILL);
-        if (gl_info->supported[EXT_POLYGON_OFFSET_CLAMP])
-        {
-            GL_EXTCALL(glPolygonOffsetClampEXT(factor, units, bias_clamp.f));
-            checkGLcall("glPolygonOffsetClampEXT(...)");
-        }
-        else
-        {
-            if (bias_clamp.f)
-                WARN("EXT_polygon_offset_clamp extension missing, no support for depth bias clamping.\n");
-
-            gl_info->gl_ops.gl.p_glPolygonOffset(factor, units);
-        }
+        gl_info->gl_ops.gl.p_glPolygonOffset(factor, units);
     }
     else
     {
@@ -1829,28 +1819,6 @@ static void state_depthbias(struct wined3d_context *context, const struct wined3
     }
 
     checkGLcall("depth bias");
-}
-
-static void state_depthclip(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
-{
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-
-    if (state->render_states[WINED3D_RS_DEPTHCLIP])
-    {
-        gl_info->gl_ops.gl.p_glDisable(GL_DEPTH_CLAMP);
-        checkGLcall("glDisable(GL_DEPTH_CLAMP)");
-    }
-    else
-    {
-        gl_info->gl_ops.gl.p_glEnable(GL_DEPTH_CLAMP);
-        checkGLcall("glEnable(GL_DEPTH_CLAMP)");
-    }
-}
-
-static void state_depthclip_w(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
-{
-    if (!state->render_states[WINED3D_RS_DEPTHCLIP])
-        FIXME("Depth clamping not supported by GL.\n");
 }
 
 static void state_zvisible(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
@@ -3334,76 +3302,6 @@ static void transform_texture(struct wined3d_context *context, const struct wine
     checkGLcall("glLoadMatrixf");
 }
 
-static void unload_tex_coords(const struct wined3d_gl_info *gl_info)
-{
-    unsigned int texture_idx;
-
-    for (texture_idx = 0; texture_idx < gl_info->limits.texture_coords; ++texture_idx)
-    {
-        GL_EXTCALL(glClientActiveTextureARB(GL_TEXTURE0_ARB + texture_idx));
-        gl_info->gl_ops.gl.p_glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    }
-}
-
-static void load_tex_coords(const struct wined3d_context *context, const struct wined3d_stream_info *si,
-        GLuint *curVBO, const struct wined3d_state *state)
-{
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-    unsigned int mapped_stage = 0;
-    unsigned int textureNo;
-
-    for (textureNo = 0; textureNo < context->d3d_info->limits.ffp_blend_stages; ++textureNo)
-    {
-        int coordIdx = state->texture_states[textureNo][WINED3D_TSS_TEXCOORD_INDEX];
-
-        mapped_stage = context->tex_unit_map[textureNo];
-        if (mapped_stage == WINED3D_UNMAPPED_STAGE) continue;
-
-        if (mapped_stage >= gl_info->limits.texture_coords)
-        {
-            FIXME("Attempted to load unsupported texture coordinate %u\n", mapped_stage);
-            continue;
-        }
-
-        if (coordIdx < MAX_TEXTURES && (si->use_map & (1u << (WINED3D_FFP_TEXCOORD0 + coordIdx))))
-        {
-            const struct wined3d_stream_info_element *e = &si->elements[WINED3D_FFP_TEXCOORD0 + coordIdx];
-
-            TRACE("Setting up texture %u, idx %d, coordindx %u, data {%#x:%p}.\n",
-                    textureNo, mapped_stage, coordIdx, e->data.buffer_object, e->data.addr);
-
-            if (*curVBO != e->data.buffer_object)
-            {
-                GL_EXTCALL(glBindBuffer(GL_ARRAY_BUFFER, e->data.buffer_object));
-                checkGLcall("glBindBuffer");
-                *curVBO = e->data.buffer_object;
-            }
-
-            GL_EXTCALL(glClientActiveTextureARB(GL_TEXTURE0_ARB + mapped_stage));
-            checkGLcall("glClientActiveTextureARB");
-
-            /* The coords to supply depend completely on the fvf / vertex shader */
-            gl_info->gl_ops.gl.p_glTexCoordPointer(e->format->gl_vtx_format, e->format->gl_vtx_type, e->stride,
-                    e->data.addr + state->load_base_vertex_index * e->stride);
-            gl_info->gl_ops.gl.p_glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-        }
-        else
-        {
-            GL_EXTCALL(glMultiTexCoord4fARB(GL_TEXTURE0_ARB + mapped_stage, 0, 0, 0, 1));
-        }
-    }
-    if (gl_info->supported[NV_REGISTER_COMBINERS])
-    {
-        /* The number of the mapped stages increases monotonically, so it's fine to use the last used one. */
-        for (textureNo = mapped_stage + 1; textureNo < gl_info->limits.textures; ++textureNo)
-        {
-            GL_EXTCALL(glMultiTexCoord4fARB(GL_TEXTURE0_ARB + textureNo, 0, 0, 0, 1));
-        }
-    }
-
-    checkGLcall("loadTexCoords");
-}
-
 static void tex_coordindex(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
     DWORD stage = (state_id - STATE_TEXTURESTAGE(0, 0)) / (WINED3D_HIGHEST_TEXTURE_STATE + 1);
@@ -3574,8 +3472,8 @@ static void tex_coordindex(struct wined3d_context *context, const struct wined3d
          */
         GLuint curVBO = gl_info->supported[ARB_VERTEX_BUFFER_OBJECT] ? ~0U : 0;
 
-        unload_tex_coords(gl_info);
-        load_tex_coords(context, &context->stream_info, &curVBO, state);
+        context_unload_tex_coords(context);
+        context_load_tex_coords(context, &context->stream_info, &curVBO, state);
     }
 }
 
@@ -3947,467 +3845,18 @@ static void transform_projection(struct wined3d_context *context, const struct w
     checkGLcall("glLoadMatrixf");
 }
 
-/* This should match any arrays loaded in load_vertex_data.
- * TODO: Only load / unload arrays if we have to. */
-static void unload_vertex_data(const struct wined3d_gl_info *gl_info)
-{
-    gl_info->gl_ops.gl.p_glDisableClientState(GL_VERTEX_ARRAY);
-    gl_info->gl_ops.gl.p_glDisableClientState(GL_NORMAL_ARRAY);
-    gl_info->gl_ops.gl.p_glDisableClientState(GL_COLOR_ARRAY);
-    if (gl_info->supported[EXT_SECONDARY_COLOR])
-        gl_info->gl_ops.gl.p_glDisableClientState(GL_SECONDARY_COLOR_ARRAY_EXT);
-    unload_tex_coords(gl_info);
-}
-
-static inline void unload_numbered_array(struct wined3d_context *context, int i)
-{
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-
-    GL_EXTCALL(glDisableVertexAttribArray(i));
-    checkGLcall("glDisableVertexAttribArray");
-    if (gl_info->supported[ARB_INSTANCED_ARRAYS])
-        GL_EXTCALL(glVertexAttribDivisor(i, 0));
-
-    context->numbered_array_mask &= ~(1u << i);
-}
-
-/* This should match any arrays loaded in loadNumberedArrays
- * TODO: Only load / unload arrays if we have to. */
-static void unload_numbered_arrays(struct wined3d_context *context)
-{
-    /* disable any attribs (this is the same for both GLSL and ARB modes) */
-    int i;
-
-    for (i = 0; i < context->gl_info->limits.vertex_attribs; ++i) {
-        unload_numbered_array(context, i);
-    }
-}
-
-static void load_numbered_arrays(struct wined3d_context *context,
-        const struct wined3d_stream_info *stream_info, const struct wined3d_state *state)
-{
-    const struct wined3d_shader *vs = state->shader[WINED3D_SHADER_TYPE_VERTEX];
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-    GLuint curVBO = gl_info->supported[ARB_VERTEX_BUFFER_OBJECT] ? ~0U : 0;
-    unsigned int i;
-
-    /* Default to no instancing */
-    context->instance_count = 0;
-
-    for (i = 0; i < MAX_ATTRIBS; ++i)
-    {
-        const struct wined3d_stream_info_element *element = &stream_info->elements[i];
-        const struct wined3d_stream_state *stream;
-
-        if (!(stream_info->use_map & (1u << i)))
-        {
-            if (context->numbered_array_mask & (1u << i))
-                unload_numbered_array(context, i);
-            if (!use_vs(state) && i == WINED3D_FFP_DIFFUSE)
-                GL_EXTCALL(glVertexAttrib4f(i, 1.0f, 1.0f, 1.0f, 1.0f));
-            else
-                GL_EXTCALL(glVertexAttrib4f(i, 0.0f, 0.0f, 0.0f, 0.0f));
-            continue;
-        }
-
-        stream = &state->streams[element->stream_idx];
-
-        if ((stream->flags & WINED3DSTREAMSOURCE_INSTANCEDATA) && !context->instance_count)
-            context->instance_count = state->streams[0].frequency ? state->streams[0].frequency : 1;
-
-        if (gl_info->supported[ARB_INSTANCED_ARRAYS])
-        {
-            GL_EXTCALL(glVertexAttribDivisor(i, element->divisor));
-        }
-        else if (element->divisor)
-        {
-            /* Unload instanced arrays, they will be loaded using
-             * immediate mode instead. */
-            if (context->numbered_array_mask & (1u << i))
-                unload_numbered_array(context, i);
-            continue;
-        }
-
-        TRACE_(d3d_shader)("Loading array %u [VBO=%u].\n", i, element->data.buffer_object);
-
-        if (element->stride)
-        {
-            if (curVBO != element->data.buffer_object)
-            {
-                GL_EXTCALL(glBindBuffer(GL_ARRAY_BUFFER, element->data.buffer_object));
-                checkGLcall("glBindBuffer");
-                curVBO = element->data.buffer_object;
-            }
-            /* Use the VBO to find out if a vertex buffer exists, not the vb
-             * pointer. vb can point to a user pointer data blob. In that case
-             * curVBO will be 0. If there is a vertex buffer but no vbo we
-             * won't be load converted attributes anyway. */
-            if (vs && vs->reg_maps.shader_version.major >= 4
-                    && (element->format->flags[WINED3D_GL_RES_TYPE_BUFFER] & WINED3DFMT_FLAG_INTEGER))
-            {
-                GL_EXTCALL(glVertexAttribIPointer(i, element->format->gl_vtx_format, element->format->gl_vtx_type,
-                        element->stride, element->data.addr + state->load_base_vertex_index * element->stride));
-            }
-            else
-            {
-                GL_EXTCALL(glVertexAttribPointer(i, element->format->gl_vtx_format, element->format->gl_vtx_type,
-                        element->format->gl_normalized, element->stride,
-                        element->data.addr + state->load_base_vertex_index * element->stride));
-            }
-
-            if (!(context->numbered_array_mask & (1u << i)))
-            {
-                GL_EXTCALL(glEnableVertexAttribArray(i));
-                context->numbered_array_mask |= (1u << i);
-            }
-        }
-        else
-        {
-            /* Stride = 0 means always the same values.
-             * glVertexAttribPointer doesn't do that. Instead disable the
-             * pointer and set up the attribute statically. But we have to
-             * figure out the system memory address. */
-            const BYTE *ptr = element->data.addr;
-            if (element->data.buffer_object)
-                ptr += (ULONG_PTR)wined3d_buffer_load_sysmem(stream->buffer, context);
-
-            if (context->numbered_array_mask & (1u << i))
-                unload_numbered_array(context, i);
-
-            switch (element->format->id)
-            {
-                case WINED3DFMT_R32_FLOAT:
-                    GL_EXTCALL(glVertexAttrib1fv(i, (const GLfloat *)ptr));
-                    break;
-                case WINED3DFMT_R32G32_FLOAT:
-                    GL_EXTCALL(glVertexAttrib2fv(i, (const GLfloat *)ptr));
-                    break;
-                case WINED3DFMT_R32G32B32_FLOAT:
-                    GL_EXTCALL(glVertexAttrib3fv(i, (const GLfloat *)ptr));
-                    break;
-                case WINED3DFMT_R32G32B32A32_FLOAT:
-                    GL_EXTCALL(glVertexAttrib4fv(i, (const GLfloat *)ptr));
-                    break;
-
-                case WINED3DFMT_R8G8B8A8_UINT:
-                    GL_EXTCALL(glVertexAttrib4ubv(i, ptr));
-                    break;
-                case WINED3DFMT_B8G8R8A8_UNORM:
-                    if (gl_info->supported[ARB_VERTEX_ARRAY_BGRA])
-                    {
-                        const DWORD *src = (const DWORD *)ptr;
-                        DWORD c = *src & 0xff00ff00u;
-                        c |= (*src & 0xff0000u) >> 16;
-                        c |= (*src & 0xffu) << 16;
-                        GL_EXTCALL(glVertexAttrib4Nubv(i, (GLubyte *)&c));
-                        break;
-                    }
-                    /* else fallthrough */
-                case WINED3DFMT_R8G8B8A8_UNORM:
-                    GL_EXTCALL(glVertexAttrib4Nubv(i, ptr));
-                    break;
-
-                case WINED3DFMT_R16G16_SINT:
-                    GL_EXTCALL(glVertexAttrib2sv(i, (const GLshort *)ptr));
-                    break;
-                case WINED3DFMT_R16G16B16A16_SINT:
-                    GL_EXTCALL(glVertexAttrib4sv(i, (const GLshort *)ptr));
-                    break;
-
-                case WINED3DFMT_R16G16_SNORM:
-                {
-                    const GLshort s[4] = {((const GLshort *)ptr)[0], ((const GLshort *)ptr)[1], 0, 1};
-                    GL_EXTCALL(glVertexAttrib4Nsv(i, s));
-                    break;
-                }
-                case WINED3DFMT_R16G16_UNORM:
-                {
-                    const GLushort s[4] = {((const GLushort *)ptr)[0], ((const GLushort *)ptr)[1], 0, 1};
-                    GL_EXTCALL(glVertexAttrib4Nusv(i, s));
-                    break;
-                }
-                case WINED3DFMT_R16G16B16A16_SNORM:
-                    GL_EXTCALL(glVertexAttrib4Nsv(i, (const GLshort *)ptr));
-                    break;
-                case WINED3DFMT_R16G16B16A16_UNORM:
-                    GL_EXTCALL(glVertexAttrib4Nusv(i, (const GLushort *)ptr));
-                    break;
-
-                case WINED3DFMT_R10G10B10X2_UINT:
-                    FIXME("Unsure about WINED3DDECLTYPE_UDEC3.\n");
-                    /*glVertexAttrib3usvARB(i, (const GLushort *)ptr); Does not exist */
-                    break;
-                case WINED3DFMT_R10G10B10X2_SNORM:
-                    FIXME("Unsure about WINED3DDECLTYPE_DEC3N.\n");
-                    /*glVertexAttrib3NusvARB(i, (const GLushort *)ptr); Does not exist */
-                    break;
-
-                case WINED3DFMT_R16G16_FLOAT:
-                    if (gl_info->supported[NV_HALF_FLOAT] && gl_info->supported[NV_VERTEX_PROGRAM])
-                    {
-                        /* Not supported by GL_ARB_half_float_vertex. */
-                        GL_EXTCALL(glVertexAttrib2hvNV(i, (const GLhalfNV *)ptr));
-                    }
-                    else
-                    {
-                        float x = float_16_to_32(((const unsigned short *)ptr) + 0);
-                        float y = float_16_to_32(((const unsigned short *)ptr) + 1);
-                        GL_EXTCALL(glVertexAttrib2f(i, x, y));
-                    }
-                    break;
-                case WINED3DFMT_R16G16B16A16_FLOAT:
-                    if (gl_info->supported[NV_HALF_FLOAT] && gl_info->supported[NV_VERTEX_PROGRAM])
-                    {
-                        /* Not supported by GL_ARB_half_float_vertex. */
-                        GL_EXTCALL(glVertexAttrib4hvNV(i, (const GLhalfNV *)ptr));
-                    }
-                    else
-                    {
-                        float x = float_16_to_32(((const unsigned short *)ptr) + 0);
-                        float y = float_16_to_32(((const unsigned short *)ptr) + 1);
-                        float z = float_16_to_32(((const unsigned short *)ptr) + 2);
-                        float w = float_16_to_32(((const unsigned short *)ptr) + 3);
-                        GL_EXTCALL(glVertexAttrib4f(i, x, y, z, w));
-                    }
-                    break;
-
-                default:
-                    ERR("Unexpected declaration in stride 0 attributes.\n");
-                    break;
-
-            }
-        }
-    }
-    checkGLcall("Loading numbered arrays");
-}
-
-static void load_vertex_data(struct wined3d_context *context,
-        const struct wined3d_stream_info *si, const struct wined3d_state *state)
-{
-    const struct wined3d_gl_info *gl_info = context->gl_info;
-    GLuint curVBO = gl_info->supported[ARB_VERTEX_BUFFER_OBJECT] ? ~0U : 0;
-    const struct wined3d_stream_info_element *e;
-
-    TRACE("Using fast vertex array code\n");
-
-    /* This is fixed function pipeline only, and the fixed function pipeline doesn't do instancing */
-    context->instance_count = 0;
-
-    /* Blend Data ---------------------------------------------- */
-    if ((si->use_map & (1u << WINED3D_FFP_BLENDWEIGHT))
-            || si->use_map & (1u << WINED3D_FFP_BLENDINDICES))
-    {
-        e = &si->elements[WINED3D_FFP_BLENDWEIGHT];
-
-        /* TODO: Support vertex blending in immediate mode draws. No need to
-         * write a FIXME here, this is done after the general vertex
-         * declaration decoding. */
-        WARN("Vertex blending not supported.\n");
-    }
-
-    /* Point Size ----------------------------------------------*/
-    if (si->use_map & (1u << WINED3D_FFP_PSIZE))
-    {
-        /* no such functionality in the fixed function GL pipeline */
-        TRACE("Cannot change ptSize here in openGl\n");
-        /* TODO: Implement this function in using shaders if they are available */
-    }
-
-    /* Vertex Pointers -----------------------------------------*/
-    if (si->use_map & (1u << WINED3D_FFP_POSITION))
-    {
-        e = &si->elements[WINED3D_FFP_POSITION];
-
-        if (curVBO != e->data.buffer_object)
-        {
-            GL_EXTCALL(glBindBuffer(GL_ARRAY_BUFFER, e->data.buffer_object));
-            checkGLcall("glBindBuffer");
-            curVBO = e->data.buffer_object;
-        }
-
-        TRACE("glVertexPointer(%#x, %#x, %#x, %p);\n",
-                e->format->gl_vtx_format, e->format->gl_vtx_type, e->stride,
-                e->data.addr + state->load_base_vertex_index * e->stride);
-        gl_info->gl_ops.gl.p_glVertexPointer(e->format->gl_vtx_format, e->format->gl_vtx_type, e->stride,
-                e->data.addr + state->load_base_vertex_index * e->stride);
-        checkGLcall("glVertexPointer(...)");
-        gl_info->gl_ops.gl.p_glEnableClientState(GL_VERTEX_ARRAY);
-        checkGLcall("glEnableClientState(GL_VERTEX_ARRAY)");
-    }
-
-    /* Normals -------------------------------------------------*/
-    if (si->use_map & (1u << WINED3D_FFP_NORMAL))
-    {
-        e = &si->elements[WINED3D_FFP_NORMAL];
-
-        if (curVBO != e->data.buffer_object)
-        {
-            GL_EXTCALL(glBindBuffer(GL_ARRAY_BUFFER, e->data.buffer_object));
-            checkGLcall("glBindBuffer");
-            curVBO = e->data.buffer_object;
-        }
-
-        TRACE("glNormalPointer(%#x, %#x, %p);\n", e->format->gl_vtx_type, e->stride,
-                e->data.addr + state->load_base_vertex_index * e->stride);
-        gl_info->gl_ops.gl.p_glNormalPointer(e->format->gl_vtx_type, e->stride,
-                e->data.addr + state->load_base_vertex_index * e->stride);
-        checkGLcall("glNormalPointer(...)");
-        gl_info->gl_ops.gl.p_glEnableClientState(GL_NORMAL_ARRAY);
-        checkGLcall("glEnableClientState(GL_NORMAL_ARRAY)");
-
-    }
-    else
-    {
-        gl_info->gl_ops.gl.p_glNormal3f(0, 0, 0);
-        checkGLcall("glNormal3f(0, 0, 0)");
-    }
-
-    /* Diffuse Colour --------------------------------------------*/
-    if (si->use_map & (1u << WINED3D_FFP_DIFFUSE))
-    {
-        e = &si->elements[WINED3D_FFP_DIFFUSE];
-
-        if (curVBO != e->data.buffer_object)
-        {
-            GL_EXTCALL(glBindBuffer(GL_ARRAY_BUFFER, e->data.buffer_object));
-            checkGLcall("glBindBuffer");
-            curVBO = e->data.buffer_object;
-        }
-
-        TRACE("glColorPointer(%#x, %#x %#x, %p);\n",
-                e->format->gl_vtx_format, e->format->gl_vtx_type, e->stride,
-                e->data.addr + state->load_base_vertex_index * e->stride);
-        gl_info->gl_ops.gl.p_glColorPointer(e->format->gl_vtx_format, e->format->gl_vtx_type, e->stride,
-                e->data.addr + state->load_base_vertex_index * e->stride);
-        checkGLcall("glColorPointer(4, GL_UNSIGNED_BYTE, ...)");
-        gl_info->gl_ops.gl.p_glEnableClientState(GL_COLOR_ARRAY);
-        checkGLcall("glEnableClientState(GL_COLOR_ARRAY)");
-
-    }
-    else
-    {
-        gl_info->gl_ops.gl.p_glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-        checkGLcall("glColor4f(1, 1, 1, 1)");
-    }
-
-    /* Specular Colour ------------------------------------------*/
-    if (si->use_map & (1u << WINED3D_FFP_SPECULAR))
-    {
-        TRACE("setting specular colour\n");
-
-        e = &si->elements[WINED3D_FFP_SPECULAR];
-
-        if (gl_info->supported[EXT_SECONDARY_COLOR])
-        {
-            GLenum type = e->format->gl_vtx_type;
-            GLint format = e->format->gl_vtx_format;
-
-            if (curVBO != e->data.buffer_object)
-            {
-                GL_EXTCALL(glBindBuffer(GL_ARRAY_BUFFER, e->data.buffer_object));
-                checkGLcall("glBindBuffer");
-                curVBO = e->data.buffer_object;
-            }
-
-            if (format != 4 || (gl_info->quirks & WINED3D_QUIRK_ALLOWS_SPECULAR_ALPHA))
-            {
-                /* Usually specular colors only allow 3 components, since they have no alpha. In D3D, the specular alpha
-                 * contains the fog coordinate, which is passed to GL with GL_EXT_fog_coord. However, the fixed function
-                 * vertex pipeline can pass the specular alpha through, and pixel shaders can read it. So it GL accepts
-                 * 4 component secondary colors use it
-                 */
-                TRACE("glSecondaryColorPointer(%#x, %#x, %#x, %p);\n", format, type, e->stride,
-                        e->data.addr + state->load_base_vertex_index * e->stride);
-                GL_EXTCALL(glSecondaryColorPointerEXT(format, type, e->stride,
-                        e->data.addr + state->load_base_vertex_index * e->stride));
-                checkGLcall("glSecondaryColorPointerEXT(format, type, ...)");
-            }
-            else
-            {
-                switch(type)
-                {
-                    case GL_UNSIGNED_BYTE:
-                        TRACE("glSecondaryColorPointer(3, GL_UNSIGNED_BYTE, %#x, %p);\n", e->stride,
-                                e->data.addr + state->load_base_vertex_index * e->stride);
-                        GL_EXTCALL(glSecondaryColorPointerEXT(3, GL_UNSIGNED_BYTE, e->stride,
-                                e->data.addr + state->load_base_vertex_index * e->stride));
-                        checkGLcall("glSecondaryColorPointerEXT(3, GL_UNSIGNED_BYTE, ...)");
-                        break;
-
-                    default:
-                        FIXME("Add 4 component specular color pointers for type %x\n", type);
-                        /* Make sure that the right color component is dropped */
-                        TRACE("glSecondaryColorPointer(3, %#x, %#x, %p);\n", type, e->stride,
-                                e->data.addr + state->load_base_vertex_index * e->stride);
-                        GL_EXTCALL(glSecondaryColorPointerEXT(3, type, e->stride,
-                                e->data.addr + state->load_base_vertex_index * e->stride));
-                        checkGLcall("glSecondaryColorPointerEXT(3, type, ...)");
-                }
-            }
-            gl_info->gl_ops.gl.p_glEnableClientState(GL_SECONDARY_COLOR_ARRAY_EXT);
-            checkGLcall("glEnableClientState(GL_SECONDARY_COLOR_ARRAY_EXT)");
-        }
-        else
-        {
-            WARN("Specular colour is not supported in this GL implementation.\n");
-        }
-    }
-    else
-    {
-        if (gl_info->supported[EXT_SECONDARY_COLOR])
-        {
-            GL_EXTCALL(glSecondaryColor3fEXT)(0, 0, 0);
-            checkGLcall("glSecondaryColor3fEXT(0, 0, 0)");
-        }
-        else
-        {
-            WARN("Specular colour is not supported in this GL implementation.\n");
-        }
-    }
-
-    /* Texture coords -------------------------------------------*/
-    load_tex_coords(context, si, &curVBO, state);
-}
-
 static void streamsrc(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
-    BOOL load_numbered = context->d3d_info->ffp_generic_attributes
-            || (use_vs(state) && !context->use_immediate_mode_draw);
-    BOOL load_named = !context->d3d_info->ffp_generic_attributes
-            && !use_vs(state) && !context->use_immediate_mode_draw;
-
-    if (isStateDirty(context, STATE_VDECL)) return;
-    if (context->numberedArraysLoaded && !load_numbered)
-    {
-        unload_numbered_arrays(context);
-        context->numberedArraysLoaded = FALSE;
-        context->numbered_array_mask = 0;
-    }
-    else if (context->namedArraysLoaded)
-    {
-        unload_vertex_data(context->gl_info);
-        context->namedArraysLoaded = FALSE;
-    }
-
-    if (load_numbered)
-    {
-        TRACE("Loading numbered arrays\n");
-        load_numbered_arrays(context, &context->stream_info, state);
-        context->numberedArraysLoaded = TRUE;
-    }
-    else if (load_named)
-    {
-        TRACE("Loading vertex data\n");
-        load_vertex_data(context, &context->stream_info, state);
-        context->namedArraysLoaded = TRUE;
-    }
+    if (isStateDirty(context, STATE_VDECL))
+        return;
+    context_update_stream_sources(context, state);
 }
 
 static void vdecl_miscpart(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
     if (isStateDirty(context, STATE_STREAMSRC))
         return;
-    streamsrc(context, state, STATE_STREAMSRC);
+    context_update_stream_sources(context, state);
 }
 
 static void vertexdeclaration(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
@@ -4545,30 +3994,18 @@ static void vertexdeclaration(struct wined3d_context *context, const struct wine
     }
 }
 
-static void get_viewport(struct wined3d_context *context, const struct wined3d_state *state,
-        struct wined3d_viewport *viewport)
+static void get_viewports(struct wined3d_context *context, const struct wined3d_state *state,
+        unsigned int viewport_count, struct wined3d_viewport *viewports)
 {
     const struct wined3d_rendertarget_view *depth_stencil = state->fb->depth_stencil;
     const struct wined3d_rendertarget_view *target = state->fb->render_targets[0];
-    unsigned int width, height;
+    unsigned int width, height, i;
 
-    *viewport = state->viewport;
+    for (i = 0; i < viewport_count; ++i)
+        viewports[i] = state->viewports[i];
 
-    if (target)
-    {
-        if (context->d3d_info->wined3d_creation_flags & WINED3D_LIMIT_VIEWPORT)
-        {
-            if (viewport->width > target->width)
-                viewport->width = target->width;
-            if (viewport->height > target->height)
-                viewport->height = target->height;
-        }
-    }
-
-    /*
-     * Note: GL requires lower left, DirectX supplies upper left. This is
-     * reversed when using offscreen rendering.
-     */
+    /* Note: GL uses a lower left origin while DirectX uses upper left. This
+     * is reversed when using offscreen rendering. */
     if (context->render_offscreen)
         return;
 
@@ -4586,22 +4023,53 @@ static void get_viewport(struct wined3d_context *context, const struct wined3d_s
         return;
     }
 
-    viewport->y = height - (viewport->y + viewport->height);
+    for (i = 0; i < viewport_count; ++i)
+        viewports[i].y = height - (viewports[i].y + viewports[i].height);
 }
 
 static void viewport_miscpart(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
-    struct wined3d_viewport vp;
-
-    get_viewport(context, state, &vp);
-
-    gl_info->gl_ops.gl.p_glDepthRange(vp.min_z, vp.max_z);
+    struct wined3d_viewport vp[WINED3D_MAX_VIEWPORTS];
 
     if (gl_info->supported[ARB_VIEWPORT_ARRAY])
-        GL_EXTCALL(glViewportIndexedf(0, vp.x, vp.y, vp.width, vp.height));
+    {
+        GLdouble depth_ranges[2 * WINED3D_MAX_VIEWPORTS];
+        GLfloat viewports[4 * WINED3D_MAX_VIEWPORTS];
+
+        unsigned int i, reset_count = 0;
+
+        get_viewports(context, state, state->viewport_count, vp);
+        for (i = 0; i < state->viewport_count; ++i)
+        {
+            depth_ranges[i * 2]     = vp[i].min_z;
+            depth_ranges[i * 2 + 1] = vp[i].max_z;
+
+            viewports[i * 4]     = vp[i].x;
+            viewports[i * 4 + 1] = vp[i].y;
+            viewports[i * 4 + 2] = vp[i].width;
+            viewports[i * 4 + 3] = vp[i].height;
+        }
+
+        if (context->viewport_count > state->viewport_count)
+            reset_count = context->viewport_count - state->viewport_count;
+
+        if (reset_count)
+        {
+            memset(&depth_ranges[state->viewport_count * 2], 0, reset_count * 2 * sizeof(*depth_ranges));
+            memset(&viewports[state->viewport_count * 4], 0, reset_count * 4 * sizeof(*viewports));
+        }
+
+        GL_EXTCALL(glDepthRangeArrayv(0, state->viewport_count + reset_count, depth_ranges));
+        GL_EXTCALL(glViewportArrayv(0, state->viewport_count + reset_count, viewports));
+        context->viewport_count = state->viewport_count;
+    }
     else
-        gl_info->gl_ops.gl.p_glViewport(vp.x, vp.y, vp.width, vp.height);
+    {
+        get_viewports(context, state, 1, vp);
+        gl_info->gl_ops.gl.p_glDepthRange(vp[0].min_z, vp[0].max_z);
+        gl_info->gl_ops.gl.p_glViewport(vp[0].x, vp[0].y, vp[0].width, vp[0].height);
+    }
     checkGLcall("setting clip space and viewport");
 }
 
@@ -4612,16 +4080,39 @@ static void viewport_miscpart_cc(struct wined3d_context *context,
     float pixel_center_offset = context->d3d_info->wined3d_creation_flags
             & WINED3D_PIXEL_CENTER_INTEGER ? 63.0f / 128.0f : -1.0f / 128.0f;
     const struct wined3d_gl_info *gl_info = context->gl_info;
-    struct wined3d_viewport vp;
+    struct wined3d_viewport vp[WINED3D_MAX_VIEWPORTS];
+    GLdouble depth_ranges[2 * WINED3D_MAX_VIEWPORTS];
+    GLfloat viewports[4 * WINED3D_MAX_VIEWPORTS];
+    unsigned int i, reset_count = 0;
 
-    get_viewport(context, state, &vp);
-    vp.x += pixel_center_offset;
-    vp.y += pixel_center_offset;
-
-    gl_info->gl_ops.gl.p_glDepthRange(vp.min_z, vp.max_z);
+    get_viewports(context, state, state->viewport_count, vp);
 
     GL_EXTCALL(glClipControl(context->render_offscreen ? GL_UPPER_LEFT : GL_LOWER_LEFT, GL_ZERO_TO_ONE));
-    GL_EXTCALL(glViewportIndexedf(0, vp.x, vp.y, vp.width, vp.height));
+
+    for (i = 0; i < state->viewport_count; ++i)
+    {
+        depth_ranges[i * 2]     = vp[i].min_z;
+        depth_ranges[i * 2 + 1] = vp[i].max_z;
+
+        viewports[i * 4] = vp[i].x + pixel_center_offset;
+        viewports[i * 4 + 1] = vp[i].y + pixel_center_offset;
+        viewports[i * 4 + 2] = vp[i].width;
+        viewports[i * 4 + 3] = vp[i].height;
+    }
+
+    if (context->viewport_count > state->viewport_count)
+        reset_count = context->viewport_count - state->viewport_count;
+
+    if (reset_count)
+    {
+        memset(&depth_ranges[state->viewport_count * 2], 0, reset_count * 2 * sizeof(*depth_ranges));
+        memset(&viewports[state->viewport_count * 4], 0, reset_count * 4 * sizeof(*viewports));
+    }
+
+    GL_EXTCALL(glDepthRangeArrayv(0, state->viewport_count + reset_count, depth_ranges));
+    GL_EXTCALL(glViewportArrayv(0, state->viewport_count + reset_count, viewports));
+    context->viewport_count = state->viewport_count;
+
     checkGLcall("setting clip space and viewport");
 }
 
@@ -4762,27 +4253,53 @@ static void light(struct wined3d_context *context, const struct wined3d_state *s
 static void scissorrect(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
-    const RECT *r = &state->scissor_rect;
+    unsigned int height = 0;
+    const RECT *r;
 
     /* Warning: glScissor uses window coordinates, not viewport coordinates,
      * so our viewport correction does not apply. Warning2: Even in windowed
      * mode the coords are relative to the window, not the screen. */
-    TRACE("Setting new scissor rect to %s.\n", wine_dbgstr_rect(r));
 
-    if (context->render_offscreen)
+    if (!context->render_offscreen)
     {
-        gl_info->gl_ops.gl.p_glScissor(r->left, r->top, r->right - r->left, r->bottom - r->top);
+        const struct wined3d_rendertarget_view *target = state->fb->render_targets[0];
+        unsigned int width;
+
+        wined3d_rendertarget_view_get_drawable_size(target, context, &width, &height);
+    }
+
+    if (gl_info->supported[ARB_VIEWPORT_ARRAY])
+    {
+        GLint sr[4 * WINED3D_MAX_VIEWPORTS];
+        unsigned int i, reset_count = 0;
+
+        for (i = 0; i < state->scissor_rect_count; ++i)
+        {
+            r = &state->scissor_rects[i];
+
+            sr[i * 4] = r->left;
+            sr[i * 4 + 1] = height ? height - r->top : r->top;
+            sr[i * 4 + 2] = r->right - r->left;
+            sr[i * 4 + 3] = r->bottom - r->top;
+        }
+
+        if (context->scissor_rect_count > state->scissor_rect_count)
+            reset_count = context->scissor_rect_count - state->scissor_rect_count;
+
+        if (reset_count)
+            memset(&sr[state->scissor_rect_count * 4], 0, reset_count * 4 * sizeof(GLint));
+
+        GL_EXTCALL(glScissorArrayv(0, state->scissor_rect_count + reset_count, sr));
+        checkGLcall("glScissorArrayv");
+        context->scissor_rect_count = state->scissor_rect_count;
     }
     else
     {
-        const struct wined3d_rendertarget_view *target = state->fb->render_targets[0];
-        UINT height;
-        UINT width;
-
-        wined3d_rendertarget_view_get_drawable_size(target, context, &width, &height);
-        gl_info->gl_ops.gl.p_glScissor(r->left, height - r->bottom, r->right - r->left, r->bottom - r->top);
+        r = &state->scissor_rects[0];
+        gl_info->gl_ops.gl.p_glScissor(r->left, height ? height - r->top : r->top,
+                r->right - r->left, r->bottom - r->top);
+        checkGLcall("glScissor");
     }
-    checkGLcall("glScissor");
 }
 
 static void indexbuffer(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
@@ -4797,15 +4314,27 @@ static void indexbuffer(struct wined3d_context *context, const struct wined3d_st
     else
     {
         struct wined3d_buffer *ib = state->index_buffer;
-        // FIXME(acomminos): disasterous.
-        if (ib->locations & WINED3D_LOCATION_PERSISTENT_MAP)
-            GL_EXTCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer_heap->buffer_object));
-        else
-            GL_EXTCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer_object));
+        GL_EXTCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer_object));
     }
 }
 
-static void frontface(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
+static void depth_clip(const struct wined3d_rasterizer_state *r, const struct wined3d_gl_info *gl_info)
+{
+    if (!gl_info->supported[ARB_DEPTH_CLAMP])
+    {
+        if (r && !r->desc.depth_clip)
+            FIXME("Depth clamp not supported by this GL implementation.\n");
+        return;
+    }
+
+    if (r && !r->desc.depth_clip)
+        gl_info->gl_ops.gl.p_glEnable(GL_DEPTH_CLAMP);
+    else
+        gl_info->gl_ops.gl.p_glDisable(GL_DEPTH_CLAMP);
+    checkGLcall("depth clip");
+}
+
+static void rasterizer(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
     GLenum mode;
@@ -4816,9 +4345,10 @@ static void frontface(struct wined3d_context *context, const struct wined3d_stat
 
     gl_info->gl_ops.gl.p_glFrontFace(mode);
     checkGLcall("glFrontFace");
+    depth_clip(state->rasterizer_state, gl_info);
 }
 
-static void frontface_cc(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
+static void rasterizer_cc(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
     GLenum mode;
@@ -4827,6 +4357,7 @@ static void frontface_cc(struct wined3d_context *context, const struct wined3d_s
 
     gl_info->gl_ops.gl.p_glFrontFace(mode);
     checkGLcall("glFrontFace");
+    depth_clip(state->rasterizer_state, gl_info);
 }
 
 static void psorigin_w(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
@@ -4867,7 +4398,6 @@ static void state_cb(struct wined3d_context *context, const struct wined3d_state
     enum wined3d_shader_type shader_type;
     struct wined3d_buffer *buffer;
     unsigned int i, base, count;
-    struct wined3d_bo_address bo_addr;
 
     TRACE("context %p, state %p, state_id %#x.\n", context, state, state_id);
 
@@ -4877,51 +4407,11 @@ static void state_cb(struct wined3d_context *context, const struct wined3d_state
         shader_type = WINED3D_SHADER_TYPE_COMPUTE;
 
     wined3d_gl_limits_get_uniform_block_range(&gl_info->limits, shader_type, &base, &count);
-
-    if (gl_info->supported[ARB_MULTI_BIND])
+    for (i = 0; i < count; ++i)
     {
-        GLuint buffer_objects[count];
-        GLsizeiptr buffer_offsets[count];
-        GLsizeiptr buffer_sizes[count];
-
-        for (i = 0; i < count; ++i)
-        {
-            buffer = state->cb[shader_type][i];
-            if (buffer)
-            {
-                wined3d_buffer_get_memory(buffer, &bo_addr, buffer->locations);
-                buffer_objects[i] = bo_addr.buffer_object;
-                buffer_offsets[i] = bo_addr.addr;
-                buffer_sizes[i] = bo_addr.length;
-            }
-            else
-            {
-                buffer_objects[i] = buffer_offsets[i] = 0;
-                // The ARB_multi_bind spec states that an error may be thrown if
-                // `size` is less than or equal to zero, Thus, we specify a size for
-                // unused buffers anyway.
-                buffer_sizes[i] = 1;
-            }
-        }
-        GL_EXTCALL(glBindBuffersRange(GL_UNIFORM_BUFFER, base, count, buffer_objects, buffer_offsets, buffer_sizes));
+        buffer = state->cb[shader_type][i];
+        GL_EXTCALL(glBindBufferBase(GL_UNIFORM_BUFFER, base + i, buffer ? buffer->buffer_object : 0));
     }
-    else
-    {
-        for (i = 0; i < count; ++i)
-        {
-            buffer = state->cb[shader_type][i];
-            if (buffer)
-            {
-                wined3d_buffer_get_memory(buffer, &bo_addr, buffer->locations);
-                GL_EXTCALL(glBindBufferRange(GL_UNIFORM_BUFFER, base + i, bo_addr.buffer_object, bo_addr.addr, bo_addr.length));
-            }
-            else
-            {
-                GL_EXTCALL(glBindBufferBase(GL_UNIFORM_BUFFER, base + i, 0));
-            }
-        }
-    }
-
     checkGLcall("bind constant buffers");
 }
 
@@ -5037,8 +4527,8 @@ const struct StateEntryTemplate misc_state_template[] =
     { STATE_BLEND,                                        { STATE_BLEND,                                        state_blend_object  }, WINED3D_GL_EXT_NONE             },
     { STATE_STREAMSRC,                                    { STATE_STREAMSRC,                                    streamsrc           }, WINED3D_GL_EXT_NONE             },
     { STATE_VDECL,                                        { STATE_VDECL,                                        vdecl_miscpart      }, WINED3D_GL_EXT_NONE             },
-    { STATE_FRONTFACE,                                    { STATE_FRONTFACE,                                    frontface_cc        }, ARB_CLIP_CONTROL                },
-    { STATE_FRONTFACE,                                    { STATE_FRONTFACE,                                    frontface           }, WINED3D_GL_EXT_NONE             },
+    { STATE_RASTERIZER,                                   { STATE_RASTERIZER,                                   rasterizer_cc       }, ARB_CLIP_CONTROL                },
+    { STATE_RASTERIZER,                                   { STATE_RASTERIZER,                                   rasterizer          }, WINED3D_GL_EXT_NONE             },
     { STATE_SCISSORRECT,                                  { STATE_SCISSORRECT,                                  scissorrect         }, WINED3D_GL_EXT_NONE             },
     { STATE_POINTSPRITECOORDORIGIN,                       { STATE_POINTSPRITECOORDORIGIN,                       state_nop           }, ARB_CLIP_CONTROL                },
     { STATE_POINTSPRITECOORDORIGIN,                       { STATE_POINTSPRITECOORDORIGIN,                       psorigin            }, WINED3D_GL_VERSION_2_0          },
@@ -5131,7 +4621,7 @@ const struct StateEntryTemplate misc_state_template[] =
     { STATE_RENDER(WINED3D_RS_STENCILFUNC),               { STATE_RENDER(WINED3D_RS_STENCILENABLE),             NULL                }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_STENCILREF),                { STATE_RENDER(WINED3D_RS_STENCILENABLE),             NULL                }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_STENCILMASK),               { STATE_RENDER(WINED3D_RS_STENCILENABLE),             NULL                }, WINED3D_GL_EXT_NONE             },
-    { STATE_RENDER(WINED3D_RS_STENCILWRITEMASK),          { STATE_RENDER(WINED3D_RS_STENCILWRITEMASK),          state_stencilwrite2s}, EXT_STENCIL_TWO_SIDE            },
+    { STATE_RENDER(WINED3D_RS_STENCILWRITEMASK),          { STATE_RENDER(WINED3D_RS_STENCILWRITEMASK),          state_stencilwrite2s_ext}, EXT_STENCIL_TWO_SIDE        },
     { STATE_RENDER(WINED3D_RS_STENCILWRITEMASK),          { STATE_RENDER(WINED3D_RS_STENCILWRITEMASK),          state_stencilwrite  }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_TWOSIDEDSTENCILMODE),       { STATE_RENDER(WINED3D_RS_STENCILENABLE),             NULL                }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_BACK_STENCILFAIL),          { STATE_RENDER(WINED3D_RS_STENCILENABLE),             NULL                }, WINED3D_GL_EXT_NONE             },
@@ -5173,33 +4663,22 @@ const struct StateEntryTemplate misc_state_template[] =
     { STATE_RENDER(WINED3D_RS_MULTISAMPLEANTIALIAS),      { STATE_RENDER(WINED3D_RS_MULTISAMPLEANTIALIAS),      state_msaa_w        }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_MULTISAMPLEMASK),           { STATE_RENDER(WINED3D_RS_MULTISAMPLEMASK),           state_multisampmask }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_DEBUGMONITORTOKEN),         { STATE_RENDER(WINED3D_RS_DEBUGMONITORTOKEN),         state_debug_monitor }, WINED3D_GL_EXT_NONE             },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          state_colorwrite_i  }, EXT_DRAW_BUFFERS2               },
+    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          state_colorwrite0   }, EXT_DRAW_BUFFERS2               },
     { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          state_colorwrite    }, WINED3D_GL_EXT_NONE             },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1),         state_colorwrite_i  }, EXT_DRAW_BUFFERS2               },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          NULL                }, WINED3D_GL_EXT_NONE             },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2),         state_colorwrite_i  }, EXT_DRAW_BUFFERS2               },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          NULL                }, WINED3D_GL_EXT_NONE             },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3),         state_colorwrite_i  }, EXT_DRAW_BUFFERS2               },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          NULL                }, WINED3D_GL_EXT_NONE             },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE4),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE4),         state_colorwrite_i  }, EXT_DRAW_BUFFERS2               },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE4),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          NULL                }, WINED3D_GL_EXT_NONE             },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE5),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE5),         state_colorwrite_i  }, EXT_DRAW_BUFFERS2               },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE5),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          NULL                }, WINED3D_GL_EXT_NONE             },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE6),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE6),         state_colorwrite_i  }, EXT_DRAW_BUFFERS2               },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE6),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          NULL                }, WINED3D_GL_EXT_NONE             },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE7),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE7),         state_colorwrite_i  }, EXT_DRAW_BUFFERS2               },
-    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE7),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          NULL                }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_BLENDOP),                   { STATE_RENDER(WINED3D_RS_BLENDOP),                   state_blendop       }, WINED3D_GL_BLEND_EQUATION       },
     { STATE_RENDER(WINED3D_RS_BLENDOP),                   { STATE_RENDER(WINED3D_RS_BLENDOP),                   state_blendop_w     }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_SCISSORTESTENABLE),         { STATE_RENDER(WINED3D_RS_SCISSORTESTENABLE),         state_scissor       }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_SLOPESCALEDEPTHBIAS),       { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 NULL                }, WINED3D_GL_EXT_NONE             },
+    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1),         state_colorwrite1   }, EXT_DRAW_BUFFERS2               },
+    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          NULL                }, WINED3D_GL_EXT_NONE             },
+    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2),         state_colorwrite2   }, EXT_DRAW_BUFFERS2               },
+    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          NULL                }, WINED3D_GL_EXT_NONE             },
+    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3),         state_colorwrite3   }, EXT_DRAW_BUFFERS2               },
+    { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3),         { STATE_RENDER(WINED3D_RS_COLORWRITEENABLE),          NULL                }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               state_blendfactor   }, EXT_BLEND_COLOR                 },
     { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               state_blendfactor_w }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 state_depthbias     }, WINED3D_GL_EXT_NONE             },
-    { STATE_RENDER(WINED3D_RS_DEPTHBIASCLAMP),            { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 NULL                }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_ZVISIBLE),                  { STATE_RENDER(WINED3D_RS_ZVISIBLE),                  state_zvisible      }, WINED3D_GL_EXT_NONE             },
-    { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 state_depthclip     }, ARB_DEPTH_CLAMP                 },
-    { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 { STATE_RENDER(WINED3D_RS_DEPTHCLIP),                 state_depthclip_w   }, WINED3D_GL_EXT_NONE             },
     /* Samplers */
     { STATE_SAMPLER(0),                                   { STATE_SAMPLER(0),                                   sampler             }, WINED3D_GL_EXT_NONE             },
     { STATE_SAMPLER(1),                                   { STATE_SAMPLER(1),                                   sampler             }, WINED3D_GL_EXT_NONE             },
@@ -5988,7 +5467,7 @@ static void validate_state_table(struct StateEntry *state_table)
         STATE_VIEWPORT,
         STATE_LIGHT_TYPE,
         STATE_SCISSORRECT,
-        STATE_FRONTFACE,
+        STATE_RASTERIZER,
         STATE_POINTSPRITECOORDORIGIN,
         STATE_BASEVERTEXINDEX,
         STATE_FRAMEBUFFER,

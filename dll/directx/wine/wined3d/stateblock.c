@@ -45,10 +45,6 @@ static const DWORD pixel_states_render[] =
     WINED3D_RS_COLORWRITEENABLE1,
     WINED3D_RS_COLORWRITEENABLE2,
     WINED3D_RS_COLORWRITEENABLE3,
-    WINED3D_RS_COLORWRITEENABLE4,
-    WINED3D_RS_COLORWRITEENABLE5,
-    WINED3D_RS_COLORWRITEENABLE6,
-    WINED3D_RS_COLORWRITEENABLE7,
     WINED3D_RS_DEPTHBIAS,
     WINED3D_RS_DESTBLEND,
     WINED3D_RS_DESTBLENDALPHA,
@@ -94,7 +90,6 @@ static const DWORD pixel_states_render[] =
     WINED3D_RS_ZENABLE,
     WINED3D_RS_ZFUNC,
     WINED3D_RS_ZWRITEENABLE,
-    WINED3D_RS_DEPTHCLIP,
 };
 
 static const DWORD pixel_states_texture[] =
@@ -815,20 +810,33 @@ void CDECL wined3d_stateblock_capture(struct wined3d_stateblock *stateblock)
         stateblock->state.material = src_state->material;
     }
 
-    if (stateblock->changed.viewport
-            && memcmp(&src_state->viewport, &stateblock->state.viewport, sizeof(stateblock->state.viewport)))
-    {
-        TRACE("Updating viewport.\n");
+    assert(src_state->viewport_count <= 1);
 
-        stateblock->state.viewport = src_state->viewport;
+    if (stateblock->changed.viewport
+            && (src_state->viewport_count != stateblock->state.viewport_count
+            || memcmp(src_state->viewports, stateblock->state.viewports,
+            src_state->viewport_count * sizeof(*stateblock->state.viewports))))
+    {
+        TRACE("Updating viewports.\n");
+
+        if ((stateblock->state.viewport_count = src_state->viewport_count))
+            memcpy(stateblock->state.viewports, src_state->viewports, sizeof(src_state->viewports));
+        else
+            memset(stateblock->state.viewports, 0, sizeof(*stateblock->state.viewports));
     }
 
-    if (stateblock->changed.scissorRect && memcmp(&src_state->scissor_rect,
-            &stateblock->state.scissor_rect, sizeof(stateblock->state.scissor_rect)))
+    if (stateblock->changed.scissorRect
+            && (src_state->scissor_rect_count != stateblock->state.scissor_rect_count
+            || memcmp(src_state->scissor_rects, stateblock->state.scissor_rects,
+                       src_state->scissor_rect_count * sizeof(*stateblock->state.scissor_rects))))
     {
-        TRACE("Updating scissor rect.\n");
+        TRACE("Updating scissor rects.\n");
 
-        stateblock->state.scissor_rect = src_state->scissor_rect;
+        if ((stateblock->state.scissor_rect_count = src_state->scissor_rect_count))
+            memcpy(stateblock->state.scissor_rects, src_state->scissor_rects,
+                    src_state->scissor_rect_count * sizeof(*src_state->scissor_rects));
+        else
+            SetRectEmpty(stateblock->state.scissor_rects);
     }
 
     map = stateblock->changed.streamSource;
@@ -1060,10 +1068,11 @@ void CDECL wined3d_stateblock_apply(const struct wined3d_stateblock *stateblock)
         wined3d_device_set_material(device, &stateblock->state.material);
 
     if (stateblock->changed.viewport)
-        wined3d_device_set_viewport(device, &stateblock->state.viewport);
+        wined3d_device_set_viewports(device, stateblock->state.viewport_count, stateblock->state.viewports);
 
     if (stateblock->changed.scissorRect)
-        wined3d_device_set_scissor_rect(device, &stateblock->state.scissor_rect);
+        wined3d_device_set_scissor_rects(device, stateblock->state.scissor_rect_count,
+                stateblock->state.scissor_rects);
 
     map = stateblock->changed.streamSource;
     for (i = 0; map; map >>= 1, ++i)
@@ -1216,6 +1225,7 @@ static void state_init_default(struct wined3d_state *state, const struct wined3d
     tmpfloat.f = gl_info->limits.pointsize_max;
     state->render_states[WINED3D_RS_POINTSIZE_MAX] = tmpfloat.d;
     state->render_states[WINED3D_RS_INDEXEDVERTEXBLENDENABLE] = FALSE;
+    state->render_states[WINED3D_RS_COLORWRITEENABLE] = 0x0000000f;
     tmpfloat.f = 0.0f;
     state->render_states[WINED3D_RS_TWEENFACTOR] = tmpfloat.d;
     state->render_states[WINED3D_RS_BLENDOP] = WINED3D_BLEND_OP_ADD;
@@ -1241,12 +1251,12 @@ static void state_init_default(struct wined3d_state *state, const struct wined3d
     state->render_states[WINED3D_RS_BACK_STENCILZFAIL] = WINED3D_STENCIL_OP_KEEP;
     state->render_states[WINED3D_RS_BACK_STENCILPASS] = WINED3D_STENCIL_OP_KEEP;
     state->render_states[WINED3D_RS_BACK_STENCILFUNC] = WINED3D_CMP_ALWAYS;
+    state->render_states[WINED3D_RS_COLORWRITEENABLE1] = 0x0000000f;
+    state->render_states[WINED3D_RS_COLORWRITEENABLE2] = 0x0000000f;
+    state->render_states[WINED3D_RS_COLORWRITEENABLE3] = 0x0000000f;
     state->render_states[WINED3D_RS_BLENDFACTOR] = 0xffffffff;
     state->render_states[WINED3D_RS_SRGBWRITEENABLE] = 0;
     state->render_states[WINED3D_RS_DEPTHBIAS] = 0;
-    tmpfloat.f = 0.0f;
-    state->render_states[WINED3D_RS_DEPTHBIASCLAMP] = tmpfloat.d;
-    state->render_states[WINED3D_RS_DEPTHCLIP] = TRUE;
     state->render_states[WINED3D_RS_WRAP8] = 0;
     state->render_states[WINED3D_RS_WRAP9] = 0;
     state->render_states[WINED3D_RS_WRAP10] = 0;
@@ -1259,8 +1269,6 @@ static void state_init_default(struct wined3d_state *state, const struct wined3d
     state->render_states[WINED3D_RS_SRCBLENDALPHA] = WINED3D_BLEND_ONE;
     state->render_states[WINED3D_RS_DESTBLENDALPHA] = WINED3D_BLEND_ZERO;
     state->render_states[WINED3D_RS_BLENDOPALPHA] = WINED3D_BLEND_OP_ADD;
-    for (i = 0; i < MAX_RENDER_TARGETS; ++i)
-        state->render_states[WINED3D_RS_COLORWRITE(i)] = 0x0000000f;
 
     /* Texture Stage States - Put directly into state block, we will call function below */
     for (i = 0; i < MAX_TEXTURES; ++i)

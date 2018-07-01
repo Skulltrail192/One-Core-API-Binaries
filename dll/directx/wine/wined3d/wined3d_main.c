@@ -74,7 +74,7 @@ struct wined3d_settings wined3d_settings =
 {
     TRUE,           /* Multithreaded CS by default. */
     FALSE,          /* explicit_gl_version */
-    MAKEDWORD_VERSION(1, 0), /* Default to legacy OpenGL */
+    MAKEDWORD_VERSION(4, 4), /* Default to OpenGL 4.4 */
     TRUE,           /* Use of GLSL enabled by default */
     ORM_FBO,        /* Use FBOs to do offscreen rendering */
     PCI_VENDOR_NONE,/* PCI Vendor ID */
@@ -225,8 +225,8 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
             if (!strcmp(buffer,"disabled"))
             {
                 ERR_(winediag)("The GLSL shader backend has been disabled. You get to keep all the pieces if it breaks.\n");
-                TRACE("Use of GL Shading Language disabled\n");
-                wined3d_settings.glslRequested = FALSE;
+                TRACE("Use of GL Shading Language disabled.\n");
+                wined3d_settings.use_glsl = FALSE;
             }
         }
         if (!get_config_key(hkey, appkey, "OffscreenRenderingMode", buffer, size)
@@ -318,8 +318,6 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
     if (appkey) RegCloseKey( appkey );
     if (hkey) RegCloseKey( hkey );
 
-    wined3d_dxtn_init();
-
     return TRUE;
 }
 
@@ -351,9 +349,6 @@ static BOOL wined3d_dll_destroy(HINSTANCE hInstDLL)
 
     DeleteCriticalSection(&wined3d_wndproc_cs);
     DeleteCriticalSection(&wined3d_cs);
-
-    wined3d_dxtn_free();
-
     return TRUE;
 }
 

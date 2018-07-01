@@ -169,8 +169,8 @@ static void create_texture_view(struct wined3d_gl_view *view, GLenum view_target
         const struct wined3d_view_desc *desc, struct wined3d_texture *texture,
         const struct wined3d_format *view_format)
 {
+    unsigned int level_idx, layer_idx, layer_count;
     const struct wined3d_gl_info *gl_info;
-    unsigned int layer_idx, layer_count;
     struct wined3d_context *context;
     GLuint texture_name;
 
@@ -189,20 +189,21 @@ static void create_texture_view(struct wined3d_gl_view *view, GLenum view_target
     wined3d_texture_prepare_texture(texture, context, FALSE);
     texture_name = wined3d_texture_get_texture_name(texture, context, FALSE);
 
+    level_idx = desc->u.texture.level_idx;
     layer_idx = desc->u.texture.layer_idx;
     layer_count = desc->u.texture.layer_count;
-    if (view_target == GL_TEXTURE_3D && (layer_idx || layer_count != 1))
+    if (view_target == GL_TEXTURE_3D)
     {
-        FIXME("Depth slice (%u-%u) not supported.\n", layer_idx, layer_count);
+        if (layer_idx || layer_count != wined3d_texture_get_level_depth(texture, level_idx))
+            FIXME("Depth slice (%u-%u) not supported.\n", layer_idx, layer_count);
         layer_idx = 0;
         layer_count = 1;
     }
 
     gl_info->gl_ops.gl.p_glGenTextures(1, &view->name);
     GL_EXTCALL(glTextureView(view->name, view->target, texture_name, view_format->glInternal,
-            desc->u.texture.level_idx, desc->u.texture.level_count,
-            layer_idx, layer_count));
-    checkGLcall("Create texture view");
+            level_idx, desc->u.texture.level_count, layer_idx, layer_count));
+    checkGLcall("create texture view");
 
     if (is_stencil_view_format(view_format))
     {
@@ -218,7 +219,7 @@ static void create_texture_view(struct wined3d_gl_view *view, GLenum view_target
         context_bind_texture(context, view->target, view->name);
         gl_info->gl_ops.gl.p_glTexParameteriv(view->target, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
         gl_info->gl_ops.gl.p_glTexParameteri(view->target, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX);
-        checkGLcall("Initialize stencil view");
+        checkGLcall("initialize stencil view");
 
         context_invalidate_compute_state(context, STATE_COMPUTE_SHADER_RESOURCE_BINDING);
         context_invalidate_state(context, STATE_GRAPHICS_SHADER_RESOURCE_BINDING);
@@ -750,8 +751,6 @@ static void wined3d_shader_resource_view_cs_init(void *object)
                     debug_d3dformat(resource->format->id), debug_d3dformat(view_format->id));
         }
     }
-
-    wined3d_resource_release(resource);
 }
 
 static HRESULT wined3d_shader_resource_view_init(struct wined3d_shader_resource_view *view,
@@ -768,7 +767,6 @@ static HRESULT wined3d_shader_resource_view_init(struct wined3d_shader_resource_
 
     wined3d_resource_incref(view->resource = resource);
 
-    wined3d_resource_acquire(resource);
     wined3d_cs_init_object(resource->device->cs, wined3d_shader_resource_view_cs_init, view);
 
     return WINED3D_OK;
@@ -1121,8 +1119,6 @@ static void wined3d_unordered_access_view_cs_init(void *object)
                     desc, texture, view->format);
         }
     }
-
-    wined3d_resource_release(resource);
 }
 
 static HRESULT wined3d_unordered_access_view_init(struct wined3d_unordered_access_view *view,
@@ -1139,7 +1135,6 @@ static HRESULT wined3d_unordered_access_view_init(struct wined3d_unordered_acces
 
     wined3d_resource_incref(view->resource = resource);
 
-    wined3d_resource_acquire(resource);
     wined3d_cs_init_object(resource->device->cs, wined3d_unordered_access_view_cs_init, view);
 
     return WINED3D_OK;

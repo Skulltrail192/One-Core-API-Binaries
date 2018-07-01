@@ -611,7 +611,7 @@ static void shader_arb_vs_local_constants(const struct arb_vs_compiled_shader *g
     unsigned char i;
 
     /* Upload the position fixup */
-    shader_get_position_fixup(context, state, position_fixup);
+    shader_get_position_fixup(context, state, 1, position_fixup);
     GL_EXTCALL(glProgramLocalParameter4fvARB(GL_VERTEX_PROGRAM_ARB, gl_shader->pos_fixup, position_fixup));
 
     if (!gl_shader->num_int_consts) return;
@@ -5084,7 +5084,6 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_DSY                              */ shader_hw_dsy,
     /* WINED3DSIH_DSY_COARSE                       */ NULL,
     /* WINED3DSIH_DSY_FINE                         */ NULL,
-    /* WINED3DSIH_EVAL_SAMPLE_INDEX                */ NULL,
     /* WINED3DSIH_ELSE                             */ shader_hw_else,
     /* WINED3DSIH_EMIT                             */ NULL,
     /* WINED3DSIH_EMIT_STREAM                      */ NULL,
@@ -5093,6 +5092,7 @@ static const SHADER_HANDLER shader_arb_instruction_handler_table[WINED3DSIH_TABL
     /* WINED3DSIH_ENDREP                           */ shader_hw_endrep,
     /* WINED3DSIH_ENDSWITCH                        */ NULL,
     /* WINED3DSIH_EQ                               */ NULL,
+    /* WINED3DSIH_EVAL_SAMPLE_INDEX                */ NULL,
     /* WINED3DSIH_EXP                              */ shader_hw_scalar_op,
     /* WINED3DSIH_EXPP                             */ shader_hw_scalar_op,
     /* WINED3DSIH_F16TOF32                         */ NULL,
@@ -6936,8 +6936,8 @@ static void arbfp_blitter_destroy(struct wined3d_blitter *blitter, struct wined3
     heap_free(arbfp_blitter);
 }
 
-static BOOL gen_planar_yuv_read(struct wined3d_string_buffer *buffer, const struct arbfp_blit_type *type,
-        char *luminance)
+static void gen_packed_yuv_read(struct wined3d_string_buffer *buffer,
+        const struct arbfp_blit_type *type, char *luminance)
 {
     char chroma;
     const char *tex, *texinstr = "TXP";
@@ -6985,13 +6985,12 @@ static BOOL gen_planar_yuv_read(struct wined3d_string_buffer *buffer, const stru
     shader_addline(buffer, "FLR texcrd.x, texcrd.x;\n");
     shader_addline(buffer, "ADD texcrd.x, texcrd.x, coef.y;\n");
 
-    /* Divide the x coordinate by 0.5 and get the fraction. This gives 0.25 and 0.75 for the
-     * even and odd pixels respectively
-     */
+    /* Multiply the x coordinate by 0.5 and get the fraction. This gives 0.25
+     * and 0.75 for the even and odd pixels respectively. */
     shader_addline(buffer, "MUL texcrd2, texcrd, coef.y;\n");
     shader_addline(buffer, "FRC texcrd2, texcrd2;\n");
 
-    /* Sample Pixel 1 */
+    /* Sample Pixel 1. */
     shader_addline(buffer, "%s luminance, texcrd, texture[0], %s;\n", texinstr, tex);
 
     /* Put the value into either of the chroma values */
@@ -7020,12 +7019,10 @@ static BOOL gen_planar_yuv_read(struct wined3d_string_buffer *buffer, const stru
 
     /* This gives the correctly filtered luminance value */
     shader_addline(buffer, "TEX luminance, fragment.texcoord[0], texture[0], %s;\n", tex);
-
-    return TRUE;
 }
 
-static BOOL gen_yv12_read(struct wined3d_string_buffer *buffer, const struct arbfp_blit_type *type,
-        char *luminance)
+static void gen_yv12_read(struct wined3d_string_buffer *buffer,
+        const struct arbfp_blit_type *type, char *luminance)
 {
     const char *tex;
     static const float yv12_coef[]
@@ -7087,7 +7084,6 @@ static BOOL gen_yv12_read(struct wined3d_string_buffer *buffer, const struct arb
      */
     if (type->res_type == WINED3D_GL_RES_TYPE_TEX_2D)
     {
-
         shader_addline(buffer, "RCP chroma.w, size.y;\n");
 
         shader_addline(buffer, "MUL texcrd2.y, texcrd.y, size.y;\n");
@@ -7095,7 +7091,7 @@ static BOOL gen_yv12_read(struct wined3d_string_buffer *buffer, const struct arb
         shader_addline(buffer, "FLR texcrd2.y, texcrd2.y;\n");
         shader_addline(buffer, "MAD texcrd.y, texcrd.y, yv12_coef.y, yv12_coef.x;\n");
 
-        /* Read odd lines from the right side(add size * 0.5 to the x coordinate */
+        /* Read odd lines from the right side (add size * 0.5 to the x coordinate). */
         shader_addline(buffer, "ADD texcrd2.x, texcrd2.y, yv12_coef.y;\n"); /* To avoid 0.5 == 0.5 comparisons */
         shader_addline(buffer, "FRC texcrd2.x, texcrd2.x;\n");
         shader_addline(buffer, "SGE texcrd2.x, texcrd2.x, coef.y;\n");
@@ -7109,11 +7105,11 @@ static BOOL gen_yv12_read(struct wined3d_string_buffer *buffer, const struct arb
     }
     else
     {
-        /* Read from [size - size+size/4] */
+        /* The y coordinate for V is in the range [size, size + size / 4). */
         shader_addline(buffer, "FLR texcrd.y, texcrd.y;\n");
         shader_addline(buffer, "MAD texcrd.y, texcrd.y, coef.w, size.y;\n");
 
-        /* Read odd lines from the right side(add size * 0.5 to the x coordinate */
+        /* Read odd lines from the right side (add size * 0.5 to the x coordinate). */
         shader_addline(buffer, "ADD texcrd2.x, texcrd.y, yv12_coef.y;\n"); /* To avoid 0.5 == 0.5 comparisons */
         shader_addline(buffer, "FRC texcrd2.x, texcrd2.x;\n");
         shader_addline(buffer, "SGE texcrd2.x, texcrd2.x, coef.y;\n");
@@ -7169,12 +7165,10 @@ static BOOL gen_yv12_read(struct wined3d_string_buffer *buffer, const struct arb
         shader_addline(buffer, "TEX luminance, texcrd, texture[0], %s;\n", tex);
     }
     *luminance = 'a';
-
-    return TRUE;
 }
 
-static BOOL gen_nv12_read(struct wined3d_string_buffer *buffer, const struct arbfp_blit_type *type,
-        char *luminance)
+static void gen_nv12_read(struct wined3d_string_buffer *buffer,
+        const struct arbfp_blit_type *type, char *luminance)
 {
     const char *tex;
     static const float nv12_coef[]
@@ -7250,7 +7244,7 @@ static BOOL gen_nv12_read(struct wined3d_string_buffer *buffer, const struct arb
     }
     else
     {
-        /* Read from [size - size+size/2] */
+        /* The y coordinate for chroma is in the range [size, size + size / 2). */
         shader_addline(buffer, "MAD texcrd.y, texcrd.y, coef.y, size.y;\n");
 
         shader_addline(buffer, "FLR texcrd.x, texcrd.x;\n");
@@ -7305,8 +7299,6 @@ static BOOL gen_nv12_read(struct wined3d_string_buffer *buffer, const struct arb
         shader_addline(buffer, "TEX luminance, texcrd, texture[0], %s;\n", tex);
     }
     *luminance = 'a';
-
-    return TRUE;
 }
 
 /* Context activation is done by the caller. */
@@ -7472,27 +7464,15 @@ static GLuint gen_yuv_shader(const struct wined3d_gl_info *gl_info, const struct
     {
         case COMPLEX_FIXUP_UYVY:
         case COMPLEX_FIXUP_YUY2:
-            if (!gen_planar_yuv_read(&buffer, type, &luminance_component))
-            {
-                string_buffer_free(&buffer);
-                return 0;
-            }
+            gen_packed_yuv_read(&buffer, type, &luminance_component);
             break;
 
         case COMPLEX_FIXUP_YV12:
-            if (!gen_yv12_read(&buffer, type, &luminance_component))
-            {
-                string_buffer_free(&buffer);
-                return 0;
-            }
+            gen_yv12_read(&buffer, type, &luminance_component);
             break;
 
         case COMPLEX_FIXUP_NV12:
-            if (!gen_nv12_read(&buffer, type, &luminance_component))
-            {
-                string_buffer_free(&buffer);
-                return 0;
-            }
+            gen_nv12_read(&buffer, type, &luminance_component);
             break;
 
         default:
@@ -7718,7 +7698,7 @@ static BOOL arbfp_blit_supported(enum wined3d_blit_op blit_op, const struct wine
     enum complex_fixup src_fixup;
     BOOL decompress;
 
-    if (!context->gl_info->supported[ARB_FRAGMENT_PROGRAM])
+    if (src_resource->type != WINED3D_RTYPE_TEXTURE_2D)
         return FALSE;
 
     if (blit_op == WINED3D_BLIT_OP_RAW_BLIT && dst_format->id == src_format->id)
@@ -7809,9 +7789,11 @@ static DWORD arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_bl
         const struct wined3d_color_key *color_key, enum wined3d_texture_filter_type filter)
 {
     struct wined3d_device *device = dst_texture->resource.device;
+    struct wined3d_texture *staging_texture = NULL;
     struct wined3d_arbfp_blitter *arbfp_blitter;
     struct wined3d_color_key alpha_test_key;
     struct wined3d_blitter *next;
+    unsigned int src_level;
     RECT s, d;
 
     TRACE("blitter %p, op %#x, context %p, src_texture %p, src_sub_resource_idx %u, src_location %s, src_rect %s, "
@@ -7836,14 +7818,45 @@ static DWORD arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_bl
 
     arbfp_blitter = CONTAINING_RECORD(blitter, struct wined3d_arbfp_blitter, blitter);
 
-    /* Now load the surface */
-    if (wined3d_settings.offscreen_rendering_mode != ORM_FBO
+    if (!(src_texture->resource.access & WINED3D_RESOURCE_ACCESS_GPU))
+    {
+        struct wined3d_resource_desc desc;
+        struct wined3d_box upload_box;
+        HRESULT hr;
+
+        TRACE("Source texture is not GPU accessible, creating a staging texture.\n");
+
+        src_level = src_sub_resource_idx % src_texture->level_count;
+        desc.resource_type = WINED3D_RTYPE_TEXTURE_2D;
+        desc.format = src_texture->resource.format->id;
+        desc.multisample_type = src_texture->resource.multisample_type;
+        desc.multisample_quality = src_texture->resource.multisample_quality;
+        desc.usage = WINED3DUSAGE_PRIVATE;
+        desc.access = WINED3D_RESOURCE_ACCESS_GPU;
+        desc.width = wined3d_texture_get_level_width(src_texture, src_level);
+        desc.height = wined3d_texture_get_level_height(src_texture, src_level);
+        desc.depth = 1;
+        desc.size = 0;
+
+        if (FAILED(hr = wined3d_texture_create(device, &desc, 1, 1, 0,
+                NULL, NULL, &wined3d_null_parent_ops, &staging_texture)))
+        {
+            ERR("Failed to create staging texture, hr %#x.\n", hr);
+            return dst_location;
+        }
+
+        wined3d_box_set(&upload_box, 0, 0, desc.width, desc.height, 0, desc.depth);
+        wined3d_texture_upload_from_texture(staging_texture, 0, 0, 0, 0,
+                src_texture, src_sub_resource_idx, &upload_box);
+
+        src_texture = staging_texture;
+        src_sub_resource_idx = 0;
+    }
+    else if (wined3d_settings.offscreen_rendering_mode != ORM_FBO
             && (src_texture->sub_resources[src_sub_resource_idx].locations
-            & (WINED3D_LOCATION_TEXTURE_RGB | WINED3D_LOCATION_DRAWABLE))
-            == WINED3D_LOCATION_DRAWABLE
+            & (WINED3D_LOCATION_TEXTURE_RGB | WINED3D_LOCATION_DRAWABLE)) == WINED3D_LOCATION_DRAWABLE
             && !wined3d_resource_is_offscreen(&src_texture->resource))
     {
-        unsigned int src_level = src_sub_resource_idx % src_texture->level_count;
 
         /* Without FBO blits transferring from the drawable to the texture is
          * expensive, because we have to flip the data in sysmem. Since we can
@@ -7853,12 +7866,15 @@ static DWORD arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_bl
         texture2d_load_fb_texture(src_texture, src_sub_resource_idx, FALSE, context);
 
         s = *src_rect;
+        src_level = src_sub_resource_idx % src_texture->level_count;
         s.top = wined3d_texture_get_level_height(src_texture, src_level) - s.top;
         s.bottom = wined3d_texture_get_level_height(src_texture, src_level) - s.bottom;
         src_rect = &s;
     }
     else
+    {
         wined3d_texture_load(src_texture, context, FALSE);
+    }
 
     context_apply_ffp_blit_state(context, device);
 
@@ -7901,13 +7917,16 @@ static DWORD arbfp_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_bl
     arbfp_blit_set(arbfp_blitter, context, src_texture, src_sub_resource_idx, color_key);
 
     /* Draw a textured quad */
-    draw_textured_quad(src_texture, src_sub_resource_idx, context, src_rect, dst_rect, filter);
+    context_draw_textured_quad(context, src_texture, src_sub_resource_idx, src_rect, dst_rect, filter);
 
     /* Leave the opengl state valid for blitting */
     arbfp_blit_unset(context->gl_info);
 
     if (dst_texture->swapchain && (dst_texture->swapchain->front_buffer == dst_texture))
         context->gl_info->gl_ops.gl.p_glFlush();
+
+    if (staging_texture)
+        wined3d_texture_decref(staging_texture);
 
     return dst_location;
 }

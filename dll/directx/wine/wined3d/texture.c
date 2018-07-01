@@ -36,6 +36,14 @@ struct wined3d_texture_idx
     unsigned int sub_resource_idx;
 };
 
+struct wined3d_rect_f
+{
+    float l;
+    float t;
+    float r;
+    float b;
+};
+
 static BOOL wined3d_texture_use_pbo(const struct wined3d_texture *texture, const struct wined3d_gl_info *gl_info)
 {
     return !(texture->resource.access & WINED3D_RESOURCE_ACCESS_CPU)
@@ -130,6 +138,122 @@ static DWORD wined3d_resource_access_from_location(DWORD location)
         default:
             FIXME("Unhandled location %#x.\n", location);
             return 0;
+    }
+}
+
+static inline void cube_coords_float(const RECT *r, UINT w, UINT h, struct wined3d_rect_f *f)
+{
+    f->l = ((r->left * 2.0f) / w) - 1.0f;
+    f->t = ((r->top * 2.0f) / h) - 1.0f;
+    f->r = ((r->right * 2.0f) / w) - 1.0f;
+    f->b = ((r->bottom * 2.0f) / h) - 1.0f;
+}
+
+void texture2d_get_blt_info(const struct wined3d_texture *texture,
+        unsigned int sub_resource_idx, const RECT *rect, struct wined3d_blt_info *info)
+{
+    struct wined3d_vec3 *coords = info->texcoords;
+    struct wined3d_rect_f f;
+    unsigned int level;
+    GLenum target;
+    GLsizei w, h;
+
+    level = sub_resource_idx % texture->level_count;
+    w = wined3d_texture_get_level_pow2_width(texture, level);
+    h = wined3d_texture_get_level_pow2_height(texture, level);
+    target = wined3d_texture_get_sub_resource_target(texture, sub_resource_idx);
+
+    switch (target)
+    {
+        default:
+            FIXME("Unsupported texture target %#x.\n", target);
+            /* Fall back to GL_TEXTURE_2D */
+        case GL_TEXTURE_2D:
+            info->bind_target = GL_TEXTURE_2D;
+            coords[0].x = (float)rect->left / w;
+            coords[0].y = (float)rect->top / h;
+            coords[0].z = 0.0f;
+
+            coords[1].x = (float)rect->right / w;
+            coords[1].y = (float)rect->top / h;
+            coords[1].z = 0.0f;
+
+            coords[2].x = (float)rect->left / w;
+            coords[2].y = (float)rect->bottom / h;
+            coords[2].z = 0.0f;
+
+            coords[3].x = (float)rect->right / w;
+            coords[3].y = (float)rect->bottom / h;
+            coords[3].z = 0.0f;
+            break;
+
+        case GL_TEXTURE_RECTANGLE_ARB:
+            info->bind_target = GL_TEXTURE_RECTANGLE_ARB;
+            coords[0].x = rect->left;  coords[0].y = rect->top;    coords[0].z = 0.0f;
+            coords[1].x = rect->right; coords[1].y = rect->top;    coords[1].z = 0.0f;
+            coords[2].x = rect->left;  coords[2].y = rect->bottom; coords[2].z = 0.0f;
+            coords[3].x = rect->right; coords[3].y = rect->bottom; coords[3].z = 0.0f;
+            break;
+
+        case GL_TEXTURE_CUBE_MAP_POSITIVE_X:
+            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
+            cube_coords_float(rect, w, h, &f);
+
+            coords[0].x =  1.0f;   coords[0].y = -f.t;   coords[0].z = -f.l;
+            coords[1].x =  1.0f;   coords[1].y = -f.t;   coords[1].z = -f.r;
+            coords[2].x =  1.0f;   coords[2].y = -f.b;   coords[2].z = -f.l;
+            coords[3].x =  1.0f;   coords[3].y = -f.b;   coords[3].z = -f.r;
+            break;
+
+        case GL_TEXTURE_CUBE_MAP_NEGATIVE_X:
+            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
+            cube_coords_float(rect, w, h, &f);
+
+            coords[0].x = -1.0f;   coords[0].y = -f.t;   coords[0].z = f.l;
+            coords[1].x = -1.0f;   coords[1].y = -f.t;   coords[1].z = f.r;
+            coords[2].x = -1.0f;   coords[2].y = -f.b;   coords[2].z = f.l;
+            coords[3].x = -1.0f;   coords[3].y = -f.b;   coords[3].z = f.r;
+            break;
+
+        case GL_TEXTURE_CUBE_MAP_POSITIVE_Y:
+            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
+            cube_coords_float(rect, w, h, &f);
+
+            coords[0].x = f.l;   coords[0].y =  1.0f;   coords[0].z = f.t;
+            coords[1].x = f.r;   coords[1].y =  1.0f;   coords[1].z = f.t;
+            coords[2].x = f.l;   coords[2].y =  1.0f;   coords[2].z = f.b;
+            coords[3].x = f.r;   coords[3].y =  1.0f;   coords[3].z = f.b;
+            break;
+
+        case GL_TEXTURE_CUBE_MAP_NEGATIVE_Y:
+            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
+            cube_coords_float(rect, w, h, &f);
+
+            coords[0].x = f.l;   coords[0].y = -1.0f;   coords[0].z = -f.t;
+            coords[1].x = f.r;   coords[1].y = -1.0f;   coords[1].z = -f.t;
+            coords[2].x = f.l;   coords[2].y = -1.0f;   coords[2].z = -f.b;
+            coords[3].x = f.r;   coords[3].y = -1.0f;   coords[3].z = -f.b;
+            break;
+
+        case GL_TEXTURE_CUBE_MAP_POSITIVE_Z:
+            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
+            cube_coords_float(rect, w, h, &f);
+
+            coords[0].x = f.l;   coords[0].y = -f.t;   coords[0].z =  1.0f;
+            coords[1].x = f.r;   coords[1].y = -f.t;   coords[1].z =  1.0f;
+            coords[2].x = f.l;   coords[2].y = -f.b;   coords[2].z =  1.0f;
+            coords[3].x = f.r;   coords[3].y = -f.b;   coords[3].z =  1.0f;
+            break;
+
+        case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z:
+            info->bind_target = GL_TEXTURE_CUBE_MAP_ARB;
+            cube_coords_float(rect, w, h, &f);
+
+            coords[0].x = -f.l;   coords[0].y = -f.t;   coords[0].z = -1.0f;
+            coords[1].x = -f.r;   coords[1].y = -f.t;   coords[1].z = -1.0f;
+            coords[2].x = -f.l;   coords[2].y = -f.b;   coords[2].z = -1.0f;
+            coords[3].x = -f.r;   coords[3].y = -f.b;   coords[3].z = -1.0f;
+            break;
     }
 }
 
@@ -1683,10 +1807,7 @@ BOOL wined3d_texture_prepare_location(struct wined3d_texture *texture, unsigned 
                 return TRUE;
 
             if (!wined3d_resource_allocate_sysmem(&texture->resource))
-            {
-                ERR("Failed to allocate system memory.\n");
                 return FALSE;
-            }
             return TRUE;
 
         case WINED3D_LOCATION_USER_MEMORY:
@@ -1753,7 +1874,7 @@ HRESULT CDECL wined3d_texture_add_dirty_region(struct wined3d_texture *texture,
     }
 
     if (dirty_region)
-        WARN("Ignoring dirty_region %s.\n", debug_box(dirty_region));
+        FIXME("Ignoring dirty_region %s.\n", debug_box(dirty_region));
 
     wined3d_cs_emit_add_dirty_texture_region(texture->resource.device->cs, texture, layer);
 
@@ -1798,15 +1919,20 @@ void wined3d_texture_upload_data(struct wined3d_texture *texture, unsigned int s
     target = wined3d_texture_get_sub_resource_target(texture, sub_resource_idx);
     level = sub_resource_idx % texture->level_count;
 
-    if (target == GL_TEXTURE_1D_ARRAY)
+    switch (target)
     {
-        dst_y = sub_resource_idx / texture->level_count;
-        update_h = 1;
-    }
-    else if (target == GL_TEXTURE_2D_ARRAY)
-    {
-        dst_z = sub_resource_idx / texture->level_count;
-        update_d = 1;
+        case GL_TEXTURE_1D_ARRAY:
+            dst_y = sub_resource_idx / texture->level_count;
+            update_h = 1;
+            break;
+        case GL_TEXTURE_2D_ARRAY:
+            dst_z = sub_resource_idx / texture->level_count;
+            update_d = 1;
+            break;
+        case GL_TEXTURE_2D_MULTISAMPLE:
+        case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
+            FIXME("Not supported for multisample textures.\n");
+            return;
     }
 
     bo.buffer_object = data->buffer_object;
@@ -2096,12 +2222,6 @@ static void wined3d_texture_unload(struct wined3d_resource *resource)
 static HRESULT texture_resource_sub_resource_map(struct wined3d_resource *resource, unsigned int sub_resource_idx,
         struct wined3d_map_desc *map_desc, const struct wined3d_box *box, DWORD flags)
 {
-    return E_NOTIMPL;
-}
-
-static HRESULT texture_resource_sub_resource_map_cs(struct wined3d_resource *resource, unsigned int sub_resource_idx,
-        struct wined3d_map_desc *map_desc, const struct wined3d_box *box, DWORD flags)
-{
     const struct wined3d_format *format = resource->format;
     struct wined3d_texture_sub_resource *sub_resource;
     struct wined3d_device *device = resource->device;
@@ -2230,42 +2350,7 @@ static HRESULT texture_resource_sub_resource_map_cs(struct wined3d_resource *res
     return WINED3D_OK;
 }
 
-static HRESULT texture_resource_sub_resource_map_info(struct wined3d_resource *resource, unsigned int sub_resource_idx,
-        struct wined3d_map_info *info, DWORD flags)
-{
-    const struct wined3d_format *format = resource->format;
-    struct wined3d_texture_sub_resource *sub_resource;
-    unsigned int fmt_flags = resource->format_flags;
-    struct wined3d_texture *texture;
-    unsigned int texture_level;
-
-    texture = texture_from_resource(resource);
-    if (!(sub_resource = wined3d_texture_get_sub_resource(texture, sub_resource_idx)))
-        return E_INVALIDARG;
-
-    texture_level = sub_resource_idx % texture->level_count;
-
-    if (fmt_flags & WINED3DFMT_FLAG_BROKEN_PITCH)
-    {
-        info->row_pitch = wined3d_texture_get_level_width(texture, texture_level) * format->byte_count;
-        info->slice_pitch = wined3d_texture_get_level_height(texture, texture_level) * info->row_pitch;
-    }
-    else
-    {
-        wined3d_texture_get_pitch(texture, texture_level, &info->row_pitch, &info->slice_pitch);
-    }
-
-    info->size = info->slice_pitch * wined3d_texture_get_level_depth(texture, texture_level);
-
-    return WINED3D_OK;
-}
-
 static HRESULT texture_resource_sub_resource_unmap(struct wined3d_resource *resource, unsigned int sub_resource_idx)
-{
-    return E_NOTIMPL;
-}
-
-static HRESULT texture_resource_sub_resource_unmap_cs(struct wined3d_resource *resource, unsigned int sub_resource_idx)
 {
     struct wined3d_texture_sub_resource *sub_resource;
     struct wined3d_device *device = resource->device;
@@ -2316,10 +2401,7 @@ static const struct wined3d_resource_ops texture_resource_ops =
     texture_resource_preload,
     wined3d_texture_unload,
     texture_resource_sub_resource_map,
-    texture_resource_sub_resource_map_info,
     texture_resource_sub_resource_unmap,
-    texture_resource_sub_resource_map_cs,
-    texture_resource_sub_resource_unmap_cs,
 };
 
 /* Context activation is done by the caller. */
@@ -2718,11 +2800,17 @@ static HRESULT wined3d_texture_init(struct wined3d_texture *texture, const struc
     TRACE("x scale %.8e, y scale %.8e.\n", texture->pow2_matrix[0], texture->pow2_matrix[5]);
 
     if (wined3d_texture_use_pbo(texture, gl_info))
-    {
-        if (desc->resource_type == WINED3D_RTYPE_TEXTURE_3D
-                || (texture->resource.usage & WINED3DUSAGE_DEPTHSTENCIL))
-            wined3d_resource_free_sysmem(&texture->resource);
         texture->resource.map_binding = WINED3D_LOCATION_BUFFER;
+
+    if ((desc->resource_type != WINED3D_RTYPE_TEXTURE_3D
+            && !(texture->resource.usage & WINED3DUSAGE_DEPTHSTENCIL))
+            || !wined3d_texture_use_pbo(texture, gl_info))
+    {
+        if (!wined3d_resource_allocate_sysmem(&texture->resource))
+        {
+            wined3d_texture_cleanup_sync(texture);
+            return E_OUTOFMEMORY;
+        }
     }
 
     sub_count = level_count * layer_count;
@@ -3304,7 +3392,7 @@ HRESULT CDECL wined3d_texture_create(struct wined3d_device *device, const struct
         for (i = 0; i < sub_count; ++i)
         {
             wined3d_device_update_sub_resource(device, &object->resource,
-                    i, NULL, data[i].data, data[i].row_pitch, data[i].slice_pitch);
+                    i, NULL, data[i].data, data[i].row_pitch, data[i].slice_pitch, 0);
         }
     }
 
@@ -3404,4 +3492,50 @@ HRESULT CDECL wined3d_texture_release_dc(struct wined3d_texture *texture, unsign
         texture->flags &= ~WINED3D_TEXTURE_DC_IN_USE;
 
     return WINED3D_OK;
+}
+
+void wined3d_texture_upload_from_texture(struct wined3d_texture *dst_texture, unsigned int dst_sub_resource_idx,
+        unsigned int dst_x, unsigned int dst_y, unsigned int dst_z, struct wined3d_texture *src_texture,
+        unsigned int src_sub_resource_idx, const struct wined3d_box *src_box)
+{
+    unsigned int src_row_pitch, src_slice_pitch;
+    unsigned int update_w, update_h, update_d;
+    unsigned int src_level, dst_level;
+    struct wined3d_context *context;
+    struct wined3d_bo_address data;
+
+    TRACE("dst_texture %p, dst_sub_resource_idx %u, dst_x %u, dst_y %u, dst_z %u, "
+            "src_texture %p, src_sub_resource_idx %u, src_box %s.\n",
+            dst_texture, dst_sub_resource_idx, dst_x, dst_y, dst_z,
+            src_texture, src_sub_resource_idx, debug_box(src_box));
+
+    context = context_acquire(dst_texture->resource.device, NULL, 0);
+
+    /* Only load the sub-resource for partial updates. For newly allocated
+     * textures the texture wouldn't be the current location, and we'd upload
+     * zeroes just to overwrite them again. */
+    update_w = src_box->right - src_box->left;
+    update_h = src_box->bottom - src_box->top;
+    update_d = src_box->back - src_box->front;
+    dst_level = dst_sub_resource_idx % dst_texture->level_count;
+    if (update_w == wined3d_texture_get_level_width(dst_texture, dst_level)
+            && update_h == wined3d_texture_get_level_height(dst_texture, dst_level)
+            && update_d == wined3d_texture_get_level_depth(dst_texture, dst_level))
+        wined3d_texture_prepare_texture(dst_texture, context, FALSE);
+    else
+        wined3d_texture_load_location(dst_texture, dst_sub_resource_idx, context, WINED3D_LOCATION_TEXTURE_RGB);
+    wined3d_texture_bind_and_dirtify(dst_texture, context, FALSE);
+
+    src_level = src_sub_resource_idx % src_texture->level_count;
+    wined3d_texture_get_memory(src_texture, src_sub_resource_idx, &data,
+            src_texture->sub_resources[src_sub_resource_idx].locations);
+    wined3d_texture_get_pitch(src_texture, src_level, &src_row_pitch, &src_slice_pitch);
+
+    wined3d_texture_upload_data(dst_texture, dst_sub_resource_idx, context, src_texture->resource.format,
+            src_box, wined3d_const_bo_address(&data), src_row_pitch, src_slice_pitch, dst_x, dst_y, dst_z, FALSE);
+
+    context_release(context);
+
+    wined3d_texture_validate_location(dst_texture, dst_sub_resource_idx, WINED3D_LOCATION_TEXTURE_RGB);
+    wined3d_texture_invalidate_location(dst_texture, dst_sub_resource_idx, ~WINED3D_LOCATION_TEXTURE_RGB);
 }
