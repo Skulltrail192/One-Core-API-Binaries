@@ -22,6 +22,7 @@ Revision History:
 
 extern RTL_CRITICAL_SECTION TIME_tz_section;
 extern RTL_CRITICAL_SECTION LocaleCritSection;
+extern RTL_CRITICAL_SECTION loader_section;
 
 VOID RtlpInitializeKeyedEvent(VOID);
 VOID RtlpCloseKeyedEvent(VOID);
@@ -41,6 +42,7 @@ LdrInitialize(
     {
 		RtlInitializeCriticalSection(&TIME_tz_section);
 		RtlInitializeCriticalSection(&LocaleCritSection);
+		RtlInitializeCriticalSection(&loader_section);
         LdrDisableThreadCalloutsForDll(hDll);
         RtlpInitializeKeyedEvent();
     }

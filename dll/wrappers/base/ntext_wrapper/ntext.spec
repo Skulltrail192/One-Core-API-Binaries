@@ -1510,6 +1510,8 @@
 @ stdcall LdrAddLoadAsDataTable(ptr wstr long long)
 @ stdcall LdrGetProcedureAddressEx(ptr ptr long ptr long)
 @ stdcall LdrLoadAlternateResourceModuleEx(long ptr ptr)
+@ stdcall LdrRegisterDllNotification(long ptr ptr ptr)
+@ stdcall LdrUnregisterDllNotification(ptr)
 @ stdcall NtAlpcAcceptConnectPort(ptr ptr long ptr ptr ptr ptr ptr long) 
 @ stdcall NtAlpcCancelMessage(ptr long ptr)	
 @ stdcall NtAlpcConnectPort(ptr ptr ptr ptr long ptr ptr ptr ptr ptr ptr)

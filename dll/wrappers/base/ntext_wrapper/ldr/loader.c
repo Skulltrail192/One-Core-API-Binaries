@@ -18,3 +18,60 @@
 #define NDEBUG
 
 #include <main.h>
+
+struct ldr_notification
+{
+    struct list                    entry;
+    PLDR_DLL_NOTIFICATION_FUNCTION callback;
+    void                           *context;
+};
+
+static struct list ldr_notifications = LIST_INIT( ldr_notifications );
+
+/******************************************************************
+ *              LdrRegisterDllNotification (NTDLL.@)
+ */
+NTSTATUS WINAPI LdrRegisterDllNotification(ULONG flags, PLDR_DLL_NOTIFICATION_FUNCTION callback,
+                                           void *context, void **cookie)
+{
+    struct ldr_notification *notify;
+
+    DbgPrint( "LdrRegisterDllNotification::(%x, %p, %p, %p)\n", flags, callback, context, cookie );
+
+    if (!callback || !cookie)
+        return STATUS_INVALID_PARAMETER;
+
+    if (flags)
+        DbgPrint( "LdrRegisterDllNotification:: ignoring flags %x\n", flags );
+
+    notify = RtlAllocateHeap( RtlProcessHeap(), 0, sizeof(*notify) );
+    if (!notify) return STATUS_NO_MEMORY;
+    notify->callback = callback;
+    notify->context = context;
+
+    RtlEnterCriticalSection( &loader_section );
+    list_add_tail( &ldr_notifications, &notify->entry );
+    RtlLeaveCriticalSection( &loader_section );
+
+    *cookie = notify;
+    return STATUS_SUCCESS;
+}
+
+/******************************************************************
+ *              LdrUnregisterDllNotification (NTDLL.@)
+ */
+NTSTATUS WINAPI LdrUnregisterDllNotification( void *cookie )
+{
+    struct ldr_notification *notify = cookie;
+
+    DbgPrint( "LdrUnregisterDllNotification::(%p)\n", cookie );
+
+    if (!notify) return STATUS_INVALID_PARAMETER;
+
+    RtlEnterCriticalSection( &loader_section );
+    list_remove( &notify->entry );
+    RtlLeaveCriticalSection( &loader_section );
+
+    RtlFreeHeap( RtlProcessHeap(), 0, notify );
+    return STATUS_SUCCESS;
+}
