@@ -39,6 +39,11 @@
 #include "wine/wined3d.h"
 #include "wine/winedxgi.h"
 
+ULONG DbgPrint(
+  PCSTR Format,
+  ...   
+);
+
 enum dxgi_frame_latency
 {
     DXGI_FRAME_LATENCY_DEFAULT =  3,
@@ -79,7 +84,7 @@ struct dxgi_device_layer
             D3D_FEATURE_LEVEL feature_level);
 };
 
-/* TRACE helper functions */
+/* DbgPrint helper functions */
 const char *debug_dxgi_format(DXGI_FORMAT format) DECLSPEC_HIDDEN;
 const char *debug_dxgi_mode(const DXGI_MODE_DESC *desc) DECLSPEC_HIDDEN;
 void dump_feature_levels(const D3D_FEATURE_LEVEL *feature_levels, unsigned int level_count) DECLSPEC_HIDDEN;

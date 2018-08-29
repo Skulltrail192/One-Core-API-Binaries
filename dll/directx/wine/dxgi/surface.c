@@ -35,7 +35,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_inner_QueryInterface(IUnknown *ifa
 {
     struct dxgi_surface *surface = impl_from_IUnknown(iface);
 
-    TRACE("iface %p, riid %s, out %p.\n", iface, debugstr_guid(riid), out);
+    DbgPrint("iface %p, riid %s, out %p.\n", iface, debugstr_guid(riid), out);
 
     if (IsEqualGUID(riid, &IID_IDXGISurface1)
             || IsEqualGUID(riid, &IID_IDXGISurface)
@@ -48,7 +48,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_inner_QueryInterface(IUnknown *ifa
         return S_OK;
     }
 
-    WARN("%s not implemented, returning E_NOINTERFACE\n", debugstr_guid(riid));
+    DbgPrint("%s not implemented, returning E_NOINTERFACE\n", debugstr_guid(riid));
 
     *out = NULL;
     return E_NOINTERFACE;
@@ -59,7 +59,7 @@ static ULONG STDMETHODCALLTYPE dxgi_surface_inner_AddRef(IUnknown *iface)
     struct dxgi_surface *surface = impl_from_IUnknown(iface);
     ULONG refcount = InterlockedIncrement(&surface->refcount);
 
-    TRACE("%p increasing refcount to %u.\n", surface, refcount);
+    DbgPrint("%p increasing refcount to %u.\n", surface, refcount);
 
     return refcount;
 }
@@ -69,7 +69,7 @@ static ULONG STDMETHODCALLTYPE dxgi_surface_inner_Release(IUnknown *iface)
     struct dxgi_surface *surface = impl_from_IUnknown(iface);
     ULONG refcount = InterlockedDecrement(&surface->refcount);
 
-    TRACE("%p decreasing refcount to %u.\n", surface, refcount);
+    DbgPrint("%p decreasing refcount to %u.\n", surface, refcount);
 
     if (!refcount)
     {
@@ -91,21 +91,21 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_QueryInterface(IDXGISurface1 *ifac
         void **object)
 {
     struct dxgi_surface *This = impl_from_IDXGISurface1(iface);
-    TRACE("Forwarding to outer IUnknown\n");
+    DbgPrint("Forwarding to outer IUnknown\n");
     return IUnknown_QueryInterface(This->outer_unknown, riid, object);
 }
 
 static ULONG STDMETHODCALLTYPE dxgi_surface_AddRef(IDXGISurface1 *iface)
 {
     struct dxgi_surface *This = impl_from_IDXGISurface1(iface);
-    TRACE("Forwarding to outer IUnknown\n");
+    DbgPrint("Forwarding to outer IUnknown\n");
     return IUnknown_AddRef(This->outer_unknown);
 }
 
 static ULONG STDMETHODCALLTYPE dxgi_surface_Release(IDXGISurface1 *iface)
 {
     struct dxgi_surface *This = impl_from_IDXGISurface1(iface);
-    TRACE("Forwarding to outer IUnknown\n");
+    DbgPrint("Forwarding to outer IUnknown\n");
     return IUnknown_Release(This->outer_unknown);
 }
 
@@ -116,7 +116,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_SetPrivateData(IDXGISurface1 *ifac
 {
     struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
 
-    TRACE("iface %p, guid %s, data_size %u, data %p.\n", iface, debugstr_guid(guid), data_size, data);
+    DbgPrint("iface %p, guid %s, data_size %u, data %p.\n", iface, debugstr_guid(guid), data_size, data);
 
     return dxgi_set_private_data(&surface->private_store, guid, data_size, data);
 }
@@ -126,7 +126,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_SetPrivateDataInterface(IDXGISurfa
 {
     struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
 
-    TRACE("iface %p, guid %s, object %p.\n", iface, debugstr_guid(guid), object);
+    DbgPrint("iface %p, guid %s, object %p.\n", iface, debugstr_guid(guid), object);
 
     return dxgi_set_private_data_interface(&surface->private_store, guid, object);
 }
@@ -136,7 +136,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_GetPrivateData(IDXGISurface1 *ifac
 {
     struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
 
-    TRACE("iface %p, guid %s, data_size %p, data %p.\n", iface, debugstr_guid(guid), data_size, data);
+    DbgPrint("iface %p, guid %s, data_size %p, data %p.\n", iface, debugstr_guid(guid), data_size, data);
 
     return dxgi_get_private_data(&surface->private_store, guid, data_size, data);
 }
@@ -145,7 +145,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_GetParent(IDXGISurface1 *iface, RE
 {
     struct dxgi_surface *This = impl_from_IDXGISurface1(iface);
 
-    TRACE("iface %p, riid %s, parent %p.\n", iface, debugstr_guid(riid), parent);
+    DbgPrint("iface %p, riid %s, parent %p.\n", iface, debugstr_guid(riid), parent);
 
     return IDXGIDevice_QueryInterface(This->device, riid, parent);
 }
@@ -156,7 +156,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_GetDevice(IDXGISurface1 *iface, RE
 {
     struct dxgi_surface *This = impl_from_IDXGISurface1(iface);
 
-    TRACE("iface %p, riid %s, device %p.\n", iface, debugstr_guid(riid), device);
+    DbgPrint("iface %p, riid %s, device %p.\n", iface, debugstr_guid(riid), device);
 
     return IDXGIDevice_QueryInterface(This->device, riid, device);
 }
@@ -167,7 +167,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_GetDesc(IDXGISurface1 *iface, DXGI
     struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
     struct wined3d_resource_desc wined3d_desc;
 
-    TRACE("iface %p, desc %p.\n", iface, desc);
+    DbgPrint("iface %p, desc %p.\n", iface, desc);
 
     wined3d_mutex_lock();
     wined3d_resource_get_desc(wined3d_texture_get_resource(surface->wined3d_texture), &wined3d_desc);
@@ -182,14 +182,14 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_GetDesc(IDXGISurface1 *iface, DXGI
 
 static HRESULT STDMETHODCALLTYPE dxgi_surface_Map(IDXGISurface1 *iface, DXGI_MAPPED_RECT *mapped_rect, UINT flags)
 {
-    FIXME("iface %p, mapped_rect %p, flags %#x stub!\n", iface, mapped_rect, flags);
+    DbgPrint("iface %p, mapped_rect %p, flags %#x stub!\n", iface, mapped_rect, flags);
 
     return E_NOTIMPL;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_surface_Unmap(IDXGISurface1 *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    DbgPrint("iface %p stub!\n", iface);
 
     return E_NOTIMPL;
 }
@@ -200,7 +200,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_GetDC(IDXGISurface1 *iface, BOOL d
     struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
     HRESULT hr;
 
-    FIXME("iface %p, discard %d, hdc %p semi-stub!\n", iface, discard, hdc);
+    DbgPrint("iface %p, discard %d, hdc %p semi-stub!\n", iface, discard, hdc);
 
     if (!hdc)
         return E_INVALIDARG;
@@ -220,10 +220,10 @@ static HRESULT STDMETHODCALLTYPE dxgi_surface_ReleaseDC(IDXGISurface1 *iface, RE
     struct dxgi_surface *surface = impl_from_IDXGISurface1(iface);
     HRESULT hr;
 
-    TRACE("iface %p, rect %s\n", iface, wine_dbgstr_rect(dirty_rect));
+    DbgPrint("iface %p, rect %s\n", iface, wine_dbgstr_rect(dirty_rect));
 
     if (!IsRectEmpty(dirty_rect))
-        FIXME("dirty rectangle is ignored.\n");
+        DbgPrint("dirty rectangle is ignored.\n");
 
     wined3d_mutex_lock();
     hr = wined3d_texture_release_dc(surface->wined3d_texture, 0, surface->dc);

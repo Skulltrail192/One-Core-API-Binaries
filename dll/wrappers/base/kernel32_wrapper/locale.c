@@ -1725,7 +1725,7 @@ GetNLSVersion(
 	pGetNLSVersion nlsVersion;
 	
 	nlsVersion = (pGetNLSVersion) GetProcAddress(
-                            GetModuleHandleW(L"kernelfull"),
+                            GetModuleHandleW(L"kernelex"),
                             "GetNLSVersion");
 							
 	if(nlsVersion!=NULL){

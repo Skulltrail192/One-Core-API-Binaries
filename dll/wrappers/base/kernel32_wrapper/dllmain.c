@@ -44,7 +44,7 @@ BaseDllInitialize(
         case DLL_PROCESS_ATTACH:
         {
             /* Insert more dll attach stuff here! */
-			kernel32_handle = GetModuleHandleW(L"kernelfull");
+			kernel32_handle = GetModuleHandleW(L"kernelex");
 			InitializeCriticalForDirectories();
 			InitializeCriticalForLocaleInfo();
 			

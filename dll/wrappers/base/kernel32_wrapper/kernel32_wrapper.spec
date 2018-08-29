@@ -1284,21 +1284,31 @@
 @ stub BaseThreadInitThunk
 @ stdcall CheckForReadOnlyResource(ptr) BasepCheckForReadOnlyResource
 @ stdcall CreateRemoteThreadEx(long ptr long ptr long long ptr ptr)
+@ stdcall -arch=x86_64 CreateUmsCompletionList(ptr)
+@ stdcall -arch=x86_64 CreateUmsThreadContext(ptr)
+@ stdcall -arch=x86_64 DeleteUmsCompletionList(ptr)
+@ stdcall -arch=x86_64 DeleteUmsThreadContext(ptr)
+@ stdcall -arch=x86_64 DequeueUmsCompletionListItems(ptr long ptr)
+@ stdcall -arch=x86_64 EnterUmsSchedulingMode(ptr)
+@ stdcall -arch=x86_64 ExecuteUmsThread(ptr)
 # @ stub FindStringOrdinal
 @ stdcall GetActiveProcessorCount(long)
 @ stdcall GetActiveProcessorGroupCount()
 @ stdcall GetCurrentProcessorNumberEx(ptr) ntext.RtlGetCurrentProcessorNumberEx
+@ stdcall -arch=x86_64 GetCurrentUmsThread()
 @ stdcall -ret64 -arch=i386,x86_64 GetEnabledXStateFeatures()
 # @ stub GetEraNameCountedString
 @ stdcall GetMaximumProcessorCount(long)
 @ stdcall GetMaximumProcessorGroupCount()
 @ stdcall GetTimeFormatWWorker(long long ptr wstr ptr long) GetTimeFormatW
 @ stdcall GetLogicalProcessorInformationEx(long ptr ptr)
+@ stdcall -arch=x86_64 GetNextUmsListItem(ptr)
 @ stdcall GetNumaAvailableMemoryNode(long ptr)
 @ stdcall GetNumaNodeProcessorMaskEx(long ptr)
 # @ stub GetNumaProximityNodeEx
 @ stdcall GetThreadGroupAffinity(long ptr)
 @ stdcall GetThreadIdealProcessorEx(ptr ptr)
+@ stdcall -arch=x86_64 GetUmsCompletionListEvent(ptr ptr)
 # @ stub GetXStateFeaturesMask
 # @ stub LoadStringBaseExW
 # @ stub LoadStringBaseW
@@ -1336,6 +1346,7 @@
 @ stdcall PowerCreateRequestW(ptr) PowerCreateRequest
 @ stdcall PowerSetRequest(ptr long)
 @ stdcall QueryIdleProcessorCycleTimeEx(long ptr ptr)
+@ stdcall -arch=x86_64 QueryUmsThreadInformation(ptr long ptr long ptr)
 @ stdcall QueryUnbiasedInterruptTime(ptr)
 @ stdcall RaiseFailFastException(ptr ptr long)
 @ stdcall RegisterApplicationRecoveryCallback(long ptr long long)
@@ -1343,6 +1354,7 @@
 @ stdcall ResolveLocaleName(wstr ptr long)
 @ stdcall SetThreadGroupAffinity(long ptr ptr)
 @ stdcall SetThreadIdealProcessorEx(ptr ptr ptr)
+@ stdcall -arch=x86_64 SetUmsThreadInformation(ptr long ptr long)
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
 @ stdcall SystemTimeToTzSpecificLocalTimeEx(ptr ptr ptr)
 @ stdcall TryAcquireSRWLockExclusive(ptr) ntext.RtlTryAcquireSRWLockExclusive
@@ -1351,6 +1363,7 @@
 @ stdcall WerRegisterRuntimeExceptionModule(wstr ptr)
 @ stdcall WerUnregisterRuntimeExceptionModule(wstr ptr)
 @ stdcall Wow64GetThreadSelectorEntry(ptr long ptr)
+@ stdcall -arch=x86_64 UmsThreadYield(ptr)
 
 #Win8 Functions 
 @ stdcall AddDllDirectory(wstr)
@@ -1379,6 +1392,7 @@
 @ stdcall PathCchCombineEx(ptr long ptr ptr long)
 @ stdcall RemoveDllDirectory(ptr)
 @ stdcall SetDefaultDllDirectories(long)
+@ stdcall SetProcessMitigationPolicy(long ptr long)
 @ stdcall WerpNotifyLoadStringResourceWorker(ptr wstr ptr long) WerpNotifyLoadStringResource
 @ stdcall WerpNotifyUseStringResourceWorker(ptr) WerpNotifyUseStringResource
 

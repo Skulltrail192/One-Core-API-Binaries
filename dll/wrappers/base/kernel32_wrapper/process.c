@@ -350,7 +350,7 @@ GetLogicalProcessorInformation(
 	LPFN_GLPI glpi;
 	
     glpi = (LPFN_GLPI) GetProcAddress(
-                            GetModuleHandle(TEXT("kernelfull")),
+                            GetModuleHandle(TEXT("kernelex")),
                             "GetLogicalProcessorInformation");
     if (NULL == glpi) 
     {
@@ -598,7 +598,7 @@ SYSTEM_LOGICAL_INFORMATION_FILLED _cdecl GetLogicalInfo()
     PCACHE_DESCRIPTOR Cache;
 
     glpi = (LPFN_GLPI) GetProcAddress(
-                            GetModuleHandle(TEXT("kernelfull")),
+                            GetModuleHandle(TEXT("kernelex")),
                             "GetLogicalProcessorInformation");
     if (NULL == glpi) 
     {
@@ -953,23 +953,17 @@ InitializeProcThreadAttributeList(
 /***********************************************************************
  *           UpdateProcThreadAttribute       (KERNEL32.@)
  */
-BOOL 
-WINAPI 
-UpdateProcThreadAttribute(
-	LPPROC_THREAD_ATTRIBUTE_LIST list,
-    DWORD flags, DWORD_PTR attr, 
-	void *value, SIZE_T size,
-    void *prev_ret, SIZE_T *size_ret
-)
+BOOL WINAPI UpdateProcThreadAttribute(struct _PROC_THREAD_ATTRIBUTE_LIST *list,
+                                      DWORD flags, DWORD_PTR attr, void *value, SIZE_T size,
+                                      void *prev_ret, SIZE_T *size_ret)
 {
     DWORD mask;
     struct proc_thread_attr *entry;
-	
-	DbgPrint("UpdateProcThreadAttribute called!\n");
+
+    DbgPrint("(%p %x %08lx %p %ld %p %p)\n", list, flags, attr, value, size, prev_ret, size_ret);
 
     if (list->count >= list->size)
     {
-		DbgPrint("UpdateProcThreadAttribute :: list->count is bigger than list->size! - ERROR_GEN_FAILURE\n");
         SetLastError(ERROR_GEN_FAILURE);
         return FALSE;
     }
@@ -979,7 +973,6 @@ UpdateProcThreadAttribute(
     case PROC_THREAD_ATTRIBUTE_PARENT_PROCESS:
         if (size != sizeof(HANDLE))
         {
-			DbgPrint("UpdateProcThreadAttribute :: size != sizeof(HANDLE)! - ERROR_BAD_LENGTH\n");
             SetLastError(ERROR_BAD_LENGTH);
             return FALSE;
         }
@@ -1001,8 +994,25 @@ UpdateProcThreadAttribute(
         }
         break;
 
+    case PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY:
+       if (size != sizeof(DWORD) && size != sizeof(DWORD64))
+       {
+           SetLastError(ERROR_BAD_LENGTH);
+           return FALSE;
+       }
+       break;
+
+    case PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY:
+        if (size != sizeof(DWORD) && size != sizeof(DWORD64) && size != sizeof(DWORD64) * 2)
+        {
+            SetLastError(ERROR_BAD_LENGTH);
+            return FALSE;
+        }
+        break;
+
     default:
         SetLastError(ERROR_NOT_SUPPORTED);
+        DbgPrint("Unhandled attribute number %lu\n", attr & PROC_THREAD_ATTRIBUTE_NUMBER);
         return FALSE;
     }
 
@@ -1433,6 +1443,9 @@ CreateProcessInternalExW(
 	// STARTUPINFOW startupInfo;
 	
 	BOOL resp;
+    static const WCHAR chromeexeW[] = {'c','h','r','o','m','e','.','e','x','e',0};
+    static const WCHAR nosandboxW[] = {' ','-','-','n','o','-','s','a','n','d','b','o','x',0};	
+	LPWSTR new_command_line;	
 	
 	// if(lpStartupInfo->cb == sizeof(STARTUPINFOEX))
 	 if(dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT)
@@ -1463,6 +1476,33 @@ CreateProcessInternalExW(
 		
 		 DbgPrint("CreateProcessInternalExW :: lpStartupInfo is STARTUPINFOEX structure\n");
 	 };
+
+        // if (strstrW(name, steamwebhelperexeW))
+        // {
+            // LPWSTR new_command_line;
+
+            // new_command_line = HeapAlloc(GetProcessHeap(), 0,
+                // sizeof(WCHAR) * (strlenW(tidy_cmdline) + strlenW(nosandboxW) + 1));
+
+            // if (!new_command_line) return FALSE;
+
+            // strcpyW(new_command_line, tidy_cmdline);
+            // strcatW(new_command_line, nosandboxW);
+
+            // TRACE("CrossOver hack changing command line to %s\n", debugstr_w(new_command_line));
+
+            // if (tidy_cmdline != cmd_line) HeapFree( GetProcessHeap(), 0, tidy_cmdline );
+            // tidy_cmdline = new_command_line;
+        // }
+	
+	// if (strstrW(lpApplicationName, chromeexeW))
+	// {
+		// new_command_line = lpCommandLine;
+		
+		// strcatW(new_command_line, nosandboxW);	
+		
+		// lpCommandLine = new_command_line;
+	// }	
 	
 	resp = CreateProcessInternalW(hUserToken,
 								  lpApplicationName,
@@ -1704,4 +1744,146 @@ CreateProcessExA(
 	DbgPrint("CreateProcessA :: returned value is %d\n", resp);		
 
 	return resp;
+}
+
+/***********************************************************************
+ *           CreateUmsCompletionList   (KERNEL32.@)
+ */
+BOOL WINAPI CreateUmsCompletionList(PUMS_COMPLETION_LIST *list)
+{
+    FIXME( "%p: stub\n", list );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/***********************************************************************
+ *           CreateUmsThreadContext   (KERNEL32.@)
+ */
+BOOL WINAPI CreateUmsThreadContext(PUMS_CONTEXT *ctx)
+{
+    FIXME( "%p: stub\n", ctx );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/***********************************************************************
+ *           DeleteUmsCompletionList   (KERNEL32.@)
+ */
+BOOL WINAPI DeleteUmsCompletionList(PUMS_COMPLETION_LIST list)
+{
+    FIXME( "%p: stub\n", list );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/***********************************************************************
+ *           DeleteUmsThreadContext   (KERNEL32.@)
+ */
+BOOL WINAPI DeleteUmsThreadContext(PUMS_CONTEXT ctx)
+{
+    FIXME( "%p: stub\n", ctx );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/***********************************************************************
+ *           DequeueUmsCompletionListItems   (KERNEL32.@)
+ */
+BOOL WINAPI DequeueUmsCompletionListItems(void *list, DWORD timeout, PUMS_CONTEXT *ctx)
+{
+    FIXME( "%p,%08x,%p: stub\n", list, timeout, ctx );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/***********************************************************************
+ *           EnterUmsSchedulingMode   (KERNEL32.@)
+ */
+BOOL WINAPI EnterUmsSchedulingMode(UMS_SCHEDULER_STARTUP_INFO *info)
+{
+    FIXME( "%p: stub\n", info );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/***********************************************************************
+ *           ExecuteUmsThread   (KERNEL32.@)
+ */
+BOOL WINAPI ExecuteUmsThread(PUMS_CONTEXT ctx)
+{
+    FIXME( "%p: stub\n", ctx );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/***********************************************************************
+ *           GetCurrentUmsThread   (KERNEL32.@)
+ */
+PUMS_CONTEXT WINAPI GetCurrentUmsThread(void)
+{
+    FIXME( "stub\n" );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/***********************************************************************
+ *           GetNextUmsListItem   (KERNEL32.@)
+ */
+PUMS_CONTEXT WINAPI GetNextUmsListItem(PUMS_CONTEXT ctx)
+{
+    FIXME( "%p: stub\n", ctx );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return NULL;
+}
+
+/***********************************************************************
+ *           GetUmsCompletionListEvent   (KERNEL32.@)
+ */
+BOOL WINAPI GetUmsCompletionListEvent(PUMS_COMPLETION_LIST list, HANDLE *event)
+{
+    FIXME( "%p,%p: stub\n", list, event );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/***********************************************************************
+ *           QueryUmsThreadInformation   (KERNEL32.@)
+ */
+BOOL WINAPI QueryUmsThreadInformation(PUMS_CONTEXT ctx, UMS_THREAD_INFO_CLASS class,
+                                       void *buf, ULONG length, ULONG *ret_length)
+{
+    FIXME( "%p,%08x,%p,%08x,%p: stub\n", ctx, class, buf, length, ret_length );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/***********************************************************************
+ *           SetUmsThreadInformation   (KERNEL32.@)
+ */
+BOOL WINAPI SetUmsThreadInformation(PUMS_CONTEXT ctx, UMS_THREAD_INFO_CLASS class,
+                                     void *buf, ULONG length)
+{
+    FIXME( "%p,%08x,%p,%08x: stub\n", ctx, class, buf, length );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/***********************************************************************
+ *           UmsThreadYield   (KERNEL32.@)
+ */
+BOOL WINAPI UmsThreadYield(void *param)
+{
+    FIXME( "%p: stub\n", param );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/**********************************************************************
+ *           SetProcessMitigationPolicy     (KERNEL32.@)
+ */
+BOOL WINAPI SetProcessMitigationPolicy(PROCESS_MITIGATION_POLICY policy, void *buffer, SIZE_T length)
+{
+    FIXME("(%d, %p, %lu): stub\n", policy, buffer, length);
+
+    return TRUE;
 }

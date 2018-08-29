@@ -33,7 +33,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_QueryInterface(IWineDXGIFactory *i
 {
     struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
 
-    TRACE("iface %p, iid %s, out %p.\n", iface, debugstr_guid(iid), out);
+    DbgPrint("iface %p, iid %s, out %p.\n", iface, debugstr_guid(iid), out);
 
     if (IsEqualGUID(iid, &IID_IWineDXGIFactory)
             || IsEqualGUID(iid, &IID_IDXGIFactory5)
@@ -50,7 +50,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_QueryInterface(IWineDXGIFactory *i
         return S_OK;
     }
 
-    WARN("%s not implemented, returning E_NOINTERFACE.\n", debugstr_guid(iid));
+    DbgPrint("%s not implemented, returning E_NOINTERFACE.\n", debugstr_guid(iid));
 
     *out = NULL;
     return E_NOINTERFACE;
@@ -61,7 +61,7 @@ static ULONG STDMETHODCALLTYPE dxgi_factory_AddRef(IWineDXGIFactory *iface)
     struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
     ULONG refcount = InterlockedIncrement(&factory->refcount);
 
-    TRACE("%p increasing refcount to %u.\n", iface, refcount);
+    DbgPrint("%p increasing refcount to %u.\n", iface, refcount);
 
     return refcount;
 }
@@ -71,7 +71,7 @@ static ULONG STDMETHODCALLTYPE dxgi_factory_Release(IWineDXGIFactory *iface)
     struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
     ULONG refcount = InterlockedDecrement(&factory->refcount);
 
-    TRACE("%p decreasing refcount to %u.\n", iface, refcount);
+    DbgPrint("%p decreasing refcount to %u.\n", iface, refcount);
 
     if (!refcount)
     {
@@ -93,7 +93,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_SetPrivateData(IWineDXGIFactory *i
 {
     struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
 
-    TRACE("iface %p, guid %s, data_size %u, data %p.\n", iface, debugstr_guid(guid), data_size, data);
+    DbgPrint("iface %p, guid %s, data_size %u, data %p.\n", iface, debugstr_guid(guid), data_size, data);
 
     return dxgi_set_private_data(&factory->private_store, guid, data_size, data);
 }
@@ -103,7 +103,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_SetPrivateDataInterface(IWineDXGIF
 {
     struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
 
-    TRACE("iface %p, guid %s, object %p.\n", iface, debugstr_guid(guid), object);
+    DbgPrint("iface %p, guid %s, object %p.\n", iface, debugstr_guid(guid), object);
 
     return dxgi_set_private_data_interface(&factory->private_store, guid, object);
 }
@@ -113,14 +113,14 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_GetPrivateData(IWineDXGIFactory *i
 {
     struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
 
-    TRACE("iface %p, guid %s, data_size %p, data %p.\n", iface, debugstr_guid(guid), data_size, data);
+    DbgPrint("iface %p, guid %s, data_size %p, data %p.\n", iface, debugstr_guid(guid), data_size, data);
 
     return dxgi_get_private_data(&factory->private_store, guid, data_size, data);
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_factory_GetParent(IWineDXGIFactory *iface, REFIID iid, void **parent)
 {
-    WARN("iface %p, iid %s, parent %p.\n", iface, debugstr_guid(iid), parent);
+    DbgPrint("iface %p, iid %s, parent %p.\n", iface, debugstr_guid(iid), parent);
 
     *parent = NULL;
 
@@ -135,7 +135,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumAdapters1(IWineDXGIFactory *if
     UINT adapter_count;
     HRESULT hr;
 
-    TRACE("iface %p, adapter_idx %u, adapter %p.\n", iface, adapter_idx, adapter);
+    DbgPrint("iface %p, adapter_idx %u, adapter %p.\n", iface, adapter_idx, adapter);
 
     if (!adapter)
         return DXGI_ERROR_INVALID_CALL;
@@ -158,7 +158,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumAdapters1(IWineDXGIFactory *if
 
     *adapter = (IDXGIAdapter1 *)&adapter_object->IWineDXGIAdapter_iface;
 
-    TRACE("Returning adapter %p.\n", *adapter);
+    DbgPrint("Returning adapter %p.\n", *adapter);
 
     return S_OK;
 }
@@ -166,7 +166,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumAdapters1(IWineDXGIFactory *if
 static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumAdapters(IWineDXGIFactory *iface,
         UINT adapter_idx, IDXGIAdapter **adapter)
 {
-    TRACE("iface %p, adapter_idx %u, adapter %p.\n", iface, adapter_idx, adapter);
+    DbgPrint("iface %p, adapter_idx %u, adapter %p.\n", iface, adapter_idx, adapter);
 
     return dxgi_factory_EnumAdapters1(iface, adapter_idx, (IDXGIAdapter1 **)adapter);
 }
@@ -176,7 +176,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_MakeWindowAssociation(IWineDXGIFac
 {
     struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
 
-    FIXME("iface %p, window %p, flags %#x stub!\n", iface, window, flags);
+    DbgPrint("iface %p, window %p, flags %#x stub!\n", iface, window, flags);
 
     if (!window && flags)
         return DXGI_ERROR_INVALID_CALL;
@@ -190,7 +190,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_GetWindowAssociation(IWineDXGIFact
 {
     struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
 
-    FIXME("iface %p, window %p stub!\n", iface, window);
+    DbgPrint("iface %p, window %p stub!\n", iface, window);
 
     if (!window)
         return DXGI_ERROR_INVALID_CALL;
@@ -206,11 +206,11 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChain(IWineDXGIFactory *
     DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreen_desc;
     DXGI_SWAP_CHAIN_DESC1 swapchain_desc;
 
-    TRACE("iface %p, device %p, desc %p, swapchain %p.\n", iface, device, desc, swapchain);
+    DbgPrint("iface %p, device %p, desc %p, swapchain %p.\n", iface, device, desc, swapchain);
 
     if (!desc)
     {
-        WARN("Invalid pointer.\n");
+        DbgPrint("Invalid pointer.\n");
         return DXGI_ERROR_INVALID_CALL;
     }
 
@@ -239,21 +239,21 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChain(IWineDXGIFactory *
 static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSoftwareAdapter(IWineDXGIFactory *iface,
         HMODULE swrast, IDXGIAdapter **adapter)
 {
-    FIXME("iface %p, swrast %p, adapter %p stub!\n", iface, swrast, adapter);
+    DbgPrint("iface %p, swrast %p, adapter %p stub!\n", iface, swrast, adapter);
 
     return E_NOTIMPL;
 }
 
 static BOOL STDMETHODCALLTYPE dxgi_factory_IsCurrent(IWineDXGIFactory *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    DbgPrint("iface %p stub!\n", iface);
 
     return TRUE;
 }
 
 static BOOL STDMETHODCALLTYPE dxgi_factory_IsWindowedStereoEnabled(IWineDXGIFactory *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    DbgPrint("iface %p stub!\n", iface);
 
     return FALSE;
 }
@@ -269,19 +269,19 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForHwnd(IWineDXGIFa
     IWineDXGIDevice *dxgi_device;
     HRESULT hr;
 
-    TRACE("iface %p, device %p, window %p, swapchain_desc %p, fullscreen_desc %p, "
+    DbgPrint("iface %p, device %p, window %p, swapchain_desc %p, fullscreen_desc %p, "
             "output %p, swapchain %p.\n",
             iface, device, window, swapchain_desc, fullscreen_desc, output, swapchain);
 
     if (!device || !window || !swapchain_desc || !swapchain)
     {
-        WARN("Invalid pointer.\n");
+        DbgPrint("Invalid pointer.\n");
         return DXGI_ERROR_INVALID_CALL;
     }
 
     if (swapchain_desc->Stereo)
     {
-        FIXME("Stereo swapchains are not supported.\n");
+        DbgPrint("Stereo swapchains are not supported.\n");
         return DXGI_ERROR_UNSUPPORTED;
     }
 
@@ -308,30 +308,30 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForHwnd(IWineDXGIFa
             break;
 
         default:
-            WARN("Invalid swap effect %u used.\n", swapchain_desc->SwapEffect);
+            DbgPrint("Invalid swap effect %u used.\n", swapchain_desc->SwapEffect);
             return DXGI_ERROR_INVALID_CALL;
     }
 
     if (swapchain_desc->BufferCount < min_buffer_count || swapchain_desc->BufferCount > 16)
     {
-        WARN("BufferCount is %u.\n", swapchain_desc->BufferCount);
+        DbgPrint("BufferCount is %u.\n", swapchain_desc->BufferCount);
         return DXGI_ERROR_INVALID_CALL;
     }
 
     if (FAILED(hr = IUnknown_QueryInterface(device, &IID_IWineDXGIDevice, (void **)&dxgi_device)))
     {
-        ERR("This is not the device we're looking for\n");
+        DbgPrint("This is not the device we're looking for\n");
         return hr;
     }
 
     if (swapchain_desc->Scaling != DXGI_SCALING_STRETCH)
-        FIXME("Ignoring scaling %#x.\n", swapchain_desc->Scaling);
+        DbgPrint("Ignoring scaling %#x.\n", swapchain_desc->Scaling);
     if (swapchain_desc->AlphaMode != DXGI_ALPHA_MODE_IGNORE)
-        FIXME("Ignoring alpha mode %#x.\n", swapchain_desc->AlphaMode);
+        DbgPrint("Ignoring alpha mode %#x.\n", swapchain_desc->AlphaMode);
     if (fullscreen_desc && fullscreen_desc->ScanlineOrdering)
-        FIXME("Unhandled scanline ordering %#x.\n", fullscreen_desc->ScanlineOrdering);
+        DbgPrint("Unhandled scanline ordering %#x.\n", fullscreen_desc->ScanlineOrdering);
     if (fullscreen_desc && fullscreen_desc->Scaling)
-        FIXME("Unhandled mode scaling %#x.\n", fullscreen_desc->Scaling);
+        DbgPrint("Unhandled mode scaling %#x.\n", fullscreen_desc->Scaling);
 
     wined3d_desc.backbuffer_width = swapchain_desc->Width;
     wined3d_desc.backbuffer_height = swapchain_desc->Height;
@@ -352,7 +352,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForHwnd(IWineDXGIFa
     IWineDXGIDevice_Release(dxgi_device);
     if (FAILED(hr))
     {
-        WARN("Failed to create swapchain, hr %#x.\n", hr);
+        DbgPrint("Failed to create swapchain, hr %#x.\n", hr);
         return hr;
     }
 
@@ -367,7 +367,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForCoreWindow(IWine
         IUnknown *device, IUnknown *window, const DXGI_SWAP_CHAIN_DESC1 *desc,
         IDXGIOutput *output, IDXGISwapChain1 **swapchain)
 {
-    FIXME("iface %p, device %p, window %p, desc %p, output %p, swapchain %p stub!\n",
+    DbgPrint("iface %p, device %p, window %p, desc %p, output %p, swapchain %p stub!\n",
             iface, device, window, desc, output, swapchain);
 
     return E_NOTIMPL;
@@ -376,7 +376,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForCoreWindow(IWine
 static HRESULT STDMETHODCALLTYPE dxgi_factory_GetSharedResourceAdapterLuid(IWineDXGIFactory *iface,
         HANDLE resource, LUID *luid)
 {
-    FIXME("iface %p, resource %p, luid %p stub!\n", iface, resource, luid);
+    DbgPrint("iface %p, resource %p, luid %p stub!\n", iface, resource, luid);
 
     return E_NOTIMPL;
 }
@@ -384,7 +384,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_GetSharedResourceAdapterLuid(IWine
 static HRESULT STDMETHODCALLTYPE dxgi_factory_RegisterOcclusionStatusWindow(IWineDXGIFactory *iface,
         HWND window, UINT message, DWORD *cookie)
 {
-    FIXME("iface %p, window %p, message %#x, cookie %p stub!\n",
+    DbgPrint("iface %p, window %p, message %#x, cookie %p stub!\n",
             iface, window, message, cookie);
 
     return E_NOTIMPL;
@@ -393,20 +393,20 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_RegisterOcclusionStatusWindow(IWin
 static HRESULT STDMETHODCALLTYPE dxgi_factory_RegisterStereoStatusEvent(IWineDXGIFactory *iface,
         HANDLE event, DWORD *cookie)
 {
-    FIXME("iface %p, event %p, cookie %p stub!\n", iface, event, cookie);
+    DbgPrint("iface %p, event %p, cookie %p stub!\n", iface, event, cookie);
 
     return E_NOTIMPL;
 }
 
 static void STDMETHODCALLTYPE dxgi_factory_UnregisterStereoStatus(IWineDXGIFactory *iface, DWORD cookie)
 {
-    FIXME("iface %p, cookie %#x stub!\n", iface, cookie);
+    DbgPrint("iface %p, cookie %#x stub!\n", iface, cookie);
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_factory_RegisterStereoStatusWindow(IWineDXGIFactory *iface,
         HWND window, UINT message, DWORD *cookie)
 {
-    FIXME("iface %p, window %p, message %#x, cookie %p stub!\n",
+    DbgPrint("iface %p, window %p, message %#x, cookie %p stub!\n",
             iface, window, message, cookie);
 
     return E_NOTIMPL;
@@ -415,20 +415,20 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_RegisterStereoStatusWindow(IWineDX
 static HRESULT STDMETHODCALLTYPE dxgi_factory_RegisterOcclusionStatusEvent(IWineDXGIFactory *iface,
         HANDLE event, DWORD *cookie)
 {
-    FIXME("iface %p, event %p, cookie %p stub!\n", iface, event, cookie);
+    DbgPrint("iface %p, event %p, cookie %p stub!\n", iface, event, cookie);
 
     return E_NOTIMPL;
 }
 
 static void STDMETHODCALLTYPE dxgi_factory_UnregisterOcclusionStatus(IWineDXGIFactory *iface, DWORD cookie)
 {
-    FIXME("iface %p, cookie %#x stub!\n", iface, cookie);
+    DbgPrint("iface %p, cookie %#x stub!\n", iface, cookie);
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForComposition(IWineDXGIFactory *iface,
         IUnknown *device, const DXGI_SWAP_CHAIN_DESC1 *desc, IDXGIOutput *output, IDXGISwapChain1 **swapchain)
 {
-    FIXME("iface %p, device %p, desc %p, output %p, swapchain %p stub!\n",
+    DbgPrint("iface %p, device %p, desc %p, output %p, swapchain %p stub!\n",
             iface, device, desc, output, swapchain);
 
     return E_NOTIMPL;
@@ -436,7 +436,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForComposition(IWin
 
 static UINT STDMETHODCALLTYPE dxgi_factory_GetCreationFlags(IWineDXGIFactory *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    DbgPrint("iface %p stub!\n", iface);
 
     return 0;
 }
@@ -449,7 +449,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumAdapterByLuid(IWineDXGIFactory
     IDXGIAdapter1 *adapter1;
     HRESULT hr;
 
-    TRACE("iface %p, luid %08x:%08x, iid %s, adapter %p.\n",
+    DbgPrint("iface %p, luid %08x:%08x, iid %s, adapter %p.\n",
             iface, luid.HighPart, luid.LowPart, debugstr_guid(iid), adapter);
 
     adapter_index = 0;
@@ -457,7 +457,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumAdapterByLuid(IWineDXGIFactory
     {
         if (FAILED(hr = IDXGIAdapter1_GetDesc1(adapter1, &desc)))
         {
-            WARN("Failed to get adapter %u desc, hr %#x.\n", adapter_index, hr);
+            DbgPrint("Failed to get adapter %u desc, hr %#x.\n", adapter_index, hr);
             ++adapter_index;
             continue;
         }
@@ -474,16 +474,16 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumAdapterByLuid(IWineDXGIFactory
         ++adapter_index;
     }
     if (hr != DXGI_ERROR_NOT_FOUND)
-        WARN("Failed to enumerate adapters, hr %#x.\n", hr);
+        DbgPrint("Failed to enumerate adapters, hr %#x.\n", hr);
 
-    WARN("Adapter could not be found.\n");
+    DbgPrint("Adapter could not be found.\n");
     return DXGI_ERROR_NOT_FOUND;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumWarpAdapter(IWineDXGIFactory *iface,
         REFIID iid, void **adapter)
 {
-    FIXME("iface %p, iid %s, adapter %p stub!\n", iface, debugstr_guid(iid), adapter);
+    DbgPrint("iface %p, iid %s, adapter %p stub!\n", iface, debugstr_guid(iid), adapter);
 
     return E_NOTIMPL;
 }
@@ -491,7 +491,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumWarpAdapter(IWineDXGIFactory *
 static HRESULT STDMETHODCALLTYPE dxgi_factory_CheckFeatureSupport(IWineDXGIFactory *iface,
         DXGI_FEATURE feature, void *feature_data, UINT data_size)
 {
-    FIXME("iface %p, feature %#x, feature_data %p, data_size %u stub!\n",
+    DbgPrint("iface %p, feature %#x, feature_data %p, data_size %u stub!\n",
             iface, feature, feature_data, data_size);
 
     return E_NOTIMPL;
@@ -545,7 +545,7 @@ struct dxgi_factory *unsafe_impl_from_IDXGIFactory(IDXGIFactory *iface)
         return NULL;
     if (FAILED(hr = IDXGIFactory_QueryInterface(iface, &IID_IWineDXGIFactory, (void **)&wine_factory)))
     {
-        ERR("Failed to get IWineDXGIFactory interface, hr %#x.\n", hr);
+        DbgPrint("Failed to get IWineDXGIFactory interface, hr %#x.\n", hr);
         return NULL;
     }
     assert(wine_factory->lpVtbl == &dxgi_factory_vtbl);
@@ -584,12 +584,12 @@ HRESULT dxgi_factory_create(REFIID riid, void **factory, BOOL extended)
 
     if (FAILED(hr = dxgi_factory_init(object, extended)))
     {
-        WARN("Failed to initialize factory, hr %#x.\n", hr);
+        DbgPrint("Failed to initialize factory, hr %#x.\n", hr);
         heap_free(object);
         return hr;
     }
 
-    TRACE("Created factory %p.\n", object);
+    DbgPrint("Created factory %p.\n", object);
 
     hr = IWineDXGIFactory_QueryInterface(&object->IWineDXGIFactory_iface, riid, factory);
     IWineDXGIFactory_Release(&object->IWineDXGIFactory_iface);
@@ -606,10 +606,10 @@ HWND dxgi_factory_get_device_window(struct dxgi_factory *factory)
                 WS_DISABLED, 0, 0, 0, 0, NULL, NULL, NULL, NULL)))
         {
             wined3d_mutex_unlock();
-            ERR("Failed to create a window.\n");
+            DbgPrint("Failed to create a window.\n");
             return NULL;
         }
-        TRACE("Created device window %p for factory %p.\n", factory->device_window, factory);
+        DbgPrint("Created device window %p for factory %p.\n", factory->device_window, factory);
     }
 
     wined3d_mutex_unlock();

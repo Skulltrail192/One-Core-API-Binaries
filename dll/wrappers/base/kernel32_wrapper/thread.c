@@ -152,7 +152,7 @@ SetThreadStackGuarantee(
 	PULONG stacksize
 )
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernelfull.dll");
+	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
 	pSetThreadStackGuarantee = (void *)GetProcAddress(hkernel32, "SetThreadStackGuarantee");
 	if(pSetThreadStackGuarantee){
 		return pSetThreadStackGuarantee(stacksize);
@@ -170,7 +170,7 @@ ConsoleIMERoutine(
     IN LPVOID lpThreadParameter
     )
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernelfull.dll");
+	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
 	pConsoleIMERoutine = (void *)GetProcAddress(hkernel32, "ConsoleIMERoutine");
 	if(pConsoleIMERoutine){
 		return pConsoleIMERoutine(lpThreadParameter);
@@ -185,7 +185,7 @@ CtrlRoutine(
     IN LPVOID lpThreadParameter
 )
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernelfull.dll");
+	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
 	pCtrlRoutine = (void *)GetProcAddress(hkernel32, "CtrlRoutine");
 	if(pCtrlRoutine){
 		return pCtrlRoutine(lpThreadParameter);

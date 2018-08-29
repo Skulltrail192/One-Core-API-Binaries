@@ -538,6 +538,47 @@ DWORD NTAPI RtlGetSystemTimePrecise();
 
 PDWORD64 WINAPI RtlGetExtendedFeaturesMask(UCHAR *contextLocal);
 
+typedef enum _RTL_UMS_THREAD_INFO_CLASS
+{
+    UmsThreadInvalidInfoClass,
+    UmsThreadUserContext,
+    UmsThreadPriority,
+    UmsThreadAffinity,
+    UmsThreadTeb,
+    UmsThreadIsSuspended,
+    UmsThreadIsTerminated,
+    UmsThreadMaxInfoClass
+} RTL_UMS_THREAD_INFO_CLASS, *PRTL_UMS_THREAD_INFO_CLASS;
+
+typedef enum _RTL_UMS_SCHEDULER_REASON
+{
+    UmsSchedulerStartup,
+    UmsSchedulerThreadBlocked,
+    UmsSchedulerThreadYield,
+} RTL_UMS_SCHEDULER_REASON, *PRTL_UMS_SCHEDULER_REASON;
+
+typedef void (CALLBACK *PRTL_UMS_SCHEDULER_ENTRY_POINT)(RTL_UMS_SCHEDULER_REASON,ULONG_PTR,PVOID);
+
+typedef enum _PROCESS_MITIGATION_POLICY
+{
+    ProcessDEPPolicy,
+    ProcessASLRPolicy,
+    ProcessDynamicCodePolicy,
+    ProcessStrictHandleCheckPolicy,
+    ProcessSystemCallDisablePolicy,
+    ProcessMitigationOptionsMask,
+    ProcessExtensionPointDisablePolicy,
+    ProcessControlFlowGuardPolicy,
+    ProcessSignaturePolicy,
+    ProcessFontDisablePolicy,
+    ProcessImageLoadPolicy,
+    ProcessSystemCallFilterPolicy,
+    ProcessPayloadRestrictionPolicy,
+    ProcessChildProcessPolicy,
+    ProcessSideChannelIsolationPolicy,
+    MaxProcessMitigationPolicy
+} PROCESS_MITIGATION_POLICY, *PPROCESS_MITIGATION_POLICY;
+
 typedef DWORD WINAPI RTL_RUN_ONCE_INIT_FN(PRTL_RUN_ONCE, PVOID, PVOID*);
 typedef RTL_RUN_ONCE_INIT_FN *PRTL_RUN_ONCE_INIT_FN;
 

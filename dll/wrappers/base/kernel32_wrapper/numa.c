@@ -34,7 +34,7 @@ GetNumaNodeProcessorMask(
     NTSTATUS Status;
     ULONG ReturnedSize;
     SYSTEM_NUMA_INFORMATION Map;
-	HMODULE hkernel32 = GetModuleHandleA("kernelfull.dll");
+	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
 	
 	pGetNumaNodeProcessorMask = (void *)GetProcAddress(hkernel32, "GetNumaNodeProcessorMask");
 	if(pGetNumaNodeProcessorMask){

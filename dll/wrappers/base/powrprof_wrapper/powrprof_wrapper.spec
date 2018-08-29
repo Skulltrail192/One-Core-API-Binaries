@@ -26,6 +26,7 @@
 @ stdcall MergeLegacyPwrScheme(ptr ptr str long)
 @ stdcall PowerDeterminePlatformRole()
 @ stdcall PowerDeterminePlatformRoleEx(long)
+@ stdcall PowerEnumerate(long ptr ptr long long ptr ptr)
 @ stdcall PowerRegisterSuspendResumeNotification(ptr ptr ptr)
 @ stdcall PowerUnregisterSuspendResumeNotification(ptr)
 @ stdcall PowerSettingRegisterNotification(ptr long ptr ptr)

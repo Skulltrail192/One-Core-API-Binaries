@@ -35,7 +35,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_QueryInterface(IWineDXGIDevice *ifa
 {
     struct dxgi_device *This = impl_from_IWineDXGIDevice(iface);
 
-    TRACE("iface %p, riid %s, object %p\n", iface, debugstr_guid(riid), object);
+    DbgPrint("iface %p, riid %s, object %p\n", iface, debugstr_guid(riid), object);
 
     if (IsEqualGUID(riid, &IID_IUnknown)
             || IsEqualGUID(riid, &IID_IDXGIObject)
@@ -50,11 +50,11 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_QueryInterface(IWineDXGIDevice *ifa
 
     if (This->child_layer)
     {
-        TRACE("forwarding to child layer %p.\n", This->child_layer);
+        DbgPrint("forwarding to child layer %p.\n", This->child_layer);
         return IUnknown_QueryInterface(This->child_layer, riid, object);
     }
 
-    WARN("%s not implemented, returning E_NOINTERFACE.\n", debugstr_guid(riid));
+    DbgPrint("%s not implemented, returning E_NOINTERFACE.\n", debugstr_guid(riid));
 
     *object = NULL;
     return E_NOINTERFACE;
@@ -65,7 +65,7 @@ static ULONG STDMETHODCALLTYPE dxgi_device_AddRef(IWineDXGIDevice *iface)
     struct dxgi_device *This = impl_from_IWineDXGIDevice(iface);
     ULONG refcount = InterlockedIncrement(&This->refcount);
 
-    TRACE("%p increasing refcount to %u\n", This, refcount);
+    DbgPrint("%p increasing refcount to %u\n", This, refcount);
 
     return refcount;
 }
@@ -75,7 +75,7 @@ static ULONG STDMETHODCALLTYPE dxgi_device_Release(IWineDXGIDevice *iface)
     struct dxgi_device *device = impl_from_IWineDXGIDevice(iface);
     ULONG refcount = InterlockedDecrement(&device->refcount);
 
-    TRACE("%p decreasing refcount to %u.\n", device, refcount);
+    DbgPrint("%p decreasing refcount to %u.\n", device, refcount);
 
     if (!refcount)
     {
@@ -100,7 +100,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_SetPrivateData(IWineDXGIDevice *ifa
 {
     struct dxgi_device *device = impl_from_IWineDXGIDevice(iface);
 
-    TRACE("iface %p, guid %s, data_size %u, data %p.\n", iface, debugstr_guid(guid), data_size, data);
+    DbgPrint("iface %p, guid %s, data_size %u, data %p.\n", iface, debugstr_guid(guid), data_size, data);
 
     return dxgi_set_private_data(&device->private_store, guid, data_size, data);
 }
@@ -110,7 +110,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_SetPrivateDataInterface(IWineDXGIDe
 {
     struct dxgi_device *device = impl_from_IWineDXGIDevice(iface);
 
-    TRACE("iface %p, guid %s, object %p.\n", iface, debugstr_guid(guid), object);
+    DbgPrint("iface %p, guid %s, object %p.\n", iface, debugstr_guid(guid), object);
 
     return dxgi_set_private_data_interface(&device->private_store, guid, object);
 }
@@ -120,7 +120,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_GetPrivateData(IWineDXGIDevice *ifa
 {
     struct dxgi_device *device = impl_from_IWineDXGIDevice(iface);
 
-    TRACE("iface %p, guid %s, data_size %p, data %p.\n", iface, debugstr_guid(guid), data_size, data);
+    DbgPrint("iface %p, guid %s, data_size %p, data %p.\n", iface, debugstr_guid(guid), data_size, data);
 
     return dxgi_get_private_data(&device->private_store, guid, data_size, data);
 }
@@ -130,12 +130,12 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_GetParent(IWineDXGIDevice *iface, R
     IDXGIAdapter *adapter;
     HRESULT hr;
 
-    TRACE("iface %p, riid %s, parent %p.\n", iface, debugstr_guid(riid), parent);
+    DbgPrint("iface %p, riid %s, parent %p.\n", iface, debugstr_guid(riid), parent);
 
     hr = IWineDXGIDevice_GetAdapter(iface, &adapter);
     if (FAILED(hr))
     {
-        ERR("Failed to get adapter, hr %#x.\n", hr);
+        DbgPrint("Failed to get adapter, hr %#x.\n", hr);
         return hr;
     }
 
@@ -151,7 +151,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_GetAdapter(IWineDXGIDevice *iface, 
 {
     struct dxgi_device *device = impl_from_IWineDXGIDevice(iface);
 
-    TRACE("iface %p, adapter %p.\n", iface, adapter);
+    DbgPrint("iface %p, adapter %p.\n", iface, adapter);
 
     *adapter = (IDXGIAdapter *)device->adapter;
     IDXGIAdapter_AddRef(*adapter);
@@ -169,13 +169,13 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_CreateSurface(IWineDXGIDevice *ifac
     UINT i;
     UINT j;
 
-    TRACE("iface %p, desc %p, surface_count %u, usage %#x, shared_resource %p, surface %p.\n",
+    DbgPrint("iface %p, desc %p, surface_count %u, usage %#x, shared_resource %p, surface %p.\n",
             iface, desc, surface_count, usage, shared_resource, surface);
 
     hr = IWineDXGIDevice_QueryInterface(iface, &IID_IWineDXGIDeviceParent, (void **)&dxgi_device_parent);
     if (FAILED(hr))
     {
-        ERR("Device should implement IWineDXGIDeviceParent.\n");
+        DbgPrint("Device should implement IWineDXGIDeviceParent.\n");
         return E_FAIL;
     }
 
@@ -202,7 +202,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_CreateSurface(IWineDXGIDevice *ifac
         if (FAILED(hr = device_parent->ops->create_swapchain_texture(device_parent,
                 NULL, &surface_desc, 0, &wined3d_texture)))
         {
-            ERR("Failed to create surface, hr %#x.\n", hr);
+            DbgPrint("Failed to create surface, hr %#x.\n", hr);
             goto fail;
         }
 
@@ -211,11 +211,11 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_CreateSurface(IWineDXGIDevice *ifac
         wined3d_texture_decref(wined3d_texture);
         if (FAILED(hr))
         {
-            ERR("Surface should implement IDXGISurface.\n");
+            DbgPrint("Surface should implement IDXGISurface.\n");
             goto fail;
         }
 
-        TRACE("Created IDXGISurface %p (%u/%u).\n", surface[i], i + 1, surface_count);
+        DbgPrint("Created IDXGISurface %p (%u/%u).\n", surface[i], i + 1, surface_count);
     }
     wined3d_mutex_unlock();
     IWineDXGIDeviceParent_Release(dxgi_device_parent);
@@ -235,7 +235,7 @@ fail:
 static HRESULT STDMETHODCALLTYPE dxgi_device_QueryResourceResidency(IWineDXGIDevice *iface,
         IUnknown *const *resources, DXGI_RESIDENCY *residency, UINT resource_count)
 {
-    FIXME("iface %p, resources %p, residency %p, resource_count %u stub!\n",
+    DbgPrint("iface %p, resources %p, residency %p, resource_count %u stub!\n",
             iface, resources, residency, resource_count);
 
     return E_NOTIMPL;
@@ -243,21 +243,21 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_QueryResourceResidency(IWineDXGIDev
 
 static HRESULT STDMETHODCALLTYPE dxgi_device_SetGPUThreadPriority(IWineDXGIDevice *iface, INT priority)
 {
-    FIXME("iface %p, priority %d stub!\n", iface, priority);
+    DbgPrint("iface %p, priority %d stub!\n", iface, priority);
 
     return E_NOTIMPL;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_device_GetGPUThreadPriority(IWineDXGIDevice *iface, INT *priority)
 {
-    FIXME("iface %p, priority %p stub!\n", iface, priority);
+    DbgPrint("iface %p, priority %p stub!\n", iface, priority);
 
     return E_NOTIMPL;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_device_SetMaximumFrameLatency(IWineDXGIDevice *iface, UINT max_latency)
 {
-    FIXME("iface %p, max_latency %u stub!\n", iface, max_latency);
+    DbgPrint("iface %p, max_latency %u stub!\n", iface, max_latency);
 
     if (max_latency > DXGI_FRAME_LATENCY_MAX)
         return DXGI_ERROR_INVALID_CALL;
@@ -267,7 +267,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_SetMaximumFrameLatency(IWineDXGIDev
 
 static HRESULT STDMETHODCALLTYPE dxgi_device_GetMaximumFrameLatency(IWineDXGIDevice *iface, UINT *max_latency)
 {
-    FIXME("iface %p, max_latency %p stub!\n", iface, max_latency);
+    DbgPrint("iface %p, max_latency %p stub!\n", iface, max_latency);
 
     if (max_latency)
         *max_latency = DXGI_FRAME_LATENCY_DEFAULT;
@@ -284,23 +284,23 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_create_surface(IWineDXGIDevice *ifa
     struct dxgi_surface *object;
     HRESULT hr;
 
-    TRACE("iface %p, wined3d_texture %p, usage %#x, shared_resource %p, outer %p, surface %p.\n",
+    DbgPrint("iface %p, wined3d_texture %p, usage %#x, shared_resource %p, outer %p, surface %p.\n",
             iface, wined3d_texture, usage, shared_resource, outer, surface);
 
     if (!(object = heap_alloc_zero(sizeof(*object))))
     {
-        ERR("Failed to allocate DXGI surface object memory\n");
+        DbgPrint("Failed to allocate DXGI surface object memory\n");
         return E_OUTOFMEMORY;
     }
 
     if (FAILED(hr = dxgi_surface_init(object, (IDXGIDevice *)iface, outer, wined3d_texture)))
     {
-        WARN("Failed to initialize surface, hr %#x.\n", hr);
+        DbgPrint("Failed to initialize surface, hr %#x.\n", hr);
         heap_free(object);
         return hr;
     }
 
-    TRACE("Created IDXGISurface %p\n", object);
+    DbgPrint("Created IDXGISurface %p\n", object);
     *surface = outer ? &object->IUnknown_iface : (IUnknown *)&object->IDXGISurface1_iface;
 
     return S_OK;
@@ -313,23 +313,23 @@ static HRESULT STDMETHODCALLTYPE dxgi_device_create_swapchain(IWineDXGIDevice *i
     struct dxgi_swapchain *object;
     HRESULT hr;
 
-    TRACE("iface %p, desc %p, wined3d_swapchain %p.\n",
+    DbgPrint("iface %p, desc %p, wined3d_swapchain %p.\n",
             iface, desc, wined3d_swapchain);
 
     if (!(object = heap_alloc_zero(sizeof(*object))))
     {
-        ERR("Failed to allocate DXGI swapchain object memory\n");
+        DbgPrint("Failed to allocate DXGI swapchain object memory\n");
         return E_OUTOFMEMORY;
     }
 
     if (FAILED(hr = dxgi_swapchain_init(object, device, desc, implicit)))
     {
-        WARN("Failed to initialize swapchain, hr %#x.\n", hr);
+        DbgPrint("Failed to initialize swapchain, hr %#x.\n", hr);
         heap_free(object);
         return hr;
     }
 
-    TRACE("Created IDXGISwapChain %p.\n", object);
+    DbgPrint("Created IDXGISwapChain %p.\n", object);
     *wined3d_swapchain = object->wined3d_swapchain;
 
     return S_OK;
@@ -375,13 +375,13 @@ HRESULT dxgi_device_init(struct dxgi_device *device, struct dxgi_device_layer *l
 
     if (!(dxgi_factory = unsafe_impl_from_IDXGIFactory(factory)))
     {
-        WARN("This is not the factory we're looking for.\n");
+        DbgPrint("This is not the factory we're looking for.\n");
         return E_FAIL;
     }
 
     if (!(dxgi_adapter = unsafe_impl_from_IDXGIAdapter(adapter)))
     {
-        WARN("This is not the adapter we're looking for.\n");
+        DbgPrint("This is not the adapter we're looking for.\n");
         return E_FAIL;
     }
 
@@ -395,7 +395,7 @@ HRESULT dxgi_device_init(struct dxgi_device *device, struct dxgi_device_layer *l
     if (FAILED(hr = layer->create(layer->id, &layer_base, 0,
             device, &IID_IUnknown, (void **)&device->child_layer)))
     {
-        WARN("Failed to create device, returning %#x.\n", hr);
+        DbgPrint("Failed to create device, returning %#x.\n", hr);
         wined3d_private_store_cleanup(&device->private_store);
         wined3d_mutex_unlock();
         return hr;
@@ -404,7 +404,7 @@ HRESULT dxgi_device_init(struct dxgi_device *device, struct dxgi_device_layer *l
     if (FAILED(hr = IWineDXGIDevice_QueryInterface(&device->IWineDXGIDevice_iface,
             &IID_IWineDXGIDeviceParent, (void **)&dxgi_device_parent)))
     {
-        ERR("DXGI device should implement IWineDXGIDeviceParent.\n");
+        DbgPrint("DXGI device should implement IWineDXGIDeviceParent.\n");
         IUnknown_Release(device->child_layer);
         wined3d_private_store_cleanup(&device->private_store);
         wined3d_mutex_unlock();
@@ -422,13 +422,13 @@ HRESULT dxgi_device_init(struct dxgi_device *device, struct dxgi_device_layer *l
         return E_FAIL;
     }
 
-    FIXME("Ignoring adapter type.\n");
+    DbgPrint("Ignoring adapter type.\n");
 
     hr = wined3d_device_create(dxgi_factory->wined3d, dxgi_adapter->ordinal, WINED3D_DEVICE_TYPE_HAL,
             NULL, 0, 4, wined3d_device_parent, &device->wined3d_device);
     if (FAILED(hr))
     {
-        WARN("Failed to create a wined3d device, returning %#x.\n", hr);
+        DbgPrint("Failed to create a wined3d device, returning %#x.\n", hr);
         IUnknown_Release(device->child_layer);
         wined3d_private_store_cleanup(&device->private_store);
         wined3d_mutex_unlock();
@@ -443,7 +443,7 @@ HRESULT dxgi_device_init(struct dxgi_device *device, struct dxgi_device_layer *l
     swapchain_desc.windowed = TRUE;
     if (FAILED(hr = wined3d_device_init_3d(device->wined3d_device, &swapchain_desc)))
     {
-        ERR("Failed to initialize 3D, hr %#x.\n", hr);
+        DbgPrint("Failed to initialize 3D, hr %#x.\n", hr);
         wined3d_device_decref(device->wined3d_device);
         IUnknown_Release(device->child_layer);
         wined3d_private_store_cleanup(&device->private_store);

@@ -52,6 +52,7 @@ list(APPEND SOURCE
 	dxgi1_4.idl
 	dxgi1_5.idl
 	dxgi1_6.idl
+	#dxgi_internal.idl
 	d3dx10core.idl
 	d3dx11core.idl
 	dcommon.idl
@@ -191,7 +192,7 @@ add_idl_headers(d3d_idl_headers d3dcommon.idl
 	dwrite_2.idl
 	dwrite_3.idl)
 
-add_iid_library(dxgi_uuids dxgi.idl dxgi1_2.idl dxgi1_3.idl dxgi1_4.idl dxgi1_5.idl)
+add_iid_library(dxgi_uuids dxgi.idl dxgi1_2.idl dxgi1_3.idl dxgi1_4.idl dxgi1_5.idl dxgi1_6.idl)
 add_iid_library(d2d1_uuids d2d1.idl d2d1_1.idl)
 add_iid_library(d3d10_uuids d3d10.idl d3d10_1.idl d3d10sdklayers.idl)
 add_iid_library(d3d10_1_uuids d3d10_1.idl)
