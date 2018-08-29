@@ -488,7 +488,7 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
     advapibase.dll,2k3SP2\srvadvapibase.dll
 	crypt32.dll,2k3SP2\srvcrypt32.dll			
     gdibase.dll,2k3SP2\srvgdibase.dll	
-    kernelfull.dll,2k3SP2\srvkernelfull.dll
+    kernelex.dll,2k3SP2\srvkernelex.dll
     netapibase.dll,2k3SP2\srvnetapibase.dll	
     olebase.dll,2k3SP2\srvolebase.dll	
     powrprofbase.dll,2k3SP2\srvpowrprofbase.dll
@@ -544,7 +544,7 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
 [SourceDisksFiles]
     2k3SP2\srvadvapibase.dll = 1
     2k3SP2\srvgdibase.dll = 1	
-    2k3SP2\srvkernelfull.dll = 1
+    2k3SP2\srvkernelex.dll = 1
     2k3SP2\srvnetapibase.dll = 1	
     2k3SP2\srvntdll.dll = 1	
     2k3SP2\srvolebase.dll = 1		

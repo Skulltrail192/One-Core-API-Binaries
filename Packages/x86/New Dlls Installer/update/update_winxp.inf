@@ -2795,6 +2795,7 @@ Signature                 = "$Windows NT$"
 	"onex.dll"
 	"XInput9_1_0.dll"	
 	"WMDRMSDK.DLL"
+	"winusb.dll"
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
@@ -2871,3 +2872,4 @@ Signature                 = "$Windows NT$"
 	"onex.dll" = 1
 	"XInput9_1_0.dll" = 1		
 	"WMDRMSDK.DLL" = 1
+	"winusb.dll" = 1

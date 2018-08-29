@@ -488,7 +488,7 @@
 	advpack.dll,XPSP3\xpadvpack.dll
 	crypt32.dll,XPSP3\xpcrypt32.dll
     gdibase.dll,XPSP3\xpgdibase.dll	
-    kernelfull.dll,XPSP3\xpkernelfull.dll
+    kernelex.dll,XPSP3\xpkernelex.dll
     netapibase.dll,XPSP3\xpnetapibase.dll	
 	ntdsapi.dll,XPSP3\xpntdsapi.dll	
     olebase.dll,XPSP3\xpolebase.dll		
@@ -548,7 +548,7 @@
 	XPSP3\xpadvpack.dll = 1	
 	XPSP3\xpcrypt32.dll = 1
     XPSP3\xpgdibase.dll = 1	
-    XPSP3\xpkernelfull.dll = 1
+    XPSP3\xpkernelex.dll = 1
     XPSP3\xpnetapibase.dll = 1	
     XPSP3\xpntdll.dll = 1	
 	XPSP3\xpntdsapi.dll = 1	
