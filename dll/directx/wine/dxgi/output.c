@@ -331,9 +331,9 @@ static HRESULT STDMETHODCALLTYPE dxgi_output_GetDisplayModeList(
 )
 {
     //struct dxgi_output *output = impl_from_IDXGIOutput4(iface);
-    enum wined3d_format_id wined3d_format;
-    unsigned int i, max_count;
-    struct wined3d *wined3d;
+    //enum wined3d_format_id wined3d_format;
+    unsigned int i;//, max_count;
+    //struct wined3d *wined3d;
 	// Walk over all modes that the display supports and
     // return those that match the requested format etc.
 	DEVMODEW devMode;	

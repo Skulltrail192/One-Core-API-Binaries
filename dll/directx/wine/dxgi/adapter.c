@@ -43,7 +43,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_QueryInterface(IWineDXGIAdapter *i
             || IsEqualGUID(iid, &IID_IDXGIAdapter2)
             || IsEqualGUID(iid, &IID_IDXGIAdapter1)
             || IsEqualGUID(iid, &IID_IDXGIAdapter)
-            || IsEqualGUID(iid, &IID_IDXGIAdapterInternal2)
+            || IsEqualGUID(iid, &IID_IDXGIAdapterInternal)
             || IsEqualGUID(iid, &IID_IDXGIObject)
             || IsEqualGUID(iid, &IID_IUnknown))
     {
@@ -311,6 +311,18 @@ static void STDMETHODCALLTYPE dxgi_adapter_UnregisterVideoMemoryBudgetChangeNoti
     DbgPrint("iface %p, cookie %#x stub!\n", iface, cookie);
 }
 
+HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDescInternal(IWineDXGIAdapter *iface, short Bread, int *pBToast)
+{
+	DbgPrint("dxgi_adapter_GetDescInternal called\n");	
+	return E_NOTIMPL;
+}
+
+HRESULT STDMETHODCALLTYPE dxgi_adapter_SetDescInternal(IWineDXGIAdapter *iface, short Bread)
+{
+	DbgPrint("dxgi_adapter_SetDescInternal called\n");
+	return E_NOTIMPL;
+}
+
 static const struct IWineDXGIAdapterVtbl dxgi_adapter_vtbl =
 {
     dxgi_adapter_QueryInterface,
@@ -336,6 +348,9 @@ static const struct IWineDXGIAdapterVtbl dxgi_adapter_vtbl =
     dxgi_adapter_SetVideoMemoryReservation,
     dxgi_adapter_RegisterVideoMemoryBudgetChangeNotificationEvent,
     dxgi_adapter_UnregisterVideoMemoryBudgetChangeNotification,
+	/* IDXGIAdapterInternal methods */
+	dxgi_adapter_GetDescInternal,
+	dxgi_adapter_SetDescInternal,
 };
 
 struct dxgi_adapter *unsafe_impl_from_IDXGIAdapter(IDXGIAdapter *iface)

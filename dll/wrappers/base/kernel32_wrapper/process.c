@@ -1447,53 +1447,53 @@ CreateProcessInternalExW(
     static const WCHAR nosandboxW[] = {' ','-','-','n','o','-','s','a','n','d','b','o','x',0};	
 	LPWSTR new_command_line;	
 	
-	// if(lpStartupInfo->cb == sizeof(STARTUPINFOEX))
-	 if(dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT)
-	 {
+	// // if(lpStartupInfo->cb == sizeof(STARTUPINFOEX))
+	 // if(dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT)
+	 // {
 		
-		// LPSTARTUPINFOEX startupInfoEx = (LPSTARTUPINFOEX)lpStartupInfo;
+		// // LPSTARTUPINFOEX startupInfoEx = (LPSTARTUPINFOEX)lpStartupInfo;
 		
-		// startupInfo.cb = sizeof(STARTUPINFOEX);
-		// startupInfo.lpReserved = startupInfoEx->StartupInfo.lpReserved;
-		// startupInfo.lpDesktop = startupInfoEx->StartupInfo.lpDesktop;
-		// startupInfo.lpTitle = startupInfoEx->StartupInfo.lpTitle;
-		// startupInfo.dwX = startupInfoEx->StartupInfo.dwX;
-		// startupInfo.dwY = startupInfoEx->StartupInfo.dwY;
-		// startupInfo.dwXSize = startupInfoEx->StartupInfo.dwXSize;
-		// startupInfo.dwYSize = startupInfoEx->StartupInfo.dwYSize;
-		// startupInfo.dwXCountChars = startupInfoEx->StartupInfo.dwXCountChars;
-		// startupInfo.dwYCountChars = startupInfoEx->StartupInfo.dwYCountChars;
-		// startupInfo.dwFillAttribute = startupInfoEx->StartupInfo.dwFillAttribute;
-		// startupInfo.dwFlags = startupInfoEx->StartupInfo.dwFlags;
-		// startupInfo.wShowWindow = startupInfoEx->StartupInfo.wShowWindow;
-		// startupInfo.cbReserved2 = startupInfoEx->StartupInfo.cbReserved2;
-		// startupInfo.lpReserved2 = startupInfoEx->StartupInfo.lpReserved2;
-		// startupInfo.hStdInput = startupInfoEx->StartupInfo.hStdInput;
-		// startupInfo.hStdOutput = startupInfoEx->StartupInfo.hStdOutput;
-		// startupInfo.hStdError = startupInfoEx->StartupInfo.hStdError;
+		// // startupInfo.cb = sizeof(STARTUPINFOEX);
+		// // startupInfo.lpReserved = startupInfoEx->StartupInfo.lpReserved;
+		// // startupInfo.lpDesktop = startupInfoEx->StartupInfo.lpDesktop;
+		// // startupInfo.lpTitle = startupInfoEx->StartupInfo.lpTitle;
+		// // startupInfo.dwX = startupInfoEx->StartupInfo.dwX;
+		// // startupInfo.dwY = startupInfoEx->StartupInfo.dwY;
+		// // startupInfo.dwXSize = startupInfoEx->StartupInfo.dwXSize;
+		// // startupInfo.dwYSize = startupInfoEx->StartupInfo.dwYSize;
+		// // startupInfo.dwXCountChars = startupInfoEx->StartupInfo.dwXCountChars;
+		// // startupInfo.dwYCountChars = startupInfoEx->StartupInfo.dwYCountChars;
+		// // startupInfo.dwFillAttribute = startupInfoEx->StartupInfo.dwFillAttribute;
+		// // startupInfo.dwFlags = startupInfoEx->StartupInfo.dwFlags;
+		// // startupInfo.wShowWindow = startupInfoEx->StartupInfo.wShowWindow;
+		// // startupInfo.cbReserved2 = startupInfoEx->StartupInfo.cbReserved2;
+		// // startupInfo.lpReserved2 = startupInfoEx->StartupInfo.lpReserved2;
+		// // startupInfo.hStdInput = startupInfoEx->StartupInfo.hStdInput;
+		// // startupInfo.hStdOutput = startupInfoEx->StartupInfo.hStdOutput;
+		// // startupInfo.hStdError = startupInfoEx->StartupInfo.hStdError;
 		
-		dwCreationFlags = DEBUG_PROCESS;			
+		// dwCreationFlags = DEBUG_PROCESS;			
 		
-		 DbgPrint("CreateProcessInternalExW :: lpStartupInfo is STARTUPINFOEX structure\n");
-	 };
+		 // DbgPrint("CreateProcessInternalExW :: lpStartupInfo is STARTUPINFOEX structure\n");
+	 // };
 
-        // if (strstrW(name, steamwebhelperexeW))
-        // {
-            // LPWSTR new_command_line;
+         if (strstrW(lpApplicationName, chromeexeW))
+         {
+             LPWSTR new_command_line;
 
-            // new_command_line = HeapAlloc(GetProcessHeap(), 0,
-                // sizeof(WCHAR) * (strlenW(tidy_cmdline) + strlenW(nosandboxW) + 1));
+             new_command_line = HeapAlloc(GetProcessHeap(), 0,
+                 sizeof(WCHAR) * (strlenW(lpCommandLine) + strlenW(nosandboxW) + 1));
 
-            // if (!new_command_line) return FALSE;
+             if (!new_command_line) return FALSE;
 
-            // strcpyW(new_command_line, tidy_cmdline);
-            // strcatW(new_command_line, nosandboxW);
+             strcpyW(new_command_line, lpCommandLine);
+             strcatW(new_command_line, nosandboxW);
 
             // TRACE("CrossOver hack changing command line to %s\n", debugstr_w(new_command_line));
 
-            // if (tidy_cmdline != cmd_line) HeapFree( GetProcessHeap(), 0, tidy_cmdline );
-            // tidy_cmdline = new_command_line;
-        // }
+             //if (tidy_cmdline != cmd_line) HeapFree( GetProcessHeap(), 0, tidy_cmdline );
+             lpCommandLine = new_command_line;
+         }
 	
 	// if (strstrW(lpApplicationName, chromeexeW))
 	// {
@@ -1545,56 +1545,56 @@ CreateProcessExW(
 	
 	startupInfo = *lpStartupInfo;
 	
-	// if(lpStartupInfo->cb == sizeof(STARTUPINFOEX))
-	 if(dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT)
-	{
-		ZeroMemory(&si, sizeof(si)); // inspected
-		si.cb = sizeof(si);
+	// // if(lpStartupInfo->cb == sizeof(STARTUPINFOEX))
+	 // if(dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT)
+	// {
+		// ZeroMemory(&si, sizeof(si)); // inspected
+		// si.cb = sizeof(si);
 
-		// The default ShowWindow flag is SW_SHOWDEFAULT which is what NT's CMD.EXE
-		// uses.  However, everything else uses SW_SHOWNORMAL, such as the shell,
-		// task manager, VC's debugger, and 9x's COMMAND.COM. Since SW_SHOWNORMAL
-		// is more common, that is what we want to simulate.
-		si.dwFlags = STARTF_USESHOWWINDOW;
-		si.wShowWindow = SW_SHOWNORMAL;
+		// // The default ShowWindow flag is SW_SHOWDEFAULT which is what NT's CMD.EXE
+		// // uses.  However, everything else uses SW_SHOWNORMAL, such as the shell,
+		// // task manager, VC's debugger, and 9x's COMMAND.COM. Since SW_SHOWNORMAL
+		// // is more common, that is what we want to simulate.
+		// si.dwFlags = STARTF_USESHOWWINDOW;
+		// si.wShowWindow = SW_SHOWNORMAL;
 		
-	    ZeroMemory(&pi, sizeof(pi)); // inspected	
-		// LPSTARTUPINFOEX startupInfoEx = (LPSTARTUPINFOEX)lpStartupInfo;
+	    // ZeroMemory(&pi, sizeof(pi)); // inspected	
+		// // LPSTARTUPINFOEX startupInfoEx = (LPSTARTUPINFOEX)lpStartupInfo;
 		
-		// startupInfo.cb = sizeof(STARTUPINFOEX);
-		// startupInfo.lpReserved = startupInfoEx->StartupInfo.lpReserved;
-		// startupInfo.lpDesktop = startupInfoEx->StartupInfo.lpDesktop;
-		// startupInfo.lpTitle = startupInfoEx->StartupInfo.lpTitle;
-		// startupInfo.dwX = startupInfoEx->StartupInfo.dwX;
-		// startupInfo.dwY = startupInfoEx->StartupInfo.dwY;
-		// startupInfo.dwXSize = startupInfoEx->StartupInfo.dwXSize;
-		// startupInfo.dwYSize = startupInfoEx->StartupInfo.dwYSize;
-		// startupInfo.dwXCountChars = startupInfoEx->StartupInfo.dwXCountChars;
-		// startupInfo.dwYCountChars = startupInfoEx->StartupInfo.dwYCountChars;
-		// startupInfo.dwFillAttribute = startupInfoEx->StartupInfo.dwFillAttribute;
-		// startupInfo.dwFlags = startupInfoEx->StartupInfo.dwFlags;
-		// startupInfo.wShowWindow = startupInfoEx->StartupInfo.wShowWindow;
-		// startupInfo.cbReserved2 = startupInfoEx->StartupInfo.cbReserved2;
-		// startupInfo.lpReserved2 = startupInfoEx->StartupInfo.lpReserved2;
-		// startupInfo.hStdInput = startupInfoEx->StartupInfo.hStdInput;
-		// startupInfo.hStdOutput = startupInfoEx->StartupInfo.hStdOutput;
-		// startupInfo.hStdError = startupInfoEx->StartupInfo.hStdError;
+		// // startupInfo.cb = sizeof(STARTUPINFOEX);
+		// // startupInfo.lpReserved = startupInfoEx->StartupInfo.lpReserved;
+		// // startupInfo.lpDesktop = startupInfoEx->StartupInfo.lpDesktop;
+		// // startupInfo.lpTitle = startupInfoEx->StartupInfo.lpTitle;
+		// // startupInfo.dwX = startupInfoEx->StartupInfo.dwX;
+		// // startupInfo.dwY = startupInfoEx->StartupInfo.dwY;
+		// // startupInfo.dwXSize = startupInfoEx->StartupInfo.dwXSize;
+		// // startupInfo.dwYSize = startupInfoEx->StartupInfo.dwYSize;
+		// // startupInfo.dwXCountChars = startupInfoEx->StartupInfo.dwXCountChars;
+		// // startupInfo.dwYCountChars = startupInfoEx->StartupInfo.dwYCountChars;
+		// // startupInfo.dwFillAttribute = startupInfoEx->StartupInfo.dwFillAttribute;
+		// // startupInfo.dwFlags = startupInfoEx->StartupInfo.dwFlags;
+		// // startupInfo.wShowWindow = startupInfoEx->StartupInfo.wShowWindow;
+		// // startupInfo.cbReserved2 = startupInfoEx->StartupInfo.cbReserved2;
+		// // startupInfo.lpReserved2 = startupInfoEx->StartupInfo.lpReserved2;
+		// // startupInfo.hStdInput = startupInfoEx->StartupInfo.hStdInput;
+		// // startupInfo.hStdOutput = startupInfoEx->StartupInfo.hStdOutput;
+		// // startupInfo.hStdError = startupInfoEx->StartupInfo.hStdError;
 		
-		// dwCreationFlags = DEBUG_PROCESS;
+		// // dwCreationFlags = DEBUG_PROCESS;
 
-		return CreateProcessW(NULL,
-					   lpCommandLine,
-					   NULL,
-					   NULL,
-					   FALSE,
-					   DEBUG_PROCESS,
-					   NULL,
-					   lpCurrentDirectory,
-					   &si, 
-					   &pi);
+		// return CreateProcessW(NULL,
+					   // lpCommandLine,
+					   // NULL,
+					   // NULL,
+					   // FALSE,
+					   // DEBUG_PROCESS,
+					   // NULL,
+					   // lpCurrentDirectory,
+					   // &si, 
+					   // &pi);
 		
-		DbgPrint("CreateProcessExW :: lpStartupInfo is STARTUPINFOEX structure\n");
-	}	
+		// DbgPrint("CreateProcessExW :: lpStartupInfo is STARTUPINFOEX structure\n");
+	// }	
 	
 	resp = CreateProcessW(lpApplicationName,
 						  lpCommandLine,
@@ -1634,35 +1634,35 @@ CreateProcessInternalExA(
 	
 	BOOL resp;
 	
-	// if(lpStartupInfo->cb == sizeof(STARTUPINFOEX))
-	 if(dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT)
-	 {
+	// // if(lpStartupInfo->cb == sizeof(STARTUPINFOEX))
+	 // if(dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT)
+	 // {
 		
-		// LPSTARTUPINFOEX startupInfoEx = (LPSTARTUPINFOEX)lpStartupInfo;
+		// // LPSTARTUPINFOEX startupInfoEx = (LPSTARTUPINFOEX)lpStartupInfo;
 		
-		// startupInfo.cb = sizeof(STARTUPINFOEX);
-		// startupInfo.lpReserved = startupInfoEx->StartupInfo.lpReserved;
-		// startupInfo.lpDesktop = startupInfoEx->StartupInfo.lpDesktop;
-		// startupInfo.lpTitle = startupInfoEx->StartupInfo.lpTitle;
-		// startupInfo.dwX = startupInfoEx->StartupInfo.dwX;
-		// startupInfo.dwY = startupInfoEx->StartupInfo.dwY;
-		// startupInfo.dwXSize = startupInfoEx->StartupInfo.dwXSize;
-		// startupInfo.dwYSize = startupInfoEx->StartupInfo.dwYSize;
-		// startupInfo.dwXCountChars = startupInfoEx->StartupInfo.dwXCountChars;
-		// startupInfo.dwYCountChars = startupInfoEx->StartupInfo.dwYCountChars;
-		// startupInfo.dwFillAttribute = startupInfoEx->StartupInfo.dwFillAttribute;
-		// startupInfo.dwFlags = startupInfoEx->StartupInfo.dwFlags;
-		// startupInfo.wShowWindow = startupInfoEx->StartupInfo.wShowWindow;
-		// startupInfo.cbReserved2 = startupInfoEx->StartupInfo.cbReserved2;
-		// startupInfo.lpReserved2 = startupInfoEx->StartupInfo.lpReserved2;
-		// startupInfo.hStdInput = startupInfoEx->StartupInfo.hStdInput;
-		// startupInfo.hStdOutput = startupInfoEx->StartupInfo.hStdOutput;
-		// startupInfo.hStdError = startupInfoEx->StartupInfo.hStdError;
+		// // startupInfo.cb = sizeof(STARTUPINFOEX);
+		// // startupInfo.lpReserved = startupInfoEx->StartupInfo.lpReserved;
+		// // startupInfo.lpDesktop = startupInfoEx->StartupInfo.lpDesktop;
+		// // startupInfo.lpTitle = startupInfoEx->StartupInfo.lpTitle;
+		// // startupInfo.dwX = startupInfoEx->StartupInfo.dwX;
+		// // startupInfo.dwY = startupInfoEx->StartupInfo.dwY;
+		// // startupInfo.dwXSize = startupInfoEx->StartupInfo.dwXSize;
+		// // startupInfo.dwYSize = startupInfoEx->StartupInfo.dwYSize;
+		// // startupInfo.dwXCountChars = startupInfoEx->StartupInfo.dwXCountChars;
+		// // startupInfo.dwYCountChars = startupInfoEx->StartupInfo.dwYCountChars;
+		// // startupInfo.dwFillAttribute = startupInfoEx->StartupInfo.dwFillAttribute;
+		// // startupInfo.dwFlags = startupInfoEx->StartupInfo.dwFlags;
+		// // startupInfo.wShowWindow = startupInfoEx->StartupInfo.wShowWindow;
+		// // startupInfo.cbReserved2 = startupInfoEx->StartupInfo.cbReserved2;
+		// // startupInfo.lpReserved2 = startupInfoEx->StartupInfo.lpReserved2;
+		// // startupInfo.hStdInput = startupInfoEx->StartupInfo.hStdInput;
+		// // startupInfo.hStdOutput = startupInfoEx->StartupInfo.hStdOutput;
+		// // startupInfo.hStdError = startupInfoEx->StartupInfo.hStdError;
 		
-		dwCreationFlags = DEBUG_PROCESS;		
+		// dwCreationFlags = DEBUG_PROCESS;		
 		
-		 DbgPrint("CreateProcessInternalExA :: lpStartupInfo is STARTUPINFOEX structure\n");
-	 } 
+		 // DbgPrint("CreateProcessInternalExA :: lpStartupInfo is STARTUPINFOEX structure\n");
+	 // } 
 	
 	resp = CreateProcessInternalA(hUserToken,
 								  lpApplicationName,
@@ -1701,8 +1701,8 @@ CreateProcessExA(
 	BOOL resp;
 	
 	// if(lpStartupInfo->cb == sizeof(STARTUPINFOEX))
-	 if(dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT)
-	 {
+	 //if(dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT)
+	 //{
 		
 		// LPSTARTUPINFOEX startupInfoEx = (LPSTARTUPINFOEX)lpStartupInfo;
 		
@@ -1725,10 +1725,10 @@ CreateProcessExA(
 		// startupInfo.hStdOutput = startupInfoEx->StartupInfo.hStdOutput;
 		// startupInfo.hStdError = startupInfoEx->StartupInfo.hStdError;
 		
-		dwCreationFlags = DEBUG_PROCESS;			
+		//dwCreationFlags = DEBUG_PROCESS;			
 		
-		 DbgPrint("CreateProcessExA :: lpStartupInfo is STARTUPINFOEX structure\n");
-	}
+		// DbgPrint("CreateProcessExA :: lpStartupInfo is STARTUPINFOEX structure\n");
+	//}
 	
 	return CreateProcessA(lpApplicationName,
 						  lpCommandLine,

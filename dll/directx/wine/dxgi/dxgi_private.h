@@ -33,6 +33,7 @@
 
 #include "d3d10_1.h"
 #include "dxgi1_6.h"
+#include "dxgi_internal.h"
 #ifdef DXGI_INIT_GUID
 #include "initguid.h"
 #endif
