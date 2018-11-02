@@ -87,7 +87,7 @@ set_subsystem(kernel32 console)
 target_link_libraries(kernel32_wrapper wine ${PSEH_LIB})
 
 if(ARCH STREQUAL "i386")
-	add_importlibs(kernel32_wrapper kernelex ntext normaliz fileextd psapi advapi32 user32 version)
+	add_importlibs(kernel32_wrapper kernelex ntext normaliz fileextd idndl psapi advapi32 user32 version)
 
 elseif(ARCH STREQUAL "amd64")
 	add_importlibs(kernel32_wrapper kernel32 ntext normaliz psapi fileextd advapi32 user32 version)

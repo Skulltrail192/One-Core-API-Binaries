@@ -1168,7 +1168,7 @@
 @ stdcall GetPhysicallyInstalledSystemMemory(ptr)
 @ stdcall GetProcessPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetProductInfo(long long long long ptr) 
-@ stub GetStringScripts
+@ stdcall GetStringScripts(long wstr long wstr long) idndl.DownlevelGetStringScripts
 @ stdcall GetSystemDefaultLocaleName(ptr long)
 @ stdcall GetSystemPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetThreadErrorMode()
@@ -1252,6 +1252,7 @@
 @ stdcall UnregisterApplicationRecoveryCallback()
 @ stdcall UpdateCalendarDayOfWeek(ptr) 
 @ stdcall UpdateProcThreadAttribute(ptr long long ptr long ptr ptr)
+@ stdcall VerifyScripts(long wstr long wstr long) idndl.DownlevelVerifyScripts
 @ stdcall WaitForThreadpoolIoCallbacks(ptr long) ntext.TpWaitForIoCompletion
 @ stdcall WaitForThreadpoolTimerCallbacks(ptr long) ntext.TpWaitForTimer
 @ stdcall WaitForThreadpoolWaitCallbacks(ptr long) ntext.TpWaitForWait
@@ -1291,7 +1292,7 @@
 @ stdcall -arch=x86_64 DequeueUmsCompletionListItems(ptr long ptr)
 @ stdcall -arch=x86_64 EnterUmsSchedulingMode(ptr)
 @ stdcall -arch=x86_64 ExecuteUmsThread(ptr)
-# @ stub FindStringOrdinal
+@ stdcall FindStringOrdinal(long wstr long wstr long long)
 @ stdcall GetActiveProcessorCount(long)
 @ stdcall GetActiveProcessorGroupCount()
 @ stdcall GetCurrentProcessorNumberEx(ptr) ntext.RtlGetCurrentProcessorNumberEx
@@ -1379,6 +1380,7 @@
 @ stdcall GetCurrentPackageFamilyName(ptr ptr)
 @ stdcall GetCurrentPackageFullName(ptr ptr)
 @ stdcall GetPackageFullName(long ptr ptr)
+@ stdcall GetProcessMitigationPolicy(long long ptr long)
 @ stdcall GetSystemTimePreciseAsFileTime(ptr)
 @ stdcall InitializeSynchronizationBarrier(ptr long long)
 @ stdcall PathCchAddBackslash(wstr long)
