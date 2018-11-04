@@ -32,7 +32,7 @@ struct d2d_settings d2d_settings =
 
 struct d2d_factory
 {
-    ID2D1Factory1 ID2D1Factory1_iface;
+    ID2D1Factory2 ID2D1Factory2_iface;
     LONG refcount;
 
     ID3D10Device1 *device;
@@ -41,9 +41,9 @@ struct d2d_factory
     float dpi_y;
 };
 
-static inline struct d2d_factory *impl_from_ID2D1Factory1(ID2D1Factory1 *iface)
+static inline struct d2d_factory *impl_from_ID2D1Factory2(ID2D1Factory2 *iface)
 {
-    return CONTAINING_RECORD(iface, struct d2d_factory, ID2D1Factory1_iface);
+    return CONTAINING_RECORD(iface, struct d2d_factory, ID2D1Factory2_iface);
 }
 
 static HRESULT d2d_factory_reload_sysmetrics(struct d2d_factory *factory)
@@ -64,15 +64,16 @@ static HRESULT d2d_factory_reload_sysmetrics(struct d2d_factory *factory)
     return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_QueryInterface(ID2D1Factory1 *iface, REFIID iid, void **out)
+static HRESULT STDMETHODCALLTYPE d2d_factory_QueryInterface(ID2D1Factory2 *iface, REFIID iid, void **out)
 {
     TRACE("iface %p, iid %s, out %p.\n", iface, debugstr_guid(iid), out);
 
-    if ((IsEqualGUID(iid, &IID_ID2D1Factory1) && d2d_settings.max_version_factory >= 1)
+    if ((IsEqualGUID(iid, &IID_ID2D1Factory2) && d2d_settings.max_version_factory >= 2)
+            || (IsEqualGUID(iid, &IID_ID2D1Factory1) && d2d_settings.max_version_factory >= 1)
             || IsEqualGUID(iid, &IID_ID2D1Factory)
             || IsEqualGUID(iid, &IID_IUnknown))
     {
-        ID2D1Factory1_AddRef(iface);
+        ID2D1Factory2_AddRef(iface);
         *out = iface;
         return S_OK;
     }
@@ -83,9 +84,9 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_QueryInterface(ID2D1Factory1 *iface
     return E_NOINTERFACE;
 }
 
-static ULONG STDMETHODCALLTYPE d2d_factory_AddRef(ID2D1Factory1 *iface)
+static ULONG STDMETHODCALLTYPE d2d_factory_AddRef(ID2D1Factory2 *iface)
 {
-    struct d2d_factory *factory = impl_from_ID2D1Factory1(iface);
+    struct d2d_factory *factory = impl_from_ID2D1Factory2(iface);
     ULONG refcount = InterlockedIncrement(&factory->refcount);
 
     TRACE("%p increasing refcount to %u.\n", iface, refcount);
@@ -93,9 +94,9 @@ static ULONG STDMETHODCALLTYPE d2d_factory_AddRef(ID2D1Factory1 *iface)
     return refcount;
 }
 
-static ULONG STDMETHODCALLTYPE d2d_factory_Release(ID2D1Factory1 *iface)
+static ULONG STDMETHODCALLTYPE d2d_factory_Release(ID2D1Factory2 *iface)
 {
-    struct d2d_factory *factory = impl_from_ID2D1Factory1(iface);
+    struct d2d_factory *factory = impl_from_ID2D1Factory2(iface);
     ULONG refcount = InterlockedDecrement(&factory->refcount);
 
     TRACE("%p decreasing refcount to %u.\n", iface, refcount);
@@ -110,18 +111,18 @@ static ULONG STDMETHODCALLTYPE d2d_factory_Release(ID2D1Factory1 *iface)
     return refcount;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_ReloadSystemMetrics(ID2D1Factory1 *iface)
+static HRESULT STDMETHODCALLTYPE d2d_factory_ReloadSystemMetrics(ID2D1Factory2 *iface)
 {
-    struct d2d_factory *factory = impl_from_ID2D1Factory1(iface);
+    struct d2d_factory *factory = impl_from_ID2D1Factory2(iface);
 
     TRACE("iface %p.\n", iface);
 
     return d2d_factory_reload_sysmetrics(factory);
 }
 
-static void STDMETHODCALLTYPE d2d_factory_GetDesktopDpi(ID2D1Factory1 *iface, float *dpi_x, float *dpi_y)
+static void STDMETHODCALLTYPE d2d_factory_GetDesktopDpi(ID2D1Factory2 *iface, float *dpi_x, float *dpi_y)
 {
-    struct d2d_factory *factory = impl_from_ID2D1Factory1(iface);
+    struct d2d_factory *factory = impl_from_ID2D1Factory2(iface);
 
     TRACE("iface %p, dpi_x %p, dpi_y %p.\n", iface, dpi_x, dpi_y);
 
@@ -129,7 +130,7 @@ static void STDMETHODCALLTYPE d2d_factory_GetDesktopDpi(ID2D1Factory1 *iface, fl
     *dpi_y = factory->dpi_y;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateRectangleGeometry(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateRectangleGeometry(ID2D1Factory2 *iface,
         const D2D1_RECT_F *rect, ID2D1RectangleGeometry **geometry)
 {
     struct d2d_geometry *object;
@@ -140,7 +141,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateRectangleGeometry(ID2D1Factor
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    if (FAILED(hr = d2d_rectangle_geometry_init(object, (ID2D1Factory *)iface, rect)))
+    if (FAILED(hr = d2d_rectangle_geometry_init(object, iface, rect)))
     {
         WARN("Failed to initialize rectangle geometry, hr %#x.\n", hr);
         heap_free(object);
@@ -153,7 +154,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateRectangleGeometry(ID2D1Factor
     return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateRoundedRectangleGeometry(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateRoundedRectangleGeometry(ID2D1Factory2 *iface,
         const D2D1_ROUNDED_RECT *rect, ID2D1RoundedRectangleGeometry **geometry)
 {
     FIXME("iface %p, rect %p, geometry %p stub!\n", iface, rect, geometry);
@@ -161,7 +162,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateRoundedRectangleGeometry(ID2D
     return E_NOTIMPL;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateEllipseGeometry(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateEllipseGeometry(ID2D1Factory2 *iface,
         const D2D1_ELLIPSE *ellipse, ID2D1EllipseGeometry **geometry)
 {
     FIXME("iface %p, ellipse %p, geometry %p stub!\n", iface, ellipse, geometry);
@@ -169,7 +170,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateEllipseGeometry(ID2D1Factory1
     return E_NOTIMPL;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateGeometryGroup(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateGeometryGroup(ID2D1Factory2 *iface,
         D2D1_FILL_MODE fill_mode, ID2D1Geometry **geometries, UINT32 geometry_count, ID2D1GeometryGroup **group)
 {
     FIXME("iface %p, fill_mode %#x, geometries %p, geometry_count %u, group %p stub!\n",
@@ -178,7 +179,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateGeometryGroup(ID2D1Factory1 *
     return E_NOTIMPL;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateTransformedGeometry(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateTransformedGeometry(ID2D1Factory2 *iface,
         ID2D1Geometry *src_geometry, const D2D1_MATRIX_3X2_F *transform,
         ID2D1TransformedGeometry **transformed_geometry)
 {
@@ -190,7 +191,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateTransformedGeometry(ID2D1Fact
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    d2d_transformed_geometry_init(object, (ID2D1Factory *)iface, src_geometry, transform);
+    d2d_transformed_geometry_init(object, iface, src_geometry, transform);
 
     TRACE("Created transformed geometry %p.\n", object);
     *transformed_geometry = (ID2D1TransformedGeometry *)&object->ID2D1Geometry_iface;
@@ -198,7 +199,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateTransformedGeometry(ID2D1Fact
     return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreatePathGeometry(ID2D1Factory1 *iface, ID2D1PathGeometry **geometry)
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreatePathGeometry(ID2D1Factory2 *iface, ID2D1PathGeometry **geometry)
 {
     struct d2d_geometry *object;
 
@@ -207,7 +208,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreatePathGeometry(ID2D1Factory1 *i
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    d2d_path_geometry_init(object, (ID2D1Factory *)iface);
+    d2d_path_geometry_init(object, iface);
 
     TRACE("Created path geometry %p.\n", object);
     *geometry = (ID2D1PathGeometry *)&object->ID2D1Geometry_iface;
@@ -215,7 +216,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreatePathGeometry(ID2D1Factory1 *i
     return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateStrokeStyle(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateStrokeStyle(ID2D1Factory2 *iface,
         const D2D1_STROKE_STYLE_PROPERTIES *desc, const float *dashes, UINT32 dash_count,
         ID2D1StrokeStyle **stroke_style)
 {
@@ -241,10 +242,11 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateStrokeStyle(ID2D1Factory1 *if
     return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDrawingStateBlock(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDrawingStateBlock(ID2D1Factory2 *iface,
         const D2D1_DRAWING_STATE_DESCRIPTION *desc, IDWriteRenderingParams *text_rendering_params,
         ID2D1DrawingStateBlock **state_block)
 {
+    D2D1_DRAWING_STATE_DESCRIPTION1 state_desc;
     struct d2d_state_block *object;
 
     TRACE("iface %p, desc %p, text_rendering_params %p, state_block %p.\n",
@@ -253,10 +255,17 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDrawingStateBlock(ID2D1Factor
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    d2d_state_block_init(object, (ID2D1Factory *)iface, desc, text_rendering_params);
+    if (desc)
+    {
+        memcpy(&state_desc, desc, sizeof(*desc));
+        state_desc.primitiveBlend = D2D1_PRIMITIVE_BLEND_SOURCE_OVER;
+        state_desc.unitMode = D2D1_UNIT_MODE_DIPS;
+    }
+
+    d2d_state_block_init(object, (ID2D1Factory *)iface, desc ? &state_desc : NULL, text_rendering_params);
 
     TRACE("Created state block %p.\n", object);
-    *state_block = &object->ID2D1DrawingStateBlock_iface;
+    *state_block = (ID2D1DrawingStateBlock *)&object->ID2D1DrawingStateBlock1_iface;
 
     return S_OK;
 }
@@ -273,10 +282,10 @@ static HRESULT d2d_factory_get_device(struct d2d_factory *factory, ID3D10Device1
     return hr;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateWicBitmapRenderTarget(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateWicBitmapRenderTarget(ID2D1Factory2 *iface,
         IWICBitmap *target, const D2D1_RENDER_TARGET_PROPERTIES *desc, ID2D1RenderTarget **render_target)
 {
-    struct d2d_factory *factory = impl_from_ID2D1Factory1(iface);
+    struct d2d_factory *factory = impl_from_ID2D1Factory2(iface);
     struct d2d_wic_render_target *object;
     ID3D10Device1 *device;
     HRESULT hr;
@@ -292,7 +301,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateWicBitmapRenderTarget(ID2D1Fa
         return hr;
     }
 
-    if (FAILED(hr = d2d_wic_render_target_init(object, (ID2D1Factory *)iface, device, target, desc)))
+    if (FAILED(hr = d2d_wic_render_target_init(object, (ID2D1Factory1 *)iface, device, target, desc)))
     {
         WARN("Failed to initialize render target, hr %#x.\n", hr);
         heap_free(object);
@@ -300,16 +309,16 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateWicBitmapRenderTarget(ID2D1Fa
     }
 
     TRACE("Created render target %p.\n", object);
-    *render_target = &object->ID2D1RenderTarget_iface;
+    *render_target = object->dxgi_target;
 
     return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateHwndRenderTarget(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateHwndRenderTarget(ID2D1Factory2 *iface,
         const D2D1_RENDER_TARGET_PROPERTIES *desc, const D2D1_HWND_RENDER_TARGET_PROPERTIES *hwnd_rt_desc,
         ID2D1HwndRenderTarget **render_target)
 {
-    struct d2d_factory *factory = impl_from_ID2D1Factory1(iface);
+    struct d2d_factory *factory = impl_from_ID2D1Factory2(iface);
     struct d2d_hwnd_render_target *object;
     ID3D10Device1 *device;
     HRESULT hr;
@@ -322,7 +331,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateHwndRenderTarget(ID2D1Factory
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    if (FAILED(hr = d2d_hwnd_render_target_init(object, (ID2D1Factory *)iface, device, desc, hwnd_rt_desc)))
+    if (FAILED(hr = d2d_hwnd_render_target_init(object, (ID2D1Factory1 *)iface, device, desc, hwnd_rt_desc)))
     {
         WARN("Failed to initialize render target, hr %#x.\n", hr);
         heap_free(object);
@@ -335,18 +344,38 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateHwndRenderTarget(ID2D1Factory
     return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDxgiSurfaceRenderTarget(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDxgiSurfaceRenderTarget(ID2D1Factory2 *iface,
         IDXGISurface *surface, const D2D1_RENDER_TARGET_PROPERTIES *desc, ID2D1RenderTarget **render_target)
 {
+    IDXGIDevice *dxgi_device;
+    ID2D1Device *device;
+    HRESULT hr;
+
     TRACE("iface %p, surface %p, desc %p, render_target %p.\n", iface, surface, desc, render_target);
 
-    return d2d_d3d_create_render_target((ID2D1Factory *)iface, surface, NULL, desc, render_target);
+    if (FAILED(hr = IDXGISurface_GetDevice(surface, &IID_IDXGIDevice, (void **)&dxgi_device)))
+    {
+        WARN("Failed to get DXGI device, hr %#x.\n", hr);
+        return hr;
+    }
+
+    hr = ID2D1Factory1_CreateDevice((ID2D1Factory1 *)iface, dxgi_device, &device);
+    IDXGIDevice_Release(dxgi_device);
+    if (FAILED(hr))
+    {
+        WARN("Failed to create D2D device, hr %#x.\n", hr);
+        return hr;
+    }
+
+    hr = d2d_d3d_create_render_target(device, surface, NULL, NULL, desc, (void **)render_target);
+    ID2D1Device_Release(device);
+    return hr;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDCRenderTarget(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDCRenderTarget(ID2D1Factory2 *iface,
         const D2D1_RENDER_TARGET_PROPERTIES *desc, ID2D1DCRenderTarget **render_target)
 {
-    struct d2d_factory *factory = impl_from_ID2D1Factory1(iface);
+    struct d2d_factory *factory = impl_from_ID2D1Factory2(iface);
     struct d2d_dc_render_target *object;
     ID3D10Device1 *device;
     HRESULT hr;
@@ -359,7 +388,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDCRenderTarget(ID2D1Factory1 
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    if (FAILED(hr = d2d_dc_render_target_init(object, (ID2D1Factory *)iface, device, desc)))
+    if (FAILED(hr = d2d_dc_render_target_init(object, (ID2D1Factory1 *)iface, device, desc)))
     {
         WARN("Failed to initialize render target, hr %#x.\n", hr);
         heap_free(object);
@@ -372,15 +401,25 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDCRenderTarget(ID2D1Factory1 
     return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDevice(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDevice(ID2D1Factory2 *iface,
         IDXGIDevice *dxgi_device, ID2D1Device **device)
 {
-    FIXME("iface %p, dxgi_device %p, device %p stub!\n", iface, dxgi_device, device);
+    struct d2d_device *object;
 
-    return E_NOTIMPL;
+    TRACE("iface %p, dxgi_device %p, device %p.\n", iface, dxgi_device, device);
+
+    if (!(object = heap_alloc_zero(sizeof(*object))))
+        return E_OUTOFMEMORY;
+
+    d2d_device_init(object, (ID2D1Factory1 *)iface, dxgi_device);
+
+    TRACE("Create device %p.\n", object);
+    *device = &object->ID2D1Device_iface;
+
+    return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateStrokeStyle1(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateStrokeStyle1(ID2D1Factory2 *iface,
         const D2D1_STROKE_STYLE_PROPERTIES1 *desc, const float *dashes, UINT32 dash_count,
         ID2D1StrokeStyle1 **stroke_style)
 {
@@ -390,24 +429,34 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateStrokeStyle1(ID2D1Factory1 *i
     return E_NOTIMPL;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreatePathGeometry1(ID2D1Factory1 *iface, ID2D1PathGeometry1 **geometry)
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreatePathGeometry1(ID2D1Factory2 *iface, ID2D1PathGeometry1 **geometry)
 {
     FIXME("iface %p, geometry %p stub!\n", iface, geometry);
 
     return E_NOTIMPL;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDrawingStateBlock1(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateDrawingStateBlock1(ID2D1Factory2 *iface,
         const D2D1_DRAWING_STATE_DESCRIPTION1 *desc, IDWriteRenderingParams *text_rendering_params,
         ID2D1DrawingStateBlock1 **state_block)
 {
-    FIXME("iface %p, desc %p, text_rendering_params %p, state_block %p stub!\n",
+    struct d2d_state_block *object;
+
+    TRACE("iface %p, desc %p, text_rendering_params %p, state_block %p.\n",
             iface, desc, text_rendering_params, state_block);
 
-    return E_NOTIMPL;
+    if (!(object = heap_alloc_zero(sizeof(*object))))
+        return E_OUTOFMEMORY;
+
+    d2d_state_block_init(object, (ID2D1Factory *)iface, desc, text_rendering_params);
+
+    TRACE("Created state block %p.\n", object);
+    *state_block = &object->ID2D1DrawingStateBlock1_iface;
+
+    return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_CreateGdiMetafile(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_CreateGdiMetafile(ID2D1Factory2 *iface,
         IStream *stream, ID2D1GdiMetafile **metafile)
 {
     FIXME("iface %p, stream %p, metafile %p stub!\n", iface, stream, metafile);
@@ -415,7 +464,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateGdiMetafile(ID2D1Factory1 *if
     return E_NOTIMPL;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_RegisterEffectFromStream(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_RegisterEffectFromStream(ID2D1Factory2 *iface,
         REFCLSID effect_id, IStream *property_xml, const D2D1_PROPERTY_BINDING *bindings,
         UINT32 binding_count, PD2D1_EFFECT_FACTORY effect_factory)
 {
@@ -425,24 +474,24 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_RegisterEffectFromStream(ID2D1Facto
     return E_NOTIMPL;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_RegisterEffectFromString(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_RegisterEffectFromString(ID2D1Factory2 *iface,
         REFCLSID effect_id, const WCHAR *property_xml, const D2D1_PROPERTY_BINDING *bindings,
         UINT32 binding_count, PD2D1_EFFECT_FACTORY effect_factory)
 {
     FIXME("iface %p, effect_id %s, property_xml %s, bindings %p, binding_count %u, effect_factory %p stub!\n",
             iface, debugstr_guid(effect_id), debugstr_w(property_xml), bindings, binding_count, effect_factory);
 
-    return E_NOTIMPL;
+    return S_OK;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_UnregisterEffect(ID2D1Factory1 *iface, REFCLSID effect_id)
+static HRESULT STDMETHODCALLTYPE d2d_factory_UnregisterEffect(ID2D1Factory2 *iface, REFCLSID effect_id)
 {
     FIXME("iface %p, effect_id %s stub!\n", iface, debugstr_guid(effect_id));
 
     return E_NOTIMPL;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_GetRegisteredEffects(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_GetRegisteredEffects(ID2D1Factory2 *iface,
         CLSID *effects, UINT32 effect_count, UINT32 *returned, UINT32 *registered)
 {
     FIXME("iface %p, effects %p, effect_count %u, returned %p, registered %p stub!\n",
@@ -451,7 +500,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_GetRegisteredEffects(ID2D1Factory1 
     return E_NOTIMPL;
 }
 
-static HRESULT STDMETHODCALLTYPE d2d_factory_GetEffectProperties(ID2D1Factory1 *iface,
+static HRESULT STDMETHODCALLTYPE d2d_factory_GetEffectProperties(ID2D1Factory2 *iface,
         REFCLSID effect_id, ID2D1Properties **props)
 {
     FIXME("iface %p, effect_id %s, props %p stub!\n", iface, debugstr_guid(effect_id), props);
@@ -459,7 +508,15 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_GetEffectProperties(ID2D1Factory1 *
     return E_NOTIMPL;
 }
 
-static const struct ID2D1Factory1Vtbl d2d_factory_vtbl =
+static HRESULT STDMETHODCALLTYPE d2d_factory_ID2D1Factory1_CreateDevice(ID2D1Factory2 *iface, IDXGIDevice *dxgi_device,
+        ID2D1Device1 **device)
+{
+    FIXME("iface %p, dxgi_device %p, device %p stub!\n", iface, dxgi_device, device);
+
+    return E_NOTIMPL;
+}
+
+static const struct ID2D1Factory2Vtbl d2d_factory_vtbl =
 {
     d2d_factory_QueryInterface,
     d2d_factory_AddRef,
@@ -488,6 +545,7 @@ static const struct ID2D1Factory1Vtbl d2d_factory_vtbl =
     d2d_factory_UnregisterEffect,
     d2d_factory_GetRegisteredEffects,
     d2d_factory_GetEffectProperties,
+    d2d_factory_ID2D1Factory1_CreateDevice,
 };
 
 static void d2d_factory_init(struct d2d_factory *factory, D2D1_FACTORY_TYPE factory_type,
@@ -498,7 +556,7 @@ static void d2d_factory_init(struct d2d_factory *factory, D2D1_FACTORY_TYPE fact
     if (factory_options && factory_options->debugLevel != D2D1_DEBUG_LEVEL_NONE)
         WARN("Ignoring debug level %#x.\n", factory_options->debugLevel);
 
-    factory->ID2D1Factory1_iface.lpVtbl = &d2d_factory_vtbl;
+    factory->ID2D1Factory2_iface.lpVtbl = &d2d_factory_vtbl;
     factory->refcount = 1;
     d2d_factory_reload_sysmetrics(factory);
 }
@@ -519,8 +577,8 @@ HRESULT WINAPI D2D1CreateFactory(D2D1_FACTORY_TYPE factory_type, REFIID iid,
 
     TRACE("Created factory %p.\n", object);
 
-    hr = ID2D1Factory1_QueryInterface(&object->ID2D1Factory1_iface, iid, factory);
-    ID2D1Factory1_Release(&object->ID2D1Factory1_iface);
+    hr = ID2D1Factory2_QueryInterface(&object->ID2D1Factory2_iface, iid, factory);
+    ID2D1Factory2_Release(&object->ID2D1Factory2_iface);
 
     return hr;
 }
@@ -529,7 +587,7 @@ void WINAPI D2D1MakeRotateMatrix(float angle, D2D1_POINT_2F center, D2D1_MATRIX_
 {
     float theta, sin_theta, cos_theta;
 
-    TRACE("angle %.8e, center {%.8e, %.8e}, matrix %p.\n", angle, center.x, center.y, matrix);
+    TRACE("angle %.8e, center %s, matrix %p.\n", angle, debug_d2d_point_2f(&center), matrix);
 
     theta = angle * (M_PI / 180.0f);
     sin_theta = sinf(theta);
@@ -542,6 +600,40 @@ void WINAPI D2D1MakeRotateMatrix(float angle, D2D1_POINT_2F center, D2D1_MATRIX_
     matrix->_22 = cos_theta;
     matrix->_31 = center.x - center.x * cos_theta + center.y * sin_theta;
     matrix->_32 = center.y - center.x * sin_theta - center.y * cos_theta;
+}
+
+void WINAPI D2D1MakeSkewMatrix(float angle_x, float angle_y, D2D1_POINT_2F center, D2D1_MATRIX_3X2_F *matrix)
+{
+    float tan_x, tan_y;
+
+    TRACE("angle_x %.8e, angle_y %.8e, center %s, matrix %p.\n", angle_x, angle_y, debug_d2d_point_2f(&center), matrix);
+
+    tan_x = tan(angle_x * (M_PI / 180.0f));
+    tan_y = tan(angle_y * (M_PI / 180.0f));
+
+    /* translate(-center) * skew() * translate(center) */
+    matrix->_11 = 1.0f;
+    matrix->_12 = tan_y;
+    matrix->_21 = tan_x;
+    matrix->_22 = 1.0f;
+    matrix->_31 = -tan_x * center.y;
+    matrix->_32 = -tan_y * center.x;
+}
+
+BOOL WINAPI D2D1IsMatrixInvertible(const D2D1_MATRIX_3X2_F *matrix)
+{
+    TRACE("matrix %p.\n", matrix);
+
+    return (matrix->_11 * matrix->_22 - matrix->_21 * matrix->_12) != 0.0f;
+}
+
+BOOL WINAPI D2D1InvertMatrix(D2D1_MATRIX_3X2_F *matrix)
+{
+    D2D1_MATRIX_3X2_F m = *matrix;
+
+    TRACE("matrix %p.\n", matrix);
+
+    return d2d_matrix_invert(matrix, &m);
 }
 
 static BOOL get_config_key_dword(HKEY default_key, HKEY application_key, const char *name, DWORD *value)

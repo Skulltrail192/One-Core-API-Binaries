@@ -48,25 +48,9 @@ struct wined3d_wndproc_table
 
 static struct wined3d_wndproc_table wndproc_table;
 
-static CRITICAL_SECTION wined3d_cs;
-static CRITICAL_SECTION_DEBUG wined3d_cs_debug =
-{
-    0, 0, &wined3d_cs,
-    {&wined3d_cs_debug.ProcessLocksList,
-    &wined3d_cs_debug.ProcessLocksList},
-    0, 0, {(DWORD_PTR)(__FILE__ ": wined3d_cs")}
-};
-static CRITICAL_SECTION wined3d_cs = {&wined3d_cs_debug, -1, 0, 0, 0, 0};
+static SRWLOCK srwLock;
 
-static CRITICAL_SECTION wined3d_wndproc_cs;
-static CRITICAL_SECTION_DEBUG wined3d_wndproc_cs_debug =
-{
-    0, 0, &wined3d_wndproc_cs,
-    {&wined3d_wndproc_cs_debug.ProcessLocksList,
-    &wined3d_wndproc_cs_debug.ProcessLocksList},
-    0, 0, {(DWORD_PTR)(__FILE__ ": wined3d_wndproc_cs")}
-};
-static CRITICAL_SECTION wined3d_wndproc_cs = {&wined3d_wndproc_cs_debug, -1, 0, 0, 0, 0};
+static SRWLOCK srwLock_wndproc;
 
 /* When updating default value here, make sure to update winecfg as well,
  * where appropriate. */
@@ -175,6 +159,10 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
     wc.hbrBackground        = NULL;
     wc.lpszMenuName         = NULL;
     wc.lpszClassName        = WINED3D_OPENGL_WINDOW_CLASS_NAME;
+	
+	InitializeSRWLock(&srwLock);
+	
+	InitializeSRWLock(&srwLock_wndproc);
 
     if (!RegisterClassA(&wc))
     {
@@ -347,30 +335,28 @@ static BOOL wined3d_dll_destroy(HINSTANCE hInstDLL)
 
     heap_free(wined3d_settings.logo);
     UnregisterClassA(WINED3D_OPENGL_WINDOW_CLASS_NAME, hInstDLL);
-
-    DeleteCriticalSection(&wined3d_wndproc_cs);
-    DeleteCriticalSection(&wined3d_cs);
+	
     return TRUE;
 }
 
 void WINAPI wined3d_mutex_lock(void)
 {
-    EnterCriticalSection(&wined3d_cs);
+	AcquireSRWLockShared(&srwLock);
 }
 
 void WINAPI wined3d_mutex_unlock(void)
 {
-    LeaveCriticalSection(&wined3d_cs);
+	ReleaseSRWLockShared(&srwLock);
 }
 
 static void wined3d_wndproc_mutex_lock(void)
 {
-    EnterCriticalSection(&wined3d_wndproc_cs);
+    AcquireSRWLockShared(&srwLock_wndproc);
 }
 
 static void wined3d_wndproc_mutex_unlock(void)
 {
-    LeaveCriticalSection(&wined3d_wndproc_cs);
+    ReleaseSRWLockShared(&srwLock_wndproc);
 }
 
 static struct wined3d_wndproc *wined3d_find_wndproc(HWND window)

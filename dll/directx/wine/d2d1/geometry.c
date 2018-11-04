@@ -2136,14 +2136,14 @@ static BOOL d2d_geometry_outline_add_join(struct d2d_geometry *geometry,
     }
     else if (ccw < 0.0f)
     {
-        d2d_outline_vertex_set(&v[0], p0->x, p0->y, 0.0f, 0.0f, 0.0f, 0.0f);
+        d2d_outline_vertex_set(&v[0], p0->x, p0->y, q_next.x, q_next.y, q_prev.x, q_prev.y);
         d2d_outline_vertex_set(&v[1], p0->x, p0->y, -q_next.x, -q_next.y, -q_next.x, -q_next.y);
         d2d_outline_vertex_set(&v[2], p0->x, p0->y, -q_next.x, -q_next.y, -q_prev.x, -q_prev.y);
         d2d_outline_vertex_set(&v[3], p0->x, p0->y, -q_prev.x, -q_prev.y, -q_prev.x, -q_prev.y);
     }
     else
     {
-        d2d_outline_vertex_set(&v[0], p0->x, p0->y, 0.0f, 0.0f, 0.0f, 0.0f);
+        d2d_outline_vertex_set(&v[0], p0->x, p0->y, -q_prev.x, -q_prev.y, -q_next.x, -q_next.y);
         d2d_outline_vertex_set(&v[1], p0->x, p0->y, q_prev.x, q_prev.y, q_prev.x, q_prev.y);
         d2d_outline_vertex_set(&v[2], p0->x, p0->y, q_prev.x, q_prev.y, q_next.x, q_next.y);
         d2d_outline_vertex_set(&v[3], p0->x, p0->y, q_next.x, q_next.y, q_next.x, q_next.y);
@@ -2343,15 +2343,15 @@ static void d2d_geometry_cleanup(struct d2d_geometry *geometry)
     heap_free(geometry->fill.bezier_vertices);
     heap_free(geometry->fill.faces);
     heap_free(geometry->fill.vertices);
-    ID2D1Factory_Release(geometry->factory);
+    ID2D1Factory1_Release(geometry->factory);
 }
 
-static void d2d_geometry_init(struct d2d_geometry *geometry, ID2D1Factory *factory,
+static void d2d_geometry_init(struct d2d_geometry *geometry, ID2D1Factory1 *factory,
         const D2D1_MATRIX_3X2_F *transform, const struct ID2D1GeometryVtbl *vtbl)
 {
     geometry->ID2D1Geometry_iface.lpVtbl = vtbl;
     geometry->refcount = 1;
-    ID2D1Factory_AddRef(geometry->factory = factory);
+    ID2D1Factory1_AddRef(geometry->factory = factory);
     geometry->transform = *transform;
 }
 
@@ -2419,8 +2419,8 @@ static void STDMETHODCALLTYPE d2d_geometry_sink_BeginFigure(ID2D1GeometrySink *i
     struct d2d_geometry *geometry = impl_from_ID2D1GeometrySink(iface);
     struct d2d_figure *figure;
 
-    TRACE("iface %p, start_point {%.8e, %.8e}, figure_begin %#x.\n",
-            iface, start_point.x, start_point.y, figure_begin);
+    TRACE("iface %p, start_point %s, figure_begin %#x.\n",
+            iface, debug_d2d_point_2f(&start_point), figure_begin);
 
     if (geometry->u.path.state != D2D_GEOMETRY_STATE_OPEN)
     {
@@ -2882,7 +2882,7 @@ done:
 
 static void STDMETHODCALLTYPE d2d_geometry_sink_AddLine(ID2D1GeometrySink *iface, D2D1_POINT_2F point)
 {
-    TRACE("iface %p, point {%.8e, %.8e}.\n", iface, point.x, point.y);
+    TRACE("iface %p, point %s.\n", iface, debug_d2d_point_2f(&point));
 
     d2d_geometry_sink_AddLines(iface, &point, 1);
 }
@@ -3040,10 +3040,14 @@ static ULONG STDMETHODCALLTYPE d2d_path_geometry_Release(ID2D1PathGeometry *ifac
 static void STDMETHODCALLTYPE d2d_path_geometry_GetFactory(ID2D1PathGeometry *iface, ID2D1Factory **factory)
 {
     struct d2d_geometry *geometry = impl_from_ID2D1PathGeometry(iface);
+    HRESULT hr;
 
     TRACE("iface %p, factory %p.\n", iface, factory);
 
-    ID2D1Factory_AddRef(*factory = geometry->factory);
+    if (FAILED(hr = ID2D1Factory1_QueryInterface(geometry->factory, &IID_ID2D1Factory, (void **)factory)))
+    {
+        WARN("Unable to query ID2D1Factory interface %#x", hr);
+    }
 }
 
 static HRESULT STDMETHODCALLTYPE d2d_path_geometry_GetBounds(ID2D1PathGeometry *iface,
@@ -3164,9 +3168,9 @@ static HRESULT STDMETHODCALLTYPE d2d_path_geometry_StrokeContainsPoint(ID2D1Path
         D2D1_POINT_2F point, float stroke_width, ID2D1StrokeStyle *stroke_style, const D2D1_MATRIX_3X2_F *transform,
         float tolerance, BOOL *contains)
 {
-    FIXME("iface %p, point {%.8e, %.8e}, stroke_width %.8e, stroke_style %p, "
+    FIXME("iface %p, point %s, stroke_width %.8e, stroke_style %p, "
             "transform %p, tolerance %.8e, contains %p stub!\n",
-            iface, point.x, point.y, stroke_width, stroke_style, transform, tolerance, contains);
+            iface, debug_d2d_point_2f(&point), stroke_width, stroke_style, transform, tolerance, contains);
 
     return E_NOTIMPL;
 }
@@ -3177,8 +3181,8 @@ static HRESULT STDMETHODCALLTYPE d2d_path_geometry_FillContainsPoint(ID2D1PathGe
     struct d2d_geometry *geometry = impl_from_ID2D1PathGeometry(iface);
     D2D1_MATRIX_3X2_F g_i;
 
-    TRACE("iface %p, point {%.8e, %.8e}, transform %p, tolerance %.8e, contains %p.\n",
-            iface, point.x, point.y, transform, tolerance, contains);
+    TRACE("iface %p, point %s, transform %p, tolerance %.8e, contains %p.\n",
+            iface, debug_d2d_point_2f(&point), transform, tolerance, contains);
 
     if (transform)
     {
@@ -3491,7 +3495,7 @@ static const struct ID2D1PathGeometryVtbl d2d_path_geometry_vtbl =
     d2d_path_geometry_GetFigureCount,
 };
 
-void d2d_path_geometry_init(struct d2d_geometry *geometry, ID2D1Factory *factory)
+void d2d_path_geometry_init(struct d2d_geometry *geometry, ID2D1Factory1 *factory)
 {
     d2d_geometry_init(geometry, factory, &identity, (ID2D1GeometryVtbl *)&d2d_path_geometry_vtbl);
     geometry->u.path.ID2D1GeometrySink_iface.lpVtbl = &d2d_geometry_sink_vtbl;
@@ -3556,10 +3560,14 @@ static ULONG STDMETHODCALLTYPE d2d_rectangle_geometry_Release(ID2D1RectangleGeom
 static void STDMETHODCALLTYPE d2d_rectangle_geometry_GetFactory(ID2D1RectangleGeometry *iface, ID2D1Factory **factory)
 {
     struct d2d_geometry *geometry = impl_from_ID2D1RectangleGeometry(iface);
+    HRESULT hr;
 
     TRACE("iface %p, factory %p.\n", iface, factory);
 
-    ID2D1Factory_AddRef(*factory = geometry->factory);
+    if (FAILED(hr = ID2D1Factory1_QueryInterface(geometry->factory, &IID_ID2D1Factory, (void **)factory)))
+    {
+        WARN("Unable to query ID2D1Factory interface %#x", hr);
+    }
 }
 
 static HRESULT STDMETHODCALLTYPE d2d_rectangle_geometry_GetBounds(ID2D1RectangleGeometry *iface,
@@ -3609,9 +3617,8 @@ static HRESULT STDMETHODCALLTYPE d2d_rectangle_geometry_StrokeContainsPoint(ID2D
         D2D1_POINT_2F point, float stroke_width, ID2D1StrokeStyle *stroke_style, const D2D1_MATRIX_3X2_F *transform,
         float tolerance, BOOL *contains)
 {
-    FIXME("iface %p, point {%.8e, %.8e}, stroke_width %.8e, stroke_style %p, "
-            "transform %p, tolerance %.8e, contains %p stub!\n",
-            iface, point.x, point.y, stroke_width, stroke_style, transform, tolerance, contains);
+    FIXME("iface %p, point %s, stroke_width %.8e, stroke_style %p, transform %p, tolerance %.8e, contains %p stub!\n",
+            iface, debug_d2d_point_2f(&point), stroke_width, stroke_style, transform, tolerance, contains);
 
     return E_NOTIMPL;
 }
@@ -3623,8 +3630,8 @@ static HRESULT STDMETHODCALLTYPE d2d_rectangle_geometry_FillContainsPoint(ID2D1R
     D2D1_RECT_F *rect = &geometry->u.rectangle.rect;
     float dx, dy;
 
-    TRACE("iface %p, point {%.8e, %.8e}, transform %p, tolerance %.8e, contains %p.\n",
-            iface, point.x, point.y, transform, tolerance, contains);
+    TRACE("iface %p, point %s, transform %p, tolerance %.8e, contains %p.\n",
+            iface, debug_d2d_point_2f(&point), transform, tolerance, contains);
 
     if (transform)
     {
@@ -3780,7 +3787,7 @@ static const struct ID2D1RectangleGeometryVtbl d2d_rectangle_geometry_vtbl =
     d2d_rectangle_geometry_GetRect,
 };
 
-HRESULT d2d_rectangle_geometry_init(struct d2d_geometry *geometry, ID2D1Factory *factory, const D2D1_RECT_F *rect)
+HRESULT d2d_rectangle_geometry_init(struct d2d_geometry *geometry, ID2D1Factory1 *factory, const D2D1_RECT_F *rect)
 {
     struct d2d_face *f;
     D2D1_POINT_2F *v;
@@ -3901,10 +3908,14 @@ static void STDMETHODCALLTYPE d2d_transformed_geometry_GetFactory(ID2D1Transform
         ID2D1Factory **factory)
 {
     struct d2d_geometry *geometry = impl_from_ID2D1TransformedGeometry(iface);
+    HRESULT hr;
 
     TRACE("iface %p, factory %p.\n", iface, factory);
 
-    ID2D1Factory_AddRef(*factory = geometry->factory);
+    if (FAILED(hr = ID2D1Factory1_QueryInterface(geometry->factory, &IID_ID2D1Factory, (void **)factory)))
+    {
+        WARN("Unable to query ID2D1Factory interface %#x", hr);
+    }
 }
 
 static HRESULT STDMETHODCALLTYPE d2d_transformed_geometry_GetBounds(ID2D1TransformedGeometry *iface,
@@ -3939,9 +3950,8 @@ static HRESULT STDMETHODCALLTYPE d2d_transformed_geometry_StrokeContainsPoint(ID
     struct d2d_geometry *geometry = impl_from_ID2D1TransformedGeometry(iface);
     D2D1_MATRIX_3X2_F g;
 
-    TRACE("iface %p, point {%.8e, %.8e}, stroke_width %.8e, stroke_style %p, "
-            "transform %p, tolerance %.8e, contains %p.\n",
-            iface, point.x, point.y, stroke_width, stroke_style, transform, tolerance, contains);
+    TRACE("iface %p, point %s, stroke_width %.8e, stroke_style %p, transform %p, tolerance %.8e, contains %p.\n",
+            iface, debug_d2d_point_2f(&point), stroke_width, stroke_style, transform, tolerance, contains);
 
     g = geometry->transform;
     if (transform)
@@ -3957,8 +3967,8 @@ static HRESULT STDMETHODCALLTYPE d2d_transformed_geometry_FillContainsPoint(ID2D
     struct d2d_geometry *geometry = impl_from_ID2D1TransformedGeometry(iface);
     D2D1_MATRIX_3X2_F g;
 
-    TRACE("iface %p, point {%.8e, %.8e}, transform %p, tolerance %.8e, contains %p.\n",
-            iface, point.x, point.y, transform, tolerance, contains);
+    TRACE("iface %p, point %s, transform %p, tolerance %.8e, contains %p.\n",
+            iface, debug_d2d_point_2f(&point), transform, tolerance, contains);
 
     g = geometry->transform;
     if (transform)
@@ -4098,7 +4108,7 @@ static const struct ID2D1TransformedGeometryVtbl d2d_transformed_geometry_vtbl =
     d2d_transformed_geometry_GetTransform,
 };
 
-void d2d_transformed_geometry_init(struct d2d_geometry *geometry, ID2D1Factory *factory,
+void d2d_transformed_geometry_init(struct d2d_geometry *geometry, ID2D1Factory1 *factory,
         ID2D1Geometry *src_geometry, const D2D_MATRIX_3X2_F *transform)
 {
     struct d2d_geometry *src_impl;

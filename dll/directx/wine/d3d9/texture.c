@@ -1314,6 +1314,7 @@ HRESULT texture_init(struct d3d9_texture *texture, struct d3d9_device *device,
     desc.usage |= WINED3DUSAGE_TEXTURE;
     if (pool == D3DPOOL_SCRATCH)
         desc.usage |= WINED3DUSAGE_SCRATCH;
+    desc.bind_flags = wined3d_bind_flags_from_d3d9_usage(usage) | WINED3D_BIND_SHADER_RESOURCE;
     desc.access = wined3daccess_from_d3dpool(pool, usage)
             | WINED3D_RESOURCE_ACCESS_MAP_R | WINED3D_RESOURCE_ACCESS_MAP_W;
     desc.width = width;
@@ -1340,8 +1341,9 @@ HRESULT texture_init(struct d3d9_texture *texture, struct d3d9_device *device,
             return D3DERR_INVALIDCALL;
         }
         wined3d_mutex_lock();
-        hr = wined3d_check_device_format(device->d3d_parent->wined3d, 0, WINED3D_DEVICE_TYPE_HAL, WINED3DFMT_B8G8R8A8_UNORM,
-                WINED3DUSAGE_TEXTURE | WINED3DUSAGE_QUERY_GENMIPMAP, WINED3D_RTYPE_TEXTURE_2D, wined3dformat_from_d3dformat(format));
+        hr = wined3d_check_device_format(device->d3d_parent->wined3d, WINED3DADAPTER_DEFAULT,
+                WINED3D_DEVICE_TYPE_HAL, WINED3DFMT_B8G8R8A8_UNORM, WINED3DUSAGE_QUERY_GENMIPMAP,
+                WINED3D_BIND_SHADER_RESOURCE, WINED3D_RTYPE_TEXTURE_2D, wined3dformat_from_d3dformat(format));
         wined3d_mutex_unlock();
         if (hr == D3D_OK)
         {
@@ -1399,6 +1401,7 @@ HRESULT cubetexture_init(struct d3d9_texture *texture, struct d3d9_device *devic
     desc.usage |= WINED3DUSAGE_LEGACY_CUBEMAP | WINED3DUSAGE_TEXTURE;
     if (pool == D3DPOOL_SCRATCH)
         desc.usage |= WINED3DUSAGE_SCRATCH;
+    desc.bind_flags = wined3d_bind_flags_from_d3d9_usage(usage) | WINED3D_BIND_SHADER_RESOURCE;
     desc.access = wined3daccess_from_d3dpool(pool, usage)
             | WINED3D_RESOURCE_ACCESS_MAP_R | WINED3D_RESOURCE_ACCESS_MAP_W;
     desc.width = edge_length;
@@ -1470,6 +1473,7 @@ HRESULT volumetexture_init(struct d3d9_texture *texture, struct d3d9_device *dev
     desc.usage |= WINED3DUSAGE_TEXTURE;
     if (pool == D3DPOOL_SCRATCH)
         desc.usage |= WINED3DUSAGE_SCRATCH;
+    desc.bind_flags = wined3d_bind_flags_from_d3d9_usage(usage) | WINED3D_BIND_SHADER_RESOURCE;
     desc.access = wined3daccess_from_d3dpool(pool, usage);
     desc.width = width;
     desc.height = height;

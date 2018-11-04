@@ -12,12 +12,13 @@ list(APPEND SOURCE
 	bitmap_render_target.c
 	brush.c
 	dc_render_target.c
+	device.c
+	effect.c
 	factory.c
 	geometry.c
 	hwnd_render_target.c
 	layer.c
 	mesh.c
-	render_target.c
 	state_block.c
 	stroke.c
 	wic_render_target.c

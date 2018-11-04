@@ -1775,6 +1775,7 @@ struct wined3d_swapchain_desc
     BOOL auto_restore_display_mode;
 };
 
+
 struct wined3d_resource_desc
 {
     enum wined3d_resource_type resource_type;

@@ -174,16 +174,29 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_EnumAdapters(IWineDXGIFactory *ifa
 static HRESULT STDMETHODCALLTYPE dxgi_factory_MakeWindowAssociation(IWineDXGIFactory *iface,
         HWND window, UINT flags)
 {
+    struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
+
     FIXME("iface %p, window %p, flags %#x stub!\n", iface, window, flags);
+
+    if (!window && flags)
+        return DXGI_ERROR_INVALID_CALL;
+
+    factory->assoc_window = window;
 
     return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_factory_GetWindowAssociation(IWineDXGIFactory *iface, HWND *window)
 {
+    struct dxgi_factory *factory = impl_from_IWineDXGIFactory(iface);
+
     FIXME("iface %p, window %p stub!\n", iface, window);
 
-    return E_NOTIMPL;
+    if (!window)
+        return DXGI_ERROR_INVALID_CALL;
+
+    *window = factory->assoc_window;
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChain(IWineDXGIFactory *iface,
@@ -491,7 +504,7 @@ static HRESULT dxgi_factory_init(struct dxgi_factory *factory, BOOL extended)
     wined3d_private_store_init(&factory->private_store);
 
     wined3d_mutex_lock();
-    factory->wined3d = wined3d_create(0);
+    factory->wined3d = wined3d_create(WINED3D_REQUEST_D3D10);
     wined3d_mutex_unlock();
     if (!factory->wined3d)
     {

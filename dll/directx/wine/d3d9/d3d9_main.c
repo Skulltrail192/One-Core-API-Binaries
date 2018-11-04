@@ -27,8 +27,6 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
 
-IDirect3D9 * d3d9impl;
-
 static int D3DPERF_event_level = 0;
 
 void WINAPI DebugSetMute(void) {
@@ -59,8 +57,6 @@ IDirect3D9 * WINAPI DECLSPEC_HOTPATCH Direct3DCreate9(UINT sdk_version)
 HRESULT WINAPI DECLSPEC_HOTPATCH Direct3DCreate9Ex(UINT sdk_version, IDirect3D9Ex **d3d9ex)
 {
     struct d3d9 *object;
-	
-	d3d9impl = Direct3DCreate9(sdk_version);
 
     TRACE("sdk_version %#x, d3d9ex %p.\n", sdk_version, d3d9ex);
 

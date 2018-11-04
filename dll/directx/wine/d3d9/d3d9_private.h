@@ -38,7 +38,6 @@
 #include "wine/unicode.h"
 
 #include "d3d9.h"
-#include "wine/config.h"
 #include "wine/wined3d.h"
 
 #define D3D9_MAX_VERTEX_SHADER_CONSTANTF 256
@@ -47,8 +46,6 @@
 #define D3DPRESENTFLAGS_MASK 0x00000fffu
 
 #define D3D9_TEXTURE_MIPMAP_DIRTY 0x1
-
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 
 extern const struct wined3d_parent_ops d3d9_null_wined3d_parent_ops DECLSPEC_HIDDEN;
 
@@ -59,7 +56,7 @@ enum wined3d_format_id wined3dformat_from_d3dformat(D3DFORMAT format) DECLSPEC_H
 unsigned int wined3dmapflags_from_d3dmapflags(unsigned int flags) DECLSPEC_HIDDEN;
 void present_parameters_from_wined3d_swapchain_desc(D3DPRESENT_PARAMETERS *present_parameters,
         const struct wined3d_swapchain_desc *swapchain_desc, DWORD presentation_interval) DECLSPEC_HIDDEN;
-void d3dcaps_from_wined3dcaps(D3DCAPS9 *caps, const WINED3DCAPS *wined3d_caps) DECLSPEC_HIDDEN;
+void d3dcaps_from_wined3dcaps(D3DCAPS9 *caps, const struct wined3d_caps *wined3d_caps) DECLSPEC_HIDDEN;
 
 struct d3d9
 {
@@ -294,9 +291,14 @@ static inline struct d3d9_device *impl_from_IDirect3DDevice9Ex(IDirect3DDevice9E
     return CONTAINING_RECORD(iface, struct d3d9_device, IDirect3DDevice9Ex_iface);
 }
 
-static inline DWORD d3dusage_from_wined3dusage(unsigned int usage)
+static inline DWORD d3dusage_from_wined3dusage(unsigned int wined3d_usage, unsigned int bind_flags)
 {
-    return usage & WINED3DUSAGE_MASK;
+    DWORD usage = wined3d_usage & WINED3DUSAGE_MASK;
+    if (bind_flags & WINED3D_BIND_RENDER_TARGET)
+        usage |= D3DUSAGE_RENDERTARGET;
+    if (bind_flags & WINED3D_BIND_DEPTH_STENCIL)
+        usage |= D3DUSAGE_DEPTHSTENCIL;
+    return usage;
 }
 
 static inline D3DPOOL d3dpool_from_wined3daccess(unsigned int access, unsigned int usage)
@@ -334,11 +336,21 @@ static inline unsigned int wined3daccess_from_d3dpool(D3DPOOL pool, unsigned int
     }
 }
 
+static inline unsigned int wined3d_bind_flags_from_d3d9_usage(DWORD usage)
+{
+    unsigned int bind_flags = 0;
+
+    if (usage & D3DUSAGE_RENDERTARGET)
+        bind_flags |= WINED3D_BIND_RENDER_TARGET;
+    if (usage & D3DUSAGE_DEPTHSTENCIL)
+        bind_flags |= WINED3D_BIND_DEPTH_STENCIL;
+
+    return bind_flags;
+}
+
 static inline DWORD wined3dusage_from_d3dusage(unsigned int usage)
 {
     return usage & WINED3DUSAGE_MASK;
 }
-
-extern IDirect3D9 * d3d9impl;
 
 #endif /* __WINE_D3D9_PRIVATE_H */

@@ -4844,7 +4844,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_deferred_context_GetData(ID3D11DeviceCont
     FIXME("iface %p, asynchronous %p, data %p, data_size %u, data_flags %#x stub!\n",
             iface, asynchronous, data, data_size, data_flags);
 
-    return E_NOTIMPL;
+    return DXGI_ERROR_INVALID_CALL;//E_NOTIMPL;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_SetPredication(ID3D11DeviceContext *iface,
@@ -6673,9 +6673,11 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckMultisampleQualityLevels(ID3D
     return hr;
 }
 
-static void STDMETHODCALLTYPE d3d11_device_CheckCounterInfo(ID3D11Device2 *iface, D3D11_COUNTER_INFO *info)
+static void STDMETHODCALLTYPE d3d11_device_CheckCounterInfo(ID3D11Device2 *iface, D3D11_COUNTER_INFO *pCounterInfo)
 {
-    FIXME("iface %p, info %p stub!\n", iface, info);
+    pCounterInfo->LastDeviceDependentCounter  = D3D11_COUNTER_DEVICE_DEPENDENT_0;
+    pCounterInfo->NumSimultaneousCounters     = 0;
+	pCounterInfo->NumDetectableParallelUnits = 0;
 }
 
 static HRESULT STDMETHODCALLTYPE d3d11_device_CheckCounter(ID3D11Device2 *iface, const D3D11_COUNTER_DESC *desc,
@@ -6705,7 +6707,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckFeatureSupport(ID3D11Device2 
         case D3D11_FEATURE_THREADING:
         {
             D3D11_FEATURE_DATA_THREADING *threading_data = feature_support_data;
-            if (feature_support_data_size != sizeof(*threading_data))
+            if (feature_support_data_size != sizeof(D3D11_FEATURE_DATA_THREADING))
             {
                 WARN("Invalid data size.\n");
                 return E_INVALIDARG;
@@ -6740,6 +6742,24 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckFeatureSupport(ID3D11Device2 
             doubles_data->DoublePrecisionFloatShaderOps = wined3d_caps.shader_double_precision;
             return S_OK;
         }
+		
+		case D3D11_FEATURE_FORMAT_SUPPORT: {
+			D3D11_FEATURE_DATA_FORMAT_SUPPORT *format_support = feature_support_data;
+			if (feature_support_data_size != sizeof(D3D11_FEATURE_DATA_FORMAT_SUPPORT))
+			  return E_INVALIDARG;
+			
+			return d3d11_device_CheckFormatSupport(iface, format_support->InFormat, &format_support->OutFormatSupport); 
+			//return GetFormatSupportFlags(feature_support_data->InFormat, &info->OutFormatSupport, nullptr);
+		} return S_OK;
+		
+		case D3D11_FEATURE_FORMAT_SUPPORT2: {
+			D3D11_FEATURE_DATA_FORMAT_SUPPORT2 *format_support = feature_support_data;
+			if (feature_support_data_size != sizeof(D3D11_FEATURE_DATA_FORMAT_SUPPORT2))
+			  return E_INVALIDARG;
+			
+			return d3d11_device_CheckFormatSupport(iface, format_support->InFormat, &format_support->OutFormatSupport2); 
+			//return GetFormatSupportFlags(info->InFormat, nullptr, &info->OutFormatSupport2);
+		} return S_OK;
 
         case D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS:
         {
@@ -6766,18 +6786,18 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckFeatureSupport(ID3D11Device2 
             FIXME("Returning fake Options support data.\n");
             options->OutputMergerLogicOp = FALSE;
             options->UAVOnlyRenderingForcedSampleCount = FALSE;
-            options->DiscardAPIsSeenByDriver = FALSE;
-            options->FlagsForUpdateAndCopySeenByDriver = FALSE;
-            options->ClearView = FALSE;
-            options->CopyWithOverlap = FALSE;
-            options->ConstantBufferPartialUpdate = FALSE;
-            options->ConstantBufferOffsetting = FALSE;
-            options->MapNoOverwriteOnDynamicConstantBuffer = FALSE;
-            options->MapNoOverwriteOnDynamicBufferSRV = FALSE;
-            options->MultisampleRTVWithForcedSampleCountOne = FALSE;
+            options->DiscardAPIsSeenByDriver = TRUE;
+            options->FlagsForUpdateAndCopySeenByDriver = TRUE;
+            options->ClearView = TRUE;
+            options->CopyWithOverlap = TRUE;
+            options->ConstantBufferPartialUpdate = TRUE;
+            options->ConstantBufferOffsetting = TRUE;
+            options->MapNoOverwriteOnDynamicConstantBuffer = TRUE;
+            options->MapNoOverwriteOnDynamicBufferSRV = TRUE;
+            options->MultisampleRTVWithForcedSampleCountOne = TRUE;
             options->SAD4ShaderInstructions = FALSE;
-            options->ExtendedDoublesShaderInstructions = FALSE;
-            options->ExtendedResourceSharing = FALSE;
+            options->ExtendedDoublesShaderInstructions = TRUE;
+            options->ExtendedResourceSharing = TRUE;
             return S_OK;
         }
 
@@ -6835,6 +6855,25 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CheckFeatureSupport(ID3D11Device2 
             return S_OK;
         }
 
+		case D3D11_FEATURE_SHADER_MIN_PRECISION_SUPPORT: {
+			D3D11_FEATURE_DATA_SHADER_MIN_PRECISION_SUPPORT *shader_min_precision_support = feature_support_data;
+			if (feature_support_data_size != sizeof(D3D11_FEATURE_DATA_SHADER_MIN_PRECISION_SUPPORT))
+				return E_INVALIDARG;
+				
+			// Report that we only support full 32-bit operations
+			shader_min_precision_support->PixelShaderMinPrecision          = 0;
+			shader_min_precision_support->AllOtherShaderStagesMinPrecision = 0;
+		} return S_OK;
+			  
+		case D3D11_FEATURE_D3D9_SHADOW_SUPPORT: {
+			D3D11_FEATURE_DATA_D3D9_SHADOW_SUPPORT * d3d9_shadow_support = feature_support_data;
+			if (feature_support_data_size != sizeof(D3D11_FEATURE_DATA_D3D9_SHADOW_SUPPORT))
+				return E_INVALIDARG;
+				
+			d3d9_shadow_support->SupportsDepthAsTextureWithLessEqualComparisonFilter = TRUE;
+			return S_OK;
+		} break;		
+		
         default:
             FIXME("Unhandled feature %#x.\n", feature);
             return E_NOTIMPL;

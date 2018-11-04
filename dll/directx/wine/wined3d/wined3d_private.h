@@ -73,6 +73,21 @@
 #define WINED3D_QUIRK_BROKEN_ARB_FOG            0x00000200
 #define WINED3D_QUIRK_USE_CLIENT_STORAGE_BIT    0x00000400
 
+typedef RTL_SRWLOCK SRWLOCK;
+typedef PRTL_SRWLOCK PSRWLOCK;
+
+void AcquireSRWLockShared(
+  PSRWLOCK SRWLock
+);
+
+void ReleaseSRWLockShared(
+  PSRWLOCK SRWLock
+);
+
+void InitializeSRWLock(
+  PSRWLOCK SRWLock
+);
+
 enum wined3d_ffp_idx
 {
     WINED3D_FFP_POSITION = 0,
