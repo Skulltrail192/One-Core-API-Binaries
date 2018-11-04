@@ -84,10 +84,10 @@ static GLenum get_texture_view_target(const struct wined3d_gl_info *gl_info,
 static const struct wined3d_format *validate_resource_view(const struct wined3d_view_desc *desc,
         struct wined3d_resource *resource, BOOL mip_slice, BOOL allow_srgb_toggle)
 {
-    const struct wined3d_gl_info *gl_info = &resource->device->adapter->gl_info;
+    const struct wined3d_adapter *adapter = resource->device->adapter;
     const struct wined3d_format *format;
 
-    format = wined3d_get_format(gl_info, desc->format_id, resource->usage);
+    format = wined3d_get_format(adapter, desc->format_id, resource->usage);
     if (resource->type == WINED3D_RTYPE_BUFFER && (desc->flags & WINED3D_VIEW_BUFFER_RAW))
     {
         if (format->id != WINED3DFMT_R32_TYPELESS)
@@ -96,7 +96,7 @@ static const struct wined3d_format *validate_resource_view(const struct wined3d_
             return NULL;
         }
 
-        format = wined3d_get_format(gl_info, WINED3DFMT_R32_UINT, resource->usage);
+        format = wined3d_get_format(adapter, WINED3DFMT_R32_UINT, resource->usage);
     }
 
     if (wined3d_format_is_typeless(format))
@@ -118,7 +118,7 @@ static const struct wined3d_format *validate_resource_view(const struct wined3d_
                 return NULL;
             }
 
-            format = wined3d_get_format(gl_info, WINED3DFMT_R32_UINT, resource->usage);
+            format = wined3d_get_format(adapter, WINED3DFMT_R32_UINT, resource->usage);
             element_size = buffer->desc.structure_byte_stride;
         }
         else
@@ -169,11 +169,13 @@ static void create_texture_view(struct wined3d_gl_view *view, GLenum view_target
         const struct wined3d_view_desc *desc, struct wined3d_texture *texture,
         const struct wined3d_format *view_format)
 {
+    const struct wined3d_format_gl *view_format_gl;
     unsigned int level_idx, layer_idx, layer_count;
     const struct wined3d_gl_info *gl_info;
     struct wined3d_context *context;
     GLuint texture_name;
 
+    view_format_gl = wined3d_format_gl(view_format);
     view->target = view_target;
 
     context = context_acquire(texture->resource.device, NULL, 0);
@@ -201,7 +203,7 @@ static void create_texture_view(struct wined3d_gl_view *view, GLenum view_target
     }
 
     gl_info->gl_ops.gl.p_glGenTextures(1, &view->name);
-    GL_EXTCALL(glTextureView(view->name, view->target, texture_name, view_format->glInternal,
+    GL_EXTCALL(glTextureView(view->name, view->target, texture_name, view_format_gl->internal,
             level_idx, desc->u.texture.level_count, layer_idx, layer_count));
     checkGLcall("create texture view");
 
@@ -224,6 +226,18 @@ static void create_texture_view(struct wined3d_gl_view *view, GLenum view_target
         context_invalidate_compute_state(context, STATE_COMPUTE_SHADER_RESOURCE_BINDING);
         context_invalidate_state(context, STATE_GRAPHICS_SHADER_RESOURCE_BINDING);
     }
+    else if (!is_identity_fixup(view_format->color_fixup) && can_use_texture_swizzle(gl_info, view_format))
+    {
+        GLint swizzle[4];
+
+        context_bind_texture(context, view->target, view->name);
+        wined3d_gl_texture_swizzle_from_color_fixup(swizzle, view_format->color_fixup);
+        gl_info->gl_ops.gl.p_glTexParameteriv(view->target, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
+        checkGLcall("set format swizzle");
+
+        context_invalidate_compute_state(context, STATE_COMPUTE_SHADER_RESOURCE_BINDING);
+        context_invalidate_state(context, STATE_GRAPHICS_SHADER_RESOURCE_BINDING);
+    }
 
     context_release(context);
 }
@@ -233,6 +247,7 @@ static void create_buffer_texture(struct wined3d_gl_view *view, struct wined3d_c
         unsigned int offset, unsigned int size)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
+    const struct wined3d_format_gl *view_format_gl;
 
     if (!gl_info->supported[ARB_TEXTURE_BUFFER_OBJECT])
     {
@@ -247,6 +262,7 @@ static void create_buffer_texture(struct wined3d_gl_view *view, struct wined3d_c
         return;
     }
 
+    view_format_gl = wined3d_format_gl(view_format);
     wined3d_buffer_load_location(buffer, context, WINED3D_LOCATION_BUFFER);
 
     view->target = GL_TEXTURE_BUFFER;
@@ -255,14 +271,14 @@ static void create_buffer_texture(struct wined3d_gl_view *view, struct wined3d_c
     context_bind_texture(context, GL_TEXTURE_BUFFER, view->name);
     if (gl_info->supported[ARB_TEXTURE_BUFFER_RANGE])
     {
-        GL_EXTCALL(glTexBufferRange(GL_TEXTURE_BUFFER, view_format->glInternal,
+        GL_EXTCALL(glTexBufferRange(GL_TEXTURE_BUFFER, view_format_gl->internal,
                 buffer->buffer_object, offset, size));
     }
     else
     {
         if (offset || size != buffer->resource.size)
             FIXME("OpenGL implementation does not support ARB_texture_buffer_range.\n");
-        GL_EXTCALL(glTexBuffer(GL_TEXTURE_BUFFER, view_format->glInternal, buffer->buffer_object));
+        GL_EXTCALL(glTexBuffer(GL_TEXTURE_BUFFER, view_format_gl->internal, buffer->buffer_object));
     }
     checkGLcall("Create buffer texture");
 
@@ -531,7 +547,11 @@ static void wined3d_render_target_view_cs_init(void *object)
         if (resource->format->id != view->format->id
                 || (view->layer_count != 1 && view->layer_count != depth_or_layer_count))
         {
-            if (resource->format->gl_view_class != view->format->gl_view_class)
+            GLenum resource_class, view_class;
+
+            resource_class = wined3d_format_gl(resource->format)->view_class;
+            view_class = wined3d_format_gl(view->format)->view_class;
+            if (resource_class != view_class)
             {
                 FIXME("Render target view not supported, resource format %s, view format %s.\n",
                         debug_d3dformat(resource->format->id), debug_d3dformat(view->format->id));
@@ -603,8 +623,8 @@ HRESULT CDECL wined3d_rendertarget_view_create(const struct wined3d_view_desc *d
     struct wined3d_rendertarget_view *object;
     HRESULT hr;
 
-    TRACE("desc %p, resource %p, parent %p, parent_ops %p, view %p.\n",
-            desc, resource, parent, parent_ops, view);
+    TRACE("desc %s, resource %p, parent %p, parent_ops %p, view %p.\n",
+            wined3d_debug_view_desc(desc, resource), resource, parent, parent_ops, view);
 
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
@@ -722,7 +742,10 @@ static void wined3d_shader_resource_view_cs_init(void *object)
     else
     {
         struct wined3d_texture *texture = texture_from_resource(resource);
+        GLenum resource_class, view_class;
 
+        resource_class = wined3d_format_gl(resource->format)->view_class;
+        view_class = wined3d_format_gl(view_format)->view_class;
         view_target = get_texture_view_target(gl_info, desc, texture);
 
         if (resource->format->id == view_format->id && texture->target == view_target
@@ -737,7 +760,7 @@ static void wined3d_shader_resource_view_cs_init(void *object)
             FIXME("Swapchain shader resource views not supported.\n");
         }
         else if (resource->format->typeless_id == view_format->typeless_id
-                && resource->format->gl_view_class == view_format->gl_view_class)
+                && resource_class == view_class)
         {
             create_texture_view(&view->gl_view, view_target, desc, texture, view_format);
         }
@@ -751,6 +774,8 @@ static void wined3d_shader_resource_view_cs_init(void *object)
                     debug_d3dformat(resource->format->id), debug_d3dformat(view_format->id));
         }
     }
+
+    wined3d_resource_release(resource);
 }
 
 static HRESULT wined3d_shader_resource_view_init(struct wined3d_shader_resource_view *view,
@@ -767,6 +792,7 @@ static HRESULT wined3d_shader_resource_view_init(struct wined3d_shader_resource_
 
     wined3d_resource_incref(view->resource = resource);
 
+    wined3d_resource_acquire(resource);
     wined3d_cs_init_object(resource->device->cs, wined3d_shader_resource_view_cs_init, view);
 
     return WINED3D_OK;
@@ -779,8 +805,8 @@ HRESULT CDECL wined3d_shader_resource_view_create(const struct wined3d_view_desc
     struct wined3d_shader_resource_view *object;
     HRESULT hr;
 
-    TRACE("desc %p, resource %p, parent %p, parent_ops %p, view %p.\n",
-            desc, resource, parent, parent_ops, view);
+    TRACE("desc %s, resource %p, parent %p, parent_ops %p, view %p.\n",
+            wined3d_debug_view_desc(desc, resource), resource, parent, parent_ops, view);
 
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
@@ -999,9 +1025,9 @@ void wined3d_unordered_access_view_clear_uint(struct wined3d_unordered_access_vi
         const struct wined3d_uvec4 *clear_value, struct wined3d_context *context)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
-    const struct wined3d_format *format;
+    const struct wined3d_format_gl *format;
+    struct wined3d_buffer_gl *buffer_gl;
     struct wined3d_resource *resource;
-    struct wined3d_buffer *buffer;
     unsigned int offset, size;
 
     resource = view->resource;
@@ -1017,23 +1043,23 @@ void wined3d_unordered_access_view_clear_uint(struct wined3d_unordered_access_vi
         return;
     }
 
-    format = view->format;
-    if (format->id != WINED3DFMT_R32_UINT && format->id != WINED3DFMT_R32_SINT
-            && format->id != WINED3DFMT_R32G32B32A32_UINT
-            && format->id != WINED3DFMT_R32G32B32A32_SINT)
+    format = wined3d_format_gl(view->format);
+    if (format->f.id != WINED3DFMT_R32_UINT && format->f.id != WINED3DFMT_R32_SINT
+            && format->f.id != WINED3DFMT_R32G32B32A32_UINT
+            && format->f.id != WINED3DFMT_R32G32B32A32_SINT)
     {
-        FIXME("Not implemented for format %s.\n", debug_d3dformat(format->id));
+        FIXME("Not implemented for format %s.\n", debug_d3dformat(format->f.id));
         return;
     }
 
-    buffer = buffer_from_resource(resource);
-    wined3d_buffer_load_location(buffer, context, WINED3D_LOCATION_BUFFER);
+    buffer_gl = wined3d_buffer_gl(buffer_from_resource(resource));
+    wined3d_buffer_load_location(&buffer_gl->b, context, WINED3D_LOCATION_BUFFER);
     wined3d_unordered_access_view_invalidate_location(view, ~WINED3D_LOCATION_BUFFER);
 
-    get_buffer_view_range(buffer, &view->desc, format, &offset, &size);
-    context_bind_bo(context, buffer->buffer_type_hint, buffer->buffer_object);
-    GL_EXTCALL(glClearBufferSubData(buffer->buffer_type_hint, format->glInternal,
-            offset, size, format->glFormat, format->glType, clear_value));
+    get_buffer_view_range(&buffer_gl->b, &view->desc, &format->f, &offset, &size);
+    context_bind_bo(context, buffer_gl->buffer_type_hint, buffer_gl->b.buffer_object);
+    GL_EXTCALL(glClearBufferSubData(buffer_gl->buffer_type_hint, format->internal,
+            offset, size, format->format, format->type, clear_value));
     checkGLcall("clear unordered access view");
 }
 
@@ -1069,7 +1095,7 @@ void wined3d_unordered_access_view_copy_counter(struct wined3d_unordered_access_
     src.buffer_object = view->counter_bo;
     src.addr = NULL;
 
-    context_copy_bo_address(context, &dst, buffer->buffer_type_hint,
+    context_copy_bo_address(context, &dst, wined3d_buffer_gl(buffer)->buffer_type_hint,
             &src, GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint));
 
     wined3d_buffer_invalidate_location(buffer, ~dst_location);
@@ -1119,6 +1145,8 @@ static void wined3d_unordered_access_view_cs_init(void *object)
                     desc, texture, view->format);
         }
     }
+
+    wined3d_resource_release(resource);
 }
 
 static HRESULT wined3d_unordered_access_view_init(struct wined3d_unordered_access_view *view,
@@ -1135,6 +1163,7 @@ static HRESULT wined3d_unordered_access_view_init(struct wined3d_unordered_acces
 
     wined3d_resource_incref(view->resource = resource);
 
+    wined3d_resource_acquire(resource);
     wined3d_cs_init_object(resource->device->cs, wined3d_unordered_access_view_cs_init, view);
 
     return WINED3D_OK;
@@ -1147,8 +1176,8 @@ HRESULT CDECL wined3d_unordered_access_view_create(const struct wined3d_view_des
     struct wined3d_unordered_access_view *object;
     HRESULT hr;
 
-    TRACE("desc %p, resource %p, parent %p, parent_ops %p, view %p.\n",
-            desc, resource, parent, parent_ops, view);
+    TRACE("desc %s, resource %p, parent %p, parent_ops %p, view %p.\n",
+            wined3d_debug_view_desc(desc, resource), resource, parent, parent_ops, view);
 
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;

@@ -185,6 +185,8 @@ add_idl_headers(d3d_idl_headers d3dcommon.idl
 	d3d10sdklayers.idl
 	d3d11.idl
 	d3d11_1.idl
+	d3d11_2.idl
+	d3d12.idl
 	d3d11sdklayers.idl
 	dxgi.idl
 	dxgi1_2.idl
@@ -193,11 +195,11 @@ add_idl_headers(d3d_idl_headers d3dcommon.idl
 	dwrite_2.idl
 	dwrite_3.idl)
 
-add_iid_library(dxgi_uuids dxgi.idl dxgi1_2.idl dxgi1_3.idl dxgi1_4.idl dxgi1_5.idl dxgi1_6.idl dxgi_internal.idl)
+add_iid_library(dxgi_uuids dxgi.idl dxgi1_2.idl dxgi1_3.idl dxgi1_4.idl dxgi1_5.idl dxgi1_6.idl d3d12.idl dxgi_internal.idl)
 add_iid_library(d2d1_uuids d2d1.idl d2d1_1.idl)
 add_iid_library(d3d10_uuids d3d10.idl d3d10_1.idl d3d10sdklayers.idl)
 add_iid_library(d3d10_1_uuids d3d10_1.idl)
-add_iid_library(d3d11_uuids d3d11.idl d3d11_1.idl d3d11sdklayers.idl)
+add_iid_library(d3d11_uuids d3d11.idl d3d11_1.idl d3d11_2.idl d3d11sdklayers.idl)
 add_iid_library(dwrite_uuids dwrite.idl dwrite_1.idl dwrite_2.idl dwrite_3.idl)	
 
 add_iid_library(wuguid wuapi.idl)

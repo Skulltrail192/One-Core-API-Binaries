@@ -659,6 +659,7 @@ static void swapchain_update_render_to_fbo(struct wined3d_swapchain *swapchain)
 static void wined3d_swapchain_apply_sample_count_override(const struct wined3d_swapchain *swapchain,
         enum wined3d_format_id format_id, enum wined3d_multisample_type *type, DWORD *quality)
 {
+    const struct wined3d_adapter *adapter;
     const struct wined3d_gl_info *gl_info;
     const struct wined3d_format *format;
     enum wined3d_multisample_type t;
@@ -666,8 +667,9 @@ static void wined3d_swapchain_apply_sample_count_override(const struct wined3d_s
     if (wined3d_settings.sample_count == ~0u)
         return;
 
-    gl_info = &swapchain->device->adapter->gl_info;
-    if (!(format = wined3d_get_format(gl_info, format_id, WINED3DUSAGE_RENDERTARGET)))
+    adapter = swapchain->device->adapter;
+    gl_info = &adapter->gl_info;
+    if (!(format = wined3d_get_format(adapter, format_id, WINED3DUSAGE_RENDERTARGET)))
         return;
 
     if ((t = min(wined3d_settings.sample_count, gl_info->limits.samples)))
@@ -706,7 +708,7 @@ void wined3d_swapchain_set_swap_interval(struct wined3d_swapchain *swapchain,
 static void wined3d_swapchain_cs_init(void *object)
 {
     struct wined3d_swapchain *swapchain = object;
-    const struct wined3d_gl_info *gl_info;
+    const struct wined3d_adapter *adapter;
     unsigned int i;
 
     static const enum wined3d_format_id formats[] =
@@ -718,13 +720,13 @@ static void wined3d_swapchain_cs_init(void *object)
         WINED3DFMT_S1_UINT_D15_UNORM,
     };
 
-    gl_info = &swapchain->device->adapter->gl_info;
+    adapter = swapchain->device->adapter;
 
     /* Without ORM_FBO, switching the depth/stencil format is hard. Always
      * request a depth/stencil buffer in the likely case it's needed later. */
     for (i = 0; i < ARRAY_SIZE(formats); ++i)
     {
-        swapchain->ds_format = wined3d_get_format(gl_info, formats[i], WINED3DUSAGE_DEPTHSTENCIL);
+        swapchain->ds_format = wined3d_get_format(adapter, formats[i], WINED3DUSAGE_DEPTHSTENCIL);
         if ((swapchain->context[0] = context_create(swapchain, swapchain->front_buffer, swapchain->ds_format)))
             break;
         TRACE("Depth stencil format %s is not supported, trying next format.\n", debug_d3dformat(formats[i]));
@@ -832,6 +834,8 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
     texture_desc.multisample_type = swapchain->desc.multisample_type;
     texture_desc.multisample_quality = swapchain->desc.multisample_quality;
     texture_desc.usage = 0;
+    if (device->wined3d->flags & WINED3D_NO3D)
+        texture_desc.usage |= WINED3DUSAGE_OWNDC;
     texture_desc.access = WINED3D_RESOURCE_ACCESS_GPU;
     texture_desc.width = swapchain->desc.backbuffer_width;
     texture_desc.height = swapchain->desc.backbuffer_height;
@@ -913,6 +917,8 @@ static HRESULT swapchain_init(struct wined3d_swapchain *swapchain, struct wined3
         }
 
         texture_desc.usage = swapchain->desc.backbuffer_usage;
+        if (device->wined3d->flags & WINED3D_NO3D)
+            texture_desc.usage |= WINED3DUSAGE_OWNDC;
         for (i = 0; i < swapchain->desc.backbuffer_count; ++i)
         {
             TRACE("Creating back buffer %u.\n", i);
@@ -1126,13 +1132,15 @@ void wined3d_swapchain_activate(struct wined3d_swapchain *swapchain, BOOL activa
 {
     struct wined3d_device *device = swapchain->device;
     BOOL filter_messages = device->filter_messages;
+    BOOL focus_messages = device->wined3d->flags & WINED3D_FOCUS_MESSAGES;
 
     /* This code is not protected by the wined3d mutex, so it may run while
      * wined3d_device_reset is active. Testing on Windows shows that changing
      * focus during resets and resetting during focus change events causes
      * the application to crash with an invalid memory access. */
 
-    device->filter_messages = !(device->wined3d->flags & WINED3D_FOCUS_MESSAGES);
+    if (!focus_messages)
+        device->filter_messages = 1;
 
     if (activate)
     {
@@ -1156,6 +1164,9 @@ void wined3d_swapchain_activate(struct wined3d_swapchain *swapchain, BOOL activa
                     device->adapter->ordinal, &swapchain->d3d_mode)))
                 ERR("Failed to set display mode.\n");
         }
+
+        if (swapchain == device->swapchains[0])
+            device->device_parent->ops->activate(device->device_parent, TRUE);
     }
     else
     {
@@ -1165,12 +1176,24 @@ void wined3d_swapchain_activate(struct wined3d_swapchain *swapchain, BOOL activa
 
         swapchain->reapply_mode = TRUE;
 
+        /* Some DDraw apps (Deus Ex: GOTY, and presumably all UT 1 based games) destroy the device
+         * during window minimization. Do our housekeeping now, as the device may not exist after
+         * the ShowWindow call.
+         *
+         * In d3d9, the device is marked lost after the window is minimized. If we find an app
+         * that needs this behavior (e.g. because it calls TestCooperativeLevel in the window proc)
+         * we'll have to control this via a create flag. Note that the device and swapchain are not
+         * safe to access after the ShowWindow call. */
+        if (swapchain == device->swapchains[0])
+            device->device_parent->ops->activate(device->device_parent, FALSE);
+
         if (!(device->create_parms.flags & WINED3DCREATE_NOWINDOWCHANGES)
                 && IsWindowVisible(swapchain->device_window))
             ShowWindow(swapchain->device_window, SW_MINIMIZE);
     }
 
-    device->filter_messages = filter_messages;
+    if (!focus_messages)
+        device->filter_messages = filter_messages;
 }
 
 HRESULT CDECL wined3d_swapchain_resize_buffers(struct wined3d_swapchain *swapchain, unsigned int buffer_count,

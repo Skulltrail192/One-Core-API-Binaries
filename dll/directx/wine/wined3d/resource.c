@@ -30,7 +30,7 @@ WINE_DECLARE_DEBUG_CHANNEL(d3d_perf);
 
 static void resource_check_usage(DWORD usage)
 {
-    static const DWORD handled = WINED3DUSAGE_RENDERTARGET
+    static DWORD handled = WINED3DUSAGE_RENDERTARGET
             | WINED3DUSAGE_DEPTHSTENCIL
             | WINED3DUSAGE_WRITEONLY
             | WINED3DUSAGE_DYNAMIC
@@ -39,7 +39,8 @@ static void resource_check_usage(DWORD usage)
             | WINED3DUSAGE_SCRATCH
             | WINED3DUSAGE_PRIVATE
             | WINED3DUSAGE_LEGACY_CUBEMAP
-            | WINED3DUSAGE_TEXTURE;
+            | WINED3DUSAGE_TEXTURE
+            | ~WINED3DUSAGE_MASK;
 
     /* WINED3DUSAGE_WRITEONLY is supposed to result in write-combined mappings
      * being returned. OpenGL doesn't give us explicit control over that, but
@@ -48,7 +49,10 @@ static void resource_check_usage(DWORD usage)
      * driver. */
 
     if (usage & ~handled)
+    {
         FIXME("Unhandled usage flags %#x.\n", usage & ~handled);
+        handled |= usage;
+    }
     if ((usage & (WINED3DUSAGE_DYNAMIC | WINED3DUSAGE_WRITEONLY)) == WINED3DUSAGE_DYNAMIC)
         WARN_(d3d_perf)("WINED3DUSAGE_DYNAMIC used without WINED3DUSAGE_WRITEONLY.\n");
 }
@@ -60,6 +64,7 @@ HRESULT resource_init(struct wined3d_resource *resource, struct wined3d_device *
         unsigned int size, void *parent, const struct wined3d_parent_ops *parent_ops,
         const struct wined3d_resource_ops *resource_ops)
 {
+    const struct wined3d_d3d_info *d3d_info = &device->adapter->d3d_info;
     enum wined3d_gl_resource_type base_type = WINED3D_GL_RES_TYPE_COUNT;
     enum wined3d_gl_resource_type gl_type = WINED3D_GL_RES_TYPE_COUNT;
     const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
@@ -129,7 +134,7 @@ HRESULT resource_init(struct wined3d_resource *resource, struct wined3d_device *
             continue;
         }
         if (((width & (width - 1)) || (height & (height - 1)))
-                && !gl_info->supported[ARB_TEXTURE_NON_POWER_OF_TWO]
+                && !d3d_info->texture_npot
                 && !gl_info->supported[WINED3D_GL_NORMALIZED_TEXRECT]
                 && gl_type == WINED3D_GL_RES_TYPE_TEX_2D)
         {
@@ -331,6 +336,7 @@ static DWORD wined3d_resource_sanitise_map_flags(const struct wined3d_resource *
 HRESULT CDECL wined3d_resource_map(struct wined3d_resource *resource, unsigned int sub_resource_idx,
         struct wined3d_map_desc *map_desc, const struct wined3d_box *box, DWORD flags)
 {
+    HRESULT hr;
     TRACE("resource %p, sub_resource_idx %u, map_desc %p, box %s, flags %#x.\n",
             resource, sub_resource_idx, map_desc, debug_box(box), flags);
 
@@ -353,16 +359,128 @@ HRESULT CDECL wined3d_resource_map(struct wined3d_resource *resource, unsigned i
     }
 
     flags = wined3d_resource_sanitise_map_flags(resource, flags);
-    wined3d_resource_wait_idle(resource);
+    if (FAILED(hr = resource->resource_ops->resource_sub_resource_map(resource, sub_resource_idx, map_desc, box, flags)))
+    {
+        TRACE_(d3d_perf)("Mapping resource %p on the command stream.\n", resource);
+        wined3d_resource_wait_idle(resource);
+        hr = wined3d_cs_map(resource->device->cs, resource, sub_resource_idx, map_desc, box, flags);
+    }
 
-    return wined3d_cs_map(resource->device->cs, resource, sub_resource_idx, map_desc, box, flags);
+    return hr;
+}
+
+HRESULT CDECL wined3d_resource_map_info(struct wined3d_resource *resource, unsigned int sub_resource_idx,
+        struct wined3d_map_info *info, DWORD flags)
+{
+    TRACE("resource %p, sub_resource_idx %u.\n", resource, sub_resource_idx);
+
+    return resource->resource_ops->resource_map_info(resource, sub_resource_idx, info, flags);
 }
 
 HRESULT CDECL wined3d_resource_unmap(struct wined3d_resource *resource, unsigned int sub_resource_idx)
 {
+    HRESULT hr;
     TRACE("resource %p, sub_resource_idx %u.\n", resource, sub_resource_idx);
 
-    return wined3d_cs_unmap(resource->device->cs, resource, sub_resource_idx);
+    if (FAILED(hr = resource->resource_ops->resource_sub_resource_unmap(resource, sub_resource_idx)))
+    {
+        TRACE_(d3d_perf)("Unmapping resource %p on the command stream.\n", resource);
+        hr = wined3d_cs_unmap(resource->device->cs, resource, sub_resource_idx);
+    }
+    return hr;
+}
+
+UINT CDECL wined3d_resource_update_info(struct wined3d_resource *resource, unsigned int sub_resource_idx,
+        const struct wined3d_box *box, unsigned int row_pitch, unsigned int depth_pitch)
+{
+    unsigned int width, height, depth;
+    struct wined3d_box b;
+    UINT data_size;
+
+    TRACE("resource %p, sub_resource_idx %u, box %s, row_pitch %u, depth_pitch %u.\n",
+            resource, sub_resource_idx, debug_box(box), row_pitch, depth_pitch);
+
+    if (resource->type == WINED3D_RTYPE_BUFFER)
+    {
+        if (sub_resource_idx > 0)
+        {
+            WARN("Invalid sub_resource_idx %u.\n", sub_resource_idx);
+            return 0;
+        }
+
+        width = resource->size;
+        height = 1;
+        depth = 1;
+    }
+    else if (resource->type == WINED3D_RTYPE_TEXTURE_1D ||
+            resource->type == WINED3D_RTYPE_TEXTURE_2D || resource->type == WINED3D_RTYPE_TEXTURE_3D)
+    {
+        struct wined3d_texture *texture = texture_from_resource(resource);
+        unsigned int level;
+
+        if (sub_resource_idx >= texture->level_count * texture->layer_count)
+        {
+            WARN("Invalid sub_resource_idx %u.\n", sub_resource_idx);
+            return 0;
+        }
+
+        level = sub_resource_idx % texture->level_count;
+        width = wined3d_texture_get_level_width(texture, level);
+        height = wined3d_texture_get_level_height(texture, level);
+        depth = wined3d_texture_get_level_depth(texture, level);
+    }
+    else
+    {
+        FIXME("Not implemented for %s resources.\n", debug_d3dresourcetype(resource->type));
+        return 0;
+    }
+
+    if (!box)
+    {
+        wined3d_box_set(&b, 0, 0, width, height, 0, depth);
+        box = &b;
+    }
+    else if (box->left >= box->right || box->right > width
+            || box->top >= box->bottom || box->bottom > height
+            || box->front >= box->back || box->back > depth)
+    {
+        WARN("Invalid box %s specified.\n", debug_box(box));
+        return 0;
+    }
+
+    if (resource->format_flags & WINED3DFMT_FLAG_BLOCKS)
+    {
+        if (resource->type != WINED3D_RTYPE_TEXTURE_2D)
+        {
+            FIXME("Calculation of block formats not implemented for %s resources.\n", debug_d3dresourcetype(resource->type));
+            return 0;
+        }
+
+        height  = (box->bottom - box->top  + resource->format->block_height - 1) / resource->format->block_height;
+        width   = (box->right  - box->left + resource->format->block_width  - 1) / resource->format->block_width;
+        return (height - 1) * row_pitch + width * resource->format->block_byte_count;
+    }
+
+    data_size = 0;
+    switch (resource->type)
+    {
+        case WINED3D_RTYPE_TEXTURE_3D:
+            data_size += (box->back - box->front - 1) * depth_pitch;
+            /* fall-through */
+        case WINED3D_RTYPE_TEXTURE_2D:
+            data_size += (box->bottom - box->top - 1) * row_pitch;
+            /* fall-through */
+        case WINED3D_RTYPE_TEXTURE_1D:
+            data_size += (box->right - box->left) * resource->format->byte_count;
+            break;
+        case WINED3D_RTYPE_BUFFER:
+            data_size = box->right - box->left;
+            break;
+        case WINED3D_RTYPE_NONE:
+            break;
+    }
+
+    return data_size;
 }
 
 void CDECL wined3d_resource_preload(struct wined3d_resource *resource)
@@ -476,4 +594,13 @@ void wined3d_resource_update_draw_binding(struct wined3d_resource *resource)
     {
         resource->draw_binding = WINED3D_LOCATION_TEXTURE_RGB;
     }
+}
+
+const struct wined3d_format *wined3d_resource_get_decompress_format(const struct wined3d_resource *resource)
+{
+    const struct wined3d_adapter *adapter = resource->device->adapter;
+    if (resource->format_flags & (WINED3DFMT_FLAG_SRGB_READ | WINED3DFMT_FLAG_SRGB_WRITE)
+            && !(adapter->d3d_info.wined3d_creation_flags & WINED3D_SRGB_READ_WRITE_CONTROL))
+        return wined3d_get_format(adapter, WINED3DFMT_B8G8R8A8_UNORM_SRGB, resource->usage);
+    return wined3d_get_format(adapter, WINED3DFMT_B8G8R8A8_UNORM, resource->usage);
 }

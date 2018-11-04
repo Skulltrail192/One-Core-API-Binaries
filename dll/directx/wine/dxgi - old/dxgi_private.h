@@ -31,17 +31,23 @@
 #include "objbase.h"
 #include "winnls.h"
 
-#include "dxgi1_6.h"
 #include "d3d10_1.h"
-#include "d3d12.h"
+#include "dxgi1_6.h"
+#include "dxgi_internal.h"
 #ifdef DXGI_INIT_GUID
 #include "initguid.h"
 #endif
 #include "wine/wined3d.h"
 #include "wine/winedxgi.h"
 
+ULONG DbgPrint(
+  PCSTR Format,
+  ...   
+);
+
 enum dxgi_frame_latency
 {
+    DXGI_FRAME_LATENCY_DEFAULT =  3,
     DXGI_FRAME_LATENCY_MAX     = 16,
 };
 
@@ -75,9 +81,11 @@ struct dxgi_device_layer
     UINT (WINAPI *get_size)(enum dxgi_device_layer_id id, struct layer_get_size_args *args, DWORD unknown0);
     HRESULT (WINAPI *create)(enum dxgi_device_layer_id id, void **layer_base, DWORD unknown0,
             void *device_object, REFIID riid, void **device_layer);
+    void (WINAPI *set_feature_level)(enum dxgi_device_layer_id id, void *device,
+            D3D_FEATURE_LEVEL feature_level);
 };
 
-/* TRACE helper functions */
+/* DbgPrint helper functions */
 const char *debug_dxgi_format(DXGI_FORMAT format) DECLSPEC_HIDDEN;
 const char *debug_dxgi_mode(const DXGI_MODE_DESC *desc) DECLSPEC_HIDDEN;
 void dump_feature_levels(const D3D_FEATURE_LEVEL *feature_levels, unsigned int level_count) DECLSPEC_HIDDEN;
@@ -91,11 +99,10 @@ void wined3d_sample_desc_from_dxgi(enum wined3d_multisample_type *wined3d_type,
         unsigned int *wined3d_quality, const DXGI_SAMPLE_DESC *dxgi_desc) DECLSPEC_HIDDEN;
 void wined3d_display_mode_from_dxgi(struct wined3d_display_mode *wined3d_mode,
         const DXGI_MODE_DESC *mode) DECLSPEC_HIDDEN;
-DXGI_USAGE dxgi_usage_from_wined3d_bind_flags(unsigned int wined3d_bind_flags) DECLSPEC_HIDDEN;
-unsigned int wined3d_bind_flags_from_dxgi_usage(DXGI_USAGE usage) DECLSPEC_HIDDEN;
+DXGI_USAGE dxgi_usage_from_wined3d_usage(DWORD wined3d_usage) DECLSPEC_HIDDEN;
+DWORD wined3d_usage_from_dxgi_usage(DXGI_USAGE usage) DECLSPEC_HIDDEN;
 unsigned int dxgi_swapchain_flags_from_wined3d(unsigned int wined3d_flags) DECLSPEC_HIDDEN;
 unsigned int wined3d_swapchain_flags_from_dxgi(unsigned int flags) DECLSPEC_HIDDEN;
-
 HRESULT dxgi_get_private_data(struct wined3d_private_store *store,
         REFGUID guid, UINT *data_size, void *data) DECLSPEC_HIDDEN;
 HRESULT dxgi_set_private_data(struct wined3d_private_store *store,
@@ -112,6 +119,7 @@ struct dxgi_factory
     struct wined3d *wined3d;
     BOOL extended;
     HWND device_window;
+    HWND assoc_window;
 };
 
 HRESULT dxgi_factory_create(REFIID riid, void **factory, BOOL extended) DECLSPEC_HIDDEN;
@@ -159,7 +167,7 @@ HRESULT dxgi_adapter_create(struct dxgi_factory *factory, UINT ordinal,
 struct dxgi_adapter *unsafe_impl_from_IDXGIAdapter(IDXGIAdapter *iface) DECLSPEC_HIDDEN;
 
 /* IDXGISwapChain */
-struct d3d11_swapchain
+struct dxgi_swapchain
 {
     IDXGISwapChain1 IDXGISwapChain1_iface;
     LONG refcount;
@@ -172,16 +180,8 @@ struct d3d11_swapchain
     IDXGIOutput *target;
 };
 
-HRESULT d3d11_swapchain_create(IWineDXGIDevice *device, HWND window, const DXGI_SWAP_CHAIN_DESC1 *swapchain_desc,
-        const DXGI_SWAP_CHAIN_FULLSCREEN_DESC *fullscreen_desc, IDXGISwapChain1 **swapchain) DECLSPEC_HIDDEN;
-HRESULT d3d11_swapchain_init(struct d3d11_swapchain *swapchain, struct dxgi_device *device,
+HRESULT dxgi_swapchain_init(struct dxgi_swapchain *swapchain, struct dxgi_device *device,
         struct wined3d_swapchain_desc *desc, BOOL implicit) DECLSPEC_HIDDEN;
-
-HRESULT d3d12_swapchain_create(IWineDXGIFactory *factory, ID3D12CommandQueue *queue, HWND window,
-        const DXGI_SWAP_CHAIN_DESC1 *swapchain_desc, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC *fullscreen_desc,
-        IDXGISwapChain1 **swapchain) DECLSPEC_HIDDEN;
-
-BOOL dxgi_validate_swapchain_desc(const DXGI_SWAP_CHAIN_DESC1 *desc) DECLSPEC_HIDDEN;
 
 /* IDXGISurface */
 struct dxgi_surface
@@ -198,5 +198,8 @@ struct dxgi_surface
 
 HRESULT dxgi_surface_init(struct dxgi_surface *surface, IDXGIDevice *device,
         IUnknown *outer, struct wined3d_texture *wined3d_texture) DECLSPEC_HIDDEN;
+
+D3D_FEATURE_LEVEL dxgi_check_feature_level_support(struct dxgi_factory *factory, struct dxgi_adapter *adapter,
+        const D3D_FEATURE_LEVEL *feature_levels, unsigned int level_count) DECLSPEC_HIDDEN;
 
 #endif /* __WINE_DXGI_PRIVATE_H */

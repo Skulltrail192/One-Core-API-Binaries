@@ -73,7 +73,7 @@ static CRITICAL_SECTION wined3d_wndproc_cs = {&wined3d_wndproc_cs_debug, -1, 0, 
 struct wined3d_settings wined3d_settings =
 {
     TRUE,           /* Multithreaded CS by default. */
-    FALSE,          /* explicit_gl_version */
+	FALSE, /* explicit_gl_version */
     MAKEDWORD_VERSION(4, 4), /* Default to OpenGL 4.4 */
     TRUE,           /* Use of GLSL enabled by default */
     ORM_FBO,        /* Use FBOs to do offscreen rendering */
@@ -217,7 +217,7 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
         {
             ERR_(winediag)("Setting maximum allowed wined3d GL version to %u.%u.\n",
                     tmpvalue >> 16, tmpvalue & 0xffff);
-            wined3d_settings.explicit_gl_version = TRUE;
+			wined3d_settings.explicit_gl_version = TRUE;		
             wined3d_settings.max_gl_version = tmpvalue;
         }
         if ( !get_config_key( hkey, appkey, "UseGLSL", buffer, size) )
@@ -307,7 +307,8 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
             TRACE("Limiting PS shader model to %u.\n", wined3d_settings.max_sm_ps);
         if (!get_config_key_dword(hkey, appkey, "MaxShaderModelCS", &wined3d_settings.max_sm_cs))
             TRACE("Limiting CS shader model to %u.\n", wined3d_settings.max_sm_cs);
-        if (!get_config_key(hkey, appkey, "DirectDrawRenderer", buffer, size)
+        if ((!get_config_key(hkey, appkey, "renderer", buffer, size)
+                || !get_config_key(hkey, appkey, "DirectDrawRenderer", buffer, size))
                 && !strcmp(buffer, "gdi"))
         {
             TRACE("Disabling 3D support.\n");

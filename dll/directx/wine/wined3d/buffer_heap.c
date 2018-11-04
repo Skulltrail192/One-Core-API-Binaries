@@ -50,7 +50,8 @@ static struct wined3d_buffer_heap_element* element_new(GLsizei offset, GLsizei s
 static inline int bitwise_log2_floor(GLsizei size)
 {
     // XXX(acomminos): I hope this gets unrolled.
-    for (int i = 8 * sizeof(GLsizei) - 1; i >= 0; i--)
+	int i;
+    for (i = 8 * sizeof(GLsizei) - 1; i >= 0; i--)
     {
         if ((size >> i) & 1) {
             return i;
@@ -73,12 +74,14 @@ static int element_bin(struct wined3d_buffer_heap_element *elem)
 // Inserts an element into the appropriate free list bin.
 static void element_insert_free_bin(struct wined3d_buffer_heap *heap, struct wined3d_buffer_heap_element *elem)
 {
+	int bin;
+	
     if (elem->prev || elem->next)
     {
         ERR("Element %p in already in a free list (for some reason).\n", elem);
     }
 
-    int bin = element_bin(elem);
+    bin = element_bin(elem);
 
     elem->prev = NULL;
     elem->next = heap->free_list.bins[bin].head;
@@ -234,6 +237,8 @@ HRESULT wined3d_buffer_heap_alloc(struct wined3d_buffer_heap *heap, GLsizeiptr s
 {
     int initial_bin;
     int initial_size = size;
+	int i;
+	int num_coalesced;
 
     EnterCriticalSection(&heap->temp_lock);
 
@@ -248,7 +253,7 @@ HRESULT wined3d_buffer_heap_alloc(struct wined3d_buffer_heap *heap, GLsizeiptr s
 
     initial_bin = min(WINED3D_BUFFER_HEAP_BINS - 1, bitwise_log2_ceil(size));
 
-    for (int i = initial_bin; i < WINED3D_BUFFER_HEAP_BINS; i++)
+    for (i = initial_bin; i < WINED3D_BUFFER_HEAP_BINS; i++)
     {
         struct wined3d_buffer_heap_element *elem = heap->free_list.bins[i].head;
         if (elem)
@@ -285,7 +290,7 @@ HRESULT wined3d_buffer_heap_alloc(struct wined3d_buffer_heap *heap, GLsizeiptr s
     LeaveCriticalSection(&heap->temp_lock);
 
     FIXME_(d3d_perf)("Forcing coalesce, not enough free space in buffer heap.\n");
-    int num_coalesced;
+    
     if (SUCCEEDED(wined3d_buffer_heap_deferred_coalesce(heap, &num_coalesced)))
     {
         if (num_coalesced > 0)
@@ -378,6 +383,7 @@ HRESULT wined3d_buffer_heap_cs_fence_issue(struct wined3d_buffer_heap *heap, str
 HRESULT wined3d_buffer_heap_cs_fence_wait(struct wined3d_buffer_heap *heap, struct wined3d_device *device)
 {
     enum wined3d_fence_result res;
+	int i;
     struct wined3d_buffer_heap_fenced_element *elem = heap->fenced_head;
     if (!elem)
         return WINED3D_OK;
@@ -391,13 +397,13 @@ HRESULT wined3d_buffer_heap_cs_fence_wait(struct wined3d_buffer_heap *heap, stru
                 TRACE_(d3d_perf)("Freed fence group.\n");
 
                 EnterCriticalSection(&heap->temp_lock);
-                for (int i = 0; i < WINED3D_BUFFER_HEAP_BINS; i++)
+                for (i = 0; i < WINED3D_BUFFER_HEAP_BINS; i++)
                 {
                     struct wined3d_buffer_heap_bin *elem_bin = &elem->free_list.bins[i];
+					struct wined3d_buffer_heap_bin *heap_bin = &heap->free_list.bins[i];
                     if (!elem_bin->tail)
                         continue;
-
-                    struct wined3d_buffer_heap_bin *heap_bin = &heap->free_list.bins[i];
+                    
                     if (heap_bin->head)
                     {
                         // Insert to front.
@@ -437,6 +443,7 @@ HRESULT wined3d_buffer_heap_deferred_coalesce(struct wined3d_buffer_heap *heap, 
     struct wined3d_buffer_heap_element *next = NULL;
     struct wine_rb_entry *entry;
     struct wined3d_map_range coalesced_range;
+	int i;
 
     struct wine_rb_tree free_tree;
     int num_coalesced = 0;
@@ -448,7 +455,7 @@ HRESULT wined3d_buffer_heap_deferred_coalesce(struct wined3d_buffer_heap *heap, 
     // TODO(acomminos): on one hand, if there's a lot of elements in the list,
     // it's highly fragmented. on the other, we can potentially waste a decent
     // sum of time checking for uncoalesced bins.
-    for (int i = 0; i < WINED3D_BUFFER_HEAP_BINS; i++)
+    for (i = 0; i < WINED3D_BUFFER_HEAP_BINS; i++)
     {
         elem = heap->free_list.bins[i].head;
         while (elem)
@@ -466,9 +473,11 @@ HRESULT wined3d_buffer_heap_deferred_coalesce(struct wined3d_buffer_heap *heap, 
             // Coalesce right.
             entry = wine_rb_next(&elem->entry);
             if (entry)
-            {
-                TRACE("Coalesced right.\n");
+            {               
                 struct wined3d_buffer_heap_element *right_elem = WINE_RB_ENTRY_VALUE(entry, struct wined3d_buffer_heap_element, entry);
+				
+				TRACE("Coalesced right.\n");
+				
                 if (elem->range.offset + elem->range.size == right_elem->range.offset)
                 {
                     coalesced_range.size += right_elem->range.size;
@@ -484,9 +493,11 @@ HRESULT wined3d_buffer_heap_deferred_coalesce(struct wined3d_buffer_heap *heap, 
             // Coalesce left.
             entry = wine_rb_prev(&elem->entry);
             if (entry)
-            {
-                TRACE("Coalesced left.\n");
+            {                
                 struct wined3d_buffer_heap_element *left_elem = WINE_RB_ENTRY_VALUE(entry, struct wined3d_buffer_heap_element, entry);
+				
+				TRACE("Coalesced left.\n");
+				
                 if (left_elem->range.offset + left_elem->range.size == coalesced_range.offset)
                 {
                     coalesced_range.offset = left_elem->range.offset;
