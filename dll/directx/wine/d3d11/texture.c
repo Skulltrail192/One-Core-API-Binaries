@@ -196,7 +196,7 @@ static UINT STDMETHODCALLTYPE d3d11_texture1d_GetEvictionPriority(ID3D11Texture1
 {
     FIXME("iface %p stub!\n", iface);
 
-    return 0;
+    return DXGI_RESOURCE_PRIORITY_NORMAL;
 }
 
 static void STDMETHODCALLTYPE d3d11_texture1d_GetDesc(ID3D11Texture1D *iface, D3D11_TEXTURE1D_DESC *desc)
@@ -339,7 +339,7 @@ static UINT STDMETHODCALLTYPE d3d10_texture1d_GetEvictionPriority(ID3D10Texture1
 {
     FIXME("iface %p stub!\n", iface);
 
-    return 0;
+    return DXGI_RESOURCE_PRIORITY_NORMAL;
 }
 
 /* ID3D10Texture1D methods */
@@ -683,7 +683,7 @@ static UINT STDMETHODCALLTYPE d3d11_texture2d_GetEvictionPriority(ID3D11Texture2
 {
     FIXME("iface %p stub!\n", iface);
 
-    return 0;
+    return DXGI_RESOURCE_PRIORITY_NORMAL;
 }
 
 static void STDMETHODCALLTYPE d3d11_texture2d_GetDesc(ID3D11Texture2D *iface, D3D11_TEXTURE2D_DESC *desc)
@@ -840,7 +840,7 @@ static UINT STDMETHODCALLTYPE d3d10_texture2d_GetEvictionPriority(ID3D10Texture2
 {
     FIXME("iface %p stub!\n", iface);
 
-    return 0;
+    return DXGI_RESOURCE_PRIORITY_NORMAL;
 }
 
 /* ID3D10Texture2D methods */
@@ -1215,7 +1215,7 @@ static UINT STDMETHODCALLTYPE d3d11_texture3d_GetEvictionPriority(ID3D11Texture3
 {
     FIXME("iface %p stub!\n", iface);
 
-    return 0;
+    return DXGI_RESOURCE_PRIORITY_NORMAL;
 }
 
 static void STDMETHODCALLTYPE d3d11_texture3d_GetDesc(ID3D11Texture3D *iface, D3D11_TEXTURE3D_DESC *desc)
@@ -1338,7 +1338,7 @@ static UINT STDMETHODCALLTYPE d3d10_texture3d_GetEvictionPriority(ID3D10Texture3
 {
     FIXME("iface %p stub!\n", iface);
 
-    return 0;
+    return DXGI_RESOURCE_PRIORITY_NORMAL;
 }
 
 static HRESULT STDMETHODCALLTYPE d3d10_texture3d_Map(ID3D10Texture3D *iface, UINT sub_resource_idx,

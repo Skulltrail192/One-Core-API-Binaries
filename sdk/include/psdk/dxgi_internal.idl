@@ -9,7 +9,7 @@ import "dxgi1_6.idl";
 	object,
 	uuid(7abb6563-02bc-47c4-8ef9-acc4795edbcf)
 ] 
-interface IDXGIAdapterInternal : IDXGIAdapter3
+interface IDXGIAdapterInternal : IDXGIAdapter4
 {
 HRESULT GetDescInternal([in] short Bread, [out] int *pBToast);
 HRESULT SetDescInternal([in] short Bread);

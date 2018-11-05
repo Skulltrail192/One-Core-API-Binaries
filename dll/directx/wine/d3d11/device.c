@@ -4028,7 +4028,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_immediate_context_FinishCommandList(ID3D1
 {
     FIXME("iface %p, restore %#x, command_list %p stub!\n", iface, restore, command_list);
 
-    return E_NOTIMPL;
+    return DXGI_ERROR_INVALID_CALL;//E_NOTIMPL;
 }
 
 static void STDMETHODCALLTYPE d3d11_immediate_context_CopySubresourceRegion1(ID3D11DeviceContext1 *iface,
@@ -6540,7 +6540,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_device_CreateCounter(ID3D11Device2 *iface
 {
     FIXME("iface %p, desc %p, counter %p stub!\n", iface, desc, counter);
 
-    return E_NOTIMPL;
+    return E_INVALIDARG;//E_NOTIMPL;
 }
 
 static HRESULT STDMETHODCALLTYPE d3d11_device_CreateDeferredContext(ID3D11Device2 *iface, UINT flags,
@@ -6976,33 +6976,71 @@ static UINT STDMETHODCALLTYPE d3d11_device_GetExceptionMode(ID3D11Device2 *iface
     return 0;
 }
 
-static void STDMETHODCALLTYPE d3d11_device_GetImmediateContext1(ID3D11Device2 *iface, ID3D11DeviceContext1 **context)
+static void STDMETHODCALLTYPE d3d11_device_GetImmediateContext1(ID3D11Device2 *iface, ID3D11DeviceContext1 **immediate_context)
 {
-    FIXME("iface %p, context %p stub!\n", iface, context);
+    struct d3d_device *device = impl_from_ID3D11Device2(iface);
+
+    TRACE("iface %p, immediate_context %p.\n", iface, immediate_context);
+
+    *immediate_context = (ID3D11DeviceContext1 *)&device->immediate_context.ID3D11DeviceContext1_iface;
+    ID3D11DeviceContext_AddRef(*immediate_context);
 }
 
 static HRESULT STDMETHODCALLTYPE d3d11_device_CreateDeferredContext1(ID3D11Device2 *iface, UINT flags,
         ID3D11DeviceContext1 **context)
 {
-    FIXME("iface %p, flags %#x, context %p stub!\n", iface, flags, context);
+    struct d3d11_deferred_context *object;
 
-    return E_NOTIMPL;
+    TRACE("iface %p, flags %#x, context %p.\n", iface, flags, context);
+
+    if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object))))
+        return E_OUTOFMEMORY;
+
+    object->ID3D11DeviceContext_iface.lpVtbl = &d3d11_deferred_context_vtbl;
+    object->device = iface;
+    object->refcount = 1;
+
+    list_init(&object->commands);
+
+    ID3D11Device_AddRef(iface);
+    wined3d_private_store_init(&object->private_store);
+
+    *context = &object->ID3D11DeviceContext_iface;
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE d3d11_device_CreateBlendState1(ID3D11Device2 *iface,
         const D3D11_BLEND_DESC1 *desc, ID3D11BlendState1 **state)
 {
-    FIXME("iface %p, desc %p, state %p stub!\n", iface, desc, state);
+    struct d3d_device *device = impl_from_ID3D11Device2(iface);
+    struct d3d_blend_state *object;
+    HRESULT hr;
 
-    return E_NOTIMPL;
+    TRACE("iface %p, desc %p, blend_state %p.\n", iface, desc, state);
+
+    if (FAILED(hr = d3d_blend_state_create(device, desc, &object)))
+        return hr;
+
+    *state = &object->ID3D11BlendState_iface;
+
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE d3d11_device_CreateRasterizerState1(ID3D11Device2 *iface,
-        const D3D11_RASTERIZER_DESC1 *desc, ID3D11RasterizerState1 **state)
+        const D3D11_RASTERIZER_DESC1 *desc, ID3D11RasterizerState1 **rasterizer_state)
 {
-    FIXME("iface %p, desc %p, state %p stub!\n", iface, desc, state);
+    struct d3d_device *device = impl_from_ID3D11Device2(iface);
+    struct d3d_rasterizer_state *object;
+    HRESULT hr;
 
-    return E_NOTIMPL;
+    TRACE("iface %p, desc %p, rasterizer_state %p.\n", iface, desc, rasterizer_state);
+
+    if (FAILED(hr = d3d_rasterizer_state_create(device, desc, &object)))
+        return hr;
+
+    *rasterizer_state = &object->ID3D11RasterizerState_iface;
+
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE d3d11_device_CreateDeviceContextState(ID3D11Device2 *iface, UINT flags,

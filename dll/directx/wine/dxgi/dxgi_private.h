@@ -32,6 +32,7 @@
 #include "winnls.h"
 
 #include "dxgi1_6.h"
+#include "dxgi_internal.h"
 #include "d3d10_1.h"
 #include "d3d12.h"
 #ifdef DXGI_INIT_GUID
@@ -199,5 +200,10 @@ struct dxgi_surface
 
 HRESULT dxgi_surface_init(struct dxgi_surface *surface, IDXGIDevice *device,
         IUnknown *outer, struct wined3d_texture *wined3d_texture) DECLSPEC_HIDDEN;
+		
+ULONG DbgPrint(
+  PCSTR Format,
+  ...   
+);		
 
 #endif /* __WINE_DXGI_PRIVATE_H */

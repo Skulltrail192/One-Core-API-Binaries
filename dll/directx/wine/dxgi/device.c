@@ -236,24 +236,31 @@ fail:
 static HRESULT STDMETHODCALLTYPE dxgi_device_QueryResourceResidency(IWineDXGIDevice *iface,
         IUnknown *const *resources, DXGI_RESIDENCY *residency, UINT resource_count)
 {
-    FIXME("iface %p, resources %p, residency %p, resource_count %u stub!\n",
-            iface, resources, residency, resource_count);
+	int i;
+	
+    WARN("DxgiDevice::QueryResourceResidency: Stub");
+    
+    if (!resources || !residency)
+      return E_INVALIDARG;
 
-    return E_NOTIMPL;
+    for (i = 0; i < resource_count; i++)
+      residency[i] = DXGI_RESIDENCY_FULLY_RESIDENT;
+
+	return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_device_SetGPUThreadPriority(IWineDXGIDevice *iface, INT priority)
 {
     FIXME("iface %p, priority %d stub!\n", iface, priority);
 
-    return E_NOTIMPL;
+	return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_device_GetGPUThreadPriority(IWineDXGIDevice *iface, INT *priority)
 {
     FIXME("iface %p, priority %p stub!\n", iface, priority);
 
-    return E_NOTIMPL;
+	return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_device_SetMaximumFrameLatency(IWineDXGIDevice *iface, UINT max_latency)

@@ -31,7 +31,11 @@ static inline struct dxgi_adapter *impl_from_IWineDXGIAdapter(IWineDXGIAdapter *
 
 static HRESULT STDMETHODCALLTYPE dxgi_adapter_QueryInterface(IWineDXGIAdapter *iface, REFIID iid, void **out)
 {
-    TRACE("iface %p, iid %s, out %p.\n", iface, debugstr_guid(iid), out);
+	BOOL unknown1 = iid->Data1 == 0x7abb6563 && iid->Data2 == 0x02bc && iid->Data3 == 0x47c4 && iid->Data4[0] == 0x8e && 
+		iid->Data4[1] == 0xf9 && iid->Data4[2] == 0xac && iid->Data4[3] == 0xc4 && iid->Data4[4] == 0x79 && 
+		iid->Data4[5] == 0x5e && iid->Data4[6] == 0xdb && iid->Data4[7] == 0xcf;
+		
+	DbgPrint("Adapter.c::dxgi_adapter_QueryInterface::iface %p, iid %s, out %p.\n", iface, debugstr_guid(iid), out);	
 
     if (IsEqualGUID(iid, &IID_IWineDXGIAdapter)
             || IsEqualGUID(iid, &IID_IDXGIAdapter4)
@@ -39,6 +43,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_QueryInterface(IWineDXGIAdapter *i
             || IsEqualGUID(iid, &IID_IDXGIAdapter2)
             || IsEqualGUID(iid, &IID_IDXGIAdapter1)
             || IsEqualGUID(iid, &IID_IDXGIAdapter)
+            || IsEqualGUID(iid, &IID_IDXGIAdapterInternal)			
             || IsEqualGUID(iid, &IID_IDXGIObject)
             || IsEqualGUID(iid, &IID_IUnknown))
     {
@@ -48,6 +53,13 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_QueryInterface(IWineDXGIAdapter *i
     }
 
     WARN("%s not implemented, returning E_NOINTERFACE.\n", debugstr_guid(iid));
+	
+	if (unknown1)
+	{
+		DbgPrint("IDXGIAdapter %s not implemented, returning E_OUTOFMEMORY.\n", debugstr_guid(iid));
+		*out = 0;
+		return E_OUTOFMEMORY;
+	}
 
     *out = NULL;
     return E_NOINTERFACE;
@@ -326,6 +338,18 @@ static void STDMETHODCALLTYPE dxgi_adapter_UnregisterVideoMemoryBudgetChangeNoti
     FIXME("iface %p, cookie %#x stub!\n", iface, cookie);
 }
 
+HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDescInternal(IWineDXGIAdapter *iface, short Bread, int *pBToast)
+{
+	DbgPrint("dxgi_adapter_GetDescInternal called\n");	
+	return E_NOTIMPL;
+}
+
+HRESULT STDMETHODCALLTYPE dxgi_adapter_SetDescInternal(IWineDXGIAdapter *iface, short Bread)
+{
+	DbgPrint("dxgi_adapter_SetDescInternal called\n");
+	return E_NOTIMPL;
+}
+
 static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc3(IWineDXGIAdapter *iface, DXGI_ADAPTER_DESC3 *desc)
 {
     struct dxgi_adapter *adapter = impl_from_IWineDXGIAdapter(iface);
@@ -364,6 +388,9 @@ static const struct IWineDXGIAdapterVtbl dxgi_adapter_vtbl =
     dxgi_adapter_UnregisterVideoMemoryBudgetChangeNotification,
     /* IDXGIAdapter4 methods */
     dxgi_adapter_GetDesc3,
+	/* IDXGIAdapterInternal methods */
+	dxgi_adapter_GetDescInternal,
+	dxgi_adapter_SetDescInternal,	
 };
 
 struct dxgi_adapter *unsafe_impl_from_IDXGIAdapter(IDXGIAdapter *iface)
