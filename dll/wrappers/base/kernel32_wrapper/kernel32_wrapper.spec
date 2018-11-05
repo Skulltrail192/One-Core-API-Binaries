@@ -1142,8 +1142,8 @@
 @ stdcall GetErrorMode()
 @ stdcall GetFileAttributesTransactedA(str long ptr ptr)
 @ stdcall GetFileAttributesTransactedW(wstr long ptr ptr)
-@ stdcall GetFileInformationByHandleEx(long long ptr long) 
-@ stdcall GetFileInformationByHandleExW(long long ptr long) GetFileInformationByHandleEx 
+@ stdcall GetFileInformationByHandleEx(long long ptr long) fileextd.GetFileInformationByHandleEx
+@ stdcall GetFileInformationByHandleExW(long long ptr long) fileextd.GetFileInformationByHandleEx 
 @ stdcall GetFinalPathNameByHandleA(ptr str long long)
 @ stdcall GetFinalPathNameByHandleW(ptr wstr long long)
 @ stdcall GetLocaleInfoEx(wstr long ptr long)
@@ -1231,8 +1231,8 @@
 @ stdcall SetEventWhenCallbackReturns(ptr long) ntext.TpCallbackSetEventOnCompletion
 @ stdcall SetFileAttributesTransactedA(str long ptr)
 @ stdcall SetFileAttributesTransactedW(wstr long ptr)
-@ stdcall SetFileInformationByHandle(long long ptr long) 
-@ stdcall SetFileInformationByHandleW(long long ptr long) SetFileInformationByHandle
+@ stdcall SetFileInformationByHandle(long long ptr long) fileextd.SetFileInformationByHandle
+@ stdcall SetFileInformationByHandleW(long long ptr long) fileextd.SetFileInformationByHandle
 @ stdcall SetNamedPipeAttribute(ptr long str ptr long)
 @ stdcall SetProcessAffinityUpdateMode(ptr long)
 @ stdcall SetProcessPreferredUILanguages(long wstr ptr)
