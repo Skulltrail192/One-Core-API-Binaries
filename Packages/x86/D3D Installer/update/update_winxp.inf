@@ -43,6 +43,9 @@ Signature                 = "$Windows NT$"
 	MSFT_Prefix                 = "MicrosoftOneCoreAPID3dRuntime"
 	MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"
 	LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
+	FNTCACHESVC_DISPLAY_NAME="Windows Driver Foundation - User-mode Driver Framework"
+	FNTCACHESVC_DESCRIPTION="Manages user-mode driver host processes"
+	SERVICE_DEMAND_START=0x3
 
 [UninstallSections]
     Add.Reg, Add.Reg.Uninstall
@@ -68,6 +71,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
+	CopyFiles                  = CopyAlways.Branding.Main.files
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -83,6 +87,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 
 [DestinationDirs]
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+	CopyAlways.Branding.Main.files = 10 ; %windir%	
 
 [CopyAlways.System32.Files]
     d2d1.dll
@@ -94,11 +99,20 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	d3d10core.dll
 	d3d11.dll
 	dwrite.dll
+	dxdiag.exe
+	dxdiagn.dll	
 	dxgi.dll
+	D3DCompiler_47.dll
 	fntcache.dll
-	libwine.dll
-	wined3d.dll
+	d3dwine.dll
 	wineft2.dll
+	winetxc.dll
+	vcruntime140.dll
+	
+[CopyAlways.Branding.Main.files]
+	Branding\Basebrd\basebrd.dll, Branding\Basebrd\basebrd.dll	
+	Branding\ShellBrd\shellbrd.dll, Branding\ShellBrd\shellbrd.dll		
+	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
@@ -112,18 +126,48 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%D3DR_VERSIO
 	d3d10core.dll = 1
 	d3d11.dll = 1
 	dwrite.dll = 1
+	dxdiag.exe = 1
+	dxdiagn.dll = 1		
 	dxgi.dll = 1
+	D3DCompiler_47.dll = 1
 	fntcache.dll = 1
-	libwine.dll = 1
-	wined3d.dll = 1
-	wineft2.dll = 1	
+	d3dwine.dll = 1
+	wineft2.dll = 1
+	winetxc.dll = 1
+	vcruntime140.dll = 1
+	Branding\Basebrd\basebrd.dll = 1 
+	Branding\ShellBrd\shellbrd.dll = 1		
+	
+[DefaultInstall]	
+	
+[DefaultInstall.Services]
+	AddService=WudfSvc,%NOCLOBBER_SERVICE%,WudfSvc_Install
+
+[FntCacheSvc_Install]
+	DisplayName=%FNTCACHESVC_DISPLAY_NAME%
+	Description=%FNTCACHESVC_DESCRIPTION%
+	ServiceType=0x20
+	StartType=%SERVICE_DEMAND_START%
+	ErrorControl=0x01
+	ServiceBinary=%10%\system32\svchost.exe -k netsvcs
+	LoadOrderGroup=AudioGroup
+	StartName = "LocalSystem"
+	AddReg=FntCacheSvc_Registry
+
+[FntCacheSvc_Registry]
+	HKR, "Parameters", "ServiceDll", %REG_EXPAND_SZ%, "%SystemRoot%\System32\fntcache.dll"
+	HKR, "Parameters", "ServiceDllUnloadOnStop", %REG_DWORD%, 1
+	HKR, ,             "FailureActions", %REG_BINARY%, 84,03,00,00,00,00,00,00,00,00,00,00,03,00,00,00,53,00,65,00,01,00,00,00,C0,D4,01,00,01,00,00,00,E0,93,04,00,00,00,00,00,00,00,00,00
+	HKR, ,             "ServiceSidType", %REG_DWORD%, 1
+
+	HKLM, "SOFTWARE\Microsoft\Windows NT\CurrentVersion\svchost", "netsvcs", 0x00010008, "FontCache"
 	
 [Add.Reg.Uninstall]
 
 [Save.Reg.For.Uninstall]
 
-HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
-HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"

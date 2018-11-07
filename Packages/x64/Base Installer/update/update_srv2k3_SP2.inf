@@ -2470,6 +2470,17 @@
 	HKLM, Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbe, 0, "program"
 	HKLM, Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbs, 0, "program"
 	HKLM, Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "program"
+	
+	;gameux
+	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}",,0x0,"GameExplorer Class"
+	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32",,0x0,"C:\Windows\System32\gameux.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32","ThreadingModel",0x0,"Both"
+	HKLM,"SOFTWARE\Classes\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\Programmable",,0x10
+	
+	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}",,0x0,"GameExplorer Class"
+	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32",,0x0,"C:\Windows\SysWOW64\gameux.dll"
+	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32","ThreadingModel",0x0,"Both"
+	HKCR,"Wow6432Node\CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\Programmable",,0x10		
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files

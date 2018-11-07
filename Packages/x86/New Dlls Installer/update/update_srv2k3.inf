@@ -2617,7 +2617,91 @@
 	; register our MSFT namespace in XMP
 	HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%
 	HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
+	
+	;gameux	
+	HKCR,"CLSID\{06EEE695-542D-46F6-AEAB-FA2F1B2102D3}",,0x0,"GameCleanupHandler Class"
+	HKCR,"CLSID\{06EEE695-542D-46F6-AEAB-FA2F1B2102D3}\InprocServer32",,0x0,"C:\Windows\System32\gameux.dll"
+	HKCR,"CLSID\{06EEE695-542D-46F6-AEAB-FA2F1B2102D3}\InprocServer32","ThreadingModel",0x0,"Both"
+	HKCR,"CLSID\{6C5CFCDA-1F1A-4c9e-8D65-94771169D0B9}",,0x0,"GameDetails Class"
+	HKCR,"CLSID\{6C5CFCDA-1F1A-4c9e-8D65-94771169D0B9}\InprocServer32",,0x0,"C:\Windows\System32\gameux.dll"
+	HKCR,"CLSID\{6C5CFCDA-1F1A-4c9e-8D65-94771169D0B9}\InprocServer32","ThreadingModel",0x0,"Apartment"
+	HKCR,"CLSID\{709E2729-F883-441e-A877-ED3CEFC975E6}",,0x0,"ProfileNotifyHandler Class"
+	HKCR,"CLSID\{709E2729-F883-441e-A877-ED3CEFC975E6}","AppID",0x0,"{E10F6C3A-F1AE-4adc-AA9D-2FE65525666E}"
+	HKCR,"CLSID\{709E2729-F883-441e-A877-ED3CEFC975E6}\InprocServer32",,0x0,"C:\Windows\System32\gameux.dll"
+	HKCR,"CLSID\{709E2729-F883-441e-A877-ED3CEFC975E6}\InprocServer32","ThreadingModel",0x0,"Apartment"
+	HKCR,"CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}",,0x0,"GameExplorer Class"
+	HKCR,"CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32",,0x0,"C:\Windows\System32\gameux.dll"
+	HKCR,"CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\InprocServer32","ThreadingModel",0x0,"Both"
+	HKCR,"CLSID\{9A5EA990-3034-4D6F-9128-01F3C61022BC}\Programmable",,0x10
+	HKCR,"CLSID\{CA22F5B1-E06F-4A2B-94FC-21E87FE53781}",,0x0,"GameUpdateTask Class"
+	HKCR,"CLSID\{CA22F5B1-E06F-4A2B-94FC-21E87FE53781}\InprocServer32",,0x0,"C:\Windows\System32\gameux.dll"
+	HKCR,"CLSID\{CA22F5B1-E06F-4A2B-94FC-21E87FE53781}\InprocServer32","ThreadingModel",0x0,"Both"
+	HKCR,"CLSID\{DBC85A2C-C0DC-4961-B6E2-D28B62C11AD4}",,0x0,"GameStatistics Class"
+	HKCR,"CLSID\{DBC85A2C-C0DC-4961-B6E2-D28B62C11AD4}\InprocServer32",,0x0,"C:\Windows\System32\gameux.dll"
+	HKCR,"CLSID\{DBC85A2C-C0DC-4961-B6E2-D28B62C11AD4}\InprocServer32","ThreadingModel",0x0,"Apartment"
+	HKCR,"CLSID\{E7B2FB72-D728-49B3-A5F2-18EBF5F1349E}",,0x0,"PSFactoryBuffer"
+	HKCR,"CLSID\{E7B2FB72-D728-49B3-A5F2-18EBF5F1349E}\InProcServer32",,0x0,"C:\Windows\System32\gameux.dll"
+	HKCR,"CLSID\{E7B2FB72-D728-49B3-A5F2-18EBF5F1349E}\InProcServer32","ThreadingModel",0x0,"Both"
+	HKCR,"CLSID\{ED228FDF-9EA8-4870-83b1-96b02CFE0D52}",,0x0,"Games Explorer"
+	HKCR,"CLSID\{ED228FDF-9EA8-4870-83b1-96b02CFE0D52}","InfoTip",0x0,"Play and Manage Games."
+	HKCR,"CLSID\{ED228FDF-9EA8-4870-83b1-96b02CFE0D52}","LocalizedString",0x20000,"@%%SystemRoot%%\system32\shell32.dll,-30579"
+	HKCR,"CLSID\{ED228FDF-9EA8-4870-83b1-96b02CFE0D52}\DefaultIcon",,0x0,"C:\Windows\System32\imageres.dll,-14"
+	HKCR,"CLSID\{ED228FDF-9EA8-4870-83b1-96b02CFE0D52}\InprocServer32",,0x0,"C:\Windows\System32\gameux.dll"
+	HKCR,"CLSID\{ED228FDF-9EA8-4870-83b1-96b02CFE0D52}\InprocServer32","ThreadingModel",0x0,"Apartment"
+	HKCR,"CLSID\{ED228FDF-9EA8-4870-83b1-96b02CFE0D52}\Programmable",,0x10
+	HKCR,"CLSID\{ED228FDF-9EA8-4870-83b1-96b02CFE0D52}\ShellFolder","Attributes",0x10001,30,01,10,20
+	HKCR,"CLSID\{F382DA49-9148-4a22-AF78-C378DFC32D02}",,0x0,"MS_InstalledGameProv Class"
+	HKCR,"CLSID\{F382DA49-9148-4a22-AF78-C378DFC32D02}\InprocServer32",,0x0,"C:\Windows\System32\gameux.dll"
+	HKCR,"CLSID\{F382DA49-9148-4a22-AF78-C378DFC32D02}\InprocServer32","ThreadingModel",0x0,"Both"
+	HKCR,"Interface\{4EDAE929-1ED1-471E-8731-20BD177DCC2B}",,0x0,"IGameDescriptionRating"
+	HKCR,"Interface\{4EDAE929-1ED1-471E-8731-20BD177DCC2B}\NumMethods",,0x0,"11"
+	HKCR,"Interface\{4EDAE929-1ED1-471E-8731-20BD177DCC2B}\ProxyStubClsid32",,0x0,"{E7B2FB72-D728-49B3-A5F2-18EBF5F1349E}"
+	HKLM,"SOFTWARE\Classes\Interface\{4EDAE929-1ED1-471E-8731-20BD177DCC2B}",,0x0,"IGameDescriptionRating"
+	HKLM,"SOFTWARE\Classes\Interface\{4EDAE929-1ED1-471E-8731-20BD177DCC2B}\NumMethods",,0x0,"11"
+	HKLM,"SOFTWARE\Classes\Interface\{4EDAE929-1ED1-471E-8731-20BD177DCC2B}\ProxyStubClsid32",,0x0,"{E7B2FB72-D728-49B3-A5F2-18EBF5F1349E}"	
+	HKCR,"Interface\{8B434050-B341-4A0C-A7B3-57175D2393A3}",,0x0,"IGameCompanyInfoCollection"
+	HKCR,"Interface\{8B434050-B341-4A0C-A7B3-57175D2393A3}\NumMethods",,0x0,"5"
+	HKCR,"Interface\{8B434050-B341-4A0C-A7B3-57175D2393A3}\ProxyStubClsid32",,0x0,"{E7B2FB72-D728-49B3-A5F2-18EBF5F1349E}"
+	HKLM,"SOFTWARE\Classes\Interface\{8B434050-B341-4A0C-A7B3-57175D2393A3}",,0x0,"IGameCompanyInfoCollection"
+	HKLM,"SOFTWARE\Classes\Interface\{8B434050-B341-4A0C-A7B3-57175D2393A3}\NumMethods",,0x0,"5"
+	HKLM,"SOFTWARE\Classes\Interface\{8B434050-B341-4A0C-A7B3-57175D2393A3}\ProxyStubClsid32",,0x0,"{E7B2FB72-D728-49B3-A5F2-18EBF5F1349E}"
+	HKLM,"SOFTWARE\Classes\Interface\{8B434050-B341-4A0C-A7B3-57175D2393A3}",,0x0,"IGameCompanyInfoCollection"
+	HKLM,"SOFTWARE\Classes\Interface\{8B434050-B341-4A0C-A7B3-57175D2393A3}\NumMethods",,0x0,"5"
+	HKLM,"SOFTWARE\Classes\Interface\{8B434050-B341-4A0C-A7B3-57175D2393A3}\ProxyStubClsid32",,0x0,"{E7B2FB72-D728-49B3-A5F2-18EBF5F1349E}"
+	HKCR,"Interface\{F4902FB8-4A1F-46DC-9BE6-CA69C72A168A}",,0x0,"IGameTaskCollection"
+	HKCR,"Interface\{F4902FB8-4A1F-46DC-9BE6-CA69C72A168A}\NumMethods",,0x0,"5"
+	HKCR,"Interface\{F4902FB8-4A1F-46DC-9BE6-CA69C72A168A}\ProxyStubClsid32",,0x0,"{E7B2FB72-D728-49B3-A5F2-18EBF5F1349E}"
+	HKLM,"SOFTWARE\Classes\Interface\{F4902FB8-4A1F-46DC-9BE6-CA69C72A168A}",,0x0,"IGameTaskCollection"
+	HKLM,"SOFTWARE\Classes\Interface\{F4902FB8-4A1F-46DC-9BE6-CA69C72A168A}\NumMethods",,0x0,"5"
+	HKLM,"SOFTWARE\Classes\Interface\{F4902FB8-4A1F-46DC-9BE6-CA69C72A168A}\ProxyStubClsid32",,0x0,"{E7B2FB72-D728-49B3-A5F2-18EBF5F1349E}"
 
+	;UIRibbon
+	HKCR,"CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}",,0x10
+	HKCR,"CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKCR,"CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}",,0x10
+	HKCR,"CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKCR,"CLSID\{926749fa-2615-4987-8845-c33e65f2b957}",,0x10
+	HKCR,"CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKCR,"CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}",,0x10
+	HKCR,"CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	
+	;License Information
+	HKLM,Software\Windows\LicenseInformation,"Kernel-MUI-Language-Allowed",,"EMPTY"
+	HKLM,Software\Windows\LicenseInformation,"Kernel-MUI-Language-Disallowed",,"EMPTY"
+	HKLM,Software\Windows\LicenseInformation,"Kernel-MUI-Number-Allowed",0x10001,1000
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-FreeCell-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-Hearts-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-Minesweeper-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-PurblePlace-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-Shanghai-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-Solitaire-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-SpiderSolitaire-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-PremiumInBoxGames-Chess-EnableGame",0x10001,0x00000001		
+	
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
 	
@@ -2643,6 +2727,7 @@
 [CopyAlways.System32.Files]
 	"avrt.dll"
 	"cabiext.dll"
+	"cardgames.dll"	
 	;"combase.dll" 	- Cause error with .net 4.5 application	
 	"cryptbase.dll"
 	"cryptsp.dll"
@@ -2655,7 +2740,9 @@
 	"esent.dll"
 	"evr.dll"
 	"explorerframe.dll"
+	"FWPUCLNT.dll"
 	"gameux.dll"
+	"GameUXLegacyGDFs.dll"	
 	"httpapi.dll"
 	"httpapinew.dll"
 	"ktmw32.dll"
@@ -2706,6 +2793,9 @@
 	"eappcfg.dll"
 	"eappprxy.dll"
 	"onex.dll"
+	"XInput9_1_0.dll"	
+	"WMDRMSDK.DLL"
+	"winusb.dll"
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
@@ -2713,6 +2803,7 @@
 [SourceDisksFiles]
 	"avrt.dll" = 1
 	"cabiext.dll" = 1
+	"cardgames.dll" = 1		
 	;"combase.dll" = 1	- Cause error with .net 4.5 application
 	"cryptbase.dll" = 1
 	"cryptsp.dll" = 1
@@ -2726,7 +2817,9 @@
 	"esent.dll" = 1
 	"evr.dll" = 1
 	"explorerframe.dll" = 1
+	"FWPUCLNT.dll" = 1	
 	"gameux.dll" = 1
+	"GameUXLegacyGDFs.dll" = 1	
 	"httpapi.dll" = 1
 	"httpapinew.dll" = 1
 	"ktmw32.dll" = 1
@@ -2777,3 +2870,6 @@
 	"eappcfg.dll" = 1
 	"eappprxy.dll" = 1
 	"onex.dll" = 1
+	"XInput9_1_0.dll" = 1		
+	"WMDRMSDK.DLL" = 1
+	"winusb.dll" = 1

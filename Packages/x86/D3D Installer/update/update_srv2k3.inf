@@ -67,6 +67,7 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
+	CopyFiles                  = CopyAlways.Branding.Main.files	
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -82,6 +83,7 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 
 [DestinationDirs]
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+	CopyAlways.Branding.Main.files = 10 ; %windir%
 
 [CopyAlways.System32.Files]
     d2d1.dll
@@ -93,6 +95,8 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	d3d10core.dll
 	d3d11.dll
 	dwrite.dll
+	dxdiag.exe
+	dxdiagn.dll
 	dxgi.dll
 	D3DCompiler_47.dll
 	fntcache.dll
@@ -100,6 +104,10 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	wineft2.dll
 	winetxc.dll
 	vcruntime140.dll
+	
+[CopyAlways.Branding.Main.files]
+	Branding\Basebrd\basebrd.dll, Branding\Basebrd\basebrd.dll	
+	Branding\ShellBrd\shellbrd.dll, Branding\ShellBrd\shellbrd.dll	
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
@@ -114,6 +122,8 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	d3d10core.dll = 1
 	d3d11.dll = 1
 	dwrite.dll = 1
+	dxdiag.exe = 1
+	dxdiagn.dll = 1	
 	dxgi.dll = 1
 	D3DCompiler_47.dll = 1
 	fntcache.dll = 1

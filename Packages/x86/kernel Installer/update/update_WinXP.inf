@@ -374,6 +374,13 @@
     ntkrpamp.exe,XPSP3\ntkrpamp.exe
     ntkrnlpa.exe,XPSP3\ntkrnlpa.exe
     ntkrnlmp.exe,XPSP3\ntkrnlmp.exe
+	hal.dll,XPSP3\hal.dll
+	halaacpi.dll,XPSP3\halaacpi.dll	
+	halacpi.dll,XPSP3\halacpi.dll	
+	halapic.dll,XPSP3\halapic.dll	
+	halmacpi.dll,XPSP3\halmacpi.dll	
+	halmps.dll,XPSP3\halmps.dll	
+	halsp.dll,XPSP3\halsp.dll	
 
 [CopyAlways.Cache.files]
     ntoskrnl.exe,XPSP3\ntoskrnl.exe
@@ -381,14 +388,23 @@
     ntkrnlpa.exe,XPSP3\ntkrnlpa.exe
     ntkrnlmp.exe,XPSP3\ntkrnlmp.exe
     ntdll.dll,XPSP3\ntdll.dll
+	hal.dll,XPSP3\hal.dll
+	halaacpi.dll,XPSP3\halaacpi.dll	
+	halacpi.dll,XPSP3\halacpi.dll	
+	halapic.dll,XPSP3\halapic.dll	
+	halmacpi.dll,XPSP3\halmacpi.dll	
+	halmps.dll,XPSP3\halmps.dll	
+	halsp.dll,XPSP3\halsp.dll		
 
 [Uniprocessor.Kernel.files]
     ntoskrnl.exe,XPSP3\ntoskrnl.exe
     ntkrnlpa.exe,XPSP3\ntkrnlpa.exe
-
+	hal.dll,XPSP3\halaacpi.dll
+	
 [Multiprocessor.Kernel.files]
     ntkrnlpa.exe,XPSP3\ntkrpamp.exe
     ntoskrnl.exe,XPSP3\ntkrnlmp.exe
+	hal.dll,XPSP3\halmacpi.dll	
 
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
