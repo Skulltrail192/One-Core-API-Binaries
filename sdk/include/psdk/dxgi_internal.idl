@@ -11,6 +11,10 @@ import "dxgi1_6.idl";
 ] 
 interface IDXGIAdapterInternal : IDXGIAdapter4
 {
-HRESULT GetDescInternal([in] short Bread, [out] int *pBToast);
-HRESULT SetDescInternal([in] short Bread);
+HRESULT GetUMDDeviceSize([in] int Bread, [in] int *pBToast, [in] int *pBToast3);
+HRESULT LoadUMD([in]int a1,[in] int a2,[in] int a3);
+HRESULT InstanceThunks([in]int a1,[in]int *a2,[in]int a3,[in]int *a4);
+HRESULT RetireUsage([in] int usage);
+HRESULT SetAdapterCapabilities([in] int * capabilities);
+HRESULT GetAdapterCapabilities([in] int * capabilities);
 };

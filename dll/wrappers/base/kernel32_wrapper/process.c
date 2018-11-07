@@ -1477,23 +1477,23 @@ CreateProcessInternalExW(
 		 // DbgPrint("CreateProcessInternalExW :: lpStartupInfo is STARTUPINFOEX structure\n");
 	 // };
 
-         if (strstrW(lpApplicationName, chromeexeW))
-         {
-             LPWSTR new_command_line;
+         // if (strstrW(lpApplicationName, chromeexeW))
+         // {
+             // LPWSTR new_command_line;
 
-             new_command_line = HeapAlloc(GetProcessHeap(), 0,
-                 sizeof(WCHAR) * (strlenW(lpCommandLine) + strlenW(nosandboxW) + 1));
+             // new_command_line = HeapAlloc(GetProcessHeap(), 0,
+                 // sizeof(WCHAR) * (strlenW(lpCommandLine) + strlenW(nosandboxW) + 1));
 
-             if (!new_command_line) return FALSE;
+             // if (!new_command_line) return FALSE;
 
-             strcpyW(new_command_line, lpCommandLine);
-             strcatW(new_command_line, nosandboxW);
+             // strcpyW(new_command_line, lpCommandLine);
+             // strcatW(new_command_line, nosandboxW);
 
-            // TRACE("CrossOver hack changing command line to %s\n", debugstr_w(new_command_line));
+            // // TRACE("CrossOver hack changing command line to %s\n", debugstr_w(new_command_line));
 
-             //if (tidy_cmdline != cmd_line) HeapFree( GetProcessHeap(), 0, tidy_cmdline );
-             lpCommandLine = new_command_line;
-         }
+             // //if (tidy_cmdline != cmd_line) HeapFree( GetProcessHeap(), 0, tidy_cmdline );
+             // lpCommandLine = new_command_line;
+         // }
 	
 	// if (strstrW(lpApplicationName, chromeexeW))
 	// {

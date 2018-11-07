@@ -868,3 +868,45 @@ GetThreadIdealProcessorEx(
   BaseSetLastNTError(Status);
   return FALSE;
 }
+
+#define THREADDESC_SUCCESS 0x10000000
+/***********************************************************************
+ * SetThreadDescription [KERNEL32.@]  Sets name of thread.
+ *
+ * RETURNS
+ *    Success: TRUE
+ *    Failure: FALSE
+ */
+HRESULT WINAPI SetThreadDescription( HANDLE handle, const WCHAR *descW )
+{
+    TRACE("(%p,%s)\n", handle, wine_dbgstr_w( descW ));
+    if (handle != GetCurrentThread())
+    {
+        FIXME("Can't set other thread description\n");
+        return THREADDESC_SUCCESS;
+    }
+
+    return THREADDESC_SUCCESS;
+}
+/***********************************************************************
+ * GetThreadDescription [KERNEL32.@]  Retrieves name of thread.
+ *
+ * RETURNS
+ *    Success: TRUE
+ *    Failure: FALSE
+ */
+HRESULT WINAPI GetThreadDescription( HANDLE handle, WCHAR **descW )
+{
+    *descW = LocalAlloc( 0, 16 * sizeof(WCHAR) );
+    if(!*descW)
+        return E_OUTOFMEMORY;
+    if (handle != GetCurrentThread())
+    {
+        DbgPrint("Can't get other thread description\n");
+        (*descW)[0] = 0;
+        return THREADDESC_SUCCESS;
+    }
+    (*descW)[0] = 0;
+	
+    return THREADDESC_SUCCESS;
+}

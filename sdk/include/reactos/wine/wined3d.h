@@ -2574,35 +2574,60 @@ static inline void wined3d_private_store_cleanup(struct wined3d_private_store *s
     }
 }
 
+ULONG DbgPrint(
+  PCSTR Format,
+  ...   
+);
+
 static inline HRESULT wined3d_private_store_set_private_data(struct wined3d_private_store *store,
         const GUID *guid, const void *data, DWORD data_size, DWORD flags)
 {
     struct wined3d_private_data *d, *old;
     const void *ptr = data;
+	
+	DbgPrint("wined3d_private_store_set_private_data::Enter function\n");
 
     if (flags & WINED3DSPD_IUNKNOWN)
     {
         if (data_size != sizeof(IUnknown *))
             return WINED3DERR_INVALIDCALL;
         ptr = &data;
+		DbgPrint("wined3d_private_store_set_private_data::flags & WINED3DSPD_IUNKNOWN\n");
     }
 
     if (!(d = HeapAlloc(GetProcessHeap(), 0,
             FIELD_OFFSET(struct wined3d_private_data, content.data[data_size]))))
-        return E_OUTOFMEMORY;
+	{
+		DbgPrint("wined3d_private_store_set_private_data::HeapAlloc Failed\n");
+		return E_OUTOFMEMORY;
+	}    
 
-    d->tag = *guid;
-    d->flags = flags;
-    d->size = data_size;
+	DbgPrint("wined3d_private_store_set_private_data::Assigning\n");    
+
+    //d->tag = *guid;
+    //d->flags = flags;
+    //d->size = data_size;
+	
+	DbgPrint("wined3d_private_store_set_private_data::memcpy\n");    
 
     memcpy(d->content.data, ptr, data_size);
-    if (flags & WINED3DSPD_IUNKNOWN)
-        IUnknown_AddRef(d->content.object);
+	
+	DbgPrint("wined3d_private_store_set_private_data::copied\n");  
+    // if (flags & WINED3DSPD_IUNKNOWN)
+	// {
+		 // IUnknown_AddRef(d->content.object);
+		 // DbgPrint("wined3d_private_store_set_private_data::IUnknown_AddRef\n");   
+	// }       
 
+	DbgPrint("wined3d_private_store_set_private_data::Assigning old\n");  
     old = wined3d_private_store_get_private_data(store, guid);
+	
+	DbgPrint("wined3d_private_store_set_private_data::freeing old\n");  
     if (old)
         wined3d_private_store_free_private_data(store, old);
     list_add_tail(&store->content, &d->entry);
+	
+	DbgPrint("wined3d_private_store_set_private_data::return OK\n");  
 
     return WINED3D_OK;
 }

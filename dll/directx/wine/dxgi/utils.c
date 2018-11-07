@@ -608,13 +608,21 @@ HRESULT dxgi_set_private_data_interface(struct wined3d_private_store *store,
         REFGUID guid, const IUnknown *object)
 {
     HRESULT hr;
+	
+	DbgPrint("DXGI::utils::dxgi_set_private_data_interface::enter function\n");
 
     if (!object)
-        return dxgi_set_private_data(store, guid, sizeof(object), &object);
+	{
+		DbgPrint("DXGI::utils::dxgi_set_private_data_interface:: object is null\n");
+		return dxgi_set_private_data(store, guid, sizeof(object), &object);
+	}
+        
 
     wined3d_mutex_lock();
+	DbgPrint("DXGI::utils::wined3d_private_store_set_private_data::calling function\n");
     hr = wined3d_private_store_set_private_data(store,
             guid, object, sizeof(object), WINED3DSPD_IUNKNOWN);
+	DbgPrint("DXGI::utils::dxgi_set_private_data_interface:: response: 0x%08X\n", hr);		
     wined3d_mutex_unlock();
 
     return hr;

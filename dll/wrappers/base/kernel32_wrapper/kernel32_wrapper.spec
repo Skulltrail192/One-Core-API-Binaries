@@ -1398,6 +1398,10 @@
 @ stdcall WerpNotifyLoadStringResourceWorker(ptr wstr ptr long) WerpNotifyLoadStringResource
 @ stdcall WerpNotifyUseStringResourceWorker(ptr) WerpNotifyUseStringResource
 
+#Win10 functions
+@ stdcall GetThreadDescription(long ptr)
+@ stdcall SetThreadDescription(long ptr)
+
 #Import from advapi32
 @ stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr) advapi32.AccessCheck
 @ stdcall AccessCheckAndAuditAlarmW(wstr ptr wstr wstr ptr long ptr long ptr ptr ptr) advapi32.AccessCheckAndAuditAlarmW
