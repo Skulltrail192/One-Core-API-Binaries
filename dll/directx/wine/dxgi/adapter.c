@@ -166,46 +166,62 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_EnumOutputs(IWineDXGIAdapter *ifac
     return S_OK;
 }
 
-static HRESULT dxgi_adapter_get_desc(struct dxgi_adapter *adapter, DXGI_ADAPTER_DESC3 *desc)
+static HRESULT DXGIAdapterGetDesc(struct dxgi_adapter *adapter, DXGI_ADAPTER_DESC3 *desc)
 {
-    struct wined3d_adapter_identifier adapter_id;
-    char description[128];
-    HRESULT hr;
+	HRESULT hr;
+	IDirect3D9* pD3D9 = NULL;
+	D3DADAPTER_IDENTIFIER9 pIdentifier;
+	LUID uid;
+	ULONG i;
 	
-	DbgPrint("IDXGIAdapter::dxgi_adapter_get_desc::enter function\n");
+	pD3D9 = Direct3DCreate9( D3D_SDK_VERSION );	
+	
+	hr = IDirect3D9_GetAdapterIdentifier(pD3D9, 0, 0, &pIdentifier );
+    // struct wined3d_adapter_identifier adapter_id;
+    // char description[128];
+    // HRESULT hr;
+	
+	// DbgPrint("IDXGIAdapter::DXGIAdapterGetDesc::enter function\n");
 
-    adapter_id.driver_size = 0;
-    adapter_id.description = description;
-    adapter_id.description_size = sizeof(description);
-    adapter_id.device_name_size = 0;
+    // adapter_id.driver_size = 0;
+    // adapter_id.description = description;
+    // adapter_id.description_size = sizeof(description);
+    // adapter_id.device_name_size = 0;
 
-    wined3d_mutex_lock();
-    hr = wined3d_get_adapter_identifier(adapter->factory->wined3d, adapter->ordinal, 0, &adapter_id);
-    wined3d_mutex_unlock();
+    // wined3d_mutex_lock();
+    // hr = wined3d_get_adapter_identifier(adapter->factory->wined3d, adapter->ordinal, 0, &adapter_id);
+    // wined3d_mutex_unlock();
 
-    if (FAILED(hr))
+     if (FAILED(hr))
         return hr;
 
-    if (!MultiByteToWideChar(CP_ACP, 0, description, -1, desc->Description, 128))
-    {
-        DWORD err = GetLastError();
-        ERR("Failed to translate description %s (%#x).\n", debugstr_a(description), err);
-        hr = E_FAIL;
-    }
+    // if (!MultiByteToWideChar(CP_ACP, 0, description, -1, desc->Description, 128))
+    // {
+        // DWORD err = GetLastError();
+        // ERR("Failed to translate description %s (%#x).\n", debugstr_a(description), err);
+        // hr = E_FAIL;
+    // }
+	
+	
+	
+	i = ((ULONG)pIdentifier.DeviceIdentifier.Data1) | ((ULONG)pIdentifier.DeviceIdentifier.Data2 << 8) | ((ULONG)pIdentifier.DeviceIdentifier.Data3 << 16) | ((ULONG)pIdentifier.DeviceIdentifier.Data4 << 24);
 
-    desc->VendorId = adapter_id.vendor_id;
-    desc->DeviceId = adapter_id.device_id;
-    desc->SubSysId = adapter_id.subsystem_id;
-    desc->Revision = adapter_id.revision;
-    desc->DedicatedVideoMemory = adapter_id.video_memory;
+	uid.LowPart = i;
+	uid.HighPart = i;
+	
+    desc->VendorId = pIdentifier.VendorId;
+    desc->DeviceId = pIdentifier.DeviceId;
+    desc->SubSysId = pIdentifier.SubSysId;
+    desc->Revision = pIdentifier.Revision;
+    desc->DedicatedVideoMemory = 4096 * 1024 * 1024;//pIdentifier.video_memory;
     desc->DedicatedSystemMemory = 0; /* FIXME */
     desc->SharedSystemMemory = 0; /* FIXME */
-    desc->AdapterLuid = adapter_id.adapter_luid;
+    desc->AdapterLuid = uid;//pIdentifier.DeviceIdentifier;
     desc->Flags = 0;
     desc->GraphicsPreemptionGranularity = DXGI_GRAPHICS_PREEMPTION_DMA_BUFFER_BOUNDARY; /* FIXME */
     desc->ComputePreemptionGranularity = DXGI_COMPUTE_PREEMPTION_DMA_BUFFER_BOUNDARY; /* FIXME */
 	
-	DbgPrint("IDXGIAdapter::dxgi_adapter_get_desc::exit ok function\n");
+	DbgPrint("IDXGIAdapter::DXGIAdapterGetDesc::exit ok function\n");
 
     return hr;
 }
@@ -221,7 +237,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc(IWineDXGIAdapter *iface, D
     if (!desc)
         return E_INVALIDARG;
 
-    if (SUCCEEDED(hr = dxgi_adapter_get_desc(adapter, &desc3)))
+    if (SUCCEEDED(hr = DXGIAdapterGetDesc(adapter, &desc3)))
         memcpy(desc, &desc3, sizeof(*desc));
 
     return hr;
@@ -280,7 +296,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc1(IWineDXGIAdapter *iface, 
     if (!desc)
         return E_INVALIDARG;
 
-    if (SUCCEEDED(hr = dxgi_adapter_get_desc(adapter, &desc3)))
+    if (SUCCEEDED(hr = DXGIAdapterGetDesc(adapter, &desc3)))
         memcpy(desc, &desc3, sizeof(*desc));
 
     return hr;
@@ -297,7 +313,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc2(IWineDXGIAdapter *iface, 
     if (!desc)
         return E_INVALIDARG;
 
-    if (SUCCEEDED(hr = dxgi_adapter_get_desc(adapter, &desc3)))
+    if (SUCCEEDED(hr = DXGIAdapterGetDesc(adapter, &desc3)))
         memcpy(desc, &desc3, sizeof(*desc));
 
     return hr;
@@ -370,7 +386,7 @@ static HRESULT STDMETHODCALLTYPE dxgi_adapter_GetDesc3(IWineDXGIAdapter *iface, 
     if (!desc)
         return E_INVALIDARG;
 
-    return dxgi_adapter_get_desc(adapter, desc);
+    return DXGIAdapterGetDesc(adapter, desc);
 }
 
 HRESULT STDMETHODCALLTYPE dxgi_adapter_GetUMDDeviceSize(IWineDXGIAdapter *iface,  int Bread,  int *pBToast,  int *pBToast3)

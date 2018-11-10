@@ -25,17 +25,17 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
 
 static inline struct d3d9_texture *impl_from_IDirect3DTexture9(IDirect3DTexture9 *iface)
 {
-    return CONTAINING_RECORD(iface, struct d3d9_texture, IDirect3DBaseTexture9_iface);
+    return CONTAINING_RECORD((IDirect3DBaseTexture9 *)iface, struct d3d9_texture, IDirect3DBaseTexture9_iface);
 }
 
 static inline struct d3d9_texture *impl_from_IDirect3DCubeTexture9(IDirect3DCubeTexture9 *iface)
 {
-    return CONTAINING_RECORD(iface, struct d3d9_texture, IDirect3DBaseTexture9_iface);
+    return CONTAINING_RECORD((IDirect3DBaseTexture9 *)iface, struct d3d9_texture, IDirect3DBaseTexture9_iface);
 }
 
 static inline struct d3d9_texture *impl_from_IDirect3DVolumeTexture9(IDirect3DVolumeTexture9 *iface)
 {
-    return CONTAINING_RECORD(iface, struct d3d9_texture, IDirect3DBaseTexture9_iface);
+    return CONTAINING_RECORD((IDirect3DBaseTexture9 *)iface, struct d3d9_texture, IDirect3DBaseTexture9_iface);
 }
 
 static void STDMETHODCALLTYPE srv_wined3d_object_destroyed(void *parent)

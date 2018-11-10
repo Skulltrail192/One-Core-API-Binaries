@@ -40,6 +40,7 @@
 #endif
 #include "wine/wined3d.h"
 #include "wine/winedxgi.h"
+#include <psdk/d3d9.h>
 
 enum dxgi_frame_latency
 {

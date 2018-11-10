@@ -21,6 +21,7 @@
 #include "wine/port.h"
 
 #include "dxgi_private.h"
+#include "d3d9.h"
 
 #ifdef SONAME_LIBVKD3D
 #define VK_NO_PROTOTYPES
@@ -825,6 +826,15 @@ HRESULT d3d11_swapchain_create(IWineDXGIDevice *device, HWND window, const DXGI_
     struct wined3d_swapchain *wined3d_swapchain;
     struct wined3d_swapchain_desc wined3d_desc;
     HRESULT hr;
+	
+	IDirect3D9* pD3D9 = NULL;
+	IDirect3DDevice9* pd3dDevice = NULL;
+	IDirect3DSwapChain9 *pSwapChain = NULL;
+	D3DPRESENT_PARAMETERS pp;
+	
+	pD3D9 = Direct3DCreate9( D3D_SDK_VERSION );
+	
+	
 
     if (swapchain_desc->Scaling != DXGI_SCALING_STRETCH)
         FIXME("Ignoring scaling %#x.\n", swapchain_desc->Scaling);
@@ -869,6 +879,27 @@ HRESULT d3d11_swapchain_create(IWineDXGIDevice *device, HWND window, const DXGI_
     wined3d_desc.refresh_rate = fullscreen_desc ? dxgi_rational_to_uint(&fullscreen_desc->RefreshRate) : 0;
     wined3d_desc.auto_restore_display_mode = TRUE;
 
+	
+    pp.BackBufferWidth = swapchain_desc->Width;
+    pp.BackBufferHeight = swapchain_desc->Height;
+    pp.BackBufferFormat = D3DFMT_R5G6B5;
+    pp.BackBufferCount = 1;
+    pp.MultiSampleType = D3DMULTISAMPLE_NONE;
+    pp.MultiSampleQuality = 0;
+    pp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+    pp.hDeviceWindow = window;
+    pp.Windowed = fullscreen_desc ? fullscreen_desc->Windowed : TRUE;
+
+    pp.EnableAutoDepthStencil = FALSE;
+    pp.Flags = 0;
+    pp.FullScreen_RefreshRateInHz = fullscreen_desc ? dxgi_rational_to_uint(&fullscreen_desc->RefreshRate) : 0;
+    pp.PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;
+
+    hr = IDirect3D9_CreateDevice(pD3D9,  0, D3DDEVTYPE_HAL, window,
+		D3DCREATE_SOFTWARE_VERTEXPROCESSING, &pp, &pd3dDevice );
+
+	hr = IDirect3DDevice9_GetSwapChain(pd3dDevice, 0, &pSwapChain);
+	
     if (FAILED(hr = IWineDXGIDevice_create_swapchain(device, &wined3d_desc, FALSE, &wined3d_swapchain)))
     {
         WARN("Failed to create swapchain, hr %#x.\n", hr);
@@ -876,7 +907,10 @@ HRESULT d3d11_swapchain_create(IWineDXGIDevice *device, HWND window, const DXGI_
     }
 
     wined3d_mutex_lock();
-    *swapchain = wined3d_swapchain_get_parent(wined3d_swapchain);
+	if(pSwapChain!=NULL)
+		*swapchain = pSwapChain;
+	else
+		*swapchain = wined3d_swapchain_get_parent(wined3d_swapchain);
     wined3d_mutex_unlock();
 
     return S_OK;

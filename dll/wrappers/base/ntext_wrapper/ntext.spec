@@ -1,6 +1,6 @@
-@ stdcall PropertyLengthAsVariant(ptr long long long)
-@ stdcall RtlConvertPropertyToVariant(ptr long ptr ptr)
-@ stdcall RtlConvertVariantToProperty(ptr long ptr ptr ptr long ptr)
+@ stdcall PropertyLengthAsVariant(ptr long long long) ntdll.PropertyLengthAsVariant
+@ stdcall RtlConvertPropertyToVariant(ptr long ptr ptr) ntdll.RtlConvertPropertyToVariant
+@ stdcall RtlConvertVariantToProperty(ptr long ptr ptr ptr long ptr) ntdll.RtlConvertVariantToProperty
 @ stdcall RtlActivateActivationContextUnsafeFast(ptr ptr) ntdll.RtlActivateActivationContextUnsafeFast
 @ stdcall RtlDeactivateActivationContextUnsafeFast(ptr) ntdll.RtlDeactivateActivationContextUnsafeFast
 @ stdcall RtlInterlockedPushListSList(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
@@ -62,8 +62,8 @@
 @ stdcall LdrGetDllHandle(wstr long ptr ptr)
 @ stdcall LdrGetDllHandleEx(long wstr long ptr ptr)
 @ stdcall LdrGetProcedureAddress(ptr ptr long ptr)
-@ stdcall LdrHotPatchRoutine(long)
-@ stdcall LdrInitShimEngineDynamic(long)
+@ stdcall LdrHotPatchRoutine(long) ntdll.LdrHotPatchRoutine
+@ stdcall LdrInitShimEngineDynamic(long) ntdll.LdrInitShimEngineDynamic
 @ stdcall LdrInitializeThunk(ptr ptr ptr) 
 @ stdcall LdrLoadAlternateResourceModule(ptr wstr)
 @ stdcall LdrLoadDll(wstr long ptr ptr)
@@ -74,7 +74,7 @@
 @ stdcall LdrQueryImageFileExecutionOptionsEx(ptr ptr long ptr long ptr long)
 @ stdcall LdrQueryImageFileKeyOption(ptr ptr long ptr long ptr) ;implemented here
 @ stdcall LdrQueryProcessModuleInformation(ptr long ptr)
-@ stdcall LdrSetAppCompatDllRedirectionCallback(long long long)
+@ stdcall LdrSetAppCompatDllRedirectionCallback(long long long) ntdll.LdrSetAppCompatDllRedirectionCallback
 @ stdcall LdrSetDllManifestProber(ptr)
 @ stdcall LdrShutdownProcess()
 @ stdcall LdrShutdownThread()
@@ -370,10 +370,10 @@
 @ stdcall NtWriteRequestData(ptr ptr long ptr long ptr)
 @ stdcall NtWriteVirtualMemory(long ptr ptr long ptr)
 @ stdcall NtYieldExecution()
-@ stdcall PfxFindPrefix(ptr ptr)
-@ stdcall PfxInitialize(ptr)
-@ stdcall PfxInsertPrefix(ptr ptr ptr)
-@ stdcall PfxRemovePrefix(ptr ptr)
+@ stdcall PfxFindPrefix(ptr ptr) ntdll.PfxFindPrefix
+@ stdcall PfxInitialize(ptr) ntdll.PfxInitialize
+@ stdcall PfxInsertPrefix(ptr ptr ptr) ntdll.PfxInsertPrefix
+@ stdcall PfxRemovePrefix(ptr ptr) ntdll.PfxRemovePrefix
 @ stdcall RtlAbortRXact(ptr)
 @ stdcall RtlAbsoluteToSelfRelativeSD(ptr ptr ptr)
 @ stdcall RtlAcquirePebLock()
@@ -394,7 +394,7 @@
 @ stdcall RtlAddAuditAccessAce(ptr long long ptr long long)
 @ stdcall RtlAddAuditAccessAceEx(ptr long long long ptr long long)
 @ stdcall RtlAddAuditAccessObjectAce(ptr long long long ptr ptr ptr long long)
-@ stdcall RtlAddCompoundAce(ptr long long long ptr ptr)
+@ stdcall RtlAddCompoundAce(ptr long long long ptr ptr) ntdll.RtlAddCompoundAce
 @ stdcall -arch=x86_64 RtlAddFunctionTable(ptr long long)
 @ stdcall RtlAddRefActivationContext(ptr)
 @ stdcall RtlAddVectoredExceptionHandler(long ptr)
@@ -407,7 +407,7 @@
 @ stdcall RtlAnsiStringToUnicodeSize(ptr) RtlxAnsiStringToUnicodeSize
 @ stdcall RtlAnsiStringToUnicodeString(ptr ptr long)
 @ stdcall RtlAppendAsciizToString(ptr str)
-@ stdcall RtlAppendPathElement(long ptr ptr)
+@ stdcall RtlAppendPathElement(long ptr ptr) ntdll.RtlAppendPathElement
 @ stdcall RtlAppendStringToString(ptr ptr)
 @ stdcall RtlAppendUnicodeStringToString(ptr ptr)
 @ stdcall RtlAppendUnicodeToString(ptr wstr)
@@ -422,10 +422,10 @@
 @ stdcall RtlCancelTimer(ptr ptr ptr) RtlDeleteTimer
 @ stdcall -register RtlCaptureContext(ptr)
 @ stdcall RtlCaptureStackBackTrace(long long ptr ptr)
-@ stdcall -arch=i386 RtlCaptureStackContext(ptr ptr long)
+@ stdcall -arch=i386 RtlCaptureStackContext(ptr ptr long) ntdll.RtlCaptureStackContext
 @ stdcall RtlCharToInteger(ptr long ptr)
 @ stdcall RtlCheckForOrphanedCriticalSections(ptr)
-@ stdcall RtlCheckProcessParameters(long long long long)
+@ stdcall RtlCheckProcessParameters(long long long long) ntdll.RtlCheckProcessParameters
 @ stdcall RtlCheckRegistryKey(long ptr)
 @ stdcall RtlClearAllBits(ptr)
 @ stdcall RtlClearBits(ptr long long)
@@ -477,7 +477,7 @@
 @ stdcall RtlCutoverTimeToSystemTime(ptr ptr ptr long)
 @ stdcall RtlDeNormalizeProcessParams(ptr)
 @ stdcall RtlDeactivateActivationContext(long long)
-@ stdcall RtlDebugPrintTimes()
+@ stdcall RtlDebugPrintTimes() ntdll.RtlDebugPrintTimes
 @ stdcall RtlDecodePointer(ptr)
 @ stdcall RtlDecodeSystemPointer(ptr) 
 @ stdcall RtlDecompressBuffer(long ptr long ptr long ptr)
@@ -518,7 +518,7 @@
 @ stdcall RtlDumpResource(ptr)
 @ stdcall RtlDuplicateUnicodeString(long ptr ptr)
 @ stdcall RtlEmptyAtomTable(ptr long)
-@ stdcall RtlEnableEarlyCriticalSectionEventCreation()
+@ stdcall RtlEnableEarlyCriticalSectionEventCreation() ntdll.RtlEnableEarlyCriticalSectionEventCreation
 @ stdcall RtlEncodePointer(ptr) 
 @ stdcall RtlEncodeSystemPointer(ptr) 
 @ stdcall -arch=win32 -ret64 RtlEnlargedIntegerMultiply(long long)
@@ -606,7 +606,7 @@
 @ stdcall RtlGetSecurityDescriptorRMControl(ptr ptr)
 @ stdcall RtlGetSetBootStatusData(ptr long long ptr long long)
 @ stdcall RtlGetThreadErrorMode()
-@ stdcall RtlGetUnloadEventTrace()
+@ stdcall RtlGetUnloadEventTrace() ntdll.RtlGetUnloadEventTrace
 @ stdcall RtlGetUserInfoHeap(ptr long ptr ptr ptr)
 @ stdcall RtlGetVersion(ptr)
 @ stdcall RtlHashUnicodeString(ptr long long ptr)
@@ -623,7 +623,7 @@
 @ stdcall RtlInitString(ptr str)
 @ stdcall RtlInitUnicodeString(ptr wstr)
 @ stdcall RtlInitUnicodeStringEx(ptr wstr)
-@ stdcall RtlInitializeAtomPackage(long)
+@ stdcall RtlInitializeAtomPackage(long) ntdll.RtlInitializeAtomPackage
 @ stdcall RtlInitializeBitMap(ptr long long)
 @ stdcall RtlInitializeContext(ptr ptr ptr ptr ptr)
 @ stdcall RtlInitializeCriticalSection(ptr)
@@ -684,7 +684,7 @@
 @ stdcall RtlLocalTimeToSystemTime(ptr ptr)
 @ stdcall RtlLockBootStatusData(ptr)
 @ stdcall RtlLockHeap(long)
-@ stdcall RtlLogStackBackTrace()
+@ stdcall RtlLogStackBackTrace() ntdll.RtlLogStackBackTrace
 @ stdcall RtlLookupAtomInAtomTable(ptr wstr ptr)
 @ stdcall RtlLookupElementGenericTable(ptr ptr)
 @ stdcall RtlLookupElementGenericTableAvl(ptr ptr)
@@ -727,10 +727,10 @@
 @ stdcall RtlQueryInformationAcl(ptr ptr long long)
 @ stdcall RtlQueryInformationActivationContext(long long ptr long ptr long ptr)
 @ stdcall RtlQueryInformationActiveActivationContext(long ptr long ptr)
-@ stdcall RtlQueryProcessBackTraceInformation(ptr)
+@ stdcall RtlQueryProcessBackTraceInformation(ptr) ntdll.RtlQueryProcessBackTraceInformation
 @ stdcall RtlQueryProcessDebugInformation(long long ptr)
-@ stdcall RtlQueryProcessHeapInformation(ptr)
-@ stdcall RtlQueryProcessLockInformation(ptr)
+@ stdcall RtlQueryProcessHeapInformation(ptr) ntdll.RtlQueryProcessHeapInformation
+@ stdcall RtlQueryProcessLockInformation(ptr) ntdll.RtlQueryProcessLockInformation
 @ stdcall RtlQueryRegistryValues(long ptr ptr ptr ptr)
 @ stdcall RtlQuerySecurityObject(ptr long ptr long ptr)
 @ stdcall RtlQueryTagHeap(ptr long long long ptr)
@@ -785,8 +785,8 @@
 @ cdecl RtlSetThreadIsCritical(long ptr long)
 @ stdcall RtlSetThreadPoolStartFunc(ptr ptr)
 @ stdcall RtlSetTimeZoneInformation(ptr)
-@ stdcall RtlSetTimer(ptr ptr ptr ptr long long long)
-@ stdcall RtlSetUnicodeCallouts(long)
+@ stdcall RtlSetTimer(ptr ptr ptr ptr long long long) ntdll.RtlSetTimer
+@ stdcall RtlSetUnicodeCallouts(long) ntdll.RtlSetUnicodeCallouts
 @ stdcall RtlSetUserFlagsHeap(ptr long ptr long long)
 @ stdcall RtlSetUserValueHeap(ptr long ptr ptr)
 @ stdcall RtlSizeHeap(long long ptr)
@@ -803,16 +803,16 @@
 @ stdcall RtlTimeToSecondsSince1970(ptr ptr)
 @ stdcall RtlTimeToSecondsSince1980(ptr ptr)
 @ stdcall RtlTimeToTimeFields (long long)
-@ stdcall RtlTraceDatabaseAdd(ptr long ptr ptr)
-@ stdcall RtlTraceDatabaseCreate(long long long long ptr)
-@ stdcall RtlTraceDatabaseDestroy(ptr)
-@ stdcall RtlTraceDatabaseEnumerate(ptr ptr ptr)
-@ stdcall RtlTraceDatabaseFind(ptr long ptr ptr)
-@ stdcall RtlTraceDatabaseLock(ptr)
-@ stdcall RtlTraceDatabaseUnlock(ptr)
-@ stdcall RtlTraceDatabaseValidate(ptr)
+@ stdcall RtlTraceDatabaseAdd(ptr long ptr ptr) ntdll.RtlTraceDatabaseAdd
+@ stdcall RtlTraceDatabaseCreate(long long long long ptr) ntdll.RtlTraceDatabaseCreate
+@ stdcall RtlTraceDatabaseDestroy(ptr) ntdll.RtlTraceDatabaseDestroy
+@ stdcall RtlTraceDatabaseEnumerate(ptr ptr ptr) ntdll.RtlTraceDatabaseEnumerate
+@ stdcall RtlTraceDatabaseFind(ptr long ptr ptr) ntdll.RtlTraceDatabaseFind
+@ stdcall RtlTraceDatabaseLock(ptr) ntdll.RtlTraceDatabaseLock
+@ stdcall RtlTraceDatabaseUnlock(ptr) ntdll.RtlTraceDatabaseUnlock
+@ stdcall RtlTraceDatabaseValidate(ptr) ntdll.RtlTraceDatabaseValidate
 @ stdcall RtlTryEnterCriticalSection(ptr)
-@ stdcall RtlUnhandledExceptionFilter2(long long)
+@ stdcall RtlUnhandledExceptionFilter2(long long) ntdll.RtlUnhandledExceptionFilter2
 @ stdcall RtlUnhandledExceptionFilter(ptr)
 @ stdcall RtlUnicodeStringToAnsiSize(str) 
 @ stdcall RtlUnicodeStringToAnsiString(ptr ptr long)
@@ -858,7 +858,7 @@
 @ stdcall RtlZombifyActivationContext(ptr)
 @ stdcall RtlpApplyLengthFunction(long long ptr ptr)
 @ stdcall RtlpEnsureBufferSize(ptr ptr ptr) ; CHECKME
-@ stdcall RtlpNotOwnerCriticalSection(ptr)
+@ stdcall RtlpNotOwnerCriticalSection(ptr) ntdll.RtlpNotOwnerCriticalSection
 @ stdcall RtlpNtCreateKey(ptr long ptr long ptr ptr)
 @ stdcall RtlpNtEnumerateSubKey(ptr ptr long long)
 @ stdcall RtlpNtMakeTemporaryKey(ptr)

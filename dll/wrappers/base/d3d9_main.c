@@ -27,38 +27,18 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
 
+IDirect3D9 *ppD3D;
+IDirect3DDevice9 *ppDevice3D;
+
 static int D3DPERF_event_level = 0;
-
-void WINAPI DebugSetMute(void) {
-    /* nothing to do */
-}
-
-IDirect3D9 * WINAPI DECLSPEC_HOTPATCH Direct3DCreate9(UINT sdk_version)
-{
-    struct d3d9 *object;
-
-    TRACE("sdk_version %#x.\n", sdk_version);
-
-    if (!(object = heap_alloc_zero(sizeof(*object))))
-        return NULL;
-
-    if (!d3d9_init(object, FALSE))
-    {
-        WARN("Failed to initialize d3d9.\n");
-        heap_free(object);
-        return NULL;
-    }
-
-    TRACE("Created d3d9 object %p.\n", object);
-
-    return (IDirect3D9 *)&object->IDirect3D9Ex_iface;
-}
 
 HRESULT WINAPI DECLSPEC_HOTPATCH Direct3DCreate9Ex(UINT sdk_version, IDirect3D9Ex **d3d9ex)
 {
     struct d3d9 *object;
 
     TRACE("sdk_version %#x, d3d9ex %p.\n", sdk_version, d3d9ex);
+	
+	ppD3D = Direct3DCreate9(sdk_version);
 
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
@@ -74,82 +54,6 @@ HRESULT WINAPI DECLSPEC_HOTPATCH Direct3DCreate9Ex(UINT sdk_version, IDirect3D9E
     *d3d9ex = &object->IDirect3D9Ex_iface;
 
     return D3D_OK;
-}
-
-/*******************************************************************
- *       Direct3DShaderValidatorCreate9 (D3D9.@)
- *
- * No documentation available for this function.
- * SDK only says it is internal and shouldn't be used.
- */
-void* WINAPI Direct3DShaderValidatorCreate9(void)
-{
-    static int once;
-
-    if (!once++) FIXME("stub\n");
-    return NULL;
-}
-
-/***********************************************************************
- *              D3DPERF_BeginEvent (D3D9.@)
- */
-int WINAPI D3DPERF_BeginEvent(D3DCOLOR color, const WCHAR *name)
-{
-    TRACE("color 0x%08x, name %s.\n", color, debugstr_w(name));
-
-    return D3DPERF_event_level++;
-}
-
-/***********************************************************************
- *              D3DPERF_EndEvent (D3D9.@)
- */
-int WINAPI D3DPERF_EndEvent(void) {
-    TRACE("(void) : stub\n");
-
-    return --D3DPERF_event_level;
-}
-
-/***********************************************************************
- *              D3DPERF_GetStatus (D3D9.@)
- */
-DWORD WINAPI D3DPERF_GetStatus(void) {
-    FIXME("(void) : stub\n");
-
-    return 0;
-}
-
-/***********************************************************************
- *              D3DPERF_SetOptions (D3D9.@)
- *
- */
-void WINAPI D3DPERF_SetOptions(DWORD options)
-{
-  FIXME("(%#x) : stub\n", options);
-}
-
-/***********************************************************************
- *              D3DPERF_QueryRepeatFrame (D3D9.@)
- */
-BOOL WINAPI D3DPERF_QueryRepeatFrame(void) {
-    FIXME("(void) : stub\n");
-
-    return FALSE;
-}
-
-/***********************************************************************
- *              D3DPERF_SetMarker (D3D9.@)
- */
-void WINAPI D3DPERF_SetMarker(D3DCOLOR color, const WCHAR *name)
-{
-    FIXME("color 0x%08x, name %s stub!\n", color, debugstr_w(name));
-}
-
-/***********************************************************************
- *              D3DPERF_SetRegion (D3D9.@)
- */
-void WINAPI D3DPERF_SetRegion(D3DCOLOR color, const WCHAR *name)
-{
-    FIXME("color 0x%08x, name %s stub!\n", color, debugstr_w(name));
 }
 
 void d3d9_resource_cleanup(struct d3d9_resource *resource)
