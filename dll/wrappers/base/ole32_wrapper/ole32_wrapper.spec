@@ -1,10 +1,10 @@
-@ stdcall PropVariantChangeType(ptr ptr long long)
+@ stdcall PropVariantChangeType(ptr ptr long long) olebase.PropVariantChangeType
 @ stdcall BindMoniker(ptr long ptr ptr)
 @ stdcall CLIPFORMAT_UserFree(ptr ptr)
 @ stdcall CLIPFORMAT_UserMarshal(ptr ptr ptr)
 @ stdcall CLIPFORMAT_UserSize(ptr long ptr)
 @ stdcall CLIPFORMAT_UserUnmarshal(ptr ptr ptr)
-@ stdcall CLSIDFromOle1Class(wstr ptr ptr)
+@ stdcall CLSIDFromOle1Class(wstr ptr ptr) olebase.CLSIDFromOle1Class
 @ stdcall CLSIDFromProgID(wstr ptr)
 @ stdcall CLSIDFromProgIDEx(wstr ptr)
 @ stdcall CLSIDFromString(wstr ptr)
@@ -17,8 +17,8 @@
 @ stdcall CoCreateGuid(ptr)
 @ stdcall CoCreateInstance(ptr ptr long ptr ptr)
 @ stdcall CoCreateInstanceEx(ptr ptr long ptr long ptr)
-@ stdcall CoCreateObjectInContext(ptr ptr ptr ptr)
-@ stdcall CoDeactivateObject(long long)
+@ stdcall CoCreateObjectInContext(ptr ptr ptr ptr) olebase.CoCreateObjectInContext
+@ stdcall CoDeactivateObject(long long) olebase.CoDeactivateObject
 @ stdcall CoDisableCallCancellation(ptr)
 @ stdcall CoDisconnectObject(ptr long)
 @ stdcall CoDosDateTimeToFileTime(long long ptr) kernel32.DosDateTimeToFileTime
@@ -29,13 +29,13 @@
 @ stdcall CoFreeLibrary(long)
 @ stdcall CoFreeUnusedLibraries()
 @ stdcall CoFreeUnusedLibrariesEx(long long)
-@ stdcall CoGetApartmentID(long ptr)
+@ stdcall CoGetApartmentID(long ptr) olebase.CoGetApartmentID
 @ stdcall CoGetCallContext(ptr ptr)
 @ stdcall CoGetCallerTID(ptr)
 @ stdcall CoGetCancelObject(long ptr ptr)
 @ stdcall CoGetClassObject(ptr long ptr ptr ptr)
-@ stdcall CoGetClassVersion(ptr ptr ptr)
-@ stdcall CoGetComCatalog(long ptr)
+@ stdcall CoGetClassVersion(ptr ptr ptr) olebase.CoGetClassVersion
+@ stdcall CoGetComCatalog(long ptr) olebase.CoGetComCatalog
 @ stdcall CoGetContextToken(ptr)
 @ stdcall CoGetCurrentLogicalThreadId(ptr)
 @ stdcall CoGetCurrentProcess()
@@ -50,19 +50,19 @@
 @ stdcall CoGetObject(wstr ptr ptr ptr)
 @ stdcall CoGetObjectContext(ptr ptr)
 @ stdcall CoGetPSClsid(ptr ptr)
-@ stdcall CoGetProcessIdentifier(ptr)
+@ stdcall CoGetProcessIdentifier(ptr) olebase.CoGetProcessIdentifier
 @ stdcall CoGetStandardMarshal(ptr ptr long ptr long ptr)
 @ stdcall CoGetState(ptr)
 @ stdcall CoGetStdMarshalEx(ptr long ptr)
-@ stdcall CoGetSystemSecurityPermissions(long ptr)
+@ stdcall CoGetSystemSecurityPermissions(long ptr) olebase.CoGetSystemSecurityPermissions
 @ stdcall CoGetTreatAsClass(ptr ptr)
 @ stdcall CoImpersonateClient()
 @ stdcall CoInitialize(ptr)
 @ stdcall CoInitializeEx(ptr long)
 @ stdcall CoInitializeSecurity(ptr long ptr ptr long long ptr long ptr)
 @ stdcall CoInitializeWOW(long long)
-@ stdcall CoInstall(ptr long ptr ptr wstr)
-@ stdcall CoInvalidateRemoteMachineBindings(str)
+@ stdcall CoInstall(ptr long ptr ptr wstr) olebase.CoInstall
+@ stdcall CoInvalidateRemoteMachineBindings(str) olebase.CoInvalidateRemoteMachineBindings
 @ stdcall CoIsHandlerConnected(ptr)
 @ stdcall CoIsOle1Class (ptr)
 @ stdcall CoLoadLibrary(wstr long)
@@ -70,13 +70,13 @@
 @ stdcall CoMarshalHresult(ptr long)
 @ stdcall CoMarshalInterThreadInterfaceInStream(ptr ptr ptr)
 @ stdcall CoMarshalInterface(ptr ptr ptr long ptr long)
-@ stdcall CoPopServiceDomain(ptr)
-@ stdcall CoPushServiceDomain(ptr)
+@ stdcall CoPopServiceDomain(ptr) olebase.CoPopServiceDomain
+@ stdcall CoPushServiceDomain(ptr) olebase.CoPushServiceDomain
 @ stdcall CoQueryAuthenticationServices(ptr ptr)
 @ stdcall CoQueryClientBlanket(ptr ptr ptr ptr ptr ptr ptr)
 @ stdcall CoQueryProxyBlanket(ptr ptr ptr ptr ptr ptr ptr ptr)
 @ stdcall CoQueryReleaseObject(ptr)
-@ stdcall CoReactivateObject(long ptr)
+@ stdcall CoReactivateObject(long ptr) olebase.CoReactivateObject
 @ stdcall CoRegisterChannelHook(ptr ptr)
 @ stdcall CoRegisterClassObject(ptr ptr long long ptr)
 @ stdcall CoRegisterInitializeSpy(ptr ptr)
@@ -88,12 +88,12 @@
 @ stdcall CoReleaseMarshalData(ptr)
 @ stdcall CoReleaseServerProcess()
 @ stdcall CoResumeClassObjects()
-@ stdcall CoRetireServer(ptr)
+@ stdcall CoRetireServer(ptr) olebase.CoRetireServer
 @ stdcall CoRevertToSelf()
 @ stdcall CoRevokeClassObject(long)
 @ stdcall CoRevokeInitializeSpy(int64)
 @ stdcall CoRevokeMallocSpy()
-@ stdcall CoSetCancelObject(ptr)
+@ stdcall CoSetCancelObject(ptr) olebase.CoSetCancelObject
 @ stdcall CoSetProxyBlanket(ptr long long ptr long long ptr long)
 @ stdcall CoSetState(ptr)
 @ stdcall CoSuspendClassObjects()
@@ -101,17 +101,17 @@
 @ stdcall CoTaskMemAlloc(long)
 @ stdcall CoTaskMemFree(ptr)
 @ stdcall CoTaskMemRealloc(ptr long)
-@ stdcall CoTestCancel()
+@ stdcall CoTestCancel() olebase.CoTestCancel
 @ stdcall CoTreatAsClass(ptr ptr)
 @ stdcall CoUninitialize()
 @ stdcall CoUnloadingWOW(long)
 @ stdcall CoUnmarshalHresult(ptr ptr)
 @ stdcall CoUnmarshalInterface(ptr ptr ptr)
 @ stdcall CoWaitForMultipleHandles(long long long ptr ptr)
-@ stdcall ComPs_NdrDllCanUnloadNow(ptr)
-@ stdcall ComPs_NdrDllGetClassObject(long long ptr ptr ptr ptr)
-@ stdcall ComPs_NdrDllRegisterProxy(ptr ptr ptr ptr ptr)
-@ stdcall ComPs_NdrDllUnregisterProxy(ptr ptr ptr ptr ptr)
+@ stdcall ComPs_NdrDllCanUnloadNow(ptr) olebase.ComPs_NdrDllCanUnloadNow
+@ stdcall ComPs_NdrDllGetClassObject(long long ptr ptr ptr ptr) olebase.ComPs_NdrDllGetClassObject
+@ stdcall ComPs_NdrDllRegisterProxy(ptr ptr ptr ptr ptr) olebase.ComPs_NdrDllRegisterProxy
+@ stdcall ComPs_NdrDllUnregisterProxy(ptr ptr ptr ptr ptr) olebase.ComPs_NdrDllUnregisterProxy
 @ stdcall CreateAntiMoniker(ptr)
 @ stdcall CreateBindCtx(long ptr)
 @ stdcall CreateClassMoniker(ptr ptr)
@@ -125,9 +125,9 @@
 @ stdcall CreateObjrefMoniker(ptr ptr)
 @ stdcall CreateOleAdviseHolder(ptr)
 @ stdcall CreatePointerMoniker(ptr ptr)
-@ stdcall CreateStdProgressIndicator(ptr str ptr ptr)
+@ stdcall CreateStdProgressIndicator(ptr str ptr ptr) olebase.CreateStdProgressIndicator
 @ stdcall CreateStreamOnHGlobal(ptr long ptr)
-@ stdcall DcomChannelSetHResult(ptr ptr ptr)
+@ stdcall DcomChannelSetHResult(ptr ptr ptr) olebase.DcomChannelSetHResult
 @ stdcall DllDebugObjectRPCHook(long ptr)
 @ stdcall DllGetClassObject(ptr ptr ptr)
 @ stdcall DllGetClassObjectWOW(long ptr ptr)
@@ -192,7 +192,7 @@
 @ stdcall HWND_UserMarshal(ptr ptr ptr)
 @ stdcall HWND_UserSize(ptr long ptr)
 @ stdcall HWND_UserUnmarshal(ptr ptr ptr)
-@ stdcall  HkOleRegisterObject(ptr ptr ptr long)
+@ stdcall  HkOleRegisterObject(ptr ptr ptr long) olebase.HkOleRegisterObject
 @ stdcall IIDFromString(wstr ptr)
 @ stdcall IsAccelerator(long long ptr long)
 @ stdcall IsEqualGUID(ptr ptr)
@@ -298,9 +298,9 @@
 @ stdcall StgOpenPropStg(ptr ptr long long ptr)
 @ stdcall StgOpenStorage(wstr ptr long ptr long ptr)
 @ stdcall StgOpenStorageEx(wstr long long long ptr ptr ptr ptr)
-@ stdcall StgOpenStorageOnHandle(ptr long long long ptr ptr)
+@ stdcall StgOpenStorageOnHandle(ptr long long long ptr ptr) olebase.StgOpenStorageOnHandle
 @ stdcall StgOpenStorageOnILockBytes(ptr ptr long long long ptr)
-@ stdcall StgPropertyLengthAsVariant(ptr long long long)
+@ stdcall StgPropertyLengthAsVariant(ptr long long long) olebase.StgPropertyLengthAsVariant
 @ stdcall StgSetTimes(wstr ptr ptr ptr )
 @ stdcall StringFromCLSID(ptr ptr)
 @ stdcall StringFromGUID2(ptr ptr long)

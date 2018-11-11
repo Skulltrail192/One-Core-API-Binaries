@@ -136,22 +136,22 @@
 @ stdcall SetTcpEntry( ptr )
 @ stdcall SetTcpEntryToStack(ptr)
 @ stdcall UnenableRouter( ptr ptr )
-@ stdcall _PfAddFiltersToInterface@24(ptr long ptr long ptr ptr) 
-@ stdcall _PfAddGlobalFilterToInterface@8(ptr long) 
-@ stdcall _PfBindInterfaceToIPAddress@12(ptr ptr ptr) 
-@ stdcall _PfBindInterfaceToIndex@16(ptr long ptr ptr) 
-@ stdcall _PfCreateInterface@24(long long long long long ptr) 
-@ stdcall _PfDeleteInterface@4(ptr) 
-@ stdcall _PfDeleteLog@0() 
-@ stdcall _PfGetInterfaceStatistics@16(ptr ptr ptr long) 
-@ stdcall _PfMakeLog@4(ptr) 
-@ stdcall _PfRebindFilters@8(ptr ptr) 
-@ stdcall _PfRemoveFilterHandles@12(ptr long ptr) 
-@ stdcall _PfRemoveFiltersFromInterface@20(ptr long ptr long ptr) 
-@ stdcall _PfRemoveGlobalFilterFromInterface@8(ptr long) 
-@ stdcall _PfSetLogBuffer@28(ptr long long long ptr ptr ptr) 
-@ stdcall _PfTestPacket@20(ptr ptr long ptr ptr) 
-@ stdcall _PfUnBindInterface@4(ptr) 
+@ stdcall _PfAddFiltersToInterface@24(ptr long ptr long ptr ptr) iphlpapibase._PfAddFiltersToInterface@24
+@ stdcall _PfAddGlobalFilterToInterface@8(ptr long) iphlpapibase._PfAddGlobalFilterToInterface@8
+@ stdcall _PfBindInterfaceToIPAddress@12(ptr ptr ptr) iphlpapibase._PfBindInterfaceToIPAddress@12
+@ stdcall _PfBindInterfaceToIndex@16(ptr long ptr ptr) iphlpapibase._PfBindInterfaceToIndex@16
+@ stdcall _PfCreateInterface@24(long long long long long ptr) iphlpapibase._PfCreateInterface@24
+@ stdcall _PfDeleteInterface@4(ptr) iphlpapibase._PfDeleteInterface@4
+@ stdcall _PfDeleteLog@0() iphlpapibase._PfDeleteLog@0
+@ stdcall _PfGetInterfaceStatistics@16(ptr ptr ptr long) iphlpapibase._PfGetInterfaceStatistics@16
+@ stdcall _PfMakeLog@4(ptr) iphlpapibase._PfMakeLog@4
+@ stdcall _PfRebindFilters@8(ptr ptr) iphlpapibase._PfRebindFilters@8
+@ stdcall _PfRemoveFilterHandles@12(ptr long ptr) iphlpapibase._PfRemoveFilterHandles@12
+@ stdcall _PfRemoveFiltersFromInterface@20(ptr long ptr long ptr) iphlpapibase._PfRemoveFiltersFromInterface@20
+@ stdcall _PfRemoveGlobalFilterFromInterface@8(ptr long) iphlpapibase._PfRemoveGlobalFilterFromInterface@8
+@ stdcall _PfSetLogBuffer@28(ptr long long long ptr ptr ptr) iphlpapibase._PfSetLogBuffer@28
+@ stdcall _PfTestPacket@20(ptr ptr long ptr ptr) iphlpapibase._PfTestPacket@20
+@ stdcall _PfUnBindInterface@4(ptr) iphlpapibase._PfUnBindInterface@4
 @ stdcall do_echo_rep(long ptr long long long long long long ptr long)
 @ stdcall do_echo_req(ptr ptr ptr long ptr long long long ptr long)
 @ stdcall register_icmp()

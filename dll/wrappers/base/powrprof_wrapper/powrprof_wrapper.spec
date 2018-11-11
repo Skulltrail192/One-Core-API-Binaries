@@ -22,8 +22,8 @@
 @ stdcall WriteProcessorPwrScheme (long ptr)
 @ stdcall WritePwrScheme (ptr str str ptr)
 @ stdcall ValidatePowerPolicies (ptr ptr)
-@ stdcall LoadCurrentPwrScheme(ptr ptr str long)
-@ stdcall MergeLegacyPwrScheme(ptr ptr str long)
+@ stdcall LoadCurrentPwrScheme(ptr ptr str long) powrprofbase.LoadCurrentPwrScheme
+@ stdcall MergeLegacyPwrScheme(ptr ptr str long) powrprofbase.MergeLegacyPwrScheme
 @ stdcall PowerDeterminePlatformRole()
 @ stdcall PowerDeterminePlatformRoleEx(long)
 @ stdcall PowerEnumerate(long ptr ptr long long ptr ptr)

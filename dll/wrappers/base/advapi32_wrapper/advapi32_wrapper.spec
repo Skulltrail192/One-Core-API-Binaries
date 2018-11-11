@@ -123,7 +123,7 @@
 125 stdcall CredUnmarshalCredentialA(str ptr ptr)
 126 stdcall CredUnmarshalCredentialW(wstr ptr ptr)
 127 stdcall CredWriteA(ptr long)
-128 stdcall CredWriteDomainCredentialsA(ptr ptr long)
+128 stdcall CredWriteDomainCredentialsA(ptr ptr long) advapibase.CredWriteDomainCredentialsA
 129 stdcall CredWriteDomainCredentialsW(ptr ptr long)
 130 stdcall CredWriteW(ptr long)
 131 stdcall CredpConvertCredential(long long long ptr)

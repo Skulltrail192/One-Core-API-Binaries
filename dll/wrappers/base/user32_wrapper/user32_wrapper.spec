@@ -559,7 +559,7 @@
 @ stdcall RemovePropA(long str)
 @ stdcall RemovePropW(long wstr)
 @ stdcall ReplyMessage(long)
-@ stdcall ResolveDesktopForWOW(long) 
+@ stdcall ResolveDesktopForWOW(long) userbase.ResolveDesktopForWOW
 @ stdcall ReuseDDElParam(long long long long long)
 @ stdcall ScreenToClient(long ptr)
 @ stdcall ScrollChildren(long long long long)

@@ -1,4 +1,4 @@
-@ stdcall DllInstall(long wstr)
+@ stdcall DllInstall(long wstr) pdhbase.DllInstall
 1 stdcall PdhPlaGetLogFileNameA(str str ptr long ptr str)
 @ stdcall PdhAdd009CounterA(ptr str ptr ptr)
 @ stdcall PdhAdd009CounterW(ptr wstr ptr ptr)
@@ -162,7 +162,7 @@
 @ stdcall PdhiPlaRunAs(wstr wstr ptr)
 @ stdcall PdhiPlaSetRunAs(wstr ptr wstr wstr)
 @ stdcall PlaTimeInfoToMilliSeconds(ptr ptr)
-@ stdcall PdhPlaDowngradeW()
-@ stdcall PdhPlaUpgradeW()
-@ stdcall PdhiPlaDowngrade()
-@ stdcall PdhiPlaUpgrade()
+@ stdcall PdhPlaDowngradeW() pdhbase.PdhPlaDowngradeW
+@ stdcall PdhPlaUpgradeW() pdhbase.PdhPlaUpgradeW
+@ stdcall PdhiPlaDowngrade() pdhbase.PdhiPlaDowngrade
+@ stdcall PdhiPlaUpgrade() pdhbase.PdhiPlaUpgrade

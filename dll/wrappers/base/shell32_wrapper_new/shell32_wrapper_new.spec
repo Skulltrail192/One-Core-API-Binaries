@@ -226,7 +226,7 @@
 654 stdcall ReadCabinetState(long long)
 660 stdcall -noname FileIconInit(long)
 680 stdcall IsUserAnAdmin()
-681 stdcall -noname SHGetAppCompatFlags(long) 
+681 stdcall -noname SHGetAppCompatFlags(long) shlwapi.SHGetAppCompatFlags
 683 stdcall -noname SHStgOpenStorageW(wstr ptr long ptr long ptr)
 684 stdcall -noname SHStgOpenStorageA(str ptr long ptr long ptr)
 685 stdcall SHPropStgCreate(ptr ptr ptr long long long ptr ptr)
