@@ -346,7 +346,7 @@
 	csrsrv.dll, XPSP3\csrsrv.dll
 	csrss.exe, XPSP3\csrss.exe
 	gdibase.dll, XPSP3\gdibase.dll
-	kernelfull.dll, XPSP3\kernelfull.dll
+	kernelex.dll, XPSP3\kernelex.dll
 	lsasrv.dll, XPSP3\lsasrv.dll
 	smss.exe, XPSP3\smss.exe
 	userbase.dll, XPSP3\userbase.dll
@@ -362,7 +362,7 @@
 	csrsrv.dll, XPSP3\csrsrv.dll
 	csrss.exe, XPSP3\csrss.exe
 	gdibase.dll, XPSP3\gdibase.dll
-	kernelfull.dll, XPSP3\kernelfull.dll
+	kernelex.dll, XPSP3\kernelex.dll
 	lsasrv.dll, XPSP3\lsasrv.dll
 	smss.exe, XPSP3\smss.exe
 	userbase.dll, XPSP3\userbase.dll	
