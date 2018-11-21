@@ -16,6 +16,7 @@ list(APPEND SOURCE
 	display.c
 	dwm.c
 	icon.c
+	input.c
 	magnification
     main.c
 	misc.c

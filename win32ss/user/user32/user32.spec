@@ -771,3 +771,13 @@
 
 @ stub RegisterSessionPort
 @ stub UnregisterSessionPort
+@ stub EnableMouseInPointer
+@ stub GetCurrentInputMessageSource
+@ stub GetPointerDevices
+
+@ stub GetPhysicalCursorPos
+@ stub SetPhysicalCursorPos
+@ stub GetGestureConfig
+@ stub GetGestureInfo
+@ stub IsTouchWindow
+@ stub GetDpiForMonitorInternal

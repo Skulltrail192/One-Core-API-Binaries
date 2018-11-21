@@ -550,17 +550,21 @@ EvaluateProximityToRect(
 	return FALSE;
 }
 
-BOOL 
-WINAPI 
-WINAPI 
-GetPointerDevices(
-  _Inout_   UINT32              *deviceCount,
-  _Out_opt_ POINTER_DEVICE_INFO *pointerDevices
-)
+/**********************************************************************
+ * GetPointerDevices [USER32.@]
+ */
+BOOL WINAPI GetPointerDevices(UINT32 *device_count, POINTER_DEVICE_INFO *devices)
 {
-	DbgPrint("GetPointerDevices is UNIMPLEMENTED\n");	
-	*deviceCount = 0;
-	return TRUE;
+    FIXME("(%p %p): partial stub\n", device_count, devices);
+
+    if (!device_count)
+        return FALSE;
+
+    if (devices)
+        return FALSE;
+
+    *device_count = 0;
+    return TRUE;
 }
 
 BOOL 

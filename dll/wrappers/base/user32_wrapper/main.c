@@ -424,13 +424,6 @@ BOOL WINAPI SkipPointerFrameMessages(
 	return TRUE;
 }
 
-VOID WINAPI EnableMouseInPointer(
-  _In_  BOOL fEnable
-)
-{
-	;
-}
-
 BOOL WINAPI GetCIMSSM(INPUT_MESSAGE_SOURCE *inputMessageSource)
 {
   BOOL resp; // esi@5
