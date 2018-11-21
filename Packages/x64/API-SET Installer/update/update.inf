@@ -23,7 +23,7 @@ MachineType=64
     AppFileinUseDetect        = 3
 
 [Strings]
-APIS_FILE_VERSION       = "6.0.6000.16385"
+APIS_FILE_VERSION       = "6.0.6002.18002"
 APIS_VERSION             = "3.0.0.0"
 SP_TITLE                = "One-Core-API API-SETS"
 LANGTYPEVALUE           = 0x0
@@ -165,6 +165,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    API-MS-WIN-CORE-PROCESSTHREADS-L1-1-0.dll,amd64/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-0.dll
    API-MS-WIN-CORE-PROCESSTHREADS-L1-1-1.dll,amd64/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-1.dll
    API-MS-WIN-CORE-PROCESSTHREADS-L1-1-2.dll,amd64/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-2.dll
+   API-MS-WIN-CORE-PROCESSTHREADS-L1-1-3.dll,amd64/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-3.dll
    API-MS-WIN-CORE-PROCESSTOPOLOGY-OBSOLETE-L1-1-0.dll,amd64/API-MS-WIN-CORE-PROCESSTOPOLOGY-OBSOLETE-L1-1-0.dll
    API-MS-WIN-CORE-PROFILE-L1-1-0.dll,amd64/API-MS-WIN-CORE-PROFILE-L1-1-0.dll
    API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll,amd64/API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll
@@ -214,6 +215,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll,amd64/API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll
    API-MS-WIN-CORE-WINRT-ROPARAMETERIZEDIID-L1-1-0.dll,amd64/API-MS-WIN-CORE-WINRT-ROPARAMETERIZEDIID-L1-1-0.dll
    API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll,amd64/API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll
+   API-MS-WIN-CORE-WINRT-STRING-L1-1-1.dll,amd64/API-MS-WIN-CORE-WINRT-STRING-L1-1-1.dll
    API-MS-WIN-CORE-WOW64-L1-1-0.dll,amd64/API-MS-WIN-CORE-WOW64-L1-1-0.dll
    API-MS-WIN-CORE-WOW64-L1-1-1.dll,amd64/API-MS-WIN-CORE-WOW64-L1-1-1.dll
    API-MS-WIN-CORE-XSTATE-L1-1-0.dll,amd64/API-MS-WIN-CORE-XSTATE-L1-1-0.dll
@@ -260,6 +262,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    API-MS-WIN-SECURITY-ACTIVEDIRECTORYCLIENT-L1-1-0.dll,amd64/API-MS-WIN-SECURITY-ACTIVEDIRECTORYCLIENT-L1-1-0.dll
    API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll,amd64/API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll
    API-MS-WIN-NTUSER-RECTANGLE-L1-1-0.dll,amd64/API-MS-WIN-NTUSER-RECTANGLE-L1-1-0.dll
+   API-MS-WIN-NTUSER-SYSPARAMS-L1-1-0.dll,amd64/API-MS-WIN-NTUSER-SYSPARAMS-L1-1-0.dll
    API-MS-WIN-PERF-LEGACY-L1-1-0,amd64/API-MS-WIN-PERF-LEGACY-L1-1-0.dll
    API-MS-WIN-POWER-BASE-L1-1-0.dll,amd64/API-MS-WIN-POWER-BASE-L1-1-0.dll
    API-MS-WIN-POWER-SETTING-L1-1-0.dll,amd64/API-MS-WIN-POWER-SETTING-L1-1-0.dll
@@ -302,6 +305,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    ext-ms-win-appmodel-usercontext-l1-1-0.dll,amd64/ext-ms-win-appmodel-usercontext-l1-1-0.dll
    ext-ms-win-authz-context-l1-1-0.dll,amd64/ext-ms-win-authz-context-l1-1-0.dll
    ext-ms-win-domainjoin-netjoin-l1-1-0.dll,amd64/ext-ms-win-domainjoin-netjoin-l1-1-0.dll
+   ext-ms-win-dwmapi-ext-l1-1-0.dll,amd64/ext-ms-win-dwmapi-ext-l1-1-0.dll
    ext-ms-win-gdi-dc-create-l1-1-1.dll,amd64/ext-ms-win-gdi-dc-create-l1-1-1.dll
    ext-ms-win-gdi-dc-l1-2-0.dll,amd64/ext-ms-win-gdi-dc-l1-2-0.dll
    ext-ms-win-gdi-devcaps-l1-1-0.dll,amd64/ext-ms-win-gdi-devcaps-l1-1-0.dll
@@ -309,25 +313,36 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    ext-ms-win-gdi-render-l1-1-0.dll,amd64/ext-ms-win-gdi-render-l1-1-0.dll
    ext-ms-win-kernel32-package-current-l1-1-0.dll,amd64/ext-ms-win-kernel32-package-current-l1-1-0.dll
    ext-ms-win-kernel32-package-l1-1-1.dll,amd64/ext-ms-win-kernel32-package-l1-1-1.dll
+   ext-ms-win-ntuser-draw-l1-1-0.dll,amd64/ext-ms-win-ntuser-draw-l1-1-0.dll
+   ext-ms-win-ntuser-gui-l1-3-0.dll,amd64/ext-ms-win-ntuser-gui-l1-3-0.dll
+   ext-ms-win-ntuser-keyboard-l1-3-0.dll,amd64/ext-ms-win-ntuser-keyboard-l1-3-0.dll
    ext-ms-win-ntuser-message-l1-1-1.dll,amd64/ext-ms-win-ntuser-message-l1-1-1.dll
+   ext-ms-win-ntuser-misc-l1-5-1.dll,amd64/ext-ms-win-ntuser-misc-l1-5-1.dll
    ext-ms-win-ntuser-mouse-l1-1-0.dll,amd64/ext-ms-win-ntuser-mouse-l1-1-0.dll
    ext-ms-win-ntuser-private-l1-1-1.dll,amd64/ext-ms-win-ntuser-private-l1-1-1.dll
+   ext-ms-win-ntuser-private-l1-3-1.dll,amd64/ext-ms-win-ntuser-private-l1-3-1.dll
    ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll,amd64/ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll
    ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll,amd64/ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll
    ext-ms-win-ntuser-windowclass-l1-1-1.dll,amd64/ext-ms-win-ntuser-windowclass-l1-1-1.dll
    ext-ms-win-ras-rasapi32-l1-1-0.dll,amd64/ext-ms-win-ras-rasapi32-l1-1-0.dll
    ext-ms-win-ntuser-window-l1-1-1.dll,amd64/ext-ms-win-ntuser-window-l1-1-1.dll
+   ext-ms-win-ntuser-window-l1-1-4.dll,amd64/ext-ms-win-ntuser-window-l1-1-4.dll
+   ext-ms-win-oleacc-l1-1-0.dll,amd64/ext-ms-win-oleacc-l1-1-0.dll
+   ext-ms-win-rtcore-gdi-devcaps-l1-1-0.dll,amd64/ext-ms-win-rtcore-gdi-devcaps-l1-1-0.dll
    ext-ms-win-rtcore-gdi-object-l1-1-0.dll,amd64/ext-ms-win-rtcore-gdi-object-l1-1-0.dll
    ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll,amd64/ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll
+   ext-ms-win-rtcore-ntuser-cursor-l1-1-0.dll,amd64/ext-ms-win-rtcore-ntuser-cursor-l1-1-0.dll
    ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll,amd64/ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll
    ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll,amd64/ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll
+   ext-ms-win-rtcore-ntuser-dpi-l1-2-0.dll,amd64/ext-ms-win-rtcore-ntuser-dpi-l1-2-0.dll
+   ext-ms-win-rtcore-ntuser-rawinput-l1-1-0.dll,amd64/ext-ms-win-rtcore-ntuser-rawinput-l1-1-0.dll
    ext-ms-win-rtcore-ntuser-syscolors-l1-1-0.dll,amd64/ext-ms-win-rtcore-ntuser-syscolors-l1-1-0.dll
    ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll,amd64/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll
    ext-ms-win-security-credui-l1-1-0.dll,amd64/ext-ms-win-security-credui-l1-1-0.dll
    ext-ms-win-security-cryptui-l1-1-0.dll,amd64/ext-ms-win-security-cryptui-l1-1-0.dll
    ext-ms-win-uxtheme-themes-l1-1-0.dll,amd64/ext-ms-win-uxtheme-themes-l1-1-0.dll
    ext-ms-win-xaml-pal-l1-1-0.dll,amd64/ext-ms-win-xaml-pal-l1-1-0.dll
-   ucrtbase.dll,amd64/ucrtbase.dll
+   ucrtbase.dll,amd64/wucrtbase.dll
 
 [CopyAlways.SysWOW64.Files]
    API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll,i386/API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll
@@ -414,6 +429,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    API-MS-WIN-CORE-PROCESSTHREADS-L1-1-0.dll,i386/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-0.dll
    API-MS-WIN-CORE-PROCESSTHREADS-L1-1-1.dll,i386/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-1.dll
    API-MS-WIN-CORE-PROCESSTHREADS-L1-1-2.dll,i386/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-2.dll
+   API-MS-WIN-CORE-PROCESSTHREADS-L1-1-3.dll,i386/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-3.dll
    API-MS-WIN-CORE-PROCESSTOPOLOGY-OBSOLETE-L1-1-0.dll,i386/API-MS-WIN-CORE-PROCESSTOPOLOGY-OBSOLETE-L1-1-0.dll
    API-MS-WIN-CORE-PROFILE-L1-1-0.dll,i386/API-MS-WIN-CORE-PROFILE-L1-1-0.dll
    API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll,i386/API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll
@@ -463,6 +479,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll,i386/API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll
    API-MS-WIN-CORE-WINRT-ROPARAMETERIZEDIID-L1-1-0.dll,i386/API-MS-WIN-CORE-WINRT-ROPARAMETERIZEDIID-L1-1-0.dll
    API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll,i386/API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll
+   API-MS-WIN-CORE-WINRT-STRING-L1-1-1.dll,i386/API-MS-WIN-CORE-WINRT-STRING-L1-1-1.dll
    API-MS-WIN-CORE-WOW64-L1-1-0.dll,i386/API-MS-WIN-CORE-WOW64-L1-1-0.dll
    API-MS-WIN-CORE-WOW64-L1-1-1.dll,i386/API-MS-WIN-CORE-WOW64-L1-1-1.dll
    API-MS-WIN-CORE-XSTATE-L1-1-0.dll,i386/API-MS-WIN-CORE-XSTATE-L1-1-0.dll
@@ -509,6 +526,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    API-MS-WIN-SECURITY-ACTIVEDIRECTORYCLIENT-L1-1-0.dll,i386/API-MS-WIN-SECURITY-ACTIVEDIRECTORYCLIENT-L1-1-0.dll
    API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll,i386/API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll
    API-MS-WIN-NTUSER-RECTANGLE-L1-1-0.dll,i386/API-MS-WIN-NTUSER-RECTANGLE-L1-1-0.dll
+   API-MS-WIN-NTUSER-SYSPARAMS-L1-1-0.dll,i386/API-MS-WIN-NTUSER-SYSPARAMS-L1-1-0.dll
    API-MS-WIN-PERF-LEGACY-L1-1-0,i386/API-MS-WIN-PERF-LEGACY-L1-1-0.dll
    API-MS-WIN-POWER-BASE-L1-1-0.dll,i386/API-MS-WIN-POWER-BASE-L1-1-0.dll
    API-MS-WIN-POWER-SETTING-L1-1-0.dll,i386/API-MS-WIN-POWER-SETTING-L1-1-0.dll
@@ -551,6 +569,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    ext-ms-win-appmodel-usercontext-l1-1-0.dll,i386/ext-ms-win-appmodel-usercontext-l1-1-0.dll
    ext-ms-win-authz-context-l1-1-0.dll,i386/ext-ms-win-authz-context-l1-1-0.dll
    ext-ms-win-domainjoin-netjoin-l1-1-0.dll,i386/ext-ms-win-domainjoin-netjoin-l1-1-0.dll
+   ext-ms-win-dwmapi-ext-l1-1-0.dll,i386/ext-ms-win-dwmapi-ext-l1-1-0.dll
    ext-ms-win-gdi-dc-create-l1-1-1.dll,i386/ext-ms-win-gdi-dc-create-l1-1-1.dll
    ext-ms-win-gdi-dc-l1-2-0.dll,i386/ext-ms-win-gdi-dc-l1-2-0.dll
    ext-ms-win-gdi-devcaps-l1-1-0.dll,i386/ext-ms-win-gdi-devcaps-l1-1-0.dll
@@ -558,18 +577,29 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    ext-ms-win-gdi-render-l1-1-0.dll,i386/ext-ms-win-gdi-render-l1-1-0.dll
    ext-ms-win-kernel32-package-current-l1-1-0.dll,i386/ext-ms-win-kernel32-package-current-l1-1-0.dll
    ext-ms-win-kernel32-package-l1-1-1.dll,i386/ext-ms-win-kernel32-package-l1-1-1.dll
+   ext-ms-win-ntuser-draw-l1-1-0.dll,i386/ext-ms-win-ntuser-draw-l1-1-0.dll
+   ext-ms-win-ntuser-gui-l1-3-0.dll,i386/ext-ms-win-ntuser-gui-l1-3-0.dll
+   ext-ms-win-ntuser-keyboard-l1-3-0.dll,i386/ext-ms-win-ntuser-keyboard-l1-3-0.dll
    ext-ms-win-ntuser-message-l1-1-1.dll,i386/ext-ms-win-ntuser-message-l1-1-1.dll
+   ext-ms-win-ntuser-misc-l1-5-1.dll,i386/ext-ms-win-ntuser-misc-l1-5-1.dll
    ext-ms-win-ntuser-mouse-l1-1-0.dll,i386/ext-ms-win-ntuser-mouse-l1-1-0.dll
    ext-ms-win-ntuser-private-l1-1-1.dll,i386/ext-ms-win-ntuser-private-l1-1-1.dll
+   ext-ms-win-ntuser-private-l1-3-1.dll,i386/ext-ms-win-ntuser-private-l1-3-1.dll
    ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll,i386/ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll
    ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll,i386/ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll
    ext-ms-win-ntuser-windowclass-l1-1-1.dll,i386/ext-ms-win-ntuser-windowclass-l1-1-1.dll
    ext-ms-win-ras-rasapi32-l1-1-0.dll,i386/ext-ms-win-ras-rasapi32-l1-1-0.dll
    ext-ms-win-ntuser-window-l1-1-1.dll,i386/ext-ms-win-ntuser-window-l1-1-1.dll
+   ext-ms-win-ntuser-window-l1-1-4.dll,i386/ext-ms-win-ntuser-window-l1-1-4.dll
+   ext-ms-win-oleacc-l1-1-0.dll,i386/ext-ms-win-oleacc-l1-1-0.dll
+   ext-ms-win-rtcore-gdi-devcaps-l1-1-0.dll,i386/ext-ms-win-rtcore-gdi-devcaps-l1-1-0.dll
    ext-ms-win-rtcore-gdi-object-l1-1-0.dll,i386/ext-ms-win-rtcore-gdi-object-l1-1-0.dll
    ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll,i386/ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll
+   ext-ms-win-rtcore-ntuser-cursor-l1-1-0.dll,i386/ext-ms-win-rtcore-ntuser-cursor-l1-1-0.dll
    ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll,i386/ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll
    ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll,i386/ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll
+   ext-ms-win-rtcore-ntuser-dpi-l1-2-0.dll,i386/ext-ms-win-rtcore-ntuser-dpi-l1-2-0.dll
+   ext-ms-win-rtcore-ntuser-rawinput-l1-1-0.dll,i386/ext-ms-win-rtcore-ntuser-rawinput-l1-1-0.dll
    ext-ms-win-rtcore-ntuser-syscolors-l1-1-0.dll,i386/ext-ms-win-rtcore-ntuser-syscolors-l1-1-0.dll
    ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll,i386/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll
    ext-ms-win-security-credui-l1-1-0.dll,i386/ext-ms-win-security-credui-l1-1-0.dll
@@ -666,6 +696,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "amd64/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-1.dll" = 1
    "amd64/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-2.dll" = 1
+   "amd64/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-3.dll" = 1
    "amd64/API-MS-WIN-CORE-PROCESSTOPOLOGY-OBSOLETE-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-CORE-PROFILE-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll" = 1
@@ -714,6 +745,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "amd64/API-MS-WIN-CORE-WINRT-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll" = 1
+   "amd64/API-MS-WIN-CORE-WINRT-STRING-L1-1-1.dll" = 1
    "amd64/API-MS-WIN-CORE-WINRT-ROPARAMETERIZEDIID-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-CORE-WOW64-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-CORE-WOW64-L1-1-1.dll" = 1
@@ -760,6 +792,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "amd64/API-MS-WIN-MM-TIME-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-NTUSER-RECTANGLE-L1-1-0.dll" = 1
+   "amd64/API-MS-WIN-NTUSER-SYSPARAMS-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-PERF-LEGACY-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-POWER-BASE-L1-1-0.dll" = 1
    "amd64/API-MS-WIN-POWER-SETTING-L1-1-0.dll" = 1
@@ -803,6 +836,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "amd64/ext-ms-win-appmodel-usercontext-l1-1-0.dll" = 1
    "amd64/ext-ms-win-authz-context-l1-1-0.dll" = 1
    "amd64/ext-ms-win-domainjoin-netjoin-l1-1-0.dll" = 1
+   "amd64/ext-ms-win-dwmapi-ext-l1-1-0.dll" = 1
    "amd64/ext-ms-win-gdi-dc-create-l1-1-1.dll" = 1
    "amd64/ext-ms-win-gdi-dc-l1-2-0.dll" = 1
    "amd64/ext-ms-win-gdi-devcaps-l1-1-0.dll" = 1
@@ -810,18 +844,29 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "amd64/ext-ms-win-gdi-render-l1-1-0.dll" = 1
    "amd64/ext-ms-win-kernel32-package-current-l1-1-0.dll" = 1
    "amd64/ext-ms-win-kernel32-package-l1-1-1.dll" = 1
+   "amd64/ext-ms-win-ntuser-draw-l1-1-0.dll" = 1
+   "amd64/ext-ms-win-ntuser-gui-l1-3-0.dll" = 1
+   "amd64/ext-ms-win-ntuser-keyboard-l1-3-0.dll" = 1
    "amd64/ext-ms-win-ntuser-message-l1-1-1.dll" = 1
+   "amd64/ext-ms-win-ntuser-misc-l1-5-1.dll" = 1
    "amd64/ext-ms-win-ntuser-mouse-l1-1-0.dll" = 1
    "amd64/ext-ms-win-ntuser-private-l1-1-1.dll" = 1
+   "amd64/ext-ms-win-ntuser-private-l1-3-1.dll" = 1
    "amd64/ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll" = 1
    "amd64/ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll" = 1
    "amd64/ext-ms-win-ntuser-windowclass-l1-1-1.dll" = 1
    "amd64/ext-ms-win-ntuser-window-l1-1-1.dll" = 1
+   "amd64/ext-ms-win-ntuser-window-l1-1-4.dll" = 1
+   "amd64/ext-ms-win-oleacc-l1-1-0.dll" = 1
    "amd64/ext-ms-win-ras-rasapi32-l1-1-0.dll" = 1
+   "amd64/ext-ms-win-rtcore-gdi-devcaps-l1-1-0.dll" = 1
    "amd64/ext-ms-win-rtcore-gdi-object-l1-1-0.dll" = 1
    "amd64/ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll" = 1
+   "amd64/ext-ms-win-rtcore-ntuser-cursor-l1-1-0.dll" = 1
    "amd64/ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll" = 1
    "amd64/ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll" = 1
+   "amd64/ext-ms-win-rtcore-ntuser-dpi-l1-2-0.dll" = 1
+   "amd64/ext-ms-win-rtcore-ntuser-rawinput-l1-1-0.dll" = 1
    "amd64/ext-ms-win-rtcore-ntuser-syscolors-l1-1-0.dll" = 1
    "amd64/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll" = 1
    "amd64/ext-ms-win-security-credui-l1-1-0.dll" = 1
@@ -913,6 +958,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "i386/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-0.dll" = 1
    "i386/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-1.dll" = 1
    "i386/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-2.dll" = 1
+   "i386/API-MS-WIN-CORE-PROCESSTHREADS-L1-1-3.dll" = 1
    "i386/API-MS-WIN-CORE-PROCESSTOPOLOGY-OBSOLETE-L1-1-0.dll" = 1
    "i386/API-MS-WIN-CORE-PROFILE-L1-1-0.dll" = 1
    "i386/API-MS-WIN-CORE-PSAPI-ANSI-L1-1-0.dll" = 1
@@ -961,6 +1007,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "i386/API-MS-WIN-CORE-WINRT-L1-1-0.dll" = 1
    "i386/API-MS-WIN-CORE-WINRT-REGISTRATION-L1-1-0.dll" = 1
    "i386/API-MS-WIN-CORE-WINRT-STRING-L1-1-0.dll" = 1
+   "i386/API-MS-WIN-CORE-WINRT-STRING-L1-1-1.dll" = 1
    "i386/API-MS-WIN-CORE-WINRT-ROPARAMETERIZEDIID-L1-1-0.dll" = 1
    "i386/API-MS-WIN-CORE-WOW64-L1-1-0.dll" = 1
    "i386/API-MS-WIN-CORE-WOW64-L1-1-1.dll" = 1
@@ -1007,6 +1054,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "i386/API-MS-WIN-MM-TIME-L1-1-0.dll" = 1
    "i386/API-MS-WIN-NTUSER-DC-ACCESS-L1-1-0.dll" = 1
    "i386/API-MS-WIN-NTUSER-RECTANGLE-L1-1-0.dll" = 1
+   "i386/API-MS-WIN-NTUSER-SYSPARAMS-L1-1-0.dll" = 1
    "i386/API-MS-WIN-PERF-LEGACY-L1-1-0.dll" = 1
    "i386/API-MS-WIN-POWER-BASE-L1-1-0.dll" = 1
    "i386/API-MS-WIN-POWER-SETTING-L1-1-0.dll" = 1
@@ -1050,6 +1098,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "i386/ext-ms-win-appmodel-usercontext-l1-1-0.dll" = 1
    "i386/ext-ms-win-authz-context-l1-1-0.dll" = 1
    "i386/ext-ms-win-domainjoin-netjoin-l1-1-0.dll" = 1
+   "i386/ext-ms-win-dwmapi-ext-l1-1-0.dll" = 1
    "i386/ext-ms-win-gdi-dc-create-l1-1-1.dll" = 1
    "i386/ext-ms-win-gdi-dc-l1-2-0.dll" = 1
    "i386/ext-ms-win-gdi-devcaps-l1-1-0.dll" = 1
@@ -1057,25 +1106,36 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "i386/ext-ms-win-gdi-render-l1-1-0.dll" = 1
    "i386/ext-ms-win-kernel32-package-current-l1-1-0.dll" = 1
    "i386/ext-ms-win-kernel32-package-l1-1-1.dll" = 1
+   "i386/ext-ms-win-ntuser-draw-l1-1-0.dll" = 1
+   "i386/ext-ms-win-ntuser-gui-l1-3-0.dll" = 1
+   "i386/ext-ms-win-ntuser-keyboard-l1-3-0.dll" = 1
    "i386/ext-ms-win-ntuser-message-l1-1-1.dll" = 1
+   "i386/ext-ms-win-ntuser-misc-l1-5-1.dll" = 1
    "i386/ext-ms-win-ntuser-mouse-l1-1-0.dll" = 1
    "i386/ext-ms-win-ntuser-private-l1-1-1.dll" = 1
+   "i386/ext-ms-win-ntuser-private-l1-3-1.dll" = 1
    "i386/ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll" = 1
    "i386/ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll" = 1
    "i386/ext-ms-win-ntuser-windowclass-l1-1-1.dll" = 1
    "i386/ext-ms-win-ntuser-window-l1-1-1.dll" = 1
+   "i386/ext-ms-win-ntuser-window-l1-1-4.dll" = 1
+   "i386/ext-ms-win-oleacc-l1-1-0.dll" = 1
    "i386/ext-ms-win-ras-rasapi32-l1-1-0.dll" = 1
+   "i386/ext-ms-win-rtcore-gdi-devcaps-l1-1-0.dll" = 1
    "i386/ext-ms-win-rtcore-gdi-object-l1-1-0.dll" = 1
    "i386/ext-ms-win-rtcore-gdi-rgn-l1-1-0.dll" = 1
+   "i386/ext-ms-win-rtcore-ntuser-cursor-l1-1-0.dll" = 1
    "i386/ext-ms-win-rtcore-ntuser-dc-access-l1-1-0.dll" = 1
    "i386/ext-ms-win-rtcore-ntuser-dpi-l1-1-0.dll" = 1
+   "i386/ext-ms-win-rtcore-ntuser-dpi-l1-2-0.dll" = 1
+   "i386/ext-ms-win-rtcore-ntuser-rawinput-l1-1-0.dll" = 1
    "i386/ext-ms-win-rtcore-ntuser-syscolors-l1-1-0.dll" = 1
    "i386/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll" = 1
    "i386/ext-ms-win-security-credui-l1-1-0.dll" = 1
    "i386/ext-ms-win-security-cryptui-l1-1-0.dll" = 1
    "i386/ext-ms-win-uxtheme-themes-l1-1-0.dll" = 1
    "i386/ext-ms-win-xaml-pal-l1-1-0.dll" = 1
-   "i386/wucrtbase.dll" = 1
+   "i386/ucrtbase.dll" = 1
    
 [Save.Reg.For.Uninstall]
 
