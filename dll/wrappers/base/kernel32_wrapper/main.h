@@ -57,6 +57,7 @@ extern ULONG BaseDllTag;
 #include <wingdi.h>
 
 #include "datetime.h"
+#include <shlwapi.h>
 
 #define FIND_DATA_SIZE 0x4000
 #define BASESRV_SERVERDLL_INDEX 1
@@ -160,6 +161,8 @@ extern ULONG BaseDllTag;
 #define WER_FAULT_REPORTING_ALWAYS_SHOW_UI          16
 
 #define KEY_LENGTH 1024
+
+#define PATHCCH_MAX_CCH 0x8000
 
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 extern BOOL bIsFileApiAnsi;

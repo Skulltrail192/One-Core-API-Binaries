@@ -20,7 +20,7 @@ Revision History:
 
 #include <main.h>
 
-WINE_DEFAULT_DEBUG_CHANNEL(kernel32_wrapper);
+WINE_DEFAULT_DEBUG_CHANNEL(kernel32);
 
 DEP_SYSTEM_POLICY_TYPE WINAPI 
 GetSystemDEPPolicy(void)

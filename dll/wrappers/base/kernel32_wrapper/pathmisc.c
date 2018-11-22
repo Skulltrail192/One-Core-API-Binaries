@@ -22,6 +22,12 @@ Revision History:
 
 WINE_DEFAULT_DEBUG_CHANNEL(kernel32file);
 
+HMODULE hshlwapi;
+
+static LPWSTR (WINAPI *pPathCombineW)(LPWSTR ,LPCWSTR, LPCWSTR);
+
+static HRESULT (WINAPI *pPathCreateFromUrlW)(PCWSTR, PWSTR, DWORD, DWORD);
+
 #define FS_VOLUME_BUFFER_SIZE (MAX_PATH * sizeof(WCHAR) + sizeof(FILE_FS_VOLUME_INFORMATION))
 
 #define FS_ATTRIBUTE_BUFFER_SIZE (MAX_PATH * sizeof(WCHAR) + sizeof(FILE_FS_ATTRIBUTE_INFORMATION))
@@ -172,14 +178,22 @@ HRESULT WINAPI PathCchAddBackslashEx(WCHAR *path, SIZE_T size, WCHAR **endptr, S
 HRESULT WINAPI PathCchCombineEx(WCHAR *out, SIZE_T size, const WCHAR *path1, const WCHAR *path2, DWORD flags)
 {
     WCHAR result[MAX_PATH];
-
+	hshlwapi = GetModuleHandleA("shlwapi.dll");
+	
     FIXME("(%p, %lu, %s, %s, %x): semi-stub\n", out, size, wine_dbgstr_w(path1), wine_dbgstr_w(path2), flags);
 
     if (!out || !size) return E_INVALIDARG;
     if (flags) FIXME("Flags %x not supported\n", flags);
-
-    // if (!PathCombineW(result, path1, path2))
-        // return E_INVALIDARG;
+	
+	
+	pPathCombineW = (void *)GetProcAddress(hshlwapi, "PathCombineW");
+	if(pPathCombineW){
+		if(!pPathCombineW(result, path1, path2))
+			return E_INVALIDARG;
+	}else{
+		SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+		return FALSE;
+	}	
 
     if (strlenW(result) + 1 > size)
     {
@@ -189,4 +203,418 @@ HRESULT WINAPI PathCchCombineEx(WCHAR *out, SIZE_T size, const WCHAR *path1, con
 
     strcpyW(out, result);
     return S_OK;
+}
+
+/***********************************************************************
+ *          PathCchCombineEx (KERNELBASE.@)
+ */
+HRESULT WINAPI PathCchCombine(WCHAR *out, SIZE_T size, const WCHAR *path1, const WCHAR *path2){
+	return PathCchCombineEx(out, size, path1, path2, 0);
+}
+
+HRESULT WINAPI PathCchFindExtension(const WCHAR *path, SIZE_T size, const WCHAR **extension)
+{
+    const WCHAR *lastpoint = NULL;
+    SIZE_T counter = 0;
+
+    TRACE("%s %lu %p\n", wine_dbgstr_w(path), size, extension);
+
+    if (!path || !size || size > PATHCCH_MAX_CCH)
+    {
+        *extension = NULL;
+        return E_INVALIDARG;
+    }
+
+    while (*path)
+    {
+        if (*path == '\\' || *path == ' ')
+            lastpoint = NULL;
+        else if (*path == '.')
+            lastpoint = path;
+
+        path++;
+        counter++;
+        if (counter == size || counter == PATHCCH_MAX_CCH)
+        {
+            *extension = NULL;
+            return E_INVALIDARG;
+        }
+    }
+
+    *extension = lastpoint ? lastpoint : path;
+    return S_OK;
+} 
+
+HRESULT WINAPI PathCchAddExtension(WCHAR *path, SIZE_T size, const WCHAR *extension)
+{
+    const WCHAR *existing_extension, *next;
+    SIZE_T path_length, extension_length, dot_length;
+    BOOL has_dot;
+    HRESULT hr;
+
+    TRACE("%s %lu %s\n", wine_dbgstr_w(path), size, wine_dbgstr_w(extension));
+
+    if (!path || !size || size > PATHCCH_MAX_CCH || !extension) return E_INVALIDARG;
+
+    next = extension;
+    while (*next)
+    {
+        if ((*next == '.' && next > extension) || *next == ' ' || *next == '\\') return E_INVALIDARG;
+        next++;
+    }
+
+    has_dot = extension[0] == '.' ? TRUE : FALSE;
+
+    hr = PathCchFindExtension(path, size, &existing_extension);
+    if (FAILED(hr)) return hr;
+    if (*existing_extension) return S_FALSE;
+
+    //path_length = wcsnlen(path, size);
+    path_length = wcslen(path);
+    dot_length = has_dot ? 0 : 1;
+    extension_length = strlenW(extension);
+
+    if (path_length + dot_length + extension_length + 1 > size) return STRSAFE_E_INSUFFICIENT_BUFFER;
+
+    /* If extension is empty or only dot, return S_OK with path unchanged */
+    if (!extension[0] || (extension[0] == '.' && !extension[1])) return S_OK;
+
+    if (!has_dot)
+    {
+        path[path_length] = '.';
+        path_length++;
+    }
+
+    strcpyW(path + path_length, extension);
+    return S_OK;
+} 
+
+HRESULT WINAPI PathCchRemoveExtension(WCHAR *path, SIZE_T size)
+{
+    const WCHAR *extension;
+    WCHAR *next;
+    HRESULT hr;
+
+    TRACE("%s %lu\n", wine_dbgstr_w(path), size);
+
+    if (!path || !size || size > PATHCCH_MAX_CCH) return E_INVALIDARG;
+
+    hr = PathCchFindExtension(path, size, &extension);
+    if (FAILED(hr)) return hr;
+
+    next = path + (extension - path);
+    while (next - path < size && *next) *next++ = 0;
+
+    return next == extension ? S_FALSE : S_OK;
+}
+
+HRESULT WINAPI PathCchRenameExtension(WCHAR *path, SIZE_T size, const WCHAR *extension)
+{
+    HRESULT hr;
+
+    TRACE("%s %lu %s\n", wine_dbgstr_w(path), size, wine_dbgstr_w(extension));
+
+    hr = PathCchRemoveExtension(path, size);
+    if (FAILED(hr)) return hr;
+
+    hr = PathCchAddExtension(path, size, extension);
+    return FAILED(hr) ? hr : S_OK;
+}  
+
+/*************************************************************************
+ * StrCpyNW	[SHLWAPI.@]
+ *
+ * Copy a string to another string, up to a maximum number of characters.
+ *
+ * PARAMS
+ *  dst    [O] Destination string
+ *  src    [I] Source string
+ *  count  [I] Maximum number of chars to copy
+ *
+ * RETURNS
+ *  dst.
+ */
+LPWSTR WINAPI StrCpyNW(LPWSTR dst, LPCWSTR src, int count)
+{
+  LPWSTR d = dst;
+  LPCWSTR s = src;
+
+  TRACE("(%p,%s,%i)\n", dst, debugstr_w(src), count);
+
+  if (s)
+  {
+    while ((count > 1) && *s)
+    {
+      count--;
+      *d++ = *s++;
+    }
+  }
+  if (count) *d = 0;
+
+  return dst;
+}
+
+/*************************************************************************
+ * StrCpyW	[SHLWAPI.@]
+ *
+ * Copy a string to another string.
+ *
+ * PARAMS
+ *  lpszStr [O] Destination string
+ *  lpszSrc [I] Source string
+ *
+ * RETURNS
+ *  lpszStr.
+ */
+LPWSTR WINAPI StrCpyW(LPWSTR lpszStr, LPCWSTR lpszSrc)
+{
+  TRACE("(%p,%s)\n", lpszStr, debugstr_w(lpszSrc));
+
+  if (lpszStr && lpszSrc)
+    strcpyW(lpszStr, lpszSrc);
+  return lpszStr;
+}
+
+
+/*************************************************************************
+ *      UrlUnescapeW	[SHLWAPI.@]
+ *
+ * See UrlUnescapeA.
+ */
+HRESULT WINAPI UrlUnescapeW(
+	LPWSTR pszUrl,
+	LPWSTR pszUnescaped,
+	LPDWORD pcchUnescaped,
+	DWORD dwFlags)
+{
+    WCHAR *dst, next;
+    LPCWSTR src;
+    HRESULT ret;
+    DWORD needed;
+    BOOL stop_unescaping = FALSE;
+
+    TRACE("(%s, %p, %p, 0x%08x)\n", debugstr_w(pszUrl), pszUnescaped,
+	  pcchUnescaped, dwFlags);
+
+    if(!pszUrl) return E_INVALIDARG;
+
+    if(dwFlags & URL_UNESCAPE_INPLACE)
+        dst = pszUrl;
+    else
+    {
+        if (!pszUnescaped || !pcchUnescaped) return E_INVALIDARG;
+        dst = pszUnescaped;
+    }
+
+    for(src = pszUrl, needed = 0; *src; src++, needed++) {
+        if(dwFlags & URL_DONT_UNESCAPE_EXTRA_INFO &&
+           (*src == '#' || *src == '?')) {
+	    stop_unescaping = TRUE;
+	    next = *src;
+        } else if(*src == '%' && isxdigitW(*(src + 1)) && isxdigitW(*(src + 2))
+		  && stop_unescaping == FALSE) {
+	    INT ih;
+	    WCHAR buf[5] = {'0','x',0};
+	    memcpy(buf + 2, src + 1, 2*sizeof(WCHAR));
+	    buf[4] = 0;
+	    StrToIntExW(buf, STIF_SUPPORT_HEX, &ih);
+	    next = (WCHAR) ih;
+	    src += 2; /* Advance to end of escape */
+	} else
+	    next = *src;
+
+	if(dwFlags & URL_UNESCAPE_INPLACE || needed < *pcchUnescaped)
+	    *dst++ = next;
+    }
+
+    if(dwFlags & URL_UNESCAPE_INPLACE || needed < *pcchUnescaped) {
+        *dst = '\0';
+	ret = S_OK;
+    } else {
+        needed++; /* add one for the '\0' */
+	ret = E_POINTER;
+    }
+    if(!(dwFlags & URL_UNESCAPE_INPLACE))
+        *pcchUnescaped = needed;
+
+    if (ret == S_OK) {
+	TRACE("result %s\n", (dwFlags & URL_UNESCAPE_INPLACE) ?
+	      debugstr_w(pszUrl) : debugstr_w(pszUnescaped));
+    }
+
+    return ret;
+}
+
+/*************************************************************************
+ * PathCreateFromUrlW   [SHLWAPI.@]
+ *
+ * Create a path from a URL
+ *
+ * PARAMS
+ *  lpszUrl  [I] URL to convert into a path
+ *  lpszPath [O] Output buffer for the resulting Path
+ *  pcchPath [I] Length of lpszPath
+ *  dwFlags  [I] Flags controlling the conversion
+ *
+ * RETURNS
+ *  Success: S_OK. lpszPath contains the URL in path format,
+ *  Failure: An HRESULT error code such as E_INVALIDARG.
+ */
+HRESULT WINAPI PathCreateFromUrlW(LPCWSTR pszUrl, LPWSTR pszPath,
+                                  LPDWORD pcchPath, DWORD dwReserved)
+{
+    static const WCHAR file_colon[] = { 'f','i','l','e',':',0 };
+    static const WCHAR localhost[] = { 'l','o','c','a','l','h','o','s','t',0 };
+    DWORD nslashes, unescape, len;
+    const WCHAR *src;
+    WCHAR *tpath, *dst;
+    HRESULT ret;
+
+    TRACE("(%s,%p,%p,0x%08x)\n", debugstr_w(pszUrl), pszPath, pcchPath, dwReserved);
+
+    if (!pszUrl || !pszPath || !pcchPath || !*pcchPath)
+        return E_INVALIDARG;
+
+    if (lstrlenW(pszUrl) < 5)
+        return E_INVALIDARG;
+
+    if (CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, pszUrl, 5,
+                       file_colon, 5) != CSTR_EQUAL)
+        return E_INVALIDARG;
+    pszUrl += 5;
+    ret = S_OK;
+
+    src = pszUrl;
+    nslashes = 0;
+    while (*src == '/' || *src == '\\') {
+        nslashes++;
+        src++;
+    }
+
+    /* We need a temporary buffer so we can compute what size to ask for.
+     * We know that the final string won't be longer than the current pszUrl
+     * plus at most two backslashes. All the other transformations make it
+     * shorter.
+     */
+    len = 2 + lstrlenW(pszUrl) + 1;
+    if (*pcchPath < len)
+        tpath = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR));
+    else
+        tpath = pszPath;
+
+    len = 0;
+    dst = tpath;
+    unescape = 1;
+    switch (nslashes)
+    {
+    case 0:
+        /* 'file:' + escaped DOS path */
+        break;
+    case 1:
+        /* 'file:/' + escaped DOS path */
+        /* fall through */
+    case 3:
+        /* 'file:///' (implied localhost) + escaped DOS path */
+        if (!isalphaW(*src) || (src[1] != ':' && src[1] != '|'))
+            src -= 1;
+        break;
+    case 2:
+        if (lstrlenW(src) >= 10 && CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE,
+            src, 9, localhost, 9) == CSTR_EQUAL && (src[9] == '/' || src[9] == '\\'))
+        {
+            /* 'file://localhost/' + escaped DOS path */
+            src += 10;
+        }
+        else if (isalphaW(*src) && (src[1] == ':' || src[1] == '|'))
+        {
+            /* 'file://' + unescaped DOS path */
+            unescape = 0;
+        }
+        else
+        {
+            /*    'file://hostname:port/path' (where path is escaped)
+             * or 'file:' + escaped UNC path (\\server\share\path)
+             * The second form is clearly specific to Windows and it might
+             * even be doing a network lookup to try to figure it out.
+             */
+            while (*src && *src != '/' && *src != '\\')
+                src++;
+            len = src - pszUrl;
+            StrCpyNW(dst, pszUrl, len + 1);
+            dst += len;
+            if (*src && isalphaW(src[1]) && (src[2] == ':' || src[2] == '|'))
+            {
+                /* 'Forget' to add a trailing '/', just like Windows */
+                src++;
+            }
+        }
+        break;
+    case 4:
+        /* 'file://' + unescaped UNC path (\\server\share\path) */
+        unescape = 0;
+        if (isalphaW(*src) && (src[1] == ':' || src[1] == '|'))
+            break;
+        /* fall through */
+    default:
+        /* 'file:/...' + escaped UNC path (\\server\share\path) */
+        src -= 2;
+    }
+
+    /* Copy the remainder of the path */
+    len += lstrlenW(src);
+    StrCpyW(dst, src);
+
+     /* First do the Windows-specific path conversions */
+    for (dst = tpath; *dst; dst++)
+        if (*dst == '/') *dst = '\\';
+    if (isalphaW(*tpath) && tpath[1] == '|')
+        tpath[1] = ':'; /* c| -> c: */
+
+    /* And only then unescape the path (i.e. escaped slashes are left as is) */
+    if (unescape)
+    {
+        ret = UrlUnescapeW(tpath, NULL, &len, URL_UNESCAPE_INPLACE);
+        if (ret == S_OK)
+        {
+            /* When working in-place UrlUnescapeW() does not set len */
+            len = lstrlenW(tpath);
+        }
+    }
+
+    if (*pcchPath < len + 1)
+    {
+        ret = E_POINTER;
+        *pcchPath = len + 1;
+    }
+    else
+    {
+        *pcchPath = len;
+        if (tpath != pszPath)
+            StrCpyW(pszPath, tpath);
+    }
+    if (tpath != pszPath)
+      HeapFree(GetProcessHeap(), 0, tpath);
+
+    TRACE("Returning (%u) %s\n", *pcchPath, debugstr_w(pszPath));
+    return ret;
+}
+
+/*************************************************************************
+ * PathCreateFromUrlAlloc   [SHLWAPI.@]
+ */
+HRESULT WINAPI PathCreateFromUrlAlloc(LPCWSTR pszUrl, LPWSTR *pszPath,
+                                      DWORD dwReserved)
+{
+    WCHAR pathW[MAX_PATH];
+    DWORD size;
+    HRESULT hr;
+
+    size = MAX_PATH;
+    hr = PathCreateFromUrlW(pszUrl, pathW, &size, dwReserved);
+    if (SUCCEEDED(hr))
+    {
+        /* Yes, this is supposed to crash if pszPath is NULL */
+        *pszPath = StrDupW(pathW);
+    }
+    return hr;
 }

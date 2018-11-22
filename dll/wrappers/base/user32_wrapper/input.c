@@ -24,7 +24,7 @@
  */
 BOOL WINAPI EnableMouseInPointer(BOOL enable)
 {
-    FIXME("(%#x) stub\n", enable);
+    DbgPrint("EnableMouseInPointer stub\n", enable);
 
     SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
     return FALSE;

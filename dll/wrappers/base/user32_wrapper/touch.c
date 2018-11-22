@@ -555,7 +555,7 @@ EvaluateProximityToRect(
  */
 BOOL WINAPI GetPointerDevices(UINT32 *device_count, POINTER_DEVICE_INFO *devices)
 {
-    FIXME("(%p %p): partial stub\n", device_count, devices);
+    DbgPrint("GetPointerDevices (%p %p): partial stub\n", device_count, devices);
 
     if (!device_count)
         return FALSE;

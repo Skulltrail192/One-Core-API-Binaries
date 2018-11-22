@@ -20,7 +20,7 @@ Revision History:
 
 #include "main.h"
 
-WINE_DEFAULT_DEBUG_CHANNEL(kernel32namedpipe);
+WINE_DEFAULT_DEBUG_CHANNEL(kernel32);
 
 BOOL 
 WINAPI 

@@ -1,6 +1,22 @@
-/*
- * ntdll.dll Event Tracing Functions
- */
+/*++
+
+Copyright (c) 2018 Shorthorn Project
+
+Module Name:
+
+    trace.c
+
+Abstract:
+
+    Event Tracing Functions in NTDLL.
+
+Author:
+
+    Skulltrail 21-November-2018
+
+Revision History:
+
+--*/ 
  
 #include <main.h> 
 #include <wmistr.h>

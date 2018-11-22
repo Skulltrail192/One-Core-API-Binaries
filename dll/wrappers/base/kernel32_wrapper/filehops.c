@@ -98,12 +98,6 @@ WINE_DEFAULT_DEBUG_CHANNEL(filehops);
 #define     WNNC_CRED_MANAGER   0xFFFF0000
 
 //
-// Network type aliases
-//
-
-#define     WNNC_NET_LANMAN      WNNC_NET_SMB
-
-//
 // Protocol generic flags for version 1 and higher
 //
 
