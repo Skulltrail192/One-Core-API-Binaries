@@ -910,3 +910,12 @@ HRESULT WINAPI GetThreadDescription( HANDLE handle, WCHAR **descW )
 	
     return THREADDESC_SUCCESS;
 }
+
+/***********************************************************************
+ *		GetCurrentThreadStackLimits (KERNEL32.@)
+ */
+void WINAPI GetCurrentThreadStackLimits(ULONG_PTR *low, ULONG_PTR *high)
+{
+    *low = (ULONG_PTR)NtCurrentTeb()->DeallocationStack;
+    *high = (ULONG_PTR)NtCurrentTeb()->NtTib.StackBase;
+}

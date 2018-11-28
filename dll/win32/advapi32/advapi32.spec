@@ -756,3 +756,10 @@
 @ stub EventAccessRemove
 @ stub EnableTraceEx
 @ stub LsaLookupSids2
+@ stub PerfCreateInstance
+@ stub PerfDeleteInstance
+@ stub PerfSetCounterRefValue
+@ stub PerfSetCounterSetInfo
+@ stub PerfStartProvider
+@ stub PerfStartProviderEx
+@ stub PerfStopProvider
