@@ -26,9 +26,20 @@
 #include <ft2build.h>
 #include <freetype.h>
 #include <unicode.h>
+#include <tttables.h>
+
+WINE_DEFAULT_DEBUG_CHANNEL(gdi);
 
 #define FIRST_FONT_HANDLE 1
 #define MAX_FONT_HANDLES  256
+
+#define MS_MAKE_TAG( _x1, _x2, _x3, _x4 ) \
+          ( ( (FT_ULong)_x4 << 24 ) |     \
+            ( (FT_ULong)_x3 << 16 ) |     \
+            ( (FT_ULong)_x2 <<  8 ) |     \
+			  (FT_ULong)_x1 )
+
+#define MS_TTCF_TAG MS_MAKE_TAG('t', 't', 'c', 'f')
 
 typedef struct {
     GLYPHMETRICS gm;
@@ -174,4 +185,72 @@ GetFontRealizationInfo(HDC hdc, struct font_realization_info *info)
     ret = dev->funcs->pGetFontRealizationInfo( dev, info );
     release_dc_ptr(dc);
     return ret;
+}
+
+static DWORD get_font_data( GdiFont *font, DWORD table, DWORD offset, LPVOID buf, DWORD cbData)
+{
+    FT_Face ft_face = font->ft_face;
+    FT_ULong len;
+    FT_Error err;
+
+    if (!FT_IS_SFNT(ft_face)) return GDI_ERROR;
+
+    if(!buf)
+        len = 0;
+    else
+        len = cbData;
+
+    /* if font is a member of TTC, 'ttcf' tag allows reading from beginning of TTC file,
+       0 tag means to read from start of collection member data. */
+    if (font->ttc_item_offset)
+    {
+        if (table == MS_TTCF_TAG)
+            table = 0;
+        else if (table == 0)
+            offset += font->ttc_item_offset;
+    }
+
+    table = RtlUlongByteSwap( table );  /* MS tags differ in endianness from FT ones */
+
+    /* make sure value of len is the value freetype says it needs */
+    if (buf && len)
+    {
+        FT_ULong needed = 0;
+        err = FT_Load_Sfnt_Table(ft_face, table, offset, NULL, &needed);
+        if( !err && needed < len) len = needed;
+    }
+    err = FT_Load_Sfnt_Table(ft_face, table, offset, buf, &len);
+    if (err)
+    {
+        table = RtlUlongByteSwap( table );
+        TRACE("Can't find table %s\n", debugstr_an((char*)&table, 4));
+	return GDI_ERROR;
+    }
+    return len;
+}
+
+/*************************************************************************
+ *             GetFontFileData   (GDI32.@)
+ */
+BOOL WINAPI GetFontFileData( DWORD instance_id, DWORD unknown, UINT64 offset, void *buff, DWORD buff_size )
+{
+    struct font_handle_entry *entry = handle_entry( instance_id );
+    DWORD tag = 0, size;
+    GdiFont *font;
+    if (!entry)
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+    font = entry->obj;
+    if (font->ttc_item_offset)
+        tag = MS_TTCF_TAG;
+    size = get_font_data( font, tag, 0, NULL, 0 );
+    if (size < buff_size || offset > size - buff_size)
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+    /* For now this only works for SFNT case. */
+    return get_font_data( font, tag, offset, buff, buff_size ) != 0;
 }

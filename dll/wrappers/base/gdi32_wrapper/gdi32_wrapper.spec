@@ -608,15 +608,16 @@
 @ stdcall cGetTTFFromFOT(long long long long long long long)
 @ stdcall gdiPlaySpoolStream(long long long long long long)
 
-#missing functions
-@ stdcall GetFontFileInfo(long long ptr long long)
-@ stdcall GetFontRealizationInfo(long ptr)
-@ stdcall GdiGetBitmapBitsSize(ptr) #please, be careful with this function!
-
-#vista functions
+#Vista functions
 @ stdcall D3DKMTCloseAdapter(ptr)
 @ stdcall D3DKMTCreateDCFromMemory(ptr)
 @ stdcall D3DKMTDestroyDCFromMemory(ptr)
 @ stdcall D3DKMTCheckMonitorPowerState(ptr)
 @ stdcall D3DKMTOpenAdapterFromHdc(ptr)
 @ stdcall D3DKMTEscape(ptr)
+@ stdcall GetFontFileData(long long int64 ptr long)
+
+#Win7 functions
+@ stdcall GetFontFileInfo(long long ptr long long)
+@ stdcall GetFontRealizationInfo(long ptr)
+@ stdcall GdiGetBitmapBitsSize(ptr) #please, be careful with this function!
