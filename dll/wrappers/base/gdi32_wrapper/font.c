@@ -132,15 +132,7 @@ static inline struct font_handle_entry *handle_entry( DWORD handle )
 /*************************************************************************
  *             GetFontFileInfo   (GDI32.@)
  */
-BOOL 
-WINAPI 
-GetFontFileInfo( 
-	DWORD instance_id,
-	DWORD unknown, 
-	struct font_fileinfo *info, 
-	DWORD size, 
-	DWORD *needed 
-)
+BOOL WINAPI GetFontFileInfo( DWORD instance_id, DWORD unknown, struct font_fileinfo *info, DWORD size, DWORD *needed )
 {
     struct font_handle_entry *entry = handle_entry( instance_id );
     const GdiFont *font;

@@ -616,6 +616,8 @@
 @ stdcall D3DKMTOpenAdapterFromHdc(ptr)
 @ stdcall D3DKMTEscape(ptr)
 @ stdcall GetFontFileData(long long int64 ptr long)
+@ stub LoadImageColorMatcherA
+@ stub LoadImageColorMatcherW 
 
 #Win7 functions
 @ stdcall GetFontFileInfo(long long ptr long long)
