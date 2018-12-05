@@ -2771,7 +2771,6 @@ Signature                 = "$Windows NT$"
 	"UIAutomationCore.dll"
 	"UIRibbon.dll"
 	"UIRibbonRes.dll"
-	"version.dll"
 	"wdi.dll"
 	"wer.dll"
 	"wevtapi.dll"
@@ -2848,7 +2847,6 @@ Signature                 = "$Windows NT$"
 	"UIAutomationCore.dll" = 1
 	"UIRibbon.dll" = 1
 	"UIRibbonRes.dll" = 1
-	"version.dll" = 1
 	"wdi.dll" = 1
 	"wer.dll" = 1
 	"wevtapi.dll" = 1	

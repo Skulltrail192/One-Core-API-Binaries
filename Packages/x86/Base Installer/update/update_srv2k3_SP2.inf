@@ -532,6 +532,7 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
     shell32.dll
     user32.dll
     uxtheme.dll
+	version.dll	
 	wevtold.dll	
     winbrand.dll	
     winsta.dll	
@@ -590,6 +591,7 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
     shell32.dll = 1
     user32.dll = 1
     uxtheme.dll = 1
+	version.dll = 1	
 	wevtold.dll = 1	
     winbrand.dll = 1	
     winsta.dll = 1	
@@ -605,6 +607,7 @@ HKLM, Software\Microsoft\Windows\CurrentVersion\Explorer\KindMap, .vbx, 0, "prog
 	WinSxS\manifests\x86_Microsoft.Windows.GdiPlus_6595b64144ccf1df_1.0.6002.24102_x-ww_22f03396.manifest =1
 	WinSxS\Polices\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24102.cat =1
 	WinSxS\Polices\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24102.policy =1	
+	
 [Strings]
 	MSFT_Prefix                 = "MicrosoftOneCoreAPIBase"
 	MSFT_Namespace              = "http://ns.microsoft.com/photo/1.0"

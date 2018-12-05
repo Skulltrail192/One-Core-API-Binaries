@@ -534,6 +534,7 @@
     shell32.dll
     user32.dll
     uxtheme.dll
+	version.dll	
 	wevtold.dll
     winbrand.dll	
     winsta.dll	
@@ -594,6 +595,7 @@
     setupapi.dll = 1
     shell32.dll = 1
     user32.dll = 1
+	version.dll = 1		
     uxtheme.dll = 1
 	wevtold.dll = 1
     winbrand.dll = 1	
