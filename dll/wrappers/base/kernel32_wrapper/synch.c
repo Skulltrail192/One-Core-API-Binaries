@@ -670,3 +670,23 @@ DeleteSynchronizationBarrier(
 
 	return TRUE;
 }
+
+BOOL WaitOnAddress(
+  volatile VOID *Address,
+  PVOID         CompareAddress,
+  SIZE_T        AddressSize,
+  DWORD         dwMilliseconds
+)
+{
+  LARGE_INTEGER timeout; 
+  NTSTATUS status; 
+  BOOL result;
+
+  BaseFormatTimeOut(&timeout, dwMilliseconds);
+  status = RtlWaitOnAddress(Address, CompareAddress, AddressSize, &timeout);
+  BaseSetLastNTError(status);
+  result = FALSE;
+  if ( status >= 0 )
+    result = status != 0x102;
+  return result;
+}

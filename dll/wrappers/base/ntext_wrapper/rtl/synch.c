@@ -105,12 +105,21 @@ RtlAcquireSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock);
 /* GLOBALS *******************************************************************/
 
 extern HANDLE GlobalKeyedEventHandle;
+static HANDLE WaitOnAddressKeyedEventHandle;
+static RTL_RUN_ONCE init_once_woa = RTL_RUN_ONCE_INIT; 
 
 VOID
 RtlpInitializeKeyedEvent(VOID)
 {
     ASSERT(GlobalKeyedEventHandle == NULL);
     NtCreateKeyedEvent(&GlobalKeyedEventHandle, EVENT_ALL_ACCESS, NULL, 0);
+}
+
+static DWORD WINAPI
+RtlpInitializeWaitOnAddressKeyedEvent( RTL_RUN_ONCE *once, void *param, void **context )
+{
+    NtCreateKeyedEvent(&WaitOnAddressKeyedEventHandle, GENERIC_READ|GENERIC_WRITE, NULL, 0);
+	return TRUE; 
 }
 
 VOID
@@ -120,6 +129,63 @@ RtlpCloseKeyedEvent(VOID)
     NtClose(GlobalKeyedEventHandle);
     GlobalKeyedEventHandle = NULL;
 }
+
+/***********************************************************************
+ *           RtlWaitOnAddress   (NTDLL.@)
+ */
+NTSTATUS WINAPI RtlWaitOnAddress( const void *addr, const void *cmp, SIZE_T size,
+                                  const LARGE_INTEGER *timeout )
+{
+    switch (size)
+    {
+        case 1:
+            if (*(const UCHAR *)addr != *(const UCHAR *)cmp)
+                return STATUS_SUCCESS;
+            break;
+        case 2:
+            if (*(const USHORT *)addr != *(const USHORT *)cmp)
+                return STATUS_SUCCESS;
+            break;
+        case 4:
+            if (*(const ULONG *)addr != *(const ULONG *)cmp)
+                return STATUS_SUCCESS;
+            break;
+        case 8:
+            if (*(const ULONG64 *)addr != *(const ULONG64 *)cmp)
+                return STATUS_SUCCESS;
+            break;
+        default:
+            return STATUS_INVALID_PARAMETER;
+    }
+
+    RtlRunOnceExecuteOnce( &init_once_woa, 
+						RtlpInitializeWaitOnAddressKeyedEvent, NULL, NULL );
+    return NtWaitForKeyedEvent( WaitOnAddressKeyedEventHandle, addr, 0, timeout );
+}
+
+/***********************************************************************
+ *           RtlWakeAddressAll    (NTDLL.@)
+ */
+void WINAPI RtlWakeAddressAll( const void *addr )
+{
+    LARGE_INTEGER now;
+
+    RtlRunOnceExecuteOnce( &init_once_woa, RtlpInitializeWaitOnAddressKeyedEvent, NULL, NULL );
+    NtQuerySystemTime( &now );
+    while (NtReleaseKeyedEvent( WaitOnAddressKeyedEventHandle, addr, 0, &now ) == STATUS_SUCCESS) {}
+}
+
+/***********************************************************************
+ *           RtlWakeAddressSingle (NTDLL.@)
+ */
+void WINAPI RtlWakeAddressSingle( const void *addr )
+{
+    LARGE_INTEGER now;
+
+    RtlRunOnceExecuteOnce( &init_once_woa, RtlpInitializeWaitOnAddressKeyedEvent, NULL, NULL );
+    NtQuerySystemTime( &now );
+    NtReleaseKeyedEvent( WaitOnAddressKeyedEventHandle, addr, 0, &now );
+}  
 
 /******************************************************************
  *              RtlRunOnceBeginInitialize (NTDLL.@)

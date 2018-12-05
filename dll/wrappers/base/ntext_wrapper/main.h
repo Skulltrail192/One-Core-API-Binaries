@@ -1068,3 +1068,11 @@ NtAccessCheckByTypeAndAuditAlarm(
     _Out_ PACCESS_MASK GrantedAccess,
     _Out_ PNTSTATUS AccessStatus,
     _Out_ PBOOLEAN GenerateOnClose);
+	
+DWORD 
+NTAPI 
+RtlRunOnceExecuteOnce( 
+	RTL_RUN_ONCE *once, 
+	PRTL_RUN_ONCE_INIT_FN func,
+    void *param, void **context 
+);	

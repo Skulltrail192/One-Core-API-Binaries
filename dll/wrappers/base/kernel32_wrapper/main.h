@@ -1425,3 +1425,10 @@ GetNumaAvailableMemoryNode(
 	UCHAR Node, 
 	PULONGLONG AvailableBytes
 );	
+
+PLARGE_INTEGER 
+WINAPI 
+BaseFormatTimeOut(
+	OUT PLARGE_INTEGER  	Timeout,
+	IN DWORD  	dwMilliseconds 
+);

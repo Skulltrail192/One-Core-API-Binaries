@@ -648,3 +648,13 @@ RtlCompareUnicodeStrings(
 	SIZE_T len2,
     BOOLEAN case_insensitive 
 );
+
+NTSTATUS 
+WINAPI 
+RtlWaitOnAddress( 
+	const void *addr, 
+	const void *cmp, 
+	SIZE_T size,
+    const LARGE_INTEGER *timeout 
+);
+								  
