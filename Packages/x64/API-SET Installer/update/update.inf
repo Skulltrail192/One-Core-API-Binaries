@@ -317,6 +317,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    ext-ms-win-ntuser-gui-l1-3-0.dll,amd64/ext-ms-win-ntuser-gui-l1-3-0.dll
    ext-ms-win-ntuser-keyboard-l1-3-0.dll,amd64/ext-ms-win-ntuser-keyboard-l1-3-0.dll
    ext-ms-win-ntuser-message-l1-1-1.dll,amd64/ext-ms-win-ntuser-message-l1-1-1.dll
+   ext-ms-win-ntuser-misc-l1-2-0.dll,amd64/ext-ms-win-ntuser-misc-l1-2-0.dll
    ext-ms-win-ntuser-misc-l1-5-1.dll,amd64/ext-ms-win-ntuser-misc-l1-5-1.dll
    ext-ms-win-ntuser-mouse-l1-1-0.dll,amd64/ext-ms-win-ntuser-mouse-l1-1-0.dll
    ext-ms-win-ntuser-private-l1-1-1.dll,amd64/ext-ms-win-ntuser-private-l1-1-1.dll
@@ -581,6 +582,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    ext-ms-win-ntuser-gui-l1-3-0.dll,i386/ext-ms-win-ntuser-gui-l1-3-0.dll
    ext-ms-win-ntuser-keyboard-l1-3-0.dll,i386/ext-ms-win-ntuser-keyboard-l1-3-0.dll
    ext-ms-win-ntuser-message-l1-1-1.dll,i386/ext-ms-win-ntuser-message-l1-1-1.dll
+   ext-ms-win-ntuser-misc-l1-2-0.dll,i386/ext-ms-win-ntuser-misc-l1-2-0.dll
    ext-ms-win-ntuser-misc-l1-5-1.dll,i386/ext-ms-win-ntuser-misc-l1-5-1.dll
    ext-ms-win-ntuser-mouse-l1-1-0.dll,i386/ext-ms-win-ntuser-mouse-l1-1-0.dll
    ext-ms-win-ntuser-private-l1-1-1.dll,i386/ext-ms-win-ntuser-private-l1-1-1.dll
