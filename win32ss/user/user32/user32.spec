@@ -781,3 +781,7 @@
 @ stub GetGestureInfo
 @ stub IsTouchWindow
 @ stub GetDpiForMonitorInternal
+@ stub ShutdownBlockReasonCreate
+@ stub ShutdownBlockReasonDestroy
+@ stub SetCoalescableTimer
+@ stub GetTouchInputInfo

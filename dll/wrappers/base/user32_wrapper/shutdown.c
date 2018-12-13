@@ -80,75 +80,24 @@ LABEL_22:
   return compare;
 }
 
-BOOL WINAPI ShutdownBlockReasonDestroy(HWND hWnd)
+/***********************************************************************
+ *		ShutdownBlockReasonCreate (USER32.@)
+ */
+BOOL WINAPI ShutdownBlockReasonCreate(HWND hwnd, LPCWSTR reason)
 {
-  BOOL result; // eax@2
-  BOOL verification; // edi@3
-  DWORD flags; // eax@4
-  //PCSR_API_MESSAGE message = NULL; // [sp+4h] [bp-50h]@3
-  NTSTATUS NtStatus = STATUS_SUCCESS; // [sp+24h] [bp-30h]@3
-
-  if (hWnd)
-  {
-    //CsrClientCallServer(message, 0, 197643, 16);
-    verification = NtStatus >= 0;
-    if ( NtStatus < 0 )
-    {
-      flags = RtlNtStatusToDosError(NtStatus);
-      SetLastError(flags);
-    }
-    result = verification;
-  }
-  else
-  {
-    SetLastError(0x57u);
-    result = 0;
-  }
-  return result;
+    DbgPrint("ShutdownBlockReasonCreate (%p, %s): stub\n", hwnd, debugstr_w(reason));
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
 }
 
-
-BOOL WINAPI ShutdownBlockReasonCreate(HWND hWnd, LPCWSTR pwszReason)
+/***********************************************************************
+ *		ShutdownBlockReasonDestroy (USER32.@)
+ */
+BOOL WINAPI ShutdownBlockReasonDestroy(HWND hwnd)
 {
-  size_t size; // esi@5
-  PCSR_CAPTURE_BUFFER buffer; // ebx@5
-  DWORD flags; // [sp-10h] [bp-68h]@7
-  //PCSR_API_MESSAGE message = NULL; // [sp+0h] [bp-58h]@6
-  NTSTATUS NtStatus = STATUS_SUCCESS; // [sp+20h] [bp-38h]@6
-  HWND window; // [sp+2Ch] [bp-2Ch]@6
-  size_t cchDest; // [sp+30h] [bp-28h]@6
-  STRSAFE_LPWSTR pszDest; // [sp+34h] [bp-24h]@6
-  size_t pcchLength; // [sp+50h] [bp-8h]@3
-  BOOL verification; // [sp+54h] [bp-4h]@1
-
-  verification = 0;
-  buffer = 0;
-  if ( StringCchLengthW(pwszReason, 0x7FFFFFFEu, &pcchLength) >= 0 && pcchLength <= 0x100 )
-  {
-    size = pcchLength + 1;
-    buffer = CsrAllocateCaptureBuffer(1, (2 * (pcchLength + 1) + 3) & 0xFFFFFFFC);
-    if ( buffer )
-    {
-      window = hWnd;
-      cchDest = size;
-      CsrAllocateMessagePointer(buffer, 2 * size, &pszDest);
-      StringCchCopyW(pszDest, size, pwszReason);
-      // CsrClientCallServer(message, buffer, KUSER_SHARED_SYSCALL_RET, 16);
-      CsrFreeCaptureBuffer(buffer);
-      verification = NtStatus >= 0;
-      if ( !(NtStatus < 0) )
-        return verification;
-      flags = RtlNtStatusToDosError(NtStatus);
-    }
-    else
-    {
-      flags = 14;
-    }
-    SetLastError(flags);
-    return verification;
-  }
-  SetLastError(0x57u);
-  return 0;
+    DbgPrint("ShutdownBlockReasonDestroy (%p): stub\n", hwnd);
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
 }
 
 BOOL WINAPI CancelShutdown()

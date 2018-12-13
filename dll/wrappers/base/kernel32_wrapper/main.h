@@ -150,6 +150,8 @@ extern ULONG BaseDllTag;
 
 #define EXTENDED_STARTUPINFO_PRESENT 0x00080000
 
+#define STATUS_FAIL_FAST_EXCEPTION          ((NTSTATUS) 0xC0000602) 
+
 //
 // Do not add heap dumps for reports for the process
 //
@@ -164,6 +166,11 @@ extern ULONG BaseDllTag;
 
 #define PATHCCH_MAX_CCH 0x8000
 
+/* Wine-specific exceptions codes */
+
+#define EXCEPTION_WINE_STUB       0x80000100  /* stub entry point called */
+#define EXCEPTION_WINE_ASSERTION 0x80000101 /* assertion failed */
+
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 extern BOOL bIsFileApiAnsi;
 extern HMODULE kernel32_handle DECLSPEC_HIDDEN;
@@ -174,6 +181,8 @@ typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
 typedef NTSTATUS(NTAPI * PRTL_CONVERT_STRING)(IN PUNICODE_STRING UnicodeString, IN PANSI_STRING AnsiString, IN BOOLEAN AllocateMemory);
 typedef DWORD (WINAPI *APPLICATION_RECOVERY_CALLBACK)(PVOID);
 typedef VOID (CALLBACK *PTP_WIN32_IO_CALLBACK)(PTP_CALLBACK_INSTANCE,PVOID,PVOID,ULONG,ULONG_PTR,PTP_IO);
+typedef INT (WINAPI *MessageBoxA_funcptr)(HWND,LPCSTR,LPCSTR,UINT);
+typedef INT (WINAPI *MessageBoxW_funcptr)(HWND,LPCWSTR,LPCWSTR,UINT);
 
 /* STRUCTS DEFINITIONS ******************************************************/
 
