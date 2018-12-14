@@ -337,6 +337,9 @@ static inline DWORD wined3dusage_from_d3dusage(unsigned int usage)
     return usage & WINED3DUSAGE_MASK;
 }
 
+extern IDirect3D9 *ppD3D;
+extern IDirect3DDevice9 *ppDevice3D;
+
 # define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #endif /* __WINE_D3D9_PRIVATE_H */

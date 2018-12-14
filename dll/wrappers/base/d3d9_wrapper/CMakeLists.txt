@@ -7,16 +7,17 @@ include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 spec2def(d3d9_wrapper.dll d3d9_wrapper.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
-    buffer.c
     d3d9_main.c
     device.c
     directx.c
+	index_buffer.c
     query.c
     shader.c
     stateblock.c
     surface.c
     swapchain.c
     texture.c
+    vertex_buffer.c	
     vertexdeclaration.c
     volume.c
     d3d9_private.h)
