@@ -334,13 +334,8 @@
     Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
     Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
     CopyAlways.Cache.files=65619        ; %windir%\system32\DllCache (copy even if don't exist)
-	ntfs.CoreDriverFiles  = 12          ; %windir%\system32\drivers
-	
-[ProductInstall.ReplaceFilesIfExist]
-	CopyFiles = ntfs.CoreDriverFiles
 
 [MustReplace.System32.files]
-	csrsrv.dll, 2k3SP2\csrsrv.dll
 	gdibase.dll, 2k3SP2\gdibase.dll
 	userbase.dll, 2k3SP2\userbase.dll
 	uxthemebase.dll, 2k3SP2\uxthemebase.dll
@@ -350,12 +345,8 @@
 	
 [System32.files]
 	win32k.sys, 2k3SP2\win32k.sys
-
-[ntfs.CoreDriverFiles]
-	ntfs.sys, 2k3SP2\Drivers\ntfs.sys	
 	
 [CopyAlways.System32.Files]
-	csrsrv.dll, 2k3SP2\csrsrv.dll
 	gdibase.dll, 2k3SP2\gdibase.dll
 	userbase.dll, 2k3SP2\userbase.dll
 	uxthemebase.dll, 2k3SP2\uxthemebase.dll

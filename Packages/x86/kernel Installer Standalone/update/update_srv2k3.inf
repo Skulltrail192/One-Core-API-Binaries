@@ -327,13 +327,8 @@
     Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
     Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
     CopyAlways.Cache.files=65619        ; %windir%\system32\DllCache (copy even if don't exist)
-	ntfs.CoreDriverFiles  = 12          ; %windir%\system32\drivers
-	
-[ProductInstall.ReplaceFilesIfExist]
-	CopyFiles = ntfs.CoreDriverFiles
 
 [MustReplace.System32.files]
-	csrsrv.dll, 2k3SP2\csrsrv.dll
 	ntdll.dll, 2k3SP2\ntdll.dll
 	gdi32.dll, 2k3SP2\gdi32.dll
 	user32.dll, 2k3SP2\user32.dll
@@ -344,12 +339,8 @@
 	
 [System32.files]
 	win32k.sys, 2k3SP2\win32k.sys
-
-[ntfs.CoreDriverFiles]
-	ntfs.sys, 2k3SP2\Drivers\ntfs.sys	
 	
 [CopyAlways.System32.Files]
-	csrsrv.dll, 2k3SP2\csrsrv.dll
 	ntdll.dll, 2k3SP2\ntdll.dll
 	gdi32.dll, 2k3SP2\gdi32.dll
 	user32.dll, 2k3SP2\user32.dll
