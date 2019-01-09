@@ -16,7 +16,6 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
 static int D3DPERF_event_level = 0;
 
 IDirect3D9 *ppD3D;
-IDirect3DDevice9 *ppDevice3D;
 
 IDirect3D9 * WINAPI DECLSPEC_HOTPATCH Direct3DCreate9Internal(
   UINT SDKVersion

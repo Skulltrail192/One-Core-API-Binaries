@@ -21,6 +21,6 @@ add_library(dxg SHARED
     ${CMAKE_CURRENT_BINARY_DIR}/dxg.def)
 
 set_module_type(dxg kernelmodedriver)
-add_importlibs(dxg dxgthk ntoskrnl)
+add_importlibs(dxg win32k ntoskrnl)
 add_pch(dxg dxg_int.h SOURCE)
 add_cd_file(TARGET dxg DESTINATION reactos/system32/drivers FOR all)

@@ -59,6 +59,19 @@ void present_parameters_from_wined3d_swapchain_desc(D3DPRESENT_PARAMETERS *prese
         const struct wined3d_swapchain_desc *swapchain_desc, DWORD presentation_interval) DECLSPEC_HIDDEN;
 void d3dcaps_from_wined3dcaps(D3DCAPS9 *caps, const struct wined3d_caps *wined3d_caps) DECLSPEC_HIDDEN;
 
+typedef struct _DIRECT3D9_INT
+{
+/* 0x0000 */    struct IDirect3D9Vtbl *lpVtbl; /* LPDIRECTD3D9 function table */
+/* 0x0004 */    CRITICAL_SECTION d3d9_cs;
+/* 0x001c */    DWORD unknown000007;    /* 0x00000001 */
+/* 0x0020 */    DWORD dwProcessId;
+/* 0x0024 */    struct _DIRECT3D9_INT *lpInt;
+/* 0x0028 */    LONG lRefCnt;          /* Increases and decreases by AddRef() and Release() */
+/* 0x002c */    UINT NumDisplayAdapters;
+/* 0x0030 */ 	Direct3D9DisplayAdapterInfo DisplayAdapters[D3D9_INT_MAX_NUM_ADAPTERS];
+/* 0x47b4 */    UINT SDKVersion;
+} DIRECT3D9_INT, FAR *LPDIRECT3D9_INT;
+
 struct d3d9
 {
     IDirect3D9Ex IDirect3D9Ex_iface;
@@ -339,6 +352,8 @@ static inline DWORD wined3dusage_from_d3dusage(unsigned int usage)
 
 extern IDirect3D9 *ppD3D;
 extern IDirect3DDevice9 *ppDevice3D;
+
+static const struct IDirect3DDevice9ExVtbl d3d9_device_vtbl;
 
 # define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 

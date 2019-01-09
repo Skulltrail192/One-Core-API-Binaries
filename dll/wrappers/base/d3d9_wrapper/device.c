@@ -25,6 +25,8 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
 
+IDirect3DDevice9 *ppDevice3D;
+
 static void STDMETHODCALLTYPE d3d9_null_wined3d_object_destroyed(void *parent) {}
 
 const struct wined3d_parent_ops d3d9_null_wined3d_parent_ops =
@@ -4399,6 +4401,16 @@ HRESULT device_init(struct d3d9_device *device, struct d3d9 *parent, struct wine
 
     IDirect3D9Ex_AddRef(&parent->IDirect3D9Ex_iface);
     device->d3d_parent = parent;
+	
+	if(ppD3D!=NULL){
+		(ppD3D)->lpVtbl->CreateDevice(ppD3D, 
+									  adapter, 
+									  device_type, 
+									  focus_window, 
+									  flags, 
+									  parameters, 
+									  &ppDevice3D);
+	}
 
     return D3D_OK;
 }

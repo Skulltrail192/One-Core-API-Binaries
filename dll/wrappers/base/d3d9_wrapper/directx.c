@@ -217,8 +217,6 @@ static HRESULT WINAPI DECLSPEC_HOTPATCH d3d9_CreateDevice(IDirect3D9Ex *iface, U
 static UINT WINAPI d3d9_GetAdapterModeCountEx(IDirect3D9Ex *iface,
         UINT adapter, const D3DDISPLAYMODEFILTER *filter)
 {
-    UINT AdapterModeCount;
-	
 	if(ppD3D!=NULL){
 		return IDirect3D9_GetAdapterModeCount(ppD3D,adapter,filter->Format);
 	}
@@ -279,15 +277,26 @@ static HRESULT WINAPI d3d9_GetAdapterDisplayModeEx(IDirect3D9Ex *iface,
 	return D3DERR_INVALIDCALL;
 }
 
-static HRESULT WINAPI DECLSPEC_HOTPATCH d3d9_CreateDeviceEx(IDirect3D9Ex *iface,
-        UINT adapter, D3DDEVTYPE device_type, HWND focus_window, DWORD flags,
-        D3DPRESENT_PARAMETERS *parameters, D3DDISPLAYMODEEX *mode, IDirect3DDevice9Ex **device)
+static 
+HRESULT 
+WINAPI 
+DECLSPEC_HOTPATCH 
+d3d9_CreateDeviceEx(
+	IDirect3D9Ex *iface,
+    UINT adapter, 
+	D3DDEVTYPE device_type, 
+	HWND focus_window, 
+	DWORD flags,
+    D3DPRESENT_PARAMETERS *parameters, 
+	D3DDISPLAYMODEEX *mode, 
+	IDirect3DDevice9Ex **device
+)
 {
     struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
     struct d3d9_device *object;
     HRESULT hr;
+	IDirect3DDevice9Ex direct3ddevice;
 	
-	(ppD3D)->lpVtbl->CreateDevice(ppD3D, adapter, device_type, focus_window, flags, parameters, &ppDevice3D);
     TRACE("iface %p, adapter %u, device_type %#x, focus_window %p, flags %#x, parameters %p, mode %p, device %p.\n",
             iface, adapter, device_type, focus_window, flags, parameters, mode, device);
 
@@ -302,6 +311,7 @@ static HRESULT WINAPI DECLSPEC_HOTPATCH d3d9_CreateDeviceEx(IDirect3D9Ex *iface,
         return hr;
     }
 
+	direct3ddevice.lpVtbl = &d3d9_device_vtbl;
     TRACE("Created device %p.\n", object);
     *device = &object->IDirect3DDevice9Ex_iface;
 
@@ -329,7 +339,7 @@ static HRESULT WINAPI d3d9_GetAdapterLUID(IDirect3D9Ex *iface, UINT adapter, LUI
     return hr;
 }
 
-static const struct IDirect3D9ExVtbl d3d9_vtbl =
+static const struct IDirect3D9ExVtbl Direct3D9_Vtbl =
 {
     /* IUnknown */
     d3d9_QueryInterface,
@@ -370,7 +380,7 @@ BOOL d3d9_init(struct d3d9 *d3d9, BOOL extended)
     else
         flags |= WINED3D_RESTORE_MODE_ON_ACTIVATE;
 
-    d3d9->IDirect3D9Ex_iface.lpVtbl = &d3d9_vtbl;
+    d3d9->IDirect3D9Ex_iface.lpVtbl = &Direct3D9_Vtbl;
     d3d9->refcount = 1;
 
     wined3d_mutex_lock();
@@ -381,4 +391,40 @@ BOOL d3d9_init(struct d3d9 *d3d9, BOOL extended)
     d3d9->extended = extended;
 
     return TRUE;
+}
+
+HRESULT CreateD3D9(OUT LPDIRECT3D9 *ppDirect3D9, UINT SDKVersion)
+{
+    LPDIRECT3D9_INT pDirect3D9;
+
+    if (ppDirect3D9 == 0)
+        return DDERR_INVALIDPARAMS;
+
+    if (AlignedAlloc((LPVOID *)&pDirect3D9, sizeof(DIRECT3D9_INT)) != S_OK)
+        return DDERR_OUTOFMEMORY;
+
+    if (pDirect3D9 == 0)
+        return DDERR_OUTOFMEMORY;
+
+    pDirect3D9->lpVtbl = &Direct3D9_Vtbl;
+    pDirect3D9->dwProcessId = GetCurrentThreadId();
+    pDirect3D9->lRefCnt = 1;
+
+    pDirect3D9->SDKVersion = SDKVersion;
+
+    pDirect3D9->lpInt = pDirect3D9;
+    pDirect3D9->unknown000007 = 1;
+
+    InitializeCriticalSection(&pDirect3D9->d3d9_cs);
+
+    if (FALSE == GetDisplayDeviceInfo(pDirect3D9))
+    {
+        DPRINT1("Could not create Direct3D9 object");
+        AlignedFree(pDirect3D9);
+        return DDERR_GENERIC;
+    }
+
+    *ppDirect3D9 = (LPDIRECT3D9)&pDirect3D9->lpVtbl;
+
+    return D3D_OK;
 }
