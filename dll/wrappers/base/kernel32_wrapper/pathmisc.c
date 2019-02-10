@@ -799,6 +799,88 @@ LPWSTR WINAPI StrCpyW(LPWSTR lpszStr, LPCWSTR lpszSrc)
   return lpszStr;
 }
 
+/*************************************************************************
+ * StrToInt64ExW	[SHLWAPI.@]
+ *
+ * See StrToIntExA.
+ */
+BOOL WINAPI StrToInt64ExW(LPCWSTR lpszStr, DWORD dwFlags, LONGLONG *lpiRet)
+{
+  BOOL bNegative = FALSE;
+  LONGLONG iRet = 0;
+
+  TRACE("(%s,%08X,%p)\n", debugstr_w(lpszStr), dwFlags, lpiRet);
+
+  if (!lpszStr || !lpiRet)
+  {
+    WARN("Invalid parameter would crash under Win32!\n");
+    return FALSE;
+  }
+  if (dwFlags > STIF_SUPPORT_HEX) WARN("Unknown flags %08x\n", dwFlags);
+
+  /* Skip leading space, '+', '-' */
+  while (isspaceW(*lpszStr)) lpszStr++;
+
+  if (*lpszStr == '-')
+  {
+    bNegative = TRUE;
+    lpszStr++;
+  }
+  else if (*lpszStr == '+')
+    lpszStr++;
+
+  if (dwFlags & STIF_SUPPORT_HEX &&
+      *lpszStr == '0' && tolowerW(lpszStr[1]) == 'x')
+  {
+    /* Read hex number */
+    lpszStr += 2;
+
+    if (!isxdigitW(*lpszStr))
+      return FALSE;
+
+    while (isxdigitW(*lpszStr))
+    {
+      iRet = iRet * 16;
+      if (isdigitW(*lpszStr))
+        iRet += (*lpszStr - '0');
+      else
+        iRet += 10 + (tolowerW(*lpszStr) - 'a');
+      lpszStr++;
+    }
+    *lpiRet = iRet;
+    return TRUE;
+  }
+
+  /* Read decimal number */
+  if (!isdigitW(*lpszStr))
+    return FALSE;
+
+  while (isdigitW(*lpszStr))
+  {
+    iRet = iRet * 10;
+    iRet += (*lpszStr - '0');
+    lpszStr++;
+  }
+  *lpiRet = bNegative ? -iRet : iRet;
+  return TRUE;
+}
+
+/*************************************************************************
+ * StrToIntExW	[SHLWAPI.@]
+ *
+ * See StrToIntExA.
+ */
+BOOL WINAPI StrToIntExW(LPCWSTR lpszStr, DWORD dwFlags, LPINT lpiRet)
+{
+  LONGLONG li;
+  BOOL bRes;
+
+  TRACE("(%s,%08X,%p)\n", debugstr_w(lpszStr), dwFlags, lpiRet);
+
+  bRes = StrToInt64ExW(lpszStr, dwFlags, &li);
+  if (bRes) *lpiRet = li;
+  return bRes;
+}
 
 /*************************************************************************
  *      UrlUnescapeW	[SHLWAPI.@]
@@ -1021,6 +1103,31 @@ HRESULT WINAPI PathCreateFromUrlW(LPCWSTR pszUrl, LPWSTR pszPath,
 
     TRACE("Returning (%u) %s\n", *pcchPath, debugstr_w(pszPath));
     return ret;
+}
+
+/*************************************************************************
+ * StrDupW	[SHLWAPI.@]
+ *
+ * See StrDupA.
+ */
+LPWSTR WINAPI StrDupW(LPCWSTR lpszStr)
+{
+  int iLen;
+  LPWSTR lpszRet;
+
+  TRACE("(%s)\n",debugstr_w(lpszStr));
+
+  iLen = (lpszStr ? strlenW(lpszStr) + 1 : 1) * sizeof(WCHAR);
+  lpszRet = LocalAlloc(LMEM_FIXED, iLen);
+
+  if (lpszRet)
+  {
+    if (lpszStr)
+      memcpy(lpszRet, lpszStr, iLen);
+    else
+      *lpszRet = '\0';
+  }
+  return lpszRet;
 }
 
 /*************************************************************************
