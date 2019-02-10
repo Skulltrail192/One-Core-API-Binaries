@@ -343,7 +343,7 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    ext-ms-win-security-cryptui-l1-1-0.dll,amd64/ext-ms-win-security-cryptui-l1-1-0.dll
    ext-ms-win-uxtheme-themes-l1-1-0.dll,amd64/ext-ms-win-uxtheme-themes-l1-1-0.dll
    ext-ms-win-xaml-pal-l1-1-0.dll,amd64/ext-ms-win-xaml-pal-l1-1-0.dll
-   ucrtbase.dll,amd64/wucrtbase.dll
+   ucrtbase.dll,amd64/ucrtbase.dll
 
 [CopyAlways.SysWOW64.Files]
    API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll,i386/API-MS-WIN-APPMODEL-IDENTITY-L1-1-0.dll

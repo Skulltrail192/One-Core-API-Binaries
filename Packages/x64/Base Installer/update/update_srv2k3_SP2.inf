@@ -2607,7 +2607,7 @@
     advapibase.dll,XP64SP2/i386/wadvapibase.dll
     crypt32.dll,XP64SP2/i386/wcrypt32.dll		
     gdibase.dll,XP64SP2/i386/wgdibase.dll	
-    kernelfull.dll,XP64SP2/i386/wkernelfull.dll
+    kernelex.dll,XP64SP2/i386/wkernelex.dll
     netapibase.dll,XP64SP2/i386/wnetapibase.dll	
     olebase.dll,XP64SP2/i386/wolebase.dll	
     powrprofbase.dll,XP64SP2/i386/wpowrprofbase.dll
@@ -2679,7 +2679,7 @@
     XP64SP2/i386/wadvapibase.dll = 1
     XP64SP2/i386/wwcrypt32.dll = 1		
     XP64SP2/i386/wgdibase.dll = 1	
-    XP64SP2/i386/wkernelfull.dll = 1
+    XP64SP2/i386/wkernelex.dll = 1
     XP64SP2/i386/wnetapibase.dll = 1	
     XP64SP2/i386/wntdll.dll = 1	
     XP64SP2/i386/wolebase.dll = 1		
