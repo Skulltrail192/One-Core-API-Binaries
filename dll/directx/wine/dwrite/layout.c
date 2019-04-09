@@ -53,6 +53,7 @@ struct dwrite_textformat_data {
     DWRITE_LINE_SPACING spacing;
 
     FLOAT fontsize;
+    FLOAT tabstop;
 
     DWRITE_TRIMMING trimming;
     IDWriteInlineObject *trimmingsign;
@@ -593,7 +594,7 @@ static HRESULT layout_update_breakpoints_range(struct dwrite_textlayout *layout,
         after = before = DWRITE_BREAK_CONDITION_NEUTRAL;
 
     if (!layout->actual_breakpoints) {
-        layout->actual_breakpoints = heap_alloc(sizeof(DWRITE_LINE_BREAKPOINT)*layout->len);
+        layout->actual_breakpoints = heap_calloc(layout->len, sizeof(*layout->actual_breakpoints));
         if (!layout->actual_breakpoints)
             return E_OUTOFMEMORY;
         memcpy(layout->actual_breakpoints, layout->nominal_breakpoints, sizeof(DWRITE_LINE_BREAKPOINT)*layout->len);
@@ -932,15 +933,15 @@ static HRESULT layout_shape_run(struct dwrite_textlayout *layout, struct regular
 
     range = get_layout_range_by_pos(layout, run->descr.textPosition);
     run->descr.localeName = range->locale;
-    run->clustermap = heap_alloc(run->descr.stringLength * sizeof(*run->clustermap));
+    run->clustermap = heap_calloc(run->descr.stringLength, sizeof(*run->clustermap));
 
     max_count = 3 * run->descr.stringLength / 2 + 16;
-    run->glyphs = heap_alloc(max_count * sizeof(*run->glyphs));
+    run->glyphs = heap_calloc(max_count, sizeof(*run->glyphs));
     if (!run->clustermap || !run->glyphs)
         return E_OUTOFMEMORY;
 
-    text_props = heap_alloc(run->descr.stringLength * sizeof(*text_props));
-    glyph_props = heap_alloc(max_count * sizeof(*glyph_props));
+    text_props = heap_calloc(run->descr.stringLength, sizeof(*text_props));
+    glyph_props = heap_calloc(max_count, sizeof(*glyph_props));
     if (!text_props || !glyph_props) {
         heap_free(text_props);
         heap_free(glyph_props);
@@ -959,8 +960,8 @@ static HRESULT layout_shape_run(struct dwrite_textlayout *layout, struct regular
 
             max_count = run->glyphcount;
 
-            run->glyphs = heap_alloc(max_count * sizeof(*run->glyphs));
-            glyph_props = heap_alloc(max_count * sizeof(*glyph_props));
+            run->glyphs = heap_calloc(max_count, sizeof(*run->glyphs));
+            glyph_props = heap_calloc(max_count, sizeof(*glyph_props));
             if (!run->glyphs || !glyph_props) {
                 hr = E_OUTOFMEMORY;
                 break;
@@ -982,8 +983,8 @@ static HRESULT layout_shape_run(struct dwrite_textlayout *layout, struct regular
     run->run.glyphIndices = run->glyphs;
     run->descr.clusterMap = run->clustermap;
 
-    run->advances = heap_alloc(run->glyphcount * sizeof(*run->advances));
-    run->offsets = heap_alloc(run->glyphcount * sizeof(*run->offsets));
+    run->advances = heap_calloc(run->glyphcount, sizeof(*run->advances));
+    run->offsets = heap_calloc(run->glyphcount, sizeof(*run->offsets));
     if (!run->advances || !run->offsets)
         return E_OUTOFMEMORY;
 
@@ -1033,8 +1034,8 @@ static HRESULT layout_compute_runs(struct dwrite_textlayout *layout)
 
     /* Cluster data arrays are allocated once, assuming one text position per cluster. */
     if (!layout->clustermetrics && layout->len) {
-        layout->clustermetrics = heap_alloc(layout->len*sizeof(*layout->clustermetrics));
-        layout->clusters = heap_alloc(layout->len*sizeof(*layout->clusters));
+        layout->clustermetrics = heap_calloc(layout->len, sizeof(*layout->clustermetrics));
+        layout->clusters = heap_calloc(layout->len, sizeof(*layout->clusters));
         if (!layout->clustermetrics || !layout->clusters) {
             heap_free(layout->clustermetrics);
             heap_free(layout->clusters);
@@ -1121,7 +1122,7 @@ static HRESULT layout_compute(struct dwrite_textlayout *layout)
     if (!layout->nominal_breakpoints) {
         IDWriteTextAnalyzer *analyzer;
 
-        layout->nominal_breakpoints = heap_alloc(layout->len * sizeof(*layout->nominal_breakpoints));
+        layout->nominal_breakpoints = heap_calloc(layout->len, sizeof(*layout->nominal_breakpoints));
         if (!layout->nominal_breakpoints)
             return E_OUTOFMEMORY;
 
@@ -1290,7 +1291,7 @@ static HRESULT layout_add_effective_run(struct dwrite_textlayout *layout, const 
     length = layout->clusters[last_cluster].position - layout->clusters[first_cluster].position +
         layout->clustermetrics[last_cluster].length;
 
-    run->clustermap = heap_alloc(sizeof(UINT16)*length);
+    run->clustermap = heap_calloc(length, sizeof(*run->clustermap));
     if (!run->clustermap) {
         heap_free(run);
         return E_OUTOFMEMORY;
@@ -1385,8 +1386,8 @@ static HRESULT layout_set_line_metrics(struct dwrite_textlayout *layout, DWRITE_
 
     if (!layout->line_alloc) {
         layout->line_alloc = 5;
-        layout->linemetrics = heap_alloc(layout->line_alloc * sizeof(*layout->linemetrics));
-        layout->lines = heap_alloc(layout->line_alloc * sizeof(*layout->lines));
+        layout->linemetrics = heap_calloc(layout->line_alloc, sizeof(*layout->linemetrics));
+        layout->lines = heap_calloc(layout->line_alloc, sizeof(*layout->lines));
         if (!layout->linemetrics || !layout->lines) {
             heap_free(layout->linemetrics);
             heap_free(layout->lines);
@@ -2519,7 +2520,7 @@ static BOOL set_layout_range_attrval(struct layout_range_header *h, enum layout_
         changed = set_layout_range_iface_attr((IUnknown**)&dest->object, (IUnknown*)value->u.object);
         break;
     case LAYOUT_RANGE_ATTR_EFFECT:
-        changed = set_layout_range_iface_attr((IUnknown**)&dest_iface->iface, (IUnknown*)value->u.effect);
+        changed = set_layout_range_iface_attr(&dest_iface->iface, value->u.effect);
         break;
     case LAYOUT_RANGE_ATTR_UNDERLINE:
         changed = dest_bool->value != value->u.underline;
@@ -2559,7 +2560,7 @@ static BOOL set_layout_range_attrval(struct layout_range_header *h, enum layout_
         dest_spacing->min_advance = value->u.spacing.min_advance;
         break;
     case LAYOUT_RANGE_ATTR_TYPOGRAPHY:
-        changed = set_layout_range_iface_attr((IUnknown**)&dest_iface->iface, (IUnknown*)value->u.typography);
+        changed = set_layout_range_iface_attr(&dest_iface->iface, (IUnknown*)value->u.typography);
         break;
     default:
         ;
@@ -3603,16 +3604,6 @@ static HRESULT WINAPI dwritetextlayout_GetMetrics(IDWriteTextLayout3 *iface, DWR
     return hr;
 }
 
-static void scale_glyph_bbox(RECT *bbox, FLOAT emSize, UINT16 units_per_em, D2D1_RECT_F *ret)
-{
-#define SCALE(x) ((FLOAT)x * emSize / (FLOAT)units_per_em)
-    ret->left = SCALE(bbox->left);
-    ret->right = SCALE(bbox->right);
-    ret->top = SCALE(bbox->top);
-    ret->bottom = SCALE(bbox->bottom);
-#undef SCALE
-}
-
 static void d2d_rect_offset(D2D1_RECT_F *rect, FLOAT x, FLOAT y)
 {
     rect->left += x;
@@ -3651,27 +3642,46 @@ static void layout_get_erun_bbox(struct dwrite_textlayout *layout, struct layout
     const struct regular_layout_run *regular = &run->run->u.regular;
     UINT32 start_glyph = regular->clustermap[run->start];
     const DWRITE_GLYPH_RUN *glyph_run = &regular->run;
-    DWRITE_FONT_METRICS font_metrics;
     D2D1_POINT_2F origin = { 0 };
+    float rtl_factor;
     UINT32 i;
 
-    if (run->bbox.top == run->bbox.bottom) {
-        IDWriteFontFace_GetMetrics(glyph_run->fontFace, &font_metrics);
+    if (run->bbox.top == run->bbox.bottom)
+    {
+        struct dwrite_glyphbitmap glyph_bitmap;
+        RECT *bbox;
 
+        memset(&glyph_bitmap, 0, sizeof(glyph_bitmap));
+        glyph_bitmap.fontface = (IDWriteFontFace4 *)glyph_run->fontFace;
+        glyph_bitmap.simulations = IDWriteFontFace_GetSimulations(glyph_run->fontFace);
+        glyph_bitmap.emsize = glyph_run->fontEmSize;
+        glyph_bitmap.nohint = layout->measuringmode == DWRITE_MEASURING_MODE_NATURAL;
+
+        bbox = &glyph_bitmap.bbox;
+
+        rtl_factor = glyph_run->bidiLevel & 1 ? -1.0f : 1.0f;
         for (i = 0; i < run->glyphcount; i++) {
             D2D1_RECT_F glyph_bbox;
-            RECT design_bbox;
-
-            freetype_get_design_glyph_bbox((IDWriteFontFace4 *)glyph_run->fontFace, font_metrics.designUnitsPerEm,
-                    glyph_run->glyphIndices[i + start_glyph], &design_bbox);
-
-            scale_glyph_bbox(&design_bbox, glyph_run->fontEmSize, font_metrics.designUnitsPerEm, &glyph_bbox);
-            d2d_rect_offset(&glyph_bbox, origin.x + glyph_run->glyphOffsets[i + start_glyph].advanceOffset,
-                    origin.y + glyph_run->glyphOffsets[i + start_glyph].ascenderOffset);
-            d2d_rect_union(&run->bbox, &glyph_bbox);
 
             /* FIXME: take care of vertical/rtl */
-            origin.x += glyph_run->glyphAdvances[i + start_glyph];
+            if (glyph_run->bidiLevel & 1)
+                origin.x -= glyph_run->glyphAdvances[i + start_glyph];
+
+            glyph_bitmap.glyph = glyph_run->glyphIndices[i + start_glyph];
+            freetype_get_glyph_bbox(&glyph_bitmap);
+
+            glyph_bbox.left = bbox->left;
+            glyph_bbox.top = bbox->top;
+            glyph_bbox.right = bbox->right;
+            glyph_bbox.bottom = bbox->bottom;
+
+            d2d_rect_offset(&glyph_bbox, origin.x + rtl_factor * glyph_run->glyphOffsets[i + start_glyph].advanceOffset,
+                    origin.y - glyph_run->glyphOffsets[i + start_glyph].ascenderOffset);
+
+            d2d_rect_union(&run->bbox, &glyph_bbox);
+
+            if (!(glyph_run->bidiLevel & 1))
+                origin.x += glyph_run->glyphAdvances[i + start_glyph];
        }
     }
 
@@ -4272,7 +4282,13 @@ static HRESULT WINAPI dwritetextformat_layout_SetFlowDirection(IDWriteTextFormat
 static HRESULT WINAPI dwritetextformat_layout_SetIncrementalTabStop(IDWriteTextFormat2 *iface, FLOAT tabstop)
 {
     struct dwrite_textlayout *This = impl_layout_from_IDWriteTextFormat2(iface);
-    FIXME("(%p)->(%f): stub\n", This, tabstop);
+
+    TRACE("(%p)->(%f)\n", This, tabstop);
+
+    if (tabstop <= 0.0f)
+        return E_INVALIDARG;
+
+    This->format.tabstop = tabstop;
     return S_OK;
 }
 
@@ -4346,8 +4362,8 @@ static DWRITE_FLOW_DIRECTION WINAPI dwritetextformat_layout_GetFlowDirection(IDW
 static FLOAT WINAPI dwritetextformat_layout_GetIncrementalTabStop(IDWriteTextFormat2 *iface)
 {
     struct dwrite_textlayout *This = impl_layout_from_IDWriteTextFormat2(iface);
-    FIXME("(%p): stub\n", This);
-    return 0.0f;
+    TRACE("(%p)\n", This);
+    return This->format.tabstop;
 }
 
 static HRESULT WINAPI dwritetextformat_layout_GetTrimming(IDWriteTextFormat2 *iface, DWRITE_TRIMMING *options,
@@ -4875,6 +4891,7 @@ static HRESULT layout_format_from_textformat(struct dwrite_textlayout *layout, I
     layout->format.style   = IDWriteTextFormat_GetFontStyle(format);
     layout->format.stretch = IDWriteTextFormat_GetFontStretch(format);
     layout->format.fontsize= IDWriteTextFormat_GetFontSize(format);
+    layout->format.tabstop = IDWriteTextFormat_GetIncrementalTabStop(format);
     layout->format.textalignment = IDWriteTextFormat_GetTextAlignment(format);
     layout->format.paralign = IDWriteTextFormat_GetParagraphAlignment(format);
     layout->format.wrapping = IDWriteTextFormat_GetWordWrapping(format);
@@ -5302,7 +5319,13 @@ static HRESULT WINAPI dwritetextformat_SetFlowDirection(IDWriteTextFormat2 *ifac
 static HRESULT WINAPI dwritetextformat_SetIncrementalTabStop(IDWriteTextFormat2 *iface, FLOAT tabstop)
 {
     struct dwrite_textformat *This = impl_from_IDWriteTextFormat2(iface);
-    FIXME("(%p)->(%f): stub\n", This, tabstop);
+
+    TRACE("(%p)->(%f)\n", This, tabstop);
+
+    if (tabstop <= 0.0f)
+        return E_INVALIDARG;
+
+    This->format.tabstop = tabstop;
     return S_OK;
 }
 
@@ -5368,8 +5391,8 @@ static DWRITE_FLOW_DIRECTION WINAPI dwritetextformat_GetFlowDirection(IDWriteTex
 static FLOAT WINAPI dwritetextformat_GetIncrementalTabStop(IDWriteTextFormat2 *iface)
 {
     struct dwrite_textformat *This = impl_from_IDWriteTextFormat2(iface);
-    FIXME("(%p): stub\n", This);
-    return 0.0f;
+    TRACE("(%p)\n", This);
+    return This->format.tabstop;
 }
 
 static HRESULT WINAPI dwritetextformat_GetTrimming(IDWriteTextFormat2 *iface, DWRITE_TRIMMING *options,
@@ -5631,6 +5654,7 @@ HRESULT create_textformat(const WCHAR *family_name, IDWriteFontCollection *colle
     This->format.weight = weight;
     This->format.style = style;
     This->format.fontsize = size;
+    This->format.tabstop = 4.0f * size;
     This->format.stretch = stretch;
     This->format.textalignment = DWRITE_TEXT_ALIGNMENT_LEADING;
     This->format.optical_alignment = DWRITE_OPTICAL_ALIGNMENT_NONE;
@@ -5763,7 +5787,7 @@ HRESULT create_typography(IDWriteTypography **ret)
     typography->allocated = 2;
     typography->count = 0;
 
-    typography->features = heap_alloc(typography->allocated*sizeof(DWRITE_FONT_FEATURE));
+    typography->features = heap_calloc(typography->allocated, sizeof(*typography->features));
     if (!typography->features) {
         heap_free(typography);
         return E_OUTOFMEMORY;

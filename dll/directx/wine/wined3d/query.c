@@ -817,6 +817,24 @@ static BOOL wined3d_so_statistics_query_ops_poll(struct wined3d_query *query, DW
     return written_available && generated_available;
 }
 
+static void wined3d_so_statistics_query_end(struct wined3d_so_statistics_query *query,
+        struct wined3d_context *context)
+{
+    const struct wined3d_gl_info *gl_info = context->gl_info;
+
+    if (gl_info->supported[ARB_TRANSFORM_FEEDBACK3])
+    {
+        GL_EXTCALL(glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query->stream_idx));
+        GL_EXTCALL(glEndQueryIndexed(GL_PRIMITIVES_GENERATED, query->stream_idx));
+    }
+    else
+    {
+        GL_EXTCALL(glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN));
+        GL_EXTCALL(glEndQuery(GL_PRIMITIVES_GENERATED));
+    }
+    checkGLcall("end query");
+}
+
 static BOOL wined3d_so_statistics_query_ops_issue(struct wined3d_query *query, DWORD flags)
 {
     struct wined3d_so_statistics_query *pq = wined3d_so_statistics_query_from_query(query);
@@ -833,9 +851,7 @@ static BOOL wined3d_so_statistics_query_ops_issue(struct wined3d_query *query, D
         {
             if ((context = context_reacquire(device, pq->context)))
             {
-                gl_info = context->gl_info;
-                GL_EXTCALL(glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, pq->stream_idx));
-                GL_EXTCALL(glEndQueryIndexed(GL_PRIMITIVES_GENERATED, pq->stream_idx));
+                wined3d_so_statistics_query_end(pq, context);
             }
             else
             {
@@ -854,10 +870,20 @@ static BOOL wined3d_so_statistics_query_ops_issue(struct wined3d_query *query, D
         }
         gl_info = context->gl_info;
 
-        GL_EXTCALL(glBeginQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN,
-                pq->stream_idx, pq->u.query.written));
-        GL_EXTCALL(glBeginQueryIndexed(GL_PRIMITIVES_GENERATED,
-                pq->stream_idx, pq->u.query.generated));
+        if (gl_info->supported[ARB_TRANSFORM_FEEDBACK3])
+        {
+            GL_EXTCALL(glBeginQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN,
+                    pq->stream_idx, pq->u.query.written));
+            GL_EXTCALL(glBeginQueryIndexed(GL_PRIMITIVES_GENERATED,
+                    pq->stream_idx, pq->u.query.generated));
+        }
+        else
+        {
+            GL_EXTCALL(glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN,
+                    pq->u.query.written));
+            GL_EXTCALL(glBeginQuery(GL_PRIMITIVES_GENERATED,
+                    pq->u.query.generated));
+        }
         checkGLcall("begin query");
 
         context_release(context);
@@ -869,10 +895,7 @@ static BOOL wined3d_so_statistics_query_ops_issue(struct wined3d_query *query, D
         {
             if ((context = context_reacquire(device, pq->context)))
             {
-                gl_info = context->gl_info;
-                GL_EXTCALL(glEndQueryIndexed(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, pq->stream_idx));
-                GL_EXTCALL(glEndQueryIndexed(GL_PRIMITIVES_GENERATED, pq->stream_idx));
-                checkGLcall("end query");
+                wined3d_so_statistics_query_end(pq, context);
 
                 context_release(context);
                 poll = TRUE;
@@ -1023,34 +1046,6 @@ static BOOL wined3d_pipeline_query_ops_issue(struct wined3d_query *query, DWORD 
     }
 
     return poll;
-}
-
-static BOOL wined3d_statistics_query_ops_poll(struct wined3d_query *query, DWORD flags)
-{
-    TRACE("query %p, flags %#x.\n", query, flags);
-
-    return TRUE;
-}
-
-static BOOL wined3d_statistics_query_ops_issue(struct wined3d_query *query, DWORD flags)
-{
-    FIXME("query %p, flags %#x.\n", query, flags);
-
-    return FALSE;
-}
-
-static BOOL wined3d_overflow_query_ops_poll(struct wined3d_query *query, DWORD flags)
-{
-    TRACE("query %p, flags %#x.\n", query, flags);
-
-    return TRUE;
-}
-
-static BOOL wined3d_overflow_query_ops_issue(struct wined3d_query *query, DWORD flags)
-{
-    FIXME("query %p, flags %#x.\n", query, flags);
-
-    return FALSE;
 }
 
 static void wined3d_event_query_ops_destroy(struct wined3d_query *query)
@@ -1264,6 +1259,8 @@ static HRESULT wined3d_so_statistics_query_create(struct wined3d_device *device,
 
     if (WINED3D_QUERY_TYPE_SO_STATISTICS_STREAM0 <= type && type <= WINED3D_QUERY_TYPE_SO_STATISTICS_STREAM3)
         stream_idx = type - WINED3D_QUERY_TYPE_SO_STATISTICS_STREAM0;
+    else if (type == WINED3D_QUERY_TYPE_SO_STATISTICS)
+        stream_idx = 0;
     else
         return WINED3DERR_NOTAVAILABLE;
 
@@ -1275,7 +1272,7 @@ static HRESULT wined3d_so_statistics_query_create(struct wined3d_device *device,
         WARN("OpenGL implementation does not support primitive queries.\n");
         return WINED3DERR_NOTAVAILABLE;
     }
-    if (!gl_info->supported[ARB_TRANSFORM_FEEDBACK3])
+    if (stream_idx && !gl_info->supported[ARB_TRANSFORM_FEEDBACK3])
     {
         WARN("OpenGL implementation does not support indexed queries.\n");
         return WINED3DERR_NOTAVAILABLE;
@@ -1337,72 +1334,6 @@ static HRESULT wined3d_pipeline_query_create(struct wined3d_device *device,
     return WINED3D_OK;
 }
 
-static void wined3d_statistics_query_ops_destroy(struct wined3d_query *query)
-{
-    HeapFree(GetProcessHeap(), 0, query);
-}
-
-static const struct wined3d_query_ops statistics_query_ops =
-{
-    wined3d_statistics_query_ops_poll,
-    wined3d_statistics_query_ops_issue,
-    wined3d_statistics_query_ops_destroy,
-};
-
-static HRESULT wined3d_statistics_query_create(struct wined3d_device *device,
-        enum wined3d_query_type type, void *parent, const struct wined3d_parent_ops *parent_ops,
-        struct wined3d_query **query)
-{
-    static const struct wined3d_query_data_so_statistics statistics = { 1, 1 };
-    struct wined3d_query *object;
-
-    FIXME("device %p, type %#x, parent %p, query %p.\n", device, type, parent, query);
-
-    if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object))))
-        return E_OUTOFMEMORY;
-
-    wined3d_query_init(object, device, type, &statistics,
-            sizeof(statistics), &statistics_query_ops, parent, parent_ops);
-
-    TRACE("Created query %p.\n", object);
-    *query = object;
-
-    return WINED3D_OK;
-}
-
-static void wined3d_overflow_query_ops_destroy(struct wined3d_query *query)
-{
-    HeapFree(GetProcessHeap(), 0, query);
-}
-
-static const struct wined3d_query_ops overflow_query_ops =
-{
-    wined3d_overflow_query_ops_poll,
-    wined3d_overflow_query_ops_issue,
-    wined3d_overflow_query_ops_destroy,
-};
-
-static HRESULT wined3d_overflow_query_create(struct wined3d_device *device,
-        enum wined3d_query_type type, void *parent, const struct wined3d_parent_ops *parent_ops,
-        struct wined3d_query **query)
-{
-    static const BOOL overflow = FALSE;
-    struct wined3d_query *object;
-
-    FIXME("device %p, type %#x, parent %p, query %p.\n", device, type, parent, query);
-
-    if (!(object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object))))
-        return E_OUTOFMEMORY;
-
-    wined3d_query_init(object, device, type, &overflow,
-            sizeof(overflow), &overflow_query_ops, parent, parent_ops);
-
-    TRACE("Created query %p.\n", object);
-    *query = object;
-
-    return WINED3D_OK;
-}
-
 HRESULT CDECL wined3d_query_create(struct wined3d_device *device, enum wined3d_query_type type,
         void *parent, const struct wined3d_parent_ops *parent_ops, struct wined3d_query **query)
 {
@@ -1424,6 +1355,7 @@ HRESULT CDECL wined3d_query_create(struct wined3d_device *device, enum wined3d_q
         case WINED3D_QUERY_TYPE_TIMESTAMP_FREQ:
             return wined3d_timestamp_disjoint_query_create(device, type, parent, parent_ops, query);
 
+        case WINED3D_QUERY_TYPE_SO_STATISTICS:
         case WINED3D_QUERY_TYPE_SO_STATISTICS_STREAM0:
         case WINED3D_QUERY_TYPE_SO_STATISTICS_STREAM1:
         case WINED3D_QUERY_TYPE_SO_STATISTICS_STREAM2:
@@ -1432,12 +1364,6 @@ HRESULT CDECL wined3d_query_create(struct wined3d_device *device, enum wined3d_q
 
         case WINED3D_QUERY_TYPE_PIPELINE_STATISTICS:
             return wined3d_pipeline_query_create(device, type, parent, parent_ops, query);
-
-        case WINED3D_QUERY_TYPE_SO_STATISTICS:
-            return wined3d_statistics_query_create(device, type, parent, parent_ops, query);
-
-        case WINED3D_QUERY_TYPE_SO_OVERFLOW:
-            return wined3d_overflow_query_create(device, type, parent, parent_ops, query);
 
         default:
             FIXME("Unhandled query type %#x.\n", type);

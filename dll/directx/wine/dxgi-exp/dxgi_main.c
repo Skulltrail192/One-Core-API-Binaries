@@ -35,6 +35,7 @@ static struct dxgi_main dxgi_main;
 
 static void dxgi_main_cleanup(void)
 {
+	DbgPrint("DXGI::dxgi_main_cleanup\n");
     heap_free(dxgi_main.device_layers);
     FreeLibrary(dxgi_main.d3d10core);
 }
@@ -58,24 +59,24 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, void *reserved)
 
 HRESULT WINAPI CreateDXGIFactory2(UINT flags, REFIID iid, void **factory)
 {
-    DbgPrint("flags %#x, iid %s, factory %p.\n", flags, debugstr_guid(iid), factory);
+    DbgPrint("DXGI::CreateDXGIFactory2::flags %#x, iid %s, factory %p.\n", flags, debugstr_guid(iid), factory);
 
     if (flags)
-        DbgPrint("Ignoring flags %#x.\n", flags);
+        DbgPrint("DXGI::CreateDXGIFactory2::Ignoring flags %#x.\n", flags);
 
     return dxgi_factory_create(iid, factory, TRUE);
 }
 
 HRESULT WINAPI CreateDXGIFactory1(REFIID iid, void **factory)
 {
-    DbgPrint("iid %s, factory %p.\n", debugstr_guid(iid), factory);
+    DbgPrint("DXGI::CreateDXGIFactory1::iid %s, factory %p.\n", debugstr_guid(iid), factory);
 
     return dxgi_factory_create(iid, factory, TRUE);
 }
 
 HRESULT WINAPI CreateDXGIFactory(REFIID iid, void **factory)
 {
-    DbgPrint("iid %s, factory %p.\n", debugstr_guid(iid), factory);
+    DbgPrint("DXGI::CreateDXGIFactory::iid %s, factory %p.\n", debugstr_guid(iid), factory);
 
     return dxgi_factory_create(iid, factory, FALSE);
 }
@@ -83,6 +84,8 @@ HRESULT WINAPI CreateDXGIFactory(REFIID iid, void **factory)
 static BOOL get_layer(enum dxgi_device_layer_id id, struct dxgi_device_layer *layer)
 {
     UINT i;
+	
+	DbgPrint("DXGI::get_layer::get_layer\n");
 
     wined3d_mutex_lock();
 
@@ -103,6 +106,8 @@ static BOOL get_layer(enum dxgi_device_layer_id id, struct dxgi_device_layer *la
 static HRESULT register_d3d10core_layers(HMODULE d3d10core)
 {
     wined3d_mutex_lock();
+	
+	DbgPrint("DXGI::register_d3d10core_layers::get_layer\n");
 
     if (!dxgi_main.d3d10core)
     {
@@ -121,7 +126,7 @@ static HRESULT register_d3d10core_layers(HMODULE d3d10core)
         hr = d3d11core_register_layers();
         if (FAILED(hr))
         {
-            DbgPrint("Failed to register d3d11 layers, returning %#x.\n", hr);
+            DbgPrint("DXGI::register_d3d10core_layers::Failed to register d3d11 layers, returning %#x.\n", hr);
             FreeLibrary(mod);
             wined3d_mutex_unlock();
             return hr;
@@ -145,11 +150,11 @@ HRESULT WINAPI DXGID3D10CreateDevice(HMODULE d3d10core, IDXGIFactory *factory, I
     DWORD count;
     HRESULT hr;
 
-    DbgPrint("d3d10core %p, factory %p, adapter %p, flags %#x, feature_levels %p, level_count %u, device %p.\n",
+    DbgPrint("DXGI::DXGID3D10CreateDevice::d3d10core %p, factory %p, adapter %p, flags %#x, feature_levels %p, level_count %u, device %p.\n",
             d3d10core, factory, adapter, flags, feature_levels, level_count, device);
 
     if (flags)
-        DbgPrint("Ignoring flags %#x.\n", flags);
+        DbgPrint("DXGI::DXGID3D10CreateDevice::Ignoring flags %#x.\n", flags);
 
     if (TRACE_ON(dxgi))
         dump_feature_levels(feature_levels, level_count);
@@ -157,13 +162,13 @@ HRESULT WINAPI DXGID3D10CreateDevice(HMODULE d3d10core, IDXGIFactory *factory, I
     hr = register_d3d10core_layers(d3d10core);
     if (FAILED(hr))
     {
-        DbgPrint("Failed to register d3d10core layers, returning %#x.\n", hr);
+        DbgPrint("DXGI::DXGID3D10CreateDevice::Failed to register d3d10core layers, returning %#x.\n", hr);
         return hr;
     }
 
     if (!get_layer(DXGI_DEVICE_LAYER_D3D10_DEVICE, &d3d10_layer))
     {
-        DbgPrint("Failed to get D3D10 device layer.\n");
+        DbgPrint("DXGI::DXGID3D10CreateDevice::Failed to get D3D10 device layer.\n");
         return E_FAIL;
     }
 
@@ -171,7 +176,7 @@ HRESULT WINAPI DXGID3D10CreateDevice(HMODULE d3d10core, IDXGIFactory *factory, I
     hr = d3d10_layer.init(d3d10_layer.id, &count, NULL);
     if (FAILED(hr))
     {
-        DbgPrint("Failed to initialize D3D10 device layer.\n");
+        DbgPrint("DXGI::DXGID3D10CreateDevice::Failed to initialize D3D10 device layer.\n");
         return E_FAIL;
     }
 
@@ -190,20 +195,20 @@ HRESULT WINAPI DXGID3D10CreateDevice(HMODULE d3d10core, IDXGIFactory *factory, I
 
     if (!(dxgi_device = heap_alloc_zero(device_size)))
     {
-        DbgPrint("Failed to allocate device memory.\n");
+        DbgPrint("DXGI::DXGID3D10CreateDevice::Failed to allocate device memory.\n");
         return E_OUTOFMEMORY;
     }
 
     hr = dxgi_device_init(dxgi_device, &d3d10_layer, factory, adapter, feature_levels, level_count);
     if (FAILED(hr))
     {
-        DbgPrint("Failed to initialize device, hr %#x.\n", hr);
+        DbgPrint("DXGI::register_d3d10core_layers::Failed to initialize device, hr %#x.\n", hr);
         heap_free(dxgi_device);
         *device = NULL;
         return hr;
     }
 
-    DbgPrint("Created device %p.\n", dxgi_device);
+    DbgPrint("DXGI::register_d3d10core_layers::Created device %p.\n", dxgi_device);
     *device = &dxgi_device->IWineDXGIDevice_iface;
 
     return S_OK;
@@ -214,7 +219,7 @@ HRESULT WINAPI DXGID3D10RegisterLayers(const struct dxgi_device_layer *layers, U
     UINT i;
     struct dxgi_device_layer *new_layers;
 
-    DbgPrint("layers %p, layer_count %u\n", layers, layer_count);
+    DbgPrint("DXGI::DXGID3D10RegisterLayers::layers %p, layer_count %u\n", layers, layer_count);
 
     wined3d_mutex_lock();
 
@@ -227,7 +232,7 @@ HRESULT WINAPI DXGID3D10RegisterLayers(const struct dxgi_device_layer *layers, U
     if (!new_layers)
     {
         wined3d_mutex_unlock();
-        DbgPrint("Failed to allocate layer memory\n");
+        DbgPrint("DXGI::DXGID3D10RegisterLayers::Failed to allocate layer memory\n");
         return E_OUTOFMEMORY;
     }
 
@@ -235,7 +240,7 @@ HRESULT WINAPI DXGID3D10RegisterLayers(const struct dxgi_device_layer *layers, U
     {
         const struct dxgi_device_layer *layer = &layers[i];
 
-        DbgPrint("layer %d: id %#x, init %p, get_size %p, create %p\n",
+        DbgPrint("DXGI::DXGID3D10RegisterLayers::layer %d: id %#x, init %p, get_size %p, create %p\n",
                 i, layer->id, layer->init, layer->get_size, layer->create);
 
         new_layers[dxgi_main.layer_count + i] = *layer;
@@ -247,4 +252,12 @@ HRESULT WINAPI DXGID3D10RegisterLayers(const struct dxgi_device_layer *layers, U
     wined3d_mutex_unlock();
 
     return S_OK;
+}
+
+HRESULT WINAPI DXGIGetDebugInterface1(UINT flags, REFIID iid, void **debug)
+{
+    DbgPrint("DXGI::DXGIGetDebugInterface1::flags %#x, iid %s, debug %p.\n", flags, debugstr_guid(iid), debug);
+
+	DbgPrint("DXGI::DXGIGetDebugInterface1::Returning DXGI_ERROR_SDK_COMPONENT_MISSING.\n");
+    return DXGI_ERROR_SDK_COMPONENT_MISSING;
 }

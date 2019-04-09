@@ -42,6 +42,7 @@
 
 #define D3D9_MAX_VERTEX_SHADER_CONSTANTF 256
 #define D3D9_MAX_TEXTURE_UNITS 20
+#define D3D9_MAX_STREAMS 16
 
 #define D3DPRESENTFLAGS_MASK 0x00000fffu
 
@@ -53,7 +54,7 @@ HRESULT vdecl_convert_fvf(DWORD FVF, D3DVERTEXELEMENT9 **ppVertexElements) DECLS
 D3DFORMAT d3dformat_from_wined3dformat(enum wined3d_format_id format) DECLSPEC_HIDDEN;
 BOOL is_gdi_compat_wined3dformat(enum wined3d_format_id format) DECLSPEC_HIDDEN;
 enum wined3d_format_id wined3dformat_from_d3dformat(D3DFORMAT format) DECLSPEC_HIDDEN;
-unsigned int wined3dmapflags_from_d3dmapflags(unsigned int flags) DECLSPEC_HIDDEN;
+unsigned int wined3dmapflags_from_d3dmapflags(unsigned int flags, unsigned int usage) DECLSPEC_HIDDEN;
 void present_parameters_from_wined3d_swapchain_desc(D3DPRESENT_PARAMETERS *present_parameters,
         const struct wined3d_swapchain_desc *swapchain_desc, DWORD presentation_interval) DECLSPEC_HIDDEN;
 void d3dcaps_from_wined3dcaps(D3DCAPS9 *caps, const struct wined3d_caps *wined3d_caps) DECLSPEC_HIDDEN;
@@ -102,9 +103,15 @@ struct d3d9_device
     struct d3d9_surface *render_targets[D3D_MAX_SIMULTANEOUS_RENDERTARGETS];
 
     LONG device_state;
-    BOOL in_destruction;
-    BOOL in_scene;
-    BOOL has_vertex_declaration;
+    DWORD sysmem_vb : 16; /* D3D9_MAX_STREAMS */
+    DWORD sysmem_ib : 1;
+    DWORD in_destruction : 1;
+    DWORD in_scene : 1;
+    DWORD has_vertex_declaration : 1;
+    DWORD recording : 1;
+    DWORD padding : 11;
+
+    DWORD auto_mipmaps; /* D3D9_MAX_TEXTURE_UNITS */
 
     unsigned int max_user_clip_planes;
 
@@ -181,7 +188,8 @@ struct d3d9_vertexbuffer
     struct d3d9_resource resource;
     struct wined3d_buffer *wined3d_buffer;
     IDirect3DDevice9Ex *parent_device;
-    DWORD fvf;
+    struct wined3d_buffer *draw_buffer;
+    DWORD fvf, usage;
 };
 
 HRESULT vertexbuffer_init(struct d3d9_vertexbuffer *buffer, struct d3d9_device *device,
@@ -194,7 +202,9 @@ struct d3d9_indexbuffer
     struct d3d9_resource resource;
     struct wined3d_buffer *wined3d_buffer;
     IDirect3DDevice9Ex *parent_device;
+    struct wined3d_buffer *draw_buffer;
     enum wined3d_format_id format;
+    DWORD usage;
 };
 
 HRESULT indexbuffer_init(struct d3d9_indexbuffer *buffer, struct d3d9_device *device,
@@ -241,6 +251,7 @@ struct d3d9_vertex_declaration
     LONG refcount;
     D3DVERTEXELEMENT9 *elements;
     UINT element_count;
+    DWORD stream_map;
     struct wined3d_vertex_declaration *wined3d_declaration;
     DWORD fvf;
     IDirect3DDevice9Ex *parent_device;
@@ -317,23 +328,35 @@ static inline D3DPOOL d3dpool_from_wined3daccess(unsigned int access, unsigned i
     }
 }
 
+static inline unsigned int map_access_from_usage(unsigned int usage)
+{
+    if (usage & D3DUSAGE_WRITEONLY)
+        return WINED3D_RESOURCE_ACCESS_MAP_W;
+    return WINED3D_RESOURCE_ACCESS_MAP_R | WINED3D_RESOURCE_ACCESS_MAP_W;
+}
+
 static inline unsigned int wined3daccess_from_d3dpool(D3DPOOL pool, unsigned int usage)
 {
+    unsigned int access;
+
     switch (pool)
     {
         case D3DPOOL_DEFAULT:
-            if (usage & D3DUSAGE_DYNAMIC)
-                return WINED3D_RESOURCE_ACCESS_GPU | WINED3D_RESOURCE_ACCESS_MAP_R | WINED3D_RESOURCE_ACCESS_MAP_W;
-            return WINED3D_RESOURCE_ACCESS_GPU;
+            access = WINED3D_RESOURCE_ACCESS_GPU;
+            break;
         case D3DPOOL_MANAGED:
-            return WINED3D_RESOURCE_ACCESS_GPU | WINED3D_RESOURCE_ACCESS_CPU
-                    | WINED3D_RESOURCE_ACCESS_MAP_R | WINED3D_RESOURCE_ACCESS_MAP_W;
+            access = WINED3D_RESOURCE_ACCESS_GPU | WINED3D_RESOURCE_ACCESS_CPU;
+            break;
         case D3DPOOL_SYSTEMMEM:
         case D3DPOOL_SCRATCH:
-            return WINED3D_RESOURCE_ACCESS_CPU | WINED3D_RESOURCE_ACCESS_MAP_R | WINED3D_RESOURCE_ACCESS_MAP_W;
+            access = WINED3D_RESOURCE_ACCESS_CPU;
+            break;
         default:
-            return 0;
+            access = 0;
     }
+    if (pool != D3DPOOL_DEFAULT || usage & D3DUSAGE_DYNAMIC)
+        access |= map_access_from_usage(usage);
+    return access;
 }
 
 static inline unsigned int wined3d_bind_flags_from_d3d9_usage(DWORD usage)

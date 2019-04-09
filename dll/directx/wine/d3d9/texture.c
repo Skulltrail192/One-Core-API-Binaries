@@ -19,6 +19,7 @@
  */
 
 #include "config.h"
+#include "wine/port.h"
 #include "d3d9_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
@@ -1301,6 +1302,12 @@ HRESULT texture_init(struct d3d9_texture *texture, struct d3d9_device *device,
     DWORD flags = 0;
     HRESULT hr;
 
+    if (pool == D3DPOOL_MANAGED && device->d3d_parent->extended)
+    {
+        WARN("Managed resources are not supported by d3d9ex devices.\n");
+        return D3DERR_INVALIDCALL;
+    }
+
     texture->IDirect3DBaseTexture9_iface.lpVtbl = (const IDirect3DBaseTexture9Vtbl *)&d3d9_texture_2d_vtbl;
     d3d9_resource_init(&texture->resource);
     list_init(&texture->rtv_list);
@@ -1311,23 +1318,23 @@ HRESULT texture_init(struct d3d9_texture *texture, struct d3d9_device *device,
     desc.multisample_type = WINED3D_MULTISAMPLE_NONE;
     desc.multisample_quality = 0;
     desc.usage = wined3dusage_from_d3dusage(usage);
-    desc.usage |= WINED3DUSAGE_TEXTURE;
     if (pool == D3DPOOL_SCRATCH)
         desc.usage |= WINED3DUSAGE_SCRATCH;
     desc.bind_flags = wined3d_bind_flags_from_d3d9_usage(usage) | WINED3D_BIND_SHADER_RESOURCE;
-    desc.access = wined3daccess_from_d3dpool(pool, usage)
-            | WINED3D_RESOURCE_ACCESS_MAP_R | WINED3D_RESOURCE_ACCESS_MAP_W;
+    desc.access = wined3daccess_from_d3dpool(pool, usage);
     desc.width = width;
     desc.height = height;
     desc.depth = 1;
     desc.size = 0;
 
-    if (pool != D3DPOOL_DEFAULT || (usage & D3DUSAGE_DYNAMIC))
-        flags |= WINED3D_TEXTURE_CREATE_MAPPABLE;
-
     if (is_gdi_compat_wined3dformat(desc.format))
         flags |= WINED3D_TEXTURE_CREATE_GET_DC;
 
+    if (usage & D3DUSAGE_WRITEONLY)
+    {
+        WARN("Texture can't be created with the D3DUSAGE_WRITEONLY flags, returning D3DERR_INVALIDCALL.\n");
+        return D3DERR_INVALIDCALL;
+    }
     if (usage & D3DUSAGE_AUTOGENMIPMAP)
     {
         if (pool == D3DPOOL_SYSTEMMEM)
@@ -1388,6 +1395,12 @@ HRESULT cubetexture_init(struct d3d9_texture *texture, struct d3d9_device *devic
     DWORD flags = 0;
     HRESULT hr;
 
+    if (pool == D3DPOOL_MANAGED && device->d3d_parent->extended)
+    {
+        WARN("Managed resources are not supported by d3d9ex devices.\n");
+        return D3DERR_INVALIDCALL;
+    }
+
     texture->IDirect3DBaseTexture9_iface.lpVtbl = (const IDirect3DBaseTexture9Vtbl *)&d3d9_texture_cube_vtbl;
     d3d9_resource_init(&texture->resource);
     list_init(&texture->rtv_list);
@@ -1398,23 +1411,24 @@ HRESULT cubetexture_init(struct d3d9_texture *texture, struct d3d9_device *devic
     desc.multisample_type = WINED3D_MULTISAMPLE_NONE;
     desc.multisample_quality = 0;
     desc.usage = wined3dusage_from_d3dusage(usage);
-    desc.usage |= WINED3DUSAGE_LEGACY_CUBEMAP | WINED3DUSAGE_TEXTURE;
+    desc.usage |= WINED3DUSAGE_LEGACY_CUBEMAP;
     if (pool == D3DPOOL_SCRATCH)
         desc.usage |= WINED3DUSAGE_SCRATCH;
     desc.bind_flags = wined3d_bind_flags_from_d3d9_usage(usage) | WINED3D_BIND_SHADER_RESOURCE;
-    desc.access = wined3daccess_from_d3dpool(pool, usage)
-            | WINED3D_RESOURCE_ACCESS_MAP_R | WINED3D_RESOURCE_ACCESS_MAP_W;
+    desc.access = wined3daccess_from_d3dpool(pool, usage);
     desc.width = edge_length;
     desc.height = edge_length;
     desc.depth = 1;
     desc.size = 0;
 
-    if (pool != D3DPOOL_DEFAULT || (usage & D3DUSAGE_DYNAMIC))
-        flags |= WINED3D_TEXTURE_CREATE_MAPPABLE;
-
     if (is_gdi_compat_wined3dformat(desc.format))
         flags |= WINED3D_TEXTURE_CREATE_GET_DC;
 
+    if (usage & D3DUSAGE_WRITEONLY)
+    {
+        WARN("Texture can't be created with the D3DUSAGE_WRITEONLY flags, returning D3DERR_INVALIDCALL.\n");
+        return D3DERR_INVALIDCALL;
+    }
     if (usage & D3DUSAGE_AUTOGENMIPMAP)
     {
         if (pool == D3DPOOL_SYSTEMMEM)
@@ -1460,6 +1474,16 @@ HRESULT volumetexture_init(struct d3d9_texture *texture, struct d3d9_device *dev
     struct wined3d_resource_desc desc;
     HRESULT hr;
 
+    if (pool == D3DPOOL_MANAGED && device->d3d_parent->extended)
+    {
+        WARN("Managed resources are not supported by d3d9ex devices.\n");
+        return D3DERR_INVALIDCALL;
+    }
+
+    /* In d3d9, 3D textures can't be used as rendertarget or depth/stencil buffer. */
+    if (usage & (D3DUSAGE_RENDERTARGET | D3DUSAGE_DEPTHSTENCIL))
+        return D3DERR_INVALIDCALL;
+
     texture->IDirect3DBaseTexture9_iface.lpVtbl = (const IDirect3DBaseTexture9Vtbl *)&d3d9_texture_3d_vtbl;
     d3d9_resource_init(&texture->resource);
     list_init(&texture->rtv_list);
@@ -1470,7 +1494,6 @@ HRESULT volumetexture_init(struct d3d9_texture *texture, struct d3d9_device *dev
     desc.multisample_type = WINED3D_MULTISAMPLE_NONE;
     desc.multisample_quality = 0;
     desc.usage = wined3dusage_from_d3dusage(usage);
-    desc.usage |= WINED3DUSAGE_TEXTURE;
     if (pool == D3DPOOL_SCRATCH)
         desc.usage |= WINED3DUSAGE_SCRATCH;
     desc.bind_flags = wined3d_bind_flags_from_d3d9_usage(usage) | WINED3D_BIND_SHADER_RESOURCE;
@@ -1480,6 +1503,11 @@ HRESULT volumetexture_init(struct d3d9_texture *texture, struct d3d9_device *dev
     desc.depth = depth;
     desc.size = 0;
 
+    if (usage & D3DUSAGE_WRITEONLY)
+    {
+        WARN("Texture can't be created with the D3DUSAGE_WRITEONLY flags, returning D3DERR_INVALIDCALL.\n");
+        return D3DERR_INVALIDCALL;
+    }
     if (usage & D3DUSAGE_AUTOGENMIPMAP)
     {
         WARN("D3DUSAGE_AUTOGENMIPMAP volume texture is not supported, returning D3DERR_INVALIDCALL.\n");

@@ -347,6 +347,10 @@ HRESULT d3d_blend_state_create(struct d3d_device *device, const D3D11_BLEND_DESC
             tmp_desc.RenderTarget[i].BlendOpAlpha = D3D11_BLEND_OP_ADD;
         }
         tmp_desc.RenderTarget[i].RenderTargetWriteMask = desc->RenderTarget[j].RenderTargetWriteMask;
+
+        if (i > 3 && tmp_desc.RenderTarget[i].RenderTargetWriteMask != D3D11_COLOR_WRITE_ENABLE_ALL)
+            FIXME("Color mask %#x not supported for render target %u.\n",
+                    tmp_desc.RenderTarget[i].RenderTargetWriteMask, i);
     }
 
     /* glEnableIndexedEXT(GL_BLEND, ...) */

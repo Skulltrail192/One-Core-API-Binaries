@@ -193,19 +193,13 @@ static HRESULT normalize_dsv_desc(D3D11_DEPTH_STENCIL_VIEW_DESC *desc, ID3D11Res
 {
     D3D11_RESOURCE_DIMENSION dimension;
     unsigned int layer_count;
-    DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
+    DXGI_FORMAT format;
     HRESULT hr;
 
     if (FAILED(hr = get_resource_properties(resource, &dimension, &format, NULL, &layer_count)))
         return hr;
     switch (dimension)
     {
-		case D3D11_RESOURCE_DIMENSION_BUFFER: {
-			if (desc->ViewDimension != D3D11_RTV_DIMENSION_BUFFER) {
-			  WARN("D3D11: Incompatible view dimension for Buffer");
-			  return E_INVALIDARG;
-			}
-		} break;
         case D3D11_RESOURCE_DIMENSION_TEXTURE1D:
             if (desc->ViewDimension != D3D11_DSV_DIMENSION_TEXTURE1D
                     && desc->ViewDimension != D3D11_DSV_DIMENSION_TEXTURE1DARRAY)
@@ -226,6 +220,7 @@ static HRESULT normalize_dsv_desc(D3D11_DEPTH_STENCIL_VIEW_DESC *desc, ID3D11Res
             }
             break;
 
+        case D3D11_RESOURCE_DIMENSION_BUFFER:
         case D3D11_RESOURCE_DIMENSION_TEXTURE3D:
         default:
             WARN("Invalid resource dimension %#x.\n", dimension);
@@ -2305,7 +2300,7 @@ struct d3d_shader_resource_view *unsafe_impl_from_ID3D10ShaderResourceView(ID3D1
     if (!iface)
         return NULL;
     assert(iface->lpVtbl == (ID3D10ShaderResourceViewVtbl *)&d3d10_shader_resource_view_vtbl);
-    return CONTAINING_RECORD((ID3D10ShaderResourceView1 *)iface, struct d3d_shader_resource_view, ID3D10ShaderResourceView1_iface);
+    return CONTAINING_RECORD(iface, struct d3d_shader_resource_view, ID3D10ShaderResourceView1_iface);
 }
 
 /* ID3D11UnorderedAccessView methods */

@@ -20,6 +20,7 @@
  */
 
 #include "config.h"
+#include "wine/port.h"
 #include "d3d9_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
@@ -249,7 +250,7 @@ static HRESULT WINAPI d3d9_surface_LockRect(IDirect3DSurface9 *iface,
 
     wined3d_mutex_lock();
     hr = wined3d_resource_map(wined3d_texture_get_resource(surface->wined3d_texture), surface->sub_resource_idx,
-            &map_desc, rect ? &box : NULL, wined3dmapflags_from_d3dmapflags(flags));
+            &map_desc, rect ? &box : NULL, wined3dmapflags_from_d3dmapflags(flags, 0));
     wined3d_mutex_unlock();
 
     if (SUCCEEDED(hr))
@@ -258,6 +259,8 @@ static HRESULT WINAPI d3d9_surface_LockRect(IDirect3DSurface9 *iface,
         locked_rect->pBits = map_desc.data;
     }
 
+    if (hr == E_INVALIDARG)
+        return D3DERR_INVALIDCALL;
     return hr;
 }
 

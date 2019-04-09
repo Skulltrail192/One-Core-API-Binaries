@@ -30,6 +30,7 @@
 #include "winuser.h"
 #include "objbase.h"
 
+#include "dxgi1_6.h"
 #include "d3d11_4.h"
 #ifdef D3D11_INIT_GUID
 #include "initguid.h"
@@ -37,6 +38,8 @@
 #include "wine/wined3d.h"
 #include "wine/winedxgi.h"
 #include "wine/rbtree.h"
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #define MAKE_TAG(ch0, ch1, ch2, ch3) \
     ((DWORD)(ch0) | ((DWORD)(ch1) << 8) | \
@@ -64,8 +67,7 @@ void d3d11_primitive_topology_from_wined3d_primitive_type(enum wined3d_primitive
 void wined3d_primitive_type_from_d3d11_primitive_topology(D3D11_PRIMITIVE_TOPOLOGY topology,
         enum wined3d_primitive_type *type, unsigned int *patch_vertex_count) DECLSPEC_HIDDEN;
 unsigned int wined3d_getdata_flags_from_d3d11_async_getdata_flags(unsigned int d3d11_flags) DECLSPEC_HIDDEN;
-UINT d3d11_bind_flags_from_wined3d_usage(DWORD wined3d_usage) DECLSPEC_HIDDEN;
-DWORD wined3d_usage_from_d3d11(UINT bind_flags, enum D3D11_USAGE usage) DECLSPEC_HIDDEN;
+DWORD wined3d_usage_from_d3d11(enum D3D11_USAGE usage) DECLSPEC_HIDDEN;
 struct wined3d_resource *wined3d_resource_from_d3d11_resource(ID3D11Resource *resource) DECLSPEC_HIDDEN;
 struct wined3d_resource *wined3d_resource_from_d3d10_resource(ID3D10Resource *resource) DECLSPEC_HIDDEN;
 DWORD wined3d_map_flags_from_d3d11_map_type(D3D11_MAP map_type) DECLSPEC_HIDDEN;
@@ -92,21 +94,15 @@ HRESULT d3d_set_private_data(struct wined3d_private_store *store,
 HRESULT d3d_set_private_data_interface(struct wined3d_private_store *store,
         REFGUID guid, const IUnknown *object) DECLSPEC_HIDDEN;
 
-static inline void read_dword(const char **ptr, DWORD *d)
+static inline unsigned int wined3d_bind_flags_from_d3d11(UINT bind_flags)
 {
-    memcpy(d, *ptr, sizeof(*d));
-    *ptr += sizeof(*d);
+    return bind_flags;
 }
 
-static inline BOOL require_space(size_t offset, size_t count, size_t size, size_t data_size)
+static inline UINT d3d11_bind_flags_from_wined3d(unsigned int bind_flags)
 {
-    return !count || (data_size - offset) / count >= size;
+    return bind_flags;
 }
-
-void skip_dword_unknown(const char **ptr, unsigned int count) DECLSPEC_HIDDEN;
-
-HRESULT parse_dxbc(const char *data, SIZE_T data_size,
-        HRESULT (*chunk_handler)(const char *data, DWORD data_size, DWORD tag, void *ctx), void *ctx) DECLSPEC_HIDDEN;
 
 /* ID3D11Texture1D, ID3D10Texture1D */
 struct d3d_texture1d
@@ -381,12 +377,6 @@ HRESULT d3d11_compute_shader_create(struct d3d_device *device, const void *byte_
         struct d3d11_compute_shader **shader) DECLSPEC_HIDDEN;
 struct d3d11_compute_shader *unsafe_impl_from_ID3D11ComputeShader(ID3D11ComputeShader *iface) DECLSPEC_HIDDEN;
 
-HRESULT shader_parse_signature(DWORD tag, const char *data, DWORD data_size,
-        struct wined3d_shader_signature *s) DECLSPEC_HIDDEN;
-struct wined3d_shader_signature_element *shader_find_signature_element(const struct wined3d_shader_signature *s,
-        const char *semantic_name, unsigned int semantic_idx, unsigned int stream_idx) DECLSPEC_HIDDEN;
-void shader_free_signature(struct wined3d_shader_signature *s) DECLSPEC_HIDDEN;
-
 /* ID3D11ClassLinkage */
 struct d3d11_class_linkage
 {
@@ -590,7 +580,5 @@ struct dxgi_device_layer
 HRESULT WINAPI DXGID3D10CreateDevice(HMODULE d3d10core, IDXGIFactory *factory, IDXGIAdapter *adapter,
         unsigned int flags, const D3D_FEATURE_LEVEL *feature_levels, unsigned int level_count, void **device);
 HRESULT WINAPI DXGID3D10RegisterLayers(const struct dxgi_device_layer *layers, UINT layer_count);
-
-# define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #endif /* __WINE_D3D11_PRIVATE_H */

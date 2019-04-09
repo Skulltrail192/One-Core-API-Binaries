@@ -196,7 +196,7 @@ static UINT STDMETHODCALLTYPE d3d11_texture1d_GetEvictionPriority(ID3D11Texture1
 {
     FIXME("iface %p stub!\n", iface);
 
-    return DXGI_RESOURCE_PRIORITY_NORMAL;
+    return 0;
 }
 
 static void STDMETHODCALLTYPE d3d11_texture1d_GetDesc(ID3D11Texture1D *iface, D3D11_TEXTURE1D_DESC *desc)
@@ -339,7 +339,7 @@ static UINT STDMETHODCALLTYPE d3d10_texture1d_GetEvictionPriority(ID3D10Texture1
 {
     FIXME("iface %p stub!\n", iface);
 
-    return DXGI_RESOURCE_PRIORITY_NORMAL;
+    return 0;
 }
 
 /* ID3D10Texture1D methods */
@@ -456,7 +456,8 @@ HRESULT d3d_texture1d_create(struct d3d_device *device, const D3D11_TEXTURE1D_DE
     wined3d_desc.format = wined3dformat_from_dxgi_format(desc->Format);
     wined3d_desc.multisample_type = WINED3D_MULTISAMPLE_NONE;
     wined3d_desc.multisample_quality = 0;
-    wined3d_desc.usage = wined3d_usage_from_d3d11(desc->BindFlags, desc->Usage);
+    wined3d_desc.usage = wined3d_usage_from_d3d11(desc->Usage);
+    wined3d_desc.bind_flags = wined3d_bind_flags_from_d3d11(desc->BindFlags);
     wined3d_desc.access = wined3d_access_from_d3d11(desc->Usage,
             desc->Usage == D3D11_USAGE_DEFAULT ? 0 : desc->CPUAccessFlags);
     wined3d_desc.width = desc->Width;
@@ -683,7 +684,7 @@ static UINT STDMETHODCALLTYPE d3d11_texture2d_GetEvictionPriority(ID3D11Texture2
 {
     FIXME("iface %p stub!\n", iface);
 
-    return DXGI_RESOURCE_PRIORITY_NORMAL;
+    return 0;
 }
 
 static void STDMETHODCALLTYPE d3d11_texture2d_GetDesc(ID3D11Texture2D *iface, D3D11_TEXTURE2D_DESC *desc)
@@ -840,7 +841,7 @@ static UINT STDMETHODCALLTYPE d3d10_texture2d_GetEvictionPriority(ID3D10Texture2
 {
     FIXME("iface %p stub!\n", iface);
 
-    return DXGI_RESOURCE_PRIORITY_NORMAL;
+    return 0;
 }
 
 /* ID3D10Texture2D methods */
@@ -1009,7 +1010,8 @@ HRESULT d3d_texture2d_create(struct d3d_device *device, const D3D11_TEXTURE2D_DE
     wined3d_desc.format = wined3dformat_from_dxgi_format(desc->Format);
     wined3d_desc.multisample_type = desc->SampleDesc.Count > 1 ? desc->SampleDesc.Count : WINED3D_MULTISAMPLE_NONE;
     wined3d_desc.multisample_quality = desc->SampleDesc.Quality;
-    wined3d_desc.usage = wined3d_usage_from_d3d11(desc->BindFlags, desc->Usage);
+    wined3d_desc.usage = wined3d_usage_from_d3d11(desc->Usage);
+    wined3d_desc.bind_flags = wined3d_bind_flags_from_d3d11(desc->BindFlags);
     wined3d_desc.access = wined3d_access_from_d3d11(desc->Usage,
             desc->Usage == D3D11_USAGE_DEFAULT ? 0 : desc->CPUAccessFlags);
     wined3d_desc.width = desc->Width;
@@ -1215,7 +1217,7 @@ static UINT STDMETHODCALLTYPE d3d11_texture3d_GetEvictionPriority(ID3D11Texture3
 {
     FIXME("iface %p stub!\n", iface);
 
-    return DXGI_RESOURCE_PRIORITY_NORMAL;
+    return 0;
 }
 
 static void STDMETHODCALLTYPE d3d11_texture3d_GetDesc(ID3D11Texture3D *iface, D3D11_TEXTURE3D_DESC *desc)
@@ -1338,7 +1340,7 @@ static UINT STDMETHODCALLTYPE d3d10_texture3d_GetEvictionPriority(ID3D10Texture3
 {
     FIXME("iface %p stub!\n", iface);
 
-    return DXGI_RESOURCE_PRIORITY_NORMAL;
+    return 0;
 }
 
 static HRESULT STDMETHODCALLTYPE d3d10_texture3d_Map(ID3D10Texture3D *iface, UINT sub_resource_idx,
@@ -1467,7 +1469,8 @@ static HRESULT d3d_texture3d_init(struct d3d_texture3d *texture, struct d3d_devi
     wined3d_desc.format = wined3dformat_from_dxgi_format(desc->Format);
     wined3d_desc.multisample_type = WINED3D_MULTISAMPLE_NONE;
     wined3d_desc.multisample_quality = 0;
-    wined3d_desc.usage = wined3d_usage_from_d3d11(desc->BindFlags, desc->Usage);
+    wined3d_desc.usage = wined3d_usage_from_d3d11(desc->Usage);
+    wined3d_desc.bind_flags = wined3d_bind_flags_from_d3d11(desc->BindFlags);
     wined3d_desc.access = wined3d_access_from_d3d11(desc->Usage,
             desc->Usage == D3D11_USAGE_DEFAULT ? 0 : desc->CPUAccessFlags);
     wined3d_desc.width = desc->Width;

@@ -32,6 +32,8 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(dwmapi);
 
+#define DWM_E_COMPOSITIONDISABLED  _HRESULT_TYPEDEF_(0x80263001)
+
 
 /* At process attach */
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
@@ -146,7 +148,7 @@ HRESULT WINAPI DwmGetTransportAttributes(BOOL *pfIsRemoting, BOOL *pfIsConnected
 {
     FIXME("(%p, %p, %p) stub\n", pfIsRemoting, pfIsConnected, pDwGeneration);
 
-    return E_NOTIMPL;
+    return DWM_E_COMPOSITIONDISABLED;
 }
 
 /**********************************************************************

@@ -441,36 +441,9 @@ unsigned int wined3d_getdata_flags_from_d3d11_async_getdata_flags(unsigned int d
     return WINED3DGETDATA_FLUSH;
 }
 
-UINT d3d11_bind_flags_from_wined3d_usage(DWORD wined3d_usage)
+DWORD wined3d_usage_from_d3d11(enum D3D11_USAGE usage)
 {
-    UINT bind_flags = 0;
-
-    if (wined3d_usage & WINED3DUSAGE_TEXTURE)
-        bind_flags |= D3D11_BIND_SHADER_RESOURCE;
-    if (wined3d_usage & WINED3DUSAGE_RENDERTARGET)
-        bind_flags |= D3D11_BIND_RENDER_TARGET;
-
-    wined3d_usage &= ~(WINED3DUSAGE_TEXTURE | WINED3DUSAGE_RENDERTARGET);
-    if (wined3d_usage)
-        FIXME("Unhandled wined3d usage %#x.\n", wined3d_usage);
-    return bind_flags;
-}
-
-DWORD wined3d_usage_from_d3d11(UINT bind_flags, enum D3D11_USAGE usage)
-{
-    static const DWORD handled = D3D11_BIND_SHADER_RESOURCE
-            | D3D11_BIND_RENDER_TARGET
-            | D3D11_BIND_DEPTH_STENCIL;
     DWORD wined3d_usage = 0;
-
-    if (bind_flags & D3D11_BIND_SHADER_RESOURCE)
-        wined3d_usage |= WINED3DUSAGE_TEXTURE;
-    if (bind_flags & D3D11_BIND_RENDER_TARGET)
-        wined3d_usage |= WINED3DUSAGE_RENDERTARGET;
-    if (bind_flags & D3D11_BIND_DEPTH_STENCIL)
-        wined3d_usage |= WINED3DUSAGE_DEPTHSTENCIL;
-    if (bind_flags & ~handled)
-        FIXME("Unhandled bind flags %#x.\n", bind_flags & ~handled);
 
     if (usage == D3D11_USAGE_DYNAMIC)
         wined3d_usage |= WINED3DUSAGE_DYNAMIC;
@@ -895,89 +868,6 @@ HRESULT d3d_set_private_data_interface(struct wined3d_private_store *store,
     hr = wined3d_private_store_set_private_data(store,
             guid, object, sizeof(object), WINED3DSPD_IUNKNOWN);
     wined3d_mutex_unlock();
-
-    return hr;
-}
-
-void skip_dword_unknown(const char **ptr, unsigned int count)
-{
-    unsigned int i;
-    DWORD d;
-
-    WARN("Skipping %u unknown DWORDs:\n", count);
-    for (i = 0; i < count; ++i)
-    {
-        read_dword(ptr, &d);
-        WARN("\t0x%08x\n", d);
-    }
-}
-
-HRESULT parse_dxbc(const char *data, SIZE_T data_size,
-        HRESULT (*chunk_handler)(const char *data, DWORD data_size, DWORD tag, void *ctx), void *ctx)
-{
-    const char *ptr = data;
-    HRESULT hr = S_OK;
-    DWORD chunk_count;
-    DWORD total_size;
-    unsigned int i;
-    DWORD version;
-    DWORD tag;
-
-    read_dword(&ptr, &tag);
-    TRACE("tag: %s.\n", debugstr_an((const char *)&tag, 4));
-
-    if (tag != TAG_DXBC)
-    {
-        WARN("Wrong tag.\n");
-        return E_INVALIDARG;
-    }
-
-    WARN("Ignoring DXBC checksum.\n");
-    skip_dword_unknown(&ptr, 4);
-
-    read_dword(&ptr, &version);
-    TRACE("version: %#x.\n", version);
-    if (version != 0x00000001)
-    {
-        WARN("Got unexpected DXBC version %#x.\n", version);
-        return E_INVALIDARG;
-    }
-
-    read_dword(&ptr, &total_size);
-    TRACE("total size: %#x\n", total_size);
-
-    read_dword(&ptr, &chunk_count);
-    TRACE("chunk count: %#x\n", chunk_count);
-
-    for (i = 0; i < chunk_count; ++i)
-    {
-        DWORD chunk_tag, chunk_size;
-        const char *chunk_ptr;
-        DWORD chunk_offset;
-
-        read_dword(&ptr, &chunk_offset);
-        TRACE("chunk %u at offset %#x\n", i, chunk_offset);
-
-        if (chunk_offset >= data_size || !require_space(chunk_offset, 2, sizeof(DWORD), data_size))
-        {
-            WARN("Invalid chunk offset %#x (data size %#lx).\n", chunk_offset, data_size);
-            return E_FAIL;
-        }
-
-        chunk_ptr = data + chunk_offset;
-
-        read_dword(&chunk_ptr, &chunk_tag);
-        read_dword(&chunk_ptr, &chunk_size);
-
-        if (!require_space(chunk_ptr - data, 1, chunk_size, data_size))
-        {
-            WARN("Invalid chunk size %#x (data size %#lx, chunk offset %#x).\n", chunk_size, data_size, chunk_offset);
-            return E_FAIL;
-        }
-
-        hr = chunk_handler(chunk_ptr, chunk_size, chunk_tag, ctx);
-        if (FAILED(hr)) break;
-    }
 
     return hr;
 }

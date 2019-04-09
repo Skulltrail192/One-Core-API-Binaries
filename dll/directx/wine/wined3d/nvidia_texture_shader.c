@@ -33,6 +33,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d);
 static void nvts_activate_dimensions(const struct wined3d_state *state, DWORD stage, struct wined3d_context *context)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
+    struct wined3d_texture *texture;
     BOOL bumpmap = FALSE;
 
     if (stage > 0
@@ -47,9 +48,9 @@ static void nvts_activate_dimensions(const struct wined3d_state *state, DWORD st
         context->texShaderBumpMap &= ~(1u << stage);
     }
 
-    if (state->textures[stage])
+    if ((texture = state->textures[stage]))
     {
-        switch (state->textures[stage]->target)
+        switch (wined3d_texture_gl(texture)->target)
         {
             case GL_TEXTURE_2D:
                 gl_info->gl_ops.gl.p_glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV,
@@ -70,7 +71,7 @@ static void nvts_activate_dimensions(const struct wined3d_state *state, DWORD st
                 checkGLcall("glTexEnvi(GL_TEXTURE_SHADER_NV, GL_SHADER_OPERATION_NV, GL_TEXTURE_CUBE_MAP_ARB)");
                 break;
             default:
-                FIXME("Unhandled target %#x.\n", state->textures[stage]->target);
+                FIXME("Unhandled target %#x.\n", wined3d_texture_gl(texture)->target);
                 break;
         }
     }
@@ -686,8 +687,10 @@ static void nvts_enable(const struct wined3d_gl_info *gl_info, BOOL enable)
     }
 }
 
-static void nvrc_fragment_get_caps(const struct wined3d_gl_info *gl_info, struct fragment_caps *caps)
+static void nvrc_fragment_get_caps(const struct wined3d_adapter *adapter, struct fragment_caps *caps)
 {
+    const struct wined3d_gl_info *gl_info = &adapter->gl_info;
+
     caps->wined3d_caps = 0;
     caps->PrimitiveMiscCaps = WINED3DPMISCCAPS_TSSARGTEMP;
 
@@ -738,7 +741,7 @@ static void nvrc_fragment_get_caps(const struct wined3d_gl_info *gl_info, struct
             WINED3DTEXOPCAPS_PREMODULATE */
 #endif
 
-    caps->MaxTextureBlendStages = min(MAX_TEXTURES, gl_info->limits.general_combiners);
+    caps->MaxTextureBlendStages = min(WINED3D_MAX_TEXTURES, gl_info->limits.general_combiners);
     caps->MaxSimultaneousTextures = gl_info->limits.textures;
 }
 
@@ -753,7 +756,7 @@ static void *nvrc_fragment_alloc(const struct wined3d_shader_backend_ops *shader
 }
 
 /* Context activation is done by the caller. */
-static void nvrc_fragment_free(struct wined3d_device *device) {}
+static void nvrc_fragment_free(struct wined3d_device *device, struct wined3d_context *context) {}
 
 /* Two fixed function pipeline implementations using GL_NV_register_combiners and
  * GL_NV_texture_shader. The nvts_fragment_pipeline assumes that both extensions
@@ -767,7 +770,7 @@ static BOOL nvts_color_fixup_supported(struct color_fixup_desc fixup)
     return is_identity_fixup(fixup);
 }
 
-static const struct StateEntryTemplate nvrc_fragmentstate_template[] =
+static const struct wined3d_state_entry_template nvrc_fragmentstate_template[] =
 {
     { STATE_TEXTURESTAGE(0, WINED3D_TSS_COLOR_OP),        { STATE_TEXTURESTAGE(0, WINED3D_TSS_COLOR_OP),        nvrc_colorop        }, WINED3D_GL_EXT_NONE             },
     { STATE_TEXTURESTAGE(0, WINED3D_TSS_COLOR_ARG1),      { STATE_TEXTURESTAGE(0, WINED3D_TSS_COLOR_OP),        NULL                }, WINED3D_GL_EXT_NONE             },

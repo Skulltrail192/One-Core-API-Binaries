@@ -299,6 +299,4 @@ static inline BOOL require_space(size_t offset, size_t count, size_t size, size_
 void skip_dword_unknown(const char *location, const char **ptr, unsigned int count) DECLSPEC_HIDDEN;
 void write_dword_unknown(char **ptr, DWORD d) DECLSPEC_HIDDEN;
 
-# define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
 #endif /* __WINE_D3D10_PRIVATE_H */

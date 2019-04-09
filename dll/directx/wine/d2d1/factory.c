@@ -141,7 +141,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateRectangleGeometry(ID2D1Factor
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    if (FAILED(hr = d2d_rectangle_geometry_init(object, iface, rect)))
+    if (FAILED(hr = d2d_rectangle_geometry_init(object, (ID2D1Factory *)iface, rect)))
     {
         WARN("Failed to initialize rectangle geometry, hr %#x.\n", hr);
         heap_free(object);
@@ -173,10 +173,26 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateEllipseGeometry(ID2D1Factory2
 static HRESULT STDMETHODCALLTYPE d2d_factory_CreateGeometryGroup(ID2D1Factory2 *iface,
         D2D1_FILL_MODE fill_mode, ID2D1Geometry **geometries, UINT32 geometry_count, ID2D1GeometryGroup **group)
 {
-    FIXME("iface %p, fill_mode %#x, geometries %p, geometry_count %u, group %p stub!\n",
+    struct d2d_geometry *object;
+    HRESULT hr;
+
+    TRACE("iface %p, fill_mode %#x, geometries %p, geometry_count %u, group %p.\n",
             iface, fill_mode, geometries, geometry_count, group);
 
-    return E_NOTIMPL;
+    if (!(object = heap_alloc_zero(sizeof(*object))))
+        return E_OUTOFMEMORY;
+
+    if (FAILED(hr = d2d_geometry_group_init(object, (ID2D1Factory *)iface, fill_mode, geometries, geometry_count)))
+    {
+        WARN("Failed to initialize geometry group, hr %#x.\n", hr);
+        heap_free(object);
+        return hr;
+    }
+
+    TRACE("Created geometry group %p.\n", object);
+    *group = (ID2D1GeometryGroup *)&object->ID2D1Geometry_iface;
+
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE d2d_factory_CreateTransformedGeometry(ID2D1Factory2 *iface,
@@ -191,7 +207,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreateTransformedGeometry(ID2D1Fact
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    d2d_transformed_geometry_init(object, iface, src_geometry, transform);
+    d2d_transformed_geometry_init(object, (ID2D1Factory *)iface, src_geometry, transform);
 
     TRACE("Created transformed geometry %p.\n", object);
     *transformed_geometry = (ID2D1TransformedGeometry *)&object->ID2D1Geometry_iface;
@@ -208,7 +224,7 @@ static HRESULT STDMETHODCALLTYPE d2d_factory_CreatePathGeometry(ID2D1Factory2 *i
     if (!(object = heap_alloc_zero(sizeof(*object))))
         return E_OUTOFMEMORY;
 
-    d2d_path_geometry_init(object, iface);
+    d2d_path_geometry_init(object, (ID2D1Factory *)iface);
 
     TRACE("Created path geometry %p.\n", object);
     *geometry = (ID2D1PathGeometry *)&object->ID2D1Geometry_iface;

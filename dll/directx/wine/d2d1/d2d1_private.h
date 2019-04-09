@@ -25,7 +25,6 @@
 #include <assert.h>
 #include <limits.h>
 #define COBJMACROS
-#include "d2d1.h"
 #include "d2d1_2.h"
 #ifdef D2D1_INIT_GUID
 #include "initguid.h"
@@ -425,7 +424,7 @@ struct d2d_geometry
     ID2D1Geometry ID2D1Geometry_iface;
     LONG refcount;
 
-    ID2D1Factory1 *factory;
+    ID2D1Factory *factory;
 
     D2D_MATRIX_3X2_F transform;
 
@@ -486,14 +485,22 @@ struct d2d_geometry
             ID2D1Geometry *src_geometry;
             D2D_MATRIX_3X2_F transform;
         } transformed;
+        struct
+        {
+            ID2D1Geometry **src_geometries;
+            UINT32 geometry_count;
+            D2D1_FILL_MODE fill_mode;
+        } group;
     } u;
 };
 
-void d2d_path_geometry_init(struct d2d_geometry *geometry, ID2D1Factory1 *factory) DECLSPEC_HIDDEN;
+void d2d_path_geometry_init(struct d2d_geometry *geometry, ID2D1Factory *factory) DECLSPEC_HIDDEN;
 HRESULT d2d_rectangle_geometry_init(struct d2d_geometry *geometry,
-        ID2D1Factory1 *factory, const D2D1_RECT_F *rect) DECLSPEC_HIDDEN;
-void d2d_transformed_geometry_init(struct d2d_geometry *geometry, ID2D1Factory1 *factory,
+        ID2D1Factory *factory, const D2D1_RECT_F *rect) DECLSPEC_HIDDEN;
+void d2d_transformed_geometry_init(struct d2d_geometry *geometry, ID2D1Factory *factory,
         ID2D1Geometry *src_geometry, const D2D_MATRIX_3X2_F *transform) DECLSPEC_HIDDEN;
+HRESULT d2d_geometry_group_init(struct d2d_geometry *geometry, ID2D1Factory *factory,
+        D2D1_FILL_MODE fill_mode, ID2D1Geometry **src_geometries, unsigned int geometry_count) DECLSPEC_HIDDEN;
 struct d2d_geometry *unsafe_impl_from_ID2D1Geometry(ID2D1Geometry *iface) DECLSPEC_HIDDEN;
 
 struct d2d_device
@@ -609,28 +616,6 @@ static inline const char *debug_d2d_rect_f(const D2D1_RECT_F *rect)
 {
     if (!rect) return "(null)";
     return wine_dbg_sprintf("(%.8e,%.8e)-(%.8e,%.8e)", rect->left, rect->top, rect->right, rect->bottom );
-}
-
-# define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
-FORCEINLINE D2D1_PIXEL_FORMAT ID2D1RenderTarget_GetPixelFormat(ID2D1RenderTarget* This) {
-    D2D1_PIXEL_FORMAT __ret;
-    return *This->lpVtbl->GetPixelFormat(This,&__ret);
-}
-
-FORCEINLINE D2D1_SIZE_F ID2D1RenderTarget_GetSize(ID2D1RenderTarget* This) {
-    D2D1_SIZE_F __ret;
-    return *This->lpVtbl->GetSize(This,&__ret);
-}
-
-FORCEINLINE D2D1_SIZE_U ID2D1RenderTarget_GetPixelSize(ID2D1RenderTarget* This) {
-    D2D1_SIZE_U __ret;
-    return *This->lpVtbl->GetPixelSize(This,&__ret);
-}
-
-FORCEINLINE D2D1_SIZE_F ID2D1Bitmap_GetSize(ID2D1Bitmap* This) {
-    D2D1_SIZE_F __ret;
-    return *This->lpVtbl->GetSize(This,&__ret);
 }
 
 #endif /* __WINE_D2D1_PRIVATE_H */

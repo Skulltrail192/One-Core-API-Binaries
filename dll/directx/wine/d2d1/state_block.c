@@ -190,5 +190,5 @@ struct d2d_state_block *unsafe_impl_from_ID2D1DrawingStateBlock(ID2D1DrawingStat
     if (!iface)
         return NULL;
     assert(iface->lpVtbl == (ID2D1DrawingStateBlockVtbl *)&d2d_state_block_vtbl);
-    return CONTAINING_RECORD((ID2D1DrawingStateBlock1*)iface, struct d2d_state_block, ID2D1DrawingStateBlock1_iface);
+    return CONTAINING_RECORD(iface, struct d2d_state_block, ID2D1DrawingStateBlock1_iface);
 }

@@ -380,24 +380,10 @@ enum wined3d_format_id wined3dformat_from_dxgi_format(DXGI_FORMAT format)
 
 const char *debug_dxgi_mode(const DXGI_MODE_DESC *desc)
 {
-    if (!desc)
-        return "(null)";
-
     return wine_dbg_sprintf("resolution %ux%u, refresh rate %u / %u, "
             "format %s, scanline ordering %#x, scaling %#x",
             desc->Width, desc->Height, desc->RefreshRate.Numerator, desc->RefreshRate.Denominator,
             debug_dxgi_format(desc->Format), desc->ScanlineOrdering, desc->Scaling);
-}
-
-const char *debug_dxgi_mode1(const DXGI_MODE_DESC1 *desc)
-{
-    if (!desc)
-        return "(null)";
-
-    return wine_dbg_sprintf("resolution %ux%u, refresh rate %u / %u, "
-            "format %s, scanline ordering %#x, scaling %#x, stereo %#x",
-            desc->Width, desc->Height, desc->RefreshRate.Numerator, desc->RefreshRate.Denominator,
-            debug_dxgi_format(desc->Format), desc->ScanlineOrdering, desc->Scaling, desc->Stereo);
 }
 
 void dump_feature_levels(const D3D_FEATURE_LEVEL *feature_levels, unsigned int level_count)
@@ -469,45 +455,34 @@ void wined3d_display_mode_from_dxgi(struct wined3d_display_mode *wined3d_mode,
     wined3d_mode->scanline_ordering = wined3d_scanline_ordering_from_dxgi(mode->ScanlineOrdering);
 }
 
-void wined3d_display_mode_from_dxgi1(struct wined3d_display_mode *wined3d_mode,
-        const DXGI_MODE_DESC1 *mode)
-{
-    wined3d_mode->width = mode->Width;
-    wined3d_mode->height = mode->Height;
-    wined3d_mode->refresh_rate = dxgi_rational_to_uint(&mode->RefreshRate);
-    wined3d_mode->format_id = wined3dformat_from_dxgi_format(mode->Format);
-    wined3d_mode->scanline_ordering = wined3d_scanline_ordering_from_dxgi(mode->ScanlineOrdering);
-    FIXME("Ignoring stereo %#x.\n", mode->Stereo);
-}
-
-DXGI_USAGE dxgi_usage_from_wined3d_bind_flags(unsigned int wined3d_bind_flags)
+DXGI_USAGE dxgi_usage_from_wined3d_usage(DWORD wined3d_usage)
 {
     DXGI_USAGE dxgi_usage = 0;
 
-    if (wined3d_bind_flags & WINED3D_BIND_SHADER_RESOURCE)
+    if (wined3d_usage & WINED3DUSAGE_TEXTURE)
         dxgi_usage |= DXGI_USAGE_SHADER_INPUT;
-    if (wined3d_bind_flags & WINED3D_BIND_RENDER_TARGET)
+    if (wined3d_usage & WINED3DUSAGE_RENDERTARGET)
         dxgi_usage |= DXGI_USAGE_RENDER_TARGET_OUTPUT;
 
-    wined3d_bind_flags &= ~(WINED3D_BIND_SHADER_RESOURCE | WINED3D_BIND_RENDER_TARGET);
-    if (wined3d_bind_flags)
-        FIXME("Unhandled wined3d bind flags %#x.\n", wined3d_bind_flags);
+    wined3d_usage &= ~(WINED3DUSAGE_TEXTURE | WINED3DUSAGE_RENDERTARGET);
+    if (wined3d_usage)
+        FIXME("Unhandled wined3d usage %#x.\n", wined3d_usage);
     return dxgi_usage;
 }
 
-unsigned int wined3d_bind_flags_from_dxgi_usage(DXGI_USAGE dxgi_usage)
+DWORD wined3d_usage_from_dxgi_usage(DXGI_USAGE dxgi_usage)
 {
-    unsigned int wined3d_bind_flags = 0;
+    DWORD wined3d_usage = 0;
 
     if (dxgi_usage & DXGI_USAGE_SHADER_INPUT)
-        wined3d_bind_flags |= WINED3D_BIND_SHADER_RESOURCE;
+        wined3d_usage |= WINED3DUSAGE_TEXTURE;
     if (dxgi_usage & DXGI_USAGE_RENDER_TARGET_OUTPUT)
-        wined3d_bind_flags |= WINED3D_BIND_RENDER_TARGET;
+        wined3d_usage |= WINED3DUSAGE_RENDERTARGET;
 
     dxgi_usage &= ~(DXGI_USAGE_SHADER_INPUT | DXGI_USAGE_RENDER_TARGET_OUTPUT);
     if (dxgi_usage)
         FIXME("Unhandled DXGI usage %#x.\n", dxgi_usage);
-    return wined3d_bind_flags;
+    return wined3d_usage;
 }
 
 #define DXGI_WINED3D_SWAPCHAIN_FLAGS \
@@ -633,13 +608,21 @@ HRESULT dxgi_set_private_data_interface(struct wined3d_private_store *store,
         REFGUID guid, const IUnknown *object)
 {
     HRESULT hr;
+	
+	DbgPrint("DXGI::utils::dxgi_set_private_data_interface::enter function\n");
 
     if (!object)
-        return dxgi_set_private_data(store, guid, sizeof(object), &object);
+	{
+		DbgPrint("DXGI::utils::dxgi_set_private_data_interface:: object is null\n");
+		return dxgi_set_private_data(store, guid, sizeof(object), &object);
+	}
+        
 
     wined3d_mutex_lock();
+	DbgPrint("DXGI::utils::wined3d_private_store_set_private_data::calling function\n");
     hr = wined3d_private_store_set_private_data(store,
             guid, object, sizeof(object), WINED3DSPD_IUNKNOWN);
+	DbgPrint("DXGI::utils::dxgi_set_private_data_interface:: response: 0x%08X\n", hr);		
     wined3d_mutex_unlock();
 
     return hr;

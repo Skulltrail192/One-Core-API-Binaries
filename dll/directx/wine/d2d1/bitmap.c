@@ -626,5 +626,5 @@ struct d2d_bitmap *unsafe_impl_from_ID2D1Bitmap(ID2D1Bitmap *iface)
     if (!iface)
         return NULL;
     assert(iface->lpVtbl == (ID2D1BitmapVtbl *)&d2d_bitmap_vtbl);
-    return CONTAINING_RECORD((ID2D1Bitmap1*)iface, struct d2d_bitmap, ID2D1Bitmap1_iface);
+    return CONTAINING_RECORD(iface, struct d2d_bitmap, ID2D1Bitmap1_iface);
 }

@@ -212,7 +212,7 @@ static inline struct d2d_device_context *impl_from_ID2D1DeviceContext(ID2D1Devic
 
 static inline struct d2d_device_context *impl_from_ID2D1RenderTarget(ID2D1RenderTarget *iface)
 {
-    return CONTAINING_RECORD((ID2D1DeviceContext*)iface, struct d2d_device_context, ID2D1DeviceContext_iface);
+    return CONTAINING_RECORD(iface, struct d2d_device_context, ID2D1DeviceContext_iface);
 }
 
 static HRESULT STDMETHODCALLTYPE d2d_device_context_inner_QueryInterface(IUnknown *iface, REFIID iid, void **out)
@@ -1720,9 +1720,9 @@ static D2D1_SIZE_U * STDMETHODCALLTYPE d2d_device_context_GetPixelSize(ID2D1Devi
 
 static UINT32 STDMETHODCALLTYPE d2d_device_context_GetMaximumBitmapSize(ID2D1DeviceContext *iface)
 {
-    FIXME("iface %p stub!\n", iface);
+    TRACE("iface %p.\n", iface);
 
-    return 0;
+    return D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION;
 }
 
 static BOOL STDMETHODCALLTYPE d2d_device_context_IsSupported(ID2D1DeviceContext *iface,

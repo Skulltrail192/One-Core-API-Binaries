@@ -20,6 +20,7 @@
  */
 
 #include "config.h"
+#include "wine/port.h"
 #include "d3d9_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
@@ -137,17 +138,16 @@ static HRESULT WINAPI d3d9_GetAdapterIdentifier(IDirect3D9Ex *iface, UINT adapte
     adapter_id.device_name = identifier->DeviceName;
     adapter_id.device_name_size = sizeof(identifier->DeviceName);
 
-    wined3d_mutex_lock();
-    hr = wined3d_get_adapter_identifier(d3d9->wined3d, adapter, flags, &adapter_id);
-    wined3d_mutex_unlock();
-
-    identifier->DriverVersion = adapter_id.driver_version;
-    identifier->VendorId = adapter_id.vendor_id;
-    identifier->DeviceId = adapter_id.device_id;
-    identifier->SubSysId = adapter_id.subsystem_id;
-    identifier->Revision = adapter_id.revision;
-    memcpy(&identifier->DeviceIdentifier, &adapter_id.device_identifier, sizeof(identifier->DeviceIdentifier));
-    identifier->WHQLLevel = adapter_id.whql_level;
+    if (SUCCEEDED(hr = wined3d_get_adapter_identifier(d3d9->wined3d, adapter, flags, &adapter_id)))
+    {
+        identifier->DriverVersion = adapter_id.driver_version;
+        identifier->VendorId = adapter_id.vendor_id;
+        identifier->DeviceId = adapter_id.device_id;
+        identifier->SubSysId = adapter_id.subsystem_id;
+        identifier->Revision = adapter_id.revision;
+        memcpy(&identifier->DeviceIdentifier, &adapter_id.device_identifier, sizeof(identifier->DeviceIdentifier));
+        identifier->WHQLLevel = adapter_id.whql_level;
+    }
 
     return hr;
 }
@@ -255,10 +255,11 @@ static HRESULT WINAPI d3d9_CheckDeviceFormat(IDirect3D9Ex *iface, UINT adapter, 
     TRACE("iface %p, adapter %u, device_type %#x, adapter_format %#x, usage %#x, resource_type %#x, format %#x.\n",
             iface, adapter, device_type, adapter_format, usage, resource_type, format);
 
-    if (!adapter_format)
+    if (adapter_format != D3DFMT_X8R8G8B8 && adapter_format != D3DFMT_R5G6B5
+            && adapter_format != D3DFMT_X1R5G5B5)
     {
         WARN("Invalid adapter format.\n");
-        return D3DERR_INVALIDCALL;
+        return adapter_format ? D3DERR_NOTAVAILABLE : D3DERR_INVALIDCALL;
     }
 
     bind_flags = wined3d_bind_flags_from_d3d9_usage(usage);
@@ -544,11 +545,8 @@ static HRESULT WINAPI d3d9_GetAdapterLUID(IDirect3D9Ex *iface, UINT adapter, LUI
     adapter_id.description_size = 0;
     adapter_id.device_name_size = 0;
 
-    wined3d_mutex_lock();
-    hr = wined3d_get_adapter_identifier(d3d9->wined3d, adapter, 0, &adapter_id);
-    wined3d_mutex_unlock();
-
-    memcpy(luid, &adapter_id.adapter_luid, sizeof(*luid));
+    if (SUCCEEDED(hr = wined3d_get_adapter_identifier(d3d9->wined3d, adapter, 0, &adapter_id)))
+        *luid = adapter_id.adapter_luid;
 
     return hr;
 }

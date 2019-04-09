@@ -26,7 +26,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(d2d);
 
 static inline struct d2d_hwnd_render_target *impl_from_IUnknown(IUnknown *iface)
 {
-    return CONTAINING_RECORD((ID2D1HwndRenderTarget*)iface, struct d2d_hwnd_render_target, ID2D1HwndRenderTarget_iface);
+    return CONTAINING_RECORD(iface, struct d2d_hwnd_render_target, ID2D1HwndRenderTarget_iface);
 }
 
 static HRESULT d2d_hwnd_render_target_present(IUnknown *outer_unknown)
