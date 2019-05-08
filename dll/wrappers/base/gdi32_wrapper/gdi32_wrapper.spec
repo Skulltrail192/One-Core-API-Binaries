@@ -614,6 +614,7 @@
 @ stdcall D3DKMTDestroyDCFromMemory(ptr)
 @ stdcall D3DKMTCheckMonitorPowerState(ptr)
 @ stdcall D3DKMTOpenAdapterFromHdc(ptr)
+@ stdcall D3DKMTQueryStatistics(ptr)
 @ stdcall D3DKMTEscape(ptr)
 @ stdcall GetFontFileData(long long int64 ptr long)
 @ stub LoadImageColorMatcherA
