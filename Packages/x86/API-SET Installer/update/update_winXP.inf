@@ -298,17 +298,25 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "ext-ms-win-authz-context-l1-1-0.dll"
    "ext-ms-win-domainjoin-netjoin-l1-1-0.dll"
    "ext-ms-win-dwmapi-ext-l1-1-0.dll"
+   "ext-ms-win-gdi-dc-create-l1-1-0.dll"
    "ext-ms-win-gdi-dc-create-l1-1-1.dll"
    "ext-ms-win-gdi-dc-l1-2-0.dll"
    "ext-ms-win-gdi-devcaps-l1-1-0.dll"
+   "ext-ms-win-gdi-draw-l1-1-0.dll"
    "ext-ms-win-gdi-draw-l1-1-1.dll"
+   "ext-ms-win-gdi-font-l1-1-0.dll"
+   "ext-ms-win-gdi-font-l1-1-1.dll"
    "ext-ms-win-gdi-render-l1-1-0.dll"
    "ext-ms-win-kernel32-package-current-l1-1-0.dll"
    "ext-ms-win-kernel32-package-l1-1-1.dll"
+   "ext-ms-win-ntuser-dialogbox-l1-1-0.dll"
    "ext-ms-win-ntuser-draw-l1-1-0.dll"
+   "ext-ms-win-ntuser-gui-l1-1-0.dll"
    "ext-ms-win-ntuser-gui-l1-3-0.dll"
    "ext-ms-win-ntuser-keyboard-l1-3-0.dll"
+   "ext-ms-win-ntuser-message-l1-1-0.dll"
    "ext-ms-win-ntuser-message-l1-1-1.dll"
+   "ext-ms-win-ntuser-misc-l1-1-0.dll"
    "ext-ms-win-ntuser-misc-l1-2-0.dll"
    "ext-ms-win-ntuser-misc-l1-5-1.dll"
    "ext-ms-win-ntuser-mouse-l1-1-0.dll"
@@ -316,9 +324,11 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "ext-ms-win-ntuser-private-l1-3-1.dll"
    "ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll"
    "ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll"
+   "ext-ms-win-ntuser-window-l1-1-0.dll"   
    "ext-ms-win-ntuser-window-l1-1-1.dll"   
    "ext-ms-win-ntuser-window-l1-1-4.dll"   
    "ext-ms-win-oleacc-l1-1-0.dll"   
+   "ext-ms-win-ntuser-windowclass-l1-1-0.dll"
    "ext-ms-win-ntuser-windowclass-l1-1-1.dll"
    "ext-ms-win-ras-rasapi32-l1-1-0.dll"
    "ext-ms-win-rtcore-gdi-devcaps-l1-1-0.dll"
@@ -566,17 +576,25 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "ext-ms-win-authz-context-l1-1-0.dll" = 1
    "ext-ms-win-domainjoin-netjoin-l1-1-0.dll" = 1
    "ext-ms-win-dwmapi-ext-l1-1-0.dll" = 1
+   "ext-ms-win-gdi-dc-create-l1-1-0.dll" = 1
    "ext-ms-win-gdi-dc-create-l1-1-1.dll" = 1
    "ext-ms-win-gdi-dc-l1-2-0.dll" = 1
    "ext-ms-win-gdi-devcaps-l1-1-0.dll" = 1
+   "ext-ms-win-gdi-draw-l1-1-0.dll" = 1
    "ext-ms-win-gdi-draw-l1-1-1.dll" = 1
+   "ext-ms-win-gdi-font-l1-1-0.dll" = 1
+   "ext-ms-win-gdi-font-l1-1-1.dll" = 1
    "ext-ms-win-gdi-render-l1-1-0.dll" = 1
    "ext-ms-win-kernel32-package-current-l1-1-0.dll" = 1
    "ext-ms-win-kernel32-package-l1-1-1.dll" = 1
+   "ext-ms-win-ntuser-dialogbox-l1-1-0.dll" = 1
    "ext-ms-win-ntuser-draw-l1-1-0.dll" = 1
+   "ext-ms-win-ntuser-gui-l1-1-0.dll" = 1
    "ext-ms-win-ntuser-gui-l1-3-0.dll" = 1
    "ext-ms-win-ntuser-keyboard-l1-3-0.dll" = 1
+   "ext-ms-win-ntuser-message-l1-1-0.dll" = 1
    "ext-ms-win-ntuser-message-l1-1-1.dll" = 1
+   "ext-ms-win-ntuser-misc-l1-1-0.dll" = 1
    "ext-ms-win-ntuser-misc-l1-2-0.dll" = 1
    "ext-ms-win-ntuser-misc-l1-5-1.dll" = 1
    "ext-ms-win-ntuser-mouse-l1-1-0.dll" = 1
@@ -584,9 +602,11 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "ext-ms-win-ntuser-private-l1-3-1.dll" = 1
    "ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll" = 1
    "ext-ms-win-ntuser-uicontext-ext-l1-1-0.dll" = 1
+   "ext-ms-win-ntuser-window-l1-1-0.dll" = 1   
    "ext-ms-win-ntuser-window-l1-1-1.dll" = 1   
    "ext-ms-win-ntuser-window-l1-1-4.dll" = 1   
    "ext-ms-win-oleacc-l1-1-0.dll" = 1   
+   "ext-ms-win-ntuser-windowclass-l1-1-0.dll" = 1
    "ext-ms-win-ntuser-windowclass-l1-1-1.dll" = 1
    "ext-ms-win-ras-rasapi32-l1-1-0.dll" = 1
    "ext-ms-win-rtcore-gdi-devcaps-l1-1-0.dll" = 1
