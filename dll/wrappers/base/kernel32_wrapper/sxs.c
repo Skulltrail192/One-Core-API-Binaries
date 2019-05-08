@@ -12,7 +12,7 @@ Abstract:
 
 Author:
 
-    Skulltrail     21-April-2018
+    Skulltrail 21-April-2018
 
 --*/
 

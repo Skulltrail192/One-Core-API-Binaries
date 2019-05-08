@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 1991-2000,  Microsoft Corporation  All rights reserved.
+Copyright (c) 2019  Shorthorn Project
 
 Module Name:
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) Microsoft Corporation
+Copyright (c) 2019 Shorthorn Project
 
 Module Name:
 
@@ -12,7 +12,7 @@ Abstract:
 
 Author:
 
-    Mark Lucovsky (markl) 26-Sep-1990
+    Skulltrail 28-April-2019
 
 Revision History:
 

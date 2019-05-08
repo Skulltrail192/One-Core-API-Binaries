@@ -12,7 +12,7 @@ Abstract:
 
 Author:
 
-    Steve Wood (stevewo) 19-March-2017
+    Skulltrail 19-March-2017
 
 Revision History:
 

@@ -97,23 +97,23 @@ Bus_PDO_QueryInterface(PPDO_DEVICE_DATA DeviceData,
   PIO_STACK_LOCATION IrpSp = IoGetCurrentIrpStackLocation(Irp);
   PACPI_INTERFACE_STANDARD AcpiInterface;
 
-  if (IrpSp->Parameters.QueryInterface.Version != 1)
-  {
-      DPRINT1("Invalid version number: %d\n",
-              IrpSp->Parameters.QueryInterface.Version);
-      return STATUS_INVALID_PARAMETER;
-  }
+  // if (IrpSp->Parameters.QueryInterface.Version != 1)
+  // {
+      // DPRINT1("Invalid version number: %d\n",
+              // IrpSp->Parameters.QueryInterface.Version);
+      // return STATUS_INVALID_PARAMETER;
+  // }
 
   if (RtlCompareMemory(IrpSp->Parameters.QueryInterface.InterfaceType,
                         &GUID_ACPI_INTERFACE_STANDARD, sizeof(GUID)) == sizeof(GUID))
   {
       DPRINT("GUID_ACPI_INTERFACE_STANDARD\n");
 
-      if (IrpSp->Parameters.QueryInterface.Size < sizeof(ACPI_INTERFACE_STANDARD))
-      {
-          DPRINT1("Buffer too small! (%d)\n", IrpSp->Parameters.QueryInterface.Size);
-          return STATUS_BUFFER_TOO_SMALL;
-      }
+      // if (IrpSp->Parameters.QueryInterface.Size < sizeof(ACPI_INTERFACE_STANDARD))
+      // {
+          // DPRINT1("Buffer too small! (%d)\n", IrpSp->Parameters.QueryInterface.Size);
+          // return STATUS_BUFFER_TOO_SMALL;
+      // }
 
      AcpiInterface = (PACPI_INTERFACE_STANDARD)IrpSp->Parameters.QueryInterface.Interface;
 
@@ -128,8 +128,55 @@ Bus_PDO_QueryInterface(PPDO_DEVICE_DATA DeviceData,
      AcpiInterface->UnregisterForDeviceNotifications = AcpiInterfaceNotificationsUnregister;
 
      return STATUS_SUCCESS;
-  }
-  else
+  } else if (RtlCompareMemory(IrpSp->Parameters.QueryInterface.InterfaceType,
+                        &GUID_TRANSLATOR_INTERFACE_STANDARD, sizeof(GUID)) == sizeof(GUID)){
+  
+     AcpiInterface = (PACPI_INTERFACE_STANDARD)IrpSp->Parameters.QueryInterface.Interface;
+
+     AcpiInterface->InterfaceReference = AcpiInterfaceReference;
+     AcpiInterface->InterfaceDereference = AcpiInterfaceDereference;
+     AcpiInterface->GpeConnectVector = AcpiInterfaceConnectVector;
+     AcpiInterface->GpeDisconnectVector = AcpiInterfaceDisconnectVector;
+     AcpiInterface->GpeEnableEvent = AcpiInterfaceEnableEvent;
+     AcpiInterface->GpeDisableEvent = AcpiInterfaceDisableEvent;
+     AcpiInterface->GpeClearStatus = AcpiInterfaceClearStatus;
+     AcpiInterface->RegisterForDeviceNotifications = AcpiInterfaceNotificationsRegister;
+     AcpiInterface->UnregisterForDeviceNotifications = AcpiInterfaceNotificationsUnregister;
+	 return STATUS_SUCCESS;
+
+  } else if (RtlCompareMemory(IrpSp->Parameters.QueryInterface.InterfaceType,
+                        &GUID_PCI_BUS_INTERFACE_STANDARD, sizeof(GUID)) == sizeof(GUID)){
+	  
+     AcpiInterface = (PACPI_INTERFACE_STANDARD)IrpSp->Parameters.QueryInterface.Interface;
+
+     AcpiInterface->InterfaceReference = AcpiInterfaceReference;
+     AcpiInterface->InterfaceDereference = AcpiInterfaceDereference;
+     AcpiInterface->GpeConnectVector = AcpiInterfaceConnectVector;
+     AcpiInterface->GpeDisconnectVector = AcpiInterfaceDisconnectVector;
+     AcpiInterface->GpeEnableEvent = AcpiInterfaceEnableEvent;
+     AcpiInterface->GpeDisableEvent = AcpiInterfaceDisableEvent;
+     AcpiInterface->GpeClearStatus = AcpiInterfaceClearStatus;
+     AcpiInterface->RegisterForDeviceNotifications = AcpiInterfaceNotificationsRegister;
+     AcpiInterface->UnregisterForDeviceNotifications = AcpiInterfaceNotificationsUnregister;
+	 return STATUS_SUCCESS;
+
+  } else if (RtlCompareMemory(IrpSp->Parameters.QueryInterface.InterfaceType,
+                        &GUID_BUS_INTERFACE_STANDARD, sizeof(GUID)) == sizeof(GUID)){
+	  
+     AcpiInterface = (PACPI_INTERFACE_STANDARD)IrpSp->Parameters.QueryInterface.Interface;
+
+     AcpiInterface->InterfaceReference = AcpiInterfaceReference;
+     AcpiInterface->InterfaceDereference = AcpiInterfaceDereference;
+     AcpiInterface->GpeConnectVector = AcpiInterfaceConnectVector;
+     AcpiInterface->GpeDisconnectVector = AcpiInterfaceDisconnectVector;
+     AcpiInterface->GpeEnableEvent = AcpiInterfaceEnableEvent;
+     AcpiInterface->GpeDisableEvent = AcpiInterfaceDisableEvent;
+     AcpiInterface->GpeClearStatus = AcpiInterfaceClearStatus;
+     AcpiInterface->RegisterForDeviceNotifications = AcpiInterfaceNotificationsRegister;
+     AcpiInterface->UnregisterForDeviceNotifications = AcpiInterfaceNotificationsUnregister;
+	 return STATUS_SUCCESS;
+
+  }else
   {
       DPRINT1("Invalid GUID\n");
       return STATUS_NOT_SUPPORTED;

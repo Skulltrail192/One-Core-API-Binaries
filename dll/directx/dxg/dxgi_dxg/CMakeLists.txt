@@ -7,7 +7,7 @@ spec2def(dxgi_dxg.dll dxgi_dxg.spec ADD_IMPORTLIB)
 list(APPEND SOURCE
     adapter.c
     device.c
-    dxgi_main.c
+    dxgi_main.cpp
     factory.c
     output.c
     surface.c
