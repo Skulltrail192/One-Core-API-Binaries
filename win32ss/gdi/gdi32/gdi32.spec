@@ -614,3 +614,6 @@
 
 @ stub D3DKMTEscape
 @ stub D3DKMTOpenAdapterFromHdc
+@ stub GetFontFileData
+@ stub GetFontFileInfo
+@ stub GetFontRealizationInfo
