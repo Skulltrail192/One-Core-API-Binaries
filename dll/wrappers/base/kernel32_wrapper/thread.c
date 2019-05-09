@@ -449,18 +449,46 @@ ConvertThreadToFiberEx(
 BOOL 
 WINAPI 
 SetThreadStackGuarantee(
-	PULONG stacksize
+	IN OUT PULONG StackSizeInBytes
 )
 {
 	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
 	pSetThreadStackGuarantee = (void *)GetProcAddress(hkernel32, "SetThreadStackGuarantee");
 	if(pSetThreadStackGuarantee){
-		return pSetThreadStackGuarantee(stacksize);
+		return pSetThreadStackGuarantee(StackSizeInBytes);
 	}else{
-		static int once;
-		if (once++ == 0)
-			DbgPrint("SetThreadStackGuarantee: stub\n", stacksize);
-		return TRUE;
+		PTEB Teb = NtCurrentTeb();
+		ULONG GuaranteedStackBytes;
+		ULONG AllocationSize;
+
+		if (!StackSizeInBytes)
+		{
+			SetLastError(ERROR_INVALID_PARAMETER);
+			return FALSE;
+		}
+
+		AllocationSize = *StackSizeInBytes;
+
+		/* Retrieve the current stack size */
+		GuaranteedStackBytes = Teb->GuaranteedStackBytes;
+
+		/* Return the size of the previous stack */
+		*StackSizeInBytes = GuaranteedStackBytes;
+
+		/*
+		 * If the new stack size is either zero or is less than the current size,
+		 * the previous stack size is returned and we return success.
+		 */
+		if ((AllocationSize == 0) || (AllocationSize < GuaranteedStackBytes))
+		{
+			return TRUE;
+		}
+
+		// FIXME: Unimplemented!
+		DbgPrint("SetThreadStackGuarantee::Unimplemented\n");
+
+		// return TRUE;
+		return FALSE;
 	}    
 }
 
