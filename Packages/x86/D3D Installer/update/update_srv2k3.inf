@@ -100,6 +100,7 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	dxgi.dll
 	D3DCompiler_47.dll
 	fntcache.dll
+	libwine.dll
 	d3dwine.dll
 	wineft2.dll
 	winetxc.dll
@@ -127,6 +128,7 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	dxgi.dll = 1
 	D3DCompiler_47.dll = 1
 	fntcache.dll = 1
+	libwine.dll = 1
 	d3dwine.dll = 1
 	wineft2.dll = 1
 	winetxc.dll = 1

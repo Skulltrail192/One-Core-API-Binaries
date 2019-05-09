@@ -96,6 +96,7 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	dxgi.dll,amd64/dxgi.dll
 	d3dwine.dll,amd64/d3dwine.dll	
 	fntcache.dll,amd64/fntcache.dll
+	libwine.dll,amd64/libwine.dll
 	vcruntime140.dll,amd64/vcruntime140.dll
 	winetxc.dll,amd64/winetxc.dll	
 	wineft2.dll,amd64/wineft2.dll
@@ -118,6 +119,7 @@ LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 	dxgi.dll,i386/wdxgi.dll
 	d3dwine.dll,i386/wd3dwine.dll
 	fntcache.dll,i386/wfntcache.dll
+	libwine.dll,i386/wlibwine.dll	
 	vcruntime140.dll,i386/wvcruntime140.dll	
 	winetxc.dll,i386/wwinetxc.dll	
 	wineft2.dll,i386/wwineft2.dll
