@@ -231,10 +231,15 @@ typedef union _DIR_INFORMATION
     PFILE_BOTH_DIR_INFORMATION BothDirInfo;
 } DIR_INFORMATION;
 
-typedef enum _DEP_SYSTEM_POLICY_TYPE
-{
-	OptOut = 1
-}DEP_SYSTEM_POLICY_TYPE, *PDEP_SYSTEM_POLICY_TYPE;
+typedef enum _DEP_SYSTEM_POLICY_TYPE {
+    AlwaysOff = 0,
+    AlwaysOn = 1,
+    OptIn = 2,
+    OptOut = 3
+} DEP_SYSTEM_POLICY_TYPE;
+
+#define PROCESS_DEP_ENABLE 1
+#define PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION 2
 
 typedef struct _FIND_FILE_DATA
 {

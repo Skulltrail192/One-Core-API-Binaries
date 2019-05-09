@@ -22,81 +22,74 @@ Revision History:
 
 WINE_DEFAULT_DEBUG_CHANNEL(kernel32);
 
+static BOOL (WINAPI *pGetProcessDEPPolicy)(HANDLE, LPDWORD, PBOOL);
+static BOOL (WINAPI *pSetProcessDEPPolicy)(DWORD);
+static DEP_SYSTEM_POLICY_TYPE (WINAPI *pGetSystemDEPPolicy)();
+
 DEP_SYSTEM_POLICY_TYPE WINAPI 
 GetSystemDEPPolicy(void)
 {
-	return OptOut;
+	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
+	NTSTATUS status;
+	ULONG dep_flags;
+	
+	pGetSystemDEPPolicy = (void *)GetProcAddress(hkernel32, "GetSystemDEPPolicy");
+	if(pGetSystemDEPPolicy){
+		return pGetSystemDEPPolicy();
+	}else{
+		return OptIn;	
+	}	
 }
 
 BOOL 
 WINAPI 
 GetProcessDEPPolicy(HANDLE ProcessInformation, LPDWORD lpFlags, PBOOL lpPermanent)
 {
-  NTSTATUS status; // eax@1
-  BOOL result; // eax@2
-  ULONG number; // eax@3
-  LPDWORD value; // ecx@3
+	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
+	NTSTATUS status;
+	ULONG dep_flags;
+	
+	pGetProcessDEPPolicy = (void *)GetProcAddress(hkernel32, "GetProcessDEPPolicy");
+	if(pGetProcessDEPPolicy){
+		return pGetProcessDEPPolicy(ProcessInformation, lpFlags, lpPermanent);
+	}else{
 
-  status = NtQueryInformationProcess(ProcessInformation, ProcessIoCounters, &ProcessInformation, 4u, 0);
-  if ( NT_SUCCESS(status))
-  {
-    number = (ULONG)ProcessInformation;
-    value = 0;
-    if ( !((ULONG)ProcessInformation & 2) )
-    {
-    value = (LPDWORD)1;
-      if ( (ULONG)ProcessInformation & 4 )
-        value = (LPDWORD)3;
-    }
-    lpFlags = value;
-    *lpPermanent = (number >> 3) & 1;
-    result = TRUE;
-  }
-  else
-  {
-    BaseSetLastNTError(status);
-    result = FALSE;
-  }
-  return result;
+		status = NtQueryInformationProcess( GetCurrentProcess(), ProcessExecuteFlags,
+											&dep_flags, sizeof(dep_flags), NULL );
+		if (!status)
+		{
+			if (lpFlags)
+			{
+				*lpFlags = 0;
+				if (dep_flags & MEM_EXECUTE_OPTION_DISABLE)
+					*lpFlags |= PROCESS_DEP_ENABLE;
+				if (dep_flags & MEM_EXECUTE_OPTION_DISABLE_THUNK_EMULATION)
+					*lpFlags |= PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION;
+			}
+
+			if (lpPermanent)
+				*lpPermanent = (dep_flags & MEM_EXECUTE_OPTION_PERMANENT) != 0;
+
+		}
+		if (status) SetLastError( RtlNtStatusToDosError(status) );
+		return !status;		
+	}
 }
 
 DWORD 
 WINAPI 
 SetProcessDEPPolicy(DWORD dwFlags)
 {
-	FIXME("(%d): stub\n", dwFlags);
-    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-    return FALSE;	
-  // BOOL value; // eax@1
-  // NTSTATUS status; // [sp-4h] [bp-4h]@2
-
-  // value = dwFlags;
-  // if ( dwFlags & 0xFFFFFFFC )
-  // {
-    // status = STATUS_INVALID_PARAMETER;
-// error_return:
-    // BaseSetLastNTError(status);
-    // return FALSE;
-  // }
-  // if ( dwFlags & 1 )
-  // {
-    // dwFlags = 9;
-    // if ( value & 2 )
-      // dwFlags = 13;
-  // }
-  // else
-  // {
-    // if ( dwFlags & 2 )
-    // {
-      // status = STATUS_INVALID_PARAMETER_MIX;
-      // goto error_return;
-    // }
-    // dwFlags = 2;
-  // }
-  // status = NtSetInformationProcess((HANDLE)0xFFFFFFFF, (PROCESSINFOCLASS)0x22u, &dwFlags, 4u);
-  // if ( !NT_SUCCESS(status))
-  // {
-    // goto error_return;
-  // }
-  // return TRUE;
+	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
+	NTSTATUS status;
+	ULONG dep_flags;
+	
+	pSetProcessDEPPolicy = (void *)GetProcAddress(hkernel32, "SetProcessDEPPolicy");
+	if(pSetProcessDEPPolicy){
+		return pSetProcessDEPPolicy(dwFlags);
+	}else{
+		FIXME("(%d): stub\n", dwFlags);
+		SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+		return FALSE;	
+	}
 }
