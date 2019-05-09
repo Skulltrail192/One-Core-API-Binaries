@@ -20,6 +20,7 @@
 #include <main.h>
 
 HANDLE section = NULL;
+static BOOL (WINAPI *pIsSETEnabled)();
 
 UINT_PTR 
 WINAPI 
@@ -36,81 +37,13 @@ SetCoalescableTimer(
 
 BOOL WINAPI IsSETEnabled()
 {
-  LONG resp; // eax@1
-  LONG query; // eax@6
-  LPBYTE data; // eax@11
-  BOOLEAN verification; // zf@11
-  LPBYTE other; // [sp+8h] [bp-130h]@16
-  DWORD cbData; // [sp+Ch] [bp-12Ch]@6
-  HKEY hKey; // [sp+10h] [bp-128h]@1
-  LPBYTE Data; // [sp+14h] [bp-124h]@1
-  struct _OSVERSIONINFOW VersionInformation; // [sp+18h] [bp-120h]@3
-  BOOLEAN mistery; // [sp+132h] [bp-6h]@4
-
-  Data = 0;
-  mistery = TRUE;
-  resp = RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"Software\\Policies\\Microsoft\\Windows NT\\Reliability", 0, 1u, &hKey);
-  if ( !resp )
-  {
-    cbData = 4;
-    query = RegQueryValueExW(hKey, L"ShutdownReasonUI", 0, 0, (LPBYTE)&Data, &cbData);
-    if ( query )
-    {
-      if ( query == 2 )
-      {
-        if ( RegQueryValueExW(hKey, L"ShutdownReasonOn", 0, 0, (LPBYTE)&other, &cbData) == 2 )
-        {
-          VersionInformation.dwOSVersionInfoSize = 284;
-          if ( GetVersionExW(&VersionInformation) )
-          {
-            Data = (LPBYTE)1;
-            if ( mistery == TRUE )
-              Data = 0;
-          }
-        }
-      }
-      goto Close_Key;
-    }
-    if ( Data && Data != (LPBYTE)1 )
-    {
-      VersionInformation.dwOSVersionInfoSize = 284;
-      if ( !GetVersionExW(&VersionInformation) )
-      {
-Close_Key:
-        RegCloseKey(hKey);
-        return Data != 0;
-      }
-      if ( mistery == TRUE )
-      {
-        data = 0;
-        verification = Data == (LPBYTE)2;
-      }
-      else
-      {
-        data = 0;
-        verification = Data == (LPBYTE)3;
-      }
-    }
-    else
-    {
-      data = 0;
-      verification = Data == (LPBYTE)1;
-    }
-    data = (LPBYTE)verification;
-    Data = data;
-    goto Close_Key;
-  }
-  if ( resp == 2 )
-  {
-    VersionInformation.dwOSVersionInfoSize = 284;
-    if ( GetVersionExW(&VersionInformation) )
-    {
-      Data = (LPBYTE)1;
-      if ( mistery == TRUE )
-        Data = 0;
-    }
-  }
-  return Data != 0;
+	HMODULE huserbase = GetModuleHandleA("userbase.dll");
+	pIsSETEnabled = (void *)GetProcAddress(huserbase, "IsSETEnabled");
+	if(pIsSETEnabled){
+		return pIsSETEnabled();
+	}else{
+		return FALSE;
+	}
 }
 
 BOOL WINAPI HangrepRegisterPort(HANDLE Port)
