@@ -13,7 +13,7 @@ list(APPEND SOURCE
 add_library(combase SHARED ${SOURCE})
 
 set_module_type(combase win32dll UNICODE)
-target_link_libraries(combase uuid wine ${PSEH_LIB})
+target_link_libraries(combase uuid activation_uuids wine ${PSEH_LIB})
 add_delay_importlibs(combase winmm uxtheme)
 add_importlibs(combase user32 gdi32 advapi32 msvcrt kernel32 ole32 ntdll)
 add_cd_file(TARGET combase DESTINATION reactos/system32 FOR all)

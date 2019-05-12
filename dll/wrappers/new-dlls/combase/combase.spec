@@ -66,7 +66,7 @@
 @ stdcall CLSIDFromProgID(wstr ptr) ole32.CLSIDFromProgID
 @ stdcall CLSIDFromString(wstr ptr) ole32.CLSIDFromString
 @ stub CleanupOleStateInAllTls
-@ stub CleanupTlsOleState
+@ stdcall CleanupTlsOleState(ptr)
 @ stub ClearCleanupFlag
 @ stdcall CoAddRefServerProcess() ole32.CoAddRefServerProcess
 @ stub CoAllowUnmarshalerCLSID
@@ -82,10 +82,10 @@
 @ stub CoDeactivateObject
 @ stub CoDecodeProxy
 @ stub CoDecrementMTAUsage
-@ stub CoDisableCallCancellation
+@ stdcall CoDisableCallCancellation(ptr) ole32.CoDisableCallCancellation
 @ stub CoDisconnectContext
 @ stdcall CoDisconnectObject(ptr long) ole32.CoDisconnectObject
-@ stub CoEnableCallCancellation
+@ stdcall CoEnableCallCancellation(ptr) ole32.CoEnableCallCancellation
 @ stdcall CoFreeUnusedLibraries() ole32.CoFreeUnusedLibraries
 @ stdcall CoFreeUnusedLibrariesEx(long long) ole32.CoFreeUnusedLibrariesEx
 @ stdcall CoGetActivationState(int128 long ptr) ole32.CoGetActivationState
@@ -170,7 +170,7 @@
 @ stdcall CreateStreamOnHGlobal(ptr long ptr) ole32.CreateStreamOnHGlobal
 @ stub DcomChannelSetHResult
 @ stdcall DllDebugObjectRPCHook(long ptr) ole32.DllDebugObjectRPCHook
-@ stub DllGetActivationFactory
+@ stdcall DllGetActivationFactory(ptr ptr)
 @ stdcall -private DllGetClassObject(ptr ptr ptr) ole32.DllGetClassObject
 @ stub EnableHookObject
 @ stdcall FreePropVariantArray(long ptr) ole32.FreePropVariantArray
@@ -242,7 +242,7 @@
 @ stdcall PropVariantClear(ptr) ole32.PropVariantClear
 @ stdcall PropVariantCopy(ptr ptr) ole32.PropVariantCopy
 @ stub ReleaseFuncDescs
-@ stub RoActivateInstance
+@ stdcall RoActivateInstance(ptr ptr)
 @ stub RoCaptureErrorContext
 @ stub RoClearError
 @ stub RoFailFastWithErrorContext
@@ -250,11 +250,11 @@
 @ stub RoGetActivatableClassRegistration
 @ stdcall RoGetActivationFactory(ptr ptr ptr)
 @ stub RoGetAgileReference
-@ stub RoGetApartmentIdentifier
+@ stdcall RoGetApartmentIdentifier(ptr)
 @ stub RoGetErrorReportingFlags
 @ stub RoGetMatchingRestrictedErrorInfo
 @ stdcall RoGetParameterizedTypeInstanceIID(long ptr ptr ptr ptr)
-@ stub RoGetServerActivatableClasses
+@ stdcall RoGetServerActivatableClasses(ptr ptr ptr)
 @ stdcall RoInitialize(long)
 @ stub RoInspectCapturedStackBackTrace
 @ stub RoInspectThreadErrorInfo
@@ -262,8 +262,8 @@
 @ stub RoOriginateErrorW
 @ stub RoOriginateLanguageException
 @ stub RoParameterizedTypeExtraGetTypeSignature
-@ stub RoRegisterActivationFactories
-@ stub RoRegisterForApartmentShutdown
+@ stdcall RoRegisterActivationFactories(ptr ptr long ptr)
+@ stdcall RoRegisterForApartmentShutdown(ptr ptr ptr)
 @ stub RoReportCapabilityCheckFailure
 @ stub RoReportFailedDelegate
 @ stub RoReportUnhandledError

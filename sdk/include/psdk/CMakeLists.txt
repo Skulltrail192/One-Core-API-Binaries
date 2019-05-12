@@ -207,4 +207,6 @@ add_iid_library(dwrite_uuids dwrite.idl dwrite_1.idl dwrite_2.idl dwrite_3.idl)
 add_iid_library(wuguid wuapi.idl)
 add_iid_library(xml_uuids msxml2.idl)
 
+add_iid_library(activation_uuids activation.idl)
+
 generate_idl_iids(wincodec.idl)
