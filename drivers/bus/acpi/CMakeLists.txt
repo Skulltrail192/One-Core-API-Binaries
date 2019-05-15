@@ -7,6 +7,7 @@ if(ARCH STREQUAL "amd64")
     add_definitions(-DWIN64)
 endif()
 
+
 list(APPEND ACPICA_SOURCE
     acpica/dispatcher/dsargs.c
     acpica/dispatcher/dscontrol.c
@@ -59,6 +60,7 @@ list(APPEND ACPICA_SOURCE
     acpica/executer/exresnte.c
     acpica/executer/exresolv.c
     acpica/executer/exresop.c
+    acpica/executer/exserial.c
     acpica/executer/exstore.c
     acpica/executer/exstoren.c
     acpica/executer/exstorob.c
@@ -162,6 +164,7 @@ list(APPEND ACPICA_SOURCE
     acpica/utilities/utstate.c
     acpica/utilities/utstring.c
     acpica/utilities/utstrtoul64.c
+    acpica/utilities/utstrsuppt.c
     # acpica/utilities/utuuid.c
     acpica/utilities/uttrack.c
     acpica/utilities/utxface.c
@@ -195,7 +198,7 @@ list(APPEND ACPI_SOURCE
     main.c
     precomp.h)
 
-add_library(acpi SHARED ${ACPI_SOURCE})
+add_library(acpi MODULE ${ACPI_SOURCE})
 set_module_type(acpi kernelmodedriver)
 target_link_libraries(acpi wdmguid acpica memcmp strtol ${PSEH_LIB})
 add_importlibs(acpi ntoskrnl hal)

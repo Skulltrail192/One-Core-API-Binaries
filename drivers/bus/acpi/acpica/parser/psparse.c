@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -468,7 +468,7 @@ AcpiPsParseAml (
 
     if (!WalkState->ParserState.Aml)
     {
-        return_ACPI_STATUS (AE_NULL_OBJECT);
+        return_ACPI_STATUS (AE_BAD_ADDRESS);
     }
 
     /* Create and initialize a new thread state */
@@ -529,6 +529,18 @@ AcpiPsParseAml (
             "Completed one call to walk loop, %s State=%p\n",
             AcpiFormatException (Status), WalkState));
 
+        if (WalkState->MethodPathname && WalkState->MethodIsNested)
+        {
+            /* Optional object evaluation log */
+
+            ACPI_DEBUG_PRINT_RAW ((ACPI_DB_EVALUATION, "%-26s:  %*s%s\n",
+                "   Exit nested method",
+                (WalkState->MethodNestingDepth + 1) * 3, " ",
+                &WalkState->MethodPathname[1]));
+
+            ACPI_FREE (WalkState->MethodPathname);
+            WalkState->MethodIsNested = FALSE;
+        }
         if (Status == AE_CTRL_TRANSFER)
         {
             /*
@@ -560,12 +572,12 @@ AcpiPsParseAml (
             if (Status == AE_ABORT_METHOD)
             {
                 AcpiNsPrintNodePathname (
-                    WalkState->MethodNode, "Method aborted:");
+                    WalkState->MethodNode, "Aborting method");
                 AcpiOsPrintf ("\n");
             }
             else
             {
-                ACPI_ERROR_METHOD ("Method parse/execution failed",
+                ACPI_ERROR_METHOD ("Aborting method",
                     WalkState->MethodNode, NULL, Status);
             }
             AcpiExEnterInterpreter ();

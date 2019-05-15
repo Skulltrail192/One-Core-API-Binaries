@@ -6,7 +6,7 @@
  ******************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -242,6 +242,11 @@ AcpiNsDetachObject (
         {
             ACPI_FREE (ObjDesc->Method.AmlStart);
         }
+    }
+
+    if (ObjDesc->Common.Type == ACPI_TYPE_REGION)
+    {
+        AcpiUtRemoveAddressRange(ObjDesc->Region.SpaceId, Node);
     }
 
     /* Clear the Node entry in all cases */

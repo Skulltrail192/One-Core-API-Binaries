@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -206,21 +206,21 @@ AcpiPsGetNextNamestring (
 
         /* Two name segments */
 
-        End += 1 + (2 * ACPI_NAME_SIZE);
+        End += 1 + (2 * ACPI_NAMESEG_SIZE);
         break;
 
     case AML_MULTI_NAME_PREFIX:
 
         /* Multiple name segments, 4 chars each, count in next byte */
 
-        End += 2 + (*(End + 1) * ACPI_NAME_SIZE);
+        End += 2 + (*(End + 1) * ACPI_NAMESEG_SIZE);
         break;
 
     default:
 
         /* Single name segment */
 
-        End += ACPI_NAME_SIZE;
+        End += ACPI_NAMESEG_SIZE;
         break;
     }
 
@@ -392,7 +392,7 @@ AcpiPsGetNextNamepath (
 
     if (ACPI_FAILURE (Status))
     {
-        ACPI_ERROR_NAMESPACE (Path, Status);
+        ACPI_ERROR_NAMESPACE (WalkState->ScopeInfo, Path, Status);
 
         if ((WalkState->ParseFlags & ACPI_PARSE_MODE_MASK) ==
             ACPI_PARSE_EXECUTE)
@@ -600,7 +600,7 @@ AcpiPsGetNextField (
 
         ACPI_MOVE_32_TO_32 (&Name, ParserState->Aml);
         AcpiPsSetName (Field, Name);
-        ParserState->Aml += ACPI_NAME_SIZE;
+        ParserState->Aml += ACPI_NAMESEG_SIZE;
 
 
         ASL_CV_CAPTURE_COMMENTS_ONLY (ParserState);
@@ -943,6 +943,9 @@ AcpiPsGetNextArg (
 
             if (Arg->Common.AmlOpcode == AML_INT_METHODCALL_OP)
             {
+                /* Free method call op and corresponding namestring sub-ob */
+
+                AcpiPsFreeOp (Arg->Common.Value.Arg);
                 AcpiPsFreeOp (Arg);
                 Arg = NULL;
                 WalkState->ArgCount = 1;
@@ -959,10 +962,9 @@ AcpiPsGetNextArg (
     case ARGP_DATAOBJ:
     case ARGP_TERMARG:
 
-
-    ACPI_DEBUG_PRINT ((ACPI_DB_PARSE,
-        "**** TermArg/DataObj: %s (%2.2X)\n",
-        AcpiUtGetArgumentTypeName (ArgType), ArgType));
+        ACPI_DEBUG_PRINT ((ACPI_DB_PARSE,
+            "**** TermArg/DataObj: %s (%2.2X)\n",
+            AcpiUtGetArgumentTypeName (ArgType), ArgType));
 
         /* Single complex argument, nothing returned */
 

@@ -6,7 +6,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -243,7 +243,7 @@ AcpiNsGetInternalNameLength (
         }
     }
 
-    Info->Length = (ACPI_NAME_SIZE * Info->NumSegments) +
+    Info->Length = (ACPI_NAMESEG_SIZE * Info->NumSegments) +
         4 + Info->NumCarats;
 
     Info->NextExternalChar = NextExternalChar;
@@ -335,7 +335,7 @@ AcpiNsBuildInternalName (
 
     for (; NumSegments; NumSegments--)
     {
-        for (i = 0; i < ACPI_NAME_SIZE; i++)
+        for (i = 0; i < ACPI_NAMESEG_SIZE; i++)
         {
             if (ACPI_IS_PATH_SEPARATOR (*ExternalName) ||
                (*ExternalName == 0))
@@ -364,7 +364,7 @@ AcpiNsBuildInternalName (
         /* Move on the next segment */
 
         ExternalName++;
-        Result += ACPI_NAME_SIZE;
+        Result += ACPI_NAMESEG_SIZE;
     }
 
     /* Terminate the string */
@@ -453,7 +453,7 @@ AcpiNsInternalizeName (
  *
  * FUNCTION:    AcpiNsExternalizeName
  *
- * PARAMETERS:  InternalNameLength  - Lenth of the internal name below
+ * PARAMETERS:  InternalNameLength  - Length of the internal name below
  *              InternalName        - Internal representation of name
  *              ConvertedNameLength - Where the length is returned
  *              ConvertedName       - Where the resulting external name
@@ -613,12 +613,12 @@ AcpiNsExternalizeName (
 
             /* Copy and validate the 4-char name segment */
 
-            ACPI_MOVE_NAME (&(*ConvertedName)[j],
+            ACPI_COPY_NAMESEG (&(*ConvertedName)[j],
                 &InternalName[NamesIndex]);
             AcpiUtRepairName (&(*ConvertedName)[j]);
 
-            j += ACPI_NAME_SIZE;
-            NamesIndex += ACPI_NAME_SIZE;
+            j += ACPI_NAMESEG_SIZE;
+            NamesIndex += ACPI_NAMESEG_SIZE;
         }
     }
 

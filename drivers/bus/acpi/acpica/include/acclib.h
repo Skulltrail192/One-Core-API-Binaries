@@ -6,7 +6,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -237,7 +237,7 @@ sprintf (
 
 /*
  * NOTE: Currently we only need to update errno for file IOs. Other
- *       Clibrary invocations in ACPICA do not make descisions according to
+ *       Clibrary invocations in ACPICA do not make decisions according to
  *       the errno.
  */
 extern int errno;

@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -113,12 +113,10 @@ AcpiDsInitCallbacks (
 
         /* Execution pass */
 
-#ifndef ACPI_NO_METHOD_EXECUTION
         WalkState->ParseFlags        |= ACPI_PARSE_EXECUTE  |
                                         ACPI_PARSE_DELETE_TREE;
         WalkState->DescendingCallback = AcpiDsExecBeginOp;
         WalkState->AscendingCallback  = AcpiDsExecEndOp;
-#endif
         break;
 
     default:
@@ -156,7 +154,7 @@ AcpiDsLoad1BeginOp (
     UINT32                  Flags;
 
 
-    ACPI_FUNCTION_TRACE (DsLoad1BeginOp);
+    ACPI_FUNCTION_TRACE_PTR (DsLoad1BeginOp, WalkState->Op);
 
 
     Op = WalkState->Op;
@@ -217,7 +215,7 @@ AcpiDsLoad1BeginOp (
 #endif
         if (ACPI_FAILURE (Status))
         {
-            ACPI_ERROR_NAMESPACE (Path, Status);
+            ACPI_ERROR_NAMESPACE (WalkState->ScopeInfo, Path, Status);
             return_ACPI_STATUS (Status);
         }
 
@@ -387,7 +385,7 @@ AcpiDsLoad1BeginOp (
 
             if (ACPI_FAILURE (Status))
             {
-                ACPI_ERROR_NAMESPACE (Path, Status);
+                ACPI_ERROR_NAMESPACE (WalkState->ScopeInfo, Path, Status);
                 return_ACPI_STATUS (Status);
             }
         }
@@ -409,7 +407,7 @@ AcpiDsLoad1BeginOp (
 
     /* Initialize the op */
 
-#if (defined (ACPI_NO_METHOD_EXECUTION) || defined (ACPI_CONSTANT_EVAL_ONLY))
+#ifdef ACPI_CONSTANT_EVAL_ONLY
     Op->Named.Path = Path;
 #endif
 
@@ -472,7 +470,6 @@ AcpiDsLoad1EndOp (
 
     ObjectType = WalkState->OpInfo->ObjectType;
 
-#ifndef ACPI_NO_METHOD_EXECUTION
     if (WalkState->OpInfo->Flags & AML_FIELD)
     {
         /*
@@ -518,7 +515,6 @@ AcpiDsLoad1EndOp (
             }
         }
     }
-#endif
 
     if (Op->Common.AmlOpcode == AML_NAME_OP)
     {

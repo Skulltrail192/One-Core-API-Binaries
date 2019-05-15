@@ -93,3 +93,30 @@ GetNumaNodeProcessorMaskEx(
 		return FALSE;
 	}	
 }
+
+/***********************************************************************
+ *           GetNumaProcessorNodeEx (KERNEL32.@)
+ */
+BOOL WINAPI GetNumaProcessorNodeEx(PPROCESSOR_NUMBER processor, PUSHORT node_number)
+{
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return FALSE;
+}
+
+/***********************************************************************
+ *           GetNumaProximityNode (KERNEL32.@)
+ */
+BOOL WINAPI GetNumaProximityNode(ULONG  proximity_id, PUCHAR node_number)
+{
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return FALSE;
+}
+
+/***********************************************************************
+ *           GetNumaProximityNodeEx (KERNEL32.@)
+ */
+BOOL WINAPI GetNumaProximityNodeEx(ULONG  proximity_id, PUSHORT node_number)
+{
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return FALSE;
+}

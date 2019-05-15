@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,6 @@ AcpiNsDeleteSubtree (
 #endif
 
 
-#ifndef ACPI_NO_METHOD_EXECUTION
 /*******************************************************************************
  *
  * FUNCTION:    AcpiNsLoadTable
@@ -126,7 +125,7 @@ AcpiNsLoadTable (
         /*
          * On error, delete any namespace objects created by this table.
          * We cannot initialize these objects, so delete them. There are
-         * a couple of expecially bad cases:
+         * a couple of especially bad cases:
          * AE_ALREADY_EXISTS - namespace collision.
          * AE_NOT_FOUND - the target of a Scope operator does not
          * exist. This target of Scope must already exist in the
@@ -162,23 +161,17 @@ Unlock:
         "**** Completed Table Object Initialization\n"));
 
     /*
-     * Execute any module-level code that was detected during the table load
-     * phase. Although illegal since ACPI 2.0, there are many machines that
-     * contain this type of code. Each block of detected executable AML code
-     * outside of any control method is wrapped with a temporary control
-     * method object and placed on a global list. The methods on this list
-     * are executed below.
+     * This case handles the legacy option that groups all module-level
+     * code blocks together and defers execution until all of the tables
+     * are loaded. Execute all of these blocks at this time.
+     * Execute any module-level code that was detected during the table
+     * load phase.
      *
-     * This case executes the module-level code for each table immediately
-     * after the table has been loaded. This provides compatibility with
-     * other ACPI implementations. Optionally, the execution can be deferred
-     * until later, see AcpiInitializeObjects.
+     * Note: this option is deprecated and will be eliminated in the
+     * future. Use of this option can cause problems with AML code that
+     * depends upon in-order immediate execution of module-level code.
      */
-    if (!AcpiGbl_ParseTableAsTermList && !AcpiGbl_GroupModuleLevelCode)
-    {
-        AcpiNsExecModuleCodeList ();
-    }
-
+    AcpiNsExecModuleCodeList ();
     return_ACPI_STATUS (Status);
 }
 
@@ -374,5 +367,4 @@ AcpiNsUnloadNamespace (
     Status = AcpiNsDeleteSubtree (Handle);
     return_ACPI_STATUS (Status);
 }
-#endif
 #endif

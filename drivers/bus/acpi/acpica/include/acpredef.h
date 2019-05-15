@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -651,6 +651,21 @@ const ACPI_PREDEFINED_INFO          AcpiGbl_PredefinedMethods[] =
 
     {{"_MTL",   METHOD_0ARGS,                          /* ACPI 6.0 */
                 METHOD_RETURNS (ACPI_RTYPE_INTEGER)}},
+
+    {{"_NBS",   METHOD_0ARGS,                          /* ACPI 6.3 */
+                METHOD_RETURNS (ACPI_RTYPE_BUFFER)}},
+
+    {{"_NCH",   METHOD_0ARGS,                          /* ACPI 6.3 */
+                METHOD_RETURNS (ACPI_RTYPE_BUFFER)}},
+
+    {{"_NIC",   METHOD_0ARGS,                          /* ACPI 6.3 */
+                METHOD_RETURNS (ACPI_RTYPE_BUFFER)}},
+
+    {{"_NIG",   METHOD_1ARGS (ACPI_TYPE_BUFFER),       /* ACPI 6.3 */
+                METHOD_RETURNS (ACPI_RTYPE_BUFFER)}},
+
+    {{"_NIH",   METHOD_0ARGS,                          /* ACPI 6.3 */
+                METHOD_RETURNS (ACPI_RTYPE_BUFFER)}},
 
     {{"_NTT",   METHOD_0ARGS,
                 METHOD_RETURNS (ACPI_RTYPE_INTEGER)}},

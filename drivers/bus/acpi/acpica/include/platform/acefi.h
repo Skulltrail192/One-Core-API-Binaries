@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@
 #define DEBUGGER_THREADING          DEBUGGER_SINGLE_THREADED
 #endif /* !DEBUGGER_THREADING */
 
-/* EDK2 EFI environemnt */
+/* EDK2 EFI environment */
 
 #if defined(_EDK2_EFI)
 

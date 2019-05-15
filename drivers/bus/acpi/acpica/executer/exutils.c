@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,7 +73,6 @@ AcpiExDigitsNeeded (
     UINT32                  Base);
 
 
-#ifndef ACPI_NO_METHOD_EXECUTION
 /*******************************************************************************
  *
  * FUNCTION:    AcpiExEnterInterpreter
@@ -218,7 +217,7 @@ AcpiExTruncateFor32bitTable (
  * RETURN:      None
  *
  * DESCRIPTION: Obtain the ACPI hardware Global Lock, only if the field
- *              flags specifiy that it is to be obtained before field access.
+ *              flags specify that it is to be obtained before field access.
  *
  ******************************************************************************/
 
@@ -506,5 +505,3 @@ AcpiIsValidSpaceId (
 
     return (TRUE);
 }
-
-#endif

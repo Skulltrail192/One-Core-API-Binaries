@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,6 +74,7 @@
 #define ACPI_SIG_XSDT           "XSDT"      /* Extended  System Description Table */
 #define ACPI_SIG_SSDT           "SSDT"      /* Secondary System Description Table */
 #define ACPI_RSDP_NAME          "RSDP"      /* Short name for RSDP, not signature */
+#define ACPI_OEM_NAME           "OEM"       /* Short name for OEM, not signature */
 
 
 /*
@@ -104,14 +105,14 @@
 
 typedef struct acpi_table_header
 {
-    char                    Signature[ACPI_NAME_SIZE];          /* ASCII table signature */
+    char                    Signature[ACPI_NAMESEG_SIZE];       /* ASCII table signature */
     UINT32                  Length;                             /* Length of table in bytes, including this header */
     UINT8                   Revision;                           /* ACPI Specification minor version number */
     UINT8                   Checksum;                           /* To make sum of entire table == 0 */
     char                    OemId[ACPI_OEM_ID_SIZE];            /* ASCII OEM identification */
     char                    OemTableId[ACPI_OEM_TABLE_ID_SIZE]; /* ASCII OEM table identification */
     UINT32                  OemRevision;                        /* OEM revision number */
-    char                    AslCompilerId[ACPI_NAME_SIZE];      /* ASCII ASL compiler vendor ID */
+    char                    AslCompilerId[ACPI_NAMESEG_SIZE];   /* ASCII ASL compiler vendor ID */
     UINT32                  AslCompilerRevision;                /* ASL compiler version */
 
 } ACPI_TABLE_HEADER;

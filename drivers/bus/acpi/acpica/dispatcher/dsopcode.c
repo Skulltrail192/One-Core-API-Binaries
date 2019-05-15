@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -178,7 +178,7 @@ AcpiDsInitBufferField (
 
         if (BitCount == 0)
         {
-            ACPI_ERROR ((AE_INFO,
+            ACPI_BIOS_ERROR ((AE_INFO,
                 "Attempt to CreateField of length zero"));
             Status = AE_AML_OPERAND_VALUE;
             goto Cleanup;
@@ -244,12 +244,12 @@ AcpiDsInitBufferField (
     if ((BitOffset + BitCount) >
         (8 * (UINT32) BufferDesc->Buffer.Length))
     {
-        ACPI_ERROR ((AE_INFO,
+        Status = AE_AML_BUFFER_LIMIT;
+        ACPI_BIOS_EXCEPTION ((AE_INFO, Status,
             "Field [%4.4s] at bit offset/length %u/%u "
             "exceeds size of target Buffer (%u bits)",
             AcpiUtGetNodeName (ResultDesc), BitOffset, BitCount,
             8 * (UINT32) BufferDesc->Buffer.Length));
-        Status = AE_AML_BUFFER_LIMIT;
         goto Cleanup;
     }
 
@@ -413,6 +413,7 @@ AcpiDsEvalRegionOperands (
     ACPI_OPERAND_OBJECT     *OperandDesc;
     ACPI_NAMESPACE_NODE     *Node;
     ACPI_PARSE_OBJECT       *NextOp;
+    ACPI_ADR_SPACE_TYPE     SpaceId;
 
 
     ACPI_FUNCTION_TRACE_PTR (DsEvalRegionOperands, Op);
@@ -422,11 +423,12 @@ AcpiDsEvalRegionOperands (
      * This is where we evaluate the address and length fields of the
      * OpRegion declaration
      */
-    Node =  Op->Common.Node;
+    Node = Op->Common.Node;
 
     /* NextOp points to the op that holds the SpaceID */
 
     NextOp = Op->Common.Value.Arg;
+    SpaceId = (ACPI_ADR_SPACE_TYPE) NextOp->Common.Value.Integer;
 
     /* NextOp points to address op */
 
@@ -464,6 +466,15 @@ AcpiDsEvalRegionOperands (
     ObjDesc->Region.Length = (UINT32) OperandDesc->Integer.Value;
     AcpiUtRemoveReference (OperandDesc);
 
+    /* A zero-length operation region is unusable. Just warn */
+
+    if (!ObjDesc->Region.Length && (SpaceId < ACPI_NUM_PREDEFINED_REGIONS))
+    {
+        ACPI_WARNING ((AE_INFO,
+            "Operation Region [%4.4s] has zero length (SpaceId %X)",
+            Node->Name.Ascii, SpaceId));
+    }
+
     /*
      * Get the address and save it
      * (at top of stack - 1)
@@ -477,6 +488,9 @@ AcpiDsEvalRegionOperands (
     ACPI_DEBUG_PRINT ((ACPI_DB_EXEC, "RgnObj %p Addr %8.8X%8.8X Len %X\n",
         ObjDesc, ACPI_FORMAT_UINT64 (ObjDesc->Region.Address),
         ObjDesc->Region.Length));
+
+    Status = AcpiUtAddAddressRange (ObjDesc->Region.SpaceId,
+        ObjDesc->Region.Address, ObjDesc->Region.Length, Node);
 
     /* Now the address and length are valid for this opregion */
 
@@ -644,8 +658,8 @@ AcpiDsEvalDataObjectOperands (
     if (!Op->Common.Value.Arg)
     {
         ACPI_ERROR ((AE_INFO,
-            "Dispatch: Missing child while executing TermArg for %X",
-            Op->Common.AmlOpcode));
+            "Missing child while evaluating opcode %4.4X, Op %p",
+            Op->Common.AmlOpcode, Op));
         return_ACPI_STATUS (AE_OK);
     }
 

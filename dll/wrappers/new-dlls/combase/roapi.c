@@ -1,5 +1,6 @@
 /*
  * Copyright 2014 Martin Storsjo
+ * Copyright 2016 Michael Müller
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,13 +16,12 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-
+#define COBJMACROS
 #include "objbase.h"
+#include "initguid.h"
 #include "roapi.h"
 #include "roparameterizediid.h"
-#include "hstring.h"
 #include "winstring.h"
-#include "activation.h"
 
 #include "wine/debug.h"
 

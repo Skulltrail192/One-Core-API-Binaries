@@ -5,7 +5,7 @@
  ******************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -313,6 +313,7 @@ AcpiNsLookup (
     ACPI_OBJECT_TYPE        ThisSearchType;
     UINT32                  SearchParentFlag = ACPI_NS_SEARCH_PARENT;
     UINT32                  LocalFlags;
+    ACPI_INTERPRETER_MODE   LocalInterpreterMode;
 
 
     ACPI_FUNCTION_TRACE (NsLookup);
@@ -562,6 +563,7 @@ AcpiNsLookup (
      */
     ThisSearchType = ACPI_TYPE_ANY;
     CurrentNode = ThisNode;
+
     while (NumSegments && CurrentNode)
     {
         NumSegments--;
@@ -596,6 +598,16 @@ AcpiNsLookup (
             }
         }
 
+        /* Handle opcodes that create a new NameSeg via a full NamePath */
+
+        LocalInterpreterMode = InterpreterMode;
+        if ((Flags & ACPI_NS_PREFIX_MUST_EXIST) && (NumSegments > 0))
+        {
+            /* Every element of the path must exist (except for the final NameSeg) */
+
+            LocalInterpreterMode = ACPI_IMODE_EXECUTE;
+        }
+
         /* Extract one ACPI name from the front of the pathname */
 
         ACPI_MOVE_32_TO_32 (&SimpleName, Path);
@@ -603,11 +615,18 @@ AcpiNsLookup (
         /* Try to find the single (4 character) ACPI name */
 
         Status = AcpiNsSearchAndEnter (SimpleName, WalkState, CurrentNode,
-            InterpreterMode, ThisSearchType, LocalFlags, &ThisNode);
+            LocalInterpreterMode, ThisSearchType, LocalFlags, &ThisNode);
         if (ACPI_FAILURE (Status))
         {
             if (Status == AE_NOT_FOUND)
             {
+#if !defined ACPI_ASL_COMPILER /* Note: iASL reports this error by itself, not needed here */
+                if (Flags & ACPI_NS_PREFIX_MUST_EXIST)
+                {
+                    AcpiOsPrintf (ACPI_MSG_BIOS_ERROR
+                        "Object does not exist: %4.4s\n", &SimpleName);
+                }
+#endif
                 /* Name not found in ACPI namespace */
 
                 ACPI_DEBUG_PRINT ((ACPI_DB_NAMES,
@@ -615,6 +634,15 @@ AcpiNsLookup (
                     (char *) &SimpleName, (char *) &CurrentNode->Name,
                     CurrentNode));
             }
+
+#ifdef ACPI_EXEC_APP
+            if ((Status == AE_ALREADY_EXISTS) &&
+                (ThisNode->Flags & ANOBJ_NODE_EARLY_INIT))
+            {
+                ThisNode->Flags &= ~ANOBJ_NODE_EARLY_INIT;
+                Status = AE_OK;
+            }
+#endif
 
 #ifdef ACPI_ASL_COMPILER
             /*
@@ -667,13 +695,6 @@ AcpiNsLookup (
                     ThisNode = (ACPI_NAMESPACE_NODE *) ThisNode->Object;
                 }
             }
-#ifdef ACPI_ASL_COMPILER
-            if (!AcpiGbl_DisasmFlag &&
-                (ThisNode->Flags & ANOBJ_IS_EXTERNAL))
-            {
-                ThisNode->Flags |= IMPLICIT_EXTERNAL;
-            }
-#endif
         }
 
         /* Special handling for the last segment (NumSegments == 0) */
@@ -722,7 +743,7 @@ AcpiNsLookup (
 
         /* Point to next name segment and make this node current */
 
-        Path += ACPI_NAME_SIZE;
+        Path += ACPI_NAMESEG_SIZE;
         CurrentNode = ThisNode;
     }
 
@@ -743,6 +764,13 @@ AcpiNsLookup (
             }
         }
     }
+
+#ifdef ACPI_EXEC_APP
+    if (Flags & ACPI_NS_EARLY_INIT)
+    {
+        ThisNode->Flags |= ANOBJ_NODE_EARLY_INIT;
+    }
+#endif
 
     *ReturnNode = ThisNode;
     return_ACPI_STATUS (AE_OK);

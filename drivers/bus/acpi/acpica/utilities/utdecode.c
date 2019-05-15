@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -106,17 +106,17 @@ const UINT8                     AcpiGbl_NsProperties[ACPI_NUM_NS_TYPES] =
 
 const char        *AcpiGbl_RegionTypes[ACPI_NUM_PREDEFINED_REGIONS] =
 {
-    "SystemMemory",     /* 0x00 */
-    "SystemIO",         /* 0x01 */
-    "PCI_Config",       /* 0x02 */
-    "EmbeddedControl",  /* 0x03 */
-    "SMBus",            /* 0x04 */
-    "SystemCMOS",       /* 0x05 */
-    "PCIBARTarget",     /* 0x06 */
-    "IPMI",             /* 0x07 */
-    "GeneralPurposeIo", /* 0x08 */
-    "GenericSerialBus", /* 0x09 */
-    "PCC"               /* 0x0A */
+    "SystemMemory",      /* 0x00 */
+    "SystemIO",          /* 0x01 */
+    "PCI_Config",        /* 0x02 */
+    "EmbeddedControl",   /* 0x03 */
+    "SMBus",             /* 0x04 */
+    "SystemCMOS",        /* 0x05 */
+    "PCIBARTarget",      /* 0x06 */
+    "IPMI",              /* 0x07 */
+    "GeneralPurposeIo",  /* 0x08 */
+    "GenericSerialBus",  /* 0x09 */
+    "PlatformCommChannel"/* 0x0A */
 };
 
 
@@ -308,7 +308,7 @@ AcpiUtGetNodeName (
     ACPI_NAMESPACE_NODE     *Node = (ACPI_NAMESPACE_NODE *) Object;
 
 
-    /* Must return a string of exactly 4 characters == ACPI_NAME_SIZE */
+    /* Must return a string of exactly 4 characters == ACPI_NAMESEG_SIZE */
 
     if (!Object)
     {
@@ -359,7 +359,7 @@ AcpiUtGetNodeName (
 static const char           *AcpiGbl_DescTypeNames[] =
 {
     /* 00 */ "Not a Descriptor",
-    /* 01 */ "Cached",
+    /* 01 */ "Cached Object",
     /* 02 */ "State-Generic",
     /* 03 */ "State-Update",
     /* 04 */ "State-Package",
@@ -370,10 +370,10 @@ static const char           *AcpiGbl_DescTypeNames[] =
     /* 09 */ "State-Result",
     /* 10 */ "State-Notify",
     /* 11 */ "State-Thread",
-    /* 12 */ "Walk",
-    /* 13 */ "Parser",
-    /* 14 */ "Operand",
-    /* 15 */ "Node"
+    /* 12 */ "Tree Walk State",
+    /* 13 */ "Parse Tree Op",
+    /* 14 */ "Operand Object",
+    /* 15 */ "Namespace Node"
 };
 
 
@@ -450,11 +450,6 @@ AcpiUtGetReferenceName (
 }
 
 
-#if defined(ACPI_DEBUG_OUTPUT) || defined(ACPI_DEBUGGER)
-/*
- * Strings and procedures used for debug only
- */
-
 /*******************************************************************************
  *
  * FUNCTION:    AcpiUtGetMutexName
@@ -493,6 +488,12 @@ AcpiUtGetMutexName (
 }
 
 
+#if defined(ACPI_DEBUG_OUTPUT) || defined(ACPI_DEBUGGER)
+
+/*
+ * Strings and procedures used for debug only
+ */
+
 /*******************************************************************************
  *
  * FUNCTION:    AcpiUtGetNotifyName
@@ -523,7 +524,8 @@ static const char           *AcpiGbl_GenericNotify[ACPI_GENERIC_NOTIFY_MAX + 1] 
     /* 0B */ "System Locality Update",
     /* 0C */ "Reserved (was previously Shutdown Request)",  /* Reserved in ACPI 6.0 */
     /* 0D */ "System Resource Affinity Update",
-    /* 0E */ "Heterogeneous Memory Attributes Update"       /* ACPI 6.2 */
+    /* 0E */ "Heterogeneous Memory Attributes Update",      /* ACPI 6.2 */
+    /* 0F */ "Error Disconnect Recover"                     /* ACPI 6.3 */
 };
 
 static const char           *AcpiGbl_DeviceNotify[5] =
@@ -560,14 +562,14 @@ AcpiUtGetNotifyName (
     ACPI_OBJECT_TYPE        Type)
 {
 
-    /* 00 - 0D are "common to all object types" (from ACPI Spec) */
+    /* 00 - 0F are "common to all object types" (from ACPI Spec) */
 
     if (NotifyValue <= ACPI_GENERIC_NOTIFY_MAX)
     {
         return (AcpiGbl_GenericNotify[NotifyValue]);
     }
 
-    /* 0E - 7F are reserved */
+    /* 10 - 7F are reserved */
 
     if (NotifyValue <= ACPI_MAX_SYS_NOTIFY)
     {

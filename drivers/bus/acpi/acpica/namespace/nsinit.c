@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2017, Intel Corp.
+ * Copyright (C) 2000 - 2019, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -300,6 +300,65 @@ ErrorExit:
 
 /*******************************************************************************
  *
+ * FUNCTION:    AcpiNsInitOnePackage
+ *
+ * PARAMETERS:  ObjHandle       - Node
+ *              Level           - Current nesting level
+ *              Context         - Not used
+ *              ReturnValue     - Not used
+ *
+ * RETURN:      Status
+ *
+ * DESCRIPTION: Callback from AcpiWalkNamespace. Invoked for every package
+ *              within the namespace. Used during dynamic load of an SSDT.
+ *
+ ******************************************************************************/
+
+ACPI_STATUS
+AcpiNsInitOnePackage (
+    ACPI_HANDLE             ObjHandle,
+    UINT32                  Level,
+    void                    *Context,
+    void                    **ReturnValue)
+{
+    ACPI_STATUS             Status;
+    ACPI_OPERAND_OBJECT     *ObjDesc;
+    ACPI_NAMESPACE_NODE     *Node = (ACPI_NAMESPACE_NODE *) ObjHandle;
+
+
+    ObjDesc = AcpiNsGetAttachedObject (Node);
+    if (!ObjDesc)
+    {
+        return (AE_OK);
+    }
+
+    /* Exit if package is already initialized */
+
+    if (ObjDesc->Package.Flags & AOPOBJ_DATA_VALID)
+    {
+        return (AE_OK);
+    }
+
+    Status = AcpiDsGetPackageArguments (ObjDesc);
+    if (ACPI_FAILURE (Status))
+    {
+        return (AE_OK);
+    }
+
+    Status = AcpiUtWalkPackageTree (ObjDesc, NULL, AcpiDsInitPackageElement,
+        NULL);
+    if (ACPI_FAILURE (Status))
+    {
+        return (AE_OK);
+    }
+
+    ObjDesc->Package.Flags |= AOPOBJ_DATA_VALID;
+    return (AE_OK);
+}
+
+
+/*******************************************************************************
+ *
  * FUNCTION:    AcpiNsInitOneObject
  *
  * PARAMETERS:  ObjHandle       - Node
@@ -310,7 +369,7 @@ ErrorExit:
  * RETURN:      Status
  *
  * DESCRIPTION: Callback from AcpiWalkNamespace. Invoked for every object
- *              within the  namespace.
+ *              within the namespace.
  *
  *              Currently, the only objects that require initialization are:
  *              1) Methods
@@ -425,22 +484,10 @@ AcpiNsInitOneObject (
 
     case ACPI_TYPE_PACKAGE:
 
-        Info->PackageInit++;
-        Status = AcpiDsGetPackageArguments (ObjDesc);
-        if (ACPI_FAILURE (Status))
-        {
-            break;
-        }
+        /* Complete the initialization/resolution of the package object */
 
-        /*
-         * Resolve all named references in package objects (and all
-         * sub-packages). This action has been deferred until the entire
-         * namespace has been loaded, in order to support external and
-         * forward references from individual package elements (05/2017).
-         */
-        Status = AcpiUtWalkPackageTree (ObjDesc, NULL,
-            AcpiDsInitPackageElement, NULL);
-        ObjDesc->Package.Flags |= AOPOBJ_DATA_VALID;
+        Info->PackageInit++;
+        Status = AcpiNsInitOnePackage (ObjHandle, Level, NULL, NULL);
         break;
 
     default:
@@ -507,7 +554,7 @@ AcpiNsFindIniMethods (
 
     /* We are only looking for methods named _INI */
 
-    if (!ACPI_COMPARE_NAME (Node->Name.Ascii, METHOD_NAME__INI))
+    if (!ACPI_COMPARE_NAMESEG (Node->Name.Ascii, METHOD_NAME__INI))
     {
         return (AE_OK);
     }
@@ -684,7 +731,7 @@ AcpiNsInitOneDevice (
      * Note: We know there is an _INI within this subtree, but it may not be
      * under this particular device, it may be lower in the branch.
      */
-    if (!ACPI_COMPARE_NAME (DeviceNode->Name.Ascii, "_SB_") ||
+    if (!ACPI_COMPARE_NAMESEG (DeviceNode->Name.Ascii, "_SB_") ||
         DeviceNode->Parent != AcpiGbl_RootNode)
     {
         ACPI_DEBUG_EXEC (AcpiUtDisplayInitPathname (

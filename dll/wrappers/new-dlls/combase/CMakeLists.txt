@@ -1,5 +1,7 @@
 
-include_directories(BEFORE ${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/psdk)
+
 spec2def(combase.dll combase.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE

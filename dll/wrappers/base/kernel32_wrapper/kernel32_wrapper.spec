@@ -1161,7 +1161,7 @@
 @ stdcall GetNamedPipeServerProcessId(ptr ptr)
 @ stdcall GetNamedPipeServerSessionId(ptr ptr)
 @ stdcall GetNLSVersionEx(long wstr ptr)
-# @ stub GetNumaProximityNode
+@ stdcall GetNumaProximityNode(long ptr)
 @ stdcall GetNumberFormatEx(wstr long wstr ptr wstr long)
 @ stdcall GetOSProductNameA(str long long)
 @ stdcall GetOSProductNameW(wstr long long)
@@ -1305,8 +1305,10 @@
 @ stdcall GetLogicalProcessorInformationEx(long ptr ptr)
 @ stdcall -arch=x86_64 GetNextUmsListItem(ptr)
 @ stdcall GetNumaAvailableMemoryNode(long ptr)
+@ stdcall GetNumaAvailableMemoryNodeEx(long ptr)
 @ stdcall GetNumaNodeProcessorMaskEx(long ptr)
-# @ stub GetNumaProximityNodeEx
+@ stdcall GetNumaProcessorNodeEx(ptr ptr)
+@ stdcall GetNumaProximityNodeEx(long ptr)
 @ stdcall GetThreadGroupAffinity(long ptr)
 @ stdcall GetThreadIdealProcessorEx(ptr ptr)
 @ stdcall -arch=x86_64 GetUmsCompletionListEvent(ptr ptr)
