@@ -324,20 +324,29 @@
     Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
     Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
     CopyAlways.Cache.files=65619        ; %windir%\system32\DllCache (copy even if don't exist)
+	ACPI.CoreDriverFiles = 12 ; %windir%\system32\drivers	
+	
+[ProductInstall.ReplaceFilesIfExist]
+	CopyFiles = ACPI.CoreDriverFiles		
 	
 [CopyAlways.DriverCab.files]
     ntoskrnl.exe,2k3SP2\ntoskrnl.exe
     ntkrnlmp.exe,2k3SP2\ntkrnlmp.exe
+	acpi.sys,2k3SP2\Drivers\acpi.sys			
 
 [CopyAlways.Cache.files]
     ntoskrnl.exe,2k3SP2\ntoskrnl.exe
     ntkrnlmp.exe,2k3SP2\ntkrnlmp.exe
+	acpi.sys,2k3SP2\Drivers\acpi.sys			
 
 [Uniprocessor.Kernel.files]
     ntoskrnl.exe,2k3SP2\ntoskrnl.exe
 
 [Multiprocessor.Kernel.files]
     ntoskrnl.exe,2k3SP2\ntkrnlmp.exe
+	
+[ACPI.CoreDriverFiles]
+	acpi.sys,2k3SP2\Drivers\acpi.sys 		
 
 [SourceDisksNames]
     1=%ServicePackSourceFiles%

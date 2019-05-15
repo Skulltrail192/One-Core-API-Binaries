@@ -332,6 +332,10 @@
     Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
     Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
     CopyAlways.Cache.files=65619        ; %windir%\system32\DllCache (copy even if don't exist)
+	ACPI.CoreDriverFiles = 12 ; %windir%\system32\drivers
+
+[ProductInstall.ReplaceFilesIfExist]
+	CopyFiles = ACPI.CoreDriverFiles		
 
 [MustReplace.System32.files]
     ntdll.dll,XPSP3\ntdll.dll
@@ -348,6 +352,9 @@
 	
 [System32.files]
 	win32k.sys, XPSP3\win32k.sys
+	
+[ACPI.CoreDriverFiles]
+	acpi.sys, XPSP3\Drivers\acpi.sys 		
 	
 [CopyAlways.System32.Files]
     ntdll.dll,XPSP3\ntdll.dll
@@ -374,6 +381,7 @@
 	halmacpi.dll,XPSP3\halmacpi.dll	
 	halmps.dll,XPSP3\halmps.dll	
 	halsp.dll,XPSP3\halsp.dll	
+	acpi.sys,XPSP3\Drivers\acpi.sys	
 
 [CopyAlways.Cache.files]
     ntoskrnl.exe,XPSP3\ntoskrnl.exe
@@ -387,7 +395,8 @@
 	halapic.dll,XPSP3\halapic.dll	
 	halmacpi.dll,XPSP3\halmacpi.dll	
 	halmps.dll,XPSP3\halmps.dll	
-	halsp.dll,XPSP3\halsp.dll		
+	halsp.dll,XPSP3\halsp.dll	
+	acpi.sys,XPSP3\Drivers\acpi.sys	
 
 [Uniprocessor.Kernel.files]
     ntoskrnl.exe,XPSP3\ntoskrnl.exe

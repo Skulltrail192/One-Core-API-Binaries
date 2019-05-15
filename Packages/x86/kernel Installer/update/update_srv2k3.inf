@@ -334,6 +334,10 @@
     Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
     Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
     CopyAlways.Cache.files=65619        ; %windir%\system32\DllCache (copy even if don't exist)
+	ACPI.CoreDriverFiles = 12 ; %windir%\system32\drivers
+	
+[ProductInstall.ReplaceFilesIfExist]
+	CopyFiles = ACPI.CoreDriverFiles	
 
 [MustReplace.System32.files]
 	gdibase.dll, 2k3SP2\gdibase.dll
@@ -345,6 +349,9 @@
 	
 [System32.files]
 	win32k.sys, 2k3SP2\win32k.sys
+	
+[ACPI.CoreDriverFiles]
+	acpi.sys, 2k3SP2\Drivers\acpi.sys 	
 	
 [CopyAlways.System32.Files]
 	gdibase.dll, 2k3SP2\gdibase.dll
@@ -365,6 +372,7 @@
 	halapic.dll,2k3SP2\halapic.dll
 	halmacpi.dll,2k3SP2\halmacpi.dll
 	halmps.dll,2k3SP2\halmps.dll
+	acpi.sys,2k3SP2\Drivers\acpi.sys	
 
 [CopyAlways.Cache.files]
     ntoskrnl.exe,2k3SP2\ntoskrnl.exe
@@ -377,6 +385,7 @@
 	halapic.dll,2k3SP2\halapic.dll
 	halmacpi.dll,2k3SP2\halmacpi.dll
 	halmps.dll,2k3SP2\halmps.dll
+	acpi.sys,2k3SP2\Drivers\acpi.sys
 
 [Uniprocessor.Kernel.files]
     ntoskrnl.exe,2k3SP2\ntoskrnl.exe
