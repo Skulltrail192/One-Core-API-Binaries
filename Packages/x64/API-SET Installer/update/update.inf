@@ -350,6 +350,9 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll,amd64/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll
    ext-ms-win-security-credui-l1-1-0.dll,amd64/ext-ms-win-security-credui-l1-1-0.dll
    ext-ms-win-security-cryptui-l1-1-0.dll,amd64/ext-ms-win-security-cryptui-l1-1-0.dll
+   ext-ms-win-shell-comctl32-init-l1-1-0.dll,amd64/ext-ms-win-shell-comctl32-init-l1-1-0.dll
+   ext-ms-win-shell-comdlg32-l1-1-0.dll,amd64/ext-ms-win-security-cryptui-l1-1-0.dll
+   ext-ms-win-shell-shell32-l1-2-0.dll,amd64/ext-ms-win-shell-shell32-l1-2-0.dll
    ext-ms-win-uxtheme-themes-l1-1-0.dll,amd64/ext-ms-win-uxtheme-themes-l1-1-0.dll
    ext-ms-win-xaml-pal-l1-1-0.dll,amd64/ext-ms-win-xaml-pal-l1-1-0.dll
    ucrtbase.dll,amd64/ucrtbase.dll
@@ -625,6 +628,9 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll,i386/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll
    ext-ms-win-security-credui-l1-1-0.dll,i386/ext-ms-win-security-credui-l1-1-0.dll
    ext-ms-win-security-cryptui-l1-1-0.dll,i386/ext-ms-win-security-cryptui-l1-1-0.dll
+   ext-ms-win-shell-comctl32-init-l1-1-0.dll,i386/ext-ms-win-shell-comctl32-init-l1-1-0.dll
+   ext-ms-win-shell-comdlg32-l1-1-0.dll,i386/ext-ms-win-shell-comdlg32-l1-1-0-0.dll
+   ext-ms-win-shell-shell32-l1-2-0.dll,i386/ext-ms-win-shell-shell32-l1-2-0.dll  
    ext-ms-win-uxtheme-themes-l1-1-0.dll,i386/ext-ms-win-uxtheme-themes-l1-1-0.dll
    ext-ms-win-xaml-pal-l1-1-0.dll,i386/ext-ms-win-xaml-pal-l1-1-0.dll
    ucrtbase.dll,i386/wucrtbase.dll
@@ -903,6 +909,9 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "amd64/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll" = 1
    "amd64/ext-ms-win-security-credui-l1-1-0.dll" = 1
    "amd64/ext-ms-win-security-cryptui-l1-1-0.dll" = 1
+   "amd64/ext-ms-win-shell-comctl32-init-l1-1-0.dll" = 1
+   "amd64/ext-ms-win-shell-comdlg32-l1-1-0-0.dll" = 1
+   "amd64/ext-ms-win-shell-shell32-l1-2-0.dll" = 1     
    "amd64/ext-ms-win-uxtheme-themes-l1-1-0.dll" = 1
    "amd64/ext-ms-win-xaml-pal-l1-1-0.dll" = 1
    "amd64/ucrtbase.dll" = 1
@@ -1177,6 +1186,9 @@ HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion",0x00000000,"%APIS_VERSIO
    "i386/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0.dll" = 1
    "i386/ext-ms-win-security-credui-l1-1-0.dll" = 1
    "i386/ext-ms-win-security-cryptui-l1-1-0.dll" = 1
+   "i386/ext-ms-win-shell-comctl32-init-l1-1-0.dll" = 1
+   "i386/ext-ms-win-shell-comdlg32-l1-1-0-0.dll" = 1
+   "i386/ext-ms-win-shell-shell32-l1-2-0.dll" = 1        
    "i386/ext-ms-win-uxtheme-themes-l1-1-0.dll" = 1
    "i386/ext-ms-win-xaml-pal-l1-1-0.dll" = 1
    "i386/ucrtbase.dll" = 1
