@@ -404,6 +404,27 @@ extern "C" {
 #define VPD_MODE_PAGE_POLICY                0x87
 #define VPD_SCSI_PORTS                      0x88
 
+//
+// Storage port driver status codes
+// This is the storage equivalent of NTSTATUS
+//
+
+#define STOR_STATUS_SUCCESS                     (0x00000000L)
+#define STOR_STATUS_UNSUCCESSFUL                (0xC1000001L)
+#define STOR_STATUS_NOT_IMPLEMENTED             (0xC1000002L)
+#define STOR_STATUS_INSUFFICIENT_RESOURCES      (0xC1000003L)
+#define STOR_STATUS_BUFFER_TOO_SMALL            (0xC1000004L)
+#define STOR_STATUS_ACCESS_DENIED               (0xC1000005L)
+#define STOR_STATUS_INVALID_PARAMETER           (0xC1000006L)
+#define STOR_STATUS_INVALID_DEVICE_REQUEST      (0xC1000007L)
+#define STOR_STATUS_INVALID_IRQL                (0xC1000008L)
+#define STOR_STATUS_INVALID_DEVICE_STATE        (0xC1000009L)
+#define STOR_STATUS_INVALID_BUFFER_SIZE         (0xC100000AL)
+#define STOR_STATUS_UNSUPPORTED_VERSION         (0xC100000BL)
+#define STOR_STATUS_BUSY                        (0xC100000CL)
+
+#define SCSI_DMA64_MINIPORT_SUPPORTED   0x01
+
 typedef enum _STOR_SYNCHRONIZATION_MODEL
 {
     StorSynchronizeHalfDuplex,
@@ -967,7 +988,7 @@ typedef union _CDB
         UCHAR CMSF:1;
         UCHAR ExpectedSectorType:3;
         UCHAR Lun:3;
-        _ANONYMOUS_UNION union
+        union
         {
             struct _LBA
             {
@@ -1605,10 +1626,10 @@ typedef union _CDB
     struct _SET_CD_SPEED
     {
         UCHAR OperationCode;
-        _ANONYMOUS_UNION union
+        union
         {
             UCHAR Reserved1;
-            _ANONYMOUS_STRUCT struct
+            struct
             {
                 UCHAR RotationControl:2;
                 UCHAR Reserved3:6;
@@ -2074,6 +2095,11 @@ typedef struct _STOR_LOG_EVENT_DETAILS
     PWSTR *StringList;
 } STOR_LOG_EVENT_DETAILS, *PSTOR_LOG_EVENT_DETAILS;
 
+typedef struct _SCSI_SUPPORTED_CONTROL_TYPE_LIST {
+  ULONG MaxControlType;
+  BOOLEAN SupportedTypeList[0];
+} SCSI_SUPPORTED_CONTROL_TYPE_LIST, *PSCSI_SUPPORTED_CONTROL_TYPE_LIST;
+
 typedef struct _PERF_CONFIGURATION_DATA
 {
     ULONG Version;
@@ -2106,25 +2132,33 @@ typedef struct _MESSAGE_INTERRUPT_INFORMATION
 
 typedef
 BOOLEAN
-(NTAPI *PHW_INITIALIZE)(
+HW_INITIALIZE(
     _In_ PVOID DeviceExtension);
+	
+typedef HW_INITIALIZE *PHW_INITIALIZE;	
 
 typedef
 BOOLEAN
-(NTAPI *PHW_BUILDIO)(
+HW_BUILDIO(
     _In_ PVOID DeviceExtension,
     _In_ PSCSI_REQUEST_BLOCK Srb);
+	
+typedef HW_BUILDIO *PHW_BUILDIO;	
 
 typedef
 BOOLEAN
-(NTAPI *PHW_STARTIO)(
+HW_STARTIO(
     _In_ PVOID DeviceExtension,
     _In_ PSCSI_REQUEST_BLOCK Srb);
+	
+typedef HW_STARTIO *PHW_STARTIO;	
 
 typedef
 BOOLEAN
-(NTAPI *PHW_INTERRUPT)(
+HW_INTERRUPT(
     _In_ PVOID DeviceExtension);
+	
+typedef HW_INTERRUPT *PHW_INTERRUPT;	
 
 typedef
 VOID
@@ -2138,46 +2172,58 @@ VOID
 
 typedef
 ULONG
-(NTAPI *PHW_FIND_ADAPTER)(
+HW_FIND_ADAPTER(
     IN PVOID DeviceExtension,
     IN PVOID HwContext,
     IN PVOID BusInformation,
     IN PCHAR ArgumentString,
     IN OUT PPORT_CONFIGURATION_INFORMATION ConfigInfo,
     OUT PBOOLEAN Again);
+	
+typedef HW_FIND_ADAPTER *PHW_FIND_ADAPTER;	
 
 typedef
 BOOLEAN
-(NTAPI *PHW_RESET_BUS)(
+HW_RESET_BUS(
     IN PVOID DeviceExtension,
     IN ULONG PathId);
+	
+typedef HW_RESET_BUS *PHW_RESET_BUS;	
 
 typedef
 BOOLEAN
-(NTAPI *PHW_ADAPTER_STATE)(
+HW_ADAPTER_STATE(
     IN PVOID DeviceExtension,
     IN PVOID Context,
     IN BOOLEAN SaveState);
+	
+typedef HW_ADAPTER_STATE *PHW_ADAPTER_STATE;	
 
 typedef
 SCSI_ADAPTER_CONTROL_STATUS
-(NTAPI *PHW_ADAPTER_CONTROL)(
+HW_ADAPTER_CONTROL(
     IN PVOID DeviceExtension,
     IN SCSI_ADAPTER_CONTROL_TYPE ControlType,
     IN PVOID Parameters);
+	
+typedef HW_ADAPTER_CONTROL *PHW_ADAPTER_CONTROL;	
 
 typedef
 BOOLEAN
-(*PHW_PASSIVE_INITIALIZE_ROUTINE)(
+HW_PASSIVE_INITIALIZE_ROUTINE(
     _In_ PVOID DeviceExtension);
+	
+typedef HW_PASSIVE_INITIALIZE_ROUTINE *PHW_PASSIVE_INITIALIZE_ROUTINE;	
 
 typedef
 VOID
-(*PHW_DPC_ROUTINE)(
+HW_DPC_ROUTINE(
     _In_ PSTOR_DPC Dpc,
     _In_ PVOID HwDeviceExtension,
     _In_ PVOID SystemArgument1,
     _In_ PVOID SystemArgument2);
+	
+typedef HW_DPC_ROUTINE *PHW_DPC_ROUTINE;	
 
 typedef
 BOOLEAN
@@ -2284,7 +2330,12 @@ typedef struct _HW_INITIALIZATION_DATA
     PHW_BUILDIO HwBuildIo;
 } HW_INITIALIZATION_DATA, *PHW_INITIALIZATION_DATA;
 
-
+// Parameter to miniport driver with ScsiPowerSettingNotification
+typedef struct _STOR_POWER_SETTING_INFO {
+    GUID    PowerSettingGuid;
+    _Field_size_bytes_(ValueLength) PVOID Value;
+    ULONG   ValueLength;
+} STOR_POWER_SETTING_INFO, *PSTOR_POWER_SETTING_INFO;
 
 #define REVERSE_BYTES_QUAD(Destination, Source) { \
     PEIGHT_BYTE d = (PEIGHT_BYTE)(Destination); \
