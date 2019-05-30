@@ -688,4 +688,17 @@ typedef struct _IDENTIFY_PACKET_DATA {
 #define IDE_COMMAND_SECURITY_FREEZE_LOCK      0xF5
 #define IDE_COMMAND_NOT_VALID                 0xFF
 
+//
+// Set features parameter list
+//
+#define IDE_FEATURE_ENABLE_WRITE_CACHE          0x2
+#define IDE_FEATURE_SET_TRANSFER_MODE           0x3
+#define IDE_FEATURE_ENABLE_SATA_FEATURE         0x10
+#define IDE_FEATURE_DISABLE_MSN                 0x31
+#define IDE_FEATURE_DISABLE_REVERT_TO_POWER_ON  0x66
+#define IDE_FEATURE_DISABLE_WRITE_CACHE         0x82
+#define IDE_FEATURE_DISABLE_SATA_FEATURE        0x90
+#define IDE_FEATURE_ENABLE_MSN                  0x95
+
+
 #endif

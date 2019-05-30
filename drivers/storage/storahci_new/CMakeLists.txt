@@ -1,6 +1,7 @@
 add_definitions(-DDEBUG)
 
 list(APPEND SOURCE
+    common.c
     entrypts.c)
 	
 include_directories(

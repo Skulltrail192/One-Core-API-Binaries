@@ -169,3 +169,54 @@ typedef struct _SENDCMDOUTPARAMS {
 #define RETURN_SMART_STATUS     0xDA
 #define ENABLE_DISABLE_AUTO_OFFLINE 0xDB
 
+/* SCSI SPC/SBC opcodes not defined by Storport.h (WDK) */
+#define SCSIOP_COMPARE_AND_WRITE                   0x89
+#define SCSIOP_SECURITY_PROTOCOL_IN                0xA2
+#define SCSIOP_SECURITY_PROTOCOL_OUT               0xB5
+#define SCSIOP_UNMAP                               0x42
+#define SCSIOP_WRITE_LONG16                        0x9F
+
+#define IDE_STATUS_ERROR   0x01
+#define IDE_ERROR_DATA_ERROR   0x40
+
+//
+// Features for IDE_COMMAND_DATA_SET_MANAGEMENT
+//
+#define IDE_DSM_FEATURE_TRIM 0x0001 //bit 0 of WORD
+
+//
+// IDE error definitions
+//
+#define IDE_ERROR_BAD_BLOCK          0x80
+#define IDE_ERROR_CRC_ERROR          IDE_ERROR_BAD_BLOCK
+#define IDE_ERROR_DATA_ERROR         0x40
+#define IDE_ERROR_MEDIA_CHANGE       0x20
+#define IDE_ERROR_ID_NOT_FOUND       0x10
+#define IDE_ERROR_MEDIA_CHANGE_REQ   0x08
+#define IDE_ERROR_COMMAND_ABORTED    0x04
+#define IDE_ERROR_END_OF_MEDIA       0x02
+#define IDE_ERROR_ILLEGAL_LENGTH     0x01
+#define IDE_ERROR_ADDRESS_NOT_FOUND IDE_ERROR_ILLEGAL_LENGTH
+
+#define FIXED_SENSE_DATA                           0x70
+
+#define SET_DATA_LENGTH(pSrb, len)  (SrbSetDataTransferLength((PVOID)pSrb, len))
+
+
+FORCEINLINE VOID
+SrbSetDataTransferLength(
+    _In_ PVOID Srb,
+    _In_ ULONG DataTransferLength
+    )
+{
+#if (NTDDI_VERSION > NTDDI_WIN7)	
+    PSTORAGE_REQUEST_BLOCK srb = (PSTORAGE_REQUEST_BLOCK)Srb;
+
+    if (srb->Function == SRB_FUNCTION_STORAGE_REQUEST_BLOCK)
+    {
+        srb->DataTransferLength = DataTransferLength;
+    }
+#else	
+    ((PSCSI_REQUEST_BLOCK)Srb)->DataTransferLength = DataTransferLength;
+#endif	
+}

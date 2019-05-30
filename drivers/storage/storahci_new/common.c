@@ -155,13 +155,13 @@ AtapiInquiryCompletion (
     __in PSCSI_REQUEST_BLOCK Srb
     )
 {
-    STOR_UNIT_ATTRIBUTES attributes = {0};
-
     StorPortSetDeviceQueueDepth(ChannelExtension->AdapterExtension,
                                 Srb->PathId,
                                 Srb->TargetId,
                                 Srb->Lun,
                                 ChannelExtension->MaxPortQueueDepth);
+#if (NTDDI_VERSION > NTDDI_WIN7)
+    STOR_UNIT_ATTRIBUTES attributes = {0};
 
     if (IsAtapiDevice(&ChannelExtension->DeviceExtension->DeviceParameters)) {
         attributes.ZeroPowerODD = ChannelExtension->DeviceExtension[0].IdentifyPacketData->SerialAtaCapabilities.SlimlineDeviceAttention;
@@ -170,7 +170,7 @@ AtapiInquiryCompletion (
                                   (PSTOR_ADDRESS)&ChannelExtension->DeviceExtension[0].DeviceAddress,
                                   attributes);
     }
-
+#endif
     return;
 }
 
@@ -609,6 +609,81 @@ Routine Description:
     return STOR_STATUS_SUCCESS;
 }
 
+/******************************************************************************
+ * SntiSetScsiSenseData
+ *
+ * @brief Sets up the SCSI sense data in the provided SRB.
+ *
+ *        NOTE: The caller of this func must set the correlating SRB status
+ *
+ * @param pSrb - This parameter specifies the SCSI I/O request. SNTI expects
+ *               that the user can access the SCSI CDB, response, and data from
+ *               this pointer. For example, if there is a failure in translation
+ *               resulting in sense data, then SNTI will call the appropriate
+ *               internal error handling code and set the status info/data and
+ *               pass the pSrb pointer as a parameter.
+ * @param scsiStatus - SCSI Status to be stored in the Sense Data buffer
+ * @param senseKey - Sense Key for the Sense Data
+ * @param asc - Additional Sense Code (ASC)
+ * @param ascq - Additional Sense Code Qualifier (ASCQ)
+ *
+ * @return BOOLEAN
+ ******************************************************************************/
+BOOLEAN SntiSetScsiSenseData(
+#if (NTDDI_VERSION > NTDDI_WIN7)
+    PSTORAGE_REQUEST_BLOCK pSrb,
+#else
+    PSCSI_REQUEST_BLOCK pSrb,
+#endif
+    UCHAR scsiStatus,
+    UCHAR senseKey,
+    UCHAR asc,
+    UCHAR ascq
+)
+{
+    PSENSE_DATA pSenseData = NULL;
+    BOOLEAN status = TRUE;
+    UCHAR senseInfoBufferLength = 0;
+    PVOID senseInfoBuffer = NULL;
+    UCHAR senseDataLength = sizeof(SENSE_DATA);
+#if (NTDDI_VERSION > NTDDI_WIN7)
+    SrbSetScsiData(pSrb, NULL, NULL, &scsiStatus, NULL, NULL);
+    SrbGetScsiData(pSrb, NULL, NULL, NULL, &senseInfoBuffer, &senseInfoBufferLength);
+#else
+    pSrb->ScsiStatus = scsiStatus;
+    senseInfoBufferLength = pSrb->SenseInfoBufferLength;
+    senseInfoBuffer = pSrb->SenseInfoBuffer;
+#endif
+    if ((scsiStatus != SCSISTAT_GOOD) &&
+        (senseInfoBufferLength >= senseDataLength)) {
+
+        pSenseData = (PSENSE_DATA)senseInfoBuffer;
+
+        memset(pSenseData, 0, senseInfoBufferLength);
+        pSenseData->ErrorCode                    = FIXED_SENSE_DATA;
+        pSenseData->SenseKey                     = senseKey;
+        pSenseData->AdditionalSenseCode          = asc;
+        pSenseData->AdditionalSenseCodeQualifier = ascq;
+
+        pSenseData->AdditionalSenseLength = senseDataLength - 
+            FIELD_OFFSET(SENSE_DATA, CommandSpecificInformation);
+#if (NTDDI_VERSION > NTDDI_WIN7)
+        SrbSetScsiData(pSrb, NULL, NULL, NULL, NULL, &senseDataLength);
+#else
+        pSrb->SenseInfoBufferLength = sizeof(SENSE_DATA);
+#endif
+        pSrb->SrbStatus |= SRB_STATUS_AUTOSENSE_VALID;
+    } else {
+#if (NTDDI_VERSION > NTDDI_WIN7)
+        SrbSetScsiData(pSrb, NULL, NULL, NULL, NULL, 0);
+#else
+        pSrb->SenseInfoBufferLength = 0;
+#endif
+        status = FALSE;
+    }
+
+   return status;
+}
 
 ULONG
 SrbConvertToATACommand(
@@ -694,7 +769,26 @@ SrbConvertToATACommand(
     case SCSIOP_SECURITY_PROTOCOL_IN:
     case SCSIOP_SECURITY_PROTOCOL_OUT:
         // Use a common function as SECURITY_PROTOCOL_IN and SECURITY_PROTOCOL_OUT structures are same.
-        status = AtaSecurityProtocolRequest(ChannelExtension, Srb);
+        /* Need support added QEMU for NVME SECURITY SEND/RECEIVE */
+        /* returnStatus = SntiTranslateSecurityProtocol(pSrb); */
+#if (NTDDI_VERSION > NTDDI_WIN7)			
+        // Use a common function as SECURITY_PROTOCOL_IN and SECURITY_PROTOCOL_OUT structures are same.
+        status = AtaSecurityProtocolRequest(ChannelExtension, Srb, Cdb);	
+#else		
+        DbgPrint(
+                "SNTI: SCSIOP_SECURITY_PROTOCOL_IN_OUT unsupported - 0x%02x\n");
+
+        SntiSetScsiSenseData(Srb,
+                                 SCSISTAT_CHECK_CONDITION,
+                                 SCSI_SENSE_ILLEGAL_REQUEST,
+                                 SCSI_ADSENSE_ILLEGAL_COMMAND,
+                                 SCSI_ADSENSE_NO_SENSE);
+
+        Srb->SrbStatus |= SRB_STATUS_INVALID_REQUEST;
+        SET_DATA_LENGTH(Srb, 0);
+
+        status = STOR_STATUS_UNSUPPORTED_VERSION;
+#endif		
         break;
 
     case SCSIOP_ATA_PASSTHROUGH16:
@@ -1405,6 +1499,7 @@ AtaReadCapacityCompletion (
     if (Srb->DataBuffer != NULL) {
 
         if (Srb->CdbLength == 0x10) {
+#if (NTDDI_VERSION > NTDDI_WIN7)			
             // 16 byte CDB
             PREAD_CAPACITY16_DATA readCap16 = (PREAD_CAPACITY16_DATA)Srb->DataBuffer;
             ULONG                 returnDataLength = 12;    //default to sizeof(READ_CAPACITY_DATA_EX)
@@ -1438,6 +1533,7 @@ AtaReadCapacityCompletion (
             }
 
             Srb->DataTransferLength = returnDataLength;
+		#endif	
         } else {
             // 12 byte CDB
             PREAD_CAPACITY_DATA readCap = (PREAD_CAPACITY_DATA)Srb->DataBuffer;
@@ -1594,7 +1690,9 @@ AtaGenerateInquiryData (
     __in_bcount(ATA_INQUIRYDATA_SIZE) PINQUIRYDATA InquiryData
     )
 {
+#if (NTDDI_VERSION > NTDDI_WIN7)	
     USHORT descriptor = VER_DESCRIPTOR_1667_NOVERSION;
+#endif
     ULONG len;
     ULONG vendorIdLength;
     ULONG prodLen;
@@ -1642,12 +1740,13 @@ AtaGenerateInquiryData (
                        len
                        );
 
+#if (NTDDI_VERSION > NTDDI_WIN7)
     if ( (ChannelExtension->DeviceExtension->IdentifyDeviceData->TrustedComputing.FeatureSupported == 1) &&
          (ChannelExtension->DeviceExtension->IdentifyDeviceData->AdditionalSupported.IEEE1667 == 1) ) {
         // fill in 1667 descriptor
         REVERSE_BYTES_SHORT(&InquiryData->VersionDescriptors[0], &descriptor);
     }
-
+#endif
     return;
 }
 
@@ -1825,6 +1924,7 @@ AtaInquiryRequest(
             }
             break;
         }
+#if (NTDDI_VERSION > NTDDI_WIN7)		
         case VPD_BLOCK_LIMITS: {
             if (Srb->DataTransferLength < 0x14) {
                 Srb->SrbStatus = SRB_STATUS_INVALID_REQUEST;
@@ -1874,7 +1974,7 @@ AtaInquiryRequest(
                 status = STOR_STATUS_SUCCESS;
             }
             break;
-        }
+        }	
         case VPD_BLOCK_DEVICE_CHARACTERISTICS: {
             if (Srb->DataTransferLength < 0x08) {
                 Srb->SrbStatus = SRB_STATUS_INVALID_REQUEST;
@@ -1894,7 +1994,7 @@ AtaInquiryRequest(
                 status = STOR_STATUS_SUCCESS;
             }
             break;
-        }
+        }		
         case VPD_LOGICAL_BLOCK_PROVISIONING: {
             if (Srb->DataTransferLength < 0x08) {
                 Srb->SrbStatus = SRB_STATUS_INVALID_REQUEST;
@@ -1927,6 +2027,7 @@ AtaInquiryRequest(
             }
             break;
         }
+#endif	
         case VPD_SERIAL_NUMBER: {
             if (Srb->DataTransferLength < 24) {
                 Srb->SrbStatus = SRB_STATUS_INVALID_REQUEST;
@@ -1951,6 +2052,7 @@ AtaInquiryRequest(
             }
             break;
         }
+#if (NTDDI_VERSION > NTDDI_WIN7)		
         case VPD_ATA_INFORMATION: {
             if (Srb->DataTransferLength < sizeof(VPD_ATA_INFORMATION_PAGE)) {
                 Srb->SrbStatus = SRB_STATUS_INVALID_REQUEST;
@@ -2015,7 +2117,7 @@ AtaInquiryRequest(
             }
             break;
         }
-
+#endif
         default:
             Srb->SrbStatus = SRB_STATUS_INVALID_REQUEST;
             status = STOR_STATUS_INVALID_PARAMETER;
@@ -2183,11 +2285,13 @@ AtaPassThroughRequest (
     __in PSCSI_REQUEST_BLOCK Srb
     )
 {
+#if (NTDDI_VERSION > NTDDI_WIN7)	
     PAHCI_SRB_EXTENSION srbExtension = GetSrbExtension(Srb);
     PCDB                cdb = (PCDB)Srb->Cdb;
-
+#endif	
     UNREFERENCED_PARAMETER(ChannelExtension);
-
+    UNREFERENCED_PARAMETER(Srb);
+#if (NTDDI_VERSION > NTDDI_WIN7)
     srbExtension->AtaFunction = ATA_FUNCTION_ATA_COMMAND;
 
     if (cdb->ATA_PASSTHROUGH16.CkCond == 1) {
@@ -2219,7 +2323,7 @@ AtaPassThroughRequest (
     srbExtension->TaskFile.Previous.bCommandReg = 0;
 
     srbExtension->CompletionRoutine = AtaAlwaysSuccessRequestCompletion;
-
+#endif
     return STOR_STATUS_SUCCESS;
 }
 
@@ -2574,8 +2678,7 @@ Exit:
     return status;
 }
 
-
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
 ULONG
 AtaSecurityProtocolRequest (
     __in PAHCI_CHANNEL_EXTENSION ChannelExtension,
@@ -2643,6 +2746,7 @@ AtaSecurityProtocolRequest (
 
     return STOR_STATUS_SUCCESS;
 }
+#endif
 
 UCHAR
 AtaMapError(
@@ -3250,11 +3354,11 @@ IOCTLtoATA(
 
             status = SmartGeneric (ChannelExtension, Srb);
             break;
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
         case IOCTL_SCSI_MINIPORT_NVCACHE:
             status = NVCacheGeneric (ChannelExtension, Srb);
             break;
-
+#endif
 
         default:
 
@@ -3540,7 +3644,7 @@ SmartGeneric(
     Srb->SrbStatus = SRB_STATUS_SUCCESS;
     return STOR_STATUS_SUCCESS;
 }
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
 ULONG
 NVCacheGeneric(
     __in PAHCI_CHANNEL_EXTENSION ChannelExtension,
@@ -3679,7 +3783,7 @@ NVCacheGeneric(
     Srb->SrbStatus = SRB_STATUS_SUCCESS;
     return STOR_STATUS_SUCCESS;
 }
-
+#endif
 
 
 #if _MSC_VER >= 1200

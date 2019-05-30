@@ -213,7 +213,7 @@ typedef struct _ATA_LBA_RANGE {
 
 typedef struct _ATA_TRIM_CONTEXT {
     // Block Descriptor for UNMAP request
-    //PUNMAP_BLOCK_DESCRIPTOR BlockDescriptors;
+    PUNMAP_BLOCK_DESCRIPTOR BlockDescriptors;
 
     // Block Descriptor count for UNMAP request
     ULONG   BlockDescrCount;
@@ -236,7 +236,7 @@ typedef struct _ATA_TRIM_CONTEXT {
     ULONG   BlockDescrIndex;
 
     // current UNMAP Block Descriptor being processed
-    //UNMAP_BLOCK_DESCRIPTOR  CurrentBlockDescr;
+    UNMAP_BLOCK_DESCRIPTOR  CurrentBlockDescr;
 
 } ATA_TRIM_CONTEXT, *PATA_TRIM_CONTEXT;
 

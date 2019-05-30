@@ -423,7 +423,108 @@ extern "C" {
 #define STOR_STATUS_UNSUPPORTED_VERSION         (0xC100000BL)
 #define STOR_STATUS_BUSY                        (0xC100000CL)
 
+//
+// Sense codes
+//
+
+#define SCSI_SENSE_NO_SENSE         0x00
+#define SCSI_SENSE_RECOVERED_ERROR  0x01
+#define SCSI_SENSE_NOT_READY        0x02
+#define SCSI_SENSE_MEDIUM_ERROR     0x03
+#define SCSI_SENSE_HARDWARE_ERROR   0x04
+#define SCSI_SENSE_ILLEGAL_REQUEST  0x05
+#define SCSI_SENSE_UNIT_ATTENTION   0x06
+#define SCSI_SENSE_DATA_PROTECT     0x07
+#define SCSI_SENSE_BLANK_CHECK      0x08
+#define SCSI_SENSE_UNIQUE           0x09
+#define SCSI_SENSE_COPY_ABORTED     0x0A
+#define SCSI_SENSE_ABORTED_COMMAND  0x0B
+#define SCSI_SENSE_EQUAL            0x0C
+#define SCSI_SENSE_VOL_OVERFLOW     0x0D
+#define SCSI_SENSE_MISCOMPARE       0x0E
+#define SCSI_SENSE_RESERVED         0x0F
+
+#define SCSI_ADSENSE_INVALID_MEDIA  0x30
+#define SCSI_ADSENSE_NO_MEDIA_IN_DEVICE 0x3a
+#define SCSI_ADSENSE_POSITION_ERROR 0x3b
+#define SCSI_ADSENSE_OPERATOR_REQUEST 0x5a // see below
+
 #define SCSI_DMA64_MINIPORT_SUPPORTED   0x01
+
+#define VER_DESCRIPTOR_1667_NOVERSION       0xFFC0
+#define VER_DESCRIPTOR_1667_2006            0xFFC1
+#define VER_DESCRIPTOR_1667_2009            0xFFC2
+
+#define VPD_MAX_BUFFER_SIZE                0xff
+
+#define VPD_SUPPORTED_PAGES                0x00
+#define VPD_SERIAL_NUMBER                  0x80
+#define VPD_DEVICE_IDENTIFIERS             0x83
+#define VPD_MEDIA_SERIAL_NUMBER            0x84
+#define VPD_SOFTWARE_INTERFACE_IDENTIFIERS 0x84
+#define VPD_NETWORK_MANAGEMENT_ADDRESSES   0x85
+#define VPD_EXTENDED_INQUIRY_DATA          0x86
+#define VPD_MODE_PAGE_POLICY               0x87
+#define VPD_SCSI_PORTS                     0x88
+#define VPD_ATA_INFORMATION                0x89
+
+#define VPD_THIRD_PARTY_COPY               0x8F
+#define VPD_BLOCK_LIMITS                   0xB0
+#define VPD_BLOCK_DEVICE_CHARACTERISTICS   0xB1
+#define VPD_LOGICAL_BLOCK_PROVISIONING     0xB2
+
+#define SCSI_ADSENSE_NO_SENSE                              0x00
+#define SCSI_ADSENSE_ILLEGAL_COMMAND 0x20
+#define SCSI_ADSENSE_ILLEGAL_BLOCK  0x21
+#define SCSI_ADSENSE_INVALID_CDB    0x24
+#define SCSI_ADSENSE_INVALID_LUN    0x25
+#define SCSI_ADSENSE_WRITE_PROTECT  0x27
+#define SCSI_ADWRITE_PROTECT        0x27 // Legacy define
+#define SCSI_ADSENSE_MEDIUM_CHANGED 0x28
+#define SCSI_ADSENSE_BUS_RESET      0x29
+
+//
+// SCSI_ADSENSE_OPERATOR_REQUEST (0x5a) qualifiers
+//
+
+#define SCSI_SENSEQ_STATE_CHANGE_INPUT     0x00 // generic request
+#define SCSI_SENSEQ_MEDIUM_REMOVAL         0x01
+#define SCSI_SENSEQ_WRITE_PROTECT_ENABLE   0x02
+#define SCSI_SENSEQ_WRITE_PROTECT_DISABLE  0x03
+
+//
+// SMART support in atapi
+//
+
+#define IOCTL_SCSI_MINIPORT_SMART_VERSION           ((FILE_DEVICE_SCSI << 16) + 0x0500)
+#define IOCTL_SCSI_MINIPORT_IDENTIFY                ((FILE_DEVICE_SCSI << 16) + 0x0501)
+#define IOCTL_SCSI_MINIPORT_READ_SMART_ATTRIBS      ((FILE_DEVICE_SCSI << 16) + 0x0502)
+#define IOCTL_SCSI_MINIPORT_READ_SMART_THRESHOLDS   ((FILE_DEVICE_SCSI << 16) + 0x0503)
+#define IOCTL_SCSI_MINIPORT_ENABLE_SMART            ((FILE_DEVICE_SCSI << 16) + 0x0504)
+#define IOCTL_SCSI_MINIPORT_DISABLE_SMART           ((FILE_DEVICE_SCSI << 16) + 0x0505)
+#define IOCTL_SCSI_MINIPORT_RETURN_STATUS           ((FILE_DEVICE_SCSI << 16) + 0x0506)
+#define IOCTL_SCSI_MINIPORT_ENABLE_DISABLE_AUTOSAVE ((FILE_DEVICE_SCSI << 16) + 0x0507)
+#define IOCTL_SCSI_MINIPORT_SAVE_ATTRIBUTE_VALUES   ((FILE_DEVICE_SCSI << 16) + 0x0508)
+#define IOCTL_SCSI_MINIPORT_EXECUTE_OFFLINE_DIAGS   ((FILE_DEVICE_SCSI << 16) + 0x0509)
+#define IOCTL_SCSI_MINIPORT_ENABLE_DISABLE_AUTO_OFFLINE ((FILE_DEVICE_SCSI << 16) + 0x050a)
+#define IOCTL_SCSI_MINIPORT_READ_SMART_LOG          ((FILE_DEVICE_SCSI << 16) + 0x050b)
+#define IOCTL_SCSI_MINIPORT_WRITE_SMART_LOG         ((FILE_DEVICE_SCSI << 16) + 0x050c)
+
+
+typedef struct _UNMAP_BLOCK_DESCRIPTOR {
+    UCHAR StartingLba[8];
+    UCHAR LbaCount[4];
+    UCHAR Reserved[4];
+} UNMAP_BLOCK_DESCRIPTOR, *PUNMAP_BLOCK_DESCRIPTOR;
+
+typedef struct _UNMAP_LIST_HEADER {
+    UCHAR DataLength[2];
+    UCHAR BlockDescrDataLength[2];
+    UCHAR Reserved[4];
+#if !defined(__midl)
+    UNMAP_BLOCK_DESCRIPTOR Descriptors[0];
+#endif
+} UNMAP_LIST_HEADER, *PUNMAP_LIST_HEADER;
 
 typedef enum _STOR_SYNCHRONIZATION_MODEL
 {
@@ -1936,6 +2037,33 @@ typedef struct _MODE_PARAMETER_HEADER10
     UCHAR BlockDescriptorLength[2];
 }MODE_PARAMETER_HEADER10, *PMODE_PARAMETER_HEADER10;
 
+#define MODE_FD_SINGLE_SIDE     0x01
+#define MODE_FD_DOUBLE_SIDE     0x02
+#define MODE_FD_MAXIMUM_TYPE    0x1E
+#define MODE_DSP_FUA_SUPPORTED  0x10
+#define MODE_DSP_WRITE_PROTECT  0x80
+
+//
+// Define mode caching page.
+//
+
+typedef struct _MODE_CACHING_PAGE {
+    UCHAR PageCode : 6;
+    UCHAR Reserved : 1;
+    UCHAR PageSavable : 1;
+    UCHAR PageLength;
+    UCHAR ReadDisableCache : 1;
+    UCHAR MultiplicationFactor : 1;
+    UCHAR WriteCacheEnable : 1;
+    UCHAR Reserved2 : 5;
+    UCHAR WriteRetensionPriority : 4;
+    UCHAR ReadRetensionPriority : 4;
+    UCHAR DisablePrefetchTransfer[2];
+    UCHAR MinimumPrefetch[2];
+    UCHAR MaximumPrefetch[2];
+    UCHAR MaximumPrefetchCeiling[2];
+}MODE_CACHING_PAGE, *PMODE_CACHING_PAGE;
+
 typedef struct _MODE_PARAMETER_BLOCK
 {
     UCHAR DensityCode;
@@ -2129,6 +2257,24 @@ typedef struct _MESSAGE_INTERRUPT_INFORMATION
     ULONG InterruptLevel;
     KINTERRUPT_MODE InterruptMode;
 } MESSAGE_INTERRUPT_INFORMATION, *PMESSAGE_INTERRUPT_INFORMATION;
+
+typedef struct _SENSE_DATA {
+    UCHAR ErrorCode:7;
+    UCHAR Valid:1;
+    UCHAR SegmentNumber;
+    UCHAR SenseKey:4;
+    UCHAR Reserved:1;
+    UCHAR IncorrectLength:1;
+    UCHAR EndOfMedia:1;
+    UCHAR FileMark:1;
+    UCHAR Information[4];
+    UCHAR AdditionalSenseLength;
+    UCHAR CommandSpecificInformation[4];
+    UCHAR AdditionalSenseCode;
+    UCHAR AdditionalSenseCodeQualifier;
+    UCHAR FieldReplaceableUnitCode;
+    UCHAR SenseKeySpecific[3];
+} SENSE_DATA, *PSENSE_DATA;
 
 typedef
 BOOLEAN
