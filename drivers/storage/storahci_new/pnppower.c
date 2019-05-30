@@ -566,7 +566,7 @@ AhciPortIdentifyDevice(
     }
     return;
 }
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
 VOID
 AhciPortNVCacheCompletion(
     __in PAHCI_CHANNEL_EXTENSION ChannelExtension,
@@ -609,6 +609,7 @@ AhciPortNVCacheCompletion(
 
     return;
 }
+#endif
 
 VOID
 AhciPortSmartCompletion(
@@ -1342,7 +1343,9 @@ AhciPortGetInitCommands(
     PACPI_EVAL_OUTPUT_BUFFER acpiData = NULL;
     PACPI_METHOD_ARGUMENT    argument = NULL;
     ULONG                    acpiDataSize = 256;     // initial size, should be good enough for most cases
-    ULONG                    returnedLength = 0;
+#if (NTDDI_VERSION > NTDDI_WIN7)    
+	ULONG                    returnedLength = 0;
+#endif
     UCHAR                    gtfCommandCount = 0;
 
     // clear Init Commands area. need to do this for device removed previously (StorAHCI only knows about adapter removal, not device removal)
@@ -1362,6 +1365,7 @@ AhciPortGetInitCommands(
                                   AHCI_POOL_TAG,
                                   (PVOID*)&acpiData);
 
+#if (NTDDI_VERSION > NTDDI_WIN7)
     if (acpiData != NULL) {
         // call API to get required buffer size
         status = StorPortInvokeAcpiMethod(ChannelExtension->AdapterExtension, 
@@ -1398,6 +1402,7 @@ AhciPortGetInitCommands(
             }
         }
     }
+#endif	
 
     // get _GTF commands count
     if ( (status == STOR_STATUS_SUCCESS) && 
@@ -1417,11 +1422,12 @@ AhciPortGetInitCommands(
 
     // Get Init Command count for devices
     if (IsAtaDevice(&ChannelExtension->DeviceExtension[0].DeviceParameters)) {
+#if (NTDDI_VERSION > NTDDI_WIN7)		
         if (ChannelExtension->DeviceExtension[0].IdentifyDeviceData->CommandSetSupport.SetTimeStamp == 0x1) {
             ChannelExtension->DeviceInitCommands.CommandCount = gtfCommandCount + 3;
-        } else {
-            ChannelExtension->DeviceInitCommands.CommandCount = gtfCommandCount + 2;
-        }
+        } else
+#endif			
+        ChannelExtension->DeviceInitCommands.CommandCount = gtfCommandCount + 2;
     } else {
         ChannelExtension->DeviceInitCommands.CommandCount = gtfCommandCount + 1;
     }
@@ -1465,6 +1471,7 @@ AhciPortGetInitCommands(
                 taskFile->Current.bCommandReg = IDE_COMMAND_SECURITY_FREEZE_LOCK;
                 i++;
             }
+#if (NTDDI_VERSION > NTDDI_WIN7)			
             if ((ChannelExtension->DeviceInitCommands.CommandCount - i) >= 1) {
                 if (ChannelExtension->DeviceExtension[0].IdentifyDeviceData->CommandSetSupport.SetTimeStamp == 0x1) {
                     taskFile = ChannelExtension->DeviceInitCommands.CommandTaskFile + i;
@@ -1473,6 +1480,7 @@ AhciPortGetInitCommands(
                     i++;
                 }
             }
+#endif			
         }
     }
 

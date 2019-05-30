@@ -4,7 +4,8 @@ list(APPEND SOURCE
     common.c
 	entrypts.c
     hbastat.c
-    io.c)
+    io.c
+    pnppower.c)
 	
 include_directories(
 	${REACTOS_SOURCE_DIR}/sdk/include/xdk)	

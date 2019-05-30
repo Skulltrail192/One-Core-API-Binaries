@@ -510,6 +510,12 @@ extern "C" {
 #define IOCTL_SCSI_MINIPORT_READ_SMART_LOG          ((FILE_DEVICE_SCSI << 16) + 0x050b)
 #define IOCTL_SCSI_MINIPORT_WRITE_SMART_LOG         ((FILE_DEVICE_SCSI << 16) + 0x050c)
 
+// Define different storage address types
+#define STOR_ADDRESS_TYPE_UNKNOWN   0x0
+#define STOR_ADDRESS_TYPE_BTL8      0x1
+#define STOR_ADDRESS_TYPE_MAX       0xffff
+
+#define STOR_ADDR_BTL8_ADDRESS_LENGTH    4
 
 typedef struct _UNMAP_BLOCK_DESCRIPTOR {
     UCHAR StartingLba[8];

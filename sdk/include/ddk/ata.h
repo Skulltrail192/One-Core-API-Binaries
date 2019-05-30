@@ -644,49 +644,91 @@ typedef struct _IDENTIFY_PACKET_DATA {
 
 #define IDE_LBA_MODE                          (1 << 6)
 
-#define IDE_COMMAND_NOP                       0x00
-#define IDE_COMMAND_DATA_SET_MANAGEMENT       0x06
-#define IDE_COMMAND_ATAPI_RESET               0x08
-#define IDE_COMMAND_READ                      0x20
-#define IDE_COMMAND_READ_EXT                  0x24
-#define IDE_COMMAND_READ_DMA_EXT              0x25
-#define IDE_COMMAND_READ_DMA_QUEUED_EXT       0x26
-#define IDE_COMMAND_READ_MULTIPLE_EXT         0x29
-#define IDE_COMMAND_WRITE                     0x30
-#define IDE_COMMAND_WRITE_EXT                 0x34
-#define IDE_COMMAND_WRITE_DMA_EXT             0x35
-#define IDE_COMMAND_WRITE_DMA_QUEUED_EXT      0x36
-#define IDE_COMMAND_WRITE_MULTIPLE_EXT        0x39
-#define IDE_COMMAND_WRITE_DMA_FUA_EXT         0x3D
-#define IDE_COMMAND_WRITE_DMA_QUEUED_FUA_EXT  0x3E
-#define IDE_COMMAND_VERIFY                    0x40
-#define IDE_COMMAND_VERIFY_EXT                0x42
-#define IDE_COMMAND_EXECUTE_DEVICE_DIAGNOSTIC 0x90
-#define IDE_COMMAND_SET_DRIVE_PARAMETERS      0x91
-#define IDE_COMMAND_ATAPI_PACKET              0xA0
-#define IDE_COMMAND_ATAPI_IDENTIFY            0xA1
-#define IDE_COMMAND_SMART                     0xB0
-#define IDE_COMMAND_READ_MULTIPLE             0xC4
-#define IDE_COMMAND_WRITE_MULTIPLE            0xC5
-#define IDE_COMMAND_SET_MULTIPLE              0xC6
-#define IDE_COMMAND_READ_DMA                  0xC8
-#define IDE_COMMAND_WRITE_DMA                 0xCA
-#define IDE_COMMAND_WRITE_DMA_QUEUED          0xCC
-#define IDE_COMMAND_WRITE_MULTIPLE_FUA_EXT    0xCE
-#define IDE_COMMAND_GET_MEDIA_STATUS          0xDA
-#define IDE_COMMAND_DOOR_LOCK                 0xDE
-#define IDE_COMMAND_DOOR_UNLOCK               0xDF
-#define IDE_COMMAND_STANDBY_IMMEDIATE         0xE0
-#define IDE_COMMAND_IDLE_IMMEDIATE            0xE1
-#define IDE_COMMAND_CHECK_POWER               0xE5
-#define IDE_COMMAND_SLEEP                     0xE6
-#define IDE_COMMAND_FLUSH_CACHE               0xE7
-#define IDE_COMMAND_FLUSH_CACHE_EXT           0xEA
-#define IDE_COMMAND_IDENTIFY                  0xEC
-#define IDE_COMMAND_MEDIA_EJECT               0xED
-#define IDE_COMMAND_SET_FEATURE               0xEF
-#define IDE_COMMAND_SECURITY_FREEZE_LOCK      0xF5
-#define IDE_COMMAND_NOT_VALID                 0xFF
+//
+// IDE command definitions
+//
+#define IDE_COMMAND_NOP                         0x00
+#define IDE_COMMAND_DATA_SET_MANAGEMENT         0x06
+#define IDE_COMMAND_ATAPI_RESET                 0x08
+#define IDE_COMMAND_READ                        0x20
+#define IDE_COMMAND_READ_EXT                    0x24
+#define IDE_COMMAND_READ_DMA_EXT                0x25
+#define IDE_COMMAND_READ_DMA_QUEUED_EXT         0x26
+#define IDE_COMMAND_READ_MULTIPLE_EXT           0x29
+#define IDE_COMMAND_READ_LOG_EXT                0x2f
+#define IDE_COMMAND_WRITE                       0x30
+#define IDE_COMMAND_WRITE_EXT                   0x34
+#define IDE_COMMAND_WRITE_DMA_EXT               0x35
+#define IDE_COMMAND_WRITE_DMA_QUEUED_EXT        0x36
+#define IDE_COMMAND_WRITE_MULTIPLE_EXT          0x39
+#define IDE_COMMAND_WRITE_DMA_FUA_EXT           0x3D
+#define IDE_COMMAND_WRITE_DMA_QUEUED_FUA_EXT    0x3E
+#define IDE_COMMAND_WRITE_LOG_EXT               0x3f
+#define IDE_COMMAND_VERIFY                      0x40
+#define IDE_COMMAND_VERIFY_EXT                  0x42
+#define IDE_COMMAND_WRITE_LOG_DMA_EXT           0x57
+#define IDE_COMMAND_TRUSTED_NON_DATA            0x5B
+#define IDE_COMMAND_TRUSTED_RECEIVE             0x5C
+#define IDE_COMMAND_TRUSTED_RECEIVE_DMA         0x5D
+#define IDE_COMMAND_TRUSTED_SEND                0x5E
+#define IDE_COMMAND_TRUSTED_SEND_DMA            0x5F
+#define IDE_COMMAND_READ_FPDMA_QUEUED           0x60        // NCQ Read command
+#define IDE_COMMAND_WRITE_FPDMA_QUEUED          0x61        // NCQ Write command
+#define IDE_COMMAND_NCQ_NON_DATA                0x63        // NCQ Non-Data command
+#define IDE_COMMAND_SEND_FPDMA_QUEUED           0x64        // NCQ Send command
+#define IDE_COMMAND_RECEIVE_FPDMA_QUEUED        0x65        // NCQ Receive command
+#define IDE_COMMAND_SET_DATE_AND_TIME           0x77        // optional 48bit command
+#define IDE_COMMAND_EXECUTE_DEVICE_DIAGNOSTIC   0x90
+#define IDE_COMMAND_SET_DRIVE_PARAMETERS        0x91
+#define IDE_COMMAND_DOWNLOAD_MICROCODE          0x92        // Optional 28bit command
+#define IDE_COMMAND_DOWNLOAD_MICROCODE_DMA      0x93        // Optional 28bit command
+#define IDE_COMMAND_ATAPI_PACKET                0xA0
+#define IDE_COMMAND_ATAPI_IDENTIFY              0xA1
+#define IDE_COMMAND_SMART                       0xB0
+#define IDE_COMMAND_READ_LOG_DMA_EXT            0xB1
+#define IDE_COMMAND_SANITIZE_DEVICE             0xB4
+#define IDE_COMMAND_READ_MULTIPLE               0xC4
+#define IDE_COMMAND_WRITE_MULTIPLE              0xC5
+#define IDE_COMMAND_SET_MULTIPLE                0xC6
+#define IDE_COMMAND_READ_DMA                    0xC8
+#define IDE_COMMAND_WRITE_DMA                   0xCA
+#define IDE_COMMAND_WRITE_DMA_QUEUED            0xCC
+#define IDE_COMMAND_WRITE_MULTIPLE_FUA_EXT      0xCE
+#define IDE_COMMAND_GET_MEDIA_STATUS            0xDA
+#define IDE_COMMAND_DOOR_LOCK                   0xDE
+#define IDE_COMMAND_DOOR_UNLOCK                 0xDF
+#define IDE_COMMAND_STANDBY_IMMEDIATE           0xE0
+#define IDE_COMMAND_IDLE_IMMEDIATE              0xE1
+#define IDE_COMMAND_CHECK_POWER                 0xE5
+#define IDE_COMMAND_SLEEP                       0xE6
+#define IDE_COMMAND_FLUSH_CACHE                 0xE7
+#define IDE_COMMAND_FLUSH_CACHE_EXT             0xEA
+#define IDE_COMMAND_IDENTIFY                    0xEC
+#define IDE_COMMAND_MEDIA_EJECT                 0xED
+#define IDE_COMMAND_SET_FEATURE                 0xEF
+#define IDE_COMMAND_SECURITY_SET_PASSWORD       0xF1
+#define IDE_COMMAND_SECURITY_UNLOCK             0xF2
+#define IDE_COMMAND_SECURITY_ERASE_PREPARE      0xF3
+#define IDE_COMMAND_SECURITY_ERASE_UNIT         0xF4
+#define IDE_COMMAND_SECURITY_FREEZE_LOCK        0xF5
+#define IDE_COMMAND_SECURITY_DISABLE_PASSWORD   0xF6
+#define IDE_COMMAND_NOT_VALID                   0xFF
+
+//
+// SATA Features Sector Count parameter list
+//
+
+#define IDE_SATA_FEATURE_NON_ZERO_DMA_BUFFER_OFFSET         0x1
+#define IDE_SATA_FEATURE_DMA_SETUP_FIS_AUTO_ACTIVATE        0x2
+#define IDE_SATA_FEATURE_DEVICE_INITIATED_POWER_MANAGEMENT  0x3
+#define IDE_SATA_FEATURE_GUARANTEED_IN_ORDER_DELIVERY       0x4
+#define IDE_SATA_FEATURE_ASYNCHRONOUS_NOTIFICATION          0x5
+#define IDE_SATA_FEATURE_SOFTWARE_SETTINGS_PRESERVATION     0x6
+#define IDE_SATA_FEATURE_DEVICE_AUTO_PARTIAL_TO_SLUMBER     0x7
+#define IDE_SATA_FEATURE_ENABLE_HARDWARE_FEATURE_CONTROL    0x8
+#define IDE_SATA_FEATURE_DEVSLP                             0x9
+#define IDE_SATA_FEATURE_HYBRID_INFORMATION                 0xa
+
 
 //
 // Set features parameter list
