@@ -2,6 +2,7 @@ add_definitions(-DDEBUG)
 
 list(APPEND SOURCE
     common.c
+    hbastat.c
     entrypts.c)
 	
 include_directories(
