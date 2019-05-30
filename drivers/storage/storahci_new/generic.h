@@ -202,11 +202,10 @@ typedef struct _SENDCMDOUTPARAMS {
 
 #define SET_DATA_LENGTH(pSrb, len)  (SrbSetDataTransferLength((PVOID)pSrb, len))
 
-
 FORCEINLINE VOID
 SrbSetDataTransferLength(
-    _In_ PVOID Srb,
-    _In_ ULONG DataTransferLength
+    IN PVOID Srb,
+    IN ULONG DataTransferLength
     )
 {
 #if (NTDDI_VERSION > NTDDI_WIN7)	
@@ -220,8 +219,3 @@ SrbSetDataTransferLength(
     ((PSCSI_REQUEST_BLOCK)Srb)->DataTransferLength = DataTransferLength;
 #endif	
 }
-
-NTSTATUS NtQueryPerformanceCounter(
-  _Out_     PLARGE_INTEGER PerformanceCounter,
-  _Out_opt_ PLARGE_INTEGER PerformanceFrequency
-);

@@ -51,11 +51,13 @@ AhciAdapterPowerUp(
     __in PAHCI_ADAPTER_EXTENSION AdapterExtension
     );
 
+#if (NTDDI_VERSION > NTDDI_WIN7)
 BOOLEAN 
 AhciAdapterPowerSettingNotification(
     __in PAHCI_ADAPTER_EXTENSION AdapterExtension,
     __in PSTOR_POWER_SETTING_INFO PowerSettingInfo
     );
+#endif	
 
 BOOLEAN 
 AhciAdapterPowerDown(

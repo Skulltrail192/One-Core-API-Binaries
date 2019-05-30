@@ -795,11 +795,11 @@ SrbConvertToATACommand(
 
         status = AtaPassThroughRequest(ChannelExtension, Srb);
         break;
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
     case SCSIOP_UNMAP:
         status = AtaUnmapRequest(ChannelExtension, Srb);
         break;
-
+#endif
     default:
 
         Srb->SrbStatus = SRB_STATUS_INVALID_REQUEST;
@@ -1912,11 +1912,12 @@ AtaInquiryRequest(
                 outputBuffer->PageLength = 0x06;        // supports 6 VPD pages
                 outputBuffer->SupportedPageList[0] = VPD_SUPPORTED_PAGES;
                 outputBuffer->SupportedPageList[1] = VPD_SERIAL_NUMBER;
+#if (NTDDI_VERSION > NTDDI_WIN7)					
                 outputBuffer->SupportedPageList[2] = VPD_ATA_INFORMATION;
                 outputBuffer->SupportedPageList[3] = VPD_BLOCK_LIMITS;
                 outputBuffer->SupportedPageList[4] = VPD_BLOCK_DEVICE_CHARACTERISTICS;
                 outputBuffer->SupportedPageList[5] = VPD_LOGICAL_BLOCK_PROVISIONING;
-
+#endif
                 Srb->DataTransferLength = 0x0a;
 
                 Srb->SrbStatus = SRB_STATUS_SUCCESS;
@@ -2327,6 +2328,7 @@ AtaPassThroughRequest (
     return STOR_STATUS_SUCCESS;
 }
 
+#if (NTDDI_VERSION > NTDDI_WIN7)
 ULONG
 ConvertUnmapBlockDescrToAtaLbaRanges(
     __inout PUNMAP_BLOCK_DESCRIPTOR BlockDescr,
@@ -2402,6 +2404,7 @@ SCSI:         0000_0000 0800_0000 0B00_0000_0000_0000
 
     return convertedEntryCount;
 }
+#endif
 
 ULONG
 __inline
@@ -2438,6 +2441,7 @@ GetDataBufferLengthForDsmCommand (
     return bufferLength;
 }
 
+#if (NTDDI_VERSION > NTDDI_WIN7)
 VOID
 DeviceProcessTrimRequest(
     __in PAHCI_CHANNEL_EXTENSION ChannelExtension,
@@ -2556,7 +2560,6 @@ Return Value:
     }
     return;
 }
-
 
 ULONG
 AtaUnmapRequest (
@@ -2678,7 +2681,6 @@ Exit:
     return status;
 }
 
-#if (NTDDI_VERSION > NTDDI_WIN7)
 ULONG
 AtaSecurityProtocolRequest (
     __in PAHCI_CHANNEL_EXTENSION ChannelExtension,

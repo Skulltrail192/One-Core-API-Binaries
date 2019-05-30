@@ -1193,7 +1193,7 @@ Return Value:
     return needStartIo;
 }
 
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
 BOOLEAN
 AhciPortPowerSettingNotification(
     IN PAHCI_CHANNEL_EXTENSION ChannelExtension,
@@ -1252,6 +1252,7 @@ AhciPortPowerSettingNotification(
 
     return TRUE;
 }
+#endif
 
 BOOLEAN
 AhciAutoPartialToSlumber(
@@ -1310,6 +1311,7 @@ AhciAutoPartialToSlumber(
     return TRUE;
 }
 
+#if (NTDDI_VERSION > NTDDI_WIN7)
 BOOLEAN 
 AhciAdapterPowerSettingNotification(
     __in PAHCI_ADAPTER_EXTENSION AdapterExtension,
@@ -1325,7 +1327,7 @@ AhciAdapterPowerSettingNotification(
 
     return TRUE;
 }
-
+#endif
 
 #define ACPI_METHOD_GTF   ((ULONG) 'FTG_') // _GTF
 #define ACPI_METHOD_RMV   ((ULONG) 'VMR_') // _RMV

@@ -6,5 +6,10 @@ TARGETLIBS=$(DDK_LIB_PATH)\storport.lib
 
 INCLUDES   = %BUILD%\inc
 LIBS       = %BUILD%\lib
-SOURCES    = storahci.c \
-			 storahci.rc
+SOURCES    = common.c \
+			 entrypts.c \
+			 hbastat.c \
+			 io.c \
+			 pnppower.c \
+			 util.c \
+			 storahci_new.rc

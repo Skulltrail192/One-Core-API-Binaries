@@ -449,7 +449,7 @@ typedef struct _AHCI_DUMP_CONTEXT {
 
 } AHCI_DUMP_CONTEXT, *PAHCI_DUMP_CONTEXT;
 
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
 // Storport miniport driver entry routines, with prefix: "AhciHw"
 HW_FIND_ADAPTER AhciHwFindAdapter;
 
@@ -466,6 +466,7 @@ HW_INTERRUPT AhciHwInterrupt;
 HW_RESET_BUS AhciHwResetBus;
 
 HW_ADAPTER_CONTROL AhciHwAdapterControl;
+#endif
 
 VOID
 AhciGetNextIos (

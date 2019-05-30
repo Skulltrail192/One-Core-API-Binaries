@@ -35,82 +35,6 @@ Revision History:
 PVOID   g_AdapterExtension[4] = {0};
 UCHAR   g_AdapterExtensionIndex = 0;
 
-ULONG
-DriverEntry(
-    __in PVOID Argument1,    //IN PDRIVER_OBJECT  DriverObject,
-    __in PVOID Argument2     //IN PUNICODE_STRING  RegistryPath
-    )
-
-/*++
-
-Routine Description:
-
-    Initial entry point for miniport driver.
-
-Arguments:
-
-    Driver Object
-
-Return Value:
-
-    Status from StorPortInitialize()
-
---*/
-
-{
-    ULONG status;
-    HW_INITIALIZATION_DATA hwInitializationData = {0};
-
-    DebugPrint((1, "\tSTORAHCI, Storport AHCI Miniport Driver.\n"));
-
-    hwInitializationData.HwInitializationDataSize = sizeof(HW_INITIALIZATION_DATA);
-
-    // required miniport entry point routines.
-    hwInitializationData.HwInitialize = AhciHwInitialize;
-    hwInitializationData.HwStartIo = AhciHwStartIo;
-    hwInitializationData.HwInterrupt = AhciHwInterrupt;
-    hwInitializationData.HwFindAdapter = AhciHwFindAdapter;
-    hwInitializationData.HwResetBus = AhciHwResetBus;
-    hwInitializationData.HwAdapterControl = AhciHwAdapterControl;
-    hwInitializationData.HwBuildIo = AhciHwBuildIo;
-#if (NTDDI_VERSION > NTDDI_WIN7)	
-    hwInitializationData.HwTracingEnabled = AhciHwTracingEnabled;
-    hwInitializationData.HwUnitControl = AhciHwUnitControl;
-#endif	
-
-    // Specifiy adapter specific information.
-    hwInitializationData.AutoRequestSense = TRUE;
-    hwInitializationData.NeedPhysicalAddresses = TRUE;
-    hwInitializationData.NumberOfAccessRanges = NUM_ACCESS_RANGES;
-    hwInitializationData.AdapterInterfaceType = PCIBus;
-    hwInitializationData.MapBuffers = STOR_MAP_NON_READ_WRITE_BUFFERS;
-    hwInitializationData.TaggedQueuing = TRUE;
-    hwInitializationData.MultipleRequestPerLu = TRUE;
-#if (NTDDI_VERSION > NTDDI_WIN7)	
-    hwInitializationData.FeatureSupport |= STOR_FEATURE_ATA_PASS_THROUGH;               // indicating this miniport driver supports ATA PASS-THROUGH(16) command.
-    hwInitializationData.FeatureSupport |= STOR_FEATURE_FULL_PNP_DEVICE_CAPABILITIES;   // indicating this miniport driver supplies values for all PnP Device Capability fields.
-    hwInitializationData.FeatureSupport |= STOR_FEATURE_DUMP_POINTERS;                  // indicating this miniport support the dump pointers SRBs
-    hwInitializationData.FeatureSupport |= STOR_FEATURE_DUMP_RESUME_CAPABLE;            // indicating this miniport driver supports resume capability for dump stack.
-    hwInitializationData.FeatureSupport |= STOR_FEATURE_DEVICE_NAME_NO_SUFFIX;          // indicating the miniport driver prefers device friendly name without suffix: "SCSI <type> Device"
-#endif
-    // Set required extension sizes.
-    hwInitializationData.DeviceExtensionSize = sizeof(AHCI_ADAPTER_EXTENSION);
-
-    // NOTE: Command Table (1st field in AHCI_SRB_EXTENSION structure) must align to 128 bytes as physical limitation.
-    // StorPort does not have interface allowing miniport requiring this.
-    // Adding 128 in SrbExtensionSize so that we can use the part starting from right alignment.
-    hwInitializationData.SrbExtensionSize = sizeof(AHCI_SRB_EXTENSION) + 128 ; // SrbExtension contains AHCI_SRB_EXTENSION
-
-    // call StorPort to register HW init data
-    status = StorPortInitialize(Argument1,
-                                Argument2,
-                                &hwInitializationData,
-                                NULL);
-
-    return status;
-
-} // end DriverEntry()
-
 BOOLEAN
 AllocateResourcesForAdapter(
     __in PAHCI_ADAPTER_EXTENSION         AdapterExtension,
@@ -240,12 +164,12 @@ AllocateResourcesForAdapter(
 
 ULONG
 AhciHwFindAdapter(
-    _In_ PVOID AdapterExtension,
-    _In_ PVOID HwContext,
-    _In_ PVOID BusInformation,
-    _In_z_ PCHAR ArgumentString,
-    _Inout_ PPORT_CONFIGURATION_INFORMATION ConfigInfo,
-    _Out_ PBOOLEAN Again
+    IN PVOID AdapterExtension,
+    IN PVOID HwContext,
+    IN PVOID BusInformation,
+    IN PCHAR ArgumentString,
+    IN OUT PPORT_CONFIGURATION_INFORMATION ConfigInfo,
+    OUT PBOOLEAN Again
     )
 /*++
     This function is called by the Storport driver indirectly when handling an IRP_MJ_PnP, IRP_MN_START_DEVICE.
@@ -1500,9 +1424,9 @@ AhciHwTracingEnabled (
 
 SCSI_UNIT_CONTROL_STATUS
 AhciHwUnitControl (
-    _In_ PVOID AdapterExtension,
-    _In_ SCSI_UNIT_CONTROL_TYPE ControlType,
-    _In_ PVOID Parameters
+    IN PVOID AdapterExtension,
+    IN SCSI_UNIT_CONTROL_TYPE ControlType,
+    IN PVOID Parameters
     )
 /*++
 
@@ -1594,6 +1518,82 @@ Return Value:
 
     return status;
 }
+
+ULONG
+DriverEntry (
+    __in PVOID DriverObject,
+    __in PVOID RegistryPath
+    )
+	
+/*++
+
+Routine Description:
+
+    Initial entry point for miniport driver.
+
+Arguments:
+
+    Driver Object
+
+Return Value:
+
+    Status from StorPortInitialize()
+
+--*/
+
+{
+    ULONG status;
+    HW_INITIALIZATION_DATA hwInitializationData = {0};
+
+    DebugPrint((1, "\tSTORAHCI, Storport AHCI Miniport Driver.\n"));
+
+    hwInitializationData.HwInitializationDataSize = sizeof(HW_INITIALIZATION_DATA);
+
+    // required miniport entry point routines.
+    hwInitializationData.HwInitialize = AhciHwInitialize;
+    hwInitializationData.HwStartIo = AhciHwStartIo;
+    hwInitializationData.HwInterrupt = AhciHwInterrupt;
+    hwInitializationData.HwFindAdapter = AhciHwFindAdapter;
+    hwInitializationData.HwResetBus = AhciHwResetBus;
+    hwInitializationData.HwAdapterControl = AhciHwAdapterControl;
+    hwInitializationData.HwBuildIo = AhciHwBuildIo;
+#if (NTDDI_VERSION > NTDDI_WIN7)	
+    hwInitializationData.HwTracingEnabled = AhciHwTracingEnabled;
+    hwInitializationData.HwUnitControl = AhciHwUnitControl;
+#endif	
+
+    // Specifiy adapter specific information.
+    hwInitializationData.AutoRequestSense = TRUE;
+    hwInitializationData.NeedPhysicalAddresses = TRUE;
+    hwInitializationData.NumberOfAccessRanges = NUM_ACCESS_RANGES;
+    hwInitializationData.AdapterInterfaceType = PCIBus;
+    hwInitializationData.MapBuffers = STOR_MAP_NON_READ_WRITE_BUFFERS;
+    hwInitializationData.TaggedQueuing = TRUE;
+    hwInitializationData.MultipleRequestPerLu = TRUE;
+#if (NTDDI_VERSION > NTDDI_WIN7)	
+    hwInitializationData.FeatureSupport |= STOR_FEATURE_ATA_PASS_THROUGH;               // indicating this miniport driver supports ATA PASS-THROUGH(16) command.
+    hwInitializationData.FeatureSupport |= STOR_FEATURE_FULL_PNP_DEVICE_CAPABILITIES;   // indicating this miniport driver supplies values for all PnP Device Capability fields.
+    hwInitializationData.FeatureSupport |= STOR_FEATURE_DUMP_POINTERS;                  // indicating this miniport support the dump pointers SRBs
+    hwInitializationData.FeatureSupport |= STOR_FEATURE_DUMP_RESUME_CAPABLE;            // indicating this miniport driver supports resume capability for dump stack.
+    hwInitializationData.FeatureSupport |= STOR_FEATURE_DEVICE_NAME_NO_SUFFIX;          // indicating the miniport driver prefers device friendly name without suffix: "SCSI <type> Device"
+#endif
+    // Set required extension sizes.
+    hwInitializationData.DeviceExtensionSize = sizeof(AHCI_ADAPTER_EXTENSION);
+
+    // NOTE: Command Table (1st field in AHCI_SRB_EXTENSION structure) must align to 128 bytes as physical limitation.
+    // StorPort does not have interface allowing miniport requiring this.
+    // Adding 128 in SrbExtensionSize so that we can use the part starting from right alignment.
+    hwInitializationData.SrbExtensionSize = sizeof(AHCI_SRB_EXTENSION) + 128 ; // SrbExtension contains AHCI_SRB_EXTENSION
+
+    // call StorPort to register HW init data
+    status = StorPortInitialize(DriverObject,
+                                RegistryPath,
+                                &hwInitializationData,
+                                NULL);
+
+    return status;
+
+} // end DriverEntry()
 #endif
 #if _MSC_VER >= 1200
 #pragma warning(pop)

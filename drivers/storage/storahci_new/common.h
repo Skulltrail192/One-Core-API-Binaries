@@ -212,9 +212,10 @@ typedef struct _ATA_LBA_RANGE {
 } ATA_LBA_RANGE, *PATA_LBA_RANGE;
 
 typedef struct _ATA_TRIM_CONTEXT {
+#if (NTDDI_VERSION > NTDDI_WIN7)	
     // Block Descriptor for UNMAP request
     PUNMAP_BLOCK_DESCRIPTOR BlockDescriptors;
-
+#endif
     // Block Descriptor count for UNMAP request
     ULONG   BlockDescrCount;
 
@@ -235,9 +236,10 @@ typedef struct _ATA_TRIM_CONTEXT {
     // current Index of the input UNMAP Block Descriptors
     ULONG   BlockDescrIndex;
 
+#if (NTDDI_VERSION > NTDDI_WIN7)
     // current UNMAP Block Descriptor being processed
     UNMAP_BLOCK_DESCRIPTOR  CurrentBlockDescr;
-
+#endif
 } ATA_TRIM_CONTEXT, *PATA_TRIM_CONTEXT;
 
 
@@ -452,6 +454,8 @@ ULONG StorPortFreeContiguousMemorySpecifyCache(
   MEMORY_CACHING_TYPE CacheType
 );
 
+#define AHCI_POOL_TAG               'ichA'  // "Ahci" - StorAHCI miniport driver
+
 ULONG
 __inline
 AhciAllocateDmaBuffer (
@@ -469,7 +473,7 @@ AhciAllocateDmaBuffer (
     maxPhysicalAddress.QuadPart = 0x7FFFFFFF;   // (2GB - 1)
     boundaryPhysicalAddress.QuadPart = 0;
 
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
     status = StorPortAllocateContiguousMemorySpecifyCacheNode(AdapterExtension,
                                                               BufferLength,
                                                               minPhysicalAddress,
@@ -478,6 +482,12 @@ AhciAllocateDmaBuffer (
                                                               MmCached,
                                                               MM_ANY_NODE_OK,
                                                               Buffer);
+#else
+	status = StorPortAllocatePool(AdapterExtension,
+								  BufferLength,
+								  AHCI_POOL_TAG,
+								  Buffer);
+#endif
     return status;
 }
 
@@ -490,10 +500,15 @@ AhciFreeDmaBuffer (
     )
 {
     ULONG   status;
+#if (NTDDI_VERSION > NTDDI_WIN7)	
     status = StorPortFreeContiguousMemorySpecifyCache(AdapterExtension,
                                                       Buffer,
                                                       BufferLength,
                                                       MmCached);
+#else
+	status = StorPortFreePool(AdapterExtension,
+							  Buffer);
+#endif	
     return status;
 }
 

@@ -440,15 +440,13 @@ Return Values:
   //2.1 Program all the IO from the chosen queue into the controller
     if (slotsToActivate != 0) {
         //2.2 Get command start time
+#if (NTDDI_VERSION > NTDDI_WIN7)		
         if(adapterExtension->TracingEnabled) {
             LARGE_INTEGER perfCounter = {0};
             ULONG pendingProgrammingCommands = slotsToActivate;
             ULONG i = 0;
-#if (NTDDI_VERSION > NTDDI_WIN7)
-            StorPortQueryPerformanceCounter((PVOID)adapterExtension, NULL, &perfCounter);
-#else
-			NtQueryPerformanceCounter(&perfCounter, NULL);
-#endif	
+
+            StorPortQueryPerformanceCounter((PVOID)adapterExtension, NULL, &perfCounter);	
             while (pendingProgrammingCommands) {
                 if (pendingProgrammingCommands & 1) {
                     PAHCI_SRB_EXTENSION srbExtension = GetSrbExtension(ChannelExtension->Slot[i].Srb);
@@ -459,6 +457,7 @@ Return Values:
                 pendingProgrammingCommands >>= 1;
             }
         }
+#endif		
 
         ChannelExtension->SlotManager.CommandsIssued |= slotsToActivate;
 
@@ -552,10 +551,10 @@ Affected Variables/Registers:
 
     PAHCI_ADAPTER_EXTENSION adapterExtension;
     PAHCI_SRB_EXTENSION     srbExtension;
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
     LARGE_INTEGER           perfCounter = {0};
     LARGE_INTEGER           perfFrequency = {0};
-
+#endif	
 
   //1.1 Initialize variables
     adapterExtension = ChannelExtension->AdapterExtension;
@@ -563,13 +562,11 @@ Affected Variables/Registers:
         RecordExecutionHistory(ChannelExtension, 0x00000046);//AhciCompleteIssuedSRBs
     }
 
-    if( adapterExtension->TracingEnabled && (ChannelExtension->SlotManager.CommandsToComplete) ) {
 #if (NTDDI_VERSION > NTDDI_WIN7)
+    if( adapterExtension->TracingEnabled && (ChannelExtension->SlotManager.CommandsToComplete) ) {
         StorPortQueryPerformanceCounter((PVOID)adapterExtension, &perfFrequency, &perfCounter);
-#else
-		NtQueryPerformanceCounter(&perfCounter, &perfFrequency);
-#endif	
 	}
+#endif	
 
   //2.1 For every command marked as completed
     for (i = 0; i <= (adapterExtension->CAP.NCS); i++) {
