@@ -444,9 +444,11 @@ Return Values:
             LARGE_INTEGER perfCounter = {0};
             ULONG pendingProgrammingCommands = slotsToActivate;
             ULONG i = 0;
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
             StorPortQueryPerformanceCounter((PVOID)adapterExtension, NULL, &perfCounter);
-
+#else
+			NtQueryPerformanceCounter(&perfCounter, NULL);
+#endif	
             while (pendingProgrammingCommands) {
                 if (pendingProgrammingCommands & 1) {
                     PAHCI_SRB_EXTENSION srbExtension = GetSrbExtension(ChannelExtension->Slot[i].Srb);
@@ -562,8 +564,12 @@ Affected Variables/Registers:
     }
 
     if( adapterExtension->TracingEnabled && (ChannelExtension->SlotManager.CommandsToComplete) ) {
+#if (NTDDI_VERSION > NTDDI_WIN7)
         StorPortQueryPerformanceCounter((PVOID)adapterExtension, &perfFrequency, &perfCounter);
-    }
+#else
+		NtQueryPerformanceCounter(&perfCounter, &perfFrequency);
+#endif	
+	}
 
   //2.1 For every command marked as completed
     for (i = 0; i <= (adapterExtension->CAP.NCS); i++) {
@@ -594,6 +600,7 @@ Affected Variables/Registers:
             }
 
           //2.1.2 Log command execution time, if it's allowed
+#if (NTDDI_VERSION > NTDDI_WIN7)
             if ( adapterExtension->TracingEnabled && 
                  (srbExtension->StartTime != 0) &&
                  (perfCounter.QuadPart != 0) &&
@@ -602,7 +609,7 @@ Affected Variables/Registers:
                 ULONGLONG durationTime = CalculateTimeDurationIn100ns((perfCounter.QuadPart - srbExtension->StartTime), perfFrequency.QuadPart);
                 StorPortNotification(IoTargetRequestServiceTime, (PVOID)adapterExtension, durationTime, slotContent->Srb);
             }
-
+#endif
           //2.2 Set the status
             if( (SrbStatus == SRB_STATUS_SUCCESS) &&
                 (!IsRequestSenseSrb(srbExtension->AtaFunction)) && 

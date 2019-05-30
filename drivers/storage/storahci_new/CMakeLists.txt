@@ -2,8 +2,9 @@ add_definitions(-DDEBUG)
 
 list(APPEND SOURCE
     common.c
+	entrypts.c
     hbastat.c
-    entrypts.c)
+    io.c)
 	
 include_directories(
 	${REACTOS_SOURCE_DIR}/sdk/include/xdk)	
