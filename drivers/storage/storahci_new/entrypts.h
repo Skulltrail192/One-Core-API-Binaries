@@ -455,7 +455,10 @@ HW_FIND_ADAPTER AhciHwFindAdapter;
 
 HW_INITIALIZE AhciHwInitialize;
 
-HW_PASSIVE_INITIALIZE_ROUTINE AhciHwPassiveInitialize;
+BOOLEAN
+AhciHwPassiveInitialize (
+    __in PVOID AdapterExtension
+    );
 
 HW_STARTIO AhciHwStartIo;
 

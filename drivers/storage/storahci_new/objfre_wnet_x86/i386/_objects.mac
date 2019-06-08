@@ -1,0 +1,22 @@
+
+
+386_OBJECTS=\
+ $(OBJ_PATH)\$O\common.obj \
+ $(OBJ_PATH)\$O\entrypts.obj \
+ $(OBJ_PATH)\$O\hbastat.obj \
+ $(OBJ_PATH)\$O\io.obj \
+ $(OBJ_PATH)\$O\pnppower.obj \
+ $(OBJ_PATH)\$O\util.obj \
+
+
+_RES_FILE=$(OBJ_PATH)\$O\storahci_new.res
+
+
+
+# lowercased
+BASEDIR=f:\develop\ddk\winddk\7600.16385.1
+OBJECT_ROOT=f:\develop\ddk\winddk\7600.16385.1
+MAKEDIR_LOWERCASE=f:\develop\one-core\one-core-api-new\drivers\storage\storahci_new
+OBJ_PATH=f:\develop\one-core\one-core-api-new\drivers\storage\storahci_new
+CONCURRENT_MIDL=0
+CONCURRENT_MANIFEST_BUILD=0

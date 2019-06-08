@@ -114,5 +114,11 @@ AhciPortFailAllIos(
     __in BOOLEAN AtDIRQL
     );
 
-HW_DPC_ROUTINE AhciPortSrbCompletionDpcRoutine;
+VOID
+AhciPortSrbCompletionDpcRoutine(
+    __in PSTOR_DPC  Dpc,
+    __in PVOID      AdapterExtension,
+    __in PVOID      SystemArgument1,
+    __in PVOID      SystemArgument2
+  );
 

@@ -275,7 +275,12 @@ IsDeviceSupportsNCQ(
     __in PIDENTIFY_DEVICE_DATA IdentifyDeviceData
     )
 {
+#if (NTDDI_VERSION > NTDDI_WIN7)	
     return (IdentifyDeviceData->SerialAtaCapabilities.NCQ == TRUE);
+#else
+	UNREFERENCED_PARAMETER(IdentifyDeviceData);
+	return FALSE;
+#endif	
 }
 
 __inline 
@@ -284,8 +289,13 @@ IsDeviceSupportsAN(
     __in PIDENTIFY_PACKET_DATA IdentifyPacketData
     )
 {
+#if (NTDDI_VERSION > NTDDI_WIN7)	
     // This bit is actually from IDENTIFY_PACKET_DATA structure for ATAPI devices.
     return (IdentifyPacketData->SerialAtaFeaturesSupported.AsynchronousNotification == TRUE);
+#else
+	UNREFERENCED_PARAMETER(IdentifyPacketData);
+	return FALSE;
+#endif	
 }
 
 __inline 

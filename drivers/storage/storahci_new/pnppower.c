@@ -186,7 +186,7 @@ NOTE: as this routine is invoked from FindAdapter where the adapter might not be
     ChannelExtension->DeviceExtension[0].IdentifyDataPhysicalAddress = StorPortGetPhysicalAddress(adapterExtension, NULL, (PVOID)ChannelExtension->DeviceExtension[0].IdentifyDeviceData, &mappedLength);
     ChannelExtension->DeviceExtension[0].InquiryDataPhysicalAddress = StorPortGetPhysicalAddress(adapterExtension, NULL, (PVOID)ChannelExtension->DeviceExtension[0].InquiryData, &mappedLength);
 
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
   //4.8 Setup STOR_ADDRESS for the device. StorAHCI uses Bus/Target/Lun addressing model, thus uses STOR_ADDRESS_TYPE_BTL8.
   //        Port - not need to be set by miniport, Storport has this knowledge. miniport can get the value by calling StorPortGetSystemPortNumber().
   //        Path - StorAHCI reports (highest implemented port number + 1) as bus number, thus "port number" will be "Path" value.
@@ -198,6 +198,7 @@ NOTE: as this routine is invoked from FindAdapter where the adapter might not be
     ChannelExtension->DeviceExtension[0].DeviceAddress.Path = (UCHAR)ChannelExtension->PortNumber;
     ChannelExtension->DeviceExtension[0].DeviceAddress.Target = 0;
     ChannelExtension->DeviceExtension[0].DeviceAddress.Lun = 0;
+#endif
 
   //3.2 Clear Enable Interrupts on the Channel (AHCI 1.1 Section 10.1.2 - 7)
   //We will enable interrupt after channel started
@@ -477,6 +478,7 @@ ReportLunsComplete(
     srbExtension->AtaFunction = 0;
     srbExtension->CompletionRoutine = NULL;
 
+#if (NTDDI_VERSION > NTDDI_WIN7)
     // report error back so that Storport may retry the command.
     // tolerate failure from IDE_COMMAND_READ_LOG_EXT during device enumeration as it's not part of device enumeration commands.
     if ( (srbExtension->TaskFile.Current.bCommandReg != IDE_COMMAND_READ_LOG_EXT) &&
@@ -485,6 +487,7 @@ ReportLunsComplete(
          (Srb->SrbStatus != SRB_STATUS_NO_DEVICE) ) {
         return;
     }
+#endif	
 
     Srb->SrbStatus = SRB_STATUS_SUCCESS;
     Srb->ScsiStatus = SCSISTAT_GOOD;
@@ -823,6 +826,7 @@ SetDateAndTimeCompletion(
     return;
 }
 
+#if (NTDDI_VERSION > NTDDI_WIN7)
 VOID
 BuildSetDateAndTimeTaskFile(
     __in PATA_TASK_FILE  TaskFile
@@ -862,11 +866,14 @@ BuildSetDateAndTimeTaskFile(
     TaskFile->Previous.bCylHighReg =         (UCHAR) (0xFF & now);
 
     TaskFile->Current.bDriveHeadReg = 0xA0;
+
     TaskFile->Current.bCommandReg = IDE_COMMAND_SET_DATE_AND_TIME;
 
     return;
 }
+#endif
 
+#if (NTDDI_VERSION > NTDDI_WIN7)	
 VOID
 IssueSetDateAndTimeCommand(
     __in PAHCI_CHANNEL_EXTENSION ChannelExtension,
@@ -906,6 +913,7 @@ Affected Variables/Registers:
 
     return;
 }
+#endif
 
 BOOLEAN 
 AhciDeviceInitialize (
@@ -978,7 +986,12 @@ IsDeviceSupportsHIPM(
     __in PIDENTIFY_DEVICE_DATA IdentifyDeviceData
     )
 {
+#if (NTDDI_VERSION > NTDDI_WIN7)	
     return (IdentifyDeviceData->SerialAtaCapabilities.HIPM == TRUE);
+#else
+	UNREFERENCED_PARAMETER(IdentifyDeviceData);
+	return FALSE;
+#endif
 }
 
 __inline 
@@ -987,10 +1000,15 @@ IsDeviceSupportsDIPM(
     __in PIDENTIFY_DEVICE_DATA IdentifyDeviceData
     )
 {
+#if (NTDDI_VERSION > NTDDI_WIN7)	
     return (IdentifyDeviceData->SerialAtaFeaturesSupported.DIPM == TRUE);
+#else
+	UNREFERENCED_PARAMETER(IdentifyDeviceData);	
+	return FALSE;
+#endif
 }
 
-
+#if (NTDDI_VERSION > NTDDI_WIN7)
 __inline 
 BOOLEAN
 IsLpmModeSetting(
@@ -1013,7 +1031,9 @@ IsLpmModeSetting(
 
     return FALSE;
 }
+#endif
 
+#if (NTDDI_VERSION > NTDDI_WIN7)
 __inline 
 BOOLEAN
 IsLpmAdaptiveSetting(
@@ -1036,6 +1056,7 @@ IsLpmAdaptiveSetting(
 
     return FALSE;
 }
+#endif
 
 UCHAR
 SetAllowedLpmStates(

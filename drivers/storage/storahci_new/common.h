@@ -506,6 +506,7 @@ AhciFreeDmaBuffer (
                                                       BufferLength,
                                                       MmCached);
 #else
+	UNREFERENCED_PARAMETER(BufferLength);
 	status = StorPortFreePool(AdapterExtension,
 							  Buffer);
 #endif	

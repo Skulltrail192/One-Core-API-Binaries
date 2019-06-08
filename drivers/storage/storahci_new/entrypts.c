@@ -246,6 +246,7 @@ Note:
     UNREFERENCED_PARAMETER(HwContext);
     UNREFERENCED_PARAMETER(BusInformation);
     UNREFERENCED_PARAMETER(Again);
+    UNREFERENCED_PARAMETER(ArgumentString);
 
     adapterExtension = (PAHCI_ADAPTER_EXTENSION)AdapterExtension;
 
@@ -477,16 +478,6 @@ Note:
 }
 
 BOOLEAN
-AhciHwInitialize (
-    __in PVOID AdapterExtension
-    )
-{
-    StorPortEnablePassiveInitialization(AdapterExtension, AhciHwPassiveInitialize);
-
-    return TRUE;
-}
-
-BOOLEAN
 AhciHwPassiveInitialize (
     __in PVOID AdapterExtension
     )
@@ -504,6 +495,15 @@ AhciHwPassiveInitialize (
     return TRUE;
 }
 
+BOOLEAN
+AhciHwInitialize (
+    __in PVOID AdapterExtension
+    )
+{
+    StorPortEnablePassiveInitialization(AdapterExtension, AhciHwPassiveInitialize);
+
+    return TRUE;
+}
 
 SCSI_ADAPTER_CONTROL_STATUS
 AhciHwAdapterControl (
@@ -1263,6 +1263,7 @@ Return Values:
 
         ssts.AsUlong = StorPortReadRegisterUlong(AdapterExtension, &channelExtension->Px->SSTS.AsUlong);
 
+#if (NTDDI_VERSION > NTDDI_WIN7)
         //If a drive has already been found and it is a ZPODD (*) ...
         if (channelExtension->DeviceExtension[0].IdentifyPacketData->SerialAtaCapabilities.SlimlineDeviceAttention) {
             if (ssts.DET == 0) {
@@ -1285,7 +1286,9 @@ Return Values:
                 // ... try to get the channel started.
                 P_Running_StartAttempt(channelExtension, TRUE);
             }
-        } else if ( !AdapterIgnoreHotPlug(adapterExtension) && (ssts.DET == 0) && (ssts.IPM == 0) ) {
+        } else 
+#endif			
+		if ( !AdapterIgnoreHotPlug(adapterExtension) && (ssts.DET == 0) && (ssts.IPM == 0) ) {
             if (!channelExtension->StateFlags.IgnoreHotplugDueToResetInProgress) {
               // Handle bus rescan processing processing
                 channelExtension->StateFlags.CallAhciReportBusChange = 1;
@@ -1519,6 +1522,16 @@ Return Value:
     return status;
 }
 
+
+#endif
+#if _MSC_VER >= 1200
+#pragma warning(pop)
+#else
+#pragma warning(default:4152)
+#pragma warning(default:4214)
+#pragma warning(default:4201)
+#endif
+
 ULONG
 DriverEntry (
     __in PVOID DriverObject,
@@ -1594,13 +1607,4 @@ Return Value:
     return status;
 
 } // end DriverEntry()
-#endif
-#if _MSC_VER >= 1200
-#pragma warning(pop)
-#else
-#pragma warning(default:4152)
-#pragma warning(default:4214)
-#pragma warning(default:4201)
-#endif
-
 
