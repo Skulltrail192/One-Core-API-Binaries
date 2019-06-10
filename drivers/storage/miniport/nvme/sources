@@ -1,0 +1,79 @@
+# ******************************************************************************
+# ** Copyright (c) 2011-2012                                                  **
+# **                                                                          **
+# **   Integrated Device Technology, Inc.                                     **
+# **   Intel Corporation                                                      **
+# **   LSI Corporation                                                        **
+# **                                                                          **
+# ** All rights reserved.                                                     **
+# **                                                                          **
+# ******************************************************************************
+# **                                                                          **
+# ** Redistribution and use in source and binary forms, with or without       **
+# ** modification, are permitted provided that the following conditions are   **
+# ** met:                                                                     **
+# **                                                                          **
+# **   1. Redistributions of source code must retain the above copyright      **
+# **      notice, this list of conditions and the following disclaimer.       **
+# **                                                                          **
+# **   2. Redistributions in binary form must reproduce the above copyright   **
+# **      notice, this list of conditions and the following disclaimer in the **
+# **      documentation and/or other materials provided with the distribution.**
+# **                                                                          **
+# ** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS  **
+# ** IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,**
+# ** THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR   **
+# ** PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR        **
+# ** CONTRIBUTORS BE LIABLE FOR ANY DIRECT,INDIRECT, INCIDENTAL, SPECIAL,     **
+# ** EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,      **
+# ** PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR       **
+# ** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF   **
+# ** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING     **
+# ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS       **
+# ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.             **
+# **                                                                          **
+# ** The views and conclusions contained in the software and documentation    **
+# ** are those of the authors and should not be interpreted as representing   **
+# ** official policies, either expressed or implied, of Intel Corporation,    **
+# ** Integrated Device Technology Inc., or Sandforce Corporation.             **
+# **                                                                          **
+# ******************************************************************************
+TARGETNAME=nvme
+
+TARGETTYPE=MINIPORT
+TARGETPATH=obj$(BUILD_ALT_DIR)
+
+# -DDUMB_DRIVER:  Used ONLY FOR DEBUG.  Double buffers all IOs, handy for any debug
+#              situation where control over all host side buffers is needed
+#              (alingment issues, etc).  Be sure to step through before use,
+#              doesn't get used/tested often!  Also disables:
+#              - learning mode
+#              - SGL-PRP xlation (our buffre addresses are known)
+#              - multiple queues NUMA opimized (uses only one Q by faking single proc)
+
+# -DCHATHAM2:  Required for use with Chatham2 (aka Chatsberg) hardware
+
+# -DCOMPLETE_IN_DPC:  Controls whether IOs are completed in the ISR ot in DPCs
+
+# -DHISTORY:  Enables history buffers for debug, can be used in free or checked build
+
+# -DPRP_DBG:  dumps all PRP info for every IO
+
+C_DEFINES = $(C_DEFINES) -D__KERNEL_ -D__MSWINDOWS__
+
+TARGETLIBS=$(DDK_LIB_PATH)\storport.lib \
+           $(DDK_LIB_PATH)\Ntoskrnl.lib \
+           $(DDK_LIB_PATH)\wdm.lib \
+           $(DDK_LIB_PATH)\scsiwmi.lib \
+           $(DDK_LIB_PATH)\procgrp.lib
+
+SOURCES=nvmeStd.c     \
+        nvmeStat.c    \
+        nvmeInit.c    \
+        nvmeSnti.c    \
+        nvmeIo.c      \
+        nvmePwrMgmt.c \
+        nvmeWmi.c \
+        nvme.rc
+
+RUN_WPP=$(SOURCES) -km -ext:.h

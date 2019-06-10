@@ -85,16 +85,10 @@ AllocateResourcesForAdapter(
                              sizeof(IDENTIFY_DEVICE_DATA) +                 // 512 bytes
                              INQUIRYDATABUFFERSIZE + 8;                     // Inquiry Data and GESN buffer
     // round up to KiloBytes if it's not dump mode. this makes sure that NonCachedExtension for next port can align to 1K.
-    if (!IsDumpMode(AdapterExtension)) {
-        nonCachedExtensionSize = ((nonCachedExtensionSize - 1) / 0x400 + 1) * 0x400;
-        // total size for all ports
-        nonCachedExtensionSize *= PortCount;
-    } else {
-        // dump mode, address returned from StorPortGetUncachedExtension() is not guaranteed align with 1K.
-        // adding 1K into length so that we can start from 1K alignment safely.
-        //       NOTE: StorPortAllocatePool is not supported in dump stack, so we allocate ChannelExtension from UnCachedExtension as work around.
-        nonCachedExtensionSize += 0x400 + sizeof(AHCI_CHANNEL_EXTENSION);
-    }
+    //if (!IsDumpMode(AdapterExtension)) {
+    nonCachedExtensionSize = ((nonCachedExtensionSize - 1) / 0x400 + 1) * 0x400;
+    // total size for all ports
+    nonCachedExtensionSize *= PortCount;
 
     AdapterExtension->NonCachedExtension = StorPortGetUncachedExtension(AdapterExtension, ConfigInfo, nonCachedExtensionSize);
 
@@ -106,35 +100,19 @@ AllocateResourcesForAdapter(
     AhciZeroMemory((PCHAR)AdapterExtension->NonCachedExtension, nonCachedExtensionSize);
 
     // 2.2 allocate resources for Ports which need AHCI_CHANNEL_EXTENSION for each of them.
-    if (!IsDumpMode(AdapterExtension)) {
-        ULONG status = STOR_STATUS_SUCCESS;
-        // allocate pool and zero the content
-        status = StorPortAllocatePool(AdapterExtension,
-                                      PortCount * sizeof(AHCI_CHANNEL_EXTENSION),
-                                      AHCI_POOL_TAG,
-                                      (PVOID*)&portsChannelExtension);
+    //if (!IsDumpMode(AdapterExtension)) {
+	// 2.2 allocate resources for Ports which need AHCI_CHANNEL_EXTENSION for each of them.
+		portsChannelExtension = ExAllocatePoolWithTag(NonPagedPool,
+												  PortCount * sizeof(AHCI_CHANNEL_EXTENSION),
+												  AHCI_POOL_TAG);
 
-        if ((status != STOR_STATUS_SUCCESS) || (portsChannelExtension == NULL)) {
+        if ((portsChannelExtension == NULL)) {
            // we cannot continue if cannot get memory for ChannelExtension.
             return FALSE;
         }
         AhciZeroMemory((PCHAR)portsChannelExtension, PortCount * sizeof(AHCI_CHANNEL_EXTENSION));
         //get the starting pointer
-        portsUncachedExtension = (PCHAR)AdapterExtension->NonCachedExtension;
-    } else {
-        ULONG_PTR left = 0;
-        // get channelExtension
-        portsChannelExtension = (PCHAR)AdapterExtension->NonCachedExtension + nonCachedExtensionSize - sizeof(AHCI_CHANNEL_EXTENSION);
-
-        //get the starting pointer; align the starting location to 1K.
-        left = ((ULONG_PTR)AdapterExtension->NonCachedExtension) % 1024;
-
-        if (left > 0) {
-            portsUncachedExtension = (PCHAR)AdapterExtension->NonCachedExtension + 1024 - left;
-        } else {
-            portsUncachedExtension = (PCHAR)AdapterExtension->NonCachedExtension;
-        }
-    }
+    portsUncachedExtension = (PCHAR)AdapterExtension->NonCachedExtension;
 
     // reset nonCachedExtensionSize to be the size for one Port, it works for dump case also as PortCount is '1'.
     nonCachedExtensionSize /= PortCount;
@@ -238,6 +216,8 @@ Note:
     ULONG                   portCount = 0;
     //Used to enable the AHCI interface
     AHCI_Global_HBA_CONTROL ghc = {0};
+    ULONG pcicfgLen = 0;
+    UCHAR pcicfgBuffer[0x30] = {0};	
 #if (NTDDI_VERSION > NTDDI_WIN7)	
     //guids
     GUID                    powerSettingChangeGuids[2] = {0};
@@ -280,9 +260,8 @@ Note:
     }
 #endif
   //1.2 Gather Vendor,Device,Revision IDs from PCI
-    if (!IsDumpMode(adapterExtension)) {
-        ULONG pcicfgLen = 0;
-        UCHAR pcicfgBuffer[0x30] = {0};
+    //if (!IsDumpMode(adapterExtension)) {
+
 
         pcicfgLen = StorPortGetBusData(adapterExtension,
                                        PCIConfiguration,
@@ -301,7 +280,7 @@ Note:
             NT_ASSERT(FALSE);
             return SP_RETURN_ERROR;
         }
-    }
+    //}
 #if (NTDDI_VERSION > NTDDI_WIN7)	
 	else {
         adapterExtension->VendorID = dumpContext->VendorID;
@@ -357,16 +336,16 @@ Note:
     } //numberOfHighestPort now holds the correct value
 
     //3.3.2 get implemented port count
-    if (!IsDumpMode(adapterExtension)) {
+    //if (!IsDumpMode(adapterExtension)) {
         for (i = 0; i <= numberOfHighestPort; i++) {
             if ( (adapterExtension->PortImplemented & (1 << i)) != 0 ) {
                 portCount++;
             }
         }
-    } else {
+    //} else {
         // in dump environment, only use the desired port.
-        portCount = 1;
-    }
+        //portCount = 1;
+    //}
 
   //3.4 Initializing the rest of PORT_CONFIGURATION_INFORMATION
     ConfigInfo->MaximumTransferLength = AHCI_MAX_TRANSFER_LENGTH;
@@ -396,9 +375,9 @@ Note:
 #endif
 
   // 3.4.2 update PortImplemented, HighestPort and portCount if necessary
-    if (!IsDumpMode(adapterExtension)) {
+    //if (!IsDumpMode(adapterExtension)) {
         adapterExtension->HighestPort = numberOfHighestPort;
-    } 
+   // } 
 #if (NTDDI_VERSION > NTDDI_WIN7)	
 	else {
         adapterExtension->PortImplemented = 1 << dumpContext->DumpPortNumber;
@@ -473,6 +452,8 @@ Note:
 
     //4.3.2 async process to get all ports into running state
     AhciAdapterRunAllPorts(adapterExtension);
+	
+	DbgPrint("AhciHwFindAdapter finishing\n");
 
     return SP_RETURN_FOUND;
 }

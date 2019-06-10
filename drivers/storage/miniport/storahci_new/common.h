@@ -464,7 +464,7 @@ AhciAllocateDmaBuffer (
     __out PVOID* Buffer
     )
 {
-    ULONG            status;
+    ULONG            status = STATUS_SUCCESS;
     PHYSICAL_ADDRESS minPhysicalAddress;
     PHYSICAL_ADDRESS maxPhysicalAddress;
     PHYSICAL_ADDRESS boundaryPhysicalAddress;
@@ -483,10 +483,12 @@ AhciAllocateDmaBuffer (
                                                               MM_ANY_NODE_OK,
                                                               Buffer);
 #else
-	status = StorPortAllocatePool(AdapterExtension,
-								  BufferLength,
-								  AHCI_POOL_TAG,
-								  Buffer);
+	UNREFERENCED_PARAMETER(AdapterExtension);
+
+	Buffer = ExAllocatePoolWithTag(NonPagedPool,
+								   BufferLength,
+								   AHCI_POOL_TAG);								  
+								  
 #endif
     return status;
 }

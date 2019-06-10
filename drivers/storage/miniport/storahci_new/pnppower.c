@@ -1361,7 +1361,6 @@ AhciPortGetInitCommands(
   )
 {
     // Read _GTF from ACPI
-    ULONG                    status = STOR_STATUS_SUCCESS;
     ACPI_EVAL_INPUT_BUFFER   inputData = {0};
     PACPI_EVAL_OUTPUT_BUFFER acpiData = NULL;
     PACPI_METHOD_ARGUMENT    argument = NULL;
@@ -1382,11 +1381,11 @@ AhciPortGetInitCommands(
 
     inputData.Signature = ACPI_EVAL_INPUT_BUFFER_SIGNATURE;
     inputData.MethodNameAsUlong = ACPI_METHOD_GTF;
-
-    status = StorPortAllocatePool(ChannelExtension->AdapterExtension,
-                                  acpiDataSize,            
-                                  AHCI_POOL_TAG,
-                                  (PVOID*)&acpiData);
+ 							  
+	acpiData = ExAllocatePoolWithTag(NonPagedPool,
+									acpiDataSize,
+									AHCI_POOL_TAG);								  
+								  
 
 #if (NTDDI_VERSION > NTDDI_WIN7)
     if (acpiData != NULL) {
@@ -1407,10 +1406,10 @@ AhciPortGetInitCommands(
             StorPortFreePool(ChannelExtension->AdapterExtension, (PVOID)acpiData);
             acpiData = NULL;
             // re-allocate a bigger buffer
-            status = StorPortAllocatePool(ChannelExtension->AdapterExtension,
-                                          acpiDataSize,            
-                                          AHCI_POOL_TAG,
-                                          (PVOID*)&acpiData);
+			
+			acpiData = ExAllocatePoolWithTag(NonPagedPool,
+											 acpiDataSize,
+											 AHCI_POOL_TAG);
 
             if (acpiData != NULL) {
                 status = StorPortInvokeAcpiMethod(ChannelExtension->AdapterExtension, 
@@ -1428,8 +1427,7 @@ AhciPortGetInitCommands(
 #endif	
 
     // get _GTF commands count
-    if ( (status == STOR_STATUS_SUCCESS) && 
-         (acpiData != NULL) &&
+    if ( (acpiData != NULL) &&
          (acpiData->Signature == ACPI_EVAL_OUTPUT_BUFFER_SIGNATURE) &&
          (acpiData->Count == 1) ) {
 
@@ -1459,13 +1457,12 @@ AhciPortGetInitCommands(
     if (ChannelExtension->DeviceInitCommands.CommandCount > 0) {
         PATA_TASK_FILE taskFile;
         ULONG i;
+							  
+	    ChannelExtension->DeviceInitCommands.CommandTaskFile = ExAllocatePoolWithTag(NonPagedPool,
+																					ChannelExtension->DeviceInitCommands.CommandCount * sizeof(ATA_TASK_FILE),
+																					AHCI_POOL_TAG);									  
 
-        status = StorPortAllocatePool(ChannelExtension->AdapterExtension,
-                                      ChannelExtension->DeviceInitCommands.CommandCount * sizeof(ATA_TASK_FILE),            
-                                      AHCI_POOL_TAG,
-                                      (PVOID*)&ChannelExtension->DeviceInitCommands.CommandTaskFile);
-
-        if ( (status != STOR_STATUS_SUCCESS) || (ChannelExtension->DeviceInitCommands.CommandTaskFile == NULL) ) {
+        if ((ChannelExtension->DeviceInitCommands.CommandTaskFile == NULL) ) {
             goto exit;
         }
         

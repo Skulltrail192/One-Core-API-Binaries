@@ -2590,9 +2590,12 @@ AtaUnmapRequest (
         ULONG                 i = 0;
         ULONG                 length = 0;
         STOR_PHYSICAL_ADDRESS bufferPhysicalAddress;
-
-        status = StorPortAllocatePool(ChannelExtension->AdapterExtension, sizeof(ATA_TRIM_CONTEXT), AHCI_POOL_TAG, (PVOID*)&trimContext);
-        if ( (status != STOR_STATUS_SUCCESS) || (trimContext == NULL) ) {
+     
+		trimContext = ExAllocatePoolWithTag(NonPagedPool,
+											sizeof(ATA_TRIM_CONTEXT),
+											AHCI_POOL_TAG);			
+		
+		if ((trimContext == NULL) ) {
             Srb->SrbStatus = SRB_STATUS_INVALID_REQUEST;
             if (status == STOR_STATUS_SUCCESS) {
                 status = STOR_STATUS_INSUFFICIENT_RESOURCES;
