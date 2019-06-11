@@ -390,7 +390,7 @@
 [Multiprocessor.Kernel.files]
     ntkrnlpa.exe,2k3SP2\ntkrpamp.exe
     ntoskrnl.exe,2k3SP2\ntkrnlmp.exe
-	hal.sys,2k3SP2\halmacpi.dll
+	hal.dll,2k3SP2\halmacpi.dll
 
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
