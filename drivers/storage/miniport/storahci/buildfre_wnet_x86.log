@@ -1,0 +1,103 @@
+BUILD: Computing Include file dependencies:
+BUILD: Examining f:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci directory for files to compile.
+oacr invalidate root:x86fre /autocleanqueue
+1>Compiling and Linking f:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci *************
+1>'nmake.exe /nologo BUILDMSG=Stop. -i BUILD_PASS=PASS2 LINKONLY=1 NOPASS0=1 MAKEDIR_RELATIVE_TO_BASEDIR='
+1>BUILDMSG: _NT_TARGET_VERSION SET TO WS03
+1> rc.exe -l 409 -DSXS_PROCESSOR_ARCHITECTURE="""x86"""  -DSXS_TARGET="""storahci.sys"""   -DSYSTEM_COMPATIBLE_ASSEMBLY_NAME="""Microsoft.Windows.SystemCompatible"""  -DLSYSTEM_COMPATIBLE_ASSEMBLY_NAME=L"""Microsoft.Windows.SystemCompatible"""   -DSXS_ASSEMBLY_VERSION=""""""  /r /fo f:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci\objfre_wnet_x86\i386\storahci.res /D_X86_=1 /Di386=1  /DSTD_CALL /DCONDITION_HANDLING=1 /DNT_UP=1  /DNT_INST=0 /DWIN32=100 /D_NT1X_=100 /DWINNT=1 /D_WIN32_WINNT=0x0502 /DWINVER=0x0502 /D_WIN32_IE=0x0603    /DWIN32_LEAN_AND_MEAN=1  /DDEVL=1 /D__BUILDMACHINE__=WinDDK /DFPO=0  /DNDEBUG  /DNTDDI_VERSION=0x05020100   /I%BUILD%\inc /If:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci\objfre_wnet_x86\i386 /IF:\Develop\DDK\WinDDK\7600.16385.1\inc\api /IF:\Develop\DDK\WinDDK\7600.16385.1\inc\api /IF:\Develop\DDK\WinDDK\7600.16385.1\inc\ddk /IF:\Develop\DDK\WinDDK\7600.16385.1\inc\ddk /IF:\Develop\DDK\WinDDK\7600.16385.1\inc\crt .\storahci.rc
+1>Microsoft (R) Windows (R) Resource Compiler Version 6.1.6908.0
+1>Copyright (C) Microsoft Corporation.  All rights reserved.
+1> F:\Develop\DDK\WinDDK\7600.16385.1\Bin\x86\oacr\oacrcl @f:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci\objfre_wnet_x86\i386\cl.rsp
+1>Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 15.00.30729.207 for 80x86
+1>Copyright (C) Microsoft Corporation.  All rights reserved.
+1>cl /Fo"f:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci\objfre_wnet_x86\i386/"
+1> /FC
+1> /MT
+1> /U_MT
+1> /Ii386
+1> /I.
+1> /I%BUILD%\inc
+1> /If:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci\objfre_wnet_x86\i386
+1> /IF:\Develop\DDK\WinDDK\7600.16385.1\inc\api
+1> /IF:\Develop\DDK\WinDDK\7600.16385.1\inc\api
+1> /IF:\Develop\DDK\WinDDK\7600.16385.1\inc\ddk
+1> /IF:\Develop\DDK\WinDDK\7600.16385.1\inc\ddk
+1> /IF:\Develop\DDK\WinDDK\7600.16385.1\inc\crt
+1> /D_X86_=1
+1> /Di386=1
+1> /DSTD_CALL
+1> /DCONDITION_HANDLING=1
+1> /DNT_UP=1
+1> /DNT_INST=0
+1> /DWIN32=100
+1> /D_NT1X_=100
+1> /DWINNT=1
+1> /D_WIN32_WINNT=0x0502
+1> /DWINVER=0x0502
+1> /D_WIN32_IE=0x0603
+1> /DWIN32_LEAN_AND_MEAN=1
+1> /DDEVL=1
+1> /D__BUILDMACHINE__=WinDDK
+1> /DFPO=0
+1> /DNDEBUG
+1> /DNTDDI_VERSION=0x05020100
+1> /c
+1> /Zc:wchar_t-
+1> /Zl
+1> /Zp8
+1> /Gy
+1> /Gm-
+1> -cbstring
+1> /W4
+1> /WX
+1> /Gz
+1> /hotpatch
+1> /EHs-c-
+1> /GR-
+1> /GF
+1> /GS
+1> /Zi
+1> /Oxs
+1> /Oy-
+1> /Zi
+1> /Fdf:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci\objfre_wnet_x86\i386\
+1> /DKMDF_MAJOR_VERSION_STRING=01
+1> /DKMDF_MINOR_VERSION_STRING=009
+1> /wd4603
+1> /wd4627
+1> /typedil-
+1> /FIF:\Develop\DDK\WinDDK\7600.16385.1\inc\api\warning.h
+1> .\storahci.c 
+1>storahci.c
+1> F:\Develop\DDK\WinDDK\7600.16385.1\Bin\x86\oacr\oacrlink /out:f:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci\objfre_wnet_x86\i386\storahci.sys /machine:ix86 @f:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci\objfre_wnet_x86\i386\lnk.rsp
+1>Microsoft (R) Incremental Linker Version 9.00.30729.207
+1>Copyright (C) Microsoft Corporation.  All rights reserved.
+1>/MERGE:_PAGE=PAGE 
+1>/MERGE:_TEXT=.text 
+1>/SECTION:INIT,d 
+1>/OPT:REF 
+1>/OPT:ICF 
+1>/IGNORE:4198,4010,4037,4039,4065,4070,4078,4087,4089,4221 
+1>/INCREMENTAL:NO 
+1>/release 
+1>/NODEFAULTLIB 
+1>/WX 
+1>/debug 
+1>/debugtype:cv,fixup,pdata 
+1>/version:6.1 
+1>/osversion:6.1 
+1>/functionpadmin:5 
+1>/safeseh 
+1>/pdbcompress 
+1>/STACK:0x40000,0x1000 
+1>/driver 
+1>/base:0x10000 
+1>/subsystem:native,5.02 
+1>/entry:GsDriverEntry@8 
+1>/out:f:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci\objfre_wnet_x86\i386\storahci.sys 
+1>f:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci\objfre_wnet_x86\i386\storahci.res 
+1>f:\develop\one-core\one-core-api-new\drivers\storage\miniport\storahci\objfre_wnet_x86\i386\storahci.obj 
+1>f:\develop\ddk\winddk\7600.16385.1\lib\wnet\i386\BufferOverflowK.lib 
+1>f:\develop\ddk\winddk\7600.16385.1\lib\wnet\i386\int64.lib 
+1>f:\develop\ddk\winddk\7600.16385.1\lib\wnet\i386\storport.lib 
+1>f:\develop\ddk\winddk\7600.16385.1\lib\wnet\i386\sehupd.lib 

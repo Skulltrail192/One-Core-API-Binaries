@@ -7,16 +7,18 @@ list(APPEND SOURCE
     endpoint.c
     iface.c
     ioctl.c
+    iso.c
     pnp.c
     power.c
     queue.c
     roothub.c
+    trfsplit.c
     urb.c
     usb2.c
     usbport.c
     usbport.h)
 
-add_library(usbport SHARED
+add_library(usbport MODULE
     ${SOURCE}
     guid.c
     usbport.rc

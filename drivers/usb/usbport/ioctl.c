@@ -1,6 +1,13 @@
+/*
+ * PROJECT:     ReactOS USB Port Driver
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     USBPort I/O control functions
+ * COPYRIGHT:   Copyright 2017 Vadim Galyant <vgal@rambler.ru>
+ */
+
 #include "usbport.h"
 
-//#define NDEBUG
+#define NDEBUG
 #include <debug.h>
 
 VOID
@@ -203,7 +210,7 @@ NTSTATUS
 NTAPI
 USBPORT_GetUnicodeName(IN PDEVICE_OBJECT FdoDevice,
                        IN PIRP Irp,
-                       IN PULONG Information)
+                       IN PULONG_PTR Information)
 {
     PUSB_HCD_DRIVERKEY_NAME DriverKey;
     PIO_STACK_LOCATION IoStack;
@@ -269,6 +276,7 @@ USBPORT_GetUnicodeName(IN PDEVICE_OBJECT FdoDevice,
 
     if (ControllerName->Header.UsbUserStatusCode != UsbUserSuccess)
     {
+        ExFreePoolWithTag(ControllerName, USB_PORT_TAG);
         return STATUS_UNSUCCESSFUL;
     }
 
@@ -318,10 +326,10 @@ USBPORT_PdoInternalDeviceControl(IN PDEVICE_OBJECT PdoDevice,
     IoStack = IoGetCurrentIrpStackLocation(Irp);
     IoCtl = IoStack->Parameters.DeviceIoControl.IoControlCode;
 
-    DPRINT("USBPORT_PdoInternalDeviceControl: PdoDevice - %p, Irp - %p, IoCtl - %x\n",
-           PdoDevice,
-           Irp,
-           IoCtl);
+    //DPRINT("USBPORT_PdoInternalDeviceControl: PdoDevice - %p, Irp - %p, IoCtl - %x\n",
+    //       PdoDevice,
+    //       Irp,
+    //       IoCtl);
 
     if (IoCtl == IOCTL_INTERNAL_USB_SUBMIT_URB)
     {

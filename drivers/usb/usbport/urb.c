@@ -1,3 +1,10 @@
+/*
+ * PROJECT:     ReactOS USB Port Driver
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     USBPort URB functions
+ * COPYRIGHT:   Copyright 2017 Vadim Galyant <vgal@rambler.ru>
+ */
+
 #include "usbport.h"
 
 #define NDEBUG
@@ -1049,10 +1056,7 @@ USBPORT_HandleSubmitURB(IN PDEVICE_OBJECT PdoDevice,
         ExFreePoolWithTag(Transfer, USB_PORT_TAG);
     }
 
-    if (DeviceHandle)
-    {
-        InterlockedDecrement(&DeviceHandle->DeviceHandleLock);
-    }
+    InterlockedDecrement(&DeviceHandle->DeviceHandleLock);
 
     Irp->IoStatus.Status = Status;
     IoCompleteRequest(Irp, IO_NO_INCREMENT);

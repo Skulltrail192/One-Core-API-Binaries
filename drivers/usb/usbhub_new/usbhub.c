@@ -1,3 +1,10 @@
+/*
+ * PROJECT:     ReactOS USB Hub Driver
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     USBHub main driver functions
+ * COPYRIGHT:   Copyright 2017 Vadim Galyant <vgal@rambler.ru>
+ */
+
 #include "usbhub.h"
 
 #define NDEBUG
@@ -18,7 +25,7 @@ USBH_Wait(IN ULONG Milliseconds)
     LARGE_INTEGER Interval;
 
     DPRINT("USBH_Wait: Milliseconds - %x\n", Milliseconds);
-    Interval.QuadPart = -10000 * Milliseconds + (KeQueryTimeIncrement() - 1);
+    Interval.QuadPart = -10000LL * Milliseconds - ((ULONGLONG)KeQueryTimeIncrement() - 1); 
     return KeDelayExecutionThread(KernelMode, FALSE, &Interval);
 }
 
@@ -2308,7 +2315,7 @@ USBH_ChangeIndication(IN PDEVICE_OBJECT DeviceObject,
 
     if (InterlockedIncrement(&HubExtension->ResetRequestCount) == 1)
     {
-        KeResetEvent(&HubExtension->ResetEvent);
+        KeClearEvent(&HubExtension->ResetEvent);
     }
 
     HubWorkItemBuffer->HubExtension = HubExtension;
@@ -2408,7 +2415,7 @@ USBH_SubmitStatusChangeTransfer(IN PUSBHUB_FDO_EXTENSION HubExtension)
                            TRUE,
                            TRUE);
 
-    KeResetEvent(&HubExtension->StatusChangeEvent);
+    KeClearEvent(&HubExtension->StatusChangeEvent);
 
     Status = IoCallDriver(HubExtension->LowerDevice, Irp);
 
@@ -2908,7 +2915,7 @@ USBD_RegisterRootHubCallBack(IN PUSBHUB_FDO_EXTENSION HubExtension)
         return STATUS_NOT_IMPLEMENTED;
     }
 
-    KeResetEvent(&HubExtension->RootHubNotificationEvent);
+    KeClearEvent(&HubExtension->RootHubNotificationEvent);
 
     return RootHubInitNotification(HubExtension->BusInterface.BusContext,
                                    HubExtension,
@@ -3821,7 +3828,7 @@ return; //HACK: delete it line after fixing Power Manager!!!
     if (IsHubCheck &&
         !(HubExtension->HubFlags & USBHUB_FDO_FLAG_WAIT_IDLE_REQUEST))
     {
-        KeResetEvent(&HubExtension->IdleEvent);
+        KeClearEvent(&HubExtension->IdleEvent);
         HubExtension->HubFlags |= USBHUB_FDO_FLAG_WAIT_IDLE_REQUEST;
         IsHubIdle = TRUE;
     }
@@ -4116,14 +4123,14 @@ USBH_CheckDeviceIDUnique(IN PUSBHUB_FDO_EXTENSION HubExtension,
 
                     if (NumberBytes == SN_DescriptorLength)
                     {
-                        break;
+                        return FALSE;
                     }
                 }
             }
         }
     }
 
-    return FALSE;
+    return TRUE;
 }
 
 BOOLEAN
@@ -4788,7 +4795,9 @@ USBH_PdoDispatch(IN PUSBHUB_PORT_PDO_EXTENSION PortExtension,
 
         case IRP_MJ_SYSTEM_CONTROL:
             DPRINT1("USBH_PdoDispatch: USBH_SystemControl() UNIMPLEMENTED. FIXME\n");
-            Status = STATUS_NOT_SUPPORTED;//USBH_PortSystemControl(PortExtension, Irp);
+            //USBH_PortSystemControl(PortExtension, Irp);
+            Status = Irp->IoStatus.Status;
+            USBH_CompleteIrp(Irp, Status);
             break;
 
         default:

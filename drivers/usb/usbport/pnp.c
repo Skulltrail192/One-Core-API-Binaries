@@ -1,3 +1,10 @@
+/*
+ * PROJECT:     ReactOS USB Port Driver
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     USBPort plug and play functions
+ * COPYRIGHT:   Copyright 2017 Vadim Galyant <vgal@rambler.ru>
+ */
+
 #include "usbport.h"
 
 #define NDEBUG
@@ -512,6 +519,7 @@ USBPORT_StartDevice(IN PDEVICE_OBJECT FdoDevice,
     BOOLEAN IsCompanion = FALSE;
     ULONG LegacyBIOS;
     ULONG MiniportFlags;
+    ULONG ix;
 
     DPRINT("USBPORT_StartDevice: FdoDevice - %p, UsbPortResources - %p\n",
            FdoDevice,
@@ -603,6 +611,7 @@ USBPORT_StartDevice(IN PDEVICE_OBJECT FdoDevice,
     KeInitializeSpinLock(&FdoExtension->PowerWakeSpinLock);
     KeInitializeSpinLock(&FdoExtension->SetPowerD0SpinLock);
     KeInitializeSpinLock(&FdoExtension->RootHubCallbackSpinLock);
+    KeInitializeSpinLock(&FdoExtension->TtSpinLock);
 
     KeInitializeDpc(&FdoExtension->IsrDpc, USBPORT_IsrDpc, FdoDevice);
 
@@ -747,6 +756,12 @@ USBPORT_StartDevice(IN PDEVICE_OBJECT FdoDevice,
         FdoExtension->TotalBusBandwidth = TotalBusBandwidth;
     }
 
+    for (ix = 0; ix < USB2_FRAMES; ix++)
+    {
+        FdoExtension->Bandwidth[ix] = FdoExtension->TotalBusBandwidth -
+                                      FdoExtension->TotalBusBandwidth / 10;
+    }
+
     FdoExtension->ActiveIrpTable = ExAllocatePoolWithTag(NonPagedPool,
                                                          sizeof(USBPORT_IRP_TABLE),
                                                          USB_PORT_TAG);
@@ -809,8 +824,8 @@ USBPORT_StartDevice(IN PDEVICE_OBJECT FdoDevice,
             goto ExitWithError;
         }
 
-        UsbPortResources->StartVA = (PVOID)HeaderBuffer->VirtualAddress;
-        UsbPortResources->StartPA = (PVOID)HeaderBuffer->PhysicalAddress;
+        UsbPortResources->StartVA = HeaderBuffer->VirtualAddress;
+        UsbPortResources->StartPA = HeaderBuffer->PhysicalAddress;
 
         FdoExtension->MiniPortCommonBuffer = HeaderBuffer;
     }
@@ -946,7 +961,7 @@ USBPORT_ParseResources(IN PDEVICE_OBJECT FdoDevice,
         {
             if (PortDescriptor->Flags & CM_RESOURCE_PORT_IO)
             {
-                UsbPortResources->ResourceBase = (PVOID)PortDescriptor->u.Port.Start.LowPart;
+                UsbPortResources->ResourceBase = (PVOID)(ULONG_PTR)PortDescriptor->u.Port.Start.QuadPart;
             }
             else
             {
@@ -1398,7 +1413,7 @@ USBPORT_GetDeviceHwIds(IN PDEVICE_OBJECT FdoDevice,
     PUSBPORT_REGISTRATION_PACKET Packet;
     PVOID Id;
     WCHAR Buffer[300] = {0};
-    ULONG Length = 0;
+    SIZE_T Length = 0;
     size_t Remaining = sizeof(Buffer);
     PWCHAR EndBuffer;
 
@@ -1478,7 +1493,7 @@ USBPORT_GetDeviceHwIds(IN PDEVICE_OBJECT FdoDevice,
                              L"USB\\ROOT_HUB");
     }
 
-    Length = (sizeof(Buffer) - Remaining + sizeof(UNICODE_NULL));
+    Length = (sizeof(Buffer) - Remaining + 2 * sizeof(UNICODE_NULL));
 
      /* for debug only */
     if (FALSE)
@@ -1694,7 +1709,7 @@ USBPORT_PdoPnP(IN PDEVICE_OBJECT PdoDevice,
                                        L"USB\\ROOT_HUB");
                 }
 
-                Length = (wcslen(Buffer) + 1);
+                Length = (LONG)(wcslen(Buffer) + 1);
 
                 Id = ExAllocatePoolWithTag(PagedPool,
                                            Length * sizeof(WCHAR),

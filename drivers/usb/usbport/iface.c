@@ -1,3 +1,10 @@
+/*
+ * PROJECT:     ReactOS USB Port Driver
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     USBPort interface functions
+ * COPYRIGHT:   Copyright 2017 Vadim Galyant <vgal@rambler.ru>
+ */
+
 #include "usbport.h"
 
 #define NDEBUG
@@ -204,8 +211,8 @@ USBHI_QueryDeviceInformation(IN PVOID BusContext,
         }
     }
 
-    ActualLength = sizeof(USB_DEVICE_INFORMATION_0) + 
-                   (NumberOfOpenPipes - 1) * sizeof(USB_PIPE_INFORMATION_0);
+    ActualLength = FIELD_OFFSET(USB_DEVICE_INFORMATION_0, PipeList) + 
+                   NumberOfOpenPipes * sizeof(USB_PIPE_INFORMATION_0);
 
     if (DeviceInfoBufferLen < ActualLength)
     {
@@ -469,7 +476,7 @@ USBHI_GetExtendedHubInformation(IN PVOID BusContext,
             HubInfoBuffer->Port[ix].PortAttributes = USB_PORTATTR_SHARED_USB2;
 
             Packet->RH_GetPortStatus(FdoExtension->MiniPortExt,
-                                     ix,
+                                     ix + 1,
                                      &PortStatus);
 
             if (PortStatus.PortStatus.Usb20PortStatus.AsUshort16 & 0x8000)
@@ -675,7 +682,7 @@ USBDI_QueryBusInformation(IN PVOID BusContext,
 
     DPRINT("USBDI_QueryBusInformation: Level - %p\n", Level);
 
-    if ((Level != 0) || (Level != 1))
+    if ((Level != 0) && (Level != 1))
     {
         DPRINT1("USBDI_QueryBusInformation: Level should be 0 or 1\n");
         return STATUS_NOT_SUPPORTED;
@@ -797,7 +804,7 @@ USBPORT_PdoQueryInterface(IN PDEVICE_OBJECT FdoDevice,
             DPRINT1("USB_BUS_INTERFACE_HUB_GUID version %x not supported!\n",
                     IoStack->Parameters.QueryInterface.Version);
 
-            return STATUS_NOT_SUPPORTED; // Version not supported
+            return Irp->IoStatus.Status; // Version not supported
         }
 
         /* Interface version 0 */
@@ -857,7 +864,7 @@ USBPORT_PdoQueryInterface(IN PDEVICE_OBJECT FdoDevice,
             DPRINT1("USB_BUS_INTERFACE_USBDI_GUID version %x not supported!\n",
                     IoStack->Parameters.QueryInterface.Version);
 
-            return STATUS_NOT_SUPPORTED; // Version not supported
+            return Irp->IoStatus.Status; // Version not supported
         }
 
         /* Interface version 0 */
@@ -897,5 +904,5 @@ USBPORT_PdoQueryInterface(IN PDEVICE_OBJECT FdoDevice,
         }
     }
 
-    return STATUS_NOT_SUPPORTED;
+    return Irp->IoStatus.Status;
 }

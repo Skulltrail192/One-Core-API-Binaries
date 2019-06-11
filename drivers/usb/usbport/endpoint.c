@@ -1,3 +1,10 @@
+/*
+ * PROJECT:     ReactOS USB Port Driver
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     USBPort endpoint functions
+ * COPYRIGHT:   Copyright 2017 Vadim Galyant <vgal@rambler.ru>
+ */
+
 #include "usbport.h"
 
 #define NDEBUG
@@ -13,7 +20,7 @@ USBPORT_CalculateUsbBandwidth(IN PDEVICE_OBJECT FdoDevice,
 {
     PUSBPORT_ENDPOINT_PROPERTIES EndpointProperties;
     ULONG Bandwidth;
-    ULONG Additional;
+    ULONG Overhead;
 
     DPRINT("USBPORT_CalculateUsbBandwidth ... \n");
 
@@ -22,25 +29,25 @@ USBPORT_CalculateUsbBandwidth(IN PDEVICE_OBJECT FdoDevice,
     switch (EndpointProperties->TransferType)
     {
         case USBPORT_TRANSFER_TYPE_ISOCHRONOUS:
-            Additional = 9;
+            Overhead = USB2_FS_ISOCHRONOUS_OVERHEAD;
             break;
 
         case USBPORT_TRANSFER_TYPE_INTERRUPT:
-            Additional = 13;
+            Overhead = USB2_FS_INTERRUPT_OVERHEAD;
             break;
 
         default: //USBPORT_TRANSFER_TYPE_CONTROL or USBPORT_TRANSFER_TYPE_BULK
-            Additional = 0;
+            Overhead = 0;
             break;
     }
 
-    if (Additional == 0)
+    if (Overhead == 0)
     {
         Bandwidth = 0;
     }
     else
     {
-        Bandwidth = (EndpointProperties->TotalMaxPacketSize + Additional) * 8 * 7 / 6;
+        Bandwidth = (EndpointProperties->TotalMaxPacketSize + Overhead) * USB2_BIT_STUFFING_OVERHEAD;
     }
 
     if (EndpointProperties->DeviceSpeed == UsbLowSpeed)
@@ -61,9 +68,19 @@ USBPORT_AllocateBandwidth(IN PDEVICE_OBJECT FdoDevice,
     ULONG TransferType;
     ULONG TotalBusBandwidth;
     ULONG EndpointBandwidth;
+    ULONG MinBandwidth;
+    PULONG Bandwidth;
+    ULONG MaxBandwidth = 0;
+    ULONG ix;
+    ULONG Offset;
+    LONG ScheduleOffset = -1;
     ULONG Period;
+    ULONG Factor;
+    UCHAR Bit;
 
-    DPRINT("USBPORT_AllocateBandwidth: ... \n");
+    DPRINT("USBPORT_AllocateBandwidth: FdoDevice - %p, Endpoint - %p\n",
+           FdoDevice,
+           Endpoint);
 
     FdoExtension = FdoDevice->DeviceExtension;
     EndpointProperties = &Endpoint->EndpointProperties;
@@ -79,17 +96,74 @@ USBPORT_AllocateBandwidth(IN PDEVICE_OBJECT FdoDevice,
 
     TotalBusBandwidth = FdoExtension->TotalBusBandwidth;
     EndpointBandwidth = EndpointProperties->UsbBandwidth;
+
     Period = EndpointProperties->Period;
+    ASSERT(Period != 0);
+    Factor = USB2_FRAMES / Period;
 
-    DPRINT1("USBPORT_AllocateBandwidth: FIXME. \n");
-    DPRINT1("USBPORT_AllocateBandwidth: Endpoint - %p, Type - %x, TotalBandwidth - %x, EpBandwidth - %x, Period - %x\n",
-           Endpoint,
-           TransferType,
-           TotalBusBandwidth,
-           EndpointBandwidth,
-           Period);
+    for (Offset = 0; Offset < Period; Offset++)
+    {
+        MinBandwidth = TotalBusBandwidth;
+        Bandwidth = &FdoExtension->Bandwidth[Offset * Factor];
 
-    return TRUE;
+        for (ix = 1; *Bandwidth >= EndpointBandwidth; ix++)
+        {
+            MinBandwidth = min(MinBandwidth, *Bandwidth); 
+
+            Bandwidth++;
+
+            if (Factor <= ix)
+            {
+                if (MinBandwidth > MaxBandwidth)
+                {
+                    MaxBandwidth = MinBandwidth;
+                    ScheduleOffset = Offset;
+
+                    DPRINT("USBPORT_AllocateBandwidth: ScheduleOffset - %X\n",
+                           ScheduleOffset);
+                }
+
+                break;
+            }
+        }
+    }
+
+    DPRINT("USBPORT_AllocateBandwidth: ScheduleOffset - %X\n", ScheduleOffset);
+
+    if (ScheduleOffset != -1)
+    {
+        EndpointProperties->ScheduleOffset = ScheduleOffset;
+
+        Bandwidth = &FdoExtension->Bandwidth[ScheduleOffset * Factor];
+
+        for (Factor = USB2_FRAMES / Period; Factor; Factor--)
+        {
+            FdoExtension->Bandwidth[ScheduleOffset * Factor] -= EndpointBandwidth;
+        }
+
+        if (TransferType == USBPORT_TRANSFER_TYPE_INTERRUPT)
+        {
+            for (Bit = 0x80; Bit != 0; Bit >>= 1)
+            {
+                if ((Period & Bit) != 0)
+                {
+                    Period = Bit;
+                    break;
+                }
+            }
+
+            DPRINT("USBPORT_AllocateBandwidth: FIXME AllocatedInterrupt_XXms\n");
+        }
+        else
+        {
+            DPRINT("USBPORT_AllocateBandwidth: FIXME AllocatedIso\n");
+        }
+    }
+
+    DPRINT("USBPORT_AllocateBandwidth: FIXME USBPORT_UpdateAllocatedBw\n");
+
+    DPRINT("USBPORT_AllocateBandwidth: ScheduleOffset - %X\n", ScheduleOffset);
+    return ScheduleOffset != -1;
 }
 
 VOID
@@ -97,7 +171,63 @@ NTAPI
 USBPORT_FreeBandwidth(IN PDEVICE_OBJECT FdoDevice,
                       IN PUSBPORT_ENDPOINT Endpoint)
 {
-    DPRINT1("USBPORT_FreeBandwidth: UNIMPLEMENTED. FIXME. \n");
+    PUSBPORT_DEVICE_EXTENSION FdoExtension;
+    PUSBPORT_ENDPOINT_PROPERTIES EndpointProperties;
+    ULONG TransferType;
+    ULONG Offset;
+    ULONG EndpointBandwidth;
+    ULONG Period;
+    ULONG Factor;
+    UCHAR Bit;
+
+    DPRINT("USBPORT_FreeBandwidth: FdoDevice - %p, Endpoint - %p\n",
+           FdoDevice,
+           Endpoint);
+
+    FdoExtension = FdoDevice->DeviceExtension;
+
+    EndpointProperties = &Endpoint->EndpointProperties;
+    TransferType = EndpointProperties->TransferType;
+
+    if (TransferType == USBPORT_TRANSFER_TYPE_BULK ||
+        TransferType == USBPORT_TRANSFER_TYPE_CONTROL ||
+        (Endpoint->Flags & ENDPOINT_FLAG_ROOTHUB_EP0))
+    {
+        return;
+    }
+
+    Offset = Endpoint->EndpointProperties.ScheduleOffset;
+    EndpointBandwidth = Endpoint->EndpointProperties.UsbBandwidth;
+
+    Period = Endpoint->EndpointProperties.Period;
+    ASSERT(Period != 0);
+
+    for (Factor = USB2_FRAMES / Period; Factor; Factor--)
+    {
+        FdoExtension->Bandwidth[Offset * Factor] += EndpointBandwidth;
+    }
+
+    if (TransferType == USBPORT_TRANSFER_TYPE_INTERRUPT)
+    {
+        for (Bit = 0x80; Bit != 0; Bit >>= 1)
+        {
+            if ((Period & Bit) != 0)
+            {
+                Period = Bit;
+                break;
+            }
+        }
+
+        ASSERT(Period != 0);
+
+        DPRINT("USBPORT_AllocateBandwidth: FIXME AllocatedInterrupt_XXms\n");
+    }
+    else
+    {
+        DPRINT("USBPORT_AllocateBandwidth: FIXME AllocatedIso\n");
+    }
+
+    DPRINT1("USBPORT_FreeBandwidth: FIXME USBPORT_UpdateAllocatedBw\n");
 }
 
 UCHAR
@@ -372,7 +502,7 @@ USBPORT_DeleteEndpoint(IN PDEVICE_OBJECT FdoDevice,
     BOOLEAN Result;
     KIRQL OldIrql;
 
-    DPRINT("USBPORT_DeleteEndpoint: Endpoint - %p\n", Endpoint);
+    DPRINT1("USBPORT_DeleteEndpoint: Endpoint - %p\n", Endpoint);
 
     FdoExtension = FdoDevice->DeviceExtension;
 
@@ -464,10 +594,13 @@ USBPORT_ClosePipe(IN PUSBPORT_DEVICE_HANDLE DeviceHandle,
     PUSBPORT_DEVICE_EXTENSION FdoExtension;
     PUSBPORT_RHDEVICE_EXTENSION PdoExtension;
     PUSBPORT_ENDPOINT Endpoint;
+    PUSBPORT_REGISTRATION_PACKET Packet;
+    PUSB2_TT_EXTENSION TtExtension;
+    ULONG ix;
     BOOLEAN IsReady;
     KIRQL OldIrql;
 
-    DPRINT("USBPORT_ClosePipe \n");
+    DPRINT1("USBPORT_ClosePipe \n");
 
     FdoExtension = FdoDevice->DeviceExtension;
 
@@ -485,7 +618,6 @@ USBPORT_ClosePipe(IN PUSBPORT_DEVICE_HANDLE DeviceHandle,
     }
 
     Endpoint = PipeHandle->Endpoint;
-    DPRINT("USBPORT_ClosePipe: Endpoint - %p\n", Endpoint);
 
     KeAcquireSpinLock(&FdoExtension->EndpointListSpinLock, &OldIrql);
 
@@ -536,16 +668,46 @@ USBPORT_ClosePipe(IN PUSBPORT_DEVICE_HANDLE DeviceHandle,
     }
 
     Endpoint->DeviceHandle = NULL;
+    Packet = &FdoExtension->MiniPortInterface->Packet;
 
-    if (FdoExtension->MiniPortInterface->Packet.MiniPortFlags & USB_MINIPORT_FLAGS_USB2)
+    if (Packet->MiniPortFlags & USB_MINIPORT_FLAGS_USB2)
     {
-        DPRINT("USBPORT_ClosePipe: FIXME USBPORT_FreeBandwidthUSB20\n");
-        //USBPORT_FreeBandwidthUSB20();
+        USBPORT_FreeBandwidthUSB2(FdoDevice, Endpoint);
+
+        KeAcquireSpinLock(&FdoExtension->TtSpinLock, &OldIrql);
+
+        TtExtension = Endpoint->TtExtension;
+        DPRINT1("USBPORT_ClosePipe: TtExtension - %p\n", TtExtension);
+
+        if (TtExtension)
+        {
+            RemoveEntryList(&Endpoint->TtLink);
+
+            Endpoint->TtLink.Flink = NULL;
+            Endpoint->TtLink.Blink = NULL;
+
+            if (TtExtension->Flags & USB2_TT_EXTENSION_FLAG_DELETED)
+            {
+                if (IsListEmpty(&TtExtension->EndpointList))
+                {
+                    USBPORT_UpdateAllocatedBwTt(TtExtension);
+
+                    for (ix = 0; ix < USB2_FRAMES; ix++)
+                    {
+                        FdoExtension->Bandwidth[ix] += TtExtension->MaxBandwidth;
+                    }
+
+                    DPRINT1("USBPORT_ClosePipe: ExFreePoolWithTag TtExtension - %p\n", TtExtension);
+                    ExFreePoolWithTag(TtExtension, USB_PORT_TAG);
+                }
+            }
+        }
+
+        KeReleaseSpinLock(&FdoExtension->TtSpinLock, OldIrql);
     }
     else
     {
-        DPRINT("USBPORT_ClosePipe: FIXME USBPORT_FreeBandwidthUSB11\n");
-        //USBPORT_FreeBandwidthUSB11();
+        USBPORT_FreeBandwidth(FdoDevice, Endpoint);
     }
 
     KeAcquireSpinLock(&Endpoint->EndpointSpinLock, &Endpoint->EndpointOldIrql);
@@ -606,14 +768,14 @@ USBPORT_OpenPipe(IN PDEVICE_OBJECT FdoDevice,
     PUSBPORT_DEVICE_EXTENSION FdoExtension;
     PUSBPORT_RHDEVICE_EXTENSION PdoExtension;
     PUSBPORT_REGISTRATION_PACKET Packet;
-    ULONG EndpointSize;
+    SIZE_T EndpointSize;
     PUSBPORT_ENDPOINT Endpoint;
     PUSBPORT_ENDPOINT_PROPERTIES EndpointProperties;
     PUSB_ENDPOINT_DESCRIPTOR EndpointDescriptor;
     UCHAR Direction;
     UCHAR Interval;
     UCHAR Period;
-    ULONG TransferParams[2] = {0};
+    USBPORT_ENDPOINT_REQUIREMENTS EndpointRequirements = {0};
     PUSBPORT_COMMON_BUFFER_HEADER HeaderBuffer;
     MPSTATUS MpStatus;
     USBD_STATUS USBDStatus;
@@ -623,7 +785,7 @@ USBPORT_OpenPipe(IN PDEVICE_OBJECT FdoDevice,
     USHORT AdditionalTransaction;
     BOOLEAN IsAllocatedBandwidth;
 
-    DPRINT("USBPORT_OpenPipe: DeviceHandle - %p, FdoDevice - %p, PipeHandle - %p\n",
+    DPRINT1("USBPORT_OpenPipe: DeviceHandle - %p, FdoDevice - %p, PipeHandle - %p\n",
            DeviceHandle,
            FdoDevice,
            PipeHandle);
@@ -635,13 +797,13 @@ USBPORT_OpenPipe(IN PDEVICE_OBJECT FdoDevice,
 
     if (Packet->MiniPortFlags & USB_MINIPORT_FLAGS_USB2)
     {
-        DPRINT1("USBPORT_OpenPipe: FIXME USB2 EndpointSize\n");
+        EndpointSize += sizeof(USB2_TT_ENDPOINT);
     }
 
     if (PipeHandle->EndpointDescriptor.wMaxPacketSize == 0)
     {
         USBPORT_AddPipeHandle(DeviceHandle, PipeHandle);
-  
+
         PipeHandle->Flags = (PipeHandle->Flags & ~PIPE_HANDLE_FLAG_CLOSED) |
                              PIPE_HANDLE_FLAG_NULL_PACKET_SIZE;
 
@@ -665,6 +827,26 @@ USBPORT_OpenPipe(IN PDEVICE_OBJECT FdoDevice,
     Endpoint->DeviceHandle = DeviceHandle;
     Endpoint->LockCounter = -1;
 
+    Endpoint->TtExtension = DeviceHandle->TtExtension;
+
+    if (DeviceHandle->TtExtension)
+    {
+        ExInterlockedInsertTailList(&DeviceHandle->TtExtension->EndpointList,
+                                    &Endpoint->TtLink,
+                                    &FdoExtension->TtSpinLock);
+    }
+
+    if (Packet->MiniPortFlags & USB_MINIPORT_FLAGS_USB2)
+    {
+        Endpoint->TtEndpoint = (PUSB2_TT_ENDPOINT)((ULONG_PTR)Endpoint +
+                                                   sizeof(USBPORT_ENDPOINT) +
+                                                   Packet->MiniPortEndpointSize);
+    }
+    else
+    {
+        Endpoint->TtEndpoint = NULL;
+    }
+
     KeInitializeSpinLock(&Endpoint->EndpointSpinLock);
     KeInitializeSpinLock(&Endpoint->StateChangeSpinLock);
 
@@ -687,6 +869,17 @@ USBPORT_OpenPipe(IN PDEVICE_OBJECT FdoDevice,
     EndpointProperties->MaxPacketSize = MaxPacketSize;
     EndpointProperties->TotalMaxPacketSize = MaxPacketSize *
                                              (AdditionalTransaction + 1);
+
+    if (Endpoint->TtExtension)
+    {
+        EndpointProperties->HubAddr = Endpoint->TtExtension->DeviceAddress;
+    }
+    else
+    {
+        EndpointProperties->HubAddr = -1;
+    }
+
+    EndpointProperties->PortNumber = DeviceHandle->PortNumber;
 
     switch (EndpointDescriptor->bmAttributes & USB_ENDPOINT_TYPE_MASK)
     {
@@ -732,14 +925,14 @@ USBPORT_OpenPipe(IN PDEVICE_OBJECT FdoDevice,
             Interval = EndpointDescriptor->bInterval;
         }
 
-        EndpointProperties->Period = 32;
+        EndpointProperties->Period = ENDPOINT_INTERRUPT_32ms;
 
-        if (Interval && (Interval < 32))
+        if (Interval && (Interval < USB2_FRAMES))
         {
             if ((EndpointProperties->DeviceSpeed != UsbLowSpeed) ||
-                (Interval >= 8))
+                (Interval >= ENDPOINT_INTERRUPT_8ms))
             {
-                if (!(Interval & 0x20))
+                if (!(Interval & ENDPOINT_INTERRUPT_32ms))
                 {
                     Period = EndpointProperties->Period;
 
@@ -754,7 +947,7 @@ USBPORT_OpenPipe(IN PDEVICE_OBJECT FdoDevice,
             }
             else
             {
-                EndpointProperties->Period = 8;
+                EndpointProperties->Period = ENDPOINT_INTERRUPT_8ms;
             }
         }
     }
@@ -763,13 +956,18 @@ USBPORT_OpenPipe(IN PDEVICE_OBJECT FdoDevice,
     {
         if (EndpointProperties->DeviceSpeed == UsbHighSpeed)
         {
-            EndpointProperties->Period = 
+            EndpointProperties->Period =
                 USBPORT_NormalizeHsInterval(EndpointDescriptor->bInterval);
         }
         else
         {
-            EndpointProperties->Period = 1;
+            EndpointProperties->Period = ENDPOINT_INTERRUPT_1ms;
         }
+    }
+
+    if ((DeviceHandle->Flags & DEVICE_HANDLE_FLAG_ROOTHUB) != 0)
+    {
+        Endpoint->Flags |= ENDPOINT_FLAG_ROOTHUB_EP0;
     }
 
     if (Packet->MiniPortFlags & USB_MINIPORT_FLAGS_USB2)
@@ -825,27 +1023,27 @@ USBPORT_OpenPipe(IN PDEVICE_OBJECT FdoDevice,
 
         Packet->QueryEndpointRequirements(FdoExtension->MiniPortExt,
                                           &Endpoint->EndpointProperties,
-                                          TransferParams);
+                                          &EndpointRequirements);
 
         KeReleaseSpinLock(&FdoExtension->MiniportSpinLock, OldIrql);
 
         if ((EndpointProperties->TransferType == USBPORT_TRANSFER_TYPE_BULK) ||
             (EndpointProperties->TransferType == USBPORT_TRANSFER_TYPE_INTERRUPT))
         {
-            EndpointProperties->MaxTransferSize = TransferParams[1];
+            EndpointProperties->MaxTransferSize = EndpointRequirements.MaxTransferSize;
         }
 
-        if (TransferParams[0])
+        if (EndpointRequirements.HeaderBufferSize)
         {
             HeaderBuffer = USBPORT_AllocateCommonBuffer(FdoDevice,
-                                                        TransferParams[0]);
+                                                        EndpointRequirements.HeaderBufferSize);
         }
         else
         {
             HeaderBuffer = NULL;
         }
 
-        if (HeaderBuffer || (TransferParams[0] == 0))
+        if (HeaderBuffer || (EndpointRequirements.HeaderBufferSize == 0))
         {
             Endpoint->HeaderBuffer = HeaderBuffer;
 
@@ -948,6 +1146,13 @@ ExitWithError:
             }
         }
 
+        if (Endpoint->TtExtension)
+        {
+            KeAcquireSpinLock(&FdoExtension->TtSpinLock, &OldIrql);
+            RemoveEntryList(&Endpoint->TtLink);
+            KeReleaseSpinLock(&FdoExtension->TtSpinLock, OldIrql);
+        }
+
         ExFreePoolWithTag(Endpoint, USB_PORT_TAG);
     }
 
@@ -962,12 +1167,12 @@ USBPORT_ReopenPipe(IN PDEVICE_OBJECT FdoDevice,
 {
     PUSBPORT_DEVICE_EXTENSION FdoExtension;
     PUSBPORT_COMMON_BUFFER_HEADER HeaderBuffer;
-    ULONG EndpointRequirements[2] = {0};
+    USBPORT_ENDPOINT_REQUIREMENTS EndpointRequirements = {0};
     PUSBPORT_REGISTRATION_PACKET Packet;
     KIRQL MiniportOldIrql;
     NTSTATUS Status;
 
-    DPRINT("USBPORT_ReopenPipe ... \n");
+    DPRINT1("USBPORT_ReopenPipe ... \n");
 
     FdoExtension = FdoDevice->DeviceExtension;
     Packet = &FdoExtension->MiniPortInterface->Packet;
@@ -981,13 +1186,15 @@ USBPORT_ReopenPipe(IN PDEVICE_OBJECT FdoDevice,
         USBPORT_Wait(FdoDevice, 1);
     }
 
-    KeAcquireSpinLock(&FdoExtension->MiniportSpinLock, &MiniportOldIrql);
+    KeAcquireSpinLock(&Endpoint->EndpointSpinLock, &Endpoint->EndpointOldIrql);
+    KeAcquireSpinLockAtDpcLevel(&FdoExtension->MiniportSpinLock);
 
     Packet->SetEndpointState(FdoExtension->MiniPortExt,
                              Endpoint + 1,
                              USBPORT_ENDPOINT_REMOVE);
 
-    KeReleaseSpinLock(&FdoExtension->MiniportSpinLock, MiniportOldIrql);
+    KeReleaseSpinLockFromDpcLevel(&FdoExtension->MiniportSpinLock);
+    KeReleaseSpinLock(&Endpoint->EndpointSpinLock, Endpoint->EndpointOldIrql);
 
     USBPORT_Wait(FdoDevice, 2);
 
@@ -1006,21 +1213,21 @@ USBPORT_ReopenPipe(IN PDEVICE_OBJECT FdoDevice,
 
     Packet->QueryEndpointRequirements(FdoExtension->MiniPortExt,
                                       &Endpoint->EndpointProperties,
-                                      EndpointRequirements);
+                                      &EndpointRequirements);
 
     KeReleaseSpinLock(&FdoExtension->MiniportSpinLock, MiniportOldIrql);
 
-    if (EndpointRequirements[0])
+    if (EndpointRequirements.HeaderBufferSize)
     {
         HeaderBuffer = USBPORT_AllocateCommonBuffer(FdoDevice,
-                                                    EndpointRequirements[0]);
+                                                    EndpointRequirements.HeaderBufferSize);
     }
     else
     {
         HeaderBuffer = NULL;
     }
 
-    if (HeaderBuffer || EndpointRequirements[0] == 0)
+    if (HeaderBuffer || EndpointRequirements.HeaderBufferSize == 0)
     {
         Endpoint->HeaderBuffer = HeaderBuffer;
         Status = STATUS_SUCCESS;
@@ -1047,6 +1254,7 @@ USBPORT_ReopenPipe(IN PDEVICE_OBJECT FdoDevice,
 
         if (Endpoint->StateLast == USBPORT_ENDPOINT_ACTIVE)
         {
+            KeReleaseSpinLockFromDpcLevel(&Endpoint->StateChangeSpinLock);
             KeAcquireSpinLockAtDpcLevel(&FdoExtension->MiniportSpinLock);
 
             Packet->SetEndpointState(FdoExtension->MiniPortExt,
@@ -1055,8 +1263,11 @@ USBPORT_ReopenPipe(IN PDEVICE_OBJECT FdoDevice,
 
             KeReleaseSpinLockFromDpcLevel(&FdoExtension->MiniportSpinLock);
         }
+        else
+        {
+            KeReleaseSpinLockFromDpcLevel(&Endpoint->StateChangeSpinLock);
+        }
 
-        KeReleaseSpinLockFromDpcLevel(&Endpoint->StateChangeSpinLock);
         KeReleaseSpinLock(&Endpoint->EndpointSpinLock, Endpoint->EndpointOldIrql);
     }
 
@@ -1074,7 +1285,7 @@ USBPORT_FlushClosedEndpointList(IN PDEVICE_OBJECT FdoDevice)
     PLIST_ENTRY ClosedList;
     PUSBPORT_ENDPOINT Endpoint;
 
-    DPRINT("USBPORT_FlushClosedEndpointList: ... \n");
+    DPRINT_CORE("USBPORT_FlushClosedEndpointList: ... \n");
 
     FdoExtension = FdoDevice->DeviceExtension;
 
@@ -1279,8 +1490,7 @@ USBPORT_DmaEndpointPaused(IN PDEVICE_OBJECT FdoDevice,
 
             if (Transfer->Flags & TRANSFER_FLAG_SPLITED)
             {
-                DPRINT1("USBPORT_DmaEndpointActive: FIXME call USBPORT_CancelSplitTransfer\n");
-                ASSERT(FALSE); //USBPORT_CancelSplitTransfer();
+                USBPORT_CancelSplitTransfer(Transfer);
             }
             else
             {

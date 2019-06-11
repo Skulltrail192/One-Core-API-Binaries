@@ -1,3 +1,10 @@
+/*
+ * PROJECT:     ReactOS USB Hub Driver
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     USBHub I/O control functions
+ * COPYRIGHT:   Copyright 2017 Vadim Galyant <vgal@rambler.ru>
+ */
+
 #include "usbhub.h"
 
 #define NDEBUG
@@ -553,12 +560,12 @@ USBH_IoctlGetNodeName(IN PUSBHUB_FDO_EXTENSION HubExtension,
     PUSB_NODE_CONNECTION_NAME ConnectionName;
     PDEVICE_OBJECT PortDevice;
     PUSBHUB_PORT_PDO_EXTENSION PortExtension;
-    ULONG LengthSkip;
+    size_t LengthSkip;
     PWCHAR Buffer;
     ULONG BufferLength;
     PWCHAR BufferEnd;
-    ULONG LengthReturned;
-    ULONG LengthName;
+    ULONG_PTR LengthReturned;
+    size_t LengthName;
     ULONG Length;
     NTSTATUS Status;
     PIO_STACK_LOCATION IoStack;

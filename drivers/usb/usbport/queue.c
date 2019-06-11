@@ -1,3 +1,10 @@
+/*
+ * PROJECT:     ReactOS USB Port Driver
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     USBPort queue implementation
+ * COPYRIGHT:   Copyright 2017 Vadim Galyant <vgal@rambler.ru>
+ */
+
 #include "usbport.h"
 
 #define NDEBUG
@@ -529,9 +536,11 @@ USBPORT_CancelActiveTransferIrp(IN PDEVICE_OBJECT DeviceObject,
     PUSBPORT_TRANSFER Transfer;
     PUSBPORT_ENDPOINT Endpoint;
     PIRP irp;
+    PUSBPORT_TRANSFER SplitTransfer;
+    PLIST_ENTRY Entry;
     KIRQL OldIrql;
 
-    DPRINT_CORE("USBPORT_CancelTransferIrp: Irp - %p\n", Irp);
+    DPRINT_CORE("USBPORT_CancelActiveTransferIrp: Irp - %p\n", Irp);
 
     PdoExtension = DeviceObject->DeviceExtension;
     FdoDevice = PdoExtension->FdoDevice;
@@ -543,30 +552,52 @@ USBPORT_CancelActiveTransferIrp(IN PDEVICE_OBJECT DeviceObject,
 
     irp = USBPORT_FindActiveTransferIrp(FdoDevice, Irp);
 
-    if (irp)
+    if (!irp)
     {
-        Urb = URB_FROM_IRP(irp);
-        Transfer = Urb->UrbControlTransfer.hca.Reserved8[0];
-        Endpoint = Transfer->Endpoint;
-
-        DPRINT_CORE("USBPORT_CancelTransferIrp: irp - %p, Urb - %p, Transfer - %p\n",
-                    irp,
-                    Urb,
-                    Transfer);
-
-        KeAcquireSpinLockAtDpcLevel(&Endpoint->EndpointSpinLock);
-        Transfer->Flags |= TRANSFER_FLAG_CANCELED;
-        KeReleaseSpinLockFromDpcLevel(&Endpoint->EndpointSpinLock);
-
         KeReleaseSpinLock(&FdoExtension->FlushTransferSpinLock, OldIrql);
-
-        USBPORT_InvalidateEndpointHandler(FdoDevice,
-                                          Endpoint,
-                                          INVALIDATE_ENDPOINT_WORKER_THREAD);
         return;
     }
 
+    Urb = URB_FROM_IRP(irp);
+    Transfer = Urb->UrbControlTransfer.hca.Reserved8[0];
+    Endpoint = Transfer->Endpoint;
+
+    DPRINT_CORE("USBPORT_CancelActiveTransferIrp: irp - %p, Urb - %p, Transfer - %p\n",
+                irp,
+                Urb,
+                Transfer);
+
+    KeAcquireSpinLockAtDpcLevel(&Endpoint->EndpointSpinLock);
+
+    Transfer->Flags |= TRANSFER_FLAG_CANCELED;
+
+    if (Transfer->Flags & TRANSFER_FLAG_PARENT)
+    {
+        KeAcquireSpinLockAtDpcLevel(&Transfer->TransferSpinLock);
+
+        Entry = Transfer->SplitTransfersList.Flink;
+
+        while (Entry && Entry != &Transfer->SplitTransfersList)
+        {
+            SplitTransfer = CONTAINING_RECORD(Entry,
+                                              USBPORT_TRANSFER,
+                                              SplitLink);
+
+            SplitTransfer->Flags |= TRANSFER_FLAG_CANCELED;
+
+            Entry = Entry->Flink;
+        }
+
+        KeReleaseSpinLockFromDpcLevel(&Transfer->TransferSpinLock);
+    }
+
+    KeReleaseSpinLockFromDpcLevel(&Endpoint->EndpointSpinLock);
     KeReleaseSpinLock(&FdoExtension->FlushTransferSpinLock, OldIrql);
+
+    USBPORT_InvalidateEndpointHandler(FdoDevice,
+                                      Endpoint,
+                                      INVALIDATE_ENDPOINT_WORKER_THREAD);
+    return;
 }
 
 VOID
@@ -759,10 +790,8 @@ USBPORT_FlushPendingTransfers(IN PUSBPORT_ENDPOINT Endpoint)
     BOOLEAN IsEnd = FALSE;
     PLIST_ENTRY List;
     PUSBPORT_TRANSFER Transfer;
-    KIRQL PrevIrql;
     PURB Urb;
     PIRP Irp;
-    PIRP irp;
     KIRQL OldIrql;
     BOOLEAN Result;
 
@@ -877,11 +906,9 @@ USBPORT_FlushPendingTransfers(IN PUSBPORT_ENDPOINT Endpoint)
         Transfer->TransferLink.Flink = NULL;
         Transfer->TransferLink.Blink = NULL;
 
-        irp = Irp;
-
         if (Irp)
         {
-            irp = USBPORT_RemovePendingTransferIrp(FdoDevice, Irp);
+            Irp = USBPORT_RemovePendingTransferIrp(FdoDevice, Irp);
         }
 
         KeReleaseSpinLockFromDpcLevel(&Endpoint->EndpointSpinLock);
@@ -890,13 +917,13 @@ USBPORT_FlushPendingTransfers(IN PUSBPORT_ENDPOINT Endpoint)
 
         KeAcquireSpinLock(&FdoExtension->FlushTransferSpinLock, &OldIrql);
 
-        if (irp)
+        if (Irp)
         {
-            IoSetCancelRoutine(irp, USBPORT_CancelActiveTransferIrp);
+            IoSetCancelRoutine(Irp, USBPORT_CancelActiveTransferIrp);
 
-            if (Irp->Cancel && IoSetCancelRoutine(irp, NULL))
+            if (Irp->Cancel && IoSetCancelRoutine(Irp, NULL))
             {
-                DPRINT_CORE("USBPORT_FlushPendingTransfers: irp - %p\n", irp);
+                DPRINT_CORE("USBPORT_FlushPendingTransfers: irp - %p\n", Irp);
 
                 KeReleaseSpinLock(&FdoExtension->FlushTransferSpinLock,
                                   OldIrql);
@@ -905,8 +932,8 @@ USBPORT_FlushPendingTransfers(IN PUSBPORT_ENDPOINT Endpoint)
                 goto Worker;
             }
 
-            USBPORT_FindUrbInIrpTable(FdoExtension->ActiveIrpTable, Urb, irp);
-            USBPORT_InsertIrpInTable(FdoExtension->ActiveIrpTable, irp);
+            USBPORT_FindUrbInIrpTable(FdoExtension->ActiveIrpTable, Urb, Irp);
+            USBPORT_InsertIrpInTable(FdoExtension->ActiveIrpTable, Irp);
         }
 
         IsMapTransfer = USBPORT_QueueActiveUrbToEndpoint(Endpoint, Urb);
@@ -920,9 +947,9 @@ USBPORT_FlushPendingTransfers(IN PUSBPORT_ENDPOINT Endpoint)
         }
 
 Worker:
-        KeRaiseIrql(DISPATCH_LEVEL, &PrevIrql);
+        KeRaiseIrql(DISPATCH_LEVEL, &OldIrql);
         Result = USBPORT_EndpointWorker(Endpoint, FALSE);
-        KeLowerIrql(PrevIrql);
+        KeLowerIrql(OldIrql);
 
         if (Result)
             USBPORT_InvalidateEndpointHandler(FdoDevice,
@@ -1042,7 +1069,7 @@ USBPORT_QueuePendingTransferIrp(IN PIRP Irp)
 
     IoSetCancelRoutine(Irp, USBPORT_CancelPendingTransferIrp);
 
-    if (Irp->Cancel && !IoSetCancelRoutine(Irp, NULL))
+    if (Irp->Cancel && IoSetCancelRoutine(Irp, NULL))
     {
         USBPORT_CompleteTransfer(Urb, USBD_STATUS_CANCELED);
     }
