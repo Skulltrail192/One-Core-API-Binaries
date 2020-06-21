@@ -334,11 +334,10 @@
 
 [MustReplace.System32.files]
 	ntdll.dll, 2k3SP2\ntdll.dll
+	kernel32.dll, 2k3SP2\kernel32.dll
 	gdi32.dll, 2k3SP2\gdi32.dll
 	user32.dll, 2k3SP2\user32.dll
-	uxtheme.dll, 2k3SP2\uxtheme.dll
 	winsrv.dll, 2k3SP2\winsrv.dll
-	themeui.dll, 2k3SP2\themeui.dll
 	win32k.sys, 2k3SP2\win32k.sys
 	
 [System32.files]
@@ -349,11 +348,10 @@
 	
 [CopyAlways.System32.Files]
 	ntdll.dll, 2k3SP2\ntdll.dll
+	kernel32.dll, 2k3SP2\kernel32.dll
 	gdi32.dll, 2k3SP2\gdi32.dll
 	user32.dll, 2k3SP2\user32.dll
-	uxtheme.dll, 2k3SP2\uxtheme.dll
 	winsrv.dll, 2k3SP2\winsrv.dll
-	themeui.dll, 2k3SP2\themeui.dll
 	win32k.sys, 2k3SP2\win32k.sys
 
 [CopyAlways.DriverCab.files]
