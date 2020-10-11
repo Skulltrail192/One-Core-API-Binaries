@@ -16,6 +16,12 @@
 
 #define APPMODEL_ERROR_NO_PACKAGE                          15700
 
+typedef struct _GROUP_AFFINITY {
+  KAFFINITY Mask;
+  WORD      Group;
+  WORD      Reserved[3];
+} GROUP_AFFINITY, *PGROUP_AFFINITY;
+
 int WINAPI CompareStringOrdinal(
   _In_ LPCWSTR lpString1,
   _In_ int     cchCount1,
@@ -57,4 +63,37 @@ LONG WINAPI GetCurrentPackageFullName(UINT32 *length, PWSTR name)
 LONG WINAPI GetPackageFullName(HANDLE process, UINT32 *length, PWSTR name)
 {
     return APPMODEL_ERROR_NO_PACKAGE;
+}
+
+BOOL GetNamedPipeClientComputerNameA(
+  HANDLE Pipe,
+  LPSTR  ClientComputerName,
+  ULONG  ClientComputerNameLength
+)
+{
+	return FALSE;
+}
+
+BOOL GetNumaNodeProcessorMaskEx(
+  USHORT          Node,
+  PGROUP_AFFINITY ProcessorMask
+)
+{
+	return FALSE;
+}
+
+BOOL GetNamedPipeServerProcessId(
+  HANDLE Pipe,
+  PULONG ServerProcessId
+)
+{
+	return FALSE;
+}
+
+HMODULE LoadPackagedLibrary(
+  LPCWSTR lpwLibFileName,
+  DWORD   Reserved
+)
+{
+	return NULL;
 }

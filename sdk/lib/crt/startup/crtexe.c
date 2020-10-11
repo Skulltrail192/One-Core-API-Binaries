@@ -20,6 +20,7 @@
 #include <tchar.h>
 #include <sect_attribs.h>
 #include <locale.h>
+#include <mbstring.h>
 
 #ifndef __winitenv
 extern wchar_t *** __MINGW_IMP_SYMBOL(__winitenv);

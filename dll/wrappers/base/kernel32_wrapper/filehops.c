@@ -176,8 +176,14 @@ Wow64RevertWow64FsRedirection(IN PVOID OldValue)
 /***********************************************************************
 *             GetFileInformationByHandleEx (KERNEL32.@)
 */
-BOOL WINAPI GetFileInformationByHandleEx( HANDLE handle, FILE_INFO_BY_HANDLE_CLASS class,
-                                          LPVOID info, DWORD size )
+BOOL 
+WINAPI 
+DECLSPEC_HOTPATCH
+GetFileInformationByHandleEx( 
+	HANDLE handle, 
+	FILE_INFO_BY_HANDLE_CLASS class,
+	LPVOID info, 
+	DWORD size )
 {
     NTSTATUS Status;
     IO_STATUS_BLOCK io;
@@ -264,6 +270,7 @@ BOOL WINAPI GetFileInformationByHandleEx( HANDLE handle, FILE_INFO_BY_HANDLE_CLA
  */
 BOOL 
 WINAPI 
+DECLSPEC_HOTPATCH
 SetFileInformationByHandle( 
 	HANDLE file, 
 	FILE_INFO_BY_HANDLE_CLASS class, 
@@ -380,6 +387,7 @@ OpenFileById(
 
 BOOL
 WINAPI
+DECLSPEC_HOTPATCH
 CancelIoEx(
     HANDLE hFile,
 	LPOVERLAPPED lpOverlapped	

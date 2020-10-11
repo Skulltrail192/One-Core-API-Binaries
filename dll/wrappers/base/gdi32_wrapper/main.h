@@ -21,7 +21,71 @@
 
 typedef UINT D3DDDI_VIDEO_PRESENT_SOURCE_ID;
 
-typedef HANDLE D3DKMT_HANDLE;
+typedef UINT D3DKMT_HANDLE;
+
+typedef struct _D3DKMT_OPENADAPTERFROMGDIDISPLAYNAME
+{
+    WCHAR DeviceName[32];
+    D3DKMT_HANDLE hAdapter;
+    LUID AdapterLuid;
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
+} D3DKMT_OPENADAPTERFROMGDIDISPLAYNAME; 
+
+typedef struct _D3DKMT_CREATEDEVICEFLAGS {
+  UINT LegacyMode : 1;
+  UINT RequestVSync : 1;
+  UINT DisableGpuTimeout : 1;
+  UINT Reserved : 29;
+} D3DKMT_CREATEDEVICEFLAGS;
+
+typedef struct _D3DDDI_ALLOCATIONLIST
+{
+    D3DKMT_HANDLE hAllocation;
+    union
+    {
+        struct
+        {
+            UINT WriteOperation : 1;
+            UINT DoNotRetireInstance : 1;
+            UINT OfferPriority : 3;
+            UINT Reserved : 27;
+        } DUMMYSTRUCTNAME;
+        UINT Value;
+    } DUMMYUNIONNAME;
+} D3DDDI_ALLOCATIONLIST; 
+
+typedef struct _D3DDDI_PATCHLOCATIONLIST
+{
+    UINT AllocationIndex;
+    union
+    {
+        struct
+        {
+            UINT SlotId : 24;
+            UINT Reserved : 8;
+        } DUMMYSTRUCTNAME;
+        UINT Value;
+    } DUMMYUNIONNAME;
+    UINT DriverId;
+    UINT AllocationOffset;
+    UINT PatchOffset;
+    UINT SplitOffset;
+} D3DDDI_PATCHLOCATIONLIST;
+
+typedef struct _D3DKMT_CREATEDEVICE {
+  union {
+    D3DKMT_HANDLE hAdapter;
+    VOID          *pAdapter;
+  };
+  D3DKMT_CREATEDEVICEFLAGS Flags;
+  D3DKMT_HANDLE            hDevice;
+  VOID                     *pCommandBuffer;
+  UINT                     CommandBufferSize;
+  D3DDDI_ALLOCATIONLIST    *pAllocationList;
+  UINT                     AllocationListSize;
+  D3DDDI_PATCHLOCATIONLIST *pPatchLocationList;
+  UINT                     PatchLocationListSize;
+} D3DKMT_CREATEDEVICE;
 
 typedef struct _D3DKMT_CLOSEADAPTER {
   D3DKMT_HANDLE hAdapter;
@@ -42,6 +106,25 @@ typedef struct _D3DKMDT_VIDEO_PRESENT_SOURCE {
   D3DDDI_VIDEO_PRESENT_SOURCE_ID Id;
   DWORD                          dwReserved;
 } D3DKMDT_VIDEO_PRESENT_SOURCE;
+
+typedef struct _D3DKMT_DESTROYDEVICE {
+  D3DKMT_HANDLE hDevice;
+} D3DKMT_DESTROYDEVICE;
+
+typedef enum _D3DKMT_VIDPNSOURCEOWNER_TYPE {
+  D3DKMT_VIDPNSOURCEOWNER_UNOWNED,
+  D3DKMT_VIDPNSOURCEOWNER_SHARED,
+  D3DKMT_VIDPNSOURCEOWNER_EXCLUSIVE,
+  D3DKMT_VIDPNSOURCEOWNER_EXCLUSIVEGDI,
+  D3DKMT_VIDPNSOURCEOWNER_EMULATED
+} D3DKMT_VIDPNSOURCEOWNER_TYPE;
+
+typedef struct _D3DKMT_SETVIDPNSOURCEOWNER {
+  D3DKMT_HANDLE                        hDevice;
+  const D3DKMT_VIDPNSOURCEOWNER_TYPE   *pType;
+  const D3DDDI_VIDEO_PRESENT_SOURCE_ID *pVidPnSourceId;
+  UINT                                 VidPnSourceCount;
+} D3DKMT_SETVIDPNSOURCEOWNER;
 
 typedef struct gdi_physdev
 {

@@ -1308,3 +1308,7 @@
 @ stdcall PathCchAddBackslash(wstr long)
 @ stdcall PathCchAddBackslashEx(wstr long ptr ptr) 
 @ stdcall PathCchCombineEx(ptr long ptr ptr long)
+@ stdcall GetNumaNodeProcessorMaskEx(long ptr)
+@ stdcall GetNamedPipeClientComputerNameA(ptr str long)
+@ stdcall GetNamedPipeServerProcessId(ptr ptr)
+@ stdcall LoadPackagedLibrary(wstr long)

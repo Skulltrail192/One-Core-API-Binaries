@@ -1028,3 +1028,5 @@
 @ stub wcsncpy_s
 @ stub wcsnlen
 @ stub wcstok_s
+@ stub _ftol2
+@ stub _ftol2_sse

@@ -1386,6 +1386,7 @@
 @ stdcall GetProcessMitigationPolicy(long long ptr long)
 @ stdcall GetSystemTimePreciseAsFileTime(ptr)
 @ stdcall InitializeSynchronizationBarrier(ptr long long)
+@ stdcall LoadPackagedLibrary(wstr long) 
 @ stdcall PathCchAddBackslash(wstr long)
 @ stdcall PathCchAddBackslashEx(wstr long ptr ptr) 
 @ stdcall PathCchAddExtension(wstr long wstr)

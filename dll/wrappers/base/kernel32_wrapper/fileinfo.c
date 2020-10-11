@@ -66,7 +66,11 @@ BOOL WINAPI SetFileCompletionNotificationModes( HANDLE handle, UCHAR flags )
 	if(pSetFileCompletionNotificationModes){
 		return pSetFileCompletionNotificationModes(handle, flags);
 	}else{
-		SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-		return FALSE;
+		FILE_IO_COMPLETION_NOTIFICATION_INFORMATION info;
+		IO_STATUS_BLOCK io;
+
+		info.Flags = flags;
+		return set_ntstatus( NtSetInformationFile( file, &io, &info, sizeof(info),
+												   FileIoCompletionNotificationInformation ));
 	}
 }
