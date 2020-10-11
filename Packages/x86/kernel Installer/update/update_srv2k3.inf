@@ -342,9 +342,7 @@
 [MustReplace.System32.files]
 	gdibase.dll, 2k3SP2\gdibase.dll
 	userbase.dll, 2k3SP2\userbase.dll
-	uxthemebase.dll, 2k3SP2\uxthemebase.dll
 	winsrv.dll, 2k3SP2\winsrv.dll
-	themeui.dll, 2k3SP2\themeui.dll
 	win32k.sys, 2k3SP2\win32k.sys
 	
 [System32.files]
@@ -356,9 +354,7 @@
 [CopyAlways.System32.Files]
 	gdibase.dll, 2k3SP2\gdibase.dll
 	userbase.dll, 2k3SP2\userbase.dll
-	uxthemebase.dll, 2k3SP2\uxthemebase.dll
 	winsrv.dll, 2k3SP2\winsrv.dll
-	themeui.dll, 2k3SP2\themeui.dll
 	win32k.sys, 2k3SP2\win32k.sys
 
 [CopyAlways.DriverCab.files]

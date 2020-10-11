@@ -10,10 +10,7 @@
     MinNtServicePackVersion   = 512
     MaxNtServicePackVersion   = 768
     ThisServicePackVersion    = 512
-	MachineType				  = 64	
-	
-[Prerequisite]
-	condition=SingleOp,LatestUpdateCheck2.Section	
+	MachineType				  = 64		
 	
 [Configuration]
     DeviceClassInfo=1
@@ -23,13 +20,16 @@
     UnInstallDirName        = $NtUninstall%SP_SHORT_TITLE%$
     EventLogKeyName         = NtServicePack
     EventLogDllName         = spmsg.dll	
-
-[LatestUpdateCheck2.Section]
-    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
-    Display_String="%LatestUpdateFail%"			
 	
 [Strings]
-	LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
+    CMAKRegkey=SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Cmak.exe
+    ProxyRegKey=SYSTEM\CurrentControlSet\Services\WSPSrv\Parameters
+    IeRegKey=Software\Microsoft\Windows\CurrentVersion\App Paths\iexplore.exe
+    HyperRegKey=SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\hypertrm.exe
+    EudcRegKey=Software\Microsoft\Windows\CurrentVersion\App Paths\eudcedit.exe
+    AdmtRegKey=SOFTWARE\Microsoft\ADMT
+    TsclientRegKey=SOFTWARE\Classes\conman.exe\DefaultIcon
+    PATH_ZONES="Software\Microsoft\Windows\CurrentVersion\Internet Settings\Zones"
     UDDIRegKey=Software\Microsoft\UDDI
     HELPLINK = http://support.microsoft.com/?kbid=2393802
     URLInfoAbout = "http://support.microsoft.com"
@@ -40,7 +40,7 @@
     HOTFIX                = "Hotfix"
     SECURITY_UPDATE       = "Security Update"
     PACKAGE_ARCHITECTURE = x86
-    LangTypeValue           = 0x0
+    LangTypeValue           = 0x09
     WSEDIR                  = "1033"
     TSCLIENTDIR             = "Terminal Services Client"
     PORTUGAL                = "Portugal"
@@ -50,7 +50,7 @@
     ACCESSDIR               = "accessories"
     ACCESSDIRNAME           = "accessories" ;; accessories folder name is different from the display name in case of PLK, FIN and ELL
     ServicePackSourceFiles  = "Windows Server 2003 Hotfix Source Files"
-    SP_SHORT_TITLE          = "One-Core-API Kernel Update"
+    SP_SHORT_TITLE          = "KB2393802"
     SP_TITLE                = "One-Core-API Kernel Update"
     SP_TITLE_XP             = "One-Core-API Kernel Update"
     SP_TITLE_WS03           = "One-Core-API Kernel Update"
@@ -181,7 +181,6 @@
     PowerShell_Culture=en
     PowerShell_InstallLangPackId=1033
     PowerShell_ReleaseNotesDir=
-	LatestUpdateFail        = "Please Install One-Core-API Base first!"
     WSMAN_ServiceDisplay="Windows Remote Management (WS-Management)"
     WSMANOOB_WSMAN_ServiceDescription="Allows access to management information from local and remote machines."
     WEC_ServiceDisplay="Windows Event Collector"
@@ -193,10 +192,12 @@
 
 [ProductInstall.DontDelayUntilReboot]
     CopyFiles=MustReplace.System32.files
+    ;CopyFiles=MustReplace.SysWOW64.files
 
 [ProductInstall.CopyFilesAlways]
     CopyFiles=CopyAlways.DriverCab.files
     CopyFiles=CopyAlways.Cache.files
+	CopyFiles= CopyAlways.SysWOW64.files	
 
 [ProductInstall.DataCenterFiles]
     AddReg=Product.Add.Reg.DataCenter
@@ -315,38 +316,99 @@
     HKLM,SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%,"Description",,%SP_TITLE_XP%
 
 [SourceDisksFiles]
-    2k3SP2\ntkrnlmp.exe=1
-    2k3SP2\ntoskrnl.exe=1
+    2k3SP2\amd64\ntdll.dll=1
+    2k3SP2\amd64\ntkrnlmp.exe=1
+    2k3SP2\amd64\ntoskrnl.exe=1
+    2k3SP2\amd64\win32k.sys=1
+    2k3SP2\amd64\ntdll.dll=1
+	2k3SP2\amd64\kernel32.dll=1
+	2k3SP2\amd64\gdi32.dll=1
+	2k3SP2\amd64\user32.dll=1
+	2k3SP2\amd64\winsrv.dll=1
+	2k3SP2\amd64\wow64win.dll=1
+    2k3SP2\i386\wgdi32.dll=1
+	2k3SP2\i386\wuser32.dll=1
+	2k3SP2\i386\wkernel32.dll=1
+    2k3SP2\i386\wntdll.dll=1		
+	
 
 [DestinationDirs]
 	System32.files=11 
+	CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
+	CopyAlways.SysWOW64.files=10,SysWOW64  ; %windir%\system32 (don't delay until reboot)
+    MustReplace.System32.files=11   ; %windir%\system32 (don't delay until reboot)
+    ;MustReplace.SysWOW64.files=10,SysWOW64  ; %windir%\system32 (don't delay until reboot)
     CopyAlways.DriverCab.files=65623 ; Destination determined at runtime
     Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
     Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
     CopyAlways.Cache.files=65619        ; %windir%\system32\DllCache (copy even if don't exist)
-	ACPI.CoreDriverFiles = 12 ; %windir%\system32\drivers	
+	ACPI.CoreDriverFiles = 12 ; %windir%\system32\drivers
 	
 [ProductInstall.ReplaceFilesIfExist]
-	CopyFiles = ACPI.CoreDriverFiles		
+	CopyFiles = ACPI.CoreDriverFiles	
+
+[MustReplace.System32.files]
+    ntdll.dll,2k3SP2\amd64\ntdll.dll
+	kernel32.dll, 2k3SP2\amd64\kernel32.dll
+	gdi32.dll, 2k3SP2\amd64\gdi32.dll
+	user32.dll, 2k3SP2\amd64\user32.dll
+	winsrv.dll, 2k3SP2\amd64\winsrv.dll
+	wow64win.dll, 2k3SP2\amd64\wow64win.dll
+	win32k.sys, 2k3SP2\amd64\win32k.sys
 	
-[CopyAlways.DriverCab.files]
-    ntoskrnl.exe,2k3SP2\ntoskrnl.exe
-    ntkrnlmp.exe,2k3SP2\ntkrnlmp.exe
-	acpi.sys,2k3SP2\Drivers\acpi.sys			
-
-[CopyAlways.Cache.files]
-    ntoskrnl.exe,2k3SP2\ntoskrnl.exe
-    ntkrnlmp.exe,2k3SP2\ntkrnlmp.exe
-	acpi.sys,2k3SP2\Drivers\acpi.sys			
-
-[Uniprocessor.Kernel.files]
-    ntoskrnl.exe,2k3SP2\ntoskrnl.exe
-
-[Multiprocessor.Kernel.files]
-    ntoskrnl.exe,2k3SP2\ntkrnlmp.exe
+; [MustReplace.SysWOW64.files]	
+    ; gdi32.dll,i386\wgdi32.dll
+	; user32.dll,i386\wuser32.dll
+	; kernel32.dll,i386\wkernel32.dll
+    ; ntdll.dll,i386\wntdll.dll	
+	
+[System32.files]
+	win32k.sys, 2k3SP2\amd64\win32k.sys
 	
 [ACPI.CoreDriverFiles]
-	acpi.sys,2k3SP2\Drivers\acpi.sys 		
+	acpi.sys, 2k3SP2\amd64\Drivers\acpi.sys 	
+	
+[CopyAlways.System32.Files]
+	ntdll.dll, 2k3SP2\amd64\ntdll.dll
+	kernel32.dll, 2k3SP2\amd64\kernel32.dll
+	gdi32.dll, 2k3SP2\amd64\gdi32.dll
+	user32.dll, 2k3SP2\amd64\user32.dll
+	winsrv.dll, 2k3SP2\amd64\winsrv.dll
+	wow64win.dll, 2k3SP2\amd64\wow64win.dll
+	win32k.sys, 2k3SP2\amd64\win32k.sys
+	
+[CopyAlways.SysWOW64.Files]
+    gdi32.dll,2k3SP2\i386\wgdi32.dll
+	user32.dll,2k3SP2\i386\wuser32.dll
+	kernel32.dll,2k3SP2\i386\wkernel32.dll
+    ntdll.dll,2k3SP2\i386\wntdll.dll	
+
+[CopyAlways.DriverCab.files]
+    ntoskrnl.exe,2k3SP2\amd64\ntoskrnl.exe
+    ntkrnlmp.exe,2k3SP2\amd64\ntkrnlmp.exe
+	hal.dll,2k3SP2\amd64\hal.dll
+	acpi.sys,2k3SP2\amd64\Drivers\acpi.sys	
+
+[CopyAlways.Cache.files]
+    ntdll.dll,2k3SP2\amd64\ntdll.dll
+    user32.dll,2k3SP2\amd64\user32.dll
+    gdi32.dll,2k3SP2\amd64\gdi32.dll
+    kernel32.dll,2k3SP2\amd64\kernel32.dll
+    wow64win.dll,2k3SP2\amd64\wow64win.dll
+    winsrv.dll,2k3SP2\amd64\winsrv.dll
+    ntoskrnl.exe,2k3SP2\amd64\ntoskrnl.exe
+    ntkrnlmp.exe,2k3SP2\amd64\ntkrnlmp.exe
+    win32k.sys,2k3SP2\amd64\win32k.sys
+	hal.dll,2k3SP2\amd64\hal.dll
+	acpi.sys,2k3SP2\amd64\Drivers\acpi.sys
+
+[Uniprocessor.Kernel.files]
+    ntoskrnl.exe,2k3SP2\amd64\ntoskrnl.exe
+	hal.dll,2k3SP2\amd64\hal.dll
+
+[Multiprocessor.Kernel.files]
+    ntoskrnl.exe,2k3SP2\amd64\ntkrnlmp.exe
+	hal.dll,2k3SP2\amd64\hal.dll
 
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
@@ -356,6 +418,4 @@
 [GlobalRegistryChanges.UnInstall]
 
 [Add.Reg.Uninstall]
-
-[PreRequisite.Uninstall]
 

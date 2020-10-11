@@ -340,12 +340,9 @@
 [MustReplace.System32.files]
     ntdll.dll,XPSP3\ntdll.dll
 	basesrv.dll, XPSP3\basesrv.dll
-	csrsrv.dll, XPSP3\csrsrv.dll
-	csrss.exe, XPSP3\csrss.exe
 	gdi32.dll, XPSP3\gdi32.dll
 	kernel32.dll, XPSP3\kernel32.dll
 	lsasrv.dll, XPSP3\lsasrv.dll
-	smss.exe, XPSP3\smss.exe
 	user32.dll, XPSP3\user32.dll
 	winsrv.dll, XPSP3\winsrv.dll
 	win32k.sys, XPSP3\win32k.sys
@@ -359,12 +356,9 @@
 [CopyAlways.System32.Files]
     ntdll.dll,XPSP3\ntdll.dll
 	basesrv.dll, XPSP3\basesrv.dll
-	csrsrv.dll, XPSP3\csrsrv.dll
-	csrss.exe, XPSP3\csrss.exe
 	gdi32.dll, XPSP3\gdi32.dll
 	kernel32.dll, XPSP3\kernel32.dll
 	lsasrv.dll, XPSP3\lsasrv.dll
-	smss.exe, XPSP3\smss.exe
 	user32.dll, XPSP3\user32.dll	
 	winsrv.dll, XPSP3\winsrv.dll
 	win32k.sys, XPSP3\win32k.sys
