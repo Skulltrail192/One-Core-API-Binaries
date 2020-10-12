@@ -18,14 +18,6 @@
  */
 
 #include <main.h>
-#include <wingdi.h>
-#include <list.h>
-#include "wine/heap.h"
-#include "winreg.h"
-#include "devguid.h"
-#include <setupapi.h>
-#include <devpropdef.h>
-#include <unicode.h>
 
 #define MAX_GDI_HANDLES  16384
 #define FIRST_GDI_HANDLE 32
@@ -40,6 +32,13 @@
 DEFINE_DEVPROPKEY(DEVPROPKEY_GPU_LUID, 0x60b193cb, 0x5276, 0x4d0f, 0x96, 0xfc, 0xf1, 0x73, 0xab, 0xad, 0x3e, 0xc6, 2); 
 
 WINE_DEFAULT_DEBUG_CHANNEL(gdi);
+
+struct graphics_driver
+{
+    struct list                entry;
+    HMODULE                    module;  /* module handle */
+    const struct gdi_dc_funcs *funcs;
+};
 
 LSTATUS
 WINAPI
@@ -98,6 +97,8 @@ struct d3dkmt_device
 };
 
 static struct graphics_driver *display_driver;
+
+#define WINE_GDI_DRIVER_VERSION 48
 
 /**********************************************************************
  *	     create_driver

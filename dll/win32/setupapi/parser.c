@@ -456,17 +456,18 @@ static unsigned int PARSER_string_substW( const struct inf_file *file, const WCH
 static unsigned int PARSER_string_substA( const struct inf_file *file, const WCHAR *text,
                                           char *buffer, unsigned int size )
 {
-    WCHAR buffW[MAX_STRING_LEN+1];
-    DWORD ret;
+    // WCHAR buffW[MAX_STRING_LEN+1];
+    // DWORD ret;
 
-    unsigned int len = PARSER_string_substW( file, text, buffW, sizeof(buffW)/sizeof(WCHAR) );
-    if (!buffer) RtlUnicodeToMultiByteSize( &ret, buffW, len * sizeof(WCHAR) );
-    else
-    {
-        RtlUnicodeToMultiByteN( buffer, size-1, &ret, buffW, len * sizeof(WCHAR) );
-        buffer[ret] = 0;
-    }
-    return ret;
+    // unsigned int len = PARSER_string_substW( file, text, buffW, sizeof(buffW)/sizeof(WCHAR) );
+    // if (!buffer) RtlUnicodeToMultiByteSize( &ret, buffW, len * sizeof(WCHAR) );
+    // else
+    // {
+        // RtlUnicodeToMultiByteN( buffer, size-1, &ret, buffW, len * sizeof(WCHAR) );
+        // buffer[ret] = 0;
+    // }
+    // return ret;
+	return 0;
 }
 
 

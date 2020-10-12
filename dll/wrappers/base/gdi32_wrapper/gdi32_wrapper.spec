@@ -609,13 +609,19 @@
 @ stdcall gdiPlaySpoolStream(long long long long long long)
 
 #Vista functions
+@ stdcall D3DKMTCheckMonitorPowerState(ptr)
+@ stdcall D3DKMTCheckVidPnExclusiveOwnership(ptr)
 @ stdcall D3DKMTCloseAdapter(ptr)
 @ stdcall D3DKMTCreateDCFromMemory(ptr)
+@ stdcall D3DKMTCreateDevice(ptr)
 @ stdcall D3DKMTDestroyDCFromMemory(ptr)
-@ stdcall D3DKMTCheckMonitorPowerState(ptr)
+@ stdcall D3DKMTDestroyDevice(ptr)
+@ stdcall D3DKMTEscape(ptr)
+@ stdcall D3DKMTOpenAdapterFromGdiDisplayName(ptr)
 @ stdcall D3DKMTOpenAdapterFromHdc(ptr)
 @ stdcall D3DKMTQueryStatistics(ptr)
-@ stdcall D3DKMTEscape(ptr)
+@ stdcall D3DKMTSetQueuedLimit(ptr)
+@ stdcall D3DKMTSetVidPnSourceOwner(ptr)
 @ stdcall GetFontFileData(long long int64 ptr long)
 @ stub LoadImageColorMatcherA
 @ stub LoadImageColorMatcherW 

@@ -42,6 +42,7 @@ static const WCHAR SecurityKey[] = {'S','e','c','u','r','i','t','y',0};
 static const WCHAR ServiceBinaryKey[] = {'S','e','r','v','i','c','e','B','i','n','a','r','y',0};
 static const WCHAR ServiceTypeKey[] = {'S','e','r','v','i','c','e','T','y','p','e',0};
 static const WCHAR StartTypeKey[] = {'S','t','a','r','t','T','y','p','e',0};
+static const WCHAR StartNameKey[] = {'S','t','a','r','t','N','a','m','e',0};
 
 static const WCHAR Name[] = {'N','a','m','e',0};
 static const WCHAR CmdLine[] = {'C','m','d','L','i','n','e',0};
@@ -668,48 +669,49 @@ done:
  */
 static BOOL register_dlls_callback( HINF hinf, PCWSTR field, void *arg )
 {
-    struct register_dll_info *info = arg;
-    INFCONTEXT context;
-    BOOL ret = TRUE;
-    BOOL ok = SetupFindFirstLineW( hinf, field, NULL, &context );
+    // struct register_dll_info *info = arg;
+    // INFCONTEXT context;
+    // BOOL ret = TRUE;
+    // BOOL ok = SetupFindFirstLineW( hinf, field, NULL, &context );
 
-    for (; ok; ok = SetupFindNextLine( &context, &context ))
-    {
-        WCHAR *path, *args, *p;
-        WCHAR buffer[MAX_INF_STRING_LENGTH];
-        INT flags, timeout;
+    // for (; ok; ok = SetupFindNextLine( &context, &context ))
+    // {
+        // WCHAR *path, *args, *p;
+        // WCHAR buffer[MAX_INF_STRING_LENGTH];
+        // INT flags, timeout;
 
-        /* get directory */
-        if (!(path = PARSER_get_dest_dir( &context ))) continue;
+        // /* get directory */
+        // if (!(path = PARSER_get_dest_dir( &context ))) continue;
 
-        /* get dll name */
-        if (!SetupGetStringFieldW( &context, 3, buffer, sizeof(buffer)/sizeof(WCHAR), NULL ))
-            goto done;
-        if (!(p = HeapReAlloc( GetProcessHeap(), 0, path,
-                               (strlenW(path) + strlenW(buffer) + 2) * sizeof(WCHAR) ))) goto done;
-        path = p;
-        p += strlenW(p);
-        if (p == path || p[-1] != '\\') *p++ = '\\';
-        strcpyW( p, buffer );
+        // /* get dll name */
+        // if (!SetupGetStringFieldW( &context, 3, buffer, sizeof(buffer)/sizeof(WCHAR), NULL ))
+            // goto done;
+        // if (!(p = HeapReAlloc( GetProcessHeap(), 0, path,
+                               // (strlenW(path) + strlenW(buffer) + 2) * sizeof(WCHAR) ))) goto done;
+        // path = p;
+        // p += strlenW(p);
+        // if (p == path || p[-1] != '\\') *p++ = '\\';
+        // strcpyW( p, buffer );
 
-        /* get flags */
-        if (!SetupGetIntField( &context, 4, &flags )) flags = 0;
+        // /* get flags */
+        // if (!SetupGetIntField( &context, 4, &flags )) flags = 0;
 
-        /* get timeout */
-        if (!SetupGetIntField( &context, 5, &timeout )) timeout = 60;
+        // /* get timeout */
+        // if (!SetupGetIntField( &context, 5, &timeout )) timeout = 60;
 
-        /* get command line */
-        args = NULL;
-        if (SetupGetStringFieldW( &context, 6, buffer, sizeof(buffer)/sizeof(WCHAR), NULL ))
-            args = buffer;
+        // /* get command line */
+        // args = NULL;
+        // if (SetupGetStringFieldW( &context, 6, buffer, sizeof(buffer)/sizeof(WCHAR), NULL ))
+            // args = buffer;
 
-        ret = do_register_dll( info, path, flags, timeout, args );
+        // ret = do_register_dll( info, path, flags, timeout, args );
 
-    done:
-        HeapFree( GetProcessHeap(), 0, path );
-        if (!ret) break;
-    }
-    return ret;
+    // done:
+        // HeapFree( GetProcessHeap(), 0, path );
+        // if (!ret) break;
+    // }
+    // return ret;
+    return FALSE;
 }
 
 #ifdef __WINESRC__
@@ -1109,8 +1111,11 @@ profile_items_callback(
                             if (FullLinkName[wcslen(FullLinkName) - 1] != '\\')
                                 wcscat(FullLinkName, BackSlash);
                         }
-                        wcscat(FullLinkName, LinkName);
-                        wcscat(FullLinkName, DotLnk);
+                        if (LinkName)
+                        {
+                            wcscat(FullLinkName, LinkName);
+                            wcscat(FullLinkName, DotLnk);
+                        }
                         hr = IPersistFile_Save(ppf, FullLinkName, TRUE);
                     }
                     else
@@ -1325,128 +1330,128 @@ BOOL WINAPI SetupInstallFromInfSectionW( HWND owner, HINF hinf, PCWSTR section, 
                                          PSP_FILE_CALLBACK_W callback, PVOID context,
                                          HDEVINFO devinfo, PSP_DEVINFO_DATA devinfo_data )
 {
-    struct needs_callback_info needs_info;
+    // struct needs_callback_info needs_info;
 
-    /* Parse 'Include' and 'Needs' directives */
-    iterate_section_fields( hinf, section, Include, include_callback, NULL);
-    needs_info.type = 0;
-    needs_info.owner = owner;
-    needs_info.flags = flags;
-    needs_info.key_root = key_root;
-    needs_info.src_root = src_root;
-    needs_info.copy_flags = copy_flags;
-    needs_info.callback = callback;
-    needs_info.context = context;
-    needs_info.devinfo = devinfo;
-    needs_info.devinfo_data = devinfo_data;
-    iterate_section_fields( hinf, section, Needs, needs_callback, &needs_info);
+    // /* Parse 'Include' and 'Needs' directives */
+    // iterate_section_fields( hinf, section, Include, include_callback, NULL);
+    // needs_info.type = 0;
+    // needs_info.owner = owner;
+    // needs_info.flags = flags;
+    // needs_info.key_root = key_root;
+    // needs_info.src_root = src_root;
+    // needs_info.copy_flags = copy_flags;
+    // needs_info.callback = callback;
+    // needs_info.context = context;
+    // needs_info.devinfo = devinfo;
+    // needs_info.devinfo_data = devinfo_data;
+    // iterate_section_fields( hinf, section, Needs, needs_callback, &needs_info);
 
-    if (flags & SPINST_FILES)
-    {
-        SP_DEVINSTALL_PARAMS_W install_params;
-        struct files_callback_info info;
-        HSPFILEQ queue = NULL;
-        BOOL use_custom_queue;
-        BOOL ret;
+    // if (flags & SPINST_FILES)
+    // {
+        // SP_DEVINSTALL_PARAMS_W install_params;
+        // struct files_callback_info info;
+        // HSPFILEQ queue = NULL;
+        // BOOL use_custom_queue;
+        // BOOL ret;
 
-        install_params.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
-        use_custom_queue = SetupDiGetDeviceInstallParamsW(devinfo, devinfo_data, &install_params) && (install_params.Flags & DI_NOVCP);
-        if (!use_custom_queue && ((queue = SetupOpenFileQueue()) == (HSPFILEQ)INVALID_HANDLE_VALUE ))
-            return FALSE;
-        info.queue      = use_custom_queue ? install_params.FileQueue : queue;
-        info.src_root   = src_root;
-        info.copy_flags = copy_flags;
-        info.layout     = hinf;
-        ret = (iterate_section_fields( hinf, section, CopyFiles, copy_files_callback, &info ) &&
-               iterate_section_fields( hinf, section, DelFiles, delete_files_callback, &info ) &&
-               iterate_section_fields( hinf, section, RenFiles, rename_files_callback, &info ));
-        if (!use_custom_queue)
-        {
-            if (ret)
-                ret = SetupCommitFileQueueW( owner, queue, callback, context );
-            SetupCloseFileQueue( queue );
-        }
-        if (!ret) return FALSE;
-    }
-    if (flags & SPINST_INIFILES)
-    {
-        if (!iterate_section_fields( hinf, section, UpdateInis, update_ini_callback, NULL ) ||
-            !iterate_section_fields( hinf, section, UpdateIniFields,
-                                     update_ini_fields_callback, NULL ))
-            return FALSE;
-    }
-    if (flags & SPINST_INI2REG)
-    {
-        if (!iterate_section_fields( hinf, section, Ini2Reg, ini2reg_callback, NULL ))
-            return FALSE;
-    }
-    if (flags & SPINST_LOGCONFIG)
-    {
-        if (!iterate_section_fields( hinf, section, LogConf, logconf_callback, NULL ))
-            return FALSE;
-    }
-    if (flags & SPINST_REGSVR)
-    {
-        struct register_dll_info info;
+        // install_params.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
+        // use_custom_queue = SetupDiGetDeviceInstallParamsW(devinfo, devinfo_data, &install_params) && (install_params.Flags & DI_NOVCP);
+        // if (!use_custom_queue && ((queue = SetupOpenFileQueue()) == (HSPFILEQ)INVALID_HANDLE_VALUE ))
+            // return FALSE;
+        // info.queue      = use_custom_queue ? install_params.FileQueue : queue;
+        // info.src_root   = src_root;
+        // info.copy_flags = copy_flags;
+        // info.layout     = hinf;
+        // ret = (iterate_section_fields( hinf, section, CopyFiles, copy_files_callback, &info ) &&
+               // iterate_section_fields( hinf, section, DelFiles, delete_files_callback, &info ) &&
+               // iterate_section_fields( hinf, section, RenFiles, rename_files_callback, &info ));
+        // if (!use_custom_queue)
+        // {
+            // if (ret)
+                // ret = SetupCommitFileQueueW( owner, queue, callback, context );
+            // SetupCloseFileQueue( queue );
+        // }
+        // if (!ret) return FALSE;
+    // }
+    // if (flags & SPINST_INIFILES)
+    // {
+        // if (!iterate_section_fields( hinf, section, UpdateInis, update_ini_callback, NULL ) ||
+            // !iterate_section_fields( hinf, section, UpdateIniFields,
+                                     // update_ini_fields_callback, NULL ))
+            // return FALSE;
+    // }
+    // if (flags & SPINST_INI2REG)
+    // {
+        // if (!iterate_section_fields( hinf, section, Ini2Reg, ini2reg_callback, NULL ))
+            // return FALSE;
+    // }
+    // if (flags & SPINST_LOGCONFIG)
+    // {
+        // if (!iterate_section_fields( hinf, section, LogConf, logconf_callback, NULL ))
+            // return FALSE;
+    // }
+    // if (flags & SPINST_REGSVR)
+    // {
+        // struct register_dll_info info;
 
-        info.unregister = FALSE;
-        if (flags & SPINST_REGISTERCALLBACKAWARE)
-        {
-            info.callback         = callback;
-            info.callback_context = context;
-        }
-        else info.callback = NULL;
+        // info.unregister = FALSE;
+        // if (flags & SPINST_REGISTERCALLBACKAWARE)
+        // {
+            // info.callback         = callback;
+            // info.callback_context = context;
+        // }
+        // else info.callback = NULL;
 
-        if (!iterate_section_fields( hinf, section, RegisterDlls, register_dlls_callback, &info ))
-            return FALSE;
+        // if (!iterate_section_fields( hinf, section, RegisterDlls, register_dlls_callback, &info ))
+            // return FALSE;
 
-#ifdef __WINESRC__
-        if (!iterate_section_fields( hinf, section, WineFakeDlls, fake_dlls_callback, NULL ))
-            return FALSE;
-#endif // __WINESRC__
-    }
-    if (flags & SPINST_UNREGSVR)
-    {
-        struct register_dll_info info;
+// #ifdef __WINESRC__
+        // if (!iterate_section_fields( hinf, section, WineFakeDlls, fake_dlls_callback, NULL ))
+            // return FALSE;
+// #endif // __WINESRC__
+    // }
+    // if (flags & SPINST_UNREGSVR)
+    // {
+        // struct register_dll_info info;
 
-        info.unregister = TRUE;
-        if (flags & SPINST_REGISTERCALLBACKAWARE)
-        {
-            info.callback         = callback;
-            info.callback_context = context;
-        }
-        else info.callback = NULL;
+        // info.unregister = TRUE;
+        // if (flags & SPINST_REGISTERCALLBACKAWARE)
+        // {
+            // info.callback         = callback;
+            // info.callback_context = context;
+        // }
+        // else info.callback = NULL;
 
-        if (!iterate_section_fields( hinf, section, UnregisterDlls, register_dlls_callback, &info ))
-            return FALSE;
-    }
-    if (flags & SPINST_REGISTRY)
-    {
-        struct registry_callback_info info;
+        // if (!iterate_section_fields( hinf, section, UnregisterDlls, register_dlls_callback, &info ))
+            // return FALSE;
+    // }
+    // if (flags & SPINST_REGISTRY)
+    // {
+        // struct registry_callback_info info;
 
-        info.default_root = key_root;
-        info.delete = TRUE;
-        if (!iterate_section_fields( hinf, section, DelReg, registry_callback, &info ))
-            return FALSE;
-        info.delete = FALSE;
-        if (!iterate_section_fields( hinf, section, AddReg, registry_callback, &info ))
-            return FALSE;
-    }
-    if (flags & SPINST_BITREG)
-    {
-        if (!iterate_section_fields( hinf, section, BitReg, bitreg_callback, NULL ))
-            return FALSE;
-    }
-    if (flags & SPINST_PROFILEITEMS)
-    {
-        if (!iterate_section_fields( hinf, section, ProfileItems, profile_items_callback, NULL ))
-            return FALSE;
-    }
-    if (flags & SPINST_COPYINF)
-    {
-        if (!iterate_section_fields( hinf, section, CopyINF, copy_inf_callback, NULL ))
-            return FALSE;
-    }
+        // info.default_root = key_root;
+        // info.delete = TRUE;
+        // if (!iterate_section_fields( hinf, section, DelReg, registry_callback, &info ))
+            // return FALSE;
+        // info.delete = FALSE;
+        // if (!iterate_section_fields( hinf, section, AddReg, registry_callback, &info ))
+            // return FALSE;
+    // }
+    // if (flags & SPINST_BITREG)
+    // {
+        // if (!iterate_section_fields( hinf, section, BitReg, bitreg_callback, NULL ))
+            // return FALSE;
+    // }
+    // if (flags & SPINST_PROFILEITEMS)
+    // {
+        // if (!iterate_section_fields( hinf, section, ProfileItems, profile_items_callback, NULL ))
+            // return FALSE;
+    // }
+    // if (flags & SPINST_COPYINF)
+    // {
+        // if (!iterate_section_fields( hinf, section, CopyINF, copy_inf_callback, NULL ))
+            // return FALSE;
+    // }
 
     return TRUE;
 }
@@ -1791,6 +1796,7 @@ static BOOL InstallOneService(
     LPWSTR DisplayName = NULL;
     LPWSTR Description = NULL;
     LPWSTR Dependencies = NULL;
+    LPWSTR StartName = NULL;
     LPWSTR SecurityDescriptor = NULL;
     PSECURITY_DESCRIPTOR sd = NULL;
     INT ServiceType, StartType, ErrorControl;
@@ -1834,6 +1840,7 @@ static BOOL InstallOneService(
     GetLineText(hInf, ServiceSection, DisplayNameKey, &DisplayName);
     GetLineText(hInf, ServiceSection, DescriptionKey, &Description);
     GetLineText(hInf, ServiceSection, DependenciesKey, &Dependencies);
+    GetLineText(hInf, ServiceSection, StartNameKey, &StartName);
 
     /* If there is no group, we must not request a tag */
     if (!LoadOrderGroup || !*LoadOrderGroup)
@@ -1868,7 +1875,8 @@ static BOOL InstallOneService(
             LoadOrderGroup,
             useTag ? &tagId : NULL,
             Dependencies,
-            NULL, NULL);
+            StartName,
+            NULL);
         if (hService == NULL)
             goto cleanup;
     }
@@ -1901,7 +1909,8 @@ static BOOL InstallOneService(
             (ServiceFlags & SPSVCINST_NOCLOBBER_LOADORDERGROUP && ServiceConfig->lpLoadOrderGroup) ? NULL : LoadOrderGroup,
             useTag ? &tagId : NULL,
             (ServiceFlags & SPSVCINST_NOCLOBBER_DEPENDENCIES && ServiceConfig->lpDependencies) ? NULL : Dependencies,
-            NULL, NULL,
+            StartName,
+            NULL,
             (ServiceFlags & SPSVCINST_NOCLOBBER_DISPLAYNAME && ServiceConfig->lpDisplayName) ? NULL : DisplayName);
         if (!ret)
             goto cleanup;
@@ -2057,6 +2066,7 @@ cleanup:
     MyFree(Dependencies);
     MyFree(SecurityDescriptor);
     MyFree(GroupOrder);
+    MyFree(StartName);
 
     TRACE("Returning %d\n", ret);
     return ret;
@@ -2269,23 +2279,23 @@ cleanup:
 
 static int compare_files( HANDLE file1, HANDLE file2 )
 {
-    char buffer1[2048];
-    char buffer2[2048];
-    DWORD size1;
-    DWORD size2;
+    // char buffer1[2048];
+    // char buffer2[2048];
+    // DWORD size1;
+    // DWORD size2;
 
-    while( ReadFile(file1, buffer1, sizeof(buffer1), &size1, NULL) &&
-           ReadFile(file2, buffer2, sizeof(buffer2), &size2, NULL) )
-    {
-        int ret;
-        if (size1 != size2)
-            return size1 > size2 ? 1 : -1;
-        if (!size1)
-            return 0;
-        ret = memcmp( buffer1, buffer2, size1 );
-        if (ret)
-            return ret;
-    }
+    // while( ReadFile(file1, buffer1, sizeof(buffer1), &size1, NULL) &&
+           // ReadFile(file2, buffer2, sizeof(buffer2), &size2, NULL) )
+    // {
+        // int ret;
+        // if (size1 != size2)
+            // return size1 > size2 ? 1 : -1;
+        // if (!size1)
+            // return 0;
+        // ret = memcmp( buffer1, buffer2, size1 );
+        // if (ret)
+            // return ret;
+    // }
 
     return 0;
 }
