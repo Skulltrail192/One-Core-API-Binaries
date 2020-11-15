@@ -323,11 +323,11 @@
     2k3SP2\amd64\ntdll.dll=1
 	2k3SP2\amd64\kernel32.dll=1
 	2k3SP2\amd64\gdi32.dll=1
-	2k3SP2\amd64\user32.dll=1
+	2k3SP2\amd64\userbase.dll=1
 	2k3SP2\amd64\winsrv.dll=1
 	2k3SP2\amd64\wow64win.dll=1
     2k3SP2\i386\wgdi32.dll=1
-	2k3SP2\i386\wuser32.dll=1
+	2k3SP2\i386\wuserbase.dll=1
 	2k3SP2\i386\wkernel32.dll=1
     2k3SP2\i386\wntdll.dll=1		
 	
@@ -351,7 +351,7 @@
     ntdll.dll,2k3SP2\amd64\ntdll.dll
 	kernel32.dll, 2k3SP2\amd64\kernel32.dll
 	gdi32.dll, 2k3SP2\amd64\gdi32.dll
-	user32.dll, 2k3SP2\amd64\user32.dll
+	userbase.dll, 2k3SP2\amd64\userbase.dll
 	winsrv.dll, 2k3SP2\amd64\winsrv.dll
 	wow64win.dll, 2k3SP2\amd64\wow64win.dll
 	win32k.sys, 2k3SP2\amd64\win32k.sys
@@ -372,14 +372,14 @@
 	ntdll.dll, 2k3SP2\amd64\ntdll.dll
 	kernel32.dll, 2k3SP2\amd64\kernel32.dll
 	gdi32.dll, 2k3SP2\amd64\gdi32.dll
-	user32.dll, 2k3SP2\amd64\user32.dll
+	userbase.dll, 2k3SP2\amd64\userbase.dll
 	winsrv.dll, 2k3SP2\amd64\winsrv.dll
 	wow64win.dll, 2k3SP2\amd64\wow64win.dll
 	win32k.sys, 2k3SP2\amd64\win32k.sys
 	
 [CopyAlways.SysWOW64.Files]
     gdi32.dll,2k3SP2\i386\wgdi32.dll
-	user32.dll,2k3SP2\i386\wuser32.dll
+	userbase.dll,2k3SP2\i386\wuserbase.dll
 	kernel32.dll,2k3SP2\i386\wkernel32.dll
     ntdll.dll,2k3SP2\i386\wntdll.dll	
 
@@ -391,7 +391,7 @@
 
 [CopyAlways.Cache.files]
     ntdll.dll,2k3SP2\amd64\ntdll.dll
-    user32.dll,2k3SP2\amd64\user32.dll
+    userbase.dll,2k3SP2\amd64\userbase.dll
     gdi32.dll,2k3SP2\amd64\gdi32.dll
     kernel32.dll,2k3SP2\amd64\kernel32.dll
     wow64win.dll,2k3SP2\amd64\wow64win.dll

@@ -325,6 +325,8 @@
     2k3SP2\ntkrpamp.exe=1
     2k3SP2\ntoskrnl.exe=1
     2k3SP2\ntkrnlpa.exe=1
+    2k3SP2\ntdll.dll=1	
+	2k3SP2\win32k.sys=1	
 
 [DestinationDirs]
 	System32.files=11 
@@ -340,6 +342,7 @@
 	CopyFiles = ACPI.CoreDriverFiles	
 
 [MustReplace.System32.files]
+    ntdll.dll,2k3SP2\ntdll.dll
 	gdibase.dll, 2k3SP2\gdibase.dll
 	userbase.dll, 2k3SP2\userbase.dll
 	winsrv.dll, 2k3SP2\winsrv.dll
@@ -352,6 +355,7 @@
 	acpi.sys, 2k3SP2\Drivers\acpi.sys 	
 	
 [CopyAlways.System32.Files]
+    ntdll.dll,2k3SP2\ntdll.dll
 	gdibase.dll, 2k3SP2\gdibase.dll
 	userbase.dll, 2k3SP2\userbase.dll
 	winsrv.dll, 2k3SP2\winsrv.dll
@@ -376,6 +380,7 @@
     ntkrnlpa.exe,2k3SP2\ntkrnlpa.exe
     ntkrnlmp.exe,2k3SP2\ntkrnlmp.exe
 	hal.dll,2k3SP2\hal.dll
+    ntdll.dll,2k3SP2\ntdll.dll	
 	halaacpi.dll,2k3SP2\halaacpi.dll
 	halacpi.dll,2k3SP2\halacpi.dll
 	halapic.dll,2k3SP2\halapic.dll

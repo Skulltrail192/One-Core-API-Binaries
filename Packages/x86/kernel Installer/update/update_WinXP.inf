@@ -325,10 +325,10 @@
 
 [SourceDisksFiles]
     XPSP3\ntkrnlmp.exe=1
-    XPSP3\ntdll.dll=1
     XPSP3\ntkrpamp.exe=1
     XPSP3\ntoskrnl.exe=1
     XPSP3\ntkrnlpa.exe=1
+    XPSP3\ntdll.dll=1	
 	XPSP3\win32k.sys=1
 
 [DestinationDirs]
