@@ -6,5 +6,5 @@ add_library(watchdog SHARED
     ${CMAKE_CURRENT_BINARY_DIR}/watchdog.def)
 
 set_module_type(watchdog kernelmodedriver)
-add_importlibs(watchdog ntoskrnl)
+add_importlibs(watchdog ntoskrnl watchdogbase)
 add_cd_file(TARGET watchdog DESTINATION reactos/system32/drivers FOR all)

@@ -38,6 +38,8 @@
 #include <cmfuncs.h>
 //#include "ntdll_misc.h"
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 /* Use intrinsics for x86 and x64 */
 #if defined(_M_IX86) || defined(_M_AMD64)
 #define InterlockedCompareExchange _InterlockedCompareExchange

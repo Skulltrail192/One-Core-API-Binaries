@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS WMI driver
  * COPYRIGHT:       GPL - See COPYING in the top level directory
- * FILE:            drivers/bootanim/main.c
+ * FILE:            drivers/bootanim/bootanim.c
  * PURPOSE:         Windows Management Intstrumentation
  * PROGRAMMERS:     Aleksey Bragin (aleksey@reactos.org)
  *                  
@@ -40,13 +40,23 @@ KTIMER Timer;
 /* FUNCTIONS ****************************************************************/
 
 
-void NTAPI VidBitmap(PIMAGE_RESOURCE_DATA_ENTRY Buffer, ULONG Left, ULONG Top)
+void 
+NTAPI 
+VidBitmap(
+	PIMAGE_RESOURCE_DATA_ENTRY Buffer, 
+	ULONG Left, 
+	ULONG Top
+)
 {
 	  DbgPrint("Bootanim::InbvBitBlt: Entered worker thread.\n");
 	  VidBitBlt(Buffer, Left, Top);
 }
 
-PIMAGE_RESOURCE_DATA_ENTRY NTAPI CountBitmap(ULONG BitmapNumber)
+PIMAGE_RESOURCE_DATA_ENTRY 
+NTAPI 
+CountBitmap(
+	ULONG BitmapNumber
+)
 {
   PIMAGE_RESOURCE_DATA_ENTRY result; // eax@2
 
@@ -116,7 +126,9 @@ void NTAPI StartRoutine()
   while ( count < 92 );
 }*/
 
-void NTAPI StartRoutine()
+void 
+NTAPI 
+StartRoutine()
 {
   NTSTATUS statusSize; // esi@1
   PIMAGE_RESOURCE_DATA_ENTRY image; // ecx@2
@@ -135,7 +147,7 @@ void NTAPI StartRoutine()
   DbgPrint("Bootanim::DriverEntry: %d = Bitmap Count.\n", 1);
   DbgPrint("Bootanim::Variables: %d = i.\n", 0);
   
-  while(TRUE)
+  while(InbvCheckDisplayOwnership())
   {
     RequestorMode = ExGetPreviousMode();
 	if(RequestorMode==UserMode)  
@@ -158,21 +170,19 @@ void NTAPI StartRoutine()
     //KeStallExecutionProcessor(60000);
 	KeDelayExecutionThread(KernelMode, TRUE, &DueTime);		
     count++;
-    if(count == 91 && variable == 0 && RequestorMode==KernelMode)
+    if(count >= 90 && variable == 0)
 	{
 		count = 1;
 		variable++;
 	}	
-	if(count == 91 && variable == 2 || RequestorMode==UserMode)
-    {
-      InbvSolidColorFill(statusSize, statusSize, 639, 439, statusSize);
-	  PsTerminateSystemThread(statusSize);
-      DbgPrint("Bootanim::Variables: %d = i.\n", variable);
-    }	
   } 
 }
 
-PIMAGE_RESOURCE_DATA_ENTRY NTAPI FindResource(PIMAGE_RESOURCE_DATA_ENTRY DataEntry)
+PIMAGE_RESOURCE_DATA_ENTRY 
+NTAPI 
+FindResource(
+	PIMAGE_RESOURCE_DATA_ENTRY DataEntry
+)
 {
   PIMAGE_RESOURCE_DATA_ENTRY Image; // esi@1
   PVOID section; // ecx@1
@@ -204,7 +214,12 @@ PIMAGE_RESOURCE_DATA_ENTRY NTAPI FindResource(PIMAGE_RESOURCE_DATA_ENTRY DataEnt
   return Data;
 }
 
-NTSTATUS NTAPI Animation(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
+NTSTATUS 
+NTAPI 
+Animation(
+	PDRIVER_OBJECT DriverObject, 
+	PUNICODE_STRING RegistryPath
+)
 {
   ULONG image; // edi@1
   NTSTATUS status; // eax@3
@@ -218,14 +233,14 @@ NTSTATUS NTAPI Animation(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPa
   ObjectAttributes.SecurityDescriptor = 0;
   ObjectAttributes.SecurityQualityOfService = 0;
   DbgPrint("Bootanim::DriverEntry: Driver Entered.\n");
-  //InbvAcquireDisplayOwnership();
-  //InbvResetDisplay();
-  VidResetDisplay(TRUE);
-  //InbvSolidColorFill(0, 0, 639, 439, 0);
-  //InbvSetTextColor(15);
-  //InbvInstallDisplayStringFilter(0);
-  //InbvEnableDisplayString(1);
-  //InbvSetScrollRegion(0, 0, 635, 475);
+  InbvAcquireDisplayOwnership();
+  InbvResetDisplay();
+  //VidResetDisplay(TRUE);
+  InbvSolidColorFill(0, 0, 639, 439, 0);
+  InbvSetTextColor(15);
+  InbvInstallDisplayStringFilter(0);
+  InbvEnableDisplayString(1);
+  InbvSetScrollRegion(0, 0, 635, 475);
   ResourceCount = 91;
   image = 0;
   do
@@ -244,8 +259,10 @@ NTSTATUS NTAPI Animation(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPa
 
 NTSTATUS
 NTAPI
-DriverEntry(IN PDRIVER_OBJECT DriverObject,
-            IN PUNICODE_STRING RegistryPath)
+DriverEntry(
+	IN PDRIVER_OBJECT DriverObject,
+    IN PUNICODE_STRING RegistryPath
+)
 {
     /* Return success */
     return Animation(DriverObject, RegistryPath);

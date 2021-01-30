@@ -1,4 +1,4 @@
-include_directories(${REACTOS_SOURCE_DIR}/include/reactos/drivers/bootvid)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/drivers/bootvid)
 
 spec2def(bootanim.sys bootanim.spec ADD_IMPORTLIB)
 

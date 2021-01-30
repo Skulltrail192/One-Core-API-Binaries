@@ -34,41 +34,22 @@ static RTL_CRITICAL_SECTION_DEBUG critsect_compl_debug;
 
 static struct
 {
-    /* threadpool_cs must be held while modifying the following four elements */
-    struct list             work_item_list;
-    LONG                    num_workers;
-    LONG                    num_busy_workers;
-    LONG                    num_items_processed;
-    RTL_CONDITION_VARIABLE  threadpool_cond;
-    RTL_CRITICAL_SECTION    threadpool_cs;
     HANDLE                  compl_port;
     RTL_CRITICAL_SECTION    threadpool_compl_cs;
 }
 old_threadpool =
 {
-    LIST_INIT(old_threadpool.work_item_list),   /* work_item_list */
-    0,                                          /* num_workers */
-    0,                                          /* num_busy_workers */
-    0,                                          /* num_items_processed */
-    RTL_CONDITION_VARIABLE_INIT,                /* threadpool_cond */
-    { &critsect_debug, -1, 0, 0, 0, 0 },        /* threadpool_cs */
     NULL,                                       /* compl_port */
     { &critsect_compl_debug, -1, 0, 0, 0, 0 },  /* threadpool_compl_cs */
-};
-
-static RTL_CRITICAL_SECTION_DEBUG critsect_debug =
-{
-    0, 0, &old_threadpool.threadpool_cs,
-    { &critsect_debug.ProcessLocksList, &critsect_debug.ProcessLocksList },
-      0, 0,  (DWORD_PTR)(__FILE__ ": threadpool_cs") 
 };
 
 static RTL_CRITICAL_SECTION_DEBUG critsect_compl_debug =
 {
     0, 0, &old_threadpool.threadpool_compl_cs,
     { &critsect_compl_debug.ProcessLocksList, &critsect_compl_debug.ProcessLocksList },
-      0, 0,  (DWORD_PTR)(__FILE__ ": threadpool_compl_cs") 
+      0, 0, { (DWORD_PTR)(__FILE__ ": threadpool_compl_cs") }
 };
+
 
 struct work_item
 {
@@ -87,7 +68,7 @@ struct wait_work_item
     ULONG Flags;
     HANDLE CompletionEvent;
     LONG DeleteCount;
-    BOOLEAN CallbackInProgress;
+    int CallbackInProgress;
 };
 
 struct timer_queue;
@@ -122,21 +103,24 @@ struct timer_queue
 #define THREADPOOL_WORKER_TIMEOUT 5000
 #define MAXIMUM_WAITQUEUE_OBJECTS (MAXIMUM_WAIT_OBJECTS - 1)
 
+
 /* internal threadpool representation */
 struct threadpool
 {
     LONG                    refcount;
     LONG                    objcount;
     BOOL                    shutdown;
-    RTL_CRITICAL_SECTION        cs;
-    /* pool of work items, locked via .cs */
-    struct list             pool;
+    CRITICAL_SECTION        cs;
+    /* Pools of work items, locked via .cs, order matches TP_CALLBACK_PRIORITY - high, normal, low. */
+    struct list             pools[3];
     RTL_CONDITION_VARIABLE  update_event;
     /* information about worker threads, locked via .cs */
     int                     max_workers;
     int                     min_workers;
     int                     num_workers;
     int                     num_busy_workers;
+    HANDLE                  compl_port;
+    TP_POOL_STACK_INFORMATION stack_info;
 };
 
 enum threadpool_objtype
@@ -144,7 +128,8 @@ enum threadpool_objtype
     TP_OBJECT_TYPE_SIMPLE,
     TP_OBJECT_TYPE_WORK,
     TP_OBJECT_TYPE_TIMER,
-    TP_OBJECT_TYPE_WAIT
+    TP_OBJECT_TYPE_WAIT,
+    TP_OBJECT_TYPE_IO,
 };
 
 /* internal threadpool object representation */
@@ -817,9 +802,11 @@ static void tp_waitqueue_unlock( struct threadpool_object *wait )
  */
 static NTSTATUS tp_threadpool_alloc( struct threadpool **out )
 {
+    IMAGE_NT_HEADERS *nt = RtlImageNtHeader( NtCurrentPeb()->ImageBaseAddress );
     struct threadpool *pool;
+    unsigned int i;
 
-    pool = RtlAllocateHeap( RtlProcessHeap(), 0, sizeof(*pool) );
+    pool = RtlAllocateHeap( GetProcessHeap(), 0, sizeof(*pool) );
     if (!pool)
         return STATUS_NO_MEMORY;
 
@@ -828,15 +815,18 @@ static NTSTATUS tp_threadpool_alloc( struct threadpool **out )
     pool->shutdown              = FALSE;
 
     RtlInitializeCriticalSection( &pool->cs );
-    pool->cs.DebugInfo->SpareWORD = (DWORD_PTR)(__FILE__ ": threadpool.cs");
+    pool->cs.DebugInfo->Spare[0] = (DWORD_PTR)(__FILE__ ": threadpool.cs");
 
-    list_init( &pool->pool );
+    for (i = 0; i < ARRAY_SIZE(pool->pools); ++i)
+        list_init( &pool->pools[i] );
     RtlInitializeConditionVariable( &pool->update_event );
 
-    pool->max_workers           = 500;
-    pool->min_workers           = 0;
-    pool->num_workers           = 0;
-    pool->num_busy_workers      = 0;
+    pool->max_workers             = 500;
+    pool->min_workers             = 0;
+    pool->num_workers             = 0;
+    pool->num_busy_workers        = 0;
+    pool->stack_info.StackReserve = nt->OptionalHeader.SizeOfStackReserve;
+    pool->stack_info.StackCommit  = nt->OptionalHeader.SizeOfStackCommit;
 
     DbgPrint( "allocated threadpool %p\n", pool );
 
@@ -866,19 +856,22 @@ static void tp_threadpool_shutdown( struct threadpool *pool )
  */
 static BOOL tp_threadpool_release( struct threadpool *pool )
 {
-    if (interlocked_dec( &pool->refcount ))
+    unsigned int i;
+
+    if (InterlockedDecrement( &pool->refcount ))
         return FALSE;
 
     DbgPrint( "destroying threadpool %p\n", pool );
 
-    ASSERT( pool->shutdown );
-    ASSERT( !pool->objcount );
-    ASSERT( list_empty( &pool->pool ) );
+    assert( pool->shutdown );
+    assert( !pool->objcount );
+    for (i = 0; i < ARRAY_SIZE(pool->pools); ++i)
+        assert( list_empty( &pool->pools[i] ) );
 
-    pool->cs.DebugInfo->SpareWORD = 0;
+    pool->cs.DebugInfo->Spare[0] = 0;
     RtlDeleteCriticalSection( &pool->cs );
 
-    RtlFreeHeap( RtlProcessHeap(), 0, pool );
+    RtlFreeHeap( GetProcessHeap(), 0, pool );
     return TRUE;
 }
 
@@ -1100,9 +1093,30 @@ static void tp_object_initialize( struct threadpool_object *object, struct threa
 }
 
 /***********************************************************************
+ *           tp_new_worker_thread    (internal)
+ *
+ * Create and account a new worker thread for the desired pool.
+ */
+static NTSTATUS tp_new_worker_thread( struct threadpool *pool )
+{
+    HANDLE thread;
+    NTSTATUS status;
+
+    status = RtlCreateUserThread( GetCurrentProcess(), NULL, FALSE, NULL, 0, 0,
+                                  threadpool_worker_proc, pool, &thread, NULL );
+    if (status == STATUS_SUCCESS)
+    {
+        InterlockedIncrement( &pool->refcount );
+        pool->num_workers++;
+        NtClose( thread );
+    }
+    return status;
+}
+
+/***********************************************************************
  *           tp_object_submit    (internal)
  *
- * Submits a threadpool object to the associcated threadpool. This
+ * Submits a threadpool object to the associated threadpool. This
  * function has to be VOID because TpPostWork can never fail on Windows.
  */
 static void tp_object_submit( struct threadpool_object *object, BOOL signaled )
@@ -1110,30 +1124,20 @@ static void tp_object_submit( struct threadpool_object *object, BOOL signaled )
     struct threadpool *pool = object->pool;
     NTSTATUS status = STATUS_UNSUCCESSFUL;
 
-    ASSERT( !object->shutdown );
-    ASSERT( !pool->shutdown );
+    assert( !object->shutdown );
+    assert( !pool->shutdown );
 
     RtlEnterCriticalSection( &pool->cs );
 
     /* Start new worker threads if required. */
     if (pool->num_busy_workers >= pool->num_workers &&
         pool->num_workers < pool->max_workers)
-    {
-        HANDLE thread;
-        status = RtlCreateUserThread( NtCurrentProcess(), NULL, FALSE, 0, 0, 0,
-                                      (PTHREAD_START_ROUTINE)threadpool_worker_proc, pool, &thread, NULL );
-        if (status == STATUS_SUCCESS)
-        {
-            interlocked_inc( &pool->refcount );
-            pool->num_workers++;
-            NtClose( thread );
-        }
-    }
+        status = tp_new_worker_thread( pool );
 
     /* Queue work item and increment refcount. */
-    interlocked_inc( &object->refcount );
+    InterlockedIncrement( &object->refcount );
     if (!object->num_pending_callbacks++)
-        list_add_tail( &pool->pool, &object->pool_entry );
+        tp_object_prio_queue( object );
 
     /* Count how often the object was signaled. */
     if (object->type == TP_OBJECT_TYPE_WAIT && signaled)
@@ -1142,7 +1146,7 @@ static void tp_object_submit( struct threadpool_object *object, BOOL signaled )
     /* No new thread started - wake up one existing thread. */
     if (status != STATUS_SUCCESS)
     {
-        ASSERT( pool->num_workers > 0 );
+        assert( pool->num_workers > 0 );
         RtlWakeConditionVariable( &pool->update_event );
     }
 
@@ -2177,77 +2181,149 @@ VOID WINAPI TpWaitForWork( TP_WORK *work, BOOL cancel_pending )
     tp_object_wait( this, FALSE );
 }
 
-NTSTATUS 
-WINAPI
-TpSetPoolStackInformation(
-  _Inout_  PTP_POOL ptpp,
-  _In_     PTP_POOL_STACK_INFORMATION ptpsi
-)
+/***********************************************************************
+ *           TpSetPoolStackInformation    (NTDLL.@)
+ */
+NTSTATUS WINAPI TpSetPoolStackInformation( TP_POOL *pool, TP_POOL_STACK_INFORMATION *stack_info )
 {
-	DbgPrint("UNIMPLEMENTED: TpSetPoolStackInformation");
-	return STATUS_SUCCESS;
+    struct threadpool *this = impl_from_TP_POOL( pool );
+
+    DbgPrint( "%p %p\n", pool, stack_info );
+
+    if (!stack_info)
+        return STATUS_INVALID_PARAMETER;
+
+    RtlEnterCriticalSection( &this->cs );
+    this->stack_info = *stack_info;
+    RtlLeaveCriticalSection( &this->cs );
+
+    return STATUS_SUCCESS;
 }
 
-NTSTATUS 
-WINAPI
-TpQueryPoolStackInformation (
-  __in PTP_POOL Pool, 
-  __out PTP_POOL_STACK_INFORMATION PoolStackInformation
-)
+/***********************************************************************
+ *           TpQueryPoolStackInformation    (NTDLL.@)
+ */
+NTSTATUS WINAPI TpQueryPoolStackInformation( TP_POOL *pool, TP_POOL_STACK_INFORMATION *stack_info )
 {
-	DbgPrint("UNIMPLEMENTED: TpQueryPoolStackInformation");	
-	return STATUS_SUCCESS;
+    struct threadpool *this = impl_from_TP_POOL( pool );
+
+    DbgPrint( "%p %p\n", pool, stack_info );
+
+    if (!stack_info)
+        return STATUS_INVALID_PARAMETER;
+
+    RtlEnterCriticalSection( &this->cs );
+    *stack_info = this->stack_info;
+    RtlLeaveCriticalSection( &this->cs );
+
+    return STATUS_SUCCESS;
 }
 
-VOID 
-NTAPI 
-TpReleaseIoCompletion(
-	__inout PTP_IO Io
-)
+/***********************************************************************
+ *           TpReleaseIoCompletion    (NTDLL.@)
+ */
+void WINAPI TpReleaseIoCompletion( TP_IO *io )
 {
-	DbgPrint("UNIMPLEMENTED: TpReleaseIoCompletion");		
-	;
+    struct threadpool_object *this = impl_from_TP_IO( io );
+
+    DbgPrint( "%p\n", io );
+
+    tp_object_prepare_shutdown( this );
+    this->shutdown = TRUE;
+    tp_object_release( this );
 }
 
-VOID 
-NTAPI 
-TpWaitForIoCompletion (
-	__inout PTP_IO Io, 
-	__in LOGICAL CancelPendingCallbacks)
+/***********************************************************************
+ *           TpWaitForIoCompletion    (NTDLL.@)
+ */
+void WINAPI TpWaitForIoCompletion( TP_IO *io, BOOL cancel_pending )
 {
-	DbgPrint("UNIMPLEMENTED: TpWaitForIoCompletion");		
-	;
+    struct threadpool_object *this = impl_from_TP_IO( io );
+
+    DbgPrint( "%p %d\n", io, cancel_pending );
+
+    if (cancel_pending)
+        tp_object_cancel( this );
+    tp_object_wait( this, FALSE );
 }
 
-VOID 
-NTAPI 	
-TpStartAsyncIoOperation(
-	__inout PTP_IO Io
-)
-{
-	DbgPrint("UNIMPLEMENTED: TpStartAsyncIoOperation");	
-	;
-} 
 
-VOID 
-NTAPI 	
-TpCancelAsyncIoOperation(
-	_Inout_ PTP_IO Io
-)
+/***********************************************************************
+ *           TpStartAsyncIoOperation    (NTDLL.@)
+ */
+void WINAPI TpStartAsyncIoOperation( TP_IO *io )
 {
-	DbgPrint("UNIMPLEMENTED: TpCancelAsyncIoOperation");		
-	;
+    struct threadpool_object *this = impl_from_TP_IO( io );
+
+    DbgPrint( "%p\n", io );
+
+    RtlEnterCriticalSection( &this->pool->cs );
+
+    this->u.io.pending_count++;
+
+    RtlLeaveCriticalSection( &this->pool->cs );
 }
 
-NTSTATUS 
-NTAPI 	
-TpAllocIoCompletion(
-	_Out_ PTP_IO *IoReturn, 
-	_In_ HANDLE File, 
-	_In_ PTP_WIN32_IO_CALLBACK Callback, 
-	_Inout_opt_ PVOID Context, 
-	_In_opt_ PTP_CALLBACK_ENVIRON CallbackEnviron
-)
+/***********************************************************************
+ *           TpCancelAsyncIoOperation    (NTDLL.@)
+ */
+void WINAPI TpCancelAsyncIoOperation( TP_IO *io )
 {
-	return STATUS_NOT_IMPLEMENTED;
+    struct threadpool_object *this = impl_from_TP_IO( io );
+
+    DbgPrint( "%p\n", io );
+
+    RtlEnterCriticalSection( &this->pool->cs );
+
+    this->u.io.pending_count--;
+    if (object_is_finished( this, TRUE ))
+        RtlWakeAllConditionVariable( &this->group_finished_event );
+    if (object_is_finished( this, FALSE ))
+        RtlWakeAllConditionVariable( &this->finished_event );
+
+    RtlLeaveCriticalSection( &this->pool->cs );
+}
+
+/***********************************************************************
+ *           TpAllocIoCompletion    (NTDLL.@)
+ */
+NTSTATUS WINAPI TpAllocIoCompletion( TP_IO **out, HANDLE file, PTP_IO_CALLBACK callback,
+                                     void *userdata, TP_CALLBACK_ENVIRON *environment )
+{
+    struct threadpool_object *object;
+    struct threadpool *pool;
+    NTSTATUS status;
+
+    DbgPrint( "%p %p %p %p %p\n", out, file, callback, userdata, environment );
+
+    if (!(object = RtlAllocateHeap( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object) )))
+        return STATUS_NO_MEMORY;
+
+    if ((status = tp_threadpool_lock( &pool, environment )))
+    {
+        RtlFreeHeap( GetProcessHeap(), 0, object );
+        return status;
+    }
+
+    object->type = TP_OBJECT_TYPE_IO;
+    object->u.io.callback = callback;
+    if (!(object->u.io.completions = RtlAllocateHeap( GetProcessHeap(), 0, 8 * sizeof(*object->u.io.completions) )))
+    {
+        tp_threadpool_unlock( pool );
+        RtlFreeHeap( GetProcessHeap(), 0, object );
+        return status;
+    }
+
+    if ((status = tp_ioqueue_lock( object, file )))
+    {
+        tp_threadpool_unlock( pool );
+        RtlFreeHeap( GetProcessHeap(), 0, object->u.io.completions );
+        RtlFreeHeap( GetProcessHeap(), 0, object );
+        return status;
+    }
+
+    tp_object_initialize( object, pool, userdata, environment );
+
+    *out = (TP_IO *)object;
+    return STATUS_SUCCESS;
 }
