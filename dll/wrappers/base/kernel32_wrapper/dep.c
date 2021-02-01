@@ -37,7 +37,7 @@ GetSystemDEPPolicy(void)
 	if(pGetSystemDEPPolicy){
 		return pGetSystemDEPPolicy();
 	}else{
-		return OptIn;	
+		return SharedUserData->NXSupportPolicy;	
 	}	
 }
 
@@ -76,20 +76,31 @@ GetProcessDEPPolicy(HANDLE ProcessInformation, LPDWORD lpFlags, PBOOL lpPermanen
 	}
 }
 
-DWORD 
+BOOL 
 WINAPI 
 SetProcessDEPPolicy(DWORD dwFlags)
 {
 	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
 	NTSTATUS status;
-	ULONG dep_flags;
+	ULONG depFlags = 0;
 	
 	pSetProcessDEPPolicy = (void *)GetProcAddress(hkernel32, "SetProcessDEPPolicy");
 	if(pSetProcessDEPPolicy){
 		return pSetProcessDEPPolicy(dwFlags);
 	}else{
-		FIXME("(%d): stub\n", dwFlags);
-		SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-		return FALSE;	
+		if (dwFlags & PROCESS_DEP_ENABLE)
+			depFlags |= MEM_EXECUTE_OPTION_DISABLE | MEM_EXECUTE_OPTION_PERMANENT;
+		if (dwFlags & PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION)
+			depFlags |= MEM_EXECUTE_OPTION_DISABLE_THUNK_EMULATION;
+
+		status = NtSetInformationProcess( GetCurrentProcess(), ProcessExecuteFlags,
+													  &depFlags, sizeof(depFlags) );
+
+		if(NT_SUCCESS(status)){
+			return TRUE;
+		}else{
+			BaseSetLastNTError(status);
+			return FALSE;
+		}
 	}
 }
