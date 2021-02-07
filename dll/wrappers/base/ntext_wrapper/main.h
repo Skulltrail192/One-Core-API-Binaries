@@ -29,7 +29,6 @@
 #include <rtlavl.h>
 #include <rtltypes.h>
 #include <winnls.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <limits.h>
 #include <list.h>
@@ -106,6 +105,8 @@ static RTL_CRITICAL_SECTION loader_section;
 #define ACTIVATION_CONTEXT_SECTION_APPLICATION_SETTINGS          10
 #define ACTIVATION_CONTEXT_SECTION_COMPATIBILITY_INFO            11
 
+#define RtlGetCurrentThreadId()  (HandleToUlong(NtCurrentTeb()->ClientId.UniqueThread))
+
 /* Enumarations ****************************************/
 
 /* Structs *********************************************/
@@ -147,6 +148,8 @@ typedef struct _RTLP_SRWLOCK_SHARED_WAKE
     volatile struct _RTLP_SRWLOCK_SHARED_WAKE *Next;
 } volatile RTLP_SRWLOCK_SHARED_WAKE, *PRTLP_SRWLOCK_SHARED_WAKE;
 
+typedef struct _TP_IO TP_IO, *PTP_IO;
+
 typedef ULONG LOGICAL;
 
 typedef DWORD TP_VERSION, *PTP_VERSION;
@@ -177,16 +180,14 @@ typedef VOID (*PTP_WAIT_CALLBACK)(PTP_CALLBACK_INSTANCE Instance, PVOID Context,
 
 typedef VOID (WINAPI *PBAD_MEMORY_CALLBACK_ROUTINE)(VOID);
 
+typedef VOID (*PTP_IO_CALLBACK)(PTP_CALLBACK_INSTANCE,void*,void*,IO_STATUS_BLOCK*,PTP_IO);
+
 typedef BOOLEAN (*PSECURE_MEMORY_CACHE_CALLBACK)(
     _In_  PVOID Addr,
     _In_  SIZE_T Range
 );
 
 typedef PVOID PDELAYLOAD_FAILURE_SYSTEM_ROUTINE; 
-
-typedef struct _TP_IO{
-	void * 	dummy;
-}TP_IO,*PTP_IO;
 
 typedef VOID (CALLBACK *PTP_WIN32_IO_CALLBACK)(PTP_CALLBACK_INSTANCE,PVOID,PVOID,ULONG,ULONG_PTR,PTP_IO);
 
@@ -1045,6 +1046,29 @@ typedef union _LDR_DLL_NOTIFICATION_DATA
 
 typedef void (CALLBACK *PLDR_DLL_NOTIFICATION_FUNCTION)(ULONG, LDR_DLL_NOTIFICATION_DATA*, void*);
 
+typedef struct _TP_CALLBACK_ENVIRON_V3
+{
+    TP_VERSION Version;
+    PTP_POOL Pool;
+    PTP_CLEANUP_GROUP CleanupGroup;
+    PTP_CLEANUP_GROUP_CANCEL_CALLBACK CleanupGroupCancelCallback;
+    PVOID RaceDll;
+    struct _ACTIVATION_CONTEXT *ActivationContext;
+    PTP_SIMPLE_CALLBACK FinalizationCallback;
+    union
+    {
+        DWORD Flags;
+        struct
+        {
+            DWORD LongFunction:1;
+            DWORD Persistent:1;
+            DWORD Private:30;
+        } s;
+    } u;
+    TP_CALLBACK_PRIORITY CallbackPriority;
+    DWORD Size;
+} TP_CALLBACK_ENVIRON_V3;
+
 RTL_CRITICAL_SECTION TIME_tz_section;
 
 RTL_CRITICAL_SECTION LocaleCritSection;
@@ -1078,3 +1102,41 @@ RtlRunOnceExecuteOnce(
 	PRTL_RUN_ONCE_INIT_FN func,
     void *param, void **context 
 );	
+
+/* Threadpool functions */
+
+NTSYSAPI NTSTATUS  WINAPI TpAllocCleanupGroup(TP_CLEANUP_GROUP **);
+NTSYSAPI NTSTATUS  WINAPI TpAllocIoCompletion(TP_IO **,HANDLE,PTP_IO_CALLBACK,void *,TP_CALLBACK_ENVIRON *);
+NTSYSAPI NTSTATUS  WINAPI TpAllocPool(TP_POOL **,PVOID);
+NTSYSAPI NTSTATUS  WINAPI TpAllocTimer(TP_TIMER **,PTP_TIMER_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+NTSYSAPI NTSTATUS  WINAPI TpAllocWait(TP_WAIT **,PTP_WAIT_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+NTSYSAPI NTSTATUS  WINAPI TpAllocWork(TP_WORK **,PTP_WORK_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+NTSYSAPI void      WINAPI TpCallbackLeaveCriticalSectionOnCompletion(TP_CALLBACK_INSTANCE *,RTL_CRITICAL_SECTION *);
+NTSYSAPI NTSTATUS  WINAPI TpCallbackMayRunLong(TP_CALLBACK_INSTANCE *);
+NTSYSAPI void      WINAPI TpCallbackReleaseMutexOnCompletion(TP_CALLBACK_INSTANCE *,HANDLE);
+NTSYSAPI void      WINAPI TpCallbackReleaseSemaphoreOnCompletion(TP_CALLBACK_INSTANCE *,HANDLE,DWORD);
+NTSYSAPI void      WINAPI TpCallbackSetEventOnCompletion(TP_CALLBACK_INSTANCE *,HANDLE);
+NTSYSAPI void      WINAPI TpCallbackUnloadDllOnCompletion(TP_CALLBACK_INSTANCE *,HMODULE);
+NTSYSAPI void      WINAPI TpCancelAsyncIoOperation(TP_IO *);
+NTSYSAPI void      WINAPI TpDisassociateCallback(TP_CALLBACK_INSTANCE *);
+NTSYSAPI BOOL      WINAPI TpIsTimerSet(TP_TIMER *);
+NTSYSAPI void      WINAPI TpPostWork(TP_WORK *);
+NTSYSAPI NTSTATUS  WINAPI TpQueryPoolStackInformation(TP_POOL *, TP_POOL_STACK_INFORMATION *stack_info);
+NTSYSAPI void      WINAPI TpReleaseCleanupGroup(TP_CLEANUP_GROUP *);
+NTSYSAPI void      WINAPI TpReleaseCleanupGroupMembers(TP_CLEANUP_GROUP *,BOOL,PVOID);
+NTSYSAPI void      WINAPI TpReleaseIoCompletion(TP_IO *);
+NTSYSAPI void      WINAPI TpReleasePool(TP_POOL *);
+NTSYSAPI void      WINAPI TpReleaseTimer(TP_TIMER *);
+NTSYSAPI void      WINAPI TpReleaseWait(TP_WAIT *);
+NTSYSAPI void      WINAPI TpReleaseWork(TP_WORK *);
+NTSYSAPI void      WINAPI TpSetPoolMaxThreads(TP_POOL *,DWORD);
+NTSYSAPI BOOL      WINAPI TpSetPoolMinThreads(TP_POOL *,DWORD);
+NTSYSAPI NTSTATUS  WINAPI TpSetPoolStackInformation(TP_POOL *, TP_POOL_STACK_INFORMATION *stack_info);
+NTSYSAPI void      WINAPI TpSetTimer(TP_TIMER *, LARGE_INTEGER *,LONG,LONG);
+NTSYSAPI void      WINAPI TpSetWait(TP_WAIT *,HANDLE,LARGE_INTEGER *);
+NTSYSAPI NTSTATUS  WINAPI TpSimpleTryPost(PTP_SIMPLE_CALLBACK,PVOID,TP_CALLBACK_ENVIRON *);
+NTSYSAPI void      WINAPI TpStartAsyncIoOperation(TP_IO *);
+NTSYSAPI void      WINAPI TpWaitForIoCompletion(TP_IO *,BOOL);
+NTSYSAPI void      WINAPI TpWaitForTimer(TP_TIMER *,BOOL);
+NTSYSAPI void      WINAPI TpWaitForWait(TP_WAIT *,BOOL);
+NTSYSAPI void      WINAPI TpWaitForWork(TP_WORK *,BOOL);

@@ -454,7 +454,7 @@ SetupDiInstallDeviceInterfaces(
         if (!Result)
             goto cleanup;
 
-        SelectedDriver = (struct DriverInfoElement *)InstallParams.ClassInstallReserved;
+        SelectedDriver = (struct DriverInfoElement *)InstallParams.Reserved;
         if (SelectedDriver == NULL)
         {
             SetLastError(ERROR_NO_DRIVER_SELECTED);
@@ -626,18 +626,4 @@ SetupDiOpenDeviceInterfaceRegKey(
     }
 
     return hKey;
-}
-
-/***********************************************************************
- *		SetupDiDeleteDeviceInterfaceData (SETUPAPI.@)
- */
-BOOL
-WINAPI
-SetupDiDeleteDeviceInterfaceData(
-    HDEVINFO DeviceInfoSet,
-    PSP_DEVICE_INTERFACE_DATA DeviceInterfaceData)
-{
-    FIXME("SetupDiDeleteDeviceInterfaceData(%p %p) stub\n",
-          DeviceInfoSet, DeviceInterfaceData);
-    return TRUE;
 }

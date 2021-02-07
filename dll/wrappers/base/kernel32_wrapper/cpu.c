@@ -4,7 +4,7 @@ Copyright (c) 2018  Shorthorn Project
 
 Module Name:
 
-    curdir.c
+    cpu.c
 
 Abstract:
 

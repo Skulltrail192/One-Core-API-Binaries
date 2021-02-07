@@ -39,6 +39,7 @@
 
 #include "d3d9.h"
 #include "wine/config.h"
+#include "wine/port.h"
 #include "wine/wined3d.h"
 
 #define D3D9_MAX_VERTEX_SHADER_CONSTANTF 256
@@ -58,6 +59,48 @@ unsigned int wined3dmapflags_from_d3dmapflags(unsigned int flags) DECLSPEC_HIDDE
 void present_parameters_from_wined3d_swapchain_desc(D3DPRESENT_PARAMETERS *present_parameters,
         const struct wined3d_swapchain_desc *swapchain_desc, DWORD presentation_interval) DECLSPEC_HIDDEN;
 void d3dcaps_from_wined3dcaps(D3DCAPS9 *caps, const struct wined3d_caps *wined3d_caps) DECLSPEC_HIDDEN;
+
+typedef struct _D3D9_DRIVERCAPS
+{
+/* 0x0000 */    D3DCAPS9 DriverCaps9;
+/* 0x0130 */    DWORD dwDisplayWidth;
+/* 0x0134 */    DWORD dwDisplayHeight;
+/* 0x0138 */    D3DFORMAT RawDisplayFormat;
+/* 0x013c */    D3DFORMAT DisplayFormat;
+/* 0x0140 */    DWORD dwRefreshRate;
+/* 0x0144 */    DWORD unknown0081;
+/* 0x0148 */    DWORD dwSVBCaps;
+/* 0x014c */    DWORD dwVSBCaps;
+/* 0x0150 */    DWORD dwSVBCaps2;
+/* 0x0154 */    DWORD dwDriverCaps;
+/* 0x0158 */    DWORD NumSupportedFormatOps;
+/* 0x015c */    LPDDSURFACEDESC pSupportedFormatOps;
+/* 0x0160 */    DWORD unknown0088;
+/* 0x0164 */    DWORD NumSupportedExtendedModes;
+/* 0x0168 */    D3DDISPLAYMODE* pSupportedExtendedModes;
+/* 0x016c */    ULONG ulUniqueAdapterGroupId;
+/* 0x0170 */    DWORD NumSupportedQueries;
+/* 0x0174 */    D3DQUERYTYPE* pSupportedQueriesList;
+} D3D9_DRIVERCAPS, FAR *LPD3D9_DRIVERCAPS;
+
+typedef struct _Direct3D9DisplayAdapterInfo
+{
+/* 0x0000 */    GUID DisplayGuid;
+/* 0x0010 */    CHAR szDeviceName[MAX_PATH];
+/* 0x0114 */    DWORD dwStateFlags;
+/* 0x0118 */    BOOL bInUseFlag;
+/* 0x011c */    DWORD MasterAdapterIndex;
+/* 0x0120 */    DWORD AdapterIndexInGroup;
+/* 0x0124 */    DWORD NumAdaptersInGroup;
+/* 0x0128 */    DWORD NumSupportedD3DFormats;
+/* 0x012c */    DWORD NumSupportedD3DExtendedFormats;
+/* 0x0130 */    D3DDISPLAYMODE* pSupportedD3DFormats;
+/* 0x0134 */    D3DDISPLAYMODE* pSupportedD3DExtendedFormats;
+/* 0x0138 */    D3DFORMAT Supported16bitFormat;
+/* 0x013c */    D3D9_DRIVERCAPS DriverCaps;
+/* 0x02b4 */    DWORD unknown000104;
+/* 0x02b8 */    DWORD unknown000105;
+} Direct3D9DisplayAdapterInfo, FAR* LPDIRECT3D9_DISPLAYADAPTER;
 
 typedef struct _DIRECT3D9_INT
 {

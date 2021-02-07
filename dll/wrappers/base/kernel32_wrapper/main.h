@@ -13,22 +13,6 @@
 #include <pseh/pseh2.h>
 #define NDEBUG
 
-typedef enum _NORM_FORM { 
-  NormalizationOther  = 0,
-  NormalizationC      = 0x1,
-  NormalizationD      = 0x2,
-  NormalizationKC     = 0x5,
-  NormalizationKD     = 0x6
-} NORM_FORM;
-
-typedef RTL_SRWLOCK SRWLOCK, *PSRWLOCK;
-
-typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
-
-volatile long TzSpecificCache;
-
-extern ULONG BaseDllTag;
-
 #include <winuser.h>
 #include <cmfuncs.h>
 #include <psfuncs.h>
@@ -171,9 +155,40 @@ extern ULONG BaseDllTag;
 #define EXCEPTION_WINE_STUB       0x80000100  /* stub entry point called */
 #define EXCEPTION_WINE_ASSERTION 0x80000101 /* assertion failed */
 
+#if (_WIN32_WINNT < _WIN32_WINNT_VISTA)
+ 
+#define FileIoCompletionNotificationInformation	41
+#define FileIoStatusBlockRangeInformation	 42
+#define FileIoPriorityHintInformation	43
+#define FileSfioReserveInformation	44
+#define FileSfioVolumeInformation	45
+#define FileHardLinkInformation	46
+#define FileProcessIdsUsingFileInformation	47
+#define FileNormalizedNameInformation	48
+#define FileNetworkPhysicalNameInformation	49
+#define FileIdGlobalTxDirectoryInformation	50
+#define FileIsRemoteDeviceInformation	51
+#define FileUnusedInformation	52
+#define FileNumaNodeInformation	53
+#define FileStandardLinkInformation	54
+#define FileRemoteProtocolInformation	55
+	
+#endif	
+
+volatile long TzSpecificCache;
+extern ULONG BaseDllTag;
 PBASE_STATIC_SERVER_DATA BaseStaticServerData;
 extern BOOL bIsFileApiAnsi;
 extern HMODULE kernel32_handle DECLSPEC_HIDDEN;
+
+typedef RTL_SRWLOCK SRWLOCK, *PSRWLOCK;
+
+typedef RTL_CONDITION_VARIABLE CONDITION_VARIABLE, *PCONDITION_VARIABLE;
+
+typedef struct _FILE_IO_COMPLETION_NOTIFICATION_INFORMATION {
+    ULONG Flags;
+} FILE_IO_COMPLETION_NOTIFICATION_INFORMATION, *PFILE_IO_COMPLETION_NOTIFICATION_INFORMATION;
+
 
 /* TYPE DEFINITIONS **********************************************************/
 typedef UINT(WINAPI * PPROCESS_START_ROUTINE)(VOID);

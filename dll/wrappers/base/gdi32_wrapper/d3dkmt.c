@@ -39,33 +39,7 @@ struct graphics_driver
     HMODULE                    module;  /* module handle */
     const struct gdi_dc_funcs *funcs;
 };
-
-LSTATUS
-WINAPI
-RegGetValueW(
-  _In_ HKEY hkey,
-  _In_opt_ LPCWSTR lpSubKey,
-  _In_opt_ LPCWSTR lpValue,
-  _In_ DWORD dwFlags,
-  _Out_opt_ LPDWORD pdwType,
-  _When_((dwFlags & 0x7F) == RRF_RT_REG_SZ || (dwFlags & 0x7F) == RRF_RT_REG_EXPAND_SZ ||
-    (dwFlags & 0x7F) == (RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ) || *pdwType == REG_SZ ||
-    *pdwType == REG_EXPAND_SZ, _Post_z_)
-    _When_((dwFlags & 0x7F) == RRF_RT_REG_MULTI_SZ || *pdwType == REG_MULTI_SZ, _Post_ _NullNull_terminated_)
-      _Out_writes_bytes_to_opt_(*pcbData,*pcbData) PVOID pvData,
-  _Inout_opt_ LPDWORD pcbData);
-  
-WINSETUPAPI BOOL SetupDiGetDevicePropertyW(
-  HDEVINFO         DeviceInfoSet,
-  PSP_DEVINFO_DATA DeviceInfoData,
-  const DEVPROPKEY *PropertyKey,
-  DEVPROPTYPE      *PropertyType,
-  PBYTE            PropertyBuffer,
-  DWORD            PropertyBufferSize,
-  PDWORD           RequiredSize,
-  DWORD            Flags
-);
-
+ 
 static HWND (WINAPI *pGetDesktopWindow)(void);
 static INT (WINAPI *pGetSystemMetrics)(INT);
 //static DPI_AWARENESS_CONTEXT (WINAPI *pSetThreadDpiAwarenessContext)(DPI_AWARENESS_CONTEXT);  

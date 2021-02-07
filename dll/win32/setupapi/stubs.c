@@ -39,24 +39,6 @@ INT WINAPI SetupPromptReboot( HSPFILEQ file_queue, HWND owner, BOOL scan_only )
 }
 
 /***********************************************************************
- *      SetupAddToSourceListA (SETUPAPI.@)
- */
-BOOL WINAPI SetupAddToSourceListA(DWORD flags, PCSTR source)
-{
-    FIXME("0x%08x %s: stub\n", flags, debugstr_a(source));
-    return TRUE;
-}
-
-/***********************************************************************
- *      SetupAddToSourceListW (SETUPAPI.@)
- */
-BOOL WINAPI SetupAddToSourceListW(DWORD flags, PCWSTR source)
-{
-    FIXME("0x%08x %s: stub\n", flags, debugstr_w(source));
-    return TRUE;
-}
-
-/***********************************************************************
  *      SetupSetSourceListA (SETUPAPI.@)
  */
 BOOL WINAPI SetupSetSourceListA(DWORD flags, PCSTR *list, UINT count)
@@ -118,6 +100,13 @@ WINSETUPAPI BOOL WINAPI SetupDiGetDeviceInterfaceAlias(IN HDEVINFO  DeviceInfoSe
 {
     FIXME("%p %p %p %p %p stub\n", DeviceInfoSet, DeviceInterfaceData, AliasInterfaceClassGuid, AliasDeviceInterfaceData);
     SetLastError(ERROR_INVALID_PARAMETER);
+    return FALSE;
+}
+
+WINSETUPAPI BOOL WINAPI SetupSetNonInteractiveMode(BOOL NonInteractiveFlag)
+{
+    FIXME("(%d) stub\n", NonInteractiveFlag);
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
     return FALSE;
 }
 

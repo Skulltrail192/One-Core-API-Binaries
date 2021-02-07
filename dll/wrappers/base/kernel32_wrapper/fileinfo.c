@@ -4,7 +4,7 @@ Copyright (c) 2017 Shorthorn Project
 
 Module Name:
 
-    syblink.c
+    fileinfo.c
 
 Abstract:
 
@@ -62,7 +62,10 @@ FilenameA2W(
 BOOL WINAPI SetFileCompletionNotificationModes( HANDLE handle, UCHAR flags )
 {
 	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
+	NTSTATUS Status;
+	
 	pSetFileCompletionNotificationModes = (void *)GetProcAddress(hkernel32, "SetFileCompletionNotificationModes");
+	
 	if(pSetFileCompletionNotificationModes){
 		return pSetFileCompletionNotificationModes(handle, flags);
 	}else{
@@ -70,7 +73,14 @@ BOOL WINAPI SetFileCompletionNotificationModes( HANDLE handle, UCHAR flags )
 		IO_STATUS_BLOCK io;
 
 		info.Flags = flags;
-		return set_ntstatus( NtSetInformationFile( file, &io, &info, sizeof(info),
-												   FileIoCompletionNotificationInformation ));
+		Status = NtSetInformationFile( handle, &io, &info, sizeof(info),
+												   FileIoCompletionNotificationInformation );
+		
+		if(NT_SUCCESS(Status)){
+			return TRUE;
+		}else{
+			SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+			return FALSE;
+		}
 	}
 }

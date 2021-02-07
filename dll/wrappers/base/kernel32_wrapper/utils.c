@@ -4,7 +4,7 @@ Copyright (c) 2017 Shorthorn Project
 
 Module Name:
 
-    syblink.c
+    utils.c
 
 Abstract:
 

@@ -76,6 +76,14 @@ typedef VOID (*PTP_WAIT_CALLBACK)(PTP_CALLBACK_INSTANCE Instance, PVOID Context,
 
 typedef VOID (WINAPI *PBAD_MEMORY_CALLBACK_ROUTINE)(VOID);
 
+typedef enum _NORM_FORM { 
+  NormalizationOther  = 0,
+  NormalizationC      = 0x1,
+  NormalizationD      = 0x2,
+  NormalizationKC     = 0x5,
+  NormalizationKD     = 0x6
+} NORM_FORM;
+
 typedef BOOLEAN (*PSECURE_MEMORY_CACHE_CALLBACK)(
     _In_  PVOID Addr,
     _In_  SIZE_T Range

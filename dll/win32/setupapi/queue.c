@@ -362,11 +362,7 @@ static WCHAR *get_destination_dir( HINF hinf, const WCHAR *section )
 }
 
 
-#ifndef __REACTOS__
 static void (WINAPI *pExtractFiles)( LPSTR, LPSTR, DWORD, DWORD, DWORD, DWORD );
-#else
-static void (WINAPI *pExtractFiles)( LPSTR, LPSTR, DWORD, LPSTR, LPVOID, DWORD );
-#endif
 
 /***********************************************************************
  *            extract_cabinet_file
@@ -376,21 +372,14 @@ static void (WINAPI *pExtractFiles)( LPSTR, LPSTR, DWORD, LPSTR, LPVOID, DWORD )
 static BOOL extract_cabinet_file( const WCHAR *cabinet, const WCHAR *root,
                                   const WCHAR *src, const WCHAR *dst )
 {
-#ifndef __REACTOS__
     static const WCHAR extW[] = {'.','c','a','b',0};
-#endif
     static HMODULE advpack;
 
     char *cab_path, *cab_file;
     int len = strlenW( cabinet );
 
-#ifdef __REACTOS__
-    TRACE("extract_cabinet_file(cab = '%s' ; root = '%s' ; src = '%s' ; dst = '%s')\n",
-          debugstr_w(cabinet), debugstr_w(root), debugstr_w(src), debugstr_w(dst));
-#else
     /* make sure the cabinet file has a .cab extension */
     if (len <= 4 || strcmpiW( cabinet + len - 4, extW )) return FALSE;
-#endif
     if (!pExtractFiles)
     {
         if (!advpack && !(advpack = LoadLibraryA( "advpack.dll" )))
@@ -416,74 +405,10 @@ static BOOL extract_cabinet_file( const WCHAR *cabinet, const WCHAR *root,
     if (cab_file[0] && cab_file[strlen(cab_file)-1] != '\\') strcat( cab_file, "\\" );
     WideCharToMultiByte( CP_ACP, 0, cabinet, -1, cab_file + strlen(cab_file), len, NULL, NULL );
     FIXME( "awful hack: extracting cabinet %s\n", debugstr_a(cab_file) );
-
-#ifdef __REACTOS__
-    {
-    BOOL Success;
-    char *src_file;
-    const WCHAR *src_fileW;
-    WCHAR TempPath[MAX_PATH];
-
-    /* Retrieve the temporary path */
-    if (!GetTempPathW(ARRAYSIZE(TempPath), TempPath))
-    {
-        ERR("GetTempPathW error\n");
-        HeapFree( GetProcessHeap(), 0, cab_file );
-        return FALSE;
-    }
-
-    /* Build the real path to where the file will be extracted */
-    HeapFree( GetProcessHeap(), 0, cab_path );
-    if (!(cab_path = strdupWtoA( TempPath )))
-    {
-        HeapFree( GetProcessHeap(), 0, cab_file );
-        return FALSE;
-    }
-
-    /* Build the file list */
-    src_fileW = strrchrW(src, '\\'); // Find where the filename starts.
-    if (src_fileW) ++src_fileW;
-    else src_fileW = src;
-    /* Convert to ANSI */
-    if (!(src_file = strdupWtoA( src_fileW )))
-    {
-        HeapFree( GetProcessHeap(), 0, cab_file );
-        HeapFree( GetProcessHeap(), 0, cab_path );
-        return FALSE;
-    }
-
-    /* Prepare for the move operation */
-    /* Build the full path to the extracted file, that will be renamed */
-    if (!(src = HeapAlloc( GetProcessHeap(), 0, (strlenW(TempPath) + 1 + strlenW(src_fileW) + 1) * sizeof(WCHAR) )))
-    {
-        HeapFree( GetProcessHeap(), 0, src_file );
-        HeapFree( GetProcessHeap(), 0, cab_file );
-        HeapFree( GetProcessHeap(), 0, cab_path );
-        return FALSE;
-    }
-    concat_W( (WCHAR*)src, NULL, TempPath, src_fileW );
-
-    TRACE("pExtractFiles(cab_file = '%s' ; cab_path = '%s', src_file = '%s')\n",
-          debugstr_a(cab_file), debugstr_a(cab_path), debugstr_a(src_file));
-
-    /* Extract to temporary folder */
-    pExtractFiles( cab_file, cab_path, 0, src_file, NULL, 0 );
-    HeapFree( GetProcessHeap(), 0, src_file );
-    HeapFree( GetProcessHeap(), 0, cab_file );
-    HeapFree( GetProcessHeap(), 0, cab_path );
-
-    /* Move to destination, overwriting the original file if needed */
-    TRACE("Renaming src = '%s' to dst = '%s')\n", debugstr_w(src), debugstr_w(dst));
-    Success = MoveFileExW( src, dst , MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED );
-    HeapFree( GetProcessHeap(), 0, (WCHAR*)src );
-    return Success;
-    }
-#else
     pExtractFiles( cab_file, cab_path, 0, 0, 0, 0 );
     HeapFree( GetProcessHeap(), 0, cab_file );
     HeapFree( GetProcessHeap(), 0, cab_path );
     return CopyFileW( src, dst, FALSE /*FIXME*/ );
-#endif
 }
 
 
@@ -1062,22 +987,22 @@ static BOOL do_file_copyW( LPCWSTR source, LPCWSTR target, DWORD style,
 {
     BOOL rc = FALSE;
     BOOL docopy = TRUE;
-#ifdef __REACTOS__
+    WCHAR TempFile[MAX_PATH];
     INT hSource, hTemp;
     OFSTRUCT OfStruct;
     WCHAR TempPath[MAX_PATH];
-    WCHAR TempFile[MAX_PATH];
-    LONG lRes;
-    DWORD dwLastError;
-#endif
 
     TRACE("copy %s to %s style 0x%x\n",debugstr_w(source),debugstr_w(target),style);
 
-#ifdef __REACTOS__
     /* Get a temp file name */
-    if (!GetTempPathW(ARRAYSIZE(TempPath), TempPath))
+    if (!GetTempPathW(sizeof(TempPath) / sizeof(WCHAR), TempPath))
     {
         ERR("GetTempPathW error\n");
+        return FALSE;
+    }
+    if (!GetTempFileNameW(TempPath, L"", 0, TempFile))
+    {
+        ERR("GetTempFileNameW(%s) error\n", debugstr_w(TempPath));
         return FALSE;
     }
 
@@ -1085,22 +1010,7 @@ static BOOL do_file_copyW( LPCWSTR source, LPCWSTR target, DWORD style,
     hSource = LZOpenFileW((LPWSTR)source, &OfStruct, OF_READ);
     if (hSource < 0)
     {
-        TRACE("LZOpenFileW(1) error %d %s\n", (int)hSource, debugstr_w(source));
-        return FALSE;
-    }
-
-    if (!GetTempFileNameW(TempPath, L"", 0, TempFile))
-    {
-        dwLastError = GetLastError();
-
-        ERR("GetTempFileNameW(%s) error\n", debugstr_w(TempPath));
-
-        /* Close the source handle */
-        LZClose(hSource);
-
-        /* Restore error condition triggered by GetTempFileNameW */
-        SetLastError(dwLastError);
-
+        ERR("LZOpenFileW(1) error %d %s\n", (int)hSource, debugstr_w(source));
         return FALSE;
     }
 
@@ -1108,42 +1018,21 @@ static BOOL do_file_copyW( LPCWSTR source, LPCWSTR target, DWORD style,
     hTemp = LZOpenFileW(TempFile, &OfStruct, OF_CREATE);
     if (hTemp < 0)
     {
-        dwLastError = GetLastError();
+        DWORD dwLastError = GetLastError();
 
         ERR("LZOpenFileW(2) error %d %s\n", (int)hTemp, debugstr_w(TempFile));
 
         /* Close the source handle */
         LZClose(hSource);
 
-        /* Delete temp file if an error is signaled */
-        DeleteFileW(TempFile);
-
         /* Restore error condition triggered by LZOpenFileW */
         SetLastError(dwLastError);
-
         return FALSE;
     }
 
-    lRes = LZCopy(hSource, hTemp);
-
-    dwLastError = GetLastError();
-
+    LZCopy(hSource, hTemp);
     LZClose(hSource);
     LZClose(hTemp);
-
-    if (lRes < 0)
-    {
-        ERR("LZCopy error %d (%s, %s)\n", (int)lRes, debugstr_w(source), debugstr_w(TempFile));
-
-        /* Delete temp file if copy was not successful */
-        DeleteFileW(TempFile);
-
-        /* Restore error condition triggered by LZCopy */
-        SetLastError(dwLastError);
-
-        return FALSE;
-    }
-#endif
 
     /* before copy processing */
     if (style & SP_COPY_REPLACEONLY)
@@ -1822,7 +1711,7 @@ UINT WINAPI SetupDefaultQueueCallbackW( PVOID context, UINT notification,
         TRACE( "end copy %s -> %s\n", debugstr_w(paths->Source), debugstr_w(paths->Target) );
         return 0;
     case SPFILENOTIFY_COPYERROR:
-        TRACE( "copy error %d %s -> %s\n", paths->Win32Error,
+        ERR( "copy error %d %s -> %s\n", paths->Win32Error,
              debugstr_w(paths->Source), debugstr_w(paths->Target) );
         return FILEOP_SKIP;
     case SPFILENOTIFY_NEEDMEDIA:
