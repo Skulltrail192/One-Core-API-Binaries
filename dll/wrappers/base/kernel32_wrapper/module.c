@@ -619,7 +619,7 @@ GetProcAddressInternal(
   _In_ LPCSTR  lpProcName
 )
 {
-	DbgPrint("GetProcAddress::Function name: %s\n", lpProcName);
+	//DbgPrint("GetProcAddress::Function name: %s\n", lpProcName);
 	return GetProcAddress(hModule, lpProcName);
 }
 
@@ -629,7 +629,7 @@ GetModuleHandleInternalA(
   _In_opt_ LPCTSTR lpModuleName
 )
 {
-	DbgPrint("GetModuleHandleA::Module name: %s\n", lpModuleName);
+	//DbgPrint("GetModuleHandleA::Module name: %s\n", lpModuleName);
 	return GetModuleHandleA(lpModuleName);
 }
 
@@ -639,7 +639,7 @@ GetModuleHandleInternalW(
   _In_opt_ LPCWSTR lpModuleName
 )
 {
-	DbgPrint("GetModuleHandleW::Module name: %ws\n", lpModuleName);
+	//DbgPrint("GetModuleHandleW::Module name: %ws\n", lpModuleName);
 	return GetModuleHandleW(lpModuleName);
 }
 
@@ -649,7 +649,7 @@ LoadLibraryInternalA(
   _In_ LPCTSTR lpFileName
 )
 {
-	DbgPrint("LoadLibraryA::File name: %s\n", lpFileName);
+	//DbgPrint("LoadLibraryA::File name: %s\n", lpFileName);
 	return LoadLibraryA(lpFileName);
 }
 
@@ -659,7 +659,7 @@ LoadLibraryInternalW(
   _In_ LPCWSTR lpFileName
 )
 {
-	DbgPrint("LoadLibraryW::File name: %ws\n", lpFileName);
+	//DbgPrint("LoadLibraryW::File name: %ws\n", lpFileName);
 	return LoadLibraryW(lpFileName);
 }
 
