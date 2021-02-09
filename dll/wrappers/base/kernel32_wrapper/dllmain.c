@@ -26,7 +26,6 @@ PPEB Peb;
 HMODULE kernel32_handle = NULL;
 ULONG BaseDllTag;
 
-void InitializeCriticalForDirectories();
 void InitializeCriticalForLocaleInfo();
 
 BOOL
@@ -45,7 +44,6 @@ BaseDllInitialize(
         {
             /* Insert more dll attach stuff here! */
 			kernel32_handle = GetModuleHandleW(L"kernelex");
-			InitializeCriticalForDirectories();
 			InitializeCriticalForLocaleInfo();
 			
 			BaseDllTag = RtlCreateTagHeap( RtlProcessHeap(),

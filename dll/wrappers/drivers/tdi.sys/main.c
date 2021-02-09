@@ -1,5 +1,7 @@
 /*
- * Copyright 2018 Louis Lenders
+ * tdi.sys
+ *
+ * Copyright 2015 Austin English
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,23 +20,19 @@
 
 #include <stdarg.h>
 
+#include "ntstatus.h"
+#define WIN32_NO_STATUS
 #include "windef.h"
 #include "winbase.h"
+#include "winternl.h"
+#include "ddk/wdm.h"
 #include "wine/debug.h"
 
-WINE_DEFAULT_DEBUG_CHANNEL(sas);
+WINE_DEFAULT_DEBUG_CHANNEL(tdi);
 
-BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD reason, LPVOID lpv)
+NTSTATUS WINAPI DriverEntry( DRIVER_OBJECT *driver, UNICODE_STRING *path )
 {
-    TRACE("(%p, %d, %p)\n", hInstDLL, reason, lpv);
+    TRACE( "(%p, %s)\n", driver, debugstr_w(path->Buffer) );
 
-    switch (reason)
-    {
-    case DLL_WINE_PREATTACH:
-        return FALSE;    /* prefer native version */
-    case DLL_PROCESS_ATTACH:
-        DisableThreadLibraryCalls(hInstDLL);
-        break;
-    }
-    return TRUE;
+    return STATUS_SUCCESS;
 }

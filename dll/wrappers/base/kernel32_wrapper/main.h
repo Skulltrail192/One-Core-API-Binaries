@@ -43,6 +43,8 @@
 #include "datetime.h"
 #include <shlwapi.h>
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 #define FIND_DATA_SIZE 0x4000
 #define BASESRV_SERVERDLL_INDEX 1
 #define LOCALE_NAME_USER_DEFAULT    NULL

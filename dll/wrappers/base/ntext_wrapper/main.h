@@ -107,6 +107,19 @@ static RTL_CRITICAL_SECTION loader_section;
 
 #define RtlGetCurrentThreadId()  (HandleToUlong(NtCurrentTeb()->ClientId.UniqueThread))
 
+#define LOAD_LIBRARY_REQUIRE_SIGNED_TARGET  0x00000080
+#define LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR    0x00000100
+#define LOAD_LIBRARY_SEARCH_APPLICATION_DIR 0x00000200
+#define LOAD_LIBRARY_SEARCH_USER_DIRS       0x00000400
+#define LOAD_LIBRARY_SEARCH_SYSTEM32        0x00000800
+#define LOAD_LIBRARY_SEARCH_DEFAULT_DIRS    0x00001000
+
+/* flags for SetSearchPathMode */
+#define BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE  0x00001
+#define BASE_SEARCH_PATH_DISABLE_SAFE_SEARCHMODE 0x10000
+#define BASE_SEARCH_PATH_PERMANENT               0x08000
+#define BASE_SEARCH_PATH_INVALID_FLAGS         (~0x18001)
+
 /* Enumarations ****************************************/
 
 /* Structs *********************************************/
@@ -187,7 +200,7 @@ typedef BOOLEAN (*PSECURE_MEMORY_CACHE_CALLBACK)(
     _In_  SIZE_T Range
 );
 
-typedef PVOID PDELAYLOAD_FAILURE_SYSTEM_ROUTINE; 
+typedef PVOID (WINAPI *PDELAYLOAD_FAILURE_SYSTEM_ROUTINE)(LPCSTR, LPCSTR);
 
 typedef VOID (CALLBACK *PTP_WIN32_IO_CALLBACK)(PTP_CALLBACK_INSTANCE,PVOID,PVOID,ULONG,ULONG_PTR,PTP_IO);
 
@@ -977,6 +990,19 @@ typedef enum {
      ACTCTX_COMPATIBILITY_ELEMENT_TYPE Type;
 } COMPATIBILITY_CONTEXT_ELEMENT, *PCOMPATIBILITY_CONTEXT_ELEMENT;
 
+/* return type of RtlDetermineDosPathNameType_U (FIXME: not the correct names) */
+typedef enum
+{
+    INVALID_PATH = 0,
+    UNC_PATH,              /* "//foo" */
+    ABSOLUTE_DRIVE_PATH,   /* "c:/foo" */
+    RELATIVE_DRIVE_PATH,   /* "c:foo" */
+    ABSOLUTE_PATH,         /* "/foo" */
+    RELATIVE_PATH,         /* "foo" */
+    DEVICE_PATH,           /* "//./foo" */
+    UNC_DOT_PATH           /* "//." */
+} DOS_PATHNAME_TYPE;
+
 struct assembly
 {
     enum assembly_type             type;
@@ -1069,9 +1095,9 @@ typedef struct _TP_CALLBACK_ENVIRON_V3
     DWORD Size;
 } TP_CALLBACK_ENVIRON_V3;
 
-RTL_CRITICAL_SECTION TIME_tz_section;
+RTL_CRITICAL_SECTION time_tz_section;
 
-RTL_CRITICAL_SECTION LocaleCritSection;
+RTL_CRITICAL_SECTION localeCritSection;
 
 HANDLE GlobalKeyedEventHandle;
 
@@ -1140,3 +1166,5 @@ NTSYSAPI void      WINAPI TpWaitForIoCompletion(TP_IO *,BOOL);
 NTSYSAPI void      WINAPI TpWaitForTimer(TP_TIMER *,BOOL);
 NTSYSAPI void      WINAPI TpWaitForWait(TP_WAIT *,BOOL);
 NTSYSAPI void      WINAPI TpWaitForWork(TP_WORK *,BOOL);
+
+NTSYSAPI NTSTATUS  WINAPI RtlDosPathNameToNtPathName_U_WithStatus(PCWSTR,PUNICODE_STRING,PWSTR*,CURDIR*);

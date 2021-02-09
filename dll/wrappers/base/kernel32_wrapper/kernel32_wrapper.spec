@@ -997,7 +997,7 @@
 @ stdcall SetThreadStackGuarantee(ptr)
 
 #Native in XP SP3 and Missing in Server 2003 SP2 with Updates
-@ stdcall SetSearchPathMode(long) kernelex.SetSearchPathMode
+@ stdcall SetSearchPathMode(long)
 @ stdcall GetProcessDEPPolicy(ptr ptr ptr)
 @ stdcall GetSystemDEPPolicy() 
 @ stdcall SetProcessDEPPolicy(long) 

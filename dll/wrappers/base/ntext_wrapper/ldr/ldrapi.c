@@ -28,15 +28,10 @@ static inline void *get_rva( HMODULE module, DWORD va )
 /****************************************************************************
  *              LdrResolveDelayLoadedAPI   (NTDLL.@)
  */
-void* 
-WINAPI 
-LdrResolveDelayLoadedAPI( 
-	void* base, 
-	const IMAGE_DELAYLOAD_DESCRIPTOR* desc,
-    PDELAYLOAD_FAILURE_DLL_CALLBACK dllhook, 
-	void* syshook,
-    IMAGE_THUNK_DATA* addr, ULONG flags 
-)
+void* WINAPI LdrResolveDelayLoadedAPI( void* base, const IMAGE_DELAYLOAD_DESCRIPTOR* desc,
+                                       PDELAYLOAD_FAILURE_DLL_CALLBACK dllhook,
+                                       PDELAYLOAD_FAILURE_SYSTEM_ROUTINE syshook,
+                                       IMAGE_THUNK_DATA* addr, ULONG flags )
 {
     IMAGE_THUNK_DATA *pIAT, *pINT;
     DELAYLOAD_INFO delayinfo;
@@ -46,6 +41,8 @@ LdrResolveDelayLoadedAPI(
     NTSTATUS nts;
     FARPROC fp;
     DWORD id;
+
+    DbgPrint( "LdrResolveDelayLoadedAPI::(%p, %p, %p, %p, %p, 0x%08x)\n", base, desc, dllhook, syshook, addr, flags );
 
     phmod = get_rva(base, desc->ModuleHandleRVA);
     pIAT = get_rva(base, desc->ImportAddressTableRVA);
@@ -60,7 +57,7 @@ LdrResolveDelayLoadedAPI(
             nts = STATUS_NO_MEMORY;
             goto fail;
         }
-        nts = LdrLoadDll(NULL, 0, &mod, (void**)phmod);
+        nts = LdrLoadDll(NULL, 0, &mod, phmod);
         RtlFreeUnicodeString(&mod);
         if (nts) goto fail;
     }
@@ -91,7 +88,20 @@ fail:
     delayinfo.TargetModuleBase = *phmod;
     delayinfo.Unused = NULL;
     delayinfo.LastError = nts;
-    return dllhook(4, &delayinfo);
+
+    if (dllhook)
+        return dllhook(4, &delayinfo);
+
+    if (IMAGE_SNAP_BY_ORDINAL(pINT[id].u1.Ordinal))
+    {
+        DWORD_PTR ord = LOWORD(pINT[id].u1.Ordinal);
+        return syshook(name, (const char *)ord);
+    }
+    else
+    {
+        const IMAGE_IMPORT_BY_NAME* iibn = get_rva(base, pINT[id].u1.AddressOfData);
+        return syshook(name, (const char *)iibn->Name);
+    }
 }
 
 NTSTATUS
@@ -116,22 +126,6 @@ LdrResolveDelayLoadsFromDll(
 {
 	DbgPrint("UNIMPLEMENTED: LdrResolveDelayLoadsFromDll");		
 	return STATUS_SUCCESS;	
-}
-
-NTSTATUS  
-NTAPI 
-LdrRemoveDllDirectory(
-  _In_  DLL_DIRECTORY_COOKIE Cookie
-)
-{
-	return STATUS_SUCCESS;
-}
-
-DLL_DIRECTORY_COOKIE 
-NTAPI
-LdrAddDllDirectory(LPCWSTR NewDirectory)
-{
-	return NULL;
 }
 
 HANDLE ImageExecOptionsKey;

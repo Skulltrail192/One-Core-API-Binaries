@@ -34,12 +34,12 @@ struct rtl_work_item
 #define EXPIRE_NEVER       (~(ULONGLONG)0)
 #define TIMER_QUEUE_MAGIC  0x516d6954   /* TimQ */
 
-static RTL_CRITICAL_SECTION_DEBUG critsect_compl_debug;
+static CRITICAL_SECTION_DEBUG critsect_compl_debug;
 
 static struct
 {
     HANDLE                  compl_port;
-    RTL_CRITICAL_SECTION    threadpool_compl_cs;
+    CRITICAL_SECTION    	threadpool_compl_cs;
 }
 old_threadpool =
 {
@@ -47,7 +47,7 @@ old_threadpool =
     { &critsect_compl_debug, -1, 0, 0, 0, 0 },  /* threadpool_compl_cs */
 };
 
-static RTL_CRITICAL_SECTION_DEBUG critsect_compl_debug =
+static CRITICAL_SECTION_DEBUG critsect_compl_debug =
 {
     0, 0, &old_threadpool.threadpool_compl_cs,
     { &critsect_compl_debug.ProcessLocksList, &critsect_compl_debug.ProcessLocksList },
@@ -85,7 +85,7 @@ struct queue_timer
 struct timer_queue
 {
     DWORD magic;
-    RTL_CRITICAL_SECTION cs;
+    CRITICAL_SECTION cs;
     struct list timers;         /* sorted by expiration time */
     BOOL quit;                  /* queue should be deleted; once set, never unset */
     HANDLE event;
@@ -232,7 +232,7 @@ struct threadpool_group
 };
 
 /* global timerqueue object */
-static RTL_CRITICAL_SECTION_DEBUG timerqueue_debug;
+static CRITICAL_SECTION_DEBUG timerqueue_debug;
 
 static struct
 {
@@ -251,7 +251,7 @@ timerqueue =
     RTL_CONDITION_VARIABLE_INIT                 /* update_event */
 };
 
-static RTL_CRITICAL_SECTION_DEBUG timerqueue_debug =
+static CRITICAL_SECTION_DEBUG timerqueue_debug =
 {
     0, 0, &timerqueue.cs,
     { &timerqueue_debug.ProcessLocksList, &timerqueue_debug.ProcessLocksList },
@@ -259,7 +259,7 @@ static RTL_CRITICAL_SECTION_DEBUG timerqueue_debug =
 };
 
 /* global waitqueue object */
-static RTL_CRITICAL_SECTION_DEBUG waitqueue_debug;
+static CRITICAL_SECTION_DEBUG waitqueue_debug;
 
 static struct
 {
@@ -274,7 +274,7 @@ waitqueue =
     LIST_INIT( waitqueue.buckets )              /* buckets */
 };
 
-static RTL_CRITICAL_SECTION_DEBUG waitqueue_debug =
+static CRITICAL_SECTION_DEBUG waitqueue_debug =
 {
     0, 0, &waitqueue.cs,
     { &waitqueue_debug.ProcessLocksList, &waitqueue_debug.ProcessLocksList },
@@ -291,7 +291,7 @@ struct waitqueue_bucket
 };
 
 /* global I/O completion queue object */
-static RTL_CRITICAL_SECTION_DEBUG ioqueue_debug;
+static CRITICAL_SECTION_DEBUG ioqueue_debug;
 
 static struct
 {
@@ -306,7 +306,7 @@ ioqueue =
     { &ioqueue_debug, -1, 0, 0, 0, 0 },
 };
 
-static RTL_CRITICAL_SECTION_DEBUG ioqueue_debug =
+static CRITICAL_SECTION_DEBUG ioqueue_debug =
 {
     0, 0, &ioqueue.cs,
     { &ioqueue_debug.ProcessLocksList, &ioqueue_debug.ProcessLocksList },

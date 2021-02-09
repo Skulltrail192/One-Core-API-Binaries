@@ -20,12 +20,14 @@ Revision History:
 
 #include <main.h>
 
-extern RTL_CRITICAL_SECTION TIME_tz_section;
-extern RTL_CRITICAL_SECTION LocaleCritSection;
+extern RTL_CRITICAL_SECTION time_tz_section;
+extern RTL_CRITICAL_SECTION localeCritSection;
 extern RTL_CRITICAL_SECTION loader_section;
+extern RTL_CRITICAL_SECTION dlldir_section;
 
 VOID RtlpInitializeKeyedEvent(VOID);
 VOID RtlpCloseKeyedEvent(VOID);
+void load_global_options(void);
 
 /*****************************************************
  *      DllMain
@@ -40,9 +42,11 @@ LdrInitialize(
 {
     if (dwReason == DLL_PROCESS_ATTACH)
     {
-		RtlInitializeCriticalSection(&TIME_tz_section);
-		RtlInitializeCriticalSection(&LocaleCritSection);
+		RtlInitializeCriticalSection(&time_tz_section);
+		RtlInitializeCriticalSection(&localeCritSection);
 		RtlInitializeCriticalSection(&loader_section);
+		RtlInitializeCriticalSection(&dlldir_section);
+		load_global_options();
         LdrDisableThreadCalloutsForDll(hDll);
         RtlpInitializeKeyedEvent();
     }

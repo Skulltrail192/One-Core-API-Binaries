@@ -666,3 +666,9 @@ RtlWaitOnAddress(
     const LARGE_INTEGER *timeout 
 );
 								  
+NTSYSAPI NTSTATUS  WINAPI LdrGetDllPath(PCWSTR,ULONG,PWSTR*,PWSTR*);								  
+NTSYSAPI void      WINAPI RtlReleasePath(PWSTR);
+NTSYSAPI NTSTATUS  WINAPI LdrAddDllDirectory(const UNICODE_STRING*,void**);
+NTSYSAPI NTSTATUS  WINAPI LdrSetDefaultDllDirectories(ULONG);
+NTSYSAPI NTSTATUS  WINAPI RtlSetSearchPathMode(ULONG);
+NTSYSAPI NTSTATUS  WINAPI LdrRemoveDllDirectory(void*);

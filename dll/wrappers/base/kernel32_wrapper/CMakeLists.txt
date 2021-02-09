@@ -9,7 +9,7 @@ include_directories(
 	${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine
 	${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys
 	${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys/win
-	${REACTOS_SOURCE_DIR}/dll/wrappers/base/ntext_wrapper)	
+	${REACTOS_SOURCE_DIR}/dll/wrappers/base/includes)	
 spec2def(kernel32_wrapper.dll kernel32_wrapper.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
@@ -64,7 +64,7 @@ list(APPEND SOURCE
 	
 if(ARCH STREQUAL "i386")
     list(APPEND ASM_SOURCE
-		asm/i386/thread.S
+		asm/i386/thunk.S
 	)
 elseif(ARCH STREQUAL "amd64")
     list(APPEND ASM_SOURCE
