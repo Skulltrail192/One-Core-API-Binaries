@@ -41,13 +41,28 @@ BOOL WINAPI SetProcessRestrictionExemption(BOOL verification)
   return resp;
 }
 
-BOOL WINAPI SetProcessDPIAware()
-{	
-	gfdDPIProcess = TRUE;
-	return TRUE;
+
+/***********************************************************************
+ *              SetProcessDPIAware   (USER32.@)
+ */
+BOOL WINAPI SetProcessDPIAware(void)
+{
+    TRACE("\n");
+    InterlockedCompareExchange( &dpi_awareness, 0x11, 0 );
+    return TRUE;
 }
 
 BOOL WINAPI IsProcessDPIAware()
 {
 	return gfdDPIProcess;
+}
+
+/**********************************************************************
+ *              EnableNonClientDpiScaling   (USER32.@)
+ */
+BOOL WINAPI EnableNonClientDpiScaling( HWND hwnd )
+{
+    FIXME("(%p): stub\n", hwnd);
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
 }

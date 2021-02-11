@@ -1142,8 +1142,8 @@
 @ stdcall GetErrorMode()
 @ stdcall GetFileAttributesTransactedA(str long ptr ptr)
 @ stdcall GetFileAttributesTransactedW(wstr long ptr ptr)
-@ stdcall GetFileInformationByHandleEx(long long ptr long) fileextd.GetFileInformationByHandleEx
-@ stdcall GetFileInformationByHandleExW(long long ptr long) fileextd.GetFileInformationByHandleEx 
+@ stdcall GetFileInformationByHandleEx(long long ptr long) ;fileextd.GetFileInformationByHandleEx
+@ stdcall GetFileInformationByHandleExW(long long ptr long) GetFileInformationByHandleEx ;fileextd.GetFileInformationByHandleEx 
 @ stdcall GetFinalPathNameByHandleA(ptr str long long)
 @ stdcall GetFinalPathNameByHandleW(ptr wstr long long)
 @ stdcall GetLocaleInfoEx(wstr long ptr long)
@@ -1231,8 +1231,8 @@
 @ stdcall SetEventWhenCallbackReturns(ptr long) ntext.TpCallbackSetEventOnCompletion
 @ stdcall SetFileAttributesTransactedA(str long ptr)
 @ stdcall SetFileAttributesTransactedW(wstr long ptr)
-@ stdcall SetFileInformationByHandle(long long ptr long) fileextd.SetFileInformationByHandle
-@ stdcall SetFileInformationByHandleW(long long ptr long) fileextd.SetFileInformationByHandle
+@ stdcall SetFileInformationByHandle(long long ptr long) ;fileextd.SetFileInformationByHandle
+@ stdcall SetFileInformationByHandleW(long long ptr long) SetFileInformationByHandle ;fileextd.SetFileInformationByHandle
 @ stdcall SetNamedPipeAttribute(ptr long str ptr long)
 @ stdcall SetProcessAffinityUpdateMode(ptr long)
 @ stdcall SetProcessPreferredUILanguages(long wstr ptr)
@@ -1274,6 +1274,8 @@
 @ stdcall Wow64SuspendThread(ptr)
 
 #Win7 Functions
+@ stdcall AddDllDirectory(wstr)
+@ stdcall BaseFormatObjectAttributes(ptr ptr ptr)
 @ stdcall BasepAllocateActivationContextActivationBlock(long ptr ptr ptr)
 @ stdcall BasepAnsiStringToDynamicUnicodeString(wstr str)
 @ stdcall BasepFreeActivationContextActivationBlock(ptr)
@@ -1349,14 +1351,18 @@
 @ stdcall PowerCreateRequestW(ptr) PowerCreateRequest
 @ stdcall PowerSetRequest(ptr long)
 @ stdcall QueryIdleProcessorCycleTimeEx(long ptr ptr)
+@ stdcall QueryThreadpoolStackInformation(ptr ptr)
 @ stdcall -arch=x86_64 QueryUmsThreadInformation(ptr long ptr long ptr)
 @ stdcall QueryUnbiasedInterruptTime(ptr)
 @ stdcall RaiseFailFastException(ptr ptr long)
 @ stdcall RegisterApplicationRecoveryCallback(long ptr long long)
 @ stdcall RegisterApplicationRestart(wstr long)
+@ stdcall RemoveDllDirectory(ptr)
 @ stdcall ResolveLocaleName(wstr ptr long)
+@ stdcall SetDefaultDllDirectories(long)
 @ stdcall SetThreadGroupAffinity(long ptr ptr)
 @ stdcall SetThreadIdealProcessorEx(ptr ptr ptr)
+@ stdcall SetThreadpoolStackInformation(ptr ptr)
 @ stdcall -arch=x86_64 SetUmsThreadInformation(ptr long ptr long)
 @ stdcall SetWaitableTimerEx(ptr ptr long ptr ptr ptr long)
 @ stdcall SystemTimeToTzSpecificLocalTimeEx(ptr ptr ptr)
@@ -1368,51 +1374,47 @@
 @ stdcall Wow64GetThreadSelectorEntry(ptr long ptr)
 @ stdcall -arch=x86_64 UmsThreadYield(ptr)
 
-#Win8 Functions 
-@ stdcall AddDllDirectory(wstr)
-@ stdcall AppPolicyGetProcessTerminationMethod(ptr ptr) 
-@ stdcall AppPolicyGetShowDeveloperDiagnostic(ptr ptr)
-@ stdcall AppPolicyGetThreadInitializationType(ptr ptr) 
-@ stdcall AppPolicyGetWindowingModel(ptr ptr)
-@ stdcall BaseFormatObjectAttributes(ptr ptr ptr)
-@ stdcall CreateFile2(wstr long long long ptr)
-@ stdcall DeleteSynchronizationBarrier(ptr)
-@ stdcall EnterSynchronizationBarrier(ptr long)
-@ stdcall GetCurrentPackageId(ptr ptr)
-@ stdcall GetCurrentPackageFamilyName(ptr ptr)
-@ stdcall GetCurrentPackageFullName(ptr ptr)
-@ stdcall GetCurrentThreadStackLimits(ptr ptr)
-@ stdcall GetPackageFullName(long ptr ptr)
-@ stdcall GetProcessMitigationPolicy(long long ptr long)
-@ stdcall GetSystemTimePreciseAsFileTime(ptr)
-@ stdcall InitializeSynchronizationBarrier(ptr long long)
-@ stdcall LoadPackagedLibrary(wstr long) 
-@ stdcall PathCchAddBackslash(wstr long)
-@ stdcall PathCchAddBackslashEx(wstr long ptr ptr) 
-@ stdcall PathCchAddExtension(wstr long wstr)
-@ stdcall PathCchFindExtension(wstr long ptr)
-@ stdcall PathCchAppend(wstr long wstr) kernelbase.PathCchAppend
-@ stdcall PathCchAppendEx(wstr long wstr long) kernelbase.PathCchAppendEx
-@ stub PathCchCanonicalize
-@ stub PathCchCanonicalizeEx
-@ stdcall PathCchCombine(ptr long ptr ptr)
-@ stdcall PathCchCombineEx(ptr long ptr ptr long)
-@ stdcall PathCchRemoveBackslash(wstr long)
-@ stdcall PathCchRemoveBackslashEx(wstr long ptr ptr)
-@ stdcall PathCchRenameExtension(wstr long wstr)
-@ stdcall PathCchRemoveExtension(wstr long)
-@ stdcall RemoveDllDirectory(ptr)
-@ stdcall SetDefaultDllDirectories(long)
-@ stdcall SetProcessMitigationPolicy(long ptr long)
-@ stdcall WaitOnAddress(ptr ptr long long)
-@ stdcall WakeByAddressAll(ptr) ntext.RtlWakeAddressAll
-@ stdcall WakeByAddressSingle(ptr) ntext.RtlWakeAddressSingle
-@ stdcall WerpNotifyLoadStringResourceWorker(ptr wstr ptr long) WerpNotifyLoadStringResource
-@ stdcall WerpNotifyUseStringResourceWorker(ptr) WerpNotifyUseStringResource
+; #Win8 Functions 
+; @ stdcall AppPolicyGetProcessTerminationMethod(ptr ptr) 
+; @ stdcall AppPolicyGetShowDeveloperDiagnostic(ptr ptr)
+; @ stdcall AppPolicyGetThreadInitializationType(ptr ptr) 
+; @ stdcall AppPolicyGetWindowingModel(ptr ptr)
+; @ stdcall CreateFile2(wstr long long long ptr)
+; @ stdcall DeleteSynchronizationBarrier(ptr)
+; @ stdcall EnterSynchronizationBarrier(ptr long)
+; @ stdcall GetCurrentPackageId(ptr ptr)
+; @ stdcall GetCurrentPackageFamilyName(ptr ptr)
+; @ stdcall GetCurrentPackageFullName(ptr ptr)
+; @ stdcall GetCurrentThreadStackLimits(ptr ptr)
+; @ stdcall GetPackageFullName(long ptr ptr)
+; @ stdcall GetProcessMitigationPolicy(long long ptr long)
+; @ stdcall GetSystemTimePreciseAsFileTime(ptr)
+; @ stdcall InitializeSynchronizationBarrier(ptr long long)
+; @ stdcall LoadPackagedLibrary(wstr long) 
+; @ stdcall PathCchAddBackslash(wstr long)
+; @ stdcall PathCchAddBackslashEx(wstr long ptr ptr) 
+; @ stdcall PathCchAddExtension(wstr long wstr)
+; @ stdcall PathCchFindExtension(wstr long ptr)
+; @ stdcall PathCchAppend(wstr long wstr) kernelbase.PathCchAppend
+; @ stdcall PathCchAppendEx(wstr long wstr long) kernelbase.PathCchAppendEx
+; @ stub PathCchCanonicalize
+; @ stub PathCchCanonicalizeEx
+; @ stdcall PathCchCombine(ptr long ptr ptr)
+; @ stdcall PathCchCombineEx(ptr long ptr ptr long)
+; @ stdcall PathCchRemoveBackslash(wstr long)
+; @ stdcall PathCchRemoveBackslashEx(wstr long ptr ptr)
+; @ stdcall PathCchRenameExtension(wstr long wstr)
+; @ stdcall PathCchRemoveExtension(wstr long)
+; @ stdcall SetProcessMitigationPolicy(long ptr long)
+; @ stdcall WaitOnAddress(ptr ptr long long)
+; @ stdcall WakeByAddressAll(ptr) ntext.RtlWakeAddressAll
+; @ stdcall WakeByAddressSingle(ptr) ntext.RtlWakeAddressSingle
+; @ stdcall WerpNotifyLoadStringResourceWorker(ptr wstr ptr long) WerpNotifyLoadStringResource
+; @ stdcall WerpNotifyUseStringResourceWorker(ptr) WerpNotifyUseStringResource
 
-#Win10 functions
-@ stdcall GetThreadDescription(long ptr)
-@ stdcall SetThreadDescription(long ptr)
+; #Win10 functions
+; @ stdcall GetThreadDescription(long ptr)
+; @ stdcall SetThreadDescription(long ptr)
 
 #Import from advapi32
 @ stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr) advapi32.AccessCheck
@@ -1619,8 +1621,8 @@
 @ stdcall LoadStringA(ptr long ptr long) user32.LoadStringA
 @ stdcall LoadStringW(ptr long ptr long) user32.LoadStringW
 
-#API-SET functions
-@ stdcall QuirkIsEnabled3(ptr ptr)
+; #API-SET functions
+; @ stdcall QuirkIsEnabled3(ptr ptr)
 
 #Import from shlwapi
 @ stdcall ChrCmpIA(long long) shlwapi.ChrCmpIA

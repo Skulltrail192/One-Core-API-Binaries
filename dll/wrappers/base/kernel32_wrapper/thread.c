@@ -1271,3 +1271,27 @@ void WINAPI GetCurrentThreadStackLimits(ULONG_PTR *low, ULONG_PTR *high)
     *low = (ULONG_PTR)NtCurrentTeb()->DeallocationStack;
     *high = (ULONG_PTR)NtCurrentTeb()->NtTib.StackBase;
 }
+
+/***********************************************************************
+ *           SetThreadpoolStackInformation   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH SetThreadpoolStackInformation( PTP_POOL pool, PTP_POOL_STACK_INFORMATION stack_info )
+{
+	NTSTATUS Status;
+	
+	Status = TpSetPoolStackInformation( pool, stack_info );
+	
+    return NT_SUCCESS(STATUS);
+}
+
+/***********************************************************************
+ *           QueryThreadpoolStackInformation   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH QueryThreadpoolStackInformation( PTP_POOL pool, PTP_POOL_STACK_INFORMATION stack_info )
+{
+	NTSTATUS Status;
+	
+	Status = TpQueryPoolStackInformation( pool, stack_info );
+	
+    return NT_SUCCESS(STATUS);
+}

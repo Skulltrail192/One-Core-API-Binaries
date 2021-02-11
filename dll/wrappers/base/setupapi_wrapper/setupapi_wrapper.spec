@@ -626,3 +626,6 @@
 @ stdcall SetupDiGetActualModelsSectionW(ptr ptr ptr long ptr ptr) setupapibase.SetupDiGetActualModelsSectionW
 @ stdcall SetupDiRestartDevices(ptr ptr) setupapibase.SetupDiRestartDevices
 @ stdcall pSetupIsLocalSystem() setupapibase.pSetupIsLocalSystem
+
+#Vista functions
+@ stdcall CM_Get_DevNode_PropertyW(long ptr ptr ptr ptr long)

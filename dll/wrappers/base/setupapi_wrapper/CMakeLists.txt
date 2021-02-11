@@ -4,7 +4,7 @@ include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 spec2def(setupapi_wrapper.dll setupapi_wrapper.spec)
 
 list(APPEND SOURCE
-    main.c
+    devinst.c
     version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/setupapi_wrapper_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/setupapi_wrapper.def)
