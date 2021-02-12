@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Henri Verbeet for CodeWeavers
+ * Copyright 2017 Skulltrail
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,12 +15,12 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-
-#define WINE_FILEDESCRIPTION_STR "Windows Shell Common Dll Compatibility Layer"
-#define WINE_FILENAME_STR "shell32.dll"
-#define WINE_FILEVERSION 6,0,6000,16386
-#define WINE_FILEVERSION_STR "6.0.6000.16386(winmain_wrapper_beta1)"
-#define WINE_PRODUCTVERSION 6,0,6000,16386
-#define WINE_PRODUCTVERSION_STR "6.0.6000.16386"
-
-#include "wine/wine_common_ver.rc"
+ 
+ #include <basetsd.h>
+ #include <wine/evcode.h>
+ 
+ #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+ 
+ #define MINLONGLONG             ((LONGLONG)~MAXLONGLONG)
+ 
+ #define EC_SAMPLE_NEEDED                    0x20

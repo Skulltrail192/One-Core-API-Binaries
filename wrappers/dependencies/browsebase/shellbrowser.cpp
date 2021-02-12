@@ -1279,7 +1279,7 @@ LRESULT CALLBACK CShellBrowser::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, 
     CComPtr<IMenuBand>                      menuBand;
     const _ATL_MSG                          *previousMessage;
     BOOL                                    handled;
-    WNDPROC                                 saveWindowProc;
+    //WNDPROC                                 saveWindowProc; /* Commented for able to compile*/
     HRESULT                                 hResult;
 
     hWnd = pThis->m_hWnd;
@@ -1303,10 +1303,11 @@ LRESULT CALLBACK CShellBrowser::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, 
     {
         if (uMsg == WM_NCDESTROY)
         {
-            saveWindowProc = reinterpret_cast<WNDPROC>(GetWindowLongPtr(hWnd, GWL_WNDPROC));
-            lResult = pThis->DefWindowProc(uMsg, wParam, lParam);
-            if (saveWindowProc == reinterpret_cast<WNDPROC>(GetWindowLongPtr(hWnd, GWL_WNDPROC)))
-                SetWindowLongPtr(hWnd, GWL_WNDPROC, (LONG_PTR)pThis->m_pfnSuperWindowProc);
+			/* Commented for able to compile*/
+            // saveWindowProc = reinterpret_cast<WNDPROC>(GetWindowLongPtr(GWL_WNDPROC));
+            // lResult = pThis->DefWindowProc(uMsg, wParam, lParam);
+            // if (saveWindowProc == reinterpret_cast<WNDPROC>(GetWindowLongPtr(hWnd, GWL_WNDPROC)))
+                // SetWindowLongPtr(hWnd, GWL_WNDPROC, (LONG_PTR)pThis->m_pfnSuperWindowProc);
             pThis->m_dwState |= WINSTATE_DESTROYED;
         }
         else

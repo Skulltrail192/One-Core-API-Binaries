@@ -2,13 +2,18 @@
 add_definitions(-D__WINESRC__)
 remove_definitions(-D_WIN32_WINNT=0x502)
 add_definitions(-D_WIN32_WINNT=0x600)
-include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/dxsdk)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/include/psdk)
 
 spec2def(evr.dll evr.spec)
 
 list(APPEND SOURCE
     evr.c
+	main.c
+	mixer.c
+	presenter.c
+	sample.c
     ${CMAKE_CURRENT_BINARY_DIR}/evr_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/evr.def)
 

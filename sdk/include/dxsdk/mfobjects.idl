@@ -141,6 +141,60 @@ interface IMF2DBuffer : IUnknown
     HRESULT ContiguousCopyFrom([in, size_is(cbSrcBuffer)] const BYTE *pbSrcBuffer, [in] DWORD cbSrcBuffer);
 }
 
+typedef enum _MF2DBuffer_LockFlags
+{
+    MF2DBuffer_LockFlags_LockTypeMask = 0x1 | 0x2 | 0x3,
+    MF2DBuffer_LockFlags_Read         = 0x1,
+    MF2DBuffer_LockFlags_Write        = 0x2,
+    MF2DBuffer_LockFlags_ReadWrite    = 0x3,
+    MF2DBuffer_LockFlags_ForceDWORD   = 0x7fffffff
+} MF2DBuffer_LockFlags;
+
+[
+    object,
+    uuid(33ae5ea6-4316-436f-8ddd-d73d22f829ec),
+    local
+]
+interface IMF2DBuffer2 : IMF2DBuffer
+{
+    HRESULT Lock2DSize(
+        [in] MF2DBuffer_LockFlags flags,
+        [out] BYTE **scanline0,
+        [out] LONG *pitch,
+        [out] BYTE **buffer_start,
+        [out] DWORD *buffer_length);
+
+    HRESULT Copy2DTo([in] IMF2DBuffer2 *dest_buffer);
+}
+
+[
+    object,
+    uuid(e7174cfa-1c9e-48b1-8866-626226bfc258),
+    local
+]
+interface IMFDXGIBuffer : IUnknown
+{
+    HRESULT GetResource(
+        [in] REFIID riid,
+        [out] void **object
+    );
+
+    HRESULT GetSubresourceIndex(
+        [out] UINT *index
+    );
+
+    HRESULT GetUnknown(
+        [in] REFIID guid,
+        [in] REFIID riid,
+        [out] void **object
+    );
+
+    HRESULT SetUnknown(
+        [in] REFIID guid,
+        [in] IUnknown *data
+    );
+}
+
 [
     object,
     uuid(44ae0fa8-ea31-4109-8d2e-4cae4997c555),
@@ -270,6 +324,8 @@ typedef enum _MFVideoTransferMatrix {
     MFVideoTransferMatrix_BT709        = 1,
     MFVideoTransferMatrix_BT601        = 2,
     MFVideoTransferMatrix_SMPTE240M    = 3,
+    MFVideoTransferMatrix_BT2020_10    = 4,
+    MFVideoTransferMatrix_BT2020_12    = 5,
     MFVideoTransferMatrix_Last,
     MFVideoTransferMatrix_ForceDWORD   = 0x7fffffff
 } MFVideoTransferMatrix;
@@ -423,17 +479,137 @@ interface IMFRemoteAsyncCallback : IUnknown
     HRESULT Invoke([in] HRESULT hr, [in] IUnknown *pRemoteResult);
 }
 
-cpp_quote("#define MFASYNC_FAST_IO_PROCESSING_CALLBACK  0x0001")
-cpp_quote("#define MFASYNC_SIGNAL_CALLBACK              0x0002" )
+cpp_quote("#define MFASYNC_FAST_IO_PROCESSING_CALLBACK   0x00000001")
+cpp_quote("#define MFASYNC_SIGNAL_CALLBACK               0x00000002")
+cpp_quote("#define MFASYNC_BLOCKING_CALLBACK             0x00000004")
+cpp_quote("#define MFASYNC_REPLY_CALLBACK                0x00000008")
+cpp_quote("#define MFASYNC_LOCALIZE_REMOTE_CALLBACK      0x00000010")
 
 cpp_quote("#define MFASYNC_CALLBACK_QUEUE_UNDEFINED      0x00000000")
 cpp_quote("#define MFASYNC_CALLBACK_QUEUE_STANDARD       0x00000001")
 cpp_quote("#define MFASYNC_CALLBACK_QUEUE_RT             0x00000002")
 cpp_quote("#define MFASYNC_CALLBACK_QUEUE_IO             0x00000003")
 cpp_quote("#define MFASYNC_CALLBACK_QUEUE_TIMER          0x00000004")
+cpp_quote("#define MFASYNC_CALLBACK_QUEUE_MULTITHREADED  0x00000005")
 cpp_quote("#define MFASYNC_CALLBACK_QUEUE_LONG_FUNCTION  0x00000007")
 cpp_quote("#define MFASYNC_CALLBACK_QUEUE_PRIVATE_MASK   0xffff0000")
 cpp_quote("#define MFASYNC_CALLBACK_QUEUE_ALL            0xffffffff")
+
+enum {
+    MEUnknown = 0,
+    MEError = 1,
+    MEExtendedType = 2,
+    MENonFatalError = 3,
+    MEGenericV1Anchor = MENonFatalError,
+    MESessionUnknown = 100,
+    MESessionTopologySet = 101,
+    MESessionTopologiesCleared = 102,
+    MESessionStarted = 103,
+    MESessionPaused = 104,
+    MESessionStopped = 105,
+    MESessionClosed = 106,
+    MESessionEnded = 107,
+    MESessionRateChanged = 108,
+    MESessionScrubSampleComplete = 109,
+    MESessionCapabilitiesChanged = 110,
+    MESessionTopologyStatus = 111,
+    MESessionNotifyPresentationTime = 112,
+    MENewPresentation = 113,
+    MELicenseAcquisitionStart = 114,
+    MELicenseAcquisitionCompleted = 115,
+    MEIndividualizationStart = 116,
+    MEIndividualizationCompleted = 117,
+    MEEnablerProgress = 118,
+    MEEnablerCompleted = 119,
+    MEPolicyError = 120,
+    MEPolicyReport = 121,
+    MEBufferingStarted = 122,
+    MEBufferingStopped = 123,
+    MEConnectStart = 124,
+    MEConnectEnd = 125,
+    MEReconnectStart = 126,
+    MEReconnectEnd = 127,
+    MERendererEvent = 128,
+    MESessionStreamSinkFormatChanged = 129,
+    MESessionV1Anchor = MESessionStreamSinkFormatChanged,
+    MESourceUnknown = 200,
+    MESourceStarted = 201,
+    MEStreamStarted = 202,
+    MESourceSeeked = 203,
+    MEStreamSeeked = 204,
+    MENewStream = 205,
+    MEUpdatedStream = 206,
+    MESourceStopped = 207,
+    MEStreamStopped = 208,
+    MESourcePaused = 209,
+    MEStreamPaused = 210,
+    MEEndOfPresentation = 211,
+    MEEndOfStream = 212,
+    MEMediaSample = 213,
+    MEStreamTick = 214,
+    MEStreamThinMode = 215,
+    MEStreamFormatChanged = 216,
+    MESourceRateChanged = 217,
+    MEEndOfPresentationSegment = 218,
+    MESourceCharacteristicsChanged = 219,
+    MESourceRateChangeRequested = 220,
+    MESourceMetadataChanged = 221,
+    MESequencerSourceTopologyUpdated = 222,
+    MESourceV1Anchor = MESequencerSourceTopologyUpdated,
+    MESinkUnknown = 300,
+    MEStreamSinkStarted = 301,
+    MEStreamSinkStopped = 302,
+    MEStreamSinkPaused = 303,
+    MEStreamSinkRateChanged = 304,
+    MEStreamSinkRequestSample = 305,
+    MEStreamSinkMarker = 306,
+    MEStreamSinkPrerolled = 307,
+    MEStreamSinkScrubSampleComplete = 308,
+    MEStreamSinkFormatChanged = 309,
+    MEStreamSinkDeviceChanged = 310,
+    MEQualityNotify = 311,
+    MESinkInvalidated = 312,
+    MEAudioSessionNameChanged = 313,
+    MEAudioSessionVolumeChanged = 314,
+    MEAudioSessionDeviceRemoved = 315,
+    MEAudioSessionServerShutdown = 316,
+    MEAudioSessionGroupingParamChanged = 317,
+    MEAudioSessionIconChanged = 318,
+    MEAudioSessionFormatChanged = 319,
+    MEAudioSessionDisconnected = 320,
+    MEAudioSessionExclusiveModeOverride = 321,
+    MESinkV1Anchor = MEAudioSessionExclusiveModeOverride,
+    METrustUnknown = 400,
+    MEPolicyChanged = 401,
+    MEContentProtectionMessage = 402,
+    MEPolicySet = 403,
+    METrustV1Anchor = MEPolicySet,
+    MEWMDRMLicenseBackupCompleted = 500,
+    MEWMDRMLicenseBackupProgress = 501,
+    MEWMDRMLicenseRestoreCompleted = 502,
+    MEWMDRMLicenseRestoreProgress = 503,
+    MEWMDRMLicenseAcquisitionCompleted = 506,
+    MEWMDRMIndividualizationCompleted = 508,
+    MEWMDRMIndividualizationProgress = 513,
+    MEWMDRMProximityCompleted = 514,
+    MEWMDRMLicenseStoreCleaned = 515,
+    MEWMDRMRevocationDownloadCompleted = 516,
+    MEWMDRMV1Anchor = MEWMDRMRevocationDownloadCompleted,
+    METransformUnknown = 600,
+    METransformNeedInput = 601,
+    METransformHaveOutput = 602,
+    METransformDrainComplete = 603,
+    METransformMarker = 604,
+    METransformInputStreamStateChanged = 605,
+    MEByteStreamCharacteristicsChanged = 700,
+    MEVideoCaptureDeviceRemoved = 800,
+    MEVideoCaptureDevicePreempted = 801,
+    MEStreamSinkFormatInvalidated = 802,
+    MEEncodingParameters = 803,
+    MEContentProtectionMetadata = 900,
+    MEDeviceThermalStateChanged = 950,
+    MEReservedMax = 10000
+};
 
 typedef DWORD MediaEventType;
 
@@ -448,6 +624,8 @@ interface IMFMediaEvent : IMFAttributes
     HRESULT GetStatus([out] HRESULT *phrStatus);
     HRESULT GetValue([out] PROPVARIANT *pvValue);
 }
+
+cpp_quote("#define MF_EVENT_FLAG_NO_WAIT 0x00000001")
 
 [
     object,
@@ -507,15 +685,16 @@ cpp_quote("#define MFBYTESTREAM_IS_DIRECTORY               0x00000080")
 cpp_quote("#define MFBYTESTREAM_HAS_SLOW_SEEK              0x00000100")
 cpp_quote("#define MFBYTESTREAM_IS_PARTIALLY_DOWNLOADED    0x00000200")
 cpp_quote("#define MFBYTESTREAM_SHARE_WRITE                0x00000400")
+cpp_quote("#define MFBYTESTREAM_DOES_NOT_USE_NETWORK       0x00000800")
 
 cpp_quote("#define MFBYTESTREAM_SEEK_FLAG_CANCEL_PENDING_IO  0x00000001")
 
-cpp_quote("EXTERN_GUID(MF_BYTESTREAM_ORIGIN_NAME,        0xfc358288,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
-cpp_quote("EXTERN_GUID(MF_BYTESTREAM_CONTENT_TYPE,       0xfc358289,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
-cpp_quote("EXTERN_GUID(MF_BYTESTREAM_DURATION,           0xfc35828a,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
-cpp_quote("EXTERN_GUID(MF_BYTESTREAM_LAST_MODIFIED_TIME, 0xfc35828b,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
-cpp_quote("EXTERN_GUID(MF_BYTESTREAM_IFO_FILE_URI,       0xfc35828c,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
-cpp_quote("EXTERN_GUID(MF_BYTESTREAM_DLNA_PROFILE_ID,    0xfc35828d,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
+cpp_quote("DEFINE_GUID(MF_BYTESTREAM_ORIGIN_NAME,        0xfc358288,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
+cpp_quote("DEFINE_GUID(MF_BYTESTREAM_CONTENT_TYPE,       0xfc358289,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
+cpp_quote("DEFINE_GUID(MF_BYTESTREAM_DURATION,           0xfc35828a,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
+cpp_quote("DEFINE_GUID(MF_BYTESTREAM_LAST_MODIFIED_TIME, 0xfc35828b,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
+cpp_quote("DEFINE_GUID(MF_BYTESTREAM_IFO_FILE_URI,       0xfc35828c,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
+cpp_quote("DEFINE_GUID(MF_BYTESTREAM_DLNA_PROFILE_ID,    0xfc35828d,0x3cb6,0x460c,0xa4,0x24,0xb6,0x68,0x12,0x60,0x37,0x5a);")
 
 typedef enum MF_FILE_ACCESSMODE {
     MF_ACCESSMODE_READ      = 1,
@@ -536,6 +715,23 @@ typedef enum  {
     MF_FILEFLAGS_NOBUFFERING           = 0x00000001,
     MF_FILEFLAGS_ALLOW_WRITE_SHARING   = 0x00000002
 } MF_FILE_FLAGS;
+
+[
+    object,
+    uuid(8feed468-6f7e-440d-869a-49bdd283ad0d),
+]
+interface IMFSampleOutputStream : IUnknown
+{
+    HRESULT BeginWriteSample(
+            [in] IMFSample *sample,
+            [in] IMFAsyncCallback *callback,
+            [in] IUnknown *state);
+
+    HRESULT EndWriteSample(
+            [in] IMFAsyncResult *result);
+
+    HRESULT Close();
+}
 
 [
     object,
@@ -600,4 +796,21 @@ interface IMFMediaEventQueue : IUnknown
     HRESULT QueueEventParamUnk([in] MediaEventType met, [in] REFGUID type,
         [in] HRESULT status, [in, unique] IUnknown *unk);
     HRESULT Shutdown();
+}
+
+[
+    object,
+    uuid(eb533d5d-2db6-40f8-97a9-494692014f07),
+    local,
+    pointer_default(unique)
+]
+interface IMFDXGIDeviceManager : IUnknown
+{
+    HRESULT CloseDeviceHandle([in] HANDLE device);
+    HRESULT GetVideoService([in] HANDLE device, [in] REFIID riid, [out] void **service);
+    HRESULT LockDevice([in] HANDLE device, [in] REFIID riid, [out] void **ppv, [in] BOOL block);
+    HRESULT OpenDeviceHandle([out] HANDLE *device);
+    HRESULT ResetDevice([in] IUnknown *device, [in] UINT token);
+    HRESULT TestDevice([in] HANDLE device);
+    HRESULT UnlockDevice([in] HANDLE device, [in] BOOL state);
 }

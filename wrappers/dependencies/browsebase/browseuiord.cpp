@@ -50,7 +50,7 @@ extern "C" void WINAPI SHCreateSavedWindows()
  * SHCreateFromDesktop			[BROWSEUI.106]
  * parameter is a FolderInfo
  */
-extern "C" long WINAPI SHCreateFromDesktop(long param8)
+extern "C" BOOL WINAPI SHCreateFromDesktop(PEXPLORER_CMDLINE_PARSE_RESULTS parseResults)
 {
     return -1;
 }
@@ -58,7 +58,7 @@ extern "C" long WINAPI SHCreateFromDesktop(long param8)
 /*************************************************************************
  * SHExplorerParseCmdLine		[BROWSEUI.107]
  */
-extern "C" long WINAPI SHExplorerParseCmdLine(LPCTSTR commandLine)
+extern "C" UINT WINAPI SHExplorerParseCmdLine(PEXPLORER_CMDLINE_PARSE_RESULTS pParseResults)
 {
     return -1;
 }
@@ -161,8 +161,6 @@ extern "C" void WINAPI SHDestroyIETHREADPARAM(IEThreadParamBlock *param)
         ILFree(param->directoryPIDL);
     if (param->offset7C != NULL)
         ILFree(param->offset7C);
-    if ((param->offset4 & 0x80000) == 0 && param->offset80 != NULL)
-        ILFree(param->offset80);
     if (param->offset14 != NULL)
         param->offset14->Release();
     if (param->offset70 != NULL)
@@ -179,9 +177,9 @@ extern "C" void WINAPI SHDestroyIETHREADPARAM(IEThreadParamBlock *param)
 /*************************************************************************
  * SHOnCWMCommandLine			[BROWSEUI.127]
  */
-extern "C" HRESULT WINAPI SHOnCWMCommandLine(long param8)
+extern "C" BOOL WINAPI SHOnCWMCommandLine(HANDLE hSharedInfo)
 {
-    return E_NOTIMPL;
+    return FALSE;
 }
 
 /*************************************************************************
@@ -243,7 +241,7 @@ extern "C" HRESULT WINAPI GetInfoTip(IUnknown *param8, long paramC, LPTSTR *para
 /*************************************************************************
  * SHEnumClassesOfCategories	[BROWSEUI.136]
  */
-extern "C" HRESULT WINAPI SHEnumClassesOfCategories(long param8, long paramC, long param10, long param14, long param18)
+extern "C" HRESULT WINAPI SHEnumClassesOfCategories(ULONG cImplemented, CATID *pImplemented, ULONG cRequired, CATID *pRequired, IEnumGUID **out)
 {
     return E_NOTIMPL;
 }
@@ -272,7 +270,7 @@ extern "C" BOOL WINAPI SHIsExplorerBrowser()
 /*************************************************************************
  * SHOpenNewFrame				[BROWSEUI.103]
  */
-extern "C" HRESULT WINAPI SHOpenNewFrame(LPITEMIDLIST pidl, IUnknown *paramC, long param10, long param14)
+extern "C" HRESULT WINAPI SHOpenNewFrame(LPITEMIDLIST pidl, IUnknown *paramC, long param10, DWORD dwFlags)
 {
     IEThreadParamBlock                      *parameters;
     HANDLE                                  threadHandle;
@@ -287,7 +285,7 @@ extern "C" HRESULT WINAPI SHOpenNewFrame(LPITEMIDLIST pidl, IUnknown *paramC, lo
     if (paramC != NULL)
         parameters->offset10 = param10;
     parameters->directoryPIDL = pidl;
-    parameters->offset4 = param14;
+	//parameters->offset4 = param14;
     threadHandle = CreateThread(NULL, 0x10000, BrowserThreadProc, parameters, 0, &threadID);
     if (threadHandle != NULL)
     {

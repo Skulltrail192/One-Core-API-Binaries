@@ -53,7 +53,7 @@ list(APPEND SOURCE
 	dxgi1_4.idl
 	dxgi1_5.idl
 	dxgi1_6.idl
-	
+	dxva2api.idl	
 	d3dx10core.idl
 	d3dx11core.idl
 	dcommon.idl
@@ -76,6 +76,8 @@ list(APPEND SOURCE
     downloadmgr.idl
 #   dyngraph.idl
     endpointvolume.idl
+	evr.idl
+	evr9.idl
     exdisp.idl
     fusion.idl
     hlink.idl
@@ -93,6 +95,8 @@ list(APPEND SOURCE
     inseng.idl
 	inspectable.idl
     metahost.idl
+	mfidl.idl
+	mftransform.idl
     mimeinfo.idl
     mimeole.idl
     mlang.idl
