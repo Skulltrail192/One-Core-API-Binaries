@@ -19,6 +19,10 @@
 
 #include <main.h>
 
+static DPI_AWARENESS dpi_awareness;
+
+WINE_DEFAULT_DEBUG_CHANNEL(process); 
+
 BOOL WINAPI SetProcessRestrictionExemption(BOOL verification)
 {
   BOOL resp; // ebx@1
@@ -47,7 +51,7 @@ BOOL WINAPI SetProcessRestrictionExemption(BOOL verification)
  */
 BOOL WINAPI SetProcessDPIAware(void)
 {
-    TRACE("\n");
+    DbgPrint("SetProcessDPIAware called\n");
     InterlockedCompareExchange( &dpi_awareness, 0x11, 0 );
     return TRUE;
 }

@@ -461,3 +461,12 @@ typedef struct tagPOINTER_DEVICE_INFO {
   USHORT              maxActiveContacts;
   WCHAR               productString[POINTER_DEVICE_PRODUCT_STRING_MAX];
 } POINTER_DEVICE_INFO;
+
+/* DPI awareness */
+typedef enum DPI_AWARENESS
+{
+    DPI_AWARENESS_INVALID = -1,
+    DPI_AWARENESS_UNAWARE = 0,
+    DPI_AWARENESS_SYSTEM_AWARE,
+    DPI_AWARENESS_PER_MONITOR_AWARE
+} DPI_AWARENESS;

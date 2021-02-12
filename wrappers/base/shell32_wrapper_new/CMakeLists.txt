@@ -6,8 +6,8 @@ include_directories(${REACTOS_SOURCE_DIR}/sdk/include)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/lib/atl)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/psdk)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
-include_directories(${REACTOS_SOURCE_DIR}/dll/wrappers/dependencies/propsys)
-include_directories(${REACTOS_SOURCE_DIR}/dll/wrappers/dependencies/shellbase)
+include_directories(${REACTOS_SOURCE_DIR}/wrappers/dependencies/propsys)
+include_directories(${REACTOS_SOURCE_DIR}/wrappers/dependencies/shellbase)
 spec2def(shell32_wrapper_new.dll shell32_wrapper_new.spec)
 
 list(APPEND SOURCE

@@ -1281,7 +1281,7 @@ BOOL WINAPI DECLSPEC_HOTPATCH SetThreadpoolStackInformation( PTP_POOL pool, PTP_
 	
 	Status = TpSetPoolStackInformation( pool, stack_info );
 	
-    return NT_SUCCESS(STATUS);
+    return NT_SUCCESS(Status);
 }
 
 /***********************************************************************
@@ -1293,5 +1293,5 @@ BOOL WINAPI DECLSPEC_HOTPATCH QueryThreadpoolStackInformation( PTP_POOL pool, PT
 	
 	Status = TpQueryPoolStackInformation( pool, stack_info );
 	
-    return NT_SUCCESS(STATUS);
+    return NT_SUCCESS(Status);
 }
