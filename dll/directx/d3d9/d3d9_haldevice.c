@@ -23,7 +23,7 @@
 /* IDirect3DDevice9 public interface */
 HRESULT WINAPI IDirect3DDevice9HAL_GetTransform(LPDIRECT3DDEVICE9 iface, D3DTRANSFORMSTATETYPE State, D3DMATRIX* pMatrix)
 {
-    UNIMPLEMENTED;
+    UNIMPLEMENTED
 
     return D3D_OK;
 }
@@ -37,14 +37,14 @@ HRESULT WINAPI IDirect3DDevice9HAL_GetMaterial(LPDIRECT3DDEVICE9 iface, D3DMATER
 
 HRESULT WINAPI IDirect3DDevice9HAL_GetLight(LPDIRECT3DDEVICE9 iface, DWORD Index, D3DLIGHT9* pLight)
 {
-    UNIMPLEMENTED;
+    UNIMPLEMENTED
 
     return D3D_OK;
 }
 
 HRESULT WINAPI IDirect3DDevice9HAL_GetLightEnable(LPDIRECT3DDEVICE9 iface, DWORD Index, BOOL* pEnable)
 {
-    UNIMPLEMENTED;
+    UNIMPLEMENTED
 
     return D3D_OK;
 }
