@@ -1,7 +1,5 @@
 
 add_definitions(-D_KERNEL32_)
-add_definitions(-D__WINESRC__)
-include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys)
 spec2def(kernel32.dll kernel32.spec ADD_IMPORTLIB)
 
@@ -26,7 +24,6 @@ list(APPEND SOURCE
     client/proc.c
     client/resntfy.c
     client/session.c
-	client/stubs.c
     client/synch.c
     client/sysinfo.c
     client/time.c
@@ -34,7 +31,6 @@ list(APPEND SOURCE
     client/toolhelp.c
     client/utils.c
     client/thread.c
-	client/unimplemented.c
     client/vdm.c
     client/version.c
     client/virtmem.c
@@ -77,15 +73,16 @@ list(APPEND SOURCE
     wine/timezone.c
     winnls/string/casemap.c
     winnls/string/collation.c
+    winnls/string/digitmap.c
     winnls/string/fold.c
     winnls/string/format_msg.c
+    winnls/string/japanese.c
     winnls/string/lang.c
     winnls/string/lcformat.c
     winnls/string/lstring.c
     winnls/string/nls.c
     winnls/string/sortkey.c
-    k32.h
-	)
+    k32.h)
 
 if(ARCH STREQUAL "i386")
     list(APPEND ASM_SOURCE
@@ -102,12 +99,12 @@ elseif(ARCH STREQUAL "arm")
 endif()
 
 add_asm_files(kernel32_asm ${ASM_SOURCE})
-add_library(kernel32 SHARED
+add_library(kernel32 MODULE
     ${SOURCE}
     ${kernel32_asm}
     kernel32.rc
-    ${CMAKE_CURRENT_BINARY_DIR}/kernel32.def
-	${CMAKE_CURRENT_BINARY_DIR}/kernel32_stubs.c)
+    ${CMAKE_CURRENT_BINARY_DIR}/kernel32_stubs.c
+    ${CMAKE_CURRENT_BINARY_DIR}/kernel32.def)
 
 set_module_type(kernel32 win32dll ENTRYPOINT DllMain 12)
 #############################################
@@ -116,7 +113,7 @@ set_subsystem(kernel32 console)
 ################# END  HACK #################
 
 target_link_libraries(kernel32 wine chkstk ${PSEH_LIB})
-add_importlibs(kernel32 ntdll user32)
+add_importlibs(kernel32 ntdll)
 add_pch(kernel32 k32.h SOURCE)
 add_dependencies(kernel32 psdk errcodes asm)
 add_cd_file(TARGET kernel32 DESTINATION reactos/system32 FOR all)

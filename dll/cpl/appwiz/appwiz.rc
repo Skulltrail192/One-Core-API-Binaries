@@ -45,11 +45,17 @@ IDB_SHORTCUT BITMAP "resources/shortcut.bmp"
 #ifdef LANGUAGE_ES_ES
     #include "lang/es-ES.rc"
 #endif
+#ifdef LANGUAGE_ET_EE
+    #include "lang/et-EE.rc"
+#endif
 #ifdef LANGUAGE_FR_FR
     #include "lang/fr-FR.rc"
 #endif
 #ifdef LANGUAGE_HE_IL
     #include "lang/he-IL.rc"
+#endif
+#ifdef LANGUAGE_ID_ID
+    #include "lang/id-ID.rc"
 #endif
 #ifdef LANGUAGE_IT_IT
     #include "lang/it-IT.rc"
@@ -65,6 +71,9 @@ IDB_SHORTCUT BITMAP "resources/shortcut.bmp"
 #endif
 #ifdef LANGUAGE_PT_BR
     #include "lang/pt-BR.rc"
+#endif
+#ifdef LANGUAGE_PT_PT
+    #include "lang/pt-PT.rc"
 #endif
 #ifdef LANGUAGE_RO_RO
     #include "lang/ro-RO.rc"

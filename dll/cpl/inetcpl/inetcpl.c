@@ -19,9 +19,25 @@
  *
  */
 
+#define NONAMELESSUNION
+#define COBJMACROS
+#define CONST_VTABLE
+
+#include <stdarg.h>
+#include <windef.h>
+#include <winbase.h>
+#include <wingdi.h>
+#include <winuser.h>
+#include <commctrl.h>
+#include <cpl.h>
+#include "ole2.h"
+
+#include "wine/debug.h"
+
 #include "inetcpl.h"
 
-#include <cpl.h>
+
+WINE_DEFAULT_DEBUG_CHANNEL(inetcpl);
 
 DECLSPEC_HIDDEN HMODULE hcpl;
 
@@ -61,13 +77,24 @@ HRESULT WINAPI DllInstall(BOOL bInstall, LPCWSTR cmdline)
  */
 static int CALLBACK propsheet_callback(HWND hwnd, UINT msg, LPARAM lparam)
 {
-
+#ifdef __REACTOS__
+    // NOTE: This callback is needed to set large icon correctly.
+    HICON hIcon;
+#endif
     TRACE("(%p, 0x%08x/%d, 0x%lx)\n", hwnd, msg, msg, lparam);
     switch (msg)
     {
         case PSCB_INITIALIZED:
+#ifdef __REACTOS__
+        {
+            hIcon = LoadIconW(hcpl, MAKEINTRESOURCEW(ICO_MAIN));
+            SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+            break;
+        }
+#else
             SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM) LoadIconW(hcpl, MAKEINTRESOURCEW(ICO_MAIN)));
             break;
+#endif
     }
     return 0;
 }
@@ -111,6 +138,12 @@ static void display_cpl_sheets(HWND parent)
     psp[id].hInstance = hcpl;
     psp[id].u.pszTemplate = MAKEINTRESOURCEW(IDD_CONTENT);
     psp[id].pfnDlgProc = content_dlgproc;
+    id++;
+
+    psp[id].dwSize = sizeof (PROPSHEETPAGEW);
+    psp[id].hInstance = hcpl;
+    psp[id].u.pszTemplate = MAKEINTRESOURCEW(IDD_CONNECTIONS);
+    psp[id].pfnDlgProc = connections_dlgproc;
     id++;
 
     /* Fill out the PROPSHEETHEADER */

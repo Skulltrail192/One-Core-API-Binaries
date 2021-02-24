@@ -79,7 +79,7 @@ GenericMfg = "(Disqueteras genéricas)"
 Floppy.DeviceDesc = "Disquetera genérica"
 
 [Strings.0415]
-ReactOS = "Ekipa ReactOS"
+ReactOS = "Zespół ReactOS"
 
 FloppyClassName = "Stacje dyskietek"
 GenericMfg = "(Standardowe stacje dyskietek)"
@@ -104,3 +104,7 @@ ReactOS = "ReactOS Takımı"
 FloppyClassName = "Yumuşak Disk Sürücüleri"
 GenericMfg = "(Umûmî Yumuşak Disk Sürücüleri)"
 Floppy.DeviceDesc = "Umûmî Yumuşak Disk Sürücüsü"
+
+[Strings.0804]
+GenericMfg = "(通用软盘驱动器)"
+Floppy.DeviceDesc = "通用软盘驱动器"

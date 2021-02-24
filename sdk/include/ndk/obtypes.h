@@ -434,6 +434,9 @@ typedef struct _OBJECT_HEADER_NAME_INFO
     ULONG QueryReferences;
     ULONG Reserved2;
     ULONG DbgReferenceCount;
+#ifdef _WIN64
+    ULONG64 Reserved3;
+#endif
 } OBJECT_HEADER_NAME_INFO, *POBJECT_HEADER_NAME_INFO;
 
 typedef struct _OBJECT_HANDLE_COUNT_ENTRY
@@ -471,6 +474,9 @@ typedef struct _OBJECT_HEADER_QUOTA_INFO
     ULONG NonPagedPoolCharge;
     ULONG SecurityDescriptorCharge;
     PEPROCESS ExclusiveProcess;
+#ifdef _WIN64
+    ULONG64 Reserved;
+#endif
 } OBJECT_HEADER_QUOTA_INFO, *POBJECT_HEADER_QUOTA_INFO;
 
 //
@@ -478,10 +484,10 @@ typedef struct _OBJECT_HEADER_QUOTA_INFO
 //
 typedef struct _OBJECT_HEADER
 {
-    LONG PointerCount;
+    LONG_PTR PointerCount;
     union
     {
-        LONG HandleCount;
+        LONG_PTR HandleCount;
         volatile PVOID NextToFree;
     };
     POBJECT_TYPE Type;
@@ -538,7 +544,6 @@ typedef struct _OBJECT_SYMBOLIC_LINK
 //
 // Kernel Exports
 //
-extern POBJECT_TYPE NTSYSAPI ObDirectoryType;
 extern PDEVICE_MAP NTSYSAPI ObSystemDeviceMap;
 
 #endif // !NTOS_MODE_USER

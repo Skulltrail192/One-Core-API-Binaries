@@ -84,7 +84,7 @@ static BOOLEAN StringsLoaded = FALSE;
 static VOID LoadStrings(VOID)
 {
     LoadString(CMD_ModuleHandle, STRING_DELETE_WIPE, szDeleteWipe, ARRAYSIZE(szDeleteWipe));
-    GetModuleFileName(NULL, CMDPath, MAX_PATH);
+    GetModuleFileName(NULL, CMDPath, ARRAYSIZE(CMDPath));
     StringsLoaded = TRUE;
 }
 
@@ -180,6 +180,7 @@ DeleteFiles(LPTSTR FileName, DWORD* dwFlags, DWORD dwAttrFlags)
 
         if (!((*dwFlags & DEL_YES) || (*dwFlags & DEL_QUIET) || (*dwFlags & DEL_PROMPT)))
         {
+            ConOutPrintf (_T("Delete %s, "),szFileName);
             res = FilePromptYNA (STRING_DEL_HELP2);
             if ((res == PROMPT_NO) || (res == PROMPT_BREAK))
                 return 0x80000000;
@@ -284,39 +285,46 @@ ProcessDirectory(LPTSTR FileName, DWORD* dwFlags, DWORD dwAttrFlags)
     WIN32_FIND_DATA f;
     DWORD dwFiles = 0;
 
+    /* Get the full path to the file */
     GetFullPathName(FileName,
                     MAX_PATH,
                     szFullPath,
                     &pFilePart);
 
+    /* Delete all the files in this directory */
     dwFiles = DeleteFiles(szFullPath, dwFlags, dwAttrFlags);
-    if (dwFiles & 0x80000000) return dwFiles;
+    if (dwFiles & 0x80000000)
+        return dwFiles;
 
     if (*dwFlags & DEL_SUBDIR)
     {
         /* Get just the file name */
-        pSearchPart = _tcsrchr(FileName,_T('\\'));
-        if (pSearchPart != NULL)
-            pSearchPart++;
-        else
-            pSearchPart = FileName;
-
-        /* Get the full path to the file */
-        GetFullPathName (FileName,MAX_PATH,szFullPath,NULL);
-
-        /* strip the filename off of it */
-        pFilePart = _tcsrchr(szFullPath, _T('\\'));
-        if (pFilePart == NULL)
+        pSearchPart = _T("*");
+        if (!IsExistingDirectory(szFullPath))
         {
-            pFilePart = szFullPath;
+            pSearchPart = _tcsrchr(FileName, _T('\\'));
+            if (pSearchPart != NULL)
+                pSearchPart++;
+            else
+                pSearchPart = FileName;
+        }
+
+        /* If no wildcard or file was specified and this is a directory, then
+           display all files in it */
+        if (pFilePart == NULL || IsExistingDirectory(szFullPath))
+        {
+            pFilePart = &szFullPath[_tcslen(szFullPath)];
+            if (*(pFilePart-1) != _T('\\'))
+                *pFilePart++ = _T('\\');
+            _tcscpy(pFilePart, _T("*"));
         }
         else
         {
-            pFilePart++;
+            /* strip the filename off of it */
+            _tcscpy(pFilePart, _T("*"));
         }
 
-        _tcscpy(pFilePart, _T("*"));
-
+        /* Enumerate all the sub-directories */
         hFile = FindFirstFile(szFullPath, &f);
         if (hFile != INVALID_HANDLE_VALUE)
         {
@@ -341,6 +349,7 @@ ProcessDirectory(LPTSTR FileName, DWORD* dwFlags, DWORD dwAttrFlags)
             FindClose (hFile);
         }
     }
+
     return dwFiles;
 }
 

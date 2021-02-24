@@ -84,15 +84,14 @@ void
 LoadDIBFromFile(HBITMAP * hBitmap, LPCTSTR name, LPSYSTEMTIME time, int *size, int *hRes, int *vRes)
 {
     CImage img;
-    img.Load(name);  // TODO: error handling
+    img.Load(name);
+    *hBitmap = img.Detach();
 
     if (!hBitmap)
     {
         ShowFileLoadError(name);
         return;
     }
-
-    *hBitmap = img.Detach();
 
     // update time and size
     HANDLE hFile =
@@ -112,7 +111,10 @@ LoadDIBFromFile(HBITMAP * hBitmap, LPCTSTR name, LPSYSTEMTIME time, int *size, i
     if (size)
         *size = GetFileSize(hFile, NULL);
 
-    // TODO: update hRes and vRes
+    HDC hScreenDC = GetDC(NULL);
+    *hRes = (int)(GetDeviceCaps(hScreenDC, LOGPIXELSX) * 1000 / 25.4);
+    *vRes = (int)(GetDeviceCaps(hScreenDC, LOGPIXELSY) * 1000 / 25.4);
+    ReleaseDC(NULL, hScreenDC);
 
     CloseHandle(hFile);
 }

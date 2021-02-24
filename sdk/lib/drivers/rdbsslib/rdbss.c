@@ -361,6 +361,11 @@ NTSTATUS
 RxNotifyChangeDirectory(
     PRX_CONTEXT RxContext);
 
+VOID
+NTAPI
+RxpCancelRoutine(
+    PVOID Context);
+
 NTSTATUS
 RxpQueryInfoMiniRdr(
     PRX_CONTEXT RxContext,
@@ -529,7 +534,6 @@ BOOLEAN DisableFlushOnCleanup = FALSE;
 ULONG ReadAheadGranularity = 1 << PAGE_SHIFT;
 LIST_ENTRY RxActiveContexts;
 NPAGED_LOOKASIDE_LIST RxContextLookasideList;
-FAST_MUTEX RxContextPerFileSerializationMutex;
 RDBSS_DATA RxData;
 FCB RxDeviceFCB;
 BOOLEAN RxLoudLowIoOpsEnabled = FALSE;
@@ -643,6 +647,8 @@ VOID
 CheckForLoudOperations(
     PRX_CONTEXT RxContext)
 {
+    RxCaptureFcb;
+
     PAGED_CODE();
 
 #define ALLSCR_LENGTH (sizeof(L"all.scr") - sizeof(UNICODE_NULL))
@@ -650,11 +656,9 @@ CheckForLoudOperations(
     /* Are loud operations enabled? */
     if (RxLoudLowIoOpsEnabled)
     {
-        PFCB Fcb;
-
         /* If so, the operation will be loud only if filename ends with all.scr */
-        Fcb = (PFCB)RxContext->pFcb;
-        if (RtlCompareMemory(Add2Ptr(Fcb->PrivateAlreadyPrefixedName.Buffer, (Fcb->PrivateAlreadyPrefixedName.Length - ALLSCR_LENGTH)),
+        if (RtlCompareMemory(Add2Ptr(capFcb->PrivateAlreadyPrefixedName.Buffer,
+                             (capFcb->PrivateAlreadyPrefixedName.Length - ALLSCR_LENGTH)),
                              L"all.scr", ALLSCR_LENGTH) == ALLSCR_LENGTH)
         {
             SetFlag(RxContext->LowIoContext.Flags, LOWIO_CONTEXT_FLAG_LOUDOPS);
@@ -701,14 +705,12 @@ __RxWriteReleaseResources(
     PCSTR FileName,
     ULONG SerialNumber)
 {
-    PFCB Fcb;
+    RxCaptureFcb;
 
     PAGED_CODE();
 
     ASSERT(RxContext != NULL);
-
-    Fcb = (PFCB)RxContext->pFcb;
-    ASSERT(Fcb != NULL);
+    ASSERT(capFcb != NULL);
 
     /* If FCB resource was acquired, release it */
     if (RxContext->FcbResourceAcquired)
@@ -716,11 +718,11 @@ __RxWriteReleaseResources(
         /* Taking care of owner */
         if (ResourceOwnerSet)
         {
-            RxReleaseFcbForThread(RxContext, Fcb, RxContext->LowIoContext.ResourceThreadId);
+            RxReleaseFcbForThread(RxContext, capFcb, RxContext->LowIoContext.ResourceThreadId);
         }
         else
         {
-            RxReleaseFcb(RxContext, Fcb);
+            RxReleaseFcb(RxContext, capFcb);
         }
 
         RxContext->FcbResourceAcquired = FALSE;
@@ -732,11 +734,11 @@ __RxWriteReleaseResources(
         /* Taking care of owner */
         if (ResourceOwnerSet)
         {
-            RxReleasePagingIoResourceForThread(RxContext, Fcb, RxContext->LowIoContext.ResourceThreadId);
+            RxReleasePagingIoResourceForThread(RxContext, capFcb, RxContext->LowIoContext.ResourceThreadId);
         }
         else
         {
-            RxReleasePagingIoResource(RxContext, Fcb);
+            RxReleasePagingIoResource(RxContext, capFcb);
         }
 
         /* No need to release boolean here, RxReleasePagingIoResource() takes care of it */
@@ -774,14 +776,14 @@ RxAddToWorkque(
     ULONG Queued;
     KIRQL OldIrql;
     WORK_QUEUE_TYPE Queue;
-    PIO_STACK_LOCATION Stack;
 
-    Stack = RxContext->CurrentIrpSp;
+    RxCaptureParamBlock;
+
     RxContext->PostRequest = FALSE;
 
     /* First of all, select the appropriate queue - delayed for prefix claim, critical for the rest */
     if (RxContext->MajorFunction == IRP_MJ_DEVICE_CONTROL &&
-        Stack->Parameters.DeviceIoControl.IoControlCode == IOCTL_REDIR_QUERY_PATH)
+        capPARAMS->Parameters.DeviceIoControl.IoControlCode == IOCTL_REDIR_QUERY_PATH)
     {
         Queue = DelayedWorkQueue;
         SetFlag(RxContext->Flags, RX_CONTEXT_FLAG_FSP_DELAYED_OVERFLOW_QUEUE);
@@ -793,7 +795,7 @@ RxAddToWorkque(
     }
 
     /* Check for overflow */
-    if (Stack->FileObject != NULL)
+    if (capPARAMS->FileObject != NULL)
     {
         KeAcquireSpinLock(&RxFileSystemDeviceObject->OverflowQueueSpinLock, &OldIrql);
 
@@ -821,22 +823,23 @@ RxAddToWorkque(
  */
 VOID
 RxAdjustFileTimesAndSize(
-    PRX_CONTEXT Context)
+    PRX_CONTEXT RxContext)
 {
-    PFCB Fcb;
-    PFOBX Fobx;
     NTSTATUS Status;
-    PFILE_OBJECT FileObject;
     LARGE_INTEGER CurrentTime;
     FILE_BASIC_INFORMATION FileBasicInfo;
     FILE_END_OF_FILE_INFORMATION FileEOFInfo;
     BOOLEAN FileModified, SetLastChange, SetLastAccess, SetLastWrite, NeedUpdate;
 
+    RxCaptureFcb;
+    RxCaptureFobx;
+    RxCaptureParamBlock;
+    RxCaptureFileObject;
+
     PAGED_CODE();
 
-    FileObject = Context->CurrentIrpSp->FileObject;
     /* If Cc isn't initialized, the file was not read nor written, nothing to do */
-    if (FileObject->PrivateCacheMap == NULL)
+    if (capFileObject->PrivateCacheMap == NULL)
     {
         return;
     }
@@ -844,17 +847,16 @@ RxAdjustFileTimesAndSize(
     /* Get now */
     KeQuerySystemTime(&CurrentTime);
 
-    Fobx = (PFOBX)Context->pFobx;
     /* Was the file modified? */
-    FileModified = BooleanFlagOn(FileObject->Flags, FO_FILE_MODIFIED);
+    FileModified = BooleanFlagOn(capFileObject->Flags, FO_FILE_MODIFIED);
     /* We'll set last write if it was modified and user didn't update yet */
-    SetLastWrite = FileModified && !BooleanFlagOn(Fobx->Flags, FOBX_FLAG_USER_SET_LAST_WRITE);
+    SetLastWrite = FileModified && !BooleanFlagOn(capFobx->Flags, FOBX_FLAG_USER_SET_LAST_WRITE);
     /* File was accessed if: written or read (fastio), we'll update last access if user didn't */
     SetLastAccess = SetLastWrite ||
-                    (BooleanFlagOn(FileObject->Flags, FO_FILE_FAST_IO_READ) &&
-                     !BooleanFlagOn(Fobx->Flags, FOBX_FLAG_USER_SET_LAST_ACCESS));
+                    (BooleanFlagOn(capFileObject->Flags, FO_FILE_FAST_IO_READ) &&
+                     !BooleanFlagOn(capFobx->Flags, FOBX_FLAG_USER_SET_LAST_ACCESS));
     /* We'll set last change if it was modified and user didn't update yet */
-    SetLastChange = FileModified && !BooleanFlagOn(Fobx->Flags, FOBX_FLAG_USER_SET_LAST_CHANGE);
+    SetLastChange = FileModified && !BooleanFlagOn(capFobx->Flags, FOBX_FLAG_USER_SET_LAST_CHANGE);
 
     /* Nothing to update? Job done */
     if (!FileModified && !SetLastWrite && !SetLastAccess && !SetLastChange)
@@ -862,7 +864,6 @@ RxAdjustFileTimesAndSize(
         return;
     }
 
-    Fcb = (PFCB)Context->pFcb;
     /* By default, we won't issue any MRxSetFileInfoAtCleanup call */
     NeedUpdate = FALSE;
     RtlZeroMemory(&FileBasicInfo, sizeof(FileBasicInfo));
@@ -871,7 +872,7 @@ RxAdjustFileTimesAndSize(
     if (SetLastWrite)
     {
         NeedUpdate = TRUE;
-        Fcb->LastWriteTime.QuadPart = CurrentTime.QuadPart;
+        capFcb->LastWriteTime.QuadPart = CurrentTime.QuadPart;
         FileBasicInfo.LastWriteTime.QuadPart = CurrentTime.QuadPart;
     }
 
@@ -879,7 +880,7 @@ RxAdjustFileTimesAndSize(
     if (SetLastAccess)
     {
         NeedUpdate = TRUE;
-        Fcb->LastAccessTime.QuadPart = CurrentTime.QuadPart;
+        capFcb->LastAccessTime.QuadPart = CurrentTime.QuadPart;
         FileBasicInfo.LastAccessTime.QuadPart = CurrentTime.QuadPart;
     }
 
@@ -887,31 +888,31 @@ RxAdjustFileTimesAndSize(
     if (SetLastChange)
     {
         NeedUpdate = TRUE;
-        Fcb->LastChangeTime.QuadPart = CurrentTime.QuadPart;
+        capFcb->LastChangeTime.QuadPart = CurrentTime.QuadPart;
         FileBasicInfo.ChangeTime.QuadPart = CurrentTime.QuadPart;
     }
 
     /* If one of the date was modified, issue a call to mini-rdr */
     if (NeedUpdate)
     {
-        Context->Info.FileInformationClass = FileBasicInformation;
-        Context->Info.Buffer = &FileBasicInfo;
-        Context->Info.Length = sizeof(FileBasicInfo);
+        RxContext->Info.FileInformationClass = FileBasicInformation;
+        RxContext->Info.Buffer = &FileBasicInfo;
+        RxContext->Info.Length = sizeof(FileBasicInfo);
 
-        MINIRDR_CALL(Status, Context, Fcb->MRxDispatch, MRxSetFileInfoAtCleanup, (Context));
+        MINIRDR_CALL(Status, RxContext, capFcb->MRxDispatch, MRxSetFileInfoAtCleanup, (RxContext));
         (void)Status;
     }
 
     /* If the file was modified, update its EOF */
     if (FileModified)
     {
-        FileEOFInfo.EndOfFile.QuadPart = Fcb->Header.FileSize.QuadPart;
+        FileEOFInfo.EndOfFile.QuadPart = capFcb->Header.FileSize.QuadPart;
 
-        Context->Info.FileInformationClass = FileEndOfFileInformation;
-        Context->Info.Buffer = &FileEOFInfo;
-        Context->Info.Length = sizeof(FileEOFInfo);
+        RxContext->Info.FileInformationClass = FileEndOfFileInformation;
+        RxContext->Info.Buffer = &FileEOFInfo;
+        RxContext->Info.Length = sizeof(FileEOFInfo);
 
-        MINIRDR_CALL(Status, Context, Fcb->MRxDispatch, MRxSetFileInfoAtCleanup, (Context));
+        MINIRDR_CALL(Status, RxContext, capFcb->MRxDispatch, MRxSetFileInfoAtCleanup, (RxContext));
         (void)Status;
     }
 }
@@ -1052,6 +1053,9 @@ RxCancelNotifyChangeDirectoryRequestsForVNetRoot(
     /* Lock our list lock */
     KeAcquireSpinLock(&RxStrucSupSpinLock, &OldIrql);
 
+    /* Assume success */
+    Status = STATUS_SUCCESS;
+
     /* Now, browse all the active contexts, to find the associated ones */
     Entry = RxActiveContexts.Flink;
     while (Entry != &RxActiveContexts)
@@ -1128,13 +1132,126 @@ RxCancelNotifyChangeDirectoryRequestsForVNetRoot(
     return Status;
 }
 
+/*
+ * @implemented
+ */
+BOOLEAN
+RxCancelOperationInOverflowQueue(
+    PRX_CONTEXT RxContext)
+{
+    KIRQL OldIrql;
+    BOOLEAN OperationToCancel;
+
+    /* By default, nothing cancelled */
+    OperationToCancel = FALSE;
+
+    /* Acquire the overflow spinlock */
+    KeAcquireSpinLock(&RxFileSystemDeviceObject->OverflowQueueSpinLock, &OldIrql);
+
+    /* Is our context in any queue? */
+    if (BooleanFlagOn(RxContext->Flags, (RX_CONTEXT_FLAG_FSP_DELAYED_OVERFLOW_QUEUE | RX_CONTEXT_FLAG_FSP_CRITICAL_OVERFLOW_QUEUE)))
+    {
+        /* Make sure flag is consistent with facts... */
+        if (RxContext->OverflowListEntry.Flink != NULL)
+        {
+            /* Remove it from the list */
+            RemoveEntryList(&RxContext->OverflowListEntry);
+            RxContext->OverflowListEntry.Flink = NULL;
+
+            /* Decrement appropriate count */
+            if (BooleanFlagOn(RxContext->Flags, RX_CONTEXT_FLAG_FSP_CRITICAL_OVERFLOW_QUEUE))
+            {
+                --RxFileSystemDeviceObject->OverflowQueueCount[CriticalWorkQueue];
+            }
+            else
+            {
+                --RxFileSystemDeviceObject->OverflowQueueCount[DelayedWorkQueue];
+            }
+
+            /* Clear the flag */
+            ClearFlag(RxContext->Flags, ~(RX_CONTEXT_FLAG_FSP_DELAYED_OVERFLOW_QUEUE | RX_CONTEXT_FLAG_FSP_CRITICAL_OVERFLOW_QUEUE));
+
+            /* Time to cancel! */
+            OperationToCancel = TRUE;
+        }
+    }
+
+    KeReleaseSpinLock(&RxFileSystemDeviceObject->OverflowQueueSpinLock, OldIrql);
+
+    /* We have something to cancel & complete */
+    if (OperationToCancel)
+    {
+        RxRemoveOperationFromBlockingQueue(RxContext);
+        RxCompleteRequest(RxContext, STATUS_CANCELLED);
+    }
+
+    return OperationToCancel;
+}
+
+/*
+ * @implemented
+ */
 VOID
 NTAPI
 RxCancelRoutine(
     PDEVICE_OBJECT DeviceObject,
     PIRP Irp)
 {
-    UNIMPLEMENTED;
+    KIRQL OldIrql;
+    PLIST_ENTRY Entry;
+    PRX_CONTEXT RxContext;
+
+    /* Lock our contexts list */
+    KeAcquireSpinLock(&RxStrucSupSpinLock, &OldIrql);
+
+    /* Now, find a context that matches the cancelled IRP */
+    Entry = RxActiveContexts.Flink;
+    while (Entry != &RxActiveContexts)
+    {
+        RxContext = CONTAINING_RECORD(Entry, RX_CONTEXT, ContextListEntry);
+        Entry = Entry->Flink;
+
+        /* Found! */
+        if (RxContext->CurrentIrp == Irp)
+        {
+            break;
+        }
+    }
+
+    /* If we reached the end of the list, we didn't find any context, so zero the buffer
+     * If the context is already under cancellation, forget about it too
+     */
+    if (Entry == &RxActiveContexts || BooleanFlagOn(RxContext->Flags, RX_CONTEXT_FLAG_CANCELLED))
+    {
+        RxContext = NULL;
+    }
+    else
+    {
+        /* Otherwise, reference it and mark it cancelled */
+        SetFlag(RxContext->Flags, RX_CONTEXT_FLAG_CANCELLED);
+        InterlockedIncrement((volatile long *)&RxContext->ReferenceCount);
+    }
+
+    /* Done with the contexts list */
+    KeReleaseSpinLock(&RxStrucSupSpinLock, OldIrql);
+
+    /* And done with the cancellation, we'll do it now */
+    IoReleaseCancelSpinLock(Irp->CancelIrql);
+
+    /* If we have a context to cancel */
+    if (RxContext != NULL)
+    {
+        /* We cannot executed at dispatch, so queue a deferred cancel */
+        if (KeGetCurrentIrql() >= DISPATCH_LEVEL)
+        {
+            RxDispatchToWorkerThread(RxFileSystemDeviceObject, CriticalWorkQueue, RxpCancelRoutine, RxContext);
+        }
+        /* Cancel now! */
+        else
+        {
+            RxpCancelRoutine(RxContext);
+        }
+    }
 }
 
 /*
@@ -1241,6 +1358,9 @@ RxCanonicalizeNameAndObtainNetRoot(
     NET_ROOT_TYPE NetRootType;
     UNICODE_STRING CanonicalName;
 
+    RxCaptureParamBlock;
+    RxCaptureFileObject;
+
     PAGED_CODE();
 
     NetRootType = NET_ROOT_WILD;
@@ -1249,7 +1369,7 @@ RxCanonicalizeNameAndObtainNetRoot(
     RtlInitEmptyUnicodeString(&CanonicalName, NULL, 0);
 
     /* if not relative opening, just handle the passed name */
-    if (RxContext->CurrentIrpSp->FileObject->RelatedFileObject == NULL)
+    if (capFileObject->RelatedFileObject == NULL)
     {
         Status = RxFirstCanonicalize(RxContext, FileName, &CanonicalName, &NetRootType);
         if (!NT_SUCCESS(Status))
@@ -1262,9 +1382,8 @@ RxCanonicalizeNameAndObtainNetRoot(
         PFCB Fcb;
 
         /* Make sure we have a valid FCB and a FOBX */
-        Fcb = RxContext->CurrentIrpSp->FileObject->RelatedFileObject->FsContext;
-        if (Fcb == NULL ||
-            RxContext->CurrentIrpSp->FileObject->RelatedFileObject->FsContext2 == NULL)
+        Fcb = capFileObject->RelatedFileObject->FsContext;
+        if (Fcb == NULL || capFileObject->RelatedFileObject->FsContext2 == NULL)
         {
             return STATUS_INVALID_PARAMETER;
         }
@@ -1320,12 +1439,15 @@ RxCanonicalizeNameAndObtainNetRoot(
     return Status;
 }
 
+/*
+ * @implemented
+ */
 VOID
 NTAPI
 RxCheckFcbStructuresForAlignment(
     VOID)
 {
-    UNIMPLEMENTED;
+    PAGED_CODE();
 }
 
 #if DBG
@@ -1610,26 +1732,25 @@ NTSTATUS
 RxCollapseOrCreateSrvOpen(
     PRX_CONTEXT RxContext)
 {
-    PFCB Fcb;
     NTSTATUS Status;
     ULONG Disposition;
     PSRV_OPEN SrvOpen;
     USHORT ShareAccess;
-    PIO_STACK_LOCATION Stack;
     ACCESS_MASK DesiredAccess;
     RX_BLOCK_CONDITION FcbCondition;
+
+    RxCaptureFcb;
+    RxCaptureParamBlock;
 
     PAGED_CODE();
 
     DPRINT("RxCollapseOrCreateSrvOpen(%p)\n", RxContext);
 
-    Fcb = (PFCB)RxContext->pFcb;
-    ASSERT(RxIsFcbAcquiredExclusive(Fcb));
-    ++Fcb->UncleanCount;
+    ASSERT(RxIsFcbAcquiredExclusive(capFcb));
+    ++capFcb->UncleanCount;
 
-    Stack = RxContext->CurrentIrpSp;
-    DesiredAccess = Stack->Parameters.Create.SecurityContext->DesiredAccess & FILE_ALL_ACCESS;
-    ShareAccess = Stack->Parameters.Create.ShareAccess & FILE_SHARE_VALID_FLAGS;
+    DesiredAccess = capPARAMS->Parameters.Create.SecurityContext->DesiredAccess & FILE_ALL_ACCESS;
+    ShareAccess = capPARAMS->Parameters.Create.ShareAccess & FILE_SHARE_VALID_FLAGS;
 
     Disposition = RxContext->Create.NtCreateParameters.Disposition;
 
@@ -1638,7 +1759,7 @@ RxCollapseOrCreateSrvOpen(
     if (Status == STATUS_NOT_FOUND)
     {
         /* If none found, create one */
-        SrvOpen = RxCreateSrvOpen((PV_NET_ROOT)RxContext->Create.pVNetRoot, Fcb);
+        SrvOpen = RxCreateSrvOpen((PV_NET_ROOT)RxContext->Create.pVNetRoot, capFcb);
         if (SrvOpen == NULL)
         {
             Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -1663,7 +1784,7 @@ RxCollapseOrCreateSrvOpen(
             /* Cookie to check the mini-rdr doesn't mess with RX_CONTEXT */
             RxContext->CurrentIrp->IoStatus.Information = 0xABCDEF;
             /* Inform the mini-rdr we're handling a create */
-            MINIRDR_CALL(Status, RxContext, Fcb->MRxDispatch, MRxCreate, (RxContext));
+            MINIRDR_CALL(Status, RxContext, capFcb->MRxDispatch, MRxCreate, (RxContext));
             ASSERT(RxContext->CurrentIrp->IoStatus.Information == 0xABCDEF);
 
             DPRINT("MRxCreate returned: %x\n", Status);
@@ -1672,23 +1793,23 @@ RxCollapseOrCreateSrvOpen(
                 /* In case of overwrite, reset file size */
                 if (Disposition == FILE_OVERWRITE || Disposition == FILE_OVERWRITE_IF)
                 {
-                    RxAcquirePagingIoResource(RxContext, Fcb);
-                    Fcb->Header.AllocationSize.QuadPart = 0LL;
-                    Fcb->Header.FileSize.QuadPart = 0LL;
-                    Fcb->Header.ValidDataLength.QuadPart = 0LL;
-                    RxContext->CurrentIrpSp->FileObject->SectionObjectPointer = &Fcb->NonPaged->SectionObjectPointers;
-                    CcSetFileSizes(RxContext->CurrentIrpSp->FileObject, (PCC_FILE_SIZES)&Fcb->Header.AllocationSize);
-                    RxReleasePagingIoResource(RxContext, Fcb);
+                    RxAcquirePagingIoResource(RxContext, capFcb);
+                    capFcb->Header.AllocationSize.QuadPart = 0LL;
+                    capFcb->Header.FileSize.QuadPart = 0LL;
+                    capFcb->Header.ValidDataLength.QuadPart = 0LL;
+                    RxContext->CurrentIrpSp->FileObject->SectionObjectPointer = &capFcb->NonPaged->SectionObjectPointers;
+                    CcSetFileSizes(RxContext->CurrentIrpSp->FileObject, (PCC_FILE_SIZES)&capFcb->Header.AllocationSize);
+                    RxReleasePagingIoResource(RxContext, capFcb);
                 }
                 else
                 {
                     /* Otherwise, adjust sizes */
-                    RxContext->CurrentIrpSp->FileObject->SectionObjectPointer = &Fcb->NonPaged->SectionObjectPointers;
+                    RxContext->CurrentIrpSp->FileObject->SectionObjectPointer = &capFcb->NonPaged->SectionObjectPointers;
                     if (CcIsFileCached(RxContext->CurrentIrpSp->FileObject))
                     {
-                        RxAdjustAllocationSizeforCC(Fcb);
+                        RxAdjustAllocationSizeforCC(capFcb);
                     }
-                    CcSetFileSizes(RxContext->CurrentIrpSp->FileObject, (PCC_FILE_SIZES)&Fcb->Header.AllocationSize);
+                    CcSetFileSizes(RxContext->CurrentIrpSp->FileObject, (PCC_FILE_SIZES)&capFcb->Header.AllocationSize);
                 }
             }
 
@@ -1699,15 +1820,15 @@ RxCollapseOrCreateSrvOpen(
             /* Set SRV_OPEN state - good or bad - depending on whether create succeed */
             RxTransitionSrvOpen(SrvOpen, (Status == STATUS_SUCCESS ? Condition_Good : Condition_Bad));
 
-            ASSERT(RxIsFcbAcquiredExclusive(Fcb));
+            ASSERT(RxIsFcbAcquiredExclusive(capFcb));
 
             RxCompleteSrvOpenKeyAssociation(SrvOpen);
 
             if (Status == STATUS_SUCCESS)
             {
-                if (BooleanFlagOn(Stack->Parameters.Create.Options, FILE_DELETE_ON_CLOSE))
+                if (BooleanFlagOn(capPARAMS->Parameters.Create.Options, FILE_DELETE_ON_CLOSE))
                 {
-                    ClearFlag(Fcb->FcbState, FCB_STATE_COLLAPSING_ENABLED);
+                    ClearFlag(capFcb->FcbState, FCB_STATE_COLLAPSING_ENABLED);
                 }
                 SrvOpen->CreateOptions = RxContext->Create.NtCreateParameters.CreateOptions;
                 FcbCondition = Condition_Good;
@@ -1727,8 +1848,8 @@ RxCollapseOrCreateSrvOpen(
         }
 
         /* Set FCB state -  good or bad - depending on whether create succeed */
-        DPRINT("Transitioning FCB %p to condition %lx\n", Fcb, Fcb->Condition);
-        RxTransitionNetFcb(Fcb, FcbCondition);
+        DPRINT("Transitioning FCB %p to condition %lx\n", capFcb, capFcb->Condition);
+        RxTransitionNetFcb(capFcb, FcbCondition);
     }
     else if (Status == STATUS_SUCCESS)
     {
@@ -1748,12 +1869,12 @@ RxCollapseOrCreateSrvOpen(
             ++SrvOpen->OpenCount;
             ExtraOpen = TRUE;
 
-            RxReleaseFcb(RxContext, Fcb);
+            RxReleaseFcb(RxContext, capFcb);
             RxContext->Create.FcbAcquired = FALSE;
 
             RxWaitForStableSrvOpen(SrvOpen, RxContext);
 
-            if (NT_SUCCESS(RxAcquireExclusiveFcb(RxContext, Fcb)))
+            if (NT_SUCCESS(RxAcquireExclusiveFcb(RxContext, capFcb)))
             {
                 RxContext->Create.FcbAcquired = TRUE;
             }
@@ -1764,9 +1885,9 @@ RxCollapseOrCreateSrvOpen(
         /* Inform the mini-rdr we do an opening with a reused SRV_OPEN */
         if (IsGood)
         {
-            MINIRDR_CALL(Status, RxContext, Fcb->MRxDispatch, MRxCollapseOpen, (RxContext));
+            MINIRDR_CALL(Status, RxContext, capFcb->MRxDispatch, MRxCollapseOpen, (RxContext));
 
-            ASSERT(RxIsFcbAcquiredExclusive(Fcb));
+            ASSERT(RxIsFcbAcquiredExclusive(capFcb));
         }
         else
         {
@@ -1780,7 +1901,7 @@ RxCollapseOrCreateSrvOpen(
         }
     }
 
-    --Fcb->UncleanCount;
+    --capFcb->UncleanCount;
 
     DPRINT("Status: %x\n", Status);
     return Status;
@@ -1847,8 +1968,8 @@ RxCommonCleanup(
 
     Fobx->AssociatedFileObject = NULL;
 
-    /* In case SRV_OPEN used is part of FCB */
-    if (BooleanFlagOn(Fcb->FcbState, FCB_STATE_SRVOPEN_USED))
+    /* In case it was already orphaned */
+    if (BooleanFlagOn(Fcb->FcbState, FCB_STATE_ORPHANED))
     {
         ASSERT(Fcb->UncleanCount != 0);
         InterlockedDecrement((volatile long *)&Fcb->UncleanCount);
@@ -4447,7 +4568,7 @@ RxCommonWrite(
                                           1,
                                           &RxStrucSupSpinLock) == 0)
                 {
-                    KeResetEvent(Fcb->NonPaged->OutstandingAsyncEvent);
+                    KeClearEvent(Fcb->NonPaged->OutstandingAsyncEvent);
                 }
 
                 UnwindOutstandingAsync = TRUE;
@@ -4787,6 +4908,134 @@ RxCompleteMdl(
  * @implemented
  */
 VOID
+RxConjureOriginalName(
+    PFCB Fcb,
+    PFOBX Fobx,
+    PULONG ActualNameLength,
+    PWCHAR OriginalName,
+    PLONG LengthRemaining,
+    RX_NAME_CONJURING_METHODS NameConjuringMethod)
+{
+    PWSTR Prefix, Name;
+    PV_NET_ROOT VNetRoot;
+    USHORT PrefixLength, NameLength, ToCopy;
+
+    PAGED_CODE();
+
+    VNetRoot = Fcb->VNetRoot;
+    /* We will use the prefix contained in NET_ROOT, if we don't have
+     * a V_NET_ROOT, or if it wasn't null deviced or if we already have
+     * a UNC path */
+    if (VNetRoot == NULL || VNetRoot->PrefixEntry.Prefix.Buffer[1] != L';' ||
+        BooleanFlagOn(Fobx->Flags, FOBX_FLAG_UNC_NAME))
+    {
+        Prefix = ((PNET_ROOT)Fcb->pNetRoot)->PrefixEntry.Prefix.Buffer;
+        PrefixLength = ((PNET_ROOT)Fcb->pNetRoot)->PrefixEntry.Prefix.Length;
+        NameLength = 0;
+
+        /* In that case, keep track that we will have a prefix as buffer */
+        NameConjuringMethod = VNetRoot_As_Prefix;
+    }
+    else
+    {
+        ASSERT(NodeType(VNetRoot) == RDBSS_NTC_V_NETROOT);
+
+        /* Otherwise, return the prefix from our V_NET_ROOT */
+        Prefix = VNetRoot->PrefixEntry.Prefix.Buffer;
+        PrefixLength = VNetRoot->PrefixEntry.Prefix.Length;
+        NameLength = VNetRoot->NamePrefix.Length;
+
+        /* If we want a UNC path, skip potential device */
+        if (NameConjuringMethod == VNetRoot_As_UNC_Name)
+        {
+            do
+            {
+                ++Prefix;
+                PrefixLength -= sizeof(WCHAR);
+            } while (PrefixLength > 0 && Prefix[0] != L'\\');
+        }
+    }
+
+    /* If we added an extra backslash, skip it */
+    if (BooleanFlagOn(Fcb->FcbState, FCB_STATE_ADDEDBACKSLASH))
+    {
+        NameLength += sizeof(WCHAR);
+    }
+
+    /* If we're asked for a drive letter, skip the prefix */
+    if (NameConjuringMethod == VNetRoot_As_DriveLetter)
+    {
+        PrefixLength = 0;
+
+        /* And make sure we arrive at a backslash */
+        if (Fcb->FcbTableEntry.Path.Length > NameLength &&
+            Fcb->FcbTableEntry.Path.Buffer[NameLength / sizeof(WCHAR)] != L'\\')
+        {
+            NameLength -= sizeof(WCHAR);
+        }
+    }
+    else
+    {
+        /* Prepare to copy the prefix, make sure not to overflow */
+        if (*LengthRemaining >= PrefixLength)
+        {
+            /* Copy everything */
+            ToCopy = PrefixLength;
+            *LengthRemaining = *LengthRemaining - PrefixLength;
+        }
+        else
+        {
+            /* Copy as much as we can */
+            ToCopy = *LengthRemaining;
+            /* And return failure */
+            *LengthRemaining = -1;
+        }
+
+        /* Copy the prefix */
+        RtlCopyMemory(OriginalName, Prefix, ToCopy);
+    }
+
+    /* Do we have a name to copy now? */
+    if (Fcb->FcbTableEntry.Path.Length > NameLength)
+    {
+        ToCopy = Fcb->FcbTableEntry.Path.Length - NameLength;
+        Name = Fcb->FcbTableEntry.Path.Buffer;
+    }
+    else
+    {
+        /* Just use slash for now */
+        ToCopy = sizeof(WCHAR);
+        NameLength = 0;
+        Name = L"\\";
+    }
+
+    /* Total length we will have in the output buffer (if everything is alright) */
+    *ActualNameLength = ToCopy + PrefixLength;
+    /* If we still have room to write data */
+    if (*LengthRemaining != -1)
+    {
+        /* If we can copy everything, it's fine! */
+        if (*LengthRemaining > ToCopy)
+        {
+            *LengthRemaining = *LengthRemaining - ToCopy;
+        }
+        /* Otherwise, copy as much as possible, and return failure */
+        else
+        {
+            ToCopy = *LengthRemaining;
+            *LengthRemaining = -1;
+        }
+
+        /* Copy name after the prefix */
+        RtlCopyMemory(Add2Ptr(OriginalName, PrefixLength),
+                      Add2Ptr(Name, NameLength), ToCopy);
+    }
+}
+
+/*
+ * @implemented
+ */
+VOID
 RxCopyCreateParameters(
     IN PRX_CONTEXT RxContext)
 {
@@ -4909,11 +5158,63 @@ RxCreateFromNetRoot(
 
     DesiredAccess = Stack->Parameters.Create.SecurityContext->DesiredAccess & FILE_ALL_ACCESS;
 
-    /* We don't support renaming yet */
+    /* Get file object */
+    FileObject = Stack->FileObject;
+
+    /* Do we have to open target directory for renaming? */
     if (BooleanFlagOn(Stack->Flags, SL_OPEN_TARGET_DIRECTORY))
     {
-        UNIMPLEMENTED;
-        return STATUS_NOT_IMPLEMENTED;
+        DPRINT("Opening target directory\n");
+
+        /* If we have been asked for delete, try to purge first */
+        if (BooleanFlagOn(Context->Create.NtCreateParameters.DesiredAccess, DELETE))
+        {
+            RxPurgeRelatedFobxs((PNET_ROOT)Context->Create.pVNetRoot->pNetRoot, Context,
+                                ATTEMPT_FINALIZE_ON_PURGE, NULL);
+        }
+
+        /* Create the FCB */
+        Fcb = RxCreateNetFcb(Context, (PV_NET_ROOT)Context->Create.pVNetRoot, NetRootName);
+        if (Fcb == NULL)
+        {
+            return STATUS_INSUFFICIENT_RESOURCES;
+        }
+
+        /* Fake it: it will be used only renaming */
+        NodeType(Fcb) = RDBSS_NTC_OPENTARGETDIR_FCB;
+        Context->Create.FcbAcquired = FALSE;
+        Context->Create.NetNamePrefixEntry = NULL;
+
+        /* Assign it to the FO */
+        FileObject->FsContext = Fcb;
+
+        /* If we have a FOBX already, check whether it's for DFS opening */
+        if (Context->pFobx != NULL)
+        {
+            /* If so, reflect this in the FOBX */
+            if (FileObject->FsContext2 == UIntToPtr(DFS_OPEN_CONTEXT))
+            {
+                SetFlag(Context->pFobx->Flags, FOBX_FLAG_DFS_OPEN);
+            }
+            else
+            {
+                ClearFlag(Context->pFobx->Flags, FOBX_FLAG_DFS_OPEN);
+            }
+        }
+
+        /* Acquire the FCB */
+        Status = RxAcquireExclusiveFcb(Context, Fcb);
+        if (Status != STATUS_SUCCESS)
+        {
+            return Status;
+        }
+
+        /* Reference the FCB and release */
+        RxReferenceNetFcb(Fcb);
+        RxReleaseFcb(Context, Fcb);
+
+        /* We're done! */
+        return STATUS_SUCCESS;
     }
 
     /* Try to find (or create) the FCB for the file */
@@ -4948,7 +5249,6 @@ RxCreateFromNetRoot(
     }
 
     /* Not mailslot! */
-    FileObject = Stack->FileObject;
     /* Check SA for conflict */
     if (Fcb->OpenCount > 0)
     {
@@ -5774,7 +6074,7 @@ RxFirstCanonicalize(
             }
         }
 
-        if (EndOfString - FirstSlash <= sizeof(WCHAR))
+        if (EndOfString - FirstSlash <= 1)
         {
             Status = STATUS_OBJECT_NAME_INVALID;
         }
@@ -6586,14 +6886,6 @@ RxIndicateChangeOfBufferingStateForSrvOpen(
     UNIMPLEMENTED;
 }
 
-VOID
-NTAPI
-RxInitializeDebugSupport(
-    VOID)
-{
-    UNIMPLEMENTED;
-}
-
 /*
  * @implemented
  */
@@ -7316,6 +7608,35 @@ RxNotifyChangeDirectory(
     return Status;
 }
 
+/*
+ * @implemented
+ */
+VOID
+NTAPI
+RxpCancelRoutine(
+    PVOID Context)
+{
+    PRX_CONTEXT RxContext;
+
+    PAGED_CODE();
+
+    RxContext = Context;
+
+    /* First, notify mini-rdr about cancellation */
+    if (RxContext->MRxCancelRoutine != NULL)
+    {
+        RxContext->MRxCancelRoutine(RxContext);
+    }
+    /* If we didn't find in overflow queue, try in blocking operations */
+    else if (!RxCancelOperationInOverflowQueue(RxContext))
+    {
+        RxCancelBlockingOperation(RxContext);
+    }
+
+    /* And delete the context */
+    RxDereferenceAndDeleteRxContext_Real(RxContext);
+}
+
 NTSTATUS
 RxPostStackOverflowRead (
     IN PRX_CONTEXT RxContext)
@@ -7438,7 +7759,7 @@ RxPrefixClaim(
         RxContext->PrefixClaim.SuppliedPathName.MaximumLength = QueryRequest->PathNameLength;
 
         /* Zero the create parameters */
-        RtlZeroMemory(&RxContext->Create.NtCreateParameters,
+        RtlZeroMemory(&RxContext->Create,
                       FIELD_OFFSET(RX_CONTEXT, AlsoCanonicalNameBuffer) - FIELD_OFFSET(RX_CONTEXT, Create.NtCreateParameters));
         RxContext->Create.ThisIsATreeConnectOpen = TRUE;
         RxContext->Create.NtCreateParameters.SecurityContext = QueryRequest->SecurityContext;
@@ -7958,13 +8279,58 @@ RxQueryInternalInfo(
     return STATUS_NOT_IMPLEMENTED;
 }
 
+/*
+ * @implemented
+ */
 NTSTATUS
 RxQueryNameInfo(
     PRX_CONTEXT RxContext,
     PFILE_NAME_INFORMATION NameInfo)
 {
-    UNIMPLEMENTED;
-    return STATUS_NOT_IMPLEMENTED;
+    PFCB Fcb;
+    PFOBX Fobx;
+    PAGED_CODE();
+
+    DPRINT("RxQueryNameInfo(%p, %p)\n", RxContext, NameInfo);
+
+    /* Check we can at least copy name size */
+    if (RxContext->Info.LengthRemaining < FIELD_OFFSET(FILE_NAME_INFORMATION, FileName))
+    {
+        DPRINT1("Buffer too small: %d\n", RxContext->Info.LengthRemaining);
+        RxContext->Info.Length = 0;
+        return STATUS_BUFFER_OVERFLOW;
+    }
+
+    RxContext->Info.LengthRemaining -= FIELD_OFFSET(FILE_NAME_INFORMATION, FileName);
+
+    Fcb = (PFCB)RxContext->pFcb;
+    Fobx = (PFOBX)RxContext->pFobx;
+    /* Get the UNC name */
+    RxConjureOriginalName(Fcb, Fobx, &NameInfo->FileNameLength, &NameInfo->FileName[0],
+                          &RxContext->Info.Length, VNetRoot_As_UNC_Name);
+
+    /* If RxConjureOriginalName returned a negative len (-1) then output buffer
+     * was too small, return the appropriate length & status.
+     */
+    if (RxContext->Info.LengthRemaining < 0)
+    {
+        DPRINT1("Buffer too small!\n");
+        RxContext->Info.Length = 0;
+        return STATUS_BUFFER_OVERFLOW;
+    }
+
+#if 1 // CORE-13938, rfb: please note I replaced 0 with 1 here
+    if (NodeType(Fcb) == RDBSS_NTC_STORAGE_TYPE_DIRECTORY &&
+        RxContext->Info.LengthRemaining >= sizeof(WCHAR))
+    {
+        NameInfo->FileName[NameInfo->FileNameLength / sizeof(WCHAR)] = L'\\';
+        NameInfo->FileNameLength += sizeof(WCHAR);
+        RxContext->Info.LengthRemaining -= sizeof(WCHAR);
+    }
+#endif
+
+    /* All correct */
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -8235,7 +8601,7 @@ RxRemoveOverflowEntry(
         /* Return head */
         Entry = RemoveHeadList(&DeviceObject->OverflowQueue[Queue]);
         Context = CONTAINING_RECORD(Entry, RX_CONTEXT, OverflowListEntry);
-        ClearFlag(Context->Flags, ~(RX_CONTEXT_FLAG_FSP_DELAYED_OVERFLOW_QUEUE | RX_CONTEXT_FLAG_FSP_CRITICAL_OVERFLOW_QUEUE));
+        ClearFlag(Context->Flags, (RX_CONTEXT_FLAG_FSP_DELAYED_OVERFLOW_QUEUE | RX_CONTEXT_FLAG_FSP_CRITICAL_OVERFLOW_QUEUE));
         Context->OverflowListEntry.Flink = NULL;
     }
     KeReleaseSpinLock(&DeviceObject->OverflowQueueSpinLock, OldIrql);
@@ -8605,12 +8971,47 @@ RxSetBasicInfo(
     return Status;
 }
 
+/*
+ * @implemented
+ */
 NTSTATUS
 RxSetDispositionInfo(
     PRX_CONTEXT RxContext)
 {
-    UNIMPLEMENTED;
-    return STATUS_NOT_IMPLEMENTED;
+    NTSTATUS Status;
+
+    PAGED_CODE();
+
+    /* First, make the mini-rdr work! */
+    Status = RxpSetInfoMiniRdr(RxContext, FileDispositionInformation);
+    /* If it succeed, we'll keep track of the change */
+    if (NT_SUCCESS(Status))
+    {
+        PFCB Fcb;
+        PFILE_OBJECT FileObject;
+        PFILE_DISPOSITION_INFORMATION FileDispo;
+
+        Fcb = (PFCB)RxContext->pFcb;
+        FileObject = RxContext->CurrentIrpSp->FileObject;
+        FileDispo = RxContext->CurrentIrp->AssociatedIrp.SystemBuffer;
+        /* Caller asks for deletion: mark as delete on close */
+        if (FileDispo->DeleteFile)
+        {
+            SetFlag(Fcb->FcbState, FCB_STATE_DELETE_ON_CLOSE);
+            FileObject->DeletePending = TRUE;
+        }
+        /* Otherwise, clear it */
+        else
+        {
+            ClearFlag(Fcb->FcbState, FCB_STATE_DELETE_ON_CLOSE);
+            FileObject->DeletePending = FALSE;
+        }
+
+        /* Sanitize output */
+        Status = STATUS_SUCCESS;
+    }
+
+    return Status;
 }
 
 NTSTATUS
@@ -8637,12 +9038,77 @@ RxSetPositionInfo(
     return STATUS_NOT_IMPLEMENTED;
 }
 
+/*
+ * @implemented
+ */
 NTSTATUS
 RxSetRenameInfo(
     PRX_CONTEXT RxContext)
 {
-    UNIMPLEMENTED;
-    return STATUS_NOT_IMPLEMENTED;
+    ULONG Length;
+    NTSTATUS Status;
+    PFCB RenameFcb, Fcb;
+    PIO_STACK_LOCATION Stack;
+    PFILE_RENAME_INFORMATION RenameInfo, UserInfo;
+
+    PAGED_CODE();
+
+    DPRINT("RxSetRenameInfo(%p)\n", RxContext);
+
+    Stack = RxContext->CurrentIrpSp;
+    DPRINT("FO: %p, Replace: %d\n", Stack->Parameters.SetFile.FileObject, Stack->Parameters.SetFile.ReplaceIfExists);
+
+    /* If there's no FO, we won't do extra operation, so directly pass to mini-rdr and quit */
+    RxContext->Info.ReplaceIfExists = Stack->Parameters.SetFile.ReplaceIfExists;
+    if (Stack->Parameters.SetFile.FileObject == NULL)
+    {
+        return RxpSetInfoMiniRdr(RxContext, Stack->Parameters.SetFile.FileInformationClass);
+    }
+
+    Fcb = (PFCB)RxContext->pFcb;
+    RenameFcb = Stack->Parameters.SetFile.FileObject->FsContext;
+    /* First, validate the received file object */
+    ASSERT(NodeType(RenameFcb) == RDBSS_NTC_OPENTARGETDIR_FCB);
+    if (Fcb->pNetRoot != RenameFcb->pNetRoot)
+    {
+        DPRINT1("Not the same device: %p:%p (%wZ) - %p:%p (%wZ)\n", Fcb, Fcb->pNetRoot, Fcb->pNetRoot->pNetRootName, RenameFcb, RenameFcb->pNetRoot, RenameFcb->pNetRoot->pNetRootName);
+        return STATUS_NOT_SAME_DEVICE;
+    }
+
+    /* We'll reallocate a safe buffer */
+    Length = Fcb->pNetRoot->DiskParameters.RenameInfoOverallocationSize + RenameFcb->FcbTableEntry.Path.Length + FIELD_OFFSET(FILE_RENAME_INFORMATION, FileName);
+    RenameInfo = RxAllocatePoolWithTag(PagedPool, Length, '??xR');
+    if (RenameInfo == NULL)
+    {
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    _SEH2_TRY
+    {
+        /* Copy the data */
+        UserInfo = RxContext->CurrentIrp->AssociatedIrp.SystemBuffer;
+        RenameInfo->ReplaceIfExists = UserInfo->ReplaceIfExists;
+        RenameInfo->RootDirectory = UserInfo->RootDirectory;
+        RenameInfo->FileNameLength = RenameFcb->FcbTableEntry.Path.Length;
+        RtlMoveMemory(&RenameInfo->FileName[0], RenameFcb->FcbTableEntry.Path.Buffer, RenameFcb->FcbTableEntry.Path.Length);
+
+        /* Set them in the RX_CONTEXT */
+        RxContext->Info.FileInformationClass = Stack->Parameters.SetFile.FileInformationClass;
+        RxContext->Info.Buffer = RenameInfo;
+        RxContext->Info.Length = Length;
+
+        /* And call the mini-rdr */
+        MINIRDR_CALL(Status, RxContext, Fcb->MRxDispatch, MRxSetFileInfo, (RxContext));
+    }
+    _SEH2_FINALLY
+    {
+        /* Free */
+        RxFreePoolWithTag(RenameInfo, '??xR');
+    }
+    _SEH2_END;
+
+    /* Done! */
+    return Status;
 }
 
 #if DBG

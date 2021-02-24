@@ -27,13 +27,13 @@ STRINGTABLE
 BEGIN
     IDS_CPL_NAME        "Internet Settings"
     IDS_CPL_INFO        "Configure WINE Internet Explorer and related settings."
-    IDS_SEC_SETTINGS    "Security settings for zone: "
-    IDS_SEC_LEVEL0      "Custom"
-    IDS_SEC_LEVEL1      "Very Low"
-    IDS_SEC_LEVEL2      "Low"
-    IDS_SEC_LEVEL3      "Medium"
-    IDS_SEC_LEVEL4      "Increased"
-    IDS_SEC_LEVEL5      "High"
+    IDS_SEC_SETTINGS    "Säkerhetsinställningar för zon: "
+    IDS_SEC_LEVEL0      "Valt"
+    IDS_SEC_LEVEL1      "Väldigt låg"
+    IDS_SEC_LEVEL2      "Låg"
+    IDS_SEC_LEVEL3      "Medel"
+    IDS_SEC_LEVEL4      "Ökad"
+    IDS_SEC_LEVEL5      "Hög"
 END
 
 /* "General" propsheet */
@@ -77,8 +77,8 @@ BEGIN
                     IDC_DELETE_FORM_DATA, 10, 128, 230, 40, BS_TOP | BS_MULTILINE
     AUTOCHECKBOX   "Passwords\nSaved passwords you have entered into forms.",
                     IDC_DELETE_PASSWORDS, 10, 168, 230, 40, BS_TOP | BS_MULTILINE
-    DEFPUSHBUTTON  "Cancel", IDCANCEL, 185, 230, 60, 15, WS_GROUP
-    PUSHBUTTON     "Delete", IDOK, 120, 230, 60, 15, WS_GROUP
+    DEFPUSHBUTTON  "Avbryt", IDCANCEL, 185, 230, 60, 15, WS_GROUP
+    PUSHBUTTON     "Ta bort", IDOK, 120, 230, 60, 15, WS_GROUP
 
 END
 
@@ -114,4 +114,23 @@ BEGIN
     PUSHBUTTON  "Certifikat...", IDC_CERT, 146, 34, 80, 14
     PUSHBUTTON	"Utgivare...", IDC_CERT_PUBLISHER, 230, 34, 80, 14
 
+END
+
+/* "Connections" propsheet */
+IDD_CONNECTIONS DIALOG 0, 0, 320, 220
+STYLE WS_CAPTION | WS_CHILD | WS_DISABLED
+FONT 8, "MS Shell Dlg"
+CAPTION "Connections"
+BEGIN
+    GROUPBOX        "Automatic configuration", IDC_STATIC, 4, 4, 312, 56
+    AUTOCHECKBOX    "Use Web Proxy Auto-Discovery (WPAD)", IDC_USE_WPAD, 10, 14, 200, 14, BS_TOP
+    AUTOCHECKBOX    "Use Proxy Auto-Config (PAC) script", IDC_USE_PAC_SCRIPT, 10, 28, 200, 14, BS_TOP
+    LTEXT           "Address:", IDC_STATIC, 10, 42, 40, 14
+    EDITTEXT        IDC_EDIT_PAC_SCRIPT, 50, 42, 160, 14, WS_VISIBLE | ES_AUTOHSCROLL | WS_DISABLED
+    GROUPBOX        "Proxy server", IDC_STATIC, 4, 66, 312, 42
+    AUTOCHECKBOX    "Use a proxy server", IDC_USE_PROXY_SERVER, 10, 76, 200, 14, BS_TOP | BS_MULTILINE
+    LTEXT           "Address:", IDC_STATIC, 10, 90, 40, 14
+    EDITTEXT        IDC_EDIT_PROXY_SERVER, 50, 90, 80, 14, WS_VISIBLE | ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "Port:", IDC_STATIC, 140, 90, 30, 14
+    EDITTEXT        IDC_EDIT_PROXY_PORT, 170, 90, 40, 14, WS_VISIBLE | ES_AUTOHSCROLL | WS_DISABLED | ES_NUMBER
 END

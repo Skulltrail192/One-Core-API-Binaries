@@ -364,7 +364,6 @@ NetServerDiskEnum(
 }
 
 
-#if 0
 NET_API_STATUS
 WINAPI
 NetServerGetInfo(
@@ -383,7 +382,7 @@ NetServerGetInfo(
     {
         status = NetrServerGetInfo(servername,
                                    level,
-                                   (LPSERVER_INFO)bufptr);
+                                   (LPSERVER_INFO *)bufptr);
     }
     RpcExcept(EXCEPTION_EXECUTE_HANDLER)
     {
@@ -393,7 +392,6 @@ NetServerGetInfo(
 
     return status;
 }
-#endif
 
 
 NET_API_STATUS
@@ -415,6 +413,36 @@ NetServerSetInfo(
                                    level,
                                    (LPSERVER_INFO)&buf,
                                    parm_err);
+    }
+    RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+    {
+        status = I_RpcMapWin32Status(RpcExceptionCode());
+    }
+    RpcEndExcept;
+
+    return status;
+}
+
+
+NET_API_STATUS
+WINAPI
+I_NetServerSetServiceBits(
+    _In_ LPWSTR servername,
+    _In_ LPWSTR transport,
+    _In_ DWORD servicebits,
+    _In_ DWORD updateimmediately)
+{
+    NET_API_STATUS status;
+
+    TRACE("I_NetServerSetServiceBits(%s %s 0x%lx %lu)\n",
+          debugstr_w(servername), debugstr_w(transport), servicebits, updateimmediately);
+
+    RpcTryExcept
+    {
+        status = NetrServerSetServiceBits(servername,
+                                          transport,
+                                          servicebits,
+                                          updateimmediately);
     }
     RpcExcept(EXCEPTION_EXECUTE_HANDLER)
     {
@@ -582,9 +610,9 @@ NetServerTransportEnum(
 NET_API_STATUS
 WINAPI
 NetSessionDel(
-    _In_ LMSTR servername,
-    _In_ LMSTR UncClientName,
-    _In_ LMSTR username)
+    _In_opt_ LMSTR servername,
+    _In_opt_ LMSTR UncClientName,
+    _In_opt_ LMSTR username)
 {
     NET_API_STATUS status;
 
@@ -610,9 +638,9 @@ NetSessionDel(
 NET_API_STATUS
 WINAPI
 NetSessionEnum(
-    _In_ LMSTR servername,
-    _In_ LMSTR UncClientName,
-    _In_ LMSTR username,
+    _In_opt_ LMSTR servername,
+    _In_opt_ LMSTR UncClientName,
+    _In_opt_ LMSTR username,
     _In_ DWORD level,
     _Out_ LPBYTE *bufptr,
     _In_ DWORD prefmaxlen,
@@ -731,7 +759,7 @@ NetSessionEnum(
 NET_API_STATUS
 WINAPI
 NetSessionGetInfo(
-    _In_ LMSTR servername,
+    _In_opt_ LMSTR servername,
     _In_ LMSTR UncClientName,
     _In_ LMSTR username,
     _In_ DWORD level,

@@ -1,4 +1,5 @@
 #include <windef.h>
+#include <winuser.h>
 
 #include "resource.h"
 
@@ -40,6 +41,9 @@ IDI_CPLSYSTEM ICON "resources/applet.ico"
 #endif
 #ifdef LANGUAGE_HE_IL
     #include "lang/he-IL.rc"
+#endif
+#ifdef LANGUAGE_ID_ID
+    #include "lang/id-ID.rc"
 #endif
 #ifdef LANGUAGE_IT_IT
     #include "lang/it-IT.rc"

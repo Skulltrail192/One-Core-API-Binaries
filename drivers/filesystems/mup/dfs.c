@@ -82,7 +82,7 @@ DfsUnload(PDRIVER_OBJECT DriverObject)
     UNIMPLEMENTED;
 }
 
-INIT_SECTION
+INIT_FUNCTION
 NTSTATUS
 DfsDriverEntry(PDRIVER_OBJECT DriverObject,
                PUNICODE_STRING RegistryPath)
@@ -90,7 +90,7 @@ DfsDriverEntry(PDRIVER_OBJECT DriverObject,
     /* We don't support DFS yet, so
      * fail to make sure it remains disabled
      */
-    UNIMPLEMENTED;
+    DPRINT("DfsDriverEntry not implemented\n");
     return STATUS_NOT_IMPLEMENTED;
 }
 

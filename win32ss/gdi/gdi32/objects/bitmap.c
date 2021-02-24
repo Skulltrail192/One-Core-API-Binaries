@@ -363,7 +363,7 @@ GetDIBits(
     UINT cjBmpScanSize;
     UINT cjInfoSize;
 
-    if (!hDC || !GdiIsHandleValid((HGDIOBJ) hDC) || !lpbmi)
+    if (!hDC || !GdiValidateHandle((HGDIOBJ) hDC) || !lpbmi)
     {
         GdiSetLastError(ERROR_INVALID_PARAMETER);
         return 0;
@@ -436,7 +436,7 @@ CreateDIBitmap(
         /* CBM_CREATDIB needs Data. */
         if (pbmiConverted == NULL)
         {
-            DPRINT1("CBM_CREATDIB needs a BITMAINFO!\n");
+            DPRINT1("CBM_CREATDIB needs a BITMAPINFO!\n");
             goto Exit;
         }
 
@@ -486,7 +486,7 @@ CreateDIBitmap(
     }
 
     /* Check if the Compr is incompatible */
-    if ((Compression == BI_JPEG) || (Compression == BI_PNG) || (Compression == BI_BITFIELDS))
+    if ((Compression == BI_JPEG) || (Compression == BI_PNG))
     {
         DPRINT1("Invalid compression: %lu!\n", Compression);
         goto Exit;
@@ -691,6 +691,34 @@ SetDIBitsToDevice(
                   lpbmi,
                   ColorUse);
 
+    // Handle the "Special Case"!
+    {
+        PLDC pldc;
+        ULONG hType = GDI_HANDLE_GET_TYPE(hdc);
+        if (hType != GDILoObjType_LO_DC_TYPE && hType != GDILoObjType_LO_METADC16_TYPE)
+        {
+            pldc = GdiGetLDC(hdc);
+            if (pldc)
+            {
+                if (pldc->Flags & LDC_STARTPAGE) StartPage(hdc);
+
+                if (pldc->Flags & LDC_SAPCALLBACK) GdiSAPCallback(pldc);
+
+                if (pldc->Flags & LDC_KILL_DOCUMENT)
+                {
+                    LinesCopied = 0;
+                    goto Exit;
+                }
+            }
+            else
+            {
+                SetLastError(ERROR_INVALID_HANDLE);
+                LinesCopied = 0;
+                goto Exit;
+            }
+        }
+    }
+
     if ((pConvertedInfo->bmiHeader.biCompression == BI_RLE8) ||
             (pConvertedInfo->bmiHeader.biCompression == BI_RLE4))
     {
@@ -742,6 +770,7 @@ SetDIBitsToDevice(
             TRUE,
             NULL);
     }
+Exit:
     if (Bits != pvSafeBits)
         RtlFreeHeap(RtlGetProcessHeap(), 0, pvSafeBits);
     if (lpbmi != pConvertedInfo)
@@ -826,6 +855,9 @@ StretchDIBits(
         }
     }
 #endif
+
+    if ( GdiConvertAndCheckDC(hdc) == NULL ) return 0;
+
     pConvertedInfo = ConvertBitmapInfo(lpBitsInfo, iUsage, &ConvertedInfoSize,
         FALSE);
     if (!pConvertedInfo)

@@ -16,43 +16,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#ifndef _INSENG_PRIVATE_H
-#define _INSENG_PRIVATE_H
+#pragma once
 
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#ifdef __REACTOS__
+#include "winnls.h"
+#endif
+#include "ole2.h"
+#include "rpcproxy.h"
+#include "inseng.h"
+#include "wine/heap.h"
 
-#define COBJMACROS
-
-#include <config.h>
-
-#include <windef.h>
-#include <winbase.h>
-#include <ole2.h>
-#include <inseng.h>
-
-#include <wine/list.h>
-#include <wine/unicode.h>
-
-#include <wine/debug.h>
-
-WINE_DEFAULT_DEBUG_CHANNEL(inseng);
-
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), 0, size);
-}
-
-static inline void *heap_zero_alloc(size_t len)
-{
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, len);
-}
-
-static inline BOOL heap_free(void *mem)
-{
-    return HeapFree(GetProcessHeap(), 0, mem);
-}
 
 static inline char *strdupA(const char *src)
 {
@@ -65,8 +41,8 @@ static inline WCHAR *strdupW(const WCHAR *src)
 {
     WCHAR *dest;
     if (!src) return NULL;
-    dest = HeapAlloc(GetProcessHeap(), 0, (strlenW(src) + 1) * sizeof(WCHAR));
-    if (dest) strcpyW(dest, src);
+    dest = HeapAlloc(GetProcessHeap(), 0, (lstrlenW(src) + 1) * sizeof(WCHAR));
+    if (dest) lstrcpyW(dest, src);
     return dest;
 }
 
@@ -106,5 +82,3 @@ void component_set_actual_download_size(ICifComponent *iface, DWORD size) DECLSP
 void component_set_downloaded(ICifComponent *iface, BOOL value) DECLSPEC_HIDDEN;
 void component_set_installed(ICifComponent *iface, BOOL value) DECLSPEC_HIDDEN;
  char *component_get_id(ICifComponent *iface) DECLSPEC_HIDDEN;
-
-#endif /* _INSENG_PRIVATE_H */

@@ -3,18 +3,20 @@ spec2def(bootvid.dll bootvid.spec ADD_IMPORTLIB)
 
 if((ARCH STREQUAL "i386") OR (ARCH STREQUAL "amd64"))
     list(APPEND SOURCE
-        i386/bootvid.c
-        i386/bootdata.c
-        i386/vga.c)
+        i386/pc/bootvid.c
+        i386/pc/bootdata.c
+        i386/pc/vga.c)
 elseif(ARCH STREQUAL "arm")
     list(APPEND SOURCE
-        arm/bootvid.c
-        arm/bootdata.c)
+        arm/bootvid.c)
 endif()
 
-list(APPEND SOURCE precomp.h)
+list(APPEND SOURCE
+    common.c
+    fontdata.c
+    precomp.h)
 
-add_library(bootvid SHARED
+add_library(bootvid MODULE
     ${SOURCE}
     bootvid.rc
     ${CMAKE_CURRENT_BINARY_DIR}/bootvid.def)

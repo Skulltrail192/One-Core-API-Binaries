@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2019, Intel Corp.
+ * Copyright (C) 2000 - 2020, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -483,8 +483,8 @@ typedef void *                          ACPI_HANDLE;    /* Actually a ptr to a N
 
 /* Owner IDs are used to track namespace nodes for selective deletion */
 
-typedef UINT8                           ACPI_OWNER_ID;
-#define ACPI_OWNER_ID_MAX               0xFF
+typedef UINT16                          ACPI_OWNER_ID;
+#define ACPI_OWNER_ID_MAX               0xFFF   /* 4095 possible owner IDs */
 
 
 #define ACPI_INTEGER_BIT_SIZE           64
@@ -549,7 +549,7 @@ typedef UINT64                          ACPI_INTEGER;
 
 /* Pointer/Integer type conversions */
 
-#define ACPI_TO_POINTER(i)              ACPI_ADD_PTR (void, (void *) 0, (ACPI_SIZE) (i))
+#define ACPI_TO_POINTER(i)              ACPI_CAST_PTR (void, (ACPI_SIZE) (i))
 #define ACPI_TO_INTEGER(p)              ACPI_PTR_DIFF (p, (void *) 0)
 #define ACPI_OFFSET(d, f)               ACPI_PTR_DIFF (&(((d *) 0)->f), (void *) 0)
 #define ACPI_PHYSADDR_TO_PTR(i)         ACPI_TO_POINTER(i)
@@ -575,11 +575,12 @@ typedef UINT64                          ACPI_INTEGER;
                                       strnlen (a, ACPI_NAMESEG_SIZE) == ACPI_NAMESEG_SIZE)
 
 /*
- * Algorithm to obtain access bit width.
- * Can be used with AccessWidth of ACPI_GENERIC_ADDRESS and AccessSize of
+ * Algorithm to obtain access bit or byte width.
+ * Can be used with AccessSize field of ACPI_GENERIC_ADDRESS and
  * ACPI_RESOURCE_GENERIC_REGISTER.
  */
-#define ACPI_ACCESS_BIT_WIDTH(size)     (1 << ((size) + 2))
+#define ACPI_ACCESS_BIT_WIDTH(AccessSize)   (1 << ((AccessSize) + 2))
+#define ACPI_ACCESS_BYTE_WIDTH(AccessSize)  (1 << ((AccessSize) - 1))
 
 
 /*******************************************************************************
@@ -1405,12 +1406,14 @@ typedef enum
 #define ACPI_OSI_WIN_VISTA_SP2          0x0A
 #define ACPI_OSI_WIN_7                  0x0B
 #define ACPI_OSI_WIN_8                  0x0C
-#define ACPI_OSI_WIN_10                 0x0D
-#define ACPI_OSI_WIN_10_RS1             0x0E
-#define ACPI_OSI_WIN_10_RS2             0x0F
-#define ACPI_OSI_WIN_10_RS3             0x10
-#define ACPI_OSI_WIN_10_RS4             0x11
-#define ACPI_OSI_WIN_10_RS5             0x12
+#define ACPI_OSI_WIN_8_1                0x0D
+#define ACPI_OSI_WIN_10                 0x0E
+#define ACPI_OSI_WIN_10_RS1             0x0F
+#define ACPI_OSI_WIN_10_RS2             0x10
+#define ACPI_OSI_WIN_10_RS3             0x11
+#define ACPI_OSI_WIN_10_RS4             0x12
+#define ACPI_OSI_WIN_10_RS5             0x13
+#define ACPI_OSI_WIN_10_19H1            0x14
 
 
 /* Definitions of getopt */

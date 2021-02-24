@@ -16,7 +16,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+
+#include "objbase.h"
+
+#include "gdiplus.h"
 #include "gdiplus_private.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(gdiplus);
 
 static DWORD gdip_to_gdi_dash(GpDashStyle dash)
 {
@@ -448,63 +460,43 @@ GpStatus WINGDIPAPI GdipGetPenTransform(GpPen *pen, GpMatrix *matrix)
 
 GpStatus WINGDIPAPI GdipTranslatePenTransform(GpPen *pen, REAL dx, REAL dy, GpMatrixOrder order)
 {
-    static int calls;
-
     TRACE("(%p,%0.2f,%0.2f,%u)\n", pen, dx, dy, order);
 
     if(!pen)
         return InvalidParameter;
 
-    if(!(calls++))
-        FIXME("not implemented\n");
-
-    return NotImplemented;
+    return GdipTranslateMatrix(&pen->transform, dx, dy, order);
 }
 
 GpStatus WINGDIPAPI GdipScalePenTransform(GpPen *pen, REAL sx, REAL sy, GpMatrixOrder order)
 {
-    static int calls;
-
     TRACE("(%p,%0.2f,%0.2f,%u)\n", pen, sx, sy, order);
 
     if(!pen)
         return InvalidParameter;
 
-    if(!(calls++))
-        FIXME("(%p, %.2f, %.2f, %d) stub\n", pen, sx, sy, order);
-
-    return NotImplemented;
+    return GdipScaleMatrix(&pen->transform, sx, sy, order);
 }
 
 GpStatus WINGDIPAPI GdipRotatePenTransform(GpPen *pen, REAL angle, GpMatrixOrder order)
 {
-    static int calls;
-
     TRACE("(%p,%0.2f,%u)\n", pen, angle, order);
 
     if(!pen)
         return InvalidParameter;
 
-    if(!(calls++))
-        FIXME("not implemented\n");
-
-    return NotImplemented;
+    return GdipRotateMatrix(&pen->transform, angle, order);
 }
 
 GpStatus WINGDIPAPI GdipMultiplyPenTransform(GpPen *pen, GDIPCONST GpMatrix *matrix,
     GpMatrixOrder order)
 {
-    static int calls;
-
     TRACE("(%p,%p,%u)\n", pen, matrix, order);
 
     if(!pen)
         return InvalidParameter;
 
-    if(!(calls++))
-        FIXME("not implemented\n");
-
-    return NotImplemented;
+    return GdipMultiplyMatrix(&pen->transform, matrix, order);
 }
 
 GpStatus WINGDIPAPI GdipSetPenBrushFill(GpPen *pen, GpBrush *brush)

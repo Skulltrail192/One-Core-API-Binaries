@@ -17,7 +17,20 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
+#include <stdarg.h>
 
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "msi.h"
+#include "msiquery.h"
+#include "msidefs.h"
+#include "winver.h"
+#include "shlwapi.h"
+#include "wine/unicode.h"
+#include "wine/debug.h"
 #include "msipriv.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(msi);
@@ -493,7 +506,7 @@ static LPWSTR get_ini_field(LPWSTR buf, int field)
     while ((end = strchrW(beg, ',')) && i < field)
     {
         beg = end + 1;
-        while (*beg && *beg == ' ')
+        while (*beg == ' ')
             beg++;
 
         i++;
@@ -1104,7 +1117,7 @@ static UINT iterate_appsearch(MSIRECORD *row, LPVOID param)
     uirow = MSI_CreateRecord( 2 );
     MSI_RecordSetStringW( uirow, 1, propName );
     MSI_RecordSetStringW( uirow, 2, sigName );
-    msi_ui_actiondata( package, szAppSearch, uirow );
+    MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
     msiobj_release( &uirow->hdr );
 
     return r;

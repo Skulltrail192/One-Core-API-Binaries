@@ -1,5 +1,3 @@
-/* $Header: /cvs/maptools/cvsroot/libtiff/libtiff/tif_error.c,v 1.5 2010-03-10 18:56:48 bfriesen Exp $ */
-
 /*
  * Copyright (c) 1988-1997 Sam Leffler
  * Copyright (c) 1991-1997 Silicon Graphics, Inc.
@@ -27,7 +25,6 @@
 /*
  * TIFF Library.
  */
-
 #include <precomp.h>
 
 TIFFErrorHandlerExt _TIFFerrorHandlerExt = NULL;
@@ -52,24 +49,32 @@ void
 TIFFError(const char* module, const char* fmt, ...)
 {
 	va_list ap;
-	va_start(ap, fmt);
-	if (_TIFFerrorHandler)
+	if (_TIFFerrorHandler) {
+		va_start(ap, fmt);	
 		(*_TIFFerrorHandler)(module, fmt, ap);
-	if (_TIFFerrorHandlerExt)
+		va_end(ap);
+	}
+	if (_TIFFerrorHandlerExt) {
+		va_start(ap, fmt);
 		(*_TIFFerrorHandlerExt)(0, module, fmt, ap);
-	va_end(ap);
+		va_end(ap);
+	}
 }
 
 void
 TIFFErrorExt(thandle_t fd, const char* module, const char* fmt, ...)
 {
 	va_list ap;
-	va_start(ap, fmt);
-	if (_TIFFerrorHandler)
+	if (_TIFFerrorHandler) {
+		va_start(ap, fmt);
 		(*_TIFFerrorHandler)(module, fmt, ap);
-	if (_TIFFerrorHandlerExt)
+		va_end(ap);
+	}
+	if (_TIFFerrorHandlerExt) {
+		va_start(ap, fmt);
 		(*_TIFFerrorHandlerExt)(fd, module, fmt, ap);
-	va_end(ap);
+		va_end(ap);
+	}
 }
 
 /*

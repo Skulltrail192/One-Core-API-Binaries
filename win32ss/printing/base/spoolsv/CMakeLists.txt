@@ -22,6 +22,11 @@ list(APPEND SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/winspool_s.c)
 
 add_executable(spoolsv ${SOURCE} spoolsv.rc)
+
+if(USE_CLANG_CL)
+    target_compile_options(spoolsv PRIVATE "-Wno-cast-calling-convention")
+endif()
+
 set_module_type(spoolsv win32cui UNICODE)
 target_link_libraries(spoolsv wine)
 add_delay_importlibs(spoolsv spoolss)

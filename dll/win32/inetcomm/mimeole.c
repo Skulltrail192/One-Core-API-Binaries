@@ -19,10 +19,31 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+#define NONAMELESSUNION
+
+#include <stdarg.h>
+#include <stdio.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wine/winternl.h"
+#include "winuser.h"
+#include "objbase.h"
+#include "ole2.h"
+#include "mimeole.h"
+#ifdef __REACTOS__
+#include <winreg.h>
+#endif
+#include "propvarutil.h"
+
+#include "wine/heap.h"
+#include "wine/list.h"
+#include "wine/debug.h"
+
 #include "inetcomm_private.h"
 
-#include <winreg.h>
-#include <propvarutil.h>
+WINE_DEFAULT_DEBUG_CHANNEL(inetcomm);
 
 typedef struct
 {
@@ -747,13 +768,13 @@ static void init_content_encoding(MimeBody *body, header_t *header)
 {
     const char *encoding = header->value.u.pszVal;
 
-    if(!strcasecmp(encoding, "base64"))
+    if(!_strnicmp(encoding, "base64", -1))
         body->encoding = IET_BASE64;
-    else if(!strcasecmp(encoding, "quoted-printable"))
+    else if(!_strnicmp(encoding, "quoted-printable", -1))
         body->encoding = IET_QP;
-    else if(!strcasecmp(encoding, "7bit"))
+    else if(!_strnicmp(encoding, "7bit", -1))
         body->encoding = IET_7BIT;
-    else if(!strcasecmp(encoding, "8bit"))
+    else if(!_strnicmp(encoding, "8bit", -1))
         body->encoding = IET_8BIT;
     else
         FIXME("unknown encoding %s\n", debugstr_a(encoding));
@@ -801,16 +822,21 @@ static void empty_param_list(struct list *list)
     }
 }
 
+static void free_header(header_t *header)
+{
+    list_remove(&header->entry);
+    PropVariantClear(&header->value);
+    empty_param_list(&header->params);
+    heap_free(header);
+}
+
 static void empty_header_list(struct list *list)
 {
     header_t *header, *cursor2;
 
     LIST_FOR_EACH_ENTRY_SAFE(header, cursor2, list, header_t, entry)
     {
-        list_remove(&header->entry);
-        PropVariantClear(&header->value);
-        empty_param_list(&header->params);
-        HeapFree(GetProcessHeap(), 0, header);
+        free_header(header);
     }
 }
 
@@ -954,10 +980,15 @@ static HRESULT WINAPI MimeBody_GetClassID(
                                  CLSID* pClassID)
 {
     MimeBody *This = impl_from_IMimeBody(iface);
-    FIXME("(%p)->(%p) stub\n", This, pClassID);
-    return E_NOTIMPL;
-}
 
+    TRACE("(%p)->(%p)\n", This, pClassID);
+
+    if(!pClassID)
+        return E_INVALIDARG;
+
+    *pClassID = IID_IMimeBody;
+    return S_OK;
+}
 
 static HRESULT WINAPI MimeBody_IsDirty(
                               IMimeBody* iface)
@@ -1209,8 +1240,7 @@ static HRESULT WINAPI MimeBody_DeleteProp(
 
         if(found)
         {
-             list_remove(&cursor->entry);
-             HeapFree(GetProcessHeap(), 0, cursor);
+             free_header(cursor);
              return S_OK;
         }
     }
@@ -1558,9 +1588,8 @@ static HRESULT decode_base64(IStream *input, IStream **ret_stream)
 
         while(1) {
             /* skip invalid chars */
-            while(ptr < end &&
-                  (*ptr >= sizeof(base64_decode_table)/sizeof(*base64_decode_table)
-                   || base64_decode_table[*ptr] == -1))
+            while(ptr < end && (*ptr >= ARRAY_SIZE(base64_decode_table)
+                                || base64_decode_table[*ptr] == -1))
                 ptr++;
             if(ptr == end)
                 break;
@@ -1738,7 +1767,7 @@ static HRESULT WINAPI MimeBody_SetData(
     }
 
     if(This->data)
-        FIXME("release old data\n");
+        release_data(&This->data_iid, This->data);
 
     This->data_iid = *riid;
     This->data = pvObject;
@@ -3686,13 +3715,13 @@ HRESULT WINAPI MimeOleObjectFromMoniker(BINDF bindf, IMoniker *moniker, IBindCtx
 
     TRACE("display name %s\n", debugstr_w(display_name));
 
-    len = strlenW(display_name);
+    len = lstrlenW(display_name);
     mhtml_url = heap_alloc((len+1)*sizeof(WCHAR) + sizeof(mhtml_prefixW));
     if(!mhtml_url)
         return E_OUTOFMEMORY;
 
     memcpy(mhtml_url, mhtml_prefixW, sizeof(mhtml_prefixW));
-    strcpyW(mhtml_url + sizeof(mhtml_prefixW)/sizeof(WCHAR), display_name);
+    lstrcpyW(mhtml_url + ARRAY_SIZE(mhtml_prefixW), display_name);
     HeapFree(GetProcessHeap(), 0, display_name);
 
     hres = CreateURLMoniker(NULL, mhtml_url, moniker_new);

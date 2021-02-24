@@ -116,6 +116,15 @@ typedef struct _DISK_DATA {
 
     PARTITION_LIST_STATE PartitionListState;
 
+#ifdef __REACTOS__
+    //
+    // HACK so that we can use NT5+ NTOS functions with this NT4 driver
+    // for removable devices and avoid an infinite recursive loop between
+    // disk!UpdateRemovableGeometry() and ntos!IoReadPartitionTable().
+    //
+    ULONG UpdateRemovableGeometryCount;
+#endif
+
 } DISK_DATA, *PDISK_DATA;
 
 //
@@ -960,12 +969,14 @@ Return Value:
     // IsFloppyDevice also checks for write cache enabled.
     //
 
+#if 0
     if (IsFloppyDevice(deviceObject) && deviceObject->Characteristics & FILE_REMOVABLE_MEDIA &&
         (((PINQUIRYDATA)LunInfo->InquiryData)->DeviceType == DIRECT_ACCESS_DEVICE)) {
 
         status = STATUS_NO_SUCH_DEVICE;
         goto CreateDiskDeviceObjectsExit;
     }
+#endif
 
     DisableWriteCache(deviceObject,LunInfo);
 
@@ -1146,6 +1157,15 @@ CreatePartitionDeviceObjects(
         dmByteSkew = physicalDeviceExtension->DMByteSkew;
 
     }
+
+#ifdef __REACTOS__
+    //
+    // HACK so that we can use NT5+ NTOS functions with this NT4 driver
+    // for removable devices and avoid an infinite recursive loop between
+    // disk!UpdateRemovableGeometry() and ntos!IoReadPartitionTable().
+    //
+    diskData->UpdateRemovableGeometryCount = 0;
+#endif
 
     //
     // Create objects for all the partitions on the device.
@@ -2235,58 +2255,69 @@ Return Value:
             sizeof(PARTITION_INFORMATION)) {
 
             status = STATUS_INFO_LENGTH_MISMATCH;
-
+            break;
         }
-#if 0 // HACK: ReactOS partition numbers must be wrong
-        else if (diskData->PartitionNumber == 0) {
+
+        //
+        // Update the geometry in case it has changed.
+        //
+
+        status = UpdateRemovableGeometry (DeviceObject, Irp);
+
+        if (!NT_SUCCESS(status)) {
 
             //
-            // Partition zero is not a partition so this is not a
-            // reasonable request.
+            // Note the drive is not ready.
             //
 
-            status = STATUS_INVALID_DEVICE_REQUEST;
-
+            diskData->DriveNotReady = TRUE;
+            break;
         }
-#endif
-        else {
+
+        //
+        // Note the drive is now ready.
+        //
+
+        diskData->DriveNotReady = FALSE;
+
+        //
+        // Handle the case were we query the whole disk
+        //
+
+        if (diskData->PartitionNumber == 0) {
 
             PPARTITION_INFORMATION outputBuffer;
 
-            if (diskData->PartitionNumber == 0) {
-                DPRINT1("HACK: Handling partition 0 request!\n");
-                //ASSERT(FALSE);
-            }
+            outputBuffer =
+                    (PPARTITION_INFORMATION)Irp->AssociatedIrp.SystemBuffer;
+
+            outputBuffer->PartitionType = PARTITION_ENTRY_UNUSED;
+            outputBuffer->StartingOffset = deviceExtension->StartingOffset;
+            outputBuffer->PartitionLength.QuadPart = deviceExtension->PartitionLength.QuadPart;
+            outputBuffer->HiddenSectors = 0;
+            outputBuffer->PartitionNumber = diskData->PartitionNumber;
+            outputBuffer->BootIndicator = FALSE;
+            outputBuffer->RewritePartition = FALSE;
+            outputBuffer->RecognizedPartition = FALSE;
+
+            status = STATUS_SUCCESS;
+            Irp->IoStatus.Information = sizeof(PARTITION_INFORMATION);
+
+        } else {
+
+            PPARTITION_INFORMATION outputBuffer;
 
             //
-            // Update the geometry in case it has changed.
+            // We query a single partition here
+            // FIXME: this can only work for MBR-based disks, check for this!
             //
-
-            status = UpdateRemovableGeometry (DeviceObject, Irp);
-
-            if (!NT_SUCCESS(status)) {
-
-                //
-                // Note the drive is not ready.
-                //
-
-                diskData->DriveNotReady = TRUE;
-                break;
-            }
-
-            //
-            // Note the drive is now ready.
-            //
-
-            diskData->DriveNotReady = FALSE;
 
             outputBuffer =
                     (PPARTITION_INFORMATION)Irp->AssociatedIrp.SystemBuffer;
 
             outputBuffer->PartitionType = diskData->PartitionType;
             outputBuffer->StartingOffset = deviceExtension->StartingOffset;
-            outputBuffer->PartitionLength.QuadPart = (diskData->PartitionNumber) ?
-                deviceExtension->PartitionLength.QuadPart : 0x1FFFFFFFFFFFFFFFLL; // HACK
+            outputBuffer->PartitionLength.QuadPart = deviceExtension->PartitionLength.QuadPart;
             outputBuffer->HiddenSectors = diskData->HiddenSectors;
             outputBuffer->PartitionNumber = diskData->PartitionNumber;
             outputBuffer->BootIndicator = diskData->BootIndicator;
@@ -4445,6 +4476,21 @@ Return Value:
         return(status);
     }
 
+#ifdef __REACTOS__
+    //
+    // HACK so that we can use NT5+ NTOS functions with this NT4 driver
+    // for removable devices and avoid an infinite recursive loop between
+    // disk!UpdateRemovableGeometry() and ntos!IoReadPartitionTable().
+    //
+    // Check whether the update-count is greater or equal than one
+    // (and increase it) and if so, reset it and return success.
+    if (diskData->UpdateRemovableGeometryCount++ >= 1)
+    {
+        diskData->UpdateRemovableGeometryCount = 0;
+        return(STATUS_SUCCESS);
+    }
+#endif
+
     //
     // Read the partition table again.
     //
@@ -4454,6 +4500,15 @@ Return Value:
                       TRUE,
                       &partitionList);
 
+#ifdef __REACTOS__
+    //
+    // HACK so that we can use NT5+ NTOS functions with this NT4 driver
+    // for removable devices and avoid an infinite recursive loop between
+    // disk!UpdateRemovableGeometry() and ntos!IoReadPartitionTable().
+    //
+    // Inconditionally reset the update-count.
+    diskData->UpdateRemovableGeometryCount = 0;
+#endif
 
     if (!NT_SUCCESS(status)) {
 

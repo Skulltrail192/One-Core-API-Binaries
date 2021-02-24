@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    Auto-fitter styles (specification only).                             */
 /*                                                                         */
-/*  Copyright 2013-2017 by                                                 */
+/*  Copyright 2013-2018 by                                                 */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -255,13 +255,6 @@
          AF_BLUE_STRINGSET_KALI,
          AF_COVERAGE_DEFAULT )
 
-  STYLE( knda_dflt, KNDA_DFLT,
-         "Kannada default style",
-         AF_WRITING_SYSTEM_LATIN,
-         AF_SCRIPT_KNDA,
-         AF_BLUE_STRINGSET_KNDA,
-         AF_COVERAGE_DEFAULT )
-
   STYLE( khmr_dflt, KHMR_DFLT,
          "Khmer default style",
          AF_WRITING_SYSTEM_LATIN,
@@ -274,6 +267,13 @@
          AF_WRITING_SYSTEM_LATIN,
          AF_SCRIPT_KHMS,
          AF_BLUE_STRINGSET_KHMS,
+         AF_COVERAGE_DEFAULT )
+
+  STYLE( knda_dflt, KNDA_DFLT,
+         "Kannada default style",
+         AF_WRITING_SYSTEM_LATIN,
+         AF_SCRIPT_KNDA,
+         AF_BLUE_STRINGSET_KNDA,
          AF_COVERAGE_DEFAULT )
 
   STYLE( lao_dflt, LAO_DFLT,
@@ -420,18 +420,18 @@
          AF_BLUE_STRINGSET_TELU,
          AF_COVERAGE_DEFAULT )
 
-  STYLE( thai_dflt, THAI_DFLT,
-         "Thai default style",
-         AF_WRITING_SYSTEM_LATIN,
-         AF_SCRIPT_THAI,
-         AF_BLUE_STRINGSET_THAI,
-         AF_COVERAGE_DEFAULT )
-
   STYLE( tfng_dflt, TFNG_DFLT,
          "Tifinagh default style",
          AF_WRITING_SYSTEM_LATIN,
          AF_SCRIPT_TFNG,
          AF_BLUE_STRINGSET_TFNG,
+         AF_COVERAGE_DEFAULT )
+
+  STYLE( thai_dflt, THAI_DFLT,
+         "Thai default style",
+         AF_WRITING_SYSTEM_LATIN,
+         AF_SCRIPT_THAI,
+         AF_BLUE_STRINGSET_THAI,
          AF_COVERAGE_DEFAULT )
 
   STYLE( vaii_dflt, VAII_DFLT,

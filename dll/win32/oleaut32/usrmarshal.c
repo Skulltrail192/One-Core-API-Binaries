@@ -19,7 +19,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#include <string.h>
+
+#define COBJMACROS
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winerror.h"
+
+#include "ole2.h"
+#include "oleauto.h"
+#include "typelib.h"
+#include "ocidl.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
@@ -211,6 +227,9 @@ unsigned int get_type_size(ULONG *pFlags, VARTYPE vt)
     case VT_INT:
     case VT_UINT:
         return sizeof(INT);
+    case VT_I8:
+    case VT_UI8:
+        return sizeof(LONGLONG);
     case VT_R4:
         return sizeof(FLOAT);
     case VT_R8:
@@ -628,7 +647,8 @@ void WINAPI VARIANT_UserFree(ULONG *pFlags, VARIANT *pvar)
       break;
     case VT_UNKNOWN | VT_BYREF:
     case VT_DISPATCH | VT_BYREF:
-      IUnknown_Release(*V_UNKNOWNREF(pvar));
+      if (*V_UNKNOWNREF(pvar))
+        IUnknown_Release(*V_UNKNOWNREF(pvar));
       break;
     }
   }

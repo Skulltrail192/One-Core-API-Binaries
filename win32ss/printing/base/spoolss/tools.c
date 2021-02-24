@@ -1,62 +1,12 @@
 /*
  * PROJECT:     ReactOS Spooler Router
- * LICENSE:     GNU LGPL v2.1 or any later version as published by the Free Software Foundation
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
  * PURPOSE:     Miscellaneous tool functions
- * COPYRIGHT:   Copyright 2015-2017 Colin Finck <colin@reactos.org>
+ * COPYRIGHT:   Copyright 2015-2017 Colin Finck (colin@reactos.org)
  */
 
 #include "precomp.h"
 
-
-/**
- * @name MarshallDownStructure
- *
- * Prepare a structure for marshalling/serialization by replacing absolute pointer addresses in its fields by relative offsets.
- *
- * @param pStructure
- * Pointer to the structure to operate on.
- *
- * @param pParameters
- * Array of MARSHALL_DOWN_INFO elements containing information about the fields of the structure as well as how to modify them.
- * See the documentation on MARSHALL_DOWN_INFO for more information.
- * You have to indicate the end of the array by setting the dwOffset field to MAXDWORD.
- *
- * @param cbStructureSize
- * Apparently, this is the size in bytes of the structure given through pStructure under Windows.
- * This parameter is unused in my implementation.
- *
- * @param bSomeBoolean
- * Unknown boolean value
- *
- * @return
- * TRUE if the structure was successfully adjusted, FALSE otherwise.
- */
-BOOL WINAPI
-MarshallDownStructure(PVOID pStructure, PMARSHALL_DOWN_INFO pParameters, DWORD cbStructureSize, BOOL bSomeBoolean)
-{
-    // Sanity checks
-    if (!pStructure || !pParameters)
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
-
-    // Loop until we reach an element with offset set to MAXDWORD.
-    while (pParameters->dwOffset != MAXDWORD)
-    {
-        if (pParameters->bAdjustAddress)
-        {
-            // Apply the byte offset on pStructure. There must be a pointer at this position, whose address we're adjusting
-            // by subtracting the address of pStructure from it.
-            *((PULONG_PTR)((PBYTE)pStructure + pParameters->dwOffset)) -= (ULONG_PTR)pStructure;
-        }
-
-        // Advance to the next element description.
-        pParameters++;
-    }
-
-    return TRUE;
-}
 
 /**
  * @name PackStrings
@@ -86,7 +36,7 @@ MarshallDownStructure(PVOID pStructure, PMARSHALL_DOWN_INFO pParameters, DWORD c
  * The strings are copied in reverse order, so this pointer will point to the last copied string of pSource.
  */
 PBYTE WINAPI
-PackStrings(PWSTR* pSource, PBYTE pDest, const DWORD* DestOffsets, PBYTE pEnd)
+PackStrings(PCWSTR* pSource, PBYTE pDest, const DWORD* DestOffsets, PBYTE pEnd)
 {
     DWORD cbString;
     ULONG_PTR StringAddress;

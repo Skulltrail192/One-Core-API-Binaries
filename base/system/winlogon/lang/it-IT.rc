@@ -20,6 +20,19 @@ BEGIN
     DEFPUSHBUTTON "&Riavvio", 1, 80, 91, 68, 14
 END
 
+IDD_SYSSHUTDOWN DIALOGEX 50, 50, 180, 140
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_VISIBLE | WS_CAPTION | WS_POPUP
+CAPTION "System Shutdown"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON IDI_WARNING, IDC_SYSSHUTDOWNICON, 6, 7, 18, 20
+    LTEXT "A system shutdown has been initiated. Please save all your work and terminate your session. All unsaved work will be lost when the system shuts down.", -1, 38, 7, 135, 40
+    LTEXT "The system shuts down in:", -1, 38, 50, 90, 8
+    LTEXT "00:00:00", IDC_SYSSHUTDOWNTIMELEFT, 132, 50, 41, 8
+    LTEXT "Message:", -1, 38, 65, 135, 8
+    EDITTEXT IDC_SYSSHUTDOWNMESSAGE, 34, 75, 139, 58, ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP, WS_EX_STATICEDGE
+END
+
 STRINGTABLE
 BEGIN
     IDS_PREPARENETWORKCONNECTIONS "Preparazione connessioni di rete..."
@@ -31,11 +44,13 @@ BEGIN
     IDS_RUNNINGLOGONSCRIPTS "Esecuzione scripts di connessione..."
     IDS_LOADINGYOURPERSONALSETTINGS "Caricamento delle impostazioni personali..."
     IDS_CLOSINGNETWORKCONNECTIONS "Chiusura connessioni di rete..."
-    IDS_REACTOSISSHUTTINGDOWN "ReactOS Sta spegnendosi..."
+    IDS_REACTOSISSHUTTINGDOWN "ReactOS si sta spegnendo..."
     IDS_PREPARETOSTANDBY "Preparazione Standby..."
-    IDS_PREPARETOHIBERNATE "Preparazione  Hibernate..."
+    IDS_PREPARETOHIBERNATE "Preparazione Ibernazione..."
     IDS_SAVEYOURSETTINGS "Salvataggio delle impostazioni personali..."
-    IDS_REACTOSISSTARTINGUP "ReactOS sta avviandosi..."
+    IDS_REACTOSISSTARTINGUP "ReactOS si sta avviando..."
+    IDS_TIMEOUTSHORTFORMAT "%02d:%02d:%02d"
+    IDS_TIMEOUTLONGFORMAT "%d days"
 END
 
 STRINGTABLE

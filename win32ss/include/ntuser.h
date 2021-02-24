@@ -167,7 +167,7 @@ typedef struct _CLIENTTHREADINFO
     WORD fsWakeBits;
     WORD fsWakeBitsJournal;
     WORD fsWakeMask;
-    ULONG tickLastMsgChecked;
+    ULONG timeLastRead; // Last time the message queue was read.
     DWORD dwcPumpHook;
 } CLIENTTHREADINFO, *PCLIENTTHREADINFO;
 
@@ -219,7 +219,7 @@ typedef struct tagHOOK
     int HookId; /* Hook table index */
     ULONG_PTR offPfn;
     ULONG flags; /* Some internal flags */
-    INT ihmod;
+    INT_PTR ihmod;
     struct _THREADINFO *ptiHooked;
     struct _DESKTOP *rpdesk;
     /* ReactOS */
@@ -657,6 +657,11 @@ typedef struct _SBINFOEX
 typedef struct _WND
 {
     THRDESKHEAD head;
+#if 0
+    WW ww;
+#else
+    /* These fields should be moved in the WW at some point. */
+    /* Plese do not change them to keep the same layout with WW. */
     DWORD state;
     DWORD state2;
     /* Extended style. */
@@ -666,6 +671,7 @@ typedef struct _WND
     /* Handle of the module that created the window. */
     HINSTANCE hModule;
     DWORD fnid;
+#endif
     struct _WND *spwndNext;
     struct _WND *spwndPrev;
     struct _WND *spwndParent;
@@ -686,7 +692,7 @@ typedef struct _WND
     HMENU SystemMenu;
     //PMENU spmenuSys;
     /* Window menu handle or window id */
-    UINT IDMenu; // Use spmenu
+    UINT_PTR IDMenu; // Use spmenu
     //PMENU spmenu;
     HRGN hrgnClip;
     HRGN hrgnNewFrame;
@@ -696,7 +702,7 @@ typedef struct _WND
     ULONG cbwndExtra;
     struct _WND *spwndLastActive;
     HIMC hImc; // Input context associated with this window.
-    LONG dwUserData;
+    LONG_PTR dwUserData;
     PVOID pActCtx;
     //PD3DMATRIX pTransForm;
     struct _WND *spwndClipboardListener;
@@ -1656,14 +1662,14 @@ DWORD
 NTAPI
 NtUserCallHwndParam(
     HWND hWnd,
-    DWORD Param,
+    DWORD_PTR Param,
     DWORD Routine);
 
 DWORD
 NTAPI
 NtUserCallHwndParamLock(
     HWND hWnd,
-    DWORD Param,
+    DWORD_PTR Param,
     DWORD Routine);
 
 BOOL
@@ -2433,7 +2439,7 @@ HDESK
 NTAPI
 NtUserGetThreadDesktop(
     DWORD dwThreadId,
-    DWORD Unknown1);
+    HDESK hConsoleDesktop);
 
 enum ThreadStateRoutines
 {
@@ -2795,7 +2801,7 @@ NtUserQueryUserCounters(
 #define QUERY_WINDOW_REAL_ID           0x05
 #define QUERY_WINDOW_FOREGROUND        0x06
 
-DWORD
+DWORD_PTR
 NTAPI
 NtUserQueryWindow(
     HWND hWnd,
@@ -2906,11 +2912,11 @@ NtUserRemoveProp(
     ATOM Atom);
 
 HDESK
-APIENTRY
+NTAPI
 NtUserResolveDesktop(
     IN HANDLE ProcessHandle,
     IN PUNICODE_STRING DesktopPath,
-    DWORD dwUnknown,
+    IN BOOL bInherit,
     OUT HWINSTA* phWinSta);
 
 DWORD
@@ -3229,6 +3235,16 @@ NtUserSetWindowLong(
     LONG NewValue,
     BOOL Ansi);
 
+#ifdef _WIN64
+LONG_PTR
+NTAPI
+NtUserSetWindowLongPtr(
+    HWND hWnd,
+    DWORD Index,
+    LONG_PTR NewValue,
+    BOOL Ansi);
+#endif // _WIN64
+
 BOOL
 NTAPI
 NtUserSetWindowPlacement(
@@ -3273,10 +3289,10 @@ NtUserSetWindowsHookEx(
 BOOL
 NTAPI
 NtUserSetWindowStationUser(
-    HWINSTA hWindowStation,
-    PLUID pluid,
-    PSID psid,
-    DWORD size);
+    IN HWINSTA hWindowStation,
+    IN PLUID pluid,
+    IN PSID psid OPTIONAL,
+    IN DWORD size);
 
 WORD
 NTAPI
@@ -3483,7 +3499,7 @@ NTAPI
 NtUserWaitForInputIdle(
     IN HANDLE hProcess,
     IN DWORD dwMilliseconds,
-    IN BOOL Unknown2); /* Always FALSE */
+    IN BOOL bSharedWow); /* Always FALSE */
 
 DWORD
 NTAPI

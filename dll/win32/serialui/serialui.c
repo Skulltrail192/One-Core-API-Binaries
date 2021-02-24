@@ -113,7 +113,7 @@ DWORD WINAPI drvCommConfigDialogW(LPCWSTR lpszDevice,
 	DialogInfo.lpCC = lpCommConfig;
 
 	return DialogBoxParamW(hDllInstance, MAKEINTRESOURCEW(IDD_COMMDLG),
-					hWnd, (DLGPROC)CommDlgProc, (LPARAM)&DialogInfo);
+					hWnd, CommDlgProc, (LPARAM)&DialogInfo);
 }
 
 /*
@@ -186,10 +186,9 @@ DWORD WINAPI drvGetDefaultCommConfigA(LPCSTR lpszDevice,
  *
  ************************************/
 
-LRESULT CommDlgProc(HWND hDlg,
-	UINT Msg,
-	WPARAM wParam,
-	LPARAM lParam)
+INT_PTR
+CALLBACK
+CommDlgProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	LPDIALOG_INFO lpDlgInfo = NULL;
 	HWND hBox;
@@ -205,7 +204,7 @@ LRESULT CommDlgProc(HWND hDlg,
 			INT i;
 
 			lpDlgInfo = (LPDIALOG_INFO)lParam;
-			SetWindowLongPtrW(hDlg, DWL_USER, (LONG_PTR)lpDlgInfo);
+			SetWindowLongPtrW(hDlg, DWLP_USER, (LONG_PTR)lpDlgInfo);
 
 			/* Set title */
 			if(LoadStringW(hDllInstance, IDS_TITLE, wstr, sizeof(wstr) / sizeof(wstr[0])))
@@ -309,7 +308,7 @@ LRESULT CommDlgProc(HWND hDlg,
 			{
 				SendMessageW(hBox, CB_INSERTSTRING, 1, (LPARAM)wstr);
 				if(lpDlgInfo->lpCC->dcb.fRtsControl == RTS_CONTROL_HANDSHAKE
-					|| lpDlgInfo->lpCC->dcb.fOutxCtsFlow == TRUE)
+					|| lpDlgInfo->lpCC->dcb.fOutxCtsFlow != FALSE)
 				{
 					SendMessageW(hBox, CB_SETCURSEL, 1, 0);
 					lpDlgInfo->InitialFlowIndex = 1;
@@ -365,7 +364,7 @@ VOID OkButton(HWND hDlg)
 	LPDIALOG_INFO lpDlgInfo;
 	UINT Index;
 
-	lpDlgInfo = (LPDIALOG_INFO) GetWindowLongPtrW(hDlg, DWL_USER);
+	lpDlgInfo = (LPDIALOG_INFO) GetWindowLongPtrW(hDlg, DWLP_USER);
 
 	/* Baud rate */
 	Index = SendMessageW(GetDlgItem(hDlg, IDC_BAUDRATE), CB_GETCURSEL, 0, 0);

@@ -1,5 +1,9 @@
 #pragma once
 
+/* icons */
+#define IDI_NETWORK     100
+#define IDI_INTERNET    101
+
 /* dialogs */
 #define IDD_TCPIP_BASIC_DLG  100
 #define IDD_TCPIP_ALTCF_DLG  101
@@ -12,6 +16,7 @@
 #define IDD_TCPIPDNS_DLG     108
 #define IDD_TCPIPSUFFIX_DLG  109
 #define IDD_TCPIP_PORT_DLG   110
+#define IDD_NET_PROPERTY_DLG 111
 
 
 /* controls */
@@ -81,6 +86,13 @@
 #define IDC_USE_FILTER    7015
 #define IDC_PORT_DESC     7016
 #define IDC_PORT_VAL      7017
+
+#define IDC_PROPERTY_NAME        7100
+#define IDC_PROPERTY_VALUE_EDIT  7101
+#define IDC_PROPERTY_VALUE_UPDN  7102
+#define IDC_PROPERTY_VALUE_LIST  7103
+#define IDC_PROPERTY_PRESENT     7104
+#define IDC_PROPERTY_NOT_PRESENT 7105
 
 /* strings */
 #define IDS_NET_CONNECT    8000

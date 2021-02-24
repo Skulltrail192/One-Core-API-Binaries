@@ -16,7 +16,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdio.h>
+
 #include "urlmon_main.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(urlmon);
 
 static WCHAR bscb_holderW[] = { '_','B','S','C','B','_','H','o','l','d','e','r','_',0 };
 
@@ -40,7 +45,7 @@ static void *get_callback_iface(BindStatusCallback *This, REFIID riid)
     void *ret;
     HRESULT hres;
 
-    hres = IBindStatusCallback_QueryInterface(This->callback, riid, (void**)&ret);
+    hres = IBindStatusCallback_QueryInterface(This->callback, riid, &ret);
     if(FAILED(hres) && This->serv_prov)
         hres = IServiceProvider_QueryService(This->serv_prov, riid, riid, &ret);
 

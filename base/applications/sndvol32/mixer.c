@@ -66,7 +66,7 @@ ClearMixerCache(PSND_MIXER Mixer)
 }
 
 PSND_MIXER
-SndMixerCreate(HWND hWndNotification)
+SndMixerCreate(HWND hWndNotification, UINT MixerId)
 {
     PSND_MIXER Mixer = (PSND_MIXER) HeapAlloc(GetProcessHeap(),
                                  HEAP_ZERO_MEMORY,
@@ -80,7 +80,7 @@ SndMixerCreate(HWND hWndNotification)
         if (Mixer->MixersCount > 0)
         {
             /* select the first mixer by default */
-            SndMixerSelect(Mixer, 0);
+            SndMixerSelect(Mixer, MixerId);
         }
     }
 
@@ -471,7 +471,7 @@ SndMixerEnumProducts(PSND_MIXER Mixer,
 }
 
 INT
-SndMixerSetVolumeControlDetails(PSND_MIXER Mixer, DWORD dwControlID, DWORD cbDetails, LPVOID paDetails)
+SndMixerSetVolumeControlDetails(PSND_MIXER Mixer, DWORD dwControlID, DWORD cChannels, DWORD cbDetails, LPVOID paDetails)
 {
     MIXERCONTROLDETAILS MixerDetails;
 
@@ -479,12 +479,12 @@ SndMixerSetVolumeControlDetails(PSND_MIXER Mixer, DWORD dwControlID, DWORD cbDet
     {
         MixerDetails.cbStruct = sizeof(MIXERCONTROLDETAILS);
         MixerDetails.dwControlID = dwControlID;
-        MixerDetails.cChannels = 1; //FIXME
+        MixerDetails.cChannels = cChannels;
         MixerDetails.cMultipleItems = 0;
         MixerDetails.cbDetails = cbDetails;
         MixerDetails.paDetails = paDetails;
 
-        if (mixerSetControlDetails((HMIXEROBJ)Mixer->hmx, &MixerDetails, MIXER_GETCONTROLDETAILSF_VALUE | MIXER_OBJECTF_HMIXER) == MMSYSERR_NOERROR)
+        if (mixerSetControlDetails((HMIXEROBJ)Mixer->hmx, &MixerDetails, MIXER_SETCONTROLDETAILSF_VALUE | MIXER_OBJECTF_HMIXER) == MMSYSERR_NOERROR)
         {
             return 1;
         }
@@ -495,7 +495,7 @@ SndMixerSetVolumeControlDetails(PSND_MIXER Mixer, DWORD dwControlID, DWORD cbDet
 
 
 INT
-SndMixerGetVolumeControlDetails(PSND_MIXER Mixer, DWORD dwControlID, DWORD cbDetails, LPVOID paDetails)
+SndMixerGetVolumeControlDetails(PSND_MIXER Mixer, DWORD dwControlID, DWORD cChannels, DWORD cbDetails, LPVOID paDetails)
 {
     MIXERCONTROLDETAILS MixerDetails;
 
@@ -503,7 +503,7 @@ SndMixerGetVolumeControlDetails(PSND_MIXER Mixer, DWORD dwControlID, DWORD cbDet
     {
         MixerDetails.cbStruct = sizeof(MIXERCONTROLDETAILS);
         MixerDetails.dwControlID = dwControlID;
-        MixerDetails.cChannels = 1; //FIXME
+        MixerDetails.cChannels = cChannels;
         MixerDetails.cMultipleItems = 0;
         MixerDetails.cbDetails = cbDetails;
         MixerDetails.paDetails = paDetails;
@@ -609,4 +609,42 @@ SndMixerIsDisplayControl(PSND_MIXER Mixer,
     }
 
     return FALSE;
+}
+
+LPMIXERLINE
+SndMixerGetLineByName(PSND_MIXER Mixer,
+                      DWORD LineID,
+                      LPWSTR LineName)
+{
+    PSND_MIXER_DESTINATION Line;
+    PSND_MIXER_CONNECTION Connection;
+
+    if (Mixer->hmx == 0)
+        return NULL;
+
+    for (Line = Mixer->Lines; Line != NULL; Line = Line->Next)
+    {
+        if (Line->Info.dwLineID == LineID)
+        {
+            if (Line->DisplayControls != 0)
+            {
+                if (wcsicmp(Line->Info.szName, LineName) == 0)
+                {
+                    return &Line->Info;
+                }
+            }
+
+            for (Connection = Line->Connections; Connection != NULL; Connection = Connection->Next)
+            {
+                if (wcsicmp(Connection->Info.szName, LineName) == 0)
+                {
+                    return &Connection->Info;
+                }
+            }
+
+            return NULL;
+        }
+    }
+
+    return NULL;
 }

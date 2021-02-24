@@ -26,7 +26,7 @@ BEGIN
         MENUITEM "Продовжити", ID_RESUME, GRAYED
         MENUITEM "Перезапуск", ID_RESTART, GRAYED
         MENUITEM SEPARATOR
-        MENUITEM "Оновити", ID_REFRESH
+        MENUITEM "Оновити\tF5", ID_REFRESH
         MENUITEM SEPARATOR
         MENUITEM "Правка...", ID_EDIT, GRAYED
         MENUITEM "Створити...", ID_CREATE, GRAYED
@@ -69,6 +69,11 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Довідка...", ID_HELP
     END
+END
+
+IDA_SERVMAN ACCELERATORS
+BEGIN
+    VK_F5, ID_REFRESH, VIRTKEY
 END
 
 IDD_ABOUTBOX DIALOGEX 22, 16, 190, 182
@@ -168,7 +173,7 @@ BEGIN
             TVS_LINESATROOT | TVS_DISABLEDRAGDROP, 8, 70, 236, 68
     CONTROL "", IDC_DEPEND_TREE2, "SysTreeView32", WS_BORDER | WS_CHILDWINDOW |
             WS_VISIBLE | WS_TABSTOP | TVS_HASBUTTONS | TVS_HASLINES |
-            TVS_LINESATROOT | TVS_DISABLEDRAGDROP, 8, 151, 234, 67
+            TVS_LINESATROOT | TVS_DISABLEDRAGDROP, 8, 151, 236, 68
     LTEXT "Деякі служби залежать від інших служб, системних драйверів або списку завантаження груп служб. Якщо служба зупинена або неправильно працює, це впливає на залежні від неї служби.", IDC_STATIC, 8, 7, 238, 26
     LTEXT "Ця служба залежить від наступних компонентів", IDC_STATIC, 8, 57, 236, 9
     LTEXT "", IDC_DEPEND_SERVICE, 8, 38, 236, 13

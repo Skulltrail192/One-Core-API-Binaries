@@ -11,6 +11,13 @@ if(MSVC)
             add_definitions(-Dvsnprintf=_vsnprintf)
         endif()
     endif()
+
+    # Disable warning " unary minus operator applied to unsigned type, result still unsigned"
+    add_compile_flags("/wd4146")
+
+    # Disable warning "'=': conversion from 'a' to 'b', possible loss of data"
+    add_compile_flags("/wd4244")
+
 endif()
 
 if(CMAKE_CROSSCOMPILING)
@@ -21,7 +28,6 @@ if(CMAKE_CROSSCOMPILING)
         -Dstrtoll=_strtoi64
         -Dopen=_open
         -Dclose=_close)
-
     include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 endif()
 
@@ -35,4 +41,5 @@ if(CMAKE_CROSSCOMPILING)
     add_library(wpp ${SOURCE})
 else()
     add_library(wpphost ${SOURCE})
+    target_link_libraries(wpphost PRIVATE host_includes)
 endif()

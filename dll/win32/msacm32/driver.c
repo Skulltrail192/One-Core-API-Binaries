@@ -21,7 +21,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+
+#include <stdarg.h>
+#include <stdio.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "mmsystem.h"
+#include "mmreg.h"
+#include "msacm.h"
+#include "msacmdrv.h"
 #include "wineacm.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(msacm);
 
 /***********************************************************************
  *           acmDriverAddA (MSACM32.@)
@@ -422,11 +438,11 @@ LRESULT WINAPI acmDriverMessage(HACMDRIVER had, UINT uMsg, LPARAM lParam1, LPARA
 
                     pConfigInfo->dwDCISize = iStructSize;
 
-                    section_name = HeapAlloc(MSACM_hHeap, 0, (strlenW(drivers32) + 1) * sizeof(WCHAR));
-                    if (section_name) strcpyW(section_name, drivers32);
+                    section_name = HeapAlloc(MSACM_hHeap, 0, (lstrlenW(drivers32) + 1) * sizeof(WCHAR));
+                    if (section_name) lstrcpyW(section_name, drivers32);
                     pConfigInfo->lpszDCISectionName = section_name;
-                    alias_name = HeapAlloc(MSACM_hHeap, 0, (strlenW(pAlias) + 1) * sizeof(WCHAR));
-                    if (alias_name) strcpyW(alias_name, pAlias);
+                    alias_name = HeapAlloc(MSACM_hHeap, 0, (lstrlenW(pAlias) + 1) * sizeof(WCHAR));
+                    if (alias_name) lstrcpyW(alias_name, pAlias);
                     pConfigInfo->lpszDCIAliasName = alias_name;
 
                     if (pConfigInfo->lpszDCISectionName == NULL || pConfigInfo->lpszDCIAliasName == NULL) {
@@ -581,8 +597,7 @@ MMRESULT WINAPI acmDriverOpen(PHACMDRIVER phad, HACMDRIVERID hadid, DWORD fdwOpe
     return MMSYSERR_NOERROR;
  gotError:
     WARN("failed: ret = %08x\n", ret);
-    if (pad && !pad->hDrvr)
-	HeapFree(MSACM_hHeap, 0, pad);
+    HeapFree(MSACM_hHeap, 0, pad);
     return ret;
 }
 

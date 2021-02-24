@@ -176,7 +176,7 @@ static LPITEMIDLIST _ILReadFromSharedMemory(PCWSTR strField)
     if (*strField != L':')
         return NULL;
 
-    HANDLE hData = (HANDLE) StrToIntW(strField + 1);
+    HANDLE hData = IntToPtr(StrToIntW(strField + 1));
     PWSTR strSecond = StrChrW(strField + 1, L':');
 
     if (strSecond)
@@ -226,7 +226,7 @@ static LPITEMIDLIST _GetDocumentsPidl()
 * SHExplorerParseCmdLine		[BROWSEUI.107]
 */
 extern "C"
-UINT
+UINT_PTR
 WINAPI
 SHExplorerParseCmdLine(ExplorerCommandLineParseResults * pInfo)
 {
@@ -246,7 +246,7 @@ SHExplorerParseCmdLine(ExplorerCommandLineParseResults * pInfo)
             PathStripToRootW(strDir);
             pInfo->pidlPath = ILCreateFromPathW(strDir);
         }
-        return (LONG) (pInfo->pidlPath);
+        return (LONG_PTR)(pInfo->pidlPath);
     }
 
     PCWSTR strNextArg = _FindFirstField(strFieldArray);
@@ -381,6 +381,15 @@ SHExplorerParseCmdLine(ExplorerCommandLineParseResults * pInfo)
             else
             {
                 // Or just a plain old string.
+
+                if (PathIsDirectoryW(strField))
+                    PathAddBackslash(strField);
+
+                WCHAR szPath[MAX_PATH];
+                DWORD result = GetFullPathNameW(strField, _countof(szPath), szPath, NULL);
+
+                if (result != 0 && result <= _countof(szPath) && PathFileExistsW(szPath))
+                    StringCchCopyW(strField, _countof(strField), szPath);
 
                 LPITEMIDLIST pidlPath = ILCreateFromPathW(strField);
 

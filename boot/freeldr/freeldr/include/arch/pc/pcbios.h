@@ -1,23 +1,75 @@
 #ifndef _PCBIOS_H_
 #define _PCBIOS_H_
 
+#ifdef __ASM__
+#define EFLAGS_CF HEX(01)
+#define EFLAGS_ZF HEX(40)
+#define EFLAGS_SF HEX(80)
+#endif
+
 #ifndef __ASM__
+
+#define MAX_BIOS_DESCRIPTORS 80
 
 typedef enum
 {
-    BiosMemoryUsable=1,
-    BiosMemoryReserved,
-    BiosMemoryAcpiReclaim,
-    BiosMemoryAcpiNvs
+    // ACPI 1.0.
+    BiosMemoryUsable        =  1,
+    BiosMemoryReserved      =  2,
+    BiosMemoryAcpiReclaim   =  3,
+    BiosMemoryAcpiNvs       =  4,
+    // ACPI 3.0.
+    BiosMemoryUnusable      =  5,
+    // ACPI 4.0.
+    BiosMemoryDisabled      =  6,
+    // ACPI 6.0.
+    BiosMemoryPersistent    =  7,
+    BiosMemoryUndefined08   =  8,
+    BiosMemoryUndefined09   =  9,
+    BiosMemoryUndefined10   = 10,
+    BiosMemoryUndefined11   = 11,
+    BiosMemoryOemDefined12  = 12
+    // BiosMemoryUndefinedNN   = 13-0xEFFFFFFF
+    // BiosMemoryOemDefinedNN  = 0xF0000000-0xFFFFFFFF
 } BIOS_MEMORY_TYPE;
 
 typedef struct
 {
-    ULONGLONG        BaseAddress;
-    ULONGLONG        Length;
-    ULONG        Type;
-    ULONG        Reserved;
+    // ACPI 1.0.
+    ULONGLONG   BaseAddress;
+    ULONGLONG   Length;
+    ULONG       Type;
+    // ACPI 3.0.
+    union
+    {
+        ULONG   ExtendedAttributesAsULONG;
+
+        struct
+        {
+            // Bit 0. ACPI 3.0.
+            // As of ACPI 4.0, became "Reserved -> must be 1".
+            ULONG Enabled_Reserved : 1;
+            // Bit 1. ACPI 3.0.
+            // As of ACPI 6.1, became "Unimplemented -> Deprecated".
+            // As of ACPI 6.3, became "Reserved -> must be 0".
+            ULONG NonVolatile_Deprecated_Reserved : 1;
+            // Bit 2. ACPI 4.0.
+            // As of ACPI 6.1, became "Unimplemented -> Deprecated".
+            // As of ACPI 6.3, became "Reserved -> must be 0".
+            ULONG SlowAccess_Deprecated_Reserved : 1;
+            // Bit 3. ACPI 4.0.
+            // ACPI 5.0-A added "Used only on PC-AT BIOS" (not UEFI).
+            ULONG ErrorLog : 1;
+            // Bits 4-31. ACPI 3.0.
+            ULONG Reserved : 28;
+        } ExtendedAttributes;
+    };
 } BIOS_MEMORY_MAP, *PBIOS_MEMORY_MAP;
+
+/* Int 15h AX=E820h Entry minimal size. */
+C_ASSERT(FIELD_OFFSET(BIOS_MEMORY_MAP, ExtendedAttributes) == 20);
+/* Int 15h AX=E820h Entry maximal size. */
+C_ASSERT(sizeof(BIOS_MEMORY_MAP) == 24);
 
 /* FIXME: Should be moved to NDK, and respective ACPI header files */
 typedef struct _ACPI_BIOS_DATA
@@ -120,10 +172,19 @@ int __cdecl Int386(int ivec, REGS* in, REGS* out);
 // If CF is set then the call failed (usually)
 #define INT386_SUCCESS(regs)    ((regs.x.eflags & EFLAGS_CF) == 0)
 
-void    EnableA20(void);
-VOID __cdecl ChainLoadBiosBootSectorCode(VOID);    // Implemented in boot.S
-VOID __cdecl Reboot(VOID);                    // Implemented in boot.S
-VOID    DetectHardware(VOID);                 // Implemented in hardware.c
+VOID __cdecl ChainLoadBiosBootSectorCode(
+    IN UCHAR BootDrive OPTIONAL,
+    IN ULONG BootPartition OPTIONAL);
+
+VOID __cdecl Relocator16Boot(
+    IN REGS*  In,
+    IN USHORT StackSegment,
+    IN USHORT StackPointer,
+    IN USHORT CodeSegment,
+    IN USHORT CodePointer);
+
+VOID __cdecl Reboot(VOID);
+VOID DetectHardware(VOID);
 
 #endif /* ! __ASM__ */
 

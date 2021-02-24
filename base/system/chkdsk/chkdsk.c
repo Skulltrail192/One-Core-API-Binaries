@@ -49,6 +49,9 @@
 
 #include <conutils.h>
 
+/* Resource header */
+#include "resource.h"
+
 #define NTOS_MODE_USER
 #include <ndk/ntndk.h>
 
@@ -85,9 +88,9 @@ PCHKDSK Chkdsk;
 // Takes the win32 error code and prints the text version.
 //
 //----------------------------------------------------------------------
-static VOID PrintWin32Error(LPWSTR Message, DWORD ErrorCode)
+static VOID PrintWin32Error(int Message, DWORD ErrorCode)
 {
-    ConPrintf(StdErr, L"%s: ", Message);
+    ConResPuts(StdErr, Message);
     ConMsgPuts(StdErr, FORMAT_MESSAGE_FROM_SYSTEM,
                NULL, ErrorCode, LANG_USER_DEFAULT);
     ConPuts(StdErr, L"\n");
@@ -123,14 +126,7 @@ CtrlCIntercept(DWORD dwCtrlType)
 static VOID
 Usage(PWCHAR ProgramName)
 {
-    ConPrintf(StdOut,
-        L"Usage: %s [drive:] [-F] [-V] [-R] [-C]\n\n"
-        L"[drive:]    Specifies the drive to check.\n"
-        L"-F          Fixes errors on the disk.\n"
-        L"-V          Displays the full path of every file on the disk.\n"
-        L"-R          Locates bad sectors and recovers readable information.\n"
-        L"-C          Checks the drive only if it is dirty.\n\n",
-        ProgramName);
+    ConResPrintf(StdOut, IDS_USAGE, ProgramName);
 }
 
 
@@ -228,6 +224,7 @@ ChkdskCallback(
     DWORD       Modifier,
     PVOID       Argument)
 {
+    BOOLEAN     Ret;
     PDWORD      percent;
     PBOOLEAN    status;
     PTEXTOUTPUT output;
@@ -236,6 +233,7 @@ ChkdskCallback(
     // We get other types of commands,
     // but we don't have to pay attention to them
     //
+    Ret = TRUE;
     switch (Command)
     {
         case UNKNOWN2:
@@ -259,7 +257,8 @@ ChkdskCallback(
             break;
 
         case VOLUMEINUSE:
-            ConPuts(StdOut, L"VOLUMEINUSE\n");
+            ConResPuts(StdOut, IDS_VOLUME_IN_USE);
+            Ret = FALSE;
             break;
 
         case UNKNOWN9:
@@ -296,7 +295,7 @@ ChkdskCallback(
 
         case PROGRESS:
             percent = (PDWORD)Argument;
-            ConPrintf(StdOut, L"%d percent completed.\r", *percent);
+            ConResPrintf(StdOut, IDS_PERCENT_COMPL, *percent);
             break;
 
         case OUTPUT:
@@ -308,12 +307,12 @@ ChkdskCallback(
             status = (PBOOLEAN)Argument;
             if (*status == FALSE)
             {
-                ConPuts(StdOut, L"Chkdsk was unable to complete successfully.\n\n");
+                ConResPuts(StdOut, IDS_CHKDSK_FAIL);
                 Error = TRUE;
             }
             break;
     }
-    return TRUE;
+    return Ret;
 }
 
 #ifndef FMIFS_IMPORT_DLL
@@ -368,11 +367,7 @@ wmain(int argc, WCHAR *argv[])
     /* Initialize the Console Standard Streams */
     ConInitStdStreams();
 
-    ConPuts(StdOut,
-        L"\n"
-        L"Chkdskx v1.0.1 by Mark Russinovich\n"
-        L"Systems Internals - http://www.sysinternals.com\n"
-        L"ReactOS adaptation 1999 by Emanuele Aliberti\n\n");
+    ConResPuts(StdOut, IDS_ABOUT);
 
 #ifndef FMIFS_IMPORT_DLL
     //
@@ -380,7 +375,7 @@ wmain(int argc, WCHAR *argv[])
     //
     if (!LoadFMIFSEntryPoints())
     {
-        ConPuts(StdErr, L"Could not located FMIFS entry points.\n\n");
+        ConResPuts(StdErr, IDS_NO_ENTRY_POINT);
         return -1;
     }
 #endif
@@ -391,7 +386,7 @@ wmain(int argc, WCHAR *argv[])
     badArg = ParseCommandLine(argc, argv);
     if (badArg)
     {
-        ConPrintf(StdOut, L"Unknown argument: %s\n", argv[badArg]);
+        ConResPrintf(StdOut, IDS_BAD_ARGUMENT, argv[badArg]);
         Usage(argv[0]);
         return -1;
     }
@@ -403,7 +398,7 @@ wmain(int argc, WCHAR *argv[])
     {
         if (!GetCurrentDirectoryW(ARRAYSIZE(CurrentDirectory), CurrentDirectory))
         {
-            PrintWin32Error(L"Could not get current directory", GetLastError());
+            PrintWin32Error(IDS_NO_CURRENT_DIR, GetLastError());
             return -1;
         }
     }
@@ -428,7 +423,7 @@ wmain(int argc, WCHAR *argv[])
                                fileSystem,
                                ARRAYSIZE(fileSystem)))
     {
-        PrintWin32Error(L"Could not query volume", GetLastError());
+        PrintWin32Error(IDS_NO_QUERY_VOL, GetLastError());
         return -1;
     }
 
@@ -447,7 +442,7 @@ wmain(int argc, WCHAR *argv[])
                                    0);
         if (volumeHandle == INVALID_HANDLE_VALUE)
         {
-            ConPuts(StdErr, L"Chkdsk cannot run because the volume is in use by another process.\n\n");
+            ConResPuts(StdErr, IDS_VOLUME_IN_USE_PROC);
             return -1;
         }
         CloseHandle(volumeHandle);
@@ -461,7 +456,7 @@ wmain(int argc, WCHAR *argv[])
     //
     // Just do it
     //
-    ConPrintf(StdOut, L"The type of file system is %s.\n", fileSystem);
+    ConResPrintf(StdOut, IDS_FILE_SYSTEM, fileSystem);
     Chkdsk(Drive,
            fileSystem,
            FixErrors,

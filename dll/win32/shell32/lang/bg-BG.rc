@@ -1,3 +1,4 @@
+
 LANGUAGE LANG_BULGARIAN, SUBLANG_DEFAULT
 
 MENU_001 MENUEX
@@ -11,6 +12,7 @@ BEGIN
     BEGIN
         MENUITEM "", -1, MFT_SEPARATOR
         MENUITEM "&Самоподреждане", FCIDM_SHVIEW_AUTOARRANGE
+        MENUITEM "Align to &Grid", FCIDM_SHVIEW_ALIGNTOGRID
     END
 END
 
@@ -31,9 +33,8 @@ BEGIN
         BEGIN
             MENUITEM "", -1, MFT_SEPARATOR
             MENUITEM "&Самоподреждане", FCIDM_SHVIEW_AUTOARRANGE
+            MENUITEM "Align to &Grid", FCIDM_SHVIEW_ALIGNTOGRID
         END
-        MENUITEM "Подравнени значета", FCIDM_SHVIEW_SNAPTOGRID
-        MENUITEM "", -1, MFT_SEPARATOR
         MENUITEM "Опресняване", FCIDM_SHVIEW_REFRESH
         MENUITEM "", -1, MFT_SEPARATOR
         MENUITEM "Поставяне", FCIDM_SHVIEW_INSERT
@@ -63,17 +64,28 @@ MENU_SHV_FILE MENU
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "&Обзор", FCIDM_SHVIEW_EXPLORE
-        MENUITEM "О&тваряне", FCIDM_SHVIEW_OPEN
         MENUITEM SEPARATOR
-        MENUITEM "Из&рязване", FCIDM_SHVIEW_CUT
-        MENUITEM "За&помняне", FCIDM_SHVIEW_COPY
+        MENUITEM "Из&рязване", IDM_CUT
+        MENUITEM "За&помняне", IDM_COPY
+        MENUITEM "Paste", IDM_INSERT
         MENUITEM SEPARATOR
-        MENUITEM "Създаване на &връзка", FCIDM_SHVIEW_CREATELINK
-        MENUITEM "Из&триване", FCIDM_SHVIEW_DELETE
-        MENUITEM "Пре&именуване", FCIDM_SHVIEW_RENAME
+        MENUITEM "Създаване на &връзка", IDM_CREATELINK
+        MENUITEM "Из&триване", IDM_DELETE
+        MENUITEM "Пре&именуване", IDM_RENAME
         MENUITEM SEPARATOR
-        MENUITEM "&Свойства", FCIDM_SHVIEW_PROPERTIES
+        MENUITEM "&Свойства", IDM_PROPERTIES
+    END
+END
+
+IDM_DRAGFILE MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "&Copy here", IDM_COPYHERE
+        MENUITEM "&Move here", IDM_MOVEHERE
+        MENUITEM "Create &shortcuts here", IDM_LINKHERE
+        MENUITEM SEPARATOR
+        MENUITEM "Cancel", 0
     END
 END
 
@@ -84,7 +96,7 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     DEFPUSHBUTTON "Добре", 1, 80, 176, 50, 12, BS_DEFPUSHBUTTON | WS_GROUP | WS_TABSTOP
     PUSHBUTTON "Отказ", 2, 134, 176, 50, 12, WS_GROUP | WS_TABSTOP
-    LTEXT "", IDC_BROWSE_FOR_FOLDER_TITLE, 4, 4, 180, 12
+    LTEXT "", IDC_BROWSE_FOR_FOLDER_TITLE, 4, 4, 180, 24
     LTEXT "", IDC_BROWSE_FOR_FOLDER_STATUS, 4, 25, 180, 12
     CONTROL "", IDC_BROWSE_FOR_FOLDER_TREEVIEW, "SysTreeView32", TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | WS_BORDER | WS_TABSTOP, 4, 40, 180, 120
 END
@@ -97,7 +109,7 @@ BEGIN
     LTEXT "", IDC_BROWSE_FOR_FOLDER_TITLE, 10, 8, 198, 24
     LTEXT "", IDC_BROWSE_FOR_FOLDER_STATUS, 10, 25, 198, 12
     LTEXT "Папка:", IDC_BROWSE_FOR_FOLDER_FOLDER, 10, 156, 40, 12
-    CONTROL "", IDC_BROWSE_FOR_FOLDER_TREEVIEW, "SysTreeView32", TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | WS_BORDER | WS_TABSTOP, 12, 38, 194, 105
+    CONTROL "", IDC_BROWSE_FOR_FOLDER_TREEVIEW, "SysTreeView32", TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_EDITLABELS | WS_BORDER | WS_TABSTOP, 12, 38, 194, 105
     EDITTEXT IDC_BROWSE_FOR_FOLDER_FOLDER_TEXT, 46, 150, 160, 14, WS_BORDER | WS_GROUP | WS_TABSTOP
     PUSHBUTTON "&Създаване на нова папка", IDC_BROWSE_FOR_FOLDER_NEW_FOLDER, 10, 174, 92, 14, WS_GROUP | WS_TABSTOP
     DEFPUSHBUTTON "Добре", IDOK, 102, 174, 50, 14, BS_DEFPUSHBUTTON | WS_GROUP | WS_TABSTOP
@@ -124,11 +136,7 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", IDC_ABOUT_ICON, 7, 55, 21, 20
     LTEXT "", IDC_ABOUT_APPNAME, 35, 55, 200, 10
-    LTEXT "Версия ", IDC_STATIC, 35, 65, 28, 10
-    LTEXT KERNEL_VERSION_STR, IDC_STATIC, 63, 65, 27, 10
-    LTEXT " (", IDC_STATIC, 90, 65, 5, 10
-    LTEXT KERNEL_VERSION_BUILD_STR, IDC_STATIC, 95, 65, 58, 10
-    LTEXT ")", IDC_STATIC, 153, 65, 5, 10
+    LTEXT "", IDC_ABOUT_VERSION, 35, 65, 250, 10
     LTEXT "Copyright 1998-", IDC_STATIC, 35, 75, 53, 10
     LTEXT COPYRIGHT_YEAR, IDC_STATIC, 88, 75, 17, 10
     LTEXT " ReactOS Team\0", IDC_STATIC, 105, 75, 53, 10
@@ -157,12 +165,12 @@ CAPTION "Run"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", IDC_RUNDLG_ICON, 7, 11, 18, 20, WS_VISIBLE
-    LTEXT "Напишете името на приложение, папка, документ или интернет източник и РеактОС ще го отвори.", 12289, 36, 11, 182, 18
+    LTEXT "Напишете името на приложение, папка, документ или интернет източник и РеактОС ще го отвори.", 12289, 36, 11, 185, 18
     LTEXT "&Отваряне:", 12305, 7, 39, 40, 10
-    CONTROL "", IDC_RUNDLG_EDITPATH, "COMBOBOX", WS_TABSTOP | WS_GROUP | WS_VSCROLL | WS_VISIBLE | CBS_AUTOHSCROLL | CBS_DROPDOWN, 46, 37, 180, 100
-    DEFPUSHBUTTON "Добре", IDOK, 62, 63, 50, 14, WS_TABSTOP
-    PUSHBUTTON "Отказ", IDCANCEL, 116, 63, 50, 14, WS_TABSTOP
-    PUSHBUTTON "&Обзор...", 12288, 170, 63, 50, 14, WS_TABSTOP
+    CONTROL "", IDC_RUNDLG_EDITPATH, "COMBOBOX", WS_TABSTOP | WS_GROUP | WS_VSCROLL | WS_VISIBLE | CBS_AUTOHSCROLL | CBS_DROPDOWN, 46, 37, 174, 100
+    DEFPUSHBUTTON "Добре", IDOK, 62, 70, 50, 14, WS_TABSTOP
+    PUSHBUTTON "Отказ", IDCANCEL, 116, 70, 50, 14, WS_TABSTOP
+    PUSHBUTTON "&Обзор...", 12288, 170, 70, 50, 14, WS_TABSTOP
 END
 
 IDD_SHORTCUT_PROPERTIES DIALOGEX 0, 0, 235, 215
@@ -170,27 +178,27 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_CAPTION
 CAPTION "Препратка"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    ICON "", 14000, 8, 8, 21, 20, WS_VISIBLE
-    EDITTEXT 14001, 49, 10, 180, 14, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    ICON "", IDC_SHORTCUT_ICON, 8, 8, 21, 20, WS_VISIBLE
+    EDITTEXT IDC_SHORTCUT_TEXT, 49, 10, 180, 14, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
     LTEXT "", -1, 8, 31, 223, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
-    LTEXT "Вид на целта:", 14004, 8, 38, 68, 10
-    EDITTEXT 14005, 79, 37, 150, 12, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
-    LTEXT "Място на целта:", 14006, 8, 55, 68, 10
-    EDITTEXT 14007, 79, 53, 150, 12, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
-    LTEXT "&Цел:", 14008, 8, 71, 68, 10
-    EDITTEXT 14009, 79, 69, 150, 14, ES_AUTOHSCROLL
+    LTEXT "Вид на целта:", IDC_SHORTCUT_TYPE, 8, 38, 68, 10
+    EDITTEXT IDC_SHORTCUT_TYPE_EDIT, 79, 37, 150, 12, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    LTEXT "Място на целта:", IDC_SHORTCUT_LOCATION, 8, 55, 68, 10
+    EDITTEXT IDC_SHORTCUT_LOCATION_EDIT, 79, 53, 150, 12, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    LTEXT "&Цел:", IDC_SHORTCUT_TARGET, 8, 71, 68, 10
+    EDITTEXT IDC_SHORTCUT_TARGET_TEXT, 79, 69, 150, 14, ES_AUTOHSCROLL
     LTEXT "", -1, 8, 88, 223, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
-    LTEXT "&Изпълняване в:", 14010, 8, 98, 68, 10
-    EDITTEXT 14011, 79, 96, 150, 14, ES_AUTOHSCROLL
-    LTEXT "Бърз &клавиш:", 14014, 8, 117, 68, 10
-    CONTROL "", 14015, "msctls_hotkey32", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP, 79, 115, 150, 14
-    LTEXT "Из&пълняване:", 14016, 8, 136, 68, 10
-    COMBOBOX 14017, 79, 134, 150, 14, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP
-    LTEXT "&Забележка:", 14018, 8, 154, 68, 10
-    EDITTEXT 14019, 79, 152, 150, 14, ES_AUTOHSCROLL
-    PUSHBUTTON "&Намиране на целта...", 14020, 10, 115, 75, 14, ES_LEFT
-    PUSHBUTTON "&Смяна на значето...", 14021, 86, 115, 72, 14, ES_LEFT
-    PUSHBUTTON "Раз&ширени...", 14022, 160, 115, 60, 14, ES_LEFT
+    LTEXT "&Изпълняване в:", IDC_SHORTCUT_START_IN, 8, 98, 68, 10
+    EDITTEXT IDC_SHORTCUT_START_IN_EDIT, 79, 96, 150, 14, ES_AUTOHSCROLL
+    LTEXT "Бърз &клавиш:", IDC_SHORTCUT_KEY, 8, 117, 68, 10
+    CONTROL "", IDC_SHORTCUT_KEY_HOTKEY, "msctls_hotkey32", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP, 79, 115, 150, 14
+    LTEXT "Из&пълняване:", IDC_SHORTCUT_RUN, 8, 136, 68, 10
+    COMBOBOX IDC_SHORTCUT_RUN_COMBO, 79, 134, 150, 14, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP
+    LTEXT "&Забележка:", IDC_SHORTCUT_COMMENT, 8, 154, 68, 10
+    EDITTEXT IDC_SHORTCUT_COMMENT_EDIT, 79, 152, 150, 14, ES_AUTOHSCROLL
+    PUSHBUTTON "&Намиране на целта...", IDC_SHORTCUT_FIND, 10, 115, 75, 14, ES_LEFT
+    PUSHBUTTON "&Смяна на значето...", IDC_SHORTCUT_CHANGE_ICON, 86, 115, 72, 14, ES_LEFT
+    PUSHBUTTON "Раз&ширени...", IDC_SHORTCUT_ADVANCED, 160, 115, 60, 14, ES_LEFT
 END
 
 IDD_SHORTCUT_EXTENDED_PROPERTIES DIALOGEX 0, 0, 260, 150
@@ -200,11 +208,11 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     ICON IDI_SHELL_EXTENDED_PROPERTIES, IDI_SHELL_EXTENDED_PROPERTIES, 5, 5, 21, 20, SS_ICON
     LTEXT "Укажете желаните допълнителни свойства за препратката.", -1, 5, 30, 246, 10
-    CHECKBOX "Изпълняване с различни правомощия", 14000, 30, 50, 150, 10
+    CHECKBOX "Изпълняване с различни правомощия", IDC_SHORTEX_RUN_DIFFERENT, 30, 50, 150, 10
     LTEXT "Тази възможност ви позволява да изпълните препратката като друг потребител или да продължите като себе си, като предпазвате компютъра и данните от неупълномощена дейност на приложенията.", -1, 50, 60, 200, 40
-    CHECKBOX "Изпълняване в отделен дял от паметта", 14001, 30, 100, 170, 10, WS_DISABLED
-    PUSHBUTTON "Добре", 1, 63, 124, 50, 15, WS_VISIBLE
-    PUSHBUTTON "Прекъсване", 2, 120, 124, 50, 15, WS_VISIBLE
+    CHECKBOX "Изпълняване в отделен дял от паметта", IDC_SHORTEX_RUN_SEPARATE, 30, 100, 170, 10, WS_DISABLED
+    PUSHBUTTON "Добре", IDOK, 63, 124, 50, 15, WS_VISIBLE
+    PUSHBUTTON "Прекъсване", IDCANCEL, 120, 124, 50, 15, WS_VISIBLE
 END
 
 IDD_FOLDER_PROPERTIES DIALOGEX 0, 0, 240, 205
@@ -212,27 +220,27 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_CAPTION
 CAPTION "Общи"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    ICON "", 14000, 10, 3, 32, 32, WS_VISIBLE
-    EDITTEXT 14001, 70, 9, 158, 14, ES_LEFT
+    ICON "", 14000, 16, 7, 32, 32, WS_VISIBLE
+    EDITTEXT 14001, 58, 9, 170, 14, ES_LEFT
     LTEXT "Вид на файла:", 14004, 8, 40, 55, 10
-    CONTROL "Папка", 14005, "edit", ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL, 68, 35, 160, 10
+    CONTROL "Папка", 14005, "edit", ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL, 58, 40, 170, 10
     LTEXT "", -1, 8, 31, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Място:", 14008, 8, 56, 55, 10
-    EDITTEXT 14009, 68, 56, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
+    EDITTEXT 14009, 58, 56, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
     LTEXT "Размер:", 14010, 8, 72, 55, 10
-    EDITTEXT 14011, 68, 72, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    EDITTEXT 14011, 58, 72, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
     LTEXT "Size on disk:", 140101, 8, 88, 55, 10
-    EDITTEXT 14012, 68, 88, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    EDITTEXT 14012, 58, 88, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
     LTEXT "Съдържа:", 14026, 8, 104, 55, 10
-    EDITTEXT 14027, 68, 104, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    EDITTEXT 14027, 58, 104, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
     LTEXT "", -1, 8, 120, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Създадено:", 14014, 8, 128, 55, 10
-    EDITTEXT 14015, 68, 128, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    EDITTEXT 14015, 58, 128, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
     LTEXT "", -1, 8, 144, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Принадлежности", 14020, 8, 152, 46, 10
-    AUTOCHECKBOX "&Само за четене", 14021, 56, 152, 70, 10
-    AUTOCHECKBOX "&Скрит", 14022, 56, 166, 70, 10
-    AUTOCHECKBOX "&Сбит", 14023, 56, 180, 70, 10
+    AUTOCHECKBOX "&Само за четене", 14021, 58, 151, 70, 10
+    AUTOCHECKBOX "&Скрит", 14022, 126, 151, 70, 10
+    AUTOCHECKBOX "&Сбит", 14023, 181, 151, 70, 10
     PUSHBUTTON "A&dvanced...", 14028, 158, 150, 70, 14, WS_CHILD | WS_VISIBLE | WS_TABSTOP
 END
 
@@ -241,34 +249,34 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_CAPTION
 CAPTION "Общи"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    ICON "", 14000, 10, 3, 32, 32, WS_VISIBLE
-    EDITTEXT 14001, 70, 9, 158, 14, ES_LEFT | WS_TABSTOP
+    ICON "", 14000, 16, 7, 32, 32, WS_VISIBLE
+    EDITTEXT 14001, 58, 9, 170, 14, ES_LEFT | WS_TABSTOP
     LTEXT "", -1, 8, 29, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Вид файл:", 14004, 8, 35, 50, 10
-    CONTROL "Файл", 14005, "edit", ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP, 68, 35, 160, 10
+    CONTROL "Файл", 14005, "edit", ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP, 58, 35, 170, 10
     LTEXT "Отваряне с:", 14006, 8, 53, 50, 10
-    ICON "", 14025, 68, 52, 11, 10, NOT WS_VISIBLE
+    ICON "", 14025, 58, 52, 11, 10, NOT WS_VISIBLE
     PUSHBUTTON "C&hange...", 14024, 168, 50, 60, 14, WS_CHILD | WS_VISIBLE | WS_TABSTOP
-    EDITTEXT 14007, 68, 53, 90, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
+    EDITTEXT 14007, 58, 53, 100, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
     LTEXT "", -1, 8, 68, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Местоположение:", 14008, 8, 75, 61, 10
-    EDITTEXT 14009, 68, 75, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
+    EDITTEXT 14009, 58, 75, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
     LTEXT "Размер:", 14010, 8, 91, 45, 10
-    EDITTEXT 14011, 68, 91, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT 14011, 58, 91, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT "Size on disk:", 140112, 8, 107, 55, 10
-    EDITTEXT 14012, 68, 107, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT 14012, 58, 107, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT "", -1, 8, 123, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Създаден:", 14014, 8, 131, 45, 10
-    EDITTEXT 14015, 68, 131, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT 14015, 58, 131, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT "Променен:", 14016, 8, 147, 45, 10
-    EDITTEXT 14017, 68, 147, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT 14017, 58, 147, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT "Използван:", 14018, 8, 163, 45, 10
-    EDITTEXT 14019, 68, 160, 163, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT 14019, 58, 163, 173, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT "", -1, 8, 179, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Принадлежности", 14020, 8, 189, 60, 10
-    AUTOCHECKBOX "Само за &четене", 14021, 61, 189, 67, 10
-    AUTOCHECKBOX "С&крит", 14022, 129, 189, 50, 10
-    AUTOCHECKBOX "&Сбит", 14023, 181, 189, 49, 10
+    AUTOCHECKBOX "Само за &четене", 14021, 61, 188, 67, 10
+    AUTOCHECKBOX "С&крит", 14022, 129, 188, 50, 10
+    AUTOCHECKBOX "&Сбит", 14023, 181, 188, 49, 10
     PUSHBUTTON "A&dvanced...", 14028, 180, 185, 50, 15, WS_TABSTOP
 END
 
@@ -295,7 +303,7 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Общи"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    ICON "", 14016, 10, 3, 32, 32, WS_VISIBLE
+    ICON "", 14016, 10, 9, 32, 32, WS_VISIBLE
     EDITTEXT 14000, 40, 11, 190, 14, ES_LEFT | WS_BORDER | WS_GROUP | ES_AUTOHSCROLL
     LTEXT "", -1, 8, 32, 223, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Вид:", -1, 8, 38, 95, 10
@@ -374,7 +382,7 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Свойства на кошчето"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    CONTROL "", 14000, "SysListView32", LVS_REPORT | LVS_SHAREIMAGELISTS | WS_BORDER | WS_TABSTOP, 10, 10, 220, 50
+    CONTROL "", 14000, "SysListView32", LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | WS_BORDER | WS_TABSTOP, 10, 10, 220, 50
     GROUPBOX "Настройки за избраното място", -1, 10, 72, 220, 70
     RADIOBUTTON "У&казан размер:", 14001, 20, 90, 80, 10, WS_TABSTOP
     EDITTEXT 14002, 106, 87, 50, 14, WS_TABSTOP | ES_NUMBER
@@ -393,8 +401,8 @@ BEGIN
     LTEXT "Файл:    ", 14001, 44, 25, 188, 20
     GROUPBOX "&Приложения", -1, 7, 42, 249, 187
     CONTROL "Programs", 14002, WC_TREEVIEW, WS_BORDER | WS_TABSTOP | TVS_SHOWSELALWAYS, 16 ,57, 230, 130
-    AUTOCHECKBOX "&Винаги избраното приложение да отваря този вид файлове.", 14003, 20, 193, 225, 10
-    PUSHBUTTON "&Обзор...", 14004, 198, 207, 50, 14
+    AUTOCHECKBOX "&Винаги избраното приложение да отваря този вид файлове.", 14003, 16, 193, 232, 10
+    PUSHBUTTON "&Обзор...", 14004, 188, 207, 60, 14
     DEFPUSHBUTTON "Добре", IDOK, 150, 236, 50, 14
     PUSHBUTTON "Отказ", IDCANCEL, 206, 236, 50, 14
 END
@@ -415,10 +423,10 @@ BEGIN
     GROUPBOX "Цъкането действа така:", -1, 7, 110, 249, 60
     CONTROL "", IDC_FOLDER_OPTIONS_CLICKICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 120, 21, 20
     AUTORADIOBUTTON "&Отваряне с единично цъкане (избор с посочване)", IDC_FOLDER_OPTIONS_SINGLECLICK, 20, 120, 210, 10, WS_TABSTOP | WS_GROUP
-    AUTORADIOBUTTON "Подчертаване заглавията на значетата съгласно &обзорника ми", IDC_FOLDER_OPTIONS_ULBROWSER, 30, 220, 170, 10
-    AUTORADIOBUTTON "Подчертаване на заглавията на значетата при &посочване", IDC_FOLDER_OPTIONS_ULPOINT, 30, 144, 220, 10
     AUTORADIOBUTTON "&Отваряне с двойно цъкане (избиране с единично)", IDC_FOLDER_OPTIONS_DOUBLECLICK, 20, 156, 170, 10
-    PUSHBUTTON "От под&разбираните", 14011, 160, 180, 75, 14, WS_TABSTOP
+    AUTORADIOBUTTON "Подчертаване заглавията на значетата съгласно &обзорника ми", IDC_FOLDER_OPTIONS_ULBROWSER, 30, 220, 170, 10, WS_TABSTOP | WS_GROUP
+    AUTORADIOBUTTON "Подчертаване на заглавията на значетата при &посочване", IDC_FOLDER_OPTIONS_ULPOINT, 30, 144, 220, 10
+    PUSHBUTTON "От под&разбираните", IDC_FOLDER_OPTIONS_RESTORE, 167, 175, 90, 14, WS_TABSTOP
 END
 
 IDD_FOLDER_OPTIONS_VIEW DIALOGEX 0, 0, 264, 256
@@ -429,11 +437,11 @@ BEGIN
     GROUPBOX "Изглед на папките", -1, 7, 10, 249, 60
     ICON IDI_SHELL_PROGRAMS_FOLDER2, IDC_STATIC, 20, 20, 21, 20
     LTEXT "Можете да прилагате изгледа (от рода на подробен\nи настелен) на тази папка за всички папки.", -1, 60, 20, 190, 20
-    PUSHBUTTON "Прилагане върху ви&чки папки", 14001, 20, 50, 115, 14, WS_TABSTOP
-    PUSHBUTTON "&Зачистване на всички папки", 14002, 140, 50, 115, 14, WS_TABSTOP
+    PUSHBUTTON "Прилагане върху ви&чки папки", IDC_VIEW_APPLY_TO_ALL, 20, 50, 115, 14, WS_TABSTOP
+    PUSHBUTTON "&Зачистване на всички папки", IDC_VIEW_RESET_ALL, 140, 50, 115, 14, WS_TABSTOP
     LTEXT "Разширени настройки", -1, 7, 80, 100, 10
-    CONTROL "", 14003, "SysTreeView32", WS_BORDER | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP | TVS_DISABLEDRAGDROP | TVS_LINESATROOT, 7, 90, 249, 120
-    PUSHBUTTON "От под&разбираните", 14004, 177, 215, 80, 14, WS_TABSTOP
+    CONTROL "", IDC_VIEW_TREEVIEW, "SysTreeView32", WS_BORDER | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP | TVS_DISABLEDRAGDROP | TVS_LINESATROOT, 7, 90, 249, 120
+    PUSHBUTTON "От под&разбираните", IDC_VIEW_RESTORE_DEFAULTS, 177, 215, 80, 14, WS_TABSTOP
 END
 
 IDD_FOLDER_OPTIONS_FILETYPES DIALOGEX 0, 0, 264, 256
@@ -441,17 +449,17 @@ STYLE DS_SHELLFONT | WS_POPUP | WS_CAPTION
 CAPTION "Видове файлове"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    LTEXT "Вписани &видове файлове:", -1, 7, 10, 170, 10
-    CONTROL "", 14000, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_SHAREIMAGELISTS | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP, 7, 20, 249, 80
-    PUSHBUTTON "&Нов", 14001, 120, 110, 50, 14, WS_TABSTOP
-    PUSHBUTTON "Из&триване", 14002, 180, 110, 50, 14, WS_TABSTOP
-    GROUPBOX "Подробности за разширение '%s'", 14003, 7, 130, 249, 70
-    LTEXT "Отваряне с:", -1, 12, 140, 40, 10
-    //ICON
-    LTEXT "Име на приложение", 14005, 100, 140, 40, 10
-    PUSHBUTTON "Про&мяна...", 14006, 180, 140, 50, 14, WS_TABSTOP
-    LTEXT "", 14007, 12, 155, 160, 32
-    PUSHBUTTON "Раз&ширени", 14008, 180, 175, 50, 14, WS_TABSTOP
+    LTEXT "Вписани &видове файлове:", -1, 7, 10, 180, 10
+    CONTROL "", IDC_FILETYPES_LISTVIEW, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_SHAREIMAGELISTS | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP, 7, 20, 249, 115
+    PUSHBUTTON "&Нов", IDC_FILETYPES_NEW, 140, 140, 55, 14, WS_TABSTOP
+    PUSHBUTTON "Из&триване", IDC_FILETYPES_DELETE, 200, 140, 55, 14, WS_TABSTOP
+    GROUPBOX "Подробности за разширение '%s'", IDC_FILETYPES_DETAILS_GROUPBOX, 7, 170, 249, 70
+    LTEXT "Отваряне с:", -1, 12, 180, 40, 10
+    CONTROL "", IDC_FILETYPES_ICON, "STATIC", SS_BITMAP | SS_REALSIZEIMAGE, 85, 180, 10, 10
+    LTEXT "Име на приложение", IDC_FILETYPES_APPNAME, 100, 180, 80, 10
+    PUSHBUTTON "Про&мяна...", IDC_FILETYPES_CHANGE, 200, 180, 50, 14, WS_TABSTOP
+    LTEXT "", IDC_FILETYPES_DESCRIPTION, 12, 195, 160, 40
+    PUSHBUTTON "Раз&ширени", IDC_FILETYPES_ADVANCED, 200, 215, 50, 14, WS_TABSTOP
 END
 
 IDD_CONFIRM_FILE_REPLACE DIALOGEX 0, 0, 282, 143
@@ -612,7 +620,7 @@ BEGIN
     PUSHBUTTON "Обзор...", IDC_BUTTON_PATH, 135, 17, 50, 14
     EDITTEXT IDC_EDIT_PATH, 7, 17, 123, 14, ES_AUTOHSCROLL
     LTEXT "Select an icon from the list below:", -1, 7, 36, 179, 10
-    LISTBOX IDC_PICKICON_LIST, 7, 47, 181, 120, LBS_OWNERDRAWFIXED | LBS_NOINTEGRALHEIGHT | LBS_MULTICOLUMN | LBS_DISABLENOSCROLL | WS_HSCROLL | WS_TABSTOP
+    LISTBOX IDC_PICKICON_LIST, 7, 47, 181, 122, LBS_OWNERDRAWFIXED | LBS_NOINTEGRALHEIGHT | LBS_MULTICOLUMN | LBS_DISABLENOSCROLL | WS_HSCROLL | WS_TABSTOP
     DEFPUSHBUTTON "Добре", IDOK, 81, 179, 50, 14
     PUSHBUTTON "Отказ", IDCANCEL, 135, 179, 50, 14
 END
@@ -629,6 +637,77 @@ system or make it less functional.\n\n\
 Are you sure you want to open this file?", IDC_STATIC, 35, 5, 230, 60
     DEFPUSHBUTTON "Yes", IDYES, 125, 55, 50, 14
     PUSHBUTTON "No", IDNO, 180, 55, 50, 14
+END
+
+IDD_NEWEXTENSION DIALOGEX 0, 0, 260, 75
+CAPTION "Create New Extension"
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "&File Extension:", -1, 10, 10, 85, 14
+    EDITTEXT IDC_NEWEXT_EDIT, 105, 8, 60, 14
+    PUSHBUTTON "<< Ad&vanced", IDC_NEWEXT_ADVANCED, 185, 8, 65, 15
+    LTEXT "&Associated File Type:", IDC_NEWEXT_ASSOC, 10, 34, 85, 14
+    COMBOBOX IDC_NEWEXT_COMBOBOX, 105, 32, 145, 120, CBS_AUTOHSCROLL | CBS_DROPDOWNLIST | WS_VSCROLL | WS_GROUP | WS_TABSTOP
+    DEFPUSHBUTTON "OK", IDOK, 125, 55, 60, 14
+    PUSHBUTTON "Cancel", IDCANCEL, 190, 55, 60, 14
+END
+
+IDD_EDITTYPE DIALOG 0, 0, 225, 190
+CAPTION "Edit File Type"
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON "", IDC_EDITTYPE_ICON, 5, 8, 20, 20
+    EDITTEXT IDC_EDITTYPE_TEXT, 30, 10, 115, 14, ES_AUTOHSCROLL
+    PUSHBUTTON "Change &Icon...", IDC_EDITTYPE_CHANGE_ICON, 150, 10, 70, 14
+    LTEXT "&Actions:", -1, 5, 37, 70, 10
+    LISTBOX IDC_EDITTYPE_LISTBOX, 5, 50, 140, 60, LBS_NOINTEGRALHEIGHT | LBS_HASSTRINGS | LBS_OWNERDRAWFIXED | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON "&New...", IDC_EDITTYPE_NEW, 150, 50, 70, 14
+    PUSHBUTTON "&Edit...", IDC_EDITTYPE_EDIT_BUTTON, 150, 65, 70, 14
+    PUSHBUTTON "&Remove", IDC_EDITTYPE_REMOVE, 150, 80, 70, 14
+    PUSHBUTTON "&Set Default", IDC_EDITTYPE_SET_DEFAULT, 150, 95, 70, 14
+    AUTOCHECKBOX "Confirm &open after download", IDC_EDITTYPE_CONFIRM_OPEN, 5, 115, 150, 14
+    AUTOCHECKBOX "Al&ways show extension", IDC_EDITTYPE_SHOW_EXT, 5, 130, 150, 14
+    AUTOCHECKBOX "&Browse in same window", IDC_EDITTYPE_SAME_WINDOW, 5, 145, 150, 14
+    DEFPUSHBUTTON "OK", IDOK, 95, 170, 60, 14
+    PUSHBUTTON "Cancel", IDCANCEL, 160, 170, 60, 14
+END
+
+IDD_ACTION DIALOG 0, 0, 225, 95
+CAPTION "New Action"
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "&Action:", -1, 5, 7, 150, 10
+    EDITTEXT IDC_ACTION_ACTION, 5, 20, 150, 14, ES_AUTOHSCROLL
+    LTEXT "App&lication used to perform action:", -1, 5, 42, 150, 10
+    EDITTEXT IDC_ACTION_APP, 5, 55, 150, 14, ES_AUTOHSCROLL
+    PUSHBUTTON "B&rowse...", IDC_ACTION_BROWSE, 160, 60, 60, 14
+    AUTOCHECKBOX "&Use DDE", IDC_ACTION_USE_DDE, 10, 75, 103, 14
+    DEFPUSHBUTTON "OK", IDOK, 160, 20, 60, 14
+    PUSHBUTTON "Cancel", IDCANCEL, 160, 40, 60, 14
+END
+
+IDD_FOLDER_CUSTOMIZE DIALOGEX 0, 0, 240, 250
+CAPTION "Customize"
+STYLE DS_SHELLFONT | WS_CHILD | WS_CAPTION
+FONT 8, "MS Shell Dlg"
+BEGIN
+    GROUPBOX "What kind of folder do you want?", IDC_STATIC, 5, 5, 230, 65, WS_TABSTOP
+    LTEXT "Use this &folder type as a template:", IDC_STATIC, 15, 20, 210, 12
+    COMBOBOX IDC_FOLDERCUST_COMBOBOX, 15, 35, 210, 300, CBS_HASSTRINGS | CBS_AUTOHSCROLL | CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    AUTOCHECKBOX "Also apply this template to all &subfolders", IDC_FOLDERCUST_CHECKBOX, 15, 50, 210, 15
+    GROUPBOX "Folder pictures", IDC_STATIC, 5, 75, 230, 90, WS_TABSTOP
+    LTEXT "For Thumbnails view, you can put a picture on this folder to remind you of the contents.", IDC_STATIC, 15, 87, 115, 33
+    PUSHBUTTON "Choose &Picture...", IDC_FOLDERCUST_CHOOSE_PIC, 15, 125, 115, 15
+    PUSHBUTTON "&Restore Default", IDC_FOLDERCUST_RESTORE_DEFAULTS, 15, 144, 115, 15
+    LTEXT "Preview:", IDC_STATIC, 139, 85, 81, 11
+    CONTROL "", IDC_FOLDERCUST_PREVIEW_BITMAP, "STATIC", SS_BITMAP | WS_GROUP, 150, 100, 60, 60
+    GROUPBOX "Folder icons", IDC_STATIC, 5, 170, 230, 65, WS_TABSTOP
+    LTEXT "For all views except Thumbnails, you can change the standard ""folder"" icon to another icon.", IDC_STATIC, 15, 180, 210, 25
+    ICON 0, IDC_FOLDERCUST_ICON, 175, 209, 32, 30
+    PUSHBUTTON "Change &Icon...", IDC_FOLDERCUST_CHANGE_ICON, 15, 210, 75, 15
 END
 
 STRINGTABLE
@@ -669,6 +748,9 @@ BEGIN
     IDS_FONTS_DESCRIPTION "Add, change, and manage fonts on your computer."
     IDS_PRINTERS_DESCRIPTION "Shows installed printers and fax printers and helps you add new ones."
 
+    /* About shell dialog version string */
+    IDS_ABOUT_VERSION_STRING "Версия %S (%S)"
+
     /* context menus */
     IDS_VIEW_LARGE "&Големи значета"
     IDS_VIEW_SMALL "&Малки значета"
@@ -685,6 +767,18 @@ BEGIN
     IDS_FORMATDRIVE "Оразмеряване..."
     IDS_RENAME "Преименуване"
     IDS_PASTE "Вмъкване"
+    IDS_EJECT "Eject"
+    IDS_DISCONNECT "Disconnect"
+    IDS_OPENFILELOCATION "Open f&ile location"
+    IDS_SENDTO_MENU "Se&nd To"
+
+    IDS_MOVEERRORTITLE "Error Moving File or Folder"
+    IDS_COPYERRORTITLE "Error Copying File or Folder"
+    IDS_MOVEERRORSAMEFOLDER "Cannot move '%s': The destination folder is the same as the source folder."
+    IDS_MOVEERRORSAME "Cannot move '%s': The source and destination file names are the same."
+    IDS_COPYERRORSAME "Cannot copy '%s': The source and destination file names are the same."
+    IDS_MOVEERRORSUBFOLDER "Cannot move '%s': The destination folder is a subfolder of the source folder."
+    IDS_COPYERRORSUBFOLDER "Cannot copy '%s': The destination folder is a subfolder of the source folder."
 
     IDS_CREATEFOLDER_DENIED "Unable to create the folder '%1'"
     IDS_CREATEFOLDER_CAPTION "Unable to create folder"
@@ -713,6 +807,11 @@ BEGIN
     IDS_RESTART_PROMPT "Искате ли да презапуснете системата?"
     IDS_SHUTDOWN_TITLE "Изключване"
     IDS_SHUTDOWN_PROMPT "Искате ли да изключите компютъра?"
+    
+    /* Format Dialog Strings */
+    IDS_FORMAT_TITLE "Format Local Disk"
+    IDS_FORMAT_WARNING "WARNING: Formatting will erase ALL data on this disk.\nTo format the disk, click OK. To quit, click CANCEL."
+    IDS_FORMAT_COMPLETE "Format Complete."
 
     /* Run File dialog */
     IDS_RUNDLG_ERROR "Unable to display Run File dialog box (internal error)"
@@ -720,7 +819,7 @@ BEGIN
     IDS_RUNDLG_BROWSE_CAPTION "Browse"
     IDS_RUNDLG_BROWSE_FILTER "Executable Files (*.exe)\0*.exe\0All Files (*.*)\0*.*\0"
 
-    /* shell folder path default values */
+    /* Shell folder path default values. See also: dll/win32/userenv/lang */
     IDS_PROGRAMS "Пусков изборник\\Приложения"
     IDS_PERSONAL "Книжа"
     IDS_FAVORITES "Любимки"
@@ -740,7 +839,7 @@ BEGIN
     IDS_COOKIES "Бисквитки"
     IDS_HISTORY "Местни настройки\\History"
     IDS_PROGRAM_FILES "Program Files"
-    IDS_MYPICTURES "Моите изображения" // "Документите ми\\Изображенията ми"
+    IDS_MYPICTURES "Моите изображения" // "Изображенията ми"
     IDS_PROGRAM_FILES_COMMON "Program Files\\Common Files"
     IDS_COMMON_DOCUMENTS "Документи"
     IDS_ADMINTOOLS "Пусков изборник\\Приложения\\Управнически средства"
@@ -778,15 +877,28 @@ BEGIN
     IDS_PICK_ICON_FILTER "Файлове със значета (*.ico, *.icl, *.exe, *.dll)\0*.ico;*.icl;*.exe;*.dll\0All Files (*.*)\0*.*\0"
     IDS_OPEN_WITH_FILTER "Изпълними файлове (*.exe)\0*.exe\0All Files (*.*)\0*.*\0"
 
+    IDS_CANTLOCKVOLUME "Unable to lock volume (Error Code: %lu)."
+    IDS_CANTDISMOUNTVOLUME "Unable to dismount volume (Error Code: %lu)."
+    IDS_CANTEJECTMEDIA "Unable to eject media (Error Code: %lu)."
+    IDS_CANTSHOWPROPERTIES "Unable to show properties (Error Code: %lu)."
+    IDS_CANTDISCONNECT "Unable to disconnect (Error Code: %lu)."
+    IDS_NONE "(None)"
+
+    /* Friendly File Type Names */
     IDS_DIRECTORY "Папка"
     IDS_BAT_FILE "Пакетен файл на РеактОС"
     IDS_CMD_FILE "Писание за управление на РеактОС"
     IDS_COM_FILE "Приложение за ДОС"
     IDS_CPL_FILE "Предмет от крилото за управление"
     IDS_CUR_FILE "Показалец"
+    IDS_DB__FILE "Database File"
     IDS_DLL_FILE "Разширение за приложения"
     IDS_DRV_FILE "Водача на устройство"
+    IDS_EFI_FILE "Extensible Firmware Interface Executable"
     IDS_EXE_FILE "Приложение"
+    IDS_NLS_FILE "National Language Support File"
+    IDS_OCX_FILE "ActiveX Control"
+    IDS_TLB_FILE "Type Library"
     IDS_FON_FILE "Шрифтов файл"
     IDS_TTF_FILE "Файл с шрифт TrueType"
     IDS_OTF_FILE "Файл с шрифт OpenType"
@@ -794,6 +906,7 @@ BEGIN
     IDS_ICO_FILE "Icon"
     IDS_INI_FILE "Настроечен файл"
     IDS_LNK_FILE "Препратка"
+    IDS_NT__FILE "NT DOS32 Configuration File"
     IDS_PIF_FILE "NT VDM Program Information File"
     IDS_SCR_FILE "Screen Saver"
     IDS_SYS_FILE "Системен файл"
@@ -806,6 +919,7 @@ BEGIN
     IDS_EDIT_VERB "Обработка"
     IDS_FIND_VERB "Търсене"
     IDS_PRINT_VERB "Разпечатване"
+    IDS_CMD_VERB "Command Prompt here"
 
     IDS_FILE_FOLDER "%u файла, %u папки"
     IDS_PRINTERS "Печатачи"
@@ -853,4 +967,21 @@ BEGIN
     IDS_ADVANCED_CONTROL_PANEL_IN_MY_COMPUTER "Show Control Panel in My Computer"
     IDS_ADVANCED_SHOW_COMP_COLOR "Show encrypted or compressed NTFS files in color"
     IDS_ADVANCED_SHOW_INFO_TIP "Show pop-up description for folder and desktop items"
+
+    IDS_NEWEXT_ADVANCED_LEFT "<< Ad&vanced"
+    IDS_NEWEXT_ADVANCED_RIGHT "Ad&vanced >>"
+    IDS_NEWEXT_NEW "<New>"
+    IDS_NEWEXT_SPECIFY_EXT "You must specify an extension."
+    IDS_NEWEXT_ALREADY_ASSOC "Extension %s is already associated with File Type %s. Do you want to un-associate %s with %s and create a new File Type for it?"
+    IDS_NEWEXT_EXT_IN_USE "Extension is in use"
+
+    IDS_REMOVE_EXT "If you remove a registered file name extension, you will not be able to open files with this extension by double-clicking their icons.\n\nAre you sure you want to remove this extension?"
+    IDS_SPECIFY_ACTION "You must specify an action."
+    IDS_INVALID_PROGRAM "The specified program could not be found. Make sure the file name and path are correct."
+    IDS_REMOVE_ACTION "Are you sure you want to remove this action?"
+    IDS_ACTION_EXISTS "The action '%s' is already registered for this file type. Please enter a different name and try again."
+    IDS_EXE_FILTER "Programs\0*.exe\0All Files\0*.*\0"
+    IDS_EDITING_ACTION "Editing action for type: "
+    IDS_NO_ICONS "The file '%s' contains no icons.\n\nChoose an icon from the list or specify a different file."
+    IDS_FILE_NOT_FOUND "The file '%s' was not found."
 END

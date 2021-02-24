@@ -243,90 +243,75 @@ PortFdoStartDevice(
 }
 
 
-static NTSTATUS
-SpiSendInquiry(IN PDEVICE_OBJECT DeviceObject,
-               ULONG Bus, ULONG Target, ULONG Lun)
+static
+NTSTATUS
+PortSendInquiry(
+    _In_ PPDO_DEVICE_EXTENSION PdoExtension)
 {
-//    IO_STATUS_BLOCK IoStatusBlock;
-//    PIO_STACK_LOCATION IrpStack;
-//    KEVENT Event;
+    IO_STATUS_BLOCK IoStatusBlock;
+    PIO_STACK_LOCATION IrpStack;
+    KEVENT Event;
 //    KIRQL Irql;
-//    PIRP Irp;
+    PIRP Irp;
     NTSTATUS Status;
-    PINQUIRYDATA InquiryBuffer;
-    PUCHAR /*PSENSE_DATA*/ SenseBuffer;
-//    BOOLEAN KeepTrying = TRUE;
-//    ULONG RetryCount = 0;
+    PSENSE_DATA SenseBuffer;
+    BOOLEAN KeepTrying = TRUE;
+    ULONG RetryCount = 0;
     SCSI_REQUEST_BLOCK Srb;
     PCDB Cdb;
 //    PSCSI_PORT_LUN_EXTENSION LunExtension;
-//    PSCSI_PORT_DEVICE_EXTENSION DeviceExtension;
+//    PFDO_DEVICE_EXTENSION DeviceExtension;
 
-PFDO_DEVICE_EXTENSION DeviceExtension;
-    PVOID SrbExtension = NULL;
-    BOOLEAN ret;
+    DPRINT("PortSendInquiry(%p)\n", PdoExtension);
 
-    DPRINT1("SpiSendInquiry() called\n");
-
-    DeviceExtension = (PFDO_DEVICE_EXTENSION)DeviceObject->DeviceExtension;
-
-    InquiryBuffer = ExAllocatePoolWithTag(NonPagedPool, INQUIRYDATABUFFERSIZE, TAG_INQUIRY_DATA);
-    if (InquiryBuffer == NULL)
-        return STATUS_INSUFFICIENT_RESOURCES;
+    if (PdoExtension->InquiryBuffer == NULL)
+    {
+        PdoExtension->InquiryBuffer = ExAllocatePoolWithTag(NonPagedPool, INQUIRYDATABUFFERSIZE, TAG_INQUIRY_DATA);
+        if (PdoExtension->InquiryBuffer == NULL)
+            return STATUS_INSUFFICIENT_RESOURCES;
+    }
 
     SenseBuffer = ExAllocatePoolWithTag(NonPagedPool, SENSE_BUFFER_SIZE, TAG_SENSE_DATA);
     if (SenseBuffer == NULL)
     {
-        ExFreePoolWithTag(InquiryBuffer, TAG_INQUIRY_DATA);
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    if (DeviceExtension->Miniport.PortConfig.SrbExtensionSize != 0)
-    {
-        SrbExtension = ExAllocatePoolWithTag(NonPagedPool, DeviceExtension->Miniport.PortConfig.SrbExtensionSize, TAG_SENSE_DATA);
-        if (SrbExtension == NULL)
-        {
-            ExFreePoolWithTag(SenseBuffer, TAG_SENSE_DATA);
-            ExFreePoolWithTag(InquiryBuffer, TAG_INQUIRY_DATA);
-            return STATUS_INSUFFICIENT_RESOURCES;
-        }
-    }
-
-//    while (KeepTrying)
+    while (KeepTrying)
     {
         /* Initialize event for waiting */
-//        KeInitializeEvent(&Event,
-//                          NotificationEvent,
-//                          FALSE);
+        KeInitializeEvent(&Event,
+                          NotificationEvent,
+                          FALSE);
 
         /* Create an IRP */
-//        Irp = IoBuildDeviceIoControlRequest(IOCTL_SCSI_EXECUTE_IN,
-//                                            DeviceObject,
-//                                            NULL,
-//                                            0,
-//                                            InquiryBuffer,
-//                                            INQUIRYDATABUFFERSIZE,
-//                                            TRUE,
-//                                            &Event,
-//                                            &IoStatusBlock);
-//        if (Irp == NULL)
-//        {
-//            DPRINT1("IoBuildDeviceIoControlRequest() failed\n");
+        Irp = IoBuildDeviceIoControlRequest(IOCTL_SCSI_EXECUTE_IN,
+                                            PdoExtension->Device,
+                                            NULL,
+                                            0,
+                                            PdoExtension->InquiryBuffer,
+                                            INQUIRYDATABUFFERSIZE,
+                                            TRUE,
+                                            &Event,
+                                            &IoStatusBlock);
+        if (Irp == NULL)
+        {
+            DPRINT("IoBuildDeviceIoControlRequest() failed\n");
 
             /* Quit the loop */
-//            Status = STATUS_INSUFFICIENT_RESOURCES;
-//            KeepTrying = FALSE;
-//            continue;
-//        }
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+            KeepTrying = FALSE;
+            continue;
+        }
 
         /* Prepare SRB */
         RtlZeroMemory(&Srb, sizeof(SCSI_REQUEST_BLOCK));
 
         Srb.Length = sizeof(SCSI_REQUEST_BLOCK);
-//        Srb.OriginalRequest = Irp;
-        Srb.PathId = Bus;
-        Srb.TargetId = Target;
-        Srb.Lun = Lun;
+        Srb.OriginalRequest = Irp;
+        Srb.PathId = PdoExtension->Bus;
+        Srb.TargetId = PdoExtension->Target;
+        Srb.Lun = PdoExtension->Lun;
         Srb.Function = SRB_FUNCTION_EXECUTE_SCSI;
         Srb.SrbFlags = SRB_FLAGS_DATA_IN | SRB_FLAGS_DISABLE_SYNCH_TRANSFER;
         Srb.TimeOutValue = 4;
@@ -335,59 +320,48 @@ PFDO_DEVICE_EXTENSION DeviceExtension;
         Srb.SenseInfoBuffer = SenseBuffer;
         Srb.SenseInfoBufferLength = SENSE_BUFFER_SIZE;
 
-        Srb.DataBuffer = InquiryBuffer;
+        Srb.DataBuffer = PdoExtension->InquiryBuffer;
         Srb.DataTransferLength = INQUIRYDATABUFFERSIZE;
 
-        Srb.SrbExtension = SrbExtension;
-
         /* Attach Srb to the Irp */
-//        IrpStack = IoGetNextIrpStackLocation(Irp);
-//        IrpStack->Parameters.Scsi.Srb = &Srb;
+        IrpStack = IoGetNextIrpStackLocation(Irp);
+        IrpStack->Parameters.Scsi.Srb = &Srb;
 
         /* Fill in CDB */
         Cdb = (PCDB)Srb.Cdb;
         Cdb->CDB6INQUIRY.OperationCode = SCSIOP_INQUIRY;
-        Cdb->CDB6INQUIRY.LogicalUnitNumber = Lun;
+        Cdb->CDB6INQUIRY.LogicalUnitNumber = PdoExtension->Lun;
         Cdb->CDB6INQUIRY.AllocationLength = INQUIRYDATABUFFERSIZE;
 
         /* Call the driver */
-
-
-        ret = MiniportStartIo(&DeviceExtension->Miniport,
-                              &Srb);
-DPRINT1("MiniportStartIo returned %u\n", ret);
-
-//        Status = IoCallDriver(DeviceObject, Irp);
+        Status = IoCallDriver(PdoExtension->Device, Irp);
 
         /* Wait for it to complete */
-//        if (Status == STATUS_PENDING)
-//        {
-//            DPRINT1("SpiSendInquiry(): Waiting for the driver to process request...\n");
-//            KeWaitForSingleObject(&Event,
-//                                  Executive,
-//                                  KernelMode,
-//                                  FALSE,
-//                                  NULL);
-//            Status = IoStatusBlock.Status;
-//        }
+        if (Status == STATUS_PENDING)
+        {
+            DPRINT1("PortSendInquiry(): Waiting for the driver to process request...\n");
+            KeWaitForSingleObject(&Event,
+                                  Executive,
+                                  KernelMode,
+                                  FALSE,
+                                  NULL);
+            Status = IoStatusBlock.Status;
+        }
 
-//        DPRINT1("SpiSendInquiry(): Request processed by driver, status = 0x%08X\n", Status);
+        DPRINT("PortSendInquiry(): Request processed by driver, status = 0x%08X\n", Status);
 
         if (SRB_STATUS(Srb.SrbStatus) == SRB_STATUS_SUCCESS)
         {
-            /* All fine, copy data over */
-//            RtlCopyMemory(LunInfo->InquiryData,
-//                          InquiryBuffer,
-//                          INQUIRYDATABUFFERSIZE);
+            DPRINT("Found a device!\n");
 
             /* Quit the loop */
             Status = STATUS_SUCCESS;
-//            KeepTrying = FALSE;
-//            continue;
+            KeepTrying = FALSE;
+            continue;
         }
 
         DPRINT("Inquiry SRB failed with SrbStatus 0x%08X\n", Srb.SrbStatus);
-#if 0
+
         /* Check if the queue is frozen */
         if (Srb.SrbStatus & SRB_STATUS_QUEUE_FROZEN)
         {
@@ -396,35 +370,29 @@ DPRINT1("MiniportStartIo returned %u\n", ret);
 
             DPRINT("SpiSendInquiry(): the queue is frozen at TargetId %d\n", Srb.TargetId);
 
-            LunExtension = SpiGetLunExtension(DeviceExtension,
-                                              LunInfo->PathId,
-                                              LunInfo->TargetId,
-                                              LunInfo->Lun);
+//            LunExtension = SpiGetLunExtension(DeviceExtension,
+//                                              LunInfo->PathId,
+//                                              LunInfo->TargetId,
+//                                              LunInfo->Lun);
 
             /* Clear frozen flag */
-            LunExtension->Flags &= ~LUNEX_FROZEN_QUEUE;
+//            LunExtension->Flags &= ~LUNEX_FROZEN_QUEUE;
 
             /* Acquire the spinlock */
-            KeAcquireSpinLock(&DeviceExtension->SpinLock, &Irql);
+//            KeAcquireSpinLock(&DeviceExtension->SpinLock, &Irql);
 
             /* Process the request */
-            SpiGetNextRequestFromLun(DeviceObject->DeviceExtension, LunExtension);
+//            SpiGetNextRequestFromLun(DeviceObject->DeviceExtension, LunExtension);
 
             /* SpiGetNextRequestFromLun() releases the spinlock,
                 so we just lower irql back to what it was before */
-            KeLowerIrql(Irql);
+//            KeLowerIrql(Irql);
         }
 
         /* Check if data overrun happened */
         if (SRB_STATUS(Srb.SrbStatus) == SRB_STATUS_DATA_OVERRUN)
         {
-            DPRINT("Data overrun at TargetId %d\n", LunInfo->TargetId);
-
-            /* Nothing dramatic, just copy data, but limiting the size */
-            RtlCopyMemory(LunInfo->InquiryData,
-                            InquiryBuffer,
-                            (Srb.DataTransferLength > INQUIRYDATABUFFERSIZE) ?
-                            INQUIRYDATABUFFERSIZE : Srb.DataTransferLength);
+            DPRINT("Data overrun at TargetId %d\n", PdoExtension->Target);
 
             /* Quit the loop */
             Status = STATUS_SUCCESS;
@@ -467,20 +435,16 @@ DPRINT1("MiniportStartIo returned %u\n", ret);
                 }
             }
         }
-#endif
     }
 
-    /* Free buffers */
-    if (SrbExtension != NULL)
-        ExFreePoolWithTag(SrbExtension, TAG_SENSE_DATA);
-
+    /* Free the sense buffer */
     ExFreePoolWithTag(SenseBuffer, TAG_SENSE_DATA);
-    ExFreePoolWithTag(InquiryBuffer, TAG_INQUIRY_DATA);
 
-    DPRINT("SpiSendInquiry() done with Status 0x%08X\n", Status);
+    DPRINT("PortSendInquiry() done with Status 0x%08X\n", Status);
 
     return Status;
 }
+
 
 
 static
@@ -488,39 +452,61 @@ NTSTATUS
 PortFdoScanBus(
     _In_ PFDO_DEVICE_EXTENSION DeviceExtension)
 {
-    ULONG Bus, Target, Lun;
+    PPDO_DEVICE_EXTENSION PdoExtension;
+    ULONG Bus, Target; //, Lun;
     NTSTATUS Status;
 
+    DPRINT("PortFdoScanBus(%p)\n", DeviceExtension);
 
-    DPRINT1("PortFdoScanBus(%p)\n",
-            DeviceExtension);
-
-    DPRINT1("NumberOfBuses: %lu\n", DeviceExtension->Miniport.PortConfig.NumberOfBuses);
-    DPRINT1("MaximumNumberOfTargets: %lu\n", DeviceExtension->Miniport.PortConfig.MaximumNumberOfTargets);
-    DPRINT1("MaximumNumberOfLogicalUnits: %lu\n", DeviceExtension->Miniport.PortConfig.MaximumNumberOfLogicalUnits);
+    DPRINT("NumberOfBuses: %lu\n", DeviceExtension->Miniport.PortConfig.NumberOfBuses);
+    DPRINT("MaximumNumberOfTargets: %lu\n", DeviceExtension->Miniport.PortConfig.MaximumNumberOfTargets);
+    DPRINT("MaximumNumberOfLogicalUnits: %lu\n", DeviceExtension->Miniport.PortConfig.MaximumNumberOfLogicalUnits);
 
     /* Scan all buses */
     for (Bus = 0; Bus < DeviceExtension->Miniport.PortConfig.NumberOfBuses; Bus++)
     {
-        DPRINT1("Scanning bus %ld\n", Bus);
+        DPRINT("Scanning bus %ld\n", Bus);
 
         /* Scan all targets */
         for (Target = 0; Target < DeviceExtension->Miniport.PortConfig.MaximumNumberOfTargets; Target++)
         {
-            DPRINT1("  Scanning target %ld:%ld\n", Bus, Target);
+            DPRINT("  Scanning target %ld:%ld\n", Bus, Target);
 
-            /* Scan all logical units */
-            for (Lun = 0; Lun < DeviceExtension->Miniport.PortConfig.MaximumNumberOfLogicalUnits; Lun++)
+            DPRINT("    Scanning logical unit %ld:%ld:%ld\n", Bus, Target, 0);
+            Status = PortCreatePdo(DeviceExtension, Bus, Target, 0, &PdoExtension);
+            if (NT_SUCCESS(Status))
             {
-                DPRINT1("    Scanning logical unit %ld:%ld:%ld\n", Bus, Target, Lun);
-
-                Status = SpiSendInquiry(DeviceExtension->Device, Bus, Target, Lun);
-                DPRINT1("SpiSendInquiry returned 0x%08lx\n", Status);
+                /* Scan LUN 0 */
+                Status = PortSendInquiry(PdoExtension);
+                DPRINT("PortSendInquiry returned 0x%08lx\n", Status);
+                if (!NT_SUCCESS(Status))
+                {
+                    PortDeletePdo(PdoExtension);
+                }
+                else
+                {
+                    DPRINT("VendorId: %.8s\n", PdoExtension->InquiryBuffer->VendorId);
+                    DPRINT("ProductId: %.16s\n", PdoExtension->InquiryBuffer->ProductId);
+                    DPRINT("ProductRevisionLevel: %.4s\n", PdoExtension->InquiryBuffer->ProductRevisionLevel);
+                    DPRINT("VendorSpecific: %.20s\n", PdoExtension->InquiryBuffer->VendorSpecific);
+                }
             }
+
+#if 0
+            /* Scan all logical units */
+            for (Lun = 1; Lun < DeviceExtension->Miniport.PortConfig.MaximumNumberOfLogicalUnits; Lun++)
+            {
+                DPRINT("    Scanning logical unit %ld:%ld:%ld\n", Bus, Target, Lun);
+                Status = PortSendInquiry(DeviceExtension->Device, Bus, Target, Lun);
+                DPRINT("PortSendInquiry returned 0x%08lx\n", Status);
+                if (!NT_SUCCESS(Status))
+                    break;
+            }
+#endif
         }
     }
 
-    DPRINT1("Done!\n");
+    DPRINT("PortFdoScanBus() done!\n");
 
     return STATUS_SUCCESS;
 }
@@ -538,6 +524,8 @@ PortFdoQueryBusRelations(
             DeviceExtension, Information);
 
     Status = PortFdoScanBus(DeviceExtension);
+
+    DPRINT1("Units found: %lu\n", DeviceExtension->PdoCount);
 
     *Information = 0;
 
@@ -578,8 +566,7 @@ PortFdoScsi(
     ULONG_PTR Information = 0;
     NTSTATUS Status = STATUS_NOT_SUPPORTED;
 
-    DPRINT1("PortFdoScsi(%p %p)\n",
-            DeviceObject, Irp);
+    DPRINT("PortFdoScsi(%p %p)\n", DeviceObject, Irp);
 
     DeviceExtension = (PFDO_DEVICE_EXTENSION)DeviceObject->DeviceExtension;
     ASSERT(DeviceExtension);

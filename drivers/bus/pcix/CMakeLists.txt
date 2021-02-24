@@ -1,4 +1,8 @@
 
+include_directories(
+    ${REACTOS_SOURCE_DIR}/sdk/lib/drivers/arbiter
+    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/drivers)
+
 list(APPEND SOURCE
     arb/ar_busno.c
     arb/ar_memio.c
@@ -35,12 +39,13 @@ list(APPEND SOURCE
     utils.c
     pci.h)
 
-add_library(pcix SHARED
+add_library(pcix MODULE
     ${SOURCE}
     guid.c
     pci.rc)
 
 set_module_type(pcix kernelmodedriver)
+target_link_libraries(pcix arbiter)
 add_importlibs(pcix ntoskrnl hal)
 add_pch(pcix pci.h SOURCE)
 add_dependencies(pcix pciclass)

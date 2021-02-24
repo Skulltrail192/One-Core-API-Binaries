@@ -16,18 +16,20 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- * NOTES
- *
- * This code was audited for completeness against the documented features
- * of Comctl32.dll version 6.0 on Apr. 4, 2005, by Dimitrie O. Paun.
- * 
- * Unless otherwise noted, we believe this code to be complete, as per
- * the specification mentioned above.
- * If you discover missing features, or bugs, please note them below.
  */
 
+#include <stdarg.h>
+#include <string.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "commctrl.h"
 #include "comctl32.h"
+#include "wine/unicode.h"
+#include "wine/debug.h"
+#include "wine/list.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(syslink);
 
@@ -181,7 +183,7 @@ static UINT SYSLINK_ParseText (SYSLINK_INFO *infoPtr, LPCWSTR Text)
     {
         if(*current == '<')
         {
-            if(!strncmpiW(current, SL_LINKOPEN, sizeof(SL_LINKOPEN)/sizeof(SL_LINKOPEN[0])) && (CurrentType == slText))
+            if(!strncmpiW(current, SL_LINKOPEN, ARRAY_SIZE(SL_LINKOPEN)) && (CurrentType == slText))
             {
                 BOOL ValidParam = FALSE, ValidLink = FALSE;
 
@@ -209,14 +211,14 @@ static UINT SYSLINK_ParseText (SYSLINK_INFO *infoPtr, LPCWSTR Text)
                     
 CheckParameter:
                     /* compare the current position with all known parameters */
-                    if(!strncmpiW(tmp, SL_HREF, sizeof(SL_HREF)/sizeof(SL_HREF[0])))
+                    if(!strncmpiW(tmp, SL_HREF, ARRAY_SIZE(SL_HREF)))
                     {
                         taglen += 6;
                         ValidParam = TRUE;
                         CurrentParameter = &lpUrl;
                         CurrentParameterLen = &lenUrl;
                     }
-                    else if(!strncmpiW(tmp, SL_ID, sizeof(SL_ID)/sizeof(SL_ID[0])))
+                    else if(!strncmpiW(tmp, SL_ID, ARRAY_SIZE(SL_ID)))
                     {
                         taglen += 4;
                         ValidParam = TRUE;
@@ -290,7 +292,7 @@ CheckParameter:
                     }
                 }
             }
-            else if(!strncmpiW(current, SL_LINKCLOSE, sizeof(SL_LINKCLOSE)/sizeof(SL_LINKCLOSE[0])) && (CurrentType == slLink) && firsttag)
+            else if(!strncmpiW(current, SL_LINKCLOSE, ARRAY_SIZE(SL_LINKCLOSE)) && (CurrentType == slLink) && firsttag)
             {
                 /* there's a <a...> tag opened, first add the previous text, if present */
                 if(textstart != NULL && textlen > 0 && firsttag > textstart)
@@ -791,7 +793,9 @@ static LRESULT SYSLINK_Draw (const SYSLINK_INFO *infoPtr, HDC hdc)
     }
     else SetBkMode( hdc, TRANSPARENT );
 
+#ifndef __REACTOS__
     DeleteObject(hBrush);
+#endif
 
     LIST_FOR_EACH_ENTRY(Current, &infoPtr->Items, DOC_ITEM, entry)
     {
@@ -1461,7 +1465,7 @@ static BOOL SYSLINK_NoNextLink (const SYSLINK_INFO *infoPtr, BOOL Prev)
  *           SYSLINK_GetIdealSize
  * Calculates the ideal size of a link control at a given maximum width.
  */
-static VOID SYSLINK_GetIdealSize (const SYSLINK_INFO *infoPtr, int cxMaxWidth, LPSIZE lpSize)
+static LONG SYSLINK_GetIdealSize (const SYSLINK_INFO *infoPtr, int cxMaxWidth, SIZE *lpSize)
 {
     RECT rc;
     HDC hdc;
@@ -1482,6 +1486,8 @@ static VOID SYSLINK_GetIdealSize (const SYSLINK_INFO *infoPtr, int cxMaxWidth, L
         lpSize->cx = rc.right;
         lpSize->cy = rc.bottom;
     }
+
+    return rc.bottom;
 }
 
 /***********************************************************************
@@ -1653,11 +1659,9 @@ static LRESULT WINAPI SysLinkWindowProc(HWND hwnd, UINT message,
 
     case LM_GETIDEALHEIGHT:
         if (lParam)
-        {
-            /* LM_GETIDEALSIZE */
-            SYSLINK_GetIdealSize(infoPtr, (int)wParam, (LPSIZE)lParam);
-        }
-        return SYSLINK_GetIdealHeight(infoPtr);
+            return SYSLINK_GetIdealSize(infoPtr, (int)wParam, (SIZE *)lParam);
+        else
+            return SYSLINK_GetIdealHeight(infoPtr);
 
     case WM_SETFOCUS:
         return SYSLINK_SetFocus(infoPtr);

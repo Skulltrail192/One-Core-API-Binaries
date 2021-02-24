@@ -16,6 +16,8 @@
 #include <shlobj.h>
 #include <shlwapi.h>
 #include <powrprof.h>
+#include <ndk/rtlfuncs.h>
+#include <strsafe.h>
 
 #include "resource.h"
 
@@ -29,8 +31,6 @@ typedef struct
 
 extern HINSTANCE hApplet;
 extern GLOBAL_POWER_POLICY gGPP;
-extern POWER_POLICY gPP[];
-extern UINT guiIndex;
 
 #define MAX_POWER_PAGES 32
 

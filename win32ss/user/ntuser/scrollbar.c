@@ -58,6 +58,13 @@ DBG_DEFAULT_CHANNEL(UserScrollbar);
 
 /* FUNCTIONS *****************************************************************/
 
+BOOL APIENTRY
+IntEnableScrollBar(BOOL Horz, PSCROLLBARINFO Info, UINT wArrows);
+
+static void
+IntRefeshScrollInterior(PWND pWnd, INT nBar, PSCROLLBARINFO psbi);
+
+
 /* Ported from WINE20020904 */
 /* Compute the scroll bar rectangle, in drawing coordinates (i.e. client coords for SB_CTL, window coords for SB_VERT and
  * SB_HORZ). 'arrowSize' returns the width or height of an arrow (depending on * the orientation of the scrollbar),
@@ -86,7 +93,7 @@ IntGetSBData(PWND pwnd, INT Bar)
        case SB_VERT:
          return &pSBInfo->Vert;
        case SB_CTL:
-         if ( pwnd->cbwndExtra != (sizeof(SBWND)-sizeof(WND)) )
+         if ( pwnd->cbwndExtra < (sizeof(SBWND)-sizeof(WND)) )
          {
             ERR("IntGetSBData Wrong Extra bytes for CTL Scrollbar!\n");
             return 0;
@@ -202,6 +209,14 @@ IntCalculateThumb(PWND Wnd, LONG idObject, PSCROLLBARINFO psbi, PSBDATA pSBData)
       psbi->xyThumbTop = 0;
       psbi->xyThumbBottom = 0;
       ThumbPos = Thumb;
+   }
+   else if (psbi->rgstate[SBRG_TOPRIGHTBTN] == STATE_SYSTEM_UNAVAILABLE &&
+            psbi->rgstate[SBRG_BOTTOMLEFTBTN] == STATE_SYSTEM_UNAVAILABLE &&
+            pSBData->posMin >= (int)(pSBData->posMax - max(pSBData->page - 1, 0)))
+   {
+      /* Nothing to scroll */
+      psbi->xyThumbTop = 0;
+      psbi->xyThumbBottom = 0;
    }
    else
    {
@@ -525,7 +540,6 @@ co_IntSetScrollInfo(PWND Window, INT nBar, LPCSCROLLINFO lpsi, BOOL bRedraw)
          OldPos = Info->nPos;
          Info->nPos = lpsi->nPos;
          pSBData->pos = lpsi->nPos;
-         bChangeParams = TRUE;
       }
    }
 
@@ -599,10 +613,14 @@ co_IntSetScrollInfo(PWND Window, INT nBar, LPCSCROLLINFO lpsi, BOOL bRedraw)
       else /* Show and enable scroll-bar only if no page only changed. */
       if (lpsi->fMask != SIF_PAGE)
       {
-         new_flags = ESB_ENABLE_BOTH;
          if ((nBar != SB_CTL) && bChangeParams)
          {
+            new_flags = ESB_ENABLE_BOTH;
             action |= SA_SSI_SHOW;
+         }
+         else if (nBar == SB_CTL)
+         {
+            new_flags = ESB_ENABLE_BOTH;
          }
       }
 
@@ -624,13 +642,21 @@ co_IntSetScrollInfo(PWND Window, INT nBar, LPCSCROLLINFO lpsi, BOOL bRedraw)
          if ( co_UserShowScrollBar(Window, nBar, TRUE, TRUE) )
             return lpsi->fMask & SIF_PREVIOUSPOS ? OldPos : pSBData->pos; /* SetWindowPos() already did the painting */
       if (bRedraw)
-      { // FIXME: Arrows and interior.
-         RECTL UpdateRect = psbi->rcScrollBar;
-         UpdateRect.left -= Window->rcClient.left - Window->rcWindow.left;
-         UpdateRect.right -= Window->rcClient.left - Window->rcWindow.left;
-         UpdateRect.top -= Window->rcClient.top - Window->rcWindow.top;
-         UpdateRect.bottom -= Window->rcClient.top - Window->rcWindow.top;
-         co_UserRedrawWindow(Window, &UpdateRect, 0, RDW_INVALIDATE | RDW_FRAME);
+      {
+         if (action & SA_SSI_REPAINT_ARROWS)
+         {  // Redraw the entire bar.
+            RECTL UpdateRect = psbi->rcScrollBar;
+            UpdateRect.left -= Window->rcClient.left - Window->rcWindow.left;
+            UpdateRect.right -= Window->rcClient.left - Window->rcWindow.left;
+            UpdateRect.top -= Window->rcClient.top - Window->rcWindow.top;
+            UpdateRect.bottom -= Window->rcClient.top - Window->rcWindow.top;
+            co_UserRedrawWindow(Window, &UpdateRect, 0, RDW_INVALIDATE | RDW_FRAME);
+         }
+         else
+         {
+            // Redraw only the interior part of the bar.
+            IntRefeshScrollInterior(Window, nBar, psbi);
+         }
       } // FIXME: Arrows
 /*      else if( action & SA_SSI_REPAINT_ARROWS )
       {
@@ -642,6 +668,12 @@ co_IntSetScrollInfo(PWND Window, INT nBar, LPCSCROLLINFO lpsi, BOOL bRedraw)
          co_UserRedrawWindow(Window, &UpdateRect, 0, RDW_INVALIDATE | RDW_FRAME);
       }
 */   }
+
+   if (bChangeParams && (nBar == SB_HORZ || nBar == SB_VERT) && (lpsi->fMask & SIF_DISABLENOSCROLL))
+   {
+       IntEnableScrollBar(nBar == SB_HORZ, psbi, Window->pSBInfo->WSBflags);
+   }
+
    /* Return current position */
    return lpsi->fMask & SIF_PREVIOUSPOS ? OldPos : pSBData->pos;
 }
@@ -1049,6 +1081,21 @@ IntScrollGetObjectId(INT SBType)
    if (SBType == SB_HORZ)
        return OBJID_HSCROLL;
    return OBJID_CLIENT;
+}
+
+static void
+IntRefeshScrollInterior(PWND pWnd, INT nBar, PSCROLLBARINFO psbi)
+{
+   HDC hdc;
+   BOOL Vertical = ((nBar == SB_CTL) ? ((pWnd->style & SBS_VERT) != 0) : (nBar == SB_VERT));
+
+   hdc = UserGetDCEx(pWnd, NULL, DCX_CACHE | ((nBar == SB_CTL) ? 0 : DCX_WINDOW));
+   if (hdc)
+   {  /* Get updated info. */
+      co_IntGetScrollBarInfo(pWnd, IntScrollGetObjectId(nBar), psbi);
+      IntDrawScrollInterior(pWnd, hdc, nBar, Vertical, psbi);
+      UserReleaseDC(pWnd, hdc, FALSE);
+   }
 }
 
 void

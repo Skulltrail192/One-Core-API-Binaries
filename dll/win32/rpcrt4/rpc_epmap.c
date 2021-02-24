@@ -20,10 +20,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
 
-#include <winsvc.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "winsvc.h"
 
+#include "rpc.h"
+
+#include "wine/debug.h"
+#include "wine/exception.h"
+
+#include "rpc_binding.h"
+#include "epm_c.h"
 #include "epm_towers.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
@@ -138,7 +148,7 @@ static RPC_STATUS get_epm_handle_client(RPC_BINDING_HANDLE handle, RPC_BINDING_H
     if (bind->server)
         return RPC_S_INVALID_BINDING;
 
-    for (i = 0; i < sizeof(epm_endpoints)/sizeof(epm_endpoints[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(epm_endpoints); i++)
         if (!strcmp(bind->Protseq, epm_endpoints[i].protseq))
             pszEndpoint = epm_endpoints[i].endpoint;
 
@@ -459,7 +469,7 @@ RPC_STATUS WINAPI RpcEpResolveBinding( RPC_BINDING_HANDLE Binding, RPC_IF_HANDLE
   {
     __TRY
     {
-      ept_map(handle, &uuid, tower, &entry_handle, sizeof(towers)/sizeof(towers[0]), &num_towers, towers, &status2);
+      ept_map(handle, &uuid, tower, &entry_handle, ARRAY_SIZE(towers), &num_towers, towers, &status2);
       /* FIXME: translate status2? */
     }
     __EXCEPT(rpc_filter)

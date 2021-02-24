@@ -20,7 +20,9 @@
 #include <tchar.h>
 #include <sect_attribs.h>
 #include <locale.h>
+#ifdef _MBCS
 #include <mbstring.h>
+#endif
 
 #ifndef __winitenv
 extern wchar_t *** __MINGW_IMP_SYMBOL(__winitenv);
@@ -129,10 +131,11 @@ pre_c_init (void)
     {
       __setusermatherr (_matherr);
     }
-
+#ifndef __clang__ /* FIXME: CORE-14042 */
   if (__globallocalestatus == -1)
     {
     }
+#endif
   return 0;
 }
 

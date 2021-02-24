@@ -3,7 +3,9 @@ include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/idl)
 add_rpc_files(server ${REACTOS_SOURCE_DIR}/sdk/include/reactos/idl/pnp.idl)
 spec2def(umpnpmgr.dll umpnpmgr.spec ADD_IMPORTLIB)
 
-add_library(umpnpmgr SHARED
+add_library(umpnpmgr MODULE
+    install.c
+    rpcserver.c
     umpnpmgr.c
     umpnpmgr.rc
     ${CMAKE_CURRENT_BINARY_DIR}/pnp_s.c

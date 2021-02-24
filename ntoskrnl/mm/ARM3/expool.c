@@ -37,6 +37,7 @@ PPOOL_DESCRIPTOR PoolVector[2];
 PKGUARDED_MUTEX ExpPagedPoolMutex;
 SIZE_T PoolTrackTableSize, PoolTrackTableMask;
 SIZE_T PoolBigPageTableSize, PoolBigPageTableHash;
+ULONG ExpBigTableExpansionFailed;
 PPOOL_TRACKER_TABLE PoolTrackTable;
 PPOOL_TRACKER_BIG_PAGES PoolBigPageTable;
 KSPIN_LOCK ExpTaggedPoolLock;
@@ -46,6 +47,7 @@ KSPIN_LOCK ExpLargePoolTableLock;
 ULONG ExpPoolBigEntriesInUse;
 ULONG ExpPoolFlags;
 ULONG ExPoolFailures;
+ULONGLONG MiLastPoolDumpTime;
 
 /* Pool block/header/list access macros */
 #define POOL_ENTRY(x)       (PPOOL_HEADER)((ULONG_PTR)(x) - sizeof(POOL_HEADER))
@@ -460,11 +462,169 @@ ExpComputePartialHashForAddress(IN PVOID BaseAddress)
     return (Result >> 24) ^ (Result >> 16) ^ (Result >> 8) ^ Result;
 }
 
-/* PRIVATE FUNCTIONS **********************************************************/
+#if DBG
+/*
+ * FORCEINLINE
+ * BOOLEAN
+ * ExpTagAllowPrint(CHAR Tag);
+ */
+#define ExpTagAllowPrint(Tag)   \
+    ((Tag) >= 0x20 /* Space */ && (Tag) <= 0x7E /* Tilde */)
+
+#ifdef KDBG
+#define MiDumperPrint(dbg, fmt, ...)        \
+    if (dbg) KdbpPrint(fmt, ##__VA_ARGS__); \
+    else DPRINT1(fmt, ##__VA_ARGS__)
+#else
+#define MiDumperPrint(dbg, fmt, ...)        \
+    DPRINT1(fmt, ##__VA_ARGS__)
+#endif
 
 VOID
+MiDumpPoolConsumers(BOOLEAN CalledFromDbg, ULONG Tag, ULONG Mask, ULONG Flags)
+{
+    SIZE_T i;
+    BOOLEAN Verbose;
+
+    //
+    // Only print header if called from OOM situation
+    //
+    if (!CalledFromDbg)
+    {
+        DPRINT1("---------------------\n");
+        DPRINT1("Out of memory dumper!\n");
+    }
+#ifdef KDBG
+    else
+    {
+        KdbpPrint("Pool Used:\n");
+    }
+#endif
+
+    //
+    // Remember whether we'll have to be verbose
+    // This is the only supported flag!
+    //
+    Verbose = BooleanFlagOn(Flags, 1);
+
+    //
+    // Print table header
+    //
+    if (Verbose)
+    {
+        MiDumperPrint(CalledFromDbg, "\t\t\t\tNonPaged\t\t\t\t\t\t\tPaged\n");
+        MiDumperPrint(CalledFromDbg, "Tag\t\tAllocs\t\tFrees\t\tDiff\t\tUsed\t\tAllocs\t\tFrees\t\tDiff\t\tUsed\n");
+    }
+    else
+    {
+        MiDumperPrint(CalledFromDbg, "\t\tNonPaged\t\t\tPaged\n");
+        MiDumperPrint(CalledFromDbg, "Tag\t\tAllocs\t\tUsed\t\tAllocs\t\tUsed\n");
+    }
+
+    //
+    // We'll extract allocations for all the tracked pools
+    //
+    for (i = 0; i < PoolTrackTableSize; ++i)
+    {
+        PPOOL_TRACKER_TABLE TableEntry;
+
+        TableEntry = &PoolTrackTable[i];
+
+        //
+        // We only care about tags which have allocated memory
+        //
+        if (TableEntry->NonPagedBytes != 0 || TableEntry->PagedBytes != 0)
+        {
+            //
+            // If there's a tag, attempt to do a pretty print
+            // only if it matches the caller's tag, or if
+            // any tag is allowed
+            // For checking whether it matches caller's tag,
+            // use the mask to make sure not to mess with the wildcards
+            //
+            if (TableEntry->Key != 0 && TableEntry->Key != TAG_NONE &&
+                (Tag == 0 || (TableEntry->Key & Mask) == (Tag & Mask)))
+            {
+                CHAR Tag[4];
+
+                //
+                // Extract each 'component' and check whether they are printable
+                //
+                Tag[0] = TableEntry->Key & 0xFF;
+                Tag[1] = TableEntry->Key >> 8 & 0xFF;
+                Tag[2] = TableEntry->Key >> 16 & 0xFF;
+                Tag[3] = TableEntry->Key >> 24 & 0xFF;
+
+                if (ExpTagAllowPrint(Tag[0]) && ExpTagAllowPrint(Tag[1]) && ExpTagAllowPrint(Tag[2]) && ExpTagAllowPrint(Tag[3]))
+                {
+                    //
+                    // Print in direct order to make !poolused TAG usage easier
+                    //
+                    if (Verbose)
+                    {
+                        MiDumperPrint(CalledFromDbg, "'%c%c%c%c'\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\n", Tag[0], Tag[1], Tag[2], Tag[3],
+                                      TableEntry->NonPagedAllocs, TableEntry->NonPagedFrees,
+                                      (TableEntry->NonPagedAllocs - TableEntry->NonPagedFrees), TableEntry->NonPagedBytes,
+                                      TableEntry->PagedAllocs, TableEntry->PagedFrees,
+                                      (TableEntry->PagedAllocs - TableEntry->PagedFrees), TableEntry->PagedBytes);
+                    }
+                    else
+                    {
+                        MiDumperPrint(CalledFromDbg, "'%c%c%c%c'\t\t%ld\t\t%ld\t\t%ld\t\t%ld\n", Tag[0], Tag[1], Tag[2], Tag[3],
+                                      TableEntry->NonPagedAllocs, TableEntry->NonPagedBytes,
+                                      TableEntry->PagedAllocs, TableEntry->PagedBytes);
+                    }
+                }
+                else
+                {
+                    if (Verbose)
+                    {
+                        MiDumperPrint(CalledFromDbg, "0x%08x\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\n", TableEntry->Key,
+                                      TableEntry->NonPagedAllocs, TableEntry->NonPagedFrees,
+                                      (TableEntry->NonPagedAllocs - TableEntry->NonPagedFrees), TableEntry->NonPagedBytes,
+                                      TableEntry->PagedAllocs, TableEntry->PagedFrees,
+                                      (TableEntry->PagedAllocs - TableEntry->PagedFrees), TableEntry->PagedBytes);
+                    }
+                    else
+                    {
+                        MiDumperPrint(CalledFromDbg, "0x%08x\t%ld\t\t%ld\t\t%ld\t\t%ld\n", TableEntry->Key,
+                                      TableEntry->NonPagedAllocs, TableEntry->NonPagedBytes,
+                                      TableEntry->PagedAllocs, TableEntry->PagedBytes);
+                    }
+                }
+            }
+            else if (Tag == 0 || (Tag & Mask) == (TAG_NONE & Mask))
+            {
+                if (Verbose)
+                {
+                    MiDumperPrint(CalledFromDbg, "Anon\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\n",
+                                  TableEntry->NonPagedAllocs, TableEntry->NonPagedFrees,
+                                  (TableEntry->NonPagedAllocs - TableEntry->NonPagedFrees), TableEntry->NonPagedBytes,
+                                  TableEntry->PagedAllocs, TableEntry->PagedFrees,
+                                  (TableEntry->PagedAllocs - TableEntry->PagedFrees), TableEntry->PagedBytes);
+                }
+                else
+                {
+                    MiDumperPrint(CalledFromDbg, "Anon\t\t%ld\t\t%ld\t\t%ld\t\t%ld\n",
+                                  TableEntry->NonPagedAllocs, TableEntry->NonPagedBytes,
+                                  TableEntry->PagedAllocs, TableEntry->PagedBytes);
+                }
+            }
+        }
+    }
+
+    if (!CalledFromDbg)
+    {
+        DPRINT1("---------------------\n");
+    }
+}
+#endif
+
+/* PRIVATE FUNCTIONS **********************************************************/
+
+INIT_FUNCTION
+VOID
 NTAPI
-INIT_SECTION
 ExpSeedHotTags(VOID)
 {
     ULONG i, Key, Hash, Index;
@@ -792,9 +952,9 @@ ExpInsertPoolTracker(IN ULONG Key,
     DPRINT1("Out of pool tag space, ignoring...\n");
 }
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_SECTION
 ExInitializePoolDescriptor(IN PPOOL_DESCRIPTOR PoolDescriptor,
                            IN POOL_TYPE PoolType,
                            IN ULONG PoolIndex,
@@ -843,9 +1003,9 @@ ExInitializePoolDescriptor(IN PPOOL_DESCRIPTOR PoolDescriptor,
     ASSERT(PoolType != PagedPoolSession);
 }
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_SECTION
 InitializePool(IN POOL_TYPE PoolType,
                IN ULONG Threshold)
 {
@@ -1008,7 +1168,10 @@ InitializePool(IN POOL_TYPE PoolType,
         PoolBigPageTableHash = PoolBigPageTableSize - 1;
         RtlZeroMemory(PoolBigPageTable,
                       PoolBigPageTableSize * sizeof(POOL_TRACKER_BIG_PAGES));
-        for (i = 0; i < PoolBigPageTableSize; i++) PoolBigPageTable[i].Va = (PVOID)1;
+        for (i = 0; i < PoolBigPageTableSize; i++)
+        {
+            PoolBigPageTable[i].Va = (PVOID)POOL_BIG_TABLE_ENTRY_FREE;
+        }
 
         //
         // During development, print this out so we can see what's happening
@@ -1282,6 +1445,95 @@ ExGetPoolTagInfo(IN PSYSTEM_POOLTAG_INFORMATION SystemInformation,
     return Status;
 }
 
+_IRQL_requires_(DISPATCH_LEVEL)
+BOOLEAN
+NTAPI
+ExpExpandBigPageTable(
+    _In_ _IRQL_restores_ KIRQL OldIrql)
+{
+    ULONG OldSize = PoolBigPageTableSize;
+    ULONG NewSize = 2 * OldSize;
+    ULONG NewSizeInBytes;
+    PPOOL_TRACKER_BIG_PAGES NewTable;
+    PPOOL_TRACKER_BIG_PAGES OldTable;
+    ULONG i;
+    ULONG PagesFreed;
+    ULONG Hash;
+    ULONG HashMask;
+
+    /* Must be holding ExpLargePoolTableLock */
+    ASSERT(KeGetCurrentIrql() == DISPATCH_LEVEL);
+
+    /* Make sure we don't overflow */
+    if (!NT_SUCCESS(RtlULongMult(2,
+                                 OldSize * sizeof(POOL_TRACKER_BIG_PAGES),
+                                 &NewSizeInBytes)))
+    {
+        DPRINT1("Overflow expanding big page table. Size=%lu\n", OldSize);
+        KeReleaseSpinLock(&ExpLargePoolTableLock, OldIrql);
+        return FALSE;
+    }
+
+    NewTable = MiAllocatePoolPages(NonPagedPool, NewSizeInBytes);
+    if (NewTable == NULL)
+    {
+        DPRINT1("Could not allocate %lu bytes for new big page table\n", NewSizeInBytes);
+        KeReleaseSpinLock(&ExpLargePoolTableLock, OldIrql);
+        return FALSE;
+    }
+
+    DPRINT("Expanding big pool tracker table to %lu entries\n", NewSize);
+
+    /* Initialize the new table */
+    RtlZeroMemory(NewTable, NewSizeInBytes);
+    for (i = 0; i < NewSize; i++)
+    {
+        NewTable[i].Va = (PVOID)POOL_BIG_TABLE_ENTRY_FREE;
+    }
+
+    /* Copy over all items */
+    OldTable = PoolBigPageTable;
+    HashMask = NewSize - 1;
+    for (i = 0; i < OldSize; i++)
+    {
+        /* Skip over empty items */
+        if ((ULONG_PTR)OldTable[i].Va & POOL_BIG_TABLE_ENTRY_FREE)
+        {
+            continue;
+        }
+
+        /* Recalculate the hash due to the new table size */
+        Hash = ExpComputePartialHashForAddress(OldTable[i].Va) & HashMask;
+
+        /* Find the location in the new table */
+        while (!((ULONG_PTR)NewTable[Hash].Va & POOL_BIG_TABLE_ENTRY_FREE))
+        {
+            Hash = (Hash + 1) & HashMask;
+        }
+
+        /* We just enlarged the table, so we must have space */
+        ASSERT((ULONG_PTR)NewTable[Hash].Va & POOL_BIG_TABLE_ENTRY_FREE);
+
+        /* Finally, copy the item */
+        NewTable[Hash] = OldTable[i];
+    }
+
+    /* Activate the new table */
+    PoolBigPageTable = NewTable;
+    PoolBigPageTableSize = NewSize;
+    PoolBigPageTableHash = PoolBigPageTableSize - 1;
+
+    /* Release the lock, we're done changing global state */
+    KeReleaseSpinLock(&ExpLargePoolTableLock, OldIrql);
+
+    /* Free the old table and update our tracker */
+    PagesFreed = MiFreePoolPages(OldTable);
+    ExpRemovePoolTracker('looP', PagesFreed << PAGE_SHIFT, 0);
+    ExpInsertPoolTracker('looP', ALIGN_UP_BY(NewSizeInBytes, PAGE_SIZE), 0);
+
+    return TRUE;
+}
+
 BOOLEAN
 NTAPI
 ExpAddTagForBigPages(IN PVOID Va,
@@ -1300,7 +1552,10 @@ ExpAddTagForBigPages(IN PVOID Va,
     //
     // As the table is expandable, these values must only be read after acquiring
     // the lock to avoid a teared access during an expansion
+    // NOTE: Windows uses a special reader/writer SpinLock to improve
+    // performance in the common case (add/remove a tracker entry)
     //
+Retry:
     Hash = ExpComputePartialHashForAddress(Va);
     KeAcquireSpinLock(&ExpLargePoolTableLock, &OldIrql);
     Hash &= PoolBigPageTableHash;
@@ -1318,10 +1573,11 @@ ExpAddTagForBigPages(IN PVOID Va,
         //
         // Make sure that this is a free entry and attempt to atomically make the
         // entry busy now
+        // NOTE: the Interlocked operation cannot fail with an exclusive SpinLock
         //
         OldVa = Entry->Va;
         if (((ULONG_PTR)OldVa & POOL_BIG_TABLE_ENTRY_FREE) &&
-            (InterlockedCompareExchangePointer(&Entry->Va, Va, OldVa) == OldVa))
+            (NT_VERIFY(InterlockedCompareExchangePointer(&Entry->Va, Va, OldVa) == OldVa)))
         {
             //
             // We now own this entry, write down the size and the pool tag
@@ -1341,8 +1597,11 @@ ExpAddTagForBigPages(IN PVOID Va,
             InterlockedIncrementUL(&ExpPoolBigEntriesInUse);
             if ((i >= 16) && (ExpPoolBigEntriesInUse > (TableSize / 4)))
             {
-                DPRINT("Should attempt expansion since we now have %lu entries\n",
+                DPRINT("Attempting expansion since we now have %lu entries\n",
                         ExpPoolBigEntriesInUse);
+                ASSERT(TableSize == PoolBigPageTableSize);
+                ExpExpandBigPageTable(OldIrql);
+                return TRUE;
             }
 
             //
@@ -1363,11 +1622,16 @@ ExpAddTagForBigPages(IN PVOID Va,
     } while (Entry != EntryStart);
 
     //
-    // This means there's no free hash buckets whatsoever, so we would now have
+    // This means there's no free hash buckets whatsoever, so we now have
     // to attempt expanding the table
     //
-    DPRINT1("Big pool expansion needed, not implemented!\n");
-    KeReleaseSpinLock(&ExpLargePoolTableLock, OldIrql);
+    ASSERT(TableSize == PoolBigPageTableSize);
+    if (ExpExpandBigPageTable(OldIrql))
+    {
+        goto Retry;
+    }
+    ExpBigTableExpansionFailed++;
+    DPRINT1("Big pool table expansion failed\n");
     return FALSE;
 }
 
@@ -1503,10 +1767,30 @@ ExQueryPoolUsage(OUT PULONG PagedPoolPages,
 #endif
 
     //
-    // FIXME: Not yet supported
+    // Get the amount of hits in the system lookaside lists
     //
-    *NonPagedPoolLookasideHits += 0;
-    *PagedPoolLookasideHits += 0;
+    if (!IsListEmpty(&ExPoolLookasideListHead))
+    {
+        PLIST_ENTRY ListEntry;
+
+        for (ListEntry = ExPoolLookasideListHead.Flink;
+             ListEntry != &ExPoolLookasideListHead;
+             ListEntry = ListEntry->Flink)
+        {
+            PGENERAL_LOOKASIDE Lookaside;
+
+            Lookaside = CONTAINING_RECORD(ListEntry, GENERAL_LOOKASIDE, ListEntry);
+
+            if (Lookaside->Type == NonPagedPool)
+            {
+                *NonPagedPoolLookasideHits += Lookaside->AllocateHits;
+            }
+            else
+            {
+                *PagedPoolLookasideHits += Lookaside->AllocateHits;
+            }
+        }
+    }
 }
 
 VOID
@@ -1542,7 +1826,7 @@ ExReturnPoolQuota(IN PVOID P)
                 DPRINT1("Object %p is not a process. Type %u, pool type 0x%x, block size %u\n",
                         Process, Process->Pcb.Header.Type, Entry->PoolType, BlockSize);
                 KeBugCheckEx(BAD_POOL_CALLER,
-                             0x0D,
+                             POOL_BILLED_PROCESS_INVALID,
                              (ULONG_PTR)P,
                              Entry->PoolTag,
                              (ULONG_PTR)Process);
@@ -1641,6 +1925,22 @@ ExAllocatePoolWithTag(IN POOL_TYPE PoolType,
         Entry = MiAllocatePoolPages(OriginalType, NumberOfBytes);
         if (!Entry)
         {
+#if DBG
+            //
+            // Out of memory, display current consumption
+            // Let's consider that if the caller wanted more
+            // than a hundred pages, that's a bogus caller
+            // and we are not out of memory. Dump at most
+            // once a second to avoid spamming the log.
+            //
+            if (NumberOfBytes < 100 * PAGE_SIZE &&
+                KeQueryInterruptTime() >= MiLastPoolDumpTime + 10000000)
+            {
+                MiDumpPoolConsumers(FALSE, 0, 0, 0);
+                MiLastPoolDumpTime = KeQueryInterruptTime();
+            }
+#endif
+
             //
             // Must succeed pool is deprecated, but still supported. These allocation
             // failures must cause an immediate bugcheck
@@ -1967,6 +2267,22 @@ ExAllocatePoolWithTag(IN POOL_TYPE PoolType,
     Entry = MiAllocatePoolPages(OriginalType, PAGE_SIZE);
     if (!Entry)
     {
+#if DBG
+        //
+        // Out of memory, display current consumption
+        // Let's consider that if the caller wanted more
+        // than a hundred pages, that's a bogus caller
+        // and we are not out of memory. Dump at most
+        // once a second to avoid spamming the log.
+        //
+        if (NumberOfBytes < 100 * PAGE_SIZE &&
+            KeQueryInterruptTime() >= MiLastPoolDumpTime + 10000000)
+        {
+            MiDumpPoolConsumers(FALSE, 0, 0, 0);
+            MiLastPoolDumpTime = KeQueryInterruptTime();
+        }
+#endif
+
         //
         // Must succeed pool is deprecated, but still supported. These allocation
         // failures must cause an immediate bugcheck
@@ -2234,7 +2550,9 @@ ExFreePoolWithTag(IN PVOID P,
         if (TagToFree && TagToFree != Tag)
         {
             DPRINT1("Freeing pool - invalid tag specified: %.4s != %.4s\n", (char*)&TagToFree, (char*)&Tag);
+#if DBG
             KeBugCheckEx(BAD_POOL_CALLER, 0x0A, (ULONG_PTR)P, Tag, TagToFree);
+#endif
         }
 
         //
@@ -2316,7 +2634,9 @@ ExFreePoolWithTag(IN PVOID P,
     if (TagToFree && TagToFree != Tag)
     {
         DPRINT1("Freeing pool - invalid tag specified: %.4s != %.4s\n", (char*)&TagToFree, (char*)&Tag);
+#if DBG
         KeBugCheckEx(BAD_POOL_CALLER, 0x0A, (ULONG_PTR)P, Tag, TagToFree);
+#endif
     }
 
     //
@@ -2339,7 +2659,7 @@ ExFreePoolWithTag(IN PVOID P,
                 DPRINT1("Object %p is not a process. Type %u, pool type 0x%x, block size %u\n",
                         Process, Process->Pcb.Header.Type, Entry->PoolType, BlockSize);
                 KeBugCheckEx(BAD_POOL_CALLER,
-                             0x0D,
+                             POOL_BILLED_PROCESS_INVALID,
                              (ULONG_PTR)P,
                              Tag,
                              (ULONG_PTR)Process);
@@ -2721,104 +3041,5 @@ ExAllocatePoolWithQuotaTag(IN POOL_TYPE PoolType,
     //
     return Buffer;
 }
-
-#if DBG && defined(KDBG)
-
-BOOLEAN
-ExpKdbgExtPool(
-    ULONG Argc,
-    PCHAR Argv[])
-{
-    ULONG_PTR Address = 0, Flags = 0;
-    PVOID PoolPage;
-    PPOOL_HEADER Entry;
-    BOOLEAN ThisOne;
-    PULONG Data;
-
-    if (Argc > 1)
-    {
-        /* Get address */
-        if (!KdbpGetHexNumber(Argv[1], &Address))
-        {
-            KdbpPrint("Invalid parameter: %s\n", Argv[0]);
-            return TRUE;
-        }
-    }
-
-    if (Argc > 2)
-    {
-        /* Get address */
-        if (!KdbpGetHexNumber(Argv[1], &Flags))
-        {
-            KdbpPrint("Invalid parameter: %s\n", Argv[0]);
-            return TRUE;
-        }
-    }
-
-    /* Check if we got an address */
-    if (Address != 0)
-    {
-        /* Get the base page */
-        PoolPage = PAGE_ALIGN(Address);
-    }
-    else
-    {
-        KdbpPrint("Heap is unimplemented\n");
-        return TRUE;
-    }
-
-    /* No paging support! */
-    if (!MmIsAddressValid(PoolPage))
-    {
-        KdbpPrint("Address not accessible!\n");
-        return TRUE;
-    }
-
-    /* Get pool type */
-    if ((Address >= (ULONG_PTR)MmPagedPoolStart) && (Address <= (ULONG_PTR)MmPagedPoolEnd))
-        KdbpPrint("Allocation is from PagedPool region\n");
-    else if ((Address >= (ULONG_PTR)MmNonPagedPoolStart) && (Address <= (ULONG_PTR)MmNonPagedPoolEnd))
-        KdbpPrint("Allocation is from NonPagedPool region\n");
-    else
-    {
-        KdbpPrint("Address 0x%p is not within any pool!\n", (PVOID)Address);
-        return TRUE;
-    }
-
-    /* Loop all entries of that page */
-    Entry = PoolPage;
-    do
-    {
-        /* Check if the address is within that entry */
-        ThisOne = ((Address >= (ULONG_PTR)Entry) &&
-                   (Address < (ULONG_PTR)(Entry + Entry->BlockSize)));
-
-        if (!(Flags & 1) || ThisOne)
-        {
-            /* Print the line */
-            KdbpPrint("%c%p size: %4d previous size: %4d  %s  %.4s\n",
-                     ThisOne ? '*' : ' ', Entry, Entry->BlockSize, Entry->PreviousSize,
-                     (Flags & 0x80000000) ? "" : (Entry->PoolType ? "(Allocated)" : "(Free)     "),
-                     (Flags & 0x80000000) ? "" : (PCHAR)&Entry->PoolTag);
-        }
-
-        if (Flags & 1)
-        {
-            Data = (PULONG)(Entry + 1);
-            KdbpPrint("    %p  %08lx %08lx %08lx %08lx\n"
-                     "    %p  %08lx %08lx %08lx %08lx\n",
-                     &Data[0], Data[0], Data[1], Data[2], Data[3],
-                     &Data[4], Data[4], Data[5], Data[6], Data[7]);
-        }
-
-        /* Go to next entry */
-        Entry = POOL_BLOCK(Entry, Entry->BlockSize);
-    }
-    while ((Entry->BlockSize != 0) && ((ULONG_PTR)Entry < (ULONG_PTR)PoolPage + PAGE_SIZE));
-
-    return TRUE;
-}
-
-#endif // DBG && KDBG
 
 /* EOF */

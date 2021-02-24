@@ -105,14 +105,6 @@ extern const xmlChar *xsltXSLTAttrMarker;
  */
 /* #define XSLT_REFACTORED_XSLT_NSCOMP */
 
-/**
- * XSLT_REFACTORED_XPATHCOMP:
- *
- * Internal define to enable the optimization of the
- * compilation of XPath expressions.
- */
-#define XSLT_REFACTORED_XPATHCOMP
-
 #ifdef XSLT_REFACTORED_XSLT_NSCOMP
 
 extern const xmlChar *xsltConstNamespaceNameXSLT;
@@ -290,7 +282,7 @@ struct _xsltTemplate {
     int inheritedNsNr;  /* number of inherited namespaces */
     xmlNsPtr *inheritedNs;/* inherited non-excluded namespaces */
 
-    /* Profiling informations */
+    /* Profiling information */
     int nbCalls;        /* the number of time the template was called */
     unsigned long time; /* the time spent in this template */
     void *params;       /* xsl:param instructions */
@@ -324,6 +316,7 @@ struct _xsltDecimalFormat {
     xmlChar *percent;
     xmlChar *permille;
     xmlChar *zeroDigit;
+    const xmlChar *nsUri;
 };
 
 /**
@@ -477,7 +470,7 @@ typedef void (*xsltElemPreCompDeallocator) (xsltElemPreCompPtr comp);
  */
 struct _xsltElemPreComp {
     xsltElemPreCompPtr next;		/* next item in the global chained
-					   list hold by xsltStylesheet. */
+					   list held by xsltStylesheet. */
     xsltStyleType type;		/* type of the element */
     xsltTransformFunction func;	/* handling function */
     xmlNodePtr inst;			/* the node in the stylesheet's tree
@@ -589,7 +582,7 @@ struct _xsltNsListContainer {
  */
 struct _xsltStylePreComp {
     xsltElemPreCompPtr next;    /* next item in the global chained
-				   list hold by xsltStylesheet */
+				   list held by xsltStylesheet */
     xsltStyleType type;         /* type of the item */
     xsltTransformFunction func; /* handling function */
     xmlNodePtr inst;		/* the node in the stylesheet's tree
@@ -1345,9 +1338,6 @@ struct _xsltCompilerCtxt {
     */
     int strict;
     xsltPrincipalStylesheetDataPtr psData;
-#ifdef XSLT_REFACTORED_XPATHCOMP
-    xmlXPathContextPtr xpathCtxt;
-#endif
     xsltStyleItemUknownPtr unknownItem;
     int hasNsAliases; /* Indicator if there was an xsl:namespace-alias. */
     xsltNsAliasPtr nsAliases;
@@ -1512,7 +1502,7 @@ struct _xsltStylesheet {
      */
     xsltTemplatePtr templates;	/* the ordered list of templates */
     void *templatesHash;	/* hash table or wherever compiled templates
-				   informations are stored */
+				   information is stored */
     void *rootMatch;		/* template based on / */
     void *keyMatch;		/* template based on key() */
     void *elemMatch;		/* template based on * */
@@ -1641,6 +1631,8 @@ struct _xsltStylesheet {
     int forwards_compatible;
 
     xmlHashTablePtr namedTemplates; /* hash table of named templates */
+
+    xmlXPathContextPtr xpathCtxt;
 };
 
 typedef struct _xsltTransformCache xsltTransformCache;
@@ -1732,7 +1724,7 @@ struct _xsltTransformContext {
 
     int              extrasNr;		/* the number of extras used */
     int              extrasMax;		/* the number of extras allocated */
-    xsltRuntimeExtraPtr extras;		/* extra per runtime informations */
+    xsltRuntimeExtraPtr extras;		/* extra per runtime information */
 
     xsltDocumentPtr  styleList;		/* the stylesheet docs list */
     void                 * sec;		/* the security preferences if any */
@@ -1754,8 +1746,8 @@ struct _xsltTransformContext {
      * Speed optimization when coalescing text nodes
      */
     const xmlChar  *lasttext;		/* last text node content */
-    unsigned int    lasttsize;		/* last text node size */
-    unsigned int    lasttuse;		/* last text node use */
+    int             lasttsize;		/* last text node size */
+    int             lasttuse;		/* last text node use */
     /*
      * Per Context Debugging
      */
@@ -1783,11 +1775,13 @@ struct _xsltTransformContext {
     xmlDocPtr localRVT; /* list of local tree fragments; will be freed when
 			   the instruction which created the fragment
                            exits */
-    xmlDocPtr localRVTBase;
+    xmlDocPtr localRVTBase; /* Obsolete */
     int keyInitLevel;   /* Needed to catch recursive keys issues */
-    int funcLevel;      /* Needed to catch recursive functions issues */
+    int depth;          /* Needed to catch recursions */
     int maxTemplateDepth;
     int maxTemplateVars;
+    unsigned long opLimit;
+    unsigned long opCount;
 };
 
 /**
@@ -1854,6 +1848,10 @@ XSLTPUBFUN void XSLTCALL
 XSLTPUBFUN xsltDecimalFormatPtr XSLTCALL
 			xsltDecimalFormatGetByName(xsltStylesheetPtr style,
 						 xmlChar *name);
+XSLTPUBFUN xsltDecimalFormatPtr XSLTCALL
+			xsltDecimalFormatGetByQName(xsltStylesheetPtr style,
+						 const xmlChar *nsUri,
+                                                 const xmlChar *name);
 
 XSLTPUBFUN xsltStylesheetPtr XSLTCALL
 			xsltParseStylesheetProcess(xsltStylesheetPtr ret,
@@ -1866,6 +1864,9 @@ XSLTPUBFUN xsltStylesheetPtr XSLTCALL
 XSLTPUBFUN xsltStylesheetPtr XSLTCALL
 			xsltParseStylesheetImportedDoc(xmlDocPtr doc,
 						xsltStylesheetPtr style);
+XSLTPUBFUN int XSLTCALL
+			xsltParseStylesheetUser(xsltStylesheetPtr style,
+						xmlDocPtr doc);
 XSLTPUBFUN xsltStylesheetPtr XSLTCALL
 			xsltLoadStylesheetPI	(xmlDocPtr doc);
 XSLTPUBFUN void XSLTCALL
@@ -1906,6 +1907,11 @@ XSLTPUBFUN int XSLTCALL
 XSLTPUBFUN int XSLTCALL
 			xsltExtensionInstructionResultFinalize(
 						 xsltTransformContextPtr ctxt);
+XSLTPUBFUN int XSLTCALL
+			xsltFlagRVTs(
+						 xsltTransformContextPtr ctxt,
+						 xmlXPathObjectPtr obj,
+						 void *val);
 XSLTPUBFUN void XSLTCALL
 			xsltFreeRVTs		(xsltTransformContextPtr ctxt);
 XSLTPUBFUN void XSLTCALL

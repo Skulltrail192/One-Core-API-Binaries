@@ -20,11 +20,50 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "dbghelp_private.h"
+#ifndef DBGHELP_STATIC_LIB
+
+#define NONAMELESSUNION
+
+#include "config.h"
+
+#include <sys/types.h>
+#include <fcntl.h>
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#include <stdio.h>
+#include <assert.h>
+#include <stdarg.h>
 
 #ifdef HAVE_ZLIB
 #include <zlib.h>
 #endif
+
+#include "windef.h"
+#include "winternl.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "ole2.h"
+#include "oleauto.h"
+
+#include "dbghelp_private.h"
+#include "image_private.h"
+
+#include "wine/debug.h"
+
+#else
+#include "dbghelp_private.h"
+#include "image_private.h"
+#endif /* !DBGHELP_STATIC_LIB */
 
 WINE_DEFAULT_DEBUG_CHANNEL(dbghelp_dwarf);
 
@@ -909,7 +948,11 @@ static BOOL dwarf2_compute_location_attr(dwarf2_parse_context_t* ctx,
                                          sizeof(unsigned) + xloc.u.block.size);
             *ptr = xloc.u.block.size;
             memcpy(ptr + 1, xloc.u.block.ptr, xloc.u.block.size);
+#ifndef __REACTOS__
             loc->offset = (unsigned long)ptr;
+#else
+            loc->offset = (uintptr_t)ptr;
+#endif
         }
     }
     return TRUE;
@@ -1790,7 +1833,7 @@ static void dwarf2_parse_subprogram_block(dwarf2_subprogram_t* subpgm,
 
     if (!dwarf2_read_range(subpgm->ctx, di, &low_pc, &high_pc))
     {
-        FIXME("no range\n");
+        WARN("no range\n");
         return;
     }
 

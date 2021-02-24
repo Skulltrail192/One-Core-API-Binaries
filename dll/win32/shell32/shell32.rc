@@ -34,7 +34,7 @@ BEGIN
     VK_DELETE, FCIDM_SHVIEW_DELETE, VIRTKEY
     VK_DELETE, FCIDM_SHVIEW_DELETE, VIRTKEY, SHIFT
     VK_F2, FCIDM_SHVIEW_RENAME, VIRTKEY
-    VK_RETURN, FCIDM_SHVIEW_OPEN, VIRTKEY, ALT
+    VK_RETURN, FCIDM_SHVIEW_PROPERTIES, VIRTKEY, ALT
     "X", FCIDM_SHVIEW_CUT, VIRTKEY, CONTROL
     "C", FCIDM_SHVIEW_COPY, VIRTKEY, CONTROL
     VK_INSERT, FCIDM_SHVIEW_COPY, VIRTKEY, CONTROL
@@ -119,6 +119,9 @@ END
 #ifdef LANGUAGE_ES_ES
     #include "lang/es-ES.rc"
 #endif
+#ifdef LANGUAGE_ET_EE
+    #include "lang/et-EE.rc"
+#endif
 #ifdef LANGUAGE_FI_FI
     #include "lang/fi-FI.rc"
 #endif
@@ -128,8 +131,14 @@ END
 #ifdef LANGUAGE_HE_IL
     #include "lang/he-IL.rc"
 #endif
+#ifdef LANGUAGE_HI_IN
+    #include "lang/hi-IN.rc"
+#endif
 #ifdef LANGUAGE_HU_HU
     #include "lang/hu-HU.rc"
+#endif
+#ifdef LANGUAGE_ID_ID
+    #include "lang/id-ID.rc"
 #endif
 #ifdef LANGUAGE_IT_IT
     #include "lang/it-IT.rc"

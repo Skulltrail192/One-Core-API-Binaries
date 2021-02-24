@@ -18,21 +18,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_NO_STATUS
+#include "config.h"
+#include "wine/debug.h"
 
-#include <config.h>
-#include <wine/debug.h>
+#include <stdarg.h>
 
-//#include <stdarg.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "icm.h"
 
-#include <windef.h>
-#include <winbase.h>
-#include <winnls.h>
-#include <wingdi.h>
-#include <winuser.h>
-#include <icm.h>
-
-//#include "mscms_priv.h"
+#include "mscms_priv.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(mscms);
 
@@ -50,6 +48,7 @@ static DWORD from_bmformat( BMFORMAT format )
     case BM_GRAY:        ret = TYPE_GRAY_8; break;
     case BM_xRGBQUADS:   ret = TYPE_ARGB_8; break;
     case BM_xBGRQUADS:   ret = TYPE_ABGR_8; break;
+    case BM_KYMCQUADS:   ret = TYPE_KYMC_8; break;
     default:
         if (!quietfixme)
         {

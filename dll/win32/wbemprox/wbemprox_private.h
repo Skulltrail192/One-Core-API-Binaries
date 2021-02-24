@@ -16,39 +16,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#ifndef _WBEMPROX_PRIVATE_H_
-#define _WBEMPROX_PRIVATE_H_
+#pragma once
 
-#include <config.h>
-
-#include <stdarg.h>
-
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
-
-#define COBJMACROS
-#define NONAMELESSUNION
-#define NONAMELESSSTRUCT
-
-#include <ntstatus.h>
-#define WIN32_NO_STATUS
-#include <windef.h>
-#include <winbase.h>
-#include <winsvc.h>
-#include <objbase.h>
-#include <oleauto.h>
-#include <wbemcli.h>
-
-#include <wine/debug.h>
-#include <wine/list.h>
-#include <wine/unicode.h>
-
-WINE_DEFAULT_DEBUG_CHANNEL(wbemprox);
+#include "wine/debug.h"
+#include "wine/heap.h"
+#include "wine/list.h"
+#ifdef __REACTOS__
+#include <winnls.h>
+#endif
 
 IClientSecurity client_security DECLSPEC_HIDDEN;
 struct list *table_list DECLSPEC_HIDDEN;
-
-#define SIZEOF(array) (sizeof(array)/sizeof((array)[0]))
 
 enum param_direction
 {
@@ -116,7 +94,6 @@ struct column
 {
     const WCHAR *name;
     UINT type;
-    VARTYPE vartype; /* 0 for default mapping */
 };
 
 enum fill_status
@@ -151,6 +128,7 @@ struct property
 
 struct array
 {
+    UINT elem_size;
     UINT count;
     void *ptr;
 };
@@ -158,7 +136,6 @@ struct array
 struct field
 {
     UINT type;
-    VARTYPE vartype; /* 0 for default mapping */
     union
     {
         LONGLONG ival;
@@ -174,13 +151,30 @@ struct record
     struct table *table;
 };
 
+struct keyword
+{
+    const WCHAR *name;
+    const WCHAR *value;
+    const struct keyword *next;
+};
+
+enum view_type
+{
+    VIEW_TYPE_SELECT,
+    VIEW_TYPE_ASSOCIATORS,
+};
+
 struct view
 {
-    const struct property *proplist;
-    struct table *table;
+    enum view_type type;
+    const WCHAR *path;                      /* ASSOCIATORS OF query */
+    const struct keyword *keywordlist;
+    const struct property *proplist;        /* SELECT query */
     const struct expr *cond;
+    UINT table_count;
+    struct table **table;
+    UINT result_count;
     UINT *result;
-    UINT  count;
 };
 
 struct query
@@ -190,16 +184,29 @@ struct query
     struct list mem;
 };
 
+struct path
+{
+    WCHAR *class;
+    UINT   class_len;
+    WCHAR *filter;
+    UINT   filter_len;
+};
+
+HRESULT parse_path( const WCHAR *, struct path ** ) DECLSPEC_HIDDEN;
+void free_path( struct path * ) DECLSPEC_HIDDEN;
+WCHAR *query_from_path( const struct path * ) DECLSPEC_HIDDEN;
+
 struct query *create_query(void) DECLSPEC_HIDDEN;
 void free_query( struct query * ) DECLSPEC_HIDDEN;
 struct query *addref_query( struct query * ) DECLSPEC_HIDDEN;
 void release_query( struct query *query ) DECLSPEC_HIDDEN;
 HRESULT exec_query( const WCHAR *, IEnumWbemClassObject ** ) DECLSPEC_HIDDEN;
 HRESULT parse_query( const WCHAR *, struct view **, struct list * ) DECLSPEC_HIDDEN;
-HRESULT create_view( const struct property *, const WCHAR *, const struct expr *,
-                     struct view ** ) DECLSPEC_HIDDEN;
+HRESULT create_view( enum view_type, const WCHAR *, const struct keyword *, const WCHAR *, const struct property *,
+                     const struct expr *, struct view ** ) DECLSPEC_HIDDEN;
 void destroy_view( struct view * ) DECLSPEC_HIDDEN;
 HRESULT execute_view( struct view * ) DECLSPEC_HIDDEN;
+struct table *get_view_table( const struct view *, UINT ) DECLSPEC_HIDDEN;
 void init_table_list( void ) DECLSPEC_HIDDEN;
 struct table *grab_table( const WCHAR * ) DECLSPEC_HIDDEN;
 struct table *addref_table( struct table * ) DECLSPEC_HIDDEN;
@@ -219,15 +226,14 @@ BSTR get_value_bstr( const struct table *, UINT, UINT ) DECLSPEC_HIDDEN;
 HRESULT set_value( const struct table *, UINT, UINT, LONGLONG, CIMTYPE ) DECLSPEC_HIDDEN;
 BOOL is_method( const struct table *, UINT ) DECLSPEC_HIDDEN;
 HRESULT get_method( const struct table *, const WCHAR *, class_method ** ) DECLSPEC_HIDDEN;
-HRESULT get_propval( const struct view *, UINT, const WCHAR *, VARIANT *,
-                     CIMTYPE *, LONG * ) DECLSPEC_HIDDEN;
+HRESULT get_propval( const struct view *, UINT, const WCHAR *, VARIANT *, CIMTYPE *, LONG * ) DECLSPEC_HIDDEN;
 HRESULT put_propval( const struct view *, UINT, const WCHAR *, VARIANT *, CIMTYPE ) DECLSPEC_HIDDEN;
 HRESULT to_longlong( VARIANT *, LONGLONG *, CIMTYPE * ) DECLSPEC_HIDDEN;
 SAFEARRAY *to_safearray( const struct array *, CIMTYPE ) DECLSPEC_HIDDEN;
 VARTYPE to_vartype( CIMTYPE ) DECLSPEC_HIDDEN;
 void destroy_array( struct array *, CIMTYPE ) DECLSPEC_HIDDEN;
-BOOL is_selected_prop( const struct view *, const WCHAR * ) DECLSPEC_HIDDEN;
-HRESULT get_properties( const struct view *, LONG, SAFEARRAY ** ) DECLSPEC_HIDDEN;
+BOOL is_result_prop( const struct view *, const WCHAR * ) DECLSPEC_HIDDEN;
+HRESULT get_properties( const struct view *, UINT, LONG, SAFEARRAY ** ) DECLSPEC_HIDDEN;
 HRESULT get_object( const WCHAR *, IWbemClassObject ** ) DECLSPEC_HIDDEN;
 BSTR get_method_name( const WCHAR *, UINT ) DECLSPEC_HIDDEN;
 void set_variant( VARTYPE, LONGLONG, void *, VARIANT * ) DECLSPEC_HIDDEN;
@@ -242,6 +248,7 @@ HRESULT EnumWbemClassObject_create(struct query *, LPVOID *) DECLSPEC_HIDDEN;
 HRESULT WbemQualifierSet_create(const WCHAR *, const WCHAR *, LPVOID *) DECLSPEC_HIDDEN;
 
 HRESULT process_get_owner(IWbemClassObject *, IWbemClassObject *, IWbemClassObject **) DECLSPEC_HIDDEN;
+HRESULT reg_create_key(IWbemClassObject *, IWbemClassObject *, IWbemClassObject **) DECLSPEC_HIDDEN;
 HRESULT reg_enum_key(IWbemClassObject *, IWbemClassObject *, IWbemClassObject **) DECLSPEC_HIDDEN;
 HRESULT reg_enum_values(IWbemClassObject *, IWbemClassObject *, IWbemClassObject **) DECLSPEC_HIDDEN;
 HRESULT reg_get_stringvalue(IWbemClassObject *, IWbemClassObject *, IWbemClassObject **) DECLSPEC_HIDDEN;
@@ -252,31 +259,21 @@ HRESULT service_stop_service(IWbemClassObject *, IWbemClassObject *, IWbemClassO
 HRESULT security_get_sd(IWbemClassObject *, IWbemClassObject *, IWbemClassObject **) DECLSPEC_HIDDEN;
 HRESULT security_set_sd(IWbemClassObject *, IWbemClassObject *, IWbemClassObject **) DECLSPEC_HIDDEN;
 
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), 0, size);
-}
-
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc_zero(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
-}
-
-static inline void* __WINE_ALLOC_SIZE(2) heap_realloc(void *mem, size_t size)
-{
-    return HeapReAlloc(GetProcessHeap(), 0, mem, size);
-}
-
-static inline BOOL heap_free(void *mem)
-{
-    return HeapFree(GetProcessHeap(), 0, mem);
-}
-
 static inline WCHAR *heap_strdupW( const WCHAR *src )
 {
     WCHAR *dst;
     if (!src) return NULL;
-    if ((dst = heap_alloc( (strlenW( src ) + 1) * sizeof(WCHAR) ))) strcpyW( dst, src );
+    if ((dst = heap_alloc( (lstrlenW( src ) + 1) * sizeof(WCHAR) ))) lstrcpyW( dst, src );
+    return dst;
+}
+
+static inline WCHAR *heap_strdupAW( const char *src )
+{
+    int len;
+    WCHAR *dst;
+    if (!src) return NULL;
+    len = MultiByteToWideChar( CP_ACP, 0, src, -1, NULL, 0 );
+    if ((dst = heap_alloc( len * sizeof(*dst) ))) MultiByteToWideChar( CP_ACP, 0, src, -1, dst, len );
     return dst;
 }
 
@@ -287,6 +284,7 @@ static const WCHAR class_systemsecurityW[] = {'_','_','S','y','s','t','e','m','S
 
 static const WCHAR prop_nameW[] = {'N','a','m','e',0};
 
+static const WCHAR method_createkeyW[] = {'C','r','e','a','t','e','K','e','y',0};
 static const WCHAR method_enumkeyW[] = {'E','n','u','m','K','e','y',0};
 static const WCHAR method_enumvaluesW[] = {'E','n','u','m','V','a','l','u','e','s',0};
 static const WCHAR method_getownerW[] = {'G','e','t','O','w','n','e','r',0};
@@ -308,5 +306,3 @@ static const WCHAR param_typesW[] = {'T','y','p','e','s',0};
 static const WCHAR param_userW[] = {'U','s','e','r',0};
 static const WCHAR param_valueW[] = {'s','V','a','l','u','e',0};
 static const WCHAR param_valuenameW[] = {'s','V','a','l','u','e','N','a','m','e',0};
-
-#endif /* _WBEMPROX_PRIVATE_H_ */

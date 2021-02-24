@@ -18,8 +18,8 @@
  */
 
 #include <freeldr.h>
-#include <debug.h>
 
+#include <debug.h>
 DBG_DEFAULT_CHANNEL(INIFILE);
 
 BOOLEAN IniOpenSection(PCSTR SectionName, ULONG_PTR* SectionId)
@@ -286,6 +286,47 @@ BOOLEAN IniAddSettingValueToSection(ULONG_PTR SectionId, PCSTR SettingName, PCST
     // Add it to the current section
     Section->SectionItemCount++;
     InsertTailList(&Section->SectionItemList, &SectionItem->ListEntry);
+
+    return TRUE;
+}
+
+BOOLEAN IniModifySettingValue(ULONG_PTR SectionId, PCSTR SettingName, PCSTR SettingValue)
+{
+    PINI_SECTION        Section = (PINI_SECTION)SectionId;
+    PINI_SECTION_ITEM    SectionItem;
+    PCHAR NewItemValue;
+
+    // Loop through each section item and find the one we want
+    SectionItem = CONTAINING_RECORD(Section->SectionItemList.Flink, INI_SECTION_ITEM, ListEntry);
+    while (&SectionItem->ListEntry != &Section->SectionItemList)
+    {
+        // Check to see if this is the setting we want
+        if (_stricmp(SectionItem->ItemName, SettingName) == 0)
+        {
+            break;
+        }
+
+        // Nope, keep going
+        // Get the next section item in the list
+        SectionItem = CONTAINING_RECORD(SectionItem->ListEntry.Flink, INI_SECTION_ITEM, ListEntry);
+    }
+    // If the section item does not exist, create it
+    if (&SectionItem->ListEntry == &Section->SectionItemList)
+    {
+        return IniAddSettingValueToSection(SectionId, SettingName, SettingValue);
+    }
+
+    // Reallocate the new setting value buffer
+    NewItemValue = FrLdrTempAlloc(strlen(SettingValue) + 1, TAG_INI_VALUE);
+    if (!NewItemValue)
+    {
+        // We failed, bail out
+        return FALSE;
+    }
+    FrLdrTempFree(SectionItem->ItemValue, TAG_INI_VALUE);
+    SectionItem->ItemValue = NewItemValue;
+
+    strcpy(SectionItem->ItemValue, SettingValue);
 
     return TRUE;
 }

@@ -12,6 +12,11 @@ if(NOT MSVC)
     add_compile_flags_language("-std=c++11" "CXX")
 endif()
 
+if(MSVC)
+    # error C4311: 'type cast': pointer truncation from 'HANDLE' to 'INT'
+    replace_compile_flags("/we4311" " ")
+endif()
+
 remove_definitions(-D_WIN32_WINNT=0x502)
 add_definitions(-D_WIN32_WINNT=0x600)
 
@@ -25,16 +30,22 @@ include_directories(
     ${REACTOS_SOURCE_DIR})
 
 list(APPEND SOURCE
+    CActiveDesktop.cpp
+    CActiveDesktop.h
     CIDLDataObj.cpp
     CQueryAssociations.cpp
+    changenotify.cpp
     debughlp.cpp
     dialogs/dialogs.cpp
     dialogs/drive.cpp
     dialogs/drvdefext.cpp
-    dialogs/folder_options.cpp
     dialogs/filedefext.cpp
+    dialogs/filetypes.cpp
+    dialogs/folder_options.cpp
     dialogs/fprop.cpp
+    dialogs/general.cpp
     dialogs/recycler_prop.cpp
+    dialogs/view.cpp
     CDropTargetHelper.cpp
     CEnumIDListBase.cpp
     CExtractIcon.cpp
@@ -57,6 +68,7 @@ list(APPEND SOURCE
     folders/CRegFolder.cpp
     droptargets/CexeDropHandler.cpp
     droptargets/CFSDropTarget.cpp
+    droptargets/CRecyclerDropTarget.cpp
     shlexec.cpp
     shlfileop.cpp
     shlfolder.cpp
@@ -66,24 +78,25 @@ list(APPEND SOURCE
     CDefViewBckgrndMenu.cpp
     stubs.cpp
     systray.cpp
+    CUserNotification.cpp
     CDefaultContextMenu.cpp
     COpenWithMenu.cpp
     CNewMenu.cpp
+    CSendToMenu.cpp
     CShellDispatch.cpp
     CFolder.cpp
     CFolderItems.cpp
     CFolderItemVerbs.cpp
-	unimplemented.cpp
     precomp.h)
 
 file(GLOB_RECURSE shell32_rc_deps res/*.*)
 list(APPEND shell32_rc_deps ${CMAKE_CURRENT_BINARY_DIR}/shell32_shldisp.tlb)
 add_rc_deps(shell32.rc ${shell32_rc_deps})
 
-add_library(shell32 SHARED
+add_library(shell32 MODULE
     ${SOURCE}
+    wine/appbar.c
     wine/brsfolder.c
-    wine/changenotify.c
     wine/classes.c
     wine/clipboard.c
     wine/control.c
@@ -106,8 +119,8 @@ add_typelib(shell32_shldisp.idl)
 set_source_files_properties(shell32.rc PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/shell32_shldisp.tlb)
 
 set_module_type(shell32 win32dll UNICODE)
-target_link_libraries(shell32 shellmenu shelldesktop atlnew wine uuid recyclebin)
-add_delay_importlibs(shell32 powrprof shdocvw devmgr winspool winmm mpr uxtheme ole32 oleaut32 userenv browseui version fmifs)
+target_link_libraries(shell32 shellmenu shelldesktop wine uuid recyclebin)
+add_delay_importlibs(shell32 powrprof shdocvw devmgr winspool.drv winmm mpr uxtheme ole32 oleaut32 userenv browseui version fmifs)
 add_importlibs(shell32 advapi32 gdi32 user32 comctl32 comdlg32 shlwapi msvcrt kernel32 ntdll)
 add_dependencies(shell32 stdole2) # shell32_shldisp.tlb needs stdole2.tlb
 add_pch(shell32 precomp.h SOURCE)

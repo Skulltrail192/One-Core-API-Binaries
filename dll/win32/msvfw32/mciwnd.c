@@ -21,12 +21,18 @@
  * Add support for MCIWNDF_RECORD.
  */
 
-#include "msvideo_private.h"
+#include <stdarg.h>
 
-#include <winternl.h>
-#include <digitalv.h>
-#include <commctrl.h>
-#include <wine/unicode.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winternl.h"
+#include "vfw.h"
+#include "digitalv.h"
+#include "commctrl.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(mci);
 
@@ -193,7 +199,7 @@ static void MCIWND_UpdateState(MCIWndInfo *mwi)
         return;
 
     if ((mwi->dwStyle & MCIWNDF_SHOWNAME) && mwi->lpName)
-        strcpyW(buffer, mwi->lpName);
+        lstrcpyW(buffer, mwi->lpName);
     else
         *buffer = 0;
 
@@ -202,8 +208,8 @@ static void MCIWND_UpdateState(MCIWndInfo *mwi)
         static const WCHAR spaceW[] = {' ',0};
         static const WCHAR l_braceW[] = {'(',0};
 
-        if (*buffer) strcatW(buffer, spaceW);
-        strcatW(buffer, l_braceW);
+        if (*buffer) lstrcatW(buffer, spaceW);
+        lstrcatW(buffer, l_braceW);
     }
 
     if (mwi->dwStyle & MCIWNDF_SHOWPOS)
@@ -212,13 +218,13 @@ static void MCIWND_UpdateState(MCIWndInfo *mwi)
 
         posW[0] = 0;
         SendMessageW(mwi->hWnd, MCIWNDM_GETPOSITIONW, 64, (LPARAM)posW);
-        strcatW(buffer, posW);
+        lstrcatW(buffer, posW);
     }
 
     if ((mwi->dwStyle & (MCIWNDF_SHOWPOS|MCIWNDF_SHOWMODE)) == (MCIWNDF_SHOWPOS|MCIWNDF_SHOWMODE))
     {
         static const WCHAR dashW[] = {' ','-',' ',0};
-        strcatW(buffer, dashW);
+        lstrcatW(buffer, dashW);
     }
 
     if (mwi->dwStyle & MCIWNDF_SHOWMODE)
@@ -227,13 +233,13 @@ static void MCIWND_UpdateState(MCIWndInfo *mwi)
 
         modeW[0] = 0;
         SendMessageW(mwi->hWnd, MCIWNDM_GETMODEW, 64, (LPARAM)modeW);
-        strcatW(buffer, modeW);
+        lstrcatW(buffer, modeW);
     }
 
     if (mwi->dwStyle & (MCIWNDF_SHOWPOS|MCIWNDF_SHOWMODE))
     {
         static const WCHAR r_braceW[] = {')',0};
-        strcatW(buffer, r_braceW);
+        lstrcatW(buffer, r_braceW);
     }
 
     TRACE("=> %s\n", debugstr_w(buffer));
@@ -583,8 +589,8 @@ static LRESULT WINAPI MCIWndProc(HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM lPa
             mwi->mci = mci_open.wDeviceID;
             mwi->alias = HandleToLong(hWnd) + 1;
 
-            mwi->lpName = HeapAlloc(GetProcessHeap(), 0, (strlenW((LPWSTR)lParam) + 1) * sizeof(WCHAR));
-            strcpyW(mwi->lpName, (LPWSTR)lParam);
+            mwi->lpName = HeapAlloc(GetProcessHeap(), 0, (lstrlenW((LPWSTR)lParam) + 1) * sizeof(WCHAR));
+            lstrcpyW(mwi->lpName, (LPWSTR)lParam);
 
             MCIWND_UpdateState(mwi);
 
@@ -980,7 +986,7 @@ end_of_mci_open:
 
             TRACE("MCIWNDM_SENDSTRINGW %s\n", debugstr_w((LPCWSTR)lParam));
 
-            p = strchrW((LPCWSTR)lParam, ' ');
+            p = wcschr((LPCWSTR)lParam, ' ');
             if (p)
             {
                 static const WCHAR formatW[] = {'%','d',' ',0};
@@ -993,14 +999,13 @@ end_of_mci_open:
 
                 memcpy(cmdW, (void *)lParam, pos * sizeof(WCHAR));
                 wsprintfW(cmdW + pos, formatW, mwi->alias);
-                strcatW(cmdW, (WCHAR *)lParam + pos);
+                lstrcatW(cmdW, (WCHAR *)lParam + pos);
             }
             else
                 cmdW = (LPWSTR)lParam;
 
             mwi->lasterror = mciSendStringW(cmdW, mwi->return_string,
-                                            sizeof(mwi->return_string)/sizeof(mwi->return_string[0]),
-                                            0);
+                                            ARRAY_SIZE(mwi->return_string), 0);
             if (mwi->lasterror)
                 MCIWND_notify_error(mwi);
 
@@ -1176,7 +1181,7 @@ end_of_mci_open:
             {
                 cmdW = HeapAlloc(GetProcessHeap(), 0, (lstrlenW((LPCWSTR)lParam) + 64) * sizeof(WCHAR));
                 wsprintfW(cmdW, formatW, mwi->alias);
-                strcatW(cmdW, (WCHAR *)lParam);
+                lstrcatW(cmdW, (WCHAR *)lParam);
 
                 mwi->lasterror = mciSendStringW(cmdW, NULL, 0, 0);
 

@@ -22,6 +22,7 @@
 #define __WINE_RPC_SERVER_H
 
 #include "rpc_binding.h"
+#include "wine/list.h"
 
 struct protseq_ops;
 
@@ -36,8 +37,8 @@ typedef struct _RpcServerProtseq
   struct list connections; /* CS cs */
   CRITICAL_SECTION cs;
 
-  /* is the server currently listening? */
-  BOOL is_listening; /* CS ::listen_cs */
+  /* handle to listening thread */
+  HANDLE server_thread; /* CS ::listen_cs */
   /* mutex for ensuring only one thread can change state at a time */
   HANDLE mgr_mutex;
   /* set when server thread has finished opening connections */

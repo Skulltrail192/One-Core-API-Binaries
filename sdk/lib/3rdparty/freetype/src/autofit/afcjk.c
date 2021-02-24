@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    Auto-fitter hinting routines for CJK writing system (body).          */
 /*                                                                         */
-/*  Copyright 2006-2017 by                                                 */
+/*  Copyright 2006-2018 by                                                 */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -16,9 +16,9 @@
 /***************************************************************************/
 
   /*
-   *  The algorithm is based on akito's autohint patch, available here:
+   *  The algorithm is based on akito's autohint patch, archived at
    *
-   *  http://www.kde.gr.jp/~akito/patch/freetype2/
+   *  https://web.archive.org/web/20051219160454/http://www.kde.gr.jp:80/~akito/patch/freetype2/2.1.7/
    *
    */
 
@@ -73,6 +73,7 @@
     /* scan the array of segments in each direction */
 #ifdef __REACTOS__
     AF_GlyphHintsRec *hints = malloc(sizeof(AF_GlyphHintsRec));
+    if (!hints) return;
 #else
     AF_GlyphHintsRec  hints[1];
 #endif
@@ -95,6 +96,9 @@
       int               dim;
 #ifdef __REACTOS__
       AF_CJKMetricsRec *dummy = malloc(sizeof(AF_CJKMetricsRec));
+      if (!dummy)
+        goto Exit;
+      {
 #else
       AF_CJKMetricsRec  dummy[1];
 #endif
@@ -274,6 +278,7 @@
       }
 #ifdef __REACTOS__
       free(dummy);
+      }
 #endif
     }
 
@@ -2287,13 +2292,7 @@
       goto Exit;
 
     /* analyze glyph outline */
-#ifdef AF_CONFIG_OPTION_USE_WARPER
-    if ( ( metrics->root.scaler.render_mode == FT_RENDER_MODE_LIGHT &&
-           AF_HINTS_DO_WARP( hints )                                ) ||
-         AF_HINTS_DO_HORIZONTAL( hints )                              )
-#else
     if ( AF_HINTS_DO_HORIZONTAL( hints ) )
-#endif
     {
       error = af_cjk_hints_detect_features( hints, AF_DIMENSION_HORZ );
       if ( error )
@@ -2319,9 +2318,9 @@
       {
 
 #ifdef AF_CONFIG_OPTION_USE_WARPER
-        if ( dim == AF_DIMENSION_HORZ                                 &&
-             metrics->root.scaler.render_mode == FT_RENDER_MODE_LIGHT &&
-             AF_HINTS_DO_WARP( hints )                                )
+        if ( dim == AF_DIMENSION_HORZ                                  &&
+             metrics->root.scaler.render_mode == FT_RENDER_MODE_NORMAL &&
+             AF_HINTS_DO_WARP( hints )                                 )
         {
           AF_WarperRec  warper;
           FT_Fixed      scale;

@@ -88,7 +88,7 @@ MiCreatePebOrTeb(IN PEPROCESS Process,
     *BaseAddress = 0;
     Status = MiInsertVadEx((PMMVAD)Vad,
                            BaseAddress,
-                           BYTES_TO_PAGES(Size),
+                           Size,
                            HighestAddress,
                            PAGE_SIZE,
                            MEM_TOP_DOWN);
@@ -175,6 +175,7 @@ MmDeleteKernelStack(IN PVOID StackBase,
     PMMPFN Pfn1, Pfn2;
     ULONG i;
     KIRQL OldIrql;
+    PSLIST_ENTRY SListEntry;
 
     //
     // This should be the guard page, so decrement by one
@@ -189,9 +190,8 @@ MmDeleteKernelStack(IN PVOID StackBase,
     {
         if (ExQueryDepthSList(&MmDeadStackSListHead) < MmMaximumDeadKernelStacks)
         {
-            Pfn1 = MiGetPfnEntry(PointerPte->u.Hard.PageFrameNumber);
-            InterlockedPushEntrySList(&MmDeadStackSListHead,
-                                      (PSLIST_ENTRY)&Pfn1->u1.NextStackPfn);
+            SListEntry = ((PSLIST_ENTRY)StackBase) - 1;
+            InterlockedPushEntrySList(&MmDeadStackSListHead, SListEntry);
             return;
         }
     }
@@ -203,7 +203,7 @@ MmDeleteKernelStack(IN PVOID StackBase,
                                 MmLargeStackSize : KERNEL_STACK_SIZE);
 
     /* Acquire the PFN lock */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     //
     // Loop them
@@ -245,7 +245,7 @@ MmDeleteKernelStack(IN PVOID StackBase,
     ASSERT(PointerPte->u.Hard.Valid == 0);
 
     /* Release the PFN lock */
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     //
     // Release the PTEs
@@ -265,7 +265,7 @@ MmCreateKernelStack(IN BOOLEAN GuiStack,
     KIRQL OldIrql;
     PFN_NUMBER PageFrameIndex;
     ULONG i;
-    PMMPFN Pfn1;
+    PSLIST_ENTRY SListEntry;
 
     //
     // Calculate pages needed
@@ -286,11 +286,10 @@ MmCreateKernelStack(IN BOOLEAN GuiStack,
         //
         if (ExQueryDepthSList(&MmDeadStackSListHead))
         {
-            Pfn1 = (PMMPFN)InterlockedPopEntrySList(&MmDeadStackSListHead);
-            if (Pfn1)
+            SListEntry = InterlockedPopEntrySList(&MmDeadStackSListHead);
+            if (SListEntry != NULL)
             {
-                PointerPte = Pfn1->PteAddress;
-                BaseAddress = MiPteToAddress(++PointerPte);
+                BaseAddress = (SListEntry + 1);
                 return BaseAddress;
             }
         }
@@ -330,7 +329,7 @@ MmCreateKernelStack(IN BOOLEAN GuiStack,
     //
     // Acquire the PFN DB lock
     //
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     //
     // Loop each stack page
@@ -359,7 +358,7 @@ MmCreateKernelStack(IN BOOLEAN GuiStack,
     //
     // Release the PFN lock
     //
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     //
     // Return the stack address
@@ -406,7 +405,6 @@ MmGrowKernelStackEx(IN PVOID StackPointer,
         //
         // Sorry!
         //
-        DPRINT1("Thread wants too much stack\n");
         return STATUS_STACK_OVERFLOW;
     }
 
@@ -421,7 +419,7 @@ MmGrowKernelStackEx(IN PVOID StackPointer,
     //
     // Acquire the PFN DB lock
     //
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     //
     // Loop each stack page
@@ -447,7 +445,7 @@ MmGrowKernelStackEx(IN PVOID StackPointer,
     //
     // Release the PFN lock
     //
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     //
     // Set the new limit
@@ -855,10 +853,10 @@ MiInitializeWorkingSetList(IN PEPROCESS CurrentProcess)
     MmWorkingSetList->HashTable = NULL;
     MmWorkingSetList->HashTableSize = 0;
     MmWorkingSetList->NumberOfImageWaiters = 0;
-    MmWorkingSetList->Wsle = (PVOID)0xDEADBABE;
+    MmWorkingSetList->Wsle = (PVOID)(ULONG_PTR)0xDEADBABEDEADBABEULL;
     MmWorkingSetList->VadBitMapHint = 1;
-    MmWorkingSetList->HashTableStart = (PVOID)0xBADAB00B;
-    MmWorkingSetList->HighestPermittedHashAddress = (PVOID)0xCAFEBABE;
+    MmWorkingSetList->HashTableStart = (PVOID)(ULONG_PTR)0xBADAB00BBADAB00BULL;
+    MmWorkingSetList->HighestPermittedHashAddress = (PVOID)(ULONG_PTR)0xCAFEBABECAFEBABEULL;
     MmWorkingSetList->FirstFree = 1;
     MmWorkingSetList->FirstDynamic = 2;
     MmWorkingSetList->NextSlot = 3;
@@ -918,7 +916,7 @@ MmInitializeProcessAddressSpace(IN PEPROCESS Process,
     Process->VadRoot.BalancedRoot.u1.Parent = &Process->VadRoot.BalancedRoot;
 
     /* Lock PFN database */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* Setup the PFN for the PDE base of this process */
 #ifdef _M_AMD64
@@ -957,7 +955,7 @@ MmInitializeProcessAddressSpace(IN PEPROCESS Process,
     ASSERT(Process->PhysicalVadRoot == NULL);
 
     /* Release PFN lock */
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     /* Check if there's a Section Object */
     if (SectionObject)
@@ -1029,9 +1027,9 @@ MmInitializeProcessAddressSpace(IN PEPROCESS Process,
     return Status;
 }
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
-INIT_FUNCTION
 MmInitializeHandBuiltProcess(IN PEPROCESS Process,
                              IN PULONG_PTR DirectoryTableBase)
 {
@@ -1054,9 +1052,9 @@ MmInitializeHandBuiltProcess(IN PEPROCESS Process,
     return STATUS_SUCCESS;
 }
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
-INIT_FUNCTION
 MmInitializeHandBuiltProcess2(IN PEPROCESS Process)
 {
     /* Lock the VAD, ARM3-owned ranges away */
@@ -1087,7 +1085,7 @@ MmCreateProcessAddressSpace(IN ULONG MinWs,
     KeInitializeSpinLock(&Process->HyperSpaceLock);
 
     /* Lock PFN database */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* Get a zero page for the PDE, if possible */
     Color = MI_GET_NEXT_PROCESS_COLOR(Process);
@@ -1099,9 +1097,9 @@ MmCreateProcessAddressSpace(IN ULONG MinWs,
         PdeIndex = MiRemoveAnyPage(Color);
 
         /* Zero it outside the PFN lock */
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
         MiZeroPhysicalPage(PdeIndex);
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
     }
 
     /* Get a zero page for hyperspace, if possible */
@@ -1114,9 +1112,9 @@ MmCreateProcessAddressSpace(IN ULONG MinWs,
         HyperIndex = MiRemoveAnyPage(Color);
 
         /* Zero it outside the PFN lock */
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
         MiZeroPhysicalPage(HyperIndex);
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
     }
 
     /* Get a zero page for the woring set list, if possible */
@@ -1129,13 +1127,13 @@ MmCreateProcessAddressSpace(IN ULONG MinWs,
         WsListIndex = MiRemoveAnyPage(Color);
 
         /* Zero it outside the PFN lock */
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
         MiZeroPhysicalPage(WsListIndex);
     }
     else
     {
         /* Release the PFN lock */
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
     }
 
     /* Switch to phase 1 initialization */
@@ -1334,7 +1332,7 @@ MmDeleteProcessAddressSpace2(IN PEPROCESS Process)
     //ASSERT(Process->CommitCharge == 0);
 
     /* Acquire the PFN lock */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* Check for fully initialized process */
     if (Process->AddressSpaceInitialized == 2)
@@ -1378,7 +1376,7 @@ MmDeleteProcessAddressSpace2(IN PEPROCESS Process)
     }
 
     /* Release the PFN lock */
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     /* Drop a reference on the session */
     if (Process->Session) MiReleaseProcessReferenceToSessionDataPage(Process->Session);

@@ -982,7 +982,7 @@ CmDeleteValueKey(IN PCM_KEY_CONTROL_BLOCK Kcb,
         }
 
         /* Get the key value */
-        Value = (PCM_KEY_VALUE)HvGetCell(Hive,ChildCell);
+        Value = (PCM_KEY_VALUE)HvGetCell(Hive, ChildCell);
         ASSERT(Value);
 
         /* Mark it and all related data as dirty */
@@ -1851,7 +1851,7 @@ CmDeleteKey(IN PCM_KEY_BODY KeyBody)
     {
         /* Don't do it twice */
         Status = STATUS_SUCCESS;
-        goto Quickie2;
+        goto Quickie;
     }
 
     /* Get the hive and node */
@@ -1925,7 +1925,7 @@ CmDeleteKey(IN PCM_KEY_BODY KeyBody)
     CmpUnlockHiveFlusher((PCMHIVE)Hive);
 
     /* Release the KCB locks */
-Quickie2:
+Quickie:
     CmpReleaseTwoKcbLockByKey(Kcb->ConvKey, Kcb->ParentKcb->ConvKey);
 
     /* Release hive lock */
@@ -1959,6 +1959,7 @@ CmFlushKey(IN PCM_KEY_CONTROL_BLOCK Kcb,
     {
         /* Don't touch the hive */
         CmpLockHiveFlusherExclusive(CmHive);
+
         ASSERT(CmHive->ViewLock);
         KeAcquireGuardedMutex(CmHive->ViewLock);
         CmHive->ViewLockOwner = KeGetCurrentThread();
@@ -1968,13 +1969,18 @@ CmFlushKey(IN PCM_KEY_CONTROL_BLOCK Kcb,
         {
             /* I don't believe the current Hv does shrinking */
             ASSERT(FALSE);
+            // CMP_ASSERT_EXCLUSIVE_REGISTRY_LOCK_OR_LOADING(CmHive);
         }
         else
         {
             /* Now we can release views */
             ASSERT(CmHive->ViewLock);
-            CMP_ASSERT_EXCLUSIVE_REGISTRY_LOCK_OR_LOADING(CmHive);
-            ASSERT(KeGetCurrentThread() == CmHive->ViewLockOwner);
+            // CMP_ASSERT_VIEW_LOCK_OWNED(CmHive);
+            ASSERT((CmpSpecialBootCondition == TRUE) ||
+                   (CmHive->HiveIsLoading == TRUE) ||
+                   (CmHive->ViewLockOwner == KeGetCurrentThread()) ||
+                   (CmpTestRegistryLockExclusive() == TRUE));
+            CmHive->ViewLockOwner = NULL;
             KeReleaseGuardedMutex(CmHive->ViewLock);
         }
 
@@ -2221,7 +2227,7 @@ CmUnloadKey(IN PCM_KEY_CONTROL_BLOCK Kcb,
     {
         if (Flags != REG_FORCE_UNLOAD)
         {
-            if (CmCountOpenSubKeys(Kcb, FALSE) != 0)
+            if (CmpEnumerateOpenSubKeys(Kcb, FALSE, FALSE) != 0)
             {
                 /* There are open subkeys but we don't force hive unloading, fail */
                 Hive->HiveFlags &= ~HIVE_IS_UNLOADING;
@@ -2230,9 +2236,18 @@ CmUnloadKey(IN PCM_KEY_CONTROL_BLOCK Kcb,
         }
         else
         {
-            DPRINT1("CmUnloadKey: Force unloading is UNIMPLEMENTED, expect dangling KCBs problems!\n");
+            DPRINT1("CmUnloadKey: Force unloading is HALF-IMPLEMENTED, expect dangling KCBs problems!\n");
+            if (CmpEnumerateOpenSubKeys(Kcb, TRUE, TRUE) != 0)
+            {
+                /* There are open subkeys that we cannot force to unload, fail */
+                Hive->HiveFlags &= ~HIVE_IS_UNLOADING;
+                return STATUS_CANNOT_DELETE;
+            }
         }
     }
+
+    /* Set the loading flag */
+    CmHive->HiveIsLoading = TRUE;
 
     /* Flush the hive */
     CmFlushKey(Kcb, TRUE);
@@ -2242,10 +2257,19 @@ CmUnloadKey(IN PCM_KEY_CONTROL_BLOCK Kcb,
     {
         DPRINT("CmpUnlinkHiveFromMaster() failed!\n");
 
-        /* Remove the unloading flag and return failure */
+        /* Remove the unloading flag */
         Hive->HiveFlags &= ~HIVE_IS_UNLOADING;
+
+        /* Reset the loading flag */
+        CmHive->HiveIsLoading = FALSE;
+
+        /* Return failure */
         return STATUS_INSUFFICIENT_RESOURCES;
     }
+
+    /* Flush any notifications if we force hive unloading */
+    if (Flags == REG_FORCE_UNLOAD)
+        CmpFlushNotifiesOnKeyBodyList(Kcb, TRUE); // Lock is already held
 
     /* Clean up information we have on the subkey */
     CmpCleanUpSubKeyInfo(Kcb->ParentKcb);
@@ -2272,6 +2296,10 @@ CmUnloadKey(IN PCM_KEY_CONTROL_BLOCK Kcb,
     /* Remove the hive from the hive file list */
     CmpRemoveFromHiveFileList(CmHive);
 
+/**
+ ** NOTE:
+ ** The following code is mostly equivalent to what we "call" CmpDestroyHive()
+ **/
     /* Destroy the security descriptor cache */
     CmpDestroySecurityCache(CmHive);
 
@@ -2296,8 +2324,10 @@ CmUnloadKey(IN PCM_KEY_CONTROL_BLOCK Kcb,
 
 ULONG
 NTAPI
-CmCountOpenSubKeys(IN PCM_KEY_CONTROL_BLOCK RootKcb,
-                   IN BOOLEAN RemoveEmptyCacheEntries)
+CmpEnumerateOpenSubKeys(
+    IN PCM_KEY_CONTROL_BLOCK RootKcb,
+    IN BOOLEAN RemoveEmptyCacheEntries,
+    IN BOOLEAN DereferenceOpenedEntries)
 {
     PCM_KEY_HASH Entry;
     PCM_KEY_CONTROL_BLOCK CachedKcb;
@@ -2306,9 +2336,9 @@ CmCountOpenSubKeys(IN PCM_KEY_CONTROL_BLOCK RootKcb,
     ULONG i, j;
     ULONG SubKeys = 0;
 
-    DPRINT("CmCountOpenSubKeys() called\n");
+    DPRINT("CmpEnumerateOpenSubKeys() called\n");
 
-    /* The root key is the only referenced key. There are no refereced sub keys. */
+    /* The root key is the only referenced key. There are no referenced sub keys. */
     if (RootKcb->RefCount == 1)
     {
         DPRINT("Open sub keys: 0\n");
@@ -2347,10 +2377,43 @@ CmCountOpenSubKeys(IN PCM_KEY_CONTROL_BLOCK RootKcb,
 
                     if (CachedKcb->RefCount > 0)
                     {
+                        DPRINT("Found a sub key pointing to '%.*s', RefCount = %u\n",
+                               CachedKcb->NameBlock->NameLength, CachedKcb->NameBlock->Name,
+                               CachedKcb->RefCount);
+
+                        /* If we dereference opened KCBs, don't touch read-only keys */
+                        if (DereferenceOpenedEntries &&
+                            !(CachedKcb->ExtFlags & CM_KCB_READ_ONLY_KEY))
+                        {
+                            /* Registry needs to be locked down */
+                            CMP_ASSERT_EXCLUSIVE_REGISTRY_LOCK();
+
+                            /* Flush any notifications */
+                            CmpFlushNotifiesOnKeyBodyList(CachedKcb, TRUE); // Lock is already held
+
+                            /* Clean up information we have on the subkey */
+                            CmpCleanUpSubKeyInfo(CachedKcb->ParentKcb);
+
+                            /* Get and cache the next cache entry */
+                            // Entry = Entry->NextHash;
+                            Entry = CachedKcb->NextHash;
+
+                            /* Set the KCB in delete mode and remove it */
+                            CachedKcb->Delete = TRUE;
+                            CmpRemoveKeyControlBlock(CachedKcb);
+
+                            /* Clear the cell */
+                            CachedKcb->KeyCell = HCELL_NIL;
+
+                            /* Restart with the next cache entry */
+                            continue;
+                        }
+                        /* Else, the key cannot be dereferenced, and we count it as in use */
+
                         /* Count the current hash entry if it is in use */
                         SubKeys++;
                     }
-                    else if ((CachedKcb->RefCount == 0) && (RemoveEmptyCacheEntries != FALSE))
+                    else if ((CachedKcb->RefCount == 0) && RemoveEmptyCacheEntries)
                     {
                         /* Remove the current key from the delayed close list */
                         CmpRemoveFromDelayedClose(CachedKcb);
@@ -2370,7 +2433,9 @@ CmCountOpenSubKeys(IN PCM_KEY_CONTROL_BLOCK RootKcb,
         }
     }
 
-    DPRINT("Open sub keys: %u\n", SubKeys);
+    if (SubKeys > 0)
+        DPRINT1("Open sub keys: %u\n", SubKeys);
+
     return SubKeys;
 }
 

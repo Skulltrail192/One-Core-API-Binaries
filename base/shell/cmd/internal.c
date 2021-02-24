@@ -184,6 +184,8 @@ BOOL SetRootPath(TCHAR *oldpath, TCHAR *InPath)
     TCHAR OutPath[MAX_PATH];
     TCHAR OutPathTemp[MAX_PATH];
 
+    StripQuotes(InPath);
+
     /* Retrieve the full path name from the (possibly relative) InPath */
     if (GetFullPathName(InPath, MAX_PATH, OutPathTemp, NULL) == 0)
         goto Fail;
@@ -282,7 +284,7 @@ INT cmd_chdir (LPTSTR param)
 #ifdef INCLUDE_CMD_MKDIR
 
 /* Helper function for mkdir to make directories in a path.
-Dont use the api to decrease depence on libs */
+Don't use the api to decrease dependence on libs */
 BOOL
 MakeFullPath(TCHAR * DirPath)
 {
@@ -509,30 +511,43 @@ INT cmd_rmdir (LPTSTR param)
 /*
  * set the exitflag to true
  */
-INT CommandExit (LPTSTR param)
+INT CommandExit(LPTSTR param)
 {
-    if (!_tcsncmp (param, _T("/?"), 2))
+    if (!_tcsncmp(param, _T("/?"), 2))
     {
-        ConOutResPaging(TRUE,STRING_EXIT_HELP);
-        /* Just make sure */
+        ConOutResPaging(TRUE, STRING_EXIT_HELP);
+
+        /* Just make sure we don't exit */
         bExit = FALSE;
-        /* Dont exit */
         return 0;
     }
 
-    if (bc != NULL && _tcsnicmp(param,_T("/b"),2) == 0)
+    if (_tcsnicmp(param, _T("/b"), 2) == 0)
     {
         param += 2;
-        while (_istspace (*param))
-            param++;
-        if (_istdigit(*param))
-            nErrorLevel = _ttoi(param);
-        ExitBatch();
+
+        /*
+         * If a current batch file is running, exit it,
+         * otherwise exit this command interpreter instance.
+         */
+        if (bc)
+            ExitBatch();
+        else
+            bExit = TRUE;
     }
     else
     {
+        /* Exit this command interpreter instance */
         bExit = TRUE;
     }
+
+    /* Search for an optional exit code */
+    while (_istspace(*param))
+        param++;
+
+    /* Set the errorlevel to the exit code */
+    if (_istdigit(*param))
+        nErrorLevel = _ttoi(param);
 
     return 0;
 }

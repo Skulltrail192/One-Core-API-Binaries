@@ -2,6 +2,7 @@
  * iphlpapi dll implementation
  *
  * Copyright (C) 2003 Juan Lang
+ *               2018 Pierre Schweitzer
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,6 +23,8 @@
 
 #include <config.h>
 #include "iphlpapi_private.h"
+#include <strsafe.h>
+#include <psapi.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(iphlpapi);
 
@@ -106,8 +109,8 @@ DWORD WINAPI AllocateAndGetIfTableFromStack(PMIB_IFTABLE *ppIfTable,
 {
   DWORD ret;
 
-  TRACE("ppIfTable %p, bOrder %ld, heap 0x%08lx, flags 0x%08lx\n", ppIfTable,
-   (DWORD)bOrder, (DWORD)heap, flags);
+  TRACE("ppIfTable %p, bOrder %ld, heap 0x%p, flags 0x%08lx\n", ppIfTable,
+   (DWORD)bOrder, heap, flags);
   if (!ppIfTable)
     ret = ERROR_INVALID_PARAMETER;
   else {
@@ -150,8 +153,8 @@ DWORD WINAPI AllocateAndGetIpAddrTableFromStack(PMIB_IPADDRTABLE *ppIpAddrTable,
 {
   DWORD ret;
 
-  TRACE("ppIpAddrTable %p, bOrder %ld, heap 0x%08lx, flags 0x%08lx\n",
-   ppIpAddrTable, (DWORD)bOrder, (DWORD)heap, flags);
+  TRACE("ppIpAddrTable %p, bOrder %ld, heap 0x%p, flags 0x%08lx\n",
+   ppIpAddrTable, (DWORD)bOrder, heap, flags);
   if (!ppIpAddrTable)
     ret = ERROR_INVALID_PARAMETER;
   else {
@@ -192,8 +195,8 @@ DWORD WINAPI AllocateAndGetIpForwardTableFromStack(PMIB_IPFORWARDTABLE *
 {
   DWORD ret;
 
-  TRACE("ppIpForwardTable %p, bOrder %ld, heap 0x%08lx, flags 0x%08lx\n",
-   ppIpForwardTable, (DWORD)bOrder, (DWORD)heap, flags);
+  TRACE("ppIpForwardTable %p, bOrder %ld, heap 0x%p, flags 0x%08lx\n",
+   ppIpForwardTable, (DWORD)bOrder, heap, flags);
   if (!ppIpForwardTable)
     ret = ERROR_INVALID_PARAMETER;
   else {
@@ -236,8 +239,8 @@ DWORD WINAPI AllocateAndGetIpNetTableFromStack(PMIB_IPNETTABLE *ppIpNetTable,
 {
   DWORD ret;
 
-  TRACE("ppIpNetTable %p, bOrder %ld, heap 0x%08lx, flags 0x%08lx\n",
-   ppIpNetTable, (DWORD)bOrder, (DWORD)heap, flags);
+  TRACE("ppIpNetTable %p, bOrder %ld, heap 0x%p, flags 0x%08lx\n",
+   ppIpNetTable, (DWORD)bOrder, heap, flags);
   if (!ppIpNetTable)
     ret = ERROR_INVALID_PARAMETER;
   else {
@@ -280,8 +283,8 @@ DWORD WINAPI AllocateAndGetTcpTableFromStack(PMIB_TCPTABLE *ppTcpTable,
 {
   DWORD ret;
 
-  TRACE("ppTcpTable %p, bOrder %ld, heap 0x%08lx, flags 0x%08lx\n",
-   ppTcpTable, (DWORD)bOrder, (DWORD)heap, flags);
+  TRACE("ppTcpTable %p, bOrder %ld, heap 0x%p, flags 0x%08lx\n",
+   ppTcpTable, (DWORD)bOrder, heap, flags);
   if (!ppTcpTable)
     ret = ERROR_INVALID_PARAMETER;
   else {
@@ -292,6 +295,97 @@ DWORD WINAPI AllocateAndGetTcpTableFromStack(PMIB_TCPTABLE *ppTcpTable,
     if (ret == ERROR_INSUFFICIENT_BUFFER) {
       *ppTcpTable = (PMIB_TCPTABLE)HeapAlloc(heap, flags, dwSize);
       ret = GetTcpTable(*ppTcpTable, &dwSize, bOrder);
+      if (ret != NO_ERROR) {
+        HeapFree(heap, flags, *ppTcpTable);
+        *ppTcpTable = NULL;
+      }
+    }
+  }
+  TRACE("returning %ld\n", ret);
+  return ret;
+}
+
+
+/******************************************************************
+ *    AllocateAndGetTcpExTableFromStack (IPHLPAPI.@)
+ *
+ *
+ * PARAMS
+ *
+ *  ppTcpTable [Out]
+ *  bOrder [In] -- passed to GetExtendedTcpTable to order the table
+ *  heap [In] -- heap from which the table is allocated
+ *  flags [In] -- flags to HeapAlloc
+ *  family [In] -- passed to GetExtendedTcpTable to select INET family
+ *
+ * RETURNS
+ *
+ *  DWORD
+ *
+ */
+DWORD WINAPI AllocateAndGetTcpExTableFromStack(PVOID *ppTcpTable,
+ BOOL bOrder, HANDLE heap, DWORD flags, DWORD family)
+{
+  DWORD ret;
+
+  TRACE("ppTcpTable %p, bOrder %ld, heap 0x%p, flags 0x%08lx, family 0x%08lx\n",
+   ppTcpTable, (DWORD)bOrder, heap, flags, family);
+  if (!ppTcpTable)
+    ret = ERROR_INVALID_PARAMETER;
+  else {
+    DWORD dwSize = 0;
+
+    *ppTcpTable = NULL;
+    ret = GetExtendedTcpTable(*ppTcpTable, &dwSize, bOrder, family, TCP_TABLE_OWNER_PID_ALL, 0);
+    if (ret == ERROR_INSUFFICIENT_BUFFER) {
+      *ppTcpTable = (PMIB_TCPTABLE_OWNER_PID)HeapAlloc(heap, flags, dwSize);
+      ret = GetExtendedTcpTable(*ppTcpTable, &dwSize, bOrder, family, TCP_TABLE_OWNER_PID_ALL, 0);
+      if (ret != NO_ERROR) {
+        HeapFree(heap, flags, *ppTcpTable);
+        *ppTcpTable = NULL;
+      }
+    }
+  }
+  TRACE("returning %ld\n", ret);
+  return ret;
+}
+
+
+/******************************************************************
+ *    AllocateAndGetTcpExTable2FromStack (IPHLPAPI.@)
+ *
+ *
+ * PARAMS
+ *
+ *  ppTcpTable [Out]
+ *  bOrder [In] -- passed to GetExtendedTcpTable to order the table
+ *  heap [In] -- heap from which the table is allocated
+ *  flags [In] -- flags to HeapAlloc
+ *  family [In] -- passed to GetExtendedTcpTable to select INET family
+ *  class [In] -- passed to GetExtendedTcpTable to select information
+ *
+ * RETURNS
+ *
+ *  DWORD
+ *
+ */
+DWORD WINAPI AllocateAndGetTcpExTable2FromStack(PVOID *ppTcpTable,
+ BOOL bOrder, HANDLE heap, DWORD flags, DWORD family, TCP_TABLE_CLASS class)
+{
+  DWORD ret;
+
+  TRACE("ppTcpTable %p, bOrder %ld, heap 0x%p, flags 0x%08lx, family %ld, class %ld\n",
+   ppTcpTable, (DWORD)bOrder, heap, flags, family, class);
+  if (!ppTcpTable)
+    ret = ERROR_INVALID_PARAMETER;
+  else {
+    DWORD dwSize = 0;
+
+    *ppTcpTable = NULL;
+    ret = GetExtendedTcpTable(*ppTcpTable, &dwSize, bOrder, family, class, 0);
+    if (ret == ERROR_INSUFFICIENT_BUFFER) {
+      *ppTcpTable = HeapAlloc(heap, flags, dwSize);
+      ret = GetExtendedTcpTable(*ppTcpTable, &dwSize, bOrder, family, class, 0);
       if (ret != NO_ERROR) {
         HeapFree(heap, flags, *ppTcpTable);
         *ppTcpTable = NULL;
@@ -324,8 +418,8 @@ DWORD WINAPI AllocateAndGetUdpTableFromStack(PMIB_UDPTABLE *ppUdpTable,
 {
   DWORD ret;
 
-  TRACE("ppUdpTable %p, bOrder %ld, heap 0x%08lx, flags 0x%08lx\n",
-   ppUdpTable, (DWORD)bOrder, (DWORD)heap, flags);
+  TRACE("ppUdpTable %p, bOrder %ld, heap 0x%p, flags 0x%08lx\n",
+   ppUdpTable, (DWORD)bOrder, heap, flags);
   if (!ppUdpTable)
     ret = ERROR_INVALID_PARAMETER;
   else {
@@ -336,6 +430,97 @@ DWORD WINAPI AllocateAndGetUdpTableFromStack(PMIB_UDPTABLE *ppUdpTable,
     if (ret == ERROR_INSUFFICIENT_BUFFER) {
       *ppUdpTable = (PMIB_UDPTABLE)HeapAlloc(heap, flags, dwSize);
       ret = GetUdpTable(*ppUdpTable, &dwSize, bOrder);
+      if (ret != NO_ERROR) {
+        HeapFree(heap, flags, *ppUdpTable);
+        *ppUdpTable = NULL;
+      }
+    }
+  }
+  TRACE("returning %ld\n", ret);
+  return ret;
+}
+
+
+/******************************************************************
+ *    AllocateAndGetUdpExTableFromStack (IPHLPAPI.@)
+ *
+ *
+ * PARAMS
+ *
+ *  ppUdpTable [Out]
+ *  bOrder [In] -- passed to GetExtendedUdpTable to order the table
+ *  heap [In] -- heap from which the table is allocated
+ *  flags [In] -- flags to HeapAlloc
+ *  family [In] -- passed to GetExtendedUdpTable to select INET family
+ *
+ * RETURNS
+ *
+ *  DWORD
+ *
+ */
+DWORD WINAPI AllocateAndGetUdpExTableFromStack(PVOID *ppUdpTable,
+ BOOL bOrder, HANDLE heap, DWORD flags, DWORD family)
+{
+  DWORD ret;
+
+  TRACE("ppUdpTable %p, bOrder %ld, heap 0x%p, flags 0x%08lx, family 0x%08lx\n",
+   ppUdpTable, (DWORD)bOrder, heap, flags, family);
+  if (!ppUdpTable)
+    ret = ERROR_INVALID_PARAMETER;
+  else {
+    DWORD dwSize = 0;
+
+    *ppUdpTable = NULL;
+    ret = GetExtendedUdpTable(*ppUdpTable, &dwSize, bOrder, family, UDP_TABLE_OWNER_PID, 0);
+    if (ret == ERROR_INSUFFICIENT_BUFFER) {
+      *ppUdpTable = (PMIB_UDPTABLE_OWNER_PID)HeapAlloc(heap, flags, dwSize);
+      ret = GetExtendedUdpTable(*ppUdpTable, &dwSize, bOrder, family, UDP_TABLE_OWNER_PID, 0);
+      if (ret != NO_ERROR) {
+        HeapFree(heap, flags, *ppUdpTable);
+        *ppUdpTable = NULL;
+      }
+    }
+  }
+  TRACE("returning %ld\n", ret);
+  return ret;
+}
+
+
+/******************************************************************
+ *    AllocateAndGetUdpExTable2FromStack (IPHLPAPI.@)
+ *
+ *
+ * PARAMS
+ *
+ *  ppUdpTable [Out]
+ *  bOrder [In] -- passed to GetExtendedUdpTable to order the table
+ *  heap [In] -- heap from which the table is allocated
+ *  flags [In] -- flags to HeapAlloc
+ *  family [In] -- passed to GetExtendedUdpTable to select INET family
+ *  class [In] -- passed to GetExtendedUdpTable to select information
+ *
+ * RETURNS
+ *
+ *  DWORD
+ *
+ */
+DWORD WINAPI AllocateAndGetUdpExTable2FromStack(PVOID *ppUdpTable,
+ BOOL bOrder, HANDLE heap, DWORD flags, DWORD family, UDP_TABLE_CLASS class)
+{
+  DWORD ret;
+
+  TRACE("ppUdpTable %p, bOrder %ld, heap 0x%p, flags 0x%08lx, family %ld, class %ld\n",
+   ppUdpTable, (DWORD)bOrder, heap, flags, family, class);
+  if (!ppUdpTable)
+    ret = ERROR_INVALID_PARAMETER;
+  else {
+    DWORD dwSize = 0;
+
+    *ppUdpTable = NULL;
+    ret = GetExtendedUdpTable(*ppUdpTable, &dwSize, bOrder, family, class, 0);
+    if (ret == ERROR_INSUFFICIENT_BUFFER) {
+      *ppUdpTable = HeapAlloc(heap, flags, dwSize);
+      ret = GetExtendedUdpTable(*ppUdpTable, &dwSize, bOrder, family, class, 0);
       if (ret != NO_ERROR) {
         HeapFree(heap, flags, *ppUdpTable);
         *ppUdpTable = NULL;
@@ -766,18 +951,19 @@ DWORD WINAPI GetBestRoute(DWORD dwDestAddr, DWORD dwSourceAddr, PMIB_IPFORWARDRO
 
   AllocateAndGetIpForwardTableFromStack(&table, FALSE, GetProcessHeap(), 0);
   if (table) {
-    DWORD ndx, matchedBits, matchedNdx = 0;
+    DWORD ndx, minMaskSize, matchedNdx = 0;
 
-    for (ndx = 0, matchedBits = 0; ndx < table->dwNumEntries; ndx++) {
+    for (ndx = 0, minMaskSize = 255; ndx < table->dwNumEntries; ndx++) {
       if ((dwDestAddr & table->table[ndx].dwForwardMask) ==
        (table->table[ndx].dwForwardDest & table->table[ndx].dwForwardMask)) {
-        DWORD numShifts, mask;
+        DWORD hostMaskSize;
 
-        for (numShifts = 0, mask = table->table[ndx].dwForwardMask;
-         mask && !(mask & 1); mask >>= 1, numShifts++)
-          ;
-        if (numShifts > matchedBits) {
-          matchedBits = numShifts;
+        if (!_BitScanForward(&hostMaskSize, ntohl(table->table[ndx].dwForwardMask)))
+        {
+            hostMaskSize = 32;
+        }
+        if (hostMaskSize < minMaskSize) {
+          minMaskSize = hostMaskSize;
           matchedNdx = ndx;
         }
       }
@@ -789,6 +975,28 @@ DWORD WINAPI GetBestRoute(DWORD dwDestAddr, DWORD dwSourceAddr, PMIB_IPFORWARDRO
   else
     ret = ERROR_OUTOFMEMORY;
   TRACE("returning %ld\n", ret);
+  return ret;
+}
+
+static int TcpTableSorter(const void *a, const void *b)
+{
+  int ret;
+
+  if (a && b) {
+    PMIB_TCPROW rowA = (PMIB_TCPROW)a, rowB = (PMIB_TCPROW)b;
+
+    ret = rowA->dwLocalAddr - rowB->dwLocalAddr;
+    if (ret == 0) {
+      ret = rowA->dwLocalPort - rowB->dwLocalPort;
+      if (ret == 0) {
+        ret = rowA->dwRemoteAddr - rowB->dwRemoteAddr;
+        if (ret == 0)
+          ret = rowA->dwRemotePort - rowB->dwRemotePort;
+      }
+    }
+  }
+  else
+    ret = 0;
   return ret;
 }
 
@@ -814,21 +1022,529 @@ DWORD WINAPI GetBestRoute(DWORD dwDestAddr, DWORD dwSourceAddr, PMIB_IPFORWARDRO
 
 DWORD WINAPI GetExtendedTcpTable(PVOID pTcpTable, PDWORD pdwSize, BOOL bOrder, ULONG ulAf, TCP_TABLE_CLASS TableClass, ULONG Reserved)
 {
+    DWORD i, count, size;
 	DWORD ret = NO_ERROR;
 
-  if (TableClass == TCP_TABLE_OWNER_PID_ALL) {
-    if (*pdwSize == 0) {
-      *pdwSize = sizeof(MIB_TCPTABLE_OWNER_PID);
-      return ERROR_INSUFFICIENT_BUFFER; 
-    } else {
-      ZeroMemory(pTcpTable, sizeof(MIB_TCPTABLE_OWNER_PID));
-      return NO_ERROR;
+    if (!pdwSize)
+    {
+        return ERROR_INVALID_PARAMETER;
     }
+
+    if (ulAf != AF_INET)
+    {
+        UNIMPLEMENTED;
+        return ERROR_INVALID_PARAMETER;
+    }
+
+    switch (TableClass)
+    {
+        case TCP_TABLE_BASIC_ALL:
+        {
+            PMIB_TCPTABLE pOurTcpTable = getTcpTable(ClassBasic);
+            PMIB_TCPTABLE pTheirTcpTable = pTcpTable;
+
+            if (pOurTcpTable)
+            {
+                size = FIELD_OFFSET(MIB_TCPTABLE, table) + pOurTcpTable->dwNumEntries * sizeof(MIB_TCPROW);
+                if (size > *pdwSize || !pTheirTcpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    memcpy(pTheirTcpTable, pOurTcpTable, size);
+
+                    if (bOrder)
+                        qsort(pTheirTcpTable->table, pTheirTcpTable->dwNumEntries,
+                              sizeof(MIB_TCPROW), TcpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(),0, pOurTcpTable);
+            }
+        }
+        break;
+
+        case TCP_TABLE_BASIC_CONNECTIONS:
+        {
+            PMIB_TCPTABLE pOurTcpTable = getTcpTable(ClassBasic);
+            PMIB_TCPTABLE pTheirTcpTable = pTcpTable;
+
+            if (pOurTcpTable)
+            {
+                for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                {
+                    if (pOurTcpTable->table[i].State != MIB_TCP_STATE_LISTEN)
+                    {
+                        ++count;
+                    }
+                }
+
+                size = FIELD_OFFSET(MIB_TCPTABLE, table) + count * sizeof(MIB_TCPROW);
+                if (size > *pdwSize || !pTheirTcpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    pTheirTcpTable->dwNumEntries = count;
+
+                    for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                    {
+                        if (pOurTcpTable->table[i].State != MIB_TCP_STATE_LISTEN)
+                        {
+                            memcpy(&pTheirTcpTable->table[count], &pOurTcpTable->table[i], sizeof(MIB_TCPROW));
+                            ++count;
+                        }
+                    }
+                    ASSERT(count == pTheirTcpTable->dwNumEntries);
+
+                    if (bOrder)
+                        qsort(pTheirTcpTable->table, pTheirTcpTable->dwNumEntries,
+                              sizeof(MIB_TCPROW), TcpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(), 0, pOurTcpTable);
+            }
+        }
+        break;
+
+        case TCP_TABLE_BASIC_LISTENER:
+        {
+            PMIB_TCPTABLE pOurTcpTable = getTcpTable(ClassBasic);
+            PMIB_TCPTABLE pTheirTcpTable = pTcpTable;
+
+            if (pOurTcpTable)
+            {
+                for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                {
+                    if (pOurTcpTable->table[i].State == MIB_TCP_STATE_LISTEN)
+                    {
+                        ++count;
+                    }
+                }
+
+                size = FIELD_OFFSET(MIB_TCPTABLE, table) + count * sizeof(MIB_TCPROW);
+                if (size > *pdwSize || !pTheirTcpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    pTheirTcpTable->dwNumEntries = count;
+
+                    for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                    {
+                        if (pOurTcpTable->table[i].State == MIB_TCP_STATE_LISTEN)
+                        {
+                            memcpy(&pTheirTcpTable->table[count], &pOurTcpTable->table[i], sizeof(MIB_TCPROW));
+                            ++count;
+                        }
+                    }
+                    ASSERT(count == pTheirTcpTable->dwNumEntries);
+
+                    if (bOrder)
+                        qsort(pTheirTcpTable->table, pTheirTcpTable->dwNumEntries,
+                              sizeof(MIB_TCPROW), TcpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(), 0, pOurTcpTable);
+            }
+        }
+        break;
+
+        case TCP_TABLE_OWNER_PID_ALL:
+        {
+            PMIB_TCPTABLE_OWNER_PID pOurTcpTable = getTcpTable(ClassModulePid);
+            PMIB_TCPTABLE_OWNER_PID pTheirTcpTable = pTcpTable;
+
+            if (pOurTcpTable)
+            {
+                size = FIELD_OFFSET(MIB_TCPTABLE_OWNER_PID, table) + pOurTcpTable->dwNumEntries * sizeof(MIB_TCPROW_OWNER_PID);
+                if (size > *pdwSize || !pTheirTcpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    memcpy(pTheirTcpTable, pOurTcpTable, size);
+
+                    /* Don't sort on PID, so use basic helper */
+                    if (bOrder)
+                        qsort(pTheirTcpTable->table, pTheirTcpTable->dwNumEntries,
+                              sizeof(MIB_TCPROW_OWNER_PID), TcpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(), 0, pOurTcpTable);
+            }
+        }
+        break;
+
+        case TCP_TABLE_OWNER_PID_CONNECTIONS:
+        {
+            PMIB_TCPTABLE_OWNER_PID pOurTcpTable = getTcpTable(ClassModulePid);
+            PMIB_TCPTABLE_OWNER_PID pTheirTcpTable = pTcpTable;
+
+            if (pOurTcpTable)
+            {
+                for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                {
+                    if (pOurTcpTable->table[i].dwState != MIB_TCP_STATE_LISTEN)
+                    {
+                        ++count;
+                    }
+                }
+
+                size = FIELD_OFFSET(MIB_TCPTABLE_OWNER_PID, table) + count * sizeof(MIB_TCPROW_OWNER_PID);
+                if (size > *pdwSize || !pTheirTcpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    pTheirTcpTable->dwNumEntries = count;
+
+                    for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                    {
+                        if (pOurTcpTable->table[i].dwState != MIB_TCP_STATE_LISTEN)
+                        {
+                            memcpy(&pTheirTcpTable->table[count], &pOurTcpTable->table[i], sizeof(MIB_TCPROW_OWNER_PID));
+                            ++count;
+                        }
+                    }
+                    ASSERT(count == pTheirTcpTable->dwNumEntries);
+
+                    /* Don't sort on PID, so use basic helper */
+                    if (bOrder)
+                        qsort(pTheirTcpTable->table, pTheirTcpTable->dwNumEntries,
+                              sizeof(MIB_TCPROW_OWNER_PID), TcpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(), 0, pOurTcpTable);
+            }
+        }
+        break;
+
+        case TCP_TABLE_OWNER_PID_LISTENER:
+        {
+            PMIB_TCPTABLE_OWNER_PID pOurTcpTable = getTcpTable(ClassModulePid);
+            PMIB_TCPTABLE_OWNER_PID pTheirTcpTable = pTcpTable;
+
+            if (pOurTcpTable)
+            {
+                for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                {
+                    if (pOurTcpTable->table[i].dwState == MIB_TCP_STATE_LISTEN)
+                    {
+                        ++count;
+                    }
+                }
+
+                size = FIELD_OFFSET(MIB_TCPTABLE_OWNER_PID, table) + count * sizeof(MIB_TCPROW_OWNER_PID);
+                if (size > *pdwSize || !pTheirTcpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    pTheirTcpTable->dwNumEntries = count;
+
+                    for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                    {
+                        if (pOurTcpTable->table[i].dwState == MIB_TCP_STATE_LISTEN)
+                        {
+                            memcpy(&pTheirTcpTable->table[count], &pOurTcpTable->table[i], sizeof(MIB_TCPROW_OWNER_PID));
+                            ++count;
+                        }
+                    }
+                    ASSERT(count == pTheirTcpTable->dwNumEntries);
+
+                    /* Don't sort on PID, so use basic helper */
+                    if (bOrder)
+                        qsort(pTheirTcpTable->table, pTheirTcpTable->dwNumEntries,
+                              sizeof(MIB_TCPROW_OWNER_PID), TcpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(), 0, pOurTcpTable);
+            }
+        }
+        break;
+
+        case TCP_TABLE_OWNER_MODULE_ALL:
+        {
+            PMIB_TCPTABLE_OWNER_MODULE pOurTcpTable = getTcpTable(ClassModule);
+            PMIB_TCPTABLE_OWNER_MODULE pTheirTcpTable = pTcpTable;
+
+            if (pOurTcpTable)
+            {
+                size = FIELD_OFFSET(MIB_TCPTABLE_OWNER_MODULE, table) + pOurTcpTable->dwNumEntries * sizeof(MIB_TCPROW_OWNER_MODULE);
+                if (size > *pdwSize || !pTheirTcpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    memcpy(pTheirTcpTable, pOurTcpTable, size);
+
+                    /* Don't sort on PID, so use basic helper */
+                    if (bOrder)
+                        qsort(pTheirTcpTable->table, pTheirTcpTable->dwNumEntries,
+                              sizeof(MIB_TCPROW_OWNER_MODULE), TcpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(), 0, pOurTcpTable);
+            }
+        }
+        break;
+
+        case TCP_TABLE_OWNER_MODULE_CONNECTIONS:
+        {
+            PMIB_TCPTABLE_OWNER_MODULE pOurTcpTable = getTcpTable(ClassModule);
+            PMIB_TCPTABLE_OWNER_MODULE pTheirTcpTable = pTcpTable;
+
+            if (pOurTcpTable)
+            {
+                for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                {
+                    if (pOurTcpTable->table[i].dwState != MIB_TCP_STATE_LISTEN)
+                    {
+                        ++count;
+                    }
+                }
+
+                size = FIELD_OFFSET(MIB_TCPTABLE_OWNER_MODULE, table) + count * sizeof(MIB_TCPROW_OWNER_MODULE);
+                if (size > *pdwSize || !pTheirTcpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    pTheirTcpTable->dwNumEntries = count;
+
+                    for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                    {
+                        if (pOurTcpTable->table[i].dwState != MIB_TCP_STATE_LISTEN)
+                        {
+                            memcpy(&pTheirTcpTable->table[count], &pOurTcpTable->table[i], sizeof(MIB_TCPROW_OWNER_MODULE));
+                            ++count;
+                        }
+                    }
+                    ASSERT(count == pTheirTcpTable->dwNumEntries);
+
+                    /* Don't sort on PID, so use basic helper */
+                    if (bOrder)
+                        qsort(pTheirTcpTable->table, pTheirTcpTable->dwNumEntries,
+                              sizeof(MIB_TCPROW_OWNER_MODULE), TcpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(), 0, pOurTcpTable);
+            }
+        }
+        break;
+
+        case TCP_TABLE_OWNER_MODULE_LISTENER:
+        {
+            PMIB_TCPTABLE_OWNER_MODULE pOurTcpTable = getTcpTable(ClassModule);
+            PMIB_TCPTABLE_OWNER_MODULE pTheirTcpTable = pTcpTable;
+
+            if (pOurTcpTable)
+            {
+                for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                {
+                    if (pOurTcpTable->table[i].dwState == MIB_TCP_STATE_LISTEN)
+                    {
+                        ++count;
+                    }
+                }
+
+                size = FIELD_OFFSET(MIB_TCPTABLE_OWNER_MODULE, table) + count * sizeof(MIB_TCPROW_OWNER_MODULE);
+                if (size > *pdwSize || !pTheirTcpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    pTheirTcpTable->dwNumEntries = count;
+
+                    for (i = 0, count = 0; i < pOurTcpTable->dwNumEntries; ++i)
+                    {
+                        if (pOurTcpTable->table[i].dwState == MIB_TCP_STATE_LISTEN)
+                        {
+                            memcpy(&pTheirTcpTable->table[count], &pOurTcpTable->table[i], sizeof(MIB_TCPROW_OWNER_MODULE));
+                            ++count;
+                        }
+                    }
+                    ASSERT(count == pTheirTcpTable->dwNumEntries);
+
+                    /* Don't sort on PID, so use basic helper */
+                    if (bOrder)
+                        qsort(pTheirTcpTable->table, pTheirTcpTable->dwNumEntries,
+                              sizeof(MIB_TCPROW_OWNER_MODULE), TcpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(), 0, pOurTcpTable);
+            }
+        }
+        break;
+
+        default:
+            ret = ERROR_INVALID_PARAMETER;
+            break;
+    }
+
+    return ret;
+}
+
+
+static int UdpTableSorter(const void *a, const void *b)
+{
+  int ret;
+
+  if (a && b) {
+    PMIB_UDPROW rowA = (PMIB_UDPROW)a, rowB = (PMIB_UDPROW)b;
+
+    ret = rowA->dwLocalAddr - rowB->dwLocalAddr;
+    if (ret == 0)
+      ret = rowA->dwLocalPort - rowB->dwLocalPort;
   }
+  else
+    ret = 0;
+  return ret;
+}
 
+/******************************************************************
+ *    GetExtendedUdpTable (IPHLPAPI.@)
+ *
+ * Get the table of UDP endpoints available to the application.
+ *
+ * PARAMS
+ *  pUdpTable [Out]    table struct with the filtered UDP endpoints available to application
+ *  pdwSize   [In/Out] estimated size of the structure returned in pUdpTable, in bytes
+ *  bOrder    [In]     whether to order the table
+ *  ulAf	[in]	version of IP used by the UDP endpoints
+ *  TableClass [in]	type of the UDP table structure from UDP_TABLE_CLASS
+ *  Reserved [in]	reserved - this value must be zero
+ *
+ * RETURNS
+ *  Success: NO_ERROR
+ *  Failure: either ERROR_INSUFFICIENT_BUFFER or ERROR_INVALID_PARAMETER
+ *
+ * NOTES
+ */
 
-    UNIMPLEMENTED;
-    return ret;	
+DWORD WINAPI GetExtendedUdpTable(PVOID pUdpTable, PDWORD pdwSize, BOOL bOrder, ULONG ulAf, UDP_TABLE_CLASS TableClass, ULONG Reserved)
+{
+    DWORD size;
+	DWORD ret = NO_ERROR;
+
+    if (!pdwSize)
+    {
+        return ERROR_INVALID_PARAMETER;
+    }
+
+    if (ulAf != AF_INET)
+    {
+        UNIMPLEMENTED;
+        return ERROR_INVALID_PARAMETER;
+    }
+
+    switch (TableClass)
+    {
+        case UDP_TABLE_BASIC:
+        {
+            PMIB_UDPTABLE pOurUdpTable = getUdpTable(ClassBasic);
+            PMIB_UDPTABLE pTheirUdpTable = pUdpTable;
+
+            if (pOurUdpTable)
+            {
+                size = FIELD_OFFSET(MIB_UDPTABLE, table) + pOurUdpTable->dwNumEntries * sizeof(MIB_UDPROW);
+                if (size > *pdwSize || !pTheirUdpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    memcpy(pTheirUdpTable, pOurUdpTable, size);
+
+                    if (bOrder)
+                        qsort(pTheirUdpTable->table, pTheirUdpTable->dwNumEntries,
+                              sizeof(MIB_UDPROW), UdpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(), 0, pOurUdpTable);
+            }
+        }
+        break;
+
+        case UDP_TABLE_OWNER_PID:
+        {
+            PMIB_UDPTABLE_OWNER_PID pOurUdpTable = getUdpTable(ClassModulePid);
+            PMIB_UDPTABLE_OWNER_PID pTheirUdpTable = pUdpTable;
+
+            if (pOurUdpTable)
+            {
+                size = FIELD_OFFSET(MIB_UDPTABLE_OWNER_PID, table) + pOurUdpTable->dwNumEntries * sizeof(MIB_UDPROW_OWNER_PID);
+                if (size > *pdwSize || !pTheirUdpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    memcpy(pTheirUdpTable, pOurUdpTable, size);
+
+                    if (bOrder)
+                        qsort(pTheirUdpTable->table, pTheirUdpTable->dwNumEntries,
+                              sizeof(MIB_UDPROW_OWNER_PID), UdpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(), 0, pOurUdpTable);
+            }
+        }
+        break;
+
+        case UDP_TABLE_OWNER_MODULE:
+        {
+            PMIB_UDPTABLE_OWNER_MODULE pOurUdpTable = getUdpTable(ClassModule);
+            PMIB_UDPTABLE_OWNER_MODULE pTheirUdpTable = pUdpTable;
+
+            if (pOurUdpTable)
+            {
+                size = FIELD_OFFSET(MIB_UDPTABLE_OWNER_MODULE, table) + pOurUdpTable->dwNumEntries * sizeof(MIB_UDPROW_OWNER_MODULE);
+                if (size > *pdwSize || !pTheirUdpTable)
+                {
+                    *pdwSize = size;
+                    ret = ERROR_INSUFFICIENT_BUFFER;
+                }
+                else
+                {
+                    memcpy(pTheirUdpTable, pOurUdpTable, size);
+
+                    if (bOrder)
+                        qsort(pTheirUdpTable->table, pTheirUdpTable->dwNumEntries,
+                              sizeof(MIB_UDPROW_OWNER_MODULE), UdpTableSorter);
+                }
+
+                HeapFree(GetProcessHeap(), 0, pOurUdpTable);
+            }
+        }
+        break;
+
+        default:
+            ret = ERROR_INVALID_PARAMETER;
+            break;
+    }
+
+    return ret;
 }
 
 
@@ -1570,6 +2286,167 @@ DWORD WINAPI GetNumberOfInterfaces(PDWORD pdwNumIf)
 }
 
 
+static DWORD GetOwnerModuleFromPidEntry(DWORD OwningPid, TCPIP_OWNER_MODULE_INFO_CLASS Class, PVOID Buffer, PDWORD pdwSize)
+{
+    HANDLE Process;
+    DWORD FileLen, PathLen, Error;
+    WCHAR File[MAX_PATH], Path[MAX_PATH];
+    PTCPIP_OWNER_MODULE_BASIC_INFO BasicInfo;
+
+    if (IsBadWritePtr(pdwSize, sizeof(DWORD)) ||
+        IsBadWritePtr(Buffer, *pdwSize))
+    {
+        return ERROR_INVALID_PARAMETER;
+    }
+
+    if (OwningPid == 0)
+    {
+        return ERROR_NOT_FOUND;
+    }
+
+    Process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, OwningPid);
+    if (Process == NULL)
+    {
+        return GetLastError();
+    }
+
+    FileLen = GetModuleBaseNameW(Process, NULL, File, MAX_PATH);
+    if (FileLen != 0)
+    {
+        PathLen = GetModuleFileNameExW(Process, NULL, Path, MAX_PATH);
+        if (PathLen == 0)
+        {
+            CloseHandle(Process);
+            return GetLastError();
+        }
+
+        /* Add NULL char */
+        ++FileLen;
+        ++PathLen;
+        PathLen *= sizeof(WCHAR);
+        FileLen *= sizeof(WCHAR);
+    }
+    else
+    {
+        Error = GetLastError();
+
+        if (Error == ERROR_PARTIAL_COPY)
+        {
+            wcscpy(File, L"System");
+            wcscpy(Path, L"System");
+
+            PathLen = sizeof(L"System");
+            FileLen = sizeof(L"System");
+        }
+        else
+        {
+            CloseHandle(Process);
+            return Error;
+        }
+    }
+
+    CloseHandle(Process);
+
+    if (*pdwSize < sizeof(TCPIP_OWNER_MODULE_BASIC_INFO) + PathLen + FileLen)
+    {
+        *pdwSize = sizeof(TCPIP_OWNER_MODULE_BASIC_INFO) + PathLen + FileLen;
+        return ERROR_INSUFFICIENT_BUFFER;
+    }
+
+    BasicInfo = Buffer;
+    BasicInfo->pModuleName = (PVOID)((ULONG_PTR)BasicInfo + sizeof(TCPIP_OWNER_MODULE_BASIC_INFO));
+    BasicInfo->pModulePath = (PVOID)((ULONG_PTR)BasicInfo->pModuleName + FileLen);
+    wcscpy(BasicInfo->pModuleName, File);
+    wcscpy(BasicInfo->pModulePath, Path);
+    *pdwSize = sizeof(TCPIP_OWNER_MODULE_BASIC_INFO) + PathLen + FileLen;
+
+    return NO_ERROR;
+}
+
+static DWORD GetOwnerModuleFromTagEntry(DWORD OwningPid, DWORD OwningTag, TCPIP_OWNER_MODULE_INFO_CLASS Class, PVOID Buffer, PDWORD pdwSize)
+{
+    UINT Size;
+    HRESULT Res;
+    HANDLE hAdvapi32;
+    WCHAR SysDir[MAX_PATH];
+    PTCPIP_OWNER_MODULE_BASIC_INFO BasicInfo;
+    ULONG (NTAPI *_I_QueryTagInformation)(PVOID, DWORD, PVOID);
+    struct
+    {
+        DWORD ProcessId;
+        DWORD ServiceTag;
+        DWORD TagType;
+        PWSTR Buffer;
+    } ServiceQuery;
+
+    if (IsBadWritePtr(pdwSize, sizeof(DWORD)) ||
+        IsBadWritePtr(Buffer, *pdwSize))
+    {
+        return ERROR_INVALID_PARAMETER;
+    }
+
+    /* First, secure (avoid injections) load advapi32.dll */
+    Size = GetSystemDirectoryW(SysDir, MAX_PATH);
+    if (Size == 0)
+    {
+        return GetLastError();
+    }
+
+    Res = StringCchCatW(&SysDir[Size], MAX_PATH - Size, L"\\advapi32.dll");
+    if (FAILED(Res))
+    {
+        return Res;
+    }
+
+    hAdvapi32 = GetModuleHandleW(SysDir);
+    if (hAdvapi32 == NULL)
+    {
+        return GetLastError();
+    }
+
+    /* Now, we'll query the service associated with the tag */
+    _I_QueryTagInformation = (PVOID)GetProcAddress(hAdvapi32, "I_QueryTagInformation");
+    if (_I_QueryTagInformation == NULL)
+    {
+        return GetLastError();
+    }
+
+    /* Set tag and PID for the query */
+    ServiceQuery.ProcessId = OwningPid;
+    ServiceQuery.ServiceTag = OwningTag;
+    ServiceQuery.TagType = 0;
+    ServiceQuery.Buffer = NULL;
+
+    /* And query */
+    Res = _I_QueryTagInformation(NULL, 1, &ServiceQuery);
+    if (Res != ERROR_SUCCESS)
+    {
+        return Res;
+    }
+
+    /* Compute service name length */
+    Size = wcslen(ServiceQuery.Buffer) * sizeof(WCHAR) + sizeof(UNICODE_NULL);
+
+    /* We'll copy it twice, so make sure we have enough room */
+    if (*pdwSize < sizeof(TCPIP_OWNER_MODULE_BASIC_INFO) + 2 * Size)
+    {
+        *pdwSize = sizeof(TCPIP_OWNER_MODULE_BASIC_INFO) + 2 * Size;
+        LocalFree(ServiceQuery.Buffer);
+        return ERROR_INSUFFICIENT_BUFFER;
+    }
+
+    /* Copy back data */
+    BasicInfo = Buffer;
+    BasicInfo->pModuleName = (PVOID)((ULONG_PTR)BasicInfo + sizeof(TCPIP_OWNER_MODULE_BASIC_INFO));
+    BasicInfo->pModulePath = (PVOID)((ULONG_PTR)BasicInfo->pModuleName + Size);
+    wcscpy(BasicInfo->pModuleName, ServiceQuery.Buffer);
+    wcscpy(BasicInfo->pModulePath, ServiceQuery.Buffer);
+    *pdwSize = sizeof(TCPIP_OWNER_MODULE_BASIC_INFO) + 2 * Size;
+    LocalFree(ServiceQuery.Buffer);
+
+    return NO_ERROR;
+}
+
 /******************************************************************
  *    GetOwnerModuleFromTcpEntry (IPHLPAPI.@)
  *
@@ -1591,9 +2468,47 @@ DWORD WINAPI GetNumberOfInterfaces(PDWORD pdwNumIf)
  */
 DWORD WINAPI GetOwnerModuleFromTcpEntry( PMIB_TCPROW_OWNER_MODULE pTcpEntry, TCPIP_OWNER_MODULE_INFO_CLASS Class, PVOID Buffer, PDWORD pdwSize)
 {
-	DWORD ret = NO_ERROR;
-	UNIMPLEMENTED;
-	return ret;	
+    /* If we have a service tag, that's a service connection */
+    if (pTcpEntry->OwningModuleInfo[0] != 0)
+    {
+        return GetOwnerModuleFromTagEntry(pTcpEntry->dwOwningPid, (DWORD)(pTcpEntry->OwningModuleInfo[0]), Class, Buffer, pdwSize);
+    }
+    else
+    {
+        return GetOwnerModuleFromPidEntry(pTcpEntry->dwOwningPid, Class, Buffer, pdwSize);
+    }
+}
+
+/******************************************************************
+ *    GetOwnerModuleFromUdpEntry (IPHLPAPI.@)
+ *
+ * Get data about the module that issued the context bind for a specific IPv4 UDP endpoint in a MIB table row
+ *
+ * PARAMS
+ *  pUdpEntry [in]    pointer to a MIB_UDPROW_OWNER_MODULE structure
+ *  Class [in]    	TCPIP_OWNER_MODULE_INFO_CLASS enumeration value
+ *  Buffer [out]     	pointer a buffer containing a TCPIP_OWNER_MODULE_BASIC_INFO structure with the owner module data. 
+ *  pdwSize [in, out]	estimated size of the structure returned in Buffer, in bytes
+ *
+ * RETURNS
+ *  Success: NO_ERROR
+ *  Failure: ERROR_INSUFFICIENT_BUFFER, ERROR_INVALID_PARAMETER, ERROR_NOT_ENOUGH_MEMORY
+ * 	       ERROR_NOT_FOUND or ERROR_PARTIAL_COPY
+ *
+ * NOTES
+ * The type of data returned in Buffer is indicated by the value of the Class parameter.
+ */
+DWORD WINAPI GetOwnerModuleFromUdpEntry( PMIB_UDPROW_OWNER_MODULE pUdpEntry, TCPIP_OWNER_MODULE_INFO_CLASS Class, PVOID Buffer, PDWORD pdwSize)
+{
+    /* If we have a service tag, that's a service connection */
+    if (pUdpEntry->OwningModuleInfo[0] != 0)
+    {
+        return GetOwnerModuleFromTagEntry(pUdpEntry->dwOwningPid, (DWORD)(pUdpEntry->OwningModuleInfo[0]), Class, Buffer, pdwSize);
+    }
+    else
+    {
+        return GetOwnerModuleFromPidEntry(pUdpEntry->dwOwningPid, Class, Buffer, pdwSize);
+    }
 }
 
 static void CreateNameServerListEnumNamesFunc( PWCHAR Interface, PWCHAR Server, PVOID Data)
@@ -1768,29 +2683,6 @@ DWORD WINAPI GetTcpStatistics(PMIB_TCPSTATS pStats)
 }
 
 
-static int TcpTableSorter(const void *a, const void *b)
-{
-  int ret;
-
-  if (a && b) {
-    PMIB_TCPROW rowA = (PMIB_TCPROW)a, rowB = (PMIB_TCPROW)b;
-
-    ret = rowA->dwLocalAddr - rowB->dwLocalAddr;
-    if (ret == 0) {
-      ret = rowA->dwLocalPort - rowB->dwLocalPort;
-      if (ret == 0) {
-        ret = rowA->dwRemoteAddr - rowB->dwRemoteAddr;
-        if (ret == 0)
-          ret = rowA->dwRemotePort - rowB->dwRemotePort;
-      }
-    }
-  }
-  else
-    ret = 0;
-  return ret;
-}
-
-
 /******************************************************************
  *    GetTcpTable (IPHLPAPI.@)
  *
@@ -1815,53 +2707,7 @@ static int TcpTableSorter(const void *a, const void *b)
  */
 DWORD WINAPI GetTcpTable(PMIB_TCPTABLE pTcpTable, PDWORD pdwSize, BOOL bOrder)
 {
-  DWORD ret = ERROR_NO_DATA;
-
-  TRACE("pTcpTable %p, pdwSize %p, bOrder %d\n", pTcpTable, pdwSize,
-   (DWORD)bOrder);
-  if (!pdwSize)
-    ret = ERROR_INVALID_PARAMETER;
-  else {
-    DWORD numEntries = getNumTcpEntries();
-    DWORD size = sizeof(MIB_TCPTABLE);
-
-    if (numEntries > 1)
-      size += (numEntries - 1) * sizeof(MIB_TCPROW);
-    if (!pTcpTable || *pdwSize < size) {
-      *pdwSize = size;
-      ret = ERROR_INSUFFICIENT_BUFFER;
-    }
-    else {
-      PMIB_TCPTABLE pOurTcpTable = getTcpTable();
-	  if (pOurTcpTable)
-      {
-        size = sizeof(MIB_TCPTABLE);
-        if (pOurTcpTable->dwNumEntries > 1)
-            size += (pOurTcpTable->dwNumEntries - 1) * sizeof(MIB_TCPROW);
-          
-        if (*pdwSize < size)
-        {
-            *pdwSize = size;
-
-            ret = ERROR_INSUFFICIENT_BUFFER;
-        }
-        else
-        {
-            memcpy(pTcpTable, pOurTcpTable, size);
-            
-            if (bOrder)
-                qsort(pTcpTable->table, pTcpTable->dwNumEntries,
-                      sizeof(MIB_TCPROW), TcpTableSorter);
-            
-            ret = NO_ERROR;
-        }
-          
-        free(pOurTcpTable);
-	  }
-   	}
-  }
-  TRACE("returning %d\n", ret);
-  return ret;
+  return GetExtendedTcpTable(pTcpTable, pdwSize, bOrder, AF_INET, TCP_TABLE_BASIC_ALL, 0);
 }
 
 
@@ -1908,23 +2754,6 @@ DWORD WINAPI GetUdpStatistics(PMIB_UDPSTATS pStats)
 }
 
 
-static int UdpTableSorter(const void *a, const void *b)
-{
-  int ret;
-
-  if (a && b) {
-    PMIB_UDPROW rowA = (PMIB_UDPROW)a, rowB = (PMIB_UDPROW)b;
-
-    ret = rowA->dwLocalAddr - rowB->dwLocalAddr;
-    if (ret == 0)
-      ret = rowA->dwLocalPort - rowB->dwLocalPort;
-  }
-  else
-    ret = 0;
-  return ret;
-}
-
-
 /******************************************************************
  *    GetUdpTable (IPHLPAPI.@)
  *
@@ -1942,45 +2771,7 @@ static int UdpTableSorter(const void *a, const void *b)
  */
 DWORD WINAPI GetUdpTable(PMIB_UDPTABLE pUdpTable, PDWORD pdwSize, BOOL bOrder)
 {
-  DWORD ret;
-
-  TRACE("pUdpTable %p, pdwSize %p, bOrder %ld\n", pUdpTable, pdwSize,
-   (DWORD)bOrder);
-  if (!pdwSize)
-    ret = ERROR_INVALID_PARAMETER;
-  else {
-    DWORD numEntries = getNumUdpEntries();
-    ULONG size = sizeof(MIB_UDPTABLE) + (numEntries - 1) * sizeof(MIB_UDPROW);
-
-    if (!pUdpTable || *pdwSize < size) {
-      *pdwSize = size;
-      ret = ERROR_INSUFFICIENT_BUFFER;
-    }
-    else {
-      PMIB_UDPTABLE table = getUdpTable();
-
-      if (table) {
-        size = sizeof(MIB_UDPTABLE) + (table->dwNumEntries - 1) *
-         sizeof(MIB_UDPROW);
-        if (*pdwSize < size) {
-          *pdwSize = size;
-          ret = ERROR_INSUFFICIENT_BUFFER;
-        }
-        else {
-          memcpy(pUdpTable, table, size);
-          if (bOrder)
-            qsort(pUdpTable->table, pUdpTable->dwNumEntries,
-             sizeof(MIB_UDPROW), UdpTableSorter);
-          ret = NO_ERROR;
-        }
-        free(table);
-      }
-      else
-        ret = ERROR_OUTOFMEMORY;
-    }
-  }
-  TRACE("returning %ld\n", ret);
-  return ret;
+  return GetExtendedUdpTable(pUdpTable, pdwSize, bOrder, AF_INET, UDP_TABLE_BASIC, 0);
 }
 
 
@@ -2395,7 +3186,10 @@ DWORD WINAPI DECLSPEC_HOTPATCH GetAdaptersAddresses(ULONG Family,ULONG Flags,PVO
 
     ret = openTcpFile(&tcpFile, FILE_READ_DATA);
     if (!NT_SUCCESS(ret))
+    {
+        free(indexTable);
         return ERROR_NO_DATA;
+    }
 
     for (i = indexTable->numIndexes; i >= 0; i--)
     {
@@ -2409,10 +3203,10 @@ DWORD WINAPI DECLSPEC_HOTPATCH GetAdaptersAddresses(ULONG Family,ULONG Flags,PVO
 
             /* Friendly name */
             if (!(Flags & GAA_FLAG_SKIP_FRIENDLY_NAME))
-                requiredSize += strlen((char *)ifInfo.if_info.ent.if_descr) + 1; //FIXME
+                requiredSize += ifInfo.if_info.ent.if_descrlen + 1; //FIXME
 
             /* Adapter name */
-            requiredSize += strlen((char *)ifInfo.if_info.ent.if_descr) + 1;
+            requiredSize += ifInfo.if_info.ent.if_descrlen + 1;
 
             /* Unicast address */
             if (!(Flags & GAA_FLAG_SKIP_UNICAST))
@@ -2457,7 +3251,7 @@ DWORD WINAPI DECLSPEC_HOTPATCH GetAdaptersAddresses(ULONG Family,ULONG Flags,PVO
 
             /* Adapter name */
             currentAddress->AdapterName = (PVOID)currentLocation;
-            currentLocation += strlen((char *)ifInfo.if_info.ent.if_descr) + 1;
+            currentLocation += ifInfo.if_info.ent.if_descrlen + 1;
 
             /* Unicast address */
             if (!(Flags & GAA_FLAG_SKIP_UNICAST))
@@ -2506,7 +3300,8 @@ DWORD WINAPI DECLSPEC_HOTPATCH GetAdaptersAddresses(ULONG Family,ULONG Flags,PVO
             currentAddress->IfIndex = indexTable->indexes[i];
 
             /* Adapter name */
-            strcpy(currentAddress->AdapterName, (char *)ifInfo.if_info.ent.if_descr);
+            memcpy(currentAddress->AdapterName, ifInfo.if_info.ent.if_descr, ifInfo.if_info.ent.if_descrlen);
+            currentAddress->AdapterName[ifInfo.if_info.ent.if_descrlen] = '\0';
 
             if (!(Flags & GAA_FLAG_SKIP_UNICAST))
             {
@@ -2619,13 +3414,96 @@ SetIpForwardEntryToStack(PMIB_IPFORWARDROW pRoute)
     return 0L;
 }
 
+DWORD GetInterfaceNameInternal(_In_ const GUID * pInterfaceGUID,
+                               _Out_writes_bytes_to_(*pOutBufLen, *pOutBufLen) PWCHAR pInterfaceName,
+                               _Inout_ PULONG pOutBufLen)
+{
+    UNICODE_STRING GuidString;
+    DWORD result, type;
+    WCHAR szKeyName[2*MAX_PATH];
+    HRESULT hr;
+    HKEY hKey;
+
+    if (pInterfaceGUID == NULL || pOutBufLen == NULL)
+        return ERROR_INVALID_PARAMETER;
+
+    result = RtlStringFromGUID(pInterfaceGUID, &GuidString);
+
+    if (!NT_SUCCESS(result))
+    {
+        // failed to convert guid to string
+        return RtlNtStatusToDosError(result);
+    }
+
+    hr = StringCbPrintfW(szKeyName, sizeof(szKeyName), L"SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}\\%s\\Connection", GuidString.Buffer);
+    RtlFreeUnicodeString(&GuidString);
+
+    if (FAILED(hr))
+    {
+        // key name is too long
+        return ERROR_BUFFER_OVERFLOW;
+    }
+
+    result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, szKeyName, 0, KEY_READ, &hKey);
+
+    if (result != ERROR_SUCCESS)
+    {
+        // failed to find adapter entry
+        return ERROR_NOT_FOUND;
+    }
+
+    result = RegQueryValueExW(hKey, L"Name", NULL, &type, (PVOID)pInterfaceName, pOutBufLen);
+
+    RegCloseKey(hKey);
+
+    if (result == ERROR_MORE_DATA)
+    {
+        *pOutBufLen = MAX_INTERFACE_NAME_LEN * 2;
+        return ERROR_INSUFFICIENT_BUFFER;
+    }
+
+    if (result != ERROR_SUCCESS || type != REG_SZ)
+    {
+        // failed to read adapter name
+        return ERROR_NO_DATA;
+    }
+    return ERROR_SUCCESS;
+}
+
+/*
+ * @implemented
+ */
 DWORD WINAPI
-NhGetInterfaceNameFromDeviceGuid(DWORD dwUnknown1,
-                                 DWORD dwUnknown2,
-                                 DWORD dwUnknown3,
+NhGetInterfaceNameFromDeviceGuid(_In_ const GUID * pInterfaceGUID,
+                                 _Out_writes_bytes_to_(*pOutBufLen, *pOutBufLen) PWCHAR pInterfaceName,
+                                 _Inout_ PULONG pOutBufLen,
                                  DWORD dwUnknown4,
                                  DWORD dwUnknown5)
 {
-    FIXME("NhGetInterfaceNameFromDeviceGuid() stub\n");
-    return 0L;
+    SetLastError(ERROR_SUCCESS);
+
+    if (pInterfaceName == NULL)
+        return ERROR_INVALID_PARAMETER;
+
+    return GetInterfaceNameInternal(pInterfaceGUID, pInterfaceName, pOutBufLen);
+}
+
+/*
+ * @implemented
+ */
+DWORD WINAPI
+NhGetInterfaceNameFromGuid(_In_ const GUID * pInterfaceGUID,
+                           _Out_writes_bytes_to_(*pOutBufLen, *pOutBufLen) PWCHAR pInterfaceName,
+                           _Inout_ PULONG pOutBufLen,
+                           DWORD dwUnknown4,
+                           DWORD dwUnknown5)
+{
+    DWORD result;
+
+    result = GetInterfaceNameInternal(pInterfaceGUID, pInterfaceName, pOutBufLen);
+
+    if (result == ERROR_NOT_FOUND)
+        SetLastError(ERROR_PATH_NOT_FOUND);
+
+    return result;
 }

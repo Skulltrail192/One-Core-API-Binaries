@@ -18,12 +18,27 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <limits.h>
 
-#include <initguid.h>
-#include <oleaut32_oaidl.h>
+#define COBJMACROS
 
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winerror.h"
+
+#include "ole2.h"
+#include "olectl.h"
+#include "oleauto.h"
+#include "initguid.h"
 #include "typelib.h"
+#include "oleaut32_oaidl.h"
+
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 WINE_DECLARE_DEBUG_CHANNEL(heap);
@@ -105,9 +120,7 @@ static inline bstr_t *bstr_from_str(BSTR str)
 
 static inline bstr_cache_entry_t *get_cache_entry_from_idx(unsigned cache_idx)
 {
-    return bstr_cache_enabled && cache_idx < sizeof(bstr_cache)/sizeof(*bstr_cache)
-        ? bstr_cache + cache_idx
-        : NULL;
+    return bstr_cache_enabled && cache_idx < ARRAY_SIZE(bstr_cache) ? bstr_cache + cache_idx : NULL;
 }
 
 static inline bstr_cache_entry_t *get_cache_entry(size_t size)
@@ -255,7 +268,7 @@ static inline IMalloc *get_malloc(void)
  *  See BSTR.
  *  str may be NULL, in which case this function does nothing.
  */
-void WINAPI SysFreeString(BSTR str)
+void WINAPI DECLSPEC_HOTPATCH SysFreeString(BSTR str)
 {
     bstr_cache_entry_t *cache_entry;
     bstr_t *bstr;
@@ -287,7 +300,7 @@ void WINAPI SysFreeString(BSTR str)
             }
         }
 
-        if(cache_entry->cnt < sizeof(cache_entry->buf)/sizeof(*cache_entry->buf)) {
+        if(cache_entry->cnt < ARRAY_SIZE(cache_entry->buf)) {
             cache_entry->buf[(cache_entry->head+cache_entry->cnt) % BUCKET_BUFFER_SIZE] = bstr;
             cache_entry->cnt++;
 
@@ -412,7 +425,7 @@ int WINAPI SysReAllocStringLen(BSTR* old, const OLECHAR* str, unsigned int len)
  *  without checking for a terminating NUL.
  *  See BSTR.
  */
-BSTR WINAPI SysAllocStringByteLen(LPCSTR str, UINT len)
+BSTR WINAPI DECLSPEC_HOTPATCH SysAllocStringByteLen(LPCSTR str, UINT len)
 {
     bstr_t *bstr;
 
@@ -751,78 +764,294 @@ extern BOOL WINAPI OLEAUTPS_DllMain(HINSTANCE, DWORD, LPVOID) DECLSPEC_HIDDEN;
 extern HRESULT WINAPI OLEAUTPS_DllRegisterServer(void) DECLSPEC_HIDDEN;
 extern HRESULT WINAPI OLEAUTPS_DllUnregisterServer(void) DECLSPEC_HIDDEN;
 
-extern void _get_STDFONT_CF(LPVOID *);
-extern void _get_STDPIC_CF(LPVOID *);
+extern HRESULT WINAPI CreateProxyFromTypeInfo(ITypeInfo *typeinfo,
+        IUnknown *outer, REFIID iid, IRpcProxyBuffer **proxy, void **obj);
+extern HRESULT WINAPI CreateStubFromTypeInfo(ITypeInfo *typeinfo, REFIID iid,
+        IUnknown *server, IRpcStubBuffer **stub);
 
-static HRESULT WINAPI PSDispatchFacBuf_QueryInterface(IPSFactoryBuffer *iface, REFIID riid, void **ppv)
+struct ifacepsredirect_data
 {
-    if (IsEqualIID(riid, &IID_IUnknown) ||
-        IsEqualIID(riid, &IID_IPSFactoryBuffer))
+    ULONG size;
+    DWORD mask;
+    GUID  iid;
+    ULONG nummethods;
+    GUID  tlbid;
+    GUID  base;
+    ULONG name_len;
+    ULONG name_offset;
+};
+
+struct tlibredirect_data
+{
+    ULONG  size;
+    DWORD  res;
+    ULONG  name_len;
+    ULONG  name_offset;
+    LANGID langid;
+    WORD   flags;
+    ULONG  help_len;
+    ULONG  help_offset;
+    WORD   major_version;
+    WORD   minor_version;
+};
+
+static BOOL actctx_get_typelib_module(REFIID iid, WCHAR *module, DWORD len)
+{
+    struct ifacepsredirect_data *iface;
+    struct tlibredirect_data *tlib;
+    ACTCTX_SECTION_KEYED_DATA data;
+    WCHAR *ptrW;
+
+    data.cbSize = sizeof(data);
+    if (!FindActCtxSectionGuid(0, NULL, ACTIVATION_CONTEXT_SECTION_COM_INTERFACE_REDIRECTION,
+            iid, &data))
+        return FALSE;
+
+    iface = (struct ifacepsredirect_data *)data.lpData;
+    if (!FindActCtxSectionGuid(0, NULL, ACTIVATION_CONTEXT_SECTION_COM_TYPE_LIBRARY_REDIRECTION,
+            &iface->tlbid, &data))
+        return FALSE;
+
+    tlib = (struct tlibredirect_data *)data.lpData;
+    ptrW = (WCHAR *)((BYTE *)data.lpSectionBase + tlib->name_offset);
+
+    if (tlib->name_len/sizeof(WCHAR) >= len)
     {
-        IPSFactoryBuffer_AddRef(iface);
-        *ppv = iface;
+        ERR("need larger module buffer, %u\n", tlib->name_len);
+        return FALSE;
+    }
+
+    memcpy(module, ptrW, tlib->name_len);
+    module[tlib->name_len/sizeof(WCHAR)] = 0;
+    return TRUE;
+}
+
+static HRESULT reg_get_typelib_module(REFIID iid, WCHAR *module, DWORD len)
+{
+    REGSAM opposite = (sizeof(void*) == 8) ? KEY_WOW64_32KEY : KEY_WOW64_64KEY;
+    char tlguid[200], typelibkey[300], interfacekey[300], ver[100], tlfn[260];
+    DWORD tlguidlen, verlen, type;
+    LONG tlfnlen, err;
+    BOOL is_wow64;
+    HKEY ikey;
+
+    sprintf( interfacekey, "Interface\\{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}\\Typelib",
+        iid->Data1, iid->Data2, iid->Data3,
+        iid->Data4[0], iid->Data4[1], iid->Data4[2], iid->Data4[3],
+        iid->Data4[4], iid->Data4[5], iid->Data4[6], iid->Data4[7]
+    );
+
+    err = RegOpenKeyExA(HKEY_CLASSES_ROOT,interfacekey,0,KEY_READ,&ikey);
+    if (err && (opposite == KEY_WOW64_32KEY || (IsWow64Process(GetCurrentProcess(), &is_wow64)
+                                                && is_wow64)))
+        err = RegOpenKeyExA(HKEY_CLASSES_ROOT,interfacekey,0,KEY_READ|opposite,&ikey);
+
+    if (err)
+    {
+        ERR("No %s key found.\n", interfacekey);
+        return E_FAIL;
+    }
+
+    tlguidlen = sizeof(tlguid);
+    if (RegQueryValueExA(ikey, NULL, NULL, &type, (BYTE *)tlguid, &tlguidlen))
+    {
+        ERR("Getting typelib guid failed.\n");
+        RegCloseKey(ikey);
+        return E_FAIL;
+    }
+
+    verlen = sizeof(ver);
+    if (RegQueryValueExA(ikey, "Version", NULL, &type, (BYTE *)ver, &verlen))
+    {
+        ERR("Could not get version value?\n");
+        RegCloseKey(ikey);
+        return E_FAIL;
+    }
+
+    RegCloseKey(ikey);
+
+#ifndef __REACTOS__
+    sprintf(typelibkey, "Typelib\\%s\\%s\\0\\win%u", tlguid, ver, sizeof(void *) == 8 ? 64 : 32);
+#else
+    snprintf(typelibkey, sizeof(typelibkey), "Typelib\\%s\\%s\\0\\win%u", tlguid, ver, sizeof(void *) == 8 ? 64 : 32);
+#endif /* __REACTOS__ */
+    tlfnlen = sizeof(tlfn);
+    if (RegQueryValueA(HKEY_CLASSES_ROOT, typelibkey, tlfn, &tlfnlen))
+    {
+#ifdef _WIN64
+        sprintf(typelibkey, "Typelib\\%s\\%s\\0\\win32", tlguid, ver);
+        tlfnlen = sizeof(tlfn);
+        if (RegQueryValueA(HKEY_CLASSES_ROOT, typelibkey, tlfn, &tlfnlen))
+        {
+#endif
+            ERR("Could not get typelib fn?\n");
+            return E_FAIL;
+#ifdef _WIN64
+        }
+#endif
+    }
+    MultiByteToWideChar(CP_ACP, 0, tlfn, -1, module, len);
+    return S_OK;
+}
+
+static HRESULT get_typeinfo_for_iid(REFIID iid, ITypeInfo **typeinfo)
+{
+    WCHAR module[MAX_PATH];
+    ITypeLib *typelib;
+    HRESULT hr;
+
+    *typeinfo = NULL;
+
+    module[0] = 0;
+    if (!actctx_get_typelib_module(iid, module, ARRAY_SIZE(module)))
+    {
+        hr = reg_get_typelib_module(iid, module, ARRAY_SIZE(module));
+        if (FAILED(hr))
+            return hr;
+    }
+
+    hr = LoadTypeLib(module, &typelib);
+    if (hr != S_OK) {
+        ERR("Failed to load typelib for %s, but it should be there.\n", debugstr_guid(iid));
+        return hr;
+    }
+
+    hr = ITypeLib_GetTypeInfoOfGuid(typelib, iid, typeinfo);
+    ITypeLib_Release(typelib);
+    if (hr != S_OK)
+        ERR("typelib does not contain info for %s\n", debugstr_guid(iid));
+
+    return hr;
+}
+
+static HRESULT WINAPI dispatch_typelib_ps_QueryInterface(IPSFactoryBuffer *iface, REFIID iid, void **out)
+{
+    if (IsEqualIID(iid, &IID_IPSFactoryBuffer) || IsEqualIID(iid, &IID_IUnknown))
+    {
+        *out = iface;
         return S_OK;
     }
+
+    FIXME("No interface for %s.\n", debugstr_guid(iid));
+    *out = NULL;
     return E_NOINTERFACE;
 }
 
-static ULONG WINAPI PSDispatchFacBuf_AddRef(IPSFactoryBuffer *iface)
+static ULONG WINAPI dispatch_typelib_ps_AddRef(IPSFactoryBuffer *iface)
 {
     return 2;
 }
 
-static ULONG WINAPI PSDispatchFacBuf_Release(IPSFactoryBuffer *iface)
+static ULONG WINAPI dispatch_typelib_ps_Release(IPSFactoryBuffer *iface)
 {
     return 1;
 }
 
-static HRESULT WINAPI PSDispatchFacBuf_CreateProxy(IPSFactoryBuffer *iface, IUnknown *pUnkOuter, REFIID riid, IRpcProxyBuffer **ppProxy, void **ppv)
+static HRESULT dispatch_create_proxy(IUnknown *outer, IRpcProxyBuffer **proxy, void **out)
 {
-    IPSFactoryBuffer *pPSFB;
+    IPSFactoryBuffer *factory;
     HRESULT hr;
 
-    if (IsEqualIID(riid, &IID_IDispatch))
-        hr = OLEAUTPS_DllGetClassObject(&CLSID_PSFactoryBuffer, &IID_IPSFactoryBuffer, (void **)&pPSFB);
-    else
-        hr = TMARSHAL_DllGetClassObject(&CLSID_PSOAInterface, &IID_IPSFactoryBuffer, (void **)&pPSFB);
-
+    hr = OLEAUTPS_DllGetClassObject(&CLSID_PSFactoryBuffer, &IID_IPSFactoryBuffer, (void **)&factory);
     if (FAILED(hr)) return hr;
 
-    hr = IPSFactoryBuffer_CreateProxy(pPSFB, pUnkOuter, riid, ppProxy, ppv);
-
-    IPSFactoryBuffer_Release(pPSFB);
+    hr = IPSFactoryBuffer_CreateProxy(factory, outer, &IID_IDispatch, proxy, out);
+    IPSFactoryBuffer_Release(factory);
     return hr;
 }
 
-static HRESULT WINAPI PSDispatchFacBuf_CreateStub(IPSFactoryBuffer *iface, REFIID riid, IUnknown *pUnkOuter, IRpcStubBuffer **ppStub)
+static HRESULT WINAPI dispatch_typelib_ps_CreateProxy(IPSFactoryBuffer *iface,
+    IUnknown *outer, REFIID iid, IRpcProxyBuffer **proxy, void **out)
 {
-    IPSFactoryBuffer *pPSFB;
+    ITypeInfo *typeinfo;
+    TYPEATTR *attr;
     HRESULT hr;
 
-    if (IsEqualIID(riid, &IID_IDispatch))
-        hr = OLEAUTPS_DllGetClassObject(&CLSID_PSFactoryBuffer, &IID_IPSFactoryBuffer, (void **)&pPSFB);
-    else
-        hr = TMARSHAL_DllGetClassObject(&CLSID_PSOAInterface, &IID_IPSFactoryBuffer, (void **)&pPSFB);
+    if (IsEqualGUID(iid, &IID_IDispatch))
+        return dispatch_create_proxy(outer, proxy, out);
 
+    hr = get_typeinfo_for_iid(iid, &typeinfo);
     if (FAILED(hr)) return hr;
 
-    hr = IPSFactoryBuffer_CreateStub(pPSFB, riid, pUnkOuter, ppStub);
+    hr = ITypeInfo_GetTypeAttr(typeinfo, &attr);
+    if (FAILED(hr))
+    {
+        ITypeInfo_Release(typeinfo);
+        return hr;
+    }
 
-    IPSFactoryBuffer_Release(pPSFB);
+    if (attr->typekind == TKIND_INTERFACE || (attr->wTypeFlags & TYPEFLAG_FDUAL))
+        hr = CreateProxyFromTypeInfo(typeinfo, outer, iid, proxy, out);
+    else
+        hr = dispatch_create_proxy(outer, proxy, out);
+
+    if (FAILED(hr))
+        ERR("Failed to create proxy, hr %#x.\n", hr);
+
+    ITypeInfo_ReleaseTypeAttr(typeinfo, attr);
+    ITypeInfo_Release(typeinfo);
     return hr;
 }
 
-static const IPSFactoryBufferVtbl PSDispatchFacBuf_Vtbl =
+static HRESULT dispatch_create_stub(IUnknown *server, IRpcStubBuffer **stub)
 {
-    PSDispatchFacBuf_QueryInterface,
-    PSDispatchFacBuf_AddRef,
-    PSDispatchFacBuf_Release,
-    PSDispatchFacBuf_CreateProxy,
-    PSDispatchFacBuf_CreateStub
+    IPSFactoryBuffer *factory;
+    HRESULT hr;
+
+    hr = OLEAUTPS_DllGetClassObject(&CLSID_PSFactoryBuffer, &IID_IPSFactoryBuffer, (void **)&factory);
+    if (FAILED(hr)) return hr;
+
+    hr = IPSFactoryBuffer_CreateStub(factory, &IID_IDispatch, server, stub);
+    IPSFactoryBuffer_Release(factory);
+    return hr;
+}
+
+static HRESULT WINAPI dispatch_typelib_ps_CreateStub(IPSFactoryBuffer *iface,
+    REFIID iid, IUnknown *server, IRpcStubBuffer **stub)
+{
+    ITypeInfo *typeinfo;
+    TYPEATTR *attr;
+    HRESULT hr;
+
+    if (IsEqualGUID(iid, &IID_IDispatch))
+        return dispatch_create_stub(server, stub);
+
+    hr = get_typeinfo_for_iid(iid, &typeinfo);
+    if (FAILED(hr)) return hr;
+
+    hr = ITypeInfo_GetTypeAttr(typeinfo, &attr);
+    if (FAILED(hr))
+    {
+        ITypeInfo_Release(typeinfo);
+        return hr;
+    }
+
+    if (attr->typekind == TKIND_INTERFACE || (attr->wTypeFlags & TYPEFLAG_FDUAL))
+        hr = CreateStubFromTypeInfo(typeinfo, iid, server, stub);
+    else
+        hr = dispatch_create_stub(server, stub);
+
+    if (FAILED(hr))
+        ERR("Failed to create proxy, hr %#x.\n", hr);
+
+    ITypeInfo_ReleaseTypeAttr(typeinfo, attr);
+    ITypeInfo_Release(typeinfo);
+    return hr;
+}
+
+static const IPSFactoryBufferVtbl dispatch_typelib_ps_vtbl =
+{
+    dispatch_typelib_ps_QueryInterface,
+    dispatch_typelib_ps_AddRef,
+    dispatch_typelib_ps_Release,
+    dispatch_typelib_ps_CreateProxy,
+    dispatch_typelib_ps_CreateStub,
 };
 
-/* This is the whole PSFactoryBuffer object, just the vtableptr */
-static const IPSFactoryBufferVtbl *pPSDispatchFacBuf = &PSDispatchFacBuf_Vtbl;
+static IPSFactoryBuffer dispatch_typelib_ps = { &dispatch_typelib_ps_vtbl };
+
+extern void _get_STDFONT_CF(LPVOID *);
+extern void _get_STDPIC_CF(LPVOID *);
 
 /***********************************************************************
  *		DllGetClassObject (OLEAUT32.@)
@@ -844,16 +1073,10 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID iid, LPVOID *ppv)
 	    return S_OK;
 	}
     }
-    if (IsEqualCLSID(rclsid, &CLSID_PSDispatch) && IsEqualIID(iid, &IID_IPSFactoryBuffer)) {
-        *ppv = &pPSDispatchFacBuf;
-        IPSFactoryBuffer_AddRef((IPSFactoryBuffer *)*ppv);
-        return S_OK;
-    }
-    if (IsEqualGUID(rclsid,&CLSID_PSOAInterface)) {
-	if (S_OK==TMARSHAL_DllGetClassObject(rclsid,iid,ppv))
-	    return S_OK;
-	/*FALLTHROUGH*/
-    }
+
+    if (IsEqualGUID(rclsid, &CLSID_PSDispatch) || IsEqualGUID(rclsid, &CLSID_PSOAInterface))
+        return IPSFactoryBuffer_QueryInterface(&dispatch_typelib_ps, iid, ppv);
+
     if (IsEqualCLSID(rclsid, &CLSID_PSTypeComp) ||
         IsEqualCLSID(rclsid, &CLSID_PSTypeInfo) ||
         IsEqualCLSID(rclsid, &CLSID_PSTypeLib) ||

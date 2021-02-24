@@ -1,8 +1,8 @@
 /*
  * PROJECT:     ReactOS Print Spooler Service
- * LICENSE:     GNU GPLv2 or any later version as published by the Free Software Foundation
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
  * PURPOSE:     Unimplemented RPC calls
- * COPYRIGHT:   Copyright 2015 Colin Finck <colin@reactos.org>
+ * COPYRIGHT:   Copyright 2015 Colin Finck (colin@reactos.org)
  */
 
 #include "precomp.h"
@@ -50,28 +50,28 @@ _RpcPrinterMessageBox(WINSPOOL_PRINTER_HANDLE hPrinter, DWORD Error, ULONG_PTR h
 }
 
 DWORD
-_RpcSetAllocFailCount()
+_RpcSetAllocFailCount(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;
 }
 
 DWORD
-_RpcClusterSplOpen()
+_RpcClusterSplOpen(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;
 }
 
 DWORD
-_RpcClusterSplClose()
+_RpcClusterSplClose(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;
 }
 
 DWORD
-_RpcClusterSplIsAlive()
+_RpcClusterSplIsAlive(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;
@@ -99,28 +99,28 @@ _RpcEnumPerMachineConnections(WINSPOOL_HANDLE pServer, BYTE* pPrinterEnum, DWORD
 }
 
 DWORD
-_RpcSplOpenPrinter()
+_RpcSplOpenPrinter(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;
 }
 
 DWORD
-_RpcGetSpoolFileInfo()
+_RpcGetSpoolFileInfo(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;
 }
 
 DWORD
-_RpcCommitSpoolData()
+_RpcCommitSpoolData(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;
 }
 
 DWORD
-_RpcCloseSpoolFileHandle()
+_RpcCloseSpoolFileHandle(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;
@@ -134,7 +134,7 @@ _RpcSendRecvBidiData(WINSPOOL_PRINTER_HANDLE hPrinter, const WCHAR* pAction, WIN
 }
 
 DWORD
-_RpcAddDriverCatalog()
+_RpcAddDriverCatalog(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;

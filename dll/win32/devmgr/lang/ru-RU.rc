@@ -79,8 +79,8 @@ BEGIN
     IDS_DEV_DISABLED_SERVICE "ReactOS не может установить драйвера для этого устройства, потому что не может получить доступ к месту расположения установочных файлов."
     IDS_DEV_TRANSLATION_FAILED "Это устройство не отвечает своему драйверу."
     IDS_DEV_NO_SOFTCONFIG "ReactOS не удалось определить настройки для этого устройства. Ознакомтесь с его документацией и воспользуйтесь вкладкой Ресурсы для настройки."
-    IDS_DEV_BIOS_TABLE "Микропрограмма вашего компьютера не содержит необходимой информации для правильной настройки и использования данного устройства. \nЧтобы использовать это устройство, обратитесь к изготовителю компьютера для получения обновления микропрограммы или BIOS."
-    IDS_DEV_IRQ_TRANSLATION_FAILED "Это устройство запрашивет прерываение PCI, но настроено на прерывания ISA (или наоборот). \nВоспользуйтесь программой системной настройки для перенастройки прерываний для данного устройства."
+    IDS_DEV_BIOS_TABLE "Микропрограмма вашего компьютера не содержит необходимой информации для правильной настройки и использования данного устройства.\nЧтобы использовать это устройство, обратитесь к изготовителю компьютера для получения обновления микропрограммы или BIOS."
+    IDS_DEV_IRQ_TRANSLATION_FAILED "Это устройство запрашивет прерываение PCI, но настроено на прерывания ISA (или наоборот).\nВоспользуйтесь программой системной настройки для перенастройки прерываний для данного устройства."
     IDS_DEV_FAILED_DRIVER_ENTRY "ReactOS не может инициализировать драйвер устройства для данного оборудования."
     IDS_DEV_DRIVER_FAILED_PRIOR_UNLOAD "ReactOS не может загрузить драйвер устройства, поскольку предыдущий экземпляр этого драйвера не выгружен из памяти."
     IDS_DEV_DRIVER_FAILED_LOAD "ReactOS не может загрузить драйвер устройства. Возможно, драйвер поврежден или отсутствует."
@@ -177,8 +177,12 @@ BEGIN
     EDITTEXT IDC_DIGITALSIGNER, 100, 81, 145, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON "&Сведения...", IDC_DRIVERDETAILS, 7, 106, 75, 15
     LTEXT "Просмотр сведений о файлах драйверов.", -1, 91, 110, 154, 17, SS_NOPREFIX
-    PUSHBUTTON "&Обновить...", IDC_UPDATEDRIVER, 7, 126, 75, 15
-    LTEXT "Обновление драйверов для устройства.", -1, 91, 130, 154, 17, SS_NOPREFIX
+    PUSHBUTTON "&Обновить...", IDC_UPDATEDRIVER, 7, 134, 75, 15
+    LTEXT "Обновление драйверов для устройства.", -1, 91, 138, 154, 17, SS_NOPREFIX
+    PUSHBUTTON "От&катить", IDC_ROLLBACKDRIVER, 7, 162, 75, 15
+    LTEXT "Если устройство не работает после обновления драйвера, выполните откат к ранее установленному драйверу.", -1, 91, 162, 154, 25, SS_NOPREFIX
+    PUSHBUTTON "&Удалить", IDC_UNINSTALLDRIVER, 7, 190, 75, 15
+    LTEXT "Удаление драйвера (для опытных).", -1, 91, 194, 154, 17, SS_NOPREFIX
 END
 
 IDD_DRIVERDETAILS DIALOGEX 0, 0, 224, 230
@@ -238,32 +242,47 @@ BEGIN
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
 END
 
+IDD_UNINSTALLDRIVER DIALOGEX 0, 0, 224, 121
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBLE | WS_DLGFRAME
+CAPTION "Confirm Device Removal"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON "", IDC_DEVICON, 7, 7, 20, 20
+    LTEXT "", IDC_DEVNAME, 40, 9, 174, 16, SS_NOPREFIX
+    LTEXT "Warning: You are about to uninstall this device from your system.", -1, 7, 37, 204, 50
+    DEFPUSHBUTTON "OK", IDOK, 110, 100, 50, 14
+    PUSHBUTTON "Cancel", IDCANCEL, 166, 100, 50, 14
+END
 
 
 /*
  This code relates to the device manager GUI
  */
 
-IDR_MAINMENU MENU
+IDM_MAINMENU MENU
 BEGIN
-  POPUP "&Файл"
-  BEGIN
-    MENUITEM "В&ыход",                       IDC_EXIT
-  END
-  MENUITEM "&Действие",                      IDC_ACTIONMENU
-  POPUP "&Вид"
-  BEGIN
-    MENUITEM "&Устройства по типу",          IDC_DEVBYTYPE
-    MENUITEM "Устройства по под&ключению",   IDC_DEVBYCONN
-    MENUITEM "&Ресурсы по типу",             IDC_RESBYTYPE, GRAYED
-    MENUITEM "Ресурсы по подк&лючению",      IDC_RESBYCONN, GRAYED
-    MENUITEM SEPARATOR
-    MENUITEM "Показать &скрытые устройства", IDC_SHOWHIDDEN
-  END
-  POPUP "&Справка"
-  BEGIN
-    MENUITEM "О &программе...",              IDC_ABOUT
-  END
+    POPUP "&Файл"
+    BEGIN
+        MENUITEM "В&ыход",                       IDM_EXIT
+    END
+    POPUP "&Действие"
+    BEGIN
+        MENUITEM "О&бновить конфигурацию оборудования", IDM_SCAN_HARDWARE
+        MENUITEM "&Добавить устройство",                IDM_ADD_HARDWARE
+    END
+    POPUP "&Вид"
+    BEGIN
+        MENUITEM "&Устройства по типу",          IDM_DEVBYTYPE
+        MENUITEM "Устройства по под&ключению",   IDM_DEVBYCONN
+        MENUITEM "&Ресурсы по типу",             IDM_RESBYTYPE, GRAYED
+        MENUITEM "Ресурсы по подк&лючению",      IDM_RESBYCONN, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "Показать &скрытые устройства", IDM_SHOWHIDDEN
+    END
+    POPUP "&Справка"
+    BEGIN
+        MENUITEM "О &программе...",              IDM_ABOUT
+    END
 END
 
 

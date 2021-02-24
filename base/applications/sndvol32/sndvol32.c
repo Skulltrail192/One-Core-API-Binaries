@@ -94,7 +94,7 @@ PrefDlgAddLine(PSND_MIXER Mixer,
     PPREFERENCES_CONTEXT PrefContext = (PPREFERENCES_CONTEXT)Context;
 
     UNREFERENCED_PARAMETER(Mixer);
-	UNREFERENCED_PARAMETER(DisplayControls);
+    UNREFERENCED_PARAMETER(DisplayControls);
 
     switch (Line->dwComponentType)
     {
@@ -174,7 +174,7 @@ PrefDlgAddConnection(PSND_MIXER Mixer,
     UINT i;
 
     UNREFERENCED_PARAMETER(Mixer);
-	UNREFERENCED_PARAMETER(LineID);
+    UNREFERENCED_PARAMETER(LineID);
 
     if (Line->cControls != 0)
     {
@@ -537,7 +537,7 @@ DlgPreferencesProc(HWND hwndDlg,
                              (LONG_PTR)lParam);
             Context = (PPREFERENCES_CONTEXT)((LONG_PTR)lParam);
             Context->hwndDlg = hwndDlg;
-            Context->Mixer = SndMixerCreate(hwndDlg);
+            Context->Mixer = SndMixerCreate(hwndDlg, Context->MixerWindow->MixerId);
             Context->Selected = (UINT)-1;
 
             FillDevContext.PrefContext = Context;
@@ -591,7 +591,6 @@ DlgPreferencesProc(HWND hwndDlg,
     return 0;
 }
 
-
 /******************************************************************************/
 
 static VOID
@@ -632,7 +631,7 @@ SetVolumeCallback(PSND_MIXER Mixer, DWORD LineID, LPMIXERLINE Line, PVOID Ctx)
 {
     UINT ControlCount = 0, Index;
     LPMIXERCONTROL Control = NULL;
-    MIXERCONTROLDETAILS_UNSIGNED uDetails;
+    PMIXERCONTROLDETAILS_UNSIGNED puDetails = NULL;
     MIXERCONTROLDETAILS_BOOLEAN bDetails;
     PSET_VOLUME_CONTEXT Context = (PSET_VOLUME_CONTEXT)Ctx;
 
@@ -650,21 +649,74 @@ SetVolumeCallback(PSND_MIXER Mixer, DWORD LineID, LPMIXERLINE Line, PVOID Ctx)
         return FALSE;
     }
 
+    puDetails = HeapAlloc(GetProcessHeap(), 0, Line->cChannels * sizeof(MIXERCONTROLDETAILS_UNSIGNED));
+    if (puDetails == NULL)
+        return FALSE;
+
     /* now go through all controls and compare control ids */
-    for(Index = 0; Index < ControlCount; Index++)
+    for (Index = 0; Index < ControlCount; Index++)
     {
         if (Context->bVertical)
         {
-            if ((Control[Index].dwControlType & MIXERCONTROL_CT_CLASS_MASK) == MIXERCONTROL_CT_CLASS_FADER)
+            if (Control[Index].dwControlType == MIXERCONTROL_CONTROLTYPE_VOLUME)
             {
-                /* FIXME: give me granularity */
-                DWORD Step = 0x10000 / 5;
+                DWORD LineOffset, volumePosition, balancePosition;
+                DWORD volumeStep, balanceStep;
 
-                /* set up details */
-                uDetails.dwValue = 0x10000 - Step * Context->SliderPos;
+                LineOffset = Context->SliderPos;
+
+                volumePosition = (DWORD)SendDlgItemMessage(Preferences.MixerWindow->hWnd, LineOffset * IDC_LINE_SLIDER_VERT, TBM_GETPOS, 0, 0);
+                volumeStep = (Control[Index].Bounds.dwMaximum - Control[Index].Bounds.dwMinimum) / (VOLUME_MAX - VOLUME_MIN);
+
+                if (Line->cChannels == 1)
+                {
+                    /* set up details */
+                    puDetails[0].dwValue = ((VOLUME_MAX - volumePosition) * volumeStep) + Control[Index].Bounds.dwMinimum;
+                }
+                else if (Line->cChannels == 2)
+                {
+                    balancePosition = (DWORD)SendDlgItemMessage(Preferences.MixerWindow->hWnd, LineOffset * IDC_LINE_SLIDER_HORZ, TBM_GETPOS, 0, 0);
+                    if (balancePosition == BALANCE_CENTER)
+                    {
+                        puDetails[0].dwValue = ((VOLUME_MAX - volumePosition) * volumeStep) + Control[Index].Bounds.dwMinimum;
+                        puDetails[1].dwValue = ((VOLUME_MAX - volumePosition) * volumeStep) + Control[Index].Bounds.dwMinimum;
+                    }
+                    else if (balancePosition == BALANCE_LEFT)
+                    {
+                        puDetails[0].dwValue = ((VOLUME_MAX - volumePosition) * volumeStep) + Control[Index].Bounds.dwMinimum;
+                        puDetails[1].dwValue = Control[Index].Bounds.dwMinimum;
+                    }
+                    else if (balancePosition == BALANCE_RIGHT)
+                    {
+                        puDetails[0].dwValue = Control[Index].Bounds.dwMinimum;
+                        puDetails[1].dwValue = ((VOLUME_MAX - volumePosition) * volumeStep) + Control[Index].Bounds.dwMinimum;
+                    }
+                    else if (balancePosition < BALANCE_CENTER) // Left
+                    {
+                        puDetails[0].dwValue = ((VOLUME_MAX - volumePosition) * volumeStep) + Control[Index].Bounds.dwMinimum;
+
+                        balanceStep = (puDetails[0].dwValue - Control[Index].Bounds.dwMinimum) / (BALANCE_STEPS / 2);
+
+                        puDetails[1].dwValue = (balancePosition * balanceStep) + Control[Index].Bounds.dwMinimum;
+                    }
+                    else if (balancePosition > BALANCE_CENTER) // Right
+                    {
+                        puDetails[1].dwValue = ((VOLUME_MAX - volumePosition) * volumeStep) + Control[Index].Bounds.dwMinimum;
+
+                        balanceStep = (puDetails[1].dwValue - Control[Index].Bounds.dwMinimum) / (BALANCE_STEPS / 2);
+
+                        puDetails[0].dwValue = ((BALANCE_RIGHT - balancePosition) * balanceStep) + Control[Index].Bounds.dwMinimum;
+                    }
+                }
+                else
+                {
+                    SndMixerGetVolumeControlDetails(Preferences.MixerWindow->Mixer, Control[Index].dwControlID, Line->cChannels, sizeof(MIXERCONTROLDETAILS_UNSIGNED), (LPVOID)puDetails);
+
+                    /* FIXME */
+                }
 
                 /* set volume */
-                SndMixerSetVolumeControlDetails(Preferences.MixerWindow->Mixer, Control[Index].dwControlID, sizeof(MIXERCONTROLDETAILS_UNSIGNED), (LPVOID)&uDetails);
+                SndMixerSetVolumeControlDetails(Preferences.MixerWindow->Mixer, Control[Index].dwControlID, Line->cChannels, sizeof(MIXERCONTROLDETAILS_UNSIGNED), (LPVOID)puDetails);
 
                 /* done */
                 break;
@@ -672,24 +724,22 @@ SetVolumeCallback(PSND_MIXER Mixer, DWORD LineID, LPMIXERLINE Line, PVOID Ctx)
         }
         else if (Context->bSwitch)
         {
-            if ((Control[Index].dwControlType & MIXERCONTROL_CT_CLASS_MASK) == MIXERCONTROL_CT_CLASS_SWITCH)
+            if (Control[Index].dwControlType == MIXERCONTROL_CONTROLTYPE_MUTE)
             {
                 /* set up details */
                 bDetails.fValue = Context->SliderPos;
 
                 /* set volume */
-                SndMixerSetVolumeControlDetails(Preferences.MixerWindow->Mixer, Control[Index].dwControlID, sizeof(MIXERCONTROLDETAILS_BOOLEAN), (LPVOID)&bDetails);
+                SndMixerSetVolumeControlDetails(Preferences.MixerWindow->Mixer, Control[Index].dwControlID, 1, sizeof(MIXERCONTROLDETAILS_BOOLEAN), (LPVOID)&bDetails);
 
                 /* done */
                 break;
             }
         }
-        else
-        {
-            /* FIXME: implement left - right channel switch support */
-            assert(0);
-        }
     }
+
+    if (puDetails != NULL)
+        HeapFree(GetProcessHeap(), 0, puDetails);
 
     /* free controls */
     HeapFree(GetProcessHeap(), 0, Control);
@@ -704,6 +754,7 @@ BOOL
 CALLBACK
 MixerControlChangeCallback(PSND_MIXER Mixer, DWORD LineID, LPMIXERLINE Line, PVOID Context)
 {
+    PMIXERCONTROLDETAILS_UNSIGNED pVolumeDetails = NULL;
     UINT ControlCount = 0, Index;
     LPMIXERCONTROL Control = NULL;
 
@@ -721,52 +772,105 @@ MixerControlChangeCallback(PSND_MIXER Mixer, DWORD LineID, LPMIXERLINE Line, PVO
         return FALSE;
     }
 
+    pVolumeDetails = HeapAlloc(GetProcessHeap(),
+                               0,
+                               Line->cChannels * sizeof(MIXERCONTROLDETAILS_UNSIGNED));
+    if (pVolumeDetails == NULL)
+        goto done;
+
     /* now go through all controls and compare control ids */
-    for(Index = 0; Index < ControlCount; Index++)
+    for (Index = 0; Index < ControlCount; Index++)
     {
         if (Control[Index].dwControlID == PtrToUlong(Context))
         {
-            if ((Control[Index].dwControlType & MIXERCONTROL_CT_CLASS_MASK) == MIXERCONTROL_CT_CLASS_SWITCH)
+            if (Control[Index].dwControlType == MIXERCONTROL_CONTROLTYPE_MUTE)
             {
                 MIXERCONTROLDETAILS_BOOLEAN Details;
 
                 /* get volume control details */
-                if (SndMixerGetVolumeControlDetails(Preferences.MixerWindow->Mixer, Control[Index].dwControlID, sizeof(MIXERCONTROLDETAILS_BOOLEAN), (LPVOID)&Details) != -1)
+                if (SndMixerGetVolumeControlDetails(Preferences.MixerWindow->Mixer, Control[Index].dwControlID, 1, sizeof(MIXERCONTROLDETAILS_BOOLEAN), (LPVOID)&Details) != -1)
                 {
                     /* update dialog control */
                     UpdateDialogLineSwitchControl(&Preferences, Line, Details.fValue);
                 }
             }
-            else if ((Control[Index].dwControlType & MIXERCONTROL_CT_CLASS_MASK) == MIXERCONTROL_CT_CLASS_FADER)
+            else if (Control[Index].dwControlType == MIXERCONTROL_CONTROLTYPE_VOLUME)
             {
-                MIXERCONTROLDETAILS_UNSIGNED Details;
-
                 /* get volume control details */
-                if (SndMixerGetVolumeControlDetails(Preferences.MixerWindow->Mixer, Control[Index].dwControlID, sizeof(MIXERCONTROLDETAILS_UNSIGNED), (LPVOID)&Details) != -1)
+                if (SndMixerGetVolumeControlDetails(Preferences.MixerWindow->Mixer, Control[Index].dwControlID, Line->cChannels, sizeof(MIXERCONTROLDETAILS_UNSIGNED), (LPVOID)pVolumeDetails) != -1)
                 {
                     /* update dialog control */
-                    DWORD Position;
-                    DWORD Step = 0x10000 / 5;
+                    DWORD volumePosition, volumeStep, maxVolume, i;
+                    DWORD balancePosition, balanceStep;
 
-                    /* FIXME: give me granularity */
-                    Position = 5 - (Details.dwValue / Step);
+                    volumeStep = (Control[Index].Bounds.dwMaximum - Control[Index].Bounds.dwMinimum) / (VOLUME_MAX - VOLUME_MIN);
 
-                    /* update volume control slider */
-                    UpdateDialogLineSliderControl(&Preferences, Line, Control[Index].dwControlID, IDC_LINE_SLIDER_VERT, Position);
+                    maxVolume = 0;
+                    for (i = 0; i < Line->cChannels; i++)
+                    {
+                        if (pVolumeDetails[i].dwValue > maxVolume)
+                            maxVolume = pVolumeDetails[i].dwValue;
+                    }
+
+                    volumePosition = (maxVolume - Control[Index].Bounds.dwMinimum) / volumeStep;
+
+                    if (Line->cChannels == 1)
+                    {
+                        balancePosition = BALANCE_CENTER;
+                    }
+                    else if (Line->cChannels == 2)
+                    {
+                        if (pVolumeDetails[0].dwValue == pVolumeDetails[1].dwValue)
+                        {
+                            balancePosition = BALANCE_CENTER;
+                        }
+                        else if (pVolumeDetails[0].dwValue == Control[Index].Bounds.dwMinimum)
+                        {
+                            balancePosition = BALANCE_RIGHT;
+                        }
+                        else if (pVolumeDetails[1].dwValue == Control[Index].Bounds.dwMinimum)
+                        {
+                            balancePosition = BALANCE_LEFT;
+                        }
+                        else
+                        {
+                            balanceStep = (maxVolume - Control[Index].Bounds.dwMinimum) / (BALANCE_STEPS / 2);
+
+                            if (pVolumeDetails[0].dwValue < pVolumeDetails[1].dwValue)
+                            {
+                                balancePosition = (pVolumeDetails[0].dwValue - Control[Index].Bounds.dwMinimum) / balanceStep;
+                                balancePosition = BALANCE_RIGHT - balancePosition;
+                            }
+                            else if (pVolumeDetails[1].dwValue < pVolumeDetails[0].dwValue)
+                            {
+                                balancePosition = (pVolumeDetails[1].dwValue - Control[Index].Bounds.dwMinimum) / balanceStep;
+                                balancePosition = BALANCE_LEFT + balancePosition;
+                            }
+                        }
+                    }
+
+                    /* Update the volume control slider */
+                    UpdateDialogLineSliderControl(&Preferences, Line, IDC_LINE_SLIDER_VERT, VOLUME_MAX - volumePosition);
+
+                    /* Update the balance control slider */
+                    UpdateDialogLineSliderControl(&Preferences, Line, IDC_LINE_SLIDER_HORZ, balancePosition);
                 }
             }
             break;
         }
     }
 
+done:
+    /* Free the volume details */
+    if (pVolumeDetails)
+        HeapFree(GetProcessHeap(), 0, pVolumeDetails);
+
     /* free controls */
     HeapFree(GetProcessHeap(), 0, Control);
-
 
     /* done */
     return TRUE;
 }
-
 
 static LRESULT CALLBACK
 MainWindowProc(HWND hwnd,
@@ -776,6 +880,7 @@ MainWindowProc(HWND hwnd,
 {
     PMIXER_WINDOW MixerWindow;
     DWORD CtrlID, LineOffset;
+    BOOL bRet;
     LRESULT Result = 0;
     SET_VOLUME_CONTEXT Context;
 
@@ -788,7 +893,7 @@ MainWindowProc(HWND hwnd,
 
             switch (LOWORD(wParam))
             {
-                case IDC_PROPERTIES:
+                case IDM_PROPERTIES:
                 {
                     PREFERENCES_CONTEXT Pref;
 
@@ -806,7 +911,7 @@ MainWindowProc(HWND hwnd,
                         TCHAR szProduct[MAXPNAMELEN];
 
                         /* get mixer product name */
-                        if (SndMixerGetProductName(MixerWindow->Mixer,
+                        if (SndMixerGetProductName(Pref.Mixer,
                                                    szProduct,
                                                    sizeof(szProduct) / sizeof(szProduct[0])) == -1)
                         {
@@ -820,7 +925,8 @@ MainWindowProc(HWND hwnd,
                         }
 
                         /* destroy old status bar */
-                        DestroyWindow(MixerWindow->hStatusBar);
+                        if (MixerWindow->Mode == NORMAL_MODE)
+                            DestroyWindow(MixerWindow->hStatusBar);
 
                         /* update details */
                         Preferences.SelectedLine = Pref.SelectedLine;
@@ -831,34 +937,44 @@ MainWindowProc(HWND hwnd,
                         /* use new selected mixer */
                         Preferences.MixerWindow->Mixer = Pref.Mixer;
 
+                        /* create status window */
+                        if (MixerWindow->Mode == NORMAL_MODE)
+                        {
+                            MixerWindow->hStatusBar = CreateStatusWindow(WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS,
+                                                                         NULL,
+                                                                         hwnd,
+                                                                         0);
+                            if (MixerWindow->hStatusBar)
+                            {
+                                /* Set status bar */
+                                SendMessage(MixerWindow->hStatusBar,
+                                    WM_SETTEXT,
+                                    0,
+                                    (LPARAM)szProduct);
+                            }
+                        }
+
                         /* rebuild dialog controls */
                         RebuildMixerWindowControls(&Preferences);
-
-                        /* create status window */
-                        MixerWindow->hStatusBar = CreateStatusWindow(WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS,
-                                                                     NULL,
-                                                                     hwnd,
-                                                                     0);
-
-                        /* set status bar */
-                        if (MixerWindow->hStatusBar)
-                        {
-                            SendMessage(MixerWindow->hStatusBar,
-                                WM_SETTEXT,
-                                0,
-                                (LPARAM)szProduct);
-                        }
                     }
                     break;
                 }
 
-                case IDC_EXIT:
+                case IDM_ADVANCED_CONTROLS:
+                    MixerWindow->bShowExtendedControls = !MixerWindow->bShowExtendedControls;
+                    CheckMenuItem(GetMenu(hwnd),
+                                  IDM_ADVANCED_CONTROLS,
+                                  MF_BYCOMMAND | (MixerWindow->bShowExtendedControls ? MF_CHECKED : MF_UNCHECKED));
+                    RebuildMixerWindowControls(&Preferences);
+                    break;
+
+                case IDM_EXIT:
                 {
                     PostQuitMessage(0);
                     break;
                 }
 
-                case IDC_ABOUT:
+                case IDM_ABOUT:
                 {
                     HICON hAppIcon = (HICON)GetClassLongPtrW(hwnd,
                                                              GCLP_HICON);
@@ -875,28 +991,70 @@ MainWindowProc(HWND hwnd,
                     CtrlID = LOWORD(wParam);
 
                     /* check if the message is from the line switch */
-                    if (HIWORD(wParam) == BN_CLICKED && (CtrlID % IDC_LINE_SWITCH == 0))
+                    if (HIWORD(wParam) == BN_CLICKED)
                     {
-                         /* compute line offset */
-                         LineOffset = CtrlID / IDC_LINE_SWITCH;
+                        if (CtrlID % IDC_LINE_SWITCH == 0)
+                        {
+                            /* compute line offset */
+                            LineOffset = CtrlID / IDC_LINE_SWITCH;
 
-                        /* compute window id of line name static control */
-                        CtrlID = LineOffset * IDC_LINE_NAME;
+                            /* compute window id of line name static control */
+                            CtrlID = LineOffset * IDC_LINE_NAME;
 
-                       /* get line name */
-                       if (GetDlgItemTextW(hwnd, CtrlID, Context.LineName, MIXER_LONG_NAME_CHARS) != 0)
-                       {
-                           /* setup context */
-                           Context.SliderPos = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
-                           Context.bVertical = FALSE;
-                           Context.bSwitch = TRUE;
+                            if (Preferences.MixerWindow->Mixer->MixerId == PLAY_MIXER)
+                            {
+                                /* get line name */
+                                if (GetDlgItemTextW(hwnd, CtrlID, Context.LineName, MIXER_LONG_NAME_CHARS) != 0)
+                                {
+                                    /* setup context */
+                                    Context.SliderPos = SendMessage((HWND)lParam, BM_GETCHECK, 0, 0);
+                                    Context.bVertical = FALSE;
+                                    Context.bSwitch = TRUE;
 
-                           /* set volume */
-                           SndMixerEnumConnections(Preferences.MixerWindow->Mixer, Preferences.SelectedLine, SetVolumeCallback, (LPVOID)&Context);
-                       }
+                                    /* set volume */
+                                    SndMixerEnumConnections(Preferences.MixerWindow->Mixer, Preferences.SelectedLine, SetVolumeCallback, (LPVOID)&Context);
+                                }
+                            }
+                            else if (Preferences.MixerWindow->Mixer->MixerId == RECORD_MIXER)
+                            {
+                                UINT i;
+
+                                for (i = 0; i < Preferences.MixerWindow->DialogCount; i++)
+                                {
+                                    SendDlgItemMessageW(hwnd, (i + 1) * IDC_LINE_SWITCH, BM_SETCHECK, (WPARAM)((i + 1) == LineOffset), 0);
+                                }
+                            }
+                        }
+                        else if (CtrlID % IDC_LINE_ADVANCED == 0)
+                        {
+                            ADVANCED_CONTEXT AdvancedContext;
+
+                            /* compute line offset */
+                            LineOffset = CtrlID / IDC_LINE_ADVANCED;
+
+                            /* compute window id of line name static control */
+                            CtrlID = LineOffset * IDC_LINE_NAME;
+
+                            /* get line name */
+                            if (GetDlgItemTextW(hwnd, CtrlID, AdvancedContext.LineName, MIXER_LONG_NAME_CHARS) != 0)
+                            {
+                                AdvancedContext.MixerWindow = Preferences.MixerWindow;
+                                AdvancedContext.Mixer = Preferences.MixerWindow->Mixer;
+                                AdvancedContext.Line = SndMixerGetLineByName(Preferences.MixerWindow->Mixer,
+                                                                             Preferences.SelectedLine,
+                                                                             AdvancedContext.LineName);
+                                if (AdvancedContext.Line)
+                                {
+                                    DialogBoxParam(hAppInstance,
+                                                   MAKEINTRESOURCE(IDD_ADVANCED),
+                                                   hwnd,
+                                                   AdvancedDlgProc,
+                                                   (LPARAM)&AdvancedContext);
+                                }
+                            }
+                        }
                     }
                 }
-
             }
             break;
         }
@@ -924,33 +1082,94 @@ MainWindowProc(HWND hwnd,
         }
 
         case WM_VSCROLL:
-        {
-            if (LOWORD(wParam) == TB_THUMBTRACK)
+            switch (LOWORD(wParam))
             {
-                /* get dialog item ctrl */
-                CtrlID = GetDlgCtrlID((HWND)lParam);
+                case TB_THUMBTRACK:
+                    /* get dialog item ctrl */
+                    CtrlID = GetDlgCtrlID((HWND)lParam);
 
-                /* get line index */
-                LineOffset = CtrlID / IDC_LINE_SLIDER_VERT;
+                    /* get line index */
+                    LineOffset = CtrlID / IDC_LINE_SLIDER_VERT;
 
-                /* compute window id of line name static control */
-                CtrlID = LineOffset * IDC_LINE_NAME;
+                    /* compute window id of line name static control */
+                    CtrlID = LineOffset * IDC_LINE_NAME;
 
-                /* get line name */
-                if (GetDlgItemTextW(hwnd, CtrlID, Context.LineName, MIXER_LONG_NAME_CHARS) != 0)
-                {
-                    /* setup context */
-                    Context.SliderPos = HIWORD(wParam);
-                    Context.bVertical = TRUE;
-                    Context.bSwitch = FALSE;
+                    /* get line name */
+                    if (GetDlgItemTextW(hwnd, CtrlID, Context.LineName, MIXER_LONG_NAME_CHARS) != 0)
+                    {
+                        /* setup context */
+                        Context.SliderPos = LineOffset;
+                        Context.bVertical = TRUE;
+                        Context.bSwitch = FALSE;
 
-                    /* set volume */
-                    SndMixerEnumConnections(Preferences.MixerWindow->Mixer, Preferences.SelectedLine, SetVolumeCallback, (LPVOID)&Context);
-                }
+                        /* set volume */
+                        SndMixerEnumConnections(Preferences.MixerWindow->Mixer, Preferences.SelectedLine, SetVolumeCallback, (LPVOID)&Context);
+                    }
+                    break;
+
+                case TB_ENDTRACK:
+                    MixerWindow = GetWindowData(hwnd,
+                                                MIXER_WINDOW);
+
+                    /* get dialog item ctrl */
+                    CtrlID = GetDlgCtrlID((HWND)lParam);
+
+                    /* get line index */
+                    LineOffset = CtrlID / IDC_LINE_SLIDER_VERT;
+
+                    if (LineOffset == 1 && MixerWindow->Mixer->MixerId == 0)
+                        PlaySound((LPCTSTR)SND_ALIAS_SYSTEMDEFAULT, NULL, SND_ASYNC | SND_ALIAS_ID);
+                    break;
+
+                default:
+                    break;
             }
-
             break;
-        }
+
+        case WM_HSCROLL:
+            switch (LOWORD(wParam))
+            {
+                case TB_THUMBTRACK:
+                    /* get dialog item ctrl */
+                    CtrlID = GetDlgCtrlID((HWND)lParam);
+
+                    /* get line index */
+                    LineOffset = CtrlID / IDC_LINE_SLIDER_HORZ;
+
+                    /* compute window id of line name static control */
+                    CtrlID = LineOffset * IDC_LINE_NAME;
+
+                    /* get line name */
+                    if (GetDlgItemTextW(hwnd, CtrlID, Context.LineName, MIXER_LONG_NAME_CHARS) != 0)
+                    {
+                        /* setup context */
+                        Context.SliderPos = LineOffset;
+                        Context.bVertical = TRUE;
+                        Context.bSwitch = FALSE;
+
+                        /* set volume */
+                        SndMixerEnumConnections(Preferences.MixerWindow->Mixer, Preferences.SelectedLine, SetVolumeCallback, (LPVOID)&Context);
+                    }
+                    break;
+
+                case TB_ENDTRACK:
+                    MixerWindow = GetWindowData(hwnd,
+                                                MIXER_WINDOW);
+
+                    /* get dialog item ctrl */
+                    CtrlID = GetDlgCtrlID((HWND)lParam);
+
+                    /* get line index */
+                    LineOffset = CtrlID / IDC_LINE_SLIDER_HORZ;
+
+                    if (LineOffset == 1 && MixerWindow->Mixer->MixerId == 0)
+                        PlaySound((LPCTSTR)SND_ALIAS_SYSTEMDEFAULT, NULL, SND_ASYNC | SND_ALIAS_ID);
+                    break;
+
+                default:
+                    break;
+            }
+            break;
 
 
         case WM_CREATE:
@@ -960,7 +1179,7 @@ MainWindowProc(HWND hwnd,
                              GWL_USERDATA,
                              (LONG_PTR)MixerWindow);
             MixerWindow->hWnd = hwnd;
-            MixerWindow->Mixer = SndMixerCreate(MixerWindow->hWnd);
+            MixerWindow->Mixer = SndMixerCreate(MixerWindow->hWnd, MixerWindow->MixerId);
             if (MixerWindow->Mixer != NULL)
             {
                 TCHAR szProduct[MAXPNAMELEN];
@@ -990,25 +1209,43 @@ MainWindowProc(HWND hwnd,
                 /* copy product */
                 wcscpy(Preferences.DeviceName, szProduct);
 
+                /* Disable the 'Advanced Controls' menu item */
+                EnableMenuItem(GetMenu(hwnd), IDM_ADVANCED_CONTROLS, MF_BYCOMMAND | MF_GRAYED);
+
+                /* Load the placement coordinate data of the window */
+                bRet = LoadXYCoordWnd(&Preferences);
+                if (bRet)
+                {
+                    /*
+                     * LoadXYCoordWnd() might fail for the first time of opening the application which is normal as
+                     * the Sound Control's applet settings haven't been saved yet to the Registry. At this point SetWindowPos()
+                     * call is skipped.
+                     */
+                    SetWindowPos(hwnd, NULL, MixerWindow->WndPosX, MixerWindow->WndPosY, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+                }
+
+                /* create status window */
+                if (MixerWindow->Mode == NORMAL_MODE)
+                {
+                    MixerWindow->hStatusBar = CreateStatusWindow(WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS,
+                                                                 NULL,
+                                                                 hwnd,
+                                                                 0);
+                    if (MixerWindow->hStatusBar)
+                    {
+                        SendMessage(MixerWindow->hStatusBar,
+                                    WM_SETTEXT,
+                                    0,
+                                   (LPARAM)szProduct);
+                    }
+                }
+
                 if (!RebuildMixerWindowControls(&Preferences))
                 {
                     DPRINT("Rebuilding mixer window controls failed!\n");
                     SndMixerDestroy(MixerWindow->Mixer);
                     MixerWindow->Mixer = NULL;
                     Result = -1;
-                }
-
-                /* create status window */
-                MixerWindow->hStatusBar = CreateStatusWindow(WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS,
-                                                             NULL,
-                                                             hwnd,
-                                                             0);
-                if (MixerWindow->hStatusBar)
-                {
-                    SendMessage(MixerWindow->hStatusBar,
-                                WM_SETTEXT,
-                                0,
-                                (LPARAM)szProduct);
                 }
             }
             break;
@@ -1024,6 +1261,8 @@ MainWindowProc(HWND hwnd,
                 {
                     SndMixerDestroy(MixerWindow->Mixer);
                 }
+                if (MixerWindow->hFont)
+                    DeleteObject(MixerWindow->hFont);
                 HeapFree(hAppHeap, 0, MixerWindow);
             }
             break;
@@ -1031,6 +1270,7 @@ MainWindowProc(HWND hwnd,
 
         case WM_CLOSE:
         {
+            SaveXYCoordWnd(hwnd, &Preferences);
             PostQuitMessage(0);
             break;
         }
@@ -1080,7 +1320,9 @@ UnregisterApplicationClasses(VOID)
 }
 
 static HWND
-CreateApplicationWindow(VOID)
+CreateApplicationWindow(
+    WINDOW_MODE WindowMode,
+    UINT MixerId)
 {
     HWND hWnd;
 
@@ -1091,6 +1333,9 @@ CreateApplicationWindow(VOID)
     {
         return NULL;
     }
+
+    MixerWindow->Mode = WindowMode;
+    MixerWindow->MixerId = MixerId;
 
     if (mixerGetNumDevs() > 0)
     {
@@ -1136,6 +1381,68 @@ CreateApplicationWindow(VOID)
     return hWnd;
 }
 
+static
+BOOL
+HandleCommandLine(LPTSTR cmdline,
+                  DWORD dwStyle,
+                  PWINDOW_MODE pMode,
+                  PUINT pMixerId)
+{
+    TCHAR option;
+
+    *pMixerId = PLAY_MIXER;
+    *pMode = (dwStyle & 0x20) ? SMALL_MODE : NORMAL_MODE;
+
+    while (*cmdline == _T(' ') || *cmdline == _T('-') || *cmdline == _T('/'))
+    {
+        if (*cmdline++ == _T(' '))
+            continue;
+
+        option = *cmdline;
+        if (option)
+            cmdline++;
+        while (*cmdline == _T(' '))
+            cmdline++;
+
+        switch (option)
+        {
+            case 'd': /* Device */
+            case 'D':
+                break;
+
+            case 'n': /* Small size */
+            case 'N':
+                *pMode = NORMAL_MODE;
+                break;
+
+            case 's': /* Small size */
+            case 'S':
+                *pMode = SMALL_MODE;
+                break;
+
+            case 't': /* Tray size */
+            case 'T':
+                *pMode = TRAY_MODE;
+                break;
+
+            case 'p': /* Play mode */
+            case 'P':
+                *pMixerId = PLAY_MIXER;
+                break;
+
+            case 'r': /* Record mode */
+            case 'R':
+                *pMixerId = RECORD_MIXER;
+                break;
+
+            default:
+                return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
 int WINAPI
 _tWinMain(HINSTANCE hInstance,
           HINSTANCE hPrevInstance,
@@ -1145,16 +1452,21 @@ _tWinMain(HINSTANCE hInstance,
     MSG Msg;
     int Ret = 1;
     INITCOMMONCONTROLSEX Controls;
+    WINDOW_MODE WindowMode = SMALL_MODE;
+    UINT MixerId = 0;
+    DWORD dwStyle;
 
     UNREFERENCED_PARAMETER(hPrevInstance);
-	UNREFERENCED_PARAMETER(lpszCmdLine);
-	UNREFERENCED_PARAMETER(nCmdShow);
+    UNREFERENCED_PARAMETER(nCmdShow);
 
     hAppInstance = hInstance;
     hAppHeap = GetProcessHeap();
 
     if (InitAppConfig())
     {
+        dwStyle = GetStyleValue();
+        HandleCommandLine(lpszCmdLine, dwStyle, &WindowMode, &MixerId);
+
         /* load the application title */
         if (!AllocAndLoadString(&lpAppTitle,
                                 hAppInstance,
@@ -1168,37 +1480,48 @@ _tWinMain(HINSTANCE hInstance,
 
         InitCommonControlsEx(&Controls);
 
-        if (RegisterApplicationClasses())
+        if (WindowMode == TRAY_MODE)
         {
-            hMainWnd = CreateApplicationWindow();
-            if (hMainWnd != NULL)
-            {
-                BOOL bRet;
-                while ((bRet =GetMessage(&Msg,
-                                         NULL,
-                                         0,
-                                         0)) != 0)
-                {
-                    if (bRet != -1)
-                    {
-                        TranslateMessage(&Msg);
-                        DispatchMessage(&Msg);
-                    }
-                }
-
-                DestroyWindow(hMainWnd);
-                Ret = 0;
-            }
-            else
-            {
-                DPRINT("Failed to create application window (LastError: %d)!\n", GetLastError());
-            }
-
-            UnregisterApplicationClasses();
+            DialogBoxParam(hAppInstance,
+                           MAKEINTRESOURCE(IDD_TRAY_MASTER),
+                           NULL,
+                           TrayDlgProc,
+                           0);
         }
         else
         {
-            DPRINT("Failed to register application classes (LastError: %d)!\n", GetLastError());
+            if (RegisterApplicationClasses())
+            {
+                hMainWnd = CreateApplicationWindow(WindowMode, MixerId);
+                if (hMainWnd != NULL)
+                {
+                    BOOL bRet;
+                    while ((bRet =GetMessage(&Msg,
+                                             NULL,
+                                             0,
+                                             0)) != 0)
+                    {
+                        if (bRet != -1)
+                        {
+                            TranslateMessage(&Msg);
+                            DispatchMessage(&Msg);
+                        }
+                    }
+
+                    DestroyWindow(hMainWnd);
+                    Ret = 0;
+                }
+                else
+                {
+                    DPRINT("Failed to create application window (LastError: %d)!\n", GetLastError());
+                }
+
+                UnregisterApplicationClasses();
+            }
+            else
+            {
+                DPRINT("Failed to register application classes (LastError: %d)!\n", GetLastError());
+            }
         }
 
         if (lpAppTitle != NULL)

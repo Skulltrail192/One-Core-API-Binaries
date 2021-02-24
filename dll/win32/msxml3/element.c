@@ -18,9 +18,30 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#define COBJMACROS
+
+#include "config.h"
+
+#include <stdarg.h>
+#ifdef HAVE_LIBXML2
+# include <libxml/parser.h>
+# include <libxml/xmlerror.h>
+#endif
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "ole2.h"
+#include "msxml6.h"
+
+#include "msxml_private.h"
+
+#include "wine/debug.h"
 
 #ifdef HAVE_LIBXML2
+
+WINE_DEFAULT_DEBUG_CHANNEL(msxml);
 
 static const xmlChar DT_prefix[] = "dt";
 static const xmlChar DT_nsURI[] = "urn:schemas-microsoft-com:datatypes";
@@ -1377,7 +1398,7 @@ static HRESULT WINAPI domelem_getAttributeNode(
 
     if (attr)
     {
-        IUnknown *unk = create_attribute((xmlNodePtr)attr);
+        IUnknown *unk = create_attribute((xmlNodePtr)attr, FALSE);
         hr = IUnknown_QueryInterface(unk, &IID_IXMLDOMAttribute, (void**)attributeNode);
         IUnknown_Release(unk);
     }
@@ -1733,8 +1754,11 @@ static HRESULT domelem_remove_named_item(xmlNodePtr node, BSTR name, IXMLDOMNode
 
 static HRESULT domelem_get_item(const xmlNodePtr node, LONG index, IXMLDOMNode **item)
 {
+    xmlNsPtr ns, xmlns;
     xmlAttrPtr curr;
     LONG attrIndex;
+    IUnknown *unk;
+    HRESULT hr;
 
     TRACE("(%p)->(%d %p)\n", node, index, item);
 
@@ -1743,42 +1767,75 @@ static HRESULT domelem_get_item(const xmlNodePtr node, LONG index, IXMLDOMNode *
     if (index < 0)
         return S_FALSE;
 
+    attrIndex = 0;
     curr = node->properties;
-
-    for (attrIndex = 0; attrIndex < index; attrIndex++) {
-        if (curr->next == NULL)
-            return S_FALSE;
-        else
+    if (curr) {
+        for (; attrIndex < index && curr->next != NULL; attrIndex++)
             curr = curr->next;
+
+        if (attrIndex == index) {
+            *item = create_node( (xmlNodePtr) curr );
+            return S_OK;
+        }
     }
 
-    *item = create_node( (xmlNodePtr) curr );
+    if (!node->nsDef)
+        return S_FALSE;
 
-    return S_OK;
+    attrIndex++;
+    ns = node->nsDef;
+    for (; attrIndex < index && ns->next != NULL; attrIndex++)
+        ns = ns->next;
+
+    if (attrIndex < index)
+        return S_FALSE;
+
+    xmlns = xmlNewNs(NULL, BAD_CAST "http://www.w3.org/2000/xmlns/", BAD_CAST "xmlns");
+    if (!xmlns)
+        return E_OUTOFMEMORY;
+
+    curr = xmlNewNsProp(NULL, xmlns, ns->prefix, ns->href);
+    if (!curr) {
+        xmlFreeNs(xmlns);
+        return E_OUTOFMEMORY;
+    }
+    curr->doc = node->doc;
+
+    unk = create_attribute((xmlNodePtr)curr, TRUE);
+    if (!unk) {
+        xmlFreeNs(xmlns);
+        xmlFreeProp(curr);
+        return E_OUTOFMEMORY;
+    }
+
+    hr = IUnknown_QueryInterface(unk, &IID_IXMLDOMNode, (void**)item);
+    IUnknown_Release(unk);
+
+    return hr;
 }
 
 static HRESULT domelem_get_length(const xmlNodePtr node, LONG *length)
 {
-    xmlAttrPtr first;
     xmlAttrPtr curr;
     LONG attrCount;
+    xmlNsPtr ns;
 
     TRACE("(%p)->(%p)\n", node, length);
 
     if( !length )
         return E_INVALIDARG;
 
-    first = node->properties;
-    if (first == NULL) {
-	*length = 0;
-	return S_OK;
-    }
-
-    curr = first;
-    attrCount = 1;
-    while (curr->next) {
+    attrCount = 0;
+    curr = node->properties;
+    while (curr) {
         attrCount++;
         curr = curr->next;
+    }
+
+    ns = node->nsDef;
+    while (ns) {
+        attrCount++;
+        ns = ns->next;
     }
     *length = attrCount;
 

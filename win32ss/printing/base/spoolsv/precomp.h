@@ -1,8 +1,8 @@
 /*
  * PROJECT:     ReactOS Print Spooler Service
- * LICENSE:     GNU GPLv2 or any later version as published by the Free Software Foundation
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
  * PURPOSE:     Precompiled Header for all source files
- * COPYRIGHT:   Copyright 2015-2017 Colin Finck <colin@reactos.org>
+ * COPYRIGHT:   Copyright 2015-2017 Colin Finck (colin@reactos.org)
  */
 
 #ifndef _PRECOMP_H
@@ -17,8 +17,10 @@
 #include <winspool.h>
 #include <winsplp.h>
 #include <winspool_s.h>
+#include <ndk/rtlfuncs.h>
 
 #include <spoolss.h>
+#include <marshalling/marshalling.h>
 
 #include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(spoolsv);

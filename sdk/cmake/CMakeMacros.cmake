@@ -74,6 +74,7 @@ macro(set_cpp)
             include_directories(${REACTOS_SOURCE_DIR}/sdk/include/c++/stlport)
         else()
             replace_compile_flags("-nostdinc" " ")
+            add_definitions(-DPAL_STDCPP_COMPAT)
         endif()
     endif()
 
@@ -83,7 +84,7 @@ endmacro()
 function(add_dependency_node _node)
     if(GENERATE_DEPENDENCY_GRAPH)
         get_target_property(_type ${_node} TYPE)
-        if(_type MATCHES SHARED_LIBRARY OR ${_node} MATCHES ntoskrnl)
+        if(_type MATCHES SHARED_LIBRARY|MODULE_LIBRARY OR ${_node} MATCHES ntoskrnl)
             file(APPEND ${REACTOS_BINARY_DIR}/dependencies.graphml "    <node id=\"${_node}\"/>\n")
         endif()
      endif()
@@ -92,14 +93,14 @@ endfunction()
 function(add_dependency_edge _source _target)
     if(GENERATE_DEPENDENCY_GRAPH)
         get_target_property(_type ${_source} TYPE)
-        if(_type MATCHES SHARED_LIBRARY)
+        if(_type MATCHES SHARED_LIBRARY|MODULE_LIBRARY)
             file(APPEND ${REACTOS_BINARY_DIR}/dependencies.graphml "    <edge source=\"${_source}\" target=\"${_target}\"/>\n")
         endif()
     endif()
 endfunction()
 
 function(add_dependency_header)
-    file(APPEND ${REACTOS_BINARY_DIR}/dependencies.graphml "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<graphml>\n  <graph id=\"ReactOS dependencies\" edgedefault=\"directed\">\n")
+    file(WRITE ${REACTOS_BINARY_DIR}/dependencies.graphml "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<graphml>\n  <graph id=\"ReactOS dependencies\" edgedefault=\"directed\">\n")
 endfunction()
 
 function(add_dependency_footer)
@@ -162,14 +163,19 @@ function(add_link)
     set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/${_LINK_NAME}.lnk PROPERTIES GENERATED TRUE)
 endfunction()
 
+#
+# WARNING!
+# Please keep the numbering in this list in sync with
+# boot/bootdata/packages/reactos.dff.in
+#
 macro(dir_to_num dir var)
-    if(${dir} STREQUAL reactos/system32)
+    if(${dir} STREQUAL reactos)
         set(${var} 1)
-    elseif(${dir} STREQUAL reactos/system32/drivers)
+    elseif(${dir} STREQUAL reactos/system32)
         set(${var} 2)
-    elseif(${dir} STREQUAL reactos/Fonts)
+    elseif(${dir} STREQUAL reactos/system32/drivers)
         set(${var} 3)
-    elseif(${dir} STREQUAL reactos)
+    elseif(${dir} STREQUAL reactos/Fonts)
         set(${var} 4)
     elseif(${dir} STREQUAL reactos/system32/drivers/etc)
         set(${var} 5)
@@ -179,6 +185,8 @@ macro(dir_to_num dir var)
         set(${var} 7)
     elseif(${dir} STREQUAL reactos/bin/testdata)
         set(${var} 8)
+    elseif(${dir} STREQUAL reactos/bin/suppl)
+        set(${var} 80)
     elseif(${dir} STREQUAL reactos/media)
         set(${var} 9)
     elseif(${dir} STREQUAL reactos/Microsoft.NET)
@@ -269,6 +277,32 @@ macro(dir_to_num dir var)
         set(${var} 52)
     elseif(${dir} STREQUAL reactos/AppPatch)
         set(${var} 53)
+    elseif(${dir} STREQUAL reactos/winsxs)
+        set(${var} 54)
+    elseif(${dir} STREQUAL reactos/winsxs/manifests)
+        set(${var} 55)
+    elseif(${dir} STREQUAL reactos/winsxs/x86_microsoft.windows.common-controls_6595b64144ccf1df_5.82.2600.2982_none_deadbeef)
+        set(${var} 56)
+    elseif(${dir} STREQUAL reactos/winsxs/x86_microsoft.windows.common-controls_6595b64144ccf1df_6.0.2600.2982_none_deadbeef)
+        set(${var} 57)
+    elseif(${dir} STREQUAL reactos/winsxs/x86_microsoft.windows.gdiplus_6595b64144ccf1df_1.1.7601.23038_none_deadbeef)
+        set(${var} 58)
+    elseif(${dir} STREQUAL reactos/winsxs/x86_reactos.apisets_6595b64144ccf1df_1.0.0.0_none_deadbeef)
+        set(${var} 59)
+    elseif(${dir} STREQUAL reactos/winsxs/x86_reactos.newapi_6595b64144ccf1df_1.0.0.0_none_deadbeef)
+        set(${var} 60)
+    elseif(${dir} STREQUAL reactos/winsxs/x86_microsoft.windows.gdiplus_6595b64144ccf1df_1.0.14393.0_none_deadbeef)
+        set(${var} 61)
+    elseif(${dir} STREQUAL reactos/Resources/Themes/Modern)
+        set(${var} 62)
+    elseif(${dir} STREQUAL reactos/3rdParty)
+        set(${var} 63)
+    elseif(${dir} STREQUAL reactos/Resources/Themes/Lunar)
+        set(${var} 64)	
+    elseif(${dir} STREQUAL reactos/Resources/Themes/Mizu)
+        set(${var} 65)
+    elseif(${dir} STREQUAL reactos/system32/spool/prtprocs/x64)
+        set(${var} 66)
     else()
         message(FATAL_ERROR "Wrong destination: ${dir}")
     endif()
@@ -292,7 +326,10 @@ function(add_cd_file)
 
     # get file if we need to
     if(NOT _CD_FILE)
-        get_target_property(_CD_FILE ${_CD_TARGET} LOCATION_${CMAKE_BUILD_TYPE})
+        set(_CD_FILE "$<TARGET_FILE:${_CD_TARGET}>")
+        if(NOT _CD_NAME_ON_CD)
+            set(_CD_NAME_ON_CD "$<TARGET_FILE_NAME:${_CD_TARGET}>")
+        endif()
     endif()
 
     # do we add it to all CDs?
@@ -328,9 +365,7 @@ function(add_cd_file)
         else()
             # add it in reactos.cab
             dir_to_num(${_CD_DESTINATION} _num)
-            file(RELATIVE_PATH __relative_file ${REACTOS_SOURCE_DIR} ${_CD_FILE})
-            file(APPEND ${REACTOS_BINARY_DIR}/boot/bootdata/packages/reactos.dff.dyn "\"${__relative_file}\" ${_num}\n")
-            unset(__relative_file)
+            file(APPEND ${REACTOS_BINARY_DIR}/boot/bootdata/packages/reactos.dff.cmake "\"${_CD_FILE}\" ${_num}\n")
             # manage dependency - target level
             if(_CD_TARGET)
                 add_dependencies(reactos_cab_inf ${_CD_TARGET})
@@ -442,23 +477,35 @@ function(create_iso_lists)
 
     get_property(_filelist GLOBAL PROPERTY BOOTCD_FILE_LIST)
     string(REPLACE ";" "\n" _filelist "${_filelist}")
-    file(APPEND ${REACTOS_BINARY_DIR}/boot/bootcd.lst "${_filelist}")
+    file(APPEND ${REACTOS_BINARY_DIR}/boot/bootcd.cmake.lst "${_filelist}")
     unset(_filelist)
+    file(GENERATE
+         OUTPUT ${REACTOS_BINARY_DIR}/boot/bootcd.$<CONFIG>.lst
+         INPUT ${REACTOS_BINARY_DIR}/boot/bootcd.cmake.lst)
 
     get_property(_filelist GLOBAL PROPERTY LIVECD_FILE_LIST)
     string(REPLACE ";" "\n" _filelist "${_filelist}")
-    file(APPEND ${REACTOS_BINARY_DIR}/boot/livecd.lst "${_filelist}")
+    file(APPEND ${REACTOS_BINARY_DIR}/boot/livecd.cmake.lst "${_filelist}")
     unset(_filelist)
+    file(GENERATE
+         OUTPUT ${REACTOS_BINARY_DIR}/boot/livecd.$<CONFIG>.lst
+         INPUT ${REACTOS_BINARY_DIR}/boot/livecd.cmake.lst)
 
     get_property(_filelist GLOBAL PROPERTY HYBRIDCD_FILE_LIST)
     string(REPLACE ";" "\n" _filelist "${_filelist}")
-    file(APPEND ${REACTOS_BINARY_DIR}/boot/hybridcd.lst "${_filelist}")
+    file(APPEND ${REACTOS_BINARY_DIR}/boot/hybridcd.cmake.lst "${_filelist}")
     unset(_filelist)
+    file(GENERATE
+         OUTPUT ${REACTOS_BINARY_DIR}/boot/hybridcd.$<CONFIG>.lst
+         INPUT ${REACTOS_BINARY_DIR}/boot/hybridcd.cmake.lst)
 
     get_property(_filelist GLOBAL PROPERTY BOOTCDREGTEST_FILE_LIST)
     string(REPLACE ";" "\n" _filelist "${_filelist}")
-    file(APPEND ${REACTOS_BINARY_DIR}/boot/bootcdregtest.lst "${_filelist}")
+    file(APPEND ${REACTOS_BINARY_DIR}/boot/bootcdregtest.cmake.lst "${_filelist}")
     unset(_filelist)
+    file(GENERATE
+         OUTPUT ${REACTOS_BINARY_DIR}/boot/bootcdregtest.$<CONFIG>.lst
+         INPUT ${REACTOS_BINARY_DIR}/boot/bootcdregtest.cmake.lst)
 endfunction()
 
 # Create module_clean targets
@@ -482,6 +529,11 @@ if(NOT MSVC_IDE)
     function(add_library name)
         _add_library(${name} ${ARGN})
         add_clean_target(${name})
+        # cmake adds a module_EXPORTS define when compiling a module or a shared library. We don't use that.
+        get_target_property(_type ${name} TYPE)
+        if (_type MATCHES SHARED_LIBRARY|MODULE_LIBRARY)
+            set_target_properties(${name} PROPERTIES DEFINE_SYMBOL "")
+        endif()
     endfunction()
 
     function(add_executable name)
@@ -507,12 +559,26 @@ elseif(USE_FOLDER_STRUCTURE)
             string(SUBSTRING ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR_LENGTH} -1 CMAKE_CURRENT_SOURCE_DIR_RELATIVE)
             set_property(TARGET "${name}" PROPERTY FOLDER "${CMAKE_CURRENT_SOURCE_DIR_RELATIVE}")
         endif()
+        # cmake adds a module_EXPORTS define when compiling a module or a shared library. We don't use that.
+        get_target_property(_type ${name} TYPE)
+        if (_type MATCHES SHARED_LIBRARY|MODULE_LIBRARY)
+            set_target_properties(${name} PROPERTIES DEFINE_SYMBOL "")
+        endif()
     endfunction()
 
     function(add_executable name)
         _add_executable(${name} ${ARGN})
         string(SUBSTRING ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR_LENGTH} -1 CMAKE_CURRENT_SOURCE_DIR_RELATIVE)
         set_property(TARGET "${name}" PROPERTY FOLDER "${CMAKE_CURRENT_SOURCE_DIR_RELATIVE}")
+    endfunction()
+else()
+    function(add_library name)
+        _add_library(${name} ${ARGN})
+        # cmake adds a module_EXPORTS define when compiling a module or a shared library. We don't use that.
+        get_target_property(_type ${name} TYPE)
+        if (_type MATCHES SHARED_LIBRARY|MODULE_LIBRARY)
+            set_target_properties(${name} PROPERTIES DEFINE_SYMBOL "")
+        endif()
     endfunction()
 endif()
 
@@ -542,7 +608,7 @@ function(add_importlibs _module)
     add_dependency_node(${_module})
     foreach(LIB ${ARGN})
         if("${LIB}" MATCHES "msvcrt")
-            add_target_compile_definitions(${_module} _DLL __USE_CRTIMP)
+            target_compile_definitions(${_module} PRIVATE _DLL __USE_CRTIMP)
             target_link_libraries(${_module} msvcrtex)
         endif()
         target_link_libraries(${_module} lib${LIB})
@@ -591,7 +657,7 @@ function(set_module_type MODULE TYPE)
 
     # Set unicode definitions
     if(__module_UNICODE)
-        add_target_compile_definitions(${MODULE} UNICODE _UNICODE)
+        target_compile_definitions(${MODULE} PRIVATE UNICODE _UNICODE)
     endif()
 
     # Set entry point
@@ -770,43 +836,72 @@ function(create_registry_hives)
                 NO_CAB
                 FOR bootcd regtest)
 
-    # livecd hives
+    # BootCD setup system hive
+    add_custom_command(
+        OUTPUT ${CMAKE_BINARY_DIR}/boot/bootdata/SETUPREG.HIV
+        COMMAND native-mkhive -h:SETUPREG -u -d:${CMAKE_BINARY_DIR}/boot/bootdata ${CMAKE_BINARY_DIR}/boot/bootdata/hivesys_utf16.inf ${CMAKE_SOURCE_DIR}/boot/bootdata/setupreg.inf
+        DEPENDS native-mkhive ${CMAKE_BINARY_DIR}/boot/bootdata/hivesys_utf16.inf)
+
+    add_custom_target(bootcd_hives
+        DEPENDS ${CMAKE_BINARY_DIR}/boot/bootdata/SETUPREG.HIV)
+
+    add_cd_file(
+        FILE ${CMAKE_BINARY_DIR}/boot/bootdata/SETUPREG.HIV
+        TARGET bootcd_hives
+        DESTINATION reactos
+        NO_CAB
+        FOR bootcd regtest)
+
+    # LiveCD hives
     list(APPEND _livecd_inf_files
         ${_registry_inf}
-        ${CMAKE_SOURCE_DIR}/boot/bootdata/livecd.inf
-        ${CMAKE_SOURCE_DIR}/boot/bootdata/hiveinst.inf)
+        ${CMAKE_SOURCE_DIR}/boot/bootdata/livecd.inf)
+    if(SARCH STREQUAL "xbox")
+        list(APPEND _livecd_inf_files
+            ${CMAKE_SOURCE_DIR}/boot/bootdata/hiveinst_xbox.inf)
+    else()
+        list(APPEND _livecd_inf_files
+            ${CMAKE_SOURCE_DIR}/boot/bootdata/hiveinst.inf)
+    endif()
 
     add_custom_command(
-        OUTPUT ${CMAKE_BINARY_DIR}/boot/bootdata/sam
-            ${CMAKE_BINARY_DIR}/boot/bootdata/default
-            ${CMAKE_BINARY_DIR}/boot/bootdata/security
-            ${CMAKE_BINARY_DIR}/boot/bootdata/software
-            ${CMAKE_BINARY_DIR}/boot/bootdata/system
-            ${CMAKE_BINARY_DIR}/boot/bootdata/BCD
-        COMMAND native-mkhive ${CMAKE_BINARY_DIR}/boot/bootdata ${_livecd_inf_files}
+        OUTPUT ${CMAKE_BINARY_DIR}/boot/bootdata/system
+               ${CMAKE_BINARY_DIR}/boot/bootdata/software
+               ${CMAKE_BINARY_DIR}/boot/bootdata/default
+               ${CMAKE_BINARY_DIR}/boot/bootdata/sam
+               ${CMAKE_BINARY_DIR}/boot/bootdata/security
+        COMMAND native-mkhive -h:SYSTEM,SOFTWARE,DEFAULT,SAM,SECURITY -d:${CMAKE_BINARY_DIR}/boot/bootdata ${_livecd_inf_files}
         DEPENDS native-mkhive ${_livecd_inf_files})
 
     add_custom_target(livecd_hives
-        DEPENDS ${CMAKE_BINARY_DIR}/boot/bootdata/sam
-            ${CMAKE_BINARY_DIR}/boot/bootdata/default
-            ${CMAKE_BINARY_DIR}/boot/bootdata/security
-            ${CMAKE_BINARY_DIR}/boot/bootdata/software
-            ${CMAKE_BINARY_DIR}/boot/bootdata/system
-            ${CMAKE_BINARY_DIR}/boot/bootdata/BCD)
+        DEPENDS ${CMAKE_BINARY_DIR}/boot/bootdata/system
+                ${CMAKE_BINARY_DIR}/boot/bootdata/software
+                ${CMAKE_BINARY_DIR}/boot/bootdata/default
+                ${CMAKE_BINARY_DIR}/boot/bootdata/sam
+                ${CMAKE_BINARY_DIR}/boot/bootdata/security)
 
     add_cd_file(
-        FILE ${CMAKE_BINARY_DIR}/boot/bootdata/sam
-            ${CMAKE_BINARY_DIR}/boot/bootdata/default
-            ${CMAKE_BINARY_DIR}/boot/bootdata/security
-            ${CMAKE_BINARY_DIR}/boot/bootdata/software
-            ${CMAKE_BINARY_DIR}/boot/bootdata/system
+        FILE ${CMAKE_BINARY_DIR}/boot/bootdata/system
+             ${CMAKE_BINARY_DIR}/boot/bootdata/software
+             ${CMAKE_BINARY_DIR}/boot/bootdata/default
+             ${CMAKE_BINARY_DIR}/boot/bootdata/sam
+             ${CMAKE_BINARY_DIR}/boot/bootdata/security
         TARGET livecd_hives
         DESTINATION reactos/system32/config
         FOR livecd)
 
+    # BCD Hive
+    add_custom_command(
+        OUTPUT ${CMAKE_BINARY_DIR}/boot/bootdata/BCD
+        COMMAND native-mkhive -h:BCD -u -d:${CMAKE_BINARY_DIR}/boot/bootdata ${CMAKE_BINARY_DIR}/boot/bootdata/hivebcd_utf16.inf
+        DEPENDS native-mkhive ${CMAKE_BINARY_DIR}/boot/bootdata/hivebcd_utf16.inf)
+
+    add_custom_target(bcd_hive
+        DEPENDS ${CMAKE_BINARY_DIR}/boot/bootdata/BCD)
+
     add_cd_file(
         FILE ${CMAKE_BINARY_DIR}/boot/bootdata/BCD
-        TARGET livecd_hives
+        TARGET bcd_hive
         DESTINATION efi/boot
         NO_CAB
         FOR bootcd regtest livecd)
@@ -830,12 +925,16 @@ function(add_rostests_file)
         message(FATAL_ERROR "You must provide a target or a file to install!")
     endif()
 
+    set(_ROSTESTS_NAME_ON_CD "${_ROSTESTS_RENAME}")
     if(NOT _ROSTESTS_FILE)
-        get_target_property(_ROSTESTS_FILE ${_ROSTESTS_TARGET} LOCATION_${CMAKE_BUILD_TYPE})
-    endif()
-
-    if(NOT _ROSTESTS_RENAME)
-        get_filename_component(_ROSTESTS_RENAME ${_ROSTESTS_FILE} NAME)
+        set(_ROSTESTS_FILE "$<TARGET_FILE:${_ROSTESTS_TARGET}>")
+        if(NOT _ROSTESTS_RENAME)
+            set(_ROSTESTS_NAME_ON_CD "$<TARGET_FILE_NAME:${_ROSTESTS_TARGET}>")
+        endif()
+    else()
+        if(NOT _ROSTESTS_RENAME)
+            get_filename_component(_ROSTESTS_NAME_ON_CD ${_ROSTESTS_FILE} NAME)
+        endif()
     endif()
 
     if(_ROSTESTS_SUBDIR)
@@ -843,12 +942,16 @@ function(add_rostests_file)
     endif()
 
     if(_ROSTESTS_TARGET)
-        add_cd_file(TARGET ${_ROSTESTS_TARGET} FILE ${_ROSTESTS_FILE} DESTINATION "reactos/bin${_ROSTESTS_SUBDIR}" NAME_ON_CD ${_ROSTESTS_RENAME} FOR all)
+        add_cd_file(TARGET ${_ROSTESTS_TARGET} FILE ${_ROSTESTS_FILE} DESTINATION "reactos/bin${_ROSTESTS_SUBDIR}" NAME_ON_CD ${_ROSTESTS_NAME_ON_CD} FOR all)
     else()
-        add_cd_file(FILE ${_ROSTESTS_FILE} DESTINATION "reactos/bin${_ROSTESTS_SUBDIR}" NAME_ON_CD ${_ROSTESTS_RENAME} FOR all)
+        add_cd_file(FILE ${_ROSTESTS_FILE} DESTINATION "reactos/bin${_ROSTESTS_SUBDIR}" NAME_ON_CD ${_ROSTESTS_NAME_ON_CD} FOR all)
     endif()
 
     if(DEFINED ENV{ROSTESTS_INSTALL})
-        install(FILES ${_ROSTESTS_FILE} DESTINATION "$ENV{ROSTESTS_INSTALL}${_ROSTESTS_SUBDIR}" COMPONENT rostests RENAME ${_ROSTESTS_RENAME})
+        if(_ROSTESTS_RENAME)
+            install(FILES ${_ROSTESTS_FILE} DESTINATION "$ENV{ROSTESTS_INSTALL}${_ROSTESTS_SUBDIR}" COMPONENT rostests RENAME ${_ROSTESTS_RENAME})
+        else()
+            install(FILES ${_ROSTESTS_FILE} DESTINATION "$ENV{ROSTESTS_INSTALL}${_ROSTESTS_SUBDIR}" COMPONENT rostests)
+        endif()
     endif()
 endfunction()

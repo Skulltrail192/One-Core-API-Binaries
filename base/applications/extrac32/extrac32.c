@@ -19,14 +19,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
 #include <setupapi.h>
 #include <shlwapi.h>
 #include <shlobj.h>
-#include <wine/unicode.h>
-#include <wine/debug.h>
+
+#include "wine/unicode.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(extrac32);
 
@@ -118,7 +118,7 @@ static void copy_file(LPCWSTR source, LPCWSTR destination)
         static const WCHAR overwriteMsg[] = {'O','v','e','r','w','r','i','t','e',' ','"','%','s','"','?',0};
         static const WCHAR titleMsg[] = {'E','x','t','r','a','c','t',0};
         WCHAR msg[MAX_PATH+100];
-        snprintfW(msg, sizeof(msg)/sizeof(msg[0]), overwriteMsg, destination);
+        snprintfW(msg, ARRAY_SIZE(msg), overwriteMsg, destination);
         if (MessageBoxW(NULL, msg, titleMsg, MB_YESNO | MB_ICONWARNING) != IDYES)
             return;
     }

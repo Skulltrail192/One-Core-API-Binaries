@@ -18,6 +18,19 @@ class CPortPinWaveCyclic : public IPortPinWaveCyclic,
                            public IServiceSink
 {
 public:
+    inline
+    PVOID
+    operator new(
+        size_t Size,
+        POOL_TYPE PoolType,
+        ULONG Tag)
+    {
+        PVOID P = ExAllocatePoolWithTag(PoolType, Size, Tag);
+        if (P)
+            RtlZeroMemory(P, Size);
+        return P;
+    }
+
     STDMETHODIMP QueryInterface( REFIID InterfaceId, PVOID* Interface);
 
     STDMETHODIMP_(ULONG) AddRef()
@@ -646,7 +659,7 @@ CPortPinWaveCyclic::GeneratePositionEvents(
         // get event entry context
         Context = (PLOOPEDSTREAMING_EVENT_CONTEXT)(EventEntry + 1);
 
-        if (Context->bLoopedStreaming == TRUE)
+        if (Context->bLoopedStreaming != FALSE)
         {
             if (NewOffset > OldOffset)
             {

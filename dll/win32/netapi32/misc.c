@@ -1,218 +1,316 @@
 /*
- * COPYRIGHT:       See COPYING in the top level directory
- * PROJECT:         NetAPI DLL
- * FILE:            reactos/dll/win32/netapi32/misc.c
- * PURPOSE:         Helper functions
- *
- * PROGRAMMERS:     Eric Kohl
+ * PROJECT:     NetAPI DLL
+ * LICENSE:     GPL-2.0 (https://spdx.org/licenses/GPL-2.0)
+ * PURPOSE:     Miscellaneous functions
+ * COPYRIGHT:   Copyright 2017 Eric Kohl (eric.kohl@reactos.org)
  */
 
 /* INCLUDES ******************************************************************/
 
 #include "netapi32.h"
 
+#include <rpc.h>
+#include "srvsvc_c.h"
+#include "wkssvc_c.h"
+
+
 WINE_DEFAULT_DEBUG_CHANNEL(netapi32);
-
-/* GLOBALS *******************************************************************/
-
-static SID_IDENTIFIER_AUTHORITY NtAuthority = {SECURITY_NT_AUTHORITY};
 
 /* FUNCTIONS *****************************************************************/
 
-NTSTATUS
-GetAccountDomainSid(IN PUNICODE_STRING ServerName,
-                    OUT PSID *AccountDomainSid)
+NET_API_STATUS
+WINAPI
+NetRegisterDomainNameChangeNotification(
+    _Out_ PHANDLE NotificationEventHandle)
 {
-    PPOLICY_ACCOUNT_DOMAIN_INFO AccountDomainInfo = NULL;
-    LSA_OBJECT_ATTRIBUTES ObjectAttributes;
-    LSA_HANDLE PolicyHandle = NULL;
-    ULONG Length = 0;
+    HANDLE EventHandle;
     NTSTATUS Status;
 
-    memset(&ObjectAttributes, 0, sizeof(LSA_OBJECT_ATTRIBUTES));
+    TRACE("NetRegisterDomainNameChangeNotification(%p)\n",
+          NotificationEventHandle);
 
-    Status = LsaOpenPolicy(ServerName,
-                           &ObjectAttributes,
-                           POLICY_VIEW_LOCAL_INFORMATION,
-                           &PolicyHandle);
+    if (NotificationEventHandle == NULL)
+        return ERROR_INVALID_PARAMETER;
+
+    EventHandle = CreateEventW(NULL, FALSE, FALSE, NULL);
+    if (EventHandle == NULL)
+        return GetLastError();
+
+    Status = LsaRegisterPolicyChangeNotification(PolicyNotifyDnsDomainInformation,
+                                                 NotificationEventHandle);
     if (!NT_SUCCESS(Status))
     {
-        ERR("LsaOpenPolicy failed (Status %08lx)\n", Status);
-        return Status;
+        CloseHandle(EventHandle);
+        return NetpNtStatusToApiStatus(Status);
     }
 
-    Status = LsaQueryInformationPolicy(PolicyHandle,
-                                       PolicyAccountDomainInformation,
-                                       (PVOID *)&AccountDomainInfo);
-    if (!NT_SUCCESS(Status))
-    {
-        ERR("LsaQueryInformationPolicy failed (Status %08lx)\n", Status);
-        goto done;
-    }
+    *NotificationEventHandle = EventHandle;
 
-    Length = RtlLengthSid(AccountDomainInfo->DomainSid);
-
-    *AccountDomainSid = RtlAllocateHeap(RtlGetProcessHeap(), 0, Length);
-    if (*AccountDomainSid == NULL)
-    {
-        ERR("Failed to allocate SID\n");
-        Status = STATUS_INSUFFICIENT_RESOURCES;
-        goto done;
-    }
-
-    memcpy(*AccountDomainSid, AccountDomainInfo->DomainSid, Length);
-
-done:
-    if (AccountDomainInfo != NULL)
-        LsaFreeMemory(AccountDomainInfo);
-
-    LsaClose(PolicyHandle);
-
-    return Status;
-}
-
-
-NTSTATUS
-GetBuiltinDomainSid(OUT PSID *BuiltinDomainSid)
-{
-    PSID Sid = NULL;
-    PULONG Ptr;
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    *BuiltinDomainSid = NULL;
-
-    Sid = RtlAllocateHeap(RtlGetProcessHeap(),
-                          0,
-                          RtlLengthRequiredSid(1));
-    if (Sid == NULL)
-        return STATUS_INSUFFICIENT_RESOURCES;
-
-    Status = RtlInitializeSid(Sid,
-                              &NtAuthority,
-                              1);
-    if (!NT_SUCCESS(Status))
-        goto done;
-
-    Ptr = RtlSubAuthoritySid(Sid, 0);
-    *Ptr = SECURITY_BUILTIN_DOMAIN_RID;
-
-    *BuiltinDomainSid = Sid;
-
-done:
-    if (!NT_SUCCESS(Status))
-    {
-        if (Sid != NULL)
-            RtlFreeHeap(RtlGetProcessHeap(), 0, Sid);
-    }
-
-    return Status;
-}
-
-
-NTSTATUS
-OpenAccountDomain(IN SAM_HANDLE ServerHandle,
-                  IN PUNICODE_STRING ServerName,
-                  IN ULONG DesiredAccess,
-                  OUT PSAM_HANDLE DomainHandle)
-{
-    PSID DomainSid = NULL;
-    NTSTATUS Status;
-
-    Status = GetAccountDomainSid(ServerName,
-                                 &DomainSid);
-    if (!NT_SUCCESS(Status))
-    {
-        ERR("GetAccountDomainSid failed (Status %08lx)\n", Status);
-        return Status;
-    }
-
-    Status = SamOpenDomain(ServerHandle,
-                           DesiredAccess,
-                           DomainSid,
-                           DomainHandle);
-
-    RtlFreeHeap(RtlGetProcessHeap(), 0, DomainSid);
-
-    if (!NT_SUCCESS(Status))
-    {
-        ERR("SamOpenDomain failed (Status %08lx)\n", Status);
-    }
-
-    return Status;
-}
-
-
-NTSTATUS
-OpenBuiltinDomain(IN SAM_HANDLE ServerHandle,
-                  IN ULONG DesiredAccess,
-                  OUT PSAM_HANDLE DomainHandle)
-{
-    PSID DomainSid = NULL;
-    NTSTATUS Status;
-
-    Status = GetBuiltinDomainSid(&DomainSid);
-    if (!NT_SUCCESS(Status))
-    {
-        ERR("GetBuiltinDomainSid failed (Status %08lx)\n", Status);
-        return Status;
-    }
-
-    Status = SamOpenDomain(ServerHandle,
-                           DesiredAccess,
-                           DomainSid,
-                           DomainHandle);
-
-    RtlFreeHeap(RtlGetProcessHeap(), 0, DomainSid);
-
-    if (!NT_SUCCESS(Status))
-    {
-        ERR("SamOpenDomain failed (Status %08lx)\n", Status);
-    }
-
-    return Status;
+    return NERR_Success;
 }
 
 
 NET_API_STATUS
-BuildSidFromSidAndRid(IN PSID SrcSid,
-                      IN ULONG RelativeId,
-                      OUT PSID *DestSid)
+WINAPI
+NetStatisticsGet(
+    _In_ LPWSTR server,
+    _In_ LPWSTR service,
+    _In_ DWORD level,
+    _In_ DWORD options,
+    _Out_ LPBYTE *bufptr)
 {
-    UCHAR RidCount;
-    PSID DstSid;
-    ULONG i;
-    ULONG DstSidSize;
-    PULONG p, q;
-    NET_API_STATUS ApiStatus = NERR_Success;
+    NET_API_STATUS status = ERROR_NOT_SUPPORTED;
 
-    RidCount = *RtlSubAuthorityCountSid(SrcSid);
-    if (RidCount >= 8)
-        return ERROR_INVALID_PARAMETER;
+    TRACE("NetStatisticsGet(%s %s %lu %lu %p)\n",
+          debugstr_w(server), debugstr_w(service), level, options, bufptr);
 
-    DstSidSize = RtlLengthRequiredSid(RidCount + 1);
+    *bufptr = NULL;
 
-    ApiStatus = NetApiBufferAllocate(DstSidSize,
-                                     &DstSid);
-    if (ApiStatus != NERR_Success)
-        return ApiStatus;
-
-    RtlInitializeSid(DstSid,
-                     RtlIdentifierAuthoritySid(SrcSid),
-                     RidCount + 1);
-
-    for (i = 0; i < (ULONG)RidCount; i++)
+    if (_wcsicmp(service, L"LanmanWorkstation") == 0)
     {
-        p = RtlSubAuthoritySid(SrcSid, i);
-        q = RtlSubAuthoritySid(DstSid, i);
-        *q = *p;
+        if (level != 0)
+            return ERROR_INVALID_LEVEL;
+
+        if (options != 0)
+            return ERROR_INVALID_PARAMETER;
+
+        RpcTryExcept
+        {
+            status = NetrWorkstationStatisticsGet(server,
+                                                  L"LanmanWorkstation",
+                                                  level,
+                                                  options,
+                                                  (LPSTAT_WORKSTATION_0*)bufptr);
+        }
+        RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+        {
+            status = I_RpcMapWin32Status(RpcExceptionCode());
+        }
+        RpcEndExcept;
+    }
+    else if (_wcsicmp(service, L"LanmanServer") == 0)
+    {
+        if (level != 0)
+            return ERROR_INVALID_LEVEL;
+
+        if (options != 0)
+            return ERROR_INVALID_PARAMETER;
+
+        RpcTryExcept
+        {
+            status = NetrServerStatisticsGet(server,
+                                             L"LanmanServer",
+                                             level,
+                                             options,
+                                             (LPSTAT_SERVER_0 *)bufptr);
+        }
+        RpcExcept(EXCEPTION_EXECUTE_HANDLER)
+        {
+            status = I_RpcMapWin32Status(RpcExceptionCode());
+        }
+        RpcEndExcept;
     }
 
-    q = RtlSubAuthoritySid(DstSid, (ULONG)RidCount);
-    *q = RelativeId;
+    return status;
+}
 
-    *DestSid = DstSid;
 
-    return NERR_Success;
+NET_API_STATUS
+WINAPI
+NetUnregisterDomainNameChangeNotification(
+    _In_ HANDLE NotificationEventHandle)
+{
+    NTSTATUS Status;
+
+    TRACE("NetUnregisterDomainNameChangeNotification(%p)\n",
+          NotificationEventHandle);
+
+    if (NotificationEventHandle == NULL)
+        return ERROR_INVALID_PARAMETER;
+
+    Status = LsaUnregisterPolicyChangeNotification(PolicyNotifyDnsDomainInformation,
+                                                   NotificationEventHandle);
+
+    return NetpNtStatusToApiStatus(Status);
+}
+
+
+PSTR
+WINAPI
+NetpAllocAnsiStrFromWStr(
+    _In_ PWSTR InString)
+{
+    UNICODE_STRING UnicodeString;
+    ANSI_STRING AnsiString;
+    ULONG Size;
+    NET_API_STATUS NetStatus;
+    NTSTATUS Status;
+
+    RtlInitUnicodeString(&UnicodeString, InString);
+
+    Size = RtlUnicodeStringToAnsiSize(&UnicodeString);
+    NetStatus = NetApiBufferAllocate(Size,
+                                     (PVOID*)&AnsiString.Buffer);
+    if (NetStatus != NERR_Success)
+        return NULL;
+
+    Status = RtlUnicodeStringToAnsiString(&AnsiString,
+                                          &UnicodeString,
+                                          FALSE);
+    if (!NT_SUCCESS(Status))
+    {
+        NetApiBufferFree(AnsiString.Buffer);
+        return NULL;
+    }
+
+    return AnsiString.Buffer;
+}
+
+
+PSTR
+WINAPI
+NetpAllocStrFromWStr(
+    _In_ PWSTR InString)
+{
+    UNICODE_STRING UnicodeString;
+    OEM_STRING OemString;
+    ULONG Size;
+    NET_API_STATUS NetStatus;
+    NTSTATUS Status;
+
+    RtlInitUnicodeString(&UnicodeString, InString);
+
+    Size = RtlUnicodeStringToOemSize(&UnicodeString);
+    NetStatus = NetApiBufferAllocate(Size,
+                                     (PVOID*)&OemString.Buffer);
+    if (NetStatus != NERR_Success)
+        return NULL;
+
+    Status = RtlUnicodeStringToOemString(&OemString,
+                                         &UnicodeString,
+                                         FALSE);
+    if (!NT_SUCCESS(Status))
+    {
+        NetApiBufferFree(OemString.Buffer);
+        return NULL;
+    }
+
+    return OemString.Buffer;
+}
+
+
+PWSTR
+WINAPI
+NetpAllocWStrFromAnsiStr(
+    _In_ PSTR InString)
+{
+    ANSI_STRING AnsiString;
+    UNICODE_STRING UnicodeString;
+    ULONG Size;
+    NET_API_STATUS NetStatus;
+    NTSTATUS Status;
+
+    RtlInitAnsiString(&AnsiString, InString);
+
+    Size = RtlAnsiStringToUnicodeSize(&AnsiString);
+    NetStatus = NetApiBufferAllocate(Size,
+                                     (PVOID*)&UnicodeString.Buffer);
+    if (NetStatus != NERR_Success)
+        return NULL;
+
+    Status = RtlAnsiStringToUnicodeString(&UnicodeString,
+                                          &AnsiString,
+                                          FALSE);
+    if (!NT_SUCCESS(Status))
+    {
+        NetApiBufferFree(UnicodeString.Buffer);
+        return NULL;
+    }
+
+    return UnicodeString.Buffer;
+}
+
+
+PWSTR
+WINAPI
+NetpAllocWStrFromStr(
+    _In_ PSTR InString)
+{
+    OEM_STRING OemString;
+    UNICODE_STRING UnicodeString;
+    ULONG Size;
+    NET_API_STATUS NetStatus;
+    NTSTATUS Status;
+
+    RtlInitAnsiString((PANSI_STRING)&OemString, InString);
+
+    Size = RtlOemStringToUnicodeSize(&OemString);
+    NetStatus = NetApiBufferAllocate(Size,
+                                     (PVOID*)&UnicodeString.Buffer);
+    if (NetStatus != NERR_Success)
+        return NULL;
+
+    Status = RtlOemStringToUnicodeString(&UnicodeString,
+                                         &OemString,
+                                         FALSE);
+    if (!NT_SUCCESS(Status))
+    {
+        NetApiBufferFree(UnicodeString.Buffer);
+        return NULL;
+    }
+
+    return UnicodeString.Buffer;
+}
+
+
+PWSTR
+WINAPI
+NetpAllocWStrFromWStr(
+    _In_ PWSTR InString)
+{
+    PWSTR OutString;
+    ULONG Size;
+    NET_API_STATUS Status;
+
+    Size = (wcslen(InString) + 1) * sizeof(WCHAR);
+    Status = NetApiBufferAllocate(Size,
+                                  (PVOID*)&OutString);
+    if (Status != NERR_Success)
+        return NULL;
+
+    wcscpy(OutString, InString);
+
+    return OutString;
+}
+
+
+NET_API_STATUS
+WINAPI
+NetpNtStatusToApiStatus(
+    _In_ NTSTATUS Status)
+{
+    NET_API_STATUS ApiStatus;
+
+    switch (Status)
+    {
+        case STATUS_SUCCESS:
+            ApiStatus = NERR_Success;
+            break;
+
+        case STATUS_INVALID_ACCOUNT_NAME:
+            ApiStatus = NERR_BadUsername;
+            break;
+
+        case STATUS_PASSWORD_RESTRICTION:
+            ApiStatus = NERR_PasswordTooShort;
+            break;
+
+        default:
+            ApiStatus = RtlNtStatusToDosError(Status);
+            break;
+    }
+
+    return ApiStatus;
 }
 
 /* EOF */

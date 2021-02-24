@@ -16,9 +16,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include <precomp.h>
+#include <stdarg.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wine/debug.h"
+#include "winscard.h"
+#include "winternl.h"
 
-#include <winternl.h>
+WINE_DEFAULT_DEBUG_CHANNEL(winscard);
 
 static HANDLE g_startedEvent = NULL;
 
@@ -134,4 +139,11 @@ LONG WINAPI SCardListReadersW(SCARDCONTEXT context, const WCHAR *groups, WCHAR *
 {
     FIXME("(%lx, %s, %p, %p) stub\n", context, debugstr_w(groups), readers, buflen);
     return SCARD_E_NO_READERS_AVAILABLE;
+}
+
+LONG WINAPI SCardCancel(SCARDCONTEXT context)
+{
+    FIXME("(%lx) stub\n", context);
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return SCARD_F_INTERNAL_ERROR;
 }

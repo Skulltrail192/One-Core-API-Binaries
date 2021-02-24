@@ -28,10 +28,32 @@
  *   NT-based native rpcrt4's.  Commonly-used transport for self-to-self RPC's.
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <ntsecapi.h>
-#include <iphlpapi.h>
+#include "ntstatus.h"
+#define WIN32_NO_STATUS
+#include "windef.h"
+#include "winerror.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winnt.h"
+#include "wine/winternl.h"
+#include "ntsecapi.h"
+#include "iptypes.h"
+#include "iphlpapi.h"
+#include "rpc.h"
+
+#include "ole2.h"
+#include "rpcndr.h"
+#include "rpcproxy.h"
+
+#include "rpc_binding.h"
+#include "rpc_server.h"
+
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(rpc);
 
@@ -593,7 +615,7 @@ RPC_STATUS WINAPI UuidFromStringW(RPC_WSTR s, UUID *uuid)
 
     if (!s) return UuidCreateNil( uuid );
 
-    if (strlenW(s) != 36) return RPC_S_INVALID_STRING_UUID;
+    if (lstrlenW(s) != 36) return RPC_S_INVALID_STRING_UUID;
 
     if ((s[8]!='-') || (s[13]!='-') || (s[18]!='-') || (s[23]!='-'))
         return RPC_S_INVALID_STRING_UUID;
@@ -829,9 +851,10 @@ LONG WINAPI I_RpcMapWin32Status(RPC_STATUS status)
 }
 
 /******************************************************************************
+ * RpcExceptionFilter     (rpcrt4.@)
  * I_RpcExceptionFilter   (rpcrt4.@)
  */
-int WINAPI I_RpcExceptionFilter(ULONG ExceptionCode)
+int WINAPI RpcExceptionFilter(ULONG ExceptionCode)
 {
     TRACE("0x%x\n", ExceptionCode);
     switch (ExceptionCode)

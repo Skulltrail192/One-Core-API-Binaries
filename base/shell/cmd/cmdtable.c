@@ -42,10 +42,6 @@ COMMAND cmds[] =
     {_T("assoc"), 0, CommandAssoc},
 #endif
 
-#ifdef INCLUDE_CMD_ATTRIB
-    {_T("attrib"), 0, CommandAttrib},
-#endif
-
 #ifdef INCLUDE_CMD_BEEP
     {_T("beep"),     0, cmd_beep},
 #endif
@@ -55,10 +51,6 @@ COMMAND cmds[] =
 #ifdef INCLUDE_CMD_CHDIR
     {_T("cd"), CMD_SPECIAL, cmd_chdir},
     {_T("chdir"), CMD_SPECIAL, cmd_chdir},
-#endif
-
-#ifdef INCLUDE_CMD_CHCP
-    {_T("chcp"), 0, CommandChcp},
 #endif
 
 #ifdef INCLUDE_CMD_CHOICE
@@ -75,6 +67,10 @@ COMMAND cmds[] =
 
 #ifdef INCLUDE_CMD_COPY
     {_T("copy"),     0, cmd_copy},
+#endif
+
+#ifdef INCLUDE_CMD_CTTY
+    {_T("ctty"),     0, cmd_ctty},
 #endif
 
 #ifdef INCLUDE_CMD_DATE
@@ -125,10 +121,6 @@ COMMAND cmds[] =
 
     {_T("if"), 0, cmd_if},
 
-#ifdef INCLUDE_CMD_LABEL
-    {_T("label"), 0, cmd_label},
-#endif
-
 #ifdef INCLUDE_CMD_MEMORY
     {_T("memory"), 0, CommandMemory},
 #endif
@@ -172,6 +164,7 @@ COMMAND cmds[] =
 
 #ifdef INCLUDE_CMD_RMDIR
     {_T("rd"), CMD_SPECIAL, cmd_rmdir},
+    {_T("rmdir"), CMD_SPECIAL, cmd_rmdir},
 #endif
 
 #ifdef INCLUDE_CMD_REM
@@ -185,10 +178,6 @@ COMMAND cmds[] =
 
 #ifdef INCLUDE_CMD_REPLACE
     {_T("replace"), 0, cmd_replace},
-#endif
-
-#ifdef INCLUDE_CMD_RMDIR
-    {_T("rmdir"), CMD_SPECIAL, cmd_rmdir},
 #endif
 
 #ifdef INCLUDE_CMD_SCREEN
@@ -256,6 +245,7 @@ VOID PrintCommandList(VOID)
             if (++y == 8)
             {
                 ConOutPuts(cmdptr->name);
+                ConOutChar(_T('\n'));
                 y = 0;
             }
             else

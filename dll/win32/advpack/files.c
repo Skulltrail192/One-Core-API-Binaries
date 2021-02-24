@@ -18,10 +18,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+#include <stdlib.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winreg.h"
+#include "winnls.h"
+#include "winver.h"
+#include "winternl.h"
+#include "setupapi.h"
+#include "advpub.h"
+#include "fdi.h"
+#include "wine/debug.h"
 #include "advpack_private.h"
 
-#include <winver.h>
-#include <fdi.h>
+WINE_DEFAULT_DEBUG_CHANNEL(advpack);
 
 /* converts an ansi double null-terminated list to a unicode list */
 static LPWSTR ansi_to_unicode_list(LPCSTR ansi_list)
@@ -492,7 +505,7 @@ HRESULT WINAPI DelNodeRunDLL32W(HWND hWnd, HINSTANCE hInst, LPWSTR cmdline, INT 
     szFlags = get_parameter(&cmdline_ptr, ',', TRUE);
 
     if (szFlags)
-        dwFlags = atolW(szFlags);
+        dwFlags = wcstol(szFlags, NULL, 10);
 
     res = DelNodeW(szFilename, dwFlags);
 

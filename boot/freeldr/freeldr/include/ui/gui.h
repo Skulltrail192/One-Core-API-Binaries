@@ -19,7 +19,6 @@
 
 #pragma once
 
-#define    TUI_SCREEN_MEM                0xB8000
 #define TITLE_BOX_CHAR_HEIGHT        5
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -49,6 +48,19 @@ UCHAR    GuiTextToFillStyle(PCSTR FillStyleText);                // Converts the
 // Menu Functions
 //
 ///////////////////////////////////////////////////////////////////////////////////////
-BOOLEAN    GuiDisplayMenu(PCSTR MenuHeader, PCSTR MenuFooter, BOOLEAN ShowBootOptions, PCSTR MenuItemList[], ULONG MenuItemCount, ULONG DefaultMenuItem, LONG MenuTimeOut, ULONG* SelectedMenuItem);
+
+BOOLEAN
+GuiDisplayMenu(
+    IN PCSTR MenuHeader,
+    IN PCSTR MenuFooter OPTIONAL,
+    IN BOOLEAN ShowBootOptions,
+    IN PCSTR MenuItemList[],
+    IN ULONG MenuItemCount,
+    IN ULONG DefaultMenuItem,
+    IN LONG MenuTimeOut,
+    OUT PULONG SelectedMenuItem,
+    IN BOOLEAN CanEscape,
+    IN UiMenuKeyPressFilterCallback KeyPressFilter OPTIONAL,
+    IN PVOID Context OPTIONAL);
 
 extern const UIVTBL GuiVtbl;

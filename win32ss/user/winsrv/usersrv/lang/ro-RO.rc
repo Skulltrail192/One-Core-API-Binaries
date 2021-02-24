@@ -1,4 +1,7 @@
-/* Romanian translation by Fulea Ștefan */
+/*
+ * Romanian translation by: Ștefan Fulea (stefan dot fulea at mail dot com)
+ *                          Bișoc George (fraizeraust99 at gmail dot com)
+ */
 
 LANGUAGE LANG_ROMANIAN, SUBLANG_NEUTRAL
 
@@ -23,4 +26,21 @@ BEGIN
     LTEXT "Acest program nu răspunde.", IDC_STATIC, 7, 7, 178, 8
     LTEXT "Pentru a vă întoarce în ReactOS și a verifica starea programului, apăsați „Anulează”.", IDC_STATIC, 7, 26, 178, 16
     LTEXT "Dacă alegeți închiderea imediată a programului, riscați pierderi de date. Pentru a forța închiderea, apăsați „Termină forțat”.", IDC_STATIC, 7, 53, 178, 26
+END
+
+
+STRINGTABLE
+BEGIN
+    IDS_SEVERITY_SUCCESS        "Succes"
+    IDS_SEVERITY_INFORMATIONAL  "Informație sistem"
+    IDS_SEVERITY_WARNING        "Avertizare sistem"
+    IDS_SEVERITY_ERROR          "Eroare sistem"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_SYSTEM_PROCESS          "Proces sistem"
+    IDS_UNKNOWN_SOFTWARE_EXCEPT "excepție software necunoscut"
+    IDS_OK_TERMINATE_PROGRAM    "Apăsați OK pentru terminarea programului."
+    IDS_CANCEL_DEBUG_PROGRAM    "Apăsați Anulează pentru depanarea programului."
 END

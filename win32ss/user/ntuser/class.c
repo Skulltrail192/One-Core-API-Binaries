@@ -53,7 +53,7 @@ REGISTER_SYSCLASS DefaultServerClasses[] =
     ICLS_SWITCH
   },
   { ((PWSTR)((ULONG_PTR)(WORD)(0x8000))),
-    CS_DBLCLKS|CS_SAVEBITS,
+    CS_DBLCLKS|CS_SAVEBITS|CS_DROPSHADOW,
     NULL, // Use User32 procs
     sizeof(LONG),
     (HICON)OCR_NORMAL,
@@ -2343,7 +2343,7 @@ UserRegisterSystemClasses(VOID)
         hBrush = DefaultServerClasses[i].hBrush;
         if (hBrush <= (HBRUSH)COLOR_MENUBAR)
         {
-            hBrush = IntGetSysColorBrush((INT)hBrush);
+            hBrush = IntGetSysColorBrush(HandleToUlong(hBrush));
         }
         wc.hbrBackground = hBrush;
         wc.lpszMenuName = NULL;
@@ -2706,6 +2706,10 @@ NtUserGetClassInfo(
     {
         ProbeForWrite( lpWndClassEx, sizeof(WNDCLASSEXW), sizeof(ULONG));
         RtlCopyMemory( &Safewcexw, lpWndClassEx, sizeof(WNDCLASSEXW));
+        if (ppszMenuName)
+        {
+            ProbeForWrite(ppszMenuName, sizeof(*ppszMenuName), sizeof(PVOID));
+        }
     }
     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
     {
@@ -2811,6 +2815,12 @@ NtUserGetClassName (IN HWND hWnd,
         {
             ProbeForWriteUnicodeString(ClassName);
             CapturedClassName = *ClassName;
+            if (CapturedClassName.Length != 0)
+            {
+                ProbeForRead(CapturedClassName.Buffer,
+                             CapturedClassName.Length,
+                             sizeof(WCHAR));
+            }
 
             /* Get the class name */
             Ret = UserGetClassName(Window->pcls,

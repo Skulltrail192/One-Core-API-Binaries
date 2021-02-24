@@ -426,7 +426,7 @@ static void fill_filename_from_selection(FileDialogImpl *This)
                 (!(This->options & FOS_PICKFOLDERS) &&  (attr & SFGAO_FOLDER))))
                 continue;
 
-            hr = IShellItem_GetDisplayName(psi, SIGDN_PARENTRELATIVEPARSING, &names[valid_count]);
+            hr = IShellItem_GetDisplayName(psi, (This->options & FOS_PICKFOLDERS) ? SIGDN_FILESYSPATH : SIGDN_PARENTRELATIVEPARSING, &names[valid_count]);
             if(SUCCEEDED(hr))
             {
                 len_total += lstrlenW(names[valid_count]) + 3;
@@ -659,7 +659,7 @@ static HRESULT on_default_action(FileDialogImpl *This)
                 if(hr != S_OK)
                 {
                     WCHAR buf[64];
-                    LoadStringW(COMDLG32_hInstance, IDS_INVALID_FOLDERNAME, buf, sizeof(buf)/sizeof(WCHAR));
+                    LoadStringW(COMDLG32_hInstance, IDS_INVALID_FOLDERNAME, buf, ARRAY_SIZE(buf));
 
                     MessageBoxW(This->dlg_hwnd, buf, This->custom_title, MB_OK | MB_ICONEXCLAMATION);
 
@@ -1286,7 +1286,7 @@ static UINT ctrl_container_resize(FileDialogImpl *This, UINT container_width)
 
     /* Move the controls to their final destination
      */
-    cur_col_pos = 0, cur_row_pos = 0;
+    cur_col_pos = 0; cur_row_pos = 0;
     LIST_FOR_EACH_ENTRY(ctrl, &This->cctrls, customctrl, entry)
     {
         if(ctrl->cdcstate & CDCS_VISIBLE)
@@ -2507,10 +2507,20 @@ static HRESULT WINAPI IFileDialog2_fnSetOptions(IFileDialog2 *iface, FILEOPENDIA
     FileDialogImpl *This = impl_from_IFileDialog2(iface);
     TRACE("%p (0x%x)\n", This, fos);
 
+    if (fos & ~(FOS_OVERWRITEPROMPT | FOS_STRICTFILETYPES | FOS_NOCHANGEDIR | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM
+            | FOS_ALLNONSTORAGEITEMS | FOS_NOVALIDATE | FOS_ALLOWMULTISELECT | FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST
+            | FOS_CREATEPROMPT | FOS_SHAREAWARE | FOS_NOREADONLYRETURN | FOS_NOTESTFILECREATE | FOS_HIDEMRUPLACES
+            | FOS_HIDEPINNEDPLACES | FOS_NODEREFERENCELINKS | FOS_DONTADDTORECENT | FOS_FORCESHOWHIDDEN
+            | FOS_DEFAULTNOMINIMODE | FOS_FORCEPREVIEWPANEON | FOS_SUPPORTSTREAMABLEITEMS))
+    {
+        WARN("Invalid option %#x\n", fos);
+        return E_INVALIDARG;
+    }
+
     if( !(This->options & FOS_PICKFOLDERS) && (fos & FOS_PICKFOLDERS) )
     {
         WCHAR buf[30];
-        LoadStringW(COMDLG32_hInstance, IDS_SELECT_FOLDER, buf, sizeof(buf)/sizeof(WCHAR));
+        LoadStringW(COMDLG32_hInstance, IDS_SELECT_FOLDER, buf, ARRAY_SIZE(buf));
         IFileDialog2_SetTitle(iface, buf);
     }
 
@@ -4599,7 +4609,7 @@ static HRESULT FileDialog_constructor(IUnknown *pUnkOuter, REFIID riid, void **p
     if(pUnkOuter)
         return CLASS_E_NOAGGREGATION;
 
-    fdimpl = HeapAlloc(GetProcessHeap(), 0, sizeof(FileDialogImpl));
+    fdimpl = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(FileDialogImpl));
     if(!fdimpl)
         return E_OUTOFMEMORY;
 
@@ -4625,32 +4635,12 @@ static HRESULT FileDialog_constructor(IUnknown *pUnkOuter, REFIID riid, void **p
         fdimpl->u.IFileSaveDialog_iface.lpVtbl = &vt_IFileSaveDialog;
         fdimpl->options = FOS_OVERWRITEPROMPT | FOS_NOREADONLYRETURN | FOS_PATHMUSTEXIST | FOS_NOCHANGEDIR;
 
-        LoadStringW(COMDLG32_hInstance, IDS_SAVE, buf, sizeof(buf)/sizeof(WCHAR));
+        LoadStringW(COMDLG32_hInstance, IDS_SAVE, buf, ARRAY_SIZE(buf));
         fdimpl->custom_title = StrDupW(buf);
         fdimpl->custom_okbutton = StrDupW(buf);
     }
 
-    fdimpl->filterspecs = NULL;
-    fdimpl->filterspec_count = 0;
-    fdimpl->filetypeindex = 0;
-
-    fdimpl->psia_selection = fdimpl->psia_results = NULL;
-    fdimpl->psi_setfolder = fdimpl->psi_folder = NULL;
-
     list_init(&fdimpl->events_clients);
-    fdimpl->events_next_cookie = 0;
-
-    fdimpl->dlg_hwnd = NULL;
-    fdimpl->peb = NULL;
-
-    fdimpl->set_filename = NULL;
-    fdimpl->default_ext = NULL;
-    fdimpl->custom_cancelbutton = fdimpl->custom_filenamelabel = NULL;
-
-    fdimpl->client_guid = GUID_NULL;
-
-    fdimpl->hmenu_opendropdown = NULL;
-    fdimpl->hfont_opendropdown = NULL;
 
     /* FIXME: The default folder setting should be restored for the
      * application if it was previously set. */

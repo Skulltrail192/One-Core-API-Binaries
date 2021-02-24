@@ -22,7 +22,12 @@
 #define BIOSCALLBUFOFFSET   HEX(0000) /* Buffer to store temporary data for any Int386() call */
 #define BIOSCALLBUFSIZE     PAGE_SIZE /* max is sizeof(VESA_SVGA_INFO) = 512 */
 #define MAX_FREELDR_PE_SIZE (MEMORY_MARGIN - FREELDR_PE_BASE - PAGE_SIZE)
-#define MAX_DISKREADBUFFER_SIZE HEX(10000)
+
+/* MAX_DISKREADBUFFER_SIZE is later passed to INT 13h, AH=42h.
+   According to https://en.wikipedia.org/wiki/INT_13H#INT_13h_AH.3D42h:_Extended_Read_Sectors_From_Drive
+   some BIOSes can only read a maximum of 127 sectors. (0xFE00 / 512 = 127)
+   Confirmed when booting from USB on Dell Latitude D531 and Lenovo ThinkPad X61. */
+#define MAX_DISKREADBUFFER_SIZE HEX(FE00)
 
 /* These addresses specify the realmode "BSS section" layout */
 #define BSS_RealModeEntry        (BSS_START +  0)
@@ -49,11 +54,10 @@
 /* Realmode function IDs */
 #define FNID_Int386 0
 #define FNID_Reboot 1
-#define FNID_ChainLoadBiosBootSectorCode 2
+#define FNID_Relocator16Boot 2
 #define FNID_PxeCallApi 3
-#define FNID_PnpBiosGetDeviceNodeCount 4
-#define FNID_PnpBiosGetDeviceNode 5
-#define FNID_BootLinuxKernel 6
+#define FNID_PnpBiosGetDeviceNodeCount  4
+#define FNID_PnpBiosGetDeviceNode       5
 
 /* Flag Masks */
 #define CR0_PE_SET    HEX(00000001)    /* OR this value with CR0 to enable pmode */
@@ -61,7 +65,7 @@
 
 /* Defines needed for switching between real and protected mode */
 //#ifdef _M_IX86
-#define NULL_DESC    HEX(00)    /* NULL descriptor */
+#define NULL_DESC   HEX(00)    /* NULL descriptor */
 #define PMODE_CS    HEX(08)    /* PMode code selector, base 0 limit 4g */
 #define PMODE_DS    HEX(10)    /* PMode data selector, base 0 limit 4g */
 #define RMODE_CS    HEX(18)    /* RMode code selector, base 0 limit 64k */
@@ -72,6 +76,3 @@
 #define LMODE_DS HEX(18)
 #define CMODE_CS HEX(30)
 //#endif
-
-/* Makes "x" a global variable or label */
-#define EXTERN(x)    .global x; x:

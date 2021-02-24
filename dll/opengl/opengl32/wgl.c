@@ -19,7 +19,7 @@ LIST_ENTRY ContextListHead;
 /* FIXME: suboptimal */
 static
 struct wgl_dc_data*
-get_dc_data(HDC hdc)
+get_dc_data_ex(HDC hdc, INT format, UINT size, PIXELFORMATDESCRIPTOR *descr)
 {
     HWND hwnd = NULL;
     struct wgl_dc_data* data;
@@ -76,7 +76,7 @@ get_dc_data(HDC hdc)
     data->icd_data = IntGetIcdData(hdc);
     /* Get the number of available formats for this DC once and for all */
     if(data->icd_data)
-        data->nb_icd_formats = data->icd_data->DrvDescribePixelFormat(hdc, 0, 0, NULL);
+        data->nb_icd_formats = data->icd_data->DrvDescribePixelFormat(hdc, format, size, descr);
     else
         data->nb_icd_formats = 0;
     TRACE("ICD %S has %u formats for HDC %x.\n", data->icd_data ? data->icd_data->DriverName : NULL, data->nb_icd_formats, hdc);
@@ -85,6 +85,13 @@ get_dc_data(HDC hdc)
     dc_data_list = data;
     LeaveCriticalSection(&dc_data_cs);
     return data;
+}
+
+static
+struct wgl_dc_data*
+get_dc_data(HDC hdc)
+{
+    return get_dc_data_ex(hdc, 0, 0, NULL);
 }
 
 void release_dc_data(struct wgl_dc_data* dc_data)
@@ -115,7 +122,7 @@ struct wgl_context* get_context(HGLRC hglrc)
 
 INT WINAPI wglDescribePixelFormat(HDC hdc, INT format, UINT size, PIXELFORMATDESCRIPTOR *descr )
 {
-    struct wgl_dc_data* dc_data = get_dc_data(hdc);
+    struct wgl_dc_data* dc_data = get_dc_data_ex(hdc, format, size, descr);
     INT ret;
     
     if(!dc_data)
@@ -131,7 +138,7 @@ INT WINAPI wglDescribePixelFormat(HDC hdc, INT format, UINT size, PIXELFORMATDES
         release_dc_data(dc_data);
         return ret;
     }
-    if((format == 0) || (format > ret) || (size != sizeof(*descr)))
+    if((format <= 0) || (format > ret) || (size < sizeof(*descr)))
     {
         release_dc_data(dc_data);
         SetLastError(ERROR_INVALID_PARAMETER);
@@ -198,28 +205,28 @@ INT WINAPI wglChoosePixelFormat(HDC hdc, const PIXELFORMATDESCRIPTOR* ppfd)
         }
 
         /* only use bitmap capable formats for bitmap rendering */
-        if ((ppfd->dwFlags & PFD_DRAW_TO_BITMAP) != (format.dwFlags & PFD_DRAW_TO_BITMAP))
+        if ((ppfd->dwFlags & PFD_DRAW_TO_BITMAP) && !(format.dwFlags & PFD_DRAW_TO_BITMAP))
         {
             TRACE( "PFD_DRAW_TO_BITMAP mismatch for iPixelFormat=%d\n", i );
             continue;
         }
 
         /* only use window capable formats for window rendering */
-        if ((ppfd->dwFlags & PFD_DRAW_TO_WINDOW) != (format.dwFlags & PFD_DRAW_TO_WINDOW))
+        if ((ppfd->dwFlags & PFD_DRAW_TO_WINDOW) && !(format.dwFlags & PFD_DRAW_TO_WINDOW))
         {
             TRACE( "PFD_DRAW_TO_WINDOW mismatch for iPixelFormat=%d\n", i );
             continue;
         }
 
         /* only use opengl capable formats for opengl rendering */
-        if ((ppfd->dwFlags & PFD_SUPPORT_OPENGL) != (format.dwFlags & PFD_SUPPORT_OPENGL))
+        if ((ppfd->dwFlags & PFD_SUPPORT_OPENGL) && !(format.dwFlags & PFD_SUPPORT_OPENGL))
         {
             TRACE( "PFD_SUPPORT_OPENGL mismatch for iPixelFormat=%d\n", i );
             continue;
         }
 
         /* only use GDI capable formats for GDI rendering */
-        if ((ppfd->dwFlags & PFD_SUPPORT_GDI) != (format.dwFlags & PFD_SUPPORT_GDI))
+        if ((ppfd->dwFlags & PFD_SUPPORT_GDI) && !(format.dwFlags & PFD_SUPPORT_GDI))
         {
             TRACE( "PFD_SUPPORT_GDI mismatch for iPixelFormat=%d\n", i );
             continue;
@@ -379,7 +386,7 @@ HGLRC WINAPI wglCreateContext(HDC hdc)
     struct wgl_context* context;
     DHGLRC dhglrc;
     
-    TRACE("Creating context for %p, format %i\n", hdc);
+    TRACE("Creating context for %p.\n", hdc);
     
     if(!dc_data)
     {
@@ -696,7 +703,7 @@ BOOL WINAPI wglMakeCurrent(HDC hdc, HGLRC hglrc)
                 ERR("DrvSetContext failed!\n");
                 /* revert */
                 InterlockedExchange(&ctx->thread_id, 0);
-                IntSetCurrentDispatchTable(&StubTable.glDispatchTable);
+                IntSetCurrentDispatchTable(NULL);
                 SetLastError(ERROR_INVALID_PARAMETER);
                 return FALSE;
             }
@@ -728,17 +735,20 @@ BOOL WINAPI wglMakeCurrent(HDC hdc, HGLRC hglrc)
         InterlockedExchange(&old_ctx->thread_id, 0);
         /* Unset it */
         IntMakeCurrent(NULL, NULL, NULL);
-        /* Reset the no-op table */
-        set_api_table(&StubTable);
+        IntSetCurrentDispatchTable(NULL);
         /* Test conformance (extreme cases) */
         return hglrc == NULL;
     }
     else
     {
         /* Winetest conformance */
-        if (GetObjectType( hdc ) != OBJ_DC && GetObjectType( hdc ) != OBJ_MEMDC)
+        DWORD objType = GetObjectType(hdc);
+        if (objType != OBJ_DC && objType != OBJ_MEMDC)
         {
-            ERR( "Error: hdc is not a DC handle!\n");
+            if (hdc)
+            {
+                ERR("hdc (%p) is not a DC handle (ObjectType: %d)!\n", hdc, objType);
+            }
             SetLastError( ERROR_INVALID_HANDLE );
             return FALSE;
         }

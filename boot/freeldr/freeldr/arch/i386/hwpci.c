@@ -20,10 +20,10 @@
 
 #include <freeldr.h>
 
-#define NDEBUG
 #include <debug.h>
-
 DBG_DEFAULT_CHANNEL(HWDETECT);
+
+FIND_PCI_BIOS FindPciBios = NULL;
 
 static
 PPCI_IRQ_ROUTING_TABLE
@@ -76,8 +76,8 @@ GetPciIrqRoutingTable(VOID)
 }
 
 
-static BOOLEAN
-FindPciBios(PPCI_REGISTRY_INFO BusData)
+BOOLEAN
+PcFindPciBios(PPCI_REGISTRY_INFO BusData)
 {
     REGS  RegsIn;
     REGS  RegsOut;
@@ -88,7 +88,7 @@ FindPciBios(PPCI_REGISTRY_INFO BusData)
     Int386(0x1A, &RegsIn, &RegsOut);
 
     if (INT386_SUCCESS(RegsOut) &&
-        (RegsOut.d.edx == 0x20494350) &&
+        (RegsOut.d.edx == ' ICP') &&
         (RegsOut.b.ah == 0))
     {
         TRACE("Found PCI bios\n");

@@ -4,7 +4,7 @@
  * PURPOSE: Romanian Language File for Winlogon
  * TRANSLATORS:
  *          Petru Dimitriu (petrimetri at gmail dot com)
- *          Ștefan Fulea (stefan dot fulea at mail dot md)
+ *          Ștefan Fulea (stefan dot fulea at mail dot com)
  */
 
 LANGUAGE LANG_ROMANIAN, SUBLANG_NEUTRAL
@@ -14,7 +14,7 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPT
 CAPTION "Oprire calculator"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "Acum puteți închide calculatorul în siguranță.", IDC_SHUTDOWNCOMPUTER, 31, 13, 132, 8
+    LTEXT "Acum puteți închide calculatorul în siguranță.", IDC_SHUTDOWNCOMPUTER, 31, 6, 132, 18
     ICON IDI_WINLOGON, IDC_SHTDOWNICON, 6, 7, 18, 20
     DEFPUSHBUTTON  "&Repornire", IDC_BTNSHTDOWNCOMPUTER, 62, 32, 40, 14
 END
@@ -27,6 +27,19 @@ BEGIN
     LTEXT "Fișierul DLL al interfeței „%s” nu a putut fi încărcat.", IDC_GINALOADFAILED, 39, 16, 156, 24
     LTEXT "Reinstalați ReactOS pentru a rezolva această problemă.", IDC_GINALOADFAILEDCONTACT, 39, 53, 151, 25
     DEFPUSHBUTTON "&Repornire", 1, 80, 91, 68, 14
+END
+
+IDD_SYSSHUTDOWN DIALOGEX 50, 50, 180, 140
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_VISIBLE | WS_CAPTION | WS_POPUP
+CAPTION "Sistem de oprire"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON IDI_WARNING, IDC_SYSSHUTDOWNICON, 6, 7, 18, 20
+    LTEXT "Sistemul de oprire a fost inițializat. Salvați toate lucrările și închideți sesiunea. Toate lucrările nesalvate vor fi pierdute atunci când sistemul se va opri.", -1, 38, 7, 135, 40
+    LTEXT "Sistemul se va opri în:", -1, 38, 50, 90, 8
+    LTEXT "00:00:00", IDC_SYSSHUTDOWNTIMELEFT, 132, 50, 41, 8
+    LTEXT "Mesaj:", -1, 38, 65, 135, 8
+    EDITTEXT IDC_SYSSHUTDOWNMESSAGE, 34, 75, 139, 58, ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP, WS_EX_STATICEDGE
 END
 
 STRINGTABLE
@@ -45,6 +58,8 @@ BEGIN
     IDS_PREPARETOHIBERNATE "Stare de hibernare în curs de pregătire…"
     IDS_SAVEYOURSETTINGS "Configurații personale în curs de păstrare…"
     IDS_REACTOSISSTARTINGUP "Sistem de operare în curs de pornire…"
+    IDS_TIMEOUTSHORTFORMAT "%02d:%02d:%02d"
+    IDS_TIMEOUTLONGFORMAT "%d zile"
 END
 
 STRINGTABLE

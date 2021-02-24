@@ -203,10 +203,13 @@ WinPrev_OnDraw(
      * Compute the console window layout
      */
 
+    if (FontPreview.hFont == NULL)
+        RefreshFontPreview(&FontPreview, pConInfo);
+
     /* We start with the console client area, rescaled for the preview */
     SetRect(&rcWin, 0, 0,
-            pConInfo->WindowSize.X * pConInfo->FontSize.X,
-            pConInfo->WindowSize.Y * pConInfo->FontSize.Y);
+            pConInfo->WindowSize.X * FontPreview.CharWidth,
+            pConInfo->WindowSize.Y * FontPreview.CharHeight);
     RescaleRect(pData, rcWin);
 
     /* Add the scrollbars if needed (does not account for any frame) */
@@ -489,7 +492,10 @@ PaintText(
     hBrush = CreateSolidBrush(nbkColor);
     if (!hBrush) return;
 
-    hOldFont = SelectObject(drawItem->hDC, hCurrentFont);
+    if (FontPreview.hFont == NULL)
+        RefreshFontPreview(&FontPreview, pConInfo);
+
+    hOldFont = SelectObject(drawItem->hDC, FontPreview.hFont);
     //if (hOldFont == NULL)
     //{
     //    DeleteObject(hBrush);

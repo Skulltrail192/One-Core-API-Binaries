@@ -1,34 +1,34 @@
 /*
- * PROJECT:     ReactOS Spooler API
- * LICENSE:     GNU LGPL v2.1 or any later version as published by the Free Software Foundation
- * PURPOSE:     Functions related to Print Processors
- * COPYRIGHT:   Copyright 2015-2017 Colin Finck <colin@reactos.org>
- */
+* PROJECT:     ReactOS Spooler API
+* LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+* PURPOSE:     Functions related to Print Processors
+* COPYRIGHT:   Copyright 2015-2018 Colin Finck (colin@reactos.org)
+*/
 
 #include "precomp.h"
+#include <marshalling/printprocessors.h>
 #include <prtprocenv.h>
 
-static void
-_MarshallUpDatatypesInfo(PDATATYPES_INFO_1W* ppDatatypesInfo1)
+BOOL WINAPI
+AddPrintProcessorA(PSTR pName, PSTR pEnvironment, PSTR pPathName, PSTR pPrintProcessorName)
 {
-    // Replace relative offset addresses in the output by absolute pointers.
-    PDATATYPES_INFO_1W pDatatypesInfo1 = *ppDatatypesInfo1;
-    pDatatypesInfo1->pName = (PWSTR)((ULONG_PTR)pDatatypesInfo1->pName + (ULONG_PTR)pDatatypesInfo1);
-    *ppDatatypesInfo1 += sizeof(DATATYPES_INFO_1W);
-}
-
-static void
-_MarshallUpPrintProcessorInfo(PPRINTPROCESSOR_INFO_1W* ppPrintProcessorInfo1)
-{
-    // Replace relative offset addresses in the output by absolute pointers.
-    PPRINTPROCESSOR_INFO_1W pPrintProcessorInfo1 = *ppPrintProcessorInfo1;
-    pPrintProcessorInfo1->pName = (PWSTR)((ULONG_PTR)pPrintProcessorInfo1->pName + (ULONG_PTR)pPrintProcessorInfo1);
-    *ppPrintProcessorInfo1 += sizeof(PRINTPROCESSOR_INFO_1W);
+    TRACE("AddPrintProcessorA(%s, %s, %s, %s)\n", pName, pEnvironment, pPathName, pPrintProcessorName);
+    UNIMPLEMENTED;
+    return FALSE;
 }
 
 BOOL WINAPI
 AddPrintProcessorW(PWSTR pName, PWSTR pEnvironment, PWSTR pPathName, PWSTR pPrintProcessorName)
 {
+    TRACE("AddPrintProcessorW(%S, %S, %S, %S)\n", pName, pEnvironment, pPathName, pPrintProcessorName);
+    UNIMPLEMENTED;
+    return FALSE;
+}
+
+BOOL WINAPI
+DeletePrintProcessorA(PSTR pName, PSTR pEnvironment, PSTR pPrintProcessorName)
+{
+    TRACE("DeletePrintProcessorA(%s, %s, %s)\n", pName, pEnvironment, pPrintProcessorName);
     UNIMPLEMENTED;
     return FALSE;
 }
@@ -36,6 +36,7 @@ AddPrintProcessorW(PWSTR pName, PWSTR pEnvironment, PWSTR pPathName, PWSTR pPrin
 BOOL WINAPI
 DeletePrintProcessorW(PWSTR pName, PWSTR pEnvironment, PWSTR pPrintProcessorName)
 {
+    TRACE("DeletePrintProcessorW(%S, %S, %S)\n", pName, pEnvironment, pPrintProcessorName);
     UNIMPLEMENTED;
     return FALSE;
 }
@@ -43,6 +44,7 @@ DeletePrintProcessorW(PWSTR pName, PWSTR pEnvironment, PWSTR pPrintProcessorName
 BOOL WINAPI
 EnumPrintProcessorDatatypesA(PSTR pName, LPSTR pPrintProcessorName, DWORD Level, PBYTE pDatatypes, DWORD cbBuf, PDWORD pcbNeeded, PDWORD pcReturned)
 {
+    TRACE("EnumPrintProcessorDatatypesA(%s, %s, %lu, %p, %lu, %p, %p)\n", pName, pPrintProcessorName, Level, pDatatypes, cbBuf, pcbNeeded, pcReturned);
     UNIMPLEMENTED;
     return FALSE;
 }
@@ -51,6 +53,8 @@ BOOL WINAPI
 EnumPrintProcessorDatatypesW(PWSTR pName, LPWSTR pPrintProcessorName, DWORD Level, PBYTE pDatatypes, DWORD cbBuf, PDWORD pcbNeeded, PDWORD pcReturned)
 {
     DWORD dwErrorCode;
+
+    TRACE("EnumPrintProcessorDatatypesW(%S, %S, %lu, %p, %lu, %p, %p)\n", pName, pPrintProcessorName, Level, pDatatypes, cbBuf, pcbNeeded, pcReturned);
 
     // Sanity checks
     if (Level != 1)
@@ -73,11 +77,8 @@ EnumPrintProcessorDatatypesW(PWSTR pName, LPWSTR pPrintProcessorName, DWORD Leve
 
     if (dwErrorCode == ERROR_SUCCESS)
     {
-        DWORD i;
-        PDATATYPES_INFO_1W p = (PDATATYPES_INFO_1W)pDatatypes;
-
-        for (i = 0; i < *pcReturned; i++)
-            _MarshallUpDatatypesInfo(&p);
+        // Replace relative offset addresses in the output by absolute pointers.
+        MarshallUpStructuresArray(cbBuf, pDatatypes, *pcReturned, DatatypesInfo1Marshalling.pInfo, DatatypesInfo1Marshalling.cbStructureSize, TRUE);
     }
 
 Cleanup:
@@ -86,9 +87,19 @@ Cleanup:
 }
 
 BOOL WINAPI
+EnumPrintProcessorsA(PSTR pName, PSTR pEnvironment, DWORD Level, PBYTE pPrintProcessorInfo, DWORD cbBuf, PDWORD pcbNeeded, PDWORD pcReturned)
+{
+    TRACE("EnumPrintProcessorsA(%s, %s, %lu, %p, %lu, %p, %p)\n", pName, pEnvironment, Level, pPrintProcessorInfo, cbBuf, pcbNeeded, pcReturned);
+    UNIMPLEMENTED;
+    return FALSE;
+}
+
+BOOL WINAPI
 EnumPrintProcessorsW(PWSTR pName, PWSTR pEnvironment, DWORD Level, PBYTE pPrintProcessorInfo, DWORD cbBuf, PDWORD pcbNeeded, PDWORD pcReturned)
 {
     DWORD dwErrorCode;
+
+    TRACE("EnumPrintProcessorsW(%S, %S, %lu, %p, %lu, %p, %p)\n", pName, pEnvironment, Level, pPrintProcessorInfo, cbBuf, pcbNeeded, pcReturned);
 
     // Choose our current environment if the caller didn't give any.
     if (!pEnvironment)
@@ -107,11 +118,8 @@ EnumPrintProcessorsW(PWSTR pName, PWSTR pEnvironment, DWORD Level, PBYTE pPrintP
 
     if (dwErrorCode == ERROR_SUCCESS)
     {
-        DWORD i;
-        PPRINTPROCESSOR_INFO_1W p = (PPRINTPROCESSOR_INFO_1W)pPrintProcessorInfo;
-
-        for (i = 0; i < *pcReturned; i++)
-            _MarshallUpPrintProcessorInfo(&p);
+        // Replace relative offset addresses in the output by absolute pointers.
+        MarshallUpStructuresArray(cbBuf, pPrintProcessorInfo, *pcReturned, PrintProcessorInfo1Marshalling.pInfo, PrintProcessorInfo1Marshalling.cbStructureSize, TRUE);
     }
 
     SetLastError(dwErrorCode);
@@ -126,6 +134,8 @@ GetPrintProcessorDirectoryA(PSTR pName, PSTR pEnvironment, DWORD Level, PBYTE pP
     PWSTR pwszName = NULL;
     PWSTR pwszEnvironment = NULL;
     PWSTR pwszPrintProcessorInfo = NULL;
+
+    TRACE("GetPrintProcessorDirectoryA(%s, %s, %lu, %p, %lu, %p)\n", pName, pEnvironment, Level, pPrintProcessorInfo, cbBuf, pcbNeeded);
 
     if (pName)
     {
@@ -198,6 +208,8 @@ BOOL WINAPI
 GetPrintProcessorDirectoryW(PWSTR pName, PWSTR pEnvironment, DWORD Level, PBYTE pPrintProcessorInfo, DWORD cbBuf, PDWORD pcbNeeded)
 {
     DWORD dwErrorCode;
+
+    TRACE("GetPrintProcessorDirectoryW(%S, %S, %lu, %p, %lu, %p)\n", pName, pEnvironment, Level, pPrintProcessorInfo, cbBuf, pcbNeeded);
 
     // Sanity checks
     if (Level != 1)

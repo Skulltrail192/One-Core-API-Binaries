@@ -22,10 +22,9 @@
 #ifndef _SHFLDR_RECYCLEBIN_H_
 #define _SHFLDR_RECYCLEBIN_H_
 
-void DoDeleteAsync(IDataObject *pda, DWORD fMask);
-
 BOOL TRASH_CanTrashFile(LPCWSTR wszPath);
 BOOL TRASH_TrashFile(LPCWSTR wszPath);
+HRESULT CRecyclerDropTarget_CreateInstance(REFIID riid, LPVOID * ppvOut);
 
 class CRecycleBin :
     public CComCoClass<CRecycleBin, &CLSID_RecycleBin>,
@@ -34,16 +33,11 @@ class CRecycleBin :
     public IPersistFolder2,
     public IContextMenu,
     public IShellPropSheetExt,
-    public IDropTarget,
     public IShellExtInit
 {
     private:
         LPITEMIDLIST pidl;
         INT iIdEmpty;
-        UINT cfShellIDList;
-        void SF_RegisterClipFmt();
-        BOOL fAcceptFmt;       /* flag for pending Drop */
-        BOOL QueryDrop (DWORD dwKeyState, LPDWORD pdwEffect);
         BOOL RecycleBinIsEmpty();
 
     public:
@@ -52,10 +46,10 @@ class CRecycleBin :
 
         // IPersistFolder
         virtual HRESULT WINAPI GetClassID(CLSID *pClassID);
-        virtual HRESULT WINAPI Initialize(LPCITEMIDLIST pidl);
+        virtual HRESULT WINAPI Initialize(PCIDLIST_ABSOLUTE pidl);
 
         // IPersistFolder2
-        virtual HRESULT WINAPI GetCurFolder(LPITEMIDLIST * pidl);
+        virtual HRESULT WINAPI GetCurFolder(PIDLIST_ABSOLUTE * pidl);
 
         // IShellFolder
         virtual HRESULT WINAPI ParseDisplayName(HWND hwndOwner, LPBC pbc, LPOLESTR lpszDisplayName, DWORD *pchEaten, PIDLIST_RELATIVE *ppidl, DWORD *pdwAttributes);
@@ -86,15 +80,9 @@ class CRecycleBin :
         // IShellPropSheetExt
         virtual HRESULT WINAPI AddPages(LPFNSVADDPROPSHEETPAGE pfnAddPage, LPARAM lParam);
         virtual HRESULT WINAPI ReplacePage(EXPPS uPageID, LPFNSVADDPROPSHEETPAGE pfnReplaceWith, LPARAM lParam);
-        
-        // IDropTarget
-        virtual HRESULT WINAPI DragEnter(IDataObject *pDataObject, DWORD dwKeyState, POINTL pt, DWORD *pdwEffect);
-        virtual HRESULT WINAPI DragOver(DWORD dwKeyState, POINTL pt, DWORD *pdwEffect);
-        virtual HRESULT WINAPI DragLeave();
-        virtual HRESULT WINAPI Drop(IDataObject *pDataObject, DWORD dwKeyState, POINTL pt, DWORD *pdwEffect);
 
         // IShellExtInit
-        virtual HRESULT STDMETHODCALLTYPE Initialize(LPCITEMIDLIST pidlFolder, IDataObject *pdtobj, HKEY hkeyProgID);
+        virtual HRESULT STDMETHODCALLTYPE Initialize(PCIDLIST_ABSOLUTE pidlFolder, IDataObject *pdtobj, HKEY hkeyProgID);
 
         DECLARE_REGISTRY_RESOURCEID(IDR_RECYCLEBIN)
         DECLARE_NOT_AGGREGATABLE(CRecycleBin)
@@ -108,7 +96,6 @@ class CRecycleBin :
         COM_INTERFACE_ENTRY_IID(IID_IShellFolder2, IShellFolder2)
         COM_INTERFACE_ENTRY_IID(IID_IContextMenu, IContextMenu)
         COM_INTERFACE_ENTRY_IID(IID_IShellPropSheetExt, IShellPropSheetExt)
-        COM_INTERFACE_ENTRY_IID(IID_IDropTarget, IDropTarget)
         COM_INTERFACE_ENTRY_IID(IID_IShellExtInit, IShellExtInit)
         END_COM_MAP()
 };

@@ -18,6 +18,10 @@
 
 #include "hlink_private.h"
 
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(hlink);
+
 typedef struct {
     IUnknown           IUnknown_inner;
     IAuthenticate      IAuthenticate_iface;
@@ -238,7 +242,7 @@ static HRESULT ExtServ_ImplSetAdditionalHeaders(ExtensionService* This, LPCWSTR 
     if (!pwzAdditionalHeaders)
         return S_OK;
 
-    len = strlenW(pwzAdditionalHeaders);
+    len = lstrlenW(pwzAdditionalHeaders);
 
     if(len && pwzAdditionalHeaders[len-1] != '\n' && pwzAdditionalHeaders[len-1] != '\r') {
         static const WCHAR endlW[] = {'\r','\n',0};

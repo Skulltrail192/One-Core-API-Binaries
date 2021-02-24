@@ -25,21 +25,19 @@
  *      + better implement non waiting command (without the MCI_WAIT flag).
  */
 
-#define WIN32_NO_STATUS
-
-//#include <stdlib.h>
+#include <stdlib.h>
 #include <stdarg.h>
-//#include <stdio.h>
-//#include <string.h>
+#include <stdio.h>
+#include <string.h>
 
-#include <windef.h>
-//#include "winbase.h"
-//#include "wingdi.h"
-#include <winuser.h>
-#include <wownt32.h>
-#include <mmddk.h>
-#include <wine/debug.h>
-#include <wine/unicode.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "wownt32.h"
+#include "mmddk.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(mcimidi);
 
@@ -694,8 +692,8 @@ static DWORD MIDI_mciOpen(WINE_MCIMIDI* wmm, DWORD dwFlags, LPMCI_OPEN_PARMSW lp
 		return MCIERR_FILE_NOT_FOUND;
 	    }
             wmm->lpstrElementName = HeapAlloc(GetProcessHeap(), 0, 
-                                              (strlenW(lpParms->lpstrElementName) + 1) * sizeof(WCHAR));
-            strcpyW(wmm->lpstrElementName, lpParms->lpstrElementName);
+                                              (lstrlenW(lpParms->lpstrElementName) + 1) * sizeof(WCHAR));
+            lstrcpyW(wmm->lpstrElementName, lpParms->lpstrElementName);
 	}
     }
     TRACE("hFile=%p\n", wmm->hFile);

@@ -4,21 +4,25 @@
 
 #include "resource.h"
 
-#define REACTOS_STR_FILE_DESCRIPTION  "ReactOS Setup"
-#define REACTOS_STR_INTERNAL_NAME     "reactos"
-#define REACTOS_STR_ORIGINAL_FILENAME "reactos.exe"
+#define REACTOS_STR_FILE_DESCRIPTION    "ReactOS Setup"
+#define REACTOS_STR_INTERNAL_NAME       "reactos"
+#define REACTOS_STR_ORIGINAL_FILENAME   "reactos.exe"
 #include <reactos/version.rc>
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 
 /* Icons */
-IDI_MAIN ICON "res/setup.ico"
+IDI_MAIN        ICON "res/setup.ico"
+IDI_ROSICON     ICON "res/roslogo.ico"
+IDI_WINICON     ICON "res/winlogo.ico"
+IDI_DISKDRIVE   ICON "res/drive_disk.ico"
+IDI_PARTITION   ICON "res/partition.ico"
 
 /* Bitmaps */
-IDB_WATERMARK BITMAP "res/watermark.bmp"
-IDB_HEADER BITMAP "res/header.bmp"
+IDB_WATERMARK   BITMAP "res/watermark.bmp"
+IDB_HEADER      BITMAP "res/header.bmp"
 
-#include <reactos/manifest_exe.rc>
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "reactos.exe.manifest"
 
 /* UTF-8 */
 #pragma code_page(65001)
@@ -53,8 +57,14 @@ IDB_HEADER BITMAP "res/header.bmp"
 #ifdef LANGUAGE_HE_IL
     #include "lang/he-IL.rc"
 #endif
+#ifdef LANGUAGE_HI_IN
+    #include "lang/hi-IN.rc"
+#endif
 #ifdef LANGUAGE_HU_HU
     #include "lang/hu-HU.rc"
+#endif
+#ifdef LANGUAGE_ID_ID
+    #include "lang/id-ID.rc"
 #endif
 #ifdef LANGUAGE_IT_IT
     #include "lang/it-IT.rc"
@@ -74,6 +84,9 @@ IDB_HEADER BITMAP "res/header.bmp"
 #ifdef LANGUAGE_PT_BR
     #include "lang/pt-BR.rc"
 #endif
+#ifdef LANGUAGE_PT_PT
+    #include "lang/pt-PT.rc"
+#endif
 #ifdef LANGUAGE_RO_RO
     #include "lang/ro-RO.rc"
 #endif
@@ -91,6 +104,9 @@ IDB_HEADER BITMAP "res/header.bmp"
 #endif
 #ifdef LANGUAGE_UK_UA
     #include "lang/uk-UA.rc"
+#endif
+#ifdef LANGUAGE_VI_VN
+    #include "lang/vi-VN.rc"
 #endif
 #ifdef LANGUAGE_ZH_CN
     #include "lang/zh-CN.rc"

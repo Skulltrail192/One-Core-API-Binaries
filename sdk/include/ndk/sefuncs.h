@@ -95,7 +95,7 @@ NtAccessCheck(
     _Out_ PPRIVILEGE_SET PrivilegeSet,
     _Out_ PULONG ReturnLength,
     _Out_ PACCESS_MASK GrantedAccess,
-    _Out_ NTSTATUS* AccessStatus
+    _Out_ PNTSTATUS AccessStatus
 );
 
 NTSTATUS
@@ -111,7 +111,7 @@ NtAccessCheckByType(
     _In_ PPRIVILEGE_SET PrivilegeSet,
     _Inout_ PULONG PrivilegeSetLength,
     _Out_ PACCESS_MASK GrantedAccess,
-    _Out_ NTSTATUS* AccessStatus
+    _Out_ PNTSTATUS AccessStatus
 );
 
 NTSTATUS
@@ -127,7 +127,7 @@ NtAccessCheckByTypeResultList(
     _In_ PPRIVILEGE_SET PrivilegeSet,
     _Inout_ PULONG PrivilegeSetLength,
     _Out_ PACCESS_MASK GrantedAccess,
-    _Out_ NTSTATUS* AccessStatus
+    _Out_ PNTSTATUS AccessStatus
 );
 
 _Must_inspect_result_
@@ -144,7 +144,7 @@ NtAccessCheckAndAuditAlarm(
     _In_ PGENERIC_MAPPING GenericMapping,
     _In_ BOOLEAN ObjectCreation,
     _Out_ PACCESS_MASK GrantedAccess,
-    _Out_ NTSTATUS* AccessStatus,
+    _Out_ PNTSTATUS AccessStatus,
     _Out_ PBOOLEAN GenerateOnClose
 );
 
@@ -201,22 +201,23 @@ NtCompareTokens(
     _In_ HANDLE SecondTokenHandle,
     _Out_ PBOOLEAN Equal);
 
+__kernel_entry
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtCreateToken(
     _Out_ PHANDLE TokenHandle,
     _In_ ACCESS_MASK DesiredAccess,
-    _In_ POBJECT_ATTRIBUTES ObjectAttributes,
+    _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
     _In_ TOKEN_TYPE TokenType,
     _In_ PLUID AuthenticationId,
     _In_ PLARGE_INTEGER ExpirationTime,
     _In_ PTOKEN_USER TokenUser,
     _In_ PTOKEN_GROUPS TokenGroups,
     _In_ PTOKEN_PRIVILEGES TokenPrivileges,
-    _In_ PTOKEN_OWNER TokenOwner,
+    _In_opt_ PTOKEN_OWNER TokenOwner,
     _In_ PTOKEN_PRIMARY_GROUP TokenPrimaryGroup,
-    _In_ PTOKEN_DEFAULT_DACL TokenDefaultDacl,
+    _In_opt_ PTOKEN_DEFAULT_DACL TokenDefaultDacl,
     _In_ PTOKEN_SOURCE TokenSource
 );
 
@@ -343,7 +344,7 @@ ZwAccessCheck(
     _Out_ PPRIVILEGE_SET PrivilegeSet,
     _Out_ PULONG ReturnLength,
     _Out_ PACCESS_MASK GrantedAccess,
-    _Out_ NTSTATUS* AccessStatus
+    _Out_ PNTSTATUS AccessStatus
 );
 
 NTSYSAPI

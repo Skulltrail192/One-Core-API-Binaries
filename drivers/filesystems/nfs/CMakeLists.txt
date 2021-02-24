@@ -9,13 +9,16 @@ include_directories(
 
 add_definitions(-DRDBSS_TRACKER)
 
-add_library(nfs41_driver SHARED ${SOURCE} nfs.rc)
+add_library(nfs41_driver MODULE ${SOURCE} nfs.rc)
 set_module_type(nfs41_driver kernelmodedriver)
 target_link_libraries(nfs41_driver ntoskrnl_vista rdbsslib rxce copysup memcmp ${PSEH_LIB})
 add_importlibs(nfs41_driver ntoskrnl hal)
 
-if((NOT MSVC) AND (NOT CMAKE_C_COMPILER_ID STREQUAL "Clang"))
-    add_target_compile_flags(nfs41_driver "-Wno-switch")
+if(USE_CLANG_CL OR (NOT MSVC))
+    target_compile_options(nfs41_driver PRIVATE "-Wno-switch")
+    if(USE_CLANG_CL)
+        target_compile_options(nfs41_driver PRIVATE "-Wno-unused-value")
+    endif()
 endif()
 
 add_cd_file(TARGET nfs41_driver DESTINATION reactos/system32/drivers FOR all)

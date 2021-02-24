@@ -17,6 +17,7 @@
 #ifdef __REACTOS__
 #include <ndk/rtlfuncs.h>
 #include <pseh/pseh2.h>
+typedef IO_STACK_LOCATION EXTENDED_IO_STACK_LOCATION, *PEXTENDED_IO_STACK_LOCATION;
 #endif
 #include <stdio.h>
 #include <time.h>
@@ -47,7 +48,7 @@
 
 /* STRUCTS & CONSTS******************************************************/
 
-#define EXT2FSD_VERSION                 "0.68"
+#define EXT2FSD_VERSION                 "0.69"
 
 
 /* WDK DEFINITIONS ******************************************************/
@@ -720,7 +721,7 @@ typedef struct _EXT2_VCB {
     // Sector size in bits
     ULONG                       SectorBits;
 
-    // Aligned size (Page or Block)
+    // Minimal i/o size: min(PageSize, BlockSize)
     ULONGLONG                   IoUnitSize;
 
     // Bits of aligned size
@@ -783,6 +784,7 @@ typedef struct _EXT2_VCB {
 #define VCB_BEING_CLOSED        0x00000020
 #define VCB_USER_IDS            0x00000040  /* uid/gid specified by user */
 #define VCB_USER_EIDS           0x00000080  /* euid/egid specified by user */
+#define VCB_GD_LOADED           0x00000100  /* group desc loaded */
 
 #define VCB_BEING_DROPPED       0x00002000
 #define VCB_FORCE_WRITING       0x00004000
@@ -929,6 +931,8 @@ struct _EXT2_MCB {
     // List Link to Vcb->McbList
     LIST_ENTRY                      Link;
 
+	
+
     struct inode                    Inode;
     struct dentry                  *de;
 };
@@ -1005,6 +1009,9 @@ typedef struct _EXT2_CCB {
 
     /* Open handle control block */
     struct file         filp;
+
+	/* The EA index we are on */
+	ULONG           EaIndex;
 
 } EXT2_CCB, *PEXT2_CCB;
 
@@ -1114,6 +1121,10 @@ typedef struct _EXT2_EXTENT {
 // Include this so we don't need the latest WDK to build the driver.
 #ifndef FSCTL_GET_RETRIEVAL_POINTER_BASE
 #define FSCTL_GET_RETRIEVAL_POINTER_BASE    CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 141, METHOD_BUFFERED, FILE_ANY_ACCESS) // RETRIEVAL_POINTER_BASE
+#endif
+
+#ifndef FILE_SUPPORTS_EXTENDED_ATTRIBUTES
+#define FILE_SUPPORTS_EXTENDED_ATTRIBUTES   0x00800000
 #endif
 
 //
@@ -1606,6 +1617,26 @@ Ext2BuildRequest (
 );
 
 //
+// ea.c
+//
+
+NTSTATUS
+Ext2QueryEa(
+	IN PEXT2_IRP_CONTEXT    IrpContext
+);
+
+BOOLEAN
+Ext2IsEaNameValid(
+	IN OEM_STRING Name
+);
+
+NTSTATUS
+Ext2SetEa(
+	IN PEXT2_IRP_CONTEXT    IrpContext
+);
+
+
+//
 // Except.c
 //
 
@@ -1766,13 +1797,22 @@ Ext2RefreshSuper(
 );
 
 BOOLEAN
+Ext2LoadGroupBH(IN PEXT2_VCB Vcb);
+
+BOOLEAN
 Ext2LoadGroup(IN PEXT2_VCB Vcb);
+
+VOID
+Ext2DropGroupBH(IN PEXT2_VCB Vcb);
 
 VOID
 Ext2PutGroup(IN PEXT2_VCB Vcb);
 
 VOID
 Ext2DropBH(IN PEXT2_VCB Vcb);
+
+NTSTATUS
+Ext2FlushVcb(IN PEXT2_VCB Vcb);
 
 BOOLEAN
 Ext2SaveGroup(
@@ -1815,6 +1855,17 @@ Ext2SaveInode (
 );
 
 BOOLEAN
+Ext2LoadInodeXattr(IN PEXT2_VCB Vcb,
+	IN struct inode *Inode,
+	IN PEXT2_INODE InodeXattr);
+
+BOOLEAN
+Ext2SaveInodeXattr(IN PEXT2_IRP_CONTEXT IrpContext,
+	IN PEXT2_VCB Vcb,
+	IN struct inode *Inode,
+	IN PEXT2_INODE InodeXattr);
+
+BOOLEAN
 Ext2LoadBlock (
     IN PEXT2_VCB Vcb,
     IN ULONG     dwBlk,
@@ -1826,6 +1877,15 @@ Ext2SaveBlock (
     IN PEXT2_IRP_CONTEXT    IrpContext,
     IN PEXT2_VCB            Vcb,
     IN ULONG                dwBlk,
+    IN PVOID                Buf
+);
+
+BOOLEAN
+Ext2LoadBuffer(
+    IN PEXT2_IRP_CONTEXT    IrpContext,
+    IN PEXT2_VCB            Vcb,
+    IN LONGLONG             Offset,
+    IN ULONG                Size,
     IN PVOID                Buf
 );
 
@@ -2436,7 +2496,8 @@ struct buffer_head *ext3_bread(struct ext2_icb *icb, struct inode *inode,
 int add_dirent_to_buf(struct ext2_icb *icb, struct dentry *dentry,
                       struct inode *inode, struct ext3_dir_entry_2 *de,
                       struct buffer_head *bh);
-#if !defined(__REACTOS__) || defined(_MSC_VER)
+#if !defined(__REACTOS__) || (defined(_MSC_VER) && !defined(__clang__))
+/* FIXME: Inspect the clang-cl code path */
 struct ext3_dir_entry_2 *
             do_split(struct ext2_icb *icb, struct inode *dir,
                      struct buffer_head **bh,struct dx_frame *frame,

@@ -1,5 +1,3 @@
-/* $Id: tif_thunder.c,v 1.13 2016-09-04 21:32:56 erouault Exp $ */
-
 /*
  * Copyright (c) 1988-1997 Sam Leffler
  * Copyright (c) 1991-1997 Silicon Graphics, Inc.
@@ -125,17 +123,17 @@ ThunderDecode(TIFF* tif, uint8* op, tmsize_t maxpixels)
 			break;
 		case THUNDER_2BITDELTAS:	/* 2-bit deltas */
 			if ((delta = ((n >> 4) & 3)) != DELTA2_SKIP)
-				SETPIXEL(op, lastpixel + twobitdeltas[delta]);
+				SETPIXEL(op, (unsigned)((int)lastpixel + twobitdeltas[delta]));
 			if ((delta = ((n >> 2) & 3)) != DELTA2_SKIP)
-				SETPIXEL(op, lastpixel + twobitdeltas[delta]);
+				SETPIXEL(op, (unsigned)((int)lastpixel + twobitdeltas[delta]));
 			if ((delta = (n & 3)) != DELTA2_SKIP)
-				SETPIXEL(op, lastpixel + twobitdeltas[delta]);
+				SETPIXEL(op, (unsigned)((int)lastpixel + twobitdeltas[delta]));
 			break;
 		case THUNDER_3BITDELTAS:	/* 3-bit deltas */
 			if ((delta = ((n >> 3) & 7)) != DELTA3_SKIP)
-				SETPIXEL(op, lastpixel + threebitdeltas[delta]);
+				SETPIXEL(op, (unsigned)((int)lastpixel + threebitdeltas[delta]));
 			if ((delta = (n & 7)) != DELTA3_SKIP)
-				SETPIXEL(op, lastpixel + threebitdeltas[delta]);
+				SETPIXEL(op, (unsigned)((int)lastpixel + threebitdeltas[delta]));
 			break;
 		case THUNDER_RAW:		/* raw data */
 			SETPIXEL(op, n);

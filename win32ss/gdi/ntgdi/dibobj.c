@@ -470,8 +470,7 @@ NtGdiSetDIBitsToDeviceInternal(
     IN BOOL bTransformCoordinates,
     IN OPTIONAL HANDLE hcmXform)
 {
-    INT ret = 0;
-    NTSTATUS Status = STATUS_SUCCESS;
+    INT ret;
     PDC pDC = NULL;
     HBITMAP hSourceBitmap = NULL, hMaskBitmap = NULL;
     SURFOBJ *pDestSurf, *pSourceSurf = NULL, *pMaskSurf = NULL;
@@ -483,6 +482,7 @@ NtGdiSetDIBitsToDeviceInternal(
     EXLATEOBJ exlo;
     PPALETTE ppalDIB = NULL;
     LPBITMAPINFO pbmiSafe;
+    BOOL bResult;
 
     if (!Bits) return 0;
 
@@ -498,19 +498,16 @@ NtGdiSetDIBitsToDeviceInternal(
     }
     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
     {
-        Status = _SEH2_GetExceptionCode();
-    }
-    _SEH2_END
-
-    if (!NT_SUCCESS(Status))
-    {
+        ret = 0;
         goto Exit;
     }
+    _SEH2_END
 
     ScanLines = min(ScanLines, abs(bmi->bmiHeader.biHeight) - StartScan);
     if (ScanLines == 0)
     {
         DPRINT1("ScanLines == 0\n");
+        ret = 0;
         goto Exit;
     }
 
@@ -518,11 +515,13 @@ NtGdiSetDIBitsToDeviceInternal(
     if (!pDC)
     {
         EngSetLastError(ERROR_INVALID_HANDLE);
+        ret = 0;
         goto Exit;
     }
 
     if (pDC->dctype == DC_TYPE_INFO)
     {
+        ret = 0;
         goto Exit;
     }
 
@@ -564,14 +563,14 @@ NtGdiSetDIBitsToDeviceInternal(
     if (!hSourceBitmap)
     {
         EngSetLastError(ERROR_NO_SYSTEM_RESOURCES);
-        Status = STATUS_NO_MEMORY;
+        ret = 0;
         goto Exit;
     }
 
     pSourceSurf = EngLockSurface((HSURF)hSourceBitmap);
     if (!pSourceSurf)
     {
-        Status = STATUS_UNSUCCESSFUL;
+        ret = 0;
         goto Exit;
     }
 
@@ -586,13 +585,13 @@ NtGdiSetDIBitsToDeviceInternal(
         if (!hMaskBitmap)
         {
             EngSetLastError(ERROR_NO_SYSTEM_RESOURCES);
-            Status = STATUS_NO_MEMORY;
+            ret = 0;
             goto Exit;
         }
         pMaskSurf = EngLockSurface((HSURF)hMaskBitmap);
         if (!pMaskSurf)
         {
-            Status = STATUS_UNSUCCESSFUL;
+            ret = 0;
             goto Exit;
         }
     }
@@ -602,7 +601,7 @@ NtGdiSetDIBitsToDeviceInternal(
     if (!ppalDIB)
     {
         EngSetLastError(ERROR_NO_SYSTEM_RESOURCES);
-        Status = STATUS_NO_MEMORY;
+        ret = 0;
         goto Exit;
     }
 
@@ -632,7 +631,7 @@ NtGdiSetDIBitsToDeviceInternal(
     DPRINT("BitsToDev with dstsurf=(%d|%d) (%d|%d), src=(%d|%d) w=%d h=%d\n",
            rcDest.left, rcDest.top, rcDest.right, rcDest.bottom,
            ptSource.x, ptSource.y, SourceSize.cx, SourceSize.cy);
-    Status = IntEngBitBlt(pDestSurf,
+    bResult = IntEngBitBlt(pDestSurf,
                           pSourceSurf,
                           pMaskSurf,
                           (CLIPOBJ *)&pDC->co,
@@ -650,11 +649,9 @@ NtGdiSetDIBitsToDeviceInternal(
     /* We're done */
     DC_vFinishBlit(pDC, NULL);
 
+    ret = bResult ? ScanLines : 0;
+
 Exit:
-    if (NT_SUCCESS(Status))
-    {
-        ret = ScanLines;
-    }
 
     if (ppalDIB) PALETTE_ShareUnlockPalette(ppalDIB);
     if (pSourceSurf) EngUnlockSurface(pSourceSurf);
@@ -954,25 +951,28 @@ GreGetDIBitsInternal(
         RECT rcDest;
         POINTL srcPoint;
         BOOL ret ;
+        int newLines = -1;
 
-        if (StartScan > (ULONG)psurf->SurfObj.sizlBitmap.cy)
+        if (StartScan >= abs(Info->bmiHeader.biHeight))
         {
-            ScanLines = 0;
+            ScanLines = 1;
             goto done;
         }
         else
         {
-            ScanLines = min(ScanLines, psurf->SurfObj.sizlBitmap.cy - StartScan);
+            ScanLines = min(ScanLines, abs(Info->bmiHeader.biHeight) - StartScan);
         }
 
+        if (abs(Info->bmiHeader.biHeight) < psurf->SurfObj.sizlBitmap.cy)
+        {
+            StartScan += psurf->SurfObj.sizlBitmap.cy - abs(Info->bmiHeader.biHeight);
+        }
         /* Fixup values */
-        Info->bmiHeader.biWidth = psurf->SurfObj.sizlBitmap.cx;
         Info->bmiHeader.biHeight = (height < 0) ?
                                    -(LONG)ScanLines : ScanLines;
         /* Create the DIB */
         hBmpDest = DIB_CreateDIBSection(pDC, Info, Usage, &pDIBits, NULL, 0, 0);
         /* Restore them */
-        Info->bmiHeader.biWidth = width;
         Info->bmiHeader.biHeight = height;
 
         if(!hBmpDest)
@@ -985,27 +985,33 @@ GreGetDIBitsInternal(
 
         psurfDest = SURFACE_ShareLockSurface(hBmpDest);
 
-        RECTL_vSetRect(&rcDest, 0, 0, psurf->SurfObj.sizlBitmap.cx, ScanLines);
-
+        RECTL_vSetRect(&rcDest, 0, 0, Info->bmiHeader.biWidth, ScanLines);
+        Info->bmiHeader.biWidth = width;
         srcPoint.x = 0;
 
-        if(height < 0)
+        if (abs(Info->bmiHeader.biHeight) <= psurf->SurfObj.sizlBitmap.cy)
         {
-            srcPoint.y = 0;
-
-            if(ScanLines <= StartScan)
-            {
-                ScanLines = 1;
-                SURFACE_ShareUnlockSurface(psurfDest);
-                GreDeleteObject(hBmpDest);
-                goto done;
-            }
-
-            ScanLines -= StartScan;
+            srcPoint.y = psurf->SurfObj.sizlBitmap.cy - StartScan - ScanLines;
         }
         else
         {
-            srcPoint.y = StartScan;
+            /*  Determine the actual number of lines copied from the  */
+            /*  original bitmap. It might be different from ScanLines. */
+            newLines = abs(Info->bmiHeader.biHeight) - psurf->SurfObj.sizlBitmap.cy;
+            newLines = min((int)(StartScan + ScanLines - newLines), psurf->SurfObj.sizlBitmap.cy);
+            if (newLines > 0)
+            {
+                srcPoint.y = psurf->SurfObj.sizlBitmap.cy - newLines;
+                if (StartScan > psurf->SurfObj.sizlBitmap.cy)
+                {
+                    newLines -= (StartScan - psurf->SurfObj.sizlBitmap.cy);
+                }
+            }
+            else
+            {
+                newLines = 0;
+                srcPoint.y = psurf->SurfObj.sizlBitmap.cy;
+            }
         }
 
         EXLATEOBJ_vInitialize(&exlo, psurf->ppal, psurfDest->ppal, 0xffffff, 0xffffff, 0);
@@ -1025,7 +1031,11 @@ GreGetDIBitsInternal(
         {
             RtlCopyMemory(Bits, pDIBits, DIB_GetDIBImageBytes (width, ScanLines, bpp));
         }
-
+        /* Update if line count has changed */
+        if (newLines != -1)
+        {
+            ScanLines = (UINT)newLines;
+        }
         GreDeleteObject(hBmpDest);
         EXLATEOBJ_vCleanup(&exlo);
     }
@@ -1291,7 +1301,7 @@ NtGdiStretchDIBitsInternal(
                                BitmapFormat(pbmi->bmiHeader.biBitCount,
                                             pbmi->bmiHeader.biCompression),
                                pbmi->bmiHeader.biHeight < 0 ? BMF_TOPDOWN : 0,
-                               pbmi->bmiHeader.biSizeImage,
+                               cjMaxBits,
                                pvBits,
                                0);
 
@@ -1817,7 +1827,7 @@ DIB_CreateDIBSection(
         if (mapBits) bm.bmBits = (char *)mapBits + (offset - mapOffset);
     }
     else if (ovr_pitch && offset)
-        bm.bmBits = (LPVOID) offset;
+        bm.bmBits = UlongToPtr(offset);
     else
     {
         offset = 0;

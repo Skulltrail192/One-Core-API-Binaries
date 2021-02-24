@@ -11,6 +11,7 @@
 #include "usersrv.h"
 
 #include <commctrl.h>
+#include <psapi.h>
 
 #include "resource.h"
 
@@ -190,8 +191,17 @@ EndNowThreadProc(LPVOID Parameter)
     PNOTIFY_CONTEXT NotifyContext = (PNOTIFY_CONTEXT)Parameter;
     MSG Msg;
 
-    // SetThreadDesktop(NotifyContext->Desktop);
-    // SwitchDesktop(NotifyContext->Desktop);
+#if 0
+    SetThreadDesktop(NotifyContext->Desktop);
+    SwitchDesktop(NotifyContext->Desktop);
+#else
+    /* For now show the end task dialog in the active desktop */
+    NtUserSetInformationThread(NtCurrentThread(),
+                               UserThreadUseActiveDesktop,
+                               NULL,
+                               0);
+#endif
+
     CallInitCommonControls();
     NotifyContext->Dlg = CreateDialogParam(UserServerDllInstance,
                                            MAKEINTRESOURCE(IDD_END_NOW), NULL,
@@ -222,7 +232,7 @@ SendClientShutdown(LPVOID Parameter)
     /* If the shutdown is aborted, just notify the process, there is no need to wait */
     if ((Context->wParam & (MCS_QUERYENDSESSION | MCS_ENDSESSION)) == 0)
     {
-        MY_DPRINT("Called WM_CLIENTSHUTDOWN with wParam == 0 ...\n");
+        DPRINT("Called WM_CLIENTSHUTDOWN with wParam == 0 ...\n");
         SendNotifyMessageW(Context->Wnd, WM_CLIENTSHUTDOWN,
                            Context->wParam, Context->lParam);
         return QUERY_RESULT_CONTINUE;
@@ -255,12 +265,12 @@ SendClientShutdown(LPVOID Parameter)
             Ret = QUERY_RESULT_CONTINUE;
         }
 
-        MY_DPRINT("SendClientShutdown -- Return == %s\n",
+        DPRINT("SendClientShutdown -- Return == %s\n",
                   Ret == QUERY_RESULT_CONTINUE ? "Continue" : "Abort");
         return Ret;
     }
 
-    MY_DPRINT("SendClientShutdown -- Error == %s\n",
+    DPRINT1("SendClientShutdown -- Error == %s\n",
               GetLastError() == 0 ? "Timeout" : "error");
 
     return (GetLastError() == 0 ? QUERY_RESULT_TIMEOUT : QUERY_RESULT_ERROR);
@@ -374,7 +384,7 @@ NotifyTopLevelWindow(HWND Wnd, PNOTIFY_CONTEXT NotifyContext)
         NotifyContext->QueryResult = QUERY_RESULT_TIMEOUT;
     }
 
-    MY_DPRINT("NotifyContext->QueryResult == %d\n", NotifyContext->QueryResult);
+    DPRINT("NotifyContext->QueryResult == %d\n", NotifyContext->QueryResult);
     return (NotifyContext->QueryResult == QUERY_RESULT_CONTINUE);
 }
 
@@ -384,47 +394,10 @@ IsConsoleMode(VOID)
     return (BOOLEAN)NtUserCallNoParam(NOPARAM_ROUTINE_ISCONSOLEMODE);
 }
 
-
-/* TODO: Find an other way to do it. */
-#if 0
-VOID FASTCALL
-ConioConsoleCtrlEventTimeout(DWORD Event, PCSR_PROCESS ProcessData, DWORD Timeout)
-{
-    HANDLE Thread;
-
-    DPRINT("ConioConsoleCtrlEvent Parent ProcessId = %x\n", ProcessData->ClientId.UniqueProcess);
-
-    if (ProcessData->CtrlDispatcher)
-    {
-        Thread = CreateRemoteThread(ProcessData->ProcessHandle, NULL, 0,
-                                    (LPTHREAD_START_ROUTINE) ProcessData->CtrlDispatcher,
-                                    UlongToPtr(Event), 0, NULL);
-        if (Thread == NULL)
-        {
-            DPRINT1("Failed thread creation (Error: 0x%x)\n", GetLastError());
-            return;
-        }
-        WaitForSingleObject(Thread, Timeout);
-        CloseHandle(Thread);
-    }
-}
-#endif
 /************************************************/
 
 
-static BOOL CALLBACK
-FindTopLevelWnd(IN HWND hWnd,
-                IN LPARAM lParam)
-{
-    if (GetWindow(hWnd, GW_OWNER) == NULL)
-    {
-        *(HWND*)lParam = hWnd;
-        return FALSE;
-    }
-    return TRUE;
-}
-
-static VOID
+static BOOL
 ThreadShutdownNotify(IN PCSR_THREAD CsrThread,
                      IN ULONG Flags,
                      IN ULONG Flags2,
@@ -450,8 +423,10 @@ ThreadShutdownNotify(IN PCSR_THREAD CsrThread,
         }
         if (TopWnd != tmpWnd) MY_DPRINT("(TopWnd = %x) != (tmpWnd = %x)\n", TopWnd, tmpWnd);
     }
-    if (TopWnd == NULL)
-        return;
+    else
+    {
+        return FALSE;
+    }
 
     Context->wParam = Flags2;
     Context->lParam = (0 != (Flags & EWX_CALLER_WINLOGON_LOGOFF) ?
@@ -505,127 +480,130 @@ ThreadShutdownNotify(IN PCSR_THREAD CsrThread,
     SwitchDesktop(Context->OldDesktop);
     MY_DPRINT("Switched back ok\n");
 #endif
+
+    return TRUE;
 }
 
-static BOOL
-NotifyProcessForShutdown(PCSR_PROCESS CsrProcess,
-                         PSHUTDOWN_SETTINGS ShutdownSettings,
-                         UINT Flags)
+static ULONG
+NotifyUserProcessForShutdown(PCSR_PROCESS CsrProcess,
+                             PSHUTDOWN_SETTINGS ShutdownSettings,
+                             UINT Flags)
 {
     DWORD QueryResult = QUERY_RESULT_CONTINUE;
+    PCSR_PROCESS Process;
+    PCSR_THREAD Thread;
+    PLIST_ENTRY NextEntry;
+    NOTIFY_CONTEXT Context;
+    BOOL FoundWindows = FALSE;
 
     /* In case we make a forced shutdown, just kill the process */
     if (Flags & EWX_FORCE)
-        return TRUE;
+        return CsrShutdownCsrProcess;
 
-    // TODO: Find an other way whether or not the process has a console.
-#if 0
-    if (CsrProcess->Console)
+    Context.ShutdownSettings = ShutdownSettings;
+    Context.QueryResult = QUERY_RESULT_CONTINUE; // We continue shutdown by default.
+
+    /* Lock the process */
+    CsrLockProcessByClientId(CsrProcess->ClientId.UniqueProcess, &Process);
+
+    /* Send first the QUERYENDSESSION messages to all the threads of the process */
+    MY_DPRINT2("Sending the QUERYENDSESSION messages...\n");
+
+    NextEntry = CsrProcess->ThreadList.Flink;
+    while (NextEntry != &CsrProcess->ThreadList)
     {
-        ConioConsoleCtrlEventTimeout(CTRL_LOGOFF_EVENT, CsrProcess,
-                                     ShutdownSettings->WaitToKillAppTimeout);
-    }
-    else
-#endif
-    {
-        PCSR_PROCESS Process;
-        PCSR_THREAD Thread;
-        PLIST_ENTRY NextEntry;
+        /* Get the current thread entry */
+        Thread = CONTAINING_RECORD(NextEntry, CSR_THREAD, Link);
 
-        NOTIFY_CONTEXT Context;
-        Context.ShutdownSettings = ShutdownSettings;
-        Context.QueryResult = QUERY_RESULT_CONTINUE; // We continue shutdown by default.
+        /* Move to the next entry */
+        NextEntry = NextEntry->Flink;
 
-        /* Lock the process */
-        CsrLockProcessByClientId(CsrProcess->ClientId.UniqueProcess, &Process);
+        /* If the thread is being terminated, just skip it */
+        if (Thread->Flags & CsrThreadTerminated) continue;
 
-        /* Send first the QUERYENDSESSION messages to all the threads of the process */
-        MY_DPRINT2("Sending the QUERYENDSESSION messages...\n");
-
-        NextEntry = CsrProcess->ThreadList.Flink;
-        while (NextEntry != &CsrProcess->ThreadList)
-        {
-            /* Get the current thread entry */
-            Thread = CONTAINING_RECORD(NextEntry, CSR_THREAD, Link);
-
-            /* Move to the next entry */
-            NextEntry = NextEntry->Flink;
-
-            /* If the thread is being terminated, just skip it */
-            if (Thread->Flags & CsrThreadTerminated) continue;
-
-            /* Reference the thread and temporarily unlock the process */
-            CsrReferenceThread(Thread);
-            CsrUnlockProcess(Process);
-
-            Context.QueryResult = QUERY_RESULT_CONTINUE;
-            ThreadShutdownNotify(Thread, Flags,
-                                 MCS_QUERYENDSESSION,
-                                 &Context);
-
-            /* Lock the process again and dereference the thread */
-            CsrLockProcessByClientId(CsrProcess->ClientId.UniqueProcess, &Process);
-            CsrDereferenceThread(Thread);
-
-            // FIXME: Analyze Context.QueryResult !!
-            /**/if (Context.QueryResult == QUERY_RESULT_ABORT) goto Quit;/**/
-        }
-
-        QueryResult = Context.QueryResult;
-        MY_DPRINT2("QueryResult = %s\n",
-                   QueryResult == QUERY_RESULT_ABORT ? "Abort" : "Continue");
-
-        /* Now send the ENDSESSION messages to the threads */
-        MY_DPRINT2("Now sending the ENDSESSION messages...\n");
-
-        NextEntry = CsrProcess->ThreadList.Flink;
-        while (NextEntry != &CsrProcess->ThreadList)
-        {
-            /* Get the current thread entry */
-            Thread = CONTAINING_RECORD(NextEntry, CSR_THREAD, Link);
-
-            /* Move to the next entry */
-            NextEntry = NextEntry->Flink;
-
-            /* If the thread is being terminated, just skip it */
-            if (Thread->Flags & CsrThreadTerminated) continue;
-
-            /* Reference the thread and temporarily unlock the process */
-            CsrReferenceThread(Thread);
-            CsrUnlockProcess(Process);
-
-            Context.QueryResult = QUERY_RESULT_CONTINUE;
-            ThreadShutdownNotify(Thread, Flags,
-                                 (QUERY_RESULT_ABORT != QueryResult) ? MCS_ENDSESSION : 0,
-                                 &Context);
-
-            /* Lock the process again and dereference the thread */
-            CsrLockProcessByClientId(CsrProcess->ClientId.UniqueProcess, &Process);
-            CsrDereferenceThread(Thread);
-        }
-
-Quit:
-        /* Unlock the process */
+        /* Reference the thread and temporarily unlock the process */
+        CsrReferenceThread(Thread);
         CsrUnlockProcess(Process);
 
-#if 0
-        if (Context.UIThread)
+        Context.QueryResult = QUERY_RESULT_CONTINUE;
+        if (ThreadShutdownNotify(Thread, Flags, MCS_QUERYENDSESSION, &Context))
         {
-            if (Context.Dlg)
-            {
-                SendMessageW(Context.Dlg, WM_CLOSE, 0, 0);
-            }
-            else
-            {
-                TerminateThread(Context.UIThread, QUERY_RESULT_ERROR);
-            }
-            CloseHandle(Context.UIThread);
+            FoundWindows = TRUE;
         }
-#endif
+
+        /* Lock the process again and dereference the thread */
+        CsrLockProcessByClientId(CsrProcess->ClientId.UniqueProcess, &Process);
+        CsrDereferenceThread(Thread);
+
+        // FIXME: Analyze Context.QueryResult !!
+        /**/if (Context.QueryResult == QUERY_RESULT_ABORT) goto Quit;/**/
     }
 
+    if (!FoundWindows)
+    {
+        /* We looped all threads but no top level window was found so we didn't send any message */
+        /* Let the console server run the generic process shutdown handler */
+        CsrUnlockProcess(Process);
+        return CsrShutdownNonCsrProcess;
+    }
+
+    QueryResult = Context.QueryResult;
+    MY_DPRINT2("QueryResult = %s\n",
+               QueryResult == QUERY_RESULT_ABORT ? "Abort" : "Continue");
+
+    /* Now send the ENDSESSION messages to the threads */
+    MY_DPRINT2("Now sending the ENDSESSION messages...\n");
+
+    NextEntry = CsrProcess->ThreadList.Flink;
+    while (NextEntry != &CsrProcess->ThreadList)
+    {
+        /* Get the current thread entry */
+        Thread = CONTAINING_RECORD(NextEntry, CSR_THREAD, Link);
+
+        /* Move to the next entry */
+        NextEntry = NextEntry->Flink;
+
+        /* If the thread is being terminated, just skip it */
+        if (Thread->Flags & CsrThreadTerminated) continue;
+
+        /* Reference the thread and temporarily unlock the process */
+        CsrReferenceThread(Thread);
+        CsrUnlockProcess(Process);
+
+        Context.QueryResult = QUERY_RESULT_CONTINUE;
+        ThreadShutdownNotify(Thread, Flags,
+                             (QUERY_RESULT_ABORT != QueryResult) ? MCS_ENDSESSION : 0,
+                             &Context);
+
+        /* Lock the process again and dereference the thread */
+        CsrLockProcessByClientId(CsrProcess->ClientId.UniqueProcess, &Process);
+        CsrDereferenceThread(Thread);
+    }
+
+Quit:
+    /* Unlock the process */
+    CsrUnlockProcess(Process);
+
+#if 0
+    if (Context.UIThread)
+    {
+        if (Context.Dlg)
+        {
+            SendMessageW(Context.Dlg, WM_CLOSE, 0, 0);
+        }
+        else
+        {
+            TerminateThread(Context.UIThread, QUERY_RESULT_ERROR);
+        }
+        CloseHandle(Context.UIThread);
+    }
+#endif
+
     /* Kill the process unless we abort shutdown */
-    return (QueryResult != QUERY_RESULT_ABORT);
+    if (QueryResult == QUERY_RESULT_ABORT)
+        return CsrShutdownCancelled;
+
+    return CsrShutdownCsrProcess;
 }
 
 static NTSTATUS FASTCALL
@@ -672,7 +650,7 @@ UserExitReactOS(PCSR_THREAD CsrThread, UINT Flags)
         goto Quit;
     }
 
-    DPRINT1("Caller LUID is: %lx.%lx\n", CallerLuid.HighPart, CallerLuid.LowPart);
+    DPRINT("Caller LUID is: %lx.%lx\n", CallerLuid.HighPart, CallerLuid.LowPart);
 
     /* Shutdown loop */
     while (TRUE)
@@ -681,23 +659,23 @@ UserExitReactOS(PCSR_THREAD CsrThread, UINT Flags)
         Status = NtUserSetInformationThread(CsrThread->ThreadHandle,
                                             UserThreadInitiateShutdown,
                                             &Flags, sizeof(Flags));
-        DPRINT1("Win32k says: %lx\n", Status);
+        DPRINT("Win32k says: %lx\n", Status);
         switch (Status)
         {
             /* We cannot wait here, the caller should start a new thread */
             case STATUS_CANT_WAIT:
-                DPRINT1("STATUS_CANT_WAIT\n");
+                DPRINT1("NtUserSetInformationThread returned STATUS_CANT_WAIT\n");
                 goto Quit;
 
             /* Shutdown is in progress */
             case STATUS_PENDING:
-                DPRINT1("STATUS_PENDING\n");
+                DPRINT1("NtUserSetInformationThread returned STATUS_PENDING\n");
                 goto Quit;
 
             /* Abort */
             case STATUS_RETRY:
             {
-                DPRINT1("STATUS_RETRY\n");
+                DPRINT1("NtUserSetInformationThread returned STATUS_RETRY\n");
                 UNIMPLEMENTED;
                 continue;
             }
@@ -740,7 +718,7 @@ UserExitReactOS(PCSR_THREAD CsrThread, UINT Flags)
                                UserThreadEndShutdown,
                                &Status, sizeof(Status));
 
-    DPRINT1("SrvExitWindowsEx returned 0x%08x\n", Status);
+    DPRINT("SrvExitWindowsEx returned 0x%08x\n", Status);
 
 Quit:
     /* We are done */
@@ -755,9 +733,12 @@ UserClientShutdown(IN PCSR_PROCESS CsrProcess,
                    IN ULONG Flags,
                    IN BOOLEAN FirstPhase)
 {
-    DPRINT1("UserClientShutdown(0x%p, 0x%x, %s) - [0x%x, 0x%x]\n",
+    ULONG result;
+
+    DPRINT("UserClientShutdown(0x%p, 0x%x, %s) - [0x%x, 0x%x], ShutdownFlags: %lu\n",
             CsrProcess, Flags, FirstPhase ? "FirstPhase" : "LastPhase",
-            CsrProcess->ClientId.UniqueProcess, CsrProcess->ClientId.UniqueThread);
+            CsrProcess->ClientId.UniqueProcess, CsrProcess->ClientId.UniqueThread,
+            CsrProcess->ShutdownFlags);
 
     /*
      * Check for process validity
@@ -767,41 +748,48 @@ UserClientShutdown(IN PCSR_PROCESS CsrProcess,
     if ((Flags & EWX_SHUTDOWN) == EWX_LOGOFF &&
         (CsrProcess->ShutdownFlags & (SHUTDOWN_OTHERCONTEXT | SHUTDOWN_SYSTEMCONTEXT)))
     {
-        DPRINT1("Do not kill a system process in a logoff request!\n");
+        DPRINT("Do not kill a system process in a logoff request!\n");
         return CsrShutdownNonCsrProcess;
     }
 
-    /* Do not kill Winlogon or CSRSS */
-    if (CsrProcess->ClientId.UniqueProcess == NtCurrentProcess() ||
-        CsrProcess->ClientId.UniqueProcess == UlongToHandle(LogonProcessId))
+    /* Do not kill Winlogon */
+    if (CsrProcess->ClientId.UniqueProcess == UlongToHandle(LogonProcessId))
     {
-        DPRINT1("Not killing %s; CsrProcess->ShutdownFlags = %lu\n",
-                CsrProcess->ClientId.UniqueProcess == NtCurrentProcess() ? "CSRSS" : "Winlogon",
-                CsrProcess->ShutdownFlags);
+        DPRINT("Not killing Winlogon; CsrProcess->ShutdownFlags = %lu\n", 
+               CsrProcess->ShutdownFlags);
 
-        return CsrShutdownNonCsrProcess;
+        /* Returning CsrShutdownCsrProcess means that we handled this process by doing nothing */
+        /* This will mark winlogon as processed so consrv won't be notified again for it */
+        CsrDereferenceProcess(CsrProcess);
+        return CsrShutdownCsrProcess;
     }
-
-    if (Flags & EWX_CALLER_SYSTEM)
-        DPRINT1("Killed by a SYSTEM process -- ShutdownFlags = %lu\n", CsrProcess->ShutdownFlags);
-    else
-        DPRINT1("Killing process with ShutdownFlags = %lu\n", CsrProcess->ShutdownFlags);
-
-    if (CsrProcess->ShutdownFlags & SHUTDOWN_OTHERCONTEXT)
-        DPRINT1("This process has SHUTDOWN_OTHERCONTEXT\n");
-
-    if (CsrProcess->ShutdownFlags & SHUTDOWN_SYSTEMCONTEXT)
-        DPRINT1("This process has SHUTDOWN_SYSTEMCONTEXT\n");
 
     /* Notify the process for shutdown if needed */
-    if (!NotifyProcessForShutdown(CsrProcess, &ShutdownSettings, Flags))
+    result = NotifyUserProcessForShutdown(CsrProcess, &ShutdownSettings, Flags);
+    if (result == CsrShutdownCancelled || result == CsrShutdownNonCsrProcess)
     {
-        /* Abort shutdown */
-        return CsrShutdownCancelled;
+        if (result == CsrShutdownCancelled)
+            DPRINT1("Process 0x%x aborted shutdown\n", CsrProcess->ClientId.UniqueProcess);
+        return result;
     }
 
     /* Terminate this process */
+#if DBG
+    {
+        WCHAR buffer[MAX_PATH];
+        if (!GetProcessImageFileNameW(CsrProcess->ProcessHandle, buffer, MAX_PATH))
+        {
+            DPRINT1("Terminating process %x\n", CsrProcess->ClientId.UniqueProcess);
+        }
+        else
+        {
+            DPRINT1("Terminating process %x (%S)\n", CsrProcess->ClientId.UniqueProcess, buffer);
+        }
+    }
+#endif
     NtTerminateProcess(CsrProcess->ProcessHandle, 0);
+
+    WaitForSingleObject(CsrProcess->ProcessHandle, ShutdownSettings.ProcessTerminateTimeout);
 
     /* We are done */
     CsrDereferenceProcess(CsrProcess);
@@ -811,24 +799,49 @@ UserClientShutdown(IN PCSR_PROCESS CsrProcess,
 
 /* PUBLIC SERVER APIS *********************************************************/
 
+/* API_NUMBER: UserpExitWindowsEx */
 CSR_API(SrvExitWindowsEx)
 {
     NTSTATUS Status;
     PUSER_EXIT_REACTOS ExitReactOSRequest = &((PUSER_API_MESSAGE)ApiMessage)->Data.ExitReactOSRequest;
 
+    Status = NtUserSetInformationThread(NtCurrentThread(),
+                                        UserThreadUseActiveDesktop,
+                                        NULL,
+                                        0);
+    if (!NT_SUCCESS(Status))
+    {
+        DPRINT1("Failed to set thread desktop!\n");
+        return Status;
+    }
+
     Status = UserExitReactOS(CsrGetClientThread(), ExitReactOSRequest->Flags);
     ExitReactOSRequest->Success   = NT_SUCCESS(Status);
     ExitReactOSRequest->LastError = GetLastError();
 
+    NtUserSetInformationThread(NtCurrentThread(), UserThreadRestoreDesktop, NULL, 0);
+
     return Status;
 }
 
+/* API_NUMBER: UserpEndTask */
 CSR_API(SrvEndTask)
 {
     PUSER_END_TASK EndTaskRequest = &((PUSER_API_MESSAGE)ApiMessage)->Data.EndTaskRequest;
+    NTSTATUS Status;
 
     // FIXME: This is HACK-plemented!!
     DPRINT1("SrvEndTask is HACKPLEMENTED!!\n");
+
+    Status = NtUserSetInformationThread(NtCurrentThread(),
+                                        UserThreadUseActiveDesktop,
+                                        NULL,
+                                        0);
+    if (!NT_SUCCESS(Status))
+    {
+        DPRINT1("Failed to set thread desktop!\n");
+        return Status;
+    }
 
     SendMessageW(EndTaskRequest->WndHandle, WM_CLOSE, 0, 0);
     // PostMessageW(EndTaskRequest->WndHandle, WM_CLOSE, 0, 0);
@@ -851,9 +864,12 @@ CSR_API(SrvEndTask)
         EndTaskRequest->LastError = ERROR_SUCCESS;
     }
 
+    NtUserSetInformationThread(NtCurrentThread(), UserThreadRestoreDesktop, NULL, 0);
+
     return STATUS_SUCCESS;
 }
 
+/* API_NUMBER: UserpRecordShutdownReason */
 CSR_API(SrvRecordShutdownReason)
 {
     DPRINT1("%s not yet implemented\n", __FUNCTION__);

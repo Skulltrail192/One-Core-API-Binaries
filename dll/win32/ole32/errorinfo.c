@@ -23,7 +23,20 @@
  * TEB at offset 0xf80.
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#include <string.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "objbase.h"
+#include "oleauto.h"
+#include "winerror.h"
+
+#include "compobj_private.h"
+
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
@@ -34,7 +47,7 @@ static inline WCHAR *heap_strdupW(const WCHAR *str)
     if(str) {
         size_t size;
 
-        size = (strlenW(str)+1)*sizeof(WCHAR);
+        size = (lstrlenW(str)+1)*sizeof(WCHAR);
         ret = heap_alloc(size);
         if(ret)
             memcpy(ret, str, size);

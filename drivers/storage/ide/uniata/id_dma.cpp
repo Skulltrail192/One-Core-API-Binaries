@@ -152,6 +152,10 @@ AtapiDmaAlloc(
 
     if(!deviceExtension->Host64 && (WinVer_Id() > WinVer_NT)) {
         KdPrint2((PRINT_PREFIX "AtapiDmaAlloc: allocate tmp buffers below 4Gb\n"));
+        if(chan->DB_PRD) {
+            KdPrint2((PRINT_PREFIX "  already initialized %x\n", chan->DB_PRD));
+            return;
+        }
         chan->DB_PRD = MmAllocateContiguousMemory(sizeof(((PATA_REQ)NULL)->dma_tab), ph4gb);
         if(chan->DB_PRD) {
             chan->DB_PRD_PhAddr = AtapiVirtToPhysAddr(HwDeviceExtension, NULL, (PUCHAR)(chan->DB_PRD), &i, &ph_addru);
@@ -289,7 +293,7 @@ AtapiDmaSetup(
         return FALSE;
     }
     //KdPrint2((PRINT_PREFIX "  checkpoint 3\n" ));
-    if((ULONG)data & deviceExtension->AlignmentMask) {
+    if((ULONG_PTR)data & deviceExtension->AlignmentMask) {
         KdPrint2((PRINT_PREFIX "AtapiDmaSetup: unaligned data: %#x (%#x)\n", data, deviceExtension->AlignmentMask));
         return FALSE;
     }
@@ -337,7 +341,7 @@ retry_DB_IO:
         return FALSE;
     }
 
-    dma_count = min(count, (PAGE_SIZE - ((ULONG)data & PAGE_MASK)));
+    dma_count = min(count, (PAGE_SIZE - ((ULONG_PTR)data & PAGE_MASK)));
     data += dma_count;
     count -= dma_count;
     i = 0;
@@ -432,7 +436,7 @@ retry_DB_IO:
         *((PULONG)&(AtaReq->ahci.ahci_cmd_ptr->prd_tab[i].DBC_ULONG)) = ((dma_count-1) & 0x3fffff);
         //AtaReq->ahci.ahci_cmd_ptr->prd_tab[i].I      = 1; // interrupt when ready
         KdPrint2((PRINT_PREFIX "  ph data[%d]=%x:%x (%x)\n", i, dma_baseu, dma_base, AtaReq->ahci.ahci_cmd_ptr->prd_tab[i].DBC));
-        if(((ULONG)&(AtaReq->ahci.ahci_cmd_ptr->prd_tab) & ~PAGE_MASK) != ((ULONG)&(AtaReq->ahci.ahci_cmd_ptr->prd_tab[i]) & ~PAGE_MASK)) {
+        if(((ULONG_PTR)&(AtaReq->ahci.ahci_cmd_ptr->prd_tab) & ~PAGE_MASK) != ((ULONG_PTR)&(AtaReq->ahci.ahci_cmd_ptr->prd_tab[i]) & ~PAGE_MASK)) {
             KdPrint2((PRINT_PREFIX "PRD table crosses page boundary! %x vs %x\n",
                 &AtaReq->ahci.ahci_cmd_ptr->prd_tab, &(AtaReq->ahci.ahci_cmd_ptr->prd_tab[i]) ));
             //AtaReq->Flags |= REQ_FLAG_DMA_DBUF_PRD;
@@ -440,7 +444,7 @@ retry_DB_IO:
     } else {
         AtaReq->dma_tab[i].base = dma_base;
         AtaReq->dma_tab[i].count = (dma_count & 0xffff) | ATA_DMA_EOT;
-        if(((ULONG)&(AtaReq->dma_tab) & ~PAGE_MASK) != ((ULONG)&(AtaReq->dma_tab[i]) & ~PAGE_MASK)) {
+        if(((ULONG_PTR)&(AtaReq->dma_tab) & ~PAGE_MASK) != ((ULONG_PTR)&(AtaReq->dma_tab[i]) & ~PAGE_MASK)) {
             KdPrint2((PRINT_PREFIX "DMA table crosses page boundary! %x vs %x\n",
                 &AtaReq->dma_tab, &(AtaReq->dma_tab[i]) ));
             //AtaReq->Flags |= REQ_FLAG_DMA_DBUF_PRD;
@@ -2256,10 +2260,13 @@ setup_drive_ite:
         UCHAR reg40;
         GetPciConfig1(0x40, reg40);
 
+        /*
+        This is done on chip-init phase
         if(reg40 & 0x08) {
             // 80-pin check
             udmamode = min(udmamode, 2);
         }
+        */
 	/* Nothing to do to setup mode, the controller snoop SET_FEATURE cmd. */
         if(apiomode >= 4)
             apiomode = 4;

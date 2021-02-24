@@ -3,6 +3,7 @@
  *
  * Copyright 2005 Johannes Anderwald
  * Copyright 2012 Rafal Harabien
+ * Copyright 2017-2018 Katayama Hirofumi MZ
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,25 +22,9 @@
 
 #include "precomp.h"
 
-#define MAX_PROPERTY_SHEET_PAGE 32
-
 WINE_DEFAULT_DEBUG_CHANNEL(shell);
 
 EXTERN_C HPSXA WINAPI SHCreatePropSheetExtArrayEx(HKEY hKey, LPCWSTR pszSubKey, UINT max_iface, IDataObject *pDataObj);
-
-static BOOL CALLBACK
-AddPropSheetPageCallback(HPROPSHEETPAGE hPage, LPARAM lParam)
-{
-    PROPSHEETHEADERW *pHeader = (PROPSHEETHEADERW *)lParam;
-
-    if (pHeader->nPages < MAX_PROPERTY_SHEET_PAGE)
-    {
-        pHeader->phpage[pHeader->nPages++] = hPage;
-        return TRUE;
-    }
-
-    return FALSE;
-}
 
 static UINT
 LoadPropSheetHandlers(LPCWSTR pwszPath, PROPSHEETHEADERW *pHeader, UINT cMaxPages, HPSXA *phpsxa, IDataObject *pDataObj)
@@ -117,12 +102,22 @@ SH_ShowPropertiesDialog(LPCWSTR pwszPath, LPCITEMIDLIST pidlFolder, PCUITEMID_CH
 
     /* Handle drives */
     if (PathIsRootW(wszPath))
-        return SH_ShowDriveProperties(wszPath, pidlFolder, apidl);
+        return SUCCEEDED(SH_ShowDriveProperties(wszPath, pidlFolder, apidl));
+
+    DWORD style = WS_DISABLED | WS_CLIPSIBLINGS | WS_CAPTION;
+    DWORD exstyle = WS_EX_WINDOWEDGE | WS_EX_APPWINDOW;
+    CStubWindow32 stub;
+    if (!stub.Create(NULL, NULL, NULL, style, exstyle))
+    {
+        ERR("StubWindow32 creation failed\n");
+        return FALSE;
+    }
 
     /* Handle files and folders */
     PROPSHEETHEADERW Header;
     memset(&Header, 0x0, sizeof(PROPSHEETHEADERW));
     Header.dwSize = sizeof(PROPSHEETHEADERW);
+    Header.hwndParent = stub;
     Header.dwFlags = PSH_NOCONTEXTHELP | PSH_PROPTITLE;
     Header.phpage = hppages;
     Header.pszCaption = PathFindFileNameW(wszPath);
@@ -156,6 +151,8 @@ SH_ShowPropertiesDialog(LPCWSTR pwszPath, LPCITEMIDLIST pidlFolder, PCUITEMID_CH
             SHDestroyPropSheetExtArray(hpsxa[i]);
     if (pFileDefExt)
         pFileDefExt->Release();
+
+    stub.DestroyWindow();
 
     return (Result != -1);
 }

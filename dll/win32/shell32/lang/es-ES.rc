@@ -1,4 +1,11 @@
-/* Spanish translation by ??? and Ismael Ferreras Morezuelas (Swyter) */
+/*
+ * PROJECT:     ReactOS Shell
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     Spanish locale file
+ * COPYRIGHT:   Ismael Ferreras Morezuelas
+ *              Julio Carchi Ruiz
+ *              Julen Urizar Compains (2020)
+ */
 
 LANGUAGE LANG_SPANISH, SUBLANG_NEUTRAL
 
@@ -13,6 +20,7 @@ BEGIN
     BEGIN
         MENUITEM "", -1, MFT_SEPARATOR
         MENUITEM "&Ordenar automáticamente", FCIDM_SHVIEW_AUTOARRANGE
+        MENUITEM "Align to &Grid", FCIDM_SHVIEW_ALIGNTOGRID
     END
 END
 
@@ -33,9 +41,8 @@ BEGIN
         BEGIN
             MENUITEM "", -1, MFT_SEPARATOR
             MENUITEM "&Ordenar automáticamente", FCIDM_SHVIEW_AUTOARRANGE
+            MENUITEM "Align to &Grid", FCIDM_SHVIEW_ALIGNTOGRID
         END
-        MENUITEM "Alinear iconos", FCIDM_SHVIEW_SNAPTOGRID
-        MENUITEM "", -1, MFT_SEPARATOR
         MENUITEM "Actualizar", FCIDM_SHVIEW_REFRESH
         MENUITEM "", -1, MFT_SEPARATOR
         MENUITEM "Pegar", FCIDM_SHVIEW_INSERT
@@ -65,17 +72,28 @@ MENU_SHV_FILE MENU
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "E&xplorar", FCIDM_SHVIEW_EXPLORE
-        MENUITEM "&Abrir", FCIDM_SHVIEW_OPEN
         MENUITEM SEPARATOR
-        MENUITEM "C&ortar", FCIDM_SHVIEW_CUT
-        MENUITEM "&Copiar", FCIDM_SHVIEW_COPY
+        MENUITEM "C&ortar", IDM_CUT
+        MENUITEM "&Copiar", IDM_COPY
+        MENUITEM "Pegar", IDM_INSERT
         MENUITEM SEPARATOR
-        MENUITEM "C&rear acceso directo", FCIDM_SHVIEW_CREATELINK
-        MENUITEM "&Eliminar", FCIDM_SHVIEW_DELETE
-        MENUITEM "Re&nombrar", FCIDM_SHVIEW_RENAME
+        MENUITEM "C&rear acceso directo", IDM_CREATELINK
+        MENUITEM "&Eliminar", IDM_DELETE
+        MENUITEM "Re&nombrar", IDM_RENAME
         MENUITEM SEPARATOR
-        MENUITEM "&Propiedades", FCIDM_SHVIEW_PROPERTIES
+        MENUITEM "&Propiedades", IDM_PROPERTIES
+    END
+END
+
+IDM_DRAGFILE MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "&Copiar aquí", IDM_COPYHERE
+        MENUITEM "&Mover aquí", IDM_MOVEHERE
+        MENUITEM "Crear &acceso directo aquí", IDM_LINKHERE
+        MENUITEM SEPARATOR
+        MENUITEM "Cancelar", 0
     END
 END
 
@@ -86,7 +104,7 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     DEFPUSHBUTTON "Aceptar", 1, 80, 176, 50, 12, BS_DEFPUSHBUTTON | WS_GROUP | WS_TABSTOP
     PUSHBUTTON "Cancelar", 2, 134, 176, 50, 12, WS_GROUP | WS_TABSTOP
-    LTEXT "", IDC_BROWSE_FOR_FOLDER_TITLE, 4, 4, 180, 12
+    LTEXT "", IDC_BROWSE_FOR_FOLDER_TITLE, 4, 4, 180, 24
     LTEXT "", IDC_BROWSE_FOR_FOLDER_STATUS, 4, 25, 180, 12
     CONTROL "", IDC_BROWSE_FOR_FOLDER_TREEVIEW, "SysTreeView32", TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | WS_BORDER | WS_TABSTOP, 4, 40, 180, 120
 END
@@ -99,7 +117,7 @@ BEGIN
     LTEXT "", IDC_BROWSE_FOR_FOLDER_TITLE, 10, 8, 198, 24
     LTEXT "", IDC_BROWSE_FOR_FOLDER_STATUS, 10, 25, 198, 12
     LTEXT "Carpeta:", IDC_BROWSE_FOR_FOLDER_FOLDER, 10, 152, 40, 12
-    CONTROL "", IDC_BROWSE_FOR_FOLDER_TREEVIEW, "SysTreeView32", TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | WS_BORDER | WS_TABSTOP, 12, 38, 194, 105
+    CONTROL "", IDC_BROWSE_FOR_FOLDER_TREEVIEW, "SysTreeView32", TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_EDITLABELS | WS_BORDER | WS_TABSTOP, 12, 38, 194, 105
     EDITTEXT IDC_BROWSE_FOR_FOLDER_FOLDER_TEXT, 46, 150, 160, 14, WS_BORDER | WS_GROUP | WS_TABSTOP
     PUSHBUTTON "&Crear nueva carpeta", IDC_BROWSE_FOR_FOLDER_NEW_FOLDER, 12, 174, 77, 14, WS_GROUP | WS_TABSTOP
     DEFPUSHBUTTON "Aceptar", IDOK, 102, 174, 50, 14, BS_DEFPUSHBUTTON | WS_GROUP | WS_TABSTOP
@@ -126,11 +144,7 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", IDC_ABOUT_ICON, 7, 55, 21, 20
     LTEXT "", IDC_ABOUT_APPNAME, 35, 55, 200, 10
-    LTEXT "Versión ", IDC_STATIC, 35, 65, 28, 10
-    LTEXT KERNEL_VERSION_STR, IDC_STATIC, 63, 65, 27, 10
-    LTEXT " (", IDC_STATIC, 90, 65, 5, 10
-    LTEXT KERNEL_VERSION_BUILD_STR, IDC_STATIC, 95, 65, 58, 10
-    LTEXT ")", IDC_STATIC, 153, 65, 5, 10
+    LTEXT "", IDC_ABOUT_VERSION, 35, 65, 250, 10
     LTEXT "Copyright 1998-", IDC_STATIC, 35, 75, 53, 10
     LTEXT COPYRIGHT_YEAR, IDC_STATIC, 88, 75, 17, 10
     LTEXT " El equipo de ReactOS\0", IDC_STATIC, 105, 75, 100, 10
@@ -159,12 +173,12 @@ CAPTION "Ejecutar"
 FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", IDC_RUNDLG_ICON, 7, 11, 18, 20, WS_VISIBLE
-    LTEXT "Escriba el nombre de un programa, carpeta, documento o recurso de Internet y ReactOS lo abrirá para usted.", 12289, 36, 11, 182, 24
+    LTEXT "Escriba el nombre de un programa, carpeta, documento o recurso de Internet y ReactOS lo abrirá para usted.", 12289, 36, 11, 185, 24
     LTEXT "&Abrir:", 12305, 7, 39, 24, 10
-    CONTROL "", IDC_RUNDLG_EDITPATH, "COMBOBOX", WS_TABSTOP | WS_GROUP | WS_VSCROLL | WS_VISIBLE | CBS_AUTOHSCROLL | CBS_DROPDOWN, 36, 37, 183, 100
-    DEFPUSHBUTTON "Aceptar", IDOK, 62, 63, 50, 14, WS_TABSTOP
-    PUSHBUTTON "Cancelar", IDCANCEL, 116, 63, 50, 14, WS_TABSTOP
-    PUSHBUTTON "&Examinar...", 12288, 170, 63, 50, 14, WS_TABSTOP
+    CONTROL "", IDC_RUNDLG_EDITPATH, "COMBOBOX", WS_TABSTOP | WS_GROUP | WS_VSCROLL | WS_VISIBLE | CBS_AUTOHSCROLL | CBS_DROPDOWN, 36, 37, 184, 100
+    DEFPUSHBUTTON "Aceptar", IDOK, 62, 70, 50, 14, WS_TABSTOP
+    PUSHBUTTON "Cancelar", IDCANCEL, 116, 70, 50, 14, WS_TABSTOP
+    PUSHBUTTON "&Examinar...", 12288, 170, 70, 50, 14, WS_TABSTOP
 END
 
 IDD_SHORTCUT_PROPERTIES DIALOGEX 0, 0, 235, 215
@@ -172,27 +186,27 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_CAPTION
 CAPTION "Acceso directo"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    ICON "", 14000, 8, 8, 21, 20, WS_VISIBLE
-    EDITTEXT 14001, 49, 10, 180, 14, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    ICON "", IDC_SHORTCUT_ICON, 8, 8, 21, 20, WS_VISIBLE
+    EDITTEXT IDC_SHORTCUT_TEXT, 49, 10, 180, 14, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
     LTEXT "", -1, 8, 31, 223, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
-    LTEXT "Tipo de destino:", 14004, 8, 38, 68, 10
-    EDITTEXT 14005, 79, 37, 150, 12, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
-    LTEXT "Ubicación de destino:", 14006, 8, 55, 68, 10
-    EDITTEXT 14007, 79, 53, 150, 12, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
-    LTEXT "&Destino:", 14008, 8, 71, 68, 10
-    EDITTEXT 14009, 79, 69, 150, 14, ES_AUTOHSCROLL
+    LTEXT "Tipo de destino:", IDC_SHORTCUT_TYPE, 8, 38, 68, 10
+    EDITTEXT IDC_SHORTCUT_TYPE_EDIT, 79, 37, 150, 12, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    LTEXT "Ubicación de destino:", IDC_SHORTCUT_LOCATION, 8, 55, 68, 10
+    EDITTEXT IDC_SHORTCUT_LOCATION_EDIT, 79, 53, 150, 12, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    LTEXT "&Destino:", IDC_SHORTCUT_TARGET, 8, 71, 68, 10
+    EDITTEXT IDC_SHORTCUT_TARGET_TEXT, 79, 69, 150, 14, ES_AUTOHSCROLL
     LTEXT "", -1, 8, 88, 223, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
-    LTEXT "I&niciar en:", 14010, 8, 98, 68, 10
-    EDITTEXT 14011, 79, 96, 150, 14, ES_AUTOHSCROLL
-    LTEXT "&Tecla de método abreviado:", 14014, 8, 117, 68, 10
-    CONTROL "", 14015, "msctls_hotkey32", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP, 79, 115, 150, 14
-    LTEXT "&Ejecutar:", 14016, 8, 136, 68, 10
-    COMBOBOX 14017, 79, 134, 150, 14, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP
-    LTEXT "C&omentario:", 14018, 8, 154, 68, 10
-    EDITTEXT 14019, 79, 152, 150, 14, ES_AUTOHSCROLL
-    PUSHBUTTON "&Abrir ubicación...", 14020, 9, 172, 62, 14, ES_LEFT
-    PUSHBUTTON "Cambiar &icono...", 14021, 76, 172, 62, 14, ES_LEFT
-    PUSHBUTTON "Propiedades avan&zadas...", 14022, 144, 172, 85, 14, ES_LEFT
+    LTEXT "I&niciar en:", IDC_SHORTCUT_START_IN, 8, 98, 68, 10
+    EDITTEXT IDC_SHORTCUT_START_IN_EDIT, 79, 96, 150, 14, ES_AUTOHSCROLL
+    LTEXT "&Tecla de método abreviado:", IDC_SHORTCUT_KEY, 8, 117, 68, 10
+    CONTROL "", IDC_SHORTCUT_KEY_HOTKEY, "msctls_hotkey32", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP, 79, 115, 150, 14
+    LTEXT "&Ejecutar:", IDC_SHORTCUT_RUN, 8, 136, 68, 10
+    COMBOBOX IDC_SHORTCUT_RUN_COMBO, 79, 134, 150, 14, CBS_DROPDOWNLIST | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP
+    LTEXT "C&omentario:", IDC_SHORTCUT_COMMENT, 8, 154, 68, 10
+    EDITTEXT IDC_SHORTCUT_COMMENT_EDIT, 79, 152, 150, 14, ES_AUTOHSCROLL
+    PUSHBUTTON "&Abrir ubicación...", IDC_SHORTCUT_FIND, 9, 172, 62, 14, ES_LEFT
+    PUSHBUTTON "Cambiar &icono...", IDC_SHORTCUT_CHANGE_ICON, 76, 172, 62, 14, ES_LEFT
+    PUSHBUTTON "Propiedades avan&zadas...", IDC_SHORTCUT_ADVANCED, 144, 172, 85, 14, ES_LEFT
 END
 
 IDD_SHORTCUT_EXTENDED_PROPERTIES DIALOGEX 0, 0, 230, 150
@@ -202,11 +216,11 @@ FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     ICON IDI_SHELL_EXTENDED_PROPERTIES, IDI_SHELL_EXTENDED_PROPERTIES, 5, 5, 21, 20, SS_ICON
     LTEXT "Elija las propiedades avanzadas que desee para este acceso directo.", -1, 5, 25, 210, 14
-    CHECKBOX "Ejecutar con credenciales diferentes", 14000, 25, 50, 150, 10
+    CHECKBOX "Ejecutar con credenciales diferentes", IDC_SHORTEX_RUN_DIFFERENT, 25, 50, 150, 10
     LTEXT "Esta opción puede permitirle ejecutar este acceso directo como otro usuario, o continuar como usted mismo mientras protege su equipo y datos de una actividad de programa no autorizada.", -1, 50, 60, 175, 40
-    CHECKBOX "Ejecutar en otro espacio de memoria", 14001, 25, 100, 150, 10, WS_DISABLED
-    PUSHBUTTON "Aceptar", 1, 63, 124, 50, 15, WS_VISIBLE
-    PUSHBUTTON "Cancelar", 2, 120, 124, 50, 15, WS_VISIBLE
+    CHECKBOX "Ejecutar en otro espacio de memoria", IDC_SHORTEX_RUN_SEPARATE, 25, 100, 150, 10, WS_DISABLED
+    PUSHBUTTON "Aceptar", IDOK, 63, 124, 50, 15, WS_VISIBLE
+    PUSHBUTTON "Cancelar", IDCANCEL, 120, 124, 50, 15, WS_VISIBLE
 END
 
 IDD_FOLDER_PROPERTIES DIALOGEX 0, 0, 240, 205
@@ -214,27 +228,27 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_CAPTION
 CAPTION "General"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    ICON "", 14000, 10, 3, 32, 32, WS_VISIBLE
-    EDITTEXT 14001, 70, 9, 158, 14, ES_LEFT
+    ICON "", 14000, 16, 7, 32, 32, WS_VISIBLE
+    EDITTEXT 14001, 58, 9, 170, 14, ES_LEFT
     LTEXT "Tipo:", 14004, 8, 40, 55, 10
-    CONTROL "Carpeta de archivos", 14005, "edit", ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL, 68, 40, 160, 10
+    CONTROL "Carpeta de archivos", 14005, "edit", ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL, 58, 40, 170, 10
     LTEXT "", -1, 8, 31, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Ubicación:", 14008, 8, 56, 55, 10
-    EDITTEXT 14009, 68, 56, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
+    EDITTEXT 14009, 58, 56, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
     LTEXT "Tamaño:", 14010, 8, 72, 55, 10
-    EDITTEXT 14011, 68, 72, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    EDITTEXT 14011, 58, 72, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
     LTEXT "Tamaño en disco:", 140101, 8, 88, 55, 10
-    EDITTEXT 14012, 68, 88, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    EDITTEXT 14012, 58, 88, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
     LTEXT "Contiene:", 14026, 8, 104, 55, 10
-    EDITTEXT 14027, 68, 104, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    EDITTEXT 14027, 58, 104, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
     LTEXT "", -1, 8, 120, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Creado:", 14014, 8, 128, 55, 10
-    EDITTEXT 14015, 68, 128, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
+    EDITTEXT 14015, 58, 128, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
     LTEXT "", -1, 8, 144, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Atributos:", 14020, 8, 152, 46, 10
-    AUTOCHECKBOX "&Sólo lectura", 14021, 56, 152, 70, 10
-    AUTOCHECKBOX "&Oculto", 14022, 56, 166, 70, 10
-    AUTOCHECKBOX "&Archivo", 14023, 56, 180, 70, 10
+    AUTOCHECKBOX "&Sólo lectura", 14021, 58, 151, 70, 10
+    AUTOCHECKBOX "&Oculto", 14022, 126, 151, 70, 10
+    AUTOCHECKBOX "&Archivo", 14023, 181, 151, 70, 10
     PUSHBUTTON "A&vanzado...", 14028, 158, 150, 70, 14, WS_CHILD | WS_VISIBLE | WS_TABSTOP
 END
 
@@ -243,34 +257,34 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_CAPTION
 CAPTION "General"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    ICON "", 14000, 10, 3, 32, 32, WS_VISIBLE
-    EDITTEXT 14001, 70, 9, 158, 14, ES_LEFT | WS_TABSTOP
+    ICON "", 14000, 16, 7, 32, 32, WS_VISIBLE
+    EDITTEXT 14001, 58, 9, 170, 14, ES_LEFT | WS_TABSTOP
     LTEXT "", -1, 8, 29, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Tipo de archivo:", 14004, 8, 35, 55, 10
-    CONTROL "Archivo", 14005, "edit", ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP, 68, 35, 160, 10
+    CONTROL "Archivo", 14005, "edit", ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP, 58, 35, 170, 10
     LTEXT "Se abre con:", 14006, 8, 53, 50, 10
-    ICON "", 14025, 68, 52, 11, 10, NOT WS_VISIBLE
+    ICON "", 14025, 58, 52, 11, 10, NOT WS_VISIBLE
     PUSHBUTTON "&Cambiar...", 14024, 168, 50, 60, 14, WS_CHILD | WS_VISIBLE | WS_TABSTOP
-    EDITTEXT 14007, 68, 53, 90, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
+    EDITTEXT 14007, 58, 53, 100, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
     LTEXT "", -1, 8, 68, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Ubicación:", 14008, 8, 75, 45, 10
-    EDITTEXT 14009, 68, 75, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
+    EDITTEXT 14009, 58, 75, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | ES_AUTOHSCROLL | NOT WS_TABSTOP
     LTEXT "Tamaño:", 14010, 8, 91, 45, 10
-    EDITTEXT 14011, 68, 91, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT 14011, 58, 91, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT "Tamaño en disco:", 140112, 8, 107, 55, 10
-    EDITTEXT 14012, 68, 107, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT 14012, 58, 107, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT "", -1, 8, 123, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Creado:", 14014, 8, 131, 45, 10
-    EDITTEXT 14015, 68, 131, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT 14015, 58, 131, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT "Modificado:", 14016, 8, 147, 45, 10
-    EDITTEXT 14017, 68, 147, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT 14017, 58, 147, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT "Último acceso:", 14018, 8, 163, 55, 10
-    EDITTEXT 14019, 68, 163, 160, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT 14019, 58, 163, 170, 10, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
     LTEXT "", -1, 8, 179, 221, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Atributos:", 14020, 8, 189, 45, 10
-    AUTOCHECKBOX "&Sólo lectura", 14021, 58, 189, 67, 10
-    AUTOCHECKBOX "&Oculto", 14022, 126, 189, 50, 10
-    AUTOCHECKBOX "&Archivo", 14023, 181, 189, 49, 10
+    AUTOCHECKBOX "&Sólo lectura", 14021, 58, 188, 67, 10
+    AUTOCHECKBOX "&Oculto", 14022, 126, 188, 50, 10
+    AUTOCHECKBOX "&Archivo", 14023, 181, 188, 49, 10
     PUSHBUTTON "A&vanzado...", 14028, 180, 185, 50, 15, WS_TABSTOP
 END
 
@@ -297,7 +311,7 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "General"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    ICON "", 14016, 10, 3, 32, 32, WS_VISIBLE
+    ICON "", 14016, 10, 9, 32, 32, WS_VISIBLE
     EDITTEXT 14000, 40, 11, 190, 14, ES_LEFT | WS_BORDER | WS_GROUP | ES_AUTOHSCROLL
     LTEXT "", -1, 8, 32, 223, 1, SS_ETCHEDHORZ | WS_CHILD | WS_VISIBLE
     LTEXT "Tipo:", -1, 8, 38, 95, 10
@@ -376,7 +390,7 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Propiedades de la Papelera"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    CONTROL "", 14000, "SysListView32", LVS_REPORT | LVS_SHAREIMAGELISTS | WS_BORDER | WS_TABSTOP, 10, 10, 220, 50
+    CONTROL "", 14000, "SysListView32", LVS_REPORT | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | WS_BORDER | WS_TABSTOP, 10, 10, 220, 50
     GROUPBOX "Configuración para la unidad seleccionada ", -1, 10, 72, 220, 70
     RADIOBUTTON "Tamaño &personalizado:", 14001, 20, 90, 88, 10, WS_TABSTOP
     EDITTEXT 14002, 120, 87, 50, 14, WS_TABSTOP | ES_NUMBER
@@ -385,20 +399,20 @@ BEGIN
     AUTOCHECKBOX "&Mostrar un cuadro de diálogo para confirmar la eliminación", 14004, 20, 155, 200, 10, WS_TABSTOP
 END
 
-IDD_OPEN_WITH DIALOGEX 0, 0, 284, 256
+IDD_OPEN_WITH DIALOGEX 0, 0, 264, 256
 STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUPWINDOW | WS_CAPTION
 CAPTION "Abrir con"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     ICON IDI_SHELL_OPEN_WITH, -1, 8, 12, 21, 20
-    LTEXT "Elija el programa que desea usar para abrir el siguiente archivo:", -1, 44, 12, 211, 10
-    LTEXT "Archivo:    ", 14001, 44, 25, 188, 20
-    GROUPBOX "&Programas ", -1, 7, 42, 269, 187
+    LTEXT "Elija el programa que desea usar para abrir el siguiente archivo:", -1, 44, 12, 211, 18
+    LTEXT "Archivo:    ", 14001, 44, 30, 188, 10
+    GROUPBOX "&Programas ", -1, 7, 42, 249, 187
     CONTROL "Programas", 14002, WC_TREEVIEW, WS_BORDER | WS_TABSTOP | TVS_SHOWSELALWAYS, 16 ,57, 230, 130
-    AUTOCHECKBOX "Utilizar &siempre el programa seleccionado para abrir este tipo de archivos", 14003, 15, 193, 250, 10
-    PUSHBUTTON "&Examinar...", 14004, 218, 207, 50, 14
-    DEFPUSHBUTTON "Aceptar", IDOK, 170, 236, 50, 14
-    PUSHBUTTON "Cancelar", IDCANCEL, 226, 236, 50, 14
+    AUTOCHECKBOX "&Siempre use el programa para abrir este tipo de archivos", 14003, 16, 193, 232, 10
+    PUSHBUTTON "&Examinar...", 14004, 188, 207, 60, 14
+    DEFPUSHBUTTON "Aceptar", IDOK, 150, 236, 50, 14
+    PUSHBUTTON "Cancelar", IDCANCEL, 206, 236, 50, 14
 END
 
 IDD_FOLDER_OPTIONS_GENERAL DIALOGEX 0, 0, 294, 240
@@ -417,10 +431,10 @@ BEGIN
     GROUPBOX "Hacer clic en los elementos tal y como se indica ", -1, 7, 110, 279, 60
     CONTROL "", IDC_FOLDER_OPTIONS_CLICKICON, "Static", SS_ICON | WS_CHILD | WS_VISIBLE, 14, 120, 21, 20
     AUTORADIOBUTTON "&Un solo clic para abrir elemento (seleccionar al señalar)", IDC_FOLDER_OPTIONS_SINGLECLICK, 40, 120, 190, 10, WS_TABSTOP | WS_GROUP
-    AUTORADIOBUTTON "Subrayar los títulos de iconos que coincidan con el e&xplorador", IDC_FOLDER_OPTIONS_ULBROWSER, 50, 132, 220, 10
-    AUTORADIOBUTTON "Subrayar &los títulos de iconos cuando yo los señale", IDC_FOLDER_OPTIONS_ULPOINT, 50, 144, 190, 10
     AUTORADIOBUTTON "&Doble clic para abrir elemento (seleccionar con un clic)", IDC_FOLDER_OPTIONS_DOUBLECLICK, 40, 156, 190, 10
-    PUSHBUTTON "&Restaurar valores predeterminados", 14011, 146, 180, 140, 14, WS_TABSTOP
+    AUTORADIOBUTTON "Subrayar los títulos de iconos que coincidan con el e&xplorador", IDC_FOLDER_OPTIONS_ULBROWSER, 50, 132, 220, 10, WS_TABSTOP | WS_GROUP
+    AUTORADIOBUTTON "Subrayar &los títulos de iconos cuando yo los señale", IDC_FOLDER_OPTIONS_ULPOINT, 50, 144, 190, 10
+    PUSHBUTTON "&Restaurar valores predeterminados", IDC_FOLDER_OPTIONS_RESTORE, 167, 175, 90, 14, WS_TABSTOP
 END
 
 IDD_FOLDER_OPTIONS_VIEW DIALOGEX 0, 0, 294, 240
@@ -431,11 +445,11 @@ BEGIN
     GROUPBOX "Vistas de carpeta", -1, 7, 10, 279, 60
     ICON IDI_SHELL_PROGRAMS_FOLDER2, IDC_STATIC, 20, 20, 21, 20
     LTEXT "Puede aplicar la vista que está usando con esta carpeta para el resto (como Detalles o Mosaicos).", -1, 60, 20, 200, 20
-    PUSHBUTTON "A&plicar a todas las carpetas", 14001, 60, 50, 100, 14, WS_TABSTOP
-    PUSHBUTTON "R&estaurar todas las carpetas", 14002, 165, 50, 100, 14, WS_TABSTOP
+    PUSHBUTTON "A&plicar a todas las carpetas", IDC_VIEW_APPLY_TO_ALL, 60, 50, 100, 14, WS_TABSTOP
+    PUSHBUTTON "R&estaurar todas las carpetas", IDC_VIEW_RESET_ALL, 165, 50, 100, 14, WS_TABSTOP
     LTEXT "Configuración avanzada:", -1, 7, 80, 100, 10
-    CONTROL "", 14003, "SysTreeView32", WS_BORDER | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP | TVS_DISABLEDRAGDROP | TVS_LINESATROOT, 7, 90, 249, 120
-    PUSHBUTTON "&Restaurar valores predeterminados", 14004, 156, 220, 130, 14, WS_TABSTOP
+    CONTROL "", IDC_VIEW_TREEVIEW, "SysTreeView32", WS_BORDER | WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_TABSTOP | TVS_DISABLEDRAGDROP | TVS_LINESATROOT, 7, 90, 249, 120
+    PUSHBUTTON "&Restaurar valores predeterminados", IDC_VIEW_RESTORE_DEFAULTS, 156, 220, 130, 14, WS_TABSTOP
 END
 
 IDD_FOLDER_OPTIONS_FILETYPES DIALOGEX 0, 0, 294, 240
@@ -443,17 +457,17 @@ STYLE DS_SHELLFONT | WS_POPUP | WS_CAPTION
 CAPTION "Tipos de Archivo"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    LTEXT "&Tipos de archivo registrados:", -1, 7, 10, 120, 10
-    CONTROL "", 14000, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_SHAREIMAGELISTS | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP, 7, 20, 279, 80
-    PUSHBUTTON "&Nueva", 14001, 170, 110, 50, 14, WS_TABSTOP
-    PUSHBUTTON "Eli&minar", 14002, 230, 110, 50, 14, WS_TABSTOP
-    GROUPBOX "Detalles para el tipo de archivo «%s»", 14003, 7, 130, 279, 100
+    LTEXT "&Tipos de archivo registrados:", -1, 7, 10, 180, 10
+    CONTROL "", IDC_FILETYPES_LISTVIEW, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_SHAREIMAGELISTS | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP, 7, 20, 279, 80
+    PUSHBUTTON "&Nueva", IDC_FILETYPES_NEW, 170, 110, 55, 14, WS_TABSTOP
+    PUSHBUTTON "Eli&minar", IDC_FILETYPES_DELETE, 230, 110, 55, 14, WS_TABSTOP
+    GROUPBOX "Detalles para el tipo de archivo «%s»", IDC_FILETYPES_DETAILS_GROUPBOX, 7, 130, 279, 100
     LTEXT "Se abre con:", -1, 12, 140, 50, 10
-    //ICON
-    LTEXT "Aplicación", 14005, 100, 140, 40, 10
-    PUSHBUTTON "Cam&biar...", 14006, 230, 140, 50, 14, WS_TABSTOP
-    LTEXT "", 14007, 12, 165, 220, 30
-    PUSHBUTTON "Opciones avanza&das", 14008, 190, 213, 90, 14, WS_TABSTOP
+    CONTROL "", IDC_FILETYPES_ICON, "STATIC", SS_BITMAP | SS_REALSIZEIMAGE, 85, 140, 10, 10
+    LTEXT "Aplicación", IDC_FILETYPES_APPNAME, 100, 140, 80, 10
+    PUSHBUTTON "Cam&biar...", IDC_FILETYPES_CHANGE, 230, 140, 50, 14, WS_TABSTOP
+    LTEXT "", IDC_FILETYPES_DESCRIPTION, 12, 165, 220, 40
+    PUSHBUTTON "Opciones avanza&das", IDC_FILETYPES_ADVANCED, 190, 213, 90, 14, WS_TABSTOP
 END
 
 IDD_CONFIRM_FILE_REPLACE DIALOGEX 0, 0, 282, 143
@@ -610,11 +624,11 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBL
 CAPTION "Cambiar icono"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    LTEXT "Look for icons in this file:", -1, 7, 7, 179, 10
+    LTEXT "Buscar íconos en este archivo:", -1, 7, 7, 179, 10
     PUSHBUTTON "Examinar...", IDC_BUTTON_PATH, 135, 17, 50, 14
     EDITTEXT IDC_EDIT_PATH, 7, 17, 123, 14, ES_AUTOHSCROLL
-    LTEXT "Select an icon from the list below:", -1, 7, 36, 179, 10
-    LISTBOX IDC_PICKICON_LIST, 7, 47, 181, 120, LBS_OWNERDRAWFIXED | LBS_NOINTEGRALHEIGHT | LBS_MULTICOLUMN | LBS_DISABLENOSCROLL | WS_HSCROLL | WS_TABSTOP
+    LTEXT "Seleccione un ícono de la siguiente lista:", -1, 7, 36, 179, 10
+    LISTBOX IDC_PICKICON_LIST, 7, 47, 181, 122, LBS_OWNERDRAWFIXED | LBS_NOINTEGRALHEIGHT | LBS_MULTICOLUMN | LBS_DISABLENOSCROLL | WS_HSCROLL | WS_TABSTOP
     DEFPUSHBUTTON "Aceptar", IDOK, 81, 179, 50, 14
     PUSHBUTTON "Cancelar", IDCANCEL, 135, 179, 50, 14
 END
@@ -631,6 +645,77 @@ sistema o comprometer su correcto funcionamiento.\n\n\
 ¿Seguro que quiere abrir este archivo?", IDC_STATIC, 35, 5, 230, 60
     DEFPUSHBUTTON "Sí", IDYES, 125, 55, 50, 14
     PUSHBUTTON "No", IDNO, 180, 55, 50, 14
+END
+
+IDD_NEWEXTENSION DIALOGEX 0, 0, 260, 75
+CAPTION "Crear nueva extensión"
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "&Extensión de archivo:", -1, 10, 10, 85, 14
+    EDITTEXT IDC_NEWEXT_EDIT, 105, 8, 60, 14
+    PUSHBUTTON "<< A&vanzado", IDC_NEWEXT_ADVANCED, 185, 8, 65, 15
+    LTEXT "&Tipo de archivo asociado:", IDC_NEWEXT_ASSOC, 10, 34, 85, 14
+    COMBOBOX IDC_NEWEXT_COMBOBOX, 105, 32, 145, 120, CBS_AUTOHSCROLL | CBS_DROPDOWNLIST | WS_VSCROLL | WS_GROUP | WS_TABSTOP
+    DEFPUSHBUTTON "Aceptar", IDOK, 125, 55, 60, 14
+    PUSHBUTTON "Cancelar", IDCANCEL, 190, 55, 60, 14
+END
+
+IDD_EDITTYPE DIALOG 0, 0, 225, 190
+CAPTION "Editar tipo de archivo"
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON "", IDC_EDITTYPE_ICON, 5, 8, 20, 20
+    EDITTEXT IDC_EDITTYPE_TEXT, 30, 10, 115, 14, ES_AUTOHSCROLL
+    PUSHBUTTON "Cambiar &Ícono...", IDC_EDITTYPE_CHANGE_ICON, 150, 10, 70, 14
+    LTEXT "&Acciones:", -1, 5, 37, 70, 10
+    LISTBOX IDC_EDITTYPE_LISTBOX, 5, 50, 140, 60, LBS_NOINTEGRALHEIGHT | LBS_HASSTRINGS | LBS_OWNERDRAWFIXED | LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON "&Nueva...", IDC_EDITTYPE_NEW, 150, 50, 70, 14
+    PUSHBUTTON "&Editar...", IDC_EDITTYPE_EDIT_BUTTON, 150, 65, 70, 14
+    PUSHBUTTON "E&liminar", IDC_EDITTYPE_REMOVE, 150, 80, 70, 14
+    PUSHBUTTON "Establecer por &defecto", IDC_EDITTYPE_SET_DEFAULT, 150, 95, 70, 14
+    AUTOCHECKBOX "Abrir al &terminar descarga", IDC_EDITTYPE_CONFIRM_OPEN, 5, 115, 150, 14
+    AUTOCHECKBOX "Siempre &mostrar extensión", IDC_EDITTYPE_SHOW_EXT, 5, 130, 150, 14
+    AUTOCHECKBOX "Examinar en la misma &ventana", IDC_EDITTYPE_SAME_WINDOW, 5, 145, 150, 14
+    DEFPUSHBUTTON "Aceptar", IDOK, 95, 170, 60, 14
+    PUSHBUTTON "Cancelar", IDCANCEL, 160, 170, 60, 14
+END
+
+IDD_ACTION DIALOG 0, 0, 225, 95
+CAPTION "Nueva Acción"
+STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "&Acción:", -1, 5, 7, 150, 10
+    EDITTEXT IDC_ACTION_ACTION, 5, 20, 150, 14, ES_AUTOHSCROLL
+    LTEXT "&Programa utilizado para realizar esta acción:", -1, 5, 42, 150, 10
+    EDITTEXT IDC_ACTION_APP, 5, 55, 150, 14, ES_AUTOHSCROLL
+    PUSHBUTTON "&Examinar...", IDC_ACTION_BROWSE, 160, 60, 60, 14
+    AUTOCHECKBOX "Usar &DDE", IDC_ACTION_USE_DDE, 10, 75, 103, 14
+    DEFPUSHBUTTON "Aceptar", IDOK, 160, 20, 60, 14
+    PUSHBUTTON "Cancelar", IDCANCEL, 160, 40, 60, 14
+END
+
+IDD_FOLDER_CUSTOMIZE DIALOGEX 0, 0, 240, 250
+CAPTION "Personalizar"
+STYLE DS_SHELLFONT | WS_CHILD | WS_CAPTION
+FONT 8, "MS Shell Dlg"
+BEGIN
+    GROUPBOX "¿Qué tipo de carpeta necesita?", IDC_STATIC, 5, 5, 230, 65, WS_TABSTOP
+    LTEXT "&Usar esta carpeta como plantilla:", IDC_STATIC, 15, 20, 210, 12
+    COMBOBOX IDC_FOLDERCUST_COMBOBOX, 15, 35, 210, 300, CBS_HASSTRINGS | CBS_AUTOHSCROLL | CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    AUTOCHECKBOX "Aplicar esta plantilla a todas las &sub carpetas", IDC_FOLDERCUST_CHECKBOX, 15, 50, 210, 15
+    GROUPBOX "Carpeta de imágenes", IDC_STATIC, 5, 75, 230, 90, WS_TABSTOP
+    LTEXT "Para ver miniaturas, guarde una imagen en esta carpeta para recordar su contenido.", IDC_STATIC, 15, 87, 115, 33
+    PUSHBUTTON "Seleccionar &imagen...", IDC_FOLDERCUST_CHOOSE_PIC, 15, 125, 115, 15
+    PUSHBUTTON "&Restaurar por defecto", IDC_FOLDERCUST_RESTORE_DEFAULTS, 15, 144, 115, 15
+    LTEXT "Previsualizar:", IDC_STATIC, 139, 85, 81, 11
+    CONTROL "", IDC_FOLDERCUST_PREVIEW_BITMAP, "STATIC", SS_BITMAP | WS_GROUP, 150, 100, 60, 60
+    GROUPBOX "Íconos de carpeta", IDC_STATIC, 5, 170, 230, 65, WS_TABSTOP
+    LTEXT "Para todas las vistas excepto miniaturas, usted puede cambiar el ícono por defecto de ""carpeta"" con otro ícono.", IDC_STATIC, 15, 180, 210, 25
+    ICON 0, IDC_FOLDERCUST_ICON, 175, 209, 32, 30
+    PUSHBUTTON "&Cambiar ícono...", IDC_FOLDERCUST_CHANGE_ICON, 15, 210, 75, 15
 END
 
 STRINGTABLE
@@ -666,10 +751,13 @@ BEGIN
     IDS_ADMINISTRATIVETOOLS "Herramientas administrativas"
 
     /* special folders descriptions */
-    IDS_ADMINISTRATIVETOOLS_DESCRIPTION "Configure administrative settings for your computer."
-    IDS_FOLDER_OPTIONS_DESCRIPTION "Customize the display of files and folders and change file associations."
-    IDS_FONTS_DESCRIPTION "Add, change, and manage fonts on your computer."
-    IDS_PRINTERS_DESCRIPTION "Shows installed printers and fax printers and helps you add new ones."
+    IDS_ADMINISTRATIVETOOLS_DESCRIPTION "Configuraciones administrativas para su computadora."
+    IDS_FOLDER_OPTIONS_DESCRIPTION "Personalize archivos y carpetas, y cambie asociaciones de archivos."
+    IDS_FONTS_DESCRIPTION "Añada, cambie y administre las fuentes de su computadora."
+    IDS_PRINTERS_DESCRIPTION "Muestra impresoras y faxes instalados y le ayuda a configurar nuevos."
+
+    /* About shell dialog version string */
+    IDS_ABOUT_VERSION_STRING "Versión %S (%S)"
 
     /* context menus */
     IDS_VIEW_LARGE "Iconos &grandes"
@@ -687,9 +775,21 @@ BEGIN
     IDS_FORMATDRIVE "Formatear..."
     IDS_RENAME "Renombrar"
     IDS_PASTE "Insertar"
+    IDS_EJECT "Extraer"
+    IDS_DISCONNECT "Desconectar"
+    IDS_OPENFILELOCATION "Abrir &ubicación del archivo"
+    IDS_SENDTO_MENU "E&nviar a"
 
-    IDS_CREATEFOLDER_DENIED "Unable to create the folder '%1'"
-    IDS_CREATEFOLDER_CAPTION "Unable to create folder"
+    IDS_MOVEERRORTITLE "Error moviendo Archivo o Carpeta"
+    IDS_COPYERRORTITLE "Error copiando Archivo o Carpeta"
+    IDS_MOVEERRORSAMEFOLDER "Imposible mover '%s': La carpeta de destino es la misma que la de origen."
+    IDS_MOVEERRORSAME "Imposible mover '%s': El archivo de origen y el de destino son el mismo."
+    IDS_COPYERRORSAME "Imposible copiar '%s': El archivo de origen y el de destino son el mismo."
+    IDS_MOVEERRORSUBFOLDER "Imposible mover '%s': La carpeta de destino es un subdirectorio de la de origen."
+    IDS_COPYERRORSUBFOLDER "Imposible copiar '%s': La carpeta de destino es un subdirectorio de la de origen."
+
+    IDS_CREATEFOLDER_DENIED "No se pudo crear la carpeta '%1'"
+    IDS_CREATEFOLDER_CAPTION "No se pudo crear la carpeta"
     IDS_DELETEITEM_CAPTION "Confirmar eliminación de archivos"
     IDS_DELETEFOLDER_CAPTION "Confirmar eliminación de carpetas"
     IDS_DELETEITEM_TEXT "¿Seguro que desea eliminar '%1'?"
@@ -715,6 +815,11 @@ BEGIN
     IDS_RESTART_PROMPT "¿Desea reiniciar el equipo?"
     IDS_SHUTDOWN_TITLE "Apagar"
     IDS_SHUTDOWN_PROMPT "¿Desea apagar el equipo?"
+    
+    /* Format Dialog Strings */
+    IDS_FORMAT_TITLE "Formatear Disco Local"
+    IDS_FORMAT_WARNING "ADVERTENCIA: Formatear eliminará TODOS los datos de este disco.\n Para formatear, haga clic en OK. Para salir, haga clic en CANCELAR."
+    IDS_FORMAT_COMPLETE "Formato completo."
 
     /* Run File dialog */
     IDS_RUNDLG_ERROR "No se pudo mostrar el diálogo Ejecutar (error interno)"
@@ -722,16 +827,16 @@ BEGIN
     IDS_RUNDLG_BROWSE_CAPTION "Examinar"
     IDS_RUNDLG_BROWSE_FILTER "Archivos ejecutables (*.exe)\0*.exe\0Todos los archivos (*.*)\0*.*\0"
 
-    /* shell folder path default values */
+    /* Shell folder path default values. See also: dll/win32/userenv/lang */
     IDS_PROGRAMS "Menú Inicio\\Programas"
     IDS_PERSONAL "Mis documentos"
     IDS_FAVORITES "Favoritos"
     IDS_STARTUP "Menú Inicio\\Programas\\Inicio"
     IDS_RECENT "Reciente"
-    IDS_SENDTO "SendTo"
+    IDS_SENDTO "Enviar a"
     IDS_STARTMENU "Menú Inicio"
-    IDS_MYMUSIC "Mis documentos\\Mi música"
-    IDS_MYVIDEO "Mis documentos\\Mis vídeos"
+    IDS_MYMUSIC "Mi música"
+    IDS_MYVIDEO "Mis vídeos"
     IDS_DESKTOPDIRECTORY "Escritorio"
     IDS_NETHOOD "Entorno de red"
     IDS_TEMPLATES "Plantillas"
@@ -780,27 +885,41 @@ BEGIN
     IDS_PICK_ICON_FILTER "Archivos de icono (*.ico, *.icl, *.exe, *.dll)\0*.ico;*.icl;*.exe;*.dll\0Todos los archivos (*.*)\0*.*\0"
     IDS_OPEN_WITH_FILTER "Programas (*.exe)\0*.exe\0Todos los archivos (*.*)\0*.*\0"
 
+    IDS_CANTLOCKVOLUME "No se pudo bloquear la unidad (Código de Error: %lu)."
+    IDS_CANTDISMOUNTVOLUME "No se pudo desmontar la unidad (Código de Error: %lu)."
+    IDS_CANTEJECTMEDIA "No se pudo extraer la unidad (Código de Error: %lu)."
+    IDS_CANTSHOWPROPERTIES "No se puede mostrar las propiedades (Código de Error: %lu)."
+    IDS_CANTDISCONNECT "No se pudo desconectar (Código de Error: %lu)."
+    IDS_NONE "(Nada)"
+
+    /* Friendly File Type Names */
     IDS_DIRECTORY "Directorio"
     IDS_BAT_FILE "Archivo por lotes de ReactOS"
     IDS_CMD_FILE "Script de comandos ReactOS"
     IDS_COM_FILE "Aplicación DOS"
-    IDS_CPL_FILE "Elemento del Panel de control"
+    IDS_CPL_FILE "Elemento del Panel de Control"
     IDS_CUR_FILE "Cursor"
+    IDS_DB__FILE "Base de datos"
     IDS_DLL_FILE "Biblioteca de aplicación"
     IDS_DRV_FILE "Controlador de dispositivo"
+    IDS_EFI_FILE "Aplicación EFI (Extensible Firmware Interface)"
     IDS_EXE_FILE "Aplicación"
+    IDS_NLS_FILE "Archivo NLS (National Language Support)"
+    IDS_OCX_FILE "Control ActiveX"
+    IDS_TLB_FILE "Librería de tipos"
     IDS_FON_FILE "Archivo de fuente"
     IDS_TTF_FILE "Archivo de fuente TrueType"
     IDS_OTF_FILE "Archivo de fuente OpenType"
     IDS_HLP_FILE "Archivo de ayuda"
-    IDS_ICO_FILE "Icon"
+    IDS_ICO_FILE "Ícono"
     IDS_INI_FILE "Archivo de configuración"
     IDS_LNK_FILE "Acceso directo"
+    IDS_NT__FILE "Archivo de configuración NT DOS32"
     IDS_PIF_FILE "NT VDM Program Information File"
-    IDS_SCR_FILE "Screen Saver"
+    IDS_SCR_FILE "Protector de pantalla"
     IDS_SYS_FILE "Archivo del sistema"
     IDS_VXD_FILE "Controlador de dispositivo virtual"
-    IDS_ANY_FILE "%s-file"
+    IDS_ANY_FILE "Archivo %s"
 
     IDS_OPEN_VERB "Abrir"
     IDS_EXPLORE_VERB "Explorar"
@@ -808,6 +927,7 @@ BEGIN
     IDS_EDIT_VERB "Editar"
     IDS_FIND_VERB "Buscar"
     IDS_PRINT_VERB "Imprimir"
+    IDS_CMD_VERB "Abrir en Línea de Comandos"
 
     IDS_FILE_FOLDER "%u archivos, %u carpetas"
     IDS_PRINTERS "Impresoras"
@@ -836,23 +956,40 @@ BEGIN
     IDS_OBJECTS "%d elementos"
     IDS_OBJECTS_SELECTED "%d elementos seleccionados"
 
-    IDS_ADVANCED_FOLDER "Files and Folders"
-    IDS_ADVANCED_NET_CRAWLER "Automatically search for network folders and printers"
-    IDS_ADVANCED_FOLDER_SIZE_TIP "Display file size information in folder tips"
-    IDS_ADVANCED_FRIENDLY_TREE "Display simple folder view in Explorer's Folders list"
-    IDS_ADVANCED_WEB_VIEW_BARRICADE "Display the contents of system folders"
-    IDS_ADVANCED_SHOW_FULL_PATH_ADDRESS "Display the full path in address bar"
-    IDS_ADVANCED_SHOW_FULL_PATH "Display the full path in the title bar"
-    IDS_ADVANCED_DISABLE_THUMB_CACHE "Do not cache thumbnails"
-    IDS_ADVANCED_HIDDEN "Hidden files and folders"
-    IDS_ADVANCED_DONT_SHOW_HIDDEN "Do not show hidden files and folders"
-    IDS_ADVANCED_SHOW_HIDDEN "Show hidden files and folders"
-    IDS_ADVANCED_HIDE_FILE_EXT "Hide extensions for known file types"
-    IDS_ADVANCED_SUPER_HIDDEN "Hide protected operating system files (Recommended)"
-    IDS_ADVANCED_DESKTOP_PROCESS "Launch folder windows in a separate process"
-    IDS_ADVANCED_CLASSIC_VIEW_STATE "Remember each folder's view settings"
-    IDS_ADVANCED_PERSIST_BROWSERS "Restore previous folder windows at logon"
-    IDS_ADVANCED_CONTROL_PANEL_IN_MY_COMPUTER "Show Control Panel in My Computer"
-    IDS_ADVANCED_SHOW_COMP_COLOR "Show encrypted or compressed NTFS files in color"
-    IDS_ADVANCED_SHOW_INFO_TIP "Show pop-up description for folder and desktop items"
+    IDS_ADVANCED_FOLDER "Archivos y carpetas"
+    IDS_ADVANCED_NET_CRAWLER "Buscar automáticamente carpetas e impresoras en red"
+    IDS_ADVANCED_FOLDER_SIZE_TIP "Mostrar tamaño de la carpeta"
+    IDS_ADVANCED_FRIENDLY_TREE "Mostrar vista simple en lista de carpetas"
+    IDS_ADVANCED_WEB_VIEW_BARRICADE "Mostrar el cotenido de carpetas del sistema"
+    IDS_ADVANCED_SHOW_FULL_PATH_ADDRESS "Mostrar la ruta completa en la barra de direcciones"
+    IDS_ADVANCED_SHOW_FULL_PATH "Mostrar la ruta completa en la barra de título"
+    IDS_ADVANCED_DISABLE_THUMB_CACHE "No guardar caché de las vistas en miniatura"
+    IDS_ADVANCED_HIDDEN "Archivos y carpetas ocultos"
+    IDS_ADVANCED_DONT_SHOW_HIDDEN "No mostrar archivos y carpetas ocultos"
+    IDS_ADVANCED_SHOW_HIDDEN "Mostrar archivos y carpetas ocultos"
+    IDS_ADVANCED_HIDE_FILE_EXT "Ocultar extensiones para tipos de archivos conocidos"
+    IDS_ADVANCED_SUPER_HIDDEN "Ocultar archivos protegidos del sistema operativo (Recomendado)"
+    IDS_ADVANCED_DESKTOP_PROCESS "Abrir carpetas en procesos separados"
+    IDS_ADVANCED_CLASSIC_VIEW_STATE "Recordar vistas personalizadas en carpetas"
+    IDS_ADVANCED_PERSIST_BROWSERS "Restaurar carpetas abiertas al iniciar sesión"
+    IDS_ADVANCED_CONTROL_PANEL_IN_MY_COMPUTER "Mostrar Panel de Control en Mi PC"
+    IDS_ADVANCED_SHOW_COMP_COLOR "Mostrar en color archivos NTFS comprimidos o encriptados"
+    IDS_ADVANCED_SHOW_INFO_TIP "Mostrar descripción de íconos y carpetas en el escritorio"
+
+    IDS_NEWEXT_ADVANCED_LEFT "<< A&vanzado"
+    IDS_NEWEXT_ADVANCED_RIGHT "A&vanzado >>"
+    IDS_NEWEXT_NEW "<Nuevo>"
+    IDS_NEWEXT_SPECIFY_EXT "Debe especificar una extensión."
+    IDS_NEWEXT_ALREADY_ASSOC "La extensión %s ya está asociada con el tipo de archivo %s. ¿Desea desasociar %s con %s y crear un nuevo tipo de archivo?"
+    IDS_NEWEXT_EXT_IN_USE "Ésta extensión ya está en uso"
+
+    IDS_REMOVE_EXT "Si elimina una extensión de archivo, no podrá abrir archivos con esa extensión haciendo doble click en sus íconos.\n\n¿Está seguro de eliminar esta extensión?"
+    IDS_SPECIFY_ACTION "Debe especificar una acción."
+    IDS_INVALID_PROGRAM "No se pudo encontrar el programa. Verifique que el nombre de archivo y la ruta son correctos."
+    IDS_REMOVE_ACTION "¿Está seguro de eliminar esta acción?"
+    IDS_ACTION_EXISTS "La acción '%s' ya está registrada para este tipo de archivo. Intente nuevamente con otro nombre."
+    IDS_EXE_FILTER "Programs\0*.exe\0All Files\0*.*\0"
+    IDS_EDITING_ACTION "Editar acción: "
+    IDS_NO_ICONS "El archivo '%s' no contiene íconos.\n\nEscoja un ícono de la lista o seleccione otro archivo."
+    IDS_FILE_NOT_FOUND "El archivo '%s' no pudo ser encontrado."
 END

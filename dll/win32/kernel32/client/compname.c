@@ -122,6 +122,89 @@ failed:
     return FALSE;
 }
 
+
+static
+BOOL
+SetActiveComputerNameToRegistry(LPCWSTR RegistryKey,
+                                LPCWSTR SubKey,
+                                LPCWSTR ValueNameStr,
+                                LPCWSTR lpBuffer)
+{
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    UNICODE_STRING KeyName;
+    UNICODE_STRING ValueName;
+    HANDLE KeyHandle, SubKeyHandle;
+    SIZE_T StringLength;
+    ULONG Disposition;
+    NTSTATUS Status;
+
+    StringLength = wcslen(lpBuffer);
+    if (StringLength > ((MAXULONG / sizeof(WCHAR)) - 1))
+    {
+        return FALSE;
+    }
+
+    RtlInitUnicodeString(&KeyName, RegistryKey);
+    InitializeObjectAttributes(&ObjectAttributes,
+                               &KeyName,
+                               OBJ_CASE_INSENSITIVE,
+                               NULL,
+                               NULL);
+
+    Status = NtOpenKey(&KeyHandle,
+                       KEY_WRITE,
+                       &ObjectAttributes);
+    if (!NT_SUCCESS(Status))
+    {
+        BaseSetLastNTError(Status);
+        return FALSE;
+    }
+
+    RtlInitUnicodeString(&KeyName, SubKey);
+    InitializeObjectAttributes(&ObjectAttributes,
+                               &KeyName,
+                               OBJ_CASE_INSENSITIVE,
+                               KeyHandle,
+                               NULL);
+
+    Status = NtCreateKey(&SubKeyHandle,
+                         KEY_WRITE,
+                         &ObjectAttributes,
+                         0,
+                         NULL,
+                         REG_OPTION_VOLATILE,
+                         &Disposition);
+    if (!NT_SUCCESS(Status))
+    {
+        NtClose(KeyHandle);
+        BaseSetLastNTError(Status);
+        return FALSE;
+    }
+
+    RtlInitUnicodeString(&ValueName, ValueNameStr);
+
+    Status = NtSetValueKey(SubKeyHandle,
+                           &ValueName,
+                           0,
+                           REG_SZ,
+                           (PVOID)lpBuffer,
+                           (StringLength + 1) * sizeof(WCHAR));
+    if (!NT_SUCCESS(Status))
+    {
+        NtClose(SubKeyHandle);
+        NtClose(KeyHandle);
+        BaseSetLastNTError(Status);
+        return FALSE;
+    }
+
+    NtFlushKey(SubKeyHandle);
+    NtClose(SubKeyHandle);
+    NtClose(KeyHandle);
+
+    return TRUE;
+}
+
+
 /*
  * @implemented
  */
@@ -148,11 +231,29 @@ GetComputerNameExW(COMPUTER_NAME_FORMAT NameType,
     switch (NameType)
     {
         case ComputerNameNetBIOS:
-            return GetComputerNameFromRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"
-                                               L"\\Control\\ComputerName\\ComputerName",
+            ret = GetComputerNameFromRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"
+                                               L"\\Control\\ComputerName\\ActiveComputerName",
                                                L"ComputerName",
                                                lpBuffer,
                                                nSize);
+            if ((ret == FALSE) &&
+                (GetLastError() != ERROR_MORE_DATA))
+            {
+                ret = GetComputerNameFromRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"
+                                                  L"\\Control\\ComputerName\\ComputerName",
+                                                  L"ComputerName",
+                                                  lpBuffer,
+                                                  nSize);
+                if (ret)
+                {
+                    ret = SetActiveComputerNameToRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"
+                                                          L"\\Control\\ComputerName",
+                                                          L"ActiveComputerName",
+                                                          L"ComputerName",
+                                                          lpBuffer);
+                }
+            }
+            return ret;
 
         case ComputerNameDnsDomain:
             return GetComputerNameFromRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"
@@ -234,21 +335,24 @@ GetComputerNameExW(COMPUTER_NAME_FORMAT NameType,
         case ComputerNamePhysicalDnsDomain:
             return GetComputerNameFromRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"
                                                L"\\Services\\Tcpip\\Parameters",
-                                               L"Domain",
+                                               L"NV Domain",
                                                lpBuffer,
                                                nSize);
 
-        /* XXX Redo these */
+        /* XXX Redo this */
         case ComputerNamePhysicalDnsFullyQualified:
             return GetComputerNameExW(ComputerNameDnsFullyQualified,
                                       lpBuffer,
                                       nSize);
 
         case ComputerNamePhysicalDnsHostname:
-            return GetComputerNameExW(ComputerNameDnsHostname,
-                                      lpBuffer,
-                                      nSize);
+            return GetComputerNameFromRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"
+                                               L"\\Services\\Tcpip\\Parameters",
+                                               L"NV Hostname",
+                                               lpBuffer,
+                                               nSize);
 
+        /* XXX Redo this */
         case ComputerNamePhysicalNetBIOS:
             return GetComputerNameExW(ComputerNameNetBIOS,
                                       lpBuffer,
@@ -323,7 +427,7 @@ GetComputerNameA(LPSTR lpBuffer, LPDWORD lpnSize)
 {
     BOOL ret;
 
-    ret = GetComputerNameExA(ComputerNameNetBIOS, lpBuffer, lpnSize);    
+    ret = GetComputerNameExA(ComputerNameNetBIOS, lpBuffer, lpnSize);
     if (!ret && GetLastError() == ERROR_MORE_DATA)
         SetLastError(ERROR_BUFFER_OVERFLOW);
 
@@ -339,9 +443,11 @@ WINAPI
 GetComputerNameW(LPWSTR lpBuffer, LPDWORD lpnSize)
 {
     BOOL ret;
-    ret=GetComputerNameExW(ComputerNameNetBIOS, lpBuffer, lpnSize);
-    if(!ret && GetLastError() == ERROR_MORE_DATA)
-      SetLastError(ERROR_BUFFER_OVERFLOW);
+
+    ret = GetComputerNameExW(ComputerNameNetBIOS, lpBuffer, lpnSize);
+    if (!ret && GetLastError() == ERROR_MORE_DATA)
+        SetLastError(ERROR_BUFFER_OVERFLOW);
+
     return ret;
 }
 
@@ -374,7 +480,14 @@ IsValidComputerName(COMPUTER_NAME_FORMAT NameType,
         p++;
     }
 
-    if (Length == 0 || Length > MAX_COMPUTERNAME_LENGTH)
+    if (NameType == ComputerNamePhysicalDnsDomain)
+        return TRUE;
+
+    if (Length == 0)
+        return FALSE;
+
+    if (NameType == ComputerNamePhysicalNetBIOS &&
+        Length > MAX_COMPUTERNAME_LENGTH)
         return FALSE;
 
     return TRUE;
@@ -391,7 +504,14 @@ SetComputerNameToRegistry(LPCWSTR RegistryKey,
     UNICODE_STRING KeyName;
     UNICODE_STRING ValueName;
     HANDLE KeyHandle;
+    SIZE_T StringLength;
     NTSTATUS Status;
+
+    StringLength = wcslen(lpBuffer);
+    if (StringLength > ((MAXULONG / sizeof(WCHAR)) - 1))
+    {
+        return FALSE;
+    }
 
     RtlInitUnicodeString(&KeyName, RegistryKey);
     InitializeObjectAttributes(&ObjectAttributes,
@@ -416,7 +536,7 @@ SetComputerNameToRegistry(LPCWSTR RegistryKey,
                            0,
                            REG_SZ,
                            (PVOID)lpBuffer,
-                           (wcslen (lpBuffer) + 1) * sizeof(WCHAR));
+                           (StringLength + 1) * sizeof(WCHAR));
     if (!NT_SUCCESS(Status))
     {
         NtClose(KeyHandle);
@@ -482,25 +602,33 @@ WINAPI
 SetComputerNameExW(COMPUTER_NAME_FORMAT NameType,
                    LPCWSTR lpBuffer)
 {
+    BOOL ret1, ret2;
+
     if (!IsValidComputerName(NameType, lpBuffer))
     {
         SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
 
-    switch( NameType )
+    switch (NameType)
     {
         case ComputerNamePhysicalDnsDomain:
             return SetComputerNameToRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"
                                              L"\\Services\\Tcpip\\Parameters",
-                                             L"Domain",
+                                             L"NV Domain",
                                              lpBuffer);
 
         case ComputerNamePhysicalDnsHostname:
-            return SetComputerNameToRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"
+            ret1 = SetComputerNameToRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"
                                              L"\\Services\\Tcpip\\Parameters",
-                                             L"Hostname",
+                                             L"NV Hostname",
                                              lpBuffer);
+
+            ret2 = SetComputerNameToRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"
+                                             L"\\Control\\ComputerName\\ComputerName",
+                                             L"ComputerName",
+                                             lpBuffer);
+            return (ret1 && ret2);
 
         case ComputerNamePhysicalNetBIOS:
             return SetComputerNameToRegistry(L"\\Registry\\Machine\\System\\CurrentControlSet"

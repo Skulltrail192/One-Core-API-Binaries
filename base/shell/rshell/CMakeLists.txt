@@ -1,5 +1,8 @@
 PROJECT(SHELL)
 
+add_definitions(
+    -D_ATL_NO_EXCEPTIONS)
+
 set_cpp(WITH_RUNTIME)
 
 include_directories(
@@ -8,10 +11,11 @@ include_directories(
 spec2def(rshell.dll rshell.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
+    CQuickLaunchBand.cpp
     misc.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/rshell.def)
 
-add_library(rshell SHARED ${SOURCE})
+add_library(rshell MODULE ${SOURCE})
 
 set_module_type(rshell win32dll UNICODE)
 
@@ -19,7 +23,6 @@ target_link_libraries(rshell
     shellbars
     shellmenu
     shelldesktop
-    atlnew
     uuid
     wine)
 
@@ -41,12 +44,6 @@ add_custom_command(TARGET rshell POST_BUILD
   COMMAND "${CMAKE_COMMAND}" -E copy 
      "$<TARGET_FILE:rshell>"
      "$<TARGET_FILE_DIR:explorer>/$<TARGET_FILE_NAME:rshell>" 
-  COMMENT "Copying to output directory")
-
-add_custom_command(TARGET rshell POST_BUILD 
-  COMMAND "${CMAKE_COMMAND}" -E copy 
-     "$<TARGET_FILE:rshell>"
-     "$<TARGET_FILE_DIR:filebrowser>/$<TARGET_FILE_NAME:rshell>" 
   COMMENT "Copying to output directory")
 
 add_custom_command(TARGET rshell POST_BUILD 

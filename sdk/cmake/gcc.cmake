@@ -47,6 +47,9 @@ add_compile_flags("-nostdinc")
 if(GCC_VERSION VERSION_GREATER 4.7)
     add_compile_flags("-mstackrealign")
 endif()
+if(NOT GCC_VERSION VERSION_LESS 4.8)
+    add_compile_flags("-fno-aggressive-loop-optimizations")
+endif()
 
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
     add_compile_flags_language("-std=gnu89 -Wno-microsoft" "C")
@@ -58,8 +61,6 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_COMPILE_OPTIONS_PIC "")
     set(CMAKE_C_COMPILE_OPTIONS_PIE "")
     set(CMAKE_CXX_COMPILE_OPTIONS_PIE "")
-    set(CMAKE_SHARED_LIBRARY_C_FLAGS "")
-    set(CMAKE_SHARED_LIBRARY_CXX_FLAGS "")
     set(CMAKE_ASM_FLAGS_DEBUG "")
     set(CMAKE_C_FLAGS_DEBUG "")
     set(CMAKE_CXX_FLAGS_DEBUG "")
@@ -98,11 +99,6 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
     endif()
 endif()
 
-# For some reason, cmake sets -fPIC, and we don't want it
-if(DEFINED CMAKE_SHARED_LIBRARY_ASM_FLAGS)
-    string(REPLACE "-fPIC" "" CMAKE_SHARED_LIBRARY_ASM_FLAGS ${CMAKE_SHARED_LIBRARY_ASM_FLAGS})
-endif()
-
 # Tuning
 if(ARCH STREQUAL "i386")
     add_compile_flags("-march=${OARCH} -mtune=${TUNE}")
@@ -117,6 +113,11 @@ endif()
 
 add_compile_flags("-Wall -Wpointer-arith")
 add_compile_flags("-Wno-char-subscripts -Wno-multichar -Wno-unused-value")
+if(NOT GCC_VERSION VERSION_LESS 6.1)
+    add_compile_flags("-Wno-unused-const-variable")
+endif()
+add_compile_flags("-Wno-unused-local-typedefs")
+add_compile_flags("-Wno-deprecated")
 
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
     add_compile_flags("-Wno-maybe-uninitialized")
@@ -178,6 +179,9 @@ endif()
 
 add_definitions(-D_inline=__inline)
 
+# Fix build with GLIBCXX + our c++ headers
+add_definitions(-D_GLIBCXX_HAVE_BROKEN_VSWPRINTF)
+
 # Alternative arch name
 if(ARCH STREQUAL "amd64")
     set(ARCH2 x86_64)
@@ -190,9 +194,14 @@ if(SEPARATE_DBG)
     message(STATUS "Building separate debug symbols")
     file(MAKE_DIRECTORY ${REACTOS_BINARY_DIR}/symbols)
     if(CMAKE_GENERATOR STREQUAL "Ninja")
+        # Those variables seems to be set but empty in newer CMake versions
+        # and Ninja generator relies on them to generate PDB name, so unset them.
+        unset(MSVC_C_ARCHITECTURE_ID)
+        unset(MSVC_CXX_ARCHITECTURE_ID)
+        set(CMAKE_DEBUG_SYMBOL_SUFFIX "")
         set(SYMBOL_FILE <TARGET_PDB>)
     else()
-        set(SYMBOL_FILE <TARGET>.gdb)
+        set(SYMBOL_FILE <TARGET>)
     endif()
     set(OBJCOPY ${CMAKE_OBJCOPY})
     set(CMAKE_C_LINK_EXECUTABLE
@@ -225,13 +234,8 @@ elseif(NO_ROSSYM)
     set(CMAKE_RC_CREATE_SHARED_LIBRARY "<CMAKE_C_COMPILER> ${CMAKE_C_FLAGS} <CMAKE_SHARED_LIBRARY_C_FLAGS> <LINK_FLAGS> <CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>")
 else()
     # Normal rsym build
-    if(NEW_STYLE_BUILD)
-        string(TOUPPER ${CMAKE_BUILD_TYPE} _build_type)
-        get_target_property(RSYM native-rsym IMPORTED_LOCATION_${_build_type})
-    else()
-        get_target_property(RSYM native-rsym IMPORTED_LOCATION_NOCONFIG)
-    endif()
-    
+    get_target_property(RSYM native-rsym IMPORTED_LOCATION_NOCONFIG)
+
     set(CMAKE_C_LINK_EXECUTABLE
         "<CMAKE_C_COMPILER> ${CMAKE_C_FLAGS} <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>"
         "${RSYM} -s ${REACTOS_SOURCE_DIR} <TARGET> <TARGET>")
@@ -248,10 +252,17 @@ else()
         "<CMAKE_C_COMPILER> ${CMAKE_C_FLAGS} <CMAKE_SHARED_LIBRARY_C_FLAGS> <LINK_FLAGS> <CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>")
 endif()
 
-set(CMAKE_EXE_LINKER_FLAGS "-nostdlib -Wl,--enable-auto-image-base,--disable-auto-import,--disable-stdcall-fixup")
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_INIT} -Wl,--disable-stdcall-fixup")
+set(CMAKE_C_CREATE_SHARED_MODULE ${CMAKE_C_CREATE_SHARED_LIBRARY})
+set(CMAKE_CXX_CREATE_SHARED_MODULE ${CMAKE_CXX_CREATE_SHARED_LIBRARY})
+set(CMAKE_RC_CREATE_SHARED_MODULE ${CMAKE_RC_CREATE_SHARED_LIBRARY})
 
-if((NOT CMAKE_C_COMPILER_ID STREQUAL "Clang") AND (NOT CMAKE_BUILD_TYPE STREQUAL "Release"))
+set(CMAKE_EXE_LINKER_FLAGS "-nostdlib -Wl,--enable-auto-image-base,--disable-auto-import,--disable-stdcall-fixup,--gc-sections")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_INIT} -Wl,--disable-stdcall-fixup")
+set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS_INIT} -Wl,--disable-stdcall-fixup")
+
+if((CMAKE_C_COMPILER_ID STREQUAL "GNU") AND
+   (NOT CMAKE_BUILD_TYPE STREQUAL "Release") AND
+   (NOT CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0))
     # FIXME: Set this once Clang toolchain works with it
     set(_compress_debug_sections_flag "-Wa,--compress-debug-sections")
 endif()
@@ -313,8 +324,10 @@ function(set_module_type_toolchain MODULE TYPE)
         if(${TYPE} STREQUAL "wdmdriver")
             add_target_link_flags(${MODULE} "-Wl,--wdmdriver")
         endif()
+        #Disabled due to LD bug: ROSBE-154
+        #add_linker_script(${MODULE} ${REACTOS_SOURCE_DIR}/sdk/cmake/init-section.lds)
     endif()
-    
+
     if(STACK_PROTECTOR)
         target_link_libraries(${MODULE} gcc_ssp)
     endif()
@@ -326,7 +339,8 @@ function(add_delay_importlibs _module)
         message(FATAL_ERROR "Cannot add delay imports to a static library")
     endif()
     foreach(_lib ${ARGN})
-        target_link_libraries(${_module} lib${_lib}_delayed)
+        get_filename_component(_basename "${_lib}" NAME_WE)
+        target_link_libraries(${_module} lib${_basename}_delayed)
     endforeach()
     target_link_libraries(${_module} delayimp)
 endfunction()
@@ -334,6 +348,14 @@ endfunction()
 if(NOT ARCH STREQUAL "i386")
     set(DECO_OPTION "-@")
 endif()
+
+function(fixup_load_config _target)
+    get_target_property(PEFIXUP native-pefixup IMPORTED_LOCATION_NOCONFIG)
+    add_custom_command(TARGET ${_target} POST_BUILD 
+        COMMAND "${PEFIXUP}" 
+                "$<TARGET_FILE:${_target}>"
+        COMMENT "Patching in LOAD_CONFIG")
+endfunction()
 
 function(generate_import_lib _libname _dllname _spec_file)
     # Generate the def for the import lib
@@ -356,8 +378,8 @@ endfunction()
 set(CMAKE_IMPLIB_CREATE_STATIC_LIBRARY "${CMAKE_DLLTOOL} --def <OBJECTS> --kill-at --output-lib=<TARGET>")
 set(CMAKE_IMPLIB_DELAYED_CREATE_STATIC_LIBRARY "${CMAKE_DLLTOOL} --def <OBJECTS> --kill-at --output-delaylib=<TARGET>")
 function(spec2def _dllname _spec_file)
-    
-    cmake_parse_arguments(__spec2def "ADD_IMPORTLIB;NO_PRIVATE_WARNINGS;WITH_RELAY" "" "" ${ARGN})
+
+    cmake_parse_arguments(__spec2def "ADD_IMPORTLIB;NO_PRIVATE_WARNINGS;WITH_RELAY" "VERSION" "" ${ARGN})
 
     # Get library basename
     get_filename_component(_file ${_dllname} NAME_WE)
@@ -371,10 +393,14 @@ function(spec2def _dllname _spec_file)
         set(__with_relay_arg "--with-tracing")
     endif()
 
+    if(__spec2def_VERSION)
+        set(__version_arg "--version=0x${__spec2def_VERSION}")
+    endif()
+
     # Generate exports def and C stubs file for the DLL
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${_file}.def ${CMAKE_CURRENT_BINARY_DIR}/${_file}_stubs.c
-        COMMAND native-spec2def -n=${_dllname} -a=${ARCH2} -d=${CMAKE_CURRENT_BINARY_DIR}/${_file}.def -s=${CMAKE_CURRENT_BINARY_DIR}/${_file}_stubs.c ${__with_relay_arg} ${CMAKE_CURRENT_SOURCE_DIR}/${_spec_file}
+        COMMAND native-spec2def -n=${_dllname} -a=${ARCH2} -d=${CMAKE_CURRENT_BINARY_DIR}/${_file}.def -s=${CMAKE_CURRENT_BINARY_DIR}/${_file}_stubs.c ${__with_relay_arg} ${__version_arg} ${CMAKE_CURRENT_SOURCE_DIR}/${_spec_file}
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${_spec_file} native-spec2def)
 
     if(__spec2def_ADD_IMPORTLIB)
@@ -382,7 +408,7 @@ function(spec2def _dllname _spec_file)
         if(__spec2def_NO_PRIVATE_WARNINGS)
             set(_extraflags --no-private-warnings)
         endif()
-        
+
         generate_import_lib(lib${_file} ${_dllname} ${_spec_file} ${_extraflags})
     endif()
 endfunction()
@@ -432,9 +458,12 @@ endif()
 function(CreateBootSectorTarget _target_name _asm_file _binary_file _base_address)
     set(_object_file ${_binary_file}.o)
 
+    get_defines(_defines)
+    get_includes(_includes)
+
     add_custom_command(
         OUTPUT ${_object_file}
-        COMMAND ${CMAKE_ASM_COMPILER} -x assembler-with-cpp -o ${_object_file} -I${REACTOS_SOURCE_DIR}/sdk/include/asm -I${REACTOS_BINARY_DIR}/sdk/include/asm -I${REACTOS_SOURCE_DIR}/boot/freeldr -D__ASM__ -c ${_asm_file}
+        COMMAND ${CMAKE_ASM_COMPILER} -x assembler-with-cpp -o ${_object_file} -I${REACTOS_SOURCE_DIR}/sdk/include/asm -I${REACTOS_BINARY_DIR}/sdk/include/asm ${_includes} ${_defines} -D__ASM__ -c ${_asm_file}
         DEPENDS ${_asm_file})
 
     add_custom_command(
@@ -446,14 +475,19 @@ function(CreateBootSectorTarget _target_name _asm_file _binary_file _base_addres
     set_source_files_properties(${_object_file} ${_binary_file} PROPERTIES GENERATED TRUE)
 
     add_custom_target(${_target_name} ALL DEPENDS ${_binary_file})
-
 endfunction()
 
 function(allow_warnings __module)
     # We don't allow warnings in trunk, this needs to be reworked. See CORE-6959.
-    #add_target_compile_flags(${__module} "-Wno-error")
+    #target_compile_options(${__module} PRIVATE "-Wno-error")
 endfunction()
 
 macro(add_asm_files _target)
     list(APPEND ${_target} ${ARGN})
 endmacro()
+
+function(add_linker_script _target _linker_script_file)
+    get_filename_component(_file_full_path ${_linker_script_file} ABSOLUTE)
+    add_target_link_flags(${_target} "-Wl,-T,${_file_full_path}")
+    add_target_property(${_target} LINK_DEPENDS ${_file_full_path})
+endfunction()

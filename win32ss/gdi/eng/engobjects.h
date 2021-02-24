@@ -153,7 +153,18 @@ typedef struct _FONTGDI {
   BYTE          OriginalItalic;
   LONG          OriginalWeight;
   BYTE          CharSet;
+
+  /* Precomputed font metrics (supplements FreeType metrics) */
+  LONG          tmHeight;
+  LONG          tmAscent;
+  LONG          tmDescent;
+  LONG          tmInternalLeading;
+  LONG          EmHeight;
+  LONG          Magic;
 } FONTGDI, *PFONTGDI;
+
+/* The initialized 'Magic' value in FONTGDI */
+#define FONTGDI_MAGIC   0x20110311
 
 typedef struct _PATHGDI {
   PATHOBJ PathObj;

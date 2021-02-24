@@ -106,7 +106,13 @@ BOOL WINAPI DeleteItemW (LPCWSTR, BOOL, LPCWSTR, BOOL);
 BOOL WINAPI CopyProfileDirectoryA(LPCSTR, LPCSTR, DWORD);
 BOOL WINAPI CopyProfileDirectoryW(LPCWSTR, LPCWSTR, DWORD);
 PSID WINAPI GetUserSid(HANDLE);
+BOOL WINAPI CopySystemProfile(ULONG);
 /* end private */
+
+#if(WINVER >= 0x0500)
+BOOL WINAPI DeleteProfileA(LPCSTR, LPCSTR, LPCSTR);
+BOOL WINAPI DeleteProfileW(LPCWSTR, LPCWSTR, LPCWSTR);
+#endif
 BOOL WINAPI LoadUserProfileA (HANDLE, LPPROFILEINFOA);
 BOOL WINAPI LoadUserProfileW (HANDLE, LPPROFILEINFOW);
 BOOL WINAPI UnloadUserProfile (HANDLE, HANDLE);
@@ -174,6 +180,9 @@ typedef LPPROFILEINFOW LPPROFILEINFO;
 #define DeleteItem  DeleteItemW
 #define CopyProfileDirectory  CopyProfileDirectoryW
 /* end private */
+#if (WINVER >= 0x0500)
+#define DeleteProfile  DeleteProfileW
+#endif
 #define LoadUserProfile  LoadUserProfileW
 #define GetAllUsersProfileDirectory  GetAllUsersProfileDirectoryW
 #define GetDefaultUserProfileDirectory  GetDefaultUserProfileDirectoryW
@@ -201,6 +210,9 @@ typedef LPPROFILEINFOA LPPROFILEINFO;
 #define DeleteItem  DeleteItemA
 #define CopyProfileDirectory  CopyProfileDirectoryA
 /* end private */
+#if (WINVER >= 0x0500)
+#define DeleteProfile  DeleteProfileA
+#endif
 #define LoadUserProfile  LoadUserProfileA
 #define GetAllUsersProfileDirectory  GetAllUsersProfileDirectoryA
 #define GetDefaultUserProfileDirectory  GetDefaultUserProfileDirectoryA

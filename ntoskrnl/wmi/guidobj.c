@@ -204,6 +204,7 @@ WmipCreateGuidObject(
     }
 
     RtlZeroMemory(GuidObject, sizeof(*GuidObject));
+    KeInitializeEvent(&GuidObject->Event, NotificationEvent, FALSE);
     GuidObject->Guid = *Guid;
 
     *OutGuidObject = GuidObject;
@@ -247,7 +248,7 @@ WmipOpenGuidObject(
     if (!NT_SUCCESS(Status))
     {
         DPRINT1("ObOpenObjectByPointer failed: 0x%lx\n", Status);
-        ObfDereferenceObject(GuidObject);
+        ObDereferenceObject(GuidObject);
         GuidObject = NULL;
     }
 

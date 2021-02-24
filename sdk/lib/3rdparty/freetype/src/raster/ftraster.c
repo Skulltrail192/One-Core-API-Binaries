@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    The FreeType glyph rasterizer (body).                                */
 /*                                                                         */
-/*  Copyright 1996-2017 by                                                 */
+/*  Copyright 1996-2018 by                                                 */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -3208,6 +3208,12 @@
 #ifdef __REACTOS__
     worker = malloc(sizeof(black_TWorker));
     buffer = malloc(FT_MAX(FT_RENDER_POOL_SIZE, 2048));
+    if (!worker || !buffer)
+    {
+      free(worker);
+      free(buffer);
+      return FT_THROW( Out_Of_Memory );
+    }
 #endif
 
     ras.outline = *outline;

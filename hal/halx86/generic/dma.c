@@ -85,6 +85,7 @@
 
 #ifndef _MINIHAL_
 static KEVENT HalpDmaLock;
+static KSPIN_LOCK HalpDmaAdapterListLock;
 static LIST_ENTRY HalpDmaAdapterList;
 static PADAPTER_OBJECT HalpEisaAdapter[8];
 #endif
@@ -133,7 +134,7 @@ static DMA_OPERATIONS HalpDmaOperations = {
 /* FUNCTIONS *****************************************************************/
 
 #ifndef _MINIHAL_
-INIT_SECTION
+INIT_FUNCTION
 VOID
 HalpInitDma(VOID)
 {
@@ -152,8 +153,8 @@ HalpInitDma(VOID)
         * Check if Extended DMA is available. We're just going to do a random
         * read and write.
         */
-        WRITE_PORT_UCHAR((PUCHAR)FIELD_OFFSET(EISA_CONTROL, DmaController2Pages.Channel2), 0x2A);
-        if (READ_PORT_UCHAR((PUCHAR)FIELD_OFFSET(EISA_CONTROL, DmaController2Pages.Channel2)) == 0x2A)
+        WRITE_PORT_UCHAR(UlongToPtr(FIELD_OFFSET(EISA_CONTROL, DmaController2Pages.Channel2)), 0x2A);
+        if (READ_PORT_UCHAR(UlongToPtr(FIELD_OFFSET(EISA_CONTROL, DmaController2Pages.Channel2))) == 0x2A)
         {
             DPRINT1("Machine supports EISA DMA. Bus type: %lu\n", HalpBusType);
             HalpEisaDma = TRUE;
@@ -165,6 +166,7 @@ HalpInitDma(VOID)
      * first map buffers.
      */
     InitializeListHead(&HalpDmaAdapterList);
+    KeInitializeSpinLock(&HalpDmaAdapterListLock);
     KeInitializeEvent(&HalpDmaLock, NotificationEvent, TRUE);
     HalpMasterAdapter = HalpDmaAllocateMasterAdapter();
 
@@ -479,11 +481,11 @@ HalpDmaInitializeEisaAdapter(IN PADAPTER_OBJECT AdapterObject,
 
     if (Controller == 1)
     {
-        AdapterBaseVa = (PVOID)FIELD_OFFSET(EISA_CONTROL, DmaController1);
+        AdapterBaseVa = UlongToPtr(FIELD_OFFSET(EISA_CONTROL, DmaController1));
     }
     else
     {
-        AdapterBaseVa = (PVOID)FIELD_OFFSET(EISA_CONTROL, DmaController2);
+        AdapterBaseVa = UlongToPtr(FIELD_OFFSET(EISA_CONTROL, DmaController2));
     }
 
     AdapterObject->AdapterNumber = Controller;
@@ -517,12 +519,12 @@ HalpDmaInitializeEisaAdapter(IN PADAPTER_OBJECT AdapterObject,
 
         if (Controller == 1)
         {
-            WRITE_PORT_UCHAR((PUCHAR)FIELD_OFFSET(EISA_CONTROL, DmaExtendedMode1),
+            WRITE_PORT_UCHAR(UlongToPtr(FIELD_OFFSET(EISA_CONTROL, DmaExtendedMode1)),
                             ExtendedMode.Byte);
         }
         else
         {
-            WRITE_PORT_UCHAR((PUCHAR)FIELD_OFFSET(EISA_CONTROL, DmaExtendedMode2),
+            WRITE_PORT_UCHAR(UlongToPtr(FIELD_OFFSET(EISA_CONTROL, DmaExtendedMode2)),
                             ExtendedMode.Byte);
         }
     }
@@ -621,6 +623,7 @@ HalGetAdapter(IN PDEVICE_DESCRIPTION DeviceDescription,
     BOOLEAN EisaAdapter;
     ULONG MapRegisters;
     ULONG MaximumLength;
+    KIRQL OldIrql;
 
     /* Validate parameters in device description */
     if (DeviceDescription->Version > DEVICE_DESCRIPTION_VERSION2) return NULL;
@@ -688,8 +691,7 @@ HalGetAdapter(IN PDEVICE_DESCRIPTION DeviceDescription,
     }
 
     /*
-     * Acquire the DMA lock that is used to protect adapter lists and
-     * EISA adapter array.
+     * Acquire the DMA lock that is used to protect the EISA adapter array.
      */
     KeWaitForSingleObject(&HalpDmaLock, Executive, KernelMode, FALSE, NULL);
 
@@ -745,13 +747,19 @@ HalGetAdapter(IN PDEVICE_DESCRIPTION DeviceDescription,
         }
     }
 
-    if (!EisaAdapter) InsertTailList(&HalpDmaAdapterList, &AdapterObject->AdapterList);
-
     /*
-     * Release the DMA lock. HalpDmaAdapterList and HalpEisaAdapter will
-     * no longer be touched, so we don't need it.
+     * Release the DMA lock. HalpEisaAdapter will no longer be touched,
+     * so we don't need it.
      */
     KeSetEvent(&HalpDmaLock, 0, 0);
+
+    if (!EisaAdapter)
+    {
+        /* If it's not one of the static adapters, add it to the list */
+        KeAcquireSpinLock(&HalpDmaAdapterListLock, &OldIrql);
+        InsertTailList(&HalpDmaAdapterList, &AdapterObject->AdapterList);
+        KeReleaseSpinLock(&HalpDmaAdapterListLock, OldIrql);
+    }
 
     /*
      * Setup the values in the adapter object that are common for all
@@ -818,11 +826,12 @@ VOID
 NTAPI
 HalPutDmaAdapter(IN PADAPTER_OBJECT AdapterObject)
 {
+    KIRQL OldIrql;
     if (AdapterObject->ChannelNumber == 0xFF)
     {
-        KeWaitForSingleObject(&HalpDmaLock, Executive, KernelMode, FALSE, NULL);
+        KeAcquireSpinLock(&HalpDmaAdapterListLock, &OldIrql);
         RemoveEntryList(&AdapterObject->AdapterList);
-        KeSetEvent(&HalpDmaLock, 0, 0);
+        KeReleaseSpinLock(&HalpDmaAdapterListLock, OldIrql);
     }
 
     ObDereferenceObject(AdapterObject);

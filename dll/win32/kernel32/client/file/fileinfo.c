@@ -325,70 +325,90 @@ SetFilePointer(HANDLE hFile,
 BOOL
 WINAPI
 SetFilePointerEx(HANDLE hFile,
-		 LARGE_INTEGER liDistanceToMove,
-		 PLARGE_INTEGER lpNewFilePointer,
-		 DWORD dwMoveMethod)
+                 LARGE_INTEGER liDistanceToMove,
+                 PLARGE_INTEGER lpNewFilePointer,
+                 DWORD dwMoveMethod)
 {
-   FILE_POSITION_INFORMATION FilePosition;
-   FILE_STANDARD_INFORMATION FileStandard;
-   NTSTATUS errCode;
-   IO_STATUS_BLOCK IoStatusBlock;
+    NTSTATUS Status;
+    IO_STATUS_BLOCK IoStatusBlock;
+    FILE_POSITION_INFORMATION FilePosition;
+    FILE_STANDARD_INFORMATION FileStandard;
 
-   if(IsConsoleHandle(hFile))
-   {
-     SetLastError(ERROR_INVALID_HANDLE);
-     return FALSE;
-   }
+    if (IsConsoleHandle(hFile))
+    {
+        BaseSetLastNTError(STATUS_INVALID_HANDLE);
+        return FALSE;
+    }
 
-   switch(dwMoveMethod)
-   {
-     case FILE_CURRENT:
-	NtQueryInformationFile(hFile,
-			       &IoStatusBlock,
-			       &FilePosition,
-			       sizeof(FILE_POSITION_INFORMATION),
-			       FilePositionInformation);
-	FilePosition.CurrentByteOffset.QuadPart += liDistanceToMove.QuadPart;
-	break;
-     case FILE_END:
-	NtQueryInformationFile(hFile,
-                               &IoStatusBlock,
-                               &FileStandard,
-                               sizeof(FILE_STANDARD_INFORMATION),
-                               FileStandardInformation);
-        FilePosition.CurrentByteOffset.QuadPart =
-                  FileStandard.EndOfFile.QuadPart + liDistanceToMove.QuadPart;
-	break;
-     case FILE_BEGIN:
-        FilePosition.CurrentByteOffset.QuadPart = liDistanceToMove.QuadPart;
-	break;
-     default:
-        SetLastError(ERROR_INVALID_PARAMETER);
-	return FALSE;
-   }
+    switch (dwMoveMethod)
+    {
+        case FILE_CURRENT:
+        {
+            Status = NtQueryInformationFile(hFile, &IoStatusBlock,
+			                                &FilePosition,
+			                                sizeof(FILE_POSITION_INFORMATION),
+			                                FilePositionInformation);
+            if (!NT_SUCCESS(Status))
+            {
+                BaseSetLastNTError(Status);
+                return FALSE;
+            }
 
-   if(FilePosition.CurrentByteOffset.QuadPart < 0)
-   {
-     SetLastError(ERROR_NEGATIVE_SEEK);
-     return FALSE;
-   }
+	        FilePosition.CurrentByteOffset.QuadPart += liDistanceToMove.QuadPart;
+            break;
+        }
 
-   errCode = NtSetInformationFile(hFile,
-				  &IoStatusBlock,
-				  &FilePosition,
-				  sizeof(FILE_POSITION_INFORMATION),
-				  FilePositionInformation);
-   if (!NT_SUCCESS(errCode))
-     {
-	BaseSetLastNTError(errCode);
-	return FALSE;
-     }
+        case FILE_END:
+        {
+            Status = NtQueryInformationFile(hFile, &IoStatusBlock,
+                                            &FileStandard,
+                                            sizeof(FILE_STANDARD_INFORMATION),
+                                            FileStandardInformation);
+            if (!NT_SUCCESS(Status))
+            {
+                BaseSetLastNTError(Status);
+                return FALSE;
+            }
 
-   if (lpNewFilePointer)
-     {
+            FilePosition.CurrentByteOffset.QuadPart = FileStandard.EndOfFile.QuadPart +
+                                                      liDistanceToMove.QuadPart;
+            break;
+        }
+
+        case FILE_BEGIN:
+        {
+            FilePosition.CurrentByteOffset.QuadPart = liDistanceToMove.QuadPart;
+            break;
+        }
+
+        default:
+        {
+            SetLastError(ERROR_INVALID_PARAMETER);
+            return FALSE;
+        }
+    }
+
+    if (FilePosition.CurrentByteOffset.QuadPart < 0)
+    {
+        SetLastError(ERROR_NEGATIVE_SEEK);
+        return FALSE;
+    }
+
+    Status = NtSetInformationFile(hFile, &IoStatusBlock, &FilePosition,
+                                  sizeof(FILE_POSITION_INFORMATION),
+                                  FilePositionInformation);
+    if (!NT_SUCCESS(Status))
+    {
+        BaseSetLastNTError(Status);
+        return FALSE;
+    }
+
+    if (lpNewFilePointer != NULL)
+    {
        *lpNewFilePointer = FilePosition.CurrentByteOffset;
-     }
-   return TRUE;
+    }
+
+    return TRUE;
 }
 
 
@@ -765,33 +785,55 @@ GetFileAttributesExA(LPCSTR lpFileName,
 DWORD WINAPI
 GetFileAttributesA(LPCSTR lpFileName)
 {
-   WIN32_FILE_ATTRIBUTE_DATA FileAttributeData;
    PWSTR FileNameW;
-   BOOL ret;
 
    if (!lpFileName || !(FileNameW = FilenameA2W(lpFileName, FALSE)))
       return INVALID_FILE_ATTRIBUTES;
 
-   ret = GetFileAttributesExW(FileNameW, GetFileExInfoStandard, &FileAttributeData);
-
-   return ret ? FileAttributeData.dwFileAttributes : INVALID_FILE_ATTRIBUTES;
+   return GetFileAttributesW(FileNameW);
 }
 
 
 /*
  * @implemented
  */
-DWORD WINAPI
+DWORD
+WINAPI
 GetFileAttributesW(LPCWSTR lpFileName)
 {
-  WIN32_FILE_ATTRIBUTE_DATA FileAttributeData;
-  BOOL Result;
+    NTSTATUS Status;
+    UNICODE_STRING FileName;
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    FILE_BASIC_INFORMATION FileInformation;
 
-  TRACE ("GetFileAttributeW(%S) called\n", lpFileName);
+    /* Get the NT path name */
+    if (!RtlDosPathNameToNtPathName_U(lpFileName, &FileName, NULL, NULL))
+    {
+        SetLastError(ERROR_PATH_NOT_FOUND);
+        return INVALID_FILE_ATTRIBUTES;
+    }
 
-  Result = GetFileAttributesExW(lpFileName, GetFileExInfoStandard, &FileAttributeData);
+    /* Prepare for querying attributes */
+    InitializeObjectAttributes(&ObjectAttributes, &FileName,
+                               OBJ_CASE_INSENSITIVE,
+                               NULL, NULL);
+    /* Simply query attributes */
+    Status = NtQueryAttributesFile(&ObjectAttributes, &FileInformation);
+    if (!NT_SUCCESS(Status))
+    {
+        /* It failed? Is it a DOS device? */
+        if (RtlIsDosDeviceName_U(lpFileName))
+        {
+            return FILE_ATTRIBUTE_ARCHIVE;
+        }
 
-  return Result ? FileAttributeData.dwFileAttributes : INVALID_FILE_ATTRIBUTES;
+        /* Set the error otherwise */
+        BaseSetLastNTError(Status);
+        return INVALID_FILE_ATTRIBUTES;
+    }
+
+    /* Return the file attributes */
+    return FileInformation.FileAttributes;
 }
 
 
@@ -897,81 +939,104 @@ SetFileAttributesA(
 /*
  * @implemented
  */
-BOOL WINAPI
+BOOL
+WINAPI
 SetFileAttributesW(LPCWSTR lpFileName,
-		   DWORD dwFileAttributes)
+                   DWORD dwFileAttributes)
 {
-  FILE_BASIC_INFORMATION FileInformation;
-  OBJECT_ATTRIBUTES ObjectAttributes;
-  IO_STATUS_BLOCK IoStatusBlock;
-  UNICODE_STRING FileName;
-  HANDLE FileHandle;
-  NTSTATUS Status;
+    NTSTATUS Status;
+    PWSTR PathUBuffer;
+    HANDLE FileHandle;
+    UNICODE_STRING NtPathU;
+    IO_STATUS_BLOCK IoStatusBlock;
+    RTL_RELATIVE_NAME_U RelativeName;
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    FILE_BASIC_INFORMATION FileInformation;
 
-  TRACE ("SetFileAttributeW(%S, 0x%lx) called\n", lpFileName, dwFileAttributes);
-
-  /* Validate and translate the filename */
-  if (!RtlDosPathNameToNtPathName_U (lpFileName,
-				     &FileName,
-				     NULL,
-				     NULL))
+    /* Get relative name */
+    if (!RtlDosPathNameToRelativeNtPathName_U(lpFileName, &NtPathU, NULL, &RelativeName))
     {
-      WARN ("Invalid path\n");
-      SetLastError (ERROR_BAD_PATHNAME);
-      return FALSE;
-    }
-  TRACE ("FileName: \'%wZ\'\n", &FileName);
-
-  /* build the object attributes */
-  InitializeObjectAttributes (&ObjectAttributes,
-			      &FileName,
-			      OBJ_CASE_INSENSITIVE,
-			      NULL,
-			      NULL);
-
-  /* Open the file */
-  Status = NtOpenFile (&FileHandle,
-		       SYNCHRONIZE | FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES,
-		       &ObjectAttributes,
-		       &IoStatusBlock,
-		       FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-		       FILE_SYNCHRONOUS_IO_NONALERT);
-  RtlFreeUnicodeString (&FileName);
-  if (!NT_SUCCESS (Status))
-    {
-      WARN ("NtOpenFile() failed (Status %lx)\n", Status);
-      BaseSetLastNTError (Status);
-      return FALSE;
+        SetLastError(ERROR_PATH_NOT_FOUND);
+        return FALSE;
     }
 
-  Status = NtQueryInformationFile(FileHandle,
-				  &IoStatusBlock,
-				  &FileInformation,
-				  sizeof(FILE_BASIC_INFORMATION),
-				  FileBasicInformation);
-  if (!NT_SUCCESS(Status))
+    /* Save buffer to allow later freeing */
+    PathUBuffer = NtPathU.Buffer;
+
+    /* If we have relative name (and root dir), use them instead */
+    if (RelativeName.RelativeName.Length != 0)
     {
-      WARN ("SetFileAttributes NtQueryInformationFile failed with status 0x%08x\n", Status);
-      NtClose (FileHandle);
-      BaseSetLastNTError (Status);
-      return FALSE;
+        NtPathU.Length = RelativeName.RelativeName.Length;
+        NtPathU.MaximumLength = RelativeName.RelativeName.MaximumLength;
+        NtPathU.Buffer = RelativeName.RelativeName.Buffer;
+    }
+    else
+    {
+        RelativeName.ContainingDirectory = NULL;
     }
 
-  FileInformation.FileAttributes = dwFileAttributes;
-  Status = NtSetInformationFile(FileHandle,
-				&IoStatusBlock,
-				&FileInformation,
-				sizeof(FILE_BASIC_INFORMATION),
-				FileBasicInformation);
-  NtClose (FileHandle);
-  if (!NT_SUCCESS(Status))
+    /* Prepare the object attribute for opening the file */
+    InitializeObjectAttributes(&ObjectAttributes, &NtPathU,
+                                OBJ_CASE_INSENSITIVE,
+                                RelativeName.ContainingDirectory, NULL);
+
+    /* Attempt to open the file, while supporting reparse point */
+    Status = NtOpenFile(&FileHandle, FILE_WRITE_ATTRIBUTES | SYNCHRONIZE,
+                        &ObjectAttributes, &IoStatusBlock,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                        FILE_OPEN_REPARSE_POINT | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT);
+    /* If opening failed, check whether it was because of reparse point support */
+    if (!NT_SUCCESS(Status))
     {
-      WARN ("SetFileAttributes NtSetInformationFile failed with status 0x%08x\n", Status);
-      BaseSetLastNTError (Status);
-      return FALSE;
+        /* Nope, just quit */
+        if (Status != STATUS_INVALID_PARAMETER)
+        {
+            RtlReleaseRelativeName(&RelativeName);
+            RtlFreeHeap(RtlGetProcessHeap(), 0, PathUBuffer);
+            BaseSetLastNTError(Status);
+
+            return FALSE;
+        }
+
+        /* Yes, retry without */
+        Status = NtOpenFile(&FileHandle, FILE_WRITE_ATTRIBUTES | SYNCHRONIZE,
+                            &ObjectAttributes, &IoStatusBlock,
+                            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                            FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT);
+        if (!NT_SUCCESS(Status))
+        {
+            RtlReleaseRelativeName(&RelativeName);
+            RtlFreeHeap(RtlGetProcessHeap(), 0, PathUBuffer);
+            BaseSetLastNTError(Status);
+
+            return FALSE;
+        }
     }
 
-  return TRUE;
+    /* We don't need strings anylonger */
+    RtlReleaseRelativeName(&RelativeName);
+    RtlFreeHeap(RtlGetProcessHeap(), 0, PathUBuffer);
+
+    /* Zero our structure, we'll only set file attributes */
+    ZeroMemory(&FileInformation, sizeof(FileInformation));
+    /* Set the attributes, filtering only allowed attributes, and forcing normal attribute */
+    FileInformation.FileAttributes = (dwFileAttributes & FILE_ATTRIBUTE_VALID_SET_FLAGS) | FILE_ATTRIBUTE_NORMAL;
+
+    /* Finally, set the attributes */
+    Status = NtSetInformationFile(FileHandle, &IoStatusBlock, &FileInformation,
+                                  sizeof(FILE_BASIC_INFORMATION), FileBasicInformation);
+    /* Close the file */
+    NtClose(FileHandle);
+
+    /* If it failed, set the error and fail */
+    if (!NT_SUCCESS(Status))
+    {
+        BaseSetLastNTError(Status);
+
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 /*

@@ -46,11 +46,18 @@
 #define IOCTL_DELETE_IP_ADDRESS \
     _TCP_CTL_CODE(16, METHOD_BUFFERED, FILE_WRITE_ACCESS)
 
+#define IOCTL_ICMP_ECHO_REQUEST \
+    _TCP_CTL_CODE(0, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
 #define IF_MIB_STATS_ID                 1
 #define IP_MIB_STATS_ID                 1
 #define IP_MIB_ARPTABLE_ENTRY_ID        0x101
 #define IP_MIB_ADDRTABLE_ENTRY_ID       0x102
 #define IP_INTFC_INFO_ID                0x103
+/* Non public TOIID used to query modules info */
+#ifdef __REACTOS__
+#define IP_SPECIFIC_MODULE_ENTRY_ID     0x110
+#endif
 #define MAX_PHYSADDR_SIZE               8
 
 /* Address Object Options */

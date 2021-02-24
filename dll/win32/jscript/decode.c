@@ -18,6 +18,10 @@
 
 #include "jscript.h"
 
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(jscript);
+
 /*
  * This file implements algorithm for decoding scripts encoded by
  * screnc.exe. The 'secret' algorithm that's well documented here:
@@ -87,7 +91,7 @@ static BOOL decode_dword(const WCHAR *p, DWORD *ret)
     DWORD i;
 
     for(i=0; i<6; i++) {
-        if(p[i] >= sizeof(digits)/sizeof(*digits) || digits[p[i]] == 0xff)
+        if(p[i] >= ARRAY_SIZE(digits) || digits[p[i]] == 0xff)
             return FALSE;
     }
     if(p[6] != '=' || p[7] != '=')
@@ -113,10 +117,10 @@ HRESULT decode_source(WCHAR *code)
     static const WCHAR decode_endW[] = {'^','#','~','@'};
 
     while(*src) {
-        if(!strncmpW(src, decode_beginW, sizeof(decode_beginW)/sizeof(*decode_beginW))) {
+        if(!wcsncmp(src, decode_beginW, ARRAY_SIZE(decode_beginW))) {
             DWORD len, i, j=0, csum, s=0;
 
-            src += sizeof(decode_beginW)/sizeof(*decode_beginW);
+            src += ARRAY_SIZE(decode_beginW);
 
             if(!decode_dword(src, &len))
                 return JS_E_INVALID_CHAR;
@@ -161,9 +165,9 @@ HRESULT decode_source(WCHAR *code)
                 return JS_E_INVALID_CHAR;
             src += 8;
 
-            if(strncmpW(src, decode_endW, sizeof(decode_endW)/sizeof(*decode_endW)))
+            if(wcsncmp(src, decode_endW, ARRAY_SIZE(decode_endW)))
                 return JS_E_INVALID_CHAR;
-            src += sizeof(decode_endW)/sizeof(*decode_endW);
+            src += ARRAY_SIZE(decode_endW);
         }else {
             *dst++ = *src++;
         }

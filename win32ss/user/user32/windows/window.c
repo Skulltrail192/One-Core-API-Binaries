@@ -3,16 +3,15 @@
  * PROJECT:         ReactOS user32.dll
  * FILE:            win32ss/user/user32/windows/window.c
  * PURPOSE:         Window management
- * PROGRAMMER:      Casper S. Hornstrup (chorns@users.sourceforge.net)
+ * PROGRAMMERS:     Casper S. Hornstrup (chorns@users.sourceforge.net)
+ *                  Katayama Hirofumi MZ (katayama.hirofumi.mz@gmail.com)
  * UPDATE HISTORY:
  *      06-06-2001  CSH  Created
  */
 
-/* INCLUDES ******************************************************************/
 #define DEBUG
 #include <user32.h>
 
-#include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(user32);
 
 void MDI_CalcDefaultChildPos( HWND hwndClient, INT total, LPPOINT lpPos, INT delta, UINT *id );
@@ -80,9 +79,9 @@ BringWindowToTop(HWND hWnd)
 
 
 VOID WINAPI
-SwitchToThisWindow(HWND hwnd, BOOL fUnknown)
+SwitchToThisWindow(HWND hwnd, BOOL fAltTab)
 {
-    ShowWindow(hwnd, SW_SHOW);
+    NtUserxSwitchToThisWindow(hwnd, fAltTab);
 }
 
 
@@ -115,9 +114,9 @@ ChildWindowFromPointEx(HWND hwndParent,
 BOOL WINAPI
 CloseWindow(HWND hWnd)
 {
-    SendMessageA(hWnd, WM_SYSCOMMAND, SC_CLOSE, 0);
-
-    return HandleToUlong(hWnd);
+    /* NOTE: CloseWindow does minimizes, and doesn't close. */
+    SetActiveWindow(hWnd);
+    return ShowWindow(hWnd, SW_SHOWMINIMIZED);
 }
 
 FORCEINLINE
@@ -149,6 +148,34 @@ RtlFreeLargeString(
     }
 }
 
+DWORD
+FASTCALL
+RtlGetExpWinVer( HMODULE hModule )
+{
+    DWORD dwMajorVersion = 3;  // Set default to Windows 3.10.
+    DWORD dwMinorVersion = 10;
+    PIMAGE_NT_HEADERS pinth;
+
+    if ( hModule && !((ULONG_PTR)hModule >> 16))
+    {
+        pinth = RtlImageNtHeader( hModule );
+        if ( pinth )
+        {
+            dwMajorVersion = pinth->OptionalHeader.MajorSubsystemVersion;
+
+            if ( dwMajorVersion == 1 )
+            {
+                dwMajorVersion = 3;
+            }
+            else
+            {
+                dwMinorVersion = pinth->OptionalHeader.MinorSubsystemVersion;
+            }
+        }
+    }
+    return MAKELONG(MAKEWORD(dwMinorVersion, dwMajorVersion), 0);
+}
+
 HWND WINAPI
 User32CreateWindowEx(DWORD dwExStyle,
                      LPCSTR lpClassName,
@@ -178,10 +205,14 @@ User32CreateWindowEx(DWORD dwExStyle,
     LPCWSTR lpszClsVersion;
     LPCWSTR lpLibFileName = NULL;
     HANDLE pCtx = NULL;
+    DWORD dwFlagsVer;
 
 #if 0
     DbgPrint("[window] User32CreateWindowEx style %d, exstyle %d, parent %d\n", dwStyle, dwExStyle, hWndParent);
 #endif
+
+    dwFlagsVer = RtlGetExpWinVer( hInstance ? hInstance : GetModuleHandleW(NULL) );
+    TRACE("Module Version %x\n",dwFlagsVer);
 
     if (!RegisterDefaultClasses)
     {
@@ -300,8 +331,8 @@ User32CreateWindowEx(DWORD dwExStyle,
                                       hMenu,
                                       hInstance,
                                       lpParam,
-                                      dwFlags,
-                                      NULL);
+                                      dwFlagsVer,
+                                      pCtx );
         if (Handle) break;
         if (!lpLibFileName) break;
         if (!ClassFound)
@@ -382,7 +413,7 @@ CreateWindowExA(DWORD dwExStyle,
         if (pWndParent->fnid != FNID_MDICLIENT) // wine uses WIN_ISMDICLIENT
         {
            WARN("WS_EX_MDICHILD, but parent %p is not MDIClient\n", hWndParent);
-           return NULL;
+           goto skip_mdi;
         }
 
         /* lpParams of WM_[NC]CREATE is different for MDI children.
@@ -448,6 +479,7 @@ CreateWindowExA(DWORD dwExStyle,
         }
     }
 
+skip_mdi:
     hwnd = User32CreateWindowEx(dwExStyle,
                                 lpClassName,
                                 lpWindowName,
@@ -507,7 +539,7 @@ CreateWindowExW(DWORD dwExStyle,
         if (pWndParent->fnid != FNID_MDICLIENT)
         {
            WARN("WS_EX_MDICHILD, but parent %p is not MDIClient\n", hWndParent);
-           return NULL;
+           goto skip_mdi;
         }
 
         /* lpParams of WM_[NC]CREATE is different for MDI children.
@@ -573,6 +605,7 @@ CreateWindowExW(DWORD dwExStyle,
         }
     }
 
+skip_mdi:
     hwnd = User32CreateWindowEx(dwExStyle,
                                 (LPCSTR)lpClassName,
                                 (LPCSTR)lpWindowName,
@@ -1308,20 +1341,22 @@ GetWindowTextA(HWND hWnd, LPSTR lpString, int nMaxCount)
 
     lpString[0] = '\0';
 
-    if (!TestWindowProcess( Wnd))
+    if (!TestWindowProcess(Wnd))
     {
-       _SEH2_TRY
-       {
-           Length = DefWindowProcA(hWnd, WM_GETTEXT, nMaxCount, (LPARAM)lpString);
-       }
-       _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
-       {
-           Length = 0;
-       }
-       _SEH2_END;
+        _SEH2_TRY
+        {
+            Length = DefWindowProcA(hWnd, WM_GETTEXT, nMaxCount, (LPARAM)lpString);
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+        {
+            Length = 0;
+        }
+        _SEH2_END;
     }
     else
-       Length = SendMessageA(hWnd, WM_GETTEXT, nMaxCount, (LPARAM)lpString);
+    {
+        Length = SendMessageA(hWnd, WM_GETTEXT, nMaxCount, (LPARAM)lpString);
+    }
     //ERR("GWTA Len %d : %s\n",Length,lpString);
     return Length;
 }
@@ -1332,7 +1367,20 @@ GetWindowTextA(HWND hWnd, LPSTR lpString, int nMaxCount)
 int WINAPI
 GetWindowTextLengthA(HWND hWnd)
 {
-    return(SendMessageA(hWnd, WM_GETTEXTLENGTH, 0, 0));
+    PWND Wnd;
+
+    Wnd = ValidateHwnd(hWnd);
+    if (!Wnd)
+        return 0;
+
+    if (!TestWindowProcess(Wnd))
+    {
+        return DefWindowProcA(hWnd, WM_GETTEXTLENGTH, 0, 0);
+    }
+    else
+    {
+        return SendMessageA(hWnd, WM_GETTEXTLENGTH, 0, 0);
+    }
 }
 
 /*
@@ -1341,7 +1389,20 @@ GetWindowTextLengthA(HWND hWnd)
 int WINAPI
 GetWindowTextLengthW(HWND hWnd)
 {
-    return(SendMessageW(hWnd, WM_GETTEXTLENGTH, 0, 0));
+    PWND Wnd;
+
+    Wnd = ValidateHwnd(hWnd);
+    if (!Wnd)
+        return 0;
+
+    if (!TestWindowProcess(Wnd))
+    {
+        return DefWindowProcW(hWnd, WM_GETTEXTLENGTH, 0, 0);
+    }
+    else
+    {
+        return SendMessageW(hWnd, WM_GETTEXTLENGTH, 0, 0);
+    }
 }
 
 /*
@@ -1362,20 +1423,22 @@ GetWindowTextW(HWND hWnd, LPWSTR lpString, int nMaxCount)
 
     lpString[0] = L'\0';
 
-    if (!TestWindowProcess( Wnd))
+    if (!TestWindowProcess(Wnd))
     {
-       _SEH2_TRY
-       {
-           Length = DefWindowProcW(hWnd, WM_GETTEXT, nMaxCount, (LPARAM)lpString);
-       }
-       _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
-       {
-           Length = 0;
-       }
-       _SEH2_END;
+        _SEH2_TRY
+        {
+            Length = DefWindowProcW(hWnd, WM_GETTEXT, nMaxCount, (LPARAM)lpString);
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+        {
+            Length = 0;
+        }
+        _SEH2_END;
     }
     else
-       Length = SendMessageW(hWnd, WM_GETTEXT, nMaxCount, (LPARAM)lpString);
+    {
+        Length = SendMessageW(hWnd, WM_GETTEXT, nMaxCount, (LPARAM)lpString);
+    }
     //ERR("GWTW Len %d : %S\n",Length,lpString);
     return Length;
 }
@@ -1801,7 +1864,7 @@ int WINAPI
 InternalGetWindowText(HWND hWnd, LPWSTR lpString, int nMaxCount)
 {
     INT Ret = NtUserInternalGetWindowText(hWnd, lpString, nMaxCount);
-    if (Ret == 0)
+    if (Ret == 0 && lpString)
         *lpString = L'\0';
     return Ret;
 }
@@ -1812,6 +1875,21 @@ InternalGetWindowText(HWND hWnd, LPWSTR lpString, int nMaxCount)
 BOOL WINAPI
 IsHungAppWindow(HWND hwnd)
 {
+    PWND Window;
+    UNICODE_STRING ClassName;
+    WCHAR szClass[16];
+    static const UNICODE_STRING GhostClass = RTL_CONSTANT_STRING(L"Ghost");
+
+    /* Ghost is a hung window */
+    RtlInitEmptyUnicodeString(&ClassName, szClass, sizeof(szClass));
+    Window = ValidateHwnd(hwnd);
+    if (Window && Window->fnid == FNID_GHOST &&
+        NtUserGetClassName(hwnd, FALSE, &ClassName) &&
+        RtlEqualUnicodeString(&ClassName, &GhostClass, TRUE))
+    {
+        return TRUE;
+    }
+
     return (NtUserQueryWindow(hwnd, QUERY_WINDOW_ISHUNG) != 0);
 }
 

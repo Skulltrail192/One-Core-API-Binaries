@@ -4,7 +4,7 @@
 /*                                                                         */
 /*    Auto-fitter module implementation (body).                            */
 /*                                                                         */
-/*  Copyright 2003-2017 by                                                 */
+/*  Copyright 2003-2018 by                                                 */
 /*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -56,7 +56,7 @@
 
 #include FT_INTERNAL_OBJECTS_H
 #include FT_INTERNAL_DEBUG_H
-#include FT_AUTOHINTER_H
+#include FT_DRIVER_H
 #include FT_SERVICE_PROPERTIES_H
 
 
@@ -548,9 +548,15 @@
     return error;
 
 #else /* !FT_DEBUG_AUTOFIT */
+
 #ifdef __REACTOS__
     AF_GlyphHintsRec *hints = malloc(sizeof(AF_GlyphHintsRec));
     AF_LoaderRec *loader = malloc(sizeof(AF_LoaderRec));
+    if (!hints || !loader)
+    {
+        error =  FT_Err_Out_Of_Memory;
+        goto Exit;
+    }
 #else
     AF_GlyphHintsRec  hints[1];
     AF_LoaderRec      loader[1];
@@ -569,6 +575,7 @@
     af_glyph_hints_done( hints );
 
 #ifdef __REACTOS__
+Exit:
     free(hints);
     free(loader);
 #endif

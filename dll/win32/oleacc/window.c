@@ -16,7 +16,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+
 #include "oleacc_private.h"
+
+#include "wine/debug.h"
+#include "wine/heap.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(oleacc);
 
 typedef struct {
     IAccessible IAccessible_iface;

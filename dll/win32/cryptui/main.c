@@ -16,39 +16,35 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
-
-#include <wine/config.h>
-
 #include <stdarg.h>
+#include <wchar.h>
 
 #define COBJMACROS
 #define NONAMELESSUNION
 
-#include <windef.h>
-#include <winbase.h>
-//#include "winnls.h"
-#include <winuser.h>
-#include <softpub.h>
-#include <wingdi.h>
-#include <richedit.h>
-#include <ole2.h>
-#include <richole.h>
-#include <commdlg.h>
-#include <commctrl.h>
-#include <cryptuiapi.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "winuser.h"
+#include "softpub.h"
+#include "wingdi.h"
+#include "richedit.h"
+#include "ole2.h"
+#include "richole.h"
+#include "commdlg.h"
+#include "commctrl.h"
+#include "cryptuiapi.h"
 #include "cryptuires.h"
-//#include "urlmon.h"
-#include <hlink.h>
-#include <winreg.h>
-#include <wine/debug.h>
-#include <wine/unicode.h>
+#include "urlmon.h"
+#include "hlink.h"
+#include "winreg.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(cryptui);
 
 static HINSTANCE hInstance;
+
+static const WCHAR empty[] = {0};
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
@@ -66,6 +62,14 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     return TRUE;
 }
 
+static WCHAR *strdupAtoW( const char *str )
+{
+    DWORD len = MultiByteToWideChar( CP_ACP, 0, str, -1, NULL, 0 );
+    WCHAR *ret = HeapAlloc( GetProcessHeap(), 0, len * sizeof(WCHAR) );
+    if (ret) MultiByteToWideChar( CP_ACP, 0, str, -1, ret, len );
+    return ret;
+}
+
 #define MAX_STRING_LEN 512
 
 static void add_cert_columns(HWND hwnd)
@@ -77,22 +81,18 @@ static void add_cert_columns(HWND hwnd)
 
     SendMessageW(lv, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT);
     GetWindowRect(lv, &rc);
-    LoadStringW(hInstance, IDS_SUBJECT_COLUMN, buf,
-     sizeof(buf) / sizeof(buf[0]));
+    LoadStringW(hInstance, IDS_SUBJECT_COLUMN, buf, ARRAY_SIZE(buf));
     column.mask = LVCF_WIDTH | LVCF_TEXT;
     column.cx = (rc.right - rc.left) * 29 / 100 - 2;
     column.pszText = buf;
     SendMessageW(lv, LVM_INSERTCOLUMNW, 0, (LPARAM)&column);
-    LoadStringW(hInstance, IDS_ISSUER_COLUMN, buf,
-     sizeof(buf) / sizeof(buf[0]));
+    LoadStringW(hInstance, IDS_ISSUER_COLUMN, buf, ARRAY_SIZE(buf));
     SendMessageW(lv, LVM_INSERTCOLUMNW, 1, (LPARAM)&column);
     column.cx = (rc.right - rc.left) * 16 / 100 - 2;
-    LoadStringW(hInstance, IDS_EXPIRATION_COLUMN, buf,
-     sizeof(buf) / sizeof(buf[0]));
+    LoadStringW(hInstance, IDS_EXPIRATION_COLUMN, buf, ARRAY_SIZE(buf));
     SendMessageW(lv, LVM_INSERTCOLUMNW, 2, (LPARAM)&column);
     column.cx = (rc.right - rc.left) * 23 / 100 - 1;
-    LoadStringW(hInstance, IDS_FRIENDLY_NAME_COLUMN, buf,
-     sizeof(buf) / sizeof(buf[0]));
+    LoadStringW(hInstance, IDS_FRIENDLY_NAME_COLUMN, buf, ARRAY_SIZE(buf));
     SendMessageW(lv, LVM_INSERTCOLUMNW, 3, (LPARAM)&column);
 }
 
@@ -147,11 +147,9 @@ static void add_cert_to_view(HWND lv, PCCERT_CONTEXT cert, DWORD *allocatedLen,
         SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
     }
 
-    GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, LOCALE_SSHORTDATE, dateFmt,
-     sizeof(dateFmt) / sizeof(dateFmt[0]));
+    GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, LOCALE_SSHORTDATE, dateFmt, ARRAY_SIZE(dateFmt));
     FileTimeToSystemTime(&cert->pCertInfo->NotAfter, &sysTime);
-    GetDateFormatW(LOCALE_SYSTEM_DEFAULT, 0, &sysTime, dateFmt, date,
-     sizeof(date) / sizeof(date[0]));
+    GetDateFormatW(LOCALE_SYSTEM_DEFAULT, 0, &sysTime, dateFmt, date, ARRAY_SIZE(date));
     item.pszText = date;
     item.iSubItem = 2;
     SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
@@ -226,12 +224,10 @@ static void initialize_purpose_selection(HWND hwnd)
     LPSTR usages;
     int index;
 
-    LoadStringW(hInstance, IDS_PURPOSE_ALL, buf,
-     sizeof(buf) / sizeof(buf[0]));
+    LoadStringW(hInstance, IDS_PURPOSE_ALL, buf, ARRAY_SIZE(buf));
     index = SendMessageW(cb, CB_INSERTSTRING, -1, (LPARAM)buf);
     SendMessageW(cb, CB_SETITEMDATA, index, (LPARAM)PurposeFilterShowAll);
-    LoadStringW(hInstance, IDS_PURPOSE_ADVANCED, buf,
-     sizeof(buf) / sizeof(buf[0]));
+    LoadStringW(hInstance, IDS_PURPOSE_ADVANCED, buf, ARRAY_SIZE(buf));
     index = SendMessageW(cb, CB_INSERTSTRING, -1, (LPARAM)buf);
     SendMessageW(cb, CB_SETITEMDATA, index, (LPARAM)PurposeFilterShowAdvanced);
     SendMessageW(cb, CB_SETCURSEL, 0, 0);
@@ -504,12 +500,12 @@ static void show_cert_stores(HWND hwnd, DWORD dwFlags, struct CertMgrData *data)
     if (dwFlags & CRYPTUI_CERT_MGR_PUBLISHER_TAB)
     {
         storeList = publisherStoreList;
-        cStores = sizeof(publisherStoreList) / sizeof(publisherStoreList[0]);
+        cStores = ARRAY_SIZE(publisherStoreList);
     }
     else
     {
         storeList = defaultStoreList;
-        cStores = sizeof(defaultStoreList) / sizeof(defaultStoreList[0]);
+        cStores = ARRAY_SIZE(defaultStoreList);
     }
     if (dwFlags & CRYPTUI_CERT_MGR_SINGLE_TAB_FLAG)
         cStores = 1;
@@ -808,8 +804,6 @@ static LRESULT CALLBACK cert_mgr_advanced_dlg_proc(HWND hwnd, UINT msg,
 
 static void cert_mgr_clear_cert_selection(HWND hwnd)
 {
-    WCHAR empty[] = { 0 };
-
     EnableWindow(GetDlgItem(hwnd, IDC_MGR_EXPORT), FALSE);
     EnableWindow(GetDlgItem(hwnd, IDC_MGR_REMOVE), FALSE);
     EnableWindow(GetDlgItem(hwnd, IDC_MGR_VIEW), FALSE);
@@ -849,10 +843,8 @@ static void show_selected_cert(HWND hwnd, int index)
     }
 }
 
-static void cert_mgr_show_cert_usages(HWND hwnd, int index)
+static void get_cert_usages(PCCERT_CONTEXT cert, LPWSTR *str)
 {
-    HWND text = GetDlgItem(hwnd, IDC_MGR_PURPOSES);
-    PCCERT_CONTEXT cert = cert_mgr_index_to_cert(hwnd, index);
     PCERT_ENHKEY_USAGE usage;
     DWORD size;
 
@@ -891,7 +883,7 @@ static void cert_mgr_show_cert_usages(HWND hwnd, int index)
         {
             static const WCHAR commaSpace[] = { ',',' ',0 };
             DWORD i, len = 1;
-            LPWSTR str, ptr;
+            LPWSTR ptr;
 
             for (i = 0; i < usage->cUsageIdentifier; i++)
             {
@@ -901,16 +893,16 @@ static void cert_mgr_show_cert_usages(HWND hwnd, int index)
                  CRYPT_ENHKEY_USAGE_OID_GROUP_ID);
 
                 if (info)
-                    len += strlenW(info->pwszName);
+                    len += lstrlenW(info->pwszName);
                 else
                     len += strlen(usage->rgpszUsageIdentifier[i]);
                 if (i < usage->cUsageIdentifier - 1)
-                    len += strlenW(commaSpace);
+                    len += lstrlenW(commaSpace);
             }
-            str = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR));
-            if (str)
+            *str = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR));
+            if (*str)
             {
-                for (i = 0, ptr = str; i < usage->cUsageIdentifier; i++)
+                for (i = 0, ptr = *str; i < usage->cUsageIdentifier; i++)
                 {
                     PCCRYPT_OID_INFO info =
                      CryptFindOIDInfo(CRYPT_OID_INFO_OID_KEY,
@@ -919,8 +911,8 @@ static void cert_mgr_show_cert_usages(HWND hwnd, int index)
 
                     if (info)
                     {
-                        strcpyW(ptr, info->pwszName);
-                        ptr += strlenW(info->pwszName);
+                        lstrcpyW(ptr, info->pwszName);
+                        ptr += lstrlenW(info->pwszName);
                     }
                     else
                     {
@@ -932,32 +924,42 @@ static void cert_mgr_show_cert_usages(HWND hwnd, int index)
                     }
                     if (i < usage->cUsageIdentifier - 1)
                     {
-                        strcpyW(ptr, commaSpace);
-                        ptr += strlenW(commaSpace);
+                        lstrcpyW(ptr, commaSpace);
+                        ptr += lstrlenW(commaSpace);
                     }
                 }
                 *ptr = 0;
-                SendMessageW(text, WM_SETTEXT, 0, (LPARAM)str);
-                HeapFree(GetProcessHeap(), 0, str);
             }
             HeapFree(GetProcessHeap(), 0, usage);
         }
         else
         {
-            WCHAR buf[MAX_STRING_LEN];
-
-            LoadStringW(hInstance, IDS_ALLOWED_PURPOSE_NONE, buf,
-             sizeof(buf) / sizeof(buf[0]));
-            SendMessageW(text, WM_SETTEXT, 0, (LPARAM)buf);
+            size = MAX_STRING_LEN * sizeof(WCHAR);
+            *str = HeapAlloc(GetProcessHeap(), 0, size);
+            if (*str)
+                LoadStringW(hInstance, IDS_ALLOWED_PURPOSE_NONE, *str, size);
         }
     }
     else
     {
-        WCHAR buf[MAX_STRING_LEN];
+        size = MAX_STRING_LEN * sizeof(WCHAR);
+        *str = HeapAlloc(GetProcessHeap(), 0, size);
+        if (*str)
+            LoadStringW(hInstance, IDS_ALLOWED_PURPOSE_ALL, *str, size);
+    }
+}
 
-        LoadStringW(hInstance, IDS_ALLOWED_PURPOSE_ALL, buf,
-         sizeof(buf) / sizeof(buf[0]));
-        SendMessageW(text, WM_SETTEXT, 0, (LPARAM)buf);
+static void cert_mgr_show_cert_usages(HWND hwnd, int index)
+{
+    HWND text = GetDlgItem(hwnd, IDC_MGR_PURPOSES);
+    PCCERT_CONTEXT cert = cert_mgr_index_to_cert(hwnd, index);
+    LPWSTR str = NULL;
+
+    get_cert_usages(cert, &str);
+    if (str)
+    {
+        SendMessageW(text, WM_SETTEXT, 0, (LPARAM)str);
+        HeapFree(GetProcessHeap(), 0, str);
     }
 }
 
@@ -983,12 +985,10 @@ static void cert_mgr_do_remove(HWND hwnd)
             pTitle = data->title;
         else
         {
-            LoadStringW(hInstance, IDS_CERT_MGR, title,
-             sizeof(title) / sizeof(title[0]));
+            LoadStringW(hInstance, IDS_CERT_MGR, title, ARRAY_SIZE(title));
             pTitle = title;
         }
-        LoadStringW(hInstance, warningID, warning,
-         sizeof(warning) / sizeof(warning[0]));
+        LoadStringW(hInstance, warningID, warning, ARRAY_SIZE(warning));
         if (MessageBoxW(hwnd, warning, pTitle, MB_YESNO) == IDYES)
         {
             int selection = -1;
@@ -1076,7 +1076,7 @@ static int cert_mgr_sort_by_text(HWND lv, int col, int index1, int index2)
     WCHAR buf1[MAX_STRING_LEN];
     WCHAR buf2[MAX_STRING_LEN];
 
-    item.cchTextMax = sizeof(buf1) / sizeof(buf1[0]);
+    item.cchTextMax = ARRAY_SIZE(buf1);
     item.mask = LVIF_TEXT;
     item.pszText = buf1;
     item.iItem = index1;
@@ -1085,7 +1085,7 @@ static int cert_mgr_sort_by_text(HWND lv, int col, int index1, int index2)
     item.pszText = buf2;
     item.iItem = index2;
     SendMessageW(lv, LVM_GETITEMW, 0, (LPARAM)&item);
-    return strcmpW(buf1, buf2);
+    return lstrcmpW(buf1, buf2);
 }
 
 static int CALLBACK cert_mgr_sort_by_subject(LPARAM lp1, LPARAM lp2, LPARAM lp)
@@ -1164,7 +1164,6 @@ static LRESULT CALLBACK cert_mgr_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
             break;
         case LVN_ITEMCHANGED:
         {
-            WCHAR empty[] = { 0 };
             NMITEMACTIVATE *nm = (NMITEMACTIVATE*)lp;
             HWND lv = GetDlgItem(hwnd, IDC_MGR_CERTS);
             int numSelected = SendMessageW(lv, LVM_GETSELECTEDCOUNT, 0, 0);
@@ -1388,12 +1387,12 @@ static BOOL WINAPI enum_store_callback(const void *pvSystemStore,
         {
             storeInfo->type = SystemStore;
             storeInfo->u.name = HeapAlloc(GetProcessHeap(), 0,
-             (strlenW(pvSystemStore) + 1) * sizeof(WCHAR));
+             (lstrlenW(pvSystemStore) + 1) * sizeof(WCHAR));
             if (storeInfo->u.name)
             {
                 tvis.u.item.mask |= TVIF_PARAM;
                 tvis.u.item.lParam = (LPARAM)storeInfo;
-                strcpyW(storeInfo->u.name, pvSystemStore);
+                lstrcpyW(storeInfo->u.name, pvSystemStore);
             }
             else
             {
@@ -1494,7 +1493,7 @@ static HCERTSTORE selected_item_to_store(HWND tree, HTREEITEM hItem)
     memset(&item, 0, sizeof(item));
     item.mask = TVIF_HANDLE | TVIF_PARAM | TVIF_TEXT;
     item.hItem = hItem;
-    item.cchTextMax = sizeof(buf) / sizeof(buf[0]);
+    item.cchTextMax = ARRAY_SIZE(buf);
     item.pszText = buf;
     SendMessageW(tree, TVM_GETITEMW, 0, (LPARAM)&item);
     if (item.lParam)
@@ -1562,12 +1561,10 @@ static LRESULT CALLBACK select_store_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
                     pTitle = selectInfo->info->pwszTitle;
                 else
                 {
-                    LoadStringW(hInstance, IDS_SELECT_STORE_TITLE, title,
-                     sizeof(title) / sizeof(title[0]));
+                    LoadStringW(hInstance, IDS_SELECT_STORE_TITLE, title, ARRAY_SIZE(title));
                     pTitle = title;
                 }
-                LoadStringW(hInstance, IDS_SELECT_STORE, error,
-                 sizeof(error) / sizeof(error[0]));
+                LoadStringW(hInstance, IDS_SELECT_STORE, error, ARRAY_SIZE(error));
                 MessageBoxW(hwnd, error, pTitle, MB_ICONEXCLAMATION | MB_OK);
             }
             else
@@ -1962,7 +1959,7 @@ static struct OIDToString oidMap[] = {
 
 static struct OIDToString *findSupportedOID(LPCSTR oid)
 {
-    int indexHigh = sizeof(oidMap) / sizeof(oidMap[0]) - 1, indexLow = 0;
+    int indexHigh = ARRAY_SIZE(oidMap) - 1, indexLow = 0;
 
     while (indexLow <= indexHigh)
     {
@@ -1995,7 +1992,7 @@ static void add_local_oid_text_to_control(HWND text, LPCSTR oid)
         len = LoadStringW(hInstance, entry->id, (LPWSTR)&str, 0);
         ptr = str;
         do {
-            if ((linebreak = memchrW(ptr, '\n', len)))
+            if ((linebreak = wmemchr(ptr, '\n', len)))
             {
                 WCHAR copy[MAX_STRING_LEN];
 
@@ -2248,9 +2245,9 @@ static WCHAR *get_user_notice_from_qualifier(const CRYPT_OBJID_BLOB *qualifier)
      &qualifierValue, &size))
     {
         str = HeapAlloc(GetProcessHeap(), 0,
-         (strlenW(qualifierValue->pszDisplayText) + 1) * sizeof(WCHAR));
+         (lstrlenW(qualifierValue->pszDisplayText) + 1) * sizeof(WCHAR));
         if (str)
-            strcpyW(str, qualifierValue->pszDisplayText);
+            lstrcpyW(str, qualifierValue->pszDisplayText);
         LocalFree(qualifierValue);
     }
     return str;
@@ -2401,11 +2398,9 @@ static void add_date_string_to_control(HWND hwnd, const FILETIME *fileTime)
     WCHAR date[80];
     SYSTEMTIME sysTime;
 
-    GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, LOCALE_SSHORTDATE, dateFmt,
-     sizeof(dateFmt) / sizeof(dateFmt[0]));
+    GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, LOCALE_SSHORTDATE, dateFmt, ARRAY_SIZE(dateFmt));
     FileTimeToSystemTime(fileTime, &sysTime);
-    GetDateFormatW(LOCALE_SYSTEM_DEFAULT, 0, &sysTime, dateFmt, date,
-     sizeof(date) / sizeof(date[0]));
+    GetDateFormatW(LOCALE_SYSTEM_DEFAULT, 0, &sysTime, dateFmt, date, ARRAY_SIZE(date));
     add_unformatted_text_to_control(hwnd, date, lstrlenW(date));
 }
 
@@ -2462,7 +2457,7 @@ static LRESULT CALLBACK user_notice_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
         text = GetDlgItem(hwnd, IDC_USERNOTICE);
         issuerStatement = (struct IssuerStatement *)lp;
         add_unformatted_text_to_control(text, issuerStatement->userNotice,
-         strlenW(issuerStatement->userNotice));
+         lstrlenW(issuerStatement->userNotice));
         if (issuerStatement->cps)
             SetWindowLongPtrW(hwnd, DWLP_USER, (LPARAM)issuerStatement->cps);
         else
@@ -2591,7 +2586,7 @@ static WCHAR *field_format_version(PCCERT_CONTEXT cert)
     WCHAR *buf = HeapAlloc(GetProcessHeap(), 0, 12 * sizeof(WCHAR));
 
     if (buf)
-        sprintfW(buf, fmt, cert->pCertInfo->dwVersion);
+        swprintf(buf, fmt, cert->pCertInfo->dwVersion);
     return buf;
 }
 
@@ -2606,7 +2601,7 @@ static WCHAR *format_hex_string(void *pb, DWORD cb)
         WCHAR *ptr;
 
         for (i = 0, ptr = buf; i < cb; i++, ptr += 3)
-            sprintfW(ptr, fmt, ((BYTE *)pb)[i]);
+            swprintf(ptr, fmt, ((BYTE *)pb)[i]);
     }
     return buf;
 }
@@ -2662,8 +2657,7 @@ static WCHAR *format_long_date(const FILETIME *fileTime)
     SYSTEMTIME sysTime;
 
     /* FIXME: format isn't quite right, want time too */
-    GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, LOCALE_SLONGDATE, dateFmt,
-     sizeof(dateFmt) / sizeof(dateFmt[0]));
+    GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, LOCALE_SLONGDATE, dateFmt, ARRAY_SIZE(dateFmt));
     FileTimeToSystemTime(fileTime, &sysTime);
     len = GetDateFormatW(LOCALE_SYSTEM_DEFAULT, 0, &sysTime, dateFmt, NULL, 0);
     if (len)
@@ -2697,8 +2691,7 @@ static WCHAR *field_format_public_key(PCCERT_CONTEXT cert)
     {
         WCHAR fmt[MAX_STRING_LEN];
 
-        if (LoadStringW(hInstance, IDS_FIELD_PUBLIC_KEY_FORMAT, fmt,
-         sizeof(fmt) / sizeof(fmt[0])))
+        if (LoadStringW(hInstance, IDS_FIELD_PUBLIC_KEY_FORMAT, fmt, ARRAY_SIZE(fmt)))
         {
             DWORD len;
 
@@ -2711,7 +2704,7 @@ static WCHAR *field_format_public_key(PCCERT_CONTEXT cert)
              * good idea, but as this isn't a sentence fragment, it shouldn't
              * be word-order dependent.
              */
-            len = strlenW(fmt) + strlenW(oidInfo->pwszName) +
+            len = lstrlenW(fmt) + lstrlenW(oidInfo->pwszName) +
                 cert->pCertInfo->SubjectPublicKeyInfo.PublicKey.cbData * 8;
             buf = HeapAlloc(GetProcessHeap(), 0, len * sizeof(*buf));
             if (buf)
@@ -2799,7 +2792,7 @@ static void add_string_id_and_value_to_list(HWND hwnd, struct detail_data *data,
 {
     WCHAR buf[MAX_STRING_LEN];
 
-    LoadStringW(hInstance, id, buf, sizeof(buf) / sizeof(buf[0]));
+    LoadStringW(hInstance, id, buf, ARRAY_SIZE(buf));
     add_field_and_value_to_list(hwnd, data, buf, value, create, param);
 }
 
@@ -2842,7 +2835,7 @@ static void add_v1_fields(HWND hwnd, struct detail_data *data)
     /* The last item in v1_fields is the public key, which is not in the loop
      * because it's a special case.
      */
-    for (i = 0; i < sizeof(v1_fields) / sizeof(v1_fields[0]) - 1; i++)
+    for (i = 0; i < ARRAY_SIZE(v1_fields) - 1; i++)
         add_v1_field(hwnd, data, &v1_fields[i]);
     if (cert->pCertInfo->SubjectPublicKeyInfo.PublicKey.cbData)
         add_v1_field(hwnd, data, &v1_fields[i]);
@@ -2903,24 +2896,24 @@ static WCHAR *field_format_extension_hex_with_ascii(const CERT_EXTENSION *ext)
             {
                 /* Output as hex bytes first */
                 for (j = i; j < min(i + 8, ext->Value.cbData); j++, ptr += 3)
-                    sprintfW(ptr, fmt, ext->Value.pbData[j]);
+                    swprintf(ptr, fmt, ext->Value.pbData[j]);
                 /* Pad the hex output with spaces for alignment */
                 if (j == ext->Value.cbData && j % 8)
                 {
                     static const WCHAR pad[] = { ' ',' ',' ' };
 
-                    for (; j % 8; j++, ptr += sizeof(pad) / sizeof(pad[0]))
+                    for (; j % 8; j++, ptr += ARRAY_SIZE(pad))
                         memcpy(ptr, pad, sizeof(pad));
                 }
-                /* The last sprintfW included a space, so just insert one
+                /* The last swprintf included a space, so just insert one
                  * more space between the hex bytes and the ASCII output
                  */
                 *ptr++ = ' ';
                 /* Output as ASCII bytes */
                 for (j = i; j < min(i + 8, ext->Value.cbData); j++, ptr++)
                 {
-                    if (isprintW(ext->Value.pbData[j]) &&
-                     !isspaceW(ext->Value.pbData[j]))
+                    if (iswprint(ext->Value.pbData[j]) &&
+                     !iswspace(ext->Value.pbData[j]))
                         *ptr = ext->Value.pbData[j];
                     else
                         *ptr = '.';
@@ -3030,7 +3023,7 @@ static void add_properties(HWND hwnd, struct detail_data *data)
     DWORD i;
     PCCERT_CONTEXT cert = data->pCertViewInfo->pCertContext;
 
-    for (i = 0; i < sizeof(prop_id_map) / sizeof(prop_id_map[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(prop_id_map); i++)
     {
         DWORD cb;
 
@@ -3093,12 +3086,11 @@ static void create_show_list(HWND hwnd, struct detail_data *data)
     WCHAR buf[MAX_STRING_LEN];
     int i;
 
-    for (i = 0; i < sizeof(listItems) / sizeof(listItems[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(listItems); i++)
     {
         int index;
 
-        LoadStringW(hInstance, listItems[i].id, buf,
-         sizeof(buf) / sizeof(buf[0]));
+        LoadStringW(hInstance, listItems[i].id, buf, ARRAY_SIZE(buf));
         index = SendMessageW(cb, CB_INSERTSTRING, -1, (LPARAM)buf);
         SendMessageW(cb, CB_SETITEMDATA, index, (LPARAM)data);
     }
@@ -3114,12 +3106,12 @@ static void create_listview_columns(HWND hwnd)
 
     SendMessageW(lv, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT);
     GetWindowRect(lv, &rc);
-    LoadStringW(hInstance, IDS_FIELD, buf, sizeof(buf) / sizeof(buf[0]));
+    LoadStringW(hInstance, IDS_FIELD, buf, ARRAY_SIZE(buf));
     column.mask = LVCF_WIDTH | LVCF_TEXT;
     column.cx = (rc.right - rc.left) / 2 - 2;
     column.pszText = buf;
     SendMessageW(lv, LVM_INSERTCOLUMNW, 0, (LPARAM)&column);
-    LoadStringW(hInstance, IDS_VALUE, buf, sizeof(buf) / sizeof(buf[0]));
+    LoadStringW(hInstance, IDS_VALUE, buf, ARRAY_SIZE(buf));
     SendMessageW(lv, LVM_INSERTCOLUMNW, 1, (LPARAM)&column);
 }
 
@@ -3127,7 +3119,7 @@ static void set_fields_selection(HWND hwnd, struct detail_data *data, int sel)
 {
     HWND list = GetDlgItem(hwnd, IDC_DETAIL_LIST);
 
-    if (sel >= 0 && sel < sizeof(listItems) / sizeof(listItems[0]))
+    if (sel >= 0 && sel < ARRAY_SIZE(listItems))
     {
         SendMessageW(list, LVM_DELETEALLITEMS, 0, 0);
         listItems[sel].add(list, data);
@@ -3251,8 +3243,8 @@ static LRESULT CALLBACK add_purpose_dlg_proc(HWND hwnd, UINT msg,
             switch (LOWORD(wp))
             {
             case IDOK:
-                SendMessageA(GetDlgItem(hwnd, IDC_NEW_PURPOSE), WM_GETTEXT,
-                 sizeof(buf) / sizeof(buf[0]), (LPARAM)buf);
+                SendMessageA(GetDlgItem(hwnd, IDC_NEW_PURPOSE), WM_GETTEXT, ARRAY_SIZE(buf),
+                 (LPARAM)buf);
                 if (!buf[0])
                 {
                     /* An empty purpose is the same as cancelling */
@@ -3263,10 +3255,8 @@ static LRESULT CALLBACK add_purpose_dlg_proc(HWND hwnd, UINT msg,
                 {
                     WCHAR title[MAX_STRING_LEN], error[MAX_STRING_LEN];
 
-                    LoadStringW(hInstance, IDS_CERTIFICATE_PURPOSE_ERROR, error,
-                     sizeof(error) / sizeof(error[0]));
-                    LoadStringW(hInstance, IDS_CERTIFICATE_PROPERTIES, title,
-                     sizeof(title) / sizeof(title[0]));
+                    LoadStringW(hInstance, IDS_CERTIFICATE_PURPOSE_ERROR, error, ARRAY_SIZE(error));
+                    LoadStringW(hInstance, IDS_CERTIFICATE_PROPERTIES, title, ARRAY_SIZE(title));
                     MessageBoxW(hwnd, error, title, MB_ICONERROR | MB_OK);
                 }
                 else if (is_oid_in_list(
@@ -3274,10 +3264,9 @@ static LRESULT CALLBACK add_purpose_dlg_proc(HWND hwnd, UINT msg,
                 {
                     WCHAR title[MAX_STRING_LEN], error[MAX_STRING_LEN];
 
-                    LoadStringW(hInstance, IDS_CERTIFICATE_PURPOSE_EXISTS,
-                     error, sizeof(error) / sizeof(error[0]));
-                    LoadStringW(hInstance, IDS_CERTIFICATE_PROPERTIES, title,
-                     sizeof(title) / sizeof(title[0]));
+                    LoadStringW(hInstance, IDS_CERTIFICATE_PURPOSE_EXISTS, error,
+                     ARRAY_SIZE(error));
+                    LoadStringW(hInstance, IDS_CERTIFICATE_PROPERTIES, title, ARRAY_SIZE(title));
                     MessageBoxW(hwnd, error, title, MB_ICONEXCLAMATION | MB_OK);
                 }
                 else
@@ -3506,12 +3495,12 @@ static void set_general_cert_properties(HWND hwnd, struct edit_cert_data *data)
 static void set_cert_string_property(PCCERT_CONTEXT cert, DWORD prop,
  LPWSTR str)
 {
-    if (str && strlenW(str))
+    if (str && *str)
     {
         CRYPT_DATA_BLOB blob;
 
         blob.pbData = (BYTE *)str;
-        blob.cbData = (strlenW(str) + 1) * sizeof(WCHAR);
+        blob.cbData = (lstrlenW(str) + 1) * sizeof(WCHAR);
         CertSetCertificateContextProperty(cert, prop, 0, &blob);
     }
     else
@@ -3536,11 +3525,9 @@ static void apply_general_changes(HWND hwnd)
     struct edit_cert_data *data =
      (struct edit_cert_data *)GetWindowLongPtrW(hwnd, DWLP_USER);
 
-    SendMessageW(GetDlgItem(hwnd, IDC_FRIENDLY_NAME), WM_GETTEXT,
-     sizeof(buf) / sizeof(buf[0]), (LPARAM)buf);
+    SendMessageW(GetDlgItem(hwnd, IDC_FRIENDLY_NAME), WM_GETTEXT, ARRAY_SIZE(buf), (LPARAM)buf);
     set_cert_string_property(data->cert, CERT_FRIENDLY_NAME_PROP_ID, buf);
-    SendMessageW(GetDlgItem(hwnd, IDC_DESCRIPTION), WM_GETTEXT,
-     sizeof(buf) / sizeof(buf[0]), (LPARAM)buf);
+    SendMessageW(GetDlgItem(hwnd, IDC_DESCRIPTION), WM_GETTEXT, ARRAY_SIZE(buf), (LPARAM)buf);
     set_cert_string_property(data->cert, CERT_DESCRIPTION_PROP_ID, buf);
     if (IsDlgButtonChecked(hwnd, IDC_ENABLE_ALL_PURPOSES))
     {
@@ -3833,7 +3820,7 @@ static LRESULT CALLBACK detail_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
                     LVITEMW item;
                     int res;
 
-                    item.cchTextMax = sizeof(buf) / sizeof(buf[0]);
+                    item.cchTextMax = ARRAY_SIZE(buf);
                     item.mask = LVIF_TEXT;
                     item.pszText = buf;
                     item.iItem = nm->iItem;
@@ -3847,7 +3834,7 @@ static LRESULT CALLBACK detail_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
                  */
                 SendMessageW(valueCtl, EM_SETSEL, 0, -1);
                 add_unformatted_text_to_control(valueCtl, val,
-                 val ? strlenW(val) : 0);
+                 val ? lstrlenW(val) : 0);
                 if (val != buf)
                     HeapFree(GetProcessHeap(), 0, val);
             }
@@ -4699,12 +4686,10 @@ static void import_warning(DWORD dwFlags, HWND hwnd, LPCWSTR szTitle,
             pTitle = szTitle;
         else
         {
-            LoadStringW(hInstance, IDS_IMPORT_WIZARD, title,
-             sizeof(title) / sizeof(title[0]));
+            LoadStringW(hInstance, IDS_IMPORT_WIZARD, title, ARRAY_SIZE(title));
             pTitle = title;
         }
-        LoadStringW(hInstance, warningID, error,
-         sizeof(error) / sizeof(error[0]));
+        LoadStringW(hInstance, warningID, error, ARRAY_SIZE(error));
         MessageBoxW(hwnd, error, pTitle, MB_ICONERROR | MB_OK);
     }
 }
@@ -4879,8 +4864,7 @@ static LRESULT CALLBACK import_welcome_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
         int height;
 
         data = (struct ImportWizData *)page->lParam;
-        LoadStringW(hInstance, IDS_WIZARD_TITLE_FONT, fontFace,
-         sizeof(fontFace) / sizeof(fontFace[0]));
+        LoadStringW(hInstance, IDS_WIZARD_TITLE_FONT, fontFace, ARRAY_SIZE(fontFace));
         height = -MulDiv(12, GetDeviceCaps(hDC, LOGPIXELSY), 72);
         data->titleFont = CreateFontW(height, 0, 0, 0, FW_BOLD, 0, 0, 0,
          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -4918,7 +4902,7 @@ static const WCHAR filter_cms[] = { '*','.','s','p','c',';','*','.',
  'p','7','b',0 };
 static const WCHAR filter_all[] = { '*','.','*',0 };
 
-static struct StringToFilter
+static const struct
 {
     int     id;
     DWORD   allowFlags;
@@ -4939,13 +4923,13 @@ static WCHAR *make_import_file_filter(DWORD dwFlags)
     int len, totalLen = 2;
     LPWSTR filter = NULL, str;
 
-    for (i = 0; i < sizeof(import_filters) / sizeof(import_filters[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(import_filters); i++)
     {
         if (!import_filters[i].allowFlags || !dwFlags ||
          (dwFlags & import_filters[i].allowFlags))
         {
             len = LoadStringW(hInstance, import_filters[i].id, (LPWSTR)&str, 0);
-            totalLen += len + strlenW(import_filters[i].filter) + 2;
+            totalLen += len + lstrlenW(import_filters[i].filter) + 2;
         }
     }
     filter = HeapAlloc(GetProcessHeap(), 0, totalLen * sizeof(WCHAR));
@@ -4954,7 +4938,7 @@ static WCHAR *make_import_file_filter(DWORD dwFlags)
         LPWSTR ptr;
 
         ptr = filter;
-        for (i = 0; i < sizeof(import_filters) / sizeof(import_filters[0]); i++)
+        for (i = 0; i < ARRAY_SIZE(import_filters); i++)
         {
             if (!import_filters[i].allowFlags || !dwFlags ||
              (dwFlags & import_filters[i].allowFlags))
@@ -4964,8 +4948,8 @@ static WCHAR *make_import_file_filter(DWORD dwFlags)
                 memcpy(ptr, str, len * sizeof(WCHAR));
                 ptr += len;
                 *ptr++ = 0;
-                strcpyW(ptr, import_filters[i].filter);
-                ptr += strlenW(import_filters[i].filter) + 1;
+                lstrcpyW(ptr, import_filters[i].filter);
+                ptr += lstrlenW(import_filters[i].filter) + 1;
             }
         }
         *ptr++ = 0;
@@ -5016,29 +5000,27 @@ static BOOL import_validate_filename(HWND hwnd, struct ImportWizData *data,
             pTitle = data->pwszWizardTitle;
         else
         {
-            LoadStringW(hInstance, IDS_IMPORT_WIZARD, title,
-             sizeof(title) / sizeof(title[0]));
+            LoadStringW(hInstance, IDS_IMPORT_WIZARD, title, ARRAY_SIZE(title));
             pTitle = title;
         }
-        LoadStringW(hInstance, IDS_IMPORT_OPEN_FAILED, error,
-         sizeof(error) / sizeof(error[0]));
+        LoadStringW(hInstance, IDS_IMPORT_OPEN_FAILED, error, ARRAY_SIZE(error));
         FormatMessageW(
          FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL,
          GetLastError(), 0, (LPWSTR) &msgBuf, 0, NULL);
         fullError = HeapAlloc(GetProcessHeap(), 0,
-         (strlenW(error) + strlenW(fileName) + strlenW(msgBuf) + 3)
+         (lstrlenW(error) + lstrlenW(fileName) + lstrlenW(msgBuf) + 3)
          * sizeof(WCHAR));
         if (fullError)
         {
             LPWSTR ptr = fullError;
 
-            strcpyW(ptr, error);
-            ptr += strlenW(error);
-            strcpyW(ptr, fileName);
-            ptr += strlenW(fileName);
+            lstrcpyW(ptr, error);
+            ptr += lstrlenW(error);
+            lstrcpyW(ptr, fileName);
+            ptr += lstrlenW(fileName);
             *ptr++ = ':';
             *ptr++ = '\n';
-            strcpyW(ptr, msgBuf);
+            lstrcpyW(ptr, msgBuf);
             MessageBoxW(hwnd, fullError, pTitle, MB_ICONERROR | MB_OK);
             HeapFree(GetProcessHeap(), 0, fullError);
         }
@@ -5131,7 +5113,7 @@ static LRESULT CALLBACK import_file_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
             ofn.hwndOwner = hwnd;
             ofn.lpstrFilter = make_import_file_filter(data->dwFlags);
             ofn.lpstrFile = fileBuf;
-            ofn.nMaxFile = sizeof(fileBuf) / sizeof(fileBuf[0]);
+            ofn.nMaxFile = ARRAY_SIZE(fileBuf);
             fileBuf[0] = 0;
             if (GetOpenFileNameW(&ofn))
                 SendMessageW(GetDlgItem(hwnd, IDC_IMPORT_FILENAME), WM_SETTEXT,
@@ -5177,8 +5159,7 @@ static LRESULT CALLBACK import_store_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
             EnableWindow(GetDlgItem(hwnd, IDC_IMPORT_BROWSE_STORE), TRUE);
             EnableWindow(GetDlgItem(hwnd, IDC_IMPORT_SPECIFY_STORE),
              !(data->dwFlags & CRYPTUI_WIZ_IMPORT_NO_CHANGE_DEST_STORE));
-            LoadStringW(hInstance, IDS_IMPORT_DEST_DETERMINED,
-             storeTitle, sizeof(storeTitle) / sizeof(storeTitle[0]));
+            LoadStringW(hInstance, IDS_IMPORT_DEST_DETERMINED, storeTitle, ARRAY_SIZE(storeTitle));
             SendMessageW(GetDlgItem(hwnd, IDC_IMPORT_STORE), WM_SETTEXT,
              0, (LPARAM)storeTitle);
         }
@@ -5246,8 +5227,8 @@ static LRESULT CALLBACK import_store_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
             {
                 WCHAR storeTitle[MAX_STRING_LEN];
 
-                LoadStringW(hInstance, IDS_IMPORT_DEST_DETERMINED,
-                 storeTitle, sizeof(storeTitle) / sizeof(storeTitle[0]));
+                LoadStringW(hInstance, IDS_IMPORT_DEST_DETERMINED, storeTitle,
+                 ARRAY_SIZE(storeTitle));
                 SendMessageW(GetDlgItem(hwnd, IDC_IMPORT_STORE), WM_SETTEXT,
                  0, (LPARAM)storeTitle);
                 data->hDestCertStore = store;
@@ -5270,22 +5251,18 @@ static void show_import_details(HWND lv, struct ImportWizData *data)
     item.mask = LVIF_TEXT;
     item.iItem = SendMessageW(lv, LVM_GETITEMCOUNT, 0, 0);
     item.iSubItem = 0;
-    LoadStringW(hInstance, IDS_IMPORT_STORE_SELECTION, text,
-     sizeof(text)/ sizeof(text[0]));
+    LoadStringW(hInstance, IDS_IMPORT_STORE_SELECTION, text, ARRAY_SIZE(text));
     item.pszText = text;
     SendMessageW(lv, LVM_INSERTITEMW, 0, (LPARAM)&item);
     item.iSubItem = 1;
     if (data->autoDest)
-        LoadStringW(hInstance, IDS_IMPORT_DEST_AUTOMATIC, text,
-         sizeof(text)/ sizeof(text[0]));
+        LoadStringW(hInstance, IDS_IMPORT_DEST_AUTOMATIC, text, ARRAY_SIZE(text));
     else
-        LoadStringW(hInstance, IDS_IMPORT_DEST_DETERMINED, text,
-         sizeof(text)/ sizeof(text[0]));
+        LoadStringW(hInstance, IDS_IMPORT_DEST_DETERMINED, text, ARRAY_SIZE(text));
     SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
     item.iItem = SendMessageW(lv, LVM_GETITEMCOUNT, 0, 0);
     item.iSubItem = 0;
-    LoadStringW(hInstance, IDS_IMPORT_CONTENT, text,
-     sizeof(text)/ sizeof(text[0]));
+    LoadStringW(hInstance, IDS_IMPORT_CONTENT, text, ARRAY_SIZE(text));
     SendMessageW(lv, LVM_INSERTITEMW, 0, (LPARAM)&item);
     switch (data->contentType)
     {
@@ -5311,15 +5288,14 @@ static void show_import_details(HWND lv, struct ImportWizData *data)
         contentID = IDS_IMPORT_CONTENT_STORE;
         break;
     }
-    LoadStringW(hInstance, contentID, text, sizeof(text)/ sizeof(text[0]));
+    LoadStringW(hInstance, contentID, text, ARRAY_SIZE(text));
     item.iSubItem = 1;
     SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
     if (data->fileName)
     {
         item.iItem = SendMessageW(lv, LVM_GETITEMCOUNT, 0, 0);
         item.iSubItem = 0;
-        LoadStringW(hInstance, IDS_IMPORT_FILE, text,
-         sizeof(text)/ sizeof(text[0]));
+        LoadStringW(hInstance, IDS_IMPORT_FILE, text, ARRAY_SIZE(text));
         SendMessageW(lv, LVM_INSERTITEMW, 0, (LPARAM)&item);
         item.iSubItem = 1;
         item.pszText = data->fileName;
@@ -5426,12 +5402,10 @@ static LRESULT CALLBACK import_finish_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
                     pTitle = data->pwszWizardTitle;
                 else
                 {
-                    LoadStringW(hInstance, IDS_IMPORT_WIZARD, title,
-                     sizeof(title) / sizeof(title[0]));
+                    LoadStringW(hInstance, IDS_IMPORT_WIZARD, title, ARRAY_SIZE(title));
                     pTitle = title;
                 }
-                LoadStringW(hInstance, IDS_IMPORT_SUCCEEDED, message,
-                 sizeof(message) / sizeof(message[0]));
+                LoadStringW(hInstance, IDS_IMPORT_SUCCEEDED, message, ARRAY_SIZE(message));
                 MessageBoxW(hwnd, message, pTitle, MB_OK);
             }
             else
@@ -5621,8 +5595,7 @@ static LRESULT CALLBACK export_welcome_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
         int height;
 
         data = (struct ExportWizData *)page->lParam;
-        LoadStringW(hInstance, IDS_WIZARD_TITLE_FONT, fontFace,
-         sizeof(fontFace) / sizeof(fontFace[0]));
+        LoadStringW(hInstance, IDS_WIZARD_TITLE_FONT, fontFace, ARRAY_SIZE(fontFace));
         height = -MulDiv(12, GetDeviceCaps(hDC, LOGPIXELSY), 72);
         data->titleFont = CreateFontW(height, 0, 0, 0, FW_BOLD, 0, 0, 0,
          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -5737,8 +5710,7 @@ static LRESULT CALLBACK export_private_key_dlg_proc(HWND hwnd, UINT msg,
         {
             WCHAR error[MAX_STRING_LEN];
 
-            LoadStringW(hInstance, errorID, error,
-             sizeof(error) / sizeof(error[0]));
+            LoadStringW(hInstance, errorID, error, ARRAY_SIZE(error));
             SendMessageW(GetDlgItem(hwnd, IDC_EXPORT_PRIVATE_KEY_UNAVAILABLE),
              WM_SETTEXT, 0, (LPARAM)error);
             EnableWindow(GetDlgItem(hwnd, IDC_EXPORT_PRIVATE_KEY_YES), FALSE);
@@ -5952,12 +5924,10 @@ static void export_password_mismatch(HWND hwnd, const struct ExportWizData *data
         pTitle = data->pwszWizardTitle;
     else
     {
-        LoadStringW(hInstance, IDS_EXPORT_WIZARD, title,
-         sizeof(title) / sizeof(title[0]));
+        LoadStringW(hInstance, IDS_EXPORT_WIZARD, title, ARRAY_SIZE(title));
         pTitle = title;
     }
-    LoadStringW(hInstance, IDS_EXPORT_PASSWORD_MISMATCH, error,
-     sizeof(error) / sizeof(error[0]));
+    LoadStringW(hInstance, IDS_EXPORT_PASSWORD_MISMATCH, error, ARRAY_SIZE(error));
     MessageBoxW(hwnd, error, pTitle, MB_ICONERROR | MB_OK);
     SetFocus(GetDlgItem(hwnd, IDC_EXPORT_PASSWORD));
 }
@@ -6022,7 +5992,7 @@ static LRESULT CALLBACK export_password_dlg_proc(HWND hwnd, UINT msg,
                      (LPARAM)password);
                     SendMessageW(passwordConfirmEdit, WM_GETTEXT,
                      passwordConfirmLen + 1, (LPARAM)passwordConfirm);
-                    if (strcmpW(password, passwordConfirm))
+                    if (lstrcmpW(password, passwordConfirm))
                     {
                         export_password_mismatch(hwnd, data);
                         SetWindowLongPtrW(hwnd, DWLP_MSGRESULT, 1);
@@ -6085,17 +6055,17 @@ static LPWSTR export_append_extension(const struct ExportWizData *data,
             extension = cer;
         }
     }
-    dot = strrchrW(fileName, '.');
+    dot = wcsrchr(fileName, '.');
     if (dot)
-        appendExtension = strcmpiW(dot, extension) != 0;
+        appendExtension = wcsicmp(dot, extension) != 0;
     else
         appendExtension = TRUE;
     if (appendExtension)
     {
         fileName = HeapReAlloc(GetProcessHeap(), 0, fileName,
-         (strlenW(fileName) + strlenW(extension) + 1) * sizeof(WCHAR));
+         (lstrlenW(fileName) + lstrlenW(extension) + 1) * sizeof(WCHAR));
         if (fileName)
-            strcatW(fileName, extension);
+            lstrcatW(fileName, extension);
     }
     return fileName;
 }
@@ -6117,12 +6087,10 @@ static BOOL export_validate_filename(HWND hwnd, struct ExportWizData *data,
             pTitle = data->pwszWizardTitle;
         else
         {
-            LoadStringW(hInstance, IDS_EXPORT_WIZARD, title,
-             sizeof(title) / sizeof(title[0]));
+            LoadStringW(hInstance, IDS_EXPORT_WIZARD, title, ARRAY_SIZE(title));
             pTitle = title;
         }
-        LoadStringW(hInstance, IDS_EXPORT_FILE_EXISTS, warning,
-         sizeof(warning) / sizeof(warning[0]));
+        LoadStringW(hInstance, IDS_EXPORT_FILE_EXISTS, warning, ARRAY_SIZE(warning));
         if (MessageBoxW(hwnd, warning, pTitle, MB_YESNO) == IDYES)
             forceCreate = TRUE;
         else
@@ -6150,29 +6118,27 @@ static BOOL export_validate_filename(HWND hwnd, struct ExportWizData *data,
                 pTitle = data->pwszWizardTitle;
             else
             {
-                LoadStringW(hInstance, IDS_EXPORT_WIZARD, title,
-                 sizeof(title) / sizeof(title[0]));
+                LoadStringW(hInstance, IDS_EXPORT_WIZARD, title, ARRAY_SIZE(title));
                 pTitle = title;
             }
-            LoadStringW(hInstance, IDS_IMPORT_OPEN_FAILED, error,
-             sizeof(error) / sizeof(error[0]));
+            LoadStringW(hInstance, IDS_IMPORT_OPEN_FAILED, error, ARRAY_SIZE(error));
             FormatMessageW(
              FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL,
              GetLastError(), 0, (LPWSTR) &msgBuf, 0, NULL);
             fullError = HeapAlloc(GetProcessHeap(), 0,
-             (strlenW(error) + strlenW(fileName) + strlenW(msgBuf) + 3)
+             (lstrlenW(error) + lstrlenW(fileName) + lstrlenW(msgBuf) + 3)
              * sizeof(WCHAR));
             if (fullError)
             {
                 LPWSTR ptr = fullError;
 
-                strcpyW(ptr, error);
-                ptr += strlenW(error);
-                strcpyW(ptr, fileName);
-                ptr += strlenW(fileName);
+                lstrcpyW(ptr, error);
+                ptr += lstrlenW(error);
+                lstrcpyW(ptr, fileName);
+                ptr += lstrlenW(fileName);
                 *ptr++ = ':';
                 *ptr++ = '\n';
-                strcpyW(ptr, msgBuf);
+                lstrcpyW(ptr, msgBuf);
                 MessageBoxW(hwnd, fullError, pTitle, MB_ICONERROR | MB_OK);
                 HeapFree(GetProcessHeap(), 0, fullError);
             }
@@ -6231,9 +6197,9 @@ static WCHAR *make_export_file_filter(DWORD exportFormat, DWORD subjectChoice)
         }
     }
     baseLen = LoadStringW(hInstance, baseID, (LPWSTR)&baseFilter, 0);
-    totalLen += baseLen + strlenW(filterStr) + 2;
+    totalLen += baseLen + lstrlenW(filterStr) + 2;
     allLen = LoadStringW(hInstance, IDS_IMPORT_FILTER_ALL, (LPWSTR)&all, 0);
-    totalLen += allLen + strlenW(filter_all) + 2;
+    totalLen += allLen + lstrlenW(filter_all) + 2;
     filter = HeapAlloc(GetProcessHeap(), 0, totalLen * sizeof(WCHAR));
     if (filter)
     {
@@ -6243,13 +6209,13 @@ static WCHAR *make_export_file_filter(DWORD exportFormat, DWORD subjectChoice)
         memcpy(ptr, baseFilter, baseLen * sizeof(WCHAR));
         ptr += baseLen;
         *ptr++ = 0;
-        strcpyW(ptr, filterStr);
-        ptr += strlenW(filterStr) + 1;
+        lstrcpyW(ptr, filterStr);
+        ptr += lstrlenW(filterStr) + 1;
         memcpy(ptr, all, allLen * sizeof(WCHAR));
         ptr += allLen;
         *ptr++ = 0;
-        strcpyW(ptr, filter_all);
-        ptr += strlenW(filter_all) + 1;
+        lstrcpyW(ptr, filter_all);
+        ptr += lstrlenW(filter_all) + 1;
         *ptr++ = 0;
     }
     return filter;
@@ -6304,12 +6270,10 @@ static LRESULT CALLBACK export_file_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
                     pTitle = data->pwszWizardTitle;
                 else
                 {
-                    LoadStringW(hInstance, IDS_EXPORT_WIZARD, title,
-                     sizeof(title) / sizeof(title[0]));
+                    LoadStringW(hInstance, IDS_EXPORT_WIZARD, title, ARRAY_SIZE(title));
                     pTitle = title;
                 }
-                LoadStringW(hInstance, IDS_IMPORT_EMPTY_FILE, error,
-                 sizeof(error) / sizeof(error[0]));
+                LoadStringW(hInstance, IDS_IMPORT_EMPTY_FILE, error, ARRAY_SIZE(error));
                 MessageBoxW(hwnd, error, pTitle, MB_ICONERROR | MB_OK);
                 SetWindowLongPtrW(hwnd, DWLP_MSGRESULT, 1);
                 ret = 1;
@@ -6360,7 +6324,7 @@ static LRESULT CALLBACK export_file_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
              data->contextInfo.dwExportFormat,
              data->exportInfo.dwSubjectChoice);
             ofn.lpstrFile = fileBuf;
-            ofn.nMaxFile = sizeof(fileBuf) / sizeof(fileBuf[0]);
+            ofn.nMaxFile = ARRAY_SIZE(fileBuf);
             fileBuf[0] = 0;
             if (GetSaveFileNameW(&ofn))
                 SendMessageW(GetDlgItem(hwnd, IDC_EXPORT_FILENAME), WM_SETTEXT,
@@ -6385,8 +6349,7 @@ static void show_export_details(HWND lv, const struct ExportWizData *data)
     {
         item.iItem = SendMessageW(lv, LVM_GETITEMCOUNT, 0, 0);
         item.iSubItem = 0;
-        LoadStringW(hInstance, IDS_IMPORT_FILE, text,
-         sizeof(text)/ sizeof(text[0]));
+        LoadStringW(hInstance, IDS_IMPORT_FILE, text, ARRAY_SIZE(text));
         item.pszText = text;
         SendMessageW(lv, LVM_INSERTITEMW, 0, (LPARAM)&item);
         item.iSubItem = 1;
@@ -6407,32 +6370,27 @@ static void show_export_details(HWND lv, const struct ExportWizData *data)
     {
         item.iItem = SendMessageW(lv, LVM_GETITEMCOUNT, 0, 0);
         item.iSubItem = 0;
-        LoadStringW(hInstance, IDS_EXPORT_INCLUDE_CHAIN, text,
-         sizeof(text) / sizeof(text[0]));
+        LoadStringW(hInstance, IDS_EXPORT_INCLUDE_CHAIN, text, ARRAY_SIZE(text));
         SendMessageW(lv, LVM_INSERTITEMW, item.iItem, (LPARAM)&item);
         item.iSubItem = 1;
-        LoadStringW(hInstance,
-         data->contextInfo.fExportChain ? IDS_YES : IDS_NO, text,
-         sizeof(text) / sizeof(text[0]));
+        LoadStringW(hInstance, data->contextInfo.fExportChain ? IDS_YES : IDS_NO, text,
+         ARRAY_SIZE(text));
         SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
 
         item.iItem = SendMessageW(lv, LVM_GETITEMCOUNT, 0, 0);
         item.iSubItem = 0;
-        LoadStringW(hInstance, IDS_EXPORT_KEYS, text,
-         sizeof(text) / sizeof(text[0]));
+        LoadStringW(hInstance, IDS_EXPORT_KEYS, text, ARRAY_SIZE(text));
         SendMessageW(lv, LVM_INSERTITEMW, item.iItem, (LPARAM)&item);
         item.iSubItem = 1;
-        LoadStringW(hInstance,
-         data->contextInfo.fExportPrivateKeys ? IDS_YES : IDS_NO, text,
-         sizeof(text) / sizeof(text[0]));
+        LoadStringW(hInstance, data->contextInfo.fExportPrivateKeys ? IDS_YES : IDS_NO, text,
+         ARRAY_SIZE(text));
         SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
     }
     }
 
     item.iItem = SendMessageW(lv, LVM_GETITEMCOUNT, 0, 0);
     item.iSubItem = 0;
-    LoadStringW(hInstance, IDS_EXPORT_FORMAT, text,
-     sizeof(text)/ sizeof(text[0]));
+    LoadStringW(hInstance, IDS_EXPORT_FORMAT, text, ARRAY_SIZE(text));
     SendMessageW(lv, LVM_INSERTITEMW, 0, (LPARAM)&item);
 
     item.iSubItem = 1;
@@ -6463,7 +6421,7 @@ static void show_export_details(HWND lv, const struct ExportWizData *data)
             contentID = IDS_EXPORT_FILTER_CERT;
         }
     }
-    LoadStringW(hInstance, contentID, text, sizeof(text) / sizeof(text[0]));
+    LoadStringW(hInstance, contentID, text, ARRAY_SIZE(text));
     SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
 }
 
@@ -6835,12 +6793,10 @@ static LRESULT CALLBACK export_finish_dlg_proc(HWND hwnd, UINT msg, WPARAM wp,
                 pTitle = data->pwszWizardTitle;
             else
             {
-                LoadStringW(hInstance, IDS_EXPORT_WIZARD, title,
-                 sizeof(title) / sizeof(title[0]));
+                LoadStringW(hInstance, IDS_EXPORT_WIZARD, title, ARRAY_SIZE(title));
                 pTitle = title;
             }
-            LoadStringW(hInstance, messageID, message,
-             sizeof(message) / sizeof(message[0]));
+            LoadStringW(hInstance, messageID, message, ARRAY_SIZE(message));
             MessageBoxW(hwnd, message, pTitle, mbFlags);
             break;
         }
@@ -7042,24 +6998,571 @@ BOOL WINAPI CryptUIDlgViewSignerInfoA(CRYPTUI_VIEWSIGNERINFO_STRUCTA *pcvsi)
     return FALSE;
 }
 
+static void init_columns(HWND lv, DWORD flags)
+{
+    WCHAR buf[MAX_STRING_LEN];
+    LVCOLUMNW column;
+    DWORD i = 0;
+
+    SendMessageW(lv, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT);
+    column.mask = LVCF_WIDTH | LVCF_TEXT;
+    column.cx = 90;
+    column.pszText = buf;
+    if (!(flags & CRYPTUI_SELECT_ISSUEDTO_COLUMN))
+    {
+        LoadStringW(hInstance, IDS_SUBJECT_COLUMN, buf, ARRAY_SIZE(buf));
+        SendMessageW(lv, LVM_INSERTCOLUMNW, i++, (LPARAM)&column);
+    }
+    if (!(flags & CRYPTUI_SELECT_ISSUEDBY_COLUMN))
+    {
+        LoadStringW(hInstance, IDS_ISSUER_COLUMN, buf, ARRAY_SIZE(buf));
+        SendMessageW(lv, LVM_INSERTCOLUMNW, i++, (LPARAM)&column);
+    }
+    if (!(flags & CRYPTUI_SELECT_INTENDEDUSE_COLUMN))
+    {
+        LoadStringW(hInstance, IDS_INTENDED_USE_COLUMN, buf, ARRAY_SIZE(buf));
+        SendMessageW(lv, LVM_INSERTCOLUMNW, i++, (LPARAM)&column);
+    }
+    if (!(flags & CRYPTUI_SELECT_FRIENDLYNAME_COLUMN))
+    {
+        LoadStringW(hInstance, IDS_FRIENDLY_NAME_COLUMN, buf, ARRAY_SIZE(buf));
+        SendMessageW(lv, LVM_INSERTCOLUMNW, i++, (LPARAM)&column);
+    }
+    if (!(flags & CRYPTUI_SELECT_EXPIRATION_COLUMN))
+    {
+        LoadStringW(hInstance, IDS_EXPIRATION_COLUMN, buf, ARRAY_SIZE(buf));
+        SendMessageW(lv, LVM_INSERTCOLUMNW, i++, (LPARAM)&column);
+    }
+    if (!(flags & CRYPTUI_SELECT_LOCATION_COLUMN))
+    {
+        LoadStringW(hInstance, IDS_LOCATION_COLUMN, buf, ARRAY_SIZE(buf));
+        SendMessageW(lv, LVM_INSERTCOLUMNW, i++, (LPARAM)&column);
+    }
+}
+
+static void add_cert_to_list(HWND lv, PCCERT_CONTEXT cert, DWORD flags, DWORD *allocatedLen,
+ LPWSTR *str)
+{
+    DWORD len;
+    LVITEMW item;
+    WCHAR dateFmt[80]; /* sufficient for LOCALE_SSHORTDATE */
+    WCHAR buf[80];
+    SYSTEMTIME sysTime;
+    LPWSTR none, usages;
+
+    item.mask = LVIF_IMAGE | LVIF_PARAM | LVIF_TEXT;
+    item.iItem = SendMessageW(lv, LVM_GETITEMCOUNT, 0, 0);
+    item.iSubItem = 0;
+    item.iImage = 0;
+    item.lParam = (LPARAM)CertDuplicateCertificateContext(cert);
+    if (!item.iItem)
+    {
+        item.mask |= LVIF_STATE;
+        item.state = LVIS_SELECTED;
+        item.stateMask = -1;
+    }
+    if (!(flags & CRYPTUI_SELECT_ISSUEDTO_COLUMN))
+    {
+        len = CertGetNameStringW(cert, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, NULL, NULL, 0);
+        if (len > *allocatedLen)
+        {
+            HeapFree(GetProcessHeap(), 0, *str);
+            *str = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR));
+            if (*str)
+                *allocatedLen = len;
+        }
+        if (*str)
+        {
+            CertGetNameStringW(cert, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, NULL, *str, len);
+            item.pszText = *str;
+            SendMessageW(lv, LVM_INSERTITEMW, 0, (LPARAM)&item);
+        }
+        item.mask = LVIF_TEXT;
+        ++item.iSubItem;
+    }
+    if (!(flags & CRYPTUI_SELECT_ISSUEDBY_COLUMN))
+    {
+        len = CertGetNameStringW(cert, CERT_NAME_SIMPLE_DISPLAY_TYPE, CERT_NAME_ISSUER_FLAG, NULL,
+         NULL, 0);
+        if (len > *allocatedLen)
+        {
+            HeapFree(GetProcessHeap(), 0, *str);
+            *str = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR));
+            if (*str)
+                *allocatedLen = len;
+        }
+        if (*str)
+        {
+            CertGetNameStringW(cert, CERT_NAME_SIMPLE_DISPLAY_TYPE, CERT_NAME_ISSUER_FLAG, NULL,
+             *str, len);
+            item.pszText = *str;
+            if (!item.iSubItem)
+                SendMessageW(lv, LVM_INSERTITEMW, 0, (LPARAM)&item);
+            else
+                SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
+        }
+        item.mask = LVIF_TEXT;
+        ++item.iSubItem;
+    }
+    if (!(flags & CRYPTUI_SELECT_INTENDEDUSE_COLUMN))
+    {
+        get_cert_usages(cert, &usages);
+        if (usages)
+        {
+            item.pszText = usages;
+            if (!item.iSubItem)
+                SendMessageW(lv, LVM_INSERTITEMW, 0, (LPARAM)&item);
+            else
+                SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
+            HeapFree(GetProcessHeap(), 0, usages);
+        }
+        item.mask = LVIF_TEXT;
+        ++item.iSubItem;
+    }
+    if (!(flags & CRYPTUI_SELECT_FRIENDLYNAME_COLUMN))
+    {
+        if (!CertGetCertificateContextProperty(cert, CERT_FRIENDLY_NAME_PROP_ID, NULL, &len))
+            len = LoadStringW(hInstance, IDS_FRIENDLY_NAME_NONE, (LPWSTR)&none, 0);
+        if (len > *allocatedLen)
+        {
+            HeapFree(GetProcessHeap(), 0, *str);
+            *str = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR));
+            if (*str)
+                *allocatedLen = len;
+        }
+        if (*str)
+        {
+            if (!CertGetCertificateContextProperty(cert, CERT_FRIENDLY_NAME_PROP_ID, *str, &len))
+                item.pszText = none;
+            else
+                item.pszText = *str;
+            if (!item.iSubItem)
+                SendMessageW(lv, LVM_INSERTITEMW, 0, (LPARAM)&item);
+            else
+                SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
+        }
+        item.mask = LVIF_TEXT;
+        ++item.iSubItem;
+    }
+    if (!(flags & CRYPTUI_SELECT_EXPIRATION_COLUMN))
+    {
+        GetLocaleInfoW(LOCALE_SYSTEM_DEFAULT, LOCALE_SSHORTDATE, dateFmt, ARRAY_SIZE(dateFmt));
+        FileTimeToSystemTime(&cert->pCertInfo->NotAfter, &sysTime);
+        GetDateFormatW(LOCALE_SYSTEM_DEFAULT, 0, &sysTime, dateFmt, buf, ARRAY_SIZE(buf));
+        item.pszText = buf;
+        if (!item.iSubItem)
+            SendMessageW(lv, LVM_INSERTITEMW, 0, (LPARAM)&item);
+        else
+            SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
+        item.mask = LVIF_TEXT;
+        ++item.iSubItem;
+    }
+    if (!(flags & CRYPTUI_SELECT_LOCATION_COLUMN))
+    {
+        static int show_fixme;
+        if (!show_fixme++)
+            FIXME("showing location is not implemented\n");
+        LoadStringW(hInstance, IDS_NO_IMPL, buf, ARRAY_SIZE(buf));
+        if (!item.iSubItem)
+            SendMessageW(lv, LVM_INSERTITEMW, 0, (LPARAM)&item);
+        else
+            SendMessageW(lv, LVM_SETITEMTEXTW, item.iItem, (LPARAM)&item);
+    }
+}
+
+static void add_store_certs(HWND lv, HCERTSTORE store, DWORD flags, PFNCFILTERPROC filter,
+ void *callback_data)
+{
+    PCCERT_CONTEXT cert = NULL;
+    BOOL select = FALSE;
+    DWORD allocatedLen = 0;
+    LPWSTR str = NULL;
+
+    do {
+        cert = CertEnumCertificatesInStore(store, cert);
+        if (cert && (!filter || filter(cert, &select, callback_data)))
+            add_cert_to_list(lv, cert, flags, &allocatedLen, &str);
+    } while (cert);
+    HeapFree(GetProcessHeap(), 0, str);
+}
+
+static PCCERT_CONTEXT select_cert_get_selected(HWND hwnd, int selection)
+{
+    HWND lv = GetDlgItem(hwnd, IDC_SELECT_CERTS);
+    PCCERT_CONTEXT cert = NULL;
+    LVITEMW item;
+
+    if (selection < 0)
+        selection = SendMessageW(lv, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
+    if (selection < 0)
+        return NULL;
+    item.mask = LVIF_PARAM;
+    item.iItem = selection;
+    item.iSubItem = 0;
+    if (SendMessageW(lv, LVM_GETITEMW, 0, (LPARAM)&item))
+        cert = (PCCERT_CONTEXT)item.lParam;
+    return cert;
+}
+
+static void select_cert_update_view_button(HWND hwnd)
+{
+    HWND lv = GetDlgItem(hwnd, IDC_SELECT_CERTS);
+    int numSelected = SendMessageW(lv, LVM_GETSELECTEDCOUNT, 0, 0);
+
+    EnableWindow(GetDlgItem(hwnd, IDC_SELECT_VIEW_CERT), numSelected == 1);
+}
+
+struct SelectCertData
+{
+    PCCERT_CONTEXT *cert;
+    DWORD dateColumn;
+    HIMAGELIST imageList;
+    LPCWSTR title;
+    DWORD cStores;
+    HCERTSTORE *rghStores;
+    DWORD cPropSheetPages;
+    LPCPROPSHEETPAGEW rgPropSheetPages;
+    PFNCCERTDISPLAYPROC displayProc;
+    void *callbackData;
+};
+
+static void select_cert_view(HWND hwnd, PCCERT_CONTEXT cert, struct SelectCertData *data)
+{
+    CRYPTUI_VIEWCERTIFICATE_STRUCTW viewInfo;
+
+    if (data->displayProc && data->displayProc(cert, hwnd, data->callbackData))
+        return;
+    memset(&viewInfo, 0, sizeof(viewInfo));
+    viewInfo.dwSize = sizeof(viewInfo);
+    viewInfo.hwndParent = hwnd;
+    viewInfo.pCertContext = cert;
+    viewInfo.cStores = data->cStores;
+    viewInfo.rghStores = data->rghStores;
+    viewInfo.cPropSheetPages = data->cPropSheetPages;
+    viewInfo.rgPropSheetPages = data->rgPropSheetPages;
+    /* FIXME: this should be modal */
+    CryptUIDlgViewCertificateW(&viewInfo, NULL);
+}
+
+struct SortData
+{
+    HWND hwnd;
+    int column;
+};
+
+static int CALLBACK select_cert_sort_by_text(LPARAM lp1, LPARAM lp2, LPARAM lp)
+{
+    struct SortData *data = (struct SortData *)lp;
+    return cert_mgr_sort_by_text(data->hwnd, data->column, lp1, lp2);
+}
+
+struct SelectCertParam
+{
+    PCCRYPTUI_SELECTCERTIFICATE_STRUCTW pcsc;
+    PCCERT_CONTEXT cert;
+};
+
+static LRESULT CALLBACK select_cert_dlg_proc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+    struct SelectCertData *data;
+
+    switch (msg)
+    {
+    case WM_INITDIALOG:
+    {
+        struct SelectCertParam *param = (struct SelectCertParam *)lp;
+        PCCRYPTUI_SELECTCERTIFICATE_STRUCTW pcsc = param->pcsc;
+        HWND lv = GetDlgItem(hwnd, IDC_SELECT_CERTS);
+        DWORD i = 0;
+
+        data = HeapAlloc(GetProcessHeap(), 0, sizeof(*data));
+        if (!data)
+            return 0;
+        data->cert = &param->cert;
+        data->dateColumn = 4 -
+         ((pcsc->dwDontUseColumn & CRYPTUI_SELECT_ISSUEDTO_COLUMN) ? 1 : 0) -
+         ((pcsc->dwDontUseColumn & CRYPTUI_SELECT_ISSUEDBY_COLUMN) ? 1 : 0) -
+         ((pcsc->dwDontUseColumn & CRYPTUI_SELECT_INTENDEDUSE_COLUMN) ? 1 : 0) -
+         ((pcsc->dwDontUseColumn & CRYPTUI_SELECT_FRIENDLYNAME_COLUMN) ? 1 : 0);
+        data->imageList = ImageList_Create(16, 16, ILC_COLOR4 | ILC_MASK, 2, 0);
+        if (data->imageList)
+        {
+            HBITMAP bmp;
+            COLORREF backColor = RGB(255, 0, 255);
+
+            bmp = LoadBitmapW(hInstance, MAKEINTRESOURCEW(IDB_SMALL_ICONS));
+            ImageList_AddMasked(data->imageList, bmp, backColor);
+            DeleteObject(bmp);
+            ImageList_SetBkColor(data->imageList, CLR_NONE);
+            SendMessageW(GetDlgItem(hwnd, IDC_SELECT_CERTS), LVM_SETIMAGELIST, LVSIL_SMALL,
+             (LPARAM)data->imageList);
+        }
+        data->title = pcsc->szTitle;
+        data->cStores = pcsc->cStores;
+        data->rghStores = pcsc->rghStores;
+        data->cPropSheetPages = pcsc->cPropSheetPages;
+        data->rgPropSheetPages = pcsc->rgPropSheetPages;
+        data->displayProc = pcsc->pDisplayCallback;
+        data->callbackData = pcsc->pvCallbackData;
+        SetWindowLongPtrW(hwnd, DWLP_USER, (LPARAM)data);
+
+        if (pcsc->szTitle)
+            SendMessageW(hwnd, WM_SETTEXT, 0, (LPARAM)pcsc->szTitle);
+        if (pcsc->szDisplayString)
+            SendMessageW(GetDlgItem(hwnd, IDC_SELECT_DISPLAY_STRING), WM_SETTEXT, 0,
+             (LPARAM)pcsc->szDisplayString);
+        init_columns(lv, pcsc->dwDontUseColumn);
+        while (i < pcsc->cDisplayStores)
+            add_store_certs(lv, pcsc->rghDisplayStores[i++], pcsc->dwDontUseColumn,
+             pcsc->pFilterCallback, pcsc->pvCallbackData);
+        select_cert_update_view_button(hwnd);
+        break;
+    }
+    case WM_NOTIFY:
+    {
+        NMHDR *hdr = (NMHDR *)lp;
+
+        switch (hdr->code)
+        {
+        case NM_DBLCLK:
+        {
+            PCCERT_CONTEXT cert = select_cert_get_selected(hwnd, ((NMITEMACTIVATE *)lp)->iItem);
+
+            data = (struct SelectCertData *)GetWindowLongPtrW(hwnd, DWLP_USER);
+            if (cert)
+                select_cert_view(hwnd, cert, data);
+            break;
+        }
+        case LVN_COLUMNCLICK:
+        {
+            NMLISTVIEW *nmlv = (NMLISTVIEW *)lp;
+            HWND lv = GetDlgItem(hwnd, IDC_SELECT_CERTS);
+
+            /* FIXME: doesn't support swapping sort order between ascending and descending. */
+            data = (struct SelectCertData *)GetWindowLongPtrW(hwnd, DWLP_USER);
+            if (nmlv->iSubItem == data->dateColumn)
+                SendMessageW(lv, LVM_SORTITEMS, 0, (LPARAM)cert_mgr_sort_by_date);
+            else
+            {
+                struct SortData sortData;
+
+                sortData.hwnd = lv;
+                sortData.column = nmlv->iSubItem;
+                SendMessageW(lv, LVM_SORTITEMSEX, (WPARAM)&sortData,
+                 (LPARAM)select_cert_sort_by_text);
+            }
+            break;
+        }
+        }
+        break;
+    }
+    case WM_COMMAND:
+        switch (wp)
+        {
+        case IDOK:
+        {
+            PCCERT_CONTEXT cert = select_cert_get_selected(hwnd, -1);
+
+            data = (struct SelectCertData *)GetWindowLongPtrW(hwnd, DWLP_USER);
+            if (!cert)
+            {
+                WCHAR buf[40], title[40];
+
+                LoadStringW(hInstance, IDS_SELECT_CERT, buf, ARRAY_SIZE(buf));
+                if (!data->title)
+                    LoadStringW(hInstance, IDS_SELECT_CERT_TITLE, title, ARRAY_SIZE(title));
+                MessageBoxW(hwnd, buf, data->title ? data->title : title, MB_OK | MB_ICONWARNING);
+                break;
+            }
+            *data->cert = CertDuplicateCertificateContext(cert);
+            free_certs(GetDlgItem(hwnd, IDC_SELECT_CERTS));
+            ImageList_Destroy(data->imageList);
+            HeapFree(GetProcessHeap(), 0, data);
+            EndDialog(hwnd, IDOK);
+            break;
+        }
+        case IDCANCEL:
+            data = (struct SelectCertData *)GetWindowLongPtrW(hwnd, DWLP_USER);
+            free_certs(GetDlgItem(hwnd, IDC_SELECT_CERTS));
+            ImageList_Destroy(data->imageList);
+            HeapFree(GetProcessHeap(), 0, data);
+            EndDialog(hwnd, IDCANCEL);
+            break;
+        case IDC_SELECT_VIEW_CERT:
+        {
+            PCCERT_CONTEXT cert = select_cert_get_selected(hwnd, -1);
+
+            data = (struct SelectCertData *)GetWindowLongPtrW(hwnd, DWLP_USER);
+            if (cert)
+                select_cert_view(hwnd, cert, data);
+            break;
+        }
+        }
+        break;
+    }
+    return 0;
+}
+
 PCCERT_CONTEXT WINAPI CryptUIDlgSelectCertificateW(PCCRYPTUI_SELECTCERTIFICATE_STRUCTW pcsc)
 {
-    FIXME("%p: stub\n", pcsc);
+    struct SelectCertParam param;
+
+    TRACE("%p\n", pcsc);
+
+    if (pcsc->dwSize != sizeof(*pcsc) && pcsc->dwSize != sizeof(*pcsc) - sizeof(HCERTSTORE))
+    {
+        WARN("unexpected size %d\n", pcsc->dwSize);
+        SetLastError(E_INVALIDARG);
+        return NULL;
+    }
+    if (pcsc->dwFlags & CRYPTUI_SELECTCERT_MULTISELECT)
+        FIXME("ignoring CRYPTUI_SELECTCERT_MULTISELECT\n");
+    param.pcsc = pcsc;
+    param.cert = NULL;
+    DialogBoxParamW(hInstance, MAKEINTRESOURCEW(IDD_SELECT_CERT), pcsc->hwndParent,
+     select_cert_dlg_proc, (LPARAM)&param);
+    return param.cert;
+}
+
+static void free_prop_sheet_pages(PROPSHEETPAGEW *pages, DWORD num)
+{
+    DWORD i;
+
+    for (i = 0; i < num; i++)
+    {
+        if (!(pages[i].dwFlags & PSP_DLGINDIRECT) && !IS_INTRESOURCE(pages[i].u.pszTemplate))
+            HeapFree(GetProcessHeap(), 0, (void *)pages[i].u.pszTemplate);
+        if ((pages[i].dwFlags & PSP_USEICONID) && !IS_INTRESOURCE(pages[i].u2.pszIcon))
+            HeapFree(GetProcessHeap(), 0, (void *)pages[i].u2.pszIcon);
+        if ((pages[i].dwFlags & PSP_USETITLE) && !IS_INTRESOURCE(pages[i].pszTitle))
+            HeapFree(GetProcessHeap(), 0, (void *)pages[i].pszTitle);
+        if ((pages[i].dwFlags & PSP_USEHEADERTITLE) && !IS_INTRESOURCE(pages[i].pszHeaderTitle))
+            HeapFree(GetProcessHeap(), 0, (void *)pages[i].pszHeaderTitle);
+        if ((pages[i].dwFlags & PSP_USEHEADERSUBTITLE) &&
+         !IS_INTRESOURCE(pages[i].pszHeaderSubTitle))
+            HeapFree(GetProcessHeap(), 0, (void *)pages[i].pszHeaderSubTitle);
+    }
+    HeapFree(GetProcessHeap(), 0, pages);
+}
+
+static PROPSHEETPAGEW *prop_sheet_pages_AtoW(LPCPROPSHEETPAGEA pages, DWORD num)
+{
+    PROPSHEETPAGEW *psp;
+    DWORD i, size = sizeof(*psp) * num;
+
+    psp = HeapAlloc(GetProcessHeap(), 0, size);
+    if (!psp)
+        return NULL;
+    memcpy(psp, pages, size);
+    for (i = 0; i < num; i++)
+    {
+        if (!(pages[i].dwFlags & PSP_DLGINDIRECT) && !IS_INTRESOURCE(pages[i].u.pszTemplate))
+            psp[i].u.pszTemplate = NULL;
+        if ((pages[i].dwFlags & PSP_USEICONID) && !IS_INTRESOURCE(pages[i].u2.pszIcon))
+            psp[i].u2.pszIcon = NULL;
+        if ((pages[i].dwFlags & PSP_USETITLE) && !IS_INTRESOURCE(pages[i].pszTitle))
+            psp[i].pszTitle = NULL;
+        if (pages[i].dwFlags & PSP_USECALLBACK)
+            psp[i].pfnCallback = NULL;
+        if ((pages[i].dwFlags & PSP_USEHEADERTITLE) && !IS_INTRESOURCE(pages[i].pszHeaderTitle))
+            psp[i].pszHeaderTitle = NULL;
+        if ((pages[i].dwFlags & PSP_USEHEADERSUBTITLE) &&
+         !IS_INTRESOURCE(pages[i].pszHeaderSubTitle))
+            psp[i].pszHeaderSubTitle = NULL;
+    }
+    for (i = 0; i < num; i++)
+    {
+        if (!(pages[i].dwFlags & PSP_DLGINDIRECT) && !IS_INTRESOURCE(pages[i].u.pszTemplate))
+        {
+            if (!(psp[i].u.pszTemplate = strdupAtoW( pages[i].u.pszTemplate ))) goto error;
+        }
+        if ((pages[i].dwFlags & PSP_USEICONID) && !IS_INTRESOURCE(pages[i].u2.pszIcon))
+        {
+            if (!(psp[i].u2.pszIcon = strdupAtoW( pages[i].u2.pszIcon ))) goto error;
+        }
+        if ((pages[i].dwFlags & PSP_USETITLE) && !IS_INTRESOURCE(pages[i].pszTitle))
+        {
+            if (!(psp[i].pszTitle = strdupAtoW( pages[i].pszTitle ))) goto error;
+        }
+        if (pages[i].dwFlags & PSP_USECALLBACK)
+            FIXME("ignoring pfnCallback\n");
+        if ((pages[i].dwFlags & PSP_USEHEADERTITLE) && !IS_INTRESOURCE(pages[i].pszHeaderTitle))
+        {
+            if (!(psp[i].pszHeaderTitle = strdupAtoW( pages[i].pszHeaderTitle ))) goto error;
+        }
+        if ((pages[i].dwFlags & PSP_USEHEADERSUBTITLE) &&
+         !IS_INTRESOURCE(pages[i].pszHeaderSubTitle))
+        {
+            if (!(psp[i].pszHeaderSubTitle = strdupAtoW( pages[i].pszHeaderSubTitle ))) goto error;
+        }
+    }
+    return psp;
+error:
+    free_prop_sheet_pages(psp, num);
     return NULL;
 }
 
 PCCERT_CONTEXT WINAPI CryptUIDlgSelectCertificateA(PCCRYPTUI_SELECTCERTIFICATE_STRUCTA pcsc)
 {
-    FIXME("%p: stub\n", pcsc);
-    return NULL;
+    PCCERT_CONTEXT cert = NULL;
+    CRYPTUI_SELECTCERTIFICATE_STRUCTW selCertInfo;
+    LPWSTR title = NULL, display_str = NULL;
+    PROPSHEETPAGEW *pages = NULL;
+
+    TRACE("%p\n", pcsc);
+
+    if (pcsc->dwSize != sizeof(*pcsc) && pcsc->dwSize != sizeof(*pcsc) - sizeof(HCERTSTORE))
+    {
+        WARN("unexpected size %d\n", pcsc->dwSize);
+        SetLastError(E_INVALIDARG);
+        return NULL;
+    }
+    memcpy(&selCertInfo, pcsc, pcsc->dwSize);
+    if (pcsc->szTitle)
+    {
+        if (!(title = strdupAtoW( pcsc->szTitle ))) goto error;
+        selCertInfo.szTitle = title;
+    }
+    if (pcsc->szDisplayString)
+    {
+        if (!(display_str = strdupAtoW( pcsc->szDisplayString ))) goto error;
+        selCertInfo.szDisplayString = display_str;
+    }
+    if (pcsc->cPropSheetPages)
+    {
+        pages = prop_sheet_pages_AtoW(pcsc->rgPropSheetPages, pcsc->cPropSheetPages);
+        if (!pages)
+            goto error;
+        selCertInfo.rgPropSheetPages = pages;
+    }
+    cert = CryptUIDlgSelectCertificateW(&selCertInfo);
+error:
+    HeapFree(GetProcessHeap(), 0, title);
+    HeapFree(GetProcessHeap(), 0, display_str);
+    if (pcsc->cPropSheetPages)
+        free_prop_sheet_pages(pages, pcsc->cPropSheetPages);
+    return cert;
 }
 
 PCCERT_CONTEXT WINAPI CryptUIDlgSelectCertificateFromStore(HCERTSTORE hCertStore, HWND hwnd, LPCWSTR pwszTitle,
                                                            LPCWSTR pwszDisplayString, DWORD dwDontUseColumn,
                                                            DWORD dwFlags, void *pvReserved)
 {
-    FIXME("%p %p %s %s %d %d %p: stub\n", hCertStore, hwnd, debugstr_w(pwszTitle), debugstr_w(pwszDisplayString), dwDontUseColumn, dwFlags, pvReserved);
-    return NULL;
+    CRYPTUI_SELECTCERTIFICATE_STRUCTW sc;
+
+    TRACE("%p %p %s %s %x %x %p\n", hCertStore, hwnd, debugstr_w(pwszTitle), debugstr_w(pwszDisplayString), dwDontUseColumn, dwFlags, pvReserved);
+
+    memset(&sc, 0, sizeof(sc));
+
+    sc.dwSize = sizeof(sc);
+    sc.hwndParent = hwnd;
+    sc.dwFlags = dwFlags;
+    sc.szTitle = pwszTitle;
+    sc.szDisplayString = pwszDisplayString;
+    sc.dwDontUseColumn = dwDontUseColumn;
+    sc.cDisplayStores = 1;
+    sc.rghDisplayStores = &hCertStore;
+    return CryptUIDlgSelectCertificateW(&sc);
 }
 
 BOOL WINAPI CryptUIWizDigitalSign(DWORD flags, HWND parent, LPCWSTR title, PCCRYPTUI_WIZ_DIGITAL_SIGN_INFO info,

@@ -17,19 +17,6 @@ assoc (друк всiх асоцiацiй)\n\
 assoc .рош (друк вiдповiдної асоцiацiї)\n\
 assoc .рош= (видалення вiдповiдної асоцiацiї)\n\
 assoc .рош=ФайлТип (додати нову асоцiацiю)\n"
-    STRING_ATTRIB_HELP "Відображення або зміна атрибутів файлу.\n\n\
-ATTRIB [+R | -R] [+A | -A] [+S | -S] [+H | -H] файл ...\n\
-       [/S [/D]]\n\n\
-  +   Встановлення атрибуту\n\
-  -   Зняття атрибуту\n\
-  R   Атрибут файлу ""Лише читання""\n\
-  A   Атрибут файлу ""Архiвний""\n\
-  S   Атрибут файлу ""Системний""\n\
-  H   Атрибут файлу ""Прихований""\n\
-  /S  Обробка файлiв зi вказаними iменами в поточнiй тецi\n\
-      i у всіх її пiдтеках\n\
-  /D  Обробка також i тек\n\n\
-Введiть ATTRIB без параметра, щоб вивести атрибути всiх файлiв.\n"
     STRING_ALIAS_HELP "Встановлення, видалення або показ псевдонiмiв.\n\n\
 ALIAS [псевдонiм=[команда]]\n\n\
   псевдонiм    Iм'я псевдонiма.\n\
@@ -55,10 +42,6 @@ CD[..|.]\n\n\
   /D   Одночасна змiна поточного диску та каталогу.\n\n\
 Команда CD диск: вiдображає iм'я поточного каталогу вказаного диску.\n\
 Команда CD без параметрiв вiдображає iмена поточних диску та каталогу.\n"
-    STRING_CHCP_HELP "Вивiд або змiна поточного номера кодової сторiнки.\n\n\
-CHCP [nnn]\n\n\
-  nnn   Задає номер кодової сторiнки.\n\n\
-Команда CHCP без параметра виводить поточний номер кодової сторiнки.\n"
     STRING_CHOICE_HELP "Очiкує, поки користувач не обере один з вказаних в списку символiв.\n\n\
 CHOICE  [/C[:]список_символiв][/N][/S][/T[:]c,nn][текст]\n\n\
   /C[:]список_символiв  Задає допустимi символи. По замовчуванню це YN.\n\
@@ -83,9 +66,9 @@ CMD [/[C|K] команда][/P][/Q][/T:кл]\n\n\
               (процес не може бути завершений).\n\
   /T:кл       Вибiр кольору тексту/тла (детальнiше див. COLOR /?).\n"
     STRING_COLOR_HELP1 "Встановлення кольорiв по замовчуванню для тексту та тла.\n\n\
-COLOR [attr [/-F]] \n\n\
-  attr        Атрибути кольорiв для текстових вiкон\n\
-  /-F         Не заливати незаповненi мiсця кольором\n\n\
+COLOR [attr [/-F]]\n\n\
+  attr        Атрибути кольорiв для текстових вiкон.\n\
+  /-F         Не заливати незаповненi мiсця кольором.\n\n\
 Iснує три способи задання кольорiв:\n\
 1) за назвою на англiйськiй мовi  (потрiбно лише першi три букви назви)\n\
 2) в виглядi десяткових чисел (decimal on decimal)\n\
@@ -115,6 +98,14 @@ COPY [/V][/Y|/-Y][/A|/B] джерело [/A|/B]\n\
                результуючого файлу.\n\n\
 Ключ /Y можна встановити через змiнну середовища COPYCMD.\n\
 ...\n"
+    STRING_CTTY_HELP "Changes the standard I/O terminal device to an auxiliary device.\n\n\
+CTTY device\n\n\
+  device    The terminal device you want to use as the new standard I/O device.\n\
+            This name must refer to a valid character device:\n\
+            AUX, COMx (x=1..N), CON, LPTx (x=1..N), PRN, NUL.\n\
+            CON is usually the default standard I/O device.\n\n\
+To return control to the standard console, type: CTTY CON on the auxiliary\n\
+device."
     STRING_DATE_HELP1 "\nВведiть нову дату (mm%cdd%cyyyy): "
     STRING_DATE_HELP2 "\nВведiть нову дату (dd%cmm%cyyyy): "
     STRING_DATE_HELP3 "\nВведiть нову дату (yyyy%cmm%cdd): "
@@ -146,13 +137,13 @@ ERASE [/N /P /T /Q /S /W /Y /Z /A[[:]атрибути]] iмена_файлiв ..
         A     Файли для архiвування\n\
         H     Прихованi файли\n\
         Префiкс ""-"" означає НЕ\n"
-    STRING_DEL_HELP2 "Всi файли в каталозi будуть видалннi!\nВи впевненi (Y/N)?"
+    STRING_DEL_HELP2 "Всi файли в каталозi будуть видалннi!\nВи впевненi (Y/N)? "
     STRING_DEL_HELP3 "    %lu файл видалено\n"
     STRING_DEL_HELP4 "    %lu файлiв видалено\n"
-    STRING_DELAY_HELP "пауза на n секунд чи мiлiсекунд\n\
+    STRING_DELAY_HELP "Пауза на n секунд чи мiлiсекунд.\n\
 DELAY [/m]n\n\n\
-  /m          вказує, що n це мiлiсекунди\n\
-              iнакше n це кiлькiсть секунд\n"
+  /m          Вказує, що n це мiлiсекунди\n\
+              iнакше n це кiлькiсть секунд.\n"
     STRING_DIR_HELP1 "DIR [диск:][шлях][iм'я_файлу] [/A[[:]атрибути]] [/B] [/C] [/D] [/L] [/N]\n\
   [/O[[:]порядок]] [/P] [/Q] [/R] [/S] [/T[[:]час]] [/W] [/X] [/4]\n\n\
   [диск:][шлях][iм'я_файлу]\n\
@@ -180,7 +171,7 @@ DELAY [/m]n\n\n\
               A  Останнiй доступ\n\
               W  Остання змiна\n\
   /W          Список на декiлька стовпцiв.\n\
-  /X          Вiдображення коротких iмен файлiв, iмена яких не вiдповiдають \n\
+  /X          Вiдображення коротких iмен файлiв, iмена яких не вiдповiдають\n\
               стандарту 8.3.  Формат аналогiчний виводу з ключем /N але короткi\n\
               iмена виводяться спава вiд довгих. Якщо у файла немає короткого\n\
               iм'я, замiсть нього виводяться пробли.\n\
@@ -215,17 +206,30 @@ PUSHD [path | ..]\n\n\
 ECHO без параметра виводить поточний режим вiдображення команд."
     STRING_ECHO_HELP5 "ECHO is %s\n"
     STRING_EXIT_HELP "Завершує iнтерпретатор команд.\n\nEXIT [/b] [ExitCode]\n\n\
-  /B            Виходить лише з пакетного файлу.  \n\
+  /B            Виходить лише з пакетного файлу.\n\
                 Якщо робота йде поза пакетним файлом - вихiд з cmd.exe\n\
   ExitCode      Це значення буде присвоєно ERRORLEVEL при виходi\n"
-    STRING_FOR_HELP1 "Запускає вказану команду для кожного файлу з набору файлiв\n\n\
-FOR %variable IN (набiр) DO команда [параметри]\n\n\
-  %variable  Параметр, що пiдставляється.\n\
+    STRING_FOR_HELP1 "Запускає вказану команду для кожного файлу з набору файлiв.\n\n\
+FOR %параметр IN (набiр) DO команда [параметри]\n\
+FOR /L %параметр IN (start,step,end) DO команда [параметри]\n\
+FOR /D %параметр IN (набiр) DO команда [параметри]\n\
+FOR /R [[drive:]path] IN (набiр) DO команда [параметри]\n\
+FOR /F [""options""] IN (набiр) DO команда [параметри]\n\n\
+  /L    Generates a number sequence from start to end incrementing by step.\n\
+  /D    Modifies the set to refer to directories instead of files.\n\
+  /R    Executes command for files in the set in the specified path (or current\n\
+        working directory if not specified) and every directory below.\n\
+  /F    Modifies the set to refer to the contents of the files in the set.\n\n\
+  %параметр  Параметр, що пiдставляється.\n\
   (набiр)    Набiр з одного або декiлькох файлiв. Можна використовувати маски.\n\
   команда    Команда, яку слiд виконати для кожного файлу.\n\
-  параметри  Параметри i ключi для вказаної команди.\n\n\
-В пакетних програмах для команди FOR використовується %%variable замiсть\n\
-%variable.\n"
+  параметри  Параметри i ключi для вказаної команди.\n\
+  options    Supported options are: eol, skip, delims, tokens, and usebackq.\n\n\
+Replacable parameters can be modified by adding a ~ and an optional qualifier\n\
+after the % and before the name (e.g. %~X). Supported qualifiers are:\n\
+f,d,p,n,x,s,a,t,z.\n\n\
+В пакетних програмах для команди FOR використовується %%параметр замiсть\n\
+%параметр.\n"
     STRING_FREE_HELP1 "\nТом диску %s : %-11s\n\
  Серiйний номер: %s\n\
   %16s байт загального дискового простору\n\
@@ -251,11 +255,6 @@ ERRORLEVEL число  Ця умова є iстинною, якщо код, що
 EXIST iм'я_файлу  Умова є iстинною, якщо файл з вказаним iменем iснує.\n\
 DEFINED змiнна    Ця умова є iстинною, якщо вказана змiнна\n\
                   задана.\n"
-    STRING_LABEL_HELP1 "Вiдображення або змiна мiтки тому.\n\nLABEL [диск:][мiтка]\n"
-    STRING_LABEL_HELP2 "Том в пристрої %c: має мiтку %s\n"
-    STRING_LABEL_HELP3 "Том в пристрої %c: не має мiтки\n"
-    STRING_LABEL_HELP4 "Серiйний номер тому: %04X-%04X\n"
-    STRING_LABEL_HELP5 "Мiтка тому (11 букв, ENTER без мiтки)? "
     STRING_LOCALE_HELP1 "Поточний час: "
     STRING_MKDIR_HELP "Створення каталогу.\n\n\
 MKDIR [диск:]шлях\nMD [диск:]шлях"
@@ -371,8 +370,8 @@ REPLACE [диск1:][шлях1]iм'я_файлу [диск2:][шлях2] [/P] [/
     STRING_REPLACE_HELP6 "Замiнити %s\n"
     STRING_REPLACE_HELP7 "Не додано жодних файлiв\n"
     STRING_REPLACE_HELP8 "%lu файл(iв) додано\n"
-    STRING_REPLACE_HELP9 "Додати %s (Y/N) "
-    STRING_REPLACE_HELP10 "Замiнити %s (Y/N) "
+    STRING_REPLACE_HELP9 "Додати %s (Y/N)? "
+    STRING_REPLACE_HELP10 "Замiнити %s (Y/N)? "
     STRING_REPLACE_HELP11 "Додавання %s\n"
     STRING_SHIFT_HELP "Змiна позицiї пiдставлюваних параметрiв для пакетного файлу.\n\n\
 SHIFT [DOWN]"
@@ -386,18 +385,18 @@ SET [змiнна[=][значення]]\n\n\
   значення   Рядок символiв, що призначається вказанiй змiннiй.\n\n\
 SET без параметрiв виводить поточнi значення змiнних середовища.\n"
     STRING_START_HELP1 "Запуск команди.\n\n\
-START [""title""] [/D path] [/I] [/B] [/MIN] [/MAX] [/WAIT]\n\
-      [command/program] [parameters]\n\n\
-  ""title""     Title of the window.\n\
-  path        Specifies the startup directory.\n\
-  I           Uses the original environment given to cmd.exe,\n\
-              instead of the current environment.\n\
-  B           Starts the command or program without creating any window.\n\
-  MIN         Starts with a minimized window.\n\
-  MAX         Starts with a maximized window.\n\
-  WAIT        Starts the command or program and waits for its termination.\n\
-  команда     Команда для запуску.\n\
-  parameters  Specifies the parameters to be given to the command or program.\n"
+START [""заголовок""] [/D шлях] [/I] [/B] [/MIN] [/MAX] [/WAIT]\n\
+      [команда/програма] [параметри]\n\n\
+  ""заголовок""   Заголовок вікна.\n\
+  шлях          Вказує папку запуску.\n\
+  I             Використовувати оригінальне оточення cmd.exe,\n\
+                замість теперішнього.\n\
+  B             Запуск без створення вікна.\n\
+  MIN           Запуск зі згорнутим вікном.\n\
+  MAX           Запуск з розгорнутим вікном.\n\
+  WAIT          Чекати завершення програми або команди.\n\
+  команда       Команда або програма для запуску.\n\
+  параметри     Параметри, які будуть передані програмі чи команді.\n"
     STRING_TITLE_HELP "Змiна заголовка вiкна командного рядка.\n\n\
 TITLE [рядок]\n\n\
 рядок       Майбутнiй заголовок вiкна командного рядка.\n"
@@ -424,7 +423,7 @@ TIMER  [ON|OFF] [/S] [/n] [/Fn]\n\n\
                     1    hh%cmm%css%cdd\n\n\
 Якщо не вказанi ON, OFF та /S , команда перемикає\n\
 стан секундомiра\n\n"
-    STRING_TYPE_HELP1 "Виведення вмiсту текстових файлiв.\n\nTYPE [диск:][шлях]iм'я_файлу \n\
+    STRING_TYPE_HELP1 "Виведення вмiсту текстових файлiв.\n\nTYPE [диск:][шлях]iм'я_файлу\n\
   /P          Поекранний вивiд.\n"
     STRING_VERIFY_HELP1 "This command is just a dummy!!\n\
 Ввiмкнення чи вимкнення перевiрки правильностi запису файлiв\n\
@@ -440,7 +439,7 @@ VER [/C][/R][/W]\n\n\
   /W  Вiдображення гарантiйної iнформацiї."
     STRING_VERSION_HELP2 " надається без БУДЬ-ЯКИХ ГАРАНТIЙ; для детальних даних\n\
 надрукуйте: `ver /w'. Ця програма є вiльним ПЗ, i ви можете розповсюджувати\n\
-її згiдно певних умов; надрукуйте `ver /r' для детальних даних. Надрукуйте `ver /c' \n\
+її згiдно певних умов; надрукуйте `ver /r' для детальних даних. Надрукуйте `ver /c'\n\
 для виведення списку авторiв."
     STRING_VERSION_HELP3 "\n Ця програма розповсюджується iз сподiванням, що вона буде корисною,\n\
  але БЕЗ БУДЬ-ЯКИХ ГАРАНТIЙ; навiть без непрямих гарантiй\n\
@@ -479,8 +478,6 @@ title         новий заголовок\n"
     STRING_ALIAS_ERROR "Командний рядок занадто довгий пiсля розгортання псевдонiмiв!\n"
     STRING_ASSOC_ERROR "Не знайдено файлової асоцiацiї для розширення %s\n"
     STRING_BATCH_ERROR "Помилка вiдкриття пакетного файлу\n"
-    STRING_CHCP_ERROR1 "Поточна кодова сторiнка: %u\n"
-    STRING_CHCP_ERROR4 "Помилкова кодова сторiнка\n"
     STRING_CHOICE_ERROR "Невiрний параметр. Очiкується формат: /C[:]параметри"
     STRING_CHOICE_ERROR_TXT "Невiрний параметр. Очiкується формат: /T[:]c,nn"
     STRING_CHOICE_ERROR_OPTION "Невiрний параметр: %s"
@@ -489,9 +486,8 @@ title         новий заголовок\n"
     STRING_CMD_ERROR3 "Не можу перенаправити в файл %s\n"
     STRING_CMD_ERROR4 "Запуск %s...\n"
     STRING_CMD_ERROR5 "Запуск cmdexit.bat...\n"
-    STRING_COLOR_ERROR1 "помилка - однаковi кольори! (тло та текст не можуть бути однакового кольору)"
-    STRING_COLOR_ERROR2 "помилка при вказаннi кольору"
-    STRING_COLOR_ERROR3 "Колiр %02x\n"
+    STRING_COLOR_ERROR1 "Помилка - однаковi кольори! (тло та текст не можуть бути однакового кольору)"
+    STRING_COLOR_ERROR2 "Помилка при вказаннi кольору"
     STRING_CONSOLE_ERROR "Невiдома помилка: %d\n"
     STRING_COPY_ERROR1 "Помилка: Неможливо вiдкрити джерело - %s!\n"
     STRING_COPY_ERROR2 "Помилка: Неможливо копiювати в себе!\n"
@@ -499,7 +495,7 @@ title         новий заголовок\n"
     STRING_COPY_ERROR4 "Помилка: Ще не реалiзовано!\n"
     STRING_DATE_ERROR "Невiрна дата."
     STRING_DEL_ERROR5 "Файл %s буде видалений! "
-    STRING_DEL_ERROR6 "Ви впевненi (Y/N)?"
+    STRING_DEL_ERROR6 "Ви впевненi (Y/N)? "
     STRING_DEL_ERROR7 "Видалення: %s\n"
     STRING_ERROR_ERROR1 "Невiдома помилка! Код помилки: 0x%lx\n"
     STRING_ERROR_ERROR2 "Синтаксична помилка"
@@ -518,7 +514,7 @@ title         новий заголовок\n"
     STRING_REN_ERROR1 "Невдачне виконання MoveFile(). Помилка: %lu\n"
     STRING_TIME_ERROR1 "Невiрний час."
     STRING_TYPE_ERROR1 "Невiрний параметр '/%s'\n"
-    STRING_WINDOW_ERROR1 "вiкно не знайдено"
+    STRING_WINDOW_ERROR1 "Вiкно не знайдено"
     STRING_ERROR_PARAMETERF_ERROR "Неправильний формат параметра - %c\n"
     STRING_ERROR_INVALID_SWITCH "Невірна опцiя - /%c\n"
     STRING_ERROR_TOO_MANY_PARAMETERS "Забагато параметрiв - %s\n"
@@ -540,7 +536,7 @@ title         новий заголовок\n"
     STRING_REPLACE_ERROR5 "Немає доступу - %s\n"
     STRING_REPLACE_ERROR6 "Файли не знайдено - %s\n"
     STRING_REPLACE_ERROR7 "Розширена помилка 32\n"
-    STRING_CMD_INFOLINE "  ReactOS Command Prompt                                      Type HELP = Help  "
+    STRING_CMD_INFOLINE "  Командний рядок ReactOS                              Введіть HELP = Допомога  "
     STRING_REACTOS_VERSION "Операцiйна Система ReactOS [Версiя %s %s]\n"
     STRING_CMD_SHELLINFO "\nIнтерпретатор командного рядка ReactOS\nVersion %s %s"
     STRING_VERSION_RUNNING_ON "Запущений на: "

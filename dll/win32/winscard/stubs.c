@@ -8,7 +8,9 @@
  *      11/07/2004  Created
  */
 
-#include <precomp.h>
+#include "precomp.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(winscard);
 
 /*
  * @unimplemented
@@ -16,17 +18,6 @@
 LONG
 WINAPI
 SCardBeginTransaction(SCARDHANDLE hCard)
-{
-  UNIMPLEMENTED;
-  return SCARD_F_UNKNOWN_ERROR;
-}
-
-/*
- * @unimplemented
- */
-LONG
-WINAPI
-SCardCancel(SCARDCONTEXT hContext)
 {
   UNIMPLEMENTED;
   return SCARD_F_UNKNOWN_ERROR;

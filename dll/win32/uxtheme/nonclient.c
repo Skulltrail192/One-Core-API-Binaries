@@ -8,26 +8,6 @@
  
 #include "uxthemep.h"
 
-HFONT hMenuFont = NULL;
-HFONT hMenuFontBold = NULL;
-
-void InitMenuFont(VOID)
-{
-    NONCLIENTMETRICS ncm;
-
-    ncm.cbSize = sizeof(NONCLIENTMETRICS); 
-
-    if (!SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0))
-    {
-        return;
-    }
-
-    hMenuFont = CreateFontIndirect(&ncm.lfMenuFont);
-
-    ncm.lfMenuFont.lfWeight = max(ncm.lfMenuFont.lfWeight + 300, 1000);
-    hMenuFontBold = CreateFontIndirect(&ncm.lfMenuFont);
-}
-
 static BOOL 
 IsWindowActive(HWND hWnd, DWORD ExStyle)
 {
@@ -88,10 +68,10 @@ UserGetWindowIcon(PDRAW_CONTEXT pcontext)
         SendMessageTimeout(pcontext->hWnd, WM_GETICON, ICON_BIG, 0, SMTO_ABORTIFHUNG, 1000, (PDWORD_PTR)&hIcon);
 
     if (!hIcon)
-        hIcon = (HICON)GetClassLong(pcontext->hWnd, GCL_HICONSM);
+        hIcon = (HICON)GetClassLongPtr(pcontext->hWnd, GCLP_HICONSM);
 
     if (!hIcon)
-        hIcon = (HICON)GetClassLong(pcontext->hWnd, GCL_HICON);
+        hIcon = (HICON)GetClassLongPtr(pcontext->hWnd, GCLP_HICON);
 
     // See also win32ss/user/ntuser/nonclient.c!NC_IconForWindow
     if (!hIcon && !(pcontext->wi.dwExStyle & WS_EX_DLGMODALFRAME))
@@ -237,6 +217,7 @@ void ThemeCalculateCaptionButtonsPos(HWND hWnd, HTHEME htheme)
     INT ButtonWidth, ButtonHeight, iPartId, i;
     WINDOWINFO wi = {sizeof(wi)};
     RECT rcCurrent;
+    SIZE ButtonSize;
 
     /* First of all check if we have something to do here */
     style = GetWindowLongW(hWnd, GWL_STYLE);
@@ -249,7 +230,11 @@ void ThemeCalculateCaptionButtonsPos(HWND hWnd, HTHEME htheme)
         return;
 
     if (!htheme)
-        htheme = pwndData->hthemeWindow;
+    {
+        htheme = GetNCCaptionTheme(hWnd, style);
+        if (!htheme)
+            return;
+    }
 
     if(!GetWindowInfo(hWnd, &wi))
         return;
@@ -263,36 +248,18 @@ void ThemeCalculateCaptionButtonsPos(HWND hWnd, HTHEME htheme)
     InflateRect(&rcCurrent, -(int)wi.cyWindowBorders-BUTTON_GAP_SIZE, 
                             -(int)wi.cyWindowBorders-BUTTON_GAP_SIZE);
 
+    iPartId = wi.dwExStyle & WS_EX_TOOLWINDOW ? WP_SMALLCLOSEBUTTON : WP_CLOSEBUTTON;
+
+    GetThemePartSize(htheme, NULL, iPartId, 0, NULL, TS_MIN, &ButtonSize);
+
+    ButtonHeight = GetSystemMetrics( wi.dwExStyle & WS_EX_TOOLWINDOW ? SM_CYSMSIZE : SM_CYSIZE);
+    ButtonWidth = MulDiv(ButtonSize.cx, ButtonHeight, ButtonSize.cy);
+
+    ButtonHeight -= 4;
+    ButtonWidth -= 4;
+
     for (i = CLOSEBUTTON; i <= HELPBUTTON; i++)
     {
-        SIZE ButtonSize;
-
-        switch(i)
-        {
-            case CLOSEBUTTON:
-                iPartId = wi.dwExStyle & WS_EX_TOOLWINDOW ? WP_SMALLCLOSEBUTTON : WP_CLOSEBUTTON;
-                break;
-
-            case MAXBUTTON:
-                iPartId = wi.dwStyle & WS_MAXIMIZE ? WP_RESTOREBUTTON : WP_MAXBUTTON;
-                break;
-
-            case MINBUTTON:
-                iPartId = wi.dwStyle & WS_MINIMIZE ? WP_RESTOREBUTTON : WP_MINBUTTON;
-                break;
-
-            default:
-                iPartId = WP_HELPBUTTON ;
-        }
-
-        GetThemePartSize(htheme, NULL, iPartId, 0, NULL, TS_MIN, &ButtonSize);
-
-        ButtonHeight = GetSystemMetrics( wi.dwExStyle & WS_EX_TOOLWINDOW ? SM_CYSMSIZE : SM_CYSIZE);
-        ButtonWidth = MulDiv(ButtonSize.cx, ButtonHeight, ButtonSize.cy);
-
-        ButtonHeight -= 4;
-        ButtonWidth -= 4;
-
         SetRect(&pwndData->rcCaptionButtons[i],
                 rcCurrent.right - ButtonWidth,
                 rcCurrent.top,
@@ -326,7 +293,7 @@ ThemeDrawCaptionButton(PDRAW_CONTEXT pcontext,
             if (!(pcontext->wi.dwStyle & WS_MINIMIZEBOX))
                 return;
             else
-                iStateId = BUTTON_DISABLED;
+                iStateId = (pcontext->Active ? BUTTON_DISABLED : BUTTON_INACTIVE_DISABLED);
         }
 
         iPartId = pcontext->wi.dwStyle & WS_MAXIMIZE ? WP_RESTOREBUTTON : WP_MAXBUTTON;
@@ -338,7 +305,7 @@ ThemeDrawCaptionButton(PDRAW_CONTEXT pcontext,
             if (!(pcontext->wi.dwStyle & WS_MAXIMIZEBOX))
                 return;
             else
-                iStateId = BUTTON_DISABLED;
+                iStateId = (pcontext->Active ? BUTTON_DISABLED : BUTTON_INACTIVE_DISABLED);
         }
  
         iPartId = pcontext->wi.dwStyle & WS_MINIMIZE ? WP_RESTOREBUTTON : WP_MINBUTTON;
@@ -359,13 +326,11 @@ static DWORD
 ThemeGetButtonState(DWORD htCurrect, DWORD htHot, DWORD htDown, BOOL Active)
 {
     if (htHot == htCurrect)
-        return BUTTON_HOT;
-    if (!Active)
-        return BUTTON_INACTIVE;
+        return (Active ? BUTTON_HOT : BUTTON_INACTIVE_HOT);
     if (htDown == htCurrect)
-        return BUTTON_PRESSED;
+        return (Active ? BUTTON_PRESSED : BUTTON_INACTIVE_PRESSED);
 
-    return BUTTON_NORMAL;
+    return (Active ? BUTTON_NORMAL : BUTTON_INACTIVE);
 }
 
 /* Used only from mouse event handlers */

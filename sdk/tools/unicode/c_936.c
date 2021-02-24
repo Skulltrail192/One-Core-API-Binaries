@@ -4234,7 +4234,7 @@ static const unsigned char cp2uni_leadbytes[256] =
     0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x00
 };
 
-static const unsigned short uni2cp_low[28622] =
+static const unsigned short uni2cp_low[] =
 {
     /* 0x0000 .. 0x00ff */
     0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -7937,7 +7937,7 @@ static const unsigned short uni2cp_high[256] =
     0x6919, 0x6a19, 0x6b19, 0x6dce, 0x6dce, 0x6dce, 0x6be9, 0x6ce8
 };
 
-const struct dbcs_table cptable_936 =
+const struct dbcs_table DECLSPEC_HIDDEN cptable_936 =
 {
     { 936, 2, 0x003f, 0x003f, "ANSI/OEM Simplified Chinese GBK" },
     cp2uni,

@@ -18,7 +18,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "objbase.h"
+
 #include "wincodecs_private.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(wincodecs);
 
 HRESULT WINAPI IPropertyBag2_Write_Proxy(IPropertyBag2 *iface,
     ULONG cProperties, PROPBAG2 *ppropbag, VARIANT *pvarValue)
@@ -612,6 +626,21 @@ HRESULT WINAPI IWICStream_InitializeFromMemory_Proxy_W(IWICStream *iface,
     return IWICStream_InitializeFromMemory(iface, pbBuffer, cbBufferSize);
 }
 
+HRESULT WINAPI IWICPixelFormatInfo_GetBitsPerPixel_Proxy_W(IWICPixelFormatInfo *iface, UINT *bpp)
+{
+    return IWICPixelFormatInfo_GetBitsPerPixel(iface, bpp);
+}
+
+HRESULT WINAPI IWICPixelFormatInfo_GetChannelCount_Proxy_W(IWICPixelFormatInfo *iface, UINT *count)
+{
+    return IWICPixelFormatInfo_GetChannelCount(iface, count);
+}
+
+HRESULT WINAPI IWICPixelFormatInfo_GetChannelMask_Proxy_W(IWICPixelFormatInfo *iface, UINT channel, UINT buffer_size, BYTE *buffer, UINT *actual)
+{
+    return IWICPixelFormatInfo_GetChannelMask(iface, channel, buffer_size, buffer, actual);
+}
+
 HRESULT WINAPI WICCreateColorContext_Proxy(IWICImagingFactory *iface, IWICColorContext **ppIWICColorContext)
 {
     TRACE("%p, %p\n", iface, ppIWICColorContext);
@@ -623,7 +652,7 @@ HRESULT WINAPI WICCreateImagingFactory_Proxy(UINT SDKVersion, IWICImagingFactory
 {
     TRACE("%x, %p\n", SDKVersion, ppIImagingFactory);
 
-    return ComponentFactory_CreateInstance(&IID_IWICImagingFactory, (void**)ppIImagingFactory);
+    return ImagingFactory_CreateInstance(&IID_IWICImagingFactory, (void**)ppIImagingFactory);
 }
 
 HRESULT WINAPI WICSetEncoderFormat_Proxy(IWICBitmapSource *pSourceIn,

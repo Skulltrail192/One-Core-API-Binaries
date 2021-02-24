@@ -551,13 +551,11 @@ VOID FASTCALL
 IntCoalesceMouseMove(PTHREADINFO pti)
 {
     MSG Msg;
-    LARGE_INTEGER LargeTickCount;
 
     // Force time stamp to update, keeping message time in sync.
     if (gdwMouseMoveTimeStamp == 0)
     {
-       KeQueryTickCount(&LargeTickCount);
-       gdwMouseMoveTimeStamp = MsqCalculateMessageTime(&LargeTickCount);
+        gdwMouseMoveTimeStamp = EngGetTickCount32();
     }
 
     // Build mouse move message.
@@ -581,7 +579,6 @@ IntCoalesceMouseMove(PTHREADINFO pti)
 VOID FASTCALL
 co_MsqInsertMouseMessage(MSG* Msg, DWORD flags, ULONG_PTR dwExtraInfo, BOOL Hook)
 {
-   LARGE_INTEGER LargeTickCount;
    MSLLHOOKSTRUCT MouseHookData;
 //   PDESKTOP pDesk;
    PWND pwnd, pwndDesktop;
@@ -590,8 +587,7 @@ co_MsqInsertMouseMessage(MSG* Msg, DWORD flags, ULONG_PTR dwExtraInfo, BOOL Hook
    PUSER_MESSAGE_QUEUE MessageQueue;
    PSYSTEM_CURSORINFO CurInfo;
 
-   KeQueryTickCount(&LargeTickCount);
-   Msg->time = MsqCalculateMessageTime(&LargeTickCount);
+   Msg->time = EngGetTickCount32();
 
    MouseHookData.pt.x = LOWORD(Msg->lParam);
    MouseHookData.pt.y = HIWORD(Msg->lParam);
@@ -751,7 +747,7 @@ MsqCreateMessage(LPMSG Msg)
 VOID FASTCALL
 MsqDestroyMessage(PUSER_MESSAGE Message)
 {
-   TRACE("Post Destroy %d\n",PostMsgCount)
+   TRACE("Post Destroy %d\n",PostMsgCount);
    if (Message->pti == NULL)
    {
       ERR("Double Free Message\n");
@@ -1151,7 +1147,7 @@ co_MsqSendMessage(PTHREADINFO ptirec,
    }
 
    Timeout.QuadPart = Int32x32To64(-10000,uTimeout); // Pass SMTO test with a TO of 0x80000000.
-   TRACE("Timeout val %lld\n",Timeout.QuadPart)
+   TRACE("Timeout val %lld\n",Timeout.QuadPart);
 
    Message->Msg.hwnd = Wnd;
    Message->Msg.message = Msg;
@@ -2093,8 +2089,8 @@ co_MsqPeekHardwareMessage(IN PTHREADINFO pti,
             {
                pti->TIF_flags |= TIF_MSGPOSCHANGED;
             }
-            pti->ptLast   = msg.pt;
             pti->timeLast = msg.time;
+            pti->ptLast   = msg.pt;
             MessageQueue->ExtraInfo = ExtraInfo;
             Ret = TRUE;
             break;
@@ -2195,17 +2191,32 @@ co_MsqWaitForNewMessages(PTHREADINFO pti, PWND WndFilter,
 }
 
 BOOL FASTCALL
-MsqIsHung(PTHREADINFO pti)
+MsqIsHung(PTHREADINFO pti, DWORD TimeOut)
 {
-   LARGE_INTEGER LargeTickCount;
-
-   KeQueryTickCount(&LargeTickCount);
-
-   if ((LargeTickCount.u.LowPart - pti->timeLast) > MSQ_HUNG &&
+    DWORD dwTimeStamp = EngGetTickCount32();
+    if (dwTimeStamp - pti->pcti->timeLastRead > TimeOut &&
        !(pti->pcti->fsWakeMask & QS_INPUT) &&
        !PsGetThreadFreezeCount(pti->pEThread) &&
        !(pti->ppi->W32PF_flags & W32PF_APPSTARTING))
-       return TRUE;
+    {
+        TRACE("\nMsqIsHung(pti %p, TimeOut %lu)\n"
+            "pEThread %p, ThreadsProcess %p, ImageFileName '%s'\n"
+            "dwTimeStamp = %lu\n"
+            "pti->pcti->timeLastRead = %lu\n"
+            "pti->timeLast = %lu\n"
+            "PsGetThreadFreezeCount(pti->pEThread) = %lu\n",
+            pti, TimeOut,
+            pti->pEThread,
+            pti->pEThread ? pti->pEThread->ThreadsProcess : NULL,
+            (pti->pEThread && pti->pEThread->ThreadsProcess)
+                ? pti->pEThread->ThreadsProcess->ImageFileName : "(None)",
+            dwTimeStamp,
+            pti->pcti->timeLastRead,
+            pti->timeLast,
+            PsGetThreadFreezeCount(pti->pEThread));
+
+        return TRUE;
+    }
 
    return FALSE;
 }
@@ -2216,9 +2227,7 @@ IsThreadSuspended(PTHREADINFO pti)
    if (pti->pEThread)
    {
       BOOL Ret = TRUE;
-      ObReferenceObject(pti->pEThread);
       if (!(pti->pEThread->Tcb.SuspendCount) && !PsGetThreadFreezeCount(pti->pEThread)) Ret = FALSE;
-      ObDereferenceObject(pti->pEThread);
       return Ret;
    }
    return FALSE;
@@ -2347,7 +2356,7 @@ MsqCleanupThreadMsgs(PTHREADINFO pti)
             {
                CurrentSentMessage->flags |= SMF_RECEIVERFREE;
             }
-            
+
             if (!(CurrentSentMessage->flags & SMF_RECEIVERFREE))
             {
 
@@ -2385,7 +2394,7 @@ MsqCleanupMessageQueue(PTHREADINFO pti)
       /* cleanup posted messages */
       while (!IsListEmpty(&MessageQueue->HardwareMessagesListHead))
       {
-         CurrentEntry = MessageQueue->HardwareMessagesListHead.Flink;       
+         CurrentEntry = MessageQueue->HardwareMessagesListHead.Flink;
          CurrentMessage = CONTAINING_RECORD(CurrentEntry, USER_MESSAGE, ListEntry);
          ERR("MQ Cleanup Post Messages %p\n",CurrentMessage);
          MsqDestroyMessage(CurrentMessage);

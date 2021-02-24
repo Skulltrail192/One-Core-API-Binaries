@@ -427,7 +427,7 @@ HRESULT WINAPI CNetFolder::GetUIObjectOf(HWND hwndOwner, UINT cidl, PCUITEMID_CH
     else if (IsEqualIID(riid, IID_IDataObject) && (cidl >= 1))
     {
         IDataObject * pDo = NULL;
-        hr = IDataObject_Constructor (hwndOwner, pidlRoot, apidl, cidl, &pDo);
+        hr = IDataObject_Constructor (hwndOwner, pidlRoot, apidl, cidl, TRUE, &pDo);
         pObj = pDo;
     }
     else if ((IsEqualIID(riid, IID_IExtractIconA) || IsEqualIID(riid, IID_IExtractIconW)) && (cidl == 1))
@@ -571,7 +571,7 @@ HRESULT WINAPI CNetFolder::GetClassID(CLSID *lpClassId)
  *
  * NOTES: it makes no sense to change the pidl
  */
-HRESULT WINAPI CNetFolder::Initialize(LPCITEMIDLIST pidl)
+HRESULT WINAPI CNetFolder::Initialize(PCIDLIST_ABSOLUTE pidl)
 {
     if (pidlRoot)
         SHFree((LPVOID)pidlRoot);
@@ -583,7 +583,7 @@ HRESULT WINAPI CNetFolder::Initialize(LPCITEMIDLIST pidl)
 /**************************************************************************
  *    CNetFolder::GetCurFolder
  */
-HRESULT WINAPI CNetFolder::GetCurFolder(LPITEMIDLIST *pidl)
+HRESULT WINAPI CNetFolder::GetCurFolder(PIDLIST_ABSOLUTE *pidl)
 {
     TRACE("(%p)->(%p)\n", this, pidl);
 

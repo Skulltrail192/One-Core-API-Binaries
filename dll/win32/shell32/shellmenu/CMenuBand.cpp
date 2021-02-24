@@ -669,6 +669,14 @@ HRESULT STDMETHODCALLTYPE CMenuBand::IsMenuMessage(MSG *pmsg)
 
 HRESULT STDMETHODCALLTYPE CMenuBand::TranslateMenuMessage(MSG *pmsg, LRESULT *plRet)
 {
+    if (pmsg->message == WM_ACTIVATE && _IsPopup() == S_FALSE)
+    {
+        if (m_staticToolbar)
+            m_staticToolbar->Invalidate();
+        if (m_SFToolbar)
+            m_SFToolbar->Invalidate();
+    }
+
     return S_FALSE;
 }
 
@@ -715,7 +723,8 @@ HRESULT STDMETHODCALLTYPE CMenuBand::GetShellFolder(DWORD *pdwFlags, LPITEMIDLIS
 
 HRESULT STDMETHODCALLTYPE CMenuBand::OnWinEvent(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT *theResult)
 {
-    *theResult = 0;
+    if (theResult)
+        *theResult = 0;
 
     if (uMsg == WM_WININICHANGE && wParam == SPI_SETFLATMENU)
     {

@@ -58,8 +58,27 @@
  *
  */
 
-#include "precomp.h"
+#include <assert.h>
+#include <stdarg.h>
+#include <string.h>
+#include <stdio.h>
+
+#define COBJMACROS
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winerror.h"
+#include "winnls.h"
+#include "ole2.h"
+#include "wine/debug.h"
+#include "olestd.h"
+
 #include "storage32.h"
+
+#include "compobj_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
@@ -1178,7 +1197,7 @@ static HRESULT get_priv_data(ole_priv_data **data)
         for(cf = 0; (cf = EnumClipboardFormats(cf)) != 0; count++)
         {
             WCHAR buf[256];
-            if (GetClipboardFormatNameW(cf, buf, sizeof(buf) / sizeof(WCHAR)))
+            if (GetClipboardFormatNameW(cf, buf, ARRAY_SIZE(buf)))
                 TRACE("cf %04x %s\n", cf, debugstr_w(buf));
             else
                 TRACE("cf %04x\n", cf);
@@ -1277,6 +1296,14 @@ static HRESULT get_stgmed_for_storage(HGLOBAL h, STGMEDIUM *med)
         return hr;
     }
 
+    hr = StgIsStorageILockBytes(lbs);
+    if(hr!=S_OK)
+    {
+        ILockBytes_Release(lbs);
+        GlobalFree(dst);
+        return SUCCEEDED(hr) ? E_FAIL : hr;
+    }
+
     hr = StgOpenStorageOnILockBytes(lbs, NULL,  STGM_SHARE_EXCLUSIVE | STGM_READWRITE, NULL, 0, &med->u.pstg);
     ILockBytes_Release(lbs);
     if(FAILED(hr))
@@ -1336,7 +1363,7 @@ static inline BOOL string_off_equal(const DVTARGETDEVICE *t1, WORD off1, const D
     str1 = (const WCHAR*)((const char*)t1 + off1);
     str2 = (const WCHAR*)((const char*)t2 + off2);
 
-    return !lstrcmpW(str1, str2);
+    return !wcscmp(str1, str2);
 }
 
 static inline BOOL td_equal(const DVTARGETDEVICE *t1, const DVTARGETDEVICE *t2)
@@ -1383,12 +1410,19 @@ static HRESULT WINAPI snapshot_GetData(IDataObject *iface, FORMATETC *fmt,
     if(This->data)
     {
         hr = IDataObject_GetData(This->data, fmt, med);
-        CloseClipboard();
-        return hr;
+        if(SUCCEEDED(hr))
+        {
+            CloseClipboard();
+            return hr;
+        }
+    }
+    if(fmt->lindex != -1)
+    {
+        hr = DV_E_FORMATETC;
+        goto end;
     }
 
-    h = GetClipboardData(fmt->cfFormat);
-    if(!h)
+    if(!IsClipboardFormatAvailable(fmt->cfFormat))
     {
         hr = DV_E_FORMATETC;
         goto end;
@@ -1406,17 +1440,31 @@ static HRESULT WINAPI snapshot_GetData(IDataObject *iface, FORMATETC *fmt,
             goto end;
         }
         mask = fmt->tymed & entry->fmtetc.tymed;
-        if(!mask) mask = fmt->tymed & (TYMED_ISTREAM | TYMED_HGLOBAL);
+        if(!mask && (entry->fmtetc.tymed & (TYMED_ISTREAM | TYMED_HGLOBAL | TYMED_ISTORAGE)))
+            mask = fmt->tymed & (TYMED_ISTREAM | TYMED_HGLOBAL | TYMED_ISTORAGE);
     }
     else /* non-Ole format */
-        mask = fmt->tymed & TYMED_HGLOBAL;
+        mask = fmt->tymed & get_tymed_from_nonole_cf(fmt->cfFormat);
 
-    if(mask & TYMED_ISTORAGE)
-        hr = get_stgmed_for_storage(h, med);
-    else if(mask & TYMED_HGLOBAL)
+    if(!mask)
+    {
+        hr = DV_E_TYMED;
+        goto end;
+    }
+
+    h = GetClipboardData(fmt->cfFormat);
+    if(!h)
+    {
+        hr = DV_E_FORMATETC;
+        goto end;
+    }
+
+    if(mask & TYMED_HGLOBAL)
         hr = get_stgmed_for_global(h, med);
     else if(mask & TYMED_ISTREAM)
         hr = get_stgmed_for_stream(h, med);
+    else if(mask & TYMED_ISTORAGE)
+        hr = get_stgmed_for_storage(h, med);
     else if(mask & TYMED_ENHMF)
         hr = get_stgmed_for_emf((HENHMETAFILE)h, med);
     else if(mask & TYMED_GDI)
@@ -1554,7 +1602,7 @@ end:
  */
 static HRESULT WINAPI snapshot_QueryGetData(IDataObject *iface, FORMATETC *fmt)
 {
-    FIXME("(%p, %p {%s})\n", iface, fmt, dump_fmtetc(fmt));
+    TRACE("(%p, %p {%s})\n", iface, fmt, dump_fmtetc(fmt));
 
     if (!fmt) return E_INVALIDARG;
 
@@ -1869,6 +1917,12 @@ static HWND create_clipbrd_window(void);
  */
 static inline HRESULT get_clipbrd_window(ole_clipbrd *clipbrd, HWND *wnd)
 {
+#ifdef __REACTOS__
+    /* The clipboard window can get destroyed if the  thread that created it dies so we may need to create it again */
+    if (!IsWindow(clipbrd->window))
+        clipbrd->window = create_clipbrd_window();
+#endif
+
     if ( !clipbrd->window )
         clipbrd->window = create_clipbrd_window();
 
@@ -2018,6 +2072,10 @@ static LRESULT CALLBACK clipbrd_wndproc(HWND hwnd, UINT message, WPARAM wparam, 
     {
     case WM_RENDERFORMAT:
     {
+#ifdef __REACTOS__
+    if (clipbrd->cached_enum)
+    {
+#endif
         UINT cf = wparam;
         ole_priv_data_entry *entry;
 
@@ -2026,7 +2084,9 @@ static LRESULT CALLBACK clipbrd_wndproc(HWND hwnd, UINT message, WPARAM wparam, 
 
         if(entry)
             render_format(clipbrd->src_data, &entry->fmtetc);
-
+#ifdef __REACTOS__
+    }
+#endif
         break;
     }
 

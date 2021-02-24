@@ -16,14 +16,15 @@
 
 /* FUNCTIONS ********************************************************/
 
-extern void
-zoomTo(int newZoom, int mouseX, int mouseY);
-
 void
 updateCanvasAndScrollbars()
 {
     selectionWindow.ShowWindow(SW_HIDE);
-    imageArea.MoveWindow(3, 3, imageModel.GetWidth() * toolsModel.GetZoom() / 1000, imageModel.GetHeight() * toolsModel.GetZoom() / 1000, FALSE);
+
+    int zoomedWidth = imageModel.GetWidth() * toolsModel.GetZoom() / 1000;
+    int zoomedHeight = imageModel.GetHeight() * toolsModel.GetZoom() / 1000;
+    imageArea.MoveWindow(3, 3, zoomedWidth, zoomedHeight, FALSE);
+
     scrollboxWindow.Invalidate(TRUE);
     imageArea.Invalidate(FALSE);
 
@@ -44,8 +45,14 @@ void CImgAreaWindow::drawZoomFrame(int mouseX, int mouseY)
     int x, y, w, h;
     scrollboxWindow.GetClientRect(&clientRectScrollbox);
     GetClientRect(&clientRectImageArea);
-    w = clientRectImageArea.right * clientRectScrollbox.right / (clientRectImageArea.right * 2);
-    h = clientRectImageArea.bottom * clientRectScrollbox.bottom / (clientRectImageArea.bottom * 2);
+    w = clientRectImageArea.right * 2;
+    h = clientRectImageArea.bottom * 2;
+    if (!w || !h)
+    {
+        return;
+    }
+    w = clientRectImageArea.right * clientRectScrollbox.right / w;
+    h = clientRectImageArea.bottom * clientRectScrollbox.bottom / h;
     x = max(0, min(clientRectImageArea.right - w, mouseX - w / 2));
     y = max(0, min(clientRectImageArea.bottom - h, mouseY - h / 2));
 
@@ -288,8 +295,8 @@ LRESULT CImgAreaWindow::OnRButtonUp(UINT nMsg, WPARAM wParam, LPARAM lParam, BOO
         }
         SendMessage(hStatusBar, SB_SETTEXT, 2, (LPARAM) "");
     }
-    ReleaseCapture();
     drawing = FALSE;
+    ReleaseCapture();
     return 0;
 }
 

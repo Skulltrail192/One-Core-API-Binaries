@@ -21,6 +21,7 @@
  * FILE:             drivers/fs/vfat/iface.c
  * PURPOSE:          VFAT Filesystem
  * PROGRAMMER:       Jason Filby (jasonfilby@yahoo.com)
+ *                   Pierre Schweitzer (pierre@reactos.org)
  */
 
 /* INCLUDES *****************************************************************/
@@ -33,7 +34,6 @@
 #if defined(ALLOC_PRAGMA)
 #pragma alloc_text(INIT, DriverEntry)
 #endif
-
 
 /* GLOBALS *****************************************************************/
 
@@ -48,7 +48,7 @@ PVFAT_GLOBAL_DATA VfatGlobalData;
  *           RegistryPath = path to our configuration entries
  * RETURNS: Success or failure
  */
-INIT_SECTION
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 DriverEntry(
@@ -91,9 +91,23 @@ DriverEntry(
     RtlZeroMemory (VfatGlobalData, sizeof(VFAT_GLOBAL_DATA));
     VfatGlobalData->DriverObject = DriverObject;
     VfatGlobalData->DeviceObject = DeviceObject;
+    VfatGlobalData->NumberProcessors = KeNumberProcessors;
     /* Enable this to enter the debugger when file system corruption
      * has been detected:
     VfatGlobalData->Flags = VFAT_BREAK_ON_CORRUPTION; */
+
+    /* Delayed close support */
+    ExInitializeFastMutex(&VfatGlobalData->CloseMutex);
+    InitializeListHead(&VfatGlobalData->CloseListHead);
+    VfatGlobalData->CloseCount = 0;
+    VfatGlobalData->CloseWorkerRunning = FALSE;
+    VfatGlobalData->ShutdownStarted = FALSE;
+    VfatGlobalData->CloseWorkItem = IoAllocateWorkItem(DeviceObject);
+    if (VfatGlobalData->CloseWorkItem == NULL)
+    {
+        IoDeleteDevice(DeviceObject);
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
 
     DeviceObject->Flags |= DO_DIRECT_IO;
     DriverObject->MajorFunction[IRP_MJ_CLOSE] = VfatBuildRequest;
@@ -118,8 +132,8 @@ DriverEntry(
     /* Cache manager */
     VfatGlobalData->CacheMgrCallbacks.AcquireForLazyWrite = VfatAcquireForLazyWrite;
     VfatGlobalData->CacheMgrCallbacks.ReleaseFromLazyWrite = VfatReleaseFromLazyWrite;
-    VfatGlobalData->CacheMgrCallbacks.AcquireForReadAhead = VfatAcquireForReadAhead;
-    VfatGlobalData->CacheMgrCallbacks.ReleaseFromReadAhead = VfatReleaseFromReadAhead;
+    VfatGlobalData->CacheMgrCallbacks.AcquireForReadAhead = VfatAcquireForLazyWrite;
+    VfatGlobalData->CacheMgrCallbacks.ReleaseFromReadAhead = VfatReleaseFromLazyWrite;
 
     /* Fast I/O */
     VfatInitFastIoRoutines(&VfatGlobalData->FastIoDispatch);
@@ -132,10 +146,22 @@ DriverEntry(
                                     NULL, NULL, 0, sizeof(VFATCCB), TAG_CCB, 0);
     ExInitializeNPagedLookasideList(&VfatGlobalData->IrpContextLookasideList,
                                     NULL, NULL, 0, sizeof(VFAT_IRP_CONTEXT), TAG_IRP, 0);
+    ExInitializePagedLookasideList(&VfatGlobalData->CloseContextLookasideList,
+                                   NULL, NULL, 0, sizeof(VFAT_CLOSE_CONTEXT), TAG_CLOSE, 0);
 
     ExInitializeResourceLite(&VfatGlobalData->VolumeListLock);
     InitializeListHead(&VfatGlobalData->VolumeListHead);
     IoRegisterFileSystem(DeviceObject);
+
+#ifdef KDBG
+    {
+        BOOLEAN Registered;
+
+        Registered = KdRosRegisterCliCallback(vfatKdbgHandler);
+        DPRINT1("FastFAT KDBG extension registered: %s\n", (Registered ? "yes" : "no"));
+    }
+#endif
+
     return STATUS_SUCCESS;
 }
 

@@ -41,6 +41,7 @@ PWND FASTCALL ValidateHwndNoErr(HWND);
 BOOL FASTCALL UserUpdateUiState(PWND Wnd, WPARAM wParam);
 BOOL FASTCALL IntIsWindow(HWND hWnd);
 HWND* FASTCALL IntWinListChildren(PWND Window);
+HWND* FASTCALL IntWinListOwnedPopups(PWND Window);
 VOID FASTCALL IntGetClientRect (PWND WindowObject, RECTL *Rect);
 INT FASTCALL  IntMapWindowPoints(PWND FromWnd, PWND ToWnd, LPPOINT lpPoints, UINT cPoints);
 BOOL FASTCALL IntIsChildWindow (PWND Parent, PWND Child);
@@ -51,17 +52,22 @@ VOID FASTCALL IntGetWindowBorderMeasures(PWND WindowObject, UINT *cx, UINT *cy);
 BOOL FASTCALL IntShowOwnedPopups( PWND owner, BOOL fShow );
 LRESULT FASTCALL IntDefWindowProc( PWND Window, UINT Msg, WPARAM wParam, LPARAM lParam, BOOL Ansi);
 VOID FASTCALL IntNotifyWinEvent(DWORD, PWND, LONG, LONG, DWORD);
+#define WINVER_WIN2K  _WIN32_WINNT_WIN2K
+#define WINVER_WINNT4 _WIN32_WINNT_NT4
+#define WINVER_WIN31  0x30A
 PWND FASTCALL IntCreateWindow(CREATESTRUCTW* Cs,
                                         PLARGE_STRING WindowName,
                                         PCLS Class,
                                         PWND ParentWindow,
                                         PWND OwnerWindow,
                                         PVOID acbiBuffer,
-                                        PDESKTOP pdeskCreated);
+                                        PDESKTOP pdeskCreated,
+                                        DWORD dwVer );
 PWND FASTCALL co_UserCreateWindowEx(CREATESTRUCTW* Cs,
                                     PUNICODE_STRING ClassName,
                                     PLARGE_STRING WindowName,
-                                    PVOID acbiBuffer);
+                                    PVOID acbiBuffer,
+                                    DWORD dwVer );
 BOOL FASTCALL IntEnableWindow(HWND,BOOL);
 BOOL FASTCALL IntIsWindowVisible(PWND);
 DWORD FASTCALL GetNCHitEx(PWND,POINT);
@@ -69,6 +75,7 @@ ULONG FASTCALL IntSetStyle(PWND,ULONG,ULONG);
 PWND FASTCALL VerifyWnd(PWND);
 PWND FASTCALL IntGetNonChildAncestor(PWND);
 LONG FASTCALL co_UserSetWindowLong(HWND,DWORD,LONG,BOOL);
+LONG_PTR FASTCALL co_UserSetWindowLongPtr(HWND, DWORD, LONG_PTR, BOOL);
 HWND FASTCALL IntGetWindow(HWND,UINT);
 LRESULT co_UserFreeWindow(PWND,PPROCESSINFO,PTHREADINFO,BOOLEAN);
 

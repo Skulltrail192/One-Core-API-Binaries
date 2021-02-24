@@ -104,7 +104,7 @@
 #endif
 
 /* Returns the byte offset of the specified structure's member */
-#ifndef __GNUC__
+#if !defined(__GNUC__) && !defined(__clang__)
  #define FIELD_OFFSET(Type, Field) ((LONG)(LONG_PTR)&(((Type*) 0)->Field))
 #else
  #define FIELD_OFFSET(Type, Field) ((LONG)__builtin_offsetof(Type, Field))
@@ -163,8 +163,16 @@
 
 /* Import and Export Specifiers */
 
-/* Done the same way as in windef.h for now */
-#define DECLSPEC_IMPORT __declspec(dllimport) // MIDL?
+#ifndef DECLSPEC_IMPORT
+ #define DECLSPEC_IMPORT __declspec(dllimport) // MIDL?
+#endif /* DECLSPEC_IMPORT */
+
+#ifndef DECLSPEC_EXPORT
+ #if defined(__REACTOS__) || defined(__WINESRC__)
+  #define DECLSPEC_EXPORT __declspec(dllexport)
+ #endif
+#endif /* DECLSPEC_EXPORT */
+
 #define DECLSPEC_NORETURN __declspec(noreturn)
 
 #ifndef DECLSPEC_ADDRSAFE
@@ -335,7 +343,7 @@ typedef void *HANDLE, **PHANDLE;
  typedef char CHAR;
  typedef short SHORT;
 
- #if defined(__ROS_LONG64__) && !defined(_M_AMD64)
+ #if defined(__ROS_LONG64__)
   typedef int LONG;
  #else
   typedef long LONG;
@@ -753,7 +761,7 @@ $endif(_WINNT_)
 #define MAXLONGLONG (0x7fffffffffffffffLL)
 
 /* 32 to 64 bit multiplication. GCC is really bad at optimizing the native math */
-#if defined(_M_IX86) && defined(__GNUC__) && \
+#if defined(_M_IX86) && !defined(_M_ARM) && !defined(_M_ARM64) && \
     !defined(MIDL_PASS)&& !defined(RC_INVOKED) && !defined(_M_CEE_PURE)
  #define Int32x32To64(a,b) __emul(a,b)
  #define UInt32x32To64(a,b) __emulu(a,b)
@@ -911,6 +919,7 @@ $endif(_WINNT_)
 #define PRODUCT_CORE_SINGLELANGUAGE                 0x00000064
 #define PRODUCT_CORE                                0x00000065
 #define PRODUCT_PROFESSIONAL_WMC                    0x00000067
+#define PRODUCT_ENTERPRISE_S_N_EVALUATION           0x00000082
 #define PRODUCT_UNLICENSED                          0xABCDABCD
 
 /* LangID and NLS */

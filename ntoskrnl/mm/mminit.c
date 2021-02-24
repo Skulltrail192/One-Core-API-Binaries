@@ -19,9 +19,6 @@
 
 VOID NTAPI MiInitializeUserPfnBitmap(VOID);
 
-HANDLE MpwThreadHandle;
-KEVENT MpwThreadEvent;
-
 BOOLEAN Mm64BitPhysicalAddress = FALSE;
 ULONG MmReadClusterSize;
 //
@@ -42,10 +39,10 @@ extern NTSTATUS MiRosTrimCache(ULONG Target, ULONG Priority, PULONG NrFreed);
 // Helper function to create initial memory areas.
 // The created area is always read/write.
 //
-VOID
 INIT_FUNCTION
+VOID
 NTAPI
-MiCreateArm3StaticMemoryArea(PVOID BaseAddress, ULONG Size, BOOLEAN Executable)
+MiCreateArm3StaticMemoryArea(PVOID BaseAddress, SIZE_T Size, BOOLEAN Executable)
 {
     const ULONG Protection = Executable ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
     PVOID pBaseAddress = BaseAddress;
@@ -64,8 +61,8 @@ MiCreateArm3StaticMemoryArea(PVOID BaseAddress, ULONG Size, BOOLEAN Executable)
     // TODO: Perhaps it would be  prudent to bugcheck here, not only assert?
 }
 
-VOID
 INIT_FUNCTION
+VOID
 NTAPI
 MiInitSystemMemoryAreas(VOID)
 {
@@ -120,9 +117,9 @@ MiInitSystemMemoryAreas(VOID)
 #endif /* _X86_ */
 }
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_FUNCTION
 MiDbgDumpAddressSpace(VOID)
 {
     //
@@ -158,6 +155,9 @@ MiDbgDumpAddressSpace(VOID)
             HYPER_SPACE, HYPER_SPACE_END,
             "Hyperspace");
     DPRINT1("          0x%p - 0x%p\t%s\n",
+            MmSystemCacheStart, MmSystemCacheEnd,
+            "System Cache");
+    DPRINT1("          0x%p - 0x%p\t%s\n",
             MmPagedPoolStart,
             (ULONG_PTR)MmPagedPoolStart + MmSizeOfPagedPoolInBytes,
             "ARM3 Paged Pool");
@@ -169,79 +169,9 @@ MiDbgDumpAddressSpace(VOID)
             "Non Paged Pool Expansion PTE Space");
 }
 
-VOID
-NTAPI
-MmMpwThreadMain(PVOID Parameter)
-{
-    NTSTATUS Status;
-#ifndef NEWCC
-    ULONG PagesWritten;
-#endif
-    LARGE_INTEGER Timeout;
-
-    UNREFERENCED_PARAMETER(Parameter);
-
-    Timeout.QuadPart = -50000000;
-
-    for(;;)
-    {
-        Status = KeWaitForSingleObject(&MpwThreadEvent,
-                                       0,
-                                       KernelMode,
-                                       FALSE,
-                                       &Timeout);
-        if (!NT_SUCCESS(Status))
-        {
-            DbgPrint("MpwThread: Wait failed\n");
-            KeBugCheck(MEMORY_MANAGEMENT);
-            return;
-        }
-
-#ifndef NEWCC
-        PagesWritten = 0;
-
-        // XXX arty -- we flush when evicting pages or destorying cache
-        // sections.
-        CcRosFlushDirtyPages(128, &PagesWritten, FALSE);
-#endif
-    }
-}
-
+INIT_FUNCTION
 NTSTATUS
 NTAPI
-INIT_FUNCTION
-MmInitMpwThread(VOID)
-{
-    KPRIORITY Priority;
-    NTSTATUS Status;
-    CLIENT_ID MpwThreadId;
-
-    KeInitializeEvent(&MpwThreadEvent, SynchronizationEvent, FALSE);
-
-    Status = PsCreateSystemThread(&MpwThreadHandle,
-                                  THREAD_ALL_ACCESS,
-                                  NULL,
-                                  NULL,
-                                  &MpwThreadId,
-                                  MmMpwThreadMain,
-                                  NULL);
-    if (!NT_SUCCESS(Status))
-    {
-        return(Status);
-    }
-
-    Priority = 27;
-    NtSetInformationThread(MpwThreadHandle,
-                           ThreadPriority,
-                           &Priority,
-                           sizeof(Priority));
-
-    return(STATUS_SUCCESS);
-}
-
-NTSTATUS
-NTAPI
-INIT_FUNCTION
 MmInitBsmThread(VOID)
 {
     NTSTATUS Status;
@@ -263,9 +193,9 @@ MmInitBsmThread(VOID)
     return Status;
 }
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
-INIT_FUNCTION
 MmInitSystem(IN ULONG Phase,
              IN PLOADER_PARAMETER_BLOCK LoaderBlock)
 {
@@ -273,6 +203,8 @@ MmInitSystem(IN ULONG Phase,
     PMMPTE PointerPte;
     MMPTE TempPte = ValidKernelPte;
     PFN_NUMBER PageFrameNumber;
+    PLIST_ENTRY ListEntry;
+    PLDR_DATA_TABLE_ENTRY DataTableEntry;
 
     /* Initialize the kernel address space */
     ASSERT(Phase == 1);
@@ -338,13 +270,20 @@ MmInitSystem(IN ULONG Phase,
      */
     MiInitBalancerThread();
 
-    /*
-     * Initialise the modified page writer.
-     */
-    MmInitMpwThread();
-
     /* Initialize the balance set manager */
     MmInitBsmThread();
+
+    /* Loop the boot loaded images */
+    for (ListEntry = PsLoadedModuleList.Flink;
+         ListEntry != &PsLoadedModuleList;
+         ListEntry = ListEntry->Flink)
+    {
+        /* Get the data table entry */
+        DataTableEntry = CONTAINING_RECORD(ListEntry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+
+        /* Set up the image protection */
+        MiWriteProtectSystemImage(DataTableEntry->DllBase);
+    }
 
     return TRUE;
 }

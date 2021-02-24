@@ -28,9 +28,6 @@
 
 #define IDS_MENU_EMPTY 34561
 
-#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
-#define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
-
 WINE_DEFAULT_DEBUG_CHANNEL(CMenuToolbars);
 
 // FIXME: Enable if/when wine comctl supports this flag properly
@@ -49,8 +46,11 @@ LRESULT CMenuToolbarBase::OnWinEventWrap(UINT uMsg, WPARAM wParam, LPARAM lParam
 HRESULT CMenuToolbarBase::OnWinEvent(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT *theResult)
 {
     NMHDR * hdr;
+    HRESULT hr;
+    LRESULT result;
 
-    *theResult = 0;
+    if (theResult)
+        *theResult = 0;
     switch (uMsg)
     {
     case WM_COMMAND:
@@ -75,7 +75,10 @@ HRESULT CMenuToolbarBase::OnWinEvent(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
             return S_OK;
 
         case NM_CUSTOMDRAW:
-            return OnCustomDraw(reinterpret_cast<LPNMTBCUSTOMDRAW>(hdr), theResult);
+            hr = OnCustomDraw(reinterpret_cast<LPNMTBCUSTOMDRAW>(hdr), &result);
+            if (theResult)
+                *theResult = result;
+            return hr;
 
         case TBN_GETINFOTIP:
             return OnGetInfoTip(reinterpret_cast<LPNMTBGETINFOTIP>(hdr));
@@ -105,8 +108,7 @@ HRESULT CMenuToolbarBase::OnWinEvent(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
         case NM_TOOLTIPSCREATED:
             break;
 
-            // Unknown
-        case -714: return S_FALSE;
+        case TBN_DRAGOUT: return S_FALSE;
 
         default:
             TRACE("WM_NOTIFY unknown code %d, %d\n", hdr->code, hdr->idFrom);
@@ -150,7 +152,7 @@ HRESULT CMenuToolbarBase::OnPagerCalcSize(LPNMPGCALCSIZE csize)
 
 HRESULT CMenuToolbarBase::OnCustomDraw(LPNMTBCUSTOMDRAW cdraw, LRESULT * theResult)
 {
-    bool     isHot, isPopup;
+    bool     isHot, isPopup, isActive;
     TBBUTTONINFO btni;
 
     switch (cdraw->nmcd.dwDrawStage)
@@ -161,9 +163,13 @@ HRESULT CMenuToolbarBase::OnCustomDraw(LPNMTBCUSTOMDRAW cdraw, LRESULT * theResu
 
     case CDDS_ITEMPREPAINT:
         
+        HWND tlw;
+        m_menuBand->_GetTopLevelWindow(&tlw);
+
         // The item with an active submenu gets the CHECKED flag.
         isHot = m_hotBar == this && (int) cdraw->nmcd.dwItemSpec == m_hotItem;
         isPopup = m_popupBar == this && (int) cdraw->nmcd.dwItemSpec == m_popupItem;
+        isActive = (GetForegroundWindow() == tlw) || (m_popupBar == this);
 
         if (m_hotItem < 0 && isPopup)
             isHot = TRUE;
@@ -207,6 +213,9 @@ HRESULT CMenuToolbarBase::OnCustomDraw(LPNMTBCUSTOMDRAW cdraw, LRESULT * theResu
         }
         else
         {
+            // Set the text color, will be used by the internal drawing code
+            cdraw->clrText = GetSysColor(isActive ? COLOR_MENUTEXT : COLOR_GRAYTEXT);
+
             // Remove HOT and CHECKED flags (will restore HOT if necessary)
             cdraw->nmcd.uItemState &= ~CDIS_HOT;
 
@@ -256,7 +265,6 @@ HRESULT CMenuToolbarBase::OnCustomDraw(LPNMTBCUSTOMDRAW cdraw, LRESULT * theResu
 CMenuToolbarBase::CMenuToolbarBase(CMenuBand *menuBand, BOOL usePager) :
     m_pager(this, 1),
     m_useFlatMenus(FALSE),
-    m_SubclassOld(NULL),
     m_disableMouseTrack(FALSE),
     m_timerEnabled(FALSE),
     m_menuBand(menuBand),
@@ -282,6 +290,8 @@ CMenuToolbarBase::CMenuToolbarBase(CMenuBand *menuBand, BOOL usePager) :
 
 CMenuToolbarBase::~CMenuToolbarBase()
 {
+    ClearToolbar();
+
     if (m_hWnd)
         DestroyWindow();
 
@@ -940,7 +950,7 @@ HRESULT CMenuToolbarBase::KeyboardItemChange(DWORD dwSelectType)
                     {
                         HWND tlw;
                         m_menuBand->_GetTopLevelWindow(&tlw);
-                        SendMessageW(tlw, WM_CANCELMODE, 0, 0);
+                        ::SendMessageW(tlw, WM_CANCELMODE, 0, 0);
                         PostMessageW(WM_USER_CHANGETRACKEDITEM, index, MAKELPARAM(m_isTrackingPopup, FALSE));
                     }
                     else
@@ -1316,7 +1326,11 @@ HRESULT CMenuSFToolbar::FillToolbar(BOOL clearFirst)
     {
         if (m_menuBand->_CallCBWithItemPidl(item, 0x10000000, 0, 0) == S_FALSE)
         {
-            DPA_AppendPtr(dpaSort, ILClone(item));
+            DPA_AppendPtr(dpaSort, item);
+        }
+        else
+        {
+            CoTaskMemFree(item);
         }
 
         hr = eidl->Next(1, &item, NULL);

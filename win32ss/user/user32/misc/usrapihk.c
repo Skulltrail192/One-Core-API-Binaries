@@ -11,9 +11,8 @@
  *   http://www.reactos.org/wiki/RegisterUserApiHook
  *
  */
-#include <user32.h>
 
-#include <wine/debug.h>
+#include <user32.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(user32);
 
@@ -114,7 +113,7 @@ BeginIfHookedUserApiHook(VOID)
 }
 
 BOOL
-FASTCALL
+WINAPI
 ForceResetUserApiHook(HINSTANCE hInstance)
 {
   if ( ghmodUserApiHook == hInstance &&
@@ -333,6 +332,7 @@ MDIRedrawFrame(HWND hWnd, DWORD flags)
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
    {
+       ERR("Got exception in hooked MDIRedrawFrame!\n");
    }
    _SEH2_END;
 

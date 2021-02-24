@@ -24,6 +24,7 @@ Author:
 //
 #include <umtypes.h>
 #include <inbvtypes.h>
+#include <section_attribs.h>
 
 #ifndef NTOS_MODE_USER
 //
@@ -112,13 +113,6 @@ InbvSolidColorFill(
     _In_ ULONG Right,
     _In_ ULONG Bottom,
     _In_ ULONG Color
-);
-
-VOID
-NTAPI
-InbvSetProgressBarSubset(
-    _In_ ULONG Floor,
-    _In_ ULONG Ceiling
 );
 
 #endif

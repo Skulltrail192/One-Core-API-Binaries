@@ -5,17 +5,19 @@
 /* Set default to IDI_AC */
 #define IDC_CPLICON_1 IDI_AC
 
-#define IDS_PROCENT  49
+#define IDS_PERCENT  49
 #define IDS_SOUND    50
 #define IDS_TEXT     51
 #define IDS_CONFIG1  53
 #define IDS_CONFIG2  54
 
-#define IDD_PROPPAGEPOWERSCHEMES 70
-#define IDD_PROPPAGEALARMS       71
-#define IDD_PROPPAGEPOWERMETER   72
-#define IDD_PROPPAGEADVANCED     73
-#define IDD_PROPPAGEHIBERNATE    74
+#define IDD_POWERSCHEMESPAGE_ACDC 70
+#define IDD_POWERSCHEMESPAGE_AC   71
+#define IDD_PROPPAGEALARMS        72
+#define IDD_PROPPAGEPOWERMETER    73
+#define IDD_PROPPAGEADVANCED      74
+#define IDD_PROPPAGEHIBERNATE     75
+#define IDD_SAVEPOWERSCHEME       76
 
 #define IDS_NOACTION               100
 #define IDS_PowerActionNone1       114
@@ -67,9 +69,9 @@
 #define IDC_DISKACLIST      216
 #define IDC_DISKDCLIST      217
 #define IDC_DISK            218
-#define IDC_HYBERNATEACLIST 219
-#define IDC_HYBERNATEDCLIST 220
-#define IDC_HYBERNATE       221
+#define IDC_HIBERNATEACLIST 219
+#define IDC_HIBERNATEDCLIST 220
+#define IDC_HIBERNATE       221
 
 #define IDC_STANDBY             211
 #define IDC_MONITOR             212
@@ -106,6 +108,8 @@
 
 #define IDC_DELETE_BTN 504
 #define IDC_SAVEAS_BTN 505
+
+#define IDC_SCHEMENAME           620
 
 #define IDS_ALPERTLOWENERGY      715
 #define IDS_ALPERTCRITICLEENERGY 716

@@ -17,11 +17,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#ifdef __REACTOS__
+#include <wchar.h>
+#endif
 
-#include <winreg.h>
+#define COBJMACROS
 
-#include <wine/unicode.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "winerror.h"
+#include "objbase.h"
+#include "sti.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(sti);
 
 static const WCHAR registeredAppsLaunchPath[] = {
     'S','O','F','T','W','A','R','E','\\',
@@ -139,11 +151,11 @@ static HRESULT WINAPI stillimagew_RegisterLaunchApplication(IStillImageW *iface,
     ret = RegCreateKeyW(HKEY_LOCAL_MACHINE, registeredAppsLaunchPath, &registeredAppsKey);
     if (ret == ERROR_SUCCESS)
     {
-        WCHAR *value = HeapAlloc(GetProcessHeap(), 0,
-            (lstrlenW(pwszCommandLine) + 1 + lstrlenW(commandLineSuffix) + 1) * sizeof(WCHAR));
+        size_t len = lstrlenW(pwszCommandLine) + 1 + lstrlenW(commandLineSuffix) + 1;
+        WCHAR *value = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR));
         if (value)
         {
-            sprintfW(value, format, pwszCommandLine, commandLineSuffix);
+            swprintf(value, format, pwszCommandLine, commandLineSuffix);
             ret = RegSetValueExW(registeredAppsKey, pwszAppName, 0,
                 REG_SZ, (BYTE*)value, (lstrlenW(value)+1)*sizeof(WCHAR));
             if (ret != ERROR_SUCCESS)

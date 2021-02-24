@@ -29,12 +29,12 @@ IDR_BROWSE_MAIN_MENU MENU
             MENUITEM "位址列(&A)",            ID_BROWSE_BAR_ADDR
         }
     }
-    POPUP "收藏夾(&F)"
+    POPUP "我的最愛(&F)"
     {
-        MENUITEM "添加到收藏夾...(&A)",        ID_BROWSE_ADDFAV
+        MENUITEM "添加到我的最愛(&A)...",        ID_BROWSE_ADDFAV
         MENUITEM SEPARATOR
     }
-    POPUP "幫助(&H)"
+    POPUP "說明(&H)"
     {
         MENUITEM "關於網際網路瀏覽器(&A)", ID_BROWSE_ABOUT
     }
@@ -67,7 +67,7 @@ STRINGTABLE
 IDD_BROWSE_OPEN DIALOGEX 10, 10, 200, 70
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_CAPTION
 CAPTION "開啟 URL"
-FONT 8, "MS Shell Dlg"
+FONT 9, "新細明體"
 {
     LTEXT "指定您希望要在 Internet Explorer 中開啟的 URL",-1, 35,5,160,25
     LTEXT "開啟:", -1, 5, 32, 30, 15

@@ -227,6 +227,41 @@ static const INetCfgPnpReconfigCallbackVtbl vt_NetCfgPnpReconfigCallback =
  */
 
 HRESULT
+ReadBindingString(
+    NetCfgComponentItem *Item)
+{
+    WCHAR szBuffer[200];
+    HKEY hKey;
+    DWORD dwType, dwSize;
+
+    if (Item == NULL || Item->szBindName == NULL)
+        return S_OK;
+
+    wcscpy(szBuffer, L"SYSTEM\\CurrentControlSet\\Services\\");
+    wcscat(szBuffer, Item->szBindName);
+    wcscat(szBuffer, L"\\Linkage");
+
+    if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, szBuffer, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+    {
+        dwSize = 0;
+        RegQueryValueExW(hKey, L"Bind", NULL, &dwType, NULL, &dwSize);
+
+        if (dwSize != 0)
+        {
+            Item->pszBinding = CoTaskMemAlloc(dwSize);
+            if (Item->pszBinding == NULL)
+                return E_OUTOFMEMORY;
+
+            RegQueryValueExW(hKey, L"Bind", NULL, &dwType, (LPBYTE)Item->pszBinding, &dwSize);
+        }
+
+        RegCloseKey(hKey);
+    }
+
+    return S_OK;
+}
+
+HRESULT
 EnumClientServiceProtocol(HKEY hKey, const GUID * pGuid, NetCfgComponentItem ** pHead)
 {
     DWORD dwIndex = 0;
@@ -293,7 +328,7 @@ EnumClientServiceProtocol(HKEY hKey, const GUID * pGuid, NetCfgComponentItem ** 
                     }
                 }
 
-                if (RegOpenKeyExW(hKey, L"NDI", 0, KEY_READ, &hNDIKey) == ERROR_SUCCESS)
+                if (RegOpenKeyExW(hSubKey, L"NDI", 0, KEY_READ, &hNDIKey) == ERROR_SUCCESS)
                 {
                     /* retrieve HelpText */
                     dwSize = sizeof(szText);
@@ -323,6 +358,8 @@ EnumClientServiceProtocol(HKEY hKey, const GUID * pGuid, NetCfgComponentItem ** 
                     RegCloseKey(hNDIKey);
                 }
                 RegCloseKey(hSubKey);
+
+                ReadBindingString(pCurrent);
 
                 if (!pLast)
                     *pHead = pCurrent;
@@ -372,7 +409,7 @@ EnumerateNetworkAdapter(NetCfgComponentItem ** pHead)
     SP_DEVINFO_DATA DevInfo;
     HKEY hKey;
     WCHAR szNetCfg[50];
-    WCHAR szAdapterNetCfg[50];
+    WCHAR szAdapterNetCfg[MAX_DEVICE_ID_LEN];
     WCHAR szDetail[200] = L"SYSTEM\\CurrentControlSet\\Control\\Class\\";
     WCHAR szName[130] = L"SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}\\";
     NetCfgComponentItem * pLast = NULL, *pCurrent;
@@ -651,17 +688,64 @@ ApplyOrCancelChanges(
     }
 }
 
+VOID
+FreeComponentItem(NetCfgComponentItem *pItem)
+{
+    CoTaskMemFree(pItem->szDisplayName);
+    CoTaskMemFree(pItem->szHelpText);
+    CoTaskMemFree(pItem->szId);
+    CoTaskMemFree(pItem->szBindName);
+    CoTaskMemFree(pItem->szNodeId);
+    CoTaskMemFree(pItem->pszBinding);
+    CoTaskMemFree(pItem);
+}
+
 HRESULT
 WINAPI
 INetCfg_fnUninitialize(
     INetCfg * iface)
 {
     INetCfgImpl *This = (INetCfgImpl *)iface;
+    NetCfgComponentItem *pItem;
 
     if (!This->bInitialized)
         return NETCFG_E_NOT_INITIALIZED;
 
-    return E_FAIL;
+    /* Free the services */
+    while (This->pService != NULL)
+    {
+        pItem = This->pService;
+        This->pService = pItem->pNext;
+        FreeComponentItem(pItem);
+    }
+
+    /* Free the clients */
+    while (This->pClient != NULL)
+    {
+        pItem = This->pClient;
+        This->pClient = pItem->pNext;
+        FreeComponentItem(pItem);
+    }
+
+    /* Free the protocols */
+    while (This->pProtocol != NULL)
+    {
+        pItem = This->pProtocol;
+        This->pProtocol = pItem->pNext;
+        FreeComponentItem(pItem);
+    }
+
+    /* Free the adapters */
+    while (This->pNet != NULL)
+    {
+        pItem = This->pNet;
+        This->pNet = pItem->pNext;
+        FreeComponentItem(pItem);
+    }
+
+    This->bInitialized = FALSE;
+
+    return S_OK;
 }
 
 

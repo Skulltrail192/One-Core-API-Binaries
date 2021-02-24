@@ -11,7 +11,7 @@
 #ifdef IN_LIBXML
 #ifdef __GNUC__
 #ifdef PIC
-#ifdef linux
+#ifdef __linux__
 #if (__GNUC__ == 3 && __GNUC_MINOR__ >= 3) || (__GNUC__ > 3)
 
 #include "libxml/c14n.h"
@@ -4308,6 +4308,16 @@ extern __typeof (xmlHashCreateDict) xmlHashCreateDict __attribute((alias("xmlHas
 #ifndef xmlHashCreateDict
 extern __typeof (xmlHashCreateDict) xmlHashCreateDict__internal_alias __attribute((visibility("hidden")));
 #define xmlHashCreateDict xmlHashCreateDict__internal_alias
+#endif
+#endif
+
+#ifdef bottom_hash
+#undef xmlHashDefaultDeallocator
+extern __typeof (xmlHashDefaultDeallocator) xmlHashDefaultDeallocator __attribute((alias("xmlHashDefaultDeallocator__internal_alias")));
+#else
+#ifndef xmlHashDefaultDeallocator
+extern __typeof (xmlHashDefaultDeallocator) xmlHashDefaultDeallocator__internal_alias __attribute((visibility("hidden")));
+#define xmlHashDefaultDeallocator xmlHashDefaultDeallocator__internal_alias
 #endif
 #endif
 

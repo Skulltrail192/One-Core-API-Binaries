@@ -21,6 +21,8 @@ BOOLEAN MmTrackPtes;
 BOOLEAN MmTrackLockedPages;
 SIZE_T MmSystemLockPagesCount;
 
+ULONG MiCacheOverride[MiNotMapped + 1];
+
 /* INTERNAL FUNCTIONS *********************************************************/
 static
 PVOID
@@ -36,6 +38,7 @@ MiMapLockedPagesInUserSpace(
     PETHREAD Thread = PsGetCurrentThread();
     TABLE_SEARCH_RESULT Result;
     MI_PFN_CACHE_ATTRIBUTE CacheAttribute;
+    MI_PFN_CACHE_ATTRIBUTE EffectiveCacheAttribute;
     BOOLEAN IsIoMapping;
     KIRQL OldIrql;
     ULONG_PTR StartingVa;
@@ -180,23 +183,50 @@ MiMapLockedPagesInUserSpace(
                                   MM_READWRITE,
                                   *MdlPages);
 
-        /* FIXME: We need to respect the PFN's caching information in some cases */
+        EffectiveCacheAttribute = CacheAttribute;
+
+        /* We need to respect the PFN's caching information in some cases */
         Pfn2 = MiGetPfnEntry(*MdlPages);
         if (Pfn2 != NULL)
         {
             ASSERT(Pfn2->u3.e2.ReferenceCount != 0);
 
-            if (Pfn2->u3.e1.CacheAttribute != CacheAttribute)
+            switch (Pfn2->u3.e1.CacheAttribute)
             {
-                DPRINT1("FIXME: Using caller's cache attribute instead of PFN override\n");
-            }
+                case MiNonCached:
+                    if (CacheAttribute != MiNonCached)
+                    {
+                        MiCacheOverride[1]++;
+                        EffectiveCacheAttribute = MiNonCached;
+                    }
+                    break;
 
-            /* We don't support AWE magic */
-            ASSERT(Pfn2->u3.e1.CacheAttribute != MiNotMapped);
+                case MiCached:
+                    if (CacheAttribute != MiCached)
+                    {
+                        MiCacheOverride[0]++;
+                        EffectiveCacheAttribute = MiCached;
+                    }
+                    break;
+
+                case MiWriteCombined:
+                    if (CacheAttribute != MiWriteCombined)
+                    {
+                        MiCacheOverride[2]++;
+                        EffectiveCacheAttribute = MiWriteCombined;
+                    }
+                    break;
+
+                default:
+                    /* We don't support AWE magic (MiNotMapped) */
+                    DPRINT1("FIXME: MiNotMapped is not supported\n");
+                    ASSERT(FALSE);
+                    break;
+            }
         }
 
         /* Configure caching */
-        switch (CacheAttribute)
+        switch (EffectiveCacheAttribute)
         {
             case MiNonCached:
                 MI_PAGE_DISABLE_CACHE(&TempPte);
@@ -218,9 +248,9 @@ MiMapLockedPagesInUserSpace(
 
         /* Acquire a share count */
         Pfn1 = MI_PFN_ELEMENT(PointerPde->u.Hard.PageFrameNumber);
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
         Pfn1->u2.ShareCount++;
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
 
         /* Next page */
         MdlPages++;
@@ -293,7 +323,7 @@ MiUnmapLockedPagesInUserSpace(
     ASSERT(Process->VadRoot.NodeHint != Vad);
 
     PointerPte = MiAddressToPte(BaseAddress);
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
     while (NumberOfPages != 0 &&
            *MdlPages != LIST_HEAD)
     {
@@ -336,7 +366,7 @@ MiUnmapLockedPagesInUserSpace(
     }
 
     KeFlushProcessTb();
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
     MiUnlockProcessWorkingSetUnsafe(Process, Thread);
     MmUnlockAddressSpace(&Process->Vm);
     ExFreePoolWithTag(Vad, 'ldaV');
@@ -560,7 +590,7 @@ MmFreePagesFromMdl(IN PMDL Mdl)
     //
     // Acquire PFN lock
     //
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     //
     // Loop all the MDL pages
@@ -618,7 +648,7 @@ MmFreePagesFromMdl(IN PMDL Mdl)
     //
     // Release the lock
     //
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     //
     // Remove the pages locked flag
@@ -1121,7 +1151,7 @@ MmProbeAndLockPages(IN PMDL Mdl,
         // Use the PFN lock
         //
         UsePfnLock = TRUE;
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
     }
     else
     {
@@ -1180,7 +1210,7 @@ MmProbeAndLockPages(IN PMDL Mdl,
                 //
                 // Release PFN lock
                 //
-                KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+                MiReleasePfnLock(OldIrql);
             }
             else
             {
@@ -1194,7 +1224,7 @@ MmProbeAndLockPages(IN PMDL Mdl,
             Address = MiPteToAddress(PointerPte);
 
             //HACK: Pass a placeholder TrapInformation so the fault handler knows we're unlocked
-            Status = MmAccessFault(FALSE, Address, KernelMode, (PVOID)0xBADBADA3);
+            Status = MmAccessFault(FALSE, Address, KernelMode, (PVOID)(ULONG_PTR)0xBADBADA3BADBADA3ULL);
             if (!NT_SUCCESS(Status))
             {
                 //
@@ -1212,7 +1242,7 @@ MmProbeAndLockPages(IN PMDL Mdl,
                 //
                 // Grab the PFN lock
                 //
-                OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+                OldIrql = MiAcquirePfnLock();
             }
             else
             {
@@ -1250,7 +1280,7 @@ MmProbeAndLockPages(IN PMDL Mdl,
                             //
                             // Release PFN lock
                             //
-                            KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+                            MiReleasePfnLock(OldIrql);
                         }
                         else
                         {
@@ -1263,7 +1293,7 @@ MmProbeAndLockPages(IN PMDL Mdl,
                         //
 
                         //HACK: Pass a placeholder TrapInformation so the fault handler knows we're unlocked
-                        Status = MmAccessFault(TRUE, Address, KernelMode, (PVOID)0xBADBADA3);
+                        Status = MmAccessFault(TRUE, Address, KernelMode, (PVOID)(ULONG_PTR)0xBADBADA3BADBADA3ULL);
                         if (!NT_SUCCESS(Status))
                         {
                             //
@@ -1281,7 +1311,7 @@ MmProbeAndLockPages(IN PMDL Mdl,
                             //
                             // Grab the PFN lock
                             //
-                            OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+                            OldIrql = MiAcquirePfnLock();
                         }
                         else
                         {
@@ -1353,7 +1383,7 @@ MmProbeAndLockPages(IN PMDL Mdl,
         //
         // Release PFN lock
         //
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
     }
     else
     {
@@ -1381,7 +1411,7 @@ CleanupWithLock:
         //
         // Release PFN lock
         //
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
     }
     else
     {
@@ -1462,7 +1492,7 @@ MmUnlockPages(IN PMDL Mdl)
         //
         // Acquire PFN lock
         //
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
 
         //
         // Loop every page
@@ -1485,7 +1515,7 @@ MmUnlockPages(IN PMDL Mdl)
         //
         // Release the lock
         //
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
 
         //
         // Check if we have a process
@@ -1564,7 +1594,7 @@ MmUnlockPages(IN PMDL Mdl)
     //
     // Now grab the PFN lock for the actual unlock and dereference
     //
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
     do
     {
         /* Get the current entry and reference count */
@@ -1575,7 +1605,7 @@ MmUnlockPages(IN PMDL Mdl)
     //
     // Release the lock
     //
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     //
     // We're done

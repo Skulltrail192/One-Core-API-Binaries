@@ -23,7 +23,7 @@ IDI_NET_TRANS ICON "res/nettrans.ico"
 IDI_NET_TRANSREC ICON "res/nettrrec.ico"
 IDI_NET_SETUP ICON "res/netsetup.ico"
 
-IDR_NETSHELL WINE_REGISTRY "res/netshell.rgs"
+IDR_NETSHELL REGISTRY "res/netshell.rgs"
 
 #include <reactos/manifest_dll.rc>
 
@@ -57,6 +57,9 @@ IDR_NETSHELL WINE_REGISTRY "res/netshell.rgs"
 #ifdef LANGUAGE_HE_IL
     #include "lang/he-IL.rc"
 #endif
+#ifdef LANGUAGE_HI_IN
+    #include "lang/hi-IN.rc"
+#endif
 #ifdef LANGUAGE_HU_HU
     #include "lang/hu-HU.rc"
 #endif
@@ -77,6 +80,9 @@ IDR_NETSHELL WINE_REGISTRY "res/netshell.rgs"
 #endif
 #ifdef LANGUAGE_PL_PL
     #include "lang/pl-PL.rc"
+#endif
+#ifdef LANGUAGE_PT_PT
+    #include "lang/pt-PT.rc"
 #endif
 #ifdef LANGUAGE_RO_RO
     #include "lang/ro-RO.rc"

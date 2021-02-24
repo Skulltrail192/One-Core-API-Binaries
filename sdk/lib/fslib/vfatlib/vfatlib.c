@@ -383,6 +383,7 @@ VfatChkdsk(IN PUNICODE_STRING DriveRoot,
     BOOLEAN salvage_files;
     ULONG free_clusters;
     DOS_FS fs;
+    NTSTATUS Status;
 
     RtlZeroMemory(&fs, sizeof(fs));
 
@@ -402,13 +403,38 @@ VfatChkdsk(IN PUNICODE_STRING DriveRoot,
     verify = TRUE;
     salvage_files = TRUE;
 
-    /* Open filesystem */
-    fs_open(DriveRoot, FsCheckFlags & FSCHECK_READ_WRITE);
+    /* Open filesystem and lock it */
+    Status = fs_open(DriveRoot, FsCheckFlags & FSCHECK_READ_WRITE);
+    if (Status == STATUS_ACCESS_DENIED)
+    {
+        /* We failed to lock, ask the caller whether we should continue */
+        if (Callback(VOLUMEINUSE, 0, NULL))
+        {
+            Status = STATUS_SUCCESS;
+        }
+    }
+    if (!NT_SUCCESS(Status))
+    {
+        fs_close(FALSE);
+        return STATUS_DISK_CORRUPT_ERROR;
+    }
 
     if (CheckOnlyIfDirty && !fs_isdirty())
     {
+        /* Unlock volume if required */
+        if (FsCheckFlags & FSCHECK_READ_WRITE)
+            fs_lock(FALSE);
+
         /* No need to check FS */
         return (fs_close(FALSE) == 0 ? STATUS_SUCCESS : STATUS_DISK_CORRUPT_ERROR);
+    }
+    else if (CheckOnlyIfDirty && fs_isdirty())
+    {
+        if (!(FsCheckFlags & FSCHECK_READ_WRITE) && !(FsCheckFlags & FSCHECK_INTERACTIVE))
+        {
+            fs_close(FALSE);
+            return STATUS_DISK_CORRUPT_ERROR;
+        }
     }
 
     read_boot(&fs);

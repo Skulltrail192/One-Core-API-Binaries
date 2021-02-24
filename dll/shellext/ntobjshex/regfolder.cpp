@@ -12,7 +12,7 @@
 const GUID CLSID_RegistryFolder = { 0x1c6d6e08, 0x2332, 0x4a7b, { 0xa9, 0x4d, 0x64, 0x32, 0xdb, 0x2b, 0x5a, 0xe6 } };
 
 // {18A4B504-F6D8-4D8A-8661-6296514C2CF0}
-static const GUID GUID_RegistryColumns = { 0x18a4b504, 0xf6d8, 0x4d8a, { 0x86, 0x61, 0x62, 0x96, 0x51, 0x4c, 0x2c, 0xf0 } };
+//static const GUID GUID_RegistryColumns = { 0x18a4b504, 0xf6d8, 0x4d8a, { 0x86, 0x61, 0x62, 0x96, 0x51, 0x4c, 0x2c, 0xf0 } };
 
 enum RegistryColumns
 {
@@ -136,21 +136,21 @@ HRESULT STDMETHODCALLTYPE CRegistryFolder::InternalBindToObject(
     return ShellObjectCreatorInit<CRegistryFolder>(fullPidl, path, m_hRoot, IID_PPV_ARG(IShellFolder, ppsfChild));
 }
 
-HRESULT STDMETHODCALLTYPE CRegistryFolder::Initialize(LPCITEMIDLIST pidl)
+HRESULT STDMETHODCALLTYPE CRegistryFolder::Initialize(PCIDLIST_ABSOLUTE pidl)
 {
     m_shellPidl = ILClone(pidl);
     m_hRoot = NULL;
 
-    StringCbCopy(m_NtPath, _countof(m_NtPath), L"");
+    StringCbCopyW(m_NtPath, sizeof(m_NtPath), L"");
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CRegistryFolder::Initialize(LPCITEMIDLIST pidl, PCWSTR ntPath, HKEY hRoot)
+HRESULT STDMETHODCALLTYPE CRegistryFolder::Initialize(PCIDLIST_ABSOLUTE pidl, PCWSTR ntPath, HKEY hRoot)
 {
     m_shellPidl = ILClone(pidl);
     m_hRoot = hRoot;
 
-    StringCbCopy(m_NtPath, _countof(m_NtPath), ntPath);
+    StringCbCopyW(m_NtPath, sizeof(m_NtPath), ntPath);
     return S_OK;
 }
 

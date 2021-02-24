@@ -23,21 +23,38 @@
  *
  */
 
-#include "precomp.h"
-
 #include "ntstatus.h"
 #define WIN32_NO_STATUS
-#include <ws2tcpip.h>
+#ifdef __REACTOS__
+#define NONAMELESSUNION
+#endif
+#include "ws2tcpip.h"
 
-#include <wininet.h>
-#include <winioctl.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
 
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "winerror.h"
+#include "wininet.h"
+#include "wine/winternl.h"
+#include "winioctl.h"
+
+#include "rpc.h"
+#include "rpcndr.h"
+
+#include "wine/debug.h"
+
+#include "rpc_binding.h"
+#include "rpc_assoc.h"
+#include "rpc_message.h"
+#include "rpc_server.h"
 #include "epm_towers.h"
 
 #define DEFAULT_NCACN_HTTP_TIMEOUT (60 * 1000)
-
-#undef ARRAYSIZE
-#define ARRAYSIZE(a) (sizeof((a)) / sizeof((a)[0]))
 
 WINE_DEFAULT_DEBUG_CHANNEL(rpc);
 
@@ -65,6 +82,7 @@ typedef struct _RpcConnection_np
     RpcConnection common;
     HANDLE pipe;
     HANDLE listen_event;
+    char *listen_pipe;
     IO_STATUS_BLOCK io_status;
     HANDLE event_cache;
     BOOL read_closed;
@@ -89,26 +107,26 @@ static void release_np_event(RpcConnection_np *connection, HANDLE event)
         CloseHandle(event);
 }
 
-static RPC_STATUS rpcrt4_conn_create_pipe(RpcConnection *Connection, LPCSTR pname)
+static RPC_STATUS rpcrt4_conn_create_pipe(RpcConnection *conn)
 {
-  RpcConnection_np *npc = (RpcConnection_np *) Connection;
-  TRACE("listening on %s\n", pname);
+    RpcConnection_np *connection = (RpcConnection_np *) conn;
 
-  npc->pipe = CreateNamedPipeA(pname, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
-                               PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE,
-                               PIPE_UNLIMITED_INSTANCES,
-                               RPC_MAX_PACKET_SIZE, RPC_MAX_PACKET_SIZE, 5000, NULL);
-  if (npc->pipe == INVALID_HANDLE_VALUE) {
-    WARN("CreateNamedPipe failed with error %d\n", GetLastError());
-    if (GetLastError() == ERROR_FILE_EXISTS)
-      return RPC_S_DUPLICATE_ENDPOINT;
-    else
-      return RPC_S_CANT_CREATE_ENDPOINT;
-  }
+    TRACE("listening on %s\n", connection->listen_pipe);
 
-  /* Note: we don't call ConnectNamedPipe here because it must be done in the
-   * server thread as the thread must be alertable */
-  return RPC_S_OK;
+    connection->pipe = CreateNamedPipeA(connection->listen_pipe, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+                                        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE,
+                                        PIPE_UNLIMITED_INSTANCES,
+                                        RPC_MAX_PACKET_SIZE, RPC_MAX_PACKET_SIZE, 5000, NULL);
+    if (connection->pipe == INVALID_HANDLE_VALUE)
+    {
+        WARN("CreateNamedPipe failed with error %d\n", GetLastError());
+        if (GetLastError() == ERROR_FILE_EXISTS)
+            return RPC_S_DUPLICATE_ENDPOINT;
+        else
+            return RPC_S_CANT_CREATE_ENDPOINT;
+    }
+
+    return RPC_S_OK;
 }
 
 static RPC_STATUS rpcrt4_conn_open_pipe(RpcConnection *Connection, LPCSTR pname, BOOL wait)
@@ -150,8 +168,17 @@ static RPC_STATUS rpcrt4_conn_open_pipe(RpcConnection *Connection, LPCSTR pname,
     if (pipe != INVALID_HANDLE_VALUE) break;
     err = GetLastError();
     if (err == ERROR_PIPE_BUSY) {
+      if (WaitNamedPipeA(pname, NMPWAIT_USE_DEFAULT_WAIT)) {
+        TRACE("retrying busy server\n");
+        continue;
+      }
       TRACE("connection failed, error=%x\n", err);
       return RPC_S_SERVER_TOO_BUSY;
+#ifdef __REACTOS__
+    } else if (err == ERROR_BAD_NETPATH) {
+      TRACE("connection failed, error=%x\n", err);
+      return RPC_S_SERVER_UNAVAILABLE;
+#endif
     }
     if (!wait || !WaitNamedPipeA(pname, NMPWAIT_WAIT_FOREVER)) {
       err = GetLastError();
@@ -201,7 +228,6 @@ static RPC_STATUS rpcrt4_ncalrpc_open(RpcConnection* Connection)
 static RPC_STATUS rpcrt4_protseq_ncalrpc_open_endpoint(RpcServerProtseq* protseq, const char *endpoint)
 {
   RPC_STATUS r;
-  LPSTR pname;
   RpcConnection *Connection;
   char generated_endpoint[22];
 
@@ -220,9 +246,8 @@ static RPC_STATUS rpcrt4_protseq_ncalrpc_open_endpoint(RpcServerProtseq* protseq
   if (r != RPC_S_OK)
       return r;
 
-  pname = ncalrpc_pipe_name(Connection->Endpoint);
-  r = rpcrt4_conn_create_pipe(Connection, pname);
-  I_RpcFree(pname);
+  ((RpcConnection_np*)Connection)->listen_pipe = ncalrpc_pipe_name(Connection->Endpoint);
+  r = rpcrt4_conn_create_pipe(Connection);
 
   EnterCriticalSection(&protseq->cs);
   list_add_head(&protseq->listeners, &Connection->protseq_entry);
@@ -232,14 +257,53 @@ static RPC_STATUS rpcrt4_protseq_ncalrpc_open_endpoint(RpcServerProtseq* protseq
   return r;
 }
 
+#ifdef __REACTOS__
+static char *ncacn_pipe_name(const char *server, const char *endpoint)
+#else
 static char *ncacn_pipe_name(const char *endpoint)
+#endif
 {
+#ifdef __REACTOS__
+  static const char prefix[] = "\\\\";
+  static const char local[] = ".";
+  char ComputerName[MAX_COMPUTERNAME_LENGTH + 1];
+  DWORD bufLen = ARRAY_SIZE(ComputerName);
+#else
   static const char prefix[] = "\\\\.";
+#endif
   char *pipe_name;
 
+#ifdef __REACTOS__
+  if (server != NULL && *server != 0)
+  {
+    /* Trim any leading UNC server prefix. */
+    if (server[0] == '\\' && server[1] == '\\')
+      server += 2;
+
+    /* If the server represents the local computer, use instead
+     * the local prefix to avoid a round in UNC name resolution. */
+    if (GetComputerNameA(ComputerName, &bufLen) &&
+        (stricmp(ComputerName, server) == 0))
+    {
+      server = local;
+    }
+  }
+  else
+  {
+    server = local;
+  }
+#endif
+
   /* protseq=ncacn_np: named pipes */
+#ifdef __REACTOS__
+  pipe_name = I_RpcAllocate(sizeof(prefix) + strlen(server) + strlen(endpoint));
+  strcpy(pipe_name, prefix);
+  strcat(pipe_name, server);
+  strcat(pipe_name, endpoint);
+#else
   pipe_name = I_RpcAllocate(sizeof(prefix) + strlen(endpoint));
   strcat(strcpy(pipe_name, prefix), endpoint);
+#endif
   return pipe_name;
 }
 
@@ -253,7 +317,11 @@ static RPC_STATUS rpcrt4_ncacn_np_open(RpcConnection* Connection)
   if (npc->pipe)
     return RPC_S_OK;
 
+#ifdef __REACTOS__
+  pname = ncacn_pipe_name(Connection->NetworkAddr, Connection->Endpoint);
+#else
   pname = ncacn_pipe_name(Connection->Endpoint);
+#endif
   r = rpcrt4_conn_open_pipe(Connection, pname, FALSE);
   I_RpcFree(pname);
 
@@ -263,7 +331,6 @@ static RPC_STATUS rpcrt4_ncacn_np_open(RpcConnection* Connection)
 static RPC_STATUS rpcrt4_protseq_ncacn_np_open_endpoint(RpcServerProtseq *protseq, const char *endpoint)
 {
   RPC_STATUS r;
-  LPSTR pname;
   RpcConnection *Connection;
   char generated_endpoint[26];
 
@@ -282,9 +349,12 @@ static RPC_STATUS rpcrt4_protseq_ncacn_np_open_endpoint(RpcServerProtseq *protse
   if (r != RPC_S_OK)
     return r;
 
-  pname = ncacn_pipe_name(Connection->Endpoint);
-  r = rpcrt4_conn_create_pipe(Connection, pname);
-  I_RpcFree(pname);
+#ifdef __REACTOS__
+  ((RpcConnection_np*)Connection)->listen_pipe = ncacn_pipe_name(NULL, Connection->Endpoint);
+#else
+  ((RpcConnection_np*)Connection)->listen_pipe = ncacn_pipe_name(Connection->Endpoint);
+#endif
+  r = rpcrt4_conn_create_pipe(Connection);
 
   EnterCriticalSection(&protseq->cs);
   list_add_head(&protseq->listeners, &Connection->protseq_entry);
@@ -308,13 +378,9 @@ static RPC_STATUS rpcrt4_ncacn_np_handoff(RpcConnection *old_conn, RpcConnection
 {
   DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
   RPC_STATUS status;
-  LPSTR pname;
 
   rpcrt4_conn_np_handoff((RpcConnection_np *)old_conn, (RpcConnection_np *)new_conn);
-
-  pname = ncacn_pipe_name(old_conn->Endpoint);
-  status = rpcrt4_conn_create_pipe(old_conn, pname);
-  I_RpcFree(pname);
+  status = rpcrt4_conn_create_pipe(old_conn);
 
   /* Store the local computer name as the NetworkAddr for ncacn_np as long as
    * we don't support named pipes over the network. */
@@ -338,7 +404,11 @@ static RPC_STATUS rpcrt4_ncacn_np_is_server_listening(const char *endpoint)
   char *pipe_name;
   RPC_STATUS status;
 
+#ifdef __REACTOS__
+  pipe_name = ncacn_pipe_name(NULL, endpoint);
+#else
   pipe_name = ncacn_pipe_name(endpoint);
+#endif
   status = is_pipe_listening(pipe_name);
   I_RpcFree(pipe_name);
   return status;
@@ -359,15 +429,11 @@ static RPC_STATUS rpcrt4_ncalrpc_handoff(RpcConnection *old_conn, RpcConnection 
 {
   DWORD len = MAX_COMPUTERNAME_LENGTH + 1;
   RPC_STATUS status;
-  LPSTR pname;
 
   TRACE("%s\n", old_conn->Endpoint);
 
   rpcrt4_conn_np_handoff((RpcConnection_np *)old_conn, (RpcConnection_np *)new_conn);
-
-  pname = ncalrpc_pipe_name(old_conn->Endpoint);
-  status = rpcrt4_conn_create_pipe(old_conn, pname);
-  I_RpcFree(pname);
+  status = rpcrt4_conn_create_pipe(old_conn);
 
   /* Store the local computer name as the NetworkAddr for ncalrpc. */
   new_conn->NetworkAddr = HeapAlloc(GetProcessHeap(), 0, len);
@@ -479,10 +545,9 @@ static void rpcrt4_conn_np_cancel_call(RpcConnection *conn)
     CancelIoEx(connection->pipe, NULL);
 }
 
-static int rpcrt4_conn_np_wait_for_incoming_data(RpcConnection *Connection)
+static int rpcrt4_conn_np_wait_for_incoming_data(RpcConnection *conn)
 {
-    /* FIXME: implement when named pipe writes use overlapped I/O */
-    return -1;
+    return rpcrt4_conn_np_read(conn, NULL, 0);
 }
 
 static size_t rpcrt4_ncacn_np_get_top_of_tower(unsigned char *tower_data,
@@ -672,6 +737,8 @@ static void *rpcrt4_protseq_np_get_wait_array(RpcServerProtseq *protseq, void *p
     *count = 1;
     LIST_FOR_EACH_ENTRY(conn, &protseq->listeners, RpcConnection_np, common.protseq_entry)
     {
+        if (!conn->pipe && rpcrt4_conn_create_pipe(&conn->common) != RPC_S_OK)
+            continue;
         if (!conn->listen_event)
         {
             NTSTATUS status;
@@ -1925,38 +1992,38 @@ static RPC_STATUS rpcrt4_http_internet_connect(RpcConnection_http *httpc)
     }
 
     for (option = httpc->common.NetworkOptions; option;
-         option = (strchrW(option, ',') ? strchrW(option, ',')+1 : NULL))
+         option = (wcschr(option, ',') ? wcschr(option, ',')+1 : NULL))
     {
         static const WCHAR wszRpcProxy[] = {'R','p','c','P','r','o','x','y','=',0};
         static const WCHAR wszHttpProxy[] = {'H','t','t','p','P','r','o','x','y','=',0};
 
-        if (!strncmpiW(option, wszRpcProxy, sizeof(wszRpcProxy)/sizeof(wszRpcProxy[0])-1))
+        if (!_wcsnicmp(option, wszRpcProxy, ARRAY_SIZE(wszRpcProxy)-1))
         {
-            const WCHAR *value_start = option + sizeof(wszRpcProxy)/sizeof(wszRpcProxy[0])-1;
+            const WCHAR *value_start = option + ARRAY_SIZE(wszRpcProxy)-1;
             const WCHAR *value_end;
             const WCHAR *p;
 
-            value_end = strchrW(option, ',');
+            value_end = wcschr(option, ',');
             if (!value_end)
-                value_end = value_start + strlenW(value_start);
+                value_end = value_start + lstrlenW(value_start);
             for (p = value_start; p < value_end; p++)
                 if (*p == ':')
                 {
-                    port = atoiW(p+1);
+                    port = wcstol(p+1, NULL, 10);
                     value_end = p;
                     break;
                 }
             TRACE("RpcProxy value is %s\n", debugstr_wn(value_start, value_end-value_start));
             servername = RPCRT4_strndupW(value_start, value_end-value_start);
         }
-        else if (!strncmpiW(option, wszHttpProxy, sizeof(wszHttpProxy)/sizeof(wszHttpProxy[0])-1))
+        else if (!_wcsnicmp(option, wszHttpProxy, ARRAY_SIZE(wszHttpProxy)-1))
         {
-            const WCHAR *value_start = option + sizeof(wszHttpProxy)/sizeof(wszHttpProxy[0])-1;
+            const WCHAR *value_start = option + ARRAY_SIZE(wszHttpProxy)-1;
             const WCHAR *value_end;
 
-            value_end = strchrW(option, ',');
+            value_end = wcschr(option, ',');
             if (!value_end)
-                value_end = value_start + strlenW(value_start);
+                value_end = value_start + lstrlenW(value_start);
             TRACE("HttpProxy value is %s\n", debugstr_wn(value_start, value_end-value_start));
             proxy = RPCRT4_strndupW(value_start, value_end-value_start);
         }
@@ -2079,9 +2146,9 @@ static RPC_STATUS insert_content_length_header(HINTERNET request, DWORD len)
 {
     static const WCHAR fmtW[] =
         {'C','o','n','t','e','n','t','-','L','e','n','g','t','h',':',' ','%','u','\r','\n',0};
-    WCHAR header[sizeof(fmtW) / sizeof(fmtW[0]) + 10];
+    WCHAR header[ARRAY_SIZE(fmtW) + 10];
 
-    sprintfW(header, fmtW, len);
+    swprintf(header, fmtW, len);
     if ((HttpAddRequestHeadersW(request, header, -1, HTTP_ADDREQ_FLAG_REPLACE | HTTP_ADDREQ_FLAG_ADD))) return RPC_S_OK;
     return RPC_S_SERVER_UNAVAILABLE;
 }
@@ -2408,20 +2475,19 @@ static const struct
 }
 auth_schemes[] =
 {
-    { basicW,     ARRAYSIZE(basicW) - 1,     RPC_C_HTTP_AUTHN_SCHEME_BASIC },
-    { ntlmW,      ARRAYSIZE(ntlmW) - 1,      RPC_C_HTTP_AUTHN_SCHEME_NTLM },
-    { passportW,  ARRAYSIZE(passportW) - 1,  RPC_C_HTTP_AUTHN_SCHEME_PASSPORT },
-    { digestW,    ARRAYSIZE(digestW) - 1,    RPC_C_HTTP_AUTHN_SCHEME_DIGEST },
-    { negotiateW, ARRAYSIZE(negotiateW) - 1, RPC_C_HTTP_AUTHN_SCHEME_NEGOTIATE }
+    { basicW,     ARRAY_SIZE(basicW) - 1,     RPC_C_HTTP_AUTHN_SCHEME_BASIC },
+    { ntlmW,      ARRAY_SIZE(ntlmW) - 1,      RPC_C_HTTP_AUTHN_SCHEME_NTLM },
+    { passportW,  ARRAY_SIZE(passportW) - 1,  RPC_C_HTTP_AUTHN_SCHEME_PASSPORT },
+    { digestW,    ARRAY_SIZE(digestW) - 1,    RPC_C_HTTP_AUTHN_SCHEME_DIGEST },
+    { negotiateW, ARRAY_SIZE(negotiateW) - 1, RPC_C_HTTP_AUTHN_SCHEME_NEGOTIATE }
 };
-static const unsigned int num_auth_schemes = sizeof(auth_schemes)/sizeof(auth_schemes[0]);
 
 static DWORD auth_scheme_from_header( const WCHAR *header )
 {
     unsigned int i;
-    for (i = 0; i < num_auth_schemes; i++)
+    for (i = 0; i < ARRAY_SIZE(auth_schemes); i++)
     {
-        if (!strncmpiW( header, auth_schemes[i].str, auth_schemes[i].len ) &&
+        if (!_wcsnicmp( header, auth_schemes[i].str, auth_schemes[i].len ) &&
             (header[auth_schemes[i].len] == ' ' || !header[auth_schemes[i].len])) return auth_schemes[i].scheme;
     }
     return 0;
@@ -2488,7 +2554,7 @@ static RPC_STATUS do_authorization(HINTERNET request, SEC_WCHAR *servername,
 
         if (creds->AuthnSchemes[0] == RPC_C_HTTP_AUTHN_SCHEME_NTLM) scheme = ntlmW;
         else scheme = negotiateW;
-        scheme_len = strlenW( scheme );
+        scheme_len = lstrlenW( scheme );
 
         if (!*auth_ptr)
         {
@@ -2525,7 +2591,7 @@ static RPC_STATUS do_authorization(HINTERNET request, SEC_WCHAR *servername,
         p = auth_value + scheme_len;
         if (!first && *p == ' ')
         {
-            int len = strlenW(++p);
+            int len = lstrlenW(++p);
             in.cbBuffer = decode_base64(p, len, NULL);
             if (!(in.pvBuffer = HeapAlloc(GetProcessHeap(), 0, in.cbBuffer))) break;
             decode_base64(p, len, in.pvBuffer);
@@ -2593,7 +2659,7 @@ static RPC_STATUS insert_authorization_header(HINTERNET request, ULONG scheme, c
     static const WCHAR basicW[] = {'B','a','s','i','c',' '};
     static const WCHAR negotiateW[] = {'N','e','g','o','t','i','a','t','e',' '};
     static const WCHAR ntlmW[] = {'N','T','L','M',' '};
-    int scheme_len, auth_len = sizeof(authW) / sizeof(authW[0]), len = ((data_len + 2) * 4) / 3;
+    int scheme_len, auth_len = ARRAY_SIZE(authW), len = ((data_len + 2) * 4) / 3;
     const WCHAR *scheme_str;
     WCHAR *header, *ptr;
     RPC_STATUS status = RPC_S_SERVER_UNAVAILABLE;
@@ -2602,15 +2668,15 @@ static RPC_STATUS insert_authorization_header(HINTERNET request, ULONG scheme, c
     {
     case RPC_C_HTTP_AUTHN_SCHEME_BASIC:
         scheme_str = basicW;
-        scheme_len = sizeof(basicW) / sizeof(basicW[0]);
+        scheme_len = ARRAY_SIZE(basicW);
         break;
     case RPC_C_HTTP_AUTHN_SCHEME_NEGOTIATE:
         scheme_str = negotiateW;
-        scheme_len = sizeof(negotiateW) / sizeof(negotiateW[0]);
+        scheme_len = ARRAY_SIZE(negotiateW);
         break;
     case RPC_C_HTTP_AUTHN_SCHEME_NTLM:
         scheme_str = ntlmW;
-        scheme_len = sizeof(ntlmW) / sizeof(ntlmW[0]);
+        scheme_len = ARRAY_SIZE(ntlmW);
         break;
     default:
         ERR("unknown scheme %u\n", scheme);
@@ -2791,9 +2857,10 @@ static RPC_STATUS rpcrt4_ncacn_http_open(RpcConnection* Connection)
     if (!url)
         return RPC_S_OUT_OF_MEMORY;
     memcpy(url, wszRpcProxyPrefix, sizeof(wszRpcProxyPrefix));
-    MultiByteToWideChar(CP_ACP, 0, Connection->NetworkAddr, -1, url+sizeof(wszRpcProxyPrefix)/sizeof(wszRpcProxyPrefix[0])-1, strlen(Connection->NetworkAddr)+1);
-    strcatW(url, wszColon);
-    MultiByteToWideChar(CP_ACP, 0, Connection->Endpoint, -1, url+strlenW(url), strlen(Connection->Endpoint)+1);
+    MultiByteToWideChar(CP_ACP, 0, Connection->NetworkAddr, -1, url+ARRAY_SIZE(wszRpcProxyPrefix)-1,
+                        strlen(Connection->NetworkAddr)+1);
+    lstrcatW(url, wszColon);
+    MultiByteToWideChar(CP_ACP, 0, Connection->Endpoint, -1, url+lstrlenW(url), strlen(Connection->Endpoint)+1);
 
     secure = is_secure(httpc);
     credentials = has_credentials(httpc);
@@ -3271,7 +3338,7 @@ static const struct protseq_ops protseq_list[] =
 const struct protseq_ops *rpcrt4_get_protseq_ops(const char *protseq)
 {
   unsigned int i;
-  for(i=0; i<ARRAYSIZE(protseq_list); i++)
+  for(i = 0; i < ARRAY_SIZE(protseq_list); i++)
     if (!strcmp(protseq_list[i].name, protseq))
       return &protseq_list[i];
   return NULL;
@@ -3280,7 +3347,7 @@ const struct protseq_ops *rpcrt4_get_protseq_ops(const char *protseq)
 static const struct connection_ops *rpcrt4_get_conn_protseq_ops(const char *protseq)
 {
     unsigned int i;
-    for(i=0; i<ARRAYSIZE(conn_protseq_list); i++)
+    for(i = 0; i < ARRAY_SIZE(conn_protseq_list); i++)
         if (!strcmp(conn_protseq_list[i].name, protseq))
             return &conn_protseq_list[i];
     return NULL;
@@ -3372,38 +3439,70 @@ static RpcConnection *rpcrt4_spawn_connection(RpcConnection *old_connection)
     return connection;
 }
 
-RpcConnection *RPCRT4_GrabConnection( RpcConnection *conn )
+void rpcrt4_conn_release_and_wait(RpcConnection *connection)
 {
-    InterlockedIncrement( &conn->ref );
-    return conn;
+    HANDLE event = NULL;
+
+    if (connection->ref > 1)
+        event = connection->wait_release = CreateEventW(NULL, TRUE, FALSE, NULL);
+
+    RPCRT4_ReleaseConnection(connection);
+
+    if(event)
+    {
+        WaitForSingleObject(event, INFINITE);
+        CloseHandle(event);
+    }
 }
 
-RPC_STATUS RPCRT4_ReleaseConnection(RpcConnection* Connection)
+RpcConnection *RPCRT4_GrabConnection(RpcConnection *connection)
 {
-  if (InterlockedDecrement( &Connection->ref ) > 0) return RPC_S_OK;
+    LONG ref = InterlockedIncrement(&connection->ref);
+    TRACE("%p ref=%u\n", connection, ref);
+    return connection;
+}
 
-  TRACE("destroying connection %p\n", Connection);
+void RPCRT4_ReleaseConnection(RpcConnection *connection)
+{
+    LONG ref;
 
-  RPCRT4_CloseConnection(Connection);
-  RPCRT4_strfree(Connection->Endpoint);
-  RPCRT4_strfree(Connection->NetworkAddr);
-  HeapFree(GetProcessHeap(), 0, Connection->NetworkOptions);
-  HeapFree(GetProcessHeap(), 0, Connection->CookieAuth);
-  if (Connection->AuthInfo) RpcAuthInfo_Release(Connection->AuthInfo);
-  if (Connection->QOS) RpcQualityOfService_Release(Connection->QOS);
+    /* protseq stores a list of active connections, but does not own references to them.
+     * It may need to grab a connection from the list, which could lead to a race if
+     * connection is being released, but not yet removed from the list. We handle that
+     * by synchronizing on CS here. */
+    if (connection->protseq)
+    {
+        EnterCriticalSection(&connection->protseq->cs);
+        ref = InterlockedDecrement(&connection->ref);
+        if (!ref)
+            list_remove(&connection->protseq_entry);
+        LeaveCriticalSection(&connection->protseq->cs);
+    }
+    else
+    {
+        ref = InterlockedDecrement(&connection->ref);
+    }
 
-  /* server-only */
-  if (Connection->server_binding) RPCRT4_ReleaseBinding(Connection->server_binding);
+    TRACE("%p ref=%u\n", connection, ref);
 
-  if (Connection->protseq)
-  {
-    EnterCriticalSection(&Connection->protseq->cs);
-    list_remove(&Connection->protseq_entry);
-    LeaveCriticalSection(&Connection->protseq->cs);
-  }
+    if (!ref)
+    {
+        RPCRT4_CloseConnection(connection);
+        RPCRT4_strfree(connection->Endpoint);
+        RPCRT4_strfree(connection->NetworkAddr);
+        HeapFree(GetProcessHeap(), 0, connection->NetworkOptions);
+        HeapFree(GetProcessHeap(), 0, connection->CookieAuth);
+        if (connection->AuthInfo) RpcAuthInfo_Release(connection->AuthInfo);
+        if (connection->QOS) RpcQualityOfService_Release(connection->QOS);
 
-  HeapFree(GetProcessHeap(), 0, Connection);
-  return RPC_S_OK;
+        /* server-only */
+        if (connection->server_binding) RPCRT4_ReleaseBinding(connection->server_binding);
+        else if (connection->assoc) RpcAssoc_ConnectionReleased(connection->assoc);
+
+        if (connection->wait_release) SetEvent(connection->wait_release);
+
+        HeapFree(GetProcessHeap(), 0, connection);
+    }
 }
 
 RPC_STATUS RPCRT4_IsServerListening(const char *protseq, const char *endpoint)
@@ -3486,7 +3585,7 @@ RPC_STATUS RpcTransport_ParseTopOfTower(const unsigned char *tower_data,
         (floor4->count_lhs != sizeof(floor4->protid)))
         return EPT_S_NOT_REGISTERED;
 
-    for(i = 0; i < ARRAYSIZE(conn_protseq_list); i++)
+    for(i = 0; i < ARRAY_SIZE(conn_protseq_list); i++)
         if ((protocol_floor->protid == conn_protseq_list[i].epm_protocols[0]) &&
             (floor4->protid == conn_protseq_list[i].epm_protocols[1]))
         {
@@ -3592,12 +3691,12 @@ RPC_STATUS WINAPI RpcNetworkInqProtseqsW( RPC_PROTSEQ_VECTORW** protseqs )
 
   TRACE("(%p)\n", protseqs);
 
-  *protseqs = HeapAlloc(GetProcessHeap(), 0, sizeof(RPC_PROTSEQ_VECTORW)+(sizeof(unsigned short*)*ARRAYSIZE(protseq_list)));
+  *protseqs = HeapAlloc(GetProcessHeap(), 0, sizeof(RPC_PROTSEQ_VECTORW)+(sizeof(unsigned short*)*ARRAY_SIZE(protseq_list)));
   if (!*protseqs)
     goto end;
   pvector = *protseqs;
   pvector->Count = 0;
-  for (i = 0; i < ARRAYSIZE(protseq_list); i++)
+  for (i = 0; i < ARRAY_SIZE(protseq_list); i++)
   {
     pvector->Protseq[i] = HeapAlloc(GetProcessHeap(), 0, (strlen(protseq_list[i].name)+1)*sizeof(unsigned short));
     if (pvector->Protseq[i] == NULL)
@@ -3625,12 +3724,12 @@ RPC_STATUS WINAPI RpcNetworkInqProtseqsA(RPC_PROTSEQ_VECTORA** protseqs)
 
   TRACE("(%p)\n", protseqs);
 
-  *protseqs = HeapAlloc(GetProcessHeap(), 0, sizeof(RPC_PROTSEQ_VECTORW)+(sizeof(unsigned char*)*ARRAYSIZE(protseq_list)));
+  *protseqs = HeapAlloc(GetProcessHeap(), 0, sizeof(RPC_PROTSEQ_VECTORW)+(sizeof(unsigned char*)*ARRAY_SIZE(protseq_list)));
   if (!*protseqs)
     goto end;
   pvector = *protseqs;
   pvector->Count = 0;
-  for (i = 0; i < ARRAYSIZE(protseq_list); i++)
+  for (i = 0; i < ARRAY_SIZE(protseq_list); i++)
   {
     pvector->Protseq[i] = HeapAlloc(GetProcessHeap(), 0, strlen(protseq_list[i].name)+1);
     if (pvector->Protseq[i] == NULL)

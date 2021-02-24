@@ -16,7 +16,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#ifdef __REACTOS__
+#include <wine/config.h>
+#include <wine/port.h>
+#endif
+
+#include <math.h>
+
 #include "jscript.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(jscript);
 
 static const WCHAR descriptionW[] = {'d','e','s','c','r','i','p','t','i','o','n',0};
 static const WCHAR messageW[] = {'m','e','s','s','a','g','e',0};
@@ -135,7 +146,7 @@ static const builtin_prop_t Error_props[] = {
 static const builtin_info_t Error_info = {
     JSCLASS_ERROR,
     {NULL, Error_value, 0},
-    sizeof(Error_props)/sizeof(*Error_props),
+    ARRAY_SIZE(Error_props),
     Error_props,
     NULL,
     NULL
@@ -184,15 +195,19 @@ static HRESULT create_error(script_ctx_t *ctx, jsdisp_t *constr,
     if(FAILED(hres))
         return hres;
 
-    hres = jsdisp_propput_dontenum(err, numberW, jsval_number((INT)number));
+    hres = jsdisp_define_data_property(err, numberW, PROPF_WRITABLE | PROPF_CONFIGURABLE,
+                                       jsval_number((INT)number));
     if(FAILED(hres)) {
         jsdisp_release(err);
         return hres;
     }
 
-    hres = jsdisp_propput_name(err, messageW, jsval_string(msg));
+    hres = jsdisp_define_data_property(err, messageW,
+                                       PROPF_WRITABLE | PROPF_ENUMERABLE | PROPF_CONFIGURABLE,
+                                       jsval_string(msg));
     if(SUCCEEDED(hres))
-        hres = jsdisp_propput_dontenum(err, descriptionW, jsval_string(msg));
+        hres = jsdisp_define_data_property(err, descriptionW, PROPF_WRITABLE | PROPF_CONFIGURABLE,
+                                           jsval_string(msg));
     if(FAILED(hres)) {
         jsdisp_release(err);
         return hres;
@@ -335,7 +350,7 @@ HRESULT init_error_constr(script_ctx_t *ctx, jsdisp_t *object_prototype)
     jsstr_t *str;
     HRESULT hres;
 
-    for(i=0; i < sizeof(names)/sizeof(names[0]); i++) {
+    for(i=0; i < ARRAY_SIZE(names); i++) {
         hres = alloc_error(ctx, i==0 ? object_prototype : NULL, NULL, &err);
         if(FAILED(hres))
             return hres;
@@ -346,7 +361,8 @@ HRESULT init_error_constr(script_ctx_t *ctx, jsdisp_t *object_prototype)
             return E_OUTOFMEMORY;
         }
 
-        hres = jsdisp_propput_dontenum(err, nameW, jsval_string(str));
+        hres = jsdisp_define_data_property(err, nameW, PROPF_WRITABLE | PROPF_CONFIGURABLE,
+                                           jsval_string(str));
         jsstr_release(str);
         if(SUCCEEDED(hres))
             hres = create_builtin_constructor(ctx, constr_val[i], names[i], NULL,
@@ -371,12 +387,12 @@ static HRESULT throw_error(script_ctx_t *ctx, HRESULT error, const WCHAR *str, j
         return error;
 
     buf[0] = '\0';
-    LoadStringW(jscript_hinstance, HRESULT_CODE(error),  buf, sizeof(buf)/sizeof(WCHAR));
+    LoadStringW(jscript_hinstance, HRESULT_CODE(error), buf, ARRAY_SIZE(buf));
 
-    if(str) pos = strchrW(buf, '|');
+    if(str) pos = wcschr(buf, '|');
     if(pos) {
-        int len = strlenW(str);
-        memmove(pos+len, pos+1, (strlenW(pos+1)+1)*sizeof(WCHAR));
+        int len = lstrlenW(str);
+        memmove(pos+len, pos+1, (lstrlenW(pos+1)+1)*sizeof(WCHAR));
         memcpy(pos, str, len*sizeof(WCHAR));
     }
 

@@ -18,6 +18,8 @@ add_executable(ntoskrnl
     guid.c
     ntoskrnl.rc
     ${CMAKE_CURRENT_BINARY_DIR}/ntoskrnl.def)
+set_property(TARGET ntoskrnl PROPERTY ENABLE_EXPORTS TRUE)
+set_target_properties(ntoskrnl PROPERTIES DEFINE_SYMBOL "")
 
 if(ARCH STREQUAL "i386")
     set_entrypoint(ntoskrnl KiSystemStartup 4)
@@ -29,15 +31,17 @@ set_subsystem(ntoskrnl native)
 if(MSVC)
     set_image_base(ntoskrnl 0x00400000)
     add_target_link_flags(ntoskrnl "/SECTION:.rsrc,!DP") #Accessed from bugcheck code
+    add_target_link_flags(ntoskrnl "/SECTION:INIT,D")
 else()
     if(GDB)
         set_image_base(ntoskrnl 0x00800000)
     else()
         set_image_base(ntoskrnl 0x80800000)
     endif()
+    add_linker_script(ntoskrnl ${REACTOS_SOURCE_DIR}/sdk/cmake/init-section.lds)
 endif()
 
-target_link_libraries(ntoskrnl cportlib csq ${PSEH_LIB} cmlib ntlsalib rtl ${ROSSYM_LIB} libcntpr wdmguid ioevent)
+target_link_libraries(ntoskrnl cportlib csq ${PSEH_LIB} arbiter cmlib ntlsalib rtl ${ROSSYM_LIB} libcntpr wdmguid ioevent)
 
 if(STACK_PROTECTOR)
     target_link_libraries(ntoskrnl gcc_ssp)

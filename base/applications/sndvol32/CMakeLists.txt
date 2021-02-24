@@ -1,9 +1,11 @@
 
 list(APPEND SOURCE
+    advanced.c
     dialog.c
     misc.c
     mixer.c
     sndvol32.c
+    tray.c
     sndvol32.h)
 
 add_rc_deps(sndvol32.rc ${CMAKE_CURRENT_SOURCE_DIR}/resources/sndvol32.ico)

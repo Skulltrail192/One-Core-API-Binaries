@@ -16,9 +16,7 @@
 
 #include <mm/ARM3/miarm.h>
 
-#ifdef _WINKD_
 extern PMMPTE MmDebugPte;
-#endif
 
 /* Helper macros */
 #define IS_ALIGNED(addr, align) (((ULONG64)(addr) & (align - 1)) == 0)
@@ -203,9 +201,6 @@ MiInitializePageTable(VOID)
     __writecr4(__readcr4() | CR4_PGE);
     ASSERT(__readcr4() & CR4_PGE);
 
-    /* Enable no execute */
-    __writemsr(X86_MSR_EFER, __readmsr(X86_MSR_EFER) | EFER_NXE);
-
     /* Loop the user mode PXEs */
     for (PointerPxe = MiAddressToPxe(0);
          PointerPxe <= MiAddressToPxe(MmHighestUserAddress);
@@ -261,12 +256,10 @@ MiInitializePageTable(VOID)
     MmLastReservedMappingPte = MiAddressToPte((PVOID)MI_MAPPING_RANGE_END);
     MmFirstReservedMappingPte->u.Hard.PageFrameNumber = MI_HYPERSPACE_PTES;
 
-#ifdef _WINKD_
     /* Setup debug mapping PTE */
     MiMapPPEs((PVOID)MI_DEBUG_MAPPING, (PVOID)MI_DEBUG_MAPPING);
     MiMapPDEs((PVOID)MI_DEBUG_MAPPING, (PVOID)MI_DEBUG_MAPPING);
     MmDebugPte = MiAddressToPte((PVOID)MI_DEBUG_MAPPING);
-#endif
 
     /* Setup PDE and PTEs for VAD bitmap and working set list */
     MiMapPDEs((PVOID)MI_VAD_BITMAP, (PVOID)(MI_WORKING_SET_LIST + PAGE_SIZE - 1));
@@ -389,11 +382,12 @@ MiBuildSystemPteSpace(VOID)
     MiInitializeSystemPtes(PointerPte, MmNumberOfSystemPtes, SystemPteSpace);
 
     /* Reserve system PTEs for zeroing PTEs and clear them */
-    MiFirstReservedZeroingPte = MiReserveSystemPtes(MI_ZERO_PTES, SystemPteSpace);
-    RtlZeroMemory(MiFirstReservedZeroingPte, MI_ZERO_PTES * sizeof(MMPTE));
+    MiFirstReservedZeroingPte = MiReserveSystemPtes(MI_ZERO_PTES + 1,
+                                                    SystemPteSpace);
+    RtlZeroMemory(MiFirstReservedZeroingPte, (MI_ZERO_PTES + 1) * sizeof(MMPTE));
 
     /* Set the counter to maximum */
-    MiFirstReservedZeroingPte->u.Hard.PageFrameNumber = MI_ZERO_PTES - 1;
+    MiFirstReservedZeroingPte->u.Hard.PageFrameNumber = MI_ZERO_PTES;
 }
 
 static
@@ -539,6 +533,7 @@ MiAddDescriptorToDatabase(
     TYPE_OF_MEMORY MemoryType)
 {
     PMMPFN Pfn;
+    KIRQL OldIrql;
 
     ASSERT(!MiIsMemoryTypeInvisible(MemoryType));
 
@@ -547,6 +542,9 @@ MiAddDescriptorToDatabase(
     {
         /* Get the last pfn of this descriptor. Note we loop backwards */
         Pfn = &MmPfnDatabase[BasePage + PageCount - 1];
+
+        /* Lock the PFN Database */
+        OldIrql = MiAcquirePfnLock();
 
         /* Loop all pages */
         while (PageCount--)
@@ -558,6 +556,9 @@ MiAddDescriptorToDatabase(
             /* Go to the previous page */
             Pfn--;
         }
+
+        /* Release PFN database */
+        MiReleasePfnLock(OldIrql);
     }
     else if (MemoryType == LoaderXIPRom)
     {
@@ -613,9 +614,9 @@ MiBuildPfnDatabase(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
 
     /* Map the PDEs and PPEs for the pfn database (ignore holes) */
 #if (_MI_PAGING_LEVELS >= 3)
-    MiMapPPEs(MmPfnDatabase, (PUCHAR)MmPfnDatabase + MxPfnAllocation - 1);
+    MiMapPPEs(MmPfnDatabase, (PUCHAR)MmPfnDatabase + (MxPfnAllocation * PAGE_SIZE) - 1);
 #endif
-    MiMapPDEs(MmPfnDatabase, (PUCHAR)MmPfnDatabase + MxPfnAllocation - 1);
+    MiMapPDEs(MmPfnDatabase, (PUCHAR)MmPfnDatabase + (MxPfnAllocation * PAGE_SIZE) - 1);
 
     /* First initialize the color tables */
     MiInitializeColorTables();
@@ -674,8 +675,6 @@ NTAPI
 INIT_FUNCTION
 MiInitMachineDependent(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
 {
-    KIRQL OldIrql;
-
     ASSERT(MxPfnAllocation != 0);
 
     /* Set some hardcoded addresses */
@@ -699,9 +698,6 @@ MiInitMachineDependent(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
 
     MiBuildSystemPteSpace();
 
-    /* Need to be at DISPATCH_LEVEL for MiInsertPageInFreeList */
-    KeRaiseIrql(DISPATCH_LEVEL, &OldIrql);
-
     /* Map the PFN database pages */
     MiBuildPfnDatabase(LoaderBlock);
 
@@ -711,15 +707,8 @@ MiInitMachineDependent(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     /* PFNs are initialized now! */
     MiPfnsInitialized = TRUE;
 
-    //KeLowerIrql(OldIrql);
-
-    /* Need to be at DISPATCH_LEVEL for InitializePool */
-    //KeRaiseIrql(DISPATCH_LEVEL, &OldIrql);
-
     /* Initialize the nonpaged pool */
     InitializePool(NonPagedPool, 0);
-
-    KeLowerIrql(OldIrql);
 
     /* Initialize the balancer */
     MmInitializeBalancer((ULONG)MmAvailablePages, 0);

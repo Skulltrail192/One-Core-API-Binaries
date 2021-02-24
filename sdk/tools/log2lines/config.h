@@ -5,10 +5,6 @@
 #define INVALID_BASE    0xFFFFFFFFL
 
 #define LOGBOTTOM       "--------"
-#define SVNDB           "svndb.log"
-#define SVNDB_INX       "svndb.inx"
-#define DEF_RANGE       500
-#define MAGIC_INX       0x494E585F //'INX_'
 #define DEF_OPT_DIR     "output-i386"
 #define SOURCES_ENV     "_ROSBE_ROSSOURCEDIR"
 #define CACHEFILE       "log2lines.cache"
@@ -21,7 +17,7 @@
 
 #define CMD_7Z          "7z"
 #define UNZIP_FMT_7Z    "%s e -y %s -o%s > " DEV_NULL
-#define UNZIP_FMT       "%s x -y -r %s -o%s > " DEV_NULL
+#define UNZIP_FMT       "%s x -tIso -y -r %s -o%s > " DEV_NULL
 #define UNZIP_FMT_CAB \
 "%s x -y -r %s" PATH_STR "reactos" PATH_STR "reactos.cab -o%s" \
 PATH_STR "reactos" PATH_STR "reactos > " DEV_NULL

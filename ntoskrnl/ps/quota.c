@@ -11,7 +11,6 @@
 /* INCLUDES **************************************************************/
 
 #include <ntoskrnl.h>
-#include <ntintsafe.h>
 #define NDEBUG
 #include <debug.h>
 
@@ -95,9 +94,9 @@ PspReturnProcessQuotaSpecifiedPool(IN PEPROCESS Process,
 
 /* FUNCTIONS ***************************************************************/
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_FUNCTION
 PsInitializeQuotaSystem(VOID)
 {
     RtlZeroMemory(&PspDefaultQuotaBlock, sizeof(PspDefaultQuotaBlock));
@@ -442,6 +441,10 @@ PspSetQuotaLimits(
             ExFreePoolWithTag(QuotaBlock, TAG_QUOTA_BLOCK);
         }
 
+        Status = STATUS_SUCCESS;
+    }
+    else
+    {
         Status = STATUS_SUCCESS;
     }
 

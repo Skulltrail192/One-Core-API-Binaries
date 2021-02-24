@@ -37,7 +37,6 @@ OpenRegistryHandlesFromSymbolicLink(IN PUNICODE_STRING SymbolicLinkName,
                                     IN OPTIONAL PHANDLE InstanceKey)
 {
     OBJECT_ATTRIBUTES ObjectAttributes;
-    WCHAR PathBuffer[MAX_PATH];
     UNICODE_STRING BaseKeyU;
     UNICODE_STRING GuidString, SubKeyName, ReferenceString;
     PWCHAR StartPosition, EndPosition;
@@ -67,11 +66,7 @@ OpenRegistryHandlesFromSymbolicLink(IN PUNICODE_STRING SymbolicLinkName,
     *DeviceKeyRealP = NULL;
     *InstanceKeyRealP = NULL;
 
-    BaseKeyU.Buffer = PathBuffer;
-    BaseKeyU.Length = 0;
-    BaseKeyU.MaximumLength = MAX_PATH * sizeof(WCHAR);
-
-    RtlAppendUnicodeToString(&BaseKeyU, BaseKeyString);
+    RtlInitUnicodeString(&BaseKeyU, BaseKeyString);
 
     /* Open the DeviceClasses key */
     InitializeObjectAttributes(&ObjectAttributes,
@@ -189,33 +184,34 @@ OpenRegistryHandlesFromSymbolicLink(IN PUNICODE_STRING SymbolicLinkName,
 
 cleanup:
     if (SubKeyName.Buffer != NULL)
-       ExFreePool(SubKeyName.Buffer);
+        ExFreePool(SubKeyName.Buffer);
 
     if (NT_SUCCESS(Status))
     {
-       if (!GuidKey)
-          ZwClose(*GuidKeyRealP);
+        if (!GuidKey)
+            ZwClose(*GuidKeyRealP);
 
-       if (!DeviceKey)
-          ZwClose(*DeviceKeyRealP);
+        if (!DeviceKey)
+            ZwClose(*DeviceKeyRealP);
 
-       if (!InstanceKey)
-          ZwClose(*InstanceKeyRealP);
+        if (!InstanceKey)
+            ZwClose(*InstanceKeyRealP);
     }
     else
     {
-       if (*GuidKeyRealP != NULL)
-          ZwClose(*GuidKeyRealP);
+        if (*GuidKeyRealP != NULL)
+            ZwClose(*GuidKeyRealP);
 
-       if (*DeviceKeyRealP != NULL)
-          ZwClose(*DeviceKeyRealP);
+        if (*DeviceKeyRealP != NULL)
+            ZwClose(*DeviceKeyRealP);
 
-       if (*InstanceKeyRealP != NULL)
-          ZwClose(*InstanceKeyRealP);
+        if (*InstanceKeyRealP != NULL)
+            ZwClose(*InstanceKeyRealP);
     }
 
     return Status;
 }
+
 /*++
  * @name IoOpenDeviceInterfaceRegistryKey
  * @unimplemented
@@ -246,37 +242,37 @@ IoOpenDeviceInterfaceRegistryKey(IN PUNICODE_STRING SymbolicLinkName,
                                  IN ACCESS_MASK DesiredAccess,
                                  OUT PHANDLE DeviceInterfaceKey)
 {
-   HANDLE InstanceKey, DeviceParametersKey;
-   NTSTATUS Status;
-   OBJECT_ATTRIBUTES ObjectAttributes;
-   UNICODE_STRING DeviceParametersU = RTL_CONSTANT_STRING(L"Device Parameters");
+    HANDLE InstanceKey, DeviceParametersKey;
+    NTSTATUS Status;
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    UNICODE_STRING DeviceParametersU = RTL_CONSTANT_STRING(L"Device Parameters");
 
-   Status = OpenRegistryHandlesFromSymbolicLink(SymbolicLinkName,
-                                                KEY_CREATE_SUB_KEY,
-                                                NULL,
-                                                NULL,
-                                                &InstanceKey);
-   if (!NT_SUCCESS(Status))
-       return Status;
+    Status = OpenRegistryHandlesFromSymbolicLink(SymbolicLinkName,
+                                                 KEY_CREATE_SUB_KEY,
+                                                 NULL,
+                                                 NULL,
+                                                 &InstanceKey);
+    if (!NT_SUCCESS(Status))
+        return Status;
 
-   InitializeObjectAttributes(&ObjectAttributes,
-                              &DeviceParametersU,
-                              OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE | OBJ_OPENIF,
-                              InstanceKey,
-                              NULL);
-   Status = ZwCreateKey(&DeviceParametersKey,
-                        DesiredAccess,
-                        &ObjectAttributes,
-                        0,
-                        NULL,
-                        REG_OPTION_NON_VOLATILE,
-                        NULL);
-   ZwClose(InstanceKey);
+    InitializeObjectAttributes(&ObjectAttributes,
+                               &DeviceParametersU,
+                               OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE | OBJ_OPENIF,
+                               InstanceKey,
+                               NULL);
+    Status = ZwCreateKey(&DeviceParametersKey,
+                         DesiredAccess,
+                         &ObjectAttributes,
+                         0,
+                         NULL,
+                         REG_OPTION_NON_VOLATILE,
+                         NULL);
+    ZwClose(InstanceKey);
 
-   if (NT_SUCCESS(Status))
-       *DeviceInterfaceKey = DeviceParametersKey;
+    if (NT_SUCCESS(Status))
+        *DeviceInterfaceKey = DeviceParametersKey;
 
-   return Status;
+    return Status;
 }
 
 /*++

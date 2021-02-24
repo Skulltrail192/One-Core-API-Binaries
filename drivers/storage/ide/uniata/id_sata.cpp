@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2008-2016 Alexandr A. Telyatnikov (Alter)
+Copyright (c) 2008-2019 Alexandr A. Telyatnikov (Alter)
 
 Module Name:
     id_probe.cpp
@@ -650,7 +650,11 @@ UniataAhciInit(
     ULONG c, i;
     PHW_CHANNEL chan;
     ULONG offs;
+#ifdef __REACTOS__
+    ULONG_PTR BaseMemAddress;
+#else
     ULONG BaseMemAddress;
+#endif
     ULONG PI;
     ULONG CAP;
     ULONG CAP2;
@@ -869,11 +873,12 @@ UniAtaAhciValidateVersion(
     case 0x00010100:
     case 0x00010200:
     case 0x00010300:
+    case 0x00010301:
         break;
     default:
         KdPrint2((PRINT_PREFIX "  Unknown AHCI revision\n"));
         if(AtapiRegCheckDevValue(deviceExtension, CHAN_NOT_SPECIFIED, DEVNUM_NOT_SPECIFIED, L"CheckAhciRevision", Strict)) {
-            KdPrint(("  AHCI revision excluded\n"));
+            KdPrint(("  AHCI revision excluded %#x\n", version));
             return FALSE;
         }
     }
@@ -894,6 +899,7 @@ UniataAhciDetect(
     ULONG version;
     ULONG i, n;
     ULONG PI;
+    //ULONG PI_ex_mask=0;
     ULONG CAP;
     ULONG CAP2;
     ULONG GHC, GHC0;
@@ -902,9 +908,10 @@ UniataAhciDetect(
     ULONG v_Mn, v_Mj;
 #endif //_DEBUG
     ULONG NumberChannels;
-    ULONG BaseMemAddress;
+    ULONG_PTR BaseMemAddress;
     BOOLEAN MemIo = FALSE;
     BOOLEAN found = FALSE;
+    ULONG BarId=5;
 
     KdPrint2((PRINT_PREFIX "  UniataAhciDetect:\n"));
 
@@ -912,13 +919,19 @@ UniataAhciDetect(
         KdPrint(("  AHCI excluded\n"));
         return FALSE;
     }
+    switch(deviceExtension->DevID) {
+    case 0xa01c0031:
+      KdPrint2((PRINT_PREFIX "  Cavium uses BAR(0)\n"));
+      BarId = 0;
+      break;
+    }
     BaseMemAddress = AtapiGetIoRange(HwDeviceExtension, ConfigInfo, pciData, SystemIoBusNumber,
-                            5, 0, 0x10);
+                          BarId, 0, 0x10);
     if(!BaseMemAddress) {
         KdPrint2((PRINT_PREFIX "  AHCI init failed - no IoRange\n"));
         return FALSE;
     }
-    if((*ConfigInfo->AccessRanges)[5].RangeInMemory) {
+    if((*ConfigInfo->AccessRanges)[BarId].RangeInMemory) {
         KdPrint2((PRINT_PREFIX "MemIo\n"));
         MemIo = TRUE;
     }
@@ -962,7 +975,7 @@ UniataAhciDetect(
 
     CAP = UniataAhciReadHostPort4(deviceExtension, IDX_AHCI_CAP);
     CAP2 = UniataAhciReadHostPort4(deviceExtension, IDX_AHCI_CAP2);
-    KdPrint2((PRINT_PREFIX "  AHCI CAP %#x, CAP2 %#x\n", CAP, CAP2));
+    KdPrint2((PRINT_PREFIX "  AHCI CAP %#x, CAP2 %#x, ver %#x\n", CAP, CAP2, version));
     if(CAP & AHCI_CAP_S64A) {
         KdPrint2((PRINT_PREFIX "  64bit"));
         //deviceExtension->Host64 = TRUE; // this is just DETECT, do not update anything
@@ -1000,6 +1013,7 @@ UniataAhciDetect(
             KdPrint2((PRINT_PREFIX "Channel %d excluded\n", n));
             deviceExtension->AHCI_PI &= ~((ULONG)1 << n);
             deviceExtension->AHCI_PI_mask &= ~((ULONG)1 << n);
+            //PI_ex_mask |= ((ULONG)1 << n);
         }
     }
     deviceExtension->AHCI_PI_mask = 
@@ -1010,10 +1024,36 @@ UniataAhciDetect(
     NumberChannels =
         max((CAP & AHCI_CAP_NOP_MASK)+1, n);
 
+    if(!PI && ((CAP & AHCI_CAP_NOP_MASK)+1)) {
+        /* Enable ports. 
+         * The spec says that BIOS sets up bits corresponding to
+         * available ports. On platforms where this information
+         * is missing, the driver can define available ports on its own.
+         */
+        KdPrint2((PRINT_PREFIX "PI=0 -> Enable ports (mask) %#x\n", deviceExtension->AHCI_PI_mask));
+        n = NumberChannels;
+        deviceExtension->AHCI_PI = ((ULONG)1 << n)-1;
+
+        if(deviceExtension->AHCI_PI_mask) {
+            // we have some forced port mask
+            PI = deviceExtension->AHCI_PI_mask;
+        } else {
+            // construct mask
+            PI = deviceExtension->AHCI_PI = (((ULONG)1 << n)-1);
+            deviceExtension->AHCI_PI_mask = (((ULONG)1 << n)-1);
+        }
+        KdPrint2((PRINT_PREFIX "Enable ports final PI %#x\n", PI));
+        UniataAhciWriteHostPort4(deviceExtension, IDX_AHCI_PI, PI);
+    }
+
     KdPrint2((PRINT_PREFIX "  CommandSlots %d\n", (CAP & AHCI_CAP_NCS_MASK)>>8 ));
     KdPrint2((PRINT_PREFIX "  Detected Channels %d / %d\n", NumberChannels, n));
 
     switch(deviceExtension->DevID) {
+    case 0x2361197b:
+        KdPrint2((PRINT_PREFIX "  JMicron JMB361 -> 1\n"));
+        NumberChannels = 1;
+        break;
     case ATA_M88SE6111:
         KdPrint2((PRINT_PREFIX "  Marvell M88SE6111 -> 1\n"));
         NumberChannels = 1;
@@ -1041,7 +1081,7 @@ UniataAhciDetect(
     v_Mj = ((version >> 20) & 0xf0) + ((version >> 16) & 0x0f);
     v_Mn = ((version >> 4) & 0xf0) + (version & 0x0f);
 
-    KdPrint2((PRINT_PREFIX "  AHCI version %#x.%02x controller with %d ports (mask %#x) detected\n",
+    KdPrint2((PRINT_PREFIX "  AHCI version %x.%02x controller with %d ports (mask %#x) detected\n",
 		  v_Mj, v_Mn,
 		  NumberChannels, PI));
     KdPrint(("  AHCI SATA Gen %d\n", (((CAP & AHCI_CAP_ISS_MASK) >> 20)) ));
@@ -1797,6 +1837,13 @@ UniataAhciSoftReset(
 
     KdDump(RCV_FIS, sizeof(chan->AhciCtlBlock->rcv_fis.rfis));
 
+    if(deviceExtension->HwFlags & UNIATA_AHCI_ALT_SIG) {
+        ULONG signature;
+        signature = UniataAhciReadChannelPort4(chan, IDX_AHCI_P_SIG);
+        KdPrint(("  alt sig: %#x\n", signature));
+        return signature;
+    }
+
     return UniataAhciUlongFromRFIS(RCV_FIS);
 
 } // end UniataAhciSoftReset()
@@ -2194,22 +2241,22 @@ UniataAhciBeginTransaction(
     if(CMD0 != CMD) {
         KdPrint2(("  send CMD %#x, entries %#x\n", CMD, AHCI_CL->prd_length));
         UniataAhciWriteChannelPort4(chan, IDX_AHCI_P_CMD, CMD);
-        UniataAhciReadChannelPort4(chan, IDX_AHCI_P_CMD); /* flush */
+        CMD0 = UniataAhciReadChannelPort4(chan, IDX_AHCI_P_CMD); /* flush */
     }
 
     /* issue command to controller */
-    //UniataAhciWriteChannelPort4(chan, IDX_AHCI_P_ACT, 0x01 << tag);
+    //UniataAhciWriteChannelPort4(chan, IDX_AHCI_P_ACT, 0x01 << tag); // Used for NCQ
     KdPrint2(("  Set CI\n"));
     UniataAhciWriteChannelPort4(chan, IDX_AHCI_P_CI, 0x01 << tag);
     chan->AhciPrevCI |= 0x01 << tag;
 
-    CMD0 = CMD;
+    //CMD0 = CMD;
     CMD |= ATA_AHCI_P_CMD_ST |
           ((chan->ChannelCtrlFlags & CTRFLAGS_AHCI_PM) ? ATA_AHCI_P_CMD_PMA : 0);
     if(CMD != CMD0) {
-      KdPrint2(("  Send CMD START\n"));
+      KdPrint2(("  Send CMD START (%#x != %#x)\n", CMD, CMD0));
       UniataAhciWriteChannelPort4(chan, IDX_AHCI_P_CMD, CMD);
-      UniataAhciReadChannelPort4(chan, IDX_AHCI_P_CMD); /* flush */
+      CMD0 = UniataAhciReadChannelPort4(chan, IDX_AHCI_P_CMD); /* flush */
     } else {
       KdPrint2(("  No CMD START, already active\n"));
     }
@@ -2294,6 +2341,7 @@ UniataAhciEndTransaction(
                                 ((ULONGLONG)(RCV_FIS[7] & 0x0f) << 24);
     }
     AtaReq->WordsTransfered = AHCI_CL->bytecount/2;
+
 /*
     if(LunExt->DeviceFlags & DFLAGS_ATAPI_DEVICE) {
         KdPrint2(("RCV:\n"));

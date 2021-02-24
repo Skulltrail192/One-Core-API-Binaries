@@ -16,7 +16,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "objbase.h"
+#include "wbemcli.h"
+
+#include "wine/debug.h"
 #include "wbemprox_private.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(wbemprox);
 
 typedef struct
 {
@@ -77,18 +89,18 @@ static BOOL is_local_machine( const WCHAR *server )
     static const WCHAR dotW[] = {'.',0};
     static const WCHAR localhostW[] = {'l','o','c','a','l','h','o','s','t',0};
     WCHAR buffer[MAX_COMPUTERNAME_LENGTH + 1];
-    DWORD len = sizeof(buffer) / sizeof(buffer[0]);
+    DWORD len = ARRAY_SIZE( buffer );
 
-    if (!server || !strcmpW( server, dotW ) || !strcmpiW( server, localhostW )) return TRUE;
-    if (GetComputerNameW( buffer, &len ) && !strcmpiW( server, buffer )) return TRUE;
+    if (!server || !wcscmp( server, dotW ) || !wcsicmp( server, localhostW )) return TRUE;
+    if (GetComputerNameW( buffer, &len ) && !wcsicmp( server, buffer )) return TRUE;
     return FALSE;
 }
 
 static HRESULT parse_resource( const WCHAR *resource, WCHAR **server, WCHAR **namespace )
 {
     static const WCHAR rootW[] = {'R','O','O','T'};
-    static const WCHAR cimv2W[] = {'C','I','M','V','2'};
-    static const WCHAR defaultW[] = {'D','E','F','A','U','L','T'};
+    static const WCHAR cimv2W[] = {'C','I','M','V','2',0};
+    static const WCHAR defaultW[] = {'D','E','F','A','U','L','T',0};
     HRESULT hr = WBEM_E_INVALID_NAMESPACE;
     const WCHAR *p, *q;
     unsigned int len;
@@ -119,16 +131,15 @@ static HRESULT parse_resource( const WCHAR *resource, WCHAR **server, WCHAR **na
     p = q;
     while (*q && *q != '\\' && *q != '/') q++;
     len = q - p;
-    if (len >= sizeof(rootW) / sizeof(rootW[0]) && memicmpW( rootW, p, len )) goto done;
+    if (len >= ARRAY_SIZE( rootW ) && _wcsnicmp( rootW, p, len )) goto done;
     if (!*q)
     {
         hr = S_OK;
         goto done;
     }
     q++;
-    len = strlenW( q );
-    if ((len != sizeof(cimv2W) / sizeof(cimv2W[0]) || memicmpW( q, cimv2W, len )) &&
-        (len != sizeof(defaultW) / sizeof(defaultW[0]) || memicmpW( q, defaultW, len )))
+    len = lstrlenW( q );
+    if (wcsicmp( q, cimv2W ) && wcsicmp( q, defaultW ))
         goto done;
     if (!(*namespace = heap_alloc( (len + 1) * sizeof(WCHAR) ))) hr = E_OUTOFMEMORY;
     else

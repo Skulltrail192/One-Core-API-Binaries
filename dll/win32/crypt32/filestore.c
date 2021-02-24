@@ -15,7 +15,13 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-
+#include <stdarg.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wincrypt.h"
+#include "winnls.h"
+#include "wine/debug.h"
+#include "wine/unicode.h"
 #include "crypt32_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(crypt);
@@ -225,8 +231,7 @@ static WINECRYPT_CERTSTORE *CRYPT_CreateFileStore(DWORD dwFlags,
         info->type = type;
         info->dirty = FALSE;
         provInfo.cbSize = sizeof(provInfo);
-        provInfo.cStoreProvFunc = sizeof(fileProvFuncs) /
-         sizeof(fileProvFuncs[0]);
+        provInfo.cStoreProvFunc = ARRAY_SIZE(fileProvFuncs);
         provInfo.rgpvStoreProvFunc = fileProvFuncs;
         provInfo.hStoreProv = info;
         store = CRYPT_ProvCreateStore(dwFlags, memStore, &provInfo);

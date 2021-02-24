@@ -54,7 +54,7 @@
 \******************************************************************************/
 
 
-VOID BiosCharPrint(CHAR Character)
+VOID Dem_BiosCharPrint(CHAR Character)
 {
     /* Save AX and BX */
     USHORT AX = getAX();
@@ -418,7 +418,7 @@ static VOID CmdStartExternalCommand(VOID)
     LPSTR Command = (LPSTR)SEG_OFF_TO_PTR(getDS(), getSI());
     CHAR CmdLine[sizeof("cmd.exe /c ") + DOS_CMDLINE_LENGTH + 1] = "";
     LPSTR CmdLinePtr;
-    ULONG CmdLineLen;
+    SIZE_T CmdLineLen;
 
     /* Spawn a user-defined 32-bit command preprocessor */
 

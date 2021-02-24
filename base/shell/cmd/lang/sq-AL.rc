@@ -13,19 +13,6 @@ assoc (shfaq të gjith asociacionet)\n\
 assoc .ext (shfaq asociacionet specifike)\n\
 assoc .ext= (hiq acosiacionet specifike)\n\
 assoc .ext=FileType (shto asociacione te reja)\n"
-    STRING_ATTRIB_HELP "Shfaq ose ndryshu atributet e dokumentave.\n\n\
-ATTRIB [+R | -R] [+A | -A] [+S | -S] [+H | -H] file ...\n\
-       [/S [/D]]\n\n\
-  +   Vendos nje atribute\n\
-  -   Pastron një atribute\n\
-  R   Lexo-vetem atributet e dokumentave\n\
-  A   Atributet e dokumentave në arkiv\n\
-  S   Atributet e dokumentave të sistemit\n\
-  H   Atributet e dokumentave te fshehur\n\
-  /S  Procesi i përputhjes së dokumentave ne skedën aktuale\n\
-      dhe të gjitha nënskedat\n\
-  /D  Proçeso skedat gjithashtu\n\n\
-Shkruaj ATTRIB pa një parameter për të shfaque atributet e të gjithë dokumentave.\n"
     STRING_ALIAS_HELP "Vëndos, hew ose shfaq pseudonimin.\n\n\
 ALIAS [alias=[Komande]]\n\n\
   alias    Emri i pseudonimit.\n\
@@ -51,10 +38,6 @@ CD[..|.]\n\n\
   /D   Do të ndryshojë drivin aktual dhe dosjen aktuale.\n\n\
 Shkruaj CD drive: për të shfaqur dosjen aktuale në harddiskun e specifikuar.\n\
 Shkruaj CD  pa asnjë parameter për të shfaque harddikun aktual dhe dosjet e tij.\n"
-    STRING_CHCP_HELP "Shfaq ose cakto kodin dhe numrin e faqes aktive.\n\n\
-CHCP [nnn]\n\n\
-  nnn   Specifikon kodin dhe numrin aktiv te faqes.\n\n\
-Shkruaj CHCP pa anjë parameter për të shfaqur kodin dhe numrin e faqes aktive.\n"
     STRING_CHOICE_HELP "Pret për përdoruesit për të zgjedhur një nga një sërë zgjedhjesh.\n\n\
 CHOICE  [/C[:]zgjedhje][/N][/S][/T[:]c,nn][tekst]\n\n\
   /C[:]zgjedhje Përcakton çelësat e lejueshme. Parazgjedhuri është YN.\n\
@@ -79,9 +62,9 @@ CMD [/[C|K] komande][/P][/Q][/T:bf]\n\n\
               (nuk mund të ndërpritet).\n\
   /T:bf       Përcakton ngjyrën e sfondit/parasfondin(shih NGJYRAT e komandave).\n"
     STRING_COLOR_HELP1 "Vë parazgjedhjene e ngjyrave të sfondit dhe parasfondit.\n\n\
-COLOR [attr [/-F]] \n\n\
-  attr        Përcakton atributin e ngjyrave të prodhimit nga konsoli\n\
-  /-F         Nuk e mbush hapësirën bosh të konsolit me atribute ngjyrash\n\n\
+COLOR [attr [/-F]]\n\n\
+  attr        Përcakton atributin e ngjyrave të prodhimit nga konsoli.\n\
+  /-F         Nuk e mbush hapësirën bosh të konsolit me atribute ngjyrash.\n\n\
 Ka tre mënyra për të specifikuar ngjyrat:\n\
 1) [e ndritshem] emri [e ndritshem] emri  (vetëm tre letrat e para janë të nevojshme)\n\
 2) decimal në decimal\n\
@@ -111,6 +94,14 @@ COPY [/V][/Y|/-Y][/A|/B] burimi [/A|/B]\n\
                destinacion dokumenti ekzistues.\n\n\
 Parametri /Y mund të jetë prezent në variabëlat e mjedisit COPYCMD.\n\
 ...\n"
+    STRING_CTTY_HELP "Changes the standard I/O terminal device to an auxiliary device.\n\n\
+CTTY device\n\n\
+  device    The terminal device you want to use as the new standard I/O device.\n\
+            This name must refer to a valid character device:\n\
+            AUX, COMx (x=1..N), CON, LPTx (x=1..N), PRN, NUL.\n\
+            CON is usually the default standard I/O device.\n\n\
+To return control to the standard console, type: CTTY CON on the auxiliary\n\
+device."
     STRING_DATE_HELP1 "\nShkruani datën e re (mm%cdd%cyyyy): "
     STRING_DATE_HELP2 "\nShkruani datën e re (dd%cmm%cyyyy): "
     STRING_DATE_HELP3 "\nShkruani datën e re (yyyy%cmm%cdd): "
@@ -139,13 +130,13 @@ ERASE [/N /P /T /Q /S /W /Y /Z /A[[:]attributes]] file ...\n\n\
         A     Arkivat\n\
         H     Të fshehur\n\
         -     kuptimi parashtesë nuk\n"
-    STRING_DEL_HELP2 "Të gjitha dokumentet në skedare do të fshihen!\nJeni i sigurtë (P/J)?"
+    STRING_DEL_HELP2 "Të gjitha dokumentet në skedare do të fshihen!\nJeni i sigurtë (P/J)? "
     STRING_DEL_HELP3 "    %lu u fshi\n"
     STRING_DEL_HELP4 "    %lu u fshinë\n"
-    STRING_DELAY_HELP "pauzë për sekonda ose milisekonda\n\
+    STRING_DELAY_HELP "Pauzë për sekonda ose milisekonda.\n\
 DELAY [/m]n\n\n\
-  /m          specifikoni se n janë millisekonda\n\
-              ndryshe n janë sekonda\n"
+  /m          Specifikoni se n janë millisekonda\n\
+              ndryshe n janë sekonda.\n"
     STRING_DIR_HELP1 "DIR [drive:][rrugë][emer] [/A[[:]attributes]] [/B] [/C] [/D] [/L] [/N]\n\
   [/O[[:]radhitje]] [/P] [/Q] [/R] [/S] [/T[[:]koha]] [/W] [/X] [/4]\n\n\
   [drive:][rrugë][emer]\n\
@@ -208,17 +199,30 @@ PUSHD [rrugë | ..]\n\n\
 Shkruaj ECHO pa parametra qe shfaqin konfigurimin aktual te ECHO."
     STRING_ECHO_HELP5 "ECHO është %s\n"
     STRING_EXIT_HELP "Dalje nga interpretuesi komandues i linjes.\n\nEXIT [/b] [ExitCode]\n\n\
-  /B            Dalje nga batch vetëm.  \n\
+  /B            Dalje nga batch vetëm.\n\
                 Nëse drejtuar jashtë nga një skedar batch do të dalë nga cmd.exe\n\
   ExitCode      Kjo vlerë do të caktohet për ERRORLEVEL në dalje\n"
-    STRING_FOR_HELP1 "Ekzekuto një komandë të specifikuar për secilën dokument në një grupim dokumentesh\n\n\
-FOR %variable IN (set) DO command [parameters]\n\n\
+    STRING_FOR_HELP1 "Ekzekuto një komandë të specifikuar për secilën dokument në një grupim dokumentesh.\n\n\
+FOR %variable IN (set) DO command [parameters]\n\
+FOR /L %variable IN (start,step,end) DO command [parameters]\n\
+FOR /D %variable IN (set) DO command [parameters]\n\
+FOR /R [[drive:]path] IN (set) DO command [parameters]\n\
+FOR /F [""options""] IN (set) DO command [parameters]\n\n\
+  /L    Generates a number sequence from start to end incrementing by step.\n\
+  /D    Modifies the set to refer to directories instead of files.\n\
+  /R    Executes command for files in the set in the specified path (or current\n\
+        working directory if not specified) and every directory below.\n\
+  /F    Modifies the set to refer to the contents of the files in the set.\n\n\
   %variable  Specifikon një parametër zëvndësueshme.\n\
   (set)      Përcakton një grup të një ose më shumë dosjeve. Jokeri mund të përdoret.\n\
   command    Përcakton komandën për ta rrealizuar për çdo skedar.\n\
-  parameters Përcakton parametrat apo çelsin për komandën e specifikuar.\n\n\
-Për të përdorur komanden FOR në një program batch, specifiko %%variablet në vënd të\n\
-%variable.\n"
+  parameters Përcakton parametrat apo çelsin për komandën e specifikuar.\n\
+  options    Supported options are: eol, skip, delims, tokens, and usebackq.\n\n\
+Replacable parameters can be modified by adding a ~ and an optional qualifier\n\
+after the % and before the name (e.g. %~X). Supported qualifiers are:\n\
+f,d,p,n,x,s,a,t,z.\n\n\
+Për të përdorur komanden FOR në një program batch, specifiko %%variablet në vënd\n\
+të %variable.\n"
     STRING_FREE_HELP1 "\nVolume në drive %s is %-11s\n\
  Nummeri Serial është %s\n\
   %16s bytes total në disk\n\
@@ -244,11 +248,6 @@ string1==string2  Përcakton një kusht të vërtetë nëse vargjet e specifikua
 EXIST filename    Përcakton një kusht të vërtetë, nëse ekziston dokumenti i specifikuar.\n\
 DEFINED variable  Përcakton një kusht të vërtetë nëse variabli është specifikuar\n\
                   dhe karakterizuar.\n"
-    STRING_LABEL_HELP1 "Shfaq ose ndrysho etiketën e driverit.\n\nLABEL [drive:][etikete]\n"
-    STRING_LABEL_HELP2 "Volumi në drive %c: is %s\n"
-    STRING_LABEL_HELP3 "Volumi në drive %c: has no label\n"
-    STRING_LABEL_HELP4 "Numri Serial i Volumit është %04X-%04X\n"
-    STRING_LABEL_HELP5 "Drive label (11 Characters, ENTER if none)? "
     STRING_LOCALE_HELP1 "Koha e tanishme është"
     STRING_MKDIR_HELP "Krijon një skedë.\n\n\
 MKDIR [drive:]rrugë\nMD [drive:]rrugë"
@@ -365,8 +364,8 @@ REPLACE [drive1:][rrugë1]emri [drive2:][rrugë2] [/P] [/R] [/S] [/W] [/U]\n\n\
     STRING_REPLACE_HELP6 "Zëvendësoh %s\n"
     STRING_REPLACE_HELP7 "S'ka dokumentat te shtuar\n"
     STRING_REPLACE_HELP8 "%lu dokumenta(t) u shtuan\n"
-    STRING_REPLACE_HELP9 "Shto %s (P/J) "
-    STRING_REPLACE_HELP10 "Zëvendëso %s (P/J) "
+    STRING_REPLACE_HELP9 "Shto %s (P/J)? "
+    STRING_REPLACE_HELP10 "Zëvendëso %s (P/J)? "
     STRING_REPLACE_HELP11 "Shtim %s\n"
     STRING_SHIFT_HELP "Ndryshon pozitën e parametrave në një dokument batch.\n\n\
 SHIFT [DOWN]"
@@ -418,7 +417,7 @@ TIMER  [ON|OFF] [/S] [/n] [/Fn]\n\n\
                     1    hh%cmm%css%cdd\n\n\
 Nëse nuk konfigurohen ON, OFF ose /S është specifikimi i komandave\n\
 që do të tregojë gjendjen e kronometrit\n\n"
-    STRING_TYPE_HELP1 "Shfaq përmbajtjen e tekstit të dosjeve.\n\nTIPI [drive:][rrugë]emri \n\
+    STRING_TYPE_HELP1 "Shfaq përmbajtjen e tekstit të dosjeve.\n\nTIPI [drive:][rrugë]emri\n\
   /P          Tregon një ekran informacionin në një kohë.\n"
     STRING_VERIFY_HELP1 "Kjo komandë është kot!!\n\
 Vendos nëse të verifikoje që dosjet tuaja janë shkruar saktë për një\n\
@@ -473,8 +472,6 @@ title         titull i ri\n"
     STRING_ALIAS_ERROR "Rreshti i komandës shumë gjatë pas pseudonimit!\n"
     STRING_ASSOC_ERROR "Dokumentit perkates nuk u gjet për zgjatjen %s\n"
     STRING_BATCH_ERROR "Gabim gjatë hapjes së dokumentit batch\n"
-    STRING_CHCP_ERROR1 "Faqja Active e Kodit: %u\n"
-    STRING_CHCP_ERROR4 "Invalid code page\n"
     STRING_CHOICE_ERROR "Opsione invalide. Format i pritshem: /C[:]opsione"
     STRING_CHOICE_ERROR_TXT "Opsione invalide. Format i pritshem: /T[:]c,nn"
     STRING_CHOICE_ERROR_OPTION "Illegal Option: %s"
@@ -484,8 +481,7 @@ title         titull i ri\n"
     STRING_CMD_ERROR4 "Fillo %s...\n"
     STRING_CMD_ERROR5 "Fillo cmdexit.bat...\n"
     STRING_COLOR_ERROR1 "Error i njëta ngjyra! (Historiku dhe prioritetit nuk mund të jetë ngjyrë të njëjtë)"
-    STRING_COLOR_ERROR2 "gabim në specifikim ngjyra"
-    STRING_COLOR_ERROR3 "Ngjyra %02x\n"
+    STRING_COLOR_ERROR2 "Gabim në specifikim ngjyra"
     STRING_CONSOLE_ERROR "Error i paditur: %d\n"
     STRING_COPY_ERROR1 "Error: Nuk mund të hapni burim - %s!\n"
     STRING_COPY_ERROR2 "Error: Nuk mund të kopjoni mbi veten!\n"
@@ -493,7 +489,7 @@ title         titull i ri\n"
     STRING_COPY_ERROR4 "Error: Akoma nuk është implementuar!\n"
     STRING_DATE_ERROR "Date Invalid."
     STRING_DEL_ERROR5 "Dokumenti %s do të fshihet! "
-    STRING_DEL_ERROR6 "Jeni të sigurtë (P/J))?"
+    STRING_DEL_ERROR6 "Jeni të sigurtë (P/J)? "
     STRING_DEL_ERROR7 "Fshini: %s\n"
     STRING_ERROR_ERROR1 "Error i paditur! Kodi error: 0x%lx\n"
     STRING_ERROR_ERROR2 "Error sintaksi"
@@ -511,8 +507,8 @@ title         titull i ri\n"
     STRING_MOVE_ERROR2 "[Error]\n"
     STRING_REN_ERROR1 "MoveFile() dështoj. Error: %lu\n"
     STRING_TIME_ERROR1 "Ora invalide."
-    STRING_TYPE_ERROR1 "opsion ivalid '/%s'\n"
-    STRING_WINDOW_ERROR1 "dritaria nuk i gjend"
+    STRING_TYPE_ERROR1 "Opsion invalid '/%s'\n"
+    STRING_WINDOW_ERROR1 "Dritaria nuk i gjend"
     STRING_ERROR_PARAMETERF_ERROR "Parametrat e formanit nuk jane te sakta - %c\n"
     STRING_ERROR_INVALID_SWITCH "Qeles invalid - /%c\n"
     STRING_ERROR_TOO_MANY_PARAMETERS "Shumë parametra - %s\n"

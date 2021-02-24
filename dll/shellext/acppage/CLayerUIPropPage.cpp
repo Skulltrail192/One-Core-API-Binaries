@@ -1,19 +1,8 @@
 /*
- * Copyright 2015-2017 Mark Jansen (mark.jansen@reactos.org)
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+ * PROJECT:     ReactOS Compatibility Layer Shell Extension
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     CLayerUIPropPage implementation
+ * COPYRIGHT:   Copyright 2015-2019 Mark Jansen (mark.jansen@reactos.org)
  */
 
 #include "precomp.h"
@@ -27,7 +16,6 @@
 #include <sfc.h>
 
 const GUID CLSID_CLayerUIPropPage = { 0x513D916F, 0x2A8E, 0x4F51, { 0xAE, 0xAB, 0x0C, 0xBC, 0x76, 0xFB, 0x1A, 0xF8 } };
-#define ACP_WNDPROP L"{513D916F-2A8E-4F51-AEAB-0CBC76FB1AF8}.Prop"
 
 #define GPLK_USER 1
 #define GPLK_MACHINE 2
@@ -41,16 +29,16 @@ static struct {
     { L"Windows 98/ME", L"WIN98" },
     { L"Windows NT 4.0 (SP5)", L"NT4SP5" },
     { L"Windows 2000", L"WIN2000" },
-    { L"Windows XP (SP2)", L"WINXPSP2" },
     { L"Windows XP (SP3)", L"WINXPSP3" },
     { L"Windows Server 2003 (SP1)", L"WINSRV03SP1" },
-#if 0
     { L"Windows Server 2008 (SP1)", L"WINSRV08SP1" },
-    { L"Windows Vista", L"VISTARTM" },
-    { L"Windows Vista (SP1)", L"VISTASP1" },
     { L"Windows Vista (SP2)", L"VISTASP2" },
     { L"Windows 7", L"WIN7RTM" },
-#endif
+    { L"Windows 7 (SP1)", L"WIN7SP1" },
+    { L"Windows 8.1", L"WIN81RTM" },
+    { L"Windows 10", L"WIN10RTM" },
+    { L"Windows Server 2016", L"WINSRV16RTM" },
+    { L"Windows Server 2019", L"WINSRV19RTM" },
     { NULL, NULL }
 };
 
@@ -77,6 +65,28 @@ static const WCHAR* g_AllowedExtensions[] = {
     L".cmd",
     0
 };
+
+BOOL IsBuiltinLayer(PCWSTR Name)
+{
+    size_t n;
+
+    for (n = 0; g_Layers[n].Name; ++n)
+    {
+        if (!wcsicmp(g_Layers[n].Name, Name))
+        {
+            return TRUE;
+        }
+    }
+
+    for (n = 0; g_CompatModes[n].Name; ++n)
+    {
+        if (!wcsicmp(g_CompatModes[n].Name, Name))
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
 
 
 void ACDBG_FN(PCSTR FunctionName, PCWSTR Format, ...)
@@ -106,10 +116,16 @@ CLayerUIPropPage::CLayerUIPropPage()
 , m_RegistryEnabledLayers(0)
 , m_EnabledLayers(0)
 {
+    CComBSTR title;
+    title.LoadString(g_hModule, IDS_COMPAT_TITLE);
+    m_psp.pszTitle = title.Detach();
+    m_psp.dwFlags |= PSP_USETITLE;
 }
 
 CLayerUIPropPage::~CLayerUIPropPage()
 {
+    CComBSTR title;
+    title.Attach((BSTR)m_psp.pszTitle);
 }
 
 HRESULT CLayerUIPropPage::InitFile(PCWSTR Filename)
@@ -158,6 +174,27 @@ HRESULT CLayerUIPropPage::InitFile(PCWSTR Filename)
         }
         return InitFile(Buffer);
     }
+
+    CString tmp;
+    if (tmp.GetEnvironmentVariable(L"SystemRoot"))
+    {
+        tmp += L"\\System32";
+        if (ExpandedFilename.GetLength() >= tmp.GetLength() &&
+            ExpandedFilename.Left(tmp.GetLength()).MakeLower() == tmp.MakeLower())
+        {
+            ACDBG(L"Ignoring System32: %s\r\n", (PCWSTR)ExpandedFilename);
+            return E_FAIL;
+        }
+        tmp.GetEnvironmentVariable(L"SystemRoot");
+        tmp += L"\\WinSxs";
+        if (ExpandedFilename.GetLength() >= tmp.GetLength() &&
+            ExpandedFilename.Left(tmp.GetLength()).MakeLower() == tmp.MakeLower())
+        {
+            ACDBG(L"Ignoring WinSxs: %s\r\n", (PCWSTR)ExpandedFilename);
+            return E_FAIL;
+        }
+    }
+
     for (size_t n = 0; g_AllowedExtensions[n]; ++n)
     {
         if (!wcsicmp(g_AllowedExtensions[n], pwszExt))
@@ -216,24 +253,24 @@ static BOOL GetLayerInfo(PCWSTR Filename, DWORD QueryFlags, PDWORD OSMode, PDWOR
     return TRUE;
 }
 
-void CLayerUIPropPage::OnRefresh(HWND hWnd)
+int CLayerUIPropPage::OnSetActive()
 {
     if (!GetLayerInfo(m_Filename, m_LayerQueryFlags, &m_RegistryOSMode, &m_RegistryEnabledLayers, m_RegistryCustomLayers))
         m_RegistryOSMode = m_RegistryEnabledLayers = 0;
 
     for (size_t n = 0; g_Layers[n].Name; ++n)
-        CheckDlgButton(hWnd, g_Layers[n].Id, (m_RegistryEnabledLayers & (1<<n)) ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlgButton(g_Layers[n].Id, (m_RegistryEnabledLayers & (1<<n)) ? BST_CHECKED : BST_UNCHECKED);
 
-    CheckDlgButton(hWnd, IDC_CHKRUNCOMPATIBILITY, m_RegistryOSMode ? BST_CHECKED : BST_UNCHECKED);
+    CheckDlgButton(IDC_CHKRUNCOMPATIBILITY, m_RegistryOSMode ? BST_CHECKED : BST_UNCHECKED);
 
     if (m_RegistryOSMode)
-        ComboBox_SetCurSel(GetDlgItem(hWnd, IDC_COMPATIBILITYMODE), m_RegistryOSMode-1);
+        ComboBox_SetCurSel(GetDlgItem(IDC_COMPATIBILITYMODE), m_RegistryOSMode-1);
 
     m_CustomLayers = m_RegistryCustomLayers;
 
-    /* TODO: visualize 'custom' layers! */
+    UpdateControls();
 
-    UpdateControls(hWnd);
+    return 0;
 }
 
 
@@ -264,7 +301,7 @@ BOOL CLayerUIPropPage::HasChanges() const
     return FALSE;
 }
 
-void CLayerUIPropPage::OnApply(HWND hWnd)
+int CLayerUIPropPage::OnApply()
 {
     if (HasChanges())
     {
@@ -292,306 +329,92 @@ void CLayerUIPropPage::OnApply(HWND hWnd)
 
         SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATHW, (PCWSTR)m_Filename, NULL);
     }
+
+    return PSNRET_NOERROR;
 }
 
-INT_PTR CLayerUIPropPage::InitDialog(HWND hWnd)
+LRESULT CLayerUIPropPage::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
-    HWND cboMode = GetDlgItem(hWnd, IDC_COMPATIBILITYMODE);
+    HWND cboMode = GetDlgItem(IDC_COMPATIBILITYMODE);
     for (size_t n = 0; g_CompatModes[n].Display; ++n)
         ComboBox_AddString(cboMode, g_CompatModes[n].Display);
-    ComboBox_SetCurSel(cboMode, 5);
+    ComboBox_SetCurSel(cboMode, 4);
 
-    CComBSTR explanation;
+    CStringW explanation;
     if (!m_AllowPermLayer)
     {
         explanation.LoadString(g_hModule, IDS_FAILED_NETWORK);
-        DisableControls(hWnd);
+        DisableControls();
         ACDBG(L"AllowPermLayer returned FALSE\r\n");
     }
     else if (m_IsSfcProtected)
     {
         explanation.LoadString(g_hModule, IDS_FAILED_PROTECTED);
-        DisableControls(hWnd);
+        DisableControls();
         ACDBG(L"Protected OS file\r\n");
     }
     else
     {
         return TRUE;
     }
-    SetDlgItemTextW(hWnd, IDC_EXPLANATION, explanation);
+    SetDlgItemTextW(IDC_EXPLANATION, explanation);
     return TRUE;
 }
 
-INT_PTR CLayerUIPropPage::DisableControls(HWND hWnd)
+INT_PTR CLayerUIPropPage::DisableControls()
 {
-    EnableWindow(GetDlgItem(hWnd, IDC_COMPATIBILITYMODE), 0);
-    EnableWindow(GetDlgItem(hWnd, IDC_CHKRUNCOMPATIBILITY), 0);
+    ::EnableWindow(GetDlgItem(IDC_COMPATIBILITYMODE), 0);
+    ::EnableWindow(GetDlgItem(IDC_CHKRUNCOMPATIBILITY), 0);
     for (size_t n = 0; g_Layers[n].Name; ++n)
-        EnableWindow(GetDlgItem(hWnd, g_Layers[n].Id), 0);
-    EnableWindow(GetDlgItem(hWnd, IDC_EDITCOMPATIBILITYMODES), 0);
+        ::EnableWindow(GetDlgItem(g_Layers[n].Id), 0);
+    ::EnableWindow(GetDlgItem(IDC_EDITCOMPATIBILITYMODES), 0);
     return TRUE;
 }
 
-void CLayerUIPropPage::UpdateControls(HWND hWnd)
+void CLayerUIPropPage::UpdateControls()
 {
     m_OSMode = 0, m_EnabledLayers = 0;
-    BOOL ModeEnabled = IsDlgButtonChecked(hWnd, IDC_CHKRUNCOMPATIBILITY);
+    BOOL ModeEnabled = IsDlgButtonChecked(IDC_CHKRUNCOMPATIBILITY);
     if (ModeEnabled)
-        m_OSMode = ComboBox_GetCurSel(GetDlgItem(hWnd, IDC_COMPATIBILITYMODE))+1;
-    EnableWindow(GetDlgItem(hWnd, IDC_COMPATIBILITYMODE), ModeEnabled);
+        m_OSMode = ComboBox_GetCurSel(GetDlgItem(IDC_COMPATIBILITYMODE))+1;
+    ::EnableWindow(GetDlgItem(IDC_COMPATIBILITYMODE), ModeEnabled);
 
     for (size_t n = 0; g_Layers[n].Name; ++n)
     {
-        m_EnabledLayers |= IsDlgButtonChecked(hWnd, g_Layers[n].Id) ? (1<<n) : 0;
-        ShowWindow(GetDlgItem(hWnd, g_Layers[n].Id), SW_SHOW);
+        m_EnabledLayers |= IsDlgButtonChecked(g_Layers[n].Id) ? (1<<n) : 0;
+        ::ShowWindow(GetDlgItem(g_Layers[n].Id), SW_SHOW);
     }
 
-    if (HasChanges())
+    CStringW customLayers;
+    for (int j = 0; j < m_CustomLayers.GetSize(); ++j)
     {
-        PropSheet_Changed(GetParent(hWnd), hWnd);
+        if (j > 0)
+            customLayers += L", ";
+        customLayers += m_CustomLayers[j];
     }
-    else
-    {
-        PropSheet_UnChanged(GetParent(hWnd), hWnd);
-    }
+    SetDlgItemTextW(IDC_ENABLED_LAYERS, customLayers);
+
+    SetModified(HasChanges());
 }
 
-INT_PTR CLayerUIPropPage::OnCommand(HWND hWnd, WORD id)
+LRESULT CLayerUIPropPage::OnCtrlCommand(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    switch (id)
-    {
-    case IDC_CHKRUNCOMPATIBILITY:
-        UpdateControls(hWnd);
-        break;
-    case IDC_COMPATIBILITYMODE:
-        UpdateControls(hWnd);
-        break;
-    case IDC_CHKRUNIN256COLORS:
-    case IDC_CHKRUNIN640480RES:
-    case IDC_CHKDISABLEVISUALTHEMES:
-        UpdateControls(hWnd);
-        break;
-    case IDC_EDITCOMPATIBILITYMODES:
-        if (DialogBoxParam(g_hModule, MAKEINTRESOURCE(IDD_EDITCOMPATIBILITYMODES), hWnd, EditModesProc, (LPARAM)this) == IDOK)
-        {
-            UpdateControls(hWnd);
-        }
-        break;
-    }
-    return FALSE;
+    UpdateControls();
+    return 0;
 }
 
-INT_PTR CALLBACK CLayerUIPropPage::PropDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CLayerUIPropPage::OnEditModes(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL &bHandled)
 {
-    CLayerUIPropPage* page = NULL;
-
-    switch (uMsg)
-    {
-    case WM_INITDIALOG:
-        page = (CLayerUIPropPage*)((LPPROPSHEETPAGE)lParam)->lParam;
-        SetProp(hWnd, ACP_WNDPROP, page);
-        return page->InitDialog(hWnd);
-
-    case WM_ENDSESSION:
-    case WM_DESTROY:
-        page = (CLayerUIPropPage*)GetProp(hWnd, ACP_WNDPROP);
-        RemoveProp(hWnd, ACP_WNDPROP);
-        page->Release();
-        break;
-
-    case WM_COMMAND:
-        page = (CLayerUIPropPage*)GetProp(hWnd, ACP_WNDPROP);
-        return page->OnCommand(hWnd, LOWORD(wParam));
-    case WM_NOTIFY:
-        switch (((LPNMHDR)lParam)->code)
-        {
-        case PSN_SETACTIVE:
-            if (((LPNMHDR)lParam)->hwndFrom == GetParent(hWnd))
-            {
-                page = (CLayerUIPropPage*)GetProp(hWnd, ACP_WNDPROP);
-                page->OnRefresh(hWnd);
-            }
-            break;
-        case PSN_APPLY:
-            if (((LPNMHDR)lParam)->hwndFrom == GetParent(hWnd))
-            {
-                page = (CLayerUIPropPage*)GetProp(hWnd, ACP_WNDPROP);
-                page->OnApply(hWnd);
-            }
-            break;
-        case NM_CLICK:
-        case NM_RETURN:
-            if (((LPNMHDR)lParam)->idFrom == IDC_INFOLINK)
-            {
-                ShellExecute(NULL, L"open", L"https://www.reactos.org/forum/viewforum.php?f=4", NULL, NULL, SW_SHOW);
-            }
-            break;
-        default:
-            break;
-        }
-        break;
-    }
-
-    return FALSE;
+    if (ShowEditCompatModes(m_hWnd, this))
+        UpdateControls();
+    return 0;
 }
 
-static void ListboxChanged(HWND hWnd)
+LRESULT CLayerUIPropPage::OnClickNotify(INT uCode, LPNMHDR hdr, BOOL& bHandled)
 {
-    int Sel = ListBox_GetCurSel(GetDlgItem(hWnd, IDC_COMPATIBILITYMODE));
-    EnableWindow(GetDlgItem(hWnd, IDC_EDIT), Sel >= 0);
-    EnableWindow(GetDlgItem(hWnd, IDC_DELETE), Sel >= 0);
-}
-
-static void OnAdd(HWND hWnd)
-{
-    HWND Combo = GetDlgItem(hWnd, IDC_NEWCOMPATIBILITYMODE);
-    
-    int Length = ComboBox_GetTextLength(Combo);
-    CComBSTR Str(Length);
-    ComboBox_GetText(Combo, Str, Length+1);
-    HWND List = GetDlgItem(hWnd, IDC_COMPATIBILITYMODE);
-    int Index = ListBox_FindStringExact(List, -1, Str);
-    if (Index == LB_ERR)
-        Index = ListBox_AddString(List, Str);
-    ListBox_SetCurSel(List, Index);
-    ListboxChanged(hWnd);
-    ComboBox_SetCurSel(Combo, -1);
-    SetFocus(Combo);
-}
-
-static BOOL ComboHasData(HWND hWnd)
-{
-    HWND Combo = GetDlgItem(hWnd, IDC_NEWCOMPATIBILITYMODE);
-    if (ComboBox_GetCurSel(Combo) >= 0)
-        return TRUE;
-    ULONG Len = ComboBox_GetTextLength(Combo);
-    return Len > 0;
-}
-
-INT_PTR CALLBACK CLayerUIPropPage::EditModesProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    CLayerUIPropPage* page = NULL;
-
-    switch (uMsg)
-    {
-    case WM_INITDIALOG:
-        page = (CLayerUIPropPage*)lParam;
-        page->AddRef();
-        SetProp(hWnd, ACP_WNDPROP, page);
-        {
-            HWND Combo = GetDlgItem(hWnd, IDC_NEWCOMPATIBILITYMODE);
-            CComObject<CLayerStringList> pList;
-
-            while (TRUE)
-            {
-                CComBSTR str;
-                HRESULT hr = pList.Next(1, &str, NULL);
-                if (hr != S_OK)
-                    break;
-                ComboBox_AddString(Combo, str);
-            }
-
-            HWND List = GetDlgItem(hWnd, IDC_COMPATIBILITYMODE);
-            for (int n = 0; n < page->m_CustomLayers.GetSize(); ++n)
-            {
-                const WCHAR* Str = page->m_CustomLayers[n].GetString();
-                int Index = ListBox_FindStringExact(List, -1, Str);
-                if (Index == LB_ERR)
-                    Index = ListBox_AddString(List, Str);
-            }
-        }
-        break;
-    case WM_ENDSESSION:
-    case WM_DESTROY:
-        page = (CLayerUIPropPage*)GetProp(hWnd, ACP_WNDPROP);
-        RemoveProp(hWnd, ACP_WNDPROP);
-        page->Release();
-        break;
-
-    case WM_COMMAND:
-        switch(LOWORD(wParam))
-        {
-        case IDC_ADD:
-            OnAdd(hWnd);
-            break;
-        case IDC_EDIT:
-        {
-            HWND List = GetDlgItem(hWnd, IDC_COMPATIBILITYMODE);
-            int Cur = ListBox_GetCurSel(List);
-            int Length = ListBox_GetTextLen(List, Cur);
-            CComBSTR Str(Length);
-            ListBox_GetText(List, Cur, Str);
-            ListBox_DeleteString(List, Cur);
-            HWND Combo = GetDlgItem(hWnd, IDC_NEWCOMPATIBILITYMODE);
-            ComboBox_SetCurSel(Combo, -1);
-            ComboBox_SetText(Combo, Str);
-            ListboxChanged(hWnd);
-            ComboBox_SetEditSel(Combo, 30000, 30000);
-            SetFocus(Combo);
-        }
-            break;
-        case IDC_DELETE:
-        {
-            HWND List = GetDlgItem(hWnd, IDC_COMPATIBILITYMODE);
-            ListBox_DeleteString(List, ListBox_GetCurSel(List));
-            ListboxChanged(hWnd);
-        }
-            break;
-        case IDC_COMPATIBILITYMODE:
-            ListboxChanged(hWnd);
-            break;
-        case IDC_NEWCOMPATIBILITYMODE:
-        {
-            EnableWindow(GetDlgItem(hWnd, IDC_ADD), ComboHasData(hWnd));
-        }
-            break;
-        case IDOK:
-            /* Copy from list! */
-        {
-            if (ComboHasData(hWnd))
-            {
-                CComBSTR question, title;
-                title.LoadString(g_hModule, IDS_TABTITLE);
-                question.LoadString(g_hModule, IDS_YOU_DID_NOT_ADD);
-                int result = MessageBoxW(hWnd, question, title, MB_YESNOCANCEL | MB_ICONQUESTION);
-                switch (result)
-                {
-                case IDYES:
-                    OnAdd(hWnd);
-                    break;
-                case IDNO:
-                    break;
-                case IDCANCEL:
-                    return FALSE;
-                }
-            }
-
-            page = (CLayerUIPropPage*)GetProp(hWnd, ACP_WNDPROP);
-
-            HWND List = GetDlgItem(hWnd, IDC_COMPATIBILITYMODE);
-            int Count = ListBox_GetCount(List);
-            page->m_CustomLayers.RemoveAll();
-            for (int Cur = 0; Cur < Count; ++Cur)
-            {
-                int Length = ListBox_GetTextLen(List, Cur);
-                CString Str;
-                LPWSTR Buffer = Str.GetBuffer(Length + 1);
-                ListBox_GetText(List, Cur, Buffer);
-                Str.ReleaseBuffer(Length);
-                page->m_CustomLayers.Add(Str);
-            }
-        }
-        /* Fall trough */
-        case IDCANCEL:
-            EndDialog(hWnd, LOWORD(wParam));
-            break;
-        }
-        break;
-    case WM_CLOSE:
-        EndDialog(hWnd, IDCANCEL);
-        break;
-    }
-    return FALSE;
+    if (hdr->idFrom == IDC_INFOLINK)
+        ShellExecute(NULL, L"open", L"https://reactos.org/forum/viewforum.php?f=4", NULL, NULL, SW_SHOW);
+    return 0;
 }
 
 static BOOL DisableShellext()
@@ -623,7 +446,7 @@ static BOOL DisableShellext()
     return Disable;
 }
 
-STDMETHODIMP CLayerUIPropPage::Initialize(LPCITEMIDLIST pidlFolder, LPDATAOBJECT pDataObj, HKEY hkeyProgID)
+STDMETHODIMP CLayerUIPropPage::Initialize(PCIDLIST_ABSOLUTE pidlFolder, LPDATAOBJECT pDataObj, HKEY hkeyProgID)
 {
     FORMATETC etc = { CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
     STGMEDIUM stg;
@@ -667,22 +490,4 @@ STDMETHODIMP CLayerUIPropPage::Initialize(LPCITEMIDLIST pidlFolder, LPDATAOBJECT
     }
     ReleaseStgMedium(&stg);
     return hr;
-}
-
-STDMETHODIMP CLayerUIPropPage::AddPages(LPFNADDPROPSHEETPAGE pfnAddPage, LPARAM lParam)
-{
-    PROPSHEETPAGEW psp = { 0 };
-    psp.dwSize = sizeof(psp);
-    psp.dwFlags = PSP_USEREFPARENT | PSP_USETITLE;
-    psp.hInstance = g_hModule;
-    psp.pszTemplate = MAKEINTRESOURCE(IDD_ACPPAGESHEET);
-    psp.pszTitle = MAKEINTRESOURCE(IDS_TABTITLE);
-    psp.pfnDlgProc = PropDlgProc;
-    psp.lParam = (LPARAM)this;
-    psp.pcRefParent = (PUINT)&g_ModuleRefCnt;
-    HPROPSHEETPAGE hPage = CreatePropertySheetPageW(&psp);
-    if (hPage && !pfnAddPage(hPage, lParam))
-        DestroyPropertySheetPage(hPage);
-
-    return S_OK;
 }

@@ -22,7 +22,9 @@
 
 /*  --------------------------------------------------------  DEFINES  */
 
-#define TAG_FCB 'BCFV'
+#ifdef KDBG
+extern UNICODE_STRING DebugFile;
+#endif
 
 /*  --------------------------------------------------------  PUBLICS  */
 
@@ -97,6 +99,9 @@ vfatInitFcb(
         DPRINT1("Unable to initialize FCB for filename '%wZ'\n", NameU);
         KeBugCheckEx(FAT_FILE_SYSTEM, (ULONG_PTR)Fcb, (ULONG_PTR)NameU, 0, 0);
     }
+
+    Fcb->RFCB.NodeTypeCode = NODE_TYPE_FCB;
+    Fcb->RFCB.NodeByteSize = sizeof(VFATFCB);
 
     Fcb->PathNameU.Length = 0;
     Fcb->PathNameU.Buffer = Fcb->PathNameBuffer;
@@ -255,7 +260,7 @@ vfatDestroyCCB(
 {
     if (pCcb->SearchPattern.Buffer)
     {
-        ExFreePoolWithTag(pCcb->SearchPattern.Buffer, TAG_VFAT);
+        ExFreePoolWithTag(pCcb->SearchPattern.Buffer, TAG_SEARCH);
     }
     ExFreeToNPagedLookasideList(&VfatGlobalData->CcbLookasideList, pCcb);
 }
@@ -264,7 +269,15 @@ VOID
 vfatDestroyFCB(
     PVFATFCB pFCB)
 {
+#ifdef KDBG
+    if (DebugFile.Buffer != NULL && FsRtlIsNameInExpression(&DebugFile, &pFCB->LongNameU, FALSE, NULL))
+    {
+        DPRINT1("Destroying: %p (%wZ) %d\n", pFCB, &pFCB->PathNameU, pFCB->RefCount);
+    }
+#endif
+
     FsRtlUninitializeFileLock(&pFCB->FileLock);
+
     if (!vfatFCBIsRoot(pFCB) &&
         !BooleanFlagOn(pFCB->Flags, FCB_IS_FAT) && !BooleanFlagOn(pFCB->Flags, FCB_IS_VOLUME))
     {
@@ -285,35 +298,90 @@ vfatFCBIsRoot(
 }
 
 VOID
+#ifndef KDBG
 vfatGrabFCB(
+#else
+_vfatGrabFCB(
+#endif
     PDEVICE_EXTENSION pVCB,
-    PVFATFCB pFCB)
+    PVFATFCB pFCB
+#ifdef KDBG
+    ,
+    PCSTR File,
+    ULONG Line,
+    PCSTR Func
+#endif
+)
 {
+#ifdef KDBG
+    if (DebugFile.Buffer != NULL && FsRtlIsNameInExpression(&DebugFile, &pFCB->LongNameU, FALSE, NULL))
+    {
+        DPRINT1("Inc ref count (%d, oc: %d) for: %p (%wZ) at: %s(%d) %s\n", pFCB->RefCount, pFCB->OpenHandleCount, pFCB, &pFCB->PathNameU, File, Line, Func);
+    }
+#else
+    DPRINT("Grabbing FCB at %p: %wZ, refCount:%d\n",
+           pFCB, &pFCB->PathNameU, pFCB->RefCount);
+#endif
+
     ASSERT(ExIsResourceAcquiredExclusive(&pVCB->DirResource));
 
-    ASSERT(pFCB != pVCB->VolumeFcb);
+    ASSERT(!BooleanFlagOn(pFCB->Flags, FCB_IS_FAT));
+    ASSERT(pFCB != pVCB->VolumeFcb && !BooleanFlagOn(pFCB->Flags, FCB_IS_VOLUME));
     ASSERT(pFCB->RefCount > 0);
     ++pFCB->RefCount;
 }
 
 VOID
+#ifndef KDBG
 vfatReleaseFCB(
+#else
+_vfatReleaseFCB(
+#endif
     PDEVICE_EXTENSION pVCB,
-    PVFATFCB pFCB)
+    PVFATFCB pFCB
+#ifdef KDBG
+    ,
+    PCSTR File,
+    ULONG Line,
+    PCSTR Func
+#endif
+)
 {
     PVFATFCB tmpFcb;
 
-    DPRINT("releasing FCB at %p: %wZ, refCount:%d\n",
+#ifdef KDBG
+    if (DebugFile.Buffer != NULL && FsRtlIsNameInExpression(&DebugFile, &pFCB->LongNameU, FALSE, NULL))
+    {
+        DPRINT1("Dec ref count (%d, oc: %d) for: %p (%wZ) at: %s(%d) %s\n", pFCB->RefCount, pFCB->OpenHandleCount, pFCB, &pFCB->PathNameU, File, Line, Func);
+    }
+#else
+    DPRINT("Releasing FCB at %p: %wZ, refCount:%d\n",
            pFCB, &pFCB->PathNameU, pFCB->RefCount);
+#endif
 
     ASSERT(ExIsResourceAcquiredExclusive(&pVCB->DirResource));
 
     while (pFCB)
     {
-        ASSERT(pFCB != pVCB->VolumeFcb);
+        ULONG RefCount;
+
+        ASSERT(!BooleanFlagOn(pFCB->Flags, FCB_IS_FAT));
+        ASSERT(pFCB != pVCB->VolumeFcb && !BooleanFlagOn(pFCB->Flags, FCB_IS_VOLUME));
         ASSERT(pFCB->RefCount > 0);
-        pFCB->RefCount--;
-        if (pFCB->RefCount == 0)
+        RefCount = --pFCB->RefCount;
+
+        if (RefCount == 1 && BooleanFlagOn(pFCB->Flags, FCB_CACHE_INITIALIZED))
+        {
+            PFILE_OBJECT tmpFileObject;
+            tmpFileObject = pFCB->FileObject;
+
+            pFCB->FileObject = NULL;
+            CcUninitializeCacheMap(tmpFileObject, NULL, NULL);
+            ClearFlag(pFCB->Flags, FCB_CACHE_INITIALIZED);
+            ObDereferenceObject(tmpFileObject);
+        }
+
+        if (RefCount == 0)
         {
             ASSERT(pFCB->OpenHandleCount == 0);
             tmpFcb = pFCB->parentFcb;
@@ -576,54 +644,6 @@ vfatGrabFCBFromTable(
     return NULL;
 }
 
-static
-NTSTATUS
-vfatFCBInitializeCacheFromVolume(
-    PVCB vcb,
-    PVFATFCB fcb)
-{
-    PFILE_OBJECT fileObject;
-    PVFATCCB newCCB;
-    NTSTATUS status;
-
-    fileObject = IoCreateStreamFileObject (NULL, vcb->StorageDevice);
-
-    newCCB = ExAllocateFromNPagedLookasideList(&VfatGlobalData->CcbLookasideList);
-    if (newCCB == NULL)
-    {
-        ObDereferenceObject(fileObject);
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-    RtlZeroMemory(newCCB, sizeof (VFATCCB));
-
-    fileObject->SectionObjectPointer = &fcb->SectionObjectPointers;
-    fileObject->FsContext = fcb;
-    fileObject->FsContext2 = newCCB;
-    fcb->FileObject = fileObject;
-
-    _SEH2_TRY
-    {
-        CcInitializeCacheMap(fileObject,
-                             (PCC_FILE_SIZES)(&fcb->RFCB.AllocationSize),
-                             TRUE,
-                             &VfatGlobalData->CacheMgrCallbacks,
-                             fcb);
-    }
-    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
-    {
-        status = _SEH2_GetExceptionCode();
-        fcb->FileObject = NULL;
-        ExFreeToNPagedLookasideList(&VfatGlobalData->CcbLookasideList, newCCB);
-        ObDereferenceObject(fileObject);
-        return status;
-    }
-    _SEH2_END;
-
-    vfatGrabFCB(vcb, fcb);
-    fcb->Flags |= FCB_CACHE_INITIALIZED;
-    return STATUS_SUCCESS;
-}
-
 PVFATFCB
 vfatMakeRootFCB(
     PDEVICE_EXTENSION pVCB)
@@ -632,6 +652,8 @@ vfatMakeRootFCB(
     ULONG FirstCluster, CurrentCluster, Size = 0;
     NTSTATUS Status = STATUS_SUCCESS;
     UNICODE_STRING NameU = RTL_CONSTANT_STRING(L"\\");
+
+    ASSERT(pVCB->RootFcb == NULL);
 
     FCB = vfatNewFCB(pVCB, &NameU);
     if (vfatVolumeIsFatX(pVCB))
@@ -676,6 +698,9 @@ vfatMakeRootFCB(
     vfatFCBInitializeCacheFromVolume(pVCB, FCB);
     vfatAddFCBToTable(pVCB, FCB);
 
+    /* Cache it */
+    pVCB->RootFcb = FCB;
+
     return FCB;
 }
 
@@ -691,6 +716,7 @@ vfatOpenRootFCB(
     {
         FCB = vfatMakeRootFCB(pVCB);
     }
+    ASSERT(FCB == pVCB->RootFcb);
 
     return FCB;
 }
@@ -716,16 +742,6 @@ vfatMakeFCBFromDirEntry(
     vfatInitFCBFromDirEntry(vcb, rcFCB, DirContext);
 
     rcFCB->RefCount = 1;
-    if (vfatFCBIsDirectory(rcFCB))
-    {
-        Status = vfatFCBInitializeCacheFromVolume(vcb, rcFCB);
-        if (!NT_SUCCESS(Status))
-        {
-            vfatReleaseFCB(vcb, rcFCB);
-            ExFreePoolWithTag(NameU.Buffer, TAG_FCB);
-            return Status;
-        }
-    }
     rcFCB->parentFcb = directoryFCB;
     InsertTailList(&directoryFCB->ParentListHead, &rcFCB->ParentListEntry);
     vfatAddFCBToTable(vcb, rcFCB);
@@ -743,7 +759,12 @@ vfatAttachFCBToFileObject(
 {
     PVFATCCB newCCB;
 
-    UNREFERENCED_PARAMETER(vcb);
+#ifdef KDBG
+    if (DebugFile.Buffer != NULL && FsRtlIsNameInExpression(&DebugFile, &fcb->LongNameU, FALSE, NULL))
+    {
+        DPRINT1("Attaching %p to %p (%d)\n", fcb, fileObject, fcb->RefCount);
+    }
+#endif
 
     newCCB = ExAllocateFromNPagedLookasideList(&VfatGlobalData->CcbLookasideList);
     if (newCCB == NULL)
@@ -755,7 +776,13 @@ vfatAttachFCBToFileObject(
     fileObject->SectionObjectPointer = &fcb->SectionObjectPointers;
     fileObject->FsContext = fcb;
     fileObject->FsContext2 = newCCB;
+    fileObject->Vpb = vcb->IoVPB;
     DPRINT("file open: fcb:%p PathName:%wZ\n", fcb, &fcb->PathNameU);
+
+#ifdef KDBG
+    fcb->Flags &= ~FCB_CLEANED_UP;
+    fcb->Flags &= ~FCB_CLOSED;
+#endif
 
     return STATUS_SUCCESS;
 }
@@ -795,6 +822,7 @@ vfatDirFindFile(
     DirContext.ShortNameU.Buffer = ShortNameBuffer;
     DirContext.ShortNameU.Length = 0;
     DirContext.ShortNameU.MaximumLength = sizeof(ShortNameBuffer);
+    DirContext.DeviceExt = pDeviceExt;
 
     while (TRUE)
     {

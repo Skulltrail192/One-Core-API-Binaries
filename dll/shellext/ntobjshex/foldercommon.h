@@ -179,7 +179,7 @@ public:
 
             WCHAR path[MAX_PATH];
 
-            StringCbCopyW(path, _countof(path), m_NtPath);
+            StringCbCopyW(path, sizeof(path), m_NtPath);
             PathAppendW(path, info->entryName);
 
             LPITEMIDLIST first = ILCloneFirst(pidl);
@@ -270,7 +270,7 @@ public:
         bool isEmpty1 = (rest1->mkid.cb == 0);
         bool isEmpty2 = (rest2->mkid.cb == 0);
 
-        if (isEmpty1 || isEmpty1)
+        if (isEmpty1 || isEmpty2)
             return MAKE_COMPARE_HRESULT(isEmpty2 - isEmpty1);
 
         LPCITEMIDLIST first1 = ILCloneFirst(pidl1);
@@ -631,17 +631,17 @@ public:
     }
 
     // IPersistFolder
-    virtual HRESULT STDMETHODCALLTYPE Initialize(LPCITEMIDLIST pidl)
+    virtual HRESULT STDMETHODCALLTYPE Initialize(PCIDLIST_ABSOLUTE pidl)
     {
         m_shellPidl = ILClone(pidl);
 
-        StringCbCopy(m_NtPath, _countof(m_NtPath), L"\\");
+        StringCbCopyW(m_NtPath, sizeof(m_NtPath), L"\\");
 
         return S_OK;
     }
 
     // IPersistFolder2
-    virtual HRESULT STDMETHODCALLTYPE GetCurFolder(LPITEMIDLIST * pidl)
+    virtual HRESULT STDMETHODCALLTYPE GetCurFolder(PIDLIST_ABSOLUTE * pidl)
     {
         if (pidl)
             *pidl = ILClone(m_shellPidl);

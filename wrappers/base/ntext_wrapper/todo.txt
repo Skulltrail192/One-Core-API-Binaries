@@ -1,4 +1,0 @@
-NtCreateIoCompletionEx
-NtCreateMutantEx
-NtCreateSemaphoreEx
-NtQuerySystemInformationEx

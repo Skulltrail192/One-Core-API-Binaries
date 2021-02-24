@@ -21,6 +21,12 @@
 #ifndef _WINE_TYPELIB_H
 #define _WINE_TYPELIB_H
 
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "oleauto.h"
+
 #define HELPDLLFLAG (0x0100)
 #define DO_NOT_SEEK (-1)
 
@@ -136,11 +142,11 @@ typedef struct tagMSFT_TypeInfoBase {
         INT     helpcontext;    /* */
         INT     oCustData;          /* offset in customer data table */
 #ifdef WORDS_BIGENDIAN
-        INT16   cbSizeVft;      /* virtual table size, not including inherits */
+        INT16   cbSizeVft;      /* virtual table size, including inherits */
         INT16   cImplTypes;     /* nr of implemented interfaces */
 #else
         INT16   cImplTypes;     /* nr of implemented interfaces */
-        INT16   cbSizeVft;      /* virtual table size, not including inherits */
+        INT16   cbSizeVft;      /* virtual table size, including inherits */
 #endif
 /*050*/ INT     size;           /* size in bytes, at least for structures */
         /* FIXME: name of this field */
@@ -149,10 +155,8 @@ typedef struct tagMSFT_TypeInfoBase {
                                 /* if coclass: offset in reftable */
                                 /* if interface: reference to inherited if */
                                 /* if module: offset to dllname in name table */
-        INT     datatype2;      /* if 0x8000, entry above is valid */
-                                /* actually dunno */
-                                /* else it is zero? */
-                                /* if interface: inheritance level | no of inherited funcs */
+        INT     datatype2;      /* for interfaces: hiword is num of inherited funcs */
+                                /*                 loword is num of inherited interfaces */
         INT     res18;          /* always? 0 */
 /*060*/ INT     res19;          /* always? -1 */
 } MSFT_TypeInfoBase;
@@ -275,9 +279,10 @@ typedef struct {
 			   to the typeinfo itself or to a member of
 			   the typeinfo */
     INT   next_hash;    /* offset to next name in the hash bucket */
-    INT   namelen;      /* only lower 8 bits are valid,
-			   lower-middle 8 bits are unknown (flags?),
-			   upper 16 bits are hash code */
+    INT   namelen;      /* only lower 8 bits are valid */
+                        /* 0x1000 if name is only used once as a variable name */
+                        /* 0x2000 if name is a variable in an enumeration */
+                        /* 0x3800 if name is typeinfo name */
 } MSFT_NameIntro;
 /* the custom data table directory has entries like this */
 typedef struct {
@@ -589,32 +594,6 @@ WORD typeofarray
 */
 
 #include "poppack.h"
-
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc( SIZE_T size )
-{
-    return HeapAlloc( GetProcessHeap(), 0, size );
-}
-
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc_zero( SIZE_T size )
-{
-    return HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, size );
-}
-
-static inline void* __WINE_ALLOC_SIZE(2) heap_realloc( LPVOID mem, SIZE_T size )
-{
-    return HeapReAlloc( GetProcessHeap(), 0, mem, size );
-}
-
-static inline BOOL heap_free( LPVOID mem )
-{
-    return HeapFree( GetProcessHeap(), 0, mem );
-}
-
-HRESULT ITypeInfoImpl_GetInternalFuncDesc( ITypeInfo *iface, UINT index, const FUNCDESC **ppFuncDesc ) DECLSPEC_HIDDEN;
-
-extern DWORD _invoke(FARPROC func, CALLCONV callconv, int nrargs, DWORD_PTR *args) DECLSPEC_HIDDEN;
-
-HRESULT TMARSHAL_DllGetClassObject(REFCLSID rclsid, REFIID iid,LPVOID *ppv) DECLSPEC_HIDDEN;
 
 /* The OLE Automation ProxyStub Interface Class (aka Typelib Marshaler) */
 DEFINE_OLEGUID( CLSID_PSDispatch,    0x00020420, 0x0000, 0x0000 );

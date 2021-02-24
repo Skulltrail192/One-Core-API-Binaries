@@ -20,7 +20,6 @@ _BaseThreadStartupThunk@0:
     /* Start out fresh */
     xor ebp, ebp
     
-	
     push ebx                  /* lpParameter */
     push eax                  /* lpStartAddress */
     push 0                    /* Return EIP */

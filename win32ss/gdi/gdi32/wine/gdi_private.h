@@ -52,17 +52,35 @@ struct gdi_obj_funcs
     BOOL    (*pDeleteObject)( HGDIOBJ handle );
 };
 
+/* DC_ATTR LCD Types */
+#define LDC_LDC           0x00000001
+#define LDC_EMFLDC        0x00000002
+
 typedef struct tagWINEDC
 {
     HDC          hdc;
+    ULONG        Flags;
+    INT          iType;
+    union {
+    PVOID        pvEmfDC; /* Pointer to ENHMETAFILE structure */
+    PHYSDEV      physDev; /* current top of the physdev stack */
+    };
+    LPWSTR       pwszPort;
+    ABORTPROC    pAbortProc;
+    DWORD        CallBackTick;
+    HANDLE       hPrinter;
+    PDEVMODEW    pdm;
+    PVOID        pUMPDev;
+    PVOID        pUMdhpdev;
+    ULONG        DevCaps[36];
+    HBRUSH       hBrush;
+    HPEN         hPen;
+    ////
     struct gdi_physdev NullPhysDev;
-    PHYSDEV      physDev;          /* current top of the physdev stack */
     LONG         refcount;         /* thread refcount */
     INT          saveLevel;
-    HFONT hFont;
-    HBRUSH hBrush;
-    HPEN hPen;
-    HPALETTE hPalette;
+    HFONT        hFont;
+    HPALETTE     hPalette;
 } WINEDC, DC;
 
 WINEDC* get_physdev_dc( PHYSDEV dev );
@@ -180,10 +198,10 @@ HGDIOBJ WINAPI GdiFixUpHandle(HGDIOBJ hGdiObj);
 
 extern void push_dc_driver_ros(PHYSDEV *dev, PHYSDEV physdev, const struct gdi_dc_funcs *funcs);
 #define push_dc_driver push_dc_driver_ros
-
+#if 0
 BOOL WINAPI SetWorldTransformForMetafile(HDC hdc, const XFORM *pxform);
 #define SetWorldTransform SetWorldTransformForMetafile
-
+#endif
 #ifdef _M_ARM
 #define DbgRaiseAssertionFailure() __emit(0xdefc)
 #else

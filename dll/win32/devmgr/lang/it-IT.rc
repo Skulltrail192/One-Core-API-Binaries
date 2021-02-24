@@ -79,8 +79,8 @@ BEGIN
     IDS_DEV_DISABLED_SERVICE "ReactOS non può installare i driver del dispositivo perchè non è possibile accedere al disco o alla rete dove si trovano i file di setup."
     IDS_DEV_TRANSLATION_FAILED "Il dispositivo non risponde ai suoi driver."
     IDS_DEV_NO_SOFTCONFIG "ReactOS non può individuare le impostazioni necessarie. Verificate la documentazione e usate il tab Risorse per impostare la configurazione."
-    IDS_DEV_BIOS_TABLE "Il firmware di sistema del vostro con contiene sufficienti informazioni per configurare correttamente questo dispositivo. \nPer utilizzare questo dispositivo contattate il costruttore per richiedere un aggiornamento del firmware o del BIOS."
-    IDS_DEV_IRQ_TRANSLATION_FAILED "E' necessario un Interrupt PCI ma ne è configurato uno ISA o viceversa. \nUsate il setup di sistema del computer per riconfigurare l'Interrupt."
+    IDS_DEV_BIOS_TABLE "Il firmware di sistema del vostro con contiene sufficienti informazioni per configurare correttamente questo dispositivo.\nPer utilizzare questo dispositivo contattate il costruttore per richiedere un aggiornamento del firmware o del BIOS."
+    IDS_DEV_IRQ_TRANSLATION_FAILED "E' necessario un Interrupt PCI ma ne è configurato uno ISA o viceversa.\nUsate il setup di sistema del computer per riconfigurare l'Interrupt."
     IDS_DEV_FAILED_DRIVER_ENTRY "ReactOS non può inizializzare il driver di questo hardware."
     IDS_DEV_DRIVER_FAILED_PRIOR_UNLOAD "ReactOS non puo' caricare il driver perchè si trova in memoria una attivazione precedente."
     IDS_DEV_DRIVER_FAILED_LOAD "ReactOS non puo' caricare il driver, potrebbe essere corrotto o assente."
@@ -177,8 +177,12 @@ BEGIN
     EDITTEXT IDC_DIGITALSIGNER, 100, 81, 145, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON "Dettagli del &Driver...", IDC_DRIVERDETAILS, 7, 106, 75, 15
     LTEXT "Per vedere i dettagli sui file del driver.", -1, 91, 110, 154, 17, SS_NOPREFIX
-    PUSHBUTTON "&Aggiorna il Driver...", IDC_UPDATEDRIVER, 7, 126, 75, 15
-    LTEXT "Aggiorna il Driver.", -1, 91, 130, 154, 17, SS_NOPREFIX
+    PUSHBUTTON "&Aggiorna il Driver...", IDC_UPDATEDRIVER, 7, 134, 75, 15
+    LTEXT "Aggiorna il Driver.", -1, 91, 138, 154, 17, SS_NOPREFIX
+    PUSHBUTTON "&Roll Back Driver", IDC_ROLLBACKDRIVER, 7, 162, 75, 15
+    LTEXT "If the device fails after updating the driver, roll back to the previously installed driver.", -1, 91, 162, 154, 25, SS_NOPREFIX
+    PUSHBUTTON "&Uninstall", IDC_UNINSTALLDRIVER, 7, 190, 75, 15
+    LTEXT "To uninstall the driver (Advanced).", -1, 91, 194, 154, 17, SS_NOPREFIX
 END
 
 IDD_DRIVERDETAILS DIALOGEX 0, 0, 224, 230
@@ -238,33 +242,47 @@ BEGIN
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
 END
 
-
+IDD_UNINSTALLDRIVER DIALOGEX 0, 0, 224, 121
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBLE | WS_DLGFRAME
+CAPTION "Confirm Device Removal"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON "", IDC_DEVICON, 7, 7, 20, 20
+    LTEXT "", IDC_DEVNAME, 40, 9, 174, 16, SS_NOPREFIX
+    LTEXT "Warning: You are about to uninstall this device from your system.", -1, 7, 37, 204, 50
+    DEFPUSHBUTTON "OK", IDOK, 110, 100, 50, 14
+    PUSHBUTTON "Cancel", IDCANCEL, 166, 100, 50, 14
+END
 
 
 /*
  This code relates to the device manager GUI
  */
 
-IDR_MAINMENU MENU
+IDM_MAINMENU MENU
 BEGIN
-  POPUP "&File"
-  BEGIN
-    MENUITEM "E&xit",                       IDC_EXIT
-  END
-  MENUITEM "Action",                        IDC_ACTIONMENU
-  POPUP "View"
-  BEGIN
-    MENUITEM "Devices by type",             IDC_DEVBYTYPE
-    MENUITEM "Devices by connection",       IDC_DEVBYCONN
-    MENUITEM "Resources by type",           IDC_RESBYTYPE, GRAYED
-    MENUITEM "Resources by connection",     IDC_RESBYCONN, GRAYED
-    MENUITEM SEPARATOR
-    MENUITEM "Show hidden devices",         IDC_SHOWHIDDEN
-  END
-  POPUP "Help"
-  BEGIN
-    MENUITEM "About",                       IDC_ABOUT
-  END
+    POPUP "&File"
+    BEGIN
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+    POPUP "Action"
+    BEGIN
+        MENUITEM "Scan for hardware changes",   IDM_SCAN_HARDWARE
+        MENUITEM "Add hardware",                IDM_ADD_HARDWARE
+    END
+    POPUP "View"
+    BEGIN
+        MENUITEM "Devices by type",             IDM_DEVBYTYPE
+        MENUITEM "Devices by connection",       IDM_DEVBYCONN
+        MENUITEM "Resources by type",           IDM_RESBYTYPE, GRAYED
+        MENUITEM "Resources by connection",     IDM_RESBYCONN, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "Show hidden devices",         IDM_SHOWHIDDEN
+    END
+    POPUP "Help"
+    BEGIN
+        MENUITEM "About",                       IDM_ABOUT
+    END
 END
 
 

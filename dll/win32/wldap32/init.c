@@ -18,7 +18,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+#include "wine/port.h"
+
+#include <stdio.h>
+#include <stdarg.h>
+#ifdef HAVE_LDAP_H
+#include <ldap.h>
+#endif
+
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "wine/winternl.h"
+
 #include "winldap_private.h"
+#include "wldap32.h"
+#include "wine/debug.h"
 
 #ifdef HAVE_LDAP
 /* Should eventually be determined by the algorithm documented on MSDN. */
@@ -47,10 +63,9 @@ static char **split_hostnames( const char *hostnames )
         p++;
     }
 
-    res = HeapAlloc( GetProcessHeap(), 0, (i + 1) * sizeof(char *) );
-    if (!res)
+    if (!(res = heap_alloc( (i + 1) * sizeof(char *) )))
     {
-        HeapFree( GetProcessHeap(), 0, str );
+        heap_free( str );
         return NULL;
     }
 
@@ -59,7 +74,7 @@ static char **split_hostnames( const char *hostnames )
 
     q = p;
     i = 0;
-    
+
     while (*p)
     {
         if (p[1] != '\0')
@@ -70,7 +85,7 @@ static char **split_hostnames( const char *hostnames )
                 res[i] = strdupU( q );
                 if (!res[i]) goto oom;
                 i++;
-            
+
                 while (isspace( *p )) p++;
                 q = p;
             }
@@ -85,14 +100,14 @@ static char **split_hostnames( const char *hostnames )
     }
     res[i] = NULL;
 
-    HeapFree( GetProcessHeap(), 0, str );
+    heap_free( str );
     return res;
 
 oom:
     while (i > 0) strfreeU( res[--i] );
 
-    HeapFree( GetProcessHeap(), 0, res );
-    HeapFree( GetProcessHeap(), 0, str );
+    heap_free( res );
+    heap_free( str );
 
     return NULL;
 }
@@ -100,10 +115,10 @@ oom:
 /* Determine if a URL starts with a known LDAP scheme */
 static BOOL has_ldap_scheme( char *url )
 {
-    return !strncasecmp( url, "ldap://", 7 )  ||
-           !strncasecmp( url, "ldaps://", 8 ) ||
-           !strncasecmp( url, "ldapi://", 8 ) ||
-           !strncasecmp( url, "cldap://", 8 );
+    return !_strnicmp( url, "ldap://", 7 )  ||
+           !_strnicmp( url, "ldaps://", 8 ) ||
+           !_strnicmp( url, "ldapi://", 8 ) ||
+           !_strnicmp( url, "cldap://", 8 );
 }
 
 /* Flatten an array of hostnames into a space separated string of URLs.
@@ -139,9 +154,7 @@ static char *join_hostnames( const char *scheme, char **hostnames, ULONG portnum
     }
 
     size += (i - 1) * strlen( sep );
- 
-    res = HeapAlloc( GetProcessHeap(), 0, size + 1 );
-    if (!res) return NULL;
+    if (!(res = heap_alloc( size + 1 ))) return NULL;
 
     p = res;
     for (v = hostnames; *v; v++)
@@ -186,6 +199,19 @@ static char *urlify_hostnames( const char *scheme, char *hostnames, ULONG port )
 
     strarrayfreeU( strarray );
     return url;
+}
+#endif
+
+WINE_DEFAULT_DEBUG_CHANNEL(wldap32);
+
+#ifdef HAVE_LDAP
+static LDAP *create_context( const char *url )
+{
+    LDAP *ld;
+    int version = LDAP_VERSION3;
+    if (ldap_initialize( &ld, url ) != LDAP_SUCCESS) return NULL;
+    ldap_set_option( ld, LDAP_OPT_PROTOCOL_VERSION, &version );
+    return ld;
 }
 #endif
 
@@ -259,7 +285,7 @@ WLDAP32_LDAP * CDECL cldap_openW( PWCHAR hostname, ULONG portnumber )
     url = urlify_hostnames( "cldap://", hostnameU, portnumber );
     if (!url) goto exit;
 
-    ldap_initialize( &ld, url );
+    ld = create_context( url );
 
 exit:
     strfreeU( hostnameU );
@@ -368,7 +394,7 @@ WLDAP32_LDAP * CDECL ldap_initW( const PWCHAR hostname, ULONG portnumber )
     url = urlify_hostnames( "ldap://", hostnameU, portnumber );
     if (!url) goto exit;
 
-    ldap_initialize( &ld, url );
+    ld = create_context( url );
 
 exit:
     strfreeU( hostnameU );
@@ -450,7 +476,7 @@ WLDAP32_LDAP * CDECL ldap_openW( PWCHAR hostname, ULONG portnumber )
     url = urlify_hostnames( "ldap://", hostnameU, portnumber );
     if (!url) goto exit;
 
-    ldap_initialize( &ld, url );
+    ld = create_context( url );
 
 exit:
     strfreeU( hostnameU );

@@ -16,10 +16,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+#include <stdio.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "ole2.h"
+#include "netfw.h"
+#include "natupnp.h"
+#ifdef __REACTOS__
+#include "winnetwk.h"
+#endif
+
+#include "wine/debug.h"
+#include "wine/heap.h"
 #include "hnetcfg_private.h"
 
-#include <winnls.h>
-#include <ole2.h>
+WINE_DEFAULT_DEBUG_CHANNEL(hnetcfg);
 
 typedef struct fw_app
 {
@@ -48,7 +64,7 @@ static ULONG WINAPI fw_app_Release(
     if (!refs)
     {
         TRACE("destroying %p\n", fw_app);
-        if (fw_app->filename) SysFreeString( fw_app->filename );
+        SysFreeString( fw_app->filename );
         HeapFree( GetProcessHeap(), 0, fw_app );
     }
     return refs;
@@ -101,7 +117,8 @@ static REFIID tid_id[] =
     &IID_INetFwOpenPorts,
     &IID_INetFwPolicy,
     &IID_INetFwPolicy2,
-    &IID_INetFwProfile
+    &IID_INetFwProfile,
+    &IID_IUPnPNAT
 };
 
 HRESULT get_typeinfo( enum type_id tid, ITypeInfo **ret )
@@ -143,7 +160,7 @@ void release_typelib(void)
 {
     unsigned i;
 
-    for (i = 0; i < sizeof(typeinfo)/sizeof(*typeinfo); i++)
+    for (i = 0; i < ARRAY_SIZE(typeinfo); i++)
         if (typeinfo[i])
             ITypeInfo_Release(typeinfo[i]);
 
@@ -243,33 +260,63 @@ static HRESULT WINAPI fw_app_get_ProcessImageFileName(
     FIXME("%p, %p\n", This, imageFileName);
 
     if (!imageFileName)
-        return E_INVALIDARG;
-
-    if (!This->filename)
-    {
-        *imageFileName = NULL;
-        return S_OK;
-    }
+        return E_POINTER;
 
     *imageFileName = SysAllocString( This->filename );
-    return *imageFileName ? S_OK : E_OUTOFMEMORY;
+    return *imageFileName || !This->filename ? S_OK : E_OUTOFMEMORY;
 }
 
 static HRESULT WINAPI fw_app_put_ProcessImageFileName(
-    INetFwAuthorizedApplication *iface,
-    BSTR imageFileName )
+    INetFwAuthorizedApplication *iface, BSTR image )
 {
     fw_app *This = impl_from_INetFwAuthorizedApplication( iface );
+    UNIVERSAL_NAME_INFOW *info;
+    DWORD sz, longsz;
+    WCHAR *path;
+    DWORD res;
 
-    FIXME("%p, %s\n", This, debugstr_w(imageFileName));
+    FIXME("%p, %s\n", This, debugstr_w(image));
 
-    if (!imageFileName)
+    if (!image || !image[0])
+        return E_INVALIDARG;
+
+    sz = 0;
+    res = WNetGetUniversalNameW(image, UNIVERSAL_NAME_INFO_LEVEL, NULL, &sz);
+    if (res == WN_MORE_DATA)
     {
-        This->filename = NULL;
-        return S_OK;
+        if (!(path = heap_alloc(sz)))
+            return E_OUTOFMEMORY;
+
+        info = (UNIVERSAL_NAME_INFOW *)&path;
+        res = WNetGetUniversalNameW(image, UNIVERSAL_NAME_INFO_LEVEL, &info, &sz);
+        if (res == NO_ERROR)
+        {
+            SysFreeString(This->filename);
+            This->filename = SysAllocString(info->lpUniversalName);
+        }
+        heap_free(path);
+        return HRESULT_FROM_WIN32(res);
     }
 
-    This->filename = SysAllocString( imageFileName );
+    sz = GetFullPathNameW(image, 0, NULL, NULL);
+    if (!(path = heap_alloc(++sz * sizeof(WCHAR))))
+        return E_OUTOFMEMORY;
+    GetFullPathNameW(image, sz, path, NULL);
+
+    longsz = GetLongPathNameW(path, path, sz);
+    if (longsz > sz)
+    {
+        if (!(path = heap_realloc(path, longsz * sizeof(WCHAR))))
+        {
+            heap_free(path);
+            return E_OUTOFMEMORY;
+        }
+        GetLongPathNameW(path, path, longsz);
+    }
+
+    SysFreeString( This->filename );
+    This->filename = SysAllocString(path);
+    heap_free(path);
     return This->filename ? S_OK : E_OUTOFMEMORY;
 }
 

@@ -52,7 +52,7 @@ struct atifs_ffp_desc
     struct ffp_frag_desc parent;
     GLuint shader;
     unsigned int num_textures_used;
-    enum atifs_constant_value constants[WINED3D_MAX_TEXTURES];
+    enum atifs_constant_value constants[MAX_TEXTURES];
 };
 
 struct atifs_private_data
@@ -322,15 +322,15 @@ static GLuint register_for_arg(DWORD arg, const struct wined3d_gl_info *gl_info,
     return ret;
 }
 
-static GLuint find_tmpreg(const struct texture_stage_op op[WINED3D_MAX_TEXTURES])
+static GLuint find_tmpreg(const struct texture_stage_op op[MAX_TEXTURES])
 {
     int lowest_read = -1;
     int lowest_write = -1;
     int i;
-    BOOL tex_used[WINED3D_MAX_TEXTURES];
+    BOOL tex_used[MAX_TEXTURES];
 
     memset(tex_used, 0, sizeof(tex_used));
-    for (i = 0; i < WINED3D_MAX_TEXTURES; ++i)
+    for (i = 0; i < MAX_TEXTURES; ++i)
     {
         if (op[i].cop == WINED3D_TOP_DISABLE)
             break;
@@ -341,8 +341,9 @@ static GLuint find_tmpreg(const struct texture_stage_op op[WINED3D_MAX_TEXTURES]
             lowest_read = i;
         }
 
-        if (lowest_write == -1 && op[i].tmp_dst)
+        if(lowest_write == -1 && op[i].dst == tempreg) {
             lowest_write = i;
+        }
 
         if(op[i].carg1 == WINED3DTA_TEXTURE || op[i].carg2 == WINED3DTA_TEXTURE || op[i].carg0 == WINED3DTA_TEXTURE ||
            op[i].aarg1 == WINED3DTA_TEXTURE || op[i].aarg2 == WINED3DTA_TEXTURE || op[i].aarg0 == WINED3DTA_TEXTURE) {
@@ -467,7 +468,7 @@ static BOOL op_reads_constant(const struct texture_stage_op *op)
             || (op->aarg2 & WINED3DTA_SELECTMASK) == WINED3DTA_CONSTANT;
 }
 
-static GLuint gen_ati_shader(const struct texture_stage_op op[WINED3D_MAX_TEXTURES],
+static GLuint gen_ati_shader(const struct texture_stage_op op[MAX_TEXTURES],
         const struct wined3d_gl_info *gl_info, enum atifs_constant_value *constants)
 {
     GLuint ret = GL_EXTCALL(glGenFragmentShadersATI(1));
@@ -504,13 +505,16 @@ static GLuint gen_ati_shader(const struct texture_stage_op op[WINED3D_MAX_TEXTUR
 
         TRACE("glSampleMapATI(GL_REG_%d_ATI, GL_TEXTURE_%d_ARB, GL_SWIZZLE_STR_ATI)\n",
               stage, stage);
-        GL_EXTCALL(glSampleMapATI(GL_REG_0_ATI + stage, GL_TEXTURE0_ARB + stage, GL_SWIZZLE_STR_ATI));
-        if (op[stage + 1].projected == WINED3D_PROJECTION_NONE)
+        GL_EXTCALL(glSampleMapATI(GL_REG_0_ATI + stage,
+                   GL_TEXTURE0_ARB + stage,
+                   GL_SWIZZLE_STR_ATI));
+        if(op[stage + 1].projected == proj_none) {
             swizzle = GL_SWIZZLE_STR_ATI;
-        else if (op[stage + 1].projected == WINED3D_PROJECTION_COUNT4)
+        } else if(op[stage + 1].projected == proj_count4) {
             swizzle = GL_SWIZZLE_STQ_DQ_ATI;
-        else
+        } else {
             swizzle = GL_SWIZZLE_STR_DR_ATI;
+        }
         TRACE("glPassTexCoordATI(GL_REG_%d_ATI, GL_TEXTURE_%d_ARB, %s)\n",
               stage + 1, stage + 1, debug_swizzle(swizzle));
         GL_EXTCALL(glPassTexCoordATI(GL_REG_0_ATI + stage + 1,
@@ -575,12 +579,13 @@ static GLuint gen_ati_shader(const struct texture_stage_op op[WINED3D_MAX_TEXTUR
         if (op[stage].cop == WINED3D_TOP_DISABLE)
             break;
 
-        if (op[stage].projected == WINED3D_PROJECTION_NONE)
+        if(op[stage].projected == proj_none) {
             swizzle = GL_SWIZZLE_STR_ATI;
-        else if (op[stage].projected == WINED3D_PROJECTION_COUNT3)
+        } else if(op[stage].projected == proj_count3) {
             swizzle = GL_SWIZZLE_STR_DR_ATI;
-        else
+        } else {
             swizzle = GL_SWIZZLE_STQ_DQ_ATI;
+        }
 
         if (op_reads_texture(&op[stage]))
         {
@@ -604,7 +609,7 @@ static GLuint gen_ati_shader(const struct texture_stage_op op[WINED3D_MAX_TEXTUR
     }
 
     /* Pass 4: Generate the arithmetic instructions */
-    for (stage = 0; stage < WINED3D_MAX_TEXTURES; ++stage)
+    for (stage = 0; stage < MAX_TEXTURES; ++stage)
     {
         if (op[stage].cop == WINED3D_TOP_DISABLE)
         {
@@ -619,18 +624,14 @@ static GLuint gen_ati_shader(const struct texture_stage_op op[WINED3D_MAX_TEXTUR
             break;
         }
 
-        if (op[stage].tmp_dst)
-        {
-            /* If we're writing to D3DTA_TEMP, but never reading from it we
-             * don't have to write there in the first place. Skip the entire
-             * stage, this saves some GPU time. */
-            if (tmparg == GL_NONE)
-                continue;
+        if(op[stage].dst == tempreg) {
+            /* If we're writing to D3DTA_TEMP, but never reading from it we don't have to write there in the first place.
+             * skip the entire stage, this saves some GPU time
+             */
+            if(tmparg == GL_NONE) continue;
 
             dstreg = tmparg;
-        }
-        else
-        {
+        } else {
             dstreg = GL_REG_0_ATI;
         }
 
@@ -936,7 +937,7 @@ static GLuint gen_ati_shader(const struct texture_stage_op op[WINED3D_MAX_TEXTUR
     constants[ATIFS_CONST_TFACTOR - GL_CON_0_ATI] = ATIFS_CONSTANT_TFACTOR;
 
     /* Assign unused constants to avoid reloading due to unused <-> bump matrix switches. */
-    for (stage = 0; stage < WINED3D_MAX_TEXTURES; ++stage)
+    for (stage = 0; stage < MAX_TEXTURES; ++stage)
     {
         if (constants[stage] == ATIFS_CONSTANT_UNUSED)
             constants[stage] = ATIFS_CONSTANT_BUMP;
@@ -1062,7 +1063,7 @@ static void set_tex_op_atifs(struct wined3d_context *context, const struct wined
     GL_EXTCALL(glBindFragmentShaderATI(desc->shader));
     ctx_priv->last_shader = desc;
 
-    for (i = 0; i < WINED3D_MAX_TEXTURES; i++)
+    for (i = 0; i < MAX_TEXTURES; i++)
     {
         if (last_shader && last_shader->constants[i] == desc->constants[i])
             continue;
@@ -1099,8 +1100,7 @@ static void atifs_srgbwriteenable(struct wined3d_context *context, const struct 
         WARN("sRGB writes are not supported by this fragment pipe.\n");
 }
 
-static const struct wined3d_state_entry_template atifs_fragmentstate_template[] =
-{
+static const struct StateEntryTemplate atifs_fragmentstate_template[] = {
     {STATE_RENDER(WINED3D_RS_TEXTUREFACTOR),              { STATE_RENDER(WINED3D_RS_TEXTUREFACTOR),             atifs_tfactor           }, WINED3D_GL_EXT_NONE             },
     {STATE_RENDER(WINED3D_RS_ALPHAFUNC),                  { STATE_RENDER(WINED3D_RS_ALPHATESTENABLE),           NULL                    }, WINED3D_GL_EXT_NONE             },
     {STATE_RENDER(WINED3D_RS_ALPHAREF),                   { STATE_RENDER(WINED3D_RS_ALPHATESTENABLE),           NULL                    }, WINED3D_GL_EXT_NONE             },
@@ -1263,7 +1263,7 @@ static void atifs_enable(const struct wined3d_gl_info *gl_info, BOOL enable)
     }
 }
 
-static void atifs_get_caps(const struct wined3d_adapter *adapter, struct fragment_caps *caps)
+static void atifs_get_caps(const struct wined3d_gl_info *gl_info, struct fragment_caps *caps)
 {
     caps->wined3d_caps = WINED3D_FRAGMENT_CAP_PROJ_CONTROL;
     caps->PrimitiveMiscCaps = WINED3DPMISCCAPS_TSSARGTEMP               |
@@ -1308,7 +1308,7 @@ static void atifs_get_caps(const struct wined3d_adapter *adapter, struct fragmen
      * The proper fix for this is not to use GL_ATI_fragment_shader on cards newer than the
      * r200 series and use an ARB or GLSL shader instead
      */
-    caps->MaxTextureBlendStages   = WINED3D_MAX_TEXTURES;
+    caps->MaxTextureBlendStages   = MAX_TEXTURES;
     caps->MaxSimultaneousTextures = 6;
 }
 
@@ -1329,24 +1329,22 @@ static void *atifs_alloc(const struct wined3d_shader_backend_ops *shader_backend
 }
 
 /* Context activation is done by the caller. */
-static void atifs_free_ffpshader(struct wine_rb_entry *entry, void *param)
+static void atifs_free_ffpshader(struct wine_rb_entry *entry, void *cb_ctx)
 {
+    const struct wined3d_gl_info *gl_info = cb_ctx;
     struct atifs_ffp_desc *entry_ati = WINE_RB_ENTRY_VALUE(entry, struct atifs_ffp_desc, parent.entry);
-    struct wined3d_context *context = param;
-    const struct wined3d_gl_info *gl_info;
 
-    gl_info = context->gl_info;
     GL_EXTCALL(glDeleteFragmentShaderATI(entry_ati->shader));
     checkGLcall("glDeleteFragmentShaderATI(entry->shader)");
     heap_free(entry_ati);
 }
 
 /* Context activation is done by the caller. */
-static void atifs_free(struct wined3d_device *device, struct wined3d_context *context)
+static void atifs_free(struct wined3d_device *device)
 {
     struct atifs_private_data *priv = device->fragment_priv;
 
-    wine_rb_destroy(&priv->fragment_shaders, atifs_free_ffpshader, context);
+    wine_rb_destroy(&priv->fragment_shaders, atifs_free_ffpshader, &device->adapter->gl_info);
 
     heap_free(priv);
     device->fragment_priv = NULL;

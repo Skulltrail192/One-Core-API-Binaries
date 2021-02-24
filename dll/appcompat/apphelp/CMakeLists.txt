@@ -19,11 +19,20 @@ list(APPEND SOURCE
     sdbwrite.c
     shimeng.c
     apphelp.spec
-    apphelp.h
     ${CMAKE_CURRENT_BINARY_DIR}/apphelp_stubs.c)
 
-add_library(apphelp SHARED
+list(APPEND HEADERS
+    apphelp.h
+    sdbpapi.h
+    sdbstringtable.h
+    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/appcompat/sdbtagid.h
+    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/appcompat/sdbtypes.h
+    sdbwrite.h
+    shimeng.h)
+
+add_library(apphelp MODULE
     ${SOURCE}
+    ${HEADERS}
     apphelp.rc
     ${CMAKE_CURRENT_BINARY_DIR}/apphelp.def)
 

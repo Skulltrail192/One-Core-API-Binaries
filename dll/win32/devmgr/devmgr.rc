@@ -42,6 +42,9 @@ IDB_TOOLBAR    BITMAP DISCARDABLE "resources/toolbar.bmp"
 #ifdef LANGUAGE_ES_ES
     #include "lang/es-ES.rc"
 #endif
+#ifdef LANGUAGE_ET_EE
+    #include "lang/et-EE.rc"
+#endif
 #ifdef LANGUAGE_HE_IL
     #include "lang/he-IL.rc"
 #endif
@@ -57,6 +60,9 @@ IDB_TOOLBAR    BITMAP DISCARDABLE "resources/toolbar.bmp"
 #ifdef LANGUAGE_IT_IT
     #include "lang/it-IT.rc"
 #endif
+#ifdef LANGUAGE_JA_JP
+    #include "lang/ja-JP.rc"
+#endif
 #ifdef LANGUAGE_NB_NO
     #include "lang/no-NO.rc"
 #endif
@@ -65,6 +71,9 @@ IDB_TOOLBAR    BITMAP DISCARDABLE "resources/toolbar.bmp"
 #endif
 #ifdef LANGUAGE_PT_BR
     #include "lang/pt-BR.rc"
+#endif
+#ifdef LANGUAGE_PT_PT
+    #include "lang/pt-PT.rc"
 #endif
 #ifdef LANGUAGE_RO_RO
     #include "lang/ro-RO.rc"

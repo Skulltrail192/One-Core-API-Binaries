@@ -19,11 +19,16 @@
 
 #pragma once
 
+#define TAG_STRING  ' rtS'
+
 typedef struct tagOperatingSystemItem
 {
-    PCSTR SystemPartition;
+    ULONG_PTR SectionId;
     PCSTR LoadIdentifier;
-    PCSTR OsLoadOptions;
 } OperatingSystemItem;
 
-OperatingSystemItem* InitOperatingSystemList(ULONG* OperatingSystemCountPointer);
+OperatingSystemItem*
+InitOperatingSystemList(
+    IN ULONG_PTR FrLdrSectionId,
+    OUT PULONG OperatingSystemCount,
+    OUT PULONG DefaultOperatingSystem);

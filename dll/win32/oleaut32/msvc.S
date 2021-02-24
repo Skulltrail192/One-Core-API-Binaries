@@ -17,6 +17,10 @@ call_method:
     int 2ch
     ret
 
+PUBLIC call_double_method
+call_double_method:
+    jmp call_method
+
 #else
 
 #include <asm.inc>
@@ -49,6 +53,11 @@ cm1:
     pop esi
     pop ebp
     ret
+
+PUBLIC _call_double_method
+_call_double_method:
+    jmp _call_method
+
 #endif
 
     END

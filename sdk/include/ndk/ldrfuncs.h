@@ -43,10 +43,10 @@ LdrAccessResource(
 NTSTATUS
 NTAPI
 LdrFindResource_U(
-    IN PVOID DllHandle,
-    IN PLDR_RESOURCE_INFO ResourceIdPath,
-    IN ULONG ResourceIdPathLength,
-    OUT PIMAGE_RESOURCE_DATA_ENTRY *ResourceDataEntry
+    _In_ PVOID BaseAddress,
+    _In_ PLDR_RESOURCE_INFO ResourceInfo,
+    _In_ ULONG Level,
+    _Out_ PIMAGE_RESOURCE_DATA_ENTRY *ResourceDataEntry
 );
 
 NTSTATUS
@@ -63,13 +63,13 @@ LdrEnumResources(
 NTSTATUS
 NTAPI
 LdrFindResourceDirectory_U(
-    IN PVOID DllHandle,
-    IN PLDR_RESOURCE_INFO ResourceIdPath,
-    IN ULONG ResourceIdPathLength,
-    OUT PIMAGE_RESOURCE_DIRECTORY *ResourceDirectory
+    _In_ PVOID BaseAddress,
+    _In_ PLDR_RESOURCE_INFO ResourceInfo,
+    _In_ ULONG Level,
+    _Out_ PIMAGE_RESOURCE_DIRECTORY *ResourceDirectory
 );
 
-PVOID
+NTSTATUS
 NTAPI
 LdrLoadAlternateResourceModule(
     _In_ PVOID Module,
@@ -109,7 +109,7 @@ NTAPI
 LdrLockLoaderLock(
     _In_ ULONG Flags,
     _Out_opt_ PULONG Disposition,
-    _Out_opt_ PULONG Cookie
+    _Out_opt_ PULONG_PTR Cookie
 );
 
 NTSTATUS

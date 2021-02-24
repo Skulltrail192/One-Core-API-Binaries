@@ -20,8 +20,10 @@
  *
  */
 
-#include "d3dcompiler_private.h"
+#include "wine/debug.h"
+
 #include "d3d9types.h"
+#include "d3dcompiler_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(bytecodewriter);
 

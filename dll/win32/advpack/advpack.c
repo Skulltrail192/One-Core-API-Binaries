@@ -19,7 +19,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+#include <stdlib.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winreg.h"
+#include "winternl.h"
+#include "winnls.h"
+#include "setupapi.h"
+#include "advpub.h"
+#include "wine/debug.h"
 #include "advpack_private.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(advpack);
 
 typedef HRESULT (WINAPI *DLLREGISTER) (void);
 
@@ -125,7 +139,7 @@ void set_ldids(HINF hInf, LPCWSTR pszInstallSection, LPCWSTR pszWorkingDir)
         /* SetupGetLineTextW returns the value if there is only one key, but
          * returns the whole line if there is more than one key
          */
-        if (!(value = strchrW(line, '=')))
+        if (!(value = wcschr(line, '=')))
         {
             SetupGetStringFieldW(&context, 0, NULL, 0, &size);
             key = HeapAlloc(GetProcessHeap(), 0, size * sizeof(WCHAR));
@@ -144,10 +158,10 @@ void set_ldids(HINF hInf, LPCWSTR pszInstallSection, LPCWSTR pszWorkingDir)
             value++;
 
         /* Extract the flags */
-        ptr = strchrW(value, ',');
+        ptr = wcschr(value, ',');
         if (ptr) {
             *ptr = '\0';
-            flags = atolW(ptr+1);
+            flags = wcstol(ptr+1, NULL, 10);
         }
 
         /* set dest to pszWorkingDir if key is SourceDir */
@@ -163,7 +177,7 @@ void set_ldids(HINF hInf, LPCWSTR pszInstallSection, LPCWSTR pszWorkingDir)
         /* set all ldids to dest */
         while ((ptr = get_parameter(&key, ',', FALSE)))
         {
-            ldid = atolW(ptr);
+            ldid = wcstol(ptr, NULL, 10);
             SetupSetDirectoryIdW(hInf, ldid, dest);
         }
         HeapFree(GetProcessHeap(), 0, key_copy);
@@ -516,18 +530,12 @@ HRESULT WINAPI SetPerUserSecValuesA(PERUSERSECTIONA* pPerUser)
     if (!pPerUser)
         return E_INVALIDARG;
 
-    MultiByteToWideChar(CP_ACP, 0, pPerUser->szGUID, -1, perUserW.szGUID,
-                        sizeof(perUserW.szGUID) / sizeof(WCHAR));
-    MultiByteToWideChar(CP_ACP, 0, pPerUser->szDispName, -1, perUserW.szDispName,
-                        sizeof(perUserW.szDispName) / sizeof(WCHAR));
-    MultiByteToWideChar(CP_ACP, 0, pPerUser->szLocale, -1, perUserW.szLocale,
-                        sizeof(perUserW.szLocale) / sizeof(WCHAR));
-    MultiByteToWideChar(CP_ACP, 0, pPerUser->szStub, -1, perUserW.szStub,
-                        sizeof(perUserW.szStub) / sizeof(WCHAR));
-    MultiByteToWideChar(CP_ACP, 0, pPerUser->szVersion, -1, perUserW.szVersion,
-                        sizeof(perUserW.szVersion) / sizeof(WCHAR));
-    MultiByteToWideChar(CP_ACP, 0, pPerUser->szCompID, -1, perUserW.szCompID,
-                        sizeof(perUserW.szCompID) / sizeof(WCHAR));
+    MultiByteToWideChar(CP_ACP, 0, pPerUser->szGUID, -1, perUserW.szGUID, ARRAY_SIZE(perUserW.szGUID));
+    MultiByteToWideChar(CP_ACP, 0, pPerUser->szDispName, -1, perUserW.szDispName, ARRAY_SIZE(perUserW.szDispName));
+    MultiByteToWideChar(CP_ACP, 0, pPerUser->szLocale, -1, perUserW.szLocale, ARRAY_SIZE(perUserW.szLocale));
+    MultiByteToWideChar(CP_ACP, 0, pPerUser->szStub, -1, perUserW.szStub, ARRAY_SIZE(perUserW.szStub));
+    MultiByteToWideChar(CP_ACP, 0, pPerUser->szVersion, -1, perUserW.szVersion, ARRAY_SIZE(perUserW.szVersion));
+    MultiByteToWideChar(CP_ACP, 0, pPerUser->szCompID, -1, perUserW.szCompID, ARRAY_SIZE(perUserW.szCompID));
     perUserW.dwIsInstalled = pPerUser->dwIsInstalled;
     perUserW.bRollback = pPerUser->bRollback;
 

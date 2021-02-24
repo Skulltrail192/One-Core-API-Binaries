@@ -10,6 +10,10 @@ list(APPEND SOURCE
 
 add_executable(wlansvc ${SOURCE} wlansvc.rc)
 
+if(USE_CLANG_CL)
+    target_compile_options(wlansvc PRIVATE "-Wno-cast-calling-convention")
+endif()
+
 if(NOT MSVC)
     target_link_libraries(wlansvc ${PSEH_LIB})
 endif()

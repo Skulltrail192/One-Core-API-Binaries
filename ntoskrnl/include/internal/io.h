@@ -96,6 +96,7 @@
 typedef struct _FILE_OBJECT_EXTENSION
 {
     PDEVICE_OBJECT TopDeviceObjectHint;
+    PVOID FilterContext;
 
 } FILE_OBJECT_EXTENSION, *PFILE_OBJECT_EXTENSION;
 
@@ -514,6 +515,53 @@ typedef struct _DEVICETREE_TRAVERSE_CONTEXT
 } DEVICETREE_TRAVERSE_CONTEXT, *PDEVICETREE_TRAVERSE_CONTEXT;
 
 //
+// Reserve IRP allocator
+// Used for read paging IOs in low-memory situations
+//
+typedef struct _RESERVE_IRP_ALLOCATOR
+{
+    PIRP ReserveIrp;
+    volatile LONG ReserveIrpInUse;
+    KEVENT WaitEvent;
+    CCHAR StackSize;
+} RESERVE_IRP_ALLOCATOR, *PRESERVE_IRP_ALLOCATOR;
+
+//
+// Type selection for IopCreateSecurityDescriptorPerType()
+//
+typedef enum _SECURITY_DESCRIPTOR_TYPE
+{
+    RestrictedPublic = 1,
+    UnrestrictedPublic,
+    RestrictedPublicOpen,
+    UnrestrictedPublicOpen,
+    SystemDefault,
+} SECURITY_DESCRIPTOR_TYPE, *PSECURITY_DESCRIPTOR_TYPE;
+
+//
+// Action types and data for IopQueueDeviceAction()
+//
+typedef enum _DEVICE_ACTION
+{
+    DeviceActionInvalidateDeviceRelations,
+    MaxDeviceAction
+} DEVICE_ACTION;
+
+typedef struct _DEVICE_ACTION_DATA
+{
+    LIST_ENTRY RequestListEntry;
+    PDEVICE_OBJECT DeviceObject;
+    DEVICE_ACTION Action;
+    union
+    {
+        struct
+        {
+            DEVICE_RELATION_TYPE Type;
+        } InvalidateDeviceRelations;
+    };
+} DEVICE_ACTION_DATA, *PDEVICE_ACTION_DATA;
+
+//
 // Resource code
 //
 ULONG
@@ -552,6 +600,7 @@ PipCallDriverAddDevice(
     IN PDRIVER_OBJECT DriverObject
 );
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 IopInitializePlugPlayServices(
@@ -667,6 +716,7 @@ IoDestroyDriverList(
     VOID
 );
 
+INIT_FUNCTION
 NTSTATUS
 IopInitPlugPlayEvents(VOID);
 
@@ -715,12 +765,14 @@ IopTraverseDeviceTree(
 //
 // PnP Routines
 //
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 IopUpdateRootKey(
     VOID
 );
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 PiInitCacheGroupInformation(
@@ -758,12 +810,14 @@ PnpRegSzToString(
 //
 // Initialization Routines
 //
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 IopCreateArcNames(
     IN PLOADER_PARAMETER_BLOCK LoaderBlock
 );
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 IopReassignSystemRoot(
@@ -771,6 +825,7 @@ IopReassignSystemRoot(
     OUT PANSI_STRING NtBootPath
 );
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 IoInitSystem(
@@ -783,6 +838,12 @@ IopVerifyDiskSignature(
     IN PDRIVE_LAYOUT_INFORMATION_EX DriveLayout,
     IN PARC_DISK_SIGNATURE ArcDiskSignature,
     OUT PULONG Signature
+);
+
+BOOLEAN
+NTAPI
+IoInitializeCrashDump(
+    IN HANDLE PageFileHandle
 );
 
 //
@@ -896,6 +957,12 @@ IopUnloadDevice(
     IN PDEVICE_OBJECT DeviceObject
 );
 
+PDEVICE_OBJECT
+NTAPI
+IopGetDeviceAttachmentBase(
+    IN PDEVICE_OBJECT DeviceObject
+);
+
 //
 // IRP Routines
 //
@@ -917,6 +984,18 @@ IopAbortInterruptedIrp(
 PIRP
 NTAPI
 IopAllocateIrpMustSucceed(
+    IN CCHAR StackSize
+);
+
+BOOLEAN
+NTAPI
+IopInitializeReserveIrp(
+    IN PRESERVE_IRP_ALLOCATOR ReserveIrpAllocator
+);
+
+PIRP
+NTAPI
+IopAllocateReserveIrp(
     IN CCHAR StackSize
 );
 
@@ -943,11 +1022,13 @@ IopShutdownBaseFileSystems(
 //
 // Boot logging support
 //
+INIT_FUNCTION
 VOID
 IopInitBootLog(
     IN BOOLEAN StartBootLog
 );
 
+INIT_FUNCTION
 VOID
 IopStartBootLog(
     VOID
@@ -1019,6 +1100,7 @@ RawFsIsRawFileSystemDeviceObject(
     IN PDEVICE_OBJECT DeviceObject
 );
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 RawFsDriverEntry(
@@ -1051,12 +1133,14 @@ PnpRootRegisterDevice(
 //
 // Driver Routines
 //
+INIT_FUNCTION
 VOID
 FASTCALL
 IopInitializeBootDrivers(
     VOID
 );
 
+INIT_FUNCTION
 VOID
 FASTCALL
 IopInitializeSystemDrivers(
@@ -1067,9 +1151,9 @@ NTSTATUS
 NTAPI
 IopCreateDriver(IN PUNICODE_STRING DriverName OPTIONAL,
                 IN PDRIVER_INITIALIZE InitializationFunction,
-                IN PUNICODE_STRING RegistryPath,
+                IN PUNICODE_STRING RegistryPath OPTIONAL,
                 IN PCUNICODE_STRING ServiceName,
-                PLDR_DATA_TABLE_ENTRY ModuleObject,
+                IN PLDR_DATA_TABLE_ENTRY ModuleObject OPTIONAL,
                 OUT PDRIVER_OBJECT *pDriverObject);
 
 VOID
@@ -1189,9 +1273,21 @@ IopGetSetSecurityObject(
 
 NTSTATUS
 NTAPI
-IopQueryNameFile(
+IopQueryName(
     IN PVOID ObjectBody,
     IN BOOLEAN HasName,
+    OUT POBJECT_NAME_INFORMATION ObjectNameInfo,
+    IN ULONG Length,
+    OUT PULONG ReturnLength,
+    IN KPROCESSOR_MODE PreviousMode
+);
+
+NTSTATUS
+NTAPI
+IopQueryNameInternal(
+    IN PVOID ObjectBody,
+    IN BOOLEAN HasName,
+    IN BOOLEAN QueryDosName,
     OUT POBJECT_NAME_INFORMATION ObjectNameInfo,
     IN ULONG Length,
     OUT PULONG ReturnLength,
@@ -1206,6 +1302,15 @@ IopCloseFile(
     IN ACCESS_MASK GrantedAccess,
     IN ULONG ProcessHandleCount,
     IN ULONG SystemHandleCount
+);
+
+NTSTATUS
+NTAPI
+IopAcquireFileObjectLock(
+    _In_ PFILE_OBJECT FileObject,
+    _In_ KPROCESSOR_MODE AccessMode,
+    _In_ BOOLEAN Alertable,
+    _Out_ PBOOLEAN LockFailed
 );
 
 PVOID
@@ -1228,6 +1333,30 @@ IopDoNameTransmogrify(
     IN PIRP Irp,
     IN PFILE_OBJECT FileObject,
     IN PREPARSE_DATA_BUFFER DataBuffer
+);
+
+NTSTATUS
+NTAPI
+IoComputeDesiredAccessFileObject(
+    IN PFILE_OBJECT FileObject,
+    IN PACCESS_MASK DesiredAccess
+);
+
+NTSTATUS
+NTAPI
+IopGetFileInformation(
+    IN PFILE_OBJECT FileObject,
+    IN ULONG Length,
+    IN FILE_INFORMATION_CLASS FileInfoClass,
+    OUT PVOID Buffer,
+    OUT PULONG ReturnedLength
+);
+
+BOOLEAN
+NTAPI
+IopVerifyDeviceObjectOnStack(
+    IN PDEVICE_OBJECT BaseDeviceObject,
+    IN PDEVICE_OBJECT TopDeviceObjectHint
 );
 
 //
@@ -1268,6 +1397,7 @@ IoSetIoCompletion(
 //
 // Ramdisk Routines
 //
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 IopStartRamdisk(
@@ -1292,6 +1422,14 @@ IopStoreSystemPartitionInformation(IN PUNICODE_STRING NtSystemPartitionDeviceNam
 );
 
 //
+// Device action
+//
+VOID
+IopQueueDeviceAction(
+    _In_ PDEVICE_ACTION_DATA ActionData
+);
+
+//
 // Global I/O Data
 //
 extern POBJECT_TYPE IoCompletionType;
@@ -1308,8 +1446,10 @@ extern ULONG IopNumTriageDumpDataBlocks;
 extern PVOID IopTriageDumpDataBlocks[64];
 extern PIO_BUS_TYPE_GUID_LIST PnpBusTypeGuidList;
 extern PDRIVER_OBJECT IopRootDriverObject;
-extern KSPIN_LOCK IopDeviceRelationsSpinLock;
-extern LIST_ENTRY IopDeviceRelationsRequestList;
+extern KSPIN_LOCK IopDeviceActionLock;
+extern LIST_ENTRY IopDeviceActionRequestList;
+extern RESERVE_IRP_ALLOCATOR IopReserveIrpAllocator;
+extern BOOLEAN IoRemoteBootClient;
 
 //
 // Inlined Functions

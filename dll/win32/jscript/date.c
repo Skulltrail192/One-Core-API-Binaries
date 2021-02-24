@@ -17,7 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#ifdef __REACTOS__
+#include <wine/config.h>
+#include <wine/port.h>
+#endif
+
+#include <limits.h>
+#include <math.h>
+#include <assert.h>
+
 #include "jscript.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(jscript);
 
 /* 1601 to 1970 is 369 years plus 89 leap days */
 #define TIME_EPOCH  ((ULONGLONG)(369 * 365 + 89) * 86400 * 1000)
@@ -38,6 +51,7 @@ typedef struct {
 static const WCHAR toStringW[] = {'t','o','S','t','r','i','n','g',0};
 static const WCHAR toLocaleStringW[] = {'t','o','L','o','c','a','l','e','S','t','r','i','n','g',0};
 static const WCHAR valueOfW[] = {'v','a','l','u','e','O','f',0};
+static const WCHAR toISOStringW[] = {'t','o','I','S','O','S','t','r','i','n','g',0};
 static const WCHAR toUTCStringW[] = {'t','o','U','T','C','S','t','r','i','n','g',0};
 static const WCHAR toGMTStringW[] = {'t','o','G','M','T','S','t','r','i','n','g',0};
 static const WCHAR toDateStringW[] = {'t','o','D','a','t','e','S','t','r','i','n','g',0};
@@ -81,6 +95,7 @@ static const WCHAR getYearW[] = {'g','e','t','Y','e','a','r',0};
 static const WCHAR setYearW[] = {'s','e','t','Y','e','a','r',0};
 
 static const WCHAR UTCW[] = {'U','T','C',0};
+static const WCHAR nowW[] = {'n','o','w',0};
 static const WCHAR parseW[] = {'p','a','r','s','e',0};
 
 static inline DateInstance *date_from_jsdisp(jsdisp_t *jsdisp)
@@ -441,6 +456,17 @@ static inline DOUBLE time_clip(DOUBLE time)
     return floor(time);
 }
 
+static double date_now(void)
+{
+    FILETIME ftime;
+    LONGLONG time;
+
+    GetSystemTimeAsFileTime(&ftime);
+    time = ((LONGLONG)ftime.dwHighDateTime << 32) + ftime.dwLowDateTime;
+
+    return time/10000 - TIME_EPOCH;
+}
+
 static SYSTEMTIME create_systemtime(DOUBLE time)
 {
     SYSTEMTIME st;
@@ -499,10 +525,10 @@ static inline HRESULT date_to_string(DOUBLE time, BOOL show_offset, int offset, 
         lcid_en = MAKELCID(MAKELANGID(LANG_ENGLISH,SUBLANG_ENGLISH_US),SORT_DEFAULT);
 
         week[0] = 0;
-        GetLocaleInfoW(lcid_en, week_ids[(int)week_day(time)], week, sizeof(week)/sizeof(*week));
+        GetLocaleInfoW(lcid_en, week_ids[(int)week_day(time)], week, ARRAY_SIZE(week));
 
         month[0] = 0;
-        GetLocaleInfoW(lcid_en, month_ids[(int)month_from_time(time)], month, sizeof(month)/sizeof(*month));
+        GetLocaleInfoW(lcid_en, month_ids[(int)month_from_time(time)], month, ARRAY_SIZE(month));
 
         year = year_from_time(time);
         if(year<0) {
@@ -518,16 +544,16 @@ static inline HRESULT date_to_string(DOUBLE time, BOOL show_offset, int offset, 
         }
 
         if(!show_offset)
-            sprintfW(buf, formatNoOffsetW, week, month, day,
+            swprintf(buf, formatNoOffsetW, week, month, day,
                     (int)hour_from_time(time), (int)min_from_time(time),
                     (int)sec_from_time(time), year, formatAD?ADW:BCW);
         else if(offset)
-            sprintfW(buf, formatW, week, month, day,
+            swprintf(buf, formatW, week, month, day,
                     (int)hour_from_time(time), (int)min_from_time(time),
                     (int)sec_from_time(time), sign, offset/60, offset%60,
                     year, formatAD?ADW:BCW);
         else
-            sprintfW(buf, formatUTCW, week, month, day,
+            swprintf(buf, formatUTCW, week, month, day,
                     (int)hour_from_time(time), (int)min_from_time(time),
                     (int)sec_from_time(time), year, formatAD?ADW:BCW);
 
@@ -609,6 +635,53 @@ static HRESULT Date_toLocaleString(script_ctx_t *ctx, vdisp_t *jsthis, WORD flag
     return S_OK;
 }
 
+static HRESULT Date_toISOString(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, unsigned argc, jsval_t *argv,
+        jsval_t *r)
+{
+    DateInstance *date;
+    WCHAR buf[64], *p = buf;
+    double year;
+
+    static const WCHAR short_year_formatW[] = {'%','0','4','d',0};
+    static const WCHAR long_year_formatW[] = {'%','0','6','d',0};
+    static const WCHAR formatW[] = {'-','%','0','2','d','-','%','0','2','d',
+        'T','%','0','2','d',':','%','0','2','d',':','%','0','2','d','.','%','0','3','d','Z',0};
+
+    TRACE("\n");
+
+    if(!(date = date_this(jsthis)))
+        return throw_type_error(ctx, JS_E_DATE_EXPECTED, NULL);
+
+    year = year_from_time(date->time);
+    if(isnan(year) || year > 999999 || year < -999999) {
+        FIXME("year %lf should throw an exception\n", year);
+        return E_FAIL;
+    }
+
+    if(year < 0) {
+        *p++ = '-';
+        p += swprintf(p, long_year_formatW, -(int)year);
+    }else if(year > 9999) {
+        *p++ = '+';
+        p += swprintf(p, long_year_formatW, (int)year);
+    }else {
+        p += swprintf(p, short_year_formatW, (int)year);
+    }
+
+    swprintf(p, formatW,
+             (int)month_from_time(date->time) + 1, (int)date_from_time(date->time),
+             (int)hour_from_time(date->time), (int)min_from_time(date->time),
+             (int)sec_from_time(date->time), (int)ms_from_time(date->time));
+
+    if(r) {
+        jsstr_t *ret;
+        if(!(ret = jsstr_alloc(buf)))
+            return E_OUTOFMEMORY;
+        *r = jsval_string(ret);
+    }
+    return S_OK;
+}
+
 static HRESULT Date_valueOf(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, unsigned argc, jsval_t *argv,
         jsval_t *r)
 {
@@ -662,10 +735,10 @@ static inline HRESULT create_utc_string(script_ctx_t *ctx, vdisp_t *jsthis, jsva
         lcid_en = MAKELCID(MAKELANGID(LANG_ENGLISH,SUBLANG_ENGLISH_US),SORT_DEFAULT);
 
         week[0] = 0;
-        GetLocaleInfoW(lcid_en, week_ids[(int)week_day(date->time)], week, sizeof(week)/sizeof(*week));
+        GetLocaleInfoW(lcid_en, week_ids[(int)week_day(date->time)], week, ARRAY_SIZE(week));
 
         month[0] = 0;
-        GetLocaleInfoW(lcid_en, month_ids[(int)month_from_time(date->time)], month, sizeof(month)/sizeof(*month));
+        GetLocaleInfoW(lcid_en, month_ids[(int)month_from_time(date->time)], month, ARRAY_SIZE(month));
 
         year = year_from_time(date->time);
         if(year<0) {
@@ -675,7 +748,7 @@ static inline HRESULT create_utc_string(script_ctx_t *ctx, vdisp_t *jsthis, jsva
 
         day = date_from_time(date->time);
 
-        sprintfW(buf, formatAD ? formatADW : formatBCW, week, day, month, year,
+        swprintf(buf, formatAD ? formatADW : formatBCW, week, day, month, year,
                 (int)hour_from_time(date->time), (int)min_from_time(date->time),
                 (int)sec_from_time(date->time));
 
@@ -739,10 +812,10 @@ static HRESULT dateobj_to_date_string(DateInstance *date, jsval_t *r)
         lcid_en = MAKELCID(MAKELANGID(LANG_ENGLISH,SUBLANG_ENGLISH_US),SORT_DEFAULT);
 
         week[0] = 0;
-        GetLocaleInfoW(lcid_en, week_ids[(int)week_day(time)], week, sizeof(week)/sizeof(*week));
+        GetLocaleInfoW(lcid_en, week_ids[(int)week_day(time)], week, ARRAY_SIZE(week));
 
         month[0] = 0;
-        GetLocaleInfoW(lcid_en, month_ids[(int)month_from_time(time)], month, sizeof(month)/sizeof(*month));
+        GetLocaleInfoW(lcid_en, month_ids[(int)month_from_time(time)], month, ARRAY_SIZE(month));
 
         year = year_from_time(time);
         if(year<0) {
@@ -752,7 +825,7 @@ static HRESULT dateobj_to_date_string(DateInstance *date, jsval_t *r)
 
         day = date_from_time(time);
 
-        sprintfW(buf, formatAD ? formatADW : formatBCW, week, month, day, year);
+        swprintf(buf, formatAD ? formatADW : formatBCW, week, month, day, year);
 
         date_str = jsstr_alloc(buf);
         if(!date_str)
@@ -813,11 +886,11 @@ static HRESULT Date_toTimeString(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags,
         else sign = '-';
 
         if(offset)
-            sprintfW(buf, formatW, (int)hour_from_time(time),
+            swprintf(buf, formatW, (int)hour_from_time(time),
                     (int)min_from_time(time), (int)sec_from_time(time),
                     sign, offset/60, offset%60);
         else
-            sprintfW(buf, formatUTCW, (int)hour_from_time(time),
+            swprintf(buf, formatUTCW, (int)hour_from_time(time),
                     (int)min_from_time(time), (int)sec_from_time(time));
 
         date_str = jsstr_alloc(buf);
@@ -1900,6 +1973,7 @@ static const builtin_prop_t Date_props[] = {
     {setYearW,               Date_setYear,               PROPF_METHOD|1},
     {toDateStringW,          Date_toDateString,          PROPF_METHOD},
     {toGMTStringW,           Date_toGMTString,           PROPF_METHOD},
+    {toISOStringW,           Date_toISOString,           PROPF_METHOD|PROPF_ES5},
     {toLocaleDateStringW,    Date_toLocaleDateString,    PROPF_METHOD},
     {toLocaleStringW,        Date_toLocaleString,        PROPF_METHOD},
     {toLocaleTimeStringW,    Date_toLocaleTimeString,    PROPF_METHOD},
@@ -1912,7 +1986,7 @@ static const builtin_prop_t Date_props[] = {
 static const builtin_info_t Date_info = {
     JSCLASS_DATE,
     {NULL, NULL,0, Date_get_value},
-    sizeof(Date_props)/sizeof(*Date_props),
+    ARRAY_SIZE(Date_props),
     Date_props,
     NULL,
     NULL
@@ -1966,7 +2040,7 @@ static inline HRESULT date_parse(jsstr_t *input_str, double *ret) {
         LOCALE_SMONTHNAME1, LOCALE_SDAYNAME7, LOCALE_SDAYNAME1,
         LOCALE_SDAYNAME2, LOCALE_SDAYNAME3, LOCALE_SDAYNAME4,
         LOCALE_SDAYNAME5, LOCALE_SDAYNAME6 };
-    WCHAR *strings[sizeof(string_ids)/sizeof(DWORD)];
+    WCHAR *strings[ARRAY_SIZE(string_ids)];
     WCHAR *parse;
     int input_len, parse_len = 0, nest_level = 0, i, size;
     int year = 0, month = 0, day = 0, hour = 0, min = 0, sec = 0;
@@ -2004,7 +2078,7 @@ static inline HRESULT date_parse(jsstr_t *input_str, double *ret) {
     for(i=0; i<input_len; i++) {
         if(input[i] == '(') nest_level++;
         else if(input[i] == ')') nest_level--;
-        else if(!nest_level) parse[parse_len++] = toupperW(input[i]);
+        else if(!nest_level) parse[parse_len++] = towupper(input[i]);
     }
     parse[parse_len] = 0;
 
@@ -2017,7 +2091,7 @@ static inline HRESULT date_parse(jsstr_t *input_str, double *ret) {
 
     /* FIXME: Cache strings */
     lcid_en = MAKELCID(MAKELANGID(LANG_ENGLISH,SUBLANG_ENGLISH_US),SORT_DEFAULT);
-    for(i=0; i<sizeof(string_ids)/sizeof(DWORD); i++) {
+    for(i=0; i<ARRAY_SIZE(string_ids); i++) {
         size = GetLocaleInfoW(lcid_en, string_ids[i], NULL, 0);
         strings[i] = heap_alloc((size+1)*sizeof(WCHAR));
         if(!strings[i]) {
@@ -2031,16 +2105,16 @@ static inline HRESULT date_parse(jsstr_t *input_str, double *ret) {
     }
 
     for(i=0; i<parse_len;) {
-        while(isspaceW(parse[i])) i++;
+        while(iswspace(parse[i])) i++;
         if(parse[i] == ',') {
             while(parse[i] == ',') i++;
             continue;
         }
 
         if(parse[i]>='0' && parse[i]<='9') {
-            int tmp = atoiW(&parse[i]);
+            int tmp = wcstol(&parse[i], NULL, 10);
             while(parse[i]>='0' && parse[i]<='9') i++;
-            while(isspaceW(parse[i])) i++;
+            while(iswspace(parse[i])) i++;
 
             if(parse[i] == ':') {
                 /* Time */
@@ -2050,17 +2124,17 @@ static inline HRESULT date_parse(jsstr_t *input_str, double *ret) {
                 hour = tmp;
 
                 while(parse[i] == ':') i++;
-                while(isspaceW(parse[i])) i++;
+                while(iswspace(parse[i])) i++;
                 if(parse[i]>='0' && parse[i]<='9') {
-                    min = atoiW(&parse[i]);
+                    min = wcstol(&parse[i], NULL, 10);
                     while(parse[i]>='0' && parse[i]<='9') i++;
                 }
 
-                while(isspaceW(parse[i])) i++;
+                while(iswspace(parse[i])) i++;
                 while(parse[i] == ':') i++;
-                while(isspaceW(parse[i])) i++;
+                while(iswspace(parse[i])) i++;
                 if(parse[i]>='0' && parse[i]<='9') {
-                    sec = atoiW(&parse[i]);
+                    sec = wcstol(&parse[i], NULL, 10);
                     while(parse[i]>='0' && parse[i]<='9') i++;
                 }
             }
@@ -2073,17 +2147,17 @@ static inline HRESULT date_parse(jsstr_t *input_str, double *ret) {
 
                 month = tmp-1;
 
-                while(isspaceW(parse[i])) i++;
+                while(iswspace(parse[i])) i++;
                 while(parse[i]=='-' || parse[i]=='/') i++;
-                while(isspaceW(parse[i])) i++;
+                while(iswspace(parse[i])) i++;
                 if(parse[i]<'0' || parse[i]>'9') break;
-                day = atoiW(&parse[i]);
+                day = wcstol(&parse[i], NULL, 10);
                 while(parse[i]>='0' && parse[i]<='9') i++;
 
                 while(parse[i]=='-' || parse[i]=='/') i++;
-                while(isspaceW(parse[i])) i++;
+                while(iswspace(parse[i])) i++;
                 if(parse[i]<'0' || parse[i]>'9') break;
-                year = atoiW(&parse[i]);
+                year = wcstol(&parse[i], NULL, 10);
                 while(parse[i]>='0' && parse[i]<='9') i++;
 
                 if(tmp >= 70){
@@ -2118,9 +2192,9 @@ static inline HRESULT date_parse(jsstr_t *input_str, double *ret) {
             if(parse[i] == '-')  positive = FALSE;
 
             i++;
-            while(isspaceW(parse[i])) i++;
+            while(iswspace(parse[i])) i++;
             if(parse[i]<'0' || parse[i]>'9') break;
-            offset = atoiW(&parse[i]);
+            offset = wcstol(&parse[i], NULL, 10);
             while(parse[i]>='0' && parse[i]<='9') i++;
 
             if(offset<24) offset *= 60;
@@ -2198,15 +2272,15 @@ static inline HRESULT date_parse(jsstr_t *input_str, double *ret) {
                 for(size=i; parse[size]>='A' && parse[size]<='Z'; size++);
                 size -= i;
 
-                for(j=0; j<sizeof(string_ids)/sizeof(DWORD); j++)
-                    if(!strncmpiW(&parse[i], strings[j], size)) break;
+                for(j=0; j<ARRAY_SIZE(string_ids); j++)
+                    if(!_wcsnicmp(&parse[i], strings[j], size)) break;
 
                 if(j < 12) {
                     if(set_month) break;
                     set_month = TRUE;
                     month = 11-j;
                 }
-                else if(j == sizeof(string_ids)/sizeof(DWORD)) break;
+                else if(j == ARRAY_SIZE(string_ids)) break;
 
                 i += size;
             }
@@ -2231,7 +2305,7 @@ static inline HRESULT date_parse(jsstr_t *input_str, double *ret) {
         *ret = NAN;
     }
 
-    for(i=0; i<sizeof(string_ids)/sizeof(DWORD); i++)
+    for(i=0; i<ARRAY_SIZE(string_ids); i++)
         heap_free(strings[i]);
     heap_free(parse);
 
@@ -2350,6 +2424,15 @@ static HRESULT DateConstr_UTC(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, un
     return hres;
 }
 
+/* ECMA-262 5.1 Edition    15.9.4.4 */
+static HRESULT DateConstr_now(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, unsigned argc, jsval_t *argv, jsval_t *r)
+{
+    TRACE("\n");
+
+    if(r) *r = jsval_number(date_now());
+    return S_OK;
+}
+
 static HRESULT DateConstr_value(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, unsigned argc, jsval_t *argv,
         jsval_t *r)
 {
@@ -2362,19 +2445,11 @@ static HRESULT DateConstr_value(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, 
     case DISPATCH_CONSTRUCT:
         switch(argc) {
         /* ECMA-262 3rd Edition    15.9.3.3 */
-        case 0: {
-            FILETIME time;
-            LONGLONG lltime;
-
-            GetSystemTimeAsFileTime(&time);
-            lltime = ((LONGLONG)time.dwHighDateTime<<32)
-                + time.dwLowDateTime;
-
-            hres = create_date(ctx, NULL, lltime/10000-TIME_EPOCH, &date);
+        case 0:
+            hres = create_date(ctx, NULL, date_now(), &date);
             if(FAILED(hres))
                 return hres;
             break;
-        }
 
         /* ECMA-262 3rd Edition    15.9.3.2 */
         case 1: {
@@ -2443,13 +2518,14 @@ static HRESULT DateConstr_value(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, 
 
 static const builtin_prop_t DateConstr_props[] = {
     {UTCW,    DateConstr_UTC,    PROPF_METHOD},
+    {nowW,    DateConstr_now,    PROPF_HTML|PROPF_METHOD},
     {parseW,  DateConstr_parse,  PROPF_METHOD}
 };
 
 static const builtin_info_t DateConstr_info = {
     JSCLASS_FUNCTION,
     DEFAULT_FUNCTION_VALUE,
-    sizeof(DateConstr_props)/sizeof(*DateConstr_props),
+    ARRAY_SIZE(DateConstr_props),
     DateConstr_props,
     NULL,
     NULL

@@ -102,6 +102,16 @@
 
 #include "precomp.h"
 
+/*
+ * See https://technet.microsoft.com/en-us/library/cc978715.aspx
+ * and https://technet.microsoft.com/en-us/library/cc940805.aspx
+ * to know the differences between those two settings.
+ * Values 0x00, 0x0D (carriage return) and 0x20 (space) disable completion.
+ */
+TCHAR AutoCompletionChar = _T('\t'); // Default is 0x20
+TCHAR PathCompletionChar = _T('\t'); // Default is 0x20
+
+
 SHORT maxx;
 SHORT maxy;
 
@@ -195,8 +205,8 @@ BOOL ReadCommand(LPTSTR str, INT maxlen)
             switch (ir.Event.KeyEvent.wVirtualKeyCode)
             {
 #ifdef FEATURE_HISTORY
-                case 'K':
-                    /*add the current command line to the history*/
+                case _T('K'):
+                    /* add the current command line to the history */
                     if (dwControlKeyState &
                         (LEFT_CTRL_PRESSED|RIGHT_CTRL_PRESSED))
                     {
@@ -211,8 +221,8 @@ BOOL ReadCommand(LPTSTR str, INT maxlen)
                         break;
                     }
 
-                case 'D':
-                    /*delete current history entry*/
+                case _T('D'):
+                    /* delete current history entry */
                     if (dwControlKeyState &
                         (LEFT_CTRL_PRESSED|RIGHT_CTRL_PRESSED))
                     {
@@ -224,8 +234,25 @@ BOOL ReadCommand(LPTSTR str, INT maxlen)
                         //bContinue=TRUE;
                         break;
                     }
-
 #endif /*FEATURE_HISTORY*/
+
+                case _T('M'):
+                    /* ^M does the same as return */
+                    if (dwControlKeyState &
+                        (LEFT_CTRL_PRESSED|RIGHT_CTRL_PRESSED))
+                    {
+                        /* end input, return to main */
+#ifdef FEATURE_HISTORY
+                        /* add to the history */
+                        if (str[0])
+                            History(0, str);
+#endif /*FEATURE_HISTORY*/
+                        str[charcount++] = _T('\n');
+                        str[charcount] = _T('\0');
+                        ConOutChar (_T('\n'));
+                        bReturn = TRUE;
+                        break;
+                    }
             }
         }
 
@@ -422,27 +449,49 @@ BOOL ReadCommand(LPTSTR str, INT maxlen)
 #endif
                 break;
 
-            case _T('M'):
             case _T('C'):
-                /* ^M does the same as return */
-                bCharInput = TRUE;
-                if (!(ir.Event.KeyEvent.dwControlKeyState &
+                if ((ir.Event.KeyEvent.dwControlKeyState &
                     (RIGHT_CTRL_PRESSED|LEFT_CTRL_PRESSED)))
                 {
-                    break;
+                    /* Ignore the Ctrl-C key event if it has already been handled */
+                    if (!bCtrlBreak)
+                        break;
+
+                    /*
+                     * Fully print the entered string
+                     * so the command prompt would not overwrite it.
+                     */
+                    SetCursorXY(orgx, orgy);
+                    ConOutPrintf(_T("%s"), str);
+
+                    /*
+                     * A Ctrl-C. Do not clear the command line,
+                     * but return an empty string in str.
+                     */
+                    str[0] = _T('\0');
+                    curx = orgx;
+                    cury = orgy;
+                    current = charcount = 0;
+                    bReturn = TRUE;
                 }
+                else
+                {
+                    /* Just a normal 'C' character */
+                    bCharInput = TRUE;
+                }
+                break;
 
             case VK_RETURN:
                 /* end input, return to main */
 #ifdef FEATURE_HISTORY
                 /* add to the history */
                 if (str[0])
-                    History (0, str);
+                    History(0, str);
 #endif
                 str[charcount++] = _T('\n');
                 str[charcount] = _T('\0');
                 ConOutChar(_T('\n'));
-            bReturn = TRUE;
+                bReturn = TRUE;
                 break;
 
             case VK_ESCAPE:
@@ -461,7 +510,7 @@ BOOL ReadCommand(LPTSTR str, INT maxlen)
 #ifdef FEATURE_HISTORY
                 /* get previous command from buffer */
                 ClearCommandLine (str, maxlen, orgx, orgy);
-                History (-1, str);
+                History(-1, str);
                 current = charcount = _tcslen (str);
                 if (((charcount + orgx) / maxx) + orgy > maxy - 1)
                     orgy += maxy - ((charcount + orgx) / maxx + orgy + 1);
@@ -474,7 +523,7 @@ BOOL ReadCommand(LPTSTR str, INT maxlen)
 #ifdef FEATURE_HISTORY
                 /* get next command from buffer */
                 ClearCommandLine (str, maxlen, orgx, orgy);
-                History (1, str);
+                History(1, str);
                 current = charcount = _tcslen (str);
                 if (((charcount + orgx) / maxx) + orgy > maxy - 1)
                     orgy += maxy - ((charcount + orgx) / maxx + orgy + 1);

@@ -51,15 +51,19 @@ public:
     /* Link file formats */
 
     #include "pshpack1.h"
-
     struct volume_info
     {
         DWORD type;
         DWORD serial;
         WCHAR label[12];  /* assume 8.3 */
     };
-
     #include "poppack.h"
+
+    enum IDCMD
+    {
+        IDCMD_OPEN = 0,
+        IDCMD_OPENFILELOCATION
+    };
 
 private:
     /* Cached link header */
@@ -81,13 +85,15 @@ private:
     BOOL          m_bRunAs;
     BOOL          m_bDirty;
     LPDBLIST      m_pDBList; /* Optional data block list (in the extra data section) */
+    BOOL          m_bInInit;    // in initialization or not
+    HICON         m_hIcon;
+    UINT          m_idCmdFirst;
 
     /* Pointers to strings inside Logo3/Darwin info blocks, cached for debug info purposes only */
     LPWSTR sProduct;
     LPWSTR sComponent;
 
     LPWSTR        m_sLinkPath;
-    INT           m_iIdOpen;     /* ID of the "Open" entry in the context menu */
 
     CComPtr<IUnknown>    m_site;
     CComPtr<IDropTarget> m_DropTarget;
@@ -98,11 +104,20 @@ private:
     HRESULT SetAdvertiseInfo(LPCWSTR str);
     HRESULT WriteAdvertiseInfo(LPCWSTR string, DWORD dwSig);
     HRESULT SetTargetFromPIDLOrPath(LPCITEMIDLIST pidl, LPCWSTR pszFile);
+    HICON CreateShortcutIcon(LPCWSTR wszIconPath, INT IconIndex);
+
+    HRESULT DoOpen(LPCMINVOKECOMMANDINFO lpici);
+    HRESULT DoOpenFileLocation();
 
 public:
     CShellLink();
     ~CShellLink();
     static INT_PTR CALLBACK SH_ShellLinkDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+    BOOL OnInitDialog(HWND hwndDlg, HWND hwndFocus, LPARAM lParam);
+    void OnCommand(HWND hwndDlg, int id, HWND hwndCtl, UINT codeNotify);
+    LRESULT OnNotify(HWND hwndDlg, int idFrom, LPNMHDR pnmhdr);
+    void OnDestroy(HWND hwndDlg);
 
     // IPersistFile
     virtual HRESULT STDMETHODCALLTYPE GetClassID(CLSID *pclsid);
@@ -121,8 +136,8 @@ public:
 
     // IShellLinkA
     virtual HRESULT STDMETHODCALLTYPE GetPath(LPSTR pszFile, INT cchMaxPath, WIN32_FIND_DATAA *pfd, DWORD fFlags);
-    virtual HRESULT STDMETHODCALLTYPE GetIDList(LPITEMIDLIST *ppidl);
-    virtual HRESULT STDMETHODCALLTYPE SetIDList(LPCITEMIDLIST pidl);
+    virtual HRESULT STDMETHODCALLTYPE GetIDList(PIDLIST_ABSOLUTE *ppidl);
+    virtual HRESULT STDMETHODCALLTYPE SetIDList(PCIDLIST_ABSOLUTE pidl);
     virtual HRESULT STDMETHODCALLTYPE GetDescription(LPSTR pszName, INT cchMaxName);
     virtual HRESULT STDMETHODCALLTYPE SetDescription(LPCSTR pszName);
     virtual HRESULT STDMETHODCALLTYPE GetWorkingDirectory(LPSTR pszDir, INT cchMaxPath);
@@ -141,8 +156,8 @@ public:
 
     // IShellLinkW
     virtual HRESULT STDMETHODCALLTYPE GetPath(LPWSTR pszFile, INT cchMaxPath, WIN32_FIND_DATAW *pfd, DWORD fFlags);
-    // virtual HRESULT STDMETHODCALLTYPE GetIDList(LPITEMIDLIST *ppidl);
-    // virtual HRESULT STDMETHODCALLTYPE SetIDList(LPCITEMIDLIST pidl);
+    // virtual HRESULT STDMETHODCALLTYPE GetIDList(PIDLIST_ABSOLUTE *ppidl);
+    // virtual HRESULT STDMETHODCALLTYPE SetIDList(PCIDLIST_ABSOLUTE pidl);
     virtual HRESULT STDMETHODCALLTYPE GetDescription(LPWSTR pszName, INT cchMaxName);
     virtual HRESULT STDMETHODCALLTYPE SetDescription(LPCWSTR pszName);
     virtual HRESULT STDMETHODCALLTYPE GetWorkingDirectory(LPWSTR pszDir, INT cchMaxPath);
@@ -175,7 +190,7 @@ public:
     virtual HRESULT STDMETHODCALLTYPE GetIconLocation(UINT uFlags, PWSTR pszIconFile, UINT cchMax, int *piIndex, UINT *pwFlags);
 
     // IShellExtInit
-    virtual HRESULT STDMETHODCALLTYPE Initialize(LPCITEMIDLIST pidlFolder, IDataObject *pdtobj, HKEY hkeyProgID);
+    virtual HRESULT STDMETHODCALLTYPE Initialize(PCIDLIST_ABSOLUTE pidlFolder, IDataObject *pdtobj, HKEY hkeyProgID);
 
     // IContextMenu
     virtual HRESULT STDMETHODCALLTYPE QueryContextMenu(HMENU hmenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags);

@@ -10,8 +10,8 @@
 
 #define WIN32_NO_STATUS
 
-#include "windef.h"
-#include "winbase.h"
+#include <windef.h>
+#include <winbase.h>
 
 #define NTOS_MODE_USER
 #include <ndk/iofuncs.h>
@@ -19,12 +19,7 @@
 #include <ndk/rtlfuncs.h>
 #include <fltmgr_shared.h>
 
-#include "wine/debug.h"
-
-
 /* DATA ****************************************************************************/
-
-WINE_DEFAULT_DEBUG_CHANNEL(fltlib);
 
 static
 HRESULT
@@ -79,8 +74,8 @@ FilterLoadUnload(_In_z_ LPCWSTR lpFilterName,
 {
     PFILTER_NAME FilterName;
     HANDLE hFltMgr;
-    DWORD StringLength;
-    DWORD BufferLength;
+    SIZE_T StringLength;
+    SIZE_T BufferLength;
     DWORD dwError;
 
     /* Get a handle to the filter manager */

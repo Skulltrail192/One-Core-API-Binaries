@@ -19,7 +19,9 @@ Severity=Informational
 Facility=System
 SymbolicName=WINDOWS_NT_BANNER
 Language=English
-ReactOS (R) Kernel Version %hs (Build %u%hs)
+ReactOS Version %s
+Build %s
+Reporting NT %s (Build %u%s)
 .
 
 MessageId=0x87
@@ -1169,6 +1171,14 @@ Language=English
 PP1_INITIALIZATION_FAILED
 .
 
+MessageId=0x91
+Severity=Success
+Facility=System
+SymbolicName=WIN32K_INIT_OR_RIT_FAILURE
+Language=English
+WIN32K_INIT_OR_RIT_FAILURE
+.
+
 MessageId=0x93
 Severity=Success
 Facility=System
@@ -1269,7 +1279,7 @@ Severity=Success
 Facility=System
 SymbolicName=VIDEO_DRIVER_INIT_FAILURE
 Language=English
-The video driver failed to initialize
+The video driver failed to initialize.
 .
 
 MessageId=0xB7
@@ -1555,7 +1565,7 @@ Severity=Success
 Facility=System
 SymbolicName=MANUALLY_INITIATED_CRASH
 Language=English
-MANUALLY_INITIATED_CRASH
+The user manually generated the crash dump.
 .
 
 MessageId=0xE3

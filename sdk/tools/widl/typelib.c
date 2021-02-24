@@ -32,7 +32,13 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef __REACTOS__
 #include <typedefs.h>
+#else
+#include "windef.h"
+#include "winbase.h"
+#endif
+
 #include "widl.h"
 #include "utils.h"
 #include "parser.h"
@@ -42,7 +48,9 @@
 #include "typelib_struct.h"
 #include "typetree.h"
 
+#ifdef __REACTOS__
 static typelib_t *typelib;
+#endif
 
 /* List of oleauto types that should be recognized by name.
  * (most of) these seem to be intrinsic types in mktyplib.
@@ -155,6 +163,7 @@ unsigned short get_type_vt(type_t *t)
       else
         return VT_INT;
     case TYPE_BASIC_INT32:
+    case TYPE_BASIC_LONG:
     case TYPE_BASIC_ERROR_STATUS_T:
       if (type_basic_get_sign(t) > 0)
         return VT_UI4;
@@ -167,7 +176,7 @@ unsigned short get_type_vt(type_t *t)
       else
         return VT_I8;
     case TYPE_BASIC_INT3264:
-      if (typelib_kind == SYS_WIN64)
+      if (pointer_size == 8)
       {
         if (type_basic_get_sign(t) > 0)
           return VT_UI8;
@@ -198,10 +207,10 @@ unsigned short get_type_vt(type_t *t)
     {
       if (match(type_array_get_element(t)->name, "SAFEARRAY"))
         return VT_SAFEARRAY;
+      return VT_PTR;
     }
     else
-      error("get_type_vt: array types not supported\n");
-    return VT_PTR;
+      return VT_CARRAY;
 
   case TYPE_INTERFACE:
     if(match(t->name, "IUnknown"))
@@ -237,6 +246,7 @@ unsigned short get_type_vt(type_t *t)
   return 0;
 }
 
+#ifdef __REACTOS__
 void start_typelib(typelib_t *typelib_type)
 {
     if (!do_typelib) return;
@@ -247,11 +257,9 @@ void end_typelib(void)
 {
     if (!typelib) return;
 
-    if (do_old_typelib)
-        create_sltg_typelib(typelib);
-    else
-        create_msft_typelib(typelib);
+    create_msft_typelib(typelib);
 }
+#endif
 
 static void tlb_read(int fd, void *buf, int count)
 {
@@ -327,22 +335,42 @@ static void read_msft_importlib(importlib_t *importlib, int fd)
     free(typeinfo_offs);
 }
 
+static int open_typelib(const char *name)
+{
+    char *file_name;
+    int fd;
+
+    file_name = wpp_find_include(name, NULL);
+    if(!file_name)
+        return open(name, O_RDONLY | O_BINARY );
+
+    fd = open(file_name, O_RDONLY | O_BINARY );
+    free(file_name);
+    return fd;
+}
+
 static void read_importlib(importlib_t *importlib)
 {
     int fd;
     INT magic;
-    char *file_name;
 
-    file_name = wpp_find_include(importlib->name, NULL);
-    if(file_name) {
-        fd = open(file_name, O_RDONLY | O_BINARY );
-        free(file_name);
-    }else {
-        fd = open(importlib->name, O_RDONLY | O_BINARY );
+    fd = open_typelib(importlib->name);
+
+    /* widl extension: if importlib name has no .tlb extension, try using .tlb */
+    if(fd < 0) {
+        const char *p = strrchr(importlib->name, '.');
+        size_t len = p ? p - importlib->name : strlen(importlib->name);
+        if(strcmp(importlib->name + len, ".tlb")) {
+            char *tlb_name = xmalloc(len + 5);
+            memcpy(tlb_name, importlib->name, len);
+            strcpy(tlb_name + len, ".tlb");
+            fd = open_typelib(tlb_name);
+            free(tlb_name);
+        }
     }
 
     if(fd < 0)
-        error("Could not open importlib %s.\n", importlib->name);
+        error("Could not find importlib %s.\n", importlib->name);
 
     tlb_read(fd, &magic, sizeof(magic));
 
@@ -357,7 +385,11 @@ static void read_importlib(importlib_t *importlib)
     close(fd);
 }
 
+#ifdef __REACTOS__
 void add_importlib(const char *name)
+#else
+void add_importlib(const char *name, typelib_t *typelib)
+#endif
 {
     importlib_t *importlib;
 

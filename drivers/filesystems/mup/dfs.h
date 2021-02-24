@@ -1,6 +1,8 @@
 #ifndef _DFS_PCH_
 #define _DFS_PCH_
 
+#include <section_attribs.h>
+
 #define DFS_OPEN_CONTEXT 0xFF444653
 #define DFS_DOWNLEVEL_OPEN_CONTEXT 0x11444653
 #define DFS_CSCAGENT_NAME_CONTEXT 0xAAAAAAAA
@@ -49,6 +51,7 @@ DfsUnload(
     PDRIVER_OBJECT DriverObject
 );
 
+INIT_FUNCTION
 NTSTATUS
 DfsDriverEntry(
     PDRIVER_OBJECT DriverObject,

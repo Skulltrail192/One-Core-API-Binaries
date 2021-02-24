@@ -1,7 +1,0 @@
-These functions and types need be updated with nt6 code
-
-NtSetInformationProcess
-NtOpenToken
-NtQueryProcessInformation
-NtQueryInformationFile 
- - Implement FileRemoteProtocolInfo 

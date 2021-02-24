@@ -18,7 +18,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "wine/debug.h"
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "winuser.h"
+#include "shlwapi.h"
+#include "winerror.h"
+#include "objbase.h"
+#include "olectl.h"
+
+#include "msctf.h"
 #include "msctf_internal.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(msctf);
 
 typedef struct tagPreservedKey
 {
@@ -79,6 +96,8 @@ typedef struct tagACLMulti {
     struct list     PreservedKeyNotifySink;
     struct list     ThreadFocusSink;
     struct list     ThreadMgrEventSink;
+    struct list     UIElementSink;
+    struct list     InputProcessorProfileActivationSink;
 } ThreadMgr;
 
 typedef struct tagEnumTfDocumentMgr {
@@ -155,6 +174,8 @@ static void ThreadMgr_Destructor(ThreadMgr *This)
     free_sinks(&This->PreservedKeyNotifySink);
     free_sinks(&This->ThreadFocusSink);
     free_sinks(&This->ThreadMgrEventSink);
+    free_sinks(&This->UIElementSink);
+    free_sinks(&This->InputProcessorProfileActivationSink);
 
     LIST_FOR_EACH_SAFE(cursor, cursor2, &This->CurrentPreservedKeys)
     {
@@ -600,6 +621,34 @@ static HRESULT WINAPI ThreadMgrSource_AdviseSink(ITfSource *iface,
         return advise_sink(&This->ThreadFocusSink, &IID_ITfThreadFocusSink, COOKIE_MAGIC_THREADFOCUSSINK, punk, pdwCookie);
     }
 
+    if (IsEqualIID(riid, &IID_ITfActiveLanguageProfileNotifySink))
+    {
+        WARN("semi-stub for ITfActiveLanguageProfileNotifySink: sink won't be used.\n");
+        return advise_sink(&This->ActiveLanguageProfileNotifySink, &IID_ITfActiveLanguageProfileNotifySink,
+                            COOKIE_MAGIC_ACTIVELANGSINK, punk, pdwCookie);
+    }
+
+    if (IsEqualIID(riid, &IID_ITfKeyTraceEventSink))
+    {
+        WARN("semi-stub for ITfKeyTraceEventSink: sink won't be used.\n");
+        return advise_sink(&This->KeyTraceEventSink, &IID_ITfKeyTraceEventSink,
+                           COOKIE_MAGIC_KEYTRACESINK, punk, pdwCookie);
+    }
+
+    if (IsEqualIID(riid, &IID_ITfUIElementSink))
+    {
+        WARN("semi-stub for ITfUIElementSink: sink won't be used.\n");
+        return advise_sink(&This->UIElementSink, &IID_ITfUIElementSink,
+                           COOKIE_MAGIC_UIELEMENTSINK, punk, pdwCookie);
+    }
+
+    if (IsEqualIID(riid, &IID_ITfInputProcessorProfileActivationSink))
+    {
+        WARN("semi-stub for ITfInputProcessorProfileActivationSink: sink won't be used.\n");
+        return advise_sink(&This->InputProcessorProfileActivationSink, &IID_ITfInputProcessorProfileActivationSink,
+                           COOKIE_MAGIC_INPUTPROCESSORPROFILEACTIVATIONSINK, punk, pdwCookie);
+    }
+
     FIXME("(%p) Unhandled Sink: %s\n",This,debugstr_guid(riid));
     return E_NOTIMPL;
 }
@@ -607,10 +656,15 @@ static HRESULT WINAPI ThreadMgrSource_AdviseSink(ITfSource *iface,
 static HRESULT WINAPI ThreadMgrSource_UnadviseSink(ITfSource *iface, DWORD pdwCookie)
 {
     ThreadMgr *This = impl_from_ITfSource(iface);
+    DWORD magic;
 
     TRACE("(%p) %x\n",This,pdwCookie);
 
-    if (get_Cookie_magic(pdwCookie) != COOKIE_MAGIC_TMSINK && get_Cookie_magic(pdwCookie) != COOKIE_MAGIC_THREADFOCUSSINK)
+    magic = get_Cookie_magic(pdwCookie);
+    if (magic != COOKIE_MAGIC_TMSINK && magic != COOKIE_MAGIC_THREADFOCUSSINK
+        && magic != COOKIE_MAGIC_KEYTRACESINK && magic != COOKIE_MAGIC_UIELEMENTSINK
+        && magic != COOKIE_MAGIC_INPUTPROCESSORPROFILEACTIVATIONSINK
+        && magic != COOKIE_MAGIC_KEYTRACESINK)
         return E_INVALIDARG;
 
     return unadvise_sink(pdwCookie);
@@ -1327,6 +1381,8 @@ HRESULT ThreadMgr_Constructor(IUnknown *pUnkOuter, IUnknown **ppOut)
     list_init(&This->PreservedKeyNotifySink);
     list_init(&This->ThreadFocusSink);
     list_init(&This->ThreadMgrEventSink);
+    list_init(&This->UIElementSink);
+    list_init(&This->InputProcessorProfileActivationSink);
 
     TRACE("returning %p\n", This);
     *ppOut = (IUnknown *)&This->ITfThreadMgrEx_iface;

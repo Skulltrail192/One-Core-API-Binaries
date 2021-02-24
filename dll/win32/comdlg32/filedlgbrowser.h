@@ -22,6 +22,17 @@
 #ifndef SHBROWSER_H
 #define SHBROWSER_H
 
+#ifndef RC_INVOKED
+#include <stdarg.h>
+#endif
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "shlobj.h"
+#include "objbase.h"
+#include "commdlg.h"
+
 /***********************************************************************
  * Defines and global variables
  */
@@ -82,6 +93,7 @@ typedef struct
     } HookMsg;
 
     BOOL ole_initialized;
+    LPITEMIDLIST places[5];
 } FileOpenDlgInfos;
 
 /***********************************************************************
@@ -120,6 +132,7 @@ typedef struct
 #define IDC_FILENAME                    edt1
 
 #define IDC_TOOLBAR			1
+#define IDC_TOOLBARPLACES               ctl1
 
 /***********************************************************************
  * Prototypes for the methods of the IShellBrowserImpl class

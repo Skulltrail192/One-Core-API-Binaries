@@ -51,10 +51,7 @@ BEGIN
             MENUITEM "&Printerat dhe Fakset", IDM_PRINTERSANDFAXES, MFT_STRING, MFS_ENABLED
             MENUITEM "&Taskbar dhe Start Menu", IDM_TASKBARANDSTARTMENU, MFT_STRING, MFS_ENABLED
         END
-        POPUP "&Kërko", IDM_SEARCH
-        BEGIN
-            MENUITEM "", -1, MFT_SEPARATOR
-        END
+        MENUITEM "&Kërko", IDM_SEARCH, MFT_STRING, MFS_ENABLED
         MENUITEM "&Ndihma dhe Suporti", IDM_HELPANDSUPPORT, MFT_STRING, MFS_ENABLED
         MENUITEM "&Fillo...", IDM_RUN, MFT_STRING, MFS_ENABLED
         MENUITEM "", 450, MFT_SEPARATOR, MFS_ENABLED
@@ -72,14 +69,14 @@ CAPTION "Taskbar"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX "Aparenca e Taskbar", IDC_STATIC, 6, 6, 240, 104
-    CONTROL "", IDC_TASKBARPROP_TASKBARBITMAP, "Static", SS_BITMAP | SS_SUNKEN, 13, 18, 224, 21
+    CONTROL "", IDC_TASKBARPROP_TASKBARBITMAP, "Static", SS_BITMAP | SS_SUNKEN | SS_CENTERIMAGE, 12, 18, 229, 24
     AUTOCHECKBOX "&Blloko taskbarin", IDC_TASKBARPROP_LOCK, 13, 45, 200, 10
     AUTOCHECKBOX "Fsheh automatikish taskbarin", IDC_TASKBARPROP_HIDE, 13, 58, 200, 10
     AUTOCHECKBOX "Mbaj &taskbar mbi dritaret e tjera", IDC_TASKBARPROP_ONTOP, 13, 71, 200, 10
     AUTOCHECKBOX "&Grupo butonat e njejte në taskbar", IDC_TASKBARPROP_GROUP, 13, 84, 200, 10
     AUTOCHECKBOX "Shfaq &Quick Launch", IDC_TASKBARPROP_SHOWQL, 13, 97, 200, 10
     GROUPBOX "Notification area", IDC_STATIC, 6, 114, 240, 98
-    CONTROL "", IDC_TASKBARPROP_NOTIFICATIONBITMAP, "Static", SS_BITMAP | SS_SUNKEN,13, 126, 223, 28
+    CONTROL "", IDC_TASKBARPROP_NOTIFICATIONBITMAP, "Static", SS_BITMAP | SS_SUNKEN | SS_CENTERIMAGE, 12, 126, 229, 24
     AUTOCHECKBOX "Shfaq Ora", IDC_TASKBARPROP_CLOCK, 13, 153, 80, 10
     AUTOCHECKBOX "Show seconds", IDC_TASKBARPROP_SECONDS, 120, 153, 80, 10, WS_DISABLED
     LTEXT "Ju mund të mbani zonën e njoftimit të pa prerë duke i fshehur ikona që ju nuk e keni klikuar kohët e fundit.", IDC_STATIC, 13, 169, 223, 16
@@ -93,11 +90,11 @@ CAPTION "Fillo"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL "", IDC_TASKBARPROP_STARTMENU_BITMAP, "Static", SS_BITMAP | SS_SUNKEN,7, 7, 183, 108
-    AUTORADIOBUTTON "&Fillo menu", IDC_TASKBARPROP_STARTMENU, 7, 135, 105, 10, WS_DISABLED
-    LTEXT "Ky stil menu ju jep juve akses të lehtë në dosjet tuaja të preferuara, programet, dhe kërko.", IDC_STATIC, 20, 145, 150, 24, WS_DISABLED
-    PUSHBUTTON "&Modifiko...", IDC_TASKBARPROP_STARTMENUCUST, 192, 132, 53, 14, WS_DISABLED
+    AUTORADIOBUTTON "&Fillo menu", IDC_TASKBARPROP_STARTMENU, 7, 135, 105, 10
+    LTEXT "Ky stil menu ju jep juve akses të lehtë në dosjet tuaja të preferuara, programet, dhe kërko.", IDC_TASKBARPROP_STARTMENUMODERNTEXT, 20, 145, 150, 24
+    PUSHBUTTON "&Modifiko...", IDC_TASKBARPROP_STARTMENUCUST, 192, 132, 53, 14
     AUTORADIOBUTTON "Start &menu klasike", IDC_TASKBARPROP_STARTMENUCLASSIC, 7, 175, 105, 10
-    LTEXT "Ky stil menu ju jep pamjen klasike dhe funksionalitetin", IDC_STATIC, 20, 185, 150, 24
+    LTEXT "Ky stil menu ju jep pamjen klasike dhe funksionalitetin", IDC_TASKBARPROP_STARTMENUCLASSICTEXT, 20, 185, 150, 24
     PUSHBUTTON "&Modifiko...", IDC_TASKBARPROP_STARTMENUCLASSICCUST, 192, 172, 53, 14
 END
 
@@ -120,7 +117,7 @@ IDD_CLASSICSTART_CUSTOMIZE DIALOGEX 0, 0, 232, 240, 0
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBLE | WS_DLGFRAME
 CAPTION "Customize Classic Start Menu"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     GROUPBOX         "Start menu", IDC_STATIC, 8, 7, 218, 114
     ICON             IDI_STARTMENU2, IDC_STATIC, 19, 17, 20, 20
     LTEXT            "You can customize your Start menu by adding or removing items.", IDC_STATIC, 48, 17, 108, 39
@@ -135,26 +132,26 @@ FONT 8, "MS Shell Dlg"
     CONTROL          "StartMenuSe&ttings", IDC_CLASSICSTART_SETTINGS, "SysTreeView32", WS_BORDER | 0x00000001, 8, 139, 218, 72, WS_EX_CLIENTEDGE
     DEFPUSHBUTTON    "OK", IDOK, 122, 220, 50, 14
     PUSHBUTTON       "Cancel", IDCANCEL, 176, 220, 50, 14
-}
+END
 
 IDD_FILENAME_WARNING DIALOGEX 0, 0, 272, 81, 0
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUPWINDOW | WS_DLGFRAME
 CAPTION "File Name Warning"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     DEFPUSHBUTTON    "&Ignore", IDIGNORE, 215, 60, 50, 14
     PUSHBUTTON       "&Rename", IDC_FILE_RENAME, 159, 60, 50, 14
     LTEXT            "", IDC_STATIC, 7, 51, 258, 1, NOT WS_GROUP
     AUTOCHECKBOX     "&Don't perform this check at startup", IDC_NOTCHECK, 7, 62, 139, 10
     ICON             32515, IDC_STATIC, 7, 7, 21, 20
     LTEXT            "There is a file or folder on your computer called %s which could cause certain applications to not function correctly.  Renaming it to %s would solve this problem.  Would you like to rename it now?", IDC_STATIC, 34, 7, 224, 37
-}
+END
 
 IDD_MODERNSTART_ADVANCED DIALOGEX 0, 0, 251, 198, 0
 STYLE DS_SETFONT | WS_CAPTION | WS_CHILD | WS_DISABLED
 CAPTION "Advanced"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     GROUPBOX         "Start menu settings ", IDC_STATIC, 7, 7, 238, 42
     AUTOCHECKBOX     "&Open submenus when I pause on them with my mouse", IDC_AUTOOPEN, 14, 21, 224, 10
     AUTOCHECKBOX     "Highlight &newly installed programs", IDC_HIGHLIGHT, 14, 35, 224, 10
@@ -164,13 +161,13 @@ FONT 8, "MS Shell Dlg"
     LTEXT            "Select this option to provide quick access to the documents you opened most recently.  Clearing this list does not delete the documents.", IDC_STATIC, 14, 144, 224, 21
     AUTOCHECKBOX     "List my most &recently opened documents", IDC_RECENTLY, 14, 168, 147, 10
     PUSHBUTTON       "&Clear List", IDC_CLEAR, 182, 168, 55, 14
-}
+END
 
 IDD_MODERNSTART_GENERAL DIALOGEX 0, 0, 251, 198
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_DLGFRAME
 CAPTION "General"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     GROUPBOX         "Select an icon size for programs ", IDC_STATIC, 7, 7, 238, 37
     ICON             IDC_LARGEICON, 17, 18, 20, 20, SS_CENTERIMAGE
     ICON             IDC_SMALLICON, 151, 18, 20, 20, SS_CENTERIMAGE
@@ -187,7 +184,7 @@ FONT 8, "MS Shell Dlg"
     COMBOBOX         IDC_INTERNETDEFAULTAPP, 98, 138, 140, 200, CBS_DROPDOWNLIST | WS_VSCROLL
     AUTOCHECKBOX     "&E-mail:", IDC_SHOWEMAIL, 14, 157, 37, 10
     COMBOBOX         IDC_EMAILDEFAULTAPP, 98, 155, 140, 200, CBS_DROPDOWNLIST | WS_VSCROLL
-}
+END
 
 STRINGTABLE
 BEGIN
@@ -201,4 +198,5 @@ END
 STRINGTABLE
 BEGIN
     IDS_TASKBAR_STARTMENU_PROP_CAPTION "Taskbar dhe Start Menu"
+    IDS_RESTORE_ALL "&Show Open Windows"
 END

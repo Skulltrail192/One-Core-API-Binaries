@@ -4,6 +4,7 @@ spec2def(mmsys.cpl mmsys.spec)
 list(APPEND SOURCE
     mmsys.c
     sounds.c
+    speakervolume.c
     volume.c
     audio.c
     voice.c
@@ -12,7 +13,7 @@ list(APPEND SOURCE
 file(GLOB mmsys_rc_deps resources/*.*)
 add_rc_deps(mmsys.rc ${mmsys_rc_deps})
 
-add_library(mmsys SHARED
+add_library(mmsys MODULE
     ${SOURCE}
     mmsys.rc
     ${CMAKE_CURRENT_BINARY_DIR}/mmsys.def)

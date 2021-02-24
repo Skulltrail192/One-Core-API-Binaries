@@ -133,6 +133,13 @@ public:
         return ::wcscmp(psz1, psz2);
     }
 
+    static int __cdecl CompareNoCase(
+        _In_z_ LPCWSTR psz1,
+        _In_z_ LPCWSTR psz2)
+    {
+        return ::_wcsicmp(psz1, psz2);
+    }
+
     static int __cdecl FormatV(
         _In_opt_z_ LPWSTR pszDest,
         _In_z_ LPCWSTR pszFormat,
@@ -143,6 +150,22 @@ public:
         return ::vswprintf(pszDest, pszFormat, args);
     }
 
+    static LPWSTR
+    FormatMessageV(_In_z_ LPCWSTR pszFormat, _In_opt_ va_list *pArgList)
+    {
+        LPWSTR psz;
+        ::FormatMessageW(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_STRING, pszFormat, 0, 0,
+            reinterpret_cast<LPWSTR>(&psz), 0, pArgList);
+        return psz;
+    }
+
+    static BSTR __cdecl AllocSysString(
+        _In_z_ LPCWSTR pszSource,
+        _In_ int nLength)
+    {
+        return ::SysAllocStringLen(pszSource, nLength);
+    }
 };
 
 
@@ -259,6 +282,13 @@ public:
         return ::strcmp(psz1, psz2);
     }
 
+    static int __cdecl CompareNoCase(
+        _In_z_ LPCSTR psz1,
+        _In_z_ LPCSTR psz2)
+    {
+        return ::_stricmp(psz1, psz2);
+    }
+
     static int __cdecl FormatV(
         _In_opt_z_ LPSTR pszDest,
         _In_z_ LPCSTR pszFormat,
@@ -267,6 +297,29 @@ public:
         if (pszDest == NULL)
             return ::_vscprintf(pszFormat, args);
         return ::vsprintf(pszDest, pszFormat, args);
+    }
+
+    static LPSTR
+    FormatMessageV(_In_z_ LPCSTR pszFormat, _In_opt_ va_list *pArgList)
+    {
+        LPSTR psz;
+        ::FormatMessageA(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_STRING, pszFormat, 0, 0, reinterpret_cast<LPSTR>(&psz),
+            0, pArgList);
+        return psz;
+    }
+
+    static BSTR __cdecl AllocSysString(
+        _In_z_ LPCSTR pszSource,
+        _In_ int nLength)
+    {
+        int nLen = ChTraitsCRT<wchar_t>::GetBaseTypeLength(pszSource, nLength);
+        BSTR bstr = ::SysAllocStringLen(NULL, nLen);
+        if (bstr)
+        {
+            ChTraitsCRT<wchar_t>::ConvertToBaseType(bstr, nLen, pszSource, nLength);
+        }
+        return bstr;
     }
 
 };
@@ -315,6 +368,11 @@ public:
     }
 
     CStringT(_In_ const CStringT& strSrc) :
+        CThisSimpleString(strSrc)
+    {
+    }
+
+    CStringT(_In_ const CThisSimpleString& strSrc) :
         CThisSimpleString(strSrc)
     {
     }
@@ -404,6 +462,12 @@ public:
         return *this;
     }
 
+    CStringT& operator=(_In_ const CThisSimpleString &strSrc)
+    {
+        CThisSimpleString::operator=(strSrc);
+        return *this;
+    }
+
     friend bool operator==(const CStringT& str1, const CStringT& str2) throw()
     {
         return str1.Compare(str2) == 0;
@@ -417,7 +481,7 @@ public:
     friend bool operator==(const CStringT& str1, PCYSTR psz2) throw()
     {
         CStringT tmp(psz2, str1.GetManager());
-        return tmp == str1;
+        return tmp.Compare(str1) == 0;
     }
 
     friend bool operator==(const CStringT& str1, XCHAR ch2) throw()
@@ -563,6 +627,10 @@ public:
         return StringTraits::Compare(CThisSimpleString::GetString(), psz);
     }
 
+    int CompareNoCase(_In_z_ PCXSTR psz) const
+    {
+        return StringTraits::CompareNoCase(CThisSimpleString::GetString(), psz);
+    }
 
     CStringT Mid(int iFirst, int nCount) const
     {
@@ -644,6 +712,36 @@ public:
         CThisSimpleString::ReleaseBufferSetLength(nLength);
     }
 
+    void __cdecl FormatMessage(UINT nFormatID, ...)
+    {
+        va_list va;
+        va_start(va, nFormatID);
+
+        CStringT str;
+        if (str.LoadString(nFormatID))
+            FormatMessageV(str, &va);
+
+        va_end(va);
+    }
+
+    void __cdecl FormatMessage(PCXSTR pszFormat, ...)
+    {
+        va_list va;
+        va_start(va, pszFormat);
+        FormatMessageV(pszFormat, &va);
+        va_end(va);
+    }
+
+    void
+    FormatMessageV(PCXSTR pszFormat, va_list *pArgList)
+    {
+        PXSTR psz = StringTraits::FormatMessageV(pszFormat, pArgList);
+        if (!psz)
+            CThisSimpleString::ThrowMemoryException();
+
+        *this = psz;
+        ::LocalFree(psz);
+    }
 
     int Replace(PCXSTR pszOld, PCXSTR pszNew)
     {
@@ -783,6 +881,12 @@ public:
     CStringT& Trim(PCXSTR pszTargets)
     {
         return TrimRight(pszTargets).TrimLeft(pszTargets);
+    }
+
+
+    BSTR AllocSysString() const
+    {
+        return StringTraits::AllocSysString(CThisSimpleString::GetString(), CThisSimpleString::GetLength());
     }
 
 

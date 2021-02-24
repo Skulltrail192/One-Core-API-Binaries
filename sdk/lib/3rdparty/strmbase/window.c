@@ -18,7 +18,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "strmbase_private.h"
+#define COBJMACROS
+
+#include "dshow.h"
+#include "wine/debug.h"
+#include "wine/unicode.h"
+#include "wine/strmbase.h"
+#include "uuids.h"
+#include "vfwmsgs.h"
+#include <assert.h>
+
+WINE_DEFAULT_DEBUG_CHANNEL(strmbase);
 
 static inline BaseControlWindow *impl_from_IVideoWindow( IVideoWindow *iface)
 {
@@ -285,7 +295,7 @@ HRESULT WINAPI BaseControlWindowImpl_put_WindowStyle(IVideoWindow *iface, LONG W
 
     TRACE("(%p/%p)->(%x -> %x)\n", This, iface, old, WindowStyle);
 
-    if (WindowStyle & (WS_DISABLED|WS_HSCROLL|WS_ICONIC|WS_MAXIMIZE|WS_MINIMIZE|WS_VSCROLL))
+    if (WindowStyle & (WS_DISABLED|WS_HSCROLL|WS_MAXIMIZE|WS_MINIMIZE|WS_VSCROLL))
         return E_INVALIDARG;
 
     SetWindowLongW(This->baseWindow.hWnd, GWL_STYLE, WindowStyle);

@@ -182,7 +182,7 @@ OpenAliasByName(SAM_HANDLE DomainHandle,
                                     &Use);
     if (!NT_SUCCESS(Status))
     {
-        ERR("SamLookupNamesInDomain failed (Status %08lx)\n", Status);
+        ERR("SamLookupNamesInDomain(%wZ) failed (Status %08lx)\n", AliasName, Status);
         return NetpNtStatusToApiStatus(Status);
     }
 
@@ -351,6 +351,9 @@ NetLocalGroupAdd(
 
     TRACE("(%s %d %p %p) stub!\n", debugstr_w(servername), level, buf,
           parm_err);
+
+    if (parm_err != NULL)
+        *parm_err = PARM_ERROR_NONE;
 
     /* Initialize the Server name*/
     if (servername != NULL)
@@ -593,7 +596,7 @@ NetLocalGroupAddMembers(
                                 &AliasHandle);
     if (ApiStatus != NERR_Success && ApiStatus != ERROR_NONE_MAPPED)
     {
-        ERR("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+        ERR("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &AliasName, ApiStatus);
         goto done;
     }
 
@@ -621,7 +624,7 @@ NetLocalGroupAddMembers(
                                     &AliasHandle);
         if (ApiStatus != NERR_Success)
         {
-            ERR("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+            ERR("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &AliasName, ApiStatus);
             if (ApiStatus == ERROR_NONE_MAPPED)
                 ApiStatus = NERR_GroupNotFound;
             goto done;
@@ -720,7 +723,7 @@ NetLocalGroupDel(
                                 &AliasHandle);
     if (ApiStatus != NERR_Success && ApiStatus != ERROR_NONE_MAPPED)
     {
-        TRACE("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+        TRACE("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &GroupName, ApiStatus);
         goto done;
     }
 
@@ -751,7 +754,7 @@ NetLocalGroupDel(
                                     &AliasHandle);
         if (ApiStatus != NERR_Success)
         {
-            ERR("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+            ERR("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &GroupName, ApiStatus);
             if (ApiStatus == ERROR_NONE_MAPPED)
                 ApiStatus = NERR_GroupNotFound;
             goto done;
@@ -890,7 +893,7 @@ NetLocalGroupDelMembers(
                                 &AliasHandle);
     if (ApiStatus != NERR_Success && ApiStatus != ERROR_NONE_MAPPED)
     {
-        ERR("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+        ERR("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &AliasName, ApiStatus);
         goto done;
     }
 
@@ -918,7 +921,7 @@ NetLocalGroupDelMembers(
                                     &AliasHandle);
         if (ApiStatus != NERR_Success)
         {
-            ERR("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+            ERR("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &AliasName, ApiStatus);
             if (ApiStatus == ERROR_NONE_MAPPED)
                 ApiStatus = NERR_GroupNotFound;
             goto done;
@@ -1273,7 +1276,7 @@ NetLocalGroupGetInfo(
                                 &AliasHandle);
     if (ApiStatus != NERR_Success && ApiStatus != ERROR_NONE_MAPPED)
     {
-        ERR("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+        ERR("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &GroupName, ApiStatus);
         goto done;
     }
 
@@ -1301,7 +1304,7 @@ NetLocalGroupGetInfo(
                                     &AliasHandle);
         if (ApiStatus != NERR_Success)
         {
-            ERR("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+            ERR("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &GroupName, ApiStatus);
             if (ApiStatus == ERROR_NONE_MAPPED)
                 ApiStatus = NERR_GroupNotFound;
             goto done;
@@ -1428,7 +1431,7 @@ NetLocalGroupGetMembers(
                                     &EnumContext->AliasHandle);
         if (ApiStatus != NERR_Success && ApiStatus != ERROR_NONE_MAPPED)
         {
-            ERR("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+            ERR("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &AliasName, ApiStatus);
             goto done;
         }
 
@@ -1456,7 +1459,7 @@ NetLocalGroupGetMembers(
                                         &EnumContext->AliasHandle);
             if (ApiStatus != NERR_Success)
             {
-                ERR("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+                ERR("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &AliasName, ApiStatus);
                 if (ApiStatus == ERROR_NONE_MAPPED)
                     ApiStatus = NERR_GroupNotFound;
                 goto done;
@@ -1784,7 +1787,7 @@ NetLocalGroupSetInfo(
                                 &AliasHandle);
     if (ApiStatus != NERR_Success && ApiStatus != ERROR_NONE_MAPPED)
     {
-        ERR("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+        ERR("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &AliasName, ApiStatus);
         goto done;
     }
 
@@ -1812,7 +1815,7 @@ NetLocalGroupSetInfo(
                                     &AliasHandle);
         if (ApiStatus != NERR_Success)
         {
-            ERR("OpenAliasByName failed (ApiStatus %lu)\n", ApiStatus);
+            ERR("OpenAliasByName(%wZ) failed (ApiStatus %lu)\n", &AliasName, ApiStatus);
             if (ApiStatus == ERROR_NONE_MAPPED)
                 ApiStatus = NERR_GroupNotFound;
             goto done;

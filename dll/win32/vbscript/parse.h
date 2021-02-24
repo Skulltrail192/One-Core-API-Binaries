@@ -16,6 +16,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#pragma once
+
 typedef enum {
     EXPR_ADD,
     EXPR_AND,
@@ -32,6 +34,7 @@ typedef enum {
     EXPR_GTEQ,
     EXPR_IDIV,
     EXPR_IMP,
+    EXPR_INT,
     EXPR_IS,
     EXPR_LT,
     EXPR_LTEQ,
@@ -49,8 +52,6 @@ typedef enum {
     EXPR_OR,
     EXPR_STRING,
     EXPR_SUB,
-    EXPR_ULONG,
-    EXPR_USHORT,
     EXPR_XOR
 } expression_type_t;
 
@@ -119,7 +120,8 @@ typedef enum {
     STAT_STOP,
     STAT_UNTIL,
     STAT_WHILE,
-    STAT_WHILELOOP
+    STAT_WHILELOOP,
+    STAT_RETVAL
 } statement_type_t;
 
 typedef struct _statement_t {
@@ -250,6 +252,11 @@ typedef struct {
 } select_statement_t;
 
 typedef struct {
+    statement_t stat;
+    expression_t *expr;
+} retval_statement_t;
+
+typedef struct {
     const WCHAR *code;
     const WCHAR *ptr;
     const WCHAR *end;
@@ -269,7 +276,7 @@ typedef struct {
     heap_pool_t heap;
 } parser_ctx_t;
 
-HRESULT parse_script(parser_ctx_t*,const WCHAR*,const WCHAR*) DECLSPEC_HIDDEN;
+HRESULT parse_script(parser_ctx_t*,const WCHAR*,const WCHAR*,DWORD) DECLSPEC_HIDDEN;
 void parser_release(parser_ctx_t*) DECLSPEC_HIDDEN;
 int parser_lex(void*,parser_ctx_t*) DECLSPEC_HIDDEN;
 void *parser_alloc(parser_ctx_t*,size_t) DECLSPEC_HIDDEN;

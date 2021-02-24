@@ -3,6 +3,7 @@
  *
  * Copyright 1998, 1999, 2000 Juergen Schmied
  * Copyright 2004 Juan Lang
+ * Copyright 2018-2020 Katayama Hirofumi MZ
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,8 +37,12 @@
 #include <undocshell.h>
 #include <shlwapi.h>
 #include <sddl.h>
+#include <strsafe.h>
 #include <wine/debug.h>
 #include <wine/unicode.h>
+
+#include <shlwapi_undoc.h>
+#include <shellutils.h>
 
 #include <userenv.h>
 
@@ -49,30 +54,54 @@ WINE_DEFAULT_DEBUG_CHANNEL(shell);
 
 static const BOOL is_win64 = sizeof(void *) > sizeof(int);
 
-typedef BOOL(WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
-
-static LPFN_ISWOW64PROCESS fnIsWow64Process = NULL;
-
-BOOL IsWow64()
+#ifdef __REACTOS__
+/* FIXME: Remove this */
+typedef enum _NT_PRODUCT_TYPE
 {
-    BOOL bIsWow64 = FALSE;
+    NtProductWinNt = 1,
+    NtProductLanManNt,
+    NtProductServer
+} NT_PRODUCT_TYPE, *PNT_PRODUCT_TYPE;
 
-    if (!fnIsWow64Process)
+/* FIXME: We cannot refresh the RtlGetNtProductType value before reboot. */
+static BOOL
+DoGetProductType(PNT_PRODUCT_TYPE ProductType)
+{
+    static const WCHAR ProductOptions[] = L"SYSTEM\\CurrentControlSet\\Control\\ProductOptions";
+    HKEY hKey;
+    LONG error;
+    WCHAR szValue[32];
+    DWORD cbValue, dwType;
+    static DWORD s_dwProductType = 0;
+
+    if (s_dwProductType != 0)
     {
-        fnIsWow64Process = (LPFN_ISWOW64PROCESS) GetProcAddress(
-            GetModuleHandle(TEXT("kernel32")), "IsWow64Process");
+        *ProductType = s_dwProductType;
+        return TRUE;
     }
 
-    if (!fnIsWow64Process)
+    *ProductType = NtProductServer;
+
+    error = RegOpenKeyExW(HKEY_LOCAL_MACHINE, ProductOptions, 0, KEY_READ, &hKey);
+    if (error)
         return FALSE;
 
-    if (!fnIsWow64Process(GetCurrentProcess(), &bIsWow64))
-        return FALSE;
+    cbValue = sizeof(szValue);
+    error = RegQueryValueExW(hKey, L"ProductType", NULL, &dwType, (LPBYTE)szValue, &cbValue);
+    if (!error && dwType == REG_SZ)
+    {
+        if (lstrcmpW(szValue, L"WinNT") == 0)
+            *ProductType = NtProductWinNt;
+        else if (lstrcmpW(szValue, L"LanmanNT") == 0)
+            *ProductType = NtProductLanManNt;
+    }
 
-    return bIsWow64;
+    s_dwProductType = *ProductType;
+
+    RegCloseKey(hKey);
+    return TRUE;
 }
-
-
+#endif
 /*
 	########## Combining and Constructing paths ##########
 */
@@ -548,8 +577,10 @@ LONG WINAPI PathProcessCommandAW (
 static const WCHAR szCurrentVersion[] = {'S','o','f','t','w','a','r','e','\\','M','i','c','r','o','s','o','f','t','\\','W','i','n','d','o','w','s','\\','C','u','r','r','e','n','t','V','e','r','s','i','o','n','\0'};
 static const WCHAR Administrative_ToolsW[] = {'A','d','m','i','n','i','s','t','r','a','t','i','v','e',' ','T','o','o','l','s','\0'};
 static const WCHAR AppDataW[] = {'A','p','p','D','a','t','a','\0'};
+#ifndef __REACTOS__
 static const WCHAR AppData_LocalLowW[] = {'A','p','p','D','a','t','a','\\','L','o','c','a','l','L','o','w','\0'};
 static const WCHAR Application_DataW[] = {'A','p','p','l','i','c','a','t','i','o','n',' ','D','a','t','a','\0'};
+#endif
 static const WCHAR CacheW[] = {'C','a','c','h','e','\0'};
 static const WCHAR CD_BurningW[] = {'C','D',' ','B','u','r','n','i','n','g','\0'};
 static const WCHAR Common_Administrative_ToolsW[] = {'C','o','m','m','o','n',' ','A','d','m','i','n','i','s','t','r','a','t','i','v','e',' ','T','o','o','l','s','\0'};
@@ -566,18 +597,27 @@ static const WCHAR Common_StartUpW[] = {'C','o','m','m','o','n',' ','S','t','a',
 static const WCHAR Common_Start_MenuW[] = {'C','o','m','m','o','n',' ','S','t','a','r','t',' ','M','e','n','u','\0'};
 static const WCHAR Common_TemplatesW[] = {'C','o','m','m','o','n',' ','T','e','m','p','l','a','t','e','s','\0'};
 static const WCHAR CommonVideoW[] = {'C','o','m','m','o','n','V','i','d','e','o','\0'};
+#ifndef __REACTOS__
 static const WCHAR ContactsW[] = {'C','o','n','t','a','c','t','s','\0'};
+#endif
 static const WCHAR CookiesW[] = {'C','o','o','k','i','e','s','\0'};
 static const WCHAR DesktopW[] = {'D','e','s','k','t','o','p','\0'};
+#ifndef __REACTOS__
 static const WCHAR DocumentsW[] = {'D','o','c','u','m','e','n','t','s','\0'};
 static const WCHAR DownloadsW[] = {'D','o','w','n','l','o','a','d','s','\0'};
+#endif
 static const WCHAR FavoritesW[] = {'F','a','v','o','r','i','t','e','s','\0'};
 static const WCHAR FontsW[] = {'F','o','n','t','s','\0'};
 static const WCHAR HistoryW[] = {'H','i','s','t','o','r','y','\0'};
+#ifndef __REACTOS__
 static const WCHAR LinksW[] = {'L','i','n','k','s','\0'};
+#endif
 static const WCHAR Local_AppDataW[] = {'L','o','c','a','l',' ','A','p','p','D','a','t','a','\0'};
+#ifndef __REACTOS__
 static const WCHAR Local_Settings_Application_DataW[] = {'L','o','c','a','l',' ','S','e','t','t','i','n','g','s','\\','A','p','p','l','i','c','a','t','i','o','n',' ','D','a','t','a','\0'};
+#endif
 static const WCHAR Local_Settings_CD_BurningW[] = {'L','o','c','a','l',' ','S','e','t','t','i','n','g','s','\\','A','p','p','l','i','c','a','t','i','o','n',' ','D','a','t','a','\\','M','i','c','r','o','s','o','f','t','\\','C','D',' ','B','u','r','n','i','n','g','\0'};
+#ifndef __REACTOS__
 static const WCHAR Local_Settings_HistoryW[] = {'L','o','c','a','l',' ','S','e','t','t','i','n','g','s','\\','H','i','s','t','o','r','y','\0'};
 static const WCHAR Local_Settings_Temporary_Internet_FilesW[] = {'L','o','c','a','l',' ','S','e','t','t','i','n','g','s','\\','T','e','m','p','o','r','a','r','y',' ','I','n','t','e','r','n','e','t',' ','F','i','l','e','s','\0'};
 static const WCHAR Microsoft_Windows_GameExplorerW[] = {'M','i','c','r','o','s','o','f','t','\\','W','i','n','d','o','w','s','\\','G','a','m','e','E','x','p','l','o','r','e','r','\0'};
@@ -587,55 +627,78 @@ static const WCHAR MusicW[] = {'M','u','s','i','c','\0'};
 static const WCHAR Music_PlaylistsW[] = {'M','u','s','i','c','\\','P','l','a','y','l','i','s','t','s','\0'};
 static const WCHAR Music_Sample_MusicW[] = {'M','u','s','i','c','\\','S','a','m','p','l','e',' ','M','u','s','i','c','\0'};
 static const WCHAR Music_Sample_PlaylistsW[] = {'M','u','s','i','c','\\','S','a','m','p','l','e',' ','P','l','a','y','l','i','s','t','s','\0'};
-static const WCHAR My_DocumentsW[] = {'M','y',' ','D','o','c','u','m','e','n','t','s','\0'};
+#endif
 static const WCHAR My_MusicW[] = {'M','y',' ','M','u','s','i','c','\0'};
 static const WCHAR My_PicturesW[] = {'M','y',' ','P','i','c','t','u','r','e','s','\0'};
 static const WCHAR My_VideoW[] = {'M','y',' ','V','i','d','e','o','\0'};
 static const WCHAR NetHoodW[] = {'N','e','t','H','o','o','d','\0'};
 static const WCHAR OEM_LinksW[] = {'O','E','M',' ','L','i','n','k','s','\0'};
 static const WCHAR PersonalW[] = {'P','e','r','s','o','n','a','l','\0'};
+#ifndef __REACTOS__
 static const WCHAR PicturesW[] = {'P','i','c','t','u','r','e','s','\0'};
 static const WCHAR Pictures_Sample_PicturesW[] = {'P','i','c','t','u','r','e','s','\\','S','a','m','p','l','e',' ','P','i','c','t','u','r','e','s','\0'};
 static const WCHAR Pictures_Slide_ShowsW[] = {'P','i','c','t','u','r','e','s','\\','S','l','i','d','e',' ','S','h','o','w','s','\0'};
+#endif
 static const WCHAR PrintHoodW[] = {'P','r','i','n','t','H','o','o','d','\0'};
+#ifndef __REACTOS__
 static const WCHAR Program_FilesW[] = {'P','r','o','g','r','a','m',' ','F','i','l','e','s','\0'};
 static const WCHAR Program_Files_Common_FilesW[] = {'P','r','o','g','r','a','m',' ','F','i','l','e','s','\\','C','o','m','m','o','n',' ','F','i','l','e','s','\0'};
+#endif
 static const WCHAR Program_Files_x86W[] = {'P','r','o','g','r','a','m',' ','F','i','l','e','s',' ','(','x','8','6',')','\0'};
 static const WCHAR Program_Files_x86_Common_FilesW[] = {'P','r','o','g','r','a','m',' ','F','i','l','e','s',' ','(','x','8','6',')','\\','C','o','m','m','o','n',' ','F','i','l','e','s','\0'};
 static const WCHAR ProgramFilesDirW[] = {'P','r','o','g','r','a','m','F','i','l','e','s','D','i','r','\0'};
 static const WCHAR ProgramFilesDirX86W[] = {'P','r','o','g','r','a','m','F','i','l','e','s','D','i','r',' ','(','x','8','6',')','\0'};
 static const WCHAR ProgramsW[] = {'P','r','o','g','r','a','m','s','\0'};
+#ifndef __REACTOS__
+static const WCHAR PublicW[] = {'P','u','b','l','i','c',0};
+#endif
 static const WCHAR RecentW[] = {'R','e','c','e','n','t','\0'};
 static const WCHAR ResourcesW[] = {'R','e','s','o','u','r','c','e','s','\0'};
+#ifndef __REACTOS__
 static const WCHAR Saved_GamesW[] = {'S','a','v','e','d',' ','G','a','m','e','s','\0'};
 static const WCHAR SearchesW[] = {'S','e','a','r','c','h','e','s','\0'};
+#endif
 static const WCHAR SendToW[] = {'S','e','n','d','T','o','\0'};
 static const WCHAR StartUpW[] = {'S','t','a','r','t','U','p','\0'};
 static const WCHAR Start_MenuW[] = {'S','t','a','r','t',' ','M','e','n','u','\0'};
+#ifndef __REACTOS__
 static const WCHAR Start_Menu_ProgramsW[] = {'S','t','a','r','t',' ','M','e','n','u','\\','P','r','o','g','r','a','m','s','\0'};
 static const WCHAR Start_Menu_Admin_ToolsW[] = {'S','t','a','r','t',' ','M','e','n','u','\\','P','r','o','g','r','a','m','s','\\','A','d','m','i','n','i','s','t','r','a','t','i','v','e',' ','T','o','o','l','s','\0'};
 static const WCHAR Start_Menu_StartupW[] = {'S','t','a','r','t',' ','M','e','n','u','\\','P','r','o','g','r','a','m','s','\\','S','t','a','r','t','U','p','\0'};
+#endif
 static const WCHAR TemplatesW[] = {'T','e','m','p','l','a','t','e','s','\0'};
+#ifndef __REACTOS__
 static const WCHAR UsersW[] = {'U','s','e','r','s','\0'};
 static const WCHAR UsersPublicW[] = {'U','s','e','r','s','\\','P','u','b','l','i','c','\0'};
 static const WCHAR VideosW[] = {'V','i','d','e','o','s','\0'};
 static const WCHAR Videos_Sample_VideosW[] = {'V','i','d','e','o','s','\\','S','a','m','p','l','e',' ','V','i','d','e','o','s','\0'};
+#endif
 static const WCHAR DefaultW[] = {'.','D','e','f','a','u','l','t','\0'};
 static const WCHAR AllUsersProfileW[] = {'%','A','L','L','U','S','E','R','S','P','R','O','F','I','L','E','%','\0'};
+#ifndef __REACTOS__
+static const WCHAR PublicProfileW[] = {'%','P','U','B','L','I','C','%',0};
+#endif
 static const WCHAR UserProfileW[] = {'%','U','S','E','R','P','R','O','F','I','L','E','%','\0'};
 static const WCHAR SystemDriveW[] = {'%','S','y','s','t','e','m','D','r','i','v','e','%','\0'};
+#ifndef __REACTOS__
 static const WCHAR ProfileListW[] = {'S','o','f','t','w','a','r','e','\\','M','i','c','r','o','s','o','f','t','\\','W','i','n','d','o','w','s',' ','N','T','\\','C','u','r','r','e','n','t','V','e','r','s','i','o','n','\\','P','r','o','f','i','l','e','L','i','s','t',0};
 static const WCHAR ProfilesDirectoryW[] = {'P','r','o','f','i','l','e','s','D','i','r','e','c','t','o','r','y',0};
 static const WCHAR AllUsersProfileValueW[] = {'A','l','l','U','s','e','r','s','P','r','o','f','i','l','e','\0'};
+#endif
 static const WCHAR szSHFolders[] = {'S','o','f','t','w','a','r','e','\\','M','i','c','r','o','s','o','f','t','\\','W','i','n','d','o','w','s','\\','C','u','r','r','e','n','t','V','e','r','s','i','o','n','\\','E','x','p','l','o','r','e','r','\\','S','h','e','l','l',' ','F','o','l','d','e','r','s','\0'};
 static const WCHAR szSHUserFolders[] = {'S','o','f','t','w','a','r','e','\\','M','i','c','r','o','s','o','f','t','\\','W','i','n','d','o','w','s','\\','C','u','r','r','e','n','t','V','e','r','s','i','o','n','\\','E','x','p','l','o','r','e','r','\\','U','s','e','r',' ','S','h','e','l','l',' ','F','o','l','d','e','r','s','\0'};
 static const WCHAR szDefaultProfileDirW[] = {'u','s','e','r','s',0};
+#ifndef __REACTOS__
 static const WCHAR szKnownFolderDescriptions[] = {'S','o','f','t','w','a','r','e','\\','M','i','c','r','o','s','o','f','t','\\','W','i','n','d','o','w','s','\\','C','u','r','r','e','n','t','V','e','r','s','i','o','n','\\','E','x','p','l','o','r','e','r','\\','F','o','l','d','e','r','D','e','s','c','r','i','p','t','i','o','n','s','\0'};
 static const WCHAR szKnownFolderRedirections[] = {'S','o','f','t','w','a','r','e','\\','M','i','c','r','o','s','o','f','t','\\','W','i','n','d','o','w','s','\\','C','u','r','r','e','n','t','V','e','r','s','i','o','n','\\','E','x','p','l','o','r','e','r','\\','U','s','e','r',' ','S','h','e','l','l',' ','F','o','l','d','e','r','s',0};
+#endif
 static const WCHAR AllUsersW[] = {'P','u','b','l','i','c',0};
 
 typedef enum _CSIDL_Type {
     CSIDL_Type_User,
+#ifdef __REACTOS__
+    CSIDL_Type_InMyDocuments,
+#endif
     CSIDL_Type_AllUsers,
     CSIDL_Type_CurrVer,
     CSIDL_Type_Disallowed,
@@ -645,7 +708,8 @@ typedef enum _CSIDL_Type {
     CSIDL_Type_SystemX86Path,
 } CSIDL_Type;
 
-#if WIN32_WINNT >= 0x0600
+/* Cannot use #if _WIN32_WINNT >= 0x0600 because _WIN32_WINNT == 0x0600 here. */
+#ifndef __REACTOS__
 #define CSIDL_CONTACTS         0x0043
 #define CSIDL_DOWNLOADS        0x0047
 #define CSIDL_LINKS            0x004d
@@ -660,6 +724,7 @@ typedef struct
     CSIDL_Type type;
     LPCWSTR    szValueName;
     LPCWSTR    szDefaultPath; /* fallback string or resource ID */
+    INT        nShell32IconIndex;
 } CSIDL_DATA;
 
 static const CSIDL_DATA CSIDL_Data[] =
@@ -668,7 +733,12 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_Desktop,
         CSIDL_Type_User,
         DesktopW,
-        MAKEINTRESOURCEW(IDS_DESKTOPDIRECTORY)
+        MAKEINTRESOURCEW(IDS_DESKTOPDIRECTORY),
+#ifdef __REACTOS__
+        0
+#else
+        -IDI_SHELL_DESKTOP
+#endif
     },
     { /* 0x01 - CSIDL_INTERNET */
         &FOLDERID_InternetFolder,
@@ -680,31 +750,40 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_Programs,
         CSIDL_Type_User,
         ProgramsW,
-        MAKEINTRESOURCEW(IDS_PROGRAMS)
+        MAKEINTRESOURCEW(IDS_PROGRAMS),
+#ifdef __REACTOS__
+        0
+#else
+        -IDI_SHELL_PROGRAMS_FOLDER
+#endif
     },
     { /* 0x03 - CSIDL_CONTROLS (.CPL files) */
         &FOLDERID_ControlPanelFolder,
         CSIDL_Type_SystemPath,
         NULL,
-        NULL
+        NULL,
+        -IDI_SHELL_CONTROL_PANEL
     },
     { /* 0x04 - CSIDL_PRINTERS */
         &FOLDERID_PrintersFolder,
         CSIDL_Type_SystemPath,
         NULL,
-        NULL
+        NULL,
+        -IDI_SHELL_PRINTERS_FOLDER
     },
     { /* 0x05 - CSIDL_PERSONAL */
         &FOLDERID_Documents,
         CSIDL_Type_User,
         PersonalW,
-        MAKEINTRESOURCEW(IDS_PERSONAL)
+        MAKEINTRESOURCEW(IDS_PERSONAL),
+        -IDI_SHELL_MY_DOCUMENTS
     },
     { /* 0x06 - CSIDL_FAVORITES */
         &FOLDERID_Favorites,
         CSIDL_Type_User,
         FavoritesW,
-        MAKEINTRESOURCEW(IDS_FAVORITES)
+        MAKEINTRESOURCEW(IDS_FAVORITES),
+        -IDI_SHELL_FAVORITES
     },
     { /* 0x07 - CSIDL_STARTUP */
         &FOLDERID_Startup,
@@ -716,7 +795,8 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_Recent,
         CSIDL_Type_User,
         RecentW,
-        MAKEINTRESOURCEW(IDS_RECENT)
+        MAKEINTRESOURCEW(IDS_RECENT),
+        -IDI_SHELL_RECENT_DOCUMENTS
     },
     { /* 0x09 - CSIDL_SENDTO */
         &FOLDERID_SendTo,
@@ -728,31 +808,43 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_RecycleBinFolder,
         CSIDL_Type_Disallowed,
         NULL,
-        NULL,
+        NULL
     },
     { /* 0x0b - CSIDL_STARTMENU */
         &FOLDERID_StartMenu,
         CSIDL_Type_User,
         Start_MenuW,
-        MAKEINTRESOURCEW(IDS_STARTMENU)
+        MAKEINTRESOURCEW(IDS_STARTMENU),
+        -IDI_SHELL_TSKBAR_STARTMENU
     },
     { /* 0x0c - CSIDL_MYDOCUMENTS */
         &GUID_NULL,
         CSIDL_Type_Disallowed, /* matches WinXP--can't get its path */
         NULL,
-        NULL
+        NULL,
+        -IDI_SHELL_MY_DOCUMENTS
     },
     { /* 0x0d - CSIDL_MYMUSIC */
         &FOLDERID_Music,
+#ifdef __REACTOS__
+        CSIDL_Type_InMyDocuments,
+#else
         CSIDL_Type_User,
+#endif
         My_MusicW,
-        MAKEINTRESOURCEW(IDS_MYMUSIC)
+        MAKEINTRESOURCEW(IDS_MYMUSIC),
+        -IDI_SHELL_MY_MUSIC
     },
     { /* 0x0e - CSIDL_MYVIDEO */
         &FOLDERID_Videos,
+#ifdef __REACTOS__
+        CSIDL_Type_InMyDocuments,
+#else
         CSIDL_Type_User,
+#endif
         My_VideoW,
-        MAKEINTRESOURCEW(IDS_MYVIDEO)
+        MAKEINTRESOURCEW(IDS_MYVIDEO),
+        -IDI_SHELL_MY_MOVIES
     },
     { /* 0x0f - unassigned */
         &GUID_NULL,
@@ -764,31 +856,40 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_Desktop,
         CSIDL_Type_User,
         DesktopW,
-        MAKEINTRESOURCEW(IDS_DESKTOPDIRECTORY)
+        MAKEINTRESOURCEW(IDS_DESKTOPDIRECTORY),
+#ifdef __REACTOS__
+        0
+#else
+        -IDI_SHELL_DESKTOP
+#endif
     },
     { /* 0x11 - CSIDL_DRIVES */
         &FOLDERID_ComputerFolder,
         CSIDL_Type_Disallowed,
         NULL,
         NULL,
+        -IDI_SHELL_COMPUTER_FOLDER
     },
     { /* 0x12 - CSIDL_NETWORK */
         &FOLDERID_NetworkFolder,
         CSIDL_Type_Disallowed,
         NULL,
         NULL,
+        -IDI_SHELL_NETWORK_FOLDER
     },
     { /* 0x13 - CSIDL_NETHOOD */
         &FOLDERID_NetHood,
         CSIDL_Type_User,
         NetHoodW,
-        MAKEINTRESOURCEW(IDS_NETHOOD)
+        MAKEINTRESOURCEW(IDS_NETHOOD),
+        -IDI_SHELL_NETWORK
     },
     { /* 0x14 - CSIDL_FONTS */
         &FOLDERID_Fonts,
         CSIDL_Type_WindowsPath,
         FontsW,
-        FontsW
+        FontsW,
+        -IDI_SHELL_FONTS_FOLDER
     },
     { /* 0x15 - CSIDL_TEMPLATES */
         &FOLDERID_Templates,
@@ -800,13 +901,19 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_CommonStartMenu,
         CSIDL_Type_AllUsers,
         Common_Start_MenuW,
-        MAKEINTRESOURCEW(IDS_STARTMENU)
+        MAKEINTRESOURCEW(IDS_STARTMENU),
+        -IDI_SHELL_TSKBAR_STARTMENU
     },
     { /* 0x17 - CSIDL_COMMON_PROGRAMS */
         &FOLDERID_CommonPrograms,
         CSIDL_Type_AllUsers,
         Common_ProgramsW,
-        MAKEINTRESOURCEW(IDS_PROGRAMS)
+        MAKEINTRESOURCEW(IDS_PROGRAMS),
+#ifdef __REACTOS__
+        0
+#else
+        -IDI_SHELL_PROGRAMS_FOLDER
+#endif
     },
     { /* 0x18 - CSIDL_COMMON_STARTUP */
         &FOLDERID_CommonStartup,
@@ -818,7 +925,12 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_PublicDesktop,
         CSIDL_Type_AllUsers,
         Common_DesktopW,
-        MAKEINTRESOURCEW(IDS_DESKTOPDIRECTORY)
+        MAKEINTRESOURCEW(IDS_DESKTOPDIRECTORY),
+#ifdef __REACTOS__
+        0
+#else
+        -IDI_SHELL_DESKTOP
+#endif
     },
     { /* 0x1a - CSIDL_APPDATA */
         &FOLDERID_RoamingAppData,
@@ -830,7 +942,8 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_PrintHood,
         CSIDL_Type_User,
         PrintHoodW,
-        MAKEINTRESOURCEW(IDS_PRINTHOOD)
+        MAKEINTRESOURCEW(IDS_PRINTHOOD),
+        -IDI_SHELL_PRINTERS_FOLDER
     },
     { /* 0x1c - CSIDL_LOCAL_APPDATA */
         &FOLDERID_LocalAppData,
@@ -854,7 +967,8 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_Favorites,
         CSIDL_Type_AllUsers,
         Common_FavoritesW,
-        MAKEINTRESOURCEW(IDS_FAVORITES)
+        MAKEINTRESOURCEW(IDS_FAVORITES),
+        -IDI_SHELL_FAVORITES
     },
     { /* 0x20 - CSIDL_INTERNET_CACHE */
         &FOLDERID_InternetCache,
@@ -884,25 +998,37 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_Windows,
         CSIDL_Type_WindowsPath,
         NULL,
-        NULL
+        NULL,
+        -IDI_SHELL_SYSTEM_GEAR
     },
     { /* 0x25 - CSIDL_SYSTEM */
         &FOLDERID_System,
         CSIDL_Type_SystemPath,
         NULL,
-        NULL
+        NULL,
+        -IDI_SHELL_SYSTEM_GEAR
     },
     { /* 0x26 - CSIDL_PROGRAM_FILES */
         &FOLDERID_ProgramFiles,
         CSIDL_Type_CurrVer,
         ProgramFilesDirW,
-        MAKEINTRESOURCEW(IDS_PROGRAM_FILES)
+        MAKEINTRESOURCEW(IDS_PROGRAM_FILES),
+#ifdef __REACTOS__
+        0
+#else
+        -IDI_SHELL_PROGRAMS_FOLDER
+#endif
     },
     { /* 0x27 - CSIDL_MYPICTURES */
         &FOLDERID_Pictures,
+#ifdef __REACTOS__
+        CSIDL_Type_InMyDocuments,
+#else
         CSIDL_Type_User,
+#endif
         My_PicturesW,
-        MAKEINTRESOURCEW(IDS_MYPICTURES)
+        MAKEINTRESOURCEW(IDS_MYPICTURES),
+        -IDI_SHELL_MY_PICTURES
     },
     { /* 0x28 - CSIDL_PROFILE */
         &FOLDERID_Profile,
@@ -914,25 +1040,29 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_SystemX86,
         CSIDL_Type_SystemX86Path,
         NULL,
-        NULL
+        NULL,
+        -IDI_SHELL_SYSTEM_GEAR
     },
     { /* 0x2a - CSIDL_PROGRAM_FILESX86 */
         &FOLDERID_ProgramFilesX86,
         CSIDL_Type_CurrVer,
         ProgramFilesDirX86W,
-        Program_Files_x86W
+        Program_Files_x86W,
+        -IDI_SHELL_PROGRAMS_FOLDER
     },
     { /* 0x2b - CSIDL_PROGRAM_FILES_COMMON */
         &FOLDERID_ProgramFilesCommon,
         CSIDL_Type_CurrVer,
         CommonFilesDirW,
-        MAKEINTRESOURCEW(IDS_PROGRAM_FILES_COMMON)
+        MAKEINTRESOURCEW(IDS_PROGRAM_FILES_COMMON),
+        -IDI_SHELL_PROGRAMS_FOLDER
     },
     { /* 0x2c - CSIDL_PROGRAM_FILES_COMMONX86 */
         &FOLDERID_ProgramFilesCommonX86,
         CSIDL_Type_CurrVer,
         CommonFilesDirX86W,
-        Program_Files_x86_Common_FilesW
+        Program_Files_x86_Common_FilesW,
+        -IDI_SHELL_PROGRAMS_FOLDER
     },
     { /* 0x2d - CSIDL_COMMON_TEMPLATES */
         &FOLDERID_CommonTemplates,
@@ -944,7 +1074,8 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_PublicDocuments,
         CSIDL_Type_AllUsers,
         Common_DocumentsW,
-        MAKEINTRESOURCEW(IDS_PERSONAL)
+        MAKEINTRESOURCEW(IDS_PERSONAL),
+        -IDI_SHELL_MY_DOCUMENTS
     },
     { /* 0x2f - CSIDL_COMMON_ADMINTOOLS */
         &FOLDERID_CommonAdminTools,
@@ -962,7 +1093,8 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_ConnectionsFolder,
         CSIDL_Type_Disallowed,
         NULL,
-        NULL
+        NULL,
+        -IDI_SHELL_NETWORK_CONNECTIONS
     },
     { /* 0x32 - unassigned */
         &GUID_NULL,
@@ -986,19 +1118,22 @@ static const CSIDL_DATA CSIDL_Data[] =
         &FOLDERID_PublicMusic,
         CSIDL_Type_AllUsers,
         CommonMusicW,
-        MAKEINTRESOURCEW(IDS_COMMON_MUSIC)
+        MAKEINTRESOURCEW(IDS_COMMON_MUSIC),
+        -IDI_SHELL_MY_MUSIC
     },
     { /* 0x36 - CSIDL_COMMON_PICTURES */
         &FOLDERID_PublicPictures,
         CSIDL_Type_AllUsers,
         CommonPicturesW,
-        MAKEINTRESOURCEW(IDS_COMMON_PICTURES)
+        MAKEINTRESOURCEW(IDS_COMMON_PICTURES),
+        -IDI_SHELL_MY_PICTURES
     },
     { /* 0x37 - CSIDL_COMMON_VIDEO */
         &FOLDERID_PublicVideos,
         CSIDL_Type_AllUsers,
         CommonVideoW,
-        MAKEINTRESOURCEW(IDS_COMMON_VIDEO)
+        MAKEINTRESOURCEW(IDS_COMMON_VIDEO),
+        -IDI_SHELL_MY_MOVIES
     },
     { /* 0x38 - CSIDL_RESOURCES */
         &FOLDERID_ResourceDir,
@@ -1042,7 +1177,8 @@ static const CSIDL_DATA CSIDL_Data[] =
         NULL,
         NULL
     },
-#if WIN32_WINNT >= 0x0600
+/* Cannot use #if _WIN32_WINNT >= 0x0600 because _WIN32_WINNT == 0x0600 here. */
+#ifndef __REACTOS__
     { /* 0x3f */
         &FOLDERID_AddNewPrograms,
         CSIDL_Type_Disallowed,
@@ -1093,7 +1229,11 @@ static const CSIDL_DATA CSIDL_Data[] =
     },
     { /* 0x47 - CSIDL_DOWNLOADS */
         &FOLDERID_Downloads,
+#ifdef __REACTOS__
+        CSIDL_Type_InMyDocuments,
+#else
         CSIDL_Type_User,
+#endif
         NULL,
         DownloadsW
     },
@@ -1358,7 +1498,11 @@ static const CSIDL_DATA CSIDL_Data[] =
 #endif
 };
 
+#ifndef __REACTOS__
 static HRESULT _SHExpandEnvironmentStrings(LPCWSTR szSrc, LPWSTR szDest);
+#else
+static HRESULT _SHExpandEnvironmentStrings(HANDLE hToken, LPCWSTR szSrc, LPWSTR szDest, DWORD cchDest);
+#endif
 
 /* Gets the value named value from the registry key
  * rootKey\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders
@@ -1369,14 +1513,18 @@ static HRESULT _SHExpandEnvironmentStrings(LPCWSTR szSrc, LPWSTR szDest);
  * Returns successful error code if the value was retrieved from the registry,
  * and a failure otherwise.
  */
+#ifndef __REACTOS__
 static HRESULT _SHGetUserShellFolderPath(HKEY rootKey, LPCWSTR userPrefix,
+#else
+static HRESULT _SHGetUserShellFolderPath(HKEY rootKey, HANDLE hToken, LPCWSTR userPrefix,
+#endif
  LPCWSTR value, LPWSTR path)
 {
     HRESULT hr;
     WCHAR shellFolderPath[MAX_PATH], userShellFolderPath[MAX_PATH];
     LPCWSTR pShellFolderPath, pUserShellFolderPath;
-    DWORD dwType, dwPathLen = MAX_PATH;
     HKEY userShellFolderKey, shellFolderKey;
+    DWORD dwType, dwPathLen;
 
     TRACE("%p,%s,%s,%p\n",rootKey, debugstr_w(userPrefix), debugstr_w(value),
      path);
@@ -1411,6 +1559,7 @@ static HRESULT _SHGetUserShellFolderPath(HKEY rootKey, LPCWSTR userPrefix,
         return E_FAIL;
     }
 
+    dwPathLen = MAX_PATH * sizeof(WCHAR);
     if (!RegQueryValueExW(userShellFolderKey, value, NULL, &dwType,
      (LPBYTE)path, &dwPathLen) && (dwType == REG_EXPAND_SZ || dwType == REG_SZ))
     {
@@ -1421,7 +1570,13 @@ static HRESULT _SHGetUserShellFolderPath(HKEY rootKey, LPCWSTR userPrefix,
         {
             WCHAR szTemp[MAX_PATH];
 
+#ifndef __REACTOS__
             _SHExpandEnvironmentStrings(path, szTemp);
+#else
+            hr = _SHExpandEnvironmentStrings(hToken, path, szTemp, _countof(szTemp));
+            if (FAILED(hr))
+                goto end;
+#endif
             lstrcpynW(path, szTemp, MAX_PATH);
         }
         ret = RegSetValueExW(shellFolderKey, value, 0, REG_SZ, (LPBYTE)path,
@@ -1433,6 +1588,9 @@ static HRESULT _SHGetUserShellFolderPath(HKEY rootKey, LPCWSTR userPrefix,
     }
     else
         hr = E_FAIL;
+#ifdef __REACTOS__
+end:
+#endif
     RegCloseKey(shellFolderKey);
     RegCloseKey(userShellFolderKey);
     TRACE("returning 0x%08x\n", hr);
@@ -1456,7 +1614,7 @@ BOOL _SHGetUserProfileDirectoryW(HANDLE hToken, LPWSTR szPath, LPDWORD lpcchPath
     {
         result = GetUserProfileDirectoryW(hToken, szPath, lpcchPath);
     }
-    DbgPrint("_SHGetUserProfileDirectoryW returning %S\n", szPath);
+    TRACE("_SHGetUserProfileDirectoryW returning %S\n", szPath);
     return result;
 }
 
@@ -1474,48 +1632,89 @@ BOOL _SHGetUserProfileDirectoryW(HANDLE hToken, LPWSTR szPath, LPDWORD lpcchPath
  *   CSIDL_Type_CurrVer:  %SystemDrive%
  *   (Others might make sense too, but as yet are unneeded.)
  */
+#ifndef __REACTOS__
+static HRESULT _SHGetDefaultValue(BYTE folder, LPWSTR pszPath)
+#else
 static HRESULT _SHGetDefaultValue(HANDLE hToken, BYTE folder, LPWSTR pszPath)
+#endif
 {
-    DWORD cchSize;
     HRESULT hr;
     WCHAR resourcePath[MAX_PATH];
+#ifdef __REACTOS__
+    NT_PRODUCT_TYPE ProductType;
+#endif
 
     TRACE("0x%02x,%p\n", folder, pszPath);
 
-    if (folder >= sizeof(CSIDL_Data) / sizeof(CSIDL_Data[0]))
+    if (folder >= ARRAY_SIZE(CSIDL_Data))
         return E_INVALIDARG;
+
     if (!pszPath)
         return E_INVALIDARG;
 
-    switch (folder)
+#ifdef __REACTOS__
+    if (hToken != NULL && hToken != (HANDLE)-1)
     {
-    case CSIDL_PROGRAM_FILES:
-        if (IsWow64())
-            folder = CSIDL_PROGRAM_FILESX86;
-        break;
-    case CSIDL_PROGRAM_FILES_COMMON:
-        if (IsWow64())
-            folder = CSIDL_PROGRAM_FILESX86;
-        break;
+        FIXME("unsupported for user other than current or default\n");
+    }
+#endif
+
+    if (!is_win64)
+    {
+        BOOL is_wow64;
+
+        switch (folder)
+        {
+        case CSIDL_PROGRAM_FILES:
+        case CSIDL_PROGRAM_FILESX86:
+            IsWow64Process( GetCurrentProcess(), &is_wow64 );
+            folder = is_wow64 ? CSIDL_PROGRAM_FILESX86 : CSIDL_PROGRAM_FILES;
+            break;
+        case CSIDL_PROGRAM_FILES_COMMON:
+        case CSIDL_PROGRAM_FILES_COMMONX86:
+            IsWow64Process( GetCurrentProcess(), &is_wow64 );
+            folder = is_wow64 ? CSIDL_PROGRAM_FILES_COMMONX86 : CSIDL_PROGRAM_FILES_COMMON;
+            break;
+        }
     }
 
     switch (CSIDL_Data[folder].type)
     {
-    case CSIDL_Type_User:
-        cchSize = MAX_PATH;
-        if (!_SHGetUserProfileDirectoryW(hToken, pszPath, &cchSize))
-            return HRESULT_FROM_WIN32(GetLastError());
-        break;
-    case CSIDL_Type_AllUsers:
-        cchSize = MAX_PATH;
-        if (!GetAllUsersProfileDirectoryW(pszPath, &cchSize))
-            return HRESULT_FROM_WIN32(GetLastError());
-        break;
-    case CSIDL_Type_CurrVer:
-        strcpyW(pszPath, SystemDriveW);
-        break;
-    default:
-        ; /* no corresponding env. var, do nothing */
+        case CSIDL_Type_User:
+            strcpyW(pszPath, UserProfileW);
+            break;
+#ifdef __REACTOS__
+        case CSIDL_Type_InMyDocuments:
+            strcpyW(pszPath, UserProfileW);
+            if (DoGetProductType(&ProductType) && ProductType == NtProductWinNt)
+            {
+                if (IS_INTRESOURCE(CSIDL_Data[CSIDL_MYDOCUMENTS].szDefaultPath))
+                {
+                    WCHAR szItem[MAX_PATH];
+                    LoadStringW(shell32_hInstance,
+                                LOWORD(CSIDL_Data[CSIDL_MYDOCUMENTS].szDefaultPath),
+                                szItem, ARRAY_SIZE(szItem));
+                    PathAppendW(pszPath, szItem);
+                }
+                else
+                {
+                    PathAppendW(pszPath, CSIDL_Data[CSIDL_MYDOCUMENTS].szDefaultPath);
+                }
+            }
+            break;
+#endif
+        case CSIDL_Type_AllUsers:
+#ifndef __REACTOS__
+            strcpyW(pszPath, PublicProfileW);
+#else
+            strcpyW(pszPath, AllUsersProfileW);
+#endif
+            break;
+        case CSIDL_Type_CurrVer:
+            strcpyW(pszPath, SystemDriveW);
+            break;
+        default:
+            ; /* no corresponding env. var, do nothing */
     }
 
     hr = S_OK;
@@ -1557,7 +1756,7 @@ static HRESULT _SHGetCurrentVersionPath(DWORD dwFlags, BYTE folder,
 
     TRACE("0x%08x,0x%02x,%p\n", dwFlags, folder, pszPath);
 
-    if (folder >= sizeof(CSIDL_Data) / sizeof(CSIDL_Data[0]))
+    if (folder >= ARRAY_SIZE(CSIDL_Data))
         return E_INVALIDARG;
     if (CSIDL_Data[folder].type != CSIDL_Type_CurrVer)
         return E_INVALIDARG;
@@ -1565,7 +1764,11 @@ static HRESULT _SHGetCurrentVersionPath(DWORD dwFlags, BYTE folder,
         return E_INVALIDARG;
 
     if (dwFlags & SHGFP_TYPE_DEFAULT)
+#ifndef __REACTOS__
+        hr = _SHGetDefaultValue(folder, pszPath);
+#else
         hr = _SHGetDefaultValue(NULL, folder, pszPath);
+#endif
     else
     {
         HKEY hKey;
@@ -1580,7 +1783,11 @@ static HRESULT _SHGetCurrentVersionPath(DWORD dwFlags, BYTE folder,
              &dwType, (LPBYTE)pszPath, &dwPathLen) ||
              (dwType != REG_SZ && dwType != REG_EXPAND_SZ))
             {
+#ifndef __REACTOS__
+                hr = _SHGetDefaultValue(folder, pszPath);
+#else
                 hr = _SHGetDefaultValue(NULL, folder, pszPath);
+#endif
                 dwType = REG_EXPAND_SZ;
                 switch (folder)
                 {
@@ -1661,16 +1868,27 @@ static HRESULT _SHGetUserProfilePath(HANDLE hToken, DWORD dwFlags, BYTE folder,
 
     TRACE("%p,0x%08x,0x%02x,%p\n", hToken, dwFlags, folder, pszPath);
 
-    if (folder >= sizeof(CSIDL_Data) / sizeof(CSIDL_Data[0]))
+    if (folder >= ARRAY_SIZE(CSIDL_Data))
         return E_INVALIDARG;
+#ifdef __REACTOS__
+    if (CSIDL_Data[folder].type != CSIDL_Type_User &&
+        CSIDL_Data[folder].type != CSIDL_Type_InMyDocuments)
+#else
     if (CSIDL_Data[folder].type != CSIDL_Type_User)
+#endif
+    {
         return E_INVALIDARG;
+    }
     if (!pszPath)
         return E_INVALIDARG;
 
     if (dwFlags & SHGFP_TYPE_DEFAULT)
     {
+#ifndef __REACTOS__
+        hr = _SHGetDefaultValue(folder, pszPath);
+#else
         hr = _SHGetDefaultValue(hToken, folder, pszPath);
+#endif
     }
     else
     {
@@ -1703,11 +1921,19 @@ static HRESULT _SHGetUserProfilePath(HANDLE hToken, DWORD dwFlags, BYTE folder,
             szValueName = &buffer[0];
         }
 
+#ifndef __REACTOS__
         hr = _SHGetUserShellFolderPath(hRootKey, userPrefix, szValueName, pszPath);
         if (FAILED(hr) && hRootKey != HKEY_LOCAL_MACHINE)
             hr = _SHGetUserShellFolderPath(HKEY_LOCAL_MACHINE, NULL, szValueName, pszPath);
         if (FAILED(hr))
+            hr = _SHGetDefaultValue(folder, pszPath);
+#else
+        hr = _SHGetUserShellFolderPath(hRootKey, hToken, userPrefix, szValueName, pszPath);
+        if (FAILED(hr) && hRootKey != HKEY_LOCAL_MACHINE)
+            hr = _SHGetUserShellFolderPath(HKEY_LOCAL_MACHINE, hToken, NULL, szValueName, pszPath);
+        if (FAILED(hr))
             hr = _SHGetDefaultValue(hToken, folder, pszPath);
+#endif
         if (userPrefix != NULL && userPrefix != DefaultW)
             LocalFree((HLOCAL) userPrefix);
     }
@@ -1728,7 +1954,7 @@ static HRESULT _SHGetAllUsersProfilePath(DWORD dwFlags, BYTE folder,
 
     TRACE("0x%08x,0x%02x,%p\n", dwFlags, folder, pszPath);
 
-    if (folder >= sizeof(CSIDL_Data) / sizeof(CSIDL_Data[0]))
+    if (folder >= ARRAY_SIZE(CSIDL_Data))
         return E_INVALIDARG;
     if (CSIDL_Data[folder].type != CSIDL_Type_AllUsers)
         return E_INVALIDARG;
@@ -1736,18 +1962,31 @@ static HRESULT _SHGetAllUsersProfilePath(DWORD dwFlags, BYTE folder,
         return E_INVALIDARG;
 
     if (dwFlags & SHGFP_TYPE_DEFAULT)
+#ifndef __REACTOS__
+        hr = _SHGetDefaultValue(folder, pszPath);
+#else
         hr = _SHGetDefaultValue(NULL, folder, pszPath);
+#endif
     else
     {
+#ifndef __REACTOS__
         hr = _SHGetUserShellFolderPath(HKEY_LOCAL_MACHINE, NULL,
+#else
+        hr = _SHGetUserShellFolderPath(HKEY_LOCAL_MACHINE, NULL, NULL,
+#endif
          CSIDL_Data[folder].szValueName, pszPath);
         if (FAILED(hr))
+#ifndef __REACTOS__
+            hr = _SHGetDefaultValue(folder, pszPath);
+#else
             hr = _SHGetDefaultValue(NULL, folder, pszPath);
+#endif
     }
     TRACE("returning 0x%08x (output path is %s)\n", hr, debugstr_w(pszPath));
     return hr;
 }
 
+#ifndef __REACTOS__
 static HRESULT _SHOpenProfilesKey(PHKEY pKey)
 {
     LONG lRet;
@@ -1798,6 +2037,7 @@ static HRESULT _SHGetProfilesValue(HKEY profilesKey, LPCWSTR szValueName,
     TRACE("returning 0x%08x (output value is %s)\n", hr, debugstr_w(szValue));
     return hr;
 }
+#endif
 
 /* Attempts to expand environment variables from szSrc into szDest, which is
  * assumed to be MAX_PATH characters in length.  Before referring to the
@@ -1811,11 +2051,19 @@ static HRESULT _SHGetProfilesValue(HKEY profilesKey, LPCWSTR szValueName,
  * If one of the directly handled environment variables is expanded, only
  * expands a single variable, and only in the beginning of szSrc.
  */
+#ifndef __REACTOS__
 static HRESULT _SHExpandEnvironmentStrings(LPCWSTR szSrc, LPWSTR szDest)
+#else
+static HRESULT _SHExpandEnvironmentStrings(HANDLE hToken, LPCWSTR szSrc, LPWSTR szDest, DWORD cchDest)
+#endif
 {
     HRESULT hr;
+#ifndef __REACTOS__
     WCHAR szTemp[MAX_PATH], szProfilesPrefix[MAX_PATH] = { 0 };
     HKEY key = NULL;
+#else
+    WCHAR szTemp[MAX_PATH];
+#endif
 
     TRACE("%s, %p\n", debugstr_w(szSrc), szDest);
 
@@ -1828,6 +2076,7 @@ static HRESULT _SHExpandEnvironmentStrings(LPCWSTR szSrc, LPWSTR szDest)
         hr = S_OK;
         goto end;
     }
+#ifndef __REACTOS__
     /* Get the profile prefix, we'll probably be needing it */
     hr = _SHOpenProfilesKey(&key);
     if (SUCCEEDED(hr))
@@ -1836,11 +2085,13 @@ static HRESULT _SHExpandEnvironmentStrings(LPCWSTR szSrc, LPWSTR szDest)
 
         /* get the system drive */
         GetSystemDirectoryW(def_val, MAX_PATH);
-        if (def_val[1] == ':') strcpyW( def_val + 3, szDefaultProfileDirW );
-        else FIXME("non-drive system paths unsupported\n");
+        strcpyW( def_val + 3, szDefaultProfileDirW );
 
         hr = _SHGetProfilesValue(key, ProfilesDirectoryW, szProfilesPrefix, def_val );
     }
+#else
+    hr = S_OK;
+#endif
 
     *szDest = 0;
     strcpyW(szTemp, szSrc);
@@ -1848,60 +2099,87 @@ static HRESULT _SHExpandEnvironmentStrings(LPCWSTR szSrc, LPWSTR szDest)
     {
         if (!strncmpiW(szTemp, AllUsersProfileW, strlenW(AllUsersProfileW)))
         {
+#ifndef __REACTOS__
             WCHAR szAllUsers[MAX_PATH];
 
             strcpyW(szDest, szProfilesPrefix);
             hr = _SHGetProfilesValue(key, AllUsersProfileValueW,
-             szAllUsers, AllUsersW);
+                                     szAllUsers, AllUsersW);
             PathAppendW(szDest, szAllUsers);
+#else
+            DWORD cchSize = cchDest;
+            if (!GetAllUsersProfileDirectoryW(szDest, &cchSize))
+                goto fallback_expand;
+#endif
             PathAppendW(szDest, szTemp + strlenW(AllUsersProfileW));
         }
+#ifndef __REACTOS__
+        else if (!strncmpiW(szTemp, PublicProfileW, strlenW(PublicProfileW)))
+        {
+            WCHAR szAllUsers[MAX_PATH], def_val[MAX_PATH];
+
+            GetSystemDirectoryW(def_val, MAX_PATH);
+            strcpyW( def_val + 3, UsersPublicW );
+
+            hr = _SHGetProfilesValue(key, PublicW, szAllUsers, def_val);
+            PathAppendW(szDest, szAllUsers);
+            PathAppendW(szDest, szTemp + strlenW(PublicProfileW));
+        }
+#endif
         else if (!strncmpiW(szTemp, UserProfileW, strlenW(UserProfileW)))
         {
+#ifndef __REACTOS__
             WCHAR userName[MAX_PATH];
             DWORD userLen = MAX_PATH;
 
             strcpyW(szDest, szProfilesPrefix);
             GetUserNameW(userName, &userLen);
             PathAppendW(szDest, userName);
+#else
+            DWORD cchSize = cchDest;
+            if (!_SHGetUserProfileDirectoryW(hToken, szDest, &cchSize))
+                goto fallback_expand;
+#endif
             PathAppendW(szDest, szTemp + strlenW(UserProfileW));
         }
         else if (!strncmpiW(szTemp, SystemDriveW, strlenW(SystemDriveW)))
         {
+#ifndef __REACTOS__
             GetSystemDirectoryW(szDest, MAX_PATH);
-            if (szDest[1] != ':')
-            {
-                FIXME("non-drive system paths unsupported\n");
-                hr = E_FAIL;
-            }
-            else
-            {
-                strcpyW(szDest + 3, szTemp + strlenW(SystemDriveW) + 1);
-                hr = S_OK;
-            }
+#else
+            if (!GetSystemDirectoryW(szDest, cchDest))
+                goto fallback_expand;
+#endif
+            strcpyW(szDest + 3, szTemp + strlenW(SystemDriveW) + 1);
         }
         else
+#ifdef __REACTOS__
+fallback_expand:
+#endif
         {
-            DWORD ret = ExpandEnvironmentStringsW(szSrc, szDest, MAX_PATH);
+#ifndef __REACTOS__
+            DWORD ret = ExpandEnvironmentStringsW(szTemp, szDest, MAX_PATH);
+#else
+            DWORD ret = SHExpandEnvironmentStringsForUserW(hToken, szTemp, szDest, cchDest);
+#endif
 
+#ifndef __REACTOS__
             if (ret > MAX_PATH)
-                hr = HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
+#else
+            if (ret > cchDest)
+#endif
+                hr = E_NOT_SUFFICIENT_BUFFER;
             else if (ret == 0)
                 hr = HRESULT_FROM_WIN32(GetLastError());
-            else
-                hr = S_OK;
+            else if (!strcmpW( szTemp, szDest )) break;  /* nothing expanded */
         }
-        if (SUCCEEDED(hr) && szDest[0] == '%')
-            strcpyW(szTemp, szDest);
-        else
-        {
-            /* terminate loop */
-            szTemp[0] = '\0';
-        }
+        if (SUCCEEDED(hr)) strcpyW(szTemp, szDest);
     }
 end:
+#ifndef __REACTOS__
     if (key)
         RegCloseKey(key);
+#endif
     TRACE("returning 0x%08x (input was %s, output is %s)\n", hr,
      debugstr_w(szSrc), debugstr_w(szDest));
     return hr;
@@ -1952,7 +2230,8 @@ HRESULT WINAPI SHGetFolderPathAndSubDirA(
     HRESULT hr = S_OK;
     LPWSTR pszSubPathW = NULL;
     LPWSTR pszPathW = NULL;
-    TRACE("%08x,%08x,%s\n",nFolder, dwFlags, debugstr_w(pszSubPathW));
+
+    TRACE("%p,%#x,%p,%#x,%s,%p\n", hwndOwner, nFolder, hToken, dwFlags, debugstr_a(pszSubPath), pszPath);
 
     if(pszPath) {
         pszPathW = HeapAlloc(GetProcessHeap(), 0, MAX_PATH * sizeof(WCHAR));
@@ -2005,7 +2284,7 @@ HRESULT WINAPI SHGetFolderPathAndSubDirW(
     CSIDL_Type type;
     int        ret;
     
-    TRACE("%p,%p,nFolder=0x%04x,%s\n", hwndOwner,pszPath,nFolder,debugstr_w(pszSubPath));
+    TRACE("%p,%#x,%p,%#x,%s,%p\n", hwndOwner, nFolder, hToken, dwFlags, debugstr_w(pszSubPath), pszPath);
 
     /* Windows always NULL-terminates the resulting path regardless of success
      * or failure, so do so first
@@ -2013,7 +2292,7 @@ HRESULT WINAPI SHGetFolderPathAndSubDirW(
     if (pszPath)
         *pszPath = '\0';
 
-    if (folder >= sizeof(CSIDL_Data) / sizeof(CSIDL_Data[0]))
+    if (folder >= ARRAY_SIZE(CSIDL_Data))
         return E_INVALIDARG;
     if ((SHGFP_TYPE_CURRENT != dwFlags) && (SHGFP_TYPE_DEFAULT != dwFlags))
         return E_INVALIDARG;
@@ -2064,6 +2343,9 @@ HRESULT WINAPI SHGetFolderPathAndSubDirW(
             hr = _SHGetCurrentVersionPath(dwFlags, folder, szTemp);
             break;
         case CSIDL_Type_User:
+#ifdef __REACTOS__
+        case CSIDL_Type_InMyDocuments:
+#endif
             hr = _SHGetUserProfilePath(hToken, dwFlags, folder, szTemp);
             break;
         case CSIDL_Type_AllUsers:
@@ -2077,7 +2359,11 @@ HRESULT WINAPI SHGetFolderPathAndSubDirW(
 
     /* Expand environment strings if necessary */
     if (*szTemp == '%')
+#ifndef __REACTOS__
         hr = _SHExpandEnvironmentStrings(szTemp, szBuildPath);
+#else
+        hr = _SHExpandEnvironmentStrings(hToken, szTemp, szBuildPath, _countof(szBuildPath));
+#endif
     else
         strcpyW(szBuildPath, szTemp);
 
@@ -2121,7 +2407,40 @@ HRESULT WINAPI SHGetFolderPathAndSubDirW(
     }
 
     TRACE("Created missing system directory %s\n", debugstr_w(szBuildPath));
+
 end:
+    /* create desktop.ini for custom icon */
+    if ((nFolder & CSIDL_FLAG_CREATE) &&
+        CSIDL_Data[folder].nShell32IconIndex)
+    {
+        static const WCHAR s_szFormat[] = L"%%SystemRoot%%\\system32\\shell32.dll,%d";
+        WCHAR szIconLocation[MAX_PATH];
+        DWORD dwAttributes;
+
+        /* make the directory a read-only folder */
+        dwAttributes = GetFileAttributesW(szBuildPath);
+        dwAttributes |= FILE_ATTRIBUTE_READONLY;
+        SetFileAttributesW(szBuildPath, dwAttributes);
+
+        /* build the desktop.ini file path */
+        PathAppendW(szBuildPath, L"desktop.ini");
+
+        /* build the icon location */
+        StringCchPrintfW(szIconLocation, _countof(szIconLocation), s_szFormat,
+                         CSIDL_Data[folder].nShell32IconIndex);
+
+        /* write desktop.ini */
+        WritePrivateProfileStringW(L".ShellClassInfo", L"IconResource", szIconLocation, szBuildPath);
+
+        /* flush! */
+        WritePrivateProfileStringW(NULL, NULL, NULL, szBuildPath);
+
+        /* make the desktop.ini a system and hidden file */
+        dwAttributes = GetFileAttributesW(szBuildPath);
+        dwAttributes |= FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN;
+        SetFileAttributesW(szBuildPath, dwAttributes);
+    }
+
     TRACE("returning 0x%08x (final path is %s)\n", hr, debugstr_w(szBuildPath));
     return hr;
 }
@@ -2141,7 +2460,7 @@ HRESULT WINAPI SHGetFolderPathA(
     WCHAR szTemp[MAX_PATH];
     HRESULT hr;
 
-    TRACE("%p,%p,nFolder=0x%04x\n",hwndOwner,pszPath,nFolder);
+    TRACE("%p,%d,%p,%#x,%p\n", hwndOwner, nFolder, hToken, dwFlags, pszPath);
 
     if (pszPath)
         *pszPath = '\0';
@@ -2192,22 +2511,38 @@ static HRESULT _SHRegisterFolders(HKEY hRootKey, HANDLE hToken,
 
         /* For CSIDL_Type_User we also use the GUID if no szValueName is provided */
         szValueName = CSIDL_Data[folders[i]].szValueName;
+#ifdef __REACTOS__
+        if (!szValueName &&
+            (CSIDL_Data[folders[i]].type == CSIDL_Type_User ||
+             CSIDL_Data[folders[i]].type == CSIDL_Type_InMyDocuments))
+#else
         if (!szValueName && CSIDL_Data[folders[i]].type == CSIDL_Type_User)
+#endif
         {
             StringFromGUID2( CSIDL_Data[folders[i]].id, buffer, 39 );
             szValueName = &buffer[0];
         }
 
-        if (RegQueryValueExW(hUserKey, szValueName, NULL,
-         &dwType, (LPBYTE)path, &dwPathLen) || (dwType != REG_SZ &&
-         dwType != REG_EXPAND_SZ))
+        if (!RegQueryValueExW(hUserKey, szValueName, NULL,
+                              &dwType, (LPBYTE)path, &dwPathLen) &&
+            (dwType == REG_SZ || dwType == REG_EXPAND_SZ))
+        {
+            hr = SHGetFolderPathW(NULL, folders[i] | CSIDL_FLAG_CREATE,
+                                  hToken, SHGFP_TYPE_CURRENT, path);
+        }
+        else
         {
             *path = '\0';
+#ifdef __REACTOS__
+            if (CSIDL_Data[folders[i]].type == CSIDL_Type_User ||
+                CSIDL_Data[folders[i]].type == CSIDL_Type_InMyDocuments)
+#else
             if (CSIDL_Data[folders[i]].type == CSIDL_Type_User)
-                _SHGetUserProfilePath(hToken, SHGFP_TYPE_DEFAULT, folders[i],
+#endif
+                _SHGetUserProfilePath(hToken, SHGFP_TYPE_CURRENT, folders[i],
                  path);
             else if (CSIDL_Data[folders[i]].type == CSIDL_Type_AllUsers)
-                _SHGetAllUsersProfilePath(SHGFP_TYPE_DEFAULT, folders[i], path);
+                _SHGetAllUsersProfilePath(SHGFP_TYPE_CURRENT, folders[i], path);
             else if (CSIDL_Data[folders[i]].type == CSIDL_Type_WindowsPath)
             {
                 GetWindowsDirectoryW(path, MAX_PATH);
@@ -2229,7 +2564,7 @@ static HRESULT _SHRegisterFolders(HKEY hRootKey, HANDLE hToken,
                 else
                 {
                     hr = SHGetFolderPathW(NULL, folders[i] | CSIDL_FLAG_CREATE,
-                     hToken, SHGFP_TYPE_DEFAULT, path);
+                     hToken, SHGFP_TYPE_CURRENT, path);
                     ret = RegSetValueExW(hKey, szValueName, 0, REG_SZ,
                      (LPBYTE)path, (strlenW(path) + 1) * sizeof(WCHAR));
                     if (ret)
@@ -2271,7 +2606,8 @@ static HRESULT _SHRegisterUserShellFolders(BOOL bDefault)
      CSIDL_MYPICTURES,
      CSIDL_FONTS,
      CSIDL_ADMINTOOLS,
-#if WIN32_WINNT >= 0x0600
+/* Cannot use #if _WIN32_WINNT >= 0x0600 because _WIN32_WINNT == 0x0600 here. */
+#ifndef __REACTOS__
      CSIDL_CONTACTS,
      CSIDL_DOWNLOADS,
      CSIDL_LINKS,
@@ -2309,7 +2645,7 @@ static HRESULT _SHRegisterUserShellFolders(BOOL bDefault)
     }
 
     hr = _SHRegisterFolders(hRootKey, hToken, pUserShellFolderPath,
-     pShellFolderPath, folders, sizeof(folders) / sizeof(folders[0]));
+     pShellFolderPath, folders, ARRAY_SIZE(folders));
     TRACE("returning 0x%08x\n", hr);
     return hr;
 }
@@ -2334,7 +2670,7 @@ static HRESULT _SHRegisterCommonShellFolders(void)
 
     TRACE("\n");
     hr = _SHRegisterFolders(HKEY_LOCAL_MACHINE, NULL, szSHUserFolders,
-     szSHFolders, folders, sizeof(folders) / sizeof(folders[0]));
+     szSHFolders, folders, ARRAY_SIZE(folders));
     TRACE("returning 0x%08x\n", hr);
     return hr;
 }

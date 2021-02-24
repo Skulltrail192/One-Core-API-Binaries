@@ -45,7 +45,7 @@ INT cmd_start (LPTSTR Rest)
     BOOL bWait = FALSE;
     BOOL bBat  = FALSE;
     BOOL bCreate = FALSE;
-    TCHAR szFullCmdLine [CMDLINE_LENGTH];
+    TCHAR szFullCmdLine[CMDLINE_LENGTH];
     PROCESS_INFORMATION prci;
     STARTUPINFO stui;
 #ifdef UNICODE
@@ -70,7 +70,7 @@ INT cmd_start (LPTSTR Rest)
             lpTitle = GetParameter(&Rest);
             StripQuotes(lpTitle);
         }
-        else if (*Rest == L'/')
+        else if (*Rest == _T('/'))
         {
             LPTSTR option;
             Rest++;
@@ -178,8 +178,9 @@ INT cmd_start (LPTSTR Rest)
 
     /* get comspec */
     comspec = cmd_alloc ( MAX_PATH * sizeof(TCHAR));
-    if (comspec == NULL)
+    if (!comspec)
     {
+        WARN("Cannot allocate memory for start comspec!\n");
         error_out_of_memory();
         return 1;
     }
@@ -303,9 +304,27 @@ INT cmd_start (LPTSTR Rest)
             nErrorLevel = (INT)dwExitCode;
         }
         CloseHandle (prci.hProcess);
-        /* Get New code page if it has change */
-        InputCodePage= GetConsoleCP();
-        OutputCodePage = GetConsoleOutputCP();
+
+        /* Update our local codepage cache */
+        {
+            UINT uNewInputCodePage  = GetConsoleCP();
+            UINT uNewOutputCodePage = GetConsoleOutputCP();
+
+            if ((InputCodePage  != uNewInputCodePage) ||
+                (OutputCodePage != uNewOutputCodePage))
+            {
+                /* Update the locale as well */
+                InitLocale();
+            }
+
+            InputCodePage  = uNewInputCodePage;
+            OutputCodePage = uNewOutputCodePage;
+
+            /* Update the streams codepage cache as well */
+            ConStreamSetCacheCodePage(StdIn , InputCodePage );
+            ConStreamSetCacheCodePage(StdOut, OutputCodePage);
+            ConStreamSetCacheCodePage(StdErr, OutputCodePage);
+        }
     }
     else
     {

@@ -21,7 +21,11 @@
 #ifndef __WINE_RPC_BINDING_H
 #define __WINE_RPC_BINDING_H
 
+#include "rpcndr.h"
+#include "security.h"
+#include "wine/list.h"
 #include "rpc_defs.h"
+
 
 enum secure_packet_direction
 {
@@ -59,6 +63,7 @@ typedef struct _RpcConnection
 {
   LONG ref;
   BOOL server;
+  HANDLE wait_release;
   LPSTR NetworkAddr;
   LPSTR Endpoint;
   LPWSTR NetworkOptions;
@@ -158,7 +163,7 @@ RPC_STATUS RPCRT4_CreateConnection(RpcConnection** Connection, BOOL server, LPCS
     LPCSTR NetworkAddr, LPCSTR Endpoint, LPCWSTR NetworkOptions, RpcAuthInfo* AuthInfo,
     RpcQualityOfService *QOS, LPCWSTR CookieAuth) DECLSPEC_HIDDEN;
 RpcConnection *RPCRT4_GrabConnection( RpcConnection *conn ) DECLSPEC_HIDDEN;
-RPC_STATUS RPCRT4_ReleaseConnection(RpcConnection* Connection) DECLSPEC_HIDDEN;
+void RPCRT4_ReleaseConnection(RpcConnection* Connection) DECLSPEC_HIDDEN;
 RPC_STATUS RPCRT4_OpenClientConnection(RpcConnection* Connection) DECLSPEC_HIDDEN;
 RPC_STATUS RPCRT4_CloseConnection(RpcConnection* Connection) DECLSPEC_HIDDEN;
 RPC_STATUS RPCRT4_IsServerListening(const char *protseq, const char *endpoint) DECLSPEC_HIDDEN;
@@ -169,8 +174,11 @@ RPC_STATUS RPCRT4_MakeBinding(RpcBinding** Binding, RpcConnection* Connection) D
 void       RPCRT4_AddRefBinding(RpcBinding* Binding) DECLSPEC_HIDDEN;
 RPC_STATUS RPCRT4_ReleaseBinding(RpcBinding* Binding) DECLSPEC_HIDDEN;
 RPC_STATUS RPCRT4_OpenBinding(RpcBinding* Binding, RpcConnection** Connection,
-                              const RPC_SYNTAX_IDENTIFIER *TransferSyntax, const RPC_SYNTAX_IDENTIFIER *InterfaceId) DECLSPEC_HIDDEN;
+                              const RPC_SYNTAX_IDENTIFIER *TransferSyntax, const RPC_SYNTAX_IDENTIFIER *InterfaceId,
+                              BOOL *from_cache) DECLSPEC_HIDDEN;
 RPC_STATUS RPCRT4_CloseBinding(RpcBinding* Binding, RpcConnection* Connection) DECLSPEC_HIDDEN;
+
+void rpcrt4_conn_release_and_wait(RpcConnection *connection) DECLSPEC_HIDDEN;
 
 static inline const char *rpcrt4_conn_get_name(const RpcConnection *Connection)
 {

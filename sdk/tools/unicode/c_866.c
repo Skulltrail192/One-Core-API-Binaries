@@ -73,7 +73,7 @@ static const WCHAR cp2uni[512] =
     0x00b0, 0x2219, 0x00b7, 0x221a, 0x2116, 0x00a4, 0x25a0, 0x00a0
 };
 
-static const unsigned char uni2cp_low[5403] =
+static const unsigned char uni2cp_low[] =
 {
     /* 0x0000 .. 0x00ff */
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -783,7 +783,7 @@ static const unsigned short uni2cp_high[256] =
     0x131b, 0x131b, 0x131b, 0x1076, 0x131b, 0x131b, 0x112d, 0x122c
 };
 
-const struct sbcs_table cptable_866 =
+const struct sbcs_table DECLSPEC_HIDDEN cptable_866 =
 {
     { 866, 1, 0x003f, 0x003f, "OEM Russian" },
     cp2uni,

@@ -20,9 +20,23 @@
 /* INCLUDES *******************************************************************/
 
 #include <freeldr.h>
-#include <debug.h>
 
+#include <debug.h>
 DBG_DEFAULT_CHANNEL(WARNING);
+
+/* GLOBALS ********************************************************************/
+
+#define TOSTRING_(X) #X
+#define TOSTRING(X) TOSTRING_(X)
+
+const PCSTR FrLdrVersionString =
+#if (FREELOADER_PATCH_VERSION == 0)
+    "FreeLoader v" TOSTRING(FREELOADER_MAJOR_VERSION) "." TOSTRING(FREELOADER_MINOR_VERSION);
+#else
+    "FreeLoader v" TOSTRING(FREELOADER_MAJOR_VERSION) "." TOSTRING(FREELOADER_MINOR_VERSION) "." TOSTRING(FREELOADER_PATCH_VERSION);
+#endif
+
+CCHAR FrLdrBootPath[MAX_PATH] = "";
 
 /* FUNCTIONS ******************************************************************/
 
@@ -31,11 +45,11 @@ VOID __cdecl BootMain(IN PCCH CmdLine)
     CmdLineParse(CmdLine);
 
     /* Debugger pre-initialization */
-    DebugInit(FALSE);
-
-    TRACE("BootMain() called.\n");
+    DebugInit(0);
 
     MachInit(CmdLine);
+
+    TRACE("BootMain() called.\n");
 
     /* Check if the CPU is new enough */
     FrLdrCheckCpuCompatibility(); // FIXME: Should be done inside MachInit!
@@ -61,9 +75,6 @@ VOID __cdecl BootMain(IN PCCH CmdLine)
 
 Quit:
     /* If we reach this point, something went wrong before, therefore reboot */
-#if defined(__i386__) || defined(_M_AMD64)
-    DiskStopFloppyMotor();
-#endif
     Reboot();
 }
 

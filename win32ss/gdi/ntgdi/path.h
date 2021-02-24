@@ -24,6 +24,13 @@ typedef enum tagGdiPathState
 #define PATHTYPE_KEEPME 1
 #define PATHTYPE_STACK  2
 
+/* extended PATHDATA */
+typedef struct _EXTPATHDATA
+{
+    PATHDATA pd;
+    struct _EXTPATHDATA *ppdNext;
+} EXTPATHDATA, *PEXTPATHDATA;
+
 typedef struct _PATH
 {
   BASEOBJECT   BaseObject;
@@ -31,13 +38,15 @@ typedef struct _PATH
   RECTFX       rcfxBoundBox;
   POINTFX      ptfxSubPathStart;
   FLONG        flType;
-  //PEXTPATHDATA ppdFirst;
-  //PEXTPATHDATA ppdLast;
+  PEXTPATHDATA ppdFirst;
+  PEXTPATHDATA ppdLast;
   FLONG        flags;   // PATHDATA flags.
-  //PEXTPATHDATA ppdCurrent;
+  PEXTPATHDATA ppdCurrent;
   // PATHOBJ;
   FLONG        fl;      // Saved flags.
   ULONG        cCurves; // Saved number of lines and Bezier.
+
+  struct _EPATHOBJ *epo;
 
   // Wine/ReactOS Things to convert from:
   FLONG        state;
@@ -83,6 +92,7 @@ BOOL FASTCALL PATH_AddEntry (PPATH pPath, const POINT *pPoint, BYTE flags);
 BOOL FASTCALL PATH_AddFlatBezier (PPATH pPath, POINT *pt, BOOL closed);
 BOOL FASTCALL PATH_DoArcPart (PPATH pPath, FLOAT_POINT corners[], double angleStart, double angleEnd, BYTE startEntryType);
 BOOL FASTCALL PATH_FillPath( PDC dc, PPATH pPath );
+BOOL FASTCALL PATH_FillPathEx(PDC dc, PPATH pPath, PBRUSH pbrFill);
 PPATH FASTCALL PATH_FlattenPath (PPATH pPath);
 VOID FASTCALL PATH_NormalizePoint (FLOAT_POINT corners[], const FLOAT_POINT *pPoint, double *pX, double *pY);
 
@@ -98,3 +108,6 @@ VOID FASTCALL IntGetCurrentPositionEx(PDC dc, LPPOINT pt);
 
 BOOL PATH_RestorePath( DC *, DC *);
 BOOL PATH_SavePath( DC *, DC *);
+BOOL IntGdiFillRgn(PDC pdc, PREGION prgn, PBRUSH pbrFill);
+PPATH FASTCALL
+IntGdiWidenPath(PPATH pPath, UINT penWidth, UINT penStyle, FLOAT eMiterLimit);

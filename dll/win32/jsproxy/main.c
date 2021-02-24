@@ -16,44 +16,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include <wine/config.h>
-
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
-
+#include <stdarg.h>
+#ifdef __REACTOS__
+#include <stdio.h>
 #define COBJMACROS
+#endif
+#include <sys/types.h>
 
-#include <windef.h>
-#include <winbase.h>
-#include <objbase.h>
-#include <oleauto.h>
-#include <dispex.h>
-#include <activscp.h>
-#include <wininet.h>
-
-#include <wine/debug.h>
-#include <wine/unicode.h>
-
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winsock2.h"
+#include "ws2ipdef.h"
+#include "ws2tcpip.h"
+#include "winnls.h"
+#include "wininet.h"
+#ifndef __REACTOS__
+#define COBJMACROS
 #endif
-#ifdef HAVE_NETINET_IN_H
-# include <netinet/in.h>
-#endif
-#ifdef HAVE_NETDB_H
-# include <netdb.h>
-#endif
-#if defined(__MINGW32__) || defined (_MSC_VER)
-# include <ws2tcpip.h>
-#else
-# define closesocket close
-# define ioctlsocket ioctl
-#endif
-
-#ifndef __MINGW32__
-#define USE_WS_PREFIX
-#endif
+#include "ole2.h"
+#include "dispex.h"
+#include "activscp.h"
+#include "wine/debug.h"
+#include "wine/heap.h"
 
 static HINSTANCE instance;
 
@@ -87,16 +71,6 @@ BOOL WINAPI DllMain( HINSTANCE hinst, DWORD reason, LPVOID reserved )
         break;
     }
     return TRUE;
-}
-
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), 0, size);
-}
-
-static inline BOOL heap_free(void *mem)
-{
-    return HeapFree(GetProcessHeap(), 0, mem);
 }
 
 static inline WCHAR *strdupAW( const char *src, int len )
@@ -190,20 +164,15 @@ BOOL WINAPI JSPROXY_InternetInitializeAutoProxyDll( DWORD version, LPSTR tmpfile
 
     if (buffer && buffer->dwStructSize == sizeof(*buffer) && buffer->lpszScriptBuffer)
     {
-        DWORD i, len = 0;
-        for (i = 0; i < buffer->dwScriptBufferSize; i++)
-        {
-            if (!buffer->lpszScriptBuffer[i]) break;
-            len++;
-        }
-        if (len == buffer->dwScriptBufferSize)
+        if (!buffer->dwScriptBufferSize)
         {
             SetLastError( ERROR_INVALID_PARAMETER );
             LeaveCriticalSection( &cs_jsproxy );
             return FALSE;
         }
         heap_free( global_script->text );
-        if ((global_script->text = strdupAW( buffer->lpszScriptBuffer, len ))) ret = TRUE;
+        if ((global_script->text = strdupAW( buffer->lpszScriptBuffer,
+                        buffer->dwScriptBufferSize ))) ret = TRUE;
     }
     else
     {
@@ -308,7 +277,7 @@ static HRESULT WINAPI dispex_GetNameSpaceParent(
 static HRESULT WINAPI dispex_GetDispID(
     IDispatchEx *iface, BSTR name, DWORD flags, DISPID *id )
 {
-    if (!strcmpW( name, dns_resolveW ))
+    if (!lstrcmpW( name, dns_resolveW ))
     {
         *id = DISPID_GLOBAL_DNSRESOLVE;
         return S_OK;
@@ -332,9 +301,9 @@ static char *get_computer_name( COMPUTER_NAME_FORMAT format )
     return ret;
 }
 
-static void printf_addr( const WCHAR *fmt, WCHAR *buf, struct sockaddr_in *addr )
+static void printf_addr( const WCHAR *fmt, WCHAR *buf, SIZE_T size, struct sockaddr_in *addr )
 {
-    sprintfW( buf, fmt,
+    swprintf( buf, fmt,
               (unsigned int)(ntohl( addr->sin_addr.s_addr ) >> 24 & 0xff),
               (unsigned int)(ntohl( addr->sin_addr.s_addr ) >> 16 & 0xff),
               (unsigned int)(ntohl( addr->sin_addr.s_addr ) >> 8 & 0xff),
@@ -343,7 +312,6 @@ static void printf_addr( const WCHAR *fmt, WCHAR *buf, struct sockaddr_in *addr 
 
 static HRESULT dns_resolve( const WCHAR *hostname, VARIANT *result )
 {
-#ifdef HAVE_GETADDRINFO
         static const WCHAR fmtW[] = {'%','u','.','%','u','.','%','u','.','%','u',0};
         WCHAR addr[16];
         struct addrinfo *ai, *elem;
@@ -367,15 +335,11 @@ static HRESULT dns_resolve( const WCHAR *hostname, VARIANT *result )
             freeaddrinfo( ai );
             return S_FALSE;
         }
-        printf_addr( fmtW, addr, (struct sockaddr_in *)elem->ai_addr );
+        printf_addr( fmtW, addr, ARRAY_SIZE(addr), (struct sockaddr_in *)elem->ai_addr );
         freeaddrinfo( ai );
         V_VT( result ) = VT_BSTR;
         V_BSTR( result ) = SysAllocString( addr );
         return S_OK;
-#else
-        FIXME("getaddrinfo not found at build time\n");
-        return S_FALSE;
-#endif
 }
 
 static HRESULT WINAPI dispex_InvokeEx(
@@ -450,7 +414,7 @@ static HRESULT WINAPI site_GetItemInfo(
     IActiveScriptSite *iface, LPCOLESTR name, DWORD mask,
     IUnknown **item, ITypeInfo **type_info )
 {
-    if (!strcmpW( name, global_funcsW ) && mask == SCRIPTINFO_IUNKNOWN)
+    if (!lstrcmpW( name, global_funcsW ) && mask == SCRIPTINFO_IUNKNOWN)
     {
         *item = (IUnknown *)&global_dispex;
         return S_OK;
@@ -526,9 +490,9 @@ static BSTR include_pac_utils( const WCHAR *script )
     data = LoadResource( hmod, rsrc );
 
     len = MultiByteToWideChar( CP_ACP, 0, data, size, NULL, 0 );
-    if (!(ret = SysAllocStringLen( NULL, len + strlenW( script ) + 1 ))) return NULL;
+    if (!(ret = SysAllocStringLen( NULL, len + lstrlenW( script ) + 1 ))) return NULL;
     MultiByteToWideChar( CP_ACP, 0, data, size, ret, len );
-    strcpyW( ret + len, script );
+    lstrcpyW( ret + len, script );
     return ret;
 }
 

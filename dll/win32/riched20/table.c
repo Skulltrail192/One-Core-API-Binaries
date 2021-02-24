@@ -56,6 +56,8 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(richedit_lists);
 
+static const WCHAR cr_lf[] = {'\r', '\n', 0};
+
 static ME_DisplayItem* ME_InsertEndParaFromCursor(ME_TextEditor *editor,
                                                   int nCursor,
                                                   const WCHAR *eol_str, int eol_len,
@@ -77,7 +79,6 @@ static ME_DisplayItem* ME_InsertEndParaFromCursor(ME_TextEditor *editor,
 ME_DisplayItem* ME_InsertTableRowStartFromCursor(ME_TextEditor *editor)
 {
   ME_DisplayItem *para;
-  WCHAR cr_lf[] = {'\r', '\n', 0};
   para = ME_InsertEndParaFromCursor(editor, 0, cr_lf, 2, MEPF_ROWSTART);
   return para->member.para.prev_para;
 }
@@ -128,7 +129,6 @@ ME_DisplayItem* ME_InsertTableCellFromCursor(ME_TextEditor *editor)
 ME_DisplayItem* ME_InsertTableRowEndFromCursor(ME_TextEditor *editor)
 {
   ME_DisplayItem *para;
-  WCHAR cr_lf[] = {'\r', '\n', 0};
   para = ME_InsertEndParaFromCursor(editor, 0, cr_lf, 2, MEPF_ROWEND);
   return para->member.para.prev_para;
 }
@@ -400,7 +400,7 @@ void ME_ProtectPartialTableDeletion(ME_TextEditor *editor, ME_Cursor *c, int *nC
       }
     }
     if (*nChars < 0)
-      nChars = 0;
+      *nChars = 0;
   }
 }
 
@@ -613,8 +613,7 @@ void ME_TabPressedInTable(ME_TextEditor *editor, BOOL bSelectedRow)
   }
   ME_InvalidateSelection(editor);
   ME_Repaint(editor);
-  ITextHost_TxShowCaret(editor->texthost, FALSE);
-  ME_ShowCaret(editor);
+  update_caret(editor);
   ME_SendSelChange(editor);
 }
 
@@ -637,8 +636,8 @@ void ME_MoveCursorFromTableRowStartParagraph(ME_TextEditor *editor)
 
 struct RTFTable *ME_MakeTableDef(ME_TextEditor *editor)
 {
-  RTFTable *tableDef = ALLOC_OBJ(RTFTable);
-  ZeroMemory(tableDef, sizeof(RTFTable));
+  RTFTable *tableDef = heap_alloc_zero(sizeof(*tableDef));
+
   if (!editor->bEmulateVersion10) /* v4.1 */
     tableDef->gapH = 10;
   return tableDef;

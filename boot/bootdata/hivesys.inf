@@ -1,5 +1,5 @@
 [Version]
-Signature = "$ReactOS$"
+Signature = "$Windows NT$"
 
 [AddReg]
 
@@ -38,8 +38,8 @@ HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#Class_08&SubCl
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#COMPOSITE","Service",0x00000000,"usbccgp"
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#COMPOSITE","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
 
-;HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#CLASS_09","Service",0x00000000,"usbhub"
-;HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#CLASS_09","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
+HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#CLASS_09","Service",0x00000000,"usbhub"
+HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#CLASS_09","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#ROOT_HUB","Service",0x00000000,"usbhub"
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#ROOT_HUB","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
@@ -348,12 +348,14 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E96B-E325-11CE-BFC1-08002BE103
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E96B-E325-11CE-BFC1-08002BE10318}","Icon",0x00000000,"-3"
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E96B-E325-11CE-BFC1-08002BE10318}","Installer32",0x00000000,"SysSetup.Dll,KeyboardClassInstaller"
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E96B-E325-11CE-BFC1-08002BE10318}","NoInstallClass",0x00000000,"1"
+HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E96B-E325-11CE-BFC1-08002BE10318}","UpperFilters",0x00010000,"kbdclass"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}",,0x00000000,"Mouse"
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}","Class",0x00000000,"Mouse"
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}","Icon",0x00000000,"-2"
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}","Installer32",0x00000000,"SysSetup.Dll,MouseClassInstaller"
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}","NoInstallClass",0x00000000,"1"
+HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}","UpperFilters",0x00010000,"mouclass"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E973-E325-11CE-BFC1-08002BE10318}",,0x00000000,"Network Client"
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E973-E325-11CE-BFC1-08002BE10318}","Class",0x00000000,"NetClient"
@@ -383,6 +385,17 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Class\{4D36E97D-E325-11CE-BFC1-08002BE103
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{9D6D66A6-0B0C-4563-9077-A0E9A7955AE4}",,0x00000000,"Ramdisk"
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{9D6D66A6-0B0C-4563-9077-A0E9A7955AE4}","Class",0x00000000,"Ramdisk"
 HKLM,"SYSTEM\CurrentControlSet\Control\Class\{9D6D66A6-0B0C-4563-9077-A0E9A7955AE4}","Icon",0x00000000,"-5"
+
+; Class Co-Installers
+HKLM,"SYSTEM\CurrentControlSet\Control\CoDeviceInstallers",,0x00000012
+HKLM,"SYSTEM\CurrentControlSet\Control\CoDeviceInstallers","{4D36E965-E325-11CE-BFC1-08002BE10318}",0x00010000,"syssetup.dll,CriticalDeviceCoInstaller"
+HKLM,"SYSTEM\CurrentControlSet\Control\CoDeviceInstallers","{4D36E967-E325-11CE-BFC1-08002BE10318}",0x00010000,"syssetup.dll,CriticalDeviceCoInstaller"
+HKLM,"SYSTEM\CurrentControlSet\Control\CoDeviceInstallers","{4D36E96A-E325-11CE-BFC1-08002BE10318}",0x00010000,"syssetup.dll,CriticalDeviceCoInstaller"
+HKLM,"SYSTEM\CurrentControlSet\Control\CoDeviceInstallers","{4D36E96B-E325-11CE-BFC1-08002BE10318}",0x00010000,"syssetup.dll,CriticalDeviceCoInstaller"
+HKLM,"SYSTEM\CurrentControlSet\Control\CoDeviceInstallers","{4D36E96F-E325-11CE-BFC1-08002BE10318}",0x00010000,"syssetup.dll,CriticalDeviceCoInstaller"
+HKLM,"SYSTEM\CurrentControlSet\Control\CoDeviceInstallers","{4D36E97B-E325-11CE-BFC1-08002BE10318}",0x00010000,"syssetup.dll,CriticalDeviceCoInstaller"
+HKLM,"SYSTEM\CurrentControlSet\Control\CoDeviceInstallers","{4D36E97D-E325-11CE-BFC1-08002BE10318}",0x00010000,"syssetup.dll,CriticalDeviceCoInstaller"
+
 
 ; Default computer name settings
 HKLM,"SYSTEM\CurrentControlSet\Control\ComputerName",,0x00000012
@@ -606,8 +619,12 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000816","Layout Text",
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000816","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5019"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000418","Layout File",0x00000000,"kbdro.dll"
-HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000418","Layout Text",0x00000000,%ROMANIAN%
+HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000418","Layout Text",0x00000000,%ROMANIAN_LEGACY%
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000418","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5037"
+
+HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00010418","Layout File",0x00000000,"kbdrost.dll"
+HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00010418","Layout Text",0x00000000,%ROMANIAN_STANDARD%
+HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00010418","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5175"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000419","Layout File",0x00000000,"kbdru.dll"
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000419","Layout Text",0x00000000,%RUSSIAN%
@@ -687,8 +704,12 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000425","Layout Text",
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000425","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5042"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000426","Layout File",0x00000000,"kbdlv.dll"
-HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000426","Layout Text",0x00000000,%LATVIAN%"
+HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000426","Layout Text",0x00000000,%LATVIAN%
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000426","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5043"
+
+; HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00010426","Layout File",0x00000000,"kbdlv1.dll"
+; HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00010426","Layout Text",0x00000000,%LATVIAN_QUERTY%
+; HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00010426","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5044"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00010427","Layout File",0x00000000,"kbdlt1.dll"
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00010427","Layout Text",0x00000000,%LITHUANIAN%
@@ -711,7 +732,7 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\0000042c","Layout Text",
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\0000042c","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5117"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\0000082c","Layout File",0x00000000,"kbdaze.dll"
-HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\0000082c","Layout Text",0x00000000,%AZERI_CYRILLIC%"
+HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\0000082c","Layout Text",0x00000000,%AZERI_CYRILLIC%
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\0000082c","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5115"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\0000042f","Layout File",0x00000000,"kbdmac.dll"
@@ -721,6 +742,10 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\0000042f","Layout Displa
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000437","Layout File",0x00000000,"kbdgeo.dll"
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000437","Layout Text",0x00000000,%GEORGIAN%
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000437","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5119"
+
+;HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000438","Layout File",0x00000000,"kbdfo.dll"
+;HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000438","Layout Text",0x00000000,%FAEROESE%
+;HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000438","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5108"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000439","Layout File",0x00000000,"kbdindev.dll"
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000439","Layout Text",0x00000000,%DEVANAGARI%
@@ -763,6 +788,10 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000455","Layout Text",
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\00000455","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5140"
 
 
+HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\0000048f","Layout File",0x00000000,"kbdeo.dll"
+HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\0000048f","Layout Text",0x00000000,"Esperanto"
+HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layouts\0000048f","Layout Display Name",0x00000000,"@%SystemRoot%\system32\input.dll,-5142"
+
 ; Keyboard layouts
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layout",,0x00000012
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layout\DosKeybCodes","00000402",2,"bg"
@@ -797,6 +826,7 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layout\DosKeybCodes","00000424",
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layout\DosKeybCodes","00000425",2,"et"
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layout\DosKeybCodes","00000426",2,"us"
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layout\DosKeybCodes","00000427",2,"us"
+HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layout\DosKeybCodes","0000048f",2,"eo"
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layout\DosKeybCodes","00000804",2,"ch"
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layout\DosKeybCodes","00000807",2,"sg"
 HKLM,"SYSTEM\CurrentControlSet\Control\Keyboard Layout\DosKeybCodes","00000809",2,"uk"
@@ -954,6 +984,7 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Nls\CodePage","28597",0x00000000,"c_28597
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\CodePage","28598",0x00000000,"c_28598.nls"
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\CodePage","28599",0x00000000,"c_28599.nls"
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\CodePage","28600",0x00000000,"c_28600.nls"
+HKLM,"SYSTEM\CurrentControlSet\Control\Nls\CodePage","28601",0x00000000,"c_28601.nls"
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\CodePage","28603",0x00000000,"c_28603.nls"
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\CodePage","28604",0x00000000,"c_28604.nls"
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\CodePage","28605",0x00000000,"c_28605.nls"
@@ -1096,6 +1127,7 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Language","0445",0x00000000,"l_intl.n
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Language","0456",0x00000000,"l_intl.nls"
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Language","048f",0x00000000,"l_intl.nls"
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Language","0490",0x00000000,"l_intl.nls"
+HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Language","0845",0x00000000,"l_intl.nls"
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Language","Default",0x00000000,"0409"
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Language","InstallLanguage",0x00000000,"0409"
 
@@ -1252,6 +1284,14 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Locale\Alternate Sorts","00021004",0x
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Locale\Alternate Sorts","00021404",0x00000000,""
 HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Locale\Alternate Sorts","00030404",0x00000000,""
 
+; Japanese calendar support
+HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Calendars\Japanese","InitialEraYear",0x00000000,"元年"
+HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Calendars\Japanese\Eras","1868 01 01",0x00000000,"明治_明_Meiji_M"
+HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Calendars\Japanese\Eras","1912 07 30",0x00000000,"大正_大_Taisho_T"
+HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Calendars\Japanese\Eras","1926 12 25",0x00000000,"昭和_昭_Showa_S"
+HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Calendars\Japanese\Eras","1989 01 08",0x00000000,"平成_平_Heisei_H"
+HKLM,"SYSTEM\CurrentControlSet\Control\Nls\Calendars\Japanese\Eras","2019 05 01",0x00000000,"令和_令_Reiwa_R"
+
 HKLM,"SYSTEM\CurrentControlSet\Control\PnP\Pci\CardList","Intel 82441FX",0x00030003,\
 01,00,00,00,86,80,37,12,00,00,00,00,00,00,00,00
 HKLM,"SYSTEM\CurrentControlSet\Control\PnP\Pci\CardList","Intel 82439HX",0x00030003,\
@@ -1289,6 +1329,13 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Print\Environments\Windows NT x86","Direc
 HKLM,"SYSTEM\CurrentControlSet\Control\Print\Environments\Windows NT x86\Print Processors",,0x00000010
 HKLM,"SYSTEM\CurrentControlSet\Control\Print\Environments\Windows NT x86\Print Processors\winprint","Driver",,"winprint.dll"
 
+[AddReg.NTamd64]
+HKLM,"SYSTEM\CurrentControlSet\Control\Print\Environments\Windows x64","Directory",,"x64"
+HKLM,"SYSTEM\CurrentControlSet\Control\Print\Environments\Windows x64\Print Processors",,0x00000010
+HKLM,"SYSTEM\CurrentControlSet\Control\Print\Environments\Windows x64\Print Processors\winprint","Driver",,"winprint.dll"
+
+[AddReg]
+
 HKLM,"SYSTEM\CurrentControlSet\Control\Print\Monitors",,0x00000010
 HKLM,"SYSTEM\CurrentControlSet\Control\Print\Monitors\Local Port","Driver",,"localmon.dll"
 
@@ -1303,6 +1350,12 @@ HKLM,"SYSTEM\CurrentControlSet\Control\ReactOS\Settings\Version","ReportAsWorkst
 ; Some installers check for SP2
 HKLM,"SYSTEM\CurrentControlSet\Control\Windows","CSDReleaseType",0x00010001,0x00000000
 HKLM,"SYSTEM\CurrentControlSet\Control\Windows","CSDVersion",0x00010001,0x00000200
+
+HKLM,"SYSTEM\CurrentControlSet\Control\Windows","Directory",0x00020002,"%SystemRoot%"
+HKLM,"SYSTEM\CurrentControlSet\Control\Windows","ErrorMode",0x00010003,0x00000000
+HKLM,"SYSTEM\CurrentControlSet\Control\Windows","NoInteractiveServices",0x00010003,0x00000000
+HKLM,"SYSTEM\CurrentControlSet\Control\Windows","ShellErrorMode",0x00010003,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Control\Windows","SystemDirectory",0x00020002,"%SystemRoot%\system32"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\SecurityProviders","SecurityProviders",2,"schannel.dll"
 HKLM,"SYSTEM\CurrentControlSet\Control\SecurityProviders\SaslProfiles",,0x00000012
@@ -1372,7 +1425,7 @@ HKLM,"SYSTEM\CurrentControlSet\Control\ServiceGroupOrder","List",0x00010000, \
  "Parallel arbitrator", \
  "Extended Base" \
  "PCI Configuration", \
- "MS Transactions
+ "MS Transactions"
 
 ; Set the timeout for directx/ReactX graphic surface lock see _EDD_DIRECTDRAW_GLOBAL struct for more info
 HKLM,"SYSTEM\CurrentControlSet\Control\GraphicsDrivers\DCI","Timeout",0x00010001,0x00000007
@@ -1395,11 +1448,12 @@ HKLM,"SYSTEM\CurrentControlSet\Control\GroupOrderList","SCSI Miniport", 0x000000
 
 ; Session Manager stuff
 HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager","BootExecute", 0x00010000, \
- "autocheck autochk *"
+ "autocheck autochk"
 HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager","GlobalFlag", 0x00010003, 0x00000000
 HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager","ObjectDirectories",0x00010000, \
  "\Windows", \
  "\RPC Control"
+HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager","ProtectionMode", 0x00010003, 0x00000001
 
 ; DOS devices
 HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\DOS Devices","AUX",0x00000002,"\DosDevices\COM1"
@@ -1417,6 +1471,8 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\Environment","PROMPT",0x0
 HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\Environment","TEMP",0x00020002,"%SystemRoot%\TEMP"
 HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\Environment","TMP",0x00020002,"%SystemRoot%\TEMP"
 HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\Environment","windir",0x00020002,"%SystemRoot%"
+;HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\Environment","SHIMENG_DEBUG_LEVEL",0x00000000,"4"
+;HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\Environment","SHIM_DEBUG_LEVEL",0x00000000,"4"
 
 
 ; Known DLLs
@@ -1458,6 +1514,9 @@ HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\SubSystems","Windows",0x0
 HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache","AppCompatCache", 0x00000001, \
   fe,0f,dc,ba,00,00,00,00
 
+; Unsecure objects names
+HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager\kernel","ObUnsecureGlobalNames",0x00010000,"netfxcustomerfcounters.1.0","SharedPerfIPCBlock","Cor_Private_IPCBlock","Cor_Public_IPCBlock_"
+
 ; WOW Support
 HKLM,"SYSTEM\CurrentControlSet\Control\WOW",,0x00000012
 
@@ -1471,14 +1530,14 @@ HKLM,"SYSTEM\CurrentControlSet\Services\swenum","Start",0x00010001,0x00000000
 HKLM,"SYSTEM\CurrentControlSet\Services\swenum","Type",0x00010001,0x00000001
 
 ; Audio Service
-HKLM,"SYSTEM\CurrentControlSet\Services\RosAudioSrv","DisplayName",0x00000000,%AUDIO_SERVICE%
-HKLM,"SYSTEM\CurrentControlSet\Services\RosAudioSrv","Description",0x00000000,%AUDIO_SERVICE_DESCRIPTION%
-HKLM,"SYSTEM\CurrentControlSet\Services\RosAudioSrv","ErrorControl",0x00010001,0x00000000
-HKLM,"SYSTEM\CurrentControlSet\Services\RosAudioSrv","Group",0x00000000,"Audio"
-HKLM,"SYSTEM\CurrentControlSet\Services\RosAudioSrv","ImagePath",0x00020000,"%SystemRoot%\system32\audiosrv.exe"
-HKLM,"SYSTEM\CurrentControlSet\Services\RosAudioSrv","ObjectName",0x00000000,"LocalSystem"
-HKLM,"SYSTEM\CurrentControlSet\Services\RosAudioSrv","Start",0x00010001,0x00000003
-HKLM,"SYSTEM\CurrentControlSet\Services\RosAudioSrv","Type",0x00010001,0x00000010
+HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","DisplayName",0x00000000,%AUDIO_SERVICE%
+HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","Description",0x00000000,%AUDIO_SERVICE_DESCRIPTION%
+HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","ErrorControl",0x00010001,0x00000000
+HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","Group",0x00000000,"Audio"
+HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","ImagePath",0x00020000,"%SystemRoot%\system32\audiosrv.exe"
+HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","ObjectName",0x00000000,"LocalSystem"
+HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","Start",0x00010001,0x00000003
+HKLM,"SYSTEM\CurrentControlSet\Services\AudioSrv","Type",0x00010001,0x00000010
 
 ; Background Intelligent Transfer Service (BITS)
 HKLM,"SYSTEM\CurrentControlSet\Services\BITS","DisplayName",0x00000000,%BITS_SERVICE%
@@ -1496,13 +1555,6 @@ HKLM,"SYSTEM\CurrentControlSet\Services\Blue","Group",0x00000000,"Video Init"
 HKLM,"SYSTEM\CurrentControlSet\Services\Blue","ImagePath",0x00020000,"system32\drivers\blue.sys"
 HKLM,"SYSTEM\CurrentControlSet\Services\Blue","Start",0x00010001,0x00000001
 HKLM,"SYSTEM\CurrentControlSet\Services\Blue","Type",0x00010001,0x00000001
-
-; Debug output driver
-HKLM,"SYSTEM\CurrentControlSet\Services\DebugOut","ErrorControl",0x00010001,0x00000000
-HKLM,"SYSTEM\CurrentControlSet\Services\DebugOut","Group",0x00000000,"Debug"
-HKLM,"SYSTEM\CurrentControlSet\Services\DebugOut","ImagePath",0x00020000,"system32\drivers\debugout.sys"
-HKLM,"SYSTEM\CurrentControlSet\Services\DebugOut","Start",0x00010001,0x00000004
-HKLM,"SYSTEM\CurrentControlSet\Services\DebugOut","Type",0x00010001,0x00000001
 
 ; EMS Serial Administration Console Driver
 HKLM,"SYSTEM\CurrentControlSet\Services\sacdrv","ErrorControl",0x00010001,0x00000000
@@ -1524,22 +1576,24 @@ HKLM,"SYSTEM\CurrentControlSet\Services\EventLog","Type",0x00010001,0x00000010
 
 HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Application",,0x00000010
 HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Application","File",0x00020000,"%SystemRoot%\system32\config\AppEvent.Evt"
-HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Application","MaxSize",0x00010003,524288
-HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Application","Retention",0x00010003,604800
+HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Application","MaxSize",0x00010003,5242880
+HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Application","Retention",0x00010003,0
 
 HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Security",,0x00000010
 HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Security","File",0x00020000,"%SystemRoot%\system32\config\SecEvent.Evt"
-HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Security","MaxSize",0x00010003,524288
-HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Security","Retention",0x00010003,604800
+HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Security","MaxSize",0x00010003,5242880
+HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\Security","Retention",0x00010003,0
 
 HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System",,0x00000010
 HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System","File",0x00020000,"%SystemRoot%\system32\config\SysEvent.Evt"
-HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System","MaxSize",0x00010003,524288
-HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System","Retention",0x00010003,604800
+HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System","MaxSize",0x00010003,5242880
+HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System","Retention",0x00010003,0
+HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System\Application Popup","EventMessageFile",0x00020000,"%SystemRoot%\system32\ntdll.dll"
+HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System\Application Popup","TypesSupported",0x00010003,0x00000007
 HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System\EventLog","EventMessageFile",0x00020000,"%SystemRoot%\system32\netevent.dll"
-HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System\EventLog","TypesSupported",0x00010001,0x00000007
+HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System\EventLog","TypesSupported",0x00010003,0x00000007
 HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System\Service Control Manager","EventMessageFile",0x00020000,"%SystemRoot%\system32\netevent.dll"
-HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System\Service Control Manager","TypesSupported",0x00010001,0x00000007
+HKLM,"SYSTEM\CurrentControlSet\Services\EventLog\System\Service Control Manager","TypesSupported",0x00010003,0x00000007
 
 ; Filesystem recognizer driver
 HKLM,"SYSTEM\CurrentControlSet\Services\Fs_Rec","ErrorControl",0x00010001,0x00000000
@@ -1568,13 +1622,6 @@ HKLM,"SYSTEM\CurrentControlSet\Services\lanmanworkstation","ObjectName",0x000000
 HKLM,"SYSTEM\CurrentControlSet\Services\lanmanworkstation","Start",0x00010001,0x00000002
 HKLM,"SYSTEM\CurrentControlSet\Services\lanmanworkstation","Type",0x00010001,0x00000020
 HKLM,"SYSTEM\CurrentControlSet\Services\lanmanworkstation\Parameters","ServiceDll",0x00020000,"%SystemRoot%\system32\wkssvc.dll"
-
-; MPU-401 MIDI driver
-HKLM,"SYSTEM\CurrentControlSet\Services\mpu401","ErrorControl",0x00010001,0x00000001
-HKLM,"SYSTEM\CurrentControlSet\Services\mpu401","Group",0x00000000,"Base"
-HKLM,"SYSTEM\CurrentControlSet\Services\mpu401","ImagePath",0x00020000,"system32\drivers\mpu401.sys"
-HKLM,"SYSTEM\CurrentControlSet\Services\mpu401","Start",0x00010001,0x00000004
-HKLM,"SYSTEM\CurrentControlSet\Services\mpu401","Type",0x00010001,0x00000001
 
 ; Multiple UNC provider driver
 HKLM,"SYSTEM\CurrentControlSet\Services\Mup","Description",0x00000000,"Multiple UNC Provider (MUP)"
@@ -1605,6 +1652,8 @@ HKLM,"SYSTEM\CurrentControlSet\Services\Ntfs","Group",0x00000000,"File System"
 HKLM,"SYSTEM\CurrentControlSet\Services\Ntfs","ImagePath",0x00020000,"system32\drivers\ntfs.sys"
 HKLM,"SYSTEM\CurrentControlSet\Services\Ntfs","Start",0x00010001,0x00000003
 HKLM,"SYSTEM\CurrentControlSet\Services\Ntfs","Type",0x00010001,0x00000002
+; un-comment the line below to enable EXPERIMENTAL write-support on NTFS volumes:
+;HKLM,"SYSTEM\CurrentControlSet\Services\Ntfs","MyDataDoesNotMatterSoEnableExperimentalWriteSupportForEveryNTFSVolume",0x00010001,0x00000001
 
 ; Null device driver
 HKLM,"SYSTEM\CurrentControlSet\Services\Null","ErrorControl",0x00010001,0x00000000
@@ -1924,6 +1973,17 @@ HKLM,"SYSTEM\CurrentControlSet\Services\Rpcss","ObjectName",0x00000000,"LocalSys
 HKLM,"SYSTEM\CurrentControlSet\Services\Rpcss","Start",0x00010001,0x00000002
 HKLM,"SYSTEM\CurrentControlSet\Services\Rpcss","Type",0x00010001,0x00000010
 
+; SamSs service
+HKLM,"SYSTEM\CurrentControlSet\Services\SamSs","DependOnService",0x00010000,"RPCSS"
+HKLM,"SYSTEM\CurrentControlSet\Services\SamSs","Description",0x00000000,%SAMSS_SERVICE_DESCRIPTION%
+HKLM,"SYSTEM\CurrentControlSet\Services\SamSs","DisplayName",0x00000000,%SAMSS_SERVICE%
+HKLM,"SYSTEM\CurrentControlSet\Services\SamSs","ErrorControl",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\SamSs","Group",0x00000000,"LocalValidation"
+HKLM,"SYSTEM\CurrentControlSet\Services\SamSs","ImagePath",0x00020000,"%SystemRoot%\system32\lsass.exe"
+HKLM,"SYSTEM\CurrentControlSet\Services\SamSs","ObjectName",0x00000000,"LocalSystem"
+HKLM,"SYSTEM\CurrentControlSet\Services\SamSs","Start",0x00010001,0x00000002
+HKLM,"SYSTEM\CurrentControlSet\Services\SamSs","Type",0x00010001,0x00000020
+
 ; Scheduler service
 HKLM,"SYSTEM\CurrentControlSet\Services\Schedule","DependOnService",0x00010000,"RPCSS"
 HKLM,"SYSTEM\CurrentControlSet\Services\Schedule","Description",0x00000000,%SCHEDULE_SERVICE_DESCRIPTION%
@@ -1961,6 +2021,20 @@ HKLM,"SYSTEM\CurrentControlSet\Services\WlanSvc","ImagePath",0x00020000,"%System
 HKLM,"SYSTEM\CurrentControlSet\Services\WlanSvc","ObjectName",0x00000000,"LocalSystem"
 HKLM,"SYSTEM\CurrentControlSet\Services\WlanSvc","Start",0x00010001,0x00000002
 HKLM,"SYSTEM\CurrentControlSet\Services\WlanSvc","Type",0x00010001,0x00000110
+
+; W32TIME service
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time","DisplayName",0x00000000,%W32TIME_SERVICE%
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time","Description",0x00000000,%W32TIME_SERVICE_DESCRIPTION%
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time","ErrorControl",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time","Group",0x00000000,"Time"
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time","ImagePath",0x00020000,"%SystemRoot%\system32\svchost.exe -k netsvcs"
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time","ObjectName",0x00000000,"LocalSystem"
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time","Start",0x00010001,0x00000002
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time","Type",0x00010001,0x00000020
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time\Parameters","ServiceDll",0x00020000,"%SystemRoot%\system32\w32time.dll"
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time\Parameters","ServiceMain",0x00000000,"SvchostEntry_W32Time"
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time\Parameters","Type",0x00010000,"NTP"
+HKLM,"SYSTEM\CurrentControlSet\Services\W32Time\TimeProviders\NtpClient","SpecialPollInterval",0x00010001,0x00093a80
 
 ; Simple TCP services
 HKLM,"SYSTEM\CurrentControlSet\Services\tcpsvcs","Description",0x00000000,%TCPSVCS_SERVICE_DECRIPTION%
@@ -2018,6 +2092,27 @@ HKLM,"SYSTEM\CurrentControlSet\Services\winmgmt","ObjectName",0x00000000,"LocalS
 HKLM,"SYSTEM\CurrentControlSet\Services\winmgmt","Start",0x00010001,0x00000002
 HKLM,"SYSTEM\CurrentControlSet\Services\winmgmt","Type",0x00010001,0x00000020
 HKLM,"SYSTEM\CurrentControlSet\Services\winmgmt\Parameters","ServiceDll",0x00020000,"%SystemRoot%\system32\wbem\wmisvc.dll"
+
+; AutoUpdate Service
+HKLM,"SYSTEM\CurrentControlSet\Services\wuauserv","DisplayName",0x00000000,%WUAUSERV_SERVICE%
+HKLM,"SYSTEM\CurrentControlSet\Services\wuauserv","Description",0x00000000,%WUAUSERV_SERVICE_DESCRIPTION%
+HKLM,"SYSTEM\CurrentControlSet\Services\wuauserv","ErrorControl",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\wuauserv","ImagePath",0x00020000,"%SystemRoot%\system32\svchost.exe -k netsvcs"
+HKLM,"SYSTEM\CurrentControlSet\Services\wuauserv","ObjectName",0x00000000,"LocalSystem"
+HKLM,"SYSTEM\CurrentControlSet\Services\wuauserv","Start",0x00010001,0x00000002
+HKLM,"SYSTEM\CurrentControlSet\Services\wuauserv","Type",0x00010001,0x00000020
+HKLM,"SYSTEM\CurrentControlSet\Services\wuauserv\Parameters","ServiceDll",0x00020000,"%SystemRoot%\system32\wuauserv.dll"
+
+; DCOMLAUNCH Service
+HKLM,"SYSTEM\CurrentControlSet\Services\DcomLaunch","DisplayName",0x00000000,%DCOMLAUNCH_SERVICE%
+HKLM,"SYSTEM\CurrentControlSet\Services\DcomLaunch","Description",0x00000000,%DCOMLAUNCH_SERVICE_DESCRIPTION%
+HKLM,"SYSTEM\CurrentControlSet\Services\DcomLaunch","ErrorControl",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\DcomLaunch","Group",0x00000000,"Event log"
+HKLM,"SYSTEM\CurrentControlSet\Services\DcomLaunch","ImagePath",0x00020000,"%SystemRoot%\system32\svchost.exe -k DcomLaunch"
+HKLM,"SYSTEM\CurrentControlSet\Services\DcomLaunch","ObjectName",0x00000000,"LocalSystem"
+HKLM,"SYSTEM\CurrentControlSet\Services\DcomLaunch","Start",0x00010001,0x00000002
+HKLM,"SYSTEM\CurrentControlSet\Services\DcomLaunch","Type",0x00010001,0x00000020
+HKLM,"SYSTEM\CurrentControlSet\Services\DcomLaunch\Parameters","ServiceDll",0x00020000,"%SystemRoot%\system32\dcomlaunch.dll"
 
 ; Sound Blaster (NT4)
 ;HKLM,"SYSTEM\CurrentControlSet\Services\sndblst","Description",0x00000000,"Sound Blaster (NT4)"
@@ -2139,6 +2234,9 @@ AUDIO_SERVICE_DESCRIPTION="Provides audio facilities to applications"
 BITS_SERVICE="Background Intelligent Transfer Service"
 BITS_SERVICE_DESCRIPTION="Transfers files in the background using idle network bandwidth."
 
+DCOMLAUNCH_SERVICE="DcomLaunch service"
+DCOMLAUNCH_SERVICE_DESCRIPTION="DcomLaunch service stub."
+
 EVENTLOG_SERVICE="Event Logger"
 EVENTLOG_SERVICE_DESCRIPTION="Logs events or messages sent by the operating system in a database accessible via the event log viewer."
 
@@ -2153,6 +2251,9 @@ PLUGPLAY_SERVICE_DESCRIPTION="Detects hardware changes and installs needed softw
 
 RPCSS_SERVICE="Remote Procedure Call"
 RPCSS_SERVICE_DESCRIPTION="RPC subsystem which is responsible for Remote Procedure Calls on the local machine."
+
+SAMSS_SERVICE="Security Accounts Manager"
+SAMSS_SERVICE_DESCRIPTION="The startup of this service signals other services that the Security Accounts Manager (SAM) is ready to accept requests.  Disabling this service will prevent other services in the system from being notified when the SAM is ready, which may in turn cause those services to fail to start correctly.  This service should not be disabled."
 
 SCHEDULE_SERVICE="Scheduler service"
 SCHEDULE_SERVICE_DESCRIPTION="Allows starting of programs at specific times."
@@ -2178,8 +2279,14 @@ WINMGMT_SERVICE_DESCRIPTION="Provides interface to system management information
 WLANSVC_SERVICE="WLAN Service"
 WLANSVC_SERVICE_DESCRIPTION="WLAN Service"
 
+W32TIME_SERVICE="Time Service"
+W32TIME_SERVICE_DESCRIPTION="ReactOS Time Service"
+
 WORKSTATION_SERVICE="Workstation"
 WORKSTATION_SERVICE_DESCRIPTION="Responsible for creating and maintaining network connections to servers."
+
+WUAUSERV_SERVICE="Automatic Updates"
+WUAUSERV_SERVICE_DESCRIPTION="AutoUpdate Service stub."
 
 ; Keyboard layouts
 ALBANIAN = "Albanian"
@@ -2215,6 +2322,7 @@ GERMAN = "German"
 GREEK = "Greek"
 GUJARATI = "Gujarati"
 IRISH = "Irish"
+FAEROESE = "Faeroese"
 FINNISH = "Finnish"
 FRENCH = "French"
 GEORGIAN = "Georgian"
@@ -2227,6 +2335,7 @@ KAZAKH = "Kazakh"
 KOREAN = "Korean"
 LATIN_AMERICAN = "Latin American"
 LATVIAN = "Latvian"
+LATVIAN_QUERTY = "Latvian (QUERTY)"
 LITHUANIAN = "Lithuanian"
 MACEDONIAN = "Macedonian (FYRO)"
 MALAYALAM = "Malayalam"
@@ -2235,7 +2344,8 @@ POLISH_214 = "Polish (214)"
 POLISH_PROGRAMMERS = "Polish (Programmers)"
 PORTUGESE = "Portuguese (Portugal)"
 PORTUGESE_BRAZILIAN% = "Portuguese (Brazilian ABNT2)"
-ROMANIAN = "Romanian"
+ROMANIAN_LEGACY = "Romanian (Legacy)"
+ROMANIAN_STANDARD = "Romanian (Standard)"
 RUSSIAN = "Russian"
 RUSSIAN_TYPEWRITER = "Russian (Typewriter)"
 SERBIAN_CYRILLIC = "Serbian (Cyrillic)"
@@ -2265,6 +2375,305 @@ UZBEK_CYRILLIC = "Uzbek (Cyrillic)"
 VIETNAMESE = "Vietnamese"
 
 
+; LANG_POLISH SUBLANG_NEUTRAL
+[Strings.0015]
+
+; Services names and descriptions
+AUDIO_SERVICE="Usługa Audio"
+AUDIO_SERVICE_DESCRIPTION="Zapewnia aplikacjom dostęp do urządzeń audio."
+
+BITS_SERVICE="Usługa inteligentnego transferu w tle"
+BITS_SERVICE_DESCRIPTION="Przenosi dane pomiędzy klientami a serwerami w tle."
+
+DCOMLAUNCH_SERVICE="DcomLaunch service"
+DCOMLAUNCH_SERVICE_DESCRIPTION="DcomLaunch service stub."
+
+EVENTLOG_SERVICE="Dziennik zdarzeń"
+EVENTLOG_SERVICE_DESCRIPTION="Zapisuje zdarzenia lub wiadomości wysyłane przez system operacyjny do bazy danych dostępnej za pomocą podglądu zdarzeń."
+
+MSISERVER_SERVICE="Instalator ReactOS"
+MSISERVER_SERVICE_DESCRIPTION="Dodaje, modyfikuje i usuwa aplikacje dostarczane jako pakiet MSI (Windows Installer)."
+
+NETLOGON_SERVICE="Logowanie do sieci"
+NETLOGON_SERVICE_DESCRIPTION="Obsługuje uwierzytelnienie przekazjące zdarzeż logowania na konta w komputerach domeny."
+
+PLUGPLAY_SERVICE="Plug and Play"
+PLUGPLAY_SERVICE_DESCRIPTION="Wykrywa zmiany w sprzęcie i instaluje potrzebne oprogramowanie, jeśli to możliwe."
+
+RPCSS_SERVICE="Zdalne wykonywanie procedur"
+RPCSS_SERVICE_DESCRIPTION="Podsystem RPC, który jest odpowiedzialny za zdalne wykonywanie procedur na tym komputerze."
+
+SAMSS_SERVICE="Security Accounts Manager"
+SAMSS_SERVICE_DESCRIPTION="The startup of this service signals other services that the Security Accounts Manager (SAM) is ready to accept requests.  Disabling this service will prevent other services in the system from being notified when the SAM is ready, which may in turn cause those services to fail to start correctly.  This service should not be disabled."
+
+SCHEDULE_SERVICE="Usługa Harmonogram"
+SCHEDULE_SERVICE_DESCRIPTION="Umożliwia uruchamianie programów w określonym czasie."
+
+SERVER_SERVICE="Serwer"
+SERVER_SERVICE_DESCRIPTION="Oferuje udostępnianie w sieci plików, drukarek i potoków dla tego komputera."
+
+SPOOLER_SERVICE="Bufor wydruku"
+SPOOLER_SERVICE_DESCRIPTION="Ładuje pliki do pamięci w celu późniejszego wydrukowania."
+
+TCPSVCS_SERVICE="Podstawowe usługi TCP/IP"
+TCPSVCS_SERVICE_DECRIPTION="Oferuje następujące usługi TCP/IP: Chargen, Daytime, Discard, Echo, QOTD."
+
+TELNETD_SERVICE="Usługa ReactOS Telnet"
+TELNETD_SERVICE_DESCRIPTION="Usługa ReactOS Telnet"
+
+THEMES_SERVICE="Motywy"
+THEMES_SERVICE_DESCRIPTION="Oferuje wsparcie dla motywów."
+
+WINMGMT_SERVICE="Infrastruktura zarządzania ReactOS"
+WINMGMT_SERVICE_DESCRIPTION="Dostarcza interfejs w celu uzyskiwania dostępu do informacji zarządzania o systemie operacyjnym, urządzeniach, aplikacjach i usługach."
+
+WLANSVC_SERVICE="Usługa WLAN"
+WLANSVC_SERVICE_DESCRIPTION="Usługa WLAN"
+
+W32TIME_SERVICE="Usługa Czas"
+W32TIME_SERVICE_DESCRIPTION="Usługa Czas systemu ReactOS"
+
+WORKSTATION_SERVICE="Stacja robocza"
+WORKSTATION_SERVICE_DESCRIPTION="Tworzy i zachowuje połączenia sieciowe klientów z serwerami."
+
+WUAUSERV_SERVICE="Aktualizacje automatyczne"
+WUAUSERV_SERVICE_DESCRIPTION="Namiastka usługi Aktualizacje automatyczne."
+
+; Keyboard layouts
+ALBANIAN = "Albański"
+ARABIC_101 = "Arabski (101)"
+ARABIC_102 = "Arabski (102)"
+ARABIC_102_AZERTY = "Arabski (102, AZERTY)"
+ARMENIAN_EASTERN = "Armeński wschodni"
+ARMENIAN_WESTERN = "Armeński zachodni"
+ASSAMESE = "ASSAMESE - INSCRIPT"
+AZERI_CYRILLIC = "Azerski (Cyrylica)"
+AZERI_LATIN = "Azerski (Latin)"
+BELARUSIAN = "Białoruski"
+BELGIAN_DUTCH = "Belgijski (Period)"
+BELGIAN_FRENCH = "Belgijski Francuski"
+BENGALI = "Bengalski"
+BULGARIAN_BDS = "Bułgarski BDS 5237-1978"
+BULGARIAN_PHONETIC = "Bułgarski (Fonetyczny)"
+BULGARIAN_PHONETIC_BDS = "Bułgarski (Fonetyczny, BDS)"
+BURMESE = "Burmański"
+CANADIAN_FRENCH = "Kanadyjski francuski (Legacy)"
+CANADIAN_MULTILINGUAL = "Kanadyjski wielojęzykowy"
+CROATIAN = "Chorwacki"
+CZECH = "Czeski"
+CZECH_QWERTY = "Czeski (QWERTY)"
+DANISH = "Duński"
+DEVANAGARI = "Devanagari - INSCRIPT"
+DUTCH = "Holenderski"
+ESTONIAN = "Estoński"
+GERMAN_ERGO = "Niemiecki (de_ergo)"
+GERMAN_NEO = "Niemiecki (NEO-1.1)"
+GERMAN_RISTOME = "Niemiecki (RISTOME)"
+GERMAN = "Niemiecki"
+GREEK = "Grecki"
+GUJARATI = "Gujarati"
+IRISH = "Irlandzki"
+FAEROESE = "Faeroese"
+FINNISH = "Fiński"
+FRENCH = "Francuski"
+GEORGIAN = "Gruziński"
+HEBREW = "Hebrajski"
+HUNGARIAN = "Węgierski"
+ICELANDIC = "Islandzki"
+ITALIAN = "Włoski"
+JAPANESE = "Japoński"
+KAZAKH = "Kazachski"
+KOREAN = "Koreański"
+LATIN_AMERICAN = "Latynoamerykański"
+LATVIAN = "Łotewski"
+LATVIAN_QUERTY = "Łotewski (QUERTY)"
+LITHUANIAN = "Litewski"
+MACEDONIAN = "Macedoński (FYRO)"
+MALAYALAM = "Malajalam"
+NORWEGIAN = "Norweski"
+POLISH_214 = "Polski (214)"
+POLISH_PROGRAMMERS = "Polski (Programisty)"
+PORTUGESE = "Portugalski"
+PORTUGESE_BRAZILIAN% = "Portugalski (Brazylijski ABNT2)"
+ROMANIAN_LEGACY = "Rumuński (Legacy)"
+ROMANIAN_STANDARD = "Rumuński (Standard)"
+RUSSIAN = "Rosyjski"
+RUSSIAN_TYPEWRITER = "Rosyjski (Maszynisty)"
+SERBIAN_CYRILLIC = "Serbski (Cyrylica)"
+SERBIAN_LATIN = "Serbski (Latin)"
+SLOVAK = "Słowacki"
+SLOVAK_QWERTY = "Słowacki (QWERTY)"
+SPANISH = "Hiszpański"
+SWEDISH = "Szwedzki"
+SWISS_GERMAN = "Szwajcarski Niemiecki"
+TATAR = "Tatarski"
+THAI_KEDMANEE = "Tajski Kedmanee"
+THAI_KEDMANEE_NON_SHIFTLOCK = "Tajski (Kedmanee, bez ShiftLock)"
+THAI_PATTACHOTE = "Tajski Pattachote"
+THAI_PATTACHOTE_NON_SHIFTLOCK = "Tajski (Pattachote bez ShiftLock)"
+TURKISH_Q = "Turecki Q"
+TURKISH_F = "Turecki F"
+UK = "Angielski (Wielka Brytania)"
+UKRAINIAN = "Ukraiński"
+UKRAINIAN_STUDENT = "Ukraiński (Student)"
+US = "Angielski (USA)"
+US_ARABIC = "Tablica Angielska (US) dla Arabskiego (IBM 238_L)"
+US_DVORAK = "Angielski (US-Dvorak)"
+US_DVORAK_LEFT = "Angielski (Dvoraka dla leworęcznych)"
+US_DVORAK_RIGHT = "Angielski (Dvoraka dla praworęcznych)"
+US_INTERNATIONAL = "Międzynarodowy (USA)"
+UZBEK_CYRILLIC = "Uzbecki (Cyrylica)"
+VIETNAMESE = "Wietnamski"
+
+
+; LANG_ROMANIAN SUBLANG_NEUTRAL
+[Strings.0018]
+
+; Services names and descriptions
+AUDIO_SERVICE="Serviciu audio"
+AUDIO_SERVICE_DESCRIPTION="Oferă aplicațiilor funcționalități audio."
+
+BITS_SERVICE="Serviciu de transfer inteligent în fundal"
+BITS_SERVICE_DESCRIPTION="Transferă fișiere în fundal utilizând lățimea de bandă nefolosită a rețelei."
+
+DCOMLAUNCH_SERVICE="DcomLaunch service"
+DCOMLAUNCH_SERVICE_DESCRIPTION="DcomLaunch service stub."
+
+EVENTLOG_SERVICE="Jurnal de evenimente"
+EVENTLOG_SERVICE_DESCRIPTION="Jurnalizează mesajele sau evenimentele transmise de sistemul de operare într-o bază de date accesibilă cu instrumentul „observator de evenimente”."
+
+MSISERVER_SERVICE="Instalare ReactOS"
+MSISERVER_SERVICE_DESCRIPTION="Controlează instalarea, mentenanța, și eliminarea de programe de instalare MSI (Windows Installer)."
+
+NETLOGON_SERVICE="Autentificare în rețea"
+NETLOGON_SERVICE_DESCRIPTION="Stabilește un canal securizat către un controlor de domentiu pentru autentificarea domeniului."
+
+PLUGPLAY_SERVICE="Plug and Play"
+PLUGPLAY_SERVICE_DESCRIPTION="Detectează schimbările în configurația fizică și instalează programele necesare dacă este posibil."
+
+RPCSS_SERVICE="Apel procedural la distanță"
+RPCSS_SERVICE_DESCRIPTION="Subsistemul responsabil pentru apel procedural la distanță în calculatorul local."
+
+SAMSS_SERVICE="Security Accounts Manager"
+SAMSS_SERVICE_DESCRIPTION="The startup of this service signals other services that the Security Accounts Manager (SAM) is ready to accept requests.  Disabling this service will prevent other services in the system from being notified when the SAM is ready, which may in turn cause those services to fail to start correctly.  This service should not be disabled."
+
+SCHEDULE_SERVICE="Serviciu de planificare"
+SCHEDULE_SERVICE_DESCRIPTION="Permite pornirea de programe la o anumită oră."
+
+SERVER_SERVICE="Server"
+SERVER_SERVICE_DESCRIPTION="Permite partajarea în rețea a fișierelor, imprimantelor și a altor resurse."
+
+SPOOLER_SERVICE="Coadă de imprimare"
+SPOOLER_SERVICE_DESCRIPTION="Încarcă fișierele în memorie pentru imprimare ulterioară."
+
+TCPSVCS_SERVICE="Servicii TCP/IP simple"
+TCPSVCS_SERVICE_DECRIPTION="Permite următoarele servicii (protocoale) TCP/IP: Chargen, Daytime, Discard, Echo, QOTD."
+
+TELNETD_SERVICE="Serviciu Telnet"
+TELNETD_SERVICE_DESCRIPTION="Serviciul Telnet al ReactOS."
+
+THEMES_SERVICE="Teme"
+THEMES_SERVICE_DESCRIPTION="Permite teme pentru interfața grafică de utilizare."
+
+WINMGMT_SERVICE="Infrastructură de gestiune"
+WINMGMT_SERVICE_DESCRIPTION="Furnizează interfața pentru informațiile de gestiune ale sistemului."
+
+WLANSVC_SERVICE="Serviciu WLAN"
+WLANSVC_SERVICE_DESCRIPTION="Serviciu pentru rețele locale fără fir."
+
+WORKSTATION_SERVICE="Stație de lucru"
+WORKSTATION_SERVICE_DESCRIPTION="Serviciu responsabil pentru crearea și menținerea conexiunilor la servere în rețea."
+
+WUAUSERV_SERVICE="Automatic Updates"
+WUAUSERV_SERVICE_DESCRIPTION="AutoUpdate Service stub."
+
+; Keyboard layouts
+ALBANIAN = "Albaneză"
+ARABIC_101 = "Arabă (101)"
+ARABIC_102 = "Arabă (102)"
+ARABIC_102_AZERTY = "Arabă (102) AZERTY"
+ARMENIAN_EASTERN = "Armeană Estică"
+ARMENIAN_WESTERN = "Armeană Vestică"
+ASSAMESE = "Assameză - INSCRIPT"
+AZERI_CYRILLIC = "Azeră alfabet chirilic"
+AZERI_LATIN = "Azeră alfabet latin"
+BELARUSIAN = "Belarusă"
+BELGIAN_DUTCH = "Belgiană (Olandeză)"
+BELGIAN_FRENCH = "Belgiană (Franceză)"
+BENGALI = "Bengaleză"
+BULGARIAN_BDS = "Bulgară BDS 5237-1978"
+BULGARIAN_PHONETIC = "Bulgară, fonetică clasică"
+BULGARIAN_PHONETIC_BDS = "Bulgară, fonetică BDS 5237-2006"
+BURMESE = "Birmană"
+CANADIAN_FRENCH = "Canadiană Franceză (moștenire)"
+CANADIAN_MULTILINGUAL = "Canadiană Multilingvă Standard"
+CROATIAN = "Croată"
+CZECH = "Cehă"
+CZECH_QWERTY = "Cehă (QWERTY)"
+DANISH = "Daneză"
+DEVANAGARI = "Devanagari - INSCRIPT"
+DUTCH = "Olandeză"
+ESTONIAN = "Estonă"
+GERMAN_ERGO = "Germană (de_ergo)"
+GERMAN_NEO = "Germană (NEO-1.1)"
+GERMAN_RISTOME = "Germană (RISTOME)"
+GERMAN = "Germană"
+GREEK = "Greacă"
+GUJARATI = "Gujarati"
+IRISH = "Irlandeză"
+FAEROESE = "Faeroese"
+FINNISH = "Finlandeză"
+FRENCH = "Franceză"
+GEORGIAN = "Georgiană"
+HEBREW = "Abraică"
+HUNGARIAN = "Maghiară"
+ICELANDIC = "Islandeză"
+ITALIAN = "Italiană"
+JAPANESE = "Japoneză"
+KAZAKH = "Kazahă"
+KOREAN = "Coreeană"
+LATIN_AMERICAN = "Iberoamericană"
+LATVIAN = "Letonă"
+LATVIAN_QUERTY = "Letonă (QUERTY)"
+LITHUANIAN = "Lituaniană"
+MACEDONIAN = "Macedonă (FYRO)"
+MALAYALAM = "Malayalam"
+NORWEGIAN = "Norvegiană"
+POLISH_214 = "Poloneză (214)"
+POLISH_PROGRAMMERS = "Poloneză (programatori)"
+PORTUGESE = "Portugheză (Portugalia)"
+PORTUGESE_BRAZILIAN% = "Portugheză (Braziliană ABNT2)"
+ROMANIAN_LEGACY = "Română (moștenire)"
+ROMANIAN_STANDARD = "Română (standard)"
+RUSSIAN = "Rusă"
+RUSSIAN_TYPEWRITER = "Rusă (dactilografiere)"
+SERBIAN_CYRILLIC = "Sârbă (alfabet chirilic)"
+SERBIAN_LATIN = "Sârbă (alfabet latin)"
+SLOVAK = "Slovacă"
+SLOVAK_QWERTY = "Slovacă (QWERTY)"
+SPANISH = "Spaniolă"
+SWEDISH = "Suedeză"
+SWISS_GERMAN = "Elvețiană (Germană)"
+TATAR = "Tatară"
+THAI_KEDMANEE = "Thai Kedmanee"
+THAI_KEDMANEE_NON_SHIFTLOCK = "Thai Kedmanee (non-ShiftLock)"
+THAI_PATTACHOTE = "Thai Pattachote"
+THAI_PATTACHOTE_NON_SHIFTLOCK = "Thai Pattachote (non-ShiftLock)"
+TURKISH_Q = "Turcă Q"
+TURKISH_F = "Turcă F"
+UK = "Britanică"
+UKRAINIAN = "Ukraineană"
+UKRAINIAN_STUDENT = "Ukraineană (studențească)"
+US = "Statele Unite"
+US_ARABIC = "Engleză SUA (IBM Arabic 238_L)"
+US_DVORAK = "Dvorak SUA"
+US_DVORAK_LEFT = "Dvorak SUA pentru mâna stângă"
+US_DVORAK_RIGHT = "Dvorak SUA pentru mâna dreaptă"
+US_INTERNATIONAL = "SUA internațională"
+UZBEK_CYRILLIC = "Uzbecă (alfabet chirilic)"
+VIETNAMESE = "Vietnameză"
+
+
 ; LANG_RUSSIAN SUBLANG_NEUTRAL
 [Strings.0019]
 
@@ -2274,6 +2683,9 @@ AUDIO_SERVICE_DESCRIPTION="Обеспечивает звуковыми устр�
 
 BITS_SERVICE="Фоновая интеллектуальная служба передачи (BITS)"
 BITS_SERVICE_DESCRIPTION="Обеспечивает передачу данных между клиентами и серверами в фоновом режиме с использованием пропускной способности простаивающей сети."
+
+DCOMLAUNCH_SERVICE="DcomLaunch service"
+DCOMLAUNCH_SERVICE_DESCRIPTION="DcomLaunch service stub."
 
 EVENTLOG_SERVICE="Журнал событий"
 EVENTLOG_SERVICE_DESCRIPTION="Регистрирует события или сообщения, отправленные операционной системой в базе данных, доступной через средство просмотра журнала событий."
@@ -2289,6 +2701,9 @@ PLUGPLAY_SERVICE_DESCRIPTION="Обнаруживает изменения обо
 
 RPCSS_SERVICE="Удаленный вызов процедур (RPC)"
 RPCSS_SERVICE_DESCRIPTION="Подсистема для вызова удаленных процедур на локальной машине."
+
+SAMSS_SERVICE="Security Accounts Manager"
+SAMSS_SERVICE_DESCRIPTION="The startup of this service signals other services that the Security Accounts Manager (SAM) is ready to accept requests.  Disabling this service will prevent other services in the system from being notified when the SAM is ready, which may in turn cause those services to fail to start correctly.  This service should not be disabled."
 
 SCHEDULE_SERVICE="Планировщик заданий"
 SCHEDULE_SERVICE_DESCRIPTION="Позволяет запускать программы в определенное время."
@@ -2317,5 +2732,7 @@ WLANSVC_SERVICE_DESCRIPTION="Обеспечивает поддержку бес�
 WORKSTATION_SERVICE="Рабочая станция"
 WORKSTATION_SERVICE_DESCRIPTION="Обеспечивает поддержку сетевых подключений и связь."
 
+WUAUSERV_SERVICE="Automatic Updates"
+WUAUSERV_SERVICE_DESCRIPTION="AutoUpdate Service stub."
 
 ; EOF

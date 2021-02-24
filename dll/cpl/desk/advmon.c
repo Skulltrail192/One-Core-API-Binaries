@@ -23,7 +23,7 @@ PropSheetAddPage(HPROPSHEETPAGE hpage, LPARAM lParam)
 }
 
 static BOOL
-InitPropSheetPage(PROPSHEETHEADER *ppsh, WORD idDlg, DLGPROC DlgProc, LPARAM lParam)
+DisplayAdvancedSettingsInitPropSheetPage(PROPSHEETHEADER *ppsh, WORD idDlg, DLGPROC DlgProc, LPARAM lParam)
 {
     HPROPSHEETPAGE hPage;
     PROPSHEETPAGE psp;
@@ -102,7 +102,7 @@ DisplayAdvancedSettings(HWND hWndParent, PDISPLAY_DEVICE_ENTRY DisplayDevice)
     psh.pszCaption = szCaption;
     psh.phpage = hpsp;
 
-    InitPropSheetPage(&psh, IDD_ADVANCED_GENERAL, AdvGeneralPageProc, (LPARAM)DisplayDevice);
+    DisplayAdvancedSettingsInitPropSheetPage(&psh, IDD_ADVANCED_GENERAL, AdvGeneralPageProc, (LPARAM)DisplayDevice);
 
     pdo = CreateDevSettings(DisplayDevice);
 
@@ -140,8 +140,7 @@ DisplayAdvancedSettings(HWND hWndParent, PDISPLAY_DEVICE_ENTRY DisplayDevice)
     IDataObject_Release(pdo);
 
 #ifdef _MSC_VER
-    if (hShell32)
-        FreeLibrary(hShell32);
+    FreeLibrary(hShell32);
 #endif
 
     return Ret;

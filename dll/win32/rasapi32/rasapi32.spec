@@ -1,5 +1,6 @@
 @ stub RasAutodialAddressToNetwork
 @ stub RasAutodialEntryToNetwork
+@ stub RasClearConnectionStatistics
 @ stdcall RasConnectionNotificationA(ptr long long)
 @ stdcall RasConnectionNotificationW(ptr long long)
 @ stdcall RasCreatePhonebookEntryA(long str)
@@ -33,6 +34,7 @@
 @ stdcall RasGetConnectStatusA(ptr ptr)
 @ stdcall RasGetConnectStatusW(ptr ptr)
 @ stub RasGetConnectStatusWow
+@ stdcall RasGetConnectionStatistics(ptr ptr)
 @ stub RasGetCountryInfoA
 @ stub RasGetCountryInfoW
 @ stub RasGetCredentialsA
@@ -126,9 +128,3 @@
 567 stub	RnaTerminate
 568 stub	RnaUICallbackDialog
 569 stub	RnaUIUsernamePassword
-
-@ stub RasAutoDialSharedConnection
-@ stub RasGetConnectionStatistics
-@ stub RasGetEntryHrasconnW
-@ stub RasQuerySharedAutoDial
-@ stub RasQuerySharedConnection

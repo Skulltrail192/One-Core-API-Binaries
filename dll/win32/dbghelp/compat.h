@@ -115,7 +115,7 @@ INT __WideCharToMultiByte( UINT page, DWORD flags, LPCWSTR src, INT srclen, LPST
 // winnt.h
 #define IMAGE_FILE_MACHINE_ARMNT      0x1c4
 #define IMAGE_FILE_MACHINE_POWERPC    0x1f0
-#define IMAGE_FILE_MACHINE_ARM64      0x1c5
+#define IMAGE_FILE_MACHINE_ARM64      0xaa64
 #define DLL_PROCESS_DETACH	0
 #define DLL_PROCESS_ATTACH	1
 #define DLL_THREAD_ATTACH	2
@@ -139,6 +139,7 @@ INT __WideCharToMultiByte( UINT page, DWORD flags, LPCWSTR src, INT srclen, LPST
 #define IMAGE_SYM_CLASS_FILE 103
 #define IMAGE_DIRECTORY_ENTRY_EXPORT	0
 #define IMAGE_DIRECTORY_ENTRY_DEBUG	6
+#define IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG	10
 #define IMAGE_DEBUG_MISC_EXENAME 1
 #define IMAGE_SEPARATE_DEBUG_SIGNATURE 0x4944
 typedef struct _IMAGE_EXPORT_DIRECTORY {
@@ -200,7 +201,7 @@ typedef struct _EXCEPTION_RECORD {
   DWORD NumberParameters;
   ULONG_PTR ExceptionInformation[EXCEPTION_MAXIMUM_PARAMETERS];
 } EXCEPTION_RECORD, *PEXCEPTION_RECORD;
-#if defined(_X86_)
+#if defined(TARGET_i386)
 #define SIZE_OF_80387_REGISTERS	80
 #define CONTEXT_i386	0x10000
 #define CONTEXT_i486	0x10000
@@ -257,7 +258,11 @@ typedef struct _CONTEXT {
   BYTE ExtendedRegisters[MAXIMUM_SUPPORTED_EXTENSION];
 } CONTEXT, *PCONTEXT;
 
-#else /* ARM? */
+#elif defined TARGET_amd64
+
+#error "Please define the CONTEXT structure for amd64 platform"
+
+#elif defined TARGET_arm /* ARM? */
 
 /* The following flags control the contents of the CONTEXT structure. */
 
@@ -356,6 +361,10 @@ typedef struct _CONTEXT {
 BOOLEAN CDECL            RtlAddFunctionTable(RUNTIME_FUNCTION*,DWORD,DWORD);
 BOOLEAN CDECL            RtlDeleteFunctionTable(RUNTIME_FUNCTION*);
 PRUNTIME_FUNCTION WINAPI RtlLookupFunctionEntry(ULONG_PTR,DWORD*,UNWIND_HISTORY_TABLE*);
+#else
+
+#error "Unknown target platform"
+
 #endif
 
 typedef
@@ -655,6 +664,13 @@ typedef VOID IMAGEHLP_CONTEXT, *PIMAGEHLP_CONTEXT;
 #define SYMFLAG_THUNK            0x00002000
 #define SYMFLAG_TLSREL           0x00004000
 #define SYMFLAG_SLOT             0x00008000
+#define SYMFLAG_ILREL            0x00010000
+#define SYMFLAG_METADATA         0x00020000
+#define SYMFLAG_CLR_TOKEN        0x00040000
+#define SYMFLAG_NULL             0x00080000
+#define SYMFLAG_FUNC_NO_RETURN   0x00100000
+#define SYMFLAG_SYNTHETIC_ZEROBASE 0x00200000
+#define SYMFLAG_PUBLIC_CODE      0x00400000
 #define UNDNAME_COMPLETE                 (0x0000)
 #define UNDNAME_NAME_ONLY                (0x1000)
 typedef struct _TI_FINDCHILDREN_PARAMS 

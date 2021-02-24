@@ -33,7 +33,7 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "インターネット時刻"
 FONT 9, "MS UI Gothic", 0, 0, 0x0
 BEGIN
-    COMBOBOX IDC_SERVERLIST, 65, 22, 117, 136, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX IDC_SERVERLIST, 65, 22, 117, 136, CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
     AUTOCHECKBOX "自動的にインターネット時刻サーバーと同期する",
                  IDC_AUTOSYNC, 11, 7, 241, 10, BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP
     LTEXT "サーバー:", IDC_SERVERTEXT, 34, 22, 28, 13
@@ -54,4 +54,6 @@ BEGIN
     IDS_INETTIMENEXTSYNC "次回の同期: %s %s"
     IDS_INETTIMESYNCING "ReactOSが %s と同期する間、お待ちください"
     IDS_INETTIMEERROR "ReactOSが %s と同期中にエラーが発生しました"
+    IDS_INETTIMESUCFILL "Please type a NTP server name in order to synchronize the time"
+    IDS_INETTIMEWELCOME "Select a NTP server from the list or type a NTP server name to synchronize the computer's time"
 END

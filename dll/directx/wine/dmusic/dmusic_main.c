@@ -17,10 +17,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "dmusic_private.h"
 
 #include <stdio.h>
-#include <rpcproxy.h>
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winnt.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winreg.h"
+#include "objbase.h"
+#include "rpcproxy.h"
+#include "initguid.h"
+#include "dmusici.h"
+
+#include "dmusic_private.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(dmusic);
 
 static HINSTANCE instance;
 LONG DMUSIC_refCount = 0;
@@ -208,11 +224,13 @@ const char *debugstr_fourcc (DWORD fourcc) {
 }
 
 /* DMUS_VERSION struct to string conversion for debug messages */
-static const char *debugstr_dmversion (const DMUS_VERSION *version) {
-	if (!version) return "'null'";
-	return wine_dbg_sprintf ("\'%i,%i,%i,%i\'",
-		(int)((version->dwVersionMS & 0xFFFF0000) >> 8), (int)(version->dwVersionMS & 0x0000FFFF), 
-		(int)((version->dwVersionLS & 0xFFFF0000) >> 8), (int)(version->dwVersionLS & 0x0000FFFF));
+static const char *debugstr_dmversion(const DMUS_VERSION *version)
+{
+    if (!version)
+        return "'null'";
+    return wine_dbg_sprintf("'%hu,%hu,%hu,%hu'",
+            HIWORD(version->dwVersionMS), LOWORD(version->dwVersionMS),
+            HIWORD(version->dwVersionLS), LOWORD(version->dwVersionLS));
 }
 
 /* returns name of given GUID */
@@ -390,7 +408,7 @@ const char *debugstr_dmguid (const GUID *id) {
 
         if (!id) return "(null)";
 
-	for (i = 0; i < sizeof(guids)/sizeof(guids[0]); i++) {
+	for (i = 0; i < ARRAY_SIZE(guids); i++) {
 		if (IsEqualGUID(id, guids[i].guid))
 			return guids[i].name;
 	}
@@ -434,7 +452,7 @@ static const char *debugstr_DMUS_OBJ_FLAGS (DWORD flagmask) {
 	    FE(DMUS_OBJ_MEMORY),
 	    FE(DMUS_OBJ_STREAM)
 	};
-    return debugstr_flags (flagmask, flags, sizeof(flags)/sizeof(flags[0]));
+    return debugstr_flags(flagmask, flags, ARRAY_SIZE(flags));
 }
 
 /* Dump whole DMUS_OBJECTDESC struct */
@@ -466,7 +484,7 @@ static const char* debugstr_DMUS_PORTPARAMS_FLAGS(DWORD flagmask)
         FE(DMUS_PORTPARAMS_EFFECTS),
         FE(DMUS_PORTPARAMS_SHARE)
     };
-    return debugstr_flags(flagmask, flags, sizeof(flags)/sizeof(flags[0]));
+    return debugstr_flags(flagmask, flags, ARRAY_SIZE(flags));
 }
 
 /* Dump whole DMUS_PORTPARAMS struct */

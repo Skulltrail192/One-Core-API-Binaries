@@ -12,6 +12,7 @@
 #define NDEBUG
 #include <debug.h>
 
+INIT_FUNCTION
 PBUS_HANDLER
 NTAPI
 HalpAllocateAndInitPciBusHandler(
@@ -20,12 +21,14 @@ HalpAllocateAndInitPciBusHandler(
     IN BOOLEAN TestAllocation
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 HalpFixupPciSupportedRanges(
     IN ULONG BusCount
 );
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 HalpGetChipHacks(
@@ -35,6 +38,7 @@ HalpGetChipHacks(
     IN PULONG HackFlags
 );
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 HalpGetPciBridgeConfig(
@@ -42,18 +46,21 @@ HalpGetPciBridgeConfig(
     IN PUCHAR BusCount
 );
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 HalpIsBridgeDevice(
     IN PPCI_COMMON_CONFIG PciData
 );
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 HalpIsIdeDevice(
     IN PPCI_COMMON_CONFIG PciData
 );
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 HalpIsRecognizedCard(
@@ -62,6 +69,7 @@ HalpIsRecognizedCard(
     IN ULONG Flags
 );
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 HalpIsValidPCIDevice(
@@ -69,18 +77,21 @@ HalpIsValidPCIDevice(
     IN PCI_SLOT_NUMBER Slot
 );
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 HalpMarkChipsetDecode(
     IN BOOLEAN OverrideEnable
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 HalpRegisterInternalBusHandlers(
     VOID
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 ShowSize(
@@ -160,7 +171,7 @@ HalpAllocateBusHandler(IN INTERFACE_TYPE InterfaceType,
     return Bus;
 }
 
-INIT_SECTION
+INIT_FUNCTION
 VOID
 NTAPI
 HalpRegisterInternalBusHandlers(VOID)
@@ -235,7 +246,7 @@ HalpRegisterInternalBusHandlers(VOID)
 }
 
 #ifndef _MINIHAL_
-INIT_SECTION
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 HalpMarkChipsetDecode(BOOLEAN OverrideEnable)
@@ -283,7 +294,7 @@ HalpMarkChipsetDecode(BOOLEAN OverrideEnable)
     return Status;
 }
 
-INIT_SECTION
+INIT_FUNCTION
 PBUS_HANDLER
 NTAPI
 HalpAllocateAndInitPciBusHandler(IN ULONG PciType,
@@ -368,7 +379,7 @@ HalpAllocateAndInitPciBusHandler(IN ULONG PciType,
     return Bus;
 }
 
-INIT_SECTION
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 HalpIsValidPCIDevice(IN PBUS_HANDLER BusHandler,
@@ -430,7 +441,7 @@ HalpIsValidPCIDevice(IN PBUS_HANDLER BusHandler,
 
 static BOOLEAN WarningsGiven[5];
 
-INIT_SECTION
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 HalpGetChipHacks(IN USHORT VendorId,
@@ -494,7 +505,7 @@ HalpGetChipHacks(IN USHORT VendorId,
     return Status;
 }
 
-INIT_SECTION
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 HalpIsRecognizedCard(IN PPCI_REGISTRY_INFO_INTERNAL PciRegistryInfo,
@@ -575,7 +586,7 @@ HalpIsRecognizedCard(IN PPCI_REGISTRY_INFO_INTERNAL PciRegistryInfo,
     return FALSE;
 }
 
-INIT_SECTION
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 HalpIsIdeDevice(IN PPCI_COMMON_CONFIG PciData)
@@ -628,7 +639,7 @@ HalpIsIdeDevice(IN PPCI_COMMON_CONFIG PciData)
     return FALSE;
 }
 
-INIT_SECTION
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 HalpIsBridgeDevice(IN PPCI_COMMON_CONFIG PciData)
@@ -642,7 +653,7 @@ HalpIsBridgeDevice(IN PPCI_COMMON_CONFIG PciData)
              (PciData->SubClass == PCI_SUBCLASS_BR_CARDBUS)));
 }
 
-INIT_SECTION
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 HalpGetPciBridgeConfig(IN ULONG PciType,
@@ -695,7 +706,7 @@ HalpGetPciBridgeConfig(IN ULONG PciType,
     return FALSE;
 }
 
-INIT_SECTION
+INIT_FUNCTION
 VOID
 NTAPI
 HalpFixupPciSupportedRanges(IN ULONG BusCount)
@@ -758,7 +769,7 @@ HalpFixupPciSupportedRanges(IN ULONG BusCount)
     }
 }
 
-INIT_SECTION
+INIT_FUNCTION
 VOID
 NTAPI
 ShowSize(ULONG x)
@@ -781,7 +792,7 @@ ShowSize(ULONG x)
     {
         DbgPrint("%d", x);
     }
-    DbgPrint("]\n");
+    DbgPrint("]");
 }
 
 /*
@@ -790,7 +801,7 @@ ShowSize(ULONG x)
  */
 #include "pci_classes.h"
 #include "pci_vendors.h"
-INIT_SECTION
+INIT_FUNCTION
 VOID
 NTAPI
 HalpDebugPciDumpBus(IN ULONG i,
@@ -798,10 +809,10 @@ HalpDebugPciDumpBus(IN ULONG i,
                     IN ULONG k,
                     IN PPCI_COMMON_CONFIG PciData)
 {
-    PCHAR p, ClassName, SubClassName, VendorName, ProductName, SubVendorName;
+    PCHAR p, ClassName, Boundary, SubClassName, VendorName, ProductName, SubVendorName;
     ULONG Length;
     CHAR LookupString[16] = "";
-    CHAR bSubClassName[64] = "";
+    CHAR bSubClassName[64] = "Unknown";
     CHAR bVendorName[64] = "";
     CHAR bProductName[128] = "Unknown device";
     CHAR bSubVendorName[128] = "Unknown";
@@ -813,19 +824,28 @@ HalpDebugPciDumpBus(IN ULONG i,
     if (ClassName)
     {
         /* Isolate the subclass name */
-        ClassName += 6;
-        sprintf(LookupString, "\t%02x  ", PciData->SubClass);
+        ClassName += strlen("C 00  ");
+        Boundary = strstr(ClassName, "\nC ");
+        sprintf(LookupString, "\n\t%02x  ", PciData->SubClass);
         SubClassName = strstr(ClassName, LookupString);
-        if (SubClassName)
+        if (Boundary && SubClassName > Boundary)
         {
-            /* Copy the subclass into our buffer */
-            SubClassName += 5;
-            p = strpbrk(SubClassName, "\r\n");
-            Length = p - SubClassName;
-            if (Length >= sizeof(bSubClassName)) Length = sizeof(bSubClassName) - 1;
-            strncpy(bSubClassName, SubClassName, Length);
-            bSubClassName[Length] = '\0';
+            SubClassName = NULL;
         }
+        if (!SubClassName)
+        {
+            SubClassName = ClassName;
+        }
+        else
+        {
+            SubClassName += strlen("\n\t00  ");
+        }
+        /* Copy the subclass into our buffer */
+        p = strpbrk(SubClassName, "\r\n");
+        Length = p - SubClassName;
+        if (Length >= sizeof(bSubClassName)) Length = sizeof(bSubClassName) - 1;
+        strncpy(bSubClassName, SubClassName, Length);
+        bSubClassName[Length] = '\0';
     }
 
     /* Isolate the vendor name */
@@ -834,25 +854,43 @@ HalpDebugPciDumpBus(IN ULONG i,
     if (VendorName)
     {
         /* Copy the vendor name into our buffer */
-        VendorName += 8;
+        VendorName += strlen("\r\n0000  ");
         p = strpbrk(VendorName, "\r\n");
         Length = p - VendorName;
         if (Length >= sizeof(bVendorName)) Length = sizeof(bVendorName) - 1;
         strncpy(bVendorName, VendorName, Length);
         bVendorName[Length] = '\0';
+        p += strlen("\r\n");
+        while (*p == '\t' || *p == '#')
+        {
+            p = strpbrk(p, "\r\n");
+            p += strlen("\r\n");
+        }
+        Boundary = p;
 
         /* Isolate the product name */
         sprintf(LookupString, "\t%04x  ", PciData->DeviceID);
         ProductName = strstr(VendorName, LookupString);
+        if (Boundary && ProductName >= Boundary)
+        {
+            ProductName = NULL;
+        }
         if (ProductName)
         {
             /* Copy the product name into our buffer */
-            ProductName += 7;
+            ProductName += strlen("\t0000  ");
             p = strpbrk(ProductName, "\r\n");
             Length = p - ProductName;
             if (Length >= sizeof(bProductName)) Length = sizeof(bProductName) - 1;
             strncpy(bProductName, ProductName, Length);
             bProductName[Length] = '\0';
+            p += strlen("\r\n");
+            while ((*p == '\t' && *(p + 1) == '\t') || *p == '#')
+            {
+                p = strpbrk(p, "\r\n");
+                p += strlen("\r\n");
+            }
+            Boundary = p;
 
             /* Isolate the subvendor and subsystem name */
             sprintf(LookupString,
@@ -860,10 +898,14 @@ HalpDebugPciDumpBus(IN ULONG i,
                     PciData->u.type0.SubVendorID,
                     PciData->u.type0.SubSystemID);
             SubVendorName = strstr(ProductName, LookupString);
+            if (Boundary && SubVendorName >= Boundary)
+            {
+                SubVendorName = NULL;
+            }
             if (SubVendorName)
             {
                 /* Copy the subvendor name into our buffer */
-                SubVendorName += 13;
+                SubVendorName += strlen("\t\t0000 0000  ");
                 p = strpbrk(SubVendorName, "\r\n");
                 Length = p - SubVendorName;
                 if (Length >= sizeof(bSubVendorName)) Length = sizeof(bSubVendorName) - 1;
@@ -938,12 +980,13 @@ HalpDebugPciDumpBus(IN ULONG i,
                          (Mem & PCI_ADDRESS_MEMORY_PREFETCHABLE) ? "" : "non-");
                 ShowSize(Size);
             }
+            DbgPrint("\n");
         }
     }
 }
 #endif
 
-INIT_SECTION
+INIT_FUNCTION
 VOID
 NTAPI
 HalpInitializePciBus(VOID)
@@ -1128,32 +1171,6 @@ HalpInitializePciBus(VOID)
                     }
                 }
 
-                /* Check if this is a USB controller */
-                if ((PciData->BaseClass == PCI_CLASS_SERIAL_BUS_CTLR) &&
-                    (PciData->SubClass == PCI_SUBCLASS_SB_USB))
-                {
-                    /* Check if this is an OHCI controller */
-                    if (PciData->ProgIf == 0x10)
-                    {
-                        DbgPrint("\tDevice is an OHCI (USB) PCI Expansion Card. Turn off Legacy USB in your BIOS!\n\n");
-                        continue;
-                    }
-
-                    /* Check for Intel UHCI controller */
-                    if (PciData->VendorID == 0x8086)
-                    {
-                        DbgPrint("\tDevice is an Intel UHCI (USB) Controller. Turn off Legacy USB in your BIOS!\n\n");
-                        continue;
-                    }
-
-                    /* Check for VIA UHCI controller */
-                    if (PciData->VendorID == 0x1106)
-                    {
-                        DbgPrint("\tDevice is a VIA UHCI (USB) Controller. Turn off Legacy USB in your BIOS!\n\n");
-                        continue;
-                    }
-                }
-
                 /* Now check the registry for chipset hacks */
                 Status = HalpGetChipHacks(PciData->VendorID,
                                           PciData->DeviceID,
@@ -1208,7 +1225,7 @@ HalpInitializePciBus(VOID)
 #endif
 }
 
-INIT_SECTION
+INIT_FUNCTION
 VOID
 NTAPI
 HalpInitBusHandlers(VOID)
@@ -1217,7 +1234,7 @@ HalpInitBusHandlers(VOID)
     HalpRegisterInternalBusHandlers();
 }
 
-INIT_SECTION
+INIT_FUNCTION
 VOID
 NTAPI
 HalpRegisterKdSupportFunctions(VOID)
@@ -1228,8 +1245,13 @@ HalpRegisterKdSupportFunctions(VOID)
 
     /* Register memory functions */
 #ifndef _MINIHAL_
+#if (NTDDI_VERSION >= NTDDI_VISTA)
+    KdMapPhysicalMemory64 = HalpMapPhysicalMemory64Vista;
+    KdUnmapVirtualAddress = HalpUnmapVirtualAddressVista;
+#else
     KdMapPhysicalMemory64 = HalpMapPhysicalMemory64;
     KdUnmapVirtualAddress = HalpUnmapVirtualAddress;
+#endif
 #endif
 
     /* Register ACPI stub */
@@ -1329,7 +1351,7 @@ HaliFindBusAddressTranslation(IN PHYSICAL_ADDRESS BusAddress,
         }
 
         /* If we made it, we're done */
-        *Context = (ULONG_PTR)Handler;
+        *Context = (ULONG_PTR)&BusHandler->Handler;
         return TRUE;
     }
 

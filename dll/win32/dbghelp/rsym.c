@@ -8,6 +8,7 @@
 #include "dbghelp_private.h"
 #include <reactos/rossym.h>
 
+#include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(dbghelp_rsym);
 
 
@@ -124,7 +125,7 @@ BOOL rsym_parse(struct module* module, unsigned long load_offset,
                     if (use_raw_address(SymbolName))
                         Address = Entry->Address;
 
-                    symt_new_public(module, NULL, SymbolName, Address, Size);
+                    symt_new_public(module, NULL, SymbolName, FALSE, Address, Size);
                 }
                 else
                 {

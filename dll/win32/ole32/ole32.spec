@@ -22,10 +22,11 @@
 @ stdcall CoCreateInstanceEx(ptr ptr long ptr long ptr)
 # CoCreateObjectInContext
 # CoDeactivateObject
-@ stdcall -stub CoDisableCallCancellation(ptr)
+@ stdcall CoDisableCallCancellation(ptr)
+@ stdcall -stub -version=0x600+ CoDisconnectContext(long)
 @ stdcall CoDisconnectObject(ptr long)
 @ stdcall CoDosDateTimeToFileTime(long long ptr) kernel32.DosDateTimeToFileTime
-@ stdcall -stub CoEnableCallCancellation(ptr)
+@ stdcall CoEnableCallCancellation(ptr)
 @ stdcall CoFileTimeNow(ptr)
 @ stdcall CoFileTimeToDosDateTime(ptr ptr ptr) kernel32.FileTimeToDosDateTime
 @ stdcall CoFreeAllLibraries()
@@ -46,7 +47,7 @@
 @ stdcall CoGetInstanceFromFile(ptr ptr ptr long long wstr long ptr)
 @ stdcall CoGetInstanceFromIStorage(ptr ptr ptr long ptr long ptr)
 @ stdcall -stub CoGetInterceptor(ptr ptr ptr ptr)
-# CoGetInterceptorFromTypeInfo
+@ stdcall -stub CoGetInterceptorFromTypeInfo(ptr ptr ptr ptr ptr)
 @ stdcall CoGetInterfaceAndReleaseStream(ptr ptr ptr)
 @ stdcall CoGetMalloc(long ptr)
 @ stdcall CoGetMarshalSizeMax(ptr ptr ptr long ptr long)
@@ -236,7 +237,7 @@
 @ stdcall OleGetAutoConvert(ptr ptr)
 @ stdcall OleGetClipboard(ptr)
 @ stdcall OleGetIconOfClass(ptr ptr long)
-@ stdcall OleGetIconOfFile(ptr long)
+@ stdcall OleGetIconOfFile(wstr long)
 @ stdcall OleInitialize(ptr)
 @ stdcall OleInitializeWOW(long long)
 @ stdcall OleIsCurrentClipboard(ptr)
@@ -323,11 +324,3 @@
 @ stdcall WriteFmtUserTypeStg(ptr long ptr)
 @ stub WriteOleStg
 @ stub WriteStringStream
-
-
-@ stub CoTestCancel
-@ stub CoInvalidateRemoteMachineBindings
-@ stub CoSetCancelObject
-@ stdcall CoGetApartmentType(ptr ptr)
-@ stdcall CoGetActivationState(int128 long ptr)
-@ stdcall CoGetCallState(long ptr)f

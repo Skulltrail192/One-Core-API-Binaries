@@ -31,7 +31,7 @@ MemFree(IN PVOID lpMem)
 
 PVOID
 MemAlloc(IN DWORD dwFlags,
-         IN DWORD dwBytes)
+         IN SIZE_T dwBytes)
 {
     /* Allocate memory from the heap */
     return HeapAlloc(g_hHeap, dwFlags, dwBytes);
@@ -142,10 +142,12 @@ RunCommand(IN LPCWSTR lpszCommand,
     lpszExpandedCommand = (LPWSTR)MemAlloc(0, dwNumOfChars * sizeof(WCHAR));
     ExpandEnvironmentStringsW(lpszCommand, lpszExpandedCommand, dwNumOfChars);
 
-    dwRes = (DWORD)ShellExecuteW(NULL, NULL /* and not L"open" !! */,
-                                 lpszExpandedCommand,
-                                 lpszParameters,
-                                 NULL, nShowCmd);
+    dwRes = (DWORD_PTR)ShellExecuteW(NULL,
+                                     NULL /* and not L"open" !! */,
+                                     lpszExpandedCommand,
+                                     lpszParameters,
+                                     NULL,
+                                     nShowCmd);
     MemFree(lpszExpandedCommand);
 
     return dwRes;

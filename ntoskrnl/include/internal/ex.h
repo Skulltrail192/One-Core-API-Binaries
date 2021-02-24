@@ -2,7 +2,7 @@
 
 /* GLOBAL VARIABLES *********************************************************/
 
-extern TIME_ZONE_INFORMATION ExpTimeZoneInfo;
+extern RTL_TIME_ZONE_INFORMATION ExpTimeZoneInfo;
 extern LARGE_INTEGER ExpTimeZoneBias;
 extern ULONG ExpTimeZoneId;
 extern ULONG ExpTickCountMultiplier;
@@ -28,6 +28,11 @@ extern LIST_ENTRY ExpNonPagedLookasideListHead;
 extern LIST_ENTRY ExpPagedLookasideListHead;
 extern KSPIN_LOCK ExpNonPagedLookasideListLock;
 extern KSPIN_LOCK ExpPagedLookasideListLock;
+extern ULONG ExCriticalWorkerThreads;
+extern ULONG ExDelayedWorkerThreads;
+
+extern PVOID ExpDefaultErrorPort;
+extern PEPROCESS ExpDefaultErrorPortProcess;
 
 /*
  * NT/Cm Version Info variables
@@ -58,6 +63,7 @@ extern WINKD_WORKER_STATE ExpDebuggerWork;
 extern PEPROCESS ExpDebuggerProcessAttach;
 extern PEPROCESS ExpDebuggerProcessKill;
 extern ULONG_PTR ExpDebuggerPageIn;
+
 VOID NTAPI ExpDebuggerWorker(IN PVOID Context);
 // #endif /* _WINKD_ */
 
@@ -68,25 +74,29 @@ VOID NTAPI ExpDebuggerWorker(IN PVOID Context);
 #define HANDLE_LOW_BITS (PAGE_SHIFT - 3)
 #define HANDLE_HIGH_BITS (PAGE_SHIFT - 2)
 #endif
-#define KERNEL_FLAG_BITS (sizeof(PVOID)*8 - 31)
+#define HANDLE_TAG_BITS (2)
+#define HANDLE_INDEX_BITS (HANDLE_LOW_BITS + 2*HANDLE_HIGH_BITS)
+#define KERNEL_FLAG_BITS (sizeof(PVOID)*8 - HANDLE_INDEX_BITS - HANDLE_TAG_BITS)
 
 typedef union _EXHANDLE
 {
      struct
      {
-         ULONG_PTR TagBits:2;
-         ULONG_PTR Index:29;
+         ULONG_PTR TagBits:     HANDLE_TAG_BITS;
+         ULONG_PTR Index:       HANDLE_INDEX_BITS;
+         ULONG_PTR KernelFlag : KERNEL_FLAG_BITS;
      };
      struct
      {
-         ULONG_PTR TagBits2:2;
-         ULONG_PTR LowIndex:HANDLE_LOW_BITS;
-         ULONG_PTR MidIndex:HANDLE_HIGH_BITS;
-         ULONG_PTR HighIndex:HANDLE_HIGH_BITS;
-         ULONG_PTR KernelFlag:KERNEL_FLAG_BITS;
+         ULONG_PTR TagBits2:    HANDLE_TAG_BITS;
+         ULONG_PTR LowIndex:    HANDLE_LOW_BITS;
+         ULONG_PTR MidIndex:    HANDLE_HIGH_BITS;
+         ULONG_PTR HighIndex:   HANDLE_HIGH_BITS;
+         ULONG_PTR KernelFlag2: KERNEL_FLAG_BITS;
      };
      HANDLE GenericHandleOverlay;
      ULONG_PTR Value;
+     ULONG AsULONG;
 } EXHANDLE, *PEXHANDLE;
 
 typedef struct _ETIMER
@@ -157,8 +167,18 @@ ExGetPoolTagInfo(
     IN OUT PULONG ReturnLength OPTIONAL
 );
 
+typedef struct _UUID_CACHED_VALUES_STRUCT
+{
+    ULONGLONG Time;
+    LONG AllocatedCount;
+    UCHAR ClockSeqHiAndReserved;
+    UCHAR ClockSeqLow;
+    UCHAR NodeId [ 6 ] ;
+} UUID_CACHED_VALUES_STRUCT, *PUUID_CACHED_VALUES_STRUCT;
+
 /* INITIALIZATION FUNCTIONS *************************************************/
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 ExpWin32kInit(VOID);
@@ -173,6 +193,7 @@ Phase1Initialization(
     IN PVOID Context
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 ExpInitializePushLocks(VOID);
@@ -183,6 +204,7 @@ ExRefreshTimeZoneInformation(
     IN PLARGE_INTEGER SystemBootTime
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 ExpInitializeWorkerThreads(VOID);
@@ -191,10 +213,12 @@ VOID
 NTAPI
 ExSwapinWorkerThreads(IN BOOLEAN AllowSwap);
 
+INIT_FUNCTION
 VOID
 NTAPI
 ExpInitLookasideLists(VOID);
 
+INIT_FUNCTION
 VOID
 NTAPI
 ExInitializeSystemLookasideList(
@@ -206,14 +230,22 @@ ExInitializeSystemLookasideList(
     IN PLIST_ENTRY ListHead
 );
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 ExpInitializeCallbacks(VOID);
 
-VOID
+INIT_FUNCTION
+BOOLEAN
 NTAPI
-ExpInitUuids(VOID);
+ExpUuidInitialization(VOID);
 
+INIT_FUNCTION
+BOOLEAN
+NTAPI
+ExLuidInitialization(VOID);
+
+INIT_FUNCTION
 VOID
 NTAPI
 ExpInitializeExecutive(
@@ -221,38 +253,51 @@ ExpInitializeExecutive(
     IN PLOADER_PARAMETER_BLOCK LoaderBlock
 );
 
+VOID
+NTAPI
+ExShutdownSystem(VOID);
+
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 ExpInitializeEventImplementation(VOID);
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 ExpInitializeKeyedEventImplementation(VOID);
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 ExpInitializeEventPairImplementation(VOID);
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 ExpInitializeSemaphoreImplementation(VOID);
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 ExpInitializeMutantImplementation(VOID);
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 ExpInitializeTimerImplementation(VOID);
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 ExpInitializeProfileImplementation(VOID);
 
+INIT_FUNCTION
 VOID
 NTAPI
 ExpResourceInitialization(VOID);
 
+INIT_FUNCTION
 VOID
 NTAPI
 ExInitPoolLookasidePointers(VOID);
@@ -392,6 +437,7 @@ typedef BOOLEAN
     ULONG_PTR Context
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 ExpInitializeHandleTables(
@@ -727,6 +773,16 @@ ExCompareSwapFastReference(IN PEX_FAST_REF FastRef,
 }
 
 /* RUNDOWN *******************************************************************/
+
+FORCEINLINE
+PEX_RUNDOWN_REF
+ExGetRunRefForGivenProcessor(IN PEX_RUNDOWN_REF_CACHE_AWARE RunRefCacheAware,
+                             IN ULONG ProcNumber)
+{
+    return (PEX_RUNDOWN_REF)((ULONG_PTR)RunRefCacheAware->RunRefs +
+                             RunRefCacheAware->RunRefSize *
+                             (ProcNumber % RunRefCacheAware->Number));
+}
 
 /*++
  * @name ExfAcquireRundownProtection
@@ -1403,7 +1459,7 @@ ExTryToAcquireResourceExclusiveLite(
 
 NTSTATUS
 ExpSetTimeZoneInformation(
-    IN PTIME_ZONE_INFORMATION TimeZoneInformation
+    IN PRTL_TIME_ZONE_INFORMATION TimeZoneInformation
 );
 
 BOOLEAN
@@ -1437,12 +1493,14 @@ ExTimerRundown(
     VOID
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 HeadlessInit(
     IN PLOADER_PARAMETER_BLOCK LoaderBlock
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 XIPInit(
@@ -1463,6 +1521,9 @@ XIPInit(
 
 #define InterlockedCompareExchangeUL(Destination, Exchange, Comperand) \
    (ULONG)InterlockedCompareExchange((PLONG)(Destination), (LONG)(Exchange), (LONG)(Comperand))
+
+#define InterlockedCompareExchangeSizeT(Destination, Exchange, Comperand) \
+   (SIZE_T)InterlockedCompareExchangePointer((PVOID*)(Destination), (PVOID)(SIZE_T)(Exchange), (PVOID)(SIZE_T)(Comperand))
 
 #define ExfInterlockedCompareExchange64UL(Destination, Exchange, Comperand) \
    (ULONGLONG)ExfInterlockedCompareExchange64((PLONGLONG)(Destination), (PLONGLONG)(Exchange), (PLONGLONG)(Comperand))

@@ -24,7 +24,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "objbase.h"
+#include "ole2.h"
+#include "winerror.h"
+
+#include "compobj_private.h" 
+
+#include "wine/list.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
@@ -108,9 +122,14 @@ StdGlobalInterfaceTable_QueryInterface(IGlobalInterfaceTable* iface,
   /* Do we implement that interface? */
   if (IsEqualIID(&IID_IUnknown, riid) ||
       IsEqualIID(&IID_IGlobalInterfaceTable, riid))
+  {
     *ppvObject = iface;
+  }
   else
+  {
+    FIXME("(%s), not supported.\n", debugstr_guid(riid));
     return E_NOINTERFACE;
+  }
 
   /* Now inc the refcount */
   IGlobalInterfaceTable_AddRef(iface);
@@ -300,13 +319,10 @@ static HRESULT WINAPI
 GITCF_CreateInstance(LPCLASSFACTORY iface, LPUNKNOWN pUnk,
                      REFIID riid, LPVOID *ppv)
 {
-  if (IsEqualIID(riid,&IID_IGlobalInterfaceTable)) {
-    IGlobalInterfaceTable *git = get_std_git();
-    return IGlobalInterfaceTable_QueryInterface(git, riid, ppv);
-  }
-
-  FIXME("(%s), not supported.\n",debugstr_guid(riid));
-  return E_NOINTERFACE;
+  IGlobalInterfaceTable *git = get_std_git();
+  HRESULT hr = IGlobalInterfaceTable_QueryInterface(git, riid, ppv);
+  IGlobalInterfaceTable_Release(git);
+  return hr;
 }
 
 static HRESULT WINAPI GITCF_LockServer(LPCLASSFACTORY iface, BOOL fLock)

@@ -4,19 +4,20 @@
  * FILE:        dll/shellext/stobject/power.cpp
  * PURPOSE:     Power notification icon handler
  * PROGRAMMERS: Eric Kohl <eric.kohl@reactos.org>
+                Shriraj Sawant a.k.a SR13 <sr.official@hotmail.com>
  *              David Quintana <gigaherz@gmail.com>
  */
 
 #include "precomp.h"
-#include "powrprof.h"
 
-#include <mmsystem.h>
-#include <mmddk.h>
+#include <devguid.h>
+#include <winioctl.h>
+#include <powrprof.h>
+#include <windows.h>
+#include <batclass.h>
 
-#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
-#define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
-
-WINE_DEFAULT_DEBUG_CHANNEL(stobject);
+int br_icons[5] = { IDI_BATTCAP0, IDI_BATTCAP1, IDI_BATTCAP2, IDI_BATTCAP3, IDI_BATTCAP4 }; // battery mode icons.
+int bc_icons[5] = { IDI_BATTCHA0, IDI_BATTCHA1, IDI_BATTCHA2, IDI_BATTCHA3, IDI_BATTCHA4 }; // charging mode icons.
 
 typedef struct _PWRSCHEMECONTEXT
 {
@@ -25,73 +26,111 @@ typedef struct _PWRSCHEMECONTEXT
     UINT uiLast;
 } PWRSCHEMECONTEXT, *PPWRSCHEMECONTEXT;
 
-//static HICON g_hIconBattery = NULL;
-static HICON g_hIconAC = NULL;
+CString  g_strTooltip;
+static HICON g_hIconBattery = NULL;
 
-static BOOL g_IsRunning = FALSE;
 
+/*++
+* @name Quantize
+* 
+* This function quantizes the mentioned quantity to nearest level.
+* 
+* @param p
+*        Should be a quantity in percentage.
+*
+* @return Nearest quantized level, can be directly used as array index based on context.
+*
+ @remarks This function uses centred/symmetric logic for quantization.
+ For the case of lvl = 4, You will get following integer levels if given (p) value falls in between the range partitions:
+     0    <= p <  12.5 : returns 0; (corresponding to 0% centre)
+     12.5 <= p <  37.5 : returns 1; (corresponding to 25% centre)
+     37.5 <= p <  62.5 : returns 2; (corresponding to 50% centre)
+     62.5 <= p <  87.5 : returns 3; (corresponding to 75% centre)
+     87.5 <= p <= 100  : returns 4; (corresponding to 100% centre)
+ *--*/
+static UINT Quantize(BYTE p)
+{
+    if (p <= 12)
+        return 0;
+    else if (p > 12 && p <= 37)
+        return 1;
+    else if (p > 37 && p <= 62)
+        return 2;
+    else if (p > 62 && p <= 87)
+        return 3;
+    else
+        return 4;
+}
+
+/*++
+* @name DynamicLoadIcon
+*
+* Returns the respective icon as per the current battery capacity.
+* It also does the work of setting global parameters of battery capacity and tooltips.
+*
+* @param hinst
+*        A handle to a instance of the module.
+*
+* @return The handle to respective battery icon.
+*
+*--*/
+static HICON DynamicLoadIcon(HINSTANCE hinst)
+{
+    SYSTEM_POWER_STATUS PowerStatus;
+    HICON hBatIcon;
+    UINT index = -1;
+
+    if (!GetSystemPowerStatus(&PowerStatus) ||
+        PowerStatus.ACLineStatus == AC_LINE_UNKNOWN ||
+        PowerStatus.BatteryFlag == BATTERY_FLAG_UNKNOWN)
+    {
+        hBatIcon = LoadIcon(hinst, MAKEINTRESOURCE(IDI_BATTCAP_ERR));
+        g_strTooltip.LoadStringW(IDS_PWR_UNKNOWN_REMAINING);
+        return hBatIcon;
+    }
+
+    if (((PowerStatus.BatteryFlag & BATTERY_FLAG_NO_BATTERY) == 0) &&
+        ((PowerStatus.BatteryFlag & BATTERY_FLAG_CHARGING) == BATTERY_FLAG_CHARGING))
+    {
+        index = Quantize(PowerStatus.BatteryLifePercent);
+        hBatIcon = LoadIcon(hinst, MAKEINTRESOURCE(bc_icons[index])); 
+        g_strTooltip.Format(IDS_PWR_CHARGING, PowerStatus.BatteryLifePercent);
+    }
+    else if (((PowerStatus.BatteryFlag & BATTERY_FLAG_NO_BATTERY) == 0) &&
+             ((PowerStatus.BatteryFlag & BATTERY_FLAG_CHARGING) == 0))
+    {
+        index = Quantize(PowerStatus.BatteryLifePercent);
+        hBatIcon = LoadIcon(hinst, MAKEINTRESOURCE(br_icons[index]));
+        g_strTooltip.Format(IDS_PWR_PERCENT_REMAINING, PowerStatus.BatteryLifePercent);
+    }
+    else
+    {
+        hBatIcon = LoadIcon(hinst, MAKEINTRESOURCE(IDI_POWER_AC));
+        g_strTooltip.LoadStringW(IDS_PWR_AC);
+    }
+
+    return hBatIcon;
+}
 
 HRESULT STDMETHODCALLTYPE Power_Init(_In_ CSysTray * pSysTray)
-{
-    WCHAR strTooltip[128];
-
+{ 
     TRACE("Power_Init\n");
+    g_hIconBattery = DynamicLoadIcon(g_hInstance);
 
-//    g_hIconBattery = LoadIcon(g_hInstance, MAKEINTRESOURCE(IDI_BATTERY));
-    g_hIconAC = LoadIcon(g_hInstance, MAKEINTRESOURCE(IDI_BATTERY));
-
-
-    HICON icon;
-//    if (g_IsMute)
-//        icon = g_hIconBattery;
-//    else
-        icon = g_hIconAC;
-
-    LoadStringW(g_hInstance, IDS_PWR_AC, strTooltip, _countof(strTooltip));
-
-    g_IsRunning = TRUE;
-
-    return pSysTray->NotifyIcon(NIM_ADD, ID_ICON_POWER, icon, strTooltip);
+    return pSysTray->NotifyIcon(NIM_ADD, ID_ICON_POWER, g_hIconBattery, g_strTooltip);
 }
 
 HRESULT STDMETHODCALLTYPE Power_Update(_In_ CSysTray * pSysTray)
 {
-//    BOOL PrevState;
-
     TRACE("Power_Update\n");
+    g_hIconBattery = DynamicLoadIcon(g_hInstance);
 
-#if 0
-    PrevState = g_IsMute;
-    Volume_IsMute();
-
-    if (PrevState != g_IsMute)
-    {
-        WCHAR strTooltip[128];
-        HICON icon;
-        if (g_IsMute) {
-            icon = g_hIconMute;
-            LoadStringW(g_hInstance, IDS_VOL_MUTED, strTooltip, _countof(strTooltip));
-        }
-        else {
-            icon = g_hIconVolume;
-            LoadStringW(g_hInstance, IDS_VOL_VOLUME, strTooltip, _countof(strTooltip));
-        }
-
-        return pSysTray->NotifyIcon(NIM_MODIFY, ID_ICON_POWER, icon, strTooltip);
-    }
-    else
-    {
-        return S_OK;
-    }
-#endif
-    return S_OK;
+    return pSysTray->NotifyIcon(NIM_MODIFY, ID_ICON_POWER, g_hIconBattery, g_strTooltip);
 }
 
 HRESULT STDMETHODCALLTYPE Power_Shutdown(_In_ CSysTray * pSysTray)
 {
     TRACE("Power_Shutdown\n");
-
-    g_IsRunning = FALSE;
 
     return pSysTray->NotifyIcon(NIM_DELETE, ID_ICON_POWER, NULL, NULL);
 }
@@ -103,22 +142,19 @@ static void _RunPower()
 
 static void _ShowContextMenu(CSysTray * pSysTray)
 {
-    WCHAR strOpen[128];
-
-    LoadStringW(g_hInstance, IDS_PWR_PROPERTIES, strOpen, _countof(strOpen));
-
+    CString strOpen((LPCSTR)IDS_PWR_PROPERTIES);
     HMENU hPopup = CreatePopupMenu();
     AppendMenuW(hPopup, MF_STRING, IDS_PWR_PROPERTIES, strOpen);
-
-    DWORD flags = TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTALIGN | TPM_BOTTOMALIGN;
-    DWORD msgPos = GetMessagePos();
+    SetMenuDefaultItem(hPopup, IDS_PWR_PROPERTIES, FALSE);
 
     SetForegroundWindow(pSysTray->GetHWnd());
-    DWORD id = TrackPopupMenuEx(hPopup, flags,
-        GET_X_LPARAM(msgPos), GET_Y_LPARAM(msgPos),
-        pSysTray->GetHWnd(), NULL);
+    DWORD flags = TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTALIGN | TPM_BOTTOMALIGN;
+    POINT pt;
+    GetCursorPos(&pt);
 
-    DestroyMenu(hPopup);
+    DWORD id = TrackPopupMenuEx(hPopup, flags,
+        pt.x, pt.y,
+        pSysTray->GetHWnd(), NULL);
 
     switch (id)
     {
@@ -126,6 +162,7 @@ static void _ShowContextMenu(CSysTray * pSysTray)
             _RunPower();
             break;
     }
+    DestroyMenu(hPopup);
 }
 
 static
@@ -160,8 +197,8 @@ ShowPowerSchemesPopupMenu(
 {
     PWRSCHEMECONTEXT PowerSchemeContext = {NULL, 0, 0};
     UINT uiActiveScheme;
-    DWORD id, msgPos;
-
+    DWORD id;
+    POINT pt;
     PowerSchemeContext.hPopup = CreatePopupMenu();
     EnumPwrSchemes(PowerSchemesEnumProc, (LPARAM)&PowerSchemeContext);
 
@@ -174,13 +211,13 @@ ShowPowerSchemesPopupMenu(
                            MF_BYCOMMAND);
     }
 
-    msgPos = GetMessagePos();
-
     SetForegroundWindow(pSysTray->GetHWnd());
+    GetCursorPos(&pt);
+    
     id = TrackPopupMenuEx(PowerSchemeContext.hPopup,
                           TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTALIGN | TPM_BOTTOMALIGN,
-                          GET_X_LPARAM(msgPos),
-                          GET_Y_LPARAM(msgPos),
+                          pt.x,
+                          pt.y,
                           pSysTray->GetHWnd(),
                           NULL);
 
@@ -198,23 +235,37 @@ HRESULT STDMETHODCALLTYPE Power_Message(_In_ CSysTray * pSysTray, UINT uMsg, WPA
     {
         case WM_USER + 220:
             TRACE("Power_Message: WM_USER+220\n");
-            if (wParam == 1)
+            if (wParam == POWER_SERVICE_FLAG)
             {
-                if (lParam == FALSE)
+                if (lParam)
+                {
+                    pSysTray->EnableService(POWER_SERVICE_FLAG, TRUE);
                     return Power_Init(pSysTray);
+                }
                 else
+                {
+                    pSysTray->EnableService(POWER_SERVICE_FLAG, FALSE);
                     return Power_Shutdown(pSysTray);
+                }
             }
             return S_FALSE;
 
         case WM_USER + 221:
             TRACE("Power_Message: WM_USER+221\n");
-            if (wParam == 1)
+            if (wParam == POWER_SERVICE_FLAG)
             {
-                lResult = (LRESULT)g_IsRunning;
+                lResult = (LRESULT)pSysTray->IsServiceEnabled(POWER_SERVICE_FLAG);
                 return S_OK;
             }
             return S_FALSE;
+
+        case WM_TIMER:
+            if (wParam == POWER_TIMER_ID)
+            {
+                KillTimer(pSysTray->GetHWnd(), POWER_TIMER_ID);
+                ShowPowerSchemesPopupMenu(pSysTray);
+            }
+            break;
 
         case ID_ICON_POWER:
             Power_Update(pSysTray);
@@ -222,13 +273,14 @@ HRESULT STDMETHODCALLTYPE Power_Message(_In_ CSysTray * pSysTray, UINT uMsg, WPA
             switch (lParam)
             {
                 case WM_LBUTTONDOWN:
+                    SetTimer(pSysTray->GetHWnd(), POWER_TIMER_ID, GetDoubleClickTime(), NULL);
                     break;
 
                 case WM_LBUTTONUP:
-                    ShowPowerSchemesPopupMenu(pSysTray);
                     break;
 
                 case WM_LBUTTONDBLCLK:
+                    KillTimer(pSysTray->GetHWnd(), POWER_TIMER_ID);
                     _RunPower();
                     break;
 

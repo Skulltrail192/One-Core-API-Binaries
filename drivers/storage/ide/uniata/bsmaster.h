@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2002-2014 Alexandr A. Telyatnikov (Alter)
+Copyright (c) 2002-2018 Alexandr A. Telyatnikov (Alter)
 
 Module Name:
     bsmaster.h
@@ -93,6 +93,9 @@ Licence:
 // Hitachi 1 Tb HDD didn't allow LBA28 with BCount > 1 beyond this LBA
 #define ATA_MAX_IOLBA28                 DEF_U64(0x0fffff80)
 #define ATA_MAX_LBA28                   DEF_U64(0x0fffffff)
+
+#define ATA_MAX_IOLBA32                 DEF_U64(0xffffff80)
+#define ATA_MAX_LBA32                   DEF_U64(0xffffffff)
 
 #define ATA_DMA_ENTRIES			256     /* PAGESIZE/2/sizeof(BM_DMA_ENTRY)*/
 #define ATA_DMA_EOT			0x80000000
@@ -706,6 +709,7 @@ typedef struct _IDE_AHCI_PORT_REGISTERS {
 #define         ATA_AHCI_P_CMD_HPCP     0x00040000
 #define         ATA_AHCI_P_CMD_ISP      0x00080000
 #define         ATA_AHCI_P_CMD_CPD      0x00100000
+#define         ATA_AHCI_P_CMD_ESP      0x00200000
 #define         ATA_AHCI_P_CMD_ATAPI    0x01000000
 #define         ATA_AHCI_P_CMD_DLAE     0x02000000
 #define         ATA_AHCI_P_CMD_ALPE     0x04000000
@@ -999,7 +1003,11 @@ struct _HW_LU_EXTENSION;
 
 typedef struct _IORES {
     union {
+#ifdef __REACTOS__
+        ULONG_PTR Addr;      /* Base address*/
+#else
         ULONG Addr;          /* Base address*/
+#endif
         PVOID pAddr;         /* Base address in pointer form */
     };
     ULONG MemIo:1;       /* Memory mapping (1) vs IO ports (0) */
@@ -1588,7 +1596,7 @@ AtapiChipInit(
     IN ULONG c
     );
 
-extern ULONG
+extern ULONGIO_PTR
 NTAPI
 AtapiGetIoRange(
     IN PVOID HwDeviceExtension,

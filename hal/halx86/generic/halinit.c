@@ -12,6 +12,7 @@
 #define NDEBUG
 #include <debug.h>
 
+INIT_FUNCTION
 VOID
 NTAPI
 HalpGetParameters(
@@ -29,7 +30,7 @@ BOOLEAN HalpPciLockSettings;
 
 /* PRIVATE FUNCTIONS *********************************************************/
 
-INIT_SECTION
+INIT_FUNCTION
 VOID
 NTAPI
 HalpGetParameters(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
@@ -76,7 +77,7 @@ HalInitializeProcessor(
 /*
  * @implemented
  */
-INIT_SECTION
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 HalInitSystem(IN ULONG BootPhase,
@@ -155,6 +156,10 @@ HalInitSystem(IN ULONG BootPhase,
 
         /* Do some HAL-specific initialization */
         HalpInitPhase1();
+
+#ifdef _M_AMD64
+        HalInitializeBios(0, LoaderBlock);
+#endif
     }
 
     /* All done, return */

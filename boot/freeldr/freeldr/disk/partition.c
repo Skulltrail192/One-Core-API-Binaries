@@ -17,25 +17,124 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-/*
- * TODO: This is here where we should add support for GPT partitions
- * as well as partitionless disks!
- */
-
 #ifndef _M_ARM
 #include <freeldr.h>
 
-#define NDEBUG
 #include <debug.h>
-
 DBG_DEFAULT_CHANNEL(DISK);
 
-/* This function serves to retrieve a partition entry for devices that handle partitions differently */
-DISK_GET_PARTITION_ENTRY DiskGetPartitionEntry = DiskGetMbrPartitionEntry;
+#define MaxDriveNumber 0xFF
+static PARTITION_STYLE DiskPartitionType[MaxDriveNumber + 1];
 
-BOOLEAN DiskGetActivePartitionEntry(UCHAR DriveNumber,
-                                    PPARTITION_TABLE_ENTRY PartitionTableEntry,
-                                    ULONG *ActivePartition)
+/* BRFR signature at disk offset 0x600 */
+#define XBOX_SIGNATURE_SECTOR 3
+#define XBOX_SIGNATURE        ('B' | ('R' << 8) | ('F' << 16) | ('R' << 24))
+
+/* Default hardcoded partition number to boot from Xbox disk */
+#define FATX_DATA_PARTITION 1
+
+static struct
+{
+    ULONG SectorCountBeforePartition;
+    ULONG PartitionSectorCount;
+    UCHAR SystemIndicator;
+} XboxPartitions[] =
+{
+    /* This is in the \Device\Harddisk0\Partition.. order used by the Xbox kernel */
+    { 0x0055F400, 0x0098F800, PARTITION_FAT32  }, /* Store , E: */
+    { 0x00465400, 0x000FA000, PARTITION_FAT_16 }, /* System, C: */
+    { 0x00000400, 0x00177000, PARTITION_FAT_16 }, /* Cache1, X: */
+    { 0x00177400, 0x00177000, PARTITION_FAT_16 }, /* Cache2, Y: */
+    { 0x002EE400, 0x00177000, PARTITION_FAT_16 }  /* Cache3, Z: */
+};
+
+static BOOLEAN
+DiskReadBootRecord(
+    IN UCHAR DriveNumber,
+    IN ULONGLONG LogicalSectorNumber,
+    OUT PMASTER_BOOT_RECORD BootRecord)
+{
+    ULONG Index;
+
+    /* Read master boot record */
+    if (!MachDiskReadLogicalSectors(DriveNumber, LogicalSectorNumber, 1, DiskReadBuffer))
+    {
+        return FALSE;
+    }
+    RtlCopyMemory(BootRecord, DiskReadBuffer, sizeof(MASTER_BOOT_RECORD));
+
+    TRACE("Dumping partition table for drive 0x%x:\n", DriveNumber);
+    TRACE("Boot record logical start sector = %d\n", LogicalSectorNumber);
+    TRACE("sizeof(MASTER_BOOT_RECORD) = 0x%x.\n", sizeof(MASTER_BOOT_RECORD));
+
+    for (Index = 0; Index < 4; Index++)
+    {
+        TRACE("-------------------------------------------\n");
+        TRACE("Partition %d\n", (Index + 1));
+        TRACE("BootIndicator: 0x%x\n", BootRecord->PartitionTable[Index].BootIndicator);
+        TRACE("StartHead: 0x%x\n", BootRecord->PartitionTable[Index].StartHead);
+        TRACE("StartSector (Plus 2 cylinder bits): 0x%x\n", BootRecord->PartitionTable[Index].StartSector);
+        TRACE("StartCylinder: 0x%x\n", BootRecord->PartitionTable[Index].StartCylinder);
+        TRACE("SystemIndicator: 0x%x\n", BootRecord->PartitionTable[Index].SystemIndicator);
+        TRACE("EndHead: 0x%x\n", BootRecord->PartitionTable[Index].EndHead);
+        TRACE("EndSector (Plus 2 cylinder bits): 0x%x\n", BootRecord->PartitionTable[Index].EndSector);
+        TRACE("EndCylinder: 0x%x\n", BootRecord->PartitionTable[Index].EndCylinder);
+        TRACE("SectorCountBeforePartition: 0x%x\n", BootRecord->PartitionTable[Index].SectorCountBeforePartition);
+        TRACE("PartitionSectorCount: 0x%x\n", BootRecord->PartitionTable[Index].PartitionSectorCount);
+    }
+
+    /* Check the partition table magic value */
+    return (BootRecord->MasterBootRecordMagic == 0xaa55);
+}
+
+static BOOLEAN
+DiskGetFirstPartitionEntry(
+    IN PMASTER_BOOT_RECORD MasterBootRecord,
+    OUT PPARTITION_TABLE_ENTRY PartitionTableEntry)
+{
+    ULONG Index;
+
+    for (Index = 0; Index < 4; Index++)
+    {
+        /* Check the system indicator. If it's not an extended or unused partition then we're done. */
+        if ((MasterBootRecord->PartitionTable[Index].SystemIndicator != PARTITION_ENTRY_UNUSED) &&
+            (MasterBootRecord->PartitionTable[Index].SystemIndicator != PARTITION_EXTENDED) &&
+            (MasterBootRecord->PartitionTable[Index].SystemIndicator != PARTITION_XINT13_EXTENDED))
+        {
+            RtlCopyMemory(PartitionTableEntry, &MasterBootRecord->PartitionTable[Index], sizeof(PARTITION_TABLE_ENTRY));
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+static BOOLEAN
+DiskGetFirstExtendedPartitionEntry(
+    IN PMASTER_BOOT_RECORD MasterBootRecord,
+    OUT PPARTITION_TABLE_ENTRY PartitionTableEntry)
+{
+    ULONG Index;
+
+    for (Index = 0; Index < 4; Index++)
+    {
+        /* Check the system indicator. If it an extended partition then we're done. */
+        if ((MasterBootRecord->PartitionTable[Index].SystemIndicator == PARTITION_EXTENDED) ||
+            (MasterBootRecord->PartitionTable[Index].SystemIndicator == PARTITION_XINT13_EXTENDED))
+        {
+            RtlCopyMemory(PartitionTableEntry, &MasterBootRecord->PartitionTable[Index], sizeof(PARTITION_TABLE_ENTRY));
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+static BOOLEAN
+DiskGetActivePartitionEntry(
+    IN UCHAR DriveNumber,
+    OUT PPARTITION_TABLE_ENTRY PartitionTableEntry,
+    OUT PULONG ActivePartition)
 {
     ULONG BootablePartitionCount = 0;
     ULONG CurrentPartitionNumber;
@@ -45,14 +144,14 @@ BOOLEAN DiskGetActivePartitionEntry(UCHAR DriveNumber,
 
     *ActivePartition = 0;
 
-    // Read master boot record
+    /* Read master boot record */
     if (!DiskReadBootRecord(DriveNumber, 0, &MasterBootRecord))
     {
         return FALSE;
     }
 
     CurrentPartitionNumber = 0;
-    for (Index=0; Index<4; Index++)
+    for (Index = 0; Index < 4; Index++)
     {
         ThisPartitionTableEntry = &MasterBootRecord.PartitionTable[Index];
 
@@ -62,13 +161,13 @@ BOOLEAN DiskGetActivePartitionEntry(UCHAR DriveNumber,
         {
             CurrentPartitionNumber++;
 
-            // Test if this is the bootable partition
+            /* Test if this is the bootable partition */
             if (ThisPartitionTableEntry->BootIndicator == 0x80)
             {
                 BootablePartitionCount++;
                 *ActivePartition = CurrentPartitionNumber;
 
-                // Copy the partition table entry
+                /* Copy the partition table entry */
                 RtlCopyMemory(PartitionTableEntry,
                               ThisPartitionTableEntry,
                               sizeof(PARTITION_TABLE_ENTRY));
@@ -76,7 +175,7 @@ BOOLEAN DiskGetActivePartitionEntry(UCHAR DriveNumber,
         }
     }
 
-    // Make sure there was only one bootable partition
+    /* Make sure there was only one bootable partition */
     if (BootablePartitionCount == 0)
     {
         ERR("No bootable (active) partitions found.\n");
@@ -91,7 +190,11 @@ BOOLEAN DiskGetActivePartitionEntry(UCHAR DriveNumber,
     return TRUE;
 }
 
-BOOLEAN DiskGetMbrPartitionEntry(UCHAR DriveNumber, ULONG PartitionNumber, PPARTITION_TABLE_ENTRY PartitionTableEntry)
+static BOOLEAN
+DiskGetMbrPartitionEntry(
+    IN UCHAR DriveNumber,
+    IN ULONG PartitionNumber,
+    OUT PPARTITION_TABLE_ENTRY PartitionTableEntry)
 {
     MASTER_BOOT_RECORD MasterBootRecord;
     PARTITION_TABLE_ENTRY ExtendedPartitionTableEntry;
@@ -101,14 +204,14 @@ BOOLEAN DiskGetMbrPartitionEntry(UCHAR DriveNumber, ULONG PartitionNumber, PPART
     ULONG CurrentPartitionNumber;
     PPARTITION_TABLE_ENTRY ThisPartitionTableEntry;
 
-    // Read master boot record
+    /* Read master boot record */
     if (!DiskReadBootRecord(DriveNumber, 0, &MasterBootRecord))
     {
         return FALSE;
     }
 
     CurrentPartitionNumber = 0;
-    for (Index=0; Index<4; Index++)
+    for (Index = 0; Index < 4; Index++)
     {
         ThisPartitionTableEntry = &MasterBootRecord.PartitionTable[Index];
 
@@ -126,134 +229,216 @@ BOOLEAN DiskGetMbrPartitionEntry(UCHAR DriveNumber, ULONG PartitionNumber, PPART
         }
     }
 
-    // They want an extended partition entry so we will need
-    // to loop through all the extended partitions on the disk
-    // and return the one they want.
-
+    /*
+     * They want an extended partition entry so we will need
+     * to loop through all the extended partitions on the disk
+     * and return the one they want.
+     */
     ExtendedPartitionNumber = PartitionNumber - CurrentPartitionNumber - 1;
 
-    // Set the initial relative starting sector to 0
-    // This is because extended partition starting
-    // sectors a numbered relative to their parent
+    /*
+     * Set the initial relative starting sector to 0.
+     * This is because extended partition starting
+     * sectors a numbered relative to their parent.
+     */
     ExtendedPartitionOffset = 0;
 
-    for (Index=0; Index<=ExtendedPartitionNumber; Index++)
+    for (Index = 0; Index <= ExtendedPartitionNumber; Index++)
     {
-        // Get the extended partition table entry
+        /* Get the extended partition table entry */
         if (!DiskGetFirstExtendedPartitionEntry(&MasterBootRecord, &ExtendedPartitionTableEntry))
         {
             return FALSE;
         }
 
-        // Adjust the relative starting sector of the partition
+        /* Adjust the relative starting sector of the partition */
         ExtendedPartitionTableEntry.SectorCountBeforePartition += ExtendedPartitionOffset;
         if (ExtendedPartitionOffset == 0)
         {
-            // Set the start of the parrent extended partition
+            /* Set the start of the parrent extended partition */
             ExtendedPartitionOffset = ExtendedPartitionTableEntry.SectorCountBeforePartition;
         }
-        // Read the partition boot record
+        /* Read the partition boot record */
         if (!DiskReadBootRecord(DriveNumber, ExtendedPartitionTableEntry.SectorCountBeforePartition, &MasterBootRecord))
         {
             return FALSE;
         }
 
-        // Get the first real partition table entry
+        /* Get the first real partition table entry */
         if (!DiskGetFirstPartitionEntry(&MasterBootRecord, PartitionTableEntry))
         {
             return FALSE;
         }
 
-        // Now correct the start sector of the partition
+        /* Now correct the start sector of the partition */
         PartitionTableEntry->SectorCountBeforePartition += ExtendedPartitionTableEntry.SectorCountBeforePartition;
     }
 
-    // When we get here we should have the correct entry
-    // already stored in PartitionTableEntry
-    // so just return TRUE
+    /*
+     * When we get here we should have the correct entry already
+     * stored in PartitionTableEntry, so just return TRUE.
+     */
     return TRUE;
 }
 
-BOOLEAN DiskGetFirstPartitionEntry(PMASTER_BOOT_RECORD MasterBootRecord, PPARTITION_TABLE_ENTRY PartitionTableEntry)
+static BOOLEAN
+DiskGetBrfrPartitionEntry(
+    IN UCHAR DriveNumber,
+    IN ULONG PartitionNumber,
+    OUT PPARTITION_TABLE_ENTRY PartitionTableEntry)
 {
-    ULONG Index;
-
-    for (Index=0; Index<4; Index++)
+    /*
+     * Get partition entry of an Xbox-standard BRFR partitioned disk.
+     */
+    if (PartitionNumber >= 1 && PartitionNumber <= sizeof(XboxPartitions) / sizeof(XboxPartitions[0]) &&
+        MachDiskReadLogicalSectors(DriveNumber, XBOX_SIGNATURE_SECTOR, 1, DiskReadBuffer))
     {
-        // Check the system indicator
-        // If it's not an extended or unused partition
-        // then we're done
-        if ((MasterBootRecord->PartitionTable[Index].SystemIndicator != PARTITION_ENTRY_UNUSED) &&
-            (MasterBootRecord->PartitionTable[Index].SystemIndicator != PARTITION_EXTENDED) &&
-            (MasterBootRecord->PartitionTable[Index].SystemIndicator != PARTITION_XINT13_EXTENDED))
+        if (*((PULONG)DiskReadBuffer) != XBOX_SIGNATURE)
         {
-            RtlCopyMemory(PartitionTableEntry, &MasterBootRecord->PartitionTable[Index], sizeof(PARTITION_TABLE_ENTRY));
-            return TRUE;
+            /* No magic Xbox partitions */
+            return FALSE;
         }
+
+        memset(PartitionTableEntry, 0, sizeof(PARTITION_TABLE_ENTRY));
+        PartitionTableEntry->SystemIndicator = XboxPartitions[PartitionNumber - 1].SystemIndicator;
+        PartitionTableEntry->SectorCountBeforePartition = XboxPartitions[PartitionNumber - 1].SectorCountBeforePartition;
+        PartitionTableEntry->PartitionSectorCount = XboxPartitions[PartitionNumber - 1].PartitionSectorCount;
+        return TRUE;
     }
 
+    /* Partition does not exist */
     return FALSE;
 }
 
-BOOLEAN DiskGetFirstExtendedPartitionEntry(PMASTER_BOOT_RECORD MasterBootRecord, PPARTITION_TABLE_ENTRY PartitionTableEntry)
+VOID
+DiskDetectPartitionType(
+    IN UCHAR DriveNumber)
 {
+    MASTER_BOOT_RECORD MasterBootRecord;
     ULONG Index;
+    ULONG PartitionCount = 0;
+    PPARTITION_TABLE_ENTRY ThisPartitionTableEntry;
+    BOOLEAN GPTProtect = FALSE;
+    PARTITION_TABLE_ENTRY PartitionTableEntry;
 
-    for (Index=0; Index<4; Index++)
+    /* Probe for Master Boot Record */
+    if (DiskReadBootRecord(DriveNumber, 0, &MasterBootRecord))
     {
-        // Check the system indicator
-        // If it an extended partition then we're done
-        if ((MasterBootRecord->PartitionTable[Index].SystemIndicator == PARTITION_EXTENDED) ||
-            (MasterBootRecord->PartitionTable[Index].SystemIndicator == PARTITION_XINT13_EXTENDED))
+        DiskPartitionType[DriveNumber] = PARTITION_STYLE_MBR;
+
+        /* Check for GUID Partition Table */
+        for (Index = 0; Index < 4; Index++)
         {
-            RtlCopyMemory(PartitionTableEntry, &MasterBootRecord->PartitionTable[Index], sizeof(PARTITION_TABLE_ENTRY));
-            return TRUE;
+            ThisPartitionTableEntry = &MasterBootRecord.PartitionTable[Index];
+
+            if (ThisPartitionTableEntry->SystemIndicator != PARTITION_ENTRY_UNUSED)
+            {
+                PartitionCount++;
+
+                if (Index == 0 && ThisPartitionTableEntry->SystemIndicator == PARTITION_GPT)
+                {
+                    GPTProtect = TRUE;
+                }
+            }
         }
+
+        if (PartitionCount == 1 && GPTProtect)
+        {
+            DiskPartitionType[DriveNumber] = PARTITION_STYLE_GPT;
+        }
+        TRACE("Drive 0x%X partition type %s\n", DriveNumber, DiskPartitionType[DriveNumber] == PARTITION_STYLE_MBR ? "MBR" : "GPT");
+        return;
     }
 
+    /* Probe for Xbox-BRFR partitioning */
+    if (DiskGetBrfrPartitionEntry(DriveNumber, FATX_DATA_PARTITION, &PartitionTableEntry))
+    {
+        DiskPartitionType[DriveNumber] = PARTITION_STYLE_BRFR;
+        TRACE("Drive 0x%X partition type Xbox-BRFR\n", DriveNumber);
+        return;
+    }
+
+    /* Failed to detect partitions, assume partitionless disk */
+    DiskPartitionType[DriveNumber] = PARTITION_STYLE_RAW;
+    TRACE("Drive 0x%X partition type unknown\n", DriveNumber);
+}
+
+BOOLEAN
+DiskGetBootPartitionEntry(
+    IN UCHAR DriveNumber,
+    OUT PPARTITION_TABLE_ENTRY PartitionTableEntry,
+    OUT PULONG BootPartition)
+{
+    switch (DiskPartitionType[DriveNumber])
+    {
+        case PARTITION_STYLE_MBR:
+        {
+            return DiskGetActivePartitionEntry(DriveNumber, PartitionTableEntry, BootPartition);
+        }
+        case PARTITION_STYLE_GPT:
+        {
+            FIXME("DiskGetBootPartitionEntry() unimplemented for GPT\n");
+            return FALSE;
+        }
+        case PARTITION_STYLE_RAW:
+        {
+            FIXME("DiskGetBootPartitionEntry() unimplemented for RAW\n");
+            return FALSE;
+        }
+        case PARTITION_STYLE_BRFR:
+        {
+            if (DiskGetBrfrPartitionEntry(DriveNumber, FATX_DATA_PARTITION, PartitionTableEntry))
+            {
+                *BootPartition = FATX_DATA_PARTITION;
+                return TRUE;
+            }
+            return FALSE;
+        }
+        default:
+        {
+            ERR("Drive 0x%X partition type = %d, should not happen!\n", DriveNumber, DiskPartitionType[DriveNumber]);
+            ASSERT(FALSE);
+        }
+    }
     return FALSE;
 }
 
-BOOLEAN DiskReadBootRecord(UCHAR DriveNumber, ULONGLONG LogicalSectorNumber, PMASTER_BOOT_RECORD BootRecord)
+BOOLEAN
+DiskGetPartitionEntry(
+    IN UCHAR DriveNumber,
+    IN ULONG PartitionNumber,
+    OUT PPARTITION_TABLE_ENTRY PartitionTableEntry)
 {
-    ULONG Index;
-
-    // Read master boot record
-    if (!MachDiskReadLogicalSectors(DriveNumber, LogicalSectorNumber, 1, DiskReadBuffer))
+    switch (DiskPartitionType[DriveNumber])
     {
-        return FALSE;
+        case PARTITION_STYLE_MBR:
+        {
+            return DiskGetMbrPartitionEntry(DriveNumber, PartitionNumber, PartitionTableEntry);
+        }
+        case PARTITION_STYLE_GPT:
+        {
+            FIXME("DiskGetPartitionEntry() unimplemented for GPT\n");
+            return FALSE;
+        }
+        case PARTITION_STYLE_RAW:
+        {
+            FIXME("DiskGetPartitionEntry() unimplemented for RAW\n");
+            return FALSE;
+        }
+        case PARTITION_STYLE_BRFR:
+        {
+            return DiskGetBrfrPartitionEntry(DriveNumber, PartitionNumber, PartitionTableEntry);
+        }
+        default:
+        {
+            ERR("Drive 0x%X partition type = %d, should not happen!\n", DriveNumber, DiskPartitionType[DriveNumber]);
+            ASSERT(FALSE);
+        }
     }
-    RtlCopyMemory(BootRecord, DiskReadBuffer, sizeof(MASTER_BOOT_RECORD));
-
-    TRACE("Dumping partition table for drive 0x%x:\n", DriveNumber);
-    TRACE("Boot record logical start sector = %d\n", LogicalSectorNumber);
-    TRACE("sizeof(MASTER_BOOT_RECORD) = 0x%x.\n", sizeof(MASTER_BOOT_RECORD));
-
-    for (Index=0; Index<4; Index++)
-    {
-        TRACE("-------------------------------------------\n");
-        TRACE("Partition %d\n", (Index + 1));
-        TRACE("BootIndicator: 0x%x\n", BootRecord->PartitionTable[Index].BootIndicator);
-        TRACE("StartHead: 0x%x\n", BootRecord->PartitionTable[Index].StartHead);
-        TRACE("StartSector (Plus 2 cylinder bits): 0x%x\n", BootRecord->PartitionTable[Index].StartSector);
-        TRACE("StartCylinder: 0x%x\n", BootRecord->PartitionTable[Index].StartCylinder);
-        TRACE("SystemIndicator: 0x%x\n", BootRecord->PartitionTable[Index].SystemIndicator);
-        TRACE("EndHead: 0x%x\n", BootRecord->PartitionTable[Index].EndHead);
-        TRACE("EndSector (Plus 2 cylinder bits): 0x%x\n", BootRecord->PartitionTable[Index].EndSector);
-        TRACE("EndCylinder: 0x%x\n", BootRecord->PartitionTable[Index].EndCylinder);
-        TRACE("SectorCountBeforePartition: 0x%x\n", BootRecord->PartitionTable[Index].SectorCountBeforePartition);
-        TRACE("PartitionSectorCount: 0x%x\n", BootRecord->PartitionTable[Index].PartitionSectorCount);
-    }
-
-    // Check the partition table magic value
-    if (BootRecord->MasterBootRecordMagic != 0xaa55)
-    {
-        return FALSE;
-    }
-
-    return TRUE;
+    return FALSE;
 }
 
+#ifndef _M_AMD64
 NTSTATUS
 NTAPI
 IopReadBootRecord(
@@ -262,7 +447,7 @@ IopReadBootRecord(
     IN ULONG SectorSize,
     OUT PMASTER_BOOT_RECORD BootRecord)
 {
-    ULONG FileId = (ULONG)DeviceObject;
+    ULONG_PTR FileId = (ULONG_PTR)DeviceObject;
     LARGE_INTEGER Position;
     ULONG BytesRead;
     ARC_STATUS Status;
@@ -313,10 +498,10 @@ IoReadPartitionTable(
     IN BOOLEAN ReturnRecognizedPartitions,
     OUT PDRIVE_LAYOUT_INFORMATION *PartitionBuffer)
 {
+    NTSTATUS Status;
     PMASTER_BOOT_RECORD MasterBootRecord;
     PDRIVE_LAYOUT_INFORMATION Partitions;
     ULONG NbPartitions, i, Size;
-    NTSTATUS ret;
 
     *PartitionBuffer = NULL;
 
@@ -328,11 +513,11 @@ IoReadPartitionTable(
         return STATUS_NO_MEMORY;
 
     /* Read disk MBR */
-    ret = IopReadBootRecord(DeviceObject, 0, SectorSize, MasterBootRecord);
-    if (!NT_SUCCESS(ret))
+    Status = IopReadBootRecord(DeviceObject, 0, SectorSize, MasterBootRecord);
+    if (!NT_SUCCESS(Status))
     {
         ExFreePool(MasterBootRecord);
-        return ret;
+        return Status;
     }
 
     /* Check validity of boot record */
@@ -400,5 +585,5 @@ IoReadPartitionTable(
     *PartitionBuffer = Partitions;
     return STATUS_SUCCESS;
 }
-
+#endif // _M_AMD64
 #endif

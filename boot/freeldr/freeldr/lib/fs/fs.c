@@ -22,9 +22,7 @@
 
 #include <freeldr.h>
 
-#define NDEBUG
 #include <debug.h>
-
 DBG_DEFAULT_CHANNEL(FILESYSTEM);
 
 /* GLOBALS ********************************************************************/
@@ -153,6 +151,8 @@ ARC_STATUS ArcOpen(CHAR* Path, OPENMODE OpenMode, ULONG* FileId)
                 if (!FileData[DeviceId].FileFuncTable)
 #endif
                     FileData[DeviceId].FileFuncTable = FatMount(DeviceId);
+                if (!FileData[DeviceId].FileFuncTable)
+                    FileData[DeviceId].FileFuncTable = BtrFsMount(DeviceId);
 #ifndef _M_ARM
                 if (!FileData[DeviceId].FileFuncTable)
                     FileData[DeviceId].FileFuncTable = NtfsMount(DeviceId);
@@ -198,8 +198,8 @@ ARC_STATUS ArcOpen(CHAR* Path, OPENMODE OpenMode, ULONG* FileId)
     if (i == MAX_FDS)
         return EMFILE;
 
-    /* Skip leading backslash, if any */
-    if (*FileName == '\\')
+    /* Skip leading path separator, if any */
+    if (*FileName == '\\' || *FileName == '/')
         FileName++;
 
     /* Open the file */
@@ -262,119 +262,62 @@ VOID FileSystemError(PCSTR ErrorString)
     UiMessageBox(ErrorString);
 }
 
-PFILE FsOpenFile(PCSTR FileName)
+ARC_STATUS
+FsOpenFile(
+    IN PCSTR FileName,
+    IN PCSTR DefaultPath OPTIONAL,
+    IN OPENMODE OpenMode,
+    OUT PULONG FileId)
 {
+    NTSTATUS Status;
+    SIZE_T cchPathLen;
     CHAR FullPath[MAX_PATH] = "";
-    ULONG FileId;
-    ARC_STATUS Status;
 
-    //
-    // Print status message
-    //
-    TRACE("Opening file '%s'...\n", FileName);
-
-    //
-    // Check whether FileName is a full path
-    // and if not, create a full file name.
-    //
-    // See ArcOpen: Search last ')', which delimits device and path.
-    //
+    /*
+     * Check whether FileName is a full path and if not, create a full
+     * file name using the user-provided default path (if present).
+     *
+     * See ArcOpen(): Search last ')', which delimits device and path.
+     */
     if (strrchr(FileName, ')') == NULL)
     {
-        /* This is not a full path. Use the current (i.e. boot) device. */
-        MachDiskGetBootPath(FullPath, sizeof(FullPath));
+        /* This is not a full path: prepend the user-provided default path */
+        if (DefaultPath)
+        {
+            Status = RtlStringCbCopyA(FullPath, sizeof(FullPath), DefaultPath);
+            if (!NT_SUCCESS(Status))
+                return ENAMETOOLONG;
+        }
 
         /* Append a path separator if needed */
-        if (FileName[0] != '\\' && FileName[0] != '/')
-            strcat(FullPath, "\\");
+
+        cchPathLen = min(sizeof(FullPath)/sizeof(CHAR), strlen(FullPath));
+        if (cchPathLen >= sizeof(FullPath)/sizeof(CHAR))
+            return ENAMETOOLONG;
+
+        if ((*FileName != '\\' && *FileName != '/') &&
+            cchPathLen > 0 && (FullPath[cchPathLen-1] != '\\' && FullPath[cchPathLen-1] != '/'))
+        {
+            /* FileName does not start with '\' and FullPath does not end with '\' */
+            Status = RtlStringCbCatA(FullPath, sizeof(FullPath), "\\");
+            if (!NT_SUCCESS(Status))
+                return ENAMETOOLONG;
+        }
+        else if ((*FileName == '\\' || *FileName == '/') &&
+                 cchPathLen > 0 && (FullPath[cchPathLen-1] == '\\' || FullPath[cchPathLen-1] == '/'))
+        {
+            /* FileName starts with '\' and FullPath ends with '\' */
+            while (*FileName == '\\' || *FileName == '/')
+                ++FileName; // Skip any backslash
+        }
     }
-    // Append (or just copy) the remaining file name.
-    strcat(FullPath, FileName);
+    /* Append (or just copy) the remaining file name */
+    Status = RtlStringCbCatA(FullPath, sizeof(FullPath), FileName);
+    if (!NT_SUCCESS(Status))
+        return ENAMETOOLONG;
 
-    //
-    // Open the file
-    //
-    Status = ArcOpen(FullPath, OpenReadOnly, &FileId);
-
-    //
-    // Check for success
-    //
-    if (Status == ESUCCESS)
-        return (PFILE)FileId;
-    else
-        return (PFILE)0;
-}
-
-VOID FsCloseFile(PFILE FileHandle)
-{
-    ULONG FileId = (ULONG)FileHandle;
-
-    //
-    // Close the handle. Do not check for error,
-    // this function is supposed to always succeed.
-    //
-    ArcClose(FileId);
-}
-
-/*
- * ReadFile()
- * returns number of bytes read or EOF
- */
-BOOLEAN FsReadFile(PFILE FileHandle, ULONG BytesToRead, ULONG* BytesRead, PVOID Buffer)
-{
-    ULONG FileId = (ULONG)FileHandle;
-
-    //
-    // Read the file
-    //
-    return (ArcRead(FileId, Buffer, BytesToRead, BytesRead) == ESUCCESS);
-}
-
-BOOLEAN FsGetFileInformation(PFILE FileHandle, FILEINFORMATION* Information)
-{
-    ULONG FileId = (ULONG)FileHandle;
-
-    //
-    // Get file information
-    //
-    return (ArcGetFileInformation(FileId, Information) == ESUCCESS);
-}
-
-ULONG FsGetFileSize(PFILE FileHandle)
-{
-    ULONG FileId = (ULONG)FileHandle;
-    FILEINFORMATION Information;
-    ARC_STATUS Status;
-
-    //
-    // Query file informations
-    //
-    Status = ArcGetFileInformation(FileId, &Information);
-
-    //
-    // Check for error
-    //
-    if (Status != ESUCCESS || Information.EndingAddress.HighPart != 0)
-        return 0;
-
-    //
-    // Return file size
-    //
-    return Information.EndingAddress.LowPart;
-}
-
-VOID FsSetFilePointer(PFILE FileHandle, ULONG NewFilePointer)
-{
-    ULONG FileId = (ULONG)FileHandle;
-    LARGE_INTEGER Position;
-
-    //
-    // Set file position. Do not check for error,
-    // this function is supposed to always succeed.
-    //
-    Position.HighPart = 0;
-    Position.LowPart = NewFilePointer;
-    ArcSeek(FileId, &Position, SeekAbsolute);
+    /* Open the file */
+    return ArcOpen(FullPath, OpenMode, FileId);
 }
 
 /*
@@ -451,12 +394,12 @@ VOID FsRegisterDevice(CHAR* Prefix, const DEVVTBL* FuncTable)
     pNewEntry->FuncTable = FuncTable;
     pNewEntry->ReferenceCount = 0;
     pNewEntry->Prefix = (CHAR*)(pNewEntry + 1);
-    memcpy(pNewEntry->Prefix, Prefix, Length);
+    RtlCopyMemory(pNewEntry->Prefix, Prefix, Length);
 
     InsertHeadList(&DeviceListHead, &pNewEntry->ListEntry);
 }
 
-LPCWSTR FsGetServiceName(ULONG FileId)
+PCWSTR FsGetServiceName(ULONG FileId)
 {
     if (FileId >= MAX_FDS || !FileData[FileId].FuncTable)
         return NULL;
@@ -493,8 +436,4 @@ VOID FsInit(VOID)
         FileData[i].DeviceId = (ULONG)-1;
 
     InitializeListHead(&DeviceListHead);
-
-    // FIXME: Retrieve the current boot device with MachDiskGetBootPath
-    // and store it somewhere in order to not call again and again this
-    // function.
 }

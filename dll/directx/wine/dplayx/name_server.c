@@ -19,11 +19,26 @@
 
 /* NOTE: Methods with the NS_ prefix are name server methods */
 
-#include "dplayx_global.h"
+#include <stdarg.h>
+#include <string.h>
 
-#include <mmsystem.h>
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "wine/debug.h"
+#include "mmsystem.h"
+
+#include "dplayx_global.h"
+#include "name_server.h"
+#include "wine/dplaysp.h"
+#include "dplayx_messages.h"
+#include "dplayx_queue.h"
 
 /* FIXME: Need to create a crit section, store and use it */
+
+WINE_DEFAULT_DEBUG_CHANNEL(dplay);
 
 /* NS specific structures */
 struct NSCacheData
@@ -147,7 +162,10 @@ LPVOID NS_GetNSAddr( LPVOID lpNSInfo )
    *        in place.
    */
 #if 1
-  return lpCache->first.lpQHFirst->lpNSAddrHdr;
+  if ( lpCache->first.lpQHFirst )
+    return lpCache->first.lpQHFirst->lpNSAddrHdr;
+
+  return NULL;
 #else
   /* FIXME: Should convert over to this */
   return lpCache->bNsIsLocal ? lpCache->lpLocalAddrHdr

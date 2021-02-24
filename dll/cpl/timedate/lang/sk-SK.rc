@@ -40,7 +40,7 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Internetový čas"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    COMBOBOX IDC_SERVERLIST, 65, 22, 117, 136, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX IDC_SERVERLIST, 65, 22, 117, 136, CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
     AUTOCHECKBOX "Automaticky &synchronizovať čas s internetovým časovým serverom",
                  IDC_AUTOSYNC, 11, 7, 241, 10, BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP
     LTEXT "Server:", IDC_SERVERTEXT, 34, 22, 28, 13
@@ -61,4 +61,6 @@ BEGIN
     IDS_INETTIMENEXTSYNC "Ďalšia synchronizácia: %s o %s"
     IDS_INETTIMESYNCING "Počkajte prosím, kým ReactOS zosynchronizuje čas s %s"
     IDS_INETTIMEERROR "Počas synchronizácie systému ReactOS s %s sa vyskytla chyba."
+    IDS_INETTIMESUCFILL "Please type a NTP server name in order to synchronize the time"
+    IDS_INETTIMEWELCOME "Select a NTP server from the list or type a NTP server name to synchronize the computer's time"
 END

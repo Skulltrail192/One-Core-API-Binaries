@@ -23,7 +23,7 @@ CAPTION "הגדרות מתקדמות"
 FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX "הגדרת מערכת", -1, 7, 7, 240, 70
-    AUTOCHECKBOX "כבה שירותי טסקס מתקמים", IDC_TURNOFFTEXTSVCS_CB, 14, 20, 220, 12
+    AUTOCHECKBOX "כבה שירותי טקסט מתקדמים", IDC_TURNOFFTEXTSVCS_CB, 14, 20, 220, 12
     LTEXT "Select this check box to turn off advanced text services in all programs.\nThis is not recommended for East Asian users because this closes the language bar.", -1, 14, 40, 230, 35
 END
 
@@ -50,9 +50,9 @@ CAPTION "הוספת שפת כתיבה"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT "שפת כתיבה:", -1, 7, 7, 61, 10
-    COMBOBOX IDC_INPUT_LANG_COMBO, 7, 17, 212, 150, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+    COMBOBOX IDC_INPUT_LANG_COMBO, 7, 17, 212, 150, CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | CBS_SORT | WS_VSCROLL
     LTEXT "&Keyboard layout/IME:", -1, 7, 36, 110, 10
-    COMBOBOX IDC_KEYBOARD_LO_COMBO, 7, 47, 212, 150, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+    COMBOBOX IDC_KEYBOARD_LO_COMBO, 7, 47, 212, 150, CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | CBS_SORT | WS_VSCROLL
     DEFPUSHBUTTON "אישור", IDOK, 116, 68, 50, 14
     PUSHBUTTON "ביטול", IDCANCEL, 169, 68, 50, 14
 END
@@ -108,6 +108,7 @@ BEGIN
     IDS_CTRL_SHIFT "Ctrl+Shift"
     IDS_LEFT_ALT_SHIFT "Left Alt+Shift"
     IDS_SWITCH_BET_INLANG "החלף בין שפות כתיבה"
+    IDS_REBOOT_NOW, "Reboot now?"
 END
 
 STRINGTABLE
@@ -123,7 +124,7 @@ BEGIN
     IDS_AZERI_LATIN_LAYOUT "אזרית לטינית"
     IDS_BELARUSIAN_LAYOUT "בלארוסית"
     IDS_BELGIAN_COMMA_LAYOUT "בלגית (פסיק)"
-    IDS_BELGIAN_FRENCH_LAYOUT "צרפית בלגית"
+    IDS_BELGIAN_FRENCH_LAYOUT "צרפתית בלגית"
     IDS_BELGIAN_LAYOUT "בלגית (נקודה)"
     IDS_BENGALI_LAYOUT "בנגלית"
     IDS_BULGARIAN_LAYOUT "בולגרית"
@@ -215,7 +216,8 @@ BEGIN
     IDS_PORTUGUESE_BRAZILIAN_ABNT_LAYOUT "פורטוגזית (ברזילאית ABNT)"
     IDS_PORTUGUESE_BRAZIL_ABNT2_LAYOUT "פורטוגזית (ברזלאית ABNT2)"
     IDS_PUNJABI_LAYOUT "Punjabi"
-    IDS_ROMANIAN_LAYOUT "רומנית"
+    IDS_ROMANIAN_LEGACY_LAYOUT "רומנית (Legacy)"
+    IDS_ROMANIAN_STANDARD_LAYOUT "רומנית (Standard)"
     IDS_RUSSIAN_LAYOUT "רוסית"
     IDS_RUSSIAN_TYPEWRITER_LAYOUT "רוסית (מכונת כתיבה)"
     IDS_SERBIAN_CYRILLIC_LAYOUT "סרבית (קירילית)"

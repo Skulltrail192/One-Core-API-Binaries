@@ -1,5 +1,3 @@
-/* $Id: tif_dir.c,v 1.130 2017-05-17 21:54:05 erouault Exp $ */
-
 /*
  * Copyright (c) 1988-1997 Sam Leffler
  * Copyright (c) 1991-1997 Silicon Graphics, Inc.
@@ -30,7 +28,6 @@
  * Directory Tag Get & Set Routines.
  * (and also some miscellaneous stuff)
  */
-
 #include <precomp.h>
 #include <float.h>
 
@@ -50,8 +47,8 @@ setByteArray(void** vpp, void* vp, size_t nmemb, size_t elem_size)
 		*vpp = 0;
 	}
 	if (vp) {
-		tmsize_t bytes = (tmsize_t)(nmemb * elem_size);
-		if (elem_size && bytes / elem_size == nmemb)
+		tmsize_t bytes = _TIFFMultiplySSize(NULL, nmemb, elem_size, NULL);
+		if (bytes)
 			*vpp = (void*) _TIFFmalloc(bytes);
 		if (*vpp)
 			_TIFFmemcpy(*vpp, vp, bytes);
@@ -91,13 +88,15 @@ setDoubleArrayOneValue(double** vpp, double value, size_t nmemb)
  * Install extra samples information.
  */
 static int
-setExtraSamples(TIFFDirectory* td, va_list ap, uint32* v)
+setExtraSamples(TIFF* tif, va_list ap, uint32* v)
 {
 /* XXX: Unassociated alpha data == 999 is a known Corel Draw bug, see below */
 #define EXTRASAMPLE_COREL_UNASSALPHA 999 
 
 	uint16* va;
 	uint32 i;
+        TIFFDirectory* td = &tif->tif_dir;
+        static const char module[] = "setExtraSamples";
 
 	*v = (uint16) va_arg(ap, uint16_vap);
 	if ((uint16) *v > td->td_samplesperpixel)
@@ -119,6 +118,18 @@ setExtraSamples(TIFFDirectory* td, va_list ap, uint32* v)
 				return 0;
 		}
 	}
+
+        if ( td->td_transferfunction[0] != NULL && (td->td_samplesperpixel - *v > 1) &&
+                !(td->td_samplesperpixel - td->td_extrasamples > 1))
+        {
+                TIFFWarningExt(tif->tif_clientdata,module,
+                    "ExtraSamples tag value is changing, "
+                    "but TransferFunction was read with a different value. Cancelling it");
+                TIFFClrFieldBit(tif,FIELD_TRANSFERFUNCTION);
+                _TIFFfree(td->td_transferfunction[0]);
+                td->td_transferfunction[0] = NULL;
+        }
+
 	td->td_extrasamples = (uint16) *v;
 	_TIFFsetShortArray(&td->td_sampleinfo, va, td->td_extrasamples);
 	return 1;
@@ -154,15 +165,6 @@ bad:
 	    td->td_samplesperpixel,
 	    td->td_samplesperpixel-i);
 	return (0);
-}
-
-static float TIFFClampDoubleToFloat( double val )
-{
-    if( val > FLT_MAX )
-        return FLT_MAX;
-    if( val < -FLT_MAX )
-        return -FLT_MAX;
-    return (float)val;
 }
 
 static int
@@ -288,6 +290,18 @@ _TIFFVSetField(TIFF* tif, uint32 tag, va_list ap)
                 _TIFFfree(td->td_smaxsamplevalue);
                 td->td_smaxsamplevalue = NULL;
             }
+            /* Test if 3 transfer functions instead of just one are now needed
+               See http://bugzilla.maptools.org/show_bug.cgi?id=2820 */
+            if( td->td_transferfunction[0] != NULL && (v - td->td_extrasamples > 1) &&
+                !(td->td_samplesperpixel - td->td_extrasamples > 1))
+            {
+                    TIFFWarningExt(tif->tif_clientdata,module,
+                        "SamplesPerPixel tag value is changing, "
+                        "but TransferFunction was read with a different value. Cancelling it");
+                    TIFFClrFieldBit(tif,FIELD_TRANSFERFUNCTION);
+                    _TIFFfree(td->td_transferfunction[0]);
+                    td->td_transferfunction[0] = NULL;
+            }
         }
 		td->td_samplesperpixel = (uint16) v;
 		break;
@@ -323,13 +337,13 @@ _TIFFVSetField(TIFF* tif, uint32 tag, va_list ap)
         dblval = va_arg(ap, double);
         if( dblval < 0 )
             goto badvaluedouble;
-		td->td_xresolution = TIFFClampDoubleToFloat( dblval );
+		td->td_xresolution = _TIFFClampDoubleToFloat( dblval );
 		break;
 	case TIFFTAG_YRESOLUTION:
         dblval = va_arg(ap, double);
         if( dblval < 0 )
             goto badvaluedouble;
-		td->td_yresolution = TIFFClampDoubleToFloat( dblval );
+		td->td_yresolution = _TIFFClampDoubleToFloat( dblval );
 		break;
 	case TIFFTAG_PLANARCONFIG:
 		v = (uint16) va_arg(ap, uint16_vap);
@@ -338,10 +352,10 @@ _TIFFVSetField(TIFF* tif, uint32 tag, va_list ap)
 		td->td_planarconfig = (uint16) v;
 		break;
 	case TIFFTAG_XPOSITION:
-		td->td_xposition = TIFFClampDoubleToFloat( va_arg(ap, double) );
+		td->td_xposition = _TIFFClampDoubleToFloat( va_arg(ap, double) );
 		break;
 	case TIFFTAG_YPOSITION:
-		td->td_yposition = TIFFClampDoubleToFloat( va_arg(ap, double) );
+		td->td_yposition = _TIFFClampDoubleToFloat( va_arg(ap, double) );
 		break;
 	case TIFFTAG_RESOLUTIONUNIT:
 		v = (uint16) va_arg(ap, uint16_vap);
@@ -364,7 +378,7 @@ _TIFFVSetField(TIFF* tif, uint32 tag, va_list ap)
 		_TIFFsetShortArray(&td->td_colormap[2], va_arg(ap, uint16*), v32);
 		break;
 	case TIFFTAG_EXTRASAMPLES:
-		if (!setExtraSamples(td, ap, &v))
+		if (!setExtraSamples(tif, ap, &v))
 			goto badvalue;
 		break;
 	case TIFFTAG_MATTEING:
@@ -687,7 +701,7 @@ _TIFFVSetField(TIFF* tif, uint32 tag, va_list ap)
 				case TIFF_SRATIONAL:
 				case TIFF_FLOAT:
 					{
-						float v2 = TIFFClampDoubleToFloat(va_arg(ap, double));
+						float v2 = _TIFFClampDoubleToFloat(va_arg(ap, double));
 						_TIFFmemcpy(val, &v2, tv_size);
 					}
 					break;
@@ -864,15 +878,27 @@ _TIFFVGetField(TIFF* tif, uint32 tag, va_list ap)
 	const TIFFField* fip = TIFFFindField(tif, tag, TIFF_ANY);
 	if( fip == NULL ) /* cannot happen since TIFFGetField() already checks it */
 	    return 0;
+
+	/*
+	 * We want to force the custom code to be used for custom
+	 * fields even if the tag happens to match a well known 
+	 * one - important for reinterpreted handling of standard
+	 * tag values in custom directories (i.e. EXIF) 
+	 */
+	if (fip->field_bit == FIELD_CUSTOM) {
+		standard_tag = 0;
+	}
 	
-        if( tag == TIFFTAG_NUMBEROFINKS )
+        if( standard_tag == TIFFTAG_NUMBEROFINKS )
         {
             int i;
             for (i = 0; i < td->td_customValueCount; i++) {
                 uint16 val;
                 TIFFTagValue *tv = td->td_customValues + i;
-                if (tv->info->field_tag != tag)
+                if (tv->info->field_tag != standard_tag)
                     continue;
+                if( tv->value == NULL )
+                    return 0;
                 val = *(uint16 *)tv->value;
                 /* Truncate to SamplesPerPixel, since the */
                 /* setting code for INKNAMES assume that there are SamplesPerPixel */
@@ -890,16 +916,6 @@ _TIFFVGetField(TIFF* tif, uint32 tag, va_list ap)
             }
             return 0;
         }
-
-	/*
-	 * We want to force the custom code to be used for custom
-	 * fields even if the tag happens to match a well known 
-	 * one - important for reinterpreted handling of standard
-	 * tag values in custom directories (i.e. EXIF) 
-	 */
-	if (fip->field_bit == FIELD_CUSTOM) {
-		standard_tag = 0;
-	}
 
 	switch (standard_tag) {
 		case TIFFTAG_SUBFILETYPE:
@@ -1003,12 +1019,12 @@ _TIFFVGetField(TIFF* tif, uint32 tag, va_list ap)
 		case TIFFTAG_STRIPOFFSETS:
 		case TIFFTAG_TILEOFFSETS:
 			_TIFFFillStriles( tif );
-			*va_arg(ap, uint64**) = td->td_stripoffset;
+			*va_arg(ap, uint64**) = td->td_stripoffset_p;
 			break;
 		case TIFFTAG_STRIPBYTECOUNTS:
 		case TIFFTAG_TILEBYTECOUNTS:
 			_TIFFFillStriles( tif );
-			*va_arg(ap, uint64**) = td->td_stripbytecount;
+			*va_arg(ap, uint64**) = td->td_stripbytecount_p;
 			break;
 		case TIFFTAG_MATTEING:
 			*va_arg(ap, uint16*) =
@@ -1066,6 +1082,9 @@ _TIFFVGetField(TIFF* tif, uint32 tag, va_list ap)
 			if (td->td_samplesperpixel - td->td_extrasamples > 1) {
 				*va_arg(ap, uint16**) = td->td_transferfunction[1];
 				*va_arg(ap, uint16**) = td->td_transferfunction[2];
+			} else {
+				*va_arg(ap, uint16**) = NULL;
+				*va_arg(ap, uint16**) = NULL;
 			}
 			break;
 		case TIFFTAG_REFERENCEBLACKWHITE:
@@ -1264,8 +1283,9 @@ TIFFFreeDirectory(TIFF* tif)
 	CleanupField(td_transferfunction[0]);
 	CleanupField(td_transferfunction[1]);
 	CleanupField(td_transferfunction[2]);
-	CleanupField(td_stripoffset);
-	CleanupField(td_stripbytecount);
+	CleanupField(td_stripoffset_p);
+	CleanupField(td_stripbytecount_p);
+        td->td_stripoffsetbyteallocsize = 0;
 	TIFFClrFieldBit(tif, FIELD_YCBCRSUBSAMPLING);
 	TIFFClrFieldBit(tif, FIELD_YCBCRPOSITIONING);
 
@@ -1278,10 +1298,8 @@ TIFFFreeDirectory(TIFF* tif)
 	td->td_customValueCount = 0;
 	CleanupField(td_customValues);
 
-#if defined(DEFER_STRILE_LOAD)
         _TIFFmemset( &(td->td_stripoffset_entry), 0, sizeof(TIFFDirEntry));
         _TIFFmemset( &(td->td_stripbytecount_entry), 0, sizeof(TIFFDirEntry));
-#endif        
 }
 #undef CleanupField
 
@@ -1369,7 +1387,9 @@ TIFFDefaultDirectory(TIFF* tif)
 	td->td_tilewidth = 0;
 	td->td_tilelength = 0;
 	td->td_tiledepth = 1;
+#ifdef STRIPBYTECOUNTSORTED_UNUSED
 	td->td_stripbytecountsorted = 1; /* Our own arrays always sorted. */  
+#endif
 	td->td_resolutionunit = RESUNIT_INCH;
 	td->td_sampleformat = SAMPLEFORMAT_UINT;
 	td->td_imagedepth = 1;

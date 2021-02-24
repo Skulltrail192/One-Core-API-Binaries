@@ -39,8 +39,8 @@ EnumerateLocalGroups(VOID)
         return Status;
 
     ConPuts(StdOut, L"\n");
-    ConResPrintf(StdOut, IDS_LOCALGROUP_ALIASES, pServer->sv100_name);
-    ConPuts(StdOut, L"\n\n");
+    PrintMessageStringV(4405, pServer->sv100_name);
+    ConPuts(StdOut, L"\n");
     PrintPadding(L'-', 79);
     ConPuts(StdOut, L"\n");
 
@@ -131,16 +131,16 @@ DisplayLocalGroup(LPWSTR lpGroupName)
              pNames[i] = pMembers[i].lgrmi3_domainandname;
     }
 
-    PrintPaddedResourceString(IDS_LOCALGROUP_ALIAS_NAME, nPaddedLength);
+    PrintPaddedMessageString(4406, nPaddedLength);
     ConPrintf(StdOut, L"%s\n", pGroupInfo->lgrpi1_name);
 
-    PrintPaddedResourceString(IDS_LOCALGROUP_COMMENT, nPaddedLength);
+    PrintPaddedMessageString(4407, nPaddedLength);
     ConPrintf(StdOut, L"%s\n", pGroupInfo->lgrpi1_comment);
 
     ConPuts(StdOut, L"\n");
 
-    ConResPuts(StdOut, IDS_LOCALGROUP_MEMBERS);
-    ConPuts(StdOut, L"\n\n");
+    PrintMessageString(4408);
+    ConPuts(StdOut, L"\n");
 
     PrintPadding(L'-', 79);
     ConPuts(StdOut, L"\n");
@@ -242,7 +242,10 @@ cmdLocalGroup(
     {
         if (_wcsicmp(argv[i], L"/help") == 0)
         {
-            ConResPuts(StdOut, IDS_LOCALGROUP_HELP);
+            PrintMessageString(4381);
+            ConPuts(StdOut, L"\n");
+            PrintNetMessage(MSG_LOCALGROUP_SYNTAX);
+            PrintNetMessage(MSG_LOCALGROUP_HELP);
             return 0;
         }
         else if (_wcsicmp(argv[i], L"/add") == 0)
@@ -259,13 +262,14 @@ cmdLocalGroup(
         }
         else if (_wcsicmp(argv[i], L"/domain") == 0)
         {
-            ConResPrintf(StdErr, IDS_ERROR_OPTION_NOT_SUPPORTED, L"/DOMAIN");
+            ConPuts(StdErr, L"The /DOMAIN option is not supported yet.\n");
 #if 0
             bDomain = TRUE;
 #endif
         }
         else
         {
+            PrintErrorMessage(3506/*, argv[i]*/);
             result = 1;
             goto done;
         }
@@ -326,9 +330,9 @@ cmdLocalGroup(
             }
 
             Status = NetLocalGroupAdd(NULL,
-                             (lpComment == NULL) ? 0 : 1,
-                             (lpComment == NULL) ? (LPBYTE)&Info0 : (LPBYTE)&Info1,
-                             NULL);
+                                      (lpComment == NULL) ? 0 : 1,
+                                      (lpComment == NULL) ? (LPBYTE)&Info0 : (LPBYTE)&Info1,
+                                      NULL);
             ConPrintf(StdOut, L"Status: %lu\n", Status);
         }
         else if (!bAdd && bDelete && lpComment == NULL)
@@ -349,20 +353,20 @@ cmdLocalGroup(
         {
             /* Add group members */
             Status = NetLocalGroupAddMembers(NULL,
-                                    lpGroupName,
-                                    3,
-                                    (LPBYTE)lpMembers,
-                                    dwMemberCount);
+                                             lpGroupName,
+                                             3,
+                                             (LPBYTE)lpMembers,
+                                             dwMemberCount);
             ConPrintf(StdOut, L"Status: %lu\n", Status);
         }
         else if (!bAdd && bDelete && lpComment == NULL)
         {
             /* Delete group members */
             Status = NetLocalGroupDelMembers(NULL,
-                                    lpGroupName,
-                                    3,
-                                    (LPBYTE)lpMembers,
-                                    dwMemberCount);
+                                             lpGroupName,
+                                             3,
+                                             (LPBYTE)lpMembers,
+                                             dwMemberCount);
             ConPrintf(StdOut, L"Status: %lu\n", Status);
         }
         else
@@ -376,7 +380,11 @@ done:
         RtlFreeHeap(RtlGetProcessHeap(), 0, lpMembers);
 
     if (result != 0)
-        ConResPuts(StdOut, IDS_LOCALGROUP_SYNTAX);
+    {
+        PrintMessageString(4381);
+        ConPuts(StdOut, L"\n");
+        PrintNetMessage(MSG_LOCALGROUP_SYNTAX);
+    }
 
     return result;
 }

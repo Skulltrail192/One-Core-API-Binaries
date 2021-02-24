@@ -208,7 +208,7 @@ ApphelpCacheQueryInfo(
 RTL_GENERIC_COMPARE_RESULTS
 NTAPI
 ApphelpShimCacheCompareRoutine(
-    _In_ PRTL_AVL_TABLE Table,
+    _In_ struct _RTL_AVL_TABLE *Table,
     _In_ PVOID FirstStruct,
     _In_ PVOID SecondStruct)
 {
@@ -233,7 +233,7 @@ ApphelpShimCacheCompareRoutine(
 PVOID
 NTAPI
 ApphelpShimCacheAllocateRoutine(
-    _In_ PRTL_AVL_TABLE Table,
+    _In_ struct _RTL_AVL_TABLE *Table,
     _In_ CLONG ByteSize)
 {
     return ApphelpAlloc(ByteSize);
@@ -242,7 +242,7 @@ ApphelpShimCacheAllocateRoutine(
 VOID
 NTAPI
 ApphelpShimCacheFreeRoutine(
-    _In_ PRTL_AVL_TABLE Table,
+    _In_ struct _RTL_AVL_TABLE *Table,
     _In_ PVOID Buffer)
 {
     ApphelpFree(Buffer);
@@ -434,9 +434,9 @@ ApphelpCacheWrite(VOID)
 }
 
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
-INIT_FUNCTION
 ApphelpCacheInitialize(VOID)
 {
     DPRINT("SHIMS: ApphelpCacheInitialize\n");
@@ -764,6 +764,7 @@ NtApphelpCacheControl(
             }
             break;
         case ApphelpCacheServiceFlush:
+            /* FIXME: Check for admin or system here. */
             Status = ApphelpCacheFlush();
             break;
         case ApphelpCacheServiceDump:

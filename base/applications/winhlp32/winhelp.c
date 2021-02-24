@@ -22,10 +22,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "winhelp.h"
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+#include <stdlib.h>
 
-#include <richedit.h>
-#include <commctrl.h>
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "commdlg.h"
+#include "winhelp.h"
+#include "winhelp_res.h"
+#include "shellapi.h"
+#include "richedit.h"
+#include "commctrl.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(winhelp);
 
 WINHELP_GLOBALS Globals = {3, NULL, TRUE, NULL, NULL, NULL, NULL, NULL, {{{NULL,NULL}},0}, NULL};
 
@@ -48,19 +66,18 @@ static void WINHELP_InitFonts(HWND hWnd)
         {-12, 0, 0, 0, 700, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 32, {'H','e','l','v',0}},
         {-10, 0, 0, 0, 700, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 32, {'H','e','l','v',0}},
         { -8, 0, 0, 0, 400, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 32, {'H','e','l','v',0}}};
-#define FONTS_LEN (sizeof(logfontlist)/sizeof(*logfontlist))
 
-    static HFONT fonts[FONTS_LEN];
+    static HFONT fonts[ARRAY_SIZE(logfontlist)];
     static BOOL init = FALSE;
 
-    win->fonts_len = FONTS_LEN;
+    win->fonts_len = ARRAY_SIZE(logfontlist);
     win->fonts = fonts;
 
     if (!init)
     {
         UINT i;
 
-        for (i = 0; i < FONTS_LEN; i++)
+        for (i = 0; i < ARRAY_SIZE(logfontlist); i++)
 	{
             fonts[i] = CreateFontIndirectW(&logfontlist[i]);
 	}
@@ -577,7 +594,7 @@ static void WINHELP_RememberPage(WINHELP_WINDOW* win, WINHELP_WNDPAGE* wpage)
 
     if (!Globals.history.index || Globals.history.set[0].page != wpage->page)
     {
-        num = sizeof(Globals.history.set) / sizeof(Globals.history.set[0]);
+        num = ARRAY_SIZE(Globals.history.set);
         /* we're full, remove latest entry */
         if (Globals.history.index == num)
         {
@@ -592,7 +609,7 @@ static void WINHELP_RememberPage(WINHELP_WINDOW* win, WINHELP_WNDPAGE* wpage)
     }
     if (win->hHistoryWnd) InvalidateRect(win->hHistoryWnd, NULL, TRUE);
 
-    num = sizeof(win->back.set) / sizeof(win->back.set[0]);
+    num = ARRAY_SIZE(win->back.set);
     if (win->back.index == num)
     {
         /* we're full, remove latest entry */
@@ -1118,7 +1135,7 @@ static LRESULT CALLBACK WINHELP_HistoryWndProc(HWND hWnd, UINT msg, WPARAM wPara
         GetWindowRect(hWnd, &r);
 
         r.right = r.left + 30 * tm.tmAveCharWidth;
-        r.bottom = r.top + (sizeof(Globals.history.set) / sizeof(Globals.history.set[0])) * tm.tmHeight;
+        r.bottom = r.top + ARRAY_SIZE(Globals.history.set) * tm.tmHeight;
         AdjustWindowRect(&r, GetWindowLongW(hWnd, GWL_STYLE), FALSE);
         if (r.left < 0) {r.right -= r.left; r.left = 0;}
         if (r.top < 0) {r.bottom -= r.top; r.top = 0;}
@@ -1648,7 +1665,7 @@ int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE prev, LPSTR cmdline, int show)
 
         option = *cmdline;
         if (option) cmdline++;
-        while (*cmdline && *cmdline == ' ') cmdline++;
+        while (*cmdline == ' ') cmdline++;
         switch (option)
 	{
 	case 'i':

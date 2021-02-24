@@ -18,14 +18,27 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+
+#include <stdarg.h>
+#include "windef.h"
+#include "winbase.h"
+#include "ole2.h"
+#include "commctrl.h"
+#include "rpcproxy.h"
+
+#ifdef __REACTOS__
+#include <wchar.h>
+#include <winnls.h>
+#endif
+
+#include "initguid.h"
 #include "oleacc_private.h"
-
-#include <commctrl.h>
-#include <rpcproxy.h>
-
-#include <wine/unicode.h>
-
 #include "resource.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(oleacc);
 
 static const WCHAR lresult_atom_prefix[] = {'w','i','n','e','_','o','l','e','a','c','c',':'};
 
@@ -100,12 +113,12 @@ static accessible_create get_builtin_accessible_obj(HWND hwnd, LONG objid)
     WCHAR class_name[64];
     int i, idx;
 
-    if(!RealGetWindowClassW(hwnd, class_name, sizeof(class_name)/sizeof(WCHAR)))
+    if(!RealGetWindowClassW(hwnd, class_name, ARRAY_SIZE(class_name)))
         return NULL;
     TRACE("got window class: %s\n", debugstr_w(class_name));
 
-    for(i=0; i<sizeof(builtin_classes)/sizeof(builtin_classes[0]); i++) {
-        if(!strcmpiW(class_name, builtin_classes[i].name)) {
+    for(i=0; i<ARRAY_SIZE(builtin_classes); i++) {
+        if(!wcsicmp(class_name, builtin_classes[i].name)) {
             accessible_create ret;
 
             ret = (objid==OBJID_CLIENT ?
@@ -119,7 +132,7 @@ static accessible_create get_builtin_accessible_obj(HWND hwnd, LONG objid)
 
     idx = SendMessageW(hwnd, WM_GETOBJECT, 0, OBJID_QUERYCLASSNAMEIDX);
     if(idx) {
-        for(i=0; i<sizeof(builtin_classes)/sizeof(builtin_classes[0]); i++) {
+        for(i=0; i<ARRAY_SIZE(builtin_classes); i++) {
             if(idx == builtin_classes[i].idx) {
                 accessible_create ret;
 
@@ -163,7 +176,7 @@ HRESULT WINAPI CreateStdAccessibleObject( HWND hwnd, LONG idObject,
 
 HRESULT WINAPI ObjectFromLresult( LRESULT result, REFIID riid, WPARAM wParam, void **ppObject )
 {
-    WCHAR atom_str[sizeof(lresult_atom_prefix)/sizeof(WCHAR)+3*8+3];
+    WCHAR atom_str[ARRAY_SIZE(lresult_atom_prefix)+3*8+3];
     HANDLE server_proc, server_mapping, mapping;
     DWORD proc_id, size;
     IStream *stream;
@@ -184,18 +197,18 @@ HRESULT WINAPI ObjectFromLresult( LRESULT result, REFIID riid, WPARAM wParam, vo
     if(result != (ATOM)result)
         return E_FAIL;
 
-    if(!GlobalGetAtomNameW(result, atom_str, sizeof(atom_str)/sizeof(WCHAR)))
+    if(!GlobalGetAtomNameW(result, atom_str, ARRAY_SIZE(atom_str)))
         return E_FAIL;
     if(memcmp(atom_str, lresult_atom_prefix, sizeof(lresult_atom_prefix)))
         return E_FAIL;
-    p = atom_str + sizeof(lresult_atom_prefix)/sizeof(WCHAR);
-    proc_id = strtoulW(p, &p, 16);
+    p = atom_str + ARRAY_SIZE(lresult_atom_prefix);
+    proc_id = wcstoul(p, &p, 16);
     if(*p != ':')
         return E_FAIL;
-    server_mapping = ULongToHandle( strtoulW(p+1, &p, 16) );
+    server_mapping = ULongToHandle( wcstoul(p+1, &p, 16) );
     if(*p != ':')
         return E_FAIL;
-    size = strtoulW(p+1, &p, 16);
+    size = wcstoul(p+1, &p, 16);
     if(*p != 0)
         return E_FAIL;
 
@@ -238,7 +251,7 @@ LRESULT WINAPI LresultFromObject( REFIID riid, WPARAM wParam, LPUNKNOWN pAcc )
     static const WCHAR atom_fmt[] = {'%','0','8','x',':','%','0','8','x',':','%','0','8','x',0};
     static const LARGE_INTEGER seek_zero = {{0}};
 
-    WCHAR atom_str[sizeof(lresult_atom_prefix)/sizeof(WCHAR)+3*8+3];
+    WCHAR atom_str[ARRAY_SIZE(lresult_atom_prefix)+3*8+3];
     IStream *stream;
     HANDLE mapping;
     STATSTG stat;
@@ -311,8 +324,8 @@ LRESULT WINAPI LresultFromObject( REFIID riid, WPARAM wParam, LPUNKNOWN pAcc )
     }
 
     memcpy(atom_str, lresult_atom_prefix, sizeof(lresult_atom_prefix));
-    sprintfW(atom_str+sizeof(lresult_atom_prefix)/sizeof(WCHAR),
-             atom_fmt, GetCurrentProcessId(), HandleToUlong(mapping), stat.cbSize.u.LowPart);
+    swprintf(atom_str+ARRAY_SIZE(lresult_atom_prefix), atom_fmt, GetCurrentProcessId(),
+             HandleToUlong(mapping), stat.cbSize.u.LowPart);
     atom = GlobalAddAtomW(atom_str);
     if(!atom) {
         CloseHandle(mapping);

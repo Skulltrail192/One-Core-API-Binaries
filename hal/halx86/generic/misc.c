@@ -9,6 +9,8 @@
 /* INCLUDES *******************************************************************/
 
 #include <hal.h>
+#include <drivers/bootvid/display.h>
+
 #define NDEBUG
 #include <debug.h>
 
@@ -27,7 +29,7 @@ CHAR HalpSerialNumber[31];
 /* PRIVATE FUNCTIONS **********************************************************/
 
 #ifndef _MINIHAL_
-INIT_SECTION
+INIT_FUNCTION
 VOID
 NTAPI
 HalpReportSerialNumber(VOID)
@@ -58,7 +60,7 @@ HalpReportSerialNumber(VOID)
     }
 }
 
-INIT_SECTION
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 HalpMarkAcpiHal(VOID)
@@ -255,8 +257,8 @@ HalHandleNMI(IN PVOID NmiInfo)
         //
         // Fill the screen
         //
-        InbvSolidColorFill(0, 0, 639, 479, 1);
-        InbvSetScrollRegion(0, 0, 639, 479);
+        InbvSolidColorFill(0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, 1);
+        InbvSetScrollRegion(0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1);
 
         //
         // Enable text

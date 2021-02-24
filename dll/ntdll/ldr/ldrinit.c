@@ -10,6 +10,8 @@
 /* INCLUDES *****************************************************************/
 
 #include <ntdll.h>
+#include <compat_undoc.h>
+#include <compatguid_undoc.h>
 
 #define NDEBUG
 #include <debug.h>
@@ -22,6 +24,8 @@ HANDLE Wow64ExecOptionsKey;
 UNICODE_STRING ImageExecOptionsString = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options");
 UNICODE_STRING Wow64OptionsString = RTL_CONSTANT_STRING(L"");
 UNICODE_STRING NtDllString = RTL_CONSTANT_STRING(L"ntdll.dll");
+UNICODE_STRING Kernel32String = RTL_CONSTANT_STRING(L"kernel32.dll");
+const UNICODE_STRING LdrpDotLocal = RTL_CONSTANT_STRING(L".Local");
 
 BOOLEAN LdrpInLdrInit;
 LONG LdrpProcessInitialized;
@@ -39,6 +43,9 @@ extern PTEB LdrpTopLevelDllBeingLoadedTeb; // defined in rtlsupp.c!
 PLDR_DATA_TABLE_ENTRY LdrpCurrentDllInitializer;
 PLDR_DATA_TABLE_ENTRY LdrpNtDllDataTableEntry;
 
+static NTSTATUS (WINAPI *Kernel32ProcessInitPostImportFunction)(VOID);
+static BOOL (WINAPI *Kernel32BaseQueryModuleData)(IN LPSTR ModuleName, IN LPSTR Unk1, IN PVOID Unk2, IN PVOID Unk3, IN PVOID Unk4);
+
 RTL_BITMAP TlsBitMap;
 RTL_BITMAP TlsExpansionBitMap;
 RTL_BITMAP FlsBitMap;
@@ -49,6 +56,7 @@ ULONG LdrpNumberOfProcessors;
 PVOID NtDllBase;
 extern LARGE_INTEGER RtlpTimeout;
 BOOLEAN RtlpTimeoutDisable;
+PVOID LdrpHeap;
 LIST_ENTRY LdrpHashTable[LDR_HASH_TABLE_ENTRIES];
 LIST_ENTRY LdrpDllNotificationList;
 HANDLE LdrpKnownDllObjectDirectory;
@@ -80,13 +88,12 @@ ULONG LdrpActiveUnloadCount;
 VOID NTAPI RtlpInitializeVectoredExceptionHandling(VOID);
 VOID NTAPI RtlpInitDeferedCriticalSection(VOID);
 VOID NTAPI RtlInitializeHeapManager(VOID);
-extern BOOLEAN RtlpPageHeapEnabled;
 
 ULONG RtlpDisableHeapLookaside; // TODO: Move to heap.c
 ULONG RtlpShutdownProcessFlags; // TODO: Use it
 
 NTSTATUS LdrPerformRelocations(PIMAGE_NT_HEADERS NTHeaders, PVOID ImageBase);
-void actctx_init(void);
+void actctx_init(PVOID* pOldShimData);
 extern BOOLEAN RtlpUse16ByteSLists;
 
 #ifdef _WIN64
@@ -135,7 +142,7 @@ LdrOpenImageFileOptionsKey(IN PUNICODE_STRING SubKey,
     if (NT_SUCCESS(Status))
     {
         /* Write the key handle */
-        if (_InterlockedCompareExchange((LONG*)RootKeyLocation, (LONG)RootKey, 0) != 0)
+        if (InterlockedCompareExchangePointer(RootKeyLocation, RootKey, NULL) != NULL)
         {
             /* Someone already opened it, use it instead */
             NtClose(RootKey);
@@ -459,8 +466,8 @@ LdrpInitSecurityCookie(PLDR_DATA_TABLE_ENTRY LdrEntry)
             NtQueryPerformanceCounter(&Counter, NULL);
 
             NewCookie = Counter.LowPart ^ Counter.HighPart;
-            NewCookie ^= (ULONG)NtCurrentTeb()->ClientId.UniqueProcess;
-            NewCookie ^= (ULONG)NtCurrentTeb()->ClientId.UniqueThread;
+            NewCookie ^= (ULONG_PTR)NtCurrentTeb()->ClientId.UniqueProcess;
+            NewCookie ^= (ULONG_PTR)NtCurrentTeb()->ClientId.UniqueThread;
 
             /* Loop like it's done in KeQueryTickCount(). We don't want to call it directly. */
             while (SharedUserData->SystemTime.High1Time != SharedUserData->SystemTime.High2Time)
@@ -551,30 +558,39 @@ LdrpInitializeThread(IN PCONTEXT Context)
                     RtlActivateActivationContextUnsafeFast(&ActCtx,
                                                            LdrEntry->EntryPointActivationContext);
 
-                    /* Check if it has TLS */
-                    if (LdrEntry->TlsIndex)
+                    _SEH2_TRY
                     {
+                        /* Check if it has TLS */
+                        if (LdrEntry->TlsIndex)
+                        {
+                            /* Make sure we're not shutting down */
+                            if (!LdrpShutdownInProgress)
+                            {
+                                /* Call TLS */
+                                LdrpCallTlsInitializers(LdrEntry, DLL_THREAD_ATTACH);
+                            }
+                        }
+
                         /* Make sure we're not shutting down */
                         if (!LdrpShutdownInProgress)
                         {
-                            /* Call TLS */
-                            LdrpCallTlsInitializers(LdrEntry->DllBase, DLL_THREAD_ATTACH);
+                            /* Call the Entrypoint */
+                            DPRINT("%wZ - Calling entry point at %p for thread attaching, %p/%p\n",
+                                   &LdrEntry->BaseDllName, LdrEntry->EntryPoint,
+                                   NtCurrentTeb()->RealClientId.UniqueProcess,
+                                   NtCurrentTeb()->RealClientId.UniqueThread);
+                            LdrpCallInitRoutine(LdrEntry->EntryPoint,
+                                                LdrEntry->DllBase,
+                                                DLL_THREAD_ATTACH,
+                                                NULL);
                         }
                     }
-
-                    /* Make sure we're not shutting down */
-                    if (!LdrpShutdownInProgress)
+                    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
                     {
-                        /* Call the Entrypoint */
-                        DPRINT("%wZ - Calling entry point at %p for thread attaching, %p/%p\n",
-                                &LdrEntry->BaseDllName, LdrEntry->EntryPoint,
-                                NtCurrentTeb()->RealClientId.UniqueProcess,
-                                NtCurrentTeb()->RealClientId.UniqueThread);
-                        LdrpCallInitRoutine(LdrEntry->EntryPoint,
-                                         LdrEntry->DllBase,
-                                         DLL_THREAD_ATTACH,
-                                         NULL);
+                        DPRINT1("WARNING: Exception 0x%x during LdrpCallInitRoutine(DLL_THREAD_ATTACH) for %wZ\n",
+                                _SEH2_GetExceptionCode(), &LdrEntry->BaseDllName);
                     }
+                    _SEH2_END;
 
                     /* Deactivate the ActCtx */
                     RtlDeactivateActivationContextUnsafeFast(&ActCtx);
@@ -598,8 +614,16 @@ LdrpInitializeThread(IN PCONTEXT Context)
         RtlActivateActivationContextUnsafeFast(&ActCtx,
                                                LdrpImageEntry->EntryPointActivationContext);
 
-        /* Do TLS callbacks */
-        LdrpCallTlsInitializers(Peb->ImageBaseAddress, DLL_THREAD_ATTACH);
+        _SEH2_TRY
+        {
+            /* Do TLS callbacks */
+            LdrpCallTlsInitializers(LdrpImageEntry, DLL_THREAD_ATTACH);
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+        {
+            /* Do nothing */
+        }
+        _SEH2_END;
 
         /* Deactivate the ActCtx */
         RtlDeactivateActivationContextUnsafeFast(&ActCtx);
@@ -641,7 +665,7 @@ LdrpRunInitializeRoutines(IN PCONTEXT Context OPTIONAL)
         if (Count > 16)
         {
             /* Allocate space for all the entries */
-            LdrRootEntry = RtlAllocateHeap(RtlGetProcessHeap(),
+            LdrRootEntry = RtlAllocateHeap(LdrpHeap,
                                            0,
                                            Count * sizeof(*LdrRootEntry));
             if (!LdrRootEntry) return STATUS_NO_MEMORY;
@@ -711,23 +735,28 @@ LdrpRunInitializeRoutines(IN PCONTEXT Context OPTIONAL)
         NextEntry = NextEntry->Flink;
     }
 
+    Status = STATUS_SUCCESS;
+
     /* If we got a context, then we have to call Kernel32 for TS support */
     if (Context)
     {
         /* Check if we have one */
-        //if (Kernel32ProcessInitPostImportfunction)
-        //{
+        if (Kernel32ProcessInitPostImportFunction)
+        {
             /* Call it */
-            //Kernel32ProcessInitPostImportfunction();
-        //}
-
+            Status = Kernel32ProcessInitPostImportFunction();
+            if (!NT_SUCCESS(Status))
+            {
+                DPRINT1("LDR: LdrpRunInitializeRoutines - Failed running kernel32 post-import function, Status=0x%08lx\n", Status);
+            }
+        }
         /* Clear it */
-        //Kernel32ProcessInitPostImportfunction = NULL;
-        //UNIMPLEMENTED;
+        Kernel32ProcessInitPostImportFunction = NULL;
     }
 
     /* No root entry? return */
-    if (!LdrRootEntry) return STATUS_SUCCESS;
+    if (!LdrRootEntry)
+        return Status;
 
     /* Set the TLD TEB */
     OldTldTeb = LdrpTopLevelDllBeingLoadedTeb;
@@ -795,23 +824,33 @@ LdrpRunInitializeRoutines(IN PCONTEXT Context OPTIONAL)
             RtlActivateActivationContextUnsafeFast(&ActCtx,
                                                    LdrEntry->EntryPointActivationContext);
 
-            /* Check if it has TLS */
-            if (LdrEntry->TlsIndex && Context)
+            _SEH2_TRY
             {
-                /* Call TLS */
-                LdrpCallTlsInitializers(LdrEntry->DllBase, DLL_PROCESS_ATTACH);
-            }
+                /* Check if it has TLS */
+                if (LdrEntry->TlsIndex && Context)
+                {
+                    /* Call TLS */
+                    LdrpCallTlsInitializers(LdrEntry, DLL_PROCESS_ATTACH);
+                }
 
-            /* Call the Entrypoint */
-            if (ShowSnaps)
-            {
-                DPRINT1("%wZ - Calling entry point at %p for DLL_PROCESS_ATTACH\n",
-                        &LdrEntry->BaseDllName, EntryPoint);
+                /* Call the Entrypoint */
+                if (ShowSnaps)
+                {
+                    DPRINT1("%wZ - Calling entry point at %p for DLL_PROCESS_ATTACH\n",
+                            &LdrEntry->BaseDllName, EntryPoint);
+                }
+                DllStatus = LdrpCallInitRoutine(EntryPoint,
+                                                LdrEntry->DllBase,
+                                                DLL_PROCESS_ATTACH,
+                                                Context);
             }
-            DllStatus = LdrpCallInitRoutine(EntryPoint,
-                                         LdrEntry->DllBase,
-                                         DLL_PROCESS_ATTACH,
-                                         Context);
+            _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+            {
+                DllStatus = FALSE;
+                DPRINT1("WARNING: Exception 0x%x during LdrpCallInitRoutine(DLL_PROCESS_ATTACH) for %wZ\n",
+                        _SEH2_GetExceptionCode(), &LdrEntry->BaseDllName);
+            }
+            _SEH2_END;
 
             /* Deactivate the ActCtx */
             RtlDeactivateActivationContextUnsafeFast(&ActCtx);
@@ -861,8 +900,16 @@ LdrpRunInitializeRoutines(IN PCONTEXT Context OPTIONAL)
         RtlActivateActivationContextUnsafeFast(&ActCtx,
                                                LdrpImageEntry->EntryPointActivationContext);
 
-        /* Do TLS callbacks */
-        LdrpCallTlsInitializers(Peb->ImageBaseAddress, DLL_PROCESS_ATTACH);
+        _SEH2_TRY
+        {
+            /* Do TLS callbacks */
+            LdrpCallTlsInitializers(LdrpImageEntry, DLL_PROCESS_ATTACH);
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+        {
+            /* Do nothing */
+        }
+        _SEH2_END;
 
         /* Deactivate the ActCtx */
         RtlDeactivateActivationContextUnsafeFast(&ActCtx);
@@ -876,7 +923,7 @@ Quickie:
     if (LdrRootEntry != LocalArray)
     {
         /* Free the array */
-        RtlFreeHeap(RtlGetProcessHeap(), 0, LdrRootEntry);
+        RtlFreeHeap(LdrpHeap, 0, LdrRootEntry);
     }
 
     /* Return to caller */
@@ -957,20 +1004,29 @@ LdrShutdownProcess(VOID)
                 RtlActivateActivationContextUnsafeFast(&ActCtx,
                                                        LdrEntry->EntryPointActivationContext);
 
-                /* Check if it has TLS */
-                if (LdrEntry->TlsIndex)
+                _SEH2_TRY
                 {
-                    /* Call TLS */
-                    LdrpCallTlsInitializers(LdrEntry->DllBase, DLL_PROCESS_DETACH);
-                }
+                    /* Check if it has TLS */
+                    if (LdrEntry->TlsIndex)
+                    {
+                        /* Call TLS */
+                        LdrpCallTlsInitializers(LdrEntry, DLL_PROCESS_DETACH);
+                    }
 
-                /* Call the Entrypoint */
-                DPRINT("%wZ - Calling entry point at %p for thread detaching\n",
-                        &LdrEntry->BaseDllName, LdrEntry->EntryPoint);
-                LdrpCallInitRoutine(EntryPoint,
-                                 LdrEntry->DllBase,
-                                 DLL_PROCESS_DETACH,
-                                 (PVOID)1);
+                    /* Call the Entrypoint */
+                    DPRINT("%wZ - Calling entry point at %p for thread detaching\n",
+                           &LdrEntry->BaseDllName, LdrEntry->EntryPoint);
+                    LdrpCallInitRoutine(EntryPoint,
+                                        LdrEntry->DllBase,
+                                        DLL_PROCESS_DETACH,
+                                        (PVOID)1);
+                }
+                _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+                {
+                    DPRINT1("WARNING: Exception 0x%x during LdrpCallInitRoutine(DLL_PROCESS_DETACH) for %wZ\n",
+                            _SEH2_GetExceptionCode(), &LdrEntry->BaseDllName);
+                }
+                _SEH2_END;
 
                 /* Deactivate the ActCtx */
                 RtlDeactivateActivationContextUnsafeFast(&ActCtx);
@@ -990,8 +1046,16 @@ LdrShutdownProcess(VOID)
         RtlActivateActivationContextUnsafeFast(&ActCtx,
                                                LdrpImageEntry->EntryPointActivationContext);
 
-        /* Do TLS callbacks */
-        LdrpCallTlsInitializers(Peb->ImageBaseAddress, DLL_PROCESS_DETACH);
+        _SEH2_TRY
+        {
+            /* Do TLS callbacks */
+            LdrpCallTlsInitializers(LdrpImageEntry, DLL_PROCESS_DETACH);
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+        {
+            /* Do nothing */
+        }
+        _SEH2_END;
 
         /* Deactivate the ActCtx */
         RtlDeactivateActivationContextUnsafeFast(&ActCtx);
@@ -1065,28 +1129,37 @@ LdrShutdownThread(VOID)
                     RtlActivateActivationContextUnsafeFast(&ActCtx,
                                                            LdrEntry->EntryPointActivationContext);
 
-                    /* Check if it has TLS */
-                    if (LdrEntry->TlsIndex)
+                    _SEH2_TRY
                     {
+                        /* Check if it has TLS */
+                        if (LdrEntry->TlsIndex)
+                        {
+                            /* Make sure we're not shutting down */
+                            if (!LdrpShutdownInProgress)
+                            {
+                                /* Call TLS */
+                                LdrpCallTlsInitializers(LdrEntry, DLL_THREAD_DETACH);
+                            }
+                        }
+
                         /* Make sure we're not shutting down */
                         if (!LdrpShutdownInProgress)
                         {
-                            /* Call TLS */
-                            LdrpCallTlsInitializers(LdrEntry->DllBase, DLL_THREAD_DETACH);
+                            /* Call the Entrypoint */
+                            DPRINT("%wZ - Calling entry point at %p for thread detaching\n",
+                                   &LdrEntry->BaseDllName, LdrEntry->EntryPoint);
+                            LdrpCallInitRoutine(EntryPoint,
+                                                LdrEntry->DllBase,
+                                                DLL_THREAD_DETACH,
+                                                NULL);
                         }
                     }
-
-                    /* Make sure we're not shutting down */
-                    if (!LdrpShutdownInProgress)
+                    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
                     {
-                        /* Call the Entrypoint */
-                        DPRINT("%wZ - Calling entry point at %p for thread detaching\n",
-                                &LdrEntry->BaseDllName, LdrEntry->EntryPoint);
-                        LdrpCallInitRoutine(EntryPoint,
-                                         LdrEntry->DllBase,
-                                         DLL_THREAD_DETACH,
-                                         NULL);
+                        DPRINT1("WARNING: Exception 0x%x during LdrpCallInitRoutine(DLL_THREAD_DETACH) for %wZ\n",
+                                _SEH2_GetExceptionCode(), &LdrEntry->BaseDllName);
                     }
+                    _SEH2_END;
 
                     /* Deactivate the ActCtx */
                     RtlDeactivateActivationContextUnsafeFast(&ActCtx);
@@ -1107,8 +1180,16 @@ LdrShutdownThread(VOID)
         RtlActivateActivationContextUnsafeFast(&ActCtx,
                                                LdrpImageEntry->EntryPointActivationContext);
 
-        /* Do TLS callbacks */
-        LdrpCallTlsInitializers(Peb->ImageBaseAddress, DLL_THREAD_DETACH);
+        _SEH2_TRY
+        {
+            /* Do TLS callbacks */
+            LdrpCallTlsInitializers(LdrpImageEntry, DLL_THREAD_DETACH);
+        }
+        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+        {
+            /* Do nothing */
+        }
+        _SEH2_END;
 
         /* Deactivate the ActCtx */
         RtlDeactivateActivationContextUnsafeFast(&ActCtx);
@@ -1128,8 +1209,29 @@ LdrShutdownThread(VOID)
     /* Check for FLS Data */
     if (Teb->FlsData)
     {
-        /* FIXME */
-        DPRINT1("We don't support FLS Data yet\n");
+        /* Mimic BaseRundownFls */
+        ULONG n, FlsHighIndex;
+        PRTL_FLS_DATA pFlsData;
+        PFLS_CALLBACK_FUNCTION lpCallback;
+
+        pFlsData = Teb->FlsData;
+
+        RtlAcquirePebLock();
+        FlsHighIndex = NtCurrentPeb()->FlsHighIndex;
+        RemoveEntryList(&pFlsData->ListEntry);
+        RtlReleasePebLock();
+
+        for (n = 1; n <= FlsHighIndex; ++n)
+        {
+            lpCallback = NtCurrentPeb()->FlsCallback[n];
+            if (lpCallback && pFlsData->Data[n])
+            {
+                lpCallback(pFlsData->Data[n]);
+            }
+        }
+
+        RtlFreeHeap(RtlGetProcessHeap(), 0, pFlsData);
+        Teb->FlsData = NULL;
     }
 
     /* Check for Fiber data */
@@ -1311,26 +1413,6 @@ LdrpFreeTls(VOID)
 
 NTSTATUS
 NTAPI
-LdrpInitializeApplicationVerifierPackage(PUNICODE_STRING ImagePathName, PPEB Peb, BOOLEAN SystemWide, BOOLEAN ReadAdvancedOptions)
-{
-    /* If global flags request DPH, perform some additional actions */
-    if (Peb->NtGlobalFlag & FLG_HEAP_PAGE_ALLOCS)
-    {
-        // TODO: Read advanced DPH flags from the registry if requested
-        if (ReadAdvancedOptions)
-        {
-            UNIMPLEMENTED;
-        }
-
-        /* Enable page heap */
-        RtlpPageHeapEnabled = TRUE;
-    }
-
-    return STATUS_SUCCESS;
-}
-
-NTSTATUS
-NTAPI
 LdrpInitializeExecutionOptions(PUNICODE_STRING ImagePathName, PPEB Peb, PHANDLE OptionsKey)
 {
     NTSTATUS Status;
@@ -1422,9 +1504,9 @@ LdrpInitializeExecutionOptions(PUNICODE_STRING ImagePathName, PPEB Peb, PHANDLE 
             GlobalFlag = 0;
 
         /* Call AVRF if necessary */
-        if (Peb->NtGlobalFlag & (FLG_POOL_ENABLE_TAIL_CHECK | FLG_HEAP_PAGE_ALLOCS))
+        if (Peb->NtGlobalFlag & (FLG_APPLICATION_VERIFIER | FLG_HEAP_PAGE_ALLOCS))
         {
-            Status = LdrpInitializeApplicationVerifierPackage(ImagePathName, Peb, TRUE, FALSE);
+            Status = LdrpInitializeApplicationVerifierPackage(KeyHandle, Peb, TRUE, FALSE);
             if (!NT_SUCCESS(Status))
             {
                 DPRINT1("AVRF: LdrpInitializeApplicationVerifierPackage failed with %08X\n", Status);
@@ -1434,10 +1516,10 @@ LdrpInitializeExecutionOptions(PUNICODE_STRING ImagePathName, PPEB Peb, PHANDLE 
     else
     {
         /* There are no image-specific options, so perform global initialization */
-        if (Peb->NtGlobalFlag & (FLG_POOL_ENABLE_TAIL_CHECK | FLG_HEAP_PAGE_ALLOCS))
+        if (Peb->NtGlobalFlag & (FLG_APPLICATION_VERIFIER | FLG_HEAP_PAGE_ALLOCS))
         {
             /* Initialize app verifier package */
-            Status = LdrpInitializeApplicationVerifierPackage(ImagePathName, Peb, TRUE, FALSE);
+            Status = LdrpInitializeApplicationVerifierPackage(KeyHandle, Peb, TRUE, FALSE);
             if (!NT_SUCCESS(Status))
             {
                 DPRINT1("AVRF: LdrpInitializeApplicationVerifierPackage failed with %08X\n", Status);
@@ -1455,6 +1537,210 @@ LdrpValidateImageForMp(IN PLDR_DATA_TABLE_ENTRY LdrDataTableEntry)
     UNIMPLEMENTED;
 }
 
+BOOLEAN
+NTAPI
+LdrpDisableProcessCompatGuidDetection(VOID)
+{
+    UNICODE_STRING PolicyKey = RTL_CONSTANT_STRING(L"\\Registry\\MACHINE\\Software\\Policies\\Microsoft\\Windows\\AppCompat");
+    UNICODE_STRING DisableDetection = RTL_CONSTANT_STRING(L"DisableCompatGuidDetection");
+    OBJECT_ATTRIBUTES PolicyKeyAttributes = RTL_CONSTANT_OBJECT_ATTRIBUTES(&PolicyKey, OBJ_CASE_INSENSITIVE);
+    KEY_VALUE_PARTIAL_INFORMATION KeyInfo;
+    ULONG ResultLength;
+    NTSTATUS Status;
+    HANDLE KeyHandle;
+
+    Status = NtOpenKey(&KeyHandle, KEY_QUERY_VALUE, &PolicyKeyAttributes);
+    if (NT_SUCCESS(Status))
+    {
+        Status = NtQueryValueKey(KeyHandle,
+                                 &DisableDetection,
+                                 KeyValuePartialInformation,
+                                 &KeyInfo,
+                                 sizeof(KeyInfo),
+                                 &ResultLength);
+        NtClose(KeyHandle);
+        if ((NT_SUCCESS(Status)) &&
+            (KeyInfo.Type == REG_DWORD) &&
+            (KeyInfo.DataLength == sizeof(ULONG)) &&
+            (KeyInfo.Data[0] == TRUE))
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+
+VOID
+NTAPI
+LdrpInitializeProcessCompat(PVOID pProcessActctx, PVOID* pOldShimData)
+{
+    static const struct
+    {
+        const GUID* Guid;
+        const DWORD Version;
+    } KnownCompatGuids[] = {
+        { &COMPAT_GUID_WIN10, _WIN32_WINNT_WIN10 },
+        { &COMPAT_GUID_WIN81, _WIN32_WINNT_WINBLUE },
+        { &COMPAT_GUID_WIN8, _WIN32_WINNT_WIN8 },
+        { &COMPAT_GUID_WIN7, _WIN32_WINNT_WIN7 },
+        { &COMPAT_GUID_VISTA, _WIN32_WINNT_VISTA },
+    };
+
+    ULONG Buffer[(sizeof(COMPATIBILITY_CONTEXT_ELEMENT) * 10 + sizeof(ACTIVATION_CONTEXT_COMPATIBILITY_INFORMATION)) / sizeof(ULONG)];
+    ACTIVATION_CONTEXT_COMPATIBILITY_INFORMATION* ContextCompatInfo;
+    SIZE_T SizeRequired;
+    NTSTATUS Status;
+    DWORD n, cur;
+    ReactOS_ShimData* pShimData = *pOldShimData;
+
+    if (pShimData)
+    {
+        if (pShimData->dwMagic != REACTOS_SHIMDATA_MAGIC ||
+            pShimData->dwSize != sizeof(ReactOS_ShimData))
+        {
+            DPRINT1("LdrpInitializeProcessCompat: Corrupt pShimData (0x%x, %u)\n", pShimData->dwMagic, pShimData->dwSize);
+            return;
+        }
+        if (pShimData->dwRosProcessCompatVersion)
+        {
+            if (pShimData->dwRosProcessCompatVersion == REACTOS_COMPATVERSION_IGNOREMANIFEST)
+            {
+                DPRINT1("LdrpInitializeProcessCompat: ProcessCompatVersion set to ignore manifest\n");
+            }
+            else
+            {
+                DPRINT1("LdrpInitializeProcessCompat: ProcessCompatVersion already set to 0x%x\n", pShimData->dwRosProcessCompatVersion);
+            }
+            return;
+        }
+    }
+
+    SizeRequired = sizeof(Buffer);
+    Status = RtlQueryInformationActivationContext(RTL_QUERY_ACTIVATION_CONTEXT_FLAG_NO_ADDREF,
+                                                  pProcessActctx,
+                                                  NULL,
+                                                  CompatibilityInformationInActivationContext,
+                                                  Buffer,
+                                                  sizeof(Buffer),
+                                                  &SizeRequired);
+
+    if (!NT_SUCCESS(Status))
+    {
+        DPRINT1("LdrpInitializeProcessCompat: Unable to query process actctx with status %x\n", Status);
+        return;
+    }
+
+    ContextCompatInfo = (ACTIVATION_CONTEXT_COMPATIBILITY_INFORMATION*)Buffer;
+    /* No Compatibility elements present, bail out */
+    if (ContextCompatInfo->ElementCount == 0)
+        return;
+
+    /* Search for known GUID's, starting from newest to oldest. */
+    for (cur = 0; cur < RTL_NUMBER_OF(KnownCompatGuids); ++cur)
+    {
+        for (n = 0; n < ContextCompatInfo->ElementCount; ++n)
+        {
+            if (ContextCompatInfo->Elements[n].Type == ACTCX_COMPATIBILITY_ELEMENT_TYPE_OS &&
+                RtlCompareMemory(&ContextCompatInfo->Elements[n].Id, KnownCompatGuids[cur].Guid, sizeof(GUID)) == sizeof(GUID))
+            {
+                if (LdrpDisableProcessCompatGuidDetection())
+                {
+                    DPRINT1("LdrpInitializeProcessCompat: Not applying automatic fix for winver 0x%x due to policy\n", KnownCompatGuids[cur].Version);
+                    return;
+                }
+
+                /* If this process did not need shim data before, allocate and store it */
+                if (pShimData == NULL)
+                {
+                    PPEB Peb = NtCurrentPeb();
+
+                    ASSERT(Peb->pShimData == NULL);
+                    pShimData = RtlAllocateHeap(Peb->ProcessHeap, HEAP_ZERO_MEMORY, sizeof(*pShimData));
+
+                    if (!pShimData)
+                    {
+                        DPRINT1("LdrpInitializeProcessCompat: Unable to allocated %u bytes\n", sizeof(*pShimData));
+                        return;
+                    }
+
+                    pShimData->dwSize = sizeof(*pShimData);
+                    pShimData->dwMagic = REACTOS_SHIMDATA_MAGIC;
+
+                    Peb->pShimData = pShimData;
+                    *pOldShimData = pShimData;
+                }
+
+                /* Store the highest found version, and bail out. */
+                pShimData->dwRosProcessCompatVersion = KnownCompatGuids[cur].Version;
+                DPRINT1("LdrpInitializeProcessCompat: Found guid for winver 0x%x\n", KnownCompatGuids[cur].Version);
+                return;
+            }
+        }
+    }
+}
+
+VOID
+NTAPI
+LdrpInitializeDotLocalSupport(PRTL_USER_PROCESS_PARAMETERS ProcessParameters)
+{
+    UNICODE_STRING ImagePathName = ProcessParameters->ImagePathName;
+    WCHAR LocalBuffer[MAX_PATH];
+    UNICODE_STRING DotLocal;
+    NTSTATUS Status;
+    ULONG RequiredSize;
+
+    RequiredSize = ImagePathName.Length + LdrpDotLocal.Length + sizeof(UNICODE_NULL);
+    if (RequiredSize <= sizeof(LocalBuffer))
+    {
+        RtlInitEmptyUnicodeString(&DotLocal, LocalBuffer, sizeof(LocalBuffer));
+    }
+    else if (RequiredSize <= UNICODE_STRING_MAX_BYTES)
+    {
+        DotLocal.Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, RequiredSize);
+        DotLocal.Length = 0;
+        DotLocal.MaximumLength = RequiredSize;
+        if (!DotLocal.Buffer)
+            DPRINT1("LDR: Failed to allocate memory for .local check\n");
+    }
+    else
+    {
+        DotLocal.Buffer = NULL;
+        DotLocal.Length = 0;
+        DotLocal.MaximumLength = 0;
+        DPRINT1("LDR: String too big for .local check\n");
+    }
+
+    if (DotLocal.Buffer)
+    {
+        Status = RtlAppendUnicodeStringToString(&DotLocal, &ImagePathName);
+        ASSERT(NT_SUCCESS(Status));
+        if (NT_SUCCESS(Status))
+        {
+            Status = RtlAppendUnicodeStringToString(&DotLocal, &LdrpDotLocal);
+            ASSERT(NT_SUCCESS(Status));
+        }
+
+        if (NT_SUCCESS(Status))
+        {
+            if (RtlDoesFileExists_UStr(&DotLocal))
+            {
+                ProcessParameters->Flags |= RTL_USER_PROCESS_PARAMETERS_PRIVATE_DLL_PATH;
+            }
+        }
+        else
+        {
+            DPRINT1("LDR: Failed to append: 0x%lx\n", Status);
+        }
+
+        if (DotLocal.Buffer != LocalBuffer)
+        {
+            RtlFreeHeap(RtlGetProcessHeap(), 0, DotLocal.Buffer);
+        }
+    }
+}
+
+
 NTSTATUS
 NTAPI
 LdrpInitializeProcess(IN PCONTEXT Context,
@@ -1462,7 +1748,8 @@ LdrpInitializeProcess(IN PCONTEXT Context,
 {
     RTL_HEAP_PARAMETERS HeapParameters;
     ULONG ComSectionSize;
-    //ANSI_STRING FunctionName = RTL_CONSTANT_STRING("BaseQueryModuleData");
+    ANSI_STRING BaseProcessInitPostImportName = RTL_CONSTANT_STRING("BaseProcessInitPostImport");
+    ANSI_STRING BaseQueryModuleDataName = RTL_CONSTANT_STRING("BaseQueryModuleData");
     PVOID OldShimData;
     OBJECT_ATTRIBUTES ObjectAttributes;
     //UNICODE_STRING LocalFileName, FullImageName;
@@ -1542,8 +1829,8 @@ LdrpInitializeProcess(IN PCONTEXT Context,
     /* Save the old Shim Data */
     OldShimData = Peb->pShimData;
 
-    /* Clear it */
-    Peb->pShimData = NULL;
+    /* ReactOS specific: do not clear it. (Windows starts doing the same in later versions) */
+    //Peb->pShimData = NULL;
 
     /* Save the number of processors and CS Timeout */
     LdrpNumberOfProcessors = Peb->NumberOfProcessors;
@@ -1580,16 +1867,45 @@ LdrpInitializeProcess(IN PCONTEXT Context,
                                               &ConfigSize);
 
     /* Setup the Heap Parameters */
-    RtlZeroMemory(&HeapParameters, sizeof(RTL_HEAP_PARAMETERS));
+    RtlZeroMemory(&HeapParameters, sizeof(HeapParameters));
     HeapFlags = HEAP_GROWABLE;
-    HeapParameters.Length = sizeof(RTL_HEAP_PARAMETERS);
+    HeapParameters.Length = sizeof(HeapParameters);
 
     /* Check if we have Configuration Data */
-    if ((LoadConfig) && (ConfigSize == sizeof(IMAGE_LOAD_CONFIG_DIRECTORY)))
+#define VALID_CONFIG_FIELD(Name) (ConfigSize >= (FIELD_OFFSET(IMAGE_LOAD_CONFIG_DIRECTORY, Name) + sizeof(LoadConfig->Name)))
+    /* The 'original' load config ends after SecurityCookie */
+    if ((LoadConfig) && ConfigSize && (VALID_CONFIG_FIELD(SecurityCookie) || ConfigSize == LoadConfig->Size))
     {
-        /* FIXME: Custom heap settings and misc. */
-        DPRINT1("We don't support LOAD_CONFIG data yet\n");
+        if (ConfigSize != sizeof(IMAGE_LOAD_CONFIG_DIRECTORY))
+            DPRINT1("WARN: Accepting different LOAD_CONFIG size!\n");
+        else
+            DPRINT1("Applying LOAD_CONFIG\n");
+
+        if (VALID_CONFIG_FIELD(GlobalFlagsSet) && LoadConfig->GlobalFlagsSet)
+            Peb->NtGlobalFlag |= LoadConfig->GlobalFlagsSet;
+
+        if (VALID_CONFIG_FIELD(GlobalFlagsClear) && LoadConfig->GlobalFlagsClear)
+            Peb->NtGlobalFlag &= ~LoadConfig->GlobalFlagsClear;
+
+        if (VALID_CONFIG_FIELD(CriticalSectionDefaultTimeout) && LoadConfig->CriticalSectionDefaultTimeout)
+            RtlpTimeout.QuadPart = Int32x32To64(LoadConfig->CriticalSectionDefaultTimeout, -10000000);
+
+        if (VALID_CONFIG_FIELD(DeCommitFreeBlockThreshold) && LoadConfig->DeCommitFreeBlockThreshold)
+            HeapParameters.DeCommitFreeBlockThreshold = LoadConfig->DeCommitFreeBlockThreshold;
+
+        if (VALID_CONFIG_FIELD(DeCommitTotalFreeThreshold) && LoadConfig->DeCommitTotalFreeThreshold)
+            HeapParameters.DeCommitTotalFreeThreshold = LoadConfig->DeCommitTotalFreeThreshold;
+
+        if (VALID_CONFIG_FIELD(MaximumAllocationSize) && LoadConfig->MaximumAllocationSize)
+            HeapParameters.MaximumAllocationSize = LoadConfig->MaximumAllocationSize;
+
+        if (VALID_CONFIG_FIELD(VirtualMemoryThreshold) && LoadConfig->VirtualMemoryThreshold)
+            HeapParameters.VirtualMemoryThreshold = LoadConfig->VirtualMemoryThreshold;
+
+        if (VALID_CONFIG_FIELD(ProcessHeapFlags) && LoadConfig->ProcessHeapFlags)
+            HeapFlags = LoadConfig->ProcessHeapFlags;
     }
+#undef VALID_CONFIG_FIELD
 
     /* Check for custom affinity mask */
     if (Peb->ImageProcessAffinityMask)
@@ -1635,6 +1951,7 @@ LdrpInitializeProcess(IN PCONTEXT Context,
                         Peb->FlsBitmapBits,
                         FLS_MAXIMUM_AVAILABLE);
     RtlSetBit(&FlsBitMap, 0);
+    InitializeListHead(&Peb->FlsListHead);
 
     /* Initialize TLS Bitmap */
     RtlInitializeBitMap(&TlsBitMap,
@@ -1702,8 +2019,15 @@ LdrpInitializeProcess(IN PCONTEXT Context,
     Status = RtlAllocateActivationContextStack(&Teb->ActivationContextStackPointer);
     if (!NT_SUCCESS(Status)) return Status;
 
-    // FIXME: Loader private heap is missing
-    //DPRINT1("Loader private heap is missing\n");
+    RtlZeroMemory(&HeapParameters, sizeof(HeapParameters));
+    HeapFlags = HEAP_GROWABLE | HEAP_CLASS_1;
+    HeapParameters.Length = sizeof(HeapParameters);
+    LdrpHeap = RtlCreateHeap(HeapFlags, 0, 0x10000, 0x6000, 0, &HeapParameters);
+    if (!LdrpHeap)
+    {
+        DPRINT1("Failed to create loader private heap\n");
+        return STATUS_NO_MEMORY;
+    }
 
     /* Check for Debug Heap */
     if (OptionsKey)
@@ -1932,7 +2256,7 @@ LdrpInitializeProcess(IN PCONTEXT Context,
                    &LdrpNtDllDataTableEntry->InInitializationOrderLinks);
 
     /* Initialize Wine's active context implementation for the current process */
-    actctx_init();
+    actctx_init(&OldShimData);
 
     /* Set the current directory */
     Status = RtlSetCurrentDirectory_U(&CurrentDirectory);
@@ -1952,17 +2276,21 @@ LdrpInitializeProcess(IN PCONTEXT Context,
     }
 
     /* Check if we should look for a .local file */
-    if (ProcessParameters->Flags & RTL_USER_PROCESS_PARAMETERS_LOCAL_DLL_PATH)
+    if (ProcessParameters && !(ProcessParameters->Flags & RTL_USER_PROCESS_PARAMETERS_LOCAL_DLL_PATH))
     {
-        /* FIXME */
-        DPRINT1("We don't support .local overrides yet\n");
+        LdrpInitializeDotLocalSupport(ProcessParameters);
     }
 
     /* Check if the Application Verifier was enabled */
-    if (Peb->NtGlobalFlag & FLG_POOL_ENABLE_TAIL_CHECK)
+    if (Peb->NtGlobalFlag & FLG_APPLICATION_VERIFIER)
     {
-        /* FIXME */
-        DPRINT1("We don't support Application Verifier yet\n");
+        Status = AVrfInitializeVerifier();
+        if (!NT_SUCCESS(Status))
+        {
+            DPRINT1("LDR: AVrfInitializeVerifier failed (ntstatus 0x%x)\n", Status);
+            return Status;
+        }
+
     }
 
     if (IsDotNetImage)
@@ -1971,11 +2299,46 @@ LdrpInitializeProcess(IN PCONTEXT Context,
         DPRINT1("We don't support .NET applications yet\n");
     }
 
-    /* FIXME: Load support for Terminal Services */
-    if (NtHeader->OptionalHeader.Subsystem == IMAGE_SUBSYSTEM_WINDOWS_GUI)
+    if (NtHeader->OptionalHeader.Subsystem == IMAGE_SUBSYSTEM_WINDOWS_GUI ||
+        NtHeader->OptionalHeader.Subsystem == IMAGE_SUBSYSTEM_WINDOWS_CUI)
     {
-        /* Load kernel32 and call BasePostImportInit... */
-        DPRINT("Unimplemented codepath!\n");
+        PVOID Kernel32BaseAddress;
+        PVOID FunctionAddress;
+
+        Status = LdrLoadDll(NULL, NULL, &Kernel32String, &Kernel32BaseAddress);
+
+        if (!NT_SUCCESS(Status))
+        {
+            if (ShowSnaps)
+                DPRINT1("LDR: Unable to load %wZ, Status=0x%08lx\n", &Kernel32String, Status);
+            return Status;
+        }
+
+        Status = LdrGetProcedureAddress(Kernel32BaseAddress,
+                                        &BaseProcessInitPostImportName,
+                                        0,
+                                        &FunctionAddress);
+
+        if (!NT_SUCCESS(Status))
+        {
+            if (ShowSnaps)
+                DPRINT1("LDR: Unable to find post-import process init function, Status=0x%08lx\n", &Kernel32String, Status);
+            return Status;
+        }
+        Kernel32ProcessInitPostImportFunction = FunctionAddress;
+
+        Status = LdrGetProcedureAddress(Kernel32BaseAddress,
+                                        &BaseQueryModuleDataName,
+                                        0,
+                                        &FunctionAddress);
+
+        if (!NT_SUCCESS(Status))
+        {
+            if (ShowSnaps)
+                DPRINT1("LDR: Unable to find BaseQueryModuleData, Status=0x%08lx\n", &Kernel32String, Status);
+            return Status;
+        }
+        Kernel32BaseQueryModuleData = FunctionAddress;
     }
 
     /* Walk the IAT and load all the DLLs */
@@ -2081,7 +2444,7 @@ LdrpInitializeProcess(IN PCONTEXT Context,
     {
         WCHAR szCSDVersion[128];
         LONG i;
-        ULONG Length = ARRAYSIZE(szCSDVersion) - 1;
+        USHORT Length = (USHORT)ARRAYSIZE(szCSDVersion) - 1;
         i = _snwprintf(szCSDVersion, Length,
                        L"Service Pack %d",
                        ((Peb->OSCSDVersion >> 8) & 0xFF));

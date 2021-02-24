@@ -2,8 +2,8 @@
  * PROJECT:         ReactOS EventLog File Library
  * LICENSE:         GPL - See COPYING in the top level directory
  * FILE:            sdk/lib/evtlib/evtlib.c
- * PURPOSE:         Provides a library for reading and writing EventLog files
- *                  in the NT <= 5.2 (.evt) format.
+ * PURPOSE:         Provides functionality for reading and writing
+ *                  EventLog files in the NT <= 5.2 (.evt) format.
  * PROGRAMMERS:     Copyright 2005 Saveliy Tretiakov
  *                  Michael Martin
  *                  Hermes Belusca-Maito
@@ -238,7 +238,7 @@ ElfpAddOffsetInformation(
             RtlCopyMemory(NewOffsetInfo,
                           LogFile->OffsetInfo,
                           LogFile->OffsetInfoSize * sizeof(EVENT_OFFSET_INFO));
-            LogFile->Free(LogFile->OffsetInfo, 0);
+            LogFile->Free(LogFile->OffsetInfo, 0, TAG_ELF);
         }
         LogFile->OffsetInfo = (PEVENT_OFFSET_INFO)NewOffsetInfo;
         LogFile->OffsetInfoSize += OFFSET_INFO_INCREMENT;
@@ -507,7 +507,7 @@ ElfpInitExistingFile(
         /* Is it an EVENTLOGEOF record? */
         if (RtlCompareMemory(&EofRec, &EOFRecord, EVENTLOGEOF_SIZE_FIXED) == EVENTLOGEOF_SIZE_FIXED)
         {
-            DPRINT1("Found EOF record at %llx\n", FileOffset.QuadPart);
+            DPRINT("Found EOF record at %llx\n", FileOffset.QuadPart);
 
             /* Got it! Break the loop and continue */
             break;
@@ -695,8 +695,8 @@ ElfpInitExistingFile(
         // LogFile->Header.Flags |= ELF_LOGFILE_HEADER_WRAP;
     // }
 
-    DPRINT1("StartOffset = 0x%x, EndOffset = 0x%x\n",
-            LogFile->Header.StartOffset, LogFile->Header.EndOffset);
+    DPRINT("StartOffset = 0x%x, EndOffset = 0x%x\n",
+           LogFile->Header.StartOffset, LogFile->Header.EndOffset);
 
     /*
      * For non-read-only logs of size < MaxSize, reorganize the events
@@ -771,20 +771,20 @@ Continue:
         if (!NT_SUCCESS(Status))
         {
             EVTLTRACE1("ReadLogBuffer failed (Status 0x%08lx)\n", Status);
-            LogFile->Free(pRecBuf, 0);
+            LogFile->Free(pRecBuf, 0, TAG_ELF_BUF);
             return STATUS_EVENTLOG_FILE_CORRUPT;
         }
         if (ReadLength != RecBuf.Length)
         {
             DPRINT1("Oh oh!!\n");
-            LogFile->Free(pRecBuf, 0);
+            LogFile->Free(pRecBuf, 0, TAG_ELF_BUF);
             break;
         }
 
         // /* If OverWrittenRecords is TRUE and this record has already been read */
         // if (OverWrittenRecords && (pRecBuf->RecordNumber == LogFile->Header.OldestRecordNumber))
         // {
-            // LogFile->Free(pRecBuf, 0);
+            // LogFile->Free(pRecBuf, 0, TAG_ELF_BUF);
             // break;
         // }
 
@@ -794,7 +794,7 @@ Continue:
         {
             EVTLTRACE1("Invalid RecordSizeEnd of record %d (0x%x) in `%wZ'\n",
                     RecordNumber, *pRecSize2, &LogFile->FileName);
-            LogFile->Free(pRecBuf, 0);
+            LogFile->Free(pRecBuf, 0, TAG_ELF_BUF);
             break;
         }
 
@@ -807,16 +807,16 @@ Continue:
                                       FileOffset.QuadPart))
         {
             EVTLTRACE1("ElfpAddOffsetInformation() failed!\n");
-            LogFile->Free(pRecBuf, 0);
+            LogFile->Free(pRecBuf, 0, TAG_ELF_BUF);
             return STATUS_EVENTLOG_FILE_CORRUPT;
         }
 
-        LogFile->Free(pRecBuf, 0);
+        LogFile->Free(pRecBuf, 0, TAG_ELF_BUF);
 
         if (NextOffset.QuadPart == LogFile->Header.EndOffset)
         {
             /* We have finished enumerating all the event records */
-            DPRINT1("NextOffset.QuadPart == LogFile->Header.EndOffset, break\n");
+            DPRINT("NextOffset.QuadPart == LogFile->Header.EndOffset, break\n");
             break;
         }
 
@@ -828,7 +828,7 @@ Continue:
         if (LogFile->Header.MaxSize - NextOffset.QuadPart < sizeof(EVENTLOGRECORD))
         {
             /* Wrap to the beginning of the log */
-            DPRINT1("Wrap!\n");
+            DPRINT("Wrap!\n");
             NextOffset.QuadPart = sizeof(EVENTLOGHEADER);
         }
 
@@ -838,7 +838,7 @@ Continue:
          */
         if (FileOffset.QuadPart > NextOffset.QuadPart)
         {
-            DPRINT1("Wrapping = TRUE;\n");
+            DPRINT("Wrapping = TRUE;\n");
             Wrapping = TRUE;
         }
 
@@ -874,7 +874,7 @@ Continue:
 NTSTATUS
 NTAPI
 ElfCreateFile(
-    IN PEVTLOGFILE LogFile,
+    IN OUT PEVTLOGFILE LogFile,
     IN PUNICODE_STRING FileName OPTIONAL,
     IN ULONG    FileSize,
     IN ULONG    MaxSize,
@@ -952,14 +952,13 @@ Quit:
     if (!NT_SUCCESS(Status))
     {
         if (LogFile->OffsetInfo)
-            LogFile->Free(LogFile->OffsetInfo, 0);
+            LogFile->Free(LogFile->OffsetInfo, 0, TAG_ELF);
 
         if (LogFile->FileName.Buffer)
-            LogFile->Free(LogFile->FileName.Buffer, 0);
+            LogFile->Free(LogFile->FileName.Buffer, 0, TAG_ELF);
     }
 
     return Status;
-
 }
 
 NTSTATUS
@@ -1071,7 +1070,7 @@ ElfBackupFile(
         if (!NT_SUCCESS(Status))
         {
             EVTLTRACE1("ReadLogBuffer failed (Status 0x%08lx)\n", Status);
-            LogFile->Free(Buffer, 0);
+            LogFile->Free(Buffer, 0, TAG_ELF_BUF);
             // Status = STATUS_EVENTLOG_FILE_CORRUPT;
             goto Quit;
         }
@@ -1085,7 +1084,7 @@ ElfBackupFile(
         if (!NT_SUCCESS(Status))
         {
             EVTLTRACE1("FileWrite() failed (Status 0x%08lx)\n", Status);
-            LogFile->Free(Buffer, 0);
+            LogFile->Free(Buffer, 0, TAG_ELF_BUF);
             goto Quit;
         }
 
@@ -1093,7 +1092,7 @@ ElfBackupFile(
         Header->EndOffset += RecBuf.Length;
 
         /* Free the buffer */
-        LogFile->Free(Buffer, 0);
+        LogFile->Free(Buffer, 0, TAG_ELF_BUF);
         Buffer = NULL;
     }
 
@@ -1186,10 +1185,10 @@ ElfCloseFile(  // ElfFree
     ElfFlushFile(LogFile);
 
     /* Free the data */
-    LogFile->Free(LogFile->OffsetInfo, 0);
+    LogFile->Free(LogFile->OffsetInfo, 0, TAG_ELF);
 
     if (LogFile->FileName.Buffer)
-        LogFile->Free(LogFile->FileName.Buffer, 0);
+        LogFile->Free(LogFile->FileName.Buffer, 0, TAG_ELF);
     RtlInitEmptyUnicodeString(&LogFile->FileName, NULL, 0);
 }
 
@@ -1475,10 +1474,10 @@ ElfWriteRecord(
             LogFile->Header.EndOffset = WriteOffset;
         }
 
-        DPRINT1("MaxSize = 0x%x, StartOffset = 0x%x, WriteOffset = 0x%x, EndOffset = 0x%x, BufSize = 0x%x\n"
-                "OldestRecordNumber = %d\n",
-                LogFile->Header.MaxSize, LogFile->Header.StartOffset, WriteOffset, LogFile->Header.EndOffset, BufSize,
-                OldestRecordNumber);
+        EVTLTRACE("MaxSize = 0x%x, StartOffset = 0x%x, WriteOffset = 0x%x, EndOffset = 0x%x, BufSize = 0x%x\n"
+                  "OldestRecordNumber = %d\n",
+                  LogFile->Header.MaxSize, LogFile->Header.StartOffset, WriteOffset, LogFile->Header.EndOffset, BufSize,
+                  OldestRecordNumber);
     }
 
     /*

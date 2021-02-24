@@ -6,6 +6,7 @@
  *              hPalWin, hToolSettings and hSelection
  * PROGRAMMERS: Benedikt Freisen
  *              Katayama Hirofumi MZ
+ *              Stanislav Motylkov
  */
 
 /* INCLUDES *********************************************************/
@@ -16,7 +17,7 @@
 
 /* FUNCTIONS ********************************************************/
 
-void
+BOOL
 zoomTo(int newZoom, int mouseX, int mouseY)
 {
     RECT clientRectScrollbox;
@@ -24,8 +25,14 @@ zoomTo(int newZoom, int mouseX, int mouseY)
     int x, y, w, h;
     scrollboxWindow.GetClientRect(&clientRectScrollbox);
     imageArea.GetClientRect(&clientRectImageArea);
-    w = clientRectImageArea.right * clientRectScrollbox.right / (clientRectImageArea.right * newZoom / toolsModel.GetZoom());
-    h = clientRectImageArea.bottom * clientRectScrollbox.bottom / (clientRectImageArea.bottom * newZoom / toolsModel.GetZoom());
+    w = clientRectImageArea.right * newZoom / toolsModel.GetZoom();
+    h = clientRectImageArea.bottom * newZoom / toolsModel.GetZoom();
+    if (!w || !h)
+    {
+        return FALSE;
+    }
+    w = clientRectImageArea.right * clientRectScrollbox.right / w;
+    h = clientRectImageArea.bottom * clientRectScrollbox.bottom / h;
     x = max(0, min(clientRectImageArea.right - w, mouseX - w / 2)) * newZoom / toolsModel.GetZoom();
     y = max(0, min(clientRectImageArea.bottom - h, mouseY - h / 2)) * newZoom / toolsModel.GetZoom();
 
@@ -38,6 +45,7 @@ zoomTo(int newZoom, int mouseX, int mouseY)
 
     scrollboxWindow.SendMessage(WM_HSCROLL, MAKEWPARAM(SB_THUMBPOSITION, x), 0);
     scrollboxWindow.SendMessage(WM_VSCROLL, MAKEWPARAM(SB_THUMBPOSITION, y), 0);
+    return TRUE;
 }
 
 void CMainWindow::alignChildrenToMainWindow()
@@ -86,6 +94,7 @@ void CMainWindow::saveImage(BOOL overwrite)
     else if (GetSaveFileName(&sfn) != 0)
     {
         imageModel.SaveImage(sfn.lpstrFile);
+        _tcsncpy(filepathname, sfn.lpstrFile, SIZEOF(filepathname));
         CString strTitle;
         strTitle.Format(IDS_WINDOWTITLE, (LPCTSTR)sfn.lpstrFileTitle);
         SetWindowText(strTitle);
@@ -605,7 +614,7 @@ LRESULT CMainWindow::OnCommand(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
             imageArea.Invalidate(FALSE);
             break;
         case IDM_IMAGEROTATEMIRROR:
-            switch (mirrorRotateDlg())
+            switch (mirrorRotateDialog.DoModal(mainWindow.m_hWnd))
             {
                 case 1: /* flip horizontally */
                     if (selectionWindow.IsWindowVisible())
@@ -633,18 +642,18 @@ LRESULT CMainWindow::OnCommand(UINT nMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
             break;
         case IDM_IMAGEATTRIBUTES:
         {
-            if (attributesDlg())
+            if (attributesDialog.DoModal(mainWindow.m_hWnd))
             {
-                imageModel.Crop(widthSetInDlg, heightSetInDlg, 0, 0);
+                imageModel.Crop(attributesDialog.newWidth, attributesDialog.newHeight, 0, 0);
             }
             break;
         }
         case IDM_IMAGESTRETCHSKEW:
         {
-            if (changeSizeDlg())
+            if (stretchSkewDialog.DoModal(mainWindow.m_hWnd))
             {
-                imageModel.StretchSkew(stretchSkew.percentage.x, stretchSkew.percentage.y,
-                                       stretchSkew.angle.x, stretchSkew.angle.y);
+                imageModel.StretchSkew(stretchSkewDialog.percentage.x, stretchSkewDialog.percentage.y,
+                                       stretchSkewDialog.angle.x, stretchSkewDialog.angle.y);
             }
             break;
         }

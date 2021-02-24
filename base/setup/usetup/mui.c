@@ -25,18 +25,10 @@
  */
 
 #include "usetup.h"
-#include "muifonts.h"
 #include "muilanguages.h"
 
 #define NDEBUG
 #include <debug.h>
-
-extern
-VOID
-PopupError(IN PCCH Text,
-           IN PCCH Status,
-           IN PINPUT_RECORD Ir,
-           IN ULONG WaitEvent);
 
 static
 ULONG
@@ -46,40 +38,43 @@ FindLanguageIndex(VOID)
 
     if (SelectedLanguageId == NULL)
     {
-        /* default to english */
-        return 0;
+        /* Default to en-US */
+        return 0;   // FIXME!!
+        // SelectedLanguageId = L"00000409";
     }
 
-    do
+    while (ResourceList[lngIndex].MuiPages != NULL)
     {
-        if (_wcsicmp(LanguageList[lngIndex].LanguageID , SelectedLanguageId) == 0)
+        if (_wcsicmp(ResourceList[lngIndex].LanguageID, SelectedLanguageId) == 0)
         {
             return lngIndex;
         }
 
         lngIndex++;
-    }while (LanguageList[lngIndex].MuiPages != NULL);
+    }
 
     return 0;
 }
 
 
+#if 0
 BOOLEAN
 IsLanguageAvailable(
     PWCHAR LanguageId)
 {
     ULONG lngIndex = 0;
 
-    do
+    while (ResourceList[lngIndex].MuiPages != NULL)
     {
-        if (_wcsicmp(LanguageList[lngIndex].LanguageID , LanguageId) == 0)
+        if (_wcsicmp(ResourceList[lngIndex].LanguageID, LanguageId) == 0)
             return TRUE;
 
         lngIndex++;
-    }while (LanguageList[lngIndex].MuiPages != NULL);
+    }
 
     return FALSE;
 }
+#endif
 
 
 static
@@ -92,59 +87,33 @@ FindMUIEntriesOfPage(
     const MUI_PAGE * Pages = NULL;
 
     lngIndex = max(FindLanguageIndex(), 0);
-    Pages = LanguageList[lngIndex].MuiPages;
+    Pages = ResourceList[lngIndex].MuiPages;
 
-    do
+    while (Pages[muiIndex].MuiEntry != NULL)
     {
-         if (Pages[muiIndex].Number == PageNumber)
-             return Pages[muiIndex].MuiEntry;
+        if (Pages[muiIndex].Number == PageNumber)
+            return Pages[muiIndex].MuiEntry;
 
-         muiIndex++;
-    }while (Pages[muiIndex].MuiEntry != NULL);
+        muiIndex++;
+    }
 
     return NULL;
 }
-
 
 static
 const MUI_ERROR *
 FindMUIErrorEntries(VOID)
 {
     ULONG lngIndex = max(FindLanguageIndex(), 0);
-    return LanguageList[lngIndex].MuiErrors;
+    return ResourceList[lngIndex].MuiErrors;
 }
-
 
 static
 const MUI_STRING *
 FindMUIStringEntries(VOID)
 {
     ULONG lngIndex = max(FindLanguageIndex(), 0);
-    return LanguageList[lngIndex].MuiStrings;
-}
-
-
-LPCWSTR
-MUIDefaultKeyboardLayout(VOID)
-{
-    ULONG lngIndex = max(FindLanguageIndex(), 0);
-    return LanguageList[lngIndex].MuiLayouts[0].LayoutID;
-}
-
-
-PWCHAR
-MUIGetGeoID(VOID)
-{
-    ULONG lngIndex = max(FindLanguageIndex(), 0);
-    return LanguageList[lngIndex].GeoID;
-}
-
-
-const MUI_LAYOUTS *
-MUIGetLayoutsList(VOID)
-{
-    ULONG lngIndex = max(FindLanguageIndex(), 0);
-    return LanguageList[lngIndex].MuiLayouts;
+    return ResourceList[lngIndex].MuiStrings;
 }
 
 
@@ -153,7 +122,7 @@ MUIClearPage(
     IN ULONG page)
 {
     const MUI_ENTRY * entry;
-    int index;
+    ULONG index;
 
     entry = FindMUIEntriesOfPage(page);
     if (!entry)
@@ -166,7 +135,7 @@ MUIClearPage(
     }
 
     index = 0;
-    do
+    while (entry[index].Buffer != NULL)
     {
         CONSOLE_ClearStyledText(entry[index].X,
                                 entry[index].Y,
@@ -174,16 +143,14 @@ MUIClearPage(
                                 strlen(entry[index].Buffer));
         index++;
     }
-    while (entry[index].Buffer != NULL);
 }
-
 
 VOID
 MUIDisplayPage(
     IN ULONG page)
 {
     const MUI_ENTRY * entry;
-    int index;
+    ULONG index;
 
     entry = FindMUIEntriesOfPage(page);
     if (!entry)
@@ -196,7 +163,7 @@ MUIDisplayPage(
     }
 
     index = 0;
-    do
+    while (entry[index].Buffer != NULL)
     {
         CONSOLE_SetStyledText(entry[index].X,
                               entry[index].Y,
@@ -205,20 +172,17 @@ MUIDisplayPage(
 
         index++;
     }
-    while (entry[index].Buffer != NULL);
 }
 
-
 VOID
-MUIDisplayError(
+MUIDisplayErrorV(
     IN ULONG ErrorNum,
     OUT PINPUT_RECORD Ir,
     IN ULONG WaitEvent,
-    ...)
+    IN va_list args)
 {
-    const MUI_ERROR * entry;
+    const MUI_ERROR* entry;
     CHAR Buffer[2048];
-    va_list ap;
 
     if (ErrorNum >= ERROR_LAST_ERROR_CODE)
     {
@@ -226,7 +190,6 @@ MUIDisplayError(
                    "Press ENTER to continue",
                    Ir,
                    POPUP_WAIT_ENTER);
-
         return;
     }
 
@@ -240,9 +203,7 @@ MUIDisplayError(
         return;
     }
 
-    va_start(ap, WaitEvent);
-    vsprintf(Buffer, entry[ErrorNum].ErrorText, ap);
-    va_end(ap);
+    vsprintf(Buffer, entry[ErrorNum].ErrorText, args);
 
     PopupError(Buffer,
                entry[ErrorNum].ErrorStatus,
@@ -250,6 +211,20 @@ MUIDisplayError(
                WaitEvent);
 }
 
+VOID
+__cdecl
+MUIDisplayError(
+    IN ULONG ErrorNum,
+    OUT PINPUT_RECORD Ir,
+    IN ULONG WaitEvent,
+    ...)
+{
+    va_list arg_ptr;
+
+    va_start(arg_ptr, WaitEvent);
+    MUIDisplayErrorV(ErrorNum, Ir, WaitEvent, arg_ptr);
+    va_end(arg_ptr);
+}
 
 LPSTR
 MUIGetString(
@@ -281,469 +256,225 @@ MUIGetString(
     return "<nostring>";
 }
 
-
-static
-BOOLEAN
-AddHotkeySettings(
-    IN LPCWSTR Hotkey,
-    IN LPCWSTR LangHotkey,
-    IN LPCWSTR LayoutHotkey)
+/**
+ * @MUIGetEntry
+ *
+ * Retrieves a MUI entry of a page, given the page number and the text ID.
+ *
+ * @param[in]   Page
+ *     The MUI (Multilingual User Interface) entry page number, as a unsigned long integer.
+ *
+ * @param[in]   TextID
+ *      The text identification number (ID), as a unsigned integer. The parameter is used to identify
+ *      its MUI properties like the coordinates, text style flag and its buffer content.
+ *
+ * @return
+ *     Returns a constant MUI entry.
+ *
+ */
+const MUI_ENTRY *
+MUIGetEntry(
+    IN ULONG Page,
+    IN INT TextID)
 {
-    OBJECT_ATTRIBUTES ObjectAttributes;
-    UNICODE_STRING KeyName;
-    UNICODE_STRING ValueName;
-    HANDLE KeyHandle;
-    ULONG Disposition;
-    NTSTATUS Status;
+    const MUI_ENTRY * entry;
+    ULONG index;
 
-    RtlInitUnicodeString(&KeyName,
-                         L"\\Registry\\User\\.DEFAULT\\Keyboard Layout\\Toggle");
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &KeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               NULL,
-                               NULL);
-
-    Status =  NtCreateKey(&KeyHandle,
-                          KEY_SET_VALUE,
-                          &ObjectAttributes,
-                          0,
-                          NULL,
-                          0,
-                          &Disposition);
-
-    if(!NT_SUCCESS(Status))
+    /* Retrieve the entries of a MUI page */
+    entry = FindMUIEntriesOfPage(Page);
+    if (!entry)
     {
-        DPRINT1("NtCreateKey() failed (Status %lx)\n", Status);
-        return FALSE;
+        DPRINT("MUIGetEntryData(): Failed to get the translated entry page!\n");
+        return NULL;
     }
 
-    RtlInitUnicodeString(&ValueName,
-                         L"Hotkey");
-
-    Status = NtSetValueKey(KeyHandle,
-                           &ValueName,
-                           0,
-                           REG_SZ,
-                           (PVOID)Hotkey,
-                           (1 + 1) * sizeof(WCHAR));
-    if (!NT_SUCCESS(Status))
+    /* Loop over the ID entries and check if it matches with one of them */
+    for (index = 0; entry[index].Buffer != NULL; index++)
     {
-        DPRINT1("NtSetValueKey() failed (Status %lx)\n", Status);
-        NtClose(KeyHandle);
-        return FALSE;
-    }
-
-    RtlInitUnicodeString(&ValueName,
-                         L"Language Hotkey");
-
-    Status = NtSetValueKey(KeyHandle,
-                           &ValueName,
-                           0,
-                           REG_SZ,
-                           (PVOID)LangHotkey,
-                           (1 + 1) * sizeof(WCHAR));
-    if (!NT_SUCCESS(Status))
-    {
-        DPRINT1("NtSetValueKey() failed (Status %lx)\n", Status);
-        NtClose(KeyHandle);
-        return FALSE;
-    }
-
-    RtlInitUnicodeString(&ValueName,
-                         L"Layout Hotkey");
-
-    Status = NtSetValueKey(KeyHandle,
-                           &ValueName,
-                           0,
-                           REG_SZ,
-                           (PVOID)LayoutHotkey,
-                           (1 + 1) * sizeof(WCHAR));
-    if (!NT_SUCCESS(Status))
-    {
-        DPRINT1("NtSetValueKey() failed (Status %lx)\n", Status);
-        NtClose(KeyHandle);
-        return FALSE;
-    }
-
-    NtClose(KeyHandle);
-    return TRUE;
-}
-
-
-BOOLEAN
-AddKbLayoutsToRegistry(
-    IN const MUI_LAYOUTS *MuiLayouts)
-{
-    OBJECT_ATTRIBUTES ObjectAttributes;
-    UNICODE_STRING KeyName;
-    UNICODE_STRING ValueName;
-    HANDLE KeyHandle;
-    HANDLE SubKeyHandle;
-    NTSTATUS Status;
-    ULONG Disposition;
-    ULONG uIndex = 0;
-    ULONG uCount = 0;
-    WCHAR szKeyName[48] = L"\\Registry\\User\\.DEFAULT\\Keyboard Layout";
-    WCHAR szValueName[3 + 1];
-    WCHAR szLangID[8 + 1];
-
-    // Open the keyboard layout key
-    RtlInitUnicodeString(&KeyName,
-                         szKeyName);
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &KeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               NULL,
-                               NULL);
-
-    Status =  NtCreateKey(&KeyHandle,
-                          KEY_CREATE_SUB_KEY,
-                          &ObjectAttributes,
-                          0,
-                          NULL,
-                          0,
-                          &Disposition);
-
-    if(NT_SUCCESS(Status))
-        NtClose(KeyHandle);
-    else
-    {
-        DPRINT1("NtCreateKey() failed (Status %lx)\n", Status);
-        return FALSE;
-    }
-
-    KeyName.MaximumLength = sizeof(szKeyName);
-    Status = RtlAppendUnicodeToString(&KeyName, L"\\Preload");
-
-    if(!NT_SUCCESS(Status))
-    {
-        DPRINT1("RtlAppend failed! (%lx)\n", Status);
-        DPRINT1("String is %wZ\n", &KeyName);
-        return FALSE;
-    }
-
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &KeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               NULL,
-                               NULL);
-
-    Status = NtCreateKey(&KeyHandle,
-                         KEY_SET_VALUE,
-                         &ObjectAttributes,
-                         0,
-                         NULL,
-                         0,
-                         &Disposition);
-
-    if (!NT_SUCCESS(Status))
-    {
-        DPRINT1("NtCreateKey() failed (Status %lx)\n", Status);
-        return FALSE;
-    }
-
-    RtlInitUnicodeString(&KeyName, L"\\Registry\\User\\.DEFAULT\\Keyboard Layout\\Substitutes");
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &KeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               NULL,
-                               NULL);
-
-    Status =  NtCreateKey(&SubKeyHandle,
-                          KEY_SET_VALUE,
-                          &ObjectAttributes,
-                          0,
-                          NULL,
-                          0,
-                          &Disposition);
-
-    if(!NT_SUCCESS(Status))
-    {
-        DPRINT1("NtCreateKey() failed (Status %lx)\n", Status);
-        NtClose(SubKeyHandle);
-        NtClose(KeyHandle);
-        return FALSE;
-    }
-
-    do
-    {
-        if (uIndex > 19) break;
-
-        swprintf(szValueName, L"%u", uIndex + 1);
-        RtlInitUnicodeString(&ValueName, szValueName);
-
-        swprintf(szLangID, L"0000%s", MuiLayouts[uIndex].LangID);
-
-        if (_wcsicmp(szLangID, MuiLayouts[uIndex].LayoutID) == 0)
+        if (entry[index].TextID == TextID)
         {
-            Status = NtSetValueKey(KeyHandle,
-                                   &ValueName,
-                                   0,
-                                   REG_SZ,
-                                   (PVOID)MuiLayouts[uIndex].LayoutID,
-                                   (wcslen(MuiLayouts[uIndex].LayoutID)+1) * sizeof(WCHAR));
-            if (!NT_SUCCESS(Status))
-            {
-                DPRINT1("NtSetValueKey() failed (Status = %lx, uIndex = %d)\n", Status, uIndex);
-                NtClose(SubKeyHandle);
-                NtClose(KeyHandle);
-                return FALSE;
-            }
+            /* They match so return the MUI entry */
+            return &entry[index];
         }
-        else
-        {
-            swprintf(szLangID, L"d%03lu%s", uCount, MuiLayouts[uIndex].LangID);
-            Status = NtSetValueKey(KeyHandle,
-                                   &ValueName,
-                                   0,
-                                   REG_SZ,
-                                   (PVOID)szLangID,
-                                   (wcslen(szLangID)+1) * sizeof(WCHAR));
-            if (!NT_SUCCESS(Status))
-            {
-                DPRINT1("NtSetValueKey() failed (Status = %lx, uIndex = %d)\n", Status, uIndex);
-                NtClose(SubKeyHandle);
-                NtClose(KeyHandle);
-                return FALSE;
-            }
-
-            RtlInitUnicodeString(&ValueName, szLangID);
-
-            Status = NtSetValueKey(SubKeyHandle,
-                                   &ValueName,
-                                   0,
-                                   REG_SZ,
-                                   (PVOID)MuiLayouts[uIndex].LayoutID,
-                                   (wcslen(MuiLayouts[uIndex].LayoutID)+1) * sizeof(WCHAR));
-            if (!NT_SUCCESS(Status))
-            {
-                DPRINT1("NtSetValueKey() failed (Status = %lx, uIndex = %u)\n", Status, uIndex);
-                NtClose(SubKeyHandle);
-                NtClose(KeyHandle);
-                return FALSE;
-            }
-
-            uCount++;
-        }
-
-        uIndex++;
     }
-    while (MuiLayouts[uIndex].LangID != NULL);
 
-    if (uIndex > 1)
-        AddHotkeySettings(L"2", L"2", L"1");
-    else
-        AddHotkeySettings(L"3", L"3", L"3");
-
-    NtClose(SubKeyHandle);
-    NtClose(KeyHandle);
-    return TRUE;
+    /* Page number or ID are incorrect so in this case bail out */
+    DPRINT("Couldn't get the MUI entry field from the page!\n");
+    return NULL;
 }
 
-
-BOOLEAN
-AddKeyboardLayouts(VOID)
+/**
+ * @MUIClearText
+ *
+ * Clears a portion of text from the console output.
+ *
+ * @param[in]   Page
+ *     The MUI (Multilingual User Interface) entry page number, as a unsigned long integer.
+ *
+ * @param[in]   TextID
+ *      The text identification number (ID), as an integer. The parameter is used to identify
+ *      its MUI properties like the coordinates, text style flag and its buffer content.
+ *
+ * @return
+ *     Nothing.
+ *
+ */
+VOID
+MUIClearText(
+    IN ULONG Page,
+    IN INT TextID)
 {
-    ULONG lngIndex = 0;
+    const MUI_ENTRY * entry;
 
-    do
-    {
-        if (_wcsicmp(LanguageList[lngIndex].LanguageID , SelectedLanguageId) == 0)
-        {
-            return AddKbLayoutsToRegistry(LanguageList[lngIndex].MuiLayouts);
-        }
+    /* Get the MUI entry */
+    entry = MUIGetEntry(Page, TextID);
 
-        lngIndex++;
-    }
-    while (LanguageList[lngIndex].MuiPages != NULL);
+    if (!entry)
+        return;
 
-    return FALSE;
+    /* Remove the text by using CONSOLE_ClearTextXY() */
+    CONSOLE_ClearTextXY(
+        entry->X,
+        entry->Y,
+        (ULONG)strlen(entry->Buffer));
 }
 
-
-static
-BOOLEAN
-AddCodepageToRegistry(
-    IN LPCWSTR ACPage,
-    IN LPCWSTR OEMCPage,
-    IN LPCWSTR MACCPage)
+/**
+ * @MUIClearStyledText
+ *
+ * Clears a portion of text from the console output, given the actual state style flag of the text.
+ *
+ * @param[in]   Page
+ *     The MUI (Multilingual User Interface) entry page number, as a unsigned long integer.
+ *
+ * @param[in]   TextID
+ *      The text identification number (ID), as an integer. The parameter is used to identify
+ *      its MUI properties like the coordinates, text style flag and its buffer content.
+ *
+ * @param[in]   Flags
+ *      The text style flag, as an integer. The flag determines the style of the text, such
+ *      as being highlighted, underlined, high padding and so on.
+ *
+ * @return
+ *     Nothing.
+ *
+ */
+VOID
+MUIClearStyledText(
+    IN ULONG Page,
+    IN INT TextID,
+    IN INT Flags)
 {
-    OBJECT_ATTRIBUTES ObjectAttributes;
-    UNICODE_STRING KeyName;
-    UNICODE_STRING ValueName;
-    HANDLE KeyHandle;
-    NTSTATUS Status;
+    const MUI_ENTRY * entry;
 
-    // Open the nls codepage key
-    RtlInitUnicodeString(&KeyName,
-                         L"\\Registry\\Machine\\SYSTEM\\CurrentControlSet\\Control\\NLS\\CodePage");
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &KeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               NULL,
-                               NULL);
-    Status =  NtOpenKey(&KeyHandle,
-                        KEY_WRITE,
-                        &ObjectAttributes);
-    if (!NT_SUCCESS(Status))
-    {
-        DPRINT1("NtOpenKey() failed (Status %lx)\n", Status);
-        return FALSE;
-    }
+    /* Get the MUI entry */
+    entry = MUIGetEntry(Page, TextID);
 
-    // Set ANSI codepage
-    RtlInitUnicodeString(&ValueName, L"ACP");
-    Status = NtSetValueKey(KeyHandle,
-                           &ValueName,
-                           0,
-                           REG_SZ,
-                           (PVOID)ACPage,
-                           (wcslen(ACPage)+1) * sizeof(WCHAR));
-    if (!NT_SUCCESS(Status))
-    {
-        DPRINT1("NtSetValueKey() failed (Status %lx)\n", Status);
-        NtClose(KeyHandle);
-        return FALSE;
-    }
+    if (!entry)
+        return;
 
-    // Set OEM codepage
-    RtlInitUnicodeString(&ValueName, L"OEMCP");
-    Status = NtSetValueKey(KeyHandle,
-                           &ValueName,
-                           0,
-                           REG_SZ,
-                           (PVOID)OEMCPage,
-                           (wcslen(OEMCPage)+1) * sizeof(WCHAR));
-    if (!NT_SUCCESS(Status))
-    {
-        DPRINT1("NtSetValueKey() failed (Status %lx)\n", Status);
-        NtClose(KeyHandle);
-        return FALSE;
-    }
-
-    // Set MAC codepage
-    RtlInitUnicodeString(&ValueName, L"MACCP");
-    Status = NtSetValueKey(KeyHandle,
-                           &ValueName,
-                           0,
-                           REG_SZ,
-                           (PVOID)MACCPage,
-                           (wcslen(MACCPage)+1) * sizeof(WCHAR));
-    if (!NT_SUCCESS(Status))
-    {
-        DPRINT1("NtSetValueKey() failed (Status %lx)\n", Status);
-        NtClose(KeyHandle);
-        return FALSE;
-    }
-
-    NtClose(KeyHandle);
-
-    return TRUE;
+    /* Now, begin removing the text by calling CONSOLE_ClearStyledText() */
+    CONSOLE_ClearStyledText(
+        entry->X,
+        entry->Y,
+        Flags,
+        (ULONG)strlen(entry->Buffer));
 }
 
-
-static
-BOOLEAN
-AddFontsSettingsToRegistry(
-    IN const MUI_SUBFONT * MuiSubFonts)
+/**
+ * @MUISetText
+ *
+ * Prints a text to the console output.
+ *
+ * @param[in]   Page
+ *     The MUI (Multilingual User Interface) entry page number, as a unsigned long integer.
+ *
+ * @param[in]   TextID
+ *      The text identification number (ID), as an integer. The parameter is used to identify
+ *      its MUI properties like the coordinates, text style flag and its buffer content.
+ *
+ * @return
+ *     Nothing.
+ *
+ */
+VOID
+MUISetText(
+    IN ULONG Page,
+    IN INT TextID)
 {
-    OBJECT_ATTRIBUTES ObjectAttributes;
-    UNICODE_STRING KeyName;
-    UNICODE_STRING ValueName;
-    HANDLE KeyHandle;
-    NTSTATUS Status;
-    ULONG uIndex = 0;
+    const MUI_ENTRY * entry;
 
-    RtlInitUnicodeString(&KeyName,
-                         L"\\Registry\\Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\FontSubstitutes");
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &KeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               NULL,
-                               NULL);
-    Status =  NtOpenKey(&KeyHandle,
-                        KEY_WRITE,
-                        &ObjectAttributes);
-    if (!NT_SUCCESS(Status))
-    {
-        DPRINT1("NtOpenKey() failed (Status %lx)\n", Status);
-        return FALSE;
-    }
+    /* Get the MUI entry */
+    entry = MUIGetEntry(Page, TextID);
 
-    do
-    {
-        RtlInitUnicodeString(&ValueName, MuiSubFonts[uIndex].FontName);
-        Status = NtSetValueKey(KeyHandle,
-                               &ValueName,
-                               0,
-                               REG_SZ,
-                               (PVOID)MuiSubFonts[uIndex].SubFontName,
-                               (wcslen(MuiSubFonts[uIndex].SubFontName)+1) * sizeof(WCHAR));
-        if (!NT_SUCCESS(Status))
-        {
-            DPRINT1("NtSetValueKey() failed (Status = %lx, uIndex = %d)\n", Status, uIndex);
-            NtClose(KeyHandle);
-            return FALSE;
-        }
+    if (!entry)
+        return;
 
-        uIndex++;
-    }
-    while (MuiSubFonts[uIndex].FontName != NULL);
-
-    NtClose(KeyHandle);
-
-    return TRUE;
+    /* Print the text to the console output by calling CONSOLE_SetTextXY() */
+    CONSOLE_SetTextXY(entry->X, entry->Y, entry->Buffer);
 }
 
-
-BOOLEAN
-AddCodePage(VOID)
+/**
+ * @MUISetStyledText
+ *
+ * Prints a text to the console output, with a style for it.
+ *
+ * @param[in]   Page
+ *     The MUI (Multilingual User Interface) entry page number, as a unsigned long integer.
+ *
+ * @param[in]   TextID
+ *      The text identification number (ID), as an integer. The parameter is used to identify
+ *      its MUI properties like the coordinates, text style flag and its buffer content.
+ *
+ *  @param[in]   Flags
+ *      The text style flag, as an integer. The flag determines the style of the text, such
+ *      as being highlighted, underlined, high padding and so on.
+ *
+ * @return
+ *     Nothing.
+ *
+ */
+VOID
+MUISetStyledText(
+    IN ULONG Page,
+    IN INT TextID,
+    IN INT Flags)
 {
-    ULONG lngIndex = 0;
-    do
-    {
-        if (_wcsicmp(LanguageList[lngIndex].LanguageID , SelectedLanguageId) == 0)
-        {
-            if (AddCodepageToRegistry(LanguageList[lngIndex].ACPage,
-                                      LanguageList[lngIndex].OEMCPage,
-                                      LanguageList[lngIndex].MACCPage)&&
-                AddFontsSettingsToRegistry(LanguageList[lngIndex].MuiSubFonts))
-            {
-                return TRUE;
-            }
-            else
-            {
-                return FALSE;
-            }
-        }
+    const MUI_ENTRY * entry;
 
-        lngIndex++;
-    }
-    while (LanguageList[lngIndex].MuiPages != NULL);
+    /* Get the MUI entry */
+    entry = MUIGetEntry(Page, TextID);
 
-    return FALSE;
+    if (!entry)
+        return;
+
+    /* Print the text to the console output by calling CONSOLE_SetStyledText() */
+    CONSOLE_SetStyledText(entry->X, entry->Y, Flags, entry->Buffer);
 }
-
 
 VOID
 SetConsoleCodePage(VOID)
 {
-    ULONG lngIndex = 0;
     UINT wCodePage;
 
-    do
+#if 0
+    ULONG lngIndex = 0;
+
+    while (ResourceList[lngIndex].MuiPages != NULL)
     {
-        if (_wcsicmp(LanguageList[lngIndex].LanguageID , SelectedLanguageId) == 0)
+        if (_wcsicmp(ResourceList[lngIndex].LanguageID, SelectedLanguageId) == 0)
         {
-            wCodePage = (UINT) wcstoul(LanguageList[lngIndex].OEMCPage, NULL, 10);
+            wCodePage = (UINT) wcstoul(ResourceList[lngIndex].OEMCPage, NULL, 10);
             SetConsoleOutputCP(wCodePage);
             return;
         }
 
         lngIndex++;
     }
-    while (LanguageList[lngIndex].MuiPages != NULL);
+#else
+    wCodePage = (UINT)wcstoul(MUIGetOEMCodePage(SelectedLanguageId), NULL, 10);
+    SetConsoleOutputCP(wCodePage);
+#endif
 }
 
 /* EOF */

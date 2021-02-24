@@ -17,7 +17,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+
+#include <stdarg.h>
+#include <string.h>
+
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winerror.h"
+#include "winbase.h"
+#include "winnt.h"
+#include "winreg.h"
+#include "winnls.h"
+#include "wine/debug.h"
+
 #include "dplayx_global.h"
+#include "name_server.h"
+#include "dplayx_queue.h"
+#include "wine/dplaysp.h"
+#include "dplay_global.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(dplay);
 
 /* FIXME: Should this be externed? */
 extern HRESULT DPL_CreateCompoundAddress
@@ -1416,14 +1437,14 @@ static BOOL DP_CopyDPNAMEStruct( LPDPNAME lpDst, const DPNAME *lpSrc, BOOL bAnsi
     if( lpSrc->u1.lpszShortNameA )
     {
         lpDst->u1.lpszShortName = HeapAlloc( GetProcessHeap(), 0,
-                                              (strlenW(lpSrc->u1.lpszShortName)+1)*sizeof(WCHAR) );
-        strcpyW( lpDst->u1.lpszShortName, lpSrc->u1.lpszShortName );
+                                              (lstrlenW(lpSrc->u1.lpszShortName)+1)*sizeof(WCHAR) );
+        lstrcpyW( lpDst->u1.lpszShortName, lpSrc->u1.lpszShortName );
     }
     if( lpSrc->u2.lpszLongNameA )
     {
         lpDst->u2.lpszLongName = HeapAlloc( GetProcessHeap(), 0,
-                                             (strlenW(lpSrc->u2.lpszLongName)+1)*sizeof(WCHAR) );
-        strcpyW( lpDst->u2.lpszLongName, lpSrc->u2.lpszLongName );
+                                             (lstrlenW(lpSrc->u2.lpszLongName)+1)*sizeof(WCHAR) );
+        lstrcpyW( lpDst->u2.lpszLongName, lpSrc->u2.lpszLongName );
     }
   }
 
@@ -4311,7 +4332,7 @@ static HRESULT WINAPI IDirectPlay4AImpl_EnumConnections( IDirectPlay4A *iface,
       RegCloseKey(hkServiceProvider);
 
       /* FIXME: Check return types to ensure we're interpreting data right */
-      MultiByteToWideChar( CP_ACP, 0, returnBuffer, -1, buff, sizeof(buff)/sizeof(WCHAR) );
+      MultiByteToWideChar( CP_ACP, 0, returnBuffer, -1, buff, ARRAY_SIZE( buff ));
       CLSIDFromString( buff, &serviceProviderGUID );
       /* FIXME: Have I got a memory leak on the serviceProviderGUID? */
 
@@ -4409,7 +4430,7 @@ static HRESULT WINAPI IDirectPlay4AImpl_EnumConnections( IDirectPlay4A *iface,
       RegCloseKey(hkServiceProvider);
 
       /* FIXME: Check return types to ensure we're interpreting data right */
-      MultiByteToWideChar( CP_ACP, 0, returnBuffer, -1, buff, sizeof(buff)/sizeof(WCHAR) );
+      MultiByteToWideChar( CP_ACP, 0, returnBuffer, -1, buff, ARRAY_SIZE( buff ));
       CLSIDFromString( buff, &serviceProviderGUID );
       /* FIXME: Have I got a memory leak on the serviceProviderGUID? */
 
@@ -4466,8 +4487,8 @@ static HRESULT WINAPI IDirectPlay4Impl_EnumConnections( IDirectPlay4 *iface,
         const GUID *application, LPDPENUMCONNECTIONSCALLBACK enumcb, void *context, DWORD flags )
 {
     IDirectPlayImpl *This = impl_from_IDirectPlay4( iface );
-    FIXME( "(%p)->(%p,%p,%p,0x%08x): stub\n", This, application, enumcb, context, flags );
-    return DP_OK;
+    return IDirectPlayX_EnumConnections( &This->IDirectPlay4A_iface, application, enumcb, context,
+            flags );
 }
 
 static HRESULT WINAPI IDirectPlay3AImpl_EnumGroupsInGroup( IDirectPlay3A *iface, DPID group,
@@ -4658,7 +4679,7 @@ static HMODULE DP_LoadSP( LPCGUID lpcGuid, LPSPINITDATA lpSpData, LPBOOL lpbIsDp
       }
 
       /* FIXME: Check return types to ensure we're interpreting data right */
-      MultiByteToWideChar( CP_ACP, 0, returnBuffer, -1, buff, sizeof(buff)/sizeof(WCHAR) );
+      MultiByteToWideChar( CP_ACP, 0, returnBuffer, -1, buff, ARRAY_SIZE( buff ));
       CLSIDFromString( buff, &serviceProviderGUID );
       /* FIXME: Have I got a memory leak on the serviceProviderGUID? */
 
@@ -5787,7 +5808,7 @@ static HRESULT DirectPlayEnumerateAW(LPDPENUMDPCALLBACKA lpEnumCallbackA,
     dwIndex = 0;
     do
     {
-	sizeOfSubKeyName = sizeof(subKeyName) / sizeof(WCHAR);
+        sizeOfSubKeyName = ARRAY_SIZE(subKeyName);
 	ret_value = RegEnumKeyW(hkResult, dwIndex, subKeyName, sizeOfSubKeyName);
 	dwIndex++;
     }
@@ -5812,8 +5833,8 @@ static HRESULT DirectPlayEnumerateAW(LPDPENUMDPCALLBACKA lpEnumCallbackA,
 	HKEY  hkServiceProvider;
 	WCHAR guidKeyContent[(2 * 16) + 1 + 6 /* This corresponds to '{....-..-..-..-......}' */ ];
 	DWORD sizeOfGuidKeyContent = sizeof(guidKeyContent);
-	
-	sizeOfSubKeyName = sizeof(subKeyName) / sizeof(WCHAR);
+
+        sizeOfSubKeyName = ARRAY_SIZE(subKeyName);
 	ret_value = RegEnumKeyExW(hkResult, dwIndex, subKeyName, &sizeOfSubKeyName,
 				  NULL, NULL, NULL, &filetime);
 	if (ret_value == ERROR_NO_MORE_ITEMS)

@@ -23,7 +23,21 @@
    sometimes, especially when 2 instances of the
    dialog are loaded at the same time */
 
+#include <stdarg.h>
+#include <stdio.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "commdlg.h"
+#include "dlgs.h"
+#include "cderr.h"
 #include "cdlg.h"
+
+#include "wine/debug.h"
+#include "wine/heap.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(commdlg);
 
 static INT_PTR CALLBACK ColorDlgProc( HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM lParam );
 
@@ -388,7 +402,7 @@ static int CC_CheckDigitsInEdit( HWND hwnd, int maxval )
  long editpos;
  char buffer[30];
 
- GetWindowTextA(hwnd, buffer, sizeof(buffer));
+ GetWindowTextA(hwnd, buffer, ARRAY_SIZE(buffer));
  m = strlen(buffer);
  result = 0;
 
@@ -846,7 +860,7 @@ static LRESULT CC_WMInitDialog( HWND hDlg, WPARAM wParam, LPARAM lParam )
        return FALSE;
    }
 
-   lpp = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(struct CCPRIVATE) );
+   lpp = heap_alloc_zero(sizeof(*lpp));
    lpp->lpcc = cc;
    lpp->hwndSelf = hDlg;
 
@@ -1203,7 +1217,7 @@ static INT_PTR CALLBACK ColorDlgProc( HWND hDlg, UINT message,
 	  case WM_NCDESTROY:
 	                DeleteDC(lpp->hdcMem);
 	                DeleteObject(lpp->hbmMem);
-                        HeapFree(GetProcessHeap(), 0, lpp);
+                        heap_free(lpp);
                         RemovePropW( hDlg, szColourDialogProp );
 	                break;
 	  case WM_COMMAND:
@@ -1314,7 +1328,7 @@ BOOL WINAPI ChooseColorA( LPCHOOSECOLORA lpChCol )
   LPWSTR template_name = NULL;
   BOOL ret;
 
-  LPCHOOSECOLORW lpcc = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(CHOOSECOLORW));
+  CHOOSECOLORW *lpcc = heap_alloc_zero(sizeof(*lpcc));
   lpcc->lStructSize = sizeof(*lpcc);
   lpcc->hwndOwner = lpChCol->hwndOwner;
   lpcc->hInstance = lpChCol->hInstance;
@@ -1326,7 +1340,7 @@ BOOL WINAPI ChooseColorA( LPCHOOSECOLORA lpChCol )
   if ((lpcc->Flags & CC_ENABLETEMPLATE) && (lpChCol->lpTemplateName)) {
       if (!IS_INTRESOURCE(lpChCol->lpTemplateName)) {
 	  INT len = MultiByteToWideChar( CP_ACP, 0, lpChCol->lpTemplateName, -1, NULL, 0);
-          template_name = HeapAlloc( GetProcessHeap(), 0, len * sizeof(WCHAR) );
+          template_name = heap_alloc( len * sizeof(WCHAR) );
           MultiByteToWideChar( CP_ACP, 0, lpChCol->lpTemplateName, -1, template_name, len );
           lpcc->lpTemplateName = template_name;
       } else {
@@ -1338,7 +1352,8 @@ BOOL WINAPI ChooseColorA( LPCHOOSECOLORA lpChCol )
 
   if (ret)
       lpChCol->rgbResult = lpcc->rgbResult;
-  HeapFree(GetProcessHeap(), 0, template_name);
-  HeapFree(GetProcessHeap(), 0, lpcc);
+
+  heap_free(template_name);
+  heap_free(lpcc);
   return ret;
 }

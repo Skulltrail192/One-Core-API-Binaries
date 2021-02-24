@@ -10,12 +10,13 @@ list(APPEND SOURCE
     ports.c
     precomp.h
     printerdata.c
+    printerdrivers.c
     printers.c
     printingthread.c
     printprocessors.c
     tools.c)
 
-add_library(localspl SHARED
+add_library(localspl MODULE
     ${SOURCE}
     localspl.rc
     ${CMAKE_CURRENT_BINARY_DIR}/localspl_stubs.c

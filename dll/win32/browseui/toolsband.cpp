@@ -24,10 +24,6 @@ Implements the toolbar band of a cabinet window
 
 #include "precomp.h"
 
-/* FIXME, I can't include windowsx because it conflicts with some #defines */
-#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
-#define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
-
 class CToolsBand :
     public CWindowImpl<CToolsBand, CWindow, CControlWinTraits>,
     public CComObjectRootEx<CComMultiThreadModelNoCS>,
@@ -38,8 +34,6 @@ class CToolsBand :
 {
 private:
     CComPtr<IDockingWindowSite> fDockSite;
-    GUID                        fExecCommandCategory;
-    CComPtr<IOleCommandTarget>  fExecCommandTarget;
     HIMAGELIST m_himlNormal;
     HIMAGELIST m_himlHot;
 public:
@@ -163,7 +157,7 @@ static const int cutImageIndex = 5;
 static const int copyImageIndex = 6;
 static const int pasteImageIndex = 7;
 static const int undoImageIndex = 8;
-static const int redoImageIndex = 9;
+//static const int redoImageIndex = 9;
 static const int deleteImageIndex = 10;
 // 11
 // 12
@@ -186,13 +180,13 @@ static const int upImageIndex = 28;
 static const int mapDriveImageIndex = 29;
 static const int disconnectImageIndex = 30;
 // 31
-static const int viewsAltImageIndex = 32;       // same image as viewsImageIndex
+//static const int viewsAltImageIndex = 32;       // same image as viewsImageIndex
 // 33
 // 34
 // 35
 // 36
 // 37
-static const int viewsAlt2ImageIndex = 38;      // same image as viewsAltImageIndex & viewsImageIndex
+//static const int viewsAlt2ImageIndex = 38;      // same image as viewsAltImageIndex & viewsImageIndex
 // 39
 // 40
 // 41
@@ -295,12 +289,13 @@ HRESULT STDMETHODCALLTYPE CToolsBand::SetSite(IUnknown* pUnkSite){
     SendMessage(TB_SETMAXTEXTROWS, 1, 0);
     SendMessage(TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_HIDECLIPPEDBUTTONS | TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_DRAWDDARROWS);
 
-    HINSTANCE shell32Instance = GetModuleHandle(_T("shell32.dll"));
-    m_himlNormal = ImageList_LoadImageW(shell32Instance, MAKEINTRESOURCE(214),
-                                           0, 0, RGB(255, 0, 255), IMAGE_BITMAP, LR_DEFAULTSIZE | LR_CREATEDIBSECTION);
+    m_himlNormal = ImageList_LoadImageW(_AtlBaseModule.GetResourceInstance(), 
+                                        MAKEINTRESOURCE(IDB_SHELL_EXPLORER_LG),
+                                        0, 0, RGB(255, 0, 255), IMAGE_BITMAP, LR_DEFAULTSIZE | LR_CREATEDIBSECTION);
 
-    m_himlHot = ImageList_LoadImageW(shell32Instance, MAKEINTRESOURCE(215),
-                                           0, 0, RGB(255, 0, 255), IMAGE_BITMAP, LR_DEFAULTSIZE | LR_CREATEDIBSECTION);
+    m_himlHot = ImageList_LoadImageW(_AtlBaseModule.GetResourceInstance(), 
+                                     MAKEINTRESOURCE(IDB_SHELL_EXPLORER_LG_HOT),
+                                     0, 0, RGB(255, 0, 255), IMAGE_BITMAP, LR_DEFAULTSIZE | LR_CREATEDIBSECTION);
 
     SendMessage(TB_SETIMAGELIST, 0, (LPARAM) m_himlNormal);
     SendMessage(TB_SETHOTIMAGELIST, 0, (LPARAM) m_himlHot);

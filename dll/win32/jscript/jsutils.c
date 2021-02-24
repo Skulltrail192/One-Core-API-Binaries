@@ -16,8 +16,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "jscript.h"
+#ifdef __REACTOS__
+#include <wine/config.h>
+#include <wine/port.h>
+#endif
 
+#include <math.h>
+#include <assert.h>
+
+#include "jscript.h"
+#include "engine.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(jscript);
 WINE_DECLARE_DEBUG_CHANNEL(heap);
 
 const char *debugstr_jsval(const jsval_t v)
@@ -284,14 +296,33 @@ HRESULT variant_to_jsval(VARIANT *var, jsval_t *r)
         *r = jsval_disp(V_DISPATCH(var));
         return S_OK;
     }
+    case VT_I1:
+        *r = jsval_number(V_I1(var));
+        return S_OK;
+    case VT_UI1:
+        *r = jsval_number(V_UI1(var));
+        return S_OK;
     case VT_I2:
         *r = jsval_number(V_I2(var));
+        return S_OK;
+    case VT_UI2:
+        *r = jsval_number(V_UI2(var));
         return S_OK;
     case VT_INT:
         *r = jsval_number(V_INT(var));
         return S_OK;
     case VT_UI4:
         *r = jsval_number(V_UI4(var));
+        return S_OK;
+    case VT_UI8:
+        /*
+         * Native doesn't support VT_UI8 here, but it's needed for IE9+ APIs
+         * (native IE9 doesn't use jscript.dll for JavaScript).
+         */
+        *r = jsval_number(V_UI8(var));
+        return S_OK;
+    case VT_R4:
+        *r = jsval_number(V_R4(var));
         return S_OK;
     case VT_UNKNOWN:
         if(V_UNKNOWN(var)) {
@@ -493,7 +524,7 @@ static HRESULT str_to_number(jsstr_t *str, double *ret)
     if(!ptr)
         return E_OUTOFMEMORY;
 
-    while(isspaceW(*ptr))
+    while(iswspace(*ptr))
         ptr++;
 
     if(*ptr == '-') {
@@ -503,9 +534,9 @@ static HRESULT str_to_number(jsstr_t *str, double *ret)
         ptr++;
     }
 
-    if(!strncmpW(ptr, infinityW, sizeof(infinityW)/sizeof(WCHAR))) {
-        ptr += sizeof(infinityW)/sizeof(WCHAR);
-        while(*ptr && isspaceW(*ptr))
+    if(!wcsncmp(ptr, infinityW, ARRAY_SIZE(infinityW))) {
+        ptr += ARRAY_SIZE(infinityW);
+        while(*ptr && iswspace(*ptr))
             ptr++;
 
         if(*ptr)
@@ -528,7 +559,7 @@ static HRESULT str_to_number(jsstr_t *str, double *ret)
         return S_OK;
     }
 
-    while(isdigitW(*ptr))
+    while(iswdigit(*ptr))
         d = d*10 + (*ptr++ - '0');
 
     if(*ptr == 'e' || *ptr == 'E') {
@@ -543,7 +574,7 @@ static HRESULT str_to_number(jsstr_t *str, double *ret)
             ptr++;
         }
 
-        while(isdigitW(*ptr))
+        while(iswdigit(*ptr))
             l = l*10 + (*ptr++ - '0');
         if(eneg)
             l = -l;
@@ -553,13 +584,13 @@ static HRESULT str_to_number(jsstr_t *str, double *ret)
         DOUBLE dec = 0.1;
 
         ptr++;
-        while(isdigitW(*ptr)) {
+        while(iswdigit(*ptr)) {
             d += dec * (*ptr++ - '0');
             dec *= 0.1;
         }
     }
 
-    while(isspaceW(*ptr))
+    while(iswspace(*ptr))
         ptr++;
 
     if(*ptr) {
@@ -636,16 +667,23 @@ HRESULT to_int32(script_ctx_t *ctx, jsval_t v, INT *ret)
     double n;
     HRESULT hres;
 
+    const double p32 = (double)0xffffffff + 1;
+
     hres = to_number(ctx, v, &n);
     if(FAILED(hres))
         return hres;
 
-    *ret = is_finite(n) ? n : 0;
+    if(is_finite(n))
+        n = n > 0 ? fmod(n, p32) : -fmod(-n, p32);
+    else
+        n = 0;
+
+    *ret = (UINT32)n;
     return S_OK;
 }
 
 /* ECMA-262 3rd Edition    9.6 */
-HRESULT to_uint32(script_ctx_t *ctx, jsval_t val, DWORD *ret)
+HRESULT to_uint32(script_ctx_t *ctx, jsval_t val, UINT32 *ret)
 {
     INT32 n;
     HRESULT hres;
@@ -671,7 +709,7 @@ static jsstr_t *int_to_string(int i)
         i = -i;
     }
 
-    p = buf + sizeof(buf)/sizeof(*buf)-1;
+    p = buf + ARRAY_SIZE(buf)-1;
     *p-- = 0;
     while(i) {
         *p-- = i%10 + '0';
@@ -688,7 +726,7 @@ static jsstr_t *int_to_string(int i)
 
 HRESULT double_to_string(double n, jsstr_t **str)
 {
-    const WCHAR InfinityW[] = {'-','I','n','f','i','n','i','t','y',0};
+    static const WCHAR InfinityW[] = {'-','I','n','f','i','n','i','t','y',0};
 
     if(isnan(n)) {
         *str = jsstr_nan();
@@ -718,9 +756,9 @@ HRESULT double_to_string(double n, jsstr_t **str)
 /* ECMA-262 3rd Edition    9.8 */
 HRESULT to_string(script_ctx_t *ctx, jsval_t val, jsstr_t **str)
 {
-    const WCHAR nullW[] = {'n','u','l','l',0};
-    const WCHAR trueW[] = {'t','r','u','e',0};
-    const WCHAR falseW[] = {'f','a','l','s','e',0};
+    static const WCHAR nullW[] = {'n','u','l','l',0};
+    static const WCHAR trueW[] = {'t','r','u','e',0};
+    static const WCHAR falseW[] = {'f','a','l','s','e',0};
 
     switch(jsval_type(val)) {
     case JSV_UNDEFINED:
@@ -862,6 +900,14 @@ HRESULT variant_change_type(script_ctx_t *ctx, VARIANT *dst, VARIANT *src, VARTY
             else
                 V_I2(dst) = i;
         }
+        break;
+    }
+    case VT_UI2: {
+        UINT32 i;
+
+        hres = to_uint32(ctx, val, &i);
+        if(SUCCEEDED(hres))
+            V_UI2(dst) = i;
         break;
     }
     case VT_R8: {

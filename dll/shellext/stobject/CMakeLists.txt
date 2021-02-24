@@ -12,23 +12,32 @@ include_directories(
     ${REACTOS_SOURCE_DIR}/sdk/lib/atl
     ${REACTOS_SOURCE_DIR})
 
+add_definitions(
+    -D_ATL_NO_EXCEPTIONS)
+
 spec2def(stobject.dll stobject.spec)
 
 file(GLOB_RECURSE stobject_rc_deps resources/*.*)
 add_rc_deps(stobject.rc ${stobject_rc_deps})
 
-add_library(stobject SHARED
+list(APPEND SOURCE
     csystray.cpp
     stobject.cpp
-    stobject.rc
+    hotplug.cpp
     power.cpp
     volume.cpp
+    precomp.h)
+
+add_library(stobject MODULE
+    ${SOURCE}
+    stobject.rc
     ${CMAKE_CURRENT_BINARY_DIR}/stobject.def)
 
 set_module_type(stobject win32dll UNICODE)
-target_link_libraries(stobject uuid wine atlnew)
+target_link_libraries(stobject uuid wine)
 
 add_importlibs(stobject
+    setupapi
     advapi32
     winmm
     ole32
@@ -43,4 +52,5 @@ add_importlibs(stobject
     kernel32
     ntdll)
 
+add_pch(stobject precomp.h SOURCE)
 add_cd_file(TARGET stobject DESTINATION reactos/system32 FOR all)

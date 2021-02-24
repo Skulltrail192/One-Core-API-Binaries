@@ -19,10 +19,31 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "ieframe.h"
+#define COBJMACROS
 
-#include <mshtmcid.h>
-#include <ddeml.h>
+#include <stdarg.h>
+
+#include "ieframe.h"
+#include "resource.h"
+
+#include "winuser.h"
+#include "wingdi.h"
+#include "winnls.h"
+#include "ole2.h"
+#include "exdisp.h"
+#include "oleidl.h"
+
+#include "mshtmcid.h"
+#include "shellapi.h"
+#include "winreg.h"
+#include "shlwapi.h"
+#include "intshcut.h"
+#include "ddeml.h"
+#include "ieautomation.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(ieframe);
 
 #define IDI_APPICON 1
 
@@ -149,8 +170,8 @@ static void add_fav_to_menu(HMENU favmenu, HMENU menu, LPWSTR title, LPCWSTR url
 
 static void add_favs_to_menu(HMENU favmenu, HMENU menu, LPCWSTR dir)
 {
+    static const WCHAR search[] = {'*',0};
     WCHAR path[MAX_PATH*2];
-    const WCHAR search[] = {'*',0};
     WCHAR* filename;
     HANDLE findhandle;
     WIN32_FIND_DATAW finddata;
@@ -181,9 +202,9 @@ static void add_favs_to_menu(HMENU favmenu, HMENU menu, LPCWSTR dir)
 
             if(finddata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
+                static const WCHAR ignore1[] = {'.','.',0};
+                static const WCHAR ignore2[] = {'.',0};
                 MENUITEMINFOW item;
-                const WCHAR ignore1[] = {'.','.',0};
-                const WCHAR ignore2[] = {'.',0};
 
                 if(!lstrcmpW(filename, ignore1) || !lstrcmpW(filename, ignore2))
                     continue;
@@ -196,9 +217,9 @@ static void add_favs_to_menu(HMENU favmenu, HMENU menu, LPCWSTR dir)
                 add_favs_to_menu(favmenu, item.hSubMenu, path);
             } else
             {
+                static const WCHAR urlext[] = {'.','u','r','l',0};
                 WCHAR* fileext;
                 WCHAR* url = NULL;
-                const WCHAR urlext[] = {'.','u','r','l',0};
 
                 if(lstrcmpiW(PathFindExtensionW(filename), urlext))
                     continue;
@@ -229,20 +250,20 @@ static void add_favs_to_menu(HMENU favmenu, HMENU menu, LPCWSTR dir)
 
 static void add_tbs_to_menu(HMENU menu)
 {
+    static const WCHAR toolbar_key[] = {'S','o','f','t','w','a','r','e','\\',
+                                        'M','i','c','r','o','s','o','f','t','\\',
+                                        'I','n','t','e','r','n','e','t',' ',
+                                        'E','x','p','l','o','r','e','r','\\',
+                                        'T','o','o','l','b','a','r',0};
     HUSKEY toolbar_handle;
-    WCHAR toolbar_key[] = {'S','o','f','t','w','a','r','e','\\',
-                           'M','i','c','r','o','s','o','f','t','\\',
-                           'I','n','t','e','r','n','e','t',' ',
-                           'E','x','p','l','o','r','e','r','\\',
-                           'T','o','o','l','b','a','r',0};
 
     if(SHRegOpenUSKeyW(toolbar_key, KEY_READ, NULL, &toolbar_handle, TRUE) == ERROR_SUCCESS)
     {
+        static const WCHAR classes_key[] = {'S','o','f','t','w','a','r','e','\\',
+                                            'C','l','a','s','s','e','s','\\','C','L','S','I','D',0};
         HUSKEY classes_handle;
-        WCHAR classes_key[] = {'S','o','f','t','w','a','r','e','\\',
-                               'C','l','a','s','s','e','s','\\','C','L','S','I','D',0};
         WCHAR guid[39];
-        DWORD value_len = sizeof(guid)/sizeof(guid[0]);
+        DWORD value_len = ARRAY_SIZE(guid);
         int i;
 
         if(SHRegOpenUSKeyW(classes_key, KEY_READ, NULL, &classes_handle, TRUE) != ERROR_SUCCESS)
@@ -255,11 +276,11 @@ static void add_tbs_to_menu(HMENU menu)
         for(i = 0; SHRegEnumUSValueW(toolbar_handle, i, guid, &value_len, NULL, NULL, NULL, SHREGENUM_HKLM) == ERROR_SUCCESS; i++)
         {
             WCHAR tb_name[100];
-            DWORD tb_name_len = sizeof(tb_name)/sizeof(tb_name[0]);
+            DWORD tb_name_len = ARRAY_SIZE(tb_name);
             HUSKEY tb_class_handle;
             MENUITEMINFOW item;
             LSTATUS ret;
-            value_len = sizeof(guid)/sizeof(guid[0]);
+            value_len = ARRAY_SIZE(guid);
 
             if(lstrlenW(guid) != 38)
             {
@@ -404,7 +425,7 @@ static void add_tb_button(InternetExplorer *ie, int bmp, int cmd, int strId)
     TBBUTTON btn;
     WCHAR buf[30];
 
-    LoadStringW(ieframe_instance, strId, buf, sizeof(buf)/sizeof(buf[0]));
+    LoadStringW(ieframe_instance, strId, buf, ARRAY_SIZE(buf));
 
     btn.iBitmap = bmp;
     btn.idCommand = cmd;
@@ -431,7 +452,7 @@ static void create_rebar(InternetExplorer *ie)
     HIMAGELIST imagelist;
     SIZE toolbar_size;
 
-    LoadStringW(ieframe_instance, IDS_ADDRESS, addr, sizeof(addr)/sizeof(addr[0]));
+    LoadStringW(ieframe_instance, IDS_ADDRESS, addr, ARRAY_SIZE(addr));
 
     hwndRebar = CreateWindowExW(WS_EX_TOOLWINDOW, REBARCLASSNAMEW, NULL,
             WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS|WS_CLIPCHILDREN|RBS_VARHEIGHT|CCS_TOP|CCS_NODIVIDER, 0, 0, 0, 0,
@@ -832,13 +853,103 @@ HRESULT WINAPI InternetExplorer_Create(IClassFactory *iface, IUnknown *pOuter, R
     return S_OK;
 }
 
+/******************************************************************
+ *      IInternetExplorerManager implementation
+ */
+struct InternetExplorerManager {
+    IInternetExplorerManager IInternetExplorerManager_iface;
+    LONG ref;
+};
+
+static inline InternetExplorerManager *impl_from_IInternetExplorerManager(IInternetExplorerManager *iface)
+{
+    return CONTAINING_RECORD(iface, InternetExplorerManager, IInternetExplorerManager_iface);
+}
+
+static HRESULT WINAPI InternetExplorerManager_QueryInterface(IInternetExplorerManager *iface, REFIID riid, void **out)
+{
+    TRACE("(%p)->(%s, %p)\n", iface, debugstr_guid(riid), out);
+
+    if (IsEqualGUID(riid, &IID_IInternetExplorerManager) || IsEqualGUID(riid, &IID_IUnknown))
+    {
+        IInternetExplorerManager_AddRef(iface);
+        *out = iface;
+        return S_OK;
+    }
+
+    FIXME("interface %s not implemented\n", debugstr_guid(riid));
+    *out = NULL;
+    return E_NOINTERFACE;
+}
+
+static ULONG WINAPI InternetExplorerManager_AddRef(IInternetExplorerManager *iface)
+{
+    InternetExplorerManager *This = impl_from_IInternetExplorerManager(iface);
+    ULONG ref = InterlockedIncrement(&This->ref);
+
+    TRACE("(%p) increasing refcount to %u\n", iface, ref);
+
+    return ref;
+}
+
+static ULONG WINAPI InternetExplorerManager_Release(IInternetExplorerManager *iface)
+{
+    InternetExplorerManager *This = impl_from_IInternetExplorerManager(iface);
+    ULONG ref = InterlockedDecrement(&This->ref);
+
+    TRACE("(%p) decreasing refcount to %u\n", iface, ref);
+
+    if (ref == 0)
+    {
+        HeapFree(GetProcessHeap(), 0, This);
+        released_obj();
+    }
+
+    return ref;
+}
+
+static HRESULT WINAPI InternetExplorerManager_CreateObject(IInternetExplorerManager *iface, DWORD config, LPCWSTR url, REFIID riid, void **ppv)
+{
+    FIXME("(%p)->(0x%x, %s, %s, %p) stub!\n", iface, config, debugstr_w(url), debugstr_guid(riid), ppv);
+
+    return E_NOTIMPL;
+}
+
+static const IInternetExplorerManagerVtbl InternetExplorerManager_vtbl =
+{
+    InternetExplorerManager_QueryInterface,
+    InternetExplorerManager_AddRef,
+    InternetExplorerManager_Release,
+    InternetExplorerManager_CreateObject,
+};
+
+HRESULT WINAPI InternetExplorerManager_Create(IClassFactory *iface, IUnknown *pOuter, REFIID riid, void **ppv)
+{
+    InternetExplorerManager *ret;
+    HRESULT hr;
+
+    TRACE("(%p %s %p)\n", pOuter, debugstr_guid(riid), ppv);
+
+    if (!(ret = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*ret))))
+        return E_OUTOFMEMORY;
+
+    ret->IInternetExplorerManager_iface.lpVtbl = &InternetExplorerManager_vtbl;
+    ret->ref = 1;
+
+    hr = IInternetExplorerManager_QueryInterface(&ret->IInternetExplorerManager_iface, riid, ppv);
+    IInternetExplorerManager_Release(&ret->IInternetExplorerManager_iface);
+
+    InterlockedIncrement(&obj_cnt);
+    return hr;
+}
+
 void released_obj(void)
 {
     if(!InterlockedDecrement(&obj_cnt))
         PostQuitMessage(0);
 }
 
-static BOOL create_ie_window(const WCHAR *cmdline)
+static BOOL create_ie_window(BOOL nohome, const WCHAR *cmdline)
 {
     InternetExplorer *ie;
     HRESULT hres;
@@ -851,33 +962,27 @@ static BOOL create_ie_window(const WCHAR *cmdline)
     IWebBrowser2_put_MenuBar(&ie->IWebBrowser2_iface, VARIANT_TRUE);
 
     if(!*cmdline) {
-        IWebBrowser2_GoHome(&ie->IWebBrowser2_iface);
+        if (nohome)
+            ie->nohome = TRUE;
+        else
+            IWebBrowser2_GoHome(&ie->IWebBrowser2_iface);
     }else {
         VARIANT var_url;
         int cmdlen;
 
-        static const WCHAR nohomeW[] = {'-','n','o','h','o','m','e'};
-
-        while(*cmdline == ' ' || *cmdline == '\t')
-            cmdline++;
-        cmdlen = strlenW(cmdline);
+        cmdlen = lstrlenW(cmdline);
         if(cmdlen > 2 && cmdline[0] == '"' && cmdline[cmdlen-1] == '"') {
             cmdline++;
             cmdlen -= 2;
         }
 
-        if(cmdlen == sizeof(nohomeW)/sizeof(*nohomeW) && !memcmp(cmdline, nohomeW, sizeof(nohomeW))) {
-            ie->nohome = TRUE;
-        }else {
-            V_VT(&var_url) = VT_BSTR;
+        V_VT(&var_url) = VT_BSTR;
+        V_BSTR(&var_url) = SysAllocStringLen(cmdline, cmdlen);
 
-            V_BSTR(&var_url) = SysAllocStringLen(cmdline, cmdlen);
+        /* navigate to the first page */
+        IWebBrowser2_Navigate2(&ie->IWebBrowser2_iface, &var_url, NULL, NULL, NULL, NULL);
 
-            /* navigate to the first page */
-            IWebBrowser2_Navigate2(&ie->IWebBrowser2_iface, &var_url, NULL, NULL, NULL, NULL);
-
-            SysFreeString(V_BSTR(&var_url));
-        }
+        SysFreeString(V_BSTR(&var_url));
     }
 
     IWebBrowser2_Release(&ie->IWebBrowser2_iface);
@@ -896,18 +1001,18 @@ static HDDEDATA open_dde_url(WCHAR *dde_url)
     url = dde_url;
     if(*url == '"') {
         url++;
-        url_end = strchrW(url, '"');
+        url_end = wcschr(url, '"');
         if(!url_end) {
             FIXME("missing string terminator\n");
             return 0;
         }
         *url_end = 0;
     }else {
-        url_end = strchrW(url, ',');
+        url_end = wcschr(url, ',');
         if(url_end)
             *url_end = 0;
         else
-            url_end = url + strlenW(url);
+            url_end = url + lstrlenW(url);
     }
 
     LIST_FOR_EACH_ENTRY(iter, &ie_list, InternetExplorer, entry) {
@@ -1035,23 +1140,60 @@ DWORD WINAPI IEWinMain(const WCHAR *cmdline, int nShowWindow)
 {
     MSG msg;
     HRESULT hres;
+    BOOL embedding = FALSE, nohome = FALSE, manager = FALSE;
+    DWORD reg_cookie;
 
     static const WCHAR embeddingW[] = {'-','e','m','b','e','d','d','i','n','g',0};
+    static const WCHAR nohomeW[] = {'-','n','o','h','o','m','e',0};
+    static const WCHAR startmanagerW[] = {'-','s','t','a','r','t','m','a','n','a','g','e','r',0};
 
     TRACE("%s %d\n", debugstr_w(cmdline), nShowWindow);
 
     CoInitialize(NULL);
 
-    hres = register_class_object(TRUE);
-    if(FAILED(hres)) {
+    init_dde();
+
+    while (*cmdline)
+    {
+        int length = 0;
+
+        while (*cmdline == ' ' || *cmdline == '\t') cmdline++;
+        if (!*cmdline) break;
+
+        while (cmdline[length] && cmdline[length] != ' ' && cmdline[length] != '\t') length++;
+
+        if (!_wcsnicmp(cmdline, embeddingW, length))
+            embedding = TRUE;
+        else if (!_wcsnicmp(cmdline, nohomeW, length))
+            nohome = TRUE;
+        else if (!_wcsnicmp(cmdline, startmanagerW, length))
+            manager = TRUE;
+        else
+            break;
+
+        cmdline += length;
+    }
+
+    if (manager)
+        hres = CoRegisterClassObject(&CLSID_InternetExplorerManager,
+            (IUnknown*)&InternetExplorerManagerFactory, CLSCTX_SERVER,
+            REGCLS_SINGLEUSE, &reg_cookie);
+    else
+        hres = CoRegisterClassObject(&CLSID_InternetExplorer,
+            (IUnknown*)&InternetExplorerFactory, CLSCTX_SERVER,
+            REGCLS_MULTIPLEUSE, &reg_cookie);
+
+    if (FAILED(hres))
+    {
+        ERR("failed to register CLSID_InternetExplorer%s: %08x\n", manager ? "Manager" : "", hres);
         CoUninitialize();
         ExitProcess(1);
     }
 
-    init_dde();
-
-    if(strcmpiW(cmdline, embeddingW)) {
-        if(!create_ie_window(cmdline)) {
+    if (!embedding)
+    {
+        if(!create_ie_window(nohome, cmdline))
+        {
             CoUninitialize();
             ExitProcess(1);
         }
@@ -1064,7 +1206,7 @@ DWORD WINAPI IEWinMain(const WCHAR *cmdline, int nShowWindow)
         DispatchMessageW(&msg);
     }
 
-    register_class_object(FALSE);
+    CoRevokeClassObject(reg_cookie);
     release_dde();
 
     CoUninitialize();

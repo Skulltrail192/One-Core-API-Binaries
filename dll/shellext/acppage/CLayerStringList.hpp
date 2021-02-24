@@ -1,21 +1,11 @@
 /*
- * Copyright 2015-2017 Mark Jansen
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+ * PROJECT:     ReactOS Compatibility Layer Shell Extension
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     CLayerStringList implementation
+ * COPYRIGHT:   Copyright 2015-2018 Mark Jansen (mark.jansen@reactos.org)
  */
 
+#pragma once
 
 /* TODO: Use HSDB instead of PDB */
 class CLayerStringList :
@@ -46,24 +36,24 @@ public:
         while (celt && m_layer)
         {
             TAGID nameid = SdbFindFirstTag(m_db, m_layer, TAG_NAME);
-            if (!nameid)
-                return S_FALSE;
+            if (nameid)
+            {
+                LPWSTR name = SdbGetStringTagPtr(m_db, nameid);
+                if (name && !IsBuiltinLayer(name))
+                {
+                    ULONG Size = wcslen(name) + 1;
 
-            LPWSTR name = SdbGetStringTagPtr(m_db, nameid);
-            if (!name)
-                return S_FALSE;
+                    *rgelt = (LPOLESTR)::CoTaskMemAlloc(Size * sizeof(WCHAR));
+                    StringCchCopyW(*rgelt, Size, name);
 
-            ULONG Size = wcslen(name) + 1;
+                    if (pceltFetched)
+                        (*pceltFetched)++;
 
-            *rgelt = (LPOLESTR)::CoTaskMemAlloc(Size * sizeof(WCHAR));
-            StringCchCopyW(*rgelt, Size, name);
-
-            if (pceltFetched)
-                (*pceltFetched)++;
-
+                    celt--;
+                    rgelt++;
+                }
+            }
             m_layer = SdbFindNextTag(m_db, m_root, m_layer);
-            celt--;
-            rgelt++;
         }
         return celt ? S_FALSE : S_OK;
     }

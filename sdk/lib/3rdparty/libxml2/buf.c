@@ -1,7 +1,7 @@
 /*
  * buf.c: memory buffers for libxml2
  *
- * new buffer structures and entry points to simplify the maintainance
+ * new buffer structures and entry points to simplify the maintenance
  * of libxml2 and ensure we keep good control over memory allocations
  * and stay 64 bits clean.
  * The new entry point use the xmlBufPtr opaque structure and
@@ -49,7 +49,7 @@ struct _xmlBuf {
     size_t use;		        /* The buffer size used */
     size_t size;		/* The buffer size */
     xmlBufferPtr buffer;        /* wrapper for an old buffer */
-    int error;                  /* an error code if a failure occured */
+    int error;                  /* an error code if a failure occurred */
 };
 
 #ifdef WITH_BUFFER_COMPAT
@@ -231,7 +231,7 @@ xmlBufPtr
 xmlBufCreateStatic(void *mem, size_t size) {
     xmlBufPtr ret;
 
-    if ((mem == NULL) || (size == 0))
+    if (mem == NULL)
         return(NULL);
 
     ret = (xmlBufPtr) xmlMalloc(sizeof(xmlBuf));
@@ -396,7 +396,7 @@ xmlBufShrink(xmlBufPtr buf, size_t len) {
         ((buf->alloc == XML_BUFFER_ALLOC_IO) && (buf->contentIO != NULL))) {
 	/*
 	 * we just move the content pointer, but also make sure
-	 * the perceived buffer size has shrinked accordingly
+	 * the perceived buffer size has shrunk accordingly
 	 */
         buf->content += len;
 	buf->size -= len;
@@ -701,7 +701,7 @@ xmlBufUse(const xmlBufPtr buf)
  * used in the buffer. It does not account for the terminating zero
  * usually needed
  *
- * Returns the amount or 0 if none or an error occured
+ * Returns the amount or 0 if none or an error occurred
  */
 
 size_t
@@ -958,7 +958,7 @@ xmlBufAddHead(xmlBufPtr buf, const xmlChar *str, int len) {
 
 	if (start_buf > (unsigned int) len) {
 	    /*
-	     * We can add it in the space previously shrinked
+	     * We can add it in the space previously shrunk
 	     */
 	    buf->content -= len;
             memmove(&buf->content[0], str, len);
@@ -1204,10 +1204,10 @@ xmlBufferPtr
 xmlBufBackToBuffer(xmlBufPtr buf) {
     xmlBufferPtr ret;
 
-    if ((buf == NULL) || (buf->error))
+    if (buf == NULL)
         return(NULL);
     CHECK_COMPAT(buf)
-    if (buf->buffer == NULL) {
+    if ((buf->error) || (buf->buffer == NULL)) {
         xmlBufFree(buf);
         return(NULL);
     }
@@ -1307,7 +1307,7 @@ xmlBufGetInputBase(xmlBufPtr buf, xmlParserInputPtr input) {
     CHECK_COMPAT(buf)
     base = input->base - buf->content;
     /*
-     * We could do some pointer arythmetic checks but that's probably
+     * We could do some pointer arithmetic checks but that's probably
      * sufficient.
      */
     if (base > buf->size) {

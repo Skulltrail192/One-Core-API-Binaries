@@ -1,6 +1,6 @@
 /*
  * Translators: Petru Dimitriu (petrimetri at gmail dot com)
- *              Ștefan Fulea (stefan dot fulea at mail dot md)
+ *              Ștefan Fulea (stefan dot fulea at mail dot com)
  */
 
 LANGUAGE LANG_ROMANIAN, SUBLANG_NEUTRAL
@@ -434,6 +434,8 @@ END
 /* Angles */
 STRINGTABLE
 BEGIN
+    IDS_ANGLE_ARCMINUTES "Minute of arc"
+    IDS_ANGLE_ARCSECONDS "Second of arc"
     IDS_ANGLE_DEGREES "Grade"
     IDS_ANGLE_GRADIANS "Gradiani"
     IDS_ANGLE_RADIANS "Radiani"
@@ -496,15 +498,15 @@ BEGIN
     IDS_CURRENCY_CZECH_KORUNA "Coroană cehă"
     IDS_CURRENCY_DEUTSCHE_MARK "Marcă nemțească"
     IDS_CURRENCY_DUTCH_GUILDER "Guilder olandez"
-    IDS_CURRENCY_ESTONIAN_KROON "Estonian kroon"
+    IDS_CURRENCY_ESTONIAN_KROON "Coroană estoniană"
     IDS_CURRENCY_EURO "Euro"
     IDS_CURRENCY_FINNISH_MARKKA "Marcă finlandeză"
     IDS_CURRENCY_FRENCH_FRANC "Franc framcez"
     IDS_CURRENCY_GREEK_DRACHMA "Drahmă grecească"
     IDS_CURRENCY_IRISH_POUND "Liră irlandeză"
     IDS_CURRENCY_ITALIAN_LIRA "Liră italiană"
-    IDS_CURRENCY_LATVIAN_LATS "Latvian lats"
-    IDS_CURRENCY_LITHUANIAN_LITAS "Lithuanian litas"
+    IDS_CURRENCY_LATVIAN_LATS "Lats leton"
+    IDS_CURRENCY_LITHUANIAN_LITAS "Litas lituanian"
     IDS_CURRENCY_LUXEMBOURG_FRANC "Franc luxemburghez"
     IDS_CURRENCY_MALTESE_LIRA "Litră malteză"
     IDS_CURRENCY_PORTOGUESE_ESCUDO "Escudo portughez"

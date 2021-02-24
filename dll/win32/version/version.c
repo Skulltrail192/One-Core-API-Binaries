@@ -21,7 +21,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  *
  */
-#include "config.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -29,9 +28,6 @@
 #include <stdio.h>
 
 #include <sys/types.h>
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
 
 #define NONAMELESSUNION
 #define NONAMELESSSTRUCT
@@ -40,9 +36,8 @@
 #include "winver.h"
 #include "winuser.h"
 #include "winnls.h"
-#include "winternl.h"
+#include "wine/winternl.h"
 #include "lzexpand.h"
-#include "wine/unicode.h"
 #include "winerror.h"
 #include "wine/debug.h"
 
@@ -594,7 +589,7 @@ typedef struct
 #define VersionInfo16_Value( ver )  \
     DWORD_ALIGN( (ver), (ver)->szKey + strlen((ver)->szKey) + 1 )
 #define VersionInfo32_Value( ver )  \
-    DWORD_ALIGN( (ver), (ver)->szKey + strlenW((ver)->szKey) + 1 )
+    DWORD_ALIGN( (ver), (ver)->szKey + lstrlenW((ver)->szKey) + 1 )
 
 #define VersionInfo16_Children( ver )  \
     (const VS_VERSION_INFO_STRUCT16 *)( VersionInfo16_Value( ver ) + \
@@ -707,7 +702,7 @@ DWORD WINAPI GetFileVersionInfoSizeExW( DWORD flags, LPCWSTR filename, LPDWORD h
     default:
         if (lzfd == HFILE_ERROR)
             SetLastError(ofs.nErrCode);
-        else if (GetVersion() & 0x80000000)
+        else if (GetVersion() & 0x80000000) /* Windows 95/98 */
             SetLastError(ERROR_FILE_NOT_FOUND);
         else
             SetLastError(ERROR_RESOURCE_DATA_NOT_FOUND);
@@ -870,7 +865,7 @@ static const VS_VERSION_INFO_STRUCT16 *VersionInfo16_FindChild( const VS_VERSION
 
     while ((char *)child < (char *)info + info->wLength )
     {
-        if (!strncasecmp( child->szKey, szKey, cbKey ) && !child->szKey[cbKey])
+        if (!_strnicmp( child->szKey, szKey, cbKey ) && !child->szKey[cbKey])
             return child;
 
 	if (!(child->wLength)) return NULL;
@@ -890,7 +885,7 @@ static const VS_VERSION_INFO_STRUCT32 *VersionInfo32_FindChild( const VS_VERSION
 
     while ((char *)child < (char *)info + info->wLength )
     {
-        if (!strncmpiW( child->szKey, szKey, cbKey ) && !child->szKey[cbKey])
+        if (!_wcsnicmp( child->szKey, szKey, cbKey ) && !child->szKey[cbKey])
             return child;
 
         if (!(child->wLength)) return NULL;
@@ -1015,6 +1010,7 @@ BOOL WINAPI VerQueryValueA( LPCVOID pBlock, LPCSTR lpSubBlock,
         BOOL ret, isText;
         INT len;
         LPWSTR lpSubBlockW;
+        UINT value_len;
 
         len  = MultiByteToWideChar(CP_ACP, 0, lpSubBlock, -1, NULL, 0);
         lpSubBlockW = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR));
@@ -1024,7 +1020,8 @@ BOOL WINAPI VerQueryValueA( LPCVOID pBlock, LPCSTR lpSubBlock,
 
         MultiByteToWideChar(CP_ACP, 0, lpSubBlock, -1, lpSubBlockW, len);
 
-        ret = VersionInfo32_QueryValue(pBlock, lpSubBlockW, lplpBuffer, puLen, &isText);
+        ret = VersionInfo32_QueryValue(pBlock, lpSubBlockW, lplpBuffer, &value_len, &isText);
+        if (puLen) *puLen = value_len;
 
         HeapFree(GetProcessHeap(), 0, lpSubBlockW);
 
@@ -1035,8 +1032,7 @@ BOOL WINAPI VerQueryValueA( LPCVOID pBlock, LPCSTR lpSubBlock,
              */
             LPSTR lpBufferA = (LPSTR)pBlock + info->wLength + 4;
             DWORD pos = (LPCSTR)*lplpBuffer - (LPCSTR)pBlock;
-
-            len = WideCharToMultiByte(CP_ACP, 0, *lplpBuffer, -1,
+            len = WideCharToMultiByte(CP_ACP, 0, *lplpBuffer, value_len,
                                       lpBufferA + pos, info->wLength - pos, NULL, NULL);
             *lplpBuffer = lpBufferA + pos;
             if (puLen) *puLen = len;
@@ -1053,7 +1049,6 @@ BOOL WINAPI VerQueryValueA( LPCVOID pBlock, LPCSTR lpSubBlock,
 BOOL WINAPI VerQueryValueW( LPCVOID pBlock, LPCWSTR lpSubBlock,
                                LPVOID *lplpBuffer, PUINT puLen )
 {
-    static const WCHAR nullW[] = { 0 };
     static const WCHAR rootW[] = { '\\', 0 };
     static const WCHAR varfileinfoW[] = { '\\','V','a','r','F','i','l','e','I','n','f','o',
                                           '\\','T','r','a','n','s','l','a','t','i','o','n', 0 };
@@ -1066,7 +1061,7 @@ BOOL WINAPI VerQueryValueW( LPCVOID pBlock, LPCWSTR lpSubBlock,
     if (!pBlock)
         return FALSE;
 
-    if (lpSubBlock == NULL || lpSubBlock[0] == nullW[0])
+    if (!lpSubBlock || !lpSubBlock[0])
         lpSubBlock = rootW;
 
     if ( VersionInfoIs16( info ) )
@@ -1087,7 +1082,7 @@ BOOL WINAPI VerQueryValueW( LPCVOID pBlock, LPCWSTR lpSubBlock,
 
         HeapFree(GetProcessHeap(), 0, lpSubBlockA);
 
-        if (ret && strcmpiW( lpSubBlock, rootW ) && strcmpiW( lpSubBlock, varfileinfoW ))
+        if (ret && wcsicmp( lpSubBlock, rootW ) && wcsicmp( lpSubBlock, varfileinfoW ))
         {
             /* Set lpBuffer so it points to the 'empty' area where we store
              * the converted strings
@@ -1320,7 +1315,7 @@ DWORD WINAPI VerFindFileW( DWORD flags,LPCWSTR lpszFilename,LPCWSTR lpszWinDir,
     /* Figure out where the file should go; shared files default to the
        system directory */
 
-    GetSystemDirectoryW(systemDir, sizeof(systemDir)/sizeof(WCHAR));
+    GetSystemDirectoryW(systemDir, ARRAY_SIZE(systemDir));
     curDir = &emptyW;
 
     if(flags & VFFF_ISSHAREDFILE)
@@ -1360,8 +1355,8 @@ DWORD WINAPI VerFindFileW( DWORD flags,LPCWSTR lpszFilename,LPCWSTR lpszWinDir,
     if (lpszFilename && !testFileExistenceW(curDir, lpszFilename, TRUE))
         retval |= VFF_FILEINUSE;
 
-    curDirSizeReq = strlenW(curDir) + 1;
-    destDirSizeReq = strlenW(destDir) + 1;
+    curDirSizeReq = lstrlenW(curDir) + 1;
+    destDirSizeReq = lstrlenW(destDir) + 1;
 
     /* Make sure that the pointers to the size of the buffers are
        valid; if not, do NOTHING with that buffer.  If that pointer

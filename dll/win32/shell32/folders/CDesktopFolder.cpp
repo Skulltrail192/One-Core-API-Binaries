@@ -85,6 +85,44 @@ class CDesktopFolderEnum :
 //    CComPtr                                fDesktopEnumerator;
 //    CComPtr                                fCommonDesktopEnumerator;
     public:
+
+        void AddItemsFromClassicStartMenuKey(HKEY hKeyRoot)
+        {
+            DWORD dwResult;
+            HKEY hkey;
+            DWORD j = 0, dwVal, Val, dwType, dwIID;
+            LONG r;
+            WCHAR iid[50];
+            LPITEMIDLIST pidl;
+
+            dwResult = RegOpenKeyExW(hKeyRoot, ClassicStartMenuW, 0, KEY_READ, &hkey);
+            if (dwResult != ERROR_SUCCESS)
+                return;
+
+            while(1)
+            {
+                dwVal = sizeof(Val);
+                dwIID = sizeof(iid) / sizeof(WCHAR);
+
+                r = RegEnumValueW(hkey, j++, iid, &dwIID, NULL, &dwType, (LPBYTE)&Val, &dwVal);
+                if (r != ERROR_SUCCESS)
+                    break;
+
+                if (Val == 0 && dwType == REG_DWORD)
+                {
+                    pidl = _ILCreateGuidFromStrW(iid);
+                    if (pidl != NULL)
+                    {
+                        if (!HasItemWithCLSID(pidl))
+                            AddToEnumList(pidl);
+                        else
+                            SHFree(pidl);
+                    }
+                }
+            }
+            RegCloseKey(hkey);
+        }
+
         HRESULT WINAPI Initialize(DWORD dwFlags,IEnumIDList * pRegEnumerator, IEnumIDList *pDesktopEnumerator, IEnumIDList *pCommonDesktopEnumerator)
         {
             BOOL ret = TRUE;
@@ -112,6 +150,8 @@ class CDesktopFolderEnum :
                             SHFree(pidl);
                     }
                 }
+                AddItemsFromClassicStartMenuKey(HKEY_LOCAL_MACHINE);
+                AddItemsFromClassicStartMenuKey(HKEY_CURRENT_USER);
             }
 
             /* Enumerate the items in the two fs folders */
@@ -142,7 +182,7 @@ static const shvheader DesktopSFHeader[] = {
 
 static const DWORD dwDesktopAttributes =
     SFGAO_HASSUBFOLDER | SFGAO_FILESYSTEM | SFGAO_FOLDER | SFGAO_FILESYSANCESTOR |
-    SFGAO_STORAGEANCESTOR | SFGAO_HASPROPSHEET | SFGAO_STORAGE | SFGAO_CANLINK;
+    SFGAO_STORAGEANCESTOR | SFGAO_HASPROPSHEET | SFGAO_STORAGE;
 static const DWORD dwMyComputerAttributes =
     SFGAO_CANRENAME | SFGAO_CANDELETE | SFGAO_HASPROPSHEET | SFGAO_DROPTARGET |
     SFGAO_FILESYSANCESTOR | SFGAO_FOLDER | SFGAO_HASSUBFOLDER | SFGAO_CANLINK;
@@ -568,7 +608,7 @@ HRESULT WINAPI CDesktopFolder::GetUIObjectOf(
 
     if (IsEqualIID (riid, IID_IContextMenu))
     {
-        if (_ILIsSpecialFolder(apidl[0]))
+        if (cidl > 0 && _ILIsSpecialFolder(apidl[0]))
         {
             hr = m_regFolder->GetUIObjectOf(hwndOwner, cidl, apidl, riid, prgfInOut, &pObj);
         }
@@ -579,7 +619,10 @@ HRESULT WINAPI CDesktopFolder::GetUIObjectOf(
             /* Otherwise operations like that involve items from both user and shared desktop will not work */
             HKEY hKeys[16];
             UINT cKeys = 0;
-            AddFSClassKeysToArray(apidl[0], hKeys, &cKeys);
+            if (cidl > 0)
+            {
+                AddFSClassKeysToArray(apidl[0], hKeys, &cKeys);
+            }
 
             DEFCONTEXTMENU dcm;
             dcm.hwnd = hwndOwner;
@@ -596,7 +639,7 @@ HRESULT WINAPI CDesktopFolder::GetUIObjectOf(
     }
     else if (IsEqualIID (riid, IID_IDataObject) && (cidl >= 1))
     {
-        hr = IDataObject_Constructor( hwndOwner, pidlRoot, apidl, cidl, (IDataObject **)&pObj);
+        hr = IDataObject_Constructor( hwndOwner, pidlRoot, apidl, cidl, TRUE, (IDataObject **)&pObj);
     }
     else if ((IsEqualIID (riid, IID_IExtractIconA) || IsEqualIID (riid, IID_IExtractIconW)) && (cidl == 1))
     {
@@ -775,14 +818,17 @@ HRESULT WINAPI CDesktopFolder::GetClassID(CLSID *lpClassId)
     return S_OK;
 }
 
-HRESULT WINAPI CDesktopFolder::Initialize(LPCITEMIDLIST pidl)
+HRESULT WINAPI CDesktopFolder::Initialize(PCIDLIST_ABSOLUTE pidl)
 {
     TRACE ("(%p)->(%p)\n", this, pidl);
+
+    if (!pidl)
+        return S_OK;
 
     return E_INVALIDARG;
 }
 
-HRESULT WINAPI CDesktopFolder::GetCurFolder(LPITEMIDLIST * pidl)
+HRESULT WINAPI CDesktopFolder::GetCurFolder(PIDLIST_ABSOLUTE * pidl)
 {
     TRACE ("(%p)->(%p)\n", this, pidl);
 
@@ -800,49 +846,31 @@ HRESULT WINAPI CDesktopFolder::CallBack(IShellFolder *psf, HWND hwndOwner, IData
     /* no data object means no selection */
     if (!pdtobj)
     {
-        if (uMsg == DFM_INVOKECOMMAND && wParam == DFM_CMD_PROPERTIES)
+        if (uMsg == DFM_INVOKECOMMAND && wParam == 0)
         {
-            if (32 >= (UINT)ShellExecuteW(hwndOwner, L"open", L"rundll32.exe shell32.dll,Control_RunDLL desk.cpl", NULL, NULL, SW_SHOWNORMAL))
+            if (32 >= (UINT_PTR)ShellExecuteW(hwndOwner, L"open", L"rundll32.exe",
+                                              L"shell32.dll,Control_RunDLL desk.cpl", NULL, SW_SHOWNORMAL))
+            {
                 return E_FAIL;
+            }
             return S_OK;
         }
         else if (uMsg == DFM_MERGECONTEXTMENU)
         {
             QCMINFO *pqcminfo = (QCMINFO *)lParam;
-            _InsertMenuItemW(pqcminfo->hmenu, pqcminfo->indexMenu++, TRUE, 0, MFT_SEPARATOR, NULL, 0);
-            _InsertMenuItemW(pqcminfo->hmenu, pqcminfo->indexMenu++, TRUE, FCIDM_SHVIEW_PROPERTIES, MFT_STRING, MAKEINTRESOURCEW(IDS_PROPERTIES), MFS_ENABLED);
+            HMENU hpopup = CreatePopupMenu();
+            _InsertMenuItemW(hpopup, 0, TRUE, 0, MFT_STRING, MAKEINTRESOURCEW(IDS_PROPERTIES), MFS_ENABLED);
+            Shell_MergeMenus(pqcminfo->hmenu, hpopup, pqcminfo->indexMenu++, pqcminfo->idCmdFirst, pqcminfo->idCmdLast, MM_ADDSEPARATOR);
+            DestroyMenu(hpopup);
         }
 
         return S_OK;
     }
 
-    PIDLIST_ABSOLUTE pidlFolder;
-    PUITEMID_CHILD *apidl;
-    UINT cidl;
-    HRESULT hr = SH_GetApidlFromDataObject(pdtobj, &pidlFolder, &apidl, &cidl);
-    if (FAILED_UNEXPECTEDLY(hr))
-        return hr;
+    if (uMsg != DFM_INVOKECOMMAND || wParam != DFM_CMD_PROPERTIES)
+        return S_OK;
 
-    if (cidl > 1)
-        ERR("SHMultiFileProperties is not yet implemented\n");
-
-    STRRET strFile;
-    hr = GetDisplayNameOf(apidl[0], SHGDN_FORPARSING, &strFile);
-    if (SUCCEEDED(hr))
-    {
-        hr = SH_ShowPropertiesDialog(strFile.pOleStr, pidlFolder, apidl);
-        if (FAILED(hr))
-            ERR("SH_ShowPropertiesDialog failed\n");
-    }
-    else
-    {
-        ERR("Failed to get display name\n");
-    }
-
-    SHFree(pidlFolder);
-    _ILFreeaPidl(apidl, cidl);
-
-    return hr;
+    return Shell_DefaultContextMenuCallBack(this, pdtobj);
 }
 
 /*************************************************************************

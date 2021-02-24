@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2019, Intel Corp.
+ * Copyright (C) 2000 - 2020, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -159,7 +159,7 @@ AcpiEnableGpe (
         if (ACPI_GPE_DISPATCH_TYPE (GpeEventInfo->Flags) !=
             ACPI_GPE_DISPATCH_NONE)
         {
-            Status = AcpiEvAddGpeReference (GpeEventInfo);
+            Status = AcpiEvAddGpeReference (GpeEventInfo, TRUE);
             if (ACPI_SUCCESS (Status) &&
                 ACPI_GPE_IS_POLLING_NEEDED (GpeEventInfo))
             {
@@ -769,6 +769,33 @@ ACPI_EXPORT_SYMBOL (AcpiGetGpeStatus)
 
 /*******************************************************************************
  *
+ * FUNCTION:    AcpiDispatchGpe
+ *
+ * PARAMETERS:  GpeDevice           - Parent GPE Device. NULL for GPE0/GPE1
+ *              GpeNumber           - GPE level within the GPE block
+ *
+ * RETURN:      INTERRUPT_HANDLED or INTERRUPT_NOT_HANDLED
+ *
+ * DESCRIPTION: Detect and dispatch a General Purpose Event to either a function
+ *              (e.g. EC) or method (e.g. _Lxx/_Exx) handler.
+ *
+ ******************************************************************************/
+
+UINT32
+AcpiDispatchGpe(
+    ACPI_HANDLE             GpeDevice,
+    UINT32                  GpeNumber)
+{
+    ACPI_FUNCTION_TRACE(acpi_dispatch_gpe);
+
+    return (AcpiEvDetectGpe (GpeDevice, NULL, GpeNumber));
+}
+
+ACPI_EXPORT_SYMBOL (AcpiDispatchGpe)
+
+
+/*******************************************************************************
+ *
  * FUNCTION:    AcpiFinishGpe
  *
  * PARAMETERS:  GpeDevice           - Namespace node for the GPE Block
@@ -928,6 +955,44 @@ AcpiEnableAllWakeupGpes (
 }
 
 ACPI_EXPORT_SYMBOL (AcpiEnableAllWakeupGpes)
+
+
+/******************************************************************************
+ *
+ * FUNCTION:    AcpiAnyGpeStatusSet
+ *
+ * PARAMETERS:  None
+ *
+ * RETURN:      Whether or not the status bit is set for any GPE
+ *
+ * DESCRIPTION: Check the status bits of all enabled GPEs and return TRUE if any
+ *              of them is set or FALSE otherwise.
+ *
+ ******************************************************************************/
+
+UINT32
+AcpiAnyGpeStatusSet (
+    void)
+{
+    ACPI_STATUS                Status;
+    UINT8                      Ret;
+
+
+    ACPI_FUNCTION_TRACE (AcpiAnyGpeStatusSet);
+
+    Status = AcpiUtAcquireMutex (ACPI_MTX_EVENTS);
+    if (ACPI_FAILURE (Status))
+    {
+        return (FALSE);
+    }
+
+    Ret = AcpiHwCheckAllGpes ();
+    (void) AcpiUtReleaseMutex (ACPI_MTX_EVENTS);
+
+    return (Ret);
+}
+
+ACPI_EXPORT_SYMBOL(AcpiAnyGpeStatusSet)
 
 
 /*******************************************************************************

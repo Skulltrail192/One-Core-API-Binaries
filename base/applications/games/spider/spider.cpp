@@ -155,7 +155,7 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrev, LPTSTR szCmdLine, int iCm
 
 LRESULT CALLBACK CardImageWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    PCARDBACK pCardBack = (PCARDBACK)GetWindowLongPtr(hwnd, GWL_USERDATA);
+    PCARDBACK pCardBack = (PCARDBACK)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     static WNDPROC hOldProc = NULL;
 
     if (!pCardBack)
@@ -248,7 +248,7 @@ INT_PTR CALLBACK CardBackDlgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
                                                                    GWLP_WNDPROC,
                                                                    (LONG_PTR)CardImageWndProc);
 
-                SetWindowLongPtr(pCardBacks[i].hSelf, GWL_USERDATA, (LONG_PTR)&pCardBacks[i]);
+                SetWindowLongPtr(pCardBacks[i].hSelf, GWLP_USERDATA, (LONG_PTR)&pCardBacks[i]);
             }
 
             return TRUE;
@@ -310,6 +310,9 @@ LRESULT CALLBACK WndProc (HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
     {
         case WM_CREATE:
         {
+            // For now, the Help dialog is disabled because of lacking of HTML Help support
+            EnableMenuItem(GetMenu(hwnd), IDM_HELP_CONTENTS, MF_BYCOMMAND | MF_GRAYED);
+
             SpiderWnd.Create(hwnd, 0, WS_CHILD | WS_VISIBLE, 0, 0, 100, 100);
             dwDifficulty = IDC_DIF_ONECOLOR;
             CreateSpider();

@@ -17,6 +17,22 @@
 
 /* DATA *********************************************************************/
 
+#define VALID_FAST_IO_DISPATCH_HANDLER(_FastIoDispatchPtr, _FieldName) \
+    (((_FastIoDispatchPtr) != NULL) && \
+     (((_FastIoDispatchPtr)->SizeOfFastIoDispatch) >= \
+            (FIELD_OFFSET(FAST_IO_DISPATCH, _FieldName) + sizeof(void *))) && \
+     ((_FastIoDispatchPtr)->_FieldName != NULL))
+
+#define IS_MY_DEVICE_OBJECT(_devObj) \
+    (((_devObj) != NULL) && \
+    ((_devObj)->DriverObject == Dispatcher::DriverObject) && \
+      ((_devObj)->DeviceExtension != NULL))
+
+extern PDEVICE_OBJECT CommsDeviceObject;
+extern LIST_ENTRY FilterList;
+extern ERESOURCE FilterListLock;
+
+
 DRIVER_INITIALIZE DriverEntry;
 NTSTATUS
 NTAPI
@@ -442,6 +458,13 @@ FltpDispatch(_In_ PDEVICE_OBJECT DeviceObject,
         return Status;
     }
 
+    /* Check if this is a request for a the messaging device */
+    if (DeviceObject == CommsDeviceObject)
+    {
+        /* Hand off to our internal routine */
+        return FltpMsgDispatch(DeviceObject, Irp);
+    }
+
     FLT_ASSERT(DeviceExtension &&
                DeviceExtension->AttachedToDeviceObject);
 
@@ -480,6 +503,13 @@ FltpCreate(_In_ PDEVICE_OBJECT DeviceObject,
         Irp->IoStatus.Information = 0;
         IofCompleteRequest(Irp, 0);
         return STATUS_SUCCESS;
+    }
+
+    /* Check if this is a request for a the new comms connection */
+    if (DeviceObject == CommsDeviceObject)
+    {
+        /* Hand off to our internal routine */
+        return FltpMsgCreate(DeviceObject, Irp);
     }
 
     FLT_ASSERT(DeviceExtension &&
@@ -1975,7 +2005,7 @@ FltpDetachFromFileSystemDevice(_In_ PDEVICE_OBJECT DeviceObject)
         NextDevice = IoGetLowerDeviceObject(AttachedDevice);
 
         /* Remove the reference we added */
-        Count = ObfDereferenceObject(AttachedDevice);
+        Count = ObDereferenceObject(AttachedDevice);
 
         /* Bail if this is the last one */
         if (NextDevice == NULL) return Count;
@@ -1998,7 +2028,7 @@ FltpDetachFromFileSystemDevice(_In_ PDEVICE_OBJECT DeviceObject)
     IoDeleteDevice(AttachedDevice);
 
     /* Remove the reference we added so the delete can complete */
-    return ObfDereferenceObject(AttachedDevice);
+    return ObDereferenceObject(AttachedDevice);
 }
 
 DRIVER_FS_NOTIFICATION FltpFsNotification;
@@ -2092,14 +2122,17 @@ DriverEntry(_In_ PDRIVER_OBJECT DriverObject,
     Status = SetupDispatchAndCallbacksTables(DriverObject);
     if (!NT_SUCCESS(Status)) goto Cleanup;
 
-    //
-    // TODO: Create fltmgr message device
-    //
+    /* Initialize the comms objects */
+    Status = FltpSetupCommunicationObjects(DriverObject);
+    if (!NT_SUCCESS(Status)) goto Cleanup;
 
     /* Register for notifications when a new file system is loaded. This also enumerates any existing file systems */
     Status = IoRegisterFsRegistrationChange(DriverObject, FltpFsNotification);
     FLT_ASSERT(Status != STATUS_DEVICE_ALREADY_ATTACHED); // Windows checks for this, I'm not sure how it can happen. Needs investigation??
     if (!NT_SUCCESS(Status))  goto Cleanup;
+
+    InitializeListHead(&FilterList);
+    ExInitializeResourceLite(&FilterListLock);
 
     /* IoRegisterFsRegistrationChange isn't notified about the raw  file systems, so we attach to them manually */
     RtlInitUnicodeString(&ObjectName, L"\\Device\\RawDisk");
@@ -2110,7 +2143,7 @@ DriverEntry(_In_ PDRIVER_OBJECT DriverObject,
     if (NT_SUCCESS(Status))
     {
         FltpFsNotification(RawDeviceObject, TRUE);
-        ObfDereferenceObject(RawFileObject);
+        ObDereferenceObject(RawFileObject);
     }
 
     RtlInitUnicodeString(&ObjectName, L"\\Device\\RawCdRom");
@@ -2121,7 +2154,7 @@ DriverEntry(_In_ PDRIVER_OBJECT DriverObject,
     if (NT_SUCCESS(Status))
     {
         FltpFsNotification(RawDeviceObject, TRUE);
-        ObfDereferenceObject(RawFileObject);
+        ObDereferenceObject(RawFileObject);
     }
 
     /* We're done, clear the initializing flag */

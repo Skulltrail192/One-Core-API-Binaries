@@ -123,13 +123,25 @@ WINAPI
 BasepIsImageVersionOk(IN ULONG ImageMajorVersion,
                       IN ULONG ImageMinorVersion)
 {
-    /* Accept images for NT 3.1 or higher, as long as they're not newer than us */
-    return ((ImageMajorVersion >= 3) &&
-            ((ImageMajorVersion != 3) ||
-             (ImageMinorVersion >= 10)) &&
-            (ImageMajorVersion <= SharedUserData->NtMajorVersion) &&
-            ((ImageMajorVersion != SharedUserData->NtMajorVersion) ||
-             (ImageMinorVersion <= SharedUserData->NtMinorVersion)));
+    /* Accept images for NT 3.1 or higher */
+    if (ImageMajorVersion > 3 ||
+        (ImageMajorVersion == 3 && ImageMinorVersion >= 10))
+    {
+        /* ReactOS-specific: Accept images even if they are newer than our internal NT version. */
+        if (ImageMajorVersion > SharedUserData->NtMajorVersion ||
+            (ImageMajorVersion == SharedUserData->NtMajorVersion && ImageMinorVersion > SharedUserData->NtMinorVersion))
+        {
+            DPRINT1("Accepting image version %lu.%lu, although ReactOS is an NT %hu.%hu OS!\n",
+                ImageMajorVersion,
+                ImageMinorVersion,
+                SharedUserData->NtMajorVersion,
+                SharedUserData->NtMinorVersion);
+        }
+
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 NTSTATUS
@@ -428,36 +440,9 @@ BasepSxsCloseHandles(IN PBASE_MSG_SXS_HANDLES Handles)
     if (Handles->ViewBase.QuadPart)
     {
         Status = NtUnmapViewOfSection(NtCurrentProcess(),
-                                      (PVOID)Handles->ViewBase.LowPart);
+                                      (PVOID)(ULONG_PTR)Handles->ViewBase.QuadPart);
         ASSERT(NT_SUCCESS(Status));
     }
-}
-
-static
-LONG BaseExceptionFilter(EXCEPTION_POINTERS *ExceptionInfo)
-{
-    LONG ExceptionDisposition = EXCEPTION_EXECUTE_HANDLER;
-    LPTOP_LEVEL_EXCEPTION_FILTER RealFilter;
-    RealFilter = RtlDecodePointer(GlobalTopLevelExceptionFilter);
-
-    if (RealFilter != NULL)
-    {
-        _SEH2_TRY
-        {
-            ExceptionDisposition = RealFilter(ExceptionInfo);
-        }
-        _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
-        {
-        }
-        _SEH2_END;
-    }
-    if ((ExceptionDisposition == EXCEPTION_CONTINUE_SEARCH || ExceptionDisposition == EXCEPTION_EXECUTE_HANDLER) &&
-        RealFilter != UnhandledExceptionFilter)
-    {
-       ExceptionDisposition = UnhandledExceptionFilter(ExceptionInfo);
-    }
-
-    return ExceptionDisposition;
 }
 
 VOID
@@ -477,7 +462,7 @@ BaseProcessStartup(PPROCESS_START_ROUTINE lpStartAddress)
         /* Call the Start Routine */
         ExitThread(lpStartAddress());
     }
-    _SEH2_EXCEPT(BaseExceptionFilter(_SEH2_GetExceptionInformation()))
+    _SEH2_EXCEPT(UnhandledExceptionFilter(_SEH2_GetExceptionInformation()))
     {
         /* Get the Exit code from the SEH Handler */
         if (!BaseRunningInServerProcess)
@@ -492,36 +477,6 @@ BaseProcessStartup(PPROCESS_START_ROUTINE lpStartAddress)
         }
     }
     _SEH2_END;
-}
-
-NTSTATUS
-WINAPI
-BasepNotifyCsrOfThread(IN HANDLE ThreadHandle,
-                       IN PCLIENT_ID ClientId)
-{
-    BASE_API_MESSAGE ApiMessage;
-    PBASE_CREATE_THREAD CreateThreadRequest = &ApiMessage.Data.CreateThreadRequest;
-
-    DPRINT("BasepNotifyCsrOfThread: Thread: %p, Handle %p\n",
-            ClientId->UniqueThread, ThreadHandle);
-
-    /* Fill out the request */
-    CreateThreadRequest->ClientId = *ClientId;
-    CreateThreadRequest->ThreadHandle = ThreadHandle;
-
-    /* Call CSR */
-    CsrClientCallServer((PCSR_API_MESSAGE)&ApiMessage,
-                        NULL,
-                        CSR_CREATE_API_NUMBER(BASESRV_SERVERDLL_INDEX, BasepCreateThread),
-                        sizeof(*CreateThreadRequest));
-    if (!NT_SUCCESS(ApiMessage.Status))
-    {
-        DPRINT1("Failed to tell CSRSS about new thread: %lx\n", ApiMessage.Status);
-        return ApiMessage.Status;
-    }
-
-    /* Return Success */
-    return STATUS_SUCCESS;
 }
 
 BOOLEAN
@@ -1225,7 +1180,7 @@ GetExitCodeProcess(IN HANDLE hProcess,
     if (!NT_SUCCESS(Status))
     {
         /* We failed, was this because this is a VDM process? */
-        if (BaseCheckForVDM(hProcess, lpExitCode) == TRUE) return TRUE;
+        if (BaseCheckForVDM(hProcess, lpExitCode) != FALSE) return TRUE;
 
         /* Not a VDM process, fail the call */
         BaseSetLastNTError(Status);
@@ -1383,9 +1338,9 @@ GetStartupInfoA(IN LPSTARTUPINFOA lpStartupInfo)
         if (StartupInfo)
         {
             /* Zero out string pointers in case we fail to create them */
-            StartupInfo->lpReserved = 0;
-            StartupInfo->lpDesktop = 0;
-            StartupInfo->lpTitle = 0;
+            StartupInfo->lpReserved = NULL;
+            StartupInfo->lpDesktop = NULL;
+            StartupInfo->lpTitle = NULL;
 
             /* Set the size */
             StartupInfo->cb = sizeof(*StartupInfo);
@@ -2298,7 +2253,8 @@ CreateProcessInternalW(IN HANDLE hUserToken,
     SECTION_IMAGE_INFORMATION ImageInformation;
     IO_STATUS_BLOCK IoStatusBlock;
     CLIENT_ID ClientId;
-    ULONG NoWindow, RegionSize, StackSize, ErrorCode, Flags;
+    ULONG NoWindow, StackSize, ErrorCode, Flags;
+    SIZE_T RegionSize;
     USHORT ImageMachine;
     ULONG ParameterFlags, PrivilegeValue, HardErrorMode, ErrorResponse;
     ULONG_PTR ErrorParameters[2];
@@ -2330,7 +2286,8 @@ CreateProcessInternalW(IN HANDLE hUserToken,
     SIZE_T n;
     WCHAR SaveChar;
     ULONG Length, FileAttribs, CmdQuoteLength;
-    ULONG CmdLineLength, ResultSize;
+    ULONG ResultSize;
+    SIZE_T EnvironmentLength, CmdLineLength;
     PWCHAR QuotedCmdLine, AnsiCmdCommand, ExtBuffer, CurrentDirectory;
     PWCHAR NullBuffer, ScanString, NameBuffer, SearchPath, DebuggerCmdLine;
     ANSI_STRING AnsiEnv;
@@ -2413,7 +2370,7 @@ CreateProcessInternalW(IN HANDLE hUserToken,
     DebuggerCmdLine = NULL;
     PathBuffer = NULL;
     SearchPath = NULL;
-    NullBuffer = 0;
+    NullBuffer = NULL;
     FreeBuffer = NULL;
     NameBuffer = NULL;
     CurrentDirectory = NULL;
@@ -2559,8 +2516,17 @@ CreateProcessInternalW(IN HANDLE hUserToken,
         AnsiEnv.Buffer = pcScan = (PCHAR)lpEnvironment;
         while ((*pcScan) || (*(pcScan + 1))) ++pcScan;
 
+        /* Make sure the environment is not too large */
+        EnvironmentLength = (pcScan + sizeof(ANSI_NULL) - (PCHAR)lpEnvironment);
+        if (EnvironmentLength > MAXUSHORT)
+        {
+            /* Fail */
+            SetLastError(ERROR_INVALID_PARAMETER);
+            return FALSE;
+        }
+
         /* Create our ANSI String */
-        AnsiEnv.Length = pcScan - (PCHAR)lpEnvironment + sizeof(ANSI_NULL);
+        AnsiEnv.Length = (USHORT)EnvironmentLength;
         AnsiEnv.MaximumLength = AnsiEnv.Length + sizeof(ANSI_NULL);
 
         /* Allocate memory for the Unicode Environment */
@@ -3991,10 +3957,11 @@ StartScan:
     if (VdmReserve)
     {
         /* Reserve the requested allocation */
+        RegionSize = VdmReserve;
         Status = NtAllocateVirtualMemory(ProcessHandle,
                                          &BaseAddress,
                                          0,
-                                         &VdmReserve,
+                                         &RegionSize,
                                          MEM_RESERVE,
                                          PAGE_EXECUTE_READWRITE);
         if (!NT_SUCCESS(Status))
@@ -4005,6 +3972,8 @@ StartScan:
             Result = FALSE;
             goto Quickie;
         }
+
+        VdmReserve = (ULONG)RegionSize;
     }
 
     /* Check if we've already queried information on the section */
@@ -4255,7 +4224,12 @@ StartScan:
 
     /* Write the remote PEB address and clear it locally, we no longer use it */
     CreateProcessMsg->PebAddressNative = RemotePeb;
+#ifdef _WIN64
+    DPRINT1("TODO: WOW64 is not supported yet\n");
+    CreateProcessMsg->PebAddressWow64 = 0;
+#else
     CreateProcessMsg->PebAddressWow64 = (ULONG)RemotePeb;
+#endif
     RemotePeb = NULL;
 
     /* Now check what kind of architecture this image was made for */

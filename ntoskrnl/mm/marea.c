@@ -169,13 +169,11 @@ MmInsertMemoryArea(
 {
     PEPROCESS Process = MmGetAddressSpaceOwner(AddressSpace);
 
-    marea->VadNode.StartingVpn = marea->StartingVpn;
-    marea->VadNode.EndingVpn = marea->EndingVpn;
     marea->VadNode.u.VadFlags.Spare = 1;
     marea->VadNode.u.VadFlags.Protection = MiMakeProtectionMask(marea->Protect);
 
     /* Build a lame VAD if this is a user-space allocation */
-    if (marea->EndingVpn + 1 < (ULONG_PTR)MmSystemRangeStart >> PAGE_SHIFT)
+    if (marea->VadNode.EndingVpn + 1 < (ULONG_PTR)MmSystemRangeStart >> PAGE_SHIFT)
     {
         ASSERT(Process != NULL);
         if (marea->Type != MEMORY_AREA_OWNED_BY_ARM3)
@@ -334,12 +332,12 @@ MmFreeMemoryArea(
                 if (MiQueryPageTableReferences((PVOID)Address) == 0)
                 {
                     /* No PTE relies on this PDE. Release it */
-                    KIRQL OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+                    KIRQL OldIrql = MiAcquirePfnLock();
                     PMMPDE PointerPde = MiAddressToPde(Address);
                     ASSERT(PointerPde->u.Hard.Valid == 1);
                     MiDeletePte(PointerPde, MiPdeToPte(PointerPde), Process, NULL);
                     ASSERT(PointerPde->u.Hard.Valid == 0);
-                    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+                    MiReleasePfnLock(OldIrql);
                 }
             }
 #endif
@@ -354,7 +352,7 @@ MmFreeMemoryArea(
         //if (MemoryArea->VadNode.StartingVpn < (ULONG_PTR)MmSystemRangeStart >> PAGE_SHIFT
         if (MemoryArea->Vad)
         {
-            ASSERT(MemoryArea->EndingVpn + 1 < (ULONG_PTR)MmSystemRangeStart >> PAGE_SHIFT);
+            ASSERT(MemoryArea->VadNode.EndingVpn + 1 < (ULONG_PTR)MmSystemRangeStart >> PAGE_SHIFT);
             ASSERT(MemoryArea->Type == MEMORY_AREA_SECTION_VIEW || MemoryArea->Type == MEMORY_AREA_CACHE);
 
             /* MmCleanProcessAddressSpace might have removed it (and this would be MmDeleteProcessAdressSpace) */
@@ -377,7 +375,7 @@ MmFreeMemoryArea(
 #endif
     ExFreePoolWithTag(MemoryArea, TAG_MAREA);
 
-    DPRINT("MmFreeMemoryAreaByNode() succeeded\n");
+    DPRINT("MmFreeMemoryArea() succeeded\n");
 
     return STATUS_SUCCESS;
 }
@@ -470,8 +468,8 @@ MmCreateMemoryArea(PMMSUPPORT AddressSpace,
             return STATUS_NO_MEMORY;
         }
 
-        MemoryArea->StartingVpn = (ULONG_PTR)*BaseAddress >> PAGE_SHIFT;
-        MemoryArea->EndingVpn = ((ULONG_PTR)*BaseAddress + tmpLength - 1) >> PAGE_SHIFT;
+        MemoryArea->VadNode.StartingVpn = (ULONG_PTR)*BaseAddress >> PAGE_SHIFT;
+        MemoryArea->VadNode.EndingVpn = ((ULONG_PTR)*BaseAddress + tmpLength - 1) >> PAGE_SHIFT;
         MmInsertMemoryArea(AddressSpace, MemoryArea);
     }
     else
@@ -508,8 +506,8 @@ MmCreateMemoryArea(PMMSUPPORT AddressSpace,
             }
         }
 
-        MemoryArea->StartingVpn = (ULONG_PTR)*BaseAddress >> PAGE_SHIFT;
-        MemoryArea->EndingVpn = ((ULONG_PTR)*BaseAddress + tmpLength - 1) >> PAGE_SHIFT;
+        MemoryArea->VadNode.StartingVpn = (ULONG_PTR)*BaseAddress >> PAGE_SHIFT;
+        MemoryArea->VadNode.EndingVpn = ((ULONG_PTR)*BaseAddress + tmpLength - 1) >> PAGE_SHIFT;
         MmInsertMemoryArea(AddressSpace, MemoryArea);
     }
 
@@ -572,8 +570,10 @@ NTSTATUS
 NTAPI
 MmDeleteProcessAddressSpace(PEPROCESS Process)
 {
+#ifndef _M_AMD64
     KIRQL OldIrql;
     PVOID Address;
+#endif
 
     DPRINT("MmDeleteProcessAddressSpace(Process %p (%s))\n", Process,
            Process->ImageFileName);
@@ -596,11 +596,11 @@ MmDeleteProcessAddressSpace(PEPROCESS Process)
         KeAttachProcess(&Process->Pcb);
 
         /* Acquire PFN lock */
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
 
         for (Address = MI_LOWEST_VAD_ADDRESS;
-                Address < MM_HIGHEST_VAD_ADDRESS;
-                Address =(PVOID)((ULONG_PTR)Address + (PAGE_SIZE * PTE_COUNT)))
+             Address < MM_HIGHEST_VAD_ADDRESS;
+             Address = (PVOID)((ULONG_PTR)Address + (PTE_PER_PAGE * PAGE_SIZE)))
         {
             /* At this point all references should be dead */
             if (MiQueryPageTableReferences(Address) != 0)
@@ -621,7 +621,7 @@ MmDeleteProcessAddressSpace(PEPROCESS Process)
         }
 
         /* Release lock */
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
 
         /* Detach */
         KeDetachProcess();

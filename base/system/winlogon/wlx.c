@@ -105,25 +105,23 @@ GetDialogListEntry(HWND hwndDlg)
 }
 
 
-HWND
-GetTopDialogWindow(VOID)
+VOID
+CloseAllDialogWindows(VOID)
 {
     PDIALOG_LIST_ENTRY Current;
     PLIST_ENTRY ListEntry;
 
     ListEntry = DialogListHead.Flink;
-    if (ListEntry != &DialogListHead)
+    while (ListEntry != &DialogListHead)
     {
         Current = CONTAINING_RECORD(ListEntry,
                                     DIALOG_LIST_ENTRY,
                                     Entry);
 
-        TRACE("Found entry: %p window %p\n", Current, Current->hWnd);
-        return Current->hWnd;
-    }
+        PostMessage(Current->hWnd, WLX_WM_SAS, 0, 0);
 
-    TRACE("Found no window\n");
-    return NULL;
+        ListEntry = ListEntry->Flink;
+    }
 }
 
 
@@ -1273,7 +1271,7 @@ CreateWindowStationAndDesktops(
         NULL,
         0,
         MAXIMUM_ALLOWED,
-        &DefaultSecurity);
+        &DefaultSecurity); // FIXME: Must use restricted Winlogon-only security!!
     if (!Session->WinlogonDesktop)
     {
         ERR("WL: Failed to create Winlogon desktop (%lu)\n", GetLastError());
@@ -1305,6 +1303,9 @@ CreateWindowStationAndDesktops(
         ERR("WL: Cannot switch to Winlogon desktop (%lu)\n", GetLastError());
         goto cleanup;
     }
+
+    SetWindowStationUser(Session->InteractiveWindowStation,
+                         &LuidNone, NULL, 0);
 
     ret = TRUE;
 

@@ -17,6 +17,7 @@ list(APPEND SOURCE
     lookup.c
     lsarpc.c
     lsasrv.c
+    notify.c
     policy.c
     privileges.c
     registry.c
@@ -30,7 +31,7 @@ list(APPEND SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/lsa_s.c
     ${CMAKE_CURRENT_BINARY_DIR}/lsasrv_stubs.c)
 
-add_library(lsasrv SHARED
+add_library(lsasrv MODULE
     ${SOURCE}
     lsasrv.rc
     ${CMAKE_CURRENT_BINARY_DIR}/lsasrv.def)

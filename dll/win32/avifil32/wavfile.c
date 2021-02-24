@@ -16,7 +16,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+#include <assert.h>
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "winerror.h"
+#include "mmsystem.h"
+#include "vfw.h"
+#include "msacm.h"
+
 #include "avifile_private.h"
+#include "extrachunk.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(avifile);
 
 /***********************************************************************/
 
@@ -502,9 +521,9 @@ static HRESULT WINAPI IPersistFile_fnLoad(IPersistFile *iface, LPCOLESTR pszFile
   memset(& This->sInfo, 0, sizeof(This->sInfo));
 
   LoadStringW(AVIFILE_hModule, IDS_WAVEFILETYPE, This->fInfo.szFileType,
-	      sizeof(This->fInfo.szFileType)/sizeof(This->fInfo.szFileType[0]));
+	      ARRAY_SIZE(This->fInfo.szFileType));
   if (LoadStringW(AVIFILE_hModule, IDS_WAVESTREAMFORMAT,
-		  wszStreamFmt, sizeof(wszStreamFmt)/sizeof(wszStreamFmt[0])) > 0) {
+		  wszStreamFmt, ARRAY_SIZE(wszStreamFmt)) > 0) {
     wsprintfW(This->sInfo.szName, wszStreamFmt,
 	      AVIFILE_BasenameW(This->szFileName));
   }
@@ -555,7 +574,7 @@ static HRESULT WINAPI IPersistFile_fnGetCurFile(IPersistFile *iface, LPOLESTR *p
     if (*ppszFileName == NULL)
       return AVIERR_MEMORY;
 
-    strcpyW(*ppszFileName, This->szFileName);
+    lstrcpyW(*ppszFileName, This->szFileName);
   }
 
   return AVIERR_OK;

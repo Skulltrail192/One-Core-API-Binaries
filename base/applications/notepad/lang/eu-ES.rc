@@ -62,8 +62,7 @@ BEGIN
     BEGIN
         MENUITEM "Í&ndizea", CMD_HELP_CONTENTS
         MENUITEM SEPARATOR
-        MENUITEM "&Ohar-blokari buruz", CMD_ABOUT
-        MENUITEM "&Informazioa...", CMD_HELP_ABOUT_NOTEPAD
+        MENUITEM "&About Notepad", CMD_HELP_ABOUT_NOTEPAD
     END
 END
 
@@ -110,10 +109,10 @@ STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD | WS_CLIPSIBLINGS | WS_CAPTION | WS_S
 FONT 8, "MS Shell Dlg"
 CAPTION "Kodifikazioa"
 BEGIN
-    COMBOBOX ID_ENCODING, 54, 0, 136, 80, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
-    LTEXT "Kodifikazioa:", 0x155, 5, 2, 41, 12
-    COMBOBOX ID_EOLN, 54, 18, 136, 80, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT "Lerro amaiera:", 0x156, 5, 20, 48, 12
+    COMBOBOX ID_ENCODING, 124, 0, 125, 80, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT "Kodifikazioa:", 0x155, 65, 2, 41, 12
+    COMBOBOX ID_EOLN, 124, 18, 125, 80, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT "Lerro amaiera:", 0x156, 65, 20, 48, 12
 END
 
 /* Dialog 'Go To' */
@@ -126,23 +125,6 @@ BEGIN
     LTEXT "Lerro zenbakia:", 0x155, 5, 12, 54, 12, WS_CHILD | WS_TABSTOP | ES_NUMBER
     DEFPUSHBUTTON "Ados", IDOK, 75, 30, 40, 15, WS_CHILD | WS_TABSTOP
     PUSHBUTTON "Utzi", IDCANCEL, 120, 30, 40, 15, WS_CHILD | WS_TABSTOP
-END
-
-IDD_ABOUTBOX DIALOGEX 22, 16, 284, 170
-STYLE DS_SHELLFONT | DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
-CAPTION "ReactOS ohar-blokari buruz"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    CONTROL "ReactOS-en ohar-bloka v1.0\r\nCopyright 1997,98 Marcel Baur\r\nCopyright 2000 Mike McCormack\r\nCopyright 2002 Sylvain Petreolle\r\nCopyright 2002 Andriy Palamarchuk\r\n", -1, "Static", SS_LEFTNOWORDWRAP | WS_GROUP, 46, 7, 232, 39
-    CONTROL " ", -1, "Static", 0x50000000, 8, 48, 272, 11
-    DEFPUSHBUTTON "Itxi", IDOK, 114, 149, 44, 15, WS_GROUP
-    ICON IDI_NPICON, -1, 12, 9, 20, 30
-    EDITTEXT IDC_LICENSE, 8, 64, 272, 81, ES_MULTILINE | ES_READONLY | WS_VSCROLL
-END
-
-STRINGTABLE
-BEGIN
-    STRING_LICENSE "This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.\r\n\r\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\r\n\r\nYou should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA."
 END
 
 STRINGTABLE
@@ -162,7 +144,7 @@ BEGIN
     STRING_TEXT_FILES_TXT "Testu dokumentuak (*.txt)"
     STRING_TOOLARGE "'%s' fitxategia handiegia da\
 ohar-blokarentzat.\n Erabili beste editore bat."
-    STRING_NOTEXT "Ez duzu ezer idatzi. \nMesedez zerbait idatzi e \
+    STRING_NOTEXT "Ez duzu ezer idatzi.\nMesedez zerbait idatzi e \
 berriz saiatu"
     STRING_DOESNOTEXIST "'%s'\nFitxategia ez dago\n\n ¿Fitxategi berri bat \
 sortu nahi duzu?"
@@ -170,8 +152,8 @@ sortu nahi duzu?"
 ¿Aldaketak gorde nahi dituzu?"
     STRING_NOTFOUND "Ez da aurkitu '%s'."
     STRING_OUT_OF_MEMORY "Ez dago memoria nahikorik lan hau\
-amaitzeko. \nItxi aplikazio bat edo gehiago \
-memoria librearen \nkopurua handitzeko."
+amaitzeko.\nItxi aplikazio bat edo gehiago \
+memoria librearen\nkopurua handitzeko."
     STRING_CANNOTFIND "Ez da '%s' aurkitu"
     STRING_ANSI "ANSI"
     STRING_UNICODE "Unicode"
@@ -184,4 +166,5 @@ memoria librearen \nkopurua handitzeko."
     STRING_PRINTERROR "Cannot print the file '%s'.\n\nMake sure that the printer is turned on and is configured properly."
 
     STRING_TEXT_DOCUMENT "Text Document"
+    STRING_NOTEPAD_AUTHORS "Copyright 1997,98 Marcel Baur, 2000 Mike McCormack, 2002 Sylvain Petreolle, 2002 Andriy Palamarchuk\r\n"
 END

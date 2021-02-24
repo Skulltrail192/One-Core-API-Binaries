@@ -6,7 +6,7 @@ include_directories(
     ${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys
     ${REACTOS_SOURCE_DIR}/win32ss/include)
 
-spec2def(winsrv.dll winsrv.spec ADD_IMPORTLIB)
+spec2def(winsrv.dll winsrv.spec)
 
 # The components
 include(consrv.cmake)
@@ -17,7 +17,7 @@ list(APPEND SOURCE
     winsrv.rc
     ${CMAKE_CURRENT_BINARY_DIR}/winsrv.def)
 
-add_library(winsrv SHARED ${SOURCE})
+add_library(winsrv MODULE ${SOURCE})
 set_module_type(winsrv win32dll UNICODE ENTRYPOINT DllMain 12)
 #############################################
 ## HACK FOR MSVC COMPILATION WITH win32dll ##

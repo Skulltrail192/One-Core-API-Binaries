@@ -1,7 +1,6 @@
 
 #include <freeldr.h>
 
-#define NDEBUG
 #include <debug.h>
 
 typedef struct _FRAME
@@ -10,7 +9,7 @@ typedef struct _FRAME
     void *Address;
 } FRAME;
 
-char *i386ExceptionDescriptionText[] =
+static const CHAR *i386ExceptionDescriptionText[] =
 {
     "Exception 00: DIVIDE BY ZERO\n\n",
     "Exception 01: DEBUG EXCEPTION\n\n",
@@ -35,50 +34,63 @@ char *i386ExceptionDescriptionText[] =
 
 #define SCREEN_ATTR 0x1F    // Bright white on blue background
 
+/* Used to store the current X and Y position on the screen */
+static ULONG i386_ScreenPosX = 0;
+static ULONG i386_ScreenPosY = 0;
+
 #if 0
 static void
-i386PrintChar(char chr, ULONG x, ULONG y)
+i386PrintChar(CHAR chr, ULONG x, ULONG y)
 {
     MachVideoPutChar(chr, SCREEN_ATTR, x, y);
 }
 #endif
 
-/* Used to store the current X and Y position on the screen */
-ULONG i386_ScreenPosX = 0;
-ULONG i386_ScreenPosY = 0;
-
 static void
-i386PrintText(char *pszText)
+i386PrintText(CHAR *pszText)
 {
-    char chr;
-    while (1)
-    {
-        chr = *pszText++;
+    ULONG Width, Unused;
 
-        if (chr == 0) break;
-        if (chr == '\n')
+    MachVideoGetDisplaySize(&Width, &Unused, &Unused);
+
+    for (; *pszText != ANSI_NULL; ++pszText)
+    {
+        if (*pszText == '\n')
         {
-            i386_ScreenPosY++;
             i386_ScreenPosX = 0;
+            ++i386_ScreenPosY;
             continue;
         }
 
-        MachVideoPutChar(chr, SCREEN_ATTR, i386_ScreenPosX, i386_ScreenPosY);
-        i386_ScreenPosX++;
+        MachVideoPutChar(*pszText, SCREEN_ATTR, i386_ScreenPosX, i386_ScreenPosY);
+        if (++i386_ScreenPosX >= Width)
+        {
+            i386_ScreenPosX = 0;
+            ++i386_ScreenPosY;
+        }
+    // FIXME: Implement vertical screen scrolling if we are at the end of the screen.
     }
 }
 
 static void
-PrintText(const char *format, ...)
+PrintTextV(const CHAR *Format, va_list args)
+{
+    CHAR Buffer[512];
+
+    _vsnprintf(Buffer, sizeof(Buffer), Format, args);
+    Buffer[sizeof(Buffer) - 1] = ANSI_NULL;
+
+    i386PrintText(Buffer);
+}
+
+static void
+PrintText(const CHAR *Format, ...)
 {
     va_list argptr;
-    char buffer[256];
 
-    va_start(argptr, format);
-    _vsnprintf(buffer, sizeof(buffer), format, argptr);
-    buffer[sizeof(buffer) - 1] = 0;
+    va_start(argptr, Format);
+    PrintTextV(Format, argptr);
     va_end(argptr);
-    i386PrintText(buffer);
 }
 
 static void
@@ -113,7 +125,7 @@ i386PrintExceptionText(ULONG TrapIndex, PKTRAP_FRAME TrapFrame, PKSPECIAL_REGIST
     i386_ScreenPosY = 0;
 
     PrintText("An error occured in " VERSION "\n"
-              "Report this error to the ReactOS Development mailing list <ros-dev@reactos.org>\n\n"
+              "Report this error on the ReactOS Bug Tracker: https://jira.reactos.org\n\n"
               "0x%02lx: %s\n", TrapIndex, i386ExceptionDescriptionText[TrapIndex]);
 #ifdef _M_IX86
     PrintText("EAX: %.8lx        ESP: %.8lx        CR0: %.8lx        DR0: %.8lx\n",
@@ -182,7 +194,6 @@ FrLdrBugCheckWithMessage(
     PSTR Format,
     ...)
 {
-    CHAR Buffer[1024];
     va_list argptr;
 
     MachVideoHideShowTextCursor(FALSE);
@@ -200,11 +211,8 @@ FrLdrBugCheckWithMessage(
     }
 
     va_start(argptr, Format);
-    _vsnprintf(Buffer, sizeof(Buffer), Format, argptr);
+    PrintTextV(Format, argptr);
     va_end(argptr);
-    Buffer[sizeof(Buffer) - 1] = 0;
-
-    i386PrintText(Buffer);
 
     _disable();
     __halt();

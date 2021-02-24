@@ -18,7 +18,7 @@ BEGIN
         MENUITEM "Συνέχιση", ID_RESUME, GRAYED
         MENUITEM "Επανεκκίνηση", ID_RESTART, GRAYED
         MENUITEM SEPARATOR
-        MENUITEM "Ανανέωση", ID_REFRESH
+        MENUITEM "Ανανέωση\tF5", ID_REFRESH
         MENUITEM SEPARATOR
         MENUITEM "Επεξεργασία...", ID_EDIT, GRAYED
         MENUITEM "Δημιουργία...", ID_CREATE, GRAYED
@@ -61,6 +61,11 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Βοήθεια...", ID_HELP
     END
+END
+
+IDA_SERVMAN ACCELERATORS
+BEGIN
+    VK_F5, ID_REFRESH, VIRTKEY
 END
 
 IDD_ABOUTBOX DIALOGEX 22, 16, 190, 182
@@ -160,7 +165,7 @@ BEGIN
             TVS_LINESATROOT | TVS_DISABLEDRAGDROP, 8, 70, 236, 68
     CONTROL "", IDC_DEPEND_TREE2, "SysTreeView32", WS_BORDER | WS_CHILDWINDOW |
             WS_VISIBLE | WS_TABSTOP | TVS_HASBUTTONS | TVS_HASLINES |
-            TVS_LINESATROOT | TVS_DISABLEDRAGDROP, 8, 151, 234, 67
+            TVS_LINESATROOT | TVS_DISABLEDRAGDROP, 8, 151, 236, 68
     LTEXT "Some services depend on other services, system drivers and load order groups. If a system component is stopped or it is not running properly, dependant services can be affected.", IDC_STATIC, 8, 7, 238, 26
     LTEXT "This service depends on the following components", IDC_STATIC, 8, 57, 236, 9
     LTEXT "", IDC_DEPEND_SERVICE, 8, 38, 236, 13

@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "initguid.h"
 #include "d3drm_private.h"
 
 /***********************************************************************
@@ -35,11 +36,13 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, void *reserved)
     return TRUE;
 }
 
-void d3drm_object_init(struct d3drm_object *object)
+void d3drm_object_init(struct d3drm_object *object, const char *classname)
 {
     object->ref = 1;
     object->appdata = 0;
     list_init(&object->destroy_callbacks);
+    object->classname = classname;
+    object->name = NULL;
 }
 
 struct destroy_callback
@@ -56,8 +59,7 @@ HRESULT d3drm_object_add_destroy_callback(struct d3drm_object *object, D3DRMOBJE
     if (!cb)
         return D3DRMERR_BADVALUE;
 
-    callback = HeapAlloc(GetProcessHeap(), 0, sizeof(*callback));
-    if (!callback)
+    if (!(callback = heap_alloc(sizeof(*callback))))
         return E_OUTOFMEMORY;
 
     callback->cb = cb;
@@ -79,9 +81,70 @@ HRESULT d3drm_object_delete_destroy_callback(struct d3drm_object *object, D3DRMO
         if (callback->cb == cb && callback->ctx == ctx)
         {
             list_remove(&callback->entry);
-            HeapFree(GetProcessHeap(), 0, callback);
+            heap_free(callback);
             break;
         }
+    }
+
+    return D3DRM_OK;
+}
+
+HRESULT d3drm_object_get_class_name(struct d3drm_object *object, DWORD *size, char *name)
+{
+    DWORD req_size;
+
+    if (!size)
+        return E_INVALIDARG;
+
+    req_size = strlen(object->classname) + 1;
+    if (name && *size < req_size)
+        return E_INVALIDARG;
+
+    *size = req_size;
+
+    if (name)
+        memcpy(name, object->classname, req_size);
+
+    return D3DRM_OK;
+}
+
+HRESULT d3drm_object_get_name(struct d3drm_object *object, DWORD *size, char *name)
+{
+    DWORD req_size;
+
+    if (!size)
+        return E_INVALIDARG;
+
+    req_size = object->name ? strlen(object->name) + 1 : 0;
+    if (name && *size < req_size)
+        return E_INVALIDARG;
+
+    if (name)
+    {
+        if (object->name)
+            memcpy(name, object->name, req_size);
+        else if (*size)
+            *name = 0;
+    }
+
+    *size = req_size;
+
+    return D3DRM_OK;
+}
+
+HRESULT d3drm_object_set_name(struct d3drm_object *object, const char *name)
+{
+    DWORD req_size;
+
+    heap_free(object->name);
+    object->name = NULL;
+
+    if (name)
+    {
+        req_size = strlen(name) + 1;
+        if (!(object->name = heap_alloc(req_size)))
+            return E_OUTOFMEMORY;
+        memcpy(object->name, name, req_size);
     }
 
     return D3DRM_OK;
@@ -95,6 +158,9 @@ void d3drm_object_cleanup(IDirect3DRMObject *iface, struct d3drm_object *object)
     {
         callback->cb(iface, callback->ctx);
         list_remove(&callback->entry);
-        HeapFree(GetProcessHeap(), 0, callback);
+        heap_free(callback);
     }
+
+    heap_free(object->name);
+    object->name = NULL;
 }

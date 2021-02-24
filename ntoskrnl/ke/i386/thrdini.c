@@ -78,7 +78,10 @@ KiThreadStartup(VOID)
     StartFrame->SystemRoutine(StartFrame->StartRoutine, StartFrame->StartContext);
 
     /* If we returned, we better be a user thread */
-    if (!StartFrame->UserThread) DbgBreakPoint();
+    if (!StartFrame->UserThread)
+    {
+        KeBugCheck(NO_USER_MODE_CONTEXT);
+    }
 
     /* Exit to user-mode */
     KiServiceExit2(TrapFrame);
@@ -366,7 +369,7 @@ KiSwapContextExit(IN PKTHREAD OldThread,
     Pcr->TSS->Esp0 = (ULONG_PTR)NewThread->InitialStack;
     if (!((KeGetTrapFrame(NewThread))->EFlags & EFLAGS_V86_MASK))
     {
-        Pcr->TSS->Esp0 -= (FIELD_OFFSET(KTRAP_FRAME, V86Gs) - FIELD_OFFSET(KTRAP_FRAME, HardwareSegSs));
+        Pcr->TSS->Esp0 -= sizeof(KTRAP_FRAME) - FIELD_OFFSET(KTRAP_FRAME, V86Es);
     }
     Pcr->TSS->Esp0 -= NPX_FRAME_LENGTH;
     Pcr->TSS->IoMapBase = NewProcess->IopmOffset;

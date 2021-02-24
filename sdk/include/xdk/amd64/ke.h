@@ -152,6 +152,15 @@ KeRestoreFloatingPointState(
     return STATUS_SUCCESS;
 }
 
+#if (NTDDI_VERSION >= NTDDI_WIN7)
+FORCEINLINE
+ULONG
+KeGetCurrentProcessorIndex(VOID)
+{
+    return __readgsdword(0x1a4);
+}
+#endif
+
 /* VOID
  * KeFlushIoBuffers(
  *   IN PMDL Mdl,
@@ -191,7 +200,7 @@ $if (_NTDDK_)
 #define CONTEXT_FULL (CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_FLOATING_POINT)
 #define CONTEXT_ALL (CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_SEGMENTS | CONTEXT_FLOATING_POINT | CONTEXT_DEBUG_REGISTERS)
 
-#define CONTEXT_XSTATE (CONTEXT_AMD64 | 0x20L)
+#define CONTEXT_XSTATE (CONTEXT_AMD64 | 0x40L)
 
 #define CONTEXT_EXCEPTION_ACTIVE 0x8000000
 #define CONTEXT_SERVICE_ACTIVE 0x10000000
@@ -320,11 +329,14 @@ KeGetPcr(VOID)
     return (PKPCR)__readgsqword(FIELD_OFFSET(KPCR, Self));
 }
 
+#if (NTDDI_VERSION >= NTDDI_WIN7)
+_CRT_DEPRECATE_TEXT("KeGetCurrentProcessorNumber is deprecated. Use KeGetCurrentProcessorNumberEx or KeGetCurrentProcessorIndex instead.")
+#endif
 FORCEINLINE
 ULONG
 KeGetCurrentProcessorNumber(VOID)
 {
-    return (ULONG)__readgsword(0x184);
+    return __readgsbyte(0x184);
 }
 
 $endif /* _NTDDK_ */

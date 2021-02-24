@@ -551,8 +551,8 @@ interface pnp
     __stdcall
     PNP_DeviceInstanceAction(
         [in] handle_t hBinding,
-        [in] DWORD ulAction,
-        [in] DWORD ulFlags,
+        [in] DWORD ulMajorAction,
+        [in] DWORD ulMinorAction,
         [in, string, unique] LPWSTR pszDeviceInstance1,
         [in, string, unique] LPWSTR pszDeviceInstance2);
 
@@ -847,7 +847,7 @@ interface pnp
     __stdcall
     PNP_QueryArbitratorFreeData(
         [in] handle_t hBinding,
-        [out,size_is(DataLen)] BYTE *pData,
+        [out, size_is(DataLen)] BYTE *pData,
         [in] DWORD DataLen,
         [in, string, ref] LPWSTR pDeviceID,
         [in] RESOURCEID ResourceID,
@@ -875,8 +875,14 @@ interface pnp
     __stdcall
     PNP_RegisterNotification(
         [in] handle_t hBinding,
+        [in] DWORD ulUnknown2,
+        [in, string, ref] LPWSTR pszName,
+        [in, size_is(ulNotificationFilterSize)] BYTE *pNotificationFilter,
+        [in] DWORD ulNotificationFilterSize,
         [in] DWORD ulFlags,
-        [out] DWORD *pulNotifyData);
+        [out] DWORD *pulNotifyData,
+        [in] DWORD ulUnknown8,
+        [out] DWORD *pulUnknown9);
 
     /* Function 60 */
     DWORD
@@ -924,6 +930,8 @@ cpp_quote("#if _WIN32_WINNT >= 0x0501")
         [in] handle_t hBinding,
         [out] DWORD *pulSSDIFlags,
         [in] DWORD ulFlags);
+
+    /* Functions 65 to 74 are Vista+, see r63565 */
 
 cpp_quote("#endif /* _WIN32_WINNT >= 0x0501 */")
 

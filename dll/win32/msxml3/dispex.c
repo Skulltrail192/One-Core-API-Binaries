@@ -16,9 +16,34 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#define COBJMACROS
 
-#include <msxml6did.h>
+#include "config.h"
+
+#include <stdarg.h>
+#ifdef HAVE_LIBXML2
+# include <libxml/parser.h>
+# include <libxml/xmlerror.h>
+#endif
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "ole2.h"
+#include "msxml6.h"
+#include "msxml6did.h"
+#include "wininet.h"
+#include "urlmon.h"
+#include "winreg.h"
+#include "shlwapi.h"
+
+#include "wine/debug.h"
+#include "wine/unicode.h"
+
+#include "msxml_private.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(msxml);
 
 static CRITICAL_SECTION cs_dispex_static_data;
 static CRITICAL_SECTION_DEBUG cs_dispex_static_data_dbg =
@@ -125,31 +150,43 @@ static inline unsigned get_libid_from_tid(tid_t tid)
     return tid_ids[tid].lib;
 }
 
-HRESULT get_typeinfo(enum tid_t tid, ITypeInfo **typeinfo)
+static HRESULT get_typelib(unsigned lib, ITypeLib **tl)
 {
-    unsigned lib = get_libid_from_tid(tid);
     HRESULT hres;
 
     if(!typelib[lib]) {
-        ITypeLib *tl;
-
-        hres = LoadRegTypeLib(lib_ids[lib].iid, lib_ids[lib].major, 0, LOCALE_SYSTEM_DEFAULT, &tl);
+        hres = LoadRegTypeLib(lib_ids[lib].iid, lib_ids[lib].major, 0, LOCALE_SYSTEM_DEFAULT, tl);
         if(FAILED(hres)) {
             ERR("LoadRegTypeLib failed: %08x\n", hres);
             return hres;
         }
 
-        if(InterlockedCompareExchangePointer((void**)&typelib[lib], tl, NULL))
-            ITypeLib_Release(tl);
+        if (InterlockedCompareExchangePointer((void**)&typelib[lib], *tl, NULL))
+            ITypeLib_Release(*tl);
     }
+
+    *tl = typelib[lib];
+    return S_OK;
+}
+
+HRESULT get_typeinfo(enum tid_t tid, ITypeInfo **typeinfo)
+{
+    unsigned lib = get_libid_from_tid(tid);
+    ITypeLib *typelib;
+    HRESULT hres;
+
+    if (FAILED(hres = get_typelib(lib, &typelib)))
+        return hres;
 
     if(!typeinfos[tid]) {
         ITypeInfo *ti;
 
-        hres = ITypeLib_GetTypeInfoOfGuid(typelib[lib], get_riid_from_tid(tid), &ti);
+        hres = ITypeLib_GetTypeInfoOfGuid(typelib, get_riid_from_tid(tid), &ti);
         if(FAILED(hres)) {
             /* try harder with typelib from msxml.dll */
-            hres = ITypeLib_GetTypeInfoOfGuid(typelib[LibXml], get_riid_from_tid(tid), &ti);
+            if (FAILED(hres = get_typelib(LibXml, &typelib)))
+                return hres;
+            hres = ITypeLib_GetTypeInfoOfGuid(typelib, get_riid_from_tid(tid), &ti);
             if(FAILED(hres)) {
                 ERR("GetTypeInfoOfGuid failed: %08x\n", hres);
                 return hres;
@@ -183,11 +220,11 @@ void release_typelib(void)
         heap_free(iter);
     }
 
-    for(i=0; i < sizeof(typeinfos)/sizeof(*typeinfos); i++)
+    for(i=0; i < ARRAY_SIZE(typeinfos); i++)
         if(typeinfos[i])
             ITypeInfo_Release(typeinfos[i]);
 
-    for(i=0; i < sizeof(typelib)/sizeof(*typelib); i++)
+    for(i=0; i < ARRAY_SIZE(typelib); i++)
         if(typelib[i])
             ITypeLib_Release(typelib[i]);
 

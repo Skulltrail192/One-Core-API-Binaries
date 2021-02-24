@@ -21,7 +21,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "winerror.h"
+#include "wine/winternl.h"
+
+#include "rpc.h"
+#include "rpcndr.h"
+
+#include "wine/debug.h"
+
+#include "rpc_binding.h"
+#include "rpc_assoc.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(rpc);
 
@@ -76,7 +93,7 @@ LPWSTR RPCRT4_strndupW(LPCWSTR src, INT slen)
   DWORD len;
   LPWSTR s;
   if (!src) return NULL;
-  if (slen == -1) slen = strlenW(src);
+  if (slen == -1) slen = lstrlenW(src);
   len = slen;
   s = HeapAlloc(GetProcessHeap(), 0, (len+1)*sizeof(WCHAR));
   memcpy(s, src, len*sizeof(WCHAR));
@@ -254,13 +271,13 @@ RPC_STATUS RPCRT4_ReleaseBinding(RpcBinding* Binding)
 
 RPC_STATUS RPCRT4_OpenBinding(RpcBinding* Binding, RpcConnection** Connection,
                               const RPC_SYNTAX_IDENTIFIER *TransferSyntax,
-                              const RPC_SYNTAX_IDENTIFIER *InterfaceId)
+                              const RPC_SYNTAX_IDENTIFIER *InterfaceId, BOOL *from_cache)
 {
   TRACE("(Binding == ^%p)\n", Binding);
 
   if (!Binding->server) {
      return RpcAssoc_GetClientConnection(Binding->Assoc, InterfaceId,
-         TransferSyntax, Binding->AuthInfo, Binding->QOS, Binding->CookieAuth, Connection);
+         TransferSyntax, Binding->AuthInfo, Binding->QOS, Binding->CookieAuth, Connection, from_cache);
   } else {
     /* we already have a connection with acceptable binding, so use it */
     if (Binding->FromConn) {
@@ -279,14 +296,13 @@ RPC_STATUS RPCRT4_CloseBinding(RpcBinding* Binding, RpcConnection* Connection)
   if (!Connection) return RPC_S_OK;
   if (Binding->server) {
     /* don't destroy a connection that is cached in the binding */
-    if (Binding->FromConn == Connection)
-      return RPC_S_OK;
-    return RPCRT4_ReleaseConnection(Connection);
+    if (Binding->FromConn != Connection)
+      RPCRT4_ReleaseConnection(Connection);
   }
   else {
     RpcAssoc_ReleaseIdleConnection(Binding->Assoc, Connection);
-    return RPC_S_OK;
   }
+  return RPC_S_OK;
 }
 
 static LPSTR RPCRT4_strconcatA(LPSTR dst, LPCSTR src)
@@ -305,7 +321,7 @@ static LPSTR RPCRT4_strconcatA(LPSTR dst, LPCSTR src)
 
 static LPWSTR RPCRT4_strconcatW(LPWSTR dst, LPCWSTR src)
 {
-  DWORD len = strlenW(dst), slen = strlenW(src);
+  DWORD len = lstrlenW(dst), slen = lstrlenW(src);
   LPWSTR ndst = HeapReAlloc(GetProcessHeap(), 0, dst, (len+slen+2)*sizeof(WCHAR));
   if (!ndst) 
   {
@@ -418,7 +434,7 @@ static RPC_WSTR unescape_string_binding_componentW(
 {
   RPC_WSTR component, p;
 
-  if (len == -1) len = strlenW(string_binding);
+  if (len == -1) len = lstrlenW(string_binding);
 
   component = HeapAlloc(GetProcessHeap(), 0, (len + 1) * sizeof(*component));
   if (!component) return NULL;
@@ -504,11 +520,11 @@ RPC_STATUS WINAPI RpcStringBindingComposeW( RPC_WSTR ObjUuid, RPC_WSTR Protseq,
        debugstr_w( Options ), StringBinding);
 
   /* overestimate for each component for escaping of delimiters */
-  if (ObjUuid && *ObjUuid) len += strlenW(ObjUuid) * 2 + 1;
-  if (Protseq && *Protseq) len += strlenW(Protseq) * 2 + 1;
-  if (NetworkAddr && *NetworkAddr) len += strlenW(NetworkAddr) * 2;
-  if (Endpoint && *Endpoint) len += strlenW(Endpoint) * 2 + 2;
-  if (Options && *Options) len += strlenW(Options) * 2 + 2;
+  if (ObjUuid && *ObjUuid) len += lstrlenW(ObjUuid) * 2 + 1;
+  if (Protseq && *Protseq) len += lstrlenW(Protseq) * 2 + 1;
+  if (NetworkAddr && *NetworkAddr) len += lstrlenW(NetworkAddr) * 2;
+  if (Endpoint && *Endpoint) len += lstrlenW(Endpoint) * 2 + 2;
+  if (Options && *Options) len += lstrlenW(Options) * 2 + 2;
 
   data = HeapAlloc(GetProcessHeap(), 0, len*sizeof(WCHAR));
   *StringBinding = data;
@@ -724,7 +740,7 @@ RPC_STATUS WINAPI RpcStringBindingParseW( RPC_WSTR StringBinding, RPC_WSTR *ObjU
         else HeapFree(GetProcessHeap(), 0, opt);
         endpoint_already_found = TRUE;
       } else {
-        if (strncmpW(opt, ep_opt, strlenW(ep_opt)) == 0) {
+        if (wcsncmp(opt, ep_opt, lstrlenW(ep_opt)) == 0) {
           /* endpoint option */
           if (endpoint_already_found) goto fail;
           if (Endpoint) *Endpoint = unescape_string_binding_componentW(next+1, -1);
@@ -1303,7 +1319,7 @@ static RPC_STATUS RpcQualityOfService_Create(const RPC_SECURITY_QOS *qos_src, BO
                 if (unicode)
                     http_credentials_dst->ServerCertificateSubject =
                         RPCRT4_strndupW(http_credentials_src->ServerCertificateSubject,
-                                        strlenW(http_credentials_src->ServerCertificateSubject));
+                                        lstrlenW(http_credentials_src->ServerCertificateSubject));
                 else
                     http_credentials_dst->ServerCertificateSubject =
                         RPCRT4_strdupAtoW((char *)http_credentials_src->ServerCertificateSubject);

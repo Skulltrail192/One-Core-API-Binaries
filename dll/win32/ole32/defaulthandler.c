@@ -45,9 +45,22 @@
  * - All the methods related to notification and advise sinks are
  *   in place but no notifications are sent to the sinks yet.
  */
+#include <assert.h>
+#include <stdarg.h>
+#include <string.h>
 
-#include "precomp.h"
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winerror.h"
+#include "ole2.h"
+
+#include "compobj_private.h"
 #include "storage32.h"
+
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
@@ -435,14 +448,14 @@ static HRESULT WINAPI DefaultHandler_SetHostNames(
   {
       if ((This->containerApp = HeapAlloc( GetProcessHeap(), 0,
                                            (lstrlenW(szContainerApp) + 1) * sizeof(WCHAR) )))
-          strcpyW( This->containerApp, szContainerApp );
+          lstrcpyW( This->containerApp, szContainerApp );
   }
 
   if (szContainerObj)
   {
       if ((This->containerObj = HeapAlloc( GetProcessHeap(), 0,
                                            (lstrlenW(szContainerObj) + 1) * sizeof(WCHAR) )))
-          strcpyW( This->containerObj, szContainerObj );
+          lstrcpyW( This->containerObj, szContainerObj );
   }
   return S_OK;
 }

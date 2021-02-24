@@ -26,7 +26,17 @@
  * RemoveExistingProducts (TODO)
  */
 
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "winreg.h"
+#include "wine/debug.h"
+#include "msidefs.h"
 #include "msipriv.h"
+#include "winuser.h"
+#include "wine/unicode.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(msi);
 
@@ -181,7 +191,7 @@ static UINT ITERATE_FindRelatedProducts(MSIRECORD *rec, LPVOID param)
             action_property = MSI_RecordGetString(rec, 7);
             append_productcode(package, action_property, productid);
             MSI_RecordSetStringW(uirow, 1, productid);
-            msi_ui_actiondata(package, szFindRelatedProducts, uirow);
+            MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
         }
         index ++;
     }

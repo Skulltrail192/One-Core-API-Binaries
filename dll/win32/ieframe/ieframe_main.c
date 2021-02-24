@@ -18,7 +18,15 @@
 
 #include "ieframe.h"
 
-#include <rpcproxy.h>
+#include "initguid.h"
+#include "rpcproxy.h"
+#include "shlguid.h"
+#include "isguids.h"
+#include "ieautomation.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(ieframe);
 
 LONG module_ref = 0;
 HINSTANCE ieframe_instance;
@@ -83,7 +91,7 @@ static void release_typelib(void)
     if(!typelib)
         return;
 
-    for(i=0; i < sizeof(typeinfos)/sizeof(*typeinfos); i++) {
+    for(i=0; i < ARRAY_SIZE(typeinfos); i++) {
         if(typeinfos[i])
             ITypeInfo_Release(typeinfos[i]);
     }
@@ -179,8 +187,6 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 
     switch(fdwReason)
     {
-    case DLL_WINE_PREATTACH:
-        return FALSE;  /* prefer native version */
     case DLL_PROCESS_ATTACH:
         ieframe_instance = hInstDLL;
         register_iewindow_class();
@@ -232,32 +238,17 @@ static const IClassFactoryVtbl InternetExplorerFactoryVtbl = {
     ClassFactory_LockServer
 };
 
-static IClassFactory InternetExplorerFactory = { &InternetExplorerFactoryVtbl };
+IClassFactory InternetExplorerFactory = { &InternetExplorerFactoryVtbl };
 
-HRESULT register_class_object(BOOL do_reg)
-{
-    HRESULT hres;
+static const IClassFactoryVtbl InternetExplorerManagerFactoryVtbl = {
+    ClassFactory_QueryInterface,
+    ClassFactory_AddRef,
+    ClassFactory_Release,
+    InternetExplorerManager_Create,
+    ClassFactory_LockServer
+};
 
-    static DWORD cookie;
-
-    if(do_reg) {
-        hres = CoRegisterClassObject(&CLSID_InternetExplorer,
-                (IUnknown*)&InternetExplorerFactory, CLSCTX_SERVER,
-                REGCLS_MULTIPLEUSE|REGCLS_SUSPENDED, &cookie);
-        if (FAILED(hres)) {
-            ERR("failed to register object %08x\n", hres);
-            return hres;
-        }
-
-        hres = CoResumeClassObjects();
-        if(SUCCEEDED(hres))
-            return hres;
-
-        ERR("failed to resume object %08x\n", hres);
-    }
-
-    return CoRevokeClassObject(cookie);
-}
+IClassFactory InternetExplorerManagerFactory = { &InternetExplorerManagerFactoryVtbl };
 
 /***********************************************************************
  *          DllCanUnloadNow (ieframe.@)

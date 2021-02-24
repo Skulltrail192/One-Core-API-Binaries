@@ -27,7 +27,10 @@ BEGIN
     END
     POPUP "選項(&O)"
     BEGIN
-        MENUITEM "&Show event details view", IDM_SHOW_EVENT_DETAILS_VIEW
+        MENUITEM "Event details &view", IDM_EVENT_DETAILS_VIEW
+        MENUITEM "&Grid lines", IDM_LIST_GRID_LINES
+        MENUITEM SEPARATOR
+        MENUITEM "&Save settings on exit", IDM_SAVE_SETTINGS
     END
     POPUP "説明(&H)"
     BEGIN
@@ -49,7 +52,7 @@ IDD_EVENTDETAILS_DLG DIALOGEX 0, 0, 266, 240
 STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_THICKFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_CONTEXTHELP
 CAPTION "事件詳細資訊"
-FONT 9, "MS Shell Dlg", 400, 0, 0x1
+FONT 9, "新細明體", 400, 0, 0x1
 BEGIN
     LTEXT "EvtDetailsCtrl", IDC_STATIC, 0, 0, 266, 215
     PUSHBUTTON "説明(&H)", IDHELP, 8, 220, 50, 14
@@ -58,7 +61,7 @@ END
 
 IDD_EVENTDETAILS_CTRL DIALOGEX 0, 0, 266, 215
 STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
-FONT 9, "MS Shell Dlg", 400, 0, 0x1
+FONT 9, "新細明體", 400, 0, 0x1
 BEGIN
     LTEXT "日期：", IDC_STATIC, 8, 5, 31, 8
     EDITTEXT IDC_EVENTDATESTATIC, 46, 5, 47, 8, ES_LEFT | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP | ES_AUTOHSCROLL
@@ -93,7 +96,7 @@ END
 IDD_LOGPROPERTIES_GENERAL DIALOGEX 0, 0, 252, 234
 STYLE DS_SHELLFONT | WS_POPUP | WS_CAPTION
 CAPTION "General"
-FONT 8, "MS Shell Dlg"
+FONT 9, "新細明體"
 BEGIN
     LTEXT "&Display name:", IDC_STATIC, 7, 9, 60, 8
     EDITTEXT IDC_DISPLAYNAME, 67, 7, 178, 12, ES_LEFT | ES_AUTOHSCROLL | WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP
@@ -139,9 +142,28 @@ BEGIN
     IDS_EVENTLOG_SYSTEM "System Logs"
     IDS_EVENTLOG_APP "Application Logs"
     IDS_EVENTLOG_USER "User Logs"
-    IDS_EVENTSTRINGIDNOTFOUND "來源 ( %s ) 中的事件 ID ( %lu ) 的描述無法找到。 本地電腦可能沒有顯示來自遠端電腦消息所必需的註冊表資訊或消息 DLL 檔。\n\nThe following information is part of the event:\n\n"
-    IDS_CLEAREVENTS_MSG "你想要在清除之前保存此事件日誌嗎？"
     IDS_SAVE_FILTER "事件日誌 (*.evt)\0*.evt\0"
+    IDS_CLEAREVENTS_MSG "你想要在清除之前保存此事件日誌嗎？"
+    IDS_EVENTSTRINGIDNOTFOUND "來源 ( %s ) 中的事件 ID ( %lu ) 的描述無法找到。 本地電腦可能沒有顯示來自遠端電腦消息所必需的註冊表資訊或消息 DLL 檔。\n\nThe following information is part of the event:\n\n"
+END
+
+STRINGTABLE
+BEGIN
+/* Please note that explicit TAB characters '\t' are used to fix the alignment of the message in the MessageBox */
+    IDS_USAGE "ReactOS Event Viewer\n\
+\n\
+EventVwr [computer name] [/l:<event log file>] [/?]\n\
+\n\
+""computer name"" : Specifies the remote computer where to connect\n\
+\tto retrieve the events to display. If no name is specified, the\n\
+\tlocal computer is used.\n\
+\n\
+/l:<event log file> : Specifies which event log file to open.\n\
+\tOnly files in the .evt format (NT ≤ 5.2) are supported.\n\
+\n\
+/? : Displays this help message.\n\
+"
+    IDS_EVENTLOGFILE "Event Log File"
 END
 
 STRINGTABLE
@@ -175,15 +197,15 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_COPY "事件種類:     %s\r\n\
-事件源:   %s\r\n\
-事件種類: %s\r\n\
-事件 ID:       %s\r\n\
-日期:           %s\r\n\
-時間:           %s\r\n\
-使用者:           %s\r\n\
-電腦:       %s\r\n\
-描述:\n%s"
+    IDS_COPY "事件種類:       %s\r\n\
+事件源:        %s\r\n\
+事件種類:       %s\r\n\
+事件 ID:      %s\r\n\
+日期:         %s\r\n\
+時間:         %s\r\n\
+使用者:        %s\r\n\
+電腦:         %s\r\n\
+描述:\r\n%s"
 END
 
 STRINGTABLE

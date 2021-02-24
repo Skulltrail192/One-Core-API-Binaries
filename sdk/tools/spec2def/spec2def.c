@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdarg.h>
 
 #ifdef _MSC_VER
-#define strcasecmp _stricmp
+#define strcasecmp(_String1, _String2) _stricmp(_String1, _String2)
+#define strncasecmp(_String1, _String2, _MaxCount) _strnicmp(_String1, _String2, _MaxCount)
 #endif
 
 #define ARRAYSIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -26,7 +28,28 @@ typedef struct
     int anArgs[30];
     unsigned int uFlags;
     int nNumber;
+    unsigned nStartVersion;
+    unsigned nEndVersion;
+    int bVersionIncluded;
 } EXPORT;
+
+#if 0 // Debug helper function
+void
+PrintExport(EXPORT *pexp)
+{
+    fprintf(stderr, "strName='%.*s'\n", pexp->strName.len, pexp->strName.buf);
+    fprintf(stderr, "strName='%.*s'\n", pexp->strTarget.len, pexp->strTarget.buf);
+    fprintf(stderr, "nCallingConvention=%u\n", pexp->nCallingConvention);
+    fprintf(stderr, "nOrdinal=%u\n", pexp->nOrdinal);
+    fprintf(stderr, "nStackBytes=%u\n", pexp->nStackBytes);
+    fprintf(stderr, "nArgCount=%u\n", pexp->nArgCount);
+    fprintf(stderr, "uFlags=0x%x\n", pexp->uFlags);
+    fprintf(stderr, "nNumber=%u\n", pexp->nNumber);
+    fprintf(stderr, "nStartVersion=%u\n", pexp->nStartVersion);
+    fprintf(stderr, "nEndVersion=%u\n", pexp->nEndVersion);
+    fprintf(stderr, "bVersionIncluded=%u\n", pexp->bVersionIncluded);
+}
+#endif
 
 enum _ARCH
 {
@@ -49,6 +72,7 @@ char *pszSourceFileName = NULL;
 char *pszDllName = NULL;
 char *gpszUnderscore = "";
 int gbDebug;
+unsigned guOsVersion = 0x502;
 #define DbgPrint(...) (!gbDebug || fprintf(stderr, __VA_ARGS__))
 
 enum
@@ -93,7 +117,12 @@ const char* astrCallingConventions[] =
     "EXTERN"
 };
 
-static const char* astrShouldBePrivate[] =
+/*
+ * List of OLE exports that should be PRIVATE and not be assigned an ordinal.
+ * In case these conditions are not met when linking with MS LINK.EXE, warnings
+ * LNK4104 and LNK4222 respectively are emitted.
+ */
+static const char* astrOlePrivateExports[] =
 {
     "DllCanUnloadNow",
     "DllGetClassObject",
@@ -129,6 +158,7 @@ CompareToken(const char *token, const char *comparand)
         token++;
         comparand++;
     }
+    if (IsSeparator(comparand[-1])) return 1;
     if (!IsSeparator(*token)) return 0;
     return 1;
 }
@@ -144,8 +174,8 @@ ScanToken(const char *token, char chr)
     return 0;
 }
 
-char *
-NextLine(char *pc)
+const char *
+NextLine(const char *pc)
 {
     while (*pc != 0)
     {
@@ -157,7 +187,7 @@ NextLine(char *pc)
 }
 
 int
-TokenLength(char *pc)
+TokenLength(const char *pc)
 {
     int length = 0;
 
@@ -166,8 +196,8 @@ TokenLength(char *pc)
     return length;
 }
 
-char *
-NextToken(char *pc)
+const char *
+NextToken(const char *pc)
 {
     /* Skip token */
     while (!IsSeparator(*pc)) pc++;
@@ -434,13 +464,26 @@ OutputLine_asmstub(FILE *fileDest, EXPORT *pexp)
     /* Handle autoname */
     if (pexp->strName.len == 1 && pexp->strName.buf[0] == '@')
     {
-        sprintf(szNameBuffer, "%sordinal%d\n%sordinal%d: nop\n",
-                gpszUnderscore, pexp->nOrdinal, gpszUnderscore, pexp->nOrdinal);
+        sprintf(szNameBuffer, "%s_stub_ordinal%d",
+                gpszUnderscore, pexp->nOrdinal);
     }
     else if (giArch != ARCH_X86)
     {
-        sprintf(szNameBuffer, "_stub_%.*s",
-                pexp->strName.len, pexp->strName.buf);
+        /* Does the string already have stdcall decoration? */
+        const char *pcAt = ScanToken(pexp->strName.buf, '@');
+        if (pcAt && (pcAt < (pexp->strName.buf + pexp->strName.len)) && 
+            (pexp->strName.buf[0] == '_'))
+        {
+            /* Skip leading underscore and remove trailing decoration */
+            sprintf(szNameBuffer, "_stub_%.*s",
+                    (int)(pcAt - pexp->strName.buf - 1),
+                    pexp->strName.buf + 1);
+        }
+        else
+        {
+            sprintf(szNameBuffer, "_stub_%.*s",
+                    pexp->strName.len, pexp->strName.buf);
+        }
     }
     else if (pexp->nCallingConvention == CC_STDCALL)
     {
@@ -487,6 +530,14 @@ PrintName(FILE *fileDest, EXPORT *pexp, PSTRING pstr, int fDeco)
     const char *pcName = pstr->buf;
     int nNameLength = pstr->len;
     const char* pcDot, *pcAt;
+    char namebuffer[19];
+
+    if ((nNameLength == 1) && (pcName[0] == '@'))
+    {
+        sprintf(namebuffer, "ordinal%d", pexp->nOrdinal);
+        pcName = namebuffer;
+        nNameLength = strlen(namebuffer);
+    }
 
     /* Check for non-x86 first */
     if (giArch != ARCH_X86)
@@ -497,7 +548,7 @@ PrintName(FILE *fileDest, EXPORT *pexp, PSTRING pstr, int fDeco)
         {
             /* Skip leading underscore and remove trailing decoration */
             pcName++;
-            nNameLength = pcAt - pcName;
+            nNameLength = (int)(pcAt - pcName);
         }
 
         /* Print the undecorated function name */
@@ -512,7 +563,7 @@ PrintName(FILE *fileDest, EXPORT *pexp, PSTRING pstr, int fDeco)
         if (pcDot)
         {
             /* First print the dll name, followed by a dot */
-            nNameLength = pcDot - pcName;
+            nNameLength = (int)(pcDot - pcName);
             fprintf(fileDest, "%.*s.", nNameLength, pcName);
 
             /* Now the actual function name */
@@ -561,7 +612,8 @@ OutputLine_def_MS(FILE *fileDest, EXPORT *pexp)
     if (gbImportLib)
     {
         /* Redirect to a stub function, to get the right decoration in the lib */
-        fprintf(fileDest, "=_stub_%.*s", pexp->strName.len, pexp->strName.buf);
+        fprintf(fileDest, "=_stub_");
+        PrintName(fileDest, pexp, &pexp->strName, 0);
     }
     else if (pexp->strTarget.buf)
     {
@@ -652,7 +704,9 @@ OutputLine_def_GCC(FILE *fileDest, EXPORT *pexp)
         {
             /* Is the name in the spec file decorated? */
             const char* pcDeco = ScanToken(pexp->strName.buf, '@');
-            if (pcDeco && (pcDeco < pexp->strName.buf + pexp->strName.len))
+            if (pcDeco && 
+                (pexp->strName.len > 1) &&
+                (pcDeco < pexp->strName.buf + pexp->strName.len))
             {
                 /* Write the name including the leading @  */
                 fprintf(fileDest, "==%.*s", pexp->strName.len, pexp->strName.buf);
@@ -678,7 +732,8 @@ OutputLine_def(FILE *fileDest, EXPORT *pexp)
     else
         OutputLine_def_GCC(fileDest, pexp);
 
-    if (pexp->uFlags & FL_ORDINAL)
+    /* On GCC builds we force ordinals */
+    if ((pexp->uFlags & FL_ORDINAL) || (!gbMSComp && !gbImportLib))
     {
         fprintf(fileDest, " @%d", pexp->nOrdinal);
     }
@@ -703,17 +758,100 @@ OutputLine_def(FILE *fileDest, EXPORT *pexp)
     return 1;
 }
 
-int
-ParseFile(char* pcStart, FILE *fileDest, PFNOUTLINE OutputLine)
+void
+Fatalv(
+    const char* filename,
+    unsigned nLine,
+    const char *pcLine,
+    const char *pc,
+    size_t errorlen,
+    const char *format,
+    va_list argptr)
 {
-    char *pc, *pcLine;
-    int nLine;
+    unsigned i, errorpos, len;
+    const char* pcLineEnd;
+
+    /* Get the length of the line */
+    pcLineEnd = strpbrk(pcLine, "\r\n");
+    len = (unsigned)(pcLineEnd - pcLine);
+
+    if (pc == NULL)
+    {
+        pc = pcLine + len - 1;
+        errorlen = 1;
+    }
+
+    errorpos = (unsigned)(pc - pcLine);
+
+    /* Output the error message */
+    fprintf(stderr, "ERROR: (%s:%u:%u): ", filename, nLine, errorpos);
+    vfprintf(stderr, format, argptr);
+    fprintf(stderr, "\n");
+
+    /* Output the line with the error */
+    fprintf(stderr, "> %.*s\n", len, pcLine);
+
+    if (errorlen == 0)
+    {
+        errorlen = TokenLength(pc);
+    }
+
+    for (i = 0; i < errorpos + 2; i++)
+    {
+        fprintf(stderr, " ");
+    }
+    for (i = 0; i < errorlen; i++)
+    {
+        fprintf(stderr, "~");
+    }
+    fprintf(stderr, "\n");
+    exit(-1);
+}
+
+void
+Fatal(
+    const char* filename,
+    unsigned nLine,
+    const char *pcLine,
+    const char *pc,
+    size_t errorlen,
+    const char *format,
+    ...)
+{
+    va_list argptr;
+
+    va_start(argptr, format);
+    Fatalv(filename, nLine, pcLine, pc, errorlen, format, argptr);
+    va_end(argptr);
+}
+
+EXPORT *
+ParseFile(char* pcStart, FILE *fileDest, unsigned *cExports)
+{
+    EXPORT *pexports;
+    const char *pc, *pcLine;
+    int cLines, nLine;
     EXPORT exp;
     int included;
-    char namebuffer[16];
     unsigned int i;
 
+    *cExports = 0;
+
     //fprintf(stderr, "info: line %d, pcStart:'%.30s'\n", nLine, pcStart);
+
+    /* Count the lines */
+    for (cLines = 1, pcLine = pcStart; *pcLine; pcLine = NextLine(pcLine), cLines++)
+    {
+        /* Nothing */
+    }
+
+    /* Allocate an array of EXPORT structures */
+    pexports = malloc(cLines * sizeof(EXPORT));
+    if (pexports == NULL)
+    {
+        fprintf(stderr, "ERROR: %s: failed to allocate EXPORT array of %u elements\n", pszSourceFileName, cLines);
+        return NULL;
+    }
 
     /* Loop all lines */
     nLine = 1;
@@ -722,42 +860,67 @@ ParseFile(char* pcStart, FILE *fileDest, PFNOUTLINE OutputLine)
     {
         pc = pcLine;
 
+        exp.strName.buf = NULL;
+        exp.strName.len = 0;
+        exp.strTarget.buf = NULL;
+        exp.strTarget.len = 0;
         exp.nArgCount = 0;
         exp.uFlags = 0;
         exp.nNumber++;
-
-        //if (!strncmp(pcLine, "22 stdcall @(long) MPR_Alloc",28))
-        //    gbDebug = 1;
-
-        //fprintf(stderr, "info: line %d, token:'%d, %.20s'\n",
-        //        nLine, TokenLength(pcLine), pcLine);
+        exp.nStartVersion = 0;
+        exp.nEndVersion = 0xFFFFFFFF;
+        exp.bVersionIncluded = 1;
 
         /* Skip white spaces */
         while (*pc == ' ' || *pc == '\t') pc++;
 
-        /* Skip empty lines, stop at EOF */
-        if (*pc == ';' || *pc <= '#') continue;
-        if (*pc == 0) return 0;
+        /* Check for line break or comment */
+        if ((*pc == '\r') || (*pc == '\n') ||
+            (*pc == ';') || (*pc == '#'))
+        {
+            continue;
+        }
 
-        //fprintf(stderr, "info: line %d, token:'%.*s'\n",
-        //        nLine, TokenLength(pc), pc);
+        /* On EOF we are done */
+        if (*pc == 0)
+        {
+            return pexports;
+        }
 
         /* Now we should get either an ordinal or @ */
         if (*pc == '@')
-            exp.nOrdinal = -1;
-        else
         {
-            exp.nOrdinal = atol(pc);
+            exp.nOrdinal = -1;
+        }
+        else if ((*pc >= '0') && (*pc <= '9'))
+        {
+            char* end;
+            long int number = strtol(pc, &end, 10);
+            if ((*end != ' ') && (*end != '\t'))
+            {
+                Fatal(pszSourceFileName, nLine, pcLine, end, 0, "Unexpected character(s) after ordinal");
+            }
+
+            if ((number < 0) || (number > 0xFFFE))
+            {
+                Fatal(pszSourceFileName, nLine, pcLine, pc, 0, "Invalid value for ordinal");
+            }
+
+            exp.nOrdinal = number;
+
             /* The import lib should contain the ordinal only if -ordinal was specified */
             if (!gbImportLib)
                 exp.uFlags |= FL_ORDINAL;
+        }
+        else
+        {
+            Fatal(pszSourceFileName, nLine, pcLine, pc, 0, "Expected '@' or ordinal");
         }
 
         /* Go to next token (type) */
         if (!(pc = NextToken(pc)))
         {
-            fprintf(stderr, "%s line %d: error: unexpected end of line\n", pszSourceFileName, nLine);
-            return -10;
+            Fatal(pszSourceFileName, nLine, pcLine, pc, 1, "Unexpected end of line");
         }
 
         //fprintf(stderr, "info: Token:'%.*s'\n", TokenLength(pc), pc);
@@ -790,32 +953,27 @@ ParseFile(char* pcStart, FILE *fileDest, PFNOUTLINE OutputLine)
         }
         else
         {
-            fprintf(stderr, "%s line %d: error: expected callconv, got '%.*s' %d\n",
-                    pszSourceFileName, nLine, TokenLength(pc), pc, *pc);
-            return -11;
+            Fatal(pszSourceFileName, nLine, pcLine, pc, 0, "Invalid calling convention");
         }
-
-        //fprintf(stderr, "info: nCallingConvention: %d\n", exp.nCallingConvention);
 
         /* Go to next token (options or name) */
         if (!(pc = NextToken(pc)))
         {
-            fprintf(stderr, "fail2\n");
-            return -12;
+            Fatal(pszSourceFileName, nLine, pcLine, pc, 1, "Unexpected end of line");
         }
 
         /* Handle options */
         included = 1;
         while (*pc == '-')
         {
-            if (CompareToken(pc, "-arch"))
+            if (CompareToken(pc, "-arch="))
             {
                 /* Default to not included */
                 included = 0;
                 pc += 5;
 
                 /* Look if we are included */
-                while (*pc == '=' || *pc == ',')
+                do
                 {
                     pc++;
                     if (CompareToken(pc, pszArchString) ||
@@ -826,11 +984,71 @@ ParseFile(char* pcStart, FILE *fileDest, PFNOUTLINE OutputLine)
 
                     /* Skip to next arch or end */
                     while (*pc > ',') pc++;
-                }
+                } while (*pc == ',');
             }
             else if (CompareToken(pc, "-i386"))
             {
                 if (giArch != ARCH_X86) included = 0;
+            }
+            else if (CompareToken(pc, "-version="))
+            {
+                const char *pcVersionStart = pc + 9;
+
+                /* Default to not included */
+                exp.bVersionIncluded = 0;
+                pc += 8;
+
+                /* Look if we are included */
+                do
+                {
+                    unsigned version, endversion;
+
+                    /* Optionally skip leading '0x' */
+                    pc++;
+                    if ((pc[0] == '0') && (pc[1] == 'x')) pc += 2;
+
+                    /* Now get the version number */
+                    endversion = version = strtoul(pc, (char**)&pc, 16);
+
+                    /* Check if it's a range */
+                    if (pc[0] == '+')
+                    {
+                        endversion = 0xFFF;
+                        pc++;
+                    }
+                    else if (pc[0] == '-')
+                    {
+                        /* Optionally skip leading '0x' */
+                        pc++;
+                        if ((pc[0] == '0') && (pc[1] == 'x')) pc += 2;
+                        endversion = strtoul(pc, (char**)&pc, 16);
+                    }
+
+                    /* Check for degenerate range */
+                    if (version > endversion)
+                    {
+                        Fatal(pszSourceFileName,
+                              nLine,
+                              pcLine,
+                              pcVersionStart,
+                              pc - pcVersionStart,
+                              "Invalid version range");
+                    }
+
+                    exp.nStartVersion = version;
+                    exp.nEndVersion = endversion;
+
+                    /* Now compare the range with our version */
+                    if ((guOsVersion >= version) &&
+                        (guOsVersion <= endversion))
+                    {
+                        exp.bVersionIncluded = 1;
+                    }
+
+                    /* Skip to next arch or end */
+                    while (*pc > ',') pc++;
+
+                } while (*pc == ',');
             }
             else if (CompareToken(pc, "-private"))
             {
@@ -866,8 +1084,12 @@ ParseFile(char* pcStart, FILE *fileDest, PFNOUTLINE OutputLine)
             }
             else
             {
-                fprintf(stderr, "info: ignored option: '%.*s'\n",
-                        TokenLength(pc), pc);
+                fprintf(stdout,
+                        "INFO: %s line %d: Ignored option: '%.*s'\n",
+                        pszSourceFileName,
+                        nLine,
+                        TokenLength(pc),
+                        pc);
             }
 
             /* Go to next token */
@@ -882,14 +1104,11 @@ ParseFile(char* pcStart, FILE *fileDest, PFNOUTLINE OutputLine)
         /* Get name */
         exp.strName.buf = pc;
         exp.strName.len = TokenLength(pc);
-        DbgPrint("Got name: '%.*s'\n", exp.strName.len, exp.strName.buf);
+        //DbgPrint("Got name: '%.*s'\n", exp.strName.len, exp.strName.buf);
 
         /* Check for autoname */
         if ((exp.strName.len == 1) && (exp.strName.buf[0] == '@'))
         {
-            sprintf(namebuffer, "ordinal%d", exp.nOrdinal);
-            exp.strName.len = strlen(namebuffer);
-            exp.strName.buf = namebuffer;
             exp.uFlags |= FL_ORDINAL | FL_NONAME;
         }
 
@@ -901,15 +1120,13 @@ ParseFile(char* pcStart, FILE *fileDest, PFNOUTLINE OutputLine)
             /* Go to next token */
             if (!(pc = NextToken(pc)))
             {
-                fprintf(stderr, "%s line %d: error: expected token\n", pszSourceFileName, nLine);
-                return -13;
+                Fatal(pszSourceFileName, nLine, pcLine, pc, 1, "Unexpected end of line");
             }
 
             /* Verify syntax */
             if (*pc++ != '(')
             {
-                fprintf(stderr, "%s line %d: error: expected '('\n", pszSourceFileName, nLine);
-                return -14;
+                Fatal(pszSourceFileName, nLine, pcLine, pc - 1, 0, "Expected '('");
             }
 
             /* Skip whitespaces */
@@ -959,23 +1176,23 @@ ParseFile(char* pcStart, FILE *fileDest, PFNOUTLINE OutputLine)
                     exp.anArgs[exp.nArgCount] = ARG_FLOAT;
                 }
                 else
-                    fprintf(stderr, "%s line %d: error: expected type, got: %.10s\n", pszSourceFileName, nLine, pc);
+                {
+                    Fatal(pszSourceFileName, nLine, pcLine, pc, 0, "Unrecognized type");
+                }
 
                 exp.nArgCount++;
 
                 /* Go to next parameter */
                 if (!(pc = NextToken(pc)))
                 {
-                    fprintf(stderr, "fail5\n");
-                    return -15;
+                    Fatal(pszSourceFileName, nLine, pcLine, pc, 1, "Unexpected end of line");
                 }
             }
 
             /* Check syntax */
             if (*pc++ != ')')
             {
-                fprintf(stderr, "%s line %d: error: expected ')'\n", pszSourceFileName, nLine);
-                return -16;
+                Fatal(pszSourceFileName, nLine, pcLine, pc - 1, 0, "Expected ')'");
             }
         }
 
@@ -1000,8 +1217,7 @@ ParseFile(char* pcStart, FILE *fileDest, PFNOUTLINE OutputLine)
                     exp.strName.len = (int)(p - pc);
                     if (exp.strName.len < 1)
                     {
-                        fprintf(stderr, "%s line %d: error: unexpected @ found\n", pszSourceFileName, nLine);
-                        return -1;
+                        Fatal(pszSourceFileName, nLine, pcLine, p, 1, "Unexpected @");
                     }
                     exp.nStackBytes = atoi(p + 1);
                     exp.nArgCount =  exp.nStackBytes / 4;
@@ -1023,8 +1239,7 @@ ParseFile(char* pcStart, FILE *fileDest, PFNOUTLINE OutputLine)
             /* Check syntax (end of line) */
             if (NextToken(pc))
             {
-                 fprintf(stderr, "%s line %d: error: additional tokens after ')'\n", pszSourceFileName, nLine);
-                 return -17;
+                Fatal(pszSourceFileName, nLine, pcLine, NextToken(pc), 0, "Excess token(s) at end of definition");
             }
 
             /* Don't relay-trace forwarded functions */
@@ -1039,27 +1254,95 @@ ParseFile(char* pcStart, FILE *fileDest, PFNOUTLINE OutputLine)
         /* Check for no-name without ordinal */
         if ((exp.uFlags & FL_ORDINAL) && (exp.nOrdinal == -1))
         {
-            fprintf(stderr, "%s line %d: error: ordinal export without ordinal!\n", pszSourceFileName, nLine);
-            return -1;
+            Fatal(pszSourceFileName, nLine, pcLine, pc, 0, "Ordinal export without ordinal");
         }
 
-        if (!gbMSComp && !gbNotPrivateNoWarn && gbImportLib && !(exp.uFlags & FL_PRIVATE))
+        /*
+         * Check for special handling of OLE exports, only when MSVC
+         * is not used, since otherwise this is handled by MS LINK.EXE.
+         */
+        if (!gbMSComp)
         {
-            for (i = 0; i < ARRAYSIZE(astrShouldBePrivate); i++)
+            /* Check whether the current export is not PRIVATE, or has an ordinal */
+            int bIsNotPrivate = (!gbNotPrivateNoWarn && /*gbImportLib &&*/ !(exp.uFlags & FL_PRIVATE));
+            int bHasOrdinal = (exp.uFlags & FL_ORDINAL);
+
+            /* Check whether the current export is an OLE export, in case any of these tests pass */
+            if (bIsNotPrivate || bHasOrdinal)
             {
-                if (strlen(astrShouldBePrivate[i]) == exp.strName.len &&
-                    strncmp(exp.strName.buf, astrShouldBePrivate[i], exp.strName.len) == 0)
+                for (i = 0; i < ARRAYSIZE(astrOlePrivateExports); ++i)
                 {
-                    fprintf(stderr, "%s line %d: warning: export of '%.*s' should be PRIVATE\n",
-                            pszSourceFileName, nLine, exp.strName.len, exp.strName.buf);
+                    if (strlen(astrOlePrivateExports[i]) == exp.strName.len &&
+                        strncmp(exp.strName.buf, astrOlePrivateExports[i], exp.strName.len) == 0)
+                    {
+                        /* The current export is an OLE export: display the corresponding warning */
+                        if (bIsNotPrivate)
+                        {
+                            fprintf(stderr, "WARNING: %s line %d: Exported symbol '%.*s' should be PRIVATE\n",
+                                    pszSourceFileName, nLine, exp.strName.len, exp.strName.buf);
+                        }
+                        if (bHasOrdinal)
+                        {
+                            fprintf(stderr, "WARNING: %s line %d: exported symbol '%.*s' should not be assigned an ordinal\n",
+                                    pszSourceFileName, nLine, exp.strName.len, exp.strName.buf);
+                        }
+                        break;
+                    }
                 }
             }
         }
 
-        OutputLine(fileDest, &exp);
+        pexports[*cExports] = exp;
+        (*cExports)++;
         gbDebug = 0;
     }
 
+    return pexports;
+}
+
+int
+ApplyOrdinals(EXPORT* pexports, unsigned cExports)
+{
+    unsigned short i, j;
+    char* used;
+
+    /* Allocate a table to mark used ordinals */
+    used = malloc(65536);
+    if (used == NULL)
+    {
+        fprintf(stderr, "Failed to allocate memory for ordinal use table\n");
+        return -1;
+    }
+    memset(used, 0, 65536);
+
+    /* Pass 1: mark the ordinals that are already used */
+    for (i = 0; i < cExports; i++)
+    {
+        if (pexports[i].uFlags & FL_ORDINAL)
+        {
+            if (used[pexports[i].nOrdinal] != 0)
+            {
+                fprintf(stderr, "Found duplicate ordinal: %u\n", pexports[i].nOrdinal);
+                return -1;
+            }
+            used[pexports[i].nOrdinal] = 1;
+        }
+    }
+
+    /* Pass 2: apply available ordinals */
+    for (i = 0, j = 1; i < cExports; i++)
+    {
+        if ((pexports[i].uFlags & FL_ORDINAL) == 0 && pexports[i].bVersionIncluded)
+        {
+            while (used[j] != 0)
+                j++;
+
+            pexports[i].nOrdinal = j;
+            used[j] = 1;
+        }
+    }
+
+    free(used);
     return 0;
 }
 
@@ -1083,9 +1366,11 @@ int main(int argc, char *argv[])
 {
     size_t nFileSize;
     char *pszSource, *pszDefFileName = NULL, *pszStubFileName = NULL, *pszLibStubName = NULL;
+    const char* pszVersionOption = "--version=0x";
     char achDllName[40];
     FILE *file;
-    int result = 0, i;
+    unsigned cExports = 0, i;
+    EXPORT *pexports;
 
     if (argc < 2)
     {
@@ -1094,7 +1379,7 @@ int main(int argc, char *argv[])
     }
 
     /* Read options */
-    for (i = 1; i < argc && *argv[i] == '-'; i++)
+    for (i = 1; i < (unsigned)argc && *argv[i] == '-'; i++)
     {
         if ((strcasecmp(argv[i], "--help") == 0) ||
             (strcasecmp(argv[i], "-h") == 0))
@@ -1117,6 +1402,10 @@ int main(int argc, char *argv[])
         else if (argv[i][1] == 'n' && argv[i][2] == '=')
         {
             pszDllName = argv[i] + 3;
+        }
+        else if (strncasecmp(argv[i], pszVersionOption, strlen(pszVersionOption)) == 0)
+        {
+            guOsVersion = strtoul(argv[i] + strlen(pszVersionOption), NULL, 16);
         }
         else if (strcasecmp(argv[i], "--implib") == 0)
         {
@@ -1220,6 +1509,22 @@ int main(int argc, char *argv[])
     /* Zero terminate the source */
     pszSource[nFileSize] = '\0';
 
+    pexports = ParseFile(pszSource, file, &cExports);
+    if (pexports == NULL)
+    {
+        fprintf(stderr, "error: could not parse file!\n");
+        return -1;
+    }
+
+    if (!gbMSComp)
+    {
+        if (ApplyOrdinals(pexports, cExports) < 0)
+        {
+            fprintf(stderr, "error: could not apply ordinals!\n");
+            return -1;
+        }
+    }
+
     if (pszDefFileName)
     {
         /* Open output file */
@@ -1231,7 +1536,13 @@ int main(int argc, char *argv[])
         }
 
         OutputHeader_def(file, pszDllName);
-        result = ParseFile(pszSource, file, OutputLine_def);
+
+        for (i = 0; i < cExports; i++)
+        {
+            if (pexports[i].bVersionIncluded)
+                 OutputLine_def(file, &pexports[i]);
+        }
+
         fclose(file);
     }
 
@@ -1246,7 +1557,13 @@ int main(int argc, char *argv[])
         }
 
         OutputHeader_stub(file);
-        result = ParseFile(pszSource, file, OutputLine_stub);
+
+        for (i = 0; i < cExports; i++)
+        {
+            if (pexports[i].bVersionIncluded)
+                OutputLine_stub(file, &pexports[i]);
+        }
+
         fclose(file);
     }
 
@@ -1261,10 +1578,18 @@ int main(int argc, char *argv[])
         }
 
         OutputHeader_asmstub(file, pszDllName);
-        result = ParseFile(pszSource, file, OutputLine_asmstub);
+
+        for (i = 0; i < cExports; i++)
+        {
+            if (pexports[i].bVersionIncluded)
+                OutputLine_asmstub(file, &pexports[i]);
+        }
+
         fprintf(file, "\n    END\n");
         fclose(file);
     }
 
-    return result;
+    free(pexports);
+
+    return 0;
 }

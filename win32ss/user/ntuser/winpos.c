@@ -22,13 +22,13 @@ DBG_DEFAULT_CHANNEL(UserWinpos);
     (SWP_NOSIZE | SWP_NOMOVE | SWP_NOCLIENTSIZE | SWP_NOCLIENTMOVE | SWP_NOZORDER)
 #define  SWP_AGG_STATUSFLAGS \
     (SWP_AGG_NOPOSCHANGE | SWP_FRAMECHANGED | SWP_HIDEWINDOW | SWP_SHOWWINDOW)
+#define SWP_AGG_NOCLIENTCHANGE \
+    (SWP_NOCLIENTSIZE | SWP_NOCLIENTMOVE)
 
 #define EMPTYPOINT(pt) ((pt).x == -1 && (pt).y == -1)
 #define PLACE_MIN               0x0001
 #define PLACE_MAX               0x0002
 #define PLACE_RECT              0x0004
-
-VOID FASTCALL IntLinkWindow(PWND Wnd,PWND WndInsertAfter);
 
 /* FUNCTIONS *****************************************************************/
 
@@ -888,14 +888,14 @@ UserGetWindowBorders(DWORD Style, DWORD ExStyle, SIZE *Size, BOOL WithClient)
 
    if (UserHasWindowEdge(Style, ExStyle))
       Border += 2;
-   else if (ExStyle & WS_EX_STATICEDGE)
-      Border += 1;
+   else if ((ExStyle & (WS_EX_STATICEDGE|WS_EX_DLGMODALFRAME)) == WS_EX_STATICEDGE)
+      Border += 1; /* for the outer frame always present */
    if ((ExStyle & WS_EX_CLIENTEDGE) && WithClient)
       Border += 2;
    if (Style & WS_CAPTION || ExStyle & WS_EX_DLGMODALFRAME)
-      Border ++;
+      Border ++; /* The other border */
    Size->cx = Size->cy = Border;
-   if ((Style & WS_THICKFRAME) && !(Style & WS_MINIMIZE))
+   if ((Style & WS_THICKFRAME) && !(Style & WS_MINIMIZE)) /* The resize border */
    {
       Size->cx += UserGetSystemMetrics(SM_CXFRAME) - UserGetSystemMetrics(SM_CXDLGFRAME);
       Size->cy += UserGetSystemMetrics(SM_CYFRAME) - UserGetSystemMetrics(SM_CYDLGFRAME);
@@ -904,32 +904,27 @@ UserGetWindowBorders(DWORD Style, DWORD ExStyle, SIZE *Size, BOOL WithClient)
    Size->cy *= UserGetSystemMetrics(SM_CYBORDER);
 }
 
-BOOL WINAPI
-UserAdjustWindowRectEx(LPRECT lpRect,
-                       DWORD dwStyle,
-                       BOOL bMenu,
-                       DWORD dwExStyle)
+//
+// Fix CORE-5177
+// See winetests:user32:win.c:wine_AdjustWindowRectEx, 
+// Simplified version.
+//
+DWORD IntGetWindowBorders(DWORD Style, DWORD ExStyle)
 {
-   SIZE BorderSize;
+    DWORD adjust = 0;
 
-   if (bMenu)
-   {
-      lpRect->top -= UserGetSystemMetrics(SM_CYMENU);
-   }
-   if ((dwStyle & WS_CAPTION) == WS_CAPTION)
-   {
-      if (dwExStyle & WS_EX_TOOLWINDOW)
-         lpRect->top -= UserGetSystemMetrics(SM_CYSMCAPTION);
-      else
-         lpRect->top -= UserGetSystemMetrics(SM_CYCAPTION);
-   }
-   UserGetWindowBorders(dwStyle, dwExStyle, &BorderSize, TRUE);
-   RECTL_vInflateRect(
-      lpRect,
-      BorderSize.cx,
-      BorderSize.cy);
+    if ( ExStyle & WS_EX_WINDOWEDGE )      // 1st
+        adjust = 2; /* outer */
+    else if ( ExStyle & WS_EX_STATICEDGE ) // 2nd
+        adjust = 1; /* for the outer frame always present */
 
-   return TRUE;
+    if (ExStyle & WS_EX_CLIENTEDGE)
+       adjust += 2;
+
+    if ( Style & WS_CAPTION || ExStyle & WS_EX_DLGMODALFRAME )
+        adjust++; /* The other border */
+
+    return adjust;
 }
 
 UINT FASTCALL
@@ -943,6 +938,7 @@ co_WinPosGetMinMaxInfo(PWND Window, POINT* MaxSize, POINT* MaxPos,
     LONG adjustedStyle;
     LONG exstyle = Window->ExStyle;
     RECT rc;
+    DWORD adjust;
 
     ASSERT_REFS_CO(Window);
 
@@ -957,9 +953,26 @@ co_WinPosGetMinMaxInfo(PWND Window, POINT* MaxSize, POINT* MaxPos,
     else
         adjustedStyle = style;
 
-    if(Window->spwndParent)
+    if (Window->spwndParent)
         IntGetClientRect(Window->spwndParent, &rc);
-    UserAdjustWindowRectEx(&rc, adjustedStyle, ((style & WS_POPUP) && Window->IDMenu), exstyle);
+
+    adjust = IntGetWindowBorders(adjustedStyle, exstyle);
+
+    // Handle special case while maximized. CORE-15893
+    if ((adjustedStyle & WS_THICKFRAME) && !(adjustedStyle & WS_CHILD) && !(adjustedStyle & WS_MINIMIZE))
+         adjust += 1;
+
+    xinc = yinc = adjust;
+
+    if ((adjustedStyle & WS_THICKFRAME) && (adjustedStyle & WS_CHILD) && !(adjustedStyle & WS_MINIMIZE))
+    {
+        xinc += UserGetSystemMetrics(SM_CXFRAME) - UserGetSystemMetrics(SM_CXDLGFRAME);
+        yinc += UserGetSystemMetrics(SM_CYFRAME) - UserGetSystemMetrics(SM_CYDLGFRAME);
+    }
+
+    RECTL_vInflateRect( &rc,
+                        xinc * UserGetSystemMetrics(SM_CXBORDER),
+                        yinc * UserGetSystemMetrics(SM_CYBORDER) );
 
     xinc = -rc.left;
     yinc = -rc.top;
@@ -981,7 +994,7 @@ co_WinPosGetMinMaxInfo(PWND Window, POINT* MaxSize, POINT* MaxPos,
     MinMax.ptMaxPosition.x = -xinc;
     MinMax.ptMaxPosition.y = -yinc;
 
-   if (!EMPTYPOINT(Window->InternalPos.MaxPos)) MinMax.ptMaxPosition = Window->InternalPos.MaxPos;
+    if (!EMPTYPOINT(Window->InternalPos.MaxPos)) MinMax.ptMaxPosition = Window->InternalPos.MaxPos;
 
     co_IntSendMessage(Window->head.h, WM_GETMINMAXINFO, 0, (LPARAM)&MinMax);
 
@@ -995,7 +1008,7 @@ co_WinPosGetMinMaxInfo(PWND Window, POINT* MaxSize, POINT* MaxPos,
         if (style & WS_MAXIMIZEBOX)
         {
             if ((style & WS_CAPTION) == WS_CAPTION || !(style & (WS_CHILD | WS_POPUP)))
-                rc_work = monitor->rcWork;
+               rc_work = monitor->rcWork;
         }
 
         if (MinMax.ptMaxSize.x == UserGetSystemMetrics(SM_CXSCREEN) + 2 * xinc &&
@@ -1011,43 +1024,37 @@ co_WinPosGetMinMaxInfo(PWND Window, POINT* MaxSize, POINT* MaxPos,
         }
         if (MinMax.ptMaxSize.x >= (monitor->rcMonitor.right - monitor->rcMonitor.left) &&
             MinMax.ptMaxSize.y >= (monitor->rcMonitor.bottom - monitor->rcMonitor.top) )
+        {
             Window->state |= WNDS_MAXIMIZESTOMONITOR;
+        }
         else
             Window->state &= ~WNDS_MAXIMIZESTOMONITOR;
     }
 
 
-   MinMax.ptMaxTrackSize.x = max(MinMax.ptMaxTrackSize.x,
-                                 MinMax.ptMinTrackSize.x);
-   MinMax.ptMaxTrackSize.y = max(MinMax.ptMaxTrackSize.y,
-                                 MinMax.ptMinTrackSize.y);
+    MinMax.ptMaxTrackSize.x = max(MinMax.ptMaxTrackSize.x,
+                                  MinMax.ptMinTrackSize.x);
+    MinMax.ptMaxTrackSize.y = max(MinMax.ptMaxTrackSize.y,
+                                  MinMax.ptMinTrackSize.y);
 
-   if (MaxSize)
-      *MaxSize = MinMax.ptMaxSize;
-   if (MaxPos)
-      *MaxPos = MinMax.ptMaxPosition;
-   if (MinTrack)
-      *MinTrack = MinMax.ptMinTrackSize;
-   if (MaxTrack)
-      *MaxTrack = MinMax.ptMaxTrackSize;
+    if (MaxSize)
+       *MaxSize = MinMax.ptMaxSize;
+    if (MaxPos)
+       *MaxPos = MinMax.ptMaxPosition;
+    if (MinTrack)
+       *MinTrack = MinMax.ptMinTrackSize;
+    if (MaxTrack)
+       *MaxTrack = MinMax.ptMaxTrackSize;
 
-   return 0; // FIXME: What does it return?
+    return 0; // FIXME: What does it return? Wine returns MINMAXINFO.
 }
 
 static
 BOOL
 IntValidateParent(PWND Child, PREGION ValidateRgn)
 {
-   PWND ParentWnd = Child;
+   PWND ParentWnd = Child->spwndParent;
 
-   if (ParentWnd->style & WS_CHILD)
-   {
-      do
-         ParentWnd = ParentWnd->spwndParent;
-      while (ParentWnd->style & WS_CHILD);
-   }
-
-   ParentWnd = Child->spwndParent;
    while (ParentWnd)
    {
       if (ParentWnd->style & WS_CLIPCHILDREN)
@@ -1263,7 +1270,8 @@ co_WinPosDoWinPosChanging(PWND Window,
 
    /* Send WM_WINDOWPOSCHANGING message */
 
-   if (!(WinPos->flags & SWP_NOSENDCHANGING))
+   if (!(WinPos->flags & SWP_NOSENDCHANGING)
+          && !((WinPos->flags & SWP_AGG_NOCLIENTCHANGE) && (WinPos->flags & SWP_SHOWWINDOW)))
    {
       TRACE("Sending WM_WINDOWPOSCHANGING to hwnd %p flags %04x.\n", Window->head.h,WinPos->flags);
       co_IntSendMessage(Window->head.h, WM_WINDOWPOSCHANGING, 0, (LPARAM) WinPos);
@@ -1645,6 +1653,68 @@ WinPosFixupFlags(WINDOWPOS *WinPos, PWND Wnd)
    return TRUE;
 }
 
+//
+// This is a NC HACK fix for forcing painting of non client areas.
+// Further troubleshooting in painting.c is required to remove this hack.
+// See CORE-7166 & CORE-15934
+//
+VOID
+ForceNCPaintErase(PWND Wnd, HRGN hRgn, PREGION pRgn)
+{
+   HDC hDC;
+   PREGION RgnUpdate;
+   UINT RgnType;
+   BOOL Create = FALSE;
+
+   if (Wnd->hrgnUpdate == NULL)
+   {
+       Wnd->hrgnUpdate = NtGdiCreateRectRgn(0, 0, 0, 0);
+       IntGdiSetRegionOwner(Wnd->hrgnUpdate, GDI_OBJ_HMGR_PUBLIC);
+       Create = TRUE;
+   }
+
+   if (Wnd->hrgnUpdate != HRGN_WINDOW)
+   {
+       RgnUpdate = REGION_LockRgn(Wnd->hrgnUpdate);
+       if (RgnUpdate)
+       {
+           RgnType = IntGdiCombineRgn(RgnUpdate, RgnUpdate, pRgn, RGN_OR);
+           REGION_UnlockRgn(RgnUpdate);
+           if (RgnType == NULLREGION)
+           {
+               IntGdiSetRegionOwner(Wnd->hrgnUpdate, GDI_OBJ_HMGR_POWNED);
+               GreDeleteObject(Wnd->hrgnUpdate);
+               Wnd->hrgnUpdate = NULL;
+               Create = FALSE;
+           }
+       }
+   }
+
+   IntSendNCPaint( Wnd, hRgn ); // Region can be deleted by the application.
+
+   if (Wnd->hrgnUpdate)
+   {
+       hDC = UserGetDCEx( Wnd,
+                          Wnd->hrgnUpdate,
+                          DCX_CACHE|DCX_USESTYLE|DCX_INTERSECTRGN|DCX_KEEPCLIPRGN);
+
+      Wnd->state &= ~(WNDS_SENDERASEBACKGROUND|WNDS_ERASEBACKGROUND);
+      // Kill the loop, so Clear before we send.
+      if (!co_IntSendMessage(UserHMGetHandle(Wnd), WM_ERASEBKGND, (WPARAM)hDC, 0))
+      {
+          Wnd->state |= (WNDS_SENDERASEBACKGROUND|WNDS_ERASEBACKGROUND);
+      }
+      UserReleaseDC(Wnd, hDC, FALSE);
+   }
+
+   if (Create)
+   {
+      IntGdiSetRegionOwner(Wnd->hrgnUpdate, GDI_OBJ_HMGR_POWNED);
+      GreDeleteObject(Wnd->hrgnUpdate);
+      Wnd->hrgnUpdate = NULL;
+   }
+}
+
 /* x and y are always screen relative */
 BOOLEAN FASTCALL
 co_WinPosSetWindowPos(
@@ -1676,7 +1746,7 @@ co_WinPosSetWindowPos(
 
    ASSERT_REFS_CO(Window);
 
-   TRACE("pwnd %p, after %p, %d,%d (%dx%d), flags %s",
+   TRACE("pwnd %p, after %p, %d,%d (%dx%d), flags 0x%x",
           Window, WndInsertAfter, x, y, cx, cy, flags);
 #if DBG
    dump_winpos_flags(flags);
@@ -1762,7 +1832,7 @@ co_WinPosSetWindowPos(
          }
 
          /* Calculate the non client area for resizes, as this is used in the copy region */
-         if (!(WinPos.flags & SWP_NOSIZE))
+         if ((WinPos.flags & (SWP_NOSIZE | SWP_FRAMECHANGED)) != SWP_NOSIZE)
          {
              VisBeforeJustClient = VIS_ComputeVisibleRegion(Window, TRUE, FALSE,
                  (Window->style & WS_CLIPSIBLINGS) ? TRUE : FALSE);
@@ -1834,11 +1904,19 @@ co_WinPosSetWindowPos(
    }
    else if (WinPos.flags & SWP_SHOWWINDOW)
    {
-       if (UserIsDesktopWindow(Window->spwndParent) &&
-           Window->spwndOwner == NULL &&
-           (!(Window->ExStyle & WS_EX_TOOLWINDOW) ||
-            (Window->ExStyle & WS_EX_APPWINDOW)))
-         co_IntShellHookNotify(HSHELL_WINDOWCREATED, (WPARAM)Window->head.h, 0);
+      if (Window->spwndOwner == NULL ||
+          !(Window->spwndOwner->style & WS_VISIBLE) ||
+          (Window->spwndOwner->ExStyle & WS_EX_TOOLWINDOW))
+      {
+         if (UserIsDesktopWindow(Window->spwndParent) &&
+             (!(Window->ExStyle & WS_EX_TOOLWINDOW) ||
+              (Window->ExStyle & WS_EX_APPWINDOW)))
+         {
+            co_IntShellHookNotify(HSHELL_WINDOWCREATED, (WPARAM)Window->head.h, 0);
+            if (!(WinPos.flags & SWP_NOACTIVATE))
+               UpdateShellHook(Window);
+         }
+      }
 
       Window->style |= WS_VISIBLE; //IntSetStyle( Window, WS_VISIBLE, 0 );
       Window->head.pti->cVisWindows++;
@@ -1853,6 +1931,14 @@ co_WinPosSetWindowPos(
    }
 
    DceResetActiveDCEs(Window); // For WS_VISIBLE changes.
+
+   // Change or update, set send non-client paint flag.
+   if ( Window->style & WS_VISIBLE &&
+       (WinPos.flags & SWP_STATECHANGED || (!(Window->state2 & WNDS2_WIN31COMPAT) && WinPos.flags & SWP_NOREDRAW ) ) )
+   {
+      TRACE("Set WNDS_SENDNCPAINT %p\n",Window);
+      Window->state |= WNDS_SENDNCPAINT;
+   }
 
    if (!(WinPos.flags & SWP_NOREDRAW))
    {
@@ -1882,8 +1968,7 @@ co_WinPosSetWindowPos(
              VisAfter != NULL &&
             !(WinPos.flags & SWP_NOCOPYBITS) &&
             ((WinPos.flags & SWP_NOSIZE) || !(WvrFlags & WVR_REDRAW)) &&
-            !(Window->ExStyle & WS_EX_TRANSPARENT) ) || 
-            ( !PosChanged && (WinPos.flags & SWP_FRAMECHANGED) && VisBefore) )
+            !(Window->ExStyle & WS_EX_TRANSPARENT) ) )
       {
 
          /*
@@ -1896,12 +1981,16 @@ co_WinPosSetWindowPos(
           */
 
          CopyRgn = IntSysCreateRectpRgn(0, 0, 0, 0);
-         if (WinPos.flags & SWP_NOSIZE)
+         if ((WinPos.flags & SWP_NOSIZE) && (WinPos.flags & SWP_NOCLIENTSIZE))
             RgnType = IntGdiCombineRgn(CopyRgn, VisAfter, VisBefore, RGN_AND);
          else if (VisBeforeJustClient != NULL)
          {
             RgnType = IntGdiCombineRgn(CopyRgn, VisAfter, VisBeforeJustClient, RGN_AND);
-            REGION_Delete(VisBeforeJustClient);
+         }
+
+         if (VisBeforeJustClient != NULL)
+         {
+             REGION_Delete(VisBeforeJustClient);
          }
 
          /* Now use in copying bits which are in the update region. */
@@ -1949,7 +2038,7 @@ co_WinPosSetWindowPos(
             REGION_UnlockRgn(DcRgnObj);
             Dc = UserGetDCEx( Window,
                               DcRgn,
-                              DCX_WINDOW|DCX_CACHE|DCX_INTERSECTRGN|DCX_CLIPSIBLINGS|DCX_KEEPCLIPRGN);
+                              DCX_WINDOW|DCX_CACHE|DCX_INTERSECTRGN|DCX_CLIPSIBLINGS|DCX_KEEPCLIPRGN); // DCX_WINDOW will set first, go read WinDC.c.
             NtGdiBitBlt( Dc,
                          CopyRect.left, CopyRect.top,
                          CopyRect.right - CopyRect.left,
@@ -1970,20 +2059,8 @@ co_WinPosSetWindowPos(
       {
          CopyRgn = NULL;
       }
-#if 0
-      /////// Fixes NoPopup tests but breaks msg_paint tests.
-      if ( !PosChanged && (WinPos.flags & SWP_FRAMECHANGED) && VisBefore)
-      {
-         PWND Parent = Window->spwndParent;
-         ERR("SWP_FRAMECHANGED no chg\n");
-         if ( !(Window->style & WS_CHILD) && (Parent) && (Parent->style & WS_CLIPCHILDREN))
-         {
-            ERR("SWP_FRAMECHANGED Parent WS_CLIPCHILDREN\n");
-            //IntInvalidateWindows( Window, VisBefore, /*RDW_ERASE |*/ RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
-         }
-      }
-#endif
-      /* We need to redraw what wasn't visible before */
+
+      /* We need to redraw what wasn't visible before or force a redraw */
       if (VisAfter != NULL)
       {
          PREGION DirtyRgn = IntSysCreateRectpRgn(0, 0, 0, 0);
@@ -1998,7 +2075,7 @@ co_WinPosSetWindowPos(
                 RgnType = IntGdiCombineRgn(DirtyRgn, VisAfter, 0, RGN_COPY);
              }
 
-             if (RgnType != ERROR && RgnType != NULLREGION)
+             if (RgnType != ERROR && RgnType != NULLREGION) // Regions moved.
              {
             /* old code
                 NtGdiOffsetRgn(DirtyRgn, Window->rcWindow.left, Window->rcWindow.top);
@@ -2023,6 +2100,45 @@ co_WinPosSetWindowPos(
                    IntInvalidateWindows( Window, DirtyRgn, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
                 }
              }
+             else if ( RgnType != ERROR && RgnType == NULLREGION ) // Must be the same. See CORE-7166 & CORE-15934, NC HACK fix.
+             {
+                if ( !PosChanged &&
+                     !(WinPos.flags & SWP_DEFERERASE) &&
+                      (WinPos.flags & SWP_FRAMECHANGED) )
+                {
+                    PWND pwnd = Window;
+                    PWND Parent = Window->spwndParent;
+
+                    if ( pwnd->style & WS_CHILD ) // Fix ProgMan menu bar drawing.
+                    {
+                        TRACE("SWP_FRAMECHANGED win child %p Parent %p\n",pwnd,Parent);
+                        pwnd = Parent ? Parent : pwnd;
+                    }
+
+                    if ( !(pwnd->style & WS_CHILD) )
+                    {
+                        /*
+                         * Check if we have these specific windows style bits set/reset.
+                         * FIXME: There may be other combinations of styles that need this handling as well.
+                         * This fixes the ReactOS Calculator buttons disappearing in CORE-16827.
+                         */
+                        if ((Window->style & WS_CLIPSIBLINGS) && !(Window->style & (WS_POPUP | WS_CLIPCHILDREN | WS_SIZEBOX)))
+                        {
+                            IntSendNCPaint(pwnd, HRGN_WINDOW); // Paint the whole frame.
+                        }
+                        else  // Use region handling
+                        {
+                            HRGN DcRgn = NtGdiCreateRectRgn(0, 0, 0, 0);
+                            PREGION DcRgnObj = REGION_LockRgn(DcRgn);
+                            TRACE("SWP_FRAMECHANGED win %p hRgn %p\n",pwnd, DcRgn);
+                            IntGdiCombineRgn(DcRgnObj, VisBefore, NULL, RGN_COPY);
+                            REGION_UnlockRgn(DcRgnObj);
+                            ForceNCPaintErase(pwnd, DcRgn, DcRgnObj);
+                            GreDeleteObject(DcRgn);
+                        }
+                    }
+                }
+             }
              REGION_Delete(DirtyRgn);
          }
       }
@@ -2033,7 +2149,7 @@ co_WinPosSetWindowPos(
       }
 
       /* Expose what was covered before but not covered anymore */
-      if (VisBefore != NULL)
+      if ( VisBefore != NULL )
       {
          PREGION ExposedRgn = IntSysCreateRectpRgn(0, 0, 0, 0);
          if (ExposedRgn)
@@ -2043,7 +2159,7 @@ co_WinPosSetWindowPos(
                                OldWindowRect.left - NewWindowRect.left,
                                OldWindowRect.top  - NewWindowRect.top);
 
-             if (VisAfter != NULL)
+             if ( VisAfter != NULL )
                 RgnType = IntGdiCombineRgn(ExposedRgn, ExposedRgn, VisAfter, RGN_DIFF);
 
              if (RgnType != ERROR && RgnType != NULLREGION)
@@ -2090,8 +2206,8 @@ co_WinPosSetWindowPos(
        PWND Parent = Window->spwndParent;
        if ( !(Window->style & WS_CHILD) && (Parent) && (Parent->style & WS_CLIPCHILDREN))
        {
-           TRACE("SWP_FRAMECHANGED Parent WS_CLIPCHILDREN\n");
-           UserSyncAndPaintWindows( Parent, RDW_CLIPCHILDREN);
+           TRACE("SWP_FRAMECHANGED Parent %p WS_CLIPCHILDREN %p\n",Parent,Window);
+           UserSyncAndPaintWindows( Parent, RDW_CLIPCHILDREN); // NC should redraw here, see NC HACK fix.
        }
    }
 
@@ -2105,11 +2221,32 @@ co_WinPosSetWindowPos(
       WinPos.flags |= SWP_NOZORDER|SWP_NOREDRAW;
    }
 
+   if(!(flags & SWP_DEFERERASE))
+   {
+       /* erase parent when hiding or resizing child */
+       if ((flags & SWP_HIDEWINDOW) ||
+         (!(flags & SWP_SHOWWINDOW) &&
+          (WinPos.flags & SWP_AGG_STATUSFLAGS) != SWP_AGG_NOGEOMETRYCHANGE))
+       {
+           PWND Parent = Window->spwndParent;
+           if (!Parent || UserIsDesktopWindow(Parent)) Parent = Window;
+           UserSyncAndPaintWindows( Parent, RDW_ERASENOW);
+       }
+
+       /* Give newly shown windows a chance to redraw */
+       if(((WinPos.flags & SWP_AGG_STATUSFLAGS) != SWP_AGG_NOPOSCHANGE)
+                && !(flags & SWP_AGG_NOCLIENTCHANGE) && (flags & SWP_SHOWWINDOW))
+       {
+           UserSyncAndPaintWindows( Window, RDW_ERASENOW);
+       }
+   }
+
    /* And last, send the WM_WINDOWPOSCHANGED message */
 
    TRACE("\tstatus hwnd %p flags = %04x\n",Window?Window->head.h:NULL,WinPos.flags & SWP_AGG_STATUSFLAGS);
 
-   if ((WinPos.flags & SWP_AGG_STATUSFLAGS) != SWP_AGG_NOPOSCHANGE)
+   if (((WinPos.flags & SWP_AGG_STATUSFLAGS) != SWP_AGG_NOPOSCHANGE)
+            && !((flags & SWP_AGG_NOCLIENTCHANGE) && (flags & SWP_SHOWWINDOW)))
    {
       /* WM_WINDOWPOSCHANGED is sent even if SWP_NOSENDCHANGING is set
          and always contains final window position.
@@ -2253,11 +2390,11 @@ co_WinPosMinMaximize(PWND Wnd, UINT ShowFlag, RECT* NewPos)
 
                WinPosFindIconPos(Wnd, &wpl.ptMinPosition);
 
-               /*if (!(old_style & WS_MINIMIZE))
+               if (!(old_style & WS_MINIMIZE))
                {
                   SwpFlags |= SWP_STATECHANGED;
                   IntShowOwnedPopups(Wnd, FALSE);
-               }*/
+               }
 
                RECTL_vSetRect(NewPos, wpl.ptMinPosition.x, wpl.ptMinPosition.y,
                              wpl.ptMinPosition.x + UserGetSystemMetrics(SM_CXMINIMIZED),
@@ -2303,7 +2440,7 @@ co_WinPosMinMaximize(PWND Wnd, UINT ShowFlag, RECT* NewPos)
                old_style = IntSetStyle( Wnd, 0, WS_MINIMIZE | WS_MAXIMIZE );
                if (old_style & WS_MINIMIZE)
                {
-                  //IntShowOwnedPopups(Wnd, TRUE);
+                  IntShowOwnedPopups(Wnd, TRUE);
 
                   if (Wnd->InternalPos.flags & WPF_RESTORETOMAXIMIZED)
                   {
@@ -3304,7 +3441,7 @@ NtUserSetWindowPos(
       RETURN(FALSE);
    }
 
-   if ( hWndInsertAfter &&
+   if ( hWndInsertAfter != HWND_TOP &&
         hWndInsertAfter != HWND_BOTTOM &&
         hWndInsertAfter != HWND_TOPMOST &&
         hWndInsertAfter != HWND_NOTOPMOST )

@@ -18,15 +18,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <stdarg.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winldap.h"
+#include "wine/debug.h"
 
-#include <windef.h>
-#include <winbase.h>
-#include <winldap.h>
-
-#include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(wldap32);
 
 #ifndef LBER_ERROR
@@ -323,7 +322,7 @@ ULONG CDECL WLDAP32_ber_skip_tag( BerElement *berelement, ULONG *len )
  *  berelement must have been allocated with ber_alloc_t. This function
  *  can be called multiple times to append data.
  */
-INT CDECL WLDAP32_ber_printf( BerElement *berelement, PCHAR fmt, ... )
+INT WINAPIV WLDAP32_ber_printf( BerElement *berelement, PCHAR fmt, ... )
 {
 #ifdef HAVE_LDAP
     __ms_va_list list;
@@ -418,7 +417,7 @@ INT CDECL WLDAP32_ber_printf( BerElement *berelement, PCHAR fmt, ... )
  *  berelement must have been allocated with ber_init. This function
  *  can be called multiple times to decode data.
  */
-INT CDECL WLDAP32_ber_scanf( BerElement *berelement, PCHAR fmt, ... )
+INT WINAPIV WLDAP32_ber_scanf( BerElement *berelement, PCHAR fmt, ... )
 {
 #ifdef HAVE_LDAP
     __ms_va_list list;

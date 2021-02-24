@@ -1,4 +1,4 @@
-/* TRANSLATOR: 2013, 2014, 2016 Erdem Ersoy (eersoy93) (erdemersoy@live.com) */
+/* TRANSLATOR: 2013, 2014, 2016 Erdem Ersoy (eersoy93) (erdemersoy [at] erdemersoy [dot] net) */
 
 LANGUAGE LANG_TURKISH, SUBLANG_DEFAULT
 
@@ -80,4 +80,12 @@ BEGIN
     IDS_DOWNLOADING "İndiriliyor..."
     IDS_INSTALLING "Kuruluyor..."
     IDS_INVALID_SHA "İndirilen kütüğün sağlama toplamı beklenmeyen. Bozuk kütüğün kurulumu iptal ediliyor."
+    IDS_NEW_INTERNET_SHORTCUT "New Internet Shortcut"
+    IDS_DWL_FAILED "Failed to download the Gecko package. Make sure you have an internet connection in order to download it. The setup will proceed without installing Gecko."
+    IDS_CANTMAKEINETSHORTCUT "Failed to create internet shortcut."
+    IDS_CANTMAKESHORTCUT "Failed to create shortcut."
+    IDS_NO_MEMORY "No memory could be allocated!"
+    IDS_NO_DIRECTORY "No directory given!"
+    IDS_INVALID_PATH "The given path is invalid!"
+    IDS_INVALID_NAME "The shortcut name you entered either contained characters that are invalid for file names or was too long."
 END

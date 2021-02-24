@@ -18,7 +18,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "wine/debug.h"
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "winuser.h"
+#include "shlwapi.h"
+#include "winerror.h"
+#include "objbase.h"
+
+#include "msctf.h"
 #include "msctf_internal.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(msctf);
 
 typedef struct tagDocumentMgr {
     ITfDocumentMgr ITfDocumentMgr_iface;
@@ -61,11 +77,15 @@ static inline EnumTfContext *impl_from_IEnumTfContexts(IEnumTfContexts *iface)
 
 static void DocumentMgr_Destructor(DocumentMgr *This)
 {
-    ITfThreadMgr *tm;
+    ITfThreadMgr *tm = NULL;
     TRACE("destroying %p\n", This);
 
     TF_GetThreadMgr(&tm);
-    ThreadMgr_OnDocumentMgrDestruction(tm, &This->ITfDocumentMgr_iface);
+    if (tm)
+    {
+        ThreadMgr_OnDocumentMgrDestruction(tm, &This->ITfDocumentMgr_iface);
+        ITfThreadMgr_Release(tm);
+    }
 
     if (This->contextStack[0])
         ITfContext_Release(This->contextStack[0]);
@@ -168,7 +188,7 @@ static HRESULT WINAPI DocumentMgr_Pop(ITfDocumentMgr *iface, DWORD dwFlags)
     {
         int i;
 
-        for (i = 0; i < sizeof(This->contextStack)/sizeof(This->contextStack[0]); i++)
+        for (i = 0; i < ARRAY_SIZE(This->contextStack); i++)
             if (This->contextStack[i])
             {
                 ITfThreadMgrEventSink_OnPopContext(This->ThreadMgrSink, This->contextStack[i]);

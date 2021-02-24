@@ -534,7 +534,7 @@
 534 stdcall GdipSetPathGradientFocusScales(ptr float float)
 535 stdcall GdipSetPathGradientGammaCorrection(ptr long)
 536 stdcall GdipSetPathGradientLinearBlend(ptr float float)
-537 stub GdipSetPathGradientPath
+537 stdcall GdipSetPathGradientPath(ptr ptr)
 538 stdcall GdipSetPathGradientPresetBlend(ptr ptr ptr long)
 539 stdcall GdipSetPathGradientSigmaBlend(ptr float float)
 540 stdcall GdipSetPathGradientSurroundColorsWithCount(ptr ptr ptr)
@@ -622,7 +622,7 @@
 622 stdcall GdipBitmapGetHistogramSize(long ptr)
 623 stdcall GdipBitmapConvertFormat(ptr long long long ptr float)
 624 stdcall GdipImageSetAbort(ptr ptr)
-625 stub GdipGraphicsSetAbort
+625 stdcall GdipGraphicsSetAbort(ptr ptr)
 626 stub GdipDrawImageFX
 627 stdcall GdipConvertToEmfPlus(ptr ptr ptr long ptr ptr)
 628 stdcall GdipConvertToEmfPlusToFile(ptr ptr ptr ptr long ptr ptr)

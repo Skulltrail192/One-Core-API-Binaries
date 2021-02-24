@@ -23,10 +23,10 @@ list(APPEND SOURCE
     rename.c
     search.c
     value.c
-    winldap_private.h
+    precomp.h
     ${CMAKE_CURRENT_BINARY_DIR}/wldap32_stubs.c)
 
-add_library(wldap32 SHARED
+add_library(wldap32 MODULE
     ${SOURCE}
     ber.c
     wldap32.rc
@@ -35,5 +35,5 @@ add_library(wldap32 SHARED
 set_module_type(wldap32 win32dll)
 target_link_libraries(wldap32 wine)
 add_importlibs(wldap32 user32 msvcrt kernel32 ntdll)
-add_pch(wldap32 winldap_private.h SOURCE)
+add_pch(wldap32 precomp.h SOURCE)
 add_cd_file(TARGET wldap32 DESTINATION reactos/system32 FOR all)

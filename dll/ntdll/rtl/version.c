@@ -59,7 +59,7 @@ SetRosSpecificInfo(IN OUT PRTL_OSVERSIONINFOEXW VersionInformation)
             {
                 /* It is, modify the product type to report a workstation */
                 VersionInformation->wProductType = VER_NT_WORKSTATION;
-                DPRINT1("We modified the reported OS from NtProductServer to NtProductWinNt\n");
+                DPRINT("We modified the reported OS from NtProductServer to NtProductWinNt\n");
             }
         }
 
@@ -157,7 +157,7 @@ RtlGetNtVersionNumbers(OUT PULONG pMajorVersion,
 NTSTATUS NTAPI
 RtlGetVersion(IN OUT PRTL_OSVERSIONINFOW lpVersionInformation)
 {
-    ULONG Length;
+    SIZE_T Length;
     PPEB Peb = NtCurrentPeb();
 
     if (lpVersionInformation->dwOSVersionInfoSize != sizeof(RTL_OSVERSIONINFOW) &&

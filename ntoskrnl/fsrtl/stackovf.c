@@ -61,7 +61,7 @@ FsRtlStackOverflowRead(IN PVOID Context)
     /* Otherwise, free the work item */
     else
     {
-        ExFreePoolWithTag(WorkItem, 'Fsrs');
+        ExFreePoolWithTag(WorkItem, 'srSF');
     }
 
     /* Reset top level */
@@ -81,7 +81,7 @@ FsRtlpPostStackOverflow(IN PVOID Context,
     PSTACK_OVERFLOW_WORK_ITEM WorkItem;
 
     /* Try to allocate a work item */
-    WorkItem = ExAllocatePoolWithTag(NonPagedPool, sizeof(STACK_OVERFLOW_WORK_ITEM), 'FSrs');
+    WorkItem = ExAllocatePoolWithTag(NonPagedPool, sizeof(STACK_OVERFLOW_WORK_ITEM), 'srSF');
     if (WorkItem == NULL)
     {
         /* If we failed, and we are not a paging file, just raise an error */
@@ -115,7 +115,7 @@ FsRtlWorkerThread(IN PVOID StartContext)
     KIRQL Irql;
     PLIST_ENTRY Entry;
     PWORK_QUEUE_ITEM WorkItem;
-    ULONG QueueId = (ULONG)StartContext;
+    ULONG_PTR QueueId = (ULONG_PTR)StartContext;
 
     /* Set our priority according to the queue we're dealing with */
     KeSetPriorityThread(&PsGetCurrentThread()->Tcb, LOW_REALTIME_PRIORITY + QueueId);
@@ -144,12 +144,12 @@ FsRtlWorkerThread(IN PVOID StartContext)
 /*
  * @implemented
  */
+INIT_FUNCTION
 NTSTATUS
 NTAPI
-INIT_FUNCTION
 FsRtlInitializeWorkerThread(VOID)
 {
-    ULONG i;
+    ULONG_PTR i;
     NTSTATUS Status;
     HANDLE ThreadHandle;
     OBJECT_ATTRIBUTES ObjectAttributes;

@@ -89,7 +89,6 @@ typedef enum _LOGICAL_PROCESSOR_RELATIONSHIP {
 
 typedef struct _PROCESSOR_RELATIONSHIP {
   UCHAR Flags;
-  UCHAR EfficiencyClass;
   UCHAR Reserved[21];
   USHORT GroupCount;
   _Field_size_(GroupCount) GROUP_AFFINITY GroupMask[ANYSIZE_ARRAY];
@@ -443,6 +442,20 @@ typedef enum _KWAIT_REASON {
 
 typedef struct _KWAIT_BLOCK {
   LIST_ENTRY WaitListEntry;
+#if (NTDDI_VERSION >= NTDDI_WIN8)
+  UCHAR WaitType;
+  volatile UCHAR BlockState;
+  USHORT WaitKey;
+#ifdef _WIN64
+  LONG SpareLong;
+#endif
+  union {
+    struct _KTHREAD *Thread;
+    struct _KQUEUE *NotificationQueue;
+  };
+  PVOID Object;
+  PVOID SparePtr;
+#else
   struct _KTHREAD *Thread;
   PVOID Object;
   struct _KWAIT_BLOCK *NextWaitBlock;
@@ -455,6 +468,7 @@ typedef struct _KWAIT_BLOCK {
 #endif
 #if defined(_WIN64)
   LONG SpareLong;
+#endif
 #endif
 } KWAIT_BLOCK, *PKWAIT_BLOCK, *PRKWAIT_BLOCK;
 

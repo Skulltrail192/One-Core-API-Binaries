@@ -17,9 +17,12 @@
  */
 
 #include "vbscript.h"
+#include "regexp.h"
+#include "vbsregexp55.h"
 
-#include <initguid.h>
-#include <vbsregexp55.h>
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(vbscript);
 
 #define REGEXP_TID_LIST \
     XDIID(RegExp2), \
@@ -1332,7 +1335,7 @@ static HRESULT WINAPI RegExp2_Execute(IRegExp2 *iface,
 
     if(!This->regexp) {
         This->regexp = regexp_new(NULL, &This->pool, This->pattern,
-                strlenW(This->pattern), This->flags, FALSE);
+                lstrlenW(This->pattern), This->flags, FALSE);
         if(!This->regexp)
             return E_FAIL;
     }else {
@@ -1399,7 +1402,7 @@ static HRESULT WINAPI RegExp2_Test(IRegExp2 *iface, BSTR sourceString, VARIANT_B
 
     if(!This->regexp) {
         This->regexp = regexp_new(NULL, &This->pool, This->pattern,
-                strlenW(This->pattern), This->flags, FALSE);
+                lstrlenW(This->pattern), This->flags, FALSE);
         if(!This->regexp)
             return E_FAIL;
     }else {

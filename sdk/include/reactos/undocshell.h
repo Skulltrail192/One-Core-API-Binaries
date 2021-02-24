@@ -30,10 +30,29 @@ extern "C" {
 #define DBIMF_NOMARGINS         0x2000
 #endif  // NTDDI_LONGHORN
 
+#if defined (_SHELLAPI_H) || defined (_INC_SHELLAPI)
+
+/****************************************************************************
+ * Taskbar interface WM_COPYDATA structures
+ * See http://www.geoffchappell.com/studies/windows/shell/shell32/api/shlnot/copydata.htm
+ */
+/* Data structure for Shell_NotifyIcon messages */
+typedef struct _TRAYNOTIFYDATAW
+{
+    DWORD dwSignature;
+    DWORD dwMessage;
+    NOTIFYICONDATAW nid; // Always use the latest NOTIFYICONDATAW structure version.
+} TRAYNOTIFYDATAW, *PTRAYNOTIFYDATAW;
+// Note: One could also introduce TRAYNOTIFYDATAA
+
+#define NI_NOTIFY_SIG 0x34753423 /* TRAYNOTIFYDATA */
+
+#endif /* defined (_SHELLAPI_H) || defined (_INC_SHELLAPI) */
+
+
 /****************************************************************************
  * Taskbar WM_COMMAND identifiers
  */
-
 #define TWM_DOEXITWINDOWS (WM_USER + 342)
 #define TWM_CYCLEFOCUS (WM_USER + 348)
 
@@ -79,8 +98,8 @@ BOOL WINAPI StrRetToStrNW(LPWSTR,DWORD,LPSTRRET,const ITEMIDLIST*);
 
 
 /****************************************************************************
-* SHChangeNotifyRegister API
-*/
+ * SHChangeNotifyRegister API
+ */
 #define SHCNRF_InterruptLevel       0x0001
 #define SHCNRF_ShellLevel           0x0002
 #define SHCNRF_RecursiveInterrupt   0x1000  /* Must be combined with SHCNRF_InterruptLevel */
@@ -443,19 +462,33 @@ BOOL WINAPI PathIsSameRootAW(LPCVOID lpszPath1, LPCVOID lpszPath2);
 BOOL WINAPI PathFindOnPathAW(LPVOID sFile, LPCVOID *sOtherDirs);
 
 /****************************************************************************
- * Shell File Operations error codes
+ * Shell File Operations error codes - SHFileOperationA/W
  */
 
 /* Error codes could be pre-Win32 */
-#define DE_SAMEFILE      0x71
-#define DE_MANYSRC1DEST  0x72
-#define DE_DIFFDIR       0x73
-#define DE_OPCANCELLED   0x75
-#define DE_DESTSUBTREE   0x76
-#define DE_INVALIDFILES  0x7C
-#define DE_DESTSAMETREE  0x7D
-#define DE_FLDDESTISFILE 0x7E
-#define DE_FILEDESTISFLD 0x80
+#define DE_SAMEFILE         0x71
+#define DE_MANYSRC1DEST     0x72
+#define DE_DIFFDIR          0x73
+#define DE_ROOTDIR          0x74
+#define DE_OPCANCELLED      0x75
+#define DE_DESTSUBTREE      0x76
+#define DE_ACCESSDENIEDSRC  0x78
+#define DE_PATHTOODEEP      0x79
+#define DE_MANYDEST         0x7A
+#define DE_INVALIDFILES     0x7C
+#define DE_DESTSAMETREE     0x7D
+#define DE_FLDDESTISFILE    0x7E
+#define DE_FILEDESTISFLD    0x80
+#define DE_FILENAMETOOLONG  0x81
+#define DE_DEST_IS_CDROM    0x82
+#define DE_DEST_IS_DVD      0x83
+#define DE_DEST_IS_CDRECORD 0x84
+#define DE_FILE_TOO_LARGE   0x85
+#define DE_SRC_IS_CDROM     0x86
+#define DE_SRC_IS_DVD       0x87
+#define DE_SRC_IS_CDRECORD  0x88
+// #define DE_ERROR_MAX
+#define ERRORONDEST         0x10000
 
 /****************************************************************************
  * Shell Namespace Routines
@@ -507,6 +540,9 @@ typedef struct
  * Misc Stuff
  */
 
+BOOL WINAPI
+RegenerateUserEnvironment(LPVOID *lpEnvironment, BOOL bUpdateSelf);
+
 /* SHWaitForFileToOpen flags */
 #define SHWFF_ADD     0x01
 #define SHWFF_REMOVE  0x02
@@ -523,6 +559,21 @@ WORD WINAPI ArrangeWindows(
     LPCRECT lpRect,
     WORD cKids,
     CONST HWND * lpKids);
+
+/* Flags for ShellExecCmdLine */
+#define SECL_NO_UI          0x2
+#define SECL_LOG_USAGE      0x8
+#define SECL_USE_IDLIST     0x10
+#define SECL_ALLOW_NONEXE   0x20
+#define SECL_RUNAS          0x40
+
+HRESULT WINAPI ShellExecCmdLine(
+    HWND hwnd,
+    LPCWSTR pwszCommand,
+    LPCWSTR pwszStartDir,
+    int nShow,
+    LPVOID pUnused,
+    DWORD dwSeclFlags);
 
 /* RegisterShellHook types */
 #define RSH_DEREGISTER        0
@@ -580,140 +631,6 @@ BOOL WINAPI GUIDFromStringW(
     _In_   PCWSTR psz,
     _Out_  LPGUID pguid
     );
-    
-static inline ULONG
-Win32DbgPrint(const char *filename, int line, const char *lpFormat, ...)
-{
-    char szMsg[512];
-    char *szMsgStart;
-    const char *fname;
-    va_list vl;
-    ULONG uRet;
-
-    fname = strrchr(filename, '\\');
-    if (fname == NULL)
-    {
-        fname = strrchr(filename, '/');
-        if (fname != NULL)
-            fname++;
-    }
-    else
-        fname++;
-
-    if (fname == NULL)
-        fname = filename;
-
-    szMsgStart = szMsg + sprintf(szMsg, "%s:%d: ", fname, line);
-
-    va_start(vl, lpFormat);
-    uRet = (ULONG) vsprintf(szMsgStart, lpFormat, vl);
-    va_end(vl);
-
-    OutputDebugStringA(szMsg);
-
-    return uRet;
-}
-
-#define DbgPrint(fmt, ...) \
-    Win32DbgPrint(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
-
-static inline void DbgDumpMenuInternal(HMENU hmenu, char* padding, int padlevel)
-{
-    WCHAR label[128];
-    int i;
-    int count = GetMenuItemCount(hmenu);
-
-    padding[padlevel] = '.';
-    padding[padlevel + 1] = '.';
-    padding[padlevel + 2] = 0;
-
-    for (i = 0; i < count; i++)
-    {
-        MENUITEMINFOW mii = { 0 };
-
-        mii.cbSize = sizeof(mii);
-        mii.fMask = MIIM_STRING | MIIM_FTYPE | MIIM_SUBMENU | MIIM_STATE | MIIM_ID;
-        mii.dwTypeData = label;
-        mii.cch = _countof(label);
-
-        GetMenuItemInfoW(hmenu, i, TRUE, &mii);
-
-        if (mii.fType & MFT_BITMAP)
-            DbgPrint("%s%2d - %08x: BITMAP %08p (state=%d, has submenu=%s)\n", padding, i, mii.wID, mii.hbmpItem, mii.fState, mii.hSubMenu ? "TRUE" : "FALSE");
-        else if (mii.fType & MFT_SEPARATOR)
-            DbgPrint("%s%2d - %08x ---SEPARATOR---\n", padding, i, mii.wID);
-        else
-            DbgPrint("%s%2d - %08x: %S (state=%d, has submenu=%s)\n", padding, i, mii.wID, mii.dwTypeData, mii.fState, mii.hSubMenu ? "TRUE" : "FALSE");
-
-        if (mii.hSubMenu)
-            DbgDumpMenuInternal(mii.hSubMenu, padding, padlevel + 2);
-
-    }
-
-    padding[padlevel] = 0;
-}
-
-static __inline void DbgDumpMenu(HMENU hmenu)
-{
-    char padding[128];
-    DbgDumpMenuInternal(hmenu, padding, 0);
-}
-
-
-static inline
-void DumpIdList(LPCITEMIDLIST pcidl)
-{
-    DbgPrint("Begin IDList Dump\n");
-
-    for (; pcidl != NULL; pcidl = ILGetNext(pcidl))
-    {
-        int i;
-        int cb = pcidl->mkid.cb;
-        BYTE * sh = (BYTE*) &(pcidl->mkid);
-        if (cb == 0) // ITEMIDLISTs are terminatedwith a null SHITEMID.
-            break;
-        DbgPrint("Begin SHITEMID (cb=%d)\n", cb);
-        if ((cb & 3) != 0)
-            DbgPrint(" - WARNING: cb is not a multiple of 4\n");
-        for (i = 0; (i + 4) <= cb; i += 4)
-        {
-            DbgPrint(" - abID[%08x]: %02x %02x %02x %02x\n",
-                     i,
-                     sh[i + 0],
-                     sh[i + 1],
-                     sh[i + 2],
-                     sh[i + 3]);
-        }
-        if (i < cb)
-        {
-            cb -= i;
-            if (cb == 3)
-            {
-                DbgPrint(" - abID[%08x]: %02x %02x %02x --\n",
-                         i,
-                         sh[i + 0],
-                         sh[i + 1],
-                         sh[i + 2]);
-            }
-            else if (cb == 2)
-            {
-                DbgPrint(" - abID[%08x]: %02x %02x -- --\n",
-                         i,
-                         sh[i + 0],
-                         sh[i + 1]);
-            }
-            else if (cb == 1)
-            {
-                DbgPrint(" - abID[%08x]: %02x -- -- --\n",
-                         i,
-                         sh[i + 0]);
-            }
-        }
-        DbgPrint("End SHITEMID\n");
-    }
-    DbgPrint("End IDList Dump.\n");
-}
-
 
 /*****************************************************************************
  * Shell32 resources
@@ -748,12 +665,55 @@ void DumpIdList(LPCITEMIDLIST pcidl)
 #define SMSET_UNKNOWN08             0x08
 #define SMSET_UNKNOWN10             0x10
 
+// explorer tray commands
+#define TRAYCMD_STARTMENU           305
+#define TRAYCMD_RUN_DIALOG          401
+#define TRAYCMD_LOGOFF_DIALOG       402
+#define TRAYCMD_CASCADE             403
+#define TRAYCMD_TILE_H              404
+#define TRAYCMD_TILE_V              405
+#define TRAYCMD_TOGGLE_DESKTOP      407
+#define TRAYCMD_DATE_AND_TIME       408
+#define TRAYCMD_TASKBAR_PROPERTIES  413
+#define TRAYCMD_MINIMIZE_ALL        415
+#define TRAYCMD_RESTORE_ALL         416
+#define TRAYCMD_SHOW_DESKTOP        419
+#define TRAYCMD_SHOW_TASK_MGR       420
+#define TRAYCMD_CUSTOMIZE_TASKBAR   421
+#define TRAYCMD_LOCK_TASKBAR        424
+#define TRAYCMD_HELP_AND_SUPPORT    503
+#define TRAYCMD_CONTROL_PANEL       505
+#define TRAYCMD_SHUTDOWN_DIALOG     506
+#define TRAYCMD_PRINTERS_AND_FAXES  510
+#define TRAYCMD_LOCK_DESKTOP        517
+#define TRAYCMD_SWITCH_USER_DIALOG  5000
+#define TRAYCMD_SEARCH_FILES        41093
+#define TRAYCMD_SEARCH_COMPUTERS    41094
+
+// Explorer Tray Application Bar Data Message Commands
+#define TABDMC_APPBAR     0
+#define TABDMC_NOTIFY     1
+#define TABDMC_LOADINPROC 2
+
 void WINAPI ShellDDEInit(BOOL bInit);
 DWORD WINAPI WinList_Init(void);
 
 IStream* WINAPI SHGetViewStream(LPCITEMIDLIST, DWORD, LPCTSTR, LPCTSTR, LPCTSTR);
 
 EXTERN_C HRESULT WINAPI SHCreateSessionKey(REGSAM samDesired, PHKEY phKey);
+
+/*****************************************************************************
+ * INVALID_FILETITLE_CHARACTERS
+ */
+
+#define INVALID_FILETITLE_CHARACTERSA "\\/:*?\"<>|"
+#define INVALID_FILETITLE_CHARACTERSW L"\\/:*?\"<>|"
+
+#ifdef UNICODE
+    #define INVALID_FILETITLE_CHARACTERS INVALID_FILETITLE_CHARACTERSW
+#else
+    #define INVALID_FILETITLE_CHARACTERS INVALID_FILETITLE_CHARACTERSA
+#endif
 
 /*****************************************************************************
  * Shell Link
@@ -838,7 +798,7 @@ typedef struct tagSHELL_LINK_INFOW
 
 /*****************************************************************************
  * SHELL_LINK_INFO_VOLUME_IDA/W
- * If cbVolumeLabelOffset != 0x00000014 (should be 0x00000010) then use 
+ * If cbVolumeLabelOffset != 0x00000014 (should be 0x00000010) then use
  * SHELL_LINK_INFO_VOLUME_IDA
  * If cbVolumeLabelOffset == 0x00000014 then use SHELL_LINK_INFO_VOLUME_IDW
  */
@@ -958,7 +918,7 @@ typedef struct tagEXP_VISTA_ID_LIST
 {
     /* .cbSize >= 0x0000000a, .dwSignature = 0xa000000c */
     DATABLOCK_HEADER dbh;
-    /* Specifies an alternate IDList that can be used instead 
+    /* Specifies an alternate IDList that can be used instead
        of the "normal" IDList (SLDF_HAS_ID_LIST) */
     /* LPITEMIDLIST pIDList; (variable) */
 } EXP_VISTA_ID_LIST, *LPEXP_VISTA_ID_LIST;
@@ -967,6 +927,15 @@ typedef struct tagEXP_VISTA_ID_LIST
 #define EXP_SHIM_SIG          0xa0000008
 #define EXP_KNOWN_FOLDER_SIG  0xa000000b
 #define EXP_VISTA_ID_LIST_SIG 0xa000000c
+
+/* Not compatible yet */
+typedef struct SFVM_CUSTOMVIEWINFO_DATA
+{
+    ULONG cbSize;
+    HBITMAP hbmBack;
+    COLORREF clrText;
+    COLORREF clrTextBack;
+} SFVM_CUSTOMVIEWINFO_DATA, *LPSFVM_CUSTOMVIEWINFO_DATA;
 
 #include <poppack.h>
 

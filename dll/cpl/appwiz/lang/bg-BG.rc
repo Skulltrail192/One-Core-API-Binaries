@@ -78,4 +78,12 @@ BEGIN
     IDS_DOWNLOADING "Downloading..."
     IDS_INSTALLING "Installing..."
     IDS_INVALID_SHA "Unexpected checksum of downloaded file. Aborting installation of corrupted file."
+    IDS_NEW_INTERNET_SHORTCUT "New Internet Shortcut"
+    IDS_DWL_FAILED "Failed to download the Gecko package. Make sure you have an internet connection in order to download it. The setup will proceed without installing Gecko."
+    IDS_CANTMAKEINETSHORTCUT "Failed to create internet shortcut."
+    IDS_CANTMAKESHORTCUT "Failed to create shortcut."
+    IDS_NO_MEMORY "No memory could be allocated!"
+    IDS_NO_DIRECTORY "No directory given!"
+    IDS_INVALID_PATH "The given path is invalid!"
+    IDS_INVALID_NAME "The shortcut name you entered either contained characters that are invalid for file names or was too long."
 END

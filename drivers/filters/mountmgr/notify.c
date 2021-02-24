@@ -247,12 +247,14 @@ MountMgrTargetDeviceNotification(IN PVOID NotificationStructure,
      */
     else if (IsEqualGUID(&(Notification->Event), &GUID_IO_VOLUME_MOUNT))
     {
+        /* If we were already mounted, then mark us unmounted */
         if (InterlockedCompareExchange(&(DeviceInformation->MountState),
                                        FALSE,
-                                       TRUE) == TRUE)
+                                       FALSE) == TRUE)
         {
             InterlockedDecrement(&(DeviceInformation->MountState));
         }
+        /* Otherwise, start mounting the device and first, reconcile its DB if required */
         else
         {
             if (DeviceInformation->NeedsReconcile)
@@ -326,6 +328,7 @@ MountMgrNotify(IN PDEVICE_EXTENSION DeviceExtension)
     {
         NextEntry = RemoveHeadList(&(DeviceExtension->IrpListHead));
         Irp = CONTAINING_RECORD(NextEntry, IRP, Tail.Overlay.ListEntry);
+        IoSetCancelRoutine(Irp, NULL);
         InsertTailList(&CopyList, &(Irp->Tail.Overlay.ListEntry));
     }
     IoReleaseCancelSpinLock(OldIrql);

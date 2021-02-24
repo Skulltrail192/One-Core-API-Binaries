@@ -1,25 +1,14 @@
 /*
- * Copyright 2017 Mark Jansen (mark.jansen@reactos.org)
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+ * PROJECT:     ReactOS Application compatibility module
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     Shim engine structures
+ * COPYRIGHT:   Copyright 2017 Mark Jansen (mark.jansen@reactos.org)
  */
 
 #ifndef SHIMENG_H
 #define SHIMENG_H
 
-/* ReactOS specific */
+/* This header is ReactOS specific */
 
 /* Structure that allows dynamic growing.
    Be aware, the data may move! */
@@ -34,6 +23,8 @@ typedef struct _ARRAY
 typedef struct _SHIMINFO *PSHIMINFO;
 typedef struct _SHIMMODULE *PSHIMMODULE;
 
+typedef struct tagHOOKAPIEX *PHOOKAPIEX;
+
 /* Shims know this structure as HOOKAPI, with 2 reserved members (the last 2). */
 typedef struct tagHOOKAPIEX
 {
@@ -42,18 +33,25 @@ typedef struct tagHOOKAPIEX
     PVOID ReplacementFunction;
     PVOID OriginalFunction;
     PSHIMINFO pShimInfo;
-    PVOID Unused;
-} HOOKAPIEX, *PHOOKAPIEX;
+    PHOOKAPIEX ApiLink;
+} HOOKAPIEX;
 
 C_ASSERT(sizeof(HOOKAPIEX) == sizeof(HOOKAPI));
 C_ASSERT(offsetof(HOOKAPIEX, pShimInfo) == offsetof(HOOKAPI, Reserved));
 
+typedef struct _INEXCLUDE
+{
+    UNICODE_STRING Module;
+    BOOL Include;
+} INEXCLUDE, *PINEXCLUDE;
 
 typedef struct _SHIMINFO
 {
+    PCWSTR ShimName;
     PHOOKAPIEX pHookApi;
     DWORD dwHookCount;
     PSHIMMODULE pShimModule;
+    ARRAY InExclude;        /* INEXCLUDE */
 } SHIMINFO, *PSHIMINFO;
 
 typedef struct _SHIMMODULE
@@ -75,6 +73,13 @@ typedef struct _HOOKMODULEINFO
     ARRAY HookApis;         /* PHOOKAPIEX */
 
 } HOOKMODULEINFO, *PHOOKMODULEINFO;
+
+typedef struct _FLAGINFO
+{
+    ULARGE_INTEGER AppCompatFlags;
+    ULARGE_INTEGER AppCompatFlagsUser;
+    ULONG ProcessParameters_Flags;
+} FLAGINFO, *PFLAGINFO;
 
 
 #if SDBAPI_DEBUG_ALLOC

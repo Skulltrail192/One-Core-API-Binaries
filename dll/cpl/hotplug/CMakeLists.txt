@@ -5,7 +5,10 @@ list(APPEND SOURCE
     hotplug.c
     enum.c)
 
-add_library(hotplug SHARED
+file(GLOB hotplug_rc_deps resources/*.*)
+add_rc_deps(hotplug.rc ${hotplug_rc_deps})
+
+add_library(hotplug MODULE
     ${SOURCE}
     hotplug.rc
     ${CMAKE_CURRENT_BINARY_DIR}/hotplug.def)

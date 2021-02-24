@@ -23,7 +23,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <string.h>
+
 #include "ieframe.h"
+
+#include "htiframe.h"
+#include "idispids.h"
+#include "mshtmdid.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(ieframe);
 
 /* shlwapi.dll */
 HWND WINAPI SHSetParentHwnd(HWND hWnd, HWND hWndParent);
@@ -375,7 +385,7 @@ static HRESULT WINAPI EnumOLEVERB_Next(IEnumOLEVERB *iface, ULONG celt, OLEVERB 
     if(pceltFetched)
         *pceltFetched = 0;
 
-    if(This->iter == sizeof(verbs)/sizeof(*verbs))
+    if(This->iter == ARRAY_SIZE(verbs))
         return S_FALSE;
 
     if(celt)

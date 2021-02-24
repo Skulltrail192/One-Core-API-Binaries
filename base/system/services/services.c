@@ -24,11 +24,12 @@ int WINAPI RegisterServicesProcess(DWORD ServicesProcessId);
 /* Defined in include/reactos/services/services.h */
 // #define SCM_START_EVENT             L"SvcctrlStartEvent_A3752DX"
 #define SCM_AUTOSTARTCOMPLETE_EVENT L"SC_AutoStartComplete"
-#define LSA_RPC_SERVER_ACTIVE       L"LSA_RPC_SERVER_ACTIVE"
 
 BOOL ScmInitialize = FALSE;
 BOOL ScmShutdown = FALSE;
+BOOL ScmLiveSetup = FALSE;
 static HANDLE hScmShutdownEvent = NULL;
+static HANDLE hScmSecurityServicesEvent = NULL;
 
 
 /* FUNCTIONS *****************************************************************/
@@ -46,6 +47,102 @@ PrintString(LPCSTR fmt, ...)
 
     OutputDebugStringA(buffer);
 #endif
+}
+
+DWORD
+CheckForLiveCD(VOID)
+{
+    WCHAR CommandLine[MAX_PATH];
+    HKEY hSetupKey;
+    DWORD dwSetupType;
+    DWORD dwType;
+    DWORD dwSize;
+    DWORD dwError;
+
+    DPRINT1("CheckSetup()\n");
+
+    /* Open the Setup key */
+    dwError = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                            L"SYSTEM\\Setup",
+                            0,
+                            KEY_QUERY_VALUE,
+                            &hSetupKey);
+    if (dwError != ERROR_SUCCESS)
+        return dwError;
+
+    /* Read the SetupType value */
+    dwSize = sizeof(DWORD);
+    dwError = RegQueryValueExW(hSetupKey,
+                               L"SetupType",
+                               NULL,
+                               &dwType,
+                               (LPBYTE)&dwSetupType,
+                               &dwSize);
+
+    if (dwError != ERROR_SUCCESS ||
+        dwType != REG_DWORD ||
+        dwSize != sizeof(DWORD) ||
+        dwSetupType == 0)
+        goto done;
+
+    /* Read the CmdLine value */
+    dwSize = sizeof(CommandLine);
+    dwError = RegQueryValueExW(hSetupKey,
+                               L"CmdLine",
+                               NULL,
+                               &dwType,
+                               (LPBYTE)CommandLine,
+                               &dwSize);
+
+    if (dwError != ERROR_SUCCESS ||
+        (dwType != REG_SZ &&
+         dwType != REG_EXPAND_SZ &&
+         dwType != REG_MULTI_SZ))
+        goto done;
+
+    /* Check for the '-mini' option */
+    if (wcsstr(CommandLine, L" -mini") != NULL)
+    {
+        DPRINT1("Running on LiveCD!\n");
+        ScmLiveSetup = TRUE;
+    }
+
+done:
+    RegCloseKey(hSetupKey);
+
+    return dwError;
+}
+
+
+DWORD
+SetSecurityServicesEvent(VOID)
+{
+    DWORD dwError;
+
+    if (hScmSecurityServicesEvent != NULL)
+        return ERROR_SUCCESS;
+
+    /* Create or open the SECURITY_SERVICES_STARTED event */
+    hScmSecurityServicesEvent = CreateEventW(NULL,
+                                             TRUE,
+                                             FALSE,
+                                             L"SECURITY_SERVICES_STARTED");
+    if (hScmSecurityServicesEvent == NULL)
+    {
+        dwError = GetLastError();
+        if (dwError != ERROR_ALREADY_EXISTS)
+            return dwError;
+
+        hScmSecurityServicesEvent = OpenEventW(EVENT_MODIFY_STATE,
+                                               FALSE,
+                                               L"SECURITY_SERVICES_STARTED");
+        if (hScmSecurityServicesEvent == NULL)
+            return GetLastError();
+    }
+
+    SetEvent(hScmSecurityServicesEvent);
+
+    return ERROR_SUCCESS;
 }
 
 
@@ -85,10 +182,10 @@ ScmLogEvent(DWORD dwEventId,
 VOID
 ScmWaitForLsa(VOID)
 {
-    HANDLE hEvent = CreateEventW(NULL, TRUE, FALSE, LSA_RPC_SERVER_ACTIVE);
+    HANDLE hEvent = CreateEventW(NULL, TRUE, FALSE, L"LSA_RPC_SERVER_ACTIVE");
     if (hEvent == NULL)
     {
-        DPRINT1("Failed to create the notification event (Error %lu)\n", GetLastError());
+        DPRINT1("Failed to create or open the notification event (Error %lu)\n", GetLastError());
     }
     else
     {
@@ -123,178 +220,6 @@ ShutdownHandlerRoutine(DWORD dwCtrlType)
 }
 
 
-/*** HACK CORE-12541: Special service accounts initialization HACK ************/
-
-#include <ndk/setypes.h>
-#include <sddl.h>
-#include <userenv.h>
-#include <strsafe.h>
-
-/* Inspired from userenv.dll's CreateUserProfileExW and LoadUserProfileW APIs */
-static
-BOOL
-ScmLogAccountHack(IN LPCWSTR pszAccountName,
-                  IN LPCWSTR pszSid,
-                  OUT PHKEY phProfile)
-{
-    BOOL Success = FALSE;
-    LONG Error;
-    NTSTATUS Status;
-    BOOLEAN WasPriv1Set = FALSE, WasPriv2Set = FALSE;
-    PSID pSid;
-    DWORD dwLength;
-    WCHAR szUserHivePath[MAX_PATH];
-
-    DPRINT1("ScmLogAccountsHack(%S, %S)\n", pszAccountName, pszSid);
-    if (!pszAccountName || !pszSid || !phProfile)
-        return ERROR_INVALID_PARAMETER;
-
-    /* Convert the SID string into a SID. NOTE: No RTL equivalent. */
-    if (!ConvertStringSidToSidW(pszSid, &pSid))
-    {
-        DPRINT1("ConvertStringSidToSidW() failed (error %lu)\n", GetLastError());
-        return FALSE;
-    }
-
-    /* Determine a suitable profile path */
-    dwLength = ARRAYSIZE(szUserHivePath);
-    if (!GetProfilesDirectoryW(szUserHivePath, &dwLength))
-    {
-        DPRINT1("GetProfilesDirectoryW() failed (error %lu)\n", GetLastError());
-        goto Quit;
-    }
-
-    /* Create user hive name */
-    StringCbCatW(szUserHivePath, sizeof(szUserHivePath), L"\\");
-    StringCbCatW(szUserHivePath, sizeof(szUserHivePath), pszAccountName);
-    StringCbCatW(szUserHivePath, sizeof(szUserHivePath), L"\\ntuser.dat");
-    DPRINT("szUserHivePath: %S\n", szUserHivePath);
-
-    /* Magic #1: Create the special user profile if needed */
-    if (GetFileAttributesW(szUserHivePath) == INVALID_FILE_ATTRIBUTES)
-    {
-        if (!CreateUserProfileW(pSid, pszAccountName))
-        {
-            DPRINT1("CreateUserProfileW() failed (error %lu)\n", GetLastError());
-            goto Quit;
-        }
-    }
-
-    /*
-     * Now Da Magiks #2: Manually mount the user profile registry hive
-     * aka. manually do what LoadUserProfile does!! But we don't require
-     * a security token!
-     */
-
-    /* Acquire restore privilege */
-    Status = RtlAdjustPrivilege(SE_RESTORE_PRIVILEGE, TRUE, FALSE, &WasPriv1Set);
-    if (!NT_SUCCESS(Status))
-    {
-        DPRINT1("RtlAdjustPrivilege(SE_RESTORE_PRIVILEGE) failed (Error 0x%08lx)\n", Status);
-        goto Quit;
-    }
-
-    /* Acquire backup privilege */
-    Status = RtlAdjustPrivilege(SE_BACKUP_PRIVILEGE, TRUE, FALSE, &WasPriv2Set);
-    if (!NT_SUCCESS(Status))
-    {
-        DPRINT1("RtlAdjustPrivilege(SE_BACKUP_PRIVILEGE) failed (Error 0x%08lx)\n", Status);
-        RtlAdjustPrivilege(SE_RESTORE_PRIVILEGE, WasPriv1Set, FALSE, &WasPriv1Set);
-        goto Quit;
-    }
-
-    /* Load user registry hive */
-    Error = RegLoadKeyW(HKEY_USERS, pszSid, szUserHivePath);
-
-    /* Remove restore and backup privileges */
-    RtlAdjustPrivilege(SE_BACKUP_PRIVILEGE, WasPriv2Set, FALSE, &WasPriv2Set);
-    RtlAdjustPrivilege(SE_RESTORE_PRIVILEGE, WasPriv1Set, FALSE, &WasPriv1Set);
-
-    /* HACK: Do not fail if the profile has already been loaded! */
-    if (Error == ERROR_SHARING_VIOLATION)
-        Error = ERROR_SUCCESS;
-
-    if (Error != ERROR_SUCCESS)
-    {
-        DPRINT1("RegLoadKeyW() failed (Error %ld)\n", Error);
-        goto Quit;
-    }
-
-    /* Open future HKEY_CURRENT_USER */
-    Error = RegOpenKeyExW(HKEY_USERS,
-                          pszSid,
-                          0,
-                          MAXIMUM_ALLOWED,
-                          phProfile);
-    if (Error != ERROR_SUCCESS)
-    {
-        DPRINT1("RegOpenKeyExW() failed (Error %ld)\n", Error);
-        goto Quit;
-    }
-
-    Success = TRUE;
-
-Quit:
-    LocalFree(pSid);
-
-    DPRINT1("ScmLogAccountsHack(%S) returned %s\n",
-            pszAccountName, Success ? "success" : "failure");
-
-    return Success;
-}
-
-static struct
-{
-    LPCWSTR pszAccountName;
-    LPCWSTR pszSid;
-    HKEY    hProfile;
-} AccountHandles[] = {
-//  {L"LocalSystem"   , L"S-1-5-18", NULL},
-    {L"LocalService"  , L"S-1-5-19", NULL}, // L"NT AUTHORITY\\LocalService"
-    {L"NetworkService", L"S-1-5-20", NULL}, // L"NT AUTHORITY\\NetworkService"
-};
-
-static VOID
-ScmCleanupServiceAccountsHack(VOID)
-{
-    UINT i;
-
-    DPRINT1("ScmCleanupServiceAccountsHack()\n");
-
-    for (i = 0; i < ARRAYSIZE(AccountHandles); ++i)
-    {
-        if (AccountHandles[i].hProfile)
-        {
-            RegCloseKey(AccountHandles[i].hProfile);
-            AccountHandles[i].hProfile = NULL;
-        }
-    }
-}
-
-static BOOL
-ScmApplyServiceAccountsHack(VOID)
-{
-    UINT i;
-
-    DPRINT1("ScmApplyServiceAccountsHack()\n");
-
-    for (i = 0; i < ARRAYSIZE(AccountHandles); ++i)
-    {
-        if (!ScmLogAccountHack( AccountHandles[i].pszAccountName,
-                                AccountHandles[i].pszSid,
-                               &AccountHandles[i].hProfile))
-        {
-            ScmCleanupServiceAccountsHack();
-            return FALSE;
-        }
-    }
-
-    return TRUE;
-}
-
-/*************************** END OF HACK CORE-12541 ***************************/
-
-
 int WINAPI
 wWinMain(HINSTANCE hInstance,
          HINSTANCE hPrevInstance,
@@ -308,6 +233,13 @@ wWinMain(HINSTANCE hInstance,
     DWORD dwError;
 
     DPRINT("SERVICES: Service Control Manager\n");
+
+    dwError = CheckForLiveCD();
+    if (dwError != ERROR_SUCCESS)
+    {
+        DPRINT1("SERVICES: Failed to check for LiveCD (Error %lu)\n", dwError);
+        goto done;
+    }
 
     /* Make us critical */
     RtlSetProcessIsCritical(TRUE, NULL, TRUE);
@@ -351,10 +283,11 @@ wWinMain(HINSTANCE hInstance,
 
     /* FIXME: more initialization */
 
-    /* Read the control set values */
-    if (!ScmGetControlSetValues())
+    /* Create the 'Last Known Good' control set */
+    dwError = ScmCreateLastKnownGoodControlSet();
+    if (dwError != ERROR_SUCCESS)
     {
-        DPRINT1("SERVICES: Failed to read the control set values\n");
+        DPRINT1("SERVICES: Failed to create the 'Last Known Good' control set (Error %lu)\n", dwError);
         goto done;
     }
 
@@ -365,9 +298,6 @@ wWinMain(HINSTANCE hInstance,
         DPRINT1("SERVICES: Failed to create SCM database (Error %lu)\n", dwError);
         goto done;
     }
-
-    /* Wait for the LSA server */
-    ScmWaitForLsa();
 
     /* Update the services database */
     ScmGetBootAndSystemDriverState();
@@ -407,9 +337,6 @@ wWinMain(HINSTANCE hInstance,
      */
     SetProcessShutdownParameters(480, SHUTDOWN_NORETRY);
 
-    /*** HACK CORE-12541: Apply service accounts HACK ***/
-    ScmApplyServiceAccountsHack();
-
     /* Start auto-start services */
     ScmAutoStartServices();
 
@@ -429,15 +356,15 @@ wWinMain(HINSTANCE hInstance,
     /* Wait until the shutdown event gets signaled */
     WaitForSingleObject(hScmShutdownEvent, INFINITE);
 
-    /*** HACK CORE-12541: Cleanup service accounts HACK ***/
-    ScmCleanupServiceAccountsHack();
-
 done:
     ScmShutdownSecurity();
 
     /* Delete our communication named pipe's critical section */
-    if (bCanDeleteNamedPipeCriticalSection == TRUE)
+    if (bCanDeleteNamedPipeCriticalSection != FALSE)
         ScmDeleteNamedPipeCriticalSection();
+
+    if (hScmSecurityServicesEvent != NULL)
+        CloseHandle(hScmSecurityServicesEvent);
 
     /* Close the shutdown event */
     if (hScmShutdownEvent != NULL)

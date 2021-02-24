@@ -16,7 +16,14 @@
 ** parser for analysis.
 */
 
-#include "msipriv.h"
+#include <ctype.h>
+#include <stdarg.h>
+#include <stdlib.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wine/unicode.h"
+#include "query.h"
 #include "sql.tab.h"
 
 /*
@@ -69,8 +76,6 @@ static const WCHAR temporaryW[] = {'T','E','M','P','O','R','A','R','Y'};
 static const WCHAR updateW[] = {'U','P','D','A','T','E'};
 static const WCHAR valuesW[] = {'V','A','L','U','E','S'};
 static const WCHAR whereW[] = {'W','H','E','R','E'};
-
-#define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
 
 /*
 ** These are the keywords

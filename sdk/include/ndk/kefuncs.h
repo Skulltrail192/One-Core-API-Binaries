@@ -24,6 +24,7 @@ Author:
 //
 #include <umtypes.h>
 #include <ketypes.h>
+#include <section_attribs.h>
 
 #ifndef NTOS_MODE_USER
 
@@ -244,6 +245,7 @@ KeSignalCallDpcSynchronize(
 // ARC Configuration Functions. Only enabled if you have ARC Support
 //
 #ifdef _ARC_
+INIT_FUNCTION
 PCONFIGURATION_COMPONENT_DATA
 NTAPI
 KeFindConfigurationNextEntry(
@@ -254,6 +256,7 @@ KeFindConfigurationNextEntry(
     _In_ PCONFIGURATION_COMPONENT_DATA *NextLink
 );
 
+INIT_FUNCTION
 PCONFIGURATION_COMPONENT_DATA
 NTAPI
 KeFindConfigurationEntry(
@@ -458,6 +461,18 @@ NTSTATUS
 NTAPI
 NtQueueApcThread(
     _In_ HANDLE ThreadHandle,
+    _In_ PKNORMAL_ROUTINE ApcRoutine,
+    _In_opt_ PVOID NormalContext,
+    _In_opt_ PVOID SystemArgument1,
+    _In_opt_ PVOID SystemArgument2
+);
+
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtQueueApcThreadEx(
+    _In_ HANDLE ThreadHandle,
+    _In_opt_ HANDLE UserApcReserveHandle,
     _In_ PKNORMAL_ROUTINE ApcRoutine,
     _In_opt_ PVOID NormalContext,
     _In_opt_ PVOID SystemArgument1,

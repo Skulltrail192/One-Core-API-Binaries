@@ -16,9 +16,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#include <stdio.h>
 
-#include <rpcproxy.h>
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "ole2.h"
+#include "rpcproxy.h"
+#include "dimm.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(msimtf);
 
 extern HRESULT ActiveIMMApp_Constructor(IUnknown *punkOuter, IUnknown **ppOut);
 

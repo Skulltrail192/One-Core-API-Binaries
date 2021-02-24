@@ -32,6 +32,7 @@
 #define NDEBUG
 #include <debug.h>
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 DriverEntry(
@@ -39,11 +40,13 @@ DriverEntry(
     PUNICODE_STRING RegistryPath
 );
 
+INIT_FUNCTION
 VOID
 MupInitializeData(
     VOID
 );
 
+INIT_FUNCTION
 VOID
 MupInitializeVcb(
     PMUP_VCB Vcb
@@ -76,7 +79,7 @@ NTSTATUS MupOrderedErrorList[] = { STATUS_UNSUCCESSFUL,
 
 /* FUNCTIONS ****************************************************************/
 
-INIT_SECTION
+INIT_FUNCTION
 VOID
 MupInitializeData(VOID)
 {
@@ -102,7 +105,7 @@ MupUninitializeData()
   ExDeleteResourceLite(&MupVcbLock);
 }
 
-INIT_SECTION
+INIT_FUNCTION
 VOID
 MupInitializeVcb(PMUP_VCB Vcb)
 {
@@ -158,7 +161,7 @@ MuppIsDfsEnabled(VOID)
         return TRUE;
     }
 
-    return ((ULONG)KeyQueryOutput.KeyInfo.Data != 1);
+    return ((ULONG_PTR)KeyQueryOutput.KeyInfo.Data != 1);
 }
 
 VOID
@@ -1245,7 +1248,7 @@ RegisterUncProvider(PDEVICE_OBJECT DeviceObject,
     }
     _SEH2_FINALLY
     {
-        if (_abnormal_termination())
+        if (_SEH2_AbnormalTermination())
         {
             Status = STATUS_INVALID_USER_BUFFER;
         }
@@ -2150,7 +2153,7 @@ CreateRedirectedFile(PIRP Irp,
         }
         _SEH2_FINALLY
         {
-            if (_abnormal_termination())
+            if (_SEH2_AbnormalTermination())
             {
                 MasterQueryContext->LatestStatus = STATUS_INSUFFICIENT_RESOURCES;
             }
@@ -2507,7 +2510,7 @@ MupUnload(PDRIVER_OBJECT DriverObject)
  *           RegistryPath = path to our configuration entries
  * RETURNS: Success or failure
  */
-INIT_SECTION
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 DriverEntry(PDRIVER_OBJECT DriverObject,

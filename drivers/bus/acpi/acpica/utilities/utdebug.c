@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2019, Intel Corp.
+ * Copyright (C) 2000 - 2020, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -214,7 +214,7 @@ AcpiDebugPrint (
      * Display the module name, current line number, thread ID (if requested),
      * current procedure nesting level, and the current procedure name
      */
-    AcpiOsPrintf ("%9s-%04ld ", ModuleName, LineNumber);
+    AcpiOsPrintf ("%9s-%04d ", ModuleName, LineNumber);
 
 #ifdef ACPI_APPLICATION
     /*
@@ -235,7 +235,7 @@ AcpiDebugPrint (
         FillCount = 0;
     }
 
-    AcpiOsPrintf ("[%02ld] %*s",
+    AcpiOsPrintf ("[%02d] %*s",
         AcpiGbl_NestingLevel, AcpiGbl_NestingLevel + 1, " ");
     AcpiOsPrintf ("%s%*s: ",
         AcpiUtTrimFunctionName (FunctionName), FillCount, " ");

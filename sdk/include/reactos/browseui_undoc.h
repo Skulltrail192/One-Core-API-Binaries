@@ -25,6 +25,45 @@
 extern "C" {
 #endif /* defined(__cplusplus) */
 
+// Name is IETHREADPARAM according to symbols / mangled function names
+#ifdef _WIN64
+typedef struct IEThreadParamBlock
+{
+    long                            offset0;  // 0x00
+    UCHAR gap4[4];
+    DWORD                   dwFlags;          // 0x08
+    long                            offset8;  // 0x0c
+    IUnknown*                       offsetC;  // 0x10
+    long                            offset10; // 0x18
+    char padding1[4];                         // 0x1c
+    IUnknown*                       offset14; // 0x20
+    LPITEMIDLIST            directoryPIDL;    // 0x28
+    WCHAR awsz_30[21];                        // 0x30
+    WCHAR awszEventName[21];                  // 0x5A
+    char padding2[4];                         // 0x84
+    IUnknown*                       offset70; // 0x88
+    long                            offset74; // 0x90 unknown contents
+    char padding3[4];                         // 0x94
+    IUnknown*                       offset78; // 0x98
+    LPITEMIDLIST                    offset7C; // 0xa0
+    LPITEMIDLIST                    offset80; // 0xa8
+    LONG                            offset84; // 0xb0
+    LONG                            offset88; // 0xb4
+    LONG                            offset8C; // 0xb8
+    LONG                            offset90; // 0xbc
+    LONG                            offset94; // 0xc0
+    LONG                            offset98; // 0xc4
+    LONG                            offset9C; // 0xc8
+    LONG                            offsetA0; // 0xcc
+    char field_B4[52];
+    LONG                            offsetD8; // 0x104
+    UCHAR gap108[24];
+    DWORD dword120;
+    DWORD dword124;
+    IUnknown*                       offsetF8; // 0x128 instance explorer
+    UCHAR byteflags_130;
+} IE_THREAD_PARAM_BLOCK, * PIE_THREAD_PARAM_BLOCK;
+#else
 typedef struct IEThreadParamBlock
 {
     long                            offset0;
@@ -54,13 +93,14 @@ typedef struct IEThreadParamBlock
     IUnknown                      * offsetF8;        // instance explorer
     LONG                            offsetFC;        // unknown contents
 } IE_THREAD_PARAM_BLOCK, *PIE_THREAD_PARAM_BLOCK;
+#endif
 
 typedef struct ExplorerCommandLineParseResults
 {
     LPWSTR                  strPath;
     LPITEMIDLIST            pidlPath;
     DWORD                   dwFlags;
-    DWORD                           offsetC;
+    int                     nCmdShow;
     DWORD                           offset10;
     DWORD                           offset14;
     DWORD                           offset18;
@@ -107,7 +147,7 @@ void WINAPI InitOCHostClass(long param8);
 long WINAPI SHOpenFolderWindow(PIE_THREAD_PARAM_BLOCK parameters);
 void WINAPI SHCreateSavedWindows(void);
 BOOL WINAPI SHCreateFromDesktop(PEXPLORER_CMDLINE_PARSE_RESULTS parseResults);
-UINT WINAPI SHExplorerParseCmdLine(PEXPLORER_CMDLINE_PARSE_RESULTS pParseResults);
+UINT_PTR WINAPI SHExplorerParseCmdLine(PEXPLORER_CMDLINE_PARSE_RESULTS pParseResults);
 void WINAPI UEMRegisterNotify(long param8, long paramC);
 HRESULT WINAPI SHCreateBandForPidl(LPCITEMIDLIST param8, IUnknown *paramC, BOOL param10);
 HRESULT WINAPI SHPidlFromDataObject(IDataObject *param8, long *paramC, long param10, FILEDESCRIPTORW *param14);
@@ -126,8 +166,23 @@ HRESULT WINAPI SHGetNavigateTarget(long param8, long paramC, long param10, long 
 HRESULT WINAPI GetInfoTip(IUnknown *param8, long paramC, LPTSTR *param10, long cchMax);
 HRESULT WINAPI SHEnumClassesOfCategories(ULONG cImplemented, CATID *pImplemented, ULONG cRequired, CATID *pRequired, IEnumGUID **out);
 HRESULT WINAPI SHWriteClassesOfCategories(long param8, long paramC, long param10, long param14, long param18, long param1C, long param20);
-BOOL WINAPI SHIsExplorerBrowser();
+BOOL WINAPI SHIsExplorerBrowser(void);
 HRESULT WINAPI SHOpenNewFrame(LPITEMIDLIST pidl, IUnknown *paramC, long param10, DWORD dwFlags);
+
+
+#define INTERFACE IACLCustomMRU
+DECLARE_INTERFACE_IID_(IACLCustomMRU, IUnknown, "F729FC5E-8769-4F3E-BDB2-D7B50FD2275B")
+{
+    // *** IUnknown methods ***
+    STDMETHOD(QueryInterface) (THIS_ REFIID riid, void **ppv) PURE;
+    STDMETHOD_(ULONG, AddRef) (THIS)PURE;
+    STDMETHOD_(ULONG, Release) (THIS)PURE;
+
+    // *** IACLCustomMRU specific methods ***
+    STDMETHOD(Initialize) (THIS_ LPCWSTR pwszMRURegKey, DWORD dwMax) PURE;
+    STDMETHOD(AddMRUString) (THIS_ LPCWSTR pwszEntry) PURE;
+};
+#undef INTERFACE
 
 #ifdef __cplusplus
 } /* extern "C" */

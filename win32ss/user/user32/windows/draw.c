@@ -6,6 +6,7 @@
  * Copyright 2003 Andrew Greenwood
  * Copyright 2003 Filip Navara
  * Copyright 2009 Matthias Kupfer
+ * Copyright 2017 Katayama Hirofumi MZ
  *
  * Based on Wine code.
  *
@@ -27,11 +28,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* INCLUDES *******************************************************************/
-
 #include <user32.h>
-
-#include <wine/debug.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(user32);
 
@@ -780,7 +777,7 @@ static BOOL UITOOLS95_DFC_ButtonCheckRadio(HDC dc, LPRECT r, UINT uFlags, BOOL R
 /* Ported from WINE20020904 */
 static BOOL UITOOLS95_DrawFrameButton(HDC hdc, LPRECT rc, UINT uState)
 {
-    switch(uState & 0xff)
+    switch(uState & 0x1f)
     {
         case DFCS_BUTTONPUSH:
             return UITOOLS95_DFC_ButtonPush(hdc, rc, uState);
@@ -794,10 +791,10 @@ static BOOL UITOOLS95_DrawFrameButton(HDC hdc, LPRECT rc, UINT uState)
         case DFCS_BUTTONRADIO:
             return UITOOLS95_DFC_ButtonCheckRadio(hdc, rc, uState, TRUE);
 
-/*
+
         default:
-            DbgPrint("Invalid button state=0x%04x\n", uState);
-*/
+            ERR("Invalid button state=0x%04x\n", uState);
+
     }
 
     return FALSE;
@@ -811,7 +808,7 @@ static BOOL UITOOLS95_DrawFrameCaption(HDC dc, LPRECT r, UINT uFlags)
     RECT myr;
     INT bkmode;
     TCHAR Symbol;
-    switch(uFlags & 0xff)
+    switch(uFlags & 0xf)
     {
         case DFCS_CAPTIONCLOSE:
 		Symbol = 'r';
@@ -829,7 +826,7 @@ static BOOL UITOOLS95_DrawFrameCaption(HDC dc, LPRECT r, UINT uFlags)
 		Symbol = '2';
 		break;
         default:
-             WARN("Invalid caption; flags=0x%04x\n", uFlags);
+             ERR("Invalid caption; flags=0x%04x\n", uFlags);
              return FALSE;
     }
     IntDrawRectEdge(dc,r,(uFlags&DFCS_PUSHED) ? EDGE_SUNKEN : EDGE_RAISED, BF_RECT | BF_MIDDLE | BF_SOFT, 1);
@@ -878,7 +875,7 @@ static BOOL UITOOLS95_DrawFrameScroll(HDC dc, LPRECT r, UINT uFlags)
     RECT myr;
     INT bkmode;
     TCHAR Symbol;
-    switch(uFlags & 0xff)
+    switch(uFlags & 0x1f)
     {
         case DFCS_SCROLLCOMBOBOX:
         case DFCS_SCROLLDOWN:
@@ -932,7 +929,7 @@ static BOOL UITOOLS95_DrawFrameScroll(HDC dc, LPRECT r, UINT uFlags)
 		DeleteObject(hFont);
             return TRUE;
 	default:
-	    WARN("Invalid scroll; flags=0x%04x\n", uFlags);
+	    ERR("Invalid scroll; flags=0x%04x\n", uFlags);
             return FALSE;
     }
     IntDrawRectEdge(dc, r, (uFlags & DFCS_PUSHED) ? EDGE_SUNKEN : EDGE_RAISED, (uFlags&DFCS_FLAT) | BF_MIDDLE | BF_RECT, 1);
@@ -975,10 +972,14 @@ static BOOL UITOOLS95_DrawFrameScroll(HDC dc, LPRECT r, UINT uFlags)
 
 static BOOL UITOOLS95_DrawFrameMenu(HDC dc, LPRECT r, UINT uFlags)
 {
+    // TODO: DFCS_TRANSPARENT upon DFCS_MENUARROWUP or DFCS_MENUARROWDOWN
     LOGFONTW lf;
     HFONT hFont, hOldFont;
     TCHAR Symbol;
-    switch(uFlags & 0xff)
+    RECT myr;
+    INT cxy;
+    cxy = UITOOLS_MakeSquareRect(r, &myr);
+    switch(uFlags & 0x1f)
     {
         case DFCS_MENUARROWUP:
             Symbol = '5';
@@ -1005,12 +1006,12 @@ static BOOL UITOOLS95_DrawFrameMenu(HDC dc, LPRECT r, UINT uFlags)
             break;
 
         default:
-            WARN("Invalid menu; flags=0x%04x\n", uFlags);
+            ERR("Invalid menu; flags=0x%04x\n", uFlags);
             return FALSE;
     }
     /* acquire ressources only if valid menu */
     ZeroMemory(&lf, sizeof(LOGFONTW));
-    lf.lfHeight = r->bottom - r->top;
+    lf.lfHeight = cxy;
     lf.lfWidth = 0;
     lf.lfWeight = FW_NORMAL;
     lf.lfCharSet = DEFAULT_CHARSET;
@@ -1019,21 +1020,21 @@ static BOOL UITOOLS95_DrawFrameMenu(HDC dc, LPRECT r, UINT uFlags)
     /* save font */
     hOldFont = SelectObject(dc, hFont);
 
-    if ((uFlags & 0xff) == DFCS_MENUARROWUP ||  
-        (uFlags & 0xff) == DFCS_MENUARROWDOWN ) 
+    if ((uFlags & 0x1f) == DFCS_MENUARROWUP ||  
+        (uFlags & 0x1f) == DFCS_MENUARROWDOWN ) 
     {
 #if 0
        if (uFlags & DFCS_INACTIVE)
        {
            /* draw shadow */
            SetTextColor(dc, GetSysColor(COLOR_BTNHIGHLIGHT));
-           TextOut(dc, r->left + 1, r->top + 1, &Symbol, 1);
+           TextOut(dc, myr.left + 1, myr.top + 1, &Symbol, 1);
        }
 #endif
        SetTextColor(dc, GetSysColor((uFlags & DFCS_INACTIVE) ? COLOR_BTNSHADOW : COLOR_BTNTEXT));
     }
     /* draw selected symbol */
-    TextOut(dc, r->left, r->top, &Symbol, 1);
+    TextOut(dc, myr.left, myr.top, &Symbol, 1);
     /* restore previous settings */
     SelectObject(dc, hOldFont);
     DeleteObject(hFont);
@@ -1242,6 +1243,8 @@ IntDrawState(HDC hdc, HBRUSH hbr, DRAWSTATEPROC func, LPARAM lp, WPARAM wp,
     UINT opcode = flags & 0xf;
     INT len = wp;
     BOOL retval, tmp;
+    LOGFONTW lf;
+    HFONT hFontOriginal, hNaaFont = NULL;
 
     if((opcode == DST_TEXT || opcode == DST_PREFIXTEXT) && !len)    /* The string is '\0' terminated */
     {
@@ -1249,6 +1252,15 @@ IntDrawState(HDC hdc, HBRUSH hbr, DRAWSTATEPROC func, LPARAM lp, WPARAM wp,
             len = lstrlenW((LPWSTR)lp);
         else
             len = lstrlenA((LPSTR)lp);
+    }
+
+    hFontOriginal = GetCurrentObject(hdc, OBJ_FONT);
+    if (flags & (DSS_MONO | DSS_DISABLED))
+    {
+        /* Create a non-antialiased font */
+        GetObjectW(hFontOriginal, sizeof(lf), &lf);
+        lf.lfQuality = NONANTIALIASED_QUALITY;
+        hNaaFont = CreateFontIndirectW(&lf);
     }
 
     /* Find out what size the image has if not given by caller */
@@ -1332,7 +1344,10 @@ IntDrawState(HDC hdc, HBRUSH hbr, DRAWSTATEPROC func, LPARAM lp, WPARAM wp,
     if(!FillRect(memdc, &rc, (HBRUSH)GetStockObject(WHITE_BRUSH))) goto cleanup;
     SetBkColor(memdc, RGB(255, 255, 255));
     SetTextColor(memdc, RGB(0, 0, 0));
-    hfsave  = (HFONT)SelectObject(memdc, GetCurrentObject(hdc, OBJ_FONT));
+    if (hNaaFont)
+        hfsave  = (HFONT)SelectObject(memdc, hNaaFont);
+    else
+        hfsave  = (HFONT)SelectObject(memdc, hFontOriginal);
     SetLayout( memdc, GetLayout( hdc ));
 
     /* DST_COMPLEX may draw text as well,
@@ -1341,6 +1356,7 @@ IntDrawState(HDC hdc, HBRUSH hbr, DRAWSTATEPROC func, LPARAM lp, WPARAM wp,
     if(!hfsave && (opcode <= DST_PREFIXTEXT)) goto cleanup;
     tmp = PAINTING_DrawStateJam(memdc, opcode, func, lp, len, &rc, dtflags, unicode);
     if(hfsave) SelectObject(memdc, hfsave);
+    if (hNaaFont) DeleteObject(hNaaFont);
     if(!tmp) goto cleanup;
 
     /* This state cause the image to be dithered */
@@ -1442,6 +1458,7 @@ DrawFrameControl(HDC hDC, LPRECT rc, UINT uType, UINT uState)
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
    {
+       ERR("Got exception in hooked DrawFrameControl!\n");
    }
    _SEH2_END;
 

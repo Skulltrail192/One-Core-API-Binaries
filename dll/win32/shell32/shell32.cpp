@@ -63,6 +63,48 @@ AddCommasW(DWORD lValue, LPWSTR lpNumber)
     return lpNumber;
 }
 
+/*
+ * Implemented
+ */
+EXTERN_C BOOL
+WINAPI
+RegenerateUserEnvironment(LPVOID *lpEnvironment, BOOL bUpdateSelf)
+{
+    HANDLE hUserToken;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_READ | TOKEN_WRITE, &hUserToken))
+        return FALSE;
+
+    BOOL bResult = CreateEnvironmentBlock(lpEnvironment, hUserToken, TRUE);
+    if (!bResult || !lpEnvironment)
+    {
+        CloseHandle(hUserToken);
+        return FALSE;
+    }
+
+    if (bUpdateSelf)
+    {
+        LPWSTR pszz = (LPWSTR)*lpEnvironment;
+        if (!pszz)
+            return FALSE;
+
+        while (*pszz)
+        {
+            size_t cch = wcslen(pszz);
+            LPWSTR pchEqual = wcschr(pszz, L'=');
+            if (pchEqual)
+            {
+                CStringW strName(pszz, pchEqual - pszz);
+                SetEnvironmentVariableW(strName, pchEqual + 1);
+            }
+            pszz += cch + 1;
+        }
+    }
+
+    CloseHandle(hUserToken);
+
+    return bResult;
+}
+
 /**************************************************************************
  * Default ClassFactory types
  */
@@ -229,6 +271,7 @@ public:
 
 
 BEGIN_OBJECT_MAP(ObjectMap)
+    OBJECT_ENTRY(CLSID_ActiveDesktop, CActiveDesktop)
     OBJECT_ENTRY(CLSID_ShellFSFolder, CFSFolder)
     OBJECT_ENTRY(CLSID_MyComputer, CDrivesFolder)
     OBJECT_ENTRY(CLSID_ShellDesktop, CDesktopFolder)
@@ -246,6 +289,7 @@ BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_RecycleBin, CRecycleBin)
     OBJECT_ENTRY(CLSID_OpenWithMenu, COpenWithMenu)
     OBJECT_ENTRY(CLSID_NewMenu, CNewMenu)
+    OBJECT_ENTRY(CLSID_SendToMenu, CSendToMenu)
     OBJECT_ENTRY(CLSID_StartMenu, CStartMenuDummy)
     OBJECT_ENTRY(CLSID_MenuBandSite, CMenuSite)
     OBJECT_ENTRY(CLSID_MenuBand, CMenuBand)
@@ -253,9 +297,10 @@ BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_MergedFolder, CMergedFolder)
     OBJECT_ENTRY(CLSID_ExeDropHandler, CExeDropHandler)
     OBJECT_ENTRY(CLSID_QueryAssociations, CQueryAssociations)
+    OBJECT_ENTRY(CLSID_UserNotification, CUserNotification)
 END_OBJECT_MAP()
 
-CShell32Module                                gModule;
+CShell32Module  gModule;
 
 
 /***********************************************************************
@@ -311,7 +356,7 @@ STDAPI DllGetVersion(DLLVERSIONINFO *pdvi)
  * all are once per process
  *
  */
-HINSTANCE    shell32_hInstance;
+HINSTANCE   shell32_hInstance;
 
 /*************************************************************************
  * SHELL32 DllMain

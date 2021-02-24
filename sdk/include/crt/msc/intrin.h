@@ -173,7 +173,6 @@ extern "C" {
 #pragma intrinsic(_byteswap_uint64)
 #if defined(_M_IX86) || defined(_M_AMD64)
 #pragma intrinsic(__ll_lshift)
-__int64 __ll_rshift(__int64 Mask, int Bit);
 #pragma intrinsic(__ll_rshift)
 #pragma intrinsic(__ull_rshift)
 #pragma intrinsic(__lzcnt)
@@ -195,17 +194,14 @@ __int64 __ll_rshift(__int64 Mask, int Bit);
 #endif
 
 /*** 64/128-bit math ***/
-__int64 __cdecl _abs64(__int64);
 #pragma intrinsic(_abs64)
 #if defined(_M_IX86) || defined(_M_AMD64)
 #pragma intrinsic(__emul)
 #pragma intrinsic(__emulu)
 #endif
 #ifdef _M_AMD64
-__int64 __mulh(__int64 a, __int64 b);
 #pragma intrinsic(__mulh)
 #pragma intrinsic(__umulh)
-__int64 _mul128(__int64 Multiplier, __int64 Multiplicand, __int64 * HighProduct);
 #pragma intrinsic(_mul128)
 #pragma intrinsic(_umul128)
 #elif defined(_M_ARM)
@@ -272,6 +268,7 @@ __int64 _mul128(__int64 Multiplier, __int64 Multiplicand, __int64 * HighProduct)
 #if (_MSC_VER >= 1700)
 #pragma intrinsic(__fastfail)
 #else
+#if defined(_M_IX86)
 __declspec(noreturn) __forceinline
 void __fastfail(unsigned int Code)
 {
@@ -281,6 +278,9 @@ void __fastfail(unsigned int Code)
         int 29h
     }
 }
+#else
+void __fastfail(unsigned int Code);
+#endif // defined(_M_IX86)
 #endif
 #endif
 #if defined(_M_ARM)
@@ -345,15 +345,19 @@ void  __forceinline __invlpg_fixed(void * Address)
 #if (_MSC_VER >= 1800)
 #pragma intrinsic(_sgdt)
 #else
-// __forceinline
-// void _sgdt(void *Destination)
-// {
-    // __asm
-    // {
-        // mov eax, Destination
-        // sgdt [eax]
-    // }
-// }
+#if defined(_M_IX86)
+__forceinline
+void _sgdt(void *Destination)
+{
+    __asm
+    {
+        mov eax, Destination
+        sgdt [eax]
+    }
+}
+#else
+void _sgdt(void *Destination);
+#endif // defined(_M_IX86)
 #endif
 #pragma intrinsic(_mm_pause)
 #endif

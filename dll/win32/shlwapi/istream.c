@@ -17,8 +17,22 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
+#include <stdarg.h>
+#include <string.h>
 
-#include "precomp.h"
+#define COBJMACROS
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "winnls.h"
+#define NO_SHLWAPI_REG
+#define NO_SHLWAPI_PATH
+#include "shlwapi.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(shell);
 
 #define STGM_ACCESS_MODE(stgm)   ((stgm)&0x0000f)
 #define STGM_SHARE_MODE(stgm)    ((stgm)&0x000f0)
@@ -284,7 +298,7 @@ static HRESULT WINAPI IStream_fnStat(IStream *iface, STATSTG* lpStat,
 
     TRACE("(%p,%p,%d)\n", This, lpStat, grfStatFlag);
 
-    if (!grfStatFlag)
+    if (!lpStat)
         return STG_E_INVALIDPOINTER;
 
     memset(&fi, 0, sizeof(fi));

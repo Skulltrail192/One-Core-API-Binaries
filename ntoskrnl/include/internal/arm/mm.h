@@ -4,6 +4,7 @@
 #pragma once
 
 #define _MI_PAGING_LEVELS 2
+#define _MI_HAS_NO_EXECUTE 1
 
 /* Memory layout base addresses */
 #define MI_USER_PROBE_ADDRESS                   (PVOID)0x7FFF0000
@@ -14,6 +15,7 @@
 #define MI_PAGED_POOL_START                     (PVOID)0xE1000000
 #define MI_NONPAGED_POOL_END                    (PVOID)0xFFBE0000
 #define MI_DEBUG_MAPPING                        (PVOID)0xFFBFF000
+#define MI_HIGHEST_SYSTEM_ADDRESS               (PVOID)0xFFFFFFFF
 
 #define PTE_PER_PAGE 256
 #define PDE_PER_PAGE 4096
@@ -83,9 +85,15 @@
 #define MI_IS_PAGE_LARGE(x)        FALSE
 #define MI_IS_PAGE_WRITEABLE(x)    ((x)->u.Hard.ReadOnly == 0)
 #define MI_IS_PAGE_COPY_ON_WRITE(x)FALSE
+#define MI_IS_PAGE_EXECUTABLE(x)   TRUE
 #define MI_IS_PAGE_DIRTY(x)        TRUE
 #define MI_MAKE_OWNER_PAGE(x)      ((x)->u.Hard.Owner = 1)
 #define MI_MAKE_WRITE_PAGE(x)      ((x)->u.Hard.ReadOnly = 0)
+
+/* Macros to identify the page fault reason from the error code */
+#define MI_IS_NOT_PRESENT_FAULT(FaultCode) TRUE
+#define MI_IS_WRITE_ACCESS(FaultCode) TRUE
+#define MI_IS_INSTRUCTION_FETCH(FaultCode) FALSE
 
 /* Convert an address to a corresponding PTE */
 #define MiAddressToPte(x) \

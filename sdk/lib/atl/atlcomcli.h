@@ -53,6 +53,12 @@
 namespace ATL
 {
 
+inline HRESULT AtlHresultFromLastError() throw()
+{
+    DWORD dwError = ::GetLastError();
+    return HRESULT_FROM_WIN32(dwError);
+}
+
 
 template<class T>
 class CComPtr
@@ -87,23 +93,49 @@ public:
 
     T *operator = (T *lp)
     {
-        if (p != NULL)
-            p->Release();
+        T* pOld = p;
+
         p = lp;
         if (p != NULL)
             p->AddRef();
+
+        if (pOld != NULL)
+            pOld->Release();
+
         return *this;
     }
 
     T *operator = (const CComPtr<T> &lp)
     {
-        if (p != NULL)
-            p->Release();
+        T* pOld = p;
+
         p = lp.p;
         if (p != NULL)
             p->AddRef();
+
+        if (pOld != NULL)
+            pOld->Release();
+
         return *this;
     }
+
+    // We cannot enable this until gcc starts supporting __uuidof
+    // See CORE-12710
+#if 0
+    template <typename Q>
+    T* operator=(const CComPtr<Q>& lp)
+    {
+        T* pOld = p;
+
+        if (!lp.p || FAILED(lp.p->QueryInterface(__uuidof(T), (void**)(IUnknown**)&p)))
+            p = NULL;
+
+        if (pOld != NULL)
+            pOld->Release();
+
+        return *this;
+    }
+#endif
 
     void Release()
     {
@@ -150,13 +182,16 @@ public:
 
 
 //CComQIIDPtr<I_ID(Itype)> is the gcc compatible version of CComQIPtr<Itype>
-#define I_ID(Itype) Itype,IID_##Itype
+#define I_ID(Itype) Itype,&IID_##Itype
 
 template <class T, const IID* piid>
-class CComQIIDPtr : 
+class CComQIIDPtr :
     public CComPtr<T>
 {
 public:
+    // Let's tell GCC how to find a symbol.
+    using CComPtr<T>::p;
+
     CComQIIDPtr()
     {
     }
@@ -172,37 +207,47 @@ public:
     {
         if (lp != NULL)
         {
-            if (FAILED(lp->QueryInterface(*piid, (void **)&this.p)))
-                this.p = NULL;
+            if (FAILED(lp->QueryInterface(*piid, (void**)(IUnknown**)&p)))
+                p = NULL;
         }
     }
     T *operator = (T *lp)
     {
-        if (this.p != NULL)
-            this.p->Release();
-        this.p = lp;
-        if (this.p != NULL)
-            this.p->AddRef();
+        T* pOld = p;
+
+        p = lp;
+        if (p != NULL)
+            p->AddRef();
+
+        if (pOld != NULL)
+            pOld->Release();
+
         return *this;
     }
 
     T *operator = (const CComQIIDPtr<T,piid> &lp)
     {
-        if (this.p != NULL)
-            this.p->Release();
-        this.p = lp.p;
-        if (this.p != NULL)
-            this.p->AddRef();
+        T* pOld = p;
+
+        p = lp.p;
+        if (p != NULL)
+            p->AddRef();
+
+        if (pOld != NULL)
+            pOld->Release();
+
         return *this;
     }
 
     T * operator=(IUnknown* lp)
     {
-        if (this.p != NULL)
-            this.p->Release();
+        T* pOld = p;
 
-        if (FAILED(lp->QueryInterface(*piid, (void **)&this.p)))
-            this.p = NULL;
+        if (!lp || FAILED(lp->QueryInterface(*piid, (void**)(IUnknown**)&p)))
+            p = NULL;
+
+        if (pOld != NULL)
+            pOld->Release();
 
         return *this;
     }
@@ -299,6 +344,12 @@ public:
         ::SysFreeString(m_str);
         m_str = other.Copy();
         return *this;
+    }
+
+    void Attach(BSTR bstr)
+    {
+        ::SysFreeString(m_str);
+        m_str = bstr;
     }
 
     BSTR Detach()

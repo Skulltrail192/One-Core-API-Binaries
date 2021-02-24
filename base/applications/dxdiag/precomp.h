@@ -22,6 +22,7 @@
 #include <initguid.h>
 #include <devguid.h>
 #include <strsafe.h>
+#include <udmihelp.h>
 
 #include "resource.h"
 

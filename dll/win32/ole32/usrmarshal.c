@@ -18,7 +18,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+
+#define COBJMACROS
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winerror.h"
+
+#include "ole2.h"
+#include "oleauto.h"
+#include "rpcproxy.h"
+
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
@@ -80,11 +97,11 @@ static const char* debugstr_user_flags(ULONG *pFlags)
  *  the first parameter is an unsigned long.
  *  This function is only intended to be called by the RPC runtime.
  */
-ULONG __RPC_USER CLIPFORMAT_UserSize(ULONG *pFlags, ULONG StartingSize, CLIPFORMAT *pCF)
+ULONG __RPC_USER CLIPFORMAT_UserSize(ULONG *pFlags, ULONG size, CLIPFORMAT *pCF)
 {
-    ULONG size = StartingSize;
+    TRACE("(%s, %d, %p\n", debugstr_user_flags(pFlags), size, pCF);
 
-    TRACE("(%s, %d, %p\n", debugstr_user_flags(pFlags), StartingSize, pCF);
+    ALIGN_LENGTH(size, 3);
 
     size += 8;
 
@@ -98,7 +115,7 @@ ULONG __RPC_USER CLIPFORMAT_UserSize(ULONG *pFlags, ULONG StartingSize, CLIPFORM
         /* urg! this function is badly designed because it won't tell us how
          * much space is needed without doing a dummy run of storing the
          * name into a buffer */
-        ret = GetClipboardFormatNameW(*pCF, format, sizeof(format)/sizeof(format[0])-1);
+        ret = GetClipboardFormatNameW(*pCF, format, ARRAY_SIZE(format)-1);
         if (!ret)
             RaiseException(DV_E_CLIPFORMAT, 0, 0, NULL);
         size += (ret + 1) * sizeof(WCHAR);
@@ -129,6 +146,8 @@ unsigned char * __RPC_USER CLIPFORMAT_UserMarshal(ULONG *pFlags, unsigned char *
 {
     TRACE("(%s, %p, &0x%04x\n", debugstr_user_flags(pFlags), pBuffer, *pCF);
 
+    ALIGN_POINTER(pBuffer, 3);
+
     /* only need to marshal the name if it is not a pre-defined type and
      * we are going remote */
     if ((*pCF >= 0xc000) && (LOWORD(*pFlags) == MSHCTX_DIFFERENTMACHINE))
@@ -141,7 +160,7 @@ unsigned char * __RPC_USER CLIPFORMAT_UserMarshal(ULONG *pFlags, unsigned char *
         *(DWORD *)pBuffer = *pCF;
         pBuffer += 4;
 
-        len = GetClipboardFormatNameW(*pCF, format, sizeof(format)/sizeof(format[0])-1);
+        len = GetClipboardFormatNameW(*pCF, format, ARRAY_SIZE(format)-1);
         if (!len)
             RaiseException(DV_E_CLIPFORMAT, 0, 0, NULL);
         len += 1;
@@ -190,6 +209,8 @@ unsigned char * __RPC_USER CLIPFORMAT_UserUnmarshal(ULONG *pFlags, unsigned char
     LONG fContext;
 
     TRACE("(%s, %p, %p\n", debugstr_user_flags(pFlags), pBuffer, pCF);
+
+    ALIGN_POINTER(pBuffer, 3);
 
     fContext = *(DWORD *)pBuffer;
     pBuffer += 4;
@@ -264,18 +285,23 @@ static ULONG handle_UserSize(ULONG *pFlags, ULONG StartingSize, HANDLE *handle)
         RaiseException(RPC_S_INVALID_TAG, 0, 0, NULL);
         return StartingSize;
     }
+
+    ALIGN_LENGTH(StartingSize, 3);
     return StartingSize + sizeof(RemotableHandle);
 }
 
 static unsigned char * handle_UserMarshal(ULONG *pFlags, unsigned char *pBuffer, HANDLE *handle)
 {
-    RemotableHandle *remhandle = (RemotableHandle *)pBuffer;
+    RemotableHandle *remhandle;
     if (LOWORD(*pFlags) == MSHCTX_DIFFERENTMACHINE)
     {
         ERR("can't remote a local handle\n");
         RaiseException(RPC_S_INVALID_TAG, 0, 0, NULL);
         return pBuffer;
     }
+
+    ALIGN_POINTER(pBuffer, 3);
+    remhandle = (RemotableHandle *)pBuffer;
     remhandle->fContext = WDT_INPROC_CALL;
     remhandle->u.hInproc = (LONG_PTR)*handle;
     return pBuffer + sizeof(RemotableHandle);
@@ -283,7 +309,10 @@ static unsigned char * handle_UserMarshal(ULONG *pFlags, unsigned char *pBuffer,
 
 static unsigned char * handle_UserUnmarshal(ULONG *pFlags, unsigned char *pBuffer, HANDLE *handle)
 {
-    RemotableHandle *remhandle = (RemotableHandle *)pBuffer;
+    RemotableHandle *remhandle;
+
+    ALIGN_POINTER(pBuffer, 3);
+    remhandle = (RemotableHandle *)pBuffer;
     if (remhandle->fContext != WDT_INPROC_CALL)
         RaiseException(RPC_X_BAD_STUB_DATA, 0, 0, NULL);
     *handle = (HANDLE)(LONG_PTR)remhandle->u.hInproc;
@@ -357,7 +386,7 @@ ULONG __RPC_USER HGLOBAL_UserSize(ULONG *pFlags, ULONG StartingSize, HGLOBAL *ph
 
     size += sizeof(ULONG);
 
-    if (LOWORD(*pFlags == MSHCTX_INPROC))
+    if (LOWORD(*pFlags) == MSHCTX_INPROC)
         size += sizeof(HGLOBAL);
     else
     {
@@ -399,7 +428,7 @@ unsigned char * __RPC_USER HGLOBAL_UserMarshal(ULONG *pFlags, unsigned char *pBu
 
     ALIGN_POINTER(pBuffer, 3);
 
-    if (LOWORD(*pFlags == MSHCTX_INPROC))
+    if (LOWORD(*pFlags) == MSHCTX_INPROC)
     {
         if (sizeof(*phGlobal) == 8)
             *(ULONG *)pBuffer = WDT_INPROC64_CALL;
@@ -542,7 +571,7 @@ void __RPC_USER HGLOBAL_UserFree(ULONG *pFlags, HGLOBAL *phGlobal)
 {
     TRACE("(%s, &%p\n", debugstr_user_flags(pFlags), *phGlobal);
 
-    if (LOWORD(*pFlags != MSHCTX_INPROC) && *phGlobal)
+    if (LOWORD(*pFlags) != MSHCTX_INPROC && *phGlobal)
         GlobalFree(*phGlobal);
 }
 
@@ -566,10 +595,28 @@ void __RPC_USER HGLOBAL_UserFree(ULONG *pFlags, HGLOBAL *phGlobal)
  *  the first parameter is a ULONG.
  *  This function is only intended to be called by the RPC runtime.
  */
-ULONG __RPC_USER HBITMAP_UserSize(ULONG *pFlags, ULONG StartingSize, HBITMAP *phBmp)
+ULONG __RPC_USER HBITMAP_UserSize(ULONG *flags, ULONG size, HBITMAP *bmp)
 {
-    FIXME(":stub\n");
-    return StartingSize;
+    TRACE("(%s, %d, %p)\n", debugstr_user_flags(flags), size, *bmp);
+
+    ALIGN_LENGTH(size, 3);
+
+    size += sizeof(ULONG);
+    if (LOWORD(*flags) == MSHCTX_INPROC)
+        size += sizeof(ULONG);
+    else
+    {
+        size += sizeof(ULONG);
+
+        if (*bmp)
+        {
+            size += sizeof(ULONG);
+            size += FIELD_OFFSET(userBITMAP, cbSize);
+            size += GetBitmapBits(*bmp, 0, NULL);
+        }
+    }
+
+    return size;
 }
 
 /******************************************************************************
@@ -591,10 +638,45 @@ ULONG __RPC_USER HBITMAP_UserSize(ULONG *pFlags, ULONG StartingSize, HBITMAP *ph
 *  the first parameter is a ULONG.
 *  This function is only intended to be called by the RPC runtime.
 */
-unsigned char * __RPC_USER HBITMAP_UserMarshal(ULONG *pFlags, unsigned char *pBuffer, HBITMAP *phBmp)
+unsigned char * __RPC_USER HBITMAP_UserMarshal(ULONG *flags, unsigned char *buffer, HBITMAP *bmp)
 {
-    FIXME(":stub\n");
-    return pBuffer;
+    TRACE("(%s, %p, %p)\n", debugstr_user_flags(flags), buffer, *bmp);
+
+    ALIGN_POINTER(buffer, 3);
+
+    if (LOWORD(*flags) == MSHCTX_INPROC)
+    {
+        *(ULONG *)buffer = WDT_INPROC_CALL;
+        buffer += sizeof(ULONG);
+        *(ULONG *)buffer = (ULONG)(ULONG_PTR)*bmp;
+        buffer += sizeof(ULONG);
+    }
+    else
+    {
+        *(ULONG *)buffer = WDT_REMOTE_CALL;
+        buffer += sizeof(ULONG);
+        *(ULONG *)buffer = (ULONG)(ULONG_PTR)*bmp;
+        buffer += sizeof(ULONG);
+
+        if (*bmp)
+        {
+            static const ULONG header_size = FIELD_OFFSET(userBITMAP, cbSize);
+            BITMAP bitmap;
+            ULONG bitmap_size;
+
+            bitmap_size = GetBitmapBits(*bmp, 0, NULL);
+            *(ULONG *)buffer = bitmap_size;
+            buffer += sizeof(ULONG);
+
+            GetObjectW(*bmp, sizeof(BITMAP), &bitmap);
+            memcpy(buffer, &bitmap, header_size);
+            buffer += header_size;
+
+            GetBitmapBits(*bmp, bitmap_size, buffer);
+            buffer += bitmap_size;
+        }
+    }
+    return buffer;
 }
 
 /******************************************************************************
@@ -616,10 +698,56 @@ unsigned char * __RPC_USER HBITMAP_UserMarshal(ULONG *pFlags, unsigned char *pBu
  *  the first parameter is an ULONG.
  *  This function is only intended to be called by the RPC runtime.
  */
-unsigned char * __RPC_USER HBITMAP_UserUnmarshal(ULONG *pFlags, unsigned char *pBuffer, HBITMAP *phBmp)
+unsigned char * __RPC_USER HBITMAP_UserUnmarshal(ULONG *flags, unsigned char *buffer, HBITMAP *bmp)
 {
-    FIXME(":stub\n");
-    return pBuffer;
+    ULONG context;
+
+    TRACE("(%s, %p, %p)\n", debugstr_user_flags(flags), buffer, bmp);
+
+    ALIGN_POINTER(buffer, 3);
+
+    context = *(ULONG *)buffer;
+    buffer += sizeof(ULONG);
+
+    if (context == WDT_INPROC_CALL)
+    {
+        *bmp = *(HBITMAP *)buffer;
+        buffer += sizeof(*bmp);
+    }
+    else if (context == WDT_REMOTE_CALL)
+    {
+        ULONG handle = *(ULONG *)buffer;
+        buffer += sizeof(ULONG);
+
+        if (handle)
+        {
+            static const ULONG header_size = FIELD_OFFSET(userBITMAP, cbSize);
+            BITMAP bitmap;
+            ULONG bitmap_size;
+            unsigned char *bits;
+
+            bitmap_size = *(ULONG *)buffer;
+            buffer += sizeof(ULONG);
+            bits = HeapAlloc(GetProcessHeap(), 0, bitmap_size);
+
+            memcpy(&bitmap, buffer, header_size);
+            buffer += header_size;
+
+            memcpy(bits, buffer, bitmap_size);
+            buffer += bitmap_size;
+
+            bitmap.bmBits = bits;
+            *bmp = CreateBitmapIndirect(&bitmap);
+
+            HeapFree(GetProcessHeap(), 0, bits);
+        }
+        else
+            *bmp = NULL;
+    }
+    else
+        RaiseException(RPC_S_INVALID_TAG, 0, 0, NULL);
+
+    return buffer;
 }
 
 /******************************************************************************
@@ -640,9 +768,12 @@ unsigned char * __RPC_USER HBITMAP_UserUnmarshal(ULONG *pFlags, unsigned char *p
  *  which the first parameter is a ULONG.
  *  This function is only intended to be called by the RPC runtime.
  */
-void __RPC_USER HBITMAP_UserFree(ULONG *pFlags, HBITMAP *phBmp)
+void __RPC_USER HBITMAP_UserFree(ULONG *flags, HBITMAP *bmp)
 {
-    FIXME(":stub\n");
+    TRACE("(%s, %p)\n", debugstr_user_flags(flags), *bmp);
+
+    if (LOWORD(*flags) != MSHCTX_INPROC)
+        DeleteObject(*bmp);
 }
 
 /******************************************************************************
@@ -963,11 +1094,11 @@ void __RPC_USER HMETAFILE_UserFree(ULONG *pFlags, HMETAFILE *phmf)
 *  the first parameter is a ULONG.
 *  This function is only intended to be called by the RPC runtime.
 */
-ULONG __RPC_USER HENHMETAFILE_UserSize(ULONG *pFlags, ULONG StartingSize, HENHMETAFILE *phEmf)
+ULONG __RPC_USER HENHMETAFILE_UserSize(ULONG *pFlags, ULONG size, HENHMETAFILE *phEmf)
 {
-    ULONG size = StartingSize;
+    TRACE("(%s, %d, %p\n", debugstr_user_flags(pFlags), size, *phEmf);
 
-    TRACE("(%s, %d, %p\n", debugstr_user_flags(pFlags), StartingSize, *phEmf);
+    ALIGN_LENGTH(size, 3);
 
     size += sizeof(ULONG);
     if (LOWORD(*pFlags) == MSHCTX_INPROC)
@@ -1011,6 +1142,8 @@ ULONG __RPC_USER HENHMETAFILE_UserSize(ULONG *pFlags, ULONG StartingSize, HENHME
 unsigned char * __RPC_USER HENHMETAFILE_UserMarshal(ULONG *pFlags, unsigned char *pBuffer, HENHMETAFILE *phEmf)
 {
     TRACE("(%s, %p, &%p\n", debugstr_user_flags(pFlags), pBuffer, *phEmf);
+
+    ALIGN_POINTER(pBuffer, 3);
 
     if (LOWORD(*pFlags) == MSHCTX_INPROC)
     {
@@ -1069,6 +1202,8 @@ unsigned char * __RPC_USER HENHMETAFILE_UserUnmarshal(ULONG *pFlags, unsigned ch
     ULONG fContext;
 
     TRACE("(%s, %p, %p\n", debugstr_user_flags(pFlags), pBuffer, phEmf);
+
+    ALIGN_POINTER(pBuffer, 3);
 
     fContext = *(ULONG *)pBuffer;
     pBuffer += sizeof(ULONG);
@@ -1155,11 +1290,11 @@ void __RPC_USER HENHMETAFILE_UserFree(ULONG *pFlags, HENHMETAFILE *phEmf)
  *  the first parameter is a ULONG.
  *  This function is only intended to be called by the RPC runtime.
  */
-ULONG __RPC_USER HMETAFILEPICT_UserSize(ULONG *pFlags, ULONG StartingSize, HMETAFILEPICT *phMfp)
+ULONG __RPC_USER HMETAFILEPICT_UserSize(ULONG *pFlags, ULONG size, HMETAFILEPICT *phMfp)
 {
-    ULONG size = StartingSize;
+    TRACE("(%s, %d, &%p)\n", debugstr_user_flags(pFlags), size, *phMfp);
 
-    TRACE("(%s, %d, &%p)\n", debugstr_user_flags(pFlags), StartingSize, *phMfp);
+    ALIGN_LENGTH(size, 3);
 
     size += sizeof(ULONG);
 
@@ -1208,6 +1343,8 @@ ULONG __RPC_USER HMETAFILEPICT_UserSize(ULONG *pFlags, ULONG StartingSize, HMETA
 unsigned char * __RPC_USER HMETAFILEPICT_UserMarshal(ULONG *pFlags, unsigned char *pBuffer, HMETAFILEPICT *phMfp)
 {
     TRACE("(%s, %p, &%p)\n", debugstr_user_flags(pFlags), pBuffer, *phMfp);
+
+    ALIGN_POINTER(pBuffer, 3);
 
     if (LOWORD(*pFlags) == MSHCTX_INPROC)
     {
@@ -1271,6 +1408,8 @@ unsigned char * __RPC_USER HMETAFILEPICT_UserUnmarshal(ULONG *pFlags, unsigned c
     ULONG fContext;
 
     TRACE("(%s, %p, %p)\n", debugstr_user_flags(pFlags), pBuffer, phMfp);
+
+    ALIGN_POINTER(pBuffer, 3);
 
     fContext = *(ULONG *)pBuffer;
     pBuffer += sizeof(ULONG);
@@ -1576,7 +1715,7 @@ ULONG __RPC_USER STGMEDIUM_UserSize(ULONG *pFlags, ULONG StartingSize, STGMEDIUM
         {
             TRACE("file name is %s\n", debugstr_w(pStgMedium->u.lpszFileName));
             size += 3 * sizeof(DWORD) +
-                (strlenW(pStgMedium->u.lpszFileName) + 1) * sizeof(WCHAR);
+                (lstrlenW(pStgMedium->u.lpszFileName) + 1) * sizeof(WCHAR);
         }
         break;
     case TYMED_ISTREAM:
@@ -1602,9 +1741,7 @@ ULONG __RPC_USER STGMEDIUM_UserSize(ULONG *pFlags, ULONG StartingSize, STGMEDIUM
     case TYMED_GDI:
         TRACE("TYMED_GDI\n");
         if (pStgMedium->u.hBitmap)
-        {
-            FIXME("not implemented for GDI object %p\n", pStgMedium->u.hBitmap);
-        }
+            size = HBITMAP_UserSize(pFlags, size, &pStgMedium->u.hBitmap);
         break;
     case TYMED_MFPICT:
         TRACE("TYMED_MFPICT\n");
@@ -1676,7 +1813,7 @@ unsigned char * __RPC_USER STGMEDIUM_UserMarshal(ULONG *pFlags, unsigned char *p
         if (pStgMedium->u.lpszFileName)
         {
             DWORD len;
-            len = strlenW(pStgMedium->u.lpszFileName);
+            len = lstrlenW(pStgMedium->u.lpszFileName);
             /* conformance */
             *(DWORD *)pBuffer = len + 1;
             pBuffer += sizeof(DWORD);
@@ -1714,9 +1851,7 @@ unsigned char * __RPC_USER STGMEDIUM_UserMarshal(ULONG *pFlags, unsigned char *p
     case TYMED_GDI:
         TRACE("TYMED_GDI\n");
         if (pStgMedium->u.hBitmap)
-        {
-            FIXME("not implemented for GDI object %p\n", pStgMedium->u.hBitmap);
-        }
+            pBuffer = HBITMAP_UserMarshal(pFlags, pBuffer, &pStgMedium->u.hBitmap);
         break;
     case TYMED_MFPICT:
         TRACE("TYMED_MFPICT\n");
@@ -1852,9 +1987,7 @@ unsigned char * __RPC_USER STGMEDIUM_UserUnmarshal(ULONG *pFlags, unsigned char 
     case TYMED_GDI:
         TRACE("TYMED_GDI\n");
         if (content)
-        {
-            FIXME("not implemented for GDI object\n");
-        }
+            pBuffer = HBITMAP_UserUnmarshal(pFlags, pBuffer, &pStgMedium->u.hBitmap);
         else
             pStgMedium->u.hBitmap = NULL;
         break;
@@ -1902,11 +2035,29 @@ unsigned char * __RPC_USER STGMEDIUM_UserUnmarshal(ULONG *pFlags, unsigned char 
  *  which the first parameter is a ULONG.
  *  This function is only intended to be called by the RPC runtime.
  */
-void __RPC_USER STGMEDIUM_UserFree(ULONG *pFlags, STGMEDIUM *pStgMedium)
+void __RPC_USER STGMEDIUM_UserFree(ULONG *flags, STGMEDIUM *med)
 {
-    TRACE("(%s, %p\n", debugstr_user_flags(pFlags), pStgMedium);
+    TRACE("(%s, %p)\n", debugstr_user_flags(flags), med);
 
-    ReleaseStgMedium(pStgMedium);
+    switch (med->tymed)
+    {
+    case TYMED_NULL:
+    case TYMED_FILE:
+    case TYMED_ISTREAM:
+    case TYMED_ISTORAGE:
+        ReleaseStgMedium(med);
+        break;
+    case TYMED_HGLOBAL:
+    case TYMED_GDI:
+    case TYMED_MFPICT:
+    case TYMED_ENHMF:
+        if (LOWORD(*flags) == MSHCTX_INPROC)
+            med->tymed = TYMED_NULL;
+        ReleaseStgMedium(med);
+        break;
+    default:
+        RaiseException(DV_E_TYMED, 0, 0, NULL);
+    }
 }
 
 ULONG __RPC_USER ASYNC_STGMEDIUM_UserSize(ULONG *pFlags, ULONG StartingSize, ASYNC_STGMEDIUM *pStgMedium)
@@ -1974,7 +2125,7 @@ ULONG __RPC_USER SNB_UserSize(ULONG *pFlags, ULONG StartingSize, SNB *pSnb)
 
         while (*ptrW)
         {
-            size += (strlenW(*ptrW) + 1)*sizeof(WCHAR);
+            size += (lstrlenW(*ptrW) + 1)*sizeof(WCHAR);
             ptrW++;
         }
     }
@@ -2009,7 +2160,7 @@ unsigned char * __RPC_USER SNB_UserMarshal(ULONG *pFlags, unsigned char *pBuffer
 
         while (*ptrW)
         {
-            ULONG len = strlenW(*ptrW) + 1;
+            ULONG len = lstrlenW(*ptrW) + 1;
 
             wire->strcnt++;
             wire->charcnt += len;
@@ -2050,7 +2201,7 @@ unsigned char * __RPC_USER SNB_UserUnmarshal(ULONG *pFlags, unsigned char *pBuff
 
         for (i = 0; i < wire->strcnt; i++)
         {
-            ULONG len = strlenW(src);
+            ULONG len = lstrlenW(src);
             memcpy(dest, src, (len + 1)*sizeof(WCHAR));
             *ptrW = dest;
             src += len + 1;

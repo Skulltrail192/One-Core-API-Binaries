@@ -18,29 +18,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
 
-/**********************************************************************/
-DECLSPEC_HIDDEN HANDLE IMAGEHLP_hHeap = NULL;
+#include "windef.h"
+#include "winbase.h"
+#include "imagehlp.h"
+#include "wine/debug.h"
 
-/***********************************************************************
- *           DllMain (IMAGEHLP.init)
- */
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
-{
-  switch(fdwReason)
-    {
-    case DLL_PROCESS_ATTACH:
-      DisableThreadLibraryCalls(hinstDLL);
-      IMAGEHLP_hHeap = HeapCreate(0, 0x10000, 0);
-      break;
-    case DLL_PROCESS_DETACH:
-      if (lpvReserved) break;
-      HeapDestroy(IMAGEHLP_hHeap);
-      break;
-    }
-  return TRUE;
-}
 
 /***********************************************************************
  *           MarkImageAsRunFromSwap (IMAGEHLP.@)

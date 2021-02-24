@@ -22,13 +22,14 @@ list(APPEND SOURCE
     videoprt.c
     videoprt.h)
 
-add_library(videoprt SHARED
+add_library(videoprt MODULE
     ${SOURCE}
     guid.c
     videoprt.rc
     ${CMAKE_CURRENT_BINARY_DIR}/videoprt.def)
 
 set_module_type(videoprt kernelmodedriver)
+target_link_libraries(videoprt ${PSEH_LIB})
 add_importlibs(videoprt ntoskrnl hal)
 add_pch(videoprt videoprt.h SOURCE)
 add_cd_file(TARGET videoprt DESTINATION reactos/system32/drivers FOR all)

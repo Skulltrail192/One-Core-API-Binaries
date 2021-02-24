@@ -19,7 +19,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winreg.h"
+#include "objbase.h"
+#include "tapi.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(tapi);
 
 /***********************************************************************
  *      tapiGetLocationInfoW (TAPI32.@)
@@ -51,7 +61,7 @@ DWORD WINAPI tapiGetLocationInfoW(LPWSTR countrycode, LPWSTR citycode)
         if(!RegQueryValueExW(hkey, currentidW, 0, &type, (LPBYTE) &currid, &valsize) &&
            type == REG_DWORD) {
             /* find a subkey called Location1, Location2... */
-            sprintfW( szlockey, locationW, currid);
+            swprintf( szlockey, locationW, currid);
             if( !RegOpenKeyW( hkey, szlockey, &hsubkey)) {
                 if( citycode) {
                     bufsize=sizeof(buf);
@@ -65,7 +75,7 @@ DWORD WINAPI tapiGetLocationInfoW(LPWSTR countrycode, LPWSTR citycode)
                     bufsize=sizeof(buf);
                     if( !RegQueryValueExW( hsubkey, countryW, 0, &type, buf, &bufsize) &&
                         type == REG_DWORD)
-                        snprintfW( countrycode, 8, fmtW, *(LPDWORD) buf );
+                        swprintf( countrycode, fmtW, *(LPDWORD) buf );
                     else
                         countrycode[0] = '\0';
                 }

@@ -9,7 +9,7 @@
 #include <win32k.h>
 DBG_DEFAULT_CHANNEL(UserDisplay);
 
-BOOL gbBaseVideo = 0;
+BOOL gbBaseVideo = FALSE;
 static PPROCESSINFO gpFullscreen = NULL;
 
 static const PWCHAR KEY_VIDEO = L"\\Registry\\Machine\\HARDWARE\\DEVICEMAP\\VIDEO";
@@ -165,24 +165,13 @@ InitVideo(VOID)
 
     TRACE("----------------------------- InitVideo() -------------------------------\n");
 
-    /* Open the key for the boot command line */
-    Status = RegOpenKey(L"\\REGISTRY\\MACHINE\\SYSTEM\\CurrentControlSet\\Control", &hkey);
+    /* Check if VGA mode is requested, by finding the special volatile key created by VIDEOPRT */
+    Status = RegOpenKey(L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\GraphicsDrivers\\BaseVideo", &hkey);
     if (NT_SUCCESS(Status))
-    {
-        cbValue = 256;
-        Status = RegQueryValue(hkey, L"SystemStartOptions", REG_SZ, awcBuffer, &cbValue);
-        if (NT_SUCCESS(Status))
-        {
-            /* Check if VGA mode is requested. */
-            if (wcsstr(awcBuffer, L"BASEVIDEO") != 0)
-            {
-                ERR("VGA mode requested.\n");
-                gbBaseVideo = TRUE;
-            }
-        }
-
         ZwClose(hkey);
-    }
+    gbBaseVideo = NT_SUCCESS(Status);
+    if (gbBaseVideo)
+        ERR("VGA mode requested.\n");
 
     /* Open the key for the adapters */
     Status = RegOpenKey(KEY_VIDEO, &hkey);
@@ -193,11 +182,11 @@ InitVideo(VOID)
     }
 
     /* Read the name of the VGA adapter */
-    cbValue = 20;
+    cbValue = sizeof(awcDeviceName);
     Status = RegQueryValue(hkey, L"VgaCompatible", REG_SZ, awcDeviceName, &cbValue);
     if (NT_SUCCESS(Status))
     {
-        iVGACompatible = _wtoi(&awcDeviceName[13]);
+        iVGACompatible = _wtoi(&awcDeviceName[sizeof("\\Device\\Video")-1]);
         ERR("VGA adapter = %lu\n", iVGACompatible);
     }
 
@@ -282,7 +271,46 @@ InitVideo(VOID)
 
     InitSysParams();
 
-    return 1;
+    return STATUS_SUCCESS;
+}
+
+VOID
+UserRefreshDisplay(IN PPDEVOBJ ppdev)
+{
+    ULONG_PTR ulResult;
+    // PVOID pvOldCursor;
+
+    // TODO: Re-enable the cursor reset code once this function becomes called
+    // from within a Win32 thread... Indeed UserSetCursor() requires this, but
+    // at the moment this function is directly called from a separate thread
+    // from within videoprt, instead of by a separate win32k system thread.
+
+    if (!ppdev)
+        return;
+
+    PDEVOBJ_vReference(ppdev);
+
+    /* Remove mouse pointer */
+    // pvOldCursor = UserSetCursor(NULL, TRUE);
+
+    /* Do the mode switch -- Use the actual same current mode */
+    ulResult = PDEVOBJ_bSwitchMode(ppdev, ppdev->pdmwDev);
+    ASSERT(ulResult);
+
+    /* Restore mouse pointer, no hooks called */
+    // pvOldCursor = UserSetCursor(pvOldCursor, TRUE);
+    // ASSERT(pvOldCursor == NULL);
+
+    /* Update the system metrics */
+    InitMetrics();
+
+    /* Set new size of the monitor */
+    // UserUpdateMonitorSize((HDEV)ppdev);
+
+    //co_IntShowDesktop(pdesk, ppdev->gdiinfo.ulHorzRes, ppdev->gdiinfo.ulVertRes);
+    UserRedrawDesktop();
+
+    PDEVOBJ_vRelease(ppdev);
 }
 
 NTSTATUS
@@ -557,7 +585,7 @@ UserEnumRegistryDisplaySettings(
         ZwClose(hkey);
         return STATUS_SUCCESS;
     }
-    return Status ;
+    return Status;
 }
 
 NTSTATUS
@@ -568,6 +596,7 @@ NtUserEnumDisplaySettings(
     OUT LPDEVMODEW lpDevMode,
     IN DWORD dwFlags)
 {
+    UNICODE_STRING ustrDeviceUser;
     UNICODE_STRING ustrDevice;
     WCHAR awcDevice[CCHDEVICENAME];
     NTSTATUS Status;
@@ -592,7 +621,7 @@ NtUserEnumDisplaySettings(
     }
     _SEH2_END;
 
-    if (lpDevMode->dmSize != sizeof(DEVMODEW))
+    if (cbSize != sizeof(DEVMODEW))
     {
         return STATUS_BUFFER_TOO_SMALL;
     }
@@ -605,15 +634,17 @@ NtUserEnumDisplaySettings(
         _SEH2_TRY
         {
             /* Probe the UNICODE_STRING and the buffer */
-            ProbeForReadUnicodeString(pustrDevice);
+            ustrDeviceUser = ProbeForReadUnicodeString(pustrDevice);
 
-            if (!pustrDevice->Length || !pustrDevice->Buffer)
+            if (!ustrDeviceUser.Length || !ustrDeviceUser.Buffer)
                 ExRaiseStatus(STATUS_NO_MEMORY);
 
-            ProbeForRead(pustrDevice->Buffer, pustrDevice->Length, sizeof(UCHAR));
+            ProbeForRead(ustrDeviceUser.Buffer,
+                         ustrDeviceUser.Length,
+                         sizeof(UCHAR));
 
             /* Copy the string */
-            RtlCopyUnicodeString(&ustrDevice, pustrDevice);
+            RtlCopyUnicodeString(&ustrDevice, &ustrDeviceUser);
         }
         _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
         {
@@ -674,6 +705,7 @@ NtUserEnumDisplaySettings(
 
     return Status;
 }
+
 VOID
 UserUpdateFullscreen(
     DWORD flags)
@@ -712,9 +744,13 @@ UserChangeDisplaySettings(
         }
     }
     else if (pdm->dmSize < FIELD_OFFSET(DEVMODEW, dmFields))
-        return DISP_CHANGE_BADMODE; /* This is what winXP SP3 returns */
+    {
+        return DISP_CHANGE_BADMODE; /* This is what WinXP SP3 returns */
+    }
     else
+    {
         dm = *pdm;
+    }
 
     /* Save original bit count */
     OrigBC = gpsi->BitCount;
@@ -735,13 +771,13 @@ UserChangeDisplaySettings(
     }
 
     /* Fixup values */
-    if(dm.dmBitsPerPel == 0 || !(dm.dmFields & DM_BITSPERPEL))
+    if (dm.dmBitsPerPel == 0 || !(dm.dmFields & DM_BITSPERPEL))
     {
         dm.dmBitsPerPel = ppdev->pdmwDev->dmBitsPerPel;
         dm.dmFields |= DM_BITSPERPEL;
     }
 
-    if((dm.dmFields & DM_DISPLAYFREQUENCY) && (dm.dmDisplayFrequency == 0))
+    if ((dm.dmFields & DM_DISPLAYFREQUENCY) && (dm.dmDisplayFrequency == 0))
         dm.dmDisplayFrequency = ppdev->pdmwDev->dmDisplayFrequency;
 
     /* Look for the requested DEVMODE */
@@ -779,10 +815,17 @@ UserChangeDisplaySettings(
         }
     }
 
+    /* Check if DEVMODE matches the current mode */
+    if (pdm == ppdev->pdmwDev && !(flags & CDS_RESET))
+    {
+        ERR("DEVMODE matches, nothing to do\n");
+        goto leave;
+    }
+
     /* Shall we apply the settings? */
     if (!(flags & CDS_NORESET))
     {
-        ULONG ulResult;
+        ULONG_PTR ulResult;
         PVOID pvOldCursor;
         TEXTMETRICW tmw;
 
@@ -796,38 +839,55 @@ UserChangeDisplaySettings(
         pvOldCursor = UserSetCursor(pvOldCursor, TRUE);
         ASSERT(pvOldCursor == NULL);
 
-        /* Check for failure */
+        /* Check for success or failure */
         if (!ulResult)
         {
+            /* Setting mode failed */
             ERR("Failed to set mode\n");
-            lResult = (lResult == DISP_CHANGE_NOTUPDATED) ?
-                DISP_CHANGE_FAILED : DISP_CHANGE_RESTART;
 
-            goto leave;
-        }
-
-        UserUpdateFullscreen(flags);
-
-        /* Update the system metrics */
-        InitMetrics();
-
-        /* Set new size of the monitor */
-        UserUpdateMonitorSize((HDEV)ppdev);
-
-        /* Update the SERVERINFO */
-        gpsi->dmLogPixels = ppdev->gdiinfo.ulLogPixelsY;
-        gpsi->Planes      = ppdev->gdiinfo.cPlanes;
-        gpsi->BitsPixel   = ppdev->gdiinfo.cBitsPixel;
-        gpsi->BitCount    = gpsi->Planes * gpsi->BitsPixel;
-        if (ppdev->gdiinfo.flRaster & RC_PALETTE)
-        {
-            gpsi->PUSIFlags |= PUSIF_PALETTEDISPLAY;
+            /* Set the correct return value */
+            if ((flags & CDS_UPDATEREGISTRY) && (lResult != DISP_CHANGE_NOTUPDATED))
+                lResult = DISP_CHANGE_RESTART;
+            else
+                lResult = DISP_CHANGE_FAILED;
         }
         else
-            gpsi->PUSIFlags &= ~PUSIF_PALETTEDISPLAY;
-        // Font is realized and this dc was previously set to internal DC_ATTR.
-        gpsi->cxSysFontChar = IntGetCharDimensions(hSystemBM, &tmw, (DWORD*)&gpsi->cySysFontChar);
-        gpsi->tmSysFont     = tmw;
+        {
+            /* Setting mode succeeded */
+            lResult = DISP_CHANGE_SUCCESSFUL;
+
+            UserUpdateFullscreen(flags);
+
+            /* Update the system metrics */
+            InitMetrics();
+
+            /* Set new size of the monitor */
+            UserUpdateMonitorSize((HDEV)ppdev);
+
+            /* Update the SERVERINFO */
+            gpsi->dmLogPixels = ppdev->gdiinfo.ulLogPixelsY;
+            gpsi->Planes      = ppdev->gdiinfo.cPlanes;
+            gpsi->BitsPixel   = ppdev->gdiinfo.cBitsPixel;
+            gpsi->BitCount    = gpsi->Planes * gpsi->BitsPixel;
+            gpsi->aiSysMet[SM_CXSCREEN] = ppdev->gdiinfo.ulHorzRes;
+            gpsi->aiSysMet[SM_CYSCREEN] = ppdev->gdiinfo.ulVertRes;
+            if (ppdev->gdiinfo.flRaster & RC_PALETTE)
+            {
+                gpsi->PUSIFlags |= PUSIF_PALETTEDISPLAY;
+            }
+            else
+            {
+                gpsi->PUSIFlags &= ~PUSIF_PALETTEDISPLAY;
+            }
+            // Font is realized and this dc was previously set to internal DC_ATTR.
+            gpsi->cxSysFontChar = IntGetCharDimensions(hSystemBM, &tmw, (DWORD*)&gpsi->cySysFontChar);
+            gpsi->tmSysFont     = tmw;
+        }
+
+        /*
+         * Refresh the display on success and even on failure,
+         * since the display may have been messed up.
+         */
 
         /* Remove all cursor clipping */
         UserClipCursor(NULL);
@@ -836,20 +896,23 @@ UserChangeDisplaySettings(
         //IntHideDesktop(pdesk);
 
         /* Send WM_DISPLAYCHANGE to all toplevel windows */
-        UserSendNotifyMessage( HWND_BROADCAST,
-                               WM_DISPLAYCHANGE,
-                               gpsi->BitCount,
-                               MAKELONG(gpsi->aiSysMet[SM_CXSCREEN], gpsi->aiSysMet[SM_CYSCREEN]) );
+        co_IntSendMessageTimeout( HWND_BROADCAST,
+                                  WM_DISPLAYCHANGE,
+                                  gpsi->BitCount,
+                                  MAKELONG(gpsi->aiSysMet[SM_CXSCREEN], gpsi->aiSysMet[SM_CYSCREEN]),
+                                  SMTO_NORMAL,
+                                  100,
+                                  &ulResult );
 
         ERR("BitCount New %d Orig %d ChkNew %d\n",gpsi->BitCount,OrigBC,ppdev->gdiinfo.cBitsPixel);
 
         /* Not full screen and different bit count, send messages */
         if (!(flags & CDS_FULLSCREEN) &&
-              gpsi->BitCount != OrigBC )
+            gpsi->BitCount != OrigBC)
         {
-           ERR("Detect settings changed.\n");
-           UserSendNotifyMessage( HWND_BROADCAST, WM_SETTINGCHANGE, 0, 0 );
-           UserSendNotifyMessage( HWND_BROADCAST, WM_SYSCOLORCHANGE, 0, 0 );
+            ERR("Detect settings changed.\n");
+            UserSendNotifyMessage(HWND_BROADCAST, WM_SETTINGCHANGE, 0, 0);
+            UserSendNotifyMessage(HWND_BROADCAST, WM_SYSCOLORCHANGE, 0, 0);
         }
 
         //co_IntShowDesktop(pdesk, ppdev->gdiinfo.ulHorzRes, ppdev->gdiinfo.ulVertRes);
@@ -898,6 +961,11 @@ NtUserChangeDisplaySettings(
 
     /* Check flags */
     if ((dwflags & (CDS_GLOBAL|CDS_NORESET)) && !(dwflags & CDS_UPDATEREGISTRY))
+    {
+        return DISP_CHANGE_BADFLAGS;
+    }
+
+    if ((dwflags & CDS_RESET) && (dwflags & CDS_NORESET))
     {
         return DISP_CHANGE_BADFLAGS;
     }
@@ -976,4 +1044,3 @@ NtUserChangeDisplaySettings(
 
     return lRet;
 }
-

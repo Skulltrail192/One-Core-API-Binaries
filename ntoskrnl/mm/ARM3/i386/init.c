@@ -39,9 +39,9 @@ MMPTE MmDecommittedPte = {{MM_DECOMMIT << MM_PTE_SOFTWARE_PROTECTION_BITS}};
 
 /* PRIVATE FUNCTIONS **********************************************************/
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_FUNCTION
 MiInitializeSessionSpaceLayout(VOID)
 {
     //
@@ -120,9 +120,9 @@ MiInitializeSessionSpaceLayout(VOID)
                                          MM_ALLOCATION_GRANULARITY);
 }
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_FUNCTION
 MiComputeNonPagedPoolVa(IN ULONG FreePages)
 {
     IN PFN_NUMBER PoolPages;
@@ -236,9 +236,9 @@ MiComputeNonPagedPoolVa(IN ULONG FreePages)
     }
 }
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
-INIT_FUNCTION
 MiInitMachineDependent(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
 {
     PFN_NUMBER PageFrameIndex;
@@ -418,6 +418,8 @@ MiInitMachineDependent(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
         StartPde++;
     }
 
+    MmSubsectionBase = (ULONG_PTR)MmNonPagedPoolStart;
+
     //
     // Now remember where the expansion starts
     //
@@ -487,7 +489,7 @@ MiInitMachineDependent(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     StartPde = MiAddressToPde(HYPER_SPACE);
 
     /* Lock PFN database */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* Allocate a page for hyperspace and create it */
     MI_SET_USAGE(MI_USAGE_PAGE_TABLE);
@@ -501,7 +503,7 @@ MiInitMachineDependent(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     KeFlushCurrentTb();
 
     /* Release the lock */
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     //
     // Zero out the page table now
@@ -522,17 +524,17 @@ MiInitMachineDependent(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     //
     // Reserve system PTEs for zeroing PTEs and clear them
     //
-    MiFirstReservedZeroingPte = MiReserveSystemPtes(MI_ZERO_PTES,
+    MiFirstReservedZeroingPte = MiReserveSystemPtes(MI_ZERO_PTES + 1,
                                                     SystemPteSpace);
-    RtlZeroMemory(MiFirstReservedZeroingPte, MI_ZERO_PTES * sizeof(MMPTE));
+    RtlZeroMemory(MiFirstReservedZeroingPte, (MI_ZERO_PTES + 1) * sizeof(MMPTE));
 
     //
     // Set the counter to maximum to boot with
     //
-    MiFirstReservedZeroingPte->u.Hard.PageFrameNumber = MI_ZERO_PTES - 1;
+    MiFirstReservedZeroingPte->u.Hard.PageFrameNumber = MI_ZERO_PTES;
 
     /* Lock PFN database */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* Reset the ref/share count so that MmInitializeProcessAddressSpace works */
     Pfn1 = MiGetPfnEntry(PFN_FROM_PTE(MiAddressToPde(PDE_BASE)));
@@ -565,7 +567,7 @@ MiInitMachineDependent(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     }
 
     /* Release the lock */
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     /* Initialize the bogus address space */
     Flags = 0;

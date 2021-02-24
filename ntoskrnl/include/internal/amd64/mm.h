@@ -3,30 +3,40 @@
  */
 #pragma once
 
-#define _MI_PAGING_LEVELS                   4
+#define _MI_PAGING_LEVELS 4
+#define _MI_HAS_NO_EXECUTE 1
 
-/* Memory layout base addresses */
+/* Memory layout base addresses (This is based on Vista!) */
 #define MI_USER_PROBE_ADDRESS           (PVOID)0x000007FFFFFF0000ULL
 #define MI_DEFAULT_SYSTEM_RANGE_START   (PVOID)0xFFFF080000000000ULL
 #define MI_REAL_SYSTEM_RANGE_START             0xFFFF800000000000ULL
-#define HYPER_SPACE                            0xFFFFF70000000000ULL
+//#define MI_PAGE_TABLE_BASE                   0xFFFFF68000000000ULL // 512 GB page tables
+#define HYPER_SPACE                            0xFFFFF70000000000ULL // 512 GB hyper space [MiVaProcessSpace]
 #define HYPER_SPACE_END                        0xFFFFF77FFFFFFFFFULL
-#define MI_SYSTEM_CACHE_WS_START               0xFFFFF78000001000ULL
-#define MI_PAGED_POOL_START             (PVOID)0xFFFFF8A000000000ULL
-//#define MI_PAGED_POOL_END                      0xFFFFF8BFFFFFFFFFULL
-//#define MI_SESSION_SPACE_START                 0xFFFFF90000000000ULL
+//#define MI_SHARED_SYSTEM_PAGE                0xFFFFF78000000000ULL
+#define MI_SYSTEM_CACHE_WS_START               0xFFFFF78000001000ULL // 512 GB - 4 KB system cache working set
+//#define MI_LOADER_MAPPINGS                   0xFFFFF80000000000ULL // 512 GB loader mappings aka KSEG0_BASE (NDK) [MiVaBootLoaded]
+#define MM_SYSTEM_SPACE_START                  0xFFFFF88000000000ULL // 128 GB system PTEs [MiVaSystemPtes]
+#define MI_DEBUG_MAPPING                (PVOID)0xFFFFF89FFFFFF000ULL // FIXME should be allocated from System PTEs
+#define MI_PAGED_POOL_START             (PVOID)0xFFFFF8A000000000ULL // 128 GB paged pool [MiVaPagedPool]
+//#define MI_PAGED_POOL_END                    0xFFFFF8BFFFFFFFFFULL
+//#define MI_SESSION_SPACE_START               0xFFFFF90000000000ULL // 512 GB session space [MiVaSessionSpace]
 #define MI_SESSION_VIEW_END                    0xFFFFF97FFF000000ULL
 #define MI_SESSION_SPACE_END                   0xFFFFF97FFFFFFFFFULL
-#define MM_SYSTEM_SPACE_START                  0xFFFFF98000000000ULL
-#define MI_PFN_DATABASE                        0xFFFFFA8000000000ULL
-#define MI_DEBUG_MAPPING                (PVOID)0xFFFFFFFF80000000ULL // FIXME
+#define MI_SYSTEM_CACHE_START                  0xFFFFF98000000000ULL // 1 TB system cache (on Vista+ this is dynamic VA space) [MiVaSystemCache,MiVaSpecialPoolPaged,MiVaSpecialPoolNonPaged]
+#define MI_SYSTEM_CACHE_END                    0xFFFFFA7FFFFFFFFFULL
+#define MI_PFN_DATABASE                        0xFFFFFA8000000000ULL // up to 5.5 TB PFN database followed by non paged pool [MiVaPfnDatabase/MiVaNonPagedPool]
 #define MI_NONPAGED_POOL_END            (PVOID)0xFFFFFFFFFFBFFFFFULL
+//#define MM_HAL_VA_START                      0xFFFFFFFFFFC00000ULL // 4 MB HAL mappings, defined in NDK [MiVaHal]
 #define MI_HIGHEST_SYSTEM_ADDRESS       (PVOID)0xFFFFFFFFFFFFFFFFULL
 #define MmSystemRangeStart              ((PVOID)MI_REAL_SYSTEM_RANGE_START)
 
 /* WOW64 address definitions */
 #define MM_HIGHEST_USER_ADDRESS_WOW64   0x7FFEFFFF
 #define MM_SYSTEM_RANGE_START_WOW64     0x80000000
+
+/* The size of the virtual memory area that is mapped using a single PDE */
+#define PDE_MAPPED_VA (PTE_PER_PAGE * PAGE_SIZE)
 
 /* Misc address definitions */
 //#define MI_NON_PAGED_SYSTEM_START_MIN   MM_SYSTEM_SPACE_START // FIXME
@@ -98,6 +108,7 @@
 #define MI_IS_PAGE_WRITEABLE(x)    ((x)->u.Hard.Writable == 1)
 #endif
 #define MI_IS_PAGE_COPY_ON_WRITE(x)((x)->u.Hard.CopyOnWrite == 1)
+#define MI_IS_PAGE_EXECUTABLE(x)   ((x)->u.Hard.NoExecute == 0)
 #define MI_IS_PAGE_DIRTY(x)        ((x)->u.Hard.Dirty == 1)
 #define MI_MAKE_OWNER_PAGE(x)      ((x)->u.Hard.Owner = 1)
 #if !defined(CONFIG_SMP)
@@ -106,13 +117,18 @@
 #define MI_MAKE_WRITE_PAGE(x)      ((x)->u.Hard.Writable = 1)
 #endif
 
+/* Macros to identify the page fault reason from the error code */
+#define MI_IS_NOT_PRESENT_FAULT(FaultCode) !BooleanFlagOn(FaultCode, 0x1)
+#define MI_IS_WRITE_ACCESS(FaultCode) BooleanFlagOn(FaultCode, 0x2)
+#define MI_IS_INSTRUCTION_FETCH(FaultCode) BooleanFlagOn(FaultCode, 0x10)
+
 /* On x64, these are the same */
 #define MI_WRITE_VALID_PPE MI_WRITE_VALID_PTE
 #define ValidKernelPpe ValidKernelPde
 
 /* Convert an address to a corresponding PTE */
-PMMPTE
 FORCEINLINE
+PMMPTE
 _MiAddressToPte(PVOID Address)
 {
     ULONG64 Offset = (ULONG64)Address >> (PTI_SHIFT - 3);
@@ -122,8 +138,8 @@ _MiAddressToPte(PVOID Address)
 #define MiAddressToPte(x) _MiAddressToPte((PVOID)(x))
 
 /* Convert an address to a corresponding PDE */
-PMMPTE
 FORCEINLINE
+PMMPTE
 _MiAddressToPde(PVOID Address)
 {
     ULONG64 Offset = (ULONG64)Address >> (PDI_SHIFT - 3);
@@ -133,8 +149,8 @@ _MiAddressToPde(PVOID Address)
 #define MiAddressToPde(x) _MiAddressToPde((PVOID)(x))
 
 /* Convert an address to a corresponding PPE */
-PMMPTE
 FORCEINLINE
+PMMPTE
 MiAddressToPpe(PVOID Address)
 {
     ULONG64 Offset = (ULONG64)Address >> (PPI_SHIFT - 3);
@@ -143,8 +159,8 @@ MiAddressToPpe(PVOID Address)
 }
 
 /* Convert an address to a corresponding PXE */
-PMMPTE
 FORCEINLINE
+PMMPTE
 MiAddressToPxe(PVOID Address)
 {
     ULONG64 Offset = (ULONG64)Address >> (PXI_SHIFT - 3);
@@ -153,8 +169,8 @@ MiAddressToPxe(PVOID Address)
 }
 
 /* Convert an address to a corresponding PTE offset/index */
-ULONG
 FORCEINLINE
+ULONG
 MiAddressToPti(PVOID Address)
 {
     return ((((ULONG64)Address) >> PTI_SHIFT) & 0x1FF);
@@ -162,8 +178,8 @@ MiAddressToPti(PVOID Address)
 #define MiAddressToPteOffset(x) MiAddressToPti(x) // FIXME: bad name
 
 /* Convert an address to a corresponding PDE offset/index */
-ULONG
 FORCEINLINE
+ULONG
 MiAddressToPdi(PVOID Address)
 {
     return ((((ULONG64)Address) >> PDI_SHIFT) & 0x1FF);
@@ -172,16 +188,16 @@ MiAddressToPdi(PVOID Address)
 #define MiGetPdeOffset(x) MiAddressToPdi(x)
 
 /* Convert an address to a corresponding PXE offset/index */
-ULONG
 FORCEINLINE
+ULONG
 MiAddressToPxi(PVOID Address)
 {
     return ((((ULONG64)Address) >> PXI_SHIFT) & 0x1FF);
 }
 
 /* Convert a PTE into a corresponding address */
-PVOID
 FORCEINLINE
+PVOID
 MiPteToAddress(PMMPTE PointerPte)
 {
     /* Use signed math */
@@ -189,8 +205,8 @@ MiPteToAddress(PMMPTE PointerPte)
 }
 
 /* Convert a PDE into a corresponding address */
-PVOID
 FORCEINLINE
+PVOID
 MiPdeToAddress(PMMPTE PointerPde)
 {
     /* Use signed math */
@@ -198,8 +214,8 @@ MiPdeToAddress(PMMPTE PointerPde)
 }
 
 /* Convert a PPE into a corresponding address */
-PVOID
 FORCEINLINE
+PVOID
 MiPpeToAddress(PMMPTE PointerPpe)
 {
     /* Use signed math */
@@ -207,8 +223,8 @@ MiPpeToAddress(PMMPTE PointerPpe)
 }
 
 /* Convert a PXE into a corresponding address */
-PVOID
 FORCEINLINE
+PVOID
 MiPxeToAddress(PMMPTE PointerPxe)
 {
     /* Use signed math */
@@ -242,10 +258,16 @@ MiPxeToAddress(PMMPTE PointerPxe)
 
 FORCEINLINE
 VOID
-MI_MAKE_SUBSECTION_PTE(IN PMMPTE NewPte,
-                       IN PVOID Segment)
+MI_MAKE_SUBSECTION_PTE(
+    _Out_ PMMPTE NewPte,
+    _In_ PVOID Segment)
 {
-    ASSERT(FALSE);
+    /* Mark this as a prototype */
+    NewPte->u.Long = 0;
+    NewPte->u.Subsect.Prototype = 1;
+
+    /* Store the lower 48 bits of the Segment address */
+    NewPte->u.Subsect.SubsectionAddress = ((ULONG_PTR)Segment & 0x0000FFFFFFFFFFFF);
 }
 
 FORCEINLINE
@@ -271,15 +293,16 @@ MI_IS_MAPPED_PTE(PMMPTE PointerPte)
     return ((PointerPte->u.Long & 0xFFFFFC01) != 0);
 }
 
-VOID
+INIT_FUNCTION
 FORCEINLINE
+VOID
 MmInitGlobalKernelPageDirectory(VOID)
 {
     /* Nothing to do */
 }
 
-BOOLEAN
 FORCEINLINE
+BOOLEAN
 MiIsPdeForAddressValid(PVOID Address)
 {
     return ((MiAddressToPxe(Address)->u.Hard.Valid) &&

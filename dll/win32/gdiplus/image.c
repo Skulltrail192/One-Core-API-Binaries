@@ -17,11 +17,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "gdiplus_private.h"
-
+#include <stdarg.h>
 #include <assert.h>
-#include <ole2.h>
-#include <olectl.h>
+
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "wingdi.h"
+
+#define COBJMACROS
+#include "objbase.h"
+#include "olectl.h"
+#include "ole2.h"
+
+#include "initguid.h"
+#include "wincodec.h"
+#include "gdiplus.h"
+#include "gdiplus_private.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(gdiplus);
 
 HRESULT WINAPI WICCreateImagingFactory_Proxy(UINT, IWICImagingFactory**);
 
@@ -1322,6 +1339,7 @@ GpStatus WINGDIPAPI GdipCloneImage(GpImage *image, GpImage **cloneImage)
         result->unit = metafile->unit;
         result->metafile_type = metafile->metafile_type;
         result->hemf = CopyEnhMetaFileW(metafile->hemf, NULL);
+        list_init(&result->containers);
 
         if (!result->hemf)
         {
@@ -2073,24 +2091,7 @@ static GpStatus free_image_data(GpImage *image)
         heap_free(((GpBitmap*)image)->prop_item);
     }
     else if (image->type == ImageTypeMetafile)
-    {
-        GpMetafile *metafile = (GpMetafile*)image;
-        heap_free(metafile->comment_data);
-        DeleteEnhMetaFile(CloseEnhMetaFile(metafile->record_dc));
-        if (!metafile->preserve_hemf)
-            DeleteEnhMetaFile(metafile->hemf);
-        if (metafile->record_graphics)
-        {
-            WARN("metafile closed while recording\n");
-            /* not sure what to do here; for now just prevent the graphics from functioning or using this object */
-            metafile->record_graphics->image = NULL;
-            metafile->record_graphics->busy = TRUE;
-        }
-        if (metafile->record_stream)
-        {
-            IStream_Release(metafile->record_stream);
-        }
-    }
+        METAFILE_Free((GpMetafile *)image);
     else
     {
         WARN("invalid image: %p\n", image);
@@ -2559,7 +2560,7 @@ static UINT vt_to_itemtype(UINT vt)
         { VT_BLOB, PropertyTagTypeUndefined }
     };
     UINT i;
-    for (i = 0; i < sizeof(vt2type)/sizeof(vt2type[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(vt2type); i++)
     {
         if (vt2type[i].vt == vt) return vt2type[i].type;
     }
@@ -3459,10 +3460,10 @@ static void png_metadata_reader(GpBitmap *bitmap, IWICBitmapDecoder *decoder, UI
                         {
                             if (name.vt == VT_LPSTR)
                             {
-                                for (j=0; j<sizeof(keywords)/sizeof(keywords[0]); j++)
+                                for (j = 0; j < ARRAY_SIZE(keywords); j++)
                                     if (!strcmp(keywords[j].name, name.u.pszVal))
                                         break;
-                                if (j < sizeof(keywords)/sizeof(keywords[0]) && !keywords[j].seen)
+                                if (j < ARRAY_SIZE(keywords) && !keywords[j].seen)
                                 {
                                     keywords[j].seen = TRUE;
                                     item = create_prop(keywords[j].propid, &value);
@@ -3954,6 +3955,39 @@ static GpStatus decode_image_jpeg(IStream* stream, GpImage **image)
     return decode_image_wic(stream, &GUID_ContainerFormatJpeg, NULL, image);
 }
 
+static BOOL has_png_transparency_chunk(IStream *pIStream)
+{
+    LARGE_INTEGER seek;
+    BOOL has_tRNS = FALSE;
+    HRESULT hr;
+    BYTE header[8];
+
+    seek.QuadPart = 8;
+    do
+    {
+        ULARGE_INTEGER chunk_start;
+        ULONG bytesread, chunk_size;
+
+        hr = IStream_Seek(pIStream, seek, STREAM_SEEK_SET, &chunk_start);
+        if (FAILED(hr)) break;
+
+        hr = IStream_Read(pIStream, header, 8, &bytesread);
+        if (FAILED(hr) || bytesread < 8) break;
+
+        chunk_size = (header[0] << 24) | (header[1] << 16) | (header[2] << 8) | header[3];
+        if (!memcmp(&header[4], "tRNS", 4))
+        {
+            has_tRNS = TRUE;
+            break;
+        }
+
+        seek.QuadPart = chunk_start.QuadPart + chunk_size + 12; /* skip data and CRC */
+    } while (memcmp(&header[4], "IDAT", 4) && memcmp(&header[4], "IEND", 4));
+
+    TRACE("has_tRNS = %d\n", has_tRNS);
+    return has_tRNS;
+}
+
 static GpStatus decode_image_png(IStream* stream, GpImage **image)
 {
     IWICBitmapDecoder *decoder;
@@ -3975,6 +4009,14 @@ static GpStatus decode_image_png(IStream* stream, GpImage **image)
         {
             if (IsEqualGUID(&format, &GUID_WICPixelFormat8bppGray))
                 force_conversion = TRUE;
+            else if ((IsEqualGUID(&format, &GUID_WICPixelFormat8bppIndexed) ||
+                      IsEqualGUID(&format, &GUID_WICPixelFormat4bppIndexed) ||
+                      IsEqualGUID(&format, &GUID_WICPixelFormat2bppIndexed) ||
+                      IsEqualGUID(&format, &GUID_WICPixelFormat1bppIndexed) ||
+                      IsEqualGUID(&format, &GUID_WICPixelFormat24bppBGR)) &&
+                     has_png_transparency_chunk(stream))
+                force_conversion = TRUE;
+
             status = decode_frame_wic(decoder, force_conversion, 0, png_metadata_reader, image);
         }
         else
@@ -4165,7 +4207,7 @@ static GpStatus decode_image_emf(IStream *stream, GpImage **image)
 }
 
 typedef GpStatus (*encode_image_func)(GpImage *image, IStream* stream,
-    GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params);
+    GDIPCONST EncoderParameters* params);
 
 typedef GpStatus (*decode_image_func)(IStream *stream, GpImage **image);
 
@@ -4318,6 +4360,11 @@ GpStatus WINGDIPAPI GdipLoadImageFromStream(IStream *stream, GpImage **image)
     LARGE_INTEGER seek;
     HRESULT hr;
     const struct image_codec *codec=NULL;
+
+    TRACE("%p %p\n", stream, image);
+
+    if (!stream || !image)
+        return InvalidParameter;
 
     /* choose an appropriate image decoder */
     stat = get_decoder_info(stream, &codec);
@@ -4541,31 +4588,31 @@ static GpStatus encode_image_wic(GpImage *image, IStream* stream,
 }
 
 static GpStatus encode_image_BMP(GpImage *image, IStream* stream,
-    GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params)
+    GDIPCONST EncoderParameters* params)
 {
     return encode_image_wic(image, stream, &GUID_ContainerFormatBmp, params);
 }
 
 static GpStatus encode_image_tiff(GpImage *image, IStream* stream,
-    GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params)
+    GDIPCONST EncoderParameters* params)
 {
     return encode_image_wic(image, stream, &GUID_ContainerFormatTiff, params);
 }
 
-static GpStatus encode_image_png(GpImage *image, IStream* stream,
-    GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params)
+GpStatus encode_image_png(GpImage *image, IStream* stream,
+    GDIPCONST EncoderParameters* params)
 {
     return encode_image_wic(image, stream, &GUID_ContainerFormatPng, params);
 }
 
 static GpStatus encode_image_jpeg(GpImage *image, IStream* stream,
-    GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params)
+    GDIPCONST EncoderParameters* params)
 {
     return encode_image_wic(image, stream, &GUID_ContainerFormatJpeg, params);
 }
 
 static GpStatus encode_image_gif(GpImage *image, IStream* stream,
-    GDIPCONST CLSID* clsid, GDIPCONST EncoderParameters* params)
+    GDIPCONST EncoderParameters* params)
 {
     return encode_image_wic(image, stream, &GUID_ContainerFormatGif, params);
 }
@@ -4580,7 +4627,7 @@ GpStatus WINGDIPAPI GdipSaveImageToStream(GpImage *image, IStream* stream,
     encode_image_func encode_image;
     int i;
 
-    TRACE("%p %p %s %p\n", image, stream, wine_dbgstr_guid(clsid), params);
+    TRACE("%p, %p, %s, %p\n", image, stream, wine_dbgstr_guid(clsid), params);
 
     if(!image || !stream)
         return InvalidParameter;
@@ -4595,7 +4642,7 @@ GpStatus WINGDIPAPI GdipSaveImageToStream(GpImage *image, IStream* stream,
     if (encode_image == NULL)
         return UnknownImageFormat;
 
-    stat = encode_image(image, stream, clsid, params);
+    stat = encode_image(image, stream, params);
 
     return stat;
 }

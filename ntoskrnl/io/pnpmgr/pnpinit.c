@@ -24,6 +24,18 @@ PUNICODE_STRING PiInitGroupOrderTable;
 USHORT PiInitGroupOrderTableCount;
 INTERFACE_TYPE PnpDefaultInterfaceType;
 
+ARBITER_INSTANCE IopRootBusNumberArbiter;
+ARBITER_INSTANCE IopRootIrqArbiter;
+ARBITER_INSTANCE IopRootDmaArbiter;
+ARBITER_INSTANCE IopRootMemArbiter;
+ARBITER_INSTANCE IopRootPortArbiter;
+
+NTSTATUS NTAPI IopPortInitialize(VOID);
+NTSTATUS NTAPI IopMemInitialize(VOID);
+NTSTATUS NTAPI IopDmaInitialize(VOID);
+NTSTATUS NTAPI IopIrqInitialize(VOID);
+NTSTATUS NTAPI IopBusNumberInitialize(VOID);
+
 /* FUNCTIONS ******************************************************************/
 
 INTERFACE_TYPE
@@ -38,13 +50,49 @@ NTSTATUS
 NTAPI
 IopInitializeArbiters(VOID)
 {
-     /* FIXME: TODO */
-    return STATUS_SUCCESS;
+    NTSTATUS Status;
+
+    Status = IopPortInitialize();
+    if (!NT_SUCCESS(Status))
+    {
+        DPRINT1("IopPortInitialize() return %X\n", Status);
+        return Status;
+    }
+
+    Status = IopMemInitialize();
+    if (!NT_SUCCESS(Status))
+    {
+        DPRINT1("IopMemInitialize() return %X\n", Status);
+        return Status;
+    }
+
+    Status = IopDmaInitialize();
+    if (!NT_SUCCESS(Status))
+    {
+        DPRINT1("IopDmaInitialize() return %X\n", Status);
+        return Status;
+    }
+
+    Status = IopIrqInitialize();
+    if (!NT_SUCCESS(Status))
+    {
+        DPRINT1("IopIrqInitialize() return %X\n", Status);
+        return Status;
+    }
+
+    Status = IopBusNumberInitialize();
+    if (!NT_SUCCESS(Status))
+    {
+        DPRINT1("IopBusNumberInitialize() return %X\n", Status);
+    }
+
+    return Status;
 }
 
+
+INIT_FUNCTION
 NTSTATUS
 NTAPI
-INIT_FUNCTION
 PiInitCacheGroupInformation(VOID)
 {
     HANDLE KeyHandle;
@@ -55,17 +103,6 @@ PiInitCacheGroupInformation(VOID)
     UNICODE_STRING GroupString =
         RTL_CONSTANT_STRING(L"\\Registry\\Machine\\System\\CurrentControlSet"
                             L"\\Control\\ServiceGroupOrder");
-
-    /* ReactOS HACK for SETUPLDR */
-    if (KeLoaderBlock->SetupLdrBlock)
-    {
-        DPRINT1("WARNING!! In PiInitCacheGroupInformation, using ReactOS HACK for SETUPLDR!!\n");
-
-        /* Bogus data */
-        PiInitGroupOrderTableCount = 0;
-        PiInitGroupOrderTable = (PVOID)0xBABEB00B;
-        return STATUS_SUCCESS;
-    }
 
     /* Open the registry key */
     Status = IopOpenRegistryKeyEx(&KeyHandle,
@@ -385,9 +422,9 @@ Exit:
     return Status;
 }
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
-INIT_FUNCTION
 IopInitializePlugPlayServices(VOID)
 {
     NTSTATUS Status;
@@ -399,8 +436,8 @@ IopInitializePlugPlayServices(VOID)
 
     /* Initialize locks and such */
     KeInitializeSpinLock(&IopDeviceTreeLock);
-    KeInitializeSpinLock(&IopDeviceRelationsSpinLock);
-    InitializeListHead(&IopDeviceRelationsRequestList);
+    KeInitializeSpinLock(&IopDeviceActionLock);
+    InitializeListHead(&IopDeviceActionRequestList);
 
     /* Get the default interface */
     PnpDefaultInterfaceType = IopDetermineDefaultInterfaceType();

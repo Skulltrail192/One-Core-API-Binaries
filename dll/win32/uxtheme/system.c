@@ -58,23 +58,23 @@ int g_cHandles;
 
 /***********************************************************************/
 
-static BOOL CALLBACK UXTHEME_broadcast_msg_enumchild (HWND hWnd, LPARAM msg)
+static BOOL CALLBACK UXTHEME_send_theme_changed (HWND hWnd, LPARAM enable)
 {
-    SendMessageW(hWnd, msg, 0, 0);
+    SendMessageW(hWnd, WM_THEMECHANGED, enable, 0);
     return TRUE;
 }
 
-/* Broadcast a message to *all* windows, including children */
-BOOL CALLBACK UXTHEME_broadcast_msg (HWND hWnd, LPARAM msg)
+/* Broadcast WM_THEMECHANGED to *all* windows, including children */
+BOOL CALLBACK UXTHEME_broadcast_theme_changed (HWND hWnd, LPARAM enable)
 {
     if (hWnd == NULL)
     {
-	EnumWindows (UXTHEME_broadcast_msg, msg);
+        EnumWindows (UXTHEME_broadcast_theme_changed, enable);
     }
     else
     {
-	SendMessageW(hWnd, msg, 0, 0);
-	EnumChildWindows (hWnd, UXTHEME_broadcast_msg_enumchild, msg);
+        UXTHEME_send_theme_changed(hWnd, enable);
+        EnumChildWindows (hWnd, UXTHEME_send_theme_changed, enable);
     }
     return TRUE;
 }
@@ -192,7 +192,7 @@ void UXTHEME_LoadTheme(BOOL bLoad)
     WCHAR szCurrentSize[64];
     BOOL bThemeActive = FALSE;
 
-    if(bLoad == TRUE && g_bThemeHooksActive) 
+    if ((bLoad != FALSE) && g_bThemeHooksActive) 
     {
         /* Get current theme configuration */
         if(!RegOpenKeyW(HKEY_CURRENT_USER, szThemeManager, &hKey)) {
@@ -473,7 +473,7 @@ static void UXTHEME_RestoreSystemMetrics(void)
 /* Make system settings persistent, so they're in effect even w/o uxtheme 
  * loaded.
  * For efficiency reasons, only the last SystemParametersInfoW sets
- * SPIF_SENDWININICHANGE */
+ * SPIF_SENDCHANGE */
 static void UXTHEME_SaveSystemMetrics(void)
 {
     const struct BackupSysParam* bsp = backupSysParams;
@@ -658,7 +658,7 @@ HRESULT WINAPI EnableTheming(BOOL fEnable)
             RegSetValueExW(hKey, szThemeActive, 0, REG_SZ, (LPBYTE)szEnabled, sizeof(WCHAR));
             RegCloseKey(hKey);
         }
-	UXTHEME_broadcast_msg (NULL, WM_THEMECHANGED);
+	UXTHEME_broadcast_theme_changed (NULL, fEnable);
     }
     return S_OK;
 }
@@ -744,6 +744,18 @@ OpenThemeDataInternal(PTHEME_FILE ThemeFile, HWND hwnd, LPCWSTR pszClassList, DW
     if(!pszClassList)
     {
         SetLastError(E_POINTER);
+        return NULL;
+    }
+
+    if ((flags & OTD_NONCLIENT) && !(dwThemeAppProperties & STAP_ALLOW_NONCLIENT))
+    {
+        SetLastError(E_PROP_ID_UNSUPPORTED);
+        return NULL;
+    }
+
+    if (!(flags & OTD_NONCLIENT) && !(dwThemeAppProperties & STAP_ALLOW_CONTROLS))
+    {
+        SetLastError(E_PROP_ID_UNSUPPORTED);
         return NULL;
     }
 
@@ -872,7 +884,7 @@ HRESULT WINAPI SetWindowTheme(HWND hwnd, LPCWSTR pszSubAppName,
     if (!SUCCEEDED(hr))
         return hr;
 
-    UXTHEME_broadcast_msg (hwnd, WM_THEMECHANGED);
+    UXTHEME_broadcast_theme_changed (hwnd, TRUE);
     return hr;
 }
 
@@ -1148,7 +1160,7 @@ HRESULT WINAPI ApplyTheme(HTHEMEFILE hThemeFile, char *unknown, HWND hWnd)
     HRESULT hr;
     TRACE("(%p,%s,%p)\n", hThemeFile, unknown, hWnd);
     hr = UXTHEME_ApplyTheme(hThemeFile);
-    UXTHEME_broadcast_msg (NULL, WM_THEMECHANGED);
+    UXTHEME_broadcast_theme_changed (NULL, (g_ActiveThemeFile != NULL));
     return hr;
 }
 
@@ -1247,14 +1259,20 @@ HRESULT WINAPI EnumThemes(LPCWSTR pszThemePath, ENUMTHEMEPROC callback,
                 wsprintfW(szPath, szFormat, szDir, wfd.cFileName, wfd.cFileName);
 
                 hr = GetThemeDocumentationProperty(szPath, szDisplayName, szName, sizeof(szName)/sizeof(szName[0]));
-                if(SUCCEEDED(hr))
-                    hr = GetThemeDocumentationProperty(szPath, szTooltip, szTip, sizeof(szTip)/sizeof(szTip[0]));
-                if(SUCCEEDED(hr)) {
-                    TRACE("callback(%s,%s,%s,%p)\n", debugstr_w(szPath), debugstr_w(szName), debugstr_w(szTip), lpData);
-                    if(!callback(NULL, szPath, szName, szTip, NULL, lpData)) {
-                        TRACE("callback ended enum\n");
-                        break;
-                    }
+                if(FAILED(hr))
+                {
+                    ERR("Failed to get theme name from %S\n", szPath);
+                    continue;
+                }
+
+                hr = GetThemeDocumentationProperty(szPath, szTooltip, szTip, sizeof(szTip)/sizeof(szTip[0]));
+                if (FAILED(hr))
+                    szTip[0] = 0;
+
+                TRACE("callback(%s,%s,%s,%p)\n", debugstr_w(szPath), debugstr_w(szName), debugstr_w(szTip), lpData);
+                if(!callback(NULL, szPath, szName, szTip, NULL, lpData)) {
+                    TRACE("callback ended enum\n");
+                    break;
                 }
             }
         } while(FindNextFileW(hFind, &wfd));

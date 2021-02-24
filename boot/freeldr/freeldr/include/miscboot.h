@@ -19,16 +19,12 @@
 
 #pragma once
 
-#ifdef _M_IX86
+#if defined(_M_IX86) || defined(_M_AMD64)
 
-VOID
-LoadAndBootBootSector(IN OperatingSystemItem* OperatingSystem,
-                      IN USHORT OperatingSystemVersion);
-VOID
-LoadAndBootPartition(IN OperatingSystemItem* OperatingSystem,
-                     IN USHORT OperatingSystemVersion);
-VOID
-LoadAndBootDrive(IN OperatingSystemItem* OperatingSystem,
-                 IN USHORT OperatingSystemVersion);
+ARC_STATUS
+LoadAndBootDevice(
+    IN ULONG Argc,
+    IN PCHAR Argv[],
+    IN PCHAR Envp[]);
 
-#endif // _M_IX86
+#endif /* _M_IX86 || _M_AMD64 */

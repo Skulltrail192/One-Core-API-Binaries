@@ -15,12 +15,12 @@ list(APPEND SOURCE
 include_directories(
     ${REACTOS_SOURCE_DIR}/win32ss/include)
 
-add_library(dxg SHARED
+add_library(dxg MODULE
     ${SOURCE}
     dxg.rc
     ${CMAKE_CURRENT_BINARY_DIR}/dxg.def)
 
 set_module_type(dxg kernelmodedriver)
-add_importlibs(dxg win32k ntoskrnl)
+add_importlibs(dxg dxgthk ntoskrnl)
 add_pch(dxg dxg_int.h SOURCE)
 add_cd_file(TARGET dxg DESTINATION reactos/system32/drivers FOR all)

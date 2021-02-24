@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2019, Intel Corp.
+ * Copyright (C) 2000 - 2020, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1148,7 +1148,7 @@ AcpiRemoveGpeHandler (
             ACPI_GPE_DISPATCH_NOTIFY)) &&
         Handler->OriginallyEnabled)
     {
-        (void) AcpiEvAddGpeReference (GpeEventInfo);
+        (void) AcpiEvAddGpeReference (GpeEventInfo, FALSE);
         if (ACPI_GPE_IS_POLLING_NEEDED (GpeEventInfo))
         {
             /* Poll edge triggered GPEs to handle existing events */

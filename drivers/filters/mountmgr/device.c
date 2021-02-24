@@ -57,7 +57,7 @@ MountMgrChangeNotify(IN PDEVICE_EXTENSION DeviceExtension,
     if (DeviceExtension->EpicNumber != ChangeNotify->EpicNumber)
     {
         ChangeNotify->EpicNumber = DeviceExtension->EpicNumber;
-        Irp->IoStatus.Information = 0;
+        Irp->IoStatus.Information = sizeof(MOUNTMGR_CHANGE_NOTIFY_INFO);
         return STATUS_SUCCESS;
     }
 
@@ -265,7 +265,7 @@ MountMgrCreatePoint(IN PDEVICE_EXTENSION DeviceExtension,
 
     MaxLength = MAX((Point->DeviceNameOffset + Point->DeviceNameLength),
                     (Point->SymbolicLinkNameLength + Point->SymbolicLinkNameOffset));
-    if (MaxLength >= Stack->Parameters.DeviceIoControl.InputBufferLength)
+    if (MaxLength > Stack->Parameters.DeviceIoControl.InputBufferLength)
     {
         return STATUS_INVALID_PARAMETER;
     }
@@ -393,7 +393,7 @@ IsFtVolume(IN PUNICODE_STRING SymbolicName)
     }
 
     /* Check if this is a FT volume */
-    return IsRecognizedPartition(PartitionInfo.PartitionType);
+    return IsFTPartition(PartitionInfo.PartitionType);
 }
 
 /*
@@ -506,13 +506,13 @@ MountMgrNextDriveLetterWorker(IN PDEVICE_EXTENSION DeviceExtension,
     DeviceInformation->LetterAssigned =
     DriveLetterInfo->DriveLetterWasAssigned = TRUE;
 
-    /* Browse all the symlink to see if there's already a drive letter */
+    /* Browse all the symlinks to check if there is already a drive letter */
     NextEntry = DeviceInformation->SymbolicLinksListHead.Flink;
     while (NextEntry != &(DeviceInformation->SymbolicLinksListHead))
     {
         SymlinkInformation = CONTAINING_RECORD(NextEntry, SYMLINK_INFORMATION, SymbolicLinksListEntry);
 
-        /* This is a driver letter & online one, forget about new drive eltter */
+        /* If this is a drive letter and it is online, forget about new drive letter */
         if (IsDriveLetter(&(SymlinkInformation->Name)) && SymlinkInformation->Online)
         {
             DriveLetterInfo->DriveLetterWasAssigned = FALSE;
@@ -524,11 +524,12 @@ MountMgrNextDriveLetterWorker(IN PDEVICE_EXTENSION DeviceExtension,
     }
 
     /* If we didn't find a drive letter online
-     * ensure there's no GPT drive letter nor no drive entry
+     * ensure this is not a no drive entry
+    * by querying GPT attributes & database
      */
     if (NextEntry == &(DeviceInformation->SymbolicLinksListHead))
     {
-        if (GptDriveLetter || HasNoDriveLetterEntry(DeviceInformation->UniqueId))
+        if (!GptDriveLetter || HasNoDriveLetterEntry(DeviceInformation->UniqueId))
         {
             DriveLetterInfo->DriveLetterWasAssigned = FALSE;
             DriveLetterInfo->CurrentDriveLetter = 0;
@@ -609,7 +610,7 @@ MountMgrNextDriveLetterWorker(IN PDEVICE_EXTENSION DeviceExtension,
          DriveLetterInfo->CurrentDriveLetter <= L'Z';
          DriveLetterInfo->CurrentDriveLetter++)
     {
-        NameBuffer[LETTER_POSITION] = DeviceInformation->SuggestedDriveLetter;
+        NameBuffer[LETTER_POSITION] = DriveLetterInfo->CurrentDriveLetter;
 
         Status = MountMgrCreatePointWorker(DeviceExtension, &SymbolicName, &TargetDeviceName);
         if (NT_SUCCESS(Status))
@@ -1745,7 +1746,7 @@ MountMgrQueryPoints(IN PDEVICE_EXTENSION DeviceExtension,
 
     /* We can't go beyond */
     if (((ULONG)MountPoint->SymbolicLinkNameLength + MountPoint->UniqueIdLength +
-        MountPoint->DeviceNameLength) < Stack->Parameters.DeviceIoControl.InputBufferLength)
+        MountPoint->DeviceNameLength) > Stack->Parameters.DeviceIoControl.InputBufferLength)
     {
         return STATUS_INVALID_PARAMETER;
     }

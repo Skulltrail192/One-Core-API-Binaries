@@ -11,7 +11,6 @@
 
 #include <shellapi.h>
 
-#define VOLUME_DIVIDER 0xFFF
 
 typedef struct _IMGINFO
 {
@@ -32,9 +31,15 @@ typedef struct _GLOBAL_DATA
     DWORD muteControlID;
 
     DWORD volumeControlID;
+    DWORD volumeChannels;
     DWORD volumeMinimum;
     DWORD volumeMaximum;
-    DWORD volumeValue;
+    DWORD volumeStep;
+
+    DWORD maxVolume;
+    PMIXERCONTROLDETAILS_UNSIGNED volumeInitialValues;
+    PMIXERCONTROLDETAILS_UNSIGNED volumePreviousValues;
+    PMIXERCONTROLDETAILS_UNSIGNED volumeCurrentValues;
 
 } GLOBAL_DATA, *PGLOBAL_DATA;
 
@@ -155,6 +160,8 @@ GetVolumeControl(PGLOBAL_DATA pGlobalData)
         != MMSYSERR_NOERROR)
         return;
 
+    pGlobalData->volumeChannels = mxln.cChannels;
+
     mxlc.cbStruct = sizeof(MIXERLINECONTROLS);
     mxlc.dwLineID = mxln.dwLineID;
     mxlc.dwControlType = MIXERCONTROL_CONTROLTYPE_VOLUME;
@@ -168,54 +175,127 @@ GetVolumeControl(PGLOBAL_DATA pGlobalData)
     pGlobalData->volumeMinimum = mxc.Bounds.dwMinimum;
     pGlobalData->volumeMaximum = mxc.Bounds.dwMaximum;
     pGlobalData->volumeControlID = mxc.dwControlID;
+    pGlobalData->volumeStep = (pGlobalData->volumeMaximum - pGlobalData->volumeMinimum) / (VOLUME_MAX - VOLUME_MIN);
+
+    pGlobalData->volumeInitialValues = HeapAlloc(GetProcessHeap(),
+                                                 0,
+                                                 mxln.cChannels * sizeof(MIXERCONTROLDETAILS_UNSIGNED));
+    if (pGlobalData->volumeInitialValues == NULL)
+        return;
+
+    pGlobalData->volumePreviousValues = HeapAlloc(GetProcessHeap(),
+                                                  0,
+                                                  mxln.cChannels * sizeof(MIXERCONTROLDETAILS_UNSIGNED));
+    if (pGlobalData->volumePreviousValues == NULL)
+        return;
+
+    pGlobalData->volumeCurrentValues = HeapAlloc(GetProcessHeap(),
+                                                 0,
+                                                 mxln.cChannels * sizeof(MIXERCONTROLDETAILS_UNSIGNED));
+    if (pGlobalData->volumeCurrentValues == NULL)
+        return;
 }
 
 
 VOID
-GetVolumeValue(PGLOBAL_DATA pGlobalData)
+GetVolumeValue(
+    PGLOBAL_DATA pGlobalData,
+    BOOL bInit)
 {
-    MIXERCONTROLDETAILS_UNSIGNED mxcdVolume;
     MIXERCONTROLDETAILS mxcd;
+    DWORD i;
 
     if (pGlobalData->hMixer == NULL)
         return;
 
     mxcd.cbStruct = sizeof(MIXERCONTROLDETAILS);
     mxcd.dwControlID = pGlobalData->volumeControlID;
-    mxcd.cChannels = 1;
+    mxcd.cChannels = pGlobalData->volumeChannels;
     mxcd.cMultipleItems = 0;
     mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_UNSIGNED);
-    mxcd.paDetails = &mxcdVolume;
+    mxcd.paDetails = pGlobalData->volumePreviousValues;
 
     if (mixerGetControlDetails((HMIXEROBJ)pGlobalData->hMixer, &mxcd, MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE)
         != MMSYSERR_NOERROR)
         return;
 
-    pGlobalData->volumeValue = mxcdVolume.dwValue;
+    pGlobalData->maxVolume = 0;
+    for (i = 0; i < pGlobalData->volumeChannels; i++)
+    {
+        pGlobalData->volumeCurrentValues[i].dwValue = pGlobalData->volumePreviousValues[i].dwValue;
+
+        if (pGlobalData->volumePreviousValues[i].dwValue > pGlobalData->maxVolume)
+            pGlobalData->maxVolume = pGlobalData->volumePreviousValues[i].dwValue;
+
+        if (bInit)
+            pGlobalData->volumeInitialValues[i].dwValue = pGlobalData->volumeCurrentValues[i].dwValue;
+    }
 }
 
 
 VOID
-SetVolumeValue(PGLOBAL_DATA pGlobalData){
-    MIXERCONTROLDETAILS_UNSIGNED mxcdVolume;
+SetVolumeValue(PGLOBAL_DATA pGlobalData,
+               DWORD dwPosition)
+{
+    MIXERCONTROLDETAILS mxcd;
+    DWORD dwVolume, i;
+
+    if (pGlobalData->hMixer == NULL)
+        return;
+
+    if (dwPosition == VOLUME_MIN)
+        dwVolume = pGlobalData->volumeMinimum;
+    else if (dwPosition == VOLUME_MAX)
+        dwVolume = pGlobalData->volumeMaximum;
+    else
+        dwVolume = (dwPosition * pGlobalData->volumeStep) + pGlobalData->volumeMinimum;
+
+    for (i = 0; i < pGlobalData->volumeChannels; i++)
+    {
+        if (pGlobalData->volumePreviousValues[i].dwValue == pGlobalData->maxVolume)
+        {
+            pGlobalData->volumeCurrentValues[i].dwValue = dwVolume;
+        }
+        else
+        {
+            pGlobalData->volumeCurrentValues[i].dwValue =
+                pGlobalData->volumePreviousValues[i].dwValue * dwVolume / pGlobalData-> maxVolume;
+        }
+    }
+
+    mxcd.cbStruct = sizeof(MIXERCONTROLDETAILS);
+    mxcd.dwControlID = pGlobalData->volumeControlID;
+    mxcd.cChannels = pGlobalData->volumeChannels;
+    mxcd.cMultipleItems = 0;
+    mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_UNSIGNED);
+    mxcd.paDetails = pGlobalData->volumeCurrentValues;
+
+    if (mixerSetControlDetails((HMIXEROBJ)pGlobalData->hMixer, &mxcd, MIXER_OBJECTF_HMIXER | MIXER_SETCONTROLDETAILSF_VALUE)
+        != MMSYSERR_NOERROR)
+        return;
+}
+
+
+static
+VOID
+RestoreVolumeValue(
+    PGLOBAL_DATA pGlobalData)
+{
     MIXERCONTROLDETAILS mxcd;
 
     if (pGlobalData->hMixer == NULL)
         return;
 
-    mxcdVolume.dwValue = pGlobalData->volumeValue;
     mxcd.cbStruct = sizeof(MIXERCONTROLDETAILS);
     mxcd.dwControlID = pGlobalData->volumeControlID;
-    mxcd.cChannels = 1;
+    mxcd.cChannels = pGlobalData->volumeChannels;
     mxcd.cMultipleItems = 0;
     mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_UNSIGNED);
-    mxcd.paDetails = &mxcdVolume;
+    mxcd.paDetails = pGlobalData->volumeInitialValues;
 
-    if (mixerSetControlDetails((HMIXEROBJ)pGlobalData->hMixer, &mxcd, MIXER_OBJECTF_HMIXER | MIXER_SETCONTROLDETAILSF_VALUE)
-        != MMSYSERR_NOERROR)
-        return;
-
-    pGlobalData->volumeValue = mxcdVolume.dwValue;
+    mixerSetControlDetails((HMIXEROBJ)pGlobalData->hMixer,
+                           &mxcd,
+                           MIXER_OBJECTF_HMIXER | MIXER_SETCONTROLDETAILSF_VALUE);
 }
 
 
@@ -254,17 +334,20 @@ InitVolumeControls(HWND hwndDlg, PGLOBAL_DATA pGlobalData)
     MIXERCAPS mxc;
     TCHAR szNoDevices[256];
 
-    CheckDlgButton(hwndDlg,
-                   IDC_ICON_IN_TASKBAR,
-                   GetSystrayVolumeIconState() ? BST_CHECKED : BST_UNCHECKED);
-
     LoadString(hApplet, IDS_NO_DEVICES, szNoDevices, _countof(szNoDevices));
+
+    SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETRANGE, (WPARAM)TRUE, (LPARAM)MAKELONG(VOLUME_MIN, VOLUME_MAX));
+    SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETTICFREQ, VOLUME_TICFREQ, 0);
+    SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETPAGESIZE, 0, VOLUME_PAGESIZE);
 
     NumMixers = mixerGetNumDevs();
     if (!NumMixers)
     {
         EnableWindow(GetDlgItem(hwndDlg, IDC_VOLUME_TRACKBAR), FALSE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_VOLUME_LOW),      FALSE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_VOLUME_HIGH),     FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_MUTE_CHECKBOX),   FALSE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_ICON_IN_TASKBAR), FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_ADVANCED_BTN),    FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SPEAKER_VOL_BTN), FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_ADVANCED2_BTN),   FALSE);
@@ -286,6 +369,10 @@ InitVolumeControls(HWND hwndDlg, PGLOBAL_DATA pGlobalData)
         return;
     }
 
+    CheckDlgButton(hwndDlg,
+                   IDC_ICON_IN_TASKBAR,
+                   GetSystrayVolumeIconState() ? BST_CHECKED : BST_UNCHECKED);
+
     GetMuteControl(pGlobalData);
     GetMuteState(pGlobalData);
     if (pGlobalData->muteVal)
@@ -300,15 +387,10 @@ InitVolumeControls(HWND hwndDlg, PGLOBAL_DATA pGlobalData)
     }
 
     GetVolumeControl(pGlobalData);
-    GetVolumeValue(pGlobalData);
+    GetVolumeValue(pGlobalData, TRUE);
 
     SendDlgItemMessage(hwndDlg, IDC_DEVICE_NAME, WM_SETTEXT, 0, (LPARAM)mxc.szPname);
-    SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETRANGE, (WPARAM)TRUE,
-        (LPARAM)MAKELONG(pGlobalData->volumeMinimum, pGlobalData->volumeMaximum/VOLUME_DIVIDER));
-    SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETPAGESIZE, (WPARAM)FALSE, (LPARAM)1);
-    SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETSEL, (WPARAM)FALSE,
-        (LPARAM)MAKELONG(pGlobalData->volumeMinimum, pGlobalData->volumeValue/VOLUME_DIVIDER));
-    SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)pGlobalData->volumeValue/VOLUME_DIVIDER);
+    SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)(pGlobalData->maxVolume - pGlobalData->volumeMinimum) / pGlobalData->volumeStep);
 }
 
 VOID
@@ -318,7 +400,7 @@ SaveData(HWND hwndDlg)
 
     bShowIcon = (IsDlgButtonChecked(hwndDlg, IDC_ICON_IN_TASKBAR) == BST_CHECKED);
 
-    SetSystrayVolumeIconState(!bShowIcon);
+    SetSystrayVolumeIconState(bShowIcon);
 }
 
 VOID
@@ -344,8 +426,6 @@ VolumeDlgProc(HWND hwndDlg,
 
     pGlobalData = (PGLOBAL_DATA)GetWindowLongPtr(hwndDlg, DWLP_USER);
 
-
-
     switch(uMsg)
     {
         case MM_MIXM_LINE_CHANGE:
@@ -365,9 +445,8 @@ VolumeDlgProc(HWND hwndDlg,
         }
         case MM_MIXM_CONTROL_CHANGE:
         {
-            GetVolumeValue(pGlobalData);
-            SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETSEL, (WPARAM)FALSE, (LPARAM)MAKELONG(pGlobalData->volumeMinimum, pGlobalData->volumeValue/VOLUME_DIVIDER));
-            SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)pGlobalData->volumeValue/VOLUME_DIVIDER);
+            GetVolumeValue(pGlobalData, FALSE);
+            SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)(pGlobalData->maxVolume - pGlobalData->volumeMinimum) / pGlobalData->volumeStep);
             break;
         }
         case WM_INITDIALOG:
@@ -446,6 +525,10 @@ VolumeDlgProc(HWND hwndDlg,
                 case IDC_ADVANCED_BTN:
                     LaunchSoundControl(hwndDlg);
                     break;
+
+                case IDC_SPEAKER_VOL_BTN:
+                    SpeakerVolume(hwndDlg);
+                    break;
             }
             break;
         }
@@ -455,26 +538,54 @@ VolumeDlgProc(HWND hwndDlg,
             HWND hVolumeTrackbar = GetDlgItem(hwndDlg, IDC_VOLUME_TRACKBAR);
             if (hVolumeTrackbar == (HWND)lParam)
             {
-                pGlobalData->volumeValue = (DWORD)SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_GETPOS, 0, 0)*VOLUME_DIVIDER;
-                SetVolumeValue(pGlobalData);
-                SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_SETSEL, (WPARAM)TRUE,
-                    (LPARAM)MAKELONG(pGlobalData->volumeMinimum, pGlobalData->volumeValue/VOLUME_DIVIDER));
+                switch (LOWORD(wParam))
+                {
+                    case TB_THUMBPOSITION:
+                        break;
+
+                    case TB_ENDTRACK:
+                        PlaySound((LPCTSTR)SND_ALIAS_SYSTEMDEFAULT, NULL, SND_ALIAS_ID | SND_ASYNC);
+                        break;
+
+                    default:
+                        SetVolumeValue(pGlobalData,
+                                       (DWORD)SendDlgItemMessage(hwndDlg, IDC_VOLUME_TRACKBAR, TBM_GETPOS, 0, 0));
+                        break;
+                }
             }
             break;
         }
 
         case WM_DESTROY:
-            mixerClose(pGlobalData->hMixer);
-            DestroyIcon(pGlobalData->hIconMuted);
-            DestroyIcon(pGlobalData->hIconUnMuted);
-            DestroyIcon(pGlobalData->hIconNoHW);
-            HeapFree(GetProcessHeap(), 0, pGlobalData);
+            if (pGlobalData)
+            {
+                if (pGlobalData->volumeCurrentValues)
+                    HeapFree(GetProcessHeap(), 0, pGlobalData->volumeCurrentValues);
+
+                if (pGlobalData->volumePreviousValues)
+                    HeapFree(GetProcessHeap(), 0, pGlobalData->volumePreviousValues);
+
+                if (pGlobalData->volumeInitialValues)
+                    HeapFree(GetProcessHeap(), 0, pGlobalData->volumeInitialValues);
+
+                mixerClose(pGlobalData->hMixer);
+                DestroyIcon(pGlobalData->hIconMuted);
+                DestroyIcon(pGlobalData->hIconUnMuted);
+                DestroyIcon(pGlobalData->hIconNoHW);
+                HeapFree(GetProcessHeap(), 0, pGlobalData);
+            }
             break;
 
         case WM_NOTIFY:
-            if (((LPNMHDR)lParam)->code == (UINT)PSN_APPLY)
+            switch (((LPNMHDR)lParam)->code)
             {
-                SaveData(hwndDlg);
+                case PSN_APPLY:
+                    SaveData(hwndDlg);
+                    break;
+
+                case PSN_RESET:
+                    RestoreVolumeValue(pGlobalData);
+                    break;
             }
             return TRUE;
     }

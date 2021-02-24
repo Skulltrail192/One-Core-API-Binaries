@@ -1,8 +1,8 @@
 /*
  * PROJECT:     ReactOS Local Port Monitor
- * LICENSE:     GNU LGPL v2.1 or any later version as published by the Free Software Foundation
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
  * PURPOSE:     Functions related to ports
- * COPYRIGHT:   Copyright 2015-2017 Colin Finck <colin@reactos.org>
+ * COPYRIGHT:   Copyright 2015-2017 Colin Finck (colin@reactos.org)
  */
 
 #include "precomp.h"
@@ -374,7 +374,7 @@ static void
 _LocalmonGetPortLevel1(PLOCALMON_PORT pPort, PPORT_INFO_1W* ppPortInfo, PBYTE* ppPortInfoEnd, PDWORD pcbNeeded)
 {
     DWORD cbPortName;
-    PWSTR pwszStrings[1];
+    PCWSTR pwszStrings[1];
 
     // Calculate the string lengths.
     if (!ppPortInfo)
@@ -397,7 +397,7 @@ static void
 _LocalmonGetPortLevel2(PLOCALMON_PORT pPort, PPORT_INFO_2W* ppPortInfo, PBYTE* ppPortInfoEnd, PDWORD pcbNeeded)
 {
     DWORD cbPortName;
-    PWSTR pwszStrings[3];
+    PCWSTR pwszStrings[3];
 
     // Calculate the string lengths.
     if (!ppPortInfo)

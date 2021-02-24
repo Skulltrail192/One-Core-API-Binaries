@@ -16,6 +16,7 @@
 
 /* PRIVATE FUNCTIONS **********************************************************/
 
+INIT_FUNCTION
 VOID
 NTAPI
 HalpRegisterKdSupportFunctions(VOID)
@@ -26,8 +27,13 @@ HalpRegisterKdSupportFunctions(VOID)
 
     /* Register memory functions */
 #ifndef _MINIHAL_
+#if (NTDDI_VERSION >= NTDDI_VISTA)
+    KdMapPhysicalMemory64 = HalpMapPhysicalMemory64Vista;
+    KdUnmapVirtualAddress = HalpUnmapVirtualAddressVista;
+#else
     KdMapPhysicalMemory64 = HalpMapPhysicalMemory64;
     KdUnmapVirtualAddress = HalpUnmapVirtualAddress;
+#endif
 #endif
 
     /* Register ACPI stub */
@@ -105,7 +111,7 @@ HalpFindBusAddressTranslation(IN PHYSICAL_ADDRESS BusAddress,
     if (!Context) return FALSE;
 
     /* If we have data in the context, then this shouldn't be a new lookup */
-    if ((*Context) && (NextBus == TRUE)) return FALSE;
+    if ((*Context != 0) && (NextBus != FALSE)) return FALSE;
 
     /* Return bus data */
     TranslatedAddress->QuadPart = BusAddress.QuadPart;

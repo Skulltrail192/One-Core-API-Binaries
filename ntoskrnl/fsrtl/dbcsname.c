@@ -163,6 +163,8 @@ FsRtlIsDbcsInExpression(IN PANSI_STRING Expression,
     USHORT Offset, Position, BackTrackingPosition, OldBackTrackingPosition;
     USHORT BackTrackingBuffer[16], OldBackTrackingBuffer[16] = {0};
     PUSHORT BackTrackingSwap, BackTracking = BackTrackingBuffer, OldBackTracking = OldBackTrackingBuffer;
+    ULONG BackTrackingBufferSize = RTL_NUMBER_OF(BackTrackingBuffer);
+    PVOID AllocatedBuffer = NULL;
     USHORT ExpressionPosition, NamePosition = 0, MatchingChars = 1;
     USHORT NameChar = 0, ExpressionChar;
     BOOLEAN EndOfName = FALSE;
@@ -246,7 +248,7 @@ FsRtlIsDbcsInExpression(IN PANSI_STRING Expression,
         if (NamePosition >= Name->Length)
         {
             EndOfName = TRUE;
-            if (OldBackTracking[MatchingChars - 1] == Expression->Length * 2)
+            if (MatchingChars && OldBackTracking[MatchingChars - 1] == Expression->Length * 2)
                 break;
         }
         else
@@ -281,25 +283,43 @@ FsRtlIsDbcsInExpression(IN PANSI_STRING Expression,
                 }
 
                 /* If buffer too small */
-                if (BackTrackingPosition > RTL_NUMBER_OF(BackTrackingBuffer) - 1)
+                if (BackTrackingPosition > BackTrackingBufferSize - 3)
                 {
-                    /* Allocate memory for BackTracking */
-                    BackTracking = ExAllocatePoolWithTag(PagedPool | POOL_RAISE_IF_ALLOCATION_FAILURE,
-                                                         (Expression->Length + 1) * sizeof(USHORT) * 2,
-                                                         'nrSF');
-                    /* Copy old buffer content */
-                    RtlCopyMemory(BackTracking,
-                                  BackTrackingBuffer,
+                    /* We should only ever get here once! */
+                    ASSERT(AllocatedBuffer == NULL);
+                    ASSERT((BackTracking == BackTrackingBuffer) || (BackTracking == OldBackTrackingBuffer));
+                    ASSERT((OldBackTracking == BackTrackingBuffer) || (OldBackTracking == OldBackTrackingBuffer));
+
+                    /* Calculate buffer size */
+                    BackTrackingBufferSize = Expression->Length * 2 + 1;
+
+                    /* Allocate memory for both back-tracking buffers */
+                    AllocatedBuffer = ExAllocatePoolWithTag(PagedPool | POOL_RAISE_IF_ALLOCATION_FAILURE,
+                                                            2 * BackTrackingBufferSize * sizeof(USHORT),
+                                                            'nrSF');
+                    if (AllocatedBuffer == NULL)
+                    {
+                        DPRINT1("Failed to allocate BackTracking buffer. BackTrackingBufferSize = =x%lx\n",
+                                BackTrackingBufferSize);
+                        Result = FALSE;
+                        goto Exit;
+                    }
+
+                    /* Copy BackTracking content. Note that it can point to either BackTrackingBuffer or OldBackTrackingBuffer */
+                    RtlCopyMemory(AllocatedBuffer,
+                                  BackTracking,
                                   RTL_NUMBER_OF(BackTrackingBuffer) * sizeof(USHORT));
 
-                    /* Allocate memory for OldBackTracking */
-                    OldBackTracking = ExAllocatePoolWithTag(PagedPool | POOL_RAISE_IF_ALLOCATION_FAILURE,
-                                                            (Expression->Length + 1) * sizeof(USHORT) * 2,
-                                                            'nrSF');
-                    /* Copy old buffer content */
-                    RtlCopyMemory(OldBackTracking,
-                                  OldBackTrackingBuffer,
+                    /* Place current Backtracking is at the start of the new buffer */
+                    BackTracking = AllocatedBuffer;
+
+                    /* Copy OldBackTracking content */
+                    RtlCopyMemory(&BackTracking[BackTrackingBufferSize],
+                                  OldBackTracking,
                                   RTL_NUMBER_OF(OldBackTrackingBuffer) * sizeof(USHORT));
+
+                    /* Place current OldBackTracking after current BackTracking in the buffer */
+                    OldBackTracking = &BackTracking[BackTrackingBufferSize];
                 }
 
                 /* If lead byte present */
@@ -366,7 +386,7 @@ FsRtlIsDbcsInExpression(IN PANSI_STRING Expression,
                     continue;
                 }
                 /* Check DOS_DOT */
-                else if (ExpressionChar == DOS_DOT)
+                else if (ExpressionChar == ANSI_DOS_DOT)
                 {
                     if (EndOfName) continue;
 
@@ -402,13 +422,15 @@ FsRtlIsDbcsInExpression(IN PANSI_STRING Expression,
     }
 
     /* Store result value */
-    Result = (OldBackTracking[MatchingChars - 1] == Expression->Length * 2);
+    Result = MatchingChars && (OldBackTracking[MatchingChars - 1] == Expression->Length * 2);
+
+Exit:
 
     /* Frees the memory if necessary */
-    if (BackTracking != BackTrackingBuffer && BackTracking != OldBackTrackingBuffer)
-        ExFreePoolWithTag(BackTracking, 'nrSF');
-    if (OldBackTracking != BackTrackingBuffer && OldBackTracking != OldBackTrackingBuffer)
-        ExFreePoolWithTag(OldBackTracking, 'nrSF');
+    if (AllocatedBuffer != NULL)
+    {
+        ExFreePoolWithTag(AllocatedBuffer, 'nrSF');
+    }
 
     return Result;
 }

@@ -39,7 +39,7 @@ ConSrvGetConsole(IN PCONSOLE_PROCESS_DATA ProcessData,
                  IN BOOLEAN LockConsole);
 VOID
 ConSrvReleaseConsole(IN struct _CONSRV_CONSOLE* /* PCONSRV_CONSOLE */ Console,
-                     IN BOOLEAN WasConsoleLocked);
+                     IN BOOLEAN IsConsoleLocked);
 
 
 BOOLEAN NTAPI
@@ -47,3 +47,8 @@ ConSrvValidateConsole(OUT struct _CONSRV_CONSOLE** /* PCONSRV_CONSOLE* */ Consol
                       IN HANDLE ConsoleHandle,
                       IN CONSOLE_STATE ExpectedState,
                       IN BOOLEAN LockConsole);
+
+NTSTATUS
+ConSrvConsoleCtrlEventTimeout(IN ULONG CtrlEvent,
+                              IN PCONSOLE_PROCESS_DATA ProcessData,
+                              IN ULONG Timeout);

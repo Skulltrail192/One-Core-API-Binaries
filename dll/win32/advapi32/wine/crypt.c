@@ -22,9 +22,38 @@
  *  TODO:
  *  - Reference counting
  *  - Thread-safing
-  */
+ */
 
+#ifdef __REACTOS__
 #include <advapi32.h>
+#else
+#include "config.h"
+#include "wine/port.h"
+
+#include <limits.h>
+#include <time.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif
+#include <fcntl.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+
+#include "ntstatus.h"
+#define WIN32_NO_STATUS
+#include "crypt.h"
+#include "winnls.h"
+#include "winreg.h"
+#include "rpc.h"
+#include "wine/debug.h"
+#include "wine/unicode.h"
+#include "winternl.h"
+#endif /* __REACTOS__ */
+
 WINE_DEFAULT_DEBUG_CHANNEL(crypt);
 
 static HWND crypt_hWindow;
@@ -575,7 +604,7 @@ BOOL WINAPI CryptAcquireContextA (HCRYPTPROV *phProv, LPCSTR pszContainer,
  * PARAMS
  *  hProv       [I] Handle to the CSP whose reference is being incremented.
  *  pdwReserved [IN] Reserved for future use and must be NULL.
- *  dwFlags     [I] Reserved for future use and must be NULL.
+ *  dwFlags     [I] Reserved for future use and must be 0.
  *
  * RETURNS
  *  Success: TRUE
@@ -599,7 +628,7 @@ BOOL WINAPI CryptContextAddRef (HCRYPTPROV hProv, DWORD *pdwReserved, DWORD dwFl
 		return FALSE;
 	}
 
-	pProv->refcount++;
+	InterlockedIncrement(&pProv->refcount);
 	return TRUE;
 }
 
@@ -610,7 +639,7 @@ BOOL WINAPI CryptContextAddRef (HCRYPTPROV hProv, DWORD *pdwReserved, DWORD dwFl
  *
  * PARAMS
  *  hProv   [I] Handle of a CSP.
- *  dwFlags [I] Reserved for future use and must be NULL.
+ *  dwFlags [I] Reserved for future use and must be 0.
  *
  * RETURNS
  *  Success: TRUE
@@ -621,11 +650,11 @@ BOOL WINAPI CryptReleaseContext (HCRYPTPROV hProv, DWORD dwFlags)
 	PCRYPTPROV pProv = (PCRYPTPROV)hProv;
 	BOOL ret = TRUE;
 
-	TRACE("(0x%lx, %08lx)\n", hProv, dwFlags);
+	TRACE("(0x%lx, %08x)\n", hProv, dwFlags);
 
 	if (!pProv)
 	{
-		SetLastError(NTE_BAD_UID);
+		SetLastError(ERROR_INVALID_PARAMETER);
 		return FALSE;
 	}
 
@@ -635,8 +664,7 @@ BOOL WINAPI CryptReleaseContext (HCRYPTPROV hProv, DWORD dwFlags)
 		return FALSE;
 	}
 
-	pProv->refcount--;
-	if (pProv->refcount <= 0) 
+	if (InterlockedDecrement(&pProv->refcount) == 0)
 	{
 		ret = pProv->pFuncs->pCPReleaseContext(pProv->hPrivate, dwFlags);
 		pProv->dwMagic = 0;
@@ -699,7 +727,7 @@ BOOL WINAPI CryptGenRandom (HCRYPTPROV hProv, DWORD dwLen, BYTE *pbBuffer)
  *  hProv   [I] Handle of a CSP.
  *  Algid   [I] Identifies the hash algorithm to use.
  *  hKey    [I] Key for the hash (if required).
- *  dwFlags [I] Reserved for future use and must be NULL.
+ *  dwFlags [I] Reserved for future use and must be 0.
  *  phHash  [O] Address of the future handle to the new hash object.
  *
  * RETURNS
@@ -934,7 +962,7 @@ BOOL WINAPI CryptDestroyKey (HCRYPTKEY hKey)
  *
  * PARAMS
  *  hHash       [I] Handle to the hash to be copied.
- *  pdwReserved [I] Reserved for future use and must be zero.
+ *  pdwReserved [I] Reserved for future use and must be NULL.
  *  dwFlags     [I] Reserved for future use and must be zero.
  *  phHash      [O] Address of the handle to receive the copy.
  *
@@ -2251,6 +2279,55 @@ BOOL WINAPI CryptVerifySignatureA (HCRYPTHASH hHash, const BYTE *pbSignature, DW
 	return result;
 }
 
+/******************************************************************************
+ * OpenEncryptedFileRawA   (ADVAPI32.@)
+ *
+ * See OpenEncryptedFileRawW
+ */
+DWORD WINAPI OpenEncryptedFileRawA(LPCSTR filename, ULONG flags, PVOID *context)
+{
+    FIXME("(%s, %x, %p): stub\n", debugstr_a(filename), flags, context);
+    return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+/******************************************************************************
+ * OpenEncryptedFileRawW   (ADVAPI32.@)
+ *
+ * Opens an EFS encrypted file for backup/restore
+ *
+ * PARAMS
+ *  filename   [I] Filename to operate on
+ *  flags     [I] Operation to perform
+ *  context    [I] Handle to the context (out)
+ * RETURNS
+ *  Success: ERROR_SUCCESS
+ *  Failure: NTSTATUS error code
+ */
+DWORD WINAPI OpenEncryptedFileRawW(LPCWSTR filename, ULONG flags, PVOID *context)
+{
+    FIXME("(%s, %x, %p): stub\n", debugstr_w(filename), flags, context);
+    return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+/******************************************************************************
+ * ReadEncryptedFileRaw   (ADVAPI32.@)
+ *
+ * Export encrypted files
+ *
+ * PARAMS
+ *  export   [I] pointer to the export callback function
+ *  callback     [I] pointer to the application defined context
+ *  context    [I] pointer to the system context
+ * RETURNS
+ *  Success: ERROR_SUCCESS
+ *  Failure: NTSTATUS error code
+ */
+DWORD WINAPI ReadEncryptedFileRaw(PFE_EXPORT_FUNC export, PVOID callback, PVOID context)
+{
+    FIXME("(%p, %p, %p): stub\n", export, callback, context);
+    return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
 #ifndef __REACTOS__
 /******************************************************************************
  * SystemFunction030   (ADVAPI32.@)
@@ -2290,7 +2367,7 @@ BOOL WINAPI SystemFunction035(LPCSTR lpszDllFilePath)
  * MSDN documents this function as RtlGenRandom and declares it in ntsecapi.h
  *
  * PARAMS
- *  pbBufer [O] Pointer to memory to receive random bytes.
+ *  pbBuffer [O] Pointer to memory to receive random bytes.
  *  dwLen   [I] Number of random bytes to fetch.
  *
  * RETURNS

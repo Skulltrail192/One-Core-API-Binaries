@@ -18,25 +18,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+
 #include "editor.h"
-
-
-#ifdef __i386__  /* thiscall functions are i386-specific */
-
-#define THISCALL(func) __thiscall_ ## func
-#define DEFINE_THISCALL_WRAPPER(func,args) \
-   extern typeof(func) THISCALL(func); \
-   __ASM_STDCALL_FUNC(__thiscall_ ## func, args, \
-                   "popl %eax\n\t" \
-                   "pushl %ecx\n\t" \
-                   "pushl %eax\n\t" \
-                   "jmp " __ASM_NAME(#func) __ASM_STDCALL(args) )
-#else /* __i386__ */
-
-#define THISCALL(func) func
-#define DEFINE_THISCALL_WRAPPER(func,args) /* nothing */
-
-#endif /* __i386__ */
+#include "ole2.h"
+#include "oleauto.h"
+#include "richole.h"
+#include "tom.h"
+#include "imm.h"
+#include "textserv.h"
+#include "wine/asm.h"
+#include "wine/debug.h"
+#include "editstr.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(richedit);
 
@@ -66,14 +59,12 @@ static HRESULT WINAPI ITextServicesImpl_QueryInterface(IUnknown *iface, REFIID r
       *ppv = &This->IUnknown_inner;
    else if (IsEqualIID(riid, &IID_ITextServices))
       *ppv = &This->ITextServices_iface;
-   else if (IsEqualIID(riid, &IID_IRichEditOle) || IsEqualIID(riid, &IID_ITextDocument)) {
+   else if (IsEqualIID(riid, &IID_IRichEditOle) || IsEqualIID(riid, &IID_ITextDocument) ||
+            IsEqualIID(riid, &IID_ITextDocument2Old)) {
       if (!This->editor->reOle)
          if (!CreateIRichEditOle(This->outer_unk, This->editor, (void **)(&This->editor->reOle)))
             return E_OUTOFMEMORY;
-      if (IsEqualIID(riid, &IID_ITextDocument))
-         ME_GetITextDocumentInterface(This->editor->reOle, ppv);
-      else
-         *ppv = This->editor->reOle;
+      return IUnknown_QueryInterface(This->editor->reOle, riid, ppv);
    } else {
       *ppv = NULL;
       FIXME("Unknown interface: %s\n", debugstr_guid(riid));
@@ -170,11 +161,16 @@ DECLSPEC_HIDDEN HRESULT WINAPI fnTextSrv_TxGetHScroll(ITextServices *iface, LONG
 {
    ITextServicesImpl *This = impl_from_ITextServices(iface);
 
-   *plMin = This->editor->horz_si.nMin;
-   *plMax = This->editor->horz_si.nMax;
-   *plPos = This->editor->horz_si.nPos;
-   *plPage = This->editor->horz_si.nPage;
-   *pfEnabled = (This->editor->styleFlags & WS_HSCROLL) != 0;
+   if (plMin)
+      *plMin = This->editor->horz_si.nMin;
+   if (plMax)
+      *plMax = This->editor->horz_si.nMax;
+   if (plPos)
+      *plPos = This->editor->horz_si.nPos;
+   if (plPage)
+      *plPage = This->editor->horz_si.nPage;
+   if (pfEnabled)
+      *pfEnabled = (This->editor->styleFlags & WS_HSCROLL) != 0;
    return S_OK;
 }
 
@@ -183,11 +179,16 @@ DECLSPEC_HIDDEN HRESULT WINAPI fnTextSrv_TxGetVScroll(ITextServices *iface, LONG
 {
    ITextServicesImpl *This = impl_from_ITextServices(iface);
 
-   *plMin = This->editor->vert_si.nMin;
-   *plMax = This->editor->vert_si.nMax;
-   *plPos = This->editor->vert_si.nPos;
-   *plPage = This->editor->vert_si.nPage;
-   *pfEnabled = (This->editor->styleFlags & WS_VSCROLL) != 0;
+   if (plMin)
+      *plMin = This->editor->vert_si.nMin;
+   if (plMax)
+      *plMax = This->editor->vert_si.nMax;
+   if (plPos)
+      *plPos = This->editor->vert_si.nPos;
+   if (plPage)
+      *plPage = This->editor->vert_si.nPage;
+   if (pfEnabled)
+      *pfEnabled = (This->editor->styleFlags & WS_VSCROLL) != 0;
    return S_OK;
 }
 
@@ -277,7 +278,7 @@ DECLSPEC_HIDDEN HRESULT WINAPI fnTextSrv_TxSetText(ITextServices *iface, LPCWSTR
    ME_InternalDeleteText(This->editor, &cursor, ME_GetTextLength(This->editor), FALSE);
    if(pszText)
        ME_InsertTextFromCursor(This->editor, 0, pszText, -1, This->editor->pBuffer->pDefaultStyle);
-   ME_SetSelection(This->editor, 0, 0);
+   set_selection_cursors(This->editor, 0, 0);
    This->editor->nModifyStep = 0;
    OleFlushClipboard();
    ME_EmptyUndoStack(This->editor);
@@ -401,9 +402,7 @@ HRESULT WINAPI CreateTextServices(IUnknown  *pUnkOuter, ITextHost *pITextHost, I
    ITextImpl->pMyHost = pITextHost;
    ITextImpl->IUnknown_inner.lpVtbl = &textservices_inner_vtbl;
    ITextImpl->ITextServices_iface.lpVtbl = &textservices_vtbl;
-   ITextImpl->editor = ME_MakeEditor(pITextHost, FALSE, ES_LEFT);
-   ITextImpl->editor->exStyleFlags = 0;
-   SetRectEmpty(&ITextImpl->editor->rcFormat);
+   ITextImpl->editor = ME_MakeEditor(pITextHost, FALSE);
 
    if (pUnkOuter)
       ITextImpl->outer_unk = pUnkOuter;

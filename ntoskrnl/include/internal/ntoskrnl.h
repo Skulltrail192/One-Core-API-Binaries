@@ -1,15 +1,6 @@
 #pragma once
 
-/*
- * Use these to place a function in a specific section of the executable
- */
-#ifdef __GNUC__
-#define INIT_SECTION __attribute__((section ("INIT")))
-#define INIT_FUNCTION INIT_SECTION
-#else
-#define INIT_SECTION /* Done via alloc_text for MSC */
-#define INIT_FUNCTION INIT_SECTION
-#endif
+#include <section_attribs.h>
 
 
 
@@ -72,9 +63,8 @@
 #include "ldr.h"
 #ifndef _WINKD_
 #include "kd.h"
-#else
-#include "kd64.h"
 #endif
+#include "kd64.h"
 #include "fsrtl.h"
 #include "lpc.h"
 #include "rtl.h"
@@ -89,6 +79,7 @@
 #include "hal.h"
 #include "hdl.h"
 #include "arch/intrin_i.h"
+#include <arbiter.h>
 
 /*
  * generic information class probing code
@@ -145,7 +136,7 @@ typedef struct _INFORMATION_CLASS_INFO
 
 #endif
 
-#ifdef _M_IX86
+#ifndef _WIN64
 C_ASSERT(FIELD_OFFSET(KUSER_SHARED_DATA, SystemCall) == 0x300);
 
 C_ASSERT(FIELD_OFFSET(KTHREAD, InitialStack) == KTHREAD_INITIAL_STACK);

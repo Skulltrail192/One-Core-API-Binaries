@@ -56,9 +56,9 @@ CAPTION "Додавання мови вводу"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT "&Мова вводу:", -1, 7, 7, 61, 10
-    COMBOBOX IDC_INPUT_LANG_COMBO, 7, 17, 212, 150, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+    COMBOBOX IDC_INPUT_LANG_COMBO, 7, 17, 212, 150, CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | CBS_SORT | WS_VSCROLL
     LTEXT "&Розкладка клавіатури або засіб вводу (IME):", -1, 7, 36, 140, 10
-    COMBOBOX IDC_KEYBOARD_LO_COMBO, 7, 47, 212, 150, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+    COMBOBOX IDC_KEYBOARD_LO_COMBO, 7, 47, 212, 150, CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | CBS_SORT | WS_VSCROLL
     DEFPUSHBUTTON "OK", IDOK, 116, 68, 50, 14
     PUSHBUTTON "Скасувати", IDCANCEL, 169, 68, 50, 14
 END
@@ -114,6 +114,7 @@ BEGIN
     IDS_CTRL_SHIFT "Ctrl+Shift"
     IDS_LEFT_ALT_SHIFT "Alt зліва+Shift"
     IDS_SWITCH_BET_INLANG "Перемикання мов вводу"
+    IDS_REBOOT_NOW, "Перезавантажити зараз?"
 END
 
 STRINGTABLE
@@ -221,7 +222,8 @@ BEGIN
     IDS_PORTUGUESE_BRAZILIAN_ABNT_LAYOUT "Португальська (Бразилія ABNT)"
     IDS_PORTUGUESE_BRAZIL_ABNT2_LAYOUT "Португальська (Бразилія ABNT2)"
     IDS_PUNJABI_LAYOUT "Панджабі"
-    IDS_ROMANIAN_LAYOUT "Румунська"
+    IDS_ROMANIAN_LEGACY_LAYOUT "Румунська (традиційна)"
+    IDS_ROMANIAN_STANDARD_LAYOUT "Румунська (стандартна)"
     IDS_RUSSIAN_LAYOUT "Російська"
     IDS_RUSSIAN_TYPEWRITER_LAYOUT "Російська (друкарська машинка)"
     IDS_SERBIAN_CYRILLIC_LAYOUT "Сербська (кирилиця)"

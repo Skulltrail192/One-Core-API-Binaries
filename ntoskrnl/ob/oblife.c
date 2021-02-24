@@ -137,7 +137,7 @@ ObpDeallocateObject(IN PVOID Object)
     }
 
     /* Catch invalid access */
-    Header->Type = (POBJECT_TYPE)0xBAADB0B0;
+    Header->Type = (POBJECT_TYPE)(ULONG_PTR)0xBAADB0B0BAADB0B0ULL;
 
     /* Free the object using the same allocation tag */
     ExFreePoolWithTag(HeaderLocation, ObjectType->Key);
@@ -460,6 +460,7 @@ ObpCaptureObjectCreateInformation(IN POBJECT_ATTRIBUTES ObjectAttributes,
                                   IN POBJECT_CREATE_INFORMATION ObjectCreateInfo,
                                   OUT PUNICODE_STRING ObjectName)
 {
+    ULONG SdCharge, QuotaInfoSize;
     NTSTATUS Status = STATUS_SUCCESS;
     PSECURITY_DESCRIPTOR SecurityDescriptor;
     PSECURITY_QUALITY_OF_SERVICE SecurityQos;
@@ -518,8 +519,21 @@ ObpCaptureObjectCreateInformation(IN POBJECT_ATTRIBUTES ObjectAttributes,
                     _SEH2_YIELD(return Status);
                 }
 
+                /*
+                 * By default, assume a SD size of 1024 and allow twice its
+                 * size.
+                 * If SD size happen to be bigger than that, then allow it
+                 */
+                SdCharge = 2048;
+                SeComputeQuotaInformationSize(ObjectCreateInfo->SecurityDescriptor,
+                                              &QuotaInfoSize);
+                if ((2 * QuotaInfoSize) > 2048)
+                {
+                    SdCharge = 2 * QuotaInfoSize;
+                }
+
                 /* Save the probe mode and security descriptor size */
-                ObjectCreateInfo->SecurityDescriptorCharge = 2048; /* FIXME */
+                ObjectCreateInfo->SecurityDescriptorCharge = SdCharge;
                 ObjectCreateInfo->ProbeMode = AccessMode;
             }
 
@@ -1215,14 +1229,14 @@ ObCreateObjectType(IN PUNICODE_STRING TypeName,
     else if ((TypeName->Length == 8) && !(wcscmp(TypeName->Buffer, L"File")))
     {
         /* Wait on the File Object's event directly */
-        LocalObjectType->DefaultObject = (PVOID)FIELD_OFFSET(FILE_OBJECT,
-                                                             Event);
+        LocalObjectType->DefaultObject = UlongToPtr(FIELD_OFFSET(FILE_OBJECT,
+                                                                 Event));
     }
     else if ((TypeName->Length == 24) && !(wcscmp(TypeName->Buffer, L"WaitablePort")))
     {
         /* Wait on the LPC Port's object directly */
-        LocalObjectType->DefaultObject = (PVOID)FIELD_OFFSET(LPCP_PORT_OBJECT,
-                                                             WaitEvent);
+        LocalObjectType->DefaultObject = UlongToPtr(FIELD_OFFSET(LPCP_PORT_OBJECT,
+                                                                 WaitEvent));
     }
     else
     {
@@ -1413,9 +1427,10 @@ NtMakePermanentObject(IN HANDLE ObjectHandle)
     PAGED_CODE();
 
     /* Make sure that the caller has SeCreatePermanentPrivilege */
-    Status = SeSinglePrivilegeCheck(SeCreatePermanentPrivilege,
-                                    PreviousMode);
-    if (!NT_SUCCESS(Status)) return STATUS_PRIVILEGE_NOT_HELD;
+    if (!SeSinglePrivilegeCheck(SeCreatePermanentPrivilege, PreviousMode))
+    {
+        return STATUS_PRIVILEGE_NOT_HELD;
+    }
 
     /* Reference the object */
     Status = ObReferenceObjectByHandle(ObjectHandle,
@@ -1473,6 +1488,9 @@ NtQueryObject(IN HANDLE ObjectHandle,
     ULONG InfoLength = 0;
     PVOID Object = NULL;
     NTSTATUS Status;
+    POBJECT_HEADER_QUOTA_INFO ObjectQuota;
+    SECURITY_INFORMATION SecurityInformation;
+    POBJECT_TYPE ObjectType;
     KPROCESSOR_MODE PreviousMode = ExGetPreviousMode();
     PAGED_CODE();
 
@@ -1513,6 +1531,7 @@ NtQueryObject(IN HANDLE ObjectHandle,
 
         /* Get the object header */
         ObjectHeader = OBJECT_TO_OBJECT_HEADER(Object);
+        ObjectType = ObjectHeader->Type;
     }
 
     _SEH2_TRY
@@ -1552,18 +1571,24 @@ NtQueryObject(IN HANDLE ObjectHandle,
                 }
 
                 /* Copy quota information */
-                BasicInfo->PagedPoolCharge = 0; /* FIXME*/
-                BasicInfo->NonPagedPoolCharge = 0; /* FIXME*/
+                ObjectQuota = OBJECT_HEADER_TO_QUOTA_INFO(ObjectHeader);
+                if (ObjectQuota != NULL)
+                {
+                    BasicInfo->PagedPoolCharge = ObjectQuota->PagedPoolCharge;
+                    BasicInfo->NonPagedPoolCharge = ObjectQuota->NonPagedPoolCharge;
+                }
+                else
+                {
+                    BasicInfo->PagedPoolCharge = 0;
+                    BasicInfo->NonPagedPoolCharge = 0;
+                }
 
                 /* Copy name information */
                 BasicInfo->NameInfoSize = 0; /* FIXME*/
                 BasicInfo->TypeInfoSize = 0; /* FIXME*/
 
-                /* Copy security information */
-                BasicInfo->SecurityDescriptorSize = 0; /* FIXME*/
-
                 /* Check if this is a symlink */
-                if (ObjectHeader->Type == ObSymbolicLinkType)
+                if (ObjectHeader->Type == ObpSymbolicLinkObjectType)
                 {
                     /* Return the creation time */
                     BasicInfo->CreationTime.QuadPart =
@@ -1573,6 +1598,26 @@ NtQueryObject(IN HANDLE ObjectHandle,
                 {
                     /* Otherwise return 0 */
                     BasicInfo->CreationTime.QuadPart = (ULONGLONG)0;
+                }
+
+                /* Copy security information */
+                BasicInfo->SecurityDescriptorSize = 0;
+                if (BooleanFlagOn(HandleInfo.GrantedAccess, READ_CONTROL) &&
+                    ObjectHeader->SecurityDescriptor != NULL)
+                {
+                    SecurityInformation = OWNER_SECURITY_INFORMATION |
+                                          GROUP_SECURITY_INFORMATION |
+                                          DACL_SECURITY_INFORMATION |
+                                          SACL_SECURITY_INFORMATION;
+
+                    ObjectType->TypeInfo.SecurityProcedure(Object,
+                                                           QuerySecurityDescriptor,
+                                                           &SecurityInformation,
+                                                           NULL,
+                                                           &BasicInfo->SecurityDescriptorSize,
+                                                           &ObjectHeader->SecurityDescriptor,
+                                                           ObjectType->TypeInfo.PoolType,
+                                                           &ObjectType->TypeInfo.GenericMapping);
                 }
 
                 /* Break out with success */
@@ -1798,7 +1843,7 @@ NtSetInformationObject(IN HANDLE ObjectHandle,
                 /* Get the object directory */
                 Status = ObReferenceObjectByHandle(ObjectHandle,
                                                    0,
-                                                   ObDirectoryType,
+                                                   ObpDirectoryObjectType,
                                                    PreviousMode,
                                                    (PVOID*)&Directory,
                                                    NULL);

@@ -4,12 +4,19 @@ SECTIONS
   {
     *(.text)
     *(SORT(.text*))
+    *(INIT)
+    *(SORT(INIT*))
     *(.data)
     *(SORT(.data*))
     *(.rdata)
     *(SORT(.rdata*))
   }
 
+  /*
+   * LD needs an explicit .edata block to make the binary correctly export
+   * symbols, otherwise, if .edata is merged with another section (e.g. .rdata)
+   * the exports are not exported!
+   */
   .edata BLOCK(__file_alignment__) :
   {
     *(.edata)

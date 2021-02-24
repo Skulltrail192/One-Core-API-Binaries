@@ -21,40 +21,7 @@
 #ifndef __XMLLITE_PRIVATE__
 #define __XMLLITE_PRIVATE__
 
-#include <config.h>
-
-#include <stdarg.h>
-
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
-
-#define COBJMACROS
-
-#include <windef.h>
-#include <winbase.h>
-#include <objbase.h>
-#include <xmllite.h>
-
-#include <wine/debug.h>
-WINE_DEFAULT_DEBUG_CHANNEL(xmllite);
-
-/* memory allocation functions */
-
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), 0, size);
-}
-
-static inline void* __WINE_ALLOC_SIZE(2) heap_realloc(void *mem, size_t size)
-{
-    return HeapReAlloc(GetProcessHeap(), 0, mem, size);
-}
-
-static inline BOOL heap_free(void *mem)
-{
-    return HeapFree(GetProcessHeap(), 0, mem);
-}
+#include "wine/heap.h"
 
 static inline void *m_alloc(IMalloc *imalloc, size_t len)
 {
@@ -92,5 +59,10 @@ xml_encoding parse_encoding_name(const WCHAR*,int) DECLSPEC_HIDDEN;
 HRESULT get_code_page(xml_encoding,UINT*) DECLSPEC_HIDDEN;
 const WCHAR *get_encoding_name(xml_encoding) DECLSPEC_HIDDEN;
 xml_encoding get_encoding_from_codepage(UINT) DECLSPEC_HIDDEN;
+
+BOOL is_ncnamechar(WCHAR ch) DECLSPEC_HIDDEN;
+BOOL is_pubchar(WCHAR ch) DECLSPEC_HIDDEN;
+BOOL is_namestartchar(WCHAR ch) DECLSPEC_HIDDEN;
+BOOL is_namechar(WCHAR ch) DECLSPEC_HIDDEN;
 
 #endif /* __XMLLITE_PRIVATE__ */

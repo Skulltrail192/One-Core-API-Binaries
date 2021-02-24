@@ -18,10 +18,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "qmgr.h"
+#include <stdarg.h>
 
-#include <urlmon.h>
-#include <winhttp.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winreg.h"
+#include "winhttp.h"
+#define COBJMACROS
+#include "qmgr.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(qmgr);
 
 static inline BackgroundCopyFileImpl *impl_from_IBackgroundCopyFile2(
     IBackgroundCopyFile2 *iface)
@@ -451,7 +459,7 @@ static BOOL transfer_file_local(BackgroundCopyFileImpl *file, const WCHAR *tmpna
 
     transitionJobState(job, BG_JOB_STATE_QUEUED, BG_JOB_STATE_TRANSFERRING);
 
-    if (strlenW(file->info.RemoteName) > 7 && !memicmpW(file->info.RemoteName, fileW, 7))
+    if (lstrlenW(file->info.RemoteName) > 7 && !_wcsnicmp(file->info.RemoteName, fileW, 7))
         ptr = file->info.RemoteName + 7;
     else
         ptr = file->info.RemoteName;
@@ -510,7 +518,7 @@ BOOL processFile(BackgroundCopyFileImpl *file, BackgroundCopyJobImpl *job)
     uc.lpszPassword      = NULL;
     uc.dwPasswordLength  = 0;
     uc.lpszHostName      = host;
-    uc.dwHostNameLength  = sizeof(host)/sizeof(host[0]);
+    uc.dwHostNameLength  = ARRAY_SIZE(host);
     uc.nPort             = 0;
     uc.lpszUrlPath       = NULL;
     uc.dwUrlPathLength   = ~0u;

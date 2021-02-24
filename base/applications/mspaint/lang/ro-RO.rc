@@ -4,7 +4,7 @@
  * FILE:        base/applications/mspaint/lang/ro-RO.rc
  * PURPOSE:     Romanian Language resource file
  * TRANSLATORS: Petru Dimitriu (petrimetri at gmail dot com)
- *              Ștefan Fulea (stefan dot fulea at mail dot md)
+ *              Ștefan Fulea (stefan dot fulea at mail dot com)
  */
 
 LANGUAGE LANG_ROMANIAN, SUBLANG_NEUTRAL
@@ -197,7 +197,7 @@ BEGIN
     IDS_PROGRAMNAME "Pictare"
     IDS_WINDOWTITLE "%s - Pictare"
     IDS_INFOTITLE "Pictare pentru ReactOS"
-    IDS_INFOTEXT "Pictare pentru ReactOS este disponibilă sub licența GNU Lesser General Public (vedeți www.gnu.org)"
+    IDS_INFOTEXT "Disponibilă sub licența GNU Lesser General Public (vedeți www.gnu.org)"
     IDS_SAVEPROMPTTEXT "Doriți păstrarea modificărilor din %s?"
     IDS_DEFAULTFILENAME "FărăNume.bmp"
     IDS_MINIATURETITLE "Miniatură"

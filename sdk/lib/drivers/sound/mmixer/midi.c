@@ -72,7 +72,7 @@ MMixerAddMidiPin(
     MidiInfo->PinId = PinId;
 
     /* sanity check */
-    ASSERT(!DeviceName || (wcslen(DeviceName) + 1 < MAXPNAMELEN));
+    ASSERT(!DeviceName || (wcslen(DeviceName) < MAXPNAMELEN));
 
     /* copy device name */
     if (bInput && DeviceName)
@@ -386,7 +386,7 @@ MMixerGetMidiDevicePath(
     PMIXER_LIST MixerList;
     LPMIXER_DATA MixerData;
     LPMIDI_INFO MidiInfo;
-    ULONG Length;
+    SIZE_T Length;
     MIXER_STATUS Status;
 
     /* verify mixer context */

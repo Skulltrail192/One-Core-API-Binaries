@@ -16,8 +16,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include <precomp.h>
+#define COBJMACROS
 
+#include "wine/atlbase.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(atl);
 
 /**************************************************************
  * ATLRegistrar implementation
@@ -101,7 +106,7 @@ static HRESULT get_word(LPCOLESTR *str, strbuf *buf)
     buf->len = 0;
     buf->str[0] = '\0';
 
-    while(isspaceW(*iter2))
+    while(iswspace(*iter2))
         iter2++;
     iter = iter2;
     if(!*iter) {
@@ -113,7 +118,7 @@ static HRESULT get_word(LPCOLESTR *str, strbuf *buf)
         strbuf_write(iter++, buf, 1);
     }else if(*iter == '\'') {
         iter2 = ++iter;
-        iter = strchrW(iter, '\'');
+        iter = wcschr(iter, '\'');
         if(!iter) {
             WARN("Unexpected end of script\n");
             *str = iter;
@@ -122,12 +127,12 @@ static HRESULT get_word(LPCOLESTR *str, strbuf *buf)
         strbuf_write(iter2, buf, iter-iter2);
         iter++;
     }else {
-        while(*iter && !isspaceW(*iter))
+        while(*iter && !iswspace(*iter))
             iter++;
         strbuf_write(iter2, buf, iter-iter2);
     }
 
-    while(isspaceW(*iter))
+    while(iswspace(*iter))
         iter++;
     *str = iter;
     return S_OK;
@@ -139,14 +144,14 @@ static HRESULT do_preprocess(const Registrar *This, LPCOLESTR data, strbuf *buf)
     rep_list *rep_iter;
     static const WCHAR wstr[] = {'%',0};
 
-    iter = strchrW(data, '%');
+    iter = wcschr(data, '%');
     while(iter) {
         strbuf_write(iter2, buf, iter-iter2);
 
         iter2 = ++iter;
         if(!*iter2)
             return DISP_E_EXCEPTION;
-        iter = strchrW(iter2, '%');
+        iter = wcschr(iter2, '%');
         if(!iter)
             return DISP_E_EXCEPTION;
 
@@ -155,7 +160,7 @@ static HRESULT do_preprocess(const Registrar *This, LPCOLESTR data, strbuf *buf)
         }else {
             for(rep_iter = This->rep; rep_iter; rep_iter = rep_iter->next) {
                 if(rep_iter->key_len == iter-iter2
-                        && !memicmpW(iter2, rep_iter->key, rep_iter->key_len))
+                        && !_wcsnicmp(iter2, rep_iter->key, rep_iter->key_len))
                     break;
             }
             if(!rep_iter) {
@@ -167,7 +172,7 @@ static HRESULT do_preprocess(const Registrar *This, LPCOLESTR data, strbuf *buf)
         }
 
         iter2 = ++iter;
-        iter = strchrW(iter, '%');
+        iter = wcschr(iter, '%');
     }
 
     strbuf_write(iter2, buf, -1);
@@ -274,7 +279,7 @@ static HRESULT do_process_key(LPCOLESTR *pstr, HKEY parent_key, strbuf *buf, BOO
                     hres = get_word(&iter, buf);
                     if(FAILED(hres))
                         break;
-                    dw = atoiW(buf->str);
+                    dw = wcstol(buf->str, NULL, 10);
                     lres = RegSetValueExW(hkey, name.len ? name.str :  NULL, 0, REG_DWORD,
                             (PBYTE)&dw, sizeof(dw));
                     if(lres != ERROR_SUCCESS) {
@@ -299,14 +304,14 @@ static HRESULT do_process_key(LPCOLESTR *pstr, HKEY parent_key, strbuf *buf, BOO
                     }
                     for(i = 0; i < count && buf->str[2*i]; i++) {
                         WCHAR digits[3];
-                        if(!isxdigitW(buf->str[2*i]) || !isxdigitW(buf->str[2*i + 1])) {
+                        if(!iswxdigit(buf->str[2*i]) || !iswxdigit(buf->str[2*i + 1])) {
                             hres = E_FAIL;
                             break;
                         }
                         digits[0] = buf->str[2*i];
                         digits[1] = buf->str[2*i + 1];
                         digits[2] = 0;
-                        bytes[i] = (BYTE) strtoulW(digits, NULL, 16);
+                        bytes[i] = (BYTE) wcstoul(digits, NULL, 16);
                     }
                     if(SUCCEEDED(hres)) {
                         lres = RegSetValueExW(hkey, name.len ? name.str :  NULL, 0, REG_BINARY,
@@ -338,7 +343,7 @@ static HRESULT do_process_key(LPCOLESTR *pstr, HKEY parent_key, strbuf *buf, BOO
             break;
         }
 
-        if(key_type != IS_VAL && key_type != DO_DELETE && *iter == '{' && isspaceW(iter[1])) {
+        if(key_type != IS_VAL && key_type != DO_DELETE && *iter == '{' && iswspace(iter[1])) {
             hres = get_word(&iter, buf);
             if(FAILED(hres))
                 break;
@@ -388,11 +393,11 @@ static HRESULT do_process_root_key(LPCOLESTR data, BOOL do_register)
             hres = DISP_E_EXCEPTION;
             break;
         }
-        for(i=0; i<sizeof(root_keys)/sizeof(root_keys[0]); i++) {
+        for(i=0; i<ARRAY_SIZE(root_keys); i++) {
             if(!lstrcmpiW(buf.str, root_keys[i].name))
                 break;
         }
-        if(i == sizeof(root_keys)/sizeof(root_keys[0])) {
+        if(i == ARRAY_SIZE(root_keys)) {
             WARN("Wrong root key name: %s\n", debugstr_w(buf.str));
             hres = DISP_E_EXCEPTION;
             break;

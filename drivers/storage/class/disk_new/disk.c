@@ -720,7 +720,7 @@ Return Value:
 
             ASSERT( status != STATUS_INSUFFICIENT_RESOURCES );
 
-        } else if((commonExtension->IsFdo == TRUE) && (residualBytes == 0)) {
+        } else if ((commonExtension->IsFdo != FALSE) && (residualBytes == 0)) {
 
             //
             // This failed because we think the physical disk is too small.
@@ -3641,7 +3641,7 @@ DisableWriteCache(
 
     status = DiskGetCacheInformation(fdoExtension, &cacheInfo);
 
-    if (NT_SUCCESS(status) && (cacheInfo.WriteCacheEnabled == TRUE)) {
+    if (NT_SUCCESS(status) && (cacheInfo.WriteCacheEnabled != FALSE)) {
 
         cacheInfo.WriteCacheEnabled = FALSE;
 
@@ -4797,7 +4797,7 @@ DiskFindContainingPartition(
         //
         // Determine the search direction and setup the loop
         //
-        if(SearchTopToBottom == TRUE) {
+        if(SearchTopToBottom != FALSE) {
 
             startIndex = 0;
             stopIndex = LayoutInfo->PartitionCount;
@@ -6053,7 +6053,7 @@ DiskIoctlGetPartitionInfoEx(
 
         status = STATUS_BUFFER_TOO_SMALL;
         Irp->IoStatus.Status = status;
-        Irp->IoStatus.Information = sizeof(PARTITION_INFORMATION);
+        Irp->IoStatus.Information = sizeof(PARTITION_INFORMATION_EX);
         return status;
     }
 

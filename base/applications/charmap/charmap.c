@@ -11,6 +11,7 @@
 
 #include <commctrl.h>
 #include <richedit.h>
+#include <winnls.h>
 
 #define REMOVE_ADVANCED
 
@@ -23,10 +24,6 @@ HWND      hStatusWnd;
 HICON     hSmIcon;
 HICON     hBgIcon;
 SETTINGS  Settings;
-
-/* GetUName prototype */
-typedef int (WINAPI * GETUNAME)(WORD wCharCode, LPWSTR lpbuf);
-GETUNAME GetUName;
 
 /* Font-enumeration callback */
 static
@@ -164,7 +161,7 @@ CopyCharacters(HWND hDlg)
 
     // Test if the whose text is unselected
     if(dwStart == dwEnd) {
-        
+
         // Select the whole text
         SendMessageW(hText, EM_SETSEL, 0, -1);
 
@@ -267,12 +264,9 @@ UpdateStatusBar(WCHAR wch)
     WCHAR buff[MAX_PATH];
     WCHAR szDesc[MAX_PATH];
 
-    if (GetUName)
-    {
-        GetUName(wch, szDesc);
-        wsprintfW(buff, L"U+%04X: %s", wch, szDesc);
-        SendMessageW(hStatusWnd, SB_SETTEXT, 0, (LPARAM)buff);
-    }
+    GetUName(wch, szDesc);
+    wsprintfW(buff, L"U+%04X: %s", wch, szDesc);
+    SendMessageW(hStatusWnd, SB_SETTEXT, 0, (LPARAM)buff);
 }
 
 static
@@ -282,6 +276,8 @@ ChangeView(HWND hWnd)
     RECT rcCharmap;
 #ifndef REMOVE_ADVANCED
     RECT rcAdvanced;
+#else
+    RECT rcCopy;
 #endif
     RECT rcPanelExt;
     RECT rcPanelInt;
@@ -290,10 +286,16 @@ ChangeView(HWND hWnd)
     UINT xPos, yPos;
     UINT Width, Height;
     UINT DeskTopWidth, DeskTopHeight;
+#ifdef REMOVE_ADVANCED
+    HWND hCopy;
+#endif
 
     GetClientRect(hCharmapDlg, &rcCharmap);
 #ifndef REMOVE_ADVANCED
     GetClientRect(hAdvancedDlg, &rcAdvanced);
+#else
+    hCopy = GetDlgItem(hCharmapDlg, IDC_COPY);
+    GetClientRect(hCopy, &rcCopy);
 #endif
     GetWindowRect(hWnd, &rcPanelExt);
     GetClientRect(hWnd, &rcPanelInt);
@@ -318,6 +320,10 @@ ChangeView(HWND hWnd)
 #ifndef REMOVE_ADVANCED
     if (Settings.IsAdvancedView)
         Height += rcAdvanced.bottom;
+#else
+    /* The lack of advanced button leaves an empty gap at the bottom of the window.
+       Shrink the window height a bit here to accomodate for that lost control. */
+    Height = rcCharmap.bottom + rcCopy.bottom + 10;
 #endif
     if ((xPos + Width) > DeskTopWidth)
         xPos += DeskTopWidth - (xPos + Width);
@@ -439,8 +445,9 @@ AdvancedDlgProc(HWND hDlg,
     return FALSE;
 }
 #endif
+
 static int
-OnCreate(HWND hWnd, WPARAM wParam, LPARAM lParam)
+PanelOnCreate(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
     HMENU hSysMenu;
     WCHAR lpAboutText[256];
@@ -488,7 +495,9 @@ PanelWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
     case WM_CREATE:
-        return OnCreate(hWnd, wParam, lParam);
+        // For now, the Help push button is disabled because of lacking of HTML Help support
+        EnableWindow(GetDlgItem(hWnd, IDC_CMHELP), FALSE);
+        return PanelOnCreate(hWnd, wParam, lParam);
 
     case WM_CLOSE:
         DestroyWindow(hWnd);
@@ -589,25 +598,23 @@ wWinMain(HINSTANCE hInst,
     INT Ret = 1;
     HMODULE hRichEd20;
     MSG Msg;
-    HINSTANCE hGetUName = NULL;
 
     hInstance = hInst;
+    
+    /* Mirroring code for the titlebar */
+    switch (GetUserDefaultUILanguage())
+    {
+        case MAKELANGID(LANG_HEBREW, SUBLANG_DEFAULT):
+            SetProcessDefaultLayout(LAYOUT_RTL);
+            break;
+
+        default:
+            break;
+    }
 
     iccx.dwSize = sizeof(INITCOMMONCONTROLSEX);
     iccx.dwICC = ICC_TAB_CLASSES;
     InitCommonControlsEx(&iccx);
-
-    /* Loading the GetUName function */
-    hGetUName = LoadLibraryW(L"getuname.dll");
-    if (hGetUName != NULL)
-    {
-        GetUName = (GETUNAME) GetProcAddress(hGetUName, "GetUName");
-        if (GetUName == NULL)
-        {
-            FreeLibrary(hGetUName);
-            hGetUName = NULL;
-        }
-    }
 
     if (RegisterMapClasses(hInstance))
     {
@@ -633,9 +640,6 @@ wWinMain(HINSTANCE hInst,
         }
         UnregisterMapClasses(hInstance);
     }
-
-    if (hGetUName != NULL)
-        FreeLibrary(hGetUName);
 
     return Ret;
 }

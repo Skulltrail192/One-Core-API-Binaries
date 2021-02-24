@@ -38,7 +38,7 @@ char iniFile[_MAX_PATH];
 char logFile[_MAX_PATH];
 char lnkFile[_MAX_PATH];
 char tempbuff[256];
-char extbuff[256];
+char extbuff[_MAX_PATH];
 char logBuff[512];
 char fileSep = '\\';
 char notFileSep = '/';
@@ -540,7 +540,11 @@ void processRequest(void *lpParam)
                 MYDWORD iip = ntohl(req.client.sin_addr.s_addr);
                 bool allowed = false;
 
+#ifdef __REACTOS__
+                for (MYWORD j = 0; j < _countof(cfig.hostRanges) && cfig.hostRanges[j].rangeStart; j++)
+#else
                 for (int j = 0; j <= 32 && cfig.hostRanges[j].rangeStart; j++)
+#endif
                 {
                     if (iip >= cfig.hostRanges[j].rangeStart && iip <= cfig.hostRanges[j].rangeEnd)
                     {
@@ -751,7 +755,11 @@ void processRequest(void *lpParam)
                 continue;
             }
 
+#ifdef __REACTOS__
+            for (int i = 0; i < MAX_SERVERS; i++)
+#else
             for (int i = 0; i < 8; i++)
+#endif
             {
                 //printf("%s=%i\n", req.filename, cfig.homes[i].alias[0]);
                 if (cfig.homes[i].alias[0] && !strcasecmp(req.filename, cfig.homes[i].alias))
@@ -1001,7 +1009,7 @@ void processRequest(void *lpParam)
                 continue;
 
             errno = 0;
-            req.bytesReady = (MYDWORD)outPtr - (MYDWORD)&req.mesout;
+            req.bytesReady = (const char*)outPtr - (const char*)&req.mesout;
             //printf("Bytes Ready=%u\n", req.bytesReady);
             send(req.sock, (const char*)&req.mesout, req.bytesReady, 0);
             errno = WSAGetLastError();
@@ -1887,7 +1895,11 @@ void init(void *lpParam)
                 }
                 else if (name[0] && strlen(name) < 64 && value[0])
                 {
+#ifdef __REACTOS__
+                    for (int i = 0; i < MAX_SERVERS; i++)
+#else
                     for (int i = 0; i < 8; i++)
+#endif
                     {
                         if (cfig.homes[i].alias[0] && !strcasecmp(name, cfig.homes[i].alias))
                         {
@@ -2046,11 +2058,19 @@ void init(void *lpParam)
 
     if ((f = openSection("ALLOWED-CLIENTS", 1, iniFile)))
     {
+#ifdef __REACTOS__
+        MYWORD i = 0;
+#else
         int i = 0;
+#endif
 
         while (readSection(raw, f))
         {
+#ifdef __REACTOS__
+            if (i < _countof(cfig.hostRanges))
+#else
             if (i < 32)
+#endif
             {
                 MYDWORD rs = 0;
                 MYDWORD re = 0;
@@ -2098,7 +2118,11 @@ void init(void *lpParam)
     {
         char temp[128];
 
+#ifdef __REACTOS__
+        for (MYWORD i = 0; i < _countof(cfig.hostRanges) && cfig.hostRanges[i].rangeStart; i++)
+#else
         for (MYWORD i = 0; i <= sizeof(cfig.hostRanges) && cfig.hostRanges[i].rangeStart; i++)
+#endif
         {
             sprintf(logBuff, "%s", "permitted clients: ");
             sprintf(temp, "%s-", IP2String(tempbuff, htonl(cfig.hostRanges[i].rangeStart)));
@@ -2412,7 +2436,11 @@ bool detectChange()
     MYDWORD eventWait = UINT_MAX;
 
     if (cfig.failureCount)
+#ifdef __REACTOS__
+        eventWait = 10000 * (1 << cfig.failureCount);
+#else
         eventWait = 10000 * pow(2, cfig.failureCount);
+#endif
 
     OVERLAPPED overlap;
     MYDWORD ret;

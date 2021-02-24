@@ -70,7 +70,7 @@ AddRemoteDatabaseEntry(IN HANDLE Database,
     /* Get size to append data */
     Size.QuadPart = GetRemoteDatabaseSize(Database);
 
-    return ZwWriteFile(Database, 0, NULL, NULL,
+    return ZwWriteFile(Database, NULL, NULL, NULL,
                        &IoStatusBlock, Entry,
                        Entry->EntrySize, &Size, NULL);
 }
@@ -624,9 +624,10 @@ ReconcileThisDatabaseWithMasterWorker(IN PVOID Parameter)
         goto ReleaseRDS;
     }
 
-    if (DeviceObject->Flags & 1)
+    /* Mark mounted only if not unloading */
+    if (!(DeviceObject->Flags & DO_UNLOAD_PENDING))
     {
-        _InterlockedExchangeAdd(&ListDeviceInfo->MountState, 1u);
+        InterlockedExchangeAdd(&ListDeviceInfo->MountState, 1);
     }
 
     ObDereferenceObject(FileObject);
@@ -677,11 +678,10 @@ ReconcileThisDatabaseWithMasterWorker(IN PVOID Parameter)
         goto ReleaseRDS;
     }
 
-    
     RtlCopyMemory(ReparseFile.Buffer, DeviceInformation->DeviceName.Buffer,
                   DeviceInformation->DeviceName.Length);
     RtlCopyMemory((PVOID)((ULONG_PTR)ReparseFile.Buffer + DeviceInformation->DeviceName.Length),
-                  ReparseFile.Buffer, ReparseFile.Length);
+                  ReparseIndex.Buffer, ReparseIndex.Length);
     ReparseFile.Buffer[ReparseFile.Length / sizeof(WCHAR)] = UNICODE_NULL;
 
     InitializeObjectAttributes(&ObjectAttributes,
@@ -1167,21 +1167,40 @@ WorkerThread(IN PDEVICE_OBJECT DeviceObject,
                                NULL,
                                NULL);
     KeInitializeEvent(&Event, NotificationEvent, FALSE);
-    Timeout.LowPart = 0xFFFFFFFF;
-    Timeout.HighPart = 0xFF676980;
+    Timeout.QuadPart = -10000000LL; /* Wait for 1 second */
 
-    /* Try to wait as long as possible */
-    for (i = (Unloading ? 999 : 0); i < 1000; i++)
+    /* Wait as long as possible for clearance from autochk
+     * We will write remote databases only if it is safe
+     * to access volumes.
+     * First, given we start before SMSS, wait for the
+     * event creation.
+     */
+    i = 0;
+    do
     {
-        Status = ZwOpenEvent(&SafeEvent, EVENT_ALL_ACCESS, &ObjectAttributes);
-        if (NT_SUCCESS(Status))
+        /* If we started to shutdown, stop waiting forever and jump to last attempt */
+        if (Unloading)
         {
-            break;
+            i = 999;
+        }
+        else
+        {
+            /* Attempt to open the event */
+            Status = ZwOpenEvent(&SafeEvent, EVENT_ALL_ACCESS, &ObjectAttributes);
+            if (NT_SUCCESS(Status))
+            {
+                break;
+            }
+
+            /* Wait a bit to give SMSS a chance to create the event */
+            KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, &Timeout);
         }
 
-        KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, &Timeout);
+        ++i;
     }
+    while (i < 1000);
 
+    /* We managed to open the event, wait until autochk signals it */
     if (i < 1000)
     {
         do
@@ -1219,7 +1238,7 @@ WorkerThread(IN PDEVICE_OBJECT DeviceObject,
         IoFreeWorkItem(WorkItem->WorkItem);
         FreePool(WorkItem);
 
-        if (InterlockedDecrement(&(DeviceExtension->WorkerReferences)) == 0)
+        if (InterlockedDecrement(&(DeviceExtension->WorkerReferences)) < 0)
         {
             return;
         }
@@ -1249,8 +1268,8 @@ QueueWorkItem(IN PDEVICE_EXTENSION DeviceExtension,
 
     /* When called, lock is already acquired */
 
-    /* If noone, start to work */
-    if (InterlockedIncrement(&(DeviceExtension->WorkerReferences)))
+    /* If noone (-1 as references), start to work */
+    if (InterlockedIncrement(&(DeviceExtension->WorkerReferences)) == 0)
     {
         IoQueueWorkItem(WorkItem->WorkItem, WorkerThread, DelayedWorkQueue, DeviceExtension);
     }

@@ -15,19 +15,6 @@ assoc (print all associations)\n\
 assoc .ext (print specific association)\n\
 assoc .ext= (remove specific association)\n\
 assoc .ext=FileType (add new association)\n"
-    STRING_ATTRIB_HELP "Displays or changes file attributes.\n\n\
-ATTRIB [+R | -R] [+A | -A] [+S | -S] [+H | -H] file ...\n\
-       [/S [/D]]\n\n\
-  +   Sets an attribute\n\
-  -   Clears an attribute\n\
-  R   Read-only file attribute\n\
-  A   Archive file attribute\n\
-  S   System file attribute\n\
-  H   Hidden file attribute\n\
-  /S  Processes matching files in the current directory\n\
-      and all subdirectories\n\
-  /D  Processes directories as well\n\n\
-Type ATTRIB without a parameter to display the attributes of all files.\n"
     STRING_ALIAS_HELP "Sets, removes or shows aliases.\n\n\
 ALIAS [alias=[command]]\n\n\
   alias    Name for an alias.\n\
@@ -53,10 +40,6 @@ CD[..|.]\n\n\
   /D   Will change current drive and current directory.\n\n\
 Type CD drive: to display the current directory on the specified drive.\n\
 Type CD without a parameter to display the current drive and directory.\n"
-    STRING_CHCP_HELP "Displays or sets the active code page number.\n\n\
-CHCP [nnn]\n\n\
-  nnn   Specifies the active code page number.\n\n\
-Type CHCP without a parameter to display the active code page number.\n"
     STRING_CHOICE_HELP "Waits for the user to choose one of a set of choices.\n\n\
 CHOICE  [/C[:]choices][/N][/S][/T[:]c,nn][text]\n\n\
   /C[:]choices  Specifies allowable keys. Default is YN.\n\
@@ -81,9 +64,9 @@ CMD [/[C|K] command][/P][/Q][/T:bf]\n\n\
               (cannot be terminated).\n\
   /T:bf       Sets the background/foreground color (see COLOR command).\n"
     STRING_COLOR_HELP1 "Sets the default foreground and background colors.\n\n\
-COLOR [attr [/-F]] \n\n\
-  attr        Specifies color attribute of console output\n\
-  /-F         Does not fill the console blank space with color attribute\n\n\
+COLOR [attr [/-F]]\n\n\
+  attr        Specifies color attribute of console output.\n\
+  /-F         Does not fill the console blank space with color attribute.\n\n\
 There are three ways to specify the colors:\n\
 1) [bright] name on [bright] name  (only the first three letters are required)\n\
 2) decimal on decimal\n\
@@ -113,6 +96,14 @@ COPY [/V][/Y|/-Y][/A|/B] source [/A|/B]\n\
                existing destination file.\n\n\
 The switch /Y may be present in the COPYCMD environment variable.\n\
 ...\n"
+    STRING_CTTY_HELP "Changes the standard I/O terminal device to an auxiliary device.\n\n\
+CTTY device\n\n\
+  device    The terminal device you want to use as the new standard I/O device.\n\
+            This name must refer to a valid character device:\n\
+            AUX, COMx (x=1..N), CON, LPTx (x=1..N), PRN, NUL.\n\
+            CON is usually the default standard I/O device.\n\n\
+To return control to the standard console, type: CTTY CON on the auxiliary\n\
+device."
     STRING_DATE_HELP1 "\nZadajte nový dátum (mm%cdd%crrrr): "
     STRING_DATE_HELP2 "\nZadajte nový dátum (dd%cmm%crrrr): "
     STRING_DATE_HELP3 "\nZadajte nový dátum (rrrr%cmm%cdd): "
@@ -141,13 +132,13 @@ ERASE [/N /P /T /Q /S /W /Y /Z /A[[:]attributes]] file ...\n\n\
         A     Archiveable files\n\
         H     Hidden Files\n\
         -     prefix meaning not\n"
-    STRING_DEL_HELP2 "All files in the directory will be deleted!\nAre you sure (Y/N)?"
+    STRING_DEL_HELP2 "All files in the directory will be deleted!\nAre you sure (Y/N)? "
     STRING_DEL_HELP3 "    %lu file deleted\n"
     STRING_DEL_HELP4 "    %lu files deleted\n"
-    STRING_DELAY_HELP "pause for n seconds or milliseconds\n\
+    STRING_DELAY_HELP "Pause for n seconds or milliseconds.\n\
 DELAY [/m]n\n\n\
-  /m          specifiy than n are milliseconds\n\
-              otherwise n are seconds\n"
+  /m          Specify that n are in milliseconds,\n\
+              otherwise n are in seconds.\n"
     STRING_DIR_HELP1 "DIR [drive:][path][filename] [/A[[:]attributes]] [/B] [/C] [/D] [/L] [/N]\n\
   [/O[[:]sortorder]] [/P] [/Q] [/R] [/S] [/T[[:]timefield]] [/W] [/X] [/4]\n\n\
   [drive:][path][filename]\n\
@@ -210,15 +201,28 @@ PUSHD [path | ..]\n\n\
 Type ECHO without a parameter to display the current ECHO setting."
     STRING_ECHO_HELP5 "ECHO je %s\n"
     STRING_EXIT_HELP "Exits the command line interpreter.\n\nEXIT [/b] [ExitCode]\n\n\
-  /B            Exits a batch file only.  \n\
+  /B            Exits a batch file only.\n\
                 If run outside of a batch file it will exit cmd.exe\n\
   ExitCode      This value will be assigned to ERRORLEVEL on exit\n"
-    STRING_FOR_HELP1 "Runs a specified command for each file in a set of files\n\n\
-FOR %variable IN (set) DO command [parameters]\n\n\
+    STRING_FOR_HELP1 "Runs a specified command for each file in a set of files.\n\n\
+FOR %variable IN (set) DO command [parameters]\n\
+FOR /L %variable IN (start,step,end) DO command [parameters]\n\
+FOR /D %variable IN (set) DO command [parameters]\n\
+FOR /R [[drive:]path] IN (set) DO command [parameters]\n\
+FOR /F [""options""] IN (set) DO command [parameters]\n\n\
+  /L    Generates a number sequence from start to end incrementing by step.\n\
+  /D    Modifies the set to refer to directories instead of files.\n\
+  /R    Executes command for files in the set in the specified path (or current\n\
+        working directory if not specified) and every directory below.\n\
+  /F    Modifies the set to refer to the contents of the files in the set.\n\n\
   %variable  Specifies a replaceable parameter.\n\
   (set)      Specifies a set of one or more files. Wildcards may be used.\n\
   command    Specifies the command to carry out for each file.\n\
-  parameters Specifies parameters or switches for the specified command.\n\n\
+  parameters Specifies parameters or switches for the specified command.\n\
+  options    Supported options are: eol, skip, delims, tokens, and usebackq.\n\n\
+Replacable parameters can be modified by adding a ~ and an optional qualifier\n\
+after the % and before the name (e.g. %~X). Supported qualifiers are:\n\
+f,d,p,n,x,s,a,t,z.\n\n\
 To use the FOR command in a batch program, specify %%variable instead of\n\
 %variable.\n"
     STRING_FREE_HELP1 "\nVolume in drive %s is %-11s\n\
@@ -246,11 +250,6 @@ string1==string2  Specifies a true condition if the specified text strings\n\
 EXIST filename    Specifies a true condition if the specified filename exists.\n\
 DEFINED variable  Specifies a true condition if the specified variable is\n\
                   defined.\n"
-    STRING_LABEL_HELP1 "Displays or changes drive label.\n\nLABEL [drive:][label]\n"
-    STRING_LABEL_HELP2 "Volume in drive %c: is %s\n"
-    STRING_LABEL_HELP3 "Volume in drive %c: has no label\n"
-    STRING_LABEL_HELP4 "Volume Serial Number is %04X-%04X\n"
-    STRING_LABEL_HELP5 "Drive label (11 Characters, ENTER if none)? "
     STRING_LOCALE_HELP1 "Aktuálny čas je"
     STRING_MKDIR_HELP "Creates a directory.\n\n\
 MKDIR [drive:]path\nMD [drive:]path"
@@ -367,8 +366,8 @@ REPLACE [drive1:][path1]filename [drive2:][path2] [/P] [/R] [/S] [/W] [/U]\n\n\
     STRING_REPLACE_HELP6 "Replace %s\n"
     STRING_REPLACE_HELP7 "No files added\n"
     STRING_REPLACE_HELP8 "%lu file(s) added\n"
-    STRING_REPLACE_HELP9 "Add %s (Y/N) "
-    STRING_REPLACE_HELP10 "Replace %s (Y/N) "
+    STRING_REPLACE_HELP9 "Add %s (Y/N)? "
+    STRING_REPLACE_HELP10 "Replace %s (Y/N)? "
     STRING_REPLACE_HELP11 "Adding %s\n"
     STRING_SHIFT_HELP "Changes the position of replaceable parameters in a batch file.\n\n\
 SHIFT [DOWN]"
@@ -411,7 +410,7 @@ TIMER  [ON|OFF] [/S] [/n] [/Fn]\n\n\
   OFF         set stopwatch OFF\n\
   /S          Split time. Return stopwatch split\n\
               time without changing its value\n\
-  /n          Specifiy the stopwatch number.\n\
+  /n          Specify the stopwatch number.\n\
               Stopwatches available are 0 to 9\n\
               If it is not specified default is 1\n\
   /Fn         Format for output\n\
@@ -420,7 +419,7 @@ TIMER  [ON|OFF] [/S] [/n] [/Fn]\n\n\
                     1    hh%cmm%css%cdd\n\n\
 if none of ON, OFF or /S is specified the command\n\
 will toggle stopwatch state\n\n"
-    STRING_TYPE_HELP1 "Displays the contents of text files.\n\nTYPE [drive:][path]filename \n\
+    STRING_TYPE_HELP1 "Displays the contents of text files.\n\nTYPE [drive:][path]filename\n\
   /P          Shows one screen of output at a time.\n"
     STRING_VERIFY_HELP1 "This command is just a dummy!!\n\
 Sets whether to verify that your files are written correctly to a\n\
@@ -475,8 +474,6 @@ title         new title\n"
     STRING_ALIAS_ERROR "Command line too long after alias expansion!\n"
     STRING_ASSOC_ERROR "File association not found for extension %s\n"
     STRING_BATCH_ERROR "Error opening batch file\n"
-    STRING_CHCP_ERROR1 "Active code page: %u\n"
-    STRING_CHCP_ERROR4 "Invalid code page\n"
     STRING_CHOICE_ERROR "Invalid option. Expected format: /C[:]options"
     STRING_CHOICE_ERROR_TXT "Invalid option. Expected format: /T[:]c,nn"
     STRING_CHOICE_ERROR_OPTION "Illegal Option: %s"
@@ -486,8 +483,7 @@ title         new title\n"
     STRING_CMD_ERROR4 "Running %s...\n"
     STRING_CMD_ERROR5 "Running cmdexit.bat...\n"
     STRING_COLOR_ERROR1 "Same colors error! (Background and foreground can't be the same color)"
-    STRING_COLOR_ERROR2 "error in color specification"
-    STRING_COLOR_ERROR3 "Color %02x\n"
+    STRING_COLOR_ERROR2 "Error in color specification"
     STRING_CONSOLE_ERROR "Neznáma chyba: %d\n"
     STRING_COPY_ERROR1 "Chyba: Cannot open source - %s!\n"
     STRING_COPY_ERROR2 "Chyba: Can't copy onto itself!\n"
@@ -495,7 +491,7 @@ title         new title\n"
     STRING_COPY_ERROR4 "Chyba: Zatiaľ neimplementované!\n"
     STRING_DATE_ERROR "Neplatný dátum."
     STRING_DEL_ERROR5 "The file %s will be deleted! "
-    STRING_DEL_ERROR6 "Ste si istý (Y/N)?"
+    STRING_DEL_ERROR6 "Ste si istý (Y/N)? "
     STRING_DEL_ERROR7 "Deleting: %s\n"
     STRING_ERROR_ERROR1 "Neznáma chyba! Kód chyby: 0x%lx\n"
     STRING_ERROR_ERROR2 "Syntax error"
@@ -514,7 +510,7 @@ title         new title\n"
     STRING_REN_ERROR1 "MoveFile() failed. Error: %lu\n"
     STRING_TIME_ERROR1 "Neplatný čas."
     STRING_TYPE_ERROR1 "Invalid option '/%s'\n"
-    STRING_WINDOW_ERROR1 "okno sa nenašlo"
+    STRING_WINDOW_ERROR1 "Okno sa nenašlo"
     STRING_ERROR_PARAMETERF_ERROR "Parameter format not correct - %c\n"
     STRING_ERROR_INVALID_SWITCH "Neplatný prepínač - /%c\n"
     STRING_ERROR_TOO_MANY_PARAMETERS "Príliš veľa parametrov - %s\n"

@@ -180,8 +180,12 @@ BEGIN
     EDITTEXT IDC_DIGITALSIGNER, 100, 81, 145, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON "&Detaily ovladače...", IDC_DRIVERDETAILS, 7, 106, 75, 15
     LTEXT "Zobrazí detaily souborů ovladače.", -1, 91, 110, 154, 17, SS_NOPREFIX
-    PUSHBUTTON "&Aktualizovat ovladač...", IDC_UPDATEDRIVER, 7, 126, 75, 15
-    LTEXT "Aktualizuje ovladač zařízení.", -1, 91, 130, 154, 17, SS_NOPREFIX
+    PUSHBUTTON "&Aktualizovat ovladač...", IDC_UPDATEDRIVER, 7, 134, 75, 15
+    LTEXT "Aktualizuje ovladač zařízení.", -1, 91, 138, 154, 17, SS_NOPREFIX
+    PUSHBUTTON "&Roll Back Driver", IDC_ROLLBACKDRIVER, 7, 162, 75, 15
+    LTEXT "If the device fails after updating the driver, roll back to the previously installed driver.", -1, 91, 162, 154, 25, SS_NOPREFIX
+    PUSHBUTTON "&Uninstall", IDC_UNINSTALLDRIVER, 7, 190, 75, 15
+    LTEXT "To uninstall the driver (Advanced).", -1, 91, 194, 154, 17, SS_NOPREFIX
 END
 
 IDD_DRIVERDETAILS DIALOGEX 0, 0, 224, 230
@@ -241,32 +245,47 @@ BEGIN
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
 END
 
+IDD_UNINSTALLDRIVER DIALOGEX 0, 0, 224, 121
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBLE | WS_DLGFRAME
+CAPTION "Confirm Device Removal"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON "", IDC_DEVICON, 7, 7, 20, 20
+    LTEXT "", IDC_DEVNAME, 40, 9, 174, 16, SS_NOPREFIX
+    LTEXT "Warning: You are about to uninstall this device from your system.", -1, 7, 37, 204, 50
+    DEFPUSHBUTTON "OK", IDOK, 110, 100, 50, 14
+    PUSHBUTTON "Cancel", IDCANCEL, 166, 100, 50, 14
+END
 
 
 /*
  This code relates to the device manager GUI
  */
 
-IDR_MAINMENU MENU
+IDM_MAINMENU MENU
 BEGIN
-  POPUP "&Soubor"
-  BEGIN
-    MENUITEM "U&končit",                       IDC_EXIT
-  END
-  MENUITEM "Akce",                        IDC_ACTIONMENU
-  POPUP "Zobrazit"
-  BEGIN
-    MENUITEM "Zařízení podle typu",             IDC_DEVBYTYPE
-    MENUITEM "Zařízení podle připojení",       IDC_DEVBYCONN
-    MENUITEM "Prostředky podle typu",           IDC_RESBYTYPE, GRAYED
-    MENUITEM "Prostředky podle připojení",     IDC_RESBYCONN, GRAYED
-    MENUITEM SEPARATOR
-    MENUITEM "SZobrazit skrytá zařízení",         IDC_SHOWHIDDEN
-  END
-  POPUP "Nápověda"
-  BEGIN
-    MENUITEM "O programu",                       IDC_ABOUT
-  END
+    POPUP "&Soubor"
+    BEGIN
+        MENUITEM "U&končit",                       IDM_EXIT
+    END
+    POPUP "Akce"
+    BEGIN
+        MENUITEM "Vyhledat změny hardwaru",        IDM_SCAN_HARDWARE
+        MENUITEM "Přidat hardware",                IDM_ADD_HARDWARE
+    END
+    POPUP "Zobrazit"
+    BEGIN
+        MENUITEM "Zařízení podle typu",             IDM_DEVBYTYPE
+        MENUITEM "Zařízení podle připojení",       IDM_DEVBYCONN
+        MENUITEM "Prostředky podle typu",           IDM_RESBYTYPE, GRAYED
+        MENUITEM "Prostředky podle připojení",     IDM_RESBYCONN, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "SZobrazit skrytá zařízení",         IDM_SHOWHIDDEN
+    END
+    POPUP "Nápověda"
+    BEGIN
+        MENUITEM "O programu",                       IDM_ABOUT
+    END
 END
 
 
@@ -309,6 +328,7 @@ BEGIN
   IDS_HINT_UNINSTALL    " Odinstaluje ovladače vybraného zařízení."
   IDS_HINT_ADD          " Umožní přidat do systému zastaralé zařízení nepodporující Plug and Play."
   IDS_HINT_ABOUT        " Ukončí program.."
+  IDS_HINT_EXIT         " Exits the program."
 
   IDS_HINT_DEV_BY_TYPE  " Zobrazí zařízení podle typu hardwaru."
   IDS_HINT_DEV_BY_CONN  " Zobrazí zařízení podle typu připojení."

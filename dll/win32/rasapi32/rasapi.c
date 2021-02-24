@@ -18,15 +18,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_NO_STATUS
+#include <stdarg.h>
 
-//#include <stdarg.h>
-
-#include <windef.h>
-//#include "winbase.h"
-#include <ras.h>
-#include <raserror.h>
-#include <wine/debug.h>
+#include "windef.h"
+#include "winbase.h"
+#include "ras.h"
+#include "raserror.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ras);
 
@@ -548,4 +546,10 @@ DWORD WINAPI RasGetLinkStatistics(HRASCONN connection, DWORD entry, RAS_STATS *s
 {
     FIXME("(%p,%u,%p), stub!\n", connection, entry, statistics);
     return 0;
+}
+
+DWORD WINAPI RasGetConnectionStatistics(HRASCONN connection, RAS_STATS *statistics)
+{
+    FIXME("(%p,%p), stub!\n", connection, statistics);
+    return ERROR_UNKNOWN;
 }

@@ -15,7 +15,7 @@ IntCreateDICW(
     UNICODE_STRING Device, Output;
     HDC hdc = NULL;
     BOOL Display = FALSE, Default = FALSE;
-    ULONG UMdhpdev = 0;
+    HANDLE UMdhpdev = 0;
 
     HANDLE hspool = NULL;
 
@@ -65,7 +65,7 @@ IntCreateDICW(
                        iType,             // DCW 0 and ICW 1.
                        Display,
                        hspool,
-                       (PVOID) &UMdhpdev );
+                       &UMdhpdev );
 #if 0
 // Handle something other than a normal dc object.
     if (GDI_HANDLE_GET_TYPE(hdc) != GDI_OBJECT_TYPE_DC)
@@ -1162,7 +1162,7 @@ SetPolyFillMode(
         if (pdcattr->ulDirty_ & DC_MODE_DIRTY)
         {
             NtGdiFlush(); // Sync up pdcattr from Kernel space.
-            pdcattr->ulDirty_ &= ~(DC_MODE_DIRTY|DC_FONTTEXT_DIRTY);
+            pdcattr->ulDirty_ &= ~DC_MODE_DIRTY;
         }
     }
 
@@ -1230,7 +1230,7 @@ SetGraphicsMode(
         if (pdcattr->ulDirty_ & DC_MODE_DIRTY)
         {
             NtGdiFlush(); // Sync up pdcattr from Kernel space.
-            pdcattr->ulDirty_ &= ~(DC_MODE_DIRTY|DC_FONTTEXT_DIRTY);
+            pdcattr->ulDirty_ &= ~DC_MODE_DIRTY;
         }
     }
 
@@ -1500,7 +1500,7 @@ SelectObject(
 {
     /* Fix up 16 bit handles */
     hobj = GdiFixUpHandle(hobj);
-    if (!GdiIsHandleValid(hobj))
+    if (!GdiValidateHandle(hobj))
     {
         return NULL;
     }
@@ -1509,7 +1509,7 @@ SelectObject(
     switch (GDI_HANDLE_GET_TYPE(hobj))
     {
         case GDILoObjType_LO_REGION_TYPE:
-            return (HGDIOBJ)ExtSelectClipRgn(hdc, hobj, RGN_COPY);
+            return (HGDIOBJ)UlongToHandle(ExtSelectClipRgn(hdc, hobj, RGN_COPY));
 
         case GDILoObjType_LO_BITMAP_TYPE:
         case GDILoObjType_LO_DIBSECTION_TYPE:

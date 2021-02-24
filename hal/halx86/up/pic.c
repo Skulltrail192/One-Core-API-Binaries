@@ -99,8 +99,7 @@ PHAL_DISMISS_INTERRUPT HalpSpecialDismissLevelTable[16] =
 /* This table contains the static x86 PIC mapping between IRQLs and IRQs */
 ULONG KiI8259MaskTable[32] =
 {
-#if defined(__GNUC__) && \
-    (__GNUC__ * 100 + __GNUC_MINOR__ >= 404)
+#if defined(__GNUC__) || defined(__clang__) || (defined(_MSC_VER) && _MSC_VER >= 1900)
     /*
      * It Device IRQLs only start at 4 or higher, so these are just software
      * IRQLs that don't really change anything on the hardware
@@ -216,8 +215,7 @@ ULONG KiI8259MaskTable[32] =
 /* This table indicates which IRQs, if pending, can preempt a given IRQL level */
 ULONG FindHigherIrqlMask[32] =
 {
-#if defined(__GNUC__) && \
-    (__GNUC__ * 100 + __GNUC_MINOR__ >= 404)
+#if defined(__GNUC__) || defined(__clang__) || (defined(_MSC_VER) && _MSC_VER >= 1900)
     /*
      * Software IRQLs, at these levels all hardware interrupts can preempt.
      * Each higher IRQL simply enables which software IRQL can preempt the
@@ -384,7 +382,7 @@ PHAL_SW_INTERRUPT_HANDLER SWInterruptHandlerTable[20] =
 {
     (PHAL_SW_INTERRUPT_HANDLER)KiUnexpectedInterrupt,
     HalpApcInterrupt,
-    HalpDispatchInterrupt2,
+    HalpDispatchInterrupt,
     (PHAL_SW_INTERRUPT_HANDLER)KiUnexpectedInterrupt,
     HalpHardwareInterrupt0,
     HalpHardwareInterrupt1,
@@ -407,7 +405,7 @@ PHAL_SW_INTERRUPT_HANDLER SWInterruptHandlerTable[20] =
 /* Handlers for pending software interrupts when we already have a trap frame*/
 PHAL_SW_INTERRUPT_HANDLER_2ND_ENTRY SWInterruptHandlerTable2[3] =
 {
-    (PHAL_SW_INTERRUPT_HANDLER_2ND_ENTRY)KiUnexpectedInterrupt,
+    (PHAL_SW_INTERRUPT_HANDLER_2ND_ENTRY)(PVOID)KiUnexpectedInterrupt,
     HalpApcInterrupt2ndEntry,
     HalpDispatchInterrupt2ndEntry
 };
@@ -421,10 +419,6 @@ NTAPI
 HalpInitializePICs(IN BOOLEAN EnableInterrupts)
 {
     ULONG EFlags;
-    I8259_ICW1 Icw1;
-    I8259_ICW2 Icw2;
-    I8259_ICW3 Icw3;
-    I8259_ICW4 Icw4;
     EISA_ELCR Elcr;
     ULONG i, j;
 
@@ -432,63 +426,8 @@ HalpInitializePICs(IN BOOLEAN EnableInterrupts)
     EFlags = __readeflags();
     _disable();
 
-    /* Initialize ICW1 for master, interval 8, edge-triggered mode with ICW4 */
-    Icw1.NeedIcw4 = TRUE;
-    Icw1.InterruptMode = EdgeTriggered;
-    Icw1.OperatingMode = Cascade;
-    Icw1.Interval = Interval8;
-    Icw1.Init = TRUE;
-    Icw1.InterruptVectorAddress = 0; /* This is only used in MCS80/85 mode */
-    __outbyte(PIC1_CONTROL_PORT, Icw1.Bits);
-
-    /* Set interrupt vector base */
-    Icw2.Bits = PRIMARY_VECTOR_BASE;
-    __outbyte(PIC1_DATA_PORT, Icw2.Bits);
-
-    /* Connect slave to IRQ 2 */
-    Icw3.Bits = 0;
-    Icw3.SlaveIrq2 = TRUE;
-    __outbyte(PIC1_DATA_PORT, Icw3.Bits);
-
-    /* Enable 8086 mode, non-automatic EOI, non-buffered mode, non special fully nested mode */
-    Icw4.Reserved = 0;
-    Icw4.SystemMode = New8086Mode;
-    Icw4.EoiMode = NormalEoi;
-    Icw4.BufferedMode = NonBuffered;
-    Icw4.SpecialFullyNestedMode = FALSE;
-    __outbyte(PIC1_DATA_PORT, Icw4.Bits);
-
-    /* Mask all interrupts */
-    __outbyte(PIC1_DATA_PORT, 0xFF);
-
-    /* Initialize ICW1 for master, interval 8, edge-triggered mode with ICW4 */
-    Icw1.NeedIcw4 = TRUE;
-    Icw1.InterruptMode = EdgeTriggered;
-    Icw1.OperatingMode = Cascade;
-    Icw1.Interval = Interval8;
-    Icw1.Init = TRUE;
-    Icw1.InterruptVectorAddress = 0; /* This is only used in MCS80/85 mode */
-    __outbyte(PIC2_CONTROL_PORT, Icw1.Bits);
-
-    /* Set interrupt vector base */
-    Icw2.Bits = PRIMARY_VECTOR_BASE + 8;
-    __outbyte(PIC2_DATA_PORT, Icw2.Bits);
-
-    /* Slave ID */
-    Icw3.Bits = 0;
-    Icw3.SlaveId = 2;
-    __outbyte(PIC2_DATA_PORT, Icw3.Bits);
-
-    /* Enable 8086 mode, non-automatic EOI, non-buffered mode, non special fully nested mode */
-    Icw4.Reserved = 0;
-    Icw4.SystemMode = New8086Mode;
-    Icw4.EoiMode = NormalEoi;
-    Icw4.BufferedMode = NonBuffered;
-    Icw4.SpecialFullyNestedMode = FALSE;
-    __outbyte(PIC2_DATA_PORT, Icw4.Bits);
-
-    /* Mask all interrupts */
-    __outbyte(PIC2_DATA_PORT, 0xFF);
+    /* Initialize and mask the PIC */
+    HalpInitializeLegacyPICs();
 
     /* Read EISA Edge/Level Register for master and slave */
     Elcr.Bits = (__inbyte(EISA_ELCR_SLAVE) << 8) | __inbyte(EISA_ELCR_MASTER);
@@ -738,7 +677,7 @@ HalClearSoftwareInterrupt(IN KIRQL Irql)
 }
 
 PHAL_SW_INTERRUPT_HANDLER_2ND_ENTRY
-NTAPI
+FASTCALL
 HalpEndSoftwareInterrupt2(IN KIRQL OldIrql,
                           IN PKTRAP_FRAME TrapFrame)
 {
@@ -1076,9 +1015,9 @@ HalpDismissIrq07Level(IN KIRQL Irql,
     return _HalpDismissIrqLevel(Irql, Irq, OldIrql);
 }
 
-VOID
+PHAL_SW_INTERRUPT_HANDLER
 __cdecl
-HalpHardwareInterruptLevel(VOID)
+HalpHardwareInterruptLevel2(VOID)
 {
     PKPCR Pcr = KeGetPcr();
     ULONG PendingIrqlMask, PendingIrql;
@@ -1088,7 +1027,7 @@ HalpHardwareInterruptLevel(VOID)
     if (PendingIrqlMask)
     {
         /* Check for in-service delayed interrupt */
-        if (Pcr->IrrActive & 0xFFFFFFF0) return;
+        if (Pcr->IrrActive & 0xFFFFFFF0) return NULL;
 
         /* Check if pending IRQL affects hardware state */
         BitScanReverse(&PendingIrql, PendingIrqlMask);
@@ -1097,8 +1036,10 @@ HalpHardwareInterruptLevel(VOID)
         Pcr->IRR ^= (1 << PendingIrql);
 
         /* Now handle pending interrupt */
-        SWInterruptHandlerTable[PendingIrql]();
+        return SWInterruptHandlerTable[PendingIrql];
     }
+
+    return NULL;
 }
 
 /* SYSTEM INTERRUPTS **********************************************************/
@@ -1200,10 +1141,10 @@ HalBeginSystemInterrupt(IN KIRQL Irql,
 /*
  * @implemented
  */
-VOID
-NTAPI
-HalEndSystemInterrupt(IN KIRQL OldIrql,
-                      IN PKTRAP_FRAME TrapFrame)
+PHAL_SW_INTERRUPT_HANDLER_2ND_ENTRY
+FASTCALL
+HalEndSystemInterrupt2(IN KIRQL OldIrql,
+                       IN PKTRAP_FRAME TrapFrame)
 {
     ULONG PendingIrql, PendingIrqlMask, PendingIrqMask;
     PKPCR Pcr = KeGetPcr();
@@ -1217,7 +1158,7 @@ HalEndSystemInterrupt(IN KIRQL OldIrql,
     if (PendingIrqlMask)
     {
         /* Check for in-service delayed interrupt */
-        if (Pcr->IrrActive & 0xFFFFFFF0) return;
+        if (Pcr->IrrActive & 0xFFFFFFF0) return NULL;
 
         /* Loop checking for pending interrupts */
         while (TRUE)
@@ -1233,7 +1174,7 @@ HalEndSystemInterrupt(IN KIRQL OldIrql,
 
                 /* Now check if this specific interrupt is already in-service */
                 PendingIrqMask = (1 << PendingIrql);
-                if (Pcr->IrrActive & PendingIrqMask) return;
+                if (Pcr->IrrActive & PendingIrqMask) return NULL;
 
                 /* Set active bit otherwise, and clear it from IRR */
                 Pcr->IrrActive |= PendingIrqMask;
@@ -1252,11 +1193,12 @@ HalEndSystemInterrupt(IN KIRQL OldIrql,
             else
             {
                 /* Now handle pending software interrupt */
-                SWInterruptHandlerTable2[PendingIrql](TrapFrame);
-                UNREACHABLE;
+                return SWInterruptHandlerTable2[PendingIrql];
             }
         }
     }
+
+    return NULL;
 }
 
 /* SOFTWARE INTERRUPT TRAPS ***************************************************/
@@ -1357,7 +1299,7 @@ HalpDispatchInterrupt2ndEntry(IN PKTRAP_FRAME TrapFrame)
     KiEoiHelper(TrapFrame);
 }
 
-VOID
+PHAL_SW_INTERRUPT_HANDLER
 __cdecl
 HalpDispatchInterrupt2(VOID)
 {
@@ -1390,8 +1332,10 @@ HalpDispatchInterrupt2(VOID)
         }
 
         /* Now handle pending interrupt */
-        SWInterruptHandlerTable[PendingIrql]();
+        return SWInterruptHandlerTable[PendingIrql];
     }
+
+    return NULL;
 }
 
 #else

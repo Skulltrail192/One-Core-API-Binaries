@@ -1282,8 +1282,6 @@ typedef struct _QUERY_PATH_RESPONSE {
 #define IOCTL_VOLSNAP_FLUSH_AND_HOLD_WRITES             CTL_CODE(VOLSNAPCONTROLTYPE, 0, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 
 /* FIXME : These definitions below don't belong here (or anywhere in ddk really) */
-#pragma pack(push,4)
-
 #ifndef VER_PRODUCTBUILD
 #define VER_PRODUCTBUILD 10000
 #endif
@@ -1359,8 +1357,6 @@ typedef struct _QUERY_PATH_RESPONSE {
 #define SEC_BASED 0x00200000
 
 /* end winnt.h */
-
-#define TOKEN_HAS_ADMIN_GROUP           0x08
 
 #if (VER_PRODUCTBUILD >= 1381)
 #define FSCTL_GET_HFS_INFORMATION       CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 31, METHOD_BUFFERED, FILE_ANY_ACCESS)
@@ -1790,8 +1786,6 @@ RtlSetSaclSecurityDescriptor (
 #define SeEnableAccessToExports() SeExports = *(PSE_EXPORTS *)SeExports;
 
 #endif
-
-#pragma pack(pop)
 
 #ifdef __cplusplus
 }

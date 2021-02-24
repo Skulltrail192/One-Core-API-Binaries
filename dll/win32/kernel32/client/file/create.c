@@ -21,36 +21,6 @@
 DEBUG_CHANNEL(kernel32file);
 #endif
 
-#define SYMLINK_FLAG_RELATIVE   1
-
-typedef struct _REPARSE_DATA_BUFFER {
-    ULONG  ReparseTag;
-    USHORT ReparseDataLength;
-    USHORT Reserved;
-    union {
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT SubstituteNameLength;
-            USHORT PrintNameOffset;
-            USHORT PrintNameLength;
-            ULONG Flags;
-            WCHAR PathBuffer[1];
-        } SymbolicLinkReparseBuffer;
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT SubstituteNameLength;
-            USHORT PrintNameOffset;
-            USHORT PrintNameLength;
-            WCHAR PathBuffer[1];
-        } MountPointReparseBuffer;
-        struct {
-            UCHAR  DataBuffer[1];
-        } GenericReparseBuffer;
-    };
-} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
-
-#define REPARSE_DATA_BUFFER_HEADER_SIZE   FIELD_OFFSET(REPARSE_DATA_BUFFER, GenericReparseBuffer)
-
 /* FUNCTIONS ****************************************************************/
 
 /*
@@ -477,7 +447,7 @@ OpenFile(LPCSTR lpFileName,
 			default:
 				Sharing = FILE_SHARE_READ | FILE_SHARE_WRITE;
 		}
-		return (HFILE) CreateFileA (lpFileName,
+		return (HFILE)(ULONG_PTR) CreateFileA (lpFileName,
 		                            GENERIC_READ | GENERIC_WRITE,
 		                            Sharing,
 		                            NULL,
@@ -506,7 +476,7 @@ OpenFile(LPCSTR lpFileName,
 	if (Len == 0 || Len > OFS_MAXPATHNAME)
 	{
 		lpReOpenBuff->nErrCode = (WORD)GetLastError();
-		return (HFILE)INVALID_HANDLE_VALUE;
+		return HFILE_ERROR;
 	}
 
     if (uStyle & OF_DELETE)
@@ -537,7 +507,7 @@ OpenFile(LPCSTR lpFileName,
 					   NULL,
 					   NULL))
 	{
-		return (HFILE)INVALID_HANDLE_VALUE;
+		return HFILE_ERROR;
 	}
 
 	// FILE_SHARE_READ
@@ -564,7 +534,7 @@ OpenFile(LPCSTR lpFileName,
 	if (!NT_SUCCESS(errCode))
 	{
 		BaseSetLastNTError (errCode);
-		return (HFILE)INVALID_HANDLE_VALUE;
+		return HFILE_ERROR;
 	}
 
 	if (uStyle & OF_EXIST)
@@ -573,7 +543,7 @@ OpenFile(LPCSTR lpFileName,
 		return (HFILE)1;
 	}
 
-	return (HFILE)FileHandle;
+	return (HFILE)(ULONG_PTR)FileHandle;
 }
 
 /*

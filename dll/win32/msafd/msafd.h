@@ -28,6 +28,10 @@
 #include <tdi.h>
 #include <afd/shared.h>
 #include <mswsock.h>
+
+#include <wine/debug.h>
+WINE_DEFAULT_DEBUG_CHANNEL(msafd);
+
 #include "include/helpers.h"
 
 extern HANDLE GlobalHeap;
@@ -136,15 +140,16 @@ typedef struct _AFDAPCCONTEXT
     PSOCKET_INFORMATION lpSocket;
 } AFDAPCCONTEXT, *PAFDAPCCONTEXT;
 
+_Must_inspect_result_
 SOCKET
 WSPAPI
 WSPAccept(
-    IN      SOCKET s,
-    OUT     LPSOCKADDR addr,
-    IN OUT  LPINT addrlen,
-    IN      LPCONDITIONPROC lpfnCondition,
-    IN      DWORD dwCallbackData,
-    OUT     LPINT lpErrno);
+    _In_ SOCKET s,
+    _Out_writes_bytes_to_opt_(*addrlen, *addrlen) struct sockaddr FAR * addr,
+    _Inout_opt_ LPINT addrlen,
+    _In_opt_ LPCONDITIONPROC lpfnCondition,
+    _In_opt_ DWORD_PTR dwCallbackData,
+    _Out_ LPINT lpErrno);
 
 INT
 WSPAPI
@@ -421,6 +426,48 @@ WSPStringToAddress(
     IN OUT  LPINT lpAddressLength,
     OUT     LPINT lpErrno);
 
+BOOL
+WSPAPI
+WSPAcceptEx(
+    IN SOCKET sListenSocket,
+    IN SOCKET sAcceptSocket,
+    OUT PVOID lpOutputBuffer,
+    IN DWORD dwReceiveDataLength,
+    IN DWORD dwLocalAddressLength,
+    IN DWORD dwRemoteAddressLength,
+    OUT LPDWORD lpdwBytesReceived,
+    IN OUT LPOVERLAPPED lpOverlapped);
+
+BOOL
+WSPAPI
+WSPConnectEx(
+    IN SOCKET s,
+    IN const struct sockaddr *name,
+    IN int namelen,
+    IN PVOID lpSendBuffer,
+    IN DWORD dwSendDataLength,
+    OUT LPDWORD lpdwBytesSent,
+    IN OUT LPOVERLAPPED lpOverlapped);
+
+BOOL
+WSPAPI
+WSPDisconnectEx(
+    IN SOCKET hSocket,
+    IN LPOVERLAPPED lpOverlapped,
+    IN DWORD dwFlags,
+    IN DWORD reserved);
+
+VOID
+WSPAPI
+WSPGetAcceptExSockaddrs(
+    IN PVOID lpOutputBuffer,
+    IN DWORD dwReceiveDataLength,
+    IN DWORD dwLocalAddressLength,
+    IN DWORD dwRemoteAddressLength,
+    OUT struct sockaddr **LocalSockaddr,
+    OUT LPINT LocalSockaddrLength,
+    OUT struct sockaddr **RemoteSockaddr,
+    OUT LPINT RemoteSockaddrLength);
 
 PSOCKET_INFORMATION GetSocketStructure(
 	SOCKET Handle
@@ -454,7 +501,9 @@ int CreateContext(
 	PSOCKET_INFORMATION Socket
 );
 
-int SockAsyncThread(
+ULONG
+NTAPI
+SockAsyncThread(
 	PVOID ThreadParam
 );
 

@@ -1,10 +1,44 @@
+// This file is converted by code7bit.
+// code7bit: https://github.com/katahiromz/code7bit
+// To revert conversion, please execute "code7bit -r <file>".
 #pragma once
 
-MUI_LAYOUTS elGRLayouts[] =
+static MUI_ENTRY elGRSetupInitPageEntries[] =
 {
-    { L"0408", L"00000408" },
-    { L"0409", L"00000409" },
-    { NULL, NULL }
+    {
+        4,
+        3,
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
+    },
+    {
+        0,
+        20,
+        "Please wait while the ReactOS Setup initializes itself",
+        TEXT_STYLE_NORMAL | TEXT_ALIGN_CENTER,
+        TEXT_ID_STATIC
+    },
+    {
+        0,
+        21,
+        "and discovers your devices...",
+        TEXT_STYLE_NORMAL | TEXT_ALIGN_CENTER,
+        TEXT_ID_STATIC
+    },
+    {
+        0,
+        0,
+        "Please wait...",
+        TEXT_TYPE_STATUS | TEXT_PADDING_BIG,
+        TEXT_ID_STATIC
+    },
+    {
+        0,
+        0,
+        NULL,
+        0
+    }
 };
 
 static MUI_ENTRY elGRLanguagePageEntries[] =
@@ -12,38 +46,44 @@ static MUI_ENTRY elGRLanguagePageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "Ñß†¢¶ö„ ö¢È©©ò™.",
-        TEXT_STYLE_NORMAL
+        "\204\247\240\242\246\232\343 \232\242\351\251\251\230\252.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         7,
         10,
-        "\x07 èò®ò°ò¢È úß†¢‚•´ú ´û ö¢È©©ò ß¶¨ üò Æ®û©†£¶ß¶†ûüúÂ °ò´· ´û§ úö°ò´·©´ò©û.",
-        TEXT_STYLE_NORMAL
+        "\x07 \217\230\250\230\241\230\242\351 \234\247\240\242\342\245\253\234 \253\236 \232\242\351\251\251\230 \247\246\254 \237\230 \256\250\236\251\240\243\246\247\246\240\236\237\234\345 \241\230\253\341 \253\236\244 \234\232\241\230\253\341\251\253\230\251\236.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         7,
         11,
-        "  ãú´· ßò´„©´ú ENTER.",
-        TEXT_STYLE_NORMAL
+        "  \213\234\253\341 \247\230\253\343\251\253\234 ENTER.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         7,
         13,
-        "\x07  Ä¨´„ û ö¢È©©ò üò úÂ§ò† û ß®¶úß†¢úö£‚§û ö†ò ´¶ ´ú¢†°Ê ©Á©´û£ò.",
-        TEXT_STYLE_NORMAL
+        "\x07  \200\254\253\343 \236 \232\242\351\251\251\230 \237\230 \234\345\244\230\240 \236 \247\250\246\234\247\240\242\234\232\243\342\244\236 \232\240\230 \253\246 \253\234\242\240\241\346 \251\347\251\253\236\243\230.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò  F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230  F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -58,68 +98,79 @@ static MUI_ENTRY elGRWelcomePageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         5,
         8,
-        "âò¢È™ é®Â©ò´ú ©´û§ úö°ò´·©´ò©û ´¶¨ ReactOS",
-        TEXT_STYLE_HIGHLIGHT
+        "\211\230\242\351\252 \216\250\345\251\230\253\234 \251\253\236\244 \234\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS",
+        TEXT_STYLE_HIGHLIGHT,
+        TEXT_ID_STATIC
     },
     {
         5,
         11,
-        "Ä¨´Ê ´¶ £‚®¶™ ´û™ úö°ò´·©´ò©û™ ò§´†ö®·≠ú† ´¶ ¢ú†´¶¨®ö†°Ê ©Á©´û£ò ReactOS",
-        TEXT_STYLE_NORMAL
+        "\200\254\253\346 \253\246 \243\342\250\246\252 \253\236\252 \234\232\241\230\253\341\251\253\230\251\236\252 \230\244\253\240\232\250\341\255\234\240 \253\246 \242\234\240\253\246\254\250\232\240\241\346 \251\347\251\253\236\243\230 ReactOS",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         5,
         12,
-        "©´¶§ ¨ß¶¢¶ö†©´„ ©ò™ °ò† ß®¶ú´¶†£·ùú† ´¶ õúÁ´ú®¶ £‚®¶™ ´û™ úö°ò´·©´ò©û™.",
-        TEXT_STYLE_NORMAL
+        "\251\253\246\244 \254\247\246\242\246\232\240\251\253\343 \251\230\252 \241\230\240 \247\250\246\234\253\246\240\243\341\235\234\240 \253\246 \233\234\347\253\234\250\246 \243\342\250\246\252 \253\236\252 \234\232\241\230\253\341\251\253\230\251\236\252.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         7,
         15,
-        "\x07  èò´„©´ú ENTER ö†ò §ò úö°ò´ò©´„©ú´ú ´¶ ReactOS.",
-        TEXT_STYLE_NORMAL
+        "\x07  Press ENTER to install or upgrade ReactOS.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         7,
         17,
-        "\x07  èò´„©´ú R ö†ò §ò úß†õ†¶®üÈ©ú´ú ´¶ ReactOS.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 R \232\240\230 \244\230 \234\247\240\233\240\246\250\237\351\251\234\253\234 \253\246 ReactOS.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         7,
         19,
-        "\x07  èò´„©´ú L ö†ò §ò õúÂ´ú ´¶¨™ Ê®¶¨™ òõú†¶õÊ´û©û™ ´¶¨ ReactOS.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 L \232\240\230 \244\230 \233\234\345\253\234 \253\246\254\252 \346\250\246\254\252 \230\233\234\240\246\233\346\253\236\251\236\252 \253\246\254 ReactOS.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         7,
         21,
-        "\x07  èò´„©´ú F3 ö†ò §ò òß¶Æ‡®„©ú´ú Æ‡®Â™ §ò úö°ò´ò©´„©ú´ú ´¶ ReactOS.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 F3 \232\240\230 \244\230 \230\247\246\256\340\250\343\251\234\253\234 \256\340\250\345\252 \244\230 \234\232\241\230\253\230\251\253\343\251\234\253\234 \253\246 ReactOS.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         5,
         23,
-        "Ç†ò ßú®†©©Ê´ú®ú™ ß¢û®¶≠¶®Âú™ ö†ò ´¶ ReactOS, ßò®ò°ò¢¶Á£ú úß†©°ú≠üúÂ´ú ´¶:",
-        TEXT_STYLE_NORMAL
+        "\202\240\230 \247\234\250\240\251\251\346\253\234\250\234\252 \247\242\236\250\246\255\246\250\345\234\252 \232\240\230 \253\246 ReactOS, \247\230\250\230\241\230\242\246\347\243\234 \234\247\240\251\241\234\255\237\234\345\253\234 \253\246:",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         5,
         24,
-        "http://www.reactos.org",
-        TEXT_STYLE_HIGHLIGHT
+        "https://reactos.org/",
+        TEXT_STYLE_HIGHLIGHT,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò  R = Ñß†õ†Ê®ü‡©û F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230  R = \204\247\240\233\240\346\250\237\340\251\236 F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -134,56 +185,72 @@ static MUI_ENTRY elGRIntroPageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
-    },
-    {
-        6,
-        7,
-        "Ü úö°ò´·©´ò©û ´¶¨ ReactOS ô®Â©°ú´ò† ©ú ß®È†£¶ ©´·õ†¶ ò§·ß´¨•û™ °ò†",
-        TEXT_STYLE_NORMAL
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "õú§ ¨ß¶©´û®Âùú† ò°Ê£ò Ê¢ú™ ´†™ õ¨§ò´Ê´û´ú™ £†ò™ ß¢„®¶¨™ úö°ò´·©´ò©û™",
-        TEXT_STYLE_NORMAL
+        "ReactOS Version Status",
+        TEXT_STYLE_HIGHLIGHT,
+        TEXT_ID_STATIC
     },
     {
         6,
         11,
-        "à©ÆÁ¶¨§ ¶† ßò®ò°·´‡ ßú®†¶®†©£¶Â :",
-        TEXT_STYLE_NORMAL
+        "ReactOS is in Alpha stage, meaning it is not feature-complete",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
-        8,
+        6,
         12,
-        "- Ü úö°ò´·©´ò©û ¨ß¶©´û®Âùú† £Ê§¶ FAT ©¨©´„£ò´ò ò®ÆúÂ‡§.",
-        TEXT_STYLE_NORMAL
+        "and is under heavy development. It is recommended to use it only for",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
-        8,
+        6,
         13,
-        "- Éú§ ¨ß¶©´û®Âùú´ò† ò°Ê£ò ‚¢úöÆ¶™ ©≠ò¢£·´‡§ ©´ò ©¨´„£ò´ò ò®ÆúÂ‡§.",
-        TEXT_STYLE_NORMAL
+        "evaluation and testing purposes and not as your daily-usage OS.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        15,
+        "Backup your data or test on a secondary computer if you attempt",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        16,
+        "to run ReactOS on real hardware.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
-        23,
-        "\x07  èò´„©´ú ENTER ö†ò §ò úö°ò´ò©´„©ú´ú ´¶ ReactOS.",
-        TEXT_STYLE_NORMAL
+        19,
+        "\x07  Press ENTER to continue ReactOS Setup.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
-        25,
-        "\x07  èò´„©´ú F3 ö†ò §ò òß¶Æ‡®„©ú´ú Æ‡®Â™ §ò úö°ò´ò©´„©ú´ú ´¶ ReactOS.",
-        TEXT_STYLE_NORMAL
+        21,
+        "\x07  Press F3 to quit without installing ReactOS.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "ENTER = Continue   F3 = Quit",
+        TEXT_TYPE_STATUS | TEXT_PADDING_BIG,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -198,116 +265,135 @@ static MUI_ENTRY elGRLicensePageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         6,
-        "Äõú†¶õÊ´û©û:",
-        TEXT_STYLE_HIGHLIGHT
+        "\200\233\234\240\246\233\346\253\236\251\236:",
+        TEXT_STYLE_HIGHLIGHT,
+        TEXT_ID_STATIC
     },
     {
         8,
         8,
         "The ReactOS System is licensed under the terms of the",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         9,
         "GNU GPL with parts containing code from other compatible",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         10,
         "licenses such as the X11 or BSD and GNU LGPL licenses.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         11,
         "All software that is part of the ReactOS system is",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         12,
         "therefore released under the GNU GPL as well as maintaining",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         13,
         "the original license.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         15,
         "This software comes with NO WARRANTY or restrictions on usage",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         16,
         "save applicable local and international law. The licensing of",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         17,
         "ReactOS only covers distribution to third parties.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         18,
         "If for some reason you did not receive a copy of the",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         19,
         "GNU General Public License with ReactOS please visit",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         20,
         "http://www.gnu.org/licenses/licenses.html",
-        TEXT_STYLE_HIGHLIGHT
+        TEXT_STYLE_HIGHLIGHT,
+        TEXT_ID_STATIC
     },
     {
         8,
         22,
         "Warranty:",
-        TEXT_STYLE_HIGHLIGHT
+        TEXT_STYLE_HIGHLIGHT,
+        TEXT_ID_STATIC
     },
     {
         8,
         24,
         "This is free software; see the source for copying conditions.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         25,
         "There is NO warranty; not even for MERCHANTABILITY or",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         26,
         "FITNESS FOR A PARTICULAR PURPOSE",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = Ñß†©´®¶≠„",
-        TEXT_TYPE_STATUS
+        "   ENTER = \204\247\240\251\253\250\246\255\343",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -322,85 +408,99 @@ static MUI_ENTRY elGRDevicePageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "Ü ßò®ò°·´‡ ¢Â©´ò õúÂÆ§ú† ´†™ ®¨ü£Â©ú†™ ©¨©°ú¨È§.",
-        TEXT_STYLE_NORMAL
+        "\206 \247\230\250\230\241\341\253\340 \242\345\251\253\230 \233\234\345\256\244\234\240 \253\240\252 \250\254\237\243\345\251\234\240\252 \251\254\251\241\234\254\351\244.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         11,
-        "    ìß¶¢¶ö†©´„™:",
-        TEXT_STYLE_NORMAL
+        "    \223\247\246\242\246\232\240\251\253\343\252:",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         12,
-        "       Ñ£≠·§†©û:",
+        "       \204\243\255\341\244\240\251\236:",
         TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         13,
-        "   è¢û°´®¶¢Êö†¶:",
-        TEXT_STYLE_NORMAL
+        "   \217\242\236\241\253\250\246\242\346\232\240\246:",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         2,
         14,
-        "É†·´ò•û ß¢û°´®¶¢¶öÂ¶¨:",
-        TEXT_STYLE_NORMAL
+        "\203\240\341\253\230\245\236 \247\242\236\241\253\250\246\242\246\232\345\246\254:",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         16,
-        "        Äß¶õ¶Æ„:",
-        TEXT_STYLE_NORMAL
+        "        \200\247\246\233\246\256\343:",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         25,
-        16, "Äß¶õ¶Æ„ ò¨´È§ ´‡§ ®¨ü£Â©ú‡§",
-        TEXT_STYLE_NORMAL
+        16, "\200\247\246\233\246\256\343 \230\254\253\351\244 \253\340\244 \250\254\237\243\345\251\234\340\244",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         19,
-        "ãß¶®úÂ´ú §ò ò¢¢·•ú´ú ´†™ ®¨ü£Â©ú†™ ¨¢†°¶Á ßò´È§´ò™ ´ò ß¢„°´®ò èÄåó",
-        TEXT_STYLE_NORMAL
+        "\213\247\246\250\234\345\253\234 \244\230 \230\242\242\341\245\234\253\234 \253\240\252 \250\254\237\243\345\251\234\240\252 \254\242\240\241\246\347 \247\230\253\351\244\253\230\252 \253\230 \247\242\343\241\253\250\230 \217\200\214\227",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         20,
-        "„ âÄíó ö†ò §ò úß†¢‚•ú´ú £†ò ®Áü£†©û.  ",
-        TEXT_STYLE_NORMAL
+        "\343 \211\200\222\227 \232\240\230 \244\230 \234\247\240\242\342\245\234\253\234 \243\240\230 \250\347\237\243\240\251\236.  ",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         21,
-        "ãú´· ßò´„©´ú ´¶ ß¢„°´®¶ ENTER ö†ò §ò úß†¢‚•ú´ú ·¢¢ú™ ®¨ü£Â©ú†™.",
-        TEXT_STYLE_NORMAL
+        "\213\234\253\341 \247\230\253\343\251\253\234 \253\246 \247\242\343\241\253\250\246 ENTER \232\240\230 \244\230 \234\247\240\242\342\245\234\253\234 \341\242\242\234\252 \250\254\237\243\345\251\234\240\252.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         23,
-        "Ó´ò§ Ê¢ú™ ¶† ®¨ü£Â©ú†™ úÂ§ò† ©‡©´‚™, úß†¢‚•´ú ",
-        TEXT_STYLE_NORMAL
+        "\356\253\230\244 \346\242\234\252 \246\240 \250\254\237\243\345\251\234\240\252 \234\345\244\230\240 \251\340\251\253\342\252, \234\247\240\242\342\245\253\234 ",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         24,
-        "\"Äß¶õ¶Æ„ ò¨´È§ ´‡§ ®¨ü£Â©ú‡§ ©¨©°ú¨È§\" °ò† ßò´„©´ú ENTER.",
-        TEXT_STYLE_NORMAL
+        "\"\200\247\246\233\246\256\343 \230\254\253\351\244 \253\340\244 \250\254\237\243\345\251\234\340\244 \251\254\251\241\234\254\351\244\" \241\230\240 \247\230\253\343\251\253\234 ENTER.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230   F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -415,56 +515,145 @@ static MUI_ENTRY elGRRepairPageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "Ü úö°ò´·©´ò©û ´¶¨ ReactOS ô®Â©°ú´ò† ©ú ß®È†£¶ ©´·õ†¶ ò§·ß´¨•û™ °ò†",
-        TEXT_STYLE_NORMAL
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS \231\250\345\251\241\234\253\230\240 \251\234 \247\250\351\240\243\246 \251\253\341\233\240\246 \230\244\341\247\253\254\245\236\252 \241\230\240",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         9,
-        "õú§ ¨ß¶©´û®Âùú† ò°Ê£ò Ê¢ú™ ´†™ õ¨§ò´Ê´û´ú™ £†ò™ ß¢„®¶¨™ úö°ò´·©´ò©û™.",
-        TEXT_STYLE_NORMAL
+        "\233\234\244 \254\247\246\251\253\236\250\345\235\234\240 \230\241\346\243\230 \346\242\234\252 \253\240\252 \233\254\244\230\253\346\253\236\253\234\252 \243\240\230\252 \247\242\343\250\246\254\252 \234\232\241\230\253\341\251\253\230\251\236\252.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         12,
-        "é† ¢ú†´¶¨®öÂú™ úß†õ†Ê®ü‡©û™ õú§ ‚Æ¶¨§ ¨¢¶ß¶†ûüúÂ ò°Ê£ò.",
-        TEXT_STYLE_NORMAL
+        "\216\240 \242\234\240\253\246\254\250\232\345\234\252 \234\247\240\233\240\346\250\237\340\251\236\252 \233\234\244 \342\256\246\254\244 \254\242\246\247\246\240\236\237\234\345 \230\241\346\243\230.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         15,
-        "\x07  èò´„©´ú U ö†ò ò§ò§‚‡©û ´¶¨ ¢ú†´®¶¨®ö†°¶Á.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 U \232\240\230 \230\244\230\244\342\340\251\236 \253\246\254 \242\234\240\253\250\246\254\250\232\240\241\246\347.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         17,
-        "\x07  èò´„©´ú R ö†ò §ò ú°´ú¢‚©ú´ú ´û§ °¶§©Ê¢ò úß†õ†Ê®ü‡©û™.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 R \232\240\230 \244\230 \234\241\253\234\242\342\251\234\253\234 \253\236\244 \241\246\244\251\346\242\230 \234\247\240\233\240\346\250\237\340\251\236\252.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         19,
-        "\x07  èò´„©´ú ESC ö†ò §ò úß†©´®‚Øú´ú ©´û§ °Á®†ò ©ú¢Âõò.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 ESC \232\240\230 \244\230 \234\247\240\251\253\250\342\257\234\253\234 \251\253\236\244 \241\347\250\240\230 \251\234\242\345\233\230.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         21,
-        "\x07  èò´„©´ú ENTER ö†ò §ò úßò§ú°°†§„©ú´ú ´¶§ ¨ß¶¢¶ö†©´„.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 ENTER \232\240\230 \244\230 \234\247\230\244\234\241\241\240\244\343\251\234\253\234 \253\246\244 \254\247\246\242\246\232\240\251\253\343.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ESC = âÁ®†ò ©ú¢Âõò  ENTER = Ñßò§ú°°Â§û©û",
-        TEXT_TYPE_STATUS
+        "   ESC = \211\347\250\240\230 \251\234\242\345\233\230  ENTER = \204\247\230\244\234\241\241\345\244\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
+    },
+    {
+        0,
+        0,
+        NULL,
+        0
+    }
+};
+
+static MUI_ENTRY elGRUpgradePageEntries[] =
+{
+    {
+        4,
+        3,
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        8,
+        "The ReactOS Setup can upgrade one of the available ReactOS installations",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        9,
+        "listed below, or, if a ReactOS installation is damaged, the Setup program",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        10,
+        "can attempt to repair it.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        12,
+        "The repair functions are not all implemented yet.",
+        TEXT_STYLE_HIGHLIGHT,
+        TEXT_ID_STATIC
+    },
+    {
+        8,
+        15,
+        "\x07  Press UP or DOWN to select an OS installation.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        8,
+        17,
+        "\x07  Press U for upgrading the selected OS installation.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        8,
+        19,
+        "\x07  Press ESC to continue with a new installation.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        8,
+        21,
+        "\x07  Press F3 to quit without installing ReactOS.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        0,
+        0,
+        "U = Upgrade   ESC = Do not upgrade   F3 = Quit",
+        TEXT_TYPE_STATUS | TEXT_PADDING_BIG,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -479,50 +668,58 @@ static MUI_ENTRY elGRComputerPageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "á‚¢ú´ú §ò ò¢¢·•ú´ú ´¶§ ´Áß¶ ´¶¨ ¨ß¶¢¶ö†©´„ ß¶¨ üò úö°ò´ò©´òüúÂ.",
-        TEXT_STYLE_NORMAL
+        "\207\342\242\234\253\234 \244\230 \230\242\242\341\245\234\253\234 \253\246\244 \253\347\247\246 \253\246\254 \254\247\246\242\246\232\240\251\253\343 \247\246\254 \237\230 \234\232\241\230\253\230\251\253\230\237\234\345.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         10,
-        "\x07  èò´„©´ú ´ò ß¢„°´®ò èÄåó „ âÄíó ö†ò §ò úß†¢‚•ú´ú ´¶§ úß†ü¨£û´Ê",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 \253\230 \247\242\343\241\253\250\230 \217\200\214\227 \343 \211\200\222\227 \232\240\230 \244\230 \234\247\240\242\342\245\234\253\234 \253\246\244 \234\247\240\237\254\243\236\253\346",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         11,
-        "   ´Áß¶ ¨ß¶¢¶ö†©´„.",
-        TEXT_STYLE_NORMAL
+        "   \253\347\247\246 \254\247\246\242\246\232\240\251\253\343.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         12,
-        "   ãú´· ßò´„©´ú ENTER.",
-        TEXT_STYLE_NORMAL
+        "   \213\234\253\341 \247\230\253\343\251\253\234 ENTER.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         14,
-        "\x07  èò´„©´ú ´¶ ß¢„°´®¶ ESC ö†ò §ò úß†©´®‚Øú´ú ©´û§ ß®¶ûö¶Á£ú§û",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 \253\246 \247\242\343\241\253\250\246 ESC \232\240\230 \244\230 \234\247\240\251\253\250\342\257\234\253\234 \251\253\236\244 \247\250\246\236\232\246\347\243\234\244\236",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         15,
-        "   ©ú¢Âõò Æ‡®Â™ §ò ò¢¢·•ú´ú ´¶§ ´Áß¶ ¨ß¶¢¶ö†©´„.",
-        TEXT_STYLE_NORMAL
+        "   \251\234\242\345\233\230 \256\340\250\345\252 \244\230 \230\242\242\341\245\234\253\234 \253\246\244 \253\347\247\246 \254\247\246\242\246\232\240\251\253\343.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò   ESC = Ä°Á®‡©û   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230   ESC = \200\241\347\250\340\251\236   F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -537,32 +734,37 @@ static MUI_ENTRY elGRFlushPageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         10,
         6,
-        "í¶ ©Á©´û£ò úß†ôúôò†È§ú† ´È®ò Ê´† Ê¢ò ´ò õúõ¶£‚§ò ‚Æ¶¨§ òß¶üû°ú¨´úÂ",
-        TEXT_STYLE_NORMAL
+        "\222\246 \251\347\251\253\236\243\230 \234\247\240\231\234\231\230\240\351\244\234\240 \253\351\250\230 \346\253\240 \346\242\230 \253\230 \233\234\233\246\243\342\244\230 \342\256\246\254\244 \230\247\246\237\236\241\234\254\253\234\345",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         10,
         8,
-        "Ä¨´Ê Â©‡™ ß·®ú† ¢Âöû È®ò",
-        TEXT_STYLE_NORMAL
+        "\200\254\253\346 \345\251\340\252 \247\341\250\234\240 \242\345\232\236 \351\250\230",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         10,
         9,
-        "Ó´ò§ ¶¢¶°¢û®‡üúÂ, ¶ ¨ß¶¢¶ö†©´„™ ©ò™ üò úßò§ú°°†§ûüúÂ ò¨´Ê£ò´ò",
-        TEXT_STYLE_NORMAL
+        "\356\253\230\244 \246\242\246\241\242\236\250\340\237\234\345, \246 \254\247\246\242\246\232\240\251\253\343\252 \251\230\252 \237\230 \234\247\230\244\234\241\241\240\244\236\237\234\345 \230\254\253\346\243\230\253\230",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   Ñ°°òü·®†©û ß®¶©‡®†§È§ ò®ÆúÂ‡§...",
-        TEXT_TYPE_STATUS
+        "   \204\241\241\230\237\341\250\240\251\236 \247\250\246\251\340\250\240\244\351\244 \230\250\256\234\345\340\244...",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -577,38 +779,44 @@ static MUI_ENTRY elGRQuitPageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         10,
         6,
-        "í¶ ReactOS õú§ úö°ò´ò©´·üû°ú ß¢„®‡™",
-        TEXT_STYLE_NORMAL
+        "\222\246 ReactOS \233\234\244 \234\232\241\230\253\230\251\253\341\237\236\241\234 \247\242\343\250\340\252.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         10,
         8,
-        "Ä≠ò†®‚©´ú ´û õ†©°‚´ò òßÊ ´¶ A: °ò†",
-        TEXT_STYLE_NORMAL
+        "\200\255\230\240\250\342\251\253\234 \253\236 \233\240\251\241\342\253\230 \230\247\346 \253\246 A: \241\230\240",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         10,
         9,
-        "Ê¢ò ´ò CD-ROMs  òßÊ ´ò CD-Drives.",
-        TEXT_STYLE_NORMAL
+        "\346\242\230 \253\230 CD-ROMs  \230\247\346 \253\230 CD-Drives.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         10,
         11,
-        "èò´„©´ú ENTER ö†ò §ò úßò§ú°°†§„©ú´ú ´¶§ ¨ß¶¢¶ö†©´„.",
-        TEXT_STYLE_NORMAL
+        "\217\230\253\343\251\253\234 ENTER \232\240\230 \244\230 \234\247\230\244\234\241\241\240\244\343\251\234\253\234 \253\246\244 \254\247\246\242\246\232\240\251\253\343.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   èò®ò°ò¢È ßú®†£‚§ú´ú ...",
+        "   \217\230\250\230\241\230\242\351 \247\234\250\240\243\342\244\234\253\234...",
         TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -623,48 +831,58 @@ static MUI_ENTRY elGRDisplayPageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "á‚¢ú´ú §ò ò¢¢·•ú´ú ´¶§ ´Áß¶ ´û™ ú£≠·§†©û™ ß¶¨ üò úö°ò´ò©´òüúÂ.",
-        TEXT_STYLE_NORMAL
+        "\207\342\242\234\253\234 \244\230 \230\242\242\341\245\234\253\234 \253\246\244 \253\347\247\246 \253\236\252 \234\243\255\341\244\240\251\236\252 \247\246\254 \237\230 \234\232\241\230\253\230\251\253\230\237\234\345.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
-    {   8,
+    {
+        8,
         10,
-         "\x07  èò´„©´ú ´¶ ß¢„°´®¶ èÄåó „ âÄíó ö†ò §ò úß†¢‚•ú´ú ´¶§ úß†ü¨£û´Ê.",
-         TEXT_STYLE_NORMAL
+         "\x07  \217\230\253\343\251\253\234 \253\246 \247\242\343\241\253\250\246 \217\200\214\227 \343 \211\200\222\227 \232\240\230 \244\230 \234\247\240\242\342\245\234\253\234 \253\246\244 \234\247\240\237\254\243\236\253\346.",
+         TEXT_STYLE_NORMAL,
+         TEXT_ID_STATIC
     },
-    {   8,
+    {
+        8,
         11,
-         "  ´Áß¶ ú£≠·§†©û™.",
-         TEXT_STYLE_NORMAL
+         "  \253\347\247\246 \234\243\255\341\244\240\251\236\252.",
+         TEXT_STYLE_NORMAL,
+         TEXT_ID_STATIC
     },
     {
         8,
         12,
-        "   ãú´· ßò´„©´ú ENTER.",
-        TEXT_STYLE_NORMAL
+        "   \213\234\253\341 \247\230\253\343\251\253\234 ENTER.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         14,
-        "\x07  èò´„©´ú ´¶ ß¢„°´®¶ ESC ö†ò §ò úß†©´®‚Øú´ú ©´û§ ß®¶ûö¶Á£ú§û ",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 \253\246 \247\242\343\241\253\250\246 ESC \232\240\230 \244\230 \234\247\240\251\253\250\342\257\234\253\234 \251\253\236\244 \247\250\246\236\232\246\347\243\234\244\236 ",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         15,
-        "   ©ú¢Âõò Æ‡®Â™ §ò ò¢¢·•ú´ú ´¶§ ´Áß¶ ú£≠·§†©û™.",
-        TEXT_STYLE_NORMAL
+        "   \251\234\242\345\233\230 \256\340\250\345\252 \244\230 \230\242\242\341\245\234\253\234 \253\246\244 \253\347\247\246 \234\243\255\341\244\240\251\236\252.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò   ESC = Ä°Á®‡©û   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230   ESC = \200\241\347\250\340\251\236   F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -679,38 +897,44 @@ static MUI_ENTRY elGRSuccessPageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         10,
         6,
-        "íò ôò©†°· ©´¶†ÆúÂò ´¶¨ ReactOS úö°ò´ò©´·üû°ò§ úß†´¨ÆÈ™.",
-        TEXT_STYLE_NORMAL
+        "\222\230 \231\230\251\240\241\341 \251\253\246\240\256\234\345\230 \253\246\254 ReactOS \234\232\241\230\253\230\251\253\341\237\236\241\230\244 \234\247\240\253\254\256\351\252.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         10,
         8,
-        "Ä≠ò†®‚©´ú ´û õ†©°‚´ò òßÊ ´¶ A: °ò†",
-        TEXT_STYLE_NORMAL
+        "\200\255\230\240\250\342\251\253\234 \253\236 \233\240\251\241\342\253\230 \230\247\346 \253\246 A: \241\230\240",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         10,
         9,
-        "Ê¢ò ´ò CD-ROMs òßÊ ´¶ CD-Drive.",
-        TEXT_STYLE_NORMAL
+        "\346\242\230 \253\230 CD-ROMs \230\247\346 \253\246 CD-Drive.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         10,
         11,
-        "èò´„©´ú ENTER ö†ò §ò úßò§ú°°†§„©ú´ú ´¶§ ¨ß¶¢¶ö†©´„ ©ò™.",
-        TEXT_STYLE_NORMAL
+        "\217\230\253\343\251\253\234 ENTER \232\240\230 \244\230 \234\247\230\244\234\241\241\240\244\343\251\234\253\234 \253\246\244 \254\247\246\242\246\232\240\251\253\343 \251\230\252.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„",
-        TEXT_TYPE_STATUS
+        "   ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -725,38 +949,44 @@ static MUI_ENTRY elGRBootPageEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "Ü úö°ò´·©´ò©û õú £ß¶®úÂ §ò úö°ò´ò©´„©ú† ´¶§ bootloader",
-        TEXT_STYLE_NORMAL
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\234 \243\247\246\250\234\345 \244\230 \234\232\241\230\253\230\251\253\343\251\234\240 \253\246\244 bootloader",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         9,
-        "©´¶ ©°¢û®Ê õÂ©°¶ ´¶¨ ¨ß¶¢¶ö†©´„ ©ò™",
-        TEXT_STYLE_NORMAL
+        "\251\253\246 \251\241\242\236\250\346 \233\345\251\241\246 \253\246\254 \254\247\246\242\246\232\240\251\253\343 \251\230\252",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         13,
-        "èò®ò°ò¢È ú†©·öú´ú £†ò õ†ò£¶®≠‡£‚§û õ†©°‚´ò ©´¶ A: °ò†",
-        TEXT_STYLE_NORMAL
+        "\217\230\250\230\241\230\242\351 \234\240\251\341\232\234\253\234 \243\240\230 \233\240\230\243\246\250\255\340\243\342\244\236 \233\240\251\241\342\253\230 \251\253\246 A: \241\230\240",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         14,
-        "ßò´„©´ú ENTER.",
+        "\247\230\253\343\251\253\234 ENTER.",
         TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230   F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -772,63 +1002,195 @@ static MUI_ENTRY elGRSelectPartitionEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "Ü ßò®ò°ò´‡ ¢Â©´ò ú£≠ò§Âùú† ´ò ¨ß·®Æ¶§´ò õ†ò£ú®Â©£ò´ò °ò†",
-        TEXT_STYLE_NORMAL
+        "\206 \247\230\250\230\241\230\253\340 \242\345\251\253\230 \234\243\255\230\244\345\235\234\240 \253\230 \254\247\341\250\256\246\244\253\230 \233\240\230\243\234\250\345\251\243\230\253\230 \241\230\240",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         9,
-        "°ò† ´¶§ ú¢‚¨üú®¶ ÆÈ®¶ ö†ò §‚ò õ†ò£ú®Â©£ò´ò.",
-        TEXT_STYLE_NORMAL
+        "\241\230\240 \253\246\244 \234\242\342\254\237\234\250\246 \256\351\250\246 \232\240\230 \244\342\230 \233\240\230\243\234\250\345\251\243\230\253\230.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         11,
-        "\x07  èò´„©´ú èÄåó „ âÄíó ö†ò §ò úß†¢‚•ú´ú ‚§ò ©´¶†ÆúÂ¶ ´û™ ¢Â©´ò™.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 \217\200\214\227 \343 \211\200\222\227 \232\240\230 \244\230 \234\247\240\242\342\245\234\253\234 \342\244\230 \251\253\246\240\256\234\345\246 \253\236\252 \242\345\251\253\230\252.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         13,
-        "\x07  èò´„©´ú ENTER ö†ò §ò úö°ò´ò©´„©ú´ú ´¶ ReactOS ©´¶ úß†¢úö£‚§¶ õ†ò£‚®†©£ò.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 ENTER \232\240\230 \244\230 \234\232\241\230\253\230\251\253\343\251\234\253\234 \253\246 ReactOS \251\253\246 \234\247\240\242\234\232\243\342\244\246 \233\240\230\243\342\250\240\251\243\230.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         15,
         "\x07  Press P to create a primary partition.",
 //        "\x07  èò´„©´ú C ö†ò §ò õû£†¶¨®ö„©ú´ú ‚§ò §‚¶ õ†ò£‚®†©£ò.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         17,
         "\x07  Press E to create an extended partition.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         19,
         "\x07  Press L to create a logical partition.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         21,
-        "\x07  èò´„©´ú D ö†ò §ò õ†òö®·Øú´ú ‚§ò ¨ß·®Æ¶§ õ†ò£‚®†©£ò.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 D \232\240\230 \244\230 \233\240\230\232\250\341\257\234\253\234 \342\244\230 \254\247\341\250\256\246\244 \233\240\230\243\342\250\240\251\243\230.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   èò®ò°ò¢È ßú®†£‚§ú´ú...",
-        TEXT_TYPE_STATUS
+        "   \217\230\250\230\241\230\242\351 \247\234\250\240\243\342\244\234\253\234...",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
+    },
+    {
+        0,
+        0,
+        NULL,
+        0
+    }
+};
+
+static MUI_ENTRY elGRChangeSystemPartition[] =
+{
+    {
+        4,
+        3,
+        " ReactOS " KERNEL_VERSION_STR " Setup ",
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        8,
+        "The current system partition of your computer",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        12,
+        "on the system disk",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        16,
+        "uses a format not supported by ReactOS.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        18,
+        "In order to successfully install ReactOS, the Setup program must change",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        19,
+        "the current system partition to a new one.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        21,
+        "The new candidate system partition is:",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        8,
+        25,
+        "\x07  To accept this choice, press ENTER.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        8,
+        27,
+        "\x07  To manually change the system partition, press ESC to go back to",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        8,
+        28,
+        "   the partition selection list, then select or create a new system",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        8,
+        29,
+        "   partition on the system disk.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        32,
+        "In case there are other operating systems that depend on the original",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        33,
+        "system partition, you may need to either reconfigure them for the new",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        34,
+        "system partition, or you may need to change the system partition back",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        6,
+        35,
+        "to the original one after finishing the installation of ReactOS.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
+    },
+    {
+        0,
+        0,
+        "ENTER = Continue   ESC = Cancel",
+        TEXT_TYPE_STATUS | TEXT_PADDING_BIG,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -843,86 +1205,100 @@ static MUI_ENTRY elGRConfirmDeleteSystemPartitionEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
         "You have chosen to delete the system partition.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         10,
         "System partitions can contain diagnostic programs, hardware configuration",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         11,
         "programs, programs to start an operating system (like ReactOS) or other",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         12,
         "programs provided by the hardware manufacturer.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         14,
         "Delete a system partition only when you are sure that there are no such",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         15,
         "programs on the partition, or when you are sure you want to delete them.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         16,
         "When you delete the partition, you might not be able to boot the",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         17,
         "computer from the harddisk until you finished the ReactOS Setup.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         20,
         "\x07  Press ENTER to delete the system partition. You will be asked",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         21,
         "   to confirm the deletion of the partition again later.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         24,
         "\x07  Press ESC to return to the previous page. The partition will",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         25,
         "   not be deleted.",
-        TEXT_STYLE_NORMAL
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
         "ENTER=Continue  ESC=Cancel",
-        TEXT_TYPE_STATUS | TEXT_PADDING_BIG
+        TEXT_TYPE_STATUS | TEXT_PADDING_BIG,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -937,38 +1313,36 @@ static MUI_ENTRY elGRFormatPartitionEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "É†ò£Ê®≠‡©û õ†ò£ú®Â©£ò´¶™",
-        TEXT_STYLE_NORMAL
+        "\203\240\230\243\346\250\255\340\251\236 \233\240\230\243\234\250\345\251\243\230\253\246\252",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         10,
-        "Ü úö°ò´·©´ò©û ´È®ò üò õ†ò£¶®≠È©ú† ´¶ õ†ò£‚®†©£ò",
-        TEXT_STYLE_NORMAL
-    },
-    {
-        6,
-        11,
-        "èò´„©´ú ENTER ö†ò §ò ©¨§úÆÂ©ú´ú.",
-        TEXT_STYLE_NORMAL
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \253\351\250\230 \237\230 \233\240\230\243\246\250\255\351\251\234\240 \253\246 \233\240\230\243\342\250\240\251\243\230 \217\230\253\343\251\253\234 ENTER \232\240\230 \244\230 \251\254\244\234\256\345\251\234\253\234.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_FORMAT_PROMPT
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230   F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
         NULL,
-        TEXT_STYLE_NORMAL
+        0
     }
 };
 
@@ -977,44 +1351,51 @@ static MUI_ENTRY elGRInstallDirectoryEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "Ü úö°ò´·©´ò©û ò§´†ö®·≠ú† ´ò ò®ÆúÂò ´¶¨ ReactOS ©´¶ úß†¢úö£‚§¶ õ†ò£‚®†©£ò.",
-        TEXT_STYLE_NORMAL
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\244\253\240\232\250\341\255\234\240 \253\230 \230\250\256\234\345\230 \253\246\254 ReactOS \251\253\246 \234\247\240\242\234\232\243\342\244\246 \233\240\230\243\342\250\240\251\243\230.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         9,
-        "Ñß†¢‚•´ú ´¶§ ©´¶§ ≠·°ú¢¶ ß¶¨ ü‚¢ú´ú §ò úö°ò´ò©´òüúÂ ´¶ ReactOS:",
-        TEXT_STYLE_NORMAL
+        "\204\247\240\242\342\245\253\234 \253\246\244 \251\253\246\244 \255\341\241\234\242\246 \247\246\254 \237\342\242\234\253\234 \244\230 \234\232\241\230\253\230\251\253\230\237\234\345 \253\246 ReactOS:",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         14,
-        "Ç†ò §ò ò¢¢·•ú´ú ´¶§ ß®¶´ú†§Ê£ú§¶ ≠·°ú¢¶ ßò´„©´ú BACKSPACE ö†ò §ò",
-        TEXT_STYLE_NORMAL
+        "\202\240\230 \244\230 \230\242\242\341\245\234\253\234 \253\246\244 \247\250\246\253\234\240\244\346\243\234\244\246 \255\341\241\234\242\246 \247\230\253\343\251\253\234 BACKSPACE \232\240\230 \244\230",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         15,
-        "õ†òö®·Øú´ú Æò®ò°´„®ú™ °ò† £ú´· ß¢û°´®¶¢¶öúÂ©´ú ´¶§ ≠·°ú¢¶ ©´¶§ ¶ß¶Â¶",
-        TEXT_STYLE_NORMAL
+        "\233\240\230\232\250\341\257\234\253\234 \256\230\250\230\241\253\343\250\234\252 \241\230\240 \243\234\253\341 \247\242\236\241\253\250\246\242\246\232\234\345\251\253\234 \253\246\244 \255\341\241\234\242\246 \251\253\246\244 \246\247\246\345\246",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         6,
         16,
-        "ü‚¢ú´ú §ò úö°ò©´òüúÂ ´¶ ReactOS.",
-        TEXT_STYLE_NORMAL
+        "\237\342\242\234\253\234 \244\230 \234\232\241\230\251\253\230\237\234\345 \253\246 ReactOS.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230   F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -1029,32 +1410,37 @@ static MUI_ENTRY elGRFileCopyEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         0,
         12,
-        "èò®ò°ò¢È ßú®†£‚§ú´ú Ê©¶ û úö°ò´·©´ò©û ´¶¨ ReactOS ò§´†ö®·≠ú†",
-        TEXT_STYLE_NORMAL | TEXT_ALIGN_CENTER
+        "\217\230\250\230\241\230\242\351 \247\234\250\240\243\342\244\234\253\234 \346\251\246 \236 \234\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS \230\244\253\240\232\250\341\255\234\240",
+        TEXT_STYLE_NORMAL | TEXT_ALIGN_CENTER,
+        TEXT_ID_STATIC
     },
     {
         0,
         13,
-        "´ò ò®ÆúÂò ©´¶ ≠·°ú¢¶ úö°ò´·©´ò©û™",
-        TEXT_STYLE_NORMAL | TEXT_ALIGN_CENTER
+        "\253\230 \230\250\256\234\345\230 \251\253\246 \255\341\241\234\242\246 \234\232\241\230\253\341\251\253\230\251\236\252",
+        TEXT_STYLE_NORMAL | TEXT_ALIGN_CENTER,
+        TEXT_ID_STATIC
     },
     {
         0,
         14,
-        "Ä¨´„ û õ†òõ†°ò©Âò £ß¶®úÂ §ò °®ò´„©ú† ò®°ú´· ¢úß´·.",
-        TEXT_STYLE_NORMAL | TEXT_ALIGN_CENTER
+        "\200\254\253\343 \236 \233\240\230\233\240\241\230\251\345\230 \243\247\246\250\234\345 \244\230 \241\250\230\253\343\251\234\240 \230\250\241\234\253\341 \242\234\247\253\341.",
+        TEXT_STYLE_NORMAL | TEXT_ALIGN_CENTER,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "                                                           \xB3 èò®ò°ò¢È ßú®†£‚§ú´ú...    ",
-        TEXT_TYPE_STATUS
+        "                                                           \xB3 \217\230\250\230\241\230\242\351 \247\234\250\240\243\342\244\234\253\234...    ",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -1069,44 +1455,51 @@ static MUI_ENTRY elGRBootLoaderEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "Ü úö°ò´·©´ò©û ö®·≠ú† ´¶§ boot loader",
-        TEXT_STYLE_NORMAL
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \232\250\341\255\234\240 \253\246\244 boot loader",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         12,
-        "Ñö°ò´·©´ò©û ´¶¨ bootloader ©´¶ ©°¢û®Ê õÂ©°¶ (MBR and VBR).",
-        TEXT_STYLE_NORMAL
+        "\204\232\241\230\253\341\251\253\230\251\236 \253\246\254 bootloader \251\253\246 \251\241\242\236\250\346 \233\345\251\241\246 (MBR and VBR).",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         13,
-        "Ñö°ò´·©´ò©û ´¶¨ bootloader ©´¶ ©°¢û®Ê õÂ©°¶ (VBR only).",
-        TEXT_STYLE_NORMAL
+        "\204\232\241\230\253\341\251\253\230\251\236 \253\246\254 bootloader \251\253\246 \251\241\242\236\250\346 \233\345\251\241\246 (VBR only).",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         14,
-        "Ñö°ò´·©´ò©û ´¶¨ bootloader ©ú £†ò õ†©°‚´ò.",
-        TEXT_STYLE_NORMAL
+        "\204\232\241\230\253\341\251\253\230\251\236 \253\246\254 bootloader \251\234 \243\240\230 \233\240\251\241\342\253\230.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         15,
-        "åò £û öÂ§ú† úö°ò´·©´ò©û ´¶¨ bootloader.",
-        TEXT_STYLE_NORMAL
+        "\214\230 \243\236 \232\345\244\234\240 \234\232\241\230\253\341\251\253\230\251\236 \253\246\254 bootloader.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230   F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -1121,50 +1514,58 @@ static MUI_ENTRY elGRKeyboardSettingsEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "á‚¢ú´ú §ò ò¢¢·•ú´ú ´¶§ ´Áß¶ ´¶¨ ß¢û°´®¶¢¶öÂ¶¨ ß¶¨ üò úö°ò´ò©´òüúÂ.",
-        TEXT_STYLE_NORMAL
+        "\207\342\242\234\253\234 \244\230 \230\242\242\341\245\234\253\234 \253\246\244 \253\347\247\246 \253\246\254 \247\242\236\241\253\250\246\242\246\232\345\246\254 \247\246\254 \237\230 \234\232\241\230\253\230\251\253\230\237\234\345.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         10,
-        "\x07  èò´„©´ú ´ò ß¢„°´®ò èÄåó „ âÄíó ö†ò §ò úß†¢‚•ú´ú ´¶§ úß†ü¨£û´Ê",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 \253\230 \247\242\343\241\253\250\230 \217\200\214\227 \343 \211\200\222\227 \232\240\230 \244\230 \234\247\240\242\342\245\234\253\234 \253\246\244 \234\247\240\237\254\243\236\253\346",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         11,
-        "   ´Áß¶ ß¢û°´®¶¢¶öÂ¶¨.",
-        TEXT_STYLE_NORMAL
+        "   \253\347\247\246 \247\242\236\241\253\250\246\242\246\232\345\246\254.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         12,
-        "   ãú´· ßò´„©´ú ENTER.",
-        TEXT_STYLE_NORMAL
+        "   \213\234\253\341 \247\230\253\343\251\253\234 ENTER.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         14,
-        "\x07  èò´„©´ú ´¶ ß¢„°´®¶ ESC ö†ò §ò úß†©´®‚Øú´ú ©´û§ ß®¶ûö¶Á£ú§û",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 \253\246 \247\242\343\241\253\250\246 ESC \232\240\230 \244\230 \234\247\240\251\253\250\342\257\234\253\234 \251\253\236\244 \247\250\246\236\232\246\347\243\234\244\236",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         15,
-        "   ©ú¢Âõò Æ‡®Â™ §ò ò¢¢·•ú´ú ´¶§ ´Áß¶ ´¶¨ ß¢û°´®¶¢¶öÂ¶¨.",
-        TEXT_STYLE_NORMAL
+        "   \251\234\242\345\233\230 \256\340\250\345\252 \244\230 \230\242\242\341\245\234\253\234 \253\246\244 \253\347\247\246 \253\246\254 \247\242\236\241\253\250\246\242\246\232\345\246\254.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò   ESC = Ä°Á®‡©û   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230   ESC = \200\241\347\250\340\251\236   F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -1179,44 +1580,51 @@ static MUI_ENTRY elGRLayoutSettingsEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "èò®ò°ò¢È úß†¢‚•´ú £†ò õ†·´ò•û ö†ò §ò úö°ò´ò©´òüúÂ ‡™ ß®¶úß†¢úö£‚§û.",
-        TEXT_STYLE_NORMAL
+        "\217\230\250\230\241\230\242\351 \234\247\240\242\342\245\253\234 \243\240\230 \233\240\341\253\230\245\236 \232\240\230 \244\230 \234\232\241\230\253\230\251\253\230\237\234\345 \340\252 \247\250\246\234\247\240\242\234\232\243\342\244\236.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         10,
-        "\x07  èò´„©´ú ´ò ß¢„°´®ò èÄåó „ âÄíó ö†ò §ò úß†¢‚•ú´ú ´û§ úß†ü¨û£û´„",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 \253\230 \247\242\343\241\253\250\230 \217\200\214\227 \343 \211\200\222\227 \232\240\230 \244\230 \234\247\240\242\342\245\234\253\234 \253\236\244 \234\247\240\237\254\236\243\236\253\343",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         11,
-        "   õ†·´ò•û ß¢û°´®¶¢¶öÂ¶¨. ãú´· ßò´„©´ú ENTER.",
-        TEXT_STYLE_NORMAL
+        "   \233\240\341\253\230\245\236 \247\242\236\241\253\250\246\242\246\232\345\246\254. \213\234\253\341 \247\230\253\343\251\253\234 ENTER.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         13,
-        "\x07  èò´„©´ú ´¶ ß¢„°´®¶ ESC ö†ò §ò úß†©´®‚Øú´ú ©´û§ ß®¶ûö¶Á£ú§û",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 \253\246 \247\242\343\241\253\250\246 ESC \232\240\230 \244\230 \234\247\240\251\253\250\342\257\234\253\234 \251\253\236\244 \247\250\246\236\232\246\347\243\234\244\236",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         14,
-        "   ©ú¢Âõò Æ‡®Â™ §ò ò¢¢·•ú´ú ´û§ õ†·´ò•û ´¶¨ ß¢û°´®¶¢¶öÂ¶¨.",
-        TEXT_STYLE_NORMAL
+        "   \251\234\242\345\233\230 \256\340\250\345\252 \244\230 \230\242\242\341\245\234\253\234 \253\236\244 \233\240\341\253\230\245\236 \253\246\254 \247\242\236\241\253\250\246\242\246\232\345\246\254.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò   ESC = Ä°Á®‡©û   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230   ESC = \200\241\347\250\340\251\236   F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -1232,20 +1640,23 @@ static MUI_ENTRY elGRPrepareCopyEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "Ü úö°ò´·©´ò©û ß®¶ú´¶†£·ùú† ´¶§ ¨ß¶¢¶ö†©´„ ©ò™ ö†ò ´û§ ò§´†ö®ò≠„ ´‡§ ò®ÆúÂ‡§ ´¶¨ ReactOS. ",
-        TEXT_STYLE_NORMAL
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \247\250\246\234\253\246\240\243\341\235\234\240 \253\246\244 \254\247\246\242\246\232\240\251\253\343 \251\230\252 \232\240\230 \253\236\244 \230\244\253\240\232\250\230\255\343 \253\340\244 \230\250\256\234\345\340\244 \253\246\254 ReactOS.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   ï´Âùú´ò† û ¢Â©´ò ´‡§ ò®ÆúÂ‡§ ß®¶™ ò§´†ö®ò≠„...",
-        TEXT_TYPE_STATUS
+        "   \225\253\345\235\234\253\230\240 \236 \242\345\251\253\230 \253\340\244 \230\250\256\234\345\340\244 \247\250\246\252 \230\244\253\240\232\250\230\255\343...",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -1261,40 +1672,41 @@ static MUI_ENTRY elGRSelectFSEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         17,
-        "Ñß†¢‚•´ú ‚§ò ©Á©´û£ò ò®ÆúÂ‡§ òßÊ ´û§ ßò®ò°·´‡ ¢Â©´ò.",
+        "\204\247\240\242\342\245\253\234 \342\244\230 \251\347\251\253\236\243\230 \230\250\256\234\345\340\244 \230\247\346 \253\236\244 \247\230\250\230\241\341\253\340 \242\345\251\253\230.",
         0
     },
     {
         8,
         19,
-        "\x07  èò´„©´ú ´ò ß¢„°´®ò èÄåó „ âÄíó ö†ò §ò úß†¢‚•ú´ú ´¶ ©Á©´û£ò ò®ÆúÂ‡§.",
+        "\x07  \217\230\253\343\251\253\234 \253\230 \247\242\343\241\253\250\230 \217\200\214\227 \343 \211\200\222\227 \232\240\230 \244\230 \234\247\240\242\342\245\234\253\234 \253\246 \251\347\251\253\236\243\230 \230\250\256\234\345\340\244.",
         0
     },
     {
         8,
         21,
-        "\x07  èò´„©´ú ENTER ö†ò §ò õ†ò£¶®≠È©ú´ú ´¶ parition.",
+        "\x07  \217\230\253\343\251\253\234 ENTER \232\240\230 \244\230 \233\240\230\243\246\250\255\351\251\234\253\234 \253\246 parition.",
         0
     },
     {
         8,
         23,
-        "\x07  èò´„©´ú ESC ö†ò §ò úß†¢‚•ú´ú ·¢¢¶ partition.",
+        "\x07  \217\230\253\343\251\253\234 ESC \232\240\230 \244\230 \234\247\240\242\342\245\234\253\234 \341\242\242\246 partition.",
         0
     },
     {
         0,
         0,
-        "   ENTER = ë¨§‚Æú†ò   ESC = Ä°Á®‡©û   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   ENTER = \221\254\244\342\256\234\240\230   ESC = \200\241\347\250\340\251\236   F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
-
     {
         0,
         0,
@@ -1308,38 +1720,44 @@ static MUI_ENTRY elGRDeletePartitionEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "Ñß†¢‚•ò´ú §ò õ†òö®·Øú´ú ò¨´Ê ´¶ partition",
-        TEXT_STYLE_NORMAL
+        "\204\247\240\242\342\245\230\253\234 \244\230 \233\240\230\232\250\341\257\234\253\234 \230\254\253\346 \253\246 partition",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         18,
-        "\x07  èò´„©´ú D ö†ò §ò õ†òö®·Øú´ú ´¶ partition.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 L \232\240\230 \244\230 \233\240\230\232\250\341\257\234\253\234 \253\246 partition.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         11,
         19,
-        "èêéÑàÉéèéàÜëÜ: Ó¢ò ´ò õúõ¶£‚§ò ©ú ò¨´Ê ´¶ partition üò Æòü¶Á§!",
-        TEXT_STYLE_NORMAL
+        "\217\220\216\204\210\203\216\217\216\210\206\221\206: \356\242\230 \253\230 \233\234\233\246\243\342\244\230 \251\234 \230\254\253\346 \253\246 partition \237\230 \256\230\237\246\347\244!",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         8,
         21,
-        "\x07  èò´„©´ú ESC ö†ò ò°Á®‡©û.",
-        TEXT_STYLE_NORMAL
+        "\x07  \217\230\253\343\251\253\234 ESC \232\240\230 \230\241\347\250\340\251\236.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   D = É†òö®ò≠„ Partition   ESC = Ä°Á®‡©û   F3 = Äß¶ÆÈ®û©û",
-        TEXT_TYPE_STATUS
+        "   L = \203\240\230\232\250\230\255\343 Partition   ESC = \200\241\347\250\340\251\236   F3 = \200\247\246\256\351\250\236\251\236",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -1354,20 +1772,23 @@ static MUI_ENTRY elGRRegistryEntries[] =
     {
         4,
         3,
-        " Ñö°ò´·©´ò©û ´¶¨ ReactOS " KERNEL_VERSION_STR,
-        TEXT_STYLE_UNDERLINE
+        " \204\232\241\230\253\341\251\253\230\251\236 \253\246\254 ReactOS " KERNEL_VERSION_STR,
+        TEXT_STYLE_UNDERLINE,
+        TEXT_ID_STATIC
     },
     {
         6,
         8,
-        "Ü úö°ò´·©´ò©û ò§ò§úÈ§ú† ´û õ¶£„ ´¶¨ ©¨©´„£ò´¶™. ",
-        TEXT_STYLE_NORMAL
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\244\230\244\234\351\244\234\240 \253\236 \233\246\243\343 \253\246\254 \251\254\251\253\343\243\230\253\246\252.",
+        TEXT_STYLE_NORMAL,
+        TEXT_ID_STATIC
     },
     {
         0,
         0,
-        "   Éû£†¶¨®ö¶Á§´ò† ´ò registry hives...",
-        TEXT_TYPE_STATUS
+        "   \203\236\243\240\246\254\250\232\246\347\244\253\230\240 \253\230 registry hives...",
+        TEXT_TYPE_STATUS,
+        TEXT_ID_STATIC
     },
     {
         0,
@@ -1385,230 +1806,239 @@ MUI_ERROR elGRErrorEntries[] =
         "Success\n"
     },
     {
-        //ERROR_NOT_INSTALLED
-        "í¶ ReactOS õú§ úö°ò´ò©´·üû°ú ß¢„®‡™ ©´¶§\n"
-        "¨ß¶¢¶ö†©´„ ©ò™. Ä§ òß¶Æ‡®„©ú´ú òßÊ ´û§ Ñö°ò´·©´ò©û ´È®ò, üò ß®‚ßú† §ò\n"
-        "•ò§ò´®‚•ú´ú ´û§ Ñö°ò´·©´ò©û ö†ò §ò úö°ò´ò©´„©ú´ ´¶ ReactOS.\n"
+        // ERROR_NOT_INSTALLED
+        "\222\246 ReactOS \233\234\244 \234\232\241\230\253\230\251\253\341\237\236\241\234 \247\242\343\250\340\252 \251\253\246\244\n"
+        "\254\247\246\242\246\232\240\251\253\343 \251\230\252. \200\244 \230\247\246\256\340\250\343\251\234\253\234 \230\247\346 \253\236\244 \204\232\241\230\253\341\251\253\230\251\236 \253\351\250\230, \237\230 \247\250\342\247\234\240 \244\230\n"
+        "\245\230\244\230\253\250\342\245\234\253\234 \253\236\244 \204\232\241\230\253\341\251\253\230\251\236 \232\240\230 \244\230 \234\232\241\230\253\230\251\253\343\251\234\253 \253\246 ReactOS.\n"
         "\n"
-        "  \x07  èò´„©´ú ENTER ö†ò ò§ ©¨§úÆÂ©ú´ú ´û§ Ñö°ò´·©´ò©û.\n"
-        "  \x07  èò´„©´ú F3 ö†ò §ò òß¶Æ‡®„©ú´ú òßÊ ´û§ Ñö°ò´·©´ò©û.",
-        "F3 = Äß¶ÆÈ®û©û  ENTER = ë¨§‚Æú†ò"
+        "  \x07  \217\230\253\343\251\253\234 ENTER \232\240\230 \230\244 \251\254\244\234\256\345\251\234\253\234 \253\236\244 \204\232\241\230\253\341\251\253\230\251\236.\n"
+        "  \x07  \217\230\253\343\251\253\234 F3 \232\240\230 \244\230 \230\247\246\256\340\250\343\251\234\253\234 \230\247\346 \253\236\244 \204\232\241\230\253\341\251\253\230\251\236.",
+        "F3 = \200\247\246\256\351\250\236\251\236  ENTER = \221\254\244\342\256\234\240\230"
     },
     {
-        //ERROR_NO_HDD
-        "Ü úö°ò´·©´ò©û õú £ßÊ®ú©ú §ò ô®ú† °·ß¶†¶§ ©°¢û®Ê õÂ©°¶.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_NO_BUILD_PATH
+        "Failed to build the installation paths for the ReactOS installation directory!\n"
+        "ENTER = Reboot computer"
     },
     {
-        //ERROR_NO_SOURCE_DRIVE
+        // ERROR_SOURCE_PATH
+        "You cannot delete the partition containing the installation source!\n"
+        "ENTER = Reboot computer"
+    },
+    {
+        // ERROR_SOURCE_DIR
+        "You cannot install ReactOS within the installation source directory!\n"
+        "ENTER = Reboot computer"
+    },
+    {
+        // ERROR_NO_HDD
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\234 \243\247\346\250\234\251\234 \244\230 \231\250\234\240 \241\341\247\246\240\246\244 \251\241\242\236\250\346 \233\345\251\241\246.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
+    },
+    {
+        // ERROR_NO_SOURCE_DRIVE
         "Setup could not find its source drive.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_LOAD_TXTSETUPSIF
-        "Ü úö°ò´·©´ò©û õú £ßÊ®ú©ú §ò ≠¶®´È©ú† ´¶ ò®ÆúÂ¶ TXTSETUP.SIF.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_LOAD_TXTSETUPSIF
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\234 \243\247\346\250\234\251\234 \244\230 \255\246\250\253\351\251\234\240 \253\246 \230\250\256\234\345\246 TXTSETUP.SIF.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_CORRUPT_TXTSETUPSIF
-        "Ü úö°ò´·©´©û ô®„°ú ‚§ò °ò´ú©´®ò£‚§¶ ò®ÆúÂ¶ TXTSETUP.SIF.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_CORRUPT_TXTSETUPSIF
+        "\206 \234\232\241\230\253\341\251\253\251\236 \231\250\343\241\234 \342\244\230 \241\230\253\234\251\253\250\230\243\342\244\246 \230\250\256\234\345\246 TXTSETUP.SIF.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_SIGNATURE_TXTSETUPSIF,
-        "Ü Ñö°ò´·©´ò©û ô®„°ú £†ò £û ‚ö°¨®û ¨ß¶ö®ò≠„ ©´¶ TXTSETUP.SIF.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_SIGNATURE_TXTSETUPSIF,
+        "\206 \204\232\241\230\253\341\251\253\230\251\236 \231\250\343\241\234 \243\240\230 \243\236 \342\232\241\254\250\236 \254\247\246\232\250\230\255\343 \251\253\246 TXTSETUP.SIF.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_DRIVE_INFORMATION
-        "Ü úö°ò´·©´ò©û õú £ßÊ®ú©ú §ò ≠¶®´È©ú† ´†™ ß¢û®¶≠¶®Âú™ ´¶¨ õÂ©°¶¨ ©¨©´„£ò´¶™.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_DRIVE_INFORMATION
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\234 \243\247\346\250\234\251\234 \244\230 \255\246\250\253\351\251\234\240 \253\240\252 \247\242\236\250\246\255\246\250\345\234\252 \253\246\254 \233\345\251\241\246\254 \251\254\251\253\343\243\230\253\246\252.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_WRITE_BOOT,
-        "Setup failed to install FAT bootcode on the system partition.",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_WRITE_BOOT,
+        "Setup failed to install %S bootcode on the system partition.",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_LOAD_COMPUTER,
-        "Ü úö°ò´·©´ò©û õú £ßÊ®ú©ú §ò ≠¶®´È©ú† ´û ¢Â©´ò ´Áß‡§ ¨ß¶¢¶ö†©´„.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_LOAD_COMPUTER,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\234 \243\247\346\250\234\251\234 \244\230 \255\246\250\253\351\251\234\240 \253\236 \242\345\251\253\230 \253\347\247\340\244 \254\247\246\242\246\232\240\251\253\343.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_LOAD_DISPLAY,
-        "Ü úö°ò´·©´ò©û õú £ßÊ®ú©ú §ò ≠¶®´È©ú† ´û ¢Â©´ò ´Áß‡§ ú£≠·§†©û™.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_LOAD_DISPLAY,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\234 \243\247\346\250\234\251\234 \244\230 \255\246\250\253\351\251\234\240 \253\236 \242\345\251\253\230 \253\347\247\340\244 \234\243\255\341\244\240\251\236\252.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_LOAD_KEYBOARD,
-        "Ü úö°ò´·©´ò©û õú £ßÊ®ú©ú §ò ≠¶®´È©ú† ´û ¢Â©´ò ´Áß‡§ ß¢û°´®¶¢¶öÂ¶¨.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_LOAD_KEYBOARD,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\234 \243\247\346\250\234\251\234 \244\230 \255\246\250\253\351\251\234\240 \253\236 \242\345\251\253\230 \253\347\247\340\244 \247\242\236\241\253\250\246\242\246\232\345\246\254.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_LOAD_KBLAYOUT,
-        "Ü úö°ò´·©´ò©û õú £ßÊ®ú©ú §ò ≠¶®´È©ú† ´û ¢Â©´ò õ†ò´·•ú‡§ ß¢û°´®¶¢¶öÂ¶¨.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_LOAD_KBLAYOUT,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\234 \243\247\346\250\234\251\234 \244\230 \255\246\250\253\351\251\234\240 \253\236 \242\345\251\253\230 \233\240\230\253\341\245\234\340\244 \247\242\236\241\253\250\246\242\246\232\345\246\254.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_WARN_PARTITION,
-          "Ü úö°ò´·©´ò©û ô®„°ú Ê´† ´¶¨¢·Æ†©´¶§ ‚§ò™ ©°¢û®Ê™ õÂ©°¶™ ßú®†‚Æú† ‚§ò £û ©¨£ôò´Ê\n"
-          "partition table ß¶¨ õú £ß¶®úÂ §ò ú¢úöÆüúÂ ©‡©´·!\n"
+        // ERROR_WARN_PARTITION,
+          "\206 \234\232\241\230\253\341\251\253\230\251\236 \231\250\343\241\234 \346\253\240 \253\246\254\242\341\256\240\251\253\246\244 \342\244\230\252 \251\241\242\236\250\346\252 \233\345\251\241\246\252 \247\234\250\240\342\256\234\240 \342\244\230 \243\236 \251\254\243\231\230\253\346\n"
+          "partition table \247\246\254 \233\234 \243\247\246\250\234\345 \244\230 \234\242\234\232\256\237\234\345 \251\340\251\253\341!\n"
           "\n"
-          "Ü õû£†¶¨®öÂò „ õ†òö®ò≠„ partitions £ß¶®úÂ §ò °ò´ò©´®‚Øú† ´¶ partition table.\n"
+          "\206 \233\236\243\240\246\254\250\232\345\230 \343 \233\240\230\232\250\230\255\343 partitions \243\247\246\250\234\345 \244\230 \241\230\253\230\251\253\250\342\257\234\240 \253\246 partition table.\n"
           "\n"
-          "  \x07  èò´„©´ú F3 ö†ò §ò òß¶Æ‡®„©ú´ú òßÊ ´û§ Ñö°ò´·©´ò©û.\n"
-          "  \x07  èò´„©´ú ENTER ö†ò §ò ©¨§úÆÂ©ú´ú.",
-          "F3 = Äß¶ÆÈ®û©û  ENTER = ë¨§‚Æú†ò"
+          "  \x07  \217\230\253\343\251\253\234 F3 \232\240\230 \244\230 \230\247\246\256\340\250\343\251\234\253\234 \230\247\346 \253\236\244 \204\232\241\230\253\341\251\253\230\251\236.\n"
+          "  \x07  \217\230\253\343\251\253\234 ENTER \232\240\230 \244\230 \251\254\244\234\256\345\251\234\253\234.",
+          "F3 = \200\247\246\256\351\250\236\251\236  ENTER = \221\254\244\342\256\234\240\230"
     },
     {
-        //ERROR_NEW_PARTITION,
-        "Éú £ß¶®úÂ´ú §ò õû£†¶¨®ö„©ú´ú ‚§ò Partition £‚©ò ©ú\n"
-        "‚§ò ·¢¢¶ ¨ß·®Æ¶§ Partition!\n"
+        // ERROR_NEW_PARTITION,
+        "\203\234 \243\247\246\250\234\345\253\234 \244\230 \233\236\243\240\246\254\250\232\343\251\234\253\234 \342\244\230 Partition \243\342\251\230 \251\234\n"
+        "\342\244\230 \341\242\242\246 \254\247\341\250\256\246\244 Partition!\n"
         "\n"
-        "  * èò´„©´ú ¶ß¶†¶õ„ß¶´ú ß¢„°´®¶ ö†ò §ò ©¨§úÆÂ©ú´ú.",
+        "  * \217\230\253\343\251\253\234 \246\247\246\240\246\233\343\247\246\253\234 \247\242\343\241\253\250\246 \232\240\230 \244\230 \251\254\244\234\256\345\251\234\253\234.",
         NULL
     },
     {
-        //ERROR_DELETE_SPACE,
-        "Éú £ß¶®úÂ´ú §ò õ†òö®·Øú´ú ‚§ò§ £û õ†ò£¶®≠‡£‚§¶ ÆÈ®¶ õÂ©°¶¨!\n"
+        // ERROR_DELETE_SPACE,
+        "\203\234 \243\247\246\250\234\345\253\234 \244\230 \233\240\230\232\250\341\257\234\253\234 \342\244\230\244 \243\236 \233\240\230\243\246\250\255\340\243\342\244\246 \256\351\250\246 \233\345\251\241\246\254!\n"
         "\n"
-        "  * èò´„©´ú ¶ß¶†¶õ„ß¶´ú ß¢„°´®¶ ö†ò §ò ©¨§úÆÂ©ú´ú.",
+        "  * \217\230\253\343\251\253\234 \246\247\246\240\246\233\343\247\246\253\234 \247\242\343\241\253\250\246 \232\240\230 \244\230 \251\254\244\234\256\345\251\234\253\234.",
         NULL
     },
     {
-        //ERROR_INSTALL_BOOTCODE,
-        "Setup failed to install the FAT bootcode on the system partition.",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_INSTALL_BOOTCODE,
+        "Setup failed to install the %S bootcode on the system partition.",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_NO_FLOPPY,
-        "Éú§ ¨ß·®Æú† õ†©°‚´ò ©´¶ A:.",
-        "ENTER = ë¨§‚Æú†ò"
+        // ERROR_NO_FLOPPY,
+        "\203\234\244 \254\247\341\250\256\234\240 \233\240\251\241\342\253\230 \251\253\246 A:.",
+        "ENTER = \221\254\244\342\256\234\240\230"
     },
     {
-        //ERROR_UPDATE_KBSETTINGS,
-        "Ü Ñö°ò´·©ò©û òß‚´¨Æú §ò ò§ò§úÈ©ú† ´†™ ®¨ü£Â©ú†™ ö†ò ´û õ†·´ò•û ß¢û°´®¶¢¶öÂ¶¨.",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_UPDATE_KBSETTINGS,
+        "\206 \204\232\241\230\253\341\251\230\251\236 \230\247\342\253\254\256\234 \244\230 \230\244\230\244\234\351\251\234\240 \253\240\252 \250\254\237\243\345\251\234\240\252 \232\240\230 \253\236 \233\240\341\253\230\245\236 \247\242\236\241\253\250\246\242\246\232\345\246\254.",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_UPDATE_DISPLAY_SETTINGS,
-        "Ü úö°ò´·©´ò©û òß‚´¨Æú §ò ò§ò§úÈ©ú† ´†™ ®¨ü£Â©ú†™ £û´®È¶¨ ö†ò ´û§ ú£≠·§†©û.",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_UPDATE_DISPLAY_SETTINGS,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\247\342\253\254\256\234 \244\230 \230\244\230\244\234\351\251\234\240 \253\240\252 \250\254\237\243\345\251\234\240\252 \243\236\253\250\351\246\254 \232\240\230 \253\236\244 \234\243\255\341\244\240\251\236.",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_IMPORT_HIVE,
-        "Ü úö°ò´·©´ò©û òß‚´¨Æú §ò ≠¶®´È©ú† ‚§ò hive ò®ÆúÂ¶.",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_IMPORT_HIVE,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\247\342\253\254\256\234 \244\230 \255\246\250\253\351\251\234\240 \342\244\230 hive \230\250\256\234\345\246.",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_FIND_REGISTRY
-        "Ü úö°ò´·©ò©û òß‚´¨Æú §ò ô®ú† ´ò ò®ÆúÂò õúõ¶£‚§‡§ ´¶¨ £û´®È¶¨.",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_FIND_REGISTRY
+        "\206 \234\232\241\230\253\341\251\230\251\236 \230\247\342\253\254\256\234 \244\230 \231\250\234\240 \253\230 \230\250\256\234\345\230 \233\234\233\246\243\342\244\340\244 \253\246\254 \243\236\253\250\351\246\254.",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_CREATE_HIVE,
-        "Ü úö°ò´·©´ò©û òß‚´¨Æú §ò õû£†¶¨®ö„©ú† ´ò registry hives.",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_CREATE_HIVE,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\247\342\253\254\256\234 \244\230 \233\236\243\240\246\254\250\232\343\251\234\240 \253\230 registry hives.",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_INITIALIZE_REGISTRY,
-        "Ü úö°ò´·©´ò©û òß‚´¨Æú §ò ò®Æ†°¶ß¶†„©ú† ´¶ £û´®È¶.",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_INITIALIZE_REGISTRY,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\247\342\253\254\256\234 \244\230 \230\250\256\240\241\246\247\246\240\343\251\234\240 \253\246 \243\236\253\250\351\246.",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_INVALID_CABINET_INF,
-        "í¶ cabinet õú§ ‚Æú† ‚ö°¨®¶ ò®ÆúÂ¶ inf.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_INVALID_CABINET_INF,
+        "\222\246 cabinet \233\234\244 \342\256\234\240 \342\232\241\254\250\246 \230\250\256\234\345\246 inf.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_CABINET_MISSING,
-        "í¶ cabinet õú ô®‚üû°ú.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_CABINET_MISSING,
+        "\222\246 cabinet \233\234 \231\250\342\237\236\241\234.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_CABINET_SCRIPT,
-        "í¶ cabinet õú§ ‚Æú† °ò§‚§ò ©°®†ß´ úö°ò´·©´ò©û™.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_CABINET_SCRIPT,
+        "\222\246 cabinet \233\234\244 \342\256\234\240 \241\230\244\342\244\230 \251\241\250\240\247\253 \234\232\241\230\253\341\251\253\230\251\236\252.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_COPY_QUEUE,
-        "Ü úö°ò´·©´ò©û òß‚´¨Æú §ò ò§¶Â•ú† ´û§ ¶¨®· ò®ÆúÂ‡§ ß®¶™ ò§´†ö®ò≠„.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_COPY_QUEUE,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\247\342\253\254\256\234 \244\230 \230\244\246\345\245\234\240 \253\236\244 \246\254\250\341 \230\250\256\234\345\340\244 \247\250\246\252 \230\244\253\240\232\250\230\255\343.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_CREATE_DIR,
-        "Ü úö°ò´·©´ò©û õú £ßÊ®ú©ú §ò õû£†¶¨®ö„©ú† ´¶¨™ °ò´ò¢Êö¶¨™ úö°ò´·©´ò©û™.",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_CREATE_DIR,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\234 \243\247\346\250\234\251\234 \244\230 \233\236\243\240\246\254\250\232\343\251\234\240 \253\246\254\252 \241\230\253\230\242\346\232\246\254\252 \234\232\241\230\253\341\251\253\230\251\236\252.",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_TXTSETUP_SECTION,
-        "Ü úö°ò´·©´ò©û òß‚´¨Æú §ò ô®ú† ´¶§ ´¶£‚ò 'Directories'\n"
-        "©´¶ TXTSETUP.SIF.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_TXTSETUP_SECTION,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\247\342\253\254\256\234 \244\230 \231\250\234\240 \253\246\244 \253\246\243\342\230 '%S'\n"
+        "\251\253\246 TXTSETUP.SIF.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_CABINET_SECTION,
-        "Ü úö°ò´·©´ò©û òß‚´¨Æú §ò ô®ú† ´¶§ ´¶£‚ò 'Directories'\n"
-        "©´¶ cabinet.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_CABINET_SECTION,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\247\342\253\254\256\234 \244\230 \231\250\234\240 \253\246\244 \253\246\243\342\230 '%S'\n"
+        "\251\253\246 cabinet.\n",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_CREATE_INSTALL_DIR
-        "Ü úö°ò´·©´ò©û õú £ßÊ®ú©ú §ò õû£†¶¨®ö„©ú† ´¶§ °ò´·¢¶ö¶ úö°ò´·©´ò©û™.",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_CREATE_INSTALL_DIR
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\234 \243\247\346\250\234\251\234 \244\230 \233\236\243\240\246\254\250\232\343\251\234\240 \253\246\244 \241\230\253\341\242\246\232\246 \234\232\241\230\253\341\251\253\230\251\236\252.",
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_FIND_SETUPDATA,
-        "Ü úö°ò´·©´ò©û òß‚´¨Æú §ò ô®ú† ´¶§ ´¶£‚ò 'SetupData'\n"
-        "©´¶ TXTSETUP.SIF.\n",
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_WRITE_PTABLE,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\247\342\253\254\256\234 \244\230 \232\250\341\257\234\240 \253\230 partition tables.\n"
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_WRITE_PTABLE,
-        "Ü úö°ò´·©´ò©û òß‚´¨Æú §ò ö®·Øú† ´ò partition tables.\n"
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
-    },
-    {
-        //ERROR_ADDING_CODEPAGE,
+        // ERROR_ADDING_CODEPAGE,
         "Setup failed to add codepage to registry.\n"
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_UPDATE_LOCALESETTINGS,
+        // ERROR_UPDATE_LOCALESETTINGS,
         "Setup could not set the system locale.\n"
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_ADDING_KBLAYOUTS,
-        "Ü úö°ò´·©´ò©û òß‚´¨Æú §ò ß®¶©ü‚©ú† ´†™ õ†ò´·•ú†™ ß¢û°´®¶¢¶öÂ‡§ ©´¶ £û´®È¶.\n"
-        "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"
+        // ERROR_ADDING_KBLAYOUTS,
+        "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\247\342\253\254\256\234 \244\230 \247\250\246\251\237\342\251\234\240 \253\240\252 \233\240\230\253\341\245\234\240\252 \247\242\236\241\253\250\246\242\246\232\345\340\244 \251\253\246 \243\236\253\250\351\246.\n"
+        "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"
     },
     {
-        //ERROR_UPDATE_GEOID,
+        // ERROR_UPDATE_GEOID,
         "Setup could not set the geo id.\n"
         "ENTER = Reboot computer"
     },
     {
-        //ERROR_DIRECTORY_NAME,
+        // ERROR_DIRECTORY_NAME,
         "Invalid directory name.\n"
         "\n"
         "  * Press any key to continue."
     },
     {
-        //ERROR_PARTITION_TABLE_FULL,
-        "You can not create a new primary or extended partition in the\n"
+        // ERROR_PARTITION_TABLE_FULL,
+        "You cannot create a new primary or extended partition in the\n"
         "partition table of this disk because the partition table is full.\n"
         "\n"
         "  * Press any key to continue."
     },
     {
-        //ERROR_ONLY_ONE_EXTENDED,
-        "You can not create more than one extended partition per disk.\n"
+        // ERROR_ONLY_ONE_EXTENDED,
+        "You cannot create more than one extended partition per disk.\n"
         "\n"
         "  * Press any key to continue."
     },
     {
-        //ERROR_FORMATTING_PARTITION,
+        // ERROR_FORMATTING_PARTITION,
         "Setup is unable to format the partition:\n"
         " %S\n"
         "\n"
@@ -1623,11 +2053,15 @@ MUI_ERROR elGRErrorEntries[] =
 MUI_PAGE elGRPages[] =
 {
     {
+        SETUP_INIT_PAGE,
+        elGRSetupInitPageEntries
+    },
+    {
         LANGUAGE_PAGE,
         elGRLanguagePageEntries
     },
     {
-       START_PAGE,
+       WELCOME_PAGE,
        elGRWelcomePageEntries
     },
     {
@@ -1647,6 +2081,10 @@ MUI_PAGE elGRPages[] =
         elGRRepairPageEntries
     },
     {
+        UPGRADE_REPAIR_PAGE,
+        elGRUpgradePageEntries
+    },
+    {
         COMPUTER_SETTINGS_PAGE,
         elGRComputerPageEntries
     },
@@ -1661,6 +2099,10 @@ MUI_PAGE elGRPages[] =
     {
         SELECT_PARTITION_PAGE,
         elGRSelectPartitionEntries
+    },
+    {
+        CHANGE_SYSTEM_PARTITION,
+        elGRChangeSystemPartition
     },
     {
         CONFIRM_DELETE_SYSTEM_PARTITION_PAGE,
@@ -1727,18 +2169,18 @@ MUI_PAGE elGRPages[] =
 MUI_STRING elGRStrings[] =
 {
     {STRING_PLEASEWAIT,
-     "   èò®ò°ò¢È ßú®†£‚§ú´ú..."},
+     "   \217\230\250\230\241\230\242\351 \247\234\250\240\243\342\244\234\253\234..."},
     {STRING_INSTALLCREATEPARTITION,
      "   ENTER = Install   P = Create Primary   E = Create Extended   F3 = Quit"},
 //     "   ENTER = Ñö°ò´·©´ò©û   C = Éû£†¶¨®öÂò Partition   F3 = Äß¶ÆÈ®û©û"},
     {STRING_INSTALLCREATELOGICAL,
      "   ENTER = Install   L = Create Logical Partition   F3 = Quit"},
     {STRING_INSTALLDELETEPARTITION,
-     "   ENTER = Ñö°ò´·©´ò©û   D = É†òö®ò≠„ Partition   F3 = Äß¶ÆÈ®û©û"},
+     "   ENTER = \204\232\241\230\253\341\251\253\230\251\236   D = \203\240\230\232\250\230\255\343 Partition   F3 = \200\247\246\256\351\250\236\251\236"},
     {STRING_DELETEPARTITION,
      "   D = Delete Partition   F3 = Quit"},
     {STRING_PARTITIONSIZE,
-     "ã‚öúü¶™ ´¶¨ §‚¶¨ partition:"},
+     "\213\342\232\234\237\246\252 \253\246\254 \244\342\246\254 partition:"},
     {STRING_CHOOSENEWPARTITION,
      "You have chosen to create a primary partition on"},
 //     "Ñß†¢‚•ò´ú §ò õû£†¶¨®ö„©ú´ú ‚§ò §‚¶ partition on"},
@@ -1747,13 +2189,13 @@ MUI_STRING elGRStrings[] =
     {STRING_CHOOSE_NEW_LOGICAL_PARTITION,
      "You have chosen to create a logical partition on"},
     {STRING_HDDSIZE,
-    "èò®ò°ò¢È õÈ©´ú ´¶ £‚öúü¶™ ´¶¨ partition ©ú megabytes."},
+    "\217\230\250\230\241\230\242\351 \233\351\251\253\234 \253\246 \243\342\232\234\237\246\252 \253\246\254 partition \251\234 megabytes."},
     {STRING_CREATEPARTITION,
-     "   ENTER = Éû£†¶¨®öÂò Partition   ESC = Ä°Á®‡©û   F3 = Äß¶ÆÈ®û©û"},
+     "   ENTER = \203\236\243\240\246\254\250\232\345\230 Partition   ESC = \200\241\347\250\340\251\236   F3 = \200\247\246\256\351\250\236\251\236"},
     {STRING_PARTFORMAT,
-    "Ä¨´Ê ´¶ Partition üò õ†ò£¶®≠‡üúÂ £ú´·."},
+    "\200\254\253\346 \253\246 Partition \237\230 \233\240\230\243\246\250\255\340\237\234\345 \243\234\253\341."},
     {STRING_NONFORMATTEDPART,
-    "Ñß†¢‚•ò´ú §ò úö°ò´ò©´„©ú´ú ´¶ ReactOS ©ú ‚§ò §‚¶ „ £û õ†ò£¶®≠‡£‚§¶ Partition."},
+    "\204\247\240\242\342\245\230\253\234 \244\230 \234\232\241\230\253\230\251\253\343\251\234\253\234 \253\246 ReactOS \251\234 \342\244\230 \244\342\246 \343 \243\236 \233\240\230\243\246\250\255\340\243\342\244\246 Partition."},
     {STRING_NONFORMATTEDSYSTEMPART,
     "The system partition is not formatted yet."},
     {STRING_NONFORMATTEDOTHERPART,
@@ -1761,87 +2203,93 @@ MUI_STRING elGRStrings[] =
     {STRING_INSTALLONPART,
     "Setup install ReactOS onto Partition"},
     {STRING_CHECKINGPART,
-    "Ü úö°ò´·©´ò©û ú¢‚öÆú† ´È®ò ´¶ úß†¢úö£‚§¶ partition."},
+    "\206 \234\232\241\230\253\341\251\253\230\251\236 \234\242\342\232\256\234\240 \253\351\250\230 \253\246 \234\247\240\242\234\232\243\342\244\246 partition."},
     {STRING_CONTINUE,
-    "ENTER = ë¨§‚Æú†ò"},
+    "ENTER = \221\254\244\342\256\234\240\230"},
     {STRING_QUITCONTINUE,
-    "F3 = Äß¶ÆÈ®û©û  ENTER = ë¨§‚Æú†ò"},
+    "F3 = \200\247\246\256\351\250\236\251\236  ENTER = \221\254\244\342\256\234\240\230"},
     {STRING_REBOOTCOMPUTER,
-    "ENTER = Ñßò§ú°°Â§û©û ¨ß¶¢¶ö†©´„"},
-    {STRING_TXTSETUPFAILED,
-    "Setup failed to find the '%S' section\nin TXTSETUP.SIF.\n"},
+    "ENTER = \204\247\230\244\234\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"},
+    {STRING_DELETING,
+     "   Deleting file: %S"},
+    {STRING_MOVING,
+     "   Moving file: %S to: %S"},
+    {STRING_RENAMING,
+     "   Renaming file: %S to: %S"},
     {STRING_COPYING,
-     "   Ä§´†ö®·≠ú´ò† ´¶ ò®ÆúÂ¶: %S"},
+     "   \200\244\253\240\232\250\341\255\234\253\230\240 \253\246 \230\250\256\234\345\246: %S"},
     {STRING_SETUPCOPYINGFILES,
-     "Ü úö°ò´·©´ò©û ò§´†ö®·≠ú† ò®ÆúÂò..."},
+     "\206 \234\232\241\230\253\341\251\253\230\251\236 \230\244\253\240\232\250\341\255\234\240 \230\250\256\234\345\230..."},
     {STRING_REGHIVEUPDATE,
-    "   ÇÂ§ú´ò† ò§ò§‚‡©û ´‡§ registry hives..."},
+    "   \202\345\244\234\253\230\240 \230\244\230\244\342\340\251\236 \253\340\244 registry hives..."},
     {STRING_IMPORTFILE,
-    "   ÇÂ§ú´ò† ú†©òö‡ö„ ´¶¨ %S..."},
-    {STRING_DISPLAYETTINGSUPDATE,
-    "   ÇÂ§ú´ò† ò§ò§‚‡©û ´‡§ ®¨ü£Â©ú‡§ ú£≠·§†©û™ ´¶¨ £û´®È¶¨..."},
+    "   \202\345\244\234\253\230\240 \234\240\251\230\232\340\232\343 \253\246\254 %S..."},
+    {STRING_DISPLAYSETTINGSUPDATE,
+    "   \202\345\244\234\253\230\240 \230\244\230\244\342\340\251\236 \253\340\244 \250\254\237\243\345\251\234\340\244 \234\243\255\341\244\240\251\236\252 \253\246\254 \243\236\253\250\351\246\254..."},
     {STRING_LOCALESETTINGSUPDATE,
-    "   ÇÂ§ú´ò† ò§ò§‚‡©û ´‡§ ®¨ü£Â©ú‡§ ö¢È©©ò™..."},
+    "   \202\345\244\234\253\230\240 \230\244\230\244\342\340\251\236 \253\340\244 \250\254\237\243\345\251\234\340\244 \232\242\351\251\251\230\252..."},
     {STRING_KEYBOARDSETTINGSUPDATE,
-    "   ÇÂ§ú´ò† ò§ò§‚‡©û ´‡§ ®¨ü£Â©ú‡§ õ†·´ò•û™ ß¢û°´®¶¢¶öÂ¶¨..."},
+    "   \202\345\244\234\253\230\240 \230\244\230\244\342\340\251\236 \253\340\244 \250\254\237\243\345\251\234\340\244 \233\240\341\253\230\245\236\252 \247\242\236\241\253\250\246\242\246\232\345\246\254..."},
     {STRING_CODEPAGEINFOUPDATE,
     "   Adding codepage information to registry..."},
     {STRING_DONE,
-    "   é¢¶°¢û®Èüû°ú..."},
+    "   \216\242\246\241\242\236\250\351\237\236\241\234..."},
     {STRING_REBOOTCOMPUTER2,
-    "   ENTER = Ñßú§†°°Â§û©û ¨ß¶¢¶ö†©´„"},
+    "   ENTER = \204\247\234\244\240\241\241\345\244\236\251\236 \254\247\246\242\246\232\240\251\253\343"},
+    {STRING_REBOOTPROGRESSBAR,
+    " Your computer will reboot in %li second(s)... "},
     {STRING_CONSOLEFAIL1,
-    "ÄõÁ§ò´¶ §ò ò§¶†Æ´úÂ û °¶§©Ê¢ò\r\n\r\n"},
+    "\200\233\347\244\230\253\246 \244\230 \230\244\246\240\256\253\234\345 \236 \241\246\244\251\346\242\230\r\n\r\n"},
     {STRING_CONSOLEFAIL2,
     "The most common cause of this is using an USB keyboard\r\n"},
     {STRING_CONSOLEFAIL3,
-    "íò USB ß¢û°´®¶¢Êö†ò õú§ úÂ§ò† ß¢„®‡™ ¨ß¶©´û®†ùÊ£ú§ò ò°Ê£ò\r\n"},
+    "\222\230 USB \247\242\236\241\253\250\246\242\346\232\240\230 \233\234\244 \234\345\244\230\240 \247\242\343\250\340\252 \254\247\246\251\253\236\250\240\235\346\243\234\244\230 \230\241\346\243\230\r\n"},
     {STRING_FORMATTINGDISK,
-    "Ü úö°ò´·©´ò©û õ†ò£¶®≠È§ú† ´¶ õÂ©°¶ ©ò™"},
+    "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\240\230\243\246\250\255\351\244\234\240 \253\246 \233\345\251\241\246 \251\230\252"},
     {STRING_CHECKINGDISK,
-    "Ü úö°ò´·©´ò©û ú¢‚öÆú† ´¶ õÂ©°¶ ©ò™"},
+    "\206 \234\232\241\230\253\341\251\253\230\251\236 \234\242\342\232\256\234\240 \253\246 \233\345\251\241\246 \251\230\252"},
     {STRING_FORMATDISK1,
-    " É†ò£Ê®≠‡©û ´¶¨ partition ‡™ %S ©Á©´û£ò ò®ÆúÂ‡§ (ö®„ö¶®û õ†ò£Ê®≠‡©û) "},
+    " \203\240\230\243\346\250\255\340\251\236 \253\246\254 partition \340\252 %S \251\347\251\253\236\243\230 \230\250\256\234\345\340\244 (\232\250\343\232\246\250\236 \233\240\230\243\346\250\255\340\251\236) "},
     {STRING_FORMATDISK2,
-    " É†ò£Ê®≠‡©û ´¶¨ partition ‡™ %S ©Á©´û£ò ò®ÆúÂ‡§ "},
+    " \203\240\230\243\346\250\255\340\251\236 \253\246\254 partition \340\252 %S \251\347\251\253\236\243\230 \230\250\256\234\345\340\244 "},
     {STRING_KEEPFORMAT,
-    " åò ßò®ò£úÂ§ú† ´¶ ©Á©´û£ò ò®ÆúÂ‡§ ‡™ ‚Æú† (°ò£Âò ò¢¢òö„) "},
-    {STRING_HDINFOPARTCREATE,
-    "%I64u %s  ë°¢û®Ê™ õÂ©°¶™ %lu  (Port=%hu, Bus=%hu, Id=%hu) on %wZ."},
-    {STRING_HDDINFOUNK1,
-    "%I64u %s  ë°¢û®Ê™ õÂ©°¶™ %lu  (Port=%hu, Bus=%hu, Id=%hu)."},
+    " \214\230 \247\230\250\230\243\234\345\244\234\240 \253\246 \251\347\251\253\236\243\230 \230\250\256\234\345\340\244 \340\252 \342\256\234\240 (\241\230\243\345\230 \230\242\242\230\232\343) "},
+    {STRING_HDINFOPARTCREATE_1,
+    "%I64u %s  \221\241\242\236\250\346\252 \233\345\251\241\246\252 %lu  (Port=%hu, Bus=%hu, Id=%hu) on %wZ [%s]."},
+    {STRING_HDINFOPARTCREATE_2,
+    "%I64u %s  \221\241\242\236\250\346\252 \233\345\251\241\246\252 %lu  (Port=%hu, Bus=%hu, Id=%hu) [%s]."},
     {STRING_HDDINFOUNK2,
     "   %c%c  Type 0x%02X    %I64u %s"},
-    {STRING_HDINFOPARTDELETE,
-    "on %I64u %s  Harddisk %lu  (Port=%hu, Bus=%hu, Id=%hu) on %wZ."},
-    {STRING_HDDINFOUNK3,
-    "on %I64u %s  Harddisk %lu  (Port=%hu, Bus=%hu, Id=%hu)."},
-    {STRING_HDINFOPARTZEROED,
-    "ë°¢û®Ê™ õÂ©°¶™ %lu (%I64u %s), Port=%hu, Bus=%hu, Id=%hu (%wZ)."},
+    {STRING_HDINFOPARTDELETE_1,
+    "on %I64u %s  Harddisk %lu  (Port=%hu, Bus=%hu, Id=%hu) on %wZ [%s]."},
+    {STRING_HDINFOPARTDELETE_2,
+    "on %I64u %s  Harddisk %lu  (Port=%hu, Bus=%hu, Id=%hu) [%s]."},
+    {STRING_HDINFOPARTZEROED_1,
+    "\221\241\242\236\250\346\252 \233\345\251\241\246\252 %lu (%I64u %s), Port=%hu, Bus=%hu, Id=%hu (%wZ) [%s]."},
     {STRING_HDDINFOUNK4,
     "%c%c  Type 0x%02X    %I64u %s"},
-    {STRING_HDINFOPARTEXISTS,
-    "©´¶ ©°¢û®Ê õÂ©°¶ %lu (%I64u %s), Port=%hu, Bus=%hu, Id=%hu (%wZ)."},
+    {STRING_HDINFOPARTEXISTS_1,
+    "\251\253\246 \251\241\242\236\250\346 \233\345\251\241\246 %lu (%I64u %s), Port=%hu, Bus=%hu, Id=%hu (%wZ) [%s]."},
     {STRING_HDDINFOUNK5,
     "%c%c %c %sType %-3u%s                      %6lu %s"},
-    {STRING_HDINFOPARTSELECT,
-    "%6lu %s  ë°¢û®Ê™ õÂ©°¶™ %lu  (Port=%hu, Bus=%hu, Id=%hu) on %S"},
-    {STRING_HDDINFOUNK6,
-    "%6lu %s  ë°¢û®Ê™ õÂ©°¶™ %lu  (Port=%hu, Bus=%hu, Id=%hu)"},
+    {STRING_HDINFOPARTSELECT_1,
+    "%6lu %s  \221\241\242\236\250\346\252 \233\345\251\241\246\252 %lu  (Port=%hu, Bus=%hu, Id=%hu) on %wZ [%s]"},
+    {STRING_HDINFOPARTSELECT_2,
+    "%6lu %s  \221\241\242\236\250\346\252 \233\345\251\241\246\252 %lu  (Port=%hu, Bus=%hu, Id=%hu) [%s]"},
     {STRING_NEWPARTITION,
-    "Ü úö°ò´·©´ò©û õû£†¶Á®öû©ú ‚§ò §‚¶ partition ©´¶"},
+    "\206 \234\232\241\230\253\341\251\253\230\251\236 \233\236\243\240\246\347\250\232\236\251\234 \342\244\230 \244\342\246 partition \251\253\246"},
     {STRING_UNPSPACE,
     "    %sUnpartitioned space%s            %6lu %s"},
     {STRING_MAXSIZE,
-    "MB (£úö. %lu MB)"},
+    "MB (\243\234\232. %lu MB)"},
     {STRING_EXTENDED_PARTITION,
     "Extended Partition"},
     {STRING_UNFORMATTED,
-    "å‚¶ (ãû õ†ò£¶®≠‡£‚§¶)"},
+    "\214\342\246 (\213\236 \233\240\230\243\246\250\255\340\243\342\244\246)"},
     {STRING_FORMATUNUSED,
-    "ÄÆ®û©†£¶ß¶Âû´¶"},
+    "\200\256\250\236\251\240\243\246\247\246\345\236\253\246"},
     {STRING_FORMATUNKNOWN,
-    "Íö§‡©´¶"},
+    "\352\232\244\340\251\253\246"},
     {STRING_KB,
     "KB"},
     {STRING_MB,
@@ -1849,6 +2297,6 @@ MUI_STRING elGRStrings[] =
     {STRING_GB,
     "GB"},
     {STRING_ADDKBLAYOUTS,
-    "ÇÂ§ú´ò† ß®¶©ü„°û ´‡§ õ†ò´·•ú‡§ ß¢û°´®¶¢¶öÂ¶¨"},
+    "\202\345\244\234\253\230\240 \247\250\246\251\237\343\241\236 \253\340\244 \233\240\230\253\341\245\234\340\244 \247\242\236\241\253\250\246\242\246\232\345\246\254"},
     {0, 0}
 };

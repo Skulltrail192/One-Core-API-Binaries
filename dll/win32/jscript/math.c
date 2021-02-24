@@ -17,9 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "jscript.h"
+#ifdef __REACTOS__
+#include <wine/config.h>
+#include <wine/port.h>
+#endif
 
-#include <ntsecapi.h>
+#include <math.h>
+#include <limits.h>
+
+#include "jscript.h"
+#include "ntsecapi.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(jscript);
 
 static const WCHAR EW[] = {'E',0};
 static const WCHAR LOG2EW[] = {'L','O','G','2','E',0};
@@ -513,7 +524,7 @@ static const builtin_prop_t Math_props[] = {
 static const builtin_info_t Math_info = {
     JSCLASS_MATH,
     {NULL, NULL, 0},
-    sizeof(Math_props)/sizeof(*Math_props),
+    ARRAY_SIZE(Math_props),
     Math_props,
     NULL,
     NULL
@@ -549,8 +560,9 @@ HRESULT create_math(script_ctx_t *ctx, jsdisp_t **ret)
         return hres;
     }
 
-    for(i=0; i < sizeof(constants)/sizeof(*constants); i++) {
-        hres = jsdisp_propput_const(math, constants[i].name, jsval_number(constants[i].val));
+    for(i=0; i < ARRAY_SIZE(constants); i++) {
+        hres = jsdisp_define_data_property(math, constants[i].name, 0,
+                                           jsval_number(constants[i].val));
         if(FAILED(hres)) {
             jsdisp_release(math);
             return hres;

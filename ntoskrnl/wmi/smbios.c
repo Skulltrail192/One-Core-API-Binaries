@@ -229,7 +229,7 @@ WmipQueryRawSMBiosTables(
     Status = WmipGetRawSMBiosTableData(OutBuffer ? &TableData : NULL, &TableSize);
     if (!NT_SUCCESS(Status))
     {
-        DPRINT1("WmipGetRawSMBiosTableData failed: 0x08lx\n", Status);
+        DPRINT1("WmipGetRawSMBiosTableData failed: 0x%08lx\n", Status);
         return Status;
     }
 
@@ -256,11 +256,11 @@ WmipQueryRawSMBiosTables(
         AllData->WnodeHeader.KernelHandle = NULL;
         //AllData->WnodeHeader.TimeStamp;
         AllData->WnodeHeader.Guid = MSSmBios_RawSMBiosTables_GUID;
-        AllData->WnodeHeader.ClientContext;
+        //AllData->WnodeHeader.ClientContext;
         AllData->WnodeHeader.Flags = WNODE_FLAG_FIXED_INSTANCE_SIZE;
         AllData->DataBlockOffset = sizeof(WNODE_ALL_DATA);
         AllData->InstanceCount = 1;
-        AllData->OffsetInstanceNameOffsets;
+        //AllData->OffsetInstanceNameOffsets;
         AllData->FixedInstanceSize = TableSize;
 
         RtlCopyMemory(AllData + 1, TableData, TableSize);

@@ -16,7 +16,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+
+#include <math.h>
+
 #include "jscript.h"
+#include "regexp.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(jscript);
 
 typedef struct {
     jsdisp_t dispex;
@@ -55,6 +63,7 @@ static const WCHAR toLowerCaseW[] = {'t','o','L','o','w','e','r','C','a','s','e'
 static const WCHAR toUpperCaseW[] = {'t','o','U','p','p','e','r','C','a','s','e',0};
 static const WCHAR toLocaleLowerCaseW[] = {'t','o','L','o','c','a','l','e','L','o','w','e','r','C','a','s','e',0};
 static const WCHAR toLocaleUpperCaseW[] = {'t','o','L','o','c','a','l','e','U','p','p','e','r','C','a','s','e',0};
+static const WCHAR trimW[] = {'t','r','i','m',0};
 static const WCHAR localeCompareW[] = {'l','o','c','a','l','e','C','o','m','p','a','r','e',0};
 static const WCHAR fromCharCodeW[] = {'f','r','o','m','C','h','a','r','C','o','d','e',0};
 
@@ -111,12 +120,6 @@ static HRESULT String_get_length(script_ctx_t *ctx, jsdisp_t *jsthis, jsval_t *r
     return S_OK;
 }
 
-static HRESULT String_set_length(script_ctx_t *ctx, jsdisp_t *jsthis, jsval_t value)
-{
-    FIXME("%p\n", jsthis);
-    return E_NOTIMPL;
-}
-
 static HRESULT stringobj_to_string(vdisp_t *jsthis, jsval_t *r)
 {
     StringInstance *string;
@@ -165,7 +168,7 @@ static HRESULT do_attributeless_tag_format(script_ctx_t *ctx, vdisp_t *jsthis, j
         return S_OK;
     }
 
-    tagname_len = strlenW(tagname);
+    tagname_len = lstrlenW(tagname);
 
     ret = jsstr_alloc_buf(jsstr_length(str) + 2*tagname_len + 5, &ptr);
     if(!ret) {
@@ -212,8 +215,8 @@ static HRESULT do_attribute_tag_format(script_ctx_t *ctx, vdisp_t *jsthis, unsig
     }
 
     if(r) {
-        unsigned attrname_len = strlenW(attrname);
-        unsigned tagname_len = strlenW(tagname);
+        unsigned attrname_len = lstrlenW(attrname);
+        unsigned tagname_len = lstrlenW(tagname);
         jsstr_t *ret;
         WCHAR *ptr;
 
@@ -850,7 +853,7 @@ static HRESULT String_replace(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, un
                     match->cp = str;
                 }
 
-                match->cp = strstrW(match->cp, match_str);
+                match->cp = wcsstr(match->cp, match_str);
                 if(!match->cp)
                     break;
                 match->match_len = jsstr_length(match_jsstr);
@@ -876,7 +879,7 @@ static HRESULT String_replace(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, un
             }else if(rep_str && regexp) {
                 const WCHAR *ptr = rep_str, *ptr2;
 
-                while((ptr2 = strchrW(ptr, '$'))) {
+                while((ptr2 = wcschr(ptr, '$'))) {
                     hres = strbuf_append(&ret, ptr, ptr2-ptr);
                     if(FAILED(hres))
                         break;
@@ -901,14 +904,14 @@ static HRESULT String_replace(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, un
                     default: {
                         DWORD idx;
 
-                        if(!isdigitW(ptr2[1])) {
+                        if(!iswdigit(ptr2[1])) {
                             hres = strbuf_append(&ret, ptr2, 1);
                             ptr = ptr2+1;
                             break;
                         }
 
                         idx = ptr2[1] - '0';
-                        if(isdigitW(ptr2[2]) && idx*10 + (ptr2[2]-'0') <= match->paren_count) {
+                        if(iswdigit(ptr2[2]) && idx*10 + (ptr2[2]-'0') <= match->paren_count) {
                             idx = idx*10 + (ptr[2]-'0');
                             ptr = ptr2+3;
                         }else if(idx && idx <= match->paren_count) {
@@ -940,7 +943,7 @@ static HRESULT String_replace(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, un
             }else {
                 static const WCHAR undefinedW[] = {'u','n','d','e','f','i','n','e','d'};
 
-                hres = strbuf_append(&ret, undefinedW, sizeof(undefinedW)/sizeof(WCHAR));
+                hres = strbuf_append(&ret, undefinedW, ARRAY_SIZE(undefinedW));
                 if(FAILED(hres))
                     break;
             }
@@ -1128,25 +1131,39 @@ static HRESULT String_split(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, unsi
         jsval_t *r)
 {
     match_state_t match_result, *match_ptr = &match_result;
-    DWORD length, i, match_len = 0;
+    size_t length, i = 0, match_len = 0;
     const WCHAR *ptr, *ptr2, *str, *match_str = NULL;
     unsigned limit = ~0u;
     jsdisp_t *array, *regexp = NULL;
     jsstr_t *jsstr, *match_jsstr, *tmp_str;
     HRESULT hres;
 
-    TRACE("\n");
-
-    if(argc != 1 && argc != 2) {
-        FIXME("unsupported argc %u\n", argc);
-        return E_NOTIMPL;
-    }
-
     hres = get_string_flat_val(ctx, jsthis, &jsstr, &str);
     if(FAILED(hres))
         return hres;
-
     length = jsstr_length(jsstr);
+
+    TRACE("%s\n", debugstr_wn(str, length));
+
+    if(!argc || (is_undefined(argv[0]) && ctx->version >= SCRIPTLANGUAGEVERSION_ES5)) {
+        if(!r)
+            return S_OK;
+
+        hres = create_array(ctx, 0, &array);
+        if(FAILED(hres))
+            return hres;
+
+        /* NOTE: according to spec, we should respect limit argument here (if provided).
+         * We have a test showing that it's broken in native IE. */
+        hres = jsdisp_propput_idx(array, 0, jsval_string(jsstr));
+        if(FAILED(hres)) {
+            jsdisp_release(array);
+            return hres;
+        }
+
+        *r = jsval_obj(array);
+        return S_OK;
+    }
 
     if(argc > 1 && !is_undefined(argv[1])) {
         hres = to_uint32(ctx, argv[1], &limit);
@@ -1185,14 +1202,32 @@ static HRESULT String_split(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, unsi
     if(SUCCEEDED(hres)) {
         ptr = str;
         match_result.cp = str;
-        for(i=0; i<limit; i++) {
+        while(i < limit) {
             if(regexp) {
                 hres = regexp_match_next(ctx, regexp, REM_NO_PARENS, jsstr, &match_ptr);
                 if(hres != S_OK)
                     break;
+                TRACE("got match %d %d\n", (int)(match_result.cp - match_result.match_len - str), match_result.match_len);
+                if(!match_result.match_len) {
+                    /* If an empty string is matched, prevent including any match in the result */
+                    if(!length) {
+                        limit = 0;
+                        break;
+                    }
+                    if(match_result.cp == ptr) {
+                        match_result.cp++;
+                        hres = regexp_match_next(ctx, regexp, REM_NO_PARENS, jsstr, &match_ptr);
+                        if(hres != S_OK)
+                            break;
+                        TRACE("retried, got match %d %d\n", (int)(match_result.cp - match_result.match_len - str),
+                              match_result.match_len);
+                    }
+                    if(!match_result.match_len && match_result.cp == str + length)
+                        break;
+                }
                 ptr2 = match_result.cp - match_result.match_len;
             }else if(match_str) {
-                ptr2 = strstrW(ptr, match_str);
+                ptr2 = wcsstr(ptr, match_str);
                 if(!ptr2)
                     break;
             }else {
@@ -1201,16 +1236,18 @@ static HRESULT String_split(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, unsi
                 ptr2 = ptr+1;
             }
 
-            tmp_str = jsstr_alloc_len(ptr, ptr2-ptr);
-            if(!tmp_str) {
-                hres = E_OUTOFMEMORY;
-                break;
-            }
+            if(!regexp || ptr2 > ptr || ctx->version >= SCRIPTLANGUAGEVERSION_ES5) {
+                tmp_str = jsstr_alloc_len(ptr, ptr2-ptr);
+                if(!tmp_str) {
+                    hres = E_OUTOFMEMORY;
+                    break;
+                }
 
-            hres = jsdisp_propput_idx(array, i, jsval_string(tmp_str));
-            jsstr_release(tmp_str);
-            if(FAILED(hres))
-                break;
+                hres = jsdisp_propput_idx(array, i++, jsval_string(tmp_str));
+                jsstr_release(tmp_str);
+                if(FAILED(hres))
+                    break;
+            }
 
             if(regexp)
                 ptr = match_result.cp;
@@ -1224,7 +1261,7 @@ static HRESULT String_split(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, unsi
     if(SUCCEEDED(hres) && (match_str || regexp) && i<limit) {
         DWORD len = (str+length) - ptr;
 
-        if(len || match_str) {
+        if(len || match_str || !length || ctx->version >= SCRIPTLANGUAGEVERSION_ES5) {
             tmp_str = jsstr_alloc_len(ptr, len);
 
             if(tmp_str) {
@@ -1409,7 +1446,7 @@ static HRESULT String_toLowerCase(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags
         }
 
         jsstr_flush(str, buf);
-        for (; len--; buf++) *buf = tolowerW(*buf);
+        for (; len--; buf++) *buf = towlower(*buf);
 
         *r = jsval_string(ret);
     }
@@ -1441,7 +1478,7 @@ static HRESULT String_toUpperCase(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags
         }
 
         jsstr_flush(str, buf);
-        for (; len--; buf++) *buf = toupperW(*buf);
+        for (; len--; buf++) *buf = towupper(*buf);
 
         *r = jsval_string(ret);
     }
@@ -1461,6 +1498,41 @@ static HRESULT String_toLocaleUpperCase(script_ctx_t *ctx, vdisp_t *jsthis, WORD
 {
     FIXME("\n");
     return E_NOTIMPL;
+}
+
+static HRESULT String_trim(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, unsigned argc,
+        jsval_t *argv, jsval_t *r)
+{
+    const WCHAR *str, *begin, *end;
+    jsstr_t *jsstr;
+    unsigned len;
+    HRESULT hres;
+
+    hres = to_flat_string(ctx, jsval_disp(jsthis->u.disp), &jsstr, &str);
+    if(FAILED(hres)) {
+        WARN("to_flat_string failed: %08x\n", hres);
+        return hres;
+    }
+    len = jsstr_length(jsstr);
+    TRACE("%s\n", debugstr_wn(str, len));
+
+    for(begin = str, end = str + len; begin < end && iswspace(*begin); begin++);
+    while(end > begin + 1 && iswspace(*(end-1))) end--;
+
+    if(r) {
+        jsstr_t *ret;
+
+        if(begin == str && end == str + len)
+            ret = jsstr_addref(jsstr);
+        else
+            ret = jsstr_alloc_len(begin, end - begin);
+        if(ret)
+            *r = jsval_string(ret);
+        else
+            hres = E_OUTOFMEMORY;
+    }
+    jsstr_release(jsstr);
+    return hres;
 }
 
 static HRESULT String_localeCompare(script_ctx_t *ctx, vdisp_t *jsthis, WORD flags, unsigned argc, jsval_t *argv,
@@ -1531,7 +1603,7 @@ static const builtin_prop_t String_props[] = {
     {indexOfW,               String_indexOf,               PROPF_METHOD|2},
     {italicsW,               String_italics,               PROPF_METHOD},
     {lastIndexOfW,           String_lastIndexOf,           PROPF_METHOD|2},
-    {lengthW,                NULL,0,                       String_get_length, String_set_length},
+    {lengthW,                NULL,0,                       String_get_length},
     {linkW,                  String_link,                  PROPF_METHOD|1},
     {localeCompareW,         String_localeCompare,         PROPF_METHOD|1},
     {matchW,                 String_match,                 PROPF_METHOD|1},
@@ -1550,26 +1622,27 @@ static const builtin_prop_t String_props[] = {
     {toLowerCaseW,           String_toLowerCase,           PROPF_METHOD},
     {toStringW,              String_toString,              PROPF_METHOD},
     {toUpperCaseW,           String_toUpperCase,           PROPF_METHOD},
+    {trimW,                  String_trim,                  PROPF_ES5|PROPF_METHOD},
     {valueOfW,               String_valueOf,               PROPF_METHOD}
 };
 
 static const builtin_info_t String_info = {
     JSCLASS_STRING,
     {NULL, NULL,0, String_get_value},
-    sizeof(String_props)/sizeof(*String_props),
+    ARRAY_SIZE(String_props),
     String_props,
     String_destructor,
     NULL
 };
 
 static const builtin_prop_t StringInst_props[] = {
-    {lengthW,                NULL,0,                       String_get_length, String_set_length}
+    {lengthW,                NULL,0,                       String_get_length}
 };
 
 static const builtin_info_t StringInst_info = {
     JSCLASS_STRING,
     {NULL, NULL,0, String_get_value},
-    sizeof(StringInst_props)/sizeof(*StringInst_props),
+    ARRAY_SIZE(StringInst_props),
     StringInst_props,
     String_destructor,
     NULL,
@@ -1687,7 +1760,7 @@ static const builtin_prop_t StringConstr_props[] = {
 static const builtin_info_t StringConstr_info = {
     JSCLASS_FUNCTION,
     DEFAULT_FUNCTION_VALUE,
-    sizeof(StringConstr_props)/sizeof(*StringConstr_props),
+    ARRAY_SIZE(StringConstr_props),
     StringConstr_props,
     NULL,
     NULL

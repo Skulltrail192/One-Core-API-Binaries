@@ -13,8 +13,11 @@ list(APPEND SOURCE
     srw.c
     ${CMAKE_CURRENT_BINARY_DIR}/ntdll_vista.def)
 
-add_library(ntdll_vista SHARED ${SOURCE})
+add_library(ntdll_vista MODULE ${SOURCE})
 set_module_type(ntdll_vista win32dll ENTRYPOINT DllMain 12)
+if(ARCH STREQUAL "arm")
+    target_link_libraries(ntdll_vista chkstk)
+endif()
 add_importlibs(ntdll_vista ntdll)
 add_dependencies(ntdll_vista psdk)
 add_cd_file(TARGET ntdll_vista DESTINATION reactos/system32 FOR all)

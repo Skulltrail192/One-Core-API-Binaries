@@ -29,13 +29,13 @@ list(APPEND SOURCE
     devmgmt/Node.cpp
     devmgmt/RootNode.cpp)
 
-add_library(devmgr SHARED
+add_library(devmgr MODULE
     ${SOURCE}
     devmgr.rc
     ${CMAKE_CURRENT_BINARY_DIR}/devmgr.def)
 
 set_module_type(devmgr win32dll UNICODE)
-target_link_libraries(devmgr uuid atlnew wine)
+target_link_libraries(devmgr uuid wine)
 add_importlibs(devmgr setupapi advapi32 newdev user32 gdi32 comctl32 version msvcrt kernel32 ole32 oleaut32 uxtheme ntdll)
 add_pch(devmgr precomp.h SOURCE)
 add_cd_file(TARGET devmgr DESTINATION reactos/system32 FOR all)

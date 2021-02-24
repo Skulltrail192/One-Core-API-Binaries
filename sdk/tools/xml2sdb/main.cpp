@@ -1,10 +1,8 @@
 /*
- * COPYRIGHT:       See COPYING in the top level directory
- * PROJECT:         ReactOS xml to sdb converter
- * FILE:            sdk/tools/xml2sdb/main.cpp
- * PURPOSE:         Implement platform agnostic read / write / allocation functions, parse commandline
- * PROGRAMMERS:     Mark Jansen (mark.jansen@reactos.org)
- *
+ * PROJECT:     xml2sdb
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     Implement platform agnostic read / write / allocation functions, parse commandline
+ * COPYRIGHT:   Copyright 2016,2017 Mark Jansen (mark.jansen@reactos.org)
  */
 
 #include "xml2sdb.h"
@@ -53,7 +51,7 @@ DWORD WINAPI SdbpStrsize(PCWSTR string)
 
 PDB WINAPI SdbpCreate(LPCWSTR path, PATH_TYPE type, BOOL write)
 {
-    PDB db;
+    PDB pdb;
     FILE* f;
     std::string pathA(path, path + SdbpStrlen(path));
 
@@ -61,30 +59,33 @@ PDB WINAPI SdbpCreate(LPCWSTR path, PATH_TYPE type, BOOL write)
     if (!f)
         return NULL;
 
-    db = (PDB)SdbAlloc(sizeof(DB));
-    db->file = f;
+    pdb = (PDB)SdbAlloc(sizeof(DB));
+    pdb->file = f;
+    pdb->for_write = write;
 
-    return db;
+    return pdb;
 }
 
-void WINAPI SdbpFlush(PDB db)
+void WINAPI SdbpFlush(PDB pdb)
 {
-    fwrite(db->data, db->write_iter, 1, (FILE*)db->file);
+    ASSERT(pdb->for_write);
+
+    fwrite(pdb->data, pdb->write_iter, 1, (FILE*)pdb->file);
 }
 
-void WINAPI SdbCloseDatabase(PDB db)
+void WINAPI SdbCloseDatabase(PDB pdb)
 {
-    if (!db)
+    if (!pdb)
         return;
 
-    if (db->file)
-        fclose((FILE*)db->file);
-    if (db->string_buffer)
-        SdbCloseDatabase(db->string_buffer);
-    if (db->string_lookup)
-        SdbpTableDestroy(&db->string_lookup);
-    SdbFree(db->data);
-    SdbFree(db);
+    if (pdb->file)
+        fclose((FILE*)pdb->file);
+    if (pdb->string_buffer)
+        SdbCloseDatabase(pdb->string_buffer);
+    if (pdb->string_lookup)
+        SdbpTableDestroy(&pdb->string_lookup);
+    SdbFree(pdb->data);
+    SdbFree(pdb);
 }
 
 BOOL WINAPI SdbpCheckTagType(TAG tag, WORD type)
@@ -94,7 +95,7 @@ BOOL WINAPI SdbpCheckTagType(TAG tag, WORD type)
     return TRUE;
 }
 
-BOOL WINAPI SdbpReadData(PDB db, PVOID dest, DWORD offset, DWORD num)
+BOOL WINAPI SdbpReadData(PDB pdb, PVOID dest, DWORD offset, DWORD num)
 {
     DWORD size = offset + num;
 
@@ -103,24 +104,24 @@ BOOL WINAPI SdbpReadData(PDB db, PVOID dest, DWORD offset, DWORD num)
         return FALSE;
 
     /* Overflow */
-    if (db->size < size)
+    if (pdb->size < size)
         return FALSE;
 
-    memcpy(dest, db->data + offset, num);
+    memcpy(dest, pdb->data + offset, num);
     return TRUE;
 }
 
-TAG WINAPI SdbGetTagFromTagID(PDB db, TAGID tagid)
+TAG WINAPI SdbGetTagFromTagID(PDB pdb, TAGID tagid)
 {
     TAG data;
-    if (!SdbpReadData(db, &data, tagid, sizeof(data)))
+    if (!SdbpReadData(pdb, &data, tagid, sizeof(data)))
         return TAG_NULL;
     return data;
 }
 
-BOOL WINAPI SdbpCheckTagIDType(PDB db, TAGID tagid, WORD type)
+BOOL WINAPI SdbpCheckTagIDType(PDB pdb, TAGID tagid, WORD type)
 {
-    TAG tag = SdbGetTagFromTagID(db, tagid);
+    TAG tag = SdbGetTagFromTagID(pdb, tagid);
     if (tag == TAG_NULL)
         return FALSE;
     return SdbpCheckTagType(tag, type);
@@ -131,7 +132,7 @@ BOOL WINAPIV ShimDbgPrint(SHIM_LOG_LEVEL Level, PCSTR FunctionName, PCSTR Format
     va_list ArgList;
     const char* LevelStr;
 
-    if (Level > g_ShimDebugLevel)
+    if ((ULONG)Level > g_ShimDebugLevel)
         return FALSE;
 
     switch (Level)

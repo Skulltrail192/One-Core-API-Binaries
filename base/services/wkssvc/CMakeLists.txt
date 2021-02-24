@@ -3,7 +3,8 @@ include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/idl)
 add_rpc_files(server ${REACTOS_SOURCE_DIR}/sdk/include/reactos/idl/wkssvc.idl)
 spec2def(wkssvc.dll wkssvc.spec ADD_IMPORTLIB)
 
-add_library(wkssvc SHARED
+add_library(wkssvc MODULE
+    domain.c
     rpcserver.c
     wkssvc.c
     wkssvc.rc

@@ -18,7 +18,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "wine/debug.h"
+
+#define COBJMACROS
+
+#include "winbase.h"
+#include "wingdi.h"
+
 #include "d3dxof_private.h"
+#include "dxfile.h"
+
+#include <stdio.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3dxof);
 WINE_DECLARE_DEBUG_CHANNEL(d3dxof_dump);
@@ -253,7 +263,7 @@ static HRESULT WINAPI IDirectXFileImpl_CreateEnumObject(IDirectXFile* iface, LPV
     ULONG i;
     TRACE("Registered templates (%d):\n", This->nb_xtemplates);
     for (i = 1; i < This->nb_xtemplates; i++)
-      DPRINTF("%s - %s\n", This->xtemplates[i].name, debugstr_guid(&This->xtemplates[i].class_id));
+      TRACE("%s - %s\n", This->xtemplates[i].name, debugstr_guid(&This->xtemplates[i].class_id));
   }
 
   *ppEnumObj = &object->IDirectXFileEnumObject_iface;
@@ -332,7 +342,7 @@ static HRESULT WINAPI IDirectXFileImpl_RegisterTemplates(IDirectXFile* iface, LP
     ULONG i;
     TRACE("Registered templates (%d):\n", This->nb_xtemplates);
     for (i = 1; i < This->nb_xtemplates; i++)
-      DPRINTF("%s - %s\n", This->xtemplates[i].name, debugstr_guid(&This->xtemplates[i].class_id));
+      TRACE("%s - %s\n", This->xtemplates[i].name, debugstr_guid(&This->xtemplates[i].class_id));
   }
 
   hr = DXFILE_OK;

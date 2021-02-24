@@ -23,6 +23,16 @@
 extern "C" {
 #endif
 
+/*
+ * pResponse values from WTSSendMessage(), in addition
+ * to those from the standard MessageBox() API.
+ */
+#ifndef IDTIMEOUT
+#define IDTIMEOUT 32000
+#endif
+#ifndef IDASYNC
+#define IDASYNC   32001
+#endif
 
 typedef enum _WTS_VIRTUAL_CLASS
 {
@@ -49,6 +59,21 @@ typedef enum tagWTS_INFO_CLASS
     WTSClientAddress,
     WTSClientDisplay,
     WTSClientProtocolType,
+#if (NTDDI_VERSION >= NTDDI_WS08)
+    WTSIdleTime,
+    WTSLogonTime,
+    WTSIncomingBytes,
+    WTSOutgoingBytes,
+    WTSIncomingFrames,
+    WTSOutgoingFrames,
+    WTSClientInfo,
+    WTSSessionInfo,
+    WTSSessionInfoEx,
+    WTSConfigInfo,
+    WTSValidationInfo,
+    WTSSessionAddressV4,
+    WTSIsRemoteSession
+#endif /* (NTDDI_VERSION >= NTDDI_WS08) */
 } WTS_INFO_CLASS;
 
 typedef enum _WTS_CONNECTSTATE_CLASS
@@ -86,6 +111,13 @@ typedef enum _WTS_CONFIG_CLASS
     WTSUserConfigfTerminalServerRemoteHomeDir
 } WTS_CONFIG_CLASS;
 
+typedef enum _WTS_TYPE_CLASS
+{
+    WTSTypeProcessInfoLevel0,
+    WTSTypeProcessInfoLevel1,
+    WTSTypeSessionInfoLevel1
+} WTS_TYPE_CLASS;
+
 typedef struct _WTS_PROCESS_INFOA
 {
     DWORD SessionId;
@@ -122,6 +154,33 @@ typedef struct _WTS_SESSION_INFOW
 DECL_WINELIB_TYPE_AW(WTS_SESSION_INFO)
 DECL_WINELIB_TYPE_AW(PWTS_SESSION_INFO)
 
+typedef struct _WTS_SESSION_INFO_1A
+{
+    DWORD ExecEnvId;
+    WTS_CONNECTSTATE_CLASS State;
+    DWORD SessionId;
+    char *pSessionName;
+    char *pHostName;
+    char *pUserName;
+    char *pDomainName;
+    char *pFarmName;
+} WTS_SESSION_INFO_1A, *PWTS_SESSION_INFO_1A;
+
+typedef struct _WTS_SESSION_INFO_1W
+{
+    DWORD ExecEnvId;
+    WTS_CONNECTSTATE_CLASS State;
+    DWORD SessionId;
+    WCHAR *pSessionName;
+    WCHAR *pHostName;
+    WCHAR *pUserName;
+    WCHAR *pDomainName;
+    WCHAR *pFarmName;
+} WTS_SESSION_INFO_1W, *PWTS_SESSION_INFO_1W;
+
+DECL_WINELIB_TYPE_AW(WTS_SESSION_INFO_1)
+DECL_WINELIB_TYPE_AW(PWTS_SESSION_INFO_1)
+
 typedef struct _WTS_SERVER_INFOA
 {
     LPSTR pServerName;
@@ -136,12 +195,14 @@ DECL_WINELIB_TYPE_AW(WTS_SERVER_INFO)
 DECL_WINELIB_TYPE_AW(PWTS_SERVER_INFO)
 
 #define WTS_CURRENT_SERVER_HANDLE ((HANDLE)NULL)
+#define WTS_CURRENT_SESSION (~0u)
 
 void WINAPI WTSCloseServer(HANDLE);
 BOOL WINAPI WTSConnectSessionA(ULONG, ULONG, PSTR, BOOL);
 BOOL WINAPI WTSConnectSessionW(ULONG, ULONG, PWSTR, BOOL);
 #define     WTSConnectSession WINELIB_NAME_AW(WTSConnectSession)
 BOOL WINAPI WTSDisconnectSession(HANDLE, DWORD, BOOL);
+BOOL WINAPI WTSEnableChildSessions(BOOL);
 BOOL WINAPI WTSEnumerateProcessesA(HANDLE, DWORD, DWORD, PWTS_PROCESS_INFOA *, DWORD *);
 BOOL WINAPI WTSEnumerateProcessesW(HANDLE, DWORD, DWORD, PWTS_PROCESS_INFOW *, DWORD *);
 #define     WTSEnumerateProcesses WINELIB_NAME_AW(WTSEnumerateProcesses)

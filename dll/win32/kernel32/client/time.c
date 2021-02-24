@@ -141,6 +141,16 @@ GetSystemTimeAsFileTime(OUT PFILETIME lpFileTime)
 }
 
 /*
+ * @unimplemented
+ */
+VOID
+WINAPI
+GetSystemTimePreciseAsFileTime(OUT PFILETIME lpFileTime)
+{
+    STUB;
+}
+
+/*
  * @implemented
  */
 BOOL
@@ -534,7 +544,7 @@ GetSystemTimes(OUT LPFILETIME lpIdleTime OPTIONAL,
 {
     PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION ProcPerfInfo;
     LARGE_INTEGER TotalUserTime, TotalKernTime, TotalIdleTime;
-    SIZE_T BufferSize, ReturnLength;
+    ULONG BufferSize, ReturnLength;
     CCHAR i;
     NTSTATUS Status;
 

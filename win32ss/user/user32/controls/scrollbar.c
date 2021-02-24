@@ -26,14 +26,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* INCLUDES *******************************************************************/
-
 #include <user32.h>
 
-#include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(scrollbar);
-
-/* GLOBAL VARIABLES ***********************************************************/
 
 /* Definitions for scrollbar hit testing [See SCROLLBARINFO in MSDN] */
 #define SCROLL_NOWHERE		0x00    /* Outside the scroll bar */
@@ -105,7 +100,7 @@ IntGetSBData(PWND pwnd, INT Bar)
        case SB_VERT:
          return &pSBInfo->Vert;
        case SB_CTL:
-         if ( pwnd->cbwndExtra != (sizeof(SBWND)-sizeof(WND)) )
+         if ( pwnd->cbwndExtra < (sizeof(SBWND)-sizeof(WND)) )
          {
             ERR("IntGetSBData Wrong Extra bytes for CTL Scrollbar!\n");
             return 0;
@@ -321,6 +316,26 @@ IntGetScrollBarInfo(HWND Wnd, INT Bar, PSCROLLBARINFO ScrollBarInfo)
   ScrollBarInfo->cbSize = sizeof(SCROLLBARINFO);
 
   return NtUserGetScrollBarInfo(Wnd, IntScrollGetObjectId(Bar), ScrollBarInfo);
+}
+
+static VOID FASTCALL
+IntUpdateScrollArrows(HWND Wnd, HDC hDC, PSCROLLBARINFO ScrollBarInfo,
+                      SETSCROLLBARINFO *info, INT SBType, INT Arrow,
+                      BOOL Vertical, BOOL Pressed)
+{
+   if (Pressed)
+   {
+      ScrollBarInfo->rgstate[Arrow] |= STATE_SYSTEM_PRESSED;
+   }
+   else
+   {
+      ScrollBarInfo->rgstate[Arrow] &= ~STATE_SYSTEM_PRESSED;
+   }
+   /* Update arrow state */
+   info->rgstate[Arrow] = ScrollBarInfo->rgstate[Arrow];
+   NtUserSetScrollBarInfo(Wnd, IntScrollGetObjectId(SBType), info);
+
+   IntDrawScrollArrows(hDC, ScrollBarInfo, Vertical);
 }
 
 void
@@ -836,9 +851,11 @@ IntScrollHandleScrollEvent(HWND Wnd, INT SBType, UINT Msg, POINT Pt)
         PrevPt = Pt;
         if (SBType == SB_CTL && (GetWindowLongPtrW(Wnd, GWL_STYLE) & WS_TABSTOP)) SetFocus(Wnd);
         SetCapture(Wnd);
-        ScrollBarInfo.rgstate[ScrollTrackHitTest] |= STATE_SYSTEM_PRESSED;
-        NewInfo.rgstate[ScrollTrackHitTest] = ScrollBarInfo.rgstate[ScrollTrackHitTest];
-        NtUserSetScrollBarInfo(Wnd, IntScrollGetObjectId(SBType), &NewInfo);
+        /* Don't update scrollbar if disabled. */
+        if (ScrollBarInfo.rgstate[ScrollTrackHitTest] != STATE_SYSTEM_UNAVAILABLE)
+        {
+            IntUpdateScrollArrows (Wnd, Dc, &ScrollBarInfo, &NewInfo, SBType, ScrollTrackHitTest, Vertical, TRUE);
+        }
         break;
 
       case WM_MOUSEMOVE:
@@ -851,13 +868,12 @@ IntScrollHandleScrollEvent(HWND Wnd, INT SBType, UINT Msg, POINT Pt)
         ReleaseCapture();
         /* if scrollbar has focus, show back caret */
         if (Wnd == GetFocus()) ShowCaret(Wnd);
-        ScrollBarInfo.rgstate[ScrollTrackHitTest] &= ~STATE_SYSTEM_PRESSED;
-        NewInfo.rgstate[ScrollTrackHitTest] = ScrollBarInfo.rgstate[ScrollTrackHitTest];
-        NtUserSetScrollBarInfo(Wnd, IntScrollGetObjectId(SBType), &NewInfo);
-
-        IntDrawScrollInterior(Wnd,Dc,SBType,Vertical,&ScrollBarInfo);
-        IntDrawScrollArrows(Dc, &ScrollBarInfo, Vertical);
-
+        /* Don't update scrollbar if disabled. */
+        if (ScrollBarInfo.rgstate[ScrollTrackHitTest] != STATE_SYSTEM_UNAVAILABLE)
+        {
+            IntUpdateScrollArrows (Wnd, Dc, &ScrollBarInfo, &NewInfo, SBType, ScrollTrackHitTest, Vertical, FALSE);
+            IntDrawScrollInterior(Wnd,Dc,SBType,Vertical,&ScrollBarInfo);
+        }
         break;
 
       case WM_SYSTIMER:
@@ -888,9 +904,17 @@ IntScrollHandleScrollEvent(HWND Wnd, INT SBType, UINT Msg, POINT Pt)
 	    SetSystemTimer(Wnd, SCROLL_TIMER, (WM_LBUTTONDOWN == Msg) ?
                            SCROLL_FIRST_DELAY : SCROLL_REPEAT_DELAY,
                            (TIMERPROC) NULL);
+            if (ScrollBarInfo.rgstate[ScrollTrackHitTest] != STATE_SYSTEM_UNAVAILABLE)
+            {
+               if (!(ScrollBarInfo.rgstate[ScrollTrackHitTest] &= STATE_SYSTEM_PRESSED))
+               {
+                  IntUpdateScrollArrows (Wnd, Dc, &ScrollBarInfo, &NewInfo, SBType, ScrollTrackHitTest, Vertical, TRUE);
+               }
+            }
           }
         else
           {
+            IntUpdateScrollArrows (Wnd, Dc, &ScrollBarInfo, &NewInfo, SBType, ScrollTrackHitTest, Vertical, FALSE);
             KillSystemTimer(Wnd, SCROLL_TIMER);
           }
         break;
@@ -990,8 +1014,20 @@ IntScrollHandleScrollEvent(HWND Wnd, INT SBType, UINT Msg, POINT Pt)
 	    SetSystemTimer(Wnd, SCROLL_TIMER, (WM_LBUTTONDOWN == Msg) ?
                            SCROLL_FIRST_DELAY : SCROLL_REPEAT_DELAY,
                            (TIMERPROC) NULL);
+            if (ScrollBarInfo.rgstate[ScrollTrackHitTest] != STATE_SYSTEM_UNAVAILABLE)
+            {
+               if (!(ScrollBarInfo.rgstate[ScrollTrackHitTest] &= STATE_SYSTEM_PRESSED))
+               {
+                  TRACE("Set Arrow\n");
+                  IntUpdateScrollArrows (Wnd, Dc, &ScrollBarInfo, &NewInfo, SBType, ScrollTrackHitTest, Vertical, TRUE);
+               }
+            }
           }
-        else KillSystemTimer(Wnd, SCROLL_TIMER);
+        else
+        {
+            IntUpdateScrollArrows (Wnd, Dc, &ScrollBarInfo, &NewInfo, SBType, ScrollTrackHitTest, Vertical, FALSE);
+            KillSystemTimer(Wnd, SCROLL_TIMER);
+        }
         break;
     }
 
@@ -1191,7 +1227,7 @@ ScrollBarWndProc_common(WNDPROC DefWindowProc, HWND Wnd, UINT Msg, WPARAM wParam
      if (!pWnd->fnid)
      {
         TRACE("ScrollBar CTL size %d\n", (sizeof(SBWND)-sizeof(WND)));
-        if ( pWnd->cbwndExtra != (sizeof(SBWND)-sizeof(WND)) )
+        if ( pWnd->cbwndExtra < (sizeof(SBWND)-sizeof(WND)) )
         {
            ERR("Wrong Extra bytes for Scrollbar!\n");
            return 0;
@@ -1464,6 +1500,7 @@ EnableScrollBar( HWND hwnd, UINT nBar, UINT flags )
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
    {
+       ERR("Got exception in hooked EnableScrollBar!\n");
    }
    _SEH2_END;
 
@@ -1538,6 +1575,7 @@ GetScrollInfo(HWND Wnd, INT SBType, LPSCROLLINFO Info)
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
    {
+       ERR("Got exception in hooked GetScrollInfo!\n");
    }
    _SEH2_END;
 
@@ -1661,6 +1699,7 @@ SetScrollInfo(HWND Wnd, int SBType, LPCSCROLLINFO Info, BOOL bRedraw)
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
    {
+       ERR("Got exception in hooked SetScrollInfo!\n");
    }
    _SEH2_END;
 

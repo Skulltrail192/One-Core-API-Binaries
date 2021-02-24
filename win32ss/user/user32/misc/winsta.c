@@ -1,30 +1,28 @@
 /*
- * COPYRIGHT:       See COPYING in the top level directory
- * PROJECT:         ReactOS user32.dll
- * FILE:            win32ss/user/user32/misc/winsta.c
- * PURPOSE:         Window stations
- * PROGRAMMER:      Casper S. Hornstrup (chorns@users.sourceforge.net)
- * UPDATE HISTORY:
- *      04-06-2001  CSH  Created
+ * PROJECT:     ReactOS user32.dll
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     Window stations
+ * COPYRIGHT:   Copyright 2001-2018 Casper S. Hornstrup (chorns@users.sourceforge.net)
+ *              Copyright 2011-2018 Giannis Adamopoulos
  */
 
 #include <user32.h>
 
-#include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(winsta);
-
 
 /*
  * @implemented
  */
-HWINSTA WINAPI
-CreateWindowStationA(LPCSTR lpwinsta,
-                     DWORD dwReserved,
-                     ACCESS_MASK dwDesiredAccess,
-                     LPSECURITY_ATTRIBUTES lpsa)
+HWINSTA
+WINAPI
+CreateWindowStationA(
+    IN LPCSTR lpwinsta OPTIONAL,
+    IN DWORD dwReserved,
+    IN ACCESS_MASK dwDesiredAccess,
+    IN LPSECURITY_ATTRIBUTES lpsa OPTIONAL)
 {
-    UNICODE_STRING WindowStationNameU;
     HWINSTA hWinSta;
+    UNICODE_STRING WindowStationNameU;
 
     if (lpwinsta)
     {
@@ -41,7 +39,7 @@ CreateWindowStationA(LPCSTR lpwinsta,
                                    dwDesiredAccess,
                                    lpsa);
 
-    /* Free the string, if it was allocated */
+    /* Free the string if it was allocated */
     if (lpwinsta) RtlFreeUnicodeString(&WindowStationNameU);
 
     return hWinSta;
@@ -51,63 +49,84 @@ CreateWindowStationA(LPCSTR lpwinsta,
 /*
  * @implemented
  */
-HWINSTA WINAPI
-CreateWindowStationW(LPCWSTR lpwinsta,
-                     DWORD dwReserved,
-                     ACCESS_MASK dwDesiredAccess,
-                     LPSECURITY_ATTRIBUTES lpsa)
+HWINSTA
+WINAPI
+CreateWindowStationW(
+    IN LPCWSTR lpwinsta OPTIONAL,
+    IN DWORD dwReserved,
+    IN ACCESS_MASK dwDesiredAccess,
+    IN LPSECURITY_ATTRIBUTES lpsa OPTIONAL)
 {
+    NTSTATUS Status;
+    HWINSTA hWinSta;
     UNICODE_STRING WindowStationName;
+    // FIXME: We should cache a per-session directory (see ntuser\winsta.c!UserCreateWinstaDirectory).
     UNICODE_STRING WindowStationsDir = RTL_CONSTANT_STRING(L"\\Windows\\WindowStations");
     OBJECT_ATTRIBUTES ObjectAttributes;
     HANDLE hWindowStationsDir;
-    NTSTATUS Status;
-    HWINSTA hwinsta;
 
-    /* Open WindowStations directory */
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &WindowStationsDir,
-                               OBJ_CASE_INSENSITIVE,
-                               0,
-                               0);
-
-    Status = NtOpenDirectoryObject(&hWindowStationsDir, 
-                                   DIRECTORY_CREATE_OBJECT, 
-                                   &ObjectAttributes);
-    if(!NT_SUCCESS(Status))
+    /*
+     * If provided, the window station name is always relative to the
+     * current user session's WindowStations directory.
+     * Otherwise (the window station name is NULL or an empty string),
+     * pass both an empty string and no WindowStations directory handle
+     * to win32k, so that it will create a window station whose name
+     * is based on the logon session identifier for the calling process.
+     */
+    if (lpwinsta && *lpwinsta)
     {
-        ERR("Failed to open WindowStations directory\n");
-        return NULL;
-    }
+        /* Open WindowStations directory */
+        InitializeObjectAttributes(&ObjectAttributes,
+                                   &WindowStationsDir,
+                                   OBJ_CASE_INSENSITIVE,
+                                   NULL,
+                                   NULL);
 
-    RtlInitUnicodeString(&WindowStationName, lpwinsta);
+        Status = NtOpenDirectoryObject(&hWindowStationsDir,
+                                       DIRECTORY_CREATE_OBJECT,
+                                       &ObjectAttributes);
+        if (!NT_SUCCESS(Status))
+        {
+            ERR("Failed to open WindowStations directory\n");
+            return NULL;
+        }
+
+        RtlInitUnicodeString(&WindowStationName, lpwinsta);
+    }
+    else
+    {
+        lpwinsta = NULL;
+        hWindowStationsDir = NULL;
+    }
 
     /* Create the window station object */
     InitializeObjectAttributes(&ObjectAttributes,
-                               &WindowStationName,
-                               OBJ_CASE_INSENSITIVE,
+                               lpwinsta ? &WindowStationName : NULL,
+                               OBJ_CASE_INSENSITIVE | OBJ_OPENIF,
                                hWindowStationsDir,
-                               0);
+                               NULL);
 
     /* Check if the handle should be inheritable */
     if (lpsa && lpsa->bInheritHandle)
-    { 
+    {
         ObjectAttributes.Attributes |= OBJ_INHERIT;
     }
 
-    hwinsta = NtUserCreateWindowStation(&ObjectAttributes,
+    hWinSta = NtUserCreateWindowStation(&ObjectAttributes,
                                         dwDesiredAccess,
                                         0, 0, 0, 0, 0);
 
-    NtClose(hWindowStationsDir);
+    if (hWindowStationsDir)
+        NtClose(hWindowStationsDir);
 
-    return hwinsta;
+    return hWinSta;
 }
 
 /*
  * Common code for EnumDesktopsA/W and EnumWindowStationsA/W
  */
-BOOL FASTCALL
+BOOL
+FASTCALL
 EnumNamesW(HWINSTA WindowStation,
            NAMEENUMPROCW EnumFunc,
            LPARAM Context,
@@ -176,7 +195,6 @@ EnumNamesW(HWINSTA WindowStation,
     return Ret;
 }
 
-
 /* For W->A conversion */
 typedef struct tagENUMNAMESASCIICONTEXT
 {
@@ -188,7 +206,8 @@ typedef struct tagENUMNAMESASCIICONTEXT
  * Callback used by Ascii versions. Converts the Unicode name to
  * Ascii and then calls the user callback
  */
-BOOL CALLBACK
+BOOL
+CALLBACK
 EnumNamesCallback(LPWSTR Name, LPARAM Param)
 {
     PENUMNAMESASCIICONTEXT Context = (PENUMNAMESASCIICONTEXT) Param;
@@ -249,7 +268,8 @@ EnumNamesCallback(LPWSTR Name, LPARAM Param)
 /*
  * Common code for EnumDesktopsA and EnumWindowStationsA
  */
-BOOL FASTCALL
+BOOL
+FASTCALL
 EnumNamesA(HWINSTA WindowStation,
            NAMEENUMPROCA EnumFunc,
            LPARAM Context,
@@ -266,9 +286,11 @@ EnumNamesA(HWINSTA WindowStation,
 /*
  * @implemented
  */
-BOOL WINAPI
-EnumWindowStationsA(WINSTAENUMPROCA EnumFunc,
-                    LPARAM Context)
+BOOL
+WINAPI
+EnumWindowStationsA(
+    IN WINSTAENUMPROCA EnumFunc,
+    IN LPARAM Context)
 {
     return EnumNamesA(NULL, EnumFunc, Context, FALSE);
 }
@@ -277,9 +299,11 @@ EnumWindowStationsA(WINSTAENUMPROCA EnumFunc,
 /*
  * @implemented
  */
-BOOL WINAPI
-EnumWindowStationsW(WINSTAENUMPROCW EnumFunc,
-                    LPARAM Context)
+BOOL
+WINAPI
+EnumWindowStationsW(
+    IN WINSTAENUMPROCW EnumFunc,
+    IN LPARAM Context)
 {
     return EnumNamesW(NULL, EnumFunc, Context, FALSE);
 }
@@ -288,7 +312,8 @@ EnumWindowStationsW(WINSTAENUMPROCW EnumFunc,
 /*
  * @unimplemented on Win32k side
  */
-BOOL WINAPI
+BOOL
+WINAPI
 GetWinStationInfo(PVOID pUnknown)
 {
     return (BOOL)NtUserCallOneParam((DWORD_PTR)pUnknown, ONEPARAM_ROUTINE_GETWINSTAINFO);
@@ -298,13 +323,15 @@ GetWinStationInfo(PVOID pUnknown)
 /*
  * @implemented
  */
-HWINSTA WINAPI
-OpenWindowStationA(LPCSTR lpszWinSta,
-                   BOOL fInherit,
-                   ACCESS_MASK dwDesiredAccess)
+HWINSTA
+WINAPI
+OpenWindowStationA(
+    IN LPCSTR lpszWinSta,
+    IN BOOL fInherit,
+    IN ACCESS_MASK dwDesiredAccess)
 {
-    UNICODE_STRING WindowStationNameU;
     HWINSTA hWinSta;
+    UNICODE_STRING WindowStationNameU;
 
     if (lpszWinSta)
     {
@@ -320,7 +347,7 @@ OpenWindowStationA(LPCSTR lpszWinSta,
                                  fInherit,
                                  dwDesiredAccess);
 
-    /* Free the string, if it was allocated */
+    /* Free the string if it was allocated */
     if (lpszWinSta) RtlFreeUnicodeString(&WindowStationNameU);
 
     return hWinSta;
@@ -330,27 +357,30 @@ OpenWindowStationA(LPCSTR lpszWinSta,
 /*
  * @implemented
  */
-HWINSTA WINAPI
-OpenWindowStationW(LPCWSTR lpszWinSta,
-                   BOOL fInherit,
-                   ACCESS_MASK dwDesiredAccess)
+HWINSTA
+WINAPI
+OpenWindowStationW(
+    IN LPCWSTR lpszWinSta,
+    IN BOOL fInherit,
+    IN ACCESS_MASK dwDesiredAccess)
 {
+    NTSTATUS Status;
+    HWINSTA hWinSta;
     UNICODE_STRING WindowStationName;
+    // FIXME: We should cache a per-session directory (see ntuser\winsta.c!UserCreateWinstaDirectory).
     UNICODE_STRING WindowStationsDir = RTL_CONSTANT_STRING(L"\\Windows\\WindowStations");
     OBJECT_ATTRIBUTES ObjectAttributes;
     HANDLE hWindowStationsDir;
-    NTSTATUS Status;
-    HWINSTA hwinsta;
 
     /* Open WindowStations directory */
     InitializeObjectAttributes(&ObjectAttributes,
                                &WindowStationsDir,
                                OBJ_CASE_INSENSITIVE,
-                               0,
-                               0);
+                               NULL,
+                               NULL);
 
-    Status = NtOpenDirectoryObject(&hWindowStationsDir, 
-                                   DIRECTORY_TRAVERSE, 
+    Status = NtOpenDirectoryObject(&hWindowStationsDir,
+                                   DIRECTORY_TRAVERSE,
                                    &ObjectAttributes);
     if(!NT_SUCCESS(Status))
     {
@@ -365,18 +395,19 @@ OpenWindowStationW(LPCWSTR lpszWinSta,
                                &WindowStationName,
                                OBJ_CASE_INSENSITIVE,
                                hWindowStationsDir,
-                               0);
+                               NULL);
 
-    if(fInherit)
+    /* Check if the handle should be inheritable */
+    if (fInherit)
     {
         ObjectAttributes.Attributes |= OBJ_INHERIT;
     }
 
-    hwinsta = NtUserOpenWindowStation(&ObjectAttributes, dwDesiredAccess);
+    hWinSta = NtUserOpenWindowStation(&ObjectAttributes, dwDesiredAccess);
 
     NtClose(hWindowStationsDir);
 
-    return hwinsta;
+    return hWinSta;
 }
 
 
@@ -385,10 +416,11 @@ OpenWindowStationW(LPCWSTR lpszWinSta,
  */
 BOOL
 WINAPI
-SetWindowStationUser(HWINSTA hWindowStation,
-                     PLUID pluid,
-                     PSID psid,
-                     DWORD size)
+SetWindowStationUser(
+    IN HWINSTA hWindowStation,
+    IN PLUID pluid,
+    IN PSID psid OPTIONAL,
+    IN DWORD size)
 {
     BOOL Success;
 
@@ -397,7 +429,7 @@ SetWindowStationUser(HWINSTA hWindowStation,
     {
         /* Signal log-on/off to WINSRV */
 
-        /* User is logging on if pluid != LuidNone, otherwise it is a log-off */
+        /* User is logging on if *pluid != LuidNone, otherwise it is a log-off */
         LUID LuidNone = {0, 0};
         BOOL IsLogon = (pluid && !RtlEqualLuid(pluid, &LuidNone));
 

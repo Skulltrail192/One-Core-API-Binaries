@@ -5,7 +5,7 @@ LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL
 IDD_PROPPAGEKEYBOARD DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "鍵盤"
-FONT 9, "MS Shell Dlg", 0, 0, 0x0
+FONT 9, "新細明體", 0, 0, 0x0
 BEGIN
     GROUPBOX "粘滯鍵", -1, 6, 11, 234, 62
     LTEXT "如果希望以一次僅按一鍵的方式來使用 SHIFT、CTRL或 ALT 鍵，請用粘滯鍵。",
@@ -17,7 +17,7 @@ BEGIN
           -1, 12, 89, 222, 29
     AUTOCHECKBOX "使用篩選鍵(&F)", IDC_FILTER_BOX, 12, 121, 126, 14
     PUSHBUTTON "設定(&E)", IDC_FILTER_BUTTON, 144, 121, 90, 14
-    GROUPBOX "切換鍵", -1, 6, 145, 234, 62
+    GROUPBOX "切換鍵", -1, 6, 148, 234, 62
     LTEXT "如果希望在按 CAPS、NUM LOCK 和 SCROLL LOCK 鍵時聽到聲音， 請用切換鍵。",
           -1, 12, 161, 222, 20
     AUTOCHECKBOX "使用切換鍵(&T)", IDC_TOGGLE_BOX, 12, 184, 126, 14
@@ -29,7 +29,7 @@ END
 IDD_PROPPAGESOUND DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "聲音"
-FONT 9, "MS Shell Dlg", 0, 0, 0x0
+FONT 9, "新細明體", 0, 0, 0x0
 BEGIN
     GROUPBOX "聲音衛士", -1, 6, 11, 234, 98
     LTEXT "希望 ReactOS 能夠在系統發出聲音時發出可視警告，請用“聲音衛士”。",
@@ -47,7 +47,7 @@ END
 IDD_PROPPAGEDISPLAY DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "顯示"
-FONT 9, "MS Shell Dlg", 0, 0, 0x0
+FONT 9, "新細明體", 0, 0, 0x0
 BEGIN
     GROUPBOX "高對比度", -1, 6, 11, 234, 62
     LTEXT "希望 ReactOS 使用可讀性好的顏色與字型，請用該選項。",
@@ -73,7 +73,7 @@ END
 IDD_PROPPAGEMOUSE DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "滑鼠"
-FONT 9, "MS Shell Dlg", 0, 0, 0x0
+FONT 9, "新細明體", 0, 0, 0x0
 BEGIN
     GROUPBOX "滑鼠鍵", -1, 6, 11, 234, 62
     LTEXT "希望用數字鍵盤來控制滑鼠指針，請用“滑鼠鍵”。",
@@ -84,8 +84,8 @@ END
 
 IDD_PROPPAGEGENERAL DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "常規"
-FONT 9, "MS Shell Dlg", 0, 0, 0x0
+CAPTION "一般"
+FONT 9, "新細明體", 0, 0, 0x0
 BEGIN
     GROUPBOX "自動重置", -1, 6, 11, 234, 47
     AUTOCHECKBOX "關閉輔助功能特徵，在空閒(&T):",
@@ -112,7 +112,7 @@ END
 IDD_STICKYKEYSOPTIONS DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "粘滯鍵設定"
-FONT 9, "MS Shell Dlg"
+FONT 9, "新細明體"
 BEGIN
     GROUPBOX "鍵盤快捷鍵", -1, 6, 11, 234, 62
     LTEXT "粘滯鍵的快捷鍵是:\n將 SHIFT 鍵按五次後啟用。",
@@ -135,10 +135,10 @@ END
 IDD_FILTERKEYSOPTIONS DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "篩選鍵設定"
-FONT 9, "MS Shell Dlg"
+FONT 9, "新細明體"
 BEGIN
     GROUPBOX "鍵盤快捷鍵", -1, 6, 11, 234, 62
-    LTEXT "篩選鍵的快捷鍵是: \n將右手的 SHIFT 鍵按住八秒鐘。",
+    LTEXT "篩選鍵的快捷鍵是:\n將右手的 SHIFT 鍵按住八秒鐘。",
           -1, 12, 20, 222, 29
     AUTOCHECKBOX "使用快捷鍵(&U)", IDC_FILTER_ACTIVATE_CHECK, 12, 49, 126, 14
     GROUPBOX "篩選器選項", -1, 6, 79, 234, 79
@@ -162,10 +162,10 @@ END
 IDD_TOGGLEKEYSOPTIONS DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "切換鍵設定"
-FONT 9, "MS Shell Dlg"
+FONT 9, "新細明體"
 BEGIN
     GROUPBOX "鍵盤快捷鍵", -1, 6, 11, 234, 62
-    LTEXT "切換鍵的快捷鍵是:  \n將 NUM LOCK 鍵按住五秒鐘。",
+    LTEXT "切換鍵的快捷鍵是:\n將 NUM LOCK 鍵按住五秒鐘。",
           -1, 12, 20, 222, 29
     AUTOCHECKBOX "使用快捷鍵(&S)", IDC_TOGGLE_ACTIVATE_CHECK, 12, 49, 222, 14
     DEFPUSHBUTTON "確定", IDOK, 135, 207, 50, 14
@@ -175,10 +175,10 @@ END
 IDD_CONTRASTOPTIONS DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "高對比度設定"
-FONT 9, "MS Shell Dlg"
+FONT 9, "新細明體"
 BEGIN
     GROUPBOX "鍵盤快捷鍵", -1, 6, 11, 234, 62
-    LTEXT "高對比度的快捷鍵是:  \n同時按住左 Alt 鍵、左 SHIFT 鍵和 PRINT SCREEN 鍵。",
+    LTEXT "高對比度的快捷鍵是:\n同時按住左 Alt 鍵、左 SHIFT 鍵和 PRINT SCREEN 鍵。",
           -1, 12, 20, 222, 29
     AUTOCHECKBOX "使用快捷鍵(&U)", IDC_CONTRAST_ACTIVATE_CHECK, 12, 49, 222, 14
     GROUPBOX "高對比度外觀方案", -1, 6, 83, 234, 44
@@ -192,10 +192,10 @@ END
 IDD_MOUSEKEYSOPTIONS DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "滑鼠鍵設定"
-FONT 9, "MS Shell Dlg"
+FONT 9, "新細明體"
 BEGIN
     GROUPBOX "鍵盤快捷鍵", -1, 6, 11, 234, 62
-    LTEXT "滑鼠鍵的快捷鍵是： \n同時按住左 Alt 鍵、左 Shift 鍵和 Num Lock 鍵。",
+    LTEXT "滑鼠鍵的快捷鍵是：\n同時按住左 Alt 鍵、左 Shift 鍵和 Num Lock 鍵。",
           -1, 12, 20, 222, 29
     AUTOCHECKBOX "使用快捷鍵(&U)", IDC_MOUSEKEYS_ACTIVATE_CHECK,
                  12, 49, 222, 14
@@ -224,7 +224,7 @@ END
 IDD_BOUNCEKEYSOPTIONS DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "篩選鍵高階設定"
-FONT 9, "MS Shell Dlg"
+FONT 9, "新細明體"
 BEGIN
     GROUPBOX "蹦跳鍵", -1, 6, 11, 234, 47
     LTEXT "忽略重複的擊鍵比快：(&I)", -1, 12, 21, 222, 20
@@ -239,7 +239,7 @@ END
 IDD_REPEATKEYSOPTIONS DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "篩選鍵高階設定"
-FONT 9, "MS Shell Dlg"
+FONT 9, "新細明體"
 BEGIN
     GROUPBOX "重複鍵", -1, 6, 11, 234, 106
     LTEXT "替代控制面板“鍵盤”上的設定：",
@@ -265,7 +265,7 @@ END
 IDD_SERIALKEYSOPTIONS DIALOGEX 0, 0, 246, 228
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "序列鍵的設定"
-FONT 9, "MS Shell Dlg"
+FONT 9, "新細明體"
 BEGIN
     GROUPBOX "序列鍵", -1, 6, 11, 234, 92
     LTEXT "選擇用於連線其他輸入裝置的埠。",
@@ -283,7 +283,7 @@ END
 STRINGTABLE
 BEGIN
     IDS_CPLSYSTEMNAME "輔助功能"
-    IDS_CPLSYSTEMDESCRIPTION "為視覺、聽力和行動能力而調整計算機設定。"
+    IDS_CPLSYSTEMDESCRIPTION "為視覺、聽力和行動能力而調整電腦設定。"
     IDS_SENTRY_NONE "[無]"
     IDS_SENTRY_TITLE "閃爍活動標題欄"
     IDS_SENTRY_WINDOW "閃爍活動視窗"

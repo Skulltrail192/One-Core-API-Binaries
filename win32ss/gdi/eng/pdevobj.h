@@ -162,6 +162,24 @@ NTAPI
 EngpGetPDEV(
     _In_opt_ PUNICODE_STRING pustrDevice);
 
+FORCEINLINE
+VOID
+PDEVOBJ_vReference(
+    _In_ PPDEVOBJ ppdev)
+{
+    ASSERT(ppdev);
+
+    /* Fail if the PDEV is being destroyed */
+    if (ppdev->cPdevRefs == 0)
+    {
+        ASSERT(FALSE);
+        return;
+    }
+    ASSERT(ppdev->cPdevRefs > 0);
+
+    InterlockedIncrement(&ppdev->cPdevRefs);
+}
+
 VOID
 NTAPI
 PDEVOBJ_vRelease(

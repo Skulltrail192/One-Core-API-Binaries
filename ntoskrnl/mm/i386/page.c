@@ -12,6 +12,7 @@
 #include <ntoskrnl.h>
 #define NDEBUG
 #include <debug.h>
+
 #include <mm/ARM3/miarm.h>
 
 #if defined (ALLOC_PRAGMA)
@@ -189,31 +190,9 @@ ProtectToPTE(ULONG flProtect)
     return(Attributes);
 }
 
-/* Taken from ARM3/pagfault.c */
-FORCEINLINE
-BOOLEAN
-MiSynchronizeSystemPde(PMMPDE PointerPde)
-{
-    MMPDE SystemPde;
-    ULONG Index;
-
-    /* Get the Index from the PDE */
-    Index = ((ULONG_PTR)PointerPde & (SYSTEM_PD_SIZE - 1)) / sizeof(MMPTE);
-
-    /* Copy the PDE from the double-mapped system page directory */
-    SystemPde = MmSystemPagePtes[Index];
-    *PointerPde = SystemPde;
-
-    /* Make sure we re-read the PDE and PTE */
-    KeMemoryBarrierWithoutFence();
-
-    /* Return, if we had success */
-    return SystemPde.u.Hard.Valid != 0;
-}
-
 NTSTATUS
 NTAPI
-MiDispatchFault(IN BOOLEAN StoreInstruction,
+MiDispatchFault(IN ULONG FaultCode,
                 IN PVOID Address,
                 IN PMMPTE PointerPte,
                 IN PMMPTE PointerProtoPte,
@@ -284,7 +263,8 @@ MmGetPageTableForProcess(PEPROCESS Process, PVOID Address, BOOLEAN Create)
             ASSERT(PointerPde->u.Long == 0);
 
             MI_WRITE_INVALID_PTE(PointerPde, DemandZeroPde);
-            Status = MiDispatchFault(TRUE,
+            // Tiny HACK: Parameter 1 is the architecture specific FaultCode for an access violation (i.e. page is present)
+            Status = MiDispatchFault(0x1,
                                      Pt,
                                      PointerPde,
                                      NULL,
@@ -410,7 +390,7 @@ MmDeleteVirtualMapping(PEPROCESS Process, PVOID Address,
 		{
 			/* Remove PDE reference */
 			Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Address)]--;
-			ASSERT(Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Address)] < PTE_COUNT);
+			ASSERT(Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Address)] < PTE_PER_PAGE);
 		}
 
         Pfn = PTE_TO_PFN(Pte);
@@ -474,7 +454,7 @@ MmDeletePageFileMapping(PEPROCESS Process, PVOID Address,
 	{
 		/* Remove PDE reference */
 		Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Address)]--;
-		ASSERT(Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Address)] < PTE_COUNT);
+		ASSERT(Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Address)] < PTE_PER_PAGE);
 	}
 
     /* We don't need to flush here because page file entries
@@ -659,7 +639,7 @@ MmCreatePageFileMapping(PEPROCESS Process,
 	{
 		/* Add PDE reference */
 		Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Address)]++;
-		ASSERT(Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Address)] <= PTE_COUNT);
+		ASSERT(Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Address)] <= PTE_PER_PAGE);
 	}
 
     /* We don't need to flush the TLB here because it
@@ -694,13 +674,13 @@ MmCreateVirtualMappingUnsafe(PEPROCESS Process,
     {
         if (Address < MmSystemRangeStart)
         {
-            DPRINT1("No process\n");
+            DPRINT1("NULL process given for user-mode mapping at %p -- %lu pages starting at %Ix\n", Address, PageCount, *Pages);
             KeBugCheck(MEMORY_MANAGEMENT);
         }
         if (PageCount > 0x10000 ||
             (ULONG_PTR) Address / PAGE_SIZE + PageCount > 0x100000)
         {
-            DPRINT1("Page count too large\n");
+            DPRINT1("Page count too large for kernel-mode mapping at %p -- %lu pages starting at %Ix\n", Address, PageCount, *Pages);
             KeBugCheck(MEMORY_MANAGEMENT);
         }
     }
@@ -708,14 +688,14 @@ MmCreateVirtualMappingUnsafe(PEPROCESS Process,
     {
         if (Address >= MmSystemRangeStart)
         {
-            DPRINT1("Setting kernel address with process context\n");
+            DPRINT1("Process %p given for kernel-mode mapping at %p -- %lu pages starting at %Ix\n", Process, Address, PageCount, *Pages);
             KeBugCheck(MEMORY_MANAGEMENT);
         }
         if (PageCount > (ULONG_PTR)MmSystemRangeStart / PAGE_SIZE ||
             (ULONG_PTR) Address / PAGE_SIZE + PageCount >
             (ULONG_PTR)MmSystemRangeStart / PAGE_SIZE)
         {
-            DPRINT1("Page Count too large\n");
+            DPRINT1("Page count too large for process %p user-mode mapping at %p -- %lu pages starting at %Ix\n", Process, Address, PageCount, *Pages);
             KeBugCheck(MEMORY_MANAGEMENT);
         }
     }
@@ -776,7 +756,7 @@ MmCreateVirtualMappingUnsafe(PEPROCESS Process,
 		{
 			/* Add PDE reference */
 			Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Addr)]++;
-			ASSERT(Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Addr)] <= PTE_COUNT);
+			ASSERT(Process->Vm.VmWorkingSetList->UsedPageTableEntries[MiGetPdeOffset(Addr)] <= PTE_PER_PAGE);
 		}
     }
 

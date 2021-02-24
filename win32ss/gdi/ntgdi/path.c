@@ -6,6 +6,7 @@
  * PROGRAMMER:      Copyright 1997, 1998 Martin Boehme
  *                            1999 Huw D M Davies
  *                            2005 Dmitry Timoshkov
+ *                            2018 Katayama Hirofumi MZ
  */
 
 #include <win32k.h>
@@ -221,7 +222,7 @@ BOOL PATH_RestorePath( DC *dst, DC *src )
        PATH_AssignGdiPath(pdstPath, psrcPath);
 
        PATH_UnlockPath(pdstPath);
-       PATH_UnlockPath(psrcPath);       
+       PATH_UnlockPath(psrcPath);
     }
     else
     {
@@ -1404,7 +1405,7 @@ PATH_PathToRegion(
     INT Mode,
     PREGION Rgn)
 {
-    int i, pos, polygons; 
+    int i, pos, polygons;
     PULONG counts;
     int Ret;
 
@@ -1457,6 +1458,16 @@ FASTCALL
 PATH_FillPath(
     PDC dc,
     PPATH pPath)
+{
+    return PATH_FillPathEx(dc, pPath, NULL);
+}
+
+BOOL
+FASTCALL
+PATH_FillPathEx(
+    PDC dc,
+    PPATH pPath,
+    PBRUSH pbrFill)
 {
     INT   mapMode, graphicsMode;
     SIZE  ptViewportExt, ptWindowExt;
@@ -1517,7 +1528,7 @@ PATH_FillPath(
     pdcattr->iGraphicsMode =  graphicsMode;
 
     /* Paint the region */
-    IntGdiPaintRgn(dc, Rgn);
+    IntGdiFillRgn(dc, Rgn, pbrFill);
     REGION_Delete(Rgn);
     /* Restore the old mapping mode */
     IntGdiSetMapMode(dc, mapMode);
@@ -1529,7 +1540,7 @@ PATH_FillPath(
     /* Go to GM_ADVANCED temporarily to restore the world transform */
     graphicsMode = pdcattr->iGraphicsMode;
     pdcattr->iGraphicsMode = GM_ADVANCED;
-    GreModifyWorldTransform(dc, &xform, MWT_MAX+1);
+    GreModifyWorldTransform(dc, &xform, MWT_SET);
     pdcattr->iGraphicsMode = graphicsMode;
     return TRUE;
 }
@@ -1709,93 +1720,22 @@ end:
 
 #define round(x) ((int)((x)>0?(x)+0.5:(x)-0.5))
 
-static
-PPATH
-FASTCALL
-PATH_WidenPath(DC *dc)
+PPATH FASTCALL
+IntGdiWidenPath(PPATH pPath, UINT penWidth, UINT penStyle, FLOAT eMiterLimit)
 {
-    INT i, j, numStrokes, numOldStrokes, penWidth, penWidthIn, penWidthOut, size, penStyle;
-    PPATH pPath, flat_path, pNewPath, *pStrokes = NULL, *pOldStrokes, pUpPath, pDownPath;
-    EXTLOGPEN *elp;
+    INT i, j, numStrokes, numOldStrokes, penWidthIn, penWidthOut;
+    PPATH flat_path, pNewPath, *pStrokes = NULL, *pOldStrokes, pUpPath, pDownPath;
     BYTE *type;
-    DWORD obj_type, joint, endcap, penType;
-    PDC_ATTR pdcattr = dc->pdcattr;
-
-    pPath = PATH_LockPath(dc->dclevel.hPath);
-    if (!pPath)
-    {
-        EngSetLastError( ERROR_CAN_NOT_COMPLETE );
-        return NULL;
-    }
-
-    if (pPath->state != PATH_Closed)
-    {
-        DPRINT("PWP 1\n");
-        PATH_UnlockPath(pPath);
-        EngSetLastError(ERROR_CAN_NOT_COMPLETE);
-        return NULL;
-    }
-
-    size = GreGetObject(pdcattr->hpen, 0, NULL);
-    if (!size)
-    {
-        DPRINT("PWP 2\n");
-        PATH_UnlockPath(pPath);
-        EngSetLastError(ERROR_CAN_NOT_COMPLETE);
-        return FALSE;
-    }
-
-    elp = ExAllocatePoolWithTag(PagedPool, size, TAG_PATH);
-    if (elp == NULL)
-    {
-        DPRINT("PWP 3\n");
-        PATH_UnlockPath(pPath);
-        EngSetLastError(ERROR_OUTOFMEMORY);
-        return FALSE;
-    }
-
-    GreGetObject(pdcattr->hpen, size, elp);
-
-    obj_type = GDI_HANDLE_GET_TYPE(pdcattr->hpen);
-    if (obj_type == GDI_OBJECT_TYPE_PEN)
-    {
-        penStyle = ((LOGPEN*)elp)->lopnStyle;
-    }
-    else if (obj_type == GDI_OBJECT_TYPE_EXTPEN)
-    {
-        penStyle = elp->elpPenStyle;
-    }
-    else
-    {
-        DPRINT("PWP 4\n");
-        EngSetLastError(ERROR_CAN_NOT_COMPLETE);
-        ExFreePoolWithTag(elp, TAG_PATH);
-        PATH_UnlockPath(pPath);
-        return FALSE;
-    }
-
-    penWidth = elp->elpWidth;
-    ExFreePoolWithTag(elp, TAG_PATH);
+    DWORD joint, endcap;
 
     endcap = (PS_ENDCAP_MASK & penStyle);
     joint = (PS_JOIN_MASK & penStyle);
-    penType = (PS_TYPE_MASK & penStyle);
-
-    /* The function cannot apply to cosmetic pens */
-    if (obj_type == GDI_OBJECT_TYPE_EXTPEN && penType == PS_COSMETIC)
-    {
-        DPRINT("PWP 5\n");
-        PATH_UnlockPath(pPath);
-        EngSetLastError(ERROR_CAN_NOT_COMPLETE);
-        return FALSE;
-    }
 
     if (!(flat_path = PATH_FlattenPath(pPath)))
     {
-       PATH_UnlockPath(pPath);
-       return NULL;
+        DPRINT1("PATH_FlattenPath\n");
+        return NULL;
     }
-    PATH_UnlockPath(pPath);
 
     penWidthIn = penWidth / 2;
     penWidthOut = penWidth / 2;
@@ -1817,7 +1757,7 @@ PATH_WidenPath(DC *dc)
                 ExFreePoolWithTag(pStrokes, TAG_PATH);
             PATH_UnlockPath(flat_path);
             PATH_Delete(flat_path->BaseObject.hHmgr);
-            return FALSE;
+            return NULL;
         }
         switch(flat_path->pFlags[i])
         {
@@ -1837,9 +1777,10 @@ PATH_WidenPath(DC *dc)
                     pStrokes = ExAllocatePoolWithTag(PagedPool, numStrokes * sizeof(*pStrokes), TAG_PATH);
                     if (!pStrokes)
                     {
+                       ExFreePoolWithTag(pOldStrokes, TAG_PATH);
                        PATH_UnlockPath(flat_path);
                        PATH_Delete(flat_path->BaseObject.hHmgr);
-                       return FALSE;
+                       return NULL;
                     }
                     RtlCopyMemory(pStrokes, pOldStrokes, numOldStrokes * sizeof(PPATH));
                     ExFreePoolWithTag(pOldStrokes, TAG_PATH); // Free old pointer.
@@ -1848,7 +1789,7 @@ PATH_WidenPath(DC *dc)
                 {
                    PATH_UnlockPath(flat_path);
                    PATH_Delete(flat_path->BaseObject.hHmgr);
-                   return FALSE;
+                   return NULL;
                 }
                 pStrokes[numStrokes - 1] = ExAllocatePoolWithTag(PagedPool, sizeof(PATH), TAG_PATH);
                 if (!pStrokes[numStrokes - 1])
@@ -1873,7 +1814,7 @@ PATH_WidenPath(DC *dc)
                     ExFreePoolWithTag(pStrokes, TAG_PATH);
                 PATH_UnlockPath(flat_path);
                 PATH_Delete(flat_path->BaseObject.hHmgr);
-                return FALSE;
+                return NULL;
         }
     }
 
@@ -1978,7 +1919,7 @@ PATH_WidenPath(DC *dc)
                 alpha = atan2(yb - yo, xb - xo) - theta;
                 if (alpha > 0) alpha -= M_PI;
                 else alpha += M_PI;
-                if (_joint == PS_JOIN_MITER && dc->dclevel.laPath.eMiterLimit < fabs(1 / sin(alpha / 2)))
+                if (_joint == PS_JOIN_MITER && eMiterLimit < fabs(1 / sin(alpha / 2)))
                 {
                     _joint = PS_JOIN_BEVEL;
                 }
@@ -2102,6 +2043,89 @@ PATH_WidenPath(DC *dc)
     PATH_Delete(flat_path->BaseObject.hHmgr);
     pNewPath->state = PATH_Closed;
     PATH_UnlockPath(pNewPath);
+    return pNewPath;
+}
+
+static
+PPATH
+FASTCALL
+PATH_WidenPath(DC *dc)
+{
+    INT size;
+    UINT penWidth, penStyle;
+    DWORD obj_type;
+    PPATH pPath, pNewPath;
+    LPEXTLOGPEN elp;
+    PDC_ATTR pdcattr = dc->pdcattr;
+
+    pPath = PATH_LockPath(dc->dclevel.hPath);
+    if (!pPath)
+    {
+        EngSetLastError( ERROR_CAN_NOT_COMPLETE );
+        return NULL;
+    }
+
+    if (pPath->state != PATH_Closed)
+    {
+        DPRINT("PWP 1\n");
+        PATH_UnlockPath(pPath);
+        EngSetLastError(ERROR_CAN_NOT_COMPLETE);
+        return NULL;
+    }
+
+    size = GreGetObject(pdcattr->hpen, 0, NULL);
+    if (!size)
+    {
+        DPRINT("PWP 2\n");
+        PATH_UnlockPath(pPath);
+        EngSetLastError(ERROR_CAN_NOT_COMPLETE);
+        return NULL;
+    }
+
+    elp = ExAllocatePoolWithTag(PagedPool, size, TAG_PATH);
+    if (elp == NULL)
+    {
+        DPRINT("PWP 3\n");
+        PATH_UnlockPath(pPath);
+        EngSetLastError(ERROR_OUTOFMEMORY);
+        return NULL;
+    }
+
+    GreGetObject(pdcattr->hpen, size, elp);
+
+    obj_type = GDI_HANDLE_GET_TYPE(pdcattr->hpen);
+    if (obj_type == GDI_OBJECT_TYPE_PEN)
+    {
+        penStyle = ((LOGPEN*)elp)->lopnStyle;
+    }
+    else if (obj_type == GDI_OBJECT_TYPE_EXTPEN)
+    {
+        penStyle = elp->elpPenStyle;
+    }
+    else
+    {
+        DPRINT("PWP 4\n");
+        EngSetLastError(ERROR_CAN_NOT_COMPLETE);
+        ExFreePoolWithTag(elp, TAG_PATH);
+        PATH_UnlockPath(pPath);
+        return NULL;
+    }
+
+    penWidth = elp->elpWidth;
+    ExFreePoolWithTag(elp, TAG_PATH);
+
+    /* The function cannot apply to cosmetic pens */
+    if (obj_type == GDI_OBJECT_TYPE_EXTPEN &&
+        (PS_TYPE_MASK & penStyle) == PS_COSMETIC)
+    {
+        DPRINT("PWP 5\n");
+        PATH_UnlockPath(pPath);
+        EngSetLastError(ERROR_CAN_NOT_COMPLETE);
+        return FALSE;
+    }
+
+    pNewPath = IntGdiWidenPath(pPath, penWidth, penStyle, dc->dclevel.laPath.eMiterLimit);
+    PATH_UnlockPath(pPath);
     return pNewPath;
 }
 
@@ -2670,8 +2694,21 @@ NtGdiGetPath(
 {
     INT ret = -1;
     PPATH pPath;
+    DC *dc;
 
-    DC *dc = DC_LockDc(hDC);
+    _SEH2_TRY
+    {
+        ProbeForWrite(Points, nSize * sizeof(*Points), sizeof(ULONG));
+        ProbeForWrite(Types, nSize, 1);
+    }
+    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+    {
+        SetLastNtError(_SEH2_GetExceptionCode());
+        _SEH2_YIELD(return -1);
+    }
+    _SEH2_END
+
+    dc = DC_LockDc(hDC);
     DPRINT("NtGdiGetPath start\n");
     if (!dc)
     {

@@ -16,15 +16,30 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+
+#define NONAMELESSUNION
+#define COBJMACROS
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "winreg.h"
+#include "wine/debug.h"
+#include "wine/list.h"
+
+#include "initguid.h"
+#include "ole2.h"
+#include "mmdeviceapi.h"
+#include "dshow.h"
+#include "dsound.h"
+#include "audioclient.h"
+#include "endpointvolume.h"
+#include "audiopolicy.h"
+
 #include "mmdevapi.h"
+#include "devpkey.h"
 
-#include <wine/list.h>
-
-#include <oleauto.h>
-#include <initguid.h>
-#define _WINDOWS_H
-#include <dshow.h>
-#include <devpkey.h>
+WINE_DEFAULT_DEBUG_CHANNEL(mmdevapi);
 
 static const WCHAR software_mmdevapi[] =
     { 'S','o','f','t','w','a','r','e','\\',
@@ -320,7 +335,7 @@ static MMDevice *MMDevice_Create(WCHAR *name, GUID *id, EDataFlow flow, DWORD st
     cur->state = state;
     cur->devguid = *id;
 
-    StringFromGUID2(&cur->devguid, guidstr, sizeof(guidstr)/sizeof(*guidstr));
+    StringFromGUID2(&cur->devguid, guidstr, ARRAY_SIZE(guidstr));
 
     if (flow == eRender)
         root = key_render;
@@ -411,7 +426,7 @@ static HRESULT load_devices_from_reg(void)
         DWORD len;
         PROPVARIANT pv = { VT_EMPTY };
 
-        len = sizeof(guidvalue)/sizeof(guidvalue[0]);
+        len = ARRAY_SIZE(guidvalue);
         ret = RegEnumKeyExW(cur, i++, guidvalue, &len, NULL, NULL, NULL, NULL);
         if (ret == ERROR_NO_MORE_ITEMS)
         {
@@ -430,7 +445,7 @@ static HRESULT load_devices_from_reg(void)
             && SUCCEEDED(MMDevice_GetPropValue(&guid, curflow, (const PROPERTYKEY*)&DEVPKEY_Device_FriendlyName, &pv))
             && pv.vt == VT_LPWSTR)
         {
-            DWORD size_bytes = (strlenW(pv.u.pwszVal) + 1) * sizeof(WCHAR);
+            DWORD size_bytes = (lstrlenW(pv.u.pwszVal) + 1) * sizeof(WCHAR);
             WCHAR *name = HeapAlloc(GetProcessHeap(), 0, size_bytes);
             memcpy(name, pv.u.pwszVal, size_bytes);
             MMDevice_Create(name, &guid, curflow,
@@ -595,7 +610,7 @@ static HRESULT WINAPI MMDevice_Activate(IMMDevice *iface, REFIID riid, DWORD cls
         if (SUCCEEDED(hr))
         {
             IPersistPropertyBag *ppb;
-            hr = IUnknown_QueryInterface((IUnknown*)*ppv, &IID_IPersistPropertyBag, (void*)&ppb);
+            hr = IUnknown_QueryInterface((IUnknown*)*ppv, &IID_IPersistPropertyBag, (void **)&ppb);
             if (SUCCEEDED(hr))
             {
                 /* ::Load cannot assume the interface stays alive after the function returns,
@@ -1377,7 +1392,7 @@ static HRESULT WINAPI MMDevPropStore_GetCount(IPropertyStore *iface, DWORD *npro
         return hr;
     *nprops = 0;
     do {
-        DWORD len = sizeof(buffer)/sizeof(*buffer);
+        DWORD len = ARRAY_SIZE(buffer);
         if (RegEnumValueW(propkey, i, buffer, &len, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
             break;
         i++;
@@ -1392,7 +1407,7 @@ static HRESULT WINAPI MMDevPropStore_GetAt(IPropertyStore *iface, DWORD prop, PR
 {
     MMDevPropStore *This = impl_from_IPropertyStore(iface);
     WCHAR buffer[50];
-    DWORD len = sizeof(buffer)/sizeof(*buffer);
+    DWORD len = ARRAY_SIZE(buffer);
     HRESULT hr;
     HKEY propkey;
 
@@ -1413,7 +1428,7 @@ static HRESULT WINAPI MMDevPropStore_GetAt(IPropertyStore *iface, DWORD prop, PR
     RegCloseKey(propkey);
     buffer[38] = 0;
     CLSIDFromString(buffer, &key->fmtid);
-    key->pid = atoiW(&buffer[39]);
+    key->pid = wcstol(&buffer[39], NULL, 10);
     return S_OK;
 }
 
@@ -1512,7 +1527,7 @@ static HRESULT WINAPI PB_Read(IPropertyBag *iface, LPCOLESTR name, VARIANT *var,
     if (!lstrcmpW(name, dsguid))
     {
         WCHAR guidstr[39];
-        StringFromGUID2(&This->devguid, guidstr,sizeof(guidstr)/sizeof(*guidstr));
+        StringFromGUID2(&This->devguid, guidstr,ARRAY_SIZE(guidstr));
         var->n1.n2.vt = VT_BSTR;
         var->n1.n2.n3.bstrVal = SysAllocString(guidstr);
         return S_OK;

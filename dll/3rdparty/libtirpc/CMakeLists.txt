@@ -2,9 +2,17 @@ spec2def(libtirpc.dll libtirpc/libtirpc.spec ADD_IMPORTLIB)
 
 remove_definitions(-D_WIN32_WINNT=0x502)
 add_definitions(-D_WIN32_WINNT=0x600)
-add_definitions(-DUNICODE -D_WIN32 -DPORTMAP -Dstrdup=_strdup)
+add_definitions(-DUNICODE -D_WIN32 -DPORTMAP -Dstrdup=_strdup -D_CRT_NONSTDC_NO_DEPRECATE=1)
 
 include_directories(${REACTOS_SOURCE_DIR}/dll/3rdparty/libtirpc/tirpc)
+
+if(MSVC)
+    # error C4133: '=': incompatible types - from 'char *' to 'int32_t *'
+    replace_compile_flags("/we4133" " ")
+
+    # Disable warning C4477 (printf format warnings)
+    add_compile_flags("/wd4313")
+endif()
 
 list(APPEND SOURCE
     src/asprintf.c
@@ -39,9 +47,8 @@ list(APPEND SOURCE
     src/gettimeofday.c
     src/key_call.c
     src/key_prot_xdr.c
-    src/libtirpc.def
     #src/makefile
-    src/Makefile.am
+    #src/Makefile.am
     src/mt_misc.c
     src/netname.c
     src/netnamer.c
@@ -85,21 +92,25 @@ list(APPEND SOURCE
     src/xdr_rec.c
     src/xdr_reference.c
     src/xdr_sizeof.c
-    src/xdr_stdio.c)
+    src/xdr_stdio.c
+    precomp.h)
 
-add_library(libtirpc SHARED
+add_library(libtirpc MODULE
     ${SOURCE}
 #    libtirpc/libtirpc.rc
     libtirpc/libtirpc_ros.rc
     ${CMAKE_CURRENT_BINARY_DIR}/libtirpc.def)
 
-if(MSVC)
+if(MSVC AND (NOT USE_CLANG_CL))
+    replace_compile_flags("/we4101" " ")
+    target_compile_options(libtirpc PRIVATE /wd4101 /wd4133 /wd4473 /wd4477)
 else()
     # FIXME: Tons of warnings.
-    add_target_compile_flags(libtirpc "-w")
+    target_compile_options(libtirpc PRIVATE "-w")
 endif()
 
 set_module_type(libtirpc win32dll)
 add_importlibs(libtirpc user32 advapi32 kernel32_vista ws2_32 msvcrt kernel32 ntdll)
 add_delay_importlibs(libtirpc secur32)
+add_pch(libtirpc precomp.h SOURCE)
 add_cd_file(TARGET libtirpc DESTINATION reactos/system32 FOR all)

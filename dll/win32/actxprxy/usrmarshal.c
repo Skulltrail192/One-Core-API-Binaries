@@ -18,29 +18,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
-
 #include <stdarg.h>
-//#include <string.h>
+#include <string.h>
 
 #define COBJMACROS
-#define NONAMELESSUNION
-#define NONAMELESSSTRUCT
 
-#include <windef.h>
-#include <winbase.h>
-//#include "wingdi.h"
-//#include "winuser.h"
-//#include "winerror.h"
-#include <objbase.h>
-//#include "servprov.h"
-//#include "comcat.h"
-//#include "docobj.h"
-#include <shobjidl.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winerror.h"
+#include "objbase.h"
+#include "servprov.h"
+#include "comcat.h"
+#include "docobj.h"
+#include "shobjidl.h"
 
-#include <wine/debug.h>
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(actxprxy);
 
@@ -199,6 +193,36 @@ HRESULT __RPC_STUB IEnumShellItems_Next_Stub(
     if (hr == S_OK) *pceltFetched = celt;
     return hr;
 }
+
+#ifdef __REACTOS__
+
+HRESULT CALLBACK IEnumExplorerCommand_Next_Proxy(
+    IEnumExplorerCommand *This,
+    ULONG celt,
+    IExplorerCommand **pUICommand,
+    ULONG *pceltFetched)
+{
+    ULONG fetched;
+    TRACE("(%p)->(%d, %p, %p)\n", This, celt, pUICommand, pceltFetched);
+    if (!pceltFetched) pceltFetched = &fetched;
+    return IEnumExplorerCommand_RemoteNext_Proxy(This, celt, pUICommand, pceltFetched);
+}
+
+HRESULT __RPC_STUB IEnumExplorerCommand_Next_Stub(
+    IEnumExplorerCommand *This,
+    ULONG celt,
+    IExplorerCommand **pUICommand,
+    ULONG *pceltFetched)
+{
+    HRESULT hr;
+    TRACE("(%p)->(%d, %p, %p)\n", This, celt, pUICommand, pceltFetched);
+    *pceltFetched = 0;
+    hr = IEnumExplorerCommand_Next(This, celt, pUICommand, pceltFetched);
+    if (hr == S_OK) *pceltFetched = celt;
+    return hr;
+}
+
+#endif // __REACTOS__
 
 HRESULT CALLBACK IModalWindow_Show_Proxy(
     IModalWindow *This,

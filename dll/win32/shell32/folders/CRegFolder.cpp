@@ -41,21 +41,40 @@ HRESULT CALLBACK RegFolderContextMenuCallback(IShellFolder *psf,
 
     if (_ILIsMyComputer(apidl[0]))
     {
-        if (32 >= (UINT)ShellExecuteW(hwnd, L"open", L"rundll32.exe shell32.dll,Control_RunDLL sysdm.cpl", NULL, NULL, SW_SHOWNORMAL))
+        if (32 >= (UINT_PTR)ShellExecuteW(hwnd,
+                                          L"open",
+                                          L"rundll32.exe",
+                                          L"shell32.dll,Control_RunDLL sysdm.cpl",
+                                          NULL,
+                                          SW_SHOWNORMAL))
+        {
             hr = E_FAIL;
+        }
     }
     else if (_ILIsDesktop(apidl[0]))
     {
-        if (32 >= (UINT)ShellExecuteW(hwnd, L"open", L"rundll32.exe shell32.dll,Control_RunDLL desk.cpl", NULL, NULL, SW_SHOWNORMAL))
+        if (32 >= (UINT_PTR)ShellExecuteW(hwnd,
+                                          L"open",
+                                          L"rundll32.exe",
+                                          L"shell32.dll,Control_RunDLL desk.cpl",
+                                          NULL,
+                                          SW_SHOWNORMAL))
+        {
             hr = E_FAIL;
+        }
     }
     else if (_ILIsNetHood(apidl[0]))
     {
         // FIXME path!
-        if (32 >= (UINT)ShellExecuteW(NULL, L"open", L"explorer.exe",
-                                      L"::{7007ACC7-3202-11D1-AAD2-00805FC1270E}",
-                                      NULL, SW_SHOWDEFAULT))
+        if (32 >= (UINT_PTR)ShellExecuteW(NULL,
+                                          L"open",
+                                          L"explorer.exe",
+                                          L"::{7007ACC7-3202-11D1-AAD2-00805FC1270E}",
+                                          NULL,
+                                          SW_SHOWDEFAULT))
+        {
             hr = E_FAIL;
+        }
     }
     else if (_ILIsBitBucket(apidl[0]))
     {
@@ -455,7 +474,15 @@ HRESULT WINAPI CRegFolder::CompareIDs(LPARAM lParam, PCUIDLIST_RELATIVE pidl1, P
     }
 
     /* Guid folders come first compared to everything else */
-    return MAKE_COMPARE_HRESULT(clsid1 ? -1 : 1);
+    /* And Drives come before folders in My Computer */
+    if (_ILIsMyComputer(m_pidlRoot))
+    {
+        return MAKE_COMPARE_HRESULT(clsid1 ? 1 : -1);
+    }
+    else
+    {
+        return MAKE_COMPARE_HRESULT(clsid1 ? -1 : 1);
+    }
 }
 
 HRESULT WINAPI CRegFolder::CreateViewObject(HWND hwndOwner, REFIID riid, LPVOID *ppvOut)
@@ -514,7 +541,7 @@ HRESULT WINAPI CRegFolder::GetUIObjectOf(HWND hwndOwner, UINT cidl, PCUITEMID_CH
     }
     else if (IsEqualIID (riid, IID_IDataObject) && (cidl >= 1))
     {
-        hr = IDataObject_Constructor (hwndOwner, m_pidlRoot, apidl, cidl, (IDataObject **)&pObj);
+        hr = IDataObject_Constructor (hwndOwner, m_pidlRoot, apidl, cidl, TRUE, (IDataObject **)&pObj);
     }
     else
     {

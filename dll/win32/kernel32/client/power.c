@@ -35,7 +35,6 @@ GetSystemPowerStatus(IN LPSYSTEM_POWER_STATUS PowerStatus)
                                 0,
                                 &BattState,
                                 sizeof(SYSTEM_BATTERY_STATE));
-
     if (!NT_SUCCESS(Status))
     {
         BaseSetLastNTError(Status);
@@ -62,17 +61,27 @@ GetSystemPowerStatus(IN LPSYSTEM_POWER_STATUS PowerStatus)
             PowerStatus->BatteryLifePercent = 100;
         }
 
-        if (PowerStatus->BatteryLifePercent <= 32) PowerStatus->BatteryFlag |= BATTERY_FLAG_LOW;
-        if (PowerStatus->BatteryLifePercent >= 67) PowerStatus->BatteryFlag |= BATTERY_FLAG_HIGH;
+        if (PowerStatus->BatteryLifePercent <= 4)
+            PowerStatus->BatteryFlag |= BATTERY_FLAG_CRITICAL;
+
+        if (PowerStatus->BatteryLifePercent <= 32)
+            PowerStatus->BatteryFlag |= BATTERY_FLAG_LOW;
+
+        if (PowerStatus->BatteryLifePercent >= 67)
+            PowerStatus->BatteryFlag |= BATTERY_FLAG_HIGH;
     }
 
-    if (!BattState.BatteryPresent) PowerStatus->BatteryFlag |= BATTERY_FLAG_NO_BATTERY;
+    if (!BattState.BatteryPresent)
+        PowerStatus->BatteryFlag |= BATTERY_FLAG_NO_BATTERY;
 
-    if (BattState.Charging) PowerStatus->BatteryFlag |= BATTERY_FLAG_CHARGING;
+    if (BattState.Charging)
+        PowerStatus->BatteryFlag |= BATTERY_FLAG_CHARGING;
 
-    if (!(BattState.AcOnLine) && (BattState.BatteryPresent)) PowerStatus->ACLineStatus = AC_LINE_OFFLINE;
+    if (!(BattState.AcOnLine) && (BattState.BatteryPresent))
+        PowerStatus->ACLineStatus = AC_LINE_OFFLINE;
 
-    if (BattState.EstimatedTime) PowerStatus->BatteryLifeTime = BattState.EstimatedTime;
+    if (BattState.EstimatedTime)
+        PowerStatus->BatteryLifeTime = BattState.EstimatedTime;
 
     return TRUE;
 }
@@ -89,7 +98,7 @@ SetSystemPowerState(IN BOOL fSuspend,
 
     Status = NtInitiatePowerAction((fSuspend != FALSE) ? PowerActionSleep     : PowerActionHibernate,
                                    (fSuspend != FALSE) ? PowerSystemSleeping1 : PowerSystemHibernate,
-                                   fForce != TRUE,
+                                   (fForce == FALSE),
                                    FALSE);
     if (!NT_SUCCESS(Status))
     {

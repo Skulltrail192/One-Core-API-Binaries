@@ -43,7 +43,7 @@ static PVOID APIENTRY wglGetCurrentValue()
     return IntGetCurrentICDPrivate();
 }
 
-static DHGLRC wglGetDHGLRC(struct wgl_context* context)
+static DHGLRC APIENTRY wglGetDHGLRC(struct wgl_context* context)
 {
     return context->dhglrc;
 }
@@ -287,10 +287,11 @@ custom_end:
     DrvSetCallbackProcs = (void*)GetProcAddress(data->hModule, "DrvSetCallbackProcs");
     if(DrvSetCallbackProcs)
     {
-        PROC callbacks[] = {(PROC)wglGetCurrentValue,
+        PROC callbacks[] = {
             (PROC)wglSetCurrentValue,
+            (PROC)wglGetCurrentValue,
             (PROC)wglGetDHGLRC};
-        DrvSetCallbackProcs(3, callbacks);
+        DrvSetCallbackProcs(ARRAYSIZE(callbacks), callbacks);
     }
     
     /* Get the DLL exports */

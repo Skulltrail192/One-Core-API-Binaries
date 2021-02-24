@@ -1,4 +1,4 @@
-/* TRANSLATOR: 2013, 2014, 2016 Erdem Ersoy (eersoy93) (erdemersoy@live.com) */
+/* TRANSLATOR: 2013, 2014, 2016 Erdem Ersoy (eersoy93) (erdemersoy [at] erdemersoy [dot] net) */
 
 LANGUAGE LANG_TURKISH, SUBLANG_DEFAULT
 
@@ -20,7 +20,7 @@ BEGIN
         MENUITEM "&Sürdür", ID_RESUME, GRAYED
         MENUITEM "&Yeniden Başlat", ID_RESTART, GRAYED
         MENUITEM SEPARATOR
-        MENUITEM "Y&enile", ID_REFRESH
+        MENUITEM "Y&enile\tF5", ID_REFRESH
         MENUITEM SEPARATOR
         MENUITEM "De&ğiştir...", ID_EDIT, GRAYED
         MENUITEM "&Oluştur...", ID_CREATE, GRAYED
@@ -63,6 +63,11 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Y&ardım...", ID_HELP
     END
+END
+
+IDA_SERVMAN ACCELERATORS
+BEGIN
+    VK_F5, ID_REFRESH, VIRTKEY
 END
 
 IDD_ABOUTBOX DIALOGEX 22, 16, 190, 182
@@ -162,7 +167,7 @@ BEGIN
             TVS_LINESATROOT | TVS_DISABLEDRAGDROP, 8, 70, 236, 68
     CONTROL "", IDC_DEPEND_TREE2, "SysTreeView32", WS_BORDER | WS_CHILDWINDOW |
             WS_VISIBLE | WS_TABSTOP | TVS_HASBUTTONS | TVS_HASLINES |
-            TVS_LINESATROOT | TVS_DISABLEDRAGDROP, 8, 151, 234, 67
+            TVS_LINESATROOT | TVS_DISABLEDRAGDROP, 8, 151, 236, 68
     LTEXT "Birtakım hizmetler, başka hizmetlere, dizge sürücülerine ve yükleme dizisi öbeklerine bağımlıdır. Eğer bir dizge bileşeni, durdurulmuşsa ya da düzgün çalışmıyorsa bağımlı hizmetler etkilenebilir.", IDC_STATIC, 8, 7, 238, 26
     LTEXT "Bu hizmet aşağıdaki bileşenlere bağımlıdır:", IDC_STATIC, 8, 57, 236, 9
     LTEXT "", IDC_DEPEND_SERVICE, 8, 38, 236, 13

@@ -134,6 +134,76 @@ FltReleasePushLock(_Inout_ _Requires_lock_held_(*_Curr_) _Releases_lock_(*_Curr_
     KeLeaveCriticalRegion();
 }
 
+_IRQL_requires_max_(PASSIVE_LEVEL)
+NTSTATUS
+FLTAPI
+FltClose(_In_ HANDLE FileHandle)
+{
+    PAGED_CODE();
+
+    return ZwClose(FileHandle);
+}
+
+_Must_inspect_result_
+_IRQL_requires_max_(PASSIVE_LEVEL)
+NTSTATUS
+FLTAPI
+FltCreateFileEx(_In_ PFLT_FILTER Filter,
+                _In_opt_ PFLT_INSTANCE Instance,
+                _Out_ PHANDLE FileHandle,
+                _Outptr_opt_ PFILE_OBJECT *FileObject,
+                _In_ ACCESS_MASK DesiredAccess,
+                _In_ POBJECT_ATTRIBUTES ObjectAttributes,
+                _Out_ PIO_STATUS_BLOCK IoStatusBlock,
+                _In_opt_ PLARGE_INTEGER AllocationSize,
+                _In_ ULONG FileAttributes,
+                _In_ ULONG ShareAccess,
+                _In_ ULONG CreateDisposition,
+                _In_ ULONG CreateOptions,
+                _In_reads_bytes_opt_(EaLength) PVOID EaBuffer,
+                _In_ ULONG EaLength,
+                _In_ ULONG Flags)
+{
+    UNIMPLEMENTED;
+    return STATUS_NOT_IMPLEMENTED;
+}
+
+_Must_inspect_result_
+_IRQL_requires_max_(PASSIVE_LEVEL)
+NTSTATUS
+FLTAPI
+FltCreateFile(_In_ PFLT_FILTER Filter,
+              _In_opt_ PFLT_INSTANCE Instance,
+              _Out_ PHANDLE FileHandle,
+              _In_ ACCESS_MASK DesiredAccess,
+              _In_ POBJECT_ATTRIBUTES ObjectAttributes,
+              _Out_ PIO_STATUS_BLOCK IoStatusBlock,
+              _In_opt_ PLARGE_INTEGER AllocationSize,
+              _In_ ULONG FileAttributes,
+              _In_ ULONG ShareAccess,
+              _In_ ULONG CreateDisposition,
+              _In_ ULONG CreateOptions,
+              _In_reads_bytes_opt_(EaLength)PVOID EaBuffer,
+              _In_ ULONG EaLength,
+              _In_ ULONG Flags)
+{
+    return FltCreateFileEx(Filter,
+                           Instance,
+                           FileHandle,
+                           NULL,
+                           DesiredAccess,
+                           ObjectAttributes,
+                           IoStatusBlock,
+                           AllocationSize,
+                           FileAttributes,
+                           ShareAccess,
+                           CreateDisposition,
+                           CreateOptions,
+                           EaBuffer,
+                           EaLength,
+                           Flags);
+}
+
 
 
 /* INTERNAL FUNCTIONS ******************************************************/
@@ -193,8 +263,8 @@ NTSTATUS
 FltpGetObjectName(_In_ PVOID Object,
                   _Inout_ PUNICODE_STRING ObjectName)
 {
-    POBJECT_NAME_INFORMATION ObjectNameInfo = NULL;
     OBJECT_NAME_INFORMATION LocalNameInfo;
+    POBJECT_NAME_INFORMATION ObjectNameInfo = &LocalNameInfo;
     ULONG ReturnLength;
     NTSTATUS Status;
 
@@ -240,7 +310,7 @@ FltpGetObjectName(_In_ PVOID Object,
         }
     }
 
-    if (ObjectNameInfo)
+    if (ObjectNameInfo != &LocalNameInfo)
     {
         ExFreePoolWithTag(ObjectNameInfo, FM_TAG_UNICODE_STRING);
     }
@@ -255,7 +325,7 @@ FltpObjectPointerReference(_In_ PFLT_OBJECT Object)
 
     /* Store the old count and increment */
     Result = &Object->PointerCount;
-    InterlockedIncrement((PLONG)&Object->PointerCount);
+    InterlockedIncrementSizeT(&Object->PointerCount);
 
     /* Return the initial value */
     return *Result;
@@ -264,7 +334,7 @@ FltpObjectPointerReference(_In_ PFLT_OBJECT Object)
 VOID
 FltpObjectPointerDereference(_In_ PFLT_OBJECT Object)
 {
-    if (!InterlockedDecrement((PLONG)Object->PointerCount))
+    if (InterlockedDecrementSizeT(&Object->PointerCount) == 0)
     {
         // Cleanup
         FLT_ASSERT(FALSE);

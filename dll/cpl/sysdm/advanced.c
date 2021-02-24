@@ -68,7 +68,7 @@ OnInitSysSettingsDialog(HWND hwndDlg)
                             (LPBYTE)&dwVal,
                             &cbData) == ERROR_SUCCESS)
         {
-            if (dwVal == TRUE)
+            if (dwVal != FALSE)
             {
                 // set the check box
                 SendDlgItemMessageW(hwndDlg,
@@ -134,35 +134,35 @@ AdvancedPageProc(HWND hwndDlg,
                     DialogBox(hApplet,
                               MAKEINTRESOURCE(IDD_VIRTMEM),
                               hwndDlg,
-                              (DLGPROC)VirtMemDlgProc);
+                              VirtMemDlgProc);
                     break;
 
                 case IDC_USERPROFILE:
                     DialogBox(hApplet,
                               MAKEINTRESOURCE(IDD_USERPROFILE),
                               hwndDlg,
-                              (DLGPROC)UserProfileDlgProc);
+                              UserProfileDlgProc);
                     break;
 
                 case IDC_STAREC:
                     DialogBox(hApplet,
                               MAKEINTRESOURCE(IDD_STARTUPRECOVERY),
                               hwndDlg,
-                              (DLGPROC)StartRecDlgProc);
+                              StartRecDlgProc);
                     break;
 
                 case IDC_SYSSETTINGS:
                     DialogBox(hApplet,
                               MAKEINTRESOURCE(IDD_SYSSETTINGS),
                               hwndDlg,
-                              (DLGPROC)SysSettingsDlgProc);
+                              SysSettingsDlgProc);
                     break;
 
                 case IDC_ENVVAR:
                     DialogBox(hApplet,
                               MAKEINTRESOURCE(IDD_ENVIRONMENT_VARIABLES),
                               hwndDlg,
-                              (DLGPROC)EnvironmentDlgProc);
+                              EnvironmentDlgProc);
                     break;
 
                 case IDC_ERRORREPORT:

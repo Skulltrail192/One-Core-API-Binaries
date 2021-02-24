@@ -20,9 +20,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
 
-#include <secext.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+
+#include "rpc.h"
+#include "rpcndr.h"
+#include "excpt.h"
+
+#include "wine/debug.h"
+#include "wine/exception.h"
+
+#include "rpc_server.h"
+#include "rpc_assoc.h"
+#include "rpc_message.h"
+#include "rpc_defs.h"
+#include "ncastatus.h"
+#include "secext.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(rpc);
 
@@ -647,21 +666,40 @@ static DWORD CALLBACK RPCRT4_server_thread(LPVOID the_arg)
     {
       /* cleanup */
       cps->ops->free_wait_array(cps, objs);
-
-      EnterCriticalSection(&cps->cs);
-      LIST_FOR_EACH_ENTRY(conn, &cps->listeners, RpcConnection, protseq_entry)
-        RPCRT4_CloseConnection(conn);
-      LIST_FOR_EACH_ENTRY(conn, &cps->connections, RpcConnection, protseq_entry)
-        rpcrt4_conn_close_read(conn);
-      LeaveCriticalSection(&cps->cs);
-
-      if (res == 0 && !std_listen)
-        SetEvent(cps->server_ready_event);
       break;
     }
     else if (res == 0)
       set_ready_event = TRUE;
   }
+
+  TRACE("closing connections\n");
+
+  EnterCriticalSection(&cps->cs);
+  LIST_FOR_EACH_ENTRY(conn, &cps->listeners, RpcConnection, protseq_entry)
+    RPCRT4_CloseConnection(conn);
+  LIST_FOR_EACH_ENTRY(conn, &cps->connections, RpcConnection, protseq_entry)
+  {
+    RPCRT4_GrabConnection(conn);
+    rpcrt4_conn_close_read(conn);
+  }
+  LeaveCriticalSection(&cps->cs);
+
+  if (res == 0 && !std_listen)
+      SetEvent(cps->server_ready_event);
+
+  TRACE("waiting for active connections to close\n");
+
+  EnterCriticalSection(&cps->cs);
+  while (!list_empty(&cps->connections))
+  {
+    conn = LIST_ENTRY(list_head(&cps->connections), RpcConnection, protseq_entry);
+    LeaveCriticalSection(&cps->cs);
+    rpcrt4_conn_release_and_wait(conn);
+    EnterCriticalSection(&cps->cs);
+  }
+  LeaveCriticalSection(&cps->cs);
+
+  TRACE("done\n");
   return 0;
 }
 
@@ -685,21 +723,15 @@ static void RPCRT4_sync_with_server_thread(RpcServerProtseq *ps)
 static RPC_STATUS RPCRT4_start_listen_protseq(RpcServerProtseq *ps, BOOL auto_listen)
 {
   RPC_STATUS status = RPC_S_OK;
-  HANDLE server_thread;
 
   EnterCriticalSection(&listen_cs);
-  if (ps->is_listening) goto done;
+  if (ps->server_thread) goto done;
 
   if (!ps->mgr_mutex) ps->mgr_mutex = CreateMutexW(NULL, FALSE, NULL);
   if (!ps->server_ready_event) ps->server_ready_event = CreateEventW(NULL, FALSE, FALSE, NULL);
-  server_thread = CreateThread(NULL, 0, RPCRT4_server_thread, ps, 0, NULL);
-  if (!server_thread)
-  {
+  ps->server_thread = CreateThread(NULL, 0, RPCRT4_server_thread, ps, 0, NULL);
+  if (!ps->server_thread)
     status = RPC_S_OUT_OF_RESOURCES;
-    goto done;
-  }
-  ps->is_listening = TRUE;
-  CloseHandle(server_thread);
 
 done:
   LeaveCriticalSection(&listen_cs);
@@ -767,8 +799,10 @@ static RPC_STATUS RPCRT4_stop_listen(BOOL auto_listen)
 
   if (stop_listen) {
     RpcServerProtseq *cps;
+    EnterCriticalSection(&server_cs);
     LIST_FOR_EACH_ENTRY(cps, &protseqs, RpcServerProtseq, entry)
       RPCRT4_sync_with_server_thread(cps);
+    LeaveCriticalSection(&server_cs);
   }
 
   if (!auto_listen)
@@ -1179,7 +1213,8 @@ RPC_STATUS WINAPI RpcServerUnregisterIf( RPC_IF_HANDLE IfSpec, UUID* MgrTypeUuid
 
   EnterCriticalSection(&server_cs);
   LIST_FOR_EACH_ENTRY(cif, &server_interfaces, RpcServerInterface, entry) {
-    if ((!IfSpec || !memcmp(&If->InterfaceId, &cif->If->InterfaceId, sizeof(RPC_SYNTAX_IDENTIFIER))) &&
+    if (((!IfSpec && !(cif->Flags & RPC_IF_AUTOLISTEN)) ||
+        (IfSpec && !memcmp(&If->InterfaceId, &cif->If->InterfaceId, sizeof(RPC_SYNTAX_IDENTIFIER)))) &&
         UuidEqual(MgrTypeUuid, &cif->MgrTypeUuid, &status)) {
       list_remove(&cif->entry);
       TRACE("unregistering cif %p\n", cif);
@@ -1503,7 +1538,8 @@ RPC_STATUS WINAPI RpcServerListen( UINT MinimumCallThreads, UINT MaxCalls, UINT 
  */
 RPC_STATUS WINAPI RpcMgmtWaitServerListen( void )
 {
-  HANDLE event;
+  RpcServerProtseq *protseq;
+  HANDLE event, wait_thread;
 
   TRACE("()\n");
 
@@ -1519,6 +1555,32 @@ RPC_STATUS WINAPI RpcMgmtWaitServerListen( void )
   TRACE( "done waiting\n" );
 
   EnterCriticalSection(&listen_cs);
+  /* wait for server threads to finish */
+  while(1)
+  {
+      if (listen_count)
+          break;
+
+      wait_thread = NULL;
+      EnterCriticalSection(&server_cs);
+      LIST_FOR_EACH_ENTRY(protseq, &protseqs, RpcServerProtseq, entry)
+      {
+          if ((wait_thread = protseq->server_thread))
+          {
+              protseq->server_thread = NULL;
+              break;
+          }
+      }
+      LeaveCriticalSection(&server_cs);
+      if (!wait_thread)
+          break;
+
+      TRACE("waiting for thread %u\n", GetThreadId(wait_thread));
+      LeaveCriticalSection(&listen_cs);
+      WaitForSingleObject(wait_thread, INFINITE);
+      CloseHandle(wait_thread);
+      EnterCriticalSection(&listen_cs);
+  }
   if (listen_done_event == event)
   {
       listen_done_event = NULL;

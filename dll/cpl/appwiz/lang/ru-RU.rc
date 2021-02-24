@@ -78,4 +78,12 @@ BEGIN
     IDS_DOWNLOADING "Загрузка..."
     IDS_INSTALLING "Установка..."
     IDS_INVALID_SHA "Ошибка контрольной суммы загруженного файла. Прерывание установки поврежденного файла."
+    IDS_NEW_INTERNET_SHORTCUT "Новый ярлык интернета"
+    IDS_DWL_FAILED "Не удалось скачать пакет установки Gecko, проверьте ваше подключение к сети интернет. Установка будет продолжена без включения пакета Gecko."
+    IDS_CANTMAKEINETSHORTCUT "Не удалось создать ярлык интернета."
+    IDS_CANTMAKESHORTCUT "Не удалось создать ярлык."
+    IDS_NO_MEMORY "Невозможно выделить память."
+    IDS_NO_DIRECTORY "Не указано ни одного каталога!"
+    IDS_INVALID_PATH "Указанный путь неверен!"
+    IDS_INVALID_NAME "The shortcut name you entered either contained characters that are invalid for file names or was too long."
 END

@@ -25,6 +25,7 @@ Author:
 #include <umtypes.h>
 #include <haltypes.h>
 #include <ketypes.h>
+#include <section_attribs.h>
 
 #ifndef NTOS_MODE_USER
 
@@ -80,6 +81,7 @@ HalInitializeProcessor(
     _In_ struct _LOADER_PARAMETER_BLOCK *LoaderBlock
 );
 
+INIT_FUNCTION
 NTHALAPI
 BOOLEAN
 NTAPI
@@ -175,6 +177,7 @@ HalGetInterruptSource(
 );
 #endif
 
+INIT_FUNCTION
 NTHALAPI
 VOID
 NTAPI
@@ -291,5 +294,48 @@ HalSetTimeIncrement(
     _In_ ULONG Increment
 );
 
-#endif
-#endif
+
+//
+// BIOS call API
+//
+#ifdef _M_AMD64
+
+NTSTATUS
+NTAPI
+x86BiosAllocateBuffer(
+    _In_ ULONG *Size,
+    _In_ USHORT *Segment,
+    _In_ USHORT *Offset);
+
+NTSTATUS
+NTAPI
+x86BiosFreeBuffer(
+    _In_ USHORT Segment,
+    _In_ USHORT Offset);
+
+NTSTATUS
+NTAPI
+x86BiosReadMemory(
+    _In_ USHORT Segment,
+    _In_ USHORT Offset,
+    _Out_writes_bytes_(Size) PVOID Buffer,
+    _In_ ULONG Size);
+
+NTSTATUS
+NTAPI
+x86BiosWriteMemory(
+    _In_ USHORT Segment,
+    _In_ USHORT Offset,
+    _In_reads_bytes_(Size) PVOID Buffer,
+    _In_ ULONG Size);
+
+BOOLEAN
+NTAPI
+x86BiosCall(
+    _In_ ULONG InterruptNumber,
+    _Inout_ PX86_BIOS_REGISTERS Registers);
+
+#endif // _M_AMD64
+
+#endif // NTOS_MODE_USER
+#endif // _HALFUNCS_H

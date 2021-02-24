@@ -50,8 +50,6 @@
 #include <wine/unicode.h>
 #define NTOS_MODE_USER
 #include <ndk/rtlfuncs.h>
-#include <wine/list.h>
-#include <pnp_c.h>
 
 #include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(setupapi);
@@ -314,6 +312,11 @@ SETUP_CreateDevicesList(
     IN CONST GUID *Class OPTIONAL,
     IN PCWSTR Enumerator OPTIONAL);
 
+HKEY SETUPDI_CreateDevKey(HKEY RootKey, struct DeviceInfo *devInfo, REGSAM samDesired);
+HKEY SETUPDI_CreateDrvKey(HKEY RootKey, struct DeviceInfo *devInfo, UUID *ClassGuid, REGSAM samDesired);
+HKEY SETUPDI_OpenDevKey(HKEY RootKey, struct DeviceInfo *devInfo, REGSAM samDesired);
+HKEY SETUPDI_OpenDrvKey(HKEY RootKey, struct DeviceInfo *devInfo, REGSAM samDesired);
+
 /* driver.c */
 
 struct InfFileDetails *
@@ -376,9 +379,5 @@ LPSTR WINAPI UnicodeToMultiByte(LPCWSTR lpUnicodeStr, UINT uCodePage);
 
 typedef BOOL (*FIND_CALLBACK)(LPCWSTR SectionName, PVOID Context);
 BOOL EnumerateSectionsStartingWith(HINF hInf, LPCWSTR pStr, FIND_CALLBACK Callback, PVOID Context);
-
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
-
-#define DEVPROP_TYPE_EMPTY                      0x00000000
 
 #endif /* __SETUPAPI_PRIVATE_H */

@@ -18,11 +18,25 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+
+#define NONAMELESSUNION
+
 #include "urlmon_main.h"
 
-#include <ole2.h>
+#include "winreg.h"
 
-#include <initguid.h>
+#define NO_SHLWAPI_REG
+#include "shlwapi.h"
+#include "advpub.h"
+#include "initguid.h"
+
+#include "wine/debug.h"
+
+#include "urlmon.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(urlmon);
+
 DEFINE_GUID(CLSID_CUri, 0xDF2FCE13, 0x25EC, 0x45BB, 0x9D,0x4C, 0xCE,0xCD,0x47,0xC2,0x43,0x0C);
 
 LONG URLMON_refCount = 0;
@@ -289,19 +303,31 @@ static ULONG WINAPI CF_Release(IClassFactory *iface)
 }
 
 
-static HRESULT WINAPI CF_CreateInstance(IClassFactory *iface, IUnknown *pOuter,
-                                        REFIID riid, LPVOID *ppobj)
+static HRESULT WINAPI CF_CreateInstance(IClassFactory *iface, IUnknown *outer,
+                                        REFIID riid, void **ppv)
 {
     ClassFactory *This = impl_from_IClassFactory(iface);
+    IUnknown *unk;
     HRESULT hres;
-    LPUNKNOWN punk;
     
-    TRACE("(%p)->(%p,%s,%p)\n",This,pOuter,debugstr_guid(riid),ppobj);
+    TRACE("(%p)->(%p %s %p)\n", This, outer, debugstr_guid(riid), ppv);
 
-    *ppobj = NULL;
-    if(SUCCEEDED(hres = This->pfnCreateInstance(pOuter, (LPVOID *) &punk))) {
-        hres = IUnknown_QueryInterface(punk, riid, ppobj);
-        IUnknown_Release(punk);
+    if(outer && !IsEqualGUID(riid, &IID_IUnknown)) {
+        *ppv = NULL;
+        return CLASS_E_NOAGGREGATION;
+    }
+
+    hres = This->pfnCreateInstance(outer, (void**)&unk);
+    if(FAILED(hres)) {
+        *ppv = NULL;
+        return hres;
+    }
+
+    if(!IsEqualGUID(riid, &IID_IUnknown)) {
+        hres = IUnknown_QueryInterface(unk, riid, ppv);
+        IUnknown_Release(unk);
+    }else {
+        *ppv = unk;
     }
     return hres;
 }
@@ -383,7 +409,7 @@ static void init_session(void)
 {
     unsigned int i;
 
-    for(i=0; i < sizeof(object_creation)/sizeof(object_creation[0]); i++) {
+    for(i = 0; i < ARRAY_SIZE(object_creation); i++) {
         if(object_creation[i].protocol)
             register_namespace(object_creation[i].cf, object_creation[i].clsid,
                                       object_creation[i].protocol, TRUE);
@@ -412,10 +438,10 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
     unsigned int i;
     HRESULT hr;
-    
+
     TRACE("(%s,%s,%p)\n", debugstr_guid(rclsid), debugstr_guid(riid), ppv);
-    
-    for (i=0; i < sizeof(object_creation)/sizeof(object_creation[0]); i++)
+
+    for (i = 0; i < ARRAY_SIZE(object_creation); i++)
     {
 	if (IsEqualGUID(object_creation[i].clsid, rclsid))
 	    return IClassFactory_QueryInterface(object_creation[i].cf, riid, ppv);
@@ -582,7 +608,7 @@ HRESULT WINAPI CopyStgMedium(const STGMEDIUM *src, STGMEDIUM *dst)
         break;
     case TYMED_FILE:
         if(src->u.lpszFileName && !src->pUnkForRelease) {
-            DWORD size = (strlenW(src->u.lpszFileName)+1)*sizeof(WCHAR);
+            DWORD size = (lstrlenW(src->u.lpszFileName)+1)*sizeof(WCHAR);
             dst->u.lpszFileName = CoTaskMemAlloc(size);
             if(!dst->u.lpszFileName)
                 return E_OUTOFMEMORY;
@@ -648,7 +674,7 @@ HRESULT WINAPI CopyBindInfo(const BINDINFO *pcbiSrc, BINDINFO *pcbiDest)
 
     size = FIELD_OFFSET(BINDINFO, szExtraInfo)+sizeof(void*);
     if(pcbiSrc->cbSize>=size && pcbiDest->cbSize>=size && pcbiSrc->szExtraInfo) {
-        size = (strlenW(pcbiSrc->szExtraInfo)+1)*sizeof(WCHAR);
+        size = (lstrlenW(pcbiSrc->szExtraInfo)+1)*sizeof(WCHAR);
         pcbiDest->szExtraInfo = CoTaskMemAlloc(size);
         if(!pcbiDest->szExtraInfo)
             return E_OUTOFMEMORY;
@@ -666,7 +692,7 @@ HRESULT WINAPI CopyBindInfo(const BINDINFO *pcbiSrc, BINDINFO *pcbiDest)
 
     size = FIELD_OFFSET(BINDINFO, szCustomVerb)+sizeof(void*);
     if(pcbiSrc->cbSize>=size && pcbiDest->cbSize>=size && pcbiSrc->szCustomVerb) {
-        size = (strlenW(pcbiSrc->szCustomVerb)+1)*sizeof(WCHAR);
+        size = (lstrlenW(pcbiSrc->szCustomVerb)+1)*sizeof(WCHAR);
         pcbiDest->szCustomVerb = CoTaskMemAlloc(size);
         if(!pcbiDest->szCustomVerb) {
             CoTaskMemFree(pcbiDest->szExtraInfo);
@@ -785,6 +811,16 @@ int WINAPI MapBrowserEmulationModeToUserAgent(DWORD unk1, DWORD unk2)
 }
 
 /***********************************************************************
+ *           CoInternetGetBrowserProfile (URLMON.446)
+ *    Undocumented, added in IE8
+ */
+HRESULT WINAPI CoInternetGetBrowserProfile(DWORD unk)
+{
+    FIXME("%x: stub\n", unk);
+    return E_NOTIMPL;
+}
+
+/***********************************************************************
  *           FlushUrlmonZonesCache (URLMON.455)
  *    Undocumented, added in IE8
  */
@@ -801,4 +837,26 @@ HRESULT WINAPI RegisterMediaTypes(UINT types, LPCSTR *szTypes, CLIPFORMAT *cfTyp
 {
    FIXME("stub: %u %p %p\n", types, szTypes, cfTypes);
    return E_INVALIDARG;
+}
+
+/***********************************************************************
+ *            ShouldShowIntranetWarningSecband
+ *    Undocumented, added in IE7
+ */
+BOOL WINAPI ShouldShowIntranetWarningSecband(DWORD unk)
+{
+    FIXME("%x: stub\n", unk);
+    return FALSE;
+}
+
+/***********************************************************************
+ *           GetIUriPriv (urlmon.@)
+ *
+ * Not documented.
+ */
+HRESULT WINAPI GetIUriPriv(IUri *uri, void **p)
+{
+    FIXME("(%p,%p): stub\n", uri, p);
+    *p = NULL;
+    return E_NOTIMPL;
 }

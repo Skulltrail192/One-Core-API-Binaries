@@ -53,10 +53,7 @@ BEGIN
             MENUITEM "&Tiskárny a faxy", IDM_PRINTERSANDFAXES, MFT_STRING, MFS_ENABLED
             MENUITEM "&Hlavní panel a nabídka Start", IDM_TASKBARANDSTARTMENU, MFT_STRING, MFS_ENABLED
         END
-        POPUP "&Hledat", IDM_SEARCH
-        BEGIN
-            MENUITEM "", -1, MFT_SEPARATOR
-        END
+        MENUITEM "&Hledat", IDM_SEARCH, MFT_STRING, MFS_ENABLED
         MENUITEM "Nápověd&a a odborná pomoc", IDM_HELPANDSUPPORT, MFT_STRING, MFS_ENABLED
         MENUITEM "&Spustit...", IDM_RUN, MFT_STRING, MFS_ENABLED
         MENUITEM "", 450, MFT_SEPARATOR, MFS_ENABLED
@@ -74,14 +71,14 @@ CAPTION "Hlavní panel"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX "Vzhled hlavního panelu", IDC_STATIC, 6, 6, 240, 104
-    CONTROL "", IDC_TASKBARPROP_TASKBARBITMAP, "Static", SS_BITMAP | SS_SUNKEN, 13, 18, 223, 28
+    CONTROL "", IDC_TASKBARPROP_TASKBARBITMAP, "Static", SS_BITMAP | SS_SUNKEN | SS_CENTERIMAGE, 12, 18, 229, 24
     AUTOCHECKBOX "Uzamknout &hlavní panel", IDC_TASKBARPROP_LOCK, 13, 45, 200, 10
     AUTOCHECKBOX "&Automaticky sktývat hlavní panel", IDC_TASKBARPROP_HIDE, 13, 58, 200, 10
     AUTOCHECKBOX "&Zobrazit hlavní panel nad ostatními okny", IDC_TASKBARPROP_ONTOP, 13, 71, 200, 10
     AUTOCHECKBOX "&Seskupovat podobná tlačítka hlavního panelu", IDC_TASKBARPROP_GROUP, 13, 84, 200, 10
     AUTOCHECKBOX "Zobrazit &panel Snadné spuštění", IDC_TASKBARPROP_SHOWQL, 13, 97, 200, 10
     GROUPBOX "Oznamovací oblast", IDC_STATIC, 6, 114, 240, 99
-    CONTROL "", IDC_TASKBARPROP_NOTIFICATIONBITMAP, "Static", SS_BITMAP | SS_SUNKEN,13, 126, 223, 28
+    CONTROL "", IDC_TASKBARPROP_NOTIFICATIONBITMAP, "Static", SS_BITMAP | SS_SUNKEN | SS_CENTERIMAGE, 12, 126, 229, 24
     AUTOCHECKBOX "&Zobrazit hodiny", IDC_TASKBARPROP_CLOCK, 13, 153, 80, 10
     AUTOCHECKBOX "Zobrazit sekundy", IDC_TASKBARPROP_SECONDS, 120, 153, 80, 10, WS_DISABLED
     LTEXT "Přehlednost oznamovací oblasti lze zachovat pomocí skrytí nepoužívaných ikon.", IDC_STATIC, 13, 169, 223, 16
@@ -95,11 +92,11 @@ CAPTION "Nabídka Start"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
 CONTROL "", IDC_TASKBARPROP_STARTMENU_BITMAP, "Static", SS_BITMAP | SS_SUNKEN,7, 7, 183, 108
-    AUTORADIOBUTTON "Nabídka &Start", IDC_TASKBARPROP_STARTMENU, 7, 135, 105, 10, WS_DISABLED
-    LTEXT "Tento styl menu umožňuje snadný přístup ke složkám, oblíbeným programům a vyhledávání.", IDC_STATIC, 20, 145, 150, 24, WS_DISABLED
-    PUSHBUTTON "&Upravit...", IDC_TASKBARPROP_STARTMENUCUST, 192, 132, 53, 14, WS_DISABLED
+    AUTORADIOBUTTON "Nabídka &Start", IDC_TASKBARPROP_STARTMENU, 7, 135, 105, 10
+    LTEXT "Tento styl menu umožňuje snadný přístup ke složkám, oblíbeným programům a vyhledávání.", IDC_TASKBARPROP_STARTMENUMODERNTEXT, 20, 145, 150, 24
+    PUSHBUTTON "&Upravit...", IDC_TASKBARPROP_STARTMENUCUST, 192, 132, 53, 14
     AUTORADIOBUTTON "&Klasická nabídka Start", IDC_TASKBARPROP_STARTMENUCLASSIC, 7, 175, 105, 10
-    LTEXT "Tento styl menu umožňuje používat klasický vzhled a funkce", IDC_STATIC, 20, 185, 150, 24
+    LTEXT "Tento styl menu umožňuje používat klasický vzhled a funkce", IDC_TASKBARPROP_STARTMENUCLASSICTEXT, 20, 185, 150, 24
     PUSHBUTTON "Up&ravit...", IDC_TASKBARPROP_STARTMENUCLASSICCUST, 192, 172, 53, 14
 END
 
@@ -122,7 +119,7 @@ IDD_CLASSICSTART_CUSTOMIZE DIALOGEX 0, 0, 232, 240, 0
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBLE | WS_DLGFRAME
 CAPTION "Upravit klasickou nabídku Start"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     GROUPBOX         "Nabídka Start", IDC_STATIC, 8, 7, 218, 114
     ICON             IDI_STARTMENU2, IDC_STATIC, 19, 17, 20, 20
     LTEXT            "Nabídku Start lze přizpůsobit přidáním nebo odebráním položek.", IDC_STATIC, 48, 17, 108, 39
@@ -137,26 +134,26 @@ FONT 8, "MS Shell Dlg"
     CONTROL          "StartMenuSe&ttings", IDC_CLASSICSTART_SETTINGS, "SysTreeView32", WS_BORDER | 0x00000001, 8, 139, 218, 72, WS_EX_CLIENTEDGE
     DEFPUSHBUTTON    "OK", IDOK, 122, 220, 50, 14
     PUSHBUTTON       "Storno", IDCANCEL, 176, 220, 50, 14
-}
+END
 
 IDD_FILENAME_WARNING DIALOGEX 0, 0, 272, 81, 0
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUPWINDOW | WS_DLGFRAME
 CAPTION "Kontrola názvů souborů"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     DEFPUSHBUTTON    "&Ignorovat", IDIGNORE, 215, 60, 50, 14
     PUSHBUTTON       "&Přejmenovat", IDC_FILE_RENAME, 159, 60, 50, 14
     LTEXT            "", IDC_STATIC, 7, 51, 258, 1, NOT WS_GROUP
     AUTOCHECKBOX     "&Neprovádět tuto kontrolu při spouštění systému", IDC_NOTCHECK, 7, 62, 139, 10
     ICON             32515, IDC_STATIC, 7, 7, 21, 20
     LTEXT            "Na Vašem počítači se nachází soubor nebo složka s názvem %s, který by mohl způsobit, že některé aplikace nebudou fungovat správně. Přejmenování na %s tento problém vyřeší. Přejete si provést přejmenování?", IDC_STATIC, 34, 7, 224, 37
-}
+END
 
 IDD_MODERNSTART_ADVANCED DIALOGEX 0, 0, 251, 198, 0
 STYLE DS_SETFONT | WS_CAPTION | WS_CHILD | WS_DISABLED
 CAPTION "Rozšířené"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     GROUPBOX         "Nastavení nabídky Start", IDC_STATIC, 7, 7, 238, 42
     AUTOCHECKBOX     "&Ponecháním kurzoru na položce otevřít podnábidku", IDC_AUTOOPEN, 14, 21, 224, 10
     AUTOCHECKBOX     "Zvýraznit &nově nainstalované programy", IDC_HIGHLIGHT, 14, 35, 224, 10
@@ -166,13 +163,13 @@ FONT 8, "MS Shell Dlg"
     LTEXT            "Vyberte tuto možnost pro zjednodušený přístup k naposledy otevřeným dokumentům. Vymazání tohoto seznamu neodstraní soubory.", IDC_STATIC, 14, 144, 224, 21
     AUTOCHECKBOX     "&Zobrazovat naposledy otevřené dokumenty", IDC_RECENTLY, 14, 168, 147, 10
     PUSHBUTTON       "&Vymazat", IDC_CLEAR, 182, 168, 55, 14
-}
+END
 
 IDD_MODERNSTART_GENERAL DIALOGEX 0, 0, 251, 198
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_DLGFRAME
 CAPTION "Obecné"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     GROUPBOX         "Velikost ikon", IDC_STATIC, 7, 7, 238, 37
     ICON             IDC_LARGEICON, 17, 18, 20, 20, SS_CENTERIMAGE
     ICON             IDC_SMALLICON, 151, 18, 20, 20, SS_CENTERIMAGE
@@ -189,7 +186,7 @@ FONT 8, "MS Shell Dlg"
     COMBOBOX         IDC_INTERNETDEFAULTAPP, 98, 138, 140, 200, CBS_DROPDOWNLIST | WS_VSCROLL
     AUTOCHECKBOX     "&E-mail:", IDC_SHOWEMAIL, 14, 157, 37, 10
     COMBOBOX         IDC_EMAILDEFAULTAPP, 98, 155, 140, 200, CBS_DROPDOWNLIST | WS_VSCROLL
-}
+END
 
 STRINGTABLE
 BEGIN
@@ -203,4 +200,5 @@ END
 STRINGTABLE
 BEGIN
     IDS_TASKBAR_STARTMENU_PROP_CAPTION "Vlastnosti hlavního panelu a Start menu"
+    IDS_RESTORE_ALL "&Show Open Windows"
 END

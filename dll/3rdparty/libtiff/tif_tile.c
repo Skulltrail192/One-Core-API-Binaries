@@ -1,5 +1,3 @@
-/* $Id: tif_tile.c,v 1.24 2015-06-07 22:35:40 bfriesen Exp $ */
-
 /*
  * Copyright (c) 1991-1997 Sam Leffler
  * Copyright (c) 1991-1997 Silicon Graphics, Inc.
@@ -29,7 +27,6 @@
  *
  * Tiled Image Support Routines.
  */
-
 #include <precomp.h>
 
 /*
@@ -184,15 +181,8 @@ TIFFTileRowSize(TIFF* tif)
 {
 	static const char module[] = "TIFFTileRowSize";
 	uint64 m;
-	tmsize_t n;
 	m=TIFFTileRowSize64(tif);
-	n=(tmsize_t)m;
-	if ((uint64)n!=m)
-	{
-		TIFFErrorExt(tif->tif_clientdata,module,"Integer overflow");
-		n=0;
-	}
-	return(n);
+	return _TIFFCastUInt64ToSSize(tif, m, module);
 }
 
 /*
@@ -251,15 +241,8 @@ TIFFVTileSize(TIFF* tif, uint32 nrows)
 {
 	static const char module[] = "TIFFVTileSize";
 	uint64 m;
-	tmsize_t n;
 	m=TIFFVTileSize64(tif,nrows);
-	n=(tmsize_t)m;
-	if ((uint64)n!=m)
-	{
-		TIFFErrorExt(tif->tif_clientdata,module,"Integer overflow");
-		n=0;
-	}
-	return(n);
+	return _TIFFCastUInt64ToSSize(tif, m, module);
 }
 
 /*
@@ -275,15 +258,8 @@ TIFFTileSize(TIFF* tif)
 {
 	static const char module[] = "TIFFTileSize";
 	uint64 m;
-	tmsize_t n;
 	m=TIFFTileSize64(tif);
-	n=(tmsize_t)m;
-	if ((uint64)n!=m)
-	{
-		TIFFErrorExt(tif->tif_clientdata,module,"Integer overflow");
-		n=0;
-	}
-	return(n);
+	return _TIFFCastUInt64ToSSize(tif, m, module);
 }
 
 /*

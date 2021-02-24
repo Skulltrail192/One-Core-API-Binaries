@@ -7,7 +7,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2019, Intel Corp.
+ * Copyright (C) 2000 - 2020, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -469,6 +469,7 @@ AcpiOsEnterSleep (
  * Debug print routines
  */
 #ifndef ACPI_USE_ALTERNATE_PROTOTYPE_AcpiOsPrintf
+ACPI_PRINTF_LIKE (1)
 void ACPI_INTERNAL_VAR_XFACE
 AcpiOsPrintf (
     const char              *Format,

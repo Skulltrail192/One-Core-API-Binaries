@@ -62,6 +62,9 @@ IDI_VERTSKEW ICON "icons/vertskew.ico"
 #ifdef LANGUAGE_ES_ES
     #include "lang/es-ES.rc"
 #endif
+#ifdef LANGUAGE_ET_EE
+    #include "lang/et-EE.rc"
+#endif
 #ifdef LANGUAGE_EU_ES
     #include "lang/eu-ES.rc"
 #endif
@@ -73,6 +76,9 @@ IDI_VERTSKEW ICON "icons/vertskew.ico"
 #endif
 #ifdef LANGUAGE_HU_HU
     #include "lang/hu-HU.rc"
+#endif
+#ifdef LANGUAGE_ID_ID
+    #include "lang/id-ID.rc"
 #endif
 #ifdef LANGUAGE_IT_IT
     #include "lang/it-IT.rc"
@@ -115,6 +121,9 @@ IDI_VERTSKEW ICON "icons/vertskew.ico"
 #endif
 #ifdef LANGUAGE_UK_UA
     #include "lang/uk-UA.rc"
+#endif
+#ifdef LANGUAGE_VI_VN
+    #include "lang/vi-VN.rc"
 #endif
 #ifdef LANGUAGE_ZH_CN
     #include "lang/zh-CN.rc"

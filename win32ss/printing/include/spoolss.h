@@ -1,8 +1,8 @@
 /*
  * PROJECT:     ReactOS Printing Include files
- * LICENSE:     GNU LGPLv2 or any later version as published by the Free Software Foundation
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
  * PURPOSE:     Undocumented APIs of the Spooler Router "spoolss.dll" and internally shared interfaces
- * COPYRIGHT:   Copyright 2015-2017 Colin Finck <colin@reactos.org>
+ * COPYRIGHT:   Copyright 2015-2017 Colin Finck (colin@reactos.org)
  */
 
 #ifndef _REACTOS_SPOOLSS_H
@@ -63,12 +63,11 @@ PVOID WINAPI DllAllocSplMem(DWORD dwBytes);
 BOOL WINAPI DllFreeSplMem(PVOID pMem);
 BOOL WINAPI DllFreeSplStr(PWSTR pwszString);
 BOOL WINAPI InitializeRouter(HANDLE SpoolerStatusHandle);
-BOOL WINAPI MarshallDownStructure(PVOID pStructure, PMARSHALL_DOWN_INFO pParameters, DWORD cbStructureSize, BOOL bSomeBoolean);
-PBYTE WINAPI PackStrings(PWSTR* pSource, PBYTE pDest, const DWORD* DestOffsets, PBYTE pEnd);
+PBYTE WINAPI PackStrings(PCWSTR* pSource, PBYTE pDest, const DWORD* DestOffsets, PBYTE pEnd);
 PVOID WINAPI ReallocSplMem(PVOID pOldMem, DWORD cbOld, DWORD cbNew);
 BOOL WINAPI ReallocSplStr(PWSTR* ppwszString, PCWSTR pwszInput);
 BOOL WINAPI SplInitializeWinSpoolDrv(PVOID* pTable);
-BOOL WINAPI SpoolerInit();
+BOOL WINAPI SpoolerInit(VOID);
 PDWORD WINAPI UndoAlignRpcPtr(PVOID pDestinationBuffer, PVOID pSourceBuffer, DWORD cbBuffer, PDWORD pcbNeeded);
 
 #endif

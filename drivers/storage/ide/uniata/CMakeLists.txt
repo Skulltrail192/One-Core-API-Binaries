@@ -20,12 +20,14 @@ list(APPEND SOURCE
     ros_glue/ros_glue.cpp
     stdafx.h)
 
-add_library(uniata SHARED ${SOURCE} idedma.rc)
+add_library(uniata MODULE ${SOURCE} idedma.rc)
 
-if(NOT MSVC)
-    add_target_compile_flags(uniata "-Wno-narrowing")
-    if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
-        add_target_compile_flags(uniata "-Wno-unused-but-set-variable")
+if(USE_CLANG_CL OR (NOT MSVC))
+    target_compile_options(uniata PRIVATE "-Wno-narrowing")
+    if(USE_CLANG_CL)
+        target_compile_options(uniata PRIVATE "-Wno-unused-const-variable")
+    else()
+        target_compile_options(uniata PRIVATE "-Wno-unused-but-set-variable")
     endif()
 endif()
 

@@ -2056,7 +2056,7 @@ static const unsigned char cp2uni_leadbytes[256] =
     0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x00, 0x00, 0x00
 };
 
-static const unsigned short uni2cp_low[27210] =
+static const unsigned short uni2cp_low[] =
 {
     /* 0x0000 .. 0x00ff */
     0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -5588,7 +5588,7 @@ static const unsigned short uni2cp_high[256] =
     0x647f, 0x6573, 0x6665, 0x684a, 0x684a, 0x684a, 0x684a, 0x6764
 };
 
-const struct dbcs_table cptable_932 =
+const struct dbcs_table DECLSPEC_HIDDEN cptable_932 =
 {
     { 932, 2, 0x003f, 0x30fb, "ANSI/OEM Japanese Shift-JIS" },
     cp2uni,

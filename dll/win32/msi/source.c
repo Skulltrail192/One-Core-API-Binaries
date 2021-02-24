@@ -18,7 +18,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "winnls.h"
+#include "shlwapi.h"
+#include "wine/debug.h"
+#include "msi.h"
+#include "msiquery.h"
 #include "msipriv.h"
+#include "wincrypt.h"
+#include "winver.h"
+#include "winuser.h"
+#include "wine/unicode.h"
+#include "sddl.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(msi);
 
@@ -81,6 +98,7 @@ static UINT OpenSourceKey(LPCWSTR szProduct, HKEY* key, DWORD dwOptions,
         if (rc != ERROR_SUCCESS)
             rc = ERROR_BAD_CONFIGURATION;
     }
+    RegCloseKey(rootkey);
 
     return rc;
 }
@@ -574,8 +592,11 @@ UINT WINAPI MsiSourceListGetInfoW( LPCWSTR szProduct, LPCWSTR szUserSid,
                               0, 0, NULL, &size);
         if (rc != ERROR_SUCCESS)
         {
-            RegCloseKey(sourcekey);
-            return ERROR_SUCCESS;
+            static WCHAR szEmpty[1] = { '\0' };
+            rc = ERROR_SUCCESS;
+            source = NULL;
+            ptr = szEmpty;
+            goto output_out;
         }
 
         source = msi_alloc(size);
@@ -609,7 +630,7 @@ UINT WINAPI MsiSourceListGetInfoW( LPCWSTR szProduct, LPCWSTR szUserSid,
             else
                 ptr++;
         }
-
+output_out:
         if (szValue)
         {
             if (strlenW(ptr) < *pcchValue)

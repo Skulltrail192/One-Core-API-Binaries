@@ -13,6 +13,7 @@ BOOL bDoShowNumbers    = FALSE; // -n
 BOOL bDoShowProtoCons  = FALSE; // -p
 BOOL bDoShowRouteTable = FALSE; // -r
 BOOL bDoShowProtoStats = FALSE; // -s
+BOOL bDoShowProcessId  = FALSE; // -o
 BOOL bDoDispSeqComp    = FALSE; // -v
 BOOL bLoopOutput       = FALSE; // interval
 
@@ -43,16 +44,12 @@ typedef struct {
 } MIB_UDPEXTABLE, *PMIB_UDPEXTABLE;
 
 /* function declarations */
-BOOL ParseCmdline(int argc, char* argv[]);
-BOOL DisplayOutput(VOID);
-DWORD DoFormatMessage(DWORD ErrorCode);
 VOID ShowIpStatistics(VOID);
 VOID ShowIcmpStatistics(VOID);
 VOID ShowTcpStatistics(VOID);
 VOID ShowUdpStatistics(VOID);
 VOID ShowEthernetStatistics(VOID);
-VOID ShowTcpTable(VOID);
-VOID ShowUdpTable(VOID);
-PCHAR GetPortName(UINT Port, PCSTR Proto, CHAR Name[PORTNAMELEN], INT NameLen);
-PCHAR GetIpHostName(BOOL local, UINT ipaddr, CHAR name[HOSTNAMELEN], int namelen);
-VOID Usage(VOID);
+BOOL ShowTcpTable(VOID);
+BOOL ShowUdpTable(VOID);
+PCHAR GetPortName(UINT Port, PCSTR Proto, CHAR Name[], INT NameLen);
+PCHAR GetIpHostName(BOOL Local, UINT IpAddr, CHAR Name[], INT NameLen);

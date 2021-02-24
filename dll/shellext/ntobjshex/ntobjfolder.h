@@ -14,7 +14,6 @@ class CNtObjectFolderExtractIcon :
     public IExtractIconW
 {
     PCWSTR m_NtPath;
-    PCIDLIST_ABSOLUTE m_pcidlFolder;
     PCITEMID_CHILD    m_pcidlChild;
 
 public:
@@ -98,10 +97,10 @@ public:
         SHCOLUMNID *pscid);
 
     // IPersistFolder
-    virtual HRESULT STDMETHODCALLTYPE Initialize(LPCITEMIDLIST pidl);
+    virtual HRESULT STDMETHODCALLTYPE Initialize(PCIDLIST_ABSOLUTE pidl);
 
     // Internal
-    HRESULT STDMETHODCALLTYPE Initialize(LPCITEMIDLIST pidl, PCWSTR ntPath);
+    HRESULT STDMETHODCALLTYPE Initialize(PCIDLIST_ABSOLUTE pidl, PCWSTR ntPath);
 
 protected:
     virtual HRESULT STDMETHODCALLTYPE CompareIDs(LPARAM lParam, const NtPidlEntry * first, const NtPidlEntry * second);

@@ -1,8 +1,8 @@
 /*
  * PROJECT:     ReactOS Local Port Monitor
- * LICENSE:     GNU LGPL v2.1 or any later version as published by the Free Software Foundation
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
  * PURPOSE:     Precompiled Header for all source files
- * COPYRIGHT:   Copyright 2015 Colin Finck <colin@reactos.org>
+ * COPYRIGHT:   Copyright 2015 Colin Finck (colin@reactos.org)
  */
 
 #ifndef _PRECOMP_H
@@ -98,7 +98,7 @@ BOOL WINAPI LocalmonWritePort(HANDLE hPort, PBYTE pBuffer, DWORD cbBuf, PDWORD p
 
 // tools.c
 BOOL DoesPortExist(PCWSTR pwszPortName);
-DWORD GetLPTTransmissionRetryTimeout();
+DWORD GetLPTTransmissionRetryTimeout(VOID);
 DWORD GetPortNameWithoutColon(PCWSTR pwszPortName, PWSTR* ppwszPortNameWithoutColon);
 
 // xcv.c

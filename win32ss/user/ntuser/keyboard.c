@@ -467,17 +467,30 @@ IntToUnicodeEx(UINT wVirtKey,
         WCHAR wchFirst, wchSecond;
         TRACE("Previous dead char: %lc (%x)\n", wchDead, wchDead);
 
-        for (i = 0; pKbdTbl->pDeadKey[i].dwBoth; i++)
+        if (pKbdTbl->pDeadKey)
         {
-            wchFirst = pKbdTbl->pDeadKey[i].dwBoth >> 16;
-            wchSecond = pKbdTbl->pDeadKey[i].dwBoth & 0xFFFF;
-            if (wchFirst == wchDead && wchSecond == wchTranslatedChar)
+            for (i = 0; pKbdTbl->pDeadKey[i].dwBoth; i++)
             {
-                wchTranslatedChar = pKbdTbl->pDeadKey[i].wchComposed;
-                wchDead = 0;
-                bDead = FALSE;
-                break;
+                wchFirst = pKbdTbl->pDeadKey[i].dwBoth >> 16;
+                wchSecond = pKbdTbl->pDeadKey[i].dwBoth & 0xFFFF;
+                if (wchFirst == wchDead && wchSecond == wchTranslatedChar)
+                {
+                    wchTranslatedChar = pKbdTbl->pDeadKey[i].wchComposed;
+                    wchDead = 0;
+                    bDead = FALSE;
+                    break;
+                }
             }
+        }
+        else
+        {
+#if defined(__GNUC__)
+            if (wchDead == 0x8000)
+            {
+                ERR("GCC is inventing bits, ignoring fake dead key\n");
+                wchDead = 0;
+            }
+#endif
         }
 
         TRACE("Final char: %lc (%x)\n", wchTranslatedChar, wchTranslatedChar);
@@ -963,7 +976,6 @@ UserSendKeyboardInput(KEYBDINPUT *pKbdInput, BOOL bInjected)
     PKL pKl = NULL;
     PKBDTABLES pKbdTbl;
     PUSER_MESSAGE_QUEUE pFocusQueue;
-    LARGE_INTEGER LargeTickCount;
     DWORD dwTime;
     BOOL bExt = (pKbdInput->dwFlags & KEYEVENTF_EXTENDEDKEY) ? TRUE : FALSE;
 
@@ -1017,8 +1029,7 @@ UserSendKeyboardInput(KEYBDINPUT *pKbdInput, BOOL bInjected)
         dwTime = pKbdInput->time;
     else
     {
-        KeQueryTickCount(&LargeTickCount);
-        dwTime = MsqCalculateMessageTime(&LargeTickCount);
+        dwTime = EngGetTickCount32();
     }
 
     if (wVk == VK_RMENU && (pKbdTbl->fLocaleFlags & KLLF_ALTGR))
@@ -1130,7 +1141,6 @@ IntTranslateKbdMessage(LPMSG lpMsg,
     WCHAR wch[3] = { 0 };
     MSG NewMsg = { 0 };
     PKBDTABLES pKbdTbl;
-    LARGE_INTEGER LargeTickCount;
     BOOL bResult = FALSE;
 
     switch(lpMsg->message)
@@ -1163,8 +1173,7 @@ IntTranslateKbdMessage(LPMSG lpMsg,
     /* Init pt, hwnd and time msg fields */
     NewMsg.pt = gpsi->ptCursor;
     NewMsg.hwnd = lpMsg->hwnd;
-    KeQueryTickCount(&LargeTickCount);
-    NewMsg.time = MsqCalculateMessageTime(&LargeTickCount);
+    NewMsg.time = EngGetTickCount32();
 
     TRACE("Enter IntTranslateKbdMessage msg %s, vk %x\n",
         lpMsg->message == WM_SYSKEYDOWN ? "WM_SYSKEYDOWN" : "WM_KEYDOWN", lpMsg->wParam);
@@ -1407,7 +1416,8 @@ APIENTRY
 NtUserGetKeyNameText(LONG lParam, LPWSTR lpString, int cchSize)
 {
     PTHREADINFO pti;
-    DWORD i, cchKeyName, dwRet = 0;
+    DWORD i, dwRet = 0;
+    SIZE_T cchKeyName;
     WORD wScanCode = (lParam >> 16) & 0xFF;
     BOOL bExtKey = (HIWORD(lParam) & KF_EXTENDED) ? TRUE : FALSE;
     PKBDTABLES pKbdTbl;

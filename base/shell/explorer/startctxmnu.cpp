@@ -182,7 +182,7 @@ public:
     virtual HRESULT STDMETHODCALLTYPE
         InvokeCommand(LPCMINVOKECOMMANDINFO lpici)
     {
-        UINT uiCmdId = (UINT)lpici->lpVerb;
+        UINT uiCmdId = PtrToUlong(lpici->lpVerb);
         if (uiCmdId != 0)
         {
             if ((uiCmdId >= ID_SHELL_CMD_FIRST) && (uiCmdId <= ID_SHELL_CMD_LAST))
@@ -237,7 +237,7 @@ public:
     END_COM_MAP()
 };
 
-HRESULT StartMenuBtnCtxMenuCreator(ITrayWindow * m_TrayWnd, IN HWND m_Owner, IContextMenu ** ppCtxMenu)
+HRESULT CStartMenuBtnCtxMenu_CreateInstance(ITrayWindow * m_TrayWnd, IN HWND m_Owner, IContextMenu ** ppCtxMenu)
 {
     CStartMenuBtnCtxMenu * mnu = new CComObject<CStartMenuBtnCtxMenu>();
     mnu->Initialize(m_TrayWnd, m_Owner);

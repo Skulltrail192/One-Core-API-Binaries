@@ -6,13 +6,11 @@ add_definitions(
     -D_NTOSKRNL_
     -DCRTDLL)
 
-	
 include_directories(
     BEFORE include
     ${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys)
 
 list(APPEND SOURCE
-    stubs.c
     csr/api.c
     csr/capture.c
     csr/connect.c
@@ -21,6 +19,7 @@ list(APPEND SOURCE
     ldr/ldrinit.c
     ldr/ldrpe.c
     ldr/ldrutils.c
+    ldr/verifier.c
     rtl/libsupp.c
     rtl/uilist.c
     rtl/version.c
@@ -39,7 +38,7 @@ endif()
 
 add_asm_files(ntdll_asm ${ASM_SOURCE})
 
-add_library(ntdll SHARED
+add_library(ntdll MODULE
     ${SOURCE}
     ${ntdll_asm}
     def/ntdll.rc

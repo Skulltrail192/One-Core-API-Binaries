@@ -20,18 +20,38 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include "config.h"
+#include "wine/port.h"
 
+#include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
-#include <winver.h>
-#include <winnetwk.h>
-#include <mmsystem.h>
-#include <shdeprecated.h>
-#include <shellapi.h>
-#include <commdlg.h>
-#include <mlang.h>
-#include <mshtmhst.h>
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "winreg.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winver.h"
+#include "winnetwk.h"
+#include "mmsystem.h"
+#include "objbase.h"
+#include "exdisp.h"
+#include "shdeprecated.h"
+#include "shlobj.h"
+#include "shlwapi.h"
+#include "shellapi.h"
+#include "commdlg.h"
+#include "mlang.h"
+#include "mshtmhst.h"
+#include "wine/unicode.h"
+#include "wine/debug.h"
+
+
+WINE_DEFAULT_DEBUG_CHANNEL(shell);
 
 /* DLL handles for late bound calls */
 extern HINSTANCE shlwapi_hInstance;
@@ -173,6 +193,48 @@ HANDLE WINAPI SHAllocShared(LPCVOID lpvData, DWORD dwSize, DWORD dwProcId)
   return hRet;
 }
 
+#ifdef __REACTOS__
+/*************************************************************************
+ * @ [SHLWAPI.510]
+ *
+ * Get a pointer to a block of shared memory from a shared memory handle,
+ * with specified access rights.
+ *
+ * PARAMS
+ * hShared  [I] Shared memory handle
+ * dwProcId [I] ID of process owning hShared
+ * bWriteAccess [I] TRUE to get a writable block,
+ *                  FALSE to get a read-only block
+ *
+ * RETURNS
+ * Success: A pointer to the shared memory
+ * Failure: NULL
+ */
+LPVOID WINAPI
+SHLockSharedEx(HANDLE hShared, DWORD dwProcId, BOOL bWriteAccess)
+{
+  HANDLE hDup;
+  LPVOID pMapped;
+  DWORD dwAccess;
+
+  TRACE("(%p %d %d)\n", hShared, dwProcId, bWriteAccess);
+
+  /* Get handle to shared memory for current process */
+  hDup = SHMapHandle(hShared, dwProcId, GetCurrentProcessId(), FILE_MAP_ALL_ACCESS, 0);
+  if (hDup == NULL)
+    return NULL;
+
+  /* Get View */
+  dwAccess = (FILE_MAP_READ | (bWriteAccess ? FILE_MAP_WRITE : 0));
+  pMapped = MapViewOfFile(hDup, dwAccess, 0, 0, 0);
+  CloseHandle(hDup);
+
+  if (pMapped)
+    return (char *) pMapped + sizeof(DWORD); /* Hide size */
+  return NULL;
+}
+
+#endif
 /*************************************************************************
  * @ [SHLWAPI.8]
  *
@@ -189,6 +251,9 @@ HANDLE WINAPI SHAllocShared(LPCVOID lpvData, DWORD dwSize, DWORD dwProcId)
  */
 PVOID WINAPI SHLockShared(HANDLE hShared, DWORD dwProcId)
 {
+#ifdef __REACTOS__
+    return SHLockSharedEx(hShared, dwProcId, TRUE);
+#else
   HANDLE hDup;
   LPVOID pMapped;
 
@@ -204,6 +269,7 @@ PVOID WINAPI SHLockShared(HANDLE hShared, DWORD dwProcId)
   if (pMapped)
     return (char *) pMapped + sizeof(DWORD); /* Hide size */
   return NULL;
+#endif
 }
 
 /*************************************************************************
@@ -2561,14 +2627,14 @@ HRESULT WINAPI IUnknown_GetSite(LPUNKNOWN lpUnknown, REFIID iid, PVOID *lppSite)
  *  Success: The window handle of the newly created window.
  *  Failure: 0.
  */
-HWND WINAPI SHCreateWorkerWindowA(LONG wndProc, HWND hWndParent, DWORD dwExStyle,
+HWND WINAPI SHCreateWorkerWindowA(WNDPROC wndProc, HWND hWndParent, DWORD dwExStyle,
                                   DWORD dwStyle, HMENU hMenu, LONG_PTR wnd_extra)
 {
   static const char szClass[] = "WorkerA";
   WNDCLASSA wc;
   HWND hWnd;
 
-  TRACE("(0x%08x, %p, 0x%08x, 0x%08x, %p, 0x%08lx)\n",
+  TRACE("(%p, %p, 0x%08x, 0x%08x, %p, 0x%08lx)\n",
          wndProc, hWndParent, dwExStyle, dwStyle, hMenu, wnd_extra);
 
   /* Create Window class */
@@ -2590,8 +2656,7 @@ HWND WINAPI SHCreateWorkerWindowA(LONG wndProc, HWND hWndParent, DWORD dwExStyle
   if (hWnd)
   {
     SetWindowLongPtrW(hWnd, 0, wnd_extra);
-
-    if (wndProc) SetWindowLongPtrA(hWnd, GWLP_WNDPROC, wndProc);
+    if (wndProc) SetWindowLongPtrA(hWnd, GWLP_WNDPROC, (LONG_PTR)wndProc);
   }
 
   return hWnd;
@@ -2850,28 +2915,28 @@ DWORD WINAPI WhichPlatform(void)
  *
  * Unicode version of SHCreateWorkerWindowA.
  */
-HWND WINAPI SHCreateWorkerWindowW(LONG wndProc, HWND hWndParent, DWORD dwExStyle,
-                        DWORD dwStyle, HMENU hMenu, LONG msg_result)
+HWND WINAPI SHCreateWorkerWindowW(WNDPROC wndProc, HWND hWndParent, DWORD dwExStyle,
+                                  DWORD dwStyle, HMENU hMenu, LONG_PTR wnd_extra)
 {
   static const WCHAR szClass[] = { 'W', 'o', 'r', 'k', 'e', 'r', 'W', 0 };
   WNDCLASSW wc;
   HWND hWnd;
 
-  TRACE("(0x%08x, %p, 0x%08x, 0x%08x, %p, 0x%08x)\n",
-         wndProc, hWndParent, dwExStyle, dwStyle, hMenu, msg_result);
+  TRACE("(%p, %p, 0x%08x, 0x%08x, %p, 0x%08lx)\n",
+         wndProc, hWndParent, dwExStyle, dwStyle, hMenu, wnd_extra);
 
   /* If our OS is natively ANSI, use the ANSI version */
   if (GetVersion() & 0x80000000)  /* not NT */
   {
     TRACE("fallback to ANSI, ver 0x%08x\n", GetVersion());
-    return SHCreateWorkerWindowA(wndProc, hWndParent, dwExStyle, dwStyle, hMenu, msg_result);
+    return SHCreateWorkerWindowA(wndProc, hWndParent, dwExStyle, dwStyle, hMenu, wnd_extra);
   }
 
   /* Create Window class */
   wc.style         = 0;
   wc.lpfnWndProc   = DefWindowProcW;
   wc.cbClsExtra    = 0;
-  wc.cbWndExtra    = 4;
+  wc.cbWndExtra    = sizeof(LONG_PTR);
   wc.hInstance     = shlwapi_hInstance;
   wc.hIcon         = NULL;
   wc.hCursor       = LoadCursorW(NULL, (LPWSTR)IDC_ARROW);
@@ -2885,9 +2950,8 @@ HWND WINAPI SHCreateWorkerWindowW(LONG wndProc, HWND hWndParent, DWORD dwExStyle
                          hWndParent, hMenu, shlwapi_hInstance, 0);
   if (hWnd)
   {
-    SetWindowLongPtrW(hWnd, DWLP_MSGRESULT, msg_result);
-
-    if (wndProc) SetWindowLongPtrW(hWnd, GWLP_WNDPROC, wndProc);
+    SetWindowLongPtrW(hWnd, 0, wnd_extra);
+    if (wndProc) SetWindowLongPtrW(hWnd, GWLP_WNDPROC, (LONG_PTR)wndProc);
   }
 
   return hWnd;
@@ -3501,7 +3565,11 @@ HRESULT WINAPI SHInvokeCommand(HWND hWnd, IShellFolder* lpFolder, LPCITEMIDLIST 
           cmIci.cbSize = sizeof(cmIci);
           cmIci.fMask = CMIC_MASK_ASYNCOK;
           cmIci.hwnd = hWnd;
+#ifdef __REACTOS__ /* r75561 */
+          cmIci.lpVerb = MAKEINTRESOURCEA(dwCommandId - 1);
+#else
           cmIci.lpVerb = MAKEINTRESOURCEA(dwCommandId);
+#endif
           cmIci.nShow = SW_SHOWNORMAL;
 
           hRet = IContextMenu_InvokeCommand(iContext, &cmIci);

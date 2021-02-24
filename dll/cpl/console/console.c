@@ -133,6 +133,23 @@ Done:
     return;
 }
 
+static int CALLBACK
+PropSheetProc(HWND hwndDlg, UINT uMsg, LPARAM lParam)
+{
+    // NOTE: This callback is needed to set large icon correctly.
+    HICON hIcon;
+    switch (uMsg)
+    {
+        case PSCB_INITIALIZED:
+        {
+            hIcon = LoadIconW(hApplet, MAKEINTRESOURCEW(IDC_CPLICON));
+            SendMessageW(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+            break;
+        }
+    }
+    return 0;
+}
+
 /* First Applet */
 static LONG
 APIENTRY
@@ -210,26 +227,19 @@ InitApplet(HANDLE hSectionOrWnd)
         InitDefaultConsoleInfo(ConInfo);
     }
 
-    /* Initialize the font support */
-    hCurrentFont = CreateConsoleFont(ConInfo);
-    if (hCurrentFont == NULL)
-        DPRINT1("InitApplet: CreateConsoleFont failed\n");
+    /* Initialize the font support -- additional TrueType fonts cache and current preview font */
+    InitTTFontCache();
+    RefreshFontPreview(&FontPreview, ConInfo);
 
     /* Initialize the property sheet structure */
     ZeroMemory(&psh, sizeof(psh));
     psh.dwSize = sizeof(psh);
-    psh.dwFlags = PSH_PROPSHEETPAGE | PSH_PROPTITLE | /* PSH_USEHICON */ PSH_USEICONID | PSH_NOAPPLYNOW;
+    psh.dwFlags = PSH_PROPSHEETPAGE | PSH_PROPTITLE | /* PSH_USEHICON | */ PSH_USEICONID | PSH_NOAPPLYNOW | PSH_USECALLBACK;
 
     if (ConInfo->ConsoleTitle[0] != UNICODE_NULL)
-    {
-        wcsncpy(szTitle, L"\"", MAX_PATH);
-        wcsncat(szTitle, ConInfo->ConsoleTitle, MAX_PATH - wcslen(szTitle));
-        wcsncat(szTitle, L"\"", MAX_PATH - wcslen(szTitle));
-    }
+        StringCchPrintfW(szTitle, ARRAYSIZE(szTitle), L"\"%s\"", ConInfo->ConsoleTitle);
     else
-    {
-        wcscpy(szTitle, L"ReactOS Console");
-    }
+        StringCchCopyW(szTitle, ARRAYSIZE(szTitle), L"ReactOS Console");
     psh.pszCaption = szTitle;
 
     if (pSharedInfo != NULL)
@@ -249,6 +259,7 @@ InitApplet(HANDLE hSectionOrWnd)
     psh.nPages = ARRAYSIZE(psp);
     psh.nStartPage = 0;
     psh.ppsp = psp;
+    psh.pfnCallback = PropSheetProc;
 
     InitPropSheetPage(&psp[i++], IDD_PROPPAGEOPTIONS, OptionsProc);
     InitPropSheetPage(&psp[i++], IDD_PROPPAGEFONT   , FontProc   );
@@ -260,9 +271,9 @@ InitApplet(HANDLE hSectionOrWnd)
     Result = PropertySheetW(&psh);
     UnRegisterWinPrevClass(hApplet);
 
-    /* First cleanup */
-    if (hCurrentFont) DeleteObject(hCurrentFont);
-    hCurrentFont = NULL;
+    /* Clear the font support */
+    ResetFontPreview(&FontPreview);
+    ClearTTFontCache();
 
     /* Save the console settings */
     if (SetConsoleInfo)

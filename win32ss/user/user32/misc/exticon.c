@@ -24,7 +24,9 @@
 
 #include <user32.h>
 
-#include <wine/debug.h>
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#endif
 
 /* Start of Hack section */
 
@@ -277,13 +279,24 @@ static UINT ICO_ExtractIconExW(
 	LPBYTE		peimage;
 	HANDLE		fmapping;
 	DWORD		fsizeh,fsizel;
+#ifdef __REACTOS__
+    WCHAR		szExpandedExePath[MAX_PATH];
+#endif
         WCHAR		szExePath[MAX_PATH];
         DWORD		dwSearchReturn;
 
 	TRACE("%s, %d, %d %p 0x%08x\n", debugstr_w(lpszExeFileName), nIconIndex, nIcons, pIconId, flags);
 
-        dwSearchReturn = SearchPathW(NULL, lpszExeFileName, NULL, sizeof(szExePath) / sizeof(szExePath[0]), szExePath, NULL);
-        if ((dwSearchReturn == 0) || (dwSearchReturn > sizeof(szExePath) / sizeof(szExePath[0])))
+#ifdef __REACTOS__
+    if (RetPtr)
+        *RetPtr = NULL;
+
+    if (ExpandEnvironmentStringsW(lpszExeFileName, szExpandedExePath, ARRAY_SIZE(szExpandedExePath)))
+        lpszExeFileName = szExpandedExePath;
+#endif
+
+        dwSearchReturn = SearchPathW(NULL, lpszExeFileName, NULL, ARRAY_SIZE(szExePath), szExePath, NULL);
+        if ((dwSearchReturn == 0) || (dwSearchReturn > ARRAY_SIZE(szExePath)))
         {
             WARN("File %s not found or path too long\n", debugstr_w(lpszExeFileName));
             return -1;
@@ -456,17 +469,20 @@ static UINT ICO_ExtractIconExW(
 
                     icon = CreateIconFromResourceEx(imageData, entry->icHeader.biSizeImage, sig == 1, 0x00030000, cx[index], cy[index], flags);
 
+                    HeapFree(GetProcessHeap(), 0, cursorData);
+
                     if (icon)
                     {
-                        RetPtr[index] = icon;
-                        iconCount = 1;
-                    }
+                        if (RetPtr)
+                            RetPtr[index] = icon;
+                        else
+                            DestroyIcon(icon);
 
-                    if(cursorData != NULL)
-                        HeapFree(GetProcessHeap(), 0, cursorData);
+                        iconCount = 1;
+                        break;
+                    }
                 }
             }
-
         }
         ret = iconCount;	/* return number of retrieved icons */
     }

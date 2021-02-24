@@ -24,18 +24,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "d3dx9_36_private.h"
+#include "config.h"
+#include "wine/port.h"
 
 #include <assert.h>
 #ifdef HAVE_FLOAT_H
 # include <float.h>
 #endif
 
+#include "d3dx9_private.h"
 #undef MAKE_DDHRESULT
 #include "dxfile.h"
 #include "rmxfguid.h"
 #include "rmxftmpl.h"
+#include "wine/unicode.h"
 #include "wine/list.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(d3dx);
 
 struct d3dx9_mesh
 {
@@ -2331,7 +2336,7 @@ UINT WINAPI D3DXGetDeclVertexSize(const D3DVERTEXELEMENT9 *decl, DWORD stream_id
 
         if (element->Stream != stream_idx) continue;
 
-        if (element->Type >= sizeof(d3dx_decltype_size) / sizeof(*d3dx_decltype_size))
+        if (element->Type >= ARRAY_SIZE(d3dx_decltype_size))
         {
             FIXME("Unhandled element type %#x, size will be incorrect.\n", element->Type);
             continue;
@@ -2366,12 +2371,15 @@ BOOL WINAPI D3DXIntersectTri(const D3DXVECTOR3 *p0, const D3DXVECTOR3 *p1, const
     D3DXMATRIX m;
     D3DXVECTOR4 vec;
 
+    TRACE("p0 %p, p1 %p, p2 %p, praypos %p, praydir %p, pu %p, pv %p, pdist %p.\n",
+            p0, p1, p2, praypos, praydir, pu, pv, pdist);
+
     m.u.m[0][0] = p1->x - p0->x;
     m.u.m[1][0] = p2->x - p0->x;
     m.u.m[2][0] = -praydir->x;
     m.u.m[3][0] = 0.0f;
-    m.u.m[0][1] = p1->y - p0->z;
-    m.u.m[1][1] = p2->y - p0->z;
+    m.u.m[0][1] = p1->y - p0->y;
+    m.u.m[1][1] = p2->y - p0->y;
     m.u.m[2][1] = -praydir->y;
     m.u.m[3][1] = 0.0f;
     m.u.m[0][2] = p1->z - p0->z;
@@ -4041,12 +4049,6 @@ HRESULT WINAPI D3DXFrameDestroy(D3DXFRAME *frame, ID3DXAllocateHierarchy *alloc_
     return D3D_OK;
 }
 
-D3DXFRAME* WINAPI D3DXFrameFind(const D3DXFRAME *frame_root, const char *name)
-{
-    FIXME("frame_root %p, name %s stub.\n", frame_root, debugstr_a(name));
-    return NULL;
-}
-
 HRESULT WINAPI D3DXLoadMeshFromXA(const char *filename, DWORD options, struct IDirect3DDevice9 *device,
         struct ID3DXBuffer **adjacency, struct ID3DXBuffer **materials, struct ID3DXBuffer **effect_instances,
         DWORD *num_materials, struct ID3DXMesh **mesh)
@@ -4566,7 +4568,7 @@ HRESULT WINAPI D3DXCreatePolygon(struct IDirect3DDevice9 *device, float length, 
     struct vertex *vertices;
     WORD (*faces)[3];
     DWORD (*adjacency_buf)[3];
-    float scale;
+    float angle, scale;
     unsigned int i;
 
     TRACE("device %p, length %f, sides %u, mesh %p, adjacency %p.\n",
@@ -4594,7 +4596,9 @@ HRESULT WINAPI D3DXCreatePolygon(struct IDirect3DDevice9 *device, float length, 
         return hr;
     }
 
-    scale = 0.5f * length / sinf(D3DX_PI / sides);
+    angle = D3DX_PI / sides;
+    scale = 0.5f * length / sinf(angle);
+    angle *= 2.0f;
 
     vertices[0].position.x = 0.0f;
     vertices[0].position.y = 0.0f;
@@ -4605,8 +4609,8 @@ HRESULT WINAPI D3DXCreatePolygon(struct IDirect3DDevice9 *device, float length, 
 
     for (i = 0; i < sides; ++i)
     {
-        vertices[i + 1].position.x = cosf(2.0f * D3DX_PI * i / sides) * scale;
-        vertices[i + 1].position.y = sinf(2.0f * D3DX_PI * i / sides) * scale;
+        vertices[i + 1].position.x = cosf(angle * i) * scale;
+        vertices[i + 1].position.y = sinf(angle * i) * scale;
         vertices[i + 1].position.z = 0.0f;
         vertices[i + 1].normal.x = 0.0f;
         vertices[i + 1].normal.y = 0.0f;
@@ -5165,7 +5169,7 @@ HRESULT WINAPI D3DXCreateCylinder(struct IDirect3DDevice9 *device, float radius1
 HRESULT WINAPI D3DXCreateTeapot(struct IDirect3DDevice9 *device,
         struct ID3DXMesh **mesh, struct ID3DXBuffer **adjacency)
 {
-    FIXME("(%p, %p, %p): stub\n", device, mesh, adjacency);
+    FIXME("device %p, mesh %p, adjacency %p semi-stub.\n", device, mesh, adjacency);
 
     return D3DXCreateSphere(device, 1.0f, 4, 4, mesh, adjacency);
 }
@@ -5663,7 +5667,6 @@ static HRESULT create_outline(struct glyphinfo *glyph, void *raw_outline, int da
                         pt->corner = POINTTYPE_CURVE_END;
                 }
                 outline->count--;
-                lastpt = &outline->items[outline->count - 1];
             } else {
                 /* outline closed with a line from end to start point */
                 attempt_line_merge(outline, outline->count - 1, &pt->pos, FALSE, cos_table);
@@ -7186,6 +7189,33 @@ cleanup:
     return hr;
 }
 
+
+/*************************************************************************
+ * D3DXOptimizeVertices    (D3DX9_36.@)
+ */
+HRESULT WINAPI D3DXOptimizeVertices(const void *indices, UINT num_faces,
+        UINT num_vertices, BOOL indices_are_32bit, DWORD *vertex_remap)
+{
+    UINT i;
+
+    FIXME("indices %p, num_faces %u, num_vertices %u, indices_are_32bit %#x, vertex_remap %p semi-stub.\n",
+            indices, num_faces, num_vertices, indices_are_32bit, vertex_remap);
+
+    if (!vertex_remap)
+    {
+        WARN("vertex remap pointer is NULL.\n");
+        return D3DERR_INVALIDCALL;
+    }
+
+    for (i = 0; i < num_vertices; i++)
+    {
+        vertex_remap[i] = i;
+    }
+
+    return D3D_OK;
+}
+
+
 /*************************************************************************
  * D3DXOptimizeFaces    (D3DX9_36.@)
  *
@@ -7510,6 +7540,24 @@ done:
 }
 
 /*************************************************************************
+ * D3DXComputeTangent    (D3DX9_36.@)
+ */
+HRESULT WINAPI D3DXComputeTangent(ID3DXMesh *mesh, DWORD stage_idx, DWORD tangent_idx,
+        DWORD binorm_idx, DWORD wrap, const DWORD *adjacency)
+{
+    TRACE("mesh %p, stage_idx %d, tangent_idx %d, binorm_idx %d, wrap %d, adjacency %p.\n",
+           mesh, stage_idx, tangent_idx, binorm_idx, wrap, adjacency);
+
+    return D3DXComputeTangentFrameEx( mesh, D3DDECLUSAGE_TEXCOORD, stage_idx,
+            ( binorm_idx == D3DX_DEFAULT ) ? D3DX_DEFAULT : D3DDECLUSAGE_BINORMAL,
+            binorm_idx,
+            ( tangent_idx == D3DX_DEFAULT ) ? D3DX_DEFAULT : D3DDECLUSAGE_TANGENT,
+            tangent_idx, D3DX_DEFAULT, 0,
+            ( wrap ? D3DXTANGENT_WRAP_UV : 0 ) | D3DXTANGENT_GENERATE_IN_PLACE | D3DXTANGENT_ORTHOGONALIZE_FROM_U,
+            adjacency, -1.01f, -0.01f, -1.01f, NULL, NULL);
+}
+
+/*************************************************************************
  * D3DXComputeNormals    (D3DX9_36.@)
  */
 HRESULT WINAPI D3DXComputeNormals(struct ID3DXBaseMesh *mesh, const DWORD *adjacency)
@@ -7526,18 +7574,6 @@ HRESULT WINAPI D3DXComputeNormals(struct ID3DXBaseMesh *mesh, const DWORD *adjac
             D3DX_DEFAULT, 0, D3DX_DEFAULT, 0, D3DDECLUSAGE_NORMAL, 0,
             D3DXTANGENT_GENERATE_IN_PLACE | D3DXTANGENT_CALCULATE_NORMALS,
             adjacency, -1.01f, -0.01f, -1.01f, NULL, NULL);
-}
-
-/*************************************************************************
- * D3DXComputeNormalMap    (D3DX9_36.@)
- */
-HRESULT WINAPI D3DXComputeNormalMap(IDirect3DTexture9 *texture, IDirect3DTexture9 *src_texture,
-        const PALETTEENTRY *src_palette, DWORD flags, DWORD channel, FLOAT amplitude)
-{
-    FIXME("texture %p, src_texture %p, src_palette %p, flags %#x, channel %u, amplitude %f stub.\n",
-            texture, src_texture, src_palette, flags, channel, amplitude);
-
-    return D3D_OK;
 }
 
 /*************************************************************************
@@ -7568,4 +7604,84 @@ HRESULT WINAPI D3DXConvertMeshSubsetToSingleStrip(struct ID3DXBaseMesh *mesh_in,
             mesh_in, attribute_id, ib_flags, index_buffer, index_count);
 
     return E_NOTIMPL;
+}
+
+struct frame_node
+{
+    struct list entry;
+    D3DXFRAME *frame;
+};
+
+static BOOL queue_frame_node(struct list *queue, D3DXFRAME *frame)
+{
+    struct frame_node *node;
+
+    if (!frame->pFrameFirstChild)
+        return TRUE;
+
+    node = HeapAlloc(GetProcessHeap(), 0, sizeof(*node));
+    if (!node)
+        return FALSE;
+
+    node->frame = frame;
+    list_add_tail(queue, &node->entry);
+
+    return TRUE;
+}
+
+static void empty_frame_queue(struct list *queue)
+{
+    struct frame_node *cur, *cur2;
+    LIST_FOR_EACH_ENTRY_SAFE(cur, cur2, queue, struct frame_node, entry)
+    {
+        list_remove(&cur->entry);
+        HeapFree(GetProcessHeap(), 0, cur);
+    }
+}
+
+D3DXFRAME * WINAPI D3DXFrameFind(const D3DXFRAME *root, const char *name)
+{
+    D3DXFRAME *found = NULL, *frame;
+    struct list queue;
+
+    TRACE("root frame %p, name %s.\n", root, debugstr_a(name));
+
+    if (!root)
+        return NULL;
+
+    list_init(&queue);
+
+    frame = (D3DXFRAME *)root;
+
+    for (;;)
+    {
+        struct frame_node *node;
+
+        while (frame)
+        {
+            if ((name && frame->Name && !strcmp(frame->Name, name)) || (!name && !frame->Name))
+            {
+                found = frame;
+                goto cleanup;
+            }
+
+            if (!queue_frame_node(&queue, frame))
+                goto cleanup;
+
+            frame = frame->pFrameSibling;
+        }
+
+        if (list_empty(&queue))
+            break;
+
+        node = LIST_ENTRY(list_head(&queue), struct frame_node, entry);
+        list_remove(&node->entry);
+        frame = node->frame->pFrameFirstChild;
+        HeapFree(GetProcessHeap(), 0, node);
+    }
+
+cleanup:
+    empty_frame_queue(&queue);
+
+    return found;
 }

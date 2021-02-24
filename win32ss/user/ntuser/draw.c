@@ -12,6 +12,7 @@
 //
 
 #include <win32k.h>
+DBG_DEFAULT_CHANNEL(UserDefwnd);
 
 /* These tables are used in:
  * UITOOLS_DrawDiagEdge()
@@ -666,7 +667,10 @@ BOOL FASTCALL UITOOLS95_DFC_ButtonCheckRadio(HDC dc, LPRECT r, UINT uFlags, BOOL
     HFONT hFont, hOldFont;
     int i;
     WCHAR OutRight, OutLeft, InRight, InLeft, Center;
+    RECT myr;
+    INT cxy, nBkMode;
 
+    cxy = UITOOLS_MakeSquareRect(r, &myr);
     if (Radio)
     {
         OutRight = 'j'; // Outer right
@@ -684,7 +688,7 @@ BOOL FASTCALL UITOOLS95_DFC_ButtonCheckRadio(HDC dc, LPRECT r, UINT uFlags, BOOL
     }
 
     RtlZeroMemory(&lf, sizeof(LOGFONTW));
-    lf.lfHeight = r->top - r->bottom;
+    lf.lfHeight = cxy;
     lf.lfWidth = 0;
     lf.lfWeight = FW_NORMAL;
     lf.lfCharSet = DEFAULT_CHARSET;
@@ -692,16 +696,18 @@ BOOL FASTCALL UITOOLS95_DFC_ButtonCheckRadio(HDC dc, LPRECT r, UINT uFlags, BOOL
     hFont = GreCreateFontIndirectW(&lf);
     hOldFont = NtGdiSelectFont(dc, hFont);
 
+    nBkMode = GreGetBkMode(dc);
+
     if(Radio && ((uFlags & 0xff) == DFCS_BUTTONRADIOMASK))
     {
         IntGdiSetBkMode(dc, OPAQUE);
         IntGdiSetTextColor(dc, IntGetSysColor(COLOR_WINDOWFRAME));
-        GreTextOutW(dc, r->left, r->top, &Center, 1);
+        GreTextOutW(dc, myr.left, myr.top, &Center, 1);
         IntGdiSetBkMode(dc, TRANSPARENT);
         IntGdiSetTextColor(dc, IntGetSysColor(COLOR_WINDOWFRAME));
-        GreTextOutW(dc, r->left, r->top, &OutRight, 1);
+        GreTextOutW(dc, myr.left, myr.top, &OutRight, 1);
         IntGdiSetTextColor(dc, IntGetSysColor(COLOR_WINDOWFRAME));
-        GreTextOutW(dc, r->left, r->top, &OutLeft, 1);
+        GreTextOutW(dc, myr.left, myr.top, &OutLeft, 1);
     }
     else
     {
@@ -710,26 +716,26 @@ BOOL FASTCALL UITOOLS95_DFC_ButtonCheckRadio(HDC dc, LPRECT r, UINT uFlags, BOOL
         /* Center section, white for active, grey for inactive */
         i= !(uFlags & (DFCS_INACTIVE|DFCS_PUSHED)) ? COLOR_WINDOW : COLOR_BTNFACE;
         IntGdiSetTextColor(dc, IntGetSysColor(i));
-        GreTextOutW(dc, r->left, r->top, &Center, 1);
+        GreTextOutW(dc, myr.left, myr.top, &Center, 1);
 
         if(uFlags & (DFCS_FLAT | DFCS_MONO))
         {
             IntGdiSetTextColor(dc, IntGetSysColor(COLOR_WINDOWFRAME));
-            GreTextOutW(dc, r->left, r->top, &OutRight, 1);
-            GreTextOutW(dc, r->left, r->top, &OutLeft, 1);
-            GreTextOutW(dc, r->left, r->top, &InRight, 1);
-            GreTextOutW(dc, r->left, r->top, &InLeft, 1);
+            GreTextOutW(dc, myr.left, myr.top, &OutRight, 1);
+            GreTextOutW(dc, myr.left, myr.top, &OutLeft, 1);
+            GreTextOutW(dc, myr.left, myr.top, &InRight, 1);
+            GreTextOutW(dc, myr.left, myr.top, &InLeft, 1);
         }
         else
         {
             IntGdiSetTextColor(dc, IntGetSysColor(COLOR_BTNSHADOW));
-            GreTextOutW(dc, r->left, r->top, &OutRight, 1);
+            GreTextOutW(dc, myr.left, myr.top, &OutRight, 1);
             IntGdiSetTextColor(dc, IntGetSysColor(COLOR_BTNHIGHLIGHT));
-            GreTextOutW(dc, r->left, r->top, &OutLeft, 1);
+            GreTextOutW(dc, myr.left, myr.top, &OutLeft, 1);
             IntGdiSetTextColor(dc, IntGetSysColor(COLOR_3DDKSHADOW));
-            GreTextOutW(dc, r->left, r->top, &InRight, 1);
+            GreTextOutW(dc, myr.left, myr.top, &InRight, 1);
             IntGdiSetTextColor(dc, IntGetSysColor(COLOR_3DLIGHT));
-            GreTextOutW(dc, r->left, r->top, &InLeft, 1);
+            GreTextOutW(dc, myr.left, myr.top, &InLeft, 1);
         }
     }
 
@@ -738,12 +744,13 @@ BOOL FASTCALL UITOOLS95_DFC_ButtonCheckRadio(HDC dc, LPRECT r, UINT uFlags, BOOL
         WCHAR Check = (Radio) ? 'i' : 'b';
 
         IntGdiSetTextColor(dc, IntGetSysColor(COLOR_WINDOWTEXT));
-        GreTextOutW(dc, r->left, r->top, &Check, 1);
+        GreTextOutW(dc, myr.left, myr.top, &Check, 1);
     }
 
     IntGdiSetTextColor(dc, IntGetSysColor(COLOR_WINDOWTEXT));
     NtGdiSelectFont(dc, hOldFont);
     GreDeleteObject(hFont);
+    IntGdiSetBkMode(dc, nBkMode);
 
     return TRUE;
 }
@@ -751,7 +758,7 @@ BOOL FASTCALL UITOOLS95_DFC_ButtonCheckRadio(HDC dc, LPRECT r, UINT uFlags, BOOL
 /* Ported from WINE20020904 */
 BOOL FASTCALL UITOOLS95_DrawFrameButton(HDC hdc, LPRECT rc, UINT uState)
 {
-    switch(uState & 0xff)
+    switch(uState & 0x1f)
     {
         case DFCS_BUTTONPUSH:
             return UITOOLS95_DFC_ButtonPush(hdc, rc, uState);
@@ -765,10 +772,10 @@ BOOL FASTCALL UITOOLS95_DrawFrameButton(HDC hdc, LPRECT rc, UINT uState)
         case DFCS_BUTTONRADIO:
             return UITOOLS95_DFC_ButtonCheckRadio(hdc, rc, uState, TRUE);
 
-/*
+
         default:
-            DbgPrint("Invalid button state=0x%04x\n", uState);
-*/
+            ERR("Invalid button state=0x%04x\n", uState);
+
     }
     return FALSE;
 }
@@ -781,7 +788,7 @@ BOOL FASTCALL UITOOLS95_DrawFrameCaption(HDC dc, LPRECT r, UINT uFlags)
     RECT myr;
     INT bkmode;
     WCHAR Symbol;
-    switch(uFlags & 0xff)
+    switch(uFlags & 0xf)
     {
         case DFCS_CAPTIONCLOSE:
 		Symbol = 'r';
@@ -799,6 +806,7 @@ BOOL FASTCALL UITOOLS95_DrawFrameCaption(HDC dc, LPRECT r, UINT uFlags)
 		Symbol = '2';
 		break;
         default:
+             ERR("Invalid caption; flags=0x%04x\n", uFlags);
              return FALSE;
     }
     IntDrawRectEdge(dc,r,(uFlags&DFCS_PUSHED) ? EDGE_SUNKEN : EDGE_RAISED, BF_RECT | BF_MIDDLE | BF_SOFT);
@@ -814,6 +822,7 @@ BOOL FASTCALL UITOOLS95_DrawFrameCaption(HDC dc, LPRECT r, UINT uFlags)
     lf.lfWidth = 0;
     lf.lfWeight = FW_NORMAL;
     lf.lfCharSet = DEFAULT_CHARSET;
+    lf.lfQuality = NONANTIALIASED_QUALITY;
     RtlCopyMemory(lf.lfFaceName, L"Marlett", sizeof(L"Marlett"));
     hFont = GreCreateFontIndirectW(&lf);
     /* save font and text color */
@@ -847,7 +856,7 @@ BOOL FASTCALL UITOOLS95_DrawFrameScroll(HDC dc, LPRECT r, UINT uFlags)
     RECT myr;
     INT bkmode;
     WCHAR Symbol;
-    switch(uFlags & 0xff)
+    switch(uFlags & 0x1f)
     {
         case DFCS_SCROLLCOMBOBOX:
         case DFCS_SCROLLDOWN:
@@ -901,6 +910,7 @@ BOOL FASTCALL UITOOLS95_DrawFrameScroll(HDC dc, LPRECT r, UINT uFlags)
 		GreDeleteObject(hFont);
             return TRUE;
 	default:
+	    ERR("Invalid scroll; flags=0x%04x\n", uFlags);
             return FALSE;
     }
     IntDrawRectEdge(dc, r, (uFlags & DFCS_PUSHED) ? EDGE_SUNKEN : EDGE_RAISED, (uFlags&DFCS_FLAT) | BF_MIDDLE | BF_RECT);
@@ -943,10 +953,14 @@ BOOL FASTCALL UITOOLS95_DrawFrameScroll(HDC dc, LPRECT r, UINT uFlags)
 
 BOOL FASTCALL UITOOLS95_DrawFrameMenu(HDC dc, LPRECT r, UINT uFlags)
 {
+    // TODO: DFCS_TRANSPARENT upon DFCS_MENUARROWUP or DFCS_MENUARROWDOWN
     LOGFONTW lf;
     HFONT hFont, hOldFont;
     WCHAR Symbol;
-    switch(uFlags & 0xff)
+    RECT myr;
+    INT cxy;
+    cxy = UITOOLS_MakeSquareRect(r, &myr);
+    switch(uFlags & 0x1f)
     {
         case DFCS_MENUARROWUP:
             Symbol = '5';
@@ -973,14 +987,12 @@ BOOL FASTCALL UITOOLS95_DrawFrameMenu(HDC dc, LPRECT r, UINT uFlags)
             break;
 
         default:
-/*
-            DbgPrint("Invalid menu; flags=0x%04x\n", uFlags);
-*/
+            ERR("Invalid menu; flags=0x%04x\n", uFlags);
             return FALSE;
     }
     /* acquire ressources only if valid menu */
     RtlZeroMemory(&lf, sizeof(LOGFONTW));
-    lf.lfHeight = r->bottom - r->top;
+    lf.lfHeight = cxy;
     lf.lfWidth = 0;
     lf.lfWeight = FW_NORMAL;
     lf.lfCharSet = DEFAULT_CHARSET;
@@ -989,21 +1001,21 @@ BOOL FASTCALL UITOOLS95_DrawFrameMenu(HDC dc, LPRECT r, UINT uFlags)
     /* save font */
     hOldFont = NtGdiSelectFont(dc, hFont);
 
-    if ((uFlags & 0xff) == DFCS_MENUARROWUP ||
-        (uFlags & 0xff) == DFCS_MENUARROWDOWN )
+    if ((uFlags & 0x1f) == DFCS_MENUARROWUP ||
+        (uFlags & 0x1f) == DFCS_MENUARROWDOWN )
     {
 #if 0
        if (uFlags & DFCS_INACTIVE)
        {
            /* draw shadow */
            IntGdiSetTextColor(dc, IntGetSysColor(COLOR_BTNHIGHLIGHT));
-           GreTextOutW(dc, r->left + 1, r->top + 1, &Symbol, 1);
+           GreTextOutW(dc, myr.left + 1, myr.top + 1, &Symbol, 1);
        }
 #endif
        IntGdiSetTextColor(dc, IntGetSysColor((uFlags & DFCS_INACTIVE) ? COLOR_BTNSHADOW : COLOR_BTNTEXT));
     }
     /* draw selected symbol */
-    GreTextOutW(dc, r->left, r->top, &Symbol, 1);
+    GreTextOutW(dc, myr.left, myr.top, &Symbol, 1);
     /* restore previous settings */
     NtGdiSelectFont(dc, hOldFont);
     GreDeleteObject(hFont);

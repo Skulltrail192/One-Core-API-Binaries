@@ -7,7 +7,9 @@
 #ifndef _INC_MINGW
 #define _INC_MINGW
 
+#ifndef _INTEGRAL_MAX_BITS
 #define _INTEGRAL_MAX_BITS 64
+#endif
 
 #ifndef MINGW64
 #define MINGW64
@@ -130,6 +132,22 @@
 #define __MINGW_ATTRIB_DEPRECATED
 #endif
 
+#if  __MINGW_GNUC_PREREQ (3, 1)
+#define __MINGW_ATTRIB_DEPRECATED_SEC_WARN //__attribute__ ((__deprecated__))
+#elif __MINGW_MSC_PREREQ(12, 0)
+#define __MINGW_ATTRIB_DEPRECATED_SEC_WARN //__declspec(deprecated)
+#else
+#define __MINGW_ATTRIB_DEPRECATED_SEC_WARN
+#endif
+
+#if  __MINGW_GNUC_PREREQ (3, 1)
+#define __MINGW_ATTRIB_DEPRECATED_MSVC2005 //__attribute__ ((__deprecated__))
+#elif __MINGW_MSC_PREREQ(12, 0)
+#define __MINGW_ATTRIB_DEPRECATED_MSVC2005 //__declspec(deprecated)
+#else
+#define __MINGW_ATTRIB_DEPRECATED_MSVC2005
+#endif
+
 #if  __MINGW_GNUC_PREREQ (3, 3)
 #define __MINGW_NOTHROW __attribute__ ((__nothrow__))
 #elif __MINGW_MSC_PREREQ(12, 0) && defined (__cplusplus)
@@ -207,7 +225,7 @@ allow GCC to optimize away some EH unwind code, at least in DW2 case.  */
 #define _CRT_UNUSED(x) (void)x
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
 #define ATTRIB_NORETURN
 #define _DECLSPEC_INTRIN_TYPE __declspec(intrin_type)
 #else
@@ -224,6 +242,15 @@ allow GCC to optimize away some EH unwind code, at least in DW2 case.  */
 #define DECLSPEC_HOTPATCH __attribute__((__ms_hook_prologue__))
 #endif
 #endif /* DECLSPEC_HOTPATCH */
+
+#ifdef __cplusplus
+#  define __mingw_ovr  inline __cdecl
+#elif defined (__GNUC__)
+#  define __mingw_ovr static \
+      __attribute__ ((__unused__)) __inline__ __cdecl
+#else
+#  define __mingw_ovr static __cdecl
+#endif /* __cplusplus */
 
 #include "_mingw_mac.h"
 

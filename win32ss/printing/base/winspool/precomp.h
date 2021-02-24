@@ -1,8 +1,8 @@
 /*
- * PROJECT:     ReactOS Print Spooler API
- * LICENSE:     GNU LGPL v2.1 or any later version as published by the Free Software Foundation
+ * PROJECT:     ReactOS Spooler API
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
  * PURPOSE:     Precompiled Header for all source files
- * COPYRIGHT:   Copyright 2015-2017 Colin Finck <colin@reactos.org>
+ * COPYRIGHT:   Copyright 2015-2017 Colin Finck (colin@reactos.org)
  */
 
 #ifndef _PRECOMP_H
@@ -15,8 +15,12 @@
 #include <winreg.h>
 #include <winspool.h>
 #include <winspool_c.h>
+#include <winddiui.h>
+#include <ndk/rtlfuncs.h>
+#include <strsafe.h>
 
 #include <spoolss.h>
+#include <marshalling/marshalling.h>
 
 #include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(winspool);
@@ -36,5 +40,13 @@ SPOOLER_HANDLE, *PSPOOLER_HANDLE;
 
 // main.c
 extern HANDLE hProcessHeap;
+
+// utils.c
+extern BOOL UnicodeToAnsiInPlace(PWSTR pwszField);
+
+// devmode.c
+extern void RosConvertAnsiDevModeToUnicodeDevmode(PDEVMODEA pDevModeInput, PDEVMODEW pDevModeOutput);
+
+extern void RosConvertUnicodeDevModeToAnsiDevmode(PDEVMODEW pDevModeInput, PDEVMODEA pDevModeOutput);
 
 #endif

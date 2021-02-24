@@ -5,10 +5,10 @@
 5   stdcall -noname PathFindOnPathExA(str ptr long)
 6   stdcall -noname PathFindOnPathExW(wstr ptr long)
 7   stdcall -ordinal SHAllocShared(ptr long long)
-8   stdcall -ordinal SHLockShared(long long)
+8   stdcall -ordinal SHLockShared(ptr long)
 9   stdcall -ordinal SHUnlockShared(ptr)
-10  stdcall -ordinal SHFreeShared(long long)
-11  stdcall -noname SHMapHandle(long long long long long)
+10  stdcall -ordinal SHFreeShared(ptr long)
+11  stdcall -noname SHMapHandle(ptr long long long long)
 12  stdcall -noname SHCreateMemStream(ptr long)
 13  stdcall -noname RegisterDefaultAcceptHeaders(ptr ptr)
 14  stdcall -ordinal GetAcceptLanguagesA(ptr ptr)
@@ -254,7 +254,7 @@
 254 stub -noname StopWatchExW
 255 stub -noname EventTraceHandler
 256 stdcall -noname IUnknown_GetSite(ptr ptr ptr)
-257 stdcall -noname SHCreateWorkerWindowA(long ptr long long ptr long)
+257 stdcall -noname SHCreateWorkerWindowA(ptr ptr long long ptr long)
 258 stub -noname SHRegisterWaitForSingleObject
 259 stub -noname SHUnregisterWait
 260 stdcall -noname SHQueueUserWorkItem(long long long long long long long)
@@ -275,7 +275,7 @@
 275 stub -noname RegisterGlobalHotkeyA
 276 stdcall -noname WhichPlatform()
 277 stub -noname SHDialogBox
-278 stdcall -noname SHCreateWorkerWindowW(long long long long long long)
+278 stdcall -noname SHCreateWorkerWindowW(ptr ptr long long ptr long)
 279 stdcall -noname SHInvokeDefaultCommand(ptr ptr ptr)
 280 stdcall -noname SHRegGetIntW(ptr wstr long)
 281 stdcall -noname SHPackDispParamsV(ptr ptr long ptr)
@@ -463,7 +463,7 @@
 463 stdcall -noname SHExpandEnvironmentStringsForUserA(ptr str ptr long) userenv.ExpandEnvironmentStringsForUserA
 464 stdcall -noname SHExpandEnvironmentStringsForUserW(ptr wstr ptr long) userenv.ExpandEnvironmentStringsForUserW
 465 stub -noname PathUnExpandEnvStringsForUserA
-466 stub -noname PathUnExpandEnvStringsForUserW
+466 stdcall -stub -noname PathUnExpandEnvStringsForUserW(ptr wstr ptr long)
 467 stub -ordinal SHRunIndirectRegClientCommand
 468 stub -noname RunIndirectRegCommand
 469 stub -noname RunRegCommand
@@ -507,7 +507,7 @@
 507 stdcall -stub -noname SHPropertyBag_ReadDWORD(ptr ptr ptr)
 508 stub -noname SHPropertyBag_WriteDWORD
 509 stdcall -noname IUnknown_OnFocusChangeIS(ptr ptr long)
-510 stub -noname SHLockSharedEx
+510 stdcall -noname SHLockSharedEx(ptr long long)
 511 stdcall -stub -noname PathFileExistsDefExtAndAttributesW(wstr long ptr)
 512 stub -ordinal IStream_ReadPidl
 513 stub -ordinal IStream_WritePidl
@@ -545,11 +545,11 @@
 545 stdcall -noname SHForwardContextMenuMsg(ptr long long long ptr long)
 546 stub -noname IUnknown_DoContextMenuPopup
 547 stdcall DelayLoadFailureHook(str str) kernel32.DelayLoadFailureHook
-548 stub -noname SHAreIconsEqual
+548 stdcall -noname SHAreIconsEqual(ptr ptr)
 549 stdcall -noname SHCoCreateInstanceAC(ptr ptr long ptr ptr)
 550 stub -noname GetTemplateInfoFromHandle
 551 stub -noname IShellFolder_CompareIDs
-;552 stub -noname SHEvaluateSystemCommandTemplate
+552 stub -noname SHEvaluateSystemCommandTemplate
 553 stdcall IsInternetESCEnabled()
 554 stdcall -noname -stub SHGetAllAccessSA()
 555 stdcall AssocQueryStringByKeyA(long long ptr str ptr ptr)
@@ -856,5 +856,3 @@
 856 varargs wnsprintfW(ptr long wstr)
 857 stdcall wvnsprintfA(ptr long str ptr)
 858 stdcall wvnsprintfW(ptr long wstr ptr)
-
-@ stdcall PathCreateFromUrlAlloc(wstr wstr long)

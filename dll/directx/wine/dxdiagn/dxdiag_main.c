@@ -19,9 +19,21 @@
  *
  */
 
-#include "dxdiag_private.h"
+#define COBJMACROS
 
-#include <rpcproxy.h>
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "objbase.h"
+#include "oleauto.h"
+#include "oleidl.h"
+#include "rpcproxy.h"
+#include "initguid.h"
+#include "dxdiag_private.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(dxdiag);
 
 HINSTANCE dxdiagn_instance = 0;
 

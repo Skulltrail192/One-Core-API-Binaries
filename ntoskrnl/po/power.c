@@ -26,8 +26,103 @@ PDEVICE_NODE PopSystemPowerDeviceNode = NULL;
 BOOLEAN PopAcpiPresent = FALSE;
 POP_POWER_ACTION PopAction;
 WORK_QUEUE_ITEM PopShutdownWorkItem;
+SYSTEM_POWER_CAPABILITIES PopCapabilities;
 
 /* PRIVATE FUNCTIONS *********************************************************/
+
+static WORKER_THREAD_ROUTINE PopPassivePowerCall;
+_Use_decl_annotations_
+static
+VOID
+NTAPI
+PopPassivePowerCall(
+    PVOID Parameter)
+{
+    PIRP Irp = Parameter;
+    PIO_STACK_LOCATION IoStack;
+
+    ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+
+    _Analysis_assume_(Irp != NULL);
+    IoStack = IoGetNextIrpStackLocation(Irp);
+
+    (VOID)IoCallDriver(IoStack->DeviceObject, Irp);
+}
+
+_IRQL_requires_max_(DISPATCH_LEVEL)
+_IRQL_requires_same_
+static
+NTSTATUS
+PopPresentIrp(
+    _In_ PIO_STACK_LOCATION NextStack,
+    _In_ PIRP Irp)
+{
+    NTSTATUS Status;
+    BOOLEAN CallAtPassiveLevel;
+    PDEVICE_OBJECT DeviceObject;
+    PWORK_QUEUE_ITEM WorkQueueItem;
+
+    ASSERT(NextStack->MajorFunction == IRP_MJ_POWER);
+
+    DeviceObject = NextStack->DeviceObject;
+
+    /* Determine whether the IRP must be handled at PASSIVE_LEVEL.
+     * Only SET_POWER to working state can happen at raised IRQL. */
+    CallAtPassiveLevel = TRUE;
+    if ((NextStack->MinorFunction == IRP_MN_SET_POWER) &&
+        !(DeviceObject->Flags & DO_POWER_PAGABLE))
+    {
+        if (NextStack->Parameters.Power.Type == DevicePowerState &&
+            NextStack->Parameters.Power.State.DeviceState == PowerDeviceD0)
+        {
+            CallAtPassiveLevel = FALSE;
+        }
+        if (NextStack->Parameters.Power.Type == SystemPowerState &&
+            NextStack->Parameters.Power.State.SystemState == PowerSystemWorking)
+        {
+            CallAtPassiveLevel = FALSE;
+        }
+    }
+
+    if (CallAtPassiveLevel)
+    {
+        /* We need to fit a work item into the DriverContext below */
+        C_ASSERT(sizeof(Irp->Tail.Overlay.DriverContext) >= sizeof(WORK_QUEUE_ITEM));
+
+        if (KeGetCurrentIrql() == PASSIVE_LEVEL)
+        {
+            /* Already at passive, call next driver directly */
+            return IoCallDriver(DeviceObject, Irp);
+        }
+
+        /* Need to schedule a work item and return pending */
+        NextStack->Control |= SL_PENDING_RETURNED;
+
+        WorkQueueItem = (PWORK_QUEUE_ITEM)&Irp->Tail.Overlay.DriverContext;
+        ExInitializeWorkItem(WorkQueueItem,
+                             PopPassivePowerCall,
+                             Irp);
+        ExQueueWorkItem(WorkQueueItem, DelayedWorkQueue);
+
+        return STATUS_PENDING;
+    }
+
+    /* Direct call. Raise IRQL in debug to catch invalid paged memory access. */
+#if DBG
+    {
+    KIRQL OldIrql;
+    KeRaiseIrql(DISPATCH_LEVEL, &OldIrql);
+#endif
+
+    Status = IoCallDriver(DeviceObject, Irp);
+
+#if DBG
+    KeLowerIrql(OldIrql);
+    }
+#endif
+
+    return Status;
+}
 
 static
 NTSTATUS
@@ -289,9 +384,9 @@ PopSetSystemPowerState(SYSTEM_POWER_STATE PowerState, POWER_ACTION PowerAction)
     return Status;
 }
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
-INIT_FUNCTION
 PoInitSystem(IN ULONG BootPhase)
 {
     PVOID NotificationEntry;
@@ -323,6 +418,9 @@ PoInitSystem(IN ULONG BootPhase)
         return TRUE;
     }
 
+    /* Initialize the power capabilities */
+    RtlZeroMemory(&PopCapabilities, sizeof(SYSTEM_POWER_CAPABILITIES));
+
     /* Get the Command Line */
     CommandLine = KeLoaderBlock->LoadOptions;
 
@@ -343,6 +441,9 @@ PoInitSystem(IN ULONG BootPhase)
         PopAcpiPresent = KeLoaderBlock->Extension->AcpiTable != NULL ? TRUE : FALSE;
     }
 
+    /* Enable shutdown by power button */
+    if (PopAcpiPresent)
+        PopCapabilities.SystemS5 = TRUE;
 
     /* Initialize volume support */
     InitializeListHead(&PopVolumeDevices);
@@ -383,9 +484,9 @@ PopIdle0(IN PPROCESSOR_POWER_STATE PowerState)
     HalProcessorIdle();
 }
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_FUNCTION
 PoInitializePrcb(IN PKPRCB Prcb)
 {
     /* Initialize the Power State */
@@ -473,18 +574,35 @@ PoSetHiberRange(IN PVOID HiberContext,
 /*
  * @implemented
  */
+_IRQL_requires_max_(DISPATCH_LEVEL)
 NTSTATUS
 NTAPI
-PoCallDriver(IN PDEVICE_OBJECT DeviceObject,
-             IN OUT PIRP Irp)
+PoCallDriver(
+    _In_ PDEVICE_OBJECT DeviceObject,
+    _Inout_ __drv_aliasesMem PIRP Irp)
 {
-    NTSTATUS Status;
+    PIO_STACK_LOCATION NextStack;
 
-    /* Forward to Io -- FIXME! */
-    Status = IoCallDriver(DeviceObject, Irp);
+    ASSERT(KeGetCurrentIrql() <= DISPATCH_LEVEL);
 
-    /* Return status */
-    return Status;
+    ASSERT(DeviceObject);
+    ASSERT(Irp);
+
+    NextStack = IoGetNextIrpStackLocation(Irp);
+    ASSERT(NextStack->MajorFunction == IRP_MJ_POWER);
+
+    /* Set DeviceObject for PopPresentIrp */
+    NextStack->DeviceObject = DeviceObject;
+
+    /* Only QUERY_POWER and SET_POWER use special handling */
+    if (NextStack->MinorFunction != IRP_MN_SET_POWER &&
+        NextStack->MinorFunction != IRP_MN_QUERY_POWER)
+    {
+        return IoCallDriver(DeviceObject, Irp);
+    }
+
+    /* Call the next driver, either directly or at PASSIVE_LEVEL */
+    return PopPresentIrp(NextStack, Irp);
 }
 
 /*
@@ -618,7 +736,7 @@ VOID
 NTAPI
 PoStartNextPowerIrp(IN PIRP Irp)
 {
-    UNIMPLEMENTED;
+    UNIMPLEMENTED_ONCE;
 }
 
 /*
@@ -697,6 +815,7 @@ NtPowerInformation(IN POWER_INFORMATION_LEVEL PowerInformationLevel,
                 /* Just zero the struct (and thus set BatteryState->BatteryPresent = FALSE) */
                 RtlZeroMemory(BatteryState, sizeof(SYSTEM_BATTERY_STATE));
                 BatteryState->EstimatedTime = MAXULONG;
+//                BatteryState->AcOnLine = TRUE;
 
                 Status = STATUS_SUCCESS;
             }
@@ -720,9 +839,9 @@ NtPowerInformation(IN POWER_INFORMATION_LEVEL PowerInformationLevel,
 
             _SEH2_TRY
             {
-                /* Just zero the struct (and thus set PowerCapabilities->SystemBatteriesPresent = FALSE) */
-                RtlZeroMemory(PowerCapabilities, sizeof(SYSTEM_POWER_CAPABILITIES));
-                //PowerCapabilities->SystemBatteriesPresent = 0;
+                RtlCopyMemory(PowerCapabilities,
+                              &PopCapabilities,
+                              sizeof(SYSTEM_POWER_CAPABILITIES));
 
                 Status = STATUS_SUCCESS;
             }
@@ -952,7 +1071,8 @@ NtSetSystemPowerState(IN POWER_ACTION SystemAction,
 
 #ifndef NEWCC
         /* Flush dirty cache pages */
-        CcRosFlushDirtyPages(-1, &Dummy, FALSE); //HACK: We really should wait here!
+        /* XXX: Is that still mandatory? As now we'll wait on lazy writer to complete? */
+        CcRosFlushDirtyPages(-1, &Dummy, FALSE, FALSE); //HACK: We really should wait here!
 #else
         Dummy = 0;
 #endif
@@ -990,7 +1110,7 @@ NtSetSystemPowerState(IN POWER_ACTION SystemAction,
         }
 
         /* You should not have made it this far */
-        // ASSERTMSG("System is still up and running?!", FALSE);
+        // ASSERTMSG("System is still up and running?!\n", FALSE);
         DPRINT1("System is still up and running, you may not have chosen a yet supported power option: %u\n", PopAction.Action);
         break;
     }

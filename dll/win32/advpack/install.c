@@ -18,9 +18,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+#include <stdlib.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winreg.h"
+#include "winternl.h"
+#include "winnls.h"
+#include "setupapi.h"
+#include "advpub.h"
+#include "ole2.h"
+#include "wine/debug.h"
 #include "advpack_private.h"
 
-#include <ole2.h>
+WINE_DEFAULT_DEBUG_CHANNEL(advpack);
 
 #define SPAPI_ERROR     0xE0000000L
 #define SPAPI_PREFIX    0x800F0000L
@@ -101,28 +114,22 @@ static HRESULT per_user_install_callback(HINF hinf, PCWSTR field, const void *ar
     per_user.bRollback = FALSE;
     per_user.dwIsInstalled = 0;
 
-    SetupGetLineTextW(NULL, hinf, field, disp_name, per_user.szDispName,
-                     sizeof(per_user.szDispName) / sizeof(WCHAR), &size);
+    SetupGetLineTextW(NULL, hinf, field, disp_name, per_user.szDispName, ARRAY_SIZE(per_user.szDispName), &size);
 
-    SetupGetLineTextW(NULL, hinf, field, version, per_user.szVersion,
-                     sizeof(per_user.szVersion) / sizeof(WCHAR), &size);
+    SetupGetLineTextW(NULL, hinf, field, version, per_user.szVersion, ARRAY_SIZE(per_user.szVersion), &size);
 
     if (SetupFindFirstLineW(hinf, field, is_installed, &context))
     {
         SetupGetIntField(&context, 1, (PINT)&per_user.dwIsInstalled);
     }
 
-    SetupGetLineTextW(NULL, hinf, field, comp_id, per_user.szCompID,
-                     sizeof(per_user.szCompID) / sizeof(WCHAR), &size);
+    SetupGetLineTextW(NULL, hinf, field, comp_id, per_user.szCompID, ARRAY_SIZE(per_user.szCompID), &size);
 
-    SetupGetLineTextW(NULL, hinf, field, guid, per_user.szGUID,
-                     sizeof(per_user.szGUID) / sizeof(WCHAR), &size);
+    SetupGetLineTextW(NULL, hinf, field, guid, per_user.szGUID, ARRAY_SIZE(per_user.szGUID), &size);
 
-    SetupGetLineTextW(NULL, hinf, field, locale, per_user.szLocale,
-                     sizeof(per_user.szLocale) / sizeof(WCHAR), &size);
+    SetupGetLineTextW(NULL, hinf, field, locale, per_user.szLocale, ARRAY_SIZE(per_user.szLocale), &size);
 
-    SetupGetLineTextW(NULL, hinf, field, stub_path, per_user.szStub,
-                     sizeof(per_user.szStub) / sizeof(WCHAR), &size);
+    SetupGetLineTextW(NULL, hinf, field, stub_path, per_user.szStub, ARRAY_SIZE(per_user.szStub), &size);
 
     return SetPerUserSecValuesW(&per_user);
 }
@@ -140,8 +147,7 @@ static HRESULT register_ocxs_callback(HINF hinf, PCWSTR field, const void *arg)
         WCHAR buffer[MAX_INF_STRING_LENGTH];
 
         /* get OCX filename */
-        if (!SetupGetStringFieldW(&context, 1, buffer,
-                                  sizeof(buffer) / sizeof(WCHAR), NULL))
+        if (!SetupGetStringFieldW(&context, 1, buffer, ARRAY_SIZE(buffer), NULL))
             continue;
 
         hm = LoadLibraryExW(buffer, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
@@ -200,7 +206,7 @@ LPWSTR get_parameter(LPWSTR *params, WCHAR separator, BOOL quoted)
 
     if (quoted && *token == '"')
     {
-        WCHAR *end = strchrW(token + 1, '"');
+        WCHAR *end = wcschr(token + 1, '"');
         if (end)
         {
             *end = 0;
@@ -209,7 +215,7 @@ LPWSTR get_parameter(LPWSTR *params, WCHAR separator, BOOL quoted)
         }
     }
 
-    *params = strchrW(*params, separator);
+    *params = wcschr(*params, separator);
     if (*params)
         *(*params)++ = '\0';
 
@@ -259,7 +265,7 @@ static HRESULT iterate_section_fields(HINF hinf, PCWSTR section, PCWSTR key,
 {
     WCHAR static_buffer[200];
     WCHAR *buffer = static_buffer;
-    DWORD size = sizeof(static_buffer) / sizeof(WCHAR);
+    DWORD size = ARRAY_SIZE(static_buffer);
     INFCONTEXT context;
     HRESULT hr = E_FAIL;
 
@@ -390,7 +396,7 @@ static HRESULT get_working_dir(ADVInfo *info, LPCWSTR inf_filename, LPCWSTR work
     static const WCHAR backslash[] = {'\\',0};
     static const WCHAR inf_dir[] = {'\\','I','N','F',0};
 
-    if ((ptr = strrchrW(inf_filename, '\\')))
+    if ((ptr = wcsrchr(inf_filename, '\\')))
     {
         len = ptr - inf_filename + 1;
         ptr = inf_filename;
@@ -444,7 +450,7 @@ static HRESULT install_init(LPCWSTR inf_filename, LPCWSTR install_sec,
         'D','e','f','a','u','l','t','I','n','s','t','a','l','l',0
     };
 
-    if (!(ptr = strrchrW(inf_filename, '\\')))
+    if (!(ptr = wcsrchr(inf_filename, '\\')))
         ptr = inf_filename;
 
     len = lstrlenW(ptr);
@@ -486,7 +492,7 @@ static HRESULT install_init(LPCWSTR inf_filename, LPCWSTR install_sec,
     lstrcatW(info->inf_path, backslash);
     lstrcatW(info->inf_path, info->inf_filename);
 
-    /* RunSetupCommand opens unmodifed filename parameter */
+    /* RunSetupCommand opens unmodified filename parameter */
     if (flags & RSC_FLAG_INF)
         path = inf_filename;
     else
@@ -631,8 +637,7 @@ HRESULT WINAPI ExecuteCabA(HWND hwnd, CABINFOA* pCab, LPVOID pReserved)
     RtlCreateUnicodeStringFromAsciiz(&inf, pCab->pszInf);
     RtlCreateUnicodeStringFromAsciiz(&section, pCab->pszSection);
     
-    MultiByteToWideChar(CP_ACP, 0, pCab->szSrcPath, -1, cabinfo.szSrcPath,
-                        sizeof(cabinfo.szSrcPath) / sizeof(WCHAR));
+    MultiByteToWideChar(CP_ACP, 0, pCab->szSrcPath, -1, cabinfo.szSrcPath, ARRAY_SIZE(cabinfo.szSrcPath));
 
     cabinfo.pszInf = inf.Buffer;
     cabinfo.pszSection = section.Buffer;
@@ -763,7 +768,7 @@ INT WINAPI LaunchINFSectionW(HWND hWnd, HINSTANCE hInst, LPWSTR cmdline, INT sho
     str_flags = get_parameter(&cmdline_ptr, ',', TRUE);
     if (str_flags)
     {
-        DWORD inf_flags = atolW(str_flags);
+        DWORD inf_flags = wcstol(str_flags, NULL, 10);
         if (inf_flags & LIS_QUIET) flags |= RSC_FLAG_QUIET;
         if (inf_flags & LIS_NOGRPCONV) flags |= RSC_FLAG_NGCONV;
     }
@@ -861,7 +866,7 @@ HRESULT WINAPI LaunchINFSectionExW(HWND hWnd, HINSTANCE hInst, LPWSTR cmdline, I
 
     flags = get_parameter(&cmdline_ptr, ',', TRUE);
     if (flags)
-        cabinfo.dwFlags = atolW(flags);
+        cabinfo.dwFlags = wcstol(flags, NULL, 10);
 
     if (!is_full_path(cabinfo.pszCab) && !is_full_path(cabinfo.pszInf))
     {
@@ -877,7 +882,7 @@ HRESULT WINAPI LaunchINFSectionExW(HWND hWnd, HINSTANCE hInst, LPWSTR cmdline, I
         else
             lstrcpyW(cabinfo.szSrcPath, cabinfo.pszCab);
 
-        ptr = strrchrW(cabinfo.szSrcPath, '\\');
+        ptr = wcsrchr(cabinfo.szSrcPath, '\\');
         *(++ptr) = '\0';
     }
 

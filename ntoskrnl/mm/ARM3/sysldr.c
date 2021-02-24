@@ -44,7 +44,7 @@ PVOID MmUnloadedDrivers;
 PVOID MmLastUnloadedDrivers;
 
 BOOLEAN MmMakeLowMemory;
-BOOLEAN MmEnforceWriteProtection = TRUE;
+BOOLEAN MmEnforceWriteProtection = FALSE; // FIXME: should be TRUE, but that would cause CORE-16387 & CORE-16449
 
 PMMPTE MiKernelResourceStartPte, MiKernelResourceEndPte;
 ULONG_PTR ExPoolCodeStart, ExPoolCodeEnd, MmPoolCodeStart, MmPoolCodeEnd;
@@ -176,7 +176,7 @@ MiLoadImageSection(IN OUT PVOID *SectionPtr,
     DPRINT1("Loading: %wZ at %p with %lx pages\n", FileName, DriverBase, PteCount);
 
     /* Lock the PFN database */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* Loop the new driver PTEs */
     TempPte = ValidKernelPte;
@@ -213,7 +213,7 @@ MiLoadImageSection(IN OUT PVOID *SectionPtr,
     }
 
     /* Release the PFN lock */
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     /* Copy the image */
     RtlCopyMemory(DriverBase, Base, PteCount << PAGE_SHIFT);
@@ -320,8 +320,9 @@ MmCallDllInitialize(IN PLDR_DATA_TABLE_ENTRY LdrEntry,
                                                      "DllInitialize");
     if (!DllInit) return STATUS_SUCCESS;
 
-    /* Do a temporary copy of BaseDllName called ImportName
-     * because we'll alter the length of the string
+    /*
+     * Do a temporary copy of BaseDllName called ImportName
+     * because we'll alter the length of the string.
      */
     ImportName.Length = LdrEntry->BaseDllName.Length;
     ImportName.MaximumLength = LdrEntry->BaseDllName.MaximumLength;
@@ -586,9 +587,9 @@ MiProcessLoaderEntry(IN PLDR_DATA_TABLE_ENTRY LdrEntry,
     KeLeaveCriticalRegion();
 }
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_FUNCTION
 MiUpdateThunks(IN PLOADER_PARAMETER_BLOCK LoaderBlock,
                IN PVOID OldBase,
                IN PVOID NewBase,
@@ -1077,7 +1078,7 @@ MiResolveImageReferences(IN PVOID ImageBase,
         GdiLink = GdiLink |
                   !(_strnicmp(ImportName, "win32k", sizeof("win32k") - 1));
 
-        /* We can also allow dxapi (for Windows compat, allow IRT and coverage )*/
+        /* We can also allow dxapi (for Windows compat, allow IRT and coverage) */
         NormalLink = NormalLink |
                      ((_strnicmp(ImportName, "win32k", sizeof("win32k") - 1)) &&
                       (_strnicmp(ImportName, "dxapi", sizeof("dxapi") - 1)) &&
@@ -1435,7 +1436,7 @@ MiFreeInitializationCode(IN PVOID InitStart,
     ASSERT(MI_IS_PHYSICAL_ADDRESS(InitStart) == FALSE);
 
     /*  Compute the number of pages we expect to free */
-    PagesFreed = (PFN_NUMBER)(MiAddressToPte(InitEnd) - PointerPte + 1);
+    PagesFreed = (PFN_NUMBER)(MiAddressToPte(InitEnd) - PointerPte);
 
     /* Try to actually free them */
     PagesFreed = MiDeleteSystemPageableVm(PointerPte,
@@ -1444,9 +1445,9 @@ MiFreeInitializationCode(IN PVOID InitStart,
                                           NULL);
 }
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_FUNCTION
 MiFindInitializationCode(OUT PVOID *StartVa,
                          OUT PVOID *EndVa)
 {
@@ -1455,8 +1456,9 @@ MiFindInitializationCode(OUT PVOID *StartVa,
     ULONG_PTR DllBase, InitStart, InitEnd, ImageEnd, InitCode;
     PLIST_ENTRY NextEntry;
     PIMAGE_NT_HEADERS NtHeader;
-    PIMAGE_SECTION_HEADER Section, LastSection;
+    PIMAGE_SECTION_HEADER Section, LastSection, InitSection;
     BOOLEAN InitFound;
+    DBG_UNREFERENCED_LOCAL_VARIABLE(InitSection);
 
     /* So we don't free our own code yet */
     InitCode = (ULONG_PTR)&MiFindInitializationCode;
@@ -1503,11 +1505,12 @@ MiFindInitializationCode(OUT PVOID *StartVa,
             InitFound = FALSE;
 
             /* Is this the INIT section or a discardable section? */
-            if ((*(PULONG)Section->Name == 'TINI') ||
+            if ((strncmp((PCCH)Section->Name, "INIT", 5) == 0) ||
                 ((Section->Characteristics & IMAGE_SCN_MEM_DISCARDABLE)))
             {
                 /* Remember this */
                 InitFound = TRUE;
+                InitSection = Section;
             }
 
             if (InitFound)
@@ -1518,10 +1521,13 @@ MiFindInitializationCode(OUT PVOID *StartVa,
                 /* Read the section alignment */
                 Alignment = NtHeader->OptionalHeader.SectionAlignment;
 
-                /* Align the start and end addresses appropriately */
+                /* Get the start and end addresses */
                 InitStart = DllBase + Section->VirtualAddress;
-                InitEnd = ((Alignment + InitStart + Size - 2) & 0xFFFFF000) - 1;
-                InitStart = (InitStart + (PAGE_SIZE - 1)) & 0xFFFFF000;
+                InitEnd = ALIGN_UP_BY(InitStart + Size, Alignment);
+
+                /* Align the addresses to PAGE_SIZE */
+                InitStart = ALIGN_UP_BY(InitStart, PAGE_SIZE);
+                InitEnd = ALIGN_DOWN_BY(InitEnd, PAGE_SIZE);
 
                 /* Have we reached the last section? */
                 if (SectionCount == 1)
@@ -1559,25 +1565,26 @@ MiFindInitializationCode(OUT PVOID *StartVa,
                     Size = max(LastSection->SizeOfRawData, LastSection->Misc.VirtualSize);
 
                     /* Use this as the end of the section address */
-                    InitEnd = DllBase + LastSection->VirtualAddress + Size - 1;
+                    InitEnd = DllBase + LastSection->VirtualAddress + Size;
 
                     /* Have we reached the last section yet? */
                     if (SectionCount != 1)
                     {
                         /* Then align this accross the session boundary */
-                        InitEnd = ((Alignment + InitEnd - 1) & 0XFFFFF000) - 1;
+                        InitEnd = ALIGN_UP_BY(InitEnd, Alignment);
+                        InitEnd = ALIGN_DOWN_BY(InitEnd, PAGE_SIZE);
                     }
                 }
 
                 /* Make sure we don't let the init section go past the image */
                 ImageEnd = DllBase + LdrEntry->SizeOfImage;
-                if (InitEnd > ImageEnd) InitEnd = (ImageEnd - 1) | (PAGE_SIZE - 1);
+                if (InitEnd > ImageEnd) InitEnd = ALIGN_UP_BY(ImageEnd, PAGE_SIZE);
 
                 /* Make sure we have a valid, non-zero init section */
-                if (InitStart <= InitEnd)
+                if (InitStart < InitEnd)
                 {
                     /* Make sure we are not within this code itself */
-                    if ((InitCode >= InitStart) && (InitCode <= InitEnd))
+                    if ((InitCode >= InitStart) && (InitCode < InitEnd))
                     {
                         /* Return it, we can't free ourselves now */
                         ASSERT(*StartVa == 0);
@@ -1588,6 +1595,12 @@ MiFindInitializationCode(OUT PVOID *StartVa,
                     {
                         /* This isn't us -- go ahead and free it */
                         ASSERT(MI_IS_PHYSICAL_ADDRESS((PVOID)InitStart) == FALSE);
+                        DPRINT("Freeing init code: %p-%p ('%wZ' @%p : '%s')\n",
+                               (PVOID)InitStart,
+                               (PVOID)InitEnd,
+                               &LdrEntry->BaseDllName,
+                               LdrEntry->DllBase,
+                               InitSection->Name);
                         MiFreeInitializationCode((PVOID)InitStart, (PVOID)InitEnd);
                     }
                 }
@@ -1667,9 +1680,9 @@ MmFreeDriverInitialization(IN PLDR_DATA_TABLE_ENTRY LdrEntry)
     MiDeleteSystemPageableVm(StartPte, PageCount, 0, NULL);
 }
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_FUNCTION
 MiReloadBootLoadedDrivers(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
 {
     PLIST_ENTRY NextEntry;
@@ -1856,9 +1869,9 @@ MiReloadBootLoadedDrivers(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     }
 }
 
+INIT_FUNCTION
 NTSTATUS
 NTAPI
-INIT_FUNCTION
 MiBuildImportsForBootDrivers(VOID)
 {
     PLIST_ENTRY NextEntry, NextEntry2;
@@ -2121,9 +2134,9 @@ MiBuildImportsForBootDrivers(VOID)
     return STATUS_SUCCESS;
 }
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_FUNCTION
 MiLocateKernelSections(IN PLDR_DATA_TABLE_ENTRY LdrEntry)
 {
     ULONG_PTR DllBase;
@@ -2137,8 +2150,8 @@ MiLocateKernelSections(IN PLDR_DATA_TABLE_ENTRY LdrEntry)
     SectionHeader = IMAGE_FIRST_SECTION(NtHeaders);
 
     /* Loop all the sections */
-    Sections = NtHeaders->FileHeader.NumberOfSections;
-    while (Sections)
+    for (Sections = NtHeaders->FileHeader.NumberOfSections;
+         Sections > 0; --Sections, ++SectionHeader)
     {
         /* Grab the size of the section */
         Size = max(SectionHeader->SizeOfRawData, SectionHeader->Misc.VirtualSize);
@@ -2149,8 +2162,8 @@ MiLocateKernelSections(IN PLDR_DATA_TABLE_ENTRY LdrEntry)
             /* Remember the PTEs so we can modify them later */
             MiKernelResourceStartPte = MiAddressToPte(DllBase +
                                                       SectionHeader->VirtualAddress);
-            MiKernelResourceEndPte = MiKernelResourceStartPte +
-                                     BYTES_TO_PAGES(SectionHeader->VirtualAddress + Size);
+            MiKernelResourceEndPte = MiAddressToPte(ROUND_TO_PAGES(DllBase +
+                                                    SectionHeader->VirtualAddress + Size));
         }
         else if (*(PULONG)SectionHeader->Name == 'LOOP')
         {
@@ -2165,26 +2178,22 @@ MiLocateKernelSections(IN PLDR_DATA_TABLE_ENTRY LdrEntry)
             {
                 /* Found Mm* Pool code */
                 MmPoolCodeStart = DllBase + SectionHeader->VirtualAddress;
-                MmPoolCodeEnd = ExPoolCodeStart + Size;
+                MmPoolCodeEnd = MmPoolCodeStart + Size;
             }
         }
         else if ((*(PULONG)SectionHeader->Name == 'YSIM') &&
                  (*(PULONG)&SectionHeader->Name[4] == 'ETPS'))
         {
-            /* Found MISYSPTE (Mm System PTE code)*/
+            /* Found MISYSPTE (Mm System PTE code) */
             MmPteCodeStart = DllBase + SectionHeader->VirtualAddress;
-            MmPteCodeEnd = ExPoolCodeStart + Size;
+            MmPteCodeEnd = MmPteCodeStart + Size;
         }
-
-        /* Keep going */
-        Sections--;
-        SectionHeader++;
     }
 }
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
-INIT_FUNCTION
 MiInitializeLoadedModuleList(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
 {
     PLDR_DATA_TABLE_ENTRY LdrEntry, NewEntry;
@@ -2272,6 +2281,60 @@ MiInitializeLoadedModuleList(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     return TRUE;
 }
 
+BOOLEAN
+NTAPI
+MmChangeKernelResourceSectionProtection(IN ULONG_PTR ProtectionMask)
+{
+    PMMPTE PointerPte;
+    MMPTE TempPte;
+
+    /* Don't do anything if the resource section is already writable */
+    if (MiKernelResourceStartPte == NULL || MiKernelResourceEndPte == NULL)
+        return FALSE;
+
+    /* If the resource section is physical, we cannot change its protection */
+    if (MI_IS_PHYSICAL_ADDRESS(MiPteToAddress(MiKernelResourceStartPte)))
+        return FALSE;
+
+    /* Loop the PTEs */
+    for (PointerPte = MiKernelResourceStartPte; PointerPte < MiKernelResourceEndPte; ++PointerPte)
+    {
+        /* Read the PTE */
+        TempPte = *PointerPte;
+
+        /* Update the protection */
+        MI_MAKE_HARDWARE_PTE_KERNEL(&TempPte, PointerPte, ProtectionMask, TempPte.u.Hard.PageFrameNumber);
+        MI_UPDATE_VALID_PTE(PointerPte, TempPte);
+    }
+
+    /* Only flush the current processor's TLB */
+    KeFlushCurrentTb();
+    return TRUE;
+}
+
+VOID
+NTAPI
+MmMakeKernelResourceSectionWritable(VOID)
+{
+    /* Don't do anything if the resource section is already writable */
+    if (MiKernelResourceStartPte == NULL || MiKernelResourceEndPte == NULL)
+        return;
+
+    /* If the resource section is physical, we cannot change its protection */
+    if (MI_IS_PHYSICAL_ADDRESS(MiPteToAddress(MiKernelResourceStartPte)))
+        return;
+
+    if (MmChangeKernelResourceSectionProtection(MM_READWRITE))
+    {
+        /*
+         * Invalidate the cached resource section PTEs
+         * so as to not change its protection again later.
+         */
+        MiKernelResourceStartPte = NULL;
+        MiKernelResourceEndPte = NULL;
+    }
+}
+
 LOGICAL
 NTAPI
 MiUseLargeDriverPage(IN ULONG NumberOfPtes,
@@ -2329,251 +2392,154 @@ MiUseLargeDriverPage(IN ULONG NumberOfPtes,
     return FALSE;
 }
 
-ULONG
-NTAPI
-MiComputeDriverProtection(IN BOOLEAN SessionSpace,
-                          IN ULONG SectionProtection)
-{
-    ULONG Protection = MM_ZERO_ACCESS;
-
-    /* Check if the caller gave anything */
-    if (SectionProtection)
-    {
-        /* Always turn on execute access */
-        SectionProtection |= IMAGE_SCN_MEM_EXECUTE;
-
-        /* Check if the registry setting is on or not */
-        if (!MmEnforceWriteProtection)
-        {
-            /* Turn on write access too */
-            SectionProtection |= (IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_EXECUTE);
-        }
-    }
-
-    /* Convert to internal PTE flags */
-    if (SectionProtection & IMAGE_SCN_MEM_EXECUTE) Protection |= MM_EXECUTE;
-    if (SectionProtection & IMAGE_SCN_MEM_READ) Protection |= MM_READONLY;
-
-    /* Check for write access */
-    if (SectionProtection & IMAGE_SCN_MEM_WRITE)
-    {
-        /* Session space is not supported */
-        if (SessionSpace)
-        {
-            DPRINT1("Session drivers not supported\n");
-            ASSERT(SessionSpace == FALSE);
-        }
-        else
-        {
-            /* Convert to internal PTE flag */
-            Protection = (Protection & MM_EXECUTE) ? MM_EXECUTE_READWRITE : MM_READWRITE;
-        }
-    }
-
-    /* If there's no access at all by now, convert to internal no access flag */
-    if (Protection == MM_ZERO_ACCESS) Protection = MM_NOACCESS;
-
-    /* Return the computed PTE protection */
-    return Protection;
-}
-
 VOID
 NTAPI
-MiSetSystemCodeProtection(IN PMMPTE FirstPte,
-                          IN PMMPTE LastPte,
-                          IN ULONG ProtectionMask)
+MiSetSystemCodeProtection(
+    _In_ PMMPTE FirstPte,
+    _In_ PMMPTE LastPte,
+    _In_ ULONG Protection)
 {
-    /* I'm afraid to introduce regressions at the moment... */
+    PMMPTE PointerPte;
+    MMPTE TempPte;
+
+    /* Loop the PTEs */
+    for (PointerPte = FirstPte; PointerPte <= LastPte; PointerPte++)
+    {
+        /* Read the PTE */
+        TempPte = *PointerPte;
+
+        /* Make sure it's valid */
+        ASSERT(TempPte.u.Hard.Valid == 1);
+
+        /* Update the protection */
+        TempPte.u.Hard.Write = BooleanFlagOn(Protection, IMAGE_SCN_MEM_WRITE);
+#if _MI_HAS_NO_EXECUTE
+        TempPte.u.Hard.NoExecute = !BooleanFlagOn(Protection, IMAGE_SCN_MEM_EXECUTE);
+#endif
+
+        MI_UPDATE_VALID_PTE(PointerPte, TempPte);
+    }
+
+    /* Flush it all */
+    KeFlushEntireTb(TRUE, TRUE);
+
     return;
 }
 
 VOID
 NTAPI
-MiWriteProtectSystemImage(IN PVOID ImageBase)
+MiWriteProtectSystemImage(
+    _In_ PVOID ImageBase)
 {
     PIMAGE_NT_HEADERS NtHeaders;
-    PIMAGE_SECTION_HEADER Section;
-    PFN_NUMBER DriverPages;
-    ULONG CurrentProtection, SectionProtection, CombinedProtection = 0, ProtectionMask;
-    ULONG Sections, Size;
-    ULONG_PTR BaseAddress, CurrentAddress;
-    PMMPTE PointerPte, StartPte, LastPte, CurrentPte, ComboPte = NULL;
-    ULONG CurrentMask, CombinedMask = 0;
-    PAGED_CODE();
+    PIMAGE_SECTION_HEADER SectionHeaders, Section;
+    ULONG i;
+    PVOID SectionBase, SectionEnd;
+    ULONG SectionSize;
+    ULONG Protection;
+    PMMPTE FirstPte, LastPte;
 
-    /* No need to write protect physical memory-backed drivers (large pages) */
-    if (MI_IS_PHYSICAL_ADDRESS(ImageBase)) return;
+    /* Check if the registry setting is on or not */
+    if (MmEnforceWriteProtection == FALSE)
+    {
+        /* Ignore section protection */
+        return;
+    }
 
-    /* Get the image headers */
+    /* Large page mapped images are not supported */
+    NT_ASSERT(!MI_IS_PHYSICAL_ADDRESS(ImageBase));
+
+    /* Session images are not yet supported */
+    NT_ASSERT(!MI_IS_SESSION_ADDRESS(ImageBase));
+
+    /* Get the NT headers */
     NtHeaders = RtlImageNtHeader(ImageBase);
-    if (!NtHeaders) return;
-
-    /* Check if this is a session driver or not */
-    if (!MI_IS_SESSION_ADDRESS(ImageBase))
+    if (NtHeaders == NULL)
     {
-        /* Don't touch NT4 drivers */
-        if (NtHeaders->OptionalHeader.MajorOperatingSystemVersion < 5) return;
-        if (NtHeaders->OptionalHeader.MajorImageVersion < 5) return;
-    }
-    else
-    {
-        /* Not supported */
-        UNIMPLEMENTED_DBGBREAK("Session drivers not supported\n");
+        DPRINT1("Failed to get NT headers for image @ %p\n", ImageBase);
+        return;
     }
 
-    /* These are the only protection masks we care about */
-    ProtectionMask = IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_EXECUTE;
-
-    /* Calculate the number of pages this driver is occupying */
-    DriverPages = BYTES_TO_PAGES(NtHeaders->OptionalHeader.SizeOfImage);
-
-    /* Get the number of sections and the first section header */
-    Sections = NtHeaders->FileHeader.NumberOfSections;
-    ASSERT(Sections != 0);
-    Section = IMAGE_FIRST_SECTION(NtHeaders);
-
-    /* Loop all the sections */
-    CurrentAddress = (ULONG_PTR)ImageBase;
-    while (Sections)
+    /* Don't touch NT4 drivers */
+    if ((NtHeaders->OptionalHeader.MajorOperatingSystemVersion < 5) ||
+        (NtHeaders->OptionalHeader.MajorSubsystemVersion < 5))
     {
-        /* Get the section size */
-        Size = max(Section->SizeOfRawData, Section->Misc.VirtualSize);
+        DPRINT1("Skipping NT 4 driver @ %p\n", ImageBase);
+        return;
+    }
 
-        /* Get its virtual address */
-        BaseAddress = (ULONG_PTR)ImageBase + Section->VirtualAddress;
-        if (BaseAddress < CurrentAddress)
+    /* Get the section headers */
+    SectionHeaders = IMAGE_FIRST_SECTION(NtHeaders);
+
+    /* Get the base address of the first section */
+    SectionBase = Add2Ptr(ImageBase, SectionHeaders[0].VirtualAddress);
+
+    /* Start protecting the image header as R/O */
+    FirstPte = MiAddressToPte(ImageBase);
+    LastPte = MiAddressToPte(SectionBase) - 1;
+    Protection = IMAGE_SCN_MEM_READ;
+    if (LastPte >= FirstPte)
+    {
+        MiSetSystemCodeProtection(FirstPte, LastPte, IMAGE_SCN_MEM_READ);
+    }
+
+    /* Loop the sections */
+    for (i = 0; i < NtHeaders->FileHeader.NumberOfSections; i++)
+    {
+        /* Get the section base address and size */
+        Section = &SectionHeaders[i];
+        SectionBase = Add2Ptr(ImageBase, Section->VirtualAddress);
+        SectionSize = max(Section->SizeOfRawData, Section->Misc.VirtualSize);
+
+        /* Get the first PTE of this section */
+        FirstPte = MiAddressToPte(SectionBase);
+
+        /* Check for overlap with the previous range */
+        if (FirstPte == LastPte)
         {
-            /* Windows doesn't like these */
-            DPRINT1("Badly linked image!\n");
-            return;
+            /* Combine the old and new protection by ORing them */
+            Protection |= (Section->Characteristics & IMAGE_SCN_PROTECTION_MASK);
+
+            /* Update the protection for this PTE */
+            MiSetSystemCodeProtection(FirstPte, FirstPte, Protection);
+
+            /* Skip this PTE */
+            FirstPte++;
         }
 
-        /* Remember the current address */
-        CurrentAddress = BaseAddress + Size - 1;
+        /* There can not be gaps! */
+        NT_ASSERT(FirstPte == (LastPte + 1));
 
-        /* Next */
-        Sections--;
-        Section++;
-    }
+        /* Get the end of the section and the last PTE */
+        SectionEnd = Add2Ptr(SectionBase, SectionSize - 1);
+        NT_ASSERT(SectionEnd < Add2Ptr(ImageBase, NtHeaders->OptionalHeader.SizeOfImage));
+        LastPte = MiAddressToPte(SectionEnd);
 
-    /* Get the number of sections and the first section header */
-    Sections = NtHeaders->FileHeader.NumberOfSections;
-    ASSERT(Sections != 0);
-    Section = IMAGE_FIRST_SECTION(NtHeaders);
-
-    /* Set the address at the end to initialize the loop */
-    CurrentAddress = (ULONG_PTR)Section + Sections - 1;
-    CurrentProtection = IMAGE_SCN_MEM_WRITE | IMAGE_SCN_MEM_READ;
-
-    /* Set the PTE points for the image, and loop its sections */
-    StartPte = MiAddressToPte(ImageBase);
-    LastPte = StartPte + DriverPages;
-    while (Sections)
-    {
-        /* Get the section size */
-        Size = max(Section->SizeOfRawData, Section->Misc.VirtualSize);
-
-        /* Get its virtual address and PTE */
-        BaseAddress = (ULONG_PTR)ImageBase + Section->VirtualAddress;
-        PointerPte = MiAddressToPte(BaseAddress);
-
-        /* Check if we were already protecting a run, and found a new run */
-        if ((ComboPte) && (PointerPte > ComboPte))
+        /* If there are no more pages (after an overlap), skip this section */
+        if (LastPte < FirstPte)
         {
-            /* Compute protection */
-            CombinedMask = MiComputeDriverProtection(FALSE, CombinedProtection);
-
-            /* Set it */
-            MiSetSystemCodeProtection(ComboPte, ComboPte, CombinedMask);
-
-            /* Check for overlap */
-            if (ComboPte == StartPte) StartPte++;
-
-            /* One done, reset variables */
-            ComboPte = NULL;
-            CombinedProtection = 0;
-        }
-
-        /* Break out when needed */
-        if (PointerPte >= LastPte) break;
-
-        /* Get the requested protection from the image header */
-        SectionProtection = Section->Characteristics & ProtectionMask;
-        if (SectionProtection == CurrentProtection)
-        {
-            /* Same protection, so merge the request */
-            CurrentAddress = BaseAddress + Size - 1;
-
-            /* Next */
-            Sections--;
-            Section++;
+            NT_ASSERT(FirstPte == (LastPte + 1));
             continue;
         }
 
-        /* This is now a new section, so close up the old one */
-        CurrentPte = MiAddressToPte(CurrentAddress);
+        /* Get the section protection */
+        Protection = (Section->Characteristics & IMAGE_SCN_PROTECTION_MASK);
 
-        /* Check for overlap */
-        if (CurrentPte == PointerPte)
-        {
-            /* Skip the last PTE, since it overlaps with us */
-            CurrentPte--;
-
-            /* And set the PTE we will merge with */
-            ASSERT((ComboPte == NULL) || (ComboPte == PointerPte));
-            ComboPte = PointerPte;
-
-            /* Get the most flexible protection by merging both */
-            CombinedMask |= (SectionProtection | CurrentProtection);
-        }
-
-        /* Loop any PTEs left */
-        if (CurrentPte >= StartPte)
-        {
-            /* Sanity check */
-            ASSERT(StartPte < LastPte);
-
-            /* Make sure we don't overflow past the last PTE in the driver */
-            if (CurrentPte >= LastPte) CurrentPte = LastPte - 1;
-            ASSERT(CurrentPte >= StartPte);
-
-            /* Compute the protection and set it */
-            CurrentMask = MiComputeDriverProtection(FALSE, CurrentProtection);
-            MiSetSystemCodeProtection(StartPte, CurrentPte, CurrentMask);
-        }
-
-        /* Set new state */
-        StartPte = PointerPte;
-        CurrentAddress = BaseAddress + Size - 1;
-        CurrentProtection = SectionProtection;
-
-        /* Next */
-        Sections--;
-        Section++;
+        /* Update the protection for this section */
+        MiSetSystemCodeProtection(FirstPte, LastPte, Protection);
     }
 
-    /* Is there a leftover section to merge? */
-    if (ComboPte)
+    /* Image should end with the last section */
+    if (ALIGN_UP_POINTER_BY(SectionEnd, PAGE_SIZE) !=
+        Add2Ptr(ImageBase, NtHeaders->OptionalHeader.SizeOfImage))
     {
-        /* Compute and set the protection */
-        CombinedMask = MiComputeDriverProtection(FALSE, CombinedProtection);
-        MiSetSystemCodeProtection(ComboPte, ComboPte, CombinedMask);
-
-        /* Handle overlap */
-        if (ComboPte == StartPte) StartPte++;
-    }
-
-    /* Finally, handle the last section */
-    CurrentPte = MiAddressToPte(CurrentAddress);
-    if ((StartPte < LastPte) && (CurrentPte >= StartPte))
-    {
-        /* Handle overlap */
-        if (CurrentPte >= LastPte) CurrentPte = LastPte - 1;
-        ASSERT(CurrentPte >= StartPte);
-
-        /* Compute and set the protection */
-        CurrentMask = MiComputeDriverProtection(FALSE, CurrentProtection);
-        MiSetSystemCodeProtection(StartPte, CurrentPte, CurrentMask);
+        DPRINT1("ImageBase 0x%p ImageSize 0x%lx Section %u VA 0x%lx Raw 0x%lx virt 0x%lx\n",
+            ImageBase,
+            NtHeaders->OptionalHeader.SizeOfImage,
+            i,
+            Section->VirtualAddress,
+            Section->SizeOfRawData,
+            Section->Misc.VirtualSize);
     }
 }
 
@@ -2665,8 +2631,7 @@ MiEnablePagingOfDriver(IN PLDR_DATA_TABLE_ENTRY LdrEntry)
             {
                 /* Nope, setup the first PTE address */
                 PointerPte = MiAddressToPte(ROUND_TO_PAGES(ImageBase +
-                                                           Section->
-                                                           VirtualAddress));
+                                                           Section->VirtualAddress));
             }
 
             /* Compute the size */
@@ -2675,9 +2640,7 @@ MiEnablePagingOfDriver(IN PLDR_DATA_TABLE_ENTRY LdrEntry)
             /* Find the last PTE that maps this section */
             LastPte = MiAddressToPte(ImageBase +
                                      Section->VirtualAddress +
-                                     Alignment +
-                                     Size -
-                                     PAGE_SIZE);
+                                     Alignment + Size - PAGE_SIZE);
         }
         else
         {
@@ -2878,7 +2841,9 @@ MmLoadSystemImage(IN PUNICODE_STRING FileName,
     }
 
     /* Allocate a buffer we'll use for names */
-    Buffer = ExAllocatePoolWithTag(NonPagedPool, MAX_PATH, TAG_LDR_WSTR);
+    Buffer = ExAllocatePoolWithTag(NonPagedPool,
+                                   MAXIMUM_FILENAME_LENGTH,
+                                   TAG_LDR_WSTR);
     if (!Buffer) return STATUS_INSUFFICIENT_RESOURCES;
 
     /* Check for a separator */
@@ -3294,7 +3259,7 @@ LoaderScan:
         PspRunLoadImageNotifyRoutines(FileName, NULL, &ImageInfo);
     }
 
-#if defined(KDBG) || defined(_WINKD_)
+#ifdef __ROS_ROSSYM__
     /* MiCacheImageSymbols doesn't detect rossym */
     if (TRUE)
 #else

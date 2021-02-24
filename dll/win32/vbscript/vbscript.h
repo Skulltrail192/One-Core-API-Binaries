@@ -16,31 +16,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#ifndef _VBSCRIPT_H
-#define _VBSCRIPT_H
+#pragma once
 
-#include <assert.h>
 #include <stdarg.h>
-
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
+#include <stdint.h>
 
 #define COBJMACROS
 
-#include <windef.h>
-#include <winbase.h>
-#include <objbase.h>
-#include <oleauto.h>
-#include <objsafe.h>
-#include <dispex.h>
-#include <activscp.h>
+#include "windef.h"
+#include "winbase.h"
+#include "ole2.h"
+#include "dispex.h"
+#include "activscp.h"
+#include "activdbg.h"
 
-#include <wine/debug.h>
-#include <wine/list.h>
-#include <wine/unicode.h>
+#ifdef __REACTOS__
+#include <initguid.h>
+#endif
+#include "vbscript_classes.h"
+#include "vbscript_defs.h"
 
-WINE_DEFAULT_DEBUG_CHANNEL(vbscript);
+#include "wine/heap.h"
+#include "wine/list.h"
 
 typedef struct {
     void **blocks;
@@ -96,17 +93,6 @@ typedef struct {
     function_t *entries[VBDISP_ANY];
 } vbdisp_funcprop_desc_t;
 
-#define BP_GET      1
-#define BP_GETPUT   2
-
-typedef struct {
-    DISPID id;
-    HRESULT (*proc)(vbdisp_t*,VARIANT*,unsigned,VARIANT*);
-    DWORD flags;
-    unsigned min_args;
-    UINT_PTR max_args;
-} builtin_prop_t;
-
 typedef struct _class_desc_t {
     const WCHAR *name;
     script_ctx_t *ctx;
@@ -122,9 +108,6 @@ typedef struct _class_desc_t {
     unsigned array_cnt;
     array_desc_t *array_descs;
 
-    unsigned builtin_prop_cnt;
-    const builtin_prop_t *builtin_props;
-    ITypeInfo *typeinfo;
     function_t *value_func;
 
     struct _class_desc_t *next;
@@ -155,6 +138,16 @@ typedef struct {
     script_ctx_t *ctx;
 } ScriptDisp;
 
+typedef struct _builtin_prop_t builtin_prop_t;
+
+typedef struct {
+    IDispatch IDispatch_iface;
+    LONG ref;
+    size_t member_cnt;
+    const builtin_prop_t *members;
+    script_ctx_t *ctx;
+} BuiltinDisp;
+
 HRESULT create_vbdisp(const class_desc_t*,vbdisp_t**) DECLSPEC_HIDDEN;
 HRESULT disp_get_id(IDispatch*,BSTR,vbdisp_invoke_type_t,BOOL,DISPID*) DECLSPEC_HIDDEN;
 HRESULT vbdisp_get_id(vbdisp_t*,BSTR,vbdisp_invoke_type_t,BOOL,DISPID*) DECLSPEC_HIDDEN;
@@ -162,7 +155,6 @@ HRESULT disp_call(script_ctx_t*,IDispatch*,DISPID,DISPPARAMS*,VARIANT*) DECLSPEC
 HRESULT disp_propput(script_ctx_t*,IDispatch*,DISPID,WORD,DISPPARAMS*) DECLSPEC_HIDDEN;
 HRESULT get_disp_value(script_ctx_t*,IDispatch*,VARIANT*) DECLSPEC_HIDDEN;
 void collect_objects(script_ctx_t*) DECLSPEC_HIDDEN;
-HRESULT create_procedure_disp(script_ctx_t*,vbscode_t*,IDispatch**) DECLSPEC_HIDDEN;
 HRESULT create_script_disp(script_ctx_t*,ScriptDisp**) DECLSPEC_HIDDEN;
 
 HRESULT to_int(VARIANT*,int*) DECLSPEC_HIDDEN;
@@ -195,13 +187,10 @@ struct _script_ctx_t {
 
     ScriptDisp *script_obj;
 
-    class_desc_t global_desc;
-    vbdisp_t *global_obj;
+    BuiltinDisp *global_obj;
+    BuiltinDisp *err_obj;
 
-    class_desc_t err_desc;
-    vbdisp_t *err_obj;
-
-    HRESULT err_number;
+    EXCEPINFO ei;
 
     dynamic_var_t *global_vars;
     function_t *global_funcs;
@@ -257,11 +246,11 @@ typedef enum {
     X(idiv,           1, 0,           0)          \
     X(imp,            1, 0,           0)          \
     X(incc,           1, ARG_BSTR,    0)          \
+    X(int,            1, ARG_INT,     0)          \
     X(is,             1, 0,           0)          \
     X(jmp,            0, ARG_ADDR,    0)          \
     X(jmp_false,      0, ARG_ADDR,    0)          \
     X(jmp_true,       0, ARG_ADDR,    0)          \
-    X(long,           1, ARG_INT,     0)          \
     X(lt,             1, 0,           0)          \
     X(lteq,           1, 0,           0)          \
     X(mcall,          1, ARG_BSTR,    ARG_UINT)   \
@@ -279,9 +268,9 @@ typedef enum {
     X(or,             1, 0,           0)          \
     X(pop,            1, ARG_UINT,    0)          \
     X(ret,            0, 0,           0)          \
+    X(retval,         1, 0,           0)          \
     X(set_ident,      1, ARG_BSTR,    ARG_UINT)   \
     X(set_member,     1, ARG_BSTR,    ARG_UINT)   \
-    X(short,          1, ARG_INT,     0)          \
     X(step,           0, ARG_ADDR,    ARG_BSTR)   \
     X(stop,           1, 0,           0)          \
     X(string,         1, ARG_STR,     0)          \
@@ -352,6 +341,7 @@ struct _vbscode_t {
 
     BOOL pending_exec;
     function_t main_code;
+    IDispatch *context;
 
     BSTR *bstr_pool;
     unsigned bstr_pool_size;
@@ -362,36 +352,17 @@ struct _vbscode_t {
 };
 
 void release_vbscode(vbscode_t*) DECLSPEC_HIDDEN;
-HRESULT compile_script(script_ctx_t*,const WCHAR*,const WCHAR*,vbscode_t**) DECLSPEC_HIDDEN;
-HRESULT exec_script(script_ctx_t*,function_t*,vbdisp_t*,DISPPARAMS*,VARIANT*) DECLSPEC_HIDDEN;
+HRESULT compile_script(script_ctx_t*,const WCHAR*,const WCHAR*,DWORD,vbscode_t**) DECLSPEC_HIDDEN;
+HRESULT compile_procedure(script_ctx_t*,const WCHAR*,const WCHAR*,DWORD,class_desc_t**) DECLSPEC_HIDDEN;
+HRESULT exec_script(script_ctx_t*,BOOL,function_t*,vbdisp_t*,DISPPARAMS*,VARIANT*) DECLSPEC_HIDDEN;
 void release_dynamic_vars(dynamic_var_t*) DECLSPEC_HIDDEN;
+IDispatch *lookup_named_item(script_ctx_t*,const WCHAR*,unsigned) DECLSPEC_HIDDEN;
+void clear_ei(EXCEPINFO*) DECLSPEC_HIDDEN;
+HRESULT report_script_error(script_ctx_t*) DECLSPEC_HIDDEN;
+void detach_global_objects(script_ctx_t*) DECLSPEC_HIDDEN;
+HRESULT get_builtin_id(BuiltinDisp*,const WCHAR*,DISPID*) DECLSPEC_HIDDEN;
 
-typedef struct {
-    UINT16 len;
-    WCHAR buf[7];
-} string_constant_t;
-
-#define TID_LIST \
-    XDIID(ErrObj) \
-    XDIID(GlobalObj)
-
-typedef enum {
-#define XDIID(iface) iface ## _tid,
-TID_LIST
-#undef XDIID
-    LAST_tid
-} tid_t;
-
-HRESULT get_typeinfo(tid_t,ITypeInfo**) DECLSPEC_HIDDEN;
 void release_regexp_typelib(void) DECLSPEC_HIDDEN;
-
-#ifndef INT32_MIN
-#define INT32_MIN (-2147483647-1)
-#endif
-
-#ifndef INT32_MAX
-#define INT32_MAX (2147483647)
-#endif
 
 static inline BOOL is_int32(double d)
 {
@@ -402,62 +373,16 @@ HRESULT create_regexp(IDispatch**) DECLSPEC_HIDDEN;
 
 HRESULT map_hres(HRESULT) DECLSPEC_HIDDEN;
 
+HRESULT create_safearray_iter(SAFEARRAY *sa, IEnumVARIANT **ev) DECLSPEC_HIDDEN;
+
 #define FACILITY_VBS 0xa
 #define MAKE_VBSERROR(code) MAKE_HRESULT(SEVERITY_ERROR, FACILITY_VBS, code)
-
-#define VBSE_ILLEGAL_FUNC_CALL              5
-#define VBSE_OVERFLOW                       6
-#define VBSE_OUT_OF_MEMORY                  7
-#define VBSE_OUT_OF_BOUNDS                  9
-#define VBSE_ARRAY_LOCKED                  10
-#define VBSE_TYPE_MISMATCH                 13
-#define VBSE_FILE_NOT_FOUND                53
-#define VBSE_IO_ERROR                      57
-#define VBSE_FILE_ALREADY_EXISTS           58
-#define VBSE_DISK_FULL                     61
-#define VBSE_TOO_MANY_FILES                67
-#define VBSE_PERMISSION_DENIED             70
-#define VBSE_PATH_FILE_ACCESS              75
-#define VBSE_PATH_NOT_FOUND                76
-#define VBSE_ILLEGAL_NULL_USE              94
-#define VBSE_OLE_NOT_SUPPORTED            430
-#define VBSE_OLE_NO_PROP_OR_METHOD        438
-#define VBSE_ACTION_NOT_SUPPORTED         445
-#define VBSE_NAMED_ARGS_NOT_SUPPORTED     446
-#define VBSE_LOCALE_SETTING_NOT_SUPPORTED 447
-#define VBSE_NAMED_PARAM_NOT_FOUND        448
-#define VBSE_INVALID_TYPELIB_VARIABLE     458
-#define VBSE_FUNC_ARITY_MISMATCH          450
-#define VBSE_PARAMETER_NOT_OPTIONAL       449
-#define VBSE_NOT_ENUM                     451
-#define VBSE_INVALID_DLL_FUNCTION_NAME    453
-#define VBSE_CANT_CREATE_TMP_FILE         322
-#define VBSE_OLE_FILE_NOT_FOUND           432
-#define VBSE_CANT_CREATE_OBJECT           429
-#define VBSE_SERVER_NOT_FOUND             462
 
 HRESULT WINAPI VBScriptFactory_CreateInstance(IClassFactory*,IUnknown*,REFIID,void**) DECLSPEC_HIDDEN;
 HRESULT WINAPI VBScriptRegExpFactory_CreateInstance(IClassFactory*,IUnknown*,REFIID,void**) DECLSPEC_HIDDEN;
 
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), 0, size);
-}
-
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc_zero(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
-}
-
-static inline void* __WINE_ALLOC_SIZE(2) heap_realloc(void *mem, size_t size)
-{
-    return HeapReAlloc(GetProcessHeap(), 0, mem, size);
-}
-
-static inline BOOL heap_free(void *mem)
-{
-    return HeapFree(GetProcessHeap(), 0, mem);
-}
+BSTR get_vbscript_string(int) DECLSPEC_HIDDEN;
+BSTR get_vbscript_error_string(HRESULT) DECLSPEC_HIDDEN;
 
 static inline LPWSTR heap_strdupW(LPCWSTR str)
 {
@@ -466,7 +391,7 @@ static inline LPWSTR heap_strdupW(LPCWSTR str)
     if(str) {
         DWORD size;
 
-        size = (strlenW(str)+1)*sizeof(WCHAR);
+        size = (lstrlenW(str)+1)*sizeof(WCHAR);
         ret = heap_alloc(size);
         if(ret)
             memcpy(ret, str, size);
@@ -478,9 +403,3 @@ static inline LPWSTR heap_strdupW(LPCWSTR str)
 #define VBSCRIPT_BUILD_VERSION 16978
 #define VBSCRIPT_MAJOR_VERSION 5
 #define VBSCRIPT_MINOR_VERSION 8
-
-#include "parse.h"
-#include "regexp.h"
-#include "vbscript_defs.h"
-
-#endif /* _VBSCRIPT_H */

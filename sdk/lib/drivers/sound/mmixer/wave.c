@@ -357,7 +357,7 @@ MMixerInitializeWaveInfo(
     WaveInfo->PinId = Pins[0];
 
     /* sanity check */
-    ASSERT(wcslen(DeviceName) + 1 < MAXPNAMELEN);
+    ASSERT(wcslen(DeviceName) < MAXPNAMELEN);
 
     /* copy device name */
     if (bWaveIn)
@@ -665,7 +665,7 @@ MMixerGetWaveDevicePath(
     PMIXER_LIST MixerList;
     LPMIXER_DATA MixerData;
     LPWAVE_INFO WaveInfo;
-    ULONG Length;
+    SIZE_T Length;
     MIXER_STATUS Status;
 
     /* verify mixer context */

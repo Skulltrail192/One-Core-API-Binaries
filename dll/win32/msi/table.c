@@ -18,7 +18,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+#include <assert.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "msi.h"
+#include "msiquery.h"
+#include "objbase.h"
+#include "objidl.h"
+#include "winnls.h"
 #include "msipriv.h"
+#include "query.h"
+
+#include "wine/debug.h"
+#include "wine/unicode.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(msidb);
 
@@ -2391,25 +2408,6 @@ static MSIRECORD *msi_get_transform_record( const MSITABLEVIEW *tv, const string
         }
     }
     return rec;
-}
-
-static void dump_record( MSIRECORD *rec )
-{
-    UINT i, n;
-
-    n = MSI_RecordGetFieldCount( rec );
-    for( i=1; i<=n; i++ )
-    {
-        int len;
-        const WCHAR *sval;
-
-        if( MSI_RecordIsNull( rec, i ) )
-            TRACE("row -> []\n");
-        else if( (sval = msi_record_get_string( rec, i, &len )) )
-            TRACE("row -> [%s]\n", debugstr_wn(sval, len));
-        else
-            TRACE("row -> [0x%08x]\n", MSI_RecordGetInteger( rec, i ) );
-    }
 }
 
 static void dump_table( const string_table *st, const USHORT *rawdata, UINT rawsize )

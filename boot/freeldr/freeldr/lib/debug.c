@@ -43,13 +43,18 @@ static UCHAR DbgChannels[DBG_CHANNELS_COUNT];
 ULONG DebugPort = RS232;
 
 /* Serial debug connection */
-ULONG ComPort  = 0; // The COM port initializer chooses the first available port starting from COM4 down to COM1.
+#if defined(SARCH_PC98)
+ULONG BaudRate = 9600;
+#else
 ULONG BaudRate = 115200;
+#endif
+
+ULONG ComPort  = 0; // The COM port initializer chooses the first available port starting from COM4 down to COM1.
 ULONG PortIrq  = 0; // Not used at the moment.
 
 BOOLEAN DebugStartOfLine = TRUE;
 
-VOID DebugInit(BOOLEAN MainInit)
+VOID DebugInit(IN ULONG_PTR FrLdrSectionId)
 {
     PCHAR CommandLine, PortString, BaudString, IrqString;
     ULONG Value;
@@ -78,7 +83,7 @@ VOID DebugInit(BOOLEAN MainInit)
 #endif
 
     /* Check for pre- or main initialization phase */
-    if (!MainInit)
+    if (FrLdrSectionId == 0)
     {
         /* Pre-initialization phase: use the FreeLdr command-line debugging string */
         CommandLine = (PCHAR)CmdLineGetDebugString();
@@ -92,14 +97,10 @@ VOID DebugInit(BOOLEAN MainInit)
     else
     {
         /* Main initialization phase: use the FreeLdr INI debugging string */
-
-        ULONG_PTR SectionId;
-
-        if (!IniOpenSection("FreeLoader", &SectionId))
+        if (!IniReadSettingByName(FrLdrSectionId, "Debug", DebugString, sizeof(DebugString)))
+        {
             return;
-
-        if (!IniReadSettingByName(SectionId, "Debug", DebugString, sizeof(DebugString)))
-            return;
+        }
     }
 
     /* Get the Command Line */
@@ -297,7 +298,7 @@ VOID
 DebugDumpBuffer(ULONG Mask, PVOID Buffer, ULONG Length)
 {
     PUCHAR BufPtr = (PUCHAR)Buffer;
-    ULONG  Idx, Idx2;
+    ULONG Offset, Count, i;
 
     /* Mask out unwanted debug messages */
     if (!(DbgChannels[Mask] & TRACE_LEVEL))
@@ -306,50 +307,20 @@ DebugDumpBuffer(ULONG Mask, PVOID Buffer, ULONG Length)
     DebugStartOfLine = FALSE; // We don't want line headers
     DbgPrint("Dumping buffer at %p with length of %lu bytes:\n", Buffer, Length);
 
-    for (Idx = 0; Idx < Length; )
+    Offset = 0;
+    while (Offset < Length)
     {
-        DebugStartOfLine = FALSE; // We don't want line headers
+        /* We don't want line headers */
+        DebugStartOfLine = FALSE;
 
-        if (Idx < 0x0010)
-            DbgPrint("000%x:\t", Idx);
-        else if (Idx < 0x0100)
-            DbgPrint("00%x:\t", Idx);
-        else if (Idx < 0x1000)
-            DbgPrint("0%x:\t", Idx);
-        else
-            DbgPrint("%x:\t", Idx);
+        /* Print the offset */
+        DbgPrint("%04x:\t", Offset);
 
-        for (Idx2 = 0; Idx2 < 16; Idx2++, Idx++)
+        /* Print either 16 or the remaining number of bytes */
+        Count = min(Length - Offset, 16);
+        for (i = 0; i < Count; i++, Offset++)
         {
-            if (BufPtr[Idx] < 0x10)
-            {
-                DbgPrint("0");
-            }
-            DbgPrint("%x", BufPtr[Idx]);
-
-            if (Idx2 == 7)
-            {
-                DbgPrint("-");
-            }
-            else
-            {
-                DbgPrint(" ");
-            }
-        }
-
-        Idx -= 16;
-        DbgPrint(" ");
-
-        for (Idx2 = 0; Idx2 < 16; Idx2++, Idx++)
-        {
-            if ((BufPtr[Idx] > 20) && (BufPtr[Idx] < 0x80))
-            {
-                DbgPrint("%c", BufPtr[Idx]);
-            }
-            else
-            {
-                DbgPrint(".");
-            }
+            DbgPrint("%02x%c", BufPtr[Offset], (i == 7) ? '-' : ' ');
         }
 
         DbgPrint("\n");
@@ -484,7 +455,7 @@ MsgBoxPrint(const char *Format, ...)
     return 0;
 }
 
-// DECLSPEC_NORETURN
+DECLSPEC_NORETURN
 VOID
 NTAPI
 KeBugCheckEx(
@@ -495,9 +466,15 @@ KeBugCheckEx(
     IN ULONG_PTR  BugCheckParameter4)
 {
     char Buffer[70];
-    sprintf(Buffer, "*** STOP: 0x%08lX (0x%08lX, 0x%08lX, 0x%08lX, 0x%08lX)",
-            BugCheckCode, BugCheckParameter1, BugCheckParameter2,
-            BugCheckParameter3, BugCheckParameter4);
+
+    sprintf(Buffer,
+            "*** STOP: 0x%08lX (0x%p,0x%p,0x%p,0x%p)",
+            BugCheckCode,
+            (PVOID)BugCheckParameter1,
+            (PVOID)BugCheckParameter2,
+            (PVOID)BugCheckParameter3,
+            (PVOID)BugCheckParameter4);
+
     UiMessageBoxCritical(Buffer);
     ASSERT(FALSE);
     for (;;);
@@ -512,7 +489,7 @@ RtlAssert(IN PVOID FailedAssertion,
 {
     if (Message)
     {
-        DbgPrint("Assertion \'%s\' failed at %s line %u: %s\n",
+        DbgPrint("Assertion \'%s\' failed at %s line %lu: %s\n",
                  (PCHAR)FailedAssertion,
                  (PCHAR)FileName,
                  LineNumber,
@@ -520,7 +497,7 @@ RtlAssert(IN PVOID FailedAssertion,
     }
     else
     {
-        DbgPrint("Assertion \'%s\' failed at %s line %u\n",
+        DbgPrint("Assertion \'%s\' failed at %s line %lu\n",
                  (PCHAR)FailedAssertion,
                  (PCHAR)FileName,
                  LineNumber);

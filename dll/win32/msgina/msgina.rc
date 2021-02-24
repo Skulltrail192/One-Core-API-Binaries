@@ -19,6 +19,7 @@ IDI_LOCKICON ICON "resources/115.ico"
 
 /* Bitmaps */
 IDI_ROSLOGO BITMAP "resources/reactos.bmp"
+IDI_BAR BITMAP "resources/line.bmp"
 
 /* UTF-8 */
 #pragma code_page(65001)
@@ -44,6 +45,9 @@ IDI_ROSLOGO BITMAP "resources/reactos.bmp"
 #ifdef LANGUAGE_HE_IL
     #include "lang/he-IL.rc"
 #endif
+#ifdef LANGUAGE_HU_HU
+    #include "lang/hu-HU.rc"
+#endif
 #ifdef LANGUAGE_ID_ID
     #include "lang/id-ID.rc"
 #endif
@@ -58,6 +62,9 @@ IDI_ROSLOGO BITMAP "resources/reactos.bmp"
 #endif
 #ifdef LANGUAGE_PL_PL
     #include "lang/pl-PL.rc"
+#endif
+#ifdef LANGUAGE_PT_PT
+    #include "lang/pt-PT.rc"
 #endif
 #ifdef LANGUAGE_RO_RO
     #include "lang/ro-RO.rc"

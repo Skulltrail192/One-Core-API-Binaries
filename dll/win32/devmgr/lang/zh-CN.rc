@@ -1,5 +1,5 @@
 /* Simplified Chinese translation by Henry Tang Ih 2016 (henrytang2@hotmail.com) */
-
+/* Translation has been changed by Luo Yufan 2018 (njlyf2011@hotmail.com) */
 LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
 
 STRINGTABLE
@@ -18,12 +18,12 @@ BEGIN
     IDS_UNKNOWNDEVICE "未知的设备"
     IDS_NODRIVERLOADED "为此设备不安装任何驱动程序。"
     IDS_DEVONPARENT "on %1"
-    IDS_TROUBLESHOOTDEV "排除故障......(&T)"
+    IDS_TROUBLESHOOTDEV "排除故障(&T)..."
     IDS_ENABLEDEV "启用设备(&N)"
     IDS_REINSTALLDRV "重新安装驱动程序(&I)"
     IDS_PROPERTIES "属性(&R)"
-    IDS_UPDATEDRV "更新驱动程序...(&P)"
-    IDS_REBOOT "重新启动计算机...(&C)"
+    IDS_UPDATEDRV "更新驱动程序(&P)..."
+    IDS_REBOOT "重新启动计算机(&C)..."
     IDS_NOTAVAILABLE "没有可供选择"
     IDS_NOTDIGITALLYSIGNED "不进行数字签名"
     IDS_NODRIVERS "没有驱动程序文件要求或都已加载此设备。"
@@ -79,8 +79,8 @@ BEGIN
     IDS_DEV_DISABLED_SERVICE "ReactOS 不能安装此设备的驱动程序，因为它不能访问已安装文件的驱动器或网络上的位置。"
     IDS_DEV_TRANSLATION_FAILED "此设备没有响应对其驱动程序。"
     IDS_DEV_NO_SOFTCONFIG "ReactOS 不能确定此设备的设置。请参考此设备附带的文档，使用资源选项卡来设置配置。"
-    IDS_DEV_BIOS_TABLE "您的计算机的系统固件不包括足够的信息来正确配置和使用此设备。 \n若要使用此设备，请联系计算机制造商以获取固件或 BIOS 更新。"
-    IDS_DEV_IRQ_TRANSLATION_FAILED "该设备正在请求 PCI 中断但被配置为 ISA 中断 (反之亦然)。 \n请使用计算机的系统设置程序重新配置此设备的中断。"
+    IDS_DEV_BIOS_TABLE "您的计算机的系统固件不包括足够的信息来正确配置和使用此设备。\n若要使用此设备，请联系计算机制造商以获取固件或 BIOS 更新。"
+    IDS_DEV_IRQ_TRANSLATION_FAILED "该设备正在请求 PCI 中断但被配置为 ISA 中断 (反之亦然)。\n请使用计算机的系统设置程序重新配置此设备的中断。"
     IDS_DEV_FAILED_DRIVER_ENTRY "ReactOS 无法初始化这个硬件的设备驱动程序。"
     IDS_DEV_DRIVER_FAILED_PRIOR_UNLOAD "由于设备驱动程序的前一个实例仍在内存中，ReactOS 无法加载这个硬件的设备驱动程序。"
     IDS_DEV_DRIVER_FAILED_LOAD "ReactOS 无法加载这个硬件的设备驱动程序。驱动程序可能已损坏或丢失。"
@@ -127,23 +127,23 @@ END
 
 IDD_HARDWARE DIALOGEX 0, 0, 300, 400
 STYLE DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_CAPTION | DS_SHELLFONT
-FONT 8, "MS Shell Dlg"
+FONT 9, "宋体"
 BEGIN
-    LTEXT "设备:(&D)", IDC_DEVICES, 7, 6, 196, 10
+    LTEXT "设备(&D):", IDC_DEVICES, 7, 6, 196, 10
     CONTROL "", IDC_LV_DEVICES, "SysListView32", LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS |
             LVS_SHAREIMAGELISTS | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP, 7, 16, 196, 50
     GROUPBOX "设备属性", IDC_PROPERTIESGROUP, 7, 76, 196, 105
     LTEXT "", IDC_MANUFACTURER, 14, 88, 183, 10, SS_ENDELLIPSIS
     LTEXT "", IDC_LOCATION, 14, 100, 183, 10, SS_ENDELLIPSIS
     LTEXT "", IDC_STATUS, 14, 112, 183, 30
-    PUSHBUTTON "排除故障......(&T)", IDC_TROUBLESHOOT, 80, 140, 60, 14, BS_PUSHBUTTON | WS_CHILD | WS_DISABLED | WS_TABSTOP
+    PUSHBUTTON "排除故障(&T)...", IDC_TROUBLESHOOT, 80, 140, 60, 14, BS_PUSHBUTTON | WS_CHILD | WS_DISABLED | WS_TABSTOP
     PUSHBUTTON "属性(&R)", IDC_PROPERTIES, 146, 140, 50, 14
 END
 
 IDD_DEVICEGENERAL DIALOGEX 0, 0, 252, 218
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "常规"
-FONT 8, "MS Shell Dlg"
+FONT 9, "宋体"
 BEGIN
     ICON "", IDC_DEVICON, 7, 7, 20, 20
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
@@ -155,15 +155,15 @@ BEGIN
     EDITTEXT IDC_DEVLOCATION, 100, 67, 145, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
     GROUPBOX "设备状态", IDC_DEVSTATUSGROUP, 7, 83, 238, 100
     EDITTEXT IDC_DEVSTATUS, 14, 96, 224, 61, NOT WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_VSCROLL
-    PUSHBUTTON "排除故障...(&T)", IDC_DEVPROBLEM, 148, 163, 90, 15
-    LTEXT "设备使用情况:(&D)", IDC_DEVUSAGELABEL, 7, 188, 222, 8, WS_DISABLED
+    PUSHBUTTON "排除故障(&T)...", IDC_DEVPROBLEM, 148, 163, 90, 15
+    LTEXT "设备使用情况(&D):", IDC_DEVUSAGELABEL, 7, 188, 222, 8, WS_DISABLED
     COMBOBOX IDC_DEVUSAGE, 7, 198, 239, 40, CBS_DROPDOWNLIST | WS_VSCROLL | WS_DISABLED
 END
 
 IDD_DEVICEDRIVER DIALOGEX 0, 0, 252, 218
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "驱动程序"
-FONT 8, "MS Shell Dlg"
+FONT 9, "宋体"
 BEGIN
     ICON "", IDC_DEVICON, 7, 7, 20, 20
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
@@ -175,20 +175,24 @@ BEGIN
     EDITTEXT IDC_DRVVERSION, 100, 67, 145, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
     LTEXT "数字签名:", -1, 37, 81, 60, 8, SS_NOPREFIX
     EDITTEXT IDC_DIGITALSIGNER, 100, 81, 145, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
-    PUSHBUTTON "驱动程序详细信息...(&D)", IDC_DRIVERDETAILS, 7, 106, 75, 15
+    PUSHBUTTON "驱动程序详细信息(&D)...", IDC_DRIVERDETAILS, 7, 106, 75, 15
     LTEXT "要查看有关驱动程序文件的详细信息。", -1, 91, 110, 154, 17, SS_NOPREFIX
-    PUSHBUTTON "更新驱动程序...(&U)", IDC_UPDATEDRIVER, 7, 126, 75, 15
-    LTEXT "更新设备驱动程序。", -1, 91, 130, 154, 17, SS_NOPREFIX
+    PUSHBUTTON "更新驱动程序(&U)...", IDC_UPDATEDRIVER, 7, 134, 75, 15
+    LTEXT "更新设备驱动程序。", -1, 91, 138, 154, 17, SS_NOPREFIX
+    PUSHBUTTON "&Roll Back Driver", IDC_ROLLBACKDRIVER, 7, 162, 75, 15
+    LTEXT "If the device fails after updating the driver, roll back to the previously installed driver.", -1, 91, 162, 154, 25, SS_NOPREFIX
+    PUSHBUTTON "&Uninstall", IDC_UNINSTALLDRIVER, 7, 190, 75, 15
+    LTEXT "To uninstall the driver (Advanced).", -1, 91, 194, 154, 17, SS_NOPREFIX
 END
 
 IDD_DRIVERDETAILS DIALOGEX 0, 0, 224, 230
 STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBLE | WS_DLGFRAME
 CAPTION "驱动程序文件的详细信息"
-FONT 8, "MS Shell Dlg"
+FONT 9, "宋体"
 BEGIN
     ICON "", IDC_DEVICON, 7, 7, 20, 20
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
-    LTEXT "驱动程序文件:(&D)", -1, 7, 36, 204, 8
+    LTEXT "驱动程序文件(&D):", -1, 7, 36, 204, 8
     CONTROL "", IDC_DRIVERFILES, "SysListView32", LVS_REPORT | LVS_NOCOLUMNHEADER |
             LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_SHAREIMAGELISTS | LVS_SORTASCENDING |
             LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP, 7, 46, 209, 80
@@ -206,7 +210,7 @@ END
 IDD_DEVICEDETAILS DIALOGEX 0, 0, 252, 218
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "详细信息"
-FONT 8, "MS Shell Dlg"
+FONT 9, "宋体"
 BEGIN
     ICON "", IDC_DEVICON, 7, 7, 20, 20
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
@@ -219,7 +223,7 @@ END
 IDD_DEVICERESOURCES DIALOGEX 0, 0, 252, 218
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "资源"
-FONT 8, "MS Shell Dlg"
+FONT 9, "宋体"
 BEGIN
     ICON "", IDC_DEVICON, 7, 7, 20, 20
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
@@ -232,10 +236,22 @@ END
 IDD_DEVICEPOWER DIALOGEX 0, 0, 252, 218
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "电源"
-FONT 8, "MS Shell Dlg"
+FONT 9, "宋体"
 BEGIN
     ICON "", IDC_DEVICON, 7, 7, 20, 20
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
+END
+
+IDD_UNINSTALLDRIVER DIALOGEX 0, 0, 224, 121
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBLE | WS_DLGFRAME
+CAPTION "Confirm Device Removal"
+FONT 9, "宋体"
+BEGIN
+    ICON "", IDC_DEVICON, 7, 7, 20, 20
+    LTEXT "", IDC_DEVNAME, 40, 9, 174, 16, SS_NOPREFIX
+    LTEXT "Warning: You are about to uninstall this device from your system.", -1, 7, 37, 204, 50
+    DEFPUSHBUTTON "OK", IDOK, 110, 100, 50, 14
+    PUSHBUTTON "Cancel", IDCANCEL, 166, 100, 50, 14
 END
 
 
@@ -245,24 +261,28 @@ END
 
 IDR_MAINMENU MENU
 BEGIN
-  POPUP "文件(&F)"
-  BEGIN
-    MENUITEM "关闭(&X)",                       IDC_EXIT
-  END
-  MENUITEM "行动",                        IDC_ACTIONMENU
-  POPUP "视图"
-  BEGIN
-    MENUITEM "按类型设备",             IDC_DEVBYTYPE
-    MENUITEM "依连接排序设备",       IDC_DEVBYCONN
-    MENUITEM "依类型排序资源",           IDC_RESBYTYPE, GRAYED
-    MENUITEM "依连接排序资源",     IDC_RESBYCONN, GRAYED
-    MENUITEM SEPARATOR
-    MENUITEM "显示隐藏的设备",         IDC_SHOWHIDDEN
-  END
-  POPUP "帮助"
-  BEGIN
-    MENUITEM "关于",                       IDC_ABOUT
-  END
+    POPUP "文件(&F)"
+    BEGIN
+        MENUITEM "关闭(&X)",                       IDM_EXIT
+    END
+    POPUP "行动"
+    BEGIN
+        MENUITEM "扫描检测硬件改动",      IDM_SCAN_HARDWARE
+        MENUITEM "添加硬件",             IDM_ADD_HARDWARE
+    END
+    POPUP "视图"
+    BEGIN
+        MENUITEM "按类型设备",             IDM_DEVBYTYPE
+        MENUITEM "依连接排序设备",       IDM_DEVBYCONN
+        MENUITEM "依类型排序资源",           IDM_RESBYTYPE, GRAYED
+        MENUITEM "依连接排序资源",     IDM_RESBYCONN, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "显示隐藏的设备",         IDM_SHOWHIDDEN
+    END
+    POPUP "帮助"
+    BEGIN
+        MENUITEM "关于",                       IDM_ABOUT
+    END
 END
 
 

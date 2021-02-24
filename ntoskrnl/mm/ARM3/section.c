@@ -499,7 +499,7 @@ MiFillSystemPageDirectory(IN PVOID Base,
     while (PointerPde <= LastPde)
     {
         /* Lock the PFN database */
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
 
         /* Check if we don't already have this PDE mapped */
         if (SystemMapPde->u.Hard.Valid == 0)
@@ -512,7 +512,7 @@ MiFillSystemPageDirectory(IN PVOID Base,
             TempPde.u.Hard.PageFrameNumber = PageFrameIndex;
 
 #if (_MI_PAGING_LEVELS == 2)
-            ParentPage = MmSystemPageDirectory[(PointerPde - MiAddressToPde(NULL)) / PDE_COUNT];
+            ParentPage = MmSystemPageDirectory[(PointerPde - MiAddressToPde(NULL)) / PDE_PER_PAGE];
 #else
             ParentPage = MiPdeToPpe(PointerPde)->u.Hard.PageFrameNumber;
 #endif
@@ -533,7 +533,7 @@ MiFillSystemPageDirectory(IN PVOID Base,
         }
 
         /* Release the lock and keep going with the next PDE */
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
         SystemMapPde++;
         PointerPde++;
     }
@@ -550,7 +550,7 @@ MiCheckPurgeAndUpMapCount(IN PCONTROL_AREA ControlArea,
     ASSERT(FailIfSystemViews == FALSE);
 
     /* Lock the PFN database */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* State not yet supported */
     ASSERT(ControlArea->u.Flags.BeingPurged == 0);
@@ -561,7 +561,7 @@ MiCheckPurgeAndUpMapCount(IN PCONTROL_AREA ControlArea,
     ASSERT(ControlArea->NumberOfSectionReferences != 0);
 
     /* Release the PFN lock and return success */
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
     return STATUS_SUCCESS;
 }
 
@@ -633,7 +633,7 @@ MiSegmentDelete(IN PSEGMENT Segment)
     LastPte = PointerPte + Segment->NonExtendedPtes;
 
     /* Lock the PFN database */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* Check if the master PTE is invalid */
     PteForProto = MiAddressToPte(PointerPte);
@@ -647,7 +647,7 @@ MiSegmentDelete(IN PSEGMENT Segment)
     while (PointerPte < LastPte)
     {
         /* Check if it's time to switch master PTEs if we passed a PDE boundary */
-        if (!((ULONG_PTR)PointerPte & (PD_SIZE - 1)) &&
+        if (MiIsPteOnPdeBoundary(PointerPte) &&
             (PointerPte != Subsection->SubsectionBase))
         {
             /* Check if the master PTE is invalid */
@@ -716,7 +716,7 @@ MiSegmentDelete(IN PSEGMENT Segment)
     }
 
     /* Release the PFN lock */
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     /* Free the structures */
     ExFreePool(ControlArea);
@@ -729,7 +729,7 @@ MiCheckControlArea(IN PCONTROL_AREA ControlArea,
                    IN KIRQL OldIrql)
 {
     BOOLEAN DeleteSegment = FALSE;
-    ASSERT(KeGetCurrentIrql() == DISPATCH_LEVEL);
+    MI_ASSERT_PFN_LOCK_HELD();
 
     /* Check if this is the last reference or view */
     if (!(ControlArea->NumberOfMappedViews) &&
@@ -747,7 +747,7 @@ MiCheckControlArea(IN PCONTROL_AREA ControlArea,
     }
 
     /* Release the PFN lock */
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     /* Delete the segment if needed */
     if (DeleteSegment)
@@ -765,7 +765,7 @@ MiDereferenceControlArea(IN PCONTROL_AREA ControlArea)
     KIRQL OldIrql;
 
     /* Lock the PFN database */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* Drop reference counts */
     ControlArea->NumberOfMappedViews--;
@@ -802,7 +802,7 @@ MiRemoveMappedView(IN PEPROCESS CurrentProcess,
     MiUnlockProcessWorkingSetUnsafe(CurrentProcess, CurrentThread);
 
     /* Lock the PFN database */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* Remove references */
     ControlArea->NumberOfMappedViews--;
@@ -993,7 +993,7 @@ _WARN("MiSessionCommitPageTables halfplemented for amd64")
             ASSERT(MmAvailablePages >= 32);
 
             /* Acquire the PFN lock and grab a zero page */
-            OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+            OldIrql = MiAcquirePfnLock();
             MI_SET_USAGE(MI_USAGE_PAGE_TABLE);
             MI_SET_PROCESS2(PsGetCurrentProcess()->ImageFileName);
             Color = (++MmSessionSpace->Color) & MmSecondaryColorMask;
@@ -1011,7 +1011,7 @@ _WARN("MiSessionCommitPageTables halfplemented for amd64")
                                            MmSessionSpace->SessionPageDirectoryIndex);
 
             /* And now release the lock */
-            KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+            MiReleasePfnLock(OldIrql);
 
             /* Get the PFN entry and make sure there's no event for it */
             Pfn1 = MI_PFN_ELEMENT(PageFrameNumber);
@@ -1145,11 +1145,11 @@ MiSetControlAreaSymbolsLoaded(IN PCONTROL_AREA ControlArea)
 
     ASSERT(KeGetCurrentIrql() <= APC_LEVEL);
 
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
     ControlArea->u.Flags.DebugSymbolsLoaded |= 1;
 
     ASSERT(OldIrql <= APC_LEVEL);
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
     ASSERT(KeGetCurrentIrql() <= APC_LEVEL);
 }
 
@@ -1370,7 +1370,7 @@ MiMapViewOfDataSection(IN PCONTROL_AREA ControlArea,
     }
 
     RtlZeroMemory(Vad, sizeof(MMVAD_LONG));
-    Vad->u4.Banked = (PVOID)0xDEADBABE;
+    Vad->u4.Banked = (PVOID)(ULONG_PTR)0xDEADBABEDEADBABEULL;
 
     /* Write all the data required in the VAD for handling a fault */
     Vad->ControlArea = ControlArea;
@@ -1897,7 +1897,6 @@ MiQueryMemorySectionName(IN HANDLE ProcessHandle,
 {
     PEPROCESS Process;
     NTSTATUS Status;
-    WCHAR ModuleFileNameBuffer[MAX_PATH] = {0};
     UNICODE_STRING ModuleFileName;
     PMEMORY_SECTION_NAME SectionName = NULL;
     KPROCESSOR_MODE PreviousMode = ExGetPreviousMode();
@@ -1915,7 +1914,6 @@ MiQueryMemorySectionName(IN HANDLE ProcessHandle,
         return Status;
     }
 
-    RtlInitEmptyUnicodeString(&ModuleFileName, ModuleFileNameBuffer, sizeof(ModuleFileNameBuffer));
     Status = MmGetFileNameForAddress(BaseAddress, &ModuleFileName);
 
     if (NT_SUCCESS(Status))
@@ -1925,11 +1923,12 @@ MiQueryMemorySectionName(IN HANDLE ProcessHandle,
         {
             _SEH2_TRY
             {
-                RtlInitUnicodeString(&SectionName->SectionFileName, SectionName->NameBuffer);
-                SectionName->SectionFileName.MaximumLength = (USHORT)MemoryInformationLength;
+                RtlInitEmptyUnicodeString(&SectionName->SectionFileName,
+                                          (PWSTR)(SectionName + 1),
+                                          MemoryInformationLength - sizeof(MEMORY_SECTION_NAME));
                 RtlCopyUnicodeString(&SectionName->SectionFileName, &ModuleFileName);
 
-                if (ReturnLength) *ReturnLength = ModuleFileName.Length;
+                if (ReturnLength) *ReturnLength = ModuleFileName.Length + sizeof(MEMORY_SECTION_NAME);
 
             }
             _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
@@ -1940,13 +1939,16 @@ MiQueryMemorySectionName(IN HANDLE ProcessHandle,
         }
         else
         {
-            RtlInitUnicodeString(&SectionName->SectionFileName, SectionName->NameBuffer);
-            SectionName->SectionFileName.MaximumLength = (USHORT)MemoryInformationLength;
+            RtlInitEmptyUnicodeString(&SectionName->SectionFileName,
+                                      (PWSTR)(SectionName + 1),
+                                      MemoryInformationLength - sizeof(MEMORY_SECTION_NAME));
             RtlCopyUnicodeString(&SectionName->SectionFileName, &ModuleFileName);
 
-            if (ReturnLength) *ReturnLength = ModuleFileName.Length;
+            if (ReturnLength) *ReturnLength = ModuleFileName.Length + sizeof(MEMORY_SECTION_NAME);
 
         }
+
+        RtlFreeUnicodeString(&ModuleFileName);
     }
     ObDereferenceObject(Process);
     return Status;
@@ -1976,7 +1978,7 @@ MiFlushTbAndCapture(IN PMMVAD FoundVad,
                               PointerPte,
                               ProtectionMask,
                               PreviousPte.u.Hard.PageFrameNumber);
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     //
     // We don't support I/O mappings in this path yet
@@ -2050,7 +2052,7 @@ MiFlushTbAndCapture(IN PMMVAD FoundVad,
     //
     // Release the PFN lock, we are done
     //
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 }
 
 //
@@ -2148,7 +2150,7 @@ MiSetProtectionOnSection(IN PEPROCESS Process,
         //
         // Check if we've crossed a PDE boundary and make the new PDE valid too
         //
-        if ((((ULONG_PTR)PointerPte) & (SYSTEM_PD_SIZE - 1)) == 0)
+        if (MiIsPteOnPdeBoundary(PointerPte))
         {
             PointerPde = MiPteToPde(PointerPte);
             MiMakePdeExistAndMakeValid(PointerPde, Process, MM_NOIRQL);
@@ -2257,7 +2259,7 @@ MiRemoveMappedPtes(IN PVOID BaseAddress,
             PointerPde = MiPteToPde(PointerPte);
 
             /* Lock the PFN database and make sure this isn't a mapped file */
-            OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+            OldIrql = MiAcquirePfnLock();
             ASSERT(((Pfn1->u3.e1.PrototypePte) && (Pfn1->OriginalPte.u.Soft.Prototype)) == 0);
 
             /* Mark the page as modified accordingly */
@@ -2287,7 +2289,7 @@ MiRemoveMappedPtes(IN PVOID BaseAddress,
             MiDecrementShareCount(Pfn1, PFN_FROM_PTE(&PteContents));
 
             /* Release the PFN lock */
-            KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+            MiReleasePfnLock(OldIrql);
         }
         else
         {
@@ -2317,7 +2319,7 @@ MiRemoveMappedPtes(IN PVOID BaseAddress,
     KeFlushCurrentTb();
 
     /* Acquire the PFN lock */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* Decrement the accounting counters */
     ControlArea->NumberOfUserReferences--;
@@ -2514,7 +2516,7 @@ MmCreateArm3Section(OUT PVOID *SectionObject,
         }
 
         /* Lock the PFN database while we play with the section pointers */
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
 
         /* Image-file backed sections are not yet supported */
         ASSERT((AllocationAttributes & SEC_IMAGE) == 0);
@@ -2530,7 +2532,7 @@ MmCreateArm3Section(OUT PVOID *SectionObject,
         File->SectionObjectPointer->DataSectionObject = ControlArea;
 
         /* We can release the PFN lock now */
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
 
         /* We don't support previously-mapped file */
         ASSERT(NewSegment == NULL);
@@ -2548,7 +2550,7 @@ MmCreateArm3Section(OUT PVOID *SectionObject,
         if (!NT_SUCCESS(Status))
         {
             /* Lock the PFN database while we play with the section pointers */
-            OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+            OldIrql = MiAcquirePfnLock();
 
             /* Reset the waiting-for-deletion event */
             ASSERT(ControlArea->WaitingForDeletion == NULL);
@@ -2566,7 +2568,7 @@ MmCreateArm3Section(OUT PVOID *SectionObject,
             ControlArea->u.Flags.BeingCreated = FALSE;
 
             /* We can release the PFN lock now */
-            KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+            MiReleasePfnLock(OldIrql);
 
             /* Check if we locked and set the IRP */
             if (FileLock)
@@ -2630,7 +2632,7 @@ MmCreateArm3Section(OUT PVOID *SectionObject,
         ASSERT(File != NULL);
 
         /* Acquire the PFN lock while we set control area flags */
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
 
         /* We don't support this race condition yet, so assume no waiters */
         ASSERT(ControlArea->WaitingForDeletion == NULL);
@@ -2642,7 +2644,7 @@ MmCreateArm3Section(OUT PVOID *SectionObject,
 
         /* Take off the being created flag, and then release the lock */
         ControlArea->u.Flags.BeingCreated = FALSE;
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
     }
 
     /* Check if we locked the file earlier */
@@ -2725,7 +2727,7 @@ MmCreateArm3Section(OUT PVOID *SectionObject,
         if (UserRefIncremented)
         {
             /* Acquire the PFN lock while we change counters */
-            OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+            OldIrql = MiAcquirePfnLock();
 
             /* Decrement the accounting counters */
             ControlArea->NumberOfSectionReferences--;
@@ -2795,13 +2797,13 @@ MmCreateArm3Section(OUT PVOID *SectionObject,
     if (ControlArea->u.Flags.BeingCreated == 1)
     {
         /* Acquire the PFN lock while we set control area flags */
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
 
         /* Take off the being created flag, and then release the lock */
         ControlArea->u.Flags.BeingCreated = 0;
         NewSection->u.Flags.BeingCreated = 0;
 
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
     }
 
     /* Migrate the attribute into a flag */
@@ -2847,6 +2849,7 @@ MmMapViewOfArm3Section(IN PVOID SectionObject,
     PCONTROL_AREA ControlArea;
     ULONG ProtectionMask;
     NTSTATUS Status;
+    ULONG64 CalculatedViewSize;
     PAGED_CODE();
 
     /* Get the segment and control area */
@@ -2893,11 +2896,12 @@ MmMapViewOfArm3Section(IN PVOID SectionObject,
     if (!(*ViewSize))
     {
         /* Compute it for the caller */
-        *ViewSize = (SIZE_T)(Section->SizeOfSection.QuadPart - SectionOffset->QuadPart);
+        CalculatedViewSize = Section->SizeOfSection.QuadPart - 
+                             SectionOffset->QuadPart;
 
         /* Check if it's larger than 4GB or overflows into kernel-mode */
-        if ((*ViewSize > 0xFFFFFFFF) ||
-            (((ULONG_PTR)MM_HIGHEST_VAD_ADDRESS - (ULONG_PTR)*BaseAddress) < *ViewSize))
+        if (!NT_SUCCESS(RtlULongLongToSIZET(CalculatedViewSize, ViewSize)) ||
+            (((ULONG_PTR)MM_HIGHEST_VAD_ADDRESS - (ULONG_PTR)*BaseAddress) < CalculatedViewSize))
         {
             DPRINT1("Section view won't fit\n");
             return STATUS_INVALID_VIEW_SIZE;
@@ -3258,7 +3262,7 @@ MiDeleteARM3Section(PVOID ObjectBody)
     }
 
     /* Lock the PFN database */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     ASSERT(SectionObject->Segment);
     ASSERT(SectionObject->Segment->ControlArea);
@@ -3567,7 +3571,7 @@ NtMapViewOfSection(IN HANDLE SectionHandle,
     ACCESS_MASK DesiredAccess;
     ULONG ProtectionMask;
     KPROCESSOR_MODE PreviousMode = ExGetPreviousMode();
-#ifdef _M_IX86
+#if defined(_M_IX86) || defined(_M_AMD64)
     static const ULONG ValidAllocationType = (MEM_TOP_DOWN | MEM_LARGE_PAGES |
             MEM_DOS_LIM | SEC_NO_CHANGE | MEM_RESERVE);
 #else

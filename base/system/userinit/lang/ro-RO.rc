@@ -1,4 +1,4 @@
-/* Romanian translation by Fulea Ștefan */
+/* Ștefan Fulea (stefan dot fulea at mail dot com) */
 
 LANGUAGE LANG_ROMANIAN, SUBLANG_NEUTRAL
 
@@ -9,9 +9,9 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL "IDB_LOGO", IDC_LOCALELOGO, "Static", WS_CHILD | WS_VISIBLE | SS_OWNERDRAW, 18, 4, 290, 99
     RTEXT "&Limbă:", IDC_STATIC, 20, 109, 106, 11, WS_CHILD | WS_VISIBLE | WS_GROUP
-    COMBOBOX IDC_LANGUAGELIST, 132, 107, 176, 142, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_CHILD | WS_VISIBLE | WS_TABSTOP
-    RTEXT "&Aranjament tastatură:", IDC_STATIC, 20, 132, 106, 11, WS_CHILD | WS_VISIBLE | WS_GROUP
-    COMBOBOX IDC_LAYOUTLIST, 132, 130, 176, 81, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_CHILD | WS_VISIBLE | WS_TABSTOP
+    COMBOBOX IDC_LANGUAGELIST, 132, 107, 176, 142, CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | CBS_SORT | WS_VSCROLL | WS_CHILD | WS_VISIBLE | WS_TABSTOP
+    RTEXT "A&ranjament tastatură:", IDC_STATIC, 20, 132, 106, 11, WS_CHILD | WS_VISIBLE | WS_GROUP
+    COMBOBOX IDC_LAYOUTLIST, 132, 130, 176, 81, CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | CBS_SORT | WS_VSCROLL | WS_CHILD | WS_VISIBLE | WS_TABSTOP
     LTEXT "Selectați limba și aranjamentul de tastatură apoi apăsați „Înainte” pentru a continua.", IDC_STATIC, 7, 152, 300, 8
 
     CONTROL "", IDC_STATIC, "STATIC", SS_ETCHEDHORZ, 0, 165, 317, 1
@@ -39,7 +39,7 @@ STRINGTABLE
 BEGIN
     IDS_SHELL_FAIL "Userinit a eșuat în lansarea interfeței!"
     IDS_INSTALLER_FAIL "Userinit a eșuat în lansarea instalării!"
-    IDS_CANCEL_CONFIRM "Are you sure you want to quit the ReactOS LiveCD?\nIf you choose to do so, your computer might restart."
+    IDS_CANCEL_CONFIRM "Sigur doriți să părăsiți ReactOS LiveCD?\nCalculatorul dumneavoastră ar putea reporni."
 END
 
 STRINGTABLE

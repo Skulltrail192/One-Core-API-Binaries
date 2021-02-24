@@ -5,9 +5,284 @@
        http://xmlsoft.org/XSLT/news.html
 
 See the git page at 
-http://git.gnome.org/browse/libxslt/
+https://gitlab.gnome.org/GNOME/libxslt
 
 to get a description of the recent commits.Those are the public releases made:
+v1.1.33: Jan 03 2019:
+   - Portability:
+  Variables need 'extern' in static lib on Cygwin (Nick Wellnhofer),
+  Really declare dllexport/dllimport for Cygwin (Michael Haubenwallner),
+  Fix callback signatures in Python bindings (Nick Wellnhofer),
+  Fix transform callback signatures (Nick Wellnhofer),
+  Fix extension callback signatures (Nick Wellnhofer),
+  Fix deallocator signatures (Nick Wellnhofer),
+  Fix XPath callback signatures (Nick Wellnhofer),
+  Fix hash callback signatures (Nick Wellnhofer)
+  
+   - Bug Fixes:
+  Don't cache direct evaluation of patterns with variables (Nick Wellnhofer),
+  Move function result RVTs to context variable (Nick Wellnhofer),
+  Fix EXSLT functions returning RVTs from outer scopes (Nick Wellnhofer),
+  Fix handling of RVTs returned from nested EXSLT functions (Nick Wellnhofer),
+  Fix typos (Nick Wellnhofer)
+  
+   - Improvements:
+  Run Travis ASan tests with "sudo: required" (Nick Wellnhofer)
+  
+   - Cleanups:
+  Remove doc/libxslt-decl.txt (Nick Wellnhofer),
+  Docs for 1.1.32 release (Daniel Veillard)
+  
+
+
+1.1.32: Nov 02 2017:
+   - Portability:
+  Add missing limits.h include (Nick Wellnhofer),
+  Also run Windows tests with --maxdepth 200 (Nick Wellnhofer),
+  Disable some MSVC warnings (Nick Wellnhofer),
+  Fix deprecated Travis compiler flag (Nick Wellnhofer),
+  Run general tests with maxdepth=200 (Nick Wellnhofer),
+  Use _WIN32 macro instead of WIN32 (Nick Wellnhofer),
+  Fix xsltproc newlines on Windows (Nick Wellnhofer),
+  Fix Windows compiler warnings (Nick Wellnhofer),
+  Rework locale feature tests (Nick Wellnhofer)
+  
+   - Improvements:
+  Rebuild win32/libxslt.def.src (Nick Wellnhofer),
+  Fix compiler warnings in Python bindings (Nick Wellnhofer)
+  
+
+
+v1.1.31: Oct 06 2017:
+   - Portability:
+  Fix win32/configure.js (Nick Wellnhofer)
+  
+   - Bug Fixes:
+  Fix pkg-config related regressions in configure script (Nick Wellnhofer)
+  
+   - Improvements:
+  Adjust expected error output for libxml2 changes (Nick Wellnhofer),
+  Misc autoconf updates (Nick Wellnhofer)
+  
+
+
+v1.1.30: Sep 04 2017:
+   - Documentation:
+  Misc doc fixes (Nick Wellnhofer)
+  
+   - Portability:
+  Look for libxml2 via pkg-config first (Elliott Sales de Andrade),
+  Change default SOPREFIX on Windows to "bin" (Nick Wellnhofer),
+  Add WIN32_EXTRA_LDFLAGS to tests/plugins/Makefile.am (Michael Haubenwallner)
+  
+   - Bug Fixes:
+  Also fix memory hazards in exsltFuncResultElem (Nick Wellnhofer),
+  Fix NULL deref in xsltDefaultSortFunction (Nick Wellnhofer),
+  Fix memory hazards in exsltFuncFunctionFunction (Nick Wellnhofer),
+  Fix memory leaks in EXSLT error paths (Nick Wellnhofer),
+  Fix memory leak in str:concat with empty node-set (Nick Wellnhofer),
+  Fix memory leaks in error paths (Nick Wellnhofer),
+  Switch to xmlUTF8Strsize in numbers.c (Nick Wellnhofer),
+  Fix NULL pointer deref in xsltFormatNumberFunction (Nick Wellnhofer),
+  Fix UTF-8 check in str:padding (Nick Wellnhofer),
+  Fix xmlStrPrintf argument (Nick Wellnhofer),
+  Check for overflow in _exsltDateParseGYear (Nick Wellnhofer),
+  Fix double to int conversion (Nick Wellnhofer),
+  Check for overflow in exsltDateParseDuration (Nick Wellnhofer),
+  Change version of xsltMaxVars back to 1.0.24 (Nick Wellnhofer),
+  Disable xsltCopyTextString optimization for extensions (Nick Wellnhofer),
+  Create DOCTYPE for HTML version 5 (Nick Wellnhofer),
+  Make xsl:decimal-format work with namespaces (Nick Wellnhofer),
+  Remove norm:localTime extension function (Nick Wellnhofer),
+  Check for integer overflow in xsltAddTextString (Nick Wellnhofer),
+  Detect infinite recursion when evaluating function arguments (Nick Wellnhofer),
+  Fix memory leak in xsltElementAvailableFunction (Nick Wellnhofer),
+  Fix for pattern predicates calling functions (Nick Wellnhofer),
+  Fix cmd.exe invocations in Makefile.mingw (Nick Wellnhofer),
+  Don't try to install index.sgml (Nick Wellnhofer),
+  Fix symbols.xml (Nick Wellnhofer),
+  Fix heap overread in xsltFormatNumberConversion (Nick Wellnhofer),
+  Fix <xsl:number level="any"/> for non-element nodes (Nick Wellnhofer),
+  Fix unreachable code in xsltAddChild (mahendra.n),
+  Change version number in xsl:version warning (Nick Wellnhofer),
+  Avoid infinite recursion after failed param evaluation (Nick Wellnhofer),
+  Stop if potential recursion is detected (Nick Wellnhofer),
+  Consider built-in templates in apply-imports (Nick Wellnhofer),
+  Fix precedence with multiple attribute sets (Nick Wellnhofer),
+  Rework attribute set resolution (Nick Wellnhofer)
+  
+   - Improvements:
+  Add .travis.yml (Nick Wellnhofer),
+  Silence tests a little (Nick Wellnhofer),
+  Set LIBXML_SRC to absolute path (Nick Wellnhofer),
+  Add missing #include (Nick Wellnhofer),
+  Adjust expected error messages in tests (Nick Wellnhofer),
+  Make xsltDebug more quiet (Nick Wellnhofer),
+  New-line terminate error message that missed this convention (Jan Pokorný),
+  Use xmlBuffers in EXSLT string functions (Nick Wellnhofer),
+  Switch to xmlUTF8Strsize in EXSLT string functions (Nick Wellnhofer),
+  Check for return value of xmlUTF8Strlen (Nick Wellnhofer),
+  Avoid double/long round trip in FORMAT_ITEM (Nick Wellnhofer),
+  Separate date and duration structs (Nick Wellnhofer),
+  Check for overflow in _exsltDateDifference (Nick Wellnhofer),
+  Clamp seconds field of durations (Nick Wellnhofer),
+  Change _exsltDateAddDurCalc parameter types (Nick Wellnhofer),
+  Fix date:difference with time zones (Nick Wellnhofer),
+  Rework division/remainder arithmetic in date.c (Nick Wellnhofer),
+  Remove exsltDateCastDateToNumber (Nick Wellnhofer),
+  Change internal representation of years (Nick Wellnhofer),
+  Optimize IS_LEAP (Nick Wellnhofer),
+  Link libraries with libm (Jussi Kukkonen),
+  Rename xsltCopyTreeInternal to xsltCopyTree (Nick Wellnhofer),
+  Update linker version script (Nick Wellnhofer),
+  Add local wildcard to version script (Nick Wellnhofer),
+  Make some symbols static (Nick Wellnhofer),
+  Remove redundant NULL check in xsltNumberComp (mahendra.n),
+  Fix forwards compatibility for imported stylesheets (Nick Wellnhofer),
+  Reduce warnings in forwards-compatible mode (Nick Wellnhofer),
+  Precompute XSLT elements after preprocessing (Nick Wellnhofer),
+  Fix whitespace in xsltParseStylesheetTop (Nick Wellnhofer),
+  Consolidate recursion checks (Nick Wellnhofer),
+  Treat XSLT_STATE_STOPPED same as errors (Nick Wellnhofer),
+  Make sure that XSLT_STATE_STOPPED isn't overwritten (Nick Wellnhofer),
+  Add comment regarding built-in templates and params (Nick Wellnhofer),
+  Rewrite memory management of local RVTs (Nick Wellnhofer),
+  Validate QNames of attribute sets (Nick Wellnhofer),
+  Add xsl:attribute-set regression tests (Nick Wellnhofer),
+  Ignore imported stylesheets in xsltApplyAttributeSet (Nick Wellnhofer)
+  
+
+
+1.1.29: May 24 2016:
+   - Security:
+  CVE-2015-7995 Fix for type confusion in preprocessing attributes (Daniel Veillard)
+  
+   - Documentation:
+  
+   - Portability:
+  Fix a portibility problem with previous commit (Eduard Sanou),
+  Fix MingW build (Nick Wellnhofer),
+  Correctly emulate snprintf on older MSVC versions (Nick Wellnhofer),
+  Add Python script to run some tests on Windows (Nick Wellnhofer),
+  Remove /OPT:NOWIN98 option (Nick Wellnhofer),
+  Visual Studio 14 CTP defines snprintf() (Daniel Veillard),
+  Use AC_PATH_TOOL to find libgcrypt-config and xml2-config (Micha¿ Górny),
+  Use $libdir for LIBXSLT_DEFAULT_PLUGINS_PATH (larryhaja),
+  Use mkdir macro also in case if mingw32. (Lars Kanis),
+  Add math library to executable link flags (Nick Wellnhofer),
+  Fix quoting of xlocale test program in configure.in (Nick Wellnhofer)
+  
+   - Bug Fixes:
+  Fix OOB heap read in xsltExtModuleRegisterDynamic (Nick Wellnhofer),
+  Remove CDATA markup from libxslt_tutorial.c (Nick Wellnhofer),
+  Remove generated headers from dist tarball (Nick Wellnhofer),
+  Mark XML file argument as repeatable (Nick Wellnhofer),
+  Keep timezone in date:add (Nick Wellnhofer),
+  Fix buffer overflow in exsltDateFormat (Nick Wellnhofer),
+  Fix saxon:line-number with namespace nodes (Nick Wellnhofer),
+  Fix dyn:map with namespace nodes (Nick Wellnhofer),
+  Fix error handling in Saxon extension functions (Nick Wellnhofer),
+  Fix double free in libexslt hash functions (Nick Wellnhofer),
+  Fix libxslt format warnings (David Kilzer),
+  Fix xsltNumberFormatGetMultipleLevel (Nick Wellnhofer),
+  Fix use-after-free in xsltDocumentFunctionLoadDocument (Nick Wellnhofer),
+  Always initialize EXSLT month and day to 1 (Nick Wellnhofer),
+  Fix possible NULL pointer deref in transform.c (mahendra.n),
+  Fix possible NULL pointer deref in xsltCopyTextString (Nick Wellnhofer),
+  Fix possible NULL pointer deref in libexslt/functions.c (Nick Wellnhofer),
+  Fix possible NULL pointer deref in xsltproc.c (mahendra.n),
+  Fix possible NULL pointer deref in preproc.c (mahendra.n),
+  Fix LIBXSLT_DEFAULT_PLUGINS_PATH in xsltconfig.h (Nick Wellnhofer),
+  Fix memory leak in xsltNumberFormat (Albert Astals Cid),
+  Error in doc/Makefile.am (Brice De Bruyne),
+  Detect attribute sets recursions in more cases (Daniel Veillard),
+  Check name vales for attribute-set elements (Daniel Veillard),
+  Fix hang with namespace-alias, fixes #700689 (Shaun McCance),
+  Fix str:align with UTF-8 strings (Nick Wellnhofer),
+  Fix for compiled XPath helpers (Nick Wellnhofer),
+  Check return value of exsltFuncNewFunctionData (Nick Wellnhofer),
+  Fix return value of xsltRegisterExtModuleElement (Nick Wellnhofer),
+  Call xmlNodeGetSpacePreserve with element node (Nick Wellnhofer),
+  Set namespaces before evaluating xsl:number (Nick Wellnhofer),
+  Make --maxvars option work (Per Hedeland),
+  Set correct context node when initializing xsl:keys (Nick Wellnhofer),
+  Fix for bug 436589 (Imran Azeezullah),
+  Memory leak in xsltCompileIdKeyPattern error path (Nick Wellnhofer),
+  Fix handling of UTF-8 strings in EXSLT crypto module (Nick Wellnhofer),
+  Fix certain patterns with predicates (Nick Wellnhofer),
+  Fix direct pattern matching (Nick Wellnhofer),
+  Fix str:padding to work with UTF-8 strings (Nick Wellnhofer),
+  EXSLT function str:replace() is broken as-is (Nick Wellnhofer),
+  Fix a couple of places where (f)printf parameters were broken (Daniel Veillard)
+  
+   - Improvements:
+  Add support timestamps from environment (Daniel Veillard),
+  Add missing tests to dist tarball (Nick Wellnhofer),
+  Improve error message in xsltAddTemplate and fix test (Nick Wellnhofer),
+  Allow REC tests with empty stdout (Nick Wellnhofer),
+  Fix GPL license in HTML files as well (Nick Wellnhofer),
+  Fix status message in EXSLT dynamic tests (Nick Wellnhofer),
+  Add public function macros to xsltlocale.h (Nick Wellnhofer),
+  Make valgrind tests work with libtool (Nick Wellnhofer),
+  Add a couple of xsl:number tests (Nick Wellnhofer),
+  Lower and upper bound for format token "i" (Nick Wellnhofer),
+  Lower bound for format token "a" (Nick Wellnhofer),
+  Handle negative xsl:number values (Nick Wellnhofer),
+  Round xsl:number values to nearest integer (Nick Wellnhofer),
+  Allow {URI}NCName syntax for user parameters (Nick Wellnhofer),
+  Fix endTimer parameter type (Nick Wellnhofer),
+  Fix error messages for unsupported methods (Nick Wellnhofer),
+  Replace sprintf with snprintf (David Kilzer),
+  Enforce two digit exponent under MSVC (Nick Wellnhofer),
+  Rework xsltNumberFormat to fix warning (Nick Wellnhofer),
+  Fix a couple of GPL licences found in the documentation (Daniel Veillard),
+  Use hash table to lookup named templates (Christian Ceelen),
+  Fix to reg tests post 737840 fix (Daniel Veillard),
+  Don't fail build the man page if xsltproc is not present (Daniel Veillard),
+  Re-adding xsltproc.1 (Daniel Veillard),
+  Fix time type in xsltSaveProfiling (Nick Wellnhofer),
+  Remove unused parameters (Nick Wellnhofer),
+  Suppress unused variable warning. (Nick Wellnhofer),
+  Remove unused variable in xsltGenerateIdFunction (Nick Wellnhofer),
+  Add test case for XPath function args in error case (Nick Wellnhofer),
+  Add comment about known-to-fail test (Nick Wellnhofer),
+  Adjust expected test output (Nick Wellnhofer),
+  Helper functions to evaluate compiled XPath expressions (Nick Wellnhofer),
+  Add tests for crypto:rc4 (Nick Wellnhofer),
+  Add first test case for EXSLT crypto module (Nick Wellnhofer),
+  Separate function for predicate matching in patterns (Nick Wellnhofer),
+  Initialize pseudo random number generator with current time or optional command line parameter (Nils Werner),
+  Adding doc update related to 1.1.28 (Daniel Veillard)
+  
+   - Cleanups:
+  Remove bogus test file (Nick Wellnhofer),
+  Add warning message to expected test output (Nick Wellnhofer)
+  
+
+
+1.1.28: Nov 21 2012:
+   -  Portability:
+    Fix python build by using libxsltmod_la_CPPFLAGS instead of AM_CPPFLAGS (Alexandre Rostovtsev),
+    configure should be more careful with linker script (Igor Pashev),
+    add gcrypt library in LIBADD, not LDFLAGS, as recommended (Roumen Petrov)
+  
+   -  Bug fixes:
+    Fix generate-id() to avoid generating the same ID (Stewart Brodie),
+    Fix crash with empty xsl:key/@match attribute (Nick Wellnhofer),
+    Crash when passing an uninitialized variable to document() (Nick Wellnhofer),
+    Add missing test docs to EXTRA_DIST (Nick Wellnhofer),
+    Fix regression: Default namespace not correctly used (Nick Wellnhofer)
+  
+   -  Cleanups:
+    Remove xsltTransStorageAdd and xsltTransStorageRemove from symbols.xml (Daniel Veillard),
+    autogen.sh cleanup (Daniel Richard),
+    consistent use of xslt processor (Roumen Petrov),
+    Add object files in tests/plugins to .gitignore (Nick Wellnhofer),
+    Fix error on bug-165 regression test (Daniel Veillard),
+    Remove xsltTransStorageAdd and xsltTransStorageRemove (Daniel Veillard),
+  
+
+
 1.1.27: Sep 12 2012:
    -  Portability:
     xincludestyle wasn't protected with LIBXML_XINCLUDE_ENABLED (Michael Bonfils),

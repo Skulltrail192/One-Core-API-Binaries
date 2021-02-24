@@ -9,10 +9,15 @@
 #include <winbase.h>
 #include <winreg.h>
 #include <winsvc.h>
+#include <lmserver.h>
 
 #include <srvsvc_s.h>
 
 #include <wine/debug.h>
+
+
+extern DWORD dwServiceBits;
+
 
 DWORD
 WINAPI

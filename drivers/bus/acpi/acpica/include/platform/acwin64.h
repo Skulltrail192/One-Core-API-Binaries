@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2019, Intel Corp.
+ * Copyright (C) 2000 - 2020, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,28 @@
 #define ACPI_USE_STANDARD_HEADERS
 #define ACPI_USE_SYSTEM_CLIBRARY
 
+ /* Note: do not include any C library headers here */
+
+ /*
+ * Note: MSVC project files should define ACPI_DEBUGGER and ACPI_DISASSEMBLER
+ * as appropriate to enable editor functions like "Find all references".
+ * The editor isn't smart enough to dig through the include files to find
+ * out if these are actually defined.
+ */
+
+ /* Eliminate warnings for "old" (non-secure) versions of clib functions */
+
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+/* Eliminate warnings for POSIX clib function names (open, write, etc.) */
+
+#ifndef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#endif
+
+
 #define ACPI_MACHINE_WIDTH          64
 
 /*
@@ -83,6 +105,7 @@
 
 /*! [Begin] no source code translation  */
 
+#ifndef __REACTOS__
 #define ACPI_FLUSH_CPU_CACHE()
 
 /*
@@ -98,6 +121,46 @@
 #define ACPI_RELEASE_GLOBAL_LOCK(GLptr, Pnd)
 
 #endif
+
+#else /* __REACTOS__ */
+
+#ifdef ACPI_APPLICATION
+#define ACPI_FLUSH_CPU_CACHE()
+#else
+#define ACPI_FLUSH_CPU_CACHE()  __wbinvd()
+#endif
+
+#define ACPI_ACQUIRE_GLOBAL_LOCK(FacsPtr, Acq) \
+{ \
+    BOOLEAN acquired = 0xFF; \
+\
+    if ((FacsPtr) != 0) \
+    { \
+        UINT32 compare, prev, newval; \
+        UINT32* lock = &((FacsPtr)->GlobalLock); \
+        do \
+        { \
+            compare = *lock; \
+            newval = (compare & ~1) | ((compare >> 1) & 1) | 2; \
+            prev = InterlockedCompareExchange(lock, newval, compare); \
+        } while (prev != compare); \
+        acquired = ((newval & 0xFF) < 3) ? 0xFF : 0x00; \
+    } \
+    (Acq) = acquired; \
+}
+
+#define ACPI_RELEASE_GLOBAL_LOCK(FacsPtr, Pnd) \
+{ \
+    BOOLEAN pending = 0; \
+\
+    if ((FacsPtr) != 0) \
+    { \
+        pending = InterlockedAnd(&(FacsPtr)->GlobalLock, ~3) & 1; \
+    } \
+    (Pnd) = pending; \
+}
+
+#endif /* __REACTOS__ */
 
 /*! [End] no source code translation !*/
 

@@ -1,5 +1,3 @@
-/* $Id: tif_strip.c,v 1.38 2016-12-03 11:02:15 erouault Exp $ */
-
 /*
  * Copyright (c) 1991-1997 Sam Leffler
  * Copyright (c) 1991-1997 Silicon Graphics, Inc.
@@ -29,7 +27,6 @@
  *
  * Strip-organized Image Support Routines.
  */
-
 #include <precomp.h>
 
 /*
@@ -132,15 +129,8 @@ TIFFVStripSize(TIFF* tif, uint32 nrows)
 {
 	static const char module[] = "TIFFVStripSize";
 	uint64 m;
-	tmsize_t n;
 	m=TIFFVStripSize64(tif,nrows);
-	n=(tmsize_t)m;
-	if ((uint64)n!=m)
-	{
-		TIFFErrorExt(tif->tif_clientdata,module,"Integer overflow");
-		n=0;
-	}
-	return(n);
+        return _TIFFCastUInt64ToSSize(tif, m, module);
 }
 
 /*
@@ -150,8 +140,7 @@ uint64
 TIFFRawStripSize64(TIFF* tif, uint32 strip)
 {
 	static const char module[] = "TIFFRawStripSize64";
-	TIFFDirectory* td = &tif->tif_dir;
-	uint64 bytecount = td->td_stripbytecount[strip];
+	uint64 bytecount = TIFFGetStrileByteCount(tif, strip);
 
 	if (bytecount == 0)
 	{
@@ -214,15 +203,8 @@ TIFFStripSize(TIFF* tif)
 {
 	static const char module[] = "TIFFStripSize";
 	uint64 m;
-	tmsize_t n;
 	m=TIFFStripSize64(tif);
-	n=(tmsize_t)m;
-	if ((uint64)n!=m)
-	{
-		TIFFErrorExt(tif->tif_clientdata,module,"Integer overflow");
-		n=0;
-	}
-	return(n);
+	return _TIFFCastUInt64ToSSize(tif, m, module);
 }
 
 /*
@@ -333,14 +315,8 @@ TIFFScanlineSize(TIFF* tif)
 {
 	static const char module[] = "TIFFScanlineSize";
 	uint64 m;
-	tmsize_t n;
 	m=TIFFScanlineSize64(tif);
-	n=(tmsize_t)m;
-	if ((uint64)n!=m) {
-		TIFFErrorExt(tif->tif_clientdata,module,"Integer arithmetic overflow");
-		n=0;
-	}
-	return(n);
+	return _TIFFCastUInt64ToSSize(tif, m, module);
 }
 
 /*
@@ -369,15 +345,8 @@ TIFFRasterScanlineSize(TIFF* tif)
 {
 	static const char module[] = "TIFFRasterScanlineSize";
 	uint64 m;
-	tmsize_t n;
 	m=TIFFRasterScanlineSize64(tif);
-	n=(tmsize_t)m;
-	if ((uint64)n!=m)
-	{
-		TIFFErrorExt(tif->tif_clientdata,module,"Integer arithmetic overflow");
-		n=0;
-	}
-	return(n);
+	return _TIFFCastUInt64ToSSize(tif, m, module);
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */

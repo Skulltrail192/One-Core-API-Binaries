@@ -15,22 +15,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include <config.h>
 #include <stdarg.h>
-//#include <stdlib.h>
-#include <ntstatus.h>
+#include <stdlib.h>
+#include "ntstatus.h"
 #define WIN32_NO_STATUS
-#include <windef.h>
-#include <winbase.h>
-#include <wine/winternl.h>
-#include <wtsapi32.h>
-#include <wine/debug.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wine/winternl.h"
+#include "wtsapi32.h"
+#include "wine/debug.h"
+#include "wine/heap.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(wtsapi);
 
-/* FIXME: Inspect */
+#ifdef __REACTOS__ /* FIXME: Inspect */
 #define GetCurrentProcessToken() ((HANDLE)~(ULONG_PTR)3)
-
+#endif
 
 /************************************************************
  *                WTSCloseServer  (WTSAPI32.@)
@@ -74,6 +74,27 @@ BOOL WINAPI WTSEnableChildSessions(BOOL enable)
 {
     FIXME("Stub %d\n", enable);
     return TRUE;
+}
+
+
+/************************************************************
+ *                WTSEnumerateProcessesExW  (WTSAPI32.@)
+ */
+BOOL WINAPI WTSEnumerateProcessesExW(HANDLE server, DWORD *level, DWORD session_id, WCHAR **info, DWORD *count)
+{
+    FIXME("Stub %p %p %d %p %p\n", server, level, session_id, info, count);
+    if (count) *count = 0;
+    return FALSE;
+}
+
+/************************************************************
+ *                WTSEnumerateProcessesExA  (WTSAPI32.@)
+ */
+BOOL WINAPI WTSEnumerateProcessesExA(HANDLE server, DWORD *level, DWORD session_id, char **info, DWORD *count)
+{
+    FIXME("Stub %p %p %d %p %p\n", server, level, session_id, info, count);
+    if (count) *count = 0;
+    return FALSE;
 }
 
 /************************************************************
@@ -201,6 +222,26 @@ BOOL WINAPI WTSEnumerateServersW(LPWSTR pDomainName, DWORD Reserved, DWORD Versi
 
 
 /************************************************************
+ *                WTSEnumerateEnumerateSessionsExW  (WTSAPI32.@)
+ */
+BOOL WINAPI WTSEnumerateSessionsExW(HANDLE server, DWORD *level, DWORD filter, WTS_SESSION_INFO_1W* info, DWORD *count)
+{
+    FIXME("Stub %p %p %d %p %p\n", server, level, filter, info, count);
+    if (count) *count = 0;
+    return FALSE;
+}
+
+/************************************************************
+ *                WTSEnumerateEnumerateSessionsExA  (WTSAPI32.@)
+ */
+BOOL WINAPI WTSEnumerateSessionsExA(HANDLE server, DWORD *level, DWORD filter, WTS_SESSION_INFO_1A* info, DWORD *count)
+{
+    FIXME("Stub %p %p %d %p %p\n", server, level, filter, info, count);
+    if (count) *count = 0;
+    return FALSE;
+}
+
+/************************************************************
  *                WTSEnumerateEnumerateSessionsA  (WTSAPI32.@)
  */
 BOOL WINAPI WTSEnumerateSessionsA(HANDLE hServer, DWORD Reserved, DWORD Version,
@@ -241,8 +282,29 @@ BOOL WINAPI WTSEnumerateSessionsW(HANDLE hServer, DWORD Reserved, DWORD Version,
  */
 void WINAPI WTSFreeMemory(PVOID pMemory)
 {
-    HeapFree(GetProcessHeap(), 0, pMemory);
+    heap_free(pMemory);
 }
+
+/************************************************************
+ *                WTSFreeMemoryExA (WTSAPI32.@)
+ */
+BOOL WINAPI WTSFreeMemoryExA(WTS_TYPE_CLASS type, void *ptr, ULONG nmemb)
+{
+    TRACE("%d %p %d\n", type, ptr, nmemb);
+    heap_free(ptr);
+    return TRUE;
+}
+
+/************************************************************
+ *                WTSFreeMemoryExW (WTSAPI32.@)
+ */
+BOOL WINAPI WTSFreeMemoryExW(WTS_TYPE_CLASS type, void *ptr, ULONG nmemb)
+{
+    TRACE("%d %p %d\n", type, ptr, nmemb);
+    heap_free(ptr);
+    return TRUE;
+}
+
 
 /************************************************************
  *                WTSLogoffSession (WTSAPI32.@)
@@ -252,6 +314,27 @@ BOOL WINAPI WTSLogoffSession(HANDLE hserver, DWORD session_id, BOOL bwait)
     FIXME("(%p, 0x%x, %d): stub\n", hserver, session_id, bwait);
     SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
     return FALSE;
+}
+
+
+/************************************************************
+ *                WTSOpenServerExW (WTSAPI32.@)
+ */
+HANDLE WINAPI WTSOpenServerExW(WCHAR *server_name)
+{
+    FIXME("(%s) stub\n", debugstr_w(server_name));
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return NULL;
+}
+
+/************************************************************
+ *                WTSOpenServerExA (WTSAPI32.@)
+ */
+HANDLE WINAPI WTSOpenServerExA(char *server_name)
+{
+    FIXME("(%s) stub\n", debugstr_a(server_name));
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return NULL;
 }
 
 /************************************************************
@@ -284,11 +367,74 @@ BOOL WINAPI WTSQuerySessionInformationA(
     LPSTR* Buffer,
     DWORD* BytesReturned)
 {
+#ifdef __REACTOS__
+    const size_t wcsErrorCode = -1;
+    LPWSTR buffer = NULL;
+    LPSTR ansiBuffer = NULL;
+    DWORD bytesReturned = 0;
+    BOOL result = FALSE;
+    size_t len;
+
+    if (!BytesReturned || !Buffer)
+    {
+        SetLastError(ERROR_INVALID_USER_BUFFER);
+        return FALSE;
+    }
+
+    if (!WTSQuerySessionInformationW(hServer, SessionId, WTSInfoClass, &buffer, &bytesReturned))
+    {
+        ansiBuffer = (LPSTR)buffer;
+        *Buffer = ansiBuffer;
+        *BytesReturned = bytesReturned;
+        return FALSE;
+    }
+
+    switch (WTSInfoClass)
+    {
+        case WTSInitialProgram:
+        case WTSApplicationName:
+        case WTSWorkingDirectory:
+        case WTSOEMId:
+        case WTSUserName:
+        case WTSWinStationName:
+        case WTSDomainName:
+        case WTSClientName:
+        case WTSClientDirectory:
+        {
+            len = wcstombs(NULL, buffer, 0);
+            if (len != wcsErrorCode)
+            {
+                len++;
+                ansiBuffer = heap_alloc_zero(len);
+                if (ansiBuffer && (wcstombs(ansiBuffer, buffer, len) != wcsErrorCode))
+                {
+                    result = TRUE;
+                    bytesReturned = len;
+                }
+            }
+            WTSFreeMemory(buffer);
+            break;
+        }
+
+        default:
+        {
+            result = TRUE;
+            ansiBuffer = (LPSTR)buffer;
+            break;
+        }
+    }
+
+    *Buffer = ansiBuffer;
+    *BytesReturned = bytesReturned;
+
+    return result;
+#else
     /* FIXME: Forward request to winsta.dll::WinStationQueryInformationA */
     FIXME("Stub %p 0x%08x %d %p %p\n", hServer, SessionId, WTSInfoClass,
         Buffer, BytesReturned);
 
     return FALSE;
+#endif
 }
 
 /************************************************************
@@ -301,11 +447,139 @@ BOOL WINAPI WTSQuerySessionInformationW(
     LPWSTR* Buffer,
     DWORD* BytesReturned)
 {
+#ifdef __REACTOS__
+    if (!BytesReturned || !Buffer)
+    {
+        SetLastError(ERROR_INVALID_USER_BUFFER);
+        return FALSE;
+    }
+
+#if (NTDDI_VERSION >= NTDDI_WS08)
+    if (WTSInfoClass > WTSIsRemoteSession)
+#else
+    if (WTSInfoClass > WTSClientProtocolType)
+#endif
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    switch (WTSInfoClass)
+    {
+        case WTSSessionId:
+        {
+            const DWORD size = sizeof(ULONG);
+            ULONG* output = heap_alloc_zero(size);
+            if (!output)
+            {
+                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+                return FALSE;
+            }
+
+            *output = NtCurrentTeb()->Peb->SessionId;
+            *Buffer = (LPWSTR)output;
+            *BytesReturned = size;
+            return TRUE;
+        }
+
+        case WTSUserName:
+        {
+            WCHAR* username;
+            DWORD count = 0;
+
+            GetUserNameW(NULL, &count);
+            if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+                return FALSE;
+            username = heap_alloc(count * sizeof(WCHAR));
+            if (!username)
+            {
+                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+                return FALSE;
+            }
+
+            GetUserNameW(username, &count);
+            *Buffer = username;
+            *BytesReturned = count * sizeof(WCHAR);
+            return TRUE;
+        }
+
+        case WTSConnectState:
+        {
+            const DWORD size = sizeof(DWORD);
+            WCHAR* output = heap_alloc_zero(size);
+            if (!output)
+            {
+                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+                return FALSE;
+            }
+
+            *Buffer = output;
+            *BytesReturned = size;
+            return TRUE;
+        }
+
+        case WTSClientProtocolType:
+        {
+            const DWORD size = sizeof(WORD);
+            WCHAR* output = heap_alloc_zero(size);
+            if (!output)
+            {
+                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+                return FALSE;
+            }
+
+            *Buffer = output;
+            *BytesReturned = size;
+            return TRUE;
+        }
+
+#if (NTDDI_VERSION >= NTDDI_WS08)
+        case WTSIdleTime:
+        case WTSLogonTime:
+        case WTSIncomingBytes:
+        case WTSOutgoingBytes:
+        case WTSIncomingFrames:
+        case WTSOutgoingFrames:
+        {
+            SetLastError(ERROR_NOT_SUPPORTED);
+            return FALSE;
+        }
+#endif /* (NTDDI_VERSION >= NTDDI_WS08) */
+
+        default:
+        {
+            if (BytesReturned)
+                *BytesReturned = 0;
+
+            break;
+        }
+    }
+
     /* FIXME: Forward request to winsta.dll::WinStationQueryInformationW */
     FIXME("Stub %p 0x%08x %d %p %p\n", hServer, SessionId, WTSInfoClass,
         Buffer, BytesReturned);
 
     return FALSE;
+#else
+    /* FIXME: Forward request to winsta.dll::WinStationQueryInformationW */
+    FIXME("Stub %p 0x%08x %d %p %p\n", hServer, SessionId, WTSInfoClass,
+        Buffer, BytesReturned);
+
+    if (WTSInfoClass == WTSUserName)
+    {
+        WCHAR *username;
+        DWORD count = 0;
+
+        GetUserNameW(NULL, &count);
+        if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) return FALSE;
+        if (!(username = heap_alloc(count * sizeof(WCHAR)))) return FALSE;
+        GetUserNameW(username, &count);
+        *Buffer = username;
+        *BytesReturned = count * sizeof(WCHAR);
+        return TRUE;
+    }
+    return FALSE;
+#endif
 }
 
 /************************************************************
@@ -313,7 +587,7 @@ BOOL WINAPI WTSQuerySessionInformationW(
  */
 BOOL WINAPI WTSQueryUserToken(ULONG session_id, PHANDLE token)
 {
-    FIXME("%u %p\n", session_id, token);
+    FIXME("%u %p semi-stub!\n", session_id, token);
 
     if (!token)
     {
@@ -357,7 +631,7 @@ BOOL WINAPI WTSRegisterSessionNotification(HWND hWnd, DWORD dwFlags)
 }
 
 /************************************************************
- *                WTSRegisterSessionNotification (WTSAPI32.@)
+ *                WTSRegisterSessionNotificationEx (WTSAPI32.@)
  */
 BOOL WINAPI WTSRegisterSessionNotificationEx(HANDLE hServer, HWND hWnd, DWORD dwFlags)
 {

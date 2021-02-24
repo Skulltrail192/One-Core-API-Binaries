@@ -18,14 +18,30 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "msipriv.h"
+#include <stdarg.h>
 
-#include <stdio.h>
-#include <propvarutil.h>
+#define COBJMACROS
+#define NONAMELESSUNION
+
+#include "stdio.h"
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "winnls.h"
+#include "shlwapi.h"
+#include "wine/debug.h"
+#include "wine/unicode.h"
+#include "msi.h"
+#include "msiquery.h"
+#include "msidefs.h"
+#include "msipriv.h"
+#include "objidl.h"
+#include "propvarutil.h"
+#include "msiserver.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(msi);
 
-#include <pshpack1.h>
+#include "pshpack1.h"
 
 typedef struct { 
     WORD wByteOrder;
@@ -63,7 +79,7 @@ typedef struct {
     } u;
 } PROPERTY_DATA;
  
-#include <poppack.h>
+#include "poppack.h"
 
 static HRESULT (WINAPI *pPropVariantChangeType)
     (PROPVARIANT *ppropvarDest, REFPROPVARIANT propvarSrc,
@@ -88,11 +104,21 @@ static void MSI_CloseSummaryInfo( MSIOBJECTHDR *arg )
     IStorage_Release( si->storage );
 }
 
+#ifdef __REACTOS__
+#define PID_DICTIONARY_MSI 0
+#define PID_CODEPAGE_MSI 1
+#define PID_SECURITY_MSI 19
+#endif
+
 static UINT get_type( UINT uiProperty )
 {
     switch( uiProperty )
     {
+#ifdef __REACTOS__
+    case PID_CODEPAGE_MSI:
+#else
     case PID_CODEPAGE:
+#endif
          return VT_I2;
 
     case PID_SUBJECT:
@@ -113,7 +139,11 @@ static UINT get_type( UINT uiProperty )
 
     case PID_WORDCOUNT:
     case PID_CHARCOUNT:
+#ifdef __REACTOS__
+    case PID_SECURITY_MSI:
+#else
     case PID_SECURITY:
+#endif
     case PID_PAGECOUNT:
          return VT_I4;
     }
@@ -924,10 +954,18 @@ static UINT parse_prop( LPCWSTR prop, LPCWSTR value, UINT *pid, INT *int_value,
     *pid = atoiW( prop );
     switch (*pid)
     {
+#ifdef __REACTOS__
+    case PID_CODEPAGE_MSI:
+#else
     case PID_CODEPAGE:
+#endif
     case PID_WORDCOUNT:
     case PID_CHARCOUNT:
+#ifdef __REACTOS__
+    case PID_SECURITY_MSI:
+#else
     case PID_SECURITY:
+#endif
     case PID_PAGECOUNT:
         *int_value = atoiW( value );
         break;

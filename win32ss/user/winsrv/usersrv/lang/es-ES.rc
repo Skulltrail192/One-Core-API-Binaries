@@ -1,4 +1,4 @@
-/* Spanish translation by Javier Remacha 2008-26-01 */
+/* Spanish translation by Javier Remacha 2008-26-01. Revision by Julen Urizar Compains 2020-09-04*/
 
 LANGUAGE LANG_SPANISH, SUBLANG_NEUTRAL
 
@@ -23,4 +23,21 @@ BEGIN
     LTEXT "Este programa no responde.", IDC_STATIC, 7, 7, 178, 8
     LTEXT "Para volver a ReactOS y ver el estado del programa, haga clic en Cancelar.", IDC_STATIC, 7, 26, 178, 16
     LTEXT "Si elige finalizar el programa ahora, perderá todos los datos no guardados. Para finalizar el programa ahora, haga clic en Finalizar ahora.", IDC_STATIC, 7, 53, 178, 26
+END
+
+
+STRINGTABLE
+BEGIN
+    IDS_SEVERITY_SUCCESS        "Fin con éxito"
+    IDS_SEVERITY_INFORMATIONAL  "Información del Sistema"
+    IDS_SEVERITY_WARNING        "Advertencia del Sistema"
+    IDS_SEVERITY_ERROR          "Error del Sistema"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_SYSTEM_PROCESS          "Proceso del Sistema"
+    IDS_UNKNOWN_SOFTWARE_EXCEPT "Excepción Desconocida de Software"
+    IDS_OK_TERMINATE_PROGRAM    "Haz clic en OK para finalizar el programa."
+    IDS_CANCEL_DEBUG_PROGRAM    "Haz clic en CANCELAR para depurar el programa."
 END

@@ -1,21 +1,10 @@
 /*
- * Copyright 2011 André Hentschel
- * Copyright 2013 Mislav Blažević
- * Copyright 2015-2017 Mark Jansen (mark.jansen@reactos.org)
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+ * PROJECT:     ReactOS Application compatibility module
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     Sdb low level glue layer
+ * COPYRIGHT:   Copyright 2011 André Hentschel
+ *              Copyright 2013 Mislav Blaževic
+ *              Copyright 2015-2019 Mark Jansen (mark.jansen@reactos.org)
  */
 
 #include "ntndk.h"
@@ -107,7 +96,7 @@ PDB WINAPI SdbpCreate(LPCWSTR path, PATH_TYPE type, BOOL write)
     IO_STATUS_BLOCK io;
     OBJECT_ATTRIBUTES attr;
     UNICODE_STRING str;
-    PDB db;
+    PDB pdb;
 
     if (type == DOS_PATH)
     {
@@ -120,8 +109,8 @@ PDB WINAPI SdbpCreate(LPCWSTR path, PATH_TYPE type, BOOL write)
     }
 
     /* SdbAlloc zeroes the memory. */
-    db = (PDB)SdbAlloc(sizeof(DB));
-    if (!db)
+    pdb = (PDB)SdbAlloc(sizeof(DB));
+    if (!pdb)
     {
         SHIM_ERR("Failed to allocate memory for shim database\n");
         return NULL;
@@ -129,35 +118,40 @@ PDB WINAPI SdbpCreate(LPCWSTR path, PATH_TYPE type, BOOL write)
 
     InitializeObjectAttributes(&attr, &str, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-    Status = NtCreateFile(&db->file, (write ? FILE_GENERIC_WRITE : FILE_GENERIC_READ )| SYNCHRONIZE,
+    Status = NtCreateFile(&pdb->file, (write ? FILE_GENERIC_WRITE : FILE_GENERIC_READ )| SYNCHRONIZE,
                           &attr, &io, NULL, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ,
                           write ? FILE_SUPERSEDE : FILE_OPEN, FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
+
+    pdb->for_write = write;
 
     if (type == DOS_PATH)
         RtlFreeUnicodeString(&str);
 
     if (!NT_SUCCESS(Status))
     {
-        SdbCloseDatabase(db);
+        SdbCloseDatabase(pdb);
         SHIM_ERR("Failed to create shim database file: %lx\n", Status);
         return NULL;
     }
 
-    return db;
+    return pdb;
 }
 
-void WINAPI SdbpFlush(PDB db)
+void WINAPI SdbpFlush(PDB pdb)
 {
     IO_STATUS_BLOCK io;
-    NTSTATUS Status = NtWriteFile(db->file, NULL, NULL, NULL, &io,
-        db->data, db->write_iter, NULL, NULL);
-    if( !NT_SUCCESS(Status))
+    NTSTATUS Status;
+
+    ASSERT(pdb->for_write);
+    Status = NtWriteFile(pdb->file, NULL, NULL, NULL, &io,
+        pdb->data, pdb->write_iter, NULL, NULL);
+    if (!NT_SUCCESS(Status))
         SHIM_WARN("failed with 0x%lx\n", Status);
 }
 
 DWORD SdbpStrlen(PCWSTR string)
 {
-    return wcslen(string);
+    return (DWORD)wcslen(string);
 }
 
 DWORD SdbpStrsize(PCWSTR string)
@@ -183,15 +177,22 @@ BOOL WINAPI SdbpOpenMemMappedFile(LPCWSTR path, PMEMMAPPED mapping)
 
     RtlZeroMemory(mapping, sizeof(*mapping));
 
-    if(!RtlDosPathNameToNtPathName_U(path, &FileName, NULL, NULL))
-    {
-        RtlFreeUnicodeString(&FileName);
-        return FALSE;
-    }
+    RtlInitUnicodeString(&FileName, path);
 
     InitializeObjectAttributes(&ObjectAttributes, &FileName, OBJ_CASE_INSENSITIVE, NULL, NULL);
     Status = NtOpenFile(&mapping->file, GENERIC_READ | SYNCHRONIZE, &ObjectAttributes, &IoStatusBlock, FILE_SHARE_READ, FILE_SYNCHRONOUS_IO_NONALERT);
-    RtlFreeUnicodeString(&FileName);
+
+    if (Status == STATUS_OBJECT_NAME_INVALID || Status == STATUS_OBJECT_PATH_SYNTAX_BAD)
+    {
+        if (!RtlDosPathNameToNtPathName_U(path, &FileName, NULL, NULL))
+        {
+            SHIM_ERR("Failed to convert %S to Nt path: 0x%lx\n", path, Status);
+            return FALSE;
+        }
+        InitializeObjectAttributes(&ObjectAttributes, &FileName, OBJ_CASE_INSENSITIVE, NULL, NULL);
+        Status = NtOpenFile(&mapping->file, GENERIC_READ | SYNCHRONIZE, &ObjectAttributes, &IoStatusBlock, FILE_SHARE_READ, FILE_SYNCHRONOUS_IO_NONALERT);
+        RtlFreeUnicodeString(&FileName);
+    }
 
     if (!NT_SUCCESS(Status))
     {
@@ -257,63 +258,63 @@ BOOL WINAPI SdbpCheckTagType(TAG tag, WORD type)
     return TRUE;
 }
 
-BOOL WINAPI SdbpCheckTagIDType(PDB db, TAGID tagid, WORD type)
+BOOL WINAPI SdbpCheckTagIDType(PDB pdb, TAGID tagid, WORD type)
 {
-    TAG tag = SdbGetTagFromTagID(db, tagid);
+    TAG tag = SdbGetTagFromTagID(pdb, tagid);
     if (tag == TAG_NULL)
         return FALSE;
     return SdbpCheckTagType(tag, type);
 }
 
-PDB SdbpOpenDatabase(LPCWSTR path, PATH_TYPE type, PDWORD major, PDWORD minor)
+PDB SdbpOpenDatabase(LPCWSTR path, PATH_TYPE type)
 {
     IO_STATUS_BLOCK io;
     FILE_STANDARD_INFORMATION fsi;
-    PDB db;
+    PDB pdb;
     NTSTATUS Status;
     BYTE header[12];
 
-    db = SdbpCreate(path, type, FALSE);
-    if (!db)
+    pdb = SdbpCreate(path, type, FALSE);
+    if (!pdb)
         return NULL;
 
-    Status = NtQueryInformationFile(db->file, &io, &fsi, sizeof(FILE_STANDARD_INFORMATION), FileStandardInformation);
+    Status = NtQueryInformationFile(pdb->file, &io, &fsi, sizeof(FILE_STANDARD_INFORMATION), FileStandardInformation);
     if (!NT_SUCCESS(Status))
     {
-        SdbCloseDatabase(db);
+        SdbCloseDatabase(pdb);
         SHIM_ERR("Failed to get shim database size: 0x%lx\n", Status);
         return NULL;
     }
 
-    db->size = fsi.EndOfFile.u.LowPart;
-    db->data = SdbAlloc(db->size);
-    Status = NtReadFile(db->file, NULL, NULL, NULL, &io, db->data, db->size, NULL, NULL);
+    pdb->size = fsi.EndOfFile.u.LowPart;
+    pdb->data = SdbAlloc(pdb->size);
+    Status = NtReadFile(pdb->file, NULL, NULL, NULL, &io, pdb->data, pdb->size, NULL, NULL);
 
     if (!NT_SUCCESS(Status))
     {
-        SdbCloseDatabase(db);
+        SdbCloseDatabase(pdb);
         SHIM_ERR("Failed to open shim database file: 0x%lx\n", Status);
         return NULL;
     }
 
-    if (!SdbpReadData(db, &header, 0, 12))
+    if (!SdbpReadData(pdb, &header, 0, 12))
     {
-        SdbCloseDatabase(db);
+        SdbCloseDatabase(pdb);
         SHIM_ERR("Failed to read shim database header\n");
         return NULL;
     }
 
     if (memcmp(&header[8], "sdbf", 4) != 0)
     {
-        SdbCloseDatabase(db);
+        SdbCloseDatabase(pdb);
         SHIM_ERR("Shim database header is invalid\n");
         return NULL;
     }
 
-    *major = *(DWORD*)&header[0];
-    *minor = *(DWORD*)&header[4];
+    pdb->major = *(DWORD*)&header[0];
+    pdb->minor = *(DWORD*)&header[4];
 
-    return db;
+    return pdb;
 }
 
 
@@ -327,46 +328,61 @@ PDB SdbpOpenDatabase(LPCWSTR path, PATH_TYPE type, PDWORD major, PDWORD minor)
  */
 PDB WINAPI SdbOpenDatabase(LPCWSTR path, PATH_TYPE type)
 {
-    PDB db;
-    DWORD major, minor;
+    PDB pdb;
+    TAGID root, name;
 
-    db = SdbpOpenDatabase(path, type, &major, &minor);
-    if (!db)
+    pdb = SdbpOpenDatabase(path, type);
+    if (!pdb)
         return NULL;
 
-    if (major != 2 && major != 3)
+    if (pdb->major != 2 && pdb->major != 3)
     {
-        SdbCloseDatabase(db);
+        SdbCloseDatabase(pdb);
         SHIM_ERR("Invalid shim database version\n");
         return NULL;
     }
 
-    db->stringtable = SdbFindFirstTag(db, TAGID_ROOT, TAG_STRINGTABLE);
-    if(!SdbGetDatabaseID(db, &db->database_id))
+    pdb->stringtable = SdbFindFirstTag(pdb, TAGID_ROOT, TAG_STRINGTABLE);
+    if (!SdbGetDatabaseID(pdb, &pdb->database_id))
     {
         SHIM_INFO("Failed to get the database id\n");
     }
-    return db;
+
+    root = SdbFindFirstTag(pdb, TAGID_ROOT, TAG_DATABASE);
+    if (root != TAGID_NULL)
+    {
+        name = SdbFindFirstTag(pdb, root, TAG_NAME);
+        if (name != TAGID_NULL)
+        {
+            pdb->database_name = SdbGetStringTagPtr(pdb, name);
+        }
+    }
+    if (!pdb->database_name)
+    {
+        SHIM_INFO("Failed to get the database name\n");
+    }
+
+    return pdb;
 }
 
 /**
  * Closes specified database and frees its memory.
  *
- * @param [in]  db  Handle to the shim database.
+ * @param [in]  pdb  Handle to the shim database.
  */
-void WINAPI SdbCloseDatabase(PDB db)
+void WINAPI SdbCloseDatabase(PDB pdb)
 {
-    if (!db)
+    if (!pdb)
         return;
 
-    if (db->file)
-        NtClose(db->file);
-    if (db->string_buffer)
-        SdbCloseDatabase(db->string_buffer);
-    if (db->string_lookup)
-        SdbpTableDestroy(&db->string_lookup);
-    SdbFree(db->data);
-    SdbFree(db);
+    if (pdb->file)
+        NtClose(pdb->file);
+    if (pdb->string_buffer)
+        SdbCloseDatabase(pdb->string_buffer);
+    if (pdb->string_lookup)
+        SdbpTableDestroy(&pdb->string_lookup);
+    SdbFree(pdb->data);
+    SdbFree(pdb);
 }
 
 /**
@@ -396,7 +412,7 @@ BOOL WINAPI SdbGUIDFromString(PCWSTR GuidString, GUID *Guid)
 BOOL WINAPI SdbGUIDToString(CONST GUID *Guid, PWSTR GuidString, SIZE_T Length)
 {
     UNICODE_STRING GuidString_u;
-    if(NT_SUCCESS(RtlStringFromGUID(Guid, &GuidString_u)))
+    if (NT_SUCCESS(RtlStringFromGUID(Guid, &GuidString_u)))
     {
         HRESULT hr = StringCchCopyNW(GuidString, Length, GuidString_u.Buffer, GuidString_u.Length / 2);
         RtlFreeUnicodeString(&GuidString_u);
@@ -444,7 +460,7 @@ BOOL WINAPI SdbGetStandardDatabaseGUID(DWORD Flags, GUID* Guid)
         SHIM_ERR("Cannot obtain database guid for databases other than main\n");
         return FALSE;
     }
-    if(Guid)
+    if (Guid)
     {
         memcpy(Guid, copy_from, sizeof(GUID));
     }
@@ -462,20 +478,62 @@ BOOL WINAPI SdbGetStandardDatabaseGUID(DWORD Flags, GUID* Guid)
  */
 BOOL WINAPI SdbGetDatabaseVersion(LPCWSTR database, PDWORD VersionHi, PDWORD VersionLo)
 {
-    PDB db;
+    PDB pdb;
 
-    db = SdbpOpenDatabase(database, DOS_PATH, VersionHi, VersionLo);
-    if (db)
-        SdbCloseDatabase(db);
+    pdb = SdbpOpenDatabase(database, DOS_PATH);
+    if (pdb)
+    {
+        *VersionHi = pdb->major;
+        *VersionLo = pdb->minor;
+        SdbCloseDatabase(pdb);
+    }
 
     return TRUE;
+}
+
+/**
+ * @name SdbGetDatabaseInformation
+ * Get information about the database
+ *
+ * @param pdb           The database
+ * @param information   The returned information
+ * @return TRUE on success
+ */
+BOOL WINAPI SdbGetDatabaseInformation(PDB pdb, PDB_INFORMATION information)
+{
+    if (pdb && information)
+    {
+        information->dwFlags = 0;
+        information->dwMajor = pdb->major;
+        information->dwMinor = pdb->minor;
+        information->Description = pdb->database_name;
+        if (!SdbIsNullGUID(&pdb->database_id))
+        {
+            information->dwFlags |= DB_INFO_FLAGS_VALID_GUID;
+            information->Id = pdb->database_id;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/**
+ * @name SdbFreeDatabaseInformation
+ * Free up resources allocated in SdbGetDatabaseInformation
+ *
+ * @param information   The information retrieved from SdbGetDatabaseInformation
+ */
+VOID WINAPI SdbFreeDatabaseInformation(PDB_INFORMATION information)
+{
+    // No-op
 }
 
 
 /**
  * Find the first named child tag.
  *
- * @param [in]  database    The database.
+ * @param [in]  pdb         The database.
  * @param [in]  root        The tag to start at
  * @param [in]  find        The tag type to find
  * @param [in]  nametag     The child of 'find' that contains the name
@@ -483,22 +541,22 @@ BOOL WINAPI SdbGetDatabaseVersion(LPCWSTR database, PDWORD VersionHi, PDWORD Ver
  *
  * @return  The found tag, or TAGID_NULL on failure
  */
-TAGID WINAPI SdbFindFirstNamedTag(PDB db, TAGID root, TAGID find, TAGID nametag, LPCWSTR find_name)
+TAGID WINAPI SdbFindFirstNamedTag(PDB pdb, TAGID root, TAGID find, TAGID nametag, LPCWSTR find_name)
 {
     TAGID iter;
 
-    iter = SdbFindFirstTag(db, root, find);
+    iter = SdbFindFirstTag(pdb, root, find);
 
     while (iter != TAGID_NULL)
     {
-        TAGID tmp = SdbFindFirstTag(db, iter, nametag);
+        TAGID tmp = SdbFindFirstTag(pdb, iter, nametag);
         if (tmp != TAGID_NULL)
         {
-            LPCWSTR name = SdbGetStringTagPtr(db, tmp);
+            LPCWSTR name = SdbGetStringTagPtr(pdb, tmp);
             if (name && !wcsicmp(name, find_name))
                 return iter;
         }
-        iter = SdbFindNextTag(db, root, iter);
+        iter = SdbFindNextTag(pdb, root, iter);
     }
     return TAGID_NULL;
 }
@@ -514,22 +572,132 @@ TAGID WINAPI SdbFindFirstNamedTag(PDB db, TAGID root, TAGID find, TAGID nametag,
  */
 TAGREF WINAPI SdbGetLayerTagRef(HSDB hsdb, LPCWSTR layerName)
 {
-    PDB db = hsdb->db;
+    PDB pdb = hsdb->pdb;
 
-    TAGID database = SdbFindFirstTag(db, TAGID_ROOT, TAG_DATABASE);
+    TAGID database = SdbFindFirstTag(pdb, TAGID_ROOT, TAG_DATABASE);
     if (database != TAGID_NULL)
     {
-        TAGID layer = SdbFindFirstNamedTag(db, database, TAG_LAYER, TAG_NAME, layerName);
+        TAGID layer = SdbFindFirstNamedTag(pdb, database, TAG_LAYER, TAG_NAME, layerName);
         if (layer != TAGID_NULL)
         {
             TAGREF tr;
-            if (SdbTagIDToTagRef(hsdb, db, layer, &tr))
+            if (SdbTagIDToTagRef(hsdb, pdb, layer, &tr))
             {
                 return tr;
             }
         }
     }
     return TAGREF_NULL;
+}
+
+
+#ifndef REG_SZ
+#define REG_SZ 1
+#define REG_DWORD 4
+#define REG_QWORD 11
+#endif
+
+
+/**
+ * Retrieve a Data entry
+ *
+ * @param [in]  pdb                     The database.
+ * @param [in]  tiExe                   The tagID to start at
+ * @param [in,opt]  lpszDataName        The name of the Data entry to find, or NULL to return all.
+ * @param [out,opt]  lpdwDataType       Any of REG_SZ, REG_QWORD, REG_DWORD, ...
+ * @param [out]  lpBuffer               The output buffer
+ * @param [in,out,opt]  lpcbBufferSize  The size of lpBuffer in bytes
+ * @param [out,opt]  ptiData            The tagID of the data
+ *
+ * @return  ERROR_SUCCESS
+ */
+DWORD WINAPI SdbQueryDataExTagID(PDB pdb, TAGID tiExe, LPCWSTR lpszDataName, LPDWORD lpdwDataType, LPVOID lpBuffer, LPDWORD lpcbBufferSize, TAGID *ptiData)
+{
+    TAGID tiData, tiValueType, tiValue;
+    DWORD dwDataType, dwSizeRequired, dwInputSize;
+    LPCWSTR lpStringData;
+    /* Not supported yet */
+    if (!lpszDataName)
+        return ERROR_INVALID_PARAMETER;
+
+    tiData = SdbFindFirstNamedTag(pdb, tiExe, TAG_DATA, TAG_NAME, lpszDataName);
+    if (tiData == TAGID_NULL)
+    {
+        SHIM_INFO("No data tag found\n");
+        return ERROR_NOT_FOUND;
+    }
+
+    if (ptiData)
+        *ptiData = tiData;
+
+    tiValueType = SdbFindFirstTag(pdb, tiData, TAG_DATA_VALUETYPE);
+    if (tiValueType == TAGID_NULL)
+    {
+        SHIM_WARN("Data tag (0x%x) without valuetype\n", tiData);
+        return ERROR_INTERNAL_DB_CORRUPTION;
+    }
+
+    dwDataType = SdbReadDWORDTag(pdb, tiValueType, 0);
+    switch (dwDataType)
+    {
+    case REG_SZ:
+        tiValue = SdbFindFirstTag(pdb, tiData, TAG_DATA_STRING);
+        break;
+    case REG_DWORD:
+        tiValue = SdbFindFirstTag(pdb, tiData, TAG_DATA_DWORD);
+        break;
+    case REG_QWORD:
+        tiValue = SdbFindFirstTag(pdb, tiData, TAG_DATA_QWORD);
+        break;
+    default:
+        /* Not supported (yet) */
+        SHIM_WARN("Unsupported dwDataType=0x%x\n", dwDataType);
+        return ERROR_INVALID_PARAMETER;
+    }
+
+    if (lpdwDataType)
+        *lpdwDataType = dwDataType;
+
+    if (tiValue == TAGID_NULL)
+    {
+        SHIM_WARN("Data tag (0x%x) without data\n", tiData);
+        return ERROR_INTERNAL_DB_CORRUPTION;
+    }
+
+    if (dwDataType != REG_SZ)
+    {
+        dwSizeRequired = SdbGetTagDataSize(pdb, tiValue);
+    }
+    else
+    {
+        lpStringData = SdbpGetString(pdb, tiValue, &dwSizeRequired);
+        if (lpStringData == NULL)
+        {
+            return ERROR_INTERNAL_DB_CORRUPTION;
+        }
+    }
+    if (!lpcbBufferSize)
+        return ERROR_INSUFFICIENT_BUFFER;
+
+    dwInputSize = *lpcbBufferSize;
+    *lpcbBufferSize = dwSizeRequired;
+
+    if (dwInputSize < dwSizeRequired || lpBuffer == NULL)
+    {
+        SHIM_WARN("dwInputSize %u not sufficient to hold %u bytes\n", dwInputSize, dwSizeRequired);
+        return ERROR_INSUFFICIENT_BUFFER;
+    }
+
+    if (dwDataType != REG_SZ)
+    {
+        SdbpReadData(pdb, lpBuffer, tiValue + sizeof(TAG), dwSizeRequired);
+    }
+    else
+    {
+        StringCbCopyNW(lpBuffer, dwInputSize, lpStringData, dwSizeRequired);
+    }
+
+    return ERROR_SUCCESS;
 }
 
 

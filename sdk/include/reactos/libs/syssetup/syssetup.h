@@ -23,50 +23,42 @@
 #ifndef __SYSSETUP_H_INCLUDED__
 #define __SYSSETUP_H_INCLUDED__
 
-
-typedef struct _TZ_INFO
+typedef enum _PRODUCT_OPTION
 {
-    LONG Bias;
-    LONG StandardBias;
-    LONG DaylightBias;
-    SYSTEMTIME StandardDate;
-    SYSTEMTIME DaylightDate;
-} TZ_INFO, *PTZ_INFO;
+    PRODUCT_OPTION_SERVER,
+    PRODUCT_OPTION_WORKSTATION,
+    PRODUCT_OPTION_DEFAULT = PRODUCT_OPTION_SERVER
+} PRODUCT_OPTION, *PPRODUCT_OPTION;
 
-typedef struct _TIMEZONE_ENTRY
-{
-    struct _TIMEZONE_ENTRY *Prev;
-    struct _TIMEZONE_ENTRY *Next;
-    WCHAR Description[64];   /* 'Display' */
-    WCHAR StandardName[32];  /* 'Std' */
-    WCHAR DaylightName[32];  /* 'Dlt' */
-    TZ_INFO TimezoneInfo;    /* 'TZI' */
-    ULONG Index;
-} TIMEZONE_ENTRY, *PTIMEZONE_ENTRY;
-
+/* Private Setup data shared between syssetup.dll and netshell.dll */
 typedef struct _SETUPDATA
 {
     HFONT hTitleFont;
     HFONT hBoldFont;
 
+    WCHAR SourcePath[MAX_PATH];   // PCWSTR
+    WCHAR UnattendFile[MAX_PATH]; // PCWSTR
+
     WCHAR OwnerName[51];
     WCHAR OwnerOrganization[51];
     WCHAR ComputerName[MAX_COMPUTERNAME_LENGTH + 1];  /* max. 15 characters */
-    WCHAR AdminPassword[128];              /* max. 127 characters */
+    WCHAR AdminPassword[128];                         /* max. 127 characters */
     BOOL  UnattendSetup;
     BOOL  DisableGeckoInst;
 
     SYSTEMTIME SystemTime;
-    PTIMEZONE_ENTRY TimeZoneListHead;
-    PTIMEZONE_ENTRY TimeZoneListTail;
+    struct _TIMEZONE_ENTRY* TimeZoneListHead;
+    struct _TIMEZONE_ENTRY* TimeZoneListTail;
     DWORD TimeZoneIndex;
     DWORD DisableAutoDaylightTimeSet;
     LCID LocaleID;
 
-    HINF hUnattendedInf;
+    HINF hSetupInf;
 
     UINT uFirstNetworkWizardPage;
     UINT uPostNetworkWizardPage;
+
+    PRODUCT_OPTION ProductOption;
 } SETUPDATA, *PSETUPDATA;
 
 

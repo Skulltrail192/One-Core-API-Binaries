@@ -9,19 +9,6 @@ assoc (print all associations)\n\
 assoc .ext (print specific association)\n\
 assoc .ext= (remove specific association)\n\
 assoc .ext=FileType (add new association)\n"
-    STRING_ATTRIB_HELP "Viser eller endrer filattributtene.\n\n\
-ATTRIB [+R | -R] [+A | -A] [+S | -S] [+H | -H] fil ...\n\
-       [/S [/D]]\n\n\
-  +   Setter et attributt\n\
-  -   Fjerner et attributt\n\
-  R   Attributt: Skrivebeskyttet.\n\
-  A   Attributt: Arkiver.\n\
-  S   Attributt: System.\n\
-  H   Attributt: Skjult.\n\
-  /S  Behandler tilsvarende filer i gjeldende mappe\n\
-      og alle undermapper.\n\
-  /D  Bearbeider også mapper.\n\n\
-Skriv ATTRIB uten parametere for å vise attributtene til alle filer.\n"
     STRING_ALIAS_HELP "Setter, fjerner eller viser alias.\n\n\
 ALIAS [alias=[Kommando]]\n\n\
   alias    Navn for et alias.\n\
@@ -35,7 +22,7 @@ For å fjerne et alias fra alias-liste:\n\
     STRING_BEEP_HELP "Gir lydsignal til høyttaleren.\n\nPIP\n"
     STRING_CALL_HELP "Kaller et satsvis program fra et annet.\n\n\
 CALL [stasjon:][mappe]filnavn [satsvis-parameter]\n\n\
-  satsvis-parameter  Spesifisere noen kommando-linje informasjon trengs av \n\
+  satsvis-parameter  Spesifisere noen kommando-linje informasjon trengs av\n\
                    satsvis program."
     STRING_CD_HELP "Viser navnet på, eller endrer gjeldende mappe\n\n\
 CHDIR [/D][stasjon:][mappe]\n\
@@ -47,10 +34,6 @@ CD[..|.]\n\n\
   /D   Vil endre gjeldende stasjon og gjeldende mappe.\n\n\
 Tast CD stasjon: for å vise gjeldende mappe på spesifiserte stasjon.\n\
 Tast CD uten parametere for å vise gjeldende stasjon og mappe.\n"
-    STRING_CHCP_HELP "Viser eller velger aktive tegntabellnummer.\n\n\
-CHCP [nnn]\n\n\
-  nnn   Spesifisere aktive tegntabellnummer.\n\n\
-Skriv CHCP uten parametrer for å vise aktiv tegntabellnummer.\n"
     STRING_CHOICE_HELP "Venter på at bruker skal velge ett av alternativene.\n\n\
 CHOICE  [/C[:]valg][/N][/S][/T[:]c,nn][tekst]\n\n\
   /C[:]Valg  Spesifisere tillatte nøkler. Standard er JN.\n\
@@ -75,9 +58,9 @@ CMD [/[C|K] kommando][/P][/Q][/T:bf]\n\n\
               (kan ikke avsluttes).\n\
   /T:bf       Velg bakgrunn/forgrunn farge (se COLOR kommando).\n"
     STRING_COLOR_HELP1 "Velg standard forgrunns- og bakgrunnsfarger.\n\n\
-COLOR [attr [/-F]] \n\n\
-  attr        Spesifisere fargeattributter for konsollteksten\n\
-  /-F         Fyller ikke blank plass med fargeattributter\n\n\
+COLOR [attr [/-F]]\n\n\
+  attr        Spesifisere fargeattributter for konsollteksten.\n\
+  /-F         Fyller ikke blank plass med fargeattributter.\n\n\
 Det er tre nåter å spesifisere fargene:\n\
 1) [bright] navn på [bright] navn  (bare de tre første bokstaver er krevet)\n\
 2) desimal på desimal\n\
@@ -107,6 +90,14 @@ COPY [/V][/Y|/-Y][/A|/B] kilde [/A|/B]\n\
                eksisterende destinasjonsfil.\n\n\
 Bryteren /Y kan eksistere i COPYCMD miljøvariabel.\n\
 ...\n"
+    STRING_CTTY_HELP "Changes the standard I/O terminal device to an auxiliary device.\n\n\
+CTTY device\n\n\
+  device    The terminal device you want to use as the new standard I/O device.\n\
+            This name must refer to a valid character device:\n\
+            AUX, COMx (x=1..N), CON, LPTx (x=1..N), PRN, NUL.\n\
+            CON is usually the default standard I/O device.\n\n\
+To return control to the standard console, type: CTTY CON on the auxiliary\n\
+device."
     STRING_DATE_HELP1 "\nSkriv inn ny dato (mm%cdd%cyyyy): "
     STRING_DATE_HELP2 "\nSkriv inn ny dato (dd%cmm%cyyyy): "
     STRING_DATE_HELP3 "\nSkriv inn ny dato (yyyy%cmm%cdd): "
@@ -135,13 +126,13 @@ ERASE [/N /P /T /Q /S /W /Y /Z /A[[:]attributer]] fil ...\n\n\
         A     Arkiv filer\n\
         H     Skjulte filer\n\
         -     prefiks som betyr IKKE. (f.eks -R)\n"
-    STRING_DEL_HELP2 "Alle filer i mappen vil bli slettet!\nEr du sikker (J/N)?"
+    STRING_DEL_HELP2 "Alle filer i mappen vil bli slettet!\nEr du sikker (J/N)? "
     STRING_DEL_HELP3 "    %lu fil slettet\n"
     STRING_DEL_HELP4 "    %lu filer slettet\n"
-    STRING_DELAY_HELP "pause i n sekunder eller mikrosekunder\n\
+    STRING_DELAY_HELP "Pause i n sekunder eller mikrosekunder.\n\
 DELAY [/m]n\n\n\
-  /m          spesifiserer at n er mikrosekunder\n\
-              ellers er n sekunder\n"
+  /m          Spesifiserer at n er mikrosekunder\n\
+              ellers er n sekunder.\n"
     STRING_DIR_HELP1 "DIR [stasjon:][mappe][filnavn] [/A[[:]attributter]] [/B] [/C] [/D] [/L] [/N]\n\
   [/O[[:]sortering]] [/P] [/Q] [/R] [/S] [/T[[:]tidsfelt]] [/W] [/X] [/4]\n\n\
   [stasjon:][mappe][filnavn]\n\
@@ -165,7 +156,7 @@ DELAY [/m]n\n\n\
   /R          Displays alternate data streams of the files.\n\
   /S          Viser alle filer i angitt mappe og alle undermapper.\n\
   /T          Styrer hvilket tidsfelt som vises eller blir brukt for sortering\n\
-  timefelt    C  Opprettet \n\
+  timefelt    C  Opprettet\n\
               A  Sist lest\n\
               W  Sist skrevet\n\
   /W          Bruk fullt listeformat.\n\
@@ -204,15 +195,28 @@ PUSHD [mappe | ..]\n\n\
 Skriv ECHO uten parameter for å vise gjeldende ECHO innstillinger."
     STRING_ECHO_HELP5 "ECHO er %s\n"
     STRING_EXIT_HELP "Avslutt kommando linje interpreter.\n\nAVSLUTT [/b] [ExitCode]\n\n\
-  /B            Avslutt bare en batch fil.  \n\
+  /B            Avslutt bare en batch fil.\n\
                 Hvis det kjøres en batch fil på utsiden vil den avslutte cmd.exe\n\
   ExitCode      Denne verdien vil bli utpekt til ERRORLEVEL ved avslutting\n"
-    STRING_FOR_HELP1 "Kjør en spesifisert kommando for hver fil i en gruppe med filer\n\n\
-FOR %variabel IN (gruppe) DO kommando [parametere]\n\n\
-  %variable   Angir en erstattelig parameter.\n\
+    STRING_FOR_HELP1 "Kjør en spesifisert kommando for hver fil i en gruppe med filer.\n\n\
+FOR %variabel IN (gruppe) DO kommando [parametere]\n\
+FOR /L %variabel IN (start,step,end) DO kommando [parametere]\n\
+FOR /D %variabel IN (gruppe) DO kommando [parametere]\n\
+FOR /R [[drive:]path] IN (gruppe) DO kommando [parametere]\n\
+FOR /F [""options""] IN (gruppe) DO kommando [parametere]\n\n\
+  /L    Generates a number sequence from start to end incrementing by step.\n\
+  /D    Modifies the set to refer to directories instead of files.\n\
+  /R    Executes command for files in the set in the specified path (or current\n\
+        working directory if not specified) and every directory below.\n\
+  /F    Modifies the set to refer to the contents of the files in the set.\n\n\
+  %variabel   Angir en erstattelig parameter.\n\
   (sett)      Angir en gruppe med en eller flere filer. Jokertegn kan bli brukt.\n\
   kommando    Angir kommandoen som skal brukes for hver enkelt fil.\n\
-  parametere  Angir parameterne eller bryterne for angitte kommando.\n\n\
+  parametere  Angir parameterne eller bryterne for angitte kommando.\n\
+  options     Supported options are: eol, skip, delims, tokens, and usebackq.\n\n\
+Replacable parameters can be modified by adding a ~ and an optional qualifier\n\
+after the % and before the name (e.g. %~X). Supported qualifiers are:\n\
+f,d,p,n,x,s,a,t,z.\n\n\
 For å bruke FOR kommando i en satsvis fil, spesifisere %%variabel isteden for\n\
 %variabel.\n"
     STRING_FREE_HELP1 "\nVolum i stasjon %s er %-11s\n\
@@ -239,11 +243,6 @@ streng1==streng2  Angir et oppfylt vilkår hvis tekststrengene er like\n\
 EXIST filnavn     Angir et oppfylt vilkår hvis spesifisert filnavn eksisterer.\n\
 DEFINED variabel  Angir et oppfylt vilkår hvis spesifisert variabel er\n\
                   definert.\n"
-    STRING_LABEL_HELP1 "Viser eller endrer navn på stasjon.\n\nLABEL [stasjon:][merke]\n"
-    STRING_LABEL_HELP2 "Volumet i stasjon %c: er %s\n"
-    STRING_LABEL_HELP3 "Volumet i stasjon %c: er uten navn\n"
-    STRING_LABEL_HELP4 "Volumserienummeret er %04X-%04X\n"
-    STRING_LABEL_HELP5 "Volumnavn (11 tegn, Enter = intet navn)? "
     STRING_LOCALE_HELP1 "gjeldende tid er"
     STRING_MKDIR_HELP "Oppretter en mappe.\n\n\
 MKDIR [stasjon:]mappe\nMD [stasjon:]mappe"
@@ -360,8 +359,8 @@ REPLACE [drive1:][path1]filename [drive2:][path2] [/P] [/R] [/S] [/W] [/U]\n\n\
     STRING_REPLACE_HELP6 "Replace %s\n"
     STRING_REPLACE_HELP7 "No files added\n"
     STRING_REPLACE_HELP8 "%lu file(s) added\n"
-    STRING_REPLACE_HELP9 "Add %s (Y/N) "
-    STRING_REPLACE_HELP10 "Replace %s (Y/N) "
+    STRING_REPLACE_HELP9 "Add %s (Y/N)? "
+    STRING_REPLACE_HELP10 "Replace %s (Y/N)? "
     STRING_REPLACE_HELP11 "Adding %s\n"
     STRING_SHIFT_HELP "Endre posisjon for erstattelig parameter i et satsvis fil.\n\n\
 SHIFT [NED]"
@@ -385,7 +384,7 @@ START [""title""] [/D path] [/I] [/B] [/MIN] [/MAX] [/WAIT]\n\
   MIN         Starts with a minimized window.\n\
   MAX         Starts with a maximized window.\n\
   WAIT        Starts the command or program and waits for its termination.\n\
-  kommando     Spesifisere kommando for å kjøre.\n\
+  kommando    Spesifisere kommando for å kjøre.\n\
   parameters  Specifies the parameters to be given to the command or program.\n"
     STRING_TITLE_HELP "Velg vindustittel for kommandotolkvindu.\n\n\
 TITLE [streng]\n\n\
@@ -413,10 +412,10 @@ TIMER  [ON|OFF] [/S] [/n] [/Fn]\n\n\
                     1    hh%cmm%css%cdd\n\n\
 hvis hverken ON, OFF eller /S er spesifisert\n\
 vil status for stoppeklokken veksles.\n\n"
-    STRING_TYPE_HELP1 "Vis innholdet av tekstfiler.\n\nSkriv [stasjon:][mappe]filnavn \n\
+    STRING_TYPE_HELP1 "Vis innholdet av tekstfiler.\n\nSkriv [stasjon:][mappe]filnavn\n\
   /P          Vis en full skjerm om gangen.\n"
     STRING_VERIFY_HELP1 "Denne kommandoen er bare en etterlikning!!\n\
-Angir om det skal bekreftes at dine filer er skrevet korrekt til disk \n\n\
+Angir om det skal bekreftes at dine filer er skrevet korrekt til disk\n\n\
 VERIFY [ON | OFF]\n\n\
 Skriv VERIFY uten parametre for å vise gjeldende VERIFY innstillinger.\n"
     STRING_VERIFY_HELP2 "VERIFY er %s.\n"
@@ -431,12 +430,12 @@ Skriv: `ver /w'. Dette er gratis programvare, og du er velkommen til videreformi
 det under gitte betingelser; Skriv `ver /r' for detaljer. Skriv `ver /c' for en\n\
 liste av anerkjennelser."
     STRING_VERSION_HELP3 "\n Dette programet er fordelt i håpet som det vil bli brukbar,\n\
- men UTEN NOEN GARANTI; uten engang antydet garantid for \n\
- SALGBARHET eller BRUKBARHET FOR NOE MÅL.  Se \n\
+ men UTEN NOEN GARANTI; uten engang antydet garantid for\n\
+ SALGBARHET eller BRUKBARHET FOR NOE MÅL.  Se\n\
  GNU Generell Publikum Lisens for flere detaljer."
     STRING_VERSION_HELP4 "\n Dette programmet er gratis programvare; du kan videre-\n\
- formidle det og/eller modifisere det under betingelser av Generell Publikum \n\
-  Lisens som utgivelses av Free Software Foundation; enten versjon 2 av \n\
+ formidle det og/eller modifisere det under betingelser av Generell Publikum\n\
+  Lisens som utgivelses av Free Software Foundation; enten versjon 2 av\n\
   Lisens, eller (ved din mulighet) andre nyere versjon.\n"
     STRING_VERSION_HELP5 "\nSend bug rapporter til <ros-dev@reactos.org>.\n\
 oppdateringer er tilgjengelig her: http://www.reactos.org"
@@ -467,8 +466,6 @@ tittel        ny tittel\n"
     STRING_ALIAS_ERROR "Kommando linje for lang etter alias utvidelse!\n"
     STRING_ASSOC_ERROR "Fil association ble ikke funnet for utvidelsen %s\n"
     STRING_BATCH_ERROR "Feil ved åpning av satsvis fil\n"
-    STRING_CHCP_ERROR1 "Aktiv tegntabell: %u\n"
-    STRING_CHCP_ERROR4 "Ugyldig tegntabell\n"
     STRING_CHOICE_ERROR "Ugyldig  valg. Forventet format: /C[:]valg"
     STRING_CHOICE_ERROR_TXT "Ugyldig  valg. Forventet format: /T[:]c,nn"
     STRING_CHOICE_ERROR_OPTION "Ulovlig operasjon: %s"
@@ -478,8 +475,7 @@ tittel        ny tittel\n"
     STRING_CMD_ERROR4 "Kjører %s...\n"
     STRING_CMD_ERROR5 "Kjører cmdexit.bat...\n"
     STRING_COLOR_ERROR1 "Samme farge feil! (Bakgrunn og forgrunn kan ikke ha samme farge)"
-    STRING_COLOR_ERROR2 "feil i farge spesifikasjon"
-    STRING_COLOR_ERROR3 "Farge %02x\n"
+    STRING_COLOR_ERROR2 "Feil i farge spesifikasjon"
     STRING_CONSOLE_ERROR "Ukjent feil: %d\n"
     STRING_COPY_ERROR1 "Feil: kan ikke åpne kilden - %s!\n"
     STRING_COPY_ERROR2 "Feil: kan ikke kopiere til seg selv!\n"
@@ -487,7 +483,7 @@ tittel        ny tittel\n"
     STRING_COPY_ERROR4 "Feil: Ikke implementert enda!\n"
     STRING_DATE_ERROR "Ugyldig dato."
     STRING_DEL_ERROR5 "Filen %s vil bli slettet! "
-    STRING_DEL_ERROR6 "Er du sikker (J/N)?"
+    STRING_DEL_ERROR6 "Er du sikker (J/N)? "
     STRING_DEL_ERROR7 "Sletter: %s\n"
     STRING_ERROR_ERROR1 "Ukjent feil! Feilkode: 0x%lx\n"
     STRING_ERROR_ERROR2 "Syntaks feil"
@@ -497,7 +493,7 @@ tittel        ny tittel\n"
     STRING_FOR_ERROR4 "ingen kommando etter 'gjøre'."
     STRING_FREE_ERROR1 "Ugyldig driver"
     STRING_FREE_ERROR2 "utmerket"
-    STRING_GOTO_ERROR1 "Ingen merke spesifisert for GÅTIL"
+    STRING_GOTO_ERROR1 "Ingen merke spesifisert for GOTO"
     STRING_GOTO_ERROR2 "merke '%s' ikke funnet\n"
     STRING_MD_ERROR "En undermappe eller fil finnes allerede.\n"
     STRING_MD_ERROR2 "Stien til den nye mappen eksisterer ikke.\n"
@@ -506,7 +502,7 @@ tittel        ny tittel\n"
     STRING_REN_ERROR1 "MoveFile() mislykkes. Feil: %lu\n"
     STRING_TIME_ERROR1 "Ugyldig tid."
     STRING_TYPE_ERROR1 "Ugyldig alternativ '/%s'\n"
-    STRING_WINDOW_ERROR1 "vinduet ble ikke funnet"
+    STRING_WINDOW_ERROR1 "Vinduet ble ikke funnet"
     STRING_ERROR_PARAMETERF_ERROR "Parameter format ikke riktig - %c\n"
     STRING_ERROR_INVALID_SWITCH "Ugyldig bryter  - /%c\n"
     STRING_ERROR_TOO_MANY_PARAMETERS "For mange parametere - %s\n"

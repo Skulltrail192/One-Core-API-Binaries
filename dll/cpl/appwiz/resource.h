@@ -22,10 +22,18 @@
 #define IDS_CPLSYSTEMDESCRIPTION	2001
 #define IDS_CREATE_SHORTCUT         2021
 #define IDS_ERROR_NOT_FOUND         2022
+#define IDS_NEW_INTERNET_SHORTCUT   2023
+#define IDS_CANTMAKEINETSHORTCUT    2024
+#define IDS_CANTMAKESHORTCUT        2025
+#define IDS_NO_MEMORY               2026
+#define IDS_NO_DIRECTORY            2027
+#define IDS_INVALID_PATH            2028
+#define IDS_INVALID_NAME            2029
 
 #define IDS_DOWNLOADING        14
 #define IDS_INSTALLING         15
 #define IDS_INVALID_SHA        16
+#define IDS_DWL_FAILED         17
 
 /* Controls */
 #define IDC_SHORTCUT_LOCATION	107

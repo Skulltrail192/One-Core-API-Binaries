@@ -20,7 +20,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+#include <string.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "winerror.h"
+#include "mmsystem.h"
+#define NOBITMAP
+#include "mmreg.h"
+#include "msacm.h"
+#include "msacmdrv.h"
 #include "wineacm.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(msacm);
 
 /***********************************************************************
  *           acmFilterChooseA (MSACM32.@)
@@ -347,8 +361,8 @@ MMRESULT WINAPI acmFilterTagDetailsW(HACMDRIVER had, PACMFILTERTAGDETAILSW paftd
 
     if (mmr == MMSYSERR_NOERROR &&
 	paftd->dwFilterTag == WAVE_FORMAT_PCM && paftd->szFilterTag[0] == 0)
-        MultiByteToWideChar( CP_ACP, 0, "PCM", -1, paftd->szFilterTag,
-                             sizeof(paftd->szFilterTag)/sizeof(WCHAR) );
+        MultiByteToWideChar(CP_ACP, 0, "PCM", -1, paftd->szFilterTag,
+                            ARRAY_SIZE(paftd->szFilterTag));
 
     return mmr;
 }

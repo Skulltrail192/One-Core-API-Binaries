@@ -6,7 +6,7 @@ spec2def(wbemdisp.dll wbemdisp.spec)
 list(APPEND SOURCE
     locator.c
     main.c
-    wbemdisp_private.h)
+    precomp.h)
 
 add_idl_headers(wbemdisp_idlheader wbemdisp_classes.idl)
 add_typelib(wbemdisp_tlb.idl)
@@ -18,7 +18,7 @@ list(APPEND wbemdisp_rc_deps
 
 set_source_files_properties(wbemdisp.rc PROPERTIES OBJECT_DEPENDS "${wbemdisp_rc_deps}")
 
-add_library(wbemdisp SHARED
+add_library(wbemdisp MODULE
     ${SOURCE}
     guid.c
     wbemdisp.rc
@@ -28,5 +28,5 @@ set_module_type(wbemdisp win32dll)
 target_link_libraries(wbemdisp uuid wine)
 add_dependencies(wbemdisp stdole2 wbemdisp_idlheader)
 add_importlibs(wbemdisp oleaut32 ole32 msvcrt kernel32 ntdll)
-add_pch(wbemdisp wbemdisp_private.h SOURCE)
+add_pch(wbemdisp precomp.h SOURCE)
 add_cd_file(TARGET wbemdisp DESTINATION reactos/system32/wbem FOR all)

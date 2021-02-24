@@ -2,7 +2,23 @@
 
 #include <ndk/cmfuncs.h>
 
-#include <wine/debug.h>
+#define MAX_USER_MODE_DRV_BUFFER 526
+
+//
+// UMPD Packet Header should match win32ss/include/ntumpd.h
+//
+typedef struct _UMPDPKTHEAD
+{
+    INT       Size;
+    INT       Index;
+    INT       RetSize;
+    DWORD     Reserved;
+    HUMPD     humpd;
+    ULONG_PTR Buffer[];
+} UMPDPKTHEAD, *PUMPDPKTHEAD;
+
+INT WINAPI GdiPrinterThunk(PUMPDPKTHEAD,PVOID,INT);
+
 WINE_DEFAULT_DEBUG_CHANNEL(user32);
 
 #define KEY_LENGTH 1024
@@ -206,6 +222,8 @@ PVOID apfnDispatch[USER32_CALLBACK_MAXIMUM + 1] =
     User32CallDDEPostFromKernel,
     User32CallDDEGetFromKernel,
     User32CallOBMFromKernel,
+    User32CallLPKFromKernel,
+    User32CallUMPDFromKernel,
 };
 
 
@@ -359,7 +377,7 @@ ClientThreadSetup(VOID)
 
     // FIXME: Disabling this call is a HACK!! See also User32CallClientThreadSetupFromKernel...
     // return ClientThreadSetupHelper(FALSE);
-    UNIMPLEMENTED;
+    TRACE("ClientThreadSetup is not implemented\n");
     return TRUE;
 }
 
@@ -575,7 +593,7 @@ User32CallGetCharsetInfo(PVOID Arguments, ULONG ArgumentLength)
 
   TRACE("GetCharsetInfo\n");
 
-  Ret = TranslateCharsetInfo((DWORD *)pgci->Locale, &pgci->Cs, TCI_SRCLOCALE);
+  Ret = TranslateCharsetInfo((DWORD *)(ULONG_PTR)pgci->Locale, &pgci->Cs, TCI_SRCLOCALE);
 
   return ZwCallbackReturn(Arguments, ArgumentLength, Ret ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL);
 }
@@ -641,4 +659,55 @@ User32CallOBMFromKernel(PVOID Arguments, ULONG ArgumentLength)
   Common->oembmi[OBI_UPARROWI].cy = bmp.bmHeight;
 
   return ZwCallbackReturn(Arguments, ArgumentLength, STATUS_SUCCESS);
+}
+
+NTSTATUS WINAPI User32CallLPKFromKernel(PVOID Arguments, ULONG ArgumentLength)
+{
+    BOOL bResult;
+    PLPK_CALLBACK_ARGUMENTS Argument;
+
+    Argument = (PLPK_CALLBACK_ARGUMENTS)Arguments;
+
+    Argument->lpString = (LPWSTR)((ULONG_PTR)Argument->lpString + (ULONG_PTR)Argument);
+
+    bResult = ExtTextOutW(Argument->hdc,
+                          Argument->x,
+                          Argument->y,
+                          Argument->flags,
+                          (Argument->bRect) ? &Argument->rect : NULL,
+                          Argument->lpString,
+                          Argument->count,
+                          NULL);
+
+    return ZwCallbackReturn(&bResult, sizeof(BOOL), STATUS_SUCCESS);
+}
+
+NTSTATUS WINAPI User32CallUMPDFromKernel(PVOID Arguments, ULONG ArgumentLength)
+{
+    DWORD Buffer[MAX_USER_MODE_DRV_BUFFER];
+    INT cbSize = 0;
+    NTSTATUS Status = STATUS_SUCCESS;
+    PUMPDPKTHEAD pkt, pktOut = NULL;
+
+    pkt = (PUMPDPKTHEAD)Arguments;
+
+    if ( pkt->RetSize <= sizeof(Buffer) )
+    {
+        pktOut = (PUMPDPKTHEAD)Buffer;
+
+        if ( (GdiPrinterThunk( pkt, pktOut, pkt->RetSize ) == GDI_ERROR) )
+        {
+            pktOut = NULL;
+            Status = STATUS_UNSUCCESSFUL;
+        }
+        else
+        {
+            cbSize = pkt->RetSize;
+        }
+    }
+    else
+    {
+       Status = STATUS_NO_MEMORY;   
+    }
+    return ZwCallbackReturn( pktOut, cbSize, Status );
 }

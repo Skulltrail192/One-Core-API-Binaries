@@ -33,7 +33,9 @@ list(APPEND SOURCE
     src/libtess/render.c
     src/libtess/sweep.c
     src/libtess/tess.c
-    src/libtess/tessmono.c
+    src/libtess/tessmono.c)
+
+list(APPEND LIBNURBS_SOURCE
     src/libnurbs/interface/bezierEval.cc
     src/libnurbs/interface/bezierPatch.cc
     src/libnurbs/interface/bezierPatchMesh.cc
@@ -95,7 +97,6 @@ list(APPEND SOURCE
     src/libnurbs/nurbtess/monoTriangulation.cc
     src/libnurbs/nurbtess/partitionX.cc
     src/libnurbs/nurbtess/partitionY.cc
-    src/libnurbs/nurbtess/polyDBG.cc
     src/libnurbs/nurbtess/polyUtil.cc
     src/libnurbs/nurbtess/primitiveStream.cc
     src/libnurbs/nurbtess/quicksort.cc
@@ -107,14 +108,26 @@ list(APPEND SOURCE
     src/libnurbs/nurbtess/sampleMonoPoly.cc
     src/libnurbs/nurbtess/sampledLine.cc
     src/libnurbs/nurbtess/searchTree.cc
+    precomp.h)
+
+add_library(glu32 MODULE
+    ${LIBNURBS_SOURCE}
+    src/libnurbs/nurbtess/polyDBG.cc
+    ${SOURCE}
+    glu32.rc
     ${CMAKE_CURRENT_BINARY_DIR}/glu32.def)
 
-add_library(glu32 SHARED ${SOURCE} glu32.rc)
 set_module_type(glu32 win32dll)
 
 if(NOT MSVC)
-    add_target_compile_flags(glu32 "-Wno-write-strings -Wno-unused-but-set-variable")
+    target_compile_options(glu32 PRIVATE -Wno-write-strings -Wno-unused-but-set-variable)
+    # Prevent a warning when comparing 'this' against 0
+    set_source_files_properties(src/libnurbs/internals/arc.cc PROPERTIES COMPILE_FLAGS "-Wno-nonnull-compare")
+elseif(USE_CLANG_CL)
+    target_compile_options(glu32 PRIVATE -Wno-self-assign -Wno-unused-function -Wno-microsoft-include)
+    target_compile_options(glu32 PRIVATE -Wno-deprecated-register -Wno-tautological-undefined-compare)
 endif()
 
 add_importlibs(glu32 opengl32 gdi32 msvcrt kernel32 ntdll)
+add_pch(glu32 precomp.h LIBNURBS_SOURCE)
 add_cd_file(TARGET glu32 DESTINATION reactos/system32 FOR all)

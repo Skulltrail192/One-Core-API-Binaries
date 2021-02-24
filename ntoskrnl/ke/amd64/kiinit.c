@@ -19,8 +19,6 @@
 
 /* GLOBALS *******************************************************************/
 
-extern BOOLEAN RtlpUse16ByteSLists;
-
 /* Function pointer for early debug prints */
 ULONG (*FrLdrDbgPrint)(const char *Format, ...);
 
@@ -42,6 +40,7 @@ void KiSystemCallEntry32();
 
 /* FUNCTIONS *****************************************************************/
 
+INIT_FUNCTION
 VOID
 NTAPI
 KiInitMachineDependent(VOID)
@@ -74,18 +73,16 @@ KiInitMachineDependent(VOID)
         DPRINT("PAT support detected but not yet taken advantage of!\n");
     }
 
-        /* Allocate the IOPM save area. */
+//        /* Allocate the IOPM save area */
 //        Ki386IopmSaveArea = ExAllocatePoolWithTag(PagedPool,
-//                                                  PAGE_SIZE * 2,
-//                                                  TAG('K', 'e', ' ', ' '));
+//                                                  IOPM_SIZE,
+//                                                  '  eK');
 //        if (!Ki386IopmSaveArea)
 //        {
 //            /* Bugcheck. We need this for V86/VDM support. */
-//            KeBugCheckEx(NO_PAGES_AVAILABLE, 2, PAGE_SIZE * 2, 0, 0);
+//            KeBugCheckEx(NO_PAGES_AVAILABLE, 2, IOPM_SIZE, 0, 0);
 //        }
 
-    /* Initialize 8/16 bit SList support */
-    RtlpUse16ByteSLists = (KeFeatureBits & KF_CMPXCHG16B) ? TRUE: FALSE;
 }
 
 VOID
@@ -368,6 +365,7 @@ KiInitModuleList(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     }
 }
 
+INIT_FUNCTION
 VOID
 NTAPI
 KiSystemStartup(IN PLOADER_PARAMETER_BLOCK LoaderBlock)

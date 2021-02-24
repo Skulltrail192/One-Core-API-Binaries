@@ -18,99 +18,18 @@
  */
 
 #include <freeldr.h>
-#include <debug.h>
 
-DBG_DEFAULT_CHANNEL(WARNING);
+#include <debug.h>
+DBG_DEFAULT_CHANNEL(DISK);
+
+#ifdef _M_IX86
 
 BOOLEAN      DriveMapInstalled = FALSE;    // Tells us if we have already installed our drive map int 13h handler code
 ULONG        OldInt13HandlerAddress = 0;   // Address of BIOS int 13h handler
 ULONG        DriveMapHandlerAddress = 0;   // Linear address of our drive map handler
 ULONG        DriveMapHandlerSegOff = 0;    // Segment:offset style address of our drive map handler
 
-#ifndef _MSC_VER
-VOID DriveMapMapDrivesInSection(PCSTR SectionName)
-{
-    CHAR           SettingName[80];
-    CHAR           SettingValue[80];
-    CHAR           Drive1[80];
-    CHAR           Drive2[80];
-    ULONG          SectionId;
-    ULONG          SectionItemCount;
-    ULONG          Index;
-    ULONG          Index2;
-    DRIVE_MAP_LIST DriveMapList;
-
-    RtlZeroMemory(&DriveMapList, sizeof(DRIVE_MAP_LIST));
-
-    if (!IniOpenSection(SectionName, &SectionId))
-    {
-        return;
-    }
-
-    // Get the number of items in this section
-    SectionItemCount = IniGetNumSectionItems(SectionId);
-
-    // Loop through each one and check if its a DriveMap= setting
-    for (Index=0; Index<SectionItemCount; Index++)
-    {
-        // Get the next setting from the .ini file section
-        if (IniReadSettingByNumber(SectionId, Index, SettingName, sizeof(SettingName), SettingValue, sizeof(SettingValue)))
-        {
-            if (_stricmp(SettingName, "DriveMap") == 0)
-            {
-                // Make sure we haven't exceeded the drive map max count
-                if (DriveMapList.DriveMapCount >= 4)
-                {
-                    UiMessageBox("Max DriveMap count exceeded in section [%s]:\n\n%s=%s", SectionName, SettingName, SettingValue);
-                    continue;
-                }
-
-                RtlZeroMemory(Drive1, 80);
-                RtlZeroMemory(Drive2, 80);
-
-                strcpy(Drive1, SettingValue);
-
-                // Parse the setting value and separate a string "hd0,hd1"
-                // into two strings "hd0" and "hd1"
-                for (Index2=0; Index2<strlen(Drive1); Index2++)
-                {
-                    // Check if this character is the separater character (comma - ',')
-                    if (Drive1[Index2] == ',')
-                    {
-                        Drive1[Index2] = '\0';
-                        strcpy(Drive2, &Drive1[Index2+1]);
-                        break;
-                    }
-                }
-
-                // Make sure we got good values before we add them to the map
-                if (!DriveMapIsValidDriveString(Drive1) || !DriveMapIsValidDriveString(Drive2))
-                {
-                    UiMessageBox("Error in DriveMap setting in section [%s]:\n\n%s=%s", SectionName, SettingName, SettingValue);
-                    continue;
-                }
-
-                // Add them to the map
-                DriveMapList.DriveMap[(DriveMapList.DriveMapCount * 2)] = DriveMapGetBiosDriveNumber(Drive1);
-                DriveMapList.DriveMap[(DriveMapList.DriveMapCount * 2)+1] = DriveMapGetBiosDriveNumber(Drive2);
-                DriveMapList.DriveMapCount++;
-
-                TRACE("Mapping BIOS drive 0x%x to drive 0x%x\n", DriveMapGetBiosDriveNumber(Drive1), DriveMapGetBiosDriveNumber(Drive2));
-            }
-        }
-    }
-
-    if (DriveMapList.DriveMapCount)
-    {
-        TRACE("Installing Int13 drive map for %d drives.\n", DriveMapList.DriveMapCount);
-        DriveMapInstallInt13Handler(&DriveMapList);
-    }
-    else
-    {
-        TRACE("Removing any previously installed Int13 drive map.\n");
-        DriveMapRemoveInt13Handler();
-    }
-}
+#endif // _M_IX86
 
 BOOLEAN DriveMapIsValidDriveString(PCSTR DriveString)
 {
@@ -143,7 +62,6 @@ BOOLEAN DriveMapIsValidDriveString(PCSTR DriveString)
 
     return TRUE;
 }
-#endif
 
 UCHAR DriveMapGetBiosDriveNumber(PCSTR DeviceName)
 {
@@ -172,11 +90,100 @@ UCHAR DriveMapGetBiosDriveNumber(PCSTR DeviceName)
     return BiosDriveNumber;
 }
 
-#ifndef _MSC_VER
+#ifdef _M_IX86
+
+VOID
+DriveMapMapDrivesInSection(
+    IN ULONG_PTR SectionId)
+{
+    CHAR           SettingName[80];
+    CHAR           SettingValue[80];
+    CHAR           Drive1[80];
+    CHAR           Drive2[80];
+    ULONG          SectionItemCount;
+    ULONG          Index;
+    ULONG          Index2;
+    DRIVE_MAP_LIST DriveMapList;
+
+    if (SectionId == 0)
+        return;
+
+    RtlZeroMemory(&DriveMapList, sizeof(DRIVE_MAP_LIST));
+
+    // Get the number of items in this section
+    SectionItemCount = IniGetNumSectionItems(SectionId);
+
+    // Loop through each one and check if its a DriveMap= setting
+    for (Index=0; Index<SectionItemCount; Index++)
+    {
+        // Get the next setting from the .ini file section
+        if (IniReadSettingByNumber(SectionId, Index, SettingName, sizeof(SettingName), SettingValue, sizeof(SettingValue)))
+        {
+            if (_stricmp(SettingName, "DriveMap") == 0)
+            {
+                // Make sure we haven't exceeded the drive map max count
+                if (DriveMapList.DriveMapCount >= 4)
+                {
+                    UiMessageBox("Max DriveMap count exceeded in section [%s]:\n\n%s=%s", ((PINI_SECTION)SectionId)->SectionName, SettingName, SettingValue);
+                    continue;
+                }
+
+                RtlZeroMemory(Drive1, 80);
+                RtlZeroMemory(Drive2, 80);
+
+                strcpy(Drive1, SettingValue);
+
+                // Parse the setting value and separate a string "hd0,hd1"
+                // into two strings "hd0" and "hd1"
+                for (Index2=0; Index2<strlen(Drive1); Index2++)
+                {
+                    // Check if this character is the separater character (comma - ',')
+                    if (Drive1[Index2] == ',')
+                    {
+                        Drive1[Index2] = '\0';
+                        strcpy(Drive2, &Drive1[Index2+1]);
+                        break;
+                    }
+                }
+
+                // Make sure we got good values before we add them to the map
+                if (!DriveMapIsValidDriveString(Drive1) || !DriveMapIsValidDriveString(Drive2))
+                {
+                    UiMessageBox("Error in DriveMap setting in section [%s]:\n\n%s=%s", ((PINI_SECTION)SectionId)->SectionName, SettingName, SettingValue);
+                    continue;
+                }
+
+                // Add them to the map
+                DriveMapList.DriveMap[(DriveMapList.DriveMapCount * 2)] = DriveMapGetBiosDriveNumber(Drive1);
+                DriveMapList.DriveMap[(DriveMapList.DriveMapCount * 2)+1] = DriveMapGetBiosDriveNumber(Drive2);
+                DriveMapList.DriveMapCount++;
+
+                TRACE("Mapping BIOS drive 0x%x to drive 0x%x\n", DriveMapGetBiosDriveNumber(Drive1), DriveMapGetBiosDriveNumber(Drive2));
+            }
+        }
+    }
+
+    if (DriveMapList.DriveMapCount)
+    {
+        TRACE("Installing Int13 drive map for %d drives.\n", DriveMapList.DriveMapCount);
+        DriveMapInstallInt13Handler(&DriveMapList);
+    }
+    else
+    {
+        TRACE("Removing any previously installed Int13 drive map.\n");
+        DriveMapRemoveInt13Handler();
+    }
+}
+
 VOID DriveMapInstallInt13Handler(PDRIVE_MAP_LIST DriveMap)
 {
-    ULONG*  RealModeIVT = (ULONG*)0x00000000;
-    USHORT* BiosLowMemorySize = (USHORT*)0x00000413;
+    ULONG*  RealModeIVT = (ULONG*)UlongToPtr(0x00000000);
+    USHORT* BiosLowMemorySize = (USHORT*)ULongToPtr(0x00000413);
+
+#if defined(SARCH_PC98)
+    /* FIXME */
+    return;
+#endif
 
     if (!DriveMapInstalled)
     {
@@ -200,7 +207,9 @@ VOID DriveMapInstallInt13Handler(PDRIVE_MAP_LIST DriveMap)
     DriveMapOldInt13HandlerAddress = OldInt13HandlerAddress;
 
     // Copy the code to our reserved area
-    RtlCopyMemory((PVOID)DriveMapHandlerAddress, &DriveMapInt13HandlerStart, ((ULONG)&DriveMapInt13HandlerEnd - (ULONG)&DriveMapInt13HandlerStart));
+    RtlCopyMemory(UlongToPtr(DriveMapHandlerAddress),
+                  &DriveMapInt13HandlerStart,
+                  ((PUCHAR)&DriveMapInt13HandlerEnd - (PUCHAR)&DriveMapInt13HandlerStart));
 
     // Update the IVT
     RealModeIVT[0x13] = DriveMapHandlerSegOff;
@@ -214,6 +223,11 @@ VOID DriveMapRemoveInt13Handler(VOID)
     ULONG*  RealModeIVT = (ULONG*)0x00000000;
     USHORT* BiosLowMemorySize = (USHORT*)0x00000413;
 
+#if defined(SARCH_PC98)
+    /* FIXME */
+    return;
+#endif
+
     if (DriveMapInstalled)
     {
         // Get the old INT 13h handler address from the vector table
@@ -226,4 +240,5 @@ VOID DriveMapRemoveInt13Handler(VOID)
         DriveMapInstalled = FALSE;
     }
 }
-#endif
+
+#endif // _M_IX86

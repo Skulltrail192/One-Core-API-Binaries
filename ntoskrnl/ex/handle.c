@@ -18,12 +18,13 @@
 LIST_ENTRY HandleTableListHead;
 EX_PUSH_LOCK HandleTableListLock;
 #define SizeOfHandle(x) (sizeof(HANDLE) * (x))
+#define INDEX_TO_HANDLE_VALUE(x) ((x) << HANDLE_TAG_BITS)
 
 /* PRIVATE FUNCTIONS *********************************************************/
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_FUNCTION
 ExpInitializeHandleTables(VOID)
 {
     /* Initialize the list of handle tables and the lock */
@@ -67,12 +68,14 @@ ExpLookupHandleTableEntry(IN PHANDLE_TABLE HandleTable,
 
             /* Get the mid level pointer array */
             PointerArray = PointerArray[Handle.HighIndex];
+            ASSERT(PointerArray != NULL);
 
             /* Fall through */
         case 1:
 
             /* Get the handle array */
             HandleArray = PointerArray[Handle.MidIndex];
+            ASSERT(HandleArray != NULL);
 
             /* Fall through */
         case 0:
@@ -255,8 +258,8 @@ ExpFreeHandleTableEntry(IN PHANDLE_TABLE HandleTable,
                         IN EXHANDLE Handle,
                         IN PHANDLE_TABLE_ENTRY HandleTableEntry)
 {
-    ULONG OldValue, NewValue, *Free;
-    ULONG i;
+    ULONG OldValue, *Free;
+    ULONG LockIndex;
     PAGED_CODE();
 
     /* Sanity checks */
@@ -267,16 +270,16 @@ ExpFreeHandleTableEntry(IN PHANDLE_TABLE HandleTable,
     InterlockedDecrement(&HandleTable->HandleCount);
 
     /* Mark the handle as free */
-    NewValue = (ULONG)Handle.Value & ~(SizeOfHandle(1) - 1);
+    Handle.TagBits = 0;
 
     /* Check if we're FIFO */
     if (!HandleTable->StrictFIFO)
     {
         /* Select a lock index */
-        i = (NewValue >> 2) % 4;
+        LockIndex = Handle.Index % 4;
 
         /* Select which entry to use */
-        Free = (HandleTable->HandleTableLock[i].Locked) ?
+        Free = (HandleTable->HandleTableLock[LockIndex].Locked) ?
                 &HandleTable->FirstFree : &HandleTable->LastFree;
     }
     else
@@ -290,8 +293,8 @@ ExpFreeHandleTableEntry(IN PHANDLE_TABLE HandleTable,
     {
         /* Get the current value and write */
         OldValue = *Free;
-        HandleTableEntry->NextFreeTableEntry = (ULONG)OldValue;
-        if (InterlockedCompareExchange((PLONG) Free, NewValue, OldValue) == OldValue)
+        HandleTableEntry->NextFreeTableEntry = OldValue;
+        if (InterlockedCompareExchange((PLONG)Free, Handle.AsULONG, OldValue) == OldValue)
         {
             /* Break out, we're done. Make sure the handle value makes sense */
             ASSERT((OldValue & FREE_HANDLE_MASK) <
@@ -354,7 +357,7 @@ ExpAllocateHandleTable(IN PEPROCESS Process OPTIONAL,
         {
             /* Set up the free data */
             HandleEntry->Value = 0;
-            HandleEntry->NextFreeTableEntry = (i + 1) * SizeOfHandle(1);
+            HandleEntry->NextFreeTableEntry = INDEX_TO_HANDLE_VALUE(i + 1);
 
             /* Move to the next entry */
             HandleEntry++;
@@ -363,11 +366,11 @@ ExpAllocateHandleTable(IN PEPROCESS Process OPTIONAL,
         /* Terminate the last entry */
         HandleEntry->Value = 0;
         HandleEntry->NextFreeTableEntry = 0;
-        HandleTable->FirstFree = SizeOfHandle(1);
+        HandleTable->FirstFree = INDEX_TO_HANDLE_VALUE(1);
     }
 
     /* Set the next handle needing pool after our allocated page from above */
-    HandleTable->NextHandleNeedingPool = LOW_LEVEL_ENTRIES * SizeOfHandle(1);
+    HandleTable->NextHandleNeedingPool = INDEX_TO_HANDLE_VALUE(LOW_LEVEL_ENTRIES);
 
     /* Setup the rest of the handle table data */
     HandleTable->QuotaProcess = Process;
@@ -409,12 +412,12 @@ ExpAllocateLowLevelTable(IN PHANDLE_TABLE HandleTable,
     {
         /* Go to the next entry and the base entry */
         HandleEntry++;
-        Base = HandleTable->NextHandleNeedingPool + SizeOfHandle(2);
+        Base = HandleTable->NextHandleNeedingPool + INDEX_TO_HANDLE_VALUE(2);
 
         /* Loop each entry */
         for (i = Base;
-             i < Base + SizeOfHandle(LOW_LEVEL_ENTRIES - 2);
-             i += SizeOfHandle(1))
+             i < Base + INDEX_TO_HANDLE_VALUE(LOW_LEVEL_ENTRIES - 2);
+             i += INDEX_TO_HANDLE_VALUE(1))
         {
             /* Free this entry and move on to the next one */
             HandleEntry->NextFreeTableEntry = i;
@@ -494,7 +497,7 @@ ExpAllocateHandleTableEntrySlow(IN PHANDLE_TABLE HandleTable,
 
         /* Get if the next index can fit in the table */
         i = HandleTable->NextHandleNeedingPool /
-            SizeOfHandle(LOW_LEVEL_ENTRIES);
+            INDEX_TO_HANDLE_VALUE(LOW_LEVEL_ENTRIES);
         if (i < MID_LEVEL_ENTRIES)
         {
             /* We need to allocate a new table */
@@ -539,7 +542,7 @@ ExpAllocateHandleTableEntrySlow(IN PHANDLE_TABLE HandleTable,
         ThirdLevel = (PVOID)TableBase;
 
         /* Get the index and check if it can fit */
-        i = HandleTable->NextHandleNeedingPool / SizeOfHandle(MAX_MID_INDEX);
+        i = HandleTable->NextHandleNeedingPool / INDEX_TO_HANDLE_VALUE(MAX_MID_INDEX);
         if (i >= HIGH_LEVEL_ENTRIES) return FALSE;
 
         /* Check if there's no mid-level table */
@@ -556,8 +559,8 @@ ExpAllocateHandleTableEntrySlow(IN PHANDLE_TABLE HandleTable,
         else
         {
             /* We have one, check at which index we should insert our entry */
-            Index  = (HandleTable->NextHandleNeedingPool / SizeOfHandle(1)) -
-                      i * MAX_MID_INDEX;
+            Index = (HandleTable->NextHandleNeedingPool / INDEX_TO_HANDLE_VALUE(1)) -
+                     i * MAX_MID_INDEX;
             j = Index / LOW_LEVEL_ENTRIES;
 
             /* Allocate a new low level */
@@ -577,13 +580,13 @@ ExpAllocateHandleTableEntrySlow(IN PHANDLE_TABLE HandleTable,
 
     /* Update the index of the next handle */
     Index = InterlockedExchangeAdd((PLONG) &HandleTable->NextHandleNeedingPool,
-                                   SizeOfHandle(LOW_LEVEL_ENTRIES));
+                                   INDEX_TO_HANDLE_VALUE(LOW_LEVEL_ENTRIES));
 
     /* Check if need to initialize the table */
     if (DoInit)
     {
         /* Create a new index number */
-        Index += SizeOfHandle(1);
+        Index += INDEX_TO_HANDLE_VALUE(1);
 
         /* Start free index change loop */
         for (;;)
@@ -646,7 +649,7 @@ ExpAllocateHandleTableEntry(IN PHANDLE_TABLE HandleTable,
 {
     ULONG OldValue, NewValue, NewValue1;
     PHANDLE_TABLE_ENTRY Entry;
-    EXHANDLE Handle;
+    EXHANDLE Handle, OldHandle;
     BOOLEAN Result;
     ULONG i;
 
@@ -709,7 +712,8 @@ ExpAllocateHandleTableEntry(IN PHANDLE_TABLE HandleTable,
         Entry = ExpLookupHandleTableEntry(HandleTable, Handle);
 
         /* Get an available lock and acquire it */
-        i = ((OldValue & FREE_HANDLE_MASK) >> 2) % 4;
+        OldHandle.Value = OldValue;
+        i = OldHandle.Index % 4;
         KeEnterCriticalRegion();
         ExAcquirePushLockShared(&HandleTable->HandleTableLock[i]);
 
@@ -1063,7 +1067,7 @@ ExDupHandleTable(IN PEPROCESS Process,
     NewTable->FirstFree = 0;
 
     /* Setup the first handle value  */
-    Handle.Value = SizeOfHandle(1);
+    Handle.Value = INDEX_TO_HANDLE_VALUE(1);
 
     /* Enter a critical region and lookup the new entry */
     KeEnterCriticalRegion();
@@ -1125,13 +1129,13 @@ ExDupHandleTable(IN PEPROCESS Process,
             }
 
             /* Increase the handle value and move to the next entry */
-            Handle.Value += SizeOfHandle(1);
+            Handle.Value += INDEX_TO_HANDLE_VALUE(1);
             NewEntry++;
             HandleTableEntry++;
-        } while (Handle.Value % SizeOfHandle(LOW_LEVEL_ENTRIES));
+        } while (Handle.Value % INDEX_TO_HANDLE_VALUE(LOW_LEVEL_ENTRIES));
 
         /* We're done, skip the last entry */
-        Handle.Value += SizeOfHandle(1);
+        Handle.Value += INDEX_TO_HANDLE_VALUE(1);
     }
 
     /* Acquire the table lock and insert this new table into the list */
@@ -1198,7 +1202,7 @@ ExSweepHandleTable(IN PHANDLE_TABLE HandleTable,
     PAGED_CODE();
 
     /* Set the initial value and loop the entries */
-    Handle.Value = SizeOfHandle(1);
+    Handle.Value = INDEX_TO_HANDLE_VALUE(1);
     while ((HandleTableEntry = ExpLookupHandleTableEntry(HandleTable, Handle)))
     {
         /* Loop each handle */
@@ -1214,12 +1218,12 @@ ExSweepHandleTable(IN PHANDLE_TABLE HandleTable,
             }
 
             /* Go to the next handle and entry */
-            Handle.Value += SizeOfHandle(1);
+            Handle.Value += INDEX_TO_HANDLE_VALUE(1);
             HandleTableEntry++;
-        } while (Handle.Value % SizeOfHandle(LOW_LEVEL_ENTRIES));
+        } while (Handle.Value % INDEX_TO_HANDLE_VALUE(LOW_LEVEL_ENTRIES));
 
         /* Skip past the last entry */
-        Handle.Value += SizeOfHandle(1);
+        Handle.Value += INDEX_TO_HANDLE_VALUE(1);
     }
 }
 
@@ -1271,10 +1275,188 @@ ExEnumHandleTable(IN PHANDLE_TABLE HandleTable,
         }
 
         /* Go to the next entry */
-        Handle.Value += SizeOfHandle(1);
+        Handle.Value += INDEX_TO_HANDLE_VALUE(1);
     }
 
     /* Leave the critical region and return callback result */
     KeLeaveCriticalRegion();
     return Result;
 }
+
+#if DBG && defined(KDBG)
+BOOLEAN ExpKdbgExtHandle(ULONG Argc, PCHAR Argv[])
+{
+    USHORT i;
+    char *endptr;
+    HANDLE ProcessId;
+    EXHANDLE ExHandle;
+    PLIST_ENTRY Entry;
+    PEPROCESS Process;
+    WCHAR KeyPath[256];
+    PFILE_OBJECT FileObject;
+    PHANDLE_TABLE HandleTable;
+    POBJECT_HEADER ObjectHeader;
+    PHANDLE_TABLE_ENTRY TableEntry;
+    ULONG NeededLength = 0;
+    ULONG NameLength;
+    PCM_KEY_CONTROL_BLOCK Kcb, CurrentKcb;
+    POBJECT_HEADER_NAME_INFO ObjectNameInfo;
+
+    if (Argc > 1)
+    {
+        /* Get EPROCESS address or PID */
+        i = 0;
+        while (Argv[1][i])
+        {
+            if (!isdigit(Argv[1][i]))
+            {
+                i = 0;
+                break;
+            }
+
+            ++i;
+        }
+
+        if (i == 0)
+        {
+            if (!KdbpGetHexNumber(Argv[1], (PVOID)&Process))
+            {
+                KdbpPrint("Invalid parameter: %s\n", Argv[1]);
+                return TRUE;
+            }
+
+            /* In the end, we always want a PID */
+            ProcessId = PsGetProcessId(Process);
+        }
+        else
+        {
+            ProcessId = (HANDLE)strtoul(Argv[1], &endptr, 10);
+            if (*endptr != '\0')
+            {
+                KdbpPrint("Invalid parameter: %s\n", Argv[1]);
+                return TRUE;
+            }
+        }
+    }
+    else
+    {
+        ProcessId = PsGetCurrentProcessId();
+    }
+
+    for (Entry = HandleTableListHead.Flink;
+         Entry != &HandleTableListHead;
+         Entry = Entry->Flink)
+    {
+        /* Only return matching PID
+         * 0 matches everything
+         */
+        HandleTable = CONTAINING_RECORD(Entry, HANDLE_TABLE, HandleTableList);
+        if (ProcessId != 0 && HandleTable->UniqueProcessId != ProcessId)
+        {
+            continue;
+        }
+
+        KdbpPrint("\n");
+
+        KdbpPrint("Handle table at %p with %d entries in use\n", HandleTable, HandleTable->HandleCount);
+
+        ExHandle.Value = 0;
+        while ((TableEntry = ExpLookupHandleTableEntry(HandleTable, ExHandle)))
+        {
+            if ((TableEntry->Object) &&
+                (TableEntry->NextFreeTableEntry != -2))
+            {
+                ObjectHeader = ObpGetHandleObject(TableEntry);
+
+                KdbpPrint("%p: Object: %p GrantedAccess: %x Entry: %p\n", ExHandle.Value, &ObjectHeader->Body, TableEntry->GrantedAccess, TableEntry);
+                KdbpPrint("Object: %p Type: (%x) %wZ\n", &ObjectHeader->Body, ObjectHeader->Type, &ObjectHeader->Type->Name);
+                KdbpPrint("\tObjectHeader: %p\n", ObjectHeader);
+                KdbpPrint("\t\tHandleCount: %u PointerCount: %u\n", ObjectHeader->HandleCount, ObjectHeader->PointerCount);
+
+                /* Specific objects debug prints */
+
+                /* For file, display path */
+                if (ObjectHeader->Type == IoFileObjectType)
+                {
+                    FileObject = (PFILE_OBJECT)&ObjectHeader->Body;
+
+                    KdbpPrint("\t\t\tName: %wZ\n", &FileObject->FileName);
+                }
+
+                /* For directory, and win32k objects, display object name */
+                else if (ObjectHeader->Type == ObpDirectoryObjectType ||
+                         ObjectHeader->Type == ExWindowStationObjectType ||
+                         ObjectHeader->Type == ExDesktopObjectType ||
+                         ObjectHeader->Type == MmSectionObjectType)
+                {
+                    ObjectNameInfo = OBJECT_HEADER_TO_NAME_INFO(ObjectHeader);
+                    if (ObjectNameInfo != NULL && ObjectNameInfo->Name.Buffer != NULL)
+                    {
+                        KdbpPrint("\t\t\tName: %wZ\n", &ObjectNameInfo->Name);
+                    }
+                }
+
+                /* For registry keys, display full path */
+                else if (ObjectHeader->Type == CmpKeyObjectType)
+                {
+                    Kcb = ((PCM_KEY_BODY)&ObjectHeader->Body)->KeyControlBlock;
+                    if (!Kcb->Delete)
+                    {
+                        CurrentKcb = Kcb;
+
+                        /* See: CmpQueryNameInformation() */
+
+                        while (CurrentKcb != NULL)
+                        {
+                            if (CurrentKcb->NameBlock->Compressed)
+                                NeededLength += CmpCompressedNameSize(CurrentKcb->NameBlock->Name, CurrentKcb->NameBlock->NameLength);
+                            else
+                                NeededLength += CurrentKcb->NameBlock->NameLength;
+
+                            NeededLength += sizeof(OBJ_NAME_PATH_SEPARATOR);
+
+                            CurrentKcb = CurrentKcb->ParentKcb;
+                        }
+
+                        if (NeededLength < sizeof(KeyPath))
+                        {
+                            CurrentKcb = Kcb;
+
+                            while (CurrentKcb != NULL)
+                            {
+                                if (CurrentKcb->NameBlock->Compressed)
+                                {
+                                    NameLength = CmpCompressedNameSize(CurrentKcb->NameBlock->Name, CurrentKcb->NameBlock->NameLength);
+                                    CmpCopyCompressedName(&KeyPath[(NeededLength - NameLength)/sizeof(WCHAR)],
+                                                          NameLength,
+                                                          CurrentKcb->NameBlock->Name,
+                                                          CurrentKcb->NameBlock->NameLength);
+                                }
+                                else
+                                {
+                                    NameLength = CurrentKcb->NameBlock->NameLength;
+                                    RtlCopyMemory(&KeyPath[(NeededLength - NameLength)/sizeof(WCHAR)],
+                                                  CurrentKcb->NameBlock->Name,
+                                                  NameLength);
+                                }
+
+                                NeededLength -= NameLength;
+                                NeededLength -= sizeof(OBJ_NAME_PATH_SEPARATOR);
+                                KeyPath[NeededLength/sizeof(WCHAR)] = OBJ_NAME_PATH_SEPARATOR;
+
+                                CurrentKcb = CurrentKcb->ParentKcb;
+                            }
+                        }
+
+                        KdbpPrint("\t\t\tName: %S\n", KeyPath);
+                    }
+                }
+            }
+
+            ExHandle.Value += INDEX_TO_HANDLE_VALUE(1);
+        }
+    }
+
+    return TRUE;
+}
+#endif

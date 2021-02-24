@@ -8,6 +8,28 @@
 #include "hdaudbus.h"
 
 NTSTATUS
+HDA_PDORemoveDevice(
+    _In_ PDEVICE_OBJECT DeviceObject)
+{
+    PHDA_PDO_DEVICE_EXTENSION DeviceExtension;
+
+    /* get device extension */
+    DeviceExtension = static_cast<PHDA_PDO_DEVICE_EXTENSION>(DeviceObject->DeviceExtension);
+    ASSERT(DeviceExtension->IsFDO == FALSE);
+
+    if (DeviceExtension->ReportedMissing)
+    {
+        if (DeviceExtension->AudioGroup != NULL)
+        {
+            DeviceExtension->AudioGroup->ChildPDO = NULL;
+        }
+        IoDeleteDevice(DeviceObject);
+    }
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS
 HDA_PDOQueryBusInformation(
     IN PIRP Irp)
 {
@@ -46,6 +68,7 @@ HDA_PDOQueryId(
     PHDA_PDO_DEVICE_EXTENSION DeviceExtension;
     ULONG Length;
     LPWSTR Device;
+    NTSTATUS Status;
 
     /* get device extension */
     DeviceExtension = (PHDA_PDO_DEVICE_EXTENSION)DeviceObject->DeviceExtension;
@@ -56,18 +79,23 @@ HDA_PDOQueryId(
 
     if (IoStack->Parameters.QueryId.IdType == BusQueryInstanceID)
     {
-        UNIMPLEMENTED;
-
-        // FIXME
-        swprintf(DeviceName, L"%08x", 1);
-        Length = wcslen(DeviceName) + 20;
+        Status = RtlStringCbPrintfW(DeviceName,
+                                    sizeof(DeviceName),
+                                    L"%02x%02x",
+                                    DeviceExtension->Codec->Addr,
+                                    DeviceExtension->AudioGroup->NodeId);
+        NT_ASSERT(NT_SUCCESS(Status));
+        Length = wcslen(DeviceName) + 1;
 
         /* allocate result buffer*/
         Device = (LPWSTR)AllocateItem(PagedPool, Length * sizeof(WCHAR));
         if (!Device)
             return STATUS_INSUFFICIENT_RESOURCES;
 
-        swprintf(Device, L"%08x", 1);
+        Status = RtlStringCbCopyW(Device,
+                                  Length * sizeof(WCHAR),
+                                  DeviceName);
+        NT_ASSERT(NT_SUCCESS(Status));
 
         DPRINT1("ID: %S\n", Device);
         /* store result */

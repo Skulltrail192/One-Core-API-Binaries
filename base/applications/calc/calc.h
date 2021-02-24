@@ -1,16 +1,24 @@
-#ifndef _CALC_H
-#define _CALC_H
+#ifndef __CALC_H__
+#define __CALC_H__
 
-#include <stdarg.h>
-#include <windef.h>
-#include <winuser.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #include <tchar.h>
+#include <commctrl.h>
+#include <shellapi.h>
+
+#include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <float.h>
 #include <malloc.h>
 #ifndef DISABLE_HTMLHELP_SUPPORT
 #include <htmlhelp.h>
 #endif
+#include <limits.h>
+
+/* RESOURCES */
+#include "resource.h"
 
 /* Messages reserved for the main dialog */
 #define WM_CLOSE_STATS      (WM_APP+1)
@@ -21,8 +29,9 @@
 #define WM_HANDLE_FROM      (WM_APP+6)
 #define WM_HANDLE_TO        (WM_APP+7)
 
+/* GNU MULTI-PRECISION LIBRARY support */
 #ifdef ENABLE_MULTI_PRECISION
-#include <mpfr.h>
+#include "mpfr.h"
 
 #ifndef MPFR_DEFAULT_RND
 #define MPFR_DEFAULT_RND mpfr_get_default_rounding_mode ()
@@ -35,13 +44,53 @@
 
 #endif
 
-#include "resource.h"
-
-#ifndef IDC_STATIC
-#define IDC_STATIC  ((DWORD)-1)
-#endif
+#define CALC_VERSION        _T("1.12")
 
 #define MAX_CALC_SIZE       256
+
+/* HTMLHELP SUPPORT */
+typedef HWND (WINAPI* type_HtmlHelpA)(HWND, LPCSTR, UINT, DWORD);
+typedef HWND (WINAPI* type_HtmlHelpW)(HWND, LPCWSTR, UINT, DWORD);
+
+extern type_HtmlHelpA calc_HtmlHelpA;
+extern type_HtmlHelpW calc_HtmlHelpW;
+
+#ifndef UNICODE
+#define calc_HtmlHelp   calc_HtmlHelpA
+#else
+#define calc_HtmlHelp   calc_HtmlHelpW
+#endif
+
+void HtmlHelp_Start(HINSTANCE hInstance);
+void HtmlHelp_Stop(void);
+
+/* THEMING SUPPORT */
+#if (_WIN32_WINNT >= 0x0600)
+#include <vssym32.h>
+#include <vsstyle.h>
+#else
+#include <tmschema.h>
+#endif
+#include <uxtheme.h>
+
+void Theme_Start(HINSTANCE hInstance);
+void Theme_Stop(void);
+
+typedef HTHEME   (WINAPI* type_OpenThemeData)(HWND,const WCHAR*);
+typedef HRESULT  (WINAPI* type_CloseThemeData)(HTHEME);
+typedef HRESULT  (WINAPI* type_DrawThemeBackground)(HTHEME,HDC,int,int,const RECT*,const RECT*);
+typedef BOOL     (WINAPI* type_IsAppThemed)(void);
+typedef BOOL     (WINAPI* type_IsThemeActive)(void);
+typedef BOOL     (WINAPI* type_IsThemeBackgroundPartiallyTransparent)(HTHEME, int, int);
+typedef HRESULT  (WINAPI* type_DrawThemeParentBackground)(HWND, HDC, RECT *);
+
+extern type_OpenThemeData                   calc_OpenThemeData;
+extern type_CloseThemeData                  calc_CloseThemeData;
+extern type_DrawThemeBackground             calc_DrawThemeBackground;
+extern type_IsAppThemed                     calc_IsAppThemed;
+extern type_IsThemeActive                   calc_IsThemeActive;
+extern type_IsThemeBackgroundPartiallyTransparent calc_IsThemeBackgroundPartiallyTransparent;
+extern type_DrawThemeParentBackground       calc_DrawThemeParentBackground;
 
 /*#define USE_KEYBOARD_HOOK*/
 
@@ -120,6 +169,8 @@ typedef struct {
     HHOOK         hKeyboardHook;
 #endif
     HWND          hWnd;
+    HICON         hBgIcon;
+    HICON         hSmIcon;
     DWORD         layout;
     TCHAR         buffer[MAX_CALC_SIZE];
     TCHAR         source[MAX_CALC_SIZE];
@@ -155,11 +206,11 @@ typedef struct {
 
 extern calc_t calc;
 
-#define CALC_E      2.7182818284590452354
-
-#define CALC_PI_2   1.57079632679489661923
-#define CALC_PI     3.14159265358979323846
-#define CALC_3_PI_2 4.71238898038468985769
+/* IEEE constants */
+#define CALC_E      2.718281828459045235360
+#define CALC_PI_2   1.570796326794896619231
+#define CALC_PI     3.141592653589793238462
+#define CALC_3_PI_2 4.712388980384689857694
 #define CALC_2_PI   6.283185307179586476925
 
 #define MODIFIER_INV    0x01
@@ -167,14 +218,9 @@ extern calc_t calc;
 #define NO_CHAIN        0x04
 
 void apply_int_mask(calc_number_t *a);
-#ifdef ENABLE_MULTI_PRECISION
-void validate_rad2angle(calc_number_t *c);
-void validate_angle2rad(calc_number_t *c);
-#else
+#ifndef ENABLE_MULTI_PRECISION
 __int64 logic_dbl2int(calc_number_t *a);
 double logic_int2dbl(calc_number_t *a);
-double validate_rad2angle(double a);
-double validate_angle2rad(calc_number_t *c);
 #endif
 void rpn_sin(calc_number_t *c);
 void rpn_cos(calc_number_t *c);
@@ -206,7 +252,9 @@ void rpn_exp10(calc_number_t *c);
 void rpn_ln(calc_number_t *c);
 void rpn_log(calc_number_t *c);
 void rpn_ave(calc_number_t *c);
+void rpn_ave2(calc_number_t *c);
 void rpn_sum(calc_number_t *c);
+void rpn_sum2(calc_number_t *c);
 void rpn_s(calc_number_t *c);
 void rpn_s_m1(calc_number_t *c);
 void rpn_dms2dec(calc_number_t *c);
@@ -217,14 +265,20 @@ int  rpn_is_zero(calc_number_t *c);
 void rpn_alloc(calc_number_t *c);
 void rpn_free(calc_number_t *c);
 
+//
+
 void prepare_rpn_result_2(calc_number_t *rpn, TCHAR *buffer, int size, int base);
 void convert_text2number_2(calc_number_t *a);
 void convert_real_integer(unsigned int base);
 
+//
+
 INT_PTR CALLBACK AboutDlgProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp);
+
+//
 
 void ConvExecute(HWND hWnd);
 void ConvAdjust(HWND hWnd, int n_cat);
 void ConvInit(HWND hWnd);
 
-#endif /* _CALC_H */
+#endif /* __CALC_H__ */

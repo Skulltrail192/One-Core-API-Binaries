@@ -18,7 +18,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+
 #include "editor.h"
+#include "ole2.h"
+#include "richole.h"
+#include "imm.h"
+#include "textserv.h"
+#include "wine/asm.h"
+#include "wine/debug.h"
+#include "editstr.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(richedit);
 
@@ -27,6 +36,7 @@ typedef struct ITextHostImpl {
     LONG ref;
     HWND hWnd;
     BOOL bEmulateVersion10;
+    PARAFORMAT2 para_fmt;
 } ITextHostImpl;
 
 static const ITextHostVtbl textHostVtbl;
@@ -34,23 +44,22 @@ static const ITextHostVtbl textHostVtbl;
 ITextHost *ME_CreateTextHost(HWND hwnd, CREATESTRUCTW *cs, BOOL bEmulateVersion10)
 {
     ITextHostImpl *texthost;
+
     texthost = CoTaskMemAlloc(sizeof(*texthost));
-    if (texthost)
-    {
-        ME_TextEditor *editor;
+    if (!texthost) return NULL;
 
-        texthost->ITextHost_iface.lpVtbl = &textHostVtbl;
-        texthost->ref = 1;
-        texthost->hWnd = hwnd;
-        texthost->bEmulateVersion10 = bEmulateVersion10;
-
-        editor = ME_MakeEditor(&texthost->ITextHost_iface, bEmulateVersion10, cs->style);
-        editor->exStyleFlags = GetWindowLongW(hwnd, GWL_EXSTYLE);
-        editor->styleFlags |= GetWindowLongW(hwnd, GWL_STYLE) & ES_WANTRETURN;
-        editor->hWnd = hwnd; /* FIXME: Remove editor's dependence on hWnd */
-        editor->hwndParent = cs->hwndParent;
-        SetWindowLongPtrW(hwnd, 0, (LONG_PTR)editor);
-    }
+    texthost->ITextHost_iface.lpVtbl = &textHostVtbl;
+    texthost->ref = 1;
+    texthost->hWnd = hwnd;
+    texthost->bEmulateVersion10 = bEmulateVersion10;
+    memset( &texthost->para_fmt, 0, sizeof(texthost->para_fmt) );
+    texthost->para_fmt.cbSize = sizeof(texthost->para_fmt);
+    texthost->para_fmt.dwMask = PFM_ALIGNMENT;
+    texthost->para_fmt.wAlignment = PFA_LEFT;
+    if (cs->style & ES_RIGHT)
+        texthost->para_fmt.wAlignment = PFA_RIGHT;
+    if (cs->style & ES_CENTER)
+        texthost->para_fmt.wAlignment = PFA_CENTER;
 
     return &texthost->ITextHost_iface;
 }
@@ -258,9 +267,11 @@ DECLSPEC_HIDDEN HRESULT WINAPI ITextHostImpl_TxGetCharFormat(ITextHost *iface,
 }
 
 DECLSPEC_HIDDEN HRESULT WINAPI ITextHostImpl_TxGetParaFormat(ITextHost *iface,
-                                             const PARAFORMAT **ppPF)
+                                                             const PARAFORMAT **fmt)
 {
-    return E_NOTIMPL;
+    ITextHostImpl *This = impl_from_ITextHost(iface);
+    *fmt = (const PARAFORMAT *)&This->para_fmt;
+    return S_OK;
 }
 
 DECLSPEC_HIDDEN COLORREF WINAPI ITextHostImpl_TxGetSysColor(ITextHost *iface,
@@ -484,26 +495,6 @@ DECLSPEC_HIDDEN HRESULT WINAPI ITextHostImpl_TxGetSelectionBarWidth(ITextHost *i
     *lSelBarWidth = (style & ES_SELECTIONBAR) ? 225 : 0; /* in HIMETRIC */
     return S_OK;
 }
-
-
-#ifdef __i386__  /* thiscall functions are i386-specific */
-
-#define THISCALL(func) __thiscall_ ## func
-#define DEFINE_THISCALL_WRAPPER(func,args) \
-   extern typeof(func) THISCALL(func); \
-   __ASM_STDCALL_FUNC(__thiscall_ ## func, args, \
-                   "popl %eax\n\t" \
-                   "pushl %ecx\n\t" \
-                   "pushl %eax\n\t" \
-                   "jmp " __ASM_NAME(#func) __ASM_STDCALL(args) )
-
-#else /* __i386__ */
-
-#define THISCALL(func) func
-#define DEFINE_THISCALL_WRAPPER(func,args) /* nothing */
-
-#endif /* __i386__ */
-
 DEFINE_THISCALL_WRAPPER(ITextHostImpl_TxGetDC,4)
 DEFINE_THISCALL_WRAPPER(ITextHostImpl_TxReleaseDC,8)
 DEFINE_THISCALL_WRAPPER(ITextHostImpl_TxShowScrollBar,12)
@@ -544,17 +535,29 @@ DEFINE_THISCALL_WRAPPER(ITextHostImpl_TxImmGetContext,4)
 DEFINE_THISCALL_WRAPPER(ITextHostImpl_TxImmReleaseContext,8)
 DEFINE_THISCALL_WRAPPER(ITextHostImpl_TxGetSelectionBarWidth,8)
 
-#ifdef __i386__  /* thiscall functions are i386-specific */
+#if defined(__i386__) && !defined(__MINGW32__)  /* thiscall functions are i386-specific */
 
-#define STDCALL(func) __stdcall_ ## func
+#define STDCALL(func) (void *) __stdcall_ ## func
+#ifdef _MSC_VER
 #define DEFINE_STDCALL_WRAPPER(num,func,args) \
-   extern typeof(func) __stdcall_ ## func; \
-   __ASM_STDCALL_FUNC(__stdcall_ ## func, args, \
+    __declspec(naked) HRESULT __stdcall_##func(void) \
+    { \
+        __asm pop eax \
+        __asm pop ecx \
+        __asm push eax \
+        __asm mov eax, [ecx] \
+        __asm jmp dword ptr [eax + 4*num] \
+    }
+#else /* _MSC_VER */
+#define DEFINE_STDCALL_WRAPPER(num,func,args) \
+   extern HRESULT __stdcall_ ## func(void); \
+   __ASM_GLOBAL_FUNC(__stdcall_ ## func, \
                    "popl %eax\n\t" \
                    "popl %ecx\n\t" \
                    "pushl %eax\n\t" \
                    "movl (%ecx), %eax\n\t" \
                    "jmp *(4*(" #num "))(%eax)" )
+#endif /* _MSC_VER */
 
 DEFINE_STDCALL_WRAPPER(3,ITextHostImpl_TxGetDC,4)
 DEFINE_STDCALL_WRAPPER(4,ITextHostImpl_TxReleaseDC,8)
@@ -600,45 +603,45 @@ const ITextHostVtbl itextHostStdcallVtbl = {
     NULL,
     NULL,
     NULL,
-    __stdcall_ITextHostImpl_TxGetDC,
-    __stdcall_ITextHostImpl_TxReleaseDC,
-    __stdcall_ITextHostImpl_TxShowScrollBar,
-    __stdcall_ITextHostImpl_TxEnableScrollBar,
-    __stdcall_ITextHostImpl_TxSetScrollRange,
-    __stdcall_ITextHostImpl_TxSetScrollPos,
-    __stdcall_ITextHostImpl_TxInvalidateRect,
-    __stdcall_ITextHostImpl_TxViewChange,
-    __stdcall_ITextHostImpl_TxCreateCaret,
-    __stdcall_ITextHostImpl_TxShowCaret,
-    __stdcall_ITextHostImpl_TxSetCaretPos,
-    __stdcall_ITextHostImpl_TxSetTimer,
-    __stdcall_ITextHostImpl_TxKillTimer,
-    __stdcall_ITextHostImpl_TxScrollWindowEx,
-    __stdcall_ITextHostImpl_TxSetCapture,
-    __stdcall_ITextHostImpl_TxSetFocus,
-    __stdcall_ITextHostImpl_TxSetCursor,
-    __stdcall_ITextHostImpl_TxScreenToClient,
-    __stdcall_ITextHostImpl_TxClientToScreen,
-    __stdcall_ITextHostImpl_TxActivate,
-    __stdcall_ITextHostImpl_TxDeactivate,
-    __stdcall_ITextHostImpl_TxGetClientRect,
-    __stdcall_ITextHostImpl_TxGetViewInset,
-    __stdcall_ITextHostImpl_TxGetCharFormat,
-    __stdcall_ITextHostImpl_TxGetParaFormat,
-    __stdcall_ITextHostImpl_TxGetSysColor,
-    __stdcall_ITextHostImpl_TxGetBackStyle,
-    __stdcall_ITextHostImpl_TxGetMaxLength,
-    __stdcall_ITextHostImpl_TxGetScrollBars,
-    __stdcall_ITextHostImpl_TxGetPasswordChar,
-    __stdcall_ITextHostImpl_TxGetAcceleratorPos,
-    __stdcall_ITextHostImpl_TxGetExtent,
-    __stdcall_ITextHostImpl_OnTxCharFormatChange,
-    __stdcall_ITextHostImpl_OnTxParaFormatChange,
-    __stdcall_ITextHostImpl_TxGetPropertyBits,
-    __stdcall_ITextHostImpl_TxNotify,
-    __stdcall_ITextHostImpl_TxImmGetContext,
-    __stdcall_ITextHostImpl_TxImmReleaseContext,
-    __stdcall_ITextHostImpl_TxGetSelectionBarWidth,
+    STDCALL(ITextHostImpl_TxGetDC),
+    STDCALL(ITextHostImpl_TxReleaseDC),
+    STDCALL(ITextHostImpl_TxShowScrollBar),
+    STDCALL(ITextHostImpl_TxEnableScrollBar),
+    STDCALL(ITextHostImpl_TxSetScrollRange),
+    STDCALL(ITextHostImpl_TxSetScrollPos),
+    STDCALL(ITextHostImpl_TxInvalidateRect),
+    STDCALL(ITextHostImpl_TxViewChange),
+    STDCALL(ITextHostImpl_TxCreateCaret),
+    STDCALL(ITextHostImpl_TxShowCaret),
+    STDCALL(ITextHostImpl_TxSetCaretPos),
+    STDCALL(ITextHostImpl_TxSetTimer),
+    STDCALL(ITextHostImpl_TxKillTimer),
+    STDCALL(ITextHostImpl_TxScrollWindowEx),
+    STDCALL(ITextHostImpl_TxSetCapture),
+    STDCALL(ITextHostImpl_TxSetFocus),
+    STDCALL(ITextHostImpl_TxSetCursor),
+    STDCALL(ITextHostImpl_TxScreenToClient),
+    STDCALL(ITextHostImpl_TxClientToScreen),
+    STDCALL(ITextHostImpl_TxActivate),
+    STDCALL(ITextHostImpl_TxDeactivate),
+    STDCALL(ITextHostImpl_TxGetClientRect),
+    STDCALL(ITextHostImpl_TxGetViewInset),
+    STDCALL(ITextHostImpl_TxGetCharFormat),
+    STDCALL(ITextHostImpl_TxGetParaFormat),
+    STDCALL(ITextHostImpl_TxGetSysColor),
+    STDCALL(ITextHostImpl_TxGetBackStyle),
+    STDCALL(ITextHostImpl_TxGetMaxLength),
+    STDCALL(ITextHostImpl_TxGetScrollBars),
+    STDCALL(ITextHostImpl_TxGetPasswordChar),
+    STDCALL(ITextHostImpl_TxGetAcceleratorPos),
+    STDCALL(ITextHostImpl_TxGetExtent),
+    STDCALL(ITextHostImpl_OnTxCharFormatChange),
+    STDCALL(ITextHostImpl_OnTxParaFormatChange),
+    STDCALL(ITextHostImpl_TxGetPropertyBits),
+    STDCALL(ITextHostImpl_TxNotify),
+    STDCALL(ITextHostImpl_TxImmGetContext),
+    STDCALL(ITextHostImpl_TxImmReleaseContext),
+    STDCALL(ITextHostImpl_TxGetSelectionBarWidth),
 };
 
 #endif /* __i386__ */

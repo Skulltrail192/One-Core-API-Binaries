@@ -18,8 +18,15 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
+#include <stdarg.h>
 
-#include "strmbase_private.h"
+#define COBJMACROS
+#include "dshow.h"
+
+#include "wine/strmbase.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(strmbase);
 
 HRESULT WINAPI CopyMediaType(AM_MEDIA_TYPE *dest, const AM_MEDIA_TYPE *src)
 {
@@ -118,18 +125,23 @@ HRESULT WINAPI EnumMediaTypes_Construct(BasePin *basePin, BasePin_GetMediaType e
     pEnumMediaTypes->basePin = basePin;
 
     i = 0;
-    while (enumFunc(basePin, i, &amt) == S_OK) i++;
+    while (enumFunc(basePin, i, &amt) == S_OK)
+    {
+        FreeMediaType(&amt);
+        i++;
+    }
 
     pEnumMediaTypes->enumMediaDetails.cMediaTypes = i;
     pEnumMediaTypes->enumMediaDetails.pMediaTypes = CoTaskMemAlloc(sizeof(AM_MEDIA_TYPE) * i);
     memset(pEnumMediaTypes->enumMediaDetails.pMediaTypes, 0, sizeof(AM_MEDIA_TYPE) * i);
     for (i = 0; i < pEnumMediaTypes->enumMediaDetails.cMediaTypes; i++)
     {
-        enumFunc(basePin,i,&amt);
-        if (FAILED(CopyMediaType(&pEnumMediaTypes->enumMediaDetails.pMediaTypes[i], &amt)))
+        HRESULT hr;
+
+        if (FAILED(hr = enumFunc(basePin, i, &pEnumMediaTypes->enumMediaDetails.pMediaTypes[i])))
         {
             IEnumMediaTypes_Release(&pEnumMediaTypes->IEnumMediaTypes_iface);
-            return E_OUTOFMEMORY;
+            return hr;
         }
     }
     *ppEnum = &pEnumMediaTypes->IEnumMediaTypes_iface;

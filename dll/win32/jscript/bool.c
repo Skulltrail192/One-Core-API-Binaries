@@ -17,7 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <assert.h>
+
 #include "jscript.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(jscript);
 
 typedef struct {
     jsdisp_t dispex;
@@ -115,7 +121,7 @@ static const builtin_prop_t Bool_props[] = {
 static const builtin_info_t Bool_info = {
     JSCLASS_BOOLEAN,
     {NULL, Bool_value, 0},
-    sizeof(Bool_props)/sizeof(*Bool_props),
+    ARRAY_SIZE(Bool_props),
     Bool_props,
     NULL,
     NULL

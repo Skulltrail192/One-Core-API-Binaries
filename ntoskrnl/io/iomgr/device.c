@@ -5,7 +5,8 @@
  * PURPOSE:         Device Object Management, including Notifications and Queues.
  * PROGRAMMERS:     Alex Ionescu (alex.ionescu@reactos.org)
  *                  Filip Navara (navaraf@reactos.org)
- *                  Hervé Poussineau (hpoussin@reactos.org)
+ *                  HervÃ© Poussineau (hpoussin@reactos.org)
+ *                  Pierre Schweitzer
  */
 
 /* INCLUDES *******************************************************************/
@@ -23,6 +24,8 @@ extern LIST_ENTRY IopDiskFileSystemQueueHead;
 extern LIST_ENTRY IopCdRomFileSystemQueueHead;
 extern LIST_ENTRY IopTapeFileSystemQueueHead;
 extern ERESOURCE IopDatabaseResource;
+
+#define DACL_SET 4
 
 /* PRIVATE FUNCTIONS **********************************************************/
 
@@ -357,9 +360,8 @@ IopEditDeviceList(IN PDRIVER_OBJECT DriverObject,
                 /* Not this one, keep moving */
                 if (!Previous->NextDevice)
                 {
-                    DPRINT1("Failed to remove PDO %p on driver %wZ (not found)\n",
-                            DeviceObject,
-                            &DeviceObject->DriverObject->DriverName);
+                    DPRINT1("Failed to remove PDO %p (not found)\n",
+                            DeviceObject);
 
                     ASSERT(FALSE);
                     KeReleaseQueuedSpinLock(LockQueueIoDatabaseLock, OldIrql);
@@ -688,6 +690,204 @@ IopGetRelatedTargetDevice(IN PFILE_OBJECT FileObject,
     return Status;
 }
 
+BOOLEAN
+NTAPI
+IopVerifyDeviceObjectOnStack(IN PDEVICE_OBJECT BaseDeviceObject,
+                             IN PDEVICE_OBJECT TopDeviceObjectHint)
+{
+    KIRQL OldIrql;
+    BOOLEAN Result;
+    PDEVICE_OBJECT LoopObject;
+
+    ASSERT(BaseDeviceObject != NULL);
+
+    Result = FALSE;
+    /* Simply loop on the device stack and try to find our hint */
+    OldIrql = KeAcquireQueuedSpinLock(LockQueueIoDatabaseLock);
+    for (LoopObject = BaseDeviceObject; ; LoopObject = LoopObject->AttachedDevice)
+    {
+        /* It was found, it's a success */
+        if (LoopObject == TopDeviceObjectHint)
+        {
+            Result = TRUE;
+            break;
+        }
+
+        /* End of the stack, that's a failure - default */
+        if (LoopObject == NULL)
+        {
+            break;
+        }
+    }
+    KeReleaseQueuedSpinLock(LockQueueIoDatabaseLock, OldIrql);
+
+    return Result;
+}
+
+NTSTATUS
+NTAPI
+IopCreateSecurityDescriptorPerType(IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+                                   IN SECURITY_DESCRIPTOR_TYPE Type,
+                                   OUT PULONG OutputFlags)
+{
+    PACL Dacl;
+    NTSTATUS Status;
+
+    /* Select the DACL the caller wants */
+    switch (Type)
+    {
+        case RestrictedPublic:
+            Dacl = SePublicDefaultDacl;
+            break;
+
+        case UnrestrictedPublic:
+            Dacl = SePublicDefaultUnrestrictedDacl;
+            break;
+
+        case RestrictedPublicOpen:
+            Dacl = SePublicOpenDacl;
+            break;
+
+        case UnrestrictedPublicOpen:
+            Dacl = SePublicOpenUnrestrictedDacl;
+            break;
+
+        case SystemDefault:
+            Dacl = SeSystemDefaultDacl;
+            break;
+
+        default:
+            ASSERT(FALSE);
+            return STATUS_INVALID_PARAMETER;
+    }
+
+    /* Create the SD and set the DACL caller wanted */
+    Status = RtlCreateSecurityDescriptor(SecurityDescriptor, SECURITY_DESCRIPTOR_REVISION);
+    ASSERT(NT_SUCCESS(Status));
+    Status = RtlSetDaclSecurityDescriptor(SecurityDescriptor, TRUE, Dacl, FALSE);
+
+    /* We've set DACL */
+    if (OutputFlags) *OutputFlags |= DACL_SET;
+
+    /* Done */
+    return Status;
+}
+
+PSECURITY_DESCRIPTOR
+NTAPI
+IopCreateDefaultDeviceSecurityDescriptor(IN DEVICE_TYPE DeviceType,
+                                         IN ULONG DeviceCharacteristics,
+                                         IN BOOLEAN HasDeviceName,
+                                         IN PSECURITY_DESCRIPTOR SecurityDescriptor,
+                                         OUT PACL * OutputDacl,
+                                         OUT PULONG OutputFlags)
+{
+    PACL Dacl;
+    ULONG AceId;
+    NTSTATUS Status;
+    PACCESS_ALLOWED_ACE Ace;
+    BOOLEAN AdminsSet, WorldSet;
+
+    PAGED_CODE();
+
+    /* Zero our output vars */
+    if (OutputFlags) *OutputFlags = 0;
+
+    *OutputDacl = NULL;
+
+    /* For FSD, easy use SePublicDefaultUnrestrictedDacl */
+    if (DeviceType == FILE_DEVICE_TAPE_FILE_SYSTEM ||
+        DeviceType == FILE_DEVICE_CD_ROM_FILE_SYSTEM ||
+        DeviceType == FILE_DEVICE_DISK_FILE_SYSTEM ||
+        DeviceType == FILE_DEVICE_FILE_SYSTEM)
+    {
+        Status = IopCreateSecurityDescriptorPerType(SecurityDescriptor,
+                                                    UnrestrictedPublic,
+                                                    OutputFlags);
+        goto Quit;
+    }
+    /* For storage devices with a name and floppy attribute,
+     * use SePublicOpenUnrestrictedDacl
+     */
+    else if ((DeviceType != FILE_DEVICE_VIRTUAL_DISK &&
+              DeviceType != FILE_DEVICE_MASS_STORAGE &&
+              DeviceType != FILE_DEVICE_CD_ROM &&
+              DeviceType != FILE_DEVICE_DISK &&
+              DeviceType != FILE_DEVICE_DFS_FILE_SYSTEM &&
+              DeviceType != FILE_DEVICE_NETWORK &&
+              DeviceType != FILE_DEVICE_NETWORK_FILE_SYSTEM) ||
+              (HasDeviceName && BooleanFlagOn(DeviceCharacteristics, FILE_FLOPPY_DISKETTE)))
+    {
+        Status = IopCreateSecurityDescriptorPerType(SecurityDescriptor,
+                                                    UnrestrictedPublicOpen,
+                                                    OutputFlags);
+        goto Quit;
+    }
+
+    /* The rest...
+     * We will rely on SePublicDefaultUnrestrictedDacl as well
+     */
+    Dacl = ExAllocatePoolWithTag(PagedPool, SePublicDefaultUnrestrictedDacl->AclSize, 'eSoI');
+    if (Dacl == NULL)
+    {
+        return NULL;
+    }
+
+    /* Copy our DACL */
+    RtlCopyMemory(Dacl, SePublicDefaultUnrestrictedDacl, SePublicDefaultUnrestrictedDacl->AclSize);
+
+    /* Now, browse the DACL to make sure we have everything we want in them,
+     * including permissions
+     */
+    AceId = 0;
+    AdminsSet = FALSE;
+    WorldSet = FALSE;
+    while (NT_SUCCESS(RtlGetAce(Dacl, AceId, (PVOID *)&Ace)))
+    {
+        /* Admins must acess and in RWX, set it */
+        if (RtlEqualSid(SeAliasAdminsSid, &Ace->SidStart))
+        {
+            SetFlag(Ace->Mask, (GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE));
+            AdminsSet = TRUE;
+        }
+
+        /* World can read a CD_ROM device */
+        if (DeviceType == FILE_DEVICE_CD_ROM && RtlEqualSid(SeWorldSid, &Ace->SidStart))
+        {
+            SetFlag(Ace->Mask, GENERIC_READ);
+            WorldSet = TRUE;
+        }
+
+        ++AceId;
+    }
+
+    /* AdminSid was present and set (otherwise, we have big trouble) */
+    ASSERT(AdminsSet);
+
+    /* If CD_ROM device, we've set world permissions */
+    if (DeviceType == FILE_DEVICE_CD_ROM) ASSERT(WorldSet);
+
+    /* Now our DACL is correct, setup the security descriptor */
+    RtlCreateSecurityDescriptor(SecurityDescriptor, SECURITY_DESCRIPTOR_REVISION);
+    RtlSetDaclSecurityDescriptor(SecurityDescriptor, TRUE, Dacl, FALSE);
+
+    /* We've set DACL */
+    if (OutputFlags) *OutputFlags |= DACL_SET;
+
+    /* Return DACL to allow later freeing */
+    *OutputDacl = Dacl;
+    Status = STATUS_SUCCESS;
+
+Quit:
+    /* Only return SD if we succeed */
+    if (!NT_SUCCESS(Status))
+    {
+        return NULL;
+    }
+
+    return SecurityDescriptor;
+}
+
 /* PUBLIC FUNCTIONS ***********************************************************/
 
 /*
@@ -714,9 +914,9 @@ IoAttachDevice(PDEVICE_OBJECT SourceDevice,
                PUNICODE_STRING TargetDeviceName,
                PDEVICE_OBJECT *AttachedDevice)
 {
-   NTSTATUS Status;
-   PFILE_OBJECT FileObject = NULL;
-   PDEVICE_OBJECT TargetDevice = NULL;
+    NTSTATUS Status;
+    PFILE_OBJECT FileObject = NULL;
+    PDEVICE_OBJECT TargetDevice = NULL;
 
     /* Call the helper routine for an attach operation */
     Status = IopGetDeviceObjectPointer(TargetDeviceName,
@@ -845,6 +1045,8 @@ IoCreateDevice(IN PDRIVER_OBJECT DriverObject,
     ULONG AlignedDeviceExtensionSize;
     ULONG TotalSize;
     HANDLE TempHandle;
+    PACL Dacl;
+    SECURITY_DESCRIPTOR SecurityDescriptor, *ReturnedSD;
     PAGED_CODE();
 
     /* Check if we have to generate a name */
@@ -860,12 +1062,20 @@ IoCreateDevice(IN PDRIVER_OBJECT DriverObject,
         DeviceName = &AutoName;
     }
 
+    /* Get the security descriptor */
+    ReturnedSD = IopCreateDefaultDeviceSecurityDescriptor(DeviceType,
+                                                          DeviceCharacteristics,
+                                                          DeviceName != NULL,
+                                                          &SecurityDescriptor,
+                                                          &Dacl,
+                                                          NULL);
+
     /* Initialize the Object Attributes */
     InitializeObjectAttributes(&ObjectAttributes,
                                DeviceName,
                                OBJ_KERNEL_HANDLE,
                                NULL,
-                               SePublicOpenUnrestrictedSd);
+                               ReturnedSD);
 
     /* Honor exclusive flag */
     if (Exclusive) ObjectAttributes.Attributes |= OBJ_EXCLUSIVE;
@@ -874,7 +1084,8 @@ IoCreateDevice(IN PDRIVER_OBJECT DriverObject,
     if (DeviceName) ObjectAttributes.Attributes |= OBJ_PERMANENT;
 
     /* Align the Extension Size to 8-bytes */
-    AlignedDeviceExtensionSize = (DeviceExtensionSize + 7) &~ 7;
+    AlignedDeviceExtensionSize = ALIGN_UP_BY(DeviceExtensionSize,
+                                             MEMORY_ALLOCATION_ALIGNMENT);
 
     /* Total Size */
     TotalSize = AlignedDeviceExtensionSize +
@@ -892,7 +1103,12 @@ IoCreateDevice(IN PDRIVER_OBJECT DriverObject,
                             0,
                             0,
                             (PVOID*)&CreatedDeviceObject);
-    if (!NT_SUCCESS(Status)) return Status;
+    if (!NT_SUCCESS(Status))
+    {
+        if (Dacl != NULL) ExFreePoolWithTag(Dacl, 'eSoI');
+
+        return Status;
+    }
 
     /* Clear the whole Object and extension so we don't null stuff manually */
     RtlZeroMemory(CreatedDeviceObject, TotalSize);
@@ -944,6 +1160,8 @@ IoCreateDevice(IN PDRIVER_OBJECT DriverObject,
         Status = IopCreateVpb(CreatedDeviceObject);
         if (!NT_SUCCESS(Status))
         {
+            if (Dacl != NULL) ExFreePoolWithTag(Dacl, 'eSoI');
+
             /* Dereference the device object and fail */
             ObDereferenceObject(CreatedDeviceObject);
             return Status;
@@ -997,7 +1215,12 @@ IoCreateDevice(IN PDRIVER_OBJECT DriverObject,
                             1,
                             (PVOID*)&CreatedDeviceObject,
                             &TempHandle);
-    if (!NT_SUCCESS(Status)) return Status;
+    if (!NT_SUCCESS(Status))
+    {
+        if (Dacl != NULL) ExFreePoolWithTag(Dacl, 'eSoI');
+
+        return Status;
+    }
 
     /* Now do the final linking */
     ObReferenceObject(DriverObject);
@@ -1011,6 +1234,9 @@ IoCreateDevice(IN PDRIVER_OBJECT DriverObject,
     /* Close the temporary handle and return to caller */
     ObCloseHandle(TempHandle, KernelMode);
     *DeviceObject = CreatedDeviceObject;
+
+    if (Dacl != NULL) ExFreePoolWithTag(Dacl, 'eSoI');
+
     return STATUS_SUCCESS;
 }
 
@@ -1350,13 +1576,14 @@ IoGetRelatedDeviceObject(IN PFILE_OBJECT FileObject)
             if (FileObject->FileObjectExtension)
             {
                 PFILE_OBJECT_EXTENSION FileObjectExtension;
-                ASSERT(FALSE);
 
                 /* Cast the buffer to something we understand */
                 FileObjectExtension = FileObject->FileObjectExtension;
 
-                /* Check if have a replacement top level device */
-                if (FileObjectExtension->TopDeviceObjectHint)
+                /* Check if have a valid replacement top level device */
+                if (FileObjectExtension->TopDeviceObjectHint &&
+                    IopVerifyDeviceObjectOnStack(DeviceObject,
+                                                 FileObjectExtension->TopDeviceObjectHint))
                 {
                     /* Use this instead of returning the top level device */
                     return FileObjectExtension->TopDeviceObjectHint;

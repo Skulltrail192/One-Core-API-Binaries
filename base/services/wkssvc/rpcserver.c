@@ -247,13 +247,13 @@ NetrUseEnum(
 }
 
 
-/* Function 12 */
-void
+/* Function 12 - Not used on wire */
+unsigned long
 __stdcall
-Opnum12NotUsedOnWire(void)
+NetrMessageBufferSend(void)
 {
-    UNIMPLEMENTED;
-//    return 0;
+    TRACE("NetrMessageBufferSend()\n");
+    return ERROR_NOT_SUPPORTED;
 }
 
 
@@ -267,68 +267,92 @@ NetrWorkstationStatisticsGet(
     unsigned long Options,
     LPSTAT_WORKSTATION_0 *Buffer)
 {
-    UNIMPLEMENTED;
-    return 0;
+    PSTAT_WORKSTATION_0 pStatBuffer;
+
+    TRACE("NetrWorkstationStatisticsGet(%p %p %lu 0x%lx %p)\n",
+          ServerName, ServiceName, Level, Options, Buffer);
+
+    if (Level != 0)
+        return ERROR_INVALID_LEVEL;
+
+    if (Options != 0)
+        return ERROR_INVALID_PARAMETER;
+
+    pStatBuffer = midl_user_allocate(sizeof(STAT_WORKSTATION_0));
+    if (pStatBuffer == NULL)
+        return ERROR_NOT_ENOUGH_MEMORY;
+
+    ZeroMemory(pStatBuffer, sizeof(STAT_WORKSTATION_0));
+
+    // FIXME: Return the actual statistcs data!
+
+    *Buffer = pStatBuffer;
+
+    return NERR_Success;
 }
 
 
-/* Function 14 */
-void
+/* Function 14 - Not used on wire */
+unsigned long
 __stdcall
-Opnum14NotUsedOnWire(void)
+NetrLogonDomainNameAdd(
+    WKSSVC_IDENTIFY_HANDLE DomainName)
 {
-    UNIMPLEMENTED;
-//    return 0;
+    TRACE("NetrLogonDomainNameAdd(%s)\n",
+          debugstr_w(DomainName));
+    return ERROR_NOT_SUPPORTED;
 }
 
 
-/* Function 15 */
-void
+/* Function 15 - Not used on wire */
+unsigned long
 __stdcall
-Opnum15NotUsedOnWire(void)
+NetrLogonDomainNameDel(
+    WKSSVC_IDENTIFY_HANDLE DomainName)
 {
-    UNIMPLEMENTED;
-//    return 0;
+    TRACE("NetrLogonDomainNameDel(%s)\n",
+          debugstr_w(DomainName));
+    return ERROR_NOT_SUPPORTED;
 }
 
 
-/* Function 16 */
-void
+/* Function 16 - Not used on wire */
+unsigned long
 __stdcall
-Opnum16NotUsedOnWire(void)
+NetrJoinDomain(void)
 {
-    UNIMPLEMENTED;
-//    return 0;
+    TRACE("NetrJoinDomain()\n");
+    return ERROR_NOT_SUPPORTED;
 }
 
 
-/* Function 17 */
-void
+/* Function 17 - Not used on wire */
+unsigned long
 __stdcall
-Opnum17NotUsedOnWire(void)
+NetrUnjoinDomain(void)
 {
-    UNIMPLEMENTED;
-//    return 0;
+    TRACE("NetrUnjoinDomain()\n");
+    return ERROR_NOT_SUPPORTED;
 }
 
 
-/* Function 18 */
-void
+/* Function 18 - Not used on wire */
+unsigned long
 __stdcall
-Opnum18NotUsedOnWire(void)
+NetrValidateName(void)
 {
-    UNIMPLEMENTED;
-//    return 0;
+    TRACE("NetrValidateName()\n");
+    return ERROR_NOT_SUPPORTED;
 }
 
 
-/* Function 19 */
-void
+/* Function 19 - Not used on wire */
+unsigned long
 __stdcall
-Opnum19NotUsedOnWire(void)
+NetrRenameMachineInDomain(void)
 {
-    UNIMPLEMENTED;
-//    return 0;
+    TRACE("NetrRenameMachineInDomain()\n");
+    return ERROR_NOT_SUPPORTED;
 }
 
 
@@ -340,22 +364,24 @@ NetrGetJoinInformation(
     wchar_t **NameBuffer,
     PNETSETUP_JOIN_STATUS BufferType)
 {
-    TRACE("NetrGetJoinInformation()\n");
+    TRACE("NetrGetJoinInformation(%p %p %p)\n",
+          ServerName, NameBuffer, BufferType);
 
-    *NameBuffer = NULL;
-    *BufferType = NetSetupUnjoined;
+    if (NameBuffer == NULL)
+        return ERROR_INVALID_PARAMETER;
 
-    return NERR_Success;
+    return NetpGetJoinInformation(NameBuffer,
+                                  BufferType);
 }
 
 
-/* Function 21 */
-void
+/* Function 21 - Not used on wire */
+unsigned long
 __stdcall
-Opnum21NotUsedOnWire(void)
+NetrGetJoinableOUs(void)
 {
-    UNIMPLEMENTED;
-//    return 0;
+    TRACE("NetrGetJoinableOUs()\n");
+    return ERROR_NOT_SUPPORTED;
 }
 
 
@@ -371,8 +397,26 @@ NetrJoinDomain2(
     PJOINPR_ENCRYPTED_USER_PASSWORD Password,
     unsigned long Options)
 {
-    UNIMPLEMENTED;
-    return 0;
+    NET_API_STATUS status;
+
+    FIXME("NetrJoinDomain2(%p %S %S %S %S %p 0x%lx)\n",
+          RpcBindingHandle, ServerName, DomainNameParam, MachineAccountOU,
+          AccountName, Password, Options);
+
+    if (DomainNameParam == NULL)
+        return ERROR_INVALID_PARAMETER;
+
+    if (Options & NETSETUP_JOIN_DOMAIN)
+    {
+        FIXME("NetrJoinDomain2: NETSETUP_JOIN_DOMAIN is not supported yet!\n");
+        status = ERROR_CALL_NOT_IMPLEMENTED;
+    }
+    else
+    {
+        status = NetpJoinWorkgroup(DomainNameParam);
+    }
+
+    return status;
 }
 
 

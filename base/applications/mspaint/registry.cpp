@@ -4,13 +4,15 @@
  * FILE:        base/applications/mspaint/registry.cpp
  * PURPOSE:     Offering functions dealing with registry values
  * PROGRAMMERS: Benedikt Freisen
+ *              Katayama Hirofumi MZ
  */
 
 /* INCLUDES *********************************************************/
 
 #include "precomp.h"
-
 #include <winreg.h>
+#include <wincon.h>
+#include <shlobj.h>
 
 /* FUNCTIONS ********************************************************/
 static DWORD ReadDWORD(CRegKey &key, LPCTSTR lpName, DWORD &dwValue, BOOL bCheckForDef)
@@ -46,7 +48,7 @@ void RegistrySettings::SetWallpaper(LPCTSTR szFileName, RegistrySettings::Wallpa
         desktop.SetStringValue(_T("TileWallpaper"), (style == RegistrySettings::TILED) ? _T("1") : _T("0"));
     }
 
-    SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, (PVOID) szFileName, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
+    SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, (PVOID) szFileName, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 }
 
 void RegistrySettings::LoadPresets()
@@ -143,6 +145,9 @@ void RegistrySettings::Store()
 
 void RegistrySettings::SetMostRecentFile(LPCTSTR szPathName)
 {
+    if (szPathName && szPathName[0])
+        SHAddToRecentDocs(SHARD_PATHW, szPathName);
+
     if (strFile1 == szPathName)
     {
         // do nothing

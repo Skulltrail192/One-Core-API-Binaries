@@ -4,6 +4,7 @@ add_definitions(-D_WIN32_WINNT=0x600)
 
 add_definitions(
     -D__WINESRC__
+    -D__ROS_LONG64__
     -DCOM_NO_WINDOWS_H
     -D_OLEAUT32_
     -DPROXY_DELEGATION
@@ -25,7 +26,6 @@ list(APPEND SOURCE
     olepropframe.c
     recinfo.c
     safearray.c
-    tmarshal.c
     typelib.c
     usrmarshal.c
     varformat.c
@@ -37,7 +37,7 @@ if(MSVC)
     add_asm_files(oleaut32_asm msvc.S)
 endif()
 
-add_library(oleaut32 SHARED
+add_library(oleaut32 MODULE
     ${SOURCE}
     ${oleaut32_asm}
     oleaut32.rc

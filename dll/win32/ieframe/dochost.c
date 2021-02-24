@@ -18,7 +18,14 @@
 
 #include "ieframe.h"
 
-#include <initguid.h>
+#include "exdispid.h"
+#include "mshtml.h"
+#include "perhist.h"
+#include "initguid.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(ieframe);
 
 DEFINE_OLEGUID(CGID_DocHostCmdPriv, 0x000214D4L, 0, 0);
 
@@ -129,7 +136,6 @@ static void notif_complete(DocHost *This, DISPID dispid)
     TRACE("%d <<<\n", dispid);
 
     SysFreeString(V_BSTR(&url));
-    This->busy = VARIANT_FALSE;
 }
 
 static void object_available(DocHost *This)
@@ -421,7 +427,7 @@ static void update_travellog(DocHost *This)
 
     static const WCHAR about_schemeW[] = {'a','b','o','u','t',':'};
 
-    if(This->url && !strncmpiW(This->url, about_schemeW, sizeof(about_schemeW)/sizeof(*about_schemeW))) {
+    if(This->url && !_wcsnicmp(This->url, about_schemeW, ARRAY_SIZE(about_schemeW))) {
         TRACE("Skipping about URL\n");
         return;
     }
@@ -674,6 +680,8 @@ static HRESULT WINAPI ClOleCommandTarget_Exec(IOleCommandTarget *iface,
                 return E_NOTIMPL;
             return IOleCommandTarget_Exec(This->olecmd, pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
         case OLECMDID_SETDOWNLOADSTATE:
+            if(pvaIn && V_VT(pvaIn) == VT_I4)
+                This->busy = V_I4(pvaIn) ? VARIANT_TRUE : VARIANT_FALSE;
             if(This->olecmd)
                 return IOleCommandTarget_Exec(This->olecmd, pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
 

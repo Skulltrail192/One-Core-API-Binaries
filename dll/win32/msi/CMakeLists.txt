@@ -3,9 +3,17 @@ remove_definitions(-D_WIN32_WINNT=0x502)
 add_definitions(-D_WIN32_WINNT=0x600)
 
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
-add_definitions(-D__WINESRC__ -DMSIRUNMODE=MSIRUNMODE_T)
+add_definitions(-D__WINESRC__ -D__ROS_LONG64__ -DMSIRUNMODE=MSIRUNMODE_T)
 spec2def(msi.dll msi.spec ADD_IMPORTLIB)
 generate_idl_iids(msiserver.idl)
+
+if(MSVC)
+    #  error C4133: 'function': incompatible types - from 'UINT *' to 'MSIINSTALLCONTEXT *'
+    replace_compile_flags("/we4133" " ")
+
+    # error C4312: 'type cast': conversion from 'unsigned int' to 'HANDLE' of greater size
+    replace_compile_flags("/we4312" " ")
+endif()
 
 list(APPEND SOURCE
     action.c
@@ -14,7 +22,6 @@ list(APPEND SOURCE
     assembly.c
     automation.c
     classes.c
-    cond.tab.c
     create.c
     custom.c
     database.c
@@ -39,7 +46,6 @@ list(APPEND SOURCE
     script.c
     select.c
     source.c
-    sql.tab.c
     storages.c
     streams.c
     string.c
@@ -49,10 +55,15 @@ list(APPEND SOURCE
     update.c
     upgrade.c
     where.c
-    msipriv.h)
+    precomp.h)
 
-add_library(msi SHARED
+# cond.tab.c/sql.tab.c have been generated with relative file paths...
+set_source_files_properties(cond.tab.c sql.tab.c PROPERTIES COMPILE_FLAGS "-UREACTOS_SOURCE_DIR -DREACTOS_SOURCE_DIR=\"\\\".\\\"\"")
+
+add_library(msi MODULE
     ${SOURCE}
+    cond.tab.c
+    sql.tab.c
     ${CMAKE_CURRENT_BINARY_DIR}/msiserver_i.c
     ${CMAKE_CURRENT_BINARY_DIR}/msi_stubs.c
     msi.rc
@@ -73,5 +84,5 @@ add_importlibs(msi advapi32 advapi32_vista cabinet comctl32 gdi32 ole32 oleaut32
     kernel32
     ntdll)
 
-add_pch(msi msipriv.h SOURCE)
+add_pch(msi precomp.h SOURCE)
 add_cd_file(TARGET msi DESTINATION reactos/system32 FOR all)

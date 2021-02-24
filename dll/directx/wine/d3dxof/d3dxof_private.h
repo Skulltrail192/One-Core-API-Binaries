@@ -21,21 +21,14 @@
 #ifndef __D3DXOF_PRIVATE_INCLUDED__
 #define __D3DXOF_PRIVATE_INCLUDED__
 
-#include <config.h>
+#include <stdarg.h>
 
-#include <stdio.h>
-
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
-
-#define COBJMACROS
-
-#include <windef.h>
-#include <winbase.h>
-#include <dxfile.h>
-
-#include <wine/debug.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wtypes.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "dxfile.h"
 
 #define MAX_NAME_LEN 40
 #define MAX_ARRAY_DIM 4
@@ -137,7 +130,7 @@ typedef struct {
   BOOL list_separator;
   ULONG cur_pos_data;
   LPBYTE cur_pstrings;
-  BYTE value[100];
+  BYTE value[512];
   xobject** pxo_globals;
   ULONG nb_pxo_globals;
   xobject* pxo_tab;

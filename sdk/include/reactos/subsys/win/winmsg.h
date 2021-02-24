@@ -68,7 +68,7 @@ typedef struct _USER_LOGON
 typedef struct _USER_GET_THREAD_CONSOLE_DESKTOP
 {
     ULONG_PTR ThreadId;
-    HANDLE ConsoleDesktop;
+    HDESK ConsoleDesktop;
 } USER_GET_THREAD_CONSOLE_DESKTOP, *PUSER_GET_THREAD_CONSOLE_DESKTOP;
 
 typedef struct _USER_REGISTER_SERVICES_PROCESS
@@ -82,6 +82,18 @@ typedef struct _USER_REGISTER_LOGON_PROCESS
     BOOL Register;
 } USER_REGISTER_LOGON_PROCESS, *PUSER_REGISTER_LOGON_PROCESS;
 
+typedef struct _USER_CREATE_SYSTEM_THREAD
+{
+    BOOL bRemote;
+} USER_CREATE_SYSTEM_THREAD, *PUSER_CREATE_SYSTEM_THREAD;
+
+typedef struct _USER_DEVICE_EVENT_MSG {
+    HWND hwnd;
+    WPARAM wParam;
+    LPARAM lParam;
+    DWORD Data;
+    ULONG_PTR Result;
+} USER_DEVICE_EVENT_MSG, *PUSER_DEVICE_EVENT_MSG;
 
 typedef struct _USER_API_MESSAGE
 {
@@ -99,6 +111,8 @@ typedef struct _USER_API_MESSAGE
         USER_GET_THREAD_CONSOLE_DESKTOP GetThreadConsoleDesktopRequest;
         USER_REGISTER_SERVICES_PROCESS RegisterServicesProcessRequest;
         USER_REGISTER_LOGON_PROCESS RegisterLogonProcessRequest;
+        USER_CREATE_SYSTEM_THREAD CreateSystemThreadRequest;
+        USER_DEVICE_EVENT_MSG DeviceEventMsg;
     } Data;
 } USER_API_MESSAGE, *PUSER_API_MESSAGE;
 

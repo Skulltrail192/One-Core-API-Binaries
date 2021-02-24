@@ -53,10 +53,22 @@
  *   -- ICC_WIN95_CLASSES
  */
 
-#include "comctl32.h"
+#include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
 
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "commctrl.h"
+#include "winerror.h"
+#include "winreg.h"
 #define NO_SHLWAPI_STREAM
-#include <shlwapi.h>
+#include "shlwapi.h"
+#include "comctl32.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(commctrl);
 
@@ -129,64 +141,6 @@ static WCHAR* GetManifestPath(BOOL create, BOOL bV6)
     return pwszBuf;
 }
 
-static BOOL create_manifest(BOOL install, BOOL bV6)
-{
-    WCHAR *pwszBuf;
-    HRSRC hResInfo;
-    HGLOBAL hResData;
-    PVOID pManifest;
-    DWORD cbManifest, cbWritten;
-    HANDLE hFile;
-    BOOL bRet = FALSE;
-
-    if (bV6)
-        hResInfo = FindResourceW(COMCTL32_hModule, L"WINE_MANIFEST", (LPWSTR)RT_MANIFEST);
-    else
-        hResInfo = FindResourceW(COMCTL32_hModule, L"WINE_MANIFESTV5", (LPWSTR)RT_MANIFEST);
-
-    if (!hResInfo)
-        return FALSE;
-
-    cbManifest = SizeofResource(COMCTL32_hModule, hResInfo);
-    if (!cbManifest)
-        return FALSE;
-
-    hResData = LoadResource(COMCTL32_hModule, hResInfo);
-    if (!hResData)
-        return FALSE;
-
-    pManifest = LockResource(hResData);
-    if (!pManifest)
-        return FALSE;
-
-    pwszBuf = GetManifestPath(TRUE, bV6);
-    if (!pwszBuf)
-        return FALSE;
-
-    if (install)
-    {
-        hFile = CreateFileW(pwszBuf, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
-        if (hFile != INVALID_HANDLE_VALUE)
-        {
-            if (WriteFile(hFile, pManifest, cbManifest, &cbWritten, NULL) && cbWritten == cbManifest)
-                bRet = TRUE;
-
-            CloseHandle(hFile);
-
-            if (!bRet)
-                DeleteFileW(pwszBuf);
-            else
-                TRACE("created %s\n", debugstr_w(pwszBuf));
-        }
-    }
-    else
-        bRet = DeleteFileW(pwszBuf);
-
-    HeapFree(GetProcessHeap(), 0, pwszBuf);
-
-    return bRet;
-}
-
 static HANDLE CreateComctl32ActCtx(BOOL bV6)
 {
     HANDLE ret;
@@ -236,7 +190,13 @@ static void RegisterControls(BOOL bV6)
     }
     else
     {
-        BUTTON_Register();
+        BUTTON_Register ();
+        COMBO_Register ();
+        COMBOLBOX_Register ();
+        EDIT_Register ();
+        LISTBOX_Register ();
+        STATIC_Register ();
+
         TOOLBARv6_Register();
     }
 }
@@ -271,6 +231,12 @@ static void UnregisterControls(BOOL bV6)
     else
     {
         BUTTON_Unregister();
+        COMBO_Unregister ();
+        COMBOLBOX_Unregister ();
+        EDIT_Unregister ();
+        LISTBOX_Unregister ();
+        STATIC_Unregister ();
+
         TOOLBARv6_Unregister ();
     }
 
@@ -333,6 +299,28 @@ BOOLEAN WINAPI RegisterClassNameW(LPCWSTR className)
     return TRUE;
 }
 
+#endif /* __REACTOS__ */
+
+#ifndef __REACTOS__
+static void unregister_versioned_classes(void)
+{
+#define VERSION "6.0.2600.2982!"
+    static const char *classes[] =
+    {
+        VERSION WC_BUTTONA,
+        VERSION WC_COMBOBOXA,
+        VERSION "ComboLBox",
+        VERSION WC_EDITA,
+        VERSION WC_LISTBOXA,
+        VERSION WC_STATICA,
+    };
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(classes); i++)
+        UnregisterClassA(classes[i], NULL);
+
+#undef VERSION
+}
 #endif
 
 /***********************************************************************
@@ -395,6 +383,13 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
             TREEVIEW_Register ();
             UPDOWN_Register ();
 
+            BUTTON_Register ();
+            COMBO_Register ();
+            COMBOLBOX_Register ();
+            EDIT_Register ();
+            LISTBOX_Register ();
+            STATIC_Register ();
+
             /* subclass user32 controls */
             THEMING_Initialize ();
 #else
@@ -431,6 +426,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
             TRACKBAR_Unregister ();
             TREEVIEW_Unregister ();
             UPDOWN_Unregister ();
+
+            unregister_versioned_classes ();
+
 #else
             UninitializeClasses();
 #endif
@@ -508,7 +506,7 @@ MenuHelp (UINT uMsg, WPARAM wParam, LPARAM lParam, HMENU hMainMenu,
 		if (uMenuID) {
 		    WCHAR szText[256];
 
-		    if (!LoadStringW (hInst, uMenuID, szText, sizeof(szText)/sizeof(szText[0])))
+		    if (!LoadStringW (hInst, uMenuID, szText, ARRAY_SIZE(szText)))
 			szText[0] = '\0';
 
 		    SendMessageW (hwndStatus, SB_SETTEXTW,
@@ -1178,22 +1176,6 @@ HRESULT WINAPI DllGetVersion (DLLVERSIONINFO *pdvi)
 HRESULT WINAPI DllInstall(BOOL bInstall, LPCWSTR cmdline)
 {
     TRACE("(%u, %s): stub\n", bInstall, debugstr_w(cmdline));
-
-#ifdef __REACTOS__
-
-    if (!create_manifest(bInstall, TRUE))
-    {
-        ERR("Failed to install comctl32 v6 manifest!\n");
-        return HRESULT_FROM_WIN32(GetLastError());
-    }
-
-    if (!create_manifest(bInstall, FALSE))
-    {
-        ERR("Failed to install comctl32 v5 manifest!\n");
-        return HRESULT_FROM_WIN32(GetLastError());
-    }
-#endif
-
     return S_OK;
 }
 
@@ -1283,6 +1265,9 @@ BOOL WINAPI SetWindowSubclass (HWND hWnd, SUBCLASSPROC pfnSubclass,
    LPSUBCLASSPROCS proc;
 
    TRACE ("(%p, %p, %lx, %lx)\n", hWnd, pfnSubclass, uIDSubclass, dwRef);
+
+    if (!hWnd || !pfnSubclass)
+        return FALSE;
 
    /* Since the window procedure that we set here has two additional arguments,
     * we can't simply set it as the new window procedure of the window. So we
@@ -1667,7 +1652,7 @@ void COMCTL32_DrawInsertMark(HDC hDC, const RECT *lpRect, COLORREF clrInsertMark
         {lCentre + 1, l2 - 3},
     };
     hOldPen = SelectObject(hDC, hPen);
-    PolyPolyline(hDC, aptInsertMark, adwPolyPoints, sizeof(adwPolyPoints)/sizeof(adwPolyPoints[0]));
+    PolyPolyline(hDC, aptInsertMark, adwPolyPoints, ARRAY_SIZE(adwPolyPoints));
     SelectObject(hDC, hOldPen);
     DeleteObject(hPen);
 }
@@ -1950,8 +1935,7 @@ int WINAPI DrawShadowText(HDC hdc, LPCWSTR pszText, UINT cch, RECT *prc, DWORD d
     bf.BlendFlags = 0;
     bf.SourceConstantAlpha = 255;
     bf.AlphaFormat = AC_SRC_ALPHA;
-    if (!GdiAlphaBlend(hdc, prc->left + ixOffset, prc->top + iyOffset, bi.bmiHeader.biWidth, bi.bmiHeader.biHeight, hdcMem, 0, 0, bi.bmiHeader.biWidth, bi.bmiHeader.biHeight, bf))
-        ERR("GdiAlphaBlend failed: %lu\n", GetLastError());
+    GdiAlphaBlend(hdc, prc->left + ixOffset, prc->top + iyOffset, bi.bmiHeader.biWidth, bi.bmiHeader.biHeight, hdcMem, 0, 0, bi.bmiHeader.biWidth, bi.bmiHeader.biHeight, bf);
 
     /* Delete the helper bitmap */
     SelectObject(hdcMem, hbmOld);

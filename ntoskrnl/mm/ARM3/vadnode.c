@@ -172,7 +172,7 @@ MiInsertNode(IN PMM_AVL_TABLE Table,
         else
         {
             /* This is a section VAD. Store the MAREA here for now */
-            ASSERT(Vad->u4.Banked == (PVOID)0xDEADBABE);
+            ASSERT(Vad->u4.Banked == (PVOID)(ULONG_PTR)0xDEADBABEDEADBABEULL);
             Vad->u4.Banked = (PVOID)MemoryArea;
         }
     }
@@ -285,7 +285,7 @@ MiInsertVadEx(
                                            &Parent);
         if (Result == TableFoundNode)
         {
-            DPRINT1("Given address conflicts with existing node\n");
+            DPRINT("Given address conflicts with existing node\n");
             KeReleaseGuardedMutex(&CurrentProcess->AddressCreationLock);
             return STATUS_CONFLICTING_ADDRESSES;
         }
@@ -399,7 +399,7 @@ MiRemoveNode(IN PMMADDRESS_NODE Node,
         if (MemoryArea)
         {
             /* Make sure we have not already freed it */
-            ASSERT(MemoryArea != (PVOID)0xDEADBAB1);
+            ASSERT(MemoryArea != (PVOID)(ULONG_PTR)0xDEADBAB1DEADBAB1ULL);
 
             /* Get the process */
             Process = CONTAINING_RECORD(Table, EPROCESS, VadRoot);
@@ -415,12 +415,12 @@ MiRemoveNode(IN PMMADDRESS_NODE Node,
             if (Vad->ControlArea == NULL)
             {
                 /* Delete the pointer to it */
-                Vad->FirstPrototypePte = (PVOID)0xDEADBAB1;
+                Vad->FirstPrototypePte = (PVOID)(ULONG_PTR)0xDEADBAB1DEADBAB1ULL;
             }
             else
             {
                 /* Delete the pointer to it */
-                Vad->u4.Banked = (PVOID)0xDEADBAB1;
+                Vad->u4.Banked = (PVOID)(ULONG_PTR)0xDEADBAB1DEADBAB1ULL;
             }
         }
     }
@@ -601,7 +601,7 @@ MiFindEmptyAddressRangeDownTree(IN SIZE_T Length,
                                 OUT PULONG_PTR Base,
                                 OUT PMMADDRESS_NODE *Parent)
 {
-    PMMADDRESS_NODE Node, OldNode, Child;
+    PMMADDRESS_NODE Node, OldNode = NULL, Child;
     ULONG_PTR LowVpn, HighVpn, AlignmentVpn;
     PFN_NUMBER PageCount;
 
@@ -670,8 +670,14 @@ MiFindEmptyAddressRangeDownTree(IN SIZE_T Length,
             }
             else
             {
-                /* Node has a right child, the node we had before is the most
-                   left grandchild of that right child, use it as parent. */
+                /* Node has a right child. This means we must have already
+                   moved one node left from the right-most node we started
+                   with, thus we already have an OldNode! */
+                ASSERT(OldNode != NULL);
+
+                /* The node we had before is the most left grandchild of 
+                   that right child, use it as parent. */
+                ASSERT(RtlLeftChildAvl(OldNode) == NULL);
                 *Parent = OldNode;
                 return TableInsertAsLeft;
             }

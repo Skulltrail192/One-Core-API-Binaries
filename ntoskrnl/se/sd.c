@@ -916,13 +916,9 @@ SeSetSecurityDescriptorInfoEx(
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    RtlCreateSecurityDescriptor(NewSd,
-                                SECURITY_DESCRIPTOR_REVISION1);
+    RtlCreateSecurityDescriptorRelative(NewSd, SECURITY_DESCRIPTOR_REVISION1);
 
-    /* We always build a self-relative descriptor */
-    NewSd->Control = Control | SE_SELF_RELATIVE;
-
-    Current = sizeof(SECURITY_DESCRIPTOR);
+    Current = sizeof(SECURITY_DESCRIPTOR_RELATIVE);
 
     if (OwnerLength != 0)
     {
@@ -1431,6 +1427,48 @@ SeAssignSecurity(
                               SubjectContext,
                               GenericMapping,
                               PoolType);
+}
+
+/*
+ * @implemented
+ */
+_IRQL_requires_max_(PASSIVE_LEVEL)
+NTSTATUS
+NTAPI
+SeComputeQuotaInformationSize(
+    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
+    _Out_ PULONG QuotaInfoSize)
+{
+    PSID Group;
+    PACL Dacl;
+
+    PAGED_CODE();
+
+    *QuotaInfoSize = 0;
+
+    /* Validate security descriptor revision */
+    if (((PISECURITY_DESCRIPTOR)SecurityDescriptor)->Revision != SECURITY_DESCRIPTOR_REVISION1)
+    {
+        return STATUS_UNKNOWN_REVISION;
+    }
+
+    /* Get group and DACL, if any */
+    Group = SepGetGroupFromDescriptor(SecurityDescriptor);
+    Dacl = SepGetDaclFromDescriptor(SecurityDescriptor);
+
+    /* Return SID length if any */
+    if (Group != NULL)
+    {
+        *QuotaInfoSize = ALIGN_UP_BY(RtlLengthSid(Group), sizeof(ULONG));
+    }
+
+    /* Return DACL if any */
+    if (Dacl != NULL)
+    {
+        *QuotaInfoSize += ALIGN_UP_BY(Dacl->AclSize, sizeof(ULONG));
+    }
+
+    return STATUS_SUCCESS;
 }
 
 /* EOF */

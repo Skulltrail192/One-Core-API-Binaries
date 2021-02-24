@@ -18,7 +18,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "fusionpriv.h"
+#include <stdarg.h>
+#ifdef __REACTOS__
+#include <wchar.h>
+#endif
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "ole2.h"
+#include "fusion.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(fusion);
+
 
 /******************************************************************
  *  InitializeFusion   (FUSION.@)
@@ -26,7 +41,7 @@
 HRESULT WINAPI InitializeFusion(void)
 {
     FIXME("\n");
-    return E_NOTIMPL;
+    return S_OK;
 }
 
 /******************************************************************
@@ -115,7 +130,7 @@ HRESULT WINAPI GetCachePath(ASM_CACHE_FLAGS dwCacheFlags, LPWSTR pwzCachePath,
         return E_INVALIDARG;
 
     len = GetWindowsDirectoryW(windir, MAX_PATH);
-    strcpyW(path, windir);
+    lstrcpyW(path, windir);
 
     switch (dwCacheFlags)
     {
@@ -125,15 +140,15 @@ HRESULT WINAPI GetCachePath(ASM_CACHE_FLAGS dwCacheFlags, LPWSTR pwzCachePath,
             if (FAILED(hr))
                 return hr;
 
-            len = sprintfW(path, zapfmt, windir, assembly + 1, nativeimg, version);
+            len = swprintf(path, zapfmt, windir, assembly + 1, nativeimg, version);
             break;
         }
         case ASM_CACHE_GAC:
         {
-            strcpyW(path + len, assembly);
-            len += sizeof(assembly)/sizeof(WCHAR) - 1;
-            strcpyW(path + len, gac);
-            len += sizeof(gac)/sizeof(WCHAR) - 1;
+            lstrcpyW(path + len, assembly);
+            len += ARRAY_SIZE(assembly) - 1;
+            lstrcpyW(path + len, gac);
+            len += ARRAY_SIZE(gac) - 1;
             break;
         }
         case ASM_CACHE_DOWNLOAD:
@@ -142,14 +157,14 @@ HRESULT WINAPI GetCachePath(ASM_CACHE_FLAGS dwCacheFlags, LPWSTR pwzCachePath,
             return E_FAIL;
         }
         case ASM_CACHE_ROOT:
-            strcpyW(path + len, assembly);
-            len += sizeof(assembly)/sizeof(WCHAR) - 1;
+            lstrcpyW(path + len, assembly);
+            len += ARRAY_SIZE(assembly) - 1;
             break;
         case ASM_CACHE_ROOT_EX:
-            strcpyW(path + len, dotnet);
-            len += sizeof(dotnet)/sizeof(WCHAR) - 1;
-            strcpyW(path + len, assembly);
-            len += sizeof(assembly)/sizeof(WCHAR) - 1;
+            lstrcpyW(path + len, dotnet);
+            len += ARRAY_SIZE(dotnet) - 1;
+            lstrcpyW(path + len, assembly);
+            len += ARRAY_SIZE(assembly) - 1;
             break;
         default:
             return E_INVALIDARG;
@@ -159,7 +174,7 @@ HRESULT WINAPI GetCachePath(ASM_CACHE_FLAGS dwCacheFlags, LPWSTR pwzCachePath,
     if (*pcchPath <= len || !pwzCachePath)
         hr = E_NOT_SUFFICIENT_BUFFER;
     else if (pwzCachePath)
-        strcpyW(pwzCachePath, path);
+        lstrcpyW(pwzCachePath, path);
 
     *pcchPath = len;
     return hr;

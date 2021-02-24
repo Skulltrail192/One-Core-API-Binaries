@@ -21,11 +21,32 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
+#include <ctype.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
 
+#define COBJMACROS
+#define NONAMELESSUNION
+#define NONAMELESSSTRUCT
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winspool.h"
+#include "winerror.h"
+#include "objbase.h"
+#include "commdlg.h"
+
+#include "wine/debug.h"
+
+#include "dlgs.h"
+#include "cderr.h"
 #include "cdlg.h"
 
-#include <assert.h>
-#include <winspool.h>
+WINE_DEFAULT_DEBUG_CHANNEL(commdlg);
 
 /* Yes these constants are the same, but we're just copying win98 */
 #define UPDOWN_ID 0x270f
@@ -135,7 +156,7 @@ static LPWSTR strdupW(LPCWSTR p)
     DWORD len;
 
     if(!p) return NULL;
-    len = (strlenW(p) + 1) * sizeof(WCHAR);
+    len = (lstrlenW(p) + 1) * sizeof(WCHAR);
     ret = HeapAlloc(GetProcessHeap(), 0, len);
     memcpy(ret, p, len);
     return ret;
@@ -347,7 +368,7 @@ static DEVMODEA *convert_to_devmodeA(const DEVMODEW *dmW)
 static BOOL PRINTDLG_OpenDefaultPrinter(HANDLE *hprn)
 {
     WCHAR buf[260];
-    DWORD dwBufLen = sizeof(buf) / sizeof(buf[0]);
+    DWORD dwBufLen = ARRAY_SIZE(buf);
     BOOL res;
     if(!GetDefaultPrinterW(buf, &dwBufLen))
         return FALSE;
@@ -392,7 +413,7 @@ static INT PRINTDLG_SetUpPrinterListComboA(HWND hDlg, UINT id, LPCSTR name)
 				(LPARAM)name)) == CB_ERR) {
 
         char buf[260];
-        DWORD dwBufLen = sizeof(buf);
+        DWORD dwBufLen = ARRAY_SIZE(buf);
         if (name != NULL)
             WARN("Can't find %s in printer list so trying to find default\n",
 	        debugstr_a(name));
@@ -425,7 +446,7 @@ static INT PRINTDLG_SetUpPrinterListComboW(HWND hDlg, UINT id, LPCWSTR name)
        (i = SendDlgItemMessageW(hDlg, id, CB_FINDSTRINGEXACT, -1,
 				(LPARAM)name)) == CB_ERR) {
         WCHAR buf[260];
-        DWORD dwBufLen = sizeof(buf)/sizeof(buf[0]);
+        DWORD dwBufLen = ARRAY_SIZE(buf);
         if (name != NULL)
             WARN("Can't find %s in printer list so trying to find default\n",
 	        debugstr_w(name));
@@ -455,7 +476,7 @@ static BOOL PRINTDLG_CreateDevNames(HGLOBAL *hmem, const char* DeviceDriverName,
     char*   pTempPtr;
     LPDEVNAMES lpDevNames;
     char buf[260];
-    DWORD dwBufLen = sizeof(buf);
+    DWORD dwBufLen = ARRAY_SIZE(buf);
     const char *p;
 
     p = strrchr( DeviceDriverName, '\\' );
@@ -502,10 +523,10 @@ static BOOL PRINTDLG_CreateDevNamesW(HGLOBAL *hmem, LPCWSTR DeviceDriverName,
     LPWSTR   pTempPtr;
     LPDEVNAMES lpDevNames;
     WCHAR bufW[260];
-    DWORD dwBufLen = sizeof(bufW) / sizeof(WCHAR);
+    DWORD dwBufLen = ARRAY_SIZE(bufW);
     const WCHAR *p;
 
-    p = strrchrW( DeviceDriverName, '\\' );
+    p = wcsrchr( DeviceDriverName, '\\' );
     if (p) DeviceDriverName = p + 1;
 
     size = sizeof(WCHAR)*lstrlenW(DeviceDriverName) + 2
@@ -693,7 +714,7 @@ static BOOL PRINTDLG_UpdatePrintDlgW(HWND hDlg,
                 args[1] = lppd->nMaxPage;
                 FormatMessageW(FORMAT_MESSAGE_FROM_STRING|FORMAT_MESSAGE_ARGUMENT_ARRAY,
                                resourcestr, 0, 0, resultstr,
-                               sizeof(resultstr)/sizeof(*resultstr),
+                               ARRAY_SIZE(resultstr),
                                (__ms_va_list*)args);
 		LoadStringW(COMDLG32_hInstance, PD32_PRINT_TITLE,
 			    resourcestr, 255);
@@ -1537,7 +1558,7 @@ static LRESULT PRINTDLG_WMInitDialog(HWND hDlg,
     } else {
 	/* else use default printer */
 	char name[200];
-        DWORD dwBufLen = sizeof(name);
+        DWORD dwBufLen = ARRAY_SIZE(name);
 	BOOL ret = GetDefaultPrinterA(name, &dwBufLen);
 
 	if (ret)
@@ -1646,7 +1667,7 @@ static LRESULT PRINTDLG_WMInitDialogW(HWND hDlg,
     } else {
 	/* else use default printer */
 	WCHAR name[200];
-        DWORD dwBufLen = sizeof(name) / sizeof(WCHAR);
+        DWORD dwBufLen = ARRAY_SIZE(name);
 	BOOL ret = GetDefaultPrinterW(name, &dwBufLen);
 
 	if (ret)
@@ -2588,7 +2609,7 @@ static WCHAR get_decimal_sep(void)
     if(!sep)
     {
         WCHAR buf[] = {'.', 0};
-        GetLocaleInfoW(LOCALE_USER_DEFAULT, LOCALE_SDECIMAL, buf, sizeof(buf) / sizeof(buf[0]));
+        GetLocaleInfoW(LOCALE_USER_DEFAULT, LOCALE_SDECIMAL, buf, ARRAY_SIZE(buf));
         sep = buf[0];
     }
     return sep;
@@ -2596,9 +2617,9 @@ static WCHAR get_decimal_sep(void)
 
 static void size2str(const pagesetup_data *data, DWORD size, LPWSTR strout)
 {
-    WCHAR integer_fmt[] = {'%','d',0};
-    WCHAR hundredths_fmt[] = {'%','d','%','c','%','0','2','d',0};
-    WCHAR thousandths_fmt[] = {'%','d','%','c','%','0','3','d',0};
+    static const WCHAR integer_fmt[] = {'%','d',0};
+    static const WCHAR hundredths_fmt[] = {'%','d','%','c','%','0','2','d',0};
+    static const WCHAR thousandths_fmt[] = {'%','d','%','c','%','0','3','d',0};
 
     /* FIXME use LOCALE_SDECIMAL when the edit parsing code can cope */
 
@@ -2796,9 +2817,9 @@ static void pagesetup_set_devnames(pagesetup_data *data, LPCWSTR drv, LPCWSTR de
 
     if(data->unicode)
     {
-        drv_len  = (strlenW(drv) + 1) * sizeof(WCHAR);
-        dev_len  = (strlenW(devname) + 1) * sizeof(WCHAR);
-        port_len = (strlenW(port) + 1) * sizeof(WCHAR);
+        drv_len  = (lstrlenW(drv) + 1) * sizeof(WCHAR);
+        dev_len  = (lstrlenW(devname) + 1) * sizeof(WCHAR);
+        port_len = (lstrlenW(port) + 1) * sizeof(WCHAR);
     }
     else
     {
@@ -2820,15 +2841,15 @@ static void pagesetup_set_devnames(pagesetup_data *data, LPCWSTR drv, LPCWSTR de
         WCHAR *ptr = (WCHAR *)(dn + 1);
         len = sizeof(DEVNAMES) / sizeof(WCHAR);
         dn->wDriverOffset = len;
-        strcpyW(ptr, drv);
+        lstrcpyW(ptr, drv);
         ptr += drv_len / sizeof(WCHAR);
         len += drv_len / sizeof(WCHAR);
         dn->wDeviceOffset = len;
-        strcpyW(ptr, devname);
+        lstrcpyW(ptr, devname);
         ptr += dev_len / sizeof(WCHAR);
         len += dev_len / sizeof(WCHAR);
         dn->wOutputOffset = len;
-        strcpyW(ptr, port);
+        lstrcpyW(ptr, port);
     }
     else
     {
@@ -2847,7 +2868,7 @@ static void pagesetup_set_devnames(pagesetup_data *data, LPCWSTR drv, LPCWSTR de
     }
 
     dn->wDefault = 0;
-    len = sizeof(def) / sizeof(def[0]);
+    len = ARRAY_SIZE(def);
     GetDefaultPrinterW(def, &len);
     if(!lstrcmpW(def, devname))
         dn->wDefault = 1;
@@ -3221,12 +3242,12 @@ static void margin_edit_notification(HWND hDlg, const pagesetup_data *data, WORD
         LONG val = 0;
         LONG *value = element_from_margin_id(pagesetup_get_margin_rect(data), id);
 
-        if (GetDlgItemTextW(hDlg, id, buf, sizeof(buf) / sizeof(buf[0])) != 0)
+        if (GetDlgItemTextW(hDlg, id, buf, ARRAY_SIZE(buf)) != 0)
         {
             WCHAR *end;
             WCHAR decimal = get_decimal_sep();
 
-            val = strtolW(buf, &end, 10);
+            val = wcstol(buf, &end, 10);
             if(end != buf || *end == decimal)
             {
                 int mult = is_metric(data) ? 100 : 1000;
@@ -3237,7 +3258,7 @@ static void margin_edit_notification(HWND hDlg, const pagesetup_data *data, WORD
                     {
                         end++;
                         mult /= 10;
-                        if(isdigitW(*end))
+                        if(iswdigit(*end))
                             val += (*end - '0') * mult;
                         else
                             break;
@@ -3260,7 +3281,7 @@ static void set_margin_groupbox_title(HWND hDlg, const pagesetup_data *data)
     WCHAR title[256];
 
     if(LoadStringW(COMDLG32_hInstance, is_metric(data) ? PD32_MARGINS_IN_MILLIMETERS : PD32_MARGINS_IN_INCHES,
-                   title, sizeof(title)/sizeof(title[0])))
+                   title, ARRAY_SIZE(title)))
         SetDlgItemTextW(hDlg, grp4, title);
 }
 
@@ -3464,7 +3485,7 @@ static UINT_PTR default_page_paint_hook(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
                  LoadStringW(COMDLG32_hInstance,
                         IDS_FAKEDOCTEXT,
                         wszFakeDocumentText,
-                        sizeof(wszFakeDocumentText)/sizeof(wszFakeDocumentText[0]));
+                        ARRAY_SIZE(wszFakeDocumentText));
 
             oldbkmode = SetBkMode(hdc, TRANSPARENT);
             DrawTextW(hdc, wszFakeDocumentText, -1, lprc, DT_TOP|DT_LEFT|DT_NOPREFIX|DT_WORDBREAK);
@@ -3618,7 +3639,7 @@ static LRESULT CALLBACK pagesetup_margin_editproc(HWND hwnd, UINT msg, WPARAM wp
     {
         WCHAR decimal = get_decimal_sep();
         WCHAR wc = (WCHAR)wparam;
-        if(!isdigitW(wc) && wc != decimal && wc != VK_BACK) return 0;
+        if(!iswdigit(wc) && wc != decimal && wc != VK_BACK) return 0;
     }
     return CallWindowProcW(edit_wndproc, hwnd, msg, wparam, lparam);
 }

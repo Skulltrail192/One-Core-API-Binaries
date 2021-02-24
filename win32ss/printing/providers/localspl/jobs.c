@@ -1,8 +1,8 @@
 /*
  * PROJECT:     ReactOS Local Spooler
- * LICENSE:     GNU LGPL v2.1 or any later version as published by the Free Software Foundation
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
  * PURPOSE:     Functions for managing print jobs
- * COPYRIGHT:   Copyright 2015-2017 Colin Finck <colin@reactos.org>
+ * COPYRIGHT:   Copyright 2015-2017 Colin Finck (colin@reactos.org)
  */
 
 #include "precomp.h"
@@ -108,7 +108,7 @@ _GlobalJobListCompareRoutine(PVOID FirstStruct, PVOID SecondStruct)
 /**
  * @name _PrinterJobListCompareRoutine
  *
- * SKIPLIST_COMPARE_ROUTINE for the each Printer's Job List.
+ * SKIPLIST_COMPARE_ROUTINE for each Printer's Job List.
  * Jobs in this list are sorted in the desired order of processing.
  */
 static int WINAPI
@@ -119,9 +119,6 @@ _PrinterJobListCompareRoutine(PVOID FirstStruct, PVOID SecondStruct)
     int iComparison;
     FILETIME ftSubmittedA;
     FILETIME ftSubmittedB;
-    ULARGE_INTEGER uliSubmittedA;
-    ULARGE_INTEGER uliSubmittedB;
-    ULONGLONG ullResult;
 
     // First compare the priorities to determine the order.
     // The job with a higher priority shall come first.
@@ -130,7 +127,6 @@ _PrinterJobListCompareRoutine(PVOID FirstStruct, PVOID SecondStruct)
         return iComparison;
 
     // Both have the same priority, so go by creation time.
-    // Comparison is done using the MSDN-recommended way for comparing SYSTEMTIMEs.
     if (!SystemTimeToFileTime(&A->stSubmitted, &ftSubmittedA))
     {
         ERR("SystemTimeToFileTime failed for A with error %lu!\n", GetLastError());
@@ -143,18 +139,7 @@ _PrinterJobListCompareRoutine(PVOID FirstStruct, PVOID SecondStruct)
         return 0;
     }
 
-    uliSubmittedA.LowPart = ftSubmittedA.dwLowDateTime;
-    uliSubmittedA.HighPart = ftSubmittedA.dwHighDateTime;
-    uliSubmittedB.LowPart = ftSubmittedB.dwLowDateTime;
-    uliSubmittedB.HighPart = ftSubmittedB.dwHighDateTime;
-    ullResult = uliSubmittedA.QuadPart - uliSubmittedB.QuadPart;
-
-    if (ullResult < 0)
-        return -1;
-    else if (ullResult > 0)
-        return 1;
-
-    return 0;
+    return CompareFileTime(&ftSubmittedA, &ftSubmittedB);
 }
 
 DWORD
@@ -470,7 +455,7 @@ _LocalGetJobLevel1(PLOCAL_JOB pJob, PJOB_INFO_1W* ppJobInfo, PBYTE* ppJobInfoEnd
     DWORD cbPrinterName;
     DWORD cbStatus = 0;
     DWORD cbUserName = 0;
-    PWSTR pwszStrings[6];
+    PCWSTR pwszStrings[6];
 
     // Calculate the string lengths.
     if (!ppJobInfo)
@@ -551,7 +536,7 @@ _LocalGetJobLevel2(PLOCAL_JOB pJob, PJOB_INFO_2W* ppJobInfo, PBYTE* ppJobInfoEnd
     DWORD cbUserName = 0;
     FILETIME ftNow;
     FILETIME ftSubmitted;
-    PWSTR pwszStrings[10];
+    PCWSTR pwszStrings[10];
     ULARGE_INTEGER uliNow;
     ULARGE_INTEGER uliSubmitted;
 
@@ -781,7 +766,7 @@ _LocalSetJobLevel1(PLOCAL_PRINTER_HANDLE pPrinterHandle, PLOCAL_JOB pJob, PJOB_I
     }
 
     // Check if the user name has changed. An empty string is permitted here!
-    if (!_EqualStrings(pJob->pwszUserName, pJobInfo->pUserName) != 0)
+    if (!_EqualStrings(pJob->pwszUserName, pJobInfo->pUserName))
     {
         // The new user name doesn't need to exist, so no additional verification is required.
 
@@ -963,7 +948,7 @@ Cleanup:
 BOOL WINAPI
 LocalSetJob(HANDLE hPrinter, DWORD JobId, DWORD Level, PBYTE pJobInfo, DWORD Command)
 {
-    DWORD dwErrorCode;
+    DWORD dwErrorCode = ERROR_SUCCESS;
     PLOCAL_HANDLE pHandle;
     PLOCAL_JOB pJob;
     PLOCAL_PRINTER_HANDLE pPrinterHandle;
@@ -973,7 +958,7 @@ LocalSetJob(HANDLE hPrinter, DWORD JobId, DWORD Level, PBYTE pJobInfo, DWORD Com
 
     // Check if this is a printer handle.
     pHandle = (PLOCAL_HANDLE)hPrinter;
-    if (pHandle->HandleType != HandleType_Printer)
+    if (!pHandle || pHandle->HandleType != HandleType_Printer)
     {
         dwErrorCode = ERROR_INVALID_HANDLE;
         goto Cleanup;
@@ -989,16 +974,11 @@ LocalSetJob(HANDLE hPrinter, DWORD JobId, DWORD Level, PBYTE pJobInfo, DWORD Com
         goto Cleanup;
     }
 
-    // Setting job information is handled differently for each level.
-    if (Level)
-    {
-        if (Level == 1)
-            dwErrorCode = _LocalSetJobLevel1(pPrinterHandle, pJob, (PJOB_INFO_1W)pJobInfo);
-        else if (Level == 2)
-            dwErrorCode = _LocalSetJobLevel2(pPrinterHandle, pJob, (PJOB_INFO_2W)pJobInfo);
-        else
-            dwErrorCode = ERROR_INVALID_LEVEL;
-    }
+    // Set new job information if a valid level was given.
+    if (Level == 1)
+        dwErrorCode = _LocalSetJobLevel1(pPrinterHandle, pJob, (PJOB_INFO_1W)pJobInfo);
+    else if (Level == 2)
+        dwErrorCode = _LocalSetJobLevel2(pPrinterHandle, pJob, (PJOB_INFO_2W)pJobInfo);
 
     if (dwErrorCode != ERROR_SUCCESS)
         goto Cleanup;
@@ -1032,8 +1012,6 @@ LocalSetJob(HANDLE hPrinter, DWORD JobId, DWORD Level, PBYTE pJobInfo, DWORD Com
             ERR("Unimplemented SetJob Command: %lu!\n", Command);
         }
     }
-
-    dwErrorCode = ERROR_SUCCESS;
 
 Cleanup:
     SetLastError(dwErrorCode);

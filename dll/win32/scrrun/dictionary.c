@@ -16,13 +16,28 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
+#define COBJMACROS
 
+#ifdef __REACTOS__
+#include <wine/config.h>
+#include <wine/port.h>
+#endif
+#include <stdarg.h>
+#include <math.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "ole2.h"
+#include "olectl.h"
+#include "dispex.h"
+#include "scrrun.h"
 #include "scrrun_private.h"
 
-#include <olectl.h>
-#include <wine/list.h>
-#include <wine/port.h>
-#include <wine/unicode.h>
+#include "wine/debug.h"
+#include "wine/heap.h"
+#include "wine/list.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(scrrun);
 
 #define BUCKET_COUNT  509
 #define DICT_HASH_MOD 1201
@@ -111,7 +126,7 @@ static inline int strcmp_key(const dictionary *dict, const VARIANT *key1, const 
 
     str1 = get_key_strptr(key1);
     str2 = get_key_strptr(key2);
-    return dict->method == BinaryCompare ? strcmpW(str1, str2) : strcmpiW(str1, str2);
+    return dict->method == BinaryCompare ? wcscmp(str1, str2) : wcsicmp(str1, str2);
 }
 
 static BOOL is_matching_key(const dictionary *dict, const struct keyitem_pair *pair, const VARIANT *key, DWORD hash)
@@ -740,7 +755,7 @@ static DWORD get_str_hash(const WCHAR *str, CompareMethod method)
         while (*str) {
             WCHAR ch;
 
-            ch = (method == TextCompare || method == DatabaseCompare) ? tolowerW(*str) : *str;
+            ch = (method == TextCompare || method == DatabaseCompare) ? towlower(*str) : *str;
 
             hash += (hash << 4) + ch;
             str++;

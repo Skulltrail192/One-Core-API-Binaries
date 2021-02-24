@@ -630,6 +630,8 @@ typedef struct _BUSMASTER_CONTROLLER_INFORMATION {
 #define UNIATA_AHCI             0x02000000
 #define UNIATA_NO80CHK          0x01000000
 #define UNIATA_CHAN_TIMINGS     0x00800000 /* controller has common timing settings for master/slave */
+#define UNIATA_AHCI_ALT_SIG     0x00400000 /* Some weird controllers do not return signature in
+			                      FIS receive area. Read it from PxSIG register */
 
 #define ATPOLD		0x0100
 
@@ -696,6 +698,7 @@ typedef struct _BUSMASTER_CONTROLLER_INFORMATION {
 
 #define NV4OFF          0x0100
 #define NVQ             0x0200
+#define NVGEN           0x0400
 
 #define VIANEW		5
 #define VIA33		4

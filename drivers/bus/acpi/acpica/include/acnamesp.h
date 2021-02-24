@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2019, Intel Corp.
+ * Copyright (C) 2000 - 2020, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -311,10 +311,6 @@ ACPI_STATUS
 AcpiNsEvaluate (
     ACPI_EVALUATE_INFO      *Info);
 
-void
-AcpiNsExecModuleCodeList (
-    void);
-
 
 /*
  * nsarguments - Argument count/type checking for predefined/reserved names
@@ -382,6 +378,10 @@ AcpiNsBuildNormalizedPath (
     char                    *FullPath,
     UINT32                  PathSize,
     BOOLEAN                 NoTrailing);
+
+void
+AcpiNsNormalizePathname (
+    char                    *OriginalPath);
 
 char *
 AcpiNsGetNormalizedPathname (

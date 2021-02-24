@@ -53,7 +53,7 @@ BEGIN
             MENUITEM "", -1, MFT_SEPARATOR
         END
         MENUITEM "&Barre d'état", IDM_VIEW_STATUSBAR
-        POPUP "&Explorer Bar", IDM_VIEW_EXPLORERBAR
+        POPUP "&Volet d'exploration", IDM_VIEW_EXPLORERBAR
         BEGIN
             MENUITEM "&Rechercher\tCtrl+E", IDM_EXPLORERBAR_SEARCH
             MENUITEM "&Favoris\tCtrl+I", IDM_EXPLORERBAR_FAVORITES
@@ -96,19 +96,33 @@ END
 
 IDM_TASKBAR_TOOLBARS MENUEX
 BEGIN
-	POPUP "&Barres d'outils", -1, MFT_STRING, MFS_ENABLED, 0
-	BEGIN
-		MENUITEM "&Bureau", IDM_TASKBAR_TOOLBARS_DESKTOP, MFT_STRING, MFS_GRAYED
-		MENUITEM "&Quick Launch", IDM_TASKBAR_TOOLBARS_QUICKLAUNCH, MFT_STRING, MFS_GRAYED
-		MENUITEM "", -1, MFT_SEPARATOR, MFS_ENABLED
-		MENUITEM "&Nouvelle barre d'outils...", IDM_TASKBAR_TOOLBARS_NEW, MFT_STRING, MFS_GRAYED
-	END
+    POPUP "&Barres d'outils", -1, MFT_STRING, MFS_ENABLED, 0
+    BEGIN
+        MENUITEM "&Bureau", IDM_TASKBAR_TOOLBARS_DESKTOP, MFT_STRING
+        MENUITEM "Lancement &rapide", IDM_TASKBAR_TOOLBARS_QUICKLAUNCH, MFT_STRING
+        MENUITEM "", -1, MFT_SEPARATOR, MFS_ENABLED
+        MENUITEM "&Nouvelle barre d'outils...", IDM_TASKBAR_TOOLBARS_NEW, MFT_STRING
+    END
 END
 
 IDM_BAND_MENU MENUEX
 BEGIN
-	MENUITEM "Sho&w title", IDM_BAND_TITLE
-	MENUITEM "&Close toolbar", IDM_BAND_CLOSE
+    MENUITEM "Afficher le titre", IDM_BAND_TITLE
+    MENUITEM "&Fermer la barre d'outils", IDM_BAND_CLOSE
+END
+
+IDM_POPUPMENU MENUEX DISCARDABLE
+BEGIN
+    POPUP ""
+    BEGIN
+        POPUP "&Affichage", IDM_VIEW_MENU
+        BEGIN
+            MENUITEM "&Grandes icônes", IDM_LARGE_ICONS
+            MENUITEM "&Petites icônes", IDM_SMALL_ICONS
+        END
+        MENUITEM "&Ouvrir le dossier", IDM_OPEN_FOLDER
+        MENUITEM "&Afficher le texte", IDM_SHOW_TEXT
+    END    
 END
 
 /* Dialogs */
@@ -117,14 +131,14 @@ IDD_PROGRESS_DLG DIALOGEX 0, 0, 260, 85
 STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU
 CAPTION ""
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     CONTROL "", IDC_ANIMATION, ANIMATE_CLASSA, 0, 12, 10, 236, 30 /* TODO: style */
     LTEXT "", IDC_TEXT_LINE,     7, 45, 250, 10, SS_LEFT|SS_NOPREFIX
     LTEXT "", IDC_TEXT_LINE + 1, 7, 55, 250, 10, SS_LEFT|SS_NOPREFIX
     LTEXT "", IDC_TEXT_LINE + 2, 7, 75, 190, 10, SS_LEFT|SS_NOPREFIX
     CONTROL "", IDC_PROGRESS_BAR, PROGRESS_CLASSA, WS_BORDER, 7, 65, 190, 8
     PUSHBUTTON "Annuler", IDCANCEL, 205, 65, 50, 15, WS_GROUP | WS_TABSTOP | WS_VISIBLE
-}
+END
 
 IDD_CUSTOMIZETOOLBAREX DIALOGEX 0, 0, 357, 33
 STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_CAPTION
@@ -134,6 +148,30 @@ BEGIN
     COMBOBOX IDC_TEXTOPTIONS, 52, 0, 123, 57, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT "Ico&n options:", -1, 4, 20, 48, 15
     COMBOBOX IDC_ICONOPTIONS, 52, 18, 123, 57, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_SEARCH_DLG DIALOGEX 0, 0, 260, 85
+STYLE DS_SHELLFONT | DS_CONTROL | WS_CHILD | WS_VISIBLE | WS_CAPTION | WS_DLGFRAME
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "Chercher en fonction d'un ou de tous les critères suivants.", IDC_SEARCH_LABEL, 4, 2, 120, 20
+
+    LTEXT "Tout ou partie du &nom de fichier :", -1, 10, 25, 500, 10
+    EDITTEXT IDC_SEARCH_FILENAME, 10, 35, 100, 12, ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP
+
+    LTEXT "Un &mot ou une phrase dans le fichier :", -1, 10, 50, 500, 10
+    EDITTEXT IDC_SEARCH_QUERY, 10, 60, 100, 12, ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP
+
+    LTEXT "&Chercher dans :", -1, 10, 75, 500, 10
+    CONTROL "", IDC_SEARCH_COMBOBOX, WC_COMBOBOXEXW, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_TABSTOP | CCS_NODIVIDER | CCS_NOMOVEY | CBS_OWNERDRAWFIXED, 10, 85, 200, 200
+
+    DEFPUSHBUTTON "Che&rcher", IDC_SEARCH_BUTTON, 80, 110, 40, 15, WS_GROUP | WS_TABSTOP | WS_VISIBLE
+    PUSHBUTTON "&Arrêter", IDC_SEARCH_STOP_BUTTON, 80, 110, 40, 15, WS_GROUP | WS_TABSTOP
+
+    AUTOCHECKBOX "Inclure les dossiers et les fichiers cachés",
+                 IDC_SEARCH_HIDDEN, 4, 130, 144, 8, WS_VISIBLE | WS_GROUP | WS_TABSTOP
+
+    CONTROL "", IDC_PROGRESS_BAR, PROGRESS_CLASSA, WS_BORDER | PBS_MARQUEE, 10, 155, 200, 8
 END
 
 /* Accelerators */
@@ -248,15 +286,15 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_SMALLICONS "Small icons"
-    IDS_LARGEICONS "Large icons"
-    IDS_SHOWTEXTLABELS "Show text labels"
+    IDS_SMALLICONS "Petites icônes"
+    IDS_LARGEICONS "Grandes icônes"
+    IDS_SHOWTEXTLABELS "Afficher les étiquettes"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_NOTEXTLABELS "No text labels"
-    IDS_SELECTIVETEXTONRIGHT "Selective text on right"
+    IDS_NOTEXTLABELS "Sans étiquettes"
+    IDS_SELECTIVETEXTONRIGHT "Aligner à droite"
 END
 
 STRINGTABLE
@@ -290,9 +328,35 @@ STRINGTABLE
 BEGIN
     IDS_BACK "Retour vers %s"
     IDS_FORWARD "Avancer vers %s"
+    IDS_FOLDER_OPTIONS "Options des dossiers"
 END
 
 STRINGTABLE
 BEGIN
     IDS_STANDARD_TOOLBAR, "|Retour|Avancer|Dossier parent|Recherche|Dossiers|Aller vers|Copier dans|Supprimer|Annuler|Affichage|Stop|Rafraîchir|Home|Map Drive|Déconnecter|Favoris|Historique|Plein écran|Propriétés|Couper|Copier|Coller|Options des dossiers||"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_BROWSEFORNEWTOOLAR "Choisissez un dossier"
+    IDS_TOOLBAR_ERR_TITLE "Barre d'outils"
+    IDS_TOOLBAR_ERR_TEXT "Impossible de créer une barre d'outils."
+END
+
+STRINGTABLE
+BEGIN
+    IDS_SEARCH_RESULTS "Résultats de la recherche"
+    IDS_SEARCHINVALID "'%1' n'est pas un dossier valide."
+    IDS_SEARCH_FOLDER "Recherche de %s en cours"
+    IDS_SEARCH_FILES_FOUND "%u fichiers trouvés"
+    IDS_SEARCH_OPEN_FOLDER "Ouvrir le &dossier parent"
+    IDS_COL_NAME "Nom"
+    IDS_COL_LOCATION "Dans le dossier"
+    IDS_COL_RELEVANCE "Pertinence"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PARSE_ADDR_ERR_TITLE "Explorateur ReactOS"
+    IDS_PARSE_ADDR_ERR_TEXT "ReactOS ne parvient pas à trouver '%1'. Vérifiez l'orthographe et réessayer."
 END

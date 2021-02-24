@@ -11,6 +11,7 @@ list(APPEND SOURCE
     controls/button.c
     controls/combo.c
     controls/edit.c
+    controls/ghost.c
     controls/icontitle.c
     controls/listbox.c
     controls/regcontrol.c
@@ -71,7 +72,7 @@ endif()
 
 add_asm_files(user32_asm ${ASM_SOURCE})
 
-add_library(user32 SHARED
+add_library(user32 MODULE
     ${SOURCE}
     ${user32_asm}
     user32.rc

@@ -238,7 +238,7 @@ xmlParserPrintFileContext(xmlParserInputPtr input) {
  * @ctx: the parser context or NULL
  * @str: the formatted error message
  *
- * Report an erro with its context, replace the 4 old error/warning
+ * Report an error with its context, replace the 4 old error/warning
  * routines.
  */
 static void
@@ -631,7 +631,7 @@ __xmlRaiseError(xmlStructuredErrorFunc schannel,
 	(channel == xmlParserValidityError) ||
 	(channel == xmlParserValidityWarning))
 	xmlReportError(to, ctxt, str, NULL, NULL);
-    else if ((channel == (xmlGenericErrorFunc) fprintf) ||
+    else if (((void(*)(void)) channel == (void(*)(void)) fprintf) ||
              (channel == xmlGenericErrorDefaultFunc))
 	xmlReportError(to, ctxt, str, channel, data);
     else
@@ -853,7 +853,7 @@ xmlParserValidityWarning(void *ctx, const char *msg, ...)
  * Get the last global error registered. This is per thread if compiled
  * with thread support.
  *
- * Returns NULL if no error occured or a pointer to the error
+ * Returns NULL if no error occurred or a pointer to the error
  */
 xmlErrorPtr
 xmlGetLastError(void)
@@ -910,7 +910,7 @@ xmlResetLastError(void)
  *
  * Get the last parsing error registered.
  *
- * Returns NULL if no error occured or a pointer to the error
+ * Returns NULL if no error occurred or a pointer to the error
  */
 xmlErrorPtr
 xmlCtxtGetLastError(void *ctx)

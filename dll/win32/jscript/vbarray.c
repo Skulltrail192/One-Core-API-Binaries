@@ -18,6 +18,10 @@
 
 #include "jscript.h"
 
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(jscript);
+
 typedef struct {
     jsdisp_t dispex;
 
@@ -254,7 +258,7 @@ static const builtin_prop_t VBArray_props[] = {
 static const builtin_info_t VBArray_info = {
     JSCLASS_VBARRAY,
     {NULL, VBArray_value, 0},
-    sizeof(VBArray_props)/sizeof(*VBArray_props),
+    ARRAY_SIZE(VBArray_props),
     VBArray_props,
     VBArray_destructor,
     NULL

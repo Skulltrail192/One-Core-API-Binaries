@@ -172,9 +172,9 @@ IsConnectedPageDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 case PSN_WIZNEXT:
                 {
                     if (SendDlgItemMessage(hwndDlg, IDC_NOTCONNECTED, BM_GETCHECK, 0, 0) == BST_CHECKED)
-                        SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_NOTCONNECTEDPAGE);
+                        SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, IDD_NOTCONNECTEDPAGE);
                     else
-                        SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_PROBELISTPAGE);
+                        SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, IDD_PROBELISTPAGE);
 
                     return TRUE;
                 }
@@ -244,7 +244,7 @@ NotConnectedPageDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
                 case PSN_WIZBACK:
                 {
-                    SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_ISCONNECTEDPAGE);
+                    SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, IDD_ISCONNECTEDPAGE);
                     return TRUE;
                 }
             }
@@ -400,6 +400,7 @@ static INT_PTR CALLBACK
 ProbeListPageDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     INT Index;
+    LVITEM Item;
 
     switch (uMsg)
     {
@@ -429,11 +430,10 @@ ProbeListPageDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
                     if (Index == 0)
                     {
-                        SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_SELECTWAYPAGE);
+                        SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, IDD_SELECTWAYPAGE);
                     }
                     else
                     {
-                        LVITEM Item;
                         PWSTR pts;
 
                         ZeroMemory(&Item, sizeof(LV_ITEM));
@@ -443,7 +443,7 @@ ProbeListPageDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
                         pts = (PWSTR) Item.lParam;
                         wcscpy(pDeviceStatusText, pts);
 
-                        SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_HWSTATUSPAGE);
+                        SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, IDD_HWSTATUSPAGE);
                     }
                     return TRUE;
                 }
@@ -453,9 +453,6 @@ ProbeListPageDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WM_DESTROY:
         {
-            INT Index;
-            LVITEM Item;
-
             for (Index = ListView_GetItemCount(GetDlgItem(hwndDlg, IDC_PROBELIST)); --Index > 0;)
             {
                 ZeroMemory(&Item, sizeof(LV_ITEM));
@@ -499,9 +496,9 @@ SelectWayPageDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 case PSN_WIZNEXT:
                 {
                     if (SendDlgItemMessage(hwndDlg, IDC_AUTOINSTALL, BM_GETCHECK, 0, 0) == BST_CHECKED)
-                        SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_PROGRESSPAGE);
+                        SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, IDD_PROGRESSPAGE);
                     else
-                        SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_HWTYPESPAGE);
+                        SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, IDD_HWTYPESPAGE);
 
                     return TRUE;
                 }
@@ -542,7 +539,7 @@ DevStatusPageDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
                 case PSN_WIZBACK:
                 {
-                    SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_PROBELISTPAGE);
+                    SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, IDD_PROBELISTPAGE);
                     return TRUE;
                 }
             }
@@ -735,7 +732,7 @@ HdTypesPageDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
                 case PSN_WIZBACK:
                 {
-                    SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_SELECTWAYPAGE);
+                    SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, IDD_SELECTWAYPAGE);
                     return TRUE;
                 }
             }
@@ -765,7 +762,7 @@ ProgressPageDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
                 case PSN_WIZBACK:
                 {
-                    SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, IDD_SELECTWAYPAGE);
+                    SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, IDD_SELECTWAYPAGE);
                     return TRUE;
                 }
             }
@@ -774,6 +771,23 @@ ProgressPageDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
     }
 
     return FALSE;
+}
+
+static int CALLBACK
+PropSheetProc(HWND hwndDlg, UINT uMsg, LPARAM lParam)
+{
+    // NOTE: This callback is needed to set large icon correctly.
+    HICON hIcon;
+    switch (uMsg)
+    {
+        case PSCB_INITIALIZED:
+        {
+            hIcon = LoadIconW(hApplet, MAKEINTRESOURCEW(IDI_CPLICON));
+            SendMessageW(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+            break;
+        }
+    }
+    return 0;
 }
 
 static VOID
@@ -888,14 +902,16 @@ HardwareWizardInit(HWND hwnd)
 
     /* Create the property sheet */
     psh.dwSize = sizeof(PROPSHEETHEADER);
-    psh.dwFlags = PSH_WIZARD97 | PSH_WATERMARK | PSH_HEADER;
+    psh.dwFlags = PSH_WIZARD97 | PSH_WATERMARK | PSH_HEADER | PSH_USEICONID | PSH_USECALLBACK;
     psh.hInstance = hApplet;
+    psh.pszIcon = MAKEINTRESOURCEW(IDI_CPLICON);
     psh.hwndParent = hwnd;
     psh.nPages = nPages;
     psh.nStartPage = 0;
     psh.phpage = ahpsp;
     psh.pszbmWatermark = MAKEINTRESOURCE(IDB_WATERMARK);
     psh.pszbmHeader = MAKEINTRESOURCE(IDB_HEADER);
+    psh.pfnCallback = PropSheetProc;
 
     /* Create title font */
     hTitleFont = CreateTitleFont();

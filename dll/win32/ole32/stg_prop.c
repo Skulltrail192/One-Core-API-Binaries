@@ -36,14 +36,27 @@
  *   PropertyStorage_ReadFromStream
  */
 
-#include "precomp.h"
+#include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define COBJMACROS
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "winuser.h"
+#include "wine/asm.h"
+#include "wine/debug.h"
+#include "dictionary.h"
 #include "storage32.h"
+#include "enumx.h"
+#include "oleauto.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(storage);
-
-#ifdef _MSC_VER
-#define __ASM_STDCALL_FUNC(name,args,code)
-#endif
 
 static inline StorageImpl *impl_from_IPropertySetStorage( IPropertySetStorage *iface )
 {
@@ -355,7 +368,7 @@ static HRESULT PropertyStorage_StringCopy(LPCSTR src, LCID srcCP, LPSTR *dst,
         size_t len;
 
         if (dstCP == CP_UNICODE)
-            len = (strlenW((LPCWSTR)src) + 1) * sizeof(WCHAR);
+            len = (lstrlenW((LPCWSTR)src) + 1) * sizeof(WCHAR);
         else
             len = strlen(src) + 1;
         *dst = CoTaskMemAlloc(len * sizeof(WCHAR));
@@ -923,7 +936,7 @@ static int PropertyStorage_PropNameCompare(const void *a, const void *b,
     {
         TRACE("(%s, %s)\n", debugstr_w(a), debugstr_w(b));
         if (This->grfFlags & PROPSETFLAG_CASE_SENSITIVE)
-            return lstrcmpW(a, b);
+            return wcscmp(a, b);
         else
             return lstrcmpiW(a, b);
     }
@@ -1038,11 +1051,13 @@ static HRESULT PropertyStorage_ReadProperty(PROPVARIANT *prop, const BYTE *data,
     UINT codepage, void* (__thiscall_wrapper *allocate)(void *this, ULONG size), void *allocate_data)
 {
     HRESULT hr = S_OK;
+    DWORD vt;
 
     assert(prop);
     assert(data);
-    StorageUtl_ReadDWord(data, 0, (DWORD *)&prop->vt);
+    StorageUtl_ReadDWord(data, 0, &vt);
     data += sizeof(DWORD);
+    prop->vt = vt;
     switch (prop->vt)
     {
     case VT_EMPTY:
@@ -2491,7 +2506,7 @@ static void prop_enum_copy_cb(IUnknown *parent, void *orig, void *dest)
 
     if (dictionary_find(storage->propid_to_name, UlongToPtr(src_prop->propid), (void**)&name))
     {
-        DWORD size = (strlenW(name) + 1) * sizeof(WCHAR);
+        DWORD size = (lstrlenW(name) + 1) * sizeof(WCHAR);
 
         dest_prop->lpwstrName = CoTaskMemAlloc(size);
         if (!dest_prop->lpwstrName) return;

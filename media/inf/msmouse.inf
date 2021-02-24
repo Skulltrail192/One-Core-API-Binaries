@@ -106,6 +106,7 @@ LoadOrderGroup = Keyboard Port
 HKLM,"SYSTEM\CurrentControlSet\Services\i8042prt\Parameters","SampleRate",0x00010001,0x0000003c
 HKLM,"SYSTEM\CurrentControlSet\Services\i8042prt\Parameters","BreakOnSysRq",0x00010001,0x00000001
 HKLM,"SYSTEM\CurrentControlSet\Services\i8042prt\Parameters","MouseResolution",0x00010001,0x00000003
+HKR, , EnumPropPages32, 0, "syssetup.dll,PS2MousePropPageProvider"
 HKR, , LocationInformationOverride, 0, %LocationOverride%
 
 ;---------------------------- HID MOUSE DRIVER --------------------------
@@ -268,14 +269,15 @@ MSMfg = "Microsoft"
 *PNP0F03.DeviceDesc = "Microsoft PS/2接続マウス"
 
 [Strings.0415]
-ReactOS = "Ekipa ReactOS"
+ReactOS = "Zespół ReactOS"
 MouseClassName = "Mysz i inne urządzenia wskazujące"
+LocationOverride = "podłączone do portu PS/2 dla myszy"
 
 StdMfg = "(Standardowa mysz)"
 SERIAL_MOUSE.DeviceDesc = "Standardowa mysz szeregowa"
 PS2_MOUSE.DeviceDesc = "Standardowa mysz PS/2"
 HID_MOUSE.DeviceDesc = "Mysz zgodna z HID"
-*PNP0F13.DeviceDesc = "Port PS/2 dla myszki"
+*PNP0F13.DeviceDesc = "Port PS/2 dla myszy"
 
 IbmMfg = "IBM"
 *IBM3780.DeviceDesc = "Trackpoint PS/2 IBM"
@@ -416,4 +418,14 @@ LogMfg = "Logitech"
 MSMfg = "Microsoft"
 *PNP0F01.DeviceDesc = "Microsoft nuoseklioji pelė"
 *PNP0F03.DeviceDesc = "Microsoft PS/2 tipo pelė"
-﻿
+
+[Strings.0804]
+StdMfg = "(标准鼠标)"
+SERIAL_MOUSE.DeviceDesc = "标准串口鼠标"
+PS2_MOUSE.DeviceDesc = "标准 PS/2 鼠标"
+HID_MOUSE.DeviceDesc = "HID 鼠标"
+*PNP0F13.DeviceDesc = "用于 PS/2 风格鼠标的 PS/2 端口"
+*PNP0F08.DeviceDesc = "Logitech 串口鼠标"
+*PNP0F12.DeviceDesc = "Logitech PS/2 风格鼠标"
+*PNP0F01.DeviceDesc = "Microsoft 串口鼠标"
+*PNP0F03.DeviceDesc = "Microsoft PS/2 风格鼠标"

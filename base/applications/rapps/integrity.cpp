@@ -1,15 +1,15 @@
 /*
- * PROJECT:         ReactOS Applications Manager
- * LICENSE:         GPL - See COPYING in the top level directory
- * FILE:            base/applications/rapps/integrity.cpp
- * PURPOSE:         Various integrity check mechanisms
- * PROGRAMMERS:     Ismael Ferreras Morezuelas (swyterzone+ros@gmail.com)
- *                  Mark Jansen
+ * PROJECT:     ReactOS Applications Manager
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * FILE:        base/applications/rapps/integrity.cpp
+ * PURPOSE:     Various integrity check mechanisms
+ * COPYRIGHT:   Copyright Ismael Ferreras Morezuelas (swyterzone+ros@gmail.com)
+ *              Copyright Mark Jansen
  */
 
 #include "rapps.h"
-#include <sha1.h>
 
+#include <sha1.h>
 
 BOOL VerifyInteg(LPCWSTR lpSHA1Hash, LPCWSTR lpFileName)
 {
@@ -49,7 +49,7 @@ BOOL VerifyInteg(LPCWSTR lpSHA1Hash, LPCWSTR lpFileName)
 
             WCHAR buf[(sizeof(sha) * 2) + 1];
             for (UINT i = 0; i < sizeof(sha); i++)
-                swprintf(buf + 2 * i, L"%02x", ((unsigned char *)sha)[i]);
+                swprintf(buf + 2 * i, L"%02x", ((unsigned char *) sha)[i]);
             /* does the resulting SHA1 match with the provided one? */
             if (!_wcsicmp(buf, lpSHA1Hash))
                 ret = TRUE;

@@ -3,7 +3,8 @@
  * PROJECT:          ReactOS kernel
  * PURPOSE:          Bitmap functions
  * FILE:             win32ss/gdi/ntgdi/bitmaps.c
- * PROGRAMER:        Timo Kreuzer <timo.kreuzer@reactos.org>
+ * PROGRAMERS:       Timo Kreuzer <timo.kreuzer@reactos.org>
+ *                   Katayama Hirofumi MZ <katayama.hirofumi.mz@gmail.com>
  */
 
 #include <win32k.h>
@@ -42,7 +43,7 @@ GreSetBitmapOwner(
     return GreSetObjectOwner(hbmp, ulOwner);
 }
 
-BOOL
+LONG
 NTAPI
 UnsafeSetBitmapBits(
     _Inout_ PSURFACE psurf,
@@ -51,8 +52,9 @@ UnsafeSetBitmapBits(
 {
     PUCHAR pjDst;
     const UCHAR *pjSrc;
-    LONG lDeltaDst, lDeltaSrc;
-    ULONG nWidth, nHeight, cBitsPixel;
+    LONG lDeltaDst, lDeltaSrc, lDeltaDstAbs;
+    ULONG Y, iSrc, iDst, cbSrc, cbDst, nWidth, nHeight, cBitsPixel;
+
     NT_ASSERT(psurf->flags & API_BITMAP);
     NT_ASSERT(psurf->SurfObj.iBitmapFormat <= BMF_32BPP);
 
@@ -60,26 +62,38 @@ UnsafeSetBitmapBits(
     nHeight = psurf->SurfObj.sizlBitmap.cy;
     cBitsPixel = BitsPerFormat(psurf->SurfObj.iBitmapFormat);
 
-    /* Get pointers */
     pjDst = psurf->SurfObj.pvScan0;
     pjSrc = pvBits;
     lDeltaDst = psurf->SurfObj.lDelta;
+    lDeltaDstAbs = labs(lDeltaDst);
     lDeltaSrc = WIDTH_BYTES_ALIGN16(nWidth, cBitsPixel);
-    NT_ASSERT(lDeltaSrc <= abs(lDeltaDst));
+    NT_ASSERT(lDeltaSrc <= lDeltaDstAbs);
 
-    /* Make sure the buffer is large enough*/
-    if (cjBits < (lDeltaSrc * nHeight))
-        return FALSE;
+    cbDst = lDeltaDstAbs * nHeight;
+    cbSrc = lDeltaSrc * nHeight;
+    cjBits = min(cjBits, cbSrc);
 
-    while (nHeight--)
+    iSrc = iDst = 0;
+    for (Y = 0; Y < nHeight; Y++)
     {
+        if (iSrc + lDeltaSrc > cjBits || iDst + lDeltaDstAbs > cbDst)
+        {
+            LONG lDelta = min(cjBits - iSrc, cbDst - iDst);
+            NT_ASSERT(lDelta >= 0);
+            RtlCopyMemory(pjDst, pjSrc, lDelta);
+            iSrc += lDelta;
+            break;
+        }
+
         /* Copy one line */
-        memcpy(pjDst, pjSrc, lDeltaSrc);
+        RtlCopyMemory(pjDst, pjSrc, lDeltaSrc);
         pjSrc += lDeltaSrc;
         pjDst += lDeltaDst;
+        iSrc += lDeltaSrc;
+        iDst += lDeltaDstAbs;
     }
 
-    return TRUE;
+    return iSrc;
 }
 
 HBITMAP
@@ -483,7 +497,7 @@ NtGdiGetBitmapDimension(
 }
 
 
-VOID
+LONG
 FASTCALL
 UnsafeGetBitmapBits(
     PSURFACE psurf,
@@ -491,8 +505,8 @@ UnsafeGetBitmapBits(
     OUT PBYTE pvBits)
 {
     PUCHAR pjDst, pjSrc;
-    LONG lDeltaDst, lDeltaSrc;
-    ULONG nWidth, nHeight, cBitsPixel;
+    LONG lDeltaDst, lDeltaSrc, lDeltaSrcAbs;
+    ULONG Y, iSrc, iDst, cbSrc, cbDst, nWidth, nHeight, cBitsPixel;
 
     nWidth = psurf->SurfObj.sizlBitmap.cx;
     nHeight = psurf->SurfObj.sizlBitmap.cy;
@@ -502,15 +516,35 @@ UnsafeGetBitmapBits(
     pjSrc = psurf->SurfObj.pvScan0;
     pjDst = pvBits;
     lDeltaSrc = psurf->SurfObj.lDelta;
+    lDeltaSrcAbs = labs(lDeltaSrc);
     lDeltaDst = WIDTH_BYTES_ALIGN16(nWidth, cBitsPixel);
+    NT_ASSERT(lDeltaSrcAbs >= lDeltaDst);
 
-    while (nHeight--)
+    cbSrc = nHeight * lDeltaSrcAbs;
+    cbDst = nHeight * lDeltaDst;
+    Bytes = min(Bytes, cbDst);
+
+    iSrc = iDst = 0;
+    for (Y = 0; Y < nHeight; Y++)
     {
+        if (iSrc + lDeltaSrcAbs > cbSrc || iDst + lDeltaDst > Bytes)
+        {
+            LONG lDelta = min(cbSrc - iSrc, Bytes - iDst);
+            NT_ASSERT(lDelta >= 0);
+            RtlCopyMemory(pjDst, pjSrc, lDelta);
+            iDst += lDelta;
+            break;
+        }
+
         /* Copy one line */
         RtlCopyMemory(pjDst, pjSrc, lDeltaDst);
         pjSrc += lDeltaSrc;
         pjDst += lDeltaDst;
+        iSrc += lDeltaSrcAbs;
+        iDst += lDeltaDst;
     }
+
+    return iDst;
 }
 
 LONG
@@ -541,7 +575,7 @@ NtGdiGetBitmapBits(
     /* Calculate the size of the bitmap in bytes */
     cjSize = WIDTH_BYTES_ALIGN16(psurf->SurfObj.sizlBitmap.cx,
                 BitsPerFormat(psurf->SurfObj.iBitmapFormat)) *
-                abs(psurf->SurfObj.sizlBitmap.cy);
+                psurf->SurfObj.sizlBitmap.cy;
 
     /* If the bits vector is null, the function should return the read size */
     if (pUnsafeBits == NULL)
@@ -557,8 +591,7 @@ NtGdiGetBitmapBits(
     _SEH2_TRY
     {
         ProbeForWrite(pUnsafeBits, cjBuffer, 1);
-        UnsafeGetBitmapBits(psurf, cjBuffer, pUnsafeBits);
-        ret = cjBuffer;
+        ret = UnsafeGetBitmapBits(psurf, cjBuffer, pUnsafeBits);
     }
     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
     {
@@ -611,7 +644,8 @@ NtGdiSetBitmapBits(
 
     _SEH2_TRY
     {
-        ProbeForRead(pUnsafeBits, Bytes, sizeof(WORD));
+        /* NOTE: Win2k3 doesn't check WORD alignment here. */
+        ProbeForWrite(pUnsafeBits, Bytes, 1);
         ret = UnsafeSetBitmapBits(psurf, Bytes, pUnsafeBits);
     }
     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)

@@ -1,10 +1,11 @@
 PROJECT(SHELL)
 
 set_cpp(WITH_RUNTIME)
-
+add_definitions(-D_ATL_NO_EXCEPTIONS)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/lib/atl)
 
 list(APPEND SOURCE
+    appbar.cpp
     desktop.cpp
     explorer.cpp
     notifyiconscust.cpp
@@ -16,9 +17,11 @@ list(APPEND SOURCE
     startmnucust.cpp
     startmnusite.cpp
     startup.cpp
+    syspager.cpp
     taskband.cpp
     taskswnd.cpp
     tbsite.cpp
+    trayclock.cpp
     trayntfy.cpp
     trayprop.cpp
     traywnd.cpp
@@ -28,7 +31,7 @@ list(APPEND SOURCE
 file(GLOB explorer_rc_deps res/*.*)
 add_rc_deps(explorer.rc ${explorer_rc_deps})
 add_executable(explorer ${SOURCE} explorer.rc)
-target_link_libraries(explorer uuid atlnew wine)
+target_link_libraries(explorer uuid wine)
 set_module_type(explorer win32gui UNICODE)
 add_importlibs(explorer advapi32 gdi32 user32 comctl32 ole32 oleaut32 shell32 browseui shlwapi shdocvw version uxtheme msvcrt kernel32 ntdll)
 add_pch(explorer precomp.h SOURCE)

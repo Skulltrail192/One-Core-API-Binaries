@@ -20,10 +20,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+
 #include "quartz_private.h"
 
-#include <d3d9.h>
-#include <vmr9.h>
+#include "uuids.h"
+#include "vfwmsgs.h"
+#include "amvideo.h"
+#include "windef.h"
+#include "winbase.h"
+#include "dshow.h"
+#include "evcode.h"
+#include "strmif.h"
+#include "ddraw.h"
+#include "dvdmedia.h"
+#include "d3d9.h"
+#include "vmr9.h"
+#include "pin.h"
+
+#include "wine/unicode.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(quartz);
 
 struct quartz_vmr
 {
@@ -365,7 +383,7 @@ static HRESULT WINAPI VMR9_CheckMediaType(BaseRenderer *iface, const AM_MEDIA_TY
         ERR("Format type %s not supported\n", debugstr_guid(&pmt->formattype));
         return S_FALSE;
     }
-    if (This->bmiheader.biCompression)
+    if (This->bmiheader.biCompression != BI_RGB)
         return S_FALSE;
     return S_OK;
 }

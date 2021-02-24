@@ -54,7 +54,18 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "precomp.h"
+
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+
+#include "chm_lib.h"
+#include "lzx.h"
 
 #define CHM_ACQUIRE_LOCK(a) do {                        \
         EnterCriticalSection(&(a));                     \
@@ -922,15 +933,10 @@ static UInt64 _chm_parse_cword(UChar **pEntry)
 /* parse a utf-8 string into an ASCII char buffer */
 static BOOL _chm_parse_UTF8(UChar **pEntry, UInt64 count, WCHAR *path)
 {
-    /* MJM - Modified to return real Unicode strings */ 
-    while (count != 0)
-    {
-        *path++ = (*(*pEntry)++);
-        --count;
-    }
-
-    *path = '\0';
-    return TRUE;
+    DWORD length = MultiByteToWideChar(CP_UTF8, 0, (char *)*pEntry, count, path, CHM_MAX_PATHLEN);
+    path[length] = '\0';
+    *pEntry += count;
+    return !!length;
 }
 
 /* parse a PMGL entry into a chmUnitInfo struct; return 1 on success. */
@@ -987,7 +993,7 @@ static UChar *_chm_find_in_PMGL(UChar *page_buf,
             return NULL;
 
         /* check if it is the right name */
-        if (! strcmpiW(buffer, objPath))
+        if (! wcsicmp(buffer, objPath))
             return temp;
 
         _chm_skip_PMGL_entry_data(&cur);
@@ -1028,7 +1034,7 @@ static Int32 _chm_find_in_PMGI(UChar *page_buf,
             return -1;
 
         /* check if it is the right name */
-        if (strcmpiW(buffer, objPath) > 0)
+        if (wcsicmp(buffer, objPath) > 0)
             return page;
 
         /* load next value for path */
@@ -1319,9 +1325,8 @@ static Int64 _chm_decompress_region(struct chmFile *h,
     /* data request not satisfied, so... start up the decompressor machine */
     if (! h->lzx_state)
     {
-        int window_size = ffs(h->window_size) - 1;
         h->lzx_last_block = -1;
-        h->lzx_state = LZXinit(window_size);
+        h->lzx_state = LZXinit(h->window_size);
     }
 
     /* decompress some data */
@@ -1430,7 +1435,7 @@ BOOL chm_enumerate_dir(struct chmFile *h,
 
     /* initialize pathname state */
     lstrcpynW(prefixRectified, prefix, CHM_MAX_PATHLEN);
-    prefixLen = strlenW(prefixRectified);
+    prefixLen = lstrlenW(prefixRectified);
     if (prefixLen != 0)
     {
         if (prefixRectified[prefixLen-1] != '/')
@@ -1479,7 +1484,7 @@ BOOL chm_enumerate_dir(struct chmFile *h,
             /* check if we should start */
             if (! it_has_begun)
             {
-                if (ui.length == 0  &&  strncmpiW(ui.path, prefixRectified, prefixLen) == 0)
+                if (ui.length == 0  &&  _wcsnicmp(ui.path, prefixRectified, prefixLen) == 0)
                     it_has_begun = TRUE;
                 else
                     continue;
@@ -1491,7 +1496,7 @@ BOOL chm_enumerate_dir(struct chmFile *h,
             /* check if we should stop */
             else
             {
-                if (strncmpiW(ui.path, prefixRectified, prefixLen) != 0)
+                if (_wcsnicmp(ui.path, prefixRectified, prefixLen) != 0)
                 {
                     HeapFree(GetProcessHeap(), 0, page_buf);
                     return TRUE;
@@ -1501,14 +1506,14 @@ BOOL chm_enumerate_dir(struct chmFile *h,
             /* check if we should include this path */
             if (lastPathLen != -1)
             {
-                if (strncmpiW(ui.path, lastPath, lastPathLen) == 0)
+                if (_wcsnicmp(ui.path, lastPath, lastPathLen) == 0)
                     continue;
             }
-            strcpyW(lastPath, ui.path);
-            lastPathLen = strlenW(lastPath);
+            lstrcpyW(lastPath, ui.path);
+            lastPathLen = lstrlenW(lastPath);
 
             /* get the length of the path */
-            ui_path_len = strlenW(ui.path)-1;
+            ui_path_len = lstrlenW(ui.path)-1;
 
             /* check for DIRS */
             if (ui.path[ui_path_len] == '/'  &&  !(what & CHM_ENUMERATE_DIRS))

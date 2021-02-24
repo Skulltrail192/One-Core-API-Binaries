@@ -33,6 +33,28 @@
 
 #include <winver.h>
 
+#define PDCAP_D0_SUPPORTED                       0x00000001
+#define PDCAP_D1_SUPPORTED                       0x00000002
+#define PDCAP_D2_SUPPORTED                       0x00000004
+#define PDCAP_D3_SUPPORTED                       0x00000008
+#define PDCAP_WAKE_FROM_D0_SUPPORTED             0x00000010
+#define PDCAP_WAKE_FROM_D1_SUPPORTED             0x00000020
+#define PDCAP_WAKE_FROM_D2_SUPPORTED             0x00000040
+#define PDCAP_WAKE_FROM_D3_SUPPORTED             0x00000080
+#define PDCAP_WARM_EJECT_SUPPORTED               0x00000100
+
+typedef struct CM_Power_Data_s
+{
+    ULONG PD_Size;
+    DEVICE_POWER_STATE PD_MostRecentPowerState;
+    ULONG PD_Capabilities;
+    ULONG PD_D1Latency;
+    ULONG PD_D2Latency;
+    ULONG PD_D3Latency;
+    DEVICE_POWER_STATE PD_PowerStateMapping[PowerSystemMaximum];
+    SYSTEM_POWER_STATE PD_DeepestSystemWake;
+} CM_POWER_DATA, *PCM_POWER_DATA;
+
 
 static UINT WINAPI
 EnumDeviceDriverFilesCallback(IN PVOID Context,
@@ -288,8 +310,7 @@ DriverDetailsDlgProc(IN HWND hwndDlg,
     PDEVADVPROP_INFO dap;
     INT_PTR Ret = FALSE;
 
-    dap = (PDEVADVPROP_INFO)GetWindowLongPtr(hwndDlg,
-                                             DWL_USER);
+    dap = (PDEVADVPROP_INFO)GetWindowLongPtr(hwndDlg, DWLP_USER);
 
     if (dap != NULL || uMsg == WM_INITDIALOG)
     {
@@ -326,9 +347,7 @@ DriverDetailsDlgProc(IN HWND hwndDlg,
                 dap = (PDEVADVPROP_INFO)lParam;
                 if (dap != NULL)
                 {
-                    SetWindowLongPtr(hwndDlg,
-                                     DWL_USER,
-                                     (DWORD_PTR)dap);
+                    SetWindowLongPtr(hwndDlg, DWLP_USER, (DWORD_PTR)dap);
 
                     hDriversListView = GetDlgItem(hwndDlg,
                                                   IDC_DRIVERFILES);
@@ -411,6 +430,104 @@ DriverDetailsDlgProc(IN HWND hwndDlg,
 
 
 static
+INT_PTR
+CALLBACK
+UninstallDriverDlgProc(IN HWND hwndDlg,
+                       IN UINT uMsg,
+                       IN WPARAM wParam,
+                       IN LPARAM lParam)
+{
+    PDEVADVPROP_INFO dap;
+    INT_PTR Ret = FALSE;
+
+    dap = (PDEVADVPROP_INFO)GetWindowLongPtr(hwndDlg, DWLP_USER);
+
+    if (dap != NULL || uMsg == WM_INITDIALOG)
+    {
+        switch (uMsg)
+        {
+            case WM_INITDIALOG:
+                dap = (PDEVADVPROP_INFO)lParam;
+                if (dap != NULL)
+                {
+                    SetWindowLongPtr(hwndDlg, DWLP_USER, (DWORD_PTR)dap);
+
+                    /* Set the device image */
+                    SendDlgItemMessage(hwndDlg,
+                                       IDC_DEVICON,
+                                       STM_SETICON,
+                                       (WPARAM)dap->hDevIcon,
+                                       0);
+
+                    /* Set the device name */
+                    SetDlgItemText(hwndDlg,
+                                   IDC_DEVNAME,
+                                   dap->szDevName);
+                }
+
+                Ret = TRUE;
+                break;
+
+            case WM_COMMAND:
+                switch (LOWORD(wParam))
+                {
+                    case IDOK:
+                        EndDialog(hwndDlg, IDOK);
+                        break;
+
+                    case IDCANCEL:
+                        EndDialog(hwndDlg,  IDCANCEL);
+                        break;
+                }
+                break;
+
+            case WM_CLOSE:
+                EndDialog(hwndDlg, IDCANCEL);
+                break;
+        }
+    }
+
+    return Ret;
+}
+
+
+static
+VOID
+UninstallDriver(
+    _In_ HWND hwndDlg,
+    _In_ PDEVADVPROP_INFO dap)
+{
+    SP_REMOVEDEVICE_PARAMS RemoveDevParams;
+
+    if (DialogBoxParam(hDllInstance,
+                       MAKEINTRESOURCE(IDD_UNINSTALLDRIVER),
+                       hwndDlg,
+                       UninstallDriverDlgProc,
+                       (ULONG_PTR)dap) == IDCANCEL)
+        return;
+
+    RemoveDevParams.ClassInstallHeader.cbSize = sizeof(SP_CLASSINSTALL_HEADER);
+    RemoveDevParams.ClassInstallHeader.InstallFunction = DIF_REMOVE;
+    RemoveDevParams.Scope = DI_REMOVEDEVICE_GLOBAL;
+    RemoveDevParams.HwProfile = 0;
+
+    SetupDiSetClassInstallParamsW(dap->DeviceInfoSet,
+                                  &dap->DeviceInfoData,
+                                  &RemoveDevParams.ClassInstallHeader,
+                                  sizeof(SP_REMOVEDEVICE_PARAMS));
+
+    SetupDiCallClassInstaller(DIF_REMOVE,
+                              dap->DeviceInfoSet,
+                              &dap->DeviceInfoData);
+
+    SetupDiSetClassInstallParamsW(dap->DeviceInfoSet,
+                                  &dap->DeviceInfoData,
+                                  NULL,
+                                  0);
+}
+
+
+static
 VOID
 UpdateDriver(
     IN HWND hwndDlg,
@@ -481,6 +598,9 @@ UpdateDriverDlg(IN HWND hwndDlg,
 {
     HDEVINFO DeviceInfoSet;
     PSP_DEVINFO_DATA DeviceInfoData;
+    DWORD dwStatus = 0;
+    DWORD dwProblem = 0;
+    CONFIGRET cr;
 
     if (dap->CurrentDeviceInfoSet != INVALID_HANDLE_VALUE)
     {
@@ -537,6 +657,19 @@ UpdateDriverDlg(IN HWND hwndDlg,
                        IDC_DRVVERSION,
                        dap->szTemp);
     }
+
+    /* Disable the Uninstall button if the driver cannot be removed */
+    cr = CM_Get_DevNode_Status_Ex(&dwStatus,
+                                  &dwProblem,
+                                  dap->DeviceInfoData.DevInst,
+                                  0,
+                                  dap->hMachine);
+    if (cr == CR_SUCCESS)
+    {
+        if ((dwStatus & DN_ROOT_ENUMERATED) != 0 &&
+            (dwStatus & DN_DISABLEABLE) == 0)
+            EnableWindow(GetDlgItem(hwndDlg, IDC_UNINSTALLDRIVER), FALSE);
+    }
 }
 
 
@@ -550,8 +683,7 @@ AdvProcDriverDlgProc(IN HWND hwndDlg,
     PDEVADVPROP_INFO dap;
     INT_PTR Ret = FALSE;
 
-    dap = (PDEVADVPROP_INFO)GetWindowLongPtr(hwndDlg,
-                                             DWL_USER);
+    dap = (PDEVADVPROP_INFO)GetWindowLongPtr(hwndDlg, DWLP_USER);
 
     if (dap != NULL || uMsg == WM_INITDIALOG)
     {
@@ -571,6 +703,14 @@ AdvProcDriverDlgProc(IN HWND hwndDlg,
 
                     case IDC_UPDATEDRIVER:
                         UpdateDriver(hwndDlg, dap);
+                        break;
+
+                    case IDC_ROLLBACKDRIVER:
+                        // FIXME
+                        break;
+
+                    case IDC_UNINSTALLDRIVER:
+                        UninstallDriver(hwndDlg, dap);
                         break;
                 }
                 break;
@@ -592,13 +732,12 @@ AdvProcDriverDlgProc(IN HWND hwndDlg,
                 dap = (PDEVADVPROP_INFO)((LPPROPSHEETPAGE)lParam)->lParam;
                 if (dap != NULL)
                 {
-                    SetWindowLongPtr(hwndDlg,
-                                     DWL_USER,
-                                     (DWORD_PTR)dap);
+                    SetWindowLongPtr(hwndDlg, DWLP_USER, (DWORD_PTR)dap);
 
                     UpdateDriverDlg(hwndDlg,
                                     dap);
                 }
+                EnableWindow(GetDlgItem(hwndDlg, IDC_ROLLBACKDRIVER), FALSE);
                 Ret = TRUE;
                 break;
             }
@@ -1382,6 +1521,204 @@ DisplayDeviceRelations(
 
 
 static VOID
+DisplayCurrentPowerState(
+    IN PDEVADVPROP_INFO dap,
+    IN HWND hwndListView)
+{
+    HDEVINFO DeviceInfoSet;
+    PSP_DEVINFO_DATA DeviceInfoData;
+    CM_POWER_DATA PowerData;
+    DWORD dwSize, dwType;
+    PCWSTR lpText = NULL;
+
+    if (dap->CurrentDeviceInfoSet != INVALID_HANDLE_VALUE)
+    {
+        DeviceInfoSet = dap->CurrentDeviceInfoSet;
+        DeviceInfoData = &dap->CurrentDeviceInfoData;
+    }
+    else
+    {
+        DeviceInfoSet = dap->DeviceInfoSet;
+        DeviceInfoData = &dap->DeviceInfoData;
+    }
+
+    dwSize = sizeof(CM_POWER_DATA);
+    if (!SetupDiGetDeviceRegistryProperty(DeviceInfoSet,
+                                          DeviceInfoData,
+                                          SPDRP_DEVICE_POWER_DATA,
+                                          &dwType,
+                                          (LPBYTE)&PowerData,
+                                          dwSize,
+                                          &dwSize))
+        return;
+
+    switch (PowerData.PD_MostRecentPowerState)
+    {
+//        case PowerDeviceUnspecified:
+
+        case PowerDeviceD0:
+            lpText = L"D0";
+            break;
+
+        case PowerDeviceD1:
+            lpText = L"D1";
+            break;
+
+        case PowerDeviceD2:
+            lpText = L"D2";
+            break;
+
+        case PowerDeviceD3:
+            lpText = L"D3";
+            break;
+
+        default:
+            break;
+    }
+
+    if (lpText != NULL)
+        SetListViewText(hwndListView, 0, lpText);
+}
+
+
+static VOID
+DisplayPowerCapabilities(
+    IN PDEVADVPROP_INFO dap,
+    IN HWND hwndListView)
+{
+    HDEVINFO DeviceInfoSet;
+    PSP_DEVINFO_DATA DeviceInfoData;
+    CM_POWER_DATA PowerData;
+    DWORD dwSize, dwType;
+    INT index = 0;
+
+    if (dap->CurrentDeviceInfoSet != INVALID_HANDLE_VALUE)
+    {
+        DeviceInfoSet = dap->CurrentDeviceInfoSet;
+        DeviceInfoData = &dap->CurrentDeviceInfoData;
+    }
+    else
+    {
+        DeviceInfoSet = dap->DeviceInfoSet;
+        DeviceInfoData = &dap->DeviceInfoData;
+    }
+
+    dwSize = sizeof(CM_POWER_DATA);
+    if (!SetupDiGetDeviceRegistryProperty(DeviceInfoSet,
+                                          DeviceInfoData,
+                                          SPDRP_DEVICE_POWER_DATA,
+                                          &dwType,
+                                          (LPBYTE)&PowerData,
+                                          dwSize,
+                                          &dwSize))
+        return;
+
+    if (PowerData.PD_Capabilities & PDCAP_D0_SUPPORTED)
+        SetListViewText(hwndListView, index++, L"PDCAP_D0_SUPPORTED");
+
+    if (PowerData.PD_Capabilities & PDCAP_D1_SUPPORTED)
+        SetListViewText(hwndListView, index++, L"PDCAP_D1_SUPPORTED");
+
+    if (PowerData.PD_Capabilities & PDCAP_D2_SUPPORTED)
+        SetListViewText(hwndListView, index++, L"PDCAP_D2_SUPPORTED");
+
+    if (PowerData.PD_Capabilities & PDCAP_D3_SUPPORTED)
+        SetListViewText(hwndListView, index++, L"PDCAP_D3_SUPPORTED");
+
+    if (PowerData.PD_Capabilities & PDCAP_WAKE_FROM_D0_SUPPORTED)
+        SetListViewText(hwndListView, index++, L"PDCAP_WAKE_FROM_D0_SUPPORTED");
+
+    if (PowerData.PD_Capabilities & PDCAP_WAKE_FROM_D1_SUPPORTED)
+        SetListViewText(hwndListView, index++, L"PDCAP_WAKE_FROM_D1_SUPPORTED");
+
+    if (PowerData.PD_Capabilities & PDCAP_WAKE_FROM_D2_SUPPORTED)
+        SetListViewText(hwndListView, index++, L"PDCAP_WAKE_FROM_D2_SUPPORTED");
+
+    if (PowerData.PD_Capabilities & PDCAP_WAKE_FROM_D3_SUPPORTED)
+        SetListViewText(hwndListView, index++, L"PDCAP_WAKE_FROM_D3_SUPPORTED");
+
+    if (PowerData.PD_Capabilities & PDCAP_WARM_EJECT_SUPPORTED)
+        SetListViewText(hwndListView, index++, L"PDCAP_WARM_EJECT_SUPPORTED");
+}
+
+
+static VOID
+DisplayPowerStateMappings(
+    IN PDEVADVPROP_INFO dap,
+    IN HWND hwndListView)
+{
+    HDEVINFO DeviceInfoSet;
+    PSP_DEVINFO_DATA DeviceInfoData;
+    CM_POWER_DATA PowerData;
+    DWORD dwSize, dwType;
+    INT i;
+    DEVICE_POWER_STATE PowerState;
+    WCHAR szSystemStateBuffer[40];
+    WCHAR szDeviceStateBuffer[40];
+    WCHAR szOutBuffer[100];
+
+    if (dap->CurrentDeviceInfoSet != INVALID_HANDLE_VALUE)
+    {
+        DeviceInfoSet = dap->CurrentDeviceInfoSet;
+        DeviceInfoData = &dap->CurrentDeviceInfoData;
+    }
+    else
+    {
+        DeviceInfoSet = dap->DeviceInfoSet;
+        DeviceInfoData = &dap->DeviceInfoData;
+    }
+
+    dwSize = sizeof(CM_POWER_DATA);
+    if (!SetupDiGetDeviceRegistryProperty(DeviceInfoSet,
+                                          DeviceInfoData,
+                                          SPDRP_DEVICE_POWER_DATA,
+                                          &dwType,
+                                          (LPBYTE)&PowerData,
+                                          dwSize,
+                                          &dwSize))
+        return;
+
+    for (i = PowerSystemWorking; i < PowerSystemMaximum; i++)
+    {
+        PowerState = PowerData.PD_PowerStateMapping[i];
+        if ((PowerState >= PowerDeviceUnspecified) && (PowerState <= PowerDeviceD3))
+        {
+            swprintf(szSystemStateBuffer, L"S%u", i - 1);
+
+            switch (PowerState)
+            {
+                case PowerDeviceUnspecified:
+                    wcscpy(szDeviceStateBuffer, L"Not specified");
+                    break;
+
+                case PowerDeviceD0:
+                    wcscpy(szDeviceStateBuffer, L"D0");
+                    break;
+
+                case PowerDeviceD1:
+                    wcscpy(szDeviceStateBuffer, L"D1");
+                    break;
+
+                case PowerDeviceD2:
+                    wcscpy(szDeviceStateBuffer, L"D2");
+                    break;
+
+                case PowerDeviceD3:
+                    wcscpy(szDeviceStateBuffer, L"D3");
+                    break;
+
+                default:
+                    break;
+            }
+
+            swprintf(szOutBuffer, L"%s -> %s", szSystemStateBuffer, szDeviceStateBuffer);
+            SetListViewText(hwndListView, i, szOutBuffer);
+        }
+    }
+}
+
+
+static VOID
 DisplayDeviceProperties(IN PDEVADVPROP_INFO dap,
                         IN HWND hwndComboBox,
                         IN HWND hwndListView)
@@ -1399,7 +1736,7 @@ DisplayDeviceProperties(IN PDEVADVPROP_INFO dap,
 
     switch (Index)
     {
-        case 0:
+        case 0: /* Device ID */
             SetListViewText(hwndListView, 0, dap->szDeviceID);
             break;
 
@@ -1514,16 +1851,22 @@ DisplayDeviceProperties(IN PDEVADVPROP_INFO dap,
 #if 0
         case 20: /* Firmware Revision */
             break;
+#endif
 
         case 21: /* Current Power State */
+            DisplayCurrentPowerState(dap,
+                                     hwndListView);
             break;
 
-        case 20: /* Power Capabilities */
+        case 22: /* Power Capabilities */
+            DisplayPowerCapabilities(dap,
+                                     hwndListView);
             break;
 
-        case 21: /* Power State Mappings */
+        case 23: /* Power State Mappings */
+            DisplayPowerStateMappings(dap,
+                                      hwndListView);
             break;
-#endif
 
         default:
             SetListViewText(hwndListView, 0, L"<Not implemented yet>");
@@ -1542,8 +1885,7 @@ AdvProcDetailsDlgProc(IN HWND hwndDlg,
     PDEVADVPROP_INFO dap;
     INT_PTR Ret = FALSE;
 
-    dap = (PDEVADVPROP_INFO)GetWindowLongPtr(hwndDlg,
-                                             DWL_USER);
+    dap = (PDEVADVPROP_INFO)GetWindowLongPtr(hwndDlg, DWLP_USER);
 
     if (dap != NULL || uMsg == WM_INITDIALOG)
     {
@@ -1581,9 +1923,7 @@ AdvProcDetailsDlgProc(IN HWND hwndDlg,
                 dap = (PDEVADVPROP_INFO)((LPPROPSHEETPAGE)lParam)->lParam;
                 if (dap != NULL)
                 {
-                    SetWindowLongPtr(hwndDlg,
-                                     DWL_USER,
-                                     (DWORD_PTR)dap);
+                    SetWindowLongPtr(hwndDlg, DWLP_USER, (DWORD_PTR)dap);
 
                     UpdateDetailsDlg(hwndDlg,
                                      dap);
@@ -2177,6 +2517,8 @@ GetParentNode:
         nDriverPages = 0;
     }
 
+    dap->pResourceList = GetResourceList(dap->szDeviceID);
+
     /* include the driver page */
     if (dap->HasDriverPage)
         dap->nDevPropSheets++;
@@ -2185,7 +2527,7 @@ GetParentNode:
     if (dap->Extended)
         dap->nDevPropSheets++;
 
-    if (dap->HasResourcePage)
+    if (dap->HasResourcePage && dap->pResourceList != NULL)
         dap->nDevPropSheets++;
 
     /* add the device property sheets */
@@ -2287,7 +2629,7 @@ GetParentNode:
                 }
             }
 
-            if (dap->HasResourcePage)
+            if (dap->HasResourcePage && dap->pResourceList)
             {
                 PROPSHEETPAGE pspDriver = {0};
                 pspDriver.dwSize = sizeof(PROPSHEETPAGE);
@@ -2383,8 +2725,7 @@ AdvPropGeneralDlgProc(IN HWND hwndDlg,
     PDEVADVPROP_INFO dap;
     INT_PTR Ret = FALSE;
 
-    dap = (PDEVADVPROP_INFO)GetWindowLongPtr(hwndDlg,
-                                             DWL_USER);
+    dap = (PDEVADVPROP_INFO)GetWindowLongPtr(hwndDlg, DWLP_USER);
 
     if (dap != NULL || uMsg == WM_INITDIALOG)
     {
@@ -2443,9 +2784,7 @@ AdvPropGeneralDlgProc(IN HWND hwndDlg,
 
                     dap->hWndGeneralPage = hwndDlg;
 
-                    SetWindowLongPtr(hwndDlg,
-                                     DWL_USER,
-                                     (DWORD_PTR)dap);
+                    SetWindowLongPtr(hwndDlg, DWLP_USER, (DWORD_PTR)dap);
 
                     /* subclass the parent window to always receive
                        WM_DEVICECHANGE messages */
@@ -2722,6 +3061,9 @@ Cleanup:
         {
             DestroyIcon(DevAdvPropInfo->hDevIcon);
         }
+
+        if (DevAdvPropInfo->pResourceList != NULL)
+            HeapFree(GetProcessHeap(), 0, DevAdvPropInfo->pResourceList);
 
         HeapFree(GetProcessHeap(),
                  0,

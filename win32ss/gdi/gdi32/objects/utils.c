@@ -1,5 +1,11 @@
 #include <precomp.h>
 
+/* LoadLPK global variables */
+HINSTANCE hLpk = NULL;
+LPKETO LpkExtTextOut = NULL;
+LPKGCP LpkGetCharacterPlacement = NULL;
+LPKGTEP LpkGetTextExtentExPoint = NULL;
+
 /**
  * @name CalculateColorTableSize
  *
@@ -408,3 +414,66 @@ EnumLogFontExW2A( LPENUMLOGFONTEXA fontA, CONST ENUMLOGFONTEXW *fontW )
     fontA->elfScript[LF_FACESIZE-1] = '\0';
 }
 
+/*
+* LPK.DLL loader function
+* 
+* Returns TRUE if a valid parameter was passed and loading was successful,
+* returns FALSE otherwise.
+*/
+BOOL WINAPI LoadLPK(INT LpkFunctionID)
+{   
+    if(!hLpk) // Check if the DLL is already loaded
+        hLpk = LoadLibraryW(L"lpk.dll");
+
+    if (hLpk)
+    {
+        switch (LpkFunctionID)
+        {
+            case LPK_INIT:
+                return TRUE;
+                
+            case LPK_ETO:
+                if (!LpkExtTextOut) // Check if the function is already loaded
+                    LpkExtTextOut = (LPKETO) GetProcAddress(hLpk, "LpkExtTextOut");
+
+                if (!LpkExtTextOut)
+                {
+                    FreeLibrary(hLpk);
+                    return FALSE;
+                }
+
+                return TRUE;
+
+            case LPK_GCP:
+                if (!LpkGetCharacterPlacement) // Check if the function is already loaded
+                    LpkGetCharacterPlacement = (LPKGCP) GetProcAddress(hLpk, "LpkGetCharacterPlacement");
+
+                if (!LpkGetCharacterPlacement)
+                {
+                    FreeLibrary(hLpk);
+                    return FALSE;
+                }
+
+                return TRUE;
+
+            case LPK_GTEP:
+                if (!LpkGetTextExtentExPoint) // Check if the function is already loaded
+                    LpkGetTextExtentExPoint = (LPKGTEP) GetProcAddress(hLpk, "LpkGetTextExtentExPoint");
+
+                if (!LpkGetTextExtentExPoint)
+                {
+                    FreeLibrary(hLpk);
+                    return FALSE;
+                }
+
+                return TRUE;
+
+            default: 
+                FreeLibrary(hLpk);
+                return FALSE;
+        }
+    }
+
+    else
+        return FALSE;
+}

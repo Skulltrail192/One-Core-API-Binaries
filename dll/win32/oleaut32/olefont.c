@@ -21,8 +21,27 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
+#include <assert.h>
+#include <stdarg.h>
+#include <string.h>
 
-#include "precomp.h"
+#define COBJMACROS
+#define NONAMELESSUNION
+#define NONAMELESSSTRUCT
+
+#include "winerror.h"
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "wine/list.h"
+#include "objbase.h"
+#include "oleauto.h"    /* for SysAllocString(....) */
+#include "ole2.h"
+#include "olectl.h"
+#include "wine/debug.h"
+#include "connpt.h" /* for CreateConnectionPoint */
+#include "oaidl.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
@@ -210,7 +229,7 @@ static HRESULT dec_ext_ref(HFONT hfont)
 static WCHAR *strdupW(const WCHAR* str)
 {
     WCHAR *ret;
-    DWORD size = (strlenW(str) + 1) * sizeof(WCHAR);
+    DWORD size = (lstrlenW(str) + 1) * sizeof(WCHAR);
 
     ret = HeapAlloc(GetProcessHeap(), 0, size);
     if(ret)
@@ -571,7 +590,7 @@ static void realize_font(OLEFontImpl *This)
     if(This->gdiFont)
     {
         old_font = SelectObject(hdc, This->gdiFont);
-        GetTextFaceW(hdc, sizeof(text_face) / sizeof(text_face[0]), text_face);
+        GetTextFaceW(hdc, ARRAY_SIZE(text_face), text_face);
         SelectObject(hdc, old_font);
         dec_int_ref(This->gdiFont);
         This->gdiFont = 0;
@@ -625,7 +644,7 @@ static void realize_font(OLEFontImpl *This)
     /* Fixup the name and charset properties so that they match the
        selected font */
     old_font = SelectObject(get_dc(), This->gdiFont);
-    GetTextFaceW(hdc, sizeof(text_face) / sizeof(text_face[0]), text_face);
+    GetTextFaceW(hdc, ARRAY_SIZE(text_face), text_face);
     if(lstrcmpiW(text_face, This->description.lpstrName))
     {
         HeapFree(GetProcessHeap(), 0, This->description.lpstrName);
@@ -1043,8 +1062,8 @@ static HRESULT WINAPI OLEFontImpl_IsEqual(
     return S_FALSE;
 
   /* Check from string */
-  left_len = strlenW(left->description.lpstrName);
-  right_len = strlenW(right->description.lpstrName);
+  left_len = lstrlenW(left->description.lpstrName);
+  right_len = lstrlenW(right->description.lpstrName);
   ret = CompareStringW(0,0,left->description.lpstrName, left_len,
     right->description.lpstrName, right_len);
   if (ret != CSTR_EQUAL)
@@ -1707,7 +1726,7 @@ static HRESULT WINAPI OLEFontImpl_Save(
   /* FontName */
   if (this->description.lpstrName)
     string_size = WideCharToMultiByte( CP_ACP, 0, this->description.lpstrName,
-                                       strlenW(this->description.lpstrName), NULL, 0, NULL, NULL );
+                                       lstrlenW(this->description.lpstrName), NULL, 0, NULL, NULL );
   else
     string_size = 0;
 
@@ -1718,7 +1737,7 @@ static HRESULT WINAPI OLEFontImpl_Save(
   {
       if (!(writeBuffer = HeapAlloc( GetProcessHeap(), 0, string_size ))) return E_OUTOFMEMORY;
       WideCharToMultiByte( CP_ACP, 0, this->description.lpstrName,
-                           strlenW(this->description.lpstrName),
+                           lstrlenW(this->description.lpstrName),
                            writeBuffer, string_size, NULL, NULL );
 
       IStream_Write(pOutStream, writeBuffer, string_size, &written);
@@ -1754,7 +1773,7 @@ static HRESULT WINAPI OLEFontImpl_GetSizeMax(
 
   if (this->description.lpstrName!=0)
       pcbSize->u.LowPart += WideCharToMultiByte( CP_ACP, 0, this->description.lpstrName,
-                                                 strlenW(this->description.lpstrName),
+                                                 lstrlenW(this->description.lpstrName),
                                                  NULL, 0, NULL, NULL );
 
   return S_OK;

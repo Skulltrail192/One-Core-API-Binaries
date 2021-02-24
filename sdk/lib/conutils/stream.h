@@ -1,17 +1,24 @@
 /*
- * COPYRIGHT:       See COPYING in the top level directory
- * PROJECT:         ReactOS Console Utilities Library
- * FILE:            sdk/lib/conutils/stream.h
- * PURPOSE:         Provides basic abstraction wrappers around CRT streams or
- *                  Win32 console API I/O functions, to deal with i18n + Unicode
- *                  related problems.
- * PROGRAMMERS:     - Hermes Belusca-Maito (for the library);
- *                  - All programmers who wrote the different console applications
- *                    from which I took those functions and improved them.
+ * PROJECT:     ReactOS Console Utilities Library
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     Provides basic abstraction wrappers around CRT streams or
+ *              Win32 console API I/O functions, to deal with i18n + Unicode
+ *              related problems.
+ * COPYRIGHT:   Copyright 2017-2018 ReactOS Team
+ *              Copyright 2017-2018 Hermes Belusca-Maito
  */
+
+/**
+ * @file    stream.h
+ * @ingroup ConUtils
+ *
+ * @brief   Console I/O streams
+ **/
 
 #ifndef __STREAM_H__
 #define __STREAM_H__
+
+#pragma once
 
 /*
  * Enable this define if you want to only use CRT functions to output
@@ -25,9 +32,9 @@
 #error The ConUtils library at the moment only supports compilation with _UNICODE defined!
 #endif
 
-/*
- * Console I/O streams
- */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * See http://archives.miloush.net/michkap/archive/2009/08/14/9869928.html
@@ -106,19 +113,14 @@ do { \
 } while(0)
 #endif /* defined(USE_CRT) */
 
-#ifdef _UNICODE
 /*
- * Use UTF8 by default for file output, because this mode is back-compatible
- * with ANSI, and it displays nice on terminals that support UTF8 by default
- * (not many terminals support UTF16 on the contrary).
+ * Use ANSI by default for file output, with no cached code page.
+ * Note that setting the stream mode to AnsiText and the code page value
+ * to CP_UTF8 sets the stream to UTF8 mode, and has the same effect as if
+ * the stream mode UTF8Text had been specified instead.
  */
 #define ConInitStdStreams() \
-    ConInitStdStreamsAndMode(UTF8Text, INVALID_CP); // Cache code page unused
-#else
-/* Use ANSI by default for file output */
-#define ConInitStdStreams() \
-    ConInitStdStreamsAndMode(AnsiText, INVALID_CP);
-#endif /* defined(_UNICODE) */
+    ConInitStdStreamsAndMode(AnsiText, INVALID_CP)
 
 /* Stream translation modes */
 BOOL
@@ -147,100 +149,10 @@ ConStreamSetOSHandle(
     IN HANDLE Handle);
 
 
-/*
- * Console I/O utility API
- * (for the moment, only Output)
- */
-
-INT
-__stdcall
-ConWrite(
-    IN PCON_STREAM Stream,
-    IN PTCHAR szStr,
-    IN DWORD len);
-
-INT
-ConStreamWrite(
-    IN PCON_STREAM Stream,
-    IN PTCHAR szStr,
-    IN DWORD len);
-
-INT
-ConPuts(
-    IN PCON_STREAM Stream,
-    IN LPWSTR szStr);
-
-INT
-ConPrintfV(
-    IN PCON_STREAM Stream,
-    IN LPWSTR  szStr,
-    IN va_list args); // arg_ptr
-
-INT
-__cdecl
-ConPrintf(
-    IN PCON_STREAM Stream,
-    IN LPWSTR szStr,
-    ...);
-
-INT
-ConResPuts(
-    IN PCON_STREAM Stream,
-    IN UINT uID);
-
-INT
-ConResPrintfV(
-    IN PCON_STREAM Stream,
-    IN UINT    uID,
-    IN va_list args); // arg_ptr
-
-INT
-__cdecl
-ConResPrintf(
-    IN PCON_STREAM Stream,
-    IN UINT uID,
-    ...);
-
-INT
-ConMsgPuts(
-    IN PCON_STREAM Stream,
-    IN DWORD   dwFlags,
-    IN LPCVOID lpSource OPTIONAL,
-    IN DWORD   dwMessageId,
-    IN DWORD   dwLanguageId);
-
-INT
-ConMsgPrintf2V(
-    IN PCON_STREAM Stream,
-    IN DWORD   dwFlags,
-    IN LPCVOID lpSource OPTIONAL,
-    IN DWORD   dwMessageId,
-    IN DWORD   dwLanguageId,
-    IN va_list args); // arg_ptr
-
-INT
-ConMsgPrintfV(
-    IN PCON_STREAM Stream,
-    IN DWORD   dwFlags,
-    IN LPCVOID lpSource OPTIONAL,
-    IN DWORD   dwMessageId,
-    IN DWORD   dwLanguageId,
-    IN va_list args); // arg_ptr
-
-INT
-__cdecl
-ConMsgPrintf(
-    IN PCON_STREAM Stream,
-    IN DWORD   dwFlags,
-    IN LPCVOID lpSource OPTIONAL,
-    IN DWORD   dwMessageId,
-    IN DWORD   dwLanguageId,
-    ...);
-
-
-
-VOID
-ConClearLine(IN PCON_STREAM Stream);
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* __STREAM_H__ */
+
+/* EOF */

@@ -22,6 +22,7 @@ IDI_APPS ICON "res/apps.ico"
 IDI_APPUPD ICON "res/appupd.ico"
 IDI_CATEGORY ICON "res/cat.ico"
 IDI_UPDATE_DB ICON "res/updatedb.ico"
+IDI_CHECK_ALL ICON "res/select.ico"
 
 /* Categories */
 IDI_CAT_AUDIO ICON "res/cats/audio.ico"
@@ -39,6 +40,8 @@ IDI_CAT_OTHER ICON "res/cats/other.ico"
 IDI_CAT_SCIENCE ICON "res/cats/science.ico"
 IDI_CAT_TOOLS ICON "res/cats/tools.ico"
 IDI_CAT_VIDEO ICON "res/cats/video.ico"
+IDI_CAT_THEMES ICON "res/cats/themes.ico"
+IDI_SELECTEDFORINST ICON "res/select.ico"
 
 /* Accelerators -- key bindings */
 HOTKEYS ACCELERATORS
@@ -48,6 +51,7 @@ HOTKEYS ACCELERATORS
   VK_F5,     ID_RESETDB,   CONTROL, VIRTKEY
   VK_DELETE, ID_UNINSTALL, CONTROL, VIRTKEY
   VK_RETURN, ID_INSTALL,   CONTROL, VIRTKEY
+  "F",       ID_SEARCH,    CONTROL, VIRTKEY
 }
 
 #include <reactos/manifest_exe.rc>
@@ -72,11 +76,17 @@ HOTKEYS ACCELERATORS
 #ifdef LANGUAGE_ES_ES
     #include "lang/es-ES.rc"
 #endif
+#ifdef LANGUAGE_ET_EE
+    #include "lang/et-EE.rc"
+#endif
 #ifdef LANGUAGE_FR_FR
     #include "lang/fr-FR.rc"
 #endif
 #ifdef LANGUAGE_HE_IL
     #include "lang/he-IL.rc"
+#endif
+#ifdef LANGUAGE_ID_ID
+    #include "lang/id-ID.rc"
 #endif
 #ifdef LANGUAGE_IT_IT
     #include "lang/it-IT.rc"
@@ -92,6 +102,9 @@ HOTKEYS ACCELERATORS
 #endif
 #ifdef LANGUAGE_PT_BR
     #include "lang/pt-BR.rc"
+#endif
+#ifdef LANGUAGE_PT_PT
+    #include "lang/pt-PT.rc"
 #endif
 #ifdef LANGUAGE_RO_RO
     #include "lang/ro-RO.rc"

@@ -1,8 +1,8 @@
 /*
  * PROJECT:     ReactOS Local Spooler
- * LICENSE:     GNU LGPL v2.1 or any later version as published by the Free Software Foundation
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
  * PURPOSE:     Main functions
- * COPYRIGHT:   Copyright 2015-2017 Colin Finck <colin@reactos.org>
+ * COPYRIGHT:   Copyright 2015-2017 Colin Finck (colin@reactos.org)
  */
 
 #include "precomp.h"
@@ -24,7 +24,7 @@ const DWORD dwSpoolerMinorVersion = 0;
 
 const WCHAR wszDefaultDocumentName[] = L"Local Downlevel Document";
 
-PWSTR wszPrintProviderInfo[3] = {
+PCWSTR wszPrintProviderInfo[3] = {
     L"Windows NT Local Print Providor",     // Name
     L"Locally connected Printers",          // Comment
     L"Windows NT Local Printers"            // Description
@@ -43,7 +43,7 @@ static const PRINTPROVIDOR _PrintProviderFunctions = {
     LocalEnumPrinters,                          // fpEnumPrinters
     NULL,                                       // fpAddPrinterDriver
     NULL,                                       // fpEnumPrinterDrivers
-    NULL,                                       // fpGetPrinterDriver
+    LocalGetPrinterDriver,                      // fpGetPrinterDriver
     NULL,                                       // fpGetPrinterDriverDirectory
     NULL,                                       // fpDeletePrinterDriver
     NULL,                                       // fpAddPrintProcessor

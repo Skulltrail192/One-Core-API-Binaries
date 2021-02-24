@@ -9,12 +9,10 @@
 
 #include "precomp.h"
 
-#include <cpl.h>
 #include <regstr.h>
 
-LONG CALLBACK SystemApplet(VOID);
+static LONG APIENTRY SystemApplet(HWND hwnd, UINT uMsg, LPARAM wParam, LPARAM lParam);
 HINSTANCE hApplet = 0;
-HWND hCPLWindow;
 
 /* Applets */
 APPLET Applets[NUM_APPLETS] =
@@ -121,36 +119,59 @@ Fail:
     return hMod;
 }
 
+static int CALLBACK
+PropSheetProc(HWND hwndDlg, UINT uMsg, LPARAM lParam)
+{
+    // NOTE: This callback is needed to set large icon correctly.
+    HICON hIcon;
+    switch (uMsg)
+    {
+        case PSCB_INITIALIZED:
+        {
+            hIcon = LoadIconW(hApplet, MAKEINTRESOURCEW(IDI_USERPROF));
+            SendMessageW(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+            break;
+        }
+    }
+    return 0;
+}
+
 /* First Applet */
 LONG CALLBACK
-SystemApplet(VOID)
+SystemApplet(HWND hwnd, UINT uMsg, LPARAM wParam, LPARAM lParam)
 {
     HPROPSHEETPAGE hpsp[MAX_SYSTEM_PAGES];
     PROPSHEETHEADER psh;
     HMODULE hNetIdDll;
     HPSXA hpsxa = NULL;
+    INT nPage = 0;
     LONG Ret;
     static INITCOMMONCONTROLSEX icc = {sizeof(INITCOMMONCONTROLSEX), ICC_LINK_CLASS};
 
     if (!InitCommonControlsEx(&icc))
         return 0;
 
+    if (uMsg == CPL_STARTWPARMSW && lParam != 0)
+    {
+        nPage = _wtoi((PWSTR)lParam);
+    }
+
     ZeroMemory(&psh, sizeof(PROPSHEETHEADER));
     psh.dwSize = sizeof(PROPSHEETHEADER);
-    psh.dwFlags =  PSH_PROPTITLE;
-    psh.hwndParent = hCPLWindow;
+    psh.dwFlags =  PSH_PROPTITLE | PSH_USEICONID | PSH_USECALLBACK;
+    psh.hwndParent = hwnd;
     psh.hInstance = hApplet;
-    psh.hIcon = LoadIcon(hApplet, MAKEINTRESOURCE(IDI_CPLSYSTEM));
+    psh.pszIcon = MAKEINTRESOURCEW(IDI_USERPROF);
     psh.pszCaption = MAKEINTRESOURCE(IDS_CPLSYSTEMNAME);
     psh.nPages = 0;
     psh.nStartPage = 0;
     psh.phpage = hpsp;
-    psh.pfnCallback = NULL;
+    psh.pfnCallback = PropSheetProc;
 
-    InitPropSheetPage(&psh, IDD_PROPPAGEGENERAL, (DLGPROC) GeneralPageProc);
+    InitPropSheetPage(&psh, IDD_PROPPAGEGENERAL, GeneralPageProc);
     hNetIdDll = AddNetIdPage(&psh);
-    InitPropSheetPage(&psh, IDD_PROPPAGEHARDWARE, (DLGPROC) HardwarePageProc);
-    InitPropSheetPage(&psh, IDD_PROPPAGEADVANCED, (DLGPROC) AdvancedPageProc);
+    InitPropSheetPage(&psh, IDD_PROPPAGEHARDWARE, HardwarePageProc);
+    InitPropSheetPage(&psh, IDD_PROPPAGEADVANCED, AdvancedPageProc);
 
     /* Load additional pages provided by shell extensions */
     hpsxa = SHCreatePropSheetExtArray(HKEY_LOCAL_MACHINE, REGSTR_PATH_CONTROLSFOLDER TEXT("\\System"), MAX_SYSTEM_PAGES - psh.nPages);
@@ -158,6 +179,9 @@ SystemApplet(VOID)
     {
         SHAddFromPropSheetExtArray(hpsxa, PropSheetAddPage, (LPARAM)&psh);
     }
+
+    if (nPage != 0 && nPage <= psh.nPages)
+        psh.nStartPage = nPage;
 
     Ret = (LONG)(PropertySheet(&psh) != -1);
 
@@ -202,9 +226,12 @@ CPlApplet(HWND hwndCPl,
             break;
 
         case CPL_DBLCLK:
-            hCPLWindow = hwndCPl;
-            Applets[i].AppletProc();
+            Applets[i].AppletProc(hwndCPl, uMsg, lParam1, lParam2);
             break;
+
+        case CPL_STARTWPARMSW:
+            return Applets[i].AppletProc(hwndCPl, uMsg, lParam1, lParam2);
+
     }
 
     return FALSE;

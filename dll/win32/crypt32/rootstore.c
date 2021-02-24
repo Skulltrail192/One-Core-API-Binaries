@@ -15,9 +15,9 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-
-#include "crypt32_private.h"
-
+#include "config.h"
+#include <stdarg.h>
+#include <stdio.h>
 #include <sys/types.h>
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -34,6 +34,15 @@
 #ifdef HAVE_SECURITY_SECURITY_H
 #include <Security/Security.h>
 #endif
+#include "ntstatus.h"
+#define WIN32_NO_STATUS
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "wincrypt.h"
+#include "wine/winternl.h"
+#include "wine/debug.h"
+#include "crypt32_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(crypt);
 
@@ -922,7 +931,7 @@ static void add_ms_root_certs(HCERTSTORE to)
 
     TRACE("\n");
 
-    for (i = 0; i < sizeof(msRootCerts) / sizeof(msRootCerts[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(msRootCerts); i++)
         if (!CertAddEncodedCertificateToStore(to, X509_ASN_ENCODING,
          msRootCerts[i].pb, msRootCerts[i].cb, CERT_STORE_ADD_NEW, NULL))
             WARN("adding root cert %d failed: %08x\n", i, GetLastError());
@@ -972,9 +981,7 @@ static void read_trusted_roots_from_known_locations(HCERTSTORE store)
         }
 #endif
 
-        for (i = 0; !ret &&
-         i < sizeof(CRYPT_knownLocations) / sizeof(CRYPT_knownLocations[0]);
-         i++)
+        for (i = 0; !ret && i < ARRAY_SIZE(CRYPT_knownLocations); i++)
             ret = import_certs_from_path(CRYPT_knownLocations[i], from, TRUE);
         check_and_store_certs(from, store);
     }

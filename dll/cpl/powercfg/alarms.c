@@ -32,7 +32,7 @@ Ala_InitData(HWND hwndDlg)
         CheckDlgButton(hwndDlg, IDC_ALARM1,
             gGPP.user.DischargePolicy[DISCHARGE_POLICY_LOW].Enable ? BST_CHECKED : BST_UNCHECKED);
 
-        if (LoadString(hApplet, IDS_PROCENT, szTemp, MAX_PATH))
+        if (LoadString(hApplet, IDS_PERCENT, szTemp, MAX_PATH))
         {
             _stprintf(szBatteryLevel, szTemp, gGPP.user.DischargePolicy[DISCHARGE_POLICY_LOW].BatteryLevel);
             SetDlgItemText(hwndDlg, IDC_ALARMVALUE1, szBatteryLevel);
@@ -100,7 +100,7 @@ Ala_InitData(HWND hwndDlg)
         CheckDlgButton(hwndDlg, IDC_ALARM2,
             gGPP.user.DischargePolicy[DISCHARGE_POLICY_CRITICAL].Enable ? BST_CHECKED : BST_UNCHECKED);
 
-        if (LoadString(hApplet, IDS_PROCENT, szTemp, MAX_PATH))
+        if (LoadString(hApplet, IDS_PERCENT, szTemp, MAX_PATH))
         {
             _stprintf(szBatteryLevel, szTemp, gGPP.user.DischargePolicy[DISCHARGE_POLICY_CRITICAL].BatteryLevel);
             SetDlgItemText(hwndDlg, IDC_ALARMVALUE2, szBatteryLevel);
@@ -169,19 +169,22 @@ AlarmsDlgProc(HWND hwndDlg,
               WPARAM wParam,
               LPARAM lParam)
 {
-  UNREFERENCED_PARAMETER(lParam);
-  UNREFERENCED_PARAMETER(wParam);
-  switch(uMsg)
-  {
-    case WM_INITDIALOG:
-        if (!Ala_InitData(hwndDlg))
-        {
-            // TODO:
-            // Handle initialization error
-        }
-        return TRUE;
-    default:
-        break;
-  }
-  return FALSE;
+    UNREFERENCED_PARAMETER(lParam);
+    UNREFERENCED_PARAMETER(wParam);
+
+    switch (uMsg)
+    {
+        case WM_INITDIALOG:
+            if (!Ala_InitData(hwndDlg))
+            {
+                // TODO:
+                // Handle initialization error
+            }
+            return TRUE;
+
+        default:
+            break;
+    }
+
+    return FALSE;
 }

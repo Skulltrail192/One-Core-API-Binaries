@@ -13,14 +13,7 @@
 #define NDEBUG
 #include <debug.h>
 
-#ifndef VACB_MAPPING_GRANULARITY
-#define VACB_MAPPING_GRANULARITY (256 * 1024)
-#endif
-
 /* GLOBALS   *****************************************************************/
-
-extern KGUARDED_MUTEX ViewLock;
-extern ULONG DirtyPageCount;
 
 NTSTATUS CcRosInternalFreeVacb(PROS_VACB Vacb);
 
@@ -111,17 +104,52 @@ CcInitializeCacheMap (
 }
 
 /*
- * @unimplemented
+ * @implemented
  */
 BOOLEAN
 NTAPI
 CcIsThereDirtyData (
     IN PVPB Vpb)
 {
+    PROS_VACB Vacb;
+    PLIST_ENTRY Entry;
+    KIRQL oldIrql;
+    /* Assume no dirty data */
+    BOOLEAN Dirty = FALSE;
+
     CCTRACE(CC_API_DEBUG, "Vpb=%p\n", Vpb);
 
-    UNIMPLEMENTED;
-    return FALSE;
+    oldIrql = KeAcquireQueuedSpinLock(LockQueueMasterLock);
+
+    /* Browse dirty VACBs */
+    for (Entry = DirtyVacbListHead.Flink; Entry != &DirtyVacbListHead; Entry = Entry->Flink)
+    {
+        Vacb = CONTAINING_RECORD(Entry, ROS_VACB, DirtyVacbListEntry);
+        /* Look for these associated with our volume */
+        if (Vacb->SharedCacheMap->FileObject->Vpb != Vpb)
+        {
+            continue;
+        }
+
+        /* From now on, we are associated with our VPB */
+
+        /* Temporary files are not counted as dirty */
+        if (BooleanFlagOn(Vacb->SharedCacheMap->FileObject->Flags, FO_TEMPORARY_FILE))
+        {
+            continue;
+        }
+
+        /* A single dirty VACB is enough to have dirty data */
+        if (Vacb->Dirty)
+        {
+            Dirty = TRUE;
+            break;
+        }
+    }
+
+    KeReleaseQueuedSpinLock(LockQueueMasterLock, oldIrql);
+
+    return Dirty;
 }
 
 /*
@@ -143,6 +171,7 @@ CcPurgeCacheSection (
     PLIST_ENTRY ListEntry;
     PROS_VACB Vacb;
     LONGLONG ViewEnd;
+    BOOLEAN Success;
 
     CCTRACE(CC_API_DEBUG, "SectionObjectPointer=%p\n FileOffset=%p Length=%lu UninitializeCacheMaps=%d",
         SectionObjectPointer, FileOffset, Length, UninitializeCacheMaps);
@@ -169,11 +198,16 @@ CcPurgeCacheSection (
 
     InitializeListHead(&FreeList);
 
-    KeAcquireGuardedMutex(&ViewLock);
-    KeAcquireSpinLock(&SharedCacheMap->CacheMapLock, &OldIrql);
+    /* Assume success */
+    Success = TRUE;
+
+    OldIrql = KeAcquireQueuedSpinLock(LockQueueMasterLock);
+    KeAcquireSpinLockAtDpcLevel(&SharedCacheMap->CacheMapLock);
     ListEntry = SharedCacheMap->CacheMapVacbListHead.Flink;
     while (ListEntry != &SharedCacheMap->CacheMapVacbListHead)
     {
+        ULONG Refs;
+
         Vacb = CONTAINING_RECORD(ListEntry, ROS_VACB, CacheMapVacbListEntry);
         ListEntry = ListEntry->Flink;
 
@@ -189,31 +223,44 @@ CcPurgeCacheSection (
             break;
         }
 
-        ASSERT((Vacb->ReferenceCount == 0) ||
-               (Vacb->ReferenceCount == 1 && Vacb->Dirty));
+        /* Still in use, it cannot be purged, fail
+         * Allow one ref: VACB is supposed to be always 1-referenced
+         */
+        Refs = CcRosVacbGetRefCount(Vacb);
+        if ((Refs > 1 && !Vacb->Dirty) ||
+            (Refs > 2 && Vacb->Dirty))
+        {
+            Success = FALSE;
+            break;
+        }
 
         /* This VACB is in range, so unlink it and mark for free */
+        ASSERT(Refs == 1 || Vacb->Dirty);
         RemoveEntryList(&Vacb->VacbLruListEntry);
+        InitializeListHead(&Vacb->VacbLruListEntry);
         if (Vacb->Dirty)
         {
-            RemoveEntryList(&Vacb->DirtyVacbListEntry);
-            DirtyPageCount -= VACB_MAPPING_GRANULARITY / PAGE_SIZE;
+            CcRosUnmarkDirtyVacb(Vacb, FALSE);
         }
         RemoveEntryList(&Vacb->CacheMapVacbListEntry);
         InsertHeadList(&FreeList, &Vacb->CacheMapVacbListEntry);
     }
-    KeReleaseSpinLock(&SharedCacheMap->CacheMapLock, OldIrql);
-    KeReleaseGuardedMutex(&ViewLock);
+    KeReleaseSpinLockFromDpcLevel(&SharedCacheMap->CacheMapLock);
+    KeReleaseQueuedSpinLock(LockQueueMasterLock, OldIrql);
 
     while (!IsListEmpty(&FreeList))
     {
+        ULONG Refs;
+
         Vacb = CONTAINING_RECORD(RemoveHeadList(&FreeList),
                                  ROS_VACB,
                                  CacheMapVacbListEntry);
-        CcRosInternalFreeVacb(Vacb);
+        InitializeListHead(&Vacb->CacheMapVacbListEntry);
+        Refs = CcRosVacbDecRefCount(Vacb);
+        ASSERT(Refs == 0);
     }
 
-    return FALSE;
+    return Success;
 }
 
 
@@ -253,6 +300,43 @@ CcSetFileSizes (
                             &FileSizes->AllocationSize,
                             0,
                             FALSE);
+    }
+    else
+    {
+        PROS_VACB LastVacb;
+
+        /*
+         * If file (allocation) size has increased, then we need to check whether
+         * it just grows in a single VACB (the last one).
+         * If so, we must mark the VACB as invalid to trigger a read to the
+         * FSD at the next VACB usage, and thus avoid returning garbage
+         */
+
+        /* Check for allocation size and the last VACB */
+        if (SharedCacheMap->SectionSize.QuadPart < FileSizes->AllocationSize.QuadPart &&
+            SharedCacheMap->SectionSize.QuadPart % VACB_MAPPING_GRANULARITY)
+        {
+            LastVacb = CcRosLookupVacb(SharedCacheMap,
+                                       SharedCacheMap->SectionSize.QuadPart);
+            if (LastVacb != NULL)
+            {
+                /* Mark it as invalid */
+                CcRosReleaseVacb(SharedCacheMap, LastVacb, LastVacb->Dirty ? LastVacb->Valid : FALSE, FALSE, FALSE);
+            }
+        }
+
+        /* Check for file size and the last VACB */
+        if (SharedCacheMap->FileSize.QuadPart < FileSizes->FileSize.QuadPart &&
+            SharedCacheMap->FileSize.QuadPart % VACB_MAPPING_GRANULARITY)
+        {
+            LastVacb = CcRosLookupVacb(SharedCacheMap,
+                                       SharedCacheMap->FileSize.QuadPart);
+            if (LastVacb != NULL)
+            {
+                /* Mark it as invalid */
+                CcRosReleaseVacb(SharedCacheMap, LastVacb, LastVacb->Dirty ? LastVacb->Valid : FALSE, FALSE, FALSE);
+            }
+        }
     }
 
     KeAcquireSpinLock(&SharedCacheMap->CacheMapLock, &oldirql);
@@ -295,7 +379,6 @@ CcUninitializeCacheMap (
         FileObject, TruncateSize, UninitializeCompleteEvent);
 
     if (TruncateSize != NULL &&
-        FileObject->SectionObjectPointer != NULL &&
         FileObject->SectionObjectPointer->SharedCacheMap != NULL)
     {
         SharedCacheMap = FileObject->SectionObjectPointer->SharedCacheMap;

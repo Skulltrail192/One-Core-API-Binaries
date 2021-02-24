@@ -19,13 +19,11 @@
 
 #include <freeldr.h>
 
-#define NDEBUG
 #include <debug.h>
+DBG_DEFAULT_CHANNEL(FILESYSTEM);
 
 #define TAG_PXE_FILE 'FexP'
 #define NO_FILE ((ULONG)-1)
-
-DBG_DEFAULT_CHANNEL(FILESYSTEM);
 
 static IP4 _ServerIP = { 0, };
 static ULONG _OpenFile = NO_FILE;
@@ -33,7 +31,7 @@ static CHAR _OpenFileName[128];
 static ULONG _FileSize = 0;
 static ULONG _FilePosition = 0;
 static ULONG _PacketPosition = 0;
-static UCHAR _Packet[4096];
+static UCHAR _Packet[1024]; // Should be a value which can be transferred well in one packet over the network
 static UCHAR* _CachedFile = NULL;
 static ULONG _CachedLength = 0;
 
@@ -46,9 +44,9 @@ FindPxeStructure(VOID)
 
     /* Find the '!PXE' structure */
     Ptr = (PPXE)0xA0000;
-    while ((ULONG)Ptr > 0x10000)
+    while ((ULONG_PTR)Ptr > 0x10000)
     {
-        Ptr = (PPXE)((ULONG)Ptr - 0x10);
+        Ptr = (PPXE)((ULONG_PTR)Ptr - 0x10);
 
         /* Look for signature */
         if (memcmp(Ptr, "!PXE", 4) != 0)
@@ -146,6 +144,9 @@ static ARC_STATUS PxeGetFileInformation(ULONG FileId, FILEINFORMATION* Informati
     Information->EndingAddress.LowPart = _FileSize;
     Information->CurrentAddress.LowPart = _FilePosition;
 
+    TRACE("PxeGetFileInformation(%lu) -> FileSize = %lu, FilePointer = 0x%lx\n",
+          FileId, Information->EndingAddress.LowPart, Information->CurrentAddress.LowPart);
+
     return ESUCCESS;
 }
 
@@ -225,8 +226,8 @@ static ARC_STATUS PxeRead(ULONG FileId, VOID* Buffer, ULONG N, ULONG* Count)
         return EBADF;
 
     RtlZeroMemory(&readData, sizeof(readData));
-    readData.Buffer.segment = ((UINT32)_Packet & 0xf0000) / 16;
-    readData.Buffer.offset = (UINT32)_Packet & 0xffff;
+    readData.Buffer.segment = ((ULONG_PTR)_Packet & 0xf0000) / 16;
+    readData.Buffer.offset = (ULONG_PTR)_Packet & 0xffff;
 
     // Get new packets as required
     while (N > 0)
@@ -277,8 +278,8 @@ static ARC_STATUS PxeSeek(ULONG FileId, LARGE_INTEGER* Position, SEEKMODE SeekMo
     }
 
     RtlZeroMemory(&readData, sizeof(readData));
-    readData.Buffer.segment = ((UINT32)_Packet & 0xf0000) / 16;
-    readData.Buffer.offset = (UINT32)_Packet & 0xffff;
+    readData.Buffer.segment = ((ULONG_PTR)_Packet & 0xf0000) / 16;
+    readData.Buffer.offset = (ULONG_PTR)_Packet & 0xffff;
 
     // Get new packets as required
     while (Position->LowPart > _CachedLength)
@@ -364,7 +365,7 @@ static BOOLEAN GetCachedInfo(VOID)
         return FALSE;
     if (Data.BufferSize < 36)
         return FALSE;
-    Packet = (UCHAR*)((UINT32)(Data.Buffer.segment << 4) + Data.Buffer.offset);
+    Packet = (UCHAR*)((ULONG_PTR)(Data.Buffer.segment << 4) + Data.Buffer.offset);
     RtlCopyMemory(&_ServerIP, Packet + 20, sizeof(IP4));
     return TRUE;
 }

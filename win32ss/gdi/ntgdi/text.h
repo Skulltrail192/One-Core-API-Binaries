@@ -64,9 +64,7 @@ typedef struct _LFONT
    LFTYPE        lft;
    FLONG         fl;
    FONTOBJ      *Font;
-   WCHAR         FullName[LF_FULLFACESIZE];
-   WCHAR         Style[LF_FACESIZE];
-   WCHAR         FaceName[LF_FACESIZE];
+   WCHAR         TextFace[LF_FACESIZE];
    DWORD         dwOffsetEndArray;
 // Fixed:
    ENUMLOGFONTEXDVW logfont;
@@ -102,18 +100,26 @@ TEXTOBJ_UnlockText(PLFONT plfnt)
     LFONT_ShareUnlockFont(plfnt);
 }
 
+/* dwFlags for IntGdiAddFontResourceEx */
+#define AFRX_WRITE_REGISTRY 0x1
+#define AFRX_ALTERNATIVE_PATH 0x2
+#define AFRX_DOS_DEVICE_PATH 0x4
 
 PTEXTOBJ FASTCALL RealizeFontInit(HFONT);
 NTSTATUS FASTCALL TextIntRealizeFont(HFONT,PTEXTOBJ);
 NTSTATUS FASTCALL TextIntCreateFontIndirect(CONST LPLOGFONTW lf, HFONT *NewFont);
+BYTE FASTCALL IntCharSetFromCodePage(UINT uCodePage);
 BOOL FASTCALL InitFontSupport(VOID);
 BOOL FASTCALL IntIsFontRenderingEnabled(VOID);
 BOOL FASTCALL IntIsFontRenderingEnabled(VOID);
 VOID FASTCALL IntEnableFontRendering(BOOL Enable);
 ULONG FASTCALL FontGetObject(PTEXTOBJ TextObj, ULONG Count, PVOID Buffer);
 VOID FASTCALL IntLoadSystemFonts(VOID);
+BOOL FASTCALL IntLoadFontsInRegistry(VOID);
 VOID FASTCALL IntGdiCleanupPrivateFontsForProcess(VOID);
 INT FASTCALL IntGdiAddFontResource(PUNICODE_STRING FileName, DWORD Characteristics);
+INT FASTCALL IntGdiAddFontResourceEx(PUNICODE_STRING FileName, DWORD Characteristics,
+                                     DWORD dwFlags);
 HANDLE FASTCALL IntGdiAddFontMemResource(PVOID Buffer, DWORD dwSize, PDWORD pNumAdded);
 BOOL FASTCALL IntGdiRemoveFontMemResource(HANDLE hMMFont);
 ULONG FASTCALL ftGdiGetGlyphOutline(PDC,WCHAR,UINT,LPGLYPHMETRICS,ULONG,PVOID,LPMAT2,BOOL);

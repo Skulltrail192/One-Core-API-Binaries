@@ -553,10 +553,10 @@ MMSYS_InstallDevice(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pspDevInfoData)
         return ERROR_DI_DO_DEFAULT;
     }
 
-    hService = OpenService(hSCManager, L"RosAudioSrv", SERVICE_ALL_ACCESS);
+    hService = OpenService(hSCManager, L"AudioSrv", SERVICE_ALL_ACCESS);
     if (hService)
     {
-        /* Make RosAudioSrv start automatically */
+        /* Make AudioSrv start automatically */
         ChangeServiceConfig(hService, SERVICE_NO_CHANGE, SERVICE_AUTO_START, SERVICE_NO_CHANGE, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
         StartService(hService, 0, NULL);
@@ -689,6 +689,23 @@ HardwareDlgProc(HWND hwndDlg,
     return FALSE;
 }
 
+static int CALLBACK
+PropSheetProc(HWND hwndDlg, UINT uMsg, LPARAM lParam)
+{
+    // NOTE: This callback is needed to set large icon correctly.
+    HICON hIcon;
+    switch (uMsg)
+    {
+        case PSCB_INITIALIZED:
+        {
+            hIcon = LoadIconW(hApplet, MAKEINTRESOURCEW(IDI_CPLICON));
+            SendMessageW(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+            break;
+        }
+    }
+    return 0;
+}
+
 LONG APIENTRY
 MmSysApplet(HWND hwnd,
             UINT uMsg,
@@ -698,29 +715,36 @@ MmSysApplet(HWND hwnd,
     PROPSHEETPAGE psp[5];
     PROPSHEETHEADER psh; // = { 0 };
     TCHAR Caption[256];
+    INT nPage = 0;
 
     UNREFERENCED_PARAMETER(lParam);
     UNREFERENCED_PARAMETER(wParam);
     UNREFERENCED_PARAMETER(uMsg);
 
+    if (uMsg == CPL_STARTWPARMSW && lParam != 0)
+        nPage = _wtoi((PWSTR)lParam);
+
     LoadString(hApplet, IDS_CPLNAME, Caption, _countof(Caption));
 
     psh.dwSize = sizeof(PROPSHEETHEADER);
-    psh.dwFlags =  PSH_PROPSHEETPAGE | PSH_PROPTITLE;
+    psh.dwFlags =  PSH_PROPSHEETPAGE | PSH_PROPTITLE | PSH_USEICONID | PSH_USECALLBACK;
     psh.hwndParent = hwnd;
     psh.hInstance = hApplet;
-    psh.hIcon = LoadIcon(hApplet,
-                         MAKEINTRESOURCE(IDI_CPLICON));
+    psh.pszIcon = MAKEINTRESOURCEW(IDI_CPLICON);
     psh.pszCaption = Caption;
     psh.nPages = sizeof(psp) / sizeof(PROPSHEETPAGE);
     psh.nStartPage = 0;
     psh.ppsp = psp;
+    psh.pfnCallback = PropSheetProc;
 
     InitPropSheetPage(&psp[0], IDD_VOLUME,VolumeDlgProc);
     InitPropSheetPage(&psp[1], IDD_SOUNDS,SoundsDlgProc);
     InitPropSheetPage(&psp[2], IDD_AUDIO,AudioDlgProc);
     InitPropSheetPage(&psp[3], IDD_VOICE,VoiceDlgProc);
     InitPropSheetPage(&psp[4], IDD_HARDWARE,HardwareDlgProc);
+
+    if (nPage != 0 && nPage <= psh.nPages)
+        psh.nStartPage = nPage;
 
     return (LONG)(PropertySheet(&psh) != -1);
 }
@@ -775,6 +799,9 @@ CPlApplet(HWND hwndCpl,
                                           lParam2);
             break;
         }
+
+        case CPL_STARTWPARMSW:
+            return Applets[(UINT)lParam1].AppletProc(hwndCpl, uMsg, lParam1, lParam2);
     }
 
     return FALSE;

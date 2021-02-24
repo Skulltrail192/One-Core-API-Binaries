@@ -3805,7 +3805,7 @@ static const unsigned char cp2uni_leadbytes[256] =
     0x70, 0x71, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static const unsigned short uni2cp_low[37401] =
+static const unsigned short uni2cp_low[] =
 {
     /* 0x0000 .. 0x00ff */
     0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -8657,7 +8657,7 @@ static const unsigned short uni2cp_high[256] =
     0x8c33, 0x8d33, 0x8e33, 0x9019, 0x9019, 0x9019, 0x9019, 0x8f32
 };
 
-const struct dbcs_table cptable_1361 =
+const struct dbcs_table DECLSPEC_HIDDEN cptable_1361 =
 {
     { 1361, 2, 0x003f, 0x003f, "Korean Johab" },
     cp2uni,

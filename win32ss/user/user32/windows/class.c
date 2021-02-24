@@ -10,7 +10,6 @@
 
 #include <user32.h>
 
-#include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(user32);
 
 #define USE_VERSIONED_CLASSES
@@ -91,7 +90,9 @@ ClassNameToVersion(
   BOOL bAnsi)
 {
     LPCWSTR VersionedClass = NULL;
+#ifdef USE_VERSIONED_CLASSES
     NTSTATUS Status;
+#endif
     UNICODE_STRING SectionName;
     WCHAR SectionNameBuf[MAX_PATH] = {0};
     ACTCTX_SECTION_KEYED_DATA KeyedData = { sizeof(KeyedData) };
@@ -127,13 +128,13 @@ ClassNameToVersion(
             RtlInitUnicodeString(&SectionName, lpszClass);
         }
     }
+#ifdef USE_VERSIONED_CLASSES
     Status = RtlFindActivationContextSectionString( FIND_ACTCTX_SECTION_KEY_RETURN_HACTCTX,
                                                     NULL,
                                                     ACTIVATION_CONTEXT_SECTION_WINDOW_CLASS_REDIRECTION,
                                                    &SectionName,
                                                    &KeyedData );
 
-#ifdef USE_VERSIONED_CLASSES
     if (NT_SUCCESS(Status) && KeyedData.ulDataFormatVersion == 1)
     {
         struct strsection_header *SectionHeader = KeyedData.lpSectionBase;
@@ -204,6 +205,8 @@ VersionRegisterClass(
     WCHAR ClassNameBuf[MAX_PATH] = {0};
     RTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME_EXTENDED Frame = { sizeof(Frame), 1 };
 
+    ERR("VersionRegisterClass: Attempting to call RegisterClassNameW in %S.\n", lpLibFileName);
+
     RtlActivateActivationContextUnsafeFast(&Frame, Contex);
 
     _SEH2_TRY
@@ -233,6 +236,7 @@ VersionRegisterClass(
     }
     _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
     {
+       ERR("Got exception while trying to call RegisterClassNameW!\n");
     }
     _SEH2_END
 
@@ -1115,6 +1119,15 @@ LONG_PTR IntGetWindowLong( HWND hwnd, INT offset, UINT size, BOOL unicode )
     case GWL_EXSTYLE:    retvalue = wndPtr->ExStyle; break;
     case GWLP_ID:        retvalue = wndPtr->IDMenu; break;
     case GWLP_HINSTANCE: retvalue = (ULONG_PTR)wndPtr->hModule; break;
+#if 0
+    /* -1 is an undocumented case which returns WW* */
+    /* source: http://www.geoffchappell.com/studies/windows/win32/user32/structs/wnd/index.htm*/
+    case -1:             retvalue = (ULONG_PTR)&wndPtr->ww; break;
+#else
+    /* We don't have a WW but WND already contains the same fields in the right order, */
+    /* so we can return a pointer to its first field */
+    case -1:             retvalue = (ULONG_PTR)&wndPtr->state; break;
+#endif
     case GWLP_WNDPROC:
     {
         if (!TestWindowProcess(wndPtr))
@@ -1582,7 +1595,19 @@ RegisterClassA(CONST WNDCLASSA *lpWndClass)
     if (lpWndClass == NULL)
         return 0;
 
-    RtlCopyMemory(&Class.style, lpWndClass, sizeof(WNDCLASSA));
+    /* These MUST be copied manually, since on 64 bit architectures the
+       alignment of the members is different between the 2 structs! */
+    Class.style = lpWndClass->style;
+    Class.lpfnWndProc = lpWndClass->lpfnWndProc;
+    Class.cbClsExtra = lpWndClass->cbClsExtra;
+    Class.cbWndExtra = lpWndClass->cbWndExtra;
+    Class.hInstance = lpWndClass->hInstance;
+    Class.hIcon = lpWndClass->hIcon;
+    Class.hCursor = lpWndClass->hCursor;
+    Class.hbrBackground = lpWndClass->hbrBackground;
+    Class.lpszMenuName = lpWndClass->lpszMenuName;
+    Class.lpszClassName = lpWndClass->lpszClassName;
+
     Class.cbSize = sizeof(WNDCLASSEXA);
     Class.hIconSm = NULL;
 
@@ -1600,7 +1625,19 @@ RegisterClassW(CONST WNDCLASSW *lpWndClass)
     if (lpWndClass == NULL)
         return 0;
 
-    RtlCopyMemory(&Class.style, lpWndClass, sizeof(WNDCLASSW));
+    /* These MUST be copied manually, since on 64 bit architectures the
+       alignment of the members is different between the 2 structs! */
+    Class.style = lpWndClass->style;
+    Class.lpfnWndProc = lpWndClass->lpfnWndProc;
+    Class.cbClsExtra = lpWndClass->cbClsExtra;
+    Class.cbWndExtra = lpWndClass->cbWndExtra;
+    Class.hInstance = lpWndClass->hInstance;
+    Class.hIcon = lpWndClass->hIcon;
+    Class.hCursor = lpWndClass->hCursor;
+    Class.hbrBackground = lpWndClass->hbrBackground;
+    Class.lpszMenuName = lpWndClass->lpszMenuName;
+    Class.lpszClassName = lpWndClass->lpszClassName;
+
     Class.cbSize = sizeof(WNDCLASSEXW);
     Class.hIconSm = NULL;
 
@@ -1830,7 +1867,7 @@ SetWindowLongPtrA(HWND hWnd,
                   INT nIndex,
                   LONG_PTR dwNewLong)
 {
-    return NtUserSetWindowLong(hWnd, nIndex, dwNewLong, FALSE);
+    return NtUserSetWindowLongPtr(hWnd, nIndex, dwNewLong, TRUE);
 }
 
 /*
@@ -1842,7 +1879,7 @@ SetWindowLongPtrW(HWND hWnd,
                   INT nIndex,
                   LONG_PTR dwNewLong)
 {
-    return NtUserSetWindowLong(hWnd, nIndex, dwNewLong, FALSE);
+    return NtUserSetWindowLongPtr(hWnd, nIndex, dwNewLong, FALSE);
 }
 #endif
 

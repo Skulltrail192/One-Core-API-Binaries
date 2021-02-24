@@ -18,7 +18,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <assert.h>
+#include <stdarg.h>
+#include <string.h>
+
+#define COBJMACROS
+#define NONAMELESSUNION
+
+#include "winerror.h"
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "wine/debug.h"
+#include "ole2.h"
+#include "moniker.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
@@ -472,7 +486,7 @@ static HRESULT WINAPI ItemMonikerImpl_IsEqual(IMoniker* iface,IMoniker* pmkOther
     if(SUCCEEDED ((res = CreateBindCtx(0,&bind)))) {
         if(SUCCEEDED (IMoniker_GetDisplayName(iface,bind,NULL,&dispName1))) {
 	    if(SUCCEEDED (IMoniker_GetDisplayName(pmkOtherMoniker,bind,NULL,&dispName2))) {
-                if(lstrcmpW(dispName1,dispName2)==0) res = S_OK;
+                if(wcscmp(dispName1,dispName2)==0) res = S_OK;
                 CoTaskMemFree(dispName2);
             }
             CoTaskMemFree(dispName1);
@@ -499,7 +513,7 @@ static HRESULT WINAPI ItemMonikerImpl_Hash(IMoniker* iface,DWORD* pdwHash)
     len = lstrlenW(val);
 
     for (i = len ; i > 0; i--)
-        h = (h * 3) ^ toupperW(val[off++]);
+        h = (h * 3) ^ towupper(val[off++]);
 
     *pdwHash=h;
 
@@ -798,7 +812,7 @@ static HRESULT WINAPI ItemMonikerROTDataImpl_GetComparisonData(IROTData* iface,
                                                                ULONG* pcbData)
 {
     ItemMonikerImpl *This = impl_from_IROTData(iface);
-    int len = (strlenW(This->itemName)+1);
+    int len = (lstrlenW(This->itemName)+1);
     int i;
     LPWSTR pszItemName;
     LPWSTR pszItemDelimiter;
@@ -817,7 +831,7 @@ static HRESULT WINAPI ItemMonikerROTDataImpl_GetComparisonData(IROTData* iface,
     /* write name */
     pszItemName = pszItemDelimiter + 1;
     for (i = 0; i < len; i++)
-        pszItemName[i] = toupperW(This->itemName[i]);
+        pszItemName[i] = towupper(This->itemName[i]);
 
     return S_OK;
 }

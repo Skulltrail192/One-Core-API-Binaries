@@ -10,19 +10,24 @@
 #define REACTOS_STR_ORIGINAL_FILENAME "syssetup.dll"
 #include <reactos/version.rc>
 
+/* Ask for common controls v6 (BCM_SETIMAGELIST) */
+#include <reactos/manifest_dll.rc>
+
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 
 /* Bitmaps */
 IDB_WATERMARK BITMAP "resources/watermark.bmp"
 IDB_HEADER BITMAP "resources/header.bmp"
+IDB_CLASSIC BITMAP "resources/thmclassic.bmp"
+IDB_LAUTUS BITMAP "resources/thmlautus.bmp"
+IDB_LUNAR BITMAP "resources/thmlunar.bmp"
+IDB_MIZU BITMAP "resources/thmmizu.bmp"
 
 IDI_ICON1 ICON "resources/1.ico"
 IDI_ICON2 ICON "resources/2.ico"
 IDI_ICON3 ICON "resources/3.ico"
 IDI_ICON4 ICON "resources/4.ico"
 IDI_ICON5 ICON "resources/5.ico"
-
-#include <reactos/manifest_dll.rc>
 
 STRINGTABLE
 BEGIN
@@ -73,6 +78,9 @@ IDR_GPL RT_TEXT "COPYING"
 #ifdef LANGUAGE_HE_IL
     #include "lang/he-IL.rc"
 #endif
+#ifdef LANGUAGE_HI_IN
+    #include "lang/hi-IN.rc"
+#endif
 #ifdef LANGUAGE_HU_HU
     #include "lang/hu-HU.rc"
 #endif
@@ -100,6 +108,9 @@ IDR_GPL RT_TEXT "COPYING"
 #ifdef LANGUAGE_PT_BR
     #include "lang/pt-BR.rc"
 #endif
+#ifdef LANGUAGE_PT_PT
+    #include "lang/pt-PT.rc"
+#endif
 #ifdef LANGUAGE_RO_RO
     #include "lang/ro-RO.rc"
 #endif
@@ -126,4 +137,7 @@ IDR_GPL RT_TEXT "COPYING"
 #endif
 #ifdef LANGUAGE_ZH_CN
     #include "lang/zh-CN.rc"
+#endif
+#ifdef LANGUAGE_ZH_TW
+    #include "lang/zh-TW.rc"
 #endif

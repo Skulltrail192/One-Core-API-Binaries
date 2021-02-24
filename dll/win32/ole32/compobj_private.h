@@ -27,6 +27,18 @@
 
 /* All private prototype functions used by OLE will be added to this header file */
 
+#include <stdarg.h>
+
+#include "wine/list.h"
+#include "wine/heap.h"
+
+#include "windef.h"
+#include "winbase.h"
+#include "wtypes.h"
+#include "dcom.h"
+#include "winreg.h"
+#include "winternl.h"
+
 struct apartment;
 typedef struct apartment APARTMENT;
 typedef struct LocalServer LocalServer;
@@ -126,11 +138,11 @@ struct apartment
   struct list stubmgrs;    /* stub managers for exported objects (CS cs) */
   BOOL remunk_exported;    /* has the IRemUnknown interface for this apartment been created yet? (CS cs) */
   LONG remoting_started;   /* has the RPC system been started for this apartment? (LOCK) */
-  struct list psclsids;    /* list of registered PS CLSIDs (CS cs) */
   struct list loaded_dlls; /* list of dlls loaded by this apartment (CS cs) */
   DWORD host_apt_tid;      /* thread ID of apartment hosting objects of differing threading model (CS cs) */
   HWND host_apt_hwnd;      /* handle to apartment window of host apartment (CS cs) */
   LocalServer *local_server; /* A marshallable object exposing local servers (CS cs) */
+  BOOL being_destroyed;    /* is currently being destroyed */
 
   /* FIXME: OIDs should be given out by RPCSS */
   OID oidc;                /* object ID counter, starts at 1, zero is invalid OID (CS cs) */
@@ -141,6 +153,13 @@ struct apartment
   BOOL main;               /* is this a main-threaded-apartment? (RO) */
 };
 
+struct init_spy
+{
+    struct list entry;
+    IInitializeSpy *spy;
+    unsigned int id;
+};
+
 /* this is what is stored in TEB->ReservedForOle */
 struct oletls
 {
@@ -148,7 +167,7 @@ struct oletls
     IErrorInfo       *errorinfo;   /* see errorinfo.c */
     IUnknown         *state;       /* see CoSetState */
     DWORD             apt_mask;    /* apartment mask (+0Ch on x86) */
-    IInitializeSpy   *spy;         /* The "SPY" from CoInitializeSpy */
+    void            *unknown0;
     DWORD            inits;        /* number of times CoInitializeEx called */
     DWORD            ole_inits;    /* number of times OleInitialize called */
     GUID             causality_id; /* unique identifier for each COM call */
@@ -159,6 +178,8 @@ struct oletls
     IUnknown        *call_state;    /* current call context (+3Ch on x86) */
     DWORD            unknown2[46];
     IUnknown        *cancel_object; /* cancel object set by CoSetCancelObject (+F8h on x86) */
+    struct list      spies;         /* Spies installed with CoRegisterInitializeSpy */
+    DWORD            spies_lock;
 };
 
 
@@ -188,7 +209,7 @@ void stub_manager_release_marshal_data(struct stub_manager *m, ULONG refs, const
 void stub_manager_disconnect(struct stub_manager *m) DECLSPEC_HIDDEN;
 HRESULT ipid_get_dispatch_params(const IPID *ipid, APARTMENT **stub_apt, struct stub_manager **manager, IRpcStubBuffer **stub,
                                  IRpcChannelBuffer **chan, IID *iid, IUnknown **iface) DECLSPEC_HIDDEN;
-HRESULT start_apartment_remote_unknown(void) DECLSPEC_HIDDEN;
+HRESULT start_apartment_remote_unknown(APARTMENT *apt) DECLSPEC_HIDDEN;
 
 HRESULT marshal_object(APARTMENT *apt, STDOBJREF *stdobjref, REFIID riid, IUnknown *obj, DWORD dest_context, void *dest_context_data, MSHLFLAGS mshlflags) DECLSPEC_HIDDEN;
 
@@ -198,9 +219,9 @@ struct dispatch_params;
 
 void    RPC_StartRemoting(struct apartment *apt) DECLSPEC_HIDDEN;
 HRESULT RPC_CreateClientChannel(const OXID *oxid, const IPID *ipid,
-                                const OXID_INFO *oxid_info,
+                                const OXID_INFO *oxid_info, const IID *iid,
                                 DWORD dest_context, void *dest_context_data,
-                                IRpcChannelBuffer **chan) DECLSPEC_HIDDEN;
+                                IRpcChannelBuffer **chan, APARTMENT *apt) DECLSPEC_HIDDEN;
 HRESULT RPC_CreateServerChannel(DWORD dest_context, void *dest_context_data, IRpcChannelBuffer **chan) DECLSPEC_HIDDEN;
 void    RPC_ExecuteCall(struct dispatch_params *params) DECLSPEC_HIDDEN;
 HRESULT RPC_RegisterInterface(REFIID riid) DECLSPEC_HIDDEN;
@@ -234,8 +255,9 @@ static inline HRESULT apartment_getoxid(const struct apartment *apt, OXID *oxid)
 }
 HRESULT apartment_createwindowifneeded(struct apartment *apt) DECLSPEC_HIDDEN;
 HWND apartment_getwindow(const struct apartment *apt) DECLSPEC_HIDDEN;
-void apartment_joinmta(void) DECLSPEC_HIDDEN;
-
+HRESULT enter_apartment(struct oletls *info, DWORD model) DECLSPEC_HIDDEN;
+void leave_apartment(struct oletls *info) DECLSPEC_HIDDEN;
+APARTMENT *apartment_get_current_or_mta(void) DECLSPEC_HIDDEN;
 
 /* DCOM messages used by the apartment window (not compatible with native) */
 #define DM_EXECUTERPC   (WM_USER + 0) /* WPARAM = 0, LPARAM = (struct dispatch_params *) */
@@ -249,7 +271,12 @@ void apartment_joinmta(void) DECLSPEC_HIDDEN;
 static inline struct oletls *COM_CurrentInfo(void)
 {
     if (!NtCurrentTeb()->ReservedForOle)
-        NtCurrentTeb()->ReservedForOle = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(struct oletls));
+    {
+        struct oletls *oletls = heap_alloc_zero(sizeof(*oletls));
+        if (oletls)
+            list_init(&oletls->spies);
+        NtCurrentTeb()->ReservedForOle = oletls;
+    }
 
     return NtCurrentTeb()->ReservedForOle;
 }
@@ -312,16 +339,6 @@ extern LSTATUS open_classes_key(HKEY, const WCHAR *, REGSAM, HKEY *) DECLSPEC_HI
 extern BOOL actctx_get_miscstatus(const CLSID*, DWORD, DWORD*) DECLSPEC_HIDDEN;
 
 extern const char *debugstr_formatetc(const FORMATETC *formatetc) DECLSPEC_HIDDEN;
-
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc(size_t len)
-{
-    return HeapAlloc(GetProcessHeap(), 0, len);
-}
-
-static inline BOOL heap_free(void *mem)
-{
-    return HeapFree(GetProcessHeap(), 0, mem);
-}
 
 static inline HRESULT copy_formatetc(FORMATETC *dst, const FORMATETC *src)
 {

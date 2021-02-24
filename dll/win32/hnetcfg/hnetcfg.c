@@ -16,9 +16,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "objbase.h"
+#include "rpcproxy.h"
+#include "netfw.h"
+#include "natupnp.h"
+
+#include "wine/debug.h"
 #include "hnetcfg_private.h"
 
-#include <rpcproxy.h>
+WINE_DEFAULT_DEBUG_CHANNEL(hnetcfg);
 
 static HINSTANCE instance;
 
@@ -103,6 +115,8 @@ static hnetcfg_cf fw_manager_cf = { { &hnetcfg_cf_vtbl }, NetFwMgr_create };
 static hnetcfg_cf fw_app_cf = { { &hnetcfg_cf_vtbl }, NetFwAuthorizedApplication_create };
 static hnetcfg_cf fw_openport_cf = { { &hnetcfg_cf_vtbl }, NetFwOpenPort_create };
 static hnetcfg_cf fw_policy2_cf = { { &hnetcfg_cf_vtbl }, NetFwPolicy2_create };
+static hnetcfg_cf upnpnat_cf = { { &hnetcfg_cf_vtbl }, IUPnPNAT_create };
+
 
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID reserved)
 {
@@ -144,6 +158,10 @@ HRESULT WINAPI DllGetClassObject( REFCLSID rclsid, REFIID iid, LPVOID *ppv )
     else if (IsEqualGUID( rclsid, &CLSID_NetFwPolicy2 ))
     {
        cf = &fw_policy2_cf.IClassFactory_iface;
+    }
+    else if (IsEqualGUID( rclsid, &CLSID_UPnPNAT ))
+    {
+        cf = &upnpnat_cf.IClassFactory_iface;
     }
 
     if (!cf) return CLASS_E_CLASSNOTAVAILABLE;

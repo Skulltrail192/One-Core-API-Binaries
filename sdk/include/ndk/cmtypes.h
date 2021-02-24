@@ -29,6 +29,24 @@ Author:
 #define MAX_BUS_NAME 24
 
 //
+// PLUGPLAY_CONTROL_PROPERTY_DATA.Properties
+//
+#define PNP_PROPERTY_UI_NUMBER                        0
+#define PNP_PROPERTY_PHYSICAL_DEVICE_OBJECT_NAME      1
+#define PNP_PROPERTY_BUSTYPEGUID                      2
+#define PNP_PROPERTY_LEGACYBUSTYPE                    3
+#define PNP_PROPERTY_BUSNUMBER                        4
+#define PNP_PROPERTY_POWER_DATA                       5
+#define PNP_PROPERTY_REMOVAL_POLICY                   6
+#define PNP_PROPERTY_REMOVAL_POLICY_OVERRIDE          7
+#define PNP_PROPERTY_ADDRESS                          8
+#define PNP_PROPERTY_ENUMERATOR_NAME                  9
+#define PNP_PROPERTY_REMOVAL_POLICY_HARDWARE_DEFAULT 10
+#define PNP_PROPERTY_INSTALL_STATE                   11
+#define PNP_PROPERTY_LOCATION_PATHS                  12
+#define PNP_PROPERTY_CONTAINERID                     13
+
+//
 // PLUGPLAY_CONTROL_RELATED_DEVICE_DATA.Relations
 //
 #define PNP_GET_PARENT_DEVICE           1
@@ -36,11 +54,20 @@ Author:
 #define PNP_GET_SIBLING_DEVICE          3
 
 //
-// PLUGPLAY_CONTROL_STATUS_DATA Operations
+// PLUGPLAY_CONTROL_STATUS_DATA.Operation
 //
 #define PNP_GET_DEVICE_STATUS           0
 #define PNP_SET_DEVICE_STATUS           1
 #define PNP_CLEAR_DEVICE_STATUS         2
+
+//
+// PLUGPLAY_CONTROL_DEVICE_RELATIONS_DATA.Relations
+//
+#define PNP_EJECT_RELATIONS             0
+#define PNP_REMOVAL_RELATIONS           1
+#define PNP_POWER_RELATIONS             2
+#define PNP_BUS_RELATIONS               3
+
 
 #ifdef NTOS_MODE_USER
 
@@ -154,14 +181,15 @@ typedef enum _KEY_VALUE_INFORMATION_CLASS
     MaxKeyValueInfoClass
 } KEY_VALUE_INFORMATION_CLASS;
 
-typedef enum _KEY_SET_INFORMATION_CLASS {
-  KeyWriteTimeInformation,
-  KeyWow64FlagsInformation,
-  KeyControlFlagsInformation,
-  KeySetVirtualizationInformation,
-  KeySetDebugInformation,
-  KeySetHandleTagsInformation,
-  MaxKeySetInfoClass
+typedef enum _KEY_SET_INFORMATION_CLASS
+{
+    KeyWriteTimeInformation,
+    KeyWow64FlagsInformation,
+    KeyControlFlagsInformation,
+    KeySetVirtualizationInformation,
+    KeySetDebugInformation,
+    KeySetHandleTagsInformation,
+    MaxKeySetInfoClass
 } KEY_SET_INFORMATION_CLASS;
 
 #endif
@@ -418,7 +446,33 @@ typedef struct _PLUGPLAY_EVENT_BLOCK
 // Plug and Play Control Classes
 //
 
-//Class 0x09
+// Class 0x00
+typedef struct _PLUGPLAY_CONTROL_ENUMERATE_DEVICE_DATA
+{
+    UNICODE_STRING DeviceInstance;
+    ULONG Flags;
+} PLUGPLAY_CONTROL_ENUMERATE_DEVICE_DATA, *PPLUGPLAY_CONTROL_ENUMERATE_DEVICE_DATA;
+
+// Class 0x06
+typedef struct _PLUGPLAY_CONTROL_QUERY_REMOVE_DATA
+{
+    UNICODE_STRING DeviceInstance;
+    ULONG Flags;
+    PNP_VETO_TYPE VetoType;
+    LPWSTR VetoName;
+    ULONG NameLength;
+} PLUGPLAY_CONTROL_QUERY_REMOVE_DATA, *PPLUGPLAY_CONTROL_QUERY_REMOVE_DATA;
+
+// Class 0x07
+typedef struct _PLUGPLAY_CONTROL_USER_RESPONSE_DATA
+{
+    ULONG Unknown1;
+    ULONG Unknown2;
+    ULONG Unknown3;
+    ULONG Unknown4;
+} PLUGPLAY_CONTROL_USER_RESPONSE_DATA, *PPLUGPLAY_CONTROL_USER_RESPONSE_DATA;
+
+// Class 0x09
 typedef struct _PLUGPLAY_CONTROL_INTERFACE_DEVICE_LIST_DATA
 {
     UNICODE_STRING DeviceInstance;
@@ -466,7 +520,7 @@ typedef struct _PLUGPLAY_CONTROL_DEPTH_DATA
 typedef struct _PLUGPLAY_CONTROL_DEVICE_RELATIONS_DATA
 {
     UNICODE_STRING DeviceInstance;
-    ULONG Relations; // 0:EjectRelations, 1:RemovalRelations, 2:PowerRelations, 3:BusRelations
+    ULONG Relations;
     ULONG BufferSize;
     PWCHAR Buffer;
 } PLUGPLAY_CONTROL_DEVICE_RELATIONS_DATA, *PPLUGPLAY_CONTROL_DEVICE_RELATIONS_DATA;
@@ -481,7 +535,7 @@ typedef struct _PLUGPLAY_CONTROL_RETRIEVE_DOCK_DATA
 // Class 0x14
 typedef struct _PLUGPLAY_CONTROL_RESET_DEVICE_DATA
 {
-   UNICODE_STRING DeviceInstance;
+    UNICODE_STRING DeviceInstance;
 } PLUGPLAY_CONTROL_RESET_DEVICE_DATA, *PPLUGPLAY_CONTROL_RESET_DEVICE_DATA;
 
 //

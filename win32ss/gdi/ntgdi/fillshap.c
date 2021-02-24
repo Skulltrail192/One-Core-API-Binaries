@@ -945,6 +945,12 @@ GreGradientFill(
     rclExtent.top    += pdc->ptlDCOrig.y;
     rclExtent.bottom += pdc->ptlDCOrig.y;
 
+    if (RECTL_bIsEmptyRect(&rclExtent))
+    {
+        DC_UnlockDc(pdc);
+        return TRUE;
+    }
+
     ptlDitherOrg.x = ptlDitherOrg.y = 0;
     IntLPtoDP(pdc, (LPPOINT)&ptlDitherOrg, 1);
 
@@ -1075,6 +1081,7 @@ NtGdiExtFloodFill(
     RECTL      DestRect;
     POINTL     Pt;
     ULONG      ConvColor;
+    PREGION    prgn;
 
     dc = DC_LockDc(hDC);
     if (!dc)
@@ -1099,13 +1106,14 @@ NtGdiExtFloodFill(
 
     DC_vPrepareDCsForBlit(dc, &DestRect, NULL, NULL);
 
-    /// FIXME: what about prgnVIS? And what about REAL clipping?
     psurf = dc->dclevel.pSurface;
-    if (dc->prgnRao)
+
+    prgn = dc->prgnRao ? dc->prgnRao : dc->prgnVis;
+    if (prgn)
     {
-        Ret = REGION_PtInRegion(dc->prgnRao, Pt.x, Pt.y);
+        Ret = REGION_PtInRegion(prgn, Pt.x, Pt.y);
         if (Ret)
-            REGION_GetRgnBox(dc->prgnRao, (LPRECT)&DestRect);
+            REGION_GetRgnBox(prgn, (LPRECT)&DestRect);
         else
         {
             DC_vFinishBlit(dc, NULL);

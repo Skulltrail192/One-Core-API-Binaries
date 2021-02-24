@@ -25,6 +25,14 @@ EXTERN _BootMain:PROC
 EXTERN _InitIdt:PROC
 EXTERN _i386Idt:DWORD
 //EXTERN _i386idtptr:FWORD
+EXTERN cmdline:DWORD
+
+EXTERN _DiskStopFloppyMotor:PROC
+
+#ifdef _USE_ML
+EXTERN __bss_start__:DWORD
+EXTERN __bss_end__:DWORD
+#endif
 
 .code32
 
@@ -56,7 +64,6 @@ PUBLIC ContinueAddress
 ContinueAddress:
     .long _FrldrStartup
 
-
 _FrldrStartup:
 
     /* Store BootDrive and BootPartition */
@@ -69,11 +76,7 @@ _FrldrStartup:
     mov eax, dword ptr ds:[BSS_RealModeEntry]
     mov dword ptr ds:[SwitchToReal16Address], eax
 
-    /* Initialize the idt */
-    call _InitIdt
-
-#ifndef _USE_ML
-    /* Clean out bss */
+    /* Clean out BSS */
     xor eax, eax
     mov edi, offset __bss_start__
     mov ecx, offset __bss_end__ + 3
@@ -81,11 +84,11 @@ _FrldrStartup:
     shr ecx, 2
     rep stosd
 
+    /* Initialize the idt */
+    call _InitIdt
+
     /* Pass the command line to BootMain */
     mov eax, offset cmdline
-#else
-    xor eax, eax
-#endif
 
     /* GO! */
     push eax
@@ -93,9 +96,69 @@ _FrldrStartup:
 
     /* We should never get here */
 stop:
-    jmp stop
+    jmp short stop
     nop
     nop
+
+
+PUBLIC _Reboot
+_Reboot:
+    /* Stop the floppy drive motor */
+    call _DiskStopFloppyMotor
+
+    /* Set the function ID and switch to real mode (we don't return) */
+    mov bx, FNID_Reboot
+    jmp SwitchToReal
+
+
+/*
+ * VOID __cdecl Relocator16Boot(
+ *     IN REGS*  In,
+ *     IN USHORT StackSegment,
+ *     IN USHORT StackPointer,
+ *     IN USHORT CodeSegment,
+ *     IN USHORT CodePointer);
+ *
+ * RETURNS: Nothing.
+ *
+ * NOTE: The implementation of this function is similar to that of Int386(),
+ * with the proviso that no attempt is done to save the original values of
+ * the registers since we will not need them anyway, as we do not return back
+ * to the caller but instead place the machine in a permanent new CPU state.
+ */
+PUBLIC _Relocator16Boot
+_Relocator16Boot:
+
+    /* Copy input registers */
+    mov esi, dword ptr [esp + 4]
+    mov edi, BSS_RegisterSet
+    mov ecx, REGS_SIZE / 4
+    rep movsd
+
+    /* Set the stack segment/offset */
+    // Since BSS_CallbackReturn contains a ULONG, store in its high word
+    // the stack segment and in its low word the stack offset.
+    mov ax, word ptr [esp + 8]
+    shl eax, 16
+    mov ax, word ptr [esp + 12]
+    mov dword ptr ds:[BSS_CallbackReturn], eax
+
+    /*
+     * Set the code segment/offset (Copy entry point)
+     * NOTE: We permanently *ERASE* the contents of ds:[BSS_RealModeEntry]
+     * but it is not a problem since we are going to place the machine in
+     * a permanent new CPU state.
+     */
+    // Since BSS_RealModeEntry contains a ULONG, store in its high word
+    // the code segment and in its low word the code offset.
+    mov ax, word ptr [esp + 16]
+    shl eax, 16
+    mov ax, word ptr [esp + 20]
+    mov dword ptr ds:[BSS_RealModeEntry], eax
+
+    /* Set the function ID and switch to real mode (we don't return) */
+    mov bx, FNID_Relocator16Boot
+    jmp SwitchToReal
 
 
 /*
@@ -137,31 +200,10 @@ _PxeCallApi:
     ret
 
 
-PUBLIC _Reboot
-_Reboot:
-    /* Set the function ID */
-    mov bx, FNID_Reboot
-
-    /* Switch to real mode (we don't return) */
-    jmp SwitchToReal
-
-
-PUBLIC _ChainLoadBiosBootSectorCode
-_ChainLoadBiosBootSectorCode:
-    /* Set the boot drive */
-    mov dl, byte ptr [_FrldrBootDrive]
-
-    /* Set the function ID */
-    mov bx, FNID_ChainLoadBiosBootSectorCode
-
-    /* Switch to real mode (we don't return) */
-    jmp SwitchToReal
-
-
 PUBLIC i386CallRealMode
 i386CallRealMode:
     /* Set continue address and switch to real mode */
-    mov dword ptr [ContinueAddress], offset i386CallRealMode_return
+    mov dword ptr ds:[ContinueAddress], offset i386CallRealMode_return
     jmp SwitchToReal
 i386CallRealMode_return:
     ret
@@ -181,7 +223,7 @@ SwitchToReal:
     mov ss, ax
 
     /* Save 32-bit stack pointer */
-    mov dword ptr [stack32], esp
+    mov dword ptr ds:[stack32], esp
 
     /* jmp to 16-bit segment to set the limit correctly */
     .byte HEX(0ea) // jmp far RMODE_CS:switch_to_real16
@@ -236,11 +278,7 @@ gdtptr:
     .word HEX(27)       /* Limit */
     .long gdt           /* Base Address */
 
-/* Real-mode IDT pointer */
-rmode_idtptr:
-    .word HEX(3ff)      /* Limit */
-    .long 0             /* Base Address */
-
+// See _i386IdtDescriptor
 PUBLIC i386idtptr
 i386idtptr:
     .word 255           /* Limit */

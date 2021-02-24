@@ -369,7 +369,10 @@ i8042KbdDpcRoutine(
 		DeviceExtension->KeyboardBuffer + KeysInBufferCopy,
 		&KeysTransferred);
 
-	KeAcquireInterruptSpinLock(PortDeviceExtension->HighestDIRQLInterrupt);
+	/* Validate that the callback didn't change the Irql. */
+	ASSERT(KeGetCurrentIrql() == Irql);
+
+	Irql = KeAcquireInterruptSpinLock(PortDeviceExtension->HighestDIRQLInterrupt);
 	DeviceExtension->KeysInBuffer -= KeysTransferred;
 	KeReleaseInterruptSpinLock(PortDeviceExtension->HighestDIRQLInterrupt, Irql);
 }
@@ -462,7 +465,6 @@ i8042KbdDeviceControl(
 		{
 			ERR_(I8042PRT, "IRP_MJ_DEVICE_CONTROL / unknown ioctl code 0x%lx\n",
 				Stack->Parameters.DeviceIoControl.IoControlCode);
-			ASSERT(FALSE);
 			return ForwardIrpAndForget(DeviceObject, Irp);
 		}
 	}
@@ -864,7 +866,6 @@ i8042KbdInterruptService(
                 /* b - Bugcheck */
                 KeBugCheck(MANUALLY_INITIATED_CRASH);
             }
-#if defined(KDBG)
             else
             {
 			    /* Send request to the kernel debugger.
@@ -877,7 +878,6 @@ i8042KbdInterruptService(
 			                         NULL,
 			                         KernelMode);
             }
-#endif
 		}
 	}
 

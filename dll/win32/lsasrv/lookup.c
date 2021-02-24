@@ -22,13 +22,6 @@ typedef struct _SAMPR_RETURNED_USTRING_ARRAY
     PRPC_UNICODE_STRING Element;
 } SAMPR_RETURNED_USTRING_ARRAY, *PSAMPR_RETURNED_USTRING_ARRAY;
 
-typedef struct _SAMPR_ULONG_ARRAY
-{
-    unsigned long Count;
-    unsigned long *Element;
-} SAMPR_ULONG_ARRAY, *PSAMPR_ULONG_ARRAY;
-
-
 VOID
 NTAPI
 SamIFree_SAMPR_RETURNED_USTRING_ARRAY(PSAMPR_RETURNED_USTRING_ARRAY Ptr);
@@ -189,7 +182,6 @@ LsapInitSids(VOID)
     hInstance = GetModuleHandleW(L"lsasrv.dll");
 
     /* NT Authority */
-
     LsapLoadString(hInstance, IDS_NT_AUTHORITY, szAccountName, ARRAYSIZE(szAccountName));
     LsapLoadString(hInstance, IDS_NT_AUTHORITY, szDomainName, ARRAYSIZE(szDomainName));
     LsapCreateSid(&NtAuthority,
@@ -940,6 +932,57 @@ LsapAddDomainToDomainsList(PLSAPR_REFERENCED_DOMAIN_LIST ReferencedDomains,
     RtlCopyMemory(ReferencedDomains->Domains[i].Name.Buffer,
                   Name->Buffer,
                   Name->MaximumLength);
+
+    ReferencedDomains->Entries++;
+    *Index = i;
+
+    return STATUS_SUCCESS;
+}
+
+
+static NTSTATUS
+LsapAddAuthorityToDomainsList(
+    PLSAPR_REFERENCED_DOMAIN_LIST ReferencedDomains,
+    PSID Sid,
+    PULONG Index)
+{
+    SID AuthoritySid;
+    ULONG i;
+
+    RtlInitializeSid(&AuthoritySid,
+                     RtlIdentifierAuthoritySid(Sid),
+                     0);
+
+    i = 0;
+    while (i < ReferencedDomains->Entries &&
+           ReferencedDomains->Domains[i].Sid != NULL)
+    {
+        if (RtlEqualSid(&AuthoritySid, ReferencedDomains->Domains[i].Sid))
+        {
+            *Index = i;
+            return STATUS_SUCCESS;
+        }
+
+        i++;
+    }
+
+    ReferencedDomains->Domains[i].Sid = MIDL_user_allocate(RtlLengthSid(&AuthoritySid));
+    if (ReferencedDomains->Domains[i].Sid == NULL)
+        return STATUS_INSUFFICIENT_RESOURCES;
+
+    RtlCopySid(RtlLengthSid(&AuthoritySid), ReferencedDomains->Domains[i].Sid, &AuthoritySid);
+
+    ReferencedDomains->Domains[i].Name.Length = 0;
+    ReferencedDomains->Domains[i].Name.MaximumLength = sizeof(WCHAR);
+    ReferencedDomains->Domains[i].Name.Buffer = MIDL_user_allocate(sizeof(WCHAR));
+    if (ReferencedDomains->Domains[i].Name.Buffer == NULL)
+    {
+        MIDL_user_free(ReferencedDomains->Domains[i].Sid);
+        ReferencedDomains->Domains[i].Sid = NULL;
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    ReferencedDomains->Domains[i].Name.Buffer[0] = UNICODE_NULL;
 
     ReferencedDomains->Entries++;
     *Index = i;
@@ -2041,17 +2084,30 @@ LsapLookupWellKnownSids(PLSAPR_SID_ENUM_BUFFER SidEnumBuffer,
 
             RtlCopyMemory(NamesBuffer[i].Name.Buffer, ptr->AccountName.Buffer, ptr->AccountName.MaximumLength);
 
-            ptr2= LsapLookupIsolatedWellKnownName(&ptr->DomainName);
-            if (ptr2 != NULL)
+            if (ptr->DomainName.Length == 0)
             {
-                Status = LsapAddDomainToDomainsList(DomainsBuffer,
-                                                    &ptr2->AccountName,
-                                                    ptr2->Sid,
-                                                    &DomainIndex);
+                Status = LsapAddAuthorityToDomainsList(DomainsBuffer,
+                                                       SidEnumBuffer->SidInfo[i].Sid,
+                                                       &DomainIndex);
                 if (!NT_SUCCESS(Status))
                     goto done;
 
                 NamesBuffer[i].DomainIndex = DomainIndex;
+            }
+            else
+            {
+                ptr2= LsapLookupIsolatedWellKnownName(&ptr->DomainName);
+                if (ptr2 != NULL)
+                {
+                    Status = LsapAddDomainToDomainsList(DomainsBuffer,
+                                                        &ptr2->AccountName,
+                                                        ptr2->Sid,
+                                                        &DomainIndex);
+                    if (!NT_SUCCESS(Status))
+                        goto done;
+
+                    NamesBuffer[i].DomainIndex = DomainIndex;
+                }
             }
 
             TRACE("Mapped to: %wZ\n", &NamesBuffer[i].Name);

@@ -6,13 +6,12 @@
  * PROGRAMMERS:     Eric Kohl
  */
 
-/* INCLUDES *****************************************************************/
+/* INCLUDES ******************************************************************/
 
 #include "winlogon.h"
 
 #include <rpc.h>
 #include <winreg_s.h>
-
 
 /* FUNCTIONS *****************************************************************/
 
@@ -262,10 +261,10 @@ BaseRegLoadKey(
 }
 
 
-/* Function 14 */
+/* Function 14 - Not used on wire */
 void
 __stdcall
-Opnum14NotImplemented(
+BaseRegNotifyChangeKeyValue(
     handle_t IDL_handle)
 {
     TRACE("\n");
@@ -431,7 +430,10 @@ BaseAbortSystemShutdown(
     PREGISTRY_SERVER_NAME ServerName)
 {
     TRACE("BaseAbortSystemShutdown()\n");
-    return ERROR_SUCCESS;
+
+    //FIXME: Verify that the caller actually has the correct privileges
+
+    return TerminateSystemShutdown();
 }
 
 
@@ -460,10 +462,10 @@ OpenCurrentConfig(
 }
 
 
-/* Function 28 */
+/* Function 28 - Not used on wire */
 void
 __stdcall
-Opnum28NotImplemented(
+OpenDynData(
     handle_t IDL_handle)
 {
     TRACE("\n");
@@ -504,12 +506,13 @@ BaseInitiateSystemShutdownEx(
     TRACE("  Reboot: %d\n", bRebootAfterShutdown);
     TRACE("  Reason: %lu\n", dwReason);
 
-//    return ERROR_SUCCESS;
+    //FIXME: Verify that the caller actually has the correct privileges
 
-    /* FIXME */
-    return ExitWindowsEx((bRebootAfterShutdown ? EWX_REBOOT : EWX_SHUTDOWN) |
-                         (bForceAppsClosed ? EWX_FORCE : 0),
-                         dwReason);
+    return StartSystemShutdown((PUNICODE_STRING)lpMessage,
+                               dwTimeout,
+                               bForceAppsClosed,
+                               bRebootAfterShutdown,
+                               dwReason);
 }
 
 

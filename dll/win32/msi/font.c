@@ -18,7 +18,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "winreg.h"
+#include "wine/debug.h"
 #include "msipriv.h"
+#include "wine/unicode.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(msi);
 
@@ -272,7 +279,7 @@ static UINT ITERATE_RegisterFonts(MSIRECORD *row, LPVOID param)
     if (p) p++;
     else p = uipath;
     MSI_RecordSetStringW( uirow, 1, p );
-    msi_ui_actiondata( package, szRegisterFonts, uirow );
+    MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
     msiobj_release( &uirow->hdr );
     msi_free( uipath );
     /* FIXME: call msi_ui_progress? */
@@ -352,7 +359,7 @@ static UINT ITERATE_UnregisterFonts( MSIRECORD *row, LPVOID param )
     if (p) p++;
     else p = uipath;
     MSI_RecordSetStringW( uirow, 1, p );
-    msi_ui_actiondata( package, szUnregisterFonts, uirow );
+    MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
     msiobj_release( &uirow->hdr );
     msi_free( uipath );
     /* FIXME: call msi_ui_progress? */

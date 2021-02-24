@@ -20,6 +20,7 @@ AddReg = MonitorClass.NT.AddReg
 [MonitorClass.NT.AddReg]
 HKR, , ,                0, %MonitorClassName%
 HKR, , Icon,            0, "-1"
+HKR, , Installer32,     0, "desk.cpl,MonitorClassInstaller"
 
 [Manufacturer]
 %StdMfg% = StdMfg
@@ -76,7 +77,7 @@ DefaultMonitor.DeviceDesc = "Monitor predeterminado"
 PnPMonitor.DeviceDesc = "Monitor Plug and Play"
 
 [Strings.0415]
-ReactOS = "Ekipa ReactOS"
+ReactOS = "Zespół ReactOS"
 
 MonitorClassName = "Monitory"
 
@@ -105,3 +106,8 @@ MonitorClassName = "Göstergeçler"
 StdMfg = "(Ölçünlü Göstergeç Türleri)"
 DefaultMonitor.DeviceDesc = "Ön Tanımlı Göstergeç"
 PnPMonitor.DeviceDesc = "Tak ve Çalıştır Göstergeç"
+
+[Strings.0804]
+StdMfg = "(标准监视器类型)"
+DefaultMonitor.DeviceDesc = "默认监视器"
+PnPMonitor.DeviceDesc = "即插即用监视器"

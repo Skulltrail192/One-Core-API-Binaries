@@ -1,9 +1,8 @@
 /*
- * COPYRIGHT:       See COPYING in the top level directory
- * PROJECT:         ReactOS Shim library
- * FILE:            dll/appcompat/shims/shimlib/shimlib.c
- * PURPOSE:         Shim helper functions
- * PROGRAMMER:      Mark Jansen (mark.jansen@reactos.org)
+ * PROJECT:     ReactOS Shim helper library
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     Shim helper functions
+ * COPYRIGHT:   Copyright 2016-2018 Mark Jansen (mark.jansen@reactos.org)
  */
 
 #define WIN32_NO_STATUS
@@ -24,18 +23,20 @@ typedef struct UsedShim
 
 
 ULONG g_ShimEngDebugLevel = 0xffffffff;
+static HINSTANCE g_ShimLib_hInstance;
 static HANDLE g_ShimLib_Heap;
 static PSLIST_HEADER g_UsedShims;
 
 void ShimLib_Init(HINSTANCE hInstance)
 {
+    g_ShimLib_hInstance = hInstance;
     g_ShimLib_Heap = HeapCreate(0, 0x10000, 0);
 
     g_UsedShims = (PSLIST_HEADER)ShimLib_ShimMalloc(sizeof(SLIST_HEADER));
     RtlInitializeSListHead(g_UsedShims);
 }
 
-void ShimLib_Deinit()
+void ShimLib_Deinit(VOID)
 {
     // Is this a good idea?
     HeapDestroy(g_ShimLib_Heap);
@@ -51,16 +52,26 @@ void ShimLib_ShimFree(PVOID pData)
     HeapFree(g_ShimLib_Heap, 0, pData);
 }
 
-PCSTR ShimLib_StringDuplicateA(PCSTR szString)
+HINSTANCE ShimLib_Instance(VOID)
 {
-    SIZE_T Length = lstrlenA(szString);
-    PSTR NewString = ShimLib_ShimMalloc(Length+1);
-    return lstrcpyA(NewString, szString);
+    return g_ShimLib_hInstance;
 }
 
-BOOL ShimLib_StrAEqualsW(PCSTR szString, PCWSTR wszString)
+PCSTR ShimLib_StringNDuplicateA(PCSTR szString, SIZE_T stringLengthIncludingNullTerm)
 {
-    while (*szString == *wszString)
+    PSTR NewString = ShimLib_ShimMalloc(stringLengthIncludingNullTerm);
+    StringCchCopyA(NewString, stringLengthIncludingNullTerm, szString);
+    return NewString;
+}
+
+PCSTR ShimLib_StringDuplicateA(PCSTR szString)
+{
+    return ShimLib_StringNDuplicateA(szString, lstrlenA(szString) + 1);
+}
+
+BOOL ShimLib_StrAEqualsWNC(PCSTR szString, PCWSTR wszString)
+{
+    while (toupper(*szString) == towupper(*wszString))
     {
         if (!*szString)
             return TRUE;
@@ -89,7 +100,7 @@ BOOL ShimLib_StrAEqualsW(PCSTR szString, PCWSTR wszString)
 #endif
 
 
-_SHMALLOC(".shm") SHIMREG _shim_start = { 0 };
+_SHMALLOC(".shm$AAA") SHIMREG _shim_start = { 0 };
 _SHMALLOC(".shm$ZZZ") SHIMREG _shim_end = { 0 };
 
 
@@ -101,11 +112,11 @@ PHOOKAPI WINAPI ShimLib_GetHookAPIs(IN LPCSTR szCommandLine, IN LPCWSTR wszShimN
 {
     PSHIMREG ps = &_shim_start;
     ps++;
-    for (; ps != &_shim_end; ps++)
+    for (; ps < &_shim_end; ps++)
     {
         if (ps->GetHookAPIs != NULL && ps->ShimName != NULL)
         {
-            if (ShimLib_StrAEqualsW(ps->ShimName, wszShimName))
+            if (ShimLib_StrAEqualsWNC(ps->ShimName, wszShimName))
             {
                 pUsedShim shim = (pUsedShim)ShimLib_ShimMalloc(sizeof(UsedShim));
                 shim->pShim = ps;
@@ -156,7 +167,7 @@ VOID SeiInitDebugSupport(VOID)
     static const UNICODE_STRING DebugKey = RTL_CONSTANT_STRING(L"SHIM_DEBUG_LEVEL");
     UNICODE_STRING DebugValue;
     NTSTATUS Status;
-    ULONG NewLevel = 0;
+    ULONG NewLevel = SEI_MSG;
     WCHAR Buffer[40];
 
     RtlInitEmptyUnicodeString(&DebugValue, Buffer, sizeof(Buffer));

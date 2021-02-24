@@ -9,6 +9,9 @@
 #include <win32k.h>
 DBG_DEFAULT_CHANNEL(UserPainting);
 
+BOOL UserExtTextOutW(HDC hdc, INT x, INT y, UINT flags, PRECTL lprc,
+                     LPCWSTR lpString, UINT count);
+
 /* PRIVATE FUNCTIONS **********************************************************/
 
 /**
@@ -366,38 +369,16 @@ IntSendNCPaint(PWND pWnd, HRGN hRgn)
 VOID FASTCALL
 IntSendChildNCPaint(PWND pWnd)
 {
-   PWND Child;
-   HWND *List, *phWnd;
-
-   List = IntWinListChildren(UserGetDesktopWindow());
-   if ( List )
-   {
-      for (phWnd = List; *phWnd; ++phWnd)
-      {
-          Child = ValidateHwndNoErr(*phWnd);
-          if ( Child && Child->hrgnUpdate == NULL && Child->state & WNDS_SENDNCPAINT)
-          {
-             USER_REFERENCE_ENTRY Ref;
-             UserRefObjectCo(Child, &Ref);
-             IntSendNCPaint(Child, HRGN_WINDOW);
-             UserDerefObjectCo(Child);
-          }
-      }
-      ExFreePoolWithTag(List, USERTAG_WINDOWLIST);
-   }
-/* FIXME : Use snap shot mode until window death is fixed while surfing menus! Fix CORE-12085 and CORE-12071.
-   pWnd = pWnd->spwndChild;
-   while(pWnd)
-   {
-      if (pWnd->hrgnUpdate == NULL && pWnd->state & WNDS_SENDNCPAINT)
-      {
-         USER_REFERENCE_ENTRY Ref;
-         UserRefObjectCo(pWnd, &Ref);
-         IntSendNCPaint(pWnd, HRGN_WINDOW);
-         UserDerefObjectCo(pWnd);
-      }
-      pWnd = pWnd->spwndNext;
-   }*/
+    for (pWnd = pWnd->spwndChild; pWnd; pWnd = pWnd->spwndNext)
+    {
+        if ((pWnd->hrgnUpdate == NULL) && (pWnd->state & WNDS_SENDNCPAINT))
+        {
+            USER_REFERENCE_ENTRY Ref;
+            UserRefObjectCo(pWnd, &Ref);
+            IntSendNCPaint(pWnd, HRGN_WINDOW);
+            UserDerefObjectCo(pWnd);
+        }
+    }
 }
 
 /*
@@ -1111,7 +1092,7 @@ UpdateThreadWindows(PWND pWnd, PTHREADINFO pti, HRGN hRgn)
       }
       else
       {
-          if (IsThreadSuspended(pwndTemp->head.pti) || MsqIsHung(pwndTemp->head.pti))
+          if (IsThreadSuspended(pwndTemp->head.pti) || MsqIsHung(pwndTemp->head.pti, MSQ_HUNG))
           {
              UpdateTheadChildren(pwndTemp, hRgn);
           }
@@ -1310,13 +1291,13 @@ BOOL
 FASTCALL
 IntFlashWindowEx(PWND pWnd, PFLASHWINFO pfwi)
 {
-   DWORD FlashState;
+   DWORD_PTR FlashState;
    UINT uCount = pfwi->uCount;
    BOOL Activate = FALSE, Ret = FALSE;
 
    ASSERT(pfwi);
 
-   FlashState = (DWORD)UserGetProp(pWnd, AtomFlashWndState, TRUE);
+   FlashState = (DWORD_PTR)UserGetProp(pWnd, AtomFlashWndState, TRUE);
 
    if (FlashState == FLASHW_FINISHED)
    {
@@ -2167,15 +2148,13 @@ UserDrawCaptionText(
 
    if (Ret)
    {  // Faster while in setup.
-      GreExtTextOutW( hDc,
+      UserExtTextOutW( hDc,
                       lpRc->left,
-                      lpRc->top + (lpRc->bottom - lpRc->top) / 2 - Size.cy / 2, // DT_SINGLELINE && DT_VCENTER
+                      lpRc->top + (lpRc->bottom - lpRc->top - Size.cy) / 2, // DT_SINGLELINE && DT_VCENTER
                       ETO_CLIPPED,
                      (RECTL *)lpRc,
                       Text->Buffer,
-                      Length,
-                      NULL,
-                      0 );
+                      Length);
    }
    else
    {

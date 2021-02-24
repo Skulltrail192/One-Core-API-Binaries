@@ -23,6 +23,24 @@ EXTERN _KeI386FxsrPresent:DWORD
 /* FUNCTIONS ****************************************************************/
 .code
 
+/*++
+ * KiSwapContextInternal
+ *
+ * \brief
+ *     The KiSwapContextInternal routine switches context to another thread.
+ *
+ * BOOLEAN USERCALL KiSwapContextInternal(ULONG_PTR OldThreadAndApcFlag@<edx>);
+ *
+ * \param OldThreadAndApcFlag@<edx>
+ *     Pointer to the current thread with the lowest bit set to the current IRQL.
+ *
+ * \returns
+ *     APC state.
+ *
+ * \remarks
+ *     Absolutely all registers except ESP can be trampled here for maximum code flexibility.
+ *
+ *--*/
 PUBLIC @KiSwapContextInternal@0
 @KiSwapContextInternal@0:
     /* Build switch frame */
@@ -31,6 +49,33 @@ PUBLIC @KiSwapContextInternal@0
     jmp @KiSwapContextEntry@8
 
 
+/**
+ * KiSwapContext
+ *
+ * \brief
+ *     The KiSwapContext routine switches context to another thread.
+ *
+ * BOOLEAN FASTCALL
+ * KiSwapContext(KIRQL WaitIrql@<cl>, PKTHREAD CurrentThread@<edx>);
+ *
+ * \param WaitIrql@<cl>
+ *     The IRQL at which the wait happens.
+ *
+ * \param CurrentThread@<edx>
+ *     Pointer to the KTHREAD of the current thread.
+ *                    
+ * \returns
+ *     The WaitStatus of the Target Thread.
+ *
+ * \remarks
+ *     This is a wrapper around KiSwapContextInternal which will save all the
+ *     non-volatile registers so that the Internal function can use all of
+ *     them. It will also save the old current thread and set the new one.
+ *
+ *     The calling thread does not return after KiSwapContextInternal until 
+ *     another thread switches to IT.
+ *
+ *--*/
 PUBLIC @KiSwapContext@8
 @KiSwapContext@8:
     /* Save 4 registers */
@@ -42,13 +87,13 @@ PUBLIC @KiSwapContext@8
     mov [esp+4], edi
     mov [esp+0], ebp
 
-    /* Get the wait IRQL */
+    /* Combine current thread and the wait IRQL in edx */
     or dl, cl
 
     /* Do the swap with the registers correctly setup */
     call @KiSwapContextInternal@0
 
-    /* Return the registers */
+    /* Restore the registers */
     mov ebp, [esp+0]
     mov edi, [esp+4]
     mov esi, [esp+8]

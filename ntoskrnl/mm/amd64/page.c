@@ -165,7 +165,7 @@ MiGetPteForProcess(
         TmplPte.u.Flush.Owner = (Address < MmHighestUserAddress) ? 1 : 0;
 
         /* Lock the PFN database */
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
 
         /* Get the PXE */
         Pte = MiAddressToPxe(Address);
@@ -192,7 +192,7 @@ MiGetPteForProcess(
         }
 
         /* Unlock PFN database */
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
     }
     else
     {
@@ -312,8 +312,10 @@ MmIsDisabledPage(PEPROCESS Process, PVOID Address)
 {
     MMPTE Pte;
     Pte.u.Long = MiGetPteValueForProcess(Process, Address);
-    __debugbreak(); // FIXME
-    return !Pte.u.Hard.Valid && !(Pte.u.Long & 0x800) && Pte.u.Hard.PageFrameNumber;
+
+    return (Pte.u.Hard.Valid == 0) && 
+           (Pte.u.Trans.Transition == 0) &&
+           (Pte.u.Hard.PageFrameNumber != 0);
 }
 
 BOOLEAN
@@ -610,7 +612,7 @@ MmCreateProcessAddressSpace(IN ULONG MinWs,
     KeInitializeSpinLock(&Process->HyperSpaceLock);
 
     /* Lock PFN database */
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     /* Get a page for the table base and one for hyper space. The PFNs for
        these pages will be initialized in MmInitializeProcessAddressSpace,
@@ -622,7 +624,7 @@ MmCreateProcessAddressSpace(IN ULONG MinWs,
     WorkingSetPfn = MiRemoveAnyPage(MI_GET_NEXT_PROCESS_COLOR(Process));
 
     /* Release PFN lock */
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 
     /* Zero pages */ /// FIXME:
     MiZeroPhysicalPage(HyperPfn);

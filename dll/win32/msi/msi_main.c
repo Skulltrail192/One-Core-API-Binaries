@@ -18,22 +18,35 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "msipriv.h"
+#include <stdarg.h>
 
-#include <rpcproxy.h>
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "shlwapi.h"
+#include "oleauto.h"
+#include "rpcproxy.h"
+#include "msipriv.h"
+#include "msiserver.h"
+
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(msi);
 
 static LONG dll_count;
 
 /* the UI level */
-INSTALLUILEVEL           gUILevel         = INSTALLUILEVEL_BASIC;
+INSTALLUILEVEL           gUILevel         = INSTALLUILEVEL_DEFAULT;
 HWND                     gUIhwnd          = 0;
 INSTALLUI_HANDLERA       gUIHandlerA      = NULL;
 INSTALLUI_HANDLERW       gUIHandlerW      = NULL;
 INSTALLUI_HANDLER_RECORD gUIHandlerRecord = NULL;
 DWORD                    gUIFilter        = 0;
+DWORD                    gUIFilterRecord  = 0;
 LPVOID                   gUIContext       = NULL;
+LPVOID                   gUIContextRecord = NULL;
 WCHAR                   *gszLogFile       = NULL;
 HINSTANCE msi_hInstance;
 

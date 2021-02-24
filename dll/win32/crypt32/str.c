@@ -15,7 +15,17 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
+#include <stdarg.h>
 
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "winuser.h"
+#include "wincrypt.h"
+#include "wine/debug.h"
+#include "wine/unicode.h"
 #include "crypt32_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(crypt);
@@ -766,7 +776,7 @@ struct KeynameKeeper
 static void CRYPT_InitializeKeynameKeeper(struct KeynameKeeper *keeper)
 {
     keeper->keyName = keeper->buf;
-    keeper->keyLen = sizeof(keeper->buf) / sizeof(keeper->buf[0]);
+    keeper->keyLen = ARRAY_SIZE(keeper->buf);
 }
 
 static void CRYPT_FreeKeynameKeeper(struct KeynameKeeper *keeper)
@@ -1317,8 +1327,7 @@ DWORD WINAPI CertGetNameStringW(PCCERT_CONTEXT pCertContext, DWORD dwType,
         {
             PCERT_RDN_ATTR nameAttr = NULL;
 
-            for (i = 0; !nameAttr && i < sizeof(simpleAttributeOIDs) /
-             sizeof(simpleAttributeOIDs[0]); i++)
+            for (i = 0; !nameAttr && i < ARRAY_SIZE(simpleAttributeOIDs); i++)
                 nameAttr = CertFindRDNAttr(simpleAttributeOIDs[i], nameInfo);
             if (nameAttr)
                 ret = CertRDNValueToStrW(nameAttr->dwValueType,

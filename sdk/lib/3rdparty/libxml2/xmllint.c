@@ -12,27 +12,11 @@
 #include <stdarg.h>
 #include <assert.h>
 
-#if defined (_WIN32) && !defined(__CYGWIN__)
-#if defined (_MSC_VER) || defined(__BORLANDC__)
-#include <winsock2.h>
-#pragma comment(lib, "ws2_32.lib")
-#define gettimeofday(p1,p2)
-#endif /* _MSC_VER */
-#endif /* _WIN32 */
-
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 #ifdef HAVE_TIME_H
 #include <time.h>
-#endif
-
-#ifdef __MINGW32__
-#define _WINSOCKAPI_
-#include <wsockcompat.h>
-#include <winsock2.h>
-#undef XML_SOCKLEN_T
-#define XML_SOCKLEN_T unsigned int
 #endif
 
 #ifdef HAVE_SYS_TIMEB_H
@@ -196,17 +180,17 @@ static int exc_canonical = 0;
 #ifdef LIBXML_READER_ENABLED
 static int stream = 0;
 static int walker = 0;
+#ifdef LIBXML_PATTERN_ENABLED
+static const char *pattern = NULL;
+static xmlPatternPtr patternc = NULL;
+static xmlStreamCtxtPtr patstream = NULL;
+#endif
 #endif /* LIBXML_READER_ENABLED */
 static int chkregister = 0;
 static int nbregister = 0;
 #ifdef LIBXML_SAX1_ENABLED
 static int sax1 = 0;
 #endif /* LIBXML_SAX1_ENABLED */
-#ifdef LIBXML_PATTERN_ENABLED
-static const char *pattern = NULL;
-static xmlPatternPtr patternc = NULL;
-static xmlStreamCtxtPtr patstream = NULL;
-#endif
 #ifdef LIBXML_XPATH_ENABLED
 static const char *xpathquery = NULL;
 #endif
@@ -535,7 +519,7 @@ endTimer(char *format, ...)
 #endif
 /************************************************************************
  *									*
- *			HTML ouput					*
+ *			HTML output					*
  *									*
  ************************************************************************/
 static char buffer[50000];
@@ -830,13 +814,14 @@ xmlShellReadline(char *prompt) {
  *									*
  ************************************************************************/
 
-static int myRead(FILE *f, char * buf, int len) {
-    return(fread(buf, 1, len, f));
+static int myRead(void *f, char *buf, int len) {
+    return(fread(buf, 1, len, (FILE *) f));
 }
-static void myClose(FILE *f) {
-  if (f != stdin) {
-    fclose(f);
-  }
+static int myClose(void *context) {
+    FILE *f = (FILE *) context;
+    if (f == stdin)
+        return(0);
+    return(fclose(f));
 }
 
 /************************************************************************
@@ -1667,10 +1652,7 @@ testSAX(const char *filename) {
 	xmlSchemaValidCtxtPtr vctxt;
 
 	vctxt = xmlSchemaNewValidCtxt(wxschemas);
-	xmlSchemaSetValidErrors(vctxt,
-		(xmlSchemaValidityErrorFunc) fprintf,
-		(xmlSchemaValidityWarningFunc) fprintf,
-		stderr);
+	xmlSchemaSetValidErrors(vctxt, xmlGenericError, xmlGenericError, NULL);
 	xmlSchemaValidateSetFilename(vctxt, filename);
 
 	ret = xmlSchemaValidateStream(vctxt, buf, 0, handler,
@@ -2086,51 +2068,52 @@ static void doXPathDump(xmlXPathObjectPtr cur) {
             int i;
             xmlNodePtr node;
 #ifdef LIBXML_OUTPUT_ENABLED
-            xmlSaveCtxtPtr ctxt;
+            xmlOutputBufferPtr buf;
 
             if ((cur->nodesetval == NULL) || (cur->nodesetval->nodeNr <= 0)) {
                 fprintf(stderr, "XPath set is empty\n");
                 progresult = XMLLINT_ERR_XPATH;
                 break;
             }
-            ctxt = xmlSaveToFd(1, NULL, 0);
-            if (ctxt == NULL) {
+            buf = xmlOutputBufferCreateFile(stdout, NULL);
+            if (buf == NULL) {
                 fprintf(stderr, "Out of memory for XPath\n");
                 progresult = XMLLINT_ERR_MEM;
                 return;
             }
             for (i = 0;i < cur->nodesetval->nodeNr;i++) {
                 node = cur->nodesetval->nodeTab[i];
-                xmlSaveTree(ctxt, node);
+                xmlNodeDumpOutput(buf, NULL, node, 0, 0, NULL);
+                xmlOutputBufferWrite(buf, 1, "\n");
             }
-            xmlSaveClose(ctxt);
+            xmlOutputBufferClose(buf);
 #else
             printf("xpath returned %d nodes\n", cur->nodesetval->nodeNr);
 #endif
 	    break;
         }
         case XPATH_BOOLEAN:
-	    if (cur->boolval) printf("true");
-	    else printf("false");
+	    if (cur->boolval) printf("true\n");
+	    else printf("false\n");
 	    break;
         case XPATH_NUMBER:
 	    switch (xmlXPathIsInf(cur->floatval)) {
 	    case 1:
-		printf("Infinity");
+		printf("Infinity\n");
 		break;
 	    case -1:
-		printf("-Infinity");
+		printf("-Infinity\n");
 		break;
 	    default:
 		if (xmlXPathIsNaN(cur->floatval)) {
-		    printf("NaN");
+		    printf("NaN\n");
 		} else {
-		    printf("%0g", cur->floatval);
+		    printf("%0g\n", cur->floatval);
 		}
 	    }
 	    break;
         case XPATH_STRING:
-	    printf("%s", (const char *) cur->stringval);
+	    printf("%s\n", (const char *) cur->stringval);
 	    break;
         case XPATH_UNDEFINED:
 	    fprintf(stderr, "XPath Object is uninitialized\n");
@@ -2319,14 +2302,11 @@ static void parseAndPrintFile(char *filename, xmlParserCtxtPtr rectxt) {
 #endif
 		if (f != NULL) {
 		    if (rectxt == NULL)
-			doc = xmlReadIO((xmlInputReadCallback) myRead,
-					(xmlInputCloseCallback) myClose, f,
-					filename, NULL, options);
+			doc = xmlReadIO(myRead, myClose, f, filename, NULL,
+                                        options);
 		    else
-			doc = xmlCtxtReadIO(rectxt,
-			                (xmlInputReadCallback) myRead,
-					(xmlInputCloseCallback) myClose, f,
-					filename, NULL, options);
+			doc = xmlCtxtReadIO(rectxt, myRead, myClose, f,
+					    filename, NULL, options);
 		} else
 		    doc = NULL;
 	    }
@@ -2777,9 +2757,9 @@ static void parseAndPrintFile(char *filename, xmlParserCtxtPtr rectxt) {
 			"Couldn't allocate validation context\n");
 		exit(-1);
 	    }
-	    cvp->userData = (void *) stderr;
-	    cvp->error    = (xmlValidityErrorFunc) fprintf;
-	    cvp->warning  = (xmlValidityWarningFunc) fprintf;
+	    cvp->userData = NULL;
+	    cvp->error    = xmlGenericError;
+	    cvp->warning  = xmlGenericError;
 
 	    if ((timing) && (!repeat)) {
 		startTimer();
@@ -2813,9 +2793,9 @@ static void parseAndPrintFile(char *filename, xmlParserCtxtPtr rectxt) {
 	if ((timing) && (!repeat)) {
 	    startTimer();
 	}
-	cvp->userData = (void *) stderr;
-	cvp->error    = (xmlValidityErrorFunc) fprintf;
-	cvp->warning  = (xmlValidityWarningFunc) fprintf;
+	cvp->userData = NULL;
+	cvp->error    = xmlGenericError;
+	cvp->warning  = xmlGenericError;
 	if (!xmlValidateDocument(cvp, doc)) {
 	    xmlGenericError(xmlGenericErrorContext,
 		    "Document %s does not validate\n", filename);
@@ -2845,10 +2825,8 @@ static void parseAndPrintFile(char *filename, xmlParserCtxtPtr rectxt) {
 	    flag |= XML_SCHEMATRON_OUT_QUIET;
 	ctxt = xmlSchematronNewValidCtxt(wxschematron, flag);
 #if 0
-	xmlSchematronSetValidErrors(ctxt,
-		(xmlSchematronValidityErrorFunc) fprintf,
-		(xmlSchematronValidityWarningFunc) fprintf,
-		stderr);
+	xmlSchematronSetValidErrors(ctxt, xmlGenericError, xmlGenericError,
+                NULL);
 #endif
 	ret = xmlSchematronValidateDoc(ctxt, doc);
 	if (ret == 0) {
@@ -2877,10 +2855,7 @@ static void parseAndPrintFile(char *filename, xmlParserCtxtPtr rectxt) {
 	}
 
 	ctxt = xmlRelaxNGNewValidCtxt(relaxngschemas);
-	xmlRelaxNGSetValidErrors(ctxt,
-		(xmlRelaxNGValidityErrorFunc) fprintf,
-		(xmlRelaxNGValidityWarningFunc) fprintf,
-		stderr);
+	xmlRelaxNGSetValidErrors(ctxt, xmlGenericError, xmlGenericError, NULL);
 	ret = xmlRelaxNGValidateDoc(ctxt, doc);
 	if (ret == 0) {
 	    fprintf(stderr, "%s validates\n", filename);
@@ -2905,10 +2880,7 @@ static void parseAndPrintFile(char *filename, xmlParserCtxtPtr rectxt) {
 	}
 
 	ctxt = xmlSchemaNewValidCtxt(wxschemas);
-	xmlSchemaSetValidErrors(ctxt,
-		(xmlSchemaValidityErrorFunc) fprintf,
-		(xmlSchemaValidityWarningFunc) fprintf,
-		stderr);
+	xmlSchemaSetValidErrors(ctxt, xmlGenericError, xmlGenericError, NULL);
 	ret = xmlSchemaValidateDoc(ctxt, doc);
 	if (ret == 0) {
 	    fprintf(stderr, "%s validates\n", filename);
@@ -2991,124 +2963,124 @@ static void showVersion(const char *name) {
     fprintf(stderr, "\n");
 }
 
-static void usage(const char *name) {
-    printf("Usage : %s [options] XMLfiles ...\n", name);
+static void usage(FILE *f, const char *name) {
+    fprintf(f, "Usage : %s [options] XMLfiles ...\n", name);
 #ifdef LIBXML_OUTPUT_ENABLED
-    printf("\tParse the XML files and output the result of the parsing\n");
+    fprintf(f, "\tParse the XML files and output the result of the parsing\n");
 #else
-    printf("\tParse the XML files\n");
+    fprintf(f, "\tParse the XML files\n");
 #endif /* LIBXML_OUTPUT_ENABLED */
-    printf("\t--version : display the version of the XML library used\n");
+    fprintf(f, "\t--version : display the version of the XML library used\n");
 #ifdef LIBXML_DEBUG_ENABLED
-    printf("\t--debug : dump a debug tree of the in-memory document\n");
-    printf("\t--shell : run a navigating shell\n");
-    printf("\t--debugent : debug the entities defined in the document\n");
+    fprintf(f, "\t--debug : dump a debug tree of the in-memory document\n");
+    fprintf(f, "\t--shell : run a navigating shell\n");
+    fprintf(f, "\t--debugent : debug the entities defined in the document\n");
 #else
 #ifdef LIBXML_READER_ENABLED
-    printf("\t--debug : dump the nodes content when using --stream\n");
+    fprintf(f, "\t--debug : dump the nodes content when using --stream\n");
 #endif /* LIBXML_READER_ENABLED */
 #endif
 #ifdef LIBXML_TREE_ENABLED
-    printf("\t--copy : used to test the internal copy implementation\n");
+    fprintf(f, "\t--copy : used to test the internal copy implementation\n");
 #endif /* LIBXML_TREE_ENABLED */
-    printf("\t--recover : output what was parsable on broken XML documents\n");
-    printf("\t--huge : remove any internal arbitrary parser limits\n");
-    printf("\t--noent : substitute entity references by their value\n");
-    printf("\t--noenc : ignore any encoding specified inside the document\n");
-    printf("\t--noout : don't output the result tree\n");
-    printf("\t--path 'paths': provide a set of paths for resources\n");
-    printf("\t--load-trace : print trace of all external entities loaded\n");
-    printf("\t--nonet : refuse to fetch DTDs or entities over network\n");
-    printf("\t--nocompact : do not generate compact text nodes\n");
-    printf("\t--htmlout : output results as HTML\n");
-    printf("\t--nowrap : do not put HTML doc wrapper\n");
+    fprintf(f, "\t--recover : output what was parsable on broken XML documents\n");
+    fprintf(f, "\t--huge : remove any internal arbitrary parser limits\n");
+    fprintf(f, "\t--noent : substitute entity references by their value\n");
+    fprintf(f, "\t--noenc : ignore any encoding specified inside the document\n");
+    fprintf(f, "\t--noout : don't output the result tree\n");
+    fprintf(f, "\t--path 'paths': provide a set of paths for resources\n");
+    fprintf(f, "\t--load-trace : print trace of all external entities loaded\n");
+    fprintf(f, "\t--nonet : refuse to fetch DTDs or entities over network\n");
+    fprintf(f, "\t--nocompact : do not generate compact text nodes\n");
+    fprintf(f, "\t--htmlout : output results as HTML\n");
+    fprintf(f, "\t--nowrap : do not put HTML doc wrapper\n");
 #ifdef LIBXML_VALID_ENABLED
-    printf("\t--valid : validate the document in addition to std well-formed check\n");
-    printf("\t--postvalid : do a posteriori validation, i.e after parsing\n");
-    printf("\t--dtdvalid URL : do a posteriori validation against a given DTD\n");
-    printf("\t--dtdvalidfpi FPI : same but name the DTD with a Public Identifier\n");
+    fprintf(f, "\t--valid : validate the document in addition to std well-formed check\n");
+    fprintf(f, "\t--postvalid : do a posteriori validation, i.e after parsing\n");
+    fprintf(f, "\t--dtdvalid URL : do a posteriori validation against a given DTD\n");
+    fprintf(f, "\t--dtdvalidfpi FPI : same but name the DTD with a Public Identifier\n");
 #endif /* LIBXML_VALID_ENABLED */
-    printf("\t--timing : print some timings\n");
-    printf("\t--output file or -o file: save to a given file\n");
-    printf("\t--repeat : repeat 100 times, for timing or profiling\n");
-    printf("\t--insert : ad-hoc test for valid insertions\n");
+    fprintf(f, "\t--timing : print some timings\n");
+    fprintf(f, "\t--output file or -o file: save to a given file\n");
+    fprintf(f, "\t--repeat : repeat 100 times, for timing or profiling\n");
+    fprintf(f, "\t--insert : ad-hoc test for valid insertions\n");
 #ifdef LIBXML_OUTPUT_ENABLED
-#ifdef HAVE_ZLIB_H
-    printf("\t--compress : turn on gzip compression of output\n");
+#ifdef LIBXML_ZLIB_ENABLED
+    fprintf(f, "\t--compress : turn on gzip compression of output\n");
 #endif
 #endif /* LIBXML_OUTPUT_ENABLED */
 #ifdef LIBXML_HTML_ENABLED
-    printf("\t--html : use the HTML parser\n");
-    printf("\t--xmlout : force to use the XML serializer when using --html\n");
-    printf("\t--nodefdtd : do not default HTML doctype\n");
+    fprintf(f, "\t--html : use the HTML parser\n");
+    fprintf(f, "\t--xmlout : force to use the XML serializer when using --html\n");
+    fprintf(f, "\t--nodefdtd : do not default HTML doctype\n");
 #endif
 #ifdef LIBXML_PUSH_ENABLED
-    printf("\t--push : use the push mode of the parser\n");
-    printf("\t--pushsmall : use the push mode of the parser using tiny increments\n");
+    fprintf(f, "\t--push : use the push mode of the parser\n");
+    fprintf(f, "\t--pushsmall : use the push mode of the parser using tiny increments\n");
 #endif /* LIBXML_PUSH_ENABLED */
 #ifdef HAVE_MMAP
-    printf("\t--memory : parse from memory\n");
+    fprintf(f, "\t--memory : parse from memory\n");
 #endif
-    printf("\t--maxmem nbbytes : limits memory allocation to nbbytes bytes\n");
-    printf("\t--nowarning : do not emit warnings from parser/validator\n");
-    printf("\t--noblanks : drop (ignorable?) blanks spaces\n");
-    printf("\t--nocdata : replace cdata section with text nodes\n");
+    fprintf(f, "\t--maxmem nbbytes : limits memory allocation to nbbytes bytes\n");
+    fprintf(f, "\t--nowarning : do not emit warnings from parser/validator\n");
+    fprintf(f, "\t--noblanks : drop (ignorable?) blanks spaces\n");
+    fprintf(f, "\t--nocdata : replace cdata section with text nodes\n");
 #ifdef LIBXML_OUTPUT_ENABLED
-    printf("\t--format : reformat/reindent the output\n");
-    printf("\t--encode encoding : output in the given encoding\n");
-    printf("\t--dropdtd : remove the DOCTYPE of the input docs\n");
-    printf("\t--pretty STYLE : pretty-print in a particular style\n");
-    printf("\t                 0 Do not pretty print\n");
-    printf("\t                 1 Format the XML content, as --format\n");
-    printf("\t                 2 Add whitespace inside tags, preserving content\n");
+    fprintf(f, "\t--format : reformat/reindent the output\n");
+    fprintf(f, "\t--encode encoding : output in the given encoding\n");
+    fprintf(f, "\t--dropdtd : remove the DOCTYPE of the input docs\n");
+    fprintf(f, "\t--pretty STYLE : pretty-print in a particular style\n");
+    fprintf(f, "\t                 0 Do not pretty print\n");
+    fprintf(f, "\t                 1 Format the XML content, as --format\n");
+    fprintf(f, "\t                 2 Add whitespace inside tags, preserving content\n");
 #endif /* LIBXML_OUTPUT_ENABLED */
-    printf("\t--c14n : save in W3C canonical format v1.0 (with comments)\n");
-    printf("\t--c14n11 : save in W3C canonical format v1.1 (with comments)\n");
-    printf("\t--exc-c14n : save in W3C exclusive canonical format (with comments)\n");
+    fprintf(f, "\t--c14n : save in W3C canonical format v1.0 (with comments)\n");
+    fprintf(f, "\t--c14n11 : save in W3C canonical format v1.1 (with comments)\n");
+    fprintf(f, "\t--exc-c14n : save in W3C exclusive canonical format (with comments)\n");
 #ifdef LIBXML_C14N_ENABLED
 #endif /* LIBXML_C14N_ENABLED */
-    printf("\t--nsclean : remove redundant namespace declarations\n");
-    printf("\t--testIO : test user I/O support\n");
+    fprintf(f, "\t--nsclean : remove redundant namespace declarations\n");
+    fprintf(f, "\t--testIO : test user I/O support\n");
 #ifdef LIBXML_CATALOG_ENABLED
-    printf("\t--catalogs : use SGML catalogs from $SGML_CATALOG_FILES\n");
-    printf("\t             otherwise XML Catalogs starting from \n");
-    printf("\t         %s are activated by default\n", XML_XML_DEFAULT_CATALOG);
-    printf("\t--nocatalogs: deactivate all catalogs\n");
+    fprintf(f, "\t--catalogs : use SGML catalogs from $SGML_CATALOG_FILES\n");
+    fprintf(f, "\t             otherwise XML Catalogs starting from \n");
+    fprintf(f, "\t         %s are activated by default\n", XML_XML_DEFAULT_CATALOG);
+    fprintf(f, "\t--nocatalogs: deactivate all catalogs\n");
 #endif
-    printf("\t--auto : generate a small doc on the fly\n");
+    fprintf(f, "\t--auto : generate a small doc on the fly\n");
 #ifdef LIBXML_XINCLUDE_ENABLED
-    printf("\t--xinclude : do XInclude processing\n");
-    printf("\t--noxincludenode : same but do not generate XInclude nodes\n");
-    printf("\t--nofixup-base-uris : do not fixup xml:base uris\n");
+    fprintf(f, "\t--xinclude : do XInclude processing\n");
+    fprintf(f, "\t--noxincludenode : same but do not generate XInclude nodes\n");
+    fprintf(f, "\t--nofixup-base-uris : do not fixup xml:base uris\n");
 #endif
-    printf("\t--loaddtd : fetch external DTD\n");
-    printf("\t--dtdattr : loaddtd + populate the tree with inherited attributes \n");
+    fprintf(f, "\t--loaddtd : fetch external DTD\n");
+    fprintf(f, "\t--dtdattr : loaddtd + populate the tree with inherited attributes \n");
 #ifdef LIBXML_READER_ENABLED
-    printf("\t--stream : use the streaming interface to process very large files\n");
-    printf("\t--walker : create a reader and walk though the resulting doc\n");
-#endif /* LIBXML_READER_ENABLED */
+    fprintf(f, "\t--stream : use the streaming interface to process very large files\n");
+    fprintf(f, "\t--walker : create a reader and walk though the resulting doc\n");
 #ifdef LIBXML_PATTERN_ENABLED
-    printf("\t--pattern pattern_value : test the pattern support\n");
+    fprintf(f, "\t--pattern pattern_value : test the pattern support\n");
 #endif
-    printf("\t--chkregister : verify the node registration code\n");
+#endif /* LIBXML_READER_ENABLED */
+    fprintf(f, "\t--chkregister : verify the node registration code\n");
 #ifdef LIBXML_SCHEMAS_ENABLED
-    printf("\t--relaxng schema : do RelaxNG validation against the schema\n");
-    printf("\t--schema schema : do validation against the WXS schema\n");
+    fprintf(f, "\t--relaxng schema : do RelaxNG validation against the schema\n");
+    fprintf(f, "\t--schema schema : do validation against the WXS schema\n");
 #endif
 #ifdef LIBXML_SCHEMATRON_ENABLED
-    printf("\t--schematron schema : do validation against a schematron\n");
+    fprintf(f, "\t--schematron schema : do validation against a schematron\n");
 #endif
 #ifdef LIBXML_SAX1_ENABLED
-    printf("\t--sax1: use the old SAX1 interfaces for processing\n");
+    fprintf(f, "\t--sax1: use the old SAX1 interfaces for processing\n");
 #endif
-    printf("\t--sax: do not build a tree but work just at the SAX level\n");
-    printf("\t--oldxml10: use XML-1.0 parsing rules before the 5th edition\n");
+    fprintf(f, "\t--sax: do not build a tree but work just at the SAX level\n");
+    fprintf(f, "\t--oldxml10: use XML-1.0 parsing rules before the 5th edition\n");
 #ifdef LIBXML_XPATH_ENABLED
-    printf("\t--xpath expr: evaluate the XPath expression, imply --noout\n");
+    fprintf(f, "\t--xpath expr: evaluate the XPath expression, imply --noout\n");
 #endif
 
-    printf("\nLibxml project home page: http://xmlsoft.org/\n");
-    printf("To report bugs or get some help check: http://xmlsoft.org/bugs.html\n");
+    fprintf(f, "\nLibxml project home page: http://xmlsoft.org/\n");
+    fprintf(f, "To report bugs or get some help check: http://xmlsoft.org/bugs.html\n");
 }
 
 static void registerNode(xmlNodePtr node)
@@ -3138,7 +3110,7 @@ main(int argc, char **argv) {
     const char* indent;
 
     if (argc <= 1) {
-	usage(argv[0]);
+	usage(stderr, argv[0]);
 	return(1);
     }
     LIBXML_TEST_VERSION
@@ -3313,7 +3285,7 @@ main(int argc, char **argv) {
 	}
 #endif
 #ifdef LIBXML_OUTPUT_ENABLED
-#ifdef HAVE_ZLIB_H
+#ifdef LIBXML_ZLIB_ENABLED
 	else if ((!strcmp(argv[i], "-compress")) ||
 	         (!strcmp(argv[i], "--compress"))) {
 	    compress++;
@@ -3421,6 +3393,12 @@ main(int argc, char **argv) {
 	         (!strcmp(argv[i], "--walker"))) {
 	     walker++;
              noout++;
+#ifdef LIBXML_PATTERN_ENABLED
+        } else if ((!strcmp(argv[i], "-pattern")) ||
+                   (!strcmp(argv[i], "--pattern"))) {
+	    i++;
+	    pattern = argv[i];
+#endif
 	}
 #endif /* LIBXML_READER_ENABLED */
 #ifdef LIBXML_SAX1_ENABLED
@@ -3471,12 +3449,6 @@ main(int argc, char **argv) {
                    (!strcmp(argv[i], "--path"))) {
 	    i++;
 	    parsePath(BAD_CAST argv[i]);
-#ifdef LIBXML_PATTERN_ENABLED
-        } else if ((!strcmp(argv[i], "-pattern")) ||
-                   (!strcmp(argv[i], "--pattern"))) {
-	    i++;
-	    pattern = argv[i];
-#endif
 #ifdef LIBXML_XPATH_ENABLED
         } else if ((!strcmp(argv[i], "-xpath")) ||
                    (!strcmp(argv[i], "--xpath"))) {
@@ -3490,7 +3462,7 @@ main(int argc, char **argv) {
 	    options |= XML_PARSE_OLD10;
 	} else {
 	    fprintf(stderr, "Unknown option %s\n", argv[i]);
-	    usage(argv[0]);
+	    usage(stderr, argv[0]);
 	    return(1);
 	}
     }
@@ -3569,10 +3541,8 @@ main(int argc, char **argv) {
 	}
 	ctxt = xmlSchematronNewParserCtxt(schematron);
 #if 0
-	xmlSchematronSetParserErrors(ctxt,
-		(xmlSchematronValidityErrorFunc) fprintf,
-		(xmlSchematronValidityWarningFunc) fprintf,
-		stderr);
+	xmlSchematronSetParserErrors(ctxt, xmlGenericError, xmlGenericError,
+                NULL);
 #endif
 	wxschematron = xmlSchematronParse(ctxt);
 	if (wxschematron == NULL) {
@@ -3602,10 +3572,8 @@ main(int argc, char **argv) {
 	    startTimer();
 	}
 	ctxt = xmlRelaxNGNewParserCtxt(relaxng);
-	xmlRelaxNGSetParserErrors(ctxt,
-		(xmlRelaxNGValidityErrorFunc) fprintf,
-		(xmlRelaxNGValidityWarningFunc) fprintf,
-		stderr);
+	xmlRelaxNGSetParserErrors(ctxt, xmlGenericError, xmlGenericError,
+                NULL);
 	relaxngschemas = xmlRelaxNGParse(ctxt);
 	if (relaxngschemas == NULL) {
 	    xmlGenericError(xmlGenericErrorContext,
@@ -3628,10 +3596,7 @@ main(int argc, char **argv) {
 	    startTimer();
 	}
 	ctxt = xmlSchemaNewParserCtxt(schema);
-	xmlSchemaSetParserErrors(ctxt,
-		(xmlSchemaValidityErrorFunc) fprintf,
-		(xmlSchemaValidityWarningFunc) fprintf,
-		stderr);
+	xmlSchemaSetParserErrors(ctxt, xmlGenericError, xmlGenericError, NULL);
 	wxschemas = xmlSchemaParse(ctxt);
 	if (wxschemas == NULL) {
 	    xmlGenericError(xmlGenericErrorContext,
@@ -3645,12 +3610,8 @@ main(int argc, char **argv) {
 	}
     }
 #endif /* LIBXML_SCHEMAS_ENABLED */
-#ifdef LIBXML_PATTERN_ENABLED
-    if ((pattern != NULL)
-#ifdef LIBXML_READER_ENABLED
-        && (walker == 0)
-#endif
-	) {
+#if defined(LIBXML_READER_ENABLED) && defined(LIBXML_PATTERN_ENABLED)
+    if ((pattern != NULL) && (walker == 0)) {
         patternc = xmlPatterncompile((const xmlChar *) pattern, NULL, 0, NULL);
 	if (patternc == NULL) {
 	    xmlGenericError(xmlGenericErrorContext,
@@ -3659,7 +3620,7 @@ main(int argc, char **argv) {
 	    pattern = NULL;
 	}
     }
-#endif /* LIBXML_PATTERN_ENABLED */
+#endif /* LIBXML_READER_ENABLED && LIBXML_PATTERN_ENABLED */
     for (i = 1; i < argc ; i++) {
 	if ((!strcmp(argv[i], "-encode")) ||
 	         (!strcmp(argv[i], "--encode"))) {
@@ -3713,7 +3674,7 @@ main(int argc, char **argv) {
 	    i++;
 	    continue;
         }
-#ifdef LIBXML_PATTERN_ENABLED
+#if defined(LIBXML_READER_ENABLED) && defined(LIBXML_PATTERN_ENABLED)
         if ((!strcmp(argv[i], "-pattern")) ||
 	    (!strcmp(argv[i], "--pattern"))) {
 	    i++;
@@ -3784,7 +3745,7 @@ main(int argc, char **argv) {
 	xmlGenericError(xmlGenericErrorContext, "</body></html>\n");
     }
     if ((files == 0) && (!generate) && (version == 0)) {
-	usage(argv[0]);
+	usage(stderr, argv[0]);
     }
 #ifdef LIBXML_SCHEMATRON_ENABLED
     if (wxschematron != NULL)
@@ -3797,7 +3758,7 @@ main(int argc, char **argv) {
 	xmlSchemaFree(wxschemas);
     xmlRelaxNGCleanupTypes();
 #endif
-#ifdef LIBXML_PATTERN_ENABLED
+#if defined(LIBXML_READER_ENABLED) && defined(LIBXML_PATTERN_ENABLED)
     if (patternc != NULL)
         xmlFreePattern(patternc);
 #endif

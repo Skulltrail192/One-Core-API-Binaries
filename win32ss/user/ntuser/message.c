@@ -96,10 +96,11 @@ static const unsigned int message_pointer_flags[] =
 };
 
 /* check whether a given message type includes pointers */
-static inline int is_pointer_message( UINT message )
+static inline int is_pointer_message( UINT message, WPARAM wparam )
 {
     if (message >= 8*sizeof(message_pointer_flags)) return FALSE;
-        return (message_pointer_flags[message / 32] & SET(message)) != 0;
+    if (message == WM_DEVICECHANGE && !(wparam & 0x8000)) return FALSE;
+    return (message_pointer_flags[message / 32] & SET(message)) != 0;
 }
 #undef SET
 
@@ -139,6 +140,7 @@ static MSGMEMORY g_MsgMemory[] =
     { WM_DRAWITEM, sizeof(DRAWITEMSTRUCT), MMS_FLAG_READWRITE },
     { WM_HELP, sizeof(HELPINFO), MMS_FLAG_READWRITE },
     { WM_NEXTMENU, sizeof(MDINEXTMENU), MMS_FLAG_READWRITE },
+    { WM_DEVICECHANGE, MMS_SIZE_SPECIAL, MMS_FLAG_READ },
 };
 
 static PMSGMEMORY FASTCALL
@@ -164,7 +166,7 @@ static UINT FASTCALL
 MsgMemorySize(PMSGMEMORY MsgMemoryEntry, WPARAM wParam, LPARAM lParam)
 {
     CREATESTRUCTW *Cs;
-    PUNICODE_STRING WindowName;
+    PLARGE_STRING WindowName;
     PUNICODE_STRING ClassName;
     UINT Size = 0;
 
@@ -196,7 +198,7 @@ MsgMemorySize(PMSGMEMORY MsgMemoryEntry, WPARAM wParam, LPARAM lParam)
             case WM_CREATE:
             case WM_NCCREATE:
                 Cs = (CREATESTRUCTW *) lParam;
-                WindowName = (PUNICODE_STRING) Cs->lpszName;
+                WindowName = (PLARGE_STRING) Cs->lpszName;
                 ClassName = (PUNICODE_STRING) Cs->lpszClass;
                 Size = sizeof(CREATESTRUCTW) + WindowName->Length + sizeof(WCHAR);
                 if (IS_ATOM(ClassName->Buffer))
@@ -217,6 +219,16 @@ MsgMemorySize(PMSGMEMORY MsgMemoryEntry, WPARAM wParam, LPARAM lParam)
                 {
                 COPYDATASTRUCT *cds = (COPYDATASTRUCT *)lParam;
                 Size = sizeof(COPYDATASTRUCT) + cds->cbData;
+                }
+                break;
+
+            case WM_DEVICECHANGE:
+                {
+                    if ( lParam && (wParam & 0x8000) )
+                    {
+                        DEV_BROADCAST_HDR *header = (DEV_BROADCAST_HDR *)lParam;
+                        Size = header->dbch_size;
+                    }
                 }
                 break;
 
@@ -577,30 +589,174 @@ GetWakeMask(UINT first, UINT last )
     return mask;
 }
 
+//
+// Pass Strings to User Heap Space for Message Hook Callbacks.
+//
+BOOL
+FASTCALL
+IntMsgCreateStructW(
+    PWND Window,
+    CREATESTRUCTW *pCsw,
+    CREATESTRUCTW *Cs,
+    PVOID *ppszClass,
+    PVOID *ppszName )
+{
+    PLARGE_STRING WindowName;
+    PUNICODE_STRING ClassName;
+    PVOID pszClass = NULL, pszName = NULL;
+
+    /* Fill the new CREATESTRUCTW */
+    RtlCopyMemory(pCsw, Cs, sizeof(CREATESTRUCTW));
+    pCsw->style = Window->style; /* HCBT_CREATEWND needs the real window style */
+
+    WindowName = (PLARGE_STRING)   Cs->lpszName;
+    ClassName  = (PUNICODE_STRING) Cs->lpszClass;
+
+    // Based on the assumption this is from "unicode source" user32, ReactOS, answer is yes.
+    if (!IS_ATOM(ClassName->Buffer))
+    {
+        if (ClassName->Length)
+        {
+            if (Window->state & WNDS_ANSICREATOR)
+            {
+                ANSI_STRING AnsiString;
+                AnsiString.MaximumLength = (USHORT)RtlUnicodeStringToAnsiSize(ClassName)+sizeof(CHAR);
+                pszClass = UserHeapAlloc(AnsiString.MaximumLength);
+                if (!pszClass)
+                {
+                    ERR("UserHeapAlloc() failed!\n");
+                    return FALSE;
+                }
+                RtlZeroMemory(pszClass, AnsiString.MaximumLength);
+                AnsiString.Buffer = (PCHAR)pszClass;
+                RtlUnicodeStringToAnsiString(&AnsiString, ClassName, FALSE);
+            }
+            else
+            {
+                UNICODE_STRING UnicodeString;
+                UnicodeString.MaximumLength = ClassName->Length + sizeof(UNICODE_NULL);
+                pszClass = UserHeapAlloc(UnicodeString.MaximumLength);
+                if (!pszClass)
+                {
+                    ERR("UserHeapAlloc() failed!\n");
+                    return FALSE;
+                }
+                RtlZeroMemory(pszClass, UnicodeString.MaximumLength);
+                UnicodeString.Buffer = (PWSTR)pszClass;
+                RtlCopyUnicodeString(&UnicodeString, ClassName);
+            }
+            *ppszClass = pszClass;
+            pCsw->lpszClass = UserHeapAddressToUser(pszClass);
+        }
+        else
+        {
+            pCsw->lpszClass = NULL;
+        }
+    }
+    else
+    {
+        pCsw->lpszClass = ClassName->Buffer;
+    }
+    if (WindowName->Length)
+    {
+        UNICODE_STRING Name;
+        Name.Buffer = WindowName->Buffer;
+        Name.Length = (USHORT)min(WindowName->Length, MAXUSHORT); // FIXME: LARGE_STRING truncated
+        Name.MaximumLength = (USHORT)min(WindowName->MaximumLength, MAXUSHORT);
+
+        if (Window->state & WNDS_ANSICREATOR)
+        {
+            ANSI_STRING AnsiString;
+            AnsiString.MaximumLength = (USHORT)RtlUnicodeStringToAnsiSize(&Name) + sizeof(CHAR);
+            pszName = UserHeapAlloc(AnsiString.MaximumLength);
+            if (!pszName)
+            {
+               ERR("UserHeapAlloc() failed!\n");
+               return FALSE;
+            }
+            RtlZeroMemory(pszName, AnsiString.MaximumLength);
+            AnsiString.Buffer = (PCHAR)pszName;
+            RtlUnicodeStringToAnsiString(&AnsiString, &Name, FALSE);
+        }
+        else
+        {
+            UNICODE_STRING UnicodeString;
+            UnicodeString.MaximumLength = Name.Length + sizeof(UNICODE_NULL);
+            pszName = UserHeapAlloc(UnicodeString.MaximumLength);
+            if (!pszName)
+            {
+               ERR("UserHeapAlloc() failed!\n");
+               return FALSE;
+            }
+            RtlZeroMemory(pszName, UnicodeString.MaximumLength);
+            UnicodeString.Buffer = (PWSTR)pszName;
+            RtlCopyUnicodeString(&UnicodeString, &Name);
+        }
+        *ppszName = pszName;
+        pCsw->lpszName = UserHeapAddressToUser(pszName);
+    }
+    else
+    {
+        pCsw->lpszName = NULL;
+    }
+
+    return TRUE;
+}
+
 static VOID FASTCALL
-IntCallWndProc( PWND Window, HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+IntCallWndProc( PWND Window, HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam )
 {
     BOOL SameThread = FALSE;
     CWPSTRUCT CWP;
+    PVOID pszClass = NULL, pszName = NULL;
+    CREATESTRUCTW Csw;
+
+    //// Check for a hook to eliminate overhead. ////
+    if ( !ISITHOOKED(WH_CALLWNDPROC) && !(Window->head.rpdesk->pDeskInfo->fsHooks & HOOKID_TO_FLAG(WH_CALLWNDPROC)) )
+        return;
 
     if (Window->head.pti == ((PTHREADINFO)PsGetCurrentThreadWin32Thread()))
         SameThread = TRUE;
+
+    if ( Msg == WM_CREATE || Msg == WM_NCCREATE )
+    {   //
+        // String pointers are in user heap space, like WH_CBT HCBT_CREATEWND.
+        //
+        if (!IntMsgCreateStructW( Window, &Csw, (CREATESTRUCTW *)lParam, &pszClass, &pszName ))
+            return;
+        lParam = (LPARAM)&Csw;
+    }
 
     CWP.hwnd    = hWnd;
     CWP.message = Msg;
     CWP.wParam  = wParam;
     CWP.lParam  = lParam;
     co_HOOK_CallHooks( WH_CALLWNDPROC, HC_ACTION, SameThread, (LPARAM)&CWP );
+
+    if (pszName)  UserHeapFree(pszName);
+    if (pszClass) UserHeapFree(pszClass);
 }
 
 static VOID FASTCALL
-IntCallWndProcRet ( PWND Window, HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam, LRESULT *uResult)
+IntCallWndProcRet( PWND Window, HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam, LRESULT *uResult )
 {
     BOOL SameThread = FALSE;
     CWPRETSTRUCT CWPR;
+    PVOID pszClass = NULL, pszName = NULL;
+    CREATESTRUCTW Csw;
+
+    if ( !ISITHOOKED(WH_CALLWNDPROCRET) && !(Window->head.rpdesk->pDeskInfo->fsHooks & HOOKID_TO_FLAG(WH_CALLWNDPROCRET)) )
+        return;
 
     if (Window->head.pti == ((PTHREADINFO)PsGetCurrentThreadWin32Thread()))
         SameThread = TRUE;
+
+    if ( Msg == WM_CREATE || Msg == WM_NCCREATE )
+    {
+        if (!IntMsgCreateStructW( Window, &Csw, (CREATESTRUCTW *)lParam, &pszClass, &pszName ))
+            return;
+        lParam = (LPARAM)&Csw;
+    }
 
     CWPR.hwnd    = hWnd;
     CWPR.message = Msg;
@@ -608,6 +764,9 @@ IntCallWndProcRet ( PWND Window, HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
     CWPR.lParam  = lParam;
     CWPR.lResult = uResult ? (*uResult) : 0;
     co_HOOK_CallHooks( WH_CALLWNDPROCRET, HC_ACTION, SameThread, (LPARAM)&CWPR );
+
+    if (pszName)  UserHeapFree(pszName);
+    if (pszClass) UserHeapFree(pszClass);
 }
 
 static LRESULT handle_internal_message( PWND pWnd, UINT msg, WPARAM wparam, LPARAM lparam )
@@ -681,7 +840,6 @@ static LRESULT handle_internal_events( PTHREADINFO pti, PWND pWnd, DWORD dwQEven
 LRESULT FASTCALL
 IntDispatchMessage(PMSG pMsg)
 {
-    LARGE_INTEGER TickCount;
     LONG Time;
     LRESULT retval = 0;
     PTHREADINFO pti;
@@ -710,8 +868,7 @@ IntDispatchMessage(PMSG pMsg)
         {
             if (ValidateTimerCallback(pti,pMsg->lParam))
             {
-                KeQueryTickCount(&TickCount);
-                Time = MsqCalculateMessageTime(&TickCount);
+                Time = EngGetTickCount32();
                 retval = co_IntCallWindowProc((WNDPROC)pMsg->lParam,
                                               TRUE,
                                               pMsg->hwnd,
@@ -727,8 +884,7 @@ IntDispatchMessage(PMSG pMsg)
             PTIMER pTimer = FindSystemTimer(pMsg);
             if (pTimer && pTimer->pfn)
             {
-                KeQueryTickCount(&TickCount);
-                Time = MsqCalculateMessageTime(&TickCount);
+                Time = EngGetTickCount32();
                 pTimer->pfn(pMsg->hwnd, WM_SYSTIMER, (UINT)pMsg->wParam, Time);
             }
             return 0;
@@ -815,7 +971,6 @@ co_IntPeekMessage( PMSG Msg,
                    BOOL bGMSG )
 {
     PTHREADINFO pti;
-    LARGE_INTEGER LargeTickCount;
     BOOL RemoveMessages;
     UINT ProcessMask;
     BOOL Hit = FALSE;
@@ -833,9 +988,8 @@ co_IntPeekMessage( PMSG Msg,
 
     do
     {
-        KeQueryTickCount(&LargeTickCount);
-        pti->timeLast = LargeTickCount.u.LowPart;
-        pti->pcti->tickLastMsgChecked = LargeTickCount.u.LowPart;
+        /* Update the last message-queue access time */
+        pti->pcti->timeLastRead = EngGetTickCount32();
 
         // Post mouse moves while looping through peek messages.
         if (pti->MessageQueue->QF_flags & QF_MOUSEMOVED)
@@ -879,7 +1033,7 @@ co_IntPeekMessage( PMSG Msg,
                             0,
                             Msg ))
         {
-            return TRUE;
+            goto GotMessage;
         }
 
         /* Only check for quit messages if not posted messages pending. */
@@ -898,7 +1052,7 @@ co_IntPeekMessage( PMSG Msg,
                 pti->pcti->fsWakeBits &= ~QS_ALLPOSTMESSAGE;
                 pti->pcti->fsChangeBits &= ~QS_ALLPOSTMESSAGE;
             }
-            return TRUE;
+            goto GotMessage;
         }
 
         /* Check for hardware events. */
@@ -911,7 +1065,7 @@ co_IntPeekMessage( PMSG Msg,
                                        ProcessMask,
                                        Msg))
         {
-            return TRUE;
+            goto GotMessage;
         }
 
         /* Now check for System Event messages. */
@@ -951,7 +1105,7 @@ co_IntPeekMessage( PMSG Msg,
                                 Msg,
                                 RemoveMessages))
         {
-            return TRUE;
+            goto GotMessage;
         }
 
        /* This is correct, check for the current threads timers waiting to be
@@ -967,6 +1121,9 @@ co_IntPeekMessage( PMSG Msg,
     }
     while (TRUE);
 
+GotMessage:
+    /* Update the last message-queue access time */
+    pti->pcti->timeLastRead = EngGetTickCount32();
     return TRUE;
 }
 
@@ -1074,8 +1231,11 @@ co_IntGetPeekMessage( PMSG pMsg,
                                      bGMSG );
         if (Present)
         {
-           /* GetMessage or PostMessage must never get messages that contain pointers */
-           ASSERT(FindMsgMemory(pMsg->message) == NULL);
+           if ( pMsg->message != WM_DEVICECHANGE || (pMsg->wParam & 0x8000) )
+           {
+               /* GetMessage or PostMessage must never get messages that contain pointers */
+               ASSERT(FindMsgMemory(pMsg->message) == NULL);
+           }
 
            if ( pMsg->message >= WM_DDE_FIRST && pMsg->message <= WM_DDE_LAST )
            {
@@ -1152,9 +1312,8 @@ UserPostThreadMessage( PTHREADINFO pti,
                        LPARAM lParam )
 {
     MSG Message;
-    LARGE_INTEGER LargeTickCount;
 
-    if (is_pointer_message(Msg))
+    if (is_pointer_message(Msg, wParam))
     {
         EngSetLastError(ERROR_MESSAGE_SYNC_ONLY );
         return FALSE;
@@ -1164,9 +1323,7 @@ UserPostThreadMessage( PTHREADINFO pti,
     Message.wParam = wParam;
     Message.lParam = lParam;
     Message.pt = gpsi->ptCursor;
-
-    KeQueryTickCount(&LargeTickCount);
-    Message.time = MsqCalculateMessageTime(&LargeTickCount);
+    Message.time = EngGetTickCount32();
     MsqPostMessage(pti, &Message, FALSE, QS_POSTMESSAGE, 0, 0);
     return TRUE;
 }
@@ -1193,7 +1350,6 @@ UserPostMessage( HWND Wnd,
 {
     PTHREADINFO pti;
     MSG Message;
-    LARGE_INTEGER LargeTickCount;
     LONG_PTR ExtraInfo = 0;
 
     Message.hwnd = Wnd;
@@ -1201,10 +1357,9 @@ UserPostMessage( HWND Wnd,
     Message.wParam = wParam;
     Message.lParam = lParam;
     Message.pt = gpsi->ptCursor;
-    KeQueryTickCount(&LargeTickCount);
-    Message.time = MsqCalculateMessageTime(&LargeTickCount);
+    Message.time = EngGetTickCount32();
 
-    if (is_pointer_message(Message.message))
+    if (is_pointer_message(Message.message, Message.wParam))
     {
         EngSetLastError(ERROR_MESSAGE_SYNC_ONLY );
         return FALSE;
@@ -1433,17 +1588,18 @@ co_IntSendMessageTimeoutSingle( HWND hWnd,
         RETURN( TRUE);
     }
 
-    if (uFlags & SMTO_ABORTIFHUNG && MsqIsHung(ptiSendTo))
-    {
-        // FIXME: Set window hung and add to a list.
-        /* FIXME: Set a LastError? */
-        RETURN( FALSE);
-    }
-
     if (Window->state & WNDS_DESTROYED)
     {
         /* FIXME: Last error? */
         ERR("Attempted to send message to window %p that is being destroyed!\n", hWnd);
+        RETURN( FALSE);
+    }
+
+    if ((uFlags & SMTO_ABORTIFHUNG) && MsqIsHung(ptiSendTo, 4 * MSQ_HUNG))
+    {
+        // FIXME: Set window hung and add to a list.
+        /* FIXME: Set a LastError? */
+        ERR("Window %p (%p) (pti %p) is hung!\n", hWnd, Window, ptiSendTo);
         RETURN( FALSE);
     }
 
@@ -1459,12 +1615,17 @@ co_IntSendMessageTimeoutSingle( HWND hWnd,
                                     MSQ_NORMAL,
                                     uResult );
     }
-    while ((STATUS_TIMEOUT == Status) &&
+    while ((Status == STATUS_TIMEOUT) &&
            (uFlags & SMTO_NOTIMEOUTIFNOTHUNG) &&
-           !MsqIsHung(ptiSendTo)); // FIXME: Set window hung and add to a list.
+           !MsqIsHung(ptiSendTo, MSQ_HUNG)); // FIXME: Set window hung and add to a list.
 
     if (Status == STATUS_TIMEOUT)
     {
+        if (0 && MsqIsHung(ptiSendTo, MSQ_HUNG))
+        {
+            TRACE("Let's go Ghost!\n");
+            IntMakeHungWindowGhosted(hWnd);
+        }
 /*
  *  MSDN says:
  *  Microsoft Windows 2000: If GetLastError returns zero, then the function
@@ -1880,7 +2041,7 @@ UserSendNotifyMessage( HWND hWnd,
 {
     BOOL Ret = TRUE;
 
-    if (is_pointer_message(Msg))
+    if (is_pointer_message(Msg, wParam))
     {
         EngSetLastError(ERROR_MESSAGE_SYNC_ONLY );
         return FALSE;
@@ -2090,7 +2251,7 @@ NtUserPostThreadMessage(DWORD idThread,
 
     UserEnterExclusive();
 
-    Status = PsLookupThreadByThreadId((HANDLE)idThread,&peThread);
+    Status = PsLookupThreadByThreadId(UlongToHandle(idThread), &peThread);
 
     if ( Status == STATUS_SUCCESS )
     {
@@ -2714,7 +2875,7 @@ NtUserMessageCall( HWND hWnd,
             }
             _SEH2_END;
 
-            if (is_pointer_message(Msg))
+            if (is_pointer_message(Msg, wParam))
             {
                EngSetLastError(ERROR_MESSAGE_SYNC_ONLY );
                break;
@@ -2894,7 +3055,7 @@ DWORD
 APIENTRY
 NtUserWaitForInputIdle( IN HANDLE hProcess,
                         IN DWORD dwMilliseconds,
-                        IN BOOL Unknown2)
+                        IN BOOL bSharedWow)
 {
     PEPROCESS Process;
     PPROCESSINFO W32Process;

@@ -30,16 +30,28 @@ There is still some work to be done:
 
 */
 
-#include "cabinet.h"
+
+
+#include "config.h"
 
 #include <assert.h>
-#include <fci.h>
-
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 #ifdef HAVE_ZLIB
 # include <zlib.h>
 #endif
 
-#include <wine/list.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "wine/winternl.h"
+#include "fci.h"
+#include "cabinet.h"
+#include "wine/list.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(cabinet);
 
 #ifdef WORDS_BIGENDIAN
 #define fci_endian_ulong(x) RtlUlongByteSwap(x)
@@ -162,7 +174,7 @@ typedef struct FCI_Int
   cab_UWORD          cFolders;
   cab_UWORD          cFiles;
   cab_ULONG          cDataBlocks;
-  cab_ULONG          cbFileRemainer; /* uncompressed, yet to be written data */
+  cab_ULONG          cbFileRemainder; /* uncompressed, yet to be written data */
                /* of spanned file of a spanning folder of a spanning cabinet */
   struct temp_file   data;
   BOOL               fNewPrevious;
@@ -827,7 +839,7 @@ static BOOL add_data_to_folder( FCI_Int *fci, struct folder *folder, cab_ULONG *
 static BOOL add_files_to_folder( FCI_Int *fci, struct folder *folder, cab_ULONG payload )
 {
     cab_ULONG sizeOfFiles = 0, sizeOfFilesPrev;
-    cab_ULONG cbFileRemainer = 0;
+    cab_ULONG cbFileRemainder = 0;
     struct file *file, *next;
 
     LIST_FOR_EACH_ENTRY_SAFE( file, next, &fci->files_list, struct file, entry )
@@ -840,10 +852,10 @@ static BOOL add_files_to_folder( FCI_Int *fci, struct folder *folder, cab_ULONG 
 
         sizeOfFilesPrev = sizeOfFiles;
         /* set complete size of all processed files */
-        if (file->folder == cffileCONTINUED_FROM_PREV && fci->cbFileRemainer != 0)
+        if (file->folder == cffileCONTINUED_FROM_PREV && fci->cbFileRemainder != 0)
         {
-            sizeOfFiles += fci->cbFileRemainer;
-            fci->cbFileRemainer = 0;
+            sizeOfFiles += fci->cbFileRemainder;
+            fci->cbFileRemainder = 0;
         }
         else sizeOfFiles += file->size;
 
@@ -876,7 +888,7 @@ static BOOL add_files_to_folder( FCI_Int *fci, struct folder *folder, cab_ULONG 
                 {
                     /* The size of the uncompressed, data of a spanning file in a */
                     /* spanning data */
-                    cbFileRemainer = sizeOfFiles - payload;
+                    cbFileRemainder = sizeOfFiles - payload;
                 }
                 file->folder = cffileCONTINUED_FROM_PREV;
             }
@@ -887,7 +899,7 @@ static BOOL add_files_to_folder( FCI_Int *fci, struct folder *folder, cab_ULONG 
             fci->files_size -= size;
         }
     }
-    fci->cbFileRemainer = cbFileRemainer;
+    fci->cbFileRemainder = cbFileRemainder;
     return TRUE;
 }
 

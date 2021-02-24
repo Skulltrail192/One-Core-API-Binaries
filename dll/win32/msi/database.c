@@ -18,9 +18,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "msipriv.h"
-
+#include <stdarg.h>
 #include <stdio.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "winnls.h"
+#include "wine/debug.h"
+#include "wine/unicode.h"
+#include "msi.h"
+#include "msiquery.h"
+#include "msipriv.h"
+#include "objidl.h"
+#include "objbase.h"
+#include "msiserver.h"
+#include "query.h"
+
+#include "initguid.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(msi);
 
@@ -768,8 +785,11 @@ static UINT MSI_DatabaseImport(MSIDATABASE *db, LPCWSTR folder, LPCWSTR file)
     lstrcatW( path, file );
 
     data = msi_read_text_archive( path, &len );
-    if (data == NULL)
-        return ERROR_BAD_PATHNAME;
+    if (!data)
+    {
+        msi_free(path);
+        return ERROR_FUNCTION_FAILED;
+    }
 
     ptr = data;
     msi_parse_line( &ptr, &columns, &num_columns, &len );
@@ -1988,16 +2008,8 @@ MSIDBSTATE WINAPI MsiGetDatabaseState( MSIHANDLE handle )
     db = msihandle2msiinfo( handle, MSIHANDLETYPE_DATABASE );
     if( !db )
     {
-        IWineMsiRemoteDatabase *remote_database;
-
-        remote_database = (IWineMsiRemoteDatabase *)msi_get_remote( handle );
-        if ( !remote_database )
-            return MSIDBSTATE_ERROR;
-
-        IWineMsiRemoteDatabase_Release( remote_database );
         WARN("MsiGetDatabaseState not allowed during a custom action!\n");
-
-        return MSIDBSTATE_READ;
+        return MSIDBSTATE_ERROR;
     }
 
     if (db->mode != MSIDBOPEN_READONLY )

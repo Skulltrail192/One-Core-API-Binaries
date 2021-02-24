@@ -18,7 +18,7 @@ BOOLEAN CMAPI
 HvpVerifyHiveHeader(
     IN PHBASE_BLOCK BaseBlock)
 {
-    if (BaseBlock->Signature != HV_SIGNATURE ||
+    if (BaseBlock->Signature != HV_HBLOCK_SIGNATURE ||
         BaseBlock->Major != HSYS_MAJOR ||
         BaseBlock->Minor < HSYS_MINOR ||
         BaseBlock->Type != HFILE_TYPE_PRIMARY ||
@@ -29,7 +29,7 @@ HvpVerifyHiveHeader(
     {
         DPRINT1("Verify Hive Header failed:\n");
         DPRINT1("    Signature: 0x%x, expected 0x%x; Major: 0x%x, expected 0x%x\n",
-                BaseBlock->Signature, HV_SIGNATURE, BaseBlock->Major, HSYS_MAJOR);
+                BaseBlock->Signature, HV_HBLOCK_SIGNATURE, BaseBlock->Major, HSYS_MAJOR);
         DPRINT1("    Minor: 0x%x expected to be >= 0x%x; Type: 0x%x, expected 0x%x\n",
                 BaseBlock->Minor, HSYS_MINOR, BaseBlock->Type, HFILE_TYPE_PRIMARY);
         DPRINT1("    Format: 0x%x, expected 0x%x; Cluster: 0x%x, expected 1\n",
@@ -172,7 +172,7 @@ HvpCreateHive(
     /* Clear it */
     RtlZeroMemory(BaseBlock, RegistryHive->BaseBlockAlloc);
 
-    BaseBlock->Signature = HV_SIGNATURE;
+    BaseBlock->Signature = HV_HBLOCK_SIGNATURE;
     BaseBlock->Major = HSYS_MAJOR;
     BaseBlock->Minor = HSYS_MINOR;
     BaseBlock->Type = HFILE_TYPE_PRIMARY;
@@ -231,12 +231,12 @@ HvpInitializeMemoryHive(
     SIZE_T ChunkSize;
 
     ChunkSize = ChunkBase->Length;
-    DPRINT("ChunkSize: %lx\n", ChunkSize);
+    DPRINT("ChunkSize: %zx\n", ChunkSize);
 
     if (ChunkSize < sizeof(HBASE_BLOCK) ||
         !HvpVerifyHiveHeader(ChunkBase))
     {
-        DPRINT1("Registry is corrupt: ChunkSize %lu < sizeof(HBASE_BLOCK) %lu, "
+        DPRINT1("Registry is corrupt: ChunkSize 0x%zx < sizeof(HBASE_BLOCK) 0x%zx, "
                 "or HvpVerifyHiveHeader() failed\n", ChunkSize, sizeof(HBASE_BLOCK));
         return STATUS_REGISTRY_CORRUPT;
     }
@@ -270,7 +270,7 @@ HvpInitializeMemoryHive(
     for (BlockIndex = 0; BlockIndex < Hive->Storage[Stable].Length; )
     {
         Bin = (PHBIN)((ULONG_PTR)ChunkBase + (BlockIndex + 1) * HBLOCK_SIZE);
-        if (Bin->Signature != HV_BIN_SIGNATURE ||
+        if (Bin->Signature != HV_HBIN_SIGNATURE ||
            (Bin->Size % HBLOCK_SIZE) != 0)
         {
             DPRINT1("Invalid bin at BlockIndex %lu, Signature 0x%x, Size 0x%x\n",
@@ -542,6 +542,7 @@ HvInitialize(
      */
 
     RtlZeroMemory(Hive, sizeof(HHIVE));
+    Hive->Signature = HV_HHIVE_SIGNATURE;
 
     Hive->Allocate = Allocate;
     Hive->Free = Free;
@@ -556,7 +557,9 @@ HvInitialize(
     Hive->BaseBlockAlloc = sizeof(HBASE_BLOCK); // == HBLOCK_SIZE
 
     Hive->Version = HSYS_MINOR;
+#if (NTDDI_VERSION < NTDDI_VISTA)
     Hive->Log = (FileType == HFILE_TYPE_LOG);
+#endif
     Hive->HiveFlags = HiveFlags & ~HIVE_NOLAZYFLUSH;
 
     switch (OperationType)

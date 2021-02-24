@@ -4,7 +4,7 @@
  * FILE:            boot/freeldr/freeldr/ui/minitui.c
  * PURPOSE:         Mini Text UI interface
  * PROGRAMMERS:     Brian Palmer <brianp@sginet.com>
- *                  Hervé Poussineau
+ *                  HervÃ© Poussineau
  */
 #ifndef _M_ARM
 #include <freeldr.h>
@@ -31,23 +31,24 @@ VOID MiniTuiDrawStatusText(PCSTR StatusText)
 
 VOID MiniTuiDrawProgressBarCenter(ULONG Position, ULONG Range, PCHAR ProgressText)
 {
-    ULONG        Left, Top, Right, Bottom;
-    ULONG        Width = 50; // Allow for 50 "bars"
-    ULONG        Height = 2;
+    ULONG Left, Top, Right, Bottom, Width, Height;
 
-    Width = 80;
+    /* Build the coordinates and sizes */
+    Height = 2;
+    Width = UiScreenWidth;
     Left = 0;
-    Right = Left + Width;
+    Right = (Left + Width) - 1;
     Top = UiScreenHeight - Height - 4;
     Bottom = Top + Height + 1;
 
+    /* Draw the progress bar */
     MiniTuiDrawProgressBar(Left, Top, Right, Bottom, Position, Range, ProgressText);
 }
 
 VOID MiniTuiDrawProgressBar(ULONG Left, ULONG Top, ULONG Right, ULONG Bottom, ULONG Position, ULONG Range, PCHAR ProgressText)
 {
     ULONG        i;
-    ULONG        ProgressBarWidth = (Right - Left) - 4;
+    ULONG        ProgressBarWidth = (Right - Left) - 3;
 
     // First make sure the progress bar text fits
     UiTruncateStringEllipsis(ProgressText, ProgressBarWidth - 4);
@@ -85,10 +86,13 @@ MiniTuiDrawMenu(PUI_MENU_INFO MenuInfo)
     //
     // No GUI status bar text, just minimal text. Show the menu header.
     //
-    UiVtbl.DrawText(0,
-                    MenuInfo->Top - 2,
-                    MenuInfo->MenuHeader,
-                    ATTR(UiMenuFgColor, UiMenuBgColor));
+    if (MenuInfo->MenuHeader)
+    {
+        UiVtbl.DrawText(0,
+                        MenuInfo->Top - 2,
+                        MenuInfo->MenuHeader,
+                        ATTR(UiMenuFgColor, UiMenuBgColor));
+    }
 
     //
     // Now tell the user how to choose
@@ -105,10 +109,13 @@ MiniTuiDrawMenu(PUI_MENU_INFO MenuInfo)
     //
     // And show the menu footer
     //
-    UiVtbl.DrawText(0,
-                    UiScreenHeight - 4,
-                    MenuInfo->MenuFooter,
-                    ATTR(UiMenuFgColor, UiMenuBgColor));
+    if (MenuInfo->MenuFooter)
+    {
+        UiVtbl.DrawText(0,
+                        UiScreenHeight - 4,
+                        MenuInfo->MenuFooter,
+                        ATTR(UiMenuFgColor, UiMenuBgColor));
+    }
 
     //
     // Draw the menu box

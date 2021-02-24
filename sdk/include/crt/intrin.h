@@ -11,6 +11,7 @@
 #if defined(_M_IX86) || defined(_M_X64)
 //#include <immintrin.h>
 //#include <ammintrin.h>
+#include <xmmintrin.h> // native headers: immintrin.h -> wmmintrin.h -> nmmintrin.h -> smmintrin.h -> tmmintrin.h -> pmmintrin.h -> emmintrin.h
 #endif /* _M_IX86 || _M_X64 */
 
 #if defined(_M_IX86)
@@ -77,13 +78,13 @@ unsigned char _interlockedbittestandset(long volatile *, long);
 _Check_return_ unsigned long __cdecl _lrotl(_In_ unsigned long, _In_ int);
 _Check_return_ unsigned long __cdecl _lrotr(_In_ unsigned long, _In_ int);
 _Check_return_ unsigned int __cdecl _rotl(_In_ unsigned int _Value, _In_ int _Shift);
-unsigned short _rotl16(unsigned short _Value, unsigned char _Shift);
+_Check_return_ unsigned short __cdecl _rotl16(_In_ unsigned short _Value, _In_ unsigned char _Shift);
 _Check_return_ unsigned __int64 __cdecl _rotl64(_In_ unsigned __int64 _Value, _In_ int _Shift);
-unsigned char _rotl8(unsigned char _Value, unsigned char _Shift);
+_Check_return_ unsigned char __cdecl _rotl8(_In_ unsigned char _Value, _In_ unsigned char _Shift);
 _Check_return_ unsigned int __cdecl _rotr(_In_ unsigned int _Value, _In_ int _Shift);
-unsigned short _rotr16(unsigned short _Value, unsigned char _Shift);
+_Check_return_ unsigned short __cdecl _rotr16(_In_ unsigned short _Value, _In_ unsigned char _Shift);
 _Check_return_ unsigned __int64 __cdecl _rotr64(_In_ unsigned __int64 _Value, _In_ int _Shift);
-unsigned char _rotr8(unsigned char _Value, unsigned char _Shift);
+_Check_return_ unsigned char __cdecl _rotr8(_In_ unsigned char _Value, _In_ unsigned char _Shift);
 
 #if defined(_M_IX86) || defined(_M_X64)
 
@@ -757,6 +758,8 @@ void __incgsword(unsigned long);
 unsigned __int64 __lzcnt64(unsigned __int64);
 void __movsq(unsigned long long *, unsigned long long const *, size_t);
 __int64 __mulh(__int64, __int64);
+__int64 _mul128(__int64 _Multiplier, __int64 _Multiplicand, __int64 * _HighProduct);
+unsigned __int64 _umul128(unsigned __int64 _Multiplier, unsigned __int64 _Multiplicand, unsigned __int64 * _HighProduct);
 unsigned __int64 __popcnt64(unsigned __int64);
 unsigned __int64 __readcr0(void);
 unsigned __int64 __readcr2(void);
@@ -820,8 +823,6 @@ __int64 _mm_popcnt_u64(unsigned __int64);
 __m128i _mm_set1_epi64x(__int64);
 __m128i _mm_set_epi64x(__int64, __int64);
 void _mm_stream_si64x(__int64 *, __int64);
-__int64 _mul128(__int64 _Multiplier, __int64 _Multiplicand, __int64 * _HighProduct);
-unsigned __int64 _umul128(unsigned __int64 _Multiplier, unsigned __int64 _Multiplicand, unsigned __int64 * _HighProduct);
 #endif
 #endif /* _M_X64 */
 
@@ -1012,7 +1013,7 @@ long _InterlockedIncrement(_Interlocked_operand_ long volatile * _Addend);
 }
 #endif /* __cplusplus */
 
-#if defined(__GNUC__) && defined(_WIN32) // We can't use __MINGW32__ here
+#if (defined(__GNUC__) || defined(__clang__)) && defined(_WIN32) // We can't use __MINGW32__ here
 #  include "mingw32/intrin.h"
 #elif defined(_MSC_VER)
 #  include "msc/intrin.h"

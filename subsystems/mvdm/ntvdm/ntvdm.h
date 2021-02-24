@@ -67,6 +67,7 @@ DWORD WINAPI SetLastConsoleEventActive(VOID);
 #define ADVANCED_DEBUGGING_LEVEL    1
 #endif
 
+#define NULL32 0
 
 /* VARIABLES ******************************************************************/
 
@@ -103,6 +104,7 @@ UpdateVdmMenuDisks(VOID);
 BOOL ConsoleAttach(VOID);
 VOID ConsoleDetach(VOID);
 VOID ConsoleReattach(HANDLE ConOutHandle);
+BOOL IsConsoleHandle(HANDLE hHandle);
 VOID MenuEventHandler(PMENU_EVENT_RECORD MenuEvent);
 VOID FocusEventHandler(PFOCUS_EVENT_RECORD FocusEvent);
 

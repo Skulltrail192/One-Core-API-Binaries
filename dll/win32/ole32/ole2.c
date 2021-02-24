@@ -23,9 +23,30 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
+#define COBJMACROS
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "winreg.h"
+#include "ole2.h"
+#include "ole2ver.h"
+
+#include "compobj_private.h"
 #include "olestd.h"
+#include "wine/list.h"
+
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 WINE_DECLARE_DEBUG_CHANNEL(accel);
@@ -46,6 +67,9 @@ typedef struct tagTrackerWindowInfo
   BOOL       escPressed;
   HWND       curTargetHWND;	/* window the mouse is hovering over */
   IDropTarget* curDragTarget;
+#ifdef __REACTOS__
+  HWND       accepterHWND;
+#endif
   POINTL     curMousePos;       /* current position of the mouse in screen coordinates */
   DWORD      dwKeyState;        /* current state of the shift and ctrl keys and the mouse buttons */
 } TrackerWindowInfo;
@@ -269,6 +293,12 @@ static inline BOOL is_droptarget(HWND hwnd)
     return get_droptarget_handle(hwnd) != 0;
 }
 
+#ifdef __REACTOS__
+static inline BOOL is_acceptfiles(HWND hwnd)
+{
+    return !!(GetWindowLong(hwnd, GWL_EXSTYLE) & WS_EX_ACCEPTFILES);
+}
+#endif
 /*************************************************************
  *           get_droptarget_local_handle
  *
@@ -673,7 +703,7 @@ HRESULT WINAPI OleRegGetUserType(REFCLSID clsid, DWORD form, LPOLESTR *usertype)
   {
     HKEY auxkey;
 
-    sprintfW(auxkeynameW, auxusertypeW, form);
+    swprintf(auxkeynameW, auxusertypeW, form);
     if (COM_OpenKeyForCLSID(clsid, auxkeynameW, KEY_READ, &auxkey) == S_OK)
     {
       if (!RegQueryValueExW(auxkey, emptyW, NULL, &valuetype, NULL, &valuelen) && valuelen)
@@ -748,6 +778,9 @@ HRESULT WINAPI DoDragDrop (
   trackerInfo.escPressed        = FALSE;
   trackerInfo.curTargetHWND     = 0;
   trackerInfo.curDragTarget     = 0;
+#ifdef __REACTOS__
+  trackerInfo.accepterHWND      = NULL;
+#endif
 
   hwndTrackWindow = CreateWindowW(OLEDD_DRAGTRACKERCLASS, trackerW,
                                   WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT,
@@ -859,7 +892,7 @@ HRESULT WINAPI OleRegGetMiscStatus(
   /*
    * Open the key specific to the requested aspect.
    */
-  sprintfW(keyName, dfmtW, dwAspect);
+  swprintf(keyName, dfmtW, dwAspect);
 
   result = open_classes_key(miscStatusKey, keyName, KEY_READ, &aspectKey);
   if (result == ERROR_SUCCESS)
@@ -943,7 +976,7 @@ static HRESULT WINAPI EnumOLEVERB_Next(
         LPWSTR pwszOLEVERB;
         LPWSTR pwszMenuFlags;
         LPWSTR pwszAttribs;
-        LONG res = RegEnumKeyW(This->hkeyVerb, This->index, wszSubKey, sizeof(wszSubKey)/sizeof(wszSubKey[0]));
+        LONG res = RegEnumKeyW(This->hkeyVerb, This->index, wszSubKey, ARRAY_SIZE(wszSubKey));
         if (res == ERROR_NO_MORE_ITEMS)
         {
             hr = S_FALSE;
@@ -978,7 +1011,7 @@ static HRESULT WINAPI EnumOLEVERB_Next(
         }
 
         TRACE("verb string: %s\n", debugstr_w(pwszOLEVERB));
-        pwszMenuFlags = strchrW(pwszOLEVERB, ',');
+        pwszMenuFlags = wcschr(pwszOLEVERB, ',');
         if (!pwszMenuFlags)
         {
             hr = OLEOBJ_E_INVALIDVERB;
@@ -988,7 +1021,7 @@ static HRESULT WINAPI EnumOLEVERB_Next(
         /* nul terminate the name string and advance to first character */
         *pwszMenuFlags = '\0';
         pwszMenuFlags++;
-        pwszAttribs = strchrW(pwszMenuFlags, ',');
+        pwszAttribs = wcschr(pwszMenuFlags, ',');
         if (!pwszAttribs)
         {
             hr = OLEOBJ_E_INVALIDVERB;
@@ -1000,10 +1033,10 @@ static HRESULT WINAPI EnumOLEVERB_Next(
         pwszAttribs++;
 
         /* fill out structure for this verb */
-        rgelt->lVerb = atolW(wszSubKey);
+        rgelt->lVerb = wcstol(wszSubKey, NULL, 10);
         rgelt->lpszVerbName = pwszOLEVERB; /* user should free */
-        rgelt->fuFlags = atolW(pwszMenuFlags);
-        rgelt->grfAttribs = atolW(pwszAttribs);
+        rgelt->fuFlags = wcstol(pwszMenuFlags, NULL, 10);
+        rgelt->grfAttribs = wcstol(pwszAttribs, NULL, 10);
 
         if (pceltFetched)
             (*pceltFetched)++;
@@ -2158,14 +2191,107 @@ static LRESULT WINAPI OLEDD_DragTrackerWindowProc(
   return DefWindowProcW (hwnd, uMsg, wParam, lParam);
 }
 
+#ifdef __REACTOS__
+static HRESULT WINAPI DefaultDragEnter(HWND hwndTarget,
+                                       IDataObject* pDataObj,
+                                       DWORD grfKeyState,
+                                       POINTL pt,
+                                       DWORD* pdwEffect)
+{
+    HRESULT hr;
+    FORMATETC fme;
+
+    ZeroMemory(&fme, sizeof(fme));
+    fme.cfFormat = CF_HDROP;
+    fme.ptd = NULL;
+    fme.dwAspect = DVASPECT_CONTENT;
+    fme.lindex = -1;
+    fme.tymed = TYMED_HGLOBAL;
+    hr = pDataObj->lpVtbl->QueryGetData(pDataObj, &fme);
+
+    *pdwEffect = SUCCEEDED(hr) ? DROPEFFECT_COPY : DROPEFFECT_NONE;
+
+    if (*pdwEffect == DROPEFFECT_NONE)
+        return DRAGDROP_S_CANCEL;
+
+    return S_OK;
+}
+
+static HRESULT WINAPI DefaultDrop(HWND hwndAccepter,
+                                  IDataObject* pDataObj,
+                                  DWORD grfKeyState,
+                                  POINTL pt,
+                                  DWORD* pdwEffect)
+{
+    FORMATETC fme;
+    STGMEDIUM stgm;
+    HRESULT hr;
+    HGLOBAL hGlobal = NULL;
+
+    ZeroMemory(&fme, sizeof(fme));
+    fme.cfFormat = CF_HDROP;
+    fme.ptd = NULL;
+    fme.dwAspect = DVASPECT_CONTENT;
+    fme.lindex = -1;
+    fme.tymed = TYMED_HGLOBAL;
+    hr = pDataObj->lpVtbl->QueryGetData(pDataObj, &fme);
+    if (FAILED(hr))
+        return hr;
+
+    ZeroMemory(&stgm, sizeof(stgm));
+    hr = pDataObj->lpVtbl->GetData(pDataObj, &fme, &stgm);
+    if (SUCCEEDED(hr))
+    {
+        hGlobal = stgm.DUMMYUNIONNAME.hGlobal;
+        if (hGlobal)
+        {
+            if (IsWindowUnicode(hwndAccepter))
+                PostMessageW(hwndAccepter, WM_DROPFILES, (WPARAM)hGlobal, 0);
+            else
+                PostMessageA(hwndAccepter, WM_DROPFILES, (WPARAM)hGlobal, 0);
+        }
+        ReleaseStgMedium(&stgm);
+    }
+
+    return hr;
+}
+#endif
+
 static void drag_enter( TrackerWindowInfo *info, HWND new_target )
 {
     HRESULT hr;
+#ifdef __REACTOS__
+    DWORD dwEffect = *info->pdwEffect;
+#endif
 
     info->curTargetHWND = new_target;
 
+#ifdef __REACTOS__
+    info->accepterHWND = NULL;
+    while (new_target && !is_droptarget( new_target ))
+    {
+        if (is_acceptfiles(new_target))
+        {
+            dwEffect = info->dwOKEffect;
+            hr = DefaultDragEnter(new_target, info->dataObject,
+                                  info->dwKeyState, info->curMousePos,
+                                  &dwEffect);
+            dwEffect &= info->dwOKEffect;
+
+            if (hr == S_OK)
+            {
+                info->accepterHWND = new_target;
+                info->curDragTarget = NULL;
+                *info->pdwEffect = dwEffect;
+                return;
+            }
+        }
+        new_target = GetParent( new_target );
+    }
+#else
     while (new_target && !is_droptarget( new_target ))
         new_target = GetParent( new_target );
+#endif
 
     info->curDragTarget = get_droptarget_pointer( new_target );
 
@@ -2183,6 +2309,9 @@ static void drag_enter( TrackerWindowInfo *info, HWND new_target )
             IDropTarget_Release( info->curDragTarget );
             info->curDragTarget = NULL;
             info->curTargetHWND = NULL;
+#ifdef __REACTOS__
+            info->accepterHWND = NULL;
+#endif
         }
     }
 }
@@ -2215,6 +2344,27 @@ static void drag_end( TrackerWindowInfo *info )
         IDropTarget_Release( info->curDragTarget );
         info->curDragTarget = NULL;
     }
+#ifdef __REACTOS__
+    else if (info->accepterHWND)
+    {
+        if (info->returnValue == DRAGDROP_S_DROP &&
+            *info->pdwEffect != DROPEFFECT_NONE)
+        {
+            *info->pdwEffect = info->dwOKEffect;
+            hr = DefaultDrop(info->accepterHWND, info->dataObject, info->dwKeyState,
+                             info->curMousePos, info->pdwEffect);
+            *info->pdwEffect &= info->dwOKEffect;
+
+            if (FAILED( hr ))
+                info->returnValue = hr;
+        }
+        else
+        {
+            *info->pdwEffect = DROPEFFECT_NONE;
+        }
+        info->accepterHWND = NULL;
+    }
+#endif
     else
         *info->pdwEffect = DROPEFFECT_NONE;
 }
@@ -2225,8 +2375,13 @@ static HRESULT give_feedback( TrackerWindowInfo *info )
     int res;
     HCURSOR cur;
 
+#ifdef __REACTOS__
+    if (info->curDragTarget == NULL && info->accepterHWND == NULL)
+        *info->pdwEffect = DROPEFFECT_NONE;
+#else
     if (info->curDragTarget == NULL)
         *info->pdwEffect = DROPEFFECT_NONE;
+#endif
 
     hr = IDropSource_GiveFeedback( info->dropSource, *info->pdwEffect );
 
@@ -2285,6 +2440,9 @@ static void OLEDD_TrackStateChange(TrackerWindowInfo* trackerInfo)
       trackerInfo->curDragTarget = NULL;
       trackerInfo->curTargetHWND = NULL;
     }
+#ifdef __REACTOS__
+    trackerInfo->accepterHWND = NULL;
+#endif
 
     if (hwndNewTarget)
       drag_enter( trackerInfo, hwndNewTarget );
@@ -2304,6 +2462,12 @@ static void OLEDD_TrackStateChange(TrackerWindowInfo* trackerInfo)
                            trackerInfo->pdwEffect);
       *trackerInfo->pdwEffect &= trackerInfo->dwOKEffect;
     }
+#ifdef __REACTOS__
+    else if (trackerInfo->accepterHWND)
+    {
+      *trackerInfo->pdwEffect = trackerInfo->dwOKEffect;
+    }
+#endif
     give_feedback( trackerInfo );
   }
   else
@@ -2385,7 +2549,7 @@ static void OLEUTL_ReadRegistryDWORDValue(
       case REG_EXPAND_SZ:
       case REG_MULTI_SZ:
       case REG_SZ:
-	*pdwValue = (DWORD)strtoulW(buffer, NULL, 10);
+	*pdwValue = wcstoul(buffer, NULL, 10);
 	break;
     }
   }
@@ -2577,7 +2741,7 @@ HRESULT WINAPI OleSetAutoConvert(REFCLSID clsidOld, REFCLSID clsidNew)
     if (FAILED(res))
         goto done;
     StringFromGUID2(clsidNew, szClsidNew, CHARS_IN_GUID);
-    if (RegSetValueW(hkey, wszAutoConvertTo, REG_SZ, szClsidNew, (strlenW(szClsidNew)+1) * sizeof(WCHAR)))
+    if (RegSetValueW(hkey, wszAutoConvertTo, REG_SZ, szClsidNew, (lstrlenW(szClsidNew)+1) * sizeof(WCHAR)))
     {
         res = REGDB_E_WRITEREGDB;
 	goto done;
@@ -2773,6 +2937,25 @@ static inline HRESULT PROPVARIANT_ValidateType(VARTYPE vt)
     case VT_FILETIME|VT_VECTOR:
     case VT_CF|VT_VECTOR:
     case VT_CLSID|VT_VECTOR:
+    case VT_ARRAY|VT_I1:
+    case VT_ARRAY|VT_UI1:
+    case VT_ARRAY|VT_I2:
+    case VT_ARRAY|VT_UI2:
+    case VT_ARRAY|VT_I4:
+    case VT_ARRAY|VT_UI4:
+    case VT_ARRAY|VT_INT:
+    case VT_ARRAY|VT_UINT:
+    case VT_ARRAY|VT_R4:
+    case VT_ARRAY|VT_R8:
+    case VT_ARRAY|VT_CY:
+    case VT_ARRAY|VT_DATE:
+    case VT_ARRAY|VT_BSTR:
+    case VT_ARRAY|VT_BOOL:
+    case VT_ARRAY|VT_DECIMAL:
+    case VT_ARRAY|VT_DISPATCH:
+    case VT_ARRAY|VT_UNKNOWN:
+    case VT_ARRAY|VT_ERROR:
+    case VT_ARRAY|VT_VARIANT:
         return S_OK;
     }
     WARN("Bad type %d\n", vt);
@@ -2884,6 +3067,8 @@ HRESULT WINAPI PropVariantClear(PROPVARIANT * pvar) /* [in/out] */
                 CoTaskMemFree(pvar->u.capropvar.pElems);
             }
         }
+        else if (pvar->vt & VT_ARRAY)
+            hr = SafeArrayDestroy(pvar->u.parray);
         else
         {
             WARN("Invalid/unsupported type %d\n", pvar->vt);
@@ -3063,6 +3248,11 @@ HRESULT WINAPI PropVariantCopy(PROPVARIANT *pvarDest,      /* [out] */
             }
             else
                 CopyMemory(pvarDest->u.capropvar.pElems, pvarSrc->u.capropvar.pElems, len * elemSize);
+        }
+        else if (pvarSrc->vt & VT_ARRAY)
+        {
+            pvarDest->u.uhVal.QuadPart = 0;
+            return SafeArrayCopy(pvarSrc->u.parray, &pvarDest->u.parray);
         }
         else
             WARN("Invalid/unsupported type %d\n", pvarSrc->vt);

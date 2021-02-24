@@ -1,4 +1,10 @@
-/* Spanish translation by Ismael Ferreras Morezuelas (2014-12-30) */
+/*
+ * PROJECT:     ReactOS Internet Options dialog
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     Spanish language file ...
+ * COPYRIGHT:   Ismael Ferreras Morezuelas (2014-12-30)
+ *              Julio Carchi Ruiz (2018-10-19)
+ */
 LANGUAGE LANG_SPANISH, SUBLANG_NEUTRAL
 
 STRINGTABLE
@@ -92,4 +98,23 @@ BEGIN
     PUSHBUTTON  "Certificados...", IDC_CERT, 146, 34, 80, 14
     PUSHBUTTON	"Autoridades...", IDC_CERT_PUBLISHER, 230, 34, 80, 14
 
+END
+
+/* "Connections" propsheet */
+IDD_CONNECTIONS DIALOG 0, 0, 320, 220
+STYLE WS_CAPTION | WS_CHILD | WS_DISABLED
+FONT 8, "MS Shell Dlg"
+CAPTION "Conexiones"
+BEGIN
+    GROUPBOX        "Configuración automática", IDC_STATIC, 4, 4, 312, 56
+    AUTOCHECKBOX    "Usar autodescubrimiento de Proxy (WPAD)", IDC_USE_WPAD, 10, 14, 300, 14, BS_TOP
+    AUTOCHECKBOX    "Usar autoconfiguración de Proxy (PAC)", IDC_USE_PAC_SCRIPT, 10, 28, 300, 14, BS_TOP
+    LTEXT           "Dirección:", IDC_STATIC, 10, 42, 40, 14
+    EDITTEXT        IDC_EDIT_PAC_SCRIPT, 50, 42, 160, 14, WS_VISIBLE | ES_AUTOHSCROLL | WS_DISABLED
+    GROUPBOX        "Servidor Proxy", IDC_STATIC, 4, 66, 312, 42
+    AUTOCHECKBOX    "Usar un servidor Proxy", IDC_USE_PROXY_SERVER, 10, 76, 200, 14, BS_TOP | BS_MULTILINE
+    LTEXT           "Dirección:", IDC_STATIC, 10, 90, 40, 14
+    EDITTEXT        IDC_EDIT_PROXY_SERVER, 50, 90, 80, 14, WS_VISIBLE | ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "Puerto:", IDC_STATIC, 140, 90, 30, 14
+    EDITTEXT        IDC_EDIT_PROXY_PORT, 170, 90, 40, 14, WS_VISIBLE | ES_AUTOHSCROLL | WS_DISABLED | ES_NUMBER
 END

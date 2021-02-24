@@ -210,9 +210,7 @@ UserSendMouseInput(MOUSEINPUT *pmi, BOOL bInjected)
     Msg.time = pmi->time;
     if (!Msg.time)
     {
-        LARGE_INTEGER LargeTickCount;
-        KeQueryTickCount(&LargeTickCount);
-        Msg.time = MsqCalculateMessageTime(&LargeTickCount);
+        Msg.time = EngGetTickCount32();
     }
 
     /* Do GetMouseMovePointsEx FIFO. */
@@ -228,6 +226,16 @@ UserSendMouseInput(MOUSEINPUT *pmi, BOOL bInjected)
     {
         UserSetCursorPos(ptCursor.x, ptCursor.y, bInjected, pmi->dwExtraInfo, TRUE);
     }
+
+    if (IS_KEY_DOWN(gafAsyncKeyState, VK_SHIFT))
+        pCurInfo->ButtonsDown |= MK_SHIFT;
+    else
+        pCurInfo->ButtonsDown &= ~MK_SHIFT;
+
+    if (IS_KEY_DOWN(gafAsyncKeyState, VK_CONTROL))
+        pCurInfo->ButtonsDown |= MK_CONTROL;
+    else
+        pCurInfo->ButtonsDown &= ~MK_CONTROL;
 
     /* Left button */
     if (dwFlags & MOUSEEVENTF_LEFTDOWN)
@@ -340,6 +348,26 @@ UserSendMouseInput(MOUSEINPUT *pmi, BOOL bInjected)
     }
 
     return TRUE;
+}
+
+VOID
+FASTCALL
+IntRemoveTrackMouseEvent(
+    PDESKTOP pDesk)
+{
+    /* Generate a leave message */
+    if (pDesk->dwDTFlags & DF_TME_LEAVE)
+    {
+        UINT uMsg = (pDesk->htEx != HTCLIENT) ? WM_NCMOUSELEAVE : WM_MOUSELEAVE;
+        UserPostMessage(UserHMGetHandle(pDesk->spwndTrack), uMsg, 0, 0);
+    }
+    /* Kill the timer */
+    if (pDesk->dwDTFlags & DF_TME_HOVER)
+        IntKillTimer(pDesk->spwndTrack, ID_EVENT_SYSTIMER_MOUSEHOVER, TRUE);
+
+    /* Reset state */
+    pDesk->dwDTFlags &= ~(DF_TME_LEAVE|DF_TME_HOVER);
+    pDesk->spwndTrack = NULL;
 }
 
 BOOL

@@ -205,6 +205,9 @@ CsrLoadServerDll(IN PCHAR DllString,
     else
     {
         /* No handle, so we are loading ourselves */
+#ifdef CSR_DBG
+        RtlInitAnsiString(&EntryPointString, "CsrServerDllInitialization");
+#endif
         ServerDllInitProcedure = CsrServerDllInitialization;
         Status = STATUS_SUCCESS;
     }
@@ -212,8 +215,21 @@ CsrLoadServerDll(IN PCHAR DllString,
     /* Check if we got the pointer, and call it */
     if (NT_SUCCESS(Status))
     {
-        /* Get the result from the Server DLL */
-        Status = ServerDllInitProcedure(ServerDll);
+        /* Call the Server DLL entrypoint */
+        _SEH2_TRY
+        {
+            Status = ServerDllInitProcedure(ServerDll);
+        }
+        _SEH2_EXCEPT(CsrUnhandledExceptionFilter(_SEH2_GetExceptionInformation()))
+        {
+            Status = _SEH2_GetExceptionCode();
+#ifdef CSR_DBG
+            DPRINT1("CSRSS: Exception 0x%lx while calling Server DLL entrypoint %Z!%Z()\n",
+                    Status, &DllName, &EntryPointString);
+#endif
+        }
+        _SEH2_END;
+
         if (NT_SUCCESS(Status))
         {
             /*
@@ -338,7 +354,7 @@ CsrSrvCreateSharedSection(IN PCHAR ParameterValue)
     ULONG Size;
     NTSTATUS Status;
     LARGE_INTEGER SectionSize;
-    ULONG ViewSize = 0;
+    SIZE_T ViewSize = 0;
     PPEB Peb = NtCurrentPeb();
 
     /* If there's no parameter, fail */
@@ -457,7 +473,7 @@ CsrSrvAttachSharedSection(IN PCSR_PROCESS CsrProcess OPTIONAL,
                           OUT PCSR_API_CONNECTINFO ConnectInfo)
 {
     NTSTATUS Status;
-    ULONG ViewSize = 0;
+    SIZE_T ViewSize = 0;
 
     /* Check if we have a process */
     if (CsrProcess)

@@ -113,7 +113,7 @@
 114 stdcall Control_RunDLLA(ptr ptr str long)
 115 stdcall Control_RunDLLAsUserW(ptr ptr wstr long)
 116 stdcall Control_RunDLLW(ptr ptr wstr long)
-@ stdcall DllCanUnloadNow()
+@ stdcall -private DllCanUnloadNow()
 @ stdcall -private DllGetClassObject(ptr ptr ptr)
 119 stdcall IsLFNDrive(ptr) IsLFNDriveAW
 @ stdcall -private DllGetVersion(ptr)
@@ -464,11 +464,3 @@
 754 stub -noname SHLimitInputEditWithFlags
 755 stdcall -noname PathIsEqualOrSubFolder(wstr wstr)
 756 stub -noname DeleteFileThumbnail
-
-@ stdcall SHGetIDListFromObject(ptr ptr)
-@ stdcall SHCreateShellItemArray(ptr ptr long ptr ptr)
-@ stdcall SHCreateShellItemArrayFromShellItem(ptr long ptr)
-@ stub SHGetKnownFolderPath
-@ stub SHSetKnownFolderPath
-@ stub GetCurrentProcessExplicitAppUserModelID
-@ stub SetCurrentProcessExplicitAppUserModelID

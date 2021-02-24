@@ -148,6 +148,8 @@ LRESULT CSelectionWindow::OnLButtonDown(UINT nMsg, WPARAM wParam, LPARAM lParam,
         SetCursor(LoadCursor(NULL, m_lpszCursorLUT[m_iAction]));
     m_bMoving = TRUE;
     scrlClientWindow.InvalidateRect(NULL, TRUE);
+    scrlClientWindow.SendMessage(WM_PAINT, 0, 0);
+    imageArea.InvalidateRect(NULL, FALSE);
     imageArea.SendMessage(WM_PAINT, 0, 0);
     return 0;
 }
@@ -174,7 +176,7 @@ LRESULT CSelectionWindow::OnMouseMove(UINT nMsg, WPARAM wParam, LPARAM lParam, B
         selectionModel.ModifyDestRect(m_ptDelta, m_iAction);
 
         CString strSize;
-        strSize.Format(_T("%d x %d"), selectionModel.GetDestRectWidth(), selectionModel.GetDestRectHeight());
+        strSize.Format(_T("%ld x %ld"), selectionModel.GetDestRectWidth(), selectionModel.GetDestRectHeight());
         SendMessage(hStatusBar, SB_SETTEXT, 2, (LPARAM) (LPCTSTR) strSize);
 
         if (toolsModel.GetActiveTool() == TOOL_TEXT)

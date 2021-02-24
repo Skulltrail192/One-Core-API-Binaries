@@ -16,6 +16,8 @@
 #include <wchar.h>
 #include <commctrl.h>
 #include <cpl.h>
+#include <debug.h>
+#include <strsafe.h>
 
 #include "resource.h"
 
@@ -23,7 +25,6 @@
 #define MAX_VALUE_NAME 16383
 #define SERVERLISTSIZE 6
 #define BUFSIZE 1024
-#define NTPPORT 123
 #define ID_TIMER 1
 
 typedef struct
@@ -33,6 +34,15 @@ typedef struct
   UINT idDescription;
   APPLET_PROC AppletProc;
 } APPLET, *PAPPLET;
+
+typedef struct
+{
+    WCHAR szSyncSuc[BUFSIZE];
+    WCHAR szSyncWait[BUFSIZE];
+    WCHAR szSyncErr[BUFSIZE];
+    WCHAR szSyncType[BUFSIZE];
+    WCHAR szSyncInit[BUFSIZE];
+} SYNC_STATUS, *PSYNC_STATUS;
 
 extern HINSTANCE hApplet;
 
@@ -65,33 +75,6 @@ VOID DisplayWin32Error(DWORD dwErrorCode);
 
 BOOL RegisterClockControl(VOID);
 VOID UnregisterClockControl(VOID);
-
-
-/* ntpclient.c */
-// NTP timestamp
-typedef struct _TIMEPACKET
-{
-  DWORD dwInteger;
-  DWORD dwFractional;
-} TIMEPACKET, *PTIMEPACKET;
-
-// NTP packet
-typedef struct _NTPPACKET
-{
-  BYTE LiVnMode;
-  BYTE Stratum;
-  char Poll;
-  char Precision;
-  long RootDelay;
-  long RootDispersion;
-  char ReferenceID[4];
-  TIMEPACKET ReferenceTimestamp;
-  TIMEPACKET OriginateTimestamp;
-  TIMEPACKET ReceiveTimestamp;
-  TIMEPACKET TransmitTimestamp;
-}NTPPACKET, *PNTPPACKET;
-
-ULONG GetServerTime(LPWSTR lpAddress);
 
 
 /* monthcal.c */

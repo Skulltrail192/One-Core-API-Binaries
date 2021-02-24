@@ -675,7 +675,7 @@
 666 stdcall ShowStartGlass(long)
 667 stdcall ShowWindow(long long) NtUserShowWindow
 668 stdcall ShowWindowAsync(long long) NtUserShowWindowAsync
-669 stdcall SoftModalMessageBox(long)
+669 stdcall SoftModalMessageBox(ptr)
 670 stdcall SubtractRect(ptr ptr ptr)
 671 stdcall SwapMouseButton(long)
 672 stdcall SwitchDesktop(long) NtUserSwitchDesktop
@@ -719,7 +719,7 @@
 710 stdcall User32InitializeImmEntryTable(ptr)
 711 stdcall UserClientDllInitialize(long long ptr) DllMain
 712 stdcall UserHandleGrantAccess(ptr ptr long) NtUserUserHandleGrantAccess
-713 stdcall UserLpkPSMTextOut(long long long long long long)
+713 stdcall UserLpkPSMTextOut(long long long wstr long long)
 714 stdcall UserLpkTabbedTextOut(long long long long long long long long long long long long)
 715 stdcall UserRealizePalette(long)
 716 stdcall UserRegisterWowHandlers(ptr ptr)
@@ -748,40 +748,3 @@
 739 varargs wsprintfW(wstr wstr)
 740 stdcall wvsprintfA(ptr str ptr)
 741 stdcall wvsprintfW(ptr wstr ptr)
-
-
-#Vista Functions
-@ stub CancelShutdown
-@ stub CreateWindowInBand
-@ stub IsThreadDesktopComposited
-@ stub SetWindowCompositionAttribute
-@ stub SwitchDesktopWithFade
-@ stub GetWindowBand
-@ stub GetWindowDisplayAffinity
-@ stub LogicalToPhysicalPoint
-@ stub SetWindowDisplayAffinity
-@ stub WindowFromPhysicalPoint
-@ stub SoundSentry
-@ stub DisplayConfigGetDeviceInfo
-@ stub DisplayConfigSetDeviceInfo
-@ stub GetDisplayConfigBufferSizes
-@ stub IsProcessDPIAware
-@ stub QueryDisplayConfig
-@ stub SetProcessDPIAware
-
-@ stub RegisterSessionPort
-@ stub UnregisterSessionPort
-@ stub EnableMouseInPointer
-@ stub GetCurrentInputMessageSource
-@ stub GetPointerDevices
-
-@ stub GetPhysicalCursorPos
-@ stub SetPhysicalCursorPos
-@ stub GetGestureConfig
-@ stub GetGestureInfo
-@ stub IsTouchWindow
-@ stub GetDpiForMonitorInternal
-@ stub ShutdownBlockReasonCreate
-@ stub ShutdownBlockReasonDestroy
-@ stub SetCoalescableTimer
-@ stub GetTouchInputInfo

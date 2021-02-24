@@ -1,8 +1,9 @@
 /**
  * \file bn_mul.h
  *
- * \brief  Multi-precision integer library
- *
+ * \brief Multi-precision integer library
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: GPL-2.0
  *
@@ -39,6 +40,12 @@
 #ifndef MBEDTLS_BN_MUL_H
 #define MBEDTLS_BN_MUL_H
 
+#if !defined(MBEDTLS_CONFIG_FILE)
+#include "config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
+
 #include "bignum.h"
 
 #if defined(MBEDTLS_HAVE_ASM)
@@ -50,7 +57,14 @@
 /* armcc5 --gnu defines __GNUC__ but doesn't support GNU's extended asm */
 #if defined(__GNUC__) && \
     ( !defined(__ARMCC_VERSION) || __ARMCC_VERSION >= 6000000 )
-#if defined(__i386__)
+
+/*
+ * Disable use of the i386 assembly code below if option -O0, to disable all
+ * compiler optimisations, is passed, detected with __OPTIMIZE__
+ * This is done as the number of registers used in the assembly code doesn't
+ * work with the -O0 option.
+ */
+#if defined(__i386__) && defined(__OPTIMIZE__)
 
 #define MULADDC_INIT                        \
     asm(                                    \
@@ -143,7 +157,7 @@
         "movl   %%esi, %3       \n\t"   \
         : "=m" (t), "=m" (c), "=m" (d), "=m" (s)        \
         : "m" (t), "m" (s), "m" (d), "m" (c), "m" (b)   \
-        : "eax", "ecx", "edx", "esi", "edi"             \
+        : "eax", "ebx", "ecx", "edx", "esi", "edi"      \
     );
 
 #else
@@ -155,7 +169,7 @@
         "movl   %%esi, %3       \n\t"   \
         : "=m" (t), "=m" (c), "=m" (d), "=m" (s)        \
         : "m" (t), "m" (s), "m" (d), "m" (c), "m" (b)   \
-        : "eax", "ecx", "edx", "esi", "edi"             \
+        : "eax", "ebx", "ecx", "edx", "esi", "edi"      \
     );
 #endif /* SSE2 */
 #endif /* i386 */
@@ -164,19 +178,19 @@
 
 #define MULADDC_INIT                        \
     asm(                                    \
-        "xorq   %%r8, %%r8          \n\t"
+        "xorq   %%r8, %%r8\n"
 
 #define MULADDC_CORE                        \
-        "movq   (%%rsi), %%rax      \n\t"   \
-        "mulq   %%rbx               \n\t"   \
-        "addq   $8,      %%rsi      \n\t"   \
-        "addq   %%rcx,   %%rax      \n\t"   \
-        "movq   %%r8,    %%rcx      \n\t"   \
-        "adcq   $0,      %%rdx      \n\t"   \
-        "nop                        \n\t"   \
-        "addq   %%rax,   (%%rdi)    \n\t"   \
-        "adcq   %%rdx,   %%rcx      \n\t"   \
-        "addq   $8,      %%rdi      \n\t"
+        "movq   (%%rsi), %%rax\n"           \
+        "mulq   %%rbx\n"                    \
+        "addq   $8, %%rsi\n"                \
+        "addq   %%rcx, %%rax\n"             \
+        "movq   %%r8, %%rcx\n"              \
+        "adcq   $0, %%rdx\n"                \
+        "nop    \n"                         \
+        "addq   %%rax, (%%rdi)\n"           \
+        "adcq   %%rdx, %%rcx\n"             \
+        "addq   $8, %%rdi\n"
 
 #define MULADDC_STOP                        \
         : "+c" (c), "+D" (d), "+S" (s)      \
@@ -522,7 +536,7 @@
         "swi   r3,   %2         \n\t"   \
         : "=m" (c), "=m" (d), "=m" (s)              \
         : "m" (s), "m" (d), "m" (c), "m" (b)        \
-        : "r3", "r4"  "r5", "r6", "r7", "r8",       \
+        : "r3", "r4", "r5", "r6", "r7", "r8",       \
           "r9", "r10", "r11", "r12", "r13"          \
     );
 
@@ -728,7 +742,7 @@
         "sw     $10, %2         \n\t"   \
         : "=m" (c), "=m" (d), "=m" (s)                      \
         : "m" (s), "m" (d), "m" (c), "m" (b)                \
-        : "$9", "$10", "$11", "$12", "$13", "$14", "$15"    \
+        : "$9", "$10", "$11", "$12", "$13", "$14", "$15", "lo", "hi" \
     );
 
 #endif /* MIPS */

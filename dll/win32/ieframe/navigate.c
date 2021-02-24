@@ -16,9 +16,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#ifdef __REACTOS__
+#include <wchar.h>
+#endif
+
+#define NONAMELESSUNION
+
 #include "ieframe.h"
 
-#include <wininet.h>
+#include "exdispid.h"
+#include "shellapi.h"
+#include "winreg.h"
+#include "shlwapi.h"
+#include "wininet.h"
+#include "mshtml.h"
+#include "perhist.h"
+#include "resource.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(ieframe);
 
 static const WCHAR emptyW[] = {0};
 
@@ -98,7 +115,7 @@ static void set_status_text(BindStatusCallback *This, ULONG statuscode, LPCWSTR 
         fmt[0] = 0;
         /* the format string must have one "%s" for the str */
         LoadStringW(ieframe_instance, IDS_STATUSFMT_FIRST + statuscode, fmt, IDS_STATUSFMT_MAXLEN);
-        snprintfW(buffer, sizeof(buffer)/sizeof(WCHAR), fmt, str);
+        swprintf(buffer, fmt, str);
     }
 
     V_VT(&arg) = VT_BSTR;
@@ -137,6 +154,7 @@ void notify_download_state(DocHost *dochost, BOOL is_downloading)
 {
     DISPPARAMS dwl_dp = {NULL};
     TRACE("(%x)\n", is_downloading);
+    dochost->busy = is_downloading ? VARIANT_TRUE : VARIANT_FALSE;
     call_sink(dochost->cps.wbe2, is_downloading ? DISPID_DOWNLOADBEGIN : DISPID_DOWNLOADCOMPLETE, &dwl_dp);
 }
 
@@ -452,7 +470,7 @@ static HRESULT WINAPI HttpNegotiate_BeginningTransaction(IHttpNegotiate *iface,
           dwReserved, pszAdditionalHeaders);
 
     if(This->headers) {
-        int size = (strlenW(This->headers)+1)*sizeof(WCHAR);
+        int size = (lstrlenW(This->headers)+1)*sizeof(WCHAR);
         *pszAdditionalHeaders = CoTaskMemAlloc(size);
         memcpy(*pszAdditionalHeaders, This->headers, size);
     }
@@ -563,14 +581,12 @@ static void on_before_navigate2(DocHost *This, LPCWSTR url, SAFEARRAY *post_data
     DISPPARAMS dispparams;
     VARIANTARG params[7];
     WCHAR file_path[MAX_PATH];
-    DWORD file_path_len = sizeof(file_path) / sizeof(*file_path);
+    DWORD file_path_len = ARRAY_SIZE(file_path);
 
     dispparams.cArgs = 7;
     dispparams.cNamedArgs = 0;
     dispparams.rgdispidNamedArgs = NULL;
     dispparams.rgvarg = params;
-
-    This->busy = VARIANT_TRUE;
 
     V_VT(params) = VT_BOOL|VT_BYREF;
     V_BOOLREF(params) = cancel;
@@ -629,7 +645,7 @@ static BOOL try_application_url(LPCWSTR url)
 
     static const WCHAR wszURLProtocol[] = {'U','R','L',' ','P','r','o','t','o','c','o','l',0};
 
-    hres = CoInternetParseUrl(url, PARSE_SCHEMA, 0, app, sizeof(app)/sizeof(WCHAR), NULL, 0);
+    hres = CoInternetParseUrl(url, PARSE_SCHEMA, 0, app, ARRAY_SIZE(app), NULL, 0);
     if(FAILED(hres))
         return FALSE;
 
@@ -661,7 +677,7 @@ static HRESULT create_moniker(LPCWSTR url, IMoniker **mon)
     if(PathIsURLW(url))
         return CreateURLMoniker(NULL, url, mon);
 
-    size = sizeof(new_url)/sizeof(WCHAR);
+    size = ARRAY_SIZE(new_url);
     hres = UrlApplySchemeW(url, new_url, &size, URL_APPLY_GUESSSCHEME | URL_APPLY_GUESSFILE | URL_APPLY_DEFAULT);
     TRACE("was %s got %s\n", debugstr_w(url), debugstr_w(new_url));
     if(FAILED(hres)) {
@@ -875,6 +891,8 @@ static HRESULT navigate_bsc(DocHost *This, BindStatusCallback *bsc, IMoniker *mo
     }
 
     notify_download_state(This, TRUE);
+    This->busy = VARIANT_FALSE;
+
     on_commandstate_change(This, CSC_NAVIGATEBACK, FALSE);
     on_commandstate_change(This, CSC_NAVIGATEFORWARD, FALSE);
 
@@ -965,7 +983,7 @@ HRESULT navigate_url(DocHost *This, LPCWSTR url, const VARIANT *Flags,
         }else {
             DWORD size;
 
-            size = sizeof(new_url)/sizeof(WCHAR);
+            size = ARRAY_SIZE(new_url);
             hres = UrlApplySchemeW(url, new_url, &size,
                     URL_APPLY_GUESSSCHEME | URL_APPLY_GUESSFILE | URL_APPLY_DEFAULT);
             if(FAILED(hres)) {

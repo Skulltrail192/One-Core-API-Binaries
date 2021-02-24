@@ -20,8 +20,27 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <limits.h>
+
+#define COBJMACROS
+#define NONAMELESSUNION
+#define NONAMELESSSTRUCT
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winerror.h"
+#include "objbase.h"
+#include "ole2.h"
+
 #include "storage32.h"
+
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(storage);
 
@@ -97,7 +116,7 @@ HRESULT FileLockBytesImpl_Construct(HANDLE hFile, DWORD openFlags, LPCWSTR pwcsN
        HeapFree(GetProcessHeap(), 0, This);
        return E_OUTOFMEMORY;
     }
-    strcpyW(This->pwcsName, fullpath);
+    lstrcpyW(This->pwcsName, fullpath);
   }
   else
     This->pwcsName = NULL;
@@ -356,7 +375,7 @@ static HRESULT WINAPI FileLockBytesImpl_Stat(ILockBytes* iface,
         pstatstg->pwcsName =
           CoTaskMemAlloc((lstrlenW(This->pwcsName)+1)*sizeof(WCHAR));
 
-        strcpyW(pstatstg->pwcsName, This->pwcsName);
+        lstrcpyW(pstatstg->pwcsName, This->pwcsName);
     }
     else
         pstatstg->pwcsName = NULL;

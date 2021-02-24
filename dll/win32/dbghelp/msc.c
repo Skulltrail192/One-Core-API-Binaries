@@ -32,9 +32,29 @@
  *	Add symbol size to internal symbol table.
  */
 
-#include "dbghelp_private.h"
+#define NONAMELESSUNION
 
-#include <wine/exception.h>
+#include "config.h"
+#include "wine/port.h"
+
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <string.h>
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+
+#include <stdarg.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winternl.h"
+
+#include "wine/exception.h"
+#include "wine/debug.h"
+#include "dbghelp_private.h"
+#include "wine/mscvpdb.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(dbghelp_msc);
 
@@ -2047,20 +2067,22 @@ static BOOL codeview_snarf_public(const struct msc_debug_info* msc_dbg, const BY
 
         switch (sym->generic.id)
         {
-	case S_PUB_V1: /* FIXME is this really a 'data_v1' structure ?? */
+	case S_PUB_V1:
             if (!(dbghelp_options & SYMOPT_NO_PUBLICS))
             {
                 symt_new_public(msc_dbg->module, compiland,
-                                terminate_string(&sym->data_v1.p_name),
-                                codeview_get_address(msc_dbg, sym->data_v1.segment, sym->data_v1.offset), 1);
+                                terminate_string(&sym->public_v1.p_name),
+                                sym->public_v1.symtype == SYMTYPE_FUNCTION,
+                                codeview_get_address(msc_dbg, sym->public_v1.segment, sym->public_v1.offset), 1);
             }
             break;
-	case S_PUB_V2: /* FIXME is this really a 'data_v2' structure ?? */
+	case S_PUB_V2:
             if (!(dbghelp_options & SYMOPT_NO_PUBLICS))
             {
                 symt_new_public(msc_dbg->module, compiland,
-                                terminate_string(&sym->data_v2.p_name),
-                                codeview_get_address(msc_dbg, sym->data_v2.segment, sym->data_v2.offset), 1);
+                                terminate_string(&sym->public_v2.p_name),
+                                sym->public_v3.symtype == SYMTYPE_FUNCTION,
+                                codeview_get_address(msc_dbg, sym->public_v2.segment, sym->public_v2.offset), 1);
             }
 	    break;
 
@@ -2068,8 +2090,9 @@ static BOOL codeview_snarf_public(const struct msc_debug_info* msc_dbg, const BY
             if (!(dbghelp_options & SYMOPT_NO_PUBLICS))
             {
                 symt_new_public(msc_dbg->module, compiland,
-                                sym->data_v3.name,
-                                codeview_get_address(msc_dbg, sym->data_v3.segment, sym->data_v3.offset), 1);
+                                sym->public_v3.name,
+                                sym->public_v3.symtype == SYMTYPE_FUNCTION,
+                                codeview_get_address(msc_dbg, sym->public_v3.segment, sym->public_v3.offset), 1);
             }
             break;
         case S_PUB_FUNC1_V3:
@@ -2430,11 +2453,11 @@ static HANDLE map_pdb_file(const struct process* pcs,
     switch (lookup->kind)
     {
     case PDB_JG:
-        ret = path_find_symbol_file(pcs, lookup->filename, NULL, lookup->timestamp,
+        ret = path_find_symbol_file(pcs, module, lookup->filename, NULL, lookup->timestamp,
                                     lookup->age, dbg_file_path, &module->module.PdbUnmatched);
         break;
     case PDB_DS:
-        ret = path_find_symbol_file(pcs, lookup->filename, &lookup->guid, 0,
+        ret = path_find_symbol_file(pcs, module, lookup->filename, &lookup->guid, 0,
                                     lookup->age, dbg_file_path, &module->module.PdbUnmatched);
         break;
     }
@@ -2865,7 +2888,7 @@ static BOOL pdb_process_file(const struct process* pcs,
     if (ret)
     {
         struct pdb_module_info*     pdb_info = msc_dbg->module->format_info[DFI_PDB]->u.pdb_info;
-        msc_dbg->module->module.SymType = SymCv;
+        msc_dbg->module->module.SymType = SymPdb;
         if (pdb_info->pdb_files[0].kind == PDB_JG)
             msc_dbg->module->module.PdbSig = pdb_info->pdb_files[0].u.jg.timestamp;
         else

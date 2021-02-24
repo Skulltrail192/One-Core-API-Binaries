@@ -18,7 +18,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
 #include "qmgr.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(qmgr);
 
 BOOL transitionJobState(BackgroundCopyJobImpl *job, BG_JOB_STATE from, BG_JOB_STATE to)
 {
@@ -592,7 +599,7 @@ static HRESULT WINAPI BackgroundCopyJob_SetDescription(
 
     if (!Val) return E_INVALIDARG;
 
-    len = strlenW(Val);
+    len = lstrlenW(Val);
     if (len > max_description_len) return BG_E_STRING_TOO_LONG;
 
     EnterCriticalSection(&This->cs);
@@ -605,7 +612,7 @@ static HRESULT WINAPI BackgroundCopyJob_SetDescription(
     {
         HeapFree(GetProcessHeap(), 0, This->description);
         if ((This->description = HeapAlloc(GetProcessHeap(), 0, (len+1)*sizeof(WCHAR))))
-            strcpyW(This->description, Val);
+            lstrcpyW(This->description, Val);
         else
             hr = E_OUTOFMEMORY;
     }

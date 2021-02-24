@@ -9,13 +9,13 @@
 /* INCLUDES ***************************************************************/
 
 #include <freeldr.h>
-
 #include <ndk/asm.h>
+#include "../../winldr.h"
+
 #include <debug.h>
+DBG_DEFAULT_CHANNEL(WINDOWS);
 
 //extern ULONG LoaderPagesSpanned;
-
-DBG_DEFAULT_CHANNEL(WINDOWS);
 
 /* GLOBALS ***************************************************************/
 
@@ -325,14 +325,14 @@ VOID
 Amd64SetupIdt(PVOID IdtBase)
 {
     KDESCRIPTOR IdtDesc, OldIdt;
-    ULONG Size;
+    //ULONG Size;
     TRACE("Amd64SetupIdt(IdtBase = %p)\n", IdtBase);
 
     /* Get old IDT */
     __sidt(&OldIdt.Limit);
 
     /* Copy the old IDT */
-    Size =  min(OldIdt.Limit + 1, NUM_IDT * sizeof(KIDTENTRY));
+    //Size =  min(OldIdt.Limit + 1, NUM_IDT * sizeof(KIDTENTRY));
     //RtlCopyMemory(IdtBase, (PVOID)OldIdt.Base, Size);
 
     /* Setup the new IDT descriptor */

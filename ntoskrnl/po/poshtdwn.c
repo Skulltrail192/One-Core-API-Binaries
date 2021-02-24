@@ -12,8 +12,11 @@
 #ifdef NEWCC
 #include <cache/newcc.h>
 #endif
+
 #define NDEBUG
 #include <debug.h>
+
+#include "inbv/logo.h"
 
 /* GLOBALS *******************************************************************/
 
@@ -135,7 +138,7 @@ PopProcessShutDownLists(VOID)
 
         /* Wait for the thread to finish and dereference it */
         KeWaitForSingleObject(ShutDownWaitEntry->Thread, 0, 0, 0, 0);
-        ObfDereferenceObject(ShutDownWaitEntry->Thread);
+        ObDereferenceObject(ShutDownWaitEntry->Thread);
 
         /* Finally free the entry */
         ExFreePoolWithTag(ShutDownWaitEntry, 'LSoP');
@@ -159,17 +162,17 @@ PopShutdownHandler(VOID)
         /* Yes we do, cleanup for shutdown screen */
         if (!InbvCheckDisplayOwnership()) InbvAcquireDisplayOwnership();
         InbvResetDisplay();
-        InbvSolidColorFill(0, 0, 639, 479, 0);
+        InbvSolidColorFill(0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, 0);
         InbvEnableDisplayString(TRUE);
-        InbvSetScrollRegion(0, 0, 639, 479);
+        InbvSetScrollRegion(0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1);
 
         /* Display shutdown logo and message */
         Logo1 = InbvGetResourceAddress(IDB_SHUTDOWN_MSG);
-        Logo2 = InbvGetResourceAddress(IDB_DEFAULT_LOGO);
+        Logo2 = InbvGetResourceAddress(IDB_LOGO_DEFAULT);
         if ((Logo1) && (Logo2))
         {
-            InbvBitBlt(Logo1, 220, 352);
-            InbvBitBlt(Logo2, 222, 111);
+            InbvBitBlt(Logo1, VID_SHUTDOWN_MSG_LEFT, VID_SHUTDOWN_MSG_TOP);
+            InbvBitBlt(Logo2, VID_SHUTDOWN_LOGO_LEFT, VID_SHUTDOWN_LOGO_TOP);
         }
     }
     else
@@ -278,17 +281,26 @@ PopGracefulShutdown(IN PVOID Context)
     DPRINT("Configuration Manager shutting down\n");
     CmShutdownSystem();
 
+    /* Shut down the Executive */
+    DPRINT("Executive shutting down\n");
+    ExShutdownSystem();
+
     /* Note that modified pages should be written here (MiShutdownSystem) */
-#ifdef NEWCC
+    MmShutdownSystem(0);
+
     /* Flush all user files before we start shutting down IO */
     /* This is where modified pages are written back by the IO manager */
     CcShutdownSystem();
-#endif
 
     /* In this step, the I/O manager does last-chance shutdown notification */
     DPRINT("I/O manager shutting down in phase 1\n");
     IoShutdownSystem(1);
     CcWaitForCurrentLazyWriterActivity();
+
+    /* FIXME: Calling Mm shutdown phase 1 here to get page file dereference
+     * but it shouldn't be called here. Only phase 2 should be called.
+     */
+    MmShutdownSystem(1);
 
     /* Note that here, we should broadcast the power IRP to devices */
 

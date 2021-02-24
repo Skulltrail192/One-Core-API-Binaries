@@ -239,13 +239,13 @@ UDFFileDirInfoToNT(
     UNICODE_STRING DosName;
     PEXTENDED_FILE_ENTRY ExFileEntry;
     USHORT Ident;
-    BOOLEAN ReadSizes;
+    BOOLEAN ReadSizes = FALSE;
     NTSTATUS status;
     PtrUDFNTRequiredFCB NtReqFcb;
 
     UDFPrint(("@=%#x, FileDirNdx %x\n", &Vcb, FileDirNdx));
 
-    ASSERT((ULONG)NTFileInfo > 0x1000);
+    ASSERT((ULONG_PTR)NTFileInfo > 0x1000);
     RtlZeroMemory(NTFileInfo, sizeof(FILE_BOTH_DIR_INFORMATION));
     
     DosName.Buffer = (PWCHAR)&(NTFileInfo->ShortName);
@@ -806,7 +806,7 @@ MyAppendUnicodeToString_(
   #define UDF_UNC_STR_TAG "AppStr"
 #endif 
 
-#if defined (_X86_) && defined (_MSC_VER)
+#if defined(_X86_) && defined(_MSC_VER) && !defined(__clang__)
 
     __asm push  ebx
     __asm push  esi
@@ -868,7 +868,7 @@ MyInitUnicodeString(
 
     USHORT i;
 
-#if defined (_X86_) && defined (_MSC_VER)
+#if defined(_X86_) && defined(_MSC_VER) && !defined(__clang__)
 
     __asm push  ebx
     __asm push  esi

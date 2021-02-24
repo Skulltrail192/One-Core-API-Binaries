@@ -91,30 +91,6 @@ IopQueueTargetDeviceEvent(const GUID *Guid,
 }
 
 
-/*
- * Remove the current PnP event from the tail of the event queue
- * and signal IopPnpNotifyEvent if there is yet another event in the queue.
- */
-static NTSTATUS
-IopRemovePlugPlayEvent(VOID)
-{
-    /* Remove a pnp event entry from the tail of the queue */
-    if (!IsListEmpty(&IopPnpEventQueueHead))
-    {
-        ExFreePool(CONTAINING_RECORD(RemoveTailList(&IopPnpEventQueueHead), PNP_EVENT_ENTRY, ListEntry));
-    }
-
-    /* Signal the next pnp event in the queue */
-    if (!IsListEmpty(&IopPnpEventQueueHead))
-    {
-        KeSetEvent(&IopPnpNotifyEvent,
-                   0,
-                   FALSE);
-    }
-
-    return STATUS_SUCCESS;
-}
-
 static PDEVICE_OBJECT
 IopTraverseDeviceNode(PDEVICE_NODE Node, PUNICODE_STRING DeviceInstance)
 {
@@ -213,6 +189,67 @@ IopCaptureUnicodeString(PUNICODE_STRING DstName, PUNICODE_STRING SrcName)
 }
 
 static NTSTATUS
+IopPnpEnumerateDevice(PPLUGPLAY_CONTROL_ENUMERATE_DEVICE_DATA DeviceData)
+{
+    PDEVICE_OBJECT DeviceObject;
+    UNICODE_STRING DeviceInstance;
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    Status = IopCaptureUnicodeString(&DeviceInstance, &DeviceData->DeviceInstance);
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
+    DPRINT("IopPnpEnumerateDevice(%wZ)\n", &DeviceInstance);
+
+    /* Get the device object */
+    DeviceObject = IopGetDeviceObjectFromDeviceInstance(&DeviceInstance);
+    if (DeviceInstance.Buffer != NULL)
+    {
+        ExFreePool(DeviceInstance.Buffer);
+    }
+    if (DeviceObject == NULL)
+    {
+        return STATUS_NO_SUCH_DEVICE;
+    }
+
+    Status = IopEnumerateDevice(DeviceObject);
+
+    ObDereferenceObject(DeviceObject);
+
+    return Status;
+}
+
+
+/*
+ * Remove the current PnP event from the tail of the event queue
+ * and signal IopPnpNotifyEvent if there is yet another event in the queue.
+ */
+static
+NTSTATUS
+IopRemovePlugPlayEvent(
+    _In_ PPLUGPLAY_CONTROL_USER_RESPONSE_DATA ResponseData)
+{
+    /* Remove a pnp event entry from the tail of the queue */
+    if (!IsListEmpty(&IopPnpEventQueueHead))
+    {
+        ExFreePool(CONTAINING_RECORD(RemoveTailList(&IopPnpEventQueueHead), PNP_EVENT_ENTRY, ListEntry));
+    }
+
+    /* Signal the next pnp event in the queue */
+    if (!IsListEmpty(&IopPnpEventQueueHead))
+    {
+        KeSetEvent(&IopPnpNotifyEvent,
+                   0,
+                   FALSE);
+    }
+
+    return STATUS_SUCCESS;
+}
+
+
+static NTSTATUS
 IopGetInterfaceDeviceList(PPLUGPLAY_CONTROL_INTERFACE_DEVICE_LIST_DATA DeviceList)
 {
     NTSTATUS Status;
@@ -294,11 +331,13 @@ static NTSTATUS
 IopGetDeviceProperty(PPLUGPLAY_CONTROL_PROPERTY_DATA PropertyData)
 {
     PDEVICE_OBJECT DeviceObject = NULL;
-    NTSTATUS Status;
+    PDEVICE_NODE DeviceNode;
     UNICODE_STRING DeviceInstance;
     ULONG BufferSize;
-    ULONG Property = 0;
+    ULONG Property;
+    DEVICE_REGISTRY_PROPERTY DeviceProperty;
     PVOID Buffer;
+    NTSTATUS Status;
 
     DPRINT("IopGetDeviceProperty() called\n");
     DPRINT("Device name: %wZ\n", &PropertyData->DeviceInstance);
@@ -341,14 +380,163 @@ IopGetDeviceProperty(PPLUGPLAY_CONTROL_PROPERTY_DATA PropertyData)
     Buffer = ExAllocatePool(NonPagedPool, BufferSize);
     if (Buffer == NULL)
     {
+        ObDereferenceObject(DeviceObject);
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    Status = IoGetDeviceProperty(DeviceObject,
-                                 Property,
-                                 BufferSize,
-                                 Buffer,
-                                 &BufferSize);
+
+    DeviceNode = ((PEXTENDED_DEVOBJ_EXTENSION)DeviceObject->DeviceObjectExtension)->DeviceNode;
+
+    if (Property == PNP_PROPERTY_POWER_DATA)
+    {
+        if (BufferSize < sizeof(CM_POWER_DATA))
+        {
+            BufferSize = 0;
+            Status = STATUS_BUFFER_TOO_SMALL;
+        }
+        else
+        {
+            DEVICE_CAPABILITIES DeviceCapabilities;
+            PCM_POWER_DATA PowerData;
+            IO_STACK_LOCATION Stack;
+            IO_STATUS_BLOCK IoStatusBlock;
+
+            PowerData = (PCM_POWER_DATA)Buffer;
+            RtlZeroMemory(PowerData, sizeof(CM_POWER_DATA));
+            PowerData->PD_Size = sizeof(CM_POWER_DATA);
+
+            RtlZeroMemory(&DeviceCapabilities, sizeof(DEVICE_CAPABILITIES));
+            DeviceCapabilities.Size = sizeof(DEVICE_CAPABILITIES);
+            DeviceCapabilities.Version = 1;
+            DeviceCapabilities.Address = -1;
+            DeviceCapabilities.UINumber = -1;
+
+            Stack.Parameters.DeviceCapabilities.Capabilities = &DeviceCapabilities;
+
+            Status = IopInitiatePnpIrp(DeviceObject,
+                                       &IoStatusBlock,
+                                       IRP_MN_QUERY_CAPABILITIES,
+                                       &Stack);
+            if (NT_SUCCESS(Status))
+            {
+                DPRINT("Got device capabiliities\n");
+
+                PowerData->PD_MostRecentPowerState = PowerDeviceD0; // FIXME
+                if (DeviceCapabilities.DeviceD1)
+                    PowerData->PD_Capabilities |= PDCAP_D1_SUPPORTED;
+                if (DeviceCapabilities.DeviceD2)
+                    PowerData->PD_Capabilities |= PDCAP_D2_SUPPORTED;
+                if (DeviceCapabilities.WakeFromD0)
+                    PowerData->PD_Capabilities |= PDCAP_WAKE_FROM_D0_SUPPORTED;
+                if (DeviceCapabilities.WakeFromD1)
+                    PowerData->PD_Capabilities |= PDCAP_WAKE_FROM_D1_SUPPORTED;
+                if (DeviceCapabilities.WakeFromD2)
+                    PowerData->PD_Capabilities |= PDCAP_WAKE_FROM_D2_SUPPORTED;
+                if (DeviceCapabilities.WakeFromD3)
+                    PowerData->PD_Capabilities |= PDCAP_WAKE_FROM_D3_SUPPORTED;
+                if (DeviceCapabilities.WarmEjectSupported)
+                    PowerData->PD_Capabilities |= PDCAP_WARM_EJECT_SUPPORTED;
+                PowerData->PD_D1Latency = DeviceCapabilities.D1Latency;
+                PowerData->PD_D2Latency = DeviceCapabilities.D2Latency;
+                PowerData->PD_D3Latency = DeviceCapabilities.D3Latency;
+                RtlCopyMemory(&PowerData->PD_PowerStateMapping,
+                              &DeviceCapabilities.DeviceState,
+                              sizeof(DeviceCapabilities.DeviceState));
+                PowerData->PD_DeepestSystemWake = DeviceCapabilities.SystemWake;
+            }
+            else
+            {
+                DPRINT("IRP_MN_QUERY_CAPABILITIES failed (Status 0x%08lx)\n", Status);
+
+                PowerData->PD_Capabilities = PDCAP_D0_SUPPORTED | PDCAP_D3_SUPPORTED;
+                PowerData->PD_MostRecentPowerState = PowerDeviceD0;
+            }
+        }
+    }
+    else if (Property == PNP_PROPERTY_REMOVAL_POLICY_OVERRIDE)
+    {
+    }
+    else if (Property == PNP_PROPERTY_REMOVAL_POLICY_HARDWARE_DEFAULT)
+    {
+        if (BufferSize < sizeof(DeviceNode->HardwareRemovalPolicy))
+        {
+            BufferSize = 0;
+            Status = STATUS_BUFFER_TOO_SMALL;
+        }
+        else
+        {
+            BufferSize = sizeof(DeviceNode->HardwareRemovalPolicy);
+            RtlCopyMemory(Buffer,
+                          &DeviceNode->HardwareRemovalPolicy,
+                          BufferSize);
+        }
+    }
+    else
+    {
+        switch (Property)
+        {
+            case PNP_PROPERTY_UI_NUMBER:
+                DeviceProperty = DevicePropertyUINumber;
+                break;
+
+            case PNP_PROPERTY_PHYSICAL_DEVICE_OBJECT_NAME:
+                DeviceProperty = DevicePropertyPhysicalDeviceObjectName;
+                break;
+
+            case PNP_PROPERTY_BUSTYPEGUID:
+                DeviceProperty = DevicePropertyBusTypeGuid;
+                break;
+
+            case PNP_PROPERTY_LEGACYBUSTYPE:
+                DeviceProperty = DevicePropertyLegacyBusType;
+                break;
+
+            case PNP_PROPERTY_BUSNUMBER:
+                DeviceProperty = DevicePropertyBusNumber;
+                break;
+
+            case PNP_PROPERTY_REMOVAL_POLICY:
+                DeviceProperty = DevicePropertyRemovalPolicy;
+                break;
+
+            case PNP_PROPERTY_ADDRESS:
+                DeviceProperty = DevicePropertyAddress;
+                break;
+
+            case PNP_PROPERTY_ENUMERATOR_NAME:
+                DeviceProperty = DevicePropertyEnumeratorName;
+                break;
+
+            case PNP_PROPERTY_INSTALL_STATE:
+                DeviceProperty = DevicePropertyInstallState;
+                break;
+
+#if (WINVER >= _WIN32_WINNT_WS03)
+            case PNP_PROPERTY_LOCATION_PATHS:
+                break;
+#endif
+
+#if (WINVER >= _WIN32_WINNT_WIN7)
+            case PNP_PROPERTY_CONTAINERID:
+                DeviceProperty = DevicePropertyContainerID;
+                break;
+#endif
+
+            default:
+                BufferSize = 0;
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+        }
+
+        if (Status == STATUS_SUCCESS)
+        {
+            Status = IoGetDeviceProperty(DeviceObject,
+                                         DeviceProperty,
+                                         BufferSize,
+                                         Buffer,
+                                         &BufferSize);
+        }
+    }
 
     ObDereferenceObject(DeviceObject);
 
@@ -696,19 +884,19 @@ IopGetDeviceRelations(PPLUGPLAY_CONTROL_DEVICE_RELATIONS_DATA RelationsData)
 
     switch (Relations)
     {
-        case 0: /* EjectRelations */
+        case PNP_EJECT_RELATIONS:
             Stack.Parameters.QueryDeviceRelations.Type = EjectionRelations;
             break;
 
-        case 1: /* RemovalRelations */
+        case PNP_REMOVAL_RELATIONS:
             Stack.Parameters.QueryDeviceRelations.Type = RemovalRelations;
             break;
 
-        case 2: /* PowerRelations */
+        case PNP_POWER_RELATIONS:
             Stack.Parameters.QueryDeviceRelations.Type = PowerRelations;
             break;
 
-        case 3: /* BusRelations */
+        case PNP_BUS_RELATIONS:
             Stack.Parameters.QueryDeviceRelations.Type = BusRelations;
             break;
 
@@ -893,7 +1081,7 @@ IopResetDevice(PPLUGPLAY_CONTROL_RESET_DEVICE_DATA ResetDeviceData)
 #endif
         {
             /* A driver has already been loaded for this device */
-            DPRINT1("A reboot is required for the current driver for '%wZ' to be replaced\n", &DeviceNode->InstancePath);
+            DPRINT("A reboot is required for the current driver for '%wZ' to be replaced\n", &DeviceNode->InstancePath);
             DeviceNode->Problem = CM_PROB_NEED_RESTART;
         }
     }
@@ -909,7 +1097,7 @@ IopResetDevice(PPLUGPLAY_CONTROL_RESET_DEVICE_DATA ResetDeviceData)
         if (NT_SUCCESS(Status))
         {
             /* Start the service and begin PnP initialization of the device again */
-            DPRINT1("A new driver will be loaded for '%wZ' (no FDO above)\n", &DeviceNode->InstancePath);
+            DPRINT("A new driver will be loaded for '%wZ' (no FDO above)\n", &DeviceNode->InstancePath);
             Status = IopActionInitChildServices(DeviceNode, DeviceNode->Parent);
         }
     }
@@ -1149,7 +1337,11 @@ NtPlugPlayControl(IN PLUGPLAY_CONTROL_CLASS PlugPlayControlClass,
 
     switch (PlugPlayControlClass)
     {
-//        case PlugPlayControlEnumerateDevice:
+        case PlugPlayControlEnumerateDevice:
+            if (!Buffer || BufferLength < sizeof(PLUGPLAY_CONTROL_ENUMERATE_DEVICE_DATA))
+                return STATUS_INVALID_PARAMETER;
+            return IopPnpEnumerateDevice((PPLUGPLAY_CONTROL_ENUMERATE_DEVICE_DATA)Buffer);
+
 //        case PlugPlayControlRegisterNewDevice:
 //        case PlugPlayControlDeregisterDevice:
 //        case PlugPlayControlInitializeDevice:
@@ -1158,9 +1350,9 @@ NtPlugPlayControl(IN PLUGPLAY_CONTROL_CLASS PlugPlayControlClass,
 //        case PlugPlayControlQueryAndRemoveDevice:
 
         case PlugPlayControlUserResponse:
-            if (Buffer || BufferLength != 0)
+            if (!Buffer || BufferLength < sizeof(PLUGPLAY_CONTROL_USER_RESPONSE_DATA))
                 return STATUS_INVALID_PARAMETER;
-            return IopRemovePlugPlayEvent();
+            return IopRemovePlugPlayEvent((PPLUGPLAY_CONTROL_USER_RESPONSE_DATA)Buffer);
 
 //        case PlugPlayControlGenerateLegacyDevice:
 

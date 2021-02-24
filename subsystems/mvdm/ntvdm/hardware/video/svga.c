@@ -847,10 +847,10 @@ static VOID VgaUpdateFramebuffer(VOID)
                             /* 4-bits per pixel */
 
                             PixelData = VgaMemory[WRAP_OFFSET((Address + (X / (VGA_NUM_BANKS * 2))) * AddressSize)
-                                                  * VGA_NUM_BANKS + (X % VGA_NUM_BANKS)];
+                                                  * VGA_NUM_BANKS + ((X / 2) % VGA_NUM_BANKS)];
 
                             /* Check if we should use the highest 4 bits or lowest 4 */
-                            if (((X / VGA_NUM_BANKS) % 2) == 0)
+                            if ((X % 2) == 0)
                             {
                                 /* Highest 4 */
                                 PixelData >>= 4;
@@ -1176,7 +1176,7 @@ static BYTE WINAPI VgaReadPort(USHORT Port)
             return VgaFeatureRegister;
 
         case VGA_AC_INDEX:
-            return VgaAcIndex;
+            return VgaAcIndex | (VgaAcPalDisable ? 0x20 : 0x00);
 
         case VGA_AC_READ:
             return VgaAcRegisters[VgaAcIndex];
@@ -1296,7 +1296,7 @@ static inline VOID VgaWriteGc(BYTE Data)
                 UCHAR MemoryMap = (VgaGcRegisters[VGA_GC_MISC_REG] >> 2) & 0x03;
 
                 /* Register a memory hook */
-                MemInstallFastMemoryHook((PVOID)MemoryBase[MemoryMap],
+                MemInstallFastMemoryHook(UlongToPtr(MemoryBase[MemoryMap]),
                                          MemorySize[MemoryMap],
                                          VgaReadMemory,
                                          VgaWriteMemory);
@@ -1466,7 +1466,7 @@ static VOID WINAPI VgaWritePort(USHORT Port, BYTE Data)
                 UCHAR MemoryMap = (VgaGcRegisters[VGA_GC_MISC_REG] >> 2) & 0x03;
 
                 /* Register a memory hook */
-                MemInstallFastMemoryHook((PVOID)MemoryBase[MemoryMap],
+                MemInstallFastMemoryHook(UlongToPtr(MemoryBase[MemoryMap]),
                                          MemorySize[MemoryMap],
                                          VgaReadMemory,
                                          VgaWriteMemory);

@@ -7,6 +7,7 @@
  *                  Gunnar Dalsnes
  *                  Eric Kohl
  *                  Filip Navara (navaraf@reactos.org)
+ *                  Pierre Schweitzer
  */
 
 /* INCLUDES *****************************************************************/
@@ -209,7 +210,7 @@ IopDoNameTransmogrify(IN PIRP Irp,
         }
         else
         {
-            /* Compute how much mem we'll need */
+            /* Compute how much memory we'll need */
             RequiredLength = DataBuffer->Reserved + Length + sizeof(UNICODE_NULL);
 
             /* Check if FileObject can already hold what we need */
@@ -223,7 +224,7 @@ IopDoNameTransmogrify(IN PIRP Irp,
                 NewBuffer = ExAllocatePoolWithTag(PagedPool, RequiredLength, TAG_IO_NAME);
                 if (NewBuffer == NULL)
                 {
-                     Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
+                    Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
                 }
             }
         }
@@ -232,7 +233,7 @@ IopDoNameTransmogrify(IN PIRP Irp,
     /* Everything went right */
     if (NT_SUCCESS(Irp->IoStatus.Status))
     {
-        /* Copy reserved */
+        /* Copy the reserved data */
         if (DataBuffer->Reserved)
         {
             RtlMoveMemory((PWSTR)((ULONG_PTR)NewBuffer + Length),
@@ -240,7 +241,7 @@ IopDoNameTransmogrify(IN PIRP Irp,
                           DataBuffer->Reserved);
         }
 
-        /* Then, buffer */
+        /* Then the buffer */
         if (Length)
         {
             RtlCopyMemory(NewBuffer, Buffer, Length);
@@ -252,7 +253,12 @@ IopDoNameTransmogrify(IN PIRP Irp,
         {
             if (FileObject->FileName.Buffer)
             {
-                ExFreePoolWithTag(FileObject->FileName.Buffer, TAG_IO_NAME);
+                /*
+                 * Don't use TAG_IO_NAME since the FileObject's FileName
+                 * may have been re-allocated using a different tag
+                 * by a filesystem.
+                 */
+                ExFreePoolWithTag(FileObject->FileName.Buffer, 0);
             }
 
             FileObject->FileName.Buffer = NewBuffer;
@@ -263,6 +269,54 @@ IopDoNameTransmogrify(IN PIRP Irp,
 
     /* We don't need them anymore - it was allocated by the driver */
     ExFreePool(DataBuffer);
+}
+
+NTSTATUS
+IopCheckTopDeviceHint(IN OUT PDEVICE_OBJECT * DeviceObject,
+                      IN POPEN_PACKET OpenPacket,
+                      BOOLEAN DirectOpen)
+{
+    PDEVICE_OBJECT LocalDevice;
+    DEVICE_TYPE DeviceType;
+
+    LocalDevice = *DeviceObject;
+
+    /* Direct open is not allowed */
+    if (DirectOpen)
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    /* Validate we have a file system device */
+    DeviceType = LocalDevice->DeviceType;
+    if (DeviceType != FILE_DEVICE_DISK_FILE_SYSTEM &&
+        DeviceType != FILE_DEVICE_CD_ROM_FILE_SYSTEM &&
+        DeviceType != FILE_DEVICE_TAPE_FILE_SYSTEM &&
+        DeviceType != FILE_DEVICE_NETWORK_FILE_SYSTEM &&
+        DeviceType != FILE_DEVICE_DFS_FILE_SYSTEM)
+    {
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    /* Verify the hint and if it's OK, return it */
+    if (IopVerifyDeviceObjectOnStack(LocalDevice, OpenPacket->TopDeviceObjectHint))
+    {
+        *DeviceObject = OpenPacket->TopDeviceObjectHint;
+        return STATUS_SUCCESS;
+    }
+
+    /* Failure case here */
+    /* If we thought was had come through a mount point,
+     * actually update we didn't and return the error
+     */
+    if (OpenPacket->TraversedMountPoint)
+    {
+        OpenPacket->TraversedMountPoint = FALSE;
+        return STATUS_MOUNT_POINT_NOT_RESOLVED;
+    }
+
+    /* Otherwise, just return the fact the hint is invalid */
+    return STATUS_INVALID_DEVICE_OBJECT_PARAMETER;
 }
 
 NTSTATUS
@@ -285,7 +339,7 @@ IopParseDevice(IN PVOID ParseObject,
     PFILE_OBJECT FileObject;
     PVPB Vpb = NULL;
     PIRP Irp;
-    PEXTENDED_IO_STACK_LOCATION StackLoc;
+    PIO_STACK_LOCATION StackLoc;
     IO_SECURITY_CONTEXT SecurityContext;
     IO_STATUS_BLOCK IoStatusBlock;
     BOOLEAN DirectOpen = FALSE, OpenCancelled, UseDummyFile;
@@ -431,7 +485,7 @@ IopParseDevice(IN PVOID ParseObject,
                 {
                     /* Update access state */
                     AccessState->PreviouslyGrantedAccess |= GrantedAccess;
-                    AccessState->RemainingDesiredAccess &= ~(GrantedAccess &
+                    AccessState->RemainingDesiredAccess &= ~(GrantedAccess |
                                                              MAXIMUM_ALLOWED);
                     OpenPacket->Override= TRUE;
                 }
@@ -533,29 +587,6 @@ IopParseDevice(IN PVOID ParseObject,
         /* Check if we can simply use a dummy file */
         UseDummyFile = ((OpenPacket->QueryOnly) || (OpenPacket->DeleteOnly));
 
-#if 1
-        /* FIXME: Small hack still exists, have to check why...
-         * This is triggered multiple times by usetup and then once per boot.
-         */
-        if (ExpInTextModeSetup &&
-            !(DirectOpen) &&
-            !(RemainingName->Length) &&
-            !(OpenPacket->RelatedFileObject) &&
-            ((wcsstr(CompleteName->Buffer, L"Harddisk")) ||
-            (wcsstr(CompleteName->Buffer, L"Floppy"))) &&
-            !(UseDummyFile))
-        {
-            DPRINT1("Using IopParseDevice() hack. Requested invalid attributes: %lx\n",
-            DesiredAccess & ~(SYNCHRONIZE |
-                              FILE_READ_ATTRIBUTES |
-                              READ_CONTROL |
-                              ACCESS_SYSTEM_SECURITY |
-                              WRITE_OWNER |
-                              WRITE_DAC));
-            DirectOpen = TRUE;
-        }
-#endif
-
         /* Check if this is a direct open */
         if (!(RemainingName->Length) &&
             !(OpenPacket->RelatedFileObject) &&
@@ -624,10 +655,16 @@ IopParseDevice(IN PVOID ParseObject,
             }
         }
 
+        /* If we have a top level device hint, verify it */
         if (OpenPacket->InternalFlags & IOP_USE_TOP_LEVEL_DEVICE_HINT)
         {
-            // FIXME: Verify our device object is good to use
-            ASSERT(DirectOpen == FALSE);
+            Status = IopCheckTopDeviceHint(&DeviceObject, OpenPacket, DirectOpen);
+            if (!NT_SUCCESS(Status))
+            {
+                IopDereferenceDeviceObject(OriginalDeviceObject, FALSE);
+                if (Vpb) IopDereferenceVpbAndFree(Vpb);
+                return Status;
+            }
         }
 
         /* If we traversed a mount point, reset the information */
@@ -641,7 +678,70 @@ IopParseDevice(IN PVOID ParseObject,
             ((OpenPacket->RelatedFileObject) || (RemainingName->Length)) &&
             (!VolumeOpen))
         {
-            DPRINT("Fix Secure FSD support!!!\n");
+            Privileges = NULL;
+            GrantedAccess = 0;
+
+            KeEnterCriticalRegion();
+            ExAcquireResourceSharedLite(&IopSecurityResource, TRUE);
+
+            /* Lock the subject context */
+            SeLockSubjectContext(&AccessState->SubjectSecurityContext);
+
+            /* Do access check */
+            AccessGranted = SeAccessCheck(OriginalDeviceObject->SecurityDescriptor,
+                                          &AccessState->SubjectSecurityContext,
+                                          TRUE,
+                                          DesiredAccess,
+                                          0,
+                                          &Privileges,
+                                          &IoFileObjectType->TypeInfo.GenericMapping,
+                                          UserMode,
+                                          &GrantedAccess,
+                                          &Status);
+            if (Privileges != NULL)
+            {
+                /* Append and free the privileges */
+                SeAppendPrivileges(AccessState, Privileges);
+                SeFreePrivileges(Privileges);
+            }
+
+            /* Check if we got access */
+            if (GrantedAccess)
+            {
+                AccessState->PreviouslyGrantedAccess |= GrantedAccess;
+                AccessState->RemainingDesiredAccess &= ~(GrantedAccess | MAXIMUM_ALLOWED);
+            }
+
+            FileString.Length = 8;
+            FileString.MaximumLength = 8;
+            FileString.Buffer = L"File";
+
+            /* Do Audit/Alarm for open operation
+             * NOTA: we audit target device object
+             */
+            SeOpenObjectAuditAlarm(&FileString,
+                                   DeviceObject,
+                                   CompleteName,
+                                   OriginalDeviceObject->SecurityDescriptor,
+                                   AccessState,
+                                   FALSE,
+                                   AccessGranted,
+                                   UserMode,
+                                   &AccessState->GenerateOnClose);
+
+            SeUnlockSubjectContext(&AccessState->SubjectSecurityContext);
+
+            ExReleaseResourceLite(&IopSecurityResource);
+            KeLeaveCriticalRegion();
+
+            /* Check if access failed */
+            if (!AccessGranted)
+            {
+                /* Dereference the device and fail */
+                IopDereferenceDeviceObject(OriginalDeviceObject, FALSE);
+                if (Vpb) IopDereferenceVpbAndFree(Vpb);
+                return STATUS_ACCESS_DENIED;
+            }
         }
 
         /* Allocate the IRP */
@@ -673,7 +773,7 @@ IopParseDevice(IN PVOID ParseObject,
         SecurityContext.FullCreateOptions = OpenPacket->CreateOptions;
 
         /* Get the I/O Stack location */
-        StackLoc = (PEXTENDED_IO_STACK_LOCATION)IoGetNextIrpStackLocation(Irp);
+        StackLoc = IoGetNextIrpStackLocation(Irp);
         StackLoc->Control = 0;
 
         /* Check what kind of file this is */
@@ -863,12 +963,9 @@ IopParseDevice(IN PVOID ParseObject,
         if (RemainingName->Length)
         {
             /* Setup the unicode string */
-            FileObject->FileName.MaximumLength = RemainingName->Length +
-                                                 sizeof(WCHAR);
+            FileObject->FileName.MaximumLength = RemainingName->Length + sizeof(WCHAR);
             FileObject->FileName.Buffer = ExAllocatePoolWithTag(PagedPool,
-                                                                FileObject->
-                                                                FileName.
-                                                                MaximumLength,
+                                                                FileObject->FileName.MaximumLength,
                                                                 TAG_IO_NAME);
             if (!FileObject->FileName.Buffer)
             {
@@ -968,11 +1065,16 @@ IopParseDevice(IN PVOID ParseObject,
         /* The driver failed to create the file */
         if (!NT_SUCCESS(Status))
         {
-            /* Check if we have a name */
+            /* Check if we have a name and if so, free it */
             if (FileObject->FileName.Length)
             {
-                /* Free it */
-                ExFreePoolWithTag(FileObject->FileName.Buffer, TAG_IO_NAME);
+                /*
+                 * Don't use TAG_IO_NAME since the FileObject's FileName
+                 * may have been re-allocated using a different tag
+                 * by a filesystem.
+                 */
+                ExFreePoolWithTag(FileObject->FileName.Buffer, 0);
+                FileObject->FileName.Buffer = NULL;
                 FileObject->FileName.Length = 0;
             }
 
@@ -1020,6 +1122,11 @@ IopParseDevice(IN PVOID ParseObject,
                     /* Release the old one */
                     if (CompleteName->Buffer != NULL)
                     {
+                        /*
+                         * Don't use TAG_IO_NAME since the FileObject's FileName
+                         * may have been re-allocated using a different tag
+                         * by a filesystem.
+                         */
                         ExFreePoolWithTag(CompleteName->Buffer, 0);
                     }
 
@@ -1037,11 +1144,16 @@ IopParseDevice(IN PVOID ParseObject,
                 }
             }
 
-            /* Check if we have a name */
+            /* Check if we have a name and if so, free it */
             if (FileObject->FileName.Length)
             {
-                /* Free it */
+                /*
+                 * Don't use TAG_IO_NAME since the FileObject's FileName
+                 * may have been re-allocated using a different tag
+                 * by a filesystem.
+                 */
                 ExFreePoolWithTag(FileObject->FileName.Buffer, 0);
+                FileObject->FileName.Buffer = NULL;
                 FileObject->FileName.Length = 0;
             }
 
@@ -1335,8 +1447,13 @@ IopDeleteFile(IN PVOID ObjectBody)
         /* Clear the file name */
         if (FileObject->FileName.Buffer)
         {
-           ExFreePoolWithTag(FileObject->FileName.Buffer, TAG_IO_NAME);
-           FileObject->FileName.Buffer = NULL;
+            /*
+             * Don't use TAG_IO_NAME since the FileObject's FileName
+             * may have been re-allocated using a different tag
+             * by a filesystem.
+             */
+            ExFreePoolWithTag(FileObject->FileName.Buffer, 0);
+            FileObject->FileName.Buffer = NULL;
         }
 
         /* Check if the FO had a completion port */
@@ -1665,7 +1782,12 @@ IopGetSetSecurityObject(IN PVOID ObjectBody,
     if (FileObject->Flags & FO_SYNCHRONOUS_IO)
     {
         /* Lock the file object */
-        IopLockFileObject(FileObject);
+        Status = IopLockFileObject(FileObject, ExGetPreviousMode());
+        if (Status != STATUS_SUCCESS)
+        {
+            ObDereferenceObject(FileObject);
+            return Status;
+        }
     }
     else
     {
@@ -1800,12 +1922,31 @@ IopGetSetSecurityObject(IN PVOID ObjectBody,
 
 NTSTATUS
 NTAPI
-IopQueryNameFile(IN PVOID ObjectBody,
-                 IN BOOLEAN HasName,
-                 OUT POBJECT_NAME_INFORMATION ObjectNameInfo,
-                 IN ULONG Length,
-                 OUT PULONG ReturnLength,
-                 IN KPROCESSOR_MODE PreviousMode)
+IopQueryName(IN PVOID ObjectBody,
+             IN BOOLEAN HasName,
+             OUT POBJECT_NAME_INFORMATION ObjectNameInfo,
+             IN ULONG Length,
+             OUT PULONG ReturnLength,
+             IN KPROCESSOR_MODE PreviousMode)
+{
+    return IopQueryNameInternal(ObjectBody,
+                                HasName,
+                                FALSE,
+                                ObjectNameInfo,
+                                Length,
+                                ReturnLength,
+                                PreviousMode);
+}
+
+NTSTATUS
+NTAPI
+IopQueryNameInternal(IN PVOID ObjectBody,
+                     IN BOOLEAN HasName,
+                     IN BOOLEAN QueryDosName,
+                     OUT POBJECT_NAME_INFORMATION ObjectNameInfo,
+                     IN ULONG Length,
+                     OUT PULONG ReturnLength,
+                     IN KPROCESSOR_MODE PreviousMode)
 {
     POBJECT_NAME_INFORMATION LocalInfo;
     PFILE_NAME_INFORMATION LocalFileInfo;
@@ -1814,6 +1955,9 @@ IopQueryNameFile(IN PVOID ObjectBody,
     BOOLEAN LengthMismatch = FALSE;
     NTSTATUS Status;
     PWCHAR p;
+    PDEVICE_OBJECT DeviceObject;
+    BOOLEAN NoObCall;
+
     IOTRACE(IO_FILE_DEBUG, "ObjectBody: %p\n", ObjectBody);
 
     /* Validate length */
@@ -1828,11 +1972,52 @@ IopQueryNameFile(IN PVOID ObjectBody,
     LocalInfo = ExAllocatePoolWithTag(PagedPool, Length, TAG_IO);
     if (!LocalInfo) return STATUS_INSUFFICIENT_RESOURCES;
 
-    /* Query the name */
-    Status = ObQueryNameString(FileObject->DeviceObject,
-                               LocalInfo,
-                               Length,
-                               &LocalReturnLength);
+    /* Query DOS name if the caller asked to */
+    NoObCall = FALSE;
+    if (QueryDosName)
+    {
+        DeviceObject = FileObject->DeviceObject;
+
+        /* In case of a network file system, don't call mountmgr */
+        if (DeviceObject->DeviceType == FILE_DEVICE_NETWORK_FILE_SYSTEM)
+        {
+            /* We'll store separator and terminator */
+            LocalReturnLength = sizeof(OBJECT_NAME_INFORMATION) + 2 * sizeof(WCHAR);
+            if (Length < LocalReturnLength)
+            {
+                Status = STATUS_BUFFER_OVERFLOW;
+            }
+            else
+            {
+                LocalInfo->Name.Length = sizeof(WCHAR);
+                LocalInfo->Name.MaximumLength = sizeof(WCHAR);
+                LocalInfo->Name.Buffer = (PVOID)((ULONG_PTR)LocalInfo + sizeof(OBJECT_NAME_INFORMATION));
+                LocalInfo->Name.Buffer[0] = OBJ_NAME_PATH_SEPARATOR;
+                Status = STATUS_SUCCESS;
+            }
+        }
+        /* Otherwise, call mountmgr to get DOS name */
+        else
+        {
+            Status = IoVolumeDeviceToDosName(DeviceObject, &LocalInfo->Name);
+            LocalReturnLength = LocalInfo->Name.Length + sizeof(OBJECT_NAME_INFORMATION) + sizeof(WCHAR);
+        }
+    }
+
+    /* Fall back if querying DOS name failed or if caller never wanted it ;-) */
+    if (!QueryDosName || !NT_SUCCESS(Status))
+    {
+        /* Query the name */
+        Status = ObQueryNameString(FileObject->DeviceObject,
+                                   LocalInfo,
+                                   Length,
+                                   &LocalReturnLength);
+    }
+    else
+    {
+        NoObCall = TRUE;
+    }
+
     if (!NT_SUCCESS(Status) && (Status != STATUS_INFO_LENGTH_MISMATCH))
     {
         /* Free the buffer and fail */
@@ -1840,86 +2025,150 @@ IopQueryNameFile(IN PVOID ObjectBody,
         return Status;
     }
 
-    /* Copy the information */
-    RtlCopyMemory(ObjectNameInfo,
-                  LocalInfo,
-                  (LocalReturnLength > Length) ?
-                  Length : LocalReturnLength);
-
-    /* Set buffer pointer */
+    /* Get buffer pointer */
     p = (PWCHAR)(ObjectNameInfo + 1);
-    ObjectNameInfo->Name.Buffer = p;
 
-    /* Advance in buffer */
-    p += (LocalInfo->Name.Length / sizeof(WCHAR));
-
-    /* Check if this already filled our buffer */
-    if (LocalReturnLength > Length)
+    _SEH2_TRY
     {
-        /* Set the length mismatch to true, so that we can return
-         * the proper buffer size to the caller later
-         */
-        LengthMismatch = TRUE;
+        /* Copy the information */
+        if (QueryDosName && NoObCall)
+        {
+            ASSERT(PreviousMode == KernelMode);
 
-        /* Save the initial buffer length value */
+            /* Copy structure first */
+            RtlCopyMemory(ObjectNameInfo,
+                          LocalInfo,
+                          (Length >= LocalReturnLength ? sizeof(OBJECT_NAME_INFORMATION) : Length));
+            /* Name then */
+            RtlCopyMemory(p, LocalInfo->Name.Buffer,
+                          (Length >= LocalReturnLength ? LocalInfo->Name.Length : Length - sizeof(OBJECT_NAME_INFORMATION)));
+
+            if (FileObject->DeviceObject->DeviceType != FILE_DEVICE_NETWORK_FILE_SYSTEM)
+            {
+                ExFreePool(LocalInfo->Name.Buffer);
+            }
+        }
+        else
+        {
+            RtlCopyMemory(ObjectNameInfo,
+                          LocalInfo,
+                          (LocalReturnLength > Length) ?
+                          Length : LocalReturnLength);
+        }
+
+        /* Set buffer pointer */
+        ObjectNameInfo->Name.Buffer = p;
+
+        /* Advance in buffer */
+        p += (LocalInfo->Name.Length / sizeof(WCHAR));
+
+        /* Check if this already filled our buffer */
+        if (LocalReturnLength > Length)
+        {
+            /* Set the length mismatch to true, so that we can return
+             * the proper buffer size to the caller later
+             */
+            LengthMismatch = TRUE;
+
+            /* Save the initial buffer length value */
+            *ReturnLength = LocalReturnLength;
+        }
+
+        /* Now get the file name buffer and check the length needed */
+        LocalFileInfo = (PFILE_NAME_INFORMATION)LocalInfo;
+        FileLength = Length -
+                     LocalReturnLength +
+                     FIELD_OFFSET(FILE_NAME_INFORMATION, FileName);
+
+        /* Query the File name */
+        if (PreviousMode == KernelMode &&
+            BooleanFlagOn(FileObject->Flags, FO_SYNCHRONOUS_IO))
+        {
+            Status = IopGetFileInformation(FileObject,
+                                           LengthMismatch ? Length : FileLength,
+                                           FileNameInformation,
+                                           LocalFileInfo,
+                                           &LocalReturnLength);
+        }
+        else
+        {
+            Status = IoQueryFileInformation(FileObject,
+                                            FileNameInformation,
+                                            LengthMismatch ? Length : FileLength,
+                                            LocalFileInfo,
+                                            &LocalReturnLength);
+        }
+        if (NT_ERROR(Status))
+        {
+            /* Allow status that would mean it's not implemented in the storage stack */
+            if (Status != STATUS_INVALID_PARAMETER && Status != STATUS_INVALID_DEVICE_REQUEST &&
+                Status != STATUS_NOT_IMPLEMENTED && Status != STATUS_INVALID_INFO_CLASS)
+            {
+                _SEH2_LEAVE;
+            }
+
+            /* In such case, zero output */
+            LocalReturnLength = FIELD_OFFSET(FILE_NAME_INFORMATION, FileName);
+            LocalFileInfo->FileNameLength = 0;
+            LocalFileInfo->FileName[0] = OBJ_NAME_PATH_SEPARATOR;
+        }
+        else
+        {
+            /* We'll at least return the name length */
+            if (LocalReturnLength < FIELD_OFFSET(FILE_NAME_INFORMATION, FileName))
+            {
+                LocalReturnLength = FIELD_OFFSET(FILE_NAME_INFORMATION, FileName);
+            }
+        }
+
+        /* If the provided buffer is too small, return the required size */
+        if (LengthMismatch)
+        {
+            /* Add the required length */
+            *ReturnLength += LocalFileInfo->FileNameLength;
+
+            /* Free the allocated buffer and return failure */
+            Status = STATUS_BUFFER_OVERFLOW;
+            _SEH2_LEAVE;
+        }
+
+        /* Now calculate the new lengths left */
+        FileLength = LocalReturnLength -
+                     FIELD_OFFSET(FILE_NAME_INFORMATION, FileName);
+        LocalReturnLength = (ULONG)((ULONG_PTR)p -
+                                    (ULONG_PTR)ObjectNameInfo +
+                                    LocalFileInfo->FileNameLength);
+
+        /* Don't copy the name if it's not valid */
+        if (LocalFileInfo->FileName[0] != OBJ_NAME_PATH_SEPARATOR)
+        {
+            /* Free the allocated buffer and return failure */
+            Status = STATUS_OBJECT_PATH_INVALID;
+            _SEH2_LEAVE;
+        }
+
+        /* Write the Name and null-terminate it */
+        RtlCopyMemory(p, LocalFileInfo->FileName, FileLength);
+        p += (FileLength / sizeof(WCHAR));
+        *p = UNICODE_NULL;
+        LocalReturnLength += sizeof(UNICODE_NULL);
+
+        /* Return the length needed */
         *ReturnLength = LocalReturnLength;
+
+        /* Setup the length and maximum length */
+        FileLength = (ULONG)((ULONG_PTR)p - (ULONG_PTR)ObjectNameInfo);
+        ObjectNameInfo->Name.Length = (USHORT)FileLength -
+                                              sizeof(OBJECT_NAME_INFORMATION);
+        ObjectNameInfo->Name.MaximumLength = (USHORT)ObjectNameInfo->Name.Length +
+                                                     sizeof(UNICODE_NULL);
     }
-
-    /* Now get the file name buffer and check the length needed */
-    LocalFileInfo = (PFILE_NAME_INFORMATION)LocalInfo;
-    FileLength = Length -
-                 LocalReturnLength +
-                 FIELD_OFFSET(FILE_NAME_INFORMATION, FileName);
-
-    /* Query the File name */
-    Status = IoQueryFileInformation(FileObject,
-                                    FileNameInformation,
-                                    LengthMismatch ? Length : FileLength,
-                                    LocalFileInfo,
-                                    &LocalReturnLength);
-    if (NT_ERROR(Status))
+    _SEH2_FINALLY
     {
-        /* Fail on errors only, allow warnings */
+        /* Free buffer and return */
         ExFreePoolWithTag(LocalInfo, TAG_IO);
-        return Status;
-    }
+    } _SEH2_END;
 
-    /* If the provided buffer is too small, return the required size */
-    if (LengthMismatch)
-    {
-        /* Add the required length */
-        *ReturnLength += LocalFileInfo->FileNameLength;
-
-        /* Free the allocated buffer and return failure */
-        ExFreePoolWithTag(LocalInfo, TAG_IO);
-        return STATUS_BUFFER_OVERFLOW;
-    }
-
-    /* Now calculate the new lengths left */
-    FileLength = LocalReturnLength -
-                 FIELD_OFFSET(FILE_NAME_INFORMATION, FileName);
-    LocalReturnLength = (ULONG)((ULONG_PTR)p -
-                                (ULONG_PTR)ObjectNameInfo +
-                                LocalFileInfo->FileNameLength);
-
-    /* Write the Name and null-terminate it */
-    RtlCopyMemory(p, LocalFileInfo->FileName, FileLength);
-    p += (FileLength / sizeof(WCHAR));
-    *p = UNICODE_NULL;
-    LocalReturnLength += sizeof(UNICODE_NULL);
-
-    /* Return the length needed */
-    *ReturnLength = LocalReturnLength;
-
-    /* Setup the length and maximum length */
-    FileLength = (ULONG)((ULONG_PTR)p - (ULONG_PTR)ObjectNameInfo);
-    ObjectNameInfo->Name.Length = (USHORT)FileLength -
-                                          sizeof(OBJECT_NAME_INFORMATION);
-    ObjectNameInfo->Name.MaximumLength = (USHORT)ObjectNameInfo->Name.Length +
-                                                 sizeof(UNICODE_NULL);
-
-    /* Free buffer and return */
-    ExFreePoolWithTag(LocalInfo, TAG_IO);
     return Status;
 }
 
@@ -1938,6 +2187,7 @@ IopCloseFile(IN PEPROCESS Process OPTIONAL,
     NTSTATUS Status;
     PDEVICE_OBJECT DeviceObject;
     KIRQL OldIrql;
+    IO_STATUS_BLOCK IoStatusBlock;
     IOTRACE(IO_FILE_DEBUG, "ObjectBody: %p\n", ObjectBody);
 
     /* If this isn't the last handle for the current process, quit */
@@ -1946,8 +2196,71 @@ IopCloseFile(IN PEPROCESS Process OPTIONAL,
     /* Check if the file is locked and has more then one handle opened */
     if ((FileObject->LockOperation) && (SystemHandleCount != 1))
     {
-        DPRINT1("We need to unlock this file!\n");
-        ASSERT(FALSE);
+        /* Check if this is a direct open or not */
+        if (BooleanFlagOn(FileObject->Flags, FO_DIRECT_DEVICE_OPEN))
+        {
+            /* Get the attached device */
+            DeviceObject = IoGetAttachedDevice(FileObject->DeviceObject);
+        }
+        else
+        {
+            /* Get the FO's device */
+            DeviceObject = IoGetRelatedDeviceObject(FileObject);
+        }
+
+        /* Check if this is a sync FO and lock it */
+        if (BooleanFlagOn(FileObject->Flags, FO_SYNCHRONOUS_IO))
+        {
+            (VOID)IopLockFileObject(FileObject, KernelMode);
+        }
+
+        /* Go the FastIO path if possible, otherwise fall back to IRP */
+        if (DeviceObject->DriverObject->FastIoDispatch == NULL ||
+            DeviceObject->DriverObject->FastIoDispatch->FastIoUnlockAll == NULL ||
+            !DeviceObject->DriverObject->FastIoDispatch->FastIoUnlockAll(FileObject, PsGetCurrentProcess(), &IoStatusBlock, DeviceObject))
+        {
+            /* Clear and set up Events */
+            KeClearEvent(&FileObject->Event);
+            KeInitializeEvent(&Event, SynchronizationEvent, FALSE);
+
+            /* Allocate an IRP */
+            Irp = IopAllocateIrpMustSucceed(DeviceObject->StackSize);
+
+            /* Set it up */
+            Irp->UserEvent = &Event;
+            Irp->UserIosb = &Irp->IoStatus;
+            Irp->Tail.Overlay.Thread = PsGetCurrentThread();
+            Irp->Tail.Overlay.OriginalFileObject = FileObject;
+            Irp->RequestorMode = KernelMode;
+            Irp->Flags = IRP_SYNCHRONOUS_API;
+            Irp->Overlay.AsynchronousParameters.UserApcRoutine = NULL;
+            ObReferenceObject(FileObject);
+
+            /* Set up Stack Pointer Data */
+            StackPtr = IoGetNextIrpStackLocation(Irp);
+            StackPtr->MajorFunction = IRP_MJ_LOCK_CONTROL;
+            StackPtr->MinorFunction = IRP_MN_UNLOCK_ALL;
+            StackPtr->FileObject = FileObject;
+
+            /* Queue the IRP */
+            IopQueueIrpToThread(Irp);
+
+            /* Call the FS Driver */
+            Status = IoCallDriver(DeviceObject, Irp);
+            if (Status == STATUS_PENDING)
+            {
+                /* Wait for completion */
+                KeWaitForSingleObject(&Event, UserRequest, KernelMode, FALSE, NULL);
+            }
+
+            /* IO will unqueue & free for us */
+        }
+
+        /* Release the lock if we were holding it */
+        if (BooleanFlagOn(FileObject->Flags, FO_SYNCHRONOUS_IO))
+        {
+            IopUnlockFileObject(FileObject);
+        }
     }
 
     /* Make sure this is the last handle */
@@ -1969,7 +2282,11 @@ IopCloseFile(IN PEPROCESS Process OPTIONAL,
     FileObject->Flags |= FO_HANDLE_CREATED;
 
     /* Check if this is a sync FO and lock it */
-    if (FileObject->Flags & FO_SYNCHRONOUS_IO) IopLockFileObject(FileObject);
+    if (Process != NULL &&
+        BooleanFlagOn(FileObject->Flags, FO_SYNCHRONOUS_IO))
+    {
+        (VOID)IopLockFileObject(FileObject, KernelMode);
+    }
 
     /* Clear and set up Events */
     KeClearEvent(&FileObject->Event);
@@ -2014,7 +2331,11 @@ IopCloseFile(IN PEPROCESS Process OPTIONAL,
     IoFreeIrp(Irp);
 
     /* Release the lock if we were holding it */
-    if (FileObject->Flags & FO_SYNCHRONOUS_IO) IopUnlockFileObject(FileObject);
+    if (Process != NULL &&
+        BooleanFlagOn(FileObject->Flags, FO_SYNCHRONOUS_IO))
+    {
+        IopUnlockFileObject(FileObject);
+    }
 }
 
 NTSTATUS
@@ -2123,15 +2444,62 @@ IopQueryAttributesFile(IN POBJECT_ATTRIBUTES ObjectAttributes,
     return Status;
 }
 
+NTSTATUS
+NTAPI
+IopAcquireFileObjectLock(
+    _In_ PFILE_OBJECT FileObject,
+    _In_ KPROCESSOR_MODE WaitMode,
+    _In_ BOOLEAN Alertable,
+    _Out_ PBOOLEAN LockFailed)
+{
+    NTSTATUS Status;
+
+    PAGED_CODE();
+
+    InterlockedIncrement((PLONG)&FileObject->Waiters);
+
+    Status = STATUS_SUCCESS;
+    do
+    {
+        if (!InterlockedExchange((PLONG)&FileObject->Busy, TRUE))
+        {
+            break;
+        }
+        Status = KeWaitForSingleObject(&FileObject->Lock,
+                                       Executive,
+                                       WaitMode,
+                                       Alertable,
+                                       NULL);
+    } while (Status == STATUS_SUCCESS);
+
+    InterlockedDecrement((PLONG)&FileObject->Waiters);
+    if (Status == STATUS_SUCCESS)
+    {
+        ObReferenceObject(FileObject);
+        *LockFailed = FALSE;
+    }
+    else
+    {
+        if (!FileObject->Busy && FileObject->Waiters)
+        {
+            KeSetEvent(&FileObject->Lock, IO_NO_INCREMENT, FALSE);
+        }
+        *LockFailed = TRUE;
+    }
+
+    return Status;
+}
+
 PVOID
 NTAPI
 IoGetFileObjectFilterContext(IN PFILE_OBJECT FileObject)
 {
-    if (FileObject->Flags & FO_FILE_OBJECT_HAS_EXTENSION)
+    if (BooleanFlagOn(FileObject->Flags, FO_FILE_OBJECT_HAS_EXTENSION))
     {
-        UNIMPLEMENTED;
-        /* FIXME: return NULL for the moment ~ */
-        return NULL;
+        PFILE_OBJECT_EXTENSION FileObjectExtension;
+
+        FileObjectExtension = FileObject->FileObjectExtension;
+        return FileObjectExtension->FilterContext;
     }
 
     return NULL;
@@ -2143,14 +2511,41 @@ IoChangeFileObjectFilterContext(IN PFILE_OBJECT FileObject,
                                 IN PVOID FilterContext,
                                 IN BOOLEAN Define)
 {
-    if (!(FileObject->Flags & FO_FILE_OBJECT_HAS_EXTENSION))
+    ULONG_PTR Success;
+    PFILE_OBJECT_EXTENSION FileObjectExtension;
+
+    if (!BooleanFlagOn(FileObject->Flags, FO_FILE_OBJECT_HAS_EXTENSION))
     {
         return STATUS_INVALID_PARAMETER;
     }
 
-    UNIMPLEMENTED;
+    FileObjectExtension = FileObject->FileObjectExtension;
+    if (Define)
+    {
+        /* If define, just set the new value if not value is set
+         * Success will only contain old value. It is valid if it is NULL
+         */
+        Success = (ULONG_PTR)InterlockedCompareExchangePointer(&FileObjectExtension->FilterContext, FilterContext, NULL);
+    }
+    else
+    {
+        /* If not define, we want to reset filter context.
+         * We will remove value (provided by the caller) and set NULL instead.
+         * This will only success if caller provides correct previous value.
+         * To catch whether it worked, we substract previous value to expect value:
+         * If it matches (and thus, we reset), Success will contain 0
+         * Otherwise, it will contain a non-zero value.
+         */
+        Success = (ULONG_PTR)InterlockedCompareExchangePointer(&FileObjectExtension->FilterContext, NULL, FilterContext) - (ULONG_PTR)FilterContext;
+    }
 
-    return STATUS_NOT_IMPLEMENTED;
+    /* If success isn't 0, it means we failed somewhere (set or unset) */
+    if (Success != 0)
+    {
+        return STATUS_ALREADY_COMMITTED;
+    }
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -3260,15 +3655,63 @@ IoCancelFileOpen(IN PDEVICE_OBJECT DeviceObject,
 }
 
 /*
- * @unimplemented
+ * @implemented
  */
 NTSTATUS
 NTAPI
 IoQueryFileDosDeviceName(IN PFILE_OBJECT FileObject,
                          OUT POBJECT_NAME_INFORMATION *ObjectNameInformation)
 {
-    UNIMPLEMENTED;
-    return STATUS_NOT_IMPLEMENTED;
+    NTSTATUS Status;
+    ULONG Length, ReturnLength;
+    POBJECT_NAME_INFORMATION LocalInfo;
+
+    /* Start with a buffer length of 200 */
+    ReturnLength = 200;
+    /*
+     * We'll loop until query works.
+     * We will use returned length for next loop
+     * iteration, trying to have a big enough buffer.
+     */
+    for (Length = 200; ; Length = ReturnLength)
+    {
+        /* Allocate our work buffer */
+        LocalInfo = ExAllocatePoolWithTag(PagedPool, Length, 'nDoI');
+        if (LocalInfo == NULL)
+        {
+            return STATUS_INSUFFICIENT_RESOURCES;
+        }
+
+        /* Query the DOS name */
+        Status = IopQueryNameInternal(FileObject,
+                                      TRUE,
+                                      TRUE,
+                                      LocalInfo,
+                                      Length,
+                                      &ReturnLength,
+                                      KernelMode);
+        /* If it succeed, nothing more to do */
+        if (Status == STATUS_SUCCESS)
+        {
+            break;
+        }
+
+        /* Otherwise, prepare for re-allocation */
+        ExFreePoolWithTag(LocalInfo, 'nDoI');
+
+        /*
+         * If we failed because of something else
+         * than memory, simply stop and fail here
+         */
+        if (Status != STATUS_BUFFER_OVERFLOW)
+        {
+            return Status;
+        }
+    }
+
+    /* Success case here: return our buffer */
+    *ObjectNameInformation = LocalInfo;
+    return STATUS_SUCCESS;
 }
 
 /*

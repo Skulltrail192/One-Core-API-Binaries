@@ -38,6 +38,8 @@
 
 #include <string.h>
 
+#if !defined(MBEDTLS_ECJPAKE_ALT)
+
 /*
  * Convert a mbedtls_ecjpake_role to identifier string
  */
@@ -213,7 +215,7 @@ static int ecjpake_hash( const mbedtls_md_info_t *md_info,
     p += id_len;
 
     /* Compute hash */
-    mbedtls_md( md_info, buf, p - buf, hash );
+    MBEDTLS_MPI_CHK( mbedtls_md( md_info, buf, p - buf, hash ) );
 
     /* Turn it into an integer mod n */
     MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( h, hash,
@@ -301,7 +303,7 @@ cleanup:
  */
 static int ecjpake_zkp_write( const mbedtls_md_info_t *md_info,
                               const mbedtls_ecp_group *grp,
-                              const int pf, 
+                              const int pf,
                               const mbedtls_ecp_point *G,
                               const mbedtls_mpi *x,
                               const mbedtls_ecp_point *X,
@@ -766,6 +768,7 @@ cleanup:
 #undef ID_MINE
 #undef ID_PEER
 
+#endif /* ! MBEDTLS_ECJPAKE_ALT */
 
 #if defined(MBEDTLS_SELF_TEST)
 
@@ -916,7 +919,7 @@ static const unsigned char ecjpake_test_pms[] = {
     0xb4, 0x38, 0xf7, 0x19, 0xd3, 0xc4, 0xf3, 0x51
 };
 
-/* Load my private keys and generate the correponding public keys */
+/* Load my private keys and generate the corresponding public keys */
 static int ecjpake_test_load( mbedtls_ecjpake_context *ctx,
                               const unsigned char *xm1, size_t len1,
                               const unsigned char *xm2, size_t len2 )

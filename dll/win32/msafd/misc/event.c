@@ -12,9 +12,6 @@
 
 #include <msafd.h>
 
-#include <wine/debug.h>
-WINE_DEFAULT_DEBUG_CHANNEL(msafd);
-
 int
 WSPAPI
 WSPEventSelect(
@@ -41,7 +38,7 @@ WSPEventSelect(
     }
 
     Status = NtCreateEvent(&SockEvent, EVENT_ALL_ACCESS,
-                           NULL, 1, FALSE);
+                           NULL, SynchronizationEvent, FALSE);
 
     if (!NT_SUCCESS(Status)) return SOCKET_ERROR;
 
@@ -161,7 +158,7 @@ WSPEnumNetworkEvents(
     }
 
     Status = NtCreateEvent(&SockEvent, EVENT_ALL_ACCESS,
-                           NULL, 1, FALSE);
+                           NULL, SynchronizationEvent, FALSE);
 
     if( !NT_SUCCESS(Status) ) {
         ERR("Could not make an event %x\n", Status);

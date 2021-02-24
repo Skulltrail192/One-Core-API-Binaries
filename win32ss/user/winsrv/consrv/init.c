@@ -320,11 +320,6 @@ PCHAR ConsoleServerApiNameTable[ConsolepMaxApiNumber - CONSRV_FIRST_API_NUMBER] 
 
 /* FUNCTIONS ******************************************************************/
 
-/* See handle.c */
-NTSTATUS
-ConSrvInheritHandlesTable(IN PCONSOLE_PROCESS_DATA SourceProcessData,
-                          IN PCONSOLE_PROCESS_DATA TargetProcessData);
-
 NTSTATUS
 NTAPI
 ConSrvNewProcess(PCSR_PROCESS SourceProcess,
@@ -428,6 +423,9 @@ ConSrvConnect(IN PCSR_PROCESS CsrProcess,
         return STATUS_UNSUCCESSFUL;
     }
 
+    /* Set Control-Dispatcher handler */
+    ProcessData->CtrlRoutine = ConnectInfo->CtrlRoutine;
+
     /* If we don't need a console, then get out of here */
     DPRINT("ConnectInfo->IsConsoleApp = %s\n", ConnectInfo->IsConsoleApp ? "True" : "False");
     if (!ConnectInfo->IsConsoleApp) return STATUS_SUCCESS;
@@ -525,9 +523,8 @@ ConSrvConnect(IN PCSR_PROCESS CsrProcess,
         }
     }
 
-    /* Set the Property-Dialog and Control-Dispatcher handlers */
+    /* Set the Property-Dialog handler */
     ProcessData->PropRoutine = ConnectInfo->PropRoutine;
-    ProcessData->CtrlRoutine = ConnectInfo->CtrlRoutine;
 
     return STATUS_SUCCESS;
 }
@@ -567,7 +564,6 @@ CSR_SERVER_DLL_INIT(ConServerDllInitialization)
     if (!ConSrvHeap) return STATUS_NO_MEMORY;
 */
 
-    ConDrvInitConsoleSupport();
     ConSrvInitConsoleSupport();
 
     /* Setup the DLL Object */

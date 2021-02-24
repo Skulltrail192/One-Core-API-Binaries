@@ -1,10 +1,11 @@
 
+if(MSVC)
+    # Disable warning C4477 (printf format warnings)
+    add_compile_flags("/wd4477")
+endif()
+
 if(NOT CMAKE_CROSSCOMPILING)
     add_definitions(-DDBGHELP_STATIC_LIB)
-
-    if(ARCH STREQUAL "i386")
-        add_definitions(-D_X86_)
-    endif()
 
     include_directories(
         ${REACTOS_SOURCE_DIR}/tools
@@ -27,6 +28,7 @@ if(NOT CMAKE_CROSSCOMPILING)
     endif()
 
     add_library(dbghelphost ${SOURCE})
+    target_link_libraries(dbghelphost PRIVATE host_includes)
 else()
     add_definitions(
         -D__WINESRC__
@@ -70,19 +72,19 @@ else()
         storage.c
         symbol.c
         type.c
-        dbghelp_private.h
-        ${CMAKE_CURRENT_BINARY_DIR}/dbghelp_stubs.c)
+        precomp.h)
 
-    add_library(dbghelp SHARED
+    add_library(dbghelp MODULE
         ${SOURCE}
         version.rc
+        ${CMAKE_CURRENT_BINARY_DIR}/dbghelp_stubs.c
         ${CMAKE_CURRENT_BINARY_DIR}/dbghelp.def)
 
     set_module_type(dbghelp win32dll)
     target_link_libraries(dbghelp wine ${PSEH_LIB} oldnames zlib)
     add_delay_importlibs(dbghelp version)
     add_importlibs(dbghelp psapi msvcrt kernel32 ntdll)
-    add_pch(dbghelp dbghelp_private.h SOURCE)
+    add_pch(dbghelp precomp.h SOURCE)
     add_cd_file(TARGET dbghelp DESTINATION reactos/system32 FOR all)
 
 endif()

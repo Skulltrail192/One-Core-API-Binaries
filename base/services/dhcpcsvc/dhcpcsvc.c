@@ -16,6 +16,7 @@ static WCHAR ServiceName[] = L"DHCP";
 
 SERVICE_STATUS_HANDLE ServiceStatusHandle = 0;
 SERVICE_STATUS ServiceStatus;
+HANDLE hStopEvent = NULL;
 
 static HANDLE PipeHandle = INVALID_HANDLE_VALUE;
 
@@ -254,6 +255,21 @@ DhcpNotifyConfigChange(LPWSTR ServerName,
     return 0;
 }
 
+DWORD APIENTRY
+DhcpRequestParams(DWORD Flags,
+                  PVOID Reserved,
+                  LPWSTR AdapterName,
+                  LPDHCPCAPI_CLASSID ClassId,
+                  DHCPCAPI_PARAMS_ARRAY SendParams,
+                  DHCPCAPI_PARAMS_ARRAY RecdParams,
+                  LPBYTE Buffer,
+                  LPDWORD pSize,
+                  LPWSTR RequestIdStr)
+{
+    UNIMPLEMENTED;
+    return 0;
+}
+
 /*!
  * Get DHCP info for an adapter
  *
@@ -328,17 +344,18 @@ UpdateServiceStatus(DWORD dwState)
     ServiceStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
     ServiceStatus.dwCurrentState = dwState;
 
-    ServiceStatus.dwControlsAccepted = 0;
+    if (dwState == SERVICE_RUNNING)
+        ServiceStatus.dwControlsAccepted = SERVICE_ACCEPT_SHUTDOWN | SERVICE_ACCEPT_STOP;
+    else
+        ServiceStatus.dwControlsAccepted = 0;
 
     ServiceStatus.dwWin32ExitCode = 0;
     ServiceStatus.dwServiceSpecificExitCode = 0;
     ServiceStatus.dwCheckPoint = 0;
 
     if (dwState == SERVICE_START_PENDING ||
-        dwState == SERVICE_STOP_PENDING  ||
-        dwState == SERVICE_PAUSE_PENDING ||
-        dwState == SERVICE_CONTINUE_PENDING)
-        ServiceStatus.dwWaitHint = 10000;
+        dwState == SERVICE_STOP_PENDING)
+        ServiceStatus.dwWaitHint = 1000;
     else
         ServiceStatus.dwWaitHint = 0;
 
@@ -355,17 +372,10 @@ ServiceControlHandler(DWORD dwControl,
     switch (dwControl)
     {
         case SERVICE_CONTROL_STOP:
+        case SERVICE_CONTROL_SHUTDOWN:
             UpdateServiceStatus(SERVICE_STOP_PENDING);
-            UpdateServiceStatus(SERVICE_STOPPED);
-            return ERROR_SUCCESS;
-
-        case SERVICE_CONTROL_PAUSE:
-            UpdateServiceStatus(SERVICE_PAUSED);
-            return ERROR_SUCCESS;
-
-        case SERVICE_CONTROL_CONTINUE:
-            UpdateServiceStatus(SERVICE_START_PENDING);
-            UpdateServiceStatus(SERVICE_RUNNING);
+            if (hStopEvent != NULL)
+                SetEvent(hStopEvent);
             return ERROR_SUCCESS;
 
         case SERVICE_CONTROL_INTERROGATE:
@@ -373,12 +383,7 @@ ServiceControlHandler(DWORD dwControl,
                              &ServiceStatus);
             return ERROR_SUCCESS;
 
-        case SERVICE_CONTROL_SHUTDOWN:
-            UpdateServiceStatus(SERVICE_STOP_PENDING);
-            UpdateServiceStatus(SERVICE_STOPPED);
-            return ERROR_SUCCESS;
-
-        default :
+        default:
             return ERROR_CALL_NOT_IMPLEMENTED;
     }
 }
@@ -392,6 +397,16 @@ ServiceMain(DWORD argc, LPWSTR* argv)
     if (!ServiceStatusHandle)
     {
         DPRINT1("DHCPCSVC: Unable to register service control handler (%lx)\n", GetLastError());
+        return;
+    }
+
+    UpdateServiceStatus(SERVICE_START_PENDING);
+
+    /* Create the stop event */
+    hStopEvent = CreateEventW(NULL, FALSE, FALSE, NULL);
+    if (hStopEvent == NULL)
+    {
+        UpdateServiceStatus(SERVICE_STOPPED);
         return;
     }
 
@@ -411,7 +426,7 @@ ServiceMain(DWORD argc, LPWSTR* argv)
     DH_DbgPrint(MID_TRACE,("Going into dispatch()\n"));
     DH_DbgPrint(MID_TRACE,("DHCPCSVC: DHCP service is starting up\n"));
 
-    dispatch();
+    dispatch(hStopEvent);
 
     DH_DbgPrint(MID_TRACE,("DHCPCSVC: DHCP service is shutting down\n"));
     stop_client();

@@ -22,10 +22,27 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "ws2tcpip.h"
+
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wininet.h"
+#include "winnls.h"
+
+#include "wine/debug.h"
 #include "internet.h"
 
-// ReactOS
+#ifdef __REACTOS__
+#include <stdio.h>
 #include "inet_ntop.c"
+#endif
+
+WINE_DEFAULT_DEBUG_CHANNEL(wininet);
 
 #define TIME_STRING_LEN  30
 
@@ -202,7 +219,7 @@ static const char *get_callback_name(DWORD dwInternetStatus) {
     };
     DWORD i;
 
-    for (i = 0; i < (sizeof(internet_status) / sizeof(internet_status[0])); i++) {
+    for (i = 0; i < ARRAY_SIZE(internet_status); i++) {
 	if (internet_status[i].val == dwInternetStatus) return internet_status[i].name;
     }
     return "Unknown";

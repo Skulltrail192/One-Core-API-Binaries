@@ -19,21 +19,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_NO_STATUS
-
 #include <assert.h>
 #include <stdarg.h>
-//#include <string.h>
-#include <windef.h>
-#include <winbase.h>
-#include <wingdi.h>
-#include <winuser.h>
-#include <winnls.h>
-//#include "mmsystem.h"
-//#include "mmreg.h"
-//#include "msacm.h"
-#include <msacmdrv.h>
-#include <wine/debug.h>
+#include <string.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "mmsystem.h"
+#include "mmreg.h"
+#include "msacm.h"
+#include "msacmdrv.h"
+#include "wine/debug.h"
 
 /* see http://www.pcisys.net/~melanson/codecs/adpcm.txt for the details */
 
@@ -81,9 +79,6 @@ static const Format ADPCM_Formats[] =
     {1,  4, 22050}, {2,	4, 22050},  {1,  4, 44100}, {2,	 4, 44100},
 };
 
-#define	NUM_PCM_FORMATS		(sizeof(PCM_Formats) / sizeof(PCM_Formats[0]))
-#define	NUM_ADPCM_FORMATS	(sizeof(ADPCM_Formats) / sizeof(ADPCM_Formats[0]))
-
 /***********************************************************************
  *           ADPCM_GetFormatIndex
  */
@@ -95,11 +90,11 @@ static	DWORD	ADPCM_GetFormatIndex(const WAVEFORMATEX *wfx)
     switch (wfx->wFormatTag)
     {
     case WAVE_FORMAT_PCM:
-	hi = NUM_PCM_FORMATS;
+	hi = ARRAY_SIZE(PCM_Formats);
 	fmts = PCM_Formats;
 	break;
     case WAVE_FORMAT_IMA_ADPCM:
-	hi = NUM_ADPCM_FORMATS;
+	hi = ARRAY_SIZE(ADPCM_Formats);
 	fmts = ADPCM_Formats;
 	break;
     default:
@@ -156,7 +151,7 @@ static void     init_wfx_ima_adpcm(IMAADPCMWAVEFORMAT* awfx/*, DWORD nba*/)
     }
     pwfx->cbSize = sizeof(WORD);
 
-    awfx->wSamplesPerBlock = (pwfx->nBlockAlign - (4 * pwfx->nChannels) * 2) / pwfx->nChannels + 1;
+    awfx->wSamplesPerBlock = (pwfx->nBlockAlign - (4 * pwfx->nChannels)) * (2 / pwfx->nChannels) + 1;
     pwfx->nAvgBytesPerSec = (pwfx->nSamplesPerSec * pwfx->nBlockAlign) / awfx->wSamplesPerBlock;
 }
 
@@ -447,7 +442,7 @@ static	void cvtSS16imaK(PACMDRVSTREAMINSTANCE adsi,
                                         &stepIndexL, &sampleL);
                 code2 = generate_nibble(R16(src + (4 * i + 2) * 2),
                                         &stepIndexL, &sampleL);
-                *dst++ = (code1 << 4) | code2;
+                *dst++ = (code2 << 4) | code1;
             }
             for (i = 0; i < 4; i++)
             {
@@ -455,7 +450,7 @@ static	void cvtSS16imaK(PACMDRVSTREAMINSTANCE adsi,
                                         &stepIndexR, &sampleR);
                 code2 = generate_nibble(R16(src + (4 * i + 3) * 2),
                                         &stepIndexR, &sampleR);
-                *dst++ = (code1 << 4) | code2;
+                *dst++ = (code2 << 4) | code1;
             }
             src += 32;
 	}
@@ -511,7 +506,7 @@ static	void cvtMM16imaK(PACMDRVSTREAMINSTANCE adsi,
             src += 2;
             code2 = generate_nibble(R16(src), &stepIndex, &sample);
             src += 2;
-            *dst++ = (code1 << 4) | code2;
+            *dst++ = (code2 << 4) | code1;
 	}
 	dst = in_dst + adsi->pwfxDst->nBlockAlign;
     }
@@ -535,13 +530,13 @@ static	LRESULT ADPCM_DriverDetails(PACMDRIVERDETAILSW add)
     add->cFilterTags = 0;
     add->hicon = NULL;
     MultiByteToWideChar( CP_ACP, 0, "Microsoft IMA ADPCM", -1,
-                         add->szShortName, sizeof(add->szShortName)/sizeof(WCHAR) );
+                         add->szShortName, ARRAY_SIZE(add->szShortName) );
     MultiByteToWideChar( CP_ACP, 0, "Microsoft IMA ADPCM CODEC", -1,
-                         add->szLongName, sizeof(add->szLongName)/sizeof(WCHAR) );
+                         add->szLongName, ARRAY_SIZE(add->szLongName) );
     MultiByteToWideChar( CP_ACP, 0, "Brought to you by the Wine team...", -1,
-                         add->szCopyright, sizeof(add->szCopyright)/sizeof(WCHAR) );
+                         add->szCopyright, ARRAY_SIZE(add->szCopyright) );
     MultiByteToWideChar( CP_ACP, 0, "Refer to LICENSE file", -1,
-                         add->szLicensing, sizeof(add->szLicensing)/sizeof(WCHAR) );
+                         add->szLicensing, ARRAY_SIZE(add->szLicensing) );
     add->szFeatures[0] = 0;
 
     return MMSYSERR_NOERROR;
@@ -587,13 +582,13 @@ static	LRESULT	ADPCM_FormatTagDetails(PACMFORMATTAGDETAILSW aftd, DWORD dwQuery)
     case 0:
 	aftd->dwFormatTag = WAVE_FORMAT_PCM;
 	aftd->cbFormatSize = sizeof(PCMWAVEFORMAT);
-	aftd->cStandardFormats = NUM_PCM_FORMATS;
+	aftd->cStandardFormats = ARRAY_SIZE(PCM_Formats);
         lstrcpyW(aftd->szFormatTag, szPcm);
         break;
     case 1:
 	aftd->dwFormatTag = WAVE_FORMAT_IMA_ADPCM;
 	aftd->cbFormatSize = sizeof(IMAADPCMWAVEFORMAT);
-	aftd->cStandardFormats = NUM_ADPCM_FORMATS;
+	aftd->cStandardFormats = ARRAY_SIZE(ADPCM_Formats);
         lstrcpyW(aftd->szFormatTag, szImaAdPcm);
 	break;
     }
@@ -616,7 +611,7 @@ static	LRESULT	ADPCM_FormatDetails(PACMFORMATDETAILSW afd, DWORD dwQuery)
 	switch (afd->dwFormatTag)
         {
 	case WAVE_FORMAT_PCM:
-	    if (afd->dwFormatIndex >= NUM_PCM_FORMATS) return ACMERR_NOTPOSSIBLE;
+	    if (afd->dwFormatIndex >= ARRAY_SIZE(PCM_Formats)) return ACMERR_NOTPOSSIBLE;
 	    afd->pwfx->nChannels = PCM_Formats[afd->dwFormatIndex].nChannels;
 	    afd->pwfx->nSamplesPerSec = PCM_Formats[afd->dwFormatIndex].rate;
 	    afd->pwfx->wBitsPerSample = PCM_Formats[afd->dwFormatIndex].nBits;
@@ -629,18 +624,11 @@ static	LRESULT	ADPCM_FormatDetails(PACMFORMATDETAILSW afd, DWORD dwQuery)
 		afd->pwfx->nSamplesPerSec * afd->pwfx->nBlockAlign;
 	    break;
 	case WAVE_FORMAT_IMA_ADPCM:
-	    if (afd->dwFormatIndex >= NUM_ADPCM_FORMATS) return ACMERR_NOTPOSSIBLE;
+	    if (afd->dwFormatIndex >= ARRAY_SIZE(ADPCM_Formats)) return ACMERR_NOTPOSSIBLE;
 	    afd->pwfx->nChannels = ADPCM_Formats[afd->dwFormatIndex].nChannels;
 	    afd->pwfx->nSamplesPerSec = ADPCM_Formats[afd->dwFormatIndex].rate;
 	    afd->pwfx->wBitsPerSample = ADPCM_Formats[afd->dwFormatIndex].nBits;
-	    afd->pwfx->nBlockAlign = 1024;
-	    /* we got 4 bits per sample */
-	    afd->pwfx->nAvgBytesPerSec =
-		(afd->pwfx->nSamplesPerSec * 4) / 8;
-            if (afd->cbwfx >= sizeof(WAVEFORMATEX))
-                afd->pwfx->cbSize = sizeof(WORD);
-            if (afd->cbwfx >= sizeof(IMAADPCMWAVEFORMAT))
-                ((IMAADPCMWAVEFORMAT*)afd->pwfx)->wSamplesPerBlock = (1024 - 4 * afd->pwfx->nChannels) * (2 / afd->pwfx->nChannels) + 1;
+	    init_wfx_ima_adpcm((IMAADPCMWAVEFORMAT *)afd->pwfx);
 	    break;
 	default:
             WARN("Unsupported tag %08x\n", afd->dwFormatTag);

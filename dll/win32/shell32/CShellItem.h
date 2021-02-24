@@ -36,6 +36,7 @@ public:
     ~CShellItem();
     HRESULT get_parent_pidl(LPITEMIDLIST *parent_pidl);
     HRESULT get_parent_shellfolder(IShellFolder **ppsf);
+    HRESULT get_shellfolder(IBindCtx *pbc, REFIID riid, void **ppvOut);
 
     // IShellItem
     virtual HRESULT WINAPI BindToHandler(IBindCtx *pbc, REFGUID rbhid, REFIID riid, void **ppvOut);
@@ -46,8 +47,8 @@ public:
 
     // IPersistIDList
     virtual HRESULT WINAPI GetClassID(CLSID *pClassID);
-    virtual HRESULT WINAPI SetIDList(LPCITEMIDLIST pidl);
-    virtual HRESULT WINAPI GetIDList(LPITEMIDLIST *ppidl);
+    virtual HRESULT WINAPI SetIDList(PCIDLIST_ABSOLUTE pidl);
+    virtual HRESULT WINAPI GetIDList(PIDLIST_ABSOLUTE *ppidl);
 
 DECLARE_NO_REGISTRY()
 DECLARE_NOT_AGGREGATABLE(CShellItem)

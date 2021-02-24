@@ -21,58 +21,32 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#ifndef _DBGHELP_PRIVATE_H_
-#define _DBGHELP_PRIVATE_H_
+#pragma once
 
-#include <config.h>
-
-#include <assert.h>
-#include <stdio.h>
-
-#ifdef HAVE_SYS_MMAN_H
-# include <sys/mman.h>
-#endif
-#ifdef HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#endif
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
-
-#define NONAMELESSUNION
-#define NONAMELESSSTRUCT
+#include <stdarg.h>
 
 #ifndef DBGHELP_STATIC_LIB
 
-#include <wine/port.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winver.h"
+#include "dbghelp.h"
+#include "objbase.h"
+#include "oaidl.h"
+#include "winnls.h"
+#include "wine/list.h"
+#include "wine/unicode.h"
+#include "wine/rbtree.h"
 
-#include <ntstatus.h>
-#define WIN32_NO_STATUS
-#include <windef.h>
-#include <winbase.h>
-#include <winver.h>
-#include <winternl.h>
-#include <dbghelp.h>
-#include <objbase.h>
-#include <cvconst.h>
-#include <psapi.h>
-
-#include <wine/debug.h>
-#include <wine/mscvpdb.h>
-#include <wine/unicode.h>
+#include "cvconst.h"
 
 #else /* DBGHELP_STATIC_LIB */
 
 #include <string.h>
 #include "compat.h"
-
-#endif /* DBGHELP_STATIC_LIB */
-
 #include <wine/list.h>
 #include <wine/rbtree.h>
+#endif /* DBGHELP_STATIC_LIB */
 
 /* #define USE_STATS */
 
@@ -177,7 +151,11 @@ struct location
 {
     unsigned            kind : 8,
                         reg;
+#ifndef __REACTOS__
     unsigned long       offset;
+#else
+    uintptr_t           offset;
+#endif
 };
 
 struct symt
@@ -266,6 +244,7 @@ struct symt_public
     struct symt                 symt;
     struct hash_table_elt       hash_elt;
     struct symt*                container;      /* compiland */
+    BOOL is_function;
     unsigned long               address;
     unsigned long               size;
 };
@@ -401,6 +380,7 @@ struct module
 {
     struct process*             process;
     IMAGEHLP_MODULEW64          module;
+    WCHAR                       modulename[64]; /* used for enumeration */
     struct module*              next;
     enum module_type		type : 16;
     unsigned short              is_virtual : 1;
@@ -676,9 +656,9 @@ extern BOOL         pdb_virtual_unwind(struct cpu_stack_walk* csw, DWORD_PTR ip,
                                        CONTEXT* context, struct pdb_cmd_pair* cpair) DECLSPEC_HIDDEN;
 
 /* path.c */
-extern BOOL         path_find_symbol_file(const struct process* pcs, PCSTR full_path,
-                                          const GUID* guid, DWORD dw1, DWORD dw2, PSTR buffer,
-                                          BOOL* is_unmatched) DECLSPEC_HIDDEN;
+extern BOOL         path_find_symbol_file(const struct process* pcs, const struct module* module,
+                                          PCSTR full_path, const GUID* guid, DWORD dw1, DWORD dw2, 
+                                          PSTR buffer, BOOL* is_unmatched) DECLSPEC_HIDDEN;
 
 /* pe_module.c */
 extern BOOL         pe_load_nt_header(HANDLE hProc, DWORD64 base, IMAGE_NT_HEADERS* nth) DECLSPEC_HIDDEN;
@@ -743,7 +723,9 @@ extern struct symt_public*
                     symt_new_public(struct module* module, 
                                     struct symt_compiland* parent, 
                                     const char* typename,
-                                    unsigned long address, unsigned size) DECLSPEC_HIDDEN;
+                                    BOOL is_function,
+                                    unsigned long address,
+                                    unsigned size) DECLSPEC_HIDDEN;
 extern struct symt_data*
                     symt_new_global_variable(struct module* module, 
                                              struct symt_compiland* parent,
@@ -844,7 +826,3 @@ extern struct symt_pointer*
 extern struct symt_typedef*
                     symt_new_typedef(struct module* module, struct symt* ref, 
                                      const char* name) DECLSPEC_HIDDEN;
-
-#include "image_private.h"
-
-#endif /* _DBGHELP_PRIVATE_H_ */

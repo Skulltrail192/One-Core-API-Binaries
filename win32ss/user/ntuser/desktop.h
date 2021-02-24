@@ -86,6 +86,7 @@ extern PCLS DesktopWindowClass;
 extern HDC ScreenDeviceContext;
 extern PTHREADINFO gptiForeground;
 extern PTHREADINFO gptiDesktopThread;
+extern PKEVENT gpDesktopThreadStartedEvent;
 
 typedef struct _SHELL_HOOK_WINDOW
 {
@@ -161,6 +162,15 @@ IntHideDesktop(PDESKTOP Desktop);
 BOOL IntSetThreadDesktop(IN HDESK hDesktop,
                          IN BOOL FreeOnFailure);
 
+NTSTATUS
+FASTCALL
+IntResolveDesktop(
+    IN PEPROCESS Process,
+    IN PUNICODE_STRING DesktopPath,
+    IN BOOL bInherit,
+    OUT HWINSTA* phWinSta,
+    OUT HDESK* phDesktop);
+
 NTSTATUS FASTCALL
 IntValidateDesktopHandle(
    HDESK Desktop,
@@ -168,11 +178,16 @@ IntValidateDesktopHandle(
    ACCESS_MASK DesiredAccess,
    PDESKTOP *Object);
 
-NTSTATUS FASTCALL
-IntParseDesktopPath(PEPROCESS Process,
-                    PUNICODE_STRING DesktopPath,
-                    HWINSTA *hWinSta,
-                    HDESK *hDesktop);
+NTSTATUS
+FASTCALL
+IntCreateDesktop(
+    OUT HDESK* phDesktop,
+    IN POBJECT_ATTRIBUTES ObjectAttributes,
+    IN KPROCESSOR_MODE AccessMode,
+    IN PUNICODE_STRING lpszDesktopDevice OPTIONAL,
+    IN LPDEVMODEW lpdmw OPTIONAL,
+    IN DWORD dwFlags,
+    IN ACCESS_MASK dwDesiredAccess);
 
 VOID APIENTRY UserRedrawDesktop(VOID);
 BOOL IntRegisterShellHookWindow(HWND hWnd);
@@ -342,5 +357,6 @@ BOOL FASTCALL IntPaintDesktop(HDC);
 BOOL FASTCALL DesktopWindowProc(PWND, UINT, WPARAM, LPARAM, LRESULT *);
 BOOL FASTCALL UserMessageWindowProc(PWND pwnd, UINT Msg, WPARAM wParam, LPARAM lParam, LRESULT *lResult);
 VOID NTAPI DesktopThreadMain(VOID);
+HDESK UserOpenInputDesktop(DWORD dwFlags, BOOL fInherit, ACCESS_MASK dwDesiredAccess);
 
 /* EOF */

@@ -1,14 +1,14 @@
 
 add_definitions(-D__WINESRC__)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
-spec2def(msdmo.dll msdmo.spec)
+spec2def(msdmo.dll msdmo.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
     dmoreg.c
     dmort.c
     precomp.h)
 
-add_library(msdmo SHARED
+add_library(msdmo MODULE
     ${SOURCE}
     stubs.c
     rsrc.rc

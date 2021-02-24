@@ -109,7 +109,7 @@ MiFindContiguousPages(IN PFN_NUMBER LowestPfn,
                 //
                 // Acquire the PFN lock
                 //
-                OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+                OldIrql = MiAcquirePfnLock();
                 do
                 {
                     //
@@ -146,7 +146,7 @@ MiFindContiguousPages(IN PFN_NUMBER LowestPfn,
                             Pfn1->u3.e1.EndOfAllocation = 0;
                             Pfn1->u3.e1.PrototypePte = 0;
                             Pfn1->u4.VerifierAllocation = 0;
-                            Pfn1->PteAddress = (PVOID)0xBAADF00D;
+                            Pfn1->PteAddress = (PVOID)(ULONG_PTR)0xBAADF00DBAADF00DULL;
 
                             //
                             // Check if this is the last PFN, otherwise go on
@@ -164,7 +164,7 @@ MiFindContiguousPages(IN PFN_NUMBER LowestPfn,
                         //
                         // Now it's safe to let go of the PFN lock
                         //
-                        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+                        MiReleasePfnLock(OldIrql);
 
                         //
                         // Quick sanity check that the last PFN is consistent
@@ -196,7 +196,7 @@ MiFindContiguousPages(IN PFN_NUMBER LowestPfn,
                 // If we got here, something changed while we hadn't acquired
                 // the PFN lock yet, so we'll have to restart
                 //
-                KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+                MiReleasePfnLock(OldIrql);
                 Length = 0;
             }
         }
@@ -444,11 +444,16 @@ MiAllocateContiguousMemory(IN SIZE_T NumberOfBytes,
     //
     // Otherwise, we'll go try to find some
     //
-    return MiFindContiguousMemory(LowestAcceptablePfn,
-                                  HighestAcceptablePfn,
-                                  BoundaryPfn,
-                                  SizeInPages,
-                                  CacheType);
+    BaseAddress = MiFindContiguousMemory(LowestAcceptablePfn,
+                                         HighestAcceptablePfn,
+                                         BoundaryPfn,
+                                         SizeInPages,
+                                         CacheType);
+    if (!BaseAddress)
+    {
+        DPRINT1("Unable to allocate contiguous memory for %d bytes (%d pages), out of memory!\n", NumberOfBytes, SizeInPages);
+    }
+    return BaseAddress;
 }
 
 VOID
@@ -540,7 +545,7 @@ MiFreeContiguousMemory(IN PVOID BaseAddress)
     //
     // Lock the PFN database
     //
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
 
     //
     // Loop all the pages
@@ -556,7 +561,7 @@ MiFreeContiguousMemory(IN PVOID BaseAddress)
     //
     // Release the PFN lock
     //
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 }
 
 /* PUBLIC FUNCTIONS ***********************************************************/

@@ -201,7 +201,7 @@ PspReapRoutine(IN PVOID Context)
 
         /* Remove magic value, keep looping if it got changed */
     } while (InterlockedCompareExchangePointer((PVOID*)&PspReaperListHead.Flink,
-                                               0,
+                                               NULL,
                                                (PVOID)1) != (PVOID)1);
 }
 
@@ -933,7 +933,7 @@ PsExitSpecialApc(IN PKAPC Apc,
     if (Apc->SystemArgument2)
     {
         /* Free the APC */
-        Status = (NTSTATUS)Apc->NormalContext;
+        Status = PtrToUlong(Apc->NormalContext);
         PspExitApcRundown(Apc);
 
         /* Terminate the Thread */
@@ -1039,7 +1039,7 @@ PspTerminateThreadByPointer(IN PETHREAD Thread,
                         PspExitApcRundown,
                         PspExitNormalApc,
                         KernelMode,
-                        (PVOID)ExitStatus);
+                        UlongToPtr(ExitStatus));
 
         /* Insert it into the APC Queue */
         if (!KeInsertQueueApc(Apc, Apc, NULL, 2))

@@ -19,10 +19,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include <precomp.h>
-
 #include <stdio.h>
-#include <rpcproxy.h>
+
+#define COBJMACROS
+
+#include "objidl.h"
+#include "rpcproxy.h"
+#include "wine/atlbase.h"
+#include "wine/atlwin.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(atl);
 
 extern HINSTANCE atl_instance;
 
@@ -305,7 +313,7 @@ ATOM WINAPI AtlModuleRegisterWndClassInfoA(_ATL_MODULEA *pm, _ATL_WNDCLASSINFOA 
 
         if (!wci->m_wc.lpszClassName)
         {
-            snprintf(wci->m_szAutoName, sizeof(wci->m_szAutoName), "ATL%08lx", (UINT_PTR)wci);
+            sprintf(wci->m_szAutoName, "ATL:%p", wci);
             TRACE("auto-generated class name %s\n", wci->m_szAutoName);
             wci->m_wc.lpszClassName = wci->m_szAutoName;
         }
@@ -342,8 +350,8 @@ ATOM WINAPI AtlModuleRegisterWndClassInfoA(_ATL_MODULEA *pm, _ATL_WNDCLASSINFOA 
  * NOTES
  *  Can be called multiple times without error, unlike RegisterClassEx().
  *
- *  If the class name is NULL, then a class with a name of "ATLxxxxxxxx" is
- *  registered, where the 'x's represent a unique value.
+ *  If the class name is NULL, then a class with a name of "ATL:xxxxxxxx" is
+ *  registered, where 'xxxxxxxx' represents a unique hexadecimal value.
  *
  */
 ATOM WINAPI AtlModuleRegisterWndClassInfoW(_ATL_MODULEW *pm, _ATL_WNDCLASSINFOW *wci, WNDPROC *pProc)
@@ -364,8 +372,11 @@ ATOM WINAPI AtlModuleRegisterWndClassInfoW(_ATL_MODULEW *pm, _ATL_WNDCLASSINFOW 
 
         if (!wci->m_wc.lpszClassName)
         {
-            static const WCHAR szFormat[] = {'A','T','L','%','0','8','l','x',0};
-            snprintfW(wci->m_szAutoName, sizeof(wci->m_szAutoName)/sizeof(WCHAR), szFormat, (UINT_PTR)wci);
+#ifndef __REACTOS__
+            swprintf(wci->m_szAutoName, ARRAY_SIZE(wci->m_szAutoName), L"ATL:%p", wci);
+#else
+            swprintf(wci->m_szAutoName, L"ATL:%p", wci);
+#endif
             TRACE("auto-generated class name %s\n", debugstr_w(wci->m_szAutoName));
             wci->m_wc.lpszClassName = wci->m_szAutoName;
         }

@@ -30,7 +30,16 @@
  * UnregisterMIMEInfo
  */
 
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "winreg.h"
+#include "wine/debug.h"
 #include "msipriv.h"
+#include "winuser.h"
+#include "wine/unicode.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(msi);
 
@@ -893,7 +902,7 @@ UINT ACTION_RegisterClassInfo(MSIPACKAGE *package)
         
         uirow = MSI_CreateRecord(1);
         MSI_RecordSetStringW( uirow, 1, cls->clsid );
-        msi_ui_actiondata( package, szRegisterClassInfo, uirow );
+        MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
         msiobj_release(&uirow->hdr);
     }
     RegCloseKey(hkey);
@@ -985,7 +994,7 @@ UINT ACTION_UnregisterClassInfo( MSIPACKAGE *package )
 
         uirow = MSI_CreateRecord( 1 );
         MSI_RecordSetStringW( uirow, 1, cls->clsid );
-        msi_ui_actiondata( package, szUnregisterClassInfo, uirow );
+        MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
         msiobj_release( &uirow->hdr );
     }
     RegCloseKey( hkey );
@@ -1091,7 +1100,7 @@ UINT ACTION_RegisterProgIdInfo(MSIPACKAGE *package)
 
         uirow = MSI_CreateRecord( 1 );
         MSI_RecordSetStringW( uirow, 1, progid->ProgID );
-        msi_ui_actiondata( package, szRegisterProgIdInfo, uirow );
+        MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
         msiobj_release( &uirow->hdr );
     }
     return ERROR_SUCCESS;
@@ -1154,7 +1163,7 @@ UINT ACTION_UnregisterProgIdInfo( MSIPACKAGE *package )
 
         uirow = MSI_CreateRecord( 1 );
         MSI_RecordSetStringW( uirow, 1, progid->ProgID );
-        msi_ui_actiondata( package, szUnregisterProgIdInfo, uirow );
+        MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
         msiobj_release( &uirow->hdr );
     }
     return ERROR_SUCCESS;
@@ -1341,7 +1350,7 @@ UINT ACTION_RegisterExtensionInfo(MSIPACKAGE *package)
 
         uirow = MSI_CreateRecord(1);
         MSI_RecordSetStringW( uirow, 1, ext->Extension );
-        msi_ui_actiondata( package, szRegisterExtensionInfo, uirow );
+        MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
         msiobj_release(&uirow->hdr);
     }
     return ERROR_SUCCESS;
@@ -1424,7 +1433,7 @@ UINT ACTION_UnregisterExtensionInfo( MSIPACKAGE *package )
 
         uirow = MSI_CreateRecord( 1 );
         MSI_RecordSetStringW( uirow, 1, ext->Extension );
-        msi_ui_actiondata( package, szUnregisterExtensionInfo, uirow );
+        MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
         msiobj_release( &uirow->hdr );
     }
     return ERROR_SUCCESS;
@@ -1479,7 +1488,7 @@ UINT ACTION_RegisterMIMEInfo(MSIPACKAGE *package)
         uirow = MSI_CreateRecord( 2 );
         MSI_RecordSetStringW( uirow, 1, mt->ContentType );
         MSI_RecordSetStringW( uirow, 2, mt->suffix );
-        msi_ui_actiondata( package, szRegisterMIMEInfo, uirow );
+        MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
         msiobj_release( &uirow->hdr );
     }
     return ERROR_SUCCESS;
@@ -1523,7 +1532,7 @@ UINT ACTION_UnregisterMIMEInfo( MSIPACKAGE *package )
         uirow = MSI_CreateRecord( 2 );
         MSI_RecordSetStringW( uirow, 1, mime->ContentType );
         MSI_RecordSetStringW( uirow, 2, mime->suffix );
-        msi_ui_actiondata( package, szUnregisterMIMEInfo, uirow );
+        MSI_ProcessMessage(package, INSTALLMESSAGE_ACTIONDATA, uirow);
         msiobj_release( &uirow->hdr );
     }
     return ERROR_SUCCESS;

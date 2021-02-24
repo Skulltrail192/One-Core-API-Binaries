@@ -1,6 +1,6 @@
 /* Translation and UTF-8 Conversion by mkbu95 <mkbu95@gmail.com> (May, 2012) */
 
-LANGUAGE LANG_PORTUGUESE, SUBLANG_NEUTRAL
+LANGUAGE LANG_PORTUGUESE, SUBLANG_PORTUGUESE_BRAZILIAN
 
 /* Dialogs */
 
@@ -60,6 +60,9 @@ END
 STRINGTABLE
 BEGIN
     IDS_ERROR "Erro"
+    IDS_NOT_RESPONDING " (Não respondendo)"
+    IDS_ASK_TERMINATE "Este programa não está respondendo. Você quer finalizar esse programa?"
+    IDS_HUNG_UP_TITLE "Não está respondendo!"
     IDS_OK "OK"
     IDS_CANCEL "Cancelar"
     IDS_ABORT "&Abortar"

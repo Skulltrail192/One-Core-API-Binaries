@@ -43,7 +43,7 @@ inline void FillSolidRect(HDC dc, const RECT *bounds, COLORREF clr)
     ::ExtTextOut(dc, 0, 0, ETO_OPAQUE, bounds, NULL, 0, NULL);
 }
 
-static const int                            gSmallImageSize = 22;
+//static const int                            gSmallImageSize = 22;
 static const int                            gMediumImageSize = 26;
 static const int                            gLargeImageSize = 38;
 
@@ -85,7 +85,6 @@ void CBrandBand::SelectImage()
     int                                     clientWidth;
     int                                     clientHeight;
     int                                     clientSize;
-    HINSTANCE                               shell32Instance;
     BITMAP                                  bitmapInfo;
     int                                     resourceID;
 
@@ -102,8 +101,7 @@ void CBrandBand::SelectImage()
         resourceID += 2;
     else if (clientSize >= gMediumImageSize)
         resourceID += 1;
-    shell32Instance = GetModuleHandle(L"shell32.dll");
-    fImageBitmap = LoadBitmap(shell32Instance, MAKEINTRESOURCE(resourceID));
+    fImageBitmap = LoadBitmap(_AtlBaseModule.GetResourceInstance(), MAKEINTRESOURCE(resourceID));
     GetObjectW(fImageBitmap, sizeof(bitmapInfo), &bitmapInfo);
     fBitmapSize = bitmapInfo.bmWidth;
     fMaxFrameCount = bitmapInfo.bmHeight / fBitmapSize;

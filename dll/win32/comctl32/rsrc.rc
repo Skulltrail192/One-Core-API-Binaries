@@ -19,11 +19,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include <windef.h>
-#include <winuser.h>
-#include <commctrl.h>
+#include "comctl32.h"
 
-#include "resource.h"
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 
@@ -35,10 +32,6 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #define WINE_PRODUCTVERSION_STR WINE_FILEVERSION_STR
 
 #include "wine/wine_common_ver.rc"
-
-/* @makedep: comctl32.manifest */
-WINE_MANIFEST RT_MANIFEST comctl32.manifest
-WINE_MANIFESTV5 RT_MANIFEST comctl32v5.manifest
 
 /* @makedep: idt_check.bmp */
 IDT_CHECK BITMAP idt_check.bmp
@@ -121,14 +114,23 @@ IDI_TT_ERROR_SM ICON idi_tt_error_sm.ico
 #ifdef LANGUAGE_ES_ES
     #include "lang/comctl_Es.rc"
 #endif
+#ifdef LANGUAGE_ET_EE
+    #include "lang/comctl_Et.rc"
+#endif
 #ifdef LANGUAGE_FR_FR
     #include "lang/comctl_Fr.rc"
 #endif
 #ifdef LANGUAGE_HE_IL
     #include "lang/comctl_He.rc"
 #endif
+#ifdef LANGUAGE_HI_IN
+    #include "lang/comctl_Hi.rc"
+#endif
 #ifdef LANGUAGE_HU_HU
     #include "lang/comctl_Hu.rc"
+#endif
+#ifdef LANGUAGE_ID_ID
+    #include "lang/comctl_Id.rc"
 #endif
 #ifdef LANGUAGE_IT_IT
     #include "lang/comctl_It.rc"

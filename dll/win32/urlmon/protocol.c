@@ -19,6 +19,10 @@
 
 #include "urlmon_main.h"
 
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(urlmon);
+
 static inline HRESULT report_progress(Protocol *protocol, ULONG status_code, LPCWSTR status_text)
 {
     return IInternetProtocolSink_ReportProgress(protocol->protocol_sink, status_code, status_text);
@@ -72,6 +76,8 @@ static HRESULT start_downloading(Protocol *protocol)
 
     hres = protocol->vtbl->start_downloading(protocol);
     if(FAILED(hres)) {
+        if(hres == INET_E_REDIRECT_FAILED)
+            return S_OK;
         protocol_close_connection(protocol);
         report_result(protocol, hres);
         return hres;
@@ -301,7 +307,7 @@ HINTERNET get_internet_session(IInternetBindInfo *bind_info)
 void update_user_agent(WCHAR *user_agent)
 {
     if(internet_session)
-        InternetSetOptionW(internet_session, INTERNET_OPTION_USER_AGENT, user_agent, strlenW(user_agent));
+        InternetSetOptionW(internet_session, INTERNET_OPTION_USER_AGENT, user_agent, lstrlenW(user_agent));
 }
 
 HRESULT protocol_start(Protocol *protocol, IInternetProtocol *prot, IUri *uri,
@@ -334,6 +340,8 @@ HRESULT protocol_start(Protocol *protocol, IInternetProtocol *prot, IUri *uri,
         request_flags |= INTERNET_FLAG_NO_CACHE_WRITE;
     if(protocol->bindf & BINDF_NEEDFILE)
         request_flags |= INTERNET_FLAG_NEED_FILE;
+    if(protocol->bind_info.dwOptions & BINDINFO_OPTIONS_DISABLEAUTOREDIRECTS)
+        request_flags |= INTERNET_FLAG_NO_AUTO_REDIRECT;
 
     hres = protocol->vtbl->open_request(protocol, uri, request_flags, internet_session, bind_info);
     if(FAILED(hres)) {

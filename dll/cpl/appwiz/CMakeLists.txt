@@ -16,7 +16,7 @@ list(APPEND SOURCE
 file(GLOB appwiz_rc_deps resources/*.*)
 add_rc_deps(appwiz.rc ${appwiz_rc_deps})
 
-add_library(appwiz SHARED
+add_library(appwiz MODULE
     ${SOURCE}
     appwiz.rc
     ${CMAKE_CURRENT_BINARY_DIR}/appwiz.def)
@@ -24,6 +24,6 @@ add_library(appwiz SHARED
 set_module_type(appwiz cpl UNICODE)
 target_link_libraries(appwiz uuid wine)
 add_delay_importlibs(appwiz msi)
-add_importlibs(appwiz urlmon ole32 comctl32 advapi32 shell32 user32 msvcrt kernel32 ntdll)
+add_importlibs(appwiz urlmon ole32 comctl32 advapi32 shell32 shlwapi user32 msvcrt kernel32 ntdll)
 add_pch(appwiz appwiz.h SOURCE)
 add_cd_file(TARGET appwiz DESTINATION reactos/system32 FOR all)

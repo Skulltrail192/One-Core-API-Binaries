@@ -23,6 +23,95 @@ LONG ProcessPipeId;
 /*
  * @implemented
  */
+static
+BOOL
+NpGetUserNamep(HANDLE hNamedPipe,
+               LPWSTR lpUserName,
+               DWORD nMaxUserNameSize)
+{
+    BOOL Ret;
+    HANDLE hToken;
+    HMODULE hAdvapi;
+    NTSTATUS Status;
+    BOOL (WINAPI *pRevertToSelf)(void);
+    BOOL (WINAPI *pGetUserNameW)(LPWSTR lpBuffer, LPDWORD lpnSize);
+    BOOL (WINAPI *pImpersonateNamedPipeClient)(HANDLE hNamedPipe);
+
+    /* Open advapi, we'll funcs from it */
+    hAdvapi = LoadLibraryW(L"advapi32.dll");
+    if (hAdvapi == NULL)
+    {
+        return FALSE;
+    }
+
+    /* Import the three required functions */
+    pRevertToSelf = (BOOL (WINAPI *)(void))GetProcAddress(hAdvapi, "RevertToSelf");
+    pGetUserNameW = (BOOL (WINAPI *)(LPWSTR, LPDWORD))GetProcAddress(hAdvapi, "GetUserNameW");
+    pImpersonateNamedPipeClient = (BOOL (WINAPI *)(HANDLE))GetProcAddress(hAdvapi, "ImpersonateNamedPipeClient");
+    /* If any couldn't be found, fail */
+    if (pRevertToSelf == NULL || pGetUserNameW == NULL || pImpersonateNamedPipeClient == NULL)
+    {
+        FreeLibrary(hAdvapi);
+        return FALSE;
+    }
+
+    /* Now, open the thread token for impersonation */
+    Status = NtOpenThreadToken(NtCurrentThread(), TOKEN_IMPERSONATE, TRUE, &hToken);
+    /* Try to impersonate the pipe client */
+    if (pImpersonateNamedPipeClient(hNamedPipe))
+    {
+        DWORD lpnSize;
+
+        /* It worked, get the user name */
+        lpnSize = nMaxUserNameSize;
+        Ret = pGetUserNameW(lpUserName, &lpnSize);
+        /* Failed to get the thread token? Revert to self */
+        if (!NT_SUCCESS(Status))
+        {
+            pRevertToSelf();
+
+            FreeLibrary(hAdvapi);
+            return Ret;
+        }
+
+        /* Restore the thread token */
+        Status = NtSetInformationThread(NtCurrentThread(), ThreadImpersonationToken,
+                                        &hToken, sizeof(HANDLE));
+        /* We cannot fail closing the thread token! */
+        if (!CloseHandle(hToken))
+        {
+            ASSERT(FALSE);
+        }
+
+        /* Set last error if it failed */
+        if (!NT_SUCCESS(Status))
+        {
+            BaseSetLastNTError(Status);
+        }
+    }
+    else
+    {
+        /* If opening the thread token succeed, close it */
+        if (NT_SUCCESS(Status))
+        {
+            /* We cannot fail closing it! */
+            if (!CloseHandle(hToken))
+            {
+                ASSERT(FALSE);
+            }
+        }
+
+        Ret = FALSE;
+    }
+
+    FreeLibrary(hAdvapi);
+    return Ret;
+}
+
+
+/*
+ * @implemented
+ */
 BOOL
 WINAPI
 CreatePipe(PHANDLE hReadPipe,
@@ -53,7 +142,7 @@ CreatePipe(PHANDLE hReadPipe,
 
     /* Create the pipe name */
     swprintf(Buffer,
-             L"\\Device\\NamedPipe\\Win32Pipes.%08x.%08x",
+             L"\\Device\\NamedPipe\\Win32Pipes.%p.%08x",
              NtCurrentTeb()->ClientId.UniqueProcess,
              PipeId);
     RtlInitUnicodeString(&PipeName, Buffer);
@@ -344,17 +433,18 @@ WINAPI
 WaitNamedPipeA(LPCSTR lpNamedPipeName,
                DWORD nTimeOut)
 {
-    BOOL r;
+    BOOL r = FALSE;
     UNICODE_STRING NameU;
 
     /* Convert the name to Unicode */
-    Basep8BitStringToDynamicUnicodeString(&NameU, lpNamedPipeName);
+    if (Basep8BitStringToDynamicUnicodeString(&NameU, lpNamedPipeName))
+    {
+        /* Call the Unicode API */
+        r = WaitNamedPipeW(NameU.Buffer, nTimeOut);
 
-    /* Call the Unicode API */
-    r = WaitNamedPipeW(NameU.Buffer, nTimeOut);
-
-    /* Free the Unicode string */
-    RtlFreeUnicodeString(&NameU);
+        /* Free the Unicode string */
+        RtlFreeUnicodeString(&NameU);
+    }
 
     /* Return result */
     return r;
@@ -378,6 +468,7 @@ WaitNamedPipeW(LPCWSTR lpNamedPipeName,
     HANDLE FileHandle;
     IO_STATUS_BLOCK IoStatusBlock;
     ULONG WaitPipeInfoSize;
+    PVOID DevicePathBuffer;
     PFILE_PIPE_WAIT_FOR_BUFFER WaitPipeInfo;
 
     /* Start by making a unicode string of the name */
@@ -395,6 +486,8 @@ WaitNamedPipeW(LPCWSTR lpNamedPipeName,
         /* Check and convert */
         if (NamedPipeName.Buffer[i] == L'/') NamedPipeName.Buffer[i] = L'\\';
     }
+
+    DevicePathBuffer = NULL;
 
     /* Find the path type of the name we were given */
     NewName = NamedPipeName;
@@ -425,6 +518,8 @@ WaitNamedPipeW(LPCWSTR lpNamedPipeName,
     }
     else if (Type == RtlPathTypeUncAbsolute)
     {
+        PWSTR PipeName;
+
         /* The path is \\server\\pipe\name; find the pipename itself */
         p = &NewName.Buffer[2];
 
@@ -453,7 +548,34 @@ WaitNamedPipeW(LPCWSTR lpNamedPipeName,
             return FALSE;
         }
 
-        /* FIXME: Open \DosDevices\Unc\Server\Pipe\Name */
+        /* Skip first backslash */
+        NewName.Buffer++;
+        /* And skip pipe for copying name */
+        PipeName = p + ((sizeof(L"pipe\\") - sizeof(UNICODE_NULL)) / sizeof(WCHAR));
+        /* Update the string */
+        NewName.Length = (USHORT)((ULONG_PTR)PipeName - (ULONG_PTR)NewName.Buffer);
+        NewName.MaximumLength = (USHORT)((ULONG_PTR)PipeName - (ULONG_PTR)NewName.Buffer);
+
+        /* DevicePath will contain the pipename + the DosDevice prefix */
+        DevicePath.MaximumLength = (USHORT)((ULONG_PTR)PipeName - (ULONG_PTR)NewName.Buffer) + sizeof(L"\\DosDevices\\UNC\\");
+
+        /* Allocate the buffer for DevicePath */
+        DevicePathBuffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, DevicePath.MaximumLength);
+        if (DevicePathBuffer == NULL)
+        {
+            RtlFreeUnicodeString(&NamedPipeName);
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            return FALSE;
+        }
+
+        /* Copy the prefix first */
+        DevicePath.Buffer = DevicePathBuffer;
+        RtlCopyMemory(DevicePathBuffer, L"\\DosDevices\\UNC\\", sizeof(L"\\DosDevices\\UNC\\") - sizeof(UNICODE_NULL));
+        DevicePath.Length = sizeof(L"\\DosDevices\\UNC\\") - sizeof(UNICODE_NULL);
+        /* And append the rest */
+        RtlAppendUnicodeStringToString(&DevicePath, &NewName);
+        /* And fix pipe name without its prefix */
+        RtlInitUnicodeString(&NewName, PipeName + 1);
     }
     else
     {
@@ -469,6 +591,11 @@ WaitNamedPipeW(LPCWSTR lpNamedPipeName,
     WaitPipeInfo = RtlAllocateHeap(RtlGetProcessHeap(), 0, WaitPipeInfoSize);
     if (WaitPipeInfo == NULL)
     {
+        if (DevicePathBuffer != NULL)
+        {
+            RtlFreeHeap(RtlGetProcessHeap(), 0, DevicePathBuffer);
+        }
+
         RtlFreeUnicodeString(&NamedPipeName);
         SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         return FALSE;
@@ -489,6 +616,12 @@ WaitNamedPipeW(LPCWSTR lpNamedPipeName,
                         &IoStatusBlock,
                         FILE_SHARE_READ | FILE_SHARE_WRITE,
                         FILE_SYNCHRONOUS_IO_NONALERT);
+
+    if (DevicePathBuffer != NULL)
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, DevicePathBuffer);
+    }
+
     if (!NT_SUCCESS(Status))
     {
         /* Fail; couldn't open */
@@ -934,18 +1067,28 @@ GetNamedPipeHandleStateW(HANDLE hNamedPipe,
             *lpMaxCollectionCount = RemoteInfo.MaximumCollectionCount;
         }
 
-        if(lpCollectDataTimeout != NULL)
+        if (lpCollectDataTimeout != NULL)
         {
-            /* FIXME */
-           *lpCollectDataTimeout = 0;
+            LARGE_INTEGER CollectDataTime;
+
+            /* Convert time and return it */
+            RemoteInfo.CollectDataTime.QuadPart *= -1;
+            CollectDataTime = RtlExtendedLargeIntegerDivide(RemoteInfo.CollectDataTime, 10000, NULL);
+            /* In case of overflow, just return MAX - 1 */
+            if (CollectDataTime.HighPart != 0)
+            {
+                *lpCollectDataTimeout = -2;
+            }
+            else
+            {
+                *lpCollectDataTimeout = CollectDataTime.LowPart;
+            }
         }
     }
 
     if (lpUserName != NULL)
     {
-      /* FIXME - open the thread token, call ImpersonateNamedPipeClient() and
-                 retrieve the user name with GetUserName(), revert the impersonation
-                 and finally restore the thread token */
+        return NpGetUserNamep(hNamedPipe, lpUserName, nMaxUserNameSize);
     }
 
     return TRUE;

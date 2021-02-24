@@ -15,18 +15,36 @@
 
 #define MAX_BACKGROUNDS     100
 
-#define PLACEMENT_CENTER    0
-#define PLACEMENT_STRETCH   1
-#define PLACEMENT_TILE      2
+typedef enum
+{
+    PLACEMENT_CENTER = 0,
+    PLACEMENT_STRETCH,
+    PLACEMENT_TILE,
+    PLACEMENT_FIT,
+    PLACEMENT_FILL
+} PLACEMENT;
+
+/* The tile placement is stored in different registry
+ * key, but due to a condition in win32k it needs to be
+ * zero when stored in the same key as others.
+ */
+typedef enum
+{
+    PLACEMENT_VALUE_CENTER    = 0,
+    PLACEMENT_VALUE_STRETCH   = 2,
+    PLACEMENT_VALUE_TILE      = 0,
+    PLACEMENT_VALUE_FIT       = 6,
+    PLACEMENT_VALUE_FILL      = 10
+} PLACEMENT_VALUE;
 
 /* The values in these macros are dependent on the
  * layout of the monitor image and they must be adjusted
  * if that image will be changed.
  */
-#define MONITOR_LEFT        18
-#define MONITOR_TOP         18
-#define MONITOR_RIGHT       168
-#define MONITOR_BOTTOM      128
+#define MONITOR_LEFT        20
+#define MONITOR_TOP         8
+#define MONITOR_RIGHT       140
+#define MONITOR_BOTTOM      92
 
 #define MONITOR_WIDTH       (MONITOR_RIGHT-MONITOR_LEFT)
 #define MONITOR_HEIGHT      (MONITOR_BOTTOM-MONITOR_TOP)
@@ -40,7 +58,7 @@ typedef struct
 
 } BackgroundItem;
 
-typedef struct _DATA
+typedef struct _BACKGROUND_DATA
 {
     BOOL bWallpaperChanged;
     BOOL bClrBackgroundChanged;
@@ -61,7 +79,7 @@ typedef struct _DATA
     int cySource;
 
     ULONG_PTR gdipToken;
-} DATA, *PDATA;
+} BACKGROUND_DATA, *PBACKGROUND_DATA;
 
 GLOBAL_DATA g_GlobalData;
 
@@ -165,7 +183,7 @@ GdipGetSupportedFileExtensions(VOID)
 
 
 static UINT
-AddWallpapersFromDirectory(UINT uCounter, HWND hwndBackgroundList, BackgroundItem *backgroundItem, PDATA pData, LPCTSTR wallpaperFilename, LPCTSTR wallpaperDirectory)
+AddWallpapersFromDirectory(UINT uCounter, HWND hwndBackgroundList, BackgroundItem *backgroundItem, PBACKGROUND_DATA pData, LPCTSTR wallpaperFilename, LPCTSTR wallpaperDirectory)
 {
     WIN32_FIND_DATA fd;
     HANDLE hFind;
@@ -184,6 +202,8 @@ AddWallpapersFromDirectory(UINT uCounter, HWND hwndBackgroundList, BackgroundIte
     {
         return i;
     }
+
+    himl = ListView_GetImageList(hwndBackgroundList, LVSIL_SMALL);
 
     token = _tcstok(szFileTypes, separators);
     while (token != NULL)
@@ -209,19 +229,13 @@ AddWallpapersFromDirectory(UINT uCounter, HWND hwndBackgroundList, BackgroundIte
             /* Don't add any hidden bitmaps. Also don't add current wallpaper once more. */
             if (((fd.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) == 0) && (_tcsicmp(wallpaperFilename, filename) != 0))
             {
-                himl = (HIMAGELIST)SHGetFileInfo(filename,
-                                                0,
-                                                &sfi,
-                                                sizeof(sfi),
-                                                SHGFI_SYSICONINDEX | SHGFI_SMALLICON |
-                                                SHGFI_DISPLAYNAME);
-                if (himl == NULL)
-                    break;
-
-                if (i++ == 0)
-                {
-                    (void)ListView_SetImageList(hwndBackgroundList, himl, LVSIL_SMALL);
-                }
+                SHGetFileInfo(filename,
+                              0,
+                              &sfi,
+                              sizeof(sfi),
+                              SHGFI_ICON | SHGFI_SMALLICON | SHGFI_DISPLAYNAME);
+                sfi.iIcon = ImageList_AddIcon(himl, sfi.hIcon);
+                i++;
 
                 backgroundItem = &pData->backgroundItems[pData->listViewItemCount];
 
@@ -274,7 +288,7 @@ AddWallpapersFromDirectory(UINT uCounter, HWND hwndBackgroundList, BackgroundIte
 
 /* Add the images in the C:\ReactOS, the wallpaper directory and the current wallpaper if any */
 static VOID
-AddListViewItems(HWND hwndDlg, PDATA pData)
+AddListViewItems(HWND hwndDlg, PBACKGROUND_DATA pData)
 {
     TCHAR szSearchPath[MAX_PATH];
     LV_ITEM listItem;
@@ -293,10 +307,25 @@ AddListViewItems(HWND hwndDlg, PDATA pData)
     BackgroundItem *backgroundItem = NULL;
     HWND hwndBackgroundList;
     HRESULT hr;
+    HICON hIcon;
+    INT cx, cy;
+    HINSTANCE hShell32;
 
     hwndBackgroundList = GetDlgItem(hwndDlg, IDC_BACKGROUND_LIST);
 
     GetClientRect(hwndBackgroundList, &clientRect);
+
+    cx = GetSystemMetrics(SM_CXSMICON);
+    cy = GetSystemMetrics(SM_CYSMICON);
+    himl = ImageList_Create(cx, cy, ILC_COLOR32 | ILC_MASK, 0, 0);
+
+    /* Load (None) icon */
+#define IDI_SHELL_NO 200
+    hShell32 = GetModuleHandleW(L"shell32.dll");
+    hIcon = (HICON)LoadImageW(hShell32, MAKEINTRESOURCEW(IDI_SHELL_NO), IMAGE_ICON, cx, cy, 0);
+#undef IDI_SHELL_NO
+
+    ListView_SetImageList(hwndBackgroundList, himl, LVSIL_SMALL);
 
     /* Add a new column to the list */
     ZeroMemory(&dummy, sizeof(LV_COLUMN));
@@ -317,9 +346,10 @@ AddListViewItems(HWND hwndDlg, PDATA pData)
     listItem.mask       = LVIF_TEXT | LVIF_PARAM | LVIF_STATE | LVIF_IMAGE;
     listItem.state      = 0;
     listItem.pszText    = backgroundItem->szDisplayName;
-    listItem.iImage     = -1;
+    listItem.iImage     = ImageList_AddIcon(himl, hIcon);
     listItem.iItem      = pData->listViewItemCount;
     listItem.lParam     = pData->listViewItemCount;
+    hIcon = NULL;
 
     (void)ListView_InsertItem(hwndBackgroundList, &listItem);
     ListView_SetItemState(hwndBackgroundList,
@@ -367,55 +397,51 @@ AddListViewItems(HWND hwndDlg, PDATA pData)
                 }
             }
 
-            himl = (HIMAGELIST)SHGetFileInfo(wallpaperFilename,
-                                             0,
-                                             &sfi,
-                                             sizeof(sfi),
-                                             SHGFI_SYSICONINDEX | SHGFI_SMALLICON |
-                                             SHGFI_DISPLAYNAME);
-            if (himl != NULL)
+            SHGetFileInfoW(wallpaperFilename,
+                           0,
+                           &sfi,
+                           sizeof(sfi),
+                           SHGFI_ICON | SHGFI_SMALLICON |
+                           SHGFI_DISPLAYNAME);
+            sfi.iIcon = ImageList_AddIcon(himl, sfi.hIcon);
+
+            i++;
+
+            backgroundItem = &pData->backgroundItems[pData->listViewItemCount];
+
+            backgroundItem->bWallpaper = TRUE;
+
+            hr = StringCbCopy(backgroundItem->szDisplayName, sizeof(backgroundItem->szDisplayName), sfi.szDisplayName);
+            if (FAILED(hr))
             {
-                if (i++ == 0)
-                {
-                    (void)ListView_SetImageList(hwndBackgroundList, himl, LVSIL_SMALL);
-                }
-
-                backgroundItem = &pData->backgroundItems[pData->listViewItemCount];
-
-                backgroundItem->bWallpaper = TRUE;
-
-                hr = StringCbCopy(backgroundItem->szDisplayName, sizeof(backgroundItem->szDisplayName), sfi.szDisplayName);
-                if (FAILED(hr))
-                {
-                    RegCloseKey(regKey);
-                    return;
-                }
-
-                PathRemoveExtension(backgroundItem->szDisplayName);
-
-                hr = StringCbCopy(backgroundItem->szFilename, sizeof(backgroundItem->szFilename), wallpaperFilename);
-                if (FAILED(hr))
-                {
-                    RegCloseKey(regKey);
-                    return;
-                }
-
-                ZeroMemory(&listItem, sizeof(LV_ITEM));
-                listItem.mask       = LVIF_TEXT | LVIF_PARAM | LVIF_STATE | LVIF_IMAGE;
-                listItem.state      = 0;
-                listItem.pszText    = backgroundItem->szDisplayName;
-                listItem.iImage     = sfi.iIcon;
-                listItem.iItem      = pData->listViewItemCount;
-                listItem.lParam     = pData->listViewItemCount;
-
-                (void)ListView_InsertItem(hwndBackgroundList, &listItem);
-                ListView_SetItemState(hwndBackgroundList,
-                                      pData->listViewItemCount,
-                                      LVIS_SELECTED,
-                                      LVIS_SELECTED);
-
-                pData->listViewItemCount++;
+                RegCloseKey(regKey);
+                return;
             }
+
+            PathRemoveExtension(backgroundItem->szDisplayName);
+
+            hr = StringCbCopy(backgroundItem->szFilename, sizeof(backgroundItem->szFilename), wallpaperFilename);
+            if (FAILED(hr))
+            {
+                RegCloseKey(regKey);
+                return;
+            }
+
+            ZeroMemory(&listItem, sizeof(LV_ITEM));
+            listItem.mask       = LVIF_TEXT | LVIF_PARAM | LVIF_STATE | LVIF_IMAGE;
+            listItem.state      = 0;
+            listItem.pszText    = backgroundItem->szDisplayName;
+            listItem.iImage     = sfi.iIcon;
+            listItem.iItem      = pData->listViewItemCount;
+            listItem.lParam     = pData->listViewItemCount;
+
+            (void)ListView_InsertItem(hwndBackgroundList, &listItem);
+            ListView_SetItemState(hwndBackgroundList,
+                                  pData->listViewItemCount,
+                                  LVIS_SELECTED,
+                                  LVIS_SELECTED);
+
+            pData->listViewItemCount++;
         }
 
         RegCloseKey(regKey);
@@ -436,11 +462,11 @@ AddListViewItems(HWND hwndDlg, PDATA pData)
 
 
 static VOID
-InitBackgroundDialog(HWND hwndDlg, PDATA pData)
+InitBackgroundDialog(HWND hwndDlg, PBACKGROUND_DATA pData)
 {
     TCHAR szString[256];
     HKEY regKey;
-    TCHAR szBuffer[2];
+    TCHAR szBuffer[3];
     DWORD bufferSize = sizeof(szBuffer);
     BITMAP bitmap;
 
@@ -454,6 +480,12 @@ InitBackgroundDialog(HWND hwndDlg, PDATA pData)
 
     LoadString(hApplet, IDS_TILE, szString, sizeof(szString) / sizeof(TCHAR));
     SendDlgItemMessage(hwndDlg, IDC_PLACEMENT_COMBO, CB_INSERTSTRING, PLACEMENT_TILE, (LPARAM)szString);
+
+    LoadString(hApplet, IDS_FIT, szString, sizeof(szString) / sizeof(TCHAR));
+    SendDlgItemMessage(hwndDlg, IDC_PLACEMENT_COMBO, CB_INSERTSTRING, PLACEMENT_FIT, (LPARAM)szString);
+
+    LoadString(hApplet, IDS_FILL, szString, sizeof(szString) / sizeof(TCHAR));
+    SendDlgItemMessage(hwndDlg, IDC_PLACEMENT_COMBO, CB_INSERTSTRING, PLACEMENT_FILL, (LPARAM)szString);
 
     SendDlgItemMessage(hwndDlg, IDC_PLACEMENT_COMBO, CB_SETCURSEL, PLACEMENT_CENTER, 0);
     pData->placementSelection = PLACEMENT_CENTER;
@@ -475,16 +507,28 @@ InitBackgroundDialog(HWND hwndDlg, PDATA pData)
 
     if (RegQueryValueEx(regKey, TEXT("WallpaperStyle"), 0, NULL, (LPBYTE)szBuffer, &bufferSize) == ERROR_SUCCESS)
     {
-        if (_ttoi(szBuffer) == 0)
+        if (_ttoi(szBuffer) == PLACEMENT_VALUE_CENTER)
         {
             SendDlgItemMessage(hwndDlg, IDC_PLACEMENT_COMBO, CB_SETCURSEL, PLACEMENT_CENTER, 0);
             pData->placementSelection = PLACEMENT_CENTER;
         }
 
-        if (_ttoi(szBuffer) == 2)
+        if (_ttoi(szBuffer) == PLACEMENT_VALUE_STRETCH)
         {
             SendDlgItemMessage(hwndDlg, IDC_PLACEMENT_COMBO, CB_SETCURSEL, PLACEMENT_STRETCH, 0);
             pData->placementSelection = PLACEMENT_STRETCH;
+        }
+
+        if (_ttoi(szBuffer) == PLACEMENT_VALUE_FIT)
+        {
+            SendDlgItemMessage(hwndDlg, IDC_PLACEMENT_COMBO, CB_SETCURSEL, PLACEMENT_FIT, 0);
+            pData->placementSelection = PLACEMENT_FIT;
+        }
+
+        if (_ttoi(szBuffer) == PLACEMENT_VALUE_FILL)
+        {
+            SendDlgItemMessage(hwndDlg, IDC_PLACEMENT_COMBO, CB_SETCURSEL, PLACEMENT_FILL, 0);
+            pData->placementSelection = PLACEMENT_FILL;
         }
     }
 
@@ -502,7 +546,7 @@ InitBackgroundDialog(HWND hwndDlg, PDATA pData)
 
 
 static VOID
-OnColorButton(HWND hwndDlg, PDATA pData)
+OnColorButton(HWND hwndDlg, PBACKGROUND_DATA pData)
 {
     /* Load custom colors from Registry */
     HKEY hKey = NULL;
@@ -586,7 +630,7 @@ CheckListViewFilenameExists(HWND hwndList, LPCTSTR tszFileName)
 
 
 static VOID
-OnBrowseButton(HWND hwndDlg, PDATA pData)
+OnBrowseButton(HWND hwndDlg, PBACKGROUND_DATA pData)
 {
     OPENFILENAME ofn;
     TCHAR filename[MAX_PATH];
@@ -604,8 +648,10 @@ OnBrowseButton(HWND hwndDlg, PDATA pData)
     size_t sizeRemain;
     SIZE_T buffersize;
     BOOL success;
+    HIMAGELIST himl;
 
     hwndBackgroundList = GetDlgItem(hwndDlg, IDC_BACKGROUND_LIST);
+    himl = ListView_GetImageList(hwndBackgroundList, LVSIL_SMALL);
 
     ZeroMemory(&ofn, sizeof(OPENFILENAME));
 
@@ -669,7 +715,7 @@ OnBrowseButton(HWND hwndDlg, PDATA pData)
     if (success)
     {
         /* Check if there is already a entry that holds this filename */
-        if (CheckListViewFilenameExists(hwndBackgroundList, ofn.lpstrFileTitle) == TRUE)
+        if (CheckListViewFilenameExists(hwndBackgroundList, ofn.lpstrFileTitle) != FALSE)
             return;
 
         if (pData->listViewItemCount > (MAX_BACKGROUNDS - 1))
@@ -679,7 +725,8 @@ OnBrowseButton(HWND hwndDlg, PDATA pData)
                       0,
                       &sfi,
                       sizeof(sfi),
-                      SHGFI_SYSICONINDEX | SHGFI_SMALLICON | SHGFI_DISPLAYNAME);
+                      SHGFI_ICON | SHGFI_SMALLICON | SHGFI_DISPLAYNAME);
+        sfi.iIcon = ImageList_AddIcon(himl, sfi.hIcon);
 
         backgroundItem = &pData->backgroundItems[pData->listViewItemCount];
 
@@ -716,7 +763,7 @@ OnBrowseButton(HWND hwndDlg, PDATA pData)
 
 
 static VOID
-ListViewItemChanged(HWND hwndDlg, PDATA pData, int itemIndex)
+ListViewItemChanged(HWND hwndDlg, PBACKGROUND_DATA pData, int itemIndex)
 {
     BackgroundItem *backgroundItem = NULL;
 
@@ -729,7 +776,7 @@ ListViewItemChanged(HWND hwndDlg, PDATA pData, int itemIndex)
         pData->pWallpaperBitmap = NULL;
     }
 
-    if (backgroundItem->bWallpaper == TRUE)
+    if (backgroundItem->bWallpaper != FALSE)
     {
         pData->pWallpaperBitmap = DibLoadImage(backgroundItem->szFilename);
 
@@ -750,7 +797,7 @@ ListViewItemChanged(HWND hwndDlg, PDATA pData, int itemIndex)
 
 
 static VOID
-DrawBackgroundPreview(LPDRAWITEMSTRUCT draw, PDATA pData)
+DrawBackgroundPreview(LPDRAWITEMSTRUCT draw, PBACKGROUND_DATA pData)
 {
     float scaleX;
     float scaleY;
@@ -758,6 +805,8 @@ DrawBackgroundPreview(LPDRAWITEMSTRUCT draw, PDATA pData)
     int scaledHeight;
     int posX, desX;
     int posY, desY;
+    int fitFillScaleNum, fitFillScaleDen;
+    int fitFillWidth, fitFillHeight;
     HBRUSH hBrush;
     int x;
     int y;
@@ -875,6 +924,72 @@ DrawBackgroundPreview(LPDRAWITEMSTRUCT draw, PDATA pData)
                 }
 
                 break;
+
+            case PLACEMENT_FIT:
+                if ((MONITOR_WIDTH * scaledHeight) <= (MONITOR_HEIGHT * scaledWidth))
+                {
+                    fitFillScaleNum = MONITOR_WIDTH;
+                    fitFillScaleDen = scaledWidth;
+                }
+                else
+                {
+                    fitFillScaleNum = MONITOR_HEIGHT;
+                    fitFillScaleDen = scaledHeight;
+                }
+
+                fitFillWidth = MulDiv(scaledWidth, fitFillScaleNum, fitFillScaleDen);
+                fitFillHeight = MulDiv(scaledHeight, fitFillScaleNum, fitFillScaleDen);
+
+                posX = (MONITOR_WIDTH - fitFillWidth) / 2;
+                posY = (MONITOR_HEIGHT - fitFillHeight) / 2;
+
+                StretchDIBits(hDC,
+                              MONITOR_LEFT + posX,
+                              MONITOR_TOP + posY,
+                              fitFillWidth,
+                              fitFillHeight,
+                              0,
+                              0,
+                              pData->pWallpaperBitmap->width,
+                              pData->pWallpaperBitmap->height,
+                              pData->pWallpaperBitmap->bits,
+                              pData->pWallpaperBitmap->info,
+                              DIB_RGB_COLORS,
+                              SRCCOPY);
+                break;
+
+            case PLACEMENT_FILL:
+                if ((MONITOR_WIDTH * scaledHeight) > (MONITOR_HEIGHT * scaledWidth))
+                {
+                    fitFillScaleNum = MONITOR_WIDTH;
+                    fitFillScaleDen = scaledWidth;
+                }
+                else
+                {
+                    fitFillScaleNum = MONITOR_HEIGHT;
+                    fitFillScaleDen = scaledHeight;
+                }
+
+                fitFillWidth = MulDiv(scaledWidth, fitFillScaleNum, fitFillScaleDen);
+                fitFillHeight = MulDiv(scaledHeight, fitFillScaleNum, fitFillScaleDen);
+
+                desX = (((fitFillWidth - MONITOR_WIDTH) * pData->pWallpaperBitmap->width) / (2 * fitFillWidth));
+                desY = (((fitFillHeight - MONITOR_HEIGHT) * pData->pWallpaperBitmap->height) / (2 * fitFillHeight));
+
+                StretchDIBits(hDC,
+                              MONITOR_LEFT,
+                              MONITOR_TOP,
+                              MONITOR_WIDTH,
+                              MONITOR_HEIGHT,
+                              desX,
+                              desY,
+                              (MONITOR_WIDTH * pData->pWallpaperBitmap->width) / fitFillWidth,
+                              (MONITOR_HEIGHT * pData->pWallpaperBitmap->height) / fitFillHeight,
+                              pData->pWallpaperBitmap->bits,
+                              pData->pWallpaperBitmap->info,
+                              DIB_RGB_COLORS,
+                              SRCCOPY);
+                break;
         }
     }
 
@@ -893,7 +1008,7 @@ DrawBackgroundPreview(LPDRAWITEMSTRUCT draw, PDATA pData)
 
 
 static VOID
-SetWallpaper(PDATA pData)
+SetWallpaper(PBACKGROUND_DATA pData)
 {
     HKEY regKey;
     TCHAR szWallpaper[MAX_PATH];
@@ -908,7 +1023,7 @@ SetWallpaper(PDATA pData)
         return;
     }
 
-    if (FAILED(StringCbCat(szWallpaper, MAX_PATH, TEXT("\\Wallpaper1.bmp"))))
+    if (FAILED(StringCbCat(szWallpaper, sizeof(szWallpaper), TEXT("\\Wallpaper1.bmp"))))
     {
         return;
     }
@@ -937,7 +1052,19 @@ SetWallpaper(PDATA pData)
         RegSetValueEx(regKey, TEXT("WallpaperStyle"), 0, REG_SZ, (LPBYTE)TEXT("2"), sizeof(TCHAR) * 2);
     }
 
-    if (pData->backgroundItems[pData->backgroundSelection].bWallpaper == TRUE)
+    if (pData->placementSelection == PLACEMENT_FIT)
+    {
+        RegSetValueEx(regKey, TEXT("TileWallpaper"), 0, REG_SZ, (LPBYTE)TEXT("0"), sizeof(TCHAR) * 2);
+        RegSetValueEx(regKey, TEXT("WallpaperStyle"), 0, REG_SZ, (LPBYTE)TEXT("6"), sizeof(TCHAR) * 2);
+    }
+
+    if (pData->placementSelection == PLACEMENT_FILL)
+    {
+        RegSetValueEx(regKey, TEXT("TileWallpaper"), 0, REG_SZ, (LPBYTE)TEXT("0"), sizeof(TCHAR) * 2);
+        RegSetValueEx(regKey, TEXT("WallpaperStyle"), 0, REG_SZ, (LPBYTE)TEXT("10"), sizeof(TCHAR) * 3);
+    }
+
+    if (pData->backgroundItems[pData->backgroundSelection].bWallpaper != FALSE)
     {
         GdipLoadImageFromFile(pData->backgroundItems[pData->backgroundSelection].szFilename, &image);
         if (!image)
@@ -1005,7 +1132,7 @@ SetWallpaper(PDATA pData)
 
 /* Change system color */
 static VOID
-SetDesktopBackColor(HWND hwndDlg, DATA *pData)
+SetDesktopBackColor(HWND hwndDlg, PBACKGROUND_DATA pData)
 {
     HKEY hKey;
     INT iElement = COLOR_BACKGROUND;
@@ -1043,15 +1170,15 @@ BackgroundPageProc(HWND hwndDlg,
                    WPARAM wParam,
                    LPARAM lParam)
 {
-    PDATA pData;
+    PBACKGROUND_DATA pData;
     struct GdiplusStartupInput gdipStartup;
 
-    pData = (PDATA)GetWindowLongPtr(hwndDlg, DWLP_USER);
+    pData = (PBACKGROUND_DATA)GetWindowLongPtr(hwndDlg, DWLP_USER);
 
     switch (uMsg)
     {
         case WM_INITDIALOG:
-            pData = (DATA*) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(DATA));
+            pData = (PBACKGROUND_DATA)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(BACKGROUND_DATA));
             SetWindowLongPtr(hwndDlg, DWLP_USER, (LONG_PTR)pData);
             gdipStartup.GdiplusVersion = 1;
             gdipStartup.DebugEventCallback = NULL;

@@ -23,7 +23,21 @@
  * some registry entries. This feature was introduced with win2k. Please
  * search for 'Shell Instance Objects' on MSDN to get more information. */
 
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "objbase.h"
+#include "oleauto.h"
+
 #include "shdocvw.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(shdocvw);
 
 #define CHARS_IN_GUID 39
 
@@ -346,8 +360,8 @@ HRESULT SHDOCVW_GetShellInstanceObjectClassObject(REFCLSID rclsid, REFIID riid,
     WCHAR wszInstanceKey[] = { 'C','L','S','I','D','\\','{','0','0','0','0','0','0','0','0','-',
         '0','0','0','0','-','0','0','0','0','-','0','0','0','0','-','0','0','0','0','0','0','0','0',
         '0','0','0','0','}','\\','I','n','s','t','a','n','c','e', 0 };
-    const WCHAR wszCLSID[] = { 'C','L','S','I','D',0 };
-    const WCHAR wszInitPropertyBag[] = 
+    static const WCHAR wszCLSID[] = { 'C','L','S','I','D',0 };
+    static const WCHAR wszInitPropertyBag[] =
         { 'I','n','i','t','P','r','o','p','e','r','t','y','B','a','g',0 };
     WCHAR wszCLSIDInstance[CHARS_IN_GUID];
     CLSID clsidInstance;

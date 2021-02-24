@@ -17,9 +17,30 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winreg.h"
+#include "winerror.h"
+
+#include "ole2.h"
+#include "shellapi.h"
+#include "shlobj.h"
+#include "vfw.h"
+#include "msacm.h"
+
 #include "avifile_private.h"
 
-#include <winreg.h>
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(avifile);
+
 
 /***********************************************************************
  * for AVIBuildFilterW -- uses fixed size table
@@ -133,8 +154,8 @@ static BOOL AVIFILE_GetFileHandlerByExtension(LPCWSTR szFile, LPCLSID lpclsid)
 {
   CHAR   szRegKey[25];
   CHAR   szValue[100];
-  LPWSTR szExt = strrchrW(szFile, '.');
-  LONG   len = sizeof(szValue) / sizeof(szValue[0]);
+  LPWSTR szExt = wcsrchr(szFile, '.');
+  LONG   len = ARRAY_SIZE(szValue);
 
   if (szExt == NULL)
     return FALSE;
@@ -349,7 +370,7 @@ HRESULT WINAPI AVIFileCreateStreamA(PAVIFILE pfile, PAVISTREAM *ppavi,
   /* Only the szName at the end is different */
   memcpy(&psiw, psi, sizeof(*psi) - sizeof(psi->szName));
   MultiByteToWideChar(CP_ACP, 0, psi->szName, -1, psiw.szName,
-		      sizeof(psiw.szName) / sizeof(psiw.szName[0]));
+		      ARRAY_SIZE(psiw.szName));
 
   return IAVIFile_CreateStream(pfile, ppavi, &psiw);
 }
@@ -1013,7 +1034,7 @@ HRESULT WINAPI AVIBuildFilterW(LPWSTR szFilter, LONG cbFilter, BOOL fSaving)
     HeapFree(GetProcessHeap(), 0, lp);
     return AVIERR_ERROR;
   }
-  for (n = 0;RegEnumKeyW(hKey, n, szFileExt, sizeof(szFileExt)/sizeof(szFileExt[0])) == ERROR_SUCCESS;n++) {
+  for (n = 0;RegEnumKeyW(hKey, n, szFileExt, ARRAY_SIZE(szFileExt)) == ERROR_SUCCESS;n++) {
     WCHAR clsidW[40];
 
     /* get CLSID to extension */
@@ -1097,10 +1118,10 @@ HRESULT WINAPI AVIBuildFilterW(LPWSTR szFilter, LONG cbFilter, BOOL fSaving)
   HeapFree(GetProcessHeap(), 0, lp);
 
   /* add "All files" "*.*" filter if enough space left */
-  size = LoadStringW(AVIFILE_hModule, IDS_ALLFILES,
-                     szAllFiles, (sizeof(szAllFiles) - sizeof(all_files))/sizeof(WCHAR)) + 1;
+  size = LoadStringW(AVIFILE_hModule, IDS_ALLFILES, szAllFiles,
+                     ARRAY_SIZE(szAllFiles) - ARRAY_SIZE(all_files)) + 1;
   memcpy( szAllFiles + size, all_files, sizeof(all_files) );
-  size += sizeof(all_files) / sizeof(WCHAR);
+  size += ARRAY_SIZE(all_files);
 
   if (cbFilter > size) {
     memcpy(szFilter, szAllFiles, size * sizeof(szAllFiles[0]));
@@ -1278,7 +1299,7 @@ static void AVISaveOptionsUpdate(HWND hWnd)
 	  } else {
 	    LoadStringW(AVIFILE_hModule, IDS_UNCOMPRESSED,
 			icinfo.szDescription,
-			sizeof(icinfo.szDescription)/sizeof(icinfo.szDescription[0]));
+			ARRAY_SIZE(icinfo.szDescription));
 	    lstrcatW(szFormat, icinfo.szDescription);
 	  }
 	} else if (sInfo.fccType == streamtypeAUDIO) {
@@ -2087,8 +2108,7 @@ HRESULT WINAPI EditStreamSetInfoA(PAVISTREAM pstream, LPAVISTREAMINFOA asi,
     return AVIERR_BADSIZE;
 
   memcpy(&asiw, asi, sizeof(asiw) - sizeof(asiw.szName));
-  MultiByteToWideChar(CP_ACP, 0, asi->szName, -1,
-		      asiw.szName, sizeof(asiw.szName)/sizeof(WCHAR));
+  MultiByteToWideChar(CP_ACP, 0, asi->szName, -1, asiw.szName, ARRAY_SIZE(asiw.szName));
 
   return EditStreamSetInfoW(pstream, &asiw, sizeof(asiw));
 }
@@ -2138,7 +2158,7 @@ HRESULT WINAPI EditStreamSetNameA(PAVISTREAM pstream, LPCSTR szName)
     return hres;
 
   memset(asia.szName, 0, sizeof(asia.szName));
-  lstrcpynA(asia.szName, szName, sizeof(asia.szName)/sizeof(asia.szName[0]));
+  lstrcpynA(asia.szName, szName, ARRAY_SIZE(asia.szName));
 
   return EditStreamSetInfoA(pstream, &asia, sizeof(asia));
 }
@@ -2163,7 +2183,7 @@ HRESULT WINAPI EditStreamSetNameW(PAVISTREAM pstream, LPCWSTR szName)
     return hres;
 
   memset(asiw.szName, 0, sizeof(asiw.szName));
-  lstrcpynW(asiw.szName, szName, sizeof(asiw.szName)/sizeof(asiw.szName[0]));
+  lstrcpynW(asiw.szName, szName, ARRAY_SIZE(asiw.szName));
 
   return EditStreamSetInfoW(pstream, &asiw, sizeof(asiw));
 }

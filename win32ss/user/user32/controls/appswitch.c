@@ -15,10 +15,8 @@
 //
 //
 
-
 #include <user32.h>
 
-#include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(user32);
 
 #define DIALOG_MARGIN   8       // margin of dialog contents
@@ -127,7 +125,7 @@ void ResizeAndCenter(HWND hwnd, int width, int height)
 void MakeWindowActive(HWND hwnd)
 {
    if (IsIconic(hwnd))
-      ShowWindowAsync(hwnd, SW_RESTORE);
+      PostMessageW(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
 
    BringWindowToTop(hwnd);  // same as: SetWindowPos(hwnd,HWND_TOP,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE); ?
    SetForegroundWindow(hwnd);
@@ -170,14 +168,6 @@ BOOL CALLBACK EnumerateCallback(HWND window, LPARAM lParam)
 
    UNREFERENCED_PARAMETER(lParam);
 
-   if (!IsWindowVisible(window))
-            return TRUE;
-
-   GetClassNameW(window, windowText, _countof(windowText));
-   if ((wcscmp(L"Shell_TrayWnd", windowText)==0) ||
-       (wcscmp(L"Progman", windowText)==0) )
-            return TRUE;
-
    // First try to get the big icon assigned to the window
    hIcon = (HICON)SendMessageW(window, WM_GETICON, ICON_BIG, 0);
    if (!hIcon)
@@ -215,18 +205,90 @@ BOOL CALLBACK EnumerateCallback(HWND window, LPARAM lParam)
    return TRUE;
 }
 
-// Function mostly compatible with the normal EnumWindows,
-// except it lists in Z-Order and it doesn't ensure consistency
-// if a window is removed while enumerating
-void EnumWindowsZOrder(WNDENUMPROC callback, LPARAM lParam)
+static HWND GetNiceRootOwner(HWND hwnd)
 {
-    HWND next = GetTopWindow(NULL);
-    while (next != NULL)
+    HWND hwndOwner;
+    DWORD ExStyle, OwnerExStyle;
+
+    for (;;)
     {
-        if(!callback(next, lParam))
-         break;
-        next = GetWindow(next, GW_HWNDNEXT);
+        // A window with WS_EX_APPWINDOW is treated as if it has no owner
+        ExStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+        if (ExStyle & WS_EX_APPWINDOW)
+            break;
+
+        // Is the owner visible?
+        // An window with WS_EX_TOOLWINDOW is treated as if it weren't visible
+        hwndOwner = GetWindow(hwnd, GW_OWNER);
+        OwnerExStyle = GetWindowLong(hwndOwner, GWL_EXSTYLE);
+        if (!IsWindowVisible(hwndOwner) || (OwnerExStyle & WS_EX_TOOLWINDOW))
+            break;
+
+        hwnd = hwndOwner;
     }
+
+    return hwnd;
+}
+
+// c.f. http://blogs.msdn.com/b/oldnewthing/archive/2007/10/08/5351207.aspx
+BOOL IsAltTabWindow(HWND hwnd)
+{
+    DWORD ExStyle;
+    RECT rc;
+    HWND hwndTry, hwndWalk;
+    WCHAR szClass[64];
+
+    // must be visible
+    if (!IsWindowVisible(hwnd))
+        return FALSE;
+
+    // must not be WS_EX_TOOLWINDOW
+    ExStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+    if (ExStyle & WS_EX_TOOLWINDOW)
+        return FALSE;
+
+    // must be not empty rect
+    GetWindowRect(hwnd, &rc);
+    if (IsRectEmpty(&rc))
+        return FALSE;
+
+    // check special windows
+    if (!GetClassNameW(hwnd, szClass, _countof(szClass)) ||
+        wcscmp(szClass, L"Shell_TrayWnd") == 0 ||
+        wcscmp(szClass, L"Progman") == 0)
+    {
+        return TRUE;
+    }
+
+    // get 'nice' root owner
+    hwndWalk = GetNiceRootOwner(hwnd);
+
+    // walk back from hwndWalk toward hwnd
+    for (;;)
+    {
+        hwndTry = GetLastActivePopup(hwndWalk);
+        if (hwndTry == hwndWalk)
+            break;
+
+        ExStyle = GetWindowLong(hwndTry, GWL_EXSTYLE);
+        if (IsWindowVisible(hwndTry) && !(ExStyle & WS_EX_TOOLWINDOW))
+            break;
+
+        hwndWalk = hwndTry;
+    }
+
+    return hwnd == hwndTry;     // Reached?
+}
+
+static BOOL CALLBACK
+EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+    if (IsAltTabWindow(hwnd))
+    {
+        if (!EnumerateCallback(hwnd, lParam))
+            return FALSE;
+    }
+    return TRUE;
 }
 
 void ProcessMouseMessage(UINT message, LPARAM lParam)
@@ -411,10 +473,19 @@ BOOL ProcessHotKey(VOID)
 {
    if (!isOpen)
    {
-      windowCount=0;
-      EnumWindowsZOrder(EnumerateCallback, 0);
+      windowCount = 0;
+      EnumWindows(EnumWindowsProc, 0);
 
-      if (windowCount < 2)
+      if (windowCount == 0)
+         return FALSE;
+
+      if (windowCount == 1)
+      {
+         MakeWindowActive(windowList[0]);
+         return FALSE;
+      }
+
+      if (!CreateSwitcherWindow(User32Instance))
          return FALSE;
 
       selectedWindow = 1;
@@ -470,6 +541,50 @@ void RotateTasks(BOOL bShift)
     }
 }
 
+static void MoveLeft(void)
+{
+    selectedWindow = selectedWindow - 1;
+    if (selectedWindow < 0)
+        selectedWindow = windowCount - 1;
+    InvalidateRect(switchdialog, NULL, TRUE);
+}
+
+static void MoveRight(void)
+{
+    selectedWindow = (selectedWindow + 1) % windowCount;
+    InvalidateRect(switchdialog, NULL, TRUE);
+}
+
+static void MoveUp(void)
+{
+    INT iRow = selectedWindow / nCols;
+    INT iCol = selectedWindow % nCols;
+
+    --iRow;
+    if (iRow < 0)
+        iRow = nRows - 1;
+
+    selectedWindow = iRow * nCols + iCol;
+    if (selectedWindow >= windowCount)
+        selectedWindow = windowCount - 1;
+    InvalidateRect(switchdialog, NULL, TRUE);
+}
+
+static void MoveDown(void)
+{
+    INT iRow = selectedWindow / nCols;
+    INT iCol = selectedWindow % nCols;
+
+    ++iRow;
+    if (iRow >= nRows)
+        iRow = 0;
+
+    selectedWindow = iRow * nCols + iCol;
+    if (selectedWindow >= windowCount)
+        selectedWindow = windowCount - 1;
+    InvalidateRect(switchdialog, NULL, TRUE);
+}
+
 VOID
 DestroyAppWindows(VOID)
 {
@@ -497,16 +612,12 @@ LRESULT WINAPI DoAppSwitch( WPARAM wParam, LPARAM lParam )
    // Already in the loop.
    if (switchdialog || Esc) return 0;
 
-   hwndActive = GetActiveWindow();
-   // Nothing is active so exit.
-   if (!hwndActive) return 0;
-
    if (lParam == VK_ESCAPE)
    {
       Esc = TRUE;
 
       windowCount = 0;
-      EnumWindowsZOrder(EnumerateCallback, 0);
+      EnumWindows(EnumWindowsProc, 0);
 
       if (windowCount < 2)
           return 0;
@@ -523,14 +634,15 @@ LRESULT WINAPI DoAppSwitch( WPARAM wParam, LPARAM lParam )
    }
 
    // Capture current active window.
-   SetCapture( hwndActive );
+   hwndActive = GetActiveWindow();
+   if (hwndActive)
+       SetCapture(hwndActive);
 
    switch (lParam)
    {
       case VK_TAB:
-         if( !CreateSwitcherWindow(User32Instance) ) goto Exit;
-         if( !GetDialogFont() ) goto Exit;
-         if( !ProcessHotKey() ) goto Exit;
+         if (!GetDialogFont() || !ProcessHotKey())
+             goto Exit;
          break;
 
       case VK_ESCAPE:
@@ -539,6 +651,10 @@ LRESULT WINAPI DoAppSwitch( WPARAM wParam, LPARAM lParam )
       default:
          goto Exit;
    }
+
+   if (!hwndActive)
+       goto Exit;
+
    // Main message loop:
    while (1)
    {
@@ -585,20 +701,33 @@ LRESULT WINAPI DoAppSwitch( WPARAM wParam, LPARAM lParam )
                 if (Esc) break;
                 if (GetKeyState(VK_SHIFT) < 0)
                 {
-                   selectedWindow = selectedWindow - 1;
-                   if (selectedWindow < 0)
-                      selectedWindow = windowCount - 1;
+                    MoveLeft();
                 }
                 else
                 {
-                   selectedWindow = (selectedWindow + 1)%windowCount;
+                    MoveRight();
                 }
-                InvalidateRect(switchdialog, NULL, TRUE);
              }
              else if ( msg.wParam == VK_ESCAPE )
              {
                 if (!Esc) break;
                 RotateTasks(GetKeyState(VK_SHIFT) < 0);
+             }
+             else if ( msg.wParam == VK_LEFT )
+             {
+                MoveLeft();
+             }
+             else if ( msg.wParam == VK_RIGHT )
+             {
+                MoveRight();
+             }
+             else if ( msg.wParam == VK_UP )
+             {
+                MoveUp();
+             }
+             else if ( msg.wParam == VK_DOWN )
+             {
+                MoveDown();
              }
           }
           break;

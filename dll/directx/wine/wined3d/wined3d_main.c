@@ -73,7 +73,9 @@ static CRITICAL_SECTION wined3d_wndproc_cs = {&wined3d_wndproc_cs_debug, -1, 0, 
 struct wined3d_settings wined3d_settings =
 {
     TRUE,           /* Multithreaded CS by default. */
-    MAKEDWORD_VERSION(4, 4), /* Default to OpenGL 4.4 */
+    FALSE,          /* explicit_gl_version */
+    MAKEDWORD_VERSION(1, 0), /* Default to legacy OpenGL */
+    TRUE,           /* Use of GLSL enabled by default */
     ORM_FBO,        /* Use FBOs to do offscreen rendering */
     PCI_VENDOR_NONE,/* PCI Vendor ID */
     PCI_DEVICE_NONE,/* PCI Device ID */
@@ -81,16 +83,15 @@ struct wined3d_settings wined3d_settings =
     NULL,           /* No wine logo by default */
     TRUE,           /* Prefer multisample textures to multisample renderbuffers. */
     ~0u,            /* Don't force a specific sample count by default. */
+    FALSE,          /* No strict draw ordering. */
     FALSE,          /* Don't range check relative addressing indices in float constants. */
-    FALSE,          /* No strict shader math by default. */
     ~0U,            /* No VS shader model limit by default. */
     ~0U,            /* No HS shader model limit by default. */
     ~0U,            /* No DS shader model limit by default. */
     ~0U,            /* No GS shader model limit by default. */
     ~0U,            /* No PS shader model limit by default. */
     ~0u,            /* No CS shader model limit by default. */
-    WINED3D_RENDERER_AUTO,
-    WINED3D_SHADER_BACKEND_AUTO,
+    FALSE,          /* 3D support enabled by default. */
 };
 
 struct wined3d * CDECL wined3d_create(DWORD flags)
@@ -104,10 +105,11 @@ struct wined3d * CDECL wined3d_create(DWORD flags)
         return NULL;
     }
 
-    if (wined3d_settings.renderer == WINED3D_RENDERER_NO3D)
+    if (wined3d_settings.no_3d)
         flags |= WINED3D_NO3D;
 
-    if (FAILED(hr = wined3d_init(object, flags)))
+    hr = wined3d_init(object, flags);
+    if (FAILED(hr))
     {
         WARN("Failed to initialize wined3d object, hr %#x.\n", hr);
         heap_free(object);
@@ -142,30 +144,6 @@ success:
     return 0;
 }
 
-BOOL wined3d_get_app_name(char *app_name, unsigned int app_name_size)
-{
-    char buffer[MAX_PATH];
-    unsigned int len;
-    char *p, *name;
-
-    len = GetModuleFileNameA(0, buffer, ARRAY_SIZE(buffer));
-    if (!(len && len < MAX_PATH))
-        return FALSE;
-
-    name = buffer;
-    if ((p = strrchr(name, '/' )))
-        name = p + 1;
-    if ((p = strrchr(name, '\\')))
-        name = p + 1;
-
-    len = strlen(name) + 1;
-    if (app_name_size < len)
-        return FALSE;
-
-    memcpy(app_name, name, len);
-    return TRUE;
-}
-
 static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
 {
     DWORD wined3d_context_tls_idx;
@@ -173,7 +151,7 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
     DWORD size = sizeof(buffer);
     HKEY hkey = 0;
     HKEY appkey = 0;
-    DWORD tmpvalue;
+    DWORD len, tmpvalue;
     WNDCLASSA wc;
 
     wined3d_context_tls_idx = TlsAlloc();
@@ -215,16 +193,20 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
     /* @@ Wine registry key: HKCU\Software\Wine\Direct3D */
     if ( RegOpenKeyA( HKEY_CURRENT_USER, "Software\\Wine\\Direct3D", &hkey ) ) hkey = 0;
 
-    if (wined3d_get_app_name(buffer, ARRAY_SIZE(buffer)))
+    len = GetModuleFileNameA( 0, buffer, MAX_PATH );
+    if (len && len < MAX_PATH)
     {
         HKEY tmpkey;
         /* @@ Wine registry key: HKCU\Software\Wine\AppDefaults\app.exe\Direct3D */
-        if (!RegOpenKeyA(HKEY_CURRENT_USER, "Software\\Wine\\AppDefaults", &tmpkey))
+        if (!RegOpenKeyA( HKEY_CURRENT_USER, "Software\\Wine\\AppDefaults", &tmpkey ))
         {
-            strcat(buffer, "\\Direct3D");
-            TRACE("Application name %s.\n", buffer);
-            if (RegOpenKeyA(tmpkey, buffer, &appkey)) appkey = 0;
-            RegCloseKey(tmpkey);
+            char *p, *appname = buffer;
+            if ((p = strrchr( appname, '/' ))) appname = p + 1;
+            if ((p = strrchr( appname, '\\' ))) appname = p + 1;
+            strcat( appname, "\\Direct3D" );
+            TRACE("appname = [%s]\n", appname);
+            if (RegOpenKeyA( tmpkey, appname, &appkey )) appkey = 0;
+            RegCloseKey( tmpkey );
         }
     }
 
@@ -236,35 +218,17 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
         {
             ERR_(winediag)("Setting maximum allowed wined3d GL version to %u.%u.\n",
                     tmpvalue >> 16, tmpvalue & 0xffff);
+            wined3d_settings.explicit_gl_version = TRUE;
             wined3d_settings.max_gl_version = tmpvalue;
         }
-        if (!get_config_key(hkey, appkey, "shader_backend", buffer, size))
+        if ( !get_config_key( hkey, appkey, "UseGLSL", buffer, size) )
         {
-            if (!_strnicmp(buffer, "glsl", -1))
+            if (!strcmp(buffer,"disabled"))
             {
-                ERR_(winediag)("Using the GLSL shader backend.\n");
-                wined3d_settings.shader_backend = WINED3D_SHADER_BACKEND_GLSL;
+                ERR_(winediag)("The GLSL shader backend has been disabled. You get to keep all the pieces if it breaks.\n");
+                TRACE("Use of GL Shading Language disabled\n");
+                wined3d_settings.glslRequested = FALSE;
             }
-            else if (!_strnicmp(buffer, "arb", -1))
-            {
-                ERR_(winediag)("Using the ARB shader backend.\n");
-                wined3d_settings.shader_backend = WINED3D_SHADER_BACKEND_ARB;
-            }
-            else if (!_strnicmp(buffer, "none", -1))
-            {
-                ERR_(winediag)("Disabling shader backends.\n");
-                wined3d_settings.shader_backend = WINED3D_SHADER_BACKEND_NONE;
-            }
-        }
-        else if (!get_config_key(hkey, appkey, "UseGLSL", buffer, size) && !strcmp(buffer, "disabled"))
-        {
-            wined3d_settings.shader_backend = WINED3D_SHADER_BACKEND_ARB;
-        }
-        if (wined3d_settings.shader_backend == WINED3D_SHADER_BACKEND_ARB
-                || wined3d_settings.shader_backend == WINED3D_SHADER_BACKEND_NONE)
-        {
-            ERR_(winediag)("The GLSL shader backend has been disabled. You get to keep all the pieces if it breaks.\n");
-            TRACE("Use of GL Shading Language disabled.\n");
         }
         if (!get_config_key(hkey, appkey, "OffscreenRenderingMode", buffer, size)
                 && !strcmp(buffer,"backbuffer"))
@@ -326,14 +290,19 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
         if (!get_config_key_dword(hkey, appkey, "SampleCount", &wined3d_settings.sample_count))
             ERR_(winediag)("Forcing sample count to %u. This may not be compatible with all applications.\n",
                     wined3d_settings.sample_count);
+        if (!get_config_key(hkey, appkey, "StrictDrawOrdering", buffer, size)
+                && !strcmp(buffer,"enabled"))
+        {
+            ERR_(winediag)("\"StrictDrawOrdering\" is deprecated, please use \"csmt\" instead.\n");
+            TRACE("Enforcing strict draw ordering.\n");
+            wined3d_settings.strict_draw_ordering = TRUE;
+        }
         if (!get_config_key(hkey, appkey, "CheckFloatConstants", buffer, size)
                 && !strcmp(buffer, "enabled"))
         {
             TRACE("Checking relative addressing indices in float constants.\n");
             wined3d_settings.check_float_constants = TRUE;
         }
-        if (!get_config_key_dword(hkey, appkey, "strict_shader_math", &wined3d_settings.strict_shader_math))
-            ERR_(winediag)("Setting strict shader math to %#x.\n", wined3d_settings.strict_shader_math);
         if (!get_config_key_dword(hkey, appkey, "MaxShaderModelVS", &wined3d_settings.max_sm_vs))
             TRACE("Limiting VS shader model to %u.\n", wined3d_settings.max_sm_vs);
         if (!get_config_key_dword(hkey, appkey, "MaxShaderModelHS", &wined3d_settings.max_sm_hs))
@@ -346,29 +315,18 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
             TRACE("Limiting PS shader model to %u.\n", wined3d_settings.max_sm_ps);
         if (!get_config_key_dword(hkey, appkey, "MaxShaderModelCS", &wined3d_settings.max_sm_cs))
             TRACE("Limiting CS shader model to %u.\n", wined3d_settings.max_sm_cs);
-        if (!get_config_key(hkey, appkey, "renderer", buffer, size)
-                || !get_config_key(hkey, appkey, "DirectDrawRenderer", buffer, size))
+        if (!get_config_key(hkey, appkey, "DirectDrawRenderer", buffer, size)
+                && !strcmp(buffer, "gdi"))
         {
-            if (!strcmp(buffer, "vulkan"))
-            {
-                ERR_(winediag)("Using the Vulkan renderer.\n");
-                wined3d_settings.renderer = WINED3D_RENDERER_VULKAN;
-            }
-            else if (!strcmp(buffer, "gl"))
-            {
-                ERR_(winediag)("Using the OpenGL renderer.\n");
-                wined3d_settings.renderer = WINED3D_RENDERER_OPENGL;
-            }
-            else if (!strcmp(buffer, "gdi") || !strcmp(buffer, "no3d"))
-            {
-                ERR_(winediag)("Disabling 3D support.\n");
-                wined3d_settings.renderer = WINED3D_RENDERER_NO3D;
-            }
+            TRACE("Disabling 3D support.\n");
+            wined3d_settings.no_3d = TRUE;
         }
     }
 
     if (appkey) RegCloseKey( appkey );
     if (hkey) RegCloseKey( hkey );
+
+    wined3d_dxtn_init();
 
     return TRUE;
 }
@@ -401,6 +359,9 @@ static BOOL wined3d_dll_destroy(HINSTANCE hInstDLL)
 
     DeleteCriticalSection(&wined3d_wndproc_cs);
     DeleteCriticalSection(&wined3d_cs);
+
+    wined3d_dxtn_free();
+
     return TRUE;
 }
 
@@ -553,6 +514,11 @@ void wined3d_unregister_window(HWND window)
     if (entry != last) *entry = *last;
 
     wined3d_wndproc_mutex_unlock();
+}
+
+void CDECL wined3d_strictdrawing_set(int value)
+{
+    wined3d_settings.strict_draw_ordering = value;
 }
 
 /* At process attach */

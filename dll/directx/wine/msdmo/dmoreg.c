@@ -17,12 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
 
-#include <winuser.h>
-#include <winreg.h>
-#include <wine/unicode.h>
-#include <dmo.h>
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winerror.h"
+#include "winreg.h"
+#include "objbase.h"
+#include "wine/debug.h"
+#include "dmo.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(msdmo);
 
 #define MSDMO_MAJOR_VERSION 6
 
@@ -108,6 +116,16 @@ static LPWSTR GUIDToString(LPWSTR lpwstr, REFGUID lpcguid)
     return lpwstr;
 }
 
+static HRESULT string_to_guid(const WCHAR *string, GUID *guid)
+{
+    WCHAR buffer[39];
+    buffer[0] = '{';
+    lstrcpyW(buffer + 1, string);
+    buffer[37] = '}';
+    buffer[38] = 0;
+    return CLSIDFromString(buffer, guid);
+}
+
 static BOOL IsMediaTypeEqual(const DMO_PARTIAL_MEDIATYPE* mt1, const DMO_PARTIAL_MEDIATYPE* mt2)
 {
 
@@ -189,7 +207,7 @@ HRESULT WINAPI DMORegister(
     ret = RegCreateKeyExW(HKEY_CLASSES_ROOT, szDMORootKey, 0, NULL,
         REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hrkey, NULL);
     if (ret)
-        return HRESULT_FROM_WIN32(ret);
+        return E_FAIL;
 
     /* Create clsidDMO key under MediaObjects */ 
     ret = RegCreateKeyExW(hrkey, GUIDToString(szguid, clsidDMO), 0, NULL,
@@ -199,7 +217,7 @@ HRESULT WINAPI DMORegister(
 
     /* Set default Name value */
     ret = RegSetValueExW(hkey, NULL, 0, REG_SZ, (const BYTE*) szName,
-        (strlenW(szName) + 1) * sizeof(WCHAR));
+        (lstrlenW(szName) + 1) * sizeof(WCHAR));
 
     /* Set InputTypes */
     hres = write_types(hkey, szDMOInputType, pInTypes, cInTypes);
@@ -297,7 +315,7 @@ HRESULT WINAPI DMOUnregister(REFCLSID dmo, REFGUID category)
     /* remove from all categories */
     if (IsEqualGUID(category, &GUID_NULL))
     {
-        DWORD index = 0, len = sizeof(catW)/sizeof(WCHAR);
+        DWORD index = 0, len = ARRAY_SIZE(catW);
 
         while (!RegEnumKeyExW(categorieskey, index++, catW, &len, NULL, NULL, NULL, NULL))
             hr = unregister_dmo_from_category(dmoW, catW, categorieskey);
@@ -381,7 +399,6 @@ static HRESULT IEnumDMO_Constructor(
 {
     IEnumDMOImpl* lpedmo;
     HRESULT hr;
-    LONG ret;
 
     *obj = NULL;
 
@@ -396,6 +413,7 @@ static HRESULT IEnumDMO_Constructor(
     lpedmo->dwFlags = dwFlags;
     lpedmo->cInTypes = cInTypes;
     lpedmo->cOutTypes = cOutTypes;
+    lpedmo->hkey = NULL;
 
     hr = dup_partial_mediatype(pInTypes, cInTypes, &lpedmo->pInTypes);
     if (FAILED(hr))
@@ -408,8 +426,7 @@ static HRESULT IEnumDMO_Constructor(
     /* If not filtering by category enum from media objects root */
     if (IsEqualGUID(guidCategory, &GUID_NULL))
     {
-        if ((ret = RegOpenKeyExW(HKEY_CLASSES_ROOT, szDMORootKey, 0, KEY_READ, &lpedmo->hkey)))
-            hr = HRESULT_FROM_WIN32(ret);
+        RegOpenKeyExW(HKEY_CLASSES_ROOT, szDMORootKey, 0, KEY_READ, &lpedmo->hkey);
     }
     else
     {
@@ -417,8 +434,7 @@ static HRESULT IEnumDMO_Constructor(
         WCHAR szKey[MAX_PATH];
 
         wsprintfW(szKey, szCat3Fmt, szDMORootKey, szDMOCategories, GUIDToString(szguid, guidCategory));
-        if ((ret = RegOpenKeyExW(HKEY_CLASSES_ROOT, szKey, 0, KEY_READ, &lpedmo->hkey)))
-            hr = HRESULT_FROM_WIN32(ret);
+        RegOpenKeyExW(HKEY_CLASSES_ROOT, szKey, 0, KEY_READ, &lpedmo->hkey);
     }
 
 lerr:
@@ -507,13 +523,17 @@ static HRESULT WINAPI IEnumDMO_fnNext(
     UINT count = 0;
     HRESULT hres = S_OK;
     LONG ret;
+    GUID guid;
 
     IEnumDMOImpl *This = impl_from_IEnumDMO(iface);
 
     TRACE("(%p)->(%d %p %p %p)\n", This, cItemsToFetch, pCLSID, Names, pcItemsFetched);
 
-    if (!pCLSID || !Names || !pcItemsFetched)
+    if (!pCLSID)
         return E_POINTER;
+
+    if (!pcItemsFetched && cItemsToFetch > 1)
+        return E_INVALIDARG;
 
     while (count < cItemsToFetch)
     {
@@ -526,6 +546,9 @@ static HRESULT WINAPI IEnumDMO_fnNext(
             hres = HRESULT_FROM_WIN32(ret);
             break;
         }
+
+        if (string_to_guid(szNextKey, &guid) != S_OK)
+            continue;
 
         TRACE("found %s\n", debugstr_w(szNextKey));
 
@@ -561,7 +584,7 @@ static HRESULT WINAPI IEnumDMO_fnNext(
                 continue;
             }
 
-	    pInTypes = (DMO_PARTIAL_MEDIATYPE*) szValue;
+            pInTypes = (DMO_PARTIAL_MEDIATYPE *)szValue;
 
             TRACE("read %d intypes for %s:\n", cInTypes, debugstr_w(szKey));
             for (i = 0; i < cInTypes; i++) {
@@ -574,10 +597,10 @@ static HRESULT WINAPI IEnumDMO_fnNext(
                 for (j = 0; j < cInTypes; j++) 
                 {
                     if (IsMediaTypeEqual(&pInTypes[j], &This->pInTypes[i]))
-		        break;
+                        break;
                 }
 
-		if (j >= cInTypes)
+                if (j >= cInTypes)
                     break;
             }
 
@@ -598,13 +621,13 @@ static HRESULT WINAPI IEnumDMO_fnNext(
                     sizeof(szValue)/sizeof(DMO_PARTIAL_MEDIATYPE),
                     (DMO_PARTIAL_MEDIATYPE*)szValue);
 
-	    if (FAILED(hres))
+            if (FAILED(hres))
             {
                 RegCloseKey(hkey);
                 continue;
             }
 
-	    pOutTypes = (DMO_PARTIAL_MEDIATYPE*) szValue;
+            pOutTypes = (DMO_PARTIAL_MEDIATYPE *)szValue;
 
             TRACE("read %d outtypes for %s:\n", cOutTypes, debugstr_w(szKey));
             for (i = 0; i < cOutTypes; i++) {
@@ -617,10 +640,10 @@ static HRESULT WINAPI IEnumDMO_fnNext(
                 for (j = 0; j < cOutTypes; j++) 
                 {
                     if (IsMediaTypeEqual(&pOutTypes[j], &This->pOutTypes[i]))
-		        break;
+                        break;
                 }
 
-		if (j >= cOutTypes)
+                if (j >= cOutTypes)
                     break;
             }
 
@@ -631,26 +654,29 @@ static HRESULT WINAPI IEnumDMO_fnNext(
             }
         }
 
-	/* Media object wasn't filtered so add it to return list */
-        Names[count] = NULL;
-	len = MAX_PATH * sizeof(WCHAR);
+        /* Media object wasn't filtered so add it to return list */
+        len = MAX_PATH * sizeof(WCHAR);
         ret = RegQueryValueExW(hkey, NULL, NULL, NULL, (LPBYTE)szValue, &len);
-        if (ERROR_SUCCESS == ret)
-	{
-            Names[count] = CoTaskMemAlloc((strlenW(szValue) + 1) * sizeof(WCHAR));
-	    if (Names[count])
-                strcpyW(Names[count], szValue);
-	}
+        if (Names)
+        {
+            Names[count] = NULL;
+            if (ret == ERROR_SUCCESS)
+            {
+                Names[count] = CoTaskMemAlloc((lstrlenW(szValue) + 1) * sizeof(WCHAR));
+                if (Names[count])
+                    lstrcpyW(Names[count], szValue);
+            }
+        }
         wsprintfW(szGuidKey,szToGuidFmt,szNextKey);
         CLSIDFromString(szGuidKey, &pCLSID[count]);
 
         TRACE("found match %s %s\n", debugstr_w(szValue), debugstr_w(szNextKey));
         RegCloseKey(hkey);
-	count++;
+        count++;
     }
 
-    *pcItemsFetched = count;
-    if (*pcItemsFetched < cItemsToFetch)
+    if (pcItemsFetched) *pcItemsFetched = count;
+    if (count < cItemsToFetch)
         hres = S_FALSE;
 
     TRACE("<-- %i found\n",count);

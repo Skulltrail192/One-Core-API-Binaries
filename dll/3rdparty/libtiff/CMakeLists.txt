@@ -2,7 +2,16 @@
 add_definitions(
     -DWIN32
     -DNDEBUG
-    -DUSE_WIN32_FILEIO)
+    -DUSE_WIN32_FILEIO
+    -DTIF_PLATFORM_CONSOLE)
+
+if(MSVC)
+    # error C4311: 'type cast': pointer truncation from 'thandle_t' to 'int'
+    replace_compile_flags("/we4311" " ")
+
+    # error C4312: 'type cast': conversion from 'int' to 'thandle_t' of greater size
+    replace_compile_flags("/we4312" " ")
+endif()
 
 include_directories(
     ${REACTOS_SOURCE_DIR}/sdk/include/reactos/libs/libtiff
@@ -46,12 +55,14 @@ list(APPEND SOURCE
     tif_tile.c
     tif_version.c
     tif_warning.c
+    #tif_webp.c
     tif_win32.c
     tif_write.c
     tif_zip.c
+    #tif_zstd.c
     precomp.h)
 
-add_library(libtiff SHARED ${SOURCE} libtiff.def)
+add_library(libtiff MODULE ${SOURCE} libtiff.def)
 set_module_type(libtiff win32dll)
 target_link_libraries(libtiff zlib getopt)
 add_importlibs(libtiff user32 msvcrt kernel32 ntdll)
@@ -59,7 +70,5 @@ add_pch(libtiff precomp.h SOURCE)
 add_cd_file(TARGET libtiff DESTINATION reactos/system32 FOR all)
 
 if(NOT MSVC)
-    if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
-        add_target_compile_flags(libtiff "-Wno-unused-but-set-variable")
-    endif()
+    target_compile_options(libtiff PRIVATE "-Wno-unused-but-set-variable")
 endif()

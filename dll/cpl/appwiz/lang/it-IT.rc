@@ -21,10 +21,10 @@ END
 
 IDD_SHORTCUT_LOCATION DIALOGEX 0, 0, 340, 200
 STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "Create Scociatoia"
+CAPTION "Crea Collegamenti"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    LTEXT "Questo wizard permette la creazione di collegamenti verso programmi locali o di rete, file, cartella, computer, o \nindirizzi Internet.", -1, 120, 15, 200, 30
+    LTEXT "Questo wizard permette la creazione di collegamenti verso programmi locali o di rete, file, cartella, computer, o\nindirizzi Internet.", -1, 120, 15, 200, 30
     LTEXT "Digitare la posizione:", -1, 120, 50, 120, 10
     EDITTEXT IDC_SHORTCUT_LOCATION, 120, 65, 150, 15, ES_LEFT
     PUSHBUTTON "Sfoglia...", IDC_SHORTCUT_BROWSE, 272, 65, 55, 15, ES_LEFT
@@ -43,14 +43,14 @@ END
 
 IDD_CONFIG_STARTMENU DIALOGEX 0, 0, 212, 200
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
-CAPTION "Remove Shortcuts/Folders"
+CAPTION "Rimuovere Scorciatoie/Cartelle"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "&To remove an item from the Start menu, select the item and click Remove.", -1, 10, 10, 192, 16
+    LTEXT "&Per rimuovere un elemento del menu di avvio, selezionalo e clicca Rimuovi.", -1, 10, 10, 192, 16
     CONTROL "List1", IDC_STARTMENU_TREE, "SysListView32", LVS_REPORT | LVS_SHOWSELALWAYS |
             LVS_SORTASCENDING | WS_BORDER | WS_TABSTOP, 10, 32, 192, 138
-    PUSHBUTTON "&Remove", IDC_REMOVE_ENTRIES, 98, 176, 50, 14, WS_GROUP | WS_TABSTOP
-    DEFPUSHBUTTON "Close", IDOK, 152, 176, 50, 14, WS_GROUP | WS_TABSTOP
+    PUSHBUTTON "&Rimuovi", IDC_REMOVE_ENTRIES, 98, 176, 50, 14, WS_GROUP | WS_TABSTOP
+    DEFPUSHBUTTON "Chiudi", IDOK, 152, 176, 50, 14, WS_GROUP | WS_TABSTOP
 END
 
 ID_DWL_GECKO_DIALOG DIALOGEX  0, 0, 260, 95
@@ -62,7 +62,7 @@ BEGIN
           ID_DWL_STATUS, "SysLink", 0, 10, 10, 240, 65
     CONTROL "", ID_DWL_PROGRESS, PROGRESS_CLASSA, WS_BORDER | PBS_SMOOTH, 10, 40, 240, 12
     DEFPUSHBUTTON "&Installa", ID_DWL_INSTALL, 200, 76, 50, 14, WS_GROUP | WS_TABSTOP
-    PUSHBUTTON "Cancella", IDCANCEL, 144, 76, 50, 14, WS_GROUP | WS_TABSTOP
+    PUSHBUTTON "Annulla", IDCANCEL, 144, 76, 50, 14, WS_GROUP | WS_TABSTOP
 END
 
 STRINGTABLE
@@ -78,4 +78,12 @@ BEGIN
     IDS_DOWNLOADING "Scaricando..."
     IDS_INSTALLING "Installando..."
     IDS_INVALID_SHA "Checksum imprevisto del file scaricato. Interruzione installazione del file danneggiato."
+    IDS_NEW_INTERNET_SHORTCUT "Nuovo Collegamento Internet"
+    IDS_DWL_FAILED "Lo scaricamento del pacchetto Gecko è fallito. Assicurati che hai una connessione internet per scaricarlo. Il setup procederà senza l'installazione del pacchetto Gecko."
+    IDS_CANTMAKEINETSHORTCUT "La creazione di un collegamento internet è fallita."
+    IDS_CANTMAKESHORTCUT "La creazione di un collegamento è fallita."
+    IDS_NO_MEMORY "No memory could be allocated!"
+    IDS_NO_DIRECTORY "No directory given!"
+    IDS_INVALID_PATH "The given path is invalid!"
+    IDS_INVALID_NAME "The shortcut name you entered either contained characters that are invalid for file names or was too long."
 END

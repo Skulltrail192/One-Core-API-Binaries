@@ -4,15 +4,10 @@
  * FILE:        dll/shellext/stobject/stobject.cpp
  * PURPOSE:     COM registration services for STobject.dll
  * PROGRAMMERS: Robert Naumann
- David Quintana <gigaherz@gmail.com>
+ *              David Quintana <gigaherz@gmail.com>
  */
 
 #include "precomp.h"
-
-#include <olectl.h>
-#include <atlwin.h>
-
-WINE_DEFAULT_DEBUG_CHANNEL(stobject);
 
 BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_SysTray, CSysTray)

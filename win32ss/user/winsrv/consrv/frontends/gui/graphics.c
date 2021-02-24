@@ -32,8 +32,8 @@ GuiCopyFromGraphicsBuffer(PGRAPHICS_SCREEN_BUFFER Buffer,
 
     if (Buffer->BitMap == NULL) return;
 
-    selWidth  = GuiData->Selection.srSelection.Right - GuiData->Selection.srSelection.Left + 1;
-    selHeight = GuiData->Selection.srSelection.Bottom - GuiData->Selection.srSelection.Top + 1;
+    selWidth  = ConioRectWidth(&GuiData->Selection.srSelection);
+    selHeight = ConioRectHeight(&GuiData->Selection.srSelection);
     DPRINT("Selection is (%d|%d) to (%d|%d)\n",
            GuiData->Selection.srSelection.Left,
            GuiData->Selection.srSelection.Top,
@@ -126,17 +126,22 @@ GuiPaintGraphicsBuffer(PGRAPHICS_SCREEN_BUFFER Buffer,
                        PRECT rcView,
                        PRECT rcFramebuffer)
 {
-    PCONSRV_CONSOLE Console = Buffer->Header.Console;
+    PCONSRV_CONSOLE Console = (PCONSRV_CONSOLE)Buffer->Header.Console;
     // ASSERT(Console == GuiData->Console);
 
-    if (Buffer->BitMap == NULL) return;
+    ConioInitLongRect(rcFramebuffer, 0, 0, 0, 0);
 
-    if (!ConDrvValidateConsoleUnsafe((PCONSOLE)Console, CONSOLE_RUNNING, TRUE)) return;
+    if (Buffer->BitMap == NULL)
+        return;
 
-    rcFramebuffer->left   = Buffer->ViewOrigin.X * 1 + rcView->left;
-    rcFramebuffer->top    = Buffer->ViewOrigin.Y * 1 + rcView->top;
-    rcFramebuffer->right  = Buffer->ViewOrigin.X * 1 + rcView->right;
-    rcFramebuffer->bottom = Buffer->ViewOrigin.Y * 1 + rcView->bottom;
+    if (!ConDrvValidateConsoleUnsafe((PCONSOLE)Console, CONSOLE_RUNNING, TRUE))
+        return;
+
+    ConioInitLongRect(rcFramebuffer,
+                      Buffer->ViewOrigin.Y * 1 + rcView->top,
+                      Buffer->ViewOrigin.X * 1 + rcView->left,
+                      Buffer->ViewOrigin.Y * 1 + rcView->bottom,
+                      Buffer->ViewOrigin.X * 1 + rcView->right);
 
     /* Grab the mutex */
     NtWaitForSingleObject(Buffer->Mutex, FALSE, NULL);

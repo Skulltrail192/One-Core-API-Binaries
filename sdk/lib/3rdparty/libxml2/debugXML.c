@@ -289,7 +289,7 @@ xmlCtxtGenericNodeCheck(xmlDebugCtxtPtr ctxt, xmlNodePtr node) {
 	dict = doc->dict;
 	if ((dict == NULL) && (ctxt->nodict == 0)) {
 #if 0
-            /* desactivated right now as it raises too many errors */
+            /* deactivated right now as it raises too many errors */
 	    if (doc->type == XML_DOCUMENT_NODE)
 		xmlDebugErr(ctxt, XML_CHECK_NO_DICT,
 			    "Document has no dictionary\n");
@@ -1168,7 +1168,7 @@ xmlCtxtDumpDocHead(xmlDebugCtxtPtr ctxt, xmlDocPtr doc)
  * @output:  the FILE * for the output
  * @doc:  the document
  *
- * Dumps debug information cncerning the document, not recursive
+ * Dumps debug information concerning the document, not recursive
  */
 static void
 xmlCtxtDumpDocumentHead(xmlDebugCtxtPtr ctxt, xmlDocPtr doc)
@@ -1229,8 +1229,11 @@ xmlCtxtDumpDocument(xmlDebugCtxtPtr ctxt, xmlDocPtr doc)
 }
 
 static void
-xmlCtxtDumpEntityCallback(xmlEntityPtr cur, xmlDebugCtxtPtr ctxt)
+xmlCtxtDumpEntityCallback(void *payload, void *data,
+                          const xmlChar *name ATTRIBUTE_UNUSED)
 {
+    xmlEntityPtr cur = (xmlEntityPtr) payload;
+    xmlDebugCtxtPtr ctxt = (xmlDebugCtxtPtr) data;
     if (cur == NULL) {
         if (!ctxt->check)
             fprintf(ctxt->output, "Entity is NULL");
@@ -1289,8 +1292,7 @@ xmlCtxtDumpEntities(xmlDebugCtxtPtr ctxt, xmlDocPtr doc)
 
         if (!ctxt->check)
             fprintf(ctxt->output, "Entities in internal subset\n");
-        xmlHashScan(table, (xmlHashScanner) xmlCtxtDumpEntityCallback,
-                    ctxt);
+        xmlHashScan(table, xmlCtxtDumpEntityCallback, ctxt);
     } else
         fprintf(ctxt->output, "No entities in internal subset\n");
     if ((doc->extSubset != NULL) && (doc->extSubset->entities != NULL)) {
@@ -1299,8 +1301,7 @@ xmlCtxtDumpEntities(xmlDebugCtxtPtr ctxt, xmlDocPtr doc)
 
         if (!ctxt->check)
             fprintf(ctxt->output, "Entities in external subset\n");
-        xmlHashScan(table, (xmlHashScanner) xmlCtxtDumpEntityCallback,
-                    ctxt);
+        xmlHashScan(table, xmlCtxtDumpEntityCallback, ctxt);
     } else if (!ctxt->check)
         fprintf(ctxt->output, "No entities in external subset\n");
 }
@@ -1497,7 +1498,7 @@ xmlDebugDumpNodeList(FILE * output, xmlNodePtr node, int depth)
  * @output:  the FILE * for the output
  * @doc:  the document
  *
- * Dumps debug information cncerning the document, not recursive
+ * Dumps debug information concerning the document, not recursive
  */
 void
 xmlDebugDumpDocumentHead(FILE * output, xmlDocPtr doc)
@@ -2362,10 +2363,7 @@ xmlShellRNGValidate(xmlShellCtxtPtr sctxt, char *schemas,
     int ret;
 
     ctxt = xmlRelaxNGNewParserCtxt(schemas);
-    xmlRelaxNGSetParserErrors(ctxt,
-	    (xmlRelaxNGValidityErrorFunc) fprintf,
-	    (xmlRelaxNGValidityWarningFunc) fprintf,
-	    stderr);
+    xmlRelaxNGSetParserErrors(ctxt, xmlGenericError, xmlGenericError, NULL);
     relaxngschemas = xmlRelaxNGParse(ctxt);
     xmlRelaxNGFreeParserCtxt(ctxt);
     if (relaxngschemas == NULL) {
@@ -2374,10 +2372,7 @@ xmlShellRNGValidate(xmlShellCtxtPtr sctxt, char *schemas,
 	return(-1);
     }
     vctxt = xmlRelaxNGNewValidCtxt(relaxngschemas);
-    xmlRelaxNGSetValidErrors(vctxt,
-	    (xmlRelaxNGValidityErrorFunc) fprintf,
-	    (xmlRelaxNGValidityWarningFunc) fprintf,
-	    stderr);
+    xmlRelaxNGSetValidErrors(vctxt, xmlGenericError, xmlGenericError, NULL);
     ret = xmlRelaxNGValidateDoc(vctxt, sctxt->doc);
     if (ret == 0) {
 	fprintf(stderr, "%s validates\n", sctxt->filename);
@@ -2646,9 +2641,9 @@ xmlShellValidate(xmlShellCtxtPtr ctxt, char *dtd,
     int res = -1;
 
     if ((ctxt == NULL) || (ctxt->doc == NULL)) return(-1);
-    vctxt.userData = stderr;
-    vctxt.error = (xmlValidityErrorFunc) fprintf;
-    vctxt.warning = (xmlValidityWarningFunc) fprintf;
+    vctxt.userData = NULL;
+    vctxt.error = xmlGenericError;
+    vctxt.warning = xmlGenericError;
 
     if ((dtd == NULL) || (dtd[0] == 0)) {
         res = xmlValidateDocument(&vctxt, ctxt->doc);
@@ -2931,7 +2926,7 @@ xmlShell(xmlDocPtr doc, char *filename, xmlShellReadlineFunc input,
 		  fprintf(ctxt->output, "\tvalidate     check the document for errors\n");
 #endif /* LIBXML_VALID_ENABLED */
 #ifdef LIBXML_SCHEMAS_ENABLED
-		  fprintf(ctxt->output, "\trelaxng rng  validate the document agaisnt the Relax-NG schemas\n");
+		  fprintf(ctxt->output, "\trelaxng rng  validate the document against the Relax-NG schemas\n");
 #endif
 		  fprintf(ctxt->output, "\tgrep string  search for a string in the subtree\n");
 #ifdef LIBXML_VALID_ENABLED

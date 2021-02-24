@@ -19,7 +19,27 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+#include "wine/port.h"
+
+#include <stdarg.h>
+#include <string.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "wine/winternl.h"
+#include "winuser.h"
+#include "winerror.h"
+#include "winreg.h"
+#include "dinput.h"
+
 #include "dinput_private.h"
+#include "device_private.h"
+#include "wine/debug.h"
+#include "wine/unicode.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(dinput);
 
 /* Wine mouse driver object instances */
 #define WINE_MOUSE_X_AXIS_INSTANCE   0
@@ -74,10 +94,6 @@ static inline IDirectInputDevice8W *IDirectInputDevice8W_from_impl(SysMouseImpl 
 
 static int dinput_mouse_hook( LPDIRECTINPUTDEVICE8A iface, WPARAM wparam, LPARAM lparam );
 
-const GUID DInput_Wine_Mouse_GUID = { /* 9e573ed8-7734-11d2-8d4a-23903fb6bdf7 */
-    0x9e573ed8, 0x7734, 0x11d2, {0x8d, 0x4a, 0x23, 0x90, 0x3f, 0xb6, 0xbd, 0xf7}
-};
-
 static void _dump_mouse_state(const DIMOUSESTATE2 *m_state)
 {
     int i;
@@ -102,7 +118,7 @@ static void fill_mouse_dideviceinstanceA(LPDIDEVICEINSTANCEA lpddi, DWORD versio
 
     ddi.dwSize = dwSize;
     ddi.guidInstance = GUID_SysMouse;/* DInput's GUID */
-    ddi.guidProduct = DInput_Wine_Mouse_GUID; /* Vendor's GUID */
+    ddi.guidProduct = GUID_SysMouse;
     if (version >= 0x0800)
         ddi.dwDevType = DI8DEVTYPE_MOUSE | (DI8DEVTYPEMOUSE_TRADITIONAL << 8);
     else
@@ -126,7 +142,7 @@ static void fill_mouse_dideviceinstanceW(LPDIDEVICEINSTANCEW lpddi, DWORD versio
 
     ddi.dwSize = dwSize;
     ddi.guidInstance = GUID_SysMouse;/* DInput's GUID */
-    ddi.guidProduct = DInput_Wine_Mouse_GUID; /* Vendor's GUID */
+    ddi.guidProduct = GUID_SysMouse;
     if (version >= 0x0800)
         ddi.dwDevType = DI8DEVTYPE_MOUSE | (DI8DEVTYPEMOUSE_TRADITIONAL << 8);
     else
@@ -141,6 +157,9 @@ static HRESULT mousedev_enum_deviceA(DWORD dwDevType, DWORD dwFlags, LPDIDEVICEI
 {
     if (id != 0)
         return E_FAIL;
+
+    if (dwFlags & DIEDFL_FORCEFEEDBACK)
+        return S_FALSE;
 
     if ((dwDevType == 0) ||
 	((dwDevType == DIDEVTYPE_MOUSE) && (version < 0x0800)) ||
@@ -159,6 +178,9 @@ static HRESULT mousedev_enum_deviceW(DWORD dwDevType, DWORD dwFlags, LPDIDEVICEI
 {
     if (id != 0)
         return E_FAIL;
+
+    if (dwFlags & DIEDFL_FORCEFEEDBACK)
+        return S_FALSE;
 
     if ((dwDevType == 0) ||
 	((dwDevType == DIDEVTYPE_MOUSE) && (version < 0x0800)) ||
@@ -196,9 +218,9 @@ static SysMouseImpl *alloc_device(REFGUID rguid, IDirectInputImpl *dinput)
     get_app_key(&hkey, &appkey);
     if (!get_config_key(hkey, appkey, "MouseWarpOverride", buffer, sizeof(buffer)))
     {
-        if (!strcasecmp(buffer, "disable"))
+        if (!_strnicmp(buffer, "disable", -1))
             newDevice->warp_override = WARP_DISABLE;
-        else if (!strcasecmp(buffer, "force"))
+        else if (!_strnicmp(buffer, "force", -1))
             newDevice->warp_override = WARP_FORCE_ON;
     }
     if (appkey) RegCloseKey(appkey);
@@ -238,8 +260,7 @@ static HRESULT mousedev_create_device(IDirectInputImpl *dinput, REFGUID rguid, R
     TRACE("%p %s %s %p %i\n", dinput, debugstr_guid(rguid), debugstr_guid(riid), pdev, unicode);
     *pdev = NULL;
 
-    if (IsEqualGUID(&GUID_SysMouse, rguid) ||        /* Generic Mouse */
-        IsEqualGUID(&DInput_Wine_Mouse_GUID, rguid)) /* Wine Mouse */
+    if (IsEqualGUID(&GUID_SysMouse, rguid)) /* Wine Mouse */
     {
         SysMouseImpl *This;
 
@@ -597,8 +618,21 @@ static HRESULT WINAPI SysMouseWImpl_GetProperty(LPDIRECTINPUTDEVICE8W iface, REF
 	    case (DWORD_PTR) DIPROP_GRANULARITY: {
 		LPDIPROPDWORD pr = (LPDIPROPDWORD) pdiph;
 		
-		/* We'll just assume that the app asks about the Z axis */
-		pr->dwData = WHEEL_DELTA;
+		if (
+		    ((pdiph->dwHow == DIPH_BYOFFSET) &&
+		     ((pdiph->dwObj == DIMOFS_X) ||
+		      (pdiph->dwObj == DIMOFS_Y)))
+		    ||
+		    ((pdiph->dwHow == DIPH_BYID) &&
+		     ((pdiph->dwObj == (DIDFT_MAKEINSTANCE(WINE_MOUSE_X_AXIS_INSTANCE) | DIDFT_RELAXIS)) ||
+		      (pdiph->dwObj == (DIDFT_MAKEINSTANCE(WINE_MOUSE_Y_AXIS_INSTANCE) | DIDFT_RELAXIS))))
+		){
+		    /* Set granularity of X/Y Axis to 1. See MSDN on DIPROP_GRANULARITY */
+		    pr->dwData = 1;
+		} else {
+		    /* We'll just assume that the app asks about the Z axis */
+		    pr->dwData = WHEEL_DELTA;
+		}
 		
 		break;
 	    }
@@ -696,6 +730,9 @@ static HRESULT WINAPI SysMouseWImpl_GetObjectInfo(LPDIRECTINPUTDEVICE8W iface,
     else if (pdidoi->dwType & DIDFT_BUTTON)
         wsprintfW(pdidoi->tszName, buttonW, DIDFT_GETINSTANCE(pdidoi->dwType) - 3);
 
+    if(pdidoi->dwType & DIDFT_AXIS)
+        pdidoi->dwFlags |= DIDOI_ASPECTPOSITION;
+
     _dump_OBJECTINSTANCEW(pdidoi);
     return res;
 }
@@ -730,11 +767,6 @@ static HRESULT WINAPI SysMouseAImpl_GetDeviceInfo(
 {
     SysMouseImpl *This = impl_from_IDirectInputDevice8A(iface);
     TRACE("(this=%p,%p)\n", This, pdidi);
-
-    if (pdidi->dwSize != sizeof(DIDEVICEINSTANCEA)) {
-        WARN(" dinput3 not supported yet...\n");
-	return DI_OK;
-    }
 
     fill_mouse_dideviceinstanceA(pdidi, This->base.dinput->dwVersion);
     
@@ -801,7 +833,8 @@ static HRESULT WINAPI SysMouseWImpl_SetActionMap(LPDIRECTINPUTDEVICE8W iface,
                                                  LPCWSTR lpszUserName,
                                                  DWORD dwFlags)
 {
-    FIXME("(%p)->(%p,%s,%08x): semi-stub !\n", iface, lpdiaf, debugstr_w(lpszUserName), dwFlags);
+    SysMouseImpl *This = impl_from_IDirectInputDevice8W(iface);
+    FIXME("(%p)->(%p,%s,%08x): semi-stub !\n", This, lpdiaf, debugstr_w(lpszUserName), dwFlags);
 
     return _set_action_map(iface, lpdiaf, lpszUserName, dwFlags, &c_dfDIMouse2);
 }
@@ -828,6 +861,8 @@ static HRESULT WINAPI SysMouseAImpl_SetActionMap(LPDIRECTINPUTDEVICE8A iface,
     }
 
     hr = SysMouseWImpl_SetActionMap(&This->base.IDirectInputDevice8W_iface, &diafW, lpszUserNameW, dwFlags);
+
+    lpdiaf->dwCRC = diafW.dwCRC;
 
     HeapFree(GetProcessHeap(), 0, diafW.rgoAction);
     HeapFree(GetProcessHeap(), 0, lpszUserNameW);

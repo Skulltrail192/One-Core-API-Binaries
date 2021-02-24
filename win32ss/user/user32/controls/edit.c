@@ -46,8 +46,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <usp10.h>
 
-#include <wine/debug.h>
-
 WINE_DEFAULT_DEBUG_CHANNEL(edit);
 WINE_DECLARE_DEBUG_CHANNEL(combo);
 WINE_DECLARE_DEBUG_CHANNEL(relay);
@@ -807,7 +805,11 @@ static void EDIT_BuildLineDefs_ML(EDITSTATE *es, INT istart, INT iend, INT delta
 		if ((es->style & ES_CENTER) || (es->style & ES_RIGHT))
 			rc.left = es->format_rect.left;
 		else
+#ifdef __REACTOS__ /* CORE-11475 */
+			rc.left = (short)LOWORD(EDIT_EM_PosFromChar(es, nstart_index, FALSE));
+#else
                         rc.left = LOWORD(EDIT_EM_PosFromChar(es, nstart_index, FALSE));
+#endif
 		rc.right = es->format_rect.right;
 		SetRectRgn(hrgn, rc.left, rc.top, rc.right, rc.bottom);
 
@@ -1133,7 +1135,11 @@ static LRESULT EDIT_EM_PosFromChar(EDITSTATE *es, INT index, BOOL after_wrap)
 			x -= es->x_offset;
 		}
 		else
+#ifdef __REACTOS__ /* CORE-15780 */
+			x = (lw > 0 ? es->x_offset : x - es->x_offset);
+#else
 			x = es->x_offset;
+#endif
 
 		if (es->style & ES_RIGHT)
 			x = w - (lw - x);
@@ -3628,7 +3634,6 @@ static LRESULT EDIT_WM_KeyDown(EDITSTATE *es, INT key)
  */
 static LRESULT EDIT_WM_KillFocus(EDITSTATE *es)
 {
-#ifdef __REACTOS__
 	HWND hCombo;
 	LONG lStyles;
 
@@ -3649,15 +3654,7 @@ static LRESULT EDIT_WM_KillFocus(EDITSTATE *es)
 		if ((lStyles & CBS_DROPDOWN) || (lStyles & CBS_SIMPLE))
 			SendMessage(hCombo, WM_CBLOSTTEXTFOCUS, 0, 0);
 	}
-#else
-	es->flags &= ~EF_FOCUSED;
-	DestroyCaret();
-	if(!(es->style & ES_NOHIDESEL))
-		EDIT_InvalidateText(es, es->selection_start, es->selection_end);
-	EDIT_NOTIFY_PARENT(es, EN_KILLFOCUS);
-	/* throw away left over scroll when we lose focus */
-	es->wheelDeltaRemainder = 0;
-#endif
+
 	return 0;
 }
 
@@ -5012,9 +5009,8 @@ LRESULT WINAPI EditWndProc_common( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 		result = EDIT_WM_NCDestroy(es);
 #ifdef __REACTOS__
 		NtUserSetWindowFNID(hwnd, FNID_DESTROY);
-#else
-		es = NULL;
 #endif
+		es = NULL;
 		break;
 
 	case WM_GETDLGCODE:

@@ -16,9 +16,10 @@ list(APPEND SOURCE
     cardlib.h)
 
 add_library(cardlib ${SOURCE})
+
+if(NOT MSVC)
+    target_compile_options(cardlib PRIVATE "-Wno-unused-but-set-variable")
+endif()
+
 add_dependencies(cardlib psdk)
 add_pch(cardlib cardlib.h SOURCE)
-
-if((NOT MSVC) AND (NOT CMAKE_C_COMPILER_ID STREQUAL "Clang"))
-    add_target_compile_flags(cardlib "-Wno-unused-but-set-variable")
-endif()

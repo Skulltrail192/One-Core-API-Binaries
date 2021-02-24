@@ -42,6 +42,7 @@ KEVENT UnloadEvent;
 LONG Unloading;
 
 static const WCHAR Cunc[] = L"\\??\\C:";
+#define Cunc_LETTER_POSITION 4
 
 /*
  * @implemented
@@ -89,28 +90,18 @@ HasDriveLetter(IN PDEVICE_INFORMATION DeviceInformation)
     PLIST_ENTRY NextEntry;
     PSYMLINK_INFORMATION SymlinkInfo;
 
-    /* To have a drive letter, a device must have symbolic links */
-    if (IsListEmpty(&(DeviceInformation->SymbolicLinksListHead)))
-    {
-        return FALSE;
-    }
-
-    /* Browse all the links untill a drive letter is found */
-    NextEntry = &(DeviceInformation->SymbolicLinksListHead);
-    do
+    /* Browse all the symlinks to check if there is at least a drive letter */
+    for (NextEntry = DeviceInformation->SymbolicLinksListHead.Flink;
+         NextEntry != &DeviceInformation->SymbolicLinksListHead;
+         NextEntry = NextEntry->Flink)
     {
         SymlinkInfo = CONTAINING_RECORD(NextEntry, SYMLINK_INFORMATION, SymbolicLinksListEntry);
 
-        if (SymlinkInfo->Online)
+        if (IsDriveLetter(&SymlinkInfo->Name) && SymlinkInfo->Online)
         {
-            if (IsDriveLetter(&(SymlinkInfo->Name)))
-            {
-                return TRUE;
-            }
+            return TRUE;
         }
-
-        NextEntry = NextEntry->Flink;
-    } while (NextEntry != &(DeviceInformation->SymbolicLinksListHead));
+    }
 
     return FALSE;
 }
@@ -213,12 +204,12 @@ QueryDeviceInformation(IN PUNICODE_STRING SymbolicName,
     PIRP Irp;
     USHORT Size;
     KEVENT Event;
-    NTSTATUS Status;
     BOOLEAN IsRemovable;
     PMOUNTDEV_NAME Name;
     PMOUNTDEV_UNIQUE_ID Id;
     PFILE_OBJECT FileObject;
     PIO_STACK_LOCATION Stack;
+    NTSTATUS Status, IntStatus;
     PDEVICE_OBJECT DeviceObject;
     IO_STATUS_BLOCK IoStatusBlock;
     PARTITION_INFORMATION_EX PartitionInfo;
@@ -282,7 +273,7 @@ QueryDeviceInformation(IN PUNICODE_STRING SymbolicName,
             if (Status == STATUS_PENDING)
             {
                 KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
-                Status =  IoStatusBlock.Status;
+                Status = IoStatusBlock.Status;
             }
 
             /* In case of failure, don't fail, that's no vital */
@@ -329,7 +320,7 @@ QueryDeviceInformation(IN PUNICODE_STRING SymbolicName,
             if (Status == STATUS_PENDING)
             {
                 KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
-                Status =  IoStatusBlock.Status;
+                Status = IoStatusBlock.Status;
             }
 
             /* Once again here, failure isn't major */
@@ -368,7 +359,7 @@ QueryDeviceInformation(IN PUNICODE_STRING SymbolicName,
                 if (Status == STATUS_PENDING)
                 {
                     KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
-                    Status =  IoStatusBlock.Status;
+                    Status = IoStatusBlock.Status;
                 }
 
                 if (!NT_SUCCESS(Status))
@@ -470,30 +461,31 @@ QueryDeviceInformation(IN PUNICODE_STRING SymbolicName,
             }
         }
 
-        /* Here we can't fail and assume default value */
-        if (!NT_SUCCESS(Status))
+        if (NT_SUCCESS(Status))
         {
-            FreePool(Name);
-            ObDereferenceObject(DeviceObject);
-            ObDereferenceObject(FileObject);
-            return Status;
+            /* Copy back found name to the caller */
+            DeviceName->Length = Name->NameLength;
+            DeviceName->MaximumLength = Name->NameLength + sizeof(WCHAR);
+            DeviceName->Buffer = AllocatePool(DeviceName->MaximumLength);
+            if (!DeviceName->Buffer)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+            }
+            else
+            {
+                RtlCopyMemory(DeviceName->Buffer, Name->Name, Name->NameLength);
+                DeviceName->Buffer[Name->NameLength / sizeof(WCHAR)] = UNICODE_NULL;
+            }
         }
 
-        /* Copy back found name to the caller */
-        DeviceName->Length = Name->NameLength;
-        DeviceName->MaximumLength = Name->NameLength + sizeof(WCHAR);
-        DeviceName->Buffer = AllocatePool(DeviceName->MaximumLength);
-        if (!DeviceName->Buffer)
-        {
-            FreePool(Name);
-            ObDereferenceObject(DeviceObject);
-            ObDereferenceObject(FileObject);
-            return STATUS_INSUFFICIENT_RESOURCES;
-        }
-
-        RtlCopyMemory(DeviceName->Buffer, Name->Name, Name->NameLength);
-        DeviceName->Buffer[Name->NameLength / sizeof(WCHAR)] = UNICODE_NULL;
         FreePool(Name);
+    }
+
+    if (!NT_SUCCESS(Status))
+    {
+        ObDereferenceObject(DeviceObject);
+        ObDereferenceObject(FileObject);
+        return Status;
     }
 
     /* If caller wants device unique ID */
@@ -628,14 +620,14 @@ QueryDeviceInformation(IN PUNICODE_STRING SymbolicName,
         Stack = IoGetNextIrpStackLocation(Irp);
         Stack->FileObject = FileObject;
 
-        Status = IoCallDriver(DeviceObject, Irp);
-        if (Status == STATUS_PENDING)
+        IntStatus = IoCallDriver(DeviceObject, Irp);
+        if (IntStatus == STATUS_PENDING)
         {
             KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
-            Status = IoStatusBlock.Status;
+            IntStatus = IoStatusBlock.Status;
         }
 
-        *HasGuid = NT_SUCCESS(Status);
+        *HasGuid = NT_SUCCESS(IntStatus);
     }
 
     ObDereferenceObject(DeviceObject);
@@ -831,7 +823,7 @@ MountMgrUnload(IN struct _DRIVER_OBJECT *DriverObject)
     KeInitializeEvent(&UnloadEvent, NotificationEvent, FALSE);
 
     /* Wait for workers to finish */
-    if (InterlockedIncrement(&DeviceExtension->WorkerReferences))
+    if (InterlockedIncrement(&DeviceExtension->WorkerReferences) > 0)
     {
         KeReleaseSemaphore(&(DeviceExtension->WorkerSemaphore),
                            IO_NO_INCREMENT, 1, FALSE);
@@ -872,7 +864,7 @@ MountMgrUnload(IN struct _DRIVER_OBJECT *DriverObject)
         NextEntry = RemoveHeadList(&(DeviceExtension->UniqueIdWorkerItemListHead));
         WorkItem = CONTAINING_RECORD(NextEntry, UNIQUE_ID_WORK_ITEM, UniqueIdWorkerItemListEntry);
 
-        KeResetEvent(&UnloadEvent);
+        KeClearEvent(&UnloadEvent);
         WorkItem->Event = &UnloadEvent;
 
         KeReleaseSemaphore(&(DeviceExtension->DeviceLock), IO_NO_INCREMENT,
@@ -907,7 +899,7 @@ MountMgrUnload(IN struct _DRIVER_OBJECT *DriverObject)
 /*
  * @implemented
  */
-INIT_SECTION
+INIT_FUNCTION
 BOOLEAN
 MountmgrReadNoAutoMount(IN PUNICODE_STRING RegistryPath)
 {
@@ -1115,7 +1107,7 @@ MountMgrMountedDeviceArrival(IN PDEVICE_EXTENSION DeviceExtension,
         /* Start checking all letters that could have been associated */
         for (Letter = L'D'; Letter <= L'Z'; Letter++)
         {
-            CSymLink.Buffer[LETTER_POSITION] = Letter;
+            CSymLink.Buffer[Cunc_LETTER_POSITION] = Letter;
 
             InitializeObjectAttributes(&ObjectAttributes,
                                        &CSymLink,
@@ -1735,7 +1727,7 @@ MountMgrCleanup(IN PDEVICE_OBJECT DeviceObject,
     }
 
     /* Otherwise, cancel all the IRPs */
-    NextEntry = &(DeviceExtension->IrpListHead);
+    NextEntry = DeviceExtension->IrpListHead.Flink;
     do
     {
         ListIrp = CONTAINING_RECORD(NextEntry, IRP, Tail.Overlay.ListEntry);
@@ -1779,7 +1771,7 @@ MountMgrShutdown(IN PDEVICE_OBJECT DeviceObject,
     KeInitializeEvent(&UnloadEvent, NotificationEvent, FALSE);
 
     /* Wait for workers */
-    if (InterlockedIncrement(&(DeviceExtension->WorkerReferences)))
+    if (InterlockedIncrement(&(DeviceExtension->WorkerReferences)) > 0)
     {
         KeReleaseSemaphore(&(DeviceExtension->WorkerSemaphore),
                            IO_NO_INCREMENT,
@@ -1801,7 +1793,7 @@ MountMgrShutdown(IN PDEVICE_OBJECT DeviceObject,
 
 /* FUNCTIONS ****************************************************************/
 
-INIT_SECTION
+INIT_FUNCTION
 NTSTATUS
 NTAPI
 DriverEntry(IN PDRIVER_OBJECT DriverObject,

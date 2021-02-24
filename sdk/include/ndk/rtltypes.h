@@ -291,11 +291,6 @@ C_ASSERT(HEAP_CREATE_VALID_MASK == 0x0007F0FF);
 #define RTL_FIND_CHAR_IN_UNICODE_STRING_CASE_INSENSITIVE    4
 
 //
-// RtlImageNtHeaderEx Flags
-//
-#define RTL_IMAGE_NT_HEADER_EX_FLAG_NO_RANGE_CHECK          0x00000001
-
-//
 // RtlDosApplyFileIsolationRedirection_Ustr Flags
 //
 #define RTL_DOS_APPLY_FILE_REDIRECTION_USTR_FLAG_RESPECT_DOT_LOCAL  0x01
@@ -310,7 +305,7 @@ C_ASSERT(HEAP_CREATE_VALID_MASK == 0x0007F0FF);
 //
 // Activation Contexts
 //
-#define INVALID_ACTIVATION_CONTEXT                          (PVOID)0xFFFFFFFF
+#define INVALID_ACTIVATION_CONTEXT                          ((PVOID)(LONG_PTR)-1)
 
 //
 // C++ CONST casting
@@ -354,6 +349,13 @@ C_ASSERT(HEAP_CREATE_VALID_MASK == 0x0007F0FF);
 #define MESSAGE_RESOURCE_UNICODE                            0x0001
 
 #endif /* !NTOS_MODE_USER */
+
+//
+// RtlImageNtHeaderEx Flags
+//
+#define RTL_IMAGE_NT_HEADER_EX_FLAG_NO_RANGE_CHECK          0x00000001
+
+
 #define MAXIMUM_LEADBYTES                                   12
 
 //
@@ -403,7 +405,16 @@ extern BOOLEAN NTSYSAPI NLS_MB_OEM_CODE_PAGE_TAG;
 
 #endif /* NTOS_MODE_USER */
 
-#ifdef NTOS_MODE_USER
+//
+// Constant Large Integer Macro
+//
+#ifdef NONAMELESSUNION
+C_ASSERT(FIELD_OFFSET(LARGE_INTEGER, u.LowPart) == 0);
+#else
+C_ASSERT(FIELD_OFFSET(LARGE_INTEGER, LowPart) == 0);
+#endif
+#define RTL_CONSTANT_LARGE_INTEGER(quad_part) { { (quad_part), (quad_part)>>32 } }
+#define RTL_MAKE_LARGE_INTEGER(low_part, high_part) { { (low_part), (high_part) } }
 
 //
 // Boot Status Data Field Types
@@ -416,9 +427,20 @@ typedef enum _RTL_BSD_ITEM_TYPE
     RtlBsdItemAabTimeout,
     RtlBsdItemBootGood,
     RtlBsdItemBootShutdown,
+    RtlBsdSleepInProgress,
+    RtlBsdPowerTransition,
+    RtlBsdItemBootAttemptCount,
+    RtlBsdItemBootCheckpoint,
+    RtlBsdItemBootId,
+    RtlBsdItemShutdownBootId,
+    RtlBsdItemReportedAbnormalShutdownBootId,
+    RtlBsdItemErrorInfo,
+    RtlBsdItemPowerButtonPressInfo,
+    RtlBsdItemChecksum,
     RtlBsdItemMax
 } RTL_BSD_ITEM_TYPE, *PRTL_BSD_ITEM_TYPE;
 
+#ifdef NTOS_MODE_USER
 //
 // Table and Compare result types
 //
@@ -847,7 +869,6 @@ typedef struct _UNICODE_PREFIX_TABLE
     PUNICODE_PREFIX_TABLE_ENTRY LastNextEntry;
 } UNICODE_PREFIX_TABLE, *PUNICODE_PREFIX_TABLE;
 
-#ifdef NTOS_MODE_USER
 //
 // Pfx* routines' table structures
 //
@@ -866,7 +887,6 @@ typedef struct _PREFIX_TABLE
   CSHORT NameLength;
   PPREFIX_TABLE_ENTRY NextPrefixTree;
 } PREFIX_TABLE, *PPREFIX_TABLE;
-#endif
 
 //
 // Time Structure for RTL Time calls
@@ -921,25 +941,6 @@ typedef struct _RTL_HEAP_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME
     PVOID ActivationStackBackTrace[8];
 } RTL_HEAP_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME, *PRTL_HEAP_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME;
 
-#if (NTDDI_VERSION >= NTDDI_WS03)
-typedef struct _ACTIVATION_CONTEXT_STACK
-{
-    PRTL_ACTIVATION_CONTEXT_STACK_FRAME ActiveFrame;
-    LIST_ENTRY FrameListCache;
-    ULONG Flags;
-    ULONG NextCookieSequenceNumber;
-    ULONG StackId;
-} ACTIVATION_CONTEXT_STACK, *PACTIVATION_CONTEXT_STACK;
-#else
-typedef struct _ACTIVATION_CONTEXT_STACK
-{
-    ULONG Flags;
-    ULONG NextCookieSequenceNumber;
-    PVOID ActiveFrame;
-    LIST_ENTRY FrameListCache;
-} ACTIVATION_CONTEXT_STACK, *PACTIVATION_CONTEXT_STACK;
-#endif
-
 typedef struct _ACTIVATION_CONTEXT_DATA
 {
     ULONG Magic;
@@ -963,6 +964,25 @@ typedef struct _ACTIVATION_CONTEXT_STACK_FRAMELIST
 } ACTIVATION_CONTEXT_STACK_FRAMELIST, *PACTIVATION_CONTEXT_STACK_FRAMELIST;
 
 #endif /* NTOS_MODE_USER */
+
+#if (NTDDI_VERSION >= NTDDI_WS03SP1)
+typedef struct _ACTIVATION_CONTEXT_STACK
+{
+    struct _RTL_ACTIVATION_CONTEXT_STACK_FRAME *ActiveFrame;
+    LIST_ENTRY FrameListCache;
+    ULONG Flags;
+    ULONG NextCookieSequenceNumber;
+    ULONG StackId;
+} ACTIVATION_CONTEXT_STACK, *PACTIVATION_CONTEXT_STACK;
+#else
+typedef struct _ACTIVATION_CONTEXT_STACK
+{
+    ULONG Flags;
+    ULONG NextCookieSequenceNumber;
+    struct _RTL_ACTIVATION_CONTEXT_STACK_FRAME *ActiveFrame;
+    LIST_ENTRY FrameListCache;
+} ACTIVATION_CONTEXT_STACK, *PACTIVATION_CONTEXT_STACK;
+#endif
 
 //
 // ACE Structure
@@ -1193,8 +1213,21 @@ typedef struct _RTL_DEBUG_INFORMATION
 } RTL_DEBUG_INFORMATION, *PRTL_DEBUG_INFORMATION;
 
 //
+// Fiber local storage data
+//
+#define RTL_FLS_MAXIMUM_AVAILABLE 128
+typedef struct _RTL_FLS_DATA
+{
+    LIST_ENTRY ListEntry;
+    PVOID Data[RTL_FLS_MAXIMUM_AVAILABLE];
+} RTL_FLS_DATA, *PRTL_FLS_DATA;
+
+
+//
 // Unload Event Trace Structure for RtlGetUnloadEventTrace
 //
+#define RTL_UNLOAD_EVENT_TRACE_NUMBER 64
+
 typedef struct _RTL_UNLOAD_EVENT_TRACE
 {
     PVOID BaseAddress;
@@ -1227,6 +1260,92 @@ typedef struct _RTL_HANDLE_TABLE
     PRTL_HANDLE_TABLE_ENTRY UnCommittedHandles;
     PRTL_HANDLE_TABLE_ENTRY MaxReservedHandles;
 } RTL_HANDLE_TABLE, *PRTL_HANDLE_TABLE;
+
+//
+// RTL Boot Status Data Item
+//
+typedef struct _RTL_BSD_ITEM
+{
+    RTL_BSD_ITEM_TYPE Type;
+    PVOID DataBuffer;
+    ULONG DataLength;
+} RTL_BSD_ITEM, *PRTL_BSD_ITEM;
+
+//
+// Data Sub-Structures for "bootstat.dat" RTL Data File
+//
+typedef struct _RTL_BSD_DATA_POWER_TRANSITION
+{
+    LARGE_INTEGER PowerButtonTimestamp;
+    struct
+    {
+        UCHAR SystemRunning : 1;
+        UCHAR ConnectedStandbyInProgress : 1;
+        UCHAR UserShutdownInProgress : 1;
+        UCHAR SystemShutdownInProgress : 1;
+        UCHAR SleepInProgress : 4;
+    } Flags;
+    UCHAR ConnectedStandbyScenarioInstanceId;
+    UCHAR ConnectedStandbyEntryReason;
+    UCHAR ConnectedStandbyExitReason;
+    USHORT SystemSleepTransitionCount;
+    LARGE_INTEGER LastReferenceTime;
+    ULONG LastReferenceTimeChecksum;
+    ULONG LastUpdateBootId;
+} RTL_BSD_DATA_POWER_TRANSITION, *PRTL_BSD_DATA_POWER_TRANSITION;
+
+typedef struct _RTL_BSD_DATA_ERROR_INFO
+{
+    ULONG BootId;
+    ULONG RepeatCount;
+    ULONG OtherErrorCount;
+    ULONG Code;
+    ULONG OtherErrorCount2;
+} RTL_BSD_DATA_ERROR_INFO, *PRTL_BSD_DATA_ERROR_INFO;
+
+typedef struct _RTL_BSD_POWER_BUTTON_PRESS_INFO
+{
+    LARGE_INTEGER LastPressTime;
+    ULONG CumulativePressCount;
+    USHORT LastPressBootId;
+    UCHAR LastPowerWatchdogStage;
+    struct
+    {
+        UCHAR WatchdogArmed : 1;
+        UCHAR ShutdownInProgress : 1;
+    } Flags;
+    LARGE_INTEGER LastReleaseTime;
+    ULONG CumulativeReleaseCount;
+    USHORT LastReleaseBootId;
+    USHORT ErrorCount;
+    UCHAR CurrentConnectedStandbyPhase;
+    ULONG TransitionLatestCheckpointId;
+    ULONG TransitionLatestCheckpointType;
+    ULONG TransitionLatestCheckpointSequenceNumber;
+} RTL_BSD_POWER_BUTTON_PRESS_INFO, *PRTL_BSD_POWER_BUTTON_PRESS_INFO;
+
+//
+// Main Structure for "bootstat.dat" RTL Data File
+//
+typedef struct _RTL_BSD_DATA
+{
+    ULONG Version;                                          // RtlBsdItemVersionNumber
+    ULONG ProductType;                                      // RtlBsdItemProductType
+    BOOLEAN AabEnabled;                                     // RtlBsdItemAabEnabled
+    UCHAR AabTimeout;                                       // RtlBsdItemAabTimeout
+    BOOLEAN LastBootSucceeded;                              // RtlBsdItemBootGood
+    BOOLEAN LastBootShutdown;                               // RtlBsdItemBootShutdown
+    BOOLEAN SleepInProgress;                                // RtlBsdSleepInProgress
+    RTL_BSD_DATA_POWER_TRANSITION PowerTransition;          // RtlBsdPowerTransition
+    UCHAR BootAttemptCount;                                 // RtlBsdItemBootAttemptCount
+    UCHAR LastBootCheckpoint;                               // RtlBsdItemBootCheckpoint
+    UCHAR Checksum;                                         // RtlBsdItemChecksum
+    ULONG LastBootId;                                       // RtlBsdItemBootId
+    ULONG LastSuccessfulShutdownBootId;                     // RtlBsdItemShutdownBootId
+    ULONG LastReportedAbnormalShutdownBootId;               // RtlBsdItemReportedAbnormalShutdownBootId
+    RTL_BSD_DATA_ERROR_INFO ErrorInfo;                      // RtlBsdItemErrorInfo
+    RTL_BSD_POWER_BUTTON_PRESS_INFO PowerButtonPressInfo;   // RtlBsdItemPowerButtonPressInfo
+} RTL_BSD_DATA, *PRTL_BSD_DATA;
 
 #ifdef NTOS_MODE_USER
 //
@@ -1438,7 +1557,7 @@ typedef enum _RTL_UMS_SCHEDULER_REASON
     UmsSchedulerThreadYield = 2,
 } RTL_UMS_SCHEDULER_REASON, *PRTL_UMS_SCHEDULER_REASON;
 
-enum _RTL_UMSCTX_FLAGS
+typedef enum _RTL_UMSCTX_FLAGS
 {
     UMSCTX_SCHEDULED_THREAD_BIT = 0,
 #if (NTDDI_VERSION < NTDDI_WIN8)
@@ -1558,38 +1677,19 @@ typedef struct _RTL_ATOM_TABLE
     PRTL_ATOM_TABLE_ENTRY Buckets[1];
 } RTL_ATOM_TABLE, *PRTL_ATOM_TABLE;
 
-#ifndef _WINBASE_
 //
-// System Time and Timezone Structures
+// Timezone Information
 //
-typedef struct _SYSTEMTIME
-{
-    USHORT wYear;
-    USHORT wMonth;
-    USHORT wDayOfWeek;
-    USHORT wDay;
-    USHORT wHour;
-    USHORT wMinute;
-    USHORT wSecond;
-    USHORT wMilliseconds;
-} SYSTEMTIME, *PSYSTEMTIME, *LPSYSTEMTIME;
-
-typedef struct _TIME_ZONE_INFORMATION
+typedef struct _RTL_TIME_ZONE_INFORMATION
 {
     LONG Bias;
     WCHAR StandardName[32];
-    SYSTEMTIME StandardDate;
+    TIME_FIELDS StandardDate;
     LONG StandardBias;
     WCHAR DaylightName[32];
-    SYSTEMTIME DaylightDate;
+    TIME_FIELDS DaylightDate;
     LONG DaylightBias;
-} TIME_ZONE_INFORMATION, *PTIME_ZONE_INFORMATION, *LPTIME_ZONE_INFORMATION;
-#endif /* !_WINBASE_ */
-
-//
-// Native version of Timezone Structure
-//
-typedef LPTIME_ZONE_INFORMATION PRTL_TIME_ZONE_INFORMATION;
+} RTL_TIME_ZONE_INFORMATION, *PRTL_TIME_ZONE_INFORMATION;
 
 //
 // Hotpatch Header

@@ -20,6 +20,7 @@ list(APPEND BOOTLIB_SOURCE
      lib/misc/resource.c
      lib/misc/font.c
      lib/misc/rtlcompat.c
+     lib/rtl/libsupp.c
      lib/firmware/fwutil.c
      lib/firmware/efi/firmware.c
      lib/mm/mm.c
@@ -102,9 +103,12 @@ set_entrypoint(bootmgfw EfiEntry)
 
 target_link_libraries(bootmgfw bootlib cportlib cmlib rtl libcntpr)
 
+# dynamic analysis switches
 if(STACK_PROTECTOR)
     target_link_libraries(bootmgfw gcc_ssp)
-elseif(RUNTIME_CHECKS)
+endif()
+
+if(RUNTIME_CHECKS)
     target_link_libraries(bootmgfw runtmchk)
 endif()
 
@@ -112,9 +116,17 @@ add_dependencies(bootmgfw asm bugcodes)
 
 list(APPEND ROSLOAD_BASE_SOURCE
      app/rosload/rosload.c
+     app/rosload/roslogo.c
      )
 
-add_executable(rosload ${ROSLOAD_BASE_SOURCE})
+if(ARCH STREQUAL "i386")
+    list(APPEND ROSLOAD_ASM_SOURCE
+         app/rosload/i386/osxfera.s
+         )
+endif()
+
+add_asm_files(rosload_asm ${ROSLOAD_ASM_SOURCE})
+add_executable(rosload ${ROSLOAD_BASE_SOURCE} ${rosload_asm})
 set_target_properties(rosload PROPERTIES SUFFIX ".efi")
 
 if(MSVC)
@@ -139,9 +151,12 @@ endif()
 
 target_link_libraries(rosload bootlib cportlib cmlib rtl libcntpr)
 
+# dynamic analysis switches
 if(STACK_PROTECTOR)
     target_link_libraries(rosload gcc_ssp)
-elseif(RUNTIME_CHECKS)
+endif()
+
+if(RUNTIME_CHECKS)
     target_link_libraries(rosload runtmchk)
 endif()
 

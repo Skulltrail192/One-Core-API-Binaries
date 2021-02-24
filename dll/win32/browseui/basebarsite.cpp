@@ -322,6 +322,7 @@ HRESULT STDMETHODCALLTYPE CBaseBarSite::OnWinEvent(
     NMHDR                                   *notifyHeader;
     // RECT                                    newBounds;
     HRESULT                                 hResult;
+    LRESULT                                 result;
     
     hResult = S_OK;
     if (uMsg == WM_NOTIFY)
@@ -342,7 +343,9 @@ HRESULT STDMETHODCALLTYPE CBaseBarSite::OnWinEvent(
 #endif
                     break;
                 case NM_CUSTOMDRAW:
-                    *theResult = OnCustomDraw((LPNMCUSTOMDRAW)lParam);
+                    result = OnCustomDraw((LPNMCUSTOMDRAW)lParam);
+                    if (theResult)
+                        *theResult = result;
                     return S_OK;
             }
         }
@@ -689,17 +692,10 @@ LRESULT CBaseBarSite::OnNotify(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bH
 
 LRESULT CBaseBarSite::OnCommand(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
-    HRESULT                             hResult;
-    CComPtr<IDockingWindow>             parentSite;
-
     if (HIWORD(wParam) == BN_CLICKED && LOWORD(wParam) == IDM_BASEBAR_CLOSE)
     {
-        hResult = fDeskBarSite->QueryInterface(IID_PPV_ARG(IDockingWindow, &parentSite));
-        if (!SUCCEEDED(hResult))
-        {
-            return E_FAIL;
-        }
-        parentSite->ShowDW(FALSE);
+        /* Tell the base bar to hide */
+        IUnknown_Exec(fDeskBarSite, IID_IDeskBarClient, 0, 0, NULL, NULL);
         bHandled = TRUE;
     }
     return 0;

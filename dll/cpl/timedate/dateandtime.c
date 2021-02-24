@@ -45,8 +45,8 @@ SystemSetLocalTime(LPSYSTEMTIME lpSystemTime)
                 GetLastError() == ERROR_SUCCESS)
             {
                 /*
-                 * We successfully enabled it, we're permitted to change the system time
-                 * Call SetLocalTime twice to ensure correct results
+                 * We successfully enabled it, we're permitted to change the time.
+                 * Call SetLocalTime twice to ensure correct results.
                  */
                 Ret = SetLocalTime(lpSystemTime) &&
                       SetLocalTime(lpSystemTime);
@@ -89,7 +89,7 @@ SetLocalSystemTime(HWND hwnd)
         SystemSetLocalTime(&Time);
 
         SetWindowLongPtrW(hwnd,
-                          DWL_MSGRESULT,
+                          DWLP_MSGRESULT,
                           PSNRET_NOERROR);
 
         SendMessageW(GetDlgItem(hwnd,
@@ -282,7 +282,7 @@ DateTimePageProc(HWND hwndDlg,
             SendMessageW(GetDlgItem(hwndDlg, IDC_YEAR), UDM_SETRANGE, 0, MAKELONG ((short) 9999, (short) 1900));
             SendMessageW(GetDlgItem(hwndDlg, IDC_YEAR), UDM_SETPOS, 0, MAKELONG( (short) st.wYear, 0));
 
-            pOldWndProc = (WNDPROC) SetWindowLongPtrW(GetDlgItem(hwndDlg, IDC_TIMEPICKER), GWL_WNDPROC, (INT_PTR) DTPProc);
+            pOldWndProc = (WNDPROC)SetWindowLongPtrW(GetDlgItem(hwndDlg, IDC_TIMEPICKER), GWLP_WNDPROC, (LONG_PTR)DTPProc);
             break;
 
         case WM_TIMER:

@@ -18,8 +18,26 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
+#include "config.h"
+#include <stdarg.h>
 
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "dshow.h"
+#include "amvideo.h"
+#include "strmif.h"
+#include "vfw.h"
+
+#include <assert.h>
+
+#include "wine/unicode.h"
+#include "wine/debug.h"
+#include "wine/strmbase.h"
 #include "strmbase_private.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(strmbase);
 
 static const WCHAR wcsInputPinName[] = {'i','n','p','u','t',' ','p','i','n',0};
 static const WCHAR wcsOutputPinName[] = {'o','u','t','p','u','t',' ','p','i','n',0};
@@ -223,7 +241,8 @@ static HRESULT TransformFilter_Init(const IBaseFilterVtbl *pVtbl, const CLSID* p
     {
         ISeekingPassThru *passthru;
         pTransformFilter->seekthru_unk = NULL;
-        hr = CoCreateInstance(&CLSID_SeekingPassThru, (IUnknown*)pTransformFilter, CLSCTX_INPROC_SERVER, &IID_IUnknown, (void**)&pTransformFilter->seekthru_unk);
+        hr = CoCreateInstance(&CLSID_SeekingPassThru, (IUnknown *)&pTransformFilter->filter.IBaseFilter_iface, CLSCTX_INPROC_SERVER,
+                &IID_IUnknown, (void **)&pTransformFilter->seekthru_unk);
         if (SUCCEEDED(hr))
         {
             IUnknown_QueryInterface(pTransformFilter->seekthru_unk, &IID_ISeekingPassThru, (void**)&passthru);
@@ -326,11 +345,8 @@ ULONG WINAPI TransformFilterImpl_Release(IBaseFilter * iface)
         IUnknown_Release(This->seekthru_unk);
         BaseFilter_Destroy(&This->filter);
         CoTaskMemFree(This);
-
-        return 0;
     }
-    else
-        return refCount;
+    return refCount;
 }
 
 /** IMediaFilter methods **/
@@ -530,7 +546,7 @@ static HRESULT WINAPI TransformFilter_InputPin_NewSegment(IPin * iface, REFERENC
     TransformFilter* pTransform;
     HRESULT hr = S_OK;
 
-    TRACE("(%p)->()\n", iface);
+    TRACE("(%p)->(%s %s %e)\n", iface, wine_dbgstr_longlong(tStart), wine_dbgstr_longlong(tStop), dRate);
 
     pTransform = impl_from_IBaseFilter(This->pin.pinInfo.pFilter);
     EnterCriticalSection(&pTransform->filter.csFilter);

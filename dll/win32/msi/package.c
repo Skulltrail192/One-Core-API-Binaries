@@ -18,9 +18,35 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "msipriv.h"
+#define NONAMELESSUNION
+#define NONAMELESSSTRUCT
+#define COBJMACROS
 
-#include <wininet.h>
+#include <stdarg.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "winnls.h"
+#include "shlwapi.h"
+#include "wingdi.h"
+#include "wine/debug.h"
+#include "msi.h"
+#include "msiquery.h"
+#include "objidl.h"
+#include "wincrypt.h"
+#include "winuser.h"
+#include "wininet.h"
+#include "winver.h"
+#include "urlmon.h"
+#include "shlobj.h"
+#include "wine/unicode.h"
+#include "objbase.h"
+#include "msidefs.h"
+#include "sddl.h"
+
+#include "msipriv.h"
+#include "msiserver.h"
+#include "resource.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(msi);
 
@@ -103,17 +129,18 @@ static void free_assembly( MSIASSEMBLY *assembly )
 void msi_free_action_script( MSIPACKAGE *package, UINT script )
 {
     UINT i;
-    for (i = 0; i < package->script->ActionCount[script]; i++)
-        msi_free( package->script->Actions[script][i] );
+    for (i = 0; i < package->script_actions_count[script]; i++)
+        msi_free( package->script_actions[script][i] );
 
-    msi_free( package->script->Actions[script] );
-    package->script->Actions[script] = NULL;
-    package->script->ActionCount[script] = 0;
+    msi_free( package->script_actions[script] );
+    package->script_actions[script] = NULL;
+    package->script_actions_count[script] = 0;
 }
 
 static void free_package_structures( MSIPACKAGE *package )
 {
     struct list *item, *cursor;
+    int i;
 
     LIST_FOR_EACH_SAFE( item, cursor, &package->features )
     {
@@ -249,20 +276,12 @@ static void free_package_structures( MSIPACKAGE *package )
         msi_free( info );
     }
 
-    if (package->script)
-    {
-        INT i;
-        UINT j;
+    for (i = 0; i < SCRIPT_MAX; i++)
+        msi_free_action_script( package, i );
 
-        for (i = 0; i < SCRIPT_MAX; i++)
-            msi_free_action_script( package, i );
-
-        for (j = 0; j < package->script->UniqueActionsCount; j++)
-            msi_free( package->script->UniqueActions[j] );
-
-        msi_free( package->script->UniqueActions );
-        msi_free( package->script );
-    }
+    for (i = 0; i < package->unique_actions_count; i++)
+        msi_free( package->unique_actions[i] );
+    msi_free( package->unique_actions);
 
     LIST_FOR_EACH_SAFE( item, cursor, &package->binaries )
     {
@@ -305,6 +324,7 @@ static void free_package_structures( MSIPACKAGE *package )
     msi_free( package->ProductCode );
     msi_free( package->ActionFormat );
     msi_free( package->LastAction );
+    msi_free( package->LastActionTemplate );
     msi_free( package->langids );
 
     /* cleanup control event subscriptions */
@@ -326,6 +346,7 @@ static void MSI_FreePackage( MSIOBJECTHDR *arg)
 
     if (package->delete_on_close) DeleteFileW( package->localfile );
     msi_free( package->localfile );
+    MSI_ProcessMessage(NULL, INSTALLMESSAGE_TERMINATE, 0);
 }
 
 static UINT create_temp_property_table(MSIPACKAGE *package)
@@ -507,71 +528,73 @@ done:
 
 static LPWSTR get_fusion_filename(MSIPACKAGE *package)
 {
-    HKEY netsetup;
+    static const WCHAR fusion[] =
+        {'f','u','s','i','o','n','.','d','l','l',0};
+    static const WCHAR subkey[] =
+        {'S','o','f','t','w','a','r','e','\\','M','i','c','r','o','s','o','f','t','\\',
+         'N','E','T',' ','F','r','a','m','e','w','o','r','k',' ','S','e','t','u','p','\\','N','D','P',0};
+    static const WCHAR subdir[] =
+        {'M','i','c','r','o','s','o','f','t','.','N','E','T','\\','F','r','a','m','e','w','o','r','k','\\',0};
+    static const WCHAR v2050727[] =
+        {'v','2','.','0','.','5','0','7','2','7',0};
+    static const WCHAR v4client[] =
+        {'v','4','\\','C','l','i','e','n','t',0};
+    static const WCHAR installpath[] =
+        {'I','n','s','t','a','l','l','P','a','t','h',0};
+    HKEY netsetup, hkey;
     LONG res;
-    LPWSTR file = NULL;
-    DWORD index = 0, size;
-    WCHAR ver[MAX_PATH];
-    WCHAR name[MAX_PATH];
-    WCHAR windir[MAX_PATH];
+    DWORD size, len, type;
+    WCHAR windir[MAX_PATH], path[MAX_PATH], *filename = NULL;
 
-    static const WCHAR fusion[] = {'f','u','s','i','o','n','.','d','l','l',0};
-    static const WCHAR sub[] = {
-        'S','o','f','t','w','a','r','e','\\',
-        'M','i','c','r','o','s','o','f','t','\\',
-        'N','E','T',' ','F','r','a','m','e','w','o','r','k',' ','S','e','t','u','p','\\',
-        'N','D','P',0
-    };
-    static const WCHAR subdir[] = {
-        'M','i','c','r','o','s','o','f','t','.','N','E','T','\\',
-        'F','r','a','m','e','w','o','r','k','\\',0
-    };
-
-    res = RegOpenKeyExW(HKEY_LOCAL_MACHINE, sub, 0, KEY_ENUMERATE_SUB_KEYS, &netsetup);
+    res = RegOpenKeyExW(HKEY_LOCAL_MACHINE, subkey, 0, KEY_CREATE_SUB_KEY, &netsetup);
     if (res != ERROR_SUCCESS)
         return NULL;
 
-    GetWindowsDirectoryW(windir, MAX_PATH);
-
-    ver[0] = '\0';
-    size = MAX_PATH;
-    while (RegEnumKeyExW(netsetup, index, name, &size, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+    if (!RegCreateKeyExW(netsetup, v4client, 0, NULL, 0, KEY_QUERY_VALUE, NULL, &hkey, NULL))
     {
-        index++;
-
-        /* verify existence of fusion.dll .Net 3.0 does not install a new one */
-        if (strcmpW( ver, name ) < 0)
+        size = sizeof(path)/sizeof(path[0]);
+        if (!RegQueryValueExW(hkey, installpath, NULL, &type, (BYTE *)path, &size))
         {
-            LPWSTR check;
-            size = lstrlenW(windir) + lstrlenW(subdir) + lstrlenW(name) +lstrlenW(fusion) + 3;
-            check = msi_alloc(size * sizeof(WCHAR));
+            len = strlenW(path) + strlenW(fusion) + 2;
+            if (!(filename = msi_alloc(len * sizeof(WCHAR)))) return NULL;
 
-            if (!check)
+            strcpyW(filename, path);
+            strcatW(filename, szBackSlash);
+            strcatW(filename, fusion);
+            if (GetFileAttributesW(filename) != INVALID_FILE_ATTRIBUTES)
             {
-                msi_free(file);
-                return NULL;
+                TRACE( "found %s\n", debugstr_w(filename) );
+                RegCloseKey(hkey);
+                RegCloseKey(netsetup);
+                return filename;
             }
+        }
+        RegCloseKey(hkey);
+    }
 
-            lstrcpyW(check, windir);
-            lstrcatW(check, szBackSlash);
-            lstrcatW(check, subdir);
-            lstrcatW(check, name);
-            lstrcatW(check, szBackSlash);
-            lstrcatW(check, fusion);
+    if (!RegCreateKeyExW(netsetup, v2050727, 0, NULL, 0, KEY_QUERY_VALUE, NULL, &hkey, NULL))
+    {
+        RegCloseKey(hkey);
+        GetWindowsDirectoryW(windir, MAX_PATH);
+        len = strlenW(windir) + strlenW(subdir) + strlenW(v2050727) + strlenW(fusion) + 3;
+        if (!(filename = msi_alloc(len * sizeof(WCHAR)))) return NULL;
 
-            if(GetFileAttributesW(check) != INVALID_FILE_ATTRIBUTES)
-            {
-                msi_free(file);
-                file = check;
-                lstrcpyW(ver, name);
-            }
-            else
-                msi_free(check);
+        strcpyW(filename, windir);
+        strcatW(filename, szBackSlash);
+        strcatW(filename, subdir);
+        strcatW(filename, v2050727);
+        strcatW(filename, szBackSlash);
+        strcatW(filename, fusion);
+        if (GetFileAttributesW(filename) != INVALID_FILE_ATTRIBUTES)
+        {
+            TRACE( "found %s\n", debugstr_w(filename) );
+            RegCloseKey(netsetup);
+            return filename;
         }
     }
 
     RegCloseKey(netsetup);
-    return file;
+    return filename;
 }
 
 typedef struct tagLANGANDCODEPAGE
@@ -646,7 +669,6 @@ static VOID set_installer_properties(MSIPACKAGE *package)
     HKEY hkey;
     LPWSTR username, companyname;
     SYSTEM_INFO sys_info;
-    SYSTEMTIME systemtime;
     LANGID langid;
 
     static const WCHAR szCommonFilesFolder[] = {'C','o','m','m','o','n','F','i','l','e','s','F','o','l','d','e','r',0};
@@ -708,8 +730,6 @@ static VOID set_installer_properties(MSIPACKAGE *package)
     };
     static const WCHAR szUSERNAME[] = {'U','S','E','R','N','A','M','E',0};
     static const WCHAR szCOMPANYNAME[] = {'C','O','M','P','A','N','Y','N','A','M','E',0};
-    static const WCHAR szDate[] = {'D','a','t','e',0};
-    static const WCHAR szTime[] = {'T','i','m','e',0};
     static const WCHAR szUserLanguageID[] = {'U','s','e','r','L','a','n','g','u','a','g','e','I','D',0};
     static const WCHAR szSystemLangID[] = {'S','y','s','t','e','m','L','a','n','g','u','a','g','e','I','D',0};
     static const WCHAR szProductState[] = {'P','r','o','d','u','c','t','S','t','a','t','e',0};
@@ -718,8 +738,6 @@ static VOID set_installer_properties(MSIPACKAGE *package)
     static const WCHAR szPrintHoodFolder[] = {'P','r','i','n','t','H','o','o','d','F','o','l','d','e','r',0};
     static const WCHAR szRecentFolder[] = {'R','e','c','e','n','t','F','o','l','d','e','r',0};
     static const WCHAR szComputerName[] = {'C','o','m','p','u','t','e','r','N','a','m','e',0};
-    static const WCHAR szBrowseProperty[] = {'_','B','r','o','w','s','e','P','r','o','p','e','r','t','y',0};
-    static const WCHAR szInstallDir[] = {'I','N','S','T','A','L','L','D','I','R',0};
 
     /*
      * Other things that probably should be set:
@@ -940,22 +958,6 @@ static VOID set_installer_properties(MSIPACKAGE *package)
     if ( set_user_sid_prop( package ) != ERROR_SUCCESS)
         ERR("Failed to set the UserSID property\n");
 
-    /* Date and time properties */
-    GetSystemTime( &systemtime );
-    if (GetDateFormatW( LOCALE_USER_DEFAULT, DATE_SHORTDATE, &systemtime,
-                        NULL, bufstr, sizeof(bufstr)/sizeof(bufstr[0]) ))
-        msi_set_property( package->db, szDate, bufstr, -1 );
-    else
-        ERR("Couldn't set Date property: GetDateFormat failed with error %d\n", GetLastError());
-
-    if (GetTimeFormatW( LOCALE_USER_DEFAULT,
-                        TIME_FORCE24HOURFORMAT | TIME_NOTIMEMARKER,
-                        &systemtime, NULL, bufstr,
-                        sizeof(bufstr)/sizeof(bufstr[0]) ))
-        msi_set_property( package->db, szTime, bufstr, -1 );
-    else
-        ERR("Couldn't set Time property: GetTimeFormat failed with error %d\n", GetLastError());
-
     set_msi_assembly_prop( package );
 
     langid = GetUserDefaultLangID();
@@ -991,7 +993,6 @@ static VOID set_installer_properties(MSIPACKAGE *package)
             msi_free( computername );
         }
     }
-    msi_set_property( package->db, szBrowseProperty, szInstallDir, -1 );
 }
 
 static MSIPACKAGE *msi_alloc_package( void )
@@ -1069,6 +1070,9 @@ MSIPACKAGE *MSI_CreatePackage( MSIDATABASE *db, LPCWSTR base_url )
         msiobj_addref( &db->hdr );
         package->db = db;
 
+        package->LastAction = NULL;
+        package->LastActionTemplate = NULL;
+        package->LastActionResult = MSI_NULL_INTEGER;
         package->WordCount = 0;
         package->PackagePath = strdupW( db->path );
         package->BaseURL = strdupW( base_url );
@@ -1078,7 +1082,6 @@ MSIPACKAGE *MSI_CreatePackage( MSIDATABASE *db, LPCWSTR base_url )
         msi_adjust_privilege_properties( package );
 
         package->ProductCode = msi_dup_property( package->db, szProductCode );
-        package->script = msi_alloc_zero( sizeof(MSISCRIPT) );
 
         set_installer_properties( package );
 
@@ -1441,6 +1444,7 @@ UINT MSI_OpenPackageW(LPCWSTR szPackage, MSIPACKAGE **pPackage)
     MSIDATABASE *db;
     MSIPACKAGE *package;
     MSIHANDLE handle;
+    MSIRECORD *data_row, *info_row;
     LPWSTR ptr, base_url = NULL;
     UINT r;
     WCHAR localfile[MAX_PATH], cachefile[MAX_PATH];
@@ -1448,8 +1452,12 @@ UINT MSI_OpenPackageW(LPCWSTR szPackage, MSIPACKAGE **pPackage)
     DWORD index = 0;
     MSISUMMARYINFO *si;
     BOOL delete_on_close = FALSE;
+    LPWSTR productname;
+    WCHAR *info_template;
 
     TRACE("%s %p\n", debugstr_w(szPackage), pPackage);
+
+    MSI_ProcessMessage(NULL, INSTALLMESSAGE_INITIALIZE, 0);
 
     localfile[0] = 0;
     if( szPackage[0] == '#' )
@@ -1581,6 +1589,40 @@ UINT MSI_OpenPackageW(LPCWSTR szPackage, MSIPACKAGE **pPackage)
     if (gszLogFile)
         package->log_file = CreateFileW( gszLogFile, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
                                          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+
+    /* FIXME: when should these messages be sent? */
+    data_row = MSI_CreateRecord(3);
+    if (!data_row)
+	return ERROR_OUTOFMEMORY;
+    MSI_RecordSetStringW(data_row, 0, NULL);
+    MSI_RecordSetInteger(data_row, 1, 0);
+    MSI_RecordSetInteger(data_row, 2, package->num_langids ? package->langids[0] : 0);
+    MSI_RecordSetInteger(data_row, 3, msi_get_string_table_codepage(package->db->strings));
+    MSI_ProcessMessageVerbatim(package, INSTALLMESSAGE_COMMONDATA, data_row);
+
+    info_row = MSI_CreateRecord(0);
+    if (!info_row)
+    {
+	msiobj_release(&data_row->hdr);
+	return ERROR_OUTOFMEMORY;
+    }
+    info_template = msi_get_error_message(package->db, MSIERR_INFO_LOGGINGSTART);
+    MSI_RecordSetStringW(info_row, 0, info_template);
+    msi_free(info_template);
+    MSI_ProcessMessage(package, INSTALLMESSAGE_INFO|MB_ICONHAND, info_row);
+
+    MSI_ProcessMessage(package, INSTALLMESSAGE_COMMONDATA, data_row);
+
+    productname = msi_dup_property(package->db, INSTALLPROPERTY_PRODUCTNAMEW);
+    MSI_RecordSetInteger(data_row, 1, 1);
+    MSI_RecordSetStringW(data_row, 2, productname);
+    MSI_RecordSetStringW(data_row, 3, NULL);
+    MSI_ProcessMessage(package, INSTALLMESSAGE_COMMONDATA, data_row);
+
+    msi_free(productname);
+    msiobj_release(&info_row->hdr);
+    msiobj_release(&data_row->hdr);
+
     *pPackage = package;
     return ERROR_SUCCESS;
 }
@@ -1612,6 +1654,8 @@ UINT WINAPI MsiOpenPackageExW(LPCWSTR szPackage, DWORD dwOptions, MSIHANDLE *phP
             ret = ERROR_NOT_ENOUGH_MEMORY;
         msiobj_release( &package->hdr );
     }
+    else
+        MSI_ProcessMessage(NULL, INSTALLMESSAGE_TERMINATE, 0);
 
     return ret;
 }
@@ -1678,139 +1722,215 @@ MSIHANDLE WINAPI MsiGetActiveDatabase(MSIHANDLE hInstall)
     return handle;
 }
 
-INT MSI_ProcessMessage( MSIPACKAGE *package, INSTALLMESSAGE eMessageType, MSIRECORD *record )
+static INT internal_ui_handler(MSIPACKAGE *package, INSTALLMESSAGE eMessageType, MSIRECORD *record, LPCWSTR message)
 {
     static const WCHAR szActionData[] = {'A','c','t','i','o','n','D','a','t','a',0};
-    static const WCHAR szSetProgress[] = {'S','e','t','P','r','o','g','r','e','s','s',0};
     static const WCHAR szActionText[] = {'A','c','t','i','o','n','T','e','x','t',0};
-    MSIRECORD *uirow;
-    LPWSTR deformated, message;
-    DWORD i, len, total_len, log_type = 0;
+    static const WCHAR szSetProgress[] = {'S','e','t','P','r','o','g','r','e','s','s',0};
+    static const WCHAR szWindows_Installer[] =
+        {'W','i','n','d','o','w','s',' ','I','n','s','t','a','l','l','e','r',0};
+
+    if (!package || (package->ui_level & INSTALLUILEVEL_MASK) == INSTALLUILEVEL_NONE)
+        return 0;
+
+    /* todo: check if message needs additional styles (topmost/foreground/modality?) */
+
+    switch (eMessageType & 0xff000000)
+    {
+    case INSTALLMESSAGE_FATALEXIT:
+    case INSTALLMESSAGE_ERROR:
+    case INSTALLMESSAGE_OUTOFDISKSPACE:
+        if (package->ui_level & INSTALLUILEVEL_PROGRESSONLY) return 0;
+        if (!(eMessageType & MB_ICONMASK))
+            eMessageType |= MB_ICONEXCLAMATION;
+        return MessageBoxW(gUIhwnd, message, szWindows_Installer, eMessageType & 0x00ffffff);
+    case INSTALLMESSAGE_WARNING:
+        if (package->ui_level & INSTALLUILEVEL_PROGRESSONLY) return 0;
+        if (!(eMessageType & MB_ICONMASK))
+            eMessageType |= MB_ICONASTERISK;
+        return MessageBoxW(gUIhwnd, message, szWindows_Installer, eMessageType & 0x00ffffff);
+    case INSTALLMESSAGE_USER:
+        if (package->ui_level & INSTALLUILEVEL_PROGRESSONLY) return 0;
+        if (!(eMessageType & MB_ICONMASK))
+            eMessageType |= MB_USERICON;
+        return MessageBoxW(gUIhwnd, message, szWindows_Installer, eMessageType & 0x00ffffff);
+    case INSTALLMESSAGE_INFO:
+    case INSTALLMESSAGE_INITIALIZE:
+    case INSTALLMESSAGE_TERMINATE:
+    case INSTALLMESSAGE_INSTALLSTART:
+    case INSTALLMESSAGE_INSTALLEND:
+        return 0;
+    case INSTALLMESSAGE_SHOWDIALOG:
+    {
+        LPWSTR dialog = msi_dup_record_field(record, 0);
+        INT rc = ACTION_DialogBox(package, dialog);
+        msi_free(dialog);
+        return rc;
+    }
+    case INSTALLMESSAGE_ACTIONSTART:
+    {
+        LPWSTR deformatted;
+        MSIRECORD *uirow = MSI_CreateRecord(1);
+        if (!uirow) return -1;
+        deformat_string(package, MSI_RecordGetString(record, 2), &deformatted);
+        MSI_RecordSetStringW(uirow, 1, deformatted);
+        msi_event_fire(package, szActionText, uirow);
+
+        msi_free(deformatted);
+        msiobj_release(&uirow->hdr);
+        return 1;
+    }
+    case INSTALLMESSAGE_ACTIONDATA:
+    {
+        MSIRECORD *uirow = MSI_CreateRecord(1);
+        if (!uirow) return -1;
+        MSI_RecordSetStringW(uirow, 1, message);
+        msi_event_fire(package, szActionData, uirow);
+        msiobj_release(&uirow->hdr);
+
+        if (package->action_progress_increment)
+        {
+            uirow = MSI_CreateRecord(2);
+            if (!uirow) return -1;
+            MSI_RecordSetInteger(uirow, 1, 2);
+            MSI_RecordSetInteger(uirow, 2, package->action_progress_increment);
+            msi_event_fire(package, szSetProgress, uirow);
+            msiobj_release(&uirow->hdr);
+        }
+        return 1;
+    }
+    case INSTALLMESSAGE_PROGRESS:
+        msi_event_fire(package, szSetProgress, record);
+        return 1;
+    case INSTALLMESSAGE_COMMONDATA:
+        switch (MSI_RecordGetInteger(record, 1))
+        {
+        case 0:
+        case 1:
+            /* do nothing */
+            return 0;
+        default:
+            /* fall through */
+            ;
+        }
+    default:
+        FIXME("internal UI not implemented for message 0x%08x (UI level = %x)\n", eMessageType, package->ui_level);
+        return 0;
+    }
+}
+
+static const WCHAR szActionNotFound[] = {'D','E','B','U','G',':',' ','E','r','r','o','r',' ','[','1',']',':',' ',' ','A','c','t','i','o','n',' ','n','o','t',' ','f','o','u','n','d',':',' ','[','2',']',0};
+
+static const struct
+{
+    int id;
+    const WCHAR *text;
+}
+internal_errors[] =
+{
+    {2726, szActionNotFound},
+    {0}
+};
+
+static LPCWSTR get_internal_error_message(int error)
+{
+    int i = 0;
+
+    while (internal_errors[i].id != 0)
+    {
+        if (internal_errors[i].id == error)
+            return internal_errors[i].text;
+        i++;
+    }
+
+    FIXME("missing error message %d\n", error);
+    return NULL;
+}
+
+/* Returned string must be freed */
+LPWSTR msi_get_error_message(MSIDATABASE *db, int error)
+{
+    static const WCHAR query[] =
+        {'S','E','L','E','C','T',' ','`','M','e','s','s','a','g','e','`',' ',
+         'F','R','O','M',' ','`','E','r','r','o','r','`',' ','W','H','E','R','E',' ',
+         '`','E','r','r','o','r','`',' ','=',' ','%','i',0};
+    MSIRECORD *record;
+    LPWSTR ret = NULL;
+
+    if ((record = MSI_QueryGetRecord(db, query, error)))
+    {
+        ret = msi_dup_record_field(record, 1);
+        msiobj_release(&record->hdr);
+    }
+    else if (error < 2000)
+    {
+        int len = LoadStringW(msi_hInstance, IDS_ERROR_BASE + error, (LPWSTR) &ret, 0);
+        if (len)
+        {
+            ret = msi_alloc((len + 1) * sizeof(WCHAR));
+            LoadStringW(msi_hInstance, IDS_ERROR_BASE + error, ret, len + 1);
+        }
+        else
+            ret = NULL;
+    }
+
+    return ret;
+}
+
+INT MSI_ProcessMessageVerbatim(MSIPACKAGE *package, INSTALLMESSAGE eMessageType, MSIRECORD *record)
+{
+    LPWSTR message = {0};
+    DWORD len;
+    DWORD log_type = 1 << (eMessageType >> 24);
+    UINT res;
     INT rc = 0;
     char *msg;
 
     TRACE("%x\n", eMessageType);
+    if (TRACE_ON(msi)) dump_record(record);
 
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_FATALEXIT)
-        log_type |= INSTALLLOGMODE_FATALEXIT;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_ERROR)
-        log_type |= INSTALLLOGMODE_ERROR;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_WARNING)
-        log_type |= INSTALLLOGMODE_WARNING;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_USER)
-        log_type |= INSTALLLOGMODE_USER;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_INFO)
-        log_type |= INSTALLLOGMODE_INFO;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_RESOLVESOURCE)
-        log_type |= INSTALLLOGMODE_RESOLVESOURCE;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_OUTOFDISKSPACE)
-        log_type |= INSTALLLOGMODE_OUTOFDISKSPACE;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_COMMONDATA)
-        log_type |= INSTALLLOGMODE_COMMONDATA;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_ACTIONSTART)
-        log_type |= INSTALLLOGMODE_ACTIONSTART;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_ACTIONDATA)
-        log_type |= INSTALLLOGMODE_ACTIONDATA;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_PROGRESS)
-        log_type |= INSTALLLOGMODE_PROGRESS;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_INITIALIZE)
-        log_type |= INSTALLLOGMODE_INITIALIZE;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_TERMINATE)
-        log_type |= INSTALLLOGMODE_TERMINATE;
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_SHOWDIALOG)
-        log_type |= INSTALLLOGMODE_SHOWDIALOG;
-
-    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_ACTIONSTART)
-    {
-        static const WCHAR template_s[]=
-            {'A','c','t','i','o','n',' ','%','s',':',' ','%','s','.',' ',0};
-        static const WCHAR format[] = 
-            {'H','H','\'',':','\'','m','m','\'',':','\'','s','s',0};
-        WCHAR timet[0x100];
-        LPCWSTR action_text, action;
-        LPWSTR deformatted = NULL;
-
-        GetTimeFormatW(LOCALE_USER_DEFAULT, 0, NULL, format, timet, 0x100);
-
-        action = MSI_RecordGetString(record, 1);
-        action_text = MSI_RecordGetString(record, 2);
-
-        if (!action || !action_text)
-            return IDOK;
-
-        deformat_string(package, action_text, &deformatted);
-
-        len = strlenW(timet) + strlenW(action) + strlenW(template_s);
-        if (deformatted)
-            len += strlenW(deformatted);
-        message = msi_alloc(len*sizeof(WCHAR));
-        sprintfW(message, template_s, timet, action);
-        if (deformatted)
-            strcatW(message, deformatted);
-        msi_free(deformatted);
+    if (!package || !record)
+        message = NULL;
+    else {
+        res = MSI_FormatRecordW(package, record, message, &len);
+        if (res != ERROR_SUCCESS && res != ERROR_MORE_DATA)
+            return res;
+        len++;
+        message = msi_alloc(len * sizeof(WCHAR));
+        if (!message) return ERROR_OUTOFMEMORY;
+        MSI_FormatRecordW(package, record, message, &len);
     }
-    else
-    {
-        static const WCHAR format[] = {'%','u',':',' ',0};
-        UINT count = MSI_RecordGetFieldCount( record );
-        WCHAR *p;
-
-        total_len = 1;
-        for (i = 1; i <= count; i++)
-        {
-            len = 0;
-            MSI_RecordGetStringW( record, i, NULL, &len );
-            total_len += len + 13;
-        }
-        p = message = msi_alloc( total_len * sizeof(WCHAR) );
-        if (!p) return ERROR_OUTOFMEMORY;
-
-        for (i = 1; i <= count; i++)
-        {
-            if (count > 1)
-            {
-                len = sprintfW( p, format, i );
-                total_len -= len;
-                p += len;
-            }
-            len = total_len;
-            MSI_RecordGetStringW( record, i, p, &len );
-            total_len -= len;
-            p += len;
-            if (count > 1 && total_len)
-            {
-                *p++ = ' ';
-                total_len--;
-            }
-        }
-        p[0] = 0;
-    }
-
-    TRACE("%p %p %p %x %x %s\n", gUIHandlerA, gUIHandlerW, gUIHandlerRecord,
-          gUIFilter, log_type, debugstr_w(message));
 
     /* convert it to ASCII */
     len = WideCharToMultiByte( CP_ACP, 0, message, -1, NULL, 0, NULL, NULL );
     msg = msi_alloc( len );
     WideCharToMultiByte( CP_ACP, 0, message, -1, msg, len, NULL, NULL );
 
-    if (gUIHandlerW && (gUIFilter & log_type))
+    if (gUIHandlerRecord && (gUIFilterRecord & log_type))
     {
-        rc = gUIHandlerW( gUIContext, eMessageType, message );
-    }
-    else if (gUIHandlerA && (gUIFilter & log_type))
-    {
-        rc = gUIHandlerA( gUIContext, eMessageType, msg );
-    }
-    else if (gUIHandlerRecord && (gUIFilter & log_type))
-    {
-        MSIHANDLE rec = MsiCreateRecord( 1 );
-        MsiRecordSetStringW( rec, 0, message );
-        rc = gUIHandlerRecord( gUIContext, eMessageType, rec );
+        MSIHANDLE rec = alloc_msihandle(&record->hdr);
+        TRACE("Calling UI handler %p(pvContext=%p, iMessageType=%08x, hRecord=%u)\n",
+              gUIHandlerRecord, gUIContextRecord, eMessageType, rec);
+        rc = gUIHandlerRecord( gUIContextRecord, eMessageType, rec );
         MsiCloseHandle( rec );
     }
+    if (!rc && gUIHandlerW && (gUIFilter & log_type))
+    {
+        TRACE("Calling UI handler %p(pvContext=%p, iMessageType=%08x, szMessage=%s)\n",
+              gUIHandlerW, gUIContext, eMessageType, debugstr_w(message));
+        rc = gUIHandlerW( gUIContext, eMessageType, message );
+    }
+    else if (!rc && gUIHandlerA && (gUIFilter & log_type))
+    {
+        TRACE("Calling UI handler %p(pvContext=%p, iMessageType=%08x, szMessage=%s)\n",
+              gUIHandlerA, gUIContext, eMessageType, debugstr_a(msg));
+        rc = gUIHandlerA( gUIContext, eMessageType, msg );
+    }
 
-    if (!rc && package->log_file != INVALID_HANDLE_VALUE &&
+    if (!rc)
+        rc = internal_ui_handler(package, eMessageType, record, message);
+
+    if (!rc && package && package->log_file != INVALID_HANDLE_VALUE &&
         (eMessageType & 0xff000000) != INSTALLMESSAGE_PROGRESS)
     {
         DWORD written;
@@ -1820,44 +1940,113 @@ INT MSI_ProcessMessage( MSIPACKAGE *package, INSTALLMESSAGE eMessageType, MSIREC
     msi_free( msg );
     msi_free( message );
 
+    return rc;
+}
+
+INT MSI_ProcessMessage( MSIPACKAGE *package, INSTALLMESSAGE eMessageType, MSIRECORD *record )
+{
     switch (eMessageType & 0xff000000)
     {
-    case INSTALLMESSAGE_ACTIONDATA:
-        deformat_string(package, MSI_RecordGetString(record, 2), &deformated);
-        uirow = MSI_CreateRecord(1);
-        MSI_RecordSetStringW(uirow, 1, deformated);
-        msi_free(deformated);
-
-        msi_event_fire( package, szActionData, uirow );
-        msiobj_release(&uirow->hdr);
-
-        if (package->action_progress_increment)
+    case INSTALLMESSAGE_FATALEXIT:
+    case INSTALLMESSAGE_ERROR:
+    case INSTALLMESSAGE_WARNING:
+    case INSTALLMESSAGE_USER:
+    case INSTALLMESSAGE_INFO:
+    case INSTALLMESSAGE_OUTOFDISKSPACE:
+        if (MSI_RecordGetInteger(record, 1) != MSI_NULL_INTEGER)
         {
-            uirow = MSI_CreateRecord(2);
-            MSI_RecordSetInteger(uirow, 1, 2);
-            MSI_RecordSetInteger(uirow, 2, package->action_progress_increment);
-            msi_event_fire( package, szSetProgress, uirow );
-            msiobj_release(&uirow->hdr);
+            /* error message */
+
+            LPWSTR template;
+            LPWSTR template_rec = NULL, template_prefix = NULL;
+            int error = MSI_RecordGetInteger(record, 1);
+
+            if (MSI_RecordIsNull(record, 0))
+            {
+                if (error >= 32)
+                {
+                    template_rec = msi_get_error_message(package->db, error);
+
+                    if (!template_rec && error >= 2000)
+                    {
+                        /* internal error, not localized */
+                        if ((template_rec = (LPWSTR) get_internal_error_message(error)))
+                        {
+                            MSI_RecordSetStringW(record, 0, template_rec);
+                            MSI_ProcessMessageVerbatim(package, INSTALLMESSAGE_INFO, record);
+                        }
+                        template_rec = msi_get_error_message(package->db, MSIERR_INSTALLERROR);
+                        MSI_RecordSetStringW(record, 0, template_rec);
+                        MSI_ProcessMessageVerbatim(package, eMessageType, record);
+                        msi_free(template_rec);
+                        return 0;
+                    }
+                }
+            }
+            else
+                template_rec = msi_dup_record_field(record, 0);
+
+            template_prefix = msi_get_error_message(package->db, eMessageType >> 24);
+            if (!template_prefix) template_prefix = strdupW(szEmpty);
+
+            if (!template_rec)
+            {
+                /* always returns 0 */
+                MSI_RecordSetStringW(record, 0, template_prefix);
+                MSI_ProcessMessageVerbatim(package, eMessageType, record);
+                msi_free(template_prefix);
+                return 0;
+            }
+
+            template = msi_alloc((strlenW(template_rec) + strlenW(template_prefix) + 1) * sizeof(WCHAR));
+            if (!template) return ERROR_OUTOFMEMORY;
+
+            strcpyW(template, template_prefix);
+            strcatW(template, template_rec);
+            MSI_RecordSetStringW(record, 0, template);
+
+            msi_free(template_prefix);
+            msi_free(template_rec);
+            msi_free(template);
         }
         break;
-
     case INSTALLMESSAGE_ACTIONSTART:
-        deformat_string(package, MSI_RecordGetString(record, 2), &deformated);
-        uirow = MSI_CreateRecord(1);
-        MSI_RecordSetStringW(uirow, 1, deformated);
-        msi_free(deformated);
+    {
+        WCHAR *template = msi_get_error_message(package->db, MSIERR_ACTIONSTART);
+        MSI_RecordSetStringW(record, 0, template);
+        msi_free(template);
 
-        msi_event_fire( package, szActionText, uirow );
-
-        msiobj_release(&uirow->hdr);
-        break;
-
-    case INSTALLMESSAGE_PROGRESS:
-        msi_event_fire( package, szSetProgress, record );
+        msi_free(package->LastAction);
+        msi_free(package->LastActionTemplate);
+        package->LastAction = msi_dup_record_field(record, 1);
+        if (!package->LastAction) package->LastAction = strdupW(szEmpty);
+        package->LastActionTemplate = msi_dup_record_field(record, 3);
         break;
     }
+    case INSTALLMESSAGE_ACTIONDATA:
+        if (package->LastAction && package->LastActionTemplate)
+        {
+            static const WCHAR template_s[] =
+                {'{','{','%','s',':',' ','}','}','%','s',0};
+            WCHAR *template;
 
-    return ERROR_SUCCESS;
+            template = msi_alloc((strlenW(package->LastAction) + strlenW(package->LastActionTemplate) + 7) * sizeof(WCHAR));
+            if (!template) return ERROR_OUTOFMEMORY;
+            sprintfW(template, template_s, package->LastAction, package->LastActionTemplate);
+            MSI_RecordSetStringW(record, 0, template);
+            msi_free(template);
+        }
+        break;
+    case INSTALLMESSAGE_COMMONDATA:
+    {
+        WCHAR *template = msi_get_error_message(package->db, MSIERR_COMMONDATA);
+        MSI_RecordSetStringW(record, 0, template);
+        msi_free(template);
+    }
+    break;
+    }
+
+    return MSI_ProcessMessageVerbatim(package, eMessageType, record);
 }
 
 INT WINAPI MsiProcessMessage( MSIHANDLE hInstall, INSTALLMESSAGE eMessageType,
@@ -1866,6 +2055,14 @@ INT WINAPI MsiProcessMessage( MSIHANDLE hInstall, INSTALLMESSAGE eMessageType,
     UINT ret = ERROR_INVALID_HANDLE;
     MSIPACKAGE *package = NULL;
     MSIRECORD *record = NULL;
+
+    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_INITIALIZE ||
+        (eMessageType & 0xff000000) == INSTALLMESSAGE_TERMINATE)
+        return -1;
+
+    if ((eMessageType & 0xff000000) == INSTALLMESSAGE_COMMONDATA &&
+        MsiRecordGetInteger(hRecord, 1) != 2)
+        return -1;
 
     package = msihandle2msiinfo( hInstall, MSIHANDLETYPE_PACKAGE );
     if( !package )
@@ -2072,8 +2269,50 @@ static MSIRECORD *msi_get_property_row( MSIDATABASE *db, LPCWSTR name )
     MSIQUERY *view;
     UINT r;
 
+    static const WCHAR szDate[] = {'D','a','t','e',0};
+    static const WCHAR szTime[] = {'T','i','m','e',0};
+    WCHAR *buffer;
+    int length;
+
     if (!name || !*name)
         return NULL;
+
+    if (!strcmpW(name, szDate))
+    {
+        length = GetDateFormatW(LOCALE_USER_DEFAULT, DATE_SHORTDATE, NULL, NULL, NULL, 0);
+        if (!length)
+            return NULL;
+        buffer = msi_alloc(length * sizeof(WCHAR));
+        GetDateFormatW(LOCALE_USER_DEFAULT, DATE_SHORTDATE, NULL, NULL, buffer, length);
+
+        row = MSI_CreateRecord(1);
+        if (!row)
+        {
+            msi_free(buffer);
+            return NULL;
+        }
+        MSI_RecordSetStringW(row, 1, buffer);
+        msi_free(buffer);
+        return row;
+    }
+    else if (!strcmpW(name, szTime))
+    {
+        length = GetTimeFormatW(LOCALE_USER_DEFAULT, TIME_NOTIMEMARKER, NULL, NULL, NULL, 0);
+        if (!length)
+            return NULL;
+        buffer = msi_alloc(length * sizeof(WCHAR));
+        GetTimeFormatW(LOCALE_USER_DEFAULT, TIME_NOTIMEMARKER, NULL, NULL, buffer, length);
+
+        row = MSI_CreateRecord(1);
+        if (!row)
+        {
+            msi_free(buffer);
+            return NULL;
+        }
+        MSI_RecordSetStringW(row, 1, buffer);
+        msi_free(buffer);
+        return row;
+    }
 
     rec = MSI_CreateRecord(1);
     if (!rec)

@@ -18,19 +18,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_NO_STATUS
-#define WIN32_LEAN_AND_MEAN
-
 #include <stdarg.h>
 #include <math.h>
-
-#include <windef.h>
-#include <mmddk.h>
-#include <wine/debug.h>
-
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "mmddk.h"
+#include "wine/debug.h"
 #include "mciqtz_private.h"
-#include <digitalv.h>
-#include <wownt32.h>
+#include "digitalv.h"
+#include "wownt32.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(mciqtz);
 
@@ -425,20 +422,19 @@ static DWORD MCIQTZ_mciPlay(UINT wDevID, DWORD dwFlags, LPMCI_PLAY_PARMS lpParms
     wma->mci_flags = dwFlags;
     IMediaSeeking_GetTimeFormat(wma->seek, &format);
     if (dwFlags & MCI_FROM) {
+        wma->seek_start = lpParms->dwFrom;
         if (IsEqualGUID(&format, &TIME_FORMAT_MEDIA_TIME))
-            wma->seek_start = lpParms->dwFrom * 10000;
-        else
-            wma->seek_start = lpParms->dwFrom;
+            wma->seek_start *= 10000;
+
         start_flags = AM_SEEKING_AbsolutePositioning;
     } else {
         wma->seek_start = 0;
         start_flags = AM_SEEKING_NoPositioning;
     }
     if (dwFlags & MCI_TO) {
+        wma->seek_stop = lpParms->dwTo;
         if (IsEqualGUID(&format, &TIME_FORMAT_MEDIA_TIME))
-            wma->seek_stop = lpParms->dwTo * 10000;
-        else
-            wma->seek_stop = lpParms->dwTo;
+            wma->seek_stop *= 10000;
     } else {
         wma->seek_stop = 0;
         IMediaSeeking_GetDuration(wma->seek, &wma->seek_stop);

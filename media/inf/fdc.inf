@@ -102,7 +102,7 @@ GenericMfg = "(標準フロッピー ディスク コントローラ)"
 *PNP0700.DeviceDesc = "標準フロッピー ディスク コントローラ"
 
 [Strings.0415]
-ReactOS = "Ekipa ReactOS"
+ReactOS = "Zespół ReactOS"
 FDCClassName = "Kontrolery stacji dyskietek"
 GenericMfg = "(Standardowowe kontrolery stacji dyskietek)"
 *PNP0700.DeviceDesc = "Standardowy kontroler stacji dyskietek"
@@ -151,3 +151,7 @@ FDCClassName = "Diskelių įrenginių valdikliai"
 
 GenericMfg = "(Standartiniai diskelių įrenginių valdikliai)"
 *PNP0700.DeviceDesc = "Standartinis diskelių įrenginio valdiklis"
+
+[Strings.0804]
+GenericMfg = "(通用软盘控制器)"
+*PNP0700.DeviceDesc = "通用软盘控制器"

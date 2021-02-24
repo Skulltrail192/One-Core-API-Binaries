@@ -267,7 +267,7 @@ MiMakeSystemAddressValidPfn(IN PVOID VirtualAddress,
     while (!MmIsAddressValid(VirtualAddress))
     {
         /* Release the PFN database */
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
 
         /* Fault it in */
         Status = MmAccessFault(FALSE, VirtualAddress, KernelMode, NULL);
@@ -285,7 +285,7 @@ MiMakeSystemAddressValidPfn(IN PVOID VirtualAddress,
         LockChange = TRUE;
 
         /* Lock the PFN database */
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
     }
 
     /* Let caller know what the lock state is */
@@ -337,7 +337,7 @@ MiDeleteSystemPageableVm(IN PMMPTE PointerPte,
                 Pfn2 = MiGetPfnEntry(PageTableIndex);
 
                 /* Lock the PFN database */
-                OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+                OldIrql = MiAcquirePfnLock();
 
                 /* Delete it the page */
                 MI_SET_PFN_DELETED(Pfn1);
@@ -347,7 +347,7 @@ MiDeleteSystemPageableVm(IN PMMPTE PointerPte,
                 MiDecrementShareCount(Pfn2, PageTableIndex);
 
                 /* Release the PFN database */
-                KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+                MiReleasePfnLock(OldIrql);
 
                 /* Destroy the PTE */
                 MI_ERASE_PTE(PointerPte);
@@ -399,7 +399,7 @@ MiDeletePte(IN PMMPTE PointerPte,
     PMMPDE PointerPde;
 
     /* PFN lock must be held */
-    ASSERT(KeGetCurrentIrql() == DISPATCH_LEVEL);
+    MI_ASSERT_PFN_LOCK_HELD();
 
     /* Capture the PTE */
     TempPte = *PointerPte;
@@ -626,7 +626,7 @@ MiDeleteVirtualAddresses(IN ULONG_PTR Va,
         }
 
         /* Lock the PFN Database while we delete the PTEs */
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
         do
         {
             /* Capture the PDE and make sure it exists */
@@ -708,7 +708,7 @@ MiDeleteVirtualAddresses(IN ULONG_PTR Va,
         }
 
         /* Release the lock and get out if we're done */
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
         if (Va > EndingAddress) return;
 
         /* Otherwise, we exited because we hit a new PDE boundary, so start over */
@@ -1379,7 +1379,7 @@ MiGetPageProtection(IN PMMPTE PointerPte)
         {
             /* The PTE is valid, so we might need to get the protection from
                the PFN. Lock the PFN database */
-            OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+            OldIrql = MiAcquirePfnLock();
 
             /* Check if the PDE is still valid */
             if (MiAddressToPte(PointerPte)->u.Hard.Valid == 0)
@@ -1407,7 +1407,7 @@ MiGetPageProtection(IN PMMPTE PointerPte)
             }
 
             /* Release the PFN database */
-            KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+            MiReleasePfnLock(OldIrql);
         }
 
         /* Lock the working set again */
@@ -2301,7 +2301,7 @@ MiProtectVirtualMemory(IN PEPROCESS Process,
                 if ((NewAccessProtection & PAGE_NOACCESS) ||
                     (NewAccessProtection & PAGE_GUARD))
                 {
-                    KIRQL OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+                    KIRQL OldIrql = MiAcquirePfnLock();
 
                     /* Mark the PTE as transition and change its protection */
                     PteContents.u.Hard.Valid = 0;
@@ -2318,7 +2318,7 @@ MiProtectVirtualMemory(IN PEPROCESS Process,
                     KeInvalidateTlbEntry(MiPteToAddress(PointerPte));
 
                     /* We are done for this PTE */
-                    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+                    MiReleasePfnLock(OldIrql);
                 }
                 else
                 {
@@ -2459,7 +2459,7 @@ MiProcessValidPteList(IN PMMPTE *ValidPteList,
     //
     // Acquire the PFN lock and loop all the PTEs in the list
     //
-    OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+    OldIrql = MiAcquirePfnLock();
     for (i = 0; i != Count; i++)
     {
         //
@@ -2494,7 +2494,7 @@ MiProcessValidPteList(IN PMMPTE *ValidPteList,
     // and then release the PFN lock
     //
     KeFlushCurrentTb();
-    KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+    MiReleasePfnLock(OldIrql);
 }
 
 ULONG
@@ -3350,7 +3350,7 @@ MiLockVirtualMemory(
             CurrentVa = MiPteToAddress(PointerPte);
 
             //HACK: Pass a placeholder TrapInformation so the fault handler knows we're unlocked
-            TempStatus = MmAccessFault(TRUE, CurrentVa, KernelMode, (PVOID)0xBADBADA3);
+            TempStatus = MmAccessFault(TRUE, CurrentVa, KernelMode, (PVOID)(ULONG_PTR)0xBADBADA3BADBADA3ULL);
             if (!NT_SUCCESS(TempStatus))
             {
                 // This should only happen, when remote backing storage is not accessible
@@ -4742,7 +4742,7 @@ NtAllocateVirtualMemory(IN HANDLE ProcessHandle,
         goto FailPath;
     }
 
-	if ((AllocationType & MEM_RESET) == MEM_RESET)
+    if ((AllocationType & MEM_RESET) == MEM_RESET)
     {
         /// @todo HACK: pretend success
         DPRINT("MEM_RESET not supported\n");
@@ -4778,6 +4778,7 @@ NtAllocateVirtualMemory(IN HANDLE ProcessHandle,
     // Make sure this is an ARM3 section
     //
     MemoryArea = MmLocateMemoryAreaByAddress(AddressSpace, (PVOID)PAGE_ROUND_DOWN(PBaseAddress));
+    ASSERT(MemoryArea != NULL);
     if (MemoryArea->Type != MEMORY_AREA_OWNED_BY_ARM3)
     {
         DPRINT1("Illegal commit of non-ARM3 section!\n");
@@ -5108,21 +5109,11 @@ NtFreeVirtualMemory(IN HANDLE ProcessHandle,
     PAGED_CODE();
 
     //
-    // Only two flags are supported
+    // Only two flags are supported, exclusively.
     //
-    if (!(FreeType & (MEM_RELEASE | MEM_DECOMMIT)))
+    if (FreeType != MEM_RELEASE && FreeType != MEM_DECOMMIT)
     {
-        DPRINT1("Invalid FreeType\n");
-        return STATUS_INVALID_PARAMETER_4;
-    }
-
-    //
-    // Check if no flag was used, or if both flags were used
-    //
-    if (!((FreeType & (MEM_DECOMMIT | MEM_RELEASE))) ||
-         ((FreeType & (MEM_DECOMMIT | MEM_RELEASE)) == (MEM_DECOMMIT | MEM_RELEASE)))
-    {
-        DPRINT1("Invalid FreeType combination\n");
+        DPRINT1("Invalid FreeType (0x%08lx)\n", FreeType);
         return STATUS_INVALID_PARAMETER_4;
     }
 
@@ -5200,8 +5191,8 @@ NtFreeVirtualMemory(IN HANDLE ProcessHandle,
         }
     }
 
-    DPRINT("NtFreeVirtualMemory: Process 0x%p, Adress 0x%p, size 0x%x, FreeType %x.\n",
-        Process, PBaseAddress, PRegionSize, FreeType);
+    DPRINT("NtFreeVirtualMemory: Process 0x%p, Address 0x%p, Size 0x%Ix, FreeType 0x%08lx\n",
+           Process, PBaseAddress, PRegionSize, FreeType);
 
     //
     // Lock the address space
@@ -5383,10 +5374,10 @@ NtFreeVirtualMemory(IN HANDLE ProcessHandle,
                     Vad->u.VadFlags.CommitCharge -= CommitReduction;
                     // For ReactOS: shrink the corresponding memory area
                     MemoryArea = MmLocateMemoryAreaByAddress(AddressSpace, (PVOID)StartingAddress);
-                    ASSERT(Vad->StartingVpn == MemoryArea->StartingVpn);
-                    ASSERT(Vad->EndingVpn == MemoryArea->EndingVpn);
+                    ASSERT(Vad->StartingVpn == MemoryArea->VadNode.StartingVpn);
+                    ASSERT(Vad->EndingVpn == MemoryArea->VadNode.EndingVpn);
                     Vad->EndingVpn = (StartingAddress - 1) >> PAGE_SHIFT;
-                    MemoryArea->EndingVpn = Vad->EndingVpn;
+                    MemoryArea->VadNode.EndingVpn = Vad->EndingVpn;
                 }
                 else
                 {
@@ -5500,8 +5491,8 @@ FinalPath:
                       AlreadyDecommitted;
 
     ASSERT(CommitReduction >= 0);
+    ASSERT(Vad->u.VadFlags.CommitCharge >= CommitReduction);
     Vad->u.VadFlags.CommitCharge -= CommitReduction;
-    ASSERT(Vad->u.VadFlags.CommitCharge >= 0);
 
     //
     // We are done, go to the exit path without freeing the VAD as it remains

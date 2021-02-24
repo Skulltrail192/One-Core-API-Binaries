@@ -16,17 +16,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
+#if 0
+#pragma makedep implib
+#endif
 
 #include <stdarg.h>
 
-#include <windef.h>
-#include <winbase.h>
-#include <dinput.h>
-
-#define numObjects(x) (sizeof(x) / sizeof(x[0]))
+#include "windef.h"
+#include "dinput.h"
 
 static const DIOBJECTDATAFORMAT dfDIJoystick[] = {
   { &GUID_XAxis,DIJOFS_X,DIDFT_OPTIONAL|DIDFT_AXIS|DIDFT_ANYINSTANCE,0},
@@ -80,7 +77,7 @@ const DIDATAFORMAT c_dfDIJoystick = {
     sizeof(DIOBJECTDATAFORMAT),
     DIDF_ABSAXIS,
     sizeof(DIJOYSTATE),
-    numObjects(dfDIJoystick),
+    ARRAY_SIZE(dfDIJoystick),
     (LPDIOBJECTDATAFORMAT)dfDIJoystick
 };
 
@@ -256,7 +253,7 @@ const DIDATAFORMAT c_dfDIJoystick2 = {
     sizeof(DIOBJECTDATAFORMAT),
     DIDF_ABSAXIS,
     sizeof(DIJOYSTATE2),
-    numObjects(dfDIJoystick2),
+    ARRAY_SIZE(dfDIJoystick2),
     (LPDIOBJECTDATAFORMAT)dfDIJoystick2
 };
 
@@ -275,7 +272,7 @@ const DIDATAFORMAT c_dfDIMouse = {
     sizeof(DIOBJECTDATAFORMAT),
     DIDF_RELAXIS,
     sizeof(DIMOUSESTATE),
-    numObjects(dfDIMouse),
+    ARRAY_SIZE(dfDIMouse),
     (LPDIOBJECTDATAFORMAT)dfDIMouse
 };
 
@@ -298,7 +295,7 @@ const DIDATAFORMAT c_dfDIMouse2 = {
     sizeof(DIOBJECTDATAFORMAT),
     DIDF_RELAXIS,
     sizeof(DIMOUSESTATE2),
-    numObjects(dfDIMouse2),
+    ARRAY_SIZE(dfDIMouse2),
     (LPDIOBJECTDATAFORMAT)dfDIMouse2
 };
 
@@ -566,6 +563,6 @@ const DIDATAFORMAT c_dfDIKeyboard = {
     sizeof(DIOBJECTDATAFORMAT),
     DIDF_RELAXIS,
     256,
-    numObjects(dfDIKeyboard),
+    ARRAY_SIZE(dfDIKeyboard),
     (LPDIOBJECTDATAFORMAT)dfDIKeyboard
 };

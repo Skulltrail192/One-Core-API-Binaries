@@ -565,7 +565,7 @@ done:
     return Result;
 }
 
-#if WIN32_WINNT < 0x0600
+#if _WIN32_WINNT < 0x0600
 /* WARNING:
  * This code has been copied from advapi32/reg/reg.c,
  * so this dll can be tested as is on Windows XP
@@ -808,13 +808,7 @@ SetupDiBuildDriverInfoList(
             strcatW(InfFileName, InfDirectory);
 
             /* Read some information from registry, before creating the driver structure */
-            hDriverKey = SetupDiOpenDevRegKey(
-                DeviceInfoSet,
-                DeviceInfoData,
-                DICS_FLAG_GLOBAL,
-                0,
-                DIREG_DRV,
-                KEY_QUERY_VALUE);
+            hDriverKey = SETUPDI_OpenDrvKey(((struct DeviceInfoSet *)DeviceInfoSet)->HKLM, devInfo, KEY_QUERY_VALUE);
             if (hDriverKey == INVALID_HANDLE_VALUE)
                 goto done;
             RequiredSize = (len - strlenW(InfFileName)) * sizeof(WCHAR);
@@ -1253,7 +1247,7 @@ SetupDiDestroyDriverInfoList(
                  driverInfo = CONTAINING_RECORD(ListEntry, struct DriverInfoElement, ListEntry);
                  DestroyDriverInfoElement(driverInfo);
             }
-            InstallParams.Reserved = 0;
+            InstallParams.ClassInstallReserved = 0;
             InstallParams.Flags &= ~(DI_DIDCLASS | DI_MULTMFGS);
             InstallParams.FlagsEx &= ~DI_FLAGSEX_DIDINFOLIST;
             ret = SetupDiSetDeviceInstallParamsW(DeviceInfoSet, NULL, &InstallParams);
@@ -1271,14 +1265,14 @@ SetupDiDestroyDriverInfoList(
             {
                  ListEntry = RemoveHeadList(&deviceInfo->DriverListHead);
                  driverInfo = CONTAINING_RECORD(ListEntry, struct DriverInfoElement, ListEntry);
-                 if ((PVOID)InstallParamsSet.Reserved == driverInfo)
+                 if ((PVOID)InstallParamsSet.ClassInstallReserved == driverInfo)
                  {
-                     InstallParamsSet.Reserved = 0;
+                     InstallParamsSet.ClassInstallReserved = 0;
                      SetupDiSetDeviceInstallParamsW(DeviceInfoSet, NULL, &InstallParamsSet);
                  }
                  DestroyDriverInfoElement(driverInfo);
             }
-            InstallParams.Reserved = 0;
+            InstallParams.ClassInstallReserved = 0;
             InstallParams.Flags &= ~DI_DIDCOMPAT;
             InstallParams.FlagsEx &= ~DI_FLAGSEX_DIDCOMPATINFO;
             ret = SetupDiSetDeviceInstallParamsW(DeviceInfoSet, DeviceInfoData, &InstallParams);
@@ -1509,7 +1503,7 @@ SetupDiGetSelectedDriverW(
         if (SetupDiGetDeviceInstallParamsW(DeviceInfoSet, DeviceInfoData, &InstallParams))
         {
             struct DriverInfoElement *driverInfo;
-            driverInfo = (struct DriverInfoElement *)InstallParams.Reserved;
+            driverInfo = (struct DriverInfoElement *)InstallParams.ClassInstallReserved;
             if (driverInfo == NULL)
                 SetLastError(ERROR_NO_DRIVER_SELECTED);
             else
@@ -1619,12 +1613,12 @@ SetupDiSetSelectedDriverW(
 
         if (DeviceInfoData)
         {
-            pDriverInfo = (struct DriverInfoElement **)&((struct DeviceInfo *)DeviceInfoData->Reserved)->InstallParams.Reserved;
+            pDriverInfo = (struct DriverInfoElement **)&((struct DeviceInfo *)DeviceInfoData->Reserved)->InstallParams.ClassInstallReserved;
             ListHead = &((struct DeviceInfo *)DeviceInfoData->Reserved)->DriverListHead;
         }
         else
         {
-            pDriverInfo = (struct DriverInfoElement **)&((struct DeviceInfoSet *)DeviceInfoSet)->InstallParams.Reserved;
+            pDriverInfo = (struct DriverInfoElement **)&((struct DeviceInfoSet *)DeviceInfoSet)->InstallParams.ClassInstallReserved;
             ListHead = &((struct DeviceInfoSet *)DeviceInfoSet)->DriverListHead;
         }
 
@@ -2038,7 +2032,7 @@ SetupDiGetDriverInstallParamsW(
         if (SetupDiGetDeviceInstallParamsW(DeviceInfoSet, DeviceInfoData, &InstallParams))
         {
             struct DriverInfoElement *driverInfo;
-            driverInfo = (struct DriverInfoElement *)InstallParams.Reserved;
+            driverInfo = (struct DriverInfoElement *)InstallParams.ClassInstallReserved;
             if (driverInfo == NULL)
                 SetLastError(ERROR_NO_DRIVER_SELECTED);
             else
@@ -2112,9 +2106,9 @@ SetupDiInstallDriverFiles(
         SetLastError(ERROR_INVALID_HANDLE);
     else if (DeviceInfoData && DeviceInfoData->cbSize != sizeof(SP_DEVINFO_DATA))
         SetLastError(ERROR_INVALID_USER_BUFFER);
-    else if (DeviceInfoData && ((struct DeviceInfo *)DeviceInfoData->Reserved)->InstallParams.Reserved == 0)
+    else if (DeviceInfoData && ((struct DeviceInfo *)DeviceInfoData->Reserved)->InstallParams.ClassInstallReserved == 0)
         SetLastError(ERROR_NO_DRIVER_SELECTED);
-    else if (!DeviceInfoData && ((struct DeviceInfoSet *)DeviceInfoSet)->InstallParams.Reserved == 0)
+    else if (!DeviceInfoData && ((struct DeviceInfoSet *)DeviceInfoSet)->InstallParams.ClassInstallReserved == 0)
         SetLastError(ERROR_NO_DRIVER_SELECTED);
     else
     {
@@ -2131,7 +2125,7 @@ SetupDiInstallDriverFiles(
         if (!ret)
             goto done;
 
-        SelectedDriver = (struct DriverInfoElement *)InstallParams.Reserved;
+        SelectedDriver = (struct DriverInfoElement *)InstallParams.ClassInstallReserved;
         if (!SelectedDriver)
         {
             SetLastError(ERROR_NO_DRIVER_SELECTED);

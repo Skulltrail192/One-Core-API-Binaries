@@ -34,7 +34,6 @@
 #include <winbase.h>
 #include <wincon.h>
 #include <winuser.h>
-#include <mbstring.h>
 #include <ndk/rtlfuncs.h>
 
 // Our headers are pretty messed up

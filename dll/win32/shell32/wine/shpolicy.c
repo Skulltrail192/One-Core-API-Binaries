@@ -131,6 +131,9 @@ static const char strNoFileMenu[] = {"NoFileMenu"};
 static const char strNoSaveSetting[] = {"NoSaveSettings"};
 static const char strNoClose[] = {"NoClose"};
 static const char strNoRun[] = {"NoRun"};
+#ifdef __REACTOS__
+static const char strNoSimpleStartMenu[] = {"NoSimpleStartMenu"};
+#endif
 
 /* policy data array */
 static POLICYDATA sh32_policy_table[] =
@@ -762,6 +765,14 @@ static POLICYDATA sh32_policy_table[] =
     "NoneLegacyShellMode",
     SHELL_NO_POLICY
   },
+#ifdef __REACTOS__
+  {
+    REST_NOSTARTPANEL,
+    strExplorer,
+    strNoSimpleStartMenu,
+    SHELL_NO_POLICY
+  },
+#endif
   {
     REST_STARTRUNNOHOMEPATH,
     strExplorer,
@@ -856,6 +867,7 @@ DWORD WINAPI SHRestricted (RESTRICTIONS policy)
 	}
 
 	lstrcpyA(regstr, strRegistryPolicyA);
+	lstrcatA(regstr, "\\");
 	lstrcatA(regstr, p->appstr);
 
 	/* return 0 and don't set the cache if any registry errors occur */

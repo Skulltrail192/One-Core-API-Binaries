@@ -107,29 +107,6 @@ typedef int INT;
 #define PACKED
 #endif
 
-#ifdef __GNUC__
-#define DECLSPEC_NORETURN __declspec(noreturn)
-#define DECLARE_STDCALL_P( type ) __stdcall type
-#elif defined(__WATCOMC__)
-#define DECLSPEC_NORETURN
-#define DECLARE_STDCALL_P( type ) type __stdcall
-#elif defined(_MSC_VER)
-#define DECLSPEC_NORETURN __declspec(noreturn)
-#define DECLARE_STDCALL_P( type ) type __stdcall
-#endif /* __GNUC__/__WATCOMC__ */
-
-#define DECLSPEC_IMPORT __declspec(dllimport)
-#define DECLSPEC_EXPORT __declspec(dllexport)
-#ifndef DECLSPEC_NOINLINE
-#if (_MSC_VER >= 1300)
-#define DECLSPEC_NOINLINE  __declspec(noinline)
-#elif defined(__GNUC__)
-#define DECLSPEC_NOINLINE __attribute__((noinline))
-#else
-#define DECLSPEC_NOINLINE
-#endif
-#endif
-
 #undef far
 #undef near
 #undef pascal
@@ -267,15 +244,10 @@ typedef HANDLE HGLOBAL;
 typedef HANDLE HLOCAL;
 typedef HANDLE GLOBALHANDLE;
 typedef HANDLE LOCALHANDLE;
-#ifdef _WIN64
+
 typedef INT_PTR (WINAPI *FARPROC)();
 typedef INT_PTR (WINAPI *NEARPROC)();
 typedef INT_PTR (WINAPI *PROC)();
-#else
-typedef int (WINAPI *FARPROC)();
-typedef int (WINAPI *NEARPROC)();
-typedef int (WINAPI *PROC)();
-#endif
 
 typedef void *HGDIOBJ;
 
@@ -307,6 +279,21 @@ DECLARE_HANDLE(HKL);
 DECLARE_HANDLE(HMONITOR);
 DECLARE_HANDLE(HWINEVENTHOOK);
 DECLARE_HANDLE(HUMPD);
+
+DECLARE_HANDLE(DPI_AWARENESS_CONTEXT);
+
+typedef enum DPI_AWARENESS {
+  DPI_AWARENESS_INVALID = -1,
+  DPI_AWARENESS_UNAWARE = 0,
+  DPI_AWARENESS_SYSTEM_AWARE,
+  DPI_AWARENESS_PER_MONITOR_AWARE
+} DPI_AWARENESS;
+
+#define DPI_AWARENESS_CONTEXT_UNAWARE              ((DPI_AWARENESS_CONTEXT)-1)
+#define DPI_AWARENESS_CONTEXT_SYSTEM_AWARE         ((DPI_AWARENESS_CONTEXT)-2)
+#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE    ((DPI_AWARENESS_CONTEXT)-3)
+#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((DPI_AWARENESS_CONTEXT)-4)
+#define DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED    ((DPI_AWARENESS_CONTEXT)-5)
 
 typedef int HFILE;
 typedef HICON HCURSOR;

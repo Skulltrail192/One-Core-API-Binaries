@@ -54,6 +54,7 @@ list(APPEND SOURCE
     platform.c
     ripemd160.c
     rsa.c
+    rsa_internal.c
     sha1.c
     sha256.c
     sha512.c
@@ -78,13 +79,12 @@ list(APPEND SOURCE
     #xtea.c
     )
 
-add_library(mbedtls SHARED
+add_library(mbedtls MODULE
     ${SOURCE}
     mbedtls.rc
     ${CMAKE_CURRENT_BINARY_DIR}/mbedtls.def)
 
 set_module_type(mbedtls win32dll)
-target_link_libraries(mbedtls zlib)
 add_importlibs(mbedtls advapi32 msvcrt kernel32 ntdll)
 
 # to use `_vsnprintf_s` looks like we have to define MINGW_HAS_SECURE_API
@@ -94,8 +94,7 @@ add_definitions(-DMINGW_HAS_SECURE_API -DCRTDLL)
 add_cd_file(TARGET mbedtls DESTINATION reactos/system32 FOR all)
 
 if(NOT MSVC)
-    add_target_compile_flags(mbedtls "-Wno-pointer-sign -Wno-unused-function")
-    if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
-        add_target_compile_flags(mbedtls "-Wno-unused-but-set-variable")
-    endif()
+    target_compile_options(mbedtls PRIVATE -Wno-pointer-sign -Wno-unused-function)
+elseif(USE_CLANG_CL)
+    target_compile_options(mbedtls PRIVATE -Wno-tautological-constant-compare)
 endif()

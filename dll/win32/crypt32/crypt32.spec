@@ -92,6 +92,7 @@
 @ stdcall CertSetStoreProperty(ptr long long ptr)
 @ stdcall CertStrToNameA(long str long ptr ptr ptr ptr)
 @ stdcall CertStrToNameW(long wstr long ptr ptr ptr ptr)
+@ stdcall CertUnregisterPhysicalStore(ptr long wstr)
 @ stdcall CertUnregisterSystemStore(ptr long)
 @ stdcall CertVerifyCRLRevocation(long ptr long ptr)
 @ stdcall CertVerifyCRLTimeValidity(ptr ptr)
@@ -176,8 +177,10 @@
 @ stdcall CryptSIPRemoveProvider(ptr)
 @ stdcall CryptSIPRemoveSignedDataMsg(ptr long)
 @ stdcall CryptSIPRetrieveSubjectGuid(wstr long ptr)
+@ stdcall CryptSIPRetrieveSubjectGuidForCatalogFile(wstr long ptr)
 @ stdcall CryptSIPVerifyIndirectData(ptr ptr)
 @ stub CryptSetAsyncParam
+@ stdcall CryptSetKeyIdentifierProperty(ptr long long wstr ptr ptr)
 @ stdcall CryptSetOIDFunctionValue(long str str wstr long ptr long)
 @ stub CryptSetProviderU
 @ stdcall CryptSignAndEncodeCertificate(long long long str ptr ptr ptr ptr ptr)
@@ -192,7 +195,7 @@
 @ stdcall CryptUnprotectMemory(ptr long long)
 @ stdcall CryptUnregisterDefaultOIDFunction(long str wstr)
 @ stdcall CryptUnregisterOIDFunction(long str str)
-@ stub CryptUnregisterOIDInfo
+@ stdcall CryptUnregisterOIDInfo(ptr)
 @ stdcall CryptVerifyCertificateSignature(long long ptr long ptr)
 @ stdcall CryptVerifyCertificateSignatureEx(long long long ptr long ptr long ptr)
 @ stdcall CryptVerifyDetachedMessageHash(ptr ptr long long ptr ptr ptr ptr)

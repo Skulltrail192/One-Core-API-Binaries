@@ -19,7 +19,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include <stdarg.h>
+#include <string.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "commdlg.h"
+#include "cderr.h"
+#include "dlgs.h"
+#include "wine/debug.h"
+#include "wine/heap.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(commdlg);
+
 #include "cdlg.h"
+
 
 /*-----------------------------------------------------------------------*/
 
@@ -269,7 +285,7 @@ static INT_PTR CALLBACK COMDLG32_FindReplaceDlgProc(HWND hDlgWnd, UINT iMsg, WPA
         if(iMsg == WM_DESTROY)
         {
 		RemovePropA(hDlgWnd, (LPSTR)COMDLG32_Atom);
-		HeapFree(GetProcessHeap(), 0, pdata);
+		heap_free(pdata);
         }
 
         return retval;
@@ -412,7 +428,7 @@ static HWND COMDLG32_FR_DoFindReplace(
 		error = CDERR_DIALOGFAILURE;
 cleanup:
 		COMDLG32_SetCommDlgExtendedError(error);
-                HeapFree(GetProcessHeap(), 0, pdata);
+                heap_free(pdata);
         }
         return hdlgwnd;
 }

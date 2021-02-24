@@ -20,9 +20,9 @@
 
 #include "regedit.h"
 
-#define CX_ICON    16
-#define CY_ICON    16
-#define NUM_ICONS   2
+#define CX_ICON            16
+#define CY_ICON            16
+#define LISTVIEW_NUM_ICONS 2
 
 int Image_String = 0;
 int Image_Bin = 0;
@@ -49,7 +49,7 @@ typedef struct tagSORT_INFO
 static INT g_iSortedColumn = 0;
 
 #define MAX_LIST_COLUMNS (IDS_LIST_COLUMN_LAST - IDS_LIST_COLUMN_FIRST + 1)
-static const int default_column_widths[MAX_LIST_COLUMNS] = { 200, 175, 400 };
+static const int default_column_widths[MAX_LIST_COLUMNS] = { 35, 25, 40 };  /* in percents */
 static const int column_alignment[MAX_LIST_COLUMNS] = { LVCFMT_LEFT, LVCFMT_LEFT, LVCFMT_LEFT };
 
 LPCWSTR GetValueName(HWND hwndLV, int iStartAt)
@@ -255,7 +255,7 @@ static void AddEntryToList(HWND hwndLV, LPWSTR Name, DWORD dwValType, void* ValB
     }
 }
 
-static BOOL CreateListColumns(HWND hWndListView)
+static BOOL CreateListColumns(HWND hWndListView, INT cxTotal)
 {
     WCHAR szText[50];
     int index;
@@ -269,7 +269,7 @@ static BOOL CreateListColumns(HWND hWndListView)
     for (index = 0; index < MAX_LIST_COLUMNS; index++)
     {
         lvC.iSubItem = index;
-        lvC.cx = default_column_widths[index];
+        lvC.cx = (cxTotal * default_column_widths[index]) / 100;
         lvC.fmt = column_alignment[index];
         LoadStringW(hInst, IDS_LIST_COLUMN_FIRST + index, szText, COUNT_OF(szText));
         if (ListView_InsertColumn(hWndListView, index, &lvC) == -1) return FALSE;
@@ -284,7 +284,7 @@ static BOOL InitListViewImageLists(HWND hwndLV)
 
     /* Create the image list.  */
     if ((himl = ImageList_Create(CX_ICON, CY_ICON,
-                                 ILC_MASK, 0, NUM_ICONS)) == NULL)
+                                 ILC_MASK, 0, LISTVIEW_NUM_ICONS)) == NULL)
     {
         return FALSE;
     }
@@ -296,7 +296,7 @@ static BOOL InitListViewImageLists(HWND hwndLV)
     Image_String = ImageList_AddIcon(himl, hico);
 
     /* Fail if not all of the images were added.  */
-    if (ImageList_GetImageCount(himl) < NUM_ICONS)
+    if (ImageList_GetImageCount(himl) < LISTVIEW_NUM_ICONS)
     {
         return FALSE;
     }
@@ -478,7 +478,7 @@ static int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSor
 
 static BOOL ListView_Sort(HWND hListView, int iSortingColumn, int iSortedColumn)
 {
-    if ( (GetWindowLongPtr(hListView, GWL_STYLE) & ~LVS_NOSORTHEADER) &&
+    if (!(GetWindowLongPtr(hListView, GWL_STYLE) & LVS_NOSORTHEADER) &&
          (iSortingColumn >= 0) )
     {
         BOOL bSortAscending;
@@ -627,7 +627,7 @@ BOOL ListWndNotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam, BOOL *Result)
     return FALSE;
 }
 
-HWND CreateListView(HWND hwndParent, HMENU id)
+HWND CreateListView(HWND hwndParent, HMENU id, INT cx)
 {
     RECT rcClient;
     HWND hwndLV;
@@ -641,7 +641,7 @@ HWND CreateListView(HWND hwndParent, HMENU id)
     if (!hwndLV) return NULL;
 
     /* Initialize the image list, and add items to the control. */
-    if (!CreateListColumns(hwndLV)) goto fail;
+    if (!CreateListColumns(hwndLV, cx)) goto fail;
     if (!InitListViewImageLists(hwndLV)) goto fail;
 
     return hwndLV;

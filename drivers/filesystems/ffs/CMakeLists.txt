@@ -28,15 +28,16 @@ list(APPEND SOURCE
     src/write.c
     inc/ffsdrv.h)
 
-add_library(ffs SHARED ${SOURCE} src/ffsdrv.rc)
+add_library(ffs MODULE ${SOURCE} src/ffsdrv.rc)
 
-if(NOT MSVC)
-    add_target_compile_flags(ffs "-Wno-pointer-sign -Wno-unused-function")
-    if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
-        add_target_compile_flags(ffs "-Wno-unused-but-set-variable -Wno-unused-variable -Wno-missing-braces")
+if(USE_CLANG_CL OR (NOT MSVC))
+    target_compile_options(ffs PRIVATE -Wno-pointer-sign -Wno-unused-function)
+    target_compile_options(ffs PRIVATE -Wno-unused-variable -Wno-missing-braces)
+    if(USE_CLANG_CL)
+        target_compile_options(ffs PRIVATE -Wno-empty-body)
+    else()
+        target_compile_options(ffs PRIVATE -Wno-unused-but-set-variable)
     endif()
-#else()
-#    replace_compile_flags("/we\"4189\"" " ")
 endif()
 
 add_definitions(-D__KERNEL__)
@@ -44,5 +45,5 @@ set_module_type(ffs kernelmodedriver)
 target_link_libraries(ffs memcmp ${PSEH_LIB})
 add_importlibs(ffs ntoskrnl hal)
 add_pch(ffs inc/ffsdrv.h SOURCE)
-add_cd_file(TARGET ffs DESTINATION reactos/system32/drivers NO_CAB FOR all)
+add_cd_file(TARGET ffs DESTINATION reactos/system32/drivers FOR all)
 

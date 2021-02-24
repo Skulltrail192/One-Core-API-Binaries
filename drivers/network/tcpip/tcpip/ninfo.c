@@ -177,17 +177,147 @@ TDI_STATUS InfoTdiQueryGetIPSnmpInfo( TDIEntityID ID,
     return Status;
 }
 
+#define ntohs(n) ((((n) & 0xff) << 8) | (((n) & 0xff00) >> 8))
+
+TDI_STATUS InfoTdiQueryGetConnectionTcpTable(PADDRESS_FILE AddrFile,
+				    PNDIS_BUFFER Buffer,
+				    PUINT BufferSize,
+                    TDI_TCPUDP_CLASS_INFO Class)
+{
+    SIZE_T Size;
+    MIB_TCPROW_OWNER_MODULE TcpRow;
+    TDI_STATUS Status = TDI_INVALID_REQUEST;
+
+    TI_DbgPrint(DEBUG_INFO, ("Called.\n"));
+
+    if (Class == TcpUdpClassOwnerPid)
+    {
+        Size = sizeof(MIB_TCPROW_OWNER_PID);
+    }
+    else if (Class == TcpUdpClassOwner)
+    {
+        Size = sizeof(MIB_TCPROW_OWNER_MODULE);
+    }
+    else
+    {
+        Size = sizeof(MIB_TCPROW);
+    }
+
+    TcpRow.dwOwningPid = HandleToUlong(AddrFile->ProcessId);
+    TcpRow.liCreateTimestamp = AddrFile->CreationTime;
+
+    if (AddrFile->Listener != NULL)
+    {
+        PADDRESS_FILE EndPoint;
+
+        EndPoint = AddrFile->Listener->AddressFile;
+
+        TcpRow.dwState = MIB_TCP_STATE_LISTEN;
+        TcpRow.dwLocalAddr = AddrFile->Address.Address.IPv4Address;
+        TcpRow.dwLocalPort = AddrFile->Port;
+        TcpRow.dwRemoteAddr = EndPoint->Address.Address.IPv4Address;
+        TcpRow.dwRemotePort = EndPoint->Port;
+
+        Status = TDI_SUCCESS;
+    }
+    else if (AddrFile->Connection != NULL &&
+             AddrFile->Connection->SocketContext != NULL)
+    {
+        TA_IP_ADDRESS EndPoint;
+
+        Status = TCPGetSockAddress(AddrFile->Connection, (PTRANSPORT_ADDRESS)&EndPoint, FALSE);
+        if (NT_SUCCESS(Status))
+        {
+            ASSERT(EndPoint.TAAddressCount >= 1);
+            ASSERT(EndPoint.Address[0].AddressLength == TDI_ADDRESS_LENGTH_IP);
+            TcpRow.dwLocalAddr = EndPoint.Address[0].Address[0].in_addr;
+            TcpRow.dwLocalPort = ntohs(EndPoint.Address[0].Address[0].sin_port);
+
+            Status = TCPGetSockAddress(AddrFile->Connection, (PTRANSPORT_ADDRESS)&EndPoint, TRUE);
+            if (NT_SUCCESS(Status))
+            {
+                ASSERT(EndPoint.TAAddressCount >= 1);
+                ASSERT(EndPoint.Address[0].AddressLength == TDI_ADDRESS_LENGTH_IP);
+                TcpRow.dwRemoteAddr = EndPoint.Address[0].Address[0].in_addr;
+                TcpRow.dwRemotePort = ntohs(EndPoint.Address[0].Address[0].sin_port);
+
+                Status = TCPGetSocketStatus(AddrFile->Connection, &TcpRow.dwState);
+                ASSERT(NT_SUCCESS(Status));
+            }
+        }
+    }
+
+    if (NT_SUCCESS(Status))
+    {
+        if (Class == TcpUdpClassOwner)
+        {
+            RtlZeroMemory(&TcpRow.OwningModuleInfo[0], sizeof(TcpRow.OwningModuleInfo));
+            TcpRow.OwningModuleInfo[0] = (ULONG_PTR)AddrFile->SubProcessTag;
+        }
+
+        Status = InfoCopyOut( (PCHAR)&TcpRow, Size,
+                              Buffer, BufferSize );
+    }
+
+    TI_DbgPrint(DEBUG_INFO, ("Returning %08x\n", Status));
+
+    return Status;
+}
+
+TDI_STATUS InfoTdiQueryGetConnectionUdpTable(PADDRESS_FILE AddrFile,
+				    PNDIS_BUFFER Buffer,
+				    PUINT BufferSize,
+				    TDI_TCPUDP_CLASS_INFO Class)
+{
+    SIZE_T Size;
+    MIB_UDPROW_OWNER_MODULE UdpRow;
+    TDI_STATUS Status = TDI_INVALID_REQUEST;
+
+    TI_DbgPrint(DEBUG_INFO, ("Called.\n"));
+
+    if (Class == TcpUdpClassOwnerPid)
+    {
+        Size = sizeof(MIB_UDPROW_OWNER_PID);
+    }
+    else if (Class == TcpUdpClassOwner)
+    {
+        Size = sizeof(MIB_UDPROW_OWNER_MODULE);
+    }
+    else
+    {
+        Size = sizeof(MIB_UDPROW);
+    }
+
+    UdpRow.dwLocalAddr = AddrFile->Address.Address.IPv4Address;
+    UdpRow.dwLocalPort = AddrFile->Port;
+    UdpRow.dwOwningPid = HandleToUlong(AddrFile->ProcessId);
+    UdpRow.liCreateTimestamp = AddrFile->CreationTime;
+    UdpRow.dwFlags = 0; /* FIXME */
+    if (Class == TcpUdpClassOwner)
+    {
+        RtlZeroMemory(&UdpRow.OwningModuleInfo[0], sizeof(UdpRow.OwningModuleInfo));
+        UdpRow.OwningModuleInfo[0] = (ULONG_PTR)AddrFile->SubProcessTag;
+    }
+
+    Status = InfoCopyOut( (PCHAR)&UdpRow,
+			  Size, Buffer, BufferSize );
+
+    TI_DbgPrint(DEBUG_INFO, ("Returning %08x\n", Status));
+
+    return Status;
+}
+
 TDI_STATUS InfoTdiSetRoute(PIP_INTERFACE IF, PVOID Buffer, UINT BufferSize)
 {
     IP_ADDRESS Address, Netmask, Router;
     PIPROUTE_ENTRY Route = Buffer;
 
+    if (!Buffer || BufferSize < sizeof(IPROUTE_ENTRY))
+        return TDI_INVALID_PARAMETER;
+
     AddrInitIPv4( &Address, Route->Dest );
     AddrInitIPv4( &Netmask, Route->Mask );
     AddrInitIPv4( &Router,  Route->Gw );
-
-    if (!Buffer || BufferSize < sizeof(IPROUTE_ENTRY))
-        return TDI_INVALID_PARAMETER;
 
     if (IF == Loopback)
     {

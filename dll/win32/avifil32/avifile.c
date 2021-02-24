@@ -30,7 +30,25 @@
  *    When index is missing it works, but index seems to be okay.
  */
 
+#define COBJMACROS
+#include <assert.h>
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "winerror.h"
+#include "mmsystem.h"
+#include "vfw.h"
+
 #include "avifile_private.h"
+#include "extrachunk.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(avifile);
 
 #ifndef IDX_PER_BLOCK
 #define IDX_PER_BLOCK 2730
@@ -606,7 +624,7 @@ static HRESULT WINAPI IPersistFile_fnGetCurFile(IPersistFile *iface, LPOLESTR *p
     if (*ppszFileName == NULL)
       return AVIERR_MEMORY;
 
-    strcpyW(*ppszFileName, This->szFileName);
+    lstrcpyW(*ppszFileName, This->szFileName);
   }
 
   return AVIERR_OK;
@@ -1622,7 +1640,7 @@ static HRESULT AVIFILE_LoadFile(IAVIFileImpl *This)
   This->fInfo.dwWidth               = MainAVIHdr.dwWidth;
   This->fInfo.dwHeight              = MainAVIHdr.dwHeight;
   LoadStringW(AVIFILE_hModule, IDS_AVIFILETYPE, This->fInfo.szFileType,
-	      sizeof(This->fInfo.szFileType)/sizeof(This->fInfo.szFileType[0]));
+	      ARRAY_SIZE(This->fInfo.szFileType));
 
   /* go back to into header list */
   if (mmioAscend(This->hmmio, &ck, 0) != S_OK)
@@ -1732,9 +1750,9 @@ static HRESULT AVIFILE_LoadFile(IAVIFileImpl *This)
 
 	    /* generate description for stream like "filename.avi Type #n" */
 	    if (streamHdr.fccType == streamtypeVIDEO)
-	      LoadStringW(AVIFILE_hModule, IDS_VIDEO, szType, sizeof(szType)/sizeof(szType[0]));
+	      LoadStringW(AVIFILE_hModule, IDS_VIDEO, szType, ARRAY_SIZE(szType));
 	    else if (streamHdr.fccType == streamtypeAUDIO)
-	      LoadStringW(AVIFILE_hModule, IDS_AUDIO, szType, sizeof(szType)/sizeof(szType[0]));
+	      LoadStringW(AVIFILE_hModule, IDS_AUDIO, szType, ARRAY_SIZE(szType));
 	    else
 	      wsprintfW(szType, streamTypeFmt, (char*)&streamHdr.fccType);
 
@@ -1765,7 +1783,7 @@ static HRESULT AVIFILE_LoadFile(IAVIFileImpl *This)
 	    }
 
 	    MultiByteToWideChar(CP_ACP, 0, str, -1, pStream->sInfo.szName,
-				sizeof(pStream->sInfo.szName)/sizeof(pStream->sInfo.szName[0]));
+				ARRAY_SIZE(pStream->sInfo.szName));
 
 	    HeapFree(GetProcessHeap(), 0, str);
 	  }

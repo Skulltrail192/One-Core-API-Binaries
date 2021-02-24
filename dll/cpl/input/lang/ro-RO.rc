@@ -1,4 +1,4 @@
-/* Translator: Ștefan Fulea (stefan dot fulea at mail dot md) */
+/* Translator: Ștefan Fulea (stefan dot fulea at mail dot com) */
 
 LANGUAGE LANG_ROMANIAN, SUBLANG_NEUTRAL
 
@@ -50,9 +50,9 @@ CAPTION "Adăguare limbă de intrare"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT "&Limbă:", -1, 7, 7, 61, 10
-    COMBOBOX IDC_INPUT_LANG_COMBO, 7, 17, 212, 150, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+    COMBOBOX IDC_INPUT_LANG_COMBO, 7, 17, 212, 150, CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | CBS_SORT | WS_VSCROLL
     LTEXT "&Aranjament de tastatură/IME:", -1, 7, 36, 110, 10
-    COMBOBOX IDC_KEYBOARD_LO_COMBO, 7, 47, 212, 150, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+    COMBOBOX IDC_KEYBOARD_LO_COMBO, 7, 47, 212, 150, CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | CBS_SORT | WS_VSCROLL
     DEFPUSHBUTTON "Con&firmă", IDOK, 116, 68, 50, 14
     PUSHBUTTON "A&nulează", IDCANCEL, 169, 68, 50, 14
 END
@@ -108,6 +108,7 @@ BEGIN
     IDS_CTRL_SHIFT "«Ctrl» + «Shift»"
     IDS_LEFT_ALT_SHIFT "«Alt» (stâng) + «Shift»"
     IDS_SWITCH_BET_INLANG "Comutarea între limbile de intrare"
+    IDS_REBOOT_NOW, "Reboot now?"
 END
 
 STRINGTABLE
@@ -215,7 +216,8 @@ BEGIN
     IDS_PORTUGUESE_BRAZILIAN_ABNT_LAYOUT "Portugheză (Braziliană ABNT)"
     IDS_PORTUGUESE_BRAZIL_ABNT2_LAYOUT "Portuguese (Braziliană ABNT2)"
     IDS_PUNJABI_LAYOUT "Punjabi"
-    IDS_ROMANIAN_LAYOUT "Română"
+    IDS_ROMANIAN_LEGACY_LAYOUT "Română (moștenire)"
+    IDS_ROMANIAN_STANDARD_LAYOUT "Română (standard)"
     IDS_RUSSIAN_LAYOUT "Rusă"
     IDS_RUSSIAN_TYPEWRITER_LAYOUT "Rusă (dactilografică)"
     IDS_SERBIAN_CYRILLIC_LAYOUT "Sârbă (grafie chirilică)"

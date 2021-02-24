@@ -10,6 +10,7 @@
 
 #include "fltmgr.h"
 #include "fltmgrint.h"
+#include "Registry.h"
 
 #define NDEBUG
 #include <debug.h>
@@ -20,9 +21,37 @@
 #define SERVICES_KEY L"\\Registry\\Machine\\System\\CurrentControlSet\\Services\\"
 #define MAX_KEY_LENGTH  0x200
 
+LIST_ENTRY FilterList;
+ERESOURCE FilterListLock;
+
 NTSTATUS
 FltpStartingToDrainObject(
     _Inout_ PFLT_OBJECT Object
+);
+
+VOID
+FltpMiniFilterDriverUnload(
+);
+
+NTSTATUS
+FltpAttachFrame(
+    _In_ PUNICODE_STRING Altitude,
+    _Inout_ PFLTP_FRAME *Frame
+);
+
+static
+NTSTATUS
+GetFilterAltitude(
+    _In_ PFLT_FILTER Filter,
+    _Inout_ PUNICODE_STRING AltitudeString
+);
+
+static
+NTSTATUS
+GetFilterFrame(
+    _In_ PFLT_FILTER Filter,
+    _In_ PUNICODE_STRING Altitude,
+    _Out_ PFLTP_FRAME *Frame
 );
 
 
@@ -56,8 +85,26 @@ NTSTATUS
 NTAPI
 FltUnloadFilter(_In_ PCUNICODE_STRING FilterName)
 {
-    UNREFERENCED_PARAMETER(FilterName);
-    return STATUS_NOT_IMPLEMENTED;
+    //
+    //FIXME: This is a temp hack, it needs properly implementing
+    //
+
+    UNICODE_STRING DriverServiceName;
+    UNICODE_STRING ServicesKey;
+    CHAR Buffer[MAX_KEY_LENGTH];
+
+    /* Setup the base services key */
+    RtlInitUnicodeString(&ServicesKey, SERVICES_KEY);
+
+    /* Initialize the string data */
+    DriverServiceName.Length = 0;
+    DriverServiceName.Buffer = (PWCH)Buffer;
+    DriverServiceName.MaximumLength = MAX_KEY_LENGTH;
+
+    /* Create the full service key for this filter */
+    RtlCopyUnicodeString(&DriverServiceName, &ServicesKey);
+    RtlAppendUnicodeStringToString(&DriverServiceName, FilterName);
+    return ZwUnloadDriver(&DriverServiceName);
 }
 
 NTSTATUS
@@ -68,11 +115,14 @@ FltRegisterFilter(_In_ PDRIVER_OBJECT DriverObject,
 {
     PFLT_OPERATION_REGISTRATION Callbacks;
     PFLT_FILTER Filter;
+    PFLTP_FRAME Frame;
     ULONG CallbackBufferSize;
     ULONG FilterBufferSize;
     ULONG Count = 0;
     PCHAR Ptr;
     NTSTATUS Status;
+
+    *RetFilter = NULL;
 
     /* Make sure we're targeting the correct major revision */
     if ((Registration->Version & 0xFF00) != FLT_MAJOR_VERSION)
@@ -145,6 +195,10 @@ FltRegisterFilter(_In_ PDRIVER_OBJECT DriverObject,
     InitializeListHead(&Filter->ActiveOpens.mList);
     Filter->ActiveOpens.mCount = 0;
 
+    ExInitializeFastMutex(&Filter->ConnectionList.mLock);
+    InitializeListHead(&Filter->ConnectionList.mList);
+    Filter->ConnectionList.mCount = 0;
+
     /* Initialize the usermode port list */
     ExInitializeFastMutex(&Filter->PortList.mLock);
     InitializeListHead(&Filter->PortList.mList);
@@ -199,15 +253,58 @@ FltRegisterFilter(_In_ PDRIVER_OBJECT DriverObject,
     Filter->Name.Buffer = (PWCH)Ptr;
     RtlCopyUnicodeString(&Filter->Name, &DriverObject->DriverExtension->ServiceKeyName);
 
+    /* Lookup the altitude of the mini-filter */
+    Status = GetFilterAltitude(Filter, &Filter->DefaultAltitude);
+    if (!NT_SUCCESS(Status))
+    {
+        goto Quit;
+    }
+
+    /* Lookup the filter frame */
+    Status = GetFilterFrame(Filter, &Filter->DefaultAltitude, &Frame);
+    if (Status == STATUS_NOT_FOUND)
+    {
+        /* Store the frame this mini-filter's main struct */
+        Filter->Frame = Frame;
+
+        Status = FltpAttachFrame(&Filter->DefaultAltitude, &Frame);
+    }
+
+    if (!NT_SUCCESS(Status))
+    {
+        goto Quit;
+    }
+
     //
-    // - Get the altitude string
     // - Slot the filter into the correct altitude location
     // - More stuff??
     //
 
-Quit:
-    if (!NT_SUCCESS(Status))
+    /* Store any existing driver unload routine before we make any changes */
+    Filter->OldDriverUnload = (PFLT_FILTER_UNLOAD_CALLBACK)DriverObject->DriverUnload;
+
+    /* Check we opted not to have an unload routine, or if we want to stop the driver from being unloaded */
+    if (Registration->FilterUnloadCallback && !FlagOn(Filter->Flags, FLTFL_REGISTRATION_DO_NOT_SUPPORT_SERVICE_STOP))
     {
+        DriverObject->DriverUnload = (PDRIVER_UNLOAD)FltpMiniFilterDriverUnload;
+    }
+    else
+    {
+        DriverObject->DriverUnload = (PDRIVER_UNLOAD)NULL;
+    }
+
+
+Quit:
+
+    if (NT_SUCCESS(Status))
+    {
+        DPRINT1("Loaded FS mini-filter %wZ\n", &DriverObject->DriverExtension->ServiceKeyName);
+        *RetFilter = Filter;
+    }
+    else
+    {
+        DPRINT1("Failed to load FS mini-filter %wZ : 0x%X\n", &DriverObject->DriverExtension->ServiceKeyName, Status);
+
         // Add cleanup for context resources
 
         ExDeleteResourceLite(&Filter->InstanceList.rLock);
@@ -301,6 +398,17 @@ FltStartFiltering(_In_ PFLT_FILTER Filter)
     return Status;
 }
 
+NTSTATUS
+NTAPI
+FltGetFilterFromName(_In_ PCUNICODE_STRING FilterName,
+                     _Out_ PFLT_FILTER *RetFilter)
+{
+   UNIMPLEMENTED;
+    UNREFERENCED_PARAMETER(FilterName);
+    *RetFilter = NULL;
+    return STATUS_NOT_IMPLEMENTED;
+}
+
 
 /* INTERNAL FUNCTIONS ******************************************************/
 
@@ -317,5 +425,175 @@ FltpStartingToDrainObject(_Inout_ PFLT_OBJECT Object)
         return STATUS_FLT_DELETING_OBJECT;
     }
 
+    return STATUS_SUCCESS;
+}
+
+VOID
+FltpMiniFilterDriverUnload()
+{
+    __debugbreak();
+}
+
+
+NTSTATUS
+FltpAttachFrame(
+    _In_ PUNICODE_STRING Altitude,
+    _Inout_ PFLTP_FRAME *Frame)
+{
+    UNIMPLEMENTED;
+    UNREFERENCED_PARAMETER(Altitude);
+    *Frame = NULL;
+    return STATUS_SUCCESS;
+}
+
+/* PRIVATE FUNCTIONS ******************************************************/
+
+static
+NTSTATUS
+GetFilterAltitude(_In_ PFLT_FILTER Filter,
+                  _Inout_ PUNICODE_STRING AltitudeString)
+{
+    UNICODE_STRING InstancesKey = RTL_CONSTANT_STRING(L"Instances");
+    UNICODE_STRING DefaultInstance = RTL_CONSTANT_STRING(L"DefaultInstance");
+    UNICODE_STRING Altitude = RTL_CONSTANT_STRING(L"Altitude");
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    UNICODE_STRING FilterInstancePath;
+    ULONG BytesRequired;
+    HANDLE InstHandle = NULL;
+    HANDLE RootHandle;
+    PWCH InstBuffer = NULL;
+    PWCH AltBuffer = NULL;
+    NTSTATUS Status;
+
+    /* Get a handle to the instances key in the filter's services key */
+    Status = FltpOpenFilterServicesKey(Filter,
+                                       KEY_QUERY_VALUE,
+                                       &InstancesKey,
+                                       &RootHandle);
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
+    /* Read the size 'default instances' string value */
+    Status = FltpReadRegistryValue(RootHandle,
+                                   &DefaultInstance,
+                                   REG_SZ,
+                                   NULL,
+                                   0,
+                                   &BytesRequired);
+
+    /* We should get a buffer too small error */
+    if (Status == STATUS_BUFFER_TOO_SMALL)
+    {
+        /* Allocate the buffer we need to hold the string */
+        InstBuffer = ExAllocatePoolWithTag(PagedPool, BytesRequired, FM_TAG_UNICODE_STRING);
+        if (InstBuffer == NULL)
+        {
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+            goto Quit;
+        }
+
+        /* Now read the string value */
+        Status = FltpReadRegistryValue(RootHandle,
+                                       &DefaultInstance,
+                                       REG_SZ,
+                                       InstBuffer,
+                                       BytesRequired,
+                                       &BytesRequired);
+    }
+
+    if (!NT_SUCCESS(Status))
+    {
+        goto Quit;
+    }
+
+    /* Convert the string to a unicode_string */
+    RtlInitUnicodeString(&FilterInstancePath, InstBuffer);
+
+    /* Setup the attributes using the root key handle */
+    InitializeObjectAttributes(&ObjectAttributes,
+                               &FilterInstancePath,
+                               OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE,
+                               RootHandle,
+                               NULL);
+
+    /* Now open the key name which was stored in the default instance */
+    Status = ZwOpenKey(&InstHandle, KEY_QUERY_VALUE, &ObjectAttributes);
+    if (NT_SUCCESS(Status))
+    {
+        /* Get the size of the buffer that holds the altitude */
+        Status = FltpReadRegistryValue(InstHandle,
+                                       &Altitude,
+                                       REG_SZ,
+                                       NULL,
+                                       0,
+                                       &BytesRequired);
+        if (Status == STATUS_BUFFER_TOO_SMALL)
+        {
+            /* Allocate the required buffer */
+            AltBuffer = ExAllocatePoolWithTag(PagedPool, BytesRequired, FM_TAG_UNICODE_STRING);
+            if (AltBuffer == NULL)
+            {
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                goto Quit;
+            }
+
+            /* And now finally read in the actual altitude string */
+            Status = FltpReadRegistryValue(InstHandle,
+                                           &Altitude,
+                                           REG_SZ,
+                                           AltBuffer,
+                                           BytesRequired,
+                                           &BytesRequired);
+            if (NT_SUCCESS(Status))
+            {
+                /* We made it, setup the return buffer */
+                AltitudeString->Length = BytesRequired;
+                AltitudeString->MaximumLength = BytesRequired;
+                AltitudeString->Buffer = AltBuffer;
+            }
+        }
+    }
+
+Quit:
+    if (!NT_SUCCESS(Status))
+    {
+        if (AltBuffer)
+        {
+            ExFreePoolWithTag(AltBuffer, FM_TAG_UNICODE_STRING);
+        }
+    }
+
+    if (InstBuffer)
+    {
+        ExFreePoolWithTag(InstBuffer, FM_TAG_UNICODE_STRING);
+    }
+
+    if (InstHandle)
+    {
+        ZwClose(InstHandle);
+    }
+    ZwClose(RootHandle);
+
+    return Status;
+}
+
+static
+NTSTATUS
+GetFilterFrame(_In_ PFLT_FILTER Filter,
+               _In_ PUNICODE_STRING Altitude,
+               _Out_ PFLTP_FRAME *Frame)
+{
+    UNIMPLEMENTED;
+    UNREFERENCED_PARAMETER(Filter);
+    UNREFERENCED_PARAMETER(Altitude);
+
+    //
+    // Try to find a frame from our existing filter list (see FilterList)
+    // If none exists, create a new frame, add it and return it
+    //
+
+    *Frame = NULL;
     return STATUS_SUCCESS;
 }

@@ -19,6 +19,33 @@ NTAPI
 RtlpGetStackLimits(PULONG_PTR StackBase,
                    PULONG_PTR StackLimit);
 
+/* PRIVATE FUNCTIONS *********************************************************/
+
+NTSTATUS
+NTAPI
+IoComputeDesiredAccessFileObject(IN PFILE_OBJECT FileObject,
+                                 IN PACCESS_MASK DesiredAccess)
+{
+    /* Assume failure */
+    *DesiredAccess = 0;
+
+    /* First check we really have a FileObject */
+    if (OBJECT_TO_OBJECT_HEADER(FileObject)->Type != IoFileObjectType)
+    {
+        return STATUS_OBJECT_TYPE_MISMATCH;
+    }
+
+    /* Then compute desired access:
+     * Check if the handle has either FILE_WRITE_DATA or FILE_APPEND_DATA was
+     * granted. However, if this is a named pipe, make sure we don't ask for
+     * FILE_APPEND_DATA as it interferes with the FILE_CREATE_PIPE_INSTANCE
+     * access right!
+     */
+    *DesiredAccess = ((!(FileObject->Flags & FO_NAMED_PIPE) ? FILE_APPEND_DATA : 0) | FILE_WRITE_DATA);
+
+    return STATUS_SUCCESS;
+}
+
 /* FUNCTIONS *****************************************************************/
 
 /*
@@ -165,82 +192,79 @@ IoCheckEaBufferValidity(IN PFILE_FULL_EA_INFORMATION EaBuffer,
                         IN ULONG EaLength,
                         OUT PULONG ErrorOffset)
 {
-    PFILE_FULL_EA_INFORMATION EaBufferEnd;
-    ULONG NextEaBufferOffset;
-    LONG IntEaLength;
+    ULONG NextEntryOffset;
+    UCHAR EaNameLength;
+    ULONG ComputedLength;
+    PFILE_FULL_EA_INFORMATION Current;
 
     PAGED_CODE();
 
-    /* Length of the rest */
-    IntEaLength = EaLength;
-    EaBufferEnd = EaBuffer;
-
-    /* The rest length of the buffer */
-    while (IntEaLength >= FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName[0]))
+    /* We will browse all the entries */
+    for (Current = EaBuffer; ; Current = (PFILE_FULL_EA_INFORMATION)((ULONG_PTR)Current + NextEntryOffset))
     {
-        /*
-         * The rest of buffer must greater than
-         * sizeof(FILE_FULL_EA_INFORMATION) + buffer
-         */
-        NextEaBufferOffset =
-            EaBufferEnd->EaNameLength + EaBufferEnd->EaValueLength +
-            FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName[0]) + 1;
-
-        if ((ULONG)IntEaLength >= NextEaBufferOffset)
+        /* Check that we have enough bits left for the current entry */
+        if (EaLength < FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName))
         {
-            /* is the EaBufferName terminated with zero? */
-            if (EaBufferEnd->EaName[EaBufferEnd->EaNameLength]==0)
-            {
-                /* more EaBuffers ahead */
-                if (EaBufferEnd->NextEntryOffset == 0)
-                {
-                    /* test the rest buffersize */
-                    IntEaLength = IntEaLength - NextEaBufferOffset;
-                    if (IntEaLength >= 0)
-                    {
-                        return STATUS_SUCCESS;
-                    }
-                }
-                else
-                {
-                    /*
-                     * From MSDN:
-                     * http://msdn2.microsoft.com/en-us/library/ms795740.aspx
-                     * For all entries except the last one, the value of
-                     * NextEntryOffset must be greater than zero and
-                     * must fall on a ULONG boundary.
-                     */
-                    NextEaBufferOffset = ((NextEaBufferOffset + 3) & ~3);
-                    if ((EaBufferEnd->NextEntryOffset == NextEaBufferOffset) &&
-                        ((LONG)EaBufferEnd->NextEntryOffset > 0))
-                    {
-                        /*
-                         * The rest of buffer must be greater
-                         * than the following offset.
-                         */
-                        IntEaLength =
-                            IntEaLength - EaBufferEnd->NextEntryOffset;
-
-                        if (IntEaLength >= 0)
-                        {
-                            EaBufferEnd = (PFILE_FULL_EA_INFORMATION)
-                                ((ULONG_PTR)EaBufferEnd +
-                                 EaBufferEnd->NextEntryOffset);
-                            continue;
-                        }
-                    }
-                }
-            }
+            goto FailPath;
         }
-        break;
+
+        EaNameLength = Current->EaNameLength;
+        ComputedLength = Current->EaValueLength + EaNameLength + FIELD_OFFSET(FILE_FULL_EA_INFORMATION, EaName) + 1;
+        /* Check that we have enough bits left for storing the name and its value */
+        if (EaLength < ComputedLength)
+        {
+            goto FailPath;
+        }
+
+        /* Make sure the name is null terminated */
+        if (Current->EaName[EaNameLength] != ANSI_NULL)
+        {
+            goto FailPath;
+        }
+
+        /* Get the next entry offset */
+        NextEntryOffset = Current->NextEntryOffset;
+        /* If it's 0, it's a termination case */
+        if (NextEntryOffset == 0)
+        {
+            /* If we don't overflow! */
+            if ((LONG)(EaLength - ComputedLength) < 0)
+            {
+                goto FailPath;
+            }
+
+            break;
+        }
+
+        /* Compare the next offset we computed with the provided one, they must match */
+        if (ALIGN_UP_BY(ComputedLength, sizeof(ULONG)) != NextEntryOffset)
+        {
+            goto FailPath;
+        }
+
+        /* Check next entry offset value is positive */
+        if ((LONG)NextEntryOffset < 0)
+        {
+            goto FailPath;
+        }
+
+        /* Compute the remaining bits */
+        EaLength -= NextEntryOffset;
+        /* We must have bits left */
+        if ((LONG)EaLength < 0)
+        {
+            goto FailPath;
+        }
+
+        /* Move to the next entry */
     }
 
-    if (ErrorOffset != NULL)
-    {
-        /* Calculate the error offset */
-        *ErrorOffset = (ULONG)((ULONG_PTR)EaBufferEnd - (ULONG_PTR)EaBuffer);
-    }
+    /* If we end here, everything went OK */
+    return STATUS_SUCCESS;
 
+FailPath:
+    /* If we end here, we failed, set failed offset */
+    *ErrorOffset = (ULONG_PTR)Current - (ULONG_PTR)EaBuffer;
     return STATUS_EA_LIST_INCONSISTENT;
 }
 
@@ -292,6 +316,14 @@ NTAPI
 IoSetHardErrorOrVerifyDevice(IN PIRP Irp,
                              IN PDEVICE_OBJECT DeviceObject)
 {
+    /* Ignore in case the IRP is not associated with any thread */
+    if (!Irp->Tail.Overlay.Thread)
+    {
+        DPRINT1("IoSetHardErrorOrVerifyDevice(0x%p, 0x%p): IRP has no thread, ignoring.\n",
+                Irp, DeviceObject);
+        return;
+    }
+
     /* Set the pointer in the IRP */
     Irp->Tail.Overlay.Thread->DeviceToVerify = DeviceObject;
 }

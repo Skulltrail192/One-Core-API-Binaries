@@ -14,16 +14,18 @@
 /* FUNCTIONS *****************************************************************/
 
 BOOLEAN
-TuiDisplayMenu(PCSTR MenuHeader,
-               PCSTR MenuFooter,
-               BOOLEAN ShowBootOptions,
-               PCSTR MenuItemList[],
-               ULONG MenuItemCount,
-               ULONG DefaultMenuItem,
-               LONG MenuTimeOut,
-               ULONG* SelectedMenuItem,
-               BOOLEAN CanEscape,
-               UiMenuKeyPressFilterCallback KeyPressFilter)
+TuiDisplayMenu(
+    IN PCSTR MenuHeader,
+    IN PCSTR MenuFooter OPTIONAL,
+    IN BOOLEAN ShowBootOptions,
+    IN PCSTR MenuItemList[],
+    IN ULONG MenuItemCount,
+    IN ULONG DefaultMenuItem,
+    IN LONG MenuTimeOut,
+    OUT PULONG SelectedMenuItem,
+    IN BOOLEAN CanEscape,
+    IN UiMenuKeyPressFilterCallback KeyPressFilter OPTIONAL,
+    IN PVOID Context OPTIONAL)
 {
     UI_MENU_INFO MenuInformation;
     ULONG LastClockSecond;
@@ -31,7 +33,36 @@ TuiDisplayMenu(PCSTR MenuHeader,
     ULONG KeyPress;
 
     //
+    // Before taking any default action if there is no timeout,
+    // check whether the supplied key filter callback function
+    // may handle a specific user keypress. If it does, the
+    // timeout is cancelled.
+    //
+    if (!MenuTimeOut && KeyPressFilter && MachConsKbHit())
+    {
+        //
+        // Get the key (get the extended key if needed)
+        //
+        KeyPress = MachConsGetCh();
+        if (KeyPress == KEY_EXTENDED)
+            KeyPress = MachConsGetCh();
+
+        //
+        // Call the supplied key filter callback function to see
+        // if it is going to handle this keypress.
+        //
+        if (KeyPressFilter(KeyPress, DefaultMenuItem, Context))
+        {
+            //
+            // It processed the key character, cancel the timeout
+            //
+            MenuTimeOut = -1;
+        }
+    }
+
+    //
     // Check if there's no timeout
+    //
     if (!MenuTimeOut)
     {
         //
@@ -51,6 +82,7 @@ TuiDisplayMenu(PCSTR MenuHeader,
     MenuInformation.MenuItemCount = MenuItemCount;
     MenuInformation.MenuTimeRemaining = MenuTimeOut;
     MenuInformation.SelectedMenuItem = DefaultMenuItem;
+    MenuInformation.Context = Context;
 
     //
     // Calculate the size of the menu box
@@ -75,8 +107,7 @@ TuiDisplayMenu(PCSTR MenuHeader,
         //
         // Process key presses
         //
-        KeyPress = TuiProcessMenuKeyboardEvent(&MenuInformation,
-                                               KeyPressFilter);
+        KeyPress = TuiProcessMenuKeyboardEvent(&MenuInformation, KeyPressFilter);
 
         //
         // Check for ENTER or ESC
@@ -137,7 +168,6 @@ TuiDisplayMenu(PCSTR MenuHeader,
 }
 
 VOID
-NTAPI
 TuiCalcMenuBoxSize(PUI_MENU_INFO MenuInfo)
 {
     ULONG i;
@@ -237,7 +267,6 @@ TuiDrawMenu(PUI_MENU_INFO MenuInfo)
 }
 
 VOID
-NTAPI
 TuiDrawMenuBox(PUI_MENU_INFO MenuInfo)
 {
     CHAR MenuLineText[80], TempString[80];
@@ -363,7 +392,6 @@ TuiDrawMenuBox(PUI_MENU_INFO MenuInfo)
 }
 
 VOID
-NTAPI
 TuiDrawMenuItem(PUI_MENU_INFO MenuInfo,
                 ULONG MenuItemNumber)
 {
@@ -445,7 +473,6 @@ TuiDrawMenuItem(PUI_MENU_INFO MenuInfo,
 }
 
 ULONG
-NTAPI
 TuiProcessMenuKeyboardEvent(PUI_MENU_INFO MenuInfo,
                             UiMenuKeyPressFilterCallback KeyPressFilter)
 {
@@ -455,115 +482,113 @@ TuiProcessMenuKeyboardEvent(PUI_MENU_INFO MenuInfo,
     //
     // Check for a keypress
     //
-    if (MachConsKbHit())
+    if (!MachConsKbHit())
+        return 0; // None, bail out
+
+    //
+    // Check if the timeout is not already complete
+    //
+    if (MenuInfo->MenuTimeRemaining != -1)
     {
         //
-        // Check if the timeout is not already complete
+        // Cancel it and remove it
         //
-        if (MenuInfo->MenuTimeRemaining != -1)
-        {
-            //
-            // Cancel it and remove it
-            //
-            MenuInfo->MenuTimeRemaining = -1;
-            TuiDrawMenuBox(MenuInfo); // FIXME: Remove for minimal UI too
-        }
+        MenuInfo->MenuTimeRemaining = -1;
+        TuiDrawMenuBox(MenuInfo); // FIXME: Remove for minimal UI too
+    }
 
-        //
-        // Get the key
-        //
+    //
+    // Get the key (get the extended key if needed)
+    //
+    KeyEvent = MachConsGetCh();
+    if (KeyEvent == KEY_EXTENDED)
         KeyEvent = MachConsGetCh();
 
+    //
+    // Call the supplied key filter callback function to see
+    // if it is going to handle this keypress.
+    //
+    if (KeyPressFilter &&
+        KeyPressFilter(KeyEvent, MenuInfo->SelectedMenuItem, MenuInfo->Context))
+    {
         //
-        // Is it extended? Then get the extended key
+        // It processed the key character, so redraw and exit
         //
-        if (!KeyEvent) KeyEvent = MachConsGetCh();
+        UiVtbl.DrawMenu(MenuInfo);
+        return 0;
+    }
+
+    //
+    // Process the key
+    //
+    if ((KeyEvent == KEY_UP  ) || (KeyEvent == KEY_DOWN) ||
+        (KeyEvent == KEY_HOME) || (KeyEvent == KEY_END ))
+    {
+        //
+        // Get the current selected item and count
+        //
+        Selected = MenuInfo->SelectedMenuItem;
+        Count = MenuInfo->MenuItemCount - 1;
 
         //
-        // Call the supplied key filter callback function to see
-        // if it is going to handle this keypress.
+        // Check the key and change the selected menu item
         //
-        if ((KeyPressFilter) && (KeyPressFilter(KeyEvent)))
+        if ((KeyEvent == KEY_UP) && (Selected > 0))
         {
             //
-            // It processed the key character, so redraw and exit
+            // Deselect previous item and go up
             //
-            UiVtbl.DrawMenu(MenuInfo);
-            return 0;
-        }
+            MenuInfo->SelectedMenuItem--;
+            TuiDrawMenuItem(MenuInfo, Selected);
+            Selected--;
 
-        //
-        // Process the key
-        //
-        if ((KeyEvent == KEY_UP  ) || (KeyEvent == KEY_DOWN) ||
-            (KeyEvent == KEY_HOME) || (KeyEvent == KEY_END ))
-        {
-            //
-            // Get the current selected item and count
-            //
-            Selected = MenuInfo->SelectedMenuItem;
-            Count = MenuInfo->MenuItemCount - 1;
-
-            //
-            // Check the key and change the selected menu item
-            //
-            if ((KeyEvent == KEY_UP) && (Selected > 0))
+            // Skip past any separators
+            if ((Selected > 0) &&
+                (MenuInfo->MenuItemList[Selected] == NULL))
             {
-                //
-                // Deselect previous item and go up
-                //
                 MenuInfo->SelectedMenuItem--;
-                TuiDrawMenuItem(MenuInfo, Selected);
-                Selected--;
-
-                // Skip past any separators
-                if ((Selected > 0) &&
-                    (MenuInfo->MenuItemList[Selected] == NULL))
-                {
-                    MenuInfo->SelectedMenuItem--;
-                }
             }
-            else if ( ((KeyEvent == KEY_UP) && (Selected == 0)) ||
-                       (KeyEvent == KEY_END) )
-            {
-                //
-                // Go to the end
-                //
-                MenuInfo->SelectedMenuItem = Count;
-                TuiDrawMenuItem(MenuInfo, Selected);
-            }
-            else if ((KeyEvent == KEY_DOWN) && (Selected < Count))
-            {
-                //
-                // Deselect previous item and go down
-                //
-                MenuInfo->SelectedMenuItem++;
-                TuiDrawMenuItem(MenuInfo, Selected);
-                Selected++;
-
-                // Skip past any separators
-                if ((Selected < Count) &&
-                    (MenuInfo->MenuItemList[Selected] == NULL))
-                {
-                    MenuInfo->SelectedMenuItem++;
-                }
-            }
-            else if ( ((KeyEvent == KEY_DOWN) && (Selected == Count)) ||
-                       (KeyEvent == KEY_HOME) )
-            {
-                //
-                // Go to the beginning
-                //
-                MenuInfo->SelectedMenuItem = 0;
-                TuiDrawMenuItem(MenuInfo, Selected);
-            }
-
-            //
-            // Select new item and update video buffer
-            //
-            TuiDrawMenuItem(MenuInfo, MenuInfo->SelectedMenuItem);
-            VideoCopyOffScreenBufferToVRAM();
         }
+        else if ( ((KeyEvent == KEY_UP) && (Selected == 0)) ||
+                   (KeyEvent == KEY_END) )
+        {
+            //
+            // Go to the end
+            //
+            MenuInfo->SelectedMenuItem = Count;
+            TuiDrawMenuItem(MenuInfo, Selected);
+        }
+        else if ((KeyEvent == KEY_DOWN) && (Selected < Count))
+        {
+            //
+            // Deselect previous item and go down
+            //
+            MenuInfo->SelectedMenuItem++;
+            TuiDrawMenuItem(MenuInfo, Selected);
+            Selected++;
+
+            // Skip past any separators
+            if ((Selected < Count) &&
+                (MenuInfo->MenuItemList[Selected] == NULL))
+            {
+                MenuInfo->SelectedMenuItem++;
+            }
+        }
+        else if ( ((KeyEvent == KEY_DOWN) && (Selected == Count)) ||
+                   (KeyEvent == KEY_HOME) )
+        {
+            //
+            // Go to the beginning
+            //
+            MenuInfo->SelectedMenuItem = 0;
+            TuiDrawMenuItem(MenuInfo, Selected);
+        }
+
+        //
+        // Select new item and update video buffer
+        //
+        TuiDrawMenuItem(MenuInfo, MenuInfo->SelectedMenuItem);
+        VideoCopyOffScreenBufferToVRAM();
     }
 
     //

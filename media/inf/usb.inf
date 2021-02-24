@@ -28,8 +28,7 @@ CopyFiles = usbhub_CopyFiles.NT
 usbhub.sys
 
 [usbhub_Inst.NT.Services]
-;AddService = usbhub, 0x00000002, usbhub_Service_Inst
-AddService = , 0x00000002
+AddService = usbhub, 0x00000002, usbhub_Service_Inst
 
 [usbhub_Service_Inst]
 ServiceType   = 1
@@ -92,8 +91,9 @@ GenericMfg = "(標準 USBハブ)"
 USB\CLASS_09.DeviceDesc = "標準 USBハブ"
 
 [Strings.0415]
-ReactOS = "Ekipa ReactOS"
+ReactOS = "Zespół ReactOS"
 GenericMfg = "(Standardowy koncentrator USB)"
+USB\COMPOSITE.DeviceDesc = "Urządzenie kompozytowe USB"
 USB\CLASS_09.DeviceDesc = "Standardowy koncentrator USB"
 
 [Strings.0416]
@@ -132,3 +132,8 @@ USB\CLASS_09.DeviceDesc = "Стандартний USB-хаб"
 [Strings.0427]
 GenericMfg = "(Standartinis USB šakotuvas)"
 USB\CLASS_09.DeviceDesc = "Standartinis USB šakotuvas"
+
+[Strings.0804]
+GenericMfg = "(通用 USB 集线器)"
+USB\COMPOSITE.DeviceDesc = "USB 聚合设备"
+USB\CLASS_09.DeviceDesc = "通用 USB 集线器"

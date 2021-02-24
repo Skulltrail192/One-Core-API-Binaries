@@ -19,9 +19,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define WIN32_LEAN_AND_MEAN
+
+#include <stdio.h>
+
+#include "windows.h"
+#include "commdlg.h"
+#include "shellapi.h"
 #include "winhelp.h"
 
-#include <shellapi.h>
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(winhelp);
 
 /**************************************************/
 /*               Macro table                      */
@@ -145,7 +154,7 @@ void CALLBACK MACRO_About(void)
     WCHAR name[256];
     HICON icon = LoadImageW( Globals.hInstance, MAKEINTRESOURCEW(IDI_WINHELP),
                              IMAGE_ICON, 48, 48, LR_SHARED );
-    LoadStringW( Globals.hInstance, STID_WINE_HELP, name, sizeof(name)/sizeof(WCHAR) );
+    LoadStringW( Globals.hInstance, STID_WINE_HELP, name, ARRAY_SIZE( name ));
     ShellAboutW( MACRO_CurrentWindow()->hMainWnd, name, NULL, icon );
 }
 

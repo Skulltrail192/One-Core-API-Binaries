@@ -20,9 +20,15 @@
 #include "wine/port.h"
 #include "wined3d_private.h"
 #include "wine/library.h"
-#include "dxtn.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
+
+static void* txc_dxtn_handle;
+static void (*pfetch_2d_texel_rgba_dxt1)(int srcRowStride, const BYTE *pixData, int i, int j, DWORD *texel);
+static void (*pfetch_2d_texel_rgba_dxt3)(int srcRowStride, const BYTE *pixData, int i, int j, DWORD *texel);
+static void (*pfetch_2d_texel_rgba_dxt5)(int srcRowStride, const BYTE *pixData, int i, int j, DWORD *texel);
+static void (*ptx_compress_dxtn)(int comps, int width, int height, const BYTE *srcPixData,
+                                 GLenum destformat, BYTE *dest, int dstRowStride);
 
 static inline BOOL dxt1_to_x8r8g8b8(const BYTE *src, BYTE *dst, DWORD pitch_in,
         DWORD pitch_out, unsigned int w, unsigned int h, BOOL alpha)
@@ -37,8 +43,8 @@ static inline BOOL dxt1_to_x8r8g8b8(const BYTE *src, BYTE *dst, DWORD pitch_in,
         DWORD *dst_line = (DWORD *)(dst + y * pitch_out);
         for (x = 0; x < w; ++x)
         {
-            /* fetch_2d_texel_rgba_dxt1 doesn't correctly handle pitch */
-            fetch_2d_texel_rgba_dxt1(0, src + (y / 4) * pitch_in + (x / 4) * 8,
+            /* pfetch_2d_texel_rgba_dxt1 doesn't correctly handle pitch */
+            pfetch_2d_texel_rgba_dxt1(0, src + (y / 4) * pitch_in + (x / 4) * 8,
                                       x & 3, y & 3, &color);
             if (alpha)
             {
@@ -69,8 +75,8 @@ static inline BOOL dxt1_to_x4r4g4b4(const BYTE *src, BYTE *dst, DWORD pitch_in,
         WORD *dst_line = (WORD *)(dst + y * pitch_out);
         for (x = 0; x < w; ++x)
         {
-            /* fetch_2d_texel_rgba_dxt1 doesn't correctly handle pitch */
-            fetch_2d_texel_rgba_dxt1(0, src + (y / 4) * pitch_in + (x / 4) * 16,
+            /* pfetch_2d_texel_rgba_dxt1 doesn't correctly handle pitch */
+            pfetch_2d_texel_rgba_dxt1(0, src + (y / 4) * pitch_in + (x / 4) * 16,
                                       x & 3, y & 3, &color);
             if (alpha)
             {
@@ -101,8 +107,8 @@ static inline BOOL dxt1_to_x1r5g5b5(const BYTE *src, BYTE *dst, DWORD pitch_in,
         WORD *dst_line = (WORD *)(dst + y * pitch_out);
         for (x = 0; x < w; ++x)
         {
-            /* fetch_2d_texel_rgba_dxt1 doesn't correctly handle pitch */
-            fetch_2d_texel_rgba_dxt1(0, src + (y / 4) * pitch_in + (x / 4) * 16,
+            /* pfetch_2d_texel_rgba_dxt1 doesn't correctly handle pitch */
+            pfetch_2d_texel_rgba_dxt1(0, src + (y / 4) * pitch_in + (x / 4) * 16,
                                       x & 3, y & 3, &color);
             if (alpha)
             {
@@ -133,8 +139,8 @@ static inline BOOL dxt3_to_x8r8g8b8(const BYTE *src, BYTE *dst, DWORD pitch_in,
         DWORD *dst_line = (DWORD *)(dst + y * pitch_out);
         for (x = 0; x < w; ++x)
         {
-            /* fetch_2d_texel_rgba_dxt3 doesn't correctly handle pitch */
-            fetch_2d_texel_rgba_dxt3(0, src + (y / 4) * pitch_in + (x / 4) * 16,
+            /* pfetch_2d_texel_rgba_dxt3 doesn't correctly handle pitch */
+            pfetch_2d_texel_rgba_dxt3(0, src + (y / 4) * pitch_in + (x / 4) * 16,
                                       x & 3, y & 3, &color);
             if (alpha)
             {
@@ -165,8 +171,8 @@ static inline BOOL dxt3_to_x4r4g4b4(const BYTE *src, BYTE *dst, DWORD pitch_in,
         WORD *dst_line = (WORD *)(dst + y * pitch_out);
         for (x = 0; x < w; ++x)
         {
-            /* fetch_2d_texel_rgba_dxt3 doesn't correctly handle pitch */
-            fetch_2d_texel_rgba_dxt3(0, src + (y / 4) * pitch_in + (x / 4) * 16,
+            /* pfetch_2d_texel_rgba_dxt3 doesn't correctly handle pitch */
+            pfetch_2d_texel_rgba_dxt3(0, src + (y / 4) * pitch_in + (x / 4) * 16,
                                       x & 3, y & 3, &color);
             if (alpha)
             {
@@ -197,8 +203,8 @@ static inline BOOL dxt5_to_x8r8g8b8(const BYTE *src, BYTE *dst, DWORD pitch_in,
         DWORD *dst_line = (DWORD *)(dst + y * pitch_out);
         for (x = 0; x < w; ++x)
         {
-            /* fetch_2d_texel_rgba_dxt5 doesn't correctly handle pitch */
-            fetch_2d_texel_rgba_dxt5(0, src + (y / 4) * pitch_in + (x / 4) * 16,
+            /* pfetch_2d_texel_rgba_dxt5 doesn't correctly handle pitch */
+            pfetch_2d_texel_rgba_dxt5(0, src + (y / 4) * pitch_in + (x / 4) * 16,
                                       x & 3, y & 3, &color);
             if (alpha)
             {
@@ -251,7 +257,7 @@ static inline BOOL x8r8g8b8_to_dxtn(const BYTE *src, BYTE *dst, DWORD pitch_in,
         }
     }
 
-    tx_compress_dxtn(4, w, h, (BYTE *)tmp, destformat, dst, pitch_out);
+    ptx_compress_dxtn(4, w, h, (BYTE *)tmp, destformat, dst, pitch_out);
     HeapFree(GetProcessHeap(), 0, tmp);
     return TRUE;
 }
@@ -303,7 +309,7 @@ static inline BOOL x1r5g5b5_to_dxtn(const BYTE *src, BYTE *dst, DWORD pitch_in,
         }
     }
 
-    tx_compress_dxtn(4, w, h, (BYTE *)tmp, destformat, dst, pitch_out);
+    ptx_compress_dxtn(4, w, h, (BYTE *)tmp, destformat, dst, pitch_out);
     HeapFree(GetProcessHeap(), 0, tmp);
     return TRUE;
 }
@@ -311,6 +317,9 @@ static inline BOOL x1r5g5b5_to_dxtn(const BYTE *src, BYTE *dst, DWORD pitch_in,
 BOOL wined3d_dxt1_decode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
         enum wined3d_format_id format, unsigned int w, unsigned int h)
 {
+    if (!txc_dxtn_handle)
+        return FALSE;
+
     switch (format)
     {
         case WINED3DFMT_B8G8R8A8_UNORM:
@@ -336,6 +345,9 @@ BOOL wined3d_dxt1_decode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch
 BOOL wined3d_dxt3_decode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
         enum wined3d_format_id format, unsigned int w, unsigned int h)
 {
+    if (!txc_dxtn_handle)
+        return FALSE;
+
     switch (format)
     {
         case WINED3DFMT_B8G8R8A8_UNORM:
@@ -357,6 +369,9 @@ BOOL wined3d_dxt3_decode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch
 BOOL wined3d_dxt5_decode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
         enum wined3d_format_id format, unsigned int w, unsigned int h)
 {
+    if (!txc_dxtn_handle)
+        return FALSE;
+
     switch (format)
     {
         case WINED3DFMT_B8G8R8A8_UNORM:
@@ -374,6 +389,9 @@ BOOL wined3d_dxt5_decode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch
 BOOL wined3d_dxt1_encode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
         enum wined3d_format_id format, unsigned int w, unsigned int h)
 {
+    if (!txc_dxtn_handle)
+        return FALSE;
+
     switch (format)
     {
         case WINED3DFMT_B8G8R8A8_UNORM:
@@ -399,6 +417,9 @@ BOOL wined3d_dxt1_encode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch
 BOOL wined3d_dxt3_encode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
         enum wined3d_format_id format, unsigned int w, unsigned int h)
 {
+    if (!txc_dxtn_handle)
+        return FALSE;
+
     switch (format)
     {
         case WINED3DFMT_B8G8R8A8_UNORM:
@@ -418,6 +439,9 @@ BOOL wined3d_dxt3_encode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch
 BOOL wined3d_dxt5_encode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch_out,
         enum wined3d_format_id format, unsigned int w, unsigned int h)
 {
+    if (!txc_dxtn_handle)
+        return FALSE;
+
     switch (format)
     {
         case WINED3DFMT_B8G8R8A8_UNORM:
@@ -432,4 +456,64 @@ BOOL wined3d_dxt5_encode(const BYTE *src, BYTE *dst, DWORD pitch_in, DWORD pitch
 
     FIXME("Cannot find a conversion function from format %s to DXT5.\n", debug_d3dformat(format));
     return FALSE;
+}
+
+BOOL wined3d_dxtn_init(void)
+{
+    static const char *soname[] =
+    {
+#ifdef SONAME_LIBTXC_DXTN
+        SONAME_LIBTXC_DXTN,
+#endif
+#ifdef __APPLE__
+        "libtxc_dxtn.dylib",
+        "libtxc_dxtn_s2tc.dylib",
+#endif
+        "libtxc_dxtn.so",
+        "libtxc_dxtn_s2tc.so.0"
+    };
+    int i;
+
+    for (i = 0; i < sizeof(soname)/sizeof(soname[0]); i++)
+    {
+        txc_dxtn_handle = wine_dlopen(soname[i], RTLD_NOW, NULL, 0);
+        if (txc_dxtn_handle) break;
+    }
+
+    if (!txc_dxtn_handle)
+    {
+        FIXME("Wine cannot find the txc_dxtn library, DXTn software support unavailable.\n");
+        return FALSE;
+    }
+
+    #define LOAD_FUNCPTR(f) \
+        if (!(p##f = wine_dlsym(txc_dxtn_handle, #f, NULL, 0))) \
+        { \
+            ERR("Can't find symbol %s , DXTn software support unavailable.\n", #f); \
+            goto error; \
+        }
+
+    LOAD_FUNCPTR(fetch_2d_texel_rgba_dxt1);
+    LOAD_FUNCPTR(fetch_2d_texel_rgba_dxt3);
+    LOAD_FUNCPTR(fetch_2d_texel_rgba_dxt5);
+    LOAD_FUNCPTR(tx_compress_dxtn);
+
+    #undef LOAD_FUNCPTR
+    return TRUE;
+
+error:
+    wine_dlclose(txc_dxtn_handle, NULL, 0);
+    txc_dxtn_handle = NULL;
+    return FALSE;
+}
+
+BOOL wined3d_dxtn_supported(void)
+{
+    return (txc_dxtn_handle != NULL);
+}
+
+void wined3d_dxtn_free(void)
+{
+    if (txc_dxtn_handle)
+        wine_dlclose(txc_dxtn_handle, NULL, 0);
 }

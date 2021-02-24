@@ -10,7 +10,6 @@
 
 #include <user32.h>
 
-#include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(user32);
 
 /*********************************************************************
@@ -160,6 +159,7 @@ GetSystemMetrics(int nIndex)
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
    {
+       ERR("Got exception in hooked GetSystemMetrics!\n");
    }
    _SEH2_END;
 
@@ -382,6 +382,7 @@ SystemParametersInfoA(UINT uiAction,
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
    {
+       ERR("Got exception in hooked SystemParametersInfoA!\n");
    }
    _SEH2_END;
 
@@ -414,6 +415,7 @@ SystemParametersInfoW(UINT uiAction,
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
    {
+       ERR("Got exception in hooked SystemParametersInfoW!\n");
    }
    _SEH2_END;
 
@@ -561,7 +563,7 @@ GetThreadDesktop(
     }
 
     return NtUserGetThreadDesktop(dwThreadId,
-                                  (DWORD)GetThreadConsoleDesktopRequest->ConsoleDesktop);
+                                  GetThreadConsoleDesktopRequest->ConsoleDesktop);
 }
 
 

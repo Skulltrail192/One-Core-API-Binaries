@@ -19,21 +19,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_NO_STATUS
-
 #include <assert.h>
 #include <stdarg.h>
-//#include <string.h>
-#include <windef.h>
-#include <winbase.h>
-#include <wingdi.h>
-#include <winuser.h>
-#include <winnls.h>
-//#include "mmsystem.h"
-//#include "mmreg.h"
-//#include "msacm.h"
-#include <msacmdrv.h>
-#include <wine/debug.h>
+#include <string.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "mmsystem.h"
+#include "mmreg.h"
+#include "msacm.h"
+#include "msacmdrv.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(g711);
 
@@ -89,10 +87,6 @@ static const Format ULaw_Formats[] =
     {1,  8, 22050}, {2,	8, 22050},  {1,  8, 44100}, {2,	 8, 44100},
 };
 
-#define	NUM_PCM_FORMATS		(sizeof(PCM_Formats) / sizeof(PCM_Formats[0]))
-#define	NUM_ALAW_FORMATS	(sizeof(ALaw_Formats) / sizeof(ALaw_Formats[0]))
-#define	NUM_ULAW_FORMATS	(sizeof(ULaw_Formats) / sizeof(ULaw_Formats[0]))
-
 /***********************************************************************
  *           G711_GetFormatIndex
  */
@@ -104,15 +98,15 @@ static	DWORD	G711_GetFormatIndex(const WAVEFORMATEX *wfx)
     switch (wfx->wFormatTag)
     {
     case WAVE_FORMAT_PCM:
-	hi = NUM_PCM_FORMATS;
+	hi = ARRAY_SIZE(PCM_Formats);
 	fmts = PCM_Formats;
 	break;
     case WAVE_FORMAT_ALAW:
-	hi = NUM_ALAW_FORMATS;
+	hi = ARRAY_SIZE(ALaw_Formats);
 	fmts = ALaw_Formats;
 	break;
     case WAVE_FORMAT_MULAW:
-	hi = NUM_ULAW_FORMATS;
+	hi = ARRAY_SIZE(ULaw_Formats);
 	fmts = ULaw_Formats;
 	break;
     default:
@@ -167,7 +161,7 @@ static inline void  W16(unsigned char* dst, short s)
  * charge.
  *
  * SUN SOURCE CODE IS PROVIDED AS IS WITH NO WARRANTIES OF ANY KIND INCLUDING
- * THE WARRANTIES OF DESIGN, MERCHANTIBILITY AND FITNESS FOR A PARTICULAR
+ * THE WARRANTIES OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR
  * PURPOSE, OR ARISING FROM A COURSE OF DEALING, USAGE OR TRADE PRACTICE.
  *
  * Sun source code is provided with no support and without any obligation on
@@ -548,8 +542,7 @@ static inline unsigned char
 ulaw2alaw(unsigned char uval)
 {
     uval &= 0xff;
-    return (unsigned char) ((uval & 0x80) ? (0xD5 ^ (_u2a[0xFF ^ uval] - 1)) :
-                            (unsigned char) (0x55 ^ (_u2a[0x7F ^ uval] - 1)));
+    return (uval & 0x80) ? (0xD5 ^ (_u2a[0xFF ^ uval] - 1)) : (0x55 ^ (_u2a[0x7F ^ uval] - 1));
 }
 
 /* -------------------------------------------------------------------------------*/
@@ -664,13 +657,13 @@ static	LRESULT G711_DriverDetails(PACMDRIVERDETAILSW add)
     add->cFilterTags = 0;
     add->hicon = NULL;
     MultiByteToWideChar( CP_ACP, 0, "Microsoft CCITT G.711", -1,
-                         add->szShortName, sizeof(add->szShortName)/sizeof(WCHAR) );
+                         add->szShortName, ARRAY_SIZE( add->szShortName ));
     MultiByteToWideChar( CP_ACP, 0, "Wine G711 converter", -1,
-                         add->szLongName, sizeof(add->szLongName)/sizeof(WCHAR) );
+                         add->szLongName, ARRAY_SIZE( add->szLongName ));
     MultiByteToWideChar( CP_ACP, 0, "Brought to you by the Wine team...", -1,
-                         add->szCopyright, sizeof(add->szCopyright)/sizeof(WCHAR) );
+                         add->szCopyright, ARRAY_SIZE( add->szCopyright ));
     MultiByteToWideChar( CP_ACP, 0, "Refer to LICENSE file", -1,
-                         add->szLicensing, sizeof(add->szLicensing)/sizeof(WCHAR) );
+                         add->szLicensing, ARRAY_SIZE( add->szLicensing ));
     add->szFeatures[0] = 0;
 
     return MMSYSERR_NOERROR;
@@ -718,19 +711,19 @@ static	LRESULT	G711_FormatTagDetails(PACMFORMATTAGDETAILSW aftd, DWORD dwQuery)
     case 0:
 	aftd->dwFormatTag = WAVE_FORMAT_PCM;
 	aftd->cbFormatSize = sizeof(PCMWAVEFORMAT);
-	aftd->cStandardFormats = NUM_PCM_FORMATS;
+	aftd->cStandardFormats = ARRAY_SIZE(PCM_Formats);
         lstrcpyW(aftd->szFormatTag, szPcm);
         break;
     case 1:
 	aftd->dwFormatTag = WAVE_FORMAT_ALAW;
 	aftd->cbFormatSize = sizeof(WAVEFORMATEX);
-	aftd->cStandardFormats = NUM_ALAW_FORMATS;
+	aftd->cStandardFormats = ARRAY_SIZE(ALaw_Formats);
         lstrcpyW(aftd->szFormatTag, szALaw);
 	break;
     case 2:
 	aftd->dwFormatTag = WAVE_FORMAT_MULAW;
 	aftd->cbFormatSize = sizeof(WAVEFORMATEX);
-	aftd->cStandardFormats = NUM_ULAW_FORMATS;
+	aftd->cStandardFormats = ARRAY_SIZE(ULaw_Formats);
         lstrcpyW(aftd->szFormatTag, szULaw);
 	break;
     }
@@ -753,7 +746,7 @@ static	LRESULT	G711_FormatDetails(PACMFORMATDETAILSW afd, DWORD dwQuery)
 	switch (afd->dwFormatTag)
         {
 	case WAVE_FORMAT_PCM:
-	    if (afd->dwFormatIndex >= NUM_PCM_FORMATS) return ACMERR_NOTPOSSIBLE;
+	    if (afd->dwFormatIndex >= ARRAY_SIZE(PCM_Formats)) return ACMERR_NOTPOSSIBLE;
 	    afd->pwfx->nChannels = PCM_Formats[afd->dwFormatIndex].nChannels;
 	    afd->pwfx->nSamplesPerSec = PCM_Formats[afd->dwFormatIndex].rate;
 	    afd->pwfx->wBitsPerSample = PCM_Formats[afd->dwFormatIndex].nBits;
@@ -761,7 +754,7 @@ static	LRESULT	G711_FormatDetails(PACMFORMATDETAILSW afd, DWORD dwQuery)
 	    afd->pwfx->nAvgBytesPerSec = afd->pwfx->nSamplesPerSec * afd->pwfx->nBlockAlign;
 	    break;
 	case WAVE_FORMAT_ALAW:
-	    if (afd->dwFormatIndex >= NUM_ALAW_FORMATS) return ACMERR_NOTPOSSIBLE;
+	    if (afd->dwFormatIndex >= ARRAY_SIZE(ALaw_Formats)) return ACMERR_NOTPOSSIBLE;
 	    afd->pwfx->nChannels = ALaw_Formats[afd->dwFormatIndex].nChannels;
 	    afd->pwfx->nSamplesPerSec = ALaw_Formats[afd->dwFormatIndex].rate;
 	    afd->pwfx->wBitsPerSample = ALaw_Formats[afd->dwFormatIndex].nBits;
@@ -770,7 +763,7 @@ static	LRESULT	G711_FormatDetails(PACMFORMATDETAILSW afd, DWORD dwQuery)
             afd->pwfx->cbSize = 0;
 	    break;
 	case WAVE_FORMAT_MULAW:
-	    if (afd->dwFormatIndex >= NUM_ULAW_FORMATS) return ACMERR_NOTPOSSIBLE;
+	    if (afd->dwFormatIndex >= ARRAY_SIZE(ULaw_Formats)) return ACMERR_NOTPOSSIBLE;
 	    afd->pwfx->nChannels = ULaw_Formats[afd->dwFormatIndex].nChannels;
 	    afd->pwfx->nSamplesPerSec = ULaw_Formats[afd->dwFormatIndex].rate;
 	    afd->pwfx->wBitsPerSample = ULaw_Formats[afd->dwFormatIndex].nBits;

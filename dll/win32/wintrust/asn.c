@@ -18,11 +18,19 @@
  *
  */
 
-#include "wintrust_priv.h"
-
+#include <stdarg.h>
+#include <stdio.h>
 #include <assert.h>
-#include <snmp.h>
-#include <wine/exception.h>
+#define NONAMELESSUNION
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "wincrypt.h"
+#include "wintrust.h"
+#include "snmp.h"
+#include "winternl.h"
+#include "wine/debug.h"
+#include "wine/exception.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(cryptasn);
 
@@ -662,8 +670,8 @@ static BOOL WINAPI CRYPT_AsnEncodeAlgorithmIdWithNullParams(
         items[1].pvStructInfo = &algo->Parameters;
     else
         items[1].pvStructInfo = &nullBlob;
-    ret = CRYPT_AsnEncodeSequence(dwCertEncodingType, items,
-     sizeof(items) / sizeof(items[0]), pbEncoded, pcbEncoded);
+    ret = CRYPT_AsnEncodeSequence(dwCertEncodingType, items, ARRAY_SIZE(items),
+     pbEncoded, pcbEncoded);
     return ret;
 }
 
@@ -677,8 +685,8 @@ static BOOL WINAPI CRYPT_AsnEncodeAttributeTypeValue(DWORD dwCertEncodingType,
      { &typeValue->Value,    CRYPT_CopyEncodedBlob, 0 },
     };
 
-    return CRYPT_AsnEncodeSequence(X509_ASN_ENCODING,
-     items, sizeof(items) / sizeof(items[0]), pbEncoded, pcbEncoded);
+    return CRYPT_AsnEncodeSequence(X509_ASN_ENCODING, items, ARRAY_SIZE(items),
+     pbEncoded, pcbEncoded);
 }
 
 struct SPCDigest
@@ -697,8 +705,8 @@ static BOOL WINAPI CRYPT_AsnEncodeSPCDigest(DWORD dwCertEncodingType,
      { &digest->Digest,          CRYPT_CopyEncodedBlob, 0 },
     };
 
-    return CRYPT_AsnEncodeSequence(X509_ASN_ENCODING,
-     items, sizeof(items) / sizeof(items[0]), pbEncoded, pcbEncoded);
+    return CRYPT_AsnEncodeSequence(X509_ASN_ENCODING, items, ARRAY_SIZE(items),
+     pbEncoded, pcbEncoded);
 }
 
 BOOL WINAPI WVTAsn1SpcIndirectDataContentEncode(DWORD dwCertEncodingType,
@@ -718,8 +726,8 @@ BOOL WINAPI WVTAsn1SpcIndirectDataContentEncode(DWORD dwCertEncodingType,
          { &data->DigestAlgorithm, CRYPT_AsnEncodeSPCDigest, 0 },
         };
 
-        ret = CRYPT_AsnEncodeSequence(X509_ASN_ENCODING,
-         items, sizeof(items) / sizeof(items[0]), pbEncoded, pcbEncoded);
+        ret = CRYPT_AsnEncodeSequence(X509_ASN_ENCODING, items, ARRAY_SIZE(items),
+         pbEncoded, pcbEncoded);
     }
     __EXCEPT_PAGE_FAULT
     {
@@ -985,8 +993,8 @@ BOOL WINAPI WVTAsn1CatMemberInfoEncode(DWORD dwCertEncodingType,
          { &info->dwCertVersion, CRYPT_AsnEncodeInt, 0 },
         };
 
-        ret = CRYPT_AsnEncodeSequence(X509_ASN_ENCODING,
-         items, sizeof(items) / sizeof(items[0]), pbEncoded, pcbEncoded);
+        ret = CRYPT_AsnEncodeSequence(X509_ASN_ENCODING, items, ARRAY_SIZE(items),
+         pbEncoded, pcbEncoded);
     }
     __EXCEPT_PAGE_FAULT
     {
@@ -1014,8 +1022,8 @@ BOOL WINAPI WVTAsn1CatNameValueEncode(DWORD dwCertEncodingType,
          { &value->Value,    CRYPT_AsnEncodeOctets, 0 },
         };
 
-        ret = CRYPT_AsnEncodeSequence(X509_ASN_ENCODING,
-         items, sizeof(items) / sizeof(items[0]), pbEncoded, pcbEncoded);
+        ret = CRYPT_AsnEncodeSequence(X509_ASN_ENCODING, items, ARRAY_SIZE(items),
+         pbEncoded, pcbEncoded);
     }
     __EXCEPT_PAGE_FAULT
     {
@@ -1073,8 +1081,8 @@ BOOL WINAPI WVTAsn1SpcFinancialCriteriaInfoEncode(DWORD dwCertEncodingType,
          { &criteria->fMeetsCriteria,          CRYPT_AsnEncodeBool, 0 },
         };
 
-        ret = CRYPT_AsnEncodeSequence(X509_ASN_ENCODING,
-         items, sizeof(items) / sizeof(items[0]), pbEncoded, pcbEncoded);
+        ret = CRYPT_AsnEncodeSequence(X509_ASN_ENCODING, items, ARRAY_SIZE(items),
+         pbEncoded, pcbEncoded);
     }
     __EXCEPT_PAGE_FAULT
     {
@@ -1797,9 +1805,8 @@ BOOL WINAPI WVTAsn1SpcPeImageDataDecode(DWORD dwCertEncodingType,
            offsetof(SPC_PE_IMAGE_DATA, pFile), 0 },
         };
 
-        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items,
-         sizeof(items) / sizeof(items[0]), pbEncoded, cbEncoded, dwFlags,
-         pvStructInfo, pcbStructInfo, NULL);
+        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items, ARRAY_SIZE(items),
+         pbEncoded, cbEncoded, dwFlags, pvStructInfo, pcbStructInfo, NULL);
     }
     __EXCEPT_PAGE_FAULT
     {
@@ -1830,10 +1837,10 @@ static BOOL WINAPI CRYPT_AsnDecodeOidIgnoreTag(DWORD dwCertEncodingType,
             /* The largest possible string for the first two components
              * is 2.175 (= 2 * 40 + 175 = 255), so this is big enough.
              */
-            char firstTwo[6];
+            char firstTwo[8];
             const BYTE *ptr;
 
-            snprintf(firstTwo, sizeof(firstTwo), "%d.%d",
+            sprintf(firstTwo, "%d.%d",
              pbEncoded[1 + lenBytes] / 40,
              pbEncoded[1 + lenBytes] - (pbEncoded[1 + lenBytes] / 40)
              * 40);
@@ -1984,9 +1991,8 @@ static BOOL WINAPI CRYPT_AsnDecodeAttributeTypeValue(DWORD dwCertEncodingType,
     TRACE("%p, %d, %08x, %p, %d\n", pbEncoded, cbEncoded, dwFlags,
      pvStructInfo, *pcbStructInfo);
 
-    return CRYPT_AsnDecodeSequence(dwCertEncodingType, items,
-     sizeof(items) / sizeof(items[0]), pbEncoded, cbEncoded, dwFlags,
-     pvStructInfo, pcbStructInfo,
+    return CRYPT_AsnDecodeSequence(dwCertEncodingType, items, ARRAY_SIZE(items),
+     pbEncoded, cbEncoded, dwFlags, pvStructInfo, pcbStructInfo,
      typeValue ? typeValue->pszObjId : NULL);
 }
 
@@ -2008,9 +2014,8 @@ static BOOL WINAPI CRYPT_AsnDecodeAlgorithmId(DWORD dwCertEncodingType,
     TRACE("%p, %d, %08x, %p, %d\n", pbEncoded, cbEncoded, dwFlags,
      pvStructInfo, *pcbStructInfo);
 
-    ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items,
-     sizeof(items) / sizeof(items[0]), pbEncoded, cbEncoded, dwFlags,
-     pvStructInfo, pcbStructInfo, algo ? algo->pszObjId : NULL);
+    ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items, ARRAY_SIZE(items),
+     pbEncoded, cbEncoded, dwFlags, pvStructInfo, pcbStructInfo, algo ? algo->pszObjId : NULL);
     if (ret && pvStructInfo)
     {
         TRACE("pszObjId is %p (%s)\n", algo->pszObjId,
@@ -2037,9 +2042,8 @@ static BOOL WINAPI CRYPT_AsnDecodeSPCDigest(DWORD dwCertEncodingType,
     TRACE("%p, %d, %08x, %p, %d\n", pbEncoded, cbEncoded, dwFlags,
      pvStructInfo, *pcbStructInfo);
 
-    return CRYPT_AsnDecodeSequence(dwCertEncodingType, items,
-     sizeof(items) / sizeof(items[0]), pbEncoded, cbEncoded, dwFlags,
-     pvStructInfo, pcbStructInfo,
+    return CRYPT_AsnDecodeSequence(dwCertEncodingType, items, ARRAY_SIZE(items),
+     pbEncoded, cbEncoded, dwFlags, pvStructInfo, pcbStructInfo,
      digest ? digest->DigestAlgorithm.pszObjId : NULL);
 }
 
@@ -2065,9 +2069,8 @@ BOOL WINAPI WVTAsn1SpcIndirectDataContentDecode(DWORD dwCertEncodingType,
            offsetof(SPC_INDIRECT_DATA_CONTENT, DigestAlgorithm.pszObjId), 0 },
         };
 
-        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items,
-         sizeof(items) / sizeof(items[0]), pbEncoded, cbEncoded, dwFlags,
-         pvStructInfo, pcbStructInfo, NULL);
+        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items, ARRAY_SIZE(items),
+         pbEncoded, cbEncoded, dwFlags, pvStructInfo, pcbStructInfo, NULL);
     }
     __EXCEPT_PAGE_FAULT
     {
@@ -2163,9 +2166,8 @@ BOOL WINAPI WVTAsn1SpcSpOpusInfoDecode(DWORD dwCertEncodingType,
            offsetof(SPC_SP_OPUS_INFO, pPublisherInfo), 0 },
         };
 
-        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items,
-         sizeof(items) / sizeof(items[0]), pbEncoded, cbEncoded, dwFlags,
-         pvStructInfo, pcbStructInfo, NULL);
+        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items, ARRAY_SIZE(items),
+         pbEncoded, cbEncoded, dwFlags, pvStructInfo, pcbStructInfo, NULL);
     }
     __EXCEPT_PAGE_FAULT
     {
@@ -2245,9 +2247,8 @@ BOOL WINAPI WVTAsn1CatMemberInfoDecode(DWORD dwCertEncodingType,
            FALSE, FALSE, 0, 0 },
         };
 
-        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items,
-         sizeof(items) / sizeof(items[0]), pbEncoded, cbEncoded, dwFlags,
-         pvStructInfo, pcbStructInfo, NULL);
+        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items, ARRAY_SIZE(items),
+         pbEncoded, cbEncoded, dwFlags, pvStructInfo, pcbStructInfo, NULL);
     }
     __EXCEPT_PAGE_FAULT
     {
@@ -2281,9 +2282,8 @@ BOOL WINAPI WVTAsn1CatNameValueDecode(DWORD dwCertEncodingType,
            offsetof(CAT_NAMEVALUE, Value.pbData), 0 },
         };
 
-        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items,
-         sizeof(items) / sizeof(items[0]), pbEncoded, cbEncoded, dwFlags,
-         pvStructInfo, pcbStructInfo, NULL);
+        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items, ARRAY_SIZE(items),
+         pbEncoded, cbEncoded, dwFlags, pvStructInfo, pcbStructInfo, NULL);
     }
     __EXCEPT_PAGE_FAULT
     {
@@ -2356,9 +2356,8 @@ BOOL WINAPI WVTAsn1SpcFinancialCriteriaInfoDecode(DWORD dwCertEncodingType,
            fMeetsCriteria), FALSE, FALSE, 0, 0 },
         };
 
-        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items,
-         sizeof(items) / sizeof(items[0]), pbEncoded, cbEncoded, dwFlags,
-         pvStructInfo, pcbStructInfo, NULL);
+        ret = CRYPT_AsnDecodeSequence(dwCertEncodingType, items, ARRAY_SIZE(items),
+         pbEncoded, cbEncoded, dwFlags, pvStructInfo, pcbStructInfo, NULL);
     }
     __EXCEPT_PAGE_FAULT
     {

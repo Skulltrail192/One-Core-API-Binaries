@@ -16,6 +16,7 @@
 #define COM_NO_WINDOWS_H
 #include <windef.h>
 #include <winbase.h>
+#include <dbt.h>
 #define NTOS_MODE_USER
 #include <ndk/rtlfuncs.h>
 #include <ndk/obfuncs.h>
@@ -23,6 +24,7 @@
 #include <ndk/exfuncs.h>
 #include <ndk/umfuncs.h>
 #include <ndk/cmfuncs.h>
+#include <ndk/sefuncs.h>
 
 /* PSEH for SEH Support */
 #include <pseh/pseh2.h>
@@ -64,5 +66,11 @@ typedef NTSTATUS (WINAPI *PCREATE_NLS_SECURTY_DESCRIPTOR)(IN PVOID Buffer,
 extern HANDLE BaseSrvHeap;
 extern HANDLE BaseSrvSharedHeap;
 extern PBASE_STATIC_SERVER_DATA BaseStaticServerData;
+extern ULONG SessionId;
+extern ULONG ProtectionMode;
+extern RTL_CRITICAL_SECTION BaseSrvDDDBSMCritSec;
+
+#define SM_REG_KEY \
+    L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Session Manager"
 
 #endif /* __BASESRV_H__ */

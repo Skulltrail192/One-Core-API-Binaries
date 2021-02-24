@@ -1,4 +1,4 @@
-/* TRANSLATOR: 2013-2015 Erdem Ersoy (eersoy93) (erdemersoy@live.com) */
+/* TRANSLATOR: 2013-2015 Erdem Ersoy (eersoy93) (erdemersoy [at] erdemersoy [dot] net) */
 
 LANGUAGE LANG_TURKISH, SUBLANG_DEFAULT
 
@@ -49,10 +49,7 @@ BEGIN
             MENUITEM "&Yazıcılar ve Belgegeçerler", IDM_PRINTERSANDFAXES, MFT_STRING, MFS_ENABLED
             MENUITEM "G&örev Çubuğu ve Başlat Seçkesi", IDM_TASKBARANDSTARTMENU, MFT_STRING, MFS_ENABLED
         END
-        POPUP "A&ra", IDM_SEARCH
-        BEGIN
-            MENUITEM "", -1, MFT_SEPARATOR
-        END
+        MENUITEM "A&ra", IDM_SEARCH, MFT_STRING, MFS_ENABLED
         MENUITEM "Yar&dım ve Destek", IDM_HELPANDSUPPORT, MFT_STRING, MFS_ENABLED
         MENUITEM "&Çalıştır...", IDM_RUN, MFT_STRING, MFS_ENABLED
         MENUITEM "", 450, MFT_SEPARATOR, MFS_ENABLED
@@ -70,14 +67,14 @@ CAPTION "Görev Çubuğu"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     GROUPBOX "Görev Çubuğu Görünümü", IDC_STATIC, 6, 6, 240, 104
-    CONTROL "", IDC_TASKBARPROP_TASKBARBITMAP, "Static", SS_BITMAP | SS_SUNKEN, 13, 18, 224, 21
+    CONTROL "", IDC_TASKBARPROP_TASKBARBITMAP, "Static", SS_BITMAP | SS_SUNKEN | SS_CENTERIMAGE, 12, 18, 229, 24
     AUTOCHECKBOX "&Görev Çubuğunu Kilitle", IDC_TASKBARPROP_LOCK, 13, 45, 200, 10
     AUTOCHECKBOX "G&örev Çubuğunu Kendiliğinden Gizle", IDC_TASKBARPROP_HIDE, 13, 58, 200, 10
     AUTOCHECKBOX "Gö&rev Çubuğunu Pencerelerin Üstünde Tut", IDC_TASKBARPROP_ONTOP, 13, 71, 200, 10
     AUTOCHECKBOX "&Benzer Görev Çubuğu Düğmelerini Öbekleştir", IDC_TASKBARPROP_GROUP, 13, 84, 200, 10
     AUTOCHECKBOX "&Hızlı Başlat'ı Göster", IDC_TASKBARPROP_SHOWQL, 13, 97, 200, 10
     GROUPBOX "Simgeler", IDC_STATIC, 6, 114, 240, 98
-    CONTROL "", IDC_TASKBARPROP_NOTIFICATIONBITMAP, "Static", SS_BITMAP | SS_SUNKEN,13, 126, 223, 28
+    CONTROL "", IDC_TASKBARPROP_NOTIFICATIONBITMAP, "Static", SS_BITMAP | SS_SUNKEN | SS_CENTERIMAGE, 12, 126, 229, 24
     AUTOCHECKBOX "&Saat", IDC_TASKBARPROP_CLOCK, 13, 153, 80, 10
     AUTOCHECKBOX "S&âniyeleri Göster", IDC_TASKBARPROP_SECONDS, 120, 153, 80, 10, WS_DISABLED
     LTEXT "Son zamanlarda tıklamadığınız simgeleri gizleyerek bildirim alanını düzenli tutabilirsiniz.", IDC_STATIC, 13, 169, 223, 16
@@ -91,11 +88,11 @@ CAPTION "Başlat Seçkesi"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL "", IDC_TASKBARPROP_STARTMENU_BITMAP, "Static", SS_BITMAP | SS_SUNKEN,7, 7, 183, 108
-    AUTORADIOBUTTON "&Başlat Seçkesi", IDC_TASKBARPROP_STARTMENU, 7, 135, 105, 10, WS_DISABLED
-    LTEXT "Bu seçke türü; size dizinlerinize, sık kullanılan izlencelere ve aramaya kolay erişim verir.", IDC_STATIC, 20, 145, 150, 24, WS_DISABLED
-    PUSHBUTTON "&Husûsileştir...", IDC_TASKBARPROP_STARTMENUCUST, 192, 132, 53, 14, WS_DISABLED
+    AUTORADIOBUTTON "&Başlat Seçkesi", IDC_TASKBARPROP_STARTMENU, 7, 135, 105, 10
+    LTEXT "Bu seçke türü; size dizinlerinize, sık kullanılan izlencelere ve aramaya kolay erişim verir.", IDC_TASKBARPROP_STARTMENUMODERNTEXT, 20, 145, 150, 24
+    PUSHBUTTON "&Husûsileştir...", IDC_TASKBARPROP_STARTMENUCUST, 192, 132, 53, 14
     AUTORADIOBUTTON "&Geleneklik Başlat Seçkesi", IDC_TASKBARPROP_STARTMENUCLASSIC, 7, 175, 105, 10
-    LTEXT "Bu seçke türü, size geleneklik görünümü ve geleneklik işlevliliği sağlar.", IDC_STATIC, 20, 185, 150, 24
+    LTEXT "Bu seçke türü, size geleneklik görünümü ve geleneklik işlevliliği sağlar.", IDC_TASKBARPROP_STARTMENUCLASSICTEXT, 20, 185, 150, 24
     PUSHBUTTON "H&usûsileştir...", IDC_TASKBARPROP_STARTMENUCLASSICCUST, 192, 172, 53, 14
 END
 
@@ -118,7 +115,7 @@ IDD_CLASSICSTART_CUSTOMIZE DIALOGEX 0, 0, 232, 240, 0
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBLE | WS_DLGFRAME
 CAPTION "Geleneklik Başlat Seçkesini Husûsileştir"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     GROUPBOX         "Başlat Seçkesi", IDC_STATIC, 8, 7, 218, 114
     ICON             IDI_STARTMENU2, IDC_STATIC, 19, 17, 20, 20
     LTEXT            "Ögeleri eklemeyle veyâ kaldırmayla Başlat seçkenizi husûsileştirebilirsiniz.", IDC_STATIC, 48, 17, 108, 39
@@ -133,26 +130,26 @@ FONT 8, "MS Shell Dlg"
     CONTROL          "&Başlat Seçkesi Ayarları", IDC_CLASSICSTART_SETTINGS, "SysTreeView32", WS_BORDER | 0x00000001, 8, 139, 218, 72, WS_EX_CLIENTEDGE
     DEFPUSHBUTTON    "Tamam", IDOK, 122, 220, 50, 14
     PUSHBUTTON       "İptal", IDCANCEL, 176, 220, 50, 14
-}
+END
 
 IDD_FILENAME_WARNING DIALOGEX 0, 0, 272, 81, 0
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUPWINDOW | WS_DLGFRAME
 CAPTION "Kütük Adı Uyarısı"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     DEFPUSHBUTTON    "&Yok Say", IDIGNORE, 215, 60, 50, 14
     PUSHBUTTON       "Y&eniden Adlandır", IDC_FILE_RENAME, 159, 60, 50, 14
     LTEXT            "", IDC_STATIC, 7, 51, 258, 1, NOT WS_GROUP
     AUTOCHECKBOX     "&Başlangıçta Bu Denetlemeyi Yapma", IDC_NOTCHECK, 7, 62, 139, 10
     ICON             32515, IDC_STATIC, 7, 7, 21, 20
     LTEXT            "Bilgisayarınızda %s adlı bir kütük ya da dizin belirli uygulamaların düzgün çalışmamasına neden olabilir. Onu %s olarak yeniden adlandırma bu sorunu çözecek. Onu şimdi yeniden adlandırmak ister misiniz?", IDC_STATIC, 34, 7, 224, 37
-}
+END
 
 IDD_MODERNSTART_ADVANCED DIALOGEX 0, 0, 251, 198, 0
 STYLE DS_SETFONT | WS_CAPTION | WS_CHILD | WS_DISABLED
 CAPTION "Gelişmiş"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     GROUPBOX         "Başlat Seçkesi Ayarları", IDC_STATIC, 7, 7, 238, 42
     AUTOCHECKBOX     "&Fâremle Onların Üzerinde Durakladığımda Alt Seçkeleri Aç", IDC_AUTOOPEN, 14, 21, 224, 10
     AUTOCHECKBOX     "&Yeni Kurulmuş İzlenceleri Vurgula", IDC_HIGHLIGHT, 14, 35, 224, 10
@@ -162,13 +159,13 @@ FONT 8, "MS Shell Dlg"
     LTEXT            "En son açtığınız belgelere hızlı erişim sağlamak için bu seçeneği seçiniz. Bu dizelgeyi silme belgeleri silmez.", IDC_STATIC, 14, 144, 224, 21
     AUTOCHECKBOX     "&En Son Açılan Belgelerimi Dizelgele", IDC_RECENTLY, 14, 168, 147, 10
     PUSHBUTTON       "&Dizelgeyi Sil", IDC_CLEAR, 182, 168, 55, 14
-}
+END
 
 IDD_MODERNSTART_GENERAL DIALOGEX 0, 0, 251, 198
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUPWINDOW | WS_DLGFRAME
 CAPTION "Umûmî"
 FONT 8, "MS Shell Dlg"
-{
+BEGIN
     GROUPBOX         "İzlenceler İçin Bir Simge Büyüklüğü Seç", IDC_STATIC, 7, 7, 238, 37
     ICON             IDC_LARGEICON, 17, 18, 20, 20, SS_CENTERIMAGE
     ICON             IDC_SMALLICON, 151, 18, 20, 20, SS_CENTERIMAGE
@@ -185,7 +182,7 @@ FONT 8, "MS Shell Dlg"
     COMBOBOX         IDC_INTERNETDEFAULTAPP, 98, 138, 140, 200, CBS_DROPDOWNLIST | WS_VSCROLL
     AUTOCHECKBOX     "&Mektup:", IDC_SHOWEMAIL, 14, 157, 37, 10
     COMBOBOX         IDC_EMAILDEFAULTAPP, 98, 155, 140, 200, CBS_DROPDOWNLIST | WS_VSCROLL
-}
+END
 
 STRINGTABLE
 BEGIN
@@ -199,4 +196,5 @@ END
 STRINGTABLE
 BEGIN
     IDS_TASKBAR_STARTMENU_PROP_CAPTION "Görev Çubuğu ve Başlat Seçkesi"
+    IDS_RESTORE_ALL "&Show Open Windows"
 END

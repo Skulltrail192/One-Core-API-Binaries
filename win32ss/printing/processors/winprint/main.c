@@ -1,14 +1,14 @@
 /*
  * PROJECT:     ReactOS Standard Print Processor
- * LICENSE:     GNU LGPL v2.1 or any later version as published by the Free Software Foundation
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
  * PURPOSE:     Main functions
- * COPYRIGHT:   Copyright 2015-2017 Colin Finck <colin@reactos.org>
+ * COPYRIGHT:   Copyright 2015-2017 Colin Finck (colin@reactos.org)
  */
 
 #include "precomp.h"
 
 // Local Constants
-static PWSTR _pwszDatatypes[] = {
+static PCWSTR _pwszDatatypes[] = {
     L"RAW",
     0
 };
@@ -113,7 +113,7 @@ EnumPrintProcessorDatatypesW(PWSTR pName, PWSTR pPrintProcessorName, DWORD Level
     DWORD cbDatatype;
     DWORD dwDatatypeCount = 0;
     DWORD dwOffsets[_countof(_pwszDatatypes)];
-    PWSTR* pCurrentDatatype;
+    PCWSTR* pCurrentDatatype;
     PDWORD pCurrentOffset = dwOffsets;
 
     TRACE("EnumPrintProcessorDatatypesW(%S, %S, %lu, %p, %lu, %p, %p)\n", pName, pPrintProcessorName, Level, pDatatypes, cbBuf, pcbNeeded, pcReturned);

@@ -26,7 +26,7 @@ VOID OnAddStartMenuItems(HWND hDlg)
 {
     WCHAR szPath[MAX_PATH];
 
-    if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_STARTMENU, NULL, 0, szPath)))
+    if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_PROGRAMS, NULL, 0, szPath)))
     {
         WCHAR szCommand[MAX_PATH] = L"appwiz.cpl,NewLinkHere ";
         if (SUCCEEDED(StringCchCatW(szCommand, _countof(szCommand), szPath)))
@@ -72,34 +72,34 @@ VOID OnClearRecentItems()
 
 INT_PTR CALLBACK CustomizeClassicProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-    switch(Message)
+    switch (Message)
     {
         case WM_INITDIALOG:
             /* FIXME: Properly initialize the dialog (check whether 'clear' button must be disabled, for example) */
-        return TRUE;
+            return TRUE;
         case WM_COMMAND:
-            switch(LOWORD(wParam))
+            switch (LOWORD(wParam))
             {
                 case IDC_CLASSICSTART_ADD:
                     OnAddStartMenuItems(hwnd);
-                break;
+                    break;
                 case IDC_CLASSICSTART_REMOVE:
                     OnRemoveStartmenuItems(hwnd);
-                break;
+                    break;
                 case IDC_CLASSICSTART_ADVANCED:
                     OnAdvancedStartMenuItems();
-                break;
+                    break;
                 case IDC_CLASSICSTART_CLEAR:
                     OnClearRecentItems();
-                break;
+                    break;
                 case IDOK:
                     EndDialog(hwnd, IDOK);
-                break;
+                    break;
                 case IDCANCEL:
                     EndDialog(hwnd, IDCANCEL);
-                break;
+                    break;
             }
-        break;
+            break;
         default:
             return FALSE;
     }

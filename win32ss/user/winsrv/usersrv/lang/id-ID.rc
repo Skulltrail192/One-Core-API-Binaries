@@ -22,3 +22,20 @@ BEGIN
     LTEXT "Untuk kembali ke ReactOS dan memeriksa status program, klik Batal.", IDC_STATIC, 7, 26, 178, 16
     LTEXT "Jika anda memilih untuk segera mengakhiri program, anda akan kehilangan data yang belum disimpan. Untuk mengakhiri program sekarang, klik Akhiri Sekarang.", IDC_STATIC, 7, 53, 178, 26
 END
+
+
+STRINGTABLE
+BEGIN
+    IDS_SEVERITY_SUCCESS        "Sukses"
+    IDS_SEVERITY_INFORMATIONAL  "Informasi Sistem"
+    IDS_SEVERITY_WARNING        "Peringatan Sistem"
+    IDS_SEVERITY_ERROR          "Kesalahan Sistem"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_SYSTEM_PROCESS          "Proses Sistem"
+    IDS_UNKNOWN_SOFTWARE_EXCEPT "pengecualian perangkat lunak tidak diketahui"
+    IDS_OK_TERMINATE_PROGRAM    "Klik OK menghentikan program."
+    IDS_CANCEL_DEBUG_PROGRAM    "klik BATAL untuk debug program."
+END

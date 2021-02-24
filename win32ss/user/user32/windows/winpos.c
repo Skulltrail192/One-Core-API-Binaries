@@ -8,11 +8,8 @@
  *      06-06-2001  CSH  Created
  */
 
-/* INCLUDES ******************************************************************/
-
 #include <user32.h>
 
-#include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(user32);
 
 void mirror_rect( const RECT *window_rect, RECT *rect )
@@ -25,6 +22,7 @@ void mirror_rect( const RECT *window_rect, RECT *rect )
 
 /* FUNCTIONS *****************************************************************/
 
+#if 0 // Keep legacy code. Moved to Win32k:NtUser:WinPos.c.
 #define EMPTYPOINT(pt) ((pt).x == -1 && (pt).y == -1)
 
 UINT WINAPI
@@ -129,9 +127,9 @@ WinPosGetMinMaxInfo(HWND hwnd, POINT* maxSize, POINT* maxPos,
     if (minTrack) *minTrack = MinMax.ptMinTrackSize;
     if (maxTrack) *maxTrack = MinMax.ptMaxTrackSize;
 
-  return 0; //FIXME: what does it return?
+  return 0; //FIXME: what does it return? Wine returns MINMAXINFO.
 }
-
+#endif
 
 /*
  * @implemented

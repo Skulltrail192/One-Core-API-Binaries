@@ -26,7 +26,45 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+
+#ifdef HAVE_CORESERVICES_CORESERVICES_H
+#define GetCurrentThread MacGetCurrentThread
+#define LoadResource MacLoadResource
+#include <CoreServices/CoreServices.h>
+#undef GetCurrentThread
+#undef LoadResource
+#endif
+
+#include "winsock2.h"
+#include "ws2ipdef.h"
+
+#include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <assert.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "winuser.h"
+#include "wininet.h"
+#include "winnls.h"
+#include "wine/debug.h"
+#include "winerror.h"
+#define NO_SHLWAPI_STREAM
+#include "shlwapi.h"
+
+#include "wine/exception.h"
+
 #include "internet.h"
+#include "resource.h"
+
+#include "wine/unicode.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(wininet);
 
 typedef struct
 {
@@ -738,7 +776,7 @@ static void dump_INTERNET_FLAGS(DWORD dwFlags)
 #undef FE
     unsigned int i;
 
-    for (i = 0; i < (sizeof(flag) / sizeof(flag[0])); i++) {
+    for (i = 0; i < ARRAY_SIZE(flag); i++) {
 	if (flag[i].val & dwFlags) {
 	    TRACE(" %s", flag[i].name);
 	    dwFlags &= ~flag[i].val;
@@ -931,6 +969,9 @@ static DWORD APPINFO_SetOption(object_header_t *hdr, DWORD option, void *buf, DW
         heap_free(ai->agent);
         if (!(ai->agent = heap_strdupW(buf))) return ERROR_OUTOFMEMORY;
         return ERROR_SUCCESS;
+    case INTERNET_OPTION_REFRESH:
+        FIXME("INTERNET_OPTION_REFRESH\n");
+        return ERROR_SUCCESS;
     }
 
     return INET_SetOption(hdr, option, buf, size);
@@ -979,7 +1020,7 @@ HINTERNET WINAPI InternetOpenW(LPCWSTR lpszAgent, DWORD dwAccessType,
 	
 	TRACE("(%s, %i, %s, %s, %i)\n", debugstr_w(lpszAgent), dwAccessType,
 	      debugstr_w(lpszProxy), debugstr_w(lpszProxyBypass), dwFlags);
-	for (i = 0; i < (sizeof(access_type) / sizeof(access_type[0])); i++) {
+        for (i = 0; i < ARRAY_SIZE(access_type); i++) {
 	    if (access_type[i].val == dwAccessType) {
 		access_type_str = access_type[i].name;
 		break;
@@ -1584,7 +1625,7 @@ static INTERNET_SCHEME GetInternetSchemeW(LPCWSTR lpszScheme, DWORD nMaxCmp)
     if(lpszScheme==NULL)
         return INTERNET_SCHEME_UNKNOWN;
 
-    for (i = 0; i < sizeof(url_schemes)/sizeof(url_schemes[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(url_schemes); i++)
         if (!strncmpiW(lpszScheme, url_schemes[i], nMaxCmp))
             return INTERNET_SCHEME_FIRST + i;
 
@@ -2155,8 +2196,7 @@ BOOL WINAPI InternetReadFile(HINTERNET hFile, LPVOID lpBuffer,
     TRACE("-- %s (%u) (bytes read: %d)\n", res == ERROR_SUCCESS ? "TRUE": "FALSE", res,
           pdwNumOfBytesRead ? *pdwNumOfBytesRead : -1);
 
-    if(res != ERROR_SUCCESS)
-        SetLastError(res);
+    SetLastError(res);
     return res == ERROR_SUCCESS;
 }
 
@@ -2590,6 +2630,10 @@ BOOL WINAPI InternetQueryOptionA(HINTERNET hInternet, DWORD dwOption,
 DWORD INET_SetOption(object_header_t *hdr, DWORD option, void *buf, DWORD size)
 {
     switch(option) {
+    case INTERNET_OPTION_SETTINGS_CHANGED:
+        FIXME("INTERNETOPTION_SETTINGS_CHANGED semi-stub\n");
+        collect_connections(COLLECT_CONNECTIONS);
+        return ERROR_SUCCESS;
     case INTERNET_OPTION_CALLBACK:
         WARN("Not settable option %u\n", option);
         return ERROR_INTERNET_OPTION_NOT_SETTABLE;
@@ -2597,6 +2641,8 @@ DWORD INET_SetOption(object_header_t *hdr, DWORD option, void *buf, DWORD size)
     case INTERNET_OPTION_MAX_CONNS_PER_1_0_SERVER:
         WARN("Called on global option %u\n", option);
         return ERROR_INTERNET_INVALID_OPERATION;
+    case INTERNET_OPTION_REFRESH:
+        return ERROR_INTERNET_INCORRECT_HANDLE_TYPE;
     }
 
     return ERROR_INTERNET_INVALID_OPTION;
@@ -2642,11 +2688,6 @@ static DWORD set_global_option(DWORD option, void *buf, DWORD size)
         connect_timeout = *(ULONG*)buf;
         return ERROR_SUCCESS;
 
-    case INTERNET_OPTION_SETTINGS_CHANGED:
-        FIXME("INTERNETOPTION_SETTINGS_CHANGED semi-stub\n");
-        collect_connections(COLLECT_CONNECTIONS);
-        return ERROR_SUCCESS;
-
     case INTERNET_OPTION_SUPPRESS_BEHAVIOR:
         FIXME("INTERNET_OPTION_SUPPRESS_BEHAVIOR stub\n");
 
@@ -2657,7 +2698,7 @@ static DWORD set_global_option(DWORD option, void *buf, DWORD size)
         return ERROR_SUCCESS;
     }
 
-    return ERROR_INTERNET_INVALID_OPTION;
+    return INET_SetOption(NULL, option, buf, size);
 }
 
 /***********************************************************************
@@ -2793,6 +2834,7 @@ BOOL WINAPI InternetSetOptionW(HINTERNET hInternet, DWORD dwOption,
     case INTERNET_OPTION_END_BROWSER_SESSION:
         FIXME("Option INTERNET_OPTION_END_BROWSER_SESSION: semi-stub\n");
         free_cookie();
+        free_authorization_cache();
         break;
     case INTERNET_OPTION_CONNECTED_STATE:
         FIXME("Option INTERNET_OPTION_CONNECTED_STATE: STUB\n");
@@ -2837,7 +2879,6 @@ BOOL WINAPI InternetSetOptionW(HINTERNET hInternet, DWORD dwOption,
 	 FIXME("Option INTERNET_OPTION_DISABLE_AUTODIAL; STUB\n");
 	 break;
     case INTERNET_OPTION_HTTP_DECODING:
-    {
         if (!lpwhh)
         {
             SetLastError(ERROR_INTERNET_INCORRECT_HANDLE_TYPE);
@@ -2851,7 +2892,6 @@ BOOL WINAPI InternetSetOptionW(HINTERNET hInternet, DWORD dwOption,
         else
             lpwhh->decoding = *(BOOL *)lpBuffer;
         break;
-    }
     case INTERNET_OPTION_COOKIES_3RD_PARTY:
         FIXME("INTERNET_OPTION_COOKIES_3RD_PARTY; STUB\n");
         SetLastError(ERROR_INTERNET_INVALID_OPTION);
@@ -2938,12 +2978,6 @@ BOOL WINAPI InternetSetOptionW(HINTERNET hInternet, DWORD dwOption,
         ret = (res == ERROR_SUCCESS);
         break;
         }
-    case INTERNET_OPTION_SETTINGS_CHANGED:
-        FIXME("INTERNET_OPTION_SETTINGS_CHANGED; STUB\n");
-        break;
-    case INTERNET_OPTION_REFRESH:
-        FIXME("INTERNET_OPTION_REFRESH; STUB\n");
-        break;
     default:
         FIXME("Option %d STUB\n",dwOption);
         SetLastError(ERROR_INTERNET_INVALID_OPTION);
@@ -4054,7 +4088,7 @@ static LPCWSTR INTERNET_GetSchemeString(INTERNET_SCHEME scheme)
     if (scheme < INTERNET_SCHEME_FIRST)
         return NULL;
     index = scheme - INTERNET_SCHEME_FIRST;
-    if (index >= sizeof(url_schemes)/sizeof(url_schemes[0]))
+    if (index >= ARRAY_SIZE(url_schemes))
         return NULL;
     return (LPCWSTR)url_schemes[index];
 }
@@ -4331,7 +4365,7 @@ BOOL WINAPI InternetCreateUrlW(LPURL_COMPONENTSW lpUrlComponents, DWORD dwFlags,
     if (!scheme_is_opaque(nScheme) || lpUrlComponents->lpszHostName)
     {
         memcpy(lpszUrl, slashSlashW, sizeof(slashSlashW));
-        lpszUrl += sizeof(slashSlashW)/sizeof(slashSlashW[0]);
+        lpszUrl += ARRAY_SIZE(slashSlashW);
     }
 
     if (lpUrlComponents->lpszUserName)
@@ -4469,6 +4503,11 @@ BOOL WINAPI InternetGetSecurityInfoByURLW(LPCWSTR lpszURL, PCCERT_CHAIN_CONTEXT 
 
     TRACE("(%s %p %p)\n", debugstr_w(lpszURL), ppCertChain, pdwSecureFlags);
 
+    if (!ppCertChain && !pdwSecureFlags) {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
     url.dwHostNameLength = 1;
     res = InternetCrackUrlW(lpszURL, 0, 0, &url);
     if(!res || url.nScheme != INTERNET_SCHEME_HTTPS) {
@@ -4483,15 +4522,11 @@ BOOL WINAPI InternetGetSecurityInfoByURLW(LPCWSTR lpszURL, PCCERT_CHAIN_CONTEXT 
     }
 
     if(server->cert_chain) {
-        const CERT_CHAIN_CONTEXT *chain_dup;
-
-        chain_dup = CertDuplicateCertificateChain(server->cert_chain);
-        if(chain_dup) {
-            *ppCertChain = chain_dup;
+        if(pdwSecureFlags)
             *pdwSecureFlags = server->security_flags & _SECURITY_ERROR_FLAGS_MASK;
-        }else {
+
+        if(ppCertChain && !(*ppCertChain = CertDuplicateCertificateChain(server->cert_chain)))
             res = FALSE;
-        }
     }else {
         SetLastError(ERROR_INTERNET_ITEM_NOT_FOUND);
         res = FALSE;

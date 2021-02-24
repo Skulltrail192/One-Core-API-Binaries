@@ -165,7 +165,7 @@ co_EVENT_CallEvents( DWORD event,
                                  pEP->idObject,
                                  pEP->idChild,
                                  pEP->idThread,
-                                (DWORD)EngGetTickCount(),
+                                 EngGetTickCount32(),
                                  pEH->Proc,
                                  pEH->ihmod,
                                  pEH->offPfn);
@@ -229,7 +229,7 @@ IntNotifyWinEvent(
                                    idObject,
                                    idChild,
                                    PtrToUint(NtCurrentTeb()->ClientId.UniqueThread),
-                                  (DWORD)EngGetTickCount(),
+                                   EngGetTickCount32(),
                                    pEH->Proc,
                                    pEH->ihmod,
                                    pEH->offPfn);
@@ -388,14 +388,14 @@ NtUserSetWinEventHook(
       if (hmodWinEventProc != NULL)
       {
          pEH->offPfn = (ULONG_PTR)((char *)lpfnWinEventProc - (char *)hmodWinEventProc);
-         pEH->ihmod = (INT)hmodWinEventProc;
+         pEH->ihmod = (INT_PTR)hmodWinEventProc;
          pEH->Proc = lpfnWinEventProc;
       }
       else
       {
          pEH->Proc = lpfnWinEventProc;
          pEH->offPfn = 0;
-         pEH->ihmod = (INT)hmodWinEventProc;
+         pEH->ihmod = (INT_PTR)hmodWinEventProc;
       }
 
       UserDereferenceObject(pEH);

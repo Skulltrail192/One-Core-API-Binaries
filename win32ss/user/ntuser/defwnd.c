@@ -420,7 +420,7 @@ UserPaintCaption(PWND pWnd, INT Flags)
       else
       {
          HDC hDC = UserGetDCEx(pWnd, NULL, DCX_WINDOW|DCX_USESTYLE);
-         UserDrawCaptionBar(pWnd, hDC, Flags);
+         UserDrawCaptionBar(pWnd, hDC, Flags | DC_FRAME); // DCFRAME added as fix for CORE-10855.
          UserReleaseDC(pWnd, hDC, FALSE);
       }
       Ret = TRUE;
@@ -539,11 +539,17 @@ IntDefWindowProc(
    PTHREADINFO pti = PsGetCurrentThreadWin32Thread();
    LRESULT lResult = 0;
    USER_REFERENCE_ENTRY Ref;
+   BOOL IsTaskBar;
+   DWORD Style;
+   DWORD ExStyle;
 
    if (Msg > WM_USER) return 0;
 
    switch (Msg)
    {
+      case WM_DEVICECHANGE:
+            return TRUE;
+
       case WM_GETTEXTLENGTH:
       {
             PWSTR buf;
@@ -619,14 +625,6 @@ IntDefWindowProc(
          if (!Wnd->spwndOwner) break;
          if (LOWORD(lParam))
          {
-            if (wParam)
-            {
-               if (!(Wnd->state & WNDS_HIDDENPOPUP)) break;
-               Wnd->state &= ~WNDS_HIDDENPOPUP;
-            }
-            else
-                Wnd->state |= WNDS_HIDDENPOPUP;
-
             co_WinPosShowWindow(Wnd, wParam ? SW_SHOWNOACTIVATE : SW_HIDE);
          }
          break;
@@ -787,6 +785,111 @@ IntDefWindowProc(
             if (UserGetKeyState(VK_SHIFT) & 0x8000)
             {
                co_IntSendMessage(UserHMGetHandle(Wnd), WM_CONTEXTMENU, (WPARAM)UserHMGetHandle(Wnd), MAKELPARAM(-1, -1));
+            }
+         }
+         if (IS_KEY_DOWN(gafAsyncKeyState, VK_LWIN) || IS_KEY_DOWN(gafAsyncKeyState, VK_RWIN))
+         {
+            HWND hwndTop = UserGetForegroundWindow();
+            PWND topWnd = UserGetWindowObject(hwndTop);
+
+            /* Test for typical TaskBar ExStyle Values */
+            ExStyle = (topWnd->ExStyle & WS_EX_TOOLWINDOW);
+            TRACE("ExStyle is '%x'.\n", ExStyle);
+
+            /* Test for typical TaskBar Style Values */
+            Style = (topWnd->style & (WS_POPUP | WS_VISIBLE |
+                        WS_CLIPSIBLINGS | WS_CLIPCHILDREN));
+            TRACE("Style is '%x'.\n", Style);
+
+            /* Test for masked typical TaskBar Style and ExStyles to detect TaskBar */
+            IsTaskBar = (Style == (WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN))
+                        && (ExStyle == WS_EX_TOOLWINDOW);
+            TRACE("This %s the TaskBar.\n", IsTaskBar ? "is" : "is not");
+
+            if (topWnd && !IsTaskBar)  /* Second test is so we are not touching the Taskbar */
+            {
+               if ((topWnd->style & WS_THICKFRAME) == 0)
+               {
+                  return 0;
+               }
+               
+               if (wParam == VK_DOWN)
+               {
+                   if (topWnd->style & WS_MAXIMIZE)
+                       co_IntSendMessage(hwndTop, WM_SYSCOMMAND, SC_RESTORE, lParam);
+                   else
+                       co_IntSendMessage(hwndTop, WM_SYSCOMMAND, SC_MINIMIZE, lParam);
+               }
+               else if (wParam == VK_UP)
+               {
+                  RECT currentRect;
+                  if ((topWnd->InternalPos.NormalRect.right == topWnd->InternalPos.NormalRect.left) || 
+                      (topWnd->InternalPos.NormalRect.top == topWnd->InternalPos.NormalRect.bottom))
+                  {
+                      currentRect = topWnd->rcWindow;
+                  }
+                  else
+                  {
+                      currentRect = topWnd->InternalPos.NormalRect;
+                  }
+                  co_IntSendMessage(hwndTop, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+
+                  // save normal rect if maximazing snapped window
+                  topWnd->InternalPos.NormalRect = currentRect;
+               }
+               else if (wParam == VK_LEFT || wParam == VK_RIGHT)
+               {
+                  RECT snapRect, normalRect, windowRect;
+                  BOOL snapped;
+                  normalRect = topWnd->InternalPos.NormalRect;
+                  snapped = (normalRect.left != 0 && normalRect.right != 0 &&
+                             normalRect.top != 0 && normalRect.bottom != 0);
+
+                  if (topWnd->style & WS_MAXIMIZE)
+                  {
+                     co_IntSendMessage(hwndTop, WM_SYSCOMMAND, SC_RESTORE, lParam);
+                     snapped = FALSE;
+                  }
+                  windowRect = topWnd->rcWindow;
+
+                  UserSystemParametersInfo(SPI_GETWORKAREA, 0, &snapRect, 0);
+                  if (wParam == VK_LEFT)
+                  {
+                     snapRect.right = (snapRect.left + snapRect.right) / 2;
+                  }
+                  else // VK_RIGHT
+                  {
+                     snapRect.left = (snapRect.left + snapRect.right) / 2;
+                  }
+
+                  if (snapped)
+                  {
+                     // if window was snapped but moved to other location - restore normal size
+                     if (!IntEqualRect(&snapRect, &windowRect))
+                     {
+                        RECT empty = {0, 0, 0, 0};
+                        co_WinPosSetWindowPos(topWnd,
+                                              0,
+                                              normalRect.left,
+                                              normalRect.top,
+                                              normalRect.right - normalRect.left,
+                                              normalRect.bottom - normalRect.top,
+                                              0);
+                        topWnd->InternalPos.NormalRect = empty;
+                     }
+                  }
+                  else
+                  {
+                     co_WinPosSetWindowPos(topWnd,
+                                           0,
+                                           snapRect.left,
+                                           snapRect.top,
+                                           snapRect.right - snapRect.left,
+                                           snapRect.bottom - snapRect.top,
+                                           0);
+                     topWnd->InternalPos.NormalRect = windowRect;
+                  }
+               }
             }
          }
          break;
@@ -967,7 +1070,7 @@ IntDefWindowProc(
          if (!hBrush) return 0;
          if (hBrush <= (HBRUSH)COLOR_MENUBAR)
          {
-            hBrush = IntGetSysColorBrush((INT)hBrush);
+            hBrush = IntGetSysColorBrush(HandleToUlong(hBrush));
          }
          if (Wnd->pcls->style & CS_PARENTDC)
          {
@@ -1132,7 +1235,7 @@ IntDefWindowProc(
       {
           HDC hDC = UserGetDCEx(Wnd, NULL, DCX_WINDOW|DCX_USESTYLE);
           TRACE("WM_NCUAHDRAWCAPTION: wParam DC_ flags %08x\n",wParam);
-          UserDrawCaptionBar(Wnd, hDC, wParam|DC_FRAME); // Include DC_FRAME to comp for drawing glich.
+          UserDrawCaptionBar(Wnd, hDC, wParam | DC_FRAME); // Include DC_FRAME to comp for drawing glitch.
           UserReleaseDC(Wnd, hDC, FALSE);
           return 0;
       }

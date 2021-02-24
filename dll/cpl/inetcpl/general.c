@@ -19,10 +19,20 @@
  *
  */
 
-#include "inetcpl.h"
-
+#include <stdarg.h>
+#include <windef.h>
+#include <winbase.h>
+#include <winuser.h>
 #include <wininet.h>
+#include <winreg.h>
+#include <shlwapi.h>
+#include <prsht.h>
 #include <shlobj.h>
+
+#include "inetcpl.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(inetcpl);
 
 static const WCHAR about_blank[] = {'a','b','o','u','t',':','b','l','a','n','k',0};
 static const WCHAR start_page[] = {'S','t','a','r','t',' ','P','a','g','e',0};
@@ -253,10 +263,10 @@ static INT_PTR general_on_notify(HWND hwnd, WPARAM wparam, LPARAM lparam)
     if (psn->hdr.code == PSN_APPLY)
     {
         *buffer = 0;
-        GetDlgItemTextW(hwnd, IDC_HOME_EDIT, buffer, sizeof(buffer)/sizeof(WCHAR));
+        GetDlgItemTextW(hwnd, IDC_HOME_EDIT, buffer, ARRAY_SIZE(buffer));
         TRACE("EDITTEXT has %s\n", debugstr_w(buffer));
 
-        res = parse_url_from_outside(buffer, parsed, sizeof(parsed)/sizeof(WCHAR));
+        res = parse_url_from_outside(buffer, parsed, ARRAY_SIZE(parsed));
         TRACE("got %d with %s\n", res, debugstr_w(parsed));
 
         if (res)

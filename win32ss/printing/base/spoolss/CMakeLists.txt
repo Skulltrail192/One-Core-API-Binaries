@@ -2,6 +2,7 @@
 spec2def(spoolss.dll spoolss.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
+    ../marshalling.c
     context.c
     jobs.c
     main.c
@@ -14,7 +15,7 @@ list(APPEND SOURCE
     printprocessors.c
     tools.c)
 
-add_library(spoolss SHARED
+add_library(spoolss MODULE
     ${SOURCE}
     spoolss.rc
     ${CMAKE_CURRENT_BINARY_DIR}/spoolss_stubs.c

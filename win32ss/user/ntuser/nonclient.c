@@ -256,6 +256,8 @@ DefWndDoSizeMove(PWND pwnd, WORD wParam)
    //PMONITOR mon = 0; Don't port sync from wine!!! This breaks explorer task bar sizing!!
    //                  The task bar can grow in size and can not reduce due to the change
    //                  in the work area.
+   DWORD ExStyleTB, StyleTB;
+   BOOL IsTaskBar;
 
    Style = pwnd->style;
    ExStyle = pwnd->ExStyle;
@@ -391,10 +393,78 @@ DefWndDoSizeMove(PWND pwnd, WORD wParam)
       if (!co_IntGetPeekMessage(&msg, 0, 0, 0, PM_REMOVE, TRUE)) break;
       if (IntCallMsgFilter( &msg, MSGF_SIZE )) continue;
 
-      /* Exit on button-up, Return, or Esc */
-      if ((msg.message == WM_LBUTTONUP) ||
-	  ((msg.message == WM_KEYDOWN) &&
-	   ((msg.wParam == VK_RETURN) || (msg.wParam == VK_ESCAPE)))) break;
+      /* Exit on button-up */
+      if (msg.message == WM_LBUTTONUP)
+      {
+         /* Test for typical TaskBar ExStyle Values */
+         ExStyleTB = (ExStyle & WS_EX_TOOLWINDOW);
+         TRACE("ExStyle is '%x'.\n", ExStyleTB);
+
+         /* Test for typical TaskBar Style Values */
+         StyleTB = (Style & (WS_POPUP | WS_VISIBLE |
+                        WS_CLIPSIBLINGS | WS_CLIPCHILDREN));
+         TRACE("Style is '%x'.\n", StyleTB);
+
+         /* Test for masked typical TaskBar Style and ExStyles to detect TaskBar */
+         IsTaskBar = (StyleTB == (WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN))
+                     && (ExStyleTB == WS_EX_TOOLWINDOW);
+         TRACE("This %s the TaskBar.\n", IsTaskBar ? "is" : "is not");
+
+         // check for snapping if was moved by caption
+         if (hittest == HTCAPTION && thickframe && (ExStyle & WS_EX_MDICHILD) == 0)
+         {
+            RECT snapRect;
+            BOOL doSideSnap = FALSE;
+            UserSystemParametersInfo(SPI_GETWORKAREA, 0, &snapRect, 0);
+
+            /* if this is the taskbar, then we want to just exit */
+            if (IsTaskBar)
+            {
+               break;
+            }
+            // snap to left
+            if (pt.x <= snapRect.left)
+            {
+               snapRect.right = (snapRect.right - snapRect.left) / 2 + snapRect.left;
+               doSideSnap = TRUE;
+            }
+            // snap to right
+            if (pt.x >= snapRect.right-1)
+            {
+               snapRect.left = (snapRect.right - snapRect.left) / 2 + snapRect.left;
+               doSideSnap = TRUE;
+            }
+            
+            if (doSideSnap)
+            {
+               co_WinPosSetWindowPos(pwnd,
+                                     0,
+                                     snapRect.left,
+                                     snapRect.top,
+                                     snapRect.right - snapRect.left,
+                                     snapRect.bottom - snapRect.top,
+                                     0);
+               pwnd->InternalPos.NormalRect = origRect;
+            }
+            else
+            {
+               // maximize if on dragged to top
+               if (pt.y <= snapRect.top)
+               {
+                  co_IntSendMessage(UserHMGetHandle(pwnd), WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+                  pwnd->InternalPos.NormalRect = origRect;
+               }
+            }
+         }
+         break;
+      }
+      
+      /* Exit on Return or Esc */
+      if (msg.message == WM_KEYDOWN &&
+          (msg.wParam == VK_RETURN || msg.wParam == VK_ESCAPE))
+      {
+         break;
+      }
 
       if ((msg.message != WM_KEYDOWN) && (msg.message != WM_MOUSEMOVE))
       {
@@ -737,7 +807,7 @@ UserDrawCaptionButton(PWND pWnd, LPRECT Rect, DWORD Style, DWORD ExStyle, HDC hD
       case DFCS_CAPTIONCLOSE:
       {
           PMENU pSysMenu = IntGetSystemMenu(pWnd, FALSE);
-          UINT MenuState = IntGetMenuState(UserHMGetHandle(pSysMenu), SC_CLOSE, MF_BYCOMMAND); /* in case of error MenuState==0xFFFFFFFF */
+          UINT MenuState = IntGetMenuState(pSysMenu ? UserHMGetHandle(pSysMenu) : NULL, SC_CLOSE, MF_BYCOMMAND); /* in case of error MenuState==0xFFFFFFFF */
 
          /* A tool window has a smaller Close button */
          if (ExStyle & WS_EX_TOOLWINDOW)
@@ -808,8 +878,8 @@ NC_DrawFrame( HDC hDC, RECT *CurrentRect, BOOL Active, DWORD Style, DWORD ExStyl
    /* Now the other bit of the frame */
    if (Style & (WS_DLGFRAME | WS_BORDER) || ExStyle & WS_EX_DLGMODALFRAME)
    {
-      DWORD Width = UserGetSystemMetrics(SM_CXBORDER);
-      DWORD Height = UserGetSystemMetrics(SM_CYBORDER);
+      LONG Width = UserGetSystemMetrics(SM_CXBORDER);
+      LONG Height = UserGetSystemMetrics(SM_CYBORDER);
 
       NtGdiSelectBrush(hDC, IntGetSysColorBrush(
          (ExStyle & (WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE)) ? COLOR_3DFACE :
@@ -940,10 +1010,13 @@ VOID UserDrawCaptionBar(
       /* Draw menu bar */
       if (pWnd->state & WNDS_HASMENU && pWnd->IDMenu) // Should be pWnd->spmenu
       {
-          PMENU menu = UserGetMenuObject(UlongToHandle(pWnd->IDMenu)); // FIXME!
-          TempRect = CurrentRect;
-          TempRect.bottom = TempRect.top + menu->cyMenu; // Should be pWnd->spmenu->cyMenu;
-          CurrentRect.top += MENU_DrawMenuBar(hDC, &TempRect, pWnd, FALSE);
+          PMENU menu;
+          if ((menu = UserGetMenuObject(UlongToHandle(pWnd->IDMenu)))) // FIXME! Use pWnd->spmenu,
+          {
+             TempRect = CurrentRect;
+             TempRect.bottom = TempRect.top + menu->cyMenu; // Should be pWnd->spmenu->cyMenu;
+             CurrentRect.top += MENU_DrawMenuBar(hDC, &TempRect, pWnd, FALSE);
+          }
       }
 
       if (ExStyle & WS_EX_CLIENTEDGE)
@@ -1111,10 +1184,14 @@ NC_DoNCPaint(PWND pWnd, HDC hDC, INT Flags)
      {
          if (!(Flags & DC_NOSENDMSG))
          {
-             PMENU menu = UserGetMenuObject(UlongToHandle(pWnd->IDMenu)); // FIXME!
-             TempRect = CurrentRect;
-             TempRect.bottom = TempRect.top + menu->cyMenu; // Should be pWnd->spmenu->cyMenu;
-             CurrentRect.top += MENU_DrawMenuBar(hDC, &TempRect, pWnd, FALSE);
+             PMENU menu;
+             // Fix crash in test_menu_locked_by_window, should use pWnd->spmenu....
+             if ((menu = UserGetMenuObject(UlongToHandle(pWnd->IDMenu)))) // FIXME! Use pWnd->spmenu,
+             {
+                TempRect = CurrentRect;
+                TempRect.bottom = TempRect.top + menu->cyMenu; // Should be pWnd->spmenu->cyMenu;
+                CurrentRect.top += MENU_DrawMenuBar(hDC, &TempRect, pWnd, FALSE);
+             }
          }
      }
 
@@ -1141,11 +1218,13 @@ NC_DoNCPaint(PWND pWnd, HDC hDC, INT Flags)
         FillRect(hDC, &TempRect, IntGetSysColorBrush(COLOR_BTNFACE));
 
         if (Parent)
+        {
            IntGetClientRect(Parent, &ParentClientRect);
 
-        if (HASSIZEGRIP(Style, ExStyle, Parent->style, WindowRect, ParentClientRect))
-        {
-           DrawFrameControl(hDC, &TempRect, DFC_SCROLL, DFCS_SCROLLSIZEGRIP);
+           if (HASSIZEGRIP(Style, ExStyle, Parent->style, WindowRect, ParentClientRect))
+           {
+              DrawFrameControl(hDC, &TempRect, DFC_SCROLL, DFCS_SCROLLSIZEGRIP);
+           }
         }
 
         IntDrawScrollBar(pWnd, hDC, SB_VERT);
@@ -1373,7 +1452,7 @@ NC_DoButton(PWND pWnd, WPARAM wParam, LPARAM lParam)
    {
       case HTCLOSE:
          SysMenu = IntGetSystemMenu(pWnd, FALSE);
-         MenuState = IntGetMenuState(UserHMGetHandle(SysMenu), SC_CLOSE, MF_BYCOMMAND); /* in case of error MenuState==0xFFFFFFFF */
+         MenuState = IntGetMenuState(SysMenu ? UserHMGetHandle(SysMenu) : NULL, SC_CLOSE, MF_BYCOMMAND); /* in case of error MenuState==0xFFFFFFFF */
          if (!(Style & WS_SYSMENU) || (MenuState & (MF_GRAYED|MF_DISABLED)) || (pWnd->style & CS_NOCLOSE))
             return;
          ButtonType = DFCS_CAPTIONCLOSE;
@@ -1547,13 +1626,32 @@ NC_HandleNCLButtonDblClk(PWND pWnd, WPARAM wParam, LPARAM lParam)
     case HTSYSMENU:
     {
       PMENU SysMenu = IntGetSystemMenu(pWnd, FALSE);
-      UINT state = IntGetMenuState(UserHMGetHandle(SysMenu), SC_CLOSE, MF_BYCOMMAND);
+      UINT state = IntGetMenuState(SysMenu ? UserHMGetHandle(SysMenu) : NULL, SC_CLOSE, MF_BYCOMMAND);
                   
       /* If the close item of the sysmenu is disabled or not present do nothing */
       if ((state & (MF_DISABLED | MF_GRAYED)) || (state == 0xFFFFFFFF))
           break;
 
       co_IntSendMessage(UserHMGetHandle(pWnd), WM_SYSCOMMAND, SC_CLOSE, lParam);
+      break;
+    }
+    case HTTOP:
+    case HTBOTTOM:
+    {
+      RECT sizingRect = pWnd->rcWindow, mouseRect;
+      
+      if (pWnd->ExStyle & WS_EX_MDICHILD)
+          break;
+      
+      UserSystemParametersInfo(SPI_GETWORKAREA, 0, &mouseRect, 0);
+        
+      co_WinPosSetWindowPos(pWnd,
+                            0,
+                            sizingRect.left,
+                            mouseRect.top,
+                            sizingRect.right - sizingRect.left,
+                            mouseRect.bottom - mouseRect.top,
+                            0);
       break;
     }
     default:

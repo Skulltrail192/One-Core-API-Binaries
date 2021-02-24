@@ -5,7 +5,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 list(APPEND SOURCE
 #   access.idl
-	activation.idl
     activaut.idl
     activdbg.idl
     activscp.idl
@@ -31,36 +30,6 @@ list(APPEND SOURCE
     cordebug.idl
 #   crtrow.idl
     ctxtcall.idl
-	d2d1.idl
-	d2d1_1.idl
-	d2d1_2.idl
-	d3dcommon.idl
-	d3d10.idl
-	d3d10_1.idl
-	d3d10sdklayers.idl
-	d3d11.idl
-	d3d11_1.idl
-	d3d11_2.idl
-	d3d11_3.idl
-	d3d11_4.idl
-	d3d11sdklayers.idl
-	dxgicommon.idl
-	dxgiformat.idl
-	dxgitype.idl
-	dxgi.idl
-	dxgi1_2.idl
-	dxgi1_3.idl
-	dxgi1_4.idl
-	dxgi1_5.idl
-	dxgi1_6.idl
-	dxva2api.idl	
-	d3dx10core.idl
-	d3dx11core.idl
-	dcommon.idl
-	dwrite.idl
-	dwrite_1.idl
-	dwrite_2.idl
-	dwrite_3.idl
 #   dbccmd.idl
 #   dbcses.idl
 #   dbdsad.idl
@@ -74,29 +43,28 @@ list(APPEND SOURCE
     docobj.idl
     docobjectservice.idl
     downloadmgr.idl
+    drmexternals.idl
 #   dyngraph.idl
     endpointvolume.idl
-	evr.idl
-	evr9.idl
     exdisp.idl
     fusion.idl
     hlink.idl
     htiface.idl
     htiframe.idl
     httprequest.idl
-	hstring.idl
-	gameux.idl
     iads.idl
     icftypes.idl
+    ieautomation.idl
     imnact.idl
     imnxport.idl
     indexsrv.idl
     inputscope.idl
     inseng.idl
-	inspectable.idl
+    mediaobj.idl
     metahost.idl
-	mfidl.idl
-	mftransform.idl
+    mfidl.idl
+    mfobjects.idl
+    mftransform.idl
     mimeinfo.idl
     mimeole.idl
     mlang.idl
@@ -111,6 +79,7 @@ list(APPEND SOURCE
     msxml.idl
     msxml2.idl
     msxml6.idl
+    natupnp.idl
     netcon.idl
     netfw.idl
     oaidl.idl
@@ -129,7 +98,6 @@ list(APPEND SOURCE
     propsys.idl
     pstore.idl
     richole.idl
-	roparameterizediid.idl
 #   row.idl
 #   rowchg.idl
 #   rstbas.idl
@@ -145,12 +113,14 @@ list(APPEND SOURCE
 #   stdole2.idl
     strmif.idl
     structuredquerycondition.idl
+    taskschd.idl
     textstor.idl
     tlogstg.idl
     tom.idl
+    transact.idl
     tuner.idl
-	uiautomationclient.idl
-	uiautomationcore.idl
+    txcoord.idl
+    txdtc.idl
     unknwn.idl
     urlhist.idl
     urlmon.idl
@@ -165,52 +135,26 @@ list(APPEND SOURCE
     wincodec.idl
     wincodecsdk.idl
     winsxs.idl
+    wmdrmsdk.idl
     wmiutils.idl
     wmsbuffer.idl
     wmsdkidl.idl
-	wpcapi.idl
     wtypes.idl
     wuapi.idl
     xmldom.idl
     xmldso.idl
     ctfutb.idl
-    xmllite.idl
-	dxgi_internal.idl)
+    xmllite.idl)
 
 add_idl_headers(psdk ${SOURCE})
 add_dependencies(psdk xdk)
 add_typelib(stdole2.idl)
 add_custom_target(stdole2 DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/stdole2.tlb)
 
-add_idl_headers(d3d_idl_headers d3dcommon.idl 	
-	d2d1.idl
-	d2d1_1.idl
-	d2d1_2.idl
-	d3d10.idl
-	d3d10_1.idl
-	d3d10sdklayers.idl
-	d3d11.idl
-	d3d11_1.idl
-	d3d11_2.idl
-	d3d12.idl
-	d3d11sdklayers.idl
-	dxgi.idl
-	dxgi1_2.idl
-	dwrite.idl
-	dwrite_1.idl
-	dwrite_2.idl
-	dwrite_3.idl)
+add_idl_headers(d3d_idl_headers d3dcommon.idl)
 
-add_iid_library(dxgi_uuids dxgi.idl dxgi1_2.idl dxgi1_3.idl dxgi1_4.idl dxgi1_5.idl dxgi1_6.idl d3d12.idl dxgi_internal.idl)
-add_iid_library(d2d1_uuids d2d1.idl d2d1_1.idl d2d1_2.idl)
-add_iid_library(d3d10_uuids d3d10.idl d3d10_1.idl d3d10sdklayers.idl)
-add_iid_library(d3d10_1_uuids d3d10_1.idl)
-add_iid_library(d3d11_uuids d3d11.idl d3d11_1.idl d3d11_2.idl d3d11sdklayers.idl)
-add_iid_library(dwrite_uuids dwrite.idl dwrite_1.idl dwrite_2.idl dwrite_3.idl)	
-
+add_iid_library(adsiid iads.idl transact.idl)
 add_iid_library(wuguid wuapi.idl)
 add_iid_library(xml_uuids msxml2.idl)
-
-add_iid_library(activation_uuids activation.idl)
 
 generate_idl_iids(wincodec.idl)

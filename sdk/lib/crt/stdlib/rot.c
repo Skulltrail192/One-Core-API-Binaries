@@ -10,11 +10,18 @@
 
 #include <stdlib.h>
 
-#ifdef _MSC_VER
+#ifdef __clang__
+#define _rotl __function_rotl
+#define _rotr __function_rotr
+#define _lrotl __function_lrotl
+#define _lrotr __function_lrotr
+#elif defined(_MSC_VER)
 #pragma function(_rotr, _rotl, _rotr, _lrotl, _lrotr)
 #endif
 
 unsigned int _rotr( unsigned int value, int shift );
+unsigned long _lrotr(unsigned long value, int shift);
+
 /*
  * @implemented
  */
@@ -38,11 +45,10 @@ unsigned int _rotr( unsigned int value, int shift )
 	if ( shift < 0 )
 		return _rotl(value,-shift);
 
-	if ( shift > max_bits<<3 )
+	if ( shift > max_bits )
 		shift = shift % max_bits;
 	return (value >> shift) | (value <<  (max_bits-shift));
 }
-
 
 /*
  * @implemented

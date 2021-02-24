@@ -5,7 +5,9 @@
  * PURPOSE:     Systray shell service object
  * PROGRAMMERS: Robert Naumann
  *              David Quintana <gigaherz@gmail.com>
+ *              Shriraj Sawant a.k.a SR13 <sr.official@hotmail.com>
  */
+
 #pragma once
 
 extern const GUID CLSID_SysTray;
@@ -26,6 +28,7 @@ class CSysTray :
 
     // TODO: keep icon handlers here
 
+    DWORD dwServicesEnabled;
     HWND hwndSysTray;
 
     static DWORD WINAPI s_SysTrayThreadProc(PVOID param);
@@ -42,10 +45,15 @@ class CSysTray :
     HRESULT InitNetShell();
     HRESULT ShutdownNetShell();
 
+    VOID GetServicesEnabled();
+
 public:
-    HRESULT NotifyIcon(INT code, UINT uId, HICON hIcon, LPCWSTR szTip);
+    HRESULT NotifyIcon(INT code, UINT uId, HICON hIcon, LPCWSTR szTip, DWORD dwstate = 0);
 
     HWND GetHWnd() { return m_hWnd; }
+
+    VOID EnableService(DWORD dwServiceFlag, BOOL bEnable);
+    BOOL IsServiceEnabled(DWORD dwServiceFlag);
 
 protected:
     BOOL ProcessWindowMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT &lResult, DWORD dwMsgMapID = 0);

@@ -4,14 +4,16 @@
 #define MIN_COORD (INT_MIN / 16)
 #define MAX_COORD (INT_MAX / 16)
 
-#define IntLPtoDP(pdc, ppt, count) \
+#define IntLPtoDP(pdc, ppt, count) do { \
         DC_vUpdateWorldToDevice(pdc); \
-        DC_vXformWorldToDevice(pdc, count, (PPOINTL)(ppt), (PPOINTL)(ppt));
+        DC_vXformWorldToDevice(pdc, count, (PPOINTL)(ppt), (PPOINTL)(ppt)); \
+    } while (0)
 #define CoordLPtoDP(pdc, ppt) \
         DC_vXformWorldToDevice(pdc, 1,  (PPOINTL)(ppt), (PPOINTL)(ppt));
-#define IntDPtoLP(pdc, ppt, count) \
+#define IntDPtoLP(pdc, ppt, count) do { \
         DC_vUpdateDeviceToWorld(pdc); \
-        DC_vXformDeviceToWorld(pdc, count, (PPOINTL)(ppt), (PPOINTL)(ppt));
+        DC_vXformDeviceToWorld(pdc, count, (PPOINTL)(ppt), (PPOINTL)(ppt)); \
+    } while (0)
 #define CoordDPtoLP(pdc, ppt) \
         DC_vXformDeviceToWorld(pdc, 1, (PPOINTL)(ppt), (PPOINTL)(ppt));
 
@@ -124,13 +126,16 @@ VOID
 DC_vXformDeviceToWorld(
     IN PDC pdc,
     IN ULONG cNumPoints,
-    IN PPOINTL pptlDest,
+    OUT PPOINTL pptlDest,
     IN PPOINTL pptlSource)
 {
     XFORMOBJ xo;
     PMATRIX pmx;
 
     pmx = DC_pmxDeviceToWorld(pdc);
+    if (!MX_IsInvertible(pmx))
+        return;
+
     XFORMOBJ_vInit(&xo, pmx);
     XFORMOBJ_bApplyXform(&xo, XF_LTOL, cNumPoints, pptlDest, pptlSource);
 }
@@ -140,7 +145,7 @@ VOID
 DC_vXformWorldToDevice(
     IN PDC pdc,
     IN ULONG cNumPoints,
-    IN PPOINTL pptlDest,
+    OUT PPOINTL pptlDest,
     IN PPOINTL pptlSource)
 {
     XFORMOBJ xo;

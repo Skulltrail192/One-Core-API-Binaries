@@ -135,35 +135,22 @@ SamrConnect(IN PSAMPR_SERVER_NAME ServerName,
             OUT SAMPR_HANDLE *ServerHandle,
             IN ACCESS_MASK DesiredAccess)
 {
-    PSAM_DB_OBJECT ServerObject;
-    NTSTATUS Status;
+    SAMPR_REVISION_INFO InRevisionInfo, OutRevisionInfo;
+    ULONG OutVersion;
 
     TRACE("SamrConnect(%p %p %lx)\n",
           ServerName, ServerHandle, DesiredAccess);
 
-    RtlAcquireResourceShared(&SampResource,
-                             TRUE);
+    InRevisionInfo.V1.Revision = 0;
+    InRevisionInfo.V1.SupportedFeatures = 0;
 
-    /* Map generic access rights */
-    RtlMapGenericMask(&DesiredAccess,
-                      &ServerMapping);
-
-    /* Open the Server Object */
-    Status = SampOpenDbObject(NULL,
-                              NULL,
-                              L"SAM",
-                              0,
-                              SamDbServerObject,
-                              DesiredAccess,
-                              &ServerObject);
-    if (NT_SUCCESS(Status))
-        *ServerHandle = (SAMPR_HANDLE)ServerObject;
-
-    RtlReleaseResource(&SampResource);
-
-    TRACE("SamrConnect done (Status 0x%08lx)\n", Status);
-
-    return Status;
+    return SamrConnect5(ServerName,
+                        DesiredAccess,
+                        1,
+                        &InRevisionInfo,
+                        &OutVersion,
+                        &OutRevisionInfo,
+                        ServerHandle);
 }
 
 
@@ -351,7 +338,7 @@ SamrQuerySecurityObject(IN SAMPR_HANDLE ObjectHandle,
     ULONG ResultSdSize = 0;
     NTSTATUS Status;
 
-    TRACE("(%p %lx %p)\n",
+    TRACE("SamrQuerySecurityObject(%p %lx %p)\n",
           ObjectHandle, SecurityInformation, SecurityDescriptor);
 
     *SecurityDescriptor = NULL;
@@ -480,7 +467,8 @@ SamrShutdownSamServer(IN SAMPR_HANDLE ServerHandle)
     PSAM_DB_OBJECT ServerObject;
     NTSTATUS Status;
 
-    TRACE("(%p)\n", ServerHandle);
+    TRACE("SamrShutdownSamServer(%p)\n",
+          ServerHandle);
 
     RtlAcquireResourceShared(&SampResource,
                              TRUE);
@@ -2302,7 +2290,10 @@ SamrEnumerateGroupsInDomain(IN SAMPR_HANDLE DomainHandle,
 
     EnumBuffer->EntriesRead = EnumCount;
     if (EnumCount == 0)
+    {
+        Status = STATUS_NO_MORE_ENTRIES;
         goto done;
+    }
 
     EnumBuffer->Buffer = midl_user_allocate(EnumCount * sizeof(SAMPR_RID_ENUMERATION));
     if (EnumBuffer->Buffer == NULL)
@@ -2393,7 +2384,7 @@ done:
     SampRegCloseKey(&NamesKeyHandle);
     SampRegCloseKey(&GroupsKeyHandle);
 
-    if ((Status == STATUS_SUCCESS) && (MoreEntries == TRUE))
+    if ((Status == STATUS_SUCCESS) && (MoreEntries != FALSE))
         Status = STATUS_MORE_ENTRIES;
 
     RtlReleaseResource(&SampResource);
@@ -2512,10 +2503,10 @@ SamrCreateUserInDomain(IN SAMPR_HANDLE DomainHandle,
 
     /* Store the fixed domain attributes */
     Status = SampSetObjectAttribute(DomainObject,
-                           L"F",
-                           REG_BINARY,
-                           &FixedDomainData,
-                           ulSize);
+                                    L"F",
+                                    REG_BINARY,
+                                    &FixedDomainData,
+                                    ulSize);
     if (!NT_SUCCESS(Status))
     {
         TRACE("failed with status 0x%08lx\n", Status);
@@ -2557,8 +2548,7 @@ SamrCreateUserInDomain(IN SAMPR_HANDLE DomainHandle,
     FixedUserData.LastLogon.QuadPart = 0;
     FixedUserData.LastLogoff.QuadPart = 0;
     FixedUserData.PasswordLastSet.QuadPart = 0;
-    FixedUserData.AccountExpires.LowPart = MAXULONG;
-    FixedUserData.AccountExpires.HighPart = MAXLONG;
+    FixedUserData.AccountExpires.QuadPart = MAXLONGLONG;
     FixedUserData.LastBadPasswordTime.QuadPart = 0;
     FixedUserData.UserId = ulRid;
     FixedUserData.PrimaryGroupId = DOMAIN_GROUP_RID_USERS;
@@ -2913,7 +2903,10 @@ SamrEnumerateUsersInDomain(IN SAMPR_HANDLE DomainHandle,
 
     EnumBuffer->EntriesRead = EnumCount;
     if (EnumCount == 0)
+    {
+        Status = STATUS_NO_MORE_ENTRIES;
         goto done;
+    }
 
     EnumBuffer->Buffer = midl_user_allocate(EnumCount * sizeof(SAMPR_RID_ENUMERATION));
     if (EnumBuffer->Buffer == NULL)
@@ -3004,7 +2997,7 @@ done:
     SampRegCloseKey(&NamesKeyHandle);
     SampRegCloseKey(&UsersKeyHandle);
 
-    if ((Status == STATUS_SUCCESS) && (MoreEntries == TRUE))
+    if ((Status == STATUS_SUCCESS) && (MoreEntries != FALSE))
         Status = STATUS_MORE_ENTRIES;
 
     RtlReleaseResource(&SampResource);
@@ -3294,7 +3287,10 @@ SamrEnumerateAliasesInDomain(IN SAMPR_HANDLE DomainHandle,
 
     EnumBuffer->EntriesRead = EnumCount;
     if (EnumCount == 0)
+    {
+        Status = STATUS_NO_MORE_ENTRIES;
         goto done;
+    }
 
     EnumBuffer->Buffer = midl_user_allocate(EnumCount * sizeof(SAMPR_RID_ENUMERATION));
     if (EnumBuffer->Buffer == NULL)
@@ -3385,7 +3381,7 @@ done:
     SampRegCloseKey(&NamesKeyHandle);
     SampRegCloseKey(&AliasesKeyHandle);
 
-    if ((Status == STATUS_SUCCESS) && (MoreEntries == TRUE))
+    if ((Status == STATUS_SUCCESS) && (MoreEntries != FALSE))
         Status = STATUS_MORE_ENTRIES;
 
     RtlReleaseResource(&SampResource);
@@ -3537,6 +3533,9 @@ TRACE("Open %S\n", MemberSidString);
 
             SampRegCloseKey(&MemberKeyHandle);
         }
+
+        if (Status == STATUS_OBJECT_NAME_NOT_FOUND)
+            Status = STATUS_SUCCESS;
 
         LocalFree(MemberSidString);
     }
@@ -4162,7 +4161,7 @@ SampQueryGroupGeneral(PSAM_DB_OBJECT GroupObject,
     }
 
     Status = SampGetObjectAttributeString(GroupObject,
-                                          L"Description",
+                                          L"AdminComment",
                                           &InfoBuffer->General.AdminComment);
     if (!NT_SUCCESS(Status))
     {
@@ -4177,7 +4176,10 @@ SampQueryGroupGeneral(PSAM_DB_OBJECT GroupObject,
                                     (PVOID)&FixedData,
                                     &Length);
     if (!NT_SUCCESS(Status))
+    {
+        TRACE("Status 0x%08lx\n", Status);
         goto done;
+    }
 
     InfoBuffer->General.Attributes = FixedData.Attributes;
 
@@ -4187,12 +4189,20 @@ SampQueryGroupGeneral(PSAM_DB_OBJECT GroupObject,
                                     NULL,
                                     &MembersLength);
     if (!NT_SUCCESS(Status) && Status != STATUS_OBJECT_NAME_NOT_FOUND)
+    {
+        TRACE("Status 0x%08lx\n", Status);
         goto done;
+    }
 
     if (Status == STATUS_OBJECT_NAME_NOT_FOUND)
+    {
         InfoBuffer->General.MemberCount = 0;
+        Status = STATUS_SUCCESS;
+    }
     else
+    {
         InfoBuffer->General.MemberCount = MembersLength / sizeof(ULONG);
+    }
 
     *Buffer = InfoBuffer;
 
@@ -4277,7 +4287,10 @@ SampQueryGroupAttribute(PSAM_DB_OBJECT GroupObject,
                                     (PVOID)&FixedData,
                                     &Length);
     if (!NT_SUCCESS(Status))
+    {
+        TRACE("Status 0x%08lx\n", Status);
         goto done;
+    }
 
     InfoBuffer->Attribute.Attributes = FixedData.Attributes;
 
@@ -4310,7 +4323,7 @@ SampQueryGroupAdminComment(PSAM_DB_OBJECT GroupObject,
         return STATUS_INSUFFICIENT_RESOURCES;
 
     Status = SampGetObjectAttributeString(GroupObject,
-                                          L"Description",
+                                          L"AdminComment",
                                           &InfoBuffer->AdminComment.AdminComment);
     if (!NT_SUCCESS(Status))
     {
@@ -4538,7 +4551,7 @@ SamrSetInformationGroup(IN SAMPR_HANDLE GroupHandle,
 
         case GroupAdminCommentInformation:
             Status = SampSetObjectAttributeString(GroupObject,
-                                                  L"Description",
+                                                  L"AdminComment",
                                                   &Buffer->AdminComment.AdminComment);
             break;
 
@@ -4565,7 +4578,7 @@ SamrAddMemberToGroup(IN SAMPR_HANDLE GroupHandle,
     PSAM_DB_OBJECT UserObject = NULL;
     NTSTATUS Status;
 
-    TRACE("(%p %lu %lx)\n",
+    TRACE("SamrAddMemberToGroup(%p %lu %lx)\n",
           GroupHandle, MemberId, Attributes);
 
     RtlAcquireResourceExclusive(&SampResource,
@@ -4627,7 +4640,7 @@ SamrDeleteGroup(IN OUT SAMPR_HANDLE *GroupHandle)
     ULONG Length = 0;
     NTSTATUS Status;
 
-    TRACE("(%p)\n", GroupHandle);
+    TRACE("SamrDeleteGroup(%p)\n", GroupHandle);
 
     RtlAcquireResourceExclusive(&SampResource,
                                 TRUE);
@@ -4696,7 +4709,7 @@ SamrRemoveMemberFromGroup(IN SAMPR_HANDLE GroupHandle,
     PSAM_DB_OBJECT UserObject = NULL;
     NTSTATUS Status;
 
-    TRACE("(%p %lu)\n",
+    TRACE("SamrRemoveMemberFromGroup(%p %lu)\n",
           GroupHandle, MemberId);
 
     RtlAcquireResourceExclusive(&SampResource,
@@ -4759,6 +4772,9 @@ SamrGetMembersInGroup(IN SAMPR_HANDLE GroupHandle,
     ULONG Length = 0;
     ULONG i;
     NTSTATUS Status;
+
+    TRACE("SamrGetMembersInGroup(%p %p)\n",
+          GroupHandle, Members);
 
     RtlAcquireResourceShared(&SampResource,
                              TRUE);
@@ -4868,6 +4884,9 @@ SamrSetMemberAttributesOfGroup(IN SAMPR_HANDLE GroupHandle,
 {
     PSAM_DB_OBJECT GroupObject;
     NTSTATUS Status;
+
+    TRACE("SamrSetMemberAttributesOfGroup(%p %lu %lx)\n",
+          GroupHandle, MemberId, Attributes);
 
     RtlAcquireResourceExclusive(&SampResource,
                                 TRUE);
@@ -5308,6 +5327,8 @@ SamrDeleteAlias(IN OUT SAMPR_HANDLE *AliasHandle)
     PSAM_DB_OBJECT AliasObject;
     NTSTATUS Status;
 
+    TRACE("SamrDeleteAlias(%p)\n", AliasHandle);
+
     RtlAcquireResourceExclusive(&SampResource,
                                 TRUE);
 
@@ -5365,7 +5386,8 @@ SamrAddMemberToAlias(IN SAMPR_HANDLE AliasHandle,
     PSAM_DB_OBJECT AliasObject;
     NTSTATUS Status;
 
-    TRACE("(%p %p)\n", AliasHandle, MemberId);
+    TRACE("SamrAddMemberToAlias(%p %p)\n",
+          AliasHandle, MemberId);
 
     RtlAcquireResourceExclusive(&SampResource,
                                 TRUE);
@@ -5404,7 +5426,8 @@ SamrRemoveMemberFromAlias(IN SAMPR_HANDLE AliasHandle,
     PSAM_DB_OBJECT AliasObject;
     NTSTATUS Status;
 
-    TRACE("(%p %p)\n", AliasHandle, MemberId);
+    TRACE("SamrRemoveMemberFromAlias(%p %p)\n",
+          AliasHandle, MemberId);
 
     RtlAcquireResourceExclusive(&SampResource,
                                 TRUE);
@@ -5564,7 +5587,7 @@ SamrDeleteUser(IN OUT SAMPR_HANDLE *UserHandle)
     PSAM_DB_OBJECT UserObject;
     NTSTATUS Status;
 
-    TRACE("(%p)\n", UserHandle);
+    TRACE("SamrDeleteUser(%p)\n", UserHandle);
 
     RtlAcquireResourceExclusive(&SampResource,
                                 TRUE);
@@ -6141,7 +6164,7 @@ SampQueryUserLogonHours(PSAM_DB_OBJECT UserObject,
     }
 
     Status = SampGetLogonHoursAttribute(UserObject,
-                                       &InfoBuffer->LogonHours.LogonHours);
+                                        &InfoBuffer->LogonHours.LogonHours);
     if (!NT_SUCCESS(Status))
     {
         TRACE("SampGetLogonHoursAttribute failed (Status 0x%08lx)\n", Status);
@@ -6736,6 +6759,54 @@ done:
 }
 
 
+static
+NTSTATUS
+SampQueryUserInternal2(PSAM_DB_OBJECT UserObject,
+                       PSAMPR_USER_INFO_BUFFER *Buffer)
+{
+    PSAMPR_USER_INFO_BUFFER InfoBuffer = NULL;
+    SAM_USER_FIXED_DATA FixedData;
+    ULONG Length = 0;
+    NTSTATUS Status;
+
+    *Buffer = NULL;
+
+    InfoBuffer = midl_user_allocate(sizeof(SAMPR_USER_INFO_BUFFER));
+    if (InfoBuffer == NULL)
+        return STATUS_INSUFFICIENT_RESOURCES;
+
+    Length = sizeof(SAM_USER_FIXED_DATA);
+    Status = SampGetObjectAttribute(UserObject,
+                                    L"F",
+                                    NULL,
+                                    (PVOID)&FixedData,
+                                    &Length);
+    if (!NT_SUCCESS(Status))
+        goto done;
+
+    InfoBuffer->Internal2.Flags = 0;
+    InfoBuffer->Internal2.LastLogon.LowPart = FixedData.LastLogon.LowPart;
+    InfoBuffer->Internal2.LastLogon.HighPart = FixedData.LastLogon.HighPart;
+    InfoBuffer->Internal2.LastLogoff.LowPart = FixedData.LastLogoff.LowPart;
+    InfoBuffer->Internal2.LastLogoff.HighPart = FixedData.LastLogoff.HighPart;
+    InfoBuffer->Internal2.BadPasswordCount = FixedData.BadPasswordCount;
+    InfoBuffer->Internal2.LogonCount = FixedData.LogonCount;
+
+    *Buffer = InfoBuffer;
+
+done:
+    if (!NT_SUCCESS(Status))
+    {
+        if (InfoBuffer != NULL)
+        {
+            midl_user_free(InfoBuffer);
+        }
+    }
+
+    return Status;
+}
+
+
 static NTSTATUS
 SampQueryUserParameters(PSAM_DB_OBJECT UserObject,
                         PSAMPR_USER_INFO_BUFFER *Buffer)
@@ -6995,7 +7066,7 @@ SampQueryUserAll(PSAM_DB_OBJECT UserObject,
     if (InfoBuffer->All.WhichFields & USER_ALL_LOGONHOURS)
     {
         Status = SampGetLogonHoursAttribute(UserObject,
-                                           &InfoBuffer->All.LogonHours);
+                                            &InfoBuffer->All.LogonHours);
         if (!NT_SUCCESS(Status))
         {
             TRACE("Status 0x%08lx\n", Status);
@@ -7313,6 +7384,7 @@ SamrQueryInformationUser(IN SAMPR_HANDLE UserHandle,
             break;
 
         case UserInternal1Information:
+        case UserInternal2Information:
         case UserAllInformation:
             DesiredAccess = 0;
             break;
@@ -7418,6 +7490,11 @@ SamrQueryInformationUser(IN SAMPR_HANDLE UserHandle,
 
         case UserInternal1Information:
             Status = SampQueryUserInternal1(UserObject,
+                                            Buffer);
+            break;
+
+        case UserInternal2Information:
+            Status = SampQueryUserInternal2(UserObject,
                                             Buffer);
             break;
 
@@ -7755,6 +7832,59 @@ done:
 
 
 static NTSTATUS
+SampSetUserInternal2(PSAM_DB_OBJECT UserObject,
+                     PSAMPR_USER_INFO_BUFFER Buffer)
+{
+    SAM_USER_FIXED_DATA FixedData;
+    ULONG Length = 0;
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    /* Get the fixed user attributes */
+    Length = sizeof(SAM_USER_FIXED_DATA);
+    Status = SampGetObjectAttribute(UserObject,
+                                    L"F",
+                                    NULL,
+                                    (PVOID)&FixedData,
+                                    &Length);
+    if (!NT_SUCCESS(Status))
+        goto done;
+
+    if ((Buffer->Internal2.Flags & USER_LOGON_SUCCESS) &&
+        ((Buffer->Internal2.Flags & ~USER_LOGON_SUCCESS) == 0))
+    {
+        /* Update the LastLogon time */
+        Status = NtQuerySystemTime(&FixedData.LastLogon);
+        if (!NT_SUCCESS(Status))
+            goto done;
+
+        FixedData.LogonCount++;
+        FixedData.BadPasswordCount = 0;
+    }
+
+    if ((Buffer->Internal2.Flags & USER_LOGON_BAD_PASSWORD) &&
+        ((Buffer->Internal2.Flags & ~USER_LOGON_BAD_PASSWORD) == 0))
+    {
+        /* Update the LastBadPasswordTime */
+        Status = NtQuerySystemTime(&FixedData.LastBadPasswordTime);
+        if (!NT_SUCCESS(Status))
+            goto done;
+
+        FixedData.BadPasswordCount++;
+    }
+
+    /* Set the fixed user attributes */
+    Status = SampSetObjectAttribute(UserObject,
+                                    L"F",
+                                    REG_BINARY,
+                                    &FixedData,
+                                    Length);
+
+done:
+    return Status;
+}
+
+
+static NTSTATUS
 SampSetUserAll(PSAM_DB_OBJECT UserObject,
                PSAMPR_USER_INFO_BUFFER Buffer)
 {
@@ -7976,7 +8106,7 @@ SampSetUserAll(PSAM_DB_OBJECT UserObject,
                                         Buffer->All.SecurityDescriptor.Length);
     }
 
-    if (WriteFixedData == TRUE)
+    if (WriteFixedData != FALSE)
     {
         Status = SampSetObjectAttribute(UserObject,
                                         L"F",
@@ -8039,6 +8169,7 @@ SamrSetInformationUser(IN SAMPR_HANDLE UserHandle,
             break;
 
         case UserAllInformation:
+        case UserInternal2Information:
             DesiredAccess = 0; /* FIXME */
             break;
 
@@ -8164,6 +8295,11 @@ SamrSetInformationUser(IN SAMPR_HANDLE UserHandle,
                                           Buffer);
             break;
 
+        case UserInternal2Information:
+            Status = SampSetUserInternal2(UserObject,
+                                          Buffer);
+            break;
+
         case UserParametersInformation:
             Status = SampSetObjectAttributeString(UserObject,
                                                   L"Parameters",
@@ -8227,7 +8363,7 @@ SamrChangePasswordUser(IN SAMPR_HANDLE UserHandle,
     DBG_UNREFERENCED_LOCAL_VARIABLE(StoredNtPresent);
     DBG_UNREFERENCED_LOCAL_VARIABLE(StoredLmEmpty);
 
-    TRACE("(%p %u %p %p %u %p %p %u %p %u %p)\n",
+    TRACE("SamrChangePasswordUser(%p %u %p %p %u %p %p %u %p %u %p)\n",
           UserHandle, LmPresent, OldLmEncryptedWithNewLm, NewLmEncryptedWithOldLm,
           NtPresent, OldNtEncryptedWithNewNt, NewNtEncryptedWithOldNt, NtCrossEncryptionPresent,
           NewNtEncryptedWithNewLm, LmCrossEncryptionPresent, NewLmEncryptedWithNewNt);
@@ -8306,7 +8442,7 @@ SamrChangePasswordUser(IN SAMPR_HANDLE UserHandle,
     }
 
     /* Check if we can change the password at this time */
-    if ((StoredNtEmpty == FALSE) || (StoredNtEmpty == FALSE))
+    if ((StoredLmEmpty == FALSE) || (StoredNtEmpty == FALSE))
     {
         /* Get fixed domain data */
         Length = sizeof(SAM_DOMAIN_FIXED_DATA);
@@ -8635,7 +8771,7 @@ SamrGetUserDomainPasswordInformation(IN SAMPR_HANDLE UserHandle,
     ULONG Length = 0;
     NTSTATUS Status;
 
-    TRACE("(%p %p)\n",
+    TRACE("SamrGetUserDomainPasswordInformation(%p %p)\n",
           UserHandle, PasswordInformation);
 
     RtlAcquireResourceShared(&SampResource,
@@ -8720,7 +8856,7 @@ SamrRemoveMemberFromForeignDomain(IN SAMPR_HANDLE DomainHandle,
     ULONG Rid = 0;
     NTSTATUS Status;
 
-    TRACE("(%p %p)\n",
+    TRACE("SamrRemoveMemberFromForeignDomain(%p %p)\n",
           DomainHandle, MemberSid);
 
     RtlAcquireResourceExclusive(&SampResource,
@@ -8776,7 +8912,8 @@ SamrQueryInformationDomain2(IN SAMPR_HANDLE DomainHandle,
                             IN DOMAIN_INFORMATION_CLASS DomainInformationClass,
                             OUT PSAMPR_DOMAIN_INFO_BUFFER *Buffer)
 {
-    TRACE("(%p %lu %p)\n", DomainHandle, DomainInformationClass, Buffer);
+    TRACE("SamrQueryInformationDomain2(%p %lu %p)\n",
+          DomainHandle, DomainInformationClass, Buffer);
 
     return SamrQueryInformationDomain(DomainHandle,
                                       DomainInformationClass,
@@ -8791,7 +8928,8 @@ SamrQueryInformationUser2(IN SAMPR_HANDLE UserHandle,
                           IN USER_INFORMATION_CLASS UserInformationClass,
                           OUT PSAMPR_USER_INFO_BUFFER *Buffer)
 {
-    TRACE("(%p %lu %p)\n", UserHandle, UserInformationClass, Buffer);
+    TRACE("SamrQueryInformationUser2(%p %lu %p)\n",
+          UserHandle, UserInformationClass, Buffer);
 
     return SamrQueryInformationUser(UserHandle,
                                     UserInformationClass,
@@ -8811,7 +8949,7 @@ SamrQueryDisplayInformation2(IN SAMPR_HANDLE DomainHandle,
                              OUT unsigned long *TotalReturned,
                              OUT PSAMPR_DISPLAY_INFO_BUFFER Buffer)
 {
-    TRACE("%p %lu %lu %lu %lu %p %p %p\n",
+    TRACE("SamrQueryDisplayInformation2(%p %lu %lu %lu %lu %p %p %p)\n",
           DomainHandle, DisplayInformationClass, Index,
           EntryCount, PreferredMaximumLength, TotalAvailable,
           TotalReturned, Buffer);
@@ -8835,8 +8973,8 @@ SamrGetDisplayEnumerationIndex2(IN SAMPR_HANDLE DomainHandle,
                                 IN PRPC_UNICODE_STRING Prefix,
                                 OUT unsigned long *Index)
 {
-    TRACE("(%p %lu %p %p)\n",
-           DomainHandle, DisplayInformationClass, Prefix, Index);
+    TRACE("SamrGetDisplayEnumerationIndex2(%p %lu %p %p)\n",
+          DomainHandle, DisplayInformationClass, Prefix, Index);
 
     return SamrGetDisplayEnumerationIndex(DomainHandle,
                                           DisplayInformationClass,
@@ -9272,7 +9410,7 @@ SamrQueryDisplayInformation3(IN SAMPR_HANDLE DomainHandle,
                              OUT unsigned long *TotalReturned,
                              OUT PSAMPR_DISPLAY_INFO_BUFFER Buffer)
 {
-    TRACE("%p %lu %lu %lu %lu %p %p %p\n",
+    TRACE("SamrQueryDisplayInformation3(%p %lu %lu %lu %lu %p %p %p)\n",
           DomainHandle, DisplayInformationClass, Index,
           EntryCount, PreferredMaximumLength, TotalAvailable,
           TotalReturned, Buffer);
@@ -9387,7 +9525,8 @@ SamrGetDomainPasswordInformation(IN handle_t BindingHandle,
     ULONG Length;
     NTSTATUS Status;
 
-    TRACE("(%p %p %p)\n", BindingHandle, Unused, PasswordInformation);
+    TRACE("SamrGetDomainPasswordInformation(%p %p %p)\n",
+          BindingHandle, Unused, PasswordInformation);
 
     Status = SamrConnect(NULL,
                          &ServerHandle,
@@ -9444,11 +9583,22 @@ SamrConnect2(IN PSAMPR_SERVER_NAME ServerName,
              OUT SAMPR_HANDLE *ServerHandle,
              IN ACCESS_MASK DesiredAccess)
 {
-    TRACE("(%p %p %lx)\n", ServerName, ServerHandle, DesiredAccess);
+    SAMPR_REVISION_INFO InRevisionInfo, OutRevisionInfo;
+    ULONG OutVersion;
 
-    return SamrConnect(ServerName,
-                       ServerHandle,
-                       DesiredAccess);
+    TRACE("SamrConnect2(%p %p %lx)\n",
+          ServerName, ServerHandle, DesiredAccess);
+
+    InRevisionInfo.V1.Revision = 1;
+    InRevisionInfo.V1.SupportedFeatures = 0;
+
+    return SamrConnect5(ServerName,
+                        DesiredAccess,
+                        1,
+                        &InRevisionInfo,
+                        &OutVersion,
+                        &OutRevisionInfo,
+                        ServerHandle);
 }
 
 
@@ -9459,7 +9609,8 @@ SamrSetInformationUser2(IN SAMPR_HANDLE UserHandle,
                         IN USER_INFORMATION_CLASS UserInformationClass,
                         IN PSAMPR_USER_INFO_BUFFER Buffer)
 {
-    TRACE("(%p %lu %p)\n", UserHandle, UserInformationClass, Buffer);
+    TRACE("SamrSetInformationUser2(%p %lu %p)\n",
+          UserHandle, UserInformationClass, Buffer);
 
     return SamrSetInformationUser(UserHandle,
                                   UserInformationClass,
@@ -9494,6 +9645,7 @@ SamrConnect3(IN handle_t BindingHandle) /* FIXME */
     return STATUS_NOT_IMPLEMENTED;
 }
 
+
 /* Function 62 */
 NTSTATUS
 NTAPI
@@ -9502,9 +9654,24 @@ SamrConnect4(IN PSAMPR_SERVER_NAME ServerName,
              IN unsigned long ClientRevision,
              IN ACCESS_MASK DesiredAccess)
 {
-    UNIMPLEMENTED;
-    return STATUS_NOT_IMPLEMENTED;
+    SAMPR_REVISION_INFO InRevisionInfo, OutRevisionInfo;
+    ULONG OutVersion;
+
+    TRACE("SamrConnect4(%p %p %lu 0x%lx)\n",
+          ServerName, ServerHandle, ClientRevision, DesiredAccess);
+
+    InRevisionInfo.V1.Revision = 2;
+    InRevisionInfo.V1.SupportedFeatures = 0;
+
+    return SamrConnect5(ServerName,
+                        DesiredAccess,
+                        1,
+                        &InRevisionInfo,
+                        &OutVersion,
+                        &OutRevisionInfo,
+                        ServerHandle);
 }
+
 
 /* Function 63 */
 NTSTATUS
@@ -9514,6 +9681,7 @@ SamrUnicodeChangePasswordUser3(IN handle_t BindingHandle) /* FIXME */
     UNIMPLEMENTED;
     return STATUS_NOT_IMPLEMENTED;
 }
+
 
 /* Function 64 */
 NTSTATUS
@@ -9526,9 +9694,48 @@ SamrConnect5(IN PSAMPR_SERVER_NAME ServerName,
              OUT SAMPR_REVISION_INFO *OutRevisionInfo,
              OUT SAMPR_HANDLE *ServerHandle)
 {
-    UNIMPLEMENTED;
-    return STATUS_NOT_IMPLEMENTED;
+    PSAM_DB_OBJECT ServerObject;
+    NTSTATUS Status;
+
+    TRACE("SamrConnect5(%p 0x%lx %lu %p %p %p %p)\n",
+          ServerName, DesiredAccess, InVersion, InRevisionInfo,
+          OutVersion, OutRevisionInfo, ServerHandle);
+
+    if (InVersion != 1)
+        return STATUS_NOT_SUPPORTED;
+
+    RtlAcquireResourceShared(&SampResource,
+                             TRUE);
+
+    /* Map generic access rights */
+    RtlMapGenericMask(&DesiredAccess,
+                      &ServerMapping);
+
+    /* Open the Server Object */
+    Status = SampOpenDbObject(NULL,
+                              NULL,
+                              L"SAM",
+                              0,
+                              SamDbServerObject,
+                              DesiredAccess,
+                              &ServerObject);
+    if (NT_SUCCESS(Status))
+    {
+        *OutVersion = 1;
+
+        OutRevisionInfo->V1.Revision = 3;
+        OutRevisionInfo->V1.SupportedFeatures = 0;
+
+        *ServerHandle = (SAMPR_HANDLE)ServerObject;
+    }
+
+    RtlReleaseResource(&SampResource);
+
+    TRACE("SamrConnect5 done (Status 0x%08lx)\n", Status);
+
+    return Status;
 }
+
 
 /* Function 65 */
 NTSTATUS

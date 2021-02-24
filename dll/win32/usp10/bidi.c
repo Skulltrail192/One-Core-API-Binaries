@@ -41,13 +41,21 @@
  * has been modified.
  */
 
-#include <windef.h>
-
-#include <wine/list.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winnls.h"
+#include "usp10.h"
+#include "wine/debug.h"
+#include "wine/heap.h"
+#include "wine/list.h"
 
 #include "usp10_internal.h"
 
 extern const unsigned short bidi_bracket_table[] DECLSPEC_HIDDEN;
+extern const unsigned short bidi_direction_table[] DECLSPEC_HIDDEN;
 
 WINE_DEFAULT_DEBUG_CHANNEL(bidi);
 
@@ -152,56 +160,14 @@ static inline void dump_types(const char* header, WORD *types, int start, int en
 /* Convert the libwine information to the direction enum */
 static void classify(const WCHAR *string, WORD *chartype, DWORD count, const SCRIPT_CONTROL *c)
 {
-    static const enum directions dir_map[16] =
-    {
-        L,  /* unassigned defaults to L */
-        L,
-        R,
-        EN,
-        ES,
-        ET,
-        AN,
-        CS,
-        B,
-        S,
-        WS,
-        ON,
-        AL,
-        NSM,
-        BN,
-        PDF  /* also LRE, LRO, RLE, RLO */
-    };
-
     unsigned i;
 
     for (i = 0; i < count; ++i)
     {
-        chartype[i] = dir_map[get_char_typeW(string[i]) >> 12];
-        switch (chartype[i])
+        chartype[i] = get_table_entry( bidi_direction_table, string[i] );
+        if (c->fLegacyBidiClass && chartype[i] == ES)
         {
-        case ES:
-            if (!c->fLegacyBidiClass) break;
-            switch (string[i])
-            {
-            case '-':
-            case '+': chartype[i] = NI; break;
-            case '/': chartype[i] = CS; break;
-            }
-            break;
-        case PDF:
-            switch (string[i])
-            {
-            case 0x202A: chartype[i] = LRE; break;
-            case 0x202B: chartype[i] = RLE; break;
-            case 0x202C: chartype[i] = PDF; break;
-            case 0x202D: chartype[i] = LRO; break;
-            case 0x202E: chartype[i] = RLO; break;
-            case 0x2066: chartype[i] = LRI; break;
-            case 0x2067: chartype[i] = RLI; break;
-            case 0x2068: chartype[i] = FSI; break;
-            case 0x2069: chartype[i] = PDI; break;
-            }
-            break;
+            if (string[i] == '+' || string[i] == '-') chartype[i] = NI;
         }
     }
 }
@@ -672,7 +638,7 @@ typedef struct tagBracketPair
     int end;
 } BracketPair;
 
-static int compr(const void *a, const void* b)
+static int __cdecl compr(const void *a, const void* b)
 {
     return ((BracketPair*)a)->start - ((BracketPair*)b)->start;
 }
@@ -682,8 +648,9 @@ static BracketPair *computeBracketPairs(IsolatedRun *iso_run)
     WCHAR *open_stack;
     int *stack_index;
     int stack_top = iso_run->length;
+    unsigned int pair_count = 0;
     BracketPair *out = NULL;
-    int pair_count = 0;
+    SIZE_T out_size = 0;
     int i;
 
     open_stack = heap_alloc(iso_run->length * sizeof(*open_stack));
@@ -692,55 +659,55 @@ static BracketPair *computeBracketPairs(IsolatedRun *iso_run)
     for (i = 0; i < iso_run->length; i++)
     {
         unsigned short ubv = get_table_entry(bidi_bracket_table, iso_run->item[i].ch);
-        if (ubv)
-        {
-            if (!out)
-            {
-                out = heap_alloc(sizeof(*out));
-                out[0].start = -1;
-            }
 
-            if ((ubv >> 8) == 0)
+        if (!ubv)
+            continue;
+
+        if ((ubv >> 8) == 0)
+        {
+            --stack_top;
+            open_stack[stack_top] = iso_run->item[i].ch + (signed char)(ubv & 0xff);
+            /* Deal with canonical equivalent U+2329/232A and U+3008/3009. */
+            if (open_stack[stack_top] == 0x232a)
+                open_stack[stack_top] = 0x3009;
+            stack_index[stack_top] = i;
+        }
+        else if ((ubv >> 8) == 1)
+        {
+            unsigned int j;
+
+            for (j = stack_top; j < iso_run->length; ++j)
             {
-                stack_top --;
-                open_stack[stack_top] = iso_run->item[i].ch + (signed char)(ubv & 0xff);
-                /* deal with canonical equivalent U+2329/232A and U+3008/3009 */
-                if (open_stack[stack_top] == 0x232A)
-                    open_stack[stack_top] = 0x3009;
-                stack_index[stack_top] = i;
-            }
-            else if ((ubv >> 8) == 1)
-            {
-                int j;
-                if (stack_top == iso_run->length) continue;
-                for (j = stack_top; j < iso_run->length; j++)
-                {
-                    WCHAR c = iso_run->item[i].ch;
-                    if (c == 0x232A) c = 0x3009;
-                    if (c == open_stack[j])
-                    {
-                        out[pair_count].start = stack_index[j];
-                        out[pair_count].end = i;
-                        pair_count++;
-                        out = HeapReAlloc(GetProcessHeap(), 0, out, sizeof(BracketPair) * (pair_count+1));
-                        out[pair_count].start = -1;
-                        stack_top = j+1;
-                        break;
-                    }
-                }
+                WCHAR c = iso_run->item[i].ch;
+
+                if (c == 0x232a)
+                    c = 0x3009;
+
+                if (c != open_stack[j])
+                    continue;
+
+                if (!(usp10_array_reserve((void **)&out, &out_size, pair_count + 2, sizeof(*out))))
+                    ERR("Failed to grow output array.\n");
+
+                out[pair_count].start = stack_index[j];
+                out[pair_count].end = i;
+                ++pair_count;
+
+                out[pair_count].start = -1;
+                stack_top = j + 1;
+                break;
             }
         }
     }
-    if (pair_count == 0)
-    {
-        heap_free(out);
-        out = NULL;
-    }
-    else if (pair_count > 1)
-        qsort(out, pair_count, sizeof(BracketPair), compr);
 
     heap_free(open_stack);
     heap_free(stack_index);
+
+    if (!pair_count)
+        return NULL;
+
+    qsort(out, pair_count, sizeof(*out), compr);
+
     return out;
 }
 
@@ -987,7 +954,7 @@ static void computeIsolatingRunsSet(unsigned baselevel, WORD *pcls, const WORD *
     Run *runs;
     IsolatedRun *current_isolated;
 
-    if (!(runs = heap_alloc(uCount * sizeof(*runs))))
+    if (!(runs = heap_calloc(uCount, sizeof(*runs))))
         return;
 
     list_init(set);

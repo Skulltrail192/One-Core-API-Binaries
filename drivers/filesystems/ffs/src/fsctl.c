@@ -159,13 +159,13 @@ FFSLoadDiskLabel(
 
 	if (Disklabel->d_magic == DISKMAGIC)
 	{
-		KdPrint(("FFSLoadDiskLabel() Disklabel magic ok\n"));
+		FFSPrint((DBG_INFO, "FFSLoadDiskLabel() Disklabel magic ok\n"));
 
 		Status = STATUS_SUCCESS;
 	}
 	else
 	{
-			KdPrint(("FFSLoadDiskLabel() No BSD disklabel found, trying to find BSD file system on \"normal\" partition.\n"));
+			FFSPrint((DBG_INFO, "FFSLoadDiskLabel() No BSD disklabel found, trying to find BSD file system on \"normal\" partition.\n"));
 
 			if ((FFSSb = FFSLoadSuper(Vcb, FALSE, FSOffset + SBLOCK_UFS1)) &&
 				(FFSSb->fs_magic == FS_UFS1_MAGIC))
@@ -183,6 +183,9 @@ FFSLoadDiskLabel(
                 Vcb->FSOffset[0] = 0;
                 Vcb->PartitionNumber = 0;
 				Vcb->ffs_super_block = FFSSb;
+#ifdef __REACTOS__
+                ExFreePoolWithTag(Disklabel, FFS_POOL_TAG);
+#endif
 				Status = STATUS_SUCCESS;
                 return Status;
 			}
@@ -202,12 +205,18 @@ FFSLoadDiskLabel(
                 Vcb->FSOffset[0] = 0;
                 Vcb->PartitionNumber = 0;
 				Vcb->ffs_super_block = FFSSb;
+#ifdef __REACTOS__
+                ExFreePoolWithTag(Disklabel, FFS_POOL_TAG);
+#endif
 				Status = STATUS_SUCCESS;
                 return Status;
 			}
             else
             {
-                KdPrint(("FFSLoadDiskLabel() No BSD file system was found on the \"normal\" partition.\n"));
+                FFSPrint((DBG_INFO, "FFSLoadDiskLabel() No BSD file system was found on the \"normal\" partition.\n"));
+#ifdef __REACTOS__
+                ExFreePoolWithTag(Disklabel, FFS_POOL_TAG);
+#endif
                 Status = STATUS_UNRECOGNIZED_VOLUME;
                 return Status;
             }
@@ -216,13 +225,16 @@ FFSLoadDiskLabel(
 	Status = FFSGetPartition(DeviceObject, &StartOffset);
 	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("FFSLoadDiskLabel() Slice info failed, Status %u\n", Status));
+		FFSPrint((DBG_ERROR, "FFSLoadDiskLabel() Slice info failed, Status %u\n", Status));
+#ifdef __REACTOS__
+        ExFreePoolWithTag(Disklabel, FFS_POOL_TAG);
+#endif
 		return Status;
 	}
 
     Vcb->PartitionNumber = FFSGlobal->PartitionNumber;
 
-	KdPrint(("FFSLoadDiskLabel() Selected BSD Label : %d, StartOffset : %x\n", Vcb->PartitionNumber, StartOffset));
+	FFSPrint((DBG_INFO, "FFSLoadDiskLabel() Selected BSD Label : %d, StartOffset : %x\n", Vcb->PartitionNumber, StartOffset));
 
 	for (i = 0; i < MAXPARTITIONS; i++)
 	{
@@ -235,7 +247,7 @@ FFSLoadDiskLabel(
 			Vcb->FSOffset[i] = FSOffset;
 			/* Important */
 
-			KdPrint(("FFSLoadDiskLabel() Label %d, FS_BSDFFS, %x\n", i, Vcb->FSOffset[i]));
+			FFSPrint((DBG_INFO, "FFSLoadDiskLabel() Label %d, FS_BSDFFS, %x\n", i, Vcb->FSOffset[i]));
 
 			if ((FFSSb = FFSLoadSuper(Vcb, FALSE, FSOffset + SBLOCK_UFS1)) &&
 				(FFSSb->fs_magic == FS_UFS1_MAGIC))
@@ -302,6 +314,10 @@ FFSLoadDiskLabel(
 
 	if (Vcb->ffs_super_block == NULL)
 		Status = STATUS_UNRECOGNIZED_VOLUME;
+
+#ifdef __REACTOS__
+    ExFreePoolWithTag(Disklabel, FFS_POOL_TAG);
+#endif
 
 	return Status;
 }

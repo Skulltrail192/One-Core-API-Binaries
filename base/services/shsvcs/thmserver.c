@@ -28,13 +28,13 @@ static WCHAR ServiceName[] = L"Themes";
 HANDLE hThemeStartWaitObject, hThemeStopWaitObject, hThemeServiceWaitObject;
 HANDLE hStartEvent, hStopEvent, hServiceProcess;
 
-BOOL WINAPI ThemeWatchForStart();
+BOOL WINAPI ThemeWatchForStart(VOID);
 
 /* FUNCTIONS *****************************************************************/
 
 static 
 HANDLE
-GetThemeServiceProcessHandle()
+GetThemeServiceProcessHandle(VOID)
 {
     SC_HANDLE scm, service;
     SERVICE_STATUS_PROCESS status;
@@ -76,7 +76,6 @@ CALLBACK
 ThemeStopCallback(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
 {
     CloseHandle(hServiceProcess);
-    UnregisterWait(hThemeStopWaitObject);
     UnregisterWait(hThemeServiceWaitObject);
 
     ThemeWatchForStart();
@@ -92,7 +91,10 @@ ThemeServiceDiedCallback(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
     ResetEvent(hStartEvent);
     ResetEvent(hStopEvent);
 
-    ThemeStopCallback(lpParameter, TimerOrWaitFired);
+    CloseHandle(hServiceProcess);
+    UnregisterWait(hThemeStopWaitObject);
+    ThemeWatchForStart();
+    ThemeHooksRemove();
 }
 
 static
@@ -100,24 +102,22 @@ VOID
 CALLBACK
 ThemeStartCallback(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
 {
-    UnregisterWait(hThemeStartWaitObject);
-
     hServiceProcess = GetThemeServiceProcessHandle();
 
-    RegisterWaitForSingleObject(&hThemeStopWaitObject, hStopEvent, ThemeStopCallback, NULL, INFINITE, WT_EXECUTEDEFAULT);
-    RegisterWaitForSingleObject(&hThemeServiceWaitObject, hServiceProcess, ThemeServiceDiedCallback, NULL, INFINITE, WT_EXECUTEDEFAULT);
+    RegisterWaitForSingleObject(&hThemeStopWaitObject, hStopEvent, ThemeStopCallback, NULL, INFINITE, WT_EXECUTEONLYONCE);
+    RegisterWaitForSingleObject(&hThemeServiceWaitObject, hServiceProcess, ThemeServiceDiedCallback, NULL, INFINITE, WT_EXECUTEONLYONCE);
 
     ThemeHooksInstall();
 }
 
 BOOL
 WINAPI
-ThemeWatchForStart()
+ThemeWatchForStart(VOID)
 {
     hStartEvent = CreateEventW(NULL, TRUE, FALSE, L"Global\\ThemeStartEvent");
     hStopEvent = CreateEventW(NULL, TRUE, FALSE, L"Global\\ThemeStopEvent");
 
-    RegisterWaitForSingleObject(&hThemeStartWaitObject, hStartEvent, ThemeStartCallback, NULL, INFINITE, WT_EXECUTEDEFAULT);
+    RegisterWaitForSingleObject(&hThemeStartWaitObject, hStartEvent, ThemeStartCallback, NULL, INFINITE, WT_EXECUTEONLYONCE);
 
     return TRUE;
 }

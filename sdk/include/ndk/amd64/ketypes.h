@@ -223,8 +223,8 @@ typedef enum
 //
 //  Flags in MSR_DEBUG_CTL
 //
-#define MSR_DEBUG_CTL_LBR equ   0x0001
-#define MSR_DEBUG_CTL_BTF equ   0x0002
+#define MSR_DEBUG_CTL_LBR       0x0001
+#define MSR_DEBUG_CTL_BTF       0x0002
 
 //
 // IPI Types
@@ -930,7 +930,11 @@ typedef struct _KEXCEPTION_FRAME
     ULONG64 P3Home;
     ULONG64 P4Home;
     ULONG64 P5;
+#if (NTDDI_VERSION >= NTDDI_WIN8)
     ULONG64 Spare1;
+#else
+    ULONG64 InitialStack;
+#endif
     M128A Xmm6;
     M128A Xmm7;
     M128A Xmm8;
@@ -942,10 +946,14 @@ typedef struct _KEXCEPTION_FRAME
     M128A Xmm14;
     M128A Xmm15;
     ULONG64 TrapFrame;
-    //ULONG64 CallbackStack;
+#if (NTDDI_VERSION < NTDDI_WIN8)
+    ULONG64 CallbackStack;
+#endif
     ULONG64 OutputBuffer;
     ULONG64 OutputLength;
+#if (NTDDI_VERSION >= NTDDI_WIN8)
     ULONG64 Spare2;
+#endif
     ULONG64 MxCsr;
     ULONG64 Rbp;
     ULONG64 Rbx;
@@ -973,7 +981,7 @@ typedef struct _MACHINE_FRAME
 //
 // Defines the Callback Stack Layout for User Mode Callbacks
 //
-typedef KEXCEPTION_FRAME KCALLOUT_FRAME, PKCALLOUT_FRAME;
+typedef KEXCEPTION_FRAME KCALLOUT_FRAME, *PKCALLOUT_FRAME;
 
 //
 // User side callout frame
@@ -993,15 +1001,16 @@ typedef struct _UCALLOUT_FRAME
 typedef struct _DISPATCHER_CONTEXT
 {
     ULONG64 ControlPc;
-    PVOID ImageBase;
-    PVOID FunctionEntry;
-    PVOID EstablisherFrame;
+    ULONG64 ImageBase;
+    struct _RUNTIME_FUNCTION *FunctionEntry;
+    ULONG64 EstablisherFrame;
     ULONG64 TargetIp;
-    PVOID ContextRecord;
-    PVOID LanguageHandler;
+    PCONTEXT ContextRecord;
+    PEXCEPTION_ROUTINE LanguageHandler;
     PVOID HandlerData;
-    PVOID HistoryTable;
+    struct _UNWIND_HISTORY_TABLE *HistoryTable;
     ULONG ScopeIndex;
+    ULONG Fill0;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
 
 typedef struct _KSTART_FRAME

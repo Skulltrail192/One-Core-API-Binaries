@@ -262,8 +262,9 @@ CmpCmdInit(IN BOOLEAN SetupBoot)
     /* Testing: Force Lazy Flushing */
     CmpHoldLazyFlush = FALSE;
 
-    /* Setup the hive list */
-    CmpInitializeHiveList(SetupBoot);
+    /* Setup the hive list if this is not a Setup boot */
+    if (!SetupBoot)
+        CmpInitializeHiveList();
 }
 
 NTSTATUS
@@ -274,13 +275,122 @@ CmpCmdHiveOpen(IN POBJECT_ATTRIBUTES FileAttributes,
                OUT PCMHIVE *NewHive,
                IN ULONG CheckFlags)
 {
-    PUNICODE_STRING FileName;
     NTSTATUS Status;
+    UNICODE_STRING FileName;
+    PWCHAR FilePath;
+    ULONG Length;
+    OBJECT_NAME_INFORMATION DummyNameInfo;
+    POBJECT_NAME_INFORMATION FileNameInfo;
+
     PAGED_CODE();
 
+    if (FileAttributes->RootDirectory)
+    {
+        /*
+         * Validity check: The ObjectName is relative to RootDirectory,
+         * therefore it must not start with a path separator.
+         */
+        if (FileAttributes->ObjectName && FileAttributes->ObjectName->Buffer &&
+            FileAttributes->ObjectName->Length >= sizeof(WCHAR) &&
+            *FileAttributes->ObjectName->Buffer == OBJ_NAME_PATH_SEPARATOR)
+        {
+            return STATUS_OBJECT_PATH_SYNTAX_BAD;
+        }
+
+        /* Determine the right buffer size and allocate */
+        Status = ZwQueryObject(FileAttributes->RootDirectory,
+                               ObjectNameInformation,
+                               &DummyNameInfo,
+                               sizeof(DummyNameInfo),
+                               &Length);
+        if (Status != STATUS_BUFFER_OVERFLOW)
+        {
+            DPRINT1("CmpCmdHiveOpen(): Root directory handle object name size query failed, Status = 0x%08lx\n", Status);
+            return Status;
+        }
+
+        FileNameInfo = ExAllocatePoolWithTag(PagedPool,
+                                             Length + sizeof(UNICODE_NULL),
+                                             TAG_CM);
+        if (FileNameInfo == NULL)
+        {
+            DPRINT1("CmpCmdHiveOpen(): Unable to allocate memory\n");
+            return STATUS_INSUFFICIENT_RESOURCES;
+        }
+
+        /* Try to get the value */
+        Status = ZwQueryObject(FileAttributes->RootDirectory,
+                               ObjectNameInformation,
+                               FileNameInfo,
+                               Length,
+                               &Length);
+        if (!NT_SUCCESS(Status))
+        {
+            /* Fail */
+            DPRINT1("CmpCmdHiveOpen(): Root directory handle object name query failed, Status = 0x%08lx\n", Status);
+            ExFreePoolWithTag(FileNameInfo, TAG_CM);
+            return Status;
+        }
+
+        /* Null-terminate and add the length of the terminator */
+        Length -= sizeof(OBJECT_NAME_INFORMATION);
+        FilePath = FileNameInfo->Name.Buffer;
+        FilePath[Length / sizeof(WCHAR)] = UNICODE_NULL;
+        Length += sizeof(UNICODE_NULL);
+
+        /* Compute the size of the full path; Length already counts the terminating NULL */
+        Length = Length + sizeof(WCHAR) + FileAttributes->ObjectName->Length;
+        if (Length > MAXUSHORT)
+        {
+            /* Name size too long, bail out */
+            ExFreePoolWithTag(FileNameInfo, TAG_CM);
+            return STATUS_OBJECT_PATH_INVALID;
+        }
+
+        /* Build the full path */
+        RtlInitEmptyUnicodeString(&FileName, NULL, 0);
+        FileName.Buffer = ExAllocatePoolWithTag(PagedPool, Length, TAG_CM);
+        if (!FileName.Buffer)
+        {
+            /* Fail */
+            DPRINT1("CmpCmdHiveOpen(): Unable to allocate memory\n");
+            ExFreePoolWithTag(FileNameInfo, TAG_CM);
+            return STATUS_INSUFFICIENT_RESOURCES;
+        }
+        FileName.MaximumLength = Length;
+        RtlCopyUnicodeString(&FileName, &FileNameInfo->Name);
+        ExFreePoolWithTag(FileNameInfo, TAG_CM);
+
+        /*
+         * Append a path terminator if needed (we have already accounted
+         * for a possible extra one when allocating the buffer).
+         */
+        if (/* FileAttributes->ObjectName->Buffer[0] != OBJ_NAME_PATH_SEPARATOR && */ // We excluded ObjectName starting with a path separator above.
+            FileName.Length > 0 && FileName.Buffer[FileName.Length / sizeof(WCHAR) - 1] != OBJ_NAME_PATH_SEPARATOR)
+        {
+            /* ObjectName does not start with '\' and PathBuffer does not end with '\' */
+            FileName.Buffer[FileName.Length / sizeof(WCHAR)] = OBJ_NAME_PATH_SEPARATOR;
+            FileName.Length += sizeof(WCHAR);
+            FileName.Buffer[FileName.Length / sizeof(WCHAR)] = UNICODE_NULL;
+        }
+
+        /* Append the object name */
+        Status = RtlAppendUnicodeStringToString(&FileName, FileAttributes->ObjectName);
+        if (!NT_SUCCESS(Status))
+        {
+            /* Fail */
+            DPRINT1("CmpCmdHiveOpen(): RtlAppendUnicodeStringToString() failed, Status = 0x%08lx\n", Status);
+            ExFreePoolWithTag(FileName.Buffer, TAG_CM);
+            return Status;
+        }
+    }
+    else
+    {
+        FileName = *FileAttributes->ObjectName;
+    }
+
     /* Open the file in the current security context */
-    FileName = FileAttributes->ObjectName;
-    Status = CmpInitHiveFromFile(FileName,
+    Status = CmpInitHiveFromFile(&FileName,
                                  0,
                                  NewHive,
                                  Allocate,
@@ -298,7 +408,7 @@ CmpCmdHiveOpen(IN POBJECT_ATTRIBUTES FileAttributes,
         if (NT_SUCCESS(Status))
         {
             /* Now try again */
-            Status = CmpInitHiveFromFile(FileName,
+            Status = CmpInitHiveFromFile(&FileName,
                                          0,
                                          NewHive,
                                          Allocate,
@@ -307,6 +417,11 @@ CmpCmdHiveOpen(IN POBJECT_ATTRIBUTES FileAttributes,
             /* Restore impersonation token */
             PsRevertToSelf();
         }
+    }
+
+    if (FileAttributes->RootDirectory)
+    {
+        ExFreePoolWithTag(FileName.Buffer, TAG_CM);
     }
 
     /* Return status of open attempt */

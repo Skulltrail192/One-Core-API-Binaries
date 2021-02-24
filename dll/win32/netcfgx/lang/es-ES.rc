@@ -1,4 +1,10 @@
-/* Spanish translation by Ismael Ferreras Morezuelas (Swyter) */
+/*
+ * PROJECT:     ReactOS Network Shell Extension
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     Spanish locale file
+ * COPYRIGHT:   Ismael Ferreras Morezuelas
+ *              Julio Carchi Ruiz
+ */
 
 LANGUAGE LANG_SPANISH, SUBLANG_NEUTRAL
 
@@ -195,6 +201,22 @@ BEGIN
     LTEXT "", IDC_PORT_DESC, 5, 15, 40, 12
     PUSHBUTTON "Aceptar", IDC_OK, 120, 15, 50, 14, WS_TABSTOP
     PUSHBUTTON "Cancelar", IDCANCEL, 120, 30, 50, 14, WS_TABSTOP
+END
+
+IDD_NET_PROPERTY_DLG DIALOGEX 0, 0, 252, 218
+STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Avanzado"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT "Las siguientes propiedades están disponibles para este adaptador de red. Seleccione una propiedad de la izquierda para cambiar su valor.", -1, 7, 7, 218, 24, WS_GROUP
+    LTEXT "&Propiedad:", -1, 7, 37, 60, 8, WS_GROUP
+    LISTBOX IDC_PROPERTY_NAME, 7, 48, 124, 124, LBS_STANDARD | WS_TABSTOP
+    LTEXT "&Valor:", -1, 151, 37, 60, 8, WS_GROUP
+    EDITTEXT IDC_PROPERTY_VALUE_EDIT, 153, 48, 92, 14, ES_LEFT | ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP
+    CONTROL "", IDC_PROPERTY_VALUE_UPDN, "msctls_updown32", UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS | UDS_NOTHOUSANDS | WS_BORDER, 232, 48, 12, 12
+    COMBOBOX IDC_PROPERTY_VALUE_LIST, 153, 48, 92, 64, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    AUTORADIOBUTTON "", IDC_PROPERTY_PRESENT, 141, 50, 8, 10, BS_TOP | WS_GROUP
+    AUTORADIOBUTTON "&Ausente", IDC_PROPERTY_NOT_PRESENT, 141, 68, 103, 10, BS_TOP
 END
 
 STRINGTABLE

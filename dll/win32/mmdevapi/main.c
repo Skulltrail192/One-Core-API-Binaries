@@ -17,9 +17,31 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "mmdevapi.h"
+#include <stdarg.h>
 
-#include <rpcproxy.h>
+#define COBJMACROS
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+
+#include "ole2.h"
+#include "olectl.h"
+#include "rpcproxy.h"
+#include "propsys.h"
+#include "propkeydef.h"
+#include "mmdeviceapi.h"
+#include "mmsystem.h"
+#include "dsound.h"
+#include "audioclient.h"
+#include "endpointvolume.h"
+#include "audiopolicy.h"
+#include "devpkey.h"
+#include "winreg.h"
+
+#include "mmdevapi.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(mmdevapi);
 
 static HINSTANCE instance;
 
@@ -82,19 +104,16 @@ static BOOL load_driver(const WCHAR *name, DriverFuncs *driver)
     return TRUE;
 }
 
-static BOOL init_driver(void)
+static BOOL WINAPI init_driver(INIT_ONCE *once, void *param, void **context)
 {
     static const WCHAR drv_value[] = {'A','u','d','i','o',0};
 
     static WCHAR default_list[] = {'p','u','l','s','e',',','a','l','s','a',',','o','s','s',',',
-        'c','o','r','e','a','u','d','i','o',0};
+        'c','o','r','e','a','u','d','i','o',',','a','n','d','r','o','i','d',0};
 
     DriverFuncs driver;
     HKEY key;
     WCHAR reg_list[256], *p, *next, *driver_list = default_list;
-
-    if(drvs.module)
-        return TRUE;
 
     if(RegOpenKeyW(HKEY_CURRENT_USER, drv_keyW, &key) == ERROR_SUCCESS){
         DWORD size = sizeof(reg_list);
@@ -115,7 +134,7 @@ static BOOL init_driver(void)
 
     TRACE("Loading driver list %s\n", wine_dbgstr_w(driver_list));
     for(next = p = driver_list; next; p = next + 1){
-        next = strchrW(p, ',');
+        next = wcschr(p, ',');
         if(next)
             *next = '\0';
 
@@ -249,10 +268,11 @@ static IClassFactoryImpl MMDEVAPI_CF[] = {
 
 HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
+    static INIT_ONCE init_once = INIT_ONCE_STATIC_INIT;
     unsigned int i = 0;
     TRACE("(%s, %s, %p)\n", debugstr_guid(rclsid), debugstr_guid(riid), ppv);
 
-    if(!init_driver()){
+    if(!InitOnceExecuteOnce(&init_once, init_driver, NULL, NULL)) {
         ERR("Driver initialization failed\n");
         return E_FAIL;
     }
@@ -270,7 +290,7 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
         return E_NOINTERFACE;
     }
 
-    for (i = 0; i < sizeof(MMDEVAPI_CF)/sizeof(MMDEVAPI_CF[0]); ++i)
+    for (i = 0; i < ARRAY_SIZE(MMDEVAPI_CF); ++i)
     {
         if (IsEqualGUID(rclsid, MMDEVAPI_CF[i].rclsid)) {
             IClassFactory_AddRef(&MMDEVAPI_CF[i].IClassFactory_iface);

@@ -116,7 +116,13 @@ static void clear_output_vars( const var_list_t *args )
           if (type_get_type(type_pointer_get_ref(arg->type)) == TYPE_BASIC) continue;
           if (type_get_type(type_pointer_get_ref(arg->type)) == TYPE_ENUM) continue;
       }
-      print_proxy( "if (%s) MIDL_memset( %s, 0, sizeof( *%s ));\n", arg->name, arg->name, arg->name );
+      print_proxy( "if (%s) MIDL_memset( %s, 0, ", arg->name, arg->name );
+      if (is_array(arg->type) && type_array_has_conformance(arg->type))
+      {
+          write_expr( proxy, type_array_get_conformance(arg->type), 1, 1, NULL, NULL, "" );
+          fprintf( proxy, " * " );
+      }
+      fprintf( proxy, "sizeof( *%s ));\n", arg->name );
   }
 }
 
@@ -158,7 +164,7 @@ static void free_variable( const var_t *arg, const char *local_var_prefix )
     break;
 
   case TGT_STRUCT:
-    if (get_struct_fc(type) != RPC_FC_STRUCT)
+    if (get_struct_fc(type) != FC_STRUCT)
       print_proxy("/* FIXME: %s code for %s struct type 0x%x missing */\n", __FUNCTION__, arg->name, get_struct_fc(type) );
     break;
 
@@ -482,7 +488,11 @@ static const statement_t * get_callas_source(const type_t * iface, const var_t *
   return NULL;
 }
 
+#ifdef __REACTOS__ /* r57019 / c3be8a3 */
 static int write_proxy_procformatstring_offsets( const type_t *iface, int skip )
+#else
+static void write_proxy_procformatstring_offsets( const type_t *iface, int skip )
+#endif
 {
     const statement_t *stmt;
     int i = 0;
@@ -512,7 +522,9 @@ static int write_proxy_procformatstring_offsets( const type_t *iface, int skip )
             print_proxy( "%u,  /* %s::%s */\n", func->procstring_offset, iface->name, get_name(func));
         i++;
     }
+#ifdef __REACTOS__ /* r57019 / c3be8a3 */
     return i;
+#endif
 }
 
 static int write_proxy_methods(type_t *iface, int skip)
@@ -645,10 +657,14 @@ static void write_proxy(type_t *iface, unsigned int *proc_offset)
   print_proxy( "static const unsigned short %s_FormatStringOffsetTable[] =\n", iface->name );
   print_proxy( "{\n" );
   indent++;
+#ifdef __REACTOS__ /* r57019 / c3be8a3 */
   if (write_proxy_procformatstring_offsets( iface, 0 ) == 0)
   {
       print_proxy( "0\n" );
   }
+#else
+  write_proxy_procformatstring_offsets( iface, 0 );
+#endif
   indent--;
   print_proxy( "};\n\n" );
 
@@ -670,7 +686,8 @@ static void write_proxy(type_t *iface, unsigned int *proc_offset)
 
   /* proxy vtable */
   print_proxy( "static %sCINTERFACE_PROXY_VTABLE(%d) _%sProxyVtbl =\n",
-               need_delegation_indirect(iface) ? "" : "const ", count, iface->name);
+               (get_stub_mode() != MODE_Os || need_delegation_indirect(iface)) ? "" : "const ",
+               count, iface->name);
   print_proxy( "{\n");
   indent++;
   print_proxy( "{\n");
@@ -722,10 +739,14 @@ static void write_proxy(type_t *iface, unsigned int *proc_offset)
       print_proxy( "static const PRPC_STUB_FUNCTION %s_table[] =\n", iface->name);
       print_proxy( "{\n");
       indent++;
+#ifdef __REACTOS__ /* r57019 / c3be8a3 */
       if (write_stub_methods(iface, FALSE) == 0)
       {
           fprintf(proxy, "0");
       }
+#else
+      write_stub_methods(iface, FALSE);
+#endif
       fprintf(proxy, "\n");
       indent--;
       fprintf(proxy, "};\n\n");
@@ -745,7 +766,9 @@ static void write_proxy(type_t *iface, unsigned int *proc_offset)
   print_proxy( "},\n");
   print_proxy( "{\n");
   indent++;
-  print_proxy( "CStdStubBuffer_%s\n", need_delegation_indirect(iface) ? "DELEGATING_METHODS" : "METHODS");
+  print_proxy( "%s_%s\n",
+               iface->details.iface->async_iface == iface ? "CStdAsyncStubBuffer" : "CStdStubBuffer",
+               need_delegation_indirect(iface) ? "DELEGATING_METHODS" : "METHODS");
   indent--;
   print_proxy( "}\n");
   indent--;
@@ -841,8 +864,13 @@ static void write_proxy_stmts(const statement_list_t *stmts, unsigned int *proc_
   {
     if (stmt->type == STMT_TYPE && type_get_type(stmt->u.type) == TYPE_INTERFACE)
     {
-      if (need_proxy(stmt->u.type))
-        write_proxy(stmt->u.type, proc_offset);
+      type_t *iface = stmt->u.type;
+      if (need_proxy(iface))
+      {
+        write_proxy(iface, proc_offset);
+        if (iface->details.iface->async_iface)
+          write_proxy(iface->details.iface->async_iface, proc_offset);
+      }
     }
   }
 }
@@ -870,6 +898,12 @@ static void build_iface_list( const statement_list_t *stmts, type_t **ifaces[], 
             {
                 *ifaces = xrealloc( *ifaces, (*count + 1) * sizeof(**ifaces) );
                 (*ifaces)[(*count)++] = iface;
+                if (iface->details.iface->async_iface)
+                {
+                    iface = iface->details.iface->async_iface;
+                    *ifaces = xrealloc( *ifaces, (*count + 1) * sizeof(**ifaces) );
+                    (*ifaces)[(*count)++] = iface;
+                }
             }
         }
     }
@@ -891,6 +925,7 @@ static void write_proxy_routines(const statement_list_t *stmts)
   unsigned int proc_offset = 0;
   char *file_id = proxy_token;
   int i, count, have_baseiid = 0;
+  unsigned int table_version;
   type_t **interfaces;
   const type_t * delegate_to;
 
@@ -936,7 +971,7 @@ static void write_proxy_routines(const statement_list_t *stmts)
   write_stubdesc(expr_eval_routines);
 
   print_proxy( "#if !defined(__RPC_WIN%u__)\n", pointer_size == 8 ? 64 : 32);
-  print_proxy( "#error Currently only Wine and WIN32 are supported.\n");
+  print_proxy( "#error Invalid build platform for this proxy.\n");
   print_proxy( "#endif\n");
   print_proxy( "\n");
   write_procformatstring(proxy, stmts, need_proxy);
@@ -1002,6 +1037,26 @@ static void write_proxy_routines(const statement_list_t *stmts)
   fprintf(proxy, "}\n");
   fprintf(proxy, "\n");
 
+  table_version = get_stub_mode() == MODE_Oif ? 2 : 1;
+  for (i = 0; i < count; i++)
+  {
+      if (interfaces[i]->details.iface->async_iface != interfaces[i]) continue;
+      if (table_version != 6)
+      {
+          fprintf(proxy, "static const IID *_AsyncInterfaceTable[] =\n");
+          fprintf(proxy, "{\n");
+          table_version = 6;
+      }
+      fprintf(proxy, "    &IID_%s,\n", interfaces[i]->name);
+      fprintf(proxy, "    (IID*)(LONG_PTR)-1,\n");
+  }
+  if (table_version == 6)
+  {
+      fprintf(proxy, "    0\n");
+      fprintf(proxy, "};\n");
+      fprintf(proxy, "\n");
+  }
+
   fprintf(proxy, "const ExtendedProxyFileInfo %s_ProxyFileInfo DECLSPEC_HIDDEN =\n", file_id);
   fprintf(proxy, "{\n");
   fprintf(proxy, "    (const PCInterfaceProxyVtblList*)_%s_ProxyVtblList,\n", file_id);
@@ -1011,8 +1066,8 @@ static void write_proxy_routines(const statement_list_t *stmts)
   else fprintf(proxy, "    0,\n");
   fprintf(proxy, "    _%s_IID_Lookup,\n", file_id);
   fprintf(proxy, "    %d,\n", count);
-  fprintf(proxy, "    %d,\n", get_stub_mode() == MODE_Oif ? 2 : 1);
-  fprintf(proxy, "    0,\n");
+  fprintf(proxy, "    %u,\n", table_version);
+  fprintf(proxy, "    %s,\n", table_version == 6 ? "_AsyncInterfaceTable" : "0");
   fprintf(proxy, "    0,\n");
   fprintf(proxy, "    0,\n");
   fprintf(proxy, "    0\n");
@@ -1027,26 +1082,6 @@ void write_proxies(const statement_list_t *stmts)
   init_proxy(stmts);
   if(!proxy) return;
 
-  if (do_win32 && do_win64)
-  {
-      fprintf(proxy, "\n#ifndef _WIN64\n\n");
-      pointer_size = 4;
-      write_proxy_routines( stmts );
-      fprintf(proxy, "\n#else /* _WIN64 */\n\n");
-      pointer_size = 8;
-      write_proxy_routines( stmts );
-      fprintf(proxy, "\n#endif /* _WIN64 */\n");
-  }
-  else if (do_win32)
-  {
-      pointer_size = 4;
-      write_proxy_routines( stmts );
-  }
-  else if (do_win64)
-  {
-      pointer_size = 8;
-      write_proxy_routines( stmts );
-  }
-
+  write_proxy_routines( stmts );
   fclose(proxy);
 }

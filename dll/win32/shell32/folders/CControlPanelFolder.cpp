@@ -459,7 +459,7 @@ HRESULT WINAPI CControlPanelFolder::GetUIObjectOf(HWND hwndOwner,
             else
                 hr = m_regFolder->GetUIObjectOf(hwndOwner, cidl, apidl, riid, prgfInOut, &pObj);
         } else if (IsEqualIID(riid, IID_IDataObject) && (cidl >= 1)) {
-            hr = IDataObject_Constructor(hwndOwner, pidlRoot, apidl, cidl, (IDataObject **)&pObj);
+            hr = IDataObject_Constructor(hwndOwner, pidlRoot, apidl, cidl, TRUE, (IDataObject **)&pObj);
         } else if ((IsEqualIID(riid, IID_IExtractIconA) || IsEqualIID(riid, IID_IExtractIconW)) && (cidl == 1)) {
             if (_ILGetCPanelPointer(apidl[0]))
                 hr = CCPLExtractIcon_CreateInstance(this, apidl[0], riid, &pObj);
@@ -614,7 +614,7 @@ HRESULT WINAPI CControlPanelFolder::GetClassID(CLSID *lpClassId)
  *
  * NOTES: it makes no sense to change the pidl
  */
-HRESULT WINAPI CControlPanelFolder::Initialize(LPCITEMIDLIST pidl)
+HRESULT WINAPI CControlPanelFolder::Initialize(PCIDLIST_ABSOLUTE pidl)
 {
     if (pidlRoot)
         SHFree((LPVOID)pidlRoot);
@@ -638,7 +638,7 @@ HRESULT WINAPI CControlPanelFolder::Initialize(LPCITEMIDLIST pidl)
 /**************************************************************************
  *    CControlPanelFolder::GetCurFolder
  */
-HRESULT WINAPI CControlPanelFolder::GetCurFolder(LPITEMIDLIST * pidl)
+HRESULT WINAPI CControlPanelFolder::GetCurFolder(PIDLIST_ABSOLUTE * pidl)
 {
     TRACE("(%p)->(%p)\n", this, pidl);
 

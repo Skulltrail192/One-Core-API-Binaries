@@ -19,23 +19,25 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_NO_STATUS
-
 #include <stdarg.h>
 #include <math.h>
 
 #define NONAMELESSUNION
-#define NONAMELESSSTRUCT
-#include <windef.h>
-#include <winbase.h>
 
-#include <pdh.h>
-#include <pdhmsg.h>
-//#include "winperf.h"
+#include "windef.h"
+#include "winbase.h"
 
-#include <wine/debug.h>
-#include <wine/list.h>
-#include <wine/unicode.h>
+#include "pdh.h"
+#include "pdhmsg.h"
+#include "winperf.h"
+#ifdef __REACTOS__
+#include <wchar.h>
+#include <winnls.h>
+#endif
+
+#include "wine/debug.h"
+#include "wine/heap.h"
+#include "wine/list.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(pdh);
 
@@ -49,27 +51,12 @@ static CRITICAL_SECTION_DEBUG pdh_handle_cs_debug =
 };
 static CRITICAL_SECTION pdh_handle_cs = { &pdh_handle_cs_debug, -1, 0, 0, 0, 0 };
 
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), 0, size);
-}
-
-static inline void* __WINE_ALLOC_SIZE(1) heap_alloc_zero(size_t size)
-{
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
-}
-
-static inline BOOL heap_free(void *mem)
-{
-    return HeapFree(GetProcessHeap(), 0, mem);
-}
-
 static inline WCHAR *pdh_strdup( const WCHAR *src )
 {
     WCHAR *dst;
 
     if (!src) return NULL;
-    if ((dst = heap_alloc( (strlenW( src ) + 1) * sizeof(WCHAR) ))) strcpyW( dst, src );
+    if ((dst = heap_alloc( (lstrlenW( src ) + 1) * sizeof(WCHAR) ))) lstrcpyW( dst, src );
     return dst;
 }
 
@@ -194,6 +181,8 @@ struct source
 static const WCHAR path_processor_time[] =
     {'\\','P','r','o','c','e','s','s','o','r','(','_','T','o','t','a','l',')',
      '\\','%',' ','P','r','o','c','e','s','s','o','r',' ','T','i','m','e',0};
+static const WCHAR path_processor[] =
+    {'\\','P','r','o','c','e','s','s','o','r',0};
 static const WCHAR path_uptime[] =
     {'\\','S','y','s','t','e','m', '\\', 'S','y','s','t','e','m',' ','U','p',' ','T','i','m','e',0};
 
@@ -220,30 +209,31 @@ static void CALLBACK collect_uptime( struct counter *counter )
 static const struct source counter_sources[] =
 {
     { 6,    path_processor_time,    collect_processor_time,     TYPE_PROCESSOR_TIME,    -5,     10000000 },
+    { 238,  path_processor,         NULL,                       0,                       0,     0 },
     { 674,  path_uptime,            collect_uptime,             TYPE_UPTIME,            -3,     1000 }
 };
 
 static BOOL is_local_machine( const WCHAR *name, DWORD len )
 {
     WCHAR buf[MAX_COMPUTERNAME_LENGTH + 1];
-    DWORD buflen = sizeof(buf) / sizeof(buf[0]);
+    DWORD buflen = ARRAY_SIZE(buf);
 
     if (!GetComputerNameW( buf, &buflen )) return FALSE;
-    return len == buflen && !memicmpW( name, buf, buflen );
+    return len == buflen && !_wcsnicmp( name, buf, buflen );
 }
 
 static BOOL pdh_match_path( LPCWSTR fullpath, LPCWSTR path )
 {
     const WCHAR *p;
 
-    if (path[0] == '\\' && path[1] == '\\' && (p = strchrW( path + 2, '\\' )) &&
+    if (path[0] == '\\' && path[1] == '\\' && (p = wcschr( path + 2, '\\' )) &&
         is_local_machine( path + 2, p - path - 2 ))
     {
         path += p - path;
     }
-    if (strchrW( path, '\\' )) p = fullpath;
-    else p = strrchrW( fullpath, '\\' ) + 1;
-    return !strcmpW( p, path );
+    if (wcschr( path, '\\' )) p = fullpath;
+    else p = wcsrchr( fullpath, '\\' ) + 1;
+    return !wcscmp( p, path );
 }
 
 /***********************************************************************
@@ -290,7 +280,7 @@ PDH_STATUS WINAPI PdhAddCounterW( PDH_HQUERY hquery, LPCWSTR path,
     }
 
     *hcounter = NULL;
-    for (i = 0; i < sizeof(counter_sources) / sizeof(counter_sources[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(counter_sources); i++)
     {
         if (pdh_match_path( counter_sources[i].path, path ))
         {
@@ -883,7 +873,7 @@ PDH_STATUS WINAPI PdhLookupPerfIndexByNameW( LPCWSTR machine, LPCWSTR name, LPDW
         FIXME("remote machine not supported\n");
         return PDH_CSTATUS_NO_MACHINE;
     }
-    for (i = 0; i < sizeof(counter_sources) / sizeof(counter_sources[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(counter_sources); i++)
     {
         if (pdh_match_path( counter_sources[i].path, name ))
         {
@@ -902,7 +892,7 @@ PDH_STATUS WINAPI PdhLookupPerfNameByIndexA( LPCSTR machine, DWORD index, LPSTR 
     PDH_STATUS ret;
     WCHAR *machineW = NULL;
     WCHAR bufferW[PDH_MAX_COUNTER_NAME];
-    DWORD sizeW = sizeof(bufferW) / sizeof(WCHAR);
+    DWORD sizeW = ARRAY_SIZE(bufferW);
 
     TRACE("%s %d %p %p\n", debugstr_a(machine), index, buffer, size);
 
@@ -914,9 +904,9 @@ PDH_STATUS WINAPI PdhLookupPerfNameByIndexA( LPCSTR machine, DWORD index, LPSTR 
     {
         int required = WideCharToMultiByte( CP_ACP, 0, bufferW, -1, NULL, 0, NULL, NULL );
 
-        if (size && *size < required) ret = PDH_MORE_DATA;
+        if (*size < required) ret = PDH_MORE_DATA;
         else WideCharToMultiByte( CP_ACP, 0, bufferW, -1, buffer, required, NULL, NULL );
-        if (size) *size = required;
+        *size = required;
     }
     heap_free( machineW );
     return ret;
@@ -941,17 +931,17 @@ PDH_STATUS WINAPI PdhLookupPerfNameByIndexW( LPCWSTR machine, DWORD index, LPWST
     if (!buffer || !size) return PDH_INVALID_ARGUMENT;
     if (!index) return ERROR_SUCCESS;
 
-    for (i = 0; i < sizeof(counter_sources) / sizeof(counter_sources[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(counter_sources); i++)
     {
         if (counter_sources[i].index == index)
         {
-            WCHAR *p = strrchrW( counter_sources[i].path, '\\' ) + 1;
-            unsigned int required = strlenW( p ) + 1;
+            WCHAR *p = wcsrchr( counter_sources[i].path, '\\' ) + 1;
+            unsigned int required = lstrlenW( p ) + 1;
 
             if (*size < required) ret = PDH_MORE_DATA;
             else
             {
-                strcpyW( buffer, p );
+                lstrcpyW( buffer, p );
                 ret = ERROR_SUCCESS;
             }
             *size = required;
@@ -1077,7 +1067,7 @@ PDH_STATUS WINAPI PdhValidatePathA( LPCSTR path )
 static PDH_STATUS validate_path( LPCWSTR path )
 {
     if (!path || !*path) return PDH_INVALID_ARGUMENT;
-    if (*path++ != '\\' || !strchrW( path, '\\' )) return PDH_CSTATUS_BAD_COUNTERNAME;
+    if (*path++ != '\\' || !wcschr( path, '\\' )) return PDH_CSTATUS_BAD_COUNTERNAME;
     return ERROR_SUCCESS;
  }
 
@@ -1093,10 +1083,22 @@ PDH_STATUS WINAPI PdhValidatePathW( LPCWSTR path )
 
     if ((ret = validate_path( path ))) return ret;
 
-    for (i = 0; i < sizeof(counter_sources) / sizeof(counter_sources[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(counter_sources); i++)
         if (pdh_match_path( counter_sources[i].path, path )) return ERROR_SUCCESS;
 
     return PDH_CSTATUS_NO_COUNTER;
+}
+
+/***********************************************************************
+ *              PdhVbAddCounter   (PDH.@)
+ */
+PDH_STATUS WINAPI PdhVbAddCounter( PDH_HQUERY query, LPCSTR path, PDH_HCOUNTER *counter )
+{
+    FIXME("%p, %s, %p: stub!\n", query, debugstr_a(path), counter);
+
+    if (!path) return PDH_INVALID_ARGUMENT;
+
+    return PDH_NOT_IMPLEMENTED;
 }
 
 /***********************************************************************
@@ -1206,30 +1208,30 @@ PDH_STATUS WINAPI PdhMakeCounterPathW( PDH_COUNTER_PATH_ELEMENTS_W *e, LPWSTR bu
     path[0] = 0;
     if (e->szMachineName)
     {
-        strcatW(path, bslash);
-        strcatW(path, bslash);
-        strcatW(path, e->szMachineName);
+        lstrcatW(path, bslash);
+        lstrcatW(path, bslash);
+        lstrcatW(path, e->szMachineName);
     }
-    strcatW(path, bslash);
-    strcatW(path, e->szObjectName);
+    lstrcatW(path, bslash);
+    lstrcatW(path, e->szObjectName);
     if (e->szInstanceName)
     {
-        strcatW(path, lparen);
+        lstrcatW(path, lparen);
         if (e->szParentInstance)
         {
-            strcatW(path, e->szParentInstance);
-            strcatW(path, fslash);
+            lstrcatW(path, e->szParentInstance);
+            lstrcatW(path, fslash);
         }
-        strcatW(path, e->szInstanceName);
-        sprintfW(instance, fmt, e->dwInstanceIndex);
-        strcatW(path, instance);
-        strcatW(path, rparen);
+        lstrcatW(path, e->szInstanceName);
+        swprintf(instance, fmt, e->dwInstanceIndex);
+        lstrcatW(path, instance);
+        lstrcatW(path, rparen);
     }
-    strcatW(path, bslash);
-    strcatW(path, e->szCounterName);
+    lstrcatW(path, bslash);
+    lstrcatW(path, e->szCounterName);
 
-    len = strlenW(path) + 1;
-    if (*buflen >= len) strcpyW(buffer, path);
+    len = lstrlenW(path) + 1;
+    if (*buflen >= len) lstrcpyW(buffer, path);
     else ret = PDH_MORE_DATA;
     *buflen = len;
     return ret;

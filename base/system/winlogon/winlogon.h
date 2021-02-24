@@ -42,6 +42,15 @@
 #include <strsafe.h>
 
 #include <reactos/undocuser.h>
+#include <reactos/undocmpr.h>
+
+BOOL
+WINAPI
+SetWindowStationUser(
+    IN HWINSTA hWindowStation,
+    IN PLUID pluid,
+    IN PSID psid OPTIONAL,
+    IN DWORD size);
 
 #include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(winlogon);
@@ -292,8 +301,14 @@ BOOL
 StartRpcServer(VOID);
 
 /* sas.c */
+extern LUID LuidNone;
+
 BOOL
 SetDefaultLanguage(IN PWLSESSION Session);
+
+NTSTATUS
+HandleShutdown(IN OUT PWLSESSION Session,
+               IN DWORD wlxAction);
 
 BOOL
 InitializeSAS(IN OUT PWLSESSION Session);
@@ -311,6 +326,18 @@ GetSetupType(VOID);
 
 BOOL
 RunSetup(VOID);
+
+/* shutdown.h*/
+DWORD
+TerminateSystemShutdown(VOID);
+
+DWORD
+StartSystemShutdown(
+    PUNICODE_STRING lpMessage,
+    ULONG dwTimeout,
+    BOOLEAN bForceAppsClosed,
+    BOOLEAN bRebootAfterShutdown,
+    ULONG dwReason);
 
 /* winlogon.c */
 BOOL
@@ -330,18 +357,20 @@ RemoveStatusMessage(IN PWLSESSION Session);
 VOID
 InitDialogListHead(VOID);
 
-HWND
-GetTopDialogWindow(VOID);
+VOID
+CloseAllDialogWindows(VOID);
 
 BOOL
 GinaInit(IN OUT PWLSESSION Session);
 
 BOOL
+AddAceToWindowStation(
+    IN HWINSTA WinSta,
+    IN PSID Sid);
+
+BOOL
 CreateWindowStationAndDesktops(IN OUT PWLSESSION Session);
 
-NTSTATUS
-HandleShutdown(IN OUT PWLSESSION Session,
-               IN DWORD wlxAction);
 
 VOID WINAPI WlxUseCtrlAltDel(HANDLE hWlx);
 VOID WINAPI WlxSetContextPointer(HANDLE hWlx, PVOID pWlxContext);

@@ -285,6 +285,15 @@ int needs_space_after(type_t *t)
           (!is_ptr(t) && (!is_array(t) || !type_array_is_decl_as_ptr(t) || t->name)));
 }
 
+static void write_pointer_left(FILE *h, type_t *ref)
+{
+    if (needs_space_after(ref))
+        fprintf(h, " ");
+    if (!type_is_alias(ref) && is_array(ref) && !type_array_is_decl_as_ptr(ref))
+        fprintf(h, "(");
+    fprintf(h, "*");
+}
+
 void write_type_left(FILE *h, type_t *t, enum name_type name_type, int declonly)
 {
   const char *name;
@@ -341,10 +350,12 @@ void write_type_left(FILE *h, type_t *t, enum name_type name_type, int declonly)
         else fprintf(h, "union %s", t->name ? t->name : "");
         break;
       case TYPE_POINTER:
+      {
         write_type_left(h, type_pointer_get_ref(t), name_type, declonly);
-        fprintf(h, "%s*", needs_space_after(type_pointer_get_ref(t)) ? " " : "");
+        write_pointer_left(h, type_pointer_get_ref(t));
         if (is_attr(t->attrs, ATTR_CONST)) fprintf(h, "const ");
         break;
+      }
       case TYPE_ARRAY:
         if (t->name && type_array_is_decl_as_ptr(t))
           fprintf(h, "%s", t->name);
@@ -352,12 +363,13 @@ void write_type_left(FILE *h, type_t *t, enum name_type name_type, int declonly)
         {
           write_type_left(h, type_array_get_element(t), name_type, declonly);
           if (type_array_is_decl_as_ptr(t))
-            fprintf(h, "%s*", needs_space_after(type_array_get_element(t)) ? " " : "");
+            write_pointer_left(h, type_array_get_element(t));
         }
         break;
       case TYPE_BASIC:
         if (type_basic_get_type(t) != TYPE_BASIC_INT32 &&
             type_basic_get_type(t) != TYPE_BASIC_INT64 &&
+            type_basic_get_type(t) != TYPE_BASIC_LONG &&
             type_basic_get_type(t) != TYPE_BASIC_HYPER)
         {
           if (type_basic_get_sign(t) < 0) fprintf(h, "signed ");
@@ -377,6 +389,12 @@ void write_type_left(FILE *h, type_t *t, enum name_type name_type, int declonly)
         case TYPE_BASIC_ERROR_STATUS_T: fprintf(h, "error_status_t"); break;
         case TYPE_BASIC_HANDLE: fprintf(h, "handle_t"); break;
         case TYPE_BASIC_INT32:
+          if (type_basic_get_sign(t) > 0)
+            fprintf(h, "UINT32");
+          else
+            fprintf(h, "INT32");
+          break;
+        case TYPE_BASIC_LONG:
           if (type_basic_get_sign(t) > 0)
             fprintf(h, "ULONG");
           else
@@ -419,23 +437,36 @@ void write_type_left(FILE *h, type_t *t, enum name_type name_type, int declonly)
 void write_type_right(FILE *h, type_t *t, int is_field)
 {
   if (!h) return;
+  if (type_is_alias(t)) return;
 
   switch (type_get_type(t))
   {
   case TYPE_ARRAY:
-    if (!type_array_is_decl_as_ptr(t))
+  {
+    type_t *elem = type_array_get_element(t);
+    if (type_array_is_decl_as_ptr(t))
+    {
+      if (!type_is_alias(elem) && is_array(elem) && !type_array_is_decl_as_ptr(elem))
+        fprintf(h, ")");
+    }
+    else
     {
       if (is_conformant_array(t))
-      {
         fprintf(h, "[%s]", is_field ? "1" : "");
-        t = type_array_get_element(t);
-      }
-      for ( ;
-           type_get_type(t) == TYPE_ARRAY && !type_array_is_decl_as_ptr(t);
-           t = type_array_get_element(t))
+      else
         fprintf(h, "[%u]", type_array_get_dim(t));
     }
+    write_type_right(h, elem, FALSE);
     break;
+  }
+  case TYPE_POINTER:
+  {
+    type_t *ref = type_pointer_get_ref(t);
+    if (!type_is_alias(ref) && is_array(ref) && !type_array_is_decl_as_ptr(ref))
+      fprintf(h, ")");
+    write_type_right(h, ref, FALSE);
+    break;
+  }
   case TYPE_BITFIELD:
     fprintf(h, " : %u", type_bitfield_get_bits(t)->cval);
     break;
@@ -450,7 +481,6 @@ void write_type_right(FILE *h, type_t *t, int is_field)
   case TYPE_COCLASS:
   case TYPE_FUNCTION:
   case TYPE_INTERFACE:
-  case TYPE_POINTER:
     break;
   }
 }
@@ -686,6 +716,47 @@ void check_for_additional_prototype_types(const var_list_t *list)
   }
 }
 
+static int write_serialize_function_decl(FILE *header, const type_t *type)
+{
+    write_serialize_functions(header, type, NULL);
+    return 1;
+}
+
+static int serializable_exists(FILE *header, const type_t *type)
+{
+    return 0;
+}
+
+static int for_each_serializable(const statement_list_t *stmts, FILE *header,
+                                 int (*proc)(FILE*, const type_t*))
+{
+    statement_t *stmt, *iface_stmt;
+    statement_list_t *iface_stmts;
+    const type_list_t *type_entry;
+
+    if (stmts) LIST_FOR_EACH_ENTRY( stmt, stmts, statement_t, entry )
+    {
+        if (stmt->type != STMT_TYPE || type_get_type(stmt->u.type) != TYPE_INTERFACE)
+            continue;
+
+        iface_stmts = type_iface_get_stmts(stmt->u.type);
+        if (iface_stmts) LIST_FOR_EACH_ENTRY( iface_stmt, iface_stmts, statement_t, entry )
+        {
+            if (iface_stmt->type != STMT_TYPEDEF) continue;
+            for (type_entry = iface_stmt->u.type_list; type_entry; type_entry = type_entry->next)
+            {
+                if (!is_attr(type_entry->type->attrs, ATTR_ENCODE)
+                    && !is_attr(type_entry->type->attrs, ATTR_DECODE))
+                    continue;
+                if (!proc(header, type_entry->type))
+                    return 0;
+            }
+        }
+    }
+
+    return 1;
+}
+
 static void write_user_types(FILE *header)
 {
   user_type_t *ut;
@@ -805,17 +876,17 @@ const var_t *get_func_handle_var( const type_t *iface, const var_t *func,
         if (!is_attr( var->attrs, ATTR_IN ) && is_attr( var->attrs, ATTR_OUT )) continue;
         if (type_get_type( var->type ) == TYPE_BASIC && type_basic_get_type( var->type ) == TYPE_BASIC_HANDLE)
         {
-            *explicit_fc = RPC_FC_BIND_PRIMITIVE;
+            *explicit_fc = FC_BIND_PRIMITIVE;
             return var;
         }
         if (get_explicit_generic_handle_type( var ))
         {
-            *explicit_fc = RPC_FC_BIND_GENERIC;
+            *explicit_fc = FC_BIND_GENERIC;
             return var;
         }
         if (is_context_handle( var->type ))
         {
-            *explicit_fc = RPC_FC_BIND_CONTEXT;
+            *explicit_fc = FC_BIND_CONTEXT;
             return var;
         }
     }
@@ -824,13 +895,13 @@ const var_t *get_func_handle_var( const type_t *iface, const var_t *func,
     {
         if (type_get_type( var->type ) == TYPE_BASIC &&
             type_basic_get_type( var->type ) == TYPE_BASIC_HANDLE)
-            *implicit_fc = RPC_FC_BIND_PRIMITIVE;
+            *implicit_fc = FC_BIND_PRIMITIVE;
         else
-            *implicit_fc = RPC_FC_BIND_GENERIC;
+            *implicit_fc = FC_BIND_GENERIC;
         return var;
     }
 
-    *implicit_fc = RPC_FC_AUTO_HANDLE;
+    *implicit_fc = FC_AUTO_HANDLE;
     return NULL;
 }
 
@@ -960,7 +1031,7 @@ static void write_method_macro(FILE *header, const type_t *iface, const type_t *
     if (is_override_method(iface, child, func))
       continue;
 
-    if (!is_callas(func->attrs) && !is_aggregate_return(func)) {
+    if (!is_callas(func->attrs)) {
       const var_t *arg;
 
       fprintf(header, "#define %s_%s(This", name, get_name(func));
@@ -968,6 +1039,12 @@ static void write_method_macro(FILE *header, const type_t *iface, const type_t *
           LIST_FOR_EACH_ENTRY( arg, type_get_function_args(func->type), const var_t, entry )
               fprintf(header, ",%s", arg->name);
       fprintf(header, ") ");
+
+      if (is_aggregate_return(func))
+      {
+        fprintf(header, "%s_%s_define_WIDL_C_INLINE_WRAPPERS_for_aggregate_return_support\n", name, get_name(func));
+        continue;
+      }
 
       fprintf(header, "(This)->lpVtbl->%s(This", get_vtbl_entry_name(iface, func));
       if (type_get_function_args(func->type))
@@ -1043,13 +1120,62 @@ static void write_cpp_method_def(FILE *header, const type_t *iface)
     const var_t *func = stmt->u.var;
     if (!is_callas(func->attrs)) {
       const char *callconv = get_attrp(func->type->attrs, ATTR_CALLCONV);
+      const var_list_t *args = type_get_function_args(func->type);
+      const var_t *arg;
+
       if (!callconv) callconv = "STDMETHODCALLTYPE";
+
+      if (is_aggregate_return(func)) {
+        fprintf(header, "#ifdef WIDL_EXPLICIT_AGGREGATE_RETURNS\n");
+
+        indent(header, 0);
+        fprintf(header, "virtual ");
+        write_type_decl_left(header, type_function_get_rettype(func->type));
+        fprintf(header, "* %s %s(\n", callconv, get_name(func));
+        ++indentation;
+        indent(header, 0);
+        write_type_decl_left(header, type_function_get_rettype(func->type));
+        fprintf(header, " *__ret");
+        --indentation;
+        if (args) {
+          fprintf(header, ",\n");
+          write_args(header, args, iface->name, 2, TRUE);
+        }
+        fprintf(header, ") = 0;\n");
+
+        indent(header, 0);
+        write_type_decl_left(header, type_function_get_rettype(func->type));
+        fprintf(header, " %s %s(\n", callconv, get_name(func));
+        write_args(header, args, iface->name, 2, TRUE);
+        fprintf(header, ")\n");
+        indent(header, 0);
+        fprintf(header, "{\n");
+        ++indentation;
+        indent(header, 0);
+        write_type_decl_left(header, type_function_get_rettype(func->type));
+        fprintf(header, " __ret;\n");
+        indent(header, 0);
+        fprintf(header, "return *%s(&__ret", get_name(func));
+        if (args)
+            LIST_FOR_EACH_ENTRY(arg, args, const var_t, entry)
+                fprintf(header, ", %s", arg->name);
+        fprintf(header, ");\n");
+        --indentation;
+        indent(header, 0);
+        fprintf(header, "}\n");
+
+        fprintf(header, "#else\n");
+      }
+
       indent(header, 0);
       fprintf(header, "virtual ");
       write_type_decl_left(header, type_function_get_rettype(func->type));
       fprintf(header, " %s %s(\n", callconv, get_name(func));
-      write_args(header, type_get_function_args(func->type), iface->name, 2, TRUE);
+      write_args(header, args, iface->name, 2, TRUE);
       fprintf(header, ") = 0;\n");
+
+      if (is_aggregate_return(func))
+        fprintf(header, "#endif\n");
       fprintf(header, "\n");
     }
   }
@@ -1079,7 +1205,11 @@ static void write_inline_wrappers(FILE *header, const type_t *iface, const type_
     if (!is_callas(func->attrs)) {
       const var_t *arg;
 
+#ifdef __REACTOS__
       fprintf(header, "FORCEINLINE ");
+#else
+      fprintf(header, "static FORCEINLINE ");
+#endif
       write_type_decl_left(header, type_function_get_rettype(func->type));
       fprintf(header, " %s_%s(", name, get_name(func));
       write_args(header, type_get_function_args(func->type), name, 1, FALSE);
@@ -1114,6 +1244,7 @@ static void do_write_c_method_def(FILE *header, const type_t *iface, const char 
 
   if (type_iface_get_inherit(iface))
     do_write_c_method_def(header, type_iface_get_inherit(iface), name);
+#ifdef __REACTOS__ /* r59312 / 3ab1571 */
   else if (type_iface_get_stmts(iface) == NULL)
   {
     fprintf(header, "#ifndef __cplusplus\n");
@@ -1123,6 +1254,7 @@ static void do_write_c_method_def(FILE *header, const type_t *iface, const char 
     fprintf(header, "\n");
     return;
   }
+#endif
 
   STATEMENTS_FOR_EACH_FUNC(stmt, type_iface_get_stmts(iface))
   {
@@ -1181,7 +1313,7 @@ static void write_method_proto(FILE *header, const type_t *iface)
   {
     const var_t *func = stmt->u.var;
 
-    if (!is_local(func->attrs)) {
+    if (is_callas(func->attrs)) {
       const char *callconv = get_attrp(func->type->attrs, ATTR_CALLCONV);
       if (!callconv) callconv = "STDMETHODCALLTYPE";
       /* proxy prototype */
@@ -1215,7 +1347,7 @@ static void write_locals(FILE *fp, const type_t *iface, int body)
     if (cas) {
       const statement_t *stmt2 = NULL;
       STATEMENTS_FOR_EACH_FUNC(stmt2, type_iface_get_stmts(iface))
-        if (!strcmp(stmt2->u.var->name, cas->name))
+        if (!strcmp(get_name(stmt2->u.var), cas->name))
           break;
       if (&stmt2->entry != type_iface_get_stmts(iface)) {
         const var_t *m = stmt2->u.var;
@@ -1535,8 +1667,13 @@ static void write_forward_decls(FILE *header, const statement_list_t *stmts)
       case STMT_TYPE:
         if (type_get_type(stmt->u.type) == TYPE_INTERFACE)
         {
-          if (is_object(stmt->u.type) || is_attr(stmt->u.type->attrs, ATTR_DISPINTERFACE))
-            write_forward(header, stmt->u.type);
+          type_t *iface = stmt->u.type;
+          if (is_object(iface) || is_attr(iface->attrs, ATTR_DISPINTERFACE))
+          {
+            write_forward(header, iface);
+            if (iface->details.iface->async_iface)
+              write_forward(header, iface->details.iface->async_iface);
+          }
         }
         else if (type_get_type(stmt->u.type) == TYPE_COCLASS)
           write_coclass_forward(header, stmt->u.type);
@@ -1571,12 +1708,18 @@ static void write_header_stmts(FILE *header, const statement_list_t *stmts, cons
         if (type_get_type(stmt->u.type) == TYPE_INTERFACE)
         {
           type_t *iface = stmt->u.type;
+          type_t *async_iface = iface->details.iface->async_iface;
           if (is_object(iface)) is_object_interface++;
           if (is_attr(stmt->u.type->attrs, ATTR_DISPINTERFACE) || is_object(stmt->u.type))
           {
             write_com_interface_start(header, iface);
             write_header_stmts(header, type_iface_get_stmts(iface), stmt->u.type, TRUE);
             write_com_interface_end(header, iface);
+            if (async_iface)
+            {
+              write_com_interface_start(header, async_iface);
+              write_com_interface_end(header, async_iface);
+            }
           }
           else
           {
@@ -1656,6 +1799,7 @@ void write_header(const statement_list_t *stmts)
   }
   fprintf(header, "/*** Autogenerated by WIDL %s from %s - Do not edit ***/\n\n", PACKAGE_VERSION, input_name);
 
+  fprintf(header, "#ifdef _WIN32\n");
   fprintf(header, "#ifndef __REQUIRED_RPCNDR_H_VERSION__\n");
   fprintf(header, "#define __REQUIRED_RPCNDR_H_VERSION__ 475\n");
   fprintf(header, "#endif\n\n");
@@ -1665,7 +1809,10 @@ void write_header(const statement_list_t *stmts)
   fprintf(header, "#endif\n\n");
 
   fprintf(header, "#include <rpc.h>\n" );
-  fprintf(header, "#include <rpcndr.h>\n\n" );
+  fprintf(header, "#include <rpcndr.h>\n" );
+  if (!for_each_serializable(stmts, NULL, serializable_exists))
+    fprintf(header, "#include <midles.h>\n" );
+  fprintf(header, "#endif\n\n");
 
   fprintf(header, "#ifndef COM_NO_WINDOWS_H\n");
   fprintf(header, "#include <windows.h>\n");
@@ -1687,6 +1834,7 @@ void write_header(const statement_list_t *stmts)
 
   fprintf(header, "/* Begin additional prototypes for all interfaces */\n");
   fprintf(header, "\n");
+  for_each_serializable(stmts, header, write_serialize_function_decl);
   write_user_types(header);
   write_generic_handle_routines(header);
   write_context_handle_rundowns(header);

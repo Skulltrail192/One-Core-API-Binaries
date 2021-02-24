@@ -18,11 +18,27 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+#define NONAMELESSUNION
+
+#include <stdarg.h>
+#include <stdio.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "objbase.h"
+#include "ole2.h"
+#include "mimeole.h"
+#include "mlang.h"
+
+#include "wine/list.h"
+#include "wine/debug.h"
+
 #include "inetcomm_private.h"
 
-#include <mlang.h>
-
-#include <wine/unicode.h>
+WINE_DEFAULT_DEBUG_CHANNEL(inetcomm);
 
 typedef struct
 {
@@ -398,7 +414,7 @@ static HRESULT WINAPI MimeInternat_ConvertString(IMimeInternational *iface, CODE
         break;
     case VT_LPWSTR:
         cpiSource = CP_UNICODE;
-        src_len = strlenW(pIn->u.pwszVal) * sizeof(WCHAR);
+        src_len = lstrlenW(pIn->u.pwszVal) * sizeof(WCHAR);
         break;
     default:
         return E_INVALIDARG;

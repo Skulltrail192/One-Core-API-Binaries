@@ -5,6 +5,7 @@
  *  Copyright 1997,98 Marcel Baur <mbaur@g26.ethz.ch>
  *  Copyright 2002 Sylvain Petreolle <spetreolle@yahoo.fr>
  *  Copyright 2002 Andriy Palamarchuk
+ *  Copyright 2020 Katayama Hirofumi MZ
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,6 +25,7 @@
 
 #include "notepad.h"
 
+#include <shlobj.h>
 #include <strsafe.h>
 
 NOTEPAD_GLOBALS Globals;
@@ -48,6 +50,9 @@ VOID SetFileName(LPCTSTR szFileName)
     StringCchCopy(Globals.szFileName, ARRAY_SIZE(Globals.szFileName), szFileName);
     Globals.szFileTitle[0] = 0;
     GetFileTitle(szFileName, Globals.szFileTitle, ARRAY_SIZE(Globals.szFileTitle));
+
+    if (szFileName && szFileName[0])
+        SHAddToRecentDocs(SHARD_PATHW, szFileName);
 }
 
 /***********************************************************************
@@ -87,14 +92,6 @@ static int NOTEPAD_MenuCommand(WPARAM wParam)
     case CMD_STATUSBAR: DIALOG_ViewStatusBar(); break;
 
     case CMD_HELP_CONTENTS: DIALOG_HelpContents(); break;
-
-    case CMD_ABOUT:
-        DialogBox(GetModuleHandle(NULL),
-                  MAKEINTRESOURCE(IDD_ABOUTBOX),
-                  Globals.hMainWnd,
-                  AboutDialogProc);
-        break;
-
     case CMD_HELP_ABOUT_NOTEPAD: DIALOG_HelpAboutNotepad(); break;
 
     default:
@@ -353,6 +350,9 @@ NOTEPAD_WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     case WM_CREATE:
         Globals.hMenu = GetMenu(hWnd);
+
+        // For now, the "Help" dialog is disabled due to the lack of HTML Help support
+        EnableMenuItem(Globals.hMenu, CMD_HELP_CONTENTS, MF_BYCOMMAND | MF_GRAYED);
         break;
 
     case WM_COMMAND:
@@ -393,7 +393,7 @@ NOTEPAD_WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     case WM_SIZE:
     {
-        if (Globals.bShowStatusBar == TRUE && Globals.bWrapLongLines == FALSE)
+        if ((Globals.bShowStatusBar != FALSE) && (Globals.bWrapLongLines == FALSE))
         {
             RECT rcStatusBar;
             HDWP hdwp;

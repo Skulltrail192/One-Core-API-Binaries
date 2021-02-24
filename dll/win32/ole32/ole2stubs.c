@@ -19,7 +19,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "ole2.h"
+#include "objidl.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
@@ -54,6 +61,15 @@ HGLOBAL WINAPI OleGetIconOfClass(REFCLSID rclsid, LPOLESTR lpszLabel, BOOL fUseT
 }
 
 /***********************************************************************
+ *              OleGetIconOfFile        [OLE32.@]
+ */
+HGLOBAL WINAPI OleGetIconOfFile(LPOLESTR path, BOOL use_file_as_label)
+{
+    FIXME("(%s, %d), stub!\n", debugstr_w(path), use_file_as_label);
+    return NULL;
+}
+
+/***********************************************************************
  *           OleRegEnumFormatEtc    [OLE32.@]
  */
 HRESULT WINAPI DECLSPEC_HOTPATCH OleRegEnumFormatEtc (
@@ -73,13 +89,4 @@ HRESULT WINAPI CoGetCallerTID(LPDWORD lpdwTID)
 {
   FIXME("stub!\n");
   return E_NOTIMPL;
-}
-
-/***********************************************************************
- *              OleGetIconOfFile        [OLE32.@]
- */
-HGLOBAL WINAPI OleGetIconOfFile(LPOLESTR path, BOOL use_file_as_label)
-{
-    FIXME("(%p, %d), stub!\n", path, use_file_as_label);
-    return NULL;
 }

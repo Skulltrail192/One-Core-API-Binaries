@@ -118,6 +118,7 @@ extern "C" {
 #define OFN_READONLY 1
 #define OFN_SHAREAWARE 0x4000
 #define OFN_SHOWHELP 16
+#define OFN_EX_NOPLACESBAR 0x00000001
 #define OFN_SHAREFALLTHROUGH 2
 #define OFN_SHARENOWARN 1
 #define OFN_SHAREWARN 0
@@ -225,7 +226,7 @@ extern "C" {
 #define CommDlg_OpenSave_HideControl(d,i) ((void)SNDMSG((d),CDM_HIDECONTROL,(i),0))
 #define CommDlg_OpenSave_SetDefExt(d,e) ((void)SNDMSG((d),CDM_SETDEFEXT,0,(LPARAM)(e)))
 
-typedef UINT_PTR (APIENTRY *__CDHOOKPROC)(HWND,UINT,WPARAM,LPARAM);
+typedef UINT_PTR (CALLBACK *__CDHOOKPROC)(HWND,UINT,WPARAM,LPARAM);
 typedef __CDHOOKPROC LPCCHOOKPROC;
 typedef __CDHOOKPROC LPCFHOOKPROC;
 typedef __CDHOOKPROC LPFRHOOKPROC;
@@ -463,8 +464,8 @@ typedef struct tagPSDW {
 typedef struct tagPDA {
 	DWORD lStructSize;
 	HWND hwndOwner;
-	HANDLE hDevMode;
-	HANDLE hDevNames;
+	HGLOBAL hDevMode;
+	HGLOBAL hDevNames;
 	HDC hDC;
 	DWORD Flags;
 	WORD nFromPage;
@@ -473,19 +474,19 @@ typedef struct tagPDA {
 	WORD nMaxPage;
 	WORD nCopies;
 	HINSTANCE hInstance;
-	DWORD lCustData;
+	LPARAM lCustData;
 	LPPRINTHOOKPROC lpfnPrintHook;
 	LPSETUPHOOKPROC lpfnSetupHook;
 	LPCSTR lpPrintTemplateName;
 	LPCSTR lpSetupTemplateName;
-	HANDLE hPrintTemplate;
-	HANDLE hSetupTemplate;
-} PRINTDLGA,*LPPRINTDLGA;
+	HGLOBAL hPrintTemplate;
+	HGLOBAL hSetupTemplate;
+} PRINTDLGA, *LPPRINTDLGA;
 typedef struct tagPDW {
 	DWORD lStructSize;
 	HWND hwndOwner;
-	HANDLE hDevMode;
-	HANDLE hDevNames;
+	HGLOBAL hDevMode;
+	HGLOBAL hDevNames;
 	HDC hDC;
 	DWORD Flags;
 	WORD nFromPage;
@@ -494,14 +495,14 @@ typedef struct tagPDW {
 	WORD nMaxPage;
 	WORD nCopies;
 	HINSTANCE hInstance;
-	DWORD lCustData;
+	LPARAM lCustData;
 	LPPRINTHOOKPROC lpfnPrintHook;
 	LPSETUPHOOKPROC lpfnSetupHook;
 	LPCWSTR lpPrintTemplateName;
 	LPCWSTR lpSetupTemplateName;
-	HANDLE hPrintTemplate;
-	HANDLE hSetupTemplate;
-} PRINTDLGW,*LPPRINTDLGW;
+	HGLOBAL hPrintTemplate;
+	HGLOBAL hSetupTemplate;
+} PRINTDLGW, *LPPRINTDLGW;
 #if (WINVER >= 0x0500) && !defined (__OBJC__)
 #include <prsht.h>   /* for HPROPSHEETPAGE  */
 typedef struct tagPRINTPAGERANGE {

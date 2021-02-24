@@ -52,7 +52,7 @@ LoadOrderGroup = NDIS
 ReactOS = "ReactOS Team"
 
 GenericMfg = "(Generic network cards)"
-*PNP80D6.DeviceDesc = "NE2000 Compatible"
+*PNP80D6.DeviceDesc = "NE2000 Compatible ISA Ethernet Adapter"
 
 [Strings.0405]
 GenericMfg = "(Generické síťové karty)"
@@ -77,9 +77,9 @@ GenericMfg = "(標準 ネットワーク カード)"
 *PNP80D6.DeviceDesc = "NE2000 互換"
 
 [Strings.0415]
-ReactOS = "Ekipa ReactOS"
+ReactOS = "Zespół ReactOS"
 GenericMfg = "(Standardowe karty sieciowe)"
-*PNP80D6.DeviceDesc = "Kompatybilna z NE2000"
+*PNP80D6.DeviceDesc = "Karta sieciowa kompatybilna z NE2000"
 
 [Strings.0416]
 GenericMfg = "(Adaptadores de rede padrão)"
@@ -113,3 +113,7 @@ GenericMfg = "(Стандартні мережеві адаптери)"
 [Strings.0427]
 GenericMfg = "(Standartinės tinklo plokštės)"
 *PNP80D6.DeviceDesc = "Su NE2000 suderinama tinklo plokštė"
+
+[Strings.0804]
+GenericMfg = "(通用网卡)"
+*PNP80D6.DeviceDesc = "NE2000 兼容"

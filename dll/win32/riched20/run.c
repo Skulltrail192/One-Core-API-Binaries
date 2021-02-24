@@ -103,6 +103,9 @@ void ME_CheckCharOffsets(ME_TextEditor *editor)
   ME_DisplayItem *p = editor->pBuffer->pFirst;
   int ofs = 0, ofsp = 0;
 
+  if (!TRACE_ON(richedit_check))
+    return;
+
   TRACE_(richedit_check)("Checking begin\n");
   if(TRACE_ON(richedit_lists))
   {
@@ -229,7 +232,7 @@ void ME_JoinRuns(ME_TextEditor *editor, ME_DisplayItem *p)
   int i;
   assert(p->type == diRun && pNext->type == diRun);
   assert(p->member.run.nCharOfs != -1);
-  ME_GetParagraph(p)->member.para.nFlags |= MEPF_REWRAP;
+  mark_para_rewrap(editor, ME_GetParagraph(p));
 
   /* Update all cursors so that they don't contain the soon deleted run */
   for (i=0; i<editor->nCursors; i++) {
@@ -243,8 +246,7 @@ void ME_JoinRuns(ME_TextEditor *editor, ME_DisplayItem *p)
   ME_Remove(pNext);
   ME_DestroyDisplayItem(pNext);
   ME_UpdateRunFlags(editor, &p->member.run);
-  if(TRACE_ON(richedit_check))
-    ME_CheckCharOffsets(editor);
+  ME_CheckCharOffsets(editor);
 }
 
 /******************************************************************************
@@ -282,7 +284,7 @@ ME_DisplayItem *ME_SplitRunSimple(ME_TextEditor *editor, ME_Cursor *cursor)
       editor->pCursors[i].nOffset -= nOffset;
     }
   }
-  cursor->pPara->member.para.nFlags |= MEPF_REWRAP;
+  mark_para_rewrap(editor, cursor->pPara);
   return run;
 }
 
@@ -295,7 +297,7 @@ ME_DisplayItem *ME_MakeRun(ME_Style *s, int nFlags)
 {
   ME_DisplayItem *item = ME_MakeDI(diRun);
   item->member.run.style = s;
-  item->member.run.ole_obj = NULL;
+  item->member.run.reobj = NULL;
   item->member.run.nFlags = nFlags;
   item->member.run.nCharOfs = -1;
   item->member.run.len = 0;
@@ -350,7 +352,7 @@ ME_InsertRunAtCursor(ME_TextEditor *editor, ME_Cursor *cursor, ME_Style *style,
   ME_InsertBefore( insert_before, pDI );
   TRACE("Shift length:%d\n", len);
   ME_PropagateCharOffset( insert_before, len );
-  insert_before->member.run.para->nFlags |= MEPF_REWRAP;
+  mark_para_rewrap(editor, get_di_from_para(insert_before->member.run.para));
 
   /* Move any cursors that were at the end of the previous run to the end of the inserted run */
   prev = ME_FindItemBack( pDI, diRun );
@@ -462,7 +464,6 @@ int ME_CharFromPointContext(ME_Context *c, int cx, ME_Run *run, BOOL closest, BO
   ME_String *mask_text = NULL;
   WCHAR *str;
   int fit = 0;
-  HGDIOBJ hOldFont;
   SIZE sz, sz2, sz3;
   if (!run->len || cx <= 0)
     return 0;
@@ -501,7 +502,7 @@ int ME_CharFromPointContext(ME_Context *c, int cx, ME_Run *run, BOOL closest, BO
   else
     str = get_text( run, 0 );
 
-  hOldFont = ME_SelectStyleFont(c, run->style);
+  select_style(c, run->style);
   GetTextExtentExPointW(c->hDC, str, run->len,
                         cx, &fit, NULL, &sz);
   if (closest && fit != run->len)
@@ -514,7 +515,6 @@ int ME_CharFromPointContext(ME_Context *c, int cx, ME_Run *run, BOOL closest, BO
 
   ME_DestroyString( mask_text );
 
-  ME_UnselectStyleFont(c, run->style, hOldFont);
   return fit;
 }
 
@@ -536,15 +536,16 @@ int ME_CharFromPoint(ME_TextEditor *editor, int cx, ME_Run *run, BOOL closest, B
  */
 static void ME_GetTextExtent(ME_Context *c, LPCWSTR szText, int nChars, ME_Style *s, SIZE *size)
 {
-  HGDIOBJ hOldFont;
-  if (c->hDC) {
-    hOldFont = ME_SelectStyleFont(c, s);
-    GetTextExtentPoint32W(c->hDC, szText, nChars, size);
-    ME_UnselectStyleFont(c, s, hOldFont);
-  } else {
-    size->cx = 0;
-    size->cy = 0;
-  }
+    if (c->hDC)
+    {
+        select_style( c, s );
+        GetTextExtentPoint32W( c->hDC, szText, nChars, size );
+    }
+    else
+    {
+        size->cx = 0;
+        size->cy = 0;
+    }
 }
 
 /******************************************************************************
@@ -615,8 +616,8 @@ int ME_PointFromChar(ME_TextEditor *editor, ME_Run *pRun, int nOffset, BOOL visu
 SIZE ME_GetRunSizeCommon(ME_Context *c, const ME_Paragraph *para, ME_Run *run, int nLen,
                          int startx, int *pAscent, int *pDescent)
 {
+  static const WCHAR spaceW[] = {' ',0};
   SIZE size;
-  WCHAR spaceW[] = {' ',0};
 
   nLen = min( nLen, run->len );
 
@@ -771,7 +772,7 @@ void ME_SetCharFormat(ME_TextEditor *editor, ME_Cursor *start, ME_Cursor *end, C
       ME_ReleaseStyle(para->para_num.style);
       para->para_num.style = NULL;
     }
-    para->nFlags |= MEPF_REWRAP;
+    mark_para_rewrap(editor, get_di_from_para(para));
   }
 }
 
@@ -865,7 +866,7 @@ void ME_GetCharFormat(ME_TextEditor *editor, const ME_Cursor *from,
     {
       if (!(tmp.dwMask & CFM_FACE))
         pFmt->dwMask &= ~CFM_FACE;
-      else if (lstrcmpW(pFmt->szFaceName, tmp.szFaceName) ||
+      else if (wcscmp(pFmt->szFaceName, tmp.szFaceName) ||
           pFmt->bPitchAndFamily != tmp.bPitchAndFamily)
         pFmt->dwMask &= ~CFM_FACE;
     }

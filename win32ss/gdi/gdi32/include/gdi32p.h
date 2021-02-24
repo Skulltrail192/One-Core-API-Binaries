@@ -27,6 +27,48 @@ typedef INT
     HANDLE hPageQuery
 );
 
+typedef BOOL
+(WINAPI* LPKETO)(
+    HDC hdc,
+    int x,
+    int y,
+    UINT fuOptions,
+    const RECT *lprc,
+    LPCWSTR lpString,
+    UINT uCount,
+    const INT *lpDx,
+    INT unknown
+);
+
+typedef DWORD
+(WINAPI* LPKGCP)(
+    HDC hdc,
+    LPCWSTR lpString,
+    INT uCount,
+    INT nMaxExtent, 
+    LPGCP_RESULTSW lpResults,
+    DWORD dwFlags,
+    DWORD dwUnused
+);
+
+typedef BOOL
+(WINAPI* LPKGTEP)(
+    HDC hdc,
+    LPCWSTR lpString,
+    INT cString,
+    INT nMaxExtent,
+    LPINT lpnFit,
+    LPINT lpnDx,
+    LPSIZE lpSize,
+    DWORD dwUnused,
+    int unknown
+);
+
+extern HINSTANCE hLpk;
+extern LPKETO LpkExtTextOut;
+extern LPKGCP LpkGetCharacterPlacement;
+extern LPKGTEP LpkGetTextExtentExPoint;
+
 /* DEFINES *******************************************************************/
 
 #define HANDLE_LIST_INC 20
@@ -35,6 +77,11 @@ typedef INT
 #define METAFILE_DISK   2
 
 #define SAPCALLBACKDELAY 244
+
+#define LPK_INIT 1
+#define LPK_ETO  2
+#define LPK_GCP  3
+#define LPK_GTEP 4
 
 /* MACRO ********************************************************************/
 
@@ -105,7 +152,7 @@ typedef struct tagENHMETAFILE
 #define UMPDEV_SUPPORT_ESCAPE 0x0004
 typedef struct _UMPDEV
 {
-    DWORD           Sig;            // Init with PDEV_UMPD_ID
+    DWORD_PTR       Sig;            // Init with PDEV_UMPD_ID
     struct _UMPDEV *pumpdNext;
     PDRIVER_INFO_5W pdi5Info;
     HMODULE         hModule;
@@ -202,7 +249,8 @@ FASTCALL
 DeleteRegion( HRGN );
 
 BOOL
-GdiIsHandleValid(HGDIOBJ hGdiObj);
+WINAPI
+GdiValidateHandle(HGDIOBJ);
 
 BOOL
 GdiGetHandleUserData(
@@ -283,6 +331,22 @@ EnumLogFontExW2A(
 
 BOOL
 WINAPI
+LoadLPK(
+    INT LpkFunctionID
+);
+
+VOID
+WINAPI
+GdiInitializeLanguagePack(
+    _In_ DWORD InitParam);
+
+VOID
+WINAPI
+InitializeLpkHooks(
+    _In_ FARPROC *hookfuncs);
+
+BOOL
+WINAPI
 GetETM(HDC hdc,
        EXTTEXTMETRIC *petm);
 
@@ -328,6 +392,21 @@ GdiAllocBatchCommand(
     /* Check if we have a valid environment */
     if (!pTeb || !pTeb->Win32ThreadInfo) return NULL;
 
+    /* Get the size of the entry */
+    if      (Cmd == GdiBCPatBlt) cjSize = sizeof(GDIBSPATBLT);
+    else if (Cmd == GdiBCPolyPatBlt) cjSize = sizeof(GDIBSPPATBLT);
+    else if (Cmd == GdiBCTextOut) cjSize = sizeof(GDIBSTEXTOUT);
+    else if (Cmd == GdiBCExtTextOut) cjSize = sizeof(GDIBSEXTTEXTOUT);
+    else if (Cmd == GdiBCSetBrushOrg) cjSize = sizeof(GDIBSSETBRHORG);
+    else if (Cmd == GdiBCExtSelClipRgn) cjSize = sizeof(GDIBSEXTSELCLPRGN);
+    else if (Cmd == GdiBCSelObj) cjSize = sizeof(GDIBSOBJECT);
+    else if (Cmd == GdiBCDelRgn) cjSize = sizeof(GDIBSOBJECT);
+    else if (Cmd == GdiBCDelObj) cjSize = sizeof(GDIBSOBJECT);
+    else cjSize = 0;
+
+    /* Unsupported operation */
+    if (cjSize == 0) return NULL;
+
     /* Do we use a DC? */
     if (hdc)
     {
@@ -338,21 +417,6 @@ GdiAllocBatchCommand(
         else if (pTeb->GdiTebBatch.HDC != hdc) return NULL;
     }
 
-    /* Get the size of the entry */
-    if      (Cmd == GdiBCPatBlt) cjSize = 0;
-    else if (Cmd == GdiBCPolyPatBlt) cjSize = 0;
-    else if (Cmd == GdiBCTextOut) cjSize = 0;
-    else if (Cmd == GdiBCExtTextOut) cjSize = 0;
-    else if (Cmd == GdiBCSetBrushOrg) cjSize = sizeof(GDIBSSETBRHORG);
-    else if (Cmd == GdiBCExtSelClipRgn) cjSize = 0;
-    else if (Cmd == GdiBCSelObj) cjSize = sizeof(GDIBSOBJECT);
-    else if (Cmd == GdiBCDelRgn) cjSize = sizeof(GDIBSOBJECT);
-    else if (Cmd == GdiBCDelObj) cjSize = sizeof(GDIBSOBJECT);
-    else cjSize = 0;
-
-    /* Unsupported operation */
-    if (cjSize == 0) return NULL;
-
     /* Check if the buffer is full */
     if ((pTeb->GdiBatchCount >= GDI_BatchLimit) ||
         ((pTeb->GdiTebBatch.Offset + cjSize) > GDIBATCHBUFSIZE))
@@ -360,6 +424,12 @@ GdiAllocBatchCommand(
         /* Call win32k, the kernel will call NtGdiFlushUserBatch to flush
            the current batch */
         NtGdiFlush();
+
+        // If Flushed, lose the hDC for this batch job! See CORE-15839.
+        if (hdc)
+        {
+            if (!pTeb->GdiTebBatch.HDC) pTeb->GdiTebBatch.HDC = hdc;
+        }
     }
 
     /* Get the head of the entry */
@@ -632,6 +702,7 @@ typedef enum _DCFUNC
     DCFUNC_SetViewportOrgEx,
     DCFUNC_SetWindowExtEx,
     DCFUNC_SetWindowOrgEx,
+    DCFUNC_SetWorldTransform,
     DCFUNC_StretchBlt,
     DCFUNC_StrokeAndFillPath,
     DCFUNC_StrokePath,
@@ -668,5 +739,7 @@ METADC_GetAndSetDCDWord(
     _In_ ULONG ulMFId,
     _In_ USHORT usMF16Id,
     _In_ DWORD dwError);
+
+HDC WINAPI GdiConvertAndCheckDC(HDC hdc);
 
 /* EOF */

@@ -8,12 +8,7 @@
 #include <wdmguid.h>
 #include <ndk/psfuncs.h>
 #include <ntdddisk.h>
-
-#ifdef __GNUC__
-#define INIT_SECTION __attribute__((section ("INIT")))
-#else
-#define INIT_SECTION /* Done via alloc_text for MSC */
-#endif
+#include <section_attribs.h>
 
 typedef struct _DEVICE_EXTENSION
 {
@@ -181,6 +176,7 @@ extern UNICODE_STRING Volume;
 extern KEVENT UnloadEvent;
 extern LONG Unloading;
 
+INIT_FUNCTION
 DRIVER_INITIALIZE DriverEntry;
 
 VOID
@@ -233,7 +229,7 @@ HasDriveLetter(
     IN PDEVICE_INFORMATION DeviceInformation
 );
 
-INIT_SECTION
+INIT_FUNCTION
 BOOLEAN
 MountmgrReadNoAutoMount(
     IN PUNICODE_STRING RegistryPath

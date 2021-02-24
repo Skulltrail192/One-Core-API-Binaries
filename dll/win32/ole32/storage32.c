@@ -30,10 +30,27 @@
  *  residing in a compound file object.
  */
 
-#include "precomp.h"
-#include "storage32.h"
+#include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <wine/wingdi16.h>
+#define COBJMACROS
+#define NONAMELESSUNION
+
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "winuser.h"
+#include "wine/debug.h"
+
+#include "storage32.h"
+#include "ole2.h"      /* For Write/ReadClassStm */
+
+#include "winreg.h"
+#include "wine/wingdi16.h"
+#include "compobj_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(storage);
 
@@ -501,7 +518,7 @@ static LONG entryNameCmp(
     /*
      * We compare the string themselves only when they are of the same length
      */
-    diff = toupperW(*name1++) - toupperW(*name2++);
+    diff = towupper(*name1++) - towupper(*name2++);
   }
 
   return diff;
@@ -1329,7 +1346,7 @@ static HRESULT StorageBaseImpl_CopyChildEntryTo(StorageBaseImpl *This,
 
     while ( *snb != NULL && !skip )
     {
-      if ( lstrcmpW(data.name, *snb) == 0 )
+      if ( wcscmp(data.name, *snb) == 0 )
         skip = TRUE;
       ++snb;
     }
@@ -1873,7 +1890,7 @@ static HRESULT WINAPI StorageBaseImpl_RenameElement(
         currentEntryRef);
 
     /* Change the name of the element */
-    strcpyW(currentEntry.name, pwcsNewName);
+    lstrcpyW(currentEntry.name, pwcsNewName);
 
     /* Delete any sibling links */
     currentEntry.leftChild = DIRENTRY_NULL;
@@ -1995,7 +2012,7 @@ static HRESULT WINAPI StorageBaseImpl_CreateStream(
   if (newStreamEntry.sizeOfNameString > DIRENTRY_NAME_BUFFER_LEN)
     return STG_E_INVALIDNAME;
 
-  strcpyW(newStreamEntry.name, pwcsName);
+  lstrcpyW(newStreamEntry.name, pwcsName);
 
   newStreamEntry.stgType       = STGTY_STREAM;
   newStreamEntry.startingBlock = BLOCK_END_OF_CHAIN;
@@ -2067,7 +2084,7 @@ static HRESULT WINAPI StorageBaseImpl_SetClass(
   HRESULT hRes;
   DirEntry currentEntry;
 
-  TRACE("(%p, %p)\n", iface, clsid);
+  TRACE("(%p, %s)\n", iface, wine_dbgstr_guid(clsid));
 
   if (This->reverted)
     return STG_E_REVERTED;
@@ -2191,7 +2208,7 @@ static HRESULT WINAPI StorageBaseImpl_CreateStorage(
     return STG_E_INVALIDNAME;
   }
 
-  strcpyW(newEntry.name, pwcsName);
+  lstrcpyW(newEntry.name, pwcsName);
 
   newEntry.stgType       = STGTY_STORAGE;
   newEntry.startingBlock = BLOCK_END_OF_CHAIN;
@@ -2339,7 +2356,7 @@ static HRESULT WINAPI StorageBaseImpl_CopyTo(
 
         while ( *snb != NULL && fail )
         {
-          if ( lstrcmpW(data.name, *snb) == 0 )
+          if ( wcscmp(data.name, *snb) == 0 )
             fail = FALSE;
           ++snb;
         }
@@ -4750,7 +4767,7 @@ static HRESULT StorageImpl_Refresh(StorageImpl *This, BOOL new_object, BOOL crea
      * Initialize the directory table
      */
     memset(&rootEntry, 0, sizeof(rootEntry));
-    strcpyW(rootEntry.name, rootentryW);
+    lstrcpyW(rootEntry.name, rootentryW);
     rootEntry.sizeOfNameString = sizeof(rootentryW);
     rootEntry.stgType          = STGTY_ROOT;
     rootEntry.leftChild        = DIRENTRY_NULL;
@@ -5039,7 +5056,7 @@ static HRESULT StorageImpl_LockOne(StorageImpl *This, ULONG start, ULONG end)
 
     if (SUCCEEDED(hr))
     {
-        for (j=0; j<sizeof(This->locked_bytes)/sizeof(This->locked_bytes[0]); j++)
+        for (j = 0; j < ARRAY_SIZE(This->locked_bytes); j++)
         {
             if (This->locked_bytes[j] == 0)
             {
@@ -5182,10 +5199,10 @@ static void StorageImpl_Destroy(StorageBaseImpl* iface)
   BlockChainStream_Destroy(This->rootBlockChain);
   BlockChainStream_Destroy(This->smallBlockDepotChain);
 
-  for (i=0; i<BLOCKCHAIN_CACHE_SIZE; i++)
+  for (i = 0; i < BLOCKCHAIN_CACHE_SIZE; i++)
     BlockChainStream_Destroy(This->blockChainCache[i]);
 
-  for (i=0; i<sizeof(This->locked_bytes)/sizeof(This->locked_bytes[0]); i++)
+  for (i = 0; i < ARRAY_SIZE(This->locked_bytes); i++)
   {
     ULARGE_INTEGER offset, cb;
     cb.QuadPart = 1;
@@ -7022,7 +7039,7 @@ void StorageUtl_CopyDirEntryToSTATSTG(
     destination->pwcsName =
       CoTaskMemAlloc((lstrlenW(source->name)+1)*sizeof(WCHAR));
 
-    strcpyW(destination->pwcsName, source->name);
+    lstrcpyW(destination->pwcsName, source->name);
   }
 
   switch (source->stgType)
@@ -7249,6 +7266,8 @@ BlockChainStream* BlockChainStream_Construct(
   BlockChainStream* newStream;
 
   newStream = HeapAlloc(GetProcessHeap(), 0, sizeof(BlockChainStream));
+  if(!newStream)
+    return NULL;
 
   newStream->parentStorage           = parentStorage;
   newStream->headOfStreamPlaceHolder = headOfStreamPlaceHolder;
@@ -9349,8 +9368,7 @@ HRESULT WINAPI WriteFmtUserTypeStg(
     /* get the clipboard format name */
     if( cf )
     {
-        n = GetClipboardFormatNameW( cf, szwClipName,
-                sizeof(szwClipName)/sizeof(szwClipName[0]) );
+        n = GetClipboardFormatNameW(cf, szwClipName, ARRAY_SIZE(szwClipName));
         szwClipName[n]=0;
     }
 
@@ -10015,8 +10033,8 @@ HRESULT OLECONVERT_CreateCompObjStream(LPSTORAGE pStorage, LPCSTR strOleTypeName
     static const WCHAR wstrStreamName[] = {1,'C', 'o', 'm', 'p', 'O', 'b', 'j', 0};
     WCHAR bufferW[OLESTREAM_MAX_STR_LEN];
 
-    BYTE pCompObjUnknown1[] = {0x01, 0x00, 0xFE, 0xFF, 0x03, 0x0A, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF};
-    BYTE pCompObjUnknown2[] = {0xF4, 0x39, 0xB2, 0x71};
+    static const BYTE pCompObjUnknown1[] = {0x01, 0x00, 0xFE, 0xFF, 0x03, 0x0A, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF};
+    static const BYTE pCompObjUnknown2[] = {0xF4, 0x39, 0xB2, 0x71};
 
     /* Initialize the CompObj structure */
     memset(&IStorageCompObj, 0, sizeof(IStorageCompObj));
@@ -10114,7 +10132,7 @@ static void OLECONVERT_CreateOlePresStream(LPSTORAGE pStorage, DWORD dwExtentX, 
     HRESULT hRes;
     IStream *pStream;
     static const WCHAR wstrStreamName[] = {2, 'O', 'l', 'e', 'P', 'r', 'e', 's', '0', '0', '0', 0};
-    BYTE pOlePresStreamHeader [] =
+    static const BYTE pOlePresStreamHeader[] =
     {
         0xFF, 0xFF, 0xFF, 0xFF, 0x03, 0x00, 0x00, 0x00,
         0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
@@ -10122,7 +10140,7 @@ static void OLECONVERT_CreateOlePresStream(LPSTORAGE pStorage, DWORD dwExtentX, 
         0x00, 0x00, 0x00, 0x00
     };
 
-    BYTE pOlePresStreamHeaderEmpty [] =
+    static const BYTE pOlePresStreamHeaderEmpty[] =
     {
         0x00, 0x00, 0x00, 0x00,
         0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,

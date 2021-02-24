@@ -17,7 +17,12 @@
  *
  */
 
-#include "d3dx9_36_private.h"
+#include "config.h"
+#include "wine/port.h"
+
+#include "d3dx9_private.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(d3dx);
 
 /* the combination of all possible D3DXSPRITE flags */
 #define D3DXSPRITE_FLAGLIMIT 511
@@ -204,7 +209,7 @@ static void set_states(struct d3dx9_sprite *object)
     IDirect3DDevice9_SetRenderState(object->device, D3DRS_ALPHATESTENABLE, object->alphacmp_caps);
     IDirect3DDevice9_SetRenderState(object->device, D3DRS_BLENDOP, D3DBLENDOP_ADD);
     IDirect3DDevice9_SetRenderState(object->device, D3DRS_CLIPPING, TRUE);
-    IDirect3DDevice9_SetRenderState(object->device, D3DRS_CLIPPLANEENABLE, FALSE);
+    IDirect3DDevice9_SetRenderState(object->device, D3DRS_CLIPPLANEENABLE, 0);
     IDirect3DDevice9_SetRenderState(object->device, D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_ALPHA | D3DCOLORWRITEENABLE_BLUE |
                                     D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED);
     IDirect3DDevice9_SetRenderState(object->device, D3DRS_CULLMODE, D3DCULL_NONE);
@@ -372,12 +377,10 @@ static HRESULT WINAPI d3dx9_sprite_Draw(ID3DXSprite *iface, IDirect3DTexture9 *t
     This->sprites[This->sprite_count].texw=texdesc.Width;
     This->sprites[This->sprite_count].texh=texdesc.Height;
 
-    if(rect==NULL) {
-        This->sprites[This->sprite_count].rect.left=0;
-        This->sprites[This->sprite_count].rect.top=0;
-        This->sprites[This->sprite_count].rect.right=texdesc.Width;
-        This->sprites[This->sprite_count].rect.bottom=texdesc.Height;
-    } else This->sprites[This->sprite_count].rect=*rect;
+    if (rect)
+        This->sprites[This->sprite_count].rect = *rect;
+    else
+        SetRect(&This->sprites[This->sprite_count].rect, 0, 0, texdesc.Width, texdesc.Height);
 
     if(center==NULL) {
         This->sprites[This->sprite_count].center.x=0.0f;

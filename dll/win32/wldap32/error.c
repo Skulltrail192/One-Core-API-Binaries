@@ -18,9 +18,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "winldap_private.h"
+#include "config.h"
+#include "wine/port.h"
 
-#include <winuser.h>
+#include <stdarg.h>
+#ifdef HAVE_LDAP_H
+#include <ldap.h>
+#endif
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winnls.h"
+
+#include "winldap_private.h"
+#include "wldap32.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(wldap32);
 
 ULONG map_error( int error )
 {
@@ -288,7 +303,7 @@ ULONG CDECL LdapMapErrorToWin32( ULONG err )
 {
     TRACE( "(0x%08x)\n", err );
 
-    if (err >= sizeof(WLDAP32_errormap)/sizeof(WLDAP32_errormap[0]))
+    if (err >= ARRAY_SIZE( WLDAP32_errormap ))
         return ERROR_DS_GENERIC_ERROR;
     return WLDAP32_errormap[err];
 }

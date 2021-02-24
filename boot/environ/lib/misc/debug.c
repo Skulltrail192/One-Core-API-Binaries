@@ -16,6 +16,8 @@ CHAR AnsiBuffer[1024];
 BOOLEAN BdDebuggerNotPresent;
 BOOLEAN BdSubsystemInitialized;
 BOOLEAN BdArchBlockDebuggerOperation;
+BOOLEAN BlpStatusErrorInProgress;
+PBL_STATUS_ERROR_HANDLER BlpStatusErrorHandler;
 
 /* FUNCTIONS *****************************************************************/
 
@@ -84,7 +86,7 @@ BlStatusPrint (
 
     /* Check if the boot debugger is enabled */
     if (BlBdDebuggerEnabled()
-#if (defined(DBG))
+#if DBG
         || TRUE
 #endif
     )
@@ -92,7 +94,7 @@ BlStatusPrint (
         /* Print the string out into a buffer */
         if (vswprintf(BlScratchBuffer, Format, va) > 0)
         {
-#if defined(DBG)
+#if DBG
             EfiPrintf(BlScratchBuffer);
             EfiPrintf(L"\r\n");
 #endif
@@ -124,6 +126,35 @@ BlStatusError (
     _In_ ULONG_PTR Parameter4
     )
 {
+    NTSTATUS Status;
+
+    /* Is this a non-boot error? */
+    if (ErrorCode != 1)
+    {
+        /* Is one already ongoing? */
+        if (!BlpStatusErrorInProgress)
+        {
+            /* Do we have a custom error handler registered? */
+            if (BlpStatusErrorHandler)
+            {
+                /* Call it, making sure to avoid recursion */
+                BlpStatusErrorInProgress = TRUE;
+                Status = BlpStatusErrorHandler(ErrorCode,
+                                               Parameter1,
+                                               Parameter2,
+                                               Parameter3,
+                                               Parameter4);
+                BlpStatusErrorInProgress = FALSE;
+
+                /* If the error handler consumed the error, we're done */
+                if (NT_SUCCESS(Status))
+                {
+                    return;
+                }
+            }
+        }
+    }
+
     /* Check if the boot debugger is enabled */
     if (BlBdDebuggerEnabled())
     {

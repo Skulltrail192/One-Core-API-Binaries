@@ -15,7 +15,7 @@ BEGIN
         MENUITEM "Page Setup...", IDM_FILEPAGESETUP
         MENUITEM "Print...\tCtrl+P", IDM_FILEPRINT
         MENUITEM SEPARATOR
-        MENUITEM "Send...", IDM_FILESEND
+        MENUITEM "שליחה...", IDM_FILESEND
         MENUITEM SEPARATOR
         MENUITEM "קבע כרקע שולחן העבודה (פרוש)", IDM_FILEASWALLPAPERPLANE
         MENUITEM "קבע כרקע שולחן העבודה (מרכז)", IDM_FILEASWALLPAPERCENTERED
@@ -115,6 +115,7 @@ END
 
 IDD_MIRRORROTATE DIALOGEX 100, 100, 180, 100
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_LAYOUTRTL
 FONT 8, "MS Shell Dlg"
 CAPTION "סובב והפוך את התמונה"
 BEGIN
@@ -131,6 +132,7 @@ END
 
 IDD_ATTRIBUTES DIALOGEX 100, 100, 225, 120
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_LAYOUTRTL
 FONT 8, "MS Shell Dlg"
 CAPTION "תכונות"
 BEGIN
@@ -158,6 +160,7 @@ END
 
 IDD_STRETCHSKEW DIALOGEX 100, 100, 225, 150
 STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_LAYOUTRTL
 FONT 8, "MS Shell Dlg"
 CAPTION "Stretch and skew image"
 BEGIN
@@ -188,7 +191,7 @@ BEGIN
     IDS_PROGRAMNAME "צייר"
     IDS_WINDOWTITLE "%s - צייר"
     IDS_INFOTITLE "צייר עבור ReactOS"
-    IDS_INFOTEXT "Paint for ReactOS is available under the GNU Lesser General Public License (LGPL, see www.gnu.org)"
+    IDS_INFOTEXT "Available under the GNU Lesser General Public License (LGPL, see www.gnu.org)"
     IDS_SAVEPROMPTTEXT "האם ברצונך לשמור את השינויים של %s?"
     IDS_DEFAULTFILENAME "ללא שם.bmp"
     IDS_MINIATURETITLE "ממוזער"
@@ -215,6 +218,6 @@ BEGIN
     IDS_INTNUMBERS, "Please enter integral numbers only!"
     IDS_PERCENTAGE, "The percentage must be between 1 and 500."
     IDS_ANGLE, "The angle must be between -89 and 89."
-    IDS_LOADERRORTEXT, "The file %s could not be loaded."
+    IDS_LOADERRORTEXT, ".%s לא היה ניתן לטעון את הקובץ"
     IDS_ENLARGEPROMPTTEXT "The image in the clipboard is larger than the bitmap.\nWould you like the bitmap enlarged?"
 END

@@ -65,8 +65,13 @@ IntFreeElementData(PCLIP pElement)
     {
         if (pElement->fGlobalHandle)
             UserDeleteObject(pElement->hData, TYPE_CLIPDATA);
-        else if (pElement->fmt == CF_BITMAP || pElement->fmt == CF_PALETTE ||
-                 pElement->fmt == CF_DSPBITMAP)
+        else if (pElement->fmt == CF_BITMAP          ||
+                 pElement->fmt == CF_PALETTE         ||
+                 pElement->fmt == CF_DSPBITMAP       ||
+                 pElement->fmt == CF_METAFILEPICT    ||
+                 pElement->fmt == CF_DSPMETAFILEPICT ||
+                 pElement->fmt == CF_DSPENHMETAFILE  ||
+                 pElement->fmt == CF_ENHMETAFILE )
         {
             GreSetObjectOwner(pElement->hData, GDI_OBJ_HMGR_POWNED);
             GreDeleteObject(pElement->hData);
@@ -160,6 +165,7 @@ IntSynthesizeDib(
     }
 
     /* Get information about the bitmap format */
+    memset(&bmiBuffer, 0, sizeof(bmiBuffer));
     pbmi->bmiHeader.biSize = sizeof(bmiBuffer.bmih);
     iResult = GreGetDIBitsInternal(hdc,
                                    hbm,
@@ -284,7 +290,7 @@ cleanup:
 static VOID NTAPI
 IntAddSynthesizedFormats(PWINSTATION_OBJECT pWinStaObj)
 {
-    BOOL bHaveText, bHaveUniText, bHaveOemText, bHaveLocale, bHaveBm, bHaveDib;
+    BOOL bHaveText, bHaveUniText, bHaveOemText, bHaveLocale, bHaveBm, bHaveDib, bHaveMFP, bHaveEMF;
 
     bHaveText = IntIsFormatAvailable(pWinStaObj, CF_TEXT);
     bHaveOemText = IntIsFormatAvailable(pWinStaObj, CF_OEMTEXT);
@@ -292,9 +298,11 @@ IntAddSynthesizedFormats(PWINSTATION_OBJECT pWinStaObj)
     bHaveLocale = IntIsFormatAvailable(pWinStaObj, CF_LOCALE);
     bHaveBm = IntIsFormatAvailable(pWinStaObj, CF_BITMAP);
     bHaveDib = IntIsFormatAvailable(pWinStaObj, CF_DIB);
+    bHaveMFP = IntIsFormatAvailable(pWinStaObj, CF_METAFILEPICT);
+    bHaveEMF = IntIsFormatAvailable(pWinStaObj, CF_ENHMETAFILE);
 
-    /* Add CF_LOCALE format if we have CF_TEXT */
-    if (!bHaveLocale && bHaveText)
+    /* Add CF_LOCALE format if we have CF_TEXT, CF_OEMTEXT or CF_UNICODETEXT */
+    if (!bHaveLocale && (bHaveText || bHaveOemText || bHaveUniText))
     {
         PCLIPBOARDDATA pMemObj;
         HANDLE hMem;
@@ -328,8 +336,16 @@ IntAddSynthesizedFormats(PWINSTATION_OBJECT pWinStaObj)
     if (!bHaveBm && bHaveDib)
         IntAddFormatedData(pWinStaObj, CF_BITMAP, DATA_SYNTH_KRNL, FALSE, TRUE);
 
+    /* Add CF_ENHMETAFILE. Note: it is synthesized in gdi32.dll */
+    if (bHaveMFP && !bHaveEMF)
+        IntAddFormatedData(pWinStaObj, CF_ENHMETAFILE, DATA_SYNTH_USER, FALSE, TRUE);
+
+    /* Add CF_METAFILEPICT. Note: it is synthesized in gdi32.dll */
+    if (bHaveEMF && !bHaveMFP)
+        IntAddFormatedData(pWinStaObj, CF_METAFILEPICT, DATA_SYNTH_USER, FALSE, TRUE);
+
     /* Note: We need to render the DIB or DIBV5 format as soon as possible
-       because pallette information may change */
+       because palette information may change */
     if (!bHaveDib && bHaveBm)
         IntSynthesizeDib(pWinStaObj, IntGetFormatElement(pWinStaObj, CF_BITMAP)->hData);
 }
@@ -358,6 +374,9 @@ VOID FASTCALL
 UserClipboardRelease(PWND pWindow)
 {
     PWINSTATION_OBJECT pWinStaObj;
+
+    if (!pWindow)
+        return;
 
     pWinStaObj = IntGetWinStaForCbAccess();
     if (!pWinStaObj)
@@ -680,7 +699,7 @@ UserEmptyClipboard(VOID)
     {
         TRACE("Clipboard: WM_DESTROYCLIPBOARD to %p\n", pWinStaObj->spwndClipOwner->head.h);
         // For 32-bit applications this message is sent as a notification
-        co_IntSendMessageNoWait(pWinStaObj->spwndClipOwner->head.h, WM_DESTROYCLIPBOARD, 0, 0);
+        co_IntSendMessage(pWinStaObj->spwndClipOwner->head.h, WM_DESTROYCLIPBOARD, 0, 0);
     }
 
     pWinStaObj->spwndClipOwner = pWinStaObj->spwndClipOpen;
@@ -880,6 +899,7 @@ NtUserGetClipboardData(UINT fmt, PGETCLIPBDATA pgcd)
     HANDLE hRet = NULL;
     PCLIP pElement;
     PWINSTATION_OBJECT pWinStaObj;
+    UINT uSourceFmt = fmt;
 
     TRACE("NtUserGetClipboardData(%x, %p)\n", fmt, pgcd);
 
@@ -897,18 +917,7 @@ NtUserGetClipboardData(UINT fmt, PGETCLIPBDATA pgcd)
     }
 
     pElement = IntGetFormatElement(pWinStaObj, fmt);
-    if (pElement && IS_DATA_DELAYED(pElement) && pWinStaObj->spwndClipOwner)
-    {
-        /* Send WM_RENDERFORMAT message */
-        pWinStaObj->fInDelayedRendering = TRUE;
-        co_IntSendMessage(pWinStaObj->spwndClipOwner->head.h, WM_RENDERFORMAT, (WPARAM)fmt, 0);
-        pWinStaObj->fInDelayedRendering = FALSE;
-
-        /* Data should be in clipboard now */
-        pElement = IntGetFormatElement(pWinStaObj, fmt);
-    }
-
-    if (!pElement || IS_DATA_DELAYED(pElement))
+    if (!pElement)
         goto cleanup;
 
     if (IS_DATA_SYNTHESIZED(pElement))
@@ -920,19 +929,52 @@ NtUserGetClipboardData(UINT fmt, PGETCLIPBDATA pgcd)
             case CF_UNICODETEXT:
             case CF_TEXT:
             case CF_OEMTEXT:
-                pElement = IntGetFormatElement(pWinStaObj, CF_UNICODETEXT);
+                uSourceFmt = CF_UNICODETEXT;
+                pElement = IntGetFormatElement(pWinStaObj, uSourceFmt);
                 if (IS_DATA_SYNTHESIZED(pElement))
-                    pElement = IntGetFormatElement(pWinStaObj, CF_TEXT);
+                {
+                    uSourceFmt = CF_TEXT;
+                    pElement = IntGetFormatElement(pWinStaObj, uSourceFmt);
+                }
                 if (IS_DATA_SYNTHESIZED(pElement))
-                    pElement = IntGetFormatElement(pWinStaObj, CF_OEMTEXT);
+                {
+                    uSourceFmt = CF_OEMTEXT;
+                    pElement = IntGetFormatElement(pWinStaObj, uSourceFmt);
+                }
                 break;
+
             case CF_BITMAP:
                 IntSynthesizeBitmap(pWinStaObj, pElement);
                 break;
+
+            case CF_METAFILEPICT:
+                uSourceFmt = CF_ENHMETAFILE;
+                pElement = IntGetFormatElement(pWinStaObj, uSourceFmt);
+                break;
+
+            case CF_ENHMETAFILE:
+                uSourceFmt = CF_METAFILEPICT;
+                pElement = IntGetFormatElement(pWinStaObj, uSourceFmt);
+                break;
+
             default:
                 ASSERT(FALSE);
         }
     }
+
+    if (pElement && IS_DATA_DELAYED(pElement) && pWinStaObj->spwndClipOwner)
+    {
+        /* Send WM_RENDERFORMAT message */
+        pWinStaObj->fInDelayedRendering = TRUE;
+        co_IntSendMessage(pWinStaObj->spwndClipOwner->head.h, WM_RENDERFORMAT, (WPARAM)uSourceFmt, 0);
+        pWinStaObj->fInDelayedRendering = FALSE;
+
+        /* Data should be in clipboard now */
+        pElement = IntGetFormatElement(pWinStaObj, uSourceFmt);
+    }
+
+    if (!pElement || IS_DATA_DELAYED(pElement))
+        goto cleanup;
 
     _SEH2_TRY
     {

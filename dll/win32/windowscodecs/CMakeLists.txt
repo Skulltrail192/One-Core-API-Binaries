@@ -1,12 +1,18 @@
 
 add_definitions(
     -D__WINESRC__
+    -D__ROS_LONG64__
     -DENTRY_PREFIX=WIC_
     -DPROXY_DELEGATION
     -DWINE_REGISTER_DLL)
 
 remove_definitions(-D_WIN32_WINNT=0x502)
 add_definitions(-D_WIN32_WINNT=0x600)
+
+if(MSVC)
+    # error C4133: 'function': incompatible types - from 'WICPixelFormatNumericRepresentation *' to 'DWORD *'
+    replace_compile_flags("/we4133" " ")
+endif()
 
 include_directories(
     BEFORE ${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine
@@ -50,7 +56,7 @@ list(APPEND SOURCE
     tgaformat.c
     tiffformat.c
     ungif.c
-    wincodecs_private.h)
+    precomp.h)
 
 if(MSVC)
     if(ARCH STREQUAL "i386")
@@ -70,12 +76,12 @@ list(APPEND ADDITIONAL_SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/windowscodecs.def
     ${CMAKE_CURRENT_BINARY_DIR}/windowscodecs_wincodec_p.c)
 
-add_library(windowscodecs SHARED
+add_library(windowscodecs MODULE
     ${SOURCE}
     ${ADDITIONAL_SOURCE})
 
 set_module_type(windowscodecs win32dll)
 target_link_libraries(windowscodecs wine uuid ${PSEH_LIB})
 add_importlibs(windowscodecs ole32 oleaut32 rpcrt4 shlwapi user32 gdi32 advapi32 advapi32_vista propsys msvcrt kernel32 ntdll)
-add_pch(windowscodecs wincodecs_private.h SOURCE)
+add_pch(windowscodecs precomp.h SOURCE)
 add_cd_file(TARGET windowscodecs DESTINATION reactos/system32 FOR all)

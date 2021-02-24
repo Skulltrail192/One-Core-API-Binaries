@@ -11,19 +11,6 @@ assoc (print all associations)\n\
 assoc .ext (print specific association)\n\
 assoc .ext= (remove specific association)\n\
 assoc .ext=FileType (add new association)\n"
-    STRING_ATTRIB_HELP "Állományok attribútumok megjelenítése vagy beállításai.\n\n\
-ATTRIB [+R | -R] [+A | -A] [+S | -S] [+H | -H] állomány ...\n\
-       [/S [/D]]\n\n\
-  +   bekapcsol egy attribútumot\n\
-  -   kikapcsol egy attribútumot\n\
-  R   Írásvédett állomány\n\
-  A   Archiválandó állomány\n\
-  S   Rendszer állomány\n\
-  H   Rejtett állomány\n\
-  /S  Minden állomány módosítása a mappában és minden\n\
-      almappábanban\n\
-  /D  Mappákra is érvényesíti\n\n\
-Ha ATTRIB-ot paraméter nélkül írod be, megjeleníti a mappában található összes állományt és annak attribútumát.\n"
     STRING_ALIAS_HELP "Aliasok megjelenítése, hozzáadása és törlése\n\n\
 ALIAS [alias=[parancs]]\n\n\
   alias    Alias neve.\n\
@@ -47,10 +34,6 @@ CD[..|.]\n\n\
   /D   Megváltoztatja az aktuális mappát és meghajtót is.\n\n\
 Írd be, hogy 'CD meghajtó:' hogy ki írja az aktuális mappát.\n\
 Írd be a CD-t paraméterek nélkül, hogy megjelenítse az aktuális meghajtót és mappát (ugyanaz mint az elõzõ).\n"
-    STRING_CHCP_HELP "Megjeleníti vagy megváltoztatja az aktív kódlapot.\n\n\
-CHCP [nnn]\n\n\
-  nnn   A használni kívánt kódlap száma.\n\n\
-Írd be a  CHCP paraméterek nélkül, hogy megjelenítse az aktív kódlapot.\n"
     STRING_CHOICE_HELP "Vár a felhasználóra, hogy válasszon a felkínált lehetõségek közül.\n\n\
 CHOICE  [/C[:]választási lehetõségek][/N][/S][/T[:]c,nn][szöveg]\n\n\
   /C[:]választási lehetõségek  Megengedett billentyûk. Alapértelmezett: YN. <-- Yes->Igen\n\
@@ -74,9 +57,9 @@ CMD [/[C|K] parancs][/P][/Q][/T:eh]\n\n\
   /P          Értelmezi az autoexec.bat állományt és a memóriában marad.\n\
   /T:eh       COLOR parancs használata.\n"
     STRING_COLOR_HELP1 "A konzol elõ- és háttérszínét állítja be.\n\n\
-COLOR [eh [/-F]] \n\n\
+COLOR [eh [/-F]]\n\n\
   eh          A konzol elõ- és háttérszínét állítja be.\n\
-  /-F         Nem frissíti az egész képernyõt\n\n\
+  /-F         Nem frissíti az egész képernyõt.\n\n\
 A színt két hexadecimális számjeggyel lehet beállítani\n\n\
 Az elérhetõ színek:\n\
 hex  név             hex  név\n\
@@ -100,6 +83,14 @@ COPY [/V][/Y|/-Y][/A|/B] forrás [/A|/B]\n\
   /Y           Igennel válaszol kérdésnél.\n\
   /-Y          Nemmel válaszol kérdésnél.\n\n\
 Az /Y kapcsolót a COPYCMD környezeti változóban is használható.\n"
+    STRING_CTTY_HELP "Changes the standard I/O terminal device to an auxiliary device.\n\n\
+CTTY device\n\n\
+  device    The terminal device you want to use as the new standard I/O device.\n\
+            This name must refer to a valid character device:\n\
+            AUX, COMx (x=1..N), CON, LPTx (x=1..N), PRN, NUL.\n\
+            CON is usually the default standard I/O device.\n\n\
+To return control to the standard console, type: CTTY CON on the auxiliary\n\
+device."
     STRING_DATE_HELP1 "\nÚj dátum (hh%cnn%céééé): "
     STRING_DATE_HELP2 "\nÚj dátum (nn%chh%céééé): "
     STRING_DATE_HELP3 "\nÚj dátum (éééé%chh%cnn): "
@@ -128,13 +119,13 @@ ERASE [/N /P /T /Q /S /W /Y /Z /A[[:]attribútumok]] állomány ...\n\n\
         A     Archivált állomány\n\
         H     Rejtett állománys\n\
         -     ""Nem"" prefix\n"
-    STRING_DEL_HELP2 "Minden állomány törölve lesz a mappában!\nBiztosan ezt akarod (I/N)?"
+    STRING_DEL_HELP2 "Minden állomány törölve lesz a mappában!\nBiztosan ezt akarod (I/N)? "
     STRING_DEL_HELP3 "    %lu állomány törölve\n"
     STRING_DEL_HELP4 "    %lu állomány törölve\n"
-    STRING_DELAY_HELP "pause for n seconds or milliseconds\n\
+    STRING_DELAY_HELP "Pause for n seconds or milliseconds.\n\
 DELAY [/m]n\n\n\
-  /m          specifiy than n are milliseconds\n\
-              otherwise n are seconds\n"
+  /m          Specify that n are in milliseconds,\n\
+              otherwise n are in seconds.\n"
     STRING_DIR_HELP1 "DIR [meghajtó:][elérési_út][állománynév] [/A[[:]attribútumok]] [/B] [/C] [/D] [/L] [/N]\n\
   [/O[[:]rendezési_feltétel]] [/P] [/Q] [/R] [/S] [/T[[:]idõ]] [/W] [/X] [/4]\n\n\
   [meghajtó:][elérési_út][állományname]\n\
@@ -194,12 +185,25 @@ PUSHD [elérési_út | ..]\n\n\
 Paraméter nélkül megjeleníti a visszang állapotát."
     STRING_ECHO_HELP5 "Az ECHO %s\n"
     STRING_EXIT_HELP "Kilép a parancssor értelmezõbõl.\n\nEXIT\n"
-    STRING_FOR_HELP1 "Végrehajt egy parancsot az összes fájlban a megadott mappákban\n\n\
-FOR %változó IN (csoport) DO parancs [paraméterek]\n\n\
+    STRING_FOR_HELP1 "Végrehajt egy parancsot az összes fájlban a megadott mappákban.\n\n\
+FOR %változó IN (csoport) DO parancs [paraméterek]\n\
+FOR /L %változó IN (start,step,end) DO parancs [paraméterek]\n\
+FOR /D %változó IN (csoport) DO parancs [paraméterek]\n\
+FOR /R [[drive:]path] IN (csoport) DO parancs [paraméterek]\n\
+FOR /F [""options""] IN (csoport) DO parancs [paraméterek]\n\n\
+  /L    Generates a number sequence from start to end incrementing by step.\n\
+  /D    Modifies the set to refer to directories instead of files.\n\
+  /R    Executes command for files in the set in the specified path (or current\n\
+        working directory if not specified) and every directory below.\n\
+  /F    Modifies the set to refer to the contents of the files in the set.\n\n\
   %változó    A cserélhetõ paraméter.\n\
-  (csoport)   Állományok csoportja. Joker-karakterek megengedettek EZT KURVÁRA ÁTKELL FORDÍTANI :)) wildcardok helyett?.\n\
+  (csoport)   Állományok csoportja. Joker-karakterek megengedettek.\n\
   parancs     Ezt a parancsot hajtja végre minden egyes állománnyal.\n\
-  paraméterek Ezeket a paramétereket adja meg a parancsnak.\n\n\
+  paraméterek Ezeket a paramétereket adja meg a parancsnak.\n\
+  options     Supported options are: eol, skip, delims, tokens, and usebackq.\n\n\
+Replacable parameters can be modified by adding a ~ and an optional qualifier\n\
+after the % and before the name (e.g. %~X). Supported qualifiers are:\n\
+f,d,p,n,x,s,a,t,z.\n\n\
 A batch állományban való haszálathoz %%változó kell a %változó helyett.\n"
     STRING_FREE_HELP1 "\nA (%s) meghajtóban lévõ kötet címkéje %-11s\n\
  Sorozatszám: %s\n\
@@ -226,12 +230,6 @@ string1==string2  Specifies a true condition if the specified text strings\n\
 EXIST állományname    Specifies a true condition if the specified állományname exists.\n\
 DEFINED variable  Specifies a true condition if the specified variable is\n\
                   defined.\n"
-    STRING_LABEL_HELP1 "A kötet címkéjét megjeleníti, vagy megváltoztatja.\n\n\
-LABEL [meghajtó:] [új_címke]\n"
-    STRING_LABEL_HELP2 "A (%c) meghajtóban lévõ kötet címkéje %s\n"
-    STRING_LABEL_HELP3 "A (%c) megjajtóban lévõ kötetnek nincs címkéje.\n"
-    STRING_LABEL_HELP4 "A kötet sorozatszáma %04X-%04X\n"
-    STRING_LABEL_HELP5 "Új kötetcímke (11 betû, ENTER ha üres)? "
     STRING_LOCALE_HELP1 "Az aktuális idõ:"
     STRING_MKDIR_HELP "Létrehoz egy új mappát.\n\n\
 MKDIR [meghajtó:]path\nMD [meghajtó:]path"
@@ -345,8 +343,8 @@ REPLACE [drive1:][path1]filename [drive2:][path2] [/P] [/R] [/S] [/W] [/U]\n\n\
     STRING_REPLACE_HELP6 "Replace %s\n"
     STRING_REPLACE_HELP7 "No files added\n"
     STRING_REPLACE_HELP8 "%lu file(s) added\n"
-    STRING_REPLACE_HELP9 "Add %s (Y/N) "
-    STRING_REPLACE_HELP10 "Replace %s (Y/N) "
+    STRING_REPLACE_HELP9 "Add %s (Y/N)? "
+    STRING_REPLACE_HELP10 "Replace %s (Y/N)? "
     STRING_REPLACE_HELP11 "Adding %s\n"
     STRING_SHIFT_HELP "Eltolja a helyettesíthetõ paraméterek pozícióját a batch állományban.\n\n\
 SHIFT [DOWN]"
@@ -399,7 +397,7 @@ TIMER  [ON|OFF] [/S] [/n] [/Fn]\n\n\
 if none of ON, OFF or /S is specified the command\n\
 will toggle stopwatch state\n\n"
     STRING_TYPE_HELP1 "Megjeleníti az állományok tartalmát.\n\n\
-TYPE [meghajtó:][elérési_út]állománynév \n\
+TYPE [meghajtó:][elérési_út]állománynév\n\
   /P          Csak egy képernyõnyi tartalmat jelenít meg egyszerre.\n"
     STRING_VERIFY_HELP1 "Ez a parancs még nem mûködik!!\n\
 Lemezre írás utáni ellenõrzést állítja be.\n\n\
@@ -453,8 +451,6 @@ title         new title\n"
     STRING_ALIAS_ERROR "A parancssor túl hosszú az alias kibontásakor!\n"
     STRING_ASSOC_ERROR "File association not found for extension %s\n"
     STRING_BATCH_ERROR "Hiba a batch állomány megnyitásakor\n"
-    STRING_CHCP_ERROR1 "Aktív kódlap: %u\n"
-    STRING_CHCP_ERROR4 "Érvénytelen kódlap\n"
     STRING_CHOICE_ERROR "Érvénytelen paraméter. Várt formátum: /C[:]választási lehetõségek"
     STRING_CHOICE_ERROR_TXT "Érvénytelen paraméter. Várt formátum: /T[:]v,nn"
     STRING_CHOICE_ERROR_OPTION "Érvénytelen paraméter: %s"
@@ -465,7 +461,6 @@ title         new title\n"
     STRING_CMD_ERROR5 "cmdexit.bat futtatása...\n"
     STRING_COLOR_ERROR1 "Ugyanaz a szín nem lehet! (Az elõ- és háttérszín nem lehet ugyanolyan)"
     STRING_COLOR_ERROR2 "Hibás szín megadás"
-    STRING_COLOR_ERROR3 "Szín %02x\n"
     STRING_CONSOLE_ERROR "Ismeretlen hiba: %d\n"
     STRING_COPY_ERROR1 "Hiba: a forrás nem nyitható meg - %s!\n"
     STRING_COPY_ERROR2 "Hiba: nem másolhatod önmagára az állományt!\n"
@@ -473,7 +468,7 @@ title         new title\n"
     STRING_COPY_ERROR4 "Hiba: ez még nem mûködik!\n"
     STRING_DATE_ERROR "Érvénytelen dátum."
     STRING_DEL_ERROR5 "A(z) %s állomány törölve lesz! "
-    STRING_DEL_ERROR6 "Biztos vagy benne (I/N)?"
+    STRING_DEL_ERROR6 "Biztos vagy benne (I/N)? "
     STRING_DEL_ERROR7 "Törlés: %s\n"
     STRING_ERROR_ERROR1 "Ismeretlen hiba! Hiba kód: 0x%lx\n"
     STRING_ERROR_ERROR2 "Szintaxis hiba"

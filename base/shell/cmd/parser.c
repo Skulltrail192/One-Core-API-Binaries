@@ -55,12 +55,12 @@ static TCHAR CurrentToken[CMDLINE_LENGTH];
 static int CurrentTokenType;
 static int InsideBlock;
 
-static TCHAR ParseChar()
+static TCHAR ParseChar(void)
 {
     TCHAR Char;
 
     if (bParseError)
-        return CurChar = 0;
+        return (CurChar = 0);
 
 restart:
     /*
@@ -69,7 +69,9 @@ restart:
      * even separate tokens.
      */
     do
+    {
         Char = *ParsePos++;
+    }
     while (Char == _T('\r'));
 
     if (!Char)
@@ -88,10 +90,10 @@ restart:
             }
         }
     }
-    return CurChar = Char;
+    return (CurChar = Char);
 }
 
-static void ParseError()
+static void ParseError(void)
 {
     error_syntax(CurrentTokenType != TOK_END ? CurrentToken : NULL);
     bParseError = TRUE;
@@ -270,6 +272,11 @@ static BOOL ParseRedirection(REDIRECTION **List)
     }
 
     Redir = cmd_alloc(FIELD_OFFSET(REDIRECTION, Filename[_tcslen(Tok) + 1]));
+    if (!Redir)
+    {
+        WARN("Cannot allocate memory for Redir!\n");
+        goto fail;
+    }
     Redir->Next = NULL;
     Redir->OldHandle = INVALID_HANDLE_VALUE;
     Redir->Number = Number;
@@ -291,7 +298,15 @@ static PARSED_COMMAND *ParseCommandOp(int OpType);
 static PARSED_COMMAND *ParseBlock(REDIRECTION *RedirList)
 {
     PARSED_COMMAND *Cmd, *Sub, **NextPtr;
+
     Cmd = cmd_alloc(sizeof(PARSED_COMMAND));
+    if (!Cmd)
+    {
+        WARN("Cannot allocate memory for Cmd!\n");
+        ParseError();
+        FreeRedirection(RedirList);
+        return NULL;
+    }
     Cmd->Type = C_BLOCK;
     Cmd->Next = NULL;
     Cmd->Subcommands = NULL;
@@ -317,6 +332,7 @@ static PARSED_COMMAND *ParseBlock(REDIRECTION *RedirList)
 
         if (CurrentTokenType == TOK_END_BLOCK)
             break;
+
         /* Skip past the \n */
         ParseChar();
     }
@@ -337,8 +353,16 @@ static PARSED_COMMAND *ParseBlock(REDIRECTION *RedirList)
 /* Parse an IF statement */
 static PARSED_COMMAND *ParseIf(void)
 {
-    PARSED_COMMAND *Cmd = cmd_alloc(sizeof(PARSED_COMMAND));
     int Type;
+    PARSED_COMMAND *Cmd;
+
+    Cmd = cmd_alloc(sizeof(PARSED_COMMAND));
+    if (!Cmd)
+    {
+        WARN("Cannot allocate memory for Cmd!\n");
+        ParseError();
+        return NULL;
+    }
     memset(Cmd, 0, sizeof(PARSED_COMMAND));
     Cmd->Type = C_IF;
 
@@ -429,10 +453,17 @@ condition_done:
  */
 static PARSED_COMMAND *ParseFor(void)
 {
-    PARSED_COMMAND *Cmd = cmd_alloc(sizeof(PARSED_COMMAND));
+    PARSED_COMMAND *Cmd;
     TCHAR List[CMDLINE_LENGTH];
     TCHAR *Pos = List;
 
+    Cmd = cmd_alloc(sizeof(PARSED_COMMAND));
+    if (!Cmd)
+    {
+        WARN("Cannot allocate memory for Cmd!\n");
+        ParseError();
+        return NULL;
+    }
     memset(Cmd, 0, sizeof(PARSED_COMMAND));
     Cmd->Type = C_FOR;
 
@@ -502,6 +533,13 @@ static PARSED_COMMAND *ParseFor(void)
         if (Type == TOK_END_BLOCK)
             break;
 
+        if (Type == TOK_END)
+        {
+            /* Skip past the \n */
+            ParseChar();
+            continue;
+        }
+
         if (Type != TOK_NORMAL)
             goto error;
 
@@ -537,9 +575,10 @@ error:
 /* Parse a REM command */
 static PARSED_COMMAND *ParseRem(void)
 {
-    /* Just ignore the rest of the line */
-    while (CurChar && CurChar != _T('\n'))
-        ParseChar();
+    /* "Ignore" the rest of the line.
+     * (Line continuations will still be parsed, though.) */
+    while (ParseToken(0, NULL) != TOK_END)
+        ;
     return NULL;
 }
 
@@ -599,6 +638,13 @@ static DECLSPEC_NOINLINE PARSED_COMMAND *ParseCommandPart(REDIRECTION *RedirList
     *Pos++ = _T('\0');
 
     Cmd = cmd_alloc(FIELD_OFFSET(PARSED_COMMAND, Command.First[Pos - ParsedLine]));
+    if (!Cmd)
+    {
+        WARN("Cannot allocate memory for Cmd!\n");
+        ParseError();
+        FreeRedirection(RedirList);
+        return NULL;
+    }
     Cmd->Type = C_COMMAND;
     Cmd->Next = NULL;
     Cmd->Subcommands = NULL;
@@ -637,6 +683,12 @@ static PARSED_COMMAND *ParsePrimary(void)
         PARSED_COMMAND *Cmd;
         ParseChar();
         Cmd = cmd_alloc(sizeof(PARSED_COMMAND));
+        if (!Cmd)
+        {
+            WARN("Cannot allocate memory for Cmd!\n");
+            ParseError();
+            return NULL;
+        }
         Cmd->Type = C_QUIET;
         Cmd->Next = NULL;
         /* @ acts like a unary operator with low precedence,
@@ -692,6 +744,14 @@ static PARSED_COMMAND *ParseCommandOp(int OpType)
         }
 
         Cmd = cmd_alloc(sizeof(PARSED_COMMAND));
+        if (!Cmd)
+        {
+            WARN("Cannot allocate memory for Cmd!\n");
+            ParseError();
+            FreeCommand(Left);
+            FreeCommand(Right);
+            return NULL;
+        }
         Cmd->Type = OpType;
         Cmd->Next = NULL;
         Cmd->Redirections = NULL;
@@ -830,8 +890,10 @@ EchoCommand(PARSED_COMMAND *Cmd)
     for (Redir = Cmd->Redirections; Redir; Redir = Redir->Next)
     {
         if (SubstituteForVars(Redir->Filename, Buf))
+        {
             ConOutPrintf(_T(" %c%s%s"), _T('0') + Redir->Number,
-                RedirString[Redir->Mode], Buf);
+                         RedirString[Redir->Mode], Buf);
+        }
     }
 }
 
@@ -852,19 +914,27 @@ Unparse(PARSED_COMMAND *Cmd, TCHAR *Out, TCHAR *OutEnd)
  * overflowing the supplied buffer, define some helper macros to make
  * this less painful.
  */
-#define CHAR(Char) { \
+#define CHAR(Char) \
+do { \
     if (Out == OutEnd) return NULL; \
-    *Out++ = Char; }
-#define STRING(String) { \
+    *Out++ = Char; \
+} while (0)
+#define STRING(String) \
+do { \
     if (Out + _tcslen(String) > OutEnd) return NULL; \
-    Out = _stpcpy(Out, String); }
-#define PRINTF(Format, ...) { \
+    Out = _stpcpy(Out, String); \
+} while (0)
+#define PRINTF(Format, ...) \
+do { \
     UINT Len = _sntprintf(Out, OutEnd - Out, Format, __VA_ARGS__); \
     if (Len > (UINT)(OutEnd - Out)) return NULL; \
-    Out += Len; }
-#define RECURSE(Subcommand) { \
+    Out += Len; \
+} while (0)
+#define RECURSE(Subcommand) \
+do { \
     Out = Unparse(Subcommand, Out, OutEnd); \
-    if (!Out) return NULL; }
+    if (!Out) return NULL; \
+} while (0)
 
     switch (Cmd->Type)
     {
@@ -873,70 +943,71 @@ Unparse(PARSED_COMMAND *Cmd, TCHAR *Out, TCHAR *OutEnd)
          * Windows doesn't bother escaping them, so for compatibility
          * we probably shouldn't do it either */
         if (!SubstituteForVars(Cmd->Command.First, Buf)) return NULL;
-        STRING(Buf)
+        STRING(Buf);
         if (!SubstituteForVars(Cmd->Command.Rest, Buf)) return NULL;
-        STRING(Buf)
+        STRING(Buf);
         break;
     case C_QUIET:
-        CHAR(_T('@'))
-        RECURSE(Cmd->Subcommands)
+        CHAR(_T('@'));
+        RECURSE(Cmd->Subcommands);
         break;
     case C_BLOCK:
-        CHAR(_T('('))
+        CHAR(_T('('));
         for (Sub = Cmd->Subcommands; Sub; Sub = Sub->Next)
         {
-            RECURSE(Sub)
+            RECURSE(Sub);
             if (Sub->Next)
-                CHAR(_T('&'))
+                CHAR(_T('&'));
         }
-        CHAR(_T(')'))
+        CHAR(_T(')'));
         break;
     case C_MULTI:
     case C_IFFAILURE:
     case C_IFSUCCESS:
     case C_PIPE:
         Sub = Cmd->Subcommands;
-        RECURSE(Sub)
-        PRINTF(_T(" %s "), OpString[Cmd->Type - C_OP_LOWEST])
-        RECURSE(Sub->Next)
+        RECURSE(Sub);
+        PRINTF(_T(" %s "), OpString[Cmd->Type - C_OP_LOWEST]);
+        RECURSE(Sub->Next);
         break;
     case C_IF:
-        STRING(_T("if"))
+        STRING(_T("if"));
         if (Cmd->If.Flags & IFFLAG_IGNORECASE)
-            STRING(_T(" /I"))
+            STRING(_T(" /I"));
         if (Cmd->If.Flags & IFFLAG_NEGATE)
-            STRING(_T(" not"))
+            STRING(_T(" not"));
         if (Cmd->If.LeftArg && SubstituteForVars(Cmd->If.LeftArg, Buf))
-            PRINTF(_T(" %s"), Buf)
+            PRINTF(_T(" %s"), Buf);
         PRINTF(_T(" %s"), IfOperatorString[Cmd->If.Operator]);
         if (!SubstituteForVars(Cmd->If.RightArg, Buf)) return NULL;
-        PRINTF(_T(" %s "), Buf)
+        PRINTF(_T(" %s "), Buf);
         Sub = Cmd->Subcommands;
-        RECURSE(Sub)
+        RECURSE(Sub);
         if (Sub->Next)
         {
-            STRING(_T(" else "))
-            RECURSE(Sub->Next)
+            STRING(_T(" else "));
+            RECURSE(Sub->Next);
         }
         break;
     case C_FOR:
-        STRING(_T("for"))
-        if (Cmd->For.Switches & FOR_DIRS)      STRING(_T(" /D"))
-        if (Cmd->For.Switches & FOR_F)         STRING(_T(" /F"))
-        if (Cmd->For.Switches & FOR_LOOP)      STRING(_T(" /L"))
-        if (Cmd->For.Switches & FOR_RECURSIVE) STRING(_T(" /R"))
+        STRING(_T("for"));
+        if (Cmd->For.Switches & FOR_DIRS)      STRING(_T(" /D"));
+        if (Cmd->For.Switches & FOR_F)         STRING(_T(" /F"));
+        if (Cmd->For.Switches & FOR_LOOP)      STRING(_T(" /L"));
+        if (Cmd->For.Switches & FOR_RECURSIVE) STRING(_T(" /R"));
         if (Cmd->For.Params)
-            PRINTF(_T(" %s"), Cmd->For.Params)
-        PRINTF(_T(" %%%c in (%s) do "), Cmd->For.Variable, Cmd->For.List)
-        RECURSE(Cmd->Subcommands)
+            PRINTF(_T(" %s"), Cmd->For.Params);
+        PRINTF(_T(" %%%c in (%s) do "), Cmd->For.Variable, Cmd->For.List);
+        RECURSE(Cmd->Subcommands);
         break;
     }
 
     for (Redir = Cmd->Redirections; Redir; Redir = Redir->Next)
     {
-        if (!SubstituteForVars(Redir->Filename, Buf)) return NULL;
+        if (!SubstituteForVars(Redir->Filename, Buf))
+            return NULL;
         PRINTF(_T(" %c%s%s"), _T('0') + Redir->Number,
-            RedirString[Redir->Mode], Buf)
+               RedirString[Redir->Mode], Buf);
     }
     return Out;
 }

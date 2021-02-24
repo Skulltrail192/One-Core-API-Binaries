@@ -24,15 +24,15 @@ PVOID HalpHeapStart = MM_HAL_HEAP_START;
 
 /* PRIVATE FUNCTIONS *********************************************************/
 
-ULONG_PTR
+ULONG64
 NTAPI
 HalpAllocPhysicalMemory(IN PLOADER_PARAMETER_BLOCK LoaderBlock,
-                        IN ULONG_PTR MaxAddress,
+                        IN ULONG64 MaxAddress,
                         IN PFN_NUMBER PageCount,
                         IN BOOLEAN Aligned)
 {
     ULONG UsedDescriptors;
-    ULONG_PTR PhysicalAddress;
+    ULONG64 PhysicalAddress;
     PFN_NUMBER MaxPage, BasePage, Alignment;
     PLIST_ENTRY NextEntry;
     PMEMORY_ALLOCATION_DESCRIPTOR MdBlock, NewBlock, FreeBlock;
@@ -71,9 +71,8 @@ HalpAllocPhysicalMemory(IN PLOADER_PARAMETER_BLOCK LoaderBlock,
                 (MdBlock->PageCount >= PageCount + Alignment) &&
                 (BasePage + PageCount + Alignment < MaxPage))
             {
-
                 /* We found an address */
-                PhysicalAddress = (BasePage + Alignment) << PAGE_SHIFT;
+                PhysicalAddress = ((ULONG64)BasePage + Alignment) << PAGE_SHIFT;
                 break;
             }
         }
@@ -141,6 +140,23 @@ NTAPI
 HalpMapPhysicalMemory64(IN PHYSICAL_ADDRESS PhysicalAddress,
                         IN PFN_COUNT PageCount)
 {
+    return HalpMapPhysicalMemory64Vista(PhysicalAddress, PageCount, TRUE);
+}
+
+VOID
+NTAPI
+HalpUnmapVirtualAddress(IN PVOID VirtualAddress,
+                        IN PFN_COUNT PageCount)
+{
+    HalpUnmapVirtualAddressVista(VirtualAddress, PageCount, TRUE);
+}
+
+PVOID
+NTAPI
+HalpMapPhysicalMemory64Vista(IN PHYSICAL_ADDRESS PhysicalAddress,
+                             IN PFN_COUNT PageCount,
+                             IN BOOLEAN FlushCurrentTLB)
+{
     PHARDWARE_PTE PointerPte;
     PFN_NUMBER UsedPages = 0;
     PVOID VirtualAddress, BaseAddress;
@@ -200,14 +216,17 @@ HalpMapPhysicalMemory64(IN PHYSICAL_ADDRESS PhysicalAddress,
     }
 
     /* Flush the TLB and return the address */
-    HalpFlushTLB();
+    if (FlushCurrentTLB)
+        HalpFlushTLB();
+
     return VirtualAddress;
 }
 
 VOID
 NTAPI
-HalpUnmapVirtualAddress(IN PVOID VirtualAddress,
-                        IN PFN_COUNT PageCount)
+HalpUnmapVirtualAddressVista(IN PVOID VirtualAddress,
+                             IN PFN_COUNT PageCount,
+                             IN BOOLEAN FlushCurrentTLB)
 {
     PHARDWARE_PTE PointerPte;
     ULONG i;
@@ -227,7 +246,8 @@ HalpUnmapVirtualAddress(IN PVOID VirtualAddress,
     }
 
     /* Flush the TLB */
-    HalpFlushTLB();
+    if (FlushCurrentTLB)
+        HalpFlushTLB();
 
     /* Put the heap back */
     if (HalpHeapStart > VirtualAddress) HalpHeapStart = VirtualAddress;

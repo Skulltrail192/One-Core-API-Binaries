@@ -31,21 +31,17 @@
  * if it's present, then the data is PAL8; RGB555 otherwise.
  */
 
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
-
 #include <stdarg.h>
-#include <windef.h>
-#include <winbase.h>
-#include <wingdi.h>
-//#include "winuser.h" 
-//#include "commdlg.h"
-#include <vfw.h>
-//#include "mmsystem.h"
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h" 
+#include "commdlg.h"
+#include "vfw.h"
+#include "mmsystem.h"
 #include "msvidc32_private.h"
  
-#include <wine/debug.h>
+#include "wine/debug.h"
  
 WINE_DEFAULT_DEBUG_CHANNEL(msvidc32); 
 
@@ -547,8 +543,8 @@ static LRESULT CRAM_GetInfo( const Msvideo1Context *info, ICINFO *icinfo, DWORD 
     icinfo->dwVersion = ICVERSION;
     icinfo->dwVersionICM = ICVERSION;
 
-    LoadStringW(MSVIDC32_hModule, IDS_NAME, icinfo->szName, sizeof(icinfo->szName)/sizeof(WCHAR));
-    LoadStringW(MSVIDC32_hModule, IDS_DESCRIPTION, icinfo->szDescription, sizeof(icinfo->szDescription)/sizeof(WCHAR));
+    LoadStringW(MSVIDC32_hModule, IDS_NAME, icinfo->szName, ARRAY_SIZE(icinfo->szName));
+    LoadStringW(MSVIDC32_hModule, IDS_DESCRIPTION, icinfo->szDescription, ARRAY_SIZE(icinfo->szDescription));
     /* msvfw32 will fill icinfo->szDriver for us */
 
     return sizeof(ICINFO);

@@ -34,6 +34,7 @@ static WCHAR s_szFavoritesRegKey[] = L"Software\\Microsoft\\Windows\\CurrentVers
 
 static BOOL bInMenuLoop = FALSE;        /* Tells us if we are in the menu loop */
 
+extern WCHAR Suggestions[256];
 /*******************************************************************************
  * Local module support methods
  */
@@ -52,8 +53,8 @@ static void resize_frame_rect(HWND hWnd, PRECT prect)
     if (IsWindowVisible(hStatusBar))
     {
         SetupStatusBar(hWnd, TRUE);
-        GetClientRect(hStatusBar, &rt);
-        prect->bottom -= rt.bottom;
+        GetWindowRect(hStatusBar, &rt);
+        prect->bottom -= rt.bottom - rt.top;
     }
     MoveWindow(g_pChildWnd->hWnd, prect->left, prect->top, prect->right, prect->bottom, TRUE);
 }
@@ -1257,6 +1258,38 @@ static BOOL _CmdWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case ID_EDIT_NEW_KEY:
         CreateNewKey(g_pChildWnd->hTreeWnd, TreeView_GetSelection(g_pChildWnd->hTreeWnd));
         break;
+
+    case ID_TREE_EXPANDBRANCH:
+        TreeView_Expand(g_pChildWnd->hTreeWnd, TreeView_GetSelection(g_pChildWnd->hTreeWnd), TVE_EXPAND);
+        break;
+    case ID_TREE_COLLAPSEBRANCH:
+        TreeView_Expand(g_pChildWnd->hTreeWnd, TreeView_GetSelection(g_pChildWnd->hTreeWnd), TVE_COLLAPSE);
+        break;
+    case ID_TREE_RENAME:
+        SetFocus(g_pChildWnd->hTreeWnd);
+        TreeView_EditLabel(g_pChildWnd->hTreeWnd, TreeView_GetSelection(g_pChildWnd->hTreeWnd));
+        break;
+    case ID_TREE_DELETE:
+        keyPath = GetItemPath(g_pChildWnd->hTreeWnd, TreeView_GetSelection(g_pChildWnd->hTreeWnd), &hKeyRoot);
+        if (keyPath == 0 || *keyPath == 0)
+        {
+            MessageBeep(MB_ICONHAND);
+        }
+        else if (DeleteKey(hWnd, hKeyRoot, keyPath))
+            DeleteNode(g_pChildWnd->hTreeWnd, 0);
+        break;
+    case ID_TREE_EXPORT:
+        ExportRegistryFile(g_pChildWnd->hTreeWnd);
+        break;
+    case ID_TREE_PERMISSIONS:
+        keyPath = GetItemPath(g_pChildWnd->hTreeWnd, TreeView_GetSelection(g_pChildWnd->hTreeWnd), &hKeyRoot);
+        RegKeyEditPermissions(hWnd, hKeyRoot, NULL, keyPath);
+        break;
+    case ID_SWITCH_PANELS:
+        g_pChildWnd->nFocusPanel = !g_pChildWnd->nFocusPanel;
+        SetFocus(g_pChildWnd->nFocusPanel? g_pChildWnd->hListWnd: g_pChildWnd->hTreeWnd);
+        break;
+
     default:
         if ((LOWORD(wParam) >= ID_FAVORITES_MIN) && (LOWORD(wParam) <= ID_FAVORITES_MAX))
         {
@@ -1277,6 +1310,18 @@ static BOOL _CmdWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 ChooseFavorite(szFavorite);
             }
+        }
+        else if ((LOWORD(wParam) >= ID_TREE_SUGGESTION_MIN) && (LOWORD(wParam) <= ID_TREE_SUGGESTION_MAX))
+        {
+            WORD wID = LOWORD(wParam);
+            LPCWSTR s = Suggestions;
+            while(wID > ID_TREE_SUGGESTION_MIN)
+            {
+                if (*s)
+                    s += wcslen(s) + 1;
+                wID--;
+            }
+            SelectNode(g_pChildWnd->hTreeWnd, s);
         }
         else
         {
@@ -1303,12 +1348,16 @@ static BOOL _CmdWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 LRESULT CALLBACK FrameWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    RECT rc;
     switch (message)
     {
     case WM_CREATE:
+        // For now, the Help dialog item is disabled because of lacking of HTML Help support
+        EnableMenuItem(GetMenu(hWnd), ID_HELP_HELPTOPICS, MF_BYCOMMAND | MF_GRAYED);
+        GetClientRect(hWnd, &rc);
         CreateWindowExW(0, szChildClass, NULL, WS_CHILD | WS_VISIBLE,
-                       CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                       hWnd, (HMENU)0, hInst, 0);
+                        rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top,
+                        hWnd, (HMENU)0, hInst, 0);
         break;
     case WM_COMMAND:
         if (!_CmdWndProc(hWnd, message, wParam, lParam))

@@ -12,9 +12,6 @@
 
 #include <msafd.h>
 
-#include <wine/debug.h>
-WINE_DEFAULT_DEBUG_CHANNEL(msafd);
-
 INT
 WSPAPI
 WSPAsyncSelect(IN  SOCKET Handle,
@@ -201,7 +198,7 @@ WSPRecv(SOCKET Handle,
     }
 
     Status = NtCreateEvent( &SockEvent, EVENT_ALL_ACCESS,
-                            NULL, 1, FALSE );
+                            NULL, SynchronizationEvent, FALSE );
 
     if( !NT_SUCCESS(Status) )
         return -1;
@@ -420,7 +417,7 @@ WSPRecvFrom(SOCKET Handle,
     }
 
     Status = NtCreateEvent( &SockEvent, EVENT_ALL_ACCESS,
-                            NULL, 1, FALSE );
+                            NULL, SynchronizationEvent, FALSE );
 
     if( !NT_SUCCESS(Status) )
         return -1;
@@ -604,7 +601,7 @@ WSPSend(SOCKET Handle,
     }
 
     Status = NtCreateEvent( &SockEvent, EVENT_ALL_ACCESS,
-                            NULL, 1, FALSE );
+                            NULL, SynchronizationEvent, FALSE );
 
     if( !NT_SUCCESS(Status) )
         return -1;
@@ -805,7 +802,7 @@ WSPSendTo(SOCKET Handle,
 
     Status = NtCreateEvent(&SockEvent,
                            EVENT_ALL_ACCESS,
-                           NULL, 1, FALSE);
+                           NULL, SynchronizationEvent, FALSE);
 
     if (!NT_SUCCESS(Status))
     {

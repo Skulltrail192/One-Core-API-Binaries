@@ -42,7 +42,7 @@
 /* Define one of these to select the used locale. */
 /*  (date and time formats etc.) used in DATE, TIME, */
 /*  DIR, PROMPT etc. */
-#define LOCALE_WINDOWS   /* System locale */
+/* #define LOCALE_WINDOWS */   /* System locale */
 /* #define LOCALE_GERMAN */    /* German locale */
 /* #define LOCALE_DEFAULT */   /* United States locale */
 
@@ -50,19 +50,17 @@
 #define INCLUDE_CMD_ACTIVATE
 #endif
 #define INCLUDE_CMD_ASSOC
-#define INCLUDE_CMD_ATTRIB
-#define INCLUDE_CMD_CHCP
 #define INCLUDE_CMD_CHDIR
 #define INCLUDE_CMD_CHOICE
 #define INCLUDE_CMD_CLS
 #define INCLUDE_CMD_COLOR
 #define INCLUDE_CMD_COPY
+#define INCLUDE_CMD_CTTY
 #define INCLUDE_CMD_DATE
 #define INCLUDE_CMD_DEL
 #define INCLUDE_CMD_DELAY
 #define INCLUDE_CMD_DIR
 #define INCLUDE_CMD_FREE
-#define INCLUDE_CMD_LABEL
 #define INCLUDE_CMD_MEMORY
 #define INCLUDE_CMD_MKDIR
 #define INCLUDE_CMD_MKLINK

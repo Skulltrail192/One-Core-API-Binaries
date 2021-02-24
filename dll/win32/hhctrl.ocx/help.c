@@ -22,8 +22,15 @@
 
 #include "hhctrl.h"
 
-#include <wingdi.h>
-#include <wininet.h>
+#include "wingdi.h"
+#include "commctrl.h"
+#include "wininet.h"
+
+#include "wine/debug.h"
+
+#include "resource.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(htmlhelp);
 
 static LRESULT Help_OnSize(HWND hWnd);
 static void ExpandContract(HHInfo *pHHInfo);
@@ -209,7 +216,7 @@ BOOL NavigateToUrl(HHInfo *info, LPCWSTR surl)
 
     TRACE("%s\n", debugstr_w(surl));
 
-    if (strstrW(surl, url_indicator)) {
+    if (wcsstr(surl, url_indicator)) {
         hres = navigate_url(info, surl);
         if(SUCCEEDED(hres))
             return TRUE;
@@ -234,7 +241,7 @@ static BOOL AppendFullPathURL(LPCWSTR file, LPWSTR buf, LPCWSTR index)
 
     TRACE("%s %p %s\n", debugstr_w(file), buf, debugstr_w(index));
 
-    if(!GetFullPathNameW(file, sizeof(full_path)/sizeof(full_path[0]), full_path, NULL)) {
+    if (!GetFullPathNameW(file, ARRAY_SIZE(full_path), full_path, NULL)) {
         WARN("GetFullPathName failed: %u\n", GetLastError());
         return FALSE;
     }
@@ -281,7 +288,7 @@ static void DoSync(HHInfo *info)
         static const WCHAR delimW[] = {':',':','/',0};
         const WCHAR *index;
 
-        index = strstrW(url, delimW);
+        index = wcsstr(url, delimW);
 
         if (index)
             ActivateContentTopic(info->tabs[TAB_CONTENTS].hwnd, index + 3, info->content); /* skip over ::/ */
@@ -632,7 +639,7 @@ static LRESULT OnTopicChange(HHInfo *info, void *user_data)
                 memset(&lvi, 0, sizeof(lvi));
                 lvi.iItem = i;
                 lvi.mask = LVIF_TEXT|LVIF_PARAM;
-                lvi.cchTextMax = strlenW(name)+1;
+                lvi.cchTextMax = lstrlenW(name)+1;
                 lvi.pszText = name;
                 lvi.lParam = (LPARAM) item;
                 SendMessageW(info->popup.hwndList, LVM_INSERTITEMW, 0, (LPARAM)&lvi);
@@ -1018,7 +1025,7 @@ static BOOL HH_AddToolbar(HHInfo *pHHInfo)
     for (dwIndex = 0; dwIndex < dwNumButtons; dwIndex++)
     {
         LPWSTR szBuf = HH_LoadString(buttons[dwIndex].idCommand);
-        DWORD dwLen = strlenW(szBuf);
+        DWORD dwLen = lstrlenW(szBuf);
         szBuf[dwLen + 1] = 0; /* Double-null terminate */
 
         buttons[dwIndex].iString = (DWORD)SendMessageW(hToolbar, TB_ADDSTRINGW, 0, (LPARAM)szBuf);
@@ -1596,7 +1603,7 @@ static LRESULT CALLBACK Help_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 static BOOL HH_CreateHelpWindow(HHInfo *info)
 {
-    HWND hWnd, parent = 0;
+    HWND hWnd;
     RECT winPos = info->WinType.rcWindowPos;
     WNDCLASSEXW wcex;
     DWORD dwStyles, dwExStyles;
@@ -1670,11 +1677,8 @@ static BOOL HH_CreateHelpWindow(HHInfo *info)
     caption = info->WinType.pszCaption;
     if (!*caption) caption = info->pCHMInfo->defTitle;
 
-    if (info->WinType.dwStyles & WS_CHILD)
-        parent = info->WinType.hwndCaller;
-
-    hWnd = CreateWindowExW(dwExStyles, windowClassW, caption,
-                           dwStyles, x, y, width, height, parent, NULL, hhctrl_hinstance, NULL);
+    hWnd = CreateWindowExW(dwExStyles, windowClassW, caption, dwStyles, x, y, width, height,
+                           info->WinType.hwndCaller, NULL, hhctrl_hinstance, NULL);
     if (!hWnd)
         return FALSE;
 
@@ -1826,7 +1830,7 @@ HHInfo *CreateHelpViewer(HHInfo *info, LPCWSTR filename, HWND caller)
     /* Set the invalid tab ID (-1) as the default value for all
      * of the tabs, this matches a failed TCM_INSERTITEM call.
      */
-    for(i=0;i<sizeof(info->tabs)/sizeof(HHTab);i++)
+    for (i = 0; i < ARRAY_SIZE(info->tabs); i++)
         info->tabs[i].id = -1;
 
     OleInitialize(NULL);
@@ -1863,7 +1867,7 @@ HHInfo *CreateHelpViewer(HHInfo *info, LPCWSTR filename, HWND caller)
  */
 static char find_html_symbol(const char *entity, int entity_len)
 {
-    int max = sizeof(html_encoded_symbols)/sizeof(html_encoded_symbols[0])-1;
+    int max = ARRAY_SIZE(html_encoded_symbols)-1;
     int min = 0, dir;
 
     while(min <= max)
@@ -1954,7 +1958,7 @@ HHInfo *find_window(const WCHAR *window)
 
     LIST_FOR_EACH_ENTRY(info, &window_list, HHInfo, entry)
     {
-        if (strcmpW(info->WinType.pszType, window) == 0)
+        if (lstrcmpW(info->WinType.pszType, window) == 0)
             return info;
     }
     return NULL;

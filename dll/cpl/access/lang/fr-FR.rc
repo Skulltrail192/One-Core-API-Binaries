@@ -17,11 +17,11 @@ BEGIN
           -1, 12, 89, 222, 29
     AUTOCHECKBOX "Utiliser les touches &filtre", IDC_FILTER_BOX, 12, 121, 126, 14
     PUSHBUTTON "P&aramètres", IDC_FILTER_BUTTON, 144, 121, 90, 14
-    GROUPBOX "Touches bascules", -1, 6, 145, 234, 62
+    GROUPBOX "Touches bascules", -1, 6, 148, 234, 62
     LTEXT "Utilisez les touches &bascules si vous voulez entendre un son émis à chaque fois que vous appuyez sur Verr. maj, Verr. num, et Arrêt défil.",
           -1, 12, 161, 222, 29
-    AUTOCHECKBOX "Utiliser les touches bascules", IDC_TOGGLE_BOX, 12, 184, 126, 14
-    PUSHBUTTON "Para&mètres", IDC_TOGGLE_BUTTON, 144, 184, 90, 14
+    AUTOCHECKBOX "Utiliser les touches bascules", IDC_TOGGLE_BOX, 12, 189, 126, 14
+    PUSHBUTTON "Para&mètres", IDC_TOGGLE_BUTTON, 144, 189, 90, 14
     AUTOCHECKBOX "&Afficher l'aide supplémentaire sur le clavier dans les programmes", IDC_KEYBOARD_EXTRA,
                  6, 212, 234, 14
 END
@@ -87,16 +87,16 @@ STYLE DS_SHELLFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Général"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
-    GROUPBOX "Réinitialisation automatique", -1, 6, 11, 234, 47
+    GROUPBOX "Réinitialisation automatique", -1, 6, 11, 234, 50
     AUTOCHECKBOX "&Désactiver les fonctionnalités d'accessibilité après un délai d'inactivité de :",
-                 IDC_RESET_BOX, 12, 18, 222, 14
+                 IDC_RESET_BOX, 12, 20, 222, 16, BS_MULTILINE
     COMBOBOX IDC_RESET_COMBO, 24, 38, 60, 47,
              CBS_DROPDOWNLIST | WS_VSCROLL | WS_VISIBLE | WS_TABSTOP
-    GROUPBOX "Avertissement", -1, 6, 63, 234, 47
+    GROUPBOX "Avertissement", -1, 6, 63, 234, 50
     AUTOCHECKBOX "Afficher un message d'avertissement lors de l'activation d'une fonctionnalité", IDC_NOTIFICATION_MESSAGE,
-                 12, 72, 222, 14
+                 12, 72, 222, 14, BS_MULTILINE
     AUTOCHECKBOX "Émettre un son lors de l'activation/désactivation d'une fonctionnalité", IDC_NOTIFICATION_SOUND,
-                 12, 90, 222, 14
+                 12, 90, 222, 18, BS_MULTILINE
     GROUPBOX "Périphériques Touches série", -1, 6, 115, 234, 47
     LTEXT "Les périphériques Touches série représentent une alternative pour accéder aux fonctionnalités du clavier et de la souris.",
           -1, 12, 124, 222, 20
@@ -106,7 +106,7 @@ BEGIN
     AUTOCHECKBOX "Appliquer tous les paramètres au Bureau d'ou&verture de session", IDC_ADMIN_LOGON_BOX,
                  12, 178, 222, 14
     AUTOCHECKBOX "Appliq&uer tous les paramètres par défaut aux nouveaux utilisateurs", IDC_ADMIN_USERS_BOX,
-                 12, 196, 222, 14
+                 12, 196, 222, 14, BS_MULTILINE
 END
 
 IDD_STICKYKEYSOPTIONS DIALOGEX 0, 0, 246, 228
@@ -138,7 +138,7 @@ CAPTION "Paramètres des touches filtre"
 FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX "Raccourci clavier", -1, 6, 11, 234, 62
-    LTEXT "Le raccourci pour les touches filtre est:  \nMaintenir la touche <Maj droit> pressée pendant huit secondes.",
+    LTEXT "Le raccourci pour les touches filtre est:\nMaintenir la touche <Maj droit> pressée pendant huit secondes.",
           -1, 12, 20, 222, 29
     AUTOCHECKBOX "&Utiliser le raccourci", IDC_FILTER_ACTIVATE_CHECK, 12, 49, 126, 14
     GROUPBOX "Options de filtre", -1, 6, 79, 234, 79
@@ -165,7 +165,7 @@ CAPTION "Paramètre des touches bascules"
 FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX "Raccourci clavier", -1, 6, 11, 234, 62
-    LTEXT "Le raccourci pour les touches bascule est : \nMaintenir la touche <Verr num> pressée pendant cinq secondes.",
+    LTEXT "Le raccourci pour les touches bascule est :\nMaintenir la touche <Verr num> pressée pendant cinq secondes.",
           -1, 12, 20, 222, 29
     AUTOCHECKBOX "Utili&ser le raccourci", IDC_TOGGLE_ACTIVATE_CHECK, 12, 49, 222, 14
     DEFPUSHBUTTON "OK", IDOK, 135, 207, 50, 14
@@ -178,7 +178,7 @@ CAPTION "Paramètres du contraste élevé"
 FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX "Raccourci clavier", -1, 6, 11, 234, 62
-    LTEXT "Le raccourci pour le contraste élevé est :  \nPresser <Alt gauche+Maj gauche+Impr écran>.",
+    LTEXT "Le raccourci pour le contraste élevé est :\nPresser <Alt gauche+Maj gauche+Impr écran>.",
           -1, 12, 20, 222, 29
     AUTOCHECKBOX "Utili&ser le raccourci", IDC_CONTRAST_ACTIVATE_CHECK, 12, 49, 222, 14
     GROUPBOX "Schéma de couleur du contraste élevé", -1, 6, 83, 234, 44
@@ -195,7 +195,7 @@ CAPTION "Paramètres des touches souris"
 FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX "Raccourci clavier", -1, 6, 11, 234, 62
-    LTEXT "Le raccourci pour les touches souris est :  \nPresser <Alt gauche+Maj gauche+Verr num>.",
+    LTEXT "Le raccourci pour les touches souris est :\nPresser <Alt gauche+Maj gauche+Verr num>.",
           -1, 12, 20, 222, 29
     AUTOCHECKBOX "Utili&ser le raccourci", IDC_MOUSEKEYS_ACTIVATE_CHECK,
                  12, 49, 222, 14

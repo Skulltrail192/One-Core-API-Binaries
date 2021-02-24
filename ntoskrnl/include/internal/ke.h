@@ -36,6 +36,13 @@ typedef struct _DISPATCH_INFO
     PKINTERRUPT_ROUTINE *FlatDispatch;
 } DISPATCH_INFO, *PDISPATCH_INFO;
 
+typedef struct _PROCESS_VALUES
+{
+    LARGE_INTEGER TotalKernelTime;
+    LARGE_INTEGER TotalUserTime;
+    IO_COUNTERS IoInfo;
+} PROCESS_VALUES, *PPROCESS_VALUES;
+
 typedef struct _DEFERRED_REVERSE_BARRIER
 {
     ULONG Barrier;
@@ -710,12 +717,19 @@ NTAPI
 KeQueryRuntimeProcess(IN PKPROCESS Process,
                       OUT PULONG UserTime);
 
+VOID
+NTAPI
+KeQueryValuesProcess(IN PKPROCESS Process,
+                     PPROCESS_VALUES Values);
+
 /* INITIALIZATION FUNCTIONS *************************************************/
 
+INIT_FUNCTION
 BOOLEAN
 NTAPI
 KeInitSystem(VOID);
 
+INIT_FUNCTION
 VOID
 NTAPI
 KeInitExceptions(VOID);
@@ -724,10 +738,12 @@ VOID
 NTAPI
 KeInitInterrupts(VOID);
 
+INIT_FUNCTION
 VOID
 NTAPI
 KiInitializeBugCheck(VOID);
 
+INIT_FUNCTION
 VOID
 NTAPI
 KiSystemStartup(
@@ -888,6 +904,7 @@ KiChainedDispatch(
     IN PKINTERRUPT Interrupt
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 KiInitializeMachineType(
@@ -905,6 +922,7 @@ KiSetupStackAndInitializeKernel(
     IN PLOADER_PARAMETER_BLOCK LoaderBlock
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 KiInitSpinLocks(
@@ -912,6 +930,7 @@ KiInitSpinLocks(
     IN CCHAR Number
 );
 
+INIT_FUNCTION
 LARGE_INTEGER
 NTAPI
 KiComputeReciprocal(
@@ -919,6 +938,7 @@ KiComputeReciprocal(
     OUT PUCHAR Shift
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 KiInitSystem(
@@ -947,6 +967,7 @@ KiCallbackReturn(
     IN NTSTATUS Status
 );
 
+INIT_FUNCTION
 VOID
 NTAPI
 KiInitMachineDependent(VOID);

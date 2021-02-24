@@ -18,7 +18,25 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+
 #include "quartz_private.h"
+#include "pin.h"
+
+#include "uuids.h"
+#include "vfwmsgs.h"
+#include "windef.h"
+#include "winbase.h"
+#include "dshow.h"
+#include "evcode.h"
+#include "strmif.h"
+#include "dsound.h"
+#include "amaudio.h"
+
+#include "wine/unicode.h"
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(quartz);
 
 /* NOTE: buffer can still be filled completely,
  * but we start waiting until only this amount is buffered
@@ -97,9 +115,9 @@ static REFERENCE_TIME time_from_pos(DSoundRenderImpl *This, DWORD pos) {
 static DWORD pos_from_time(DSoundRenderImpl *This, REFERENCE_TIME time) {
     WAVEFORMATEX *wfx = (WAVEFORMATEX*)This->renderer.pInputPin->pin.mtCurrent.pbFormat;
     REFERENCE_TIME ret = time;
-    ret *= wfx->nSamplesPerSec;
+    ret *= wfx->nAvgBytesPerSec;
     ret /= 10000000;
-    ret *= wfx->nBlockAlign;
+    ret -= ret % wfx->nBlockAlign;
     return ret;
 }
 
@@ -406,7 +424,7 @@ static HRESULT WINAPI DSoundRender_CheckMediaType(BaseRenderer *iface, const AM_
     TRACE("Format = %p\n", format);
     TRACE("wFormatTag = %x %x\n", format->wFormatTag, WAVE_FORMAT_PCM);
     TRACE("nChannels = %d\n", format->nChannels);
-    TRACE("nSamplesPerSec = %d\n", format->nAvgBytesPerSec);
+    TRACE("nSamplesPerSec = %d\n", format->nSamplesPerSec);
     TRACE("nAvgBytesPerSec = %d\n", format->nAvgBytesPerSec);
     TRACE("nBlockAlign = %d\n", format->nBlockAlign);
     TRACE("wBitsPerSample = %d\n", format->wBitsPerSample);
@@ -473,7 +491,7 @@ static HRESULT WINAPI DSoundRender_CompleteConnect(BaseRenderer * iface, IPin * 
                        DSBCAPS_GETCURRENTPOSITION2;
     buf_desc.dwBufferBytes = This->buf_size;
     buf_desc.lpwfxFormat = format;
-    hr = IDirectSound_CreateSoundBuffer(This->dsound, &buf_desc, &This->dsbuffer, NULL);
+    hr = IDirectSound8_CreateSoundBuffer(This->dsound, &buf_desc, &This->dsbuffer, NULL);
     This->writepos = This->buf_size;
     if (FAILED(hr))
         ERR("Can't create sound buffer (%x)\n", hr);
@@ -627,14 +645,14 @@ HRESULT DSoundRender_create(IUnknown * pUnkOuter, LPVOID * ppv)
         if (FAILED(hr))
             ERR("Cannot create Direct Sound object (%x)\n", hr);
         else
-            hr = IDirectSound_SetCooperativeLevel(pDSoundRender->dsound, GetDesktopWindow(), DSSCL_PRIORITY);
+            hr = IDirectSound8_SetCooperativeLevel(pDSoundRender->dsound, GetDesktopWindow(), DSSCL_PRIORITY);
         if (SUCCEEDED(hr)) {
             IDirectSoundBuffer *buf;
             DSBUFFERDESC buf_desc;
             memset(&buf_desc,0,sizeof(DSBUFFERDESC));
             buf_desc.dwSize = sizeof(DSBUFFERDESC);
             buf_desc.dwFlags = DSBCAPS_PRIMARYBUFFER;
-            hr = IDirectSound_CreateSoundBuffer(pDSoundRender->dsound, &buf_desc, &buf, NULL);
+            hr = IDirectSound8_CreateSoundBuffer(pDSoundRender->dsound, &buf_desc, &buf, NULL);
             if (SUCCEEDED(hr)) {
                 IDirectSoundBuffer_Play(buf, 0, 0, DSBPLAY_LOOPING);
                 IDirectSoundBuffer_Release(buf);
@@ -718,7 +736,7 @@ static ULONG WINAPI DSoundRender_Release(IBaseFilter * iface)
             IDirectSoundBuffer_Release(This->dsbuffer);
         This->dsbuffer = NULL;
         if (This->dsound)
-            IDirectSound_Release(This->dsound);
+            IDirectSound8_Release(This->dsound);
         This->dsound = NULL;
 
         BasicAudio_Destroy(&This->basicAudio);

@@ -8,8 +8,6 @@
 
 #include <user32.h>
 
-#include <wine/debug.h>
-
 WINE_DEFAULT_DEBUG_CHANNEL(cursor);
 WINE_DECLARE_DEBUG_CHANNEL(icon);
 //WINE_DECLARE_DEBUG_CHANNEL(resource);
@@ -283,7 +281,7 @@ create_alpha_bitmap(
     HDC hdc = NULL, hdcScreen;
     unsigned char *ptr;
     void *bits = NULL;
-    size_t size;
+    ULONG size;
 
     hdcScreen = CreateDCW(DISPLAYW, NULL, NULL, NULL);
     if (!hdcScreen)

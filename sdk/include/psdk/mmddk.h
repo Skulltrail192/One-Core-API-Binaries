@@ -29,6 +29,10 @@
 #include <mmsystem.h>
 #include <winbase.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Maxium drivers  */
 #define MAXWAVEDRIVERS 10
 
@@ -91,6 +95,7 @@ typedef struct {
 #define DRV_QUERYSTRINGID		(DRV_RESERVED + 14)
 #define DRV_QUERYSTRINGIDSIZE		(DRV_RESERVED + 15)
 #define DRV_QUERYIDFROMSTRINGID		(DRV_RESERVED + 16)
+#define DRV_QUERYFUNCTIONINSTANCEID	(DRV_RESERVED + 17)
 #ifdef _WINE
 #define DRV_QUERYDSOUNDIFACE		(DRV_RESERVED + 20)
 #define DRV_QUERYDSOUNDDESC		(DRV_RESERVED + 21)
@@ -478,5 +483,9 @@ DWORD   WINAPI mmGetCurrentTask(void);
 
 
 #include <poppack.h>
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif /* __MMDDK_H */

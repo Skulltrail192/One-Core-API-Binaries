@@ -7,9 +7,9 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPT
 CAPTION "Arrêter l'ordinateur"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "Vous pouvez maintenant éteindre votre ordinateur en toute sécurité", IDC_SHUTDOWNCOMPUTER, 31, 13, 132, 8
+    LTEXT "Vous pouvez maintenant éteindre votre ordinateur en toute sécurité.", IDC_SHUTDOWNCOMPUTER, 31, 6, 132, 18
     ICON IDI_WINLOGON, IDC_SHTDOWNICON, 6, 7, 18, 20
-    DEFPUSHBUTTON "&Redémarrer", IDC_BTNSHTDOWNCOMPUTER, 62, 32, 40, 14
+    DEFPUSHBUTTON "&Redémarrer", IDC_BTNSHTDOWNCOMPUTER, 58, 32, 48, 14
 END
 
 IDD_GINALOADFAILED DIALOGEX 58, 83, 231, 119
@@ -17,9 +17,22 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPT
 CAPTION "Échec de l'interface utilisateur"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "Le chargement du DLL %s de l'interface utilisateur a échoué", IDC_GINALOADFAILED, 39, 16, 156, 24
+    LTEXT "Le chargement du DLL %s de l'interface utilisateur a échoué.", IDC_GINALOADFAILED, 39, 16, 156, 24
     LTEXT "Contactez votre administrateur système pour remplacer la DLL, ou restaurez la DLL originale.", IDC_GINALOADFAILEDCONTACT, 39, 53, 151, 25
     DEFPUSHBUTTON "&Redémarrer", 1, 80, 91, 68, 14
+END
+
+IDD_SYSSHUTDOWN DIALOGEX 50, 50, 180, 140
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CENTER | WS_VISIBLE | WS_CAPTION | WS_POPUP
+CAPTION "Arrêt du système"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON IDI_WARNING, IDC_SYSSHUTDOWNICON, 6, 7, 18, 20
+    LTEXT "Un arrêt du système a été initié. Veuillez enregistrer tous les travaux en cours et quitter votre session. Toutes les modifications non enregistrées seront perdues.", -1, 38, 7, 135, 40
+    LTEXT "Le système s'arrête dans :", -1, 38, 50, 90, 8
+    LTEXT "00:00:00", IDC_SYSSHUTDOWNTIMELEFT, 132, 50, 41, 8
+    LTEXT "Message :", -1, 38, 65, 135, 8
+    EDITTEXT IDC_SYSSHUTDOWNMESSAGE, 34, 75, 139, 58, ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP, WS_EX_STATICEDGE
 END
 
 STRINGTABLE
@@ -38,6 +51,8 @@ BEGIN
     IDS_PREPARETOHIBERNATE "Préparation de l'hibernation..."
     IDS_SAVEYOURSETTINGS "Enregistrement de vos paramètres..."
     IDS_REACTOSISSTARTINGUP "Démarrage de ReactOS..."
+    IDS_TIMEOUTSHORTFORMAT "%02d:%02d:%02d"
+    IDS_TIMEOUTLONGFORMAT "%d jours"
 END
 
 STRINGTABLE

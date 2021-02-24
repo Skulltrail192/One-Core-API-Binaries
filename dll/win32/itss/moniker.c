@@ -20,9 +20,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
 
-#include <oleidl.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "ole2.h"
+
+#include "wine/itss.h"
+#include "wine/debug.h"
+
+#include "itsstor.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(itss);
 
 /*****************************************************************************/
 
@@ -271,14 +285,14 @@ static HRESULT WINAPI ITS_IMonikerImpl_GetDisplayName(
     ITS_IMonikerImpl *This = impl_from_IMoniker(iface);
     static const WCHAR szFormat[] = {
         'm','s','-','i','t','s',':','%','s',':',':','%','s',0 };
-    DWORD len = sizeof szFormat / sizeof(WCHAR);
+    DWORD len;
     LPWSTR str;
 
     TRACE("%p %p %p %p\n", iface, pbc, pmkToLeft, ppszDisplayName);
 
-    len = strlenW( This->szFile ) + strlenW( This->szHtml );
+    len = lstrlenW( This->szFile ) + lstrlenW( This->szHtml );
     str = CoTaskMemAlloc( len*sizeof(WCHAR) );
-    sprintfW( str, szFormat, This->szFile, This->szHtml );
+    swprintf( str, szFormat, This->szFile, This->szHtml );
 
     *ppszDisplayName = str;
     
@@ -338,12 +352,12 @@ static HRESULT ITS_IMoniker_create( IMoniker **ppObj, LPCWSTR name, DWORD n )
     DWORD sz;
 
     /* szFile[1] has space for one character already */
-    sz = FIELD_OFFSET( ITS_IMonikerImpl, szFile[strlenW( name ) + 1] );
+    sz = FIELD_OFFSET( ITS_IMonikerImpl, szFile[lstrlenW( name ) + 1] );
 
     itsmon = HeapAlloc( GetProcessHeap(), 0, sz );
     itsmon->IMoniker_iface.lpVtbl = &ITS_IMonikerImpl_Vtbl;
     itsmon->ref = 1;
-    strcpyW( itsmon->szFile, name );
+    lstrcpyW( itsmon->szFile, name );
     itsmon->szHtml = &itsmon->szFile[n];
 
     while( *itsmon->szHtml == ':' )
@@ -419,7 +433,7 @@ static HRESULT WINAPI ITS_IParseDisplayNameImpl_ParseDisplayName(
 {
     static const WCHAR szPrefix[] = { 
         '@','M','S','I','T','S','t','o','r','e',':',0 };
-    const DWORD prefix_len = (sizeof szPrefix/sizeof szPrefix[0])-1;
+    const DWORD prefix_len = ARRAY_SIZE(szPrefix)-1;
     DWORD n;
 
     ITS_IParseDisplayNameImpl *This = impl_from_IParseDisplayName(iface);
@@ -427,11 +441,11 @@ static HRESULT WINAPI ITS_IParseDisplayNameImpl_ParseDisplayName(
     TRACE("%p %s %p %p\n", This,
           debugstr_w( pszDisplayName ), pchEaten, ppmkOut );
 
-    if( strncmpiW( pszDisplayName, szPrefix, prefix_len ) )
+    if( _wcsnicmp( pszDisplayName, szPrefix, prefix_len ) )
         return MK_E_SYNTAX;
 
     /* search backwards for a double colon */
-    for( n = strlenW( pszDisplayName ) - 3; prefix_len <= n; n-- )
+    for( n = lstrlenW( pszDisplayName ) - 3; prefix_len <= n; n-- )
         if( ( pszDisplayName[n] == ':' ) && ( pszDisplayName[n+1] == ':' ) )
             break;
 
@@ -441,7 +455,7 @@ static HRESULT WINAPI ITS_IParseDisplayNameImpl_ParseDisplayName(
     if( !pszDisplayName[n+2] )
         return MK_E_SYNTAX;
 
-    *pchEaten = strlenW( pszDisplayName ) - n - 3;
+    *pchEaten = lstrlenW( pszDisplayName ) - n - 3;
 
     return ITS_IMoniker_create( ppmkOut,
               &pszDisplayName[prefix_len], n-prefix_len );

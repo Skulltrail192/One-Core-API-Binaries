@@ -4,11 +4,17 @@ add_definitions(-D_WIN32_WINNT=0x600)
 
 add_definitions(
     -D__WINESRC__
+    -D__ROS_LONG64__
     -DCOM_NO_WINDOWS_H)
 
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 add_idl_headers(mshtml_nsiface_header nsiface.idl)
-spec2def(mshtml.dll mshtml.spec)
+spec2def(mshtml.dll mshtml.spec ADD_IMPORTLIB)
+
+if(MSVC)
+    # error C4028: formal parameter 3 different from declaration
+    replace_compile_flags("/we4028" " ")
+endif()
 
 list(APPEND SOURCE
     conpoint.c
@@ -89,7 +95,7 @@ if(MSVC)
     add_asm_files(mshtml_asm msvc.S)
 endif()
 
-add_library(mshtml SHARED
+add_library(mshtml MODULE
     ${SOURCE}
     ${mshtml_asm}
     guid.c

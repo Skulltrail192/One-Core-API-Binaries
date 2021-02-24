@@ -69,6 +69,10 @@ InterpretCmd(int argc, LPWSTR *argv)
 {
     PCOMMAND cmdptr;
 
+    /* If no args provided */
+    if (argc < 1)
+        return TRUE;
+
     /* First, determine if the user wants to exit
        or to use a comment */
     if(wcsicmp(argv[0], L"exit") == 0)
@@ -114,7 +118,7 @@ InterpretScript(LPWSTR input_line)
         }
         else
         {
-            if ((bWhiteSpace == TRUE) && (args_count < MAX_ARGS_COUNT))
+            if ((bWhiteSpace != FALSE) && (args_count < MAX_ARGS_COUNT))
             {
                 args_vector[args_count] = ptr;
                 args_count++;
@@ -147,7 +151,7 @@ InterpretMain(VOID)
     BOOL bRun = TRUE;
     LPWSTR ptr;
 
-    while (bRun == TRUE)
+    while (bRun != FALSE)
     {
         args_count = 0;
         memset(args_vector, 0, sizeof(args_vector));
@@ -168,7 +172,7 @@ InterpretMain(VOID)
             }
             else
             {
-                if ((bWhiteSpace == TRUE) && (args_count < MAX_ARGS_COUNT))
+                if ((bWhiteSpace != FALSE) && (args_count < MAX_ARGS_COUNT))
                 {
                     args_vector[args_count] = ptr;
                     args_count++;

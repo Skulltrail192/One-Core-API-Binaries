@@ -50,6 +50,8 @@
 #define ROUND_UP(n, align) \
     ROUND_DOWN(((ULONG)n) + (align) - 1, (align))
 
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
+
 #define __TRY _SEH2_TRY
 #define __EXCEPT_PAGE_FAULT _SEH2_EXCEPT(_SEH2_GetExceptionCode() == STATUS_ACCESS_VIOLATION)
 #define __ENDTRY _SEH2_END
@@ -181,10 +183,17 @@ BaseFormatObjectAttributes(OUT POBJECT_ATTRIBUTES ObjectAttributes,
 
 NTSTATUS
 WINAPI
-BaseCreateStack(HANDLE hProcess,
-                 SIZE_T StackReserve,
-                 SIZE_T StackCommit,
-                 PINITIAL_TEB InitialTeb);
+BaseCreateStack(
+    _In_ HANDLE hProcess,
+    _In_opt_ SIZE_T StackCommit,
+    _In_opt_ SIZE_T StackReserve,
+    _Out_ PINITIAL_TEB InitialTeb);
+
+VOID
+WINAPI
+BaseFreeThreadStack(
+    _In_ HANDLE hProcess,
+    _In_ PINITIAL_TEB InitialTeb);
 
 VOID
 WINAPI
@@ -230,11 +239,6 @@ VOID
 WINAPI
 BaseThreadStartup(LPTHREAD_START_ROUTINE lpStartAddress,
                   LPVOID lpParameter);
-
-VOID
-WINAPI
-BaseFreeThreadStack(IN HANDLE hProcess,
-                    IN PINITIAL_TEB InitialTeb);
 
 __declspec(noreturn)
 VOID
@@ -438,6 +442,28 @@ BasepCopyFileExW(
     IN DWORD dwBasepFlags,
     OUT LPHANDLE lpExistingHandle,
     OUT LPHANDLE lpNewHandle
+);
+
+BOOL
+BasepGetVolumeNameForVolumeMountPoint(
+    IN LPCWSTR lpszMountPoint,
+    OUT LPWSTR lpszVolumeName,
+    IN DWORD cchBufferLength,
+    OUT LPBOOL IsAMountPoint
+);
+
+BOOL
+BasepGetVolumeNameFromReparsePoint(
+    IN LPCWSTR lpszMountPoint,
+    OUT LPWSTR lpszVolumeName,
+    IN DWORD cchBufferLength,
+    OUT LPBOOL IsAMountPoint
+);
+
+BOOL
+IsThisARootDirectory(
+    IN HANDLE VolumeHandle,
+    IN PUNICODE_STRING NtPathName
 );
 
 /* FIXME: This is EXPORTED! It should go in an external kernel32.h header */

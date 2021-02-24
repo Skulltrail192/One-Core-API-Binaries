@@ -1,28 +1,123 @@
-﻿[Version]
-Signature="$ReactOS$"
+[Version]
+Signature = "$Windows NT$"
 
 [AddReg]
 
-HKLM,"SOFTWARE\Classes\Applications\iexplore.exe","",0x00000000,""
-HKLM,"SOFTWARE\Classes\Applications\iexplore.exe\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" %1"
+; Applications
+HKLM,"SOFTWARE\Classes\Applications\notepad.exe\shell\open\command","",0x00020000,"%SystemRoot%\system32\notepad.exe ""%1"""
+HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\shell\open\command","",0x00020000,"%SystemRoot%\system32\mspaint.exe ""%1"""
+HKLM,"SOFTWARE\Classes\Applications\wordpad.exe\shell\open\command","",0x00020000,"%SystemRoot%\system32\wordpad.exe ""%1"""
+HKLM,"SOFTWARE\Classes\Applications\iexplore.exe\shell\open\command","",0x00020000,"""%programfiles%\Internet Explorer\iexplore.exe"" ""%1"""
+HKLM,"SOFTWARE\Classes\Applications\mplay32.exe\shell\open\command","",0x00020000,"%SystemRoot%\system32\mplay32.exe ""%1"""
+
+; Applications NoOpenWith
+HKLM,"SOFTWARE\Classes\Applications\accwiz.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\artgalry.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\awdvstub.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\cag.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\cchat.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\cdfview.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\clipbrd.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\cmmgr32.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\cryptext.dll","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\datainst.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\depends.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\drwatson.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\dsquery.dll","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\explorer.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\faxcover.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\finder.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\fontview.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\fpidcwiz.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\graflink.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\grpconv.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\helpctr.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\hh.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\inetcpl.cpl","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\isignup.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\kodakprv.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mmc.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mnyimprt.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\msconf.dll","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\msdxm.ocx","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mshta.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\msiexec.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\msimn.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\msinfo32.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\msrating.dll","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\netshell.dll","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\ntbackup.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\oledb32.dll","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\orgchart.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\osa.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\outlook.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\perfmon.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\rasphone.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\regedit.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\rnaui.dll","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\shdocvw.dll","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\shell32.dll","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\shscrap.dll","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\snapview.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\themes.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\ttxmpc97.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\url.dll","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\wab.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\wb32.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\winhlp32.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\wltmime.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\wpnpinst.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\wscript.exe","NoOpenWith",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\zipfldr.dll","NoOpenWith",0x00000000,""
+
+; Applications NoStartPage
+HKLM,"SOFTWARE\Classes\Applications\explorer.exe","NoStartPage",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\icwconn1.exe","NoStartPage",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\inoculan.exe","NoStartPage",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mobsync.exe","NoStartPage",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\navwnt.exe","NoStartPage",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\realmon.exe","NoStartPage",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\sndvol32.exe","NoStartPage",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\xpsviewer.exe","NoStartPage",0x00000000,""
+
+; mspaint.exe SupportedTypes
+HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".bmp",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".dib",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".jpg",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".jpeg",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".jpe",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".jfif",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".gif",0x00000000,""
+; HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".emf",0x00000000,"" ; NOT SUPPORTED YET
+; HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".wmf",0x00000000,"" ; NOT SUPPORTED YET
+HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".tif",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".tiff",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mspaint.exe\SupportedTypes",".png",0x00000000,""
+
+; mplay32.exe SupportedTypes
+HKLM,"SOFTWARE\Classes\Applications\mplay32.exe\SupportedTypes",".wav",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mplay32.exe\SupportedTypes",".mid",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mplay32.exe\SupportedTypes",".midi",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mplay32.exe\SupportedTypes",".cda",0x00000000,""
+HKLM,"SOFTWARE\Classes\Applications\mplay32.exe\SupportedTypes",".avi",0x00000000,""
 
 HKLM,"SOFTWARE\Classes\ftp","",0x00000000,"URL:File Transfer Protocol"
 HKLM,"SOFTWARE\Classes\ftp\Source Filter","",0x00000000,"{E436EBB6-524F-11CE-9F53-0020AF0BA770}"
 HKLM,"SOFTWARE\Classes\ftp\URL Protocol","",0x00000000,""
-HKLM,"SOFTWARE\Classes\ftp\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" %1"
+HKLM,"SOFTWARE\Classes\ftp\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" ""%1"""
 
 HKLM,"SOFTWARE\Classes\gopher","",0x00000000,"URL:Gopher Protocol"
 HKLM,"SOFTWARE\Classes\gopher\Source Filter","",0x00000000,"{E436EBB6-524F-11CE-9F53-0020AF0BA770}"
 HKLM,"SOFTWARE\Classes\gopher\URL Protocol","",0x00000000,""
 ;see http
 ;HKLM,"SOFTWARE\Classes\gopher\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" -nohome"
-HKLM,"SOFTWARE\Classes\gopher\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" %1"
+HKLM,"SOFTWARE\Classes\gopher\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" ""%1"""
 
 HKLM,"SOFTWARE\Classes\http","",0x00000000,"URL:HyperText Transfer Protocol"
 HKLM,"SOFTWARE\Classes\http\DefaultIcon","",0x00000000,"%SystemRoot%\system32\url.dll,0"
 HKLM,"SOFTWARE\Classes\http\Source Filter","",0x00000000,"{E436EBB6-524F-11CE-9F53-0020AF0BA770}"
 HKLM,"SOFTWARE\Classes\http\URL Protocol","",0x00000000,""
-HKLM,"SOFTWARE\Classes\http\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" %1"
+HKLM,"SOFTWARE\Classes\http\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" ""%1"""
 ;TODO : iexplore should use DDE
 ;HKLM,"SOFTWARE\Classes\http\shell\open\ddeexec","",0x00000000,"""%1"",,-1,0,,,,"
 ;HKLM,"SOFTWARE\Classes\http\shell\open\ddeexec","NoActivateHandler",0x00000000,""
@@ -35,13 +130,17 @@ HKLM,"SOFTWARE\Classes\https\Source Filter","",0x00000000,"{E436EBB6-524F-11CE-9
 HKLM,"SOFTWARE\Classes\https\URL Protocol","",0x00000000,""
 ;see http
 ;HKLM,"SOFTWARE\Classes\https\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" -nohome"
-HKLM,"SOFTWARE\Classes\https\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" %1"
+HKLM,"SOFTWARE\Classes\https\shell\open\command","",0x00000000,"""%programfiles%\Internet Explorer\iexplore.exe"" ""%1"""
 
 ; Register system default web browser
 HKLM,"SOFTWARE\Clients\StartMenuInternet","",0x00000000,"IEXPLORE.EXE"
 HKLM,"SOFTWARE\Clients\StartMenuInternet\IEXPLORE.EXE","",0x00000000,"Internet Explorer"
 HKLM,"SOFTWARE\Clients\StartMenuInternet\IEXPLORE.EXE\DefaultIcon","",0x00000000,"%programfiles%\Internet Explorer\iexplore.exe,-7"
 HKLM,"SOFTWARE\Clients\StartMenuInternet\IEXPLORE.EXE\shell\open\command","",0x00000000,"%programfiles%\Internet Explorer\iexplore.exe"
+
+; CTF
+HKLM,"SOFTWARE\Microsoft\CTF\SystemShared",,0x00000012
+HKLM,"SOFTWARE\Microsoft\CTF\TIP",,0x00000012
 
 ; DirectX
 HKLM,"SOFTWARE\Microsoft\DirectX","InstalledVersion",0x00000001, 0x00,0x00,0x00,0x09,0x00,0x00,0x00,0x00
@@ -110,7 +209,18 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion","DevicePath",0x00020002,"%Syste
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion","MediaPathUnexpanded",0x00020000,"%SystemRoot%\Media"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion","WallPaperDir",0x00020002,"%SystemRoot%\Web\Wallpaper"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\pbrush.exe",,0x00020000,"%SystemRoot%\system32\mspaint.exe"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\pbrush.exe","Path",0x00020000,"%SystemRoot%\system32"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\wordpad.exe",,0x00020000,"%SystemRoot%\system32\wordpad.exe"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\wordpad.exe","Path",0x00020000,"%SystemRoot%\system32"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\write.exe",,0x00020000,"%SystemRoot%\system32\wordpad.exe"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\write.exe","Path",0x00020000,"%SystemRoot%\system32"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Applets",,0x00000012
+
+; default shell
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer","NoSimpleStartMenu",0x00010003,1
 
 ; Extra Control Panel Applets
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\Cpls",,0x00000012
@@ -126,7 +236,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder","Type"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder","Text",0x00000000,"@shell32.dll,-30498"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder","Bitmap",0x00020000,"%SystemRoot%\system32\SHELL32.dll,4"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder","HelpID",0x00000000,"shell.hlp#51140"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder","Ordinal",0x00010001,0
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ClassicViewState",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ClassicViewState","Type",0x00000000,"checkbox"
@@ -138,7 +247,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Classic
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ClassicViewState","UncheckedValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ClassicViewState","DefaultValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ClassicViewState","HelpID",0x00000000,"shell.hlp#51076"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ClassicViewState","Ordinal",0x00010001,14
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ControlPanelInMyComputer",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ControlPanelInMyComputer","RegPath",0x00000000,"Software\Microsoft\Windows\CurrentVersion\Explorer\HideMyComputerIcons"
@@ -150,7 +258,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Control
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ControlPanelInMyComputer","DefaultValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ControlPanelInMyComputer","HKeyRoot",0x00010001,0x80000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ControlPanelInMyComputer","HelpID",0x00000000,"shell.hlp#51150"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ControlPanelInMyComputer","Ordinal",0x00010001,16
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DesktopProcess",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DesktopProcess","Type",0x00000000,"checkbox"
@@ -162,7 +269,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Desktop
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DesktopProcess","UncheckedValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DesktopProcess","DefaultValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DesktopProcess","HelpID",0x00000000,"shell.hlp#51079"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DesktopProcess","Ordinal",0x00010001,13
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DesktopProcess\Policy",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DesktopProcess\Policy\SeparateProcess",,0x00000012
@@ -177,7 +283,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Disable
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DisableThumbCache","UncheckedValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DisableThumbCache","DefaultValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DisableThumbCache","HelpID",0x00000000,"shell.hlp#51155"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\DisableThumbCache","Ordinal",0x00010001,7
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FolderSizeTip",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FolderSizeTip","Type",0x00000000,"checkbox"
@@ -188,7 +293,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FolderS
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FolderSizeTip","CheckedValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FolderSizeTip","UncheckedValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FolderSizeTip","DefaultValue",0x00010001,0x00000001
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FolderSizeTip","Ordinal",0x00010001,2
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FriendlyTree",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FriendlyTree","Type",0x00000000,"checkbox"
@@ -200,14 +304,12 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Friendl
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FriendlyTree","UncheckedValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FriendlyTree","HelpID",0x00000000,"shell.hlp#51149"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FriendlyTree","DefaultValue",0x00010001,0x00000001
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\FriendlyTree","Ordinal",0x00010001,3
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden","Text",0x00000000,"@shell32.dll,-30499"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden","Type",0x00000000,"group"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden","Bitmap",0x00020000,"%SystemRoot%\system32\SHELL32.dll,4"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden","HelpID",0x00000000,"shell.hlp#51131"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden","Ordinal",0x00010001,8
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN","RegPath",0x00000000,"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
@@ -215,10 +317,10 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN","Type",0x00000000,"radio"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN","CheckedValue",0x00010001,0x00000002
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN","ValueName",0x00000000,"Hidden"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN","DefaultValue",0x00010001,0x00000002
+; "DefaultValue" to be changed to 2 if we later want to have "Hide hidden files by default"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN","DefaultValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN","HKeyRoot",0x00010001,0x80000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN","HelpID",0x00000000,"shell.hlp#51104"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\NOHIDDEN","Ordinal",0x00010001,9
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL","RegPath",0x00000000,"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
@@ -226,10 +328,10 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL","Type",0x00000000,"radio"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL","CheckedValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL","ValueName",0x00000000,"Hidden"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL","DefaultValue",0x00010001,0x00000002
+; "DefaultValue" to be changed to 2 if we later want to have "Hide hidden files by default"
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL","DefaultValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL","HKeyRoot",0x00010001,0x80000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL","HelpID",0x00000000,"shell.hlp#51105"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL","Ordinal",0x00010001,10
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt","Type",0x00000000,"checkbox"
@@ -241,7 +343,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFil
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt","UncheckedValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt","DefaultValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt","HelpID",0x00000000,""
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\HideFileExt","Ordinal",0x00010001,11
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\NetCrawler",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\NetCrawler","Type",0x00000000,"checkbox"
@@ -253,7 +354,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\NetCraw
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\NetCrawler","UncheckedValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\NetCrawler","DefaultValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\NetCrawler","HelpID",0x00000000,"shell.hlp#51147"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\NetCrawler","Ordinal",0x00010001,1
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\NetCrawler\Policy",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\NetCrawler\Policy\NoNetCrawling",,0x00000012
@@ -268,7 +368,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Persist
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\PersistBrowsers","UncheckedValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\PersistBrowsers","HelpID",0x00000000,"shell.hlp#51152"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\PersistBrowsers","DefaultValue",0x00010001,0x00000000
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\PersistBrowsers","Ordinal",0x00010001,15
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowCompColor",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowCompColor","Type",0x00000000,"checkbox"
@@ -280,7 +379,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowCom
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowCompColor","UncheckedValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowCompColor","DefaultValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowCompColor","HelpID",0x00000000,"shell.hlp#51130"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowCompColor","Ordinal",0x00010001,17
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPath",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPath","Type",0x00000000,"checkbox"
@@ -292,7 +390,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFul
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPath","UncheckedValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPath","DefaultValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPath","HelpID",0x00000000,"shell.hlp#51100"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPath","Ordinal",0x00010001,6
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPathAddress",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPathAddress","Type",0x00000000,"checkbox"
@@ -304,7 +401,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFul
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPathAddress","UncheckedValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPathAddress","DefaultValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPathAddress","HelpID",0x00000000,"shell.hlp#51107"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowFullPathAddress","Ordinal",0x00010001,5
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowInfoTip",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowInfoTip","Type",0x00000000,"checkbox"
@@ -316,7 +412,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowInf
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowInfoTip","UncheckedValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowInfoTip","DefaultValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowInfoTip","HelpID",0x00000000,"shell.hlp#51102"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\ShowInfoTip","Ordinal",0x00010001,18
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\SuperHidden",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\SuperHidden","Type",0x00000000,"checkbox"
@@ -329,7 +424,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\SuperHi
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\SuperHidden","UncheckedValue",0x00010001,0x00000001
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\SuperHidden","DefaultValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\SuperHidden","HelpID",0x00000000,"shell.hlp#51103"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\SuperHidden","Ordinal",0x00010001,12
 
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\SuperHidden\Policy",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\SuperHidden\Policy\DontShowSuperHidden",,0x00000012
@@ -344,7 +438,6 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\WebView
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\WebViewBarricade","UncheckedValue",0x00010001,0x00000000
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\WebViewBarricade","HelpID",0x00000000,"shell.hlp#51148"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\WebViewBarricade","DefaultValue",0x00010001,0x00000000
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\WebViewBarricade","Ordinal",0x00010001,4
 
 ; Common shell folders
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",,0x00000012
@@ -371,8 +464,8 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce","InstallRoot.NET",0x000
 HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons",,0x00000012
 HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu",,0x00000012
 HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu","{208D2C60-3AEA-1069-A2D7-08002B30309D}",0x00010001,0x00000000
-HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Bitbucket",,0x00000012
-HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Bitbucket\Volume",,0x00000012
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\BitBucket",,0x00000012
+HKCU,"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\BitBucket\Volume",,0x00000012
 
 ; CMD Settings
 HKLM,"SOFTWARE\Microsoft\Command Processor","AutoRun",0x00020000,""
@@ -517,9 +610,8 @@ HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontSubstitutes",,0x00000012
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontDPI","LogPixels",0x00010003,96
 
-; win32k GRE initialization
+; Win32k GRE initialization
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize",,0x00000012
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize","MS Shell Dlg",0x00000002,"Microsoft Sans Serif"
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize","FIXEDFON.FON",0x00000002,"vgafix.fon"
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize","FONTS.FON",0x00000002,"vgasys.fon"
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\GRE_Initialize","OEMFONT.FON",0x00000002,"vgaoem.fon"
@@ -1387,31 +1479,56 @@ HKLM,"SOFTWARE\ReactOS\ReactOS\CurrentVersion\IFS","FATX",0x00000000,"ufatx.dll"
 HKLM,"SOFTWARE\ReactOS\ReactOS\CurrentVersion\IFS","EXT2",0x00000000,"uext2.dll"
 HKLM,"SOFTWARE\ReactOS\ReactOS\CurrentVersion\IFS","BtrFS",0x00000000,"ubtrfs.dll"
 
-; Winlogon settings
+; Global Winlogon settings
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","ConsoleShell",0x00020000,"%SystemRoot%\system32\cmd.exe"
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","Shell",0x00020000,"%SystemRoot%\explorer.exe"
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","Userinit",0x00020000,"%SystemRoot%\system32\userinit.exe"
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","AutoAdminLogon",0x00000000,"1"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","DefaultDomain",0x00000000,""
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","DefaultDomainName",0x00000000,""
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","DefaultUserName",0x00000000,""
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon","DefaultPassword",0x00000000,""
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify",,0x00000012
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test",,0x00000012
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","Disconnect",0x00000000,"TestDisconnectEvent"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","DlLName",0x00020000,"wlnotify.dll"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","Lock",0x00000000,"TestLockEvent"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","Logoff",0x00000000,"TestLogoffEvent"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","Logon",0x00000000,"TestLogonEvent"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","PostShell",0x00000000,"TestPostShellEvent"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","Reconnect",0x00000000,"TestReconnectEvent"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","Shutdown",0x00000000,"TestShutdownEvent"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","StartScreenSaver",0x00000000,"TestStartScreenSaverEvent"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","StartShell",0x00000000,"TestStartShellEvent"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","Startup",0x00000000,"TestStartupEvent"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","StopScreenSaver",0x00000000,"TestStopScreenSaverEvent"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Test","Unlock",0x00000000,"TestUnlockEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\ScCertProp",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\ScCertProp","DlLName",0x00020000,"wlnotify.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\ScCertProp","Lock",0x00000000,"SCardSuspendCertProp"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\ScCertProp","Logoff",0x00000000,"SCardStopCertProp"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\ScCertProp","Logon",0x00000000,"SCardStartCertProp"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\ScCertProp","Unlock",0x00000000,"SCardResumeCertProp"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Schedule",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Schedule","DlLName",0x00020000,"wlnotify.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Schedule","Logoff",0x00000000,"SchedEventLogoff"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\Schedule","StartShell",0x00000000,"SchedStartShell"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","Disconnect",0x00000000,"SensDisconnectEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","DlLName",0x00020000,"wlnotify.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","Lock",0x00000000,"SensLockEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","Logoff",0x00000000,"SensLogoffEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","Logon",0x00000000,"SensLogonEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","PostShell",0x00000000,"SensPostShellEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","Reconnect",0x00000000,"SensReconnectEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","Shutdown",0x00000000,"SensShutdownEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","StartScreenSaver",0x00000000,"SensStartScreenSaverEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","StartShell",0x00000000,"SensStartShellEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","Startup",0x00000000,"SensStartupEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","StopScreenSaver",0x00000000,"SensStopScreenSaverEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\SensLogn","Unlock",0x00000000,"SensUnlockEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\termsrv",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\termsrv","Disconnect",0x00000000,"TSEventDisconnect"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\termsrv","DlLName",0x00020000,"wlnotify.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\termsrv","Logoff",0x00000000,"TSEventLogoff"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\termsrv","Logon",0x00000000,"TSEventLogon"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\termsrv","PostShell",0x00000000,"TSEventPostShell"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\termsrv","Reconnect",0x00000000,"TSEventReconnect"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\termsrv","Shutdown",0x00000000,"TSEventShutdown"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\termsrv","StartShell",0x00000000,"TSEventStartShell"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\termsrv","Startup",0x00000000,"TSEventStartup"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\wlballoon",,0x00000012
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\wlballoon","DlLName",0x00020000,"wlnotify.dll"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\wlballoon","Logoff",0x00000000,"UnregisterTicketExpiredNotificationEvent"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\Notify\wlballoon","Logon",0x00000000,"RegisterTicketExpiredNotificationEvent"
 
 ; Time Zone Servers
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers",,0x00000000,"1"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers","1",0x00000000,"pool.ntp.org"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers","2",0x00000000,"asia.pool.ntp.org"
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers","3",0x00000000,"europe.pool.ntp.org"
@@ -1671,8 +1788,9 @@ HKLM,"SOFTWARE\Microsoft\Ole","EnableRemoteConnect",0x00000000,"N"
 
 ; SvcHost services
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SvcHost",,0x00000012
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SvcHost","DcomLaunch",0x00010000,"PlugPlay"
-HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SvcHost","netsvcs",0x00010000,"DHCP","BITS","lanmanserver","lanmanworkstation","Schedule","Themes","winmgmt"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SvcHost","DcomLaunch",0x00010000,"DcomLaunch","PlugPlay"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SvcHost","netsvcs",0x00010000,"DHCP","BITS","lanmanserver","lanmanworkstation","Schedule","Themes","W32Time","winmgmt","wuauserv"
+HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Svchost","NetworkService",0x00010000,"DnsCache"
 
 ; Win32 config
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows",,0x00000012
@@ -1686,8 +1804,13 @@ HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","swapdisk",0x0000000
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","TransmissionRetryTimeout",0x00000000,"90"
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows","USERProcessHandleQuota",0x00010001,0x2710
 
-; App Compat -- Disable on ReactOS
-HKLM,"SOFTWARE\Policies\Microsoft\Windows\AppCompat","DisableEngine",0x00010003, 0x00000001
+; App Compat -- Enable on ReactOS
+;HKLM,"SOFTWARE\Policies\Microsoft\Windows\AppCompat","DisableEngine",0x00010003, 0x00000001
+
+; App Compat -- for official Releases we do still disable the new heuristic introduced in master 0.4.13-dev-986-g029b8f2.
+; This will not automatically expose apisets based on apps manifests as we have too many gaps still in the apisets.
+; Adventurous users can set this to 0 to expose more Vista+ stuff, in return can OPT-OUT per app via shim "IgnoreManifestCompatVersion".
+HKLM,"SOFTWARE\Policies\Microsoft\Windows\AppCompat","DisableCompatGuidDetection",0x00010003, 0x00000001
 
 ;-------------------------------- STRINGS -------------------------------
 
@@ -2097,7 +2220,7 @@ GMT_PLUS_03_A_DESC    ="(GMT+03:00) Minsk"
 GMT_PLUS_03_A_DAYLIGHT="Belarus Daylight Time"
 GMT_PLUS_03_A_STANDARD="Belarus Standard Time"
 
-GMT_PLUS_03_B_DESC    ="(GMT+03:00) Moscow, St. Petersburg, Volgograd"
+GMT_PLUS_03_B_DESC    ="(GMT+03:00) Moscow, St. Petersburg"
 GMT_PLUS_03_B_DAYLIGHT="RTZ 2 Daylight Time"
 GMT_PLUS_03_B_STANDARD="RTZ 2 Standard Time"
 
@@ -2125,7 +2248,7 @@ GMT_PLUS_04_B_DESC    ="(GMT+04:00) Yerevan"
 GMT_PLUS_04_B_DAYLIGHT="Caucasus Daylight Time"
 GMT_PLUS_04_B_STANDARD="Caucasus Standard Time"
 
-GMT_PLUS_04_C_DESC    ="(GMT+04:00) Izhevsk, Samara"
+GMT_PLUS_04_C_DESC    ="(GMT+04:00) Izhevsk, Samara, Volgograd"
 GMT_PLUS_04_C_DAYLIGHT="RTZ 3 Daylight Time"
 GMT_PLUS_04_C_STANDARD="RTZ 3 Standard Time"
 
@@ -2674,6 +2797,582 @@ COUNTRY_ZM="Sambia"
 COUNTRY_ZW="Simbabwe"
 
 
+; LANG_POLISH SUBLANG_NEUTRAL
+[Strings.0015]
+COUNTRY_AD="Andora"
+COUNTRY_AE="Zjednoczone Emiraty Arabskie"
+COUNTRY_AF="Afganistan"
+COUNTRY_AG="Antigua i Barbuda"
+COUNTRY_AI="Anguilla"
+COUNTRY_AL="Albania"
+COUNTRY_AM="Armenia"
+COUNTRY_AO="Angola"
+COUNTRY_AQ="Antarktyka"
+COUNTRY_AR="Argentyna"
+COUNTRY_AS="Samoa Amerykańskie"
+COUNTRY_AT="Austria"
+COUNTRY_AU="Australia"
+COUNTRY_AW="Aruba"
+COUNTRY_AX="Wyspy Alandzkie"
+COUNTRY_AZ="Azerbejdżan"
+COUNTRY_BA="Bośnia i Hercegowina"
+COUNTRY_BB="Barbados"
+COUNTRY_BD="Bangladesz"
+COUNTRY_BE="Belgia"
+COUNTRY_BF="Burkina Faso"
+COUNTRY_BG="Bułgaria"
+COUNTRY_BH="Bahrajn"
+COUNTRY_BI="Burundi"
+COUNTRY_BJ="Benin"
+COUNTRY_BL="Saint Barthélemy"
+COUNTRY_BM="Bermudy"
+COUNTRY_BN="Brunei Darussalam"
+COUNTRY_BO="Boliwia"
+COUNTRY_BQ="Bonaire, Saint Eustatius i Saba"
+COUNTRY_BR="Brazylia"
+COUNTRY_BS="Bahamy"
+COUNTRY_BT="Bhutan"
+COUNTRY_BV="Wyspa Bouveta"
+COUNTRY_BW="Botswana"
+COUNTRY_BY="Białoruś"
+COUNTRY_BZ="Belize"
+COUNTRY_CA="Kanada"
+COUNTRY_CC="Wyspy Kokosowe (Keelinga)"
+COUNTRY_CD="Kongo (DRK)"
+COUNTRY_CF="Republika Środkowoafrykańska"
+COUNTRY_CG="Kongo"
+COUNTRY_CH="Szwajcaria"
+COUNTRY_CI="Wybrzeże Kości Słoniowej"
+COUNTRY_CK="Wyspy Cooka"
+COUNTRY_CL="Chile"
+COUNTRY_CM="Kamerun"
+COUNTRY_CN="Chiny"
+COUNTRY_CO="Kolumbia"
+COUNTRY_CR="Kostaryka"
+COUNTRY_CU="Kuba"
+COUNTRY_CV="Wyspy Zielonego Przylądka"
+COUNTRY_CW="Curaçao"
+COUNTRY_CX="Wyspa Bożego Narodzenia"
+COUNTRY_CY="Cypr"
+COUNTRY_CZ="Czechy"
+COUNTRY_DE="Niemcy"
+COUNTRY_DJ="Dżibuti"
+COUNTRY_DK="Dania"
+COUNTRY_DM="Dominika"
+COUNTRY_DO="Dominikana"
+COUNTRY_DZ="Algieria"
+COUNTRY_EC="Ekwador"
+COUNTRY_EE="Estonia"
+COUNTRY_EG="Egipt"
+COUNTRY_EH="Sahara Zachodnia"
+COUNTRY_ER="Erytrea"
+COUNTRY_ES="Hiszpania"
+COUNTRY_ET="Etiopia"
+COUNTRY_FI="Finlandia"
+COUNTRY_FJ="Fidżi"
+COUNTRY_FK="Falklandy"
+COUNTRY_FM="Mikronezja"
+COUNTRY_FO="Wyspy Owcze"
+COUNTRY_FR="Francja"
+COUNTRY_GA="Gabon"
+COUNTRY_GD="Grenada"
+COUNTRY_GE="Gruzja"
+COUNTRY_GF="Gujana Francuska"
+COUNTRY_GG="Guernsey"
+COUNTRY_GH="Ghana"
+COUNTRY_GI="Gibraltar"
+COUNTRY_GL="Grenlandia"
+COUNTRY_GM="Gambia"
+COUNTRY_GN="Gwinea"
+COUNTRY_GP="Gwadelupa"
+COUNTRY_GQ="Gwinea Równikowa"
+COUNTRY_GR="Grecja"
+COUNTRY_GS="Wyspy Georgia Południowa i Sandwich Południowy"
+COUNTRY_GT="Gwatemala"
+COUNTRY_GU="Guam"
+COUNTRY_GW="Gwinea Bissau"
+COUNTRY_GY="Gujana"
+COUNTRY_HK="Hongkong"
+COUNTRY_HM="Wyspy Heard i McDonalda"
+COUNTRY_HN="Honduras"
+COUNTRY_HR="Chorwacja"
+COUNTRY_HT="Haiti"
+COUNTRY_HU="Węgry"
+COUNTRY_ID="Indonezja"
+COUNTRY_IE="Irlandia"
+COUNTRY_IL="Izrael"
+COUNTRY_IM="Wyspa Man"
+COUNTRY_IN="Indie"
+COUNTRY_IO="Brytyjskie Terytorium Oceanu Indyjskiego"
+COUNTRY_IQ="Irak"
+COUNTRY_IR="Iran"
+COUNTRY_IS="Islandia"
+COUNTRY_IT="Włochy"
+COUNTRY_JE="Jersey"
+COUNTRY_JM="Jamajka"
+COUNTRY_JO="Jordania"
+COUNTRY_JP="Japonia"
+COUNTRY_KE="Kenia"
+COUNTRY_KG="Kirgistan"
+COUNTRY_KH="Kambodża"
+COUNTRY_KI="Kiribati"
+COUNTRY_KM="Komory"
+COUNTRY_KN="Saint Kitts i Nevis"
+COUNTRY_KP="Korea Południowa"
+COUNTRY_KR="Korea Północna"
+COUNTRY_KW="Kuwejt"
+COUNTRY_KY="Kajmany"
+COUNTRY_KZ="Kazachstan"
+COUNTRY_LA="Laotańska Republika Ludowo-Demokratyczna"
+COUNTRY_LB="Liban"
+COUNTRY_LC="Saint Lucia"
+COUNTRY_LI="Liechtenstein"
+COUNTRY_LK="Sri Lanka"
+COUNTRY_LR="Liberia"
+COUNTRY_LS="Lesotho"
+COUNTRY_LT="Litwa"
+COUNTRY_LU="Luksemburg"
+COUNTRY_LV="Łotwa"
+COUNTRY_LY="Libia"
+COUNTRY_MA="Maroko"
+COUNTRY_MC="Monako"
+COUNTRY_MD="Mołdawia"
+COUNTRY_ME="Czarnogóra"
+COUNTRY_MF="Saint Martin (część francuska)"
+COUNTRY_MG="Madagaskar"
+COUNTRY_MH="Wyspy Marshalla"
+COUNTRY_MK="Macedonia, Była Jugosłowiańska Republika"
+COUNTRY_ML="Mali"
+COUNTRY_MM="Myanmar"
+COUNTRY_MN="Mongolia"
+COUNTRY_MO="Makao"
+COUNTRY_MP="Wyspy Mariany Północne"
+COUNTRY_MQ="Martynika"
+COUNTRY_MR="Mauretania"
+COUNTRY_MS="Montserrat"
+COUNTRY_MT="Malta"
+COUNTRY_MU="Mauritius"
+COUNTRY_MV="Malediwy"
+COUNTRY_MW="Malawi"
+COUNTRY_MX="Meksyk"
+COUNTRY_MY="Malezja"
+COUNTRY_MZ="Mozambik"
+COUNTRY_NA="Namibia"
+COUNTRY_NC="Nowa Kaledonia"
+COUNTRY_NE="Niger"
+COUNTRY_NF="Wyspa Norfolk"
+COUNTRY_NG="Nigeria"
+COUNTRY_NI="Nikaragua"
+COUNTRY_NL="Holandia"
+COUNTRY_NO="Norwegia"
+COUNTRY_NP="Nepal"
+COUNTRY_NR="Nauru"
+COUNTRY_NU="Niue"
+COUNTRY_NZ="Nowa Zelandia"
+COUNTRY_OM="Oman"
+COUNTRY_PA="Panama"
+COUNTRY_PE="Peru"
+COUNTRY_PF="Polinezja Francuska"
+COUNTRY_PG="Papua-Nowa Gwinea"
+COUNTRY_PH="Filipiny"
+COUNTRY_PK="Pakistan"
+COUNTRY_PL="Polska"
+COUNTRY_PM="Saint Pierre i Miquelon"
+COUNTRY_PN="Pitcairn"
+COUNTRY_PR="Portoryko"
+COUNTRY_PS="Terytoria Palestyny"
+COUNTRY_PT="Portugalia"
+COUNTRY_PW="Palau"
+COUNTRY_PY="Paragwaj"
+COUNTRY_QA="Katar"
+COUNTRY_RE="Reunion"
+COUNTRY_RO="Rumunia"
+COUNTRY_RS="Serbia"
+COUNTRY_RU="Rosja"
+COUNTRY_RW="Rwanda"
+COUNTRY_SA="Arabia Saudyjska"
+COUNTRY_SB="Wyspy Salomona"
+COUNTRY_SC="Seszele"
+COUNTRY_SD="Sudan"
+COUNTRY_SE="Szwecja"
+COUNTRY_SG="Singapur"
+COUNTRY_SH="Wyspa Świętej Heleny, Wyspa Wniebowstąpienia i Tristan da Cunha"
+COUNTRY_SI="Słowenia"
+COUNTRY_SJ="Svalbard i Jan Mayen"
+COUNTRY_SK="Słowacja"
+COUNTRY_SL="Sierra Leone"
+COUNTRY_SM="San Marino"
+COUNTRY_SN="Senegal"
+COUNTRY_SO="Somalia"
+COUNTRY_SR="Surinam"
+COUNTRY_ST="Wyspy Świętego Tomasza i Książęca"
+COUNTRY_SV="Salwador"
+COUNTRY_SX="Sint Maarten (część holenderska)"
+COUNTRY_SY="Syria"
+COUNTRY_SZ="Suazi"
+COUNTRY_TC="Wyspy Turks i Caicos"
+COUNTRY_TD="Czad"
+COUNTRY_TF="Francuskie Terytoria Południowe"
+COUNTRY_TG="Togo"
+COUNTRY_TH="Tajlandia"
+COUNTRY_TJ="Tadżykistan"
+COUNTRY_TK="Tokelau"
+COUNTRY_TL="Demokratyczna Republika Timoru Wschodniego"
+COUNTRY_TM="Turkmenistan"
+COUNTRY_TN="Tunezja"
+COUNTRY_TO="Tonga"
+COUNTRY_TR="Turcja"
+COUNTRY_TT="Trynidad i Tobago"
+COUNTRY_TV="Tuvalu"
+COUNTRY_TW="Tajwan"
+COUNTRY_TZ="Tanzania"
+COUNTRY_UA="Ukraina"
+COUNTRY_UG="Uganda"
+COUNTRY_UK="Zjednoczone Królestwo"
+COUNTRY_UM="Odległe Mniejsze Wyspy Stanów Zjednoczonych"
+COUNTRY_US="Stany Zjednoczone"
+COUNTRY_UY="Urugwaj"
+COUNTRY_UZ="Uzbekistan"
+COUNTRY_VA="Stolica Apostolska (Państwo Watykańskie)"
+COUNTRY_VC="Saint Vincent i Grenadyny"
+COUNTRY_VE="Wenezuela"
+COUNTRY_VG="Brytyjskie Wyspy Dziewicze"
+COUNTRY_VI="Wyspy Dziewicze Stanów Zjednoczonych"
+COUNTRY_VN="Wietnam"
+COUNTRY_VU="Vanuatu"
+COUNTRY_WF="Wyspy Wallis i Futuna"
+COUNTRY_WS="Samoa"
+COUNTRY_YE="Jemen"
+COUNTRY_YT="Wyspa Majotta"
+COUNTRY_ZA="Republika Południowej Afryki"
+COUNTRY_ZM="Zambia"
+COUNTRY_ZW="Zimbabwe"
+
+GMT_MINUS_12_A_DESC    ="(GMT-12:00) Międzynarodowa linia zmiany daty - Zachód"
+GMT_MINUS_12_A_DAYLIGHT="Czas letni linii zmiany czasu"
+GMT_MINUS_12_A_STANDARD="Czas standardowy linii zmiany czasu"
+
+GMT_MINUS_11_A_DESC    ="(GMT-11:00) Wyspa Midway, Saoma"
+GMT_MINUS_11_A_DAYLIGHT="Samoa (czas letni)"
+GMT_MINUS_11_A_STANDARD="Samoa (czas standardowy)"
+
+GMT_MINUS_10_A_DESC    ="(GMT-10:00) Hawaje"
+GMT_MINUS_10_A_DAYLIGHT="Hawaje (czas letni)"
+GMT_MINUS_10_A_STANDARD="Hawaje (czas standardowy)"
+
+GMT_MINUS_09_A_DESC    ="(GMT-09:00) Alaska"
+GMT_MINUS_09_A_DAYLIGHT="Alaska (czas letni)"
+GMT_MINUS_09_A_STANDARD="Alaska (czas standardowy)"
+
+GMT_MINUS_08_A_DESC    ="(GMT-08:00) Stany Zjednoczone i Kanada (czas pacyficzny)"
+GMT_MINUS_08_A_DAYLIGHT="Pacyfik (czas letni)"
+GMT_MINUS_08_A_STANDARD="Pacyfik (czas standardowy)"
+
+GMT_MINUS_07_A_DESC    ="(GMT-07:00) Stany Zjednoczone i Kanada (czas górski)"
+GMT_MINUS_07_A_DAYLIGHT="Górski czas letni"
+GMT_MINUS_07_A_STANDARD="Górski czas standardowy"
+
+GMT_MINUS_07_B_DESC    ="(GMT-07:00) Chihuahua, La Paz, Mazatlan"
+GMT_MINUS_07_B_DAYLIGHT="Górski czas letni (Meksyk)"
+GMT_MINUS_07_B_STANDARD="Górski czas standardowy (Meksyk)"
+
+GMT_MINUS_07_C_DESC    ="(GMT-07:00) Arizona"
+GMT_MINUS_07_C_DAYLIGHT="Stany Zjednoczone (górski czas letni)"
+GMT_MINUS_07_C_STANDARD="Stany Zjednoczone (górski czas standardowy)"
+
+GMT_MINUS_06_A_DESC    ="(GMT-06:00) Stany Zjednoczone i Kanada (czas środkowy)"
+GMT_MINUS_06_A_DAYLIGHT="Środkowy czas letni"
+GMT_MINUS_06_A_STANDARD="Środkowy czas standardowy"
+
+GMT_MINUS_06_B_DESC    ="(GMT-06:00) Saskatchewan"
+GMT_MINUS_06_B_DAYLIGHT="Kanada (środkowy czas letni)"
+GMT_MINUS_06_B_STANDARD="Kanada (środkowy czas standardowy)"
+
+GMT_MINUS_06_C_DESC    ="(GMT-06:00) Guadalajara, Meksyk, Monterrey"
+GMT_MINUS_06_C_DAYLIGHT="Meksyk (czas letni)"
+GMT_MINUS_06_C_STANDARD="Meksyk (czas standardowy)"
+
+GMT_MINUS_06_D_DESC    ="(GMT-06:00) Ameryka Środkowa"
+GMT_MINUS_06_D_DAYLIGHT="Ameryka Środkowa (czas letni)"
+GMT_MINUS_06_D_STANDARD="Ameryka Środkowa (czas standardowy)"
+
+GMT_MINUS_05_A_DESC    ="(GMT-05:00) Stany Zjednoczone i Kanada (czas wschodni)"
+GMT_MINUS_05_A_DAYLIGHT="Wschodni czas letni"
+GMT_MINUS_05_A_STANDARD="Wschodni czas standardowy"
+
+GMT_MINUS_05_B_DESC    ="(GMT-05:00) Indiana (Wschód)"
+GMT_MINUS_05_B_DAYLIGHT="Stany Zjednoczone (wschodni czas letni)"
+GMT_MINUS_05_B_STANDARD="Stany Zjednoczone (wschodni czas standardowy)"
+
+GMT_MINUS_05_C_DESC    ="(GMT-05:00) Bogota, Lima, Quito, Rio Branco"
+GMT_MINUS_05_C_DAYLIGHT="Ameryka Południowa (pacyficzny czas letni)"
+GMT_MINUS_05_C_STANDARD="Ameryka Południowa (pacyficzny czas standardowy)"
+
+GMT_MINUS_04_A_DESC    ="(GMT-04:00) Czas atlantycki (Kanada)"
+GMT_MINUS_04_A_DAYLIGHT="Atlantycki czas letni"
+GMT_MINUS_04_A_STANDARD="Atlantycki czas standardowy"
+
+GMT_MINUS_04_B_DESC    ="(GMT-04:00) La Paz"
+GMT_MINUS_04_B_DAYLIGHT="Ameryka Południowa (zachodni czas letni)"
+GMT_MINUS_04_B_STANDARD="Ameryka Południowa (zachodni czas standardowy)"
+
+GMT_MINUS_0330_A_DESC    ="(GMT-03:30) Nowa Fundlandia"
+GMT_MINUS_0330_A_DAYLIGHT="Nowa Fundlandia (czas letni)"
+GMT_MINUS_0330_A_STANDARD="Nowa Fundlandia (czas standardowy)"
+
+GMT_MINUS_03_A_DESC    ="(GMT-03:00) Santiago"
+GMT_MINUS_03_A_DAYLIGHT="Letni czas pacyficzny (Ameryka Południowa)"
+GMT_MINUS_03_A_STANDARD="Standardowy czas pacyficzny (Ameryka Południowa)"
+
+GMT_MINUS_03_B_DESC    ="(GMT-03:00) Brazylia"
+GMT_MINUS_03_B_DAYLIGHT="Ameryka Południowa (wschodni czas letni)"
+GMT_MINUS_03_B_STANDARD="Ameryka Południowa (wschodni czas standardowy)"
+
+GMT_MINUS_03_C_DESC    ="(GMT-03:00) Buenos Aires, Georgetown"
+GMT_MINUS_03_C_DAYLIGHT="Wschodni czas standardowy (Ameryka Południowa)"
+GMT_MINUS_03_C_STANDARD="Wschodni czas letni (Ameryka Południowa)"
+
+GMT_MINUS_03_D_DESC    ="(GMT-03:00) Grenlandia"
+GMT_MINUS_03_D_DAYLIGHT="Grenlandia (czas letni)"
+GMT_MINUS_03_D_STANDARD="Grenlandia (czas standardowy)"
+
+GMT_MINUS_02_A_DESC    ="(GMT-02:00) Środkowy Atlantyk"
+GMT_MINUS_02_A_DAYLIGHT="Środkowy Atlantyk (czas letni)"
+GMT_MINUS_02_A_STANDARD="Środkowy Atlantyk (czas standardowy)"
+
+GMT_MINUS_01_A_DESC    ="(GMT-01:00) Azory"
+GMT_MINUS_01_A_DAYLIGHT="Azory (czas letni)"
+GMT_MINUS_01_A_STANDARD="Azory (czas standardowy)"
+
+GMT_MINUS_01_B_DESC    ="(GMT-01:00) Wyspy Zielonego Przylądka."
+GMT_MINUS_01_B_DAYLIGHT="Wyspy Zielonego Przylądka (czas letni)"
+GMT_MINUS_01_B_STANDARD="Wyspy Zielonego Przylądka (czas standardowy)"
+
+GMT_PLUS_00_A_DESC    ="(GMT) Czas uniwersalny Greenwich: Dublin, Edynburg, Lizbona, Londyn"
+GMT_PLUS_00_A_DAYLIGHT="GMT (czas letni)"
+GMT_PLUS_00_A_STANDARD="GMT (czas standardowy)"
+
+GMT_PLUS_00_B_DESC    ="(GMT) Casablanca, Monrovia, Reykjavik"
+GMT_PLUS_00_B_DAYLIGHT="Greenwich (czas letni)"
+GMT_PLUS_00_B_STANDARD="Greenwich (czas standardowy)"
+
+GMT_PLUS_01_A_DESC    ="(GMT+01:00) Belgrad, Bratysława, Budapeszt, Ljubljana, Praga"
+GMT_PLUS_01_A_DAYLIGHT="Europa Środkowa (czas letni)"
+GMT_PLUS_01_A_STANDARD="Europa Środkowa (czas standardowy)"
+
+GMT_PLUS_01_B_DESC    ="(GMT+01:00) Sarajewo, Skopie, Warszawa, Zagrzeb"
+GMT_PLUS_01_B_DAYLIGHT="Środkowoeuropejski czas letni"
+GMT_PLUS_01_B_STANDARD="Środkowoeuropejski czas standardowy"
+
+GMT_PLUS_01_C_DESC    ="(GMT+01:00) Bruksela, Kopenhaga, Madryt, Paryż"
+GMT_PLUS_01_C_DAYLIGHT="Romański czas letni"
+GMT_PLUS_01_C_STANDARD="Romański czas standardowy"
+
+GMT_PLUS_01_D_DESC    ="(GMT+01:00) Amsterdam, Berlin, Berno, Rzym, Sztokholm, Wiedeń"
+GMT_PLUS_01_D_DAYLIGHT="Europa Zachodnia (czas letni)"
+GMT_PLUS_01_D_STANDARD="Europa Zachodnia (czas standardowy)"
+
+GMT_PLUS_02_A_DESC    ="(GMT+02:00) Mińsk"
+GMT_PLUS_02_A_DAYLIGHT="Europa Wschodnia (czas letni)"
+GMT_PLUS_02_A_STANDARD="Europa Wschodnia (czas standardowy)"
+
+GMT_PLUS_02_B_DESC    ="(GMT+02:00) Kair"
+GMT_PLUS_02_B_DAYLIGHT="Egipt (czas letni)"
+GMT_PLUS_02_B_STANDARD="Egipt (czas standardowy)"
+
+GMT_PLUS_02_C_DESC    ="(GMT+02:00) Helsinki, Kijów, Ryga, Sofia, Talin, Wilno"
+GMT_PLUS_02_C_DAYLIGHT="FLE (czas letni)"
+GMT_PLUS_02_C_STANDARD="FLE (czas standardowy)"
+
+GMT_PLUS_02_D_DESC    ="(GMT+02:00) Ateny, Bukareszt, Stambuł"
+GMT_PLUS_02_D_DAYLIGHT="GTB (czas letni)"
+GMT_PLUS_02_D_STANDARD="GTB (czas standardowy)"
+
+GMT_PLUS_02_E_DESC    ="(GMT+02:00) Jerozolima"
+GMT_PLUS_02_E_DAYLIGHT="Izrael (czas letni)"
+GMT_PLUS_02_E_STANDARD="Izrael (czas standardowy)"
+
+GMT_PLUS_02_F_DESC    ="(GMT+02:00) Harare, Pretoria"
+GMT_PLUS_02_F_DAYLIGHT="Republika Południowej Afryki (czas letni)"
+GMT_PLUS_02_F_STANDARD="Republika Południowej Afryki (czas standardowy)"
+
+GMT_PLUS_02_G_DESC    ="(GMT+02:00) Kaliningrad"
+GMT_PLUS_02_G_DAYLIGHT="RTZ 1 (czas letni)"
+GMT_PLUS_02_G_STANDARD="RTZ 1 (czas standardowy)"
+
+GMT_PLUS_03_A_DESC    ="(GMT+03:00) Mińsk"
+GMT_PLUS_03_A_DAYLIGHT="Białoruś (czas letni)"
+GMT_PLUS_03_A_STANDARD="Białoruś (czas standardowy)"
+
+GMT_PLUS_03_B_DESC    ="(GMT+03:00) Moskwa, Sankt Petersburg"
+GMT_PLUS_03_B_DAYLIGHT="RTZ 2 (czas letni)"
+GMT_PLUS_03_B_STANDARD="RTZ 2 (czas standardowy)"
+
+GMT_PLUS_03_C_DESC    ="(GMT+03:00) Kuwejt, Rijad"
+GMT_PLUS_03_C_DAYLIGHT="Arabia Saudyjska (czas letni)"
+GMT_PLUS_03_C_STANDARD="Arabia Saudyjska (czas standardowy)"
+
+GMT_PLUS_03_D_DESC    ="(GMT+03:00) Nairobi"
+GMT_PLUS_03_D_DAYLIGHT="Afryka Wschodnia (czas letni)"
+GMT_PLUS_03_D_STANDARD="Afryka Wschodnia (czas standardowy)"
+
+GMT_PLUS_03_E_DESC    ="(GMT+03:00) Bagdad"
+GMT_PLUS_03_E_DAYLIGHT="Arabski czas letni"
+GMT_PLUS_03_E_STANDARD="Arabski czas standardowy"
+
+GMT_PLUS_0330_A_DESC    ="(GMT+03:30) Teheran"
+GMT_PLUS_0330_A_DAYLIGHT="Iran (czas letni)"
+GMT_PLUS_0330_A_STANDARD="Iran (czas standardowy)"
+
+GMT_PLUS_04_A_DESC    ="(GMT+04:00) Abu Zabi, Maskat"
+GMT_PLUS_04_A_DAYLIGHT="Arabia (czas letni)"
+GMT_PLUS_04_A_STANDARD="Arabia (czas standardowy)"
+
+GMT_PLUS_04_B_DESC    ="(GMT+04:00) Erywań"
+GMT_PLUS_04_B_DAYLIGHT="Kaukaz (czas letni)"
+GMT_PLUS_04_B_STANDARD="Kaukaz (czas standardowy)"
+
+GMT_PLUS_04_C_DESC    ="(GMT+04:00) Iżewsk, Samara, Wołgograd"
+GMT_PLUS_04_C_DAYLIGHT="RTZ 3 (czas letni)"
+GMT_PLUS_04_C_STANDARD="RTZ 3 (czas standardowy)"
+
+GMT_PLUS_0430_A_DESC    ="(GMT+04:30) Kabul"
+GMT_PLUS_0430_A_DAYLIGHT="Afganistan (czas letni)"
+GMT_PLUS_0430_A_STANDARD="Afganistan (czas standardowy)"
+
+GMT_PLUS_05_A_DESC    ="(GMT+05:00) Jekaterynburg"
+GMT_PLUS_05_A_DAYLIGHT="RTZ 4 (czas letni)"
+GMT_PLUS_05_A_STANDARD="RTZ 4 (czas standardowy)"
+
+GMT_PLUS_05_B_DESC    ="(GMT+05:00) Islamabad, Karaczi, Taszkient"
+GMT_PLUS_05_B_DAYLIGHT="Azja Zachodnia (czas letni)"
+GMT_PLUS_05_B_STANDARD="Azja Zachodnia (czas standardowy)"
+
+GMT_PLUS_0530_A_DESC    ="(GMT+05:30) Chennai, Kalkuta, Mumbaj, Nowe Delhi"
+GMT_PLUS_0530_A_DAYLIGHT="Indie (czas letni)"
+GMT_PLUS_0530_A_STANDARD="Indie (czas standardowy)"
+
+GMT_PLUS_0530_B_DESC    ="(GMT+05:30) Sri Jayawardenepura"
+GMT_PLUS_0530_B_DAYLIGHT="Sri Lanka (czas letni)"
+GMT_PLUS_0530_B_STANDARD="Sri Lanka (czas standardowy)"
+
+GMT_PLUS_0545_A_DESC    ="(GMT+05:45) Katmandu"
+GMT_PLUS_0545_A_DAYLIGHT="Nepal (czas letni)"
+GMT_PLUS_0545_A_STANDARD="Nepal (czas standardowy)"
+
+GMT_PLUS_06_A_DESC    ="(GMT+06:00) Astana, Dhaka"
+GMT_PLUS_06_A_DAYLIGHT="Azja (środkowy czas letni)"
+GMT_PLUS_06_A_STANDARD="Azja (środkowy czas standardowy)"
+
+GMT_PLUS_06_B_DESC    ="(GMT+06:00) Nowosybirsk"
+GMT_PLUS_06_B_DAYLIGHT="RTZ 5 (czas letni)"
+GMT_PLUS_06_B_STANDARD="RTZ 5 (czas standardowy)"
+
+GMT_PLUS_0630_A_DESC    ="(GMT+06:30) Yangon (Rangun)"
+GMT_PLUS_0630_A_DAYLIGHT="Myanmar (czas letni)"
+GMT_PLUS_0630_A_STANDARD="Myanmar (czas standardowy)"
+
+GMT_PLUS_07_A_DESC    ="(GMT+07:00) Bangkok, Hanoi, Dżakarta"
+GMT_PLUS_07_A_DAYLIGHT="Azja Południowo-Wschodnia (czas letni)"
+GMT_PLUS_07_A_STANDARD="Azja Południowo-Wschodnia (czas standardowy)"
+
+GMT_PLUS_07_B_DESC    ="(GMT+07:00) Krasnojarsk"
+GMT_PLUS_07_B_DAYLIGHT="RTZ 6 (czas letni)"
+GMT_PLUS_07_B_STANDARD="RTZ 6 (czas standardowy)"
+
+GMT_PLUS_08_A_DESC    ="(GMT+08:00) Pekin, Chongqing, Hongkong, Urumczi"
+GMT_PLUS_08_A_DAYLIGHT="Chiny (czas letni)"
+GMT_PLUS_08_A_STANDARD="Chiny (czas standardowy)"
+
+GMT_PLUS_08_B_DESC    ="(GMT+08:00) Kuala Lumpur, Singapur"
+GMT_PLUS_08_B_DAYLIGHT="Singapur (czas letni)"
+GMT_PLUS_08_B_STANDARD="Singapur (czas standardowy)"
+
+GMT_PLUS_08_C_DESC    ="(GMT+08:00) Tajpej"
+GMT_PLUS_08_C_DAYLIGHT="Tajpej (czas letni)"
+GMT_PLUS_08_C_STANDARD="Tajpej (czas standardowy)"
+
+GMT_PLUS_08_D_DESC    ="(GMT+08:00) Perth"
+GMT_PLUS_08_D_DAYLIGHT="Australia Zachodnia (czas letni)"
+GMT_PLUS_08_D_STANDARD="Australia Zachodnia (czas standardowy)"
+
+GMT_PLUS_08_E_DESC    ="(GMT+08:00) Ułan Bator"
+GMT_PLUS_08_E_DAYLIGHT="Ułan Bator (czas letni)"
+GMT_PLUS_08_E_STANDARD="Ułan Bator (czas standardowy)"
+
+GMT_PLUS_08_F_DESC    ="(GMT+08:00) Irkuck"
+GMT_PLUS_08_F_DAYLIGHT="RTZ 7 (czas letni)"
+GMT_PLUS_08_F_STANDARD="RTZ 7 (czas standardowy)"
+
+GMT_PLUS_09_A_DESC    ="(GMT+09:00) Seul"
+GMT_PLUS_09_A_DAYLIGHT="Korea (czas letni)"
+GMT_PLUS_09_A_STANDARD="Korea (czas standardowy)"
+
+GMT_PLUS_09_B_DESC    ="(GMT+09:00) Osaka, Sapporo, Tokio"
+GMT_PLUS_09_B_DAYLIGHT="Tokio (czas letni)"
+GMT_PLUS_09_B_STANDARD="Tokio (czas standardowy)"
+
+GMT_PLUS_09_C_DESC    ="(GMT+09:00) Jakuck"
+GMT_PLUS_09_C_DAYLIGHT="RTZ 8 (czas letni)"
+GMT_PLUS_09_C_STANDARD="RTZ 8 (czas standardowy)"
+
+GMT_PLUS_0930_A_DESC    ="(GMT+09:30) Darwin"
+GMT_PLUS_0903_A_DAYLIGHT="Australia (środkowy czas letni)"
+GMT_PLUS_0930_A_STANDARD="Australia (środkowy czas standardowy)"
+
+GMT_PLUS_0930_B_DESC    ="(GMT+09:30) Adelajda"
+GMT_PLUS_0930_B_DAYLIGHT="Australia Środkowa (czas letni)"
+GMT_PLUS_0930_B_STANDARD="Australia Środkowa (czas standardowy)"
+
+GMT_PLUS_10_A_DESC    ="(GMT+10:00) Canberra, Melbourne, Sydney"
+GMT_PLUS_10_A_DAYLIGHT="Australia czas wschodni (letni)"
+GMT_PLUS_10_A_STANDARD="Australia czas wschodni (standardowy)"
+
+GMT_PLUS_10_B_DESC    ="(GMT+10:00) Brisbane"
+GMT_PLUS_10_B_DAYLIGHT="Australia Wschodnia (czas letni)"
+GMT_PLUS_10_B_STANDARD="Australia Wschodnia (czas standardowy)"
+
+GMT_PLUS_10_C_DESC    ="(GMT+10:00) Hobart"
+GMT_PLUS_10_C_DAYLIGHT="Tasmania (czas letni)"
+GMT_PLUS_10_C_STANDARD="Tasmania (czas standardowy)"
+
+GMT_PLUS_10_D_DESC    ="(GMT+10:00) Władywostok"
+GMT_PLUS_10_D_DAYLIGHT="RTZ 9 (czas letni)"
+GMT_PLUS_10_D_STANDARD="RTZ 9 (czas standardowy)"
+
+GMT_PLUS_10_E_DESC    ="(GMT+10:00) Guam, Port Moresby"
+GMT_PLUS_10_E_DAYLIGHT="Zachodni Pacyfik (czas letni)"
+GMT_PLUS_10_E_STANDARD="Zachodni Pacyfik (czas standardowy)"
+
+GMT_PLUS_10_F_DESC    ="(GMT+10:00) Magadan"
+GMT_PLUS_10_F_DAYLIGHT="Magadan (czas letni)"
+GMT_PLUS_10_F_STANDARD="Magadan (czas standardowy)"
+
+GMT_PLUS_11_A_DESC    ="(GMT+11:00) Wyspy Salomona, Nowa Kaledonia"
+GMT_PLUS_11_A_DAYLIGHT="Środkowy Pacyfik (czas letni)"
+GMT_PLUS_11_A_STANDARD="Środkowy Pacyfik (czas standardowy)"
+
+GMT_PLUS_11_B_DESC    ="(GMT+11:00) Czokurdach"
+GMT_PLUS_11_B_DAYLIGHT="RTZ 10 (czas letni)"
+GMT_PLUS_11_B_STANDARD="RTZ 10 (czas standardowy)"
+
+GMT_PLUS_12_A_DESC    ="(GMT+12:00) Fidżi, Kamczatka, Wyspy Marshalla"
+GMT_PLUS_12_A_DAYLIGHT="Fidżi (czas letni)"
+GMT_PLUS_12_A_STANDARD="Fidżi (czas standardowy)"
+
+GMT_PLUS_12_B_DESC    ="(GMT+12:00) Anadyr, Pietropawłowsk Kamczacki"
+GMT_PLUS_12_B_DAYLIGHT="RTZ 11 (czas letni)"
+GMT_PLUS_12_B_STANDARD="RTZ 11 (czas standardowy)"
+
+GMT_PLUS_12_C_DESC    ="(GMT+12:00) Auckland, Wellington"
+GMT_PLUS_12_C_DAYLIGHT="Nowa Zelandia (czas letni)"
+GMT_PLUS_12_C_STANDARD="Nowa Zelandia (czas standardowy)"
+
+GMT_PLUS_13_A_DESC    ="(GMT+13:00) Nuku'alofa"
+GMT_PLUS_13_A_DAYLIGHT="Tonga (czas letni)"
+GMT_PLUS_13_A_STANDARD="Tonga (czas standardowy)"
+
+
 ; LANG_ROMANIAN SUBLANG_NEUTRAL
 [Strings.0018]
 COUNTRY_AD="Andorra, Principatul"
@@ -2924,6 +3623,330 @@ COUNTRY_YT="Mayotte, Teritoriul"
 COUNTRY_ZA="Africa de Sud, Republica"
 COUNTRY_ZM="Zambia, Republica"
 COUNTRY_ZW="Zimbabwe, Republica"
+
+GMT_MINUS_12_A_DESC    ="(UTC-12:00) Dată internațională de vest"
+GMT_MINUS_12_A_DAYLIGHT="Oră de vest diurnă"
+GMT_MINUS_12_A_STANDARD="Oră de vest standard"
+
+GMT_MINUS_11_A_DESC    ="(UTC-11:00) Atolul Midway, Samoa"
+GMT_MINUS_11_A_DAYLIGHT="Oră de Samoa diurnă"
+GMT_MINUS_11_A_STANDARD="Oră de Samoa standard"
+
+GMT_MINUS_10_A_DESC    ="(UTC-10:00) Hawai"
+GMT_MINUS_10_A_DAYLIGHT="Oră de Hawai diurnă"
+GMT_MINUS_10_A_STANDARD="Oră de Hawai standard"
+
+GMT_MINUS_09_A_DESC    ="(UTC-09:00) Alaska"
+GMT_MINUS_09_A_DAYLIGHT="Oră de Alaska diurnă"
+GMT_MINUS_09_A_STANDARD="Oră de Alaska standard"
+
+GMT_MINUS_08_A_DESC    ="(UTC-08:00) Ora Pacificului (SUA & Canada)"
+GMT_MINUS_08_A_DAYLIGHT="Ora Pacificului diurnă"
+GMT_MINUS_08_A_STANDARD="Ora Pacificului standard"
+
+GMT_MINUS_07_A_DESC    ="(UTC-07:00) Ora montană (SUA & Canada)"
+GMT_MINUS_07_A_DAYLIGHT="Ora montană diurnă"
+GMT_MINUS_07_A_STANDARD="Ora montană standard"
+
+GMT_MINUS_07_B_DESC    ="(UTC-07:00) Chihuahua, La Paz, Mazatlan"
+GMT_MINUS_07_B_DAYLIGHT="Ora montană diurnă (Mexico)"
+GMT_MINUS_07_B_STANDARD="Ora montană standard (Mexico)"
+
+GMT_MINUS_07_C_DESC    ="(UTC-07:00) Arizona"
+GMT_MINUS_07_C_DAYLIGHT="Ora montană diurnă (SUA)"
+GMT_MINUS_07_C_STANDARD="Ora montană standard (SUA)"
+
+GMT_MINUS_06_A_DESC    ="(UTC-06:00) Oră centrală (SUA & Canada)"
+GMT_MINUS_06_A_DAYLIGHT="Ora centrală diurnă"
+GMT_MINUS_06_A_STANDARD="Ora centrală standard"
+
+GMT_MINUS_06_B_DESC    ="(UTC-06:00) Saskatchewan"
+GMT_MINUS_06_B_DAYLIGHT="Oră de Canada centrală diurnă"
+GMT_MINUS_06_B_STANDARD="Oră de Canada centrală standard"
+
+GMT_MINUS_06_C_DESC    ="(UTC-06:00) Guadalajara, Ciudad de México, Monterrey"
+GMT_MINUS_06_C_DAYLIGHT="Oră de Mexic centrală diurnă"
+GMT_MINUS_06_C_STANDARD="Oră de Mexic centrală standard"
+
+GMT_MINUS_06_D_DESC    ="(UTC-06:00) America centrală"
+GMT_MINUS_06_D_DAYLIGHT="Ora Americii Centrale diurnă"
+GMT_MINUS_06_D_STANDARD="Ora Americii Centrale standard"
+
+GMT_MINUS_05_A_DESC    ="(UTC-05:00) Ora de est (SUA & Canada)"
+GMT_MINUS_05_A_DAYLIGHT="Oră de est diurnă"
+GMT_MINUS_05_A_STANDARD="Oră de est standard"
+
+GMT_MINUS_05_B_DESC    ="(UTC-05:00) Indiana (Est)"
+GMT_MINUS_05_B_DAYLIGHT="Ora SUA de est diurnă"
+GMT_MINUS_05_B_STANDARD="Ora SUA de est standard"
+
+GMT_MINUS_05_C_DESC    ="(UTC-05:00) Bogota, Lima, Quito, Rio Branco"
+GMT_MINUS_05_C_DAYLIGHT="Ora Americii de Sud diurnă"
+GMT_MINUS_05_C_STANDARD="Ora Americii de Sud standard"
+
+GMT_MINUS_04_A_DESC    ="(UTC-04:00) Ora atlanticului (Canada)"
+GMT_MINUS_04_A_DAYLIGHT="Ora atlanticului diurnă"
+GMT_MINUS_04_A_STANDARD="Ora atlanticului standard"
+
+GMT_MINUS_04_B_DESC    ="(UTC-04:00) La Paz"
+GMT_MINUS_04_B_DAYLIGHT="Ora de vest a Americii de Sud diurnă"
+GMT_MINUS_04_B_STANDARD="Ora de vest a Americii de Sud standard"
+
+GMT_MINUS_0330_A_DESC    ="(UTC-03:30) Newfoundland"
+GMT_MINUS_0330_A_DAYLIGHT="Ora insulei Newfoundland diurnă"
+GMT_MINUS_0330_A_STANDARD="Ora insulei Newfoundland standard"
+
+GMT_MINUS_03_A_DESC    ="(UTC-03:00) Santiago"
+GMT_MINUS_03_A_DAYLIGHT="Ora pacificului a Americii de Sud diurnă"
+GMT_MINUS_03_A_STANDARD="Ora pacificului a Americii de Sud standard"
+
+GMT_MINUS_03_B_DESC    ="(UTC-03:00) Brazilia"
+GMT_MINUS_03_B_DAYLIGHT="Ora de est a Americii de Sud diurnă"
+GMT_MINUS_03_B_STANDARD="Ora de est a Americii de Sud standard"
+
+GMT_MINUS_03_C_DESC    ="(UTC-03:00) Buenos Aires, Georgetown"
+GMT_MINUS_03_C_DAYLIGHT="Ora de est a Americii de Sud diurnă"
+GMT_MINUS_03_C_STANDARD="Ora de est a Americii de Sud standard"
+
+GMT_MINUS_03_D_DESC    ="(UTC-03:00) Groenlanda"
+GMT_MINUS_03_D_DAYLIGHT="Ora insulei Groenlanda diurnă"
+GMT_MINUS_03_D_STANDARD="Ora insulei Groenlanda standard"
+
+GMT_MINUS_02_A_DESC    ="(UTC-02:00) Atlanticul de mijloc"
+GMT_MINUS_02_A_DAYLIGHT="Ora atlanticului de mijloc diurnă"
+GMT_MINUS_02_A_STANDARD="Ora atlanticului de mijloc standard"
+
+GMT_MINUS_01_A_DESC    ="(UTC-01:00) Azore"
+GMT_MINUS_01_A_DAYLIGHT="Ora insulelor Azore diurnă"
+GMT_MINUS_01_A_STANDARD="Ora insulelor Azore standard"
+
+GMT_MINUS_01_B_DESC    ="(UTC-01:00) Insula Capului Verde"
+GMT_MINUS_01_B_DAYLIGHT="Ora insulei Capul Verde diurnă"
+GMT_MINUS_01_B_STANDARD="Ora insulei Capul Verde standard"
+
+GMT_PLUS_00_A_DESC    ="(UTC) Ora medie Greenwich (GMT): Dublin, Edinburg, Lisabona, Londra"
+GMT_PLUS_00_A_DAYLIGHT="Ora medie Greenwich (GMT) diurnă"
+GMT_PLUS_00_A_STANDARD="Ora medie Greenwich (GMT) standard"
+
+GMT_PLUS_00_B_DESC    ="Ora medie Greenwich (GMT): Casablanca, Monrovia, Reykjavik"
+GMT_PLUS_00_B_DAYLIGHT="Ora medie Greenwich (GMT) diurnă"
+GMT_PLUS_00_B_STANDARD="Ora medie Greenwich (GMT) standard"
+
+GMT_PLUS_01_A_DESC    ="(UTC+01:00) Belgrad, Bratislava, Budapesta, Ljubljana, Praga"
+GMT_PLUS_01_A_DAYLIGHT="Ora Europei Centrale diurnă"
+GMT_PLUS_01_A_STANDARD="Ora Europei Centrale standard"
+
+GMT_PLUS_01_B_DESC    ="(UTC+01:00) Sarajevo, Skopje, Varșovia, Zagreb"
+GMT_PLUS_01_B_DAYLIGHT="Ora Europei Centrale diurnă"
+GMT_PLUS_01_B_STANDARD="Ora Europei Centrale standard"
+
+GMT_PLUS_01_C_DESC    ="(UTC+01:00) Bruxelles, Copenhaga, Madrid, Paris"
+GMT_PLUS_01_C_DAYLIGHT="Ora romanică diurnă"
+GMT_PLUS_01_C_STANDARD="Ora romanică standard"
+
+GMT_PLUS_01_D_DESC    ="(UTC+01:00) Amsterdam, Berlin, Berna, Roma, Stockholm, Viena"
+GMT_PLUS_01_D_DAYLIGHT="Ora Europei de Vest diurnă"
+GMT_PLUS_01_D_STANDARD="Ora Europei de Vest standard"
+
+GMT_PLUS_02_A_DESC    ="(UTC+02:00) Minsk"
+GMT_PLUS_02_A_DAYLIGHT="Ora Europei de Est diurnă"
+GMT_PLUS_02_A_STANDARD="Ora Europei de Est standard"
+
+GMT_PLUS_02_B_DESC    ="(UTC+02:00) Cairo"
+GMT_PLUS_02_B_DAYLIGHT="Ora Egiptului diurnă"
+GMT_PLUS_02_B_STANDARD="Ora Egiptului standard"
+
+GMT_PLUS_02_C_DESC    ="(UTC+02:00) Helsinki, Kiev, Riga, Sofia, Tallinn, Vilnius"
+GMT_PLUS_02_C_DAYLIGHT="Ora FLE diurnă"
+GMT_PLUS_02_C_STANDARD="Ora FLE standard"
+
+GMT_PLUS_02_D_DESC    ="(UTC+02:00) Atena, București, Istanbul"
+GMT_PLUS_02_D_DAYLIGHT="Ora GTB diurnă"
+GMT_PLUS_02_D_STANDARD="Ora GTB standard"
+
+GMT_PLUS_02_E_DESC    ="(UTC+02:00) Ierusalim"
+GMT_PLUS_02_E_DAYLIGHT="Oră de Israel diurnă"
+GMT_PLUS_02_E_STANDARD="Oră de Israel standard"
+
+GMT_PLUS_02_F_DESC    ="(UTC+02:00) Harare, Pretoria"
+GMT_PLUS_02_F_DAYLIGHT="Ora Africii de Sud diurnă"
+GMT_PLUS_02_F_STANDARD="Ora Africii de Sud standard"
+
+GMT_PLUS_02_G_DESC    ="(UTC+02:00) Kaliningrad"
+GMT_PLUS_02_G_DAYLIGHT="Ora zonală rusă 1 diurnă"
+GMT_PLUS_02_G_STANDARD="Ora zonală rusă 1 standard"
+
+GMT_PLUS_03_A_DESC    ="(UTC+03:00) Minsk"
+GMT_PLUS_03_A_DAYLIGHT="Oră de Belarus diurnă"
+GMT_PLUS_03_A_STANDARD="Oră de Belarus standard"
+
+GMT_PLUS_03_B_DESC    ="(UTC+03:00) Moscova, St. Petersburg"
+GMT_PLUS_03_B_DAYLIGHT="Ora zonală rusă 2 diurnă"
+GMT_PLUS_03_B_STANDARD="Ora zonală rusă 2 standard"
+
+GMT_PLUS_03_C_DESC    ="(UTC+03:00) Kuweit, Riad"
+GMT_PLUS_03_C_DAYLIGHT="Oră de Arabia diurnă"
+GMT_PLUS_03_C_STANDARD="Oră de Arabia standard"
+
+GMT_PLUS_03_D_DESC    ="(UTC+03:00) Nairobi"
+GMT_PLUS_03_D_DAYLIGHT="Ora Africii de Est diurnă"
+GMT_PLUS_03_D_STANDARD="Ora Africii de Est standard"
+
+GMT_PLUS_03_E_DESC    ="(UTC+03:00) Bagdad"
+GMT_PLUS_03_E_DAYLIGHT="Oră arabă diurnă"
+GMT_PLUS_03_E_STANDARD="Oră arabă standard"
+
+GMT_PLUS_0330_A_DESC    ="(UTC+03:30) Teheran"
+GMT_PLUS_0330_A_DAYLIGHT="Ora Iranului diurnă"
+GMT_PLUS_0330_A_STANDARD="Ora Iranului standard"
+
+GMT_PLUS_04_A_DESC    ="(UTC+04:00) Abu Dhabi, Muscat"
+GMT_PLUS_04_A_DAYLIGHT="Oră arabă diurnă"
+GMT_PLUS_04_A_STANDARD="Oră arabă diurnă"
+
+GMT_PLUS_04_B_DESC    ="(UTC+04:00) Erevan"
+GMT_PLUS_04_B_DAYLIGHT="Oră de Caucaz diurnă"
+GMT_PLUS_04_B_STANDARD="Oră de Caucaz standard"
+
+GMT_PLUS_04_C_DESC    ="(UTC+04:00) Ijevsk, Samara, Volgograd"
+GMT_PLUS_04_C_DAYLIGHT="Ora zonală rusă 3 diurnă"
+GMT_PLUS_04_C_STANDARD="Ora zonală rusă 3 standard"
+
+GMT_PLUS_0430_A_DESC    ="(UTC+04:30) Kabul"
+GMT_PLUS_0430_A_DAYLIGHT="Ora Afganistanului diurnă"
+GMT_PLUS_0430_A_STANDARD="Ora Afganistanului standard"
+
+GMT_PLUS_05_A_DESC    ="(UTC+05:00) Ekaterinburg"
+GMT_PLUS_05_A_DAYLIGHT="Ora zonală rusă 4 diurnă"
+GMT_PLUS_05_A_STANDARD="Ora zonală rusă 4 standard"
+
+GMT_PLUS_05_B_DESC    ="(UTC+05:00) Islamabad, Karachi, Tașkent"
+GMT_PLUS_05_B_DAYLIGHT="Ora Asiei de Vest diurnă"
+GMT_PLUS_05_B_STANDARD="Ora Asiei de Vest standard"
+
+GMT_PLUS_0530_A_DESC    ="(UTC+05:30) Chennai, Calcutta, Mumbai, New Delhi"
+GMT_PLUS_0530_A_DAYLIGHT="Oră de India diurnă"
+GMT_PLUS_0530_A_STANDARD="Oră de India standard"
+
+GMT_PLUS_0530_B_DESC    ="(UTC+05:30) Sri Jayewardanapura"
+GMT_PLUS_0530_B_DAYLIGHT="Oră de Sri Lanka diurnă"
+GMT_PLUS_0530_B_STANDARD="Oră de Sri Lanka standard"
+
+GMT_PLUS_0545_A_DESC    ="(UTC+05:45) Kathmandu"
+GMT_PLUS_0545_A_DAYLIGHT="Oră de Nepal diurnă"
+GMT_PLUS_0545_A_STANDARD="Oră de Nepal standard"
+
+GMT_PLUS_06_A_DESC    ="(UTC+06:00) Astana, Dacca"
+GMT_PLUS_06_A_DAYLIGHT="Ora Asiei Centrale diurnă"
+GMT_PLUS_06_A_STANDARD="Ora Asiei Centrale standard"
+
+GMT_PLUS_06_B_DESC    ="(UTC+06:00) Novosibirsk"
+GMT_PLUS_06_B_DAYLIGHT="Ora zonală rusă 5 diurnă"
+GMT_PLUS_06_B_STANDARD="Ora zonală rusă 5 standard"
+
+GMT_PLUS_0630_A_DESC    ="(UTC+06:30) Yangon (Rangoon)"
+GMT_PLUS_0630_A_DAYLIGHT="Oră de Myanmar diurnă"
+GMT_PLUS_0630_A_STANDARD="Oră de Myanmar standard"
+
+GMT_PLUS_07_A_DESC    ="(UTC+07:00) Bangkok, Hanoi, Jakarta"
+GMT_PLUS_07_A_DAYLIGHT="Ora Asiei de Sud-Est diurnă"
+GMT_PLUS_07_A_STANDARD="Ora Asiei de Sud-Est standard"
+
+GMT_PLUS_07_B_DESC    ="(UTC+07:00) Krasnoiarsk"
+GMT_PLUS_07_B_DAYLIGHT="Ora zonală rusă 6 diurnă"
+GMT_PLUS_07_B_STANDARD="Ora zonală rusă 6 standard"
+
+GMT_PLUS_08_A_DESC    ="(UTC+08:00) Beijing, Chongqing, Hong Kong, Urumci"
+GMT_PLUS_08_A_DAYLIGHT="Oră de China diurnă"
+GMT_PLUS_08_A_STANDARD="Oră de China standard"
+
+GMT_PLUS_08_B_DESC    ="(UTC+08:00) Kuala Lumpur, Singapore"
+GMT_PLUS_08_B_DAYLIGHT="Oră de Singapore diurnă"
+GMT_PLUS_08_B_STANDARD="Oră de Singapore standard"
+
+GMT_PLUS_08_C_DESC    ="(UTC+08:00) Taipei"
+GMT_PLUS_08_C_DAYLIGHT="Oră de Taipei diurnă"
+GMT_PLUS_08_C_STANDARD="Oră de Taipei standard"
+
+GMT_PLUS_08_D_DESC    ="(UTC+08:00) Perth"
+GMT_PLUS_08_D_DAYLIGHT="Ora Australiei de Vest diurnă"
+GMT_PLUS_08_D_STANDARD="Ora Australiei de Vest standard"
+
+GMT_PLUS_08_E_DESC    ="(UTC+08:00) Ulaanbaatar"
+GMT_PLUS_08_E_DAYLIGHT="Oră de Ulaanbaatar diurnă"
+GMT_PLUS_08_E_STANDARD="Oră de Ulaanbaatar standard"
+
+GMT_PLUS_08_F_DESC    ="(UTC+08:00) Irkutsk"
+GMT_PLUS_08_F_DAYLIGHT="Ora zonală rusă 7 diurnă"
+GMT_PLUS_08_F_STANDARD="Ora zonală rusă 7 standard"
+
+GMT_PLUS_09_A_DESC    ="(UTC+09:00) Seul"
+GMT_PLUS_09_A_DAYLIGHT="Oră de Coreea diurnă"
+GMT_PLUS_09_A_STANDARD="Oră de Coreea standard"
+
+GMT_PLUS_09_B_DESC    ="(UTC+09:00) Osaka, Sapporo, Tokio"
+GMT_PLUS_09_B_DAYLIGHT="Oră de Tokio diurnă"
+GMT_PLUS_09_B_STANDARD="Oră de Tokio standard"
+
+GMT_PLUS_09_C_DESC    ="(UTC+09:00) Iakutsk"
+GMT_PLUS_09_C_DAYLIGHT="Ora zonală rusă 8 diurnă"
+GMT_PLUS_09_C_STANDARD="Ora zonală rusă 8 standard"
+
+GMT_PLUS_0930_A_DESC    ="(UTC+09:30) Darwin"
+GMT_PLUS_0903_A_DAYLIGHT="Ora Australiei Centrale diurnă"
+GMT_PLUS_0930_A_STANDARD="Ora Australiei Centrale standard"
+
+GMT_PLUS_0930_B_DESC    ="(UTC+09:30) Adelaide"
+GMT_PLUS_0930_B_DAYLIGHT="Ora Australiei Centrale diurnă"
+GMT_PLUS_0930_B_STANDARD="Ora Australiei Centrale standard"
+
+GMT_PLUS_10_A_DESC    ="(UTC+10:00) Canberra, Melbourne, Sydney"
+GMT_PLUS_10_A_DAYLIGHT="Ora Australiei de Est diurnă"
+GMT_PLUS_10_A_STANDARD="Ora Australiei de Est standard"
+
+GMT_PLUS_10_B_DESC    ="(UTC+10:00) Brisbane"
+GMT_PLUS_10_B_DAYLIGHT="Ora Australiei de Est diurnă"
+GMT_PLUS_10_B_STANDARD="Ora Australiei de Est standard"
+
+GMT_PLUS_10_C_DESC    ="(UTC+10:00) Hobart"
+GMT_PLUS_10_C_DAYLIGHT="Oră de Tasmania diurnă"
+GMT_PLUS_10_C_STANDARD="Oră de Tasmania standard"
+
+GMT_PLUS_10_D_DESC    ="(UTC+10:00) Vladivostok"
+GMT_PLUS_10_D_DAYLIGHT="Ora zonală rusă 9 diurnă"
+GMT_PLUS_10_D_STANDARD="Ora zonală rusă 9 standard"
+
+GMT_PLUS_10_E_DESC    ="(UTC+10:00) Guam, Port Moresby"
+GMT_PLUS_10_E_DAYLIGHT="Ora Pacificului de Vest diurnă"
+GMT_PLUS_10_E_STANDARD="Ora Pacificului de Vest standard"
+
+GMT_PLUS_10_F_DESC    ="(UTC+10:00) Magadan"
+GMT_PLUS_10_F_DAYLIGHT="Oră de Magadan diurnă"
+GMT_PLUS_10_F_STANDARD="Oră de Magadan standard"
+
+GMT_PLUS_11_A_DESC    ="(UTC+11:00) Insulele Solomon, Noua Caledonie"
+GMT_PLUS_11_A_DAYLIGHT="Ora Pacificului Central diurnă"
+GMT_PLUS_11_A_STANDARD="Ora Pacificului Central standard"
+
+GMT_PLUS_11_B_DESC    ="(UTC+11:00) Ciocurdah"
+GMT_PLUS_11_B_DAYLIGHT="Ora zonală rusă 10 diurnă"
+GMT_PLUS_11_B_STANDARD="Ora zonală rusă 10 standard"
+
+GMT_PLUS_12_A_DESC    ="(UTC+12:00) Fiji, Kamceatka, Insulele Marshall"
+GMT_PLUS_12_A_DAYLIGHT="Oră de Fiji diurnă"
+GMT_PLUS_12_A_STANDARD="Oră de Fiji standard"
+
+GMT_PLUS_12_B_DESC    ="(UTC+12:00) Anadîr, Petropavlovsk-Kamceatski"
+GMT_PLUS_12_B_DAYLIGHT="Ora zonală rusă 11 diurnă"
+GMT_PLUS_12_B_STANDARD="Ora zonală rusă 11 standard"
+
+GMT_PLUS_12_C_DESC    ="(UTC+12:00) Auckland, Wellington"
+GMT_PLUS_12_C_DAYLIGHT="Ora Noii Zeelande diurnă"
+GMT_PLUS_12_C_STANDARD="Ora Noii Zeelande standard"
+
+GMT_PLUS_13_A_DESC    ="(UTC+13:00) Nuku'alofa"
+GMT_PLUS_13_A_DAYLIGHT="Oră de Tonga diurnă"
+GMT_PLUS_13_A_STANDARD="Oră de Tonga standard"
 
 
 ; LANG_RUSSIAN SUBLANG_NEUTRAL
@@ -3216,14 +4239,14 @@ GMT_PLUS_02_E_DESC      ="(GMT+02:00) Иерусалим"
 GMT_PLUS_02_F_DESC      ="(GMT+02:00) Хараре, Претория"
 GMT_PLUS_02_G_DESC      ="(GMT+02:00) Калининград"
 GMT_PLUS_03_A_DESC      ="(GMT+03:00) Минск"
-GMT_PLUS_03_B_DESC      ="(GMT+03:00) Волгоград, Москва, Санкт-Петербург"
+GMT_PLUS_03_B_DESC      ="(GMT+03:00) Москва, Санкт-Петербург"
 GMT_PLUS_03_C_DESC      ="(GMT+03:00) Кувейт, Эр-Рияд"
 GMT_PLUS_03_D_DESC      ="(GMT+03:00) Найроби"
 GMT_PLUS_03_E_DESC      ="(GMT+03:00) Багдад"
 GMT_PLUS_0330_A_DESC    ="(GMT+03:30) Тегеран"
 GMT_PLUS_04_A_DESC      ="(GMT+04:00) Абу-Даби, Мускат"
 GMT_PLUS_04_B_DESC      ="(GMT+04:00) Ереван"
-GMT_PLUS_04_C_DESC      ="(GMT+04:00) Ижевск, Самара"
+GMT_PLUS_04_C_DESC      ="(GMT+04:00) Волгоград, Ижевск, Самара"
 GMT_PLUS_0430_A_DESC    ="(GMT+04:30) Кабул"
 GMT_PLUS_05_A_DESC      ="(GMT+05:00) Екатеринбург"
 GMT_PLUS_05_B_DESC      ="(GMT+05:00) Исламабад, Карачи, Ташкент"

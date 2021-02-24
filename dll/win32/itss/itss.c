@@ -21,9 +21,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
 
-#include <rpcproxy.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winreg.h"
+#include "ole2.h"
+#include "rpcproxy.h"
+#include "advpub.h"
+
+#include "wine/debug.h"
+
+#include "itsstor.h"
+
+#include "initguid.h"
+#include "wine/itss.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(itss);
 
 static HRESULT ITSS_create(IUnknown *pUnkOuter, LPVOID *ppObj);
 
@@ -84,20 +103,31 @@ static ULONG WINAPI ITSSCF_Release(LPCLASSFACTORY iface)
 }
 
 
-static HRESULT WINAPI ITSSCF_CreateInstance(LPCLASSFACTORY iface, LPUNKNOWN pOuter,
-					  REFIID riid, LPVOID *ppobj)
+static HRESULT WINAPI ITSSCF_CreateInstance(IClassFactory *iface, IUnknown *outer,
+                                            REFIID riid, void **ppv)
 {
     IClassFactoryImpl *This = impl_from_IClassFactory(iface);
+    IUnknown *unk;
     HRESULT hres;
-    LPUNKNOWN punk;
 
-    TRACE("(%p)->(%p,%s,%p)\n", This, pOuter, debugstr_guid(riid), ppobj);
+    TRACE("(%p)->(%p %s %p)\n", This, outer, debugstr_guid(riid), ppv);
 
-    *ppobj = NULL;
-    hres = This->pfnCreateInstance(pOuter, (LPVOID *) &punk);
-    if (SUCCEEDED(hres)) {
-        hres = IUnknown_QueryInterface(punk, riid, ppobj);
-        IUnknown_Release(punk);
+    if(outer && !IsEqualGUID(riid, &IID_IUnknown)) {
+        *ppv = NULL;
+        return CLASS_E_NOAGGREGATION;
+    }
+
+    hres = This->pfnCreateInstance(outer, (void**)&unk);
+    if(FAILED(hres)) {
+        *ppv = NULL;
+        return hres;
+    }
+
+    if(!IsEqualGUID(riid, &IID_IUnknown)) {
+        hres = IUnknown_QueryInterface(unk, riid, ppv);
+        IUnknown_Release(unk);
+    }else {
+        *ppv = unk;
     }
     return hres;
 }

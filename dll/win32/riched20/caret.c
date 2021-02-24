@@ -122,8 +122,14 @@ int ME_GetTextLengthEx(ME_TextEditor *editor, const GETTEXTLENGTHEX *how)
   return length; 
 }
 
-
-int ME_SetSelection(ME_TextEditor *editor, int from, int to)
+/******************************************************************
+ *    set_selection_cursors
+ *
+ * Updates the selection cursors.
+ *
+ * Note that this does not invalidate either the old or the new selections.
+ */
+int set_selection_cursors(ME_TextEditor *editor, int from, int to)
 {
   int selectionEnd = 0;
   const int len = ME_GetTextLength(editor);
@@ -139,7 +145,6 @@ int ME_SetSelection(ME_TextEditor *editor, int from, int to)
   {
     ME_SetCursorToStart(editor, &editor->pCursors[1]);
     ME_SetCursorToEnd(editor, &editor->pCursors[0], TRUE);
-    ME_InvalidateSelection(editor);
     return len + 1;
   }
 
@@ -165,7 +170,6 @@ int ME_SetSelection(ME_TextEditor *editor, int from, int to)
               end --;
           }
           editor->pCursors[1] = editor->pCursors[0];
-          ME_Repaint(editor);
       }
       return end;
     }
@@ -194,7 +198,6 @@ int ME_SetSelection(ME_TextEditor *editor, int from, int to)
   {
     ME_SetCursorToEnd(editor, &editor->pCursors[0], FALSE);
     editor->pCursors[1] = editor->pCursors[0];
-    ME_InvalidateSelection(editor);
     return len;
   }
 
@@ -266,36 +269,47 @@ void ME_GetCursorCoordinates(ME_TextEditor *editor, ME_Cursor *pCursor,
   return;
 }
 
-
-void
-ME_MoveCaret(ME_TextEditor *editor)
+void create_caret(ME_TextEditor *editor)
 {
   int x, y, height;
 
   ME_GetCursorCoordinates(editor, &editor->pCursors[0], &x, &y, &height);
-  if(editor->bHaveFocus && !ME_IsSelection(editor))
+  ITextHost_TxCreateCaret(editor->texthost, NULL, 0, height);
+  editor->caret_height = height;
+  editor->caret_hidden = TRUE;
+}
+
+void show_caret(ME_TextEditor *editor)
+{
+  ITextHost_TxShowCaret(editor->texthost, TRUE);
+  editor->caret_hidden = FALSE;
+}
+
+void hide_caret(ME_TextEditor *editor)
+{
+  /* calls to HideCaret are cumulative; do so only once */
+  if (!editor->caret_hidden)
   {
+    ITextHost_TxShowCaret(editor->texthost, FALSE);
+    editor->caret_hidden = TRUE;
+  }
+}
+
+void update_caret(ME_TextEditor *editor)
+{
+  int x, y, height;
+
+  if (!editor->bHaveFocus) return;
+  if (!ME_IsSelection(editor))
+  {
+    ME_GetCursorCoordinates(editor, &editor->pCursors[0], &x, &y, &height);
+    if (height != editor->caret_height) create_caret(editor);
     x = min(x, editor->rcFormat.right-1);
-    ITextHost_TxCreateCaret(editor->texthost, NULL, 0, height);
     ITextHost_TxSetCaretPos(editor->texthost, x, y);
+    show_caret(editor);
   }
-}
-
-
-void ME_ShowCaret(ME_TextEditor *ed)
-{
-  ME_MoveCaret(ed);
-  if(ed->bHaveFocus && !ME_IsSelection(ed))
-    ITextHost_TxShowCaret(ed->texthost, TRUE);
-}
-
-void ME_HideCaret(ME_TextEditor *ed)
-{
-  if(!ed->bHaveFocus || ME_IsSelection(ed))
-  {
-    ITextHost_TxShowCaret(ed->texthost, FALSE);
-    DestroyCaret();
-  }
+  else
+    hide_caret(editor);
 }
 
 BOOL ME_InternalDeleteText(ME_TextEditor *editor, ME_Cursor *start,
@@ -380,7 +394,7 @@ BOOL ME_InternalDeleteText(ME_TextEditor *editor, ME_Cursor *start,
 
       c.nOffset -= nCharsToDelete;
 
-      ME_FindItemBack(c.pRun, diParagraph)->member.para.nFlags |= MEPF_REWRAP;
+      mark_para_rewrap(editor, ME_FindItemBack(c.pRun, diParagraph));
 
       cursor = c;
       /* nChars is the number of characters that should be deleted from the
@@ -471,12 +485,26 @@ ME_InternalInsertTextFromCursor(ME_TextEditor *editor, int nCursor,
   return ME_InsertRunAtCursor(editor, p, style, str, len, flags);
 }
 
+static struct re_object* create_re_object(const REOBJECT *reo)
+{
+  struct re_object *reobj = heap_alloc(sizeof(*reobj));
+
+  if (!reobj)
+  {
+    WARN("Fail to allocate re_object.\n");
+    return NULL;
+  }
+  ME_CopyReObject(&reobj->obj, reo, REO_GETOBJ_ALL_INTERFACES);
+  return reobj;
+}
 
 void ME_InsertOLEFromCursor(ME_TextEditor *editor, const REOBJECT* reo, int nCursor)
 {
   ME_Style              *pStyle = ME_GetInsertStyle(editor, nCursor);
   ME_DisplayItem        *di;
   WCHAR                 space = ' ';
+  ME_DisplayItem        *di_prev = NULL;
+  struct re_object      *reobj_prev = NULL;
   
   /* FIXME no no no */
   if (ME_IsSelection(editor))
@@ -484,8 +512,22 @@ void ME_InsertOLEFromCursor(ME_TextEditor *editor, const REOBJECT* reo, int nCur
 
   di = ME_InternalInsertTextFromCursor(editor, nCursor, &space, 1, pStyle,
                                        MERF_GRAPHICS);
-  di->member.run.ole_obj = ALLOC_OBJ(*reo);
-  ME_CopyReObject(di->member.run.ole_obj, reo);
+  di->member.run.reobj = create_re_object(reo);
+
+  di_prev = di;
+  while (ME_PrevRun(NULL, &di_prev, TRUE))
+  {
+    if (di_prev->member.run.reobj)
+    {
+      reobj_prev = di_prev->member.run.reobj;
+      break;
+    }
+  }
+  if (reobj_prev)
+    list_add_after(&reobj_prev->entry, &di->member.run.reobj->entry);
+  else
+    list_add_head(&editor->reobj_list, &di->member.run.reobj->entry);
+
   ME_ReleaseStyle(pStyle);
 }
 
@@ -550,6 +592,10 @@ void ME_InsertTextFromCursor(ME_TextEditor *editor, int nCursor,
     } else { /* handle EOLs */
       ME_DisplayItem *tp, *end_run, *run, *prev;
       int eol_len = 0;
+
+      /* Check if new line is allowed for this control */
+      if (!(editor->styleFlags & ES_MULTILINE))
+        break;
 
       /* Find number of CR and LF in end of paragraph run */
       if (*pos =='\r')
@@ -1168,8 +1214,7 @@ void ME_LButtonDown(ME_TextEditor *editor, int x, int y, int clickNum)
     }
   }
   ME_InvalidateSelection(editor);
-  ITextHost_TxShowCaret(editor->texthost, FALSE);
-  ME_ShowCaret(editor);
+  update_caret(editor);
   ME_SendSelChange(editor);
 }
 
@@ -1201,8 +1246,7 @@ void ME_MouseMove(ME_TextEditor *editor, int x, int y)
   }
 
   ME_InvalidateSelection(editor);
-  ITextHost_TxShowCaret(editor->texthost, FALSE);
-  ME_ShowCaret(editor);
+  update_caret(editor);
   ME_SendSelChange(editor);
 }
 
@@ -1595,9 +1639,9 @@ ME_ArrowKey(ME_TextEditor *editor, int nVKey, BOOL extend, BOOL ctrl)
 
   ME_InvalidateSelection(editor);
   ME_Repaint(editor);
-  ITextHost_TxShowCaret(editor->texthost, FALSE);
+  hide_caret(editor);
   ME_EnsureVisible(editor, &tmp_curs);
-  ME_ShowCaret(editor);
+  update_caret(editor);
   ME_SendSelChange(editor);
   return success;
 }

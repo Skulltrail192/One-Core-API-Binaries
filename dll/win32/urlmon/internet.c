@@ -18,6 +18,12 @@
  */
 
 #include "urlmon_main.h"
+#include "winreg.h"
+#include "shlwapi.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(urlmon);
 
 static const WCHAR feature_control_keyW[] =
     {'S','o','f','t','w','a','r','e','\\',
@@ -150,7 +156,7 @@ static HRESULT parse_schema(LPCWSTR url, DWORD flags, LPWSTR result, DWORD size,
     if(flags)
         ERR("wrong flags\n");
     
-    ptr = strchrW(url, ':');
+    ptr = wcschr(url, ':');
     if(ptr)
         len = ptr-url;
 
@@ -212,7 +218,7 @@ static HRESULT parse_security_url(LPCWSTR url, DWORD flags, LPWSTR result, DWORD
     return E_FAIL;
 }
 
-static HRESULT parse_encode(LPCWSTR url, DWORD flags, LPWSTR result, DWORD size, DWORD *rsize)
+static HRESULT parse_encode(LPCWSTR url, PARSEACTION action, DWORD flags, LPWSTR result, DWORD size, DWORD *rsize)
 {
     IInternetProtocolInfo *protocol_info;
     DWORD prsize;
@@ -223,7 +229,7 @@ static HRESULT parse_encode(LPCWSTR url, DWORD flags, LPWSTR result, DWORD size,
     protocol_info = get_protocol_info(url);
 
     if(protocol_info) {
-        hres = IInternetProtocolInfo_ParseUrl(protocol_info, url, PARSE_ENCODE,
+        hres = IInternetProtocolInfo_ParseUrl(protocol_info, url, action,
                 flags, result, size, rsize, 0);
         IInternetProtocolInfo_Release(protocol_info);
         if(SUCCEEDED(hres))
@@ -395,7 +401,8 @@ HRESULT WINAPI CoInternetParseUrl(LPCWSTR pwzUrl, PARSEACTION ParseAction, DWORD
     case PARSE_SECURITY_URL:
         return parse_security_url(pwzUrl, dwFlags, pszResult, cchResult, pcchResult);
     case PARSE_ENCODE:
-        return parse_encode(pwzUrl, dwFlags, pszResult, cchResult, pcchResult);
+    case PARSE_UNESCAPE:
+        return parse_encode(pwzUrl, ParseAction, dwFlags, pszResult, cchResult, pcchResult);
     case PARSE_PATH_FROM_URL:
         return parse_path_from_url(pwzUrl, dwFlags, pszResult, cchResult, pcchResult);
     case PARSE_SCHEMA:
@@ -582,12 +589,12 @@ static HRESULT load_process_feature(INTERNETFEATURELIST feature)
     BOOL check_hklm = FALSE;
     BOOL enabled;
 
-    if (!GetModuleFileNameW(NULL, module_name, sizeof(module_name)/sizeof(WCHAR))) {
+    if (!GetModuleFileNameW(NULL, module_name, ARRAY_SIZE(module_name))) {
         ERR("Failed to get module file name: %u\n", GetLastError());
         return E_UNEXPECTED;
     }
 
-    process_name = strrchrW(module_name, '\\');
+    process_name = wcsrchr(module_name, '\\');
     if(!process_name) {
         ERR("Invalid module file name: %s\n", debugstr_w(module_name));
         return E_UNEXPECTED;

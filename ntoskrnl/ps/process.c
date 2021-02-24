@@ -448,15 +448,14 @@ PspCreateProcess(OUT PHANDLE ProcessHandle,
     /* Check if we have a parent */
     if (Parent)
     {
-        /* Inherit PID and Hard Error Processing */
+        /* Inherit PID and hard-error processing */
         Process->InheritedFromUniqueProcessId = Parent->UniqueProcessId;
-        Process->DefaultHardErrorProcessing = Parent->
-                                              DefaultHardErrorProcessing;
+        Process->DefaultHardErrorProcessing = Parent->DefaultHardErrorProcessing;
     }
     else
     {
-        /* Use default hard error processing */
-        Process->DefaultHardErrorProcessing = TRUE;
+        /* Use default hard-error processing */
+        Process->DefaultHardErrorProcessing = SEM_FAILCRITICALERRORS;
     }
 
     /* Check for a section handle */
@@ -586,7 +585,8 @@ PspCreateProcess(OUT PHANDLE ProcessHandle,
                         PROCESS_PRIORITY_NORMAL,
                         Affinity,
                         DirectoryTableBase,
-                        (BOOLEAN)(Process->DefaultHardErrorProcessing & 4));
+                        BooleanFlagOn(Process->DefaultHardErrorProcessing,
+                                      SEM_NOALIGNMENTFAULTEXCEPT));
 
     /* Duplicate Parent Token */
     Status = PspInitializeProcessSecurity(Process, Parent);
@@ -1416,8 +1416,8 @@ NtCreateProcess(OUT PHANDLE ProcessHandle,
             "Parent: %p Attributes: %p\n", ParentProcess, ObjectAttributes);
 
     /* Set new-style flags */
-    if ((ULONG)SectionHandle & 1) Flags |= PROCESS_CREATE_FLAGS_BREAKAWAY;
-    if ((ULONG)DebugPort & 1) Flags |= PROCESS_CREATE_FLAGS_NO_DEBUG_INHERIT;
+    if ((ULONG_PTR)SectionHandle & 1) Flags |= PROCESS_CREATE_FLAGS_BREAKAWAY;
+    if ((ULONG_PTR)DebugPort & 1) Flags |= PROCESS_CREATE_FLAGS_NO_DEBUG_INHERIT;
     if (InheritObjectTable) Flags |= PROCESS_CREATE_FLAGS_INHERIT_HANDLES;
 
     /* Call the new API */
@@ -1614,4 +1614,5 @@ NtOpenProcess(OUT PHANDLE ProcessHandle,
     /* Return status */
     return Status;
 }
+
 /* EOF */

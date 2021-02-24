@@ -505,7 +505,7 @@ AddDisplayDevice(PINFO pInfo, PDISPLAY_DEVICEW DisplayDevice)
     LPWSTR name = NULL;
     LPWSTR key = NULL;
     LPWSTR devid = NULL;
-    DWORD descriptionSize, nameSize, keySize, devidSize;
+    SIZE_T descriptionSize, nameSize, keySize, devidSize;
     PSETTINGS_ENTRY Current;
     DWORD ResolutionsCount = 1;
     DWORD i;
@@ -1262,7 +1262,7 @@ DlgProc(HWND hDlg,
                                       szBuffer,
                                       -1,
                                       &txtRc,
-                                      DT_BOTTOM | DT_SINGLELINE | DT_NOCLIP);
+                                      DT_BOTTOM | DT_SINGLELINE | DT_NOCLIP | DT_CENTER); //DT_CENTER makes the text visible in RTL layouts...
                             SelectObject(hdc, hFontOld);
                             DeleteObject(hFont);
                         }

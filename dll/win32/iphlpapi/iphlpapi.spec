@@ -4,11 +4,11 @@
 @ stdcall AllocateAndGetIpAddrTableFromStack( ptr long long long )
 @ stdcall AllocateAndGetIpForwardTableFromStack( ptr long long long )
 @ stdcall AllocateAndGetIpNetTableFromStack( ptr long long long )
-@ stub AllocateAndGetTcpExTable2FromStack
-@ stub AllocateAndGetTcpExTableFromStack
+@ stdcall AllocateAndGetTcpExTable2FromStack( ptr long long long long long )
+@ stdcall AllocateAndGetTcpExTableFromStack( ptr long long long long )
 @ stdcall AllocateAndGetTcpTableFromStack( ptr long long long )
-@ stub AllocateAndGetUdpExTable2FromStack
-@ stub AllocateAndGetUdpExTableFromStack
+@ stdcall AllocateAndGetUdpExTable2FromStack( ptr long long long long long )
+@ stdcall AllocateAndGetUdpExTableFromStack( ptr long long long long )
 @ stdcall AllocateAndGetUdpTableFromStack( ptr long long long )
 @ stdcall CancelIPChangeNotify(ptr)
 @ stub CancelSecurityHealthChangeNotify
@@ -33,7 +33,7 @@
 @ stdcall GetBestRoute( long long long )
 @ stub GetBestRouteFromStack
 @ stdcall GetExtendedTcpTable( ptr ptr long long long long )
-@ stdcall -stub GetExtendedUdpTable( ptr ptr long long long long )
+@ stdcall GetExtendedUdpTable( ptr ptr long long long long )
 @ stdcall GetFriendlyIfIndex( long )
 @ stdcall GetIcmpStatistics( ptr )
 @ stdcall GetIcmpStatisticsEx(ptr long)
@@ -61,7 +61,7 @@
 @ stub GetOwnerModuleFromTcp6Entry
 @ stdcall GetOwnerModuleFromTcpEntry ( ptr long ptr ptr )
 @ stub GetOwnerModuleFromUdp6Entry
-@ stub GetOwnerModuleFromUdpEntry
+@ stdcall GetOwnerModuleFromUdpEntry ( ptr long ptr ptr )
 @ stdcall GetPerAdapterInfo( long ptr ptr )
 @ stdcall GetRTTAndHopCount( long ptr long ptr )
 @ stub GetTcpExTable2FromStack
@@ -80,11 +80,11 @@
 @ stub GetUdpTableFromStack
 @ stdcall GetUniDirectionalAdapterInfo( ptr ptr )
 @ stdcall Icmp6CreateFile()
-@ stdcall -stub Icmp6ParseReplies(ptr long)
+@ stdcall Icmp6ParseReplies(ptr long)
 @ stdcall Icmp6SendEcho2(ptr ptr ptr ptr ptr ptr ptr long ptr ptr long long)
 @ stdcall IcmpCloseHandle(ptr)
 @ stdcall IcmpCreateFile()
-@ stdcall -stub IcmpParseReplies(ptr long)
+@ stdcall IcmpParseReplies(ptr long)
 @ stdcall IcmpSendEcho2(ptr ptr ptr ptr long ptr long ptr ptr long long)
 @ stdcall IcmpSendEcho(ptr long ptr long ptr ptr long long)
 @ stub InternalCreateIpForwardEntry
@@ -108,14 +108,30 @@
 @ stub NTPTimeToNTFileTime
 @ stub NTTimeToNTPTime
 @ stub NhGetGuidFromInterfaceName
-@ stdcall NhGetInterfaceNameFromDeviceGuid(long long long long long)
-@ stub NhGetInterfaceNameFromGuid
+@ stdcall NhGetInterfaceNameFromDeviceGuid(ptr ptr ptr long long)
+@ stdcall NhGetInterfaceNameFromGuid(ptr ptr ptr long long)
 @ stdcall NhpAllocateAndGetInterfaceInfoFromStack(ptr ptr long ptr long)
 @ stub NhpGetInterfaceIndexFromStack
 @ stdcall NotifyAddrChange( ptr ptr )
 @ stdcall NotifyRouteChange( ptr ptr )
 @ stub NotifyRouteChangeEx
 @ stub NotifySecurityHealthChange
+@ stdcall _PfAddFiltersToInterface@24()
+@ stdcall _PfAddGlobalFilterToInterface@8()
+@ stdcall _PfBindInterfaceToIPAddress@12()
+@ stdcall _PfBindInterfaceToIndex@16()
+@ stdcall _PfCreateInterface@24()
+@ stdcall _PfDeleteInterface@4()
+@ stdcall _PfDeleteLog@0()
+@ stdcall _PfGetInterfaceStatistics@16()
+@ stdcall _PfMakeLog@4()
+@ stdcall _PfRebindFilters@8()
+@ stdcall _PfRemoveFilterHandles@12()
+@ stdcall _PfRemoveFiltersFromInterface@20()
+@ stdcall _PfRemoveGlobalFilterFromInterface@8()
+@ stdcall _PfSetLogBuffer@28()
+@ stdcall _PfTestPacket@20()
+@ stdcall _PfUnBindInterface@4()
 @ stdcall RestoreMediaSense(ptr ptr)
 @ stdcall SendARP(long long ptr ptr)
 @ stub SetAdapterIpAddress
@@ -136,22 +152,6 @@
 @ stdcall SetTcpEntry( ptr )
 @ stub SetTcpEntryToStack
 @ stdcall UnenableRouter( ptr ptr )
-@ stub _PfAddFiltersToInterface@24
-@ stub _PfAddGlobalFilterToInterface@8
-@ stub _PfBindInterfaceToIPAddress@12
-@ stub _PfBindInterfaceToIndex@16
-@ stub _PfCreateInterface@24
-@ stub _PfDeleteInterface@4
-@ stub _PfDeleteLog@0
-@ stub _PfGetInterfaceStatistics@16
-@ stub _PfMakeLog@4
-@ stub _PfRebindFilters@8
-@ stub _PfRemoveFilterHandles@12
-@ stub _PfRemoveFiltersFromInterface@20
-@ stub _PfRemoveGlobalFilterFromInterface@8
-@ stub _PfSetLogBuffer@28
-@ stub _PfTestPacket@20
-@ stub _PfUnBindInterface@4
 @ stub do_echo_rep
 @ stub do_echo_req
 @ stub register_icmp

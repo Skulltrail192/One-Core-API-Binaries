@@ -97,7 +97,7 @@ typedef struct _THREADINFO
     struct _USER_SENT_MESSAGE *pusmCurrent;
     /* Queue of messages sent to the queue. */
     LIST_ENTRY          SentMessagesListHead;    // psmsReceiveList
-    /* Last time PeekMessage() was called. */
+    /* Last message time and ID */
     LONG                timeLast;
     ULONG_PTR           idLast;
     /* True if a WM_QUIT message is pending. */
@@ -124,6 +124,7 @@ typedef struct _THREADINFO
     PKEVENT             pEventQueueServer;
     LIST_ENTRY          PtiLink;
     INT                 iCursorLevel;
+    /* Last message cursor position */
     POINT               ptLast;
 
     INT                 cEnterCount;
@@ -295,3 +296,17 @@ typedef struct _PROCESSINFO
 void NTAPI UserDbgPreServiceHook(ULONG ulSyscallId, PULONG_PTR pulArguments);
 ULONG_PTR NTAPI UserDbgPostServiceHook(ULONG ulSyscallId, ULONG_PTR ulResult);
 #endif
+
+/* Helper function used by some wine code */
+
+__forceinline
+int
+lstrlenW(
+    _In_ LPCWSTR lpString)
+{
+    size_t size = wcslen(lpString);
+    if (size > ULONG_MAX) __fastfail(FAST_FAIL_RANGE_CHECK_FAILURE);
+    return (int)size;
+}
+
+#define strlenW lstrlenW

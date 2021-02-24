@@ -1,27 +1,22 @@
 
 list(APPEND FONT_FILES
-    DejaVuMathTeXGyre.ttf
-    DejaVuSans-Bold.ttf
-    DejaVuSans-BoldOblique.ttf
-    DejaVuSans-ExtraLight.ttf
-    DejaVuSans-Oblique.ttf
-    DejaVuSans.ttf
-    DejaVuSansCondensed-Bold.ttf
-    DejaVuSansCondensed-BoldOblique.ttf
-    DejaVuSansCondensed-Oblique.ttf
-    DejaVuSansCondensed.ttf
+    arial.ttf
+    arialbd.ttf
+    arialbi.ttf
+    ariali.ttf
+    ariblk.ttf
+    comic.ttf
+    comicbd.ttf
+    cour.ttf
+    courbd.ttf
+    courbi.ttf
+    couri.ttf
     DejaVuSansMono-Bold.ttf
     DejaVuSansMono-BoldOblique.ttf
     DejaVuSansMono-Oblique.ttf
     DejaVuSansMono.ttf
-    DejaVuSerif-Bold.ttf
-    DejaVuSerif-BoldItalic.ttf
-    DejaVuSerif-Italic.ttf
-    DejaVuSerif.ttf
-    DejaVuSerifCondensed-Bold.ttf
-    DejaVuSerifCondensed-BoldItalic.ttf
-    DejaVuSerifCondensed-Italic.ttf
-    DejaVuSerifCondensed.ttf
+    framd.ttf
+    framdit.ttf
     FreeMono.ttf
     FreeMonoBold.ttf
     FreeMonoBoldOblique.ttf
@@ -30,77 +25,47 @@ list(APPEND FONT_FILES
     FreeSansBold.ttf
     FreeSansBoldOblique.ttf
     FreeSansOblique.ttf
-    FreeSerif.ttf
-    FreeSerifBold.ttf
-    FreeSerifBoldItalic.ttf
-    FreeSerifItalic.ttf
     FSEX301.ttf
     FSEX301-L2.ttf
-    LiberationMono-Bold.ttf
-    LiberationMono-BoldItalic.ttf
-    LiberationMono-Italic.ttf
-    LiberationMono-Regular.ttf
-    LiberationSans-Bold.ttf
-    LiberationSans-BoldItalic.ttf
-    LiberationSans-Italic.ttf
-    LiberationSans-Regular.ttf
-    LiberationSansNarrow-Bold.ttf
-    LiberationSansNarrow-BoldItalic.ttf
-    LiberationSansNarrow-Italic.ttf
-    LiberationSansNarrow-Regular.ttf
-    LiberationSerif-Bold.ttf
-    LiberationSerif-BoldItalic.ttf
-    LiberationSerif-Italic.ttf
-    LiberationSerif-Regular.ttf
-    LibreFranklin-Black.ttf
-    LibreFranklin-BlackItalic.ttf
-    LibreFranklin-Bold.ttf
-    LibreFranklin-BoldItalic.ttf
-    LibreFranklin-ExtraBold.ttf
-    LibreFranklin-ExtraBoldItalic.ttf
-    LibreFranklin-ExtraLight.ttf
-    LibreFranklin-ExtraLightItalic.ttf
-    LibreFranklin-Italic.ttf
-    LibreFranklin-Light.ttf
-    LibreFranklin-LightItalic.ttf
-    LibreFranklin-Medium.ttf
-    LibreFranklin-MediumItalic.ttf
-    LibreFranklin-Regular.ttf
-    LibreFranklin-SemiBold.ttf
-    LibreFranklin-SemiBoldItalic.ttf
-    LibreFranklin-Thin.ttf
-    LibreFranklin-ThinItalic.ttf
+    georgia.ttf
+    georgiab.ttf
+    georgiai.ttf
+    georgiaz.ttf
+    lucon.ttf
     Marlett.ttf
-    OpenSans-Bold.ttf
-    OpenSans-BoldItalic.ttf
-    OpenSans-CondBold.ttf
-    OpenSans-CondLight.ttf
-    OpenSans-CondLightItalic.ttf
-    OpenSans-ExtraBold.ttf
-    OpenSans-ExtraBoldItalic.ttf
-    OpenSans-Italic.ttf
-    OpenSans-Light.ttf
-    OpenSans-LightItalic.ttf
-    OpenSans-Regular.ttf
-    OpenSans-Semibold.ttf
-    OpenSans-SemiboldItalic.ttf
+    pala.ttf
+    palab.ttf
+    palabi.ttf
+    palai.ttf
+    SourceSansPro-Regular.ttf
+    SourceSansPro-Bold.ttf
+    SourceSansPro-BoldIt.ttf
+    SourceSansPro-It.ttf
+    #ssee874.fon # to be added
+    #ssee1255.fon # to be added
+    #ssee1256.fon # to be added
+    #ssee1257.fon # to be added
+    #sserife.fon # to be added
+    #sserifeg.fon # to be added
+    #sserifer.fon # to be added
+    #sserifet.fon # to be added
     symbol.ttf
     tahoma.ttf
     tahomabd.ttf
-    Ubuntu-B.ttf
-    Ubuntu-BI.ttf
-    Ubuntu-C.ttf
-    Ubuntu-L.ttf
-    Ubuntu-LI.ttf
-    Ubuntu-M.ttf
-    Ubuntu-MI.ttf
-    UbuntuMono-B.ttf
-    UbuntuMono-BI.ttf
-    UbuntuMono-R.ttf
-    UbuntuMono-RI.ttf
-    Ubuntu-R.ttf
-    Ubuntu-RI.ttf
-    UniVGA16.ttf)
+    times.ttf
+    timesbd.ttf
+    timesbi.ttf
+    timesi.ttf
+    trebuc.ttf
+    trebucbd.ttf
+    trebucbi.ttf
+    trebucit.ttf
+    UniVGA16.ttf
+    verdanab.ttf
+    verdanaz.ttf
+    verdanai.ttf
+    verdana.ttf
+    wingding.ttf)
 
 foreach(item ${FONT_FILES})
     add_cd_file(FILE "${CMAKE_CURRENT_SOURCE_DIR}/${item}" DESTINATION reactos/Fonts FOR all)

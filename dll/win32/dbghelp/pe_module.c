@@ -21,7 +21,20 @@
  *
  */
 
+#include "config.h"
+#include "wine/port.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+
 #include "dbghelp_private.h"
+#include "image_private.h"
+#ifndef DBGHELP_STATIC_LIB
+#include "winternl.h"
+#include "wine/debug.h"
+#endif
 
 WINE_DEFAULT_DEBUG_CHANNEL(dbghelp);
 
@@ -431,9 +444,9 @@ static BOOL pe_load_coff_symbol_table(struct module* module)
                                                source_new(module, NULL, lastfilename));
 
             if (!(dbghelp_options & SYMOPT_NO_PUBLICS))
-                symt_new_public(module, compiland, name,
+                symt_new_public(module, compiland, name, FALSE,
                                 module->module.BaseOfImage + sect[isym->SectionNumber - 1].VirtualAddress +
-                                     isym->Value,
+                                    isym->Value,
                                 1);
         }
         naux = isym->NumberOfAuxSymbols + 1;
@@ -547,7 +560,7 @@ static BOOL pe_load_dbg_file(const struct process* pcs, struct module* module,
 
     TRACE("Processing DBG file %s\n", debugstr_a(dbg_name));
 
-    if (path_find_symbol_file(pcs, dbg_name, NULL, timestamp, 0, tmp, &module->module.DbgUnmatched) &&
+    if (path_find_symbol_file(pcs, module, dbg_name, NULL, timestamp, 0, tmp, &module->module.DbgUnmatched) &&
         (hFile = CreateFileA(tmp, GENERIC_READ, FILE_SHARE_READ, NULL,
                              OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) != INVALID_HANDLE_VALUE &&
         ((hMap = CreateFileMappingW(hFile, NULL, PAGE_READONLY, 0, 0, NULL)) != 0) &&
@@ -602,6 +615,15 @@ static BOOL pe_load_msc_debug_info(const struct process* pcs, struct module* mod
 
     dbg = RtlImageRvaToVa(nth, mapping, dir->VirtualAddress, NULL);
 
+#ifdef __REACTOS__
+    if (!dbg)
+    {
+        ERR("Debug directory not found in module %s\n",
+            debugstr_w(module->module.ModuleName));
+        goto done;
+    }
+#endif
+
     /* Parse debug directory */
     if (nth->FileHeader.Characteristics & IMAGE_FILE_DEBUG_STRIPPED)
     {
@@ -652,11 +674,11 @@ static BOOL pe_load_export_debug_info(const struct process* pcs, struct module* 
 #if 0
     /* Add start of DLL (better use the (yet unimplemented) Exe SymTag for this) */
     /* FIXME: module.ModuleName isn't correctly set yet if it's passed in SymLoadModule */
-    symt_new_public(module, NULL, module->module.ModuleName, base, 1);
+    symt_new_public(module, NULL, module->module.ModuleName, FALSE, base, 1);
 #endif
     
     /* Add entry point */
-    symt_new_public(module, NULL, "EntryPoint", 
+    symt_new_public(module, NULL, "EntryPoint", FALSE,
                     base + nth->OptionalHeader.AddressOfEntryPoint, 1);
 #if 0
     /* FIXME: we'd better store addresses linked to sections rather than 
@@ -667,7 +689,7 @@ static BOOL pe_load_export_debug_info(const struct process* pcs, struct module* 
         ((char*)&nth->OptionalHeader + nth->FileHeader.SizeOfOptionalHeader);
     for (i = 0; i < nth->FileHeader.NumberOfSections; i++, section++) 
     {
-	symt_new_public(module, NULL, section->Name, 
+	symt_new_public(module, NULL, section->Name, FALSE,
                         RtlImageRvaToVa(nth, mapping, section->VirtualAddress, NULL), 1);
     }
 #endif
@@ -693,6 +715,7 @@ static BOOL pe_load_export_debug_info(const struct process* pcs, struct module* 
                 if (!names[i]) continue;
                 symt_new_public(module, NULL,
                                 RtlImageRvaToVa(nth, mapping, names[i], NULL),
+                                FALSE,
                                 base + functions[ordinals[i]], 1);
             }
 
@@ -704,7 +727,7 @@ static BOOL pe_load_export_debug_info(const struct process* pcs, struct module* 
                     if ((ordinals[j] == i) && names[j]) break;
                 if (j < exports->NumberOfNames) continue;
                 snprintf(buffer, sizeof(buffer), "%d", i + exports->Base);
-                symt_new_public(module, NULL, buffer, base + (DWORD)functions[i], 1);
+                symt_new_public(module, NULL, buffer, FALSE, base + (DWORD)functions[i], 1);
             }
         }
     }

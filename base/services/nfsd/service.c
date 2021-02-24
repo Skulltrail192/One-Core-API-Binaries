@@ -153,7 +153,6 @@ void WINAPI service_main(DWORD dwArgc, LPTSTR *lpszArgv)
                            3000))                 // wait hint
       goto cleanup;
 
-
    ServiceStart( dwArgc, lpszArgv );
 
    cleanup:
@@ -189,6 +188,7 @@ VOID WINAPI service_ctrl(DWORD dwCtrlCode)
 {
    // Handle the requested control code.
    //
+
    switch (dwCtrlCode)
    {
    // Stop the service.

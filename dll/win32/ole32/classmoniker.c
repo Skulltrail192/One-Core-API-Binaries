@@ -19,7 +19,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <assert.h>
+#include <stdarg.h>
+#include <string.h>
+
+#define COBJMACROS
+
+#include "winerror.h"
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "wine/debug.h"
+#include "ole2.h"
+#include "moniker.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
@@ -389,7 +401,7 @@ static HRESULT WINAPI ClassMoniker_IsEqual(IMoniker* iface,IMoniker* pmkOtherMon
     if(SUCCEEDED ((res = CreateBindCtx(0,&bind)))) {
         if(SUCCEEDED (IMoniker_GetDisplayName(iface,bind,NULL,&dispName1))) {
 	    if(SUCCEEDED (IMoniker_GetDisplayName(pmkOtherMoniker,bind,NULL,&dispName2))) {
-                if(lstrcmpW(dispName1,dispName2)==0) res = S_OK;
+                if(wcscmp(dispName1,dispName2)==0) res = S_OK;
                 CoTaskMemFree(dispName2);
             }
             CoTaskMemFree(dispName1);
@@ -523,14 +535,14 @@ static HRESULT WINAPI ClassMoniker_GetDisplayName(IMoniker* iface,
 
     *ppszDisplayName = CoTaskMemAlloc(sizeof(wszClsidPrefix) + (CHARS_IN_GUID-2) * sizeof(WCHAR));
 
-    StringFromGUID2(&This->clsid, *ppszDisplayName+sizeof(wszClsidPrefix)/sizeof(WCHAR)-2, CHARS_IN_GUID);
+    StringFromGUID2(&This->clsid, *ppszDisplayName+ARRAY_SIZE(wszClsidPrefix)-2, CHARS_IN_GUID);
 
     /* note: this overwrites the opening curly bracket of the CLSID string generated above */
     memcpy(*ppszDisplayName, wszClsidPrefix, sizeof(wszClsidPrefix)-sizeof(WCHAR));
 
     /* note: this overwrites the closing curly bracket of the CLSID string generated above */
-    (*ppszDisplayName)[sizeof(wszClsidPrefix)/sizeof(WCHAR)-2+CHARS_IN_GUID-2] = ':';
-    (*ppszDisplayName)[sizeof(wszClsidPrefix)/sizeof(WCHAR)-2+CHARS_IN_GUID-1] = '\0';
+    (*ppszDisplayName)[ARRAY_SIZE(wszClsidPrefix)-2+CHARS_IN_GUID-2] = ':';
+    (*ppszDisplayName)[ARRAY_SIZE(wszClsidPrefix)-2+CHARS_IN_GUID-1] = '\0';
 
     TRACE("string is %s\n", debugstr_w(*ppszDisplayName));
     return S_OK;
@@ -714,7 +726,7 @@ HRESULT ClassMoniker_CreateFromDisplayName(LPBC pbc, LPCOLESTR szDisplayName, LP
                                            IMoniker **ppmk)
 {
     HRESULT hr;
-    LPCWSTR s = strchrW(szDisplayName, ':');
+    LPCWSTR s = wcschr(szDisplayName, ':');
     LPCWSTR end;
     CLSID clsid;
     BYTE table[256];

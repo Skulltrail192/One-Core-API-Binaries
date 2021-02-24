@@ -7,7 +7,6 @@ if(ARCH STREQUAL "amd64")
     add_definitions(-DWIN64)
 endif()
 
-
 list(APPEND ACPICA_SOURCE
     acpica/dispatcher/dsargs.c
     acpica/dispatcher/dscontrol.c

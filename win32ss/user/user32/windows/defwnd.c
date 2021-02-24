@@ -9,16 +9,9 @@
  *      06-06-2001  CSH  Created
  */
 
-/* INCLUDES ******************************************************************/
-
 #include <user32.h>
 
-#include <wine/debug.h>
 WINE_DEFAULT_DEBUG_CHANNEL(user32);
-
-/* GLOBALS *******************************************************************/
-
-/* FUNCTIONS *****************************************************************/
 
 /*
  * @implemented
@@ -50,7 +43,6 @@ GetSysColorBrush(int nIndex)
     return gpsi->ahbrSystem[nIndex];
   }
 
-  SetLastError(ERROR_INVALID_PARAMETER);
   return NULL;
 }
 
@@ -336,6 +328,9 @@ User32DefWindowProc(HWND hWnd,
 
     switch (Msg)
     {
+        case WM_DEVICECHANGE:
+            return TRUE;
+
         case WM_POPUPSYSTEMMENU:
         {
             /* This is an undocumented message used by the windows taskbar to
@@ -756,6 +751,12 @@ User32DefWindowProc(HWND hWnd,
             break;
         }
 
+        case WM_COPYGLOBALDATA:
+        {
+            TRACE("WM_COPYGLOBALDATA hGlobal %p Size %d Flags 0x%x\n",lParam,wParam,GlobalFlags((HGLOBAL)lParam));
+            return lParam;
+        }
+
 /* Move to Win32k !*/
         case WM_SHOWWINDOW:
             if (!lParam) break; // Call when it is necessary.
@@ -801,75 +802,6 @@ GoSS:
         }
     }
     return 0;
-}
-
-
-/*
- * helpers for calling IMM32 (from Wine 10/22/2008)
- *
- * WM_IME_* messages are generated only by IMM32,
- * so I assume imm32 is already LoadLibrary-ed.
- */
-static HWND
-DefWndImmGetDefaultIMEWnd(HWND hwnd)
-{
-    HINSTANCE hInstIMM = GetModuleHandleW(L"imm32\0");
-    HWND (WINAPI *pFunc)(HWND);
-    HWND hwndRet = 0;
-
-    if (!hInstIMM)
-    {
-        ERR("cannot get IMM32 handle\n");
-        return 0;
-    }
-
-    pFunc = (void*) GetProcAddress(hInstIMM, "ImmGetDefaultIMEWnd");
-    if (pFunc != NULL)
-        hwndRet = (*pFunc)(hwnd);
-
-    return hwndRet;
-}
-
-
-static BOOL
-DefWndImmIsUIMessageA(HWND hwndIME, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    HINSTANCE hInstIMM = GetModuleHandleW(L"imm32\0");
-    BOOL (WINAPI *pFunc)(HWND,UINT,WPARAM,LPARAM);
-    BOOL fRet = FALSE;
-
-    if (!hInstIMM)
-    {
-        ERR("cannot get IMM32 handle\n");
-        return FALSE;
-    }
-
-    pFunc = (void*) GetProcAddress(hInstIMM, "ImmIsUIMessageA");
-    if (pFunc != NULL)
-        fRet = (*pFunc)(hwndIME, msg, wParam, lParam);
-
-    return fRet;
-}
-
-
-static BOOL
-DefWndImmIsUIMessageW(HWND hwndIME, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    HINSTANCE hInstIMM = GetModuleHandleW(L"imm32\0");
-    BOOL (WINAPI *pFunc)(HWND,UINT,WPARAM,LPARAM);
-    BOOL fRet = FALSE;
-
-    if (!hInstIMM)
-    {
-        ERR("cannot get IMM32 handle\n");
-        return FALSE;
-    }
-
-    pFunc = (void*) GetProcAddress(hInstIMM, "ImmIsUIMessageW");
-    if (pFunc != NULL)
-        fRet = (*pFunc)(hwndIME, msg, wParam, lParam);
-
-    return fRet;
 }
 
 
@@ -946,7 +878,7 @@ RealDefWindowProcA(HWND hWnd,
         {
             PWSTR buf = NULL;
             PSTR outbuf = (PSTR)lParam;
-            UINT copy;
+            SIZE_T copy;
 
             if (Wnd != NULL && wParam != 0)
             {
@@ -1010,8 +942,44 @@ RealDefWindowProcA(HWND hWnd,
             break;
         }
 
-        case WM_IME_STARTCOMPOSITION:
         case WM_IME_COMPOSITION:
+        if (lParam & GCS_RESULTSTR)
+        {
+            LONG size, i;
+            unsigned char lead = 0;
+            char *buf = NULL;
+            HIMC himc = ImmGetContext( hWnd );
+
+            if (himc)
+            {
+                if ((size = ImmGetCompositionStringA( himc, GCS_RESULTSTR, NULL, 0 )))
+                {
+                    if (!(buf = HeapAlloc( GetProcessHeap(), 0, size ))) size = 0;
+                    else size = ImmGetCompositionStringA( himc, GCS_RESULTSTR, buf, size );
+                }
+                ImmReleaseContext( hWnd, himc );
+
+                for (i = 0; i < size; i++)
+                {
+                    unsigned char c = buf[i];
+                    if (!lead)
+                    {
+                        if (IsDBCSLeadByte( c ))
+                            lead = c;
+                        else
+                            SendMessageA( hWnd, WM_IME_CHAR, c, 1 );
+                    }
+                    else
+                    {
+                        SendMessageA( hWnd, WM_IME_CHAR, MAKEWORD(c, lead), 1 );
+                        lead = 0;
+                    }
+                }
+                HeapFree( GetProcessHeap(), 0, buf );
+            }
+        }
+        /* fall through */
+        case WM_IME_STARTCOMPOSITION:
         case WM_IME_ENDCOMPOSITION:
         case WM_IME_SELECT:
         case WM_IME_NOTIFY:
@@ -1019,7 +987,7 @@ RealDefWindowProcA(HWND hWnd,
         {
             HWND hwndIME;
 
-            hwndIME = DefWndImmGetDefaultIMEWnd(hWnd);
+            hwndIME = ImmGetDefaultIMEWnd(hWnd);
             if (hwndIME)
                 Result = SendMessageA(hwndIME, Msg, wParam, lParam);
             break;
@@ -1029,9 +997,9 @@ RealDefWindowProcA(HWND hWnd,
         {
             HWND hwndIME;
 
-            hwndIME = DefWndImmGetDefaultIMEWnd(hWnd);
+            hwndIME = ImmGetDefaultIMEWnd(hWnd);
             if (hwndIME)
-                Result = DefWndImmIsUIMessageA(hwndIME, Msg, wParam, lParam);
+                Result = ImmIsUIMessageA(hwndIME, Msg, wParam, lParam);
             break;
         }
 
@@ -1172,8 +1140,29 @@ RealDefWindowProcW(HWND hWnd,
             break;
         }
 
-        case WM_IME_STARTCOMPOSITION:
         case WM_IME_COMPOSITION:
+        if (lParam & GCS_RESULTSTR)
+        {
+            LONG size, i;
+            WCHAR *buf = NULL;
+            HIMC himc = ImmGetContext( hWnd );
+
+            if (himc)
+            {
+                if ((size = ImmGetCompositionStringW( himc, GCS_RESULTSTR, NULL, 0 )))
+                {
+                    if (!(buf = HeapAlloc( GetProcessHeap(), 0, size * sizeof(WCHAR) ))) size = 0;
+                    else size = ImmGetCompositionStringW( himc, GCS_RESULTSTR, buf, size * sizeof(WCHAR) );
+                }
+                ImmReleaseContext( hWnd, himc );
+
+                for (i = 0; i < size / sizeof(WCHAR); i++)
+                    SendMessageW( hWnd, WM_IME_CHAR, buf[i], 1 );
+                HeapFree( GetProcessHeap(), 0, buf );
+            }
+        }
+        /* fall through */
+        case WM_IME_STARTCOMPOSITION:
         case WM_IME_ENDCOMPOSITION:
         case WM_IME_SELECT:
         case WM_IME_NOTIFY:
@@ -1181,7 +1170,7 @@ RealDefWindowProcW(HWND hWnd,
         {
             HWND hwndIME;
 
-            hwndIME = DefWndImmGetDefaultIMEWnd(hWnd);
+            hwndIME = ImmGetDefaultIMEWnd(hWnd);
             if (hwndIME)
                 Result = SendMessageW(hwndIME, Msg, wParam, lParam);
             break;
@@ -1191,9 +1180,9 @@ RealDefWindowProcW(HWND hWnd,
         {
             HWND hwndIME;
 
-            hwndIME = DefWndImmGetDefaultIMEWnd(hWnd);
+            hwndIME = ImmGetDefaultIMEWnd(hWnd);
             if (hwndIME)
-                Result = DefWndImmIsUIMessageW(hwndIME, Msg, wParam, lParam);
+                Result = ImmIsUIMessageW(hwndIME, Msg, wParam, lParam);
             break;
         }
 
@@ -1236,6 +1225,7 @@ DefWindowProcA(HWND hWnd,
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
    {
+       ERR("Got exception in hooked DefWindowProcA!\n");
    }
    _SEH2_END;
 
@@ -1275,6 +1265,7 @@ DefWindowProcW(HWND hWnd,
    }
    _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
    {
+       ERR("Got exception in hooked DefWindowProcW!\n");
    }
    _SEH2_END;
 

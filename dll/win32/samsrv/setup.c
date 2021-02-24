@@ -389,8 +389,7 @@ SampSetupCreateUserAccount(HANDLE hDomainKey,
     FixedUserData.LastLogon.QuadPart = 0;
     FixedUserData.LastLogoff.QuadPart = 0;
     FixedUserData.PasswordLastSet.QuadPart = 0;
-    FixedUserData.AccountExpires.LowPart = MAXULONG;
-    FixedUserData.AccountExpires.HighPart = MAXLONG;
+    FixedUserData.AccountExpires.QuadPart = MAXLONGLONG;
     FixedUserData.LastBadPasswordTime.QuadPart = 0;
     FixedUserData.UserId = ulRelativeId;
     FixedUserData.PrimaryGroupId = DOMAIN_GROUP_RID_USERS;
@@ -762,7 +761,7 @@ SampSetupCreateDomain(IN HANDLE hServerKey,
         goto done;
 
     /* Create the server SD */
-    if (bBuiltinDomain == TRUE)
+    if (bBuiltinDomain != FALSE)
         Status = SampCreateBuiltinDomainSD(&Sd,
                                            &SdSize);
     else

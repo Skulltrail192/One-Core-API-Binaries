@@ -5,6 +5,7 @@
  * PURPOSE:         Initialization
  * PROGRAMMERS:     Alex Ionescu (alex.ionescu@reactos.org)
  *                  Hermes Belusca-Maito (hermes.belusca@sfr.fr)
+ *                  Pierre Schweitzer (pierre@reactos.org)
  */
 
 /* INCLUDES *******************************************************************/
@@ -28,6 +29,9 @@ extern UNICODE_STRING BaseSrvKernel32DllPath;
 HANDLE BaseSrvHeap = NULL;          // Our own heap.
 HANDLE BaseSrvSharedHeap = NULL;    // Shared heap with CSR. (CsrSrvSharedSectionHeap)
 PBASE_STATIC_SERVER_DATA BaseStaticServerData = NULL;   // Data that we can share amongst processes. Initialized inside BaseSrvSharedHeap.
+
+ULONG SessionId = 0;
+ULONG ProtectionMode = 0;
 
 PINIFILE_MAPPING BaseSrvIniFileMapping;
 
@@ -175,17 +179,15 @@ CreateBaseAcls(OUT PACL* Dacl,
     SID_IDENTIFIER_AUTHORITY NtAuthority = {SECURITY_NT_AUTHORITY};
     SID_IDENTIFIER_AUTHORITY WorldAuthority = {SECURITY_WORLD_SID_AUTHORITY};
     NTSTATUS Status;
-#if 0 // Unused code
     UCHAR KeyValueBuffer[0x40];
     PKEY_VALUE_PARTIAL_INFORMATION KeyValuePartialInfo;
     UNICODE_STRING KeyName;
-    ULONG ProtectionMode = 0;
-#endif
     ULONG AclLength;
-#if 0 // Unused code
     ULONG ResultLength;
     HANDLE hKey;
     OBJECT_ATTRIBUTES ObjectAttributes;
+    ULONG ObjectSecurityMode;
+    ACCESS_MASK WorldAccess, RestrictedAccess;
 
     /* Open the Session Manager Key */
     RtlInitUnicodeString(&KeyName, SM_REG_KEY);
@@ -218,28 +220,46 @@ CreateBaseAcls(OUT PACL* Dacl,
         /* Close the handle */
         NtClose(hKey);
     }
-#endif
+
+    /* Get object security mode */
+    if (SessionId == 0 ||
+        !NT_SUCCESS(NtQuerySystemInformation(SystemObjectSecurityMode, &ObjectSecurityMode, sizeof(ULONG), NULL)))
+    {
+        ObjectSecurityMode = 0;
+    }
 
     /* Allocate the System SID */
     Status = RtlAllocateAndInitializeSid(&NtAuthority,
                                          1, SECURITY_LOCAL_SYSTEM_RID,
                                          0, 0, 0, 0, 0, 0, 0,
                                          &SystemSid);
-    ASSERT(NT_SUCCESS(Status));
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
 
     /* Allocate the World SID */
     Status = RtlAllocateAndInitializeSid(&WorldAuthority,
                                          1, SECURITY_WORLD_RID,
                                          0, 0, 0, 0, 0, 0, 0,
                                          &WorldSid);
-    ASSERT(NT_SUCCESS(Status));
+    if (!NT_SUCCESS(Status))
+    {
+        RtlFreeSid(SystemSid);
+        goto Return;
+    }
 
     /* Allocate the restricted SID */
     Status = RtlAllocateAndInitializeSid(&NtAuthority,
                                          1, SECURITY_RESTRICTED_CODE_RID,
                                          0, 0, 0, 0, 0, 0, 0,
                                          &RestrictedSid);
-    ASSERT(NT_SUCCESS(Status));
+    if (!NT_SUCCESS(Status))
+    {
+        RtlFreeSid(WorldSid);
+        RtlFreeSid(SystemSid);
+        goto Return;
+    }
 
     /* Allocate one ACL with 3 ACEs each for one SID */
     AclLength = sizeof(ACL) + 3 * sizeof(ACCESS_ALLOWED_ACE) +
@@ -247,42 +267,90 @@ CreateBaseAcls(OUT PACL* Dacl,
                     RtlLengthSid(WorldSid)  +
                     RtlLengthSid(RestrictedSid);
     *Dacl = RtlAllocateHeap(BaseSrvHeap, 0, AclLength);
-    ASSERT(*Dacl != NULL);
+    if (*Dacl == NULL)
+    {
+        Status = STATUS_NO_MEMORY;
+        goto FreeAndReturn;
+    }
 
     /* Set the correct header fields */
     Status = RtlCreateAcl(*Dacl, AclLength, ACL_REVISION2);
-    ASSERT(NT_SUCCESS(Status));
+    if (!NT_SUCCESS(Status))
+    {
+        RtlFreeHeap(BaseSrvHeap, 0, *Dacl);
+        goto FreeAndReturn;
+    }
+
+    /* Setup access for anyone depending on object security mode */
+    if (ObjectSecurityMode != 0)
+    {
+        /*
+         * If we have restrictions on security mode, make it read only
+         * it also means session ID is not 0
+         */
+        WorldAccess = DIRECTORY_QUERY | DIRECTORY_TRAVERSE;
+    }
+    else
+    {
+        /* Otherwise, open wide */
+        WorldAccess = READ_CONTROL | DIRECTORY_QUERY | DIRECTORY_TRAVERSE | DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY;
+    }
 
     /* Give the appropriate rights to each SID */
-    /* FIXME: Should check SessionId/ProtectionMode */
-    Status = RtlAddAccessAllowedAce(*Dacl, ACL_REVISION2, DIRECTORY_QUERY | DIRECTORY_TRAVERSE | DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY | READ_CONTROL, WorldSid);
-    ASSERT(NT_SUCCESS(Status));
-    Status = RtlAddAccessAllowedAce(*Dacl, ACL_REVISION2, DIRECTORY_ALL_ACCESS, SystemSid);
-    ASSERT(NT_SUCCESS(Status));
-    Status = RtlAddAccessAllowedAce(*Dacl, ACL_REVISION2, DIRECTORY_TRAVERSE, RestrictedSid);
-    ASSERT(NT_SUCCESS(Status));
+    if (NT_SUCCESS(RtlAddAccessAllowedAce(*Dacl, ACL_REVISION2, WorldAccess, WorldSid)) &&
+        NT_SUCCESS(RtlAddAccessAllowedAce(*Dacl, ACL_REVISION2, DIRECTORY_ALL_ACCESS, SystemSid)))
+    {
+        RtlAddAccessAllowedAce(*Dacl, ACL_REVISION2, DIRECTORY_TRAVERSE, RestrictedSid);
+    }
 
     /* Now allocate the restricted DACL */
     *RestrictedDacl = RtlAllocateHeap(BaseSrvHeap, 0, AclLength);
-    ASSERT(*RestrictedDacl != NULL);
+    if (*RestrictedDacl == NULL)
+    {
+        Status = STATUS_NO_MEMORY;
+        RtlFreeHeap(BaseSrvHeap, 0, *Dacl);
+        goto FreeAndReturn;
+    }
 
     /* Initialize it */
     Status = RtlCreateAcl(*RestrictedDacl, AclLength, ACL_REVISION2);
-    ASSERT(NT_SUCCESS(Status));
+    if (!NT_SUCCESS(Status))
+    {
+        RtlFreeHeap(BaseSrvHeap, 0, *RestrictedDacl);
+        RtlFreeHeap(BaseSrvHeap, 0, *Dacl);
+        goto FreeAndReturn;
+    }
+
+    /* Setup access for restricted sid depending on session id and protection mode */
+    if (SessionId == 0 || (ProtectionMode & 3) == 0)
+    {
+        /* If we have no session ID or if protection mode is not set, then open wide */
+        RestrictedAccess = READ_CONTROL | DIRECTORY_QUERY | DIRECTORY_TRAVERSE | DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY;
+    }
+    else
+    {
+        /* Otherwise, make read only */
+        RestrictedAccess = READ_CONTROL | DIRECTORY_QUERY | DIRECTORY_TRAVERSE;
+    }
 
     /* And add the same ACEs as before */
-    /* FIXME: Not really fully correct */
-    Status = RtlAddAccessAllowedAce(*RestrictedDacl, ACL_REVISION2, DIRECTORY_QUERY | DIRECTORY_TRAVERSE | DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY | READ_CONTROL, WorldSid);
-    ASSERT(NT_SUCCESS(Status));
-    Status = RtlAddAccessAllowedAce(*RestrictedDacl, ACL_REVISION2, DIRECTORY_ALL_ACCESS, SystemSid);
-    ASSERT(NT_SUCCESS(Status));
-    Status = RtlAddAccessAllowedAce(*RestrictedDacl, ACL_REVISION2, DIRECTORY_TRAVERSE, RestrictedSid);
-    ASSERT(NT_SUCCESS(Status));
+    Status = RtlAddAccessAllowedAce(*RestrictedDacl, ACL_REVISION2, WorldAccess, WorldSid);
+    if (NT_SUCCESS(Status))
+    {
+        Status = RtlAddAccessAllowedAce(*RestrictedDacl, ACL_REVISION2, DIRECTORY_ALL_ACCESS, SystemSid);
+        if (NT_SUCCESS(Status))
+        {
+            Status = RtlAddAccessAllowedAce(*RestrictedDacl, ACL_REVISION2, RestrictedAccess, RestrictedSid);
+        }
+    }
 
     /* The SIDs are captured, can free them now */
+FreeAndReturn:
     RtlFreeSid(RestrictedSid);
     RtlFreeSid(WorldSid);
     RtlFreeSid(SystemSid);
+
+Return:
     return Status;
 }
 
@@ -292,6 +360,7 @@ BaseInitializeStaticServerData(IN PCSR_SERVER_DLL LoadedServerDll)
 {
     NTSTATUS Status;
     BOOLEAN Success;
+    WCHAR BnoBuffer[100];
     WCHAR Buffer[MAX_PATH];
     PWCHAR HeapBuffer;
     UNICODE_STRING SystemRootString;
@@ -301,7 +370,6 @@ BaseInitializeStaticServerData(IN PCSR_SERVER_DLL LoadedServerDll)
     UNICODE_STRING BaseSrvWindowsSystemDirectory;
     UNICODE_STRING BnoString;
     OBJECT_ATTRIBUTES ObjectAttributes;
-    ULONG SessionId;
     HANDLE BaseSrvNamedObjectDirectory;
     HANDLE BaseSrvRestrictedObjectDirectory;
     PACL BnoDacl, BnoRestrictedDacl;
@@ -355,9 +423,15 @@ BaseInitializeStaticServerData(IN PCSR_SERVER_DLL LoadedServerDll)
                                      SystemRootString.Buffer);
     ASSERT(Success);
 
-    /* FIXME: Check Session ID */
-    wcscpy(Buffer, L"\\BaseNamedObjects");
-    RtlInitUnicodeString(&BnoString, Buffer);
+    if (SessionId != 0)
+    {
+        swprintf(BnoBuffer, L"\\Sessions\\%ld\\BaseNamedObjects", SessionId);
+    }
+    else
+    {
+        wcscpy(BnoBuffer, L"\\BaseNamedObjects");
+    }
+    RtlInitUnicodeString(&BnoString, BnoBuffer);
 
     /* Allocate the server data */
     BaseStaticServerData = RtlAllocateHeap(BaseSrvSharedHeap,
@@ -477,7 +551,6 @@ BaseInitializeStaticServerData(IN PCSR_SERVER_DLL LoadedServerDll)
     ASSERT(NT_SUCCESS(Status));
 
     /* Create the BNO directory */
-    RtlInitUnicodeString(&BnoString, L"\\BaseNamedObjects");
     InitializeObjectAttributes(&ObjectAttributes,
                                &BnoString,
                                OBJ_OPENIF | OBJ_PERMANENT | OBJ_CASE_INSENSITIVE,
@@ -507,7 +580,10 @@ BaseInitializeStaticServerData(IN PCSR_SERVER_DLL LoadedServerDll)
                                        NULL);
     ASSERT(NT_SUCCESS(Status));
     BaseStaticServerData->LUIDDeviceMapsEnabled = (BOOLEAN)LuidEnabled;
-    if (!BaseStaticServerData->LUIDDeviceMapsEnabled)
+
+    /* Initialize Global */
+    if (!BaseStaticServerData->LUIDDeviceMapsEnabled ||
+        NT_SUCCESS(RtlInitializeCriticalSectionAndSpinCount(&BaseSrvDDDBSMCritSec, 0x80000000)))
     {
         /* Make Global point back to BNO */
         RtlInitUnicodeString(&DirectoryName, L"Global");
@@ -534,7 +610,7 @@ BaseInitializeStaticServerData(IN PCSR_SERVER_DLL LoadedServerDll)
         Status = NtCreateSymbolicLinkObject(&SymHandle,
                                             SYMBOLIC_LINK_ALL_ACCESS,
                                             &ObjectAttributes,
-                                            &SymlinkName);
+                                            &BnoString);
         if ((NT_SUCCESS(Status)) && SessionId == 0) NtClose(SymHandle);
 
         /* Make Session point back to BNOLINKS */
@@ -564,6 +640,11 @@ BaseInitializeStaticServerData(IN PCSR_SERVER_DLL LoadedServerDll)
                                          DIRECTORY_ALL_ACCESS,
                                          &ObjectAttributes);
         ASSERT(NT_SUCCESS(Status));
+    }
+    else
+    {
+        /* That should never happen */
+        ASSERT(FALSE);
     }
 
     /* Initialize NLS */

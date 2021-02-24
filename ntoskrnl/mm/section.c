@@ -197,7 +197,7 @@ NTSTATUS NTAPI PeFmtCreateSection(IN CONST VOID * FileHeader,
     ULONG cbHeadersSize = 0;
     ULONG nSectionAlignment;
     ULONG nFileAlignment;
-    ULONG_PTR ImageBase;
+    ULONG_PTR ImageBase = 0;
     const IMAGE_DOS_HEADER * pidhDosHeader;
     const IMAGE_NT_HEADERS32 * pinhNtHeader;
     const IMAGE_OPTIONAL_HEADER32 * piohOptHeader;
@@ -358,14 +358,17 @@ l_ReadHeaderFromFile:
 
     switch(piohOptHeader->Magic)
     {
-    case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
-#ifdef _WIN64
-    case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
-#endif // _WIN64
-        break;
-
-    default:
-        DIE(("Unrecognized optional header, Magic is %X\n", piohOptHeader->Magic));
+        case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
+#ifndef _WIN64
+            nStatus = STATUS_INVALID_IMAGE_WIN_64;
+            DIE(("Win64 optional header, unsupported\n"));
+#else
+            // Fall through.
+#endif
+        case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
+            break;
+        default:
+            DIE(("Unrecognized optional header, Magic is %X\n", piohOptHeader->Magic));
     }
 
     if (RTL_CONTAINS_FIELD(piohOptHeader, cbOptHeaderSize, SectionAlignment) &&
@@ -684,7 +687,7 @@ l_ReadHeaderFromFile:
     pssSegments[0].Length.QuadPart = nPrevVirtualEndOfSegment;
     pssSegments[0].RawLength.QuadPart = nFileSizeOfHeaders;
     pssSegments[0].Image.VirtualAddress = 0;
-    pssSegments[0].Image.Characteristics = IMAGE_SCN_CNT_INITIALIZED_DATA;
+    pssSegments[0].Image.Characteristics = 0;
     pssSegments[0].WriteCopy = TRUE;
 
     /* skip the headers segment */
@@ -1040,23 +1043,21 @@ BOOLEAN MiIsPageFromCache(PMEMORY_AREA MemoryArea,
 
 NTSTATUS
 NTAPI
-MiCopyFromUserPage(PFN_NUMBER DestPage, PFN_NUMBER SrcPage)
+MiCopyFromUserPage(PFN_NUMBER DestPage, const VOID *SrcAddress)
 {
     PEPROCESS Process;
-    KIRQL Irql, Irql2;
-    PVOID DestAddress, SrcAddress;
+    KIRQL Irql;
+    PVOID DestAddress;
 
     Process = PsGetCurrentProcess();
     DestAddress = MiMapPageInHyperSpace(Process, DestPage, &Irql);
-    SrcAddress = MiMapPageInHyperSpace(Process, SrcPage, &Irql2);
-    if (DestAddress == NULL || SrcAddress == NULL)
+    if (DestAddress == NULL)
     {
         return(STATUS_NO_MEMORY);
     }
     ASSERT((ULONG_PTR)DestAddress % PAGE_SIZE == 0);
     ASSERT((ULONG_PTR)SrcAddress % PAGE_SIZE == 0);
     RtlCopyMemory(DestAddress, SrcAddress, PAGE_SIZE);
-    MiUnmapPageInHyperSpace(Process, SrcAddress, Irql2);
     MiUnmapPageInHyperSpace(Process, DestAddress, Irql);
     return(STATUS_SUCCESS);
 }
@@ -1277,6 +1278,87 @@ MiReadPage(PMEMORY_AREA MemoryArea,
 }
 #endif
 
+static VOID
+MmAlterViewAttributes(PMMSUPPORT AddressSpace,
+                      PVOID BaseAddress,
+                      SIZE_T RegionSize,
+                      ULONG OldType,
+                      ULONG OldProtect,
+                      ULONG NewType,
+                      ULONG NewProtect)
+{
+    PMEMORY_AREA MemoryArea;
+    PMM_SECTION_SEGMENT Segment;
+    BOOLEAN DoCOW = FALSE;
+    ULONG i;
+    PEPROCESS Process = MmGetAddressSpaceOwner(AddressSpace);
+
+    MemoryArea = MmLocateMemoryAreaByAddress(AddressSpace, BaseAddress);
+    ASSERT(MemoryArea != NULL);
+    Segment = MemoryArea->Data.SectionData.Segment;
+    MmLockSectionSegment(Segment);
+
+    if ((Segment->WriteCopy) &&
+            (NewProtect == PAGE_READWRITE || NewProtect == PAGE_EXECUTE_READWRITE))
+    {
+        DoCOW = TRUE;
+    }
+
+    if (OldProtect != NewProtect)
+    {
+        for (i = 0; i < PAGE_ROUND_UP(RegionSize) / PAGE_SIZE; i++)
+        {
+            SWAPENTRY SwapEntry;
+            PVOID Address = (char*)BaseAddress + (i * PAGE_SIZE);
+            ULONG Protect = NewProtect;
+
+            /* Wait for a wait entry to disappear */
+            do
+            {
+                MmGetPageFileMapping(Process, Address, &SwapEntry);
+                if (SwapEntry != MM_WAIT_ENTRY)
+                    break;
+                MiWaitForPageEvent(Process, Address);
+            }
+            while (TRUE);
+
+            /*
+             * If we doing COW for this segment then check if the page is
+             * already private.
+             */
+            if (DoCOW && MmIsPagePresent(Process, Address))
+            {
+                LARGE_INTEGER Offset;
+                ULONG_PTR Entry;
+                PFN_NUMBER Page;
+
+                Offset.QuadPart = (ULONG_PTR)Address - MA_GetStartingAddress(MemoryArea)
+                                  + MemoryArea->Data.SectionData.ViewOffset.QuadPart;
+                Entry = MmGetPageEntrySectionSegment(Segment, &Offset);
+                /*
+                 * An MM_WAIT_ENTRY is ok in this case...  It'll just count as
+                 * IS_SWAP_FROM_SSE and we'll do the right thing.
+                 */
+                Page = MmGetPfnForProcess(Process, Address);
+
+                Protect = PAGE_READONLY;
+                if (IS_SWAP_FROM_SSE(Entry) || PFN_FROM_SSE(Entry) != Page)
+                {
+                    Protect = NewProtect;
+                }
+            }
+
+            if (MmIsPagePresent(Process, Address) || MmIsDisabledPage(Process, Address))
+            {
+                MmSetPageProtect(Process, Address,
+                                 Protect);
+            }
+        }
+    }
+
+    MmUnlockSectionSegment(Segment);
+}
+
 NTSTATUS
 NTAPI
 MmNotPresentFaultSectionView(PMMSUPPORT AddressSpace,
@@ -1331,6 +1413,29 @@ MmNotPresentFaultSectionView(PMMSUPPORT AddressSpace,
                           &MemoryArea->Data.SectionData.RegionListHead,
                           Address, NULL);
     ASSERT(Region != NULL);
+
+    /* Check for a NOACCESS mapping */
+    if (Region->Protect & PAGE_NOACCESS)
+    {
+        return STATUS_ACCESS_VIOLATION;
+    }
+
+    if (Region->Protect & PAGE_GUARD)
+    {
+        /* Remove it */
+        Status = MmAlterRegion(AddressSpace, (PVOID)MA_GetStartingAddress(MemoryArea),
+                &MemoryArea->Data.SectionData.RegionListHead,
+                Address, PAGE_SIZE, Region->Type, Region->Protect & ~PAGE_GUARD,
+                MmAlterViewAttributes);
+
+        if (!NT_SUCCESS(Status))
+        {
+            DPRINT1("Removing PAGE_GUARD protection failed : 0x%08x.\n", Status);
+        }
+
+        return STATUS_GUARD_PAGE_VIOLATION;
+    }
+
     /*
      * Lock the segment
      */
@@ -1367,7 +1472,7 @@ MmNotPresentFaultSectionView(PMMSUPPORT AddressSpace,
     HasSwapEntry = MmIsPageSwapEntry(Process, Address);
 
     /* See if we should use a private page */
-    if ((HasSwapEntry) || (Segment->Image.Characteristics & IMAGE_SCN_CNT_UNINITIALIZED_DATA))
+    if (HasSwapEntry)
     {
         SWAPENTRY DummyEntry;
 
@@ -1781,7 +1886,7 @@ MmAccessFaultSectionView(PMMSUPPORT AddressSpace,
     /*
      * Copy the old page
      */
-    MiCopyFromUserPage(NewPage, OldPage);
+    NT_VERIFY(NT_SUCCESS(MiCopyFromUserPage(NewPage, PAddress)));
 
     /*
      * Unshare the old page.
@@ -1958,9 +2063,7 @@ MmPageOutSectionView(PMMSUPPORT AddressSpace,
      */
     MmUnlockSectionSegment(Context.Segment);
     Context.WasDirty = FALSE;
-    if (Context.Segment->Image.Characteristics & IMAGE_SCN_CNT_UNINITIALIZED_DATA ||
-            IS_SWAP_FROM_SSE(Entry) ||
-            PFN_FROM_SSE(Entry) != Page)
+    if (IS_SWAP_FROM_SSE(Entry) || PFN_FROM_SSE(Entry) != Page)
     {
         Context.Private = TRUE;
     }
@@ -1982,9 +2085,9 @@ MmPageOutSectionView(PMMSUPPORT AddressSpace,
     }
     else
     {
-        OldIrql = KeAcquireQueuedSpinLock(LockQueuePfnLock);
+        OldIrql = MiAcquirePfnLock();
         MmReferencePage(Page);
-        KeReleaseQueuedSpinLock(LockQueuePfnLock, OldIrql);
+        MiReleasePfnLock(OldIrql);
     }
 
     MmDeleteAllRmaps(Page, (PVOID)&Context, MmPageOutDeleteMapping);
@@ -2348,9 +2451,7 @@ MmWritePageSectionView(PMMSUPPORT AddressSpace,
     /*
      * Check for a private (COWed) page.
      */
-    if (Segment->Image.Characteristics & IMAGE_SCN_CNT_UNINITIALIZED_DATA ||
-            IS_SWAP_FROM_SSE(Entry) ||
-            PFN_FROM_SSE(Entry) != Page)
+    if (IS_SWAP_FROM_SSE(Entry) || PFN_FROM_SSE(Entry) != Page)
     {
         Private = TRUE;
     }
@@ -2374,7 +2475,7 @@ MmWritePageSectionView(PMMSUPPORT AddressSpace,
         ASSERT(SwapEntry == 0);
         //SOffset.QuadPart = Offset.QuadPart + Segment->Image.FileOffset;
 #ifndef NEWCC
-        CcRosMarkDirtyVacb(SharedCacheMap, Offset.QuadPart);
+        CcRosMarkDirtyFile(SharedCacheMap, Offset.QuadPart);
 #endif
         MmLockSectionSegment(Segment);
         MmSetPageEntrySectionSegment(Segment, &Offset, PageEntry);
@@ -2417,89 +2518,6 @@ MmWritePageSectionView(PMMSUPPORT AddressSpace,
     DPRINT("MM: Wrote section page 0x%.8X to swap!\n", Page << PAGE_SHIFT);
     MiSetPageEvent(NULL, NULL);
     return(STATUS_SUCCESS);
-}
-
-static VOID
-MmAlterViewAttributes(PMMSUPPORT AddressSpace,
-                      PVOID BaseAddress,
-                      SIZE_T RegionSize,
-                      ULONG OldType,
-                      ULONG OldProtect,
-                      ULONG NewType,
-                      ULONG NewProtect)
-{
-    PMEMORY_AREA MemoryArea;
-    PMM_SECTION_SEGMENT Segment;
-    BOOLEAN DoCOW = FALSE;
-    ULONG i;
-    PEPROCESS Process = MmGetAddressSpaceOwner(AddressSpace);
-
-    MemoryArea = MmLocateMemoryAreaByAddress(AddressSpace, BaseAddress);
-    ASSERT(MemoryArea != NULL);
-    Segment = MemoryArea->Data.SectionData.Segment;
-    MmLockSectionSegment(Segment);
-
-    if ((Segment->WriteCopy) &&
-            (NewProtect == PAGE_READWRITE || NewProtect == PAGE_EXECUTE_READWRITE))
-    {
-        DoCOW = TRUE;
-    }
-
-    if (OldProtect != NewProtect)
-    {
-        for (i = 0; i < PAGE_ROUND_UP(RegionSize) / PAGE_SIZE; i++)
-        {
-            SWAPENTRY SwapEntry;
-            PVOID Address = (char*)BaseAddress + (i * PAGE_SIZE);
-            ULONG Protect = NewProtect;
-
-            /* Wait for a wait entry to disappear */
-            do
-            {
-                MmGetPageFileMapping(Process, Address, &SwapEntry);
-                if (SwapEntry != MM_WAIT_ENTRY)
-                    break;
-                MiWaitForPageEvent(Process, Address);
-            }
-            while (TRUE);
-
-            /*
-             * If we doing COW for this segment then check if the page is
-             * already private.
-             */
-            if (DoCOW && MmIsPagePresent(Process, Address))
-            {
-                LARGE_INTEGER Offset;
-                ULONG_PTR Entry;
-                PFN_NUMBER Page;
-
-                Offset.QuadPart = (ULONG_PTR)Address - MA_GetStartingAddress(MemoryArea)
-                                  + MemoryArea->Data.SectionData.ViewOffset.QuadPart;
-                Entry = MmGetPageEntrySectionSegment(Segment, &Offset);
-                /*
-                 * An MM_WAIT_ENTRY is ok in this case...  It'll just count as
-                 * IS_SWAP_FROM_SSE and we'll do the right thing.
-                 */
-                Page = MmGetPfnForProcess(Process, Address);
-
-                Protect = PAGE_READONLY;
-                if (Segment->Image.Characteristics & IMAGE_SCN_CNT_UNINITIALIZED_DATA ||
-                        IS_SWAP_FROM_SSE(Entry) ||
-                        PFN_FROM_SSE(Entry) != Page)
-                {
-                    Protect = NewProtect;
-                }
-            }
-
-            if (MmIsPagePresent(Process, Address) || MmIsDisabledPage(Process, Address))
-            {
-                MmSetPageProtect(Process, Address,
-                                 Protect);
-            }
-        }
-    }
-
-    MmUnlockSectionSegment(Segment);
 }
 
 NTSTATUS
@@ -3288,9 +3306,12 @@ MmspCompareSegments(const void * x,
     const MM_SECTION_SEGMENT *Segment1 = (const MM_SECTION_SEGMENT *)x;
     const MM_SECTION_SEGMENT *Segment2 = (const MM_SECTION_SEGMENT *)y;
 
-    return
-        (Segment1->Image.VirtualAddress - Segment2->Image.VirtualAddress) >>
-        ((sizeof(ULONG_PTR) - sizeof(int)) * 8);
+    if (Segment1->Image.VirtualAddress > Segment2->Image.VirtualAddress)
+        return 1;
+    else if (Segment1->Image.VirtualAddress < Segment2->Image.VirtualAddress)
+        return -1;
+    else
+        return 0;
 }
 
 /*
@@ -3724,7 +3745,7 @@ MmCreateImageSection(PROS_SECTION_OBJECT *SectionObject,
         return STATUS_INVALID_FILE_FOR_SECTION;
 
 #ifndef NEWCC
-    if (FileObject->SectionObjectPointer->SharedCacheMap == NULL)
+    if (!CcIsFileCached(FileObject))
     {
         DPRINT1("Denying section creation due to missing cache initialization\n");
         return STATUS_INVALID_FILE_FOR_SECTION;
@@ -3758,17 +3779,7 @@ MmCreateImageSection(PROS_SECTION_OBJECT *SectionObject,
     Section->SectionPageProtection = SectionPageProtection;
     Section->AllocationAttributes = AllocationAttributes;
 
-#ifndef NEWCC
-    /*
-     * Initialized caching for this file object if previously caching
-     * was initialized for the same on disk file
-     */
-    Status = CcTryToInitializeFileCache(FileObject);
-#else
-    Status = STATUS_SUCCESS;
-#endif
-
-    if (!NT_SUCCESS(Status) || FileObject->SectionObjectPointer->ImageSectionObject == NULL)
+    if (FileObject->SectionObjectPointer->ImageSectionObject == NULL)
     {
         NTSTATUS StatusExeFmt;
 
@@ -4006,7 +4017,7 @@ MmFreeSectionPage(PVOID Context, MEMORY_AREA* MemoryArea, PVOID Address,
 #ifndef NEWCC
             FileObject = MemoryArea->Data.SectionData.Section->FileObject;
             SharedCacheMap = FileObject->SectionObjectPointer->SharedCacheMap;
-            CcRosMarkDirtyVacb(SharedCacheMap, Offset.QuadPart + Segment->Image.FileOffset);
+            CcRosMarkDirtyFile(SharedCacheMap, Offset.QuadPart + Segment->Image.FileOffset);
 #endif
             ASSERT(SwapEntry == 0);
         }
@@ -4568,11 +4579,11 @@ MmMapViewOfSection(IN PVOID SectionObject,
         ImageSectionObject->ImageInformation.ImageFileSize = (ULONG)ImageSize;
 
         /* Check for an illegal base address */
-        if (((ImageBase + ImageSize) > (ULONG_PTR)MmHighestUserAddress) ||
+        if (((ImageBase + ImageSize) > (ULONG_PTR)MM_HIGHEST_VAD_ADDRESS) ||
                 ((ImageBase + ImageSize) < ImageSize))
         {
             ASSERT(*BaseAddress == NULL);
-            ImageBase = ALIGN_DOWN_BY((ULONG_PTR)MmHighestUserAddress - ImageSize,
+            ImageBase = ALIGN_DOWN_BY((ULONG_PTR)MM_HIGHEST_VAD_ADDRESS - ImageSize,
                                       MM_VIRTMEM_GRANULARITY);
             NotAtBase = TRUE;
         }

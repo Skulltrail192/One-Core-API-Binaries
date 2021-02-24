@@ -19,21 +19,41 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#define COBJMACROS
 
+#include "config.h"
+
+#include <stdarg.h>
 #include <assert.h>
-
 #ifdef HAVE_LIBXML2
+# include <libxml/parser.h>
+# include <libxml/xmlerror.h>
 # include <libxml/xpathInternals.h>
 # include <libxml/xmlsave.h>
 # include <libxml/SAX2.h>
 # include <libxml/parserInternals.h>
 #endif
 
-#include <olectl.h>
-#include <objsafe.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "ole2.h"
+#include "olectl.h"
+#include "msxml6.h"
+#include "wininet.h"
+#include "winreg.h"
+#include "shlwapi.h"
+#include "ocidl.h"
+#include "objsafe.h"
+
+#include "wine/debug.h"
+
+#include "msxml_private.h"
 
 #ifdef HAVE_LIBXML2
+
+WINE_DEFAULT_DEBUG_CHANNEL(msxml);
 
 /* not defined in older versions */
 #define XML_SAVE_FORMAT     1
@@ -53,6 +73,7 @@ static const WCHAR PropValueXSLPatternW[] = {'X','S','L','P','a','t','t','e','r'
 static const WCHAR PropertyResolveExternalsW[] = {'R','e','s','o','l','v','e','E','x','t','e','r','n','a','l','s',0};
 static const WCHAR PropertyAllowXsltScriptW[] = {'A','l','l','o','w','X','s','l','t','S','c','r','i','p','t',0};
 static const WCHAR PropertyAllowDocumentFunctionW[] = {'A','l','l','o','w','D','o','c','u','m','e','n','t','F','u','n','c','t','i','o','n',0};
+static const WCHAR PropertyNormalizeAttributeValuesW[] = {'N','o','r','m','a','l','i','z','e','A','t','t','r','i','b','u','t','e','V','a','l','u','e','s',0};
 
 /* Anything that passes the test_get_ownerDocument()
  * tests can go here (data shared between all instances).
@@ -66,7 +87,7 @@ typedef struct {
     xmlChar const* selectNsStr;
     LONG selectNsStr_len;
     BOOL XPath;
-    WCHAR *url;
+    IUri *uri;
 } domdoc_properties;
 
 typedef struct ConnectionPoint ConnectionPoint;
@@ -278,8 +299,8 @@ static domdoc_properties *create_properties(MSXML_VERSION version)
     properties->version = version;
     properties->XPath = (version == MSXML4 || version == MSXML6);
 
-    /* document url */
-    properties->url = NULL;
+    /* document uri */
+    properties->uri = NULL;
 
     return properties;
 }
@@ -315,16 +336,9 @@ static domdoc_properties* copy_properties(domdoc_properties const* properties)
             list_add_tail(&pcopy->selectNsList, &new_ns->entry);
         }
 
-        if (properties->url)
-        {
-            int len = strlenW(properties->url);
-
-            pcopy->url = CoTaskMemAlloc((len+1)*sizeof(WCHAR));
-            memcpy(pcopy->url, properties->url, len*sizeof(WCHAR));
-            pcopy->url[len] = 0;
-        }
-        else
-            pcopy->url = NULL;
+        pcopy->uri = properties->uri;
+        if (pcopy->uri)
+            IUri_AddRef(pcopy->uri);
     }
 
     return pcopy;
@@ -338,7 +352,8 @@ static void free_properties(domdoc_properties* properties)
             IXMLDOMSchemaCollection2_Release(properties->schemaCache);
         clear_selectNsList(&properties->selectNsList);
         heap_free((xmlChar*)properties->selectNsStr);
-        CoTaskMemFree(properties->url);
+        if (properties->uri)
+            IUri_Release(properties->uri);
         heap_free(properties);
     }
 }
@@ -379,6 +394,11 @@ xmlNodePtr xmldoc_unlink_xmldecl(xmlDocPtr doc)
         node = NULL;
 
     return node;
+}
+
+MSXML_VERSION xmldoc_version(xmlDocPtr doc)
+{
+    return properties_from_xmlDocPtr(doc)->version;
 }
 
 BOOL is_preserving_whitespace(xmlNodePtr node)
@@ -1486,10 +1506,48 @@ static HRESULT WINAPI domdoc_get_baseName(
 static HRESULT WINAPI domdoc_transformNodeToObject(
     IXMLDOMDocument3 *iface,
     IXMLDOMNode* stylesheet,
-    VARIANT outputObject)
+    VARIANT output)
 {
     domdoc *This = impl_from_IXMLDOMDocument3( iface );
-    FIXME("(%p)->(%p %s)\n", This, stylesheet, debugstr_variant(&outputObject));
+
+    TRACE("(%p)->(%p %s)\n", This, stylesheet, debugstr_variant(&output));
+
+    switch (V_VT(&output))
+    {
+    case VT_UNKNOWN:
+    case VT_DISPATCH:
+    {
+        IXMLDOMDocument *doc;
+        HRESULT hr;
+
+        if (!V_UNKNOWN(&output))
+            return E_INVALIDARG;
+
+        /* FIXME: we're not supposed to query for document interface, should use IStream
+           which we don't support currently. */
+        if (IUnknown_QueryInterface(V_UNKNOWN(&output), &IID_IXMLDOMDocument, (void **)&doc) == S_OK)
+        {
+            VARIANT_BOOL b;
+            BSTR str;
+
+            if (FAILED(hr = node_transform_node(&This->node, stylesheet, &str)))
+                return hr;
+
+            hr = IXMLDOMDocument_loadXML(doc, str, &b);
+            SysFreeString(str);
+            return hr;
+        }
+        else
+        {
+            FIXME("Unsupported destination type.\n");
+            return E_INVALIDARG;
+        }
+    }
+    default:
+        FIXME("Output type %d not handled.\n", V_VT(&output));
+        return E_NOTIMPL;
+    }
+
     return E_NOTIMPL;
 }
 
@@ -2234,26 +2292,36 @@ static HRESULT WINAPI domdoc_load(
 
     if ( filename )
     {
+        IUri *uri = NULL;
         IMoniker *mon;
 
-        CoTaskMemFree(This->properties->url);
-        This->properties->url = NULL;
+        if (This->properties->uri)
+        {
+            IUri_Release(This->properties->uri);
+            This->properties->uri = NULL;
+        }
 
-        hr = create_moniker_from_url( filename, &mon);
+        hr = create_uri(filename, &uri);
+        if (SUCCEEDED(hr))
+            hr = CreateURLMonikerEx2(NULL, uri, &mon, 0);
         if ( SUCCEEDED(hr) )
         {
             hr = domdoc_load_moniker( This, mon );
-            if (hr == S_OK)
-                IMoniker_GetDisplayName(mon, NULL, NULL, &This->properties->url);
             IMoniker_Release(mon);
         }
 
-        if ( FAILED(hr) )
-            This->error = E_FAIL;
-        else
+        if (SUCCEEDED(hr))
         {
+            get_doc(This)->name = (char *)xmlchar_from_wcharn(filename, -1, TRUE);
+            This->properties->uri = uri;
             hr = This->error = S_OK;
             *isSuccessful = VARIANT_TRUE;
+        }
+        else
+        {
+            if (uri)
+                IUri_Release(uri);
+            This->error = E_FAIL;
         }
     }
 
@@ -2316,16 +2384,10 @@ static HRESULT WINAPI domdoc_get_url(
     if (!url)
         return E_INVALIDARG;
 
-    if (This->properties->url)
-    {
-        *url = SysAllocString(This->properties->url);
-        if (!*url)
-            return E_OUTOFMEMORY;
-
-        return S_OK;
-    }
-    else
+    if (!This->properties->uri)
         return return_null_bstr(url);
+
+    return IUri_GetPropertyBSTR(This->properties->uri, Uri_PROPERTY_DISPLAY_URI, url, 0);
 }
 
 
@@ -3056,6 +3118,7 @@ static HRESULT WINAPI domdoc_setProperty(
              lstrcmpiW(p, PropertyNewParserW) == 0 ||
              lstrcmpiW(p, PropertyResolveExternalsW) == 0 ||
              lstrcmpiW(p, PropertyAllowXsltScriptW) == 0 ||
+             lstrcmpiW(p, PropertyNormalizeAttributeValuesW) == 0 ||
              lstrcmpiW(p, PropertyAllowDocumentFunctionW) == 0)
     {
         /* Ignore */

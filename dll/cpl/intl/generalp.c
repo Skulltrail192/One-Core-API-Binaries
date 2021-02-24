@@ -38,7 +38,7 @@
 
 HWND hList;
 HWND hLocaleList, hGeoList;
-BOOL bSpain = FALSE;
+BOOL isSpain = FALSE;
 
 GROUPINGDATA
 GroupingFormats[MAX_GROUPINGFORMATS] =
@@ -49,7 +49,7 @@ GroupingFormats[MAX_GROUPINGFORMATS] =
 };
 
 static BOOL CALLBACK
-LocalesEnumProc(LPTSTR lpLocale)
+GeneralPropertyPageLocalesEnumProc(LPTSTR lpLocale)
 {
     LCID lcid;
     WCHAR lang[255];
@@ -65,10 +65,10 @@ LocalesEnumProc(LPTSTR lpLocale)
     if (lcid == MAKELCID(MAKELANGID(LANG_SPANISH, SUBLANG_SPANISH), SORT_DEFAULT) ||
         lcid == MAKELCID(MAKELANGID(LANG_SPANISH, SUBLANG_SPANISH_MODERN), SORT_DEFAULT))
     {
-        if (bSpain == FALSE)
+        if (isSpain == FALSE)
         {
             LoadStringW(hApplet, IDS_SPAIN, lang, 255);
-            bSpain = TRUE;
+            isSpain = TRUE;
         }
         else
         {
@@ -169,8 +169,8 @@ CreateLanguagesList(HWND hwnd)
     WCHAR langSel[255];
 
     hList = hwnd;
-    bSpain = FALSE;
-    EnumSystemLocalesW(LocalesEnumProc, LCID_SUPPORTED);
+    isSpain = FALSE;
+    EnumSystemLocalesW(GeneralPropertyPageLocalesEnumProc, LCID_SUPPORTED);
 
     /* Select current locale */
     /* or should it be System and not user? */
@@ -1324,6 +1324,22 @@ InitPropSheetPage(
     psp->lParam = (LPARAM)pGlobalData;
 }
 
+static int CALLBACK
+PropSheetProc(HWND hwndDlg, UINT uMsg, LPARAM lParam)
+{
+    // NOTE: This callback is needed to set large icon correctly.
+    HICON hIcon;
+    switch (uMsg)
+    {
+        case PSCB_INITIALIZED:
+        {
+            hIcon = LoadIconW(hApplet, MAKEINTRESOURCEW(IDC_CPLICON));
+            SendMessageW(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+            break;
+        }
+    }
+    return 0;
+}
 
 INT_PTR
 APIENTRY
@@ -1339,14 +1355,15 @@ CustomizeLocalePropertySheet(
 
     ZeroMemory(&psh, sizeof(PROPSHEETHEADER));
     psh.dwSize = sizeof(PROPSHEETHEADER);
-    psh.dwFlags =  PSH_PROPSHEETPAGE | PSH_USECALLBACK;
+    psh.dwFlags =  PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_USECALLBACK;
     psh.hwndParent = hwndDlg;
     psh.hInstance = hApplet;
-    psh.hIcon = LoadIcon(hApplet, MAKEINTRESOURCE(IDC_CPLICON));
+    psh.pszIcon = MAKEINTRESOURCE(IDC_CPLICON);
     psh.pszCaption = Caption;
     psh.nPages = (sizeof(PsPage) / sizeof(PROPSHEETPAGE)) - 1;
     psh.nStartPage = 0;
     psh.ppsp = PsPage;
+    psh.pfnCallback = PropSheetProc;
 
     InitPropSheetPage(&PsPage[0], IDD_NUMBERSPAGE, NumbersPageProc, pGlobalData);
     InitPropSheetPage(&PsPage[1], IDD_CURRENCYPAGE, CurrencyPageProc, pGlobalData);

@@ -39,7 +39,7 @@ VfatDiskShutDown(
     }
     else
     {
-        Status = IoStatus.Status;
+        Status = STATUS_INSUFFICIENT_RESOURCES;
     }
 
     return Status;
@@ -55,13 +55,13 @@ VfatShutdown(
     NTSTATUS Status;
     PLIST_ENTRY ListEntry;
     PDEVICE_EXTENSION DeviceExt;
-    ULONG eocMark;
 
     DPRINT("VfatShutdown(DeviceObject %p, Irp %p)\n",DeviceObject, Irp);
 
     FsRtlEnterFileSystem();
 
     /* FIXME: block new mount requests */
+    VfatGlobalData->ShutdownStarted = TRUE;
 
     if (DeviceObject == VfatGlobalData->DeviceObject)
     {
@@ -74,19 +74,19 @@ VfatShutdown(
             ListEntry = ListEntry->Flink;
 
             ExAcquireResourceExclusiveLite(&DeviceExt->DirResource, TRUE);
-            if (DeviceExt->VolumeFcb->Flags & VCB_CLEAR_DIRTY)
+
+            /* Flush volume & files */
+            Status = VfatFlushVolume(DeviceExt, DeviceExt->VolumeFcb);
+
+            /* We're performing a clean shutdown */
+            if (BooleanFlagOn(DeviceExt->VolumeFcb->Flags, VCB_CLEAR_DIRTY) &&
+                BooleanFlagOn(DeviceExt->VolumeFcb->Flags, VCB_IS_DIRTY))
             {
-                /* set clean shutdown bit */
-                Status = GetNextCluster(DeviceExt, 1, &eocMark);
-                if (NT_SUCCESS(Status))
-                {
-                    eocMark |= DeviceExt->CleanShutBitMask;
-                    if (NT_SUCCESS(WriteCluster(DeviceExt, 1, eocMark)))
-                        DeviceExt->VolumeFcb->Flags &= ~VCB_IS_DIRTY;
-                }
+                /* Drop the dirty bit */
+                if (NT_SUCCESS(SetDirtyStatus(DeviceExt, FALSE)))
+                    DeviceExt->VolumeFcb->Flags &= ~VCB_IS_DIRTY;
             }
 
-            Status = VfatFlushVolume(DeviceExt, DeviceExt->VolumeFcb);
             if (NT_SUCCESS(Status))
             {
                 Status = VfatDiskShutDown(DeviceExt);
@@ -101,7 +101,10 @@ VfatShutdown(
             }
             ExReleaseResourceLite(&DeviceExt->DirResource);
 
-            /* FIXME: Unmount the logical volume */
+            /* Unmount the logical volume */
+#ifdef ENABLE_SWAPOUT
+            VfatCheckForDismount(DeviceExt, FALSE);
+#endif
 
             if (!NT_SUCCESS(Status))
                 Irp->IoStatus.Status = Status;

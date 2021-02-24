@@ -20,6 +20,10 @@
 
 #pragma once
 
+#include "windef.h"
+#include "winerror.h"
+#include "objbase.h"
+#include "oleauto.h"
 #include <math.h>
 
 /* Get just the type from a variant pointer */
@@ -113,7 +117,6 @@ typedef struct tagVARIANT_NUMBER_CHARS
 } VARIANT_NUMBER_CHARS;
 
 unsigned int get_type_size(ULONG*, VARTYPE) DECLSPEC_HIDDEN;
-BOOL VARIANT_GetLocalisedText(LANGID, DWORD, WCHAR *) DECLSPEC_HIDDEN;
 HRESULT VARIANT_ClearInd(VARIANTARG *) DECLSPEC_HIDDEN;
 BOOL get_date_format(LCID, DWORD, const SYSTEMTIME *,
         const WCHAR *, WCHAR *, int) DECLSPEC_HIDDEN;

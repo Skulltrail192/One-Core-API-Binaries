@@ -313,7 +313,7 @@ extern ULONG CmlibTraceLevel;
 // Hack since bigkeys are not yet supported
 //
 #define ASSERT_VALUE_BIG(h, s)                          \
-    ASSERTMSG("Big keys not supported!", !CmpIsKeyValueBig(h, s));
+    ASSERTMSG("Big keys not supported!\n", !CmpIsKeyValueBig(h, s));
 
 //
 // Returns whether or not this is a small valued key
@@ -595,7 +595,7 @@ CmpFindNameInList(
     IN PHHIVE Hive,
     IN PCHILD_LIST ChildList,
     IN PUNICODE_STRING Name,
-    OUT PULONG ChildIndex,
+    OUT PULONG ChildIndex OPTIONAL,
     OUT PHCELL_INDEX CellIndex
 );
 
@@ -625,7 +625,7 @@ CmpSetValueDataNew(
     IN PHHIVE Hive,
     IN PVOID Data,
     IN ULONG DataSize,
-    IN ULONG StorageType,
+    IN HSTORAGE_TYPE StorageType,
     IN HCELL_INDEX ValueCell,
     OUT PHCELL_INDEX DataCell
 );
@@ -636,7 +636,7 @@ CmpAddValueToList(
     IN PHHIVE Hive,
     IN HCELL_INDEX ValueCell,
     IN ULONG Index,
-    IN ULONG Type,
+    IN HSTORAGE_TYPE StorageType,
     IN OUT PCHILD_LIST ChildList
 );
 

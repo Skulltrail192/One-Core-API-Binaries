@@ -14,7 +14,7 @@
 
 #define TAG_ERR ' rrE'
 
-/* GLOBALS ****************************************************************/
+/* GLOBALS ******************************************************************/
 
 BOOLEAN ExReadyForErrors = FALSE;
 PVOID ExpDefaultErrorPort = NULL;
@@ -85,30 +85,15 @@ ExpSystemErrorHandler(IN NTSTATUS ErrorStatus,
 
 /*++
  * @name ExpRaiseHardError
+ * @implemented
  *
- * For now it's a stub
+ * See ExRaiseHardError and NtRaiseHardError, same parameters.
  *
- * @param ErrorStatus
- *        FILLME
- *
- * @param NumberOfParameters
- *        FILLME
- *
- * @param UnicodeStringParameterMask
- *        FILLME
- *
- * @param Parameters
- *        FILLME
- *
- * @param ValidResponseOptions
- *        FILLME
- *
- * @param Response
- *        FILLME
- *
- * @return None
- *
- * @remarks None
+ * This function performs the central work for both ExRaiseHardError
+ * and NtRaiseHardError. ExRaiseHardError is the service for kernel-mode
+ * that copies the parameters to user-mode, and NtRaiseHardError is the
+ * service for both kernel-mode and user-mode that performs parameters
+ * validation and capture if necessary.
  *
  *--*/
 NTSTATUS
@@ -120,20 +105,31 @@ ExpRaiseHardError(IN NTSTATUS ErrorStatus,
                   IN ULONG ValidResponseOptions,
                   OUT PULONG Response)
 {
+    NTSTATUS Status;
     PEPROCESS Process = PsGetCurrentProcess();
     PETHREAD Thread = PsGetCurrentThread();
     UCHAR Buffer[PORT_MAXIMUM_MESSAGE_LENGTH];
     PHARDERROR_MSG Message = (PHARDERROR_MSG)Buffer;
-    NTSTATUS Status;
     HANDLE PortHandle;
     KPROCESSOR_MODE PreviousMode = KeGetPreviousMode();
+
     PAGED_CODE();
 
     /* Check if this error will shutdown the system */
     if (ValidResponseOptions == OptionShutdownSystem)
     {
-        /* Check for privilege */
-        if (!SeSinglePrivilegeCheck(SeShutdownPrivilege, PreviousMode))
+        /*
+         * Check if we have the privileges.
+         *
+         * NOTE: In addition to the Shutdown privilege we also check whether
+         * the caller has the Tcb privilege. The purpose is to allow only
+         * SYSTEM processes to "shutdown" the system on hard errors (BSOD)
+         * while forbidding regular processes to do so. This behaviour differs
+         * from Windows, where any user-mode process, as soon as it has the
+         * Shutdown privilege, can trigger a hard-error BSOD.
+         */
+        if (!SeSinglePrivilegeCheck(SeTcbPrivilege, PreviousMode) ||
+            !SeSinglePrivilegeCheck(SeShutdownPrivilege, PreviousMode))
         {
             /* No rights */
             *Response = ResponseNotHandled;
@@ -155,13 +151,15 @@ ExpRaiseHardError(IN NTSTATUS ErrorStatus,
                                   NumberOfParameters,
                                   UnicodeStringParameterMask,
                                   Parameters,
-                                  (PreviousMode != KernelMode) ? TRUE: FALSE);
+                                  (PreviousMode != KernelMode) ? TRUE : FALSE);
         }
     }
 
-    /* Enable hard error processing if it is enabled for the process
-     * or if the exception status forces it */
-    if ((Process->DefaultHardErrorProcessing & 1) ||
+    /*
+     * Enable hard error processing if it is enabled for the process
+     * or if the exception status forces it.
+     */
+    if ((Process->DefaultHardErrorProcessing & SEM_FAILCRITICALERRORS) ||
         (ErrorStatus & HARDERROR_OVERRIDE_ERRORMODE))
     {
         /* Check if we have an exception port */
@@ -185,6 +183,31 @@ ExpRaiseHardError(IN NTSTATUS ErrorStatus,
     /* If hard errors are disabled, do nothing */
     if (Thread->HardErrorsAreDisabled) PortHandle = NULL;
 
+    /*
+     * If this is not the system thread, check whether hard errors are
+     * disabled for this thread on user-mode side, and if so, do nothing.
+     */
+    if (!Thread->SystemThread && (PortHandle != NULL))
+    {
+        /* Check if we have a TEB */
+        PTEB Teb = PsGetCurrentThread()->Tcb.Teb;
+        if (Teb)
+        {
+            _SEH2_TRY
+            {
+                if (Teb->HardErrorMode & RTL_SEM_FAILCRITICALERRORS)
+                {
+                    PortHandle = NULL;
+                }
+            }
+            _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+            {
+                NOTHING;
+            }
+            _SEH2_END;
+        }
+    }
+
     /* Now check if we have a port */
     if (PortHandle == NULL)
     {
@@ -204,7 +227,7 @@ ExpRaiseHardError(IN NTSTATUS ErrorStatus,
                                   NumberOfParameters,
                                   UnicodeStringParameterMask,
                                   Parameters,
-                                  (PreviousMode != KernelMode) ? TRUE: FALSE);
+                                  (PreviousMode != KernelMode) ? TRUE : FALSE);
 
             /* If we survived, return to caller */
             *Response = ResponseReturnToCaller;
@@ -224,9 +247,12 @@ ExpRaiseHardError(IN NTSTATUS ErrorStatus,
     KeQuerySystemTime(&Message->ErrorTime);
 
     /* Copy the parameters */
-    if (Parameters) RtlMoveMemory(&Message->Parameters,
-                                  Parameters,
-                                  sizeof(ULONG_PTR) * NumberOfParameters);
+    if (Parameters)
+    {
+        RtlMoveMemory(&Message->Parameters,
+                      Parameters,
+                      sizeof(ULONG_PTR) * NumberOfParameters);
+    }
 
     /* Send the LPC Message */
     Status = LpcRequestWaitReplyPort(PortHandle,
@@ -332,7 +358,7 @@ ExSystemExceptionFilter(VOID)
  * @name ExRaiseHardError
  * @implemented
  *
- * See NtRaiseHardError
+ * See NtRaiseHardError and ExpRaiseHardError.
  *
  * @param ErrorStatus
  *        Error Code
@@ -352,9 +378,7 @@ ExSystemExceptionFilter(VOID)
  * @param Response
  *        Pointer to HARDERROR_RESPONSE enumeration
  *
- * @return None
- *
- * @remarks None
+ * @return Status
  *
  *--*/
 NTSTATUS
@@ -366,14 +390,15 @@ ExRaiseHardError(IN NTSTATUS ErrorStatus,
                  IN ULONG ValidResponseOptions,
                  OUT PULONG Response)
 {
+    NTSTATUS Status;
     SIZE_T Size;
     UNICODE_STRING CapturedParams[MAXIMUM_HARDERROR_PARAMETERS];
     ULONG i;
     PVOID UserData = NULL;
     PHARDERROR_USER_PARAMETERS UserParams;
     PWSTR BufferBase;
-    ULONG SafeResponse;
-    NTSTATUS Status;
+    ULONG SafeResponse = ResponseNotHandled;
+
     PAGED_CODE();
 
     /* Check if we have parameters */
@@ -408,41 +433,57 @@ ExRaiseHardError(IN NTSTATUS ErrorStatus,
                                              &Size,
                                              MEM_COMMIT,
                                              PAGE_READWRITE);
-            if (!NT_SUCCESS(Status)) return Status;
+            if (!NT_SUCCESS(Status))
+            {
+                /* Return failure */
+                *Response = ResponseNotHandled;
+                return Status;
+            }
 
             /* Set the pointers to our data */
             UserParams = UserData;
             BufferBase = UserParams->Buffer;
 
-            /* Loop parameters again */
-            for (i = 0; i < NumberOfParameters; i++)
+            /* Enter SEH block as we are writing to user-mode space */
+            _SEH2_TRY
             {
-                /* Check if we're in the mask */
-                if (UnicodeStringParameterMask & (1 << i))
+                /* Loop parameters again */
+                for (i = 0; i < NumberOfParameters; i++)
                 {
-                    /* Update the base */
-                    UserParams->Parameters[i] = (ULONG_PTR)&UserParams->Strings[i];
+                    /* Check if we are in the mask */
+                    if (UnicodeStringParameterMask & (1 << i))
+                    {
+                        /* Update the base */
+                        UserParams->Parameters[i] = (ULONG_PTR)&UserParams->Strings[i];
 
-                    /* Copy the string buffer */
-                    RtlMoveMemory(BufferBase,
-                                  CapturedParams[i].Buffer,
-                                  CapturedParams[i].MaximumLength);
+                        /* Copy the string buffer */
+                        RtlMoveMemory(BufferBase,
+                                      CapturedParams[i].Buffer,
+                                      CapturedParams[i].MaximumLength);
 
-                    /* Set buffer */
-                    CapturedParams[i].Buffer = BufferBase;
+                        /* Set buffer */
+                        CapturedParams[i].Buffer = BufferBase;
 
-                    /* Copy the string structure */
-                    UserParams->Strings[i] = CapturedParams[i];
+                        /* Copy the string structure */
+                        UserParams->Strings[i] = CapturedParams[i];
 
-                    /* Update the pointer */
-                    BufferBase += CapturedParams[i].MaximumLength;
-                }
-                else
-                {
-                    /* No need to copy any strings */
-                    UserParams->Parameters[i] = Parameters[i];
+                        /* Update the pointer */
+                        BufferBase += CapturedParams[i].MaximumLength;
+                    }
+                    else
+                    {
+                        /* No need to copy any strings */
+                        UserParams->Parameters[i] = Parameters[i];
+                    }
                 }
             }
+            _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
+            {
+                /* Return the exception code */
+                Status = _SEH2_GetExceptionCode();
+                DPRINT1("ExRaiseHardError - Exception when writing data to user-mode, Status 0x%08lx\n", Status);
+            }
+            _SEH2_END;
         }
         else
         {
@@ -479,9 +520,9 @@ ExRaiseHardError(IN NTSTATUS ErrorStatus,
  * @name NtRaiseHardError
  * @implemented
  *
- * This function sends HARDERROR_MSG LPC message to listener
- * (typically CSRSS.EXE). See NtSetDefaultHardErrorPort for more information
- * See: http://undocumented.ntinternals.net/UserMode/Undocumented%20Functions/Error/NtRaiseHardError.html
+ * This function sends HARDERROR_MSG LPC message to a hard-error listener,
+ * typically CSRSS.EXE. See NtSetDefaultHardErrorPort for more information.
+ * See also: http://undocumented.ntinternals.net/UserMode/Undocumented%20Functions/Error/NtRaiseHardError.html
  *
  * @param ErrorStatus
  *        Error Code
@@ -503,8 +544,8 @@ ExRaiseHardError(IN NTSTATUS ErrorStatus,
  *
  * @return Status
  *
- * @remarks NtRaiseHardError is easy way to display message in GUI
- *          without loading Win32 API libraries
+ * @remarks NtRaiseHardError constitutes an easy way to display messages
+ *          in GUI without loading any Win32 API libraries.
  *
  *--*/
 NTSTATUS
@@ -518,11 +559,13 @@ NtRaiseHardError(IN NTSTATUS ErrorStatus,
 {
     NTSTATUS Status = STATUS_SUCCESS;
     PULONG_PTR SafeParams = NULL;
-    ULONG SafeResponse;
+    ULONG SafeResponse = ResponseNotHandled;
     UNICODE_STRING SafeString;
     ULONG i;
     ULONG ParamSize = 0;
     KPROCESSOR_MODE PreviousMode = ExGetPreviousMode();
+
+    PAGED_CODE();
 
     /* Validate parameter count */
     if (NumberOfParameters > MAXIMUM_HARDERROR_PARAMETERS)
@@ -629,37 +672,17 @@ NtRaiseHardError(IN NTSTATUS ErrorStatus,
         _SEH2_END;
 
         /* Call the system function directly, because we probed */
-        ExpRaiseHardError(ErrorStatus,
-                          NumberOfParameters,
-                          UnicodeStringParameterMask,
-                          SafeParams,
-                          ValidResponseOptions,
-                          &SafeResponse);
-    }
-    else
-    {
-        /* Reuse variable */
-        SafeParams = Parameters;
+        Status = ExpRaiseHardError(ErrorStatus,
+                                   NumberOfParameters,
+                                   UnicodeStringParameterMask,
+                                   SafeParams,
+                                   ValidResponseOptions,
+                                   &SafeResponse);
 
-        /*
-         * Call the Executive Function. It will probe and copy pointers to
-         * user-mode
-         */
-        ExRaiseHardError(ErrorStatus,
-                         NumberOfParameters,
-                         UnicodeStringParameterMask,
-                         SafeParams,
-                         ValidResponseOptions,
-                         &SafeResponse);
-    }
-
-    /* Check if we were called in user-mode */
-    if (PreviousMode != KernelMode)
-    {
-        /* That means we have a buffer to free */
+        /* Free captured buffer */
         if (SafeParams) ExFreePoolWithTag(SafeParams, TAG_ERR);
 
-        /* Enter SEH Block for return */
+        /* Enter SEH Block to return the response */
         _SEH2_TRY
         {
             /* Return the response */
@@ -674,6 +697,20 @@ NtRaiseHardError(IN NTSTATUS ErrorStatus,
     }
     else
     {
+        /* Reuse variable */
+        SafeParams = Parameters;
+
+        /*
+         * Call the Executive Function. It will probe
+         * and copy pointers to user-mode.
+         */
+        Status = ExRaiseHardError(ErrorStatus,
+                                  NumberOfParameters,
+                                  UnicodeStringParameterMask,
+                                  SafeParams,
+                                  ValidResponseOptions,
+                                  &SafeResponse);
+
         /* Return the response */
         *Response = SafeResponse;
     }
@@ -686,11 +723,11 @@ NtRaiseHardError(IN NTSTATUS ErrorStatus,
  * @name NtSetDefaultHardErrorPort
  * @implemented
  *
- * NtSetDefaultHardErrorPort is typically called only once. After call,
- * kernel set BOOLEAN flag named ExReadyForErrors to TRUE, and all other
- * tries to change default port are broken with STATUS_UNSUCCESSFUL error code
- * See: http://www.windowsitlibrary.com/Content/356/08/2.html
- *      http://undocumented.ntinternals.net/UserMode/Undocumented%20Functions/Error/NtSetDefaultHardErrorPort.html
+ * NtSetDefaultHardErrorPort is typically called only once. After the call,
+ * the kernel sets a BOOLEAN flag named ExReadyForErrors to TRUE, and all other
+ * attempts to change the default port fail with STATUS_UNSUCCESSFUL error code.
+ * See: http://undocumented.ntinternals.net/UserMode/Undocumented%20Functions/Error/NtSetDefaultHardErrorPort.html
+ *      https://web.archive.org/web/20070716133753/http://www.windowsitlibrary.com/Content/356/08/2.html
  *
  * @param PortHandle
  *        Handle to named port object
@@ -707,7 +744,9 @@ NtSetDefaultHardErrorPort(IN HANDLE PortHandle)
     KPROCESSOR_MODE PreviousMode = ExGetPreviousMode();
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
 
-    /* Check if we have the Privilege */
+    PAGED_CODE();
+
+    /* Check if we have the privileges */
     if (!SeSinglePrivilegeCheck(SeTcbPrivilege, PreviousMode))
     {
         DPRINT1("NtSetDefaultHardErrorPort: Caller requires "
@@ -718,7 +757,7 @@ NtSetDefaultHardErrorPort(IN HANDLE PortHandle)
     /* Only called once during bootup, make sure we weren't called yet */
     if (!ExReadyForErrors)
     {
-        /* Reference the port */
+        /* Reference the hard-error port */
         Status = ObReferenceObjectByHandle(PortHandle,
                                            0,
                                            LpcPortObjectType,
@@ -727,9 +766,11 @@ NtSetDefaultHardErrorPort(IN HANDLE PortHandle)
                                            NULL);
         if (NT_SUCCESS(Status))
         {
-            /* Save the data */
+            /* Keep also a reference to the process handling the hard errors */
             ExpDefaultErrorPortProcess = PsGetCurrentProcess();
+            ObReferenceObject(ExpDefaultErrorPortProcess);
             ExReadyForErrors = TRUE;
+            Status = STATUS_SUCCESS;
         }
     }
 

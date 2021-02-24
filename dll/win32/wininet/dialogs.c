@@ -18,12 +18,31 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "ws2tcpip.h"
+
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winuser.h"
+#include "winreg.h"
+#include "wininet.h"
+#include "winnetwk.h"
+#include "wine/debug.h"
+#include "winerror.h"
+#define NO_SHLWAPI_STREAM
+#include "shlwapi.h"
+#include "cryptuiapi.h"
+
 #include "internet.h"
 
-#include <winnetwk.h>
-#include <cryptuiapi.h>
+#include "wine/unicode.h"
+
+#include "resource.h"
 
 #define MAX_STRING_LEN 1024
+
+WINE_DEFAULT_DEBUG_CHANNEL(wininet);
 
 struct WININET_ErrorDlgParams
 {
@@ -116,12 +135,10 @@ static BOOL WININET_GetSetPassword( HWND hdlg, LPCWSTR szServer,
     if( bSet )
     {
         szUserPass[0] = 0;
-        GetWindowTextW( hUserItem, szUserPass, 
-                        (sizeof szUserPass-1)/sizeof(WCHAR) );
+        GetWindowTextW( hUserItem, szUserPass, ARRAY_SIZE( szUserPass ) - 1 );
         lstrcatW(szUserPass, szColon);
         u_len = strlenW( szUserPass );
-        GetWindowTextW( hPassItem, szUserPass+u_len, 
-                        (sizeof szUserPass)/sizeof(WCHAR)-u_len );
+        GetWindowTextW( hPassItem, szUserPass+u_len, ARRAY_SIZE( szUserPass ) - u_len );
 
         r_len = (strlenW( szResource ) + 1)*sizeof(WCHAR);
         u_len = (strlenW( szUserPass ) + 1)*sizeof(WCHAR);
@@ -199,7 +216,7 @@ static INT_PTR WINAPI WININET_ProxyPasswordDialog(
 {
     HWND hitem;
     struct WININET_ErrorDlgParams *params;
-    WCHAR szRealm[0x80], szServer[0x80];
+    WCHAR szRealm[0x80];
 
     if( uMsg == WM_INITDIALOG )
     {
@@ -211,7 +228,7 @@ static INT_PTR WINAPI WININET_ProxyPasswordDialog(
 
         /* extract the Realm from the proxy response and show it */
         if( WININET_GetAuthRealm( params->req->hdr.hInternet,
-                                  szRealm, sizeof szRealm/sizeof(WCHAR), TRUE ) )
+                                  szRealm, ARRAY_SIZE( szRealm ), TRUE ) )
         {
             hitem = GetDlgItem( hdlg, IDC_REALM );
             SetWindowTextW( hitem, szRealm );
@@ -220,7 +237,7 @@ static INT_PTR WINAPI WININET_ProxyPasswordDialog(
         hitem = GetDlgItem( hdlg, IDC_PROXY );
         SetWindowTextW( hitem, params->req->session->appInfo->proxy );
 
-        WININET_GetSetPassword( hdlg, szServer, szRealm, FALSE );
+        WININET_GetSetPassword( hdlg, params->req->session->appInfo->proxy, szRealm, FALSE );
 
         return TRUE;
     }
@@ -238,18 +255,18 @@ static INT_PTR WINAPI WININET_ProxyPasswordDialog(
             username[0] = 0;
             hitem = GetDlgItem( hdlg, IDC_USERNAME );
             if( hitem )
-                GetWindowTextW( hitem, username, sizeof username/sizeof(WCHAR) );
-            
+                GetWindowTextW( hitem, username, ARRAY_SIZE( username ));
+
             password[0] = 0;
             hitem = GetDlgItem( hdlg, IDC_PASSWORD );
             if( hitem )
-                GetWindowTextW( hitem, password, sizeof password/sizeof(WCHAR) );
+                GetWindowTextW( hitem, password, ARRAY_SIZE( password ));
 
             hitem = GetDlgItem( hdlg, IDC_SAVEPASSWORD );
             if( hitem &&
                 SendMessageW( hitem, BM_GETSTATE, 0, 0 ) &&
                 WININET_GetAuthRealm( params->req->hdr.hInternet,
-                                      szRealm, sizeof szRealm/sizeof(WCHAR), TRUE) )
+                                      szRealm, ARRAY_SIZE( szRealm ), TRUE) )
                 WININET_GetSetPassword( hdlg, params->req->session->appInfo->proxy, szRealm, TRUE );
             WININET_SetAuthorization( params->req, username, password, TRUE );
 
@@ -274,7 +291,7 @@ static INT_PTR WINAPI WININET_PasswordDialog(
 {
     HWND hitem;
     struct WININET_ErrorDlgParams *params;
-    WCHAR szRealm[0x80], szServer[0x80];
+    WCHAR szRealm[0x80];
 
     if( uMsg == WM_INITDIALOG )
     {
@@ -286,7 +303,7 @@ static INT_PTR WINAPI WININET_PasswordDialog(
 
         /* extract the Realm from the response and show it */
         if( WININET_GetAuthRealm( params->req->hdr.hInternet,
-                                  szRealm, sizeof szRealm/sizeof(WCHAR), FALSE ) )
+                                  szRealm, ARRAY_SIZE( szRealm ), FALSE ) )
         {
             hitem = GetDlgItem( hdlg, IDC_REALM );
             SetWindowTextW( hitem, szRealm );
@@ -295,7 +312,7 @@ static INT_PTR WINAPI WININET_PasswordDialog(
         hitem = GetDlgItem( hdlg, IDC_SERVER );
         SetWindowTextW( hitem, params->req->session->hostName );
 
-        WININET_GetSetPassword( hdlg, szServer, szRealm, FALSE );
+        WININET_GetSetPassword( hdlg, params->req->session->hostName, szRealm, FALSE );
 
         return TRUE;
     }
@@ -313,18 +330,18 @@ static INT_PTR WINAPI WININET_PasswordDialog(
             username[0] = 0;
             hitem = GetDlgItem( hdlg, IDC_USERNAME );
             if( hitem )
-                GetWindowTextW( hitem, username, sizeof username/sizeof(WCHAR) );
+                GetWindowTextW( hitem, username, ARRAY_SIZE( username ));
 
             password[0] = 0;
             hitem = GetDlgItem( hdlg, IDC_PASSWORD );
             if( hitem )
-                GetWindowTextW( hitem, password, sizeof password/sizeof(WCHAR) );
+                GetWindowTextW( hitem, password, ARRAY_SIZE( password ));
 
             hitem = GetDlgItem( hdlg, IDC_SAVEPASSWORD );
             if( hitem &&
                 SendMessageW( hitem, BM_GETSTATE, 0, 0 ) &&
                 WININET_GetAuthRealm( params->req->hdr.hInternet,
-                                      szRealm, sizeof szRealm/sizeof(WCHAR), FALSE ))
+                                      szRealm, ARRAY_SIZE( szRealm ), FALSE ))
             {
                 WININET_GetSetPassword( hdlg, params->req->session->hostName, szRealm, TRUE );
             }

@@ -144,7 +144,7 @@ StdMfg = "(スタンダード キーボード)"
 *PNP0303.DeviceDesc = "IBM PC/AT キーボード"
 
 [Strings.0415]
-ReactOS = "Ekipa ReactOS"
+ReactOS = "Zespół ReactOS"
 KeyboardClassName = "Klawiatury"
 HID.KeyboardDevice    = "Klawiatura HID"
 StdMfg = "(Klawiatury standardowe)"
@@ -197,4 +197,8 @@ LocationOverride = "приєднано до порту клавітури"
 KeyboardClassName = "Klaviatūros"
 StdMfg = "(Standartinė klaviatūra)"
 *PNP0303.DeviceDesc = "IBM PC/AT klaviatūra"
-﻿
+
+[Strings.0804]
+HID.KeyboardDevice    = "HID 键盘"
+StdMfg = "(标准键盘)"
+*PNP0303.DeviceDesc = "IBM PC/AT 键盘"

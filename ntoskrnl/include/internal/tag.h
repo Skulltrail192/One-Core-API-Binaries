@@ -108,7 +108,7 @@
 #define TAG_DRIVER_MEM  'MVRD' /* drvm */
 #define TAG_MODULE_OBJECT 'omlk' /* klmo - kernel ldr module object */
 #define TAG_LDR_WSTR 'swlk' /* klws - kernel ldr wide string */
-#define TAG_LDR_IMPORTS 'klim' /* klim - kernel ldr imports */
+#define TAG_LDR_IMPORTS 'milk' /* klim - kernel ldr imports */
 
 /* formerly located in lpc/connect */
 #define TAG_LPC_CONNECT_MESSAGE   'CCPL'
@@ -177,9 +177,9 @@
 #define TAG_QOS               'sQeS'
 #define TAG_LUID              'uLeS'
 #define TAG_PRIVILEGE_SET     'rPeS'
-#define TAG_TOKEN_USERS       'uKOT'
-#define TAG_TOKEN_PRIVILAGES  'pKOT'
-#define TAG_TOKEN_ACL         'kDOT'
+#define TAG_TOKEN_DYNAMIC     'dTeS'
+#define TAG_SE_HANDLES_TAB    'aHeS'
+#define TAG_SE_DIR_BUFFER     'bDeS'
 
 /* LPC Tags */
 #define TAG_LPC_MESSAGE   'McpL'
@@ -190,3 +190,6 @@
 
 #define TAG_WAIT            'tiaW'
 #define TAG_SEC_QUERY       'qSbO'
+
+/* FSTUB */
+#define TAG_FSTUB 'BtsF'

@@ -73,7 +73,7 @@ IsShimInfrastructureDisabled(VOID)
             if ((NT_SUCCESS(Status)) &&
                  (KeyInfo.Type == REG_DWORD) &&
                  (KeyInfo.DataLength == sizeof(ULONG)) &&
-                 (KeyInfo.Data[0] == TRUE))
+                 (KeyInfo.Data[0] != FALSE))
             {
                 /* It is, so disable shims! */
                 DisableShims = TRUE;
@@ -309,23 +309,29 @@ BasepCheckBadapp(IN HANDLE FileHandle,
 }
 
 /*
- * @unimplemented
+ * @implemented
  */
-VOID
+BOOL
 WINAPI
 BaseDumpAppcompatCache(VOID)
 {
-    STUB;
+    NTSTATUS Status;
+
+    Status = NtApphelpCacheControl(ApphelpCacheServiceDump, NULL);
+    return NT_SUCCESS(Status);
 }
 
 /*
- * @unimplemented
+ * @implemented
  */
-VOID
+BOOL
 WINAPI
 BaseFlushAppcompatCache(VOID)
 {
-    STUB;
+    NTSTATUS Status;
+
+    Status = NtApphelpCacheControl(ApphelpCacheServiceFlush, NULL);
+    return NT_SUCCESS(Status);
 }
 
 /*

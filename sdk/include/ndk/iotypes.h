@@ -314,6 +314,25 @@ typedef enum _FILE_INFORMATION_CLASS
     FileIdFullDirectoryInformation,
     FileValidDataLengthInformation,
     FileShortNameInformation,
+#if (NTDDI_VERSION >= NTDDI_VISTA)
+    FileIoCompletionNotificationInformation,
+    FileIoStatusBlockRangeInformation,
+    FileIoPriorityHintInformation,
+    FileSfioReserveInformation,
+    FileSfioVolumeInformation,
+    FileHardLinkInformation,
+    FileProcessIdsUsingFileInformation,
+    FileNormalizedNameInformation,
+    FileNetworkPhysicalNameInformation,
+#endif
+#if (NTDDI_VERSION >= NTDDI_WIN7)
+    FileIdGlobalTxDirectoryInformation,
+    FileIsRemoteDeviceInformation,
+    FileUnusedInformation,
+    FileNumaNodeInformation,
+    FileStandardLinkInformation,
+    FileRemoteProtocolInformation,
+#endif
     FileMaximumInformation
 } FILE_INFORMATION_CLASS, *PFILE_INFORMATION_CLASS;
 
@@ -437,6 +456,11 @@ typedef struct _FILE_EA_INFORMATION
 {
     ULONG EaSize;
 } FILE_EA_INFORMATION, *PFILE_EA_INFORMATION;
+
+typedef struct _FILE_ACCESS_INFORMATION
+{
+    ACCESS_MASK AccessFlags;
+} FILE_ACCESS_INFORMATION, *PFILE_ACCESS_INFORMATION;
 
 typedef struct _FILE_COMPRESSION_INFORMATION
 {
@@ -858,7 +882,7 @@ typedef struct _DEVICE_NODE
     LIST_ENTRY LegacyBusListEntry;
     ULONG DriverUnloadRetryCount;
     struct _DEVICE_NODE *PreviousParent;
-    ULONG DeletedChidren;
+    ULONG DeletedChildren;
 #if (NTDDI_VERSION >= NTDDI_LONGHORN)
     ULONG NumaNodeIndex;
 #endif
@@ -913,255 +937,7 @@ typedef struct _EXTENDED_DRIVER_EXTENSION
     PFS_FILTER_CALLBACKS FsFilterCallbacks;
 } EXTENDED_DRIVER_EXTENSION, *PEXTENDED_DRIVER_EXTENSION;
 
-//
-// Extended I/O Stack Location Structure
-//
-#if !defined(_ALPHA_)
-#include <pshpack4.h>
-#endif
-typedef struct _EXTENDED_IO_STACK_LOCATION
-{
-    UCHAR MajorFunction;
-    UCHAR MinorFunction;
-    UCHAR Flags;
-    UCHAR Control;
-    union
-    {
-        struct
-        {
-            PIO_SECURITY_CONTEXT SecurityContext;
-            ULONG Options;
-            USHORT FileAttributes;
-            USHORT ShareAccess;
-            ULONG EaLength;
-        } Create;
-        struct
-        {
-            PIO_SECURITY_CONTEXT SecurityContext;
-            ULONG Options;
-            USHORT Reserved;
-            USHORT ShareAccess;
-            struct _NAMED_PIPE_CREATE_PARAMETERS *Parameters;
-        } CreatePipe;
-        struct
-        {
-            PIO_SECURITY_CONTEXT SecurityContext;
-            ULONG Options;
-            USHORT Reserved;
-            USHORT ShareAccess;
-            struct _MAILSLOT_CREATE_PARAMETERS *Parameters;
-        } CreateMailslot;
-        struct
-        {
-            ULONG Length;
-            ULONG Key;
-            LARGE_INTEGER ByteOffset;
-        } Read;
-        struct
-        {
-            ULONG Length;
-            ULONG Key;
-            LARGE_INTEGER ByteOffset;
-        } Write;
-        struct
-        {
-            ULONG Length;
-            PUNICODE_STRING FileName;
-            FILE_INFORMATION_CLASS FileInformationClass;
-            ULONG FileIndex;
-        } QueryDirectory;
-        struct
-        {
-            ULONG Length;
-            ULONG CompletionFilter;
-        } NotifyDirectory;
-        struct
-        {
-            ULONG Length;
-            FILE_INFORMATION_CLASS FileInformationClass;
-        } QueryFile;
-        struct
-        {
-            ULONG Length;
-            FILE_INFORMATION_CLASS FileInformationClass;
-            PFILE_OBJECT  FileObject;
-            union
-            {
-                struct
-                {
-                    BOOLEAN ReplaceIfExists;
-                    BOOLEAN AdvanceOnly;
-                };
-                ULONG ClusterCount;
-                HANDLE DeleteHandle;
-            };
-        } SetFile;
-        struct
-        {
-            ULONG Length;
-            PVOID EaList;
-            ULONG EaListLength;
-            ULONG EaIndex;
-        } QueryEa;
-        struct
-        {
-            ULONG Length;
-        } SetEa;
-        struct
-        {
-            ULONG Length;
-            FS_INFORMATION_CLASS FsInformationClass;
-        } QueryVolume;
-        struct
-        {
-            ULONG Length;
-            FS_INFORMATION_CLASS FsInformationClass;
-        } SetVolume;
-        struct
-        {
-            ULONG OutputBufferLength;
-            ULONG InputBufferLength;
-            ULONG FsControlCode;
-            PVOID Type3InputBuffer;
-        } FileSystemControl;
-        struct
-        {
-            PLARGE_INTEGER Length;
-            ULONG Key;
-            LARGE_INTEGER ByteOffset;
-        } LockControl;
-        struct
-        {
-            ULONG OutputBufferLength;
-            ULONG InputBufferLength;
-            ULONG IoControlCode;
-            PVOID Type3InputBuffer;
-        } DeviceIoControl;
-        struct
-        {
-            SECURITY_INFORMATION SecurityInformation;
-            ULONG POINTER_ALIGNMENT Length;
-        } QuerySecurity;
-        struct
-        {
-            SECURITY_INFORMATION SecurityInformation;
-            PSECURITY_DESCRIPTOR SecurityDescriptor;
-        } SetSecurity;
-        struct
-        {
-            PVPB Vpb;
-            PDEVICE_OBJECT DeviceObject;
-        } MountVolume;
-        struct
-        {
-            PVPB Vpb;
-            PDEVICE_OBJECT DeviceObject;
-        } VerifyVolume;
-        struct
-        {
-            struct _SCSI_REQUEST_BLOCK *Srb;
-        } Scsi;
-        struct
-        {
-            ULONG Length;
-            PSID StartSid;
-            struct _FILE_GET_QUOTA_INFORMATION *SidList;
-            ULONG SidListLength;
-        } QueryQuota;
-        struct
-        {
-            ULONG Length;
-        } SetQuota;
-        struct
-        {
-            DEVICE_RELATION_TYPE Type;
-        } QueryDeviceRelations;
-        struct
-        {
-            CONST GUID *InterfaceType;
-            USHORT Size;
-            USHORT Version;
-            PINTERFACE Interface;
-            PVOID InterfaceSpecificData;
-        } QueryInterface;
-        struct
-        {
-            PDEVICE_CAPABILITIES Capabilities;
-        } DeviceCapabilities;
-        struct
-        {
-            PIO_RESOURCE_REQUIREMENTS_LIST IoResourceRequirementList;
-        } FilterResourceRequirements;
-        struct
-        {
-            ULONG WhichSpace;
-            PVOID Buffer;
-            ULONG Offset;
-            ULONG Length;
-        } ReadWriteConfig;
-        struct
-        {
-            BOOLEAN Lock;
-        } SetLock;
-        struct
-        {
-            BUS_QUERY_ID_TYPE IdType;
-        } QueryId;
-        struct
-        {
-            DEVICE_TEXT_TYPE DeviceTextType;
-            LCID LocaleId;
-        } QueryDeviceText;
-        struct
-        {
-            BOOLEAN InPath;
-            BOOLEAN Reserved[3];
-            DEVICE_USAGE_NOTIFICATION_TYPE Type;
-        } UsageNotification;
-        struct
-        {
-            SYSTEM_POWER_STATE  PowerState;
-        } WaitWake;
-        struct
-        {
-            PPOWER_SEQUENCE  PowerSequence;
-        } PowerSequence;
-        struct
-        {
-            ULONG SystemContext;
-            POWER_STATE_TYPE Type;
-            POWER_STATE State;
-            POWER_ACTION ShutdownType;
-        } Power;
-        struct
-        {
-            PCM_RESOURCE_LIST AllocatedResources;
-            PCM_RESOURCE_LIST AllocatedResourcesTranslated;
-        } StartDevice;
-        struct
-        {
-            ULONG_PTR ProviderId;
-            PVOID DataPath;
-            ULONG BufferSize;
-            PVOID Buffer;
-        } WMI;
-        struct
-        {
-            PVOID Argument1;
-            PVOID Argument2;
-            PVOID Argument3;
-            PVOID Argument4;
-        } Others;
-    } Parameters;
-    PDEVICE_OBJECT DeviceObject;
-    PFILE_OBJECT FileObject;
-    PIO_COMPLETION_ROUTINE CompletionRoutine;
-    PVOID Context;
-} EXTENDED_IO_STACK_LOCATION, *PEXTENDED_IO_STACK_LOCATION;
-#if !defined(_ALPHA_)
-#include <poppack.h>
-#endif
-#endif
+#endif // !NTOS_MODE_USER
 
 //
 // Firmware Boot File Path
@@ -1255,8 +1031,6 @@ typedef VOID
     CTL_CODE(FILE_DEVICE_NAMED_PIPE, 8, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define FSCTL_PIPE_QUERY_CLIENT_PROCESS \
     CTL_CODE(FILE_DEVICE_NAMED_PIPE, 9, METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define FSCTL_PIPE_GET_CONNECTION_ATTRIBUTE \
-	CTL_CODE(FILE_DEVICE_NAMED_PIPE, 12, METHOD_BUFFERED, FILE_ANY_ACCESS)	
 #define FSCTL_PIPE_INTERNAL_READ        \
     CTL_CODE(FILE_DEVICE_NAMED_PIPE, 2045, METHOD_BUFFERED, FILE_READ_DATA)
 #define FSCTL_PIPE_INTERNAL_WRITE       \
@@ -1291,6 +1065,38 @@ typedef VOID
     CTL_CODE(FILE_DEVICE_TAPE, 9, METHOD_BUFFERED, FILE_READ_ACCESS)
 #define IOCTL_TAPE_CREATE_PARTITION     \
     CTL_CODE(FILE_DEVICE_TAPE, 10, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+
+//
+// Reparse points
+//
+
+#define SYMLINK_FLAG_RELATIVE   1
+
+typedef struct _REPARSE_DATA_BUFFER {
+  ULONG ReparseTag;
+  USHORT ReparseDataLength;
+  USHORT Reserved;
+  _ANONYMOUS_UNION union {
+    struct {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      ULONG Flags;
+      WCHAR PathBuffer[1];
+    } SymbolicLinkReparseBuffer;
+    struct {
+      USHORT SubstituteNameOffset;
+      USHORT SubstituteNameLength;
+      USHORT PrintNameOffset;
+      USHORT PrintNameLength;
+      WCHAR PathBuffer[1];
+    } MountPointReparseBuffer;
+    struct {
+      UCHAR DataBuffer[1];
+    } GenericReparseBuffer;
+  } DUMMYUNIONNAME;
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 
 #endif // NTOS_MODE_USER
 

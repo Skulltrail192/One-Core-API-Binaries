@@ -1,8 +1,0 @@
-add_subdirectory(api-sets)
-add_subdirectory(aplications)
-add_subdirectory(base)
-add_subdirectory(dependencies)
-add_subdirectory(drivers)
-add_subdirectory(ext-sets)
-add_subdirectory(includes)
-add_subdirectory(new-dlls)

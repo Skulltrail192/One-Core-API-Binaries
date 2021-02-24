@@ -74,7 +74,7 @@ BEGIN
     LTEXT "Kein Proxy", -1, 27, 175, 64, 10
     EDITTEXT IDC_NO_PROXY_FOR, 90, 175, 147, 12, ES_AUTOHSCROLL | WS_DISABLED
     PUSHBUTTON "Vorgabe", IDC_DEFAULT_SETTINGS, 8, 195, 60, 14
-    PUSHBUTTON "OK", IDOK, 116, 195, 60, 14
+    DEFPUSHBUTTON "OK", IDOK, 116, 195, 60, 14
     PUSHBUTTON "Abbrechen", IDCANCEL, 181, 195, 60, 14
 END
 
@@ -83,16 +83,16 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYS
 CAPTION "Programminstallation"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "...", IDC_INSTALL_TEXT, 4, 5, 209, 35
+    LTEXT "…", IDC_INSTALL_TEXT, 4, 5, 209, 35
     AUTORADIOBUTTON "&Installation von einem Datenträger (CD oder DVD)", IDC_CD_INSTALL, 10, 46, 197, 11, WS_GROUP
     AUTORADIOBUTTON "Herunterla&den und installieren", IDC_DOWNLOAD_INSTALL, 10, 59, 197, 11, NOT WS_TABSTOP
-    PUSHBUTTON "OK", IDOK, 86, 78, 60, 14
+    DEFPUSHBUTTON "OK", IDOK, 86, 78, 60, 14
     PUSHBUTTON "Abbrechen", IDCANCEL, 150, 78, 60, 14
 END
 
 IDD_DOWNLOAD_DIALOG DIALOGEX 0, 0, 220, 72
 STYLE DS_SHELLFONT | DS_CENTER | WS_BORDER | WS_CAPTION | WS_POPUP | WS_SYSMENU | WS_VISIBLE
-CAPTION "Herunterladen..."
+CAPTION "Download von %ls…"
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL "Progress1", IDC_DOWNLOAD_PROGRESS, "msctls_progress32", WS_BORDER | PBS_SMOOTH, 10, 10, 200, 12
@@ -105,9 +105,9 @@ STYLE DS_SHELLFONT | WS_BORDER | WS_DLGFRAME | WS_SYSMENU | DS_MODALFRAME
 CAPTION "Über"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "ReactOS-Anwendungsmanager\nCopyright (C) 2009\nby Dmitry Chapyshev (dmitry@reactos.org)", IDC_STATIC, 48, 7, 130, 39
-    PUSHBUTTON "Schließen", IDOK, 133, 46, 50, 14
     ICON IDI_MAIN, IDC_STATIC, 10, 10, 7, 30
+    LTEXT "ReactOS-Anwendungsmanager\nCopyright (C) 2009\nby Dmitry Chapyshev (dmitry@reactos.org)", IDC_STATIC, 48, 7, 130, 39
+    DEFPUSHBUTTON "Schließen", IDOK, 133, 46, 50, 14
 END
 
 STRINGTABLE
@@ -152,11 +152,13 @@ END
 STRINGTABLE
 BEGIN
     IDS_AINFO_VERSION "\nVersion: "
+    IDS_AINFO_AVAILABLEVERSION "\nVerfügbare Version: "
     IDS_AINFO_DESCRIPTION "\nBeschreibung: "
     IDS_AINFO_SIZE "\nGröße: "
     IDS_AINFO_URLSITE "\nHomepage: "
     IDS_AINFO_LICENSE "\nLizenz: "
     IDS_AINFO_URLDOWNLOAD "\nHerunterladen: "
+    IDS_AINFO_LANGUAGES "\nSprachen: "
 END
 
 STRINGTABLE
@@ -176,19 +178,20 @@ BEGIN
     IDS_CAT_SCIENCE "Wissenschaft"
     IDS_CAT_TOOLS "Werkzeuge"
     IDS_CAT_VIDEO "Video"
+    IDS_CAT_THEMES "Themes"
 END
 
 STRINGTABLE
 BEGIN
     IDS_APPTITLE "ReactOS-Anwendungsmanager"
-    IDS_SEARCH_TEXT "Suche..."
+    IDS_SEARCH_TEXT "Suche…"
     IDS_INSTALL "Installieren"
     IDS_UNINSTALL "Deinstallieren"
     IDS_MODIFY "Ändern"
-    IDS_APPS_COUNT "Anzahl der Anwendungen: %d"
+    IDS_APPS_COUNT "Anzahl der Anwendungen: %d, ausgewählt: %d"
     IDS_WELCOME_TITLE "Willkommen im ReactOS-Anwendungsmanager!\n\n"
     IDS_WELCOME_TEXT "Wählen Sie links eine Kategorie und dann eine Anwendung um sie zu installieren oder zu deinstallieren.\nReactOS-Webseite: "
-    IDS_WELCOME_URL "http://www.reactos.org"
+    IDS_WELCOME_URL "https://reactos.org/"
     IDS_INSTALLED "Installiert"
     IDS_AVAILABLEFORINST "Zur Installation verfügbar"
     IDS_UPDATES "Aktualisierungen"
@@ -200,9 +203,49 @@ BEGIN
     IDS_UNABLE_TO_DOWNLOAD "Paket konnte nicht geladen werden! Addresse wurde nicht gefunden!"
     IDS_UNABLE_TO_DOWNLOAD2 "Paket konnte nicht geladen werden! Prüfen Sie Ihre Internetverbindung!"
     IDS_UNABLE_TO_REMOVE "Konnte die Daten nicht aus der Registry löschen!"
-    IDS_CERT_DOES_NOT_MATCH "Überprüfung des SSL-Zertifikats fehlgeschlagen."
-    IDS_INTEG_CHECK_TITLE "Verifying package integrity..."
-    IDS_INTEG_CHECK_FAIL "The package did not pass the integrity check, it may have been corrupted or tampered with during downloading. Running the software is not recommended."
-    IDS_INTERRUPTED_DOWNLOAD "The download was interrupted. Check connection to Internet."
-    IDS_UNABLE_TO_WRITE "Unable to write to disk. Disk may be at capacity."
+    IDS_UNABLE_TO_INSTALL "Paket konnte nicht installiert werden!"
+    IDS_UNABLE_TO_QUERY_CERT "Unable to retrieve certificate info.\n\nDo you want to continue anyway?"
+    IDS_INTEG_CHECK_TITLE "Integritätsprüfung…"
+    IDS_INTEG_CHECK_FAIL "Das Paket hat die Integritätsprüfung nicht bestanden. Mögliche Ursachen sind Übertragungsfehler, Datenbankfehler oder Manipulation durch einen Angreifer. Sie sollten die Software nicht ausführen."
+    IDS_INTERRUPTED_DOWNLOAD "Übertragung unterbrochen. Prüfen Sie Ihre Internetverbindung!"
+    IDS_UNABLE_TO_WRITE "Schreibfehler. Prüfen Sie die Kapazität des Datenträgers!"
+    IDS_SELECT_ALL "Alle/Keine"
+    IDS_INSTALL_SELECTED "Ausgewählte Installieren"
+    IDS_SELECTEDFORINST "Zur Installation ausgewählt"
+    IDS_MISMATCH_CERT_INFO "The certificate used is unknown:\nSubject: %s\nIssuer: %s\nDo you want to continue anyway?"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_STATUS_INSTALLED "Installiert"
+    IDS_STATUS_NOTINSTALLED "Nicht installiert"
+    IDS_STATUS_DOWNLOADED "Heruntergeladen"
+    IDS_STATUS_UPDATE_AVAILABLE "Aktualisierung verfügbar"
+    IDS_STATUS_DOWNLOADING "Lädt herunter…"
+    IDS_STATUS_INSTALLING "Installiert…"
+    IDS_STATUS_WAITING "Installation anstehend…"
+    IDS_STATUS_FINISHED "Abgeschlossen"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_LICENSE_OPENSOURCE "Open Source"
+    IDS_LICENSE_FREEWARE "Freeware"
+    IDS_LICENSE_TRIAL "Trial/Demo"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_LANGUAGE_AVAILABLE_TRANSLATION "deutsch"
+    IDS_LANGUAGE_NO_TRANSLATION "anderssprachig"
+    IDS_LANGUAGE_ENGLISH_TRANSLATION "englisch"
+    IDS_LANGUAGE_SINGLE "einsprachig"
+    IDS_LANGUAGE_MORE_PLACEHOLDER " (+%d mehr)"
+    IDS_LANGUAGE_AVAILABLE_PLACEHOLDER " (+%d verfügbar)"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_DL_DIALOG_DB_DISP "Anwendungsdatenbank"
+    IDS_DL_DIALOG_DB_DOWNLOAD_DISP "Datenbank-Aktualisierung…"
 END

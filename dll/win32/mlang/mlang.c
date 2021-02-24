@@ -21,32 +21,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-
-#include <config.h>
 
 #include <stdarg.h>
-//#include <stdio.h>
+#include <stdio.h>
 
 #define COBJMACROS
 
-#include <windef.h>
-#include <winbase.h>
-#include <wingdi.h>
-//#include "winuser.h"
-#include <ole2.h>
-//#include "objbase.h"
-#include <rpcproxy.h>
-#include <mlang.h>
-#include <mimeole.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "ole2.h"
+#include "objbase.h"
+#include "rpcproxy.h"
+#include "mlang.h"
+#include "mimeole.h"
 
-#include <wine/unicode.h>
-#include <wine/debug.h>
+#include "wine/debug.h"
+#include "wine/list.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(mlang);
 
-//#include "initguid.h"
+#include "initguid.h"
 
 static HRESULT MultiLanguage_create(IUnknown *pUnkOuter, LPVOID *ppObj);
 static HRESULT MLangConvertCharset_create(IUnknown *outer, void **obj);
@@ -121,13 +117,33 @@ static const MIME_CP_INFO baltic_cp[] =
 };
 static const MIME_CP_INFO chinese_simplified_cp[] =
 {
+    { "Chinese Simplified (Auto-Select)",
+      50936, MIMECONTF_IMPORT | MIMECONTF_VALID | MIMECONTF_VALID_NLS |
+             MIMECONTF_MIME_LATEST,
+      "_autodetect_chs", "_autodetect_chs", "_autodetect_chs" },
     { "Chinese Simplified (GB2312)",
       936, MIMECONTF_MAILNEWS | MIMECONTF_BROWSER | MIMECONTF_MINIMAL |
-           MIMECONTF_IMPORT | MIMECONTF_SAVABLE_MAILNEWS |
+           MIMECONTF_IMPORT | MIMECONTF_SAVABLE_MAILNEWS | MIMECONTF_VALID |
            MIMECONTF_SAVABLE_BROWSER | MIMECONTF_EXPORT | MIMECONTF_VALID_NLS |
            MIMECONTF_MIME_IE4 | MIMECONTF_MIME_LATEST,
       "gb2312", "gb2312", "gb2312" },
-      { "Chinese Simplified (GBK)",
+    { "Chinese Simplified (GB2312-80)",
+      20936, MIMECONTF_IMPORT | MIMECONTF_EXPORT | MIMECONTF_VALID |
+             MIMECONTF_VALID_NLS | MIMECONTF_MIME_LATEST,
+      "x-cp20936", "x-cp20936", "x-cp20936" },
+    { "Chinese Simplified (HZ)",
+      52936, MIMECONTF_MAILNEWS | MIMECONTF_BROWSER | MIMECONTF_IMPORT |
+             MIMECONTF_SAVABLE_MAILNEWS | MIMECONTF_SAVABLE_BROWSER | MIMECONTF_EXPORT |
+             MIMECONTF_VALID | MIMECONTF_VALID_NLS | MIMECONTF_MIME_IE4 |
+             MIMECONTF_MIME_LATEST,
+      "hz-gb-2312", "hz-gb-2312", "hz-gb-2312" },
+    { "Chinese Simplified (GB18030)",
+      54936, MIMECONTF_MAILNEWS | MIMECONTF_BROWSER | MIMECONTF_MINIMAL |
+             MIMECONTF_IMPORT | MIMECONTF_SAVABLE_MAILNEWS | MIMECONTF_SAVABLE_BROWSER |
+             MIMECONTF_EXPORT | MIMECONTF_VALID | MIMECONTF_VALID_NLS |
+             MIMECONTF_MIME_LATEST,
+      "GB18030", "GB18030", "GB18030" },
+    { "Chinese Simplified (GBK)",
       936, MIMECONTF_MAILNEWS | MIMECONTF_BROWSER | MIMECONTF_MINIMAL |
            MIMECONTF_IMPORT | MIMECONTF_SAVABLE_MAILNEWS |
            MIMECONTF_SAVABLE_BROWSER | MIMECONTF_EXPORT | MIMECONTF_VALID_NLS |
@@ -136,12 +152,20 @@ static const MIME_CP_INFO chinese_simplified_cp[] =
 };
 static const MIME_CP_INFO chinese_traditional_cp[] =
 {
+    { "Chinese Traditional (Auto-Select)",
+      50950, MIMECONTF_IMPORT | MIMECONTF_VALID | MIMECONTF_VALID_NLS |
+             MIMECONTF_MIME_LATEST,
+      "_autodetect_cht", "_autodetect_cht", "_autodetect_cht" },
     { "Chinese Traditional (Big5)",
       950, MIMECONTF_MAILNEWS | MIMECONTF_BROWSER | MIMECONTF_MINIMAL |
            MIMECONTF_IMPORT | MIMECONTF_SAVABLE_MAILNEWS |
-           MIMECONTF_SAVABLE_BROWSER | MIMECONTF_EXPORT |
+           MIMECONTF_SAVABLE_BROWSER | MIMECONTF_EXPORT | MIMECONTF_VALID |
            MIMECONTF_VALID_NLS | MIMECONTF_MIME_IE4 | MIMECONTF_MIME_LATEST,
-      "big5", "big5", "big5" }
+      "big5", "big5", "big5" },
+    { "Chinese Traditional (CNS)",
+      20000, MIMECONTF_IMPORT | MIMECONTF_EXPORT | MIMECONTF_VALID |
+             MIMECONTF_VALID_NLS | MIMECONTF_MIME_LATEST,
+      "x-Chinese-CNS", "x-Chinese-CNS", "x-Chinese-CNS" }
 };
 static const MIME_CP_INFO central_european_cp[] =
 {
@@ -468,37 +492,55 @@ static const struct mlang_data
     SCRIPT_ID sid;
 } mlang_data[] =
 {
-    { "Arabic",1256,sizeof(arabic_cp)/sizeof(arabic_cp[0]),arabic_cp,
-      "Courier","Arial", sidArabic }, /* FIXME */
-    { "Baltic",1257,sizeof(baltic_cp)/sizeof(baltic_cp[0]),baltic_cp,
-      "Courier","Arial", sidAsciiLatin }, /* FIXME */
-    { "Chinese Simplified",936,sizeof(chinese_simplified_cp)/sizeof(chinese_simplified_cp[0]),chinese_simplified_cp,
-      "Courier","Arial", sidHan }, /* FIXME */
-    { "Chinese Traditional",950,sizeof(chinese_traditional_cp)/sizeof(chinese_traditional_cp[0]),chinese_traditional_cp,
-      "Courier","Arial", sidBopomofo }, /* FIXME */
-    { "Central European",1250,sizeof(central_european_cp)/sizeof(central_european_cp[0]),central_european_cp,
-      "Courier","Arial", sidAsciiLatin }, /* FIXME */
-    { "Cyrillic",1251,sizeof(cyrillic_cp)/sizeof(cyrillic_cp[0]),cyrillic_cp,
-      "Courier","Arial", sidCyrillic }, /* FIXME */
-    { "Greek",1253,sizeof(greek_cp)/sizeof(greek_cp[0]),greek_cp,
-      "Courier","Arial", sidGreek }, /* FIXME */
-    { "Hebrew",1255,sizeof(hebrew_cp)/sizeof(hebrew_cp[0]),hebrew_cp,
-      "Courier","Arial", sidHebrew }, /* FIXME */
-    { "Japanese",932,sizeof(japanese_cp)/sizeof(japanese_cp[0]),japanese_cp,
+    { "Arabic", 1256, ARRAY_SIZE(arabic_cp), arabic_cp,
+      "Simplified Arabic Fixed","Simplified Arabic", sidArabic },
+    { "Baltic",  1257, ARRAY_SIZE(baltic_cp), baltic_cp,
+      "Courier New","Arial", sidAsciiLatin },
+    { "Chinese Simplified", 936, ARRAY_SIZE(chinese_simplified_cp), chinese_simplified_cp,
+      "Simsun","Simsun", sidHan },
+    { "Chinese Traditional", 950, ARRAY_SIZE(chinese_traditional_cp), chinese_traditional_cp,
+      "MingLiu","New MingLiu", sidBopomofo },
+    { "Central European", 1250, ARRAY_SIZE(central_european_cp), central_european_cp,
+      "Courier New","Arial", sidAsciiLatin },
+    { "Cyrillic", 1251, ARRAY_SIZE(cyrillic_cp), cyrillic_cp,
+      "Courier New","Arial", sidCyrillic },
+    { "Greek", 1253, ARRAY_SIZE(greek_cp), greek_cp,
+      "Courier New","Arial", sidGreek },
+    { "Hebrew", 1255, ARRAY_SIZE(hebrew_cp), hebrew_cp,
+      "Miriam Fixed","David", sidHebrew },
+    { "Japanese", 932, ARRAY_SIZE(japanese_cp), japanese_cp,
       "MS Gothic","MS PGothic", sidKana },
-    { "Korean",949,sizeof(korean_cp)/sizeof(korean_cp[0]),korean_cp,
-      "Courier","Arial", sidHangul }, /* FIXME */
-    { "Thai",874,sizeof(thai_cp)/sizeof(thai_cp[0]),thai_cp,
-      "Courier","Arial", sidThai }, /* FIXME */
-    { "Turkish",1254,sizeof(turkish_cp)/sizeof(turkish_cp[0]),turkish_cp,
-      "Courier","Arial", sidAsciiLatin }, /* FIXME */
-    { "Vietnamese",1258,sizeof(vietnamese_cp)/sizeof(vietnamese_cp[0]),vietnamese_cp,
-      "Courier","Arial", sidAsciiLatin }, /* FIXME */
-    { "Western European",1252,sizeof(western_cp)/sizeof(western_cp[0]),western_cp,
-      "Courier","Arial", sidAsciiLatin }, /* FIXME */
-    { "Unicode",CP_UNICODE,sizeof(unicode_cp)/sizeof(unicode_cp[0]),unicode_cp,
-      "Courier","Arial" } /* FIXME */
+    { "Korean", 949, ARRAY_SIZE(korean_cp), korean_cp,
+      "GulimChe","Gulim", sidHangul },
+    { "Thai", 874, ARRAY_SIZE(thai_cp), thai_cp,
+      "Tahoma","Tahoma", sidThai },
+    { "Turkish", 1254, ARRAY_SIZE(turkish_cp), turkish_cp,
+      "Courier New","Arial", sidAsciiLatin },
+    { "Vietnamese", 1258, ARRAY_SIZE(vietnamese_cp), vietnamese_cp,
+      "Courier New","Arial", sidAsciiLatin },
+    { "Western European", 1252, ARRAY_SIZE(western_cp), western_cp,
+      "Courier New","Arial", sidAsciiLatin },
+    { "Unicode", CP_UNICODE, ARRAY_SIZE(unicode_cp), unicode_cp,
+      "Courier New","Arial" }
 };
+
+struct font_list
+{
+    struct list list_entry;
+    HFONT base_font;
+    HFONT font;
+    UINT charset;
+};
+
+static struct list font_cache = LIST_INIT(font_cache);
+static CRITICAL_SECTION font_cache_critical;
+static CRITICAL_SECTION_DEBUG font_cache_critical_debug =
+{
+    0, 0, &font_cache_critical,
+    { &font_cache_critical_debug.ProcessLocksList, &font_cache_critical_debug.ProcessLocksList },
+    0, 0, { (DWORD_PTR)(__FILE__ ": font_cache_critical") }
+};
+static CRITICAL_SECTION font_cache_critical = { &font_cache_critical_debug, -1, 0, 0, 0, 0 };
 
 static void fill_cp_info(const struct mlang_data *ml_data, UINT index, MIMECPINFO *mime_cp_info);
 
@@ -1119,7 +1161,7 @@ static HRESULT GetFamilyCodePage(
 
     if (!puiFamilyCodePage) return S_FALSE;
 
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         for (n = 0; n < mlang_data[i].number_of_cp; n++)
         {
@@ -1239,12 +1281,12 @@ static HRESULT lcid_from_rfc1766(IEnumRfc1766 *iface, LCID *lcid, LPCWSTR rfc176
 
     while (IEnumRfc1766_Next(iface, 1, &info, &num) == S_OK)
     {
-        if (!strcmpiW(info.wszRfc1766, rfc1766))
+        if (!wcsicmp(info.wszRfc1766, rfc1766))
         {
             *lcid = info.lcid;
             return S_OK;
         }
-        if (strlenW(rfc1766) == 2 && !memcmp(info.wszRfc1766, rfc1766, 2 * sizeof(WCHAR)))
+        if (lstrlenW(rfc1766) == 2 && !memcmp(info.wszRfc1766, rfc1766, 2 * sizeof(WCHAR)))
         {
             *lcid = PRIMARYLANGID(info.lcid);
             return S_OK;
@@ -1285,6 +1327,119 @@ HRESULT WINAPI Rfc1766ToLcidA(LCID *lcid, LPCSTR rfc1766A)
     rfc1766W[MAX_RFC1766_NAME] = 0;
 
     return Rfc1766ToLcidW(lcid, rfc1766W);
+}
+
+static HRESULT map_font(HDC hdc, DWORD codepages, HFONT src_font, HFONT *dst_font)
+{
+    struct font_list *font_list_entry;
+    CHARSETINFO charset_info;
+    HFONT new_font, old_font;
+    LOGFONTW font_attr;
+    DWORD mask, Csb[2];
+    BOOL found_cached;
+    UINT charset;
+    BOOL ret;
+    UINT i;
+
+    if (hdc == NULL || src_font == NULL) return E_FAIL;
+
+    for (i = 0; i < 32; i++)
+    {
+        mask = (DWORD)(1 << i);
+        if (codepages & mask)
+        {
+            Csb[0] = mask;
+            Csb[1] = 0x0;
+            ret = TranslateCharsetInfo(Csb, &charset_info, TCI_SRCFONTSIG);
+            if (!ret) continue;
+
+            /* use cached font if possible */
+            found_cached = FALSE;
+            EnterCriticalSection(&font_cache_critical);
+            LIST_FOR_EACH_ENTRY(font_list_entry, &font_cache, struct font_list, list_entry)
+            {
+                if (font_list_entry->charset == charset_info.ciCharset &&
+                    font_list_entry->base_font == src_font)
+                {
+                    if (dst_font != NULL)
+                        *dst_font = font_list_entry->font;
+                    found_cached = TRUE;
+                }
+            }
+            LeaveCriticalSection(&font_cache_critical);
+            if (found_cached) return S_OK;
+
+            GetObjectW(src_font, sizeof(font_attr), &font_attr);
+            font_attr.lfCharSet = (BYTE)charset_info.ciCharset;
+            font_attr.lfWidth = 0;
+            font_attr.lfFaceName[0] = 0;
+            new_font = CreateFontIndirectW(&font_attr);
+            if (new_font == NULL) continue;
+
+            old_font = SelectObject(hdc, new_font);
+            charset = GetTextCharset(hdc);
+            SelectObject(hdc, old_font);
+            if (charset == charset_info.ciCharset)
+            {
+                font_list_entry = HeapAlloc(GetProcessHeap(), 0, sizeof(*font_list_entry));
+                if (font_list_entry == NULL) return E_OUTOFMEMORY;
+
+                font_list_entry->base_font = src_font;
+                font_list_entry->font = new_font;
+                font_list_entry->charset = charset;
+
+                EnterCriticalSection(&font_cache_critical);
+                list_add_tail(&font_cache, &font_list_entry->list_entry);
+                LeaveCriticalSection(&font_cache_critical);
+
+                if (dst_font != NULL)
+                    *dst_font = new_font;
+                return S_OK;
+            }
+        }
+    }
+
+    return E_FAIL;
+}
+
+static HRESULT release_font(HFONT font)
+{
+    struct font_list *font_list_entry;
+    HRESULT hr;
+
+    hr = E_FAIL;
+    EnterCriticalSection(&font_cache_critical);
+    LIST_FOR_EACH_ENTRY(font_list_entry, &font_cache, struct font_list, list_entry)
+    {
+        if (font_list_entry->font == font)
+        {
+            list_remove(&font_list_entry->list_entry);
+            DeleteObject(font);
+            HeapFree(GetProcessHeap(), 0, font_list_entry);
+            hr = S_OK;
+            break;
+        }
+    }
+    LeaveCriticalSection(&font_cache_critical);
+
+    return hr;
+}
+
+static HRESULT clear_font_cache(void)
+{
+    struct font_list *font_list_entry;
+    struct font_list *font_list_entry2;
+
+    EnterCriticalSection(&font_cache_critical);
+    LIST_FOR_EACH_ENTRY_SAFE(font_list_entry, font_list_entry2, &font_cache, struct font_list, list_entry)
+    {
+        list_remove(&font_list_entry->list_entry);
+        DeleteObject(font_list_entry->font);
+        HeapFree(GetProcessHeap(), 0, font_list_entry);
+    }
+    LeaveCriticalSection(&font_cache_critical);
+
+    return S_OK;
 }
 
 /******************************************************************************
@@ -1403,13 +1558,13 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID iid, LPVOID *ppv)
 	 && ! IsEqualGUID( &IID_IUnknown, iid) )
 	return E_NOINTERFACE;
 
-    for (i=0; i < sizeof(object_creation)/sizeof(object_creation[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(object_creation); i++)
     {
 	if (IsEqualGUID(object_creation[i].clsid, rclsid))
 	    break;
     }
 
-    if (i == sizeof(object_creation)/sizeof(object_creation[0]))
+    if (i == ARRAY_SIZE(object_creation))
     {
 	FIXME("%s: no class found.\n", debugstr_guid(rclsid));
 	return CLASS_E_CLASSNOTAVAILABLE;
@@ -1610,7 +1765,7 @@ static HRESULT EnumCodePage_create( MLang_impl* mlang, DWORD grfFlags,
     ecp->ref = 1;
     ecp->pos = 0;
     ecp->total = 0;
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         for (n = 0; n < mlang_data[i].number_of_cp; n++)
         {
@@ -1623,7 +1778,7 @@ static HRESULT EnumCodePage_create( MLang_impl* mlang, DWORD grfFlags,
                             sizeof(MIMECPINFO) * ecp->total);
     cpinfo = ecp->cpinfo;
 
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         for (n = 0; n < mlang_data[i].number_of_cp; n++)
         {
@@ -1787,7 +1942,7 @@ static HRESULT EnumScript_create( MLang_impl* mlang, DWORD dwFlags,
     es->ref = 1;
     es->pos = 0;
     /* do not enumerate unicode flavours */
-    es->total = sizeof(mlang_data)/sizeof(mlang_data[0]) - 1;
+    es->total = ARRAY_SIZE(mlang_data) - 1;
     es->script_info = HeapAlloc(GetProcessHeap(), 0, sizeof(SCRIPTINFO) * es->total);
 
     for (i = 0; i < es->total; i++)
@@ -1898,23 +2053,26 @@ static HRESULT WINAPI fnIMLangFontLink_MapFont(
         HFONT hSrcFont,
         HFONT* phDestFont)
 {
-    FIXME("\n");
-    return E_NOTIMPL;
+    TRACE("(%p)->%p %08x %p %p\n",iface, hDC, dwCodePages, hSrcFont, phDestFont);
+
+    return map_font(hDC, dwCodePages, hSrcFont, phDestFont);
 }
 
 static HRESULT WINAPI fnIMLangFontLink_ReleaseFont(
         IMLangFontLink* iface,
         HFONT hFont)
 {
-    FIXME("\n");
-    return E_NOTIMPL;
+    TRACE("(%p)->%p\n",iface, hFont);
+
+    return release_font(hFont);
 }
 
 static HRESULT WINAPI fnIMLangFontLink_ResetFontMapping(
         IMLangFontLink* iface)
 {
-    FIXME("\n");
-    return E_NOTIMPL;
+    TRACE("(%p)\n",iface);
+
+    return clear_font_cache();
 }
 
 
@@ -1980,7 +2138,7 @@ static HRESULT WINAPI fnIMultiLanguage_GetCodePageInfo(
 
     TRACE("%p, %u, %p\n", This, uiCodePage, pCodePageInfo);
 
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         for (n = 0; n < mlang_data[i].number_of_cp; n++)
         {
@@ -2266,7 +2424,7 @@ static BOOL CALLBACK enum_locales_proc(LPWSTR locale)
 
     info = &data->info[data->total];
 
-    info->lcid = strtolW(locale, &end, 16);
+    info->lcid = wcstol(locale, &end, 16);
     if (*end) /* invalid number */
         return FALSE;
 
@@ -2474,7 +2632,7 @@ static ULONG WINAPI fnIMultiLanguage3_Release( IMultiLanguage3* iface )
     TRACE("(%p)->(%d)\n", This, ref);
     if (ref == 0)
     {
-	HeapFree(GetProcessHeap(), 0, This);
+        HeapFree(GetProcessHeap(), 0, This);
         UnlockModule();
     }
 
@@ -2509,18 +2667,18 @@ static void fill_cp_info(const struct mlang_data *ml_data, UINT index, MIMECPINF
     mime_cp_info->uiCodePage = ml_data->mime_cp_info[index].cp;
     mime_cp_info->uiFamilyCodePage = ml_data->family_codepage;
     MultiByteToWideChar(CP_ACP, 0, ml_data->mime_cp_info[index].description, -1,
-                        mime_cp_info->wszDescription, sizeof(mime_cp_info->wszDescription)/sizeof(WCHAR));
+                        mime_cp_info->wszDescription, ARRAY_SIZE(mime_cp_info->wszDescription));
     MultiByteToWideChar(CP_ACP, 0, ml_data->mime_cp_info[index].web_charset, -1,
-                        mime_cp_info->wszWebCharset, sizeof(mime_cp_info->wszWebCharset)/sizeof(WCHAR));
+                        mime_cp_info->wszWebCharset, ARRAY_SIZE(mime_cp_info->wszWebCharset));
     MultiByteToWideChar(CP_ACP, 0, ml_data->mime_cp_info[index].header_charset, -1,
-                        mime_cp_info->wszHeaderCharset, sizeof(mime_cp_info->wszHeaderCharset)/sizeof(WCHAR));
+                        mime_cp_info->wszHeaderCharset, ARRAY_SIZE(mime_cp_info->wszHeaderCharset));
     MultiByteToWideChar(CP_ACP, 0, ml_data->mime_cp_info[index].body_charset, -1,
-                        mime_cp_info->wszBodyCharset, sizeof(mime_cp_info->wszBodyCharset)/sizeof(WCHAR));
+                        mime_cp_info->wszBodyCharset, ARRAY_SIZE(mime_cp_info->wszBodyCharset));
 
     MultiByteToWideChar(CP_ACP, 0, ml_data->fixed_font, -1,
-        mime_cp_info->wszFixedWidthFont, sizeof(mime_cp_info->wszFixedWidthFont)/sizeof(WCHAR));
+        mime_cp_info->wszFixedWidthFont, ARRAY_SIZE(mime_cp_info->wszFixedWidthFont));
     MultiByteToWideChar(CP_ACP, 0, ml_data->proportional_font, -1,
-        mime_cp_info->wszProportionalFont, sizeof(mime_cp_info->wszProportionalFont)/sizeof(WCHAR));
+        mime_cp_info->wszProportionalFont, ARRAY_SIZE(mime_cp_info->wszProportionalFont));
 
     TRACE("%08x %u %u %s %s %s %s %s %s %d\n",
           mime_cp_info->dwFlags, mime_cp_info->uiCodePage,
@@ -2545,7 +2703,7 @@ static HRESULT WINAPI fnIMultiLanguage3_GetCodePageInfo(
 
     TRACE("%p, %u, %04x, %p\n", This, uiCodePage, LangId, pCodePageInfo);
 
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         for (n = 0; n < mlang_data[i].number_of_cp; n++)
         {
@@ -2593,7 +2751,7 @@ static HRESULT WINAPI fnIMultiLanguage3_GetCharsetInfo(
 
     if (!pCharsetInfo) return E_FAIL;
 
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         for (n = 0; n < mlang_data[i].number_of_cp; n++)
         {
@@ -2604,14 +2762,14 @@ static HRESULT WINAPI fnIMultiLanguage3_GetCharsetInfo(
             {
                 pCharsetInfo->uiCodePage = mlang_data[i].family_codepage;
                 pCharsetInfo->uiInternetEncoding = mlang_data[i].mime_cp_info[n].cp;
-                strcpyW(pCharsetInfo->wszCharset, csetW);
+                lstrcpyW(pCharsetInfo->wszCharset, csetW);
                 return S_OK;
             }
             if (mlang_data[i].mime_cp_info[n].alias && !lstrcmpiW(Charset, mlang_data[i].mime_cp_info[n].alias))
             {
                 pCharsetInfo->uiCodePage = mlang_data[i].family_codepage;
                 pCharsetInfo->uiInternetEncoding = mlang_data[i].mime_cp_info[n].cp;
-                strcpyW(pCharsetInfo->wszCharset, mlang_data[i].mime_cp_info[n].alias);
+                lstrcpyW(pCharsetInfo->wszCharset, mlang_data[i].mime_cp_info[n].alias);
                 return S_OK;
             }
         }
@@ -2622,7 +2780,7 @@ static HRESULT WINAPI fnIMultiLanguage3_GetCharsetInfo(
      * them in our database as a primary (web_charset) encoding this loop
      * does an attempt to 'approximate' charset name by header_charset.
      */
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         for (n = 0; n < mlang_data[i].number_of_cp; n++)
         {
@@ -2633,7 +2791,7 @@ static HRESULT WINAPI fnIMultiLanguage3_GetCharsetInfo(
             {
                 pCharsetInfo->uiCodePage = mlang_data[i].family_codepage;
                 pCharsetInfo->uiInternetEncoding = mlang_data[i].mime_cp_info[n].cp;
-                strcpyW(pCharsetInfo->wszCharset, csetW);
+                lstrcpyW(pCharsetInfo->wszCharset, csetW);
                 return S_OK;
             }
         }
@@ -2960,7 +3118,7 @@ static HRESULT WINAPI fnIMultiLanguage3_GetCodePageDescription(
     unsigned int i,n;
 
     TRACE ("%u, %04x, %p, %d\n", uiCodePage, lcid, lpWideCharStr, cchWideChar);
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         for (n = 0; n < mlang_data[i].number_of_cp; n++)
         {
@@ -3038,7 +3196,7 @@ static HRESULT WINAPI fnIMultiLanguage3_ValidateCodePageEx(
         return S_OK;
 
     /* check for mlang supported code pages */
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         UINT n;
         for (n = 0; n < mlang_data[i].number_of_cp; n++)
@@ -3179,7 +3337,7 @@ static HRESULT WINAPI fnIMLangFontLink2_GetCharCodePages( IMLangFontLink2* iface
 
     *ret_codepages = 0;
 
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         BOOL used_dc;
         CHAR buf;
@@ -3326,21 +3484,38 @@ static HRESULT WINAPI fnIMLangFontLink2_GetFontCodePages(IMLangFontLink2 *iface,
 static HRESULT WINAPI fnIMLangFontLink2_ReleaseFont(IMLangFontLink2* This,
         HFONT hFont)
 {
-    FIXME("(%p)->%p\n",This, hFont);
-    return E_NOTIMPL;
+    TRACE("(%p)->%p\n",This, hFont);
+
+    return release_font(hFont);
 }
 
 static HRESULT WINAPI fnIMLangFontLink2_ResetFontMapping(IMLangFontLink2* This)
 {
-    FIXME("(%p)->\n",This);
-    return E_NOTIMPL;
+    TRACE("(%p)\n",This);
+
+    return clear_font_cache();
 }
 
 static HRESULT WINAPI fnIMLangFontLink2_MapFont(IMLangFontLink2* This,
         HDC hDC, DWORD dwCodePages, WCHAR chSrc, HFONT *pFont)
 {
-    FIXME("(%p)->%p %i %s %p\n",This, hDC, dwCodePages, debugstr_wn(&chSrc,1), pFont);
-    return E_NOTIMPL;
+    HFONT old_font;
+
+    TRACE("(%p)->%p %08x %04x %p\n",This, hDC, dwCodePages, chSrc, pFont);
+
+    if (!hDC) return E_FAIL;
+
+    if (dwCodePages != 0)
+    {
+        old_font = GetCurrentObject(hDC, OBJ_FONT);
+        return map_font(hDC, dwCodePages, old_font, pFont);
+    }
+    else
+    {
+        if (pFont == NULL) return E_INVALIDARG;
+        FIXME("the situation where dwCodepages is set to zero is not implemented\n");
+        return E_FAIL;
+    }
 }
 
 static HRESULT WINAPI fnIMLangFontLink2_GetFontUnicodeRanges(IMLangFontLink2* This,
@@ -3382,7 +3557,7 @@ static HRESULT WINAPI fnIMLangFontLink2_GetScriptFontInfo(IMLangFontLink2* This,
 
     if (!dwFlags) dwFlags = SCRIPTCONTF_PROPORTIONAL_FONT;
 
-    for (i = 0, j = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0, j = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         if (sid == mlang_data[i].sid)
         {
@@ -3418,7 +3593,7 @@ static HRESULT WINAPI fnIMLangFontLink2_CodePageToScriptID(IMLangFontLink2* This
 
     if (uiCodePage == CP_UNICODE) return E_FAIL;
 
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
     {
         if (uiCodePage == mlang_data[i].family_codepage)
         {
@@ -3707,11 +3882,11 @@ static HRESULT MultiLanguage_create(IUnknown *pUnkOuter, LPVOID *ppObj)
     mlang->IMLangLineBreakConsole_iface.lpVtbl = &IMLangLineBreakConsole_vtbl;
 
     mlang->total_cp = 0;
-    for (i = 0; i < sizeof(mlang_data)/sizeof(mlang_data[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(mlang_data); i++)
         mlang->total_cp += mlang_data[i].number_of_cp;
 
     /* do not enumerate unicode flavours */
-    mlang->total_scripts = sizeof(mlang_data)/sizeof(mlang_data[0]) - 1;
+    mlang->total_scripts = ARRAY_SIZE(mlang_data) - 1;
 
     mlang->ref = 1;
     *ppObj = &mlang->IMultiLanguage_iface;
@@ -3751,12 +3926,65 @@ HRESULT WINAPI DllCanUnloadNow(void)
     return dll_count == 0 ? S_OK : S_FALSE;
 }
 
+static BOOL register_codepages(void)
+{
+    const struct mlang_data *family;
+    const MIME_CP_INFO *info;
+    HKEY db_key, key;
+    WCHAR buf[32];
+    LSTATUS status;
+
+    static const WCHAR db_key_nameW[] = {
+        'M','I','M','E',
+        '\\','D','a','t','a','b','a','s','e',
+        '\\','C','o','d','e','p','a','g','e',0};
+    static const WCHAR familyW[] = {'F','a','m','i','l','y',0};
+    static const WCHAR formatW[] = {'%','u',0};
+
+    status = RegCreateKeyW(HKEY_CLASSES_ROOT, db_key_nameW, &db_key);
+    if (status != ERROR_SUCCESS)
+        return FALSE;
+
+    for (family = mlang_data; family < mlang_data + ARRAY_SIZE(mlang_data); family++)
+    {
+        for (info = family->mime_cp_info; info < family->mime_cp_info + family->number_of_cp; info++)
+        {
+            swprintf(buf, formatW, info->cp);
+            status = RegCreateKeyW(db_key, buf, &key);
+            if (status != ERROR_SUCCESS)
+                continue;
+
+            RegSetValueExA(key, "BodyCharset", 0, REG_SZ, (BYTE*)info->body_charset,
+                           strlen(info->body_charset) + 1);
+
+            if (info->cp == family->family_codepage)
+            {
+                RegSetValueExA(key, "FixedWidthFont", 0, REG_SZ, (BYTE*)family->fixed_font,
+                               strlen(family->fixed_font) + 1);
+                RegSetValueExA(key, "ProportionalFont", 0, REG_SZ, (BYTE*)family->proportional_font,
+                               strlen(family->proportional_font) + 1);
+            }
+            else
+            {
+                RegSetValueExW(key, familyW, 0, REG_DWORD, (BYTE*)&family->family_codepage,
+                               sizeof(family->family_codepage));
+            }
+
+            RegCloseKey(key);
+        }
+    }
+
+    RegCloseKey(db_key);
+    return TRUE;
+}
 
 /***********************************************************************
  *		DllRegisterServer (MLANG.@)
  */
 HRESULT WINAPI DllRegisterServer(void)
 {
+    if(!register_codepages())
+        return E_FAIL;
     return __wine_register_resources( instance );
 }
 

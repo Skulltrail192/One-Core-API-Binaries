@@ -37,6 +37,9 @@ static WCHAR ServiceName[] = L"Lanmanserver";
 static SERVICE_STATUS_HANDLE ServiceStatusHandle;
 static SERVICE_STATUS ServiceStatus;
 
+DWORD dwServiceBits = 0;
+
+
 /* FUNCTIONS *****************************************************************/
 
 static VOID
@@ -57,6 +60,9 @@ UpdateServiceStatus(DWORD dwState)
     else
         ServiceStatus.dwWaitHint = 0;
 
+    if (dwState == SERVICE_RUNNING)
+        ServiceStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
+
     SetServiceStatus(ServiceStatusHandle,
                      &ServiceStatus);
 }
@@ -73,6 +79,7 @@ ServiceControlHandler(DWORD dwControl,
     {
         case SERVICE_CONTROL_STOP:
             TRACE("  SERVICE_CONTROL_STOP received\n");
+            UpdateServiceStatus(SERVICE_STOP_PENDING);
             /* Stop listening to incoming RPC messages */
             RpcMgmtStopServerListening(NULL);
             UpdateServiceStatus(SERVICE_STOPPED);
@@ -96,6 +103,9 @@ ServiceControlHandler(DWORD dwControl,
 
         case SERVICE_CONTROL_SHUTDOWN:
             TRACE("  SERVICE_CONTROL_SHUTDOWN received\n");
+            UpdateServiceStatus(SERVICE_STOP_PENDING);
+            /* Stop listening to incoming RPC messages */
+            RpcMgmtStopServerListening(NULL);
             UpdateServiceStatus(SERVICE_STOPPED);
             return ERROR_SUCCESS;
 
@@ -126,6 +136,12 @@ ServiceInit(VOID)
     }
     else
         CloseHandle(hThread);
+
+    /* Report a running server service */
+    SetServiceBits(ServiceStatusHandle,
+                   SV_TYPE_SERVER,
+                   TRUE,
+                   TRUE);
 
     return ERROR_SUCCESS;
 }

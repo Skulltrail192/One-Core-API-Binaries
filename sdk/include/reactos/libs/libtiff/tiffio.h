@@ -1,5 +1,3 @@
-/* $Id: tiffio.h,v 1.94 2017-01-11 19:02:49 erouault Exp $ */
-
 /*
  * Copyright (c) 1988-1997 Sam Leffler
  * Copyright (c) 1991-1997 Silicon Graphics, Inc.
@@ -52,7 +50,7 @@ typedef struct tiff TIFF;
  *     promoted type (i.e. one of int, unsigned int, pointer,
  *     or double) and because we defined pseudo-tags that are
  *     outside the range of legal Aldus-assigned tags.
- * NB: tsize_t is int32 and not uint32 because some functions
+ * NB: tsize_t is signed and not unsigned because some functions
  *     return -1.
  * NB: toff_t is not off_t for many reasons; TIFFs max out at
  *     32-bit file offsets, and BigTIFF maxes out at 64-bit
@@ -96,9 +94,7 @@ typedef void* tdata_t;          /* image data ref */
 
 #if defined(USE_WIN32_FILEIO)
 # define VC_EXTRALEAN
-//# include <windows.h>
-# define WIN32_NO_STATUS
-# include <windef.h>
+# include <windows.h>
 # ifdef __WIN32__
 DECLARE_HANDLE(thandle_t);     /* Win32 file handle */
 # else
@@ -415,6 +411,8 @@ extern int TIFFWriteDirectory(TIFF *);
 extern int TIFFWriteCustomDirectory(TIFF *, uint64 *);
 extern int TIFFCheckpointDirectory(TIFF *);
 extern int TIFFRewriteDirectory(TIFF *);
+extern int TIFFDeferStrileArrayWriting(TIFF *);
+extern int TIFFForceStrileArrayWriting(TIFF* );
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern void TIFFPrintDirectory(TIFF*, FILE*, long = 0);
@@ -472,6 +470,9 @@ extern tmsize_t TIFFReadEncodedStrip(TIFF* tif, uint32 strip, void* buf, tmsize_
 extern tmsize_t TIFFReadRawStrip(TIFF* tif, uint32 strip, void* buf, tmsize_t size);  
 extern tmsize_t TIFFReadEncodedTile(TIFF* tif, uint32 tile, void* buf, tmsize_t size);  
 extern tmsize_t TIFFReadRawTile(TIFF* tif, uint32 tile, void* buf, tmsize_t size);  
+extern int      TIFFReadFromUserBuffer(TIFF* tif, uint32 strile,
+                                       void* inbuf, tmsize_t insize,
+                                       void* outbuf, tmsize_t outsize);
 extern tmsize_t TIFFWriteEncodedStrip(TIFF* tif, uint32 strip, void* data, tmsize_t cc);
 extern tmsize_t TIFFWriteRawStrip(TIFF* tif, uint32 strip, void* data, tmsize_t cc);  
 extern tmsize_t TIFFWriteEncodedTile(TIFF* tif, uint32 tile, void* data, tmsize_t cc);  
@@ -491,6 +492,11 @@ extern void TIFFSwabArrayOfFloat(float* fp, tmsize_t n);
 extern void TIFFSwabArrayOfDouble(double* dp, tmsize_t n);
 extern void TIFFReverseBits(uint8* cp, tmsize_t n);
 extern const unsigned char* TIFFGetBitRevTable(int);
+
+extern uint64 TIFFGetStrileOffset(TIFF *tif, uint32 strile);
+extern uint64 TIFFGetStrileByteCount(TIFF *tif, uint32 strile);
+extern uint64 TIFFGetStrileOffsetWithErr(TIFF *tif, uint32 strile, int *pbErr);
+extern uint64 TIFFGetStrileByteCountWithErr(TIFF *tif, uint32 strile, int *pbErr);
 
 #ifdef LOGLUV_PUBLIC
 #define U_NEU		0.210526316

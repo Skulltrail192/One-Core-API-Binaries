@@ -4,14 +4,10 @@ PROJECT(NTVDM)
 #####################################
 # Generate the integrated COMMAND.COM
 #
-
-# Retrieve the full path to the generated file of the 'command' target
-get_target_property(_command_com_file command LOCATION)
-
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/command_com.c ${CMAKE_CURRENT_BINARY_DIR}/command_com.h
-    COMMAND native-bin2c ${_command_com_file} ${CMAKE_CURRENT_BINARY_DIR}/command_com.c ${CMAKE_CURRENT_BINARY_DIR}/command_com.h BIN CommandCom
-    DEPENDS native-bin2c command ${_command_com_file})
+    COMMAND native-bin2c $<TARGET_PROPERTY:command,BINARY_PATH> ${CMAKE_CURRENT_BINARY_DIR}/command_com.c ${CMAKE_CURRENT_BINARY_DIR}/command_com.h BIN CommandCom
+    DEPENDS native-bin2c command)
 #####################################
 
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/libs/fast486)
@@ -67,12 +63,16 @@ list(APPEND SOURCE
     utils.c
     vddsup.c
     ntvdm.c
-    ntvdm.h
-    ${CMAKE_CURRENT_BINARY_DIR}/ntvdm.def)
+    ntvdm.h)
 
 file(GLOB ntvdm_rc_deps res/*.*)
 add_rc_deps(ntvdm.rc ${ntvdm_rc_deps})
-add_executable(ntvdm ${SOURCE} ntvdm.rc)
+
+add_executable(ntvdm
+    ${SOURCE}
+    ntvdm.rc
+    ${CMAKE_CURRENT_BINARY_DIR}/ntvdm.def)
+
 add_pch(ntvdm ntvdm.h SOURCE)
 set_module_type(ntvdm win32cui UNICODE IMAGEBASE 0x0F000000)
 target_link_libraries(ntvdm fast486 ${PSEH_LIB})

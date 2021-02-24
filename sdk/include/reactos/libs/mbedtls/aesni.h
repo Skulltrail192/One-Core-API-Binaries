@@ -2,7 +2,8 @@
  * \file aesni.h
  *
  * \brief AES-NI for hardware AES acceleration on some Intel processors
- *
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: GPL-2.0
  *
@@ -24,6 +25,12 @@
  */
 #ifndef MBEDTLS_AESNI_H
 #define MBEDTLS_AESNI_H
+
+#if !defined(MBEDTLS_CONFIG_FILE)
+#include "config.h"
+#else
+#include MBEDTLS_CONFIG_FILE
+#endif
 
 #include "aes.h"
 

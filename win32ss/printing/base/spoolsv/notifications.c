@@ -1,28 +1,28 @@
 /*
  * PROJECT:     ReactOS Print Spooler Service
- * LICENSE:     GNU GPLv2 or any later version as published by the Free Software Foundation
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
  * PURPOSE:     Functions related to Printer Configuration Data
- * COPYRIGHT:   Copyright 2015 Colin Finck <colin@reactos.org>
+ * COPYRIGHT:   Copyright 2015 Colin Finck (colin@reactos.org)
  */
 
 #include "precomp.h"
 
 DWORD
-_RpcClientFindFirstPrinterChangeNotification()
+_RpcClientFindFirstPrinterChangeNotification(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;
 }
 
 DWORD
-_RpcFindClosePrinterChangeNotification()
+_RpcFindClosePrinterChangeNotification(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;
 }
 
 DWORD
-_RpcFindNextPrinterChangeNotification()
+_RpcFindNextPrinterChangeNotification(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;
@@ -57,7 +57,7 @@ _RpcReplyOpenPrinter(WINSPOOL_HANDLE pMachine, WINSPOOL_PRINTER_HANDLE* phPrinte
 }
 
 DWORD
-_RpcRouterFindFirstPrinterChangeNotificationOld()
+_RpcRouterFindFirstPrinterChangeNotificationOld(VOID)
 {
     UNIMPLEMENTED;
     return ERROR_INVALID_FUNCTION;

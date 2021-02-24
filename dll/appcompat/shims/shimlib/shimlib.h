@@ -1,12 +1,17 @@
 /*
- * COPYRIGHT:       See COPYING in the top level directory
- * PROJECT:         ReactOS Shim Engine
- * FILE:            dll/appcompat/shims/shimlib/shimlib.h
- * PURPOSE:         ReactOS Shim Engine
- * PROGRAMMER:      Mark Jansen (mark.jansen@reactos.org)
+ * PROJECT:     ReactOS Shim helper library
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     ReactOS Shim Engine common functions / structures
+ * COPYRIGHT:   Copyright 2016-2019 Mark Jansen (mark.jansen@reactos.org)
  */
 
 #pragma once
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 typedef struct tagHOOKAPI
 {
@@ -18,16 +23,17 @@ typedef struct tagHOOKAPI
 } HOOKAPI, *PHOOKAPI;
 
 
-PVOID ShimLib_ShimMalloc(SIZE_T);
-void ShimLib_ShimFree(PVOID);
-PCSTR ShimLib_StringDuplicateA(PCSTR);
-BOOL ShimLib_StrAEqualsW(PCSTR, PCWSTR);
-
+PVOID ShimLib_ShimMalloc(SIZE_T dwSize);
+VOID ShimLib_ShimFree(PVOID pData);
+PCSTR ShimLib_StringDuplicateA(PCSTR szString);
+PCSTR ShimLib_StringNDuplicateA(PCSTR szString, SIZE_T stringLength);
+BOOL ShimLib_StrAEqualsWNC(PCSTR szString, PCWSTR wszString);
+HINSTANCE ShimLib_Instance(VOID);
 
 /* Forward events to generic handlers */
-void ShimLib_Init(HINSTANCE);
-void ShimLib_Deinit(void);
-PHOOKAPI WINAPI ShimLib_GetHookAPIs(LPCSTR,LPCWSTR,PDWORD);
+VOID ShimLib_Init(HINSTANCE hInstance);
+VOID ShimLib_Deinit(VOID);
+PHOOKAPI WINAPI ShimLib_GetHookAPIs(LPCSTR szCommandLine,LPCWSTR wszShimName,PDWORD pdwHookCount);
 BOOL WINAPI ShimLib_NotifyShims(DWORD fdwReason, PVOID ptr);
 
 
@@ -89,5 +95,9 @@ typedef struct tagSHIMREG
 #define _SHMALLOC(x) __attribute__ ((section (x) ))
 #else
 #error Your compiler is not supported.
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 

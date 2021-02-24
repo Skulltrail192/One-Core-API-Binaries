@@ -19,29 +19,15 @@
 #ifndef __WINE_DLLS_DINPUT_DINPUT_PRIVATE_H
 #define __WINE_DLLS_DINPUT_DINPUT_PRIVATE_H
 
-#include <wine/config.h>
-
 #include <stdarg.h>
 
-#define WIN32_NO_STATUS
-#define _INC_WINDOWS
-#define COM_NO_WINDOWS_H
+#include "windef.h"
+#include "winbase.h"
+#include "dinput.h"
+#include "dinputd.h"
+#include "wine/list.h"
 
-#define COBJMACROS
-#define NONAMELESSUNION
-
-#include <windef.h>
-#include <winbase.h>
-#include <winreg.h>
-#include <winuser.h>
-#include <dinput.h>
-#include <dinputd.h>
-
-#include <wine/debug.h>
-#include <wine/list.h>
-#include <wine/unicode.h>
-
-WINE_DEFAULT_DEBUG_CHANNEL(dinput);
+extern HINSTANCE DINPUT_instance;
 
 /* Implementation specification */
 typedef struct IDirectInputImpl IDirectInputImpl;
@@ -85,7 +71,7 @@ extern const struct dinput_device joystick_linux_device DECLSPEC_HIDDEN;
 extern const struct dinput_device joystick_linuxinput_device DECLSPEC_HIDDEN;
 extern const struct dinput_device joystick_osx_device DECLSPEC_HIDDEN;
 
-extern void check_dinput_hooks(LPDIRECTINPUTDEVICE8W) DECLSPEC_HIDDEN;
+extern void check_dinput_hooks(LPDIRECTINPUTDEVICE8W, BOOL) DECLSPEC_HIDDEN;
 extern void check_dinput_events(void) DECLSPEC_HIDDEN;
 typedef int (*DI_EVENT_PROC)(LPDIRECTINPUTDEVICE8A, WPARAM, LPARAM);
 
@@ -95,13 +81,12 @@ extern void _copy_diactionformatWtoA(LPDIACTIONFORMATA, LPDIACTIONFORMATW) DECLS
 extern HRESULT _configure_devices(IDirectInput8W *iface, LPDICONFIGUREDEVICESCALLBACK lpdiCallback, LPDICONFIGUREDEVICESPARAMSW lpdiCDParams, DWORD dwFlags, LPVOID pvRefData) DECLSPEC_HIDDEN;
 
 extern WCHAR* get_mapping_path(const WCHAR *device, const WCHAR *username) DECLSPEC_HIDDEN;
+extern DWORD get_device_type(DWORD version, BOOL is_joystick) DECLSPEC_HIDDEN;
 
 #define IS_DIPROP(x)    (((ULONG_PTR)(x) >> 16) == 0)
 
 #define DIKEYBOARD_MASK    0x81000000
 #define DIMOUSE_MASK       0x82000000
 #define DIGENRE_ANY        0xFF000000
-
-#include "device_private.h"
 
 #endif /* __WINE_DLLS_DINPUT_DINPUT_PRIVATE_H */

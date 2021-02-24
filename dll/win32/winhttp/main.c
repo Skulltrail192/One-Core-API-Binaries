@@ -16,12 +16,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+#include "config.h"
+#include "ws2tcpip.h"
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "objbase.h"
+#include "rpcproxy.h"
+#include "httprequest.h"
+#include "winhttp.h"
+
+#include "wine/debug.h"
 #include "winhttp_private.h"
 
-#include <rpcproxy.h>
-#include <httprequest.h>
+HINSTANCE winhttp_instance;
 
-static HINSTANCE instance;
+WINE_DEFAULT_DEBUG_CHANNEL(winhttp);
 
 /******************************************************************
  *              DllMain (winhttp.@)
@@ -31,7 +43,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
     switch(fdwReason)
     {
     case DLL_PROCESS_ATTACH:
-        instance = hInstDLL;
+        winhttp_instance = hInstDLL;
         DisableThreadLibraryCalls(hInstDLL);
         break;
     case DLL_PROCESS_DETACH:
@@ -158,7 +170,7 @@ HRESULT WINAPI DllCanUnloadNow(void)
  */
 HRESULT WINAPI DllRegisterServer(void)
 {
-    return __wine_register_resources( instance );
+    return __wine_register_resources( winhttp_instance );
 }
 
 /***********************************************************************
@@ -166,5 +178,5 @@ HRESULT WINAPI DllRegisterServer(void)
  */
 HRESULT WINAPI DllUnregisterServer(void)
 {
-    return __wine_unregister_resources( instance );
+    return __wine_unregister_resources( winhttp_instance );
 }

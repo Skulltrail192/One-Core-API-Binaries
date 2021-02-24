@@ -21,9 +21,9 @@ extern BOOL APIENTRY IntEngEnter(PINTENG_ENTER_LEAVE EnterLeave,
 extern BOOL APIENTRY IntEngLeave(PINTENG_ENTER_LEAVE EnterLeave);
 
 extern HGDIOBJ StockObjects[];
-extern SHORT gusLanguageID;
+extern USHORT gusLanguageID;
 
-SHORT FASTCALL UserGetLanguageID(VOID);
+USHORT FASTCALL UserGetLanguageID(VOID);
 PVOID APIENTRY HackSecureVirtualMemory(IN PVOID,IN SIZE_T,IN ULONG,OUT PVOID *);
 VOID APIENTRY HackUnsecureVirtualMemory(IN PVOID);
 
@@ -53,25 +53,6 @@ RegWriteDWORD(HKEY hkey, PWSTR pwszValue, DWORD dwData);
 BOOL
 NTAPI
 RegReadDWORD(HKEY hkey, PWSTR pwszValue, PDWORD pdwData);
-
-_Success_(return!=FALSE)
-BOOL
-NTAPI
-RegReadUserSetting(
-    _In_z_ PCWSTR pwszKeyName,
-    _In_z_ PCWSTR pwszValueName,
-    _In_ ULONG ulType,
-    _Out_writes_(cbDataSize) _When_(ulType == REG_SZ, _Post_z_) PVOID pvData,
-    _In_ ULONG cbDataSize);
-
-BOOL
-NTAPI
-RegWriteUserSetting(
-    IN PCWSTR pwszKeyName,
-    IN PCWSTR pwszValueName,
-    IN ULONG ulType,
-    OUT PVOID pvData,
-    IN ULONG cbDataSize);
 
 VOID FASTCALL
 SetLastNtError(

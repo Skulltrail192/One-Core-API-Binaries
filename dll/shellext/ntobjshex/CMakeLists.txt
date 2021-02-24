@@ -1,6 +1,9 @@
 
 project(SHELL)
 
+add_definitions(
+    -D_ATL_NO_EXCEPTIONS)
+
 set_cpp(WITH_RUNTIME)
 
 if(NOT MSVC)
@@ -17,16 +20,20 @@ spec2def(ntobjshex.dll ntobjshex.spec)
 file(GLOB_RECURSE ntobjshex_rc_deps resources/*.*)
 add_rc_deps(ntobjshex.rc ${ntobjshex_rc_deps})
 
-add_library(ntobjshex SHARED
+list(APPEND SOURCE
     ntobjenum.cpp
     ntobjfolder.cpp
     ntobjshex.cpp
-    ntobjshex.rc
     regfolder.cpp
+    precomp.h)
+
+add_library(ntobjshex MODULE
+    ${SOURCE}
+    ntobjshex.rc
     ${CMAKE_CURRENT_BINARY_DIR}/ntobjshex.def)
 
 set_module_type(ntobjshex win32dll UNICODE)
-target_link_libraries(ntobjshex uuid wine atlnew)
+target_link_libraries(ntobjshex uuid wine)
 
 add_importlibs(ntobjshex
     advapi32
@@ -42,4 +49,5 @@ add_importlibs(ntobjshex
     kernel32
     ntdll)
 
+add_pch(ntobjshex precomp.h SOURCE)
 add_cd_file(TARGET ntobjshex DESTINATION reactos/system32 FOR all)

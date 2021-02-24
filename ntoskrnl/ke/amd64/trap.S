@@ -305,7 +305,7 @@ ENDFUNC
 
 PUBLIC KiBoundFault
 FUNC KiBoundFault
-   /* No error code */
+    /* Push pseudo error code */
     EnterTrap TF_SAVE_ALL
 
     /* Check if the frame was from kernelmode */
@@ -329,7 +329,7 @@ ENDFUNC
 
 PUBLIC KiInvalidOpcodeFault
 FUNC KiInvalidOpcodeFault
-   /* No error code */
+    /* Push pseudo error code */
     EnterTrap TF_SAVE_ALL
 
     TRAPINFO KiInvalidOpcodeFault
@@ -360,7 +360,7 @@ ENDFUNC
 
 PUBLIC KiNpxNotAvailableFault
 FUNC KiNpxNotAvailableFault
-   /* No error code */
+    /* Push pseudo error code */
     EnterTrap TF_SAVE_ALL
 
     /* Call the C handler */
@@ -382,8 +382,8 @@ ENDFUNC
 
 PUBLIC KiDoubleFaultAbort
 FUNC KiDoubleFaultAbort
-   /* No error code */
-    EnterTrap TF_SAVE_ALL
+    /* A zero error code is pushed */
+    EnterTrap (TF_HAS_ERROR_CODE OR TF_SAVE_ALL)
 
     lea rcx, MsgDoubleFault[rip]
     mov rdx, [rbp + KTRAP_FRAME_FaultAddress]
@@ -398,7 +398,7 @@ ENDFUNC
 
 PUBLIC KiNpxSegmentOverrunAbort
 FUNC KiNpxSegmentOverrunAbort
-   /* No error code */
+    /* Push pseudo error code */
     EnterTrap TF_SAVE_ALL
 
     /* Bugcheck */
@@ -503,8 +503,7 @@ FUNC KiPageFault
     sti
 
     /* Call page fault handler */
-    mov ecx, [rbp + KTRAP_FRAME_ErrorCode] // StoreInstruction
-    and ecx, 1
+    mov ecx, [rbp + KTRAP_FRAME_ErrorCode] // FaultCode
     // rdx == Address
     mov r8b, [rbp + KTRAP_FRAME_SegCs] // Mode
     and r8b, 1
@@ -567,7 +566,7 @@ ENDFUNC
 
 PUBLIC KiFloatingErrorFault
 FUNC KiFloatingErrorFault
-   /* No error code */
+    /* Push pseudo error code */
     EnterTrap TF_SAVE_ALL
 
     UNIMPLEMENTED KiFloatingErrorFault
@@ -591,7 +590,7 @@ ENDFUNC
 
 PUBLIC KiMcheckAbort
 FUNC KiMcheckAbort
-   /* No error code */
+    /* Push pseudo error code */
     EnterTrap TF_SAVE_ALL
 
     /* Bugcheck */
@@ -602,7 +601,7 @@ ENDFUNC
 
 PUBLIC KiXmmException
 FUNC KiXmmException
-   /* No error code */
+    /* Push pseudo error code */
     EnterTrap TF_SAVE_ALL
 
     /* Call the C handler */

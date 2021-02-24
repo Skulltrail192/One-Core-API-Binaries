@@ -81,12 +81,12 @@ BEGIN
     IDS_DEV_FAILED_INSTALL "Драйвери для цього пристрою не встановлені."
     IDS_DEV_HARDWARE_DISABLED "Цей пристрій вимкнено, оскільки BIOS не виділив для пристрою ресурсів."
     IDS_DEV_CANT_SHARE_IRQ "Цей пристрій використувує ресурс Запиту Переривань (IRQ), який використовується іншим пристроєм та не може бути спільним.\nВи повинні змінити конфліктуючі налаштування або видалити драйвер реального режиму, що спричинює конфлікт."
-    IDS_DEV_FAILED_ADD "Цей пристрій працює неправильно, оскільки %1 is not working properly."
+    IDS_DEV_FAILED_ADD "Цей пристрій працює неправильно, оскільки %1 працює неправильно."
     IDS_DEV_DISABLED_SERVICE "ReactOS не може встановити драйвери для цього пристрою, оскільки не має доступу до диску чи мережного ресурсу, які містять файли установки."
     IDS_DEV_TRANSLATION_FAILED "Цей пристрій не відповідає його драйверу."
     IDS_DEV_NO_SOFTCONFIG "ReactOS не може визначити налаштуванн для цього пристрою. Зверніться до документації пристрою, і використовуйте вкладку Ресурси для налаштування конфігурації."
-    IDS_DEV_BIOS_TABLE "Мікропрограма вашого комп'ютера не містить досить інформації для коректних налаштування та використання цього пристрою. \nЩоб використовувати цей пристрій, зверніться до виробника комп'ютера для отримання оновлених мікропрограми чи BIOS."
-    IDS_DEV_IRQ_TRANSLATION_FAILED "Цей пристрій запитує переривання PCI, а він налаштований на переривання ISA (або навпаки). \nВикористайте програму налаштування комп'ютера для зміни параметрів переривань цього пристрою."
+    IDS_DEV_BIOS_TABLE "Мікропрограма вашого комп'ютера не містить досить інформації для коректних налаштування та використання цього пристрою.\nЩоб використовувати цей пристрій, зверніться до виробника комп'ютера для отримання оновлених мікропрограми чи BIOS."
+    IDS_DEV_IRQ_TRANSLATION_FAILED "Цей пристрій запитує переривання PCI, а він налаштований на переривання ISA (або навпаки).\nВикористайте програму налаштування комп'ютера для зміни параметрів переривань цього пристрою."
     IDS_DEV_FAILED_DRIVER_ENTRY "ReactOS не може ініціалізувати драйвер пристрою для даного обладнання."
     IDS_DEV_DRIVER_FAILED_PRIOR_UNLOAD "ReactOS не може завантажити драйвер цого пристрою, оскільки попередня версія драйвера пристрою все ще знаходиться в пам'яті."
     IDS_DEV_DRIVER_FAILED_LOAD "ReactOS не може завантажити драйвер для цого пристрою. Драйвер зіпсований або відсутній."
@@ -153,16 +153,16 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", IDC_DEVICON, 7, 7, 20, 20
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
-     LTEXT "Тип пристрою:", -1, 37, 39, 60, 8, SS_NOPREFIX
+    LTEXT "Тип пристрою:", -1, 37, 39, 60, 8, SS_NOPREFIX
     EDITTEXT IDC_DEVTYPE, 100, 39, 146, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
-     LTEXT "Виробник:", -1, 37, 53, 60, 8, SS_NOPREFIX
+    LTEXT "Виробник:", -1, 37, 53, 60, 8, SS_NOPREFIX
     EDITTEXT IDC_DEVMANUFACTURER, 100, 53, 145, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
-     LTEXT "Розміщення:", -1, 37, 67, 60, 8, SS_NOPREFIX
+    LTEXT "Розміщення:", -1, 37, 67, 60, 8, SS_NOPREFIX
     EDITTEXT IDC_DEVLOCATION, 100, 67, 145, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
-     GROUPBOX "Стан пристрою", IDC_DEVSTATUSGROUP, 7, 83, 238, 100
+    GROUPBOX "Стан пристрою", IDC_DEVSTATUSGROUP, 7, 83, 238, 100
     EDITTEXT IDC_DEVSTATUS, 14, 96, 224, 61, NOT WS_TABSTOP | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_VSCROLL
-     PUSHBUTTON "&Усунення несправностей...", IDC_DEVPROBLEM, 146, 163, 94, 15
-     LTEXT "&Використання пристрою:", IDC_DEVUSAGELABEL, 7, 188, 222, 8, WS_DISABLED
+    PUSHBUTTON "&Усунення несправностей...", IDC_DEVPROBLEM, 146, 163, 94, 15
+    LTEXT "&Використання пристрою:", IDC_DEVUSAGELABEL, 7, 188, 222, 8, WS_DISABLED
     COMBOBOX IDC_DEVUSAGE, 7, 198, 239, 40, CBS_DROPDOWNLIST | WS_VSCROLL | WS_DISABLED
 END
 
@@ -173,18 +173,22 @@ FONT 8, "MS Shell Dlg"
 BEGIN
     ICON "", IDC_DEVICON, 7, 7, 20, 20
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
-     LTEXT "Постачальник драйвера:", -1, 4, 39, 85, 8, SS_NOPREFIX
+    LTEXT "Постачальник драйвера:", -1, 4, 39, 85, 8, SS_NOPREFIX
     EDITTEXT IDC_DRVPROVIDER, 100, 39, 146, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
-     LTEXT "Дата драйвера:", -1, 4, 53, 60, 8, SS_NOPREFIX
+    LTEXT "Дата драйвера:", -1, 4, 53, 60, 8, SS_NOPREFIX
     EDITTEXT IDC_DRVDATE, 100, 53, 145, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
-     LTEXT "Версія драйвера:", -1, 4, 67, 60, 8, SS_NOPREFIX
+    LTEXT "Версія драйвера:", -1, 4, 67, 60, 8, SS_NOPREFIX
     EDITTEXT IDC_DRVVERSION, 100, 67, 145, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
-     LTEXT "Цифровий підпис:", -1, 4, 81, 65, 8, SS_NOPREFIX
+    LTEXT "Цифровий підпис:", -1, 4, 81, 65, 8, SS_NOPREFIX
     EDITTEXT IDC_DIGITALSIGNER, 100, 81, 145, 12, NOT WS_TABSTOP | NOT WS_BORDER | ES_AUTOHSCROLL | ES_READONLY
-     PUSHBUTTON "&Відомості...", IDC_DRIVERDETAILS, 7, 106, 75, 15
-     LTEXT "Перегляд відомостей про файли драйвера.", -1, 91, 110, 154, 17, SS_NOPREFIX
-    PUSHBUTTON "&Update Driver...", IDC_UPDATEDRIVER, 7, 126, 75, 15
-    LTEXT "Update the device driver.", -1, 91, 130, 154, 17, SS_NOPREFIX
+    PUSHBUTTON "&Відомості...", IDC_DRIVERDETAILS, 7, 106, 75, 15
+    LTEXT "Перегляд відомостей про файли драйвера.", -1, 91, 110, 154, 17, SS_NOPREFIX
+    PUSHBUTTON "&Update Driver...", IDC_UPDATEDRIVER, 7, 134, 75, 15
+    LTEXT "Update the device driver.", -1, 91, 138, 154, 17, SS_NOPREFIX
+    PUSHBUTTON "&Roll Back Driver", IDC_ROLLBACKDRIVER, 7, 162, 75, 15
+    LTEXT "If the device fails after updating the driver, roll back to the previously installed driver.", -1, 91, 162, 154, 25, SS_NOPREFIX
+    PUSHBUTTON "&Uninstall", IDC_UNINSTALLDRIVER, 7, 190, 75, 15
+    LTEXT "To uninstall the driver (Advanced).", -1, 91, 194, 154, 17, SS_NOPREFIX
 END
 
 IDD_DRIVERDETAILS DIALOGEX 0, 0, 224, 230
@@ -244,6 +248,17 @@ BEGIN
     LTEXT "", IDC_DEVNAME, 37, 9, 174, 16, SS_NOPREFIX
 END
 
+IDD_UNINSTALLDRIVER DIALOGEX 0, 0, 224, 121
+STYLE DS_SHELLFONT | DS_MODALFRAME | DS_CONTEXTHELP | WS_POPUPWINDOW | WS_VISIBLE | WS_DLGFRAME
+CAPTION "Confirm Device Removal"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON "", IDC_DEVICON, 7, 7, 20, 20
+    LTEXT "", IDC_DEVNAME, 40, 9, 174, 16, SS_NOPREFIX
+    LTEXT "Warning: You are about to uninstall this device from your system.", -1, 7, 37, 204, 50
+    DEFPUSHBUTTON "OK", IDOK, 110, 100, 50, 14
+    PUSHBUTTON "Cancel", IDCANCEL, 166, 100, 50, 14
+END
 
 
 /*
@@ -252,24 +267,28 @@ END
 
 IDR_MAINMENU MENU
 BEGIN
-  POPUP "&File"
-  BEGIN
-    MENUITEM "E&xit",                       IDC_EXIT
-  END
-  MENUITEM "Action",                        IDC_ACTIONMENU
-  POPUP "View"
-  BEGIN
-    MENUITEM "Devices by type",             IDC_DEVBYTYPE
-    MENUITEM "Devices by connection",       IDC_DEVBYCONN
-    MENUITEM "Resources by type",           IDC_RESBYTYPE, GRAYED
-    MENUITEM "Resources by connection",     IDC_RESBYCONN, GRAYED
-    MENUITEM SEPARATOR
-    MENUITEM "Show hidden devices",         IDC_SHOWHIDDEN
-  END
-  POPUP "Help"
-  BEGIN
-    MENUITEM "About",                       IDC_ABOUT
-  END
+    POPUP "&File"
+    BEGIN
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+    POPUP "Action"
+    BEGIN
+        MENUITEM "Scan for hardware changes",   IDM_SCAN_HARDWARE
+        MENUITEM "Add hardware",                IDM_ADD_HARDWARE
+    END
+    POPUP "View"
+    BEGIN
+        MENUITEM "Devices by type",             IDM_DEVBYTYPE
+        MENUITEM "Devices by connection",       IDM_DEVBYCONN
+        MENUITEM "Resources by type",           IDM_RESBYTYPE, GRAYED
+        MENUITEM "Resources by connection",     IDM_RESBYCONN, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "Show hidden devices",         IDM_SHOWHIDDEN
+    END
+    POPUP "Help"
+    BEGIN
+        MENUITEM "About",                       IDM_ABOUT
+    END
 END
 
 

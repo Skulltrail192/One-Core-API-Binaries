@@ -16,11 +16,19 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "urlmon_main.h"
+#define OEMRESOURCE
 
 #include <assert.h>
 
+#include "urlmon_main.h"
 #include "resource.h"
+
+#include "advpub.h"
+#include "fdi.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(urlmon);
 
 static const WCHAR ctxW[] = {'c','t','x',0};
 static const WCHAR cab_extW[] = {'.','c','a','b',0};
@@ -64,20 +72,149 @@ static inline BOOL file_exists(const WCHAR *file_name)
     return GetFileAttributesW(file_name) != INVALID_FILE_ATTRIBUTES;
 }
 
+#ifdef __REACTOS__
+
+/* The following definitions were copied from dll/win32/advpack32/files.c */
+
+/* SESSION Operation */
+#define EXTRACT_FILLFILELIST  0x00000001
+#define EXTRACT_EXTRACTFILES  0x00000002
+
+struct FILELIST{
+    LPSTR FileName;
+    struct FILELIST *next;
+    BOOL DoExtract;
+};
+
+typedef struct {
+    INT FileSize;
+    ERF Error;
+    struct FILELIST *FileList;
+    INT FileCount;
+    INT Operation;
+    CHAR Destination[MAX_PATH];
+    CHAR CurrentFile[MAX_PATH];
+    CHAR Reserved[MAX_PATH];
+    struct FILELIST *FilterList;
+} SESSION;
+
+static HRESULT (WINAPI *pExtract)(SESSION*, LPCSTR);
+
+
+/* The following functions were copied from dll/win32/advpack32/files.c
+   All unused arguments are removed */
+
+static void free_file_node(struct FILELIST *pNode)
+{
+    HeapFree(GetProcessHeap(), 0, pNode->FileName);
+    HeapFree(GetProcessHeap(), 0, pNode);
+}
+
+static void free_file_list(SESSION* session)
+{
+    struct FILELIST *next, *curr = session->FileList;
+
+    while (curr)
+    {
+        next = curr->next;
+        free_file_node(curr);
+        curr = next;
+    }
+}
+
+HRESULT WINAPI Modified_ExtractFilesA(LPCSTR CabName, LPCSTR ExpandDir)
+{   
+    SESSION session;
+    HMODULE hCabinet;
+    HRESULT res = S_OK;
+    LPSTR szConvertedList = NULL;
+
+    TRACE("(%s, %s)\n", debugstr_a(CabName), debugstr_a(ExpandDir));
+
+    if (!CabName || !ExpandDir)
+        return E_INVALIDARG;
+
+    if (GetFileAttributesA(ExpandDir) == INVALID_FILE_ATTRIBUTES)
+        return HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND);
+
+    hCabinet = LoadLibraryA("cabinet.dll");
+    if (!hCabinet)
+        return E_FAIL;
+
+    ZeroMemory(&session, sizeof(SESSION));
+
+    pExtract = (void *)GetProcAddress(hCabinet, "Extract");
+    if (!pExtract)
+    {
+        res = E_FAIL;
+        goto done;
+    }
+
+    lstrcpyA(session.Destination, ExpandDir);
+
+    session.Operation |= (EXTRACT_FILLFILELIST | EXTRACT_EXTRACTFILES);
+    res = pExtract(&session, CabName);
+
+done:
+    free_file_list(&session);
+    FreeLibrary(hCabinet);
+    HeapFree(GetProcessHeap(), 0, szConvertedList);
+
+    return res;
+}
+
+
+
+HRESULT WINAPI Modified_ExtractFilesW(LPCWSTR CabName, LPCWSTR ExpandDir)
+{
+    char *cab_name = NULL, *expand_dir = NULL;
+    HRESULT hres = S_OK;
+
+    TRACE("(%s, %s, %d)\n", debugstr_w(CabName), debugstr_w(ExpandDir));
+
+    if(CabName) {
+        cab_name = heap_strdupWtoA(CabName);
+        if(!cab_name)
+            return E_OUTOFMEMORY;
+    }
+
+    if(ExpandDir) {
+        expand_dir = heap_strdupWtoA(ExpandDir);
+        if(!expand_dir)
+            hres = E_OUTOFMEMORY;
+    }
+
+    /* cabinet.dll, which does the real job of extracting files, doesn't have UNICODE API,
+    so we need W->A conversion at some point anyway. */
+    if(SUCCEEDED(hres))
+        hres = Modified_ExtractFilesA(cab_name, expand_dir);
+
+    heap_free(cab_name);
+    heap_free(expand_dir);
+    return hres;
+}
+
+#endif
+
+
 static HRESULT extract_cab_file(install_ctx_t *ctx)
 {
     size_t path_len, file_len;
     WCHAR *ptr;
     HRESULT hres;
 
+#ifdef __REACTOS__
+    hres = Modified_ExtractFilesW(ctx->cache_file, ctx->tmp_dir);
+#else
     hres = ExtractFilesW(ctx->cache_file, ctx->tmp_dir, 0, NULL, NULL, 0);
+#endif
     if(FAILED(hres)) {
         WARN("ExtractFilesW failed: %08x\n", hres);
         return hres;
     }
 
-    path_len = strlenW(ctx->tmp_dir);
-    file_len = strlenW(ctx->file_name);
+    path_len = lstrlenW(ctx->tmp_dir);
+    file_len = lstrlenW(ctx->file_name);
     ctx->install_file = heap_alloc((path_len+file_len+2)*sizeof(WCHAR));
     if(!ctx->install_file)
         return E_OUTOFMEMORY;
@@ -141,17 +278,17 @@ static void expand_command(install_ctx_t *ctx, const WCHAR *cmd, WCHAR *buf, siz
 
     static const WCHAR expand_dirW[] = {'%','E','X','T','R','A','C','T','_','D','I','R','%'};
 
-    while((ptr = strchrW(ptr, '%'))) {
+    while((ptr = wcschr(ptr, '%'))) {
         if(buf)
             memcpy(buf+len, prev_ptr, ptr-prev_ptr);
         len += ptr-prev_ptr;
 
-        if(!strncmpiW(ptr, expand_dirW, sizeof(expand_dirW)/sizeof(WCHAR))) {
-            len2 = strlenW(ctx->tmp_dir);
+        if(!_wcsnicmp(ptr, expand_dirW, ARRAY_SIZE(expand_dirW))) {
+            len2 = lstrlenW(ctx->tmp_dir);
             if(buf)
                 memcpy(buf+len, ctx->tmp_dir, len2*sizeof(WCHAR));
             len += len2;
-            ptr += sizeof(expand_dirW)/sizeof(WCHAR);
+            ptr += ARRAY_SIZE(expand_dirW);
         }else {
             FIXME("Can't expand %s\n", debugstr_w(ptr));
             if(buf)
@@ -164,8 +301,8 @@ static void expand_command(install_ctx_t *ctx, const WCHAR *cmd, WCHAR *buf, siz
     }
 
     if(buf)
-        strcpyW(buf+len, prev_ptr);
-    *size = len + strlenW(prev_ptr) + 1;
+        lstrcpyW(buf+len, prev_ptr);
+    *size = len + lstrlenW(prev_ptr) + 1;
 }
 
 static HRESULT process_hook_section(install_ctx_t *ctx, const WCHAR *sect_name)
@@ -177,16 +314,16 @@ static HRESULT process_hook_section(install_ctx_t *ctx, const WCHAR *sect_name)
 
     static const WCHAR runW[] = {'r','u','n',0};
 
-    len = GetPrivateProfileStringW(sect_name, NULL, NULL, buf, sizeof(buf)/sizeof(*buf), ctx->install_file);
+    len = GetPrivateProfileStringW(sect_name, NULL, NULL, buf, ARRAY_SIZE(buf), ctx->install_file);
     if(!len)
         return S_OK;
 
-    for(key = buf; *key; key += strlenW(key)+1) {
-        if(!strcmpiW(key, runW)) {
+    for(key = buf; *key; key += lstrlenW(key)+1) {
+        if(!wcsicmp(key, runW)) {
             WCHAR *cmd;
             size_t size;
 
-            len = GetPrivateProfileStringW(sect_name, runW, NULL, val, sizeof(val)/sizeof(*val), ctx->install_file);
+            len = GetPrivateProfileStringW(sect_name, runW, NULL, val, ARRAY_SIZE(val), ctx->install_file);
 
             TRACE("Run %s\n", debugstr_w(val));
 
@@ -221,14 +358,14 @@ static HRESULT install_inf_file(install_ctx_t *ctx)
     static const WCHAR setup_hooksW[] = {'S','e','t','u','p',' ','H','o','o','k','s',0};
     static const WCHAR add_codeW[] = {'A','d','d','.','C','o','d','e',0};
 
-    len = GetPrivateProfileStringW(setup_hooksW, NULL, NULL, buf, sizeof(buf)/sizeof(*buf), ctx->install_file);
+    len = GetPrivateProfileStringW(setup_hooksW, NULL, NULL, buf, ARRAY_SIZE(buf), ctx->install_file);
     if(len) {
         default_install = FALSE;
 
-        for(key = buf; *key; key += strlenW(key)+1) {
+        for(key = buf; *key; key += lstrlenW(key)+1) {
             TRACE("[Setup Hooks] key: %s\n", debugstr_w(key));
 
-            len = GetPrivateProfileStringW(setup_hooksW, key, NULL, sect_name, sizeof(sect_name)/sizeof(*sect_name),
+            len = GetPrivateProfileStringW(setup_hooksW, key, NULL, sect_name, ARRAY_SIZE(sect_name),
                     ctx->install_file);
             if(!len) {
                 WARN("Could not get key value\n");
@@ -241,14 +378,27 @@ static HRESULT install_inf_file(install_ctx_t *ctx)
         }
     }
 
-    len = GetPrivateProfileStringW(add_codeW, NULL, NULL, buf, sizeof(buf)/sizeof(*buf), ctx->install_file);
+    len = GetPrivateProfileStringW(add_codeW, NULL, NULL, buf, ARRAY_SIZE(buf), ctx->install_file);
     if(len) {
-        FIXME("[Add.Code] section not supported\n");
+        default_install = FALSE;
 
-        /* Don't throw an error if we successfully ran setup hooks;
-           installation is likely to be complete enough */
-        if(default_install)
-            return E_NOTIMPL;
+        for(key = buf; *key; key += lstrlenW(key)+1) {
+            TRACE("[Add.Code] key: %s\n", debugstr_w(key));
+
+            len = GetPrivateProfileStringW(add_codeW, key, NULL, sect_name, ARRAY_SIZE(sect_name),
+                    ctx->install_file);
+            if(!len) {
+                WARN("Could not get key value\n");
+                return E_FAIL;
+            }
+
+            hres = RunSetupCommandW(ctx->hwnd, ctx->install_file, sect_name,
+                    ctx->tmp_dir, NULL, NULL, RSC_FLAG_INF, NULL);
+            if(FAILED(hres)) {
+                WARN("RunSetupCommandW failed: %08x\n", hres);
+                return hres;
+            }
+        }
     }
 
     if(default_install) {
@@ -269,7 +419,7 @@ static HRESULT install_cab_file(install_ctx_t *ctx)
     DWORD i;
     HRESULT hres;
 
-    GetTempPathW(sizeof(tmp_path)/sizeof(WCHAR), tmp_path);
+    GetTempPathW(ARRAY_SIZE(tmp_path), tmp_path);
 
     for(i=0; !res && i < 100; i++) {
         GetTempFileNameW(tmp_path, NULL, GetTickCount() + i*17037, tmp_dir);
@@ -315,14 +465,14 @@ static void update_counter(install_ctx_t *ctx, HWND hwnd)
         HWND button_hwnd;
 
         KillTimer(hwnd, ctx->timer);
-        LoadStringW(urlmon_instance, IDS_AXINSTALL_INSTALL, text, sizeof(text)/sizeof(WCHAR));
+        LoadStringW(urlmon_instance, IDS_AXINSTALL_INSTALL, text, ARRAY_SIZE(text));
 
         button_hwnd = GetDlgItem(hwnd, ID_AXINSTALL_INSTALL_BTN);
         EnableWindow(button_hwnd, TRUE);
     }else {
         WCHAR buf[100];
-        LoadStringW(urlmon_instance, IDS_AXINSTALL_INSTALLN, buf, sizeof(buf)/sizeof(WCHAR));
-        sprintfW(text, buf, ctx->counter);
+        LoadStringW(urlmon_instance, IDS_AXINSTALL_INSTALLN, buf, ARRAY_SIZE(buf));
+        swprintf(text, buf, ctx->counter);
     }
 
     SetDlgItemTextW(hwnd, ID_AXINSTALL_INSTALL_BTN, text);
@@ -424,22 +574,22 @@ static HRESULT install_file(install_ctx_t *ctx, const WCHAR *cache_file)
     if(SUCCEEDED(hres)) {
         const WCHAR *ptr, *ptr2, *ext;
 
-        ptr = strrchrW(path, '/');
+        ptr = wcsrchr(path, '/');
         if(!ptr)
             ptr = path;
         else
             ptr++;
 
-        ptr2 = strrchrW(ptr, '\\');
+        ptr2 = wcsrchr(ptr, '\\');
         if(ptr2)
             ptr = ptr2+1;
 
         ctx->file_name = ptr;
-        ext = strrchrW(ptr, '.');
+        ext = wcsrchr(ptr, '.');
         if(!ext)
             ext = ptr;
 
-        if(!strcmpiW(ext, cab_extW)) {
+        if(!wcsicmp(ext, cab_extW)) {
             hres = install_cab_file(ctx);
         }else {
             FIXME("Unsupported extension %s\n", debugstr_w(ext));
@@ -455,8 +605,8 @@ static void failure_msgbox(install_ctx_t *ctx, HRESULT hres)
 {
     WCHAR buf[1024], fmt[1024];
 
-    LoadStringW(urlmon_instance, IDS_AXINSTALL_FAILURE, fmt, sizeof(fmt)/sizeof(WCHAR));
-    sprintfW(buf, fmt, hres);
+    LoadStringW(urlmon_instance, IDS_AXINSTALL_FAILURE, fmt, ARRAY_SIZE(fmt));
+    swprintf(buf, fmt, hres);
     MessageBoxW(ctx->hwnd, buf, NULL, MB_OK);
 }
 

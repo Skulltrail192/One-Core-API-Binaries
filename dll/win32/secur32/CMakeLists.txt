@@ -17,10 +17,9 @@ list(APPEND SOURCE
     wine/negotiate.c
     wine/ntlm.c
     wine/util.c
-	unimplemented.c
     precomp.h)
 
-add_library(secur32 SHARED
+add_library(secur32 MODULE
     ${SOURCE}
     secur32.rc
     ${CMAKE_CURRENT_BINARY_DIR}/secur32_stubs.c

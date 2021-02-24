@@ -132,7 +132,7 @@ VfatHasFileSystem(
 
     if (*RecognizedFS)
     {
-        Boot = ExAllocatePoolWithTag(NonPagedPool, DiskGeometry.BytesPerSector, TAG_VFAT);
+        Boot = ExAllocatePoolWithTag(NonPagedPool, DiskGeometry.BytesPerSector, TAG_BUFFER);
         if (Boot == NULL)
         {
            return STATUS_INSUFFICIENT_RESOURCES;
@@ -232,6 +232,7 @@ VfatHasFileSystem(
                     FatInfo.RootCluster = ((struct _BootSector32*) Boot)->RootCluster;
                     FatInfo.rootStart = FatInfo.dataStart + ((FatInfo.RootCluster - 2) * FatInfo.SectorsPerCluster);
                     FatInfo.VolumeID = ((struct _BootSector32*) Boot)->VolumeID;
+                    FatInfo.FSInfoSector = ((struct _BootSector32*) Boot)->FSInfoSector;
                     RtlCopyMemory(&FatInfo.VolumeLabel, &((struct _BootSector32*)Boot)->VolumeLabel, sizeof(FatInfo.VolumeLabel));
                 }
                 else
@@ -255,12 +256,12 @@ VfatHasFileSystem(
             }
         }
 
-        ExFreePool(Boot);
+        ExFreePoolWithTag(Boot, TAG_BUFFER);
     }
 
     if (!*RecognizedFS && PartitionInfoIsValid)
     {
-        BootFatX = ExAllocatePoolWithTag(NonPagedPool, sizeof(struct _BootSectorFatX), TAG_VFAT);
+        BootFatX = ExAllocatePoolWithTag(NonPagedPool, sizeof(struct _BootSectorFatX), TAG_BUFFER);
         if (BootFatX == NULL)
         {
             *RecognizedFS=FALSE;
@@ -279,8 +280,14 @@ VfatHasFileSystem(
                 BootFatX->SysType[2] != 'T' ||
                 BootFatX->SysType[3] != 'X')
             {
-                DPRINT1("SysType %c%c%c%c\n", BootFatX->SysType[0], BootFatX->SysType[1], BootFatX->SysType[2], BootFatX->SysType[3]);
-                *RecognizedFS=FALSE;
+                DPRINT1("SysType %02X%02X%02X%02X (%c%c%c%c)\n",
+                        BootFatX->SysType[0], BootFatX->SysType[1], BootFatX->SysType[2], BootFatX->SysType[3],
+                        isprint(BootFatX->SysType[0]) ? BootFatX->SysType[0] : '.',
+                        isprint(BootFatX->SysType[1]) ? BootFatX->SysType[1] : '.',
+                        isprint(BootFatX->SysType[2]) ? BootFatX->SysType[2] : '.',
+                        isprint(BootFatX->SysType[3]) ? BootFatX->SysType[3] : '.');
+
+                *RecognizedFS = FALSE;
             }
 
             if (*RecognizedFS &&
@@ -331,7 +338,7 @@ VfatHasFileSystem(
                 }
             }
         }
-        ExFreePool(BootFatX);
+        ExFreePoolWithTag(BootFatX, TAG_BUFFER);
     }
 
     DPRINT("VfatHasFileSystem done\n");
@@ -411,13 +418,13 @@ ReadVolumeLabel(
 
         ASSERT(DeviceObject->Type == 3);
 
-        Buffer = ExAllocatePoolWithTag(NonPagedPool, PAGE_SIZE, TAG_VFAT);
+        Buffer = ExAllocatePoolWithTag(NonPagedPool, PAGE_SIZE, TAG_DIRENT);
         if (Buffer != NULL)
         {
             Status = VfatReadDisk(DeviceObject, &FileOffset, PAGE_SIZE, (PUCHAR)Buffer, TRUE);
             if (!NT_SUCCESS(Status))
             {
-                ExFreePoolWithTag(Buffer, TAG_VFAT);
+                ExFreePoolWithTag(Buffer, TAG_DIRENT);
             }
             else
             {
@@ -495,7 +502,7 @@ ReadVolumeLabel(
         }
         else if (NoCache)
         {
-            ExFreePoolWithTag(Buffer, TAG_VFAT);
+            ExFreePoolWithTag(Buffer, TAG_DIRENT);
         }
     }
 
@@ -524,15 +531,15 @@ VfatMount(
     NTSTATUS Status;
     PVFATFCB Fcb = NULL;
     PVFATFCB VolumeFcb = NULL;
-    PVFATCCB Ccb = NULL;
     PDEVICE_OBJECT DeviceToMount;
     PVPB Vpb;
     UNICODE_STRING NameU = RTL_CONSTANT_STRING(L"\\$$Fat$$");
     UNICODE_STRING VolumeNameU = RTL_CONSTANT_STRING(L"\\$$Volume$$");
     UNICODE_STRING VolumeLabelU;
     ULONG HashTableSize;
-    ULONG eocMark;
+    ULONG i;
     FATINFO FatInfo;
+    BOOLEAN Dirty;
 
     DPRINT("VfatMount(IrpContext %p)\n", IrpContext);
 
@@ -593,6 +600,11 @@ VfatMount(
     DeviceExt->HashTableSize = HashTableSize;
     DeviceExt->VolumeDevice = DeviceObject;
 
+    KeInitializeSpinLock(&DeviceExt->OverflowQueueSpinLock);
+    InitializeListHead(&DeviceExt->OverflowQueue);
+    DeviceExt->OverflowQueueCount = 0;
+    DeviceExt->PostedRequestCount = 0;
+
     /* use same vpb as device disk */
     DeviceObject->Vpb = Vpb;
     DeviceToMount->Vpb = Vpb;
@@ -616,7 +628,9 @@ VfatMount(
             DeviceExt->GetNextCluster = FAT12GetNextCluster;
             DeviceExt->FindAndMarkAvailableCluster = FAT12FindAndMarkAvailableCluster;
             DeviceExt->WriteCluster = FAT12WriteCluster;
-            DeviceExt->CleanShutBitMask = 0;
+            /* We don't define dirty bit functions here
+             * FAT12 doesn't have such bit and they won't get called
+             */
             break;
 
         case FAT16:
@@ -624,7 +638,8 @@ VfatMount(
             DeviceExt->GetNextCluster = FAT16GetNextCluster;
             DeviceExt->FindAndMarkAvailableCluster = FAT16FindAndMarkAvailableCluster;
             DeviceExt->WriteCluster = FAT16WriteCluster;
-            DeviceExt->CleanShutBitMask = 0x8000;
+            DeviceExt->GetDirtyStatus = FAT16GetDirtyStatus;
+            DeviceExt->SetDirtyStatus = FAT16SetDirtyStatus;
             break;
 
         case FAT32:
@@ -632,7 +647,8 @@ VfatMount(
             DeviceExt->GetNextCluster = FAT32GetNextCluster;
             DeviceExt->FindAndMarkAvailableCluster = FAT32FindAndMarkAvailableCluster;
             DeviceExt->WriteCluster = FAT32WriteCluster;
-            DeviceExt->CleanShutBitMask = 0x80000000;
+            DeviceExt->GetDirtyStatus = FAT32GetDirtyStatus;
+            DeviceExt->SetDirtyStatus = FAT32SetDirtyStatus;
             break;
     }
 
@@ -662,11 +678,28 @@ VfatMount(
     ExInitializeResourceLite(&DeviceExt->DirResource);
 
     DeviceExt->IoVPB = DeviceObject->Vpb;
-    DeviceExt->SpareVPB = ExAllocatePoolWithTag(NonPagedPool, sizeof(VPB), TAG_VFAT);
+    DeviceExt->SpareVPB = ExAllocatePoolWithTag(NonPagedPool, sizeof(VPB), TAG_VPB);
     if (DeviceExt->SpareVPB == NULL)
     {
         Status = STATUS_INSUFFICIENT_RESOURCES;
         goto ByeBye;
+    }
+
+    DeviceExt->Statistics = ExAllocatePoolWithTag(NonPagedPool,
+                                                  sizeof(STATISTICS) * VfatGlobalData->NumberProcessors,
+                                                  TAG_STATS);
+    if (DeviceExt->Statistics == NULL)
+    {
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+        goto ByeBye;
+    }
+
+    RtlZeroMemory(DeviceExt->Statistics, sizeof(STATISTICS) * VfatGlobalData->NumberProcessors);
+    for (i = 0; i < VfatGlobalData->NumberProcessors; ++i)
+    {
+        DeviceExt->Statistics[i].Base.FileSystemType = FILESYSTEM_STATISTICS_TYPE_FAT;
+        DeviceExt->Statistics[i].Base.Version = 1;
+        DeviceExt->Statistics[i].Base.SizeOfCompleteStructure = sizeof(STATISTICS);
     }
 
     DeviceExt->FATFileObject = IoCreateStreamFileObject(NULL, DeviceExt->StorageDevice);
@@ -677,23 +710,14 @@ VfatMount(
         goto ByeBye;
     }
 
-    Ccb = ExAllocateFromNPagedLookasideList(&VfatGlobalData->CcbLookasideList);
-    if (Ccb == NULL)
-    {
-        Status =  STATUS_INSUFFICIENT_RESOURCES;
+    Status = vfatAttachFCBToFileObject(DeviceExt, Fcb, DeviceExt->FATFileObject);
+    if (!NT_SUCCESS(Status))
         goto ByeBye;
-    }
 
-    RtlZeroMemory(Ccb, sizeof (VFATCCB));
-    DeviceExt->FATFileObject->FsContext = Fcb;
-    DeviceExt->FATFileObject->FsContext2 = Ccb;
-    DeviceExt->FATFileObject->SectionObjectPointer = &Fcb->SectionObjectPointers;
     DeviceExt->FATFileObject->PrivateCacheMap = NULL;
-    DeviceExt->FATFileObject->Vpb = DeviceObject->Vpb;
     Fcb->FileObject = DeviceExt->FATFileObject;
 
-    Fcb->Flags |= FCB_IS_FAT;
-
+    Fcb->Flags = FCB_IS_FAT;
     Fcb->RFCB.FileSize.QuadPart = DeviceExt->FatInfo.FATSectors * DeviceExt->FatInfo.BytesPerSector;
     Fcb->RFCB.ValidDataLength = Fcb->RFCB.FileSize;
     Fcb->RFCB.AllocationSize = Fcb->RFCB.FileSize;
@@ -714,6 +738,7 @@ VfatMount(
     _SEH2_END;
 
     DeviceExt->LastAvailableCluster = 2;
+    CountAvailableClusters(DeviceExt, NULL);
     ExInitializeResourceLite(&DeviceExt->FatResource);
 
     InitializeListHead(&DeviceExt->FcbListHead);
@@ -745,24 +770,38 @@ VfatMount(
     ReadVolumeLabel(DeviceExt, 0, vfatVolumeIsFatX(DeviceExt), &VolumeLabelU);
     Vpb->VolumeLabelLength = VolumeLabelU.Length;
 
-    /* read clean shutdown bit status */
-    Status = GetNextCluster(DeviceExt, 1, &eocMark);
+    /* read dirty bit status */
+    Status = GetDirtyStatus(DeviceExt, &Dirty);
     if (NT_SUCCESS(Status))
     {
-        if (eocMark & DeviceExt->CleanShutBitMask)
+        /* The volume wasn't dirty, it was properly dismounted */
+        if (!Dirty)
         {
-            /* unset clean shutdown bit */
-            eocMark &= ~DeviceExt->CleanShutBitMask;
-            WriteCluster(DeviceExt, 1, eocMark);
+            /* Mark it dirty now! */
+            SetDirtyStatus(DeviceExt, TRUE);
             VolumeFcb->Flags |= VCB_CLEAR_DIRTY;
+        }
+        else
+        {
+            DPRINT1("Mounting a dirty volume\n");
         }
     }
 
     VolumeFcb->Flags |= VCB_IS_DIRTY;
+    if (BooleanFlagOn(Vpb->RealDevice->Flags, DO_SYSTEM_BOOT_PARTITION))
+    {
+        SetFlag(DeviceExt->Flags, VCB_IS_SYS_OR_HAS_PAGE);
+    }
 
-    FsRtlNotifyVolumeEvent(DeviceExt->FATFileObject, FSRTL_VOLUME_MOUNT);
-    FsRtlNotifyInitializeSync(&DeviceExt->NotifySync);
+    /* Initialize the notify list and synchronization object */
     InitializeListHead(&DeviceExt->NotifyList);
+    FsRtlNotifyInitializeSync(&DeviceExt->NotifySync);
+
+    /* The VCB is OK for usage */
+    SetFlag(DeviceExt->Flags, VCB_GOOD);
+
+    /* Send the mount notification */
+    FsRtlNotifyVolumeEvent(DeviceExt->FATFileObject, FSRTL_VOLUME_MOUNT);
 
     DPRINT("Mount success\n");
 
@@ -773,13 +812,24 @@ ByeBye:
     {
         /* Cleanup */
         if (DeviceExt && DeviceExt->FATFileObject)
-            ObDereferenceObject (DeviceExt->FATFileObject);
-        if (DeviceExt && DeviceExt->SpareVPB)
-            ExFreePoolWithTag(DeviceExt->SpareVPB, TAG_VFAT);
+        {
+            LARGE_INTEGER Zero = {{0,0}};
+            PVFATCCB Ccb = (PVFATCCB)DeviceExt->FATFileObject->FsContext2;
+
+            CcUninitializeCacheMap(DeviceExt->FATFileObject,
+                                   &Zero,
+                                   NULL);
+            ObDereferenceObject(DeviceExt->FATFileObject);
+            if (Ccb)
+                vfatDestroyCCB(Ccb);
+            DeviceExt->FATFileObject = NULL;
+        }
         if (Fcb)
             vfatDestroyFCB(Fcb);
-        if (Ccb)
-            vfatDestroyCCB(Ccb);
+        if (DeviceExt && DeviceExt->SpareVPB)
+            ExFreePoolWithTag(DeviceExt->SpareVPB, TAG_VPB);
+        if (DeviceExt && DeviceExt->Statistics)
+            ExFreePoolWithTag(DeviceExt->Statistics, TAG_STATS);
         if (DeviceObject)
             IoDeleteDevice(DeviceObject);
     }
@@ -1021,6 +1071,8 @@ VfatIsVolumeDirty(
         *Flags |= VOLUME_IS_DIRTY;
     }
 
+    IrpContext->Irp->IoStatus.Information = sizeof(ULONG);
+
     return STATUS_SUCCESS;
 }
 
@@ -1029,7 +1081,6 @@ NTSTATUS
 VfatMarkVolumeDirty(
     PVFAT_IRP_CONTEXT IrpContext)
 {
-    ULONG eocMark;
     PDEVICE_EXTENSION DeviceExt;
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1038,13 +1089,7 @@ VfatMarkVolumeDirty(
 
     if (!BooleanFlagOn(DeviceExt->VolumeFcb->Flags, VCB_IS_DIRTY))
     {
-        Status = GetNextCluster(DeviceExt, 1, &eocMark);
-        if (NT_SUCCESS(Status))
-        {
-            /* unset clean shutdown bit */
-            eocMark &= ~DeviceExt->CleanShutBitMask;
-            Status = WriteCluster(DeviceExt, 1, eocMark);
-        }
+        Status = SetDirtyStatus(DeviceExt, TRUE);
     }
 
     DeviceExt->VolumeFcb->Flags &= ~VCB_CLEAR_DIRTY;
@@ -1090,15 +1135,125 @@ VfatLockOrUnlockVolume(
         return STATUS_ACCESS_DENIED;
     }
 
+    if (Lock)
+    {
+        FsRtlNotifyVolumeEvent(IrpContext->Stack->FileObject, FSRTL_VOLUME_LOCK);
+    }
+
     /* Deny locking if we're not alone */
     if (Lock && DeviceExt->OpenHandleCount != 1)
     {
+        PLIST_ENTRY ListEntry;
+
+#if 1
+        /* FIXME: Hack that allows locking the system volume on
+         * boot so that autochk can run properly
+         * That hack is, on purpose, really restrictive
+         * it will only allow locking with two directories
+         * open: current directory of smss and autochk.
+         */
+        BOOLEAN ForceLock = TRUE;
+        ULONG HandleCount = 0;
+
+        /* Only allow boot volume */
+        if (BooleanFlagOn(DeviceExt->Flags, VCB_IS_SYS_OR_HAS_PAGE))
+        {
+            /* We'll browse all the FCB */
+            ListEntry = DeviceExt->FcbListHead.Flink;
+            while (ListEntry != &DeviceExt->FcbListHead)
+            {
+                Fcb = CONTAINING_RECORD(ListEntry, VFATFCB, FcbListEntry);
+                ListEntry = ListEntry->Flink;
+
+                /* If no handle: that FCB is no problem for locking
+                 * so ignore it
+                 */
+                if (Fcb->OpenHandleCount == 0)
+                {
+                    continue;
+                }
+
+                /* Not a dir? We're no longer at boot */
+                if (!vfatFCBIsDirectory(Fcb))
+                {
+                    ForceLock = FALSE;
+                    break;
+                }
+
+                /* If we have cached initialized and several handles, we're
+                   not in the boot case
+                 */
+                if (Fcb->FileObject != NULL && Fcb->OpenHandleCount > 1)
+                {
+                    ForceLock = FALSE;
+                    break;
+                }
+
+                /* Count the handles */
+                HandleCount += Fcb->OpenHandleCount;
+                /* More than two handles? Then, we're not booting anymore */
+                if (HandleCount > 2)
+                {
+                    ForceLock = FALSE;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            ForceLock = FALSE;
+        }
+
+        /* Here comes the hack, ignore the failure! */
+        if (!ForceLock)
+        {
+#endif
+
+        DPRINT1("Can't lock: %u opened\n", DeviceExt->OpenHandleCount);
+
+        ListEntry = DeviceExt->FcbListHead.Flink;
+        while (ListEntry != &DeviceExt->FcbListHead)
+        {
+            Fcb = CONTAINING_RECORD(ListEntry, VFATFCB, FcbListEntry);
+            ListEntry = ListEntry->Flink;
+
+            if (Fcb->OpenHandleCount  > 0)
+            {
+                DPRINT1("Opened (%u - %u): %wZ\n", Fcb->OpenHandleCount, Fcb->RefCount, &Fcb->PathNameU);
+            }
+        }
+
+        FsRtlNotifyVolumeEvent(IrpContext->Stack->FileObject, FSRTL_VOLUME_LOCK_FAILED);
+
         return STATUS_ACCESS_DENIED;
+
+#if 1
+        /* End of the hack: be verbose about its usage,
+         * just in case we would mess up everything!
+         */
+        }
+        else
+        {
+            DPRINT1("HACK: Using lock-hack!\n");
+        }
+#endif
     }
 
     /* Finally, proceed */
     if (Lock)
     {
+        /* Flush volume & files */
+        VfatFlushVolume(DeviceExt, DeviceExt->VolumeFcb);
+
+        /* The volume is now clean */
+        if (BooleanFlagOn(DeviceExt->VolumeFcb->Flags, VCB_CLEAR_DIRTY) &&
+            BooleanFlagOn(DeviceExt->VolumeFcb->Flags, VCB_IS_DIRTY))
+        {
+            /* Drop the dirty bit */
+            if (NT_SUCCESS(SetDirtyStatus(DeviceExt, FALSE)))
+                ClearFlag(DeviceExt->VolumeFcb->Flags, VCB_IS_DIRTY);
+        }
+
         DeviceExt->Flags |= VCB_VOLUME_LOCKED;
         Vpb->Flags |= VPB_LOCKED;
     }
@@ -1106,6 +1261,8 @@ VfatLockOrUnlockVolume(
     {
         DeviceExt->Flags &= ~VCB_VOLUME_LOCKED;
         Vpb->Flags &= ~VPB_LOCKED;
+
+        FsRtlNotifyVolumeEvent(IrpContext->Stack->FileObject, FSRTL_VOLUME_UNLOCK);
     }
 
     return STATUS_SUCCESS;
@@ -1120,8 +1277,6 @@ VfatDismountVolume(
     PLIST_ENTRY NextEntry;
     PVFATFCB Fcb;
     PFILE_OBJECT FileObject;
-    ULONG eocMark;
-    NTSTATUS Status;
 
     DPRINT("VfatDismountVolume(%p)\n", IrpContext);
 
@@ -1132,6 +1287,12 @@ VfatDismountVolume(
      * but we're here mainly for 1st stage, so KISS
      */
     if (!BooleanFlagOn(DeviceExt->Flags, VCB_VOLUME_LOCKED))
+    {
+        return STATUS_ACCESS_DENIED;
+    }
+
+    /* Deny dismount of boot volume */
+    if (BooleanFlagOn(DeviceExt->Flags, VCB_IS_SYS_OR_HAS_PAGE))
     {
         return STATUS_ACCESS_DENIED;
     }
@@ -1147,28 +1308,34 @@ VfatDismountVolume(
 
     ExAcquireResourceExclusiveLite(&DeviceExt->FatResource, TRUE);
 
-    if (BooleanFlagOn(DeviceExt->VolumeFcb->Flags, VCB_CLEAR_DIRTY))
-    {
-        /* Set clean shutdown bit */
-        Status = GetNextCluster(DeviceExt, 1, &eocMark);
-        if (NT_SUCCESS(Status))
-        {
-            eocMark |= DeviceExt->CleanShutBitMask;
-            if (NT_SUCCESS(WriteCluster(DeviceExt, 1, eocMark)))
-                DeviceExt->VolumeFcb->Flags &= ~VCB_IS_DIRTY;
-        }
-    }
-
     /* Flush volume & files */
     VfatFlushVolume(DeviceExt, (PVFATFCB)FileObject->FsContext);
+
+    /* The volume is now clean */
+    if (BooleanFlagOn(DeviceExt->VolumeFcb->Flags, VCB_CLEAR_DIRTY) &&
+        BooleanFlagOn(DeviceExt->VolumeFcb->Flags, VCB_IS_DIRTY))
+    {
+        /* Drop the dirty bit */
+        if (NT_SUCCESS(SetDirtyStatus(DeviceExt, FALSE)))
+            DeviceExt->VolumeFcb->Flags &= ~VCB_IS_DIRTY;
+    }
 
     /* Rebrowse the FCB in order to free them now */
     while (!IsListEmpty(&DeviceExt->FcbListHead))
     {
-        NextEntry = RemoveHeadList(&DeviceExt->FcbListHead);
+        NextEntry = RemoveTailList(&DeviceExt->FcbListHead);
         Fcb = CONTAINING_RECORD(NextEntry, VFATFCB, FcbListEntry);
+
+        if (Fcb == DeviceExt->RootFcb)
+            DeviceExt->RootFcb = NULL;
+        else if (Fcb == DeviceExt->VolumeFcb)
+            DeviceExt->VolumeFcb = NULL;
+
         vfatDestroyFCB(Fcb);
     }
+
+    /* We are uninitializing, the VCB cannot be used anymore */
+    ClearFlag(DeviceExt->Flags, VCB_GOOD);
 
     /* Mark we're being dismounted */
     DeviceExt->Flags |= VCB_DISMOUNT_PENDING;
@@ -1178,12 +1345,47 @@ VfatDismountVolume(
 
     ExReleaseResourceLite(&DeviceExt->FatResource);
 
-    /* Release a few resources and quit, we're done */
-    ExDeleteResourceLite(&DeviceExt->DirResource);
-    ExDeleteResourceLite(&DeviceExt->FatResource);
-    ObDereferenceObject(DeviceExt->FATFileObject);
-
     return STATUS_SUCCESS;
+}
+
+static
+NTSTATUS
+VfatGetStatistics(
+    PVFAT_IRP_CONTEXT IrpContext)
+{
+    PVOID Buffer;
+    ULONG Length;
+    NTSTATUS Status;
+    PDEVICE_EXTENSION DeviceExt;
+
+    DeviceExt = IrpContext->DeviceExt;
+    Length = IrpContext->Stack->Parameters.FileSystemControl.OutputBufferLength;
+    Buffer = IrpContext->Irp->AssociatedIrp.SystemBuffer;
+
+    if (Length < sizeof(FILESYSTEM_STATISTICS))
+    {
+        return STATUS_BUFFER_TOO_SMALL;
+    }
+
+    if (Buffer == NULL)
+    {
+        return STATUS_INVALID_USER_BUFFER;
+    }
+
+    if (Length >= sizeof(STATISTICS) * VfatGlobalData->NumberProcessors)
+    {
+        Length = sizeof(STATISTICS) * VfatGlobalData->NumberProcessors;
+        Status = STATUS_SUCCESS;
+    }
+    else
+    {
+        Status = STATUS_BUFFER_OVERFLOW;
+    }
+
+    RtlCopyMemory(Buffer, DeviceExt->Statistics, Length);
+    IrpContext->Irp->IoStatus.Information = Length;
+
+    return Status;
 }
 
 /*
@@ -1239,6 +1441,10 @@ VfatFileSystemControl(
 
                 case FSCTL_DISMOUNT_VOLUME:
                     Status = VfatDismountVolume(IrpContext);
+                    break;
+
+                case FSCTL_FILESYSTEM_GET_STATISTICS:
+                    Status = VfatGetStatistics(IrpContext);
                     break;
 
                 default:

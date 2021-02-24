@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#include <libloaderapi.h>
+
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4201)
@@ -331,12 +333,19 @@ extern "C" {
 #define PROCESS_HEAP_ENTRY_BUSY 4
 #define PROCESS_HEAP_ENTRY_MOVEABLE 16
 #define PROCESS_HEAP_ENTRY_DDESHARE 32
-#define DONT_RESOLVE_DLL_REFERENCES 1
-#define LOAD_LIBRARY_AS_DATAFILE 2
-#define LOAD_WITH_ALTERED_SEARCH_PATH 8
-#define LOAD_IGNORE_CODE_AUTHZ_LEVEL 16
-#define LOAD_LIBRARY_AS_IMAGE_RESOURCE 32
-#define LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE 64
+
+#define DONT_RESOLVE_DLL_REFERENCES         1
+#define LOAD_LIBRARY_AS_DATAFILE            2
+#define LOAD_WITH_ALTERED_SEARCH_PATH       8
+#define LOAD_IGNORE_CODE_AUTHZ_LEVEL        16
+#define LOAD_LIBRARY_AS_IMAGE_RESOURCE      32
+#define LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE  64
+#define LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR    256
+#define LOAD_LIBRARY_SEARCH_APPLICATION_DIR 512
+#define LOAD_LIBRARY_SEARCH_USER_DIRS       1024
+#define LOAD_LIBRARY_SEARCH_SYSTEM32        2048
+#define LOAD_LIBRARY_SEARCH_DEFAULT_DIRS    4096
+
 #define LMEM_FIXED 0
 #define LMEM_MOVEABLE 2
 #define LMEM_NONZEROLHND 2
@@ -576,6 +585,11 @@ extern "C" {
 #define CONDITION_VARIABLE_LOCKMODE_SHARED  RTL_CONDITION_VARIABLE_LOCKMODE_SHARED
 #endif
 
+#define BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE  0x00001
+#define BASE_SEARCH_PATH_DISABLE_SAFE_SEARCHMODE 0x10000
+#define BASE_SEARCH_PATH_PERMANENT               0x08000
+#define BASE_SEARCH_PATH_INVALID_FLAGS           (~0x18001)
+
 #define INIT_ONCE_STATIC_INIT RTL_RUN_ONCE_INIT
 
 #if (_WIN32_WINNT >= 0x0600)
@@ -765,6 +779,12 @@ typedef struct _DEBUG_EVENT {
 	} u;
 } DEBUG_EVENT,*LPDEBUG_EVENT;
 
+#ifndef MIDL_PASS
+typedef PCONTEXT LPCONTEXT;
+typedef PEXCEPTION_RECORD LPEXCEPTION_RECORD;
+typedef PEXCEPTION_POINTERS LPEXCEPTION_POINTERS;
+#endif
+
 typedef struct _OVERLAPPED {
 	ULONG_PTR Internal;
 	ULONG_PTR InternalHigh;
@@ -777,6 +797,13 @@ typedef struct _OVERLAPPED {
 	} DUMMYUNIONNAME;
 	HANDLE hEvent;
 } OVERLAPPED, *POVERLAPPED, *LPOVERLAPPED;
+
+typedef struct _OVERLAPPED_ENTRY {
+    ULONG_PTR lpCompletionKey;
+    LPOVERLAPPED lpOverlapped;
+    ULONG_PTR Internal;
+    DWORD dwNumberOfBytesTransferred;
+} OVERLAPPED_ENTRY, *LPOVERLAPPED_ENTRY;
 
 typedef struct _STARTUPINFOA {
 	DWORD	cb;
@@ -1124,7 +1151,7 @@ typedef struct _SYSTEM_POWER_STATUS {
 	BYTE ACLineStatus;
 	BYTE BatteryFlag;
 	BYTE BatteryLifePercent;
-	BYTE Reserved1;
+	BYTE SystemStatusFlag;
 	DWORD BatteryLifeTime;
 	DWORD BatteryFullLifeTime;
 } SYSTEM_POWER_STATUS,*LPSYSTEM_POWER_STATUS;
@@ -1689,6 +1716,20 @@ CreateProcessAsUserA(
 
 BOOL WINAPI CreateProcessAsUserW(HANDLE,LPCWSTR,LPWSTR,LPSECURITY_ATTRIBUTES,LPSECURITY_ATTRIBUTES,BOOL,DWORD,PVOID,LPCWSTR,LPSTARTUPINFOW,LPPROCESS_INFORMATION);
 HANDLE WINAPI CreateRemoteThread(HANDLE,LPSECURITY_ATTRIBUTES,DWORD,LPTHREAD_START_ROUTINE,LPVOID,DWORD,LPDWORD);
+
+BOOL
+WINAPI
+CreateRestrictedToken(
+  _In_ HANDLE ExistingTokenHandle,
+  _In_ DWORD Flags,
+  _In_ DWORD DisableSidCount,
+  _In_reads_opt_(DisableSidCount) PSID_AND_ATTRIBUTES SidsToDisable,
+  _In_ DWORD DeletePrivilegeCount,
+  _In_reads_opt_(DeletePrivilegeCount) PLUID_AND_ATTRIBUTES PrivilegesToDelete,
+  _In_ DWORD RestrictedSidCount,
+  _In_reads_opt_(RestrictedSidCount) PSID_AND_ATTRIBUTES SidsToRestrict,
+  _Outptr_ PHANDLE NewTokenHandle);
+
 _Ret_maybenull_ HANDLE WINAPI CreateSemaphoreA(_In_opt_ LPSECURITY_ATTRIBUTES, _In_ LONG, _In_ LONG, _In_opt_ LPCSTR);
 _Ret_maybenull_ HANDLE WINAPI CreateSemaphoreW(_In_opt_ LPSECURITY_ATTRIBUTES, _In_ LONG, _In_ LONG, _In_opt_ LPCWSTR);
 #if (_WIN32_WINNT >= 0x0600)
@@ -1696,10 +1737,33 @@ _Ret_maybenull_ HANDLE WINAPI CreateSemaphoreExA(_In_opt_ LPSECURITY_ATTRIBUTES,
 HANDLE WINAPI CreateSemaphoreExW(LPSECURITY_ATTRIBUTES,LONG,LONG,LPCWSTR,DWORD,DWORD);
 #endif
 DWORD WINAPI CreateTapePartition(_In_ HANDLE, _In_ DWORD, _In_ DWORD, _In_ DWORD);
+
 #if (_WIN32_WINNT >= 0x0500)
+
 HANDLE WINAPI CreateTimerQueue(void);
-BOOL WINAPI CreateTimerQueueTimer(PHANDLE,HANDLE,WAITORTIMERCALLBACK,PVOID,DWORD,DWORD,ULONG);
-#endif
+
+BOOL
+WINAPI
+CreateTimerQueueTimer(
+  _Outptr_ PHANDLE,
+  _In_opt_ HANDLE,
+  _In_ WAITORTIMERCALLBACK,
+  _In_opt_ PVOID,
+  _In_ DWORD,
+  _In_ DWORD,
+  _In_ ULONG);
+
+_Must_inspect_result_
+BOOL
+WINAPI
+ChangeTimerQueueTimer(
+  _In_opt_ HANDLE TimerQueue,
+  _Inout_ HANDLE Timer,
+  _In_ ULONG DueTime,
+  _In_ ULONG Period);
+
+#endif /* (_WIN32_WINNT >= 0x0500) */
+
 HANDLE WINAPI CreateThread(LPSECURITY_ATTRIBUTES,DWORD,LPTHREAD_START_ROUTINE,PVOID,DWORD,PDWORD);
 _Ret_maybenull_ HANDLE WINAPI CreateWaitableTimerA(_In_opt_ LPSECURITY_ATTRIBUTES, _In_ BOOL, _In_opt_ LPCSTR);
 _Ret_maybenull_ HANDLE WINAPI CreateWaitableTimerW(_In_opt_ LPSECURITY_ATTRIBUTES, _In_ BOOL, _In_opt_ LPCWSTR);
@@ -2238,6 +2302,7 @@ HANDLE WINAPI GetProcessHeap(VOID);
 DWORD WINAPI GetProcessHeaps(DWORD,PHANDLE);
 #if (_WIN32_WINNT >= 0x0502)
 DWORD WINAPI GetProcessId(HANDLE);
+DWORD WINAPI GetProcessIdOfThread(HANDLE);
 #endif
 #if (_WIN32_WINNT >= 0x0500)
 BOOL WINAPI GetProcessIoCounters(_In_ HANDLE, _Out_ PIO_COUNTERS);
@@ -2310,6 +2375,16 @@ VOID WINAPI GetStartupInfoW(LPSTARTUPINFOW);
 HANDLE WINAPI GetStdHandle(_In_ DWORD);
 UINT WINAPI GetSystemDirectoryA(LPSTR,UINT);
 UINT WINAPI GetSystemDirectoryW(LPWSTR,UINT);
+
+WINBASEAPI
+UINT
+WINAPI
+GetSystemFirmwareTable(
+  _In_ DWORD FirmwareTableProviderSignature,
+  _In_ DWORD FirmwareTableID,
+  _Out_writes_bytes_to_opt_(BufferSize,return) PVOID pFirmwareTableBuffer,
+  _In_ DWORD BufferSize);
+
 VOID WINAPI GetSystemInfo(LPSYSTEM_INFO);
 BOOL WINAPI GetSystemPowerStatus(_Out_ LPSYSTEM_POWER_STATUS);
 #if (_WIN32_WINNT >= 0x0502)
@@ -3231,8 +3306,11 @@ BOOL WINAPI WriteProfileSectionW(_In_ LPCWSTR, _In_ LPCWSTR);
 BOOL WINAPI WriteProfileStringA(_In_opt_ LPCSTR, _In_opt_ LPCSTR, _In_opt_ LPCSTR);
 BOOL WINAPI WriteProfileStringW(_In_opt_ LPCWSTR, _In_opt_ LPCWSTR, _In_opt_ LPCWSTR);
 DWORD WINAPI WriteTapemark(_In_ HANDLE, _In_ DWORD, _In_ DWORD, _In_ BOOL);
+
 #define Yield()
+
 #if (_WIN32_WINNT >= 0x0501)
+DWORD WINAPI WTSGetActiveConsoleSessionId(VOID);
 BOOL WINAPI ZombifyActCtx(_Inout_ HANDLE);
 #endif
 
@@ -3831,11 +3909,41 @@ InitOnceExecuteOnce(
   _Inout_opt_ PVOID Parameter,
   _Outptr_opt_result_maybenull_ LPVOID *Context);
 
+
+#if defined(_SLIST_HEADER_) && !defined(_NTOS_) && !defined(_NTOSP_)
+
 WINBASEAPI
 VOID
 WINAPI
 InitializeSListHead(
-    _Out_ PSLIST_HEADER ListHead);
+  _Out_ PSLIST_HEADER ListHead);
+
+WINBASEAPI
+PSLIST_ENTRY
+WINAPI
+InterlockedPopEntrySList(
+  _Inout_ PSLIST_HEADER ListHead);
+
+WINBASEAPI
+PSLIST_ENTRY
+WINAPI
+InterlockedPushEntrySList(
+  _Inout_ PSLIST_HEADER ListHead,
+  _Inout_ PSLIST_ENTRY ListEntry);
+
+WINBASEAPI
+PSLIST_ENTRY
+WINAPI
+InterlockedFlushSList(
+  _Inout_ PSLIST_HEADER ListHead);
+
+WINBASEAPI
+USHORT
+WINAPI
+QueryDepthSList(
+  _In_ PSLIST_HEADER ListHead);
+
+#endif /* _SLIST_HEADER_ */
 
 #ifdef _MSC_VER
 #pragma warning(pop)

@@ -17,8 +17,7 @@
 #define NDEBUG
 #include <debug.h>
 
-BOOLEAN ObpLUIDDeviceMapsEnabled;
-POBJECT_TYPE ObDirectoryType = NULL;
+POBJECT_TYPE ObpDirectoryObjectType = NULL;
 
 /* PRIVATE FUNCTIONS ******************************************************/
 
@@ -94,6 +93,42 @@ ObpInsertEntryDirectory(IN POBJECT_DIRECTORY Parent,
 }
 
 /*++
+* @name ObpGetShadowDirectory
+*
+*     The ObpGetShadowDirectory routine <FILLMEIN>.
+*
+* @param Directory
+*        <FILLMEIN>.
+*
+* @return Pointer to the global DOS directory if any, or NULL otherwise.
+*
+* @remarks None.
+*
+*--*/
+POBJECT_DIRECTORY
+NTAPI
+ObpGetShadowDirectory(IN POBJECT_DIRECTORY Directory)
+{
+    PDEVICE_MAP DeviceMap;
+    POBJECT_DIRECTORY GlobalDosDirectory = NULL;
+
+    /* Acquire the device map lock */
+    KeAcquireGuardedMutex(&ObpDeviceMapLock);
+
+    /* Get the global DOS directory if any */
+    DeviceMap = Directory->DeviceMap;
+    if (DeviceMap != NULL)
+    {
+        GlobalDosDirectory = DeviceMap->GlobalDosDevicesDirectory;
+    }
+
+    /* Release the devicemap lock */
+    KeReleaseGuardedMutex(&ObpDeviceMapLock);
+
+    return GlobalDosDirectory;
+}
+
+/*++
 * @name ObpLookupEntryDirectory
 *
 *     The ObpLookupEntryDirectory routine <FILLMEIN>.
@@ -138,10 +173,11 @@ ObpLookupEntryDirectory(IN POBJECT_DIRECTORY Directory,
     POBJECT_DIRECTORY_ENTRY CurrentEntry;
     PVOID FoundObject = NULL;
     PWSTR Buffer;
+    POBJECT_DIRECTORY ShadowDirectory;
     PAGED_CODE();
 
     /* Check if we should search the shadow directory */
-    if (!ObpLUIDDeviceMapsEnabled) SearchShadow = FALSE;
+    if (ObpLUIDDeviceMapsEnabled == 0) SearchShadow = FALSE;
 
     /* Fail if we don't have a directory or name */
     if (!(Directory) || !(Name)) goto Quickie;
@@ -178,6 +214,7 @@ ObpLookupEntryDirectory(IN POBJECT_DIRECTORY Directory,
     Context->HashValue = HashValue;
     Context->HashIndex = (USHORT)HashIndex;
 
+DoItAgain:
     /* Get the root entry and set it as our lookup bucket */
     AllocatedEntry = &Directory->HashBuckets[HashIndex];
     LookupBucket = AllocatedEntry;
@@ -251,8 +288,13 @@ ObpLookupEntryDirectory(IN POBJECT_DIRECTORY Directory,
         /* Check if we should scan the shadow directory */
         if ((SearchShadow) && (Directory->DeviceMap))
         {
-            /* FIXME: We don't support this yet */
-            ASSERT(FALSE);
+            ShadowDirectory = ObpGetShadowDirectory(Directory);
+            /* A global DOS directory was found, loop it again */
+            if (ShadowDirectory != NULL)
+            {
+                Directory = ShadowDirectory;
+                goto DoItAgain;
+            }
         }
     }
 
@@ -383,7 +425,7 @@ NtOpenDirectoryObject(OUT PHANDLE DirectoryHandle,
 
     /* Open the directory object */
     Status = ObOpenObjectByName(ObjectAttributes,
-                                ObDirectoryType,
+                                ObpDirectoryObjectType,
                                 PreviousMode,
                                 NULL,
                                 DesiredAccess,
@@ -520,7 +562,7 @@ NtQueryDirectoryObject(IN HANDLE DirectoryHandle,
     /* Get a reference to directory */
     Status = ObReferenceObjectByHandle(DirectoryHandle,
                                        DIRECTORY_QUERY,
-                                       ObDirectoryType,
+                                       ObpDirectoryObjectType,
                                        PreviousMode,
                                        (PVOID*)&Directory,
                                        NULL);
@@ -756,7 +798,7 @@ NtCreateDirectoryObject(OUT PHANDLE DirectoryHandle,
 
     /* Create the object */
     Status = ObCreateObject(PreviousMode,
-                            ObDirectoryType,
+                            ObpDirectoryObjectType,
                             ObjectAttributes,
                             PreviousMode,
                             NULL,

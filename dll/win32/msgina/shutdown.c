@@ -24,9 +24,78 @@
 typedef struct _SHUTDOWN_DLG_CONTEXT
 {
     PGINA_CONTEXT pgContext;
+    HBITMAP hBitmap;
     DWORD ShutdownOptions;
     BOOL bCloseDlg;
+    BOOL bReasonUI;
 } SHUTDOWN_DLG_CONTEXT, *PSHUTDOWN_DLG_CONTEXT;
+
+
+static
+BOOL
+GetShutdownReasonUI(VOID)
+{
+    OSVERSIONINFOEX VersionInfo;
+    DWORD dwValue, dwSize;
+    HKEY hKey;
+    LONG lRet;
+
+    /* Query the policy value */
+    lRet = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                         L"Software\\Policies\\Microsoft\\Windows NT\\Reliability",
+                         0,
+                         KEY_QUERY_VALUE,
+                         &hKey);
+    if (lRet == ERROR_SUCCESS)
+    {
+        dwValue = 0;
+        dwSize = sizeof(dwValue);
+        RegQueryValueExW(hKey,
+                         L"ShutdownReasonUI",
+                         NULL,
+                         NULL,
+                         (LPBYTE)&dwValue,
+                         &dwSize);
+        RegCloseKey(hKey);
+
+        return (dwValue != 0) ? TRUE : FALSE;
+    }
+
+    /* Query the machine value */
+    lRet = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                         L"Software\\Microsoft\\Windows\\CurrentVersion\\Reliability",
+                         0,
+                         KEY_QUERY_VALUE,
+                         &hKey);
+    if (lRet == ERROR_SUCCESS)
+    {
+        dwValue = 0;
+        dwSize = sizeof(dwValue);
+        RegQueryValueExW(hKey,
+                         L"ShutdownReasonUI",
+                         NULL,
+                         NULL,
+                         (LPBYTE)&dwValue,
+                         &dwSize);
+        RegCloseKey(hKey);
+
+        return (dwValue != 0) ? TRUE : FALSE;
+    }
+
+    /* Return the default value */
+    VersionInfo.dwOSVersionInfoSize = sizeof(VersionInfo);
+    if (!GetVersionEx((POSVERSIONINFO)&VersionInfo))
+        return FALSE;
+
+    return FALSE;
+//    return (VersionInfo.wProductType == VER_NT_WORKSTATION) ? FALSE : TRUE;
+}
+
+DWORD
+GetDefaultShutdownSelState(VOID)
+{
+    return WLX_SAS_ACTION_SHUTDOWN_POWER_OFF;
+}
 
 DWORD
 LoadShutdownSelState(VOID)
@@ -149,6 +218,12 @@ SaveShutdownSelState(
 }
 
 DWORD
+GetDefaultShutdownOptions(VOID)
+{
+    return WLX_SHUTDOWN_STATE_POWER_OFF | WLX_SHUTDOWN_STATE_REBOOT;
+}
+
+DWORD
 GetAllowedShutdownOptions(VOID)
 {
     DWORD Options = 0;
@@ -174,11 +249,11 @@ UpdateShutdownDesc(
     DWORD ShutdownCode;
     WCHAR szBuffer[256];
 
-    ShutdownCode = SendDlgItemMessageW(hDlg, IDC_SHUTDOWN_LIST, CB_GETCURSEL, 0, 0);
+    ShutdownCode = SendDlgItemMessageW(hDlg, IDC_SHUTDOWN_ACTION, CB_GETCURSEL, 0, 0);
     if (ShutdownCode == CB_ERR) // Invalid selection
         return;
 
-    ShutdownCode = SendDlgItemMessageW(hDlg, IDC_SHUTDOWN_LIST, CB_GETITEMDATA, ShutdownCode, 0);
+    ShutdownCode = SendDlgItemMessageW(hDlg, IDC_SHUTDOWN_ACTION, CB_GETITEMDATA, ShutdownCode, 0);
 
     switch (ShutdownCode)
     {
@@ -208,6 +283,13 @@ UpdateShutdownDesc(
 
     LoadStringW(pContext->pgContext->hDllInstance, DescId, szBuffer, _countof(szBuffer));
     SetDlgItemTextW(hDlg, IDC_SHUTDOWN_DESCRIPTION, szBuffer);
+
+    if (pContext->bReasonUI)
+    {
+        EnableWindow(GetDlgItem(hDlg, IDC_REASON_PLANNED), (ShutdownCode != WLX_SAS_ACTION_LOGOFF));
+        EnableWindow(GetDlgItem(hDlg, IDC_REASON_LIST), (ShutdownCode != WLX_SAS_ACTION_LOGOFF));
+        EnableWindow(GetDlgItem(hDlg, IDC_REASON_COMMENT), (ShutdownCode != WLX_SAS_ACTION_LOGOFF));
+    }
 }
 
 static VOID
@@ -221,7 +303,7 @@ ShutdownOnInit(
     WCHAR szBuffer[256];
     WCHAR szBuffer2[256];
 
-    hwndList = GetDlgItem(hDlg, IDC_SHUTDOWN_LIST);
+    hwndList = GetDlgItem(hDlg, IDC_SHUTDOWN_ACTION);
 
     /* Clear the content before it's used */
     SendMessageW(hwndList, CB_RESETCONTENT, 0, 0);
@@ -301,7 +383,7 @@ ShutdownOnOk(
     INT idx;
 
     idx = SendDlgItemMessageW(hDlg,
-                              IDC_SHUTDOWN_LIST,
+                              IDC_SHUTDOWN_ACTION,
                               CB_GETCURSEL,
                               0,
                               0);
@@ -309,14 +391,14 @@ ShutdownOnOk(
     {
         pgContext->nShutdownAction =
             SendDlgItemMessageW(hDlg,
-                                IDC_SHUTDOWN_LIST,
+                                IDC_SHUTDOWN_ACTION,
                                 CB_GETITEMDATA,
                                 idx,
                                 0);
     }
 }
 
-static BOOL
+static INT_PTR
 CALLBACK
 ShutdownDialogProc(
     HWND hDlg,
@@ -338,13 +420,13 @@ ShutdownDialogProc(
             ShutdownOnInit(hDlg, pContext);
 
             /* Draw the logo bitmap */
-            pContext->pgContext->hBitmap =
+            pContext->hBitmap =
                 LoadImageW(pContext->pgContext->hDllInstance, MAKEINTRESOURCEW(IDI_ROSLOGO), IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR);
             return TRUE;
         }
 
         case WM_DESTROY:
-            DeleteObject(pContext->pgContext->hBitmap);
+            DeleteObject(pContext->hBitmap);
             return TRUE;
 
         case WM_ACTIVATE:
@@ -368,10 +450,10 @@ ShutdownDialogProc(
         case WM_PAINT:
         {
             PAINTSTRUCT ps;
-            if (pContext->pgContext->hBitmap)
+            if (pContext->hBitmap)
             {
                 BeginPaint(hDlg, &ps);
-                DrawStateW(ps.hdc, NULL, NULL, (LPARAM)pContext->pgContext->hBitmap, (WPARAM)0, 0, 0, 0, 0, DST_BITMAP);
+                DrawStateW(ps.hdc, NULL, NULL, (LPARAM)pContext->hBitmap, (WPARAM)0, 0, 0, 0, 0, DST_BITMAP);
                 EndPaint(hDlg, &ps);
             }
             return TRUE;
@@ -395,7 +477,7 @@ ShutdownDialogProc(
                     EndDialog(hDlg, LOWORD(wParam));
                     break;
 
-                case IDC_SHUTDOWN_LIST:
+                case IDC_SHUTDOWN_ACTION:
                     UpdateShutdownDesc(hDlg, pContext);
                     break;
             }
@@ -427,12 +509,13 @@ ShutdownDialog(
     Context.pgContext = pgContext;
     Context.ShutdownOptions = ShutdownOptions;
     Context.bCloseDlg = FALSE;
+    Context.bReasonUI = GetShutdownReasonUI();
 
     if (pgContext->hWlx && pgContext->pWlxFuncs)
     {
         ret = pgContext->pWlxFuncs->WlxDialogBoxParam(pgContext->hWlx,
                                                       pgContext->hDllInstance,
-                                                      MAKEINTRESOURCEW(IDD_SHUTDOWN_DLG),
+                                                      MAKEINTRESOURCEW(Context.bReasonUI ? IDD_SHUTDOWN_REASON : IDD_SHUTDOWN),
                                                       hwndDlg,
                                                       ShutdownDialogProc,
                                                       (LPARAM)&Context);
@@ -440,7 +523,7 @@ ShutdownDialog(
     else
     {
         ret = DialogBoxParamW(pgContext->hDllInstance,
-                              MAKEINTRESOURCEW(IDD_SHUTDOWN_DLG),
+                              MAKEINTRESOURCEW(Context.bReasonUI ? IDD_SHUTDOWN_REASON : IDD_SHUTDOWN),
                               hwndDlg,
                               ShutdownDialogProc,
                               (LPARAM)&Context);

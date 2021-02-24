@@ -12,7 +12,7 @@
 
 /* Update all the controls with the current values for the selected screen element */
 static VOID
-UpdateControls(HWND hwndDlg, GLOBALS *g)
+EffAppearanceDlgUpdateControls(HWND hwndDlg, GLOBALS *g)
 {
     WPARAM state;
 
@@ -21,6 +21,12 @@ do { \
     state = SendDlgItemMessageW(hwndDlg, __CONTROL_ID, BM_GETCHECK, 0, 0);  \
     g->SchemeAdv.Effects.__MEMBER = /* Do a XOR of both the conditions */   \
         ((state == BST_CHECKED) != (__CONTROL_ID == IDC_EFFAPPEARANCE_KEYBOARDCUES)); \
+} while(0)
+
+#define SAVE_CHECKBOX_SCH(__CONTROL_ID, __MEMBER)                           \
+do { \
+    state = SendDlgItemMessageW(hwndDlg, __CONTROL_ID, BM_GETCHECK, 0, 0);  \
+    g->SchemeAdv.__MEMBER = (state == BST_CHECKED);                         \
 } while(0)
 
 #define RSET_COMBOBOX(__CONTROL_ID, __PARENT_MEMBER, __MEMBER)                                          \
@@ -41,6 +47,7 @@ do { \
     SAVE_CHECKBOX(IDC_EFFAPPEARANCE_SETDROPSHADOW,   bDropShadow);
     SAVE_CHECKBOX(IDC_EFFAPPEARANCE_DRAGFULLWINDOWS, bDragFullWindows);
     SAVE_CHECKBOX(IDC_EFFAPPEARANCE_KEYBOARDCUES,    bKeyboardCues);
+    SAVE_CHECKBOX_SCH(IDC_EFFAPPEARANCE_FLATMENUS,   bFlatMenus);
 
 #undef SAVE_CHECKBOX
 #undef RSET_COMBOBOX
@@ -49,7 +56,7 @@ do { \
 }
 
 static VOID
-SaveCurrentValues(HWND hwndDlg, GLOBALS *g)
+EffAppearanceDlgSaveCurrentValues(HWND hwndDlg, GLOBALS *g)
 {
     /* The settings get saved at the end of ApplyScheme() in theme.c,
      * when clicking Apply in the main dialog. */
@@ -85,6 +92,14 @@ do { \
     SendDlgItemMessageW(hwndDlg, __CONTROL_ID, BM_SETCHECK, state, 0);  \
 } while(0)
 
+#define INIT_CHECKBOX_SCH(__CONTROL_ID, __MEMBER)                       \
+do { \
+    state = /* Do a XOR of both the conditions */                       \
+        ((g->SchemeAdv.__MEMBER) == TRUE)                               \
+            ? BST_CHECKED : BST_UNCHECKED;                              \
+    SendDlgItemMessageW(hwndDlg, __CONTROL_ID, BM_SETCHECK, state, 0);  \
+} while(0)
+
 #define FILL_COMBOBOX(__CONTROL_ID, __FIRST_STR, __LAST_STR) \
     AddToCombobox(__CONTROL_ID, hwndDlg, __FIRST_STR, __LAST_STR)
 
@@ -102,12 +117,13 @@ do { \
     INIT_CHECKBOX(IDC_EFFAPPEARANCE_SETDROPSHADOW,   bDropShadow);
     INIT_CHECKBOX(IDC_EFFAPPEARANCE_DRAGFULLWINDOWS, bDragFullWindows);
     INIT_CHECKBOX(IDC_EFFAPPEARANCE_KEYBOARDCUES,    bKeyboardCues);
+    INIT_CHECKBOX_SCH(IDC_EFFAPPEARANCE_FLATMENUS,   bFlatMenus);
 
 #undef INIT_CHECKBOX
 #undef FILL_COMBOBOX
 
     /* Update the controls */
-    UpdateControls(hwndDlg, g);
+    EffAppearanceDlgUpdateControls(hwndDlg, g);
 }
 
 INT_PTR CALLBACK
@@ -132,7 +148,7 @@ EffAppearanceDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
             switch(LOWORD(wParam))
             {
                 case IDOK:
-                    SaveCurrentValues(hwndDlg, g);
+                    EffAppearanceDlgSaveCurrentValues(hwndDlg, g);
                     EndDialog(hwndDlg, IDOK);
                     break;
 
@@ -146,9 +162,10 @@ EffAppearanceDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 case IDC_EFFAPPEARANCE_SETDROPSHADOW:
                 case IDC_EFFAPPEARANCE_DRAGFULLWINDOWS:
                 case IDC_EFFAPPEARANCE_KEYBOARDCUES:
+                case IDC_EFFAPPEARANCE_FLATMENUS:
                     if (HIWORD(wParam) == BN_CLICKED)
                     {
-                        UpdateControls(hwndDlg, g);
+                        EffAppearanceDlgUpdateControls(hwndDlg, g);
                     }
                     break;
 
@@ -165,7 +182,7 @@ EffAppearanceDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
                                                 CB_GETCURSEL, 0, 0);
                         g->SchemeAdv.Effects.uiFontSmoothingType = (Index == CB_ERR) ? 0 : (Index + 1);
 
-                        UpdateControls(hwndDlg, g);
+                        EffAppearanceDlgUpdateControls(hwndDlg, g);
                     }
                     break;
 

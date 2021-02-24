@@ -15,10 +15,15 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-
+#include <assert.h>
+#include <stdarg.h>
+#include "windef.h"
+#include "winbase.h"
+#include "wincrypt.h"
+#include "winreg.h"
+#include "winuser.h"
+#include "wine/debug.h"
 #include "crypt32_private.h"
-
-#include <shlwapi.h>
 
 WINE_DEFAULT_DEBUG_CHANNEL(crypt);
 
@@ -66,7 +71,7 @@ static void CRYPT_RegReadSerializedFromReg(HKEY key, DWORD contextType,
     WCHAR subKeyName[MAX_PATH];
 
     do {
-        DWORD size = sizeof(subKeyName) / sizeof(WCHAR);
+        DWORD size = ARRAY_SIZE(subKeyName);
 
         rc = RegEnumKeyExW(key, index++, subKeyName, &size, NULL, NULL, NULL,
          NULL);
@@ -158,7 +163,7 @@ static void CRYPT_RegReadFromReg(HKEY key, HCERTSTORE store)
      CERT_STORE_CRL_CONTEXT_FLAG, CERT_STORE_CTL_CONTEXT_FLAG };
     DWORD i;
 
-    for (i = 0; i < sizeof(subKeys) / sizeof(subKeys[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(subKeys); i++)
     {
         HKEY hKey;
         LONG rc;
@@ -250,7 +255,7 @@ static BOOL CRYPT_RegWriteToReg(WINE_REGSTOREINFO *store)
     BOOL ret = TRUE;
     DWORD i;
 
-    for (i = 0; ret && i < sizeof(subKeys) / sizeof(subKeys[0]); i++)
+    for (i = 0; ret && i < ARRAY_SIZE(subKeys); i++)
     {
         HKEY key;
         LONG rc = RegCreateKeyExW(store->key, subKeys[i], 0, NULL, 0,
@@ -304,7 +309,11 @@ static BOOL CRYPT_RegFlushStore(WINE_REGSTOREINFO *store, BOOL force)
     TRACE("(%p, %d)\n", store, force);
 
     if (store->dirty || force)
+    {
         ret = CRYPT_RegWriteToReg(store);
+        if (ret)
+            store->dirty = FALSE;
+    }
     else
         ret = TRUE;
     return ret;
@@ -448,7 +457,7 @@ static BOOL WINAPI CRYPT_RegControl(HCERTSTORE hCertStore, DWORD dwFlags,
  DWORD dwCtrlType, void const *pvCtrlPara)
 {
     WINE_REGSTOREINFO *store = hCertStore;
-    BOOL ret;
+    BOOL ret = TRUE;
 
     TRACE("(%p, %08x, %d, %p)\n", hCertStore, dwFlags, dwCtrlType,
      pvCtrlPara);
@@ -464,7 +473,6 @@ static BOOL WINAPI CRYPT_RegControl(HCERTSTORE hCertStore, DWORD dwFlags,
         CRYPT_RegReadFromReg(store->key, memStore);
         I_CertUpdateStore(store->memStore, memStore, 0, 0);
         CertCloseStore(memStore, 0);
-        ret = TRUE;
         break;
     }
     case CERT_STORE_CTRL_COMMIT:
@@ -473,10 +481,12 @@ static BOOL WINAPI CRYPT_RegControl(HCERTSTORE hCertStore, DWORD dwFlags,
         break;
     case CERT_STORE_CTRL_AUTO_RESYNC:
         FIXME("CERT_STORE_CTRL_AUTO_RESYNC: stub\n");
-        ret = TRUE;
+        break;
+    case CERT_STORE_CTRL_NOTIFY_CHANGE:
+        FIXME("CERT_STORE_CTRL_NOTIFY_CHANGE: stub\n");
         break;
     default:
-        FIXME("%d: stub\n", dwCtrlType);
+        FIXME("%u: stub\n", dwCtrlType);
         ret = FALSE;
     }
     return ret;
@@ -551,8 +561,7 @@ WINECRYPT_CERTSTORE *CRYPT_RegOpenStore(HCRYPTPROV hCryptProv, DWORD dwFlags,
                     CRYPT_RegReadFromReg(regInfo->key, regInfo->memStore);
                     regInfo->dirty = FALSE;
                     provInfo.cbSize = sizeof(provInfo);
-                    provInfo.cStoreProvFunc = sizeof(regProvFuncs) /
-                     sizeof(regProvFuncs[0]);
+                    provInfo.cStoreProvFunc = ARRAY_SIZE(regProvFuncs);
                     provInfo.rgpvStoreProvFunc = regProvFuncs;
                     provInfo.hStoreProv = regInfo;
                     store = CRYPT_ProvCreateStore(dwFlags, memStore, &provInfo);

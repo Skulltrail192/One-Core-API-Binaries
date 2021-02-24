@@ -158,6 +158,11 @@ IntGdiSetTextAlign(HDC  hDC,
     pdcattr = dc->pdcattr;
     prevAlign = pdcattr->lTextAlign;
     pdcattr->lTextAlign = Mode;
+    if (pdcattr->dwLayout & LAYOUT_RTL)
+    {
+        if ((Mode & TA_CENTER) != TA_CENTER) Mode ^= TA_RIGHT;
+    }
+    pdcattr->flTextAlign = Mode & TA_MASK;
     DC_UnlockDc(dc);
     return  prevAlign;
 }
@@ -396,11 +401,10 @@ IntSetDefaultRegion(PDC pdc)
         pdc->erclWindow = rclWnd;
         pdc->erclClip = rclClip;
         /* Might be an InitDC or DCE... */
-        pdc->ptlFillOrigin.x = pdc->dcattr.ptlBrushOrigin.x;
-        pdc->ptlFillOrigin.y = pdc->dcattr.ptlBrushOrigin.y;
+        pdc->ptlFillOrigin = pdc->dcattr.ptlBrushOrigin;
         return TRUE;
     }
-
+    // No Vis use the Default System Region.
     pdc->prgnVis = prgnDefault;
     return FALSE;
 }

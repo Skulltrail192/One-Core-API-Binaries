@@ -316,8 +316,7 @@ SaveFontSubstitutionSettings(
     if (!SetupInstallFromInfSectionW(hwnd, hFontInf, szSection, SPINST_REGISTRY & ~SPINST_FILES,
                                      NULL, NULL, 0, NULL, NULL, NULL, NULL))
     {
-        MessageBoxW(hwnd, L"Unable to install a new language for programs don't support unicode!",
-                   NULL, MB_ICONERROR | MB_OK);
+        PrintErrorMsgBox(IDS_ERROR_UNICODE);
     }
 
     SetupCloseInfFile(hFontInf);
@@ -404,17 +403,14 @@ ListViewCustomDraw(
         case CDDS_ITEMPREPAINT:
             if (((PCPAGE)lplvcd->nmcd.lItemlParam)->Flags & CODEPAGE_NOT_REMOVEABLE)
             {
-                lplvcd->clrText   = GetSysColor(COLOR_GRAYTEXT);
-                lplvcd->clrTextBk = GetSysColor(COLOR_WINDOW);
-                return CDRF_NEWFONT;
+                lplvcd->clrText = GetSysColor(COLOR_GRAYTEXT);
             }
             else
             {
-                lplvcd->clrText   = GetSysColor(COLOR_WINDOWTEXT);
-                lplvcd->clrTextBk = GetSysColor(COLOR_WINDOW);
-                return CDRF_NEWFONT;
+                lplvcd->clrText = GetSysColor(COLOR_WINDOWTEXT);
             }
-            break;
+            lplvcd->clrTextBk = GetSysColor(COLOR_WINDOW);
+            return CDRF_NEWFONT;
     }
 
     return CDRF_DODEFAULT;
@@ -499,9 +495,9 @@ AdvancedPageProc(HWND hwndDlg,
             else if (((LPNMHDR)lParam)->idFrom == IDC_CONV_TABLES &&
                      ((LPNMHDR)lParam)->code == NM_CUSTOMDRAW)
             {
-                SetWindowLong(hwndDlg,
-                              DWL_MSGRESULT,
-                              (LONG)ListViewCustomDraw(lParam));
+                SetWindowLongPtr(hwndDlg,
+                                 DWLP_MSGRESULT,
+                                 (LONG_PTR)ListViewCustomDraw(lParam));
                 return TRUE;
             }
             break;

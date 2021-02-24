@@ -2,7 +2,7 @@
  *    Translated by Caemyr - Olaf Siejka (Aug, 2009)
  *    Use ReactOS forum PM or IRC to contact me
  *    Updated by Saibamen - Adam Stachowicz (saibamenppl@gmail.com) (Apr, 2011)
- *    http://www.reactos.org
+ *    https://reactos.org/
  *    IRC: irc.freenode.net #reactos-pl;
  */
 
@@ -82,7 +82,7 @@ BEGIN
     LTEXT "Bez proxy dla", -1, 27, 175, 64, 10
     EDITTEXT IDC_NO_PROXY_FOR, 90, 175, 147, 12, ES_AUTOHSCROLL | WS_DISABLED
     PUSHBUTTON "Domyślne", IDC_DEFAULT_SETTINGS, 8, 195, 60, 14
-    PUSHBUTTON "OK", IDOK, 116, 195, 60, 14
+    DEFPUSHBUTTON "OK", IDOK, 116, 195, 60, 14
     PUSHBUTTON "Anuluj", IDCANCEL, 181, 195, 60, 14
 END
 
@@ -91,16 +91,16 @@ STYLE DS_SHELLFONT | DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYS
 CAPTION "Instalacja programu"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "...", IDC_INSTALL_TEXT, 4, 5, 209, 35
+    LTEXT "…", IDC_INSTALL_TEXT, 4, 5, 209, 35
     AUTORADIOBUTTON "&Zainstaluj z dysku (CD lub DVD)", IDC_CD_INSTALL, 10, 46, 197, 11, WS_GROUP
     AUTORADIOBUTTON "&Pobierz i zainstaluj", IDC_DOWNLOAD_INSTALL, 10, 59, 197, 11, NOT WS_TABSTOP
-    PUSHBUTTON "OK", IDOK, 86, 78, 60, 14
+    DEFPUSHBUTTON "OK", IDOK, 86, 78, 60, 14
     PUSHBUTTON "Anuluj", IDCANCEL, 150, 78, 60, 14
 END
 
-IDD_DOWNLOAD_DIALOG DIALOGEX 0, 0, 220, 72
+IDD_DOWNLOAD_DIALOG DIALOGEX 0, 0, 220, 220
 STYLE DS_SHELLFONT | DS_CENTER | WS_BORDER | WS_CAPTION | WS_POPUP | WS_SYSMENU | WS_VISIBLE
-CAPTION "Ściągnij..."
+CAPTION "Pobierz %ls…"
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL "Progress1", IDC_DOWNLOAD_PROGRESS, "msctls_progress32", WS_BORDER | PBS_SMOOTH, 10, 10, 200, 12
@@ -113,9 +113,9 @@ STYLE DS_SHELLFONT | WS_BORDER | WS_DLGFRAME | WS_SYSMENU | DS_MODALFRAME
 CAPTION "O programie"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT "Menedżer aplikacji ReactOS\nCopyright (C) 2009\nby Dmitry Chapyshev (dmitry@reactos.org)", IDC_STATIC, 48, 7, 130, 39
-    PUSHBUTTON "Zamknij", IDOK, 133, 46, 50, 14
     ICON IDI_MAIN, IDC_STATIC, 10, 10, 7, 30
+    LTEXT "Menedżer aplikacji ReactOS\nCopyright (C) 2009\nby Dmitry Chapyshev (dmitry@reactos.org)", IDC_STATIC, 48, 7, 130, 39
+    DEFPUSHBUTTON "Zamknij", IDOK, 133, 46, 50, 14
 END
 
 STRINGTABLE
@@ -160,11 +160,13 @@ END
 STRINGTABLE
 BEGIN
     IDS_AINFO_VERSION "\nWersja: "
+    IDS_AINFO_AVAILABLEVERSION "\nDostępna wersja: "
     IDS_AINFO_DESCRIPTION "\nOpis: "
     IDS_AINFO_SIZE "\nRozmiar: "
     IDS_AINFO_URLSITE "\nStrona: "
     IDS_AINFO_LICENSE "\nLicencja: "
     IDS_AINFO_URLDOWNLOAD "\nPobieranie: "
+    IDS_AINFO_LANGUAGES "\nJęzyki: "
 END
 
 STRINGTABLE
@@ -184,19 +186,20 @@ BEGIN
     IDS_CAT_SCIENCE "Nauka"
     IDS_CAT_TOOLS "Narzędzia"
     IDS_CAT_VIDEO "Wideo"
+    IDS_CAT_THEMES "Motywy"
 END
 
 STRINGTABLE
 BEGIN
     IDS_APPTITLE "Menedżer aplikacji ReactOS"
-    IDS_SEARCH_TEXT "Szukaj..."
+    IDS_SEARCH_TEXT "Szukaj…"
     IDS_INSTALL "Instaluj"
     IDS_UNINSTALL "Odinstaluj"
     IDS_MODIFY "Modyfikuj"
     IDS_APPS_COUNT "Licznik aplikacji: %d"
     IDS_WELCOME_TITLE "Witamy w Menedżerze aplikacji ReactOS!\n\n"
     IDS_WELCOME_TEXT "Z listy po lewej wybierz kategorię, a następnie aplikację, by ją zainstalować lub odinstalować.\nStrona projektu ReactOS: "
-    IDS_WELCOME_URL "http://www.reactos.org"
+    IDS_WELCOME_URL "https://reactos.org/"
     IDS_INSTALLED "Zainstalowane"
     IDS_AVAILABLEFORINST "Dostępne"
     IDS_UPDATES "Uaktualnienia"
@@ -206,11 +209,51 @@ BEGIN
     IDS_APP_REG_REMOVE "Czy na pewno chcesz usunąć wpis tego programu z rejestru?"
     IDS_INFORMATION "Informacja"
     IDS_UNABLE_TO_DOWNLOAD "Nie można pobrać pakietu! Nie znaleziono adresu!"
-    IDS_UNABLE_TO_DOWNLOAD2 "Unable to download the package! Check Internet Connection!"
+    IDS_UNABLE_TO_DOWNLOAD2 "Nie można pobrać pakietu! Sprawdź połączenie z siecią!"
     IDS_UNABLE_TO_REMOVE "Nie można było usunąć wpisu z rejestru!"
-    IDS_CERT_DOES_NOT_MATCH "SSL certificate verification failed."
-    IDS_INTEG_CHECK_TITLE "Verifying package integrity..."
-    IDS_INTEG_CHECK_FAIL "The package did not pass the integrity check, it may have been corrupted or tampered with during downloading. Running the software is not recommended."
-    IDS_INTERRUPTED_DOWNLOAD "The download was interrupted. Check connection to Internet."
-    IDS_UNABLE_TO_WRITE "Unable to write to disk. Disk may be at capacity."
+    IDS_UNABLE_TO_INSTALL "Nie można uruchomić instalatora!"
+    IDS_UNABLE_TO_QUERY_CERT "Nie można odnaleźć informacji o certyfikacie.\n\nCzy chcesz mimo to kontynuować?"
+    IDS_INTEG_CHECK_TITLE "Weryfikowanie integralności pakietu…"
+    IDS_INTEG_CHECK_FAIL "Pakiet nie przeszedł kontroli integralności, mógł zostać uszkodzony lub naruszony podczas pobierania. Uruchamianie tego programu nie jest zalecane."
+    IDS_INTERRUPTED_DOWNLOAD "Pobieranie zostało przerwane. Sprawdź połączenie z siecią"
+    IDS_UNABLE_TO_WRITE "Nie można zapisać na dysku. Dysk może być pełny."
+    IDS_SELECT_ALL "Zaznacz/Odznacz Wszystko"
+    IDS_INSTALL_SELECTED "Instaluj Zaznaczone"
+    IDS_SELECTEDFORINST "Wybrane do instalacji"
+    IDS_MISMATCH_CERT_INFO "Użyty certyfikat jest nieznany:\nSubject: %s\nIssuer: %s\nCzy chcesz mimo to kontynuować?"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_STATUS_INSTALLED "Zainstalowane"
+    IDS_STATUS_NOTINSTALLED "Nie zainstalowane"
+    IDS_STATUS_DOWNLOADED "Pobrane"
+    IDS_STATUS_UPDATE_AVAILABLE "Dostępna aktualizacja"
+    IDS_STATUS_DOWNLOADING "Pobieranie…"
+    IDS_STATUS_INSTALLING "Instalowanie…"
+    IDS_STATUS_WAITING "Oczekiwanie na instalację…"
+    IDS_STATUS_FINISHED "Gotowe"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_LICENSE_OPENSOURCE "Otwartoźródłowe"
+    IDS_LICENSE_FREEWARE "Darmowe"
+    IDS_LICENSE_TRIAL "Wersja próbna/Demo"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_LANGUAGE_AVAILABLE_TRANSLATION "Wspiera Twój język"
+    IDS_LANGUAGE_NO_TRANSLATION "Wspiera inne języki"
+    IDS_LANGUAGE_ENGLISH_TRANSLATION "Wspiera Angielski"
+    IDS_LANGUAGE_SINGLE "Jednojęzyczne"
+    IDS_LANGUAGE_MORE_PLACEHOLDER " (+%d więcej)"
+    IDS_LANGUAGE_AVAILABLE_PLACEHOLDER " (+%d dostępne)"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_DL_DIALOG_DB_DISP "Baza programów"
+    IDS_DL_DIALOG_DB_DOWNLOAD_DISP "Aktualizowanie bazy programów…"
 END

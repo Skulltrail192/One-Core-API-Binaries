@@ -10,14 +10,11 @@
 
 #include "input.h"
 
-#include <cpl.h>
-
 #define NUM_APPLETS    (1)
 
-static LONG CALLBACK SystemApplet(VOID);
+static LONG CALLBACK SystemApplet(HWND hwnd, UINT uMsg, LPARAM lParam1, LPARAM lParam2);
 
 HINSTANCE hApplet = NULL;
-static HWND hCPLWindow;
 
 /* Applets */
 static APPLET Applets[NUM_APPLETS] =
@@ -38,10 +35,26 @@ InitPropSheetPage(PROPSHEETPAGEW *page, WORD idDlg, DLGPROC DlgProc)
     page->pfnDlgProc  = DlgProc;
 }
 
+static int CALLBACK
+PropSheetProc(HWND hwndDlg, UINT uMsg, LPARAM lParam)
+{
+    // NOTE: This callback is needed to set large icon correctly.
+    HICON hIcon;
+    switch (uMsg)
+    {
+        case PSCB_INITIALIZED:
+        {
+            hIcon = LoadIconW(hApplet, MAKEINTRESOURCEW(IDI_KEY_SHORT_ICO));
+            SendMessageW(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+            break;
+        }
+    }
+    return 0;
+}
 
 /* First Applet */
 static LONG CALLBACK
-SystemApplet(VOID)
+SystemApplet(HWND hwnd, UINT uMsg, LPARAM lParam1, LPARAM lParam2)
 {
     PROPSHEETPAGEW page[2];
     PROPSHEETHEADERW header;
@@ -52,15 +65,15 @@ SystemApplet(VOID)
     ZeroMemory(&header, sizeof(header));
 
     header.dwSize      = sizeof(header);
-    header.dwFlags     = PSH_PROPSHEETPAGE;
-    header.hwndParent  = hCPLWindow;
+    header.dwFlags     = PSH_PROPSHEETPAGE | PSH_USEICONID | PSH_USECALLBACK;
+    header.hwndParent  = hwnd;
     header.hInstance   = hApplet;
-    header.hIcon       = LoadIconW(hApplet, MAKEINTRESOURCEW(IDI_CPLSYSTEM));
+    header.pszIcon     = MAKEINTRESOURCEW(IDI_KEY_SHORT_ICO);
     header.pszCaption  = szCaption;
     header.nPages      = ARRAYSIZE(page);
     header.nStartPage  = 0;
     header.ppsp        = page;
-    header.pfnCallback = NULL;
+    header.pfnCallback = PropSheetProc;
 
     /* Settings */
     InitPropSheetPage(&page[0], IDD_PROPPAGESETTINGS, SettingsPageProc);
@@ -98,8 +111,7 @@ CPlApplet(HWND hwndCPl, UINT uMsg, LPARAM lParam1, LPARAM lParam2)
             break;
 
         case CPL_DBLCLK:
-            hCPLWindow = hwndCPl;
-            Applets[i].AppletProc();
+            Applets[i].AppletProc(hwndCPl, uMsg, lParam1, lParam2);
             break;
     }
 

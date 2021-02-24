@@ -115,7 +115,9 @@ ASSERT_LOCK_ORDER(
            (objt) == GDIObjType_BRUSH_TYPE)
 #define ASSERT_EXCLUSIVE_OBJECT_TYPE(objt) \
     ASSERT((objt) == GDIObjType_DC_TYPE || \
-           (objt) == GDIObjType_RGN_TYPE)
+           (objt) == GDIObjType_RGN_TYPE || \
+           (objt) == GDIObjType_UMPD_TYPE || \
+           (objt) == GDIObjType_META_TYPE)
 #define ASSERT_TRYLOCK_OBJECT_TYPE(objt) \
     ASSERT((objt) == GDIObjType_DRVOBJ_TYPE)
 #else
@@ -177,7 +179,7 @@ apfnCleanup[] =
     NULL,              /* 12 GDIObjType_UNUSED4_TYPE */
     NULL,              /* 13 GDIObjType_SPACE_TYPE, unused */
     NULL,              /* 14 GDIObjType_UNUSED5_TYPE */
-    NULL,              /* 15 GDIObjType_META_TYPE, unused */
+    GDIOBJ_vCleanup,   /* 15 GDIObjType_META_TYPE */
     NULL,              /* 16 GDIObjType_EFSTATE_TYPE, unused */
     NULL,              /* 17 GDIObjType_BMFD_TYPE, unused */
     NULL,              /* 18 GDIObjType_VTFD_TYPE, unused */
@@ -341,7 +343,7 @@ DecrementCurrentProcessGdiHandleCount(void)
     if (ppi) InterlockedDecrement((LONG*)&ppi->GDIHandleCount);
 }
 
-FORCEINLINE
+static inline
 VOID
 IncrementGdiHandleCount(ULONG ulProcessId)
 {
@@ -358,7 +360,7 @@ IncrementGdiHandleCount(ULONG ulProcessId)
     if (NT_SUCCESS(Status)) ObDereferenceObject(pep);
 }
 
-FORCEINLINE
+static inline
 VOID
 DecrementGdiHandleCount(ULONG ulProcessId)
 {
@@ -1259,7 +1261,7 @@ NTAPI
 GreGetObject(
     IN HGDIOBJ hobj,
     IN INT cbCount,
-    IN PVOID pvBuffer)
+    OUT PVOID pvBuffer)
 {
     PVOID pvObj;
     UCHAR objt;
@@ -1515,7 +1517,7 @@ GDI_MapHandleTable(PEPROCESS pProcess)
     PVOID pvMappedView = NULL;
     NTSTATUS Status;
     LARGE_INTEGER liOffset;
-    ULONG cjViewSize = sizeof(GDI_HANDLE_TABLE);
+    SIZE_T cjViewSize = sizeof(GDI_HANDLE_TABLE);
 
     liOffset.QuadPart = 0;
 

@@ -19,12 +19,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
-
+#include <stdarg.h>
 #include <stdio.h>
-#include <winternl.h>
-#include <xcmc.h>
-#include <msi.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "winuser.h"
+#include "winerror.h"
+#include "winternl.h"
+#include "objbase.h"
+#include "shlwapi.h"
+#include "wine/debug.h"
+#include "mapival.h"
+#include "xcmc.h"
+#include "msi.h"
+#include "util.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(mapi);
 
 static const BYTE digitsToHex[] = {
   0,1,2,3,4,5,6,7,8,9,0xff,0xff,0xff,0xff,0xff,0xff,0xff,10,11,12,13,14,15,
@@ -389,7 +403,7 @@ VOID WINAPI SwapPword(PUSHORT lpData, ULONG ulLen)
 ULONG WINAPI MNLS_lstrlenW(LPCWSTR lpszStr)
 {
     TRACE("(%s)\n", debugstr_w(lpszStr));
-    return strlenW(lpszStr);
+    return lstrlenW(lpszStr);
 }
 
 /*************************************************************************
@@ -408,7 +422,7 @@ ULONG WINAPI MNLS_lstrlenW(LPCWSTR lpszStr)
 INT WINAPI MNLS_lstrcmpW(LPCWSTR lpszLeft, LPCWSTR lpszRight)
 {
     TRACE("(%s,%s)\n", debugstr_w(lpszLeft), debugstr_w(lpszRight));
-    return strcmpW(lpszLeft, lpszRight);
+    return lstrcmpW(lpszLeft, lpszRight);
 }
 
 /*************************************************************************
@@ -428,7 +442,7 @@ ULONG WINAPI MNLS_lstrcpyW(LPWSTR lpszDest, LPCWSTR lpszSrc)
     ULONG len;
 
     TRACE("(%p,%s)\n", lpszDest, debugstr_w(lpszSrc));
-    len = (strlenW(lpszSrc) + 1) * sizeof(WCHAR);
+    len = (lstrlenW(lpszSrc) + 1) * sizeof(WCHAR);
     memcpy(lpszDest, lpszSrc, len);
     return len;
 }
@@ -479,7 +493,7 @@ BOOL WINAPI FEqualNames(LPMAPINAMEID lpName1, LPMAPINAMEID lpName2)
         return FALSE;
 
     if (lpName1->ulKind == MNID_STRING)
-        return !strcmpW(lpName1->Kind.lpwstrName, lpName2->Kind.lpwstrName);
+        return !lstrcmpW(lpName1->Kind.lpwstrName, lpName2->Kind.lpwstrName);
 
     return lpName1->Kind.lID == lpName2->Kind.lID;
 }
@@ -888,7 +902,7 @@ BOOL WINAPI FGetComponentPath(LPCSTR component, LPCSTR qualifier, LPSTR dll_path
             char lcid_ver[20];
             UINT i;
 
-            for (i = 0; i < sizeof(fmt)/sizeof(fmt[0]); i++)
+            for (i = 0; i < ARRAY_SIZE(fmt); i++)
             {
                 /* FIXME: what's the correct behaviour here? */
                 if (!qualifier || qualifier == lcid_ver)

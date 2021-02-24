@@ -1,5 +1,5 @@
 
-add_definitions(-D__WINESRC__)
+add_definitions(-D__WINESRC__ -D__ROS_LONG64__)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 spec2def(itss.dll itss.spec)
 
@@ -10,13 +10,13 @@ list(APPEND SOURCE
     moniker.c
     protocol.c
     storage.c
-    precomp.h
-    ${CMAKE_CURRENT_BINARY_DIR}/itss_stubs.c)
+    precomp.h)
 
-add_library(itss SHARED
+add_library(itss MODULE
     ${SOURCE}
     guid.c
     rsrc.rc
+    ${CMAKE_CURRENT_BINARY_DIR}/itss_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/itss.def)
 
 set_module_type(itss win32dll)

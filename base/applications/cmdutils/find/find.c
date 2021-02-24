@@ -1,256 +1,344 @@
-/* find.c */
-
-/* Copyright (C) 1994-2002, Jim Hall <jhall@freedos.org> */
-
-/* Adapted for ReactOS */
-
 /*
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc.,
-   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
-
-
-/* This program locates a string in a text file and prints those lines
- * that contain the string.  Multiple files are clearly separated.
+ * PROJECT:     ReactOS Find Command
+ * LICENSE:     GPL-2.0-or-later (https://spdx.org/licenses/GPL-2.0-or-later)
+ * PURPOSE:     Prints all lines of a file that contain a string.
+ * COPYRIGHT:   Copyright 1994-2002 Jim Hall (jhall@freedos.org)
+ *              Copyright 2019 Paweł Cholewa (DaMcpg@protonmail.com)
+ *              Copyright 2019 Hermes Belusca-Maito
  */
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <string.h>
-//#include <ctype.h>
 
 #include <windef.h>
 #include <winbase.h>
+#include <winnls.h>
 #include <winuser.h>
 
-//#include <io.h>
-#include <dos.h>
+#include <conutils.h>
+#include <strsafe.h>
 
 #include "resource.h"
 
-/* Symbol definition */
-#define MAX_STR 1024
+#define FIND_LINE_BUFFER_SIZE 4096
 
-/* This function prints out all lines containing a substring.  There are some
- * conditions that may be passed to the function.
+static BOOL bInvertSearch = FALSE;
+static BOOL bCountLines = FALSE;
+static BOOL bDisplayLineNumbers = FALSE;
+static BOOL bIgnoreCase = FALSE;
+static BOOL bDoNotSkipOfflineFiles = FALSE;
+
+/**
+ * @name StrStrCase
+ * @implemented
  *
- * RETURN: If the string was found at least once, returns 1.
- * If the string was not found at all, returns 0.
+ * Locates a substring inside a NULL-terminated wide string.
+ *
+ * @param[in] pszStr
+ *     The NULL-terminated string to be scanned.
+ *
+ * @param[in] pszSearch
+ *     The NULL-terminated string to search for.
+ *
+ * @param[in] bIgnoreCase
+ *     TRUE if case has to be ignored, FALSE otherwise.
+ *
+ * @return
+ *     Returns a pointer to the first occurrence of pszSearch in pszStr,
+ *     or NULL if pszSearch does not appear in pszStr. If pszSearch points
+ *     to a string of zero length, the function returns pszStr.
  */
-int
-find_str (char *sz, FILE *p, int invert_search,
-          int count_lines, int number_output, int ignore_case)
+static PWSTR
+StrStrCase(
+    IN PCWSTR pszStr,
+    IN PCWSTR pszSearch,
+    IN BOOL bIgnoreCase)
 {
-  int i, length;
-  long line_number = 0, total_lines = 0;
-  char *c, temp_str[MAX_STR], this_line[MAX_STR];
-
-  /* Convert to upper if needed */
-  if (ignore_case)
+    if (bIgnoreCase)
     {
-      length = strlen (sz);
-      for (i = 0; i < length; i++)
-	sz[i] = toupper (sz[i]);
-    }
+        LCID LocaleId;
+        INT i, cch1, cch2;
 
-  /* Scan the file until EOF */
-  while (fgets (temp_str, MAX_STR, p) != NULL)
-    {
-      /* Remove the trailing newline */
-      length = strlen (temp_str);
-      if (temp_str[length-1] == '\n')
-	{
-	  temp_str[length-1] = '\0';
-	}
+        LocaleId = GetThreadLocale();
 
-      /* Increment number of lines */
-      line_number++;
-      strcpy (this_line, temp_str);
+        cch1 = wcslen(pszStr);
+        cch2 = wcslen(pszSearch);
 
-      /* Convert to upper if needed */
-      if (ignore_case)
-	{
-	  for (i = 0; i < length; i++)
-	    {
-	      temp_str[i] = toupper (temp_str[i]);
-	    }
-	}
+        if (cch2 == 0)
+            return (PWSTR)pszStr;
 
-      /* Locate the substring */
-
-      /* strstr() returns a pointer to the first occurrence in the
-       string of the substring */
-      c = strstr (temp_str, sz);
-
-      if ( ((invert_search) ? (c == NULL) : (c != NULL)) )
-	{
-	  if (!count_lines)
-	    {
-	      if (number_output)
-		printf ("%ld:", line_number);
-
-	      /* Print the line of text */
-	      puts (this_line);
-	    }
-
-	  total_lines++;
-	} /* long if */
-    } /* while fgets */
-
-  if (count_lines)
-    {
-      /* Just show num. lines that contain the string */
-      printf ("%ld\n", total_lines);
-    }
-
-
- /* RETURN: If the string was found at least once, returns 1.
-  * If the string was not found at all, returns 0.
-  */
-  return (total_lines > 0 ? 1 : 0);
-}
-
-/* Show usage */
-void
-usage (void)
-{
-  WCHAR wszUsage[4096];
-  char oemUsage[4096];
-
-  LoadStringW (GetModuleHandleW (NULL), IDS_USAGE, wszUsage, sizeof(wszUsage) / sizeof(wszUsage[0]));
-  CharToOemW (wszUsage, oemUsage);
-  fputs (oemUsage, stdout);
-}
-
-
-/* Main program */
-int
-main (int argc, char **argv)
-{
-  char *opt, *needle = NULL;
-  int ret = 0;
-  WCHAR wszMessage[4096];
-  char oemMessage[4096];
-
-  int invert_search = 0;		/* flag to invert the search */
-  int count_lines = 0;			/* flag to whether/not count lines */
-  int number_output = 0;		/* flag to print line numbers */
-  int ignore_case = 0;			/* flag to be case insensitive */
-
-  FILE *pfile;				/* file pointer */
-  int hfind;				/* search handle */
-  struct _finddata_t finddata;		/* _findfirst, filenext block */
-
-  /* Scan the command line */
-  while ((--argc) && (needle == NULL))
-    {
-      if (*(opt = *++argv) == '/')
+        for (i = 0; i <= cch1 - cch2; ++i)
         {
-          switch (opt[1])
-	    {
-	      case 'c':
-	      case 'C':		/* Count */
-	        count_lines = 1;
-	        break;
-
-	      case 'i':
-	      case 'I':		/* Ignore */
-	        ignore_case = 1;
-	        break;
-
-	      case 'n':
-	      case 'N':		/* Number */
-	        number_output = 1;
-	        break;
-
-	      case 'v':
-	      case 'V':		/* Not with */
-	        invert_search = 1;
-	        break;
-
-	      default:
-	        usage ();
-	        exit (2);		/* syntax error .. return error 2 */
-	        break;
-	    }
-        }
-      else
-        {
-          /* Get the string */
-	  if (needle == NULL)
-	    {
-              /* Assign the string to find */
-              needle = *argv;
-	    }
-	}
-    }
-
-  /* Check for search string */
-  if (needle == NULL)
-    {
-      /* No string? */
-      usage ();
-      exit (1);
-    }
-
-  /* Scan the files for the string */
-  if (argc == 0)
-    {
-      ret = find_str (needle, stdin, invert_search, count_lines,
-                      number_output, ignore_case);
-    }
-
-  while (--argc >= 0)
-    {
-      hfind = _findfirst (*++argv, &finddata);
-      if (hfind < 0)
-	{
-	  /* We were not able to find a file. Display a message and
-	     set the exit status. */
-	  LoadStringW (GetModuleHandleW (NULL), IDS_NO_SUCH_FILE, wszMessage, sizeof(wszMessage) / sizeof(wszMessage[0]));
-	  CharToOemW (wszMessage, oemMessage);
-	  fprintf (stderr, oemMessage, *argv);
-	}
-      else
-        {
-          /* repeat find next file to match the filemask */
-	  do
+            if (CompareStringW(LocaleId /* LOCALE_SYSTEM_DEFAULT */,
+                               NORM_IGNORECASE /* | NORM_LINGUISTIC_CASING */,
+                               pszStr + i, cch2, pszSearch, cch2) == CSTR_EQUAL)
             {
-              /* We have found a file, so try to open it */
-	      if ((pfile = fopen (finddata.name, "r")) != NULL)
-	        {
-	          printf ("---------------- %s\n", finddata.name);
-	          ret = find_str (needle, pfile, invert_search, count_lines,
-	                          number_output, ignore_case);
-	          fclose (pfile);
-	        }
- 	      else
-	        {
-	          LoadStringW (GetModuleHandleW (NULL), IDS_CANNOT_OPEN, wszMessage, sizeof(wszMessage) / sizeof(wszMessage[0]));
-	          CharToOemW (wszMessage, oemMessage);
-	          fprintf (stderr, oemMessage,
-		           finddata.name);
-                }
-	    }
-          while (_findnext(hfind, &finddata) > 0);
+                return (PWSTR)(pszStr + i);
+            }
         }
-      _findclose(hfind);
-    } /* for each argv */
+        return NULL;
+    }
+    else
+    {
+        return wcsstr(pszStr, pszSearch);
+    }
+}
 
- /* RETURN: If the string was found at least once, returns 0.
-  * If the string was not found at all, returns 1.
-  * (Note that find_str.c returns the exact opposite values.)
-  */
-  exit ( (ret ? 0 : 1) );
+/**
+ * @name FindString
+ * @implemented
+ *
+ * Prints all lines of the stream that contain a string.
+ *
+ * @param[in] pStream
+ *     The stream to read from.
+ *
+ * @param[in] pszFilePath
+ *     The file name to print out. Can be NULL.
+ *
+ * @param[in] pszSearchString
+ *     The NULL-terminated string to search for.
+ *
+ * @return
+ *     0 if the string was found at least once, 1 otherwise.
+ */
+static int
+FindString(
+    IN FILE* pStream,
+    IN PCWSTR pszFilePath OPTIONAL,
+    IN PCWSTR pszSearchString)
+{
+    LONG lLineCount = 0;
+    LONG lLineNumber = 0;
+    BOOL bSubstringFound;
+    int iReturnValue = 1;
+    WCHAR szLineBuffer[FIND_LINE_BUFFER_SIZE];
+
+    if (pszFilePath != NULL)
+    {
+        /* Print the file's header */
+        ConPrintf(StdOut, L"\n---------- %s%s",
+                  pszFilePath, bCountLines ? L": " : L"\n");
+    }
+
+    /* Loop through every line in the file */
+    // FIXME: What if the string we search for crosses the boundary of our szLineBuffer ?
+    while (fgetws(szLineBuffer, _countof(szLineBuffer), pStream) != NULL)
+    {
+        ++lLineNumber;
+
+        bSubstringFound = (StrStrCase(szLineBuffer, pszSearchString, bIgnoreCase) != NULL);
+
+        /* Check if this line can be counted */
+        if (bSubstringFound != bInvertSearch)
+        {
+            iReturnValue = 0;
+
+            if (bCountLines)
+            {
+                ++lLineCount;
+            }
+            else
+            {
+                /* Display the line number if needed */
+                if (bDisplayLineNumbers)
+                {
+                    ConPrintf(StdOut, L"[%ld]", lLineNumber);
+                }
+                ConPrintf(StdOut, L"%s", szLineBuffer);
+            }
+        }
+    }
+
+    if (bCountLines)
+    {
+        /* Print the matching line count */
+        ConPrintf(StdOut, L"%ld\n", lLineCount);
+    }
+#if 0
+    else if (pszFilePath != NULL && iReturnValue == 0)
+    {
+        /* Print a newline for formatting */
+        ConPrintf(StdOut, L"\n");
+    }
+#endif
+
+    return iReturnValue;
+}
+
+int wmain(int argc, WCHAR* argv[])
+{
+    int i;
+    int iReturnValue = 2;
+    int iSearchedStringIndex = -1;
+    BOOL bFoundFileParameter = FALSE;
+    HANDLE hFindFile;
+    WIN32_FIND_DATAW FindData;
+    FILE* pOpenedFile;
+    PWCHAR ptr;
+    WCHAR szFullFilePath[MAX_PATH];
+
+    /* Initialize the Console Standard Streams */
+    ConInitStdStreams();
+
+    if (argc == 1)
+    {
+        /* If no argument were provided by the user, display program usage and exit */
+        ConResPuts(StdOut, IDS_USAGE);
+        return 0;
+    }
+
+    /* Parse the command line arguments */
+    for (i = 1; i < argc; ++i)
+    {
+        /* Check if this argument contains a switch */
+        if (wcslen(argv[i]) == 2 && argv[i][0] == L'/')
+        {
+            switch (towupper(argv[i][1]))
+            {
+                case L'?':
+                    ConResPuts(StdOut, IDS_USAGE);
+                    return 0;
+                case L'V':
+                    bInvertSearch = TRUE;
+                    break;
+                case L'C':
+                    bCountLines = TRUE;
+                    break;
+                case L'N':
+                    bDisplayLineNumbers = TRUE;
+                    break;
+                case L'I':
+                    bIgnoreCase = TRUE;
+                    break;
+                default:
+                    /* Report invalid switch error */
+                    ConResPuts(StdErr, IDS_INVALID_SWITCH);
+                    return 2;
+            }
+        }
+        else if (wcslen(argv[i]) > 2 && argv[i][0] == L'/')
+        {
+            /* Check if this parameter is /OFF or /OFFLINE */
+            if (_wcsicmp(argv[i], L"/off") == 0 || _wcsicmp(argv[i], L"/offline") == 0)
+            {
+                bDoNotSkipOfflineFiles = TRUE;
+            }
+            else
+            {
+                /* Report invalid switch error */
+                ConResPuts(StdErr, IDS_INVALID_SWITCH);
+                return 2;
+            }
+        }
+        else
+        {
+            if (iSearchedStringIndex == -1)
+            {
+                iSearchedStringIndex = i;
+            }
+            else
+            {
+                /* There's a file specified in the parameters, no need to read from stdin */
+                bFoundFileParameter = TRUE;
+            }
+        }
+    }
+
+    if (iSearchedStringIndex == -1)
+    {
+        /* User didn't provide the string to search for, display program usage and exit */
+        ConResPuts(StdErr, IDS_USAGE);
+        return 2;
+    }
+
+    if (bFoundFileParameter)
+    {
+        /* After the command line arguments were parsed, iterate through them again to get the filenames */
+        for (i = 1; i < argc; ++i)
+        {
+            /* If the value is a switch or the searched string, continue */
+            if ((wcslen(argv[i]) > 0 && argv[i][0] == L'/') || i == iSearchedStringIndex)
+            {
+                continue;
+            }
+
+            hFindFile = FindFirstFileW(argv[i], &FindData);
+            if (hFindFile == INVALID_HANDLE_VALUE)
+            {
+                ConResPrintf(StdErr, IDS_NO_SUCH_FILE, argv[i]);
+                continue;
+            }
+
+            do
+            {
+                /* Check if the file contains offline attribute and should be skipped */
+                if ((FindData.dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) && !bDoNotSkipOfflineFiles)
+                {
+                    continue;
+                }
+
+                /* Skip directory */
+                // FIXME: Implement recursivity?
+                if (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                {
+                    continue;
+                }
+
+                /*
+                 * Build the full file path from the file specification pattern.
+                 *
+                 * Note that we could use GetFullPathName() instead, however
+                 * we want to keep compatibility with Windows' find.exe utility
+                 * that does not use this function as it keeps the file name
+                 * directly based on the pattern.
+                 */
+                ptr = wcsrchr(argv[i], L'\\');    // Check for last directory.
+                if (!ptr)
+                    ptr = wcsrchr(argv[i], L':'); // Check for drive.
+                if (ptr)
+                {
+                    /* The pattern contains a drive or directory part: keep it and concatenate the full file name */
+                    StringCchCopyNW(szFullFilePath, _countof(szFullFilePath),
+                                    argv[i], ptr + 1 - argv[i]);
+                    StringCchCatW(szFullFilePath, _countof(szFullFilePath),
+                                  FindData.cFileName);
+                }
+                else
+                {
+                    /* The pattern does not contain any drive or directory part: just copy the full file name */
+                    StringCchCopyW(szFullFilePath, _countof(szFullFilePath),
+                                   FindData.cFileName);
+                }
+
+                // FIXME: Windows' find.exe supports searching inside binary files.
+                pOpenedFile = _wfopen(szFullFilePath, L"r");
+                if (pOpenedFile == NULL)
+                {
+                    ConResPrintf(StdErr, IDS_CANNOT_OPEN, szFullFilePath);
+                    continue;
+                }
+
+                /* NOTE: Convert the file path to uppercase for formatting */
+                if (FindString(pOpenedFile, _wcsupr(szFullFilePath), argv[iSearchedStringIndex]) == 0)
+                {
+                    iReturnValue = 0;
+                }
+                else if (iReturnValue != 0)
+                {
+                    iReturnValue = 1;
+                }
+
+                fclose(pOpenedFile);
+            } while (FindNextFileW(hFindFile, &FindData));
+
+            FindClose(hFindFile);
+        }
+    }
+    else
+    {
+        iReturnValue = FindString(stdin, NULL, argv[iSearchedStringIndex]);
+    }
+
+    return iReturnValue;
 }

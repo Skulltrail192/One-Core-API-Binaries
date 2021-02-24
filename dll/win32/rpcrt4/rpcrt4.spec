@@ -44,7 +44,7 @@
 44 stub I_RpcConnectionSetSockBuffSize
 45 stub I_RpcDeleteMutex
 46 stub I_RpcEnableWmiTrace
-47 stdcall I_RpcExceptionFilter(long)
+47 stdcall I_RpcExceptionFilter(long) RpcExceptionFilter
 48 stdcall I_RpcFree(ptr)
 49 stdcall I_RpcFreeBuffer(ptr)
 50 stub I_RpcFreePipeBuffer
@@ -378,7 +378,7 @@
 378 stdcall RpcErrorStartEnumeration(ptr)
 379 stub RpcFreeAuthorizationContext
 380 stdcall RpcGetAsyncCallStatus(ptr) RpcAsyncGetCallStatus
-# RpcGetAuthorizationContextForClient
+381 stdcall RpcGetAuthorizationContextForClient(ptr long ptr ptr int64 long ptr ptr)
 382 stub RpcIfIdVectorFree
 383 stub RpcIfInqId
 384 stdcall RpcImpersonateClient(ptr)
@@ -511,9 +511,9 @@
 511 stub long_from_ndr
 512 stub long_from_ndr_temp
 513 stub pfnFreeRoutines
-514 stub pfnMarshallRouteines
+514 stub pfnMarshallRoutines
 515 stub pfnSizeRoutines
-516 stub pfnUnmarshallRouteines
+516 stub pfnUnmarshallRoutines
 517 stub short_array_from_ndr
 518 stub short_from_ndr
 519 stub short_from_ndr_temp

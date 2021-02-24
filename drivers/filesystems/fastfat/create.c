@@ -122,7 +122,7 @@ FindFile(
     DPRINT("FindFile: Path %wZ\n",&Parent->PathNameU);
 
     PathNameBufferLength = LONGNAME_MAX_LENGTH * sizeof(WCHAR);
-    PathNameBuffer = ExAllocatePoolWithTag(NonPagedPool, PathNameBufferLength + sizeof(WCHAR), TAG_VFAT);
+    PathNameBuffer = ExAllocatePoolWithTag(NonPagedPool, PathNameBufferLength + sizeof(WCHAR), TAG_NAME);
     if (!PathNameBuffer)
     {
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -173,7 +173,7 @@ FindFile(
                 Status = STATUS_UNSUCCESSFUL;
             }
             vfatReleaseFCB(DeviceExt, rcFcb);
-            ExFreePool(PathNameBuffer);
+            ExFreePoolWithTag(PathNameBuffer, TAG_NAME);
             return Status;
         }
     }
@@ -183,7 +183,7 @@ FindFile(
     Status = RtlUpcaseUnicodeString(&FileToFindUpcase, FileToFindU, TRUE);
     if (!NT_SUCCESS(Status))
     {
-        ExFreePool(PathNameBuffer);
+        ExFreePoolWithTag(PathNameBuffer, TAG_NAME);
         return Status;
     }
 
@@ -251,7 +251,7 @@ FindFile(
                 CcUnpinData(Context);
             }
             RtlFreeUnicodeString(&FileToFindUpcase);
-            ExFreePool(PathNameBuffer);
+            ExFreePoolWithTag(PathNameBuffer, TAG_NAME);
             return STATUS_SUCCESS;
         }
         DirContext->DirIndex++;
@@ -263,7 +263,7 @@ FindFile(
     }
 
     RtlFreeUnicodeString(&FileToFindUpcase);
-    ExFreePool(PathNameBuffer);
+    ExFreePoolWithTag(PathNameBuffer, TAG_NAME);
     return Status;
 }
 
@@ -360,14 +360,50 @@ VfatOpenFile(
         return STATUS_CANNOT_DELETE;
     }
 
-    if ((vfatFCBIsRoot(Fcb) ||
-         (Fcb->LongNameU.Length == sizeof(WCHAR) && Fcb->LongNameU.Buffer[0] == L'.') ||
-         (Fcb->LongNameU.Length == 2 * sizeof(WCHAR) && Fcb->LongNameU.Buffer[0] == L'.' && Fcb->LongNameU.Buffer[1] == L'.')) &&
+    if ((vfatFCBIsRoot(Fcb) || IsDotOrDotDot(&Fcb->LongNameU)) &&
         BooleanFlagOn(RequestedOptions, FILE_DELETE_ON_CLOSE))
     {
         // we cannot delete a '.', '..' or the root directory
         vfatReleaseFCB(DeviceExt, Fcb);
         return STATUS_CANNOT_DELETE;
+    }
+
+    /* If that one was marked for closing, remove it */
+    if (BooleanFlagOn(Fcb->Flags, FCB_DELAYED_CLOSE))
+    {
+        BOOLEAN ConcurrentDeletion;
+        PVFAT_CLOSE_CONTEXT CloseContext;
+
+        /* Get the context */
+        CloseContext = Fcb->CloseContext;
+        /* Is someone already taking over? */
+        if (CloseContext != NULL)
+        {
+            ConcurrentDeletion = FALSE;
+            /* Lock list */
+            ExAcquireFastMutex(&VfatGlobalData->CloseMutex);
+            /* Check whether it was already removed, if not, do it */
+            if (!IsListEmpty(&CloseContext->CloseListEntry))
+            {
+                RemoveEntryList(&CloseContext->CloseListEntry);
+                --VfatGlobalData->CloseCount;
+                ConcurrentDeletion = TRUE;
+            }
+            ExReleaseFastMutex(&VfatGlobalData->CloseMutex);
+
+            /* It's not delayed anymore! */
+            ClearFlag(Fcb->Flags, FCB_DELAYED_CLOSE);
+            /* Release the extra reference (would have been removed by IRP_MJ_CLOSE) */
+            vfatReleaseFCB(DeviceExt, Fcb);
+            Fcb->CloseContext = NULL;
+            /* If no concurrent deletion, free work item */
+            if (!ConcurrentDeletion)
+            {
+                ExFreeToPagedLookasideList(&VfatGlobalData->CloseContextLookasideList, CloseContext);
+            }
+        }
+
+        DPRINT("Reusing delayed close FCB for %wZ\n", &Fcb->PathNameU);
     }
 
     DPRINT("Attaching FCB to fileObject\n");
@@ -468,6 +504,8 @@ VfatCreateFile(
             return STATUS_CANNOT_DELETE;
         }
 
+        vfatAddToStat(DeviceExt, Fat.CreateHits, 1);
+
         pFcb = DeviceExt->VolumeFcb;
 
         if (pFcb->OpenHandleCount == 0)
@@ -483,9 +521,10 @@ VfatCreateFile(
                                         Stack->Parameters.Create.ShareAccess,
                                         FileObject,
                                         &pFcb->FCBShareAccess,
-                                        FALSE);
+                                        TRUE);
             if (!NT_SUCCESS(Status))
             {
+                vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
                 return Status;
             }
         }
@@ -493,6 +532,7 @@ VfatCreateFile(
         vfatAttachFCBToFileObject(DeviceExt, pFcb, FileObject);
         DeviceExt->OpenHandleCount++;
         pFcb->OpenHandleCount++;
+        vfatAddToStat(DeviceExt, Fat.SuccessfulCreates, 1);
 
         Irp->IoStatus.Information = FILE_OPENED;
         return STATUS_SUCCESS;
@@ -566,6 +606,8 @@ VfatCreateFile(
     /* Try opening the file. */
     if (!OpenTargetDir)
     {
+        vfatAddToStat(DeviceExt, Fat.CreateHits, 1);
+
         Status = VfatOpenFile(DeviceExt, &PathNameU, FileObject, RequestedDisposition, RequestedOptions, &ParentFcb);
     }
     else
@@ -573,13 +615,15 @@ VfatCreateFile(
         PVFATFCB TargetFcb;
         LONG idx, FileNameLen;
 
+        vfatAddToStat(DeviceExt, Fat.CreateHits, 1);
+
         ParentFcb = (FileObject->RelatedFileObject != NULL) ? FileObject->RelatedFileObject->FsContext : NULL;
         if (ParentFcb)
         {
             vfatGrabFCB(DeviceExt, ParentFcb);
         }
-        Status = vfatGetFCBForFile(DeviceExt, &ParentFcb, &TargetFcb, &PathNameU);
 
+        Status = vfatGetFCBForFile(DeviceExt, &ParentFcb, &TargetFcb, &PathNameU);
         if (NT_SUCCESS(Status))
         {
             vfatReleaseFCB(DeviceExt, TargetFcb);
@@ -615,6 +659,16 @@ VfatCreateFile(
             ++idx;
             FileObject->FileName.Length = FileNameLen;
             RtlMoveMemory(&PathNameU.Buffer[0], &PathNameU.Buffer[idx], FileObject->FileName.Length);
+#if 0
+            /* Terminate the string at the last backslash */
+            PathNameU.Buffer[idx + 1] = UNICODE_NULL;
+            PathNameU.Length = (idx + 1) * sizeof(WCHAR);
+            PathNameU.MaximumLength = PathNameU.Length + sizeof(WCHAR);
+
+            /* Update the file object as well */
+            FileObject->FileName.Length = PathNameU.Length;
+            FileObject->FileName.MaximumLength = PathNameU.MaximumLength;
+#endif
         }
         else
         {
@@ -654,6 +708,7 @@ VfatCreateFile(
                 if (!NT_SUCCESS(Status))
                 {
                     VfatCloseFile(DeviceExt, FileObject);
+                    vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
                     return Status;
                 }
             }
@@ -670,6 +725,15 @@ VfatCreateFile(
         else if (ParentFcb != NULL)
         {
             vfatReleaseFCB(DeviceExt, ParentFcb);
+        }
+
+        if (NT_SUCCESS(Status))
+        {
+            vfatAddToStat(DeviceExt, Fat.SuccessfulCreates, 1);
+        }
+        else
+        {
+            vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
         }
 
         return Status;
@@ -689,14 +753,22 @@ VfatCreateFile(
         {
             vfatReleaseFCB(DeviceExt, ParentFcb);
         }
+        vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
         return Status;
     }
 
     if (!NT_SUCCESS(Status) && ParentFcb == NULL)
     {
         DPRINT1("VfatOpenFile failed for '%wZ', status %x\n", &PathNameU, Status);
+        vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
         return Status;
     }
+
+    Attributes = (Stack->Parameters.Create.FileAttributes & (FILE_ATTRIBUTE_ARCHIVE |
+                                                             FILE_ATTRIBUTE_SYSTEM |
+                                                             FILE_ATTRIBUTE_HIDDEN |
+                                                             FILE_ATTRIBUTE_DIRECTORY |
+                                                             FILE_ATTRIBUTE_READONLY));
 
     /* If the file open failed then create the required file */
     if (!NT_SUCCESS (Status))
@@ -706,19 +778,26 @@ VfatCreateFile(
             RequestedDisposition == FILE_OVERWRITE_IF ||
             RequestedDisposition == FILE_SUPERSEDE)
         {
-            Attributes = Stack->Parameters.Create.FileAttributes & ~FILE_ATTRIBUTE_NORMAL;
             if (!BooleanFlagOn(RequestedOptions, FILE_DIRECTORY_FILE))
             {
                 if (TrailingBackslash)
                 {
                     vfatReleaseFCB(DeviceExt, ParentFcb);
+                    vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
                     return STATUS_OBJECT_NAME_INVALID;
                 }
                 Attributes |= FILE_ATTRIBUTE_ARCHIVE;
             }
             vfatSplitPathName(&PathNameU, NULL, &FileNameU);
+
+            if (IsDotOrDotDot(&FileNameU))
+            {
+                vfatReleaseFCB(DeviceExt, ParentFcb);
+                vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
+                return STATUS_OBJECT_NAME_INVALID;
+            }
             Status = VfatAddEntry(DeviceExt, &FileNameU, &pFcb, ParentFcb, RequestedOptions,
-                                  (UCHAR)FlagOn(Attributes, FILE_ATTRIBUTE_VALID_FLAGS), NULL);
+                                  Attributes, NULL);
             vfatReleaseFCB(DeviceExt, ParentFcb);
             if (NT_SUCCESS(Status))
             {
@@ -726,6 +805,7 @@ VfatCreateFile(
                 if (!NT_SUCCESS(Status))
                 {
                     vfatReleaseFCB(DeviceExt, pFcb);
+                    vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
                     return Status;
                 }
 
@@ -741,16 +821,19 @@ VfatCreateFile(
                 if (PagingFileCreate)
                 {
                     pFcb->Flags |= FCB_IS_PAGE_FILE;
+                    SetFlag(DeviceExt->Flags, VCB_IS_SYS_OR_HAS_PAGE);
                 }
             }
             else
             {
+                vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
                 return Status;
             }
         }
         else
         {
             vfatReleaseFCB(DeviceExt, ParentFcb);
+            vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
             return Status;
         }
     }
@@ -769,9 +852,11 @@ VfatCreateFile(
             VfatCloseFile(DeviceExt, FileObject);
             if (TrailingBackslash && !vfatFCBIsDirectory(pFcb))
             {
+                vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
                 return STATUS_OBJECT_NAME_INVALID;
             }
             Irp->IoStatus.Information = FILE_EXISTS;
+            vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
             return STATUS_OBJECT_NAME_COLLISION;
         }
 
@@ -785,6 +870,7 @@ VfatCreateFile(
             if (!NT_SUCCESS(Status))
             {
                 VfatCloseFile(DeviceExt, FileObject);
+                vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
                 return Status;
             }
         }
@@ -796,17 +882,20 @@ VfatCreateFile(
             vfatFCBIsDirectory(pFcb))
         {
             VfatCloseFile (DeviceExt, FileObject);
+            vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
             return STATUS_FILE_IS_A_DIRECTORY;
         }
         if (BooleanFlagOn(RequestedOptions, FILE_DIRECTORY_FILE) &&
             !vfatFCBIsDirectory(pFcb))
         {
             VfatCloseFile (DeviceExt, FileObject);
+            vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
             return STATUS_NOT_A_DIRECTORY;
         }
         if (TrailingBackslash && !vfatFCBIsDirectory(pFcb))
         {
             VfatCloseFile (DeviceExt, FileObject);
+            vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
             return STATUS_OBJECT_NAME_INVALID;
         }
 #ifndef USE_ROS_CC_AND_FS
@@ -823,6 +912,7 @@ VfatCreateFile(
                     DPRINT1("%d %d %d\n", Stack->Parameters.Create.SecurityContext->DesiredAccess & FILE_WRITE_DATA,
                             RequestedDisposition == FILE_OVERWRITE, RequestedDisposition == FILE_OVERWRITE_IF);
                     VfatCloseFile (DeviceExt, FileObject);
+                    vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
                     return (BooleanFlagOn(RequestedOptions, FILE_DELETE_ON_CLOSE)) ? STATUS_CANNOT_DELETE
                                                                                    : STATUS_SHARING_VIOLATION;
                 }
@@ -844,12 +934,14 @@ VfatCreateFile(
                 if(!BooleanFlagOn(pFcb->Flags, FCB_IS_PAGE_FILE))
                 {
                     VfatCloseFile(DeviceExt, FileObject);
+                    vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
                     return STATUS_INVALID_PARAMETER;
                 }
             }
             else
             {
                 pFcb->Flags |= FCB_IS_PAGE_FILE;
+                SetFlag(DeviceExt->Flags, VCB_IS_SYS_OR_HAS_PAGE);
             }
         }
         else
@@ -857,6 +949,7 @@ VfatCreateFile(
             if (BooleanFlagOn(pFcb->Flags, FCB_IS_PAGE_FILE))
             {
                 VfatCloseFile(DeviceExt, FileObject);
+                vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
                 return STATUS_INVALID_PARAMETER;
             }
         }
@@ -865,11 +958,43 @@ VfatCreateFile(
             RequestedDisposition == FILE_OVERWRITE_IF ||
             RequestedDisposition == FILE_SUPERSEDE)
         {
+            if ((BooleanFlagOn(*pFcb->Attributes, FILE_ATTRIBUTE_HIDDEN) && !BooleanFlagOn(Attributes, FILE_ATTRIBUTE_HIDDEN)) ||
+                (BooleanFlagOn(*pFcb->Attributes, FILE_ATTRIBUTE_SYSTEM) && !BooleanFlagOn(Attributes, FILE_ATTRIBUTE_SYSTEM)))
+            {
+                VfatCloseFile(DeviceExt, FileObject);
+                vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
+                return STATUS_ACCESS_DENIED;
+            }
+
             if (!vfatFCBIsDirectory(pFcb))
             {
-                *pFcb->Attributes = Stack->Parameters.Create.FileAttributes & ~FILE_ATTRIBUTE_NORMAL;
+                LARGE_INTEGER SystemTime;
+
+                if (RequestedDisposition == FILE_SUPERSEDE)
+                {
+                    *pFcb->Attributes = Attributes;
+                }
+                else
+                {
+                    *pFcb->Attributes |= Attributes;
+                }
                 *pFcb->Attributes |= FILE_ATTRIBUTE_ARCHIVE;
-                VfatUpdateEntry(pFcb, vfatVolumeIsFatX(DeviceExt));
+
+                KeQuerySystemTime(&SystemTime);
+                if (vfatVolumeIsFatX(DeviceExt))
+                {
+                    FsdSystemTimeToDosDateTime(DeviceExt,
+                                               &SystemTime, &pFcb->entry.FatX.UpdateDate,
+                                               &pFcb->entry.FatX.UpdateTime);
+                }
+                else
+                {
+                    FsdSystemTimeToDosDateTime(DeviceExt,
+                                               &SystemTime, &pFcb->entry.Fat.UpdateDate,
+                                               &pFcb->entry.Fat.UpdateTime);
+                }
+
+                VfatUpdateEntry(DeviceExt, pFcb);
             }
 
             ExAcquireResourceExclusiveLite(&(pFcb->MainResource), TRUE);
@@ -881,6 +1006,7 @@ VfatCreateFile(
             if (!NT_SUCCESS (Status))
             {
                 VfatCloseFile(DeviceExt, FileObject);
+                vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
                 return Status;
             }
         }
@@ -921,22 +1047,36 @@ VfatCreateFile(
 
     if (Irp->IoStatus.Information == FILE_CREATED)
     {
-        FsRtlNotifyFullReportChange(DeviceExt->NotifySync,
-                                    &(DeviceExt->NotifyList),
-                                    (PSTRING)&pFcb->PathNameU,
-                                    pFcb->PathNameU.Length - pFcb->LongNameU.Length,
-                                    NULL,
-                                    NULL,
-                                    (vfatFCBIsDirectory(pFcb) ?
-                                    FILE_NOTIFY_CHANGE_DIR_NAME : FILE_NOTIFY_CHANGE_FILE_NAME),
-                                    FILE_ACTION_ADDED,
-                                    NULL);
+        vfatReportChange(DeviceExt,
+                         pFcb,
+                         (vfatFCBIsDirectory(pFcb) ?
+                          FILE_NOTIFY_CHANGE_DIR_NAME : FILE_NOTIFY_CHANGE_FILE_NAME),
+                         FILE_ACTION_ADDED);
+    }
+    else if (Irp->IoStatus.Information == FILE_OVERWRITTEN ||
+             Irp->IoStatus.Information == FILE_SUPERSEDED)
+    {
+        vfatReportChange(DeviceExt,
+                         pFcb,
+                         FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE,
+                         FILE_ACTION_MODIFIED);
     }
 
     pFcb->OpenHandleCount++;
     DeviceExt->OpenHandleCount++;
 
     /* FIXME : test write access if requested */
+
+    /* FIXME: That is broken, we cannot reach this code path with failure */
+    ASSERT(NT_SUCCESS(Status));
+    if (NT_SUCCESS(Status))
+    {
+        vfatAddToStat(DeviceExt, Fat.SuccessfulCreates, 1);
+    }
+    else
+    {
+        vfatAddToStat(DeviceExt, Fat.FailedCreates, 1);
+    }
 
     return Status;
 }
@@ -960,11 +1100,6 @@ VfatCreate(
         IrpContext->PriorityBoost = IO_DISK_INCREMENT;
 
         return STATUS_SUCCESS;
-    }
-
-    if (!BooleanFlagOn(IrpContext->Flags, IRPCONTEXT_CANWAIT))
-    {
-        return VfatMarkIrpContextForQueue(IrpContext);
     }
 
     IrpContext->Irp->IoStatus.Information = 0;

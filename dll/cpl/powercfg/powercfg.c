@@ -26,7 +26,7 @@ TCHAR langSel[255];
 /* Applets */
 APPLET Applets[NUM_APPLETS] =
 {
-  {IDC_CPLICON_1, IDS_CPLNAME_1, IDS_CPLDESCRIPTION_1, Applet1}
+    {IDC_CPLICON_1, IDS_CPLNAME_1, IDS_CPLDESCRIPTION_1, Applet1}
 };
 
 static BOOL CALLBACK
@@ -67,58 +67,89 @@ InitPropSheetPage(PROPSHEETHEADER *ppsh, WORD idDlg, DLGPROC DlgProc)
     return FALSE;
 }
 
+static int CALLBACK
+PropSheetProc(HWND hwndDlg, UINT uMsg, LPARAM lParam)
+{
+    // NOTE: This callback is needed to set large icon correctly.
+    HICON hIcon;
+
+    switch (uMsg)
+    {
+        case PSCB_INITIALIZED:
+        {
+            hIcon = LoadIconW(hApplet, MAKEINTRESOURCEW(IDC_CPLICON_1));
+            SendMessageW(hwndDlg, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+            break;
+        }
+    }
+    return 0;
+}
 
 /* First Applet */
 static LONG APIENTRY
 Applet1(HWND hwnd, UINT uMsg, LPARAM wParam, LPARAM lParam)
 {
-  HPROPSHEETPAGE hpsp[MAX_POWER_PAGES];
-  PROPSHEETHEADER psh;
-  HPSXA hpsxa = NULL;
-  TCHAR Caption[1024];
-  SYSTEM_POWER_CAPABILITIES spc;
-  LONG ret;
+    HPROPSHEETPAGE hpsp[MAX_POWER_PAGES];
+    PROPSHEETHEADER psh;
+    HPSXA hpsxa = NULL;
+    TCHAR Caption[1024];
+    SYSTEM_POWER_CAPABILITIES spc;
+    LONG ret;
 
-  UNREFERENCED_PARAMETER(uMsg);
-  UNREFERENCED_PARAMETER(wParam);
-  UNREFERENCED_PARAMETER(lParam);
+    UNREFERENCED_PARAMETER(uMsg);
+    UNREFERENCED_PARAMETER(wParam);
+    UNREFERENCED_PARAMETER(lParam);
 
-  memset(Caption, 0x0, sizeof(Caption));
-  LoadString(hApplet, IDS_CPLNAME_1, Caption, sizeof(Caption) / sizeof(TCHAR));
+    memset(Caption, 0x0, sizeof(Caption));
+    LoadString(hApplet, IDS_CPLNAME_1, Caption, sizeof(Caption) / sizeof(TCHAR));
 
-  ZeroMemory(&psh, sizeof(PROPSHEETHEADER));
-  psh.dwSize = sizeof(PROPSHEETHEADER);
-  psh.dwFlags = PSH_PROPTITLE;
-  psh.hwndParent = hwnd;
-  psh.hInstance = hApplet;
-  psh.hIcon = LoadIcon(hApplet, MAKEINTRESOURCE(IDC_CPLICON_1));
-  psh.pszCaption = Caption;
-  psh.nPages = 0;
-  psh.nStartPage = 0;
-  psh.phpage = hpsp;
+    ZeroMemory(&psh, sizeof(PROPSHEETHEADER));
+    psh.dwSize = sizeof(PROPSHEETHEADER);
+    psh.dwFlags = PSH_PROPTITLE | PSH_USEICONID | PSH_USECALLBACK;
+    psh.hwndParent = hwnd;
+    psh.hInstance = hApplet;
+    psh.pszIcon = MAKEINTRESOURCEW(IDC_CPLICON_1);
+    psh.pszCaption = Caption;
+    psh.nPages = 0;
+    psh.nStartPage = 0;
+    psh.phpage = hpsp;
+    psh.pfnCallback = PropSheetProc;
 
-  InitPropSheetPage(&psh, IDD_PROPPAGEPOWERSCHEMES, (DLGPROC)PowerSchemesDlgProc);
-  if (GetPwrCapabilities(&spc))
-  {
+    if (!GetPwrCapabilities(&spc))
+    {
+        return GetLastError();
+    }
+
     if (spc.SystemBatteriesPresent)
     {
-      InitPropSheetPage(&psh, IDD_PROPPAGEALARMS, (DLGPROC)AlarmsDlgProc);
+        InitPropSheetPage(&psh, IDD_POWERSCHEMESPAGE_ACDC, PowerSchemesDlgProc);
+        InitPropSheetPage(&psh, IDD_PROPPAGEALARMS, AlarmsDlgProc);
+
+        /* FIXME: Add battery page */
     }
-  }
-  InitPropSheetPage(&psh, IDD_PROPPAGEADVANCED, (DLGPROC)AdvancedDlgProc);
-  InitPropSheetPage(&psh, IDD_PROPPAGEHIBERNATE, (DLGPROC)HibernateDlgProc);
+    else
+    {
+        InitPropSheetPage(&psh, IDD_POWERSCHEMESPAGE_AC, PowerSchemesDlgProc);
+    }
+    InitPropSheetPage(&psh, IDD_PROPPAGEADVANCED, AdvancedDlgProc);
+    if (spc.SystemS4)
+    {
+        InitPropSheetPage(&psh, IDD_PROPPAGEHIBERNATE, HibernateDlgProc);
+    }
 
-  /* Load additional pages provided by shell extensions */
-  hpsxa = SHCreatePropSheetExtArray(HKEY_LOCAL_MACHINE, REGSTR_PATH_CONTROLSFOLDER TEXT("\\Power"), MAX_POWER_PAGES - psh.nPages);
-  if (hpsxa != NULL)
-      SHAddFromPropSheetExtArray(hpsxa, PropSheetAddPage, (LPARAM)&psh);
+    /* FIXME: Add UPS page */
 
-  ret = (LONG)(PropertySheet(&psh) != -1);
+    /* Load additional pages provided by shell extensions */
+    hpsxa = SHCreatePropSheetExtArray(HKEY_LOCAL_MACHINE, REGSTR_PATH_CONTROLSFOLDER TEXT("\\Power"), MAX_POWER_PAGES - psh.nPages);
+    if (hpsxa != NULL)
+        SHAddFromPropSheetExtArray(hpsxa, PropSheetAddPage, (LPARAM)&psh);
 
-  if (hpsxa != NULL)
-    SHDestroyPropSheetExtArray(hpsxa);
+    ret = (LONG)(PropertySheet(&psh) != -1);
 
-  return ret;
+    if (hpsxa != NULL)
+        SHDestroyPropSheetExtArray(hpsxa);
+
+    return ret;
 }
 
 /* Control Panel Callback */
@@ -128,34 +159,38 @@ CPlApplet(HWND hwndCPl,
           LPARAM lParam1,
           LPARAM lParam2)
 {
-  int i = (int)lParam1;
+    int i = (int)lParam1;
 
-  switch(uMsg)
-  {
-    case CPL_INIT:
+    switch (uMsg)
     {
-      return TRUE;
+        case CPL_INIT:
+        {
+            return TRUE;
+        }
+
+        case CPL_GETCOUNT:
+        {
+            return NUM_APPLETS;
+        }
+
+        case CPL_INQUIRE:
+        {
+            CPLINFO *CPlInfo = (CPLINFO*)lParam2;
+            CPlInfo->lData = 0;
+            CPlInfo->idIcon = Applets[i].idIcon;
+            CPlInfo->idName = Applets[i].idName;
+            CPlInfo->idInfo = Applets[i].idDescription;
+            break;
+        }
+
+        case CPL_DBLCLK:
+        {
+            Applets[i].AppletProc(hwndCPl, uMsg, lParam1, lParam2);
+            break;
+        }
     }
-    case CPL_GETCOUNT:
-    {
-      return NUM_APPLETS;
-    }
-    case CPL_INQUIRE:
-    {
-      CPLINFO *CPlInfo = (CPLINFO*)lParam2;
-      CPlInfo->lData = 0;
-      CPlInfo->idIcon = Applets[i].idIcon;
-      CPlInfo->idName = Applets[i].idName;
-      CPlInfo->idInfo = Applets[i].idDescription;
-      break;
-    }
-    case CPL_DBLCLK:
-    {
-      Applets[i].AppletProc(hwndCPl, uMsg, lParam1, lParam2);
-      break;
-    }
-  }
-  return FALSE;
+
+    return FALSE;
 }
 
 
@@ -164,13 +199,15 @@ DllMain(HINSTANCE hinstDLL,
         DWORD dwReason,
         LPVOID lpvReserved)
 {
-  UNREFERENCED_PARAMETER(lpvReserved);
-  switch(dwReason)
-  {
-    case DLL_PROCESS_ATTACH:
-    case DLL_THREAD_ATTACH:
-      hApplet = hinstDLL;
-      break;
-  }
-  return TRUE;
+    UNREFERENCED_PARAMETER(lpvReserved);
+
+    switch (dwReason)
+    {
+        case DLL_PROCESS_ATTACH:
+            DisableThreadLibraryCalls(hinstDLL);
+            hApplet = hinstDLL;
+            break;
+    }
+
+    return TRUE;
 }

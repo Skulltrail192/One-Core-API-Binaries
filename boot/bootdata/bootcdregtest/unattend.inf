@@ -1,8 +1,7 @@
-; Set UnattendSetupEnabled to yes in order to get unattended setup working
-
 [Unattend]
 Signature = "$ReactOS$"
 
+; Set UnattendSetupEnabled to yes in order to get unattended setup working
 ; yes - unattend setup enabled
 ; no - unattend setup disabled
 UnattendSetupEnabled = yes
@@ -39,6 +38,11 @@ FormatPartition=1
 ; 0 - disabled
 AutoPartition = 1
 
+; choose default file system type
+; 0 - FAT
+; 1 - BtrFS
+FsType = 0
+
 ; set this option to automatically
 ; specify language in 2nd mode setup
 ; see hivesys.inf for available languages
@@ -49,3 +53,10 @@ LocaleID = 409
 ;
 [GuiRunOnce]
 %SystemRoot%\system32\cmd.exe /c "regtest.cmd"
+
+[Display]
+BitsPerPel = 16
+XResolution = 800
+YResolution = 600
+VRefresh = 0
+

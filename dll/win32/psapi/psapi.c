@@ -33,12 +33,6 @@
 #define MAX_MODULES 0x2710      // Matches 10.000 modules
 #define INIT_MEMORY_SIZE 0x1000 // Matches 4kB
 
-typedef struct _PSAPI_WS_WATCH_INFORMATION_EX {
-  PSAPI_WS_WATCH_INFORMATION BasicInfo;
-  ULONG_PTR                  FaultingThreadId;
-  ULONG_PTR                  Flags;
-} PSAPI_WS_WATCH_INFORMATION_EX, *PPSAPI_WS_WATCH_INFORMATION_EX;
-
 /* INTERNAL *******************************************************************/
 
 /*
@@ -193,7 +187,7 @@ FindModule(IN HANDLE hProcess,
     {
         /* Load module data */
         if (!ReadProcessMemory(hProcess,
-                               NULL,
+                               CONTAINING_RECORD(ListEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks),
                                Module,
                                sizeof(*Module),
                                NULL))
@@ -214,7 +208,7 @@ FindModule(IN HANDLE hProcess,
         }
 
         /* Get to next listed module */
-        ListEntry = NULL;
+        ListEntry = Module->InMemoryOrderLinks.Flink;
     }
 
     SetLastError(ERROR_INVALID_HANDLE);
@@ -512,7 +506,7 @@ EnumProcesses(DWORD *lpidProcess,
              */
             if (Count < cb / sizeof(DWORD))
             {
-                lpidProcess[Count] = (DWORD)ProcInfo->UniqueProcessId;
+                lpidProcess[Count] = HandleToUlong(ProcInfo->UniqueProcessId);
                 Count++;
             }
 
@@ -846,7 +840,7 @@ GetMappedFileNameW(HANDLE hProcess,
                    DWORD nSize)
 {
     DWORD Len;
-    DWORD OutSize;
+    SIZE_T OutSize;
     NTSTATUS Status;
     struct
     {
@@ -975,7 +969,7 @@ GetModuleBaseNameW(HANDLE hProcess,
             lpBaseName[nSize - 1] = UNICODE_NULL;
         }
     }
-    /* Otherwise, nullify at last writen char */
+    /* Otherwise, nullify at last written char */
     else
     {
         ASSERT(Len + sizeof(UNICODE_NULL) <= nSize * sizeof(WCHAR));
@@ -1067,7 +1061,7 @@ GetModuleFileNameExW(HANDLE hProcess,
             lpFilename[nSize - 1] = UNICODE_NULL;
         }
     }
-    /* Otherwise, nullify at last writen char */
+    /* Otherwise, nullify at last written char */
     else
     {
         ASSERT(Len + sizeof(UNICODE_NULL) <= nSize * sizeof(WCHAR));
@@ -1273,7 +1267,7 @@ GetProcessImageFileNameA(HANDLE hProcess,
     /* Copy name */
     Len = WideCharToMultiByte(CP_ACP, 0, ImageFileName->Buffer,
                               ImageFileName->Length, lpImageFileName, nSize, NULL, NULL);
-    /* If conversion was successfull, don't return len with added \0 */
+    /* If conversion was successful, don't return len with added \0 */
     if (Len != 0)
     {
         Len -= sizeof(ANSI_NULL);
@@ -1610,7 +1604,7 @@ GetProcessMemoryInfo(HANDLE Process,
         ppsmemCounters->QuotaNonPagedPoolUsage = Counters.QuotaNonPagedPoolUsage;
         ppsmemCounters->PagefileUsage = Counters.PagefileUsage;
         ppsmemCounters->PeakPagefileUsage = Counters.PeakPagefileUsage;
-        /* And if needed, additionnal field for _EX version */
+        /* And if needed, additional field for _EX version */
         if (cb >= sizeof(PROCESS_MEMORY_COUNTERS_EX))
         {
             ((PPROCESS_MEMORY_COUNTERS_EX)ppsmemCounters)->PrivateUsage = Counters.PrivateUsage;
@@ -1679,27 +1673,6 @@ QueryWorkingSetEx(IN HANDLE hProcess,
     }
 
     return TRUE;
-}
-
-
-BOOL WINAPI EnumProcessModulesEx(
-  _In_   HANDLE hProcess,
-  _Out_  HMODULE *lphModule,
-  _In_   DWORD cb,
-  _Out_  LPDWORD lpcbNeeded,
-  _In_   DWORD dwFilterFlag
-)
-{
-	return TRUE;
-}
-
-BOOL WINAPI GetWsChangesEx(
-  _In_     HANDLE hProcess,
-  _Out_    PPSAPI_WS_WATCH_INFORMATION_EX lpWatchInfoEx,
-  _Inout_  PDWORD cb
-)
-{
-	return TRUE;
 }
 
 /* EOF */

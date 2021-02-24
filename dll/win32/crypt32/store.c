@@ -23,6 +23,19 @@
  * - Many flags, options and whatnot are unimplemented.
  */
 
+#include "config.h"
+#include "wine/port.h"
+
+#include <assert.h>
+#include <stdarg.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winnls.h"
+#include "winreg.h"
+#include "winuser.h"
+#include "wincrypt.h"
+#include "wine/debug.h"
+#include "wine/exception.h"
 #include "crypt32_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(crypt);
@@ -111,7 +124,7 @@ BOOL WINAPI I_CertUpdateStore(HCERTSTORE store1, HCERTSTORE store2, DWORD unk0,
     /* Poor-man's resync:  empty first store, then add everything from second
      * store to it.
      */
-    for (i = 0; i < sizeof(interfaces) / sizeof(interfaces[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(interfaces); i++)
     {
         const void *context;
 
@@ -704,8 +717,7 @@ static WINECRYPT_CERTSTORE *CRYPT_MsgOpenStore(HCRYPTPROV hCryptProv,
             CERT_STORE_PROV_INFO provInfo = { 0 };
 
             provInfo.cbSize = sizeof(provInfo);
-            provInfo.cStoreProvFunc = sizeof(msgProvFuncs) /
-             sizeof(msgProvFuncs[0]);
+            provInfo.cStoreProvFunc = ARRAY_SIZE(msgProvFuncs);
             provInfo.rgpvStoreProvFunc = msgProvFuncs;
             provInfo.hStoreProv = CryptMsgDuplicate(msg);
             store = CRYPT_ProvCreateStore(dwFlags, memStore, &provInfo);
@@ -1325,7 +1337,7 @@ BOOL WINAPI CertEnumSystemStore(DWORD dwFlags, void *pvSystemStoreLocationPara,
         ret = TRUE;
         do {
             WCHAR name[MAX_PATH];
-            DWORD size = sizeof(name) / sizeof(name[0]);
+            DWORD size = ARRAY_SIZE(name);
 
             rc = RegEnumKeyExW(key, index++, name, &size, NULL, NULL, NULL,
                 NULL);
@@ -1371,6 +1383,13 @@ BOOL WINAPI CertRegisterPhysicalStore(const void *pvSystemStore, DWORD dwFlags,
     return FALSE;
 }
 
+BOOL WINAPI CertUnregisterPhysicalStore(const void *pvSystemStore, DWORD dwFlags,
+ LPCWSTR pwszStoreName)
+{
+    FIXME("(%p, %08x, %s): stub\n", pvSystemStore, dwFlags, debugstr_w(pwszStoreName));
+    return TRUE;
+}
+
 BOOL WINAPI CertRegisterSystemStore(const void *pvSystemStore, DWORD dwFlags,
   PCERT_SYSTEM_STORE_INFO pStoreInfo, void *pvReserved)
 {
@@ -1394,7 +1413,7 @@ BOOL WINAPI CertRegisterSystemStore(const void *pvSystemStore, DWORD dwFlags,
     return FALSE;
 }
 
-BOOL WINAPI CertUnregisterSystemStore(void *pvSystemStore, DWORD dwFlags)
+BOOL WINAPI CertUnregisterSystemStore(const void *pvSystemStore, DWORD dwFlags)
 {
     HCERTSTORE hstore;
 

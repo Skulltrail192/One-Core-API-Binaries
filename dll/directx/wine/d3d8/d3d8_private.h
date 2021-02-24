@@ -29,7 +29,6 @@
 #define NONAMELESSUNION
 #define NONAMELESSSTRUCT
 #define COBJMACROS
-#include "wine/config.h"
 #include "windef.h"
 #include "winbase.h"
 #include "wingdi.h"

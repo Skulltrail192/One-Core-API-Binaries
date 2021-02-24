@@ -1,19 +1,8 @@
 /*
- * Copyright 2015 Mark Jansen
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+ * PROJECT:     ReactOS Compatibility Layer Shell Extension
+ * LICENSE:     GPL-2.0+ (https://spdx.org/licenses/GPL-2.0+)
+ * PURPOSE:     acppage entrypoint
+ * COPYRIGHT:   Copyright 2015-2018 Mark Jansen (mark.jansen@reactos.org)
  */
 
 #include "precomp.h"
@@ -26,10 +15,6 @@ LONG g_ModuleRefCnt = 0;
 class CLayerUIPropPageModule : public CComModule
 {
 public:
-    void Term()
-    {
-        CComModule::Term();
-    }
 };
 
 BEGIN_OBJECT_MAP(ObjectMap)
@@ -47,6 +32,9 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
         DisableThreadLibraryCalls(hInstance);
         g_hModule = hInstance;
         gModule.Init(ObjectMap, hInstance, NULL);
+        break;
+    case DLL_PROCESS_DETACH:
+        gModule.Term();
         break;
     }
 
@@ -73,10 +61,6 @@ STDAPI DllRegisterServer()
     if (FAILED(hr))
         return hr;
 
-    hr = gModule.UpdateRegistryFromResource(IDR_ACPPAGE, TRUE, NULL);
-    if (FAILED(hr))
-        return hr;
-
     return S_OK;
 }
 
@@ -85,10 +69,6 @@ STDAPI DllUnregisterServer()
     HRESULT hr;
 
     hr = gModule.DllUnregisterServer(FALSE);
-    if (FAILED(hr))
-        return hr;
-
-    hr = gModule.UpdateRegistryFromResource(IDR_ACPPAGE, FALSE, NULL);
     if (FAILED(hr))
         return hr;
 
@@ -106,19 +86,19 @@ EXTERN_C
 BOOL WINAPI GetExeFromLnk(PCWSTR pszLnk, PWSTR pszExe, size_t cchSize)
 {
     CCoInit init;
-    if (FAILED(init.hres))
+    if (FAILED_UNEXPECTEDLY(init.hres))
         return FALSE;
 
     CComPtr<IShellLinkW> spShellLink;
-    if (FAILED(CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARG(IShellLinkW, &spShellLink))))
+    if (FAILED_UNEXPECTEDLY(CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARG(IShellLinkW, &spShellLink))))
         return FALSE;
 
     CComPtr<IPersistFile> spPersistFile;
-    if (FAILED(spShellLink->QueryInterface(IID_PPV_ARG(IPersistFile, &spPersistFile))))
+    if (FAILED_UNEXPECTEDLY(spShellLink->QueryInterface(IID_PPV_ARG(IPersistFile, &spPersistFile))))
         return FALSE;
 
-    if (FAILED(spPersistFile->Load(pszLnk, STGM_READ)) || FAILED(spShellLink->Resolve(NULL, SLR_NO_UI | SLR_NOUPDATE | SLR_NOSEARCH)))
+    if (FAILED_UNEXPECTEDLY(spPersistFile->Load(pszLnk, STGM_READ)) || FAILED_UNEXPECTEDLY(spShellLink->Resolve(NULL, SLR_NO_UI | SLR_NOUPDATE | SLR_NOSEARCH)))
         return FALSE;
 
-    return SUCCEEDED(spShellLink->GetPath(pszExe, cchSize, NULL, SLGP_RAWPATH));
+    return !FAILED_UNEXPECTEDLY(spShellLink->GetPath(pszExe, cchSize, NULL, SLGP_RAWPATH));
 }

@@ -18,7 +18,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+
+#include "dshow.h"
+#include "wine/debug.h"
+#include "wine/unicode.h"
+#include "wine/strmbase.h"
+#include "uuids.h"
+#include "vfwmsgs.h"
 #include "strmbase_private.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(strmbase);
 
 static const WCHAR wcsInputPinName[] = {'i','n','p','u','t',' ','p','i','n',0};
 static const WCHAR wcsAltInputPinName[] = {'I','n',0};
@@ -228,7 +238,8 @@ static const BaseInputPinFuncTable input_BaseInputFuncTable = {
 };
 
 
-HRESULT WINAPI BaseRenderer_Init(BaseRenderer * This, const IBaseFilterVtbl *Vtbl, IUnknown *pUnkOuter, const CLSID *pClsid, DWORD_PTR DebugInfo, const BaseRendererFuncTable* pBaseFuncsTable)
+HRESULT WINAPI BaseRenderer_Init(BaseRenderer * This, const IBaseFilterVtbl *Vtbl, IUnknown *pUnkOuter, const CLSID *pClsid,
+    DWORD_PTR DebugInfo, const BaseRendererFuncTable* pBaseFuncsTable)
 {
     PIN_INFO piInput;
     HRESULT hr;
@@ -247,7 +258,8 @@ HRESULT WINAPI BaseRenderer_Init(BaseRenderer * This, const IBaseFilterVtbl *Vtb
 
     if (SUCCEEDED(hr))
     {
-        hr = CreatePosPassThru(pUnkOuter ? pUnkOuter: (IUnknown*)This, TRUE, &This->pInputPin->pin.IPin_iface, &This->pPosition);
+        hr = CreatePosPassThru(pUnkOuter ? pUnkOuter: (IUnknown *)&This->filter.IBaseFilter_iface, TRUE,
+                &This->pInputPin->pin.IPin_iface, &This->pPosition);
         if (FAILED(hr))
             return hr;
 

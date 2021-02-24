@@ -1,31 +1,43 @@
-
-include_directories(
-    .
-    ${REACTOS_SOURCE_DIR}/sdk/include/reactos/libs/fullfat)
-
 list(APPEND SOURCE
+    acchksup.c
+    allocsup.c
+    cachesup.c
     cleanup.c
     close.c
     create.c
-    device.c
-    dir.c
+    devctrl.c
+    deviosup.c
+    dirctrl.c
+    dirsup.c
+    dumpsup.c
     ea.c
-    fastfat.c
-    fastio.c
-    fat.c
-    fcb.c
-    finfo.c
+    easup.c
+    fatdata.c
+    fatinit.c
+    fatprocssrc.c
+    fileinfo.c
+    filobsup.c
     flush.c
-    fsctl.c
-    fullfat.c
-    lock.c
-    rw.c
+    fsctrl.c
+    fspdisp.c
+    lockctrl.c
+    namesup.c
+    pnp.c
+    read.c
+    resrcsup.c
     shutdown.c
-    volume.c
-    fastfat.h)
+    splaysup.c
+    strucsup.c
+    timesup.c
+    verfysup.c
+    volinfo.c
+    workque.c
+    write.c
+    fatprocs.h)
 
-add_library(fastfat_new SHARED ${SOURCE} fastfat.rc)
-set_module_type(fastfat_new kernelmodedriver)
-target_link_libraries(fastfat_new ${PSEH_LIB} fullfat)
-add_importlibs(fastfat_new ntoskrnl hal)
-add_pch(fastfat_new fastfat.h SOURCE)
+add_library(fastfat MODULE ${SOURCE} fastfat.rc)
+set_module_type(fastfat kernelmodedriver)
+target_link_libraries(fastfat ${PSEH_LIB} memcmp)
+add_importlibs(fastfat ntoskrnl hal)
+add_pch(fastfat fatprocs.h SOURCE)
+add_cd_file(TARGET fastfat DESTINATION reactos/system32/drivers NO_CAB FOR all)

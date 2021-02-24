@@ -4,7 +4,7 @@
  * Copyright 1995 Sven Verdoolaege
  * Copyright 1998 Juergen Schmied
  * Copyright 2003 Mike Hearn
- * Copyright 2007 Hervé Poussineau
+ * Copyright 2007 HervÃ© Poussineau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,17 +40,17 @@ handle_t __RPC_USER
 EVENTLOG_HANDLE_A_bind(EVENTLOG_HANDLE_A UNCServerName)
 {
     handle_t hBinding = NULL;
-    UCHAR *pszStringBinding;
+    RPC_CSTR pszStringBinding;
     RPC_STATUS status;
 
     TRACE("EVENTLOG_HANDLE_A_bind() called\n");
 
     status = RpcStringBindingComposeA(NULL,
-                                      (UCHAR *)"ncacn_np",
-                                      (UCHAR *)UNCServerName,
-                                      (UCHAR *)"\\pipe\\EventLog",
+                                      (RPC_CSTR)"ncacn_np",
+                                      (RPC_CSTR)UNCServerName,
+                                      (RPC_CSTR)"\\pipe\\EventLog",
                                       NULL,
-                                      (UCHAR **)&pszStringBinding);
+                                      &pszStringBinding);
     if (status)
     {
         ERR("RpcStringBindingCompose returned 0x%x\n", status);
@@ -95,7 +95,7 @@ handle_t __RPC_USER
 EVENTLOG_HANDLE_W_bind(EVENTLOG_HANDLE_W UNCServerName)
 {
     handle_t hBinding = NULL;
-    LPWSTR pszStringBinding;
+    RPC_WSTR pszStringBinding;
     RPC_STATUS status;
 
     TRACE("EVENTLOG_HANDLE_W_bind() called\n");
@@ -655,7 +655,7 @@ ElfChangeNotify(IN HANDLE hEventLog,
 
     RpcTryExcept
     {
-        Status = ElfrChangeNotify(hEventLog, RpcClientId, (DWORD)hEvent);
+        Status = ElfrChangeNotify(hEventLog, RpcClientId, HandleToUlong(hEvent));
     }
     RpcExcept(EXCEPTION_EXECUTE_HANDLER)
     {
@@ -813,7 +813,8 @@ ElfOpenBackupEventLogW(IN PUNICODE_STRING UNCServerNameU,
     {
         Status = ElfrOpenBELW(pUNCServerName,
                               (PRPC_UNICODE_STRING)BackupFileNameU,
-                              1, 1,
+                              1,
+                              1,
                               (IELF_HANDLE*)phEventLog);
     }
     RpcExcept(EXCEPTION_EXECUTE_HANDLER)
@@ -851,7 +852,7 @@ OpenBackupEventLogW(IN LPCWSTR lpUNCServerName,
     RtlInitUnicodeString(&UNCServerName, lpUNCServerName);
 
     Status = ElfOpenBackupEventLogW(&UNCServerName, &FileName, &hEventLog);
-    
+
     if (FileName.Buffer != NULL)
         RtlFreeHeap(RtlGetProcessHeap(), 0, FileName.Buffer);
 
@@ -901,7 +902,8 @@ ElfOpenEventLogA(IN PANSI_STRING UNCServerNameA,
         Status = ElfrOpenELA(pUNCServerName,
                              (PRPC_STRING)SourceNameA,
                              &EmptyStringA,
-                             1, 1,
+                             1,
+                             1,
                              (IELF_HANDLE*)phEventLog);
     }
     RpcExcept(EXCEPTION_EXECUTE_HANDLER)
@@ -966,7 +968,8 @@ ElfOpenEventLogW(IN PUNICODE_STRING UNCServerNameU,
         Status = ElfrOpenELW(pUNCServerName,
                              (PRPC_UNICODE_STRING)SourceNameU,
                              &EmptyStringU,
-                             1, 1,
+                             1,
+                             1,
                              (IELF_HANDLE*)phEventLog);
     }
     RpcExcept(EXCEPTION_EXECUTE_HANDLER)
@@ -1204,7 +1207,8 @@ ElfRegisterEventSourceA(IN PANSI_STRING UNCServerNameA,
         Status = ElfrRegisterEventSourceA(pUNCServerName,
                                           (PRPC_STRING)SourceNameA,
                                           &EmptyStringA,
-                                          1, 1,
+                                          1,
+                                          1,
                                           (IELF_HANDLE*)phEventLog);
     }
     RpcExcept(EXCEPTION_EXECUTE_HANDLER)
@@ -1274,7 +1278,8 @@ ElfRegisterEventSourceW(IN PUNICODE_STRING UNCServerNameU,
         Status = ElfrRegisterEventSourceW(pUNCServerName,
                                           (PRPC_UNICODE_STRING)SourceNameU,
                                           &EmptyStringU,
-                                          1, 1,
+                                          1,
+                                          1,
                                           (IELF_HANDLE*)phEventLog);
     }
     RpcExcept(EXCEPTION_EXECUTE_HANDLER)
@@ -1352,7 +1357,7 @@ ElfReportEventA(IN HANDLE hEventLog,
                                   NumStrings,
                                   DataSize,
                                   (PRPC_STRING)&ComputerName,
-                                  UserSID,
+                                  (PRPC_SID)UserSID,
                                   (PRPC_STRING*)Strings,
                                   Data,
                                   Flags,
@@ -1491,7 +1496,7 @@ ElfReportEventW(IN HANDLE hEventLog,
                                   NumStrings,
                                   DataSize,
                                   (PRPC_UNICODE_STRING)&ComputerName,
-                                  UserSID,
+                                  (PRPC_SID)UserSID,
                                   (PRPC_UNICODE_STRING*)Strings,
                                   Data,
                                   Flags,

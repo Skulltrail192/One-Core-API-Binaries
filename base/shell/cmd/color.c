@@ -24,36 +24,6 @@
 
 #ifdef INCLUDE_CMD_COLOR
 
-BOOL SetScreenColor(WORD wColor, BOOL bNoFill)
-{
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD dwWritten;
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    COORD coPos;
-
-    /* Foreground and Background colors can't be the same */
-    if ((wColor & 0x0F) == (wColor & 0xF0) >> 4)
-        return FALSE;
-
-    /* Fill the whole background if needed */
-    if (bNoFill != TRUE)
-    {
-        GetConsoleScreenBufferInfo(hConsole, &csbi);
-
-        coPos.X = 0;
-        coPos.Y = 0;
-        FillConsoleOutputAttribute(hConsole,
-                                   wColor & 0x00FF,
-                                   csbi.dwSize.X * csbi.dwSize.Y,
-                                   coPos,
-                                   &dwWritten);
-    }
-
-    /* Set the text attribute */
-    SetConsoleTextAttribute(hConsole, wColor & 0x00FF);
-    return TRUE;
-}
-
 /*
  * color
  *
@@ -73,10 +43,10 @@ INT CommandColor(LPTSTR rest)
     /* Let's prepare %ERRORLEVEL% */
     nErrorLevel = 0;
 
-    /* No parameter. Set the default colors */
+    /* No parameter: Set the default colors */
     if (rest[0] == _T('\0'))
     {
-        SetScreenColor(wDefColor, FALSE);
+        ConSetScreenColor(ConStreamGetOSHandle(StdOut), wDefColor, TRUE);
         return 0;
     }
 
@@ -102,7 +72,7 @@ INT CommandColor(LPTSTR rest)
             return 1;
         }
     }
-    /* Color string: advanced choice: two-digits, "Color ON Color" , "Foreground ON Background" */
+    /* Color string: advanced choice: two-digits, "Color ON Color", "Foreground ON Background" */
     else if (StringToColor(&wColor, &rest) == FALSE)
     {
         /* Invalid color string */
@@ -111,17 +81,14 @@ INT CommandColor(LPTSTR rest)
         return 1;
     }
 
-    /* Print the chosen color if we are in echo mode (NOTE: Not Windows-compliant) */
-    if ((bc && bc->bEcho) || !bc)
-    {
-        ConErrResPrintf(STRING_COLOR_ERROR3, wColor);
-    }
+    TRACE("Color %02x\n", wColor);
 
     /*
      * Set the chosen color. Use also the following advanced flag:
      * /-F to avoid changing already buffered foreground/background.
      */
-    if (SetScreenColor(wColor, (_tcsstr(rest, _T("/-F")) || _tcsstr(rest, _T("/-f")))) == FALSE)
+    if (ConSetScreenColor(ConStreamGetOSHandle(StdOut), wColor,
+                          !_tcsstr(rest, _T("/-F")) && !_tcsstr(rest, _T("/-f"))) == FALSE)
     {
         /* Failed because foreground and background colors were the same */
         ConErrResPuts(STRING_COLOR_ERROR1);

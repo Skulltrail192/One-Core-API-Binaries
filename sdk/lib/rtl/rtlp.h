@@ -27,10 +27,10 @@ extern VOID FASTCALL CHECK_PAGED_CODE_RTL(char *file, int line);
 #endif
 
 #define ROUND_DOWN(n, align) \
-    (((ULONG)(n)) & ~((align) - 1l))
+    (((ULONG_PTR)(n)) & ~((align) - 1l))
 
 #define ROUND_UP(n, align) \
-    ROUND_DOWN(((ULONG)(n)) + (align) - 1, (align))
+    ROUND_DOWN(((ULONG_PTR)(n)) + (align) - 1, (align))
 
 #define RVA(m, b) ((PVOID)((ULONG_PTR)(b) + (ULONG_PTR)(m)))
 
@@ -74,10 +74,12 @@ RtlCallVectoredContinueHandlers(
     IN PCONTEXT Context
 );
 
+#ifdef _M_IX86
 typedef struct _DISPATCHER_CONTEXT
 {
     PEXCEPTION_REGISTRATION_RECORD RegistrationPointer;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
+#endif
 
 /* These provide support for sharing code between User and Kernel RTL */
 PVOID
@@ -157,6 +159,7 @@ RtlpClearInDbgPrint(
 
 /* i386/except.S */
 
+#ifdef _M_IX86
 EXCEPTION_DISPOSITION
 NTAPI
 RtlpExecuteHandlerForException(PEXCEPTION_RECORD ExceptionRecord,
@@ -164,6 +167,7 @@ RtlpExecuteHandlerForException(PEXCEPTION_RECORD ExceptionRecord,
                                PCONTEXT Context,
                                PVOID DispatcherContext,
                                PEXCEPTION_ROUTINE ExceptionHandler);
+#endif
 
 EXCEPTION_DISPOSITION
 NTAPI
@@ -238,5 +242,11 @@ RtlpUpcaseUnicodeChar(IN WCHAR Source);
 WCHAR
 NTAPI
 RtlpDowncaseUnicodeChar(IN WCHAR Source);
+
+/* ReactOS only */
+VOID
+NTAPI
+LdrpInitializeProcessCompat(PVOID pProcessActctx, PVOID* pOldShimData);
+
 
 /* EOF */

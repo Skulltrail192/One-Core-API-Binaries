@@ -148,7 +148,7 @@ UniataEnableIoPCI(
 /*
     Get PCI address by ConfigInfo and RID
 */
-ULONG
+ULONGIO_PTR
 NTAPI
 AtapiGetIoRange(
     IN PVOID HwDeviceExtension,
@@ -932,7 +932,7 @@ UniataFindCompatBusMasterController1(
 {
     return UniataFindBusMasterController(
         HwDeviceExtension,
-        (PVOID)0x00000000,
+        UlongToPtr(0x00000000),
         BusInformation,
         ArgumentString,
         ConfigInfo,
@@ -953,7 +953,7 @@ UniataFindCompatBusMasterController2(
 {
     return UniataFindBusMasterController(
         HwDeviceExtension,
-        (PVOID)0x80000000,
+        UlongToPtr(0x80000000),
         BusInformation,
         ArgumentString,
         ConfigInfo,
@@ -1071,7 +1071,7 @@ UniataFindBusMasterController(
         KdPrint2((PRINT_PREFIX "AdapterInterfaceType: Isa\n"));
     }
     if(InDriverEntry) {
-        i = (ULONG)Context;
+        i = PtrToUlong(Context);
         if(i & 0x80000000) {
             AltInit = TRUE;
         }
@@ -1087,7 +1087,7 @@ UniataFindBusMasterController(
         }
         if(i >= BMListLen) {
             KdPrint2((PRINT_PREFIX "unexpected device arrival\n"));
-            i = (ULONG)Context;
+            i = PtrToUlong(Context);
             if(FirstMasterOk) {
                 channel = 1;
             }
@@ -2549,14 +2549,14 @@ retryIdentifier:
 
             if(BaseIoAddress2) {
                 if(hasPCI) {
-                    (*ConfigInfo->AccessRanges)[1].RangeStart = ScsiPortConvertUlongToPhysicalAddress((ULONG)BaseIoAddress2);
+                    (*ConfigInfo->AccessRanges)[1].RangeStart = ScsiPortConvertUlongToPhysicalAddress((ULONG_PTR)BaseIoAddress2);
                     (*ConfigInfo->AccessRanges)[1].RangeLength = ATA_ALTIOSIZE;
                     (*ConfigInfo->AccessRanges)[1].RangeInMemory = FALSE;
                 } else {
                     // NT4 and NT3.51 on ISA-only hardware definitly fail floppy.sys load
                     // when this range is claimed by other driver.
                     // However, floppy should use only 0x3f0-3f5,3f7
-                    if((ULONG)BaseIoAddress2 >= 0x3f0 && (ULONG)BaseIoAddress2 <= 0x3f7) {
+                    if((ULONGIO_PTR)BaseIoAddress2 >= 0x3f0 && (ULONGIO_PTR)BaseIoAddress2 <= 0x3f7) {
                         KdPrint2((PRINT_PREFIX "!!! Possible AltStatus vs Floppy IO range interference !!!\n"));
                     }
                     KdPrint2((PRINT_PREFIX "Do not expose to OS on old ISA\n"));

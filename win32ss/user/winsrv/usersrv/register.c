@@ -20,8 +20,13 @@ static BOOLEAN ServicesProcessIdValid = FALSE;
 ULONG_PTR ServicesProcessId = 0;
 ULONG_PTR LogonProcessId = 0;
 
+#if 1 //HACK! See use below
+extern HANDLE CsrApiPort;
+#endif
+
 /* PUBLIC SERVER APIS *********************************************************/
 
+/* API_NUMBER: UserpRegisterLogonProcess */
 CSR_API(SrvRegisterLogonProcess)
 {
     PUSER_REGISTER_LOGON_PROCESS RegisterLogonProcessRequest = &((PUSER_API_MESSAGE)ApiMessage)->Data.RegisterLogonProcessRequest;
@@ -45,9 +50,34 @@ CSR_API(SrvRegisterLogonProcess)
         LogonProcessId = 0;
     }
 
+#if 1 //HAAAACK. This should be done in UserClientConnect which is never called!
+
+    /* Check if we don't have an API port yet */
+    if (CsrApiPort == NULL)
+    {
+        NTSTATUS Status;
+
+        /* Query the API port and save it globally */
+        CsrApiPort = CsrQueryApiPort();
+
+        DPRINT("Giving win32k our api port\n");
+
+        /* Inform win32k about the API port */
+        Status = NtUserSetInformationThread(NtCurrentThread(),
+                                            UserThreadCsrApiPort,
+                                            &CsrApiPort,
+                                            sizeof(CsrApiPort));
+        if (!NT_SUCCESS(Status))
+        {
+            return Status;
+        }
+    }
+#endif
+
     return STATUS_SUCCESS;
 }
 
+/* API_NUMBER: UserpRegisterServicesProcess */
 CSR_API(SrvRegisterServicesProcess)
 {
     PUSER_REGISTER_SERVICES_PROCESS RegisterServicesProcessRequest = &((PUSER_API_MESSAGE)ApiMessage)->Data.RegisterServicesProcessRequest;

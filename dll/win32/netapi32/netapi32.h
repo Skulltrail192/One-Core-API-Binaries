@@ -3,6 +3,7 @@
 
 #include <wine/config.h>
 
+#include <limits.h>
 #include <stdarg.h>
 
 #define WIN32_NO_STATUS
@@ -29,9 +30,8 @@
 #include "nbnamecache.h"
 #include "netbios.h"
 
-NET_API_STATUS
-WINAPI
-NetpNtStatusToApiStatus(NTSTATUS Status);
+extern LIST_ENTRY g_EnumContextListHead;
+extern CRITICAL_SECTION g_EnumContextListLock;
 
 /* misc.c */
 
@@ -57,6 +57,42 @@ NET_API_STATUS
 BuildSidFromSidAndRid(IN PSID SrcSid,
                       IN ULONG RelativeId,
                       OUT PSID *DestSid);
+
+VOID
+CopySidFromSidAndRid(
+    _Out_ PSID DstSid,
+    _In_ PSID SrcSid,
+    _In_ ULONG RelativeId);
+
+PSTR
+WINAPI
+NetpAllocAnsiStrFromWStr(
+    _In_ PWSTR InString);
+
+PSTR
+WINAPI
+NetpAllocStrFromWStr(
+    _In_ PWSTR InString);
+
+PWSTR
+WINAPI
+NetpAllocWStrFromAnsiStr(
+    _In_ PSTR InString);
+
+PWSTR
+WINAPI
+NetpAllocWStrFromStr(
+    _In_ PSTR InString);
+
+PWSTR
+WINAPI
+NetpAllocWStrFromWStr(
+    _In_ PWSTR InString);
+
+NET_API_STATUS
+WINAPI
+NetpNtStatusToApiStatus(
+    _In_ NTSTATUS Status);
 
 /* wksta.c */
 

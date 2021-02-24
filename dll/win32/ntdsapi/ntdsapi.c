@@ -16,17 +16,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WIN32_NO_STATUS
-
 #include <stdarg.h>
 
-#include <windef.h>
-//#include "winbase.h"
-//#include "winerror.h"
-#include <winuser.h>
-#include <ntdsapi.h>
-#include <wine/debug.h>
-#include <wine/unicode.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "winuser.h"
+#include "ntdsapi.h"
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ntdsapi);
 
@@ -85,11 +82,11 @@ DWORD WINAPI DsMakeSpnW(LPCWSTR svc_class, LPCWSTR svc_name,
     if (!svc_class || !svc_name)
         return ERROR_INVALID_PARAMETER;
 
-    new_spn_length = strlenW(svc_class) + 1 /* for '/' */ + 1 /* for terminating '\0' */;
+    new_spn_length = lstrlenW(svc_class) + 1 /* for '/' */ + 1 /* for terminating '\0' */;
     if (inst_name)
-        new_spn_length += strlenW(inst_name);
+        new_spn_length += lstrlenW(inst_name);
     else
-        new_spn_length += strlenW(svc_name);
+        new_spn_length += lstrlenW(svc_name);
     if (inst_port)
     {
         USHORT n = inst_port;
@@ -101,7 +98,7 @@ DWORD WINAPI DsMakeSpnW(LPCWSTR svc_class, LPCWSTR svc_name,
         } while (n != 0);
     }
     if (inst_name)
-        new_spn_length += 1 /* for '/' */ + strlenW(svc_name);
+        new_spn_length += 1 /* for '/' */ + lstrlenW(svc_name);
 
     if (*spn_length < new_spn_length)
     {
@@ -111,21 +108,21 @@ DWORD WINAPI DsMakeSpnW(LPCWSTR svc_class, LPCWSTR svc_name,
     *spn_length = new_spn_length;
 
     p = spn;
-    len = strlenW(svc_class);
+    len = lstrlenW(svc_class);
     memcpy(p, svc_class, len * sizeof(WCHAR));
     p += len;
     *p = '/';
     p++;
     if (inst_name)
     {
-        len = strlenW(inst_name);
+        len = lstrlenW(inst_name);
         memcpy(p, inst_name, len * sizeof(WCHAR));
         p += len;
         *p = '\0';
     }
     else
     {
-        len = strlenW(svc_name);
+        len = lstrlenW(svc_name);
         memcpy(p, svc_name, len * sizeof(WCHAR));
         p += len;
         *p = '\0';
@@ -137,14 +134,14 @@ DWORD WINAPI DsMakeSpnW(LPCWSTR svc_class, LPCWSTR svc_name,
         *p = ':';
         p++;
         wsprintfW(p, percentU, inst_port);
-        p += strlenW(p);
+        p += lstrlenW(p);
     }
 
     if (inst_name)
     {
         *p = '/';
         p++;
-        len = strlenW(svc_name);
+        len = lstrlenW(svc_name);
         memcpy(p, svc_name, len * sizeof(WCHAR));
         p += len;
         *p = '\0';
@@ -206,6 +203,9 @@ DWORD WINAPI DsServerRegisterSpnW(DS_SPN_WRITE_OP operation, LPCWSTR ServiceClas
     return ERROR_CALL_NOT_IMPLEMENTED;
 }
 
+/***********************************************************************
+ *             DsClientMakeSpnForTargetServerW (NTDSAPI.@)
+ */
 DWORD WINAPI DsClientMakeSpnForTargetServerW(LPCWSTR class, LPCWSTR name, DWORD *buflen, LPWSTR buf)
 {
     DWORD len;
@@ -215,7 +215,7 @@ DWORD WINAPI DsClientMakeSpnForTargetServerW(LPCWSTR class, LPCWSTR name, DWORD 
 
     if (!class || !name || !buflen) return ERROR_INVALID_PARAMETER;
 
-    len = strlenW(class) + 1 + strlenW(name) + 1;
+    len = lstrlenW(class) + 1 + lstrlenW(name) + 1;
     if (*buflen < len)
     {
         *buflen = len;
@@ -223,11 +223,31 @@ DWORD WINAPI DsClientMakeSpnForTargetServerW(LPCWSTR class, LPCWSTR name, DWORD 
     }
     *buflen = len;
 
-    memcpy(buf, class, strlenW(class) * sizeof(WCHAR));
-    p = buf + strlenW(class);
+    memcpy(buf, class, lstrlenW(class) * sizeof(WCHAR));
+    p = buf + lstrlenW(class);
     *p++ = '/';
-    memcpy(p, name, strlenW(name) * sizeof(WCHAR));
+    memcpy(p, name, lstrlenW(name) * sizeof(WCHAR));
     buf[len - 1] = 0;
 
     return ERROR_SUCCESS;
+}
+
+/***********************************************************************
+ *             DsCrackNamesA (NTDSAPI.@)
+ */
+DWORD WINAPI DsCrackNamesA(HANDLE handle, DS_NAME_FLAGS flags, DS_NAME_FORMAT offered, DS_NAME_FORMAT desired,
+                   DWORD num, const CHAR **names, PDS_NAME_RESULTA *result)
+{
+    FIXME("(%p %u %u %u %u %p %p stub\n", handle, flags, offered, desired, num, names, result);
+    return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+/***********************************************************************
+ *             DsCrackNamesW (NTDSAPI.@)
+ */
+DWORD WINAPI DsCrackNamesW(HANDLE handle, DS_NAME_FLAGS flags, DS_NAME_FORMAT offered, DS_NAME_FORMAT desired,
+                   DWORD num, const WCHAR **names, PDS_NAME_RESULTW *result)
+{
+    FIXME("(%p %u %u %u %u %p %p stub\n", handle, flags, offered, desired, num, names, result);
+    return ERROR_CALL_NOT_IMPLEMENTED;
 }

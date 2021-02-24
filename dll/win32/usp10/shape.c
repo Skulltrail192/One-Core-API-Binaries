@@ -18,8 +18,21 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  *
  */
+#include <stdarg.h>
+#include <stdlib.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winnls.h"
+#include "usp10.h"
+#include "winternl.h"
 
 #include "usp10_internal.h"
+
+#include "wine/debug.h"
+#include "wine/heap.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(uniscribe);
 
@@ -626,8 +639,12 @@ static LoadedFeature* load_OT_feature(HDC hdc, SCRIPT_ANALYSIS *psa, ScriptCache
         } while(attempt && !feature);
 
         /* try in the default (latin) table */
-        if (!feature && !script)
-            OpenType_GetFontFeatureTags(psc, MS_MAKE_TAG('l','a','t','n'), MS_MAKE_TAG('d','f','l','t'), FALSE, MS_MAKE_TAG(feat[0],feat[1],feat[2],feat[3]), tableType, 1, &tags, &cTags, &feature);
+        if (!feature)
+        {
+            if (!script)
+                script = MS_MAKE_TAG('l','a','t','n');
+            OpenType_GetFontFeatureTags(psc, script, MS_MAKE_TAG('d','f','l','t'), FALSE, MS_MAKE_TAG(feat[0],feat[1],feat[2],feat[3]), tableType, 1, &tags, &cTags, &feature);
+        }
     }
 
     TRACE("Feature %s located at %p\n",debugstr_an(feat,4),feature);
@@ -695,13 +712,14 @@ static VOID load_ot_tables(HDC hdc, ScriptCache *psc)
         psc->GDEF_Table = load_gdef_table(hdc);
 }
 
-INT SHAPE_does_GSUB_feature_apply_to_chars(HDC hdc, SCRIPT_ANALYSIS *psa, ScriptCache* psc, const WCHAR *chars, INT write_dir, INT count, const char* feature)
+int SHAPE_does_GSUB_feature_apply_to_chars(HDC hdc, SCRIPT_ANALYSIS *psa, ScriptCache *psc,
+        const WCHAR *chars, int write_dir, int count, const char *feature)
 {
     WORD *glyphs;
     INT glyph_count = count;
     INT rc;
 
-    glyphs = heap_alloc(2 * count * sizeof(*glyphs));
+    glyphs = heap_calloc(count, 2 * sizeof(*glyphs));
     GetGlyphIndicesW(hdc, chars, count, glyphs, 0);
     rc = apply_GSUB_feature_to_glyph(hdc, psa, psc, glyphs, 0, write_dir, &glyph_count, feature);
     if (rc > GSUB_E_NOGLYPH)
@@ -1678,7 +1696,7 @@ static void ComposeConsonants(HDC hdc, WCHAR *pwOutChars, INT *pcChars, const Co
     int offset = 0;
     int cWalk;
 
-    for (cWalk = 0; cWalk < *pcChars; cWalk++)
+    for (cWalk = 0; cWalk < *pcChars; cWalk += 2)
     {
         for (i = 0; consonants[i].output!= 0x0; i++)
         {
@@ -1703,7 +1721,6 @@ static void ComposeConsonants(HDC hdc, WCHAR *pwOutChars, INT *pcChars, const Co
                 break;
             }
         }
-        cWalk++;
     }
 }
 

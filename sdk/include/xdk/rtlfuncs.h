@@ -2376,9 +2376,9 @@ NTSYSAPI
 VOID
 NTAPI
 RtlFillMemoryUlong(
-  OUT PVOID Destination,
-  IN SIZE_T Length,
-  IN ULONG Pattern);
+  _Out_writes_bytes_all_(Length) PVOID Destination,
+  _In_ SIZE_T Length,
+  _In_ ULONG Pattern);
 
 NTSYSAPI
 VOID
@@ -3200,7 +3200,7 @@ RtlCheckBit(
 #define RtlUlongByteSwap(_x) _byteswap_ulong((_x))
 #define RtlUlonglongByteSwap(_x) _byteswap_uint64((_x))
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__)
 # define __assert_annotationA(msg) __annotation(L"Debug", L"AssertFail", L ## msg)
 # define __assert_annotationW(msg) __annotation(L"Debug", L"AssertFail", msg)
 #else

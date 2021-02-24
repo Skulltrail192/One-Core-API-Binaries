@@ -38,25 +38,6 @@ static const WCHAR REGSTR_DRIVER_VERSION[]  = {'D','r','i','v','e','r','V','e','
 static const WCHAR REGSTR_SECURITY[]  = {'S','e','c','u','r','i','t','y',0};
 static const WCHAR REGSTR_UI_NUMBER_DESC_FORMAT[]  = {'U','I','N','u','m','b','e','r','D','e','s','c','F','o','r','m','a','t',0};
 
-
-struct device
-{
-    struct DeviceInfoSet *set;
-    HKEY                  key;
-    BOOL                  phantom;
-    WCHAR                *instanceId;
-    struct list           interfaces;
-    GUID                  class;
-    DEVINST               devnode;
-    struct list           entry;
-    BOOL                  removed;
-    SP_DEVINSTALL_PARAMS_W params;
-    struct driver        *drivers;
-    unsigned int          driver_count;
-    struct driver        *selected_driver;
-};
-
-
 typedef DWORD
 (CALLBACK* CLASS_INSTALL_PROC) (
     IN DI_FUNCTION InstallFunction,
@@ -1431,18 +1412,10 @@ HKEY WINAPI SetupDiCreateDevRegKeyW(
         PCWSTR InfSectionName)
 {
     struct DeviceInfoSet *set = (struct DeviceInfoSet *)DeviceInfoSet;
+    struct DeviceInfo *deviceInfo;
     HKEY key = INVALID_HANDLE_VALUE;
-    LPWSTR lpGuidString = NULL;
-    LPWSTR DriverKey = NULL; /* {GUID}\Index */
-    LPWSTR pDeviceInstance; /* Points into DriverKey, on the Index field */
-    DWORD Index; /* Index used in the DriverKey name */
-    DWORD dwSize;
-    DWORD Disposition;
     DWORD rc;
     HKEY hHWProfileKey = INVALID_HANDLE_VALUE;
-    HKEY hEnumKey = NULL;
-    HKEY hClassKey = NULL;
-    HKEY hDeviceKey = INVALID_HANDLE_VALUE;
     HKEY hKey = NULL;
     HKEY RootKey;
 
@@ -1486,6 +1459,8 @@ HKEY WINAPI SetupDiCreateDevRegKeyW(
         return INVALID_HANDLE_VALUE;
     }
 
+    deviceInfo = (struct DeviceInfo *)DeviceInfoData->Reserved;
+
         if (Scope == DICS_FLAG_GLOBAL)
             RootKey = set->HKLM;
         else /* Scope == DICS_FLAG_CONFIGSPECIFIC */
@@ -1498,162 +1473,44 @@ HKEY WINAPI SetupDiCreateDevRegKeyW(
 
         if (KeyType == DIREG_DEV)
         {
-            struct DeviceInfo *deviceInfo = (struct DeviceInfo *)DeviceInfoData->Reserved;
-
-            rc = RegCreateKeyExW(
-                RootKey,
-                REGSTR_PATH_SYSTEMENUM,
-                0,
-                NULL,
-                REG_OPTION_NON_VOLATILE,
-                KEY_CREATE_SUB_KEY,
-                NULL,
-                &hEnumKey,
-                NULL);
-            if (rc != ERROR_SUCCESS)
-            {
-                SetLastError(rc);
-                goto cleanup;
-            }
-            rc = RegCreateKeyExW(
-                hEnumKey,
-                deviceInfo->instanceId,
-                0,
-                NULL,
-                REG_OPTION_NON_VOLATILE,
 #if _WIN32_WINNT >= 0x502
-                KEY_READ | KEY_WRITE,
+            hKey = SETUPDI_CreateDevKey(RootKey, deviceInfo, KEY_READ | KEY_WRITE);
 #else
-                KEY_ALL_ACCESS,
+            hKey = SETUPDI_CreateDevKey(RootKey, deviceInfo, KEY_ALL_ACCESS);
 #endif
-                NULL,
-                &hKey,
-                NULL);
-            if (rc != ERROR_SUCCESS)
-            {
-                SetLastError(rc);
+            if (hKey == INVALID_HANDLE_VALUE)
                 goto cleanup;
+
+            if (Scope == DICS_FLAG_GLOBAL)
+            {
+                HKEY hTempKey = hKey;
+
+                rc = RegCreateKeyExW(hTempKey,
+                                     L"Device Parameters",
+                                     0,
+                                     NULL,
+                                     REG_OPTION_NON_VOLATILE,
+#if _WIN32_WINNT >= 0x502
+                                     KEY_READ | KEY_WRITE,
+#else
+                                     KEY_ALL_ACCESS,
+#endif
+                                     NULL,
+                                     &hKey,
+                                     NULL);
+                if (rc == ERROR_SUCCESS)
+                    RegCloseKey(hTempKey);
             }
         }
         else /* KeyType == DIREG_DRV */
         {
-            /* Open device key, to read Driver value */
-            hDeviceKey = SetupDiOpenDevRegKey(DeviceInfoSet, DeviceInfoData, Scope, HwProfile, DIREG_DEV, KEY_QUERY_VALUE | KEY_SET_VALUE);
-            if (hDeviceKey == INVALID_HANDLE_VALUE)
-                goto cleanup;
-
-            rc = RegOpenKeyExW(RootKey, REGSTR_PATH_CLASS_NT, 0, KEY_CREATE_SUB_KEY, &hClassKey);
-            if (rc != ERROR_SUCCESS)
-            {
-                SetLastError(rc);
-                goto cleanup;
-            }
-
-            rc = RegQueryValueExW(hDeviceKey, REGSTR_VAL_DRIVER, NULL, NULL, NULL, &dwSize);
-            if (rc != ERROR_SUCCESS)
-            {
-                /* Create a new driver key */
-
-                if (UuidToStringW((UUID*)&DeviceInfoData->ClassGuid, &lpGuidString) != RPC_S_OK)
-                    goto cleanup;
-
-                /* The driver key is in \System\CurrentControlSet\Control\Class\{GUID}\Index */
-                DriverKey = HeapAlloc(GetProcessHeap(), 0, (strlenW(lpGuidString) + 7) * sizeof(WCHAR) + sizeof(UNICODE_NULL));
-                if (!DriverKey)
-                {
-                    SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-                    goto cleanup;
-                }
-
-                DriverKey[0] = '{';
-                strcpyW(&DriverKey[1], lpGuidString);
-                pDeviceInstance = &DriverKey[strlenW(DriverKey)];
-                *pDeviceInstance++ = '}';
-                *pDeviceInstance++ = '\\';
-
-                /* Try all values for Index between 0 and 9999 */
-                Index = 0;
-                while (Index <= 9999)
-                {
-                    sprintfW(pDeviceInstance, InstanceKeyFormat, Index);
-                    rc = RegCreateKeyExW(hClassKey,
-                        DriverKey,
-                        0,
-                        NULL,
-                        REG_OPTION_NON_VOLATILE,
 #if _WIN32_WINNT >= 0x502
-                        KEY_READ | KEY_WRITE,
+            hKey = SETUPDI_CreateDrvKey(RootKey, deviceInfo, (UUID*)&DeviceInfoData->ClassGuid, KEY_READ | KEY_WRITE);
 #else
-                        KEY_ALL_ACCESS,
+            hKey = SETUPDI_CreateDrvKey(RootKey, deviceInfo, (UUID*)&DeviceInfoData->ClassGuid, KEY_ALL_ACCESS);
 #endif
-                        NULL,
-                        &hKey,
-                        &Disposition);
-                    if (rc != ERROR_SUCCESS)
-                    {
-                        SetLastError(rc);
-                        goto cleanup;
-                    }
-                    if (Disposition == REG_CREATED_NEW_KEY)
-                        break;
-                    RegCloseKey(hKey);
-                    hKey = NULL;
-                    Index++;
-                }
-
-                if (Index > 9999)
-                {
-                    /* Unable to create more than 9999 devices within the same class */
-                    SetLastError(ERROR_GEN_FAILURE);
-                    goto cleanup;
-                }
-
-                /* Write the new Driver value */
-                rc = RegSetValueExW(hDeviceKey, REGSTR_VAL_DRIVER, 0, REG_SZ, (const BYTE *)DriverKey, (strlenW(DriverKey) + 1) * sizeof(WCHAR));
-                if (rc != ERROR_SUCCESS)
-                {
-                    SetLastError(rc);
-                    goto cleanup;
-                }
-
-            }
-            else
-            {
-                /* Open the existing driver key */
-
-                DriverKey = HeapAlloc(GetProcessHeap(), 0, dwSize);
-                if (!DriverKey)
-                {
-                    SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-                    goto cleanup;
-                }
-
-                rc = RegQueryValueExW(hDeviceKey, REGSTR_VAL_DRIVER, NULL, NULL, (LPBYTE)DriverKey, &dwSize);
-                if (rc != ERROR_SUCCESS)
-                {
-                    SetLastError(rc);
-                    goto cleanup;
-                }
-
-                rc = RegCreateKeyExW(hClassKey,
-                    DriverKey,
-                    0,
-                    NULL,
-                    REG_OPTION_NON_VOLATILE,
-#if _WIN32_WINNT >= 0x502
-                    KEY_READ | KEY_WRITE,
-#else
-                    KEY_ALL_ACCESS,
-#endif
-                    NULL,
-                    &hKey,
-                    &Disposition);
-                if (rc != ERROR_SUCCESS)
-                {
-                    SetLastError(rc);
-                    goto cleanup;
-                }
-            }
+            if (hKey == INVALID_HANDLE_VALUE)
+                goto cleanup;
         }
 
         /* Do installation of the specified section */
@@ -1665,17 +1522,8 @@ HKEY WINAPI SetupDiCreateDevRegKeyW(
         key = hKey;
 
 cleanup:
-        if (lpGuidString)
-            RpcStringFreeW(&lpGuidString);
-        HeapFree(GetProcessHeap(), 0, DriverKey);
         if (hHWProfileKey != INVALID_HANDLE_VALUE)
             RegCloseKey(hHWProfileKey);
-        if (hEnumKey != NULL)
-            RegCloseKey(hEnumKey);
-        if (hClassKey != NULL)
-            RegCloseKey(hClassKey);
-        if (hDeviceKey != INVALID_HANDLE_VALUE)
-            RegCloseKey(hDeviceKey);
         if (hKey != NULL && hKey != key)
             RegCloseKey(hKey);
 
@@ -3387,9 +3235,11 @@ BOOL WINAPI SetupDiGetDeviceRegistryPropertyW(
         DWORD   PropertyBufferSize,
         PDWORD  RequiredSize)
 {
-    BOOL ret = FALSE;
     struct DeviceInfoSet *set = (struct DeviceInfoSet *)DeviceInfoSet;
     struct DeviceInfo *devInfo;
+    CONFIGRET cr;
+    LONG lError = ERROR_SUCCESS;
+    DWORD size;
 
     TRACE("%p %p %d %p %p %d %p\n", DeviceInfoSet, DeviceInfoData,
         Property, PropertyRegDataType, PropertyBuffer, PropertyBufferSize,
@@ -3411,72 +3261,116 @@ BOOL WINAPI SetupDiGetDeviceRegistryPropertyW(
         SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
+
+    if (Property >= SPDRP_MAXIMUM_PROPERTY)
+    {
+        SetLastError(ERROR_INVALID_REG_PROPERTY);
+        return FALSE;
+    }
+
     devInfo = (struct DeviceInfo *)DeviceInfoData->Reserved;
+
     if (Property < sizeof(PropertyMap) / sizeof(PropertyMap[0])
         && PropertyMap[Property].nameW)
     {
-        DWORD size = PropertyBufferSize;
         HKEY hKey;
-        LONG l;
-        hKey = SetupDiOpenDevRegKey(DeviceInfoSet, DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DEV, KEY_QUERY_VALUE);
+        size = PropertyBufferSize;
+        hKey = SETUPDI_OpenDevKey(set->HKLM, devInfo, KEY_QUERY_VALUE);
         if (hKey == INVALID_HANDLE_VALUE)
             return FALSE;
-        l = RegQueryValueExW(hKey, PropertyMap[Property].nameW,
-                NULL, PropertyRegDataType, PropertyBuffer, &size);
+        lError = RegQueryValueExW(hKey, PropertyMap[Property].nameW,
+                 NULL, PropertyRegDataType, PropertyBuffer, &size);
         RegCloseKey(hKey);
 
         if (RequiredSize)
             *RequiredSize = size;
-        switch(l) {
+
+        switch (lError)
+        {
             case ERROR_SUCCESS:
-                if (PropertyBuffer != NULL || size == 0)
-                    ret = TRUE;
-                else
-                    SetLastError(ERROR_INSUFFICIENT_BUFFER);
+                if (PropertyBuffer == NULL && size != 0)
+                    lError = ERROR_INSUFFICIENT_BUFFER;
                 break;
             case ERROR_MORE_DATA:
-                SetLastError(ERROR_INSUFFICIENT_BUFFER);
+                lError = ERROR_INSUFFICIENT_BUFFER;
                 break;
             default:
-                SetLastError(l);
+                break;
         }
     }
     else if (Property == SPDRP_PHYSICAL_DEVICE_OBJECT_NAME)
     {
-        DWORD required = (strlenW(devInfo->Data) + 1) * sizeof(WCHAR);
+        size = (strlenW(devInfo->Data) + 1) * sizeof(WCHAR);
 
         if (PropertyRegDataType)
             *PropertyRegDataType = REG_SZ;
         if (RequiredSize)
-            *RequiredSize = required;
-        if (PropertyBufferSize >= required)
+            *RequiredSize = size;
+        if (PropertyBufferSize >= size)
         {
             strcpyW((LPWSTR)PropertyBuffer, devInfo->Data);
-            ret = TRUE;
         }
         else
-            SetLastError(ERROR_INSUFFICIENT_BUFFER);
+            lError = ERROR_INSUFFICIENT_BUFFER;
     }
     else
     {
-        ERR("Property 0x%lx not implemented\n", Property);
-        SetLastError(ERROR_NOT_SUPPORTED);
+        size = PropertyBufferSize;
+
+        cr = CM_Get_DevNode_Registry_Property_ExW(devInfo->dnDevInst,
+                                                  Property + (CM_DRP_DEVICEDESC - SPDRP_DEVICEDESC),
+                                                  PropertyRegDataType,
+                                                  PropertyBuffer,
+                                                  &size,
+                                                  0,
+                                                  set->hMachine);
+        if ((cr == CR_SUCCESS) || (cr == CR_BUFFER_SMALL))
+        {
+            if (RequiredSize)
+                *RequiredSize = size;
+        }
+
+        if (cr != CR_SUCCESS)
+        {
+            switch (cr)
+            {
+                case CR_INVALID_DEVINST:
+                    lError = ERROR_NO_SUCH_DEVINST;
+                    break;
+
+                case CR_INVALID_PROPERTY:
+                    lError = ERROR_INVALID_REG_PROPERTY;
+                    break;
+
+                case CR_BUFFER_SMALL:
+                    lError = ERROR_INSUFFICIENT_BUFFER;
+                    break;
+
+                default :
+                    lError = ERROR_INVALID_DATA;
+                    break;
+            }
+        }
     }
-    return ret;
+
+    SetLastError(lError);
+    return (lError == ERROR_SUCCESS);
 }
 
 /***********************************************************************
- *		SetupDiSetDeviceRegistryPropertyA (SETUPAPI.@)
+ *		Internal for SetupDiSetDeviceRegistryPropertyA/W
  */
-BOOL WINAPI SetupDiSetDeviceRegistryPropertyA(
+BOOL WINAPI IntSetupDiSetDeviceRegistryPropertyAW(
         HDEVINFO DeviceInfoSet,
         PSP_DEVINFO_DATA DeviceInfoData,
         DWORD Property,
         const BYTE *PropertyBuffer,
-        DWORD PropertyBufferSize)
+        DWORD PropertyBufferSize,
+        BOOL isAnsi)
 {
     BOOL ret = FALSE;
     struct DeviceInfoSet *set = (struct DeviceInfoSet *)DeviceInfoSet;
+    struct DeviceInfo *deviceInfo;
 
     TRACE("%p %p %d %p %d\n", DeviceInfoSet, DeviceInfoData, Property,
         PropertyBuffer, PropertyBufferSize);
@@ -3498,57 +3392,32 @@ BOOL WINAPI SetupDiSetDeviceRegistryPropertyA(
         return FALSE;
     }
 
-    FIXME("%p %p 0x%lx %p 0x%lx\n", DeviceInfoSet, DeviceInfoData,
-        Property, PropertyBuffer, PropertyBufferSize);
-    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
-    return ret;
-}
+    deviceInfo = (struct DeviceInfo *)DeviceInfoData->Reserved;
 
-/***********************************************************************
- *		SetupDiSetDeviceRegistryPropertyW (SETUPAPI.@)
- */
-BOOL WINAPI SetupDiSetDeviceRegistryPropertyW(
-        HDEVINFO DeviceInfoSet,
-        PSP_DEVINFO_DATA DeviceInfoData,
-        DWORD Property,
-        const BYTE *PropertyBuffer,
-        DWORD PropertyBufferSize)
-{
-    BOOL ret = FALSE;
-    struct DeviceInfoSet *set = (struct DeviceInfoSet *)DeviceInfoSet;
-
-    TRACE("%p %p %d %p %d\n", DeviceInfoSet, DeviceInfoData, Property,
-        PropertyBuffer, PropertyBufferSize);
-
-    if (!DeviceInfoSet || DeviceInfoSet == INVALID_HANDLE_VALUE)
-    {
-        SetLastError(ERROR_INVALID_HANDLE);
-        return FALSE;
-    }
-    if (set->magic != SETUP_DEVICE_INFO_SET_MAGIC)
-    {
-        SetLastError(ERROR_INVALID_HANDLE);
-        return FALSE;
-    }
-    if (!DeviceInfoData || DeviceInfoData->cbSize != sizeof(SP_DEVINFO_DATA)
-            || !DeviceInfoData->Reserved)
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
     if (Property < sizeof(PropertyMap) / sizeof(PropertyMap[0])
-        && PropertyMap[Property].nameW)
+        && PropertyMap[Property].nameW
+        && PropertyMap[Property].nameA)
     {
         HKEY hKey;
         LONG l;
-        hKey = SetupDiOpenDevRegKey(DeviceInfoSet, DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DEV, KEY_SET_VALUE);
+        hKey = SETUPDI_OpenDevKey(set->HKLM, deviceInfo, KEY_SET_VALUE);
         if (hKey == INVALID_HANDLE_VALUE)
             return FALSE;
         /* Write new data */
-        l = RegSetValueExW(
-            hKey, PropertyMap[Property].nameW, 0,
-                PropertyMap[Property].regType, PropertyBuffer,
-                PropertyBufferSize);
+        if (isAnsi)
+        {
+            l = RegSetValueExA(
+                hKey, PropertyMap[Property].nameA, 0,
+                    PropertyMap[Property].regType, PropertyBuffer,
+                    PropertyBufferSize);
+        } 
+        else
+        {
+            l = RegSetValueExW(
+                hKey, PropertyMap[Property].nameW, 0,
+                    PropertyMap[Property].regType, PropertyBuffer,
+                    PropertyBufferSize);
+        }
         if (!l)
             ret = TRUE;
         else
@@ -3563,6 +3432,41 @@ BOOL WINAPI SetupDiSetDeviceRegistryPropertyW(
 
     TRACE("Returning %d\n", ret);
     return ret;
+}
+/***********************************************************************
+ *		SetupDiSetDeviceRegistryPropertyA (SETUPAPI.@)
+ */
+BOOL WINAPI SetupDiSetDeviceRegistryPropertyA(
+        HDEVINFO DeviceInfoSet,
+        PSP_DEVINFO_DATA DeviceInfoData,
+        DWORD Property,
+        const BYTE *PropertyBuffer,
+        DWORD PropertyBufferSize)
+{
+    return IntSetupDiSetDeviceRegistryPropertyAW(DeviceInfoSet,
+                                                 DeviceInfoData,
+                                                 Property,
+                                                 PropertyBuffer,
+                                                 PropertyBufferSize,
+                                                 TRUE);
+}
+
+/***********************************************************************
+ *		SetupDiSetDeviceRegistryPropertyW (SETUPAPI.@)
+ */
+BOOL WINAPI SetupDiSetDeviceRegistryPropertyW(
+        HDEVINFO DeviceInfoSet,
+        PSP_DEVINFO_DATA DeviceInfoData,
+        DWORD Property,
+        const BYTE *PropertyBuffer,
+        DWORD PropertyBufferSize)
+{
+    return IntSetupDiSetDeviceRegistryPropertyAW(DeviceInfoSet,
+                                                 DeviceInfoData,
+                                                 Property,
+                                                 PropertyBuffer,
+                                                 PropertyBufferSize,
+                                                 FALSE);
 }
 
 /***********************************************************************
@@ -4255,7 +4159,7 @@ BOOL WINAPI SetupDiCallClassInstaller(
 
             if (CanHandle & DEVICE_COINSTALLER)
             {
-                hKey = SetupDiOpenDevRegKey(DeviceInfoSet, DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DRV, KEY_QUERY_VALUE);
+                hKey = SETUPDI_OpenDrvKey(((struct DeviceInfoSet *)DeviceInfoSet)->HKLM, (struct DeviceInfo *)DeviceInfoData->Reserved, KEY_QUERY_VALUE);
                 if (hKey != INVALID_HANDLE_VALUE)
                 {
                     rc = RegQueryValueExW(hKey, REGSTR_VAL_COINSTALLERS_32, NULL, &dwRegType, NULL, &dwLength);
@@ -4299,16 +4203,16 @@ BOOL WINAPI SetupDiCallClassInstaller(
                     &hKey);
                 if (rc == ERROR_SUCCESS)
                 {
-                    LPWSTR lpGuidString;
-                    if (UuidToStringW((UUID*)&DeviceInfoData->ClassGuid, &lpGuidString) == RPC_S_OK)
+                    WCHAR szGuidString[40];
+                    if (pSetupStringFromGuid(&DeviceInfoData->ClassGuid, szGuidString, ARRAYSIZE(szGuidString)) == ERROR_SUCCESS)
                     {
-                        rc = RegQueryValueExW(hKey, lpGuidString, NULL, &dwRegType, NULL, &dwLength);
+                        rc = RegQueryValueExW(hKey, szGuidString, NULL, &dwRegType, NULL, &dwLength);
                         if (rc == ERROR_SUCCESS && dwRegType == REG_MULTI_SZ)
                         {
                             LPWSTR KeyBuffer = HeapAlloc(GetProcessHeap(), 0, dwLength);
                             if (KeyBuffer != NULL)
                             {
-                                rc = RegQueryValueExW(hKey, lpGuidString, NULL, NULL, (LPBYTE)KeyBuffer, &dwLength);
+                                rc = RegQueryValueExW(hKey, szGuidString, NULL, NULL, (LPBYTE)KeyBuffer, &dwLength);
                                 if (rc == ERROR_SUCCESS)
                                 {
                                     LPWSTR ptr;
@@ -4330,7 +4234,6 @@ BOOL WINAPI SetupDiCallClassInstaller(
                                 HeapFree(GetProcessHeap(), 0, KeyBuffer);
                             }
                         }
-                        RpcStringFreeW(&lpGuidString);
                     }
                     RegCloseKey(hKey);
                 }
@@ -4537,7 +4440,7 @@ SetupDiGetDeviceInfoListClass(
         SetLastError(ERROR_NO_ASSOCIATED_CLASS);
     else
     {
-        memcpy(&ClassGuid, &list->ClassGuid, sizeof(GUID));
+        *ClassGuid = list->ClassGuid;
 
         ret = TRUE;
     }
@@ -5142,12 +5045,28 @@ ResetDevice(
 #endif
 }
 
-static BOOL StopDevice(
+static BOOL
+StopDevice(
         IN HDEVINFO DeviceInfoSet,
         IN PSP_DEVINFO_DATA DeviceInfoData)
 {
+#ifndef __WINESRC__
+    struct DeviceInfoSet *set = (struct DeviceInfoSet *)DeviceInfoSet;
+    struct DeviceInfo *deviceInfo = (struct DeviceInfo *)DeviceInfoData->Reserved;
+    CONFIGRET cr;
+
+    cr = CM_Disable_DevNode_Ex(deviceInfo->dnDevInst, 0, set->hMachine);
+    if (cr != CR_SUCCESS)
+    {
+        SetLastError(GetErrorCodeFromCrCode(cr));
+        return FALSE;
+    }
+
+    return TRUE;
+#else
     FIXME("Stub: StopDevice(%p %p)\n", DeviceInfoSet, DeviceInfoData);
     return TRUE;
+#endif
 }
 
 /***********************************************************************
@@ -5158,8 +5077,10 @@ SetupDiChangeState(
         IN HDEVINFO DeviceInfoSet,
         IN OUT PSP_DEVINFO_DATA DeviceInfoData)
 {
+    struct DeviceInfoSet *set = (struct DeviceInfoSet *)DeviceInfoSet;
+    struct DeviceInfo *deviceInfo = (struct DeviceInfo *)DeviceInfoData->Reserved;
     PSP_PROPCHANGE_PARAMS PropChange;
-    HKEY hKey = INVALID_HANDLE_VALUE;
+    HKEY hRootKey = INVALID_HANDLE_VALUE, hKey = INVALID_HANDLE_VALUE;
     LPCWSTR RegistryValueName;
     DWORD dwConfigFlags, dwLength, dwRegType;
     LONG rc;
@@ -5187,10 +5108,19 @@ SetupDiChangeState(
         case DICS_ENABLE:
         case DICS_DISABLE:
         {
+            if (PropChange->Scope == DICS_FLAG_GLOBAL)
+                hRootKey = set->HKLM;
+            else /* PropChange->Scope == DICS_FLAG_CONFIGSPECIFIC */
+            {
+                hRootKey = OpenHardwareProfileKey(set->HKLM, PropChange->HwProfile, KEY_CREATE_SUB_KEY);
+                if (hRootKey == INVALID_HANDLE_VALUE)
+                    goto cleanup;
+            }
+
             /* Enable/disable device in registry */
-            hKey = SetupDiOpenDevRegKey(DeviceInfoSet, DeviceInfoData, PropChange->Scope, PropChange->HwProfile, DIREG_DEV, KEY_QUERY_VALUE | KEY_SET_VALUE);
+            hKey = SETUPDI_OpenDrvKey(hRootKey, deviceInfo, KEY_QUERY_VALUE | KEY_SET_VALUE);
             if (hKey == INVALID_HANDLE_VALUE && GetLastError() == ERROR_FILE_NOT_FOUND)
-                hKey = SetupDiCreateDevRegKeyW(DeviceInfoSet, DeviceInfoData, PropChange->Scope, PropChange->HwProfile, DIREG_DEV, NULL, NULL);
+                hKey = SETUPDI_CreateDevKey(hRootKey, deviceInfo, KEY_QUERY_VALUE | KEY_SET_VALUE);
             if (hKey == INVALID_HANDLE_VALUE)
                 break;
             dwLength = sizeof(DWORD);
@@ -5255,6 +5185,9 @@ SetupDiChangeState(
     }
 
 cleanup:
+    if (hRootKey != INVALID_HANDLE_VALUE && hRootKey != set->HKLM)
+        RegCloseKey(hRootKey);
+
     if (hKey != INVALID_HANDLE_VALUE)
         RegCloseKey(hKey);
 
@@ -5284,6 +5217,8 @@ SetupDiRegisterCoDeviceInstallers(
         IN HDEVINFO DeviceInfoSet,
         IN PSP_DEVINFO_DATA DeviceInfoData)
 {
+    struct DeviceInfoSet *set = (struct DeviceInfoSet *)DeviceInfoSet;
+    struct DeviceInfo *deviceInfo;
     BOOL ret = FALSE; /* Return value */
 
     TRACE("%p %p\n", DeviceInfoSet, DeviceInfoData);
@@ -5314,7 +5249,7 @@ SetupDiRegisterCoDeviceInstallers(
         if (!Result)
             goto cleanup;
 
-        SelectedDriver = (struct DriverInfoElement *)InstallParams.Reserved;
+        SelectedDriver = (struct DriverInfoElement *)InstallParams.ClassInstallReserved;
         if (SelectedDriver == NULL)
         {
             SetLastError(ERROR_NO_DRIVER_SELECTED);
@@ -5330,14 +5265,20 @@ SetupDiRegisterCoDeviceInstallers(
             goto cleanup;
         lstrcatW(SectionName, DotCoInstallers);
 
+        deviceInfo = (struct DeviceInfo *)DeviceInfoData->Reserved;
+
         /* Open/Create driver key information */
 #if _WIN32_WINNT >= 0x502
-        hKey = SetupDiOpenDevRegKey(DeviceInfoSet, DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DRV, KEY_READ | KEY_WRITE);
+        hKey = SETUPDI_OpenDrvKey(set->HKLM, deviceInfo, KEY_READ | KEY_WRITE);
 #else
-        hKey = SetupDiOpenDevRegKey(DeviceInfoSet, DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DRV, KEY_ALL_ACCESS);
+        hKey = SETUPDI_OpenDrvKey(set->HKLM, deviceInfo, KEY_ALL_ACCESS);
 #endif
         if (hKey == INVALID_HANDLE_VALUE && GetLastError() == ERROR_FILE_NOT_FOUND)
-            hKey = SetupDiCreateDevRegKeyW(DeviceInfoSet, DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DRV, NULL, NULL);
+#if _WIN32_WINNT >= 0x502
+            hKey = SETUPDI_CreateDrvKey(set->HKLM, deviceInfo, (UUID*)&DeviceInfoData->ClassGuid, KEY_READ | KEY_WRITE);
+#else
+            hKey = SETUPDI_CreateDrvKey(set->HKLM, deviceInfo, (UUID*)&DeviceInfoData->ClassGuid, KEY_ALL_ACCESS);
+#endif
         if (hKey == INVALID_HANDLE_VALUE)
             goto cleanup;
 
@@ -5430,6 +5371,8 @@ SetupDiInstallDevice(
         IN HDEVINFO DeviceInfoSet,
         IN OUT PSP_DEVINFO_DATA DeviceInfoData)
 {
+    struct DeviceInfoSet *set = (struct DeviceInfoSet *)DeviceInfoSet;
+    struct DeviceInfo *deviceInfo;
     SP_DEVINSTALL_PARAMS_W InstallParams;
     struct DriverInfoElement *SelectedDriver;
     SYSTEMTIME DriverDate;
@@ -5509,7 +5452,7 @@ SetupDiInstallDevice(
         goto cleanup;
     }
 
-    SelectedDriver = (struct DriverInfoElement *)InstallParams.Reserved;
+    SelectedDriver = (struct DriverInfoElement *)InstallParams.ClassInstallReserved;
     if (SelectedDriver == NULL)
     {
         SetLastError(ERROR_NO_DRIVER_SELECTED);
@@ -5573,14 +5516,20 @@ SetupDiInstallDevice(
         strcpyW(SelectedDriver->Details.InfFileName, NewFileName);
     }
 
+    deviceInfo = (struct DeviceInfo *)DeviceInfoData->Reserved;
+
     /* Open/Create driver key information */
 #if _WIN32_WINNT >= 0x502
-    hKey = SetupDiOpenDevRegKey(DeviceInfoSet, DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DRV, KEY_READ | KEY_WRITE);
+    hKey = SETUPDI_OpenDrvKey(set->HKLM, deviceInfo, KEY_READ | KEY_WRITE);
 #else
-    hKey = SetupDiOpenDevRegKey(DeviceInfoSet, DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DRV, KEY_ALL_ACCESS);
+    hKey = SETUPDI_OpenDrvKey(set->HKLM, deviceInfo, KEY_ALL_ACCESS);
 #endif
     if (hKey == INVALID_HANDLE_VALUE && GetLastError() == ERROR_FILE_NOT_FOUND)
-        hKey = SetupDiCreateDevRegKeyW(DeviceInfoSet, DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DRV, NULL, NULL);
+#if _WIN32_WINNT >= 0x502
+        hKey = SETUPDI_CreateDrvKey(set->HKLM, deviceInfo, (UUID*)&DeviceInfoData->ClassGuid, KEY_READ | KEY_WRITE);
+#else
+        hKey = SETUPDI_CreateDrvKey(set->HKLM, deviceInfo, (UUID*)&DeviceInfoData->ClassGuid, KEY_ALL_ACCESS);
+#endif
     if (hKey == INVALID_HANDLE_VALUE)
         goto cleanup;
 
@@ -5665,7 +5614,7 @@ SetupDiInstallDevice(
         RebootRequired = TRUE;
 
     /* Open device registry key */
-    hKey = SetupDiOpenDevRegKey(DeviceInfoSet, DeviceInfoData, DICS_FLAG_GLOBAL, 0, DIREG_DEV, KEY_SET_VALUE);
+    hKey = SETUPDI_OpenDevKey(((struct DeviceInfoSet *)DeviceInfoSet)->HKLM, (struct DeviceInfo *)DeviceInfoData->Reserved, KEY_SET_VALUE);
     if (hKey == INVALID_HANDLE_VALUE)
         goto cleanup;
 
@@ -5720,7 +5669,177 @@ cleanup:
     return ret;
 }
 
-static HKEY SETUPDI_OpenDevKey(HKEY RootKey, struct DeviceInfo *devInfo, REGSAM samDesired)
+HKEY SETUPDI_CreateDevKey(HKEY RootKey, struct DeviceInfo *devInfo, REGSAM samDesired)
+{
+    HKEY enumKey, key = INVALID_HANDLE_VALUE;
+    LONG l;
+
+    l = RegCreateKeyExW(RootKey, REGSTR_PATH_SYSTEMENUM, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_CREATE_SUB_KEY, NULL, &enumKey, NULL);
+    if (!l)
+    {
+        l = RegCreateKeyExW(enumKey, devInfo->instanceId, 0, NULL, REG_OPTION_NON_VOLATILE, samDesired, NULL, &key, NULL);
+        RegCloseKey(enumKey);
+    }
+    if (l)
+        SetLastError(l);
+    return key;
+}
+
+HKEY SETUPDI_CreateDrvKey(HKEY RootKey, struct DeviceInfo *devInfo, UUID *ClassGuid, REGSAM samDesired)
+{
+    HKEY key = INVALID_HANDLE_VALUE;
+    LPWSTR lpGuidString = NULL;
+    LPWSTR DriverKey = NULL; /* {GUID}\Index */
+    LPWSTR pDeviceInstance; /* Points into DriverKey, on the Index field */
+    DWORD Index; /* Index used in the DriverKey name */
+    DWORD dwSize;
+    DWORD Disposition;
+    DWORD rc;
+    HKEY hHWProfileKey = INVALID_HANDLE_VALUE;
+    HKEY hEnumKey = NULL;
+    HKEY hClassKey = NULL;
+    HKEY hDeviceKey = INVALID_HANDLE_VALUE;
+    HKEY hKey = NULL;
+
+    /* Open device key, to read Driver value */
+    hDeviceKey = SETUPDI_OpenDevKey(RootKey, devInfo, KEY_QUERY_VALUE | KEY_SET_VALUE);
+    if (hDeviceKey == INVALID_HANDLE_VALUE)
+        goto cleanup;
+
+    rc = RegOpenKeyExW(RootKey, REGSTR_PATH_CLASS_NT, 0, KEY_CREATE_SUB_KEY, &hClassKey);
+    if (rc != ERROR_SUCCESS)
+    {
+        SetLastError(rc);
+        goto cleanup;
+    }
+
+    rc = RegQueryValueExW(hDeviceKey, REGSTR_VAL_DRIVER, NULL, NULL, NULL, &dwSize);
+    if (rc != ERROR_SUCCESS)
+    {
+        /* Create a new driver key */
+
+        if (UuidToStringW(ClassGuid, &lpGuidString) != RPC_S_OK)
+            goto cleanup;
+
+        /* The driver key is in \System\CurrentControlSet\Control\Class\{GUID}\Index */
+        DriverKey = HeapAlloc(GetProcessHeap(), 0, (strlenW(lpGuidString) + 7) * sizeof(WCHAR) + sizeof(UNICODE_NULL));
+        if (!DriverKey)
+        {
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            goto cleanup;
+        }
+
+        DriverKey[0] = '{';
+        strcpyW(&DriverKey[1], lpGuidString);
+        pDeviceInstance = &DriverKey[strlenW(DriverKey)];
+        *pDeviceInstance++ = '}';
+        *pDeviceInstance++ = '\\';
+
+        /* Try all values for Index between 0 and 9999 */
+        Index = 0;
+        while (Index <= 9999)
+        {
+            sprintfW(pDeviceInstance, InstanceKeyFormat, Index);
+            rc = RegCreateKeyExW(hClassKey,
+                DriverKey,
+                0,
+                NULL,
+                REG_OPTION_NON_VOLATILE,
+#if _WIN32_WINNT >= 0x502
+                KEY_READ | KEY_WRITE,
+#else
+                KEY_ALL_ACCESS,
+#endif
+                NULL,
+                &hKey,
+                &Disposition);
+            if (rc != ERROR_SUCCESS)
+            {
+                SetLastError(rc);
+                goto cleanup;
+            }
+            if (Disposition == REG_CREATED_NEW_KEY)
+                break;
+            RegCloseKey(hKey);
+            hKey = NULL;
+            Index++;
+        }
+
+        if (Index > 9999)
+        {
+            /* Unable to create more than 9999 devices within the same class */
+            SetLastError(ERROR_GEN_FAILURE);
+            goto cleanup;
+        }
+
+        /* Write the new Driver value */
+        rc = RegSetValueExW(hDeviceKey, REGSTR_VAL_DRIVER, 0, REG_SZ, (const BYTE *)DriverKey, (strlenW(DriverKey) + 1) * sizeof(WCHAR));
+        if (rc != ERROR_SUCCESS)
+        {
+            SetLastError(rc);
+            goto cleanup;
+        }
+    }
+    else
+    {
+        /* Open the existing driver key */
+
+        DriverKey = HeapAlloc(GetProcessHeap(), 0, dwSize);
+        if (!DriverKey)
+        {
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            goto cleanup;
+        }
+
+        rc = RegQueryValueExW(hDeviceKey, REGSTR_VAL_DRIVER, NULL, NULL, (LPBYTE)DriverKey, &dwSize);
+        if (rc != ERROR_SUCCESS)
+        {
+            SetLastError(rc);
+            goto cleanup;
+        }
+
+        rc = RegCreateKeyExW(hClassKey,
+            DriverKey,
+            0,
+            NULL,
+            REG_OPTION_NON_VOLATILE,
+#if _WIN32_WINNT >= 0x502
+            KEY_READ | KEY_WRITE,
+#else
+            KEY_ALL_ACCESS,
+#endif
+            NULL,
+            &hKey,
+            &Disposition);
+        if (rc != ERROR_SUCCESS)
+        {
+            SetLastError(rc);
+            goto cleanup;
+        }
+    }
+
+    key = hKey;
+
+cleanup:
+        if (lpGuidString)
+            RpcStringFreeW(&lpGuidString);
+        HeapFree(GetProcessHeap(), 0, DriverKey);
+        if (hHWProfileKey != INVALID_HANDLE_VALUE)
+            RegCloseKey(hHWProfileKey);
+        if (hEnumKey != NULL)
+            RegCloseKey(hEnumKey);
+        if (hClassKey != NULL)
+            RegCloseKey(hClassKey);
+        if (hDeviceKey != INVALID_HANDLE_VALUE)
+            RegCloseKey(hDeviceKey);
+        if (hKey != NULL && hKey != key)
+            RegCloseKey(hKey);
+
+    TRACE("Returning 0x%p\n", hKey);
+    return hKey;
+}
+
+HKEY SETUPDI_OpenDevKey(HKEY RootKey, struct DeviceInfo *devInfo, REGSAM samDesired)
 {
     HKEY enumKey, key = INVALID_HANDLE_VALUE;
     LONG l;
@@ -5736,7 +5855,7 @@ static HKEY SETUPDI_OpenDevKey(HKEY RootKey, struct DeviceInfo *devInfo, REGSAM 
     return key;
 }
 
-static HKEY SETUPDI_OpenDrvKey(HKEY RootKey, struct DeviceInfo *devInfo, REGSAM samDesired)
+HKEY SETUPDI_OpenDrvKey(HKEY RootKey, struct DeviceInfo *devInfo, REGSAM samDesired)
 {
     LPWSTR DriverKey = NULL;
     DWORD dwLength = 0;
@@ -5873,6 +5992,18 @@ HKEY WINAPI SetupDiOpenDevRegKey(
     {
         case DIREG_DEV:
             key = SETUPDI_OpenDevKey(RootKey, devInfo, samDesired);
+            if (Scope == DICS_FLAG_GLOBAL)
+            {
+                LONG rc;
+                HKEY hTempKey = key;
+                rc = RegOpenKeyExW(hTempKey,
+                                   L"Device Parameters",
+                                   0,
+                                   samDesired,
+                                   &key);
+                if (rc == ERROR_SUCCESS)
+                    RegCloseKey(hTempKey);
+            }
             break;
         case DIREG_DRV:
             key = SETUPDI_OpenDrvKey(RootKey, devInfo, samDesired);
@@ -5976,144 +6107,47 @@ BOOL WINAPI SetupDiDeleteDevRegKey(
     return ret;
 }
 
-static 
-NTSTATUS 
-get_device_property(
-	struct device *device, 
-	DEVPROPKEY *prop_key, 
-	DEVPROPTYPE *prop_type,
-    BYTE *prop_buff, 
-	DWORD prop_buff_size, 
-	DWORD *required_size, 
-	DWORD flags
-)
+/***********************************************************************
+ *		SetupDiRestartDevices (SETUPAPI.@)
+ */
+BOOL
+WINAPI
+SetupDiRestartDevices(
+    HDEVINFO DeviceInfoSet,
+    PSP_DEVINFO_DATA DeviceInfoData)
 {
-    WCHAR key_path[55] = L"Properties\\";
-    HKEY hkey;
-    DWORD value_type;
-    DWORD value_size = 0;
-    NTSTATUS ls;
+    struct DeviceInfoSet *set = (struct DeviceInfoSet *)DeviceInfoSet;
+    struct DeviceInfo *devInfo;
+    CONFIGRET cr;
 
-    if (!prop_key)
-        return ERROR_INVALID_DATA;
+    TRACE("%p %p\n", DeviceInfoSet, DeviceInfoData);
 
-    if (!prop_type || (!prop_buff && prop_buff_size))
-        return ERROR_INVALID_USER_BUFFER;
-
-    if (flags)
-        return ERROR_INVALID_FLAGS;
-
-    SETUPDI_GuidToString(&prop_key->fmtid, key_path + 11);
-    swprintf(key_path + 49, 
-			L"\\%04X",
-			//ARRAY_SIZE(key_path) - 49, 
-			//, 
-			prop_key->pid);
-
-    ls = RegOpenKeyExW(device->key, key_path, 0, KEY_QUERY_VALUE, &hkey);
-    if (!ls)
-    {
-        value_size = prop_buff_size;
-        ls = RegQueryValueExW(hkey, NULL, NULL, &value_type, prop_buff, &value_size);
-        RegCloseKey(hkey);
-    }
-
-    switch (ls)
-    {
-    case NO_ERROR:
-    case ERROR_MORE_DATA:
-        *prop_type = 0xffff & value_type;
-        ls = (ls == ERROR_MORE_DATA || !prop_buff) ? ERROR_INSUFFICIENT_BUFFER : NO_ERROR;
-        break;
-    case ERROR_FILE_NOT_FOUND:
-        *prop_type = DEVPROP_TYPE_EMPTY;
-        value_size = 0;
-        ls = ERROR_NOT_FOUND;
-        break;
-    default:
-        *prop_type = DEVPROP_TYPE_EMPTY;
-        value_size = 0;
-        FIXME("Unhandled error %#x\n", ls);
-        break;
-    }
-
-    if (required_size)
-        *required_size = value_size;
-
-    return ls;
-}
-
-static struct DeviceInfoSet *get_device_set(HDEVINFO devinfo)
-{
-    struct DeviceInfoSet *set = devinfo;
-
-    if (!devinfo || devinfo == INVALID_HANDLE_VALUE || set->magic != SETUP_DEVICE_INFO_SET_MAGIC)
+    if (!DeviceInfoSet || DeviceInfoSet == INVALID_HANDLE_VALUE)
     {
         SetLastError(ERROR_INVALID_HANDLE);
-        return NULL;
+        return FALSE;
+    }
+    if (set->magic != SETUP_DEVICE_INFO_SET_MAGIC)
+    {
+        SetLastError(ERROR_INVALID_HANDLE);
+        return FALSE;
     }
 
-    return set;
-}
-
-static struct device *get_device(HDEVINFO devinfo, const SP_DEVINFO_DATA *data)
-{
-    struct DeviceInfoSet *set;
-    struct device *device;
-
-    if (!(set = get_device_set(devinfo)))
-        return FALSE;
-
-    if (!data || data->cbSize != sizeof(*data) || !data->Reserved)
+    if (!DeviceInfoData || DeviceInfoData->cbSize != sizeof(SP_DEVINFO_DATA)
+            || !DeviceInfoData->Reserved)
     {
         SetLastError(ERROR_INVALID_PARAMETER);
-        return NULL;
-    }
-
-    device = (struct device *)data->Reserved;
-
-    if (device->set != set)
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return NULL;
-    }
-
-    if (device->removed)
-    {
-        SetLastError(ERROR_NO_SUCH_DEVINST);
-        return NULL;
-    }
-
-    return device;
-}
-
-/***********************************************************************
- *              SetupDiGetDevicePropertyW (SETUPAPI.@)
- */
-BOOL 
-WINAPI 
-SetupDiGetDevicePropertyW(
-	HDEVINFO devinfo, 
-	PSP_DEVINFO_DATA device_data,
-	DEVPROPKEY *prop_key, 
-	DEVPROPTYPE *prop_type, 
-	BYTE *prop_buff,
-    DWORD prop_buff_size, 
-	DWORD *required_size, 
-	DWORD flags
-)
-{
-    struct device *device;
-    NTSTATUS ls;
-
-    TRACE("%p, %p, %p, %p, %p, %d, %p, %#x\n", devinfo, device_data, prop_key, prop_type, prop_buff, prop_buff_size,
-          required_size, flags);
-
-    if (!(device = get_device(devinfo, device_data)))
         return FALSE;
+    }
 
-    ls = get_device_property(device, prop_key, prop_type, prop_buff, prop_buff_size, required_size, flags);
+    devInfo = (struct DeviceInfo *)DeviceInfoData->Reserved;
 
-    SetLastError(ls);
-    return !ls;
+    cr = CM_Enable_DevNode_Ex(devInfo->dnDevInst, 0, set->hMachine);
+    if (cr != CR_SUCCESS)
+    {
+        SetLastError(GetErrorCodeFromCrCode(cr));
+        return FALSE;
+    }
+
+    return TRUE;
 }

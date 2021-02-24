@@ -629,6 +629,7 @@ VideoPortGetAccessRanges(
                 /*
                  * Search for the device id and vendor id on this bus.
                  */
+                PciSlotNumber.u.bits.Reserved = 0;
                 for (DeviceNumber = 0; DeviceNumber < PCI_MAX_DEVICES; DeviceNumber++)
                 {
                     PciSlotNumber.u.bits.DeviceNumber = DeviceNumber;
@@ -764,7 +765,7 @@ VideoPortGetAccessRanges(
             ERR_(VIDEOPRT, "Too many access ranges found\n");
             return ERROR_NOT_ENOUGH_MEMORY;
         }
-        if (Descriptor->Type == CmResourceTypeMemory)
+        else if (Descriptor->Type == CmResourceTypeMemory)
         {
             INFO_(VIDEOPRT, "Memory range starting at 0x%08x length 0x%08x\n",
                   Descriptor->u.Memory.Start.u.LowPart, Descriptor->u.Memory.Length);
@@ -803,6 +804,11 @@ VideoPortGetAccessRanges(
             else
                 DeviceExtension->InterruptShared = FALSE;
         }
+        else
+        {
+            ASSERT(FALSE);
+            return ERROR_INVALID_PARAMETER;
+        }
     }
 
     return NO_ERROR;
@@ -837,7 +843,7 @@ VideoPortVerifyAccessRanges(
    if (!ResourceList)
    {
       WARN_(VIDEOPRT, "ExAllocatePool() failed\n");
-      return ERROR_INVALID_PARAMETER;
+      return ERROR_NOT_ENOUGH_MEMORY;
    }
 
    /* Fill resource list */

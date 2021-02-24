@@ -18,16 +18,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#include <string.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winnt.h"
+#include "winternl.h"
+#include "winerror.h"
+#include "wine/debug.h"
+#include "imagehlp.h"
 
-#include <winternl.h>
+WINE_DEFAULT_DEBUG_CHANNEL(imagehlp);
 
 /***********************************************************************
  *           Data
  */
-LIST_ENTRY image_list = { &image_list, &image_list };
+static LIST_ENTRY image_list = { &image_list, &image_list };
 
-DECLSPEC_HIDDEN extern HANDLE IMAGEHLP_hHeap;
 
 /***********************************************************************
  *		GetImageConfigInformation (IMAGEHLP.@)
@@ -66,12 +73,12 @@ PLOADED_IMAGE WINAPI ImageLoad(PCSTR dll_name, PCSTR dll_path)
 
     TRACE("(%s, %s)\n", dll_name, dll_path);
 
-    image = HeapAlloc(IMAGEHLP_hHeap, 0, sizeof(*image));
+    image = HeapAlloc(GetProcessHeap(), 0, sizeof(*image));
     if (!image) return NULL;
 
     if (!MapAndLoad(dll_name, dll_path, image, TRUE, TRUE))
     {
-        HeapFree(IMAGEHLP_hHeap, 0, image);
+        HeapFree(GetProcessHeap(), 0, image);
         return NULL;
     }
 
@@ -91,14 +98,7 @@ BOOL WINAPI ImageUnload(PLOADED_IMAGE loaded_image)
     LIST_ENTRY *entry, *mark;
     PLOADED_IMAGE image;
 
-    FIXME("(%p)\n", loaded_image);
-
-    if (!loaded_image)
-    {
-        /* No image loaded or null pointer */
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return FALSE;
-    }
+    TRACE("(%p)\n", loaded_image);
 
     /* FIXME: do we really need to check this? */
     mark = &image_list;
@@ -120,7 +120,7 @@ BOOL WINAPI ImageUnload(PLOADED_IMAGE loaded_image)
     entry->Flink->Blink = entry->Blink;
 
     UnMapAndLoad(loaded_image);
-    HeapFree(IMAGEHLP_hHeap, 0, loaded_image);
+    HeapFree(GetProcessHeap(), 0, loaded_image);
 
     return TRUE;
 }

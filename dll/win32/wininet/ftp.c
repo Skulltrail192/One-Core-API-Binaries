@@ -27,7 +27,30 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "ws2tcpip.h"
+
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <assert.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "wininet.h"
+#include "winnls.h"
+#include "winerror.h"
+#include "winreg.h"
+#include "winternl.h"
+#include "shlwapi.h"
+
+#include "wine/debug.h"
 #include "internet.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(wininet);
 
 #define RESPONSE_TIMEOUT        30
 
@@ -2558,8 +2581,7 @@ HINTERNET FTP_Connect(appinfo_t *hIC, LPCWSTR lpszServerName,
 lerror:
     if (!bSuccess)
     {
-        if(lpwfs)
-            WININET_Release( &lpwfs->hdr );
+        WININET_Release(&lpwfs->hdr);
         return NULL;
     }
 
@@ -3723,7 +3745,7 @@ static BOOL FTP_ParseNextFile(INT nSocket, LPCWSTR lpszSearchFile, LPFILEPROPERT
 
             pszToken = strtok(NULL, szSpace);
             if(!pszToken) continue;
-            if(!strcasecmp(pszToken, "<DIR>")) {
+            if(!_strnicmp(pszToken, "<DIR>", -1)) {
                 lpfp->bIsDirectory = TRUE;
                 lpfp->nSize = 0;
                 TRACE("Is directory\n");

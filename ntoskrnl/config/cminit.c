@@ -38,15 +38,17 @@ CmpInitializeHive(OUT PCMHIVE *CmHive,
 
     /*
      * The following are invalid:
-     * An external hive that is also internal.
-     * A log hive that's not a primary hive too.
-     * A volatile hive that's linked to permanent storage.
-     * An in-memory initialization without hive data.
-     * A log hive that's not linked to a correct file type.
+     * - An external hive that is also internal.
+     * - A log hive that is not a primary hive too.
+     * - A volatile hive that is linked to permanent storage,
+     *   unless this hive is a shared system hive.
+     * - An in-memory initialization without hive data.
+     * - A log hive that is not linked to a correct file type.
      */
     if (((External) && ((Primary) || (Log))) ||
         ((Log) && !(Primary)) ||
-        ((HiveFlags & HIVE_VOLATILE) && ((Primary) || (External) || (Log))) ||
+        (!(CmpShareSystemHives) && (HiveFlags & HIVE_VOLATILE) &&
+            ((Primary) || (External) || (Log))) ||
         ((OperationType == HINIT_MEMORY) && (!HiveData)) ||
         ((Log) && (FileType != HFILE_TYPE_LOG)))
     {
@@ -100,7 +102,7 @@ CmpInitializeHive(OUT PCMHIVE *CmHive,
     Hive->NotifyList.Flink = NULL;
     Hive->NotifyList.Blink = NULL;
 
-    /* Set loading flag */
+    /* Set the loading flag */
     Hive->HiveIsLoading = TRUE;
 
     /* Set the current thread as creator */
@@ -210,6 +212,9 @@ CmpInitializeHive(OUT PCMHIVE *CmHive,
             return STATUS_REGISTRY_CORRUPT;
         }
     }
+
+    /* Reset the loading flag */
+    Hive->HiveIsLoading = FALSE;
 
     /* Lock the hive list */
     ExAcquirePushLockExclusive(&CmpHiveListHeadLock);

@@ -48,9 +48,9 @@ CAPTION "Добавление языка ввода"
 FONT 8, "MS Shell Dlg"
 BEGIN
     LTEXT "&Язык ввода:", -1, 7, 7, 61, 10
-    COMBOBOX IDC_INPUT_LANG_COMBO, 7, 17, 212, 150, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+    COMBOBOX IDC_INPUT_LANG_COMBO, 7, 17, 212, 150, CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | CBS_SORT | WS_VSCROLL
     LTEXT "&Раскладка клавиатуры:", -1, 7, 36, 170, 10
-    COMBOBOX IDC_KEYBOARD_LO_COMBO, 7, 47, 212, 150, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+    COMBOBOX IDC_KEYBOARD_LO_COMBO, 7, 47, 212, 150, CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | CBS_SORT | WS_VSCROLL
     DEFPUSHBUTTON "OK", IDOK, 116, 68, 50, 14
     PUSHBUTTON "Отмена", IDCANCEL, 169, 68, 50, 14
 END
@@ -106,6 +106,7 @@ BEGIN
     IDS_CTRL_SHIFT "Ctrl+Shift"
     IDS_LEFT_ALT_SHIFT "Alt слева+Shift"
     IDS_SWITCH_BET_INLANG "Переключение между языками ввода"
+    IDS_REBOOT_NOW, "Перезагрузить сейчас?"
 END
 
 STRINGTABLE
@@ -213,7 +214,8 @@ BEGIN
     IDS_PORTUGUESE_BRAZILIAN_ABNT_LAYOUT "Португальская (Бразильская ABNT)"
     IDS_PORTUGUESE_BRAZIL_ABNT2_LAYOUT "Португальская (Бразилия)"
     IDS_PUNJABI_LAYOUT "Пенджабская"
-    IDS_ROMANIAN_LAYOUT "Румынская"
+    IDS_ROMANIAN_LEGACY_LAYOUT "Румынская (традиционная)"
+    IDS_ROMANIAN_STANDARD_LAYOUT "Румынская (стандартная)"
     IDS_RUSSIAN_LAYOUT "Русская"
     IDS_RUSSIAN_TYPEWRITER_LAYOUT "Русская (машинопись)"
     IDS_SERBIAN_CYRILLIC_LAYOUT "Сербская (кириллица)"

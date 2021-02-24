@@ -294,7 +294,7 @@
 294 stdcall GetUserNameA(ptr ptr)
 295 stdcall GetUserNameW(ptr ptr)
 296 stdcall GetWindowsAccountDomainSid(ptr ptr ptr)
-297 stub I_QueryTagInformation
+297 stdcall I_QueryTagInformation(ptr long ptr)
 298 stdcall I_ScIsSecurityProcess()
 299 stdcall I_ScPnPGetServiceName(ptr wstr long)
 300 stub I_ScSendTSMessage
@@ -422,8 +422,8 @@
 422 stdcall ObjectPrivilegeAuditAlarmW(wstr ptr long long ptr long)
 423 stdcall OpenBackupEventLogA(str str)
 424 stdcall OpenBackupEventLogW(wstr wstr)
-425 stub OpenEncryptedFileRawA
-426 stub OpenEncryptedFileRawW
+425 stdcall OpenEncryptedFileRawA(str long ptr)
+426 stdcall OpenEncryptedFileRawW(wstr long ptr)
 427 stdcall OpenEventLogA(str str)
 428 stdcall OpenEventLogW(wstr wstr)
 429 stdcall OpenProcessToken(long long ptr)
@@ -432,13 +432,13 @@
 432 stdcall OpenServiceA(long str long)
 433 stdcall OpenServiceW(long wstr long)
 434 stdcall OpenThreadToken(long long long ptr)
-435 stub OpenTraceA
-436 stub OpenTraceW
+435 stdcall -ret64 OpenTraceA(ptr)
+436 stdcall -ret64 OpenTraceW(ptr)
 437 stdcall PrivilegeCheck(ptr ptr ptr)
 438 stdcall PrivilegedServiceAuditAlarmA(str str long ptr long)
 439 stdcall PrivilegedServiceAuditAlarmW(wstr wstr long ptr long)
 440 stub ProcessIdleTasks
-441 stub ProcessTrace
+441 stdcall ProcessTrace(ptr long ptr ptr)
 442 stdcall QueryAllTracesA(ptr long ptr) ntdll.EtwQueryAllTracesA
 443 stdcall QueryAllTracesW(ptr long ptr) ntdll.EtwQueryAllTracesW
 444 stdcall QueryRecoveryAgentsOnEncryptedFile(wstr ptr)
@@ -454,7 +454,7 @@
 454 stdcall QueryTraceA(double str ptr) ntdll.EtwQueryTraceA
 455 stdcall QueryTraceW(double str ptr) ntdll.EtwQueryTraceA
 456 stdcall QueryUsersOnEncryptedFile(wstr ptr)
-457 stub ReadEncryptedFileRaw
+457 stdcall ReadEncryptedFileRaw(ptr ptr ptr)
 458 stdcall ReadEventLogA(long long long ptr long ptr ptr)
 459 stdcall ReadEventLogW(long long long ptr long ptr ptr)
 460 stdcall RegCloseKey(long)
@@ -682,84 +682,5 @@
 682 stub WmiSetSingleItemW
 683 stub Wow64Win32ApiEntry
 684 stdcall WriteEncryptedFileRaw(ptr ptr ptr)
-
-
-@ stub AddMandatoryAce
-@ stub RegCopyTreeW
-@ stub RegDeleteTreeA
-@ stub RegDeleteTreeW
-@ stub RegDisablePredefinedCacheEx
-@ stub RegLoadMUIStringA
-@ stub RegLoadMUIStringW
-
-
-@ stub CredFindBestCredentialA
-@ stub CredFindBestCredentialW
-@ stub CredIsProtectedA
-@ stub CredIsProtectedW
-@ stub CredProtectA
-@ stub CredProtectW
-@ stub CredUnprotectA
-@ stub CredUnprotectW
-@ stub CredWriteDomainCredentialsA
-@ stub RegLoadAppKeyA
-@ stub RegLoadAppKeyW
-@ stub RegCopyTreeA
-@ stub RegCreateKeyTransactedA
-@ stub RegCreateKeyTransactedW
-@ stub RegDeleteKeyValueA
-@ stub RegDeleteKeyValueW
-@ stub RegSetKeyValueA
-@ stub RegSetKeyValueW
-@ stub RegDeleteKeyTransactedA
-@ stub RegDeleteKeyTransactedW
-@ stub RegOpenKeyTransactedA
-@ stub RegOpenKeyTransactedW
-@ stub ControlServiceExA
-@ stub ControlServiceExW
-@ stub I_ScQueryServiceConfig
-@ stub I_ScSendPnPMessage
-@ stub I_ScValidatePnPService
-@ stub NotifyServiceStatusChangeA
-@ stub NotifyServiceStatusChangeW
-
-@ stub AuditComputeEffectivePolicyBySid
-@ stub AuditEnumerateCategories
-@ stub AuditEnumeratePerUserPolicy
-@ stub AuditEnumerateSubCategories
-@ stub AuditFree
-@ stub AuditLookupCategoryNameW
-@ stub AuditLookupSubCategoryNameW
-@ stub AuditQueryPerUserPolicy
-@ stub AuditQuerySecurity
-@ stub AuditQuerySystemPolicy
-@ stub AuditSetPerUserPolicy
-@ stub AuditSetSecurity
-@ stub AuditSetSystemPolicy
-@ stub EventActivityIdControl
-@ stub EventEnabled
-@ stub EventProviderEnabled
-@ stub EventRegister
-@ stub EventSetInformation
-@ stub EventUnregister
-@ stub EventWrite
-@ stub EventWriteEx
-@ stub EventWriteString
-@ stub EventWriteTransfer
-@ stub IsValidRelativeSecurityDescriptor
-@ stub QuerySecurityAccessMask
-@ stub SetSecurityAccessMask
-@ stub EnableTraceEx2
-@ stub EnumerateTraceGuidsEx
-@ stub EventAccessControl
-@ stub EventAccessQuery
-@ stub EventAccessRemove
-@ stub EnableTraceEx
-@ stub LsaLookupSids2
-@ stub PerfCreateInstance
-@ stub PerfDeleteInstance
-@ stub PerfSetCounterRefValue
-@ stub PerfSetCounterSetInfo
-@ stub PerfStartProvider
-@ stub PerfStartProviderEx
-@ stub PerfStopProvider
+685 stdcall -version=0x600+ RegLoadMUIStringW(ptr wstr wstr long ptr long wstr) advapi32_vista.RegLoadMUIStringW
+686 stdcall -version=0x600+ RegLoadMUIStringA(ptr str str long ptr long str) advapi32_vista.RegLoadMUIStringA

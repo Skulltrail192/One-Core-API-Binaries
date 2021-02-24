@@ -16,9 +16,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "wbemdisp_private.h"
+#define COBJMACROS
 
-#include <wbemcli.h>
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "initguid.h"
+#include "objbase.h"
+#include "wmiutils.h"
+#include "wbemcli.h"
+#include "wbemdisp.h"
+
+#include "wine/debug.h"
+#include "wine/heap.h"
+#include "wbemdisp_private.h"
+#include "wbemdisp_classes.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(wbemdisp);
 
 static HRESULT EnumVARIANT_create( IEnumWbemClassObject *, IEnumVARIANT ** );
 static HRESULT ISWbemSecurity_create( ISWbemSecurity ** );
@@ -408,7 +423,7 @@ static HRESULT WINAPI propertyset_Item( ISWbemPropertySet *iface, BSTR name,
     HRESULT hr;
     VARIANT var;
 
-    TRACE( "%p, %s, %08x, %p", propertyset, debugstr_w(name), flags, prop );
+    TRACE( "%p, %s, %08x, %p\n", propertyset, debugstr_w(name), flags, prop );
 
     hr = IWbemClassObject_Get( propertyset->object, name, 0, &var, NULL, NULL );
     if (SUCCEEDED(hr))
@@ -421,8 +436,19 @@ static HRESULT WINAPI propertyset_Item( ISWbemPropertySet *iface, BSTR name,
 
 static HRESULT WINAPI propertyset_get_Count( ISWbemPropertySet *iface, LONG *count )
 {
-    FIXME( "\n" );
-    return E_NOTIMPL;
+    static const WCHAR propcountW[] = {'_','_','P','R','O','P','E','R','T','Y','_','C','O','U','N','T',0};
+    struct propertyset *propertyset = impl_from_ISWbemPropertySet( iface );
+    HRESULT hr;
+    VARIANT val;
+
+    TRACE( "%p, %p\n", propertyset, count );
+
+    hr = IWbemClassObject_Get( propertyset->object, propcountW, 0, &val, NULL, NULL );
+    if (SUCCEEDED(hr))
+    {
+        *count = V_I4( &val );
+    }
+    return hr;
 }
 
 static HRESULT WINAPI propertyset_Add( ISWbemPropertySet *iface, BSTR name, WbemCimtypeEnum type,
@@ -471,11 +497,13 @@ static HRESULT SWbemPropertySet_create( IWbemClassObject *wbem_object, ISWbemPro
     return S_OK;
 }
 
-#define DISPID_BASE 0x1800000
+#define DISPID_BASE         0x1800000
+#define DISPID_BASE_METHOD  0x1000000
 
 struct member
 {
     BSTR name;
+    BOOL is_method;
     DISPID dispid;
 };
 
@@ -487,6 +515,7 @@ struct object
     struct member *members;
     UINT nb_members;
     DISPID last_dispid;
+    DISPID last_dispid_method;
 };
 
 static inline struct object *impl_from_ISWbemObject(
@@ -568,41 +597,83 @@ static HRESULT WINAPI object_GetTypeInfo(
 
 static HRESULT init_members( struct object *object )
 {
-    LONG bound, i;
-    SAFEARRAY *sa;
+    IWbemClassObject *sig_in, *sig_out;
+    LONG i = 0, count = 0;
+    BSTR name;
     HRESULT hr;
 
     if (object->members) return S_OK;
 
-    hr = IWbemClassObject_GetNames( object->object, NULL, 0, NULL, &sa );
-    if (FAILED( hr )) return hr;
-    hr = SafeArrayGetUBound( sa, 1, &bound );
-    if (FAILED( hr ))
+    hr = IWbemClassObject_BeginEnumeration( object->object, 0 );
+    if (SUCCEEDED( hr ))
     {
-        SafeArrayDestroy( sa );
-        return hr;
+        while (IWbemClassObject_Next( object->object, 0, NULL, NULL, NULL, NULL ) == S_OK) count++;
+        IWbemClassObject_EndEnumeration( object->object );
     }
-    if (!(object->members = heap_alloc( sizeof(struct member) * (bound + 1) )))
+
+    hr = IWbemClassObject_BeginMethodEnumeration( object->object, 0 );
+    if (SUCCEEDED( hr ))
     {
-        SafeArrayDestroy( sa );
-        return E_OUTOFMEMORY;
-    }
-    for (i = 0; i <= bound; i++)
-    {
-        hr = SafeArrayGetElement( sa, &i, &object->members[i].name );
-        if (FAILED( hr ))
+        while (IWbemClassObject_NextMethod( object->object, 0, &name, &sig_in, &sig_out ) == S_OK)
         {
-            for (i--; i >= 0; i--) SysFreeString( object->members[i].name );
-            SafeArrayDestroy( sa );
-            heap_free( object->members );
-            object->members = NULL;
-            return E_OUTOFMEMORY;
+            count++;
+            SysFreeString( name );
+            if (sig_in) IWbemClassObject_Release( sig_in );
+            if (sig_out) IWbemClassObject_Release( sig_out );
         }
-        object->members[i].dispid = 0;
+        IWbemClassObject_EndMethodEnumeration( object->object );
     }
-    object->nb_members = bound + 1;
-    SafeArrayDestroy( sa );
+
+    if (!(object->members = heap_alloc( sizeof(struct member) * count ))) return E_OUTOFMEMORY;
+
+    hr = IWbemClassObject_BeginEnumeration( object->object, 0 );
+    if (SUCCEEDED( hr ))
+    {
+        while (IWbemClassObject_Next( object->object, 0, &name, NULL, NULL, NULL ) == S_OK)
+        {
+            object->members[i].name      = name;
+            object->members[i].is_method = FALSE;
+            object->members[i].dispid    = 0;
+            if (++i > count)
+            {
+                IWbemClassObject_EndEnumeration( object->object );
+                goto error;
+            }
+            TRACE( "added property %s\n", debugstr_w(name) );
+        }
+        IWbemClassObject_EndEnumeration( object->object );
+    }
+
+    hr = IWbemClassObject_BeginMethodEnumeration( object->object, 0 );
+    if (SUCCEEDED( hr ))
+    {
+        while (IWbemClassObject_NextMethod( object->object, 0, &name, &sig_in, &sig_out ) == S_OK)
+        {
+            object->members[i].name      = name;
+            object->members[i].is_method = TRUE;
+            object->members[i].dispid    = 0;
+            if (++i > count)
+            {
+                IWbemClassObject_EndMethodEnumeration( object->object );
+                goto error;
+            }
+            if (sig_in) IWbemClassObject_Release( sig_in );
+            if (sig_out) IWbemClassObject_Release( sig_out );
+            TRACE( "added method %s\n", debugstr_w(name) );
+        }
+        IWbemClassObject_EndMethodEnumeration( object->object );
+    }
+
+    object->nb_members = count;
+    TRACE( "added %u members\n", object->nb_members );
     return S_OK;
+
+error:
+    for (--i; i >= 0; i--) SysFreeString( object->members[i].name );
+    heap_free( object->members );
+    object->members = NULL;
+    object->nb_members = 0;
+    return E_FAIL;
 }
 
 static DISPID get_member_dispid( struct object *object, const WCHAR *name )
@@ -610,9 +681,15 @@ static DISPID get_member_dispid( struct object *object, const WCHAR *name )
     UINT i;
     for (i = 0; i < object->nb_members; i++)
     {
-        if (!strcmpiW( object->members[i].name, name ))
+        if (!wcsicmp( object->members[i].name, name ))
         {
-            if (!object->members[i].dispid) object->members[i].dispid = ++object->last_dispid;
+            if (!object->members[i].dispid)
+            {
+                if (object->members[i].is_method)
+                    object->members[i].dispid = ++object->last_dispid_method;
+                else
+                    object->members[i].dispid = ++object->last_dispid;
+            }
             return object->members[i].dispid;
         }
     }
@@ -684,7 +761,7 @@ static HRESULT WINAPI object_Invoke(
     TRACE( "%p, %x, %s, %u, %x, %p, %p, %p, %p\n", object, member, debugstr_guid(riid),
            lcid, flags, params, result, excep_info, arg_err );
 
-    if (member <= DISPID_BASE)
+    if (member <= DISPID_BASE_METHOD)
     {
         hr = get_typeinfo( ISWbemObject_tid, &typeinfo );
         if (SUCCEEDED(hr))
@@ -1027,6 +1104,7 @@ static HRESULT SWbemObject_create( IWbemClassObject *wbem_object, ISWbemObject *
     object->members = NULL;
     object->nb_members = 0;
     object->last_dispid = DISPID_BASE;
+    object->last_dispid_method = DISPID_BASE_METHOD;
 
     *obj = &object->ISWbemObject_iface;
     TRACE( "returning iface %p\n", *obj );
@@ -1624,12 +1702,12 @@ static HRESULT WINAPI services_DeleteAsync(
 static BSTR build_query_string( const WCHAR *class )
 {
     static const WCHAR selectW[] = {'S','E','L','E','C','T',' ','*',' ','F','R','O','M',' ',0};
-    UINT len = strlenW(class) + sizeof(selectW) / sizeof(selectW[0]);
+    UINT len = lstrlenW(class) + ARRAY_SIZE(selectW);
     BSTR ret;
 
     if (!(ret = SysAllocStringLen( NULL, len ))) return NULL;
-    strcpyW( ret, selectW );
-    strcatW( ret, class );
+    lstrcpyW( ret, selectW );
+    lstrcatW( ret, class );
     return ret;
 }
 
@@ -2054,22 +2132,22 @@ static BSTR build_resource_string( BSTR server, BSTR namespace )
     ULONG len, len_server = 0, len_namespace = 0;
     BSTR ret;
 
-    if (server && *server) len_server = strlenW( server );
+    if (server && *server) len_server = lstrlenW( server );
     else len_server = 1;
-    if (namespace && *namespace) len_namespace = strlenW( namespace );
-    else len_namespace = sizeof(defaultW) / sizeof(defaultW[0]) - 1;
+    if (namespace && *namespace) len_namespace = lstrlenW( namespace );
+    else len_namespace = ARRAY_SIZE(defaultW) - 1;
 
     if (!(ret = SysAllocStringLen( NULL, 2 + len_server + 1 + len_namespace ))) return NULL;
 
     ret[0] = ret[1] = '\\';
-    if (server && *server) strcpyW( ret + 2, server );
+    if (server && *server) lstrcpyW( ret + 2, server );
     else ret[2] = '.';
 
     len = len_server + 2;
     ret[len++] = '\\';
 
-    if (namespace && *namespace) strcpyW( ret + len, namespace );
-    else strcpyW( ret + len, defaultW );
+    if (namespace && *namespace) lstrcpyW( ret + len, namespace );
+    else lstrcpyW( ret + len, defaultW );
     return ret;
 }
 
@@ -2287,7 +2365,7 @@ static HRESULT WINAPI security_Invoke(
     return hr;
 }
 
-static HRESULT WINAPI security_get_ImpersonationLevel_(
+static HRESULT WINAPI security_get_ImpersonationLevel(
     ISWbemSecurity *iface,
     WbemImpersonationLevelEnum *impersonation_level )
 {
@@ -2301,7 +2379,7 @@ static HRESULT WINAPI security_get_ImpersonationLevel_(
     return S_OK;
 }
 
-static HRESULT WINAPI security_put_ImpersonationLevel_(
+static HRESULT WINAPI security_put_ImpersonationLevel(
     ISWbemSecurity *iface,
     WbemImpersonationLevelEnum impersonation_level )
 {
@@ -2312,7 +2390,7 @@ static HRESULT WINAPI security_put_ImpersonationLevel_(
     return S_OK;
 }
 
-static HRESULT WINAPI security_get_AuthenticationLevel_(
+static HRESULT WINAPI security_get_AuthenticationLevel(
     ISWbemSecurity *iface,
     WbemAuthenticationLevelEnum *authentication_level )
 {
@@ -2326,7 +2404,7 @@ static HRESULT WINAPI security_get_AuthenticationLevel_(
     return S_OK;
 }
 
-static HRESULT WINAPI security_put_AuthenticationLevel_(
+static HRESULT WINAPI security_put_AuthenticationLevel(
     ISWbemSecurity *iface,
     WbemAuthenticationLevelEnum authentication_level )
 {
@@ -2337,7 +2415,7 @@ static HRESULT WINAPI security_put_AuthenticationLevel_(
     return S_OK;
 }
 
-static HRESULT WINAPI security_get_Privileges_(
+static HRESULT WINAPI security_get_Privileges(
     ISWbemSecurity *iface,
     ISWbemPrivilegeSet **privilege_set )
 {
@@ -2359,11 +2437,11 @@ static const ISWbemSecurityVtbl security_vtbl =
     security_GetTypeInfo,
     security_GetIDsOfNames,
     security_Invoke,
-    security_get_ImpersonationLevel_,
-    security_put_ImpersonationLevel_,
-    security_get_AuthenticationLevel_,
-    security_put_AuthenticationLevel_,
-    security_get_Privileges_
+    security_get_ImpersonationLevel,
+    security_put_ImpersonationLevel,
+    security_get_AuthenticationLevel,
+    security_put_AuthenticationLevel,
+    security_get_Privileges
 };
 
 static HRESULT ISWbemSecurity_create( ISWbemSecurity **obj )
@@ -2375,8 +2453,8 @@ static HRESULT ISWbemSecurity_create( ISWbemSecurity **obj )
     if (!(security = heap_alloc( sizeof(*security) ))) return E_OUTOFMEMORY;
     security->ISWbemSecurity_iface.lpVtbl = &security_vtbl;
     security->refs = 1;
-    security->implevel = wbemImpersonationLevelAnonymous;
-    security->authlevel = wbemAuthenticationLevelDefault;
+    security->implevel = wbemImpersonationLevelImpersonate;
+    security->authlevel = wbemAuthenticationLevelPktPrivacy;
 
     *obj = &security->ISWbemSecurity_iface;
     TRACE( "returning iface %p\n", *obj );

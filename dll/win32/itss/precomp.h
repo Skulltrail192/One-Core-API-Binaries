@@ -1,8 +1,6 @@
+
 #ifndef _ITSS_PCH_
 #define _ITSS_PCH_
-
-#include <wine/config.h>
-#include <wine/port.h>
 
 #include <stdarg.h>
 
@@ -17,13 +15,10 @@
 #include <objbase.h>
 
 #include <wine/itss.h>
-#include <wine/unicode.h>
-
 #include <wine/debug.h>
-WINE_DEFAULT_DEBUG_CHANNEL(itss);
 
 #include "chm_lib.h"
 #include "itsstor.h"
 #include "lzx.h"
 
-#endif /* _ITSS_PCH_ */
+#endif /* !_ITSS_PCH_ */

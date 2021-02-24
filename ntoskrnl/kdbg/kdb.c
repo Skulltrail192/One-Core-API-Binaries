@@ -137,42 +137,15 @@ KdbpTrapFrameToKdbTrapFrame(
     PKTRAP_FRAME TrapFrame,
     PKDB_KTRAP_FRAME KdbTrapFrame)
 {
-    ULONG TrapCr0, TrapCr2, TrapCr3, TrapCr4;
-
     /* Copy the TrapFrame only up to Eflags and zero the rest*/
     RtlCopyMemory(&KdbTrapFrame->Tf, TrapFrame, FIELD_OFFSET(KTRAP_FRAME, HardwareEsp));
     RtlZeroMemory((PVOID)((ULONG_PTR)&KdbTrapFrame->Tf + FIELD_OFFSET(KTRAP_FRAME, HardwareEsp)),
                   sizeof(KTRAP_FRAME) - FIELD_OFFSET(KTRAP_FRAME, HardwareEsp));
 
-#ifndef _MSC_VER
-   asm volatile(
-      "movl %%cr0, %0"    "\n\t"
-      "movl %%cr2, %1"    "\n\t"
-      "movl %%cr3, %2"    "\n\t"
-      "movl %%cr4, %3"    "\n\t"
-      : "=r"(TrapCr0), "=r"(TrapCr2),
-        "=r"(TrapCr3), "=r"(TrapCr4));
-#else
-   __asm
-   {
-       mov eax, cr0;
-       mov TrapCr0, eax;
-
-       mov eax, cr2;
-       mov TrapCr2, eax;
-
-       mov eax, cr3;
-       mov TrapCr3, eax;
-/* FIXME: What's the problem with cr4? */
-       //mov eax, cr4;
-       //mov TrapCr4, eax;
-   }
-#endif
-
-    KdbTrapFrame->Cr0 = TrapCr0;
-    KdbTrapFrame->Cr2 = TrapCr2;
-    KdbTrapFrame->Cr3 = TrapCr3;
-    KdbTrapFrame->Cr4 = TrapCr4;
+    KdbTrapFrame->Cr0 = __readcr0();
+    KdbTrapFrame->Cr2 = __readcr2();
+    KdbTrapFrame->Cr3 = __readcr3();
+    KdbTrapFrame->Cr4 = __readcr4();
 
     KdbTrapFrame->Tf.HardwareEsp = KiEspFromTrapFrame(TrapFrame);
     KdbTrapFrame->Tf.HardwareSegSs = (USHORT)(KiSsFromTrapFrame(TrapFrame) & 0xFFFF);
@@ -415,7 +388,7 @@ KdbpStepIntoInstruction(
     __sidt(&Idtr.Limit);
     if (IntVect >= (Idtr.Limit + 1) / 8)
     {
-        /*KdbpPrint("IDT does not contain interrupt vector %d\n.", IntVect);*/
+        /*KdbpPrint("IDT does not contain interrupt vector %d.\n", IntVect);*/
         return TRUE;
     }
 
@@ -1245,21 +1218,9 @@ KdbpInternalEnter(VOID)
 
     KbdDisableMouse();
 
-    if (KdpDebugMode.Screen &&
-        InbvIsBootDriverInstalled() &&
-        !InbvCheckDisplayOwnership())
-    {
-        /* Acquire ownership and reset the display */
-        InbvAcquireDisplayOwnership();
-        InbvResetDisplay();
-
-        /* Display debugger prompt */
-        InbvSolidColorFill(0, 0, 639, 479, 0);
-        InbvSetTextColor(15);
-        InbvInstallDisplayStringFilter(NULL);
-        InbvEnableDisplayString(TRUE);
-        InbvSetScrollRegion(0, 0, 639, 479);
-    }
+    /* Take control of the display */
+    if (KdpDebugMode.Screen)
+        KdpScreenAcquire();
 
     /* Call the interface's main loop on a different stack */
     Thread = PsGetCurrentThread();
@@ -1271,7 +1232,7 @@ KdbpInternalEnter(VOID)
     Thread->Tcb.StackLimit = (ULONG_PTR)KdbStack;
     Thread->Tcb.KernelStack = (char*)KdbStack + KDB_STACK_SIZE;
 
-    /*KdbpPrint("Switching to KDB stack 0x%08x-0x%08x (Current Stack is 0x%08x)\n", Thread->Tcb.StackLimit, Thread->Tcb.StackBase, Esp);*/
+    // KdbpPrint("Switching to KDB stack 0x%08x-0x%08x (Current Stack is 0x%08x)\n", Thread->Tcb.StackLimit, Thread->Tcb.StackBase, Esp);
 
     KdbpStackSwitchAndCall(KdbStack + KDB_STACK_SIZE - sizeof(ULONG), KdbpCallMainLoop);
 
@@ -1279,6 +1240,11 @@ KdbpInternalEnter(VOID)
     Thread->Tcb.StackBase = SavedStackBase;
     Thread->Tcb.StackLimit = SavedStackLimit;
     Thread->Tcb.KernelStack = SavedKernelStack;
+
+    /* Release the display */
+    if (KdpDebugMode.Screen)
+        KdpScreenRelease();
+
     KbdEnableMouse();
 }
 
@@ -1390,7 +1356,7 @@ KdbEnterDebuggerException(
         EnterConditionMet = FALSE;
     }
 
-    /* If we stopped on one of our breakpoints then let the user know. */
+    /* If we stopped on one of our breakpoints then let the user know */
     KdbLastBreakPointNr = -1;
     KdbEnteredOnSingleStep = FALSE;
 
@@ -1401,7 +1367,7 @@ KdbEnterDebuggerException(
 
         if (ExceptionCode == STATUS_BREAKPOINT)
         {
-            /* ... and restore the original instruction. */
+            /* ... and restore the original instruction */
             if (!NT_SUCCESS(KdbpOverwriteInstruction(KdbCurrentProcess, BreakPoint->Address,
                                                      BreakPoint->Data.SavedInstruction, NULL)))
             {
@@ -1435,7 +1401,7 @@ KdbEnterDebuggerException(
         {
             ASSERT((TrapFrame->EFlags & EFLAGS_TF) == 0);
 
-            /* Delete the temporary breakpoint which was used to step over or into the instruction. */
+            /* Delete the temporary breakpoint which was used to step over or into the instruction */
             KdbpDeleteBreakPoint(-1, BreakPoint);
 
             if (--KdbNumSingleSteps > 0)
@@ -1653,7 +1619,7 @@ KdbEnterDebuggerException(
         return kdHandleException;
     }
 
-    /* Call the main loop. */
+    /* Call the main loop */
     KdbpInternalEnter();
 
     /* Check if we should single step */
@@ -1725,9 +1691,9 @@ continue_execution:
     return ContinueType;
 }
 
+INIT_FUNCTION
 VOID
 NTAPI
-INIT_FUNCTION
 KdbpGetCommandLineSettings(
     PCHAR p1)
 {
@@ -1763,34 +1729,12 @@ KdbpSafeReadMemory(
     IN PVOID Src,
     IN ULONG Bytes)
 {
-    BOOLEAN Result = TRUE;
-
-    switch (Bytes)
-    {
-        case 1:
-        case 2:
-        case 4:
-        case 8:
-            Result = KdpSafeReadMemory((ULONG_PTR)Src, Bytes, Dest);
-            break;
-
-        default:
-        {
-            ULONG_PTR Start, End, Write;
-
-            for (Start = (ULONG_PTR)Src,
-                    End = Start + Bytes,
-                    Write = (ULONG_PTR)Dest;
-                 Result && (Start < End);
-                 Start++, Write++)
-                if (!KdpSafeReadMemory(Start, 1, (PVOID)Write))
-                    Result = FALSE;
-
-            break;
-        }
-    }
-
-    return Result ? STATUS_SUCCESS : STATUS_ACCESS_VIOLATION;
+    return KdpCopyMemoryChunks((ULONG64)(ULONG_PTR)Src,
+                               Dest,
+                               Bytes,
+                               0,
+                               MMDBG_COPY_UNSAFE,
+                               NULL);
 }
 
 NTSTATUS
@@ -1799,16 +1743,10 @@ KdbpSafeWriteMemory(
     IN PVOID Src,
     IN ULONG Bytes)
 {
-    BOOLEAN Result = TRUE;
-    ULONG_PTR Start, End, Write;
-
-    for (Start = (ULONG_PTR)Src,
-            End = Start + Bytes,
-            Write = (ULONG_PTR)Dest;
-         Result && (Start < End);
-         Start++, Write++)
-        if (!KdpSafeWriteMemory(Write, 1, *((PCHAR)Start)))
-            Result = FALSE;
-
-    return Result ? STATUS_SUCCESS : STATUS_ACCESS_VIOLATION;
+    return KdpCopyMemoryChunks((ULONG64)(ULONG_PTR)Dest,
+                               Src,
+                               Bytes,
+                               0,
+                               MMDBG_COPY_UNSAFE | MMDBG_COPY_WRITE,
+                               NULL);
 }

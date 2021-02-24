@@ -21,15 +21,15 @@
 
 extern char __ImageBase;
 #ifdef __GNUC__
-/* .text, .edata and .bss */
+/* .text/.data/.rdata, .edata and .bss */
 #define FREELDR_SECTION_COUNT 3
 #else
 #ifdef _M_AMD64
-/* .text and .pdata */
-#define FREELDR_SECTION_COUNT 2
+/* .text, .rdata/.edata, .pdata and .data/.bss */
+#define FREELDR_SECTION_COUNT 4
 #else
-/* .text and .edata */
-#define FREELDR_SECTION_COUNT 2
+/* .text, .rdata/.edata and .data/.bss */
+#define FREELDR_SECTION_COUNT 3
 #endif
 #endif
 
@@ -58,8 +58,7 @@ typedef struct _FREELDR_MEMORY_DESCRIPTOR
 #define MM_PAGE_SIZE    4096
 #define MM_PAGE_MASK    0xFFF
 #define MM_PAGE_SHIFT    12
-// FIXME: freeldr implementation uses ULONG for page numbers
-#define MM_MAX_PAGE        0xFFFFFFFFFFFFF
+#define MM_MAX_PAGE     0x3FFFF /* freeldr only maps 1 GB */
 
 #define MM_SIZE_TO_PAGES(a)  \
     ( ((a) >> MM_PAGE_SHIFT) + ((a) & MM_PAGE_MASK ? 1 : 0) )
@@ -176,7 +175,8 @@ FrLdrHeapFree(PVOID MemoryPointer, ULONG Tag)
 FORCEINLINE
 PVOID
 FrLdrTempAlloc(
-    ULONG Size, ULONG Tag)
+    _In_ SIZE_T Size,
+    _In_ ULONG Tag)
 {
     return FrLdrHeapAllocateEx(FrLdrTempHeap, Size, Tag);
 }

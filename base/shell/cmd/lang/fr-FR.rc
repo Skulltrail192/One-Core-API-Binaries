@@ -11,19 +11,6 @@ assoc (print all associations)\n\
 assoc .ext (print specific association)\n\
 assoc .ext= (remove specific association)\n\
 assoc .ext=FileType (add new association)\n"
-    STRING_ATTRIB_HELP "Affiche ou change des attributs de fichiers.\n\n\
-ATTRIB [+R | -R] [+A | -A] [+S | -S] [+H | -H] file ...\n\
-       [/S [/D]]\n\n\
-  +   Positionne un attribut\n\
-  -   Enlève un attribut\n\
-  R   Fichier en lecture seule\n\
-  A   Fichier archive\n\
-  S   Fichier système\n\
-  H   Fichier caché\n\
-  /S  Traite les fichiers correspondants dans le répertoire courant\n\
-        et tous les sous-répertoires\n\
-  /D  Traite également les répertoires\n\n\
-Taper ATTRIB sans paramètre pour afficher les attributs de tous les fichiers."
     STRING_ALIAS_HELP "Positionne, enlève ou affiche les alias.\n\n\
 ALIAS [alias=[commande]]\n\n\
   alias     Nom de l'alias.\n\
@@ -37,7 +24,7 @@ Pour effacer un alias de la liste des alias :\n\
     STRING_BEEP_HELP "Émet un bip par le haut-parleur système.\n\nBEEP"
     STRING_CALL_HELP "Appelle un programme batch depuis un autre.\n\n\
 CALL [lecteur:][chemin]fichier [paramètre-batch]\n\n\
-  paramètre-batch  Spécifie les paramètres nécessaires au \n\
+  paramètre-batch  Spécifie les paramètres nécessaires au\n\
                    programme batch."
     STRING_CD_HELP "Change ou affiche le répertoire courant\n\n\
   CHDIR [lecteur:][chemin]\n\
@@ -49,10 +36,6 @@ CALL [lecteur:][chemin]fichier [paramètre-batch]\n\n\
   /D   Changera le lecteur et le répertoire courant.\n\n\
 Taper CD lecteur: pour afficher le répertoire courant sur le disque indiqué.\n\
 Taper CD sans paramètre pour afficher le répertoire courant du disque actuel.\n"
-    STRING_CHCP_HELP "Affiche ou change la page de codes active.\n\n\
-CHCP [nnn]\n\n\
-  nnn   Indique la page de codes .\n\n\
-Taper CHCP sans paramètre pour afficher la page de codes active."
     STRING_CHOICE_HELP "Demande à l'utilisateur de choisir parmi plusieurs choix.\n\n\
 CHOICE  [/C[:]choix][/N][/S][/T[:]c,nn][texte]\n\n\
   /C[:]choix    Spécifier les touches disponibles. Choix par défaut: ON.\n\
@@ -80,11 +63,11 @@ CMD [/[C|K] commande][/P][/Q][/T:ap]\n\n\
   /T:ap        Changer la couleur d'arrière/premier plan\n\
                (voir la commande COLOR.)"
     STRING_COLOR_HELP1 "Change les couleurs de premier et d'arrière plan.\n\n\
-COLOR [attr [/F]] \n\n\
-  attr        Spécifie l'attribut des couleurs de la console\n\
-  /F          remplit la console avec l'attribut de couleur\n\n\
+COLOR [attr [/-F]]\n\n\
+  attr        Spécifie l'attribut de couleur de la console.\n\
+  /-F         Ne remplit pas les espaces blancs avec l'attribut de couleur.\n\n\
 Il y a trois façons de spécifier les couleurs :\n\
-1) [bright] nom on [bright] nom (seules les trois premières lettres \n\
+1) [bright] nom on [bright] nom (seules les trois premières lettres\n\
 sont nécessaires)\n\
 2) décimal on décimal\n\
 3) deux chiffres hexadécimaux\n\n\
@@ -113,6 +96,15 @@ COPY [/V][/Y|/-Y][/A|/B] source [/A|/B]\n\
   /-Y          Affiche un invite de confirmation en cas d'écrasement\n\
                d'un fichier destination existant.\n\n\
 Le switch /Y peut être présent dans la variable d'environnement COPYCMD.\n"
+    STRING_CTTY_HELP "Change le terminal d'I/O standard vers un périphérique\n\
+auxiliaire.\n\n\
+CTTY périph\n\n\
+  périph    Le nouveau terminal d'I/O standard que vous voulez utiliser.\n\
+            Ce nom doit référer vers un périphérique caractère valide:\n\
+            AUX, COMx (x=1..N), CON, LPTx (x=1..N), PRN, NUL.\n\
+            CON est habituellement le périphérique d'I/O standard par défaut.\n\n\
+Pour restaurer le contrôle vers la console standard, entrez: CTTY CON sur\n\
+le périphérique auxiliaire."
     STRING_DATE_HELP1 "\nEntrer la nouvelle date (mm%cdd%cyyyy): "
     STRING_DATE_HELP2 "\nEntrer la nouvelle date (dd%cmm%cyyyy): "
     STRING_DATE_HELP3 "\nEntrer la nouvelle date (yyyy%cmm%cdd): "
@@ -142,14 +134,13 @@ ERASE [/N /P /T /Q /W /Y /Z] fichier ...\n\n\
         A     Fichiers archivables\n\
         H     Fichiers cachés\n\
         -     préfixe signifiant ne pas\n"
-    STRING_DEL_HELP2 "Tous les fichiers du répertoire seront effacés!\n\
-Etes vous sûr(e) (O/N) ?"
+    STRING_DEL_HELP2 "Tous les fichiers du répertoire seront effacés!\nEtes vous sûr(e) (O/N) ? "
     STRING_DEL_HELP3 "    %lu fichier effacé\n"
     STRING_DEL_HELP4 "    %lu fichiers effacés\n"
-    STRING_DELAY_HELP "Attend pendant n secondes ou millisecondes\n\
+    STRING_DELAY_HELP "Attend pendant n secondes ou millisecondes.\n\
 DELAY [/m]n\n\n\
-  /m          spécifie que n est en millisecondes\n\
-              sinon n est en secondes"
+  /m          Spécifie que n est en millisecondes,\n\
+              sinon n est en secondes."
     STRING_DIR_HELP1 "DIR [lecteur:][chemin][fichier] [/A[[:]attributs]] [/B] [/C] [/D] [/L] [/N]\n\
   [/O[[:]ordredetri]] [/P] [/Q] [/R] [/S] [/T[[:]heure]] [/W] [/X] [/4]\n\n\
   [lecteur:][chemin][fichier]\n\
@@ -160,12 +151,12 @@ DELAY [/m]n\n\n\
                S  Fichiers systèmes     -  Préfixe signifiant non\n\
   /B          Utilise le format court (pas d'informations ni de résumé).\n\
   /C          Affiche le séparateur de milliers dans les tailles de fichier.\n\
-              C'est l'option par défaut. Utiliser /-C pour désactiver \n\
+              C'est l'option par défaut. Utiliser /-C pour désactiver\n\
               l'affichage du séparateur.\n\
   /D          Identique au format large mais les fichiers sont triés\n\
               par colonne.\n\
   /L          Utilise les minuscules.\n\
-  /N          Nouveau format de liste longue où les noms de fichiers sont \n\
+  /N          Nouveau format de liste longue où les noms de fichiers sont\n\
               sur la droite.\n\
   /O          Lister les fichiers de façon triée.\n\
   ordre de     N  Par nom (alphabétique) S  Par taille (plus petit d'abord)\n\
@@ -182,7 +173,7 @@ DELAY [/m]n\n\n\
               A  Dernier accès\n\
               W  Dernière modification\n\
   /W          Utilise le format de liste large.\n\
-  /X          Ceci affiche les noms de fichiers courts pour les noms \n\
+  /X          Ceci affiche les noms de fichiers courts pour les noms\n\
               de fichiers longs. Le format est comme pour /N avec\n\
               le nom de fichier court inséré avant le nom de fichier long.\n\
               S'il n'y a pas de nom court, des espaces seront affichés.\n\
@@ -218,18 +209,33 @@ ni passage à la ligne.\n\n\
 Taper ECHO sans paramètre pour afficher le réglage ECHO courant."
     STRING_ECHO_HELP5 "ECHO est %s\n"
     STRING_EXIT_HELP "Sort de l'interpréteur de commandes.\n\nEXIT [/b] [CodeDeFin]\n\n\
-  /B            Quitte seulement un fichier batch.  \n\
+  /B            Quitte seulement un fichier batch.\n\
                 En cas de lancement en dehors d'un fichier batch, cmd.exe sera quittée\n\
   CodeDeFin     ERRORLEVEL prendra cette valeur à la sortie\n"
-    STRING_FOR_HELP1 "Exécute une commande donnée pour chaque fichier d'un ensemble de fichiers.\n\
-FOR %variable IN (ensemble) do commande [paramètres]\n\n\
-  %variable  Spécife un paramètre remplaçable.\n\
-  (ensemble) Spécifie un ensemble d'un ou plusieurs fichiers.\n\
-             Des jokers peuvent être utilisés.\n\
-  commande   Spécifie la commande à éxécuter pour chaque fichier.\n\
-  paramètres Spécifie les paramètres ou switchs pour la commande spécifiée.\n\n\
-Pour utiliser la comamnde FOR dans un programme batch,\n\
-utiliser %%variable au lieu de %variable."
+    STRING_FOR_HELP1 "Exécute une commande donnée pour chaque fichier d'un ensemble de fichiers.\n\n\
+FOR %variable IN (ensemble) DO commande [paramètres]\n\
+FOR /L %variable IN (début,pas,fin) DO commande [paramètres]\n\
+FOR /D %variable IN (ensemble) DO commande [paramètres]\n\
+FOR /R [[lecteur:]chemin] IN (ensemble) DO commande [paramètres]\n\
+FOR /F [""options""] IN (ensemble) DO commande [paramètres]\n\n\
+  /L    Génère une séquence numérique allant de début à fin, incrémenté de pas.\n\
+  /D    L'ensemble se réfère à des répertoires au lieu de fichiers.\n\
+  /R    Exécute la commande pour les fichiers dans l'ensemble du répertoire\n\
+        spécifié (ou bien le répertoire de travail courant si non spécifié)\n\
+        ainsi que chaque sous-répertoire.\n\
+  /F    L'ensemble se réfère au contenu des fichiers de l'ensemble.\n\n\
+  %variable  Spécifie un paramètre remplaçable.\n\
+  (ensemble) Spécifie un ensemble d'un ou plusieurs fichiers. Des caractères\n\
+             jokers peuvent être utilisés.\n\
+  commande   Spécifie la commande à exécuter pour chaque fichier.\n\
+  paramètres Spécifie les paramètres ou commutateurs pour la commande.\n\
+  options    Les options supportées sont : eol, skip, delims, tokens, et\n\
+             usebackq.\n\n\
+Les paramètres remplaçables peuvent être modifiés par l'ajout d'un ~ et d'un\n\
+qualificateur optionnel après le % et avant le nom (par ex. %~X).\n\
+Les qualificateurs supportés sont : f,d,p,n,x,s,a,t,z.\n\n\
+Pour utiliser la comamnde FOR dans un programme batch, utiliser %%variable\n\
+au lieu de %variable."
     STRING_FREE_HELP1 "\nLe nom de volume du lecteur %s est %-11s\n\
 Le numéro de série est %s\n\
   %16s octets d'espace disque total\n\
@@ -252,11 +258,6 @@ commande          Indique la commande à lancer si la condition est vérifiée.\
 chaine1==chaine2  La condition sera vraie si les deux chaines sont identiques.\n\
 EXIST nomfichier  La condition sera vraie si le fichier spécifié existe.\n\
 DEFINED variable  La condition sera vraie si la variable indiquée est définie."
-    STRING_LABEL_HELP1 "Affiche ou change le nom de volume du disque.\n\nLABEL [disque:][nomdevolume]\n"
-    STRING_LABEL_HELP2 "Le nom de volume du disque %c: est %s\n"
-    STRING_LABEL_HELP3 "Le disque %c: n'a pas de nom de volume\n"
-    STRING_LABEL_HELP4 "Le numéro de serie du volume est %04X-%04X\n"
-    STRING_LABEL_HELP5 "Nom de volume (11 Caractères, ENTREE si aucun) ? "
     STRING_LOCALE_HELP1 "L'heure actuelle est "
     STRING_MKDIR_HELP "Crée un répertoire.\n\n\
 MKDIR [lecteur:]chemin\nMD [lecteur:]chemin"
@@ -292,11 +293,11 @@ type          boutons affichés\n\
               les valeurs possibles sont: OK, OKCANCEL,\n\
               YESNO, YESNOCANCEL\n\
 titre         titre de la boite de message\n\
-prompt        texte affiché par la boite de dialogue \n\n\n\
+prompt        texte affiché par la boite de dialogue\n\n\n\
 ERRORLEVEL est modifié suivant le bouton pressé:\n\n\
 YES  :  10    |  NO      :  11\n\
 OK   :  10    |  CANCEL  :  12\n"
-    STRING_PATH_HELP1 "Affiche ou modifie le chemin de recherche pour les fichiers éxécutables.\n\n\
+    STRING_PATH_HELP1 "Affiche ou modifie le chemin de recherche pour les fichiers exécutables.\n\n\
 PATH [[lecteur:][chemin;...]]\nPATH ;\n\n\
 Taper PATH ; pour effacer tous les réglages courants\n\
 et indiquer à l'interpréteur de commandes\n\
@@ -325,7 +326,7 @@ des caractères spéciaux suivants:\n\n\
   $V   Numéro de version de ReactOS\n\
   $_   Retour chariot/saut de ligne\n\
   $$   $ (signe dollar)"
-    STRING_PAUSE_HELP1 "Stoppe l'éxécution d'un fichier batch et affiche le message suivant:\n\
+    STRING_PAUSE_HELP1 "Stoppe l'exécution d'un fichier batch et affiche le message suivant:\n\
 'Appuyer sur une touche pour continuer...' ou un message défini\n\
 par l'utilisateur.\n\n\
 PAUSE [message]"
@@ -375,8 +376,8 @@ REPLACE [lecteur1:][chemin1]nomdefichier [lecteur2:][chemin2] [/P] [/R] [/S] [/W
     STRING_REPLACE_HELP6 "Remplace %s\n"
     STRING_REPLACE_HELP7 "Aucun fichier ajouté\n"
     STRING_REPLACE_HELP8 "%lu fichier(s) ajouté(s)\n"
-    STRING_REPLACE_HELP9 "Ajouter %s (Y/N) "
-    STRING_REPLACE_HELP10 "Remplacer %s (Y/N) "
+    STRING_REPLACE_HELP9 "Ajouter %s (O/N) ? "
+    STRING_REPLACE_HELP10 "Remplacer %s (O/N) ? "
     STRING_REPLACE_HELP11 "Ajoute %s\n"
     STRING_SHIFT_HELP "Change la position de paramètres remplaçables dans un fichier batch.\n\n\
 SHIFT [DOWN]"
@@ -428,7 +429,7 @@ TIMER  [ON|OFF] [/S] [/n] [/Fn]\n\n\
                     1    hh%cmm%css%cdd\n\n\
 En l'absence d'une option ON, OFF ou /S la commande\n\
 changera l'état du chronomètre sélectionné\n\n"
-    STRING_TYPE_HELP1 "Affiche le contenu de fichiers textes.\n\nTYPE [lecteur:][chemin]nomfich \n\
+    STRING_TYPE_HELP1 "Affiche le contenu de fichiers textes.\n\nTYPE [lecteur:][chemin]nomfich\n\
   /P          Ne montre qu'un écran de contenu à la fois.\n"
     STRING_VERIFY_HELP1 "Cette commande ne fait rien !!\n\
 Spécifie s'il faut verifier que vos fichiers sont écrits correctement.\
@@ -481,10 +482,8 @@ titre         titre de la fenêtre"
     STRING_CHOICE_OPTION "ON"
     STRING_COPY_OPTION "ONT"
     STRING_ALIAS_ERROR "Ligne de commande trop longue après remplacement de l'alias!\n"
-    STRING_ASSOC_ERROR "File association not found for extension %s\n"
+    STRING_ASSOC_ERROR "Association de fichier introuvable pour l'extension %s\n"
     STRING_BATCH_ERROR "Erreur à l'ouverture du fichier batch\n"
-    STRING_CHCP_ERROR1 "Page de codes actuelle : %u\n"
-    STRING_CHCP_ERROR4 "Page de codes invalide \n"
     STRING_CHOICE_ERROR "Option invalide. Format attendu : /C[:]options"
     STRING_CHOICE_ERROR_TXT "Option invalide. Format attendu : /T[:]c,nn"
     STRING_CHOICE_ERROR_OPTION "Option invalide : %s"
@@ -495,7 +494,6 @@ titre         titre de la fenêtre"
     STRING_CMD_ERROR5 "Lance cmdexit.bat...\n"
     STRING_COLOR_ERROR1 "L'arrière plan et l'avant plan ne peuvent être de la même couleur"
     STRING_COLOR_ERROR2 "Erreur dans la spécification des couleurs"
-    STRING_COLOR_ERROR3 "Couleur %02x\n"
     STRING_CONSOLE_ERROR "Erreur inconnue : %d\n"
     STRING_COPY_ERROR1 "Erreur : Ne peut ouvrir la source - %s !\n"
     STRING_COPY_ERROR2 "Erreur : Ne peut copier le fichier sur lui-même !\n"
@@ -503,7 +501,7 @@ titre         titre de la fenêtre"
     STRING_COPY_ERROR4 "Erreur : Non implémenté actuellement !\n"
     STRING_DATE_ERROR "Date invalide."
     STRING_DEL_ERROR5 "Le fichier %s va être effacé ! "
-    STRING_DEL_ERROR6 "Etes vous sûr (O/N) ?"
+    STRING_DEL_ERROR6 "Etes vous sûr (O/N) ? "
     STRING_DEL_ERROR7 "Efface : %s\n"
     STRING_ERROR_ERROR1 "Erreur inconnue! Code d'erreur : 0x%lx\n"
     STRING_ERROR_ERROR2 "Erreur de syntaxe"
@@ -514,7 +512,7 @@ titre         titre de la fenêtre"
     STRING_FREE_ERROR1 "Lecteur invalide"
     STRING_FREE_ERROR2 "sans nom"
     STRING_GOTO_ERROR1 "Pas de label indiqué pour GOTO"
-    STRING_GOTO_ERROR2 "Label '%s' non trouvé\n"
+    STRING_GOTO_ERROR2 "Label '%s' introuvable\n"
     STRING_MD_ERROR "Un sous répertoire ou un fichier existe déjà.\n"
     STRING_MD_ERROR2 "Le chemin vers le nouveau répertoire n'existe pas.\n"
     STRING_MOVE_ERROR1 "[OK]\n"
@@ -522,12 +520,12 @@ titre         titre de la fenêtre"
     STRING_REN_ERROR1 "MoveFile() a échoué. Erreur : %lu\n"
     STRING_TIME_ERROR1 "Heure invalide."
     STRING_TYPE_ERROR1 "Option invalide '/%s'\n"
-    STRING_WINDOW_ERROR1 "Fenêtre non trouvée"
+    STRING_WINDOW_ERROR1 "Fenêtre introuvable"
     STRING_ERROR_PARAMETERF_ERROR "Format du paramètre incorrect - %c\n"
     STRING_ERROR_INVALID_SWITCH "Paramètre invalide - /%c\n"
     STRING_ERROR_TOO_MANY_PARAMETERS "Trop de paramètres - %s\n"
-    STRING_ERROR_PATH_NOT_FOUND "Chemin non trouvé\n"
-    STRING_ERROR_FILE_NOT_FOUND "Fichier non trouvé\n"
+    STRING_ERROR_PATH_NOT_FOUND "Chemin introuvable\n"
+    STRING_ERROR_FILE_NOT_FOUND "Fichier introuvable\n"
     STRING_ERROR_REQ_PARAM_MISSING "Paramètre requis manquant\n"
     STRING_ERROR_INVALID_DRIVE "Lecteur spécifié introuvable\n"
     STRING_ERROR_INVALID_PARAM_FORMAT "Format de paramètre incorrect - %s\n"
@@ -538,7 +536,7 @@ titre         titre de la fenêtre"
     STRING_ERROR_DRIVER_NOT_READY "Lecteur non prêt"
     STRING_PATH_ERROR "CMD : Pas dans l'environnement '%s'\n"
     STRING_REPLACE_ERROR1 "Commutateur invalide - %s\n"
-    STRING_REPLACE_ERROR2 "Chemin non trouvé - %s\n"
+    STRING_REPLACE_ERROR2 "Chemin introuvable - %s\n"
     STRING_REPLACE_ERROR3 "La syntaxe du nom de fichier, du répertoire, ou du nom de volume est incorrecte.\n"
     STRING_REPLACE_ERROR4 "Combinaison de paramètres invalide\n"
     STRING_REPLACE_ERROR5 "Accès refusé - %s\n"

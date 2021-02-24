@@ -20,8 +20,6 @@ import "wtypes.idl";
 import "propidl.idl";
 import "ocidl.idl";
 
-cpp_quote ("#include \"dcommon.h\"")
-
 cpp_quote("#define WINCODEC_SDK_VERSION 0x0236")
 
 #define CODEC_FORCE_DWORD 0x7fffffff
@@ -189,6 +187,12 @@ typedef enum WICPngFilterOption {
     WICPNFFILTEROPTION_FORCE_DWORD = CODEC_FORCE_DWORD
 } WICPngFilterOption;
 
+typedef enum WICSectionAccessLevel {
+    WICSectionAccessLevelRead = 0x00000001,
+    WICSectionAccessLevelReadWrite = 0x00000003,
+    WICSectionAccessLevel_FORCE_DWORD = CODEC_FORCE_DWORD
+} WICSectionAccessLevel;
+
 typedef GUID WICPixelFormatGUID;
 typedef REFGUID REFWICPixelFormatGUID;
 
@@ -223,11 +227,10 @@ cpp_quote("DEFINE_GUID(GUID_WICPixelFormat48bppRGB, 0x6fddc324,0x4e03,0x4bfe,0xb
 cpp_quote("DEFINE_GUID(GUID_WICPixelFormat64bppRGBA, 0x6fddc324,0x4e03,0x4bfe,0xb1,0x85,0x3d,0x77,0x76,0x8d,0xc9,0x16);")
 cpp_quote("DEFINE_GUID(GUID_WICPixelFormat64bppPRGBA, 0x6fddc324,0x4e03,0x4bfe,0xb1,0x85,0x3d,0x77,0x76,0x8d,0xc9,0x17);")
 
-cpp_quote("DEFINE_GUID(GUID_WICPixelFormat32bppCMYK, 0x6fddc324,0x4e03,0x4bfe,0xb1,0x85,0x3d,0x77,0x76,0x8d,0xc9,0x1c);")
+cpp_quote("DEFINE_GUID(GUID_WICPixelFormat128bppRGBAFloat, 0x6fddc324,0x4e03,0x4bfe,0xb1,0x85,0x3d,0x77,0x76,0x8d,0xc9,0x19);")
 
-cpp_quote("#if 0")
-typedef DWORD *D2D1_PIXEL_FORMAT;
-cpp_quote ("#endif")
+cpp_quote("DEFINE_GUID(GUID_WICPixelFormat32bppCMYK, 0x6fddc324,0x4e03,0x4bfe,0xb1,0x85,0x3d,0x77,0x76,0x8d,0xc9,0x1c);")
+cpp_quote("DEFINE_GUID(GUID_WICPixelFormat64bppCMYK, 0x6fddc324,0x4e03,0x4bfe,0xb1,0x85,0x3d,0x77,0x76,0x8d,0xc9,0x1f);")
 
 typedef struct WICRect {
     INT X;
@@ -244,21 +247,8 @@ typedef struct WICBitmapPattern {
     BOOL EndOfStream;
 } WICBitmapPattern;
 
-typedef struct WICImageParameters
-{
-    D2D1_PIXEL_FORMAT PixelFormat;
-    FLOAT DpiX;
-    FLOAT DpiY;
-    FLOAT Top;
-    FLOAT Left;
-    UINT32 PixelWidth;
-    UINT32 PixelHeight;
-} WICImageParameters;
-
 typedef UINT32 WICColor;
 
-interface ID2D1Device;
-interface ID2D1Image;
 interface IWICPalette;
 
 [
@@ -869,29 +859,6 @@ interface IWICFastMetadataEncoder : IUnknown
         [out] IWICMetadataQueryWriter **ppIMetadataQueryWriter);
 }
 
-[
-    object,
-    uuid(04c75bf8-3ce1-473b-acc5-3cc4f5e94999),
-    local
-]
-interface IWICImageEncoder : IUnknown
-{
-    HRESULT WriteFrame(
-        [in] ID2D1Image *image,
-        [in] IWICBitmapFrameEncode *encode,
-        [in, unique] const WICImageParameters *parameters);
-
-    HRESULT WriteFrameThumbnail(
-        [in] ID2D1Image *image,
-        [in] IWICBitmapFrameEncode *encode,
-        [in, unique] const WICImageParameters *parameters);
-
-    HRESULT WriteThumbnail(
-        [in] ID2D1Image *image,
-        [in] IWICBitmapEncoder *encoder,
-        [in, unique] const WICImageParameters *parameters);
-}
-
 cpp_quote("DEFINE_GUID(CLSID_WICImagingFactory,  0xcacaf262,0x9370,0x4615,0xa1,0x3b,0x9f,0x55,0x39,0xda,0x4c,0x0a);")
 cpp_quote("DEFINE_GUID(CLSID_WICImagingFactory1, 0xcacaf262,0x9370,0x4615,0xa1,0x3b,0x9f,0x55,0x39,0xda,0x4c,0x0a);")
 cpp_quote("DEFINE_GUID(CLSID_WICImagingFactory2, 0x317d06e8,0x5f24,0x433d,0xbd,0xf7,0x79,0xce,0x68,0xd8,0xab,0xc2);")
@@ -1029,9 +996,6 @@ interface IWICImagingFactory : IUnknown
 ]
 interface IWICImagingFactory2 : IWICImagingFactory
 {
-    HRESULT CreateImageEncoder(
-        [in] ID2D1Device *device,
-        [out] IWICImageEncoder **encoder);
 }
 
 [
@@ -1058,6 +1022,8 @@ interface IWICEnumMetadataItem : IUnknown
 }
 
 cpp_quote("HRESULT WINAPI WICConvertBitmapSource(REFWICPixelFormatGUID dstFormat, IWICBitmapSource *pISrc, IWICBitmapSource **ppIDst);")
+cpp_quote("HRESULT WINAPI WICCreateBitmapFromSection(UINT width, UINT height, REFWICPixelFormatGUID format, HANDLE section, UINT stride, UINT offset, IWICBitmap **bitmap);")
+cpp_quote("HRESULT WINAPI WICCreateBitmapFromSectionEx(UINT width, UINT height, REFWICPixelFormatGUID format, HANDLE section, UINT stride, UINT offset, WICSectionAccessLevel access, IWICBitmap **bitmap);")
 
 cpp_quote("HRESULT WINAPI WICMapGuidToShortName(REFGUID,UINT,WCHAR *,UINT *);")
 cpp_quote("HRESULT WINAPI WICMapShortNameToGuid(PCWSTR,GUID *);")

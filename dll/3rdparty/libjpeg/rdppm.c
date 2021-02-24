@@ -2,7 +2,7 @@
  * rdppm.c
  *
  * Copyright (C) 1991-1997, Thomas G. Lane.
- * Modified 2009 by Bill Allombert, Guido Vollbeding.
+ * Modified 2009-2019 by Bill Allombert, Guido Vollbeding.
  * This file is part of the Independent JPEG Group's software.
  * For conditions of distribution and use, see the accompanying README file.
  *
@@ -19,11 +19,6 @@
  * the file is indeed PPM format).
  */
 
-#include "cdjpeg.h"		/* Common decls for cjpeg/djpeg applications */
-
-#ifdef PPM_SUPPORTED
-
-
 /* Portions of this code are based on the PBMPLUS library, which is:
 **
 ** Copyright (C) 1988 by Jef Poskanzer.
@@ -36,6 +31,10 @@
 ** implied warranty.
 */
 
+#include "cdjpeg.h"		/* Common decls for cjpeg/djpeg applications */
+
+#ifdef PPM_SUPPORTED
+
 
 /* Macros to deal with unsigned chars as efficiently as compiler allows */
 
@@ -43,11 +42,10 @@
 typedef unsigned char U_CHAR;
 #define UCH(x)	((int) (x))
 #else /* !HAVE_UNSIGNED_CHAR */
-#ifdef CHAR_IS_UNSIGNED
 typedef char U_CHAR;
+#ifdef CHAR_IS_UNSIGNED
 #define UCH(x)	((int) (x))
 #else
-typedef char U_CHAR;
 #define UCH(x)	((int) (x) & 0xFF)
 #endif
 #endif /* HAVE_UNSIGNED_CHAR */
@@ -76,6 +74,7 @@ typedef struct {
   JSAMPROW pixrow;		/* FAR pointer to same */
   size_t buffer_width;		/* width of I/O buffer */
   JSAMPLE *rescale;		/* => maxval-remapping array, or NULL */
+  unsigned int maxval;
 } ppm_source_struct;
 
 typedef ppm_source_struct * ppm_source_ptr;
@@ -146,11 +145,16 @@ get_text_gray_row (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   FILE * infile = source->pub.input_file;
   register JSAMPROW ptr;
   register JSAMPLE *rescale = source->rescale;
+  unsigned int maxval = source->maxval;
   JDIMENSION col;
 
   ptr = source->pub.buffer[0];
   for (col = cinfo->image_width; col > 0; col--) {
-    *ptr++ = rescale[read_pbm_integer(cinfo, infile)];
+    register unsigned int temp;
+    temp = read_pbm_integer(cinfo, infile);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
+    *ptr++ = rescale[temp];
   }
   return 1;
 }
@@ -164,13 +168,24 @@ get_text_rgb_row (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   FILE * infile = source->pub.input_file;
   register JSAMPROW ptr;
   register JSAMPLE *rescale = source->rescale;
+  unsigned int maxval = source->maxval;
   JDIMENSION col;
 
   ptr = source->pub.buffer[0];
   for (col = cinfo->image_width; col > 0; col--) {
-    *ptr++ = rescale[read_pbm_integer(cinfo, infile)];
-    *ptr++ = rescale[read_pbm_integer(cinfo, infile)];
-    *ptr++ = rescale[read_pbm_integer(cinfo, infile)];
+    register unsigned int temp;
+    temp = read_pbm_integer(cinfo, infile);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
+    *ptr++ = rescale[temp];
+    temp = read_pbm_integer(cinfo, infile);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
+    *ptr++ = rescale[temp];
+    temp = read_pbm_integer(cinfo, infile);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
+    *ptr++ = rescale[temp];
   }
   return 1;
 }
@@ -184,6 +199,7 @@ get_scaled_gray_row (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   register JSAMPROW ptr;
   register U_CHAR * bufferptr;
   register JSAMPLE *rescale = source->rescale;
+  unsigned int maxval = source->maxval;
   JDIMENSION col;
 
   if (! ReadOK(source->pub.input_file, source->iobuffer, source->buffer_width))
@@ -191,7 +207,11 @@ get_scaled_gray_row (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   ptr = source->pub.buffer[0];
   bufferptr = source->iobuffer;
   for (col = cinfo->image_width; col > 0; col--) {
-    *ptr++ = rescale[UCH(*bufferptr++)];
+    register unsigned int temp;
+    temp = (unsigned int) UCH(*bufferptr++);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
+    *ptr++ = rescale[temp];
   }
   return 1;
 }
@@ -205,6 +225,7 @@ get_scaled_rgb_row (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   register JSAMPROW ptr;
   register U_CHAR * bufferptr;
   register JSAMPLE *rescale = source->rescale;
+  unsigned int maxval = source->maxval;
   JDIMENSION col;
 
   if (! ReadOK(source->pub.input_file, source->iobuffer, source->buffer_width))
@@ -212,9 +233,19 @@ get_scaled_rgb_row (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   ptr = source->pub.buffer[0];
   bufferptr = source->iobuffer;
   for (col = cinfo->image_width; col > 0; col--) {
-    *ptr++ = rescale[UCH(*bufferptr++)];
-    *ptr++ = rescale[UCH(*bufferptr++)];
-    *ptr++ = rescale[UCH(*bufferptr++)];
+    register unsigned int temp;
+    temp = (unsigned int) UCH(*bufferptr++);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
+    *ptr++ = rescale[temp];
+    temp = (unsigned int) UCH(*bufferptr++);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
+    *ptr++ = rescale[temp];
+    temp = (unsigned int) UCH(*bufferptr++);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
+    *ptr++ = rescale[temp];
   }
   return 1;
 }
@@ -243,6 +274,7 @@ get_word_gray_row (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   register JSAMPROW ptr;
   register U_CHAR * bufferptr;
   register JSAMPLE *rescale = source->rescale;
+  unsigned int maxval = source->maxval;
   JDIMENSION col;
 
   if (! ReadOK(source->pub.input_file, source->iobuffer, source->buffer_width))
@@ -250,9 +282,11 @@ get_word_gray_row (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   ptr = source->pub.buffer[0];
   bufferptr = source->iobuffer;
   for (col = cinfo->image_width; col > 0; col--) {
-    register int temp;
-    temp  = UCH(*bufferptr++) << 8;
-    temp |= UCH(*bufferptr++);
+    register unsigned int temp;
+    temp = ((unsigned int) UCH(*bufferptr++)) << 8;
+    temp |= (unsigned int) UCH(*bufferptr++);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
     *ptr++ = rescale[temp];
   }
   return 1;
@@ -267,6 +301,7 @@ get_word_rgb_row (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   register JSAMPROW ptr;
   register U_CHAR * bufferptr;
   register JSAMPLE *rescale = source->rescale;
+  unsigned int maxval = source->maxval;
   JDIMENSION col;
 
   if (! ReadOK(source->pub.input_file, source->iobuffer, source->buffer_width))
@@ -274,15 +309,21 @@ get_word_rgb_row (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   ptr = source->pub.buffer[0];
   bufferptr = source->iobuffer;
   for (col = cinfo->image_width; col > 0; col--) {
-    register int temp;
-    temp  = UCH(*bufferptr++) << 8;
-    temp |= UCH(*bufferptr++);
+    register unsigned int temp;
+    temp = ((unsigned int) UCH(*bufferptr++)) << 8;
+    temp |= (unsigned int) UCH(*bufferptr++);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
     *ptr++ = rescale[temp];
-    temp  = UCH(*bufferptr++) << 8;
-    temp |= UCH(*bufferptr++);
+    temp = ((unsigned int) UCH(*bufferptr++)) << 8;
+    temp |= (unsigned int) UCH(*bufferptr++);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
     *ptr++ = rescale[temp];
-    temp  = UCH(*bufferptr++) << 8;
-    temp |= UCH(*bufferptr++);
+    temp = ((unsigned int) UCH(*bufferptr++)) << 8;
+    temp |= (unsigned int) UCH(*bufferptr++);
+    if (temp > maxval)
+      ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
     *ptr++ = rescale[temp];
   }
   return 1;
@@ -315,7 +356,6 @@ start_input_ppm (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
     break;
   default:
     ERREXIT(cinfo, JERR_PPM_NOT);
-    break;
   }
 
   /* fetch the remaining header info */
@@ -326,9 +366,14 @@ start_input_ppm (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   if (w <= 0 || h <= 0 || maxval <= 0) /* error check */
     ERREXIT(cinfo, JERR_PPM_NOT);
 
+  if (((long) w      >> 24) ||	/* sanity check for buffer allocation below */
+      ((long) maxval >> 16))	/* support max 16-bit (2-byte) sample values */
+    ERREXIT(cinfo, JERR_PPM_OUTOFRANGE);
+
   cinfo->data_precision = BITS_IN_JSAMPLE; /* we always rescale data to this */
   cinfo->image_width = (JDIMENSION) w;
   cinfo->image_height = (JDIMENSION) h;
+  source->maxval = maxval;
 
   /* initialize flags to most common settings */
   need_iobuffer = TRUE;		/* do we need an I/O buffer? */
@@ -386,10 +431,9 @@ start_input_ppm (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
   /* Allocate space for I/O buffer: 1 or 3 bytes or words/pixel. */
   if (need_iobuffer) {
     source->buffer_width = (size_t) w * cinfo->input_components *
-      ((maxval<=255) ? SIZEOF(U_CHAR) : (2*SIZEOF(U_CHAR)));
-    source->iobuffer = (U_CHAR *)
-      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
-				  source->buffer_width);
+      ((maxval <= 255) ? SIZEOF(U_CHAR) : (2 * SIZEOF(U_CHAR)));
+    source->iobuffer = (U_CHAR *) (*cinfo->mem->alloc_small)
+      ((j_common_ptr) cinfo, JPOOL_IMAGE, source->buffer_width);
   }
 
   /* Create compressor input buffer. */
@@ -402,9 +446,8 @@ start_input_ppm (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
     source->pub.buffer_height = 1;
   } else {
     /* Need to translate anyway, so make a separate sample buffer. */
-    source->pub.buffer = (*cinfo->mem->alloc_sarray)
-      ((j_common_ptr) cinfo, JPOOL_IMAGE,
-       (JDIMENSION) w * cinfo->input_components, (JDIMENSION) 1);
+    source->pub.buffer = (*cinfo->mem->alloc_sarray) ((j_common_ptr) cinfo,
+      JPOOL_IMAGE, (JDIMENSION) w * cinfo->input_components, (JDIMENSION) 1);
     source->pub.buffer_height = 1;
   }
 
@@ -413,13 +456,12 @@ start_input_ppm (j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
     INT32 val, half_maxval;
 
     /* On 16-bit-int machines we have to be careful of maxval = 65535 */
-    source->rescale = (JSAMPLE *)
-      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
-				  (size_t) (((long) maxval + 1L) * SIZEOF(JSAMPLE)));
+    source->rescale = (JSAMPLE *) (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo,
+      JPOOL_IMAGE, ((size_t) maxval + (size_t) 1) * SIZEOF(JSAMPLE));
     half_maxval = maxval / 2;
     for (val = 0; val <= (INT32) maxval; val++) {
       /* The multiplication here must be done in 32 bits to avoid overflow */
-      source->rescale[val] = (JSAMPLE) ((val*MAXJSAMPLE + half_maxval)/maxval);
+      source->rescale[val] = (JSAMPLE) ((val * MAXJSAMPLE + half_maxval) / maxval);
     }
   }
 }
@@ -446,14 +488,13 @@ jinit_read_ppm (j_compress_ptr cinfo)
   ppm_source_ptr source;
 
   /* Create module interface object */
-  source = (ppm_source_ptr)
-      (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
-				  SIZEOF(ppm_source_struct));
+  source = (ppm_source_ptr) (*cinfo->mem->alloc_small)
+    ((j_common_ptr) cinfo, JPOOL_IMAGE, SIZEOF(ppm_source_struct));
   /* Fill in method ptrs, except get_pixel_rows which start_input sets */
   source->pub.start_input = start_input_ppm;
   source->pub.finish_input = finish_input_ppm;
 
-  return (cjpeg_source_ptr) source;
+  return &source->pub;
 }
 
 #endif /* PPM_SUPPORTED */

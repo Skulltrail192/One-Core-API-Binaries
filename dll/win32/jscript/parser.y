@@ -19,6 +19,12 @@
 %{
 
 #include "jscript.h"
+#include "engine.h"
+#include "parser.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(jscript);
 
 static int parser_error(parser_ctx_t*,const char*);
 static void set_error(parser_ctx_t*,UINT);
@@ -31,16 +37,18 @@ typedef struct _statement_list_t {
     statement_t *tail;
 } statement_list_t;
 
-static literal_t *new_string_literal(parser_ctx_t*,const WCHAR*);
+static literal_t *new_string_literal(parser_ctx_t*,jsstr_t*);
 static literal_t *new_null_literal(parser_ctx_t*);
 
 typedef struct _property_list_t {
-    prop_val_t *head;
-    prop_val_t *tail;
+    property_definition_t *head;
+    property_definition_t *tail;
 } property_list_t;
 
-static property_list_t *new_property_list(parser_ctx_t*,literal_t*,expression_t*);
-static property_list_t *property_list_add(parser_ctx_t*,property_list_t*,literal_t*,expression_t*);
+static property_definition_t *new_property_definition(parser_ctx_t *ctx, property_definition_type_t,
+                                                      literal_t *name, expression_t *value);
+static property_list_t *new_property_list(parser_ctx_t*,property_definition_t*);
+static property_list_t *property_list_add(parser_ctx_t*,property_list_t*,property_definition_t*);
 
 typedef struct _element_list_t {
     array_element_t *head;
@@ -133,13 +141,13 @@ static source_elements_t *source_elements_add_statement(source_elements_t*,state
 
 %lex-param { parser_ctx_t *ctx }
 %parse-param { parser_ctx_t *ctx }
-%pure-parser
+%define api.pure
 %start Program
 
 %union {
     int                     ival;
     const WCHAR             *srcptr;
-    LPCWSTR                 wstr;
+    jsstr_t                 *str;
     literal_t               *literal;
     struct _argument_list_t *argument_list;
     case_clausule_t         *case_clausule;
@@ -150,6 +158,7 @@ static source_elements_t *source_elements_add_statement(source_elements_t*,state
     const WCHAR            *identifier;
     struct _parameter_list_t *parameter_list;
     struct _property_list_t *property_list;
+    property_definition_t   *property_definition;
     source_elements_t       *source_elements;
     statement_t             *statement;
     struct _statement_list_t *statement_list;
@@ -158,17 +167,17 @@ static source_elements_t *source_elements_add_statement(source_elements_t*,state
 }
 
 /* keywords */
-%token kBREAK kCASE kCATCH kCONTINUE kDEFAULT kDELETE kDO kELSE kIF kFINALLY kFOR kIN
-%token kINSTANCEOF kNEW kNULL kRETURN kSWITCH kTHIS kTHROW kTRUE kFALSE kTRY kTYPEOF kVAR kVOID kWHILE kWITH
+%token <identifier> kBREAK kCASE kCATCH kCONTINUE kDEFAULT kDELETE kDO kELSE kFUNCTION kIF kFINALLY kFOR kGET kIN kSET
+%token <identifier> kINSTANCEOF kNEW kNULL kRETURN kSWITCH kTHIS kTHROW kTRUE kFALSE kTRY kTYPEOF kVAR kVOID kWHILE kWITH
 %token tANDAND tOROR tINC tDEC tHTMLCOMMENT kDIVEQ kDCOL
 
-%token <srcptr> kFUNCTION '}'
+%token <srcptr> '}'
 
 /* tokens */
 %token <identifier> tIdentifier
 %token <ival> tAssignOper tEqOper tShiftOper tRelOper
 %token <literal> tNumericLiteral tBooleanLiteral
-%token <wstr> tStringLiteral
+%token <str> tStringLiteral
 %token tEOF
 
 %type <source_elements> SourceElements
@@ -215,6 +224,7 @@ static source_elements_t *source_elements_add_statement(source_elements_t*,state
 %type <expr> CallExpression
 %type <expr> MemberExpression
 %type <expr> PrimaryExpression
+%type <expr> GetterSetterMethod
 %type <identifier> Identifier_opt
 %type <variable_list> VariableDeclarationList
 %type <variable_list> VariableDeclarationListNoIn
@@ -231,10 +241,12 @@ static source_elements_t *source_elements_add_statement(source_elements_t*,state
 %type <ival> Elision Elision_opt
 %type <element_list> ElementList
 %type <property_list> PropertyNameAndValueList
+%type <property_definition> PropertyDefinition
 %type <literal> PropertyName
 %type <literal> BooleanLiteral
-%type <srcptr> KFunction
+%type <srcptr> KFunction left_bracket
 %type <ival> AssignOper
+%type <identifier> IdentifierName ReservedAsIdentifier
 
 %nonassoc LOWER_THAN_ELSE
 %nonassoc kELSE
@@ -266,7 +278,7 @@ FunctionExpression
                                 { $$ = new_function_expression(ctx, $4, $6, $9, $2, $1, $10-$1+1); }
 
 KFunction
-        : kFUNCTION             { $$ = $1; }
+        : kFUNCTION             { $$ = ctx->ptr - 8; }
 
 /* ECMA-262 3rd Edition    13 */
 FunctionBody
@@ -705,7 +717,7 @@ MemberExpression
         | FunctionExpression    { $$ = $1; }
         | MemberExpression '[' Expression ']'
                                 { $$ = new_binary_expression(ctx, EXPR_ARRAY, $1, $3); }
-        | MemberExpression '.' tIdentifier
+        | MemberExpression '.' IdentifierName
                                 { $$ = new_member_expression(ctx, $1, $3); }
         | kNEW MemberExpression Arguments
                                 { $$ = new_new_expression(ctx, $2, $3); }
@@ -718,7 +730,7 @@ CallExpression
                                 { $$ = new_call_expression(ctx, $1, $2); }
         | CallExpression '[' Expression ']'
                                 { $$ = new_binary_expression(ctx, EXPR_ARRAY, $1, $3); }
-        | CallExpression '.' tIdentifier
+        | CallExpression '.' IdentifierName
                                 { $$ = new_member_expression(ctx, $1, $3); }
 
 /* ECMA-262 3rd Edition    11.2 */
@@ -771,17 +783,37 @@ ObjectLiteral
         : '{' '}'               { $$ = new_prop_and_value_expression(ctx, NULL); }
         | '{' PropertyNameAndValueList '}'
                                 { $$ = new_prop_and_value_expression(ctx, $2); }
+        | '{' PropertyNameAndValueList ',' '}'
+        {
+            if(ctx->script->version < 2) {
+                WARN("Trailing comma in object literal is illegal in legacy mode.\n");
+                YYABORT;
+            }
+            $$ = new_prop_and_value_expression(ctx, $2);
+        }
 
 /* ECMA-262 3rd Edition    11.1.5 */
 PropertyNameAndValueList
-        : PropertyName ':' AssignmentExpression
-                                { $$ = new_property_list(ctx, $1, $3); }
-        | PropertyNameAndValueList ',' PropertyName ':' AssignmentExpression
-                                { $$ = property_list_add(ctx, $1, $3, $5); }
+        : PropertyDefinition    { $$ = new_property_list(ctx, $1); }
+        | PropertyNameAndValueList ',' PropertyDefinition
+                                { $$ = property_list_add(ctx, $1, $3); }
 
-/* ECMA-262 3rd Edition    11.1.5 */
+/* ECMA-262 5.1 Edition    12.2.6 */
+PropertyDefinition
+        : PropertyName ':' AssignmentExpression
+                                { $$ = new_property_definition(ctx, PROPERTY_DEFINITION_VALUE, $1, $3); }
+        | kGET PropertyName GetterSetterMethod
+                                { $$ = new_property_definition(ctx, PROPERTY_DEFINITION_GETTER, $2, $3); }
+        | kSET PropertyName GetterSetterMethod
+                                { $$ = new_property_definition(ctx, PROPERTY_DEFINITION_SETTER, $2, $3); }
+
+GetterSetterMethod
+        : left_bracket FormalParameterList_opt right_bracket '{' FunctionBody '}'
+                                { $$ = new_function_expression(ctx, NULL, $2, $5, NULL, $1, $6-$1); }
+
+/* Ecma-262 3rd Edition    11.1.5 */
 PropertyName
-        : tIdentifier           { $$ = new_string_literal(ctx, $1); }
+        : IdentifierName        { $$ = new_string_literal(ctx, compiler_alloc_string_len(ctx->compiler, $1, lstrlenW($1))); }
         | tStringLiteral        { $$ = new_string_literal(ctx, $1); }
         | tNumericLiteral       { $$ = $1; }
 
@@ -789,6 +821,51 @@ PropertyName
 Identifier_opt
         : /* empty*/            { $$ = NULL; }
         | tIdentifier           { $$ = $1; }
+
+/* ECMA-262 5.1 Edition    7.6 */
+IdentifierName
+        : tIdentifier           { $$ = $1; }
+        | ReservedAsIdentifier
+        {
+            if(ctx->script->version < SCRIPTLANGUAGEVERSION_ES5) {
+                WARN("%s keyword used as an identifier in legacy mode.\n",
+                     debugstr_w($1));
+                YYABORT;
+            }
+            $$ = $1;
+        }
+
+ReservedAsIdentifier
+        : kBREAK                { $$ = $1; }
+        | kCASE                 { $$ = $1; }
+        | kCATCH                { $$ = $1; }
+        | kCONTINUE             { $$ = $1; }
+        | kDEFAULT              { $$ = $1; }
+        | kDELETE               { $$ = $1; }
+        | kDO                   { $$ = $1; }
+        | kELSE                 { $$ = $1; }
+        | kFALSE                { $$ = $1; }
+        | kFINALLY              { $$ = $1; }
+        | kFOR                  { $$ = $1; }
+        | kFUNCTION             { $$ = $1; }
+        | kGET                  { $$ = $1; }
+        | kIF                   { $$ = $1; }
+        | kIN                   { $$ = $1; }
+        | kINSTANCEOF           { $$ = $1; }
+        | kNEW                  { $$ = $1; }
+        | kNULL                 { $$ = $1; }
+        | kRETURN               { $$ = $1; }
+        | kSET                  { $$ = $1; }
+        | kSWITCH               { $$ = $1; }
+        | kTHIS                 { $$ = $1; }
+        | kTHROW                { $$ = $1; }
+        | kTRUE                 { $$ = $1; }
+        | kTRY                  { $$ = $1; }
+        | kTYPEOF               { $$ = $1; }
+        | kVAR                  { $$ = $1; }
+        | kVOID                 { $$ = $1; }
+        | kWHILE                { $$ = $1; }
+        | kWITH                 { $$ = $1; }
 
 /* ECMA-262 3rd Edition    7.8 */
 Literal
@@ -812,7 +889,7 @@ semicolon_opt
         | error                 { if(!allow_auto_semicolon(ctx)) {YYABORT;} }
 
 left_bracket
-        : '('
+        : '('                   { $$ = ctx->ptr; }
         | error                 { set_error(ctx, JS_E_MISSING_LBRACKET); YYABORT; }
 
 right_bracket
@@ -844,12 +921,12 @@ static void *new_statement(parser_ctx_t *ctx, statement_type_t type, size_t size
     return stat;
 }
 
-static literal_t *new_string_literal(parser_ctx_t *ctx, const WCHAR *str)
+static literal_t *new_string_literal(parser_ctx_t *ctx, jsstr_t *str)
 {
     literal_t *ret = parser_alloc(ctx, sizeof(literal_t));
 
     ret->type = LT_STRING;
-    ret->u.wstr = str;
+    ret->u.str = str;
 
     return ret;
 }
@@ -863,10 +940,12 @@ static literal_t *new_null_literal(parser_ctx_t *ctx)
     return ret;
 }
 
-static prop_val_t *new_prop_val(parser_ctx_t *ctx, literal_t *name, expression_t *value)
+static property_definition_t *new_property_definition(parser_ctx_t *ctx, property_definition_type_t type,
+                                                      literal_t *name, expression_t *value)
 {
-    prop_val_t *ret = parser_alloc(ctx, sizeof(prop_val_t));
+    property_definition_t *ret = parser_alloc(ctx, sizeof(property_definition_t));
 
+    ret->type = type;
     ret->name = name;
     ret->value = value;
     ret->next = NULL;
@@ -874,19 +953,16 @@ static prop_val_t *new_prop_val(parser_ctx_t *ctx, literal_t *name, expression_t
     return ret;
 }
 
-static property_list_t *new_property_list(parser_ctx_t *ctx, literal_t *name, expression_t *value)
+static property_list_t *new_property_list(parser_ctx_t *ctx, property_definition_t *prop)
 {
     property_list_t *ret = parser_alloc_tmp(ctx, sizeof(property_list_t));
-
-    ret->head = ret->tail = new_prop_val(ctx, name, value);
-
+    ret->head = ret->tail = prop;
     return ret;
 }
 
-static property_list_t *property_list_add(parser_ctx_t *ctx, property_list_t *list, literal_t *name, expression_t *value)
+static property_list_t *property_list_add(parser_ctx_t *ctx, property_list_t *list, property_definition_t *prop)
 {
-    list->tail = list->tail->next = new_prop_val(ctx, name, value);
-
+    list->tail = list->tail->next = prop;
     return list;
 }
 
@@ -1490,7 +1566,7 @@ void parser_release(parser_ctx_t *ctx)
     heap_free(ctx);
 }
 
-HRESULT script_parse(script_ctx_t *ctx, const WCHAR *code, const WCHAR *delimiter, BOOL from_eval,
+HRESULT script_parse(script_ctx_t *ctx, struct _compiler_ctx_t *compiler, const WCHAR *code, const WCHAR *delimiter, BOOL from_eval,
         parser_ctx_t **ret)
 {
     parser_ctx_t *parser_ctx;
@@ -1504,10 +1580,10 @@ HRESULT script_parse(script_ctx_t *ctx, const WCHAR *code, const WCHAR *delimite
         return E_OUTOFMEMORY;
 
     parser_ctx->hres = JS_E_SYNTAX;
-    parser_ctx->is_html = delimiter && !strcmpiW(delimiter, html_tagW);
+    parser_ctx->is_html = delimiter && !wcsicmp(delimiter, html_tagW);
 
     parser_ctx->begin = parser_ctx->ptr = code;
-    parser_ctx->end = parser_ctx->begin + strlenW(parser_ctx->begin);
+    parser_ctx->end = parser_ctx->begin + lstrlenW(parser_ctx->begin);
 
     script_addref(ctx);
     parser_ctx->script = ctx;
@@ -1515,7 +1591,10 @@ HRESULT script_parse(script_ctx_t *ctx, const WCHAR *code, const WCHAR *delimite
     mark = heap_pool_mark(&ctx->tmp_heap);
     heap_pool_init(&parser_ctx->heap);
 
+    parser_ctx->compiler = compiler;
     parser_parse(parser_ctx);
+    parser_ctx->compiler = NULL;
+
     heap_pool_clear(mark);
     hres = parser_ctx->hres;
     if(FAILED(hres)) {
