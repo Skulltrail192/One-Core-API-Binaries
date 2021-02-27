@@ -270,6 +270,7 @@ else()
     add_subdirectory(subsystems)
     add_subdirectory(sdk/tools/wpp)
     add_subdirectory(win32ss)
+    add_subdirectory(wrappers)
 
     # Create the registry hives
     create_registry_hives()

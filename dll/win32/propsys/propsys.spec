@@ -208,3 +208,6 @@
 @ stub VariantToUInt64Array
 @ stub VariantToUInt64ArrayAlloc
 @ stub VariantToUInt64WithDefault
+
+423 stdcall -noname PSStrFormatByteSizeEx(long long long wstr long)
+@ stdcall PSFormatForDisplay(ptr ptr long wstr long)

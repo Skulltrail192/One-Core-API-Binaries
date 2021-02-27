@@ -7,6 +7,7 @@ list(APPEND SOURCE
     propstore.c
     propsys_main.c
     propvar.c
+    unimplemented.c
     precomp.h
     ${CMAKE_CURRENT_BINARY_DIR}/propsys_stubs.c)
 

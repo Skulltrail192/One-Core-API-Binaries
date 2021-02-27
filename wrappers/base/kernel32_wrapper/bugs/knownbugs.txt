@@ -1,0 +1,4 @@
+- Visual C++ 2012+:
+  Wow64DisableWow64FsRedirection(ptr)
+  Wow64EnableWow64FsRedirection(long)
+  Wow64RevertWow64FsRedirection(ptr)
