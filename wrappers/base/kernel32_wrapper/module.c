@@ -119,7 +119,7 @@ static HMODULE load_library( const UNICODE_STRING *libname, DWORD flags )
         ULONG_PTR magic;
 
         LdrLockLoaderLock( 0, NULL, &magic );
-        if (!LdrGetDllHandle( load_path, NULL, libname, &module ))
+        if (!LdrGetDllHandle( load_path, NULL, (PUNICODE_STRING)libname, &module ))
         {
             LdrAddRefDll( 0, module );
             LdrUnlockLoaderLock( 0, magic );

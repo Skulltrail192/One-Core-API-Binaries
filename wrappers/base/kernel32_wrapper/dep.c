@@ -30,8 +30,6 @@ DEP_SYSTEM_POLICY_TYPE WINAPI
 GetSystemDEPPolicy(void)
 {
 	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
-	NTSTATUS status;
-	ULONG dep_flags;
 	
 	pGetSystemDEPPolicy = (void *)GetProcAddress(hkernel32, "GetSystemDEPPolicy");
 	if(pGetSystemDEPPolicy){

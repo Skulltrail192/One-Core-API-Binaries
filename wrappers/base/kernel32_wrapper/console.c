@@ -151,7 +151,7 @@ SetConsoleScreenBufferInfoEx(
 	
     CsrClientCallServer((PCSR_API_MESSAGE)&ApiMessage,
                         NULL,
-                        CSR_CREATE_API_NUMBER(CONSRV_SERVERDLL_INDEX, ConsolepSetScreenBufferInfo),
+                        (CSR_API_NUMBER)0x20258,//Hack because reactos doesn't have imlemented CSR_CREATE_API_NUMBER(CONSRV_SERVERDLL_INDEX, ConsolepSetScreenBufferInfo),
                         sizeof(*ScreenBufferInfoRequest));	
 						
     if (!NT_SUCCESS(ApiMessage.Status))

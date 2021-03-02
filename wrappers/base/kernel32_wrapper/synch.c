@@ -671,7 +671,10 @@ DeleteSynchronizationBarrier(
 	return TRUE;
 }
 
-BOOL WaitOnAddress(
+/***********************************************************************
+ *           WaitOnAddress   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH WaitOnAddress(
   volatile VOID *Address,
   PVOID         CompareAddress,
   SIZE_T        AddressSize,
@@ -683,7 +686,7 @@ BOOL WaitOnAddress(
   BOOL result;
 
   BaseFormatTimeOut(&timeout, dwMilliseconds);
-  status = RtlWaitOnAddress(Address, CompareAddress, AddressSize, &timeout);
+  status = RtlWaitOnAddress((const void*)Address, CompareAddress, AddressSize, &timeout);
   BaseSetLastNTError(status);
   result = FALSE;
   if ( status >= 0 )

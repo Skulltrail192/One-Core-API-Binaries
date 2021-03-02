@@ -601,7 +601,7 @@ void WINAPI RtlWakeConditionVariable( RTL_CONDITION_VARIABLE *variable )
  *
  * See WakeConditionVariable, wakes up all waiting threads.
  */
-void WINAPI RtlWakeAllConditionVariable( RTL_CONDITION_VARIABLE *variable )
+void NTAPI RtlWakeAllConditionVariable( RTL_CONDITION_VARIABLE *variable )
 {
     int val = interlocked_xchg( (int *)&variable->Ptr, 0 );
     while (val-- > 0)
@@ -623,14 +623,14 @@ void WINAPI RtlWakeAllConditionVariable( RTL_CONDITION_VARIABLE *variable )
  * RETURNS
  *  see NtWaitForKeyedEvent for all possible return values.
  */
-NTSTATUS WINAPI RtlSleepConditionVariableCS( RTL_CONDITION_VARIABLE *variable, RTL_CRITICAL_SECTION *crit,
-                                             const LARGE_INTEGER *timeout )
+NTSTATUS NTAPI RtlSleepConditionVariableCS( PRTL_CONDITION_VARIABLE variable, PRTL_CRITICAL_SECTION crit,
+                                             IN const LARGE_INTEGER * TimeOut OPTIONAL)
 {
     NTSTATUS status;
     interlocked_xchg_add( (int *)&variable->Ptr, 1 );
     RtlLeaveCriticalSection( crit );
 
-    status = NtWaitForKeyedEvent( GlobalKeyedEventHandle, &variable->Ptr, FALSE, timeout );
+    status = NtWaitForKeyedEvent( GlobalKeyedEventHandle, &variable->Ptr, FALSE, TimeOut );
     if (status != STATUS_SUCCESS)
     {
         if (!interlocked_dec_if_nonzero( (int *)&variable->Ptr ))
@@ -660,7 +660,7 @@ NTSTATUS WINAPI RtlSleepConditionVariableCS( RTL_CONDITION_VARIABLE *variable, R
  * NOTES
  *  the behaviour is undefined if the thread doesn't own the lock.
  */
-NTSTATUS WINAPI RtlSleepConditionVariableSRW( RTL_CONDITION_VARIABLE *variable, RTL_SRWLOCK *lock,
+NTSTATUS NTAPI RtlSleepConditionVariableSRW( RTL_CONDITION_VARIABLE *variable, RTL_SRWLOCK *lock,
                                               const LARGE_INTEGER *timeout, ULONG flags )
 {
     NTSTATUS status;

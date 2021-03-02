@@ -55,5 +55,5 @@ BOOL WINAPI ConvertCalDateTimeToSystemTime(_In_   const LPCALDATETIME lpCalDateT
 BOOL WINAPI ConvertSystemTimeToCalDateTime(_In_   const LPSYSTEMTIME lpSystemTime, _In_   CALID calId, _Out_  LPCALDATETIME lpCalDateTime);
 ULONG WINAPI ConvertNLSDayOfWeekToWin32DayOfWeek(UINT DayOfWeek);
 BOOL WINAPI GetCalendarSupportedDateRange(_In_   CALID Calendar, _Out_  LPCALDATETIME lpCalMinDateTime, _Out_  LPCALDATETIME lpCalMaxDateTime);
-BOOL WINAPI GetCalendarDifferenceInDays(_In_ const LPCALDATETIME lpCalDateTimeFirst, const _In_ LPCALDATETIME lpCalDateTimeSecond, _Inout_ LPCALDATETIME lpCalDateTimeResult);
+BOOL WINAPI GetCalendarDifferenceInDays(_In_ const LPCALDATETIME lpCalDateTimeFirst, const _In_ LPCALDATETIME lpCalDateTimeSecond, _Inout_ const LPCALDATETIME lpCalDateTimeResult);
 BOOL WINAPI IsValidYearAndMonth(LPCALDATETIME lpCalDateTime);

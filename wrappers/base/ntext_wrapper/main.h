@@ -108,17 +108,15 @@ static RTL_CRITICAL_SECTION loader_section;
 #define RtlGetCurrentThreadId()  (HandleToUlong(NtCurrentTeb()->ClientId.UniqueThread))
 
 #define LOAD_LIBRARY_REQUIRE_SIGNED_TARGET  0x00000080
-#define LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR    0x00000100
-#define LOAD_LIBRARY_SEARCH_APPLICATION_DIR 0x00000200
-#define LOAD_LIBRARY_SEARCH_USER_DIRS       0x00000400
-#define LOAD_LIBRARY_SEARCH_SYSTEM32        0x00000800
-#define LOAD_LIBRARY_SEARCH_DEFAULT_DIRS    0x00001000
 
 /* flags for SetSearchPathMode */
 #define BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE  0x00001
 #define BASE_SEARCH_PATH_DISABLE_SAFE_SEARCHMODE 0x10000
 #define BASE_SEARCH_PATH_PERMANENT               0x08000
 #define BASE_SEARCH_PATH_INVALID_FLAGS         (~0x18001)
+
+//Because we want don't touch in THREADINFOCLASS on Reactos 
+#define ThreadGroupInformation 30
 
 /* Enumarations ****************************************/
 
@@ -174,8 +172,6 @@ typedef PVOID* PALPC_HANDLE;
 typedef PVOID ALPC_HANDLE;
 
 typedef HANDLE 	DLL_DIRECTORY_COOKIE;
-
-typedef struct _TP_POOL TP_POOL, *PTP_POOL;
 
 typedef struct _TP_TIMER TP_TIMER, *PTP_TIMER;
 

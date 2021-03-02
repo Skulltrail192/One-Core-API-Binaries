@@ -682,5 +682,82 @@
 682 stub WmiSetSingleItemW
 683 stub Wow64Win32ApiEntry
 684 stdcall WriteEncryptedFileRaw(ptr ptr ptr)
-685 stdcall -version=0x600+ RegLoadMUIStringW(ptr wstr wstr long ptr long wstr) advapi32_vista.RegLoadMUIStringW
-686 stdcall -version=0x600+ RegLoadMUIStringA(ptr str str long ptr long str) advapi32_vista.RegLoadMUIStringA
+685 stdcall RegLoadMUIStringW(ptr wstr wstr long ptr long wstr) advapi32_vista.RegLoadMUIStringW
+686 stdcall RegLoadMUIStringA(ptr str str long ptr long str) advapi32_vista.RegLoadMUIStringA
+
+@ stub AddMandatoryAce
+@ stub RegCopyTreeW
+@ stub RegDeleteTreeA
+@ stub RegDeleteTreeW
+@ stub RegDisablePredefinedCacheEx
+
+@ stub CredFindBestCredentialA
+@ stub CredFindBestCredentialW
+@ stub CredIsProtectedA
+@ stub CredIsProtectedW
+@ stub CredProtectA
+@ stub CredProtectW
+@ stub CredUnprotectA
+@ stub CredUnprotectW
+@ stub CredWriteDomainCredentialsA
+@ stub RegLoadAppKeyA
+@ stub RegLoadAppKeyW
+@ stub RegCopyTreeA
+@ stub RegCreateKeyTransactedA
+@ stub RegCreateKeyTransactedW
+@ stub RegDeleteKeyValueA
+@ stub RegDeleteKeyValueW
+@ stub RegSetKeyValueA
+@ stub RegSetKeyValueW
+@ stub RegDeleteKeyTransactedA
+@ stub RegDeleteKeyTransactedW
+@ stub RegOpenKeyTransactedA
+@ stub RegOpenKeyTransactedW
+@ stub ControlServiceExA
+@ stub ControlServiceExW
+@ stub I_ScQueryServiceConfig
+@ stub I_ScSendPnPMessage
+@ stub I_ScValidatePnPService
+@ stub NotifyServiceStatusChangeA
+@ stub NotifyServiceStatusChangeW
+
+@ stub AuditComputeEffectivePolicyBySid
+@ stub AuditEnumerateCategories
+@ stub AuditEnumeratePerUserPolicy
+@ stub AuditEnumerateSubCategories
+@ stub AuditFree
+@ stub AuditLookupCategoryNameW
+@ stub AuditLookupSubCategoryNameW
+@ stub AuditQueryPerUserPolicy
+@ stub AuditQuerySecurity
+@ stub AuditQuerySystemPolicy
+@ stub AuditSetPerUserPolicy
+@ stub AuditSetSecurity
+@ stub AuditSetSystemPolicy
+@ stub EventActivityIdControl
+@ stub EventEnabled
+@ stub EventProviderEnabled
+@ stub EventRegister
+@ stub EventSetInformation
+@ stub EventUnregister
+@ stub EventWrite
+@ stub EventWriteEx
+@ stub EventWriteString
+@ stub EventWriteTransfer
+@ stub IsValidRelativeSecurityDescriptor
+@ stub QuerySecurityAccessMask
+@ stub SetSecurityAccessMask
+@ stub EnableTraceEx2
+@ stub EnumerateTraceGuidsEx
+@ stub EventAccessControl
+@ stub EventAccessQuery
+@ stub EventAccessRemove
+@ stub EnableTraceEx
+@ stub LsaLookupSids2
+@ stub PerfCreateInstance
+@ stub PerfDeleteInstance
+@ stub PerfSetCounterRefValue
+@ stub PerfSetCounterSetInfo
+@ stub PerfStartProvider
+@ stub PerfStartProviderEx
+@ stub PerfStopProvider

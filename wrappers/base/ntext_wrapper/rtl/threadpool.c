@@ -400,53 +400,6 @@ static void CALLBACK process_rtl_work_item( TP_CALLBACK_INSTANCE *instance, void
 }
 
 /***********************************************************************
- *              RtlQueueWorkItem   (NTDLL.@)
- *
- * Queues a work item into a thread in the thread pool.
- *
- * PARAMS
- *  function [I] Work function to execute.
- *  context  [I] Context to pass to the work function when it is executed.
- *  flags    [I] Flags. See notes.
- *
- * RETURNS
- *  Success: STATUS_SUCCESS.
- *  Failure: Any NTSTATUS code.
- *
- * NOTES
- *  Flags can be one or more of the following:
- *|WT_EXECUTEDEFAULT - Executes the work item in a non-I/O worker thread.
- *|WT_EXECUTEINIOTHREAD - Executes the work item in an I/O worker thread.
- *|WT_EXECUTEINPERSISTENTTHREAD - Executes the work item in a thread that is persistent.
- *|WT_EXECUTELONGFUNCTION - Hints that the execution can take a long time.
- *|WT_TRANSFER_IMPERSONATION - Executes the function with the current access token.
- */
-NTSTATUS WINAPI RtlQueueWorkItem( PRTL_WORK_ITEM_ROUTINE function, PVOID context, ULONG flags )
-{
-    TP_CALLBACK_ENVIRON environment;
-    struct rtl_work_item *item;
-    NTSTATUS status;
-
-    DbgPrint( "%p %p %u\n", function, context, flags );
-
-    item = RtlAllocateHeap( RtlProcessHeap(), 0, sizeof(*item) );
-    if (!item)
-        return STATUS_NO_MEMORY;
-
-    memset( &environment, 0, sizeof(environment) );
-    environment.Version = 1;
-    environment.u.s.LongFunction = (flags & WT_EXECUTELONGFUNCTION) != 0;
-    environment.u.s.Persistent   = (flags & WT_EXECUTEINPERSISTENTTHREAD) != 0;
-
-    item->function = function;
-    item->context  = context;
-
-    status = TpSimpleTryPost( process_rtl_work_item, item, &environment );
-    if (status) RtlFreeHeap( RtlProcessHeap(), 0, item );
-    return status;
-}
-
-/***********************************************************************
  * iocp_poller - get completion events and run callbacks
  */
 static DWORD CALLBACK iocp_poller(LPVOID Arg)
@@ -477,59 +430,6 @@ static DWORD CALLBACK iocp_poller(LPVOID Arg)
         }
     }
     return 0;
-}
-
-/***********************************************************************
- *              RtlSetIoCompletionCallback  (NTDLL.@)
- *
- * Binds a handle to a thread pool's completion port, and possibly
- * starts a non-I/O thread to monitor this port and call functions back.
- *
- * PARAMS
- *  FileHandle [I] Handle to bind to a completion port.
- *  Function   [I] Callback function to call on I/O completions.
- *  Flags      [I] Not used.
- *
- * RETURNS
- *  Success: STATUS_SUCCESS.
- *  Failure: Any NTSTATUS code.
- *
- */
-NTSTATUS WINAPI RtlSetIoCompletionCallback(HANDLE FileHandle, PRTL_OVERLAPPED_COMPLETION_ROUTINE Function, ULONG Flags)
-{
-    IO_STATUS_BLOCK iosb;
-    FILE_COMPLETION_INFORMATION info;
-
-    if (Flags) DbgPrint("Unknown value Flags=0x%x\n", Flags);
-
-    if (!old_threadpool.compl_port)
-    {
-        NTSTATUS res = STATUS_SUCCESS;
-
-        RtlEnterCriticalSection(&old_threadpool.threadpool_compl_cs);
-        if (!old_threadpool.compl_port)
-        {
-            HANDLE cport;
-
-            res = NtCreateIoCompletion( &cport, IO_COMPLETION_ALL_ACCESS, NULL, 0 );
-            if (!res)
-            {
-                /* DbgPrint native can start additional threads in case of e.g. hung callback function. */
-                res = RtlQueueWorkItem( iocp_poller, cport, WT_EXECUTEDEFAULT );
-                if (!res)
-                    old_threadpool.compl_port = cport;
-                else
-                    NtClose( cport );
-            }
-        }
-        RtlLeaveCriticalSection(&old_threadpool.threadpool_compl_cs);
-        if (res) return res;
-    }
-
-    info.Port = old_threadpool.compl_port;
-    info.Key = Function;
-
-    return NtSetInformationFile( FileHandle, &iosb, &info, sizeof(info), FileCompletionInformation );
 }
 
 static inline PLARGE_INTEGER get_nt_timeout( PLARGE_INTEGER pTime, ULONG timeout )
@@ -994,7 +894,7 @@ NTSTATUS WINAPI RtlCreateTimerQueue(PHANDLE NewTimerQueue)
         return status;
     }
     status = RtlCreateUserThread(NtCurrentProcess(), NULL, FALSE, 0, 0, 0,
-                                 timer_queue_thread_proc, q, &q->thread, NULL);
+                                 (PTHREAD_START_ROUTINE)timer_queue_thread_proc, q, &q->thread, NULL);
     if (status != STATUS_SUCCESS)
     {
         NtClose(q->event);
@@ -1088,166 +988,6 @@ static struct timer_queue *get_timer_queue(HANDLE TimerQueue)
         }
         return default_timer_queue;
     }
-}
-
-/***********************************************************************
- *              RtlCreateTimer   (NTDLL.@)
- *
- * Creates a new timer associated with the given queue.
- *
- * PARAMS
- *  NewTimer   [O] The newly created timer.
- *  TimerQueue [I] The queue to hold the timer.
- *  Callback   [I] The callback to fire.
- *  Parameter  [I] The argument for the callback.
- *  DueTime    [I] The delay, in milliseconds, before first firing the
- *                 timer.
- *  Period     [I] The period, in milliseconds, at which to fire the timer
- *                 after the first callback.  If zero, the timer will only
- *                 fire once.  It still needs to be deleted with
- *                 RtlDeleteTimer.
- * Flags       [I] Flags controlling the execution of the callback.  In
- *                 addition to the WT_* thread pool flags (see
- *                 RtlQueueWorkItem), WT_EXECUTEINTIMERTHREAD and
- *                 WT_EXECUTEONLYONCE are supported.
- *
- * RETURNS
- *  Success: STATUS_SUCCESS.
- *  Failure: Any NTSTATUS code.
- */
-NTSTATUS WINAPI RtlCreateTimer(PHANDLE NewTimer, HANDLE TimerQueue,
-                               RTL_WAITORTIMERCALLBACKFUNC Callback,
-                               PVOID Parameter, DWORD DueTime, DWORD Period,
-                               ULONG Flags)
-{
-    NTSTATUS status;
-    struct queue_timer *t;
-    struct timer_queue *q = get_timer_queue(TimerQueue);
-
-    if (!q) return STATUS_NO_MEMORY;
-    if (q->magic != TIMER_QUEUE_MAGIC) return STATUS_INVALID_HANDLE;
-
-    t = RtlAllocateHeap(RtlProcessHeap(), 0, sizeof *t);
-    if (!t)
-        return STATUS_NO_MEMORY;
-
-    t->q = q;
-    t->runcount = 0;
-    t->callback = Callback;
-    t->param = Parameter;
-    t->period = Period;
-    t->flags = Flags;
-    t->destroy = FALSE;
-    t->event = NULL;
-
-    status = STATUS_SUCCESS;
-    RtlEnterCriticalSection(&q->cs);
-    if (q->quit)
-        status = STATUS_INVALID_HANDLE;
-    else
-        queue_add_timer(t, queue_current_time() + DueTime, TRUE);
-    RtlLeaveCriticalSection(&q->cs);
-
-    if (status == STATUS_SUCCESS)
-        *NewTimer = t;
-    else
-        RtlFreeHeap(RtlProcessHeap(), 0, t);
-
-    return status;
-}
-
-/***********************************************************************
- *              RtlUpdateTimer   (NTDLL.@)
- *
- * Changes the time at which a timer expires.
- *
- * PARAMS
- *  TimerQueue [I] The queue that holds the timer.
- *  Timer      [I] The timer to update.
- *  DueTime    [I] The delay, in milliseconds, before next firing the timer.
- *  Period     [I] The period, in milliseconds, at which to fire the timer
- *                 after the first callback.  If zero, the timer will not
- *                 refire once.  It still needs to be deleted with
- *                 RtlDeleteTimer.
- *
- * RETURNS
- *  Success: STATUS_SUCCESS.
- *  Failure: Any NTSTATUS code.
- */
-NTSTATUS WINAPI RtlUpdateTimer(HANDLE TimerQueue, HANDLE Timer,
-                               DWORD DueTime, DWORD Period)
-{
-    struct queue_timer *t = Timer;
-    struct timer_queue *q = t->q;
-
-    RtlEnterCriticalSection(&q->cs);
-    /* Can't change a timer if it was once-only or destroyed.  */
-    if (t->expire != EXPIRE_NEVER)
-    {
-        t->period = Period;
-        queue_move_timer(t, queue_current_time() + DueTime, TRUE);
-    }
-    RtlLeaveCriticalSection(&q->cs);
-
-    return STATUS_SUCCESS;
-}
-
-/***********************************************************************
- *              RtlDeleteTimer   (NTDLL.@)
- *
- * Cancels a timer-queue timer.
- *
- * PARAMS
- *  TimerQueue      [I] The queue that holds the timer.
- *  Timer           [I] The timer to update.
- *  CompletionEvent [I] If NULL, return immediately.  If INVALID_HANDLE_VALUE,
- *                      wait until the timer is finished firing all pending
- *                      callbacks before returning.  Otherwise, return
- *                      immediately and set the timer is done.
- *
- * RETURNS
- *  Success: STATUS_SUCCESS if the timer is done, STATUS_PENDING if not,
-             or if the completion event is NULL.
- *  Failure: Any NTSTATUS code.
- */
-NTSTATUS WINAPI RtlDeleteTimer(HANDLE TimerQueue, HANDLE Timer,
-                               HANDLE CompletionEvent)
-{
-    struct queue_timer *t = Timer;
-    struct timer_queue *q;
-    NTSTATUS status = STATUS_PENDING;
-    HANDLE event = NULL;
-
-    if (!Timer)
-        return STATUS_INVALID_PARAMETER_1;
-    q = t->q;
-    if (CompletionEvent == INVALID_HANDLE_VALUE)
-    {
-        status = NtCreateEvent(&event, EVENT_ALL_ACCESS, NULL, SynchronizationEvent, FALSE);
-        if (status == STATUS_SUCCESS)
-            status = STATUS_PENDING;
-    }
-    else if (CompletionEvent)
-        event = CompletionEvent;
-
-    RtlEnterCriticalSection(&q->cs);
-    t->event = event;
-    if (t->runcount == 0 && event)
-        status = STATUS_SUCCESS;
-    queue_destroy_timer(t);
-    RtlLeaveCriticalSection(&q->cs);
-
-    if (CompletionEvent == INVALID_HANDLE_VALUE && event)
-    {
-        if (status == STATUS_PENDING)
-        {
-            NtWaitForSingleObject(event, FALSE, NULL);
-            status = STATUS_SUCCESS;
-        }
-        NtClose(event);
-    }
-
-    return status;
 }
 
 /***********************************************************************
@@ -1353,7 +1093,7 @@ static NTSTATUS tp_new_worker_thread( struct threadpool *pool )
     NTSTATUS status;
 
     status = RtlCreateUserThread( NtCurrentProcess(), NULL, FALSE, 0, 0, 0,
-                                  threadpool_worker_proc, pool, &thread, NULL );
+                                  (PTHREAD_START_ROUTINE)threadpool_worker_proc, pool, &thread, NULL );
     if (status == STATUS_SUCCESS)
     {
         InterlockedIncrement( &pool->refcount );
@@ -1388,7 +1128,7 @@ static NTSTATUS tp_timerqueue_lock( struct threadpool_object *timer )
     {
         HANDLE thread;
         status = RtlCreateUserThread( NtCurrentProcess(), NULL, FALSE, 0, 0, 0,
-                                      timerqueue_thread_proc, NULL, &thread, NULL );
+                                      (PTHREAD_START_ROUTINE)timerqueue_thread_proc, NULL, &thread, NULL );
         if (status == STATUS_SUCCESS)
         {
             timerqueue.thread_running = TRUE;
@@ -1641,7 +1381,7 @@ static NTSTATUS tp_waitqueue_lock( struct threadpool_object *wait )
     }
 
     status = RtlCreateUserThread( NtCurrentProcess(), NULL, FALSE, 0, 0, 0,
-                                  waitqueue_thread_proc, bucket, &thread, NULL );
+                                  (PTHREAD_START_ROUTINE)waitqueue_thread_proc, bucket, &thread, NULL );
     if (status == STATUS_SUCCESS)
     {
         list_add_tail( &waitqueue.buckets, &bucket->bucket_entry );
@@ -1768,7 +1508,7 @@ static NTSTATUS tp_ioqueue_lock( struct threadpool_object *io, HANDLE file )
         HANDLE thread;
 
         if (!(status = RtlCreateUserThread( NtCurrentProcess(), NULL, FALSE,
-                0, 0, 0, ioqueue_thread_proc, NULL, &thread, NULL )))
+                0, 0, 0, (PTHREAD_START_ROUTINE)ioqueue_thread_proc, NULL, &thread, NULL )))
         {
             ioqueue.thread_running = TRUE;
             NtClose( thread );
@@ -1828,7 +1568,7 @@ static NTSTATUS tp_threadpool_alloc( struct threadpool **out )
     pool->shutdown              = FALSE;
 
     RtlInitializeCriticalSection( &pool->cs );
-    pool->cs.Spare[0] = (DWORD_PTR)(__FILE__ ": threadpool.cs");
+    pool->cs.DebugInfo->Spare[0] = (DWORD_PTR)(__FILE__ ": threadpool.cs");
 
     for (i = 0; i < ARRAY_SIZE(pool->pools); ++i)
         list_init( &pool->pools[i] );

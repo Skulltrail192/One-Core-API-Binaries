@@ -1122,8 +1122,6 @@ GetCalendarDifferenceInDays(
 		return TRUE;
 }
 
-
-LPCWSTR dayofweek = 0; //Hack for work on MSVC
 /*
  * @implemented
  */
@@ -1136,58 +1134,6 @@ GetGregorianDifferenceInDays(
 	int var;
 	var = GetAbsoluteDateFromGregorian(lpCalDateTimeFirst->Year,lpCalDateTimeFirst->Month,lpCalDateTimeFirst->Day);
 	return GetAbsoluteDateFromGregorian(lpCalDateTimeSecond->Year,lpCalDateTimeSecond->Month,lpCalDateTimeSecond->Day) - var;
-}
-
-//TODO
-BOOL 
-WINAPI 
-GetCalendarDateFormat(
-  _In_   LCID lpszLocale,
-  _In_   DWORD dwFlags,
-  _In_   const LPCALDATETIME lpCalDateTime,
-  _In_   LPCWSTR lpFormat,
-  _Out_  LPWSTR lpDateStr,
-  _In_   int cchDate
-)
-{
-	lpFormat = L"dddd, MMMM dd, yyyy";
-
-	switch(lpCalDateTime->DayOfWeek)
-	{
-		case 0:
-			dayofweek = L"Sunday";
-			break;
-		case 1:
-			dayofweek = L"Monday";
-			break;	
-		case 2:
-			dayofweek = L"Tuesday";
-			break;	
-		case 3:
-			dayofweek = L"Wednesday";
-			break;	
-		case 4:
-			dayofweek = L"Thursday";
-			break;
-		case 5:
-			dayofweek = L"Friday";
-			break;
-		case 6:
-			dayofweek = L"Saturday";
-			break;
-		default:
-			break;			
-	}
-	StringCchCat(lpDateStr,256,dayofweek);
-	StringCchCat(lpDateStr,256,L",");
-	StringCchCat(lpDateStr,256,L" ");
-	StringCchCat(lpDateStr,256,(LPCWSTR)lpCalDateTime->Month);
-	StringCchCat(lpDateStr,256,L" ");
-	StringCchCat(lpDateStr,256,(LPCWSTR)lpCalDateTime->Day);
-	StringCchCat(lpDateStr,256,L",");
-	StringCchCat(lpDateStr,256,L" ");
-	StringCchCat(lpDateStr,256,(LPCWSTR)lpCalDateTime->Year);
-	return TRUE;
 }
 
 BOOL 
@@ -1411,7 +1357,6 @@ GetTimeZoneInformationForYear(
     return TRUE;
 }
 
-
 BOOL 
 WINAPI 
 GetCalendarDateFormatEx(
@@ -1423,8 +1368,68 @@ GetCalendarDateFormatEx(
   _In_   int cchDate
 )
 {
-  UNIMPLEMENTED;
-  return TRUE;
+	LPCWSTR dayofweek = L"";
+	lpFormat = L"dddd, MMMM dd, yyyy";
+
+	switch(lpCalDateTime->DayOfWeek)
+	{
+		case 0:
+			dayofweek = L"Sunday";
+			break;
+		case 1:
+			dayofweek = L"Monday";
+			break;	
+		case 2:
+			dayofweek = L"Tuesday";
+			break;	
+		case 3:
+			dayofweek = L"Wednesday";
+			break;	
+		case 4:
+			dayofweek = L"Thursday";
+			break;
+		case 5:
+			dayofweek = L"Friday";
+			break;
+		case 6:
+			dayofweek = L"Saturday";
+			break;
+		default:
+			break;			
+	}
+	wcscat(lpDateStr,dayofweek);
+	wcscat(lpDateStr,L",");
+	wcscat(lpDateStr,L" ");
+	wcscat(lpDateStr,(LPCWSTR)lpCalDateTime->Month);
+	wcscat(lpDateStr,L" ");
+	wcscat(lpDateStr,(LPCWSTR)lpCalDateTime->Day);
+	wcscat(lpDateStr,L",");
+	wcscat(lpDateStr,L" ");
+	wcscat(lpDateStr,(LPCWSTR)lpCalDateTime->Year);
+	return TRUE;
+}
+
+//TODO
+BOOL 
+WINAPI 
+GetCalendarDateFormat(
+  _In_   LCID lpszLocale,
+  _In_   DWORD dwFlags,
+  _In_   const LPCALDATETIME lpCalDateTime,
+  _In_   LPCWSTR lpFormat,
+  _Out_  LPWSTR lpDateStr,
+  _In_   int cchDate
+)
+{
+  int result; // eax
+  WCHAR LCData; // [esp+Ch] [ebp-B0h]
+
+  result = LCIDToLocaleName(lpszLocale, &LCData, 85, 0);
+  
+  if(result){
+	  return GetCalendarDateFormatEx(&LCData, dwFlags, lpCalDateTime, lpFormat, lpDateStr, cchDate);
+  }
+  return result;
 }
 
 BOOL 

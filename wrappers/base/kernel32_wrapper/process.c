@@ -464,7 +464,7 @@ static inline BOOL logical_proc_info_add_by_id(
         dataex->Relationship = rel;
         dataex->Size = log_proc_ex_size_plus(sizeof(PROCESSOR_RELATIONSHIP));
         dataex->Processor.Flags = 0; /* TODO */
-        dataex->Processor.EfficiencyClass = 0;
+        //dataex->Processor.EfficiencyClass = 0;
         dataex->Processor.GroupCount = 1;
         dataex->Processor.GroupMask[0].Mask = mask;
         dataex->Processor.GroupMask[0].Group = 0;
@@ -1445,7 +1445,7 @@ CreateProcessInternalExW(
 	BOOL resp;
     static const WCHAR chromeexeW[] = {'c','h','r','o','m','e','.','e','x','e',0};
     static const WCHAR nosandboxW[] = {' ','-','-','n','o','-','s','a','n','d','b','o','x',0};	
-	LPWSTR new_command_line;	
+	//LPWSTR new_command_line;	
 	
 	// // if(lpStartupInfo->cb == sizeof(STARTUPINFOEX))
 	 // if(dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT)
@@ -1540,8 +1540,8 @@ CreateProcessExW(
 {
 	STARTUPINFOW startupInfo;
 	BOOL resp;
-	STARTUPINFO si;
-	PROCESS_INFORMATION pi;
+	//STARTUPINFO si;
+	//PROCESS_INFORMATION pi;
 	
 	startupInfo = *lpStartupInfo;
 	

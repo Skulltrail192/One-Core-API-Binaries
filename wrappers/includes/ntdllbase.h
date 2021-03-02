@@ -58,8 +58,6 @@ typedef PVOID ALPC_HANDLE;
 
 typedef HANDLE 	DLL_DIRECTORY_COOKIE;
 
-typedef struct _TP_POOL TP_POOL, *PTP_POOL;
-
 typedef struct _TP_TIMER TP_TIMER, *PTP_TIMER;
 
 typedef struct _TP_CLEANUP_GROUP TP_CLEANUP_GROUP, *PTP_CLEANUP_GROUP;
@@ -287,7 +285,7 @@ NTSTATUS WINAPI RtlFlsAlloc(PFLS_CALLBACK_FUNCTION lpCallback,
 
 NTSTATUS WINAPI RtlFlsFree(DWORD dwFlsIndex);
 
-NTSTATUS NTAPI TpAllocPool(__out PTP_POOL *PoolReturn, __reserved PVOID Reserved);
+NTSTATUS NTAPI TpAllocPool(__out PTP_POOL *PoolReturn, PVOID Reserved);
 
 NTSTATUS NTAPI TpAllocCleanupGroup(__out PTP_CLEANUP_GROUP *CleanupGroupReturn);
 

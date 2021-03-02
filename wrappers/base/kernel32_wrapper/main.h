@@ -98,11 +98,6 @@
 
 /* flags that can be passed to LoadLibraryEx */
 #define LOAD_LIBRARY_REQUIRE_SIGNED_TARGET  0x00000080
-#define LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR    0x00000100
-#define LOAD_LIBRARY_SEARCH_APPLICATION_DIR 0x00000200
-#define LOAD_LIBRARY_SEARCH_USER_DIRS       0x00000400
-#define LOAD_LIBRARY_SEARCH_SYSTEM32        0x00000800
-#define LOAD_LIBRARY_SEARCH_DEFAULT_DIRS    0x00001000
 
 #define RESOURCE_ENUM_LN          0x0001
 #define RESOURCE_ENUM_MUI         0x0002
@@ -302,32 +297,6 @@ typedef struct _FIND_DATA_HANDLE
     } u;
 
 } FIND_DATA_HANDLE, *PFIND_DATA_HANDLE;
-
-typedef struct _REPARSE_DATA_BUFFER {
-    ULONG  ReparseTag;
-    USHORT ReparseDataLength;
-    USHORT Reserved;
-    union {
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT SubstituteNameLength;
-            USHORT PrintNameOffset;
-            USHORT PrintNameLength;
-            ULONG Flags;
-            WCHAR PathBuffer[1];
-        } SymbolicLinkReparseBuffer;
-        struct {
-            USHORT SubstituteNameOffset;
-            USHORT SubstituteNameLength;
-            USHORT PrintNameOffset;
-            USHORT PrintNameLength;
-            WCHAR PathBuffer[1];
-        } MountPointReparseBuffer;
-        struct {
-            UCHAR  DataBuffer[1];
-        } GenericReparseBuffer;
-    };
-} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 
 typedef struct _REASON_CONTEXT {
   ULONG Version;
@@ -983,14 +952,16 @@ OpenRegKey(
 
 #define NLS_REG_BUFFER_FREE(pBuffer)        (NLS_FREE_MEM(pBuffer))
 
-extern HANDLE           hAltSortsKey;       // handle to Locale\Alternate Sorts key
-
 #define PATHCCH_NONE                            0x00
 #define PATHCCH_ALLOW_LONG_PATHS                0x01
 #define PATHCCH_FORCE_ENABLE_LONG_NAME_PROCESS  0x02
 #define PATHCCH_FORCE_DISABLE_LONG_NAME_PROCESS 0x04
 #define PATHCCH_DO_NOT_NORMALIZE_SEGMENTS       0x08
 #define PATHCCH_ENSURE_IS_EXTENDED_LENGTH_PATH  0x10
+
+#define FSCTL_PIPE_GET_CONNECTION_ATTRIBUTE CTL_CODE(FILE_DEVICE_NAMED_PIPE, 12, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+extern HANDLE           hAltSortsKey;       // handle to Locale\Alternate Sorts key
 
 HRESULT 
 WINAPI 
@@ -1017,14 +988,6 @@ PathCchCombineEx(
 	const WCHAR *path2, 
 	DWORD flags
 );
-
-typedef struct _nlsversioninfoex {
-  DWORD dwNLSVersionInfoSize;
-  DWORD dwNLSVersion;
-  DWORD dwDefinedVersion;
-  DWORD dwEffectiveId;
-  GUID  guidCustomVersion;
-} NLSVERSIONINFOEX, *LPNLSVERSIONINFOEX;
 
 typedef struct {
   UINT  cbSize;

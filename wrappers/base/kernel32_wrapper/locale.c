@@ -1442,7 +1442,7 @@ BOOL WINAPI EnumResourceLanguagesExA( HMODULE hmod, LPCSTR type, LPCSTR name,
 
     if (!hmod) hmod = GetModuleHandleA( NULL );
     typeW.Buffer = nameW.Buffer = NULL;
-    if ((status = LdrFindResourceDirectory_U( hmod, NULL, 0, &basedir )) != STATUS_SUCCESS)
+    if ((status = LdrFindResourceDirectory_U( hmod, (const LDR_RESOURCE_INFO *)NULL, 0, &basedir )) != STATUS_SUCCESS)
         goto done;
     if ((status = get_res_nameA( type, &typeW )) != STATUS_SUCCESS)
         goto done;
@@ -1591,7 +1591,7 @@ EnumSystemLocalesEx(
 			flags = LCID_SUPPORTED;
 			break;
 	}	
-	EnumSystemLocalesW(EnumLocalesProc, flags);
+	EnumSystemLocalesW((LOCALE_ENUMPROCW)EnumLocalesProc, flags);
 	
 	if(systemLocale){
 		return proc(systemLocale, dwFlags, lparam);
