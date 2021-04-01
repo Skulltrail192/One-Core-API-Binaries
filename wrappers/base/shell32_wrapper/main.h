@@ -57,7 +57,7 @@
 #include <sys/types.h>
 #include <wingdi.h>
 #include <commdlg.h>
-// #include <link.h>
+#include <wine/heap.h>
 
 //DEFINITIONS
 #define IDS_DESKTOP		20
@@ -82,8 +82,16 @@
 #define FOF_NOERRORUI              0x0400
 #define FOF_NOCONFIRMMKDIR         0x0200
 #define FOF_NO_UI                  (FOF_SILENT | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_NOCONFIRMMKDIR)
-#define PCIDLIST_ABSOLUTE_ARRAY  LPCITEMIDLIST *
 #define MAX_EXTENSION_LENGTH 20
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+//We don't know where it is implemented
+#define IUnknown_AddRef(T) (T)->lpVtbl->AddRef(T)
+#define IApplicationAssociationRegistration_QueryInterface( x, p1, p2 ) \
+            (x)->lpVtbl->QueryInterface( x, p1, p2 )
+#define IEnumAssocHandlers_AddRef( x ) \
+            (x)->lpVtbl->AddRef( x )			
 
 typedef BYTE PIDLTYPE;
 
@@ -106,3 +114,13 @@ BOOL PidlToSicIndex (
 	int * pIndex);
 
 BOOL HCR_MapTypeToValueA(LPCSTR szExtension, LPSTR szFileType, LONG len, BOOL bPrependDot);
+
+HRESULT 
+WINAPI 
+PSFormatForDisplay(
+  _In_   REFPROPERTYKEY propkey,
+  _In_   REFPROPVARIANT propvar,
+  _In_   PROPDESC_FORMAT_FLAGS pdfFlags,
+  _Out_  LPWSTR pwszText,
+  _In_   DWORD cchText
+);

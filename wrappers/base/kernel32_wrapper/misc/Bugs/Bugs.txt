@@ -1,1 +1,0 @@
-CreateSemaphoreExA(ptr long long str ptr long) and CreateSemaphoreExW error on MPC #fixed

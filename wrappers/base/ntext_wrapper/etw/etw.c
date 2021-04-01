@@ -137,16 +137,6 @@ EtwEventWrite(
 	return ERROR_SUCCESS;
 }
 
-ULONG 
-NTAPI
-EtwEventActivityIdControl(
-  _In_     ULONG ControlCode,
-  _Inout_  LPGUID ActivityId
-)
-{
-	return ERROR_SUCCESS;
-}
-
 ULONG
 NTAPI
 EtwEventWriteFull(
@@ -576,4 +566,56 @@ NTAPI
 EtwpIsProcessExiting()
 {
 	return FALSE;
+}
+
+/******************************************************************************
+ *                  EtwEventActivityIdControl (NTDLL.@)
+ */
+ULONG WINAPI EtwEventActivityIdControl(ULONG code, GUID *guid)
+{
+    static int once;
+
+    if (!once++) DbgPrint("0x%x, %p: stub\n", code, guid);
+    return ERROR_SUCCESS;
+}
+
+
+/******************************************************************************
+ *                  EtwEventProviderEnabled (NTDLL.@)
+ */
+BOOLEAN WINAPI EtwEventProviderEnabled( REGHANDLE handle, UCHAR level, ULONGLONG keyword )
+{
+    DbgPrint("%s, %u, %s: stub\n", handle, level, keyword);
+    return FALSE;
+}
+
+/*********************************************************************
+ *                  EtwEventSetInformation   (NTDLL.@)
+ */
+ULONG WINAPI EtwEventSetInformation( REGHANDLE handle, EVENT_INFO_CLASS class, void *info,
+                                     ULONG length )
+{
+    DbgPrint("(%s, %u, %p, %u) stub\n", handle, class, info, length);
+    return ERROR_SUCCESS;
+}
+
+/******************************************************************************
+ *                  EtwEventWriteString   (NTDLL.@)
+ */
+ULONG WINAPI EtwEventWriteString( REGHANDLE handle, UCHAR level, ULONGLONG keyword, PCWSTR string )
+{
+    DbgPrint("%s, %u, %s, %s: stub\n", handle, level,
+          keyword, string);
+    return ERROR_SUCCESS;
+}
+
+/******************************************************************************
+ *                  EtwEventWriteTransfer   (NTDLL.@)
+ */
+ULONG WINAPI EtwEventWriteTransfer( REGHANDLE handle, PCEVENT_DESCRIPTOR descriptor, LPCGUID activity,
+                                    LPCGUID related, ULONG count, PEVENT_DATA_DESCRIPTOR data )
+{
+    DbgPrint("%s, %p, %s, %s, %u, %p: stub\n", handle, descriptor,
+          activity, related, count, data);
+    return ERROR_SUCCESS;
 }

@@ -1,5 +1,5 @@
-@ stdcall GetSystemWow64DirectoryA(ptr long) kernel32.GetSystemWow64DirectoryA
-@ stdcall GetSystemWow64DirectoryW(ptr long) kernel32.GetSystemWow64DirectoryW
-@ stdcall IsWow64Process(ptr ptr) kernel32.IsWow64Process
-@ stdcall Wow64DisableWow64FsRedirection(ptr) kernel32.Wow64DisableWow64FsRedirection
-@ stdcall Wow64RevertWow64FsRedirection(ptr) kernel32.Wow64RevertWow64FsRedirection
+@ stdcall GetSystemWow64DirectoryA(ptr long) kernelbase.GetSystemWow64DirectoryA
+@ stdcall GetSystemWow64DirectoryW(ptr long) kernelbase.GetSystemWow64DirectoryW
+@ stdcall IsWow64Process(ptr ptr) kernelbase.IsWow64Process
+@ stdcall Wow64DisableWow64FsRedirection(ptr) kernelbase.Wow64DisableWow64FsRedirection
+@ stdcall Wow64RevertWow64FsRedirection(ptr) kernelbase.Wow64RevertWow64FsRedirection

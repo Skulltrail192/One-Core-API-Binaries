@@ -663,6 +663,8 @@ RtlWaitOnAddress(
 	SIZE_T size,
     const LARGE_INTEGER *timeout 
 );
+
+NTSTATUS WINAPI NtOpenKeyEx( HANDLE *key, ACCESS_MASK access, const OBJECT_ATTRIBUTES *attr, ULONG options );
 								  
 NTSYSAPI NTSTATUS  WINAPI LdrGetDllPath(PCWSTR,ULONG,PWSTR*,PWSTR*);								  
 NTSYSAPI void      WINAPI RtlReleasePath(PWSTR);

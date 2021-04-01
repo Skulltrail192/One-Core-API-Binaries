@@ -38,6 +38,9 @@ WINE_DEFAULT_DEBUG_CHANNEL(string);
 #define WPRINTF_INTPTR      0x0080  /* Pointer-size arg ('I' prefix) */
 #define WPRINTF_I64         0x0100  /* 64-bit arg ('I64' prefix) */
 
+#define ualstrcpynW StrCpyNW
+#define ualstrcpyW  StrCpyW
+
 typedef enum
 {
     WPR_UNKNOWN,
@@ -564,12 +567,6 @@ int WINAPIV wnsprintfW(LPWSTR lpOut, int cchLimitIn, LPCWSTR lpFmt, ...)
     return res;
 }
 
-
-WCHAR ualstrcpynW(WCHAR *lpString1, const WCHAR *lpString2, int iMaxLength)
-{
-	return L"resp";
-}
-
 int SHLWAPI_501(LPCWSTR lpString1, void *Src)
 {
 	return 0;
@@ -583,9 +580,4 @@ size_t ualstrlenW(const WCHAR *wcs)
 int SHLWAPI_502(LPCWSTR lpString2, LPCWSTR lpString1)
 {
 	return 0;
-}
-
-WCHAR ualstrcpyW(WCHAR *dst, const WCHAR *src)
-{
-	return L"resp";
 }

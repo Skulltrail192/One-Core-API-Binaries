@@ -148,7 +148,7 @@ static ULONG WINAPI IMalloc_fnAddRefRelease (LPMALLOC iface) {
 /******************************************************************************
  *	IMalloc32_Alloc 		[VTABLE]
  */
-static LPVOID WINAPI IMalloc_fnAlloc(LPMALLOC iface, DWORD cb) {
+static void * WINAPI IMalloc_fnAlloc(IMalloc *iface, SIZE_T cb) {
 
 	LPVOID addr;
 
@@ -182,7 +182,7 @@ static LPVOID WINAPI IMalloc_fnAlloc(LPMALLOC iface, DWORD cb) {
 /******************************************************************************
  * IMalloc32_Realloc [VTABLE]
  */
-static LPVOID WINAPI IMalloc_fnRealloc(LPMALLOC iface,LPVOID pv,DWORD cb) {
+static void * WINAPI IMalloc_fnRealloc(IMalloc *iface, void *pv, SIZE_T cb) {
 
 	LPVOID pNewMemory;
 
@@ -377,7 +377,7 @@ HRESULT WINAPI CoGetMalloc(DWORD dwMemContext, LPMALLOC *lpMalloc)
  * 	Success: Pointer to newly allocated memory block.
  *  Failure: NULL.
  */
-LPVOID WINAPI CoTaskMemAlloc(ULONG size)
+LPVOID WINAPI CoTaskMemAlloc(SIZE_T size)
 {
         return IMalloc_Alloc(&Malloc32.IMalloc_iface,size);
 }
@@ -411,7 +411,7 @@ VOID WINAPI CoTaskMemFree(LPVOID ptr)
  * 	Success: Pointer to newly allocated memory block.
  *  Failure: NULL.
  */
-LPVOID WINAPI CoTaskMemRealloc(LPVOID pvOld, ULONG size)
+LPVOID WINAPI CoTaskMemRealloc(LPVOID pvOld, SIZE_T size)
 {
         return IMalloc_Realloc(&Malloc32.IMalloc_iface, pvOld, size);
 }

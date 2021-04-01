@@ -2,7 +2,7 @@
  * COPYRIGHT:       See COPYING in the top level directory
  * PROJECT:         ReactOS System Libraries
  * FILE:            lib/advapi32/advapi32.h
- * PURPOSE:         Win32 Advanced API Libary Header
+ * PURPOSE:         Win32 Advanced API Library Header
  * PROGRAMMER:      Alex Ionescu (alex@relsoft.net)
  */
 #ifndef __ADVAPI32_H
@@ -23,23 +23,26 @@
 #define _WMI_SOURCE_
 #include <aclapi.h>
 #include <winsafer.h>
+
 #define NTOS_MODE_USER
 #include <ndk/iofuncs.h>
 #include <ndk/obfuncs.h>
 #include <ndk/psfuncs.h>
 #include <ndk/rtlfuncs.h>
 #include <ndk/sefuncs.h>
+#include <ndk/setypes.h>
 
 /* this has to go after the NDK when being used with the NDK */
 #include <ntsecapi.h>
 
 #include <services/services.h>
 #include <svcctl_c.h>
+#include <winreg_c.h>
 
 #include <wine/debug.h>
 #include <wine/unicode.h>
 
-#include "crypt/crypt.h"
+#include "wine/crypt.h"
 
 #ifndef HAS_FN_PROGRESSW
 #define FN_PROGRESSW FN_PROGRESS
@@ -177,5 +180,17 @@ typedef struct _NTMARTA
 extern NTMARTA NtMartaStatic;
 
 DWORD CheckNtMartaPresent(VOID);
+
+/* heap allocation helpers */
+static void *heap_alloc( size_t len ) __WINE_ALLOC_SIZE(1);
+static inline void *heap_alloc( size_t len )
+{
+    return HeapAlloc( GetProcessHeap(), 0, len );
+}
+
+static inline BOOL heap_free( void *mem )
+{
+    return HeapFree( GetProcessHeap(), 0, mem );
+}
 
 #endif /* __ADVAPI32_H */

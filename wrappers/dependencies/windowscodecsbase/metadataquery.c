@@ -372,7 +372,7 @@ static const struct
     { MPReg, MPReg_scheme }
 };
 
-HRESULT WINAPI WICMapSchemaToName(REFGUID format, const WCHAR *schema, UINT len, WCHAR *name, UINT *ret_len)
+HRESULT WINAPI WICMapSchemaToName(REFGUID format, LPWSTR schema, UINT len, WCHAR *name, UINT *ret_len)
 {
     UINT i;
 

@@ -1,9 +1,23 @@
 
-spec2def(rpcrtbase.dll rpcrtbase.spec ADD_IMPORTLIB)
+remove_definitions(-D_WIN32_WINNT=0x502)
+add_definitions(-D_WIN32_WINNT=0x600)
+
+add_definitions(
+    -D__WINESRC__
+    -D_rpcrtbase_
+    -DCOM_NO_WINDOWS_H
+    -DMSWMSG)
 
 include_directories(BEFORE ${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
+spec2def(rpcrtbase.dll rpcrtbase.spec ADD_IMPORTLIB)
 
 add_rpc_files(client epm.idl)
+add_idl_headers(ndr_types_header_base ndr_types.idl)
+
+set(OLD_IDL_FLAGS ${IDL_FLAGS})
+set(IDL_FLAGS ${IDL_FLAGS} -Oicf)
+add_rpcproxy_files(ndr_types.idl)
+set(IDL_FLAGS ${OLD_IDL_FLAGS})
 
 list(APPEND SOURCE
     cproxy.c
@@ -21,39 +35,31 @@ list(APPEND SOURCE
     rpc_binding.c
     rpc_epmap.c
     rpc_message.c
-    rpcrt4_main.c
+    rpcrtbase_main.c
     rpc_server.c
     rpc_transport.c
     unix_func.c
     precomp.h
     ${CMAKE_CURRENT_BINARY_DIR}/epm_c.c)
 
-remove_definitions(-D_WIN32_WINNT=0x502)
-add_definitions(-D_WIN32_WINNT=0x600)
-
-add_definitions(
-    -D__WINESRC__
-    -D_rpcrtbase_
-    -DCOM_NO_WINDOWS_H
-    -DMSWMSG)
-
-include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
-
-if(MSVC)
-    add_asm_files(rpcrt4_asm msvc.S)
+if(MSVC AND NOT ARCH STREQUAL "arm")
+    add_asm_files(rpcrtbase_asm msvc.S)
 endif()
 
-add_library(rpcrtbase SHARED
+add_library(rpcrtbase MODULE
     ${SOURCE}
-    ${rpcrt4_asm}
+    ndr_typelib.c
+    ${CMAKE_CURRENT_BINARY_DIR}/ndr_types_p.c
+    ${CMAKE_CURRENT_BINARY_DIR}/proxy.dlldata.c
+    ${rpcrtbase_asm}
     rpcrtbase.rc
     ${CMAKE_CURRENT_BINARY_DIR}/rpcrtbase_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/rpcrtbase.def)
 
 set_module_type(rpcrtbase win32dll)
 target_link_libraries(rpcrtbase wine uuid ${PSEH_LIB})
-
-add_delay_importlibs(rpcrtbase iphlpapi wininet secur32 user32)
-add_importlibs(rpcrtbase advapi32 ws2_32 shlwapi msvcrt kernel32 ntdll)
+add_delay_importlibs(rpcrtbase iphlpapi wininet secur32 user32 oleaut32)
+add_importlibs(rpcrtbase advapi32 advapi32_vista kernel32_vista ws2_32 msvcrt kernel32 ntdll)
+add_dependencies(rpcrtbase ndr_types_header_base)
 add_pch(rpcrtbase precomp.h SOURCE)
 add_cd_file(TARGET rpcrtbase DESTINATION reactos/system32 FOR all)

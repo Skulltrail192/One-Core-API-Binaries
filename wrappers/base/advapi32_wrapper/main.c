@@ -1,21 +1,22 @@
-/*
- * Copyright 2009 Henri Verbeet for CodeWeavers
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
- */
+/*++
+
+Copyright (c) 2021  Shorthorn Project
+
+Module Name:
+
+    main.c
+
+Abstract:
+
+    Main and common functions
+
+Author:
+
+    Skulltrail 07-March-2021
+
+Revision History:
+
+--*/
 
 /* INCLUDES ******************************************************************/
 
@@ -49,7 +50,7 @@
     ((ULONG_PTR)(HKey) & 0x0FFFFFFF)
 
 	
-WINE_DEFAULT_DEBUG_CHANNEL(advapi); 	
+WINE_DEFAULT_DEBUG_CHANNEL(advapi32); 	
 
 /* PROTOTYPES ***************************************************************/
 	
@@ -96,11 +97,32 @@ typedef enum _EVENT_INFO_CLASS {
   MaxEventInfo                    = 3
 } EVENT_INFO_CLASS;
 
-BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
+extern BOOL RegInitialize(VOID);
+extern BOOL RegCleanup(VOID);
+extern VOID UnloadNtMarta(VOID);
+extern VOID CloseKsecDdHandle(VOID);
+extern void ElfReportInitialize(VOID);
+
+BOOL
+WINAPI
+DllMain(
+    HINSTANCE hinstDll,
+    DWORD dwReason,
+    LPVOID reserved)
 {
-    switch(fdwReason)
+    switch (dwReason)
     {
         case DLL_PROCESS_ATTACH:
+            DisableThreadLibraryCalls(hinstDll);
+            RegInitialize();
+            ElfReportInitialize();
+            break;
+
+        case DLL_PROCESS_DETACH:
+            //CloseLogonLsaHandle();
+            RegCleanup();
+            //UnloadNtMarta();
+            //CloseKsecDdHandle();
             break;
     }
 
@@ -117,221 +139,6 @@ FORCEINLINE BOOL IsHKCRKey 	( 	_In_ HKEY  	hKey	)
 FORCEINLINE void MakeHKCRKey 	( 	_Inout_ HKEY *  	hKey	) 	
 {
 	*hKey = (HKEY)((ULONG_PTR)(*hKey) | 0x2);
-}
-
-/************************************************************************
- *  RegInitDefaultHandles
- */
-BOOL
-RegInitialize(VOID)
-{
-    /* Lazy init hack */
-    if (!DllInitialized)
-    {
-        ProcessHeap = RtlGetProcessHeap();
-        RtlZeroMemory(DefaultHandleTable,
-                      MAX_DEFAULT_HANDLES * sizeof(HANDLE));
-        RtlInitializeCriticalSection(&HandleTableCS);
-
-        DllInitialized = TRUE;
-    }
-
-    return TRUE;
-}
-/*
-static VOID
-CloseDefaultKeys(VOID)
-{
-    ULONG i;
-    RegInitialize();
-    RtlEnterCriticalSection(&HandleTableCS);
-
-    for (i = 0; i < MAX_DEFAULT_HANDLES; i++)
-    {
-        if (DefaultHandleTable[i] != NULL)
-        {
-            NtClose(DefaultHandleTable[i]);
-            DefaultHandleTable[i] = NULL;
-        }
-    }
-
-    RtlLeaveCriticalSection(&HandleTableCS);
-}*/
-
-static NTSTATUS
-OpenClassesRootKey(PHANDLE KeyHandle)
-{
-    OBJECT_ATTRIBUTES Attributes;
-    UNICODE_STRING KeyName = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\Software\\CLASSES");
-
-    InitializeObjectAttributes(&Attributes,
-                               &KeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               NULL,
-                               NULL);
-    return NtOpenKey(KeyHandle,
-                     MAXIMUM_ALLOWED,
-                     &Attributes);
-}
-
-static NTSTATUS
-OpenLocalMachineKey(PHANDLE KeyHandle)
-{
-    OBJECT_ATTRIBUTES Attributes;
-    UNICODE_STRING KeyName = RTL_CONSTANT_STRING(L"\\Registry\\Machine");
-    NTSTATUS Status;
-
-    InitializeObjectAttributes(&Attributes,
-                               &KeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               NULL,
-                               NULL);
-    Status = NtOpenKey(KeyHandle,
-                       MAXIMUM_ALLOWED,
-                       &Attributes);
-
-    return Status;
-}
-
-
-static NTSTATUS
-OpenUsersKey(PHANDLE KeyHandle)
-{
-    OBJECT_ATTRIBUTES Attributes;
-    UNICODE_STRING KeyName = RTL_CONSTANT_STRING(L"\\Registry\\User");
-
-    InitializeObjectAttributes(&Attributes,
-                               &KeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               NULL,
-                               NULL);
-    return NtOpenKey(KeyHandle,
-                     MAXIMUM_ALLOWED,
-                     &Attributes);
-}
-
-
-static NTSTATUS
-OpenCurrentConfigKey (PHANDLE KeyHandle)
-{
-    OBJECT_ATTRIBUTES Attributes;
-    UNICODE_STRING KeyName =
-        RTL_CONSTANT_STRING(L"\\Registry\\Machine\\System\\CurrentControlSet\\Hardware Profiles\\Current");
-
-    InitializeObjectAttributes(&Attributes,
-                               &KeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               NULL,
-                               NULL);
-    return NtOpenKey(KeyHandle,
-                     MAXIMUM_ALLOWED,
-                     &Attributes);
-}
-
-static NTSTATUS
-OpenPredefinedKey(IN ULONG Index,
-                  OUT HANDLE Handle)
-{
-    NTSTATUS Status;
-
-    switch (Index)
-    {
-        case 0: /* HKEY_CLASSES_ROOT */
-            Status = OpenClassesRootKey (Handle);
-            break;
-
-        case 1: /* HKEY_CURRENT_USER */
-            Status = RtlOpenCurrentUser (MAXIMUM_ALLOWED,
-                                         Handle);
-            break;
-
-        case 2: /* HKEY_LOCAL_MACHINE */
-            Status = OpenLocalMachineKey (Handle);
-            break;
-
-        case 3: /* HKEY_USERS */
-            Status = OpenUsersKey (Handle);
-            break;
-#if 0
-        case 4: /* HKEY_PERFORMANCE_DATA */
-            Status = OpenPerformanceDataKey (Handle);
-            break;
-#endif
-
-        case 5: /* HKEY_CURRENT_CONFIG */
-            Status = OpenCurrentConfigKey (Handle);
-            break;
-
-        case 6: /* HKEY_DYN_DATA */
-            Status = STATUS_NOT_IMPLEMENTED;
-            break;
-
-        default:
-            Status = STATUS_INVALID_PARAMETER;
-            break;
-    }
-
-    return Status;
-}
-
-static NTSTATUS
-MapDefaultKey(OUT PHANDLE RealKey,
-              IN HKEY Key)
-{
-    PHANDLE Handle;
-    ULONG Index;
-    BOOLEAN DoOpen, DefDisabled;
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    if (!IsPredefKey(Key))
-    {
-        *RealKey = (HANDLE)((ULONG_PTR)Key & ~0x1);
-        return STATUS_SUCCESS;
-    }
-
-    /* Handle special cases here */
-    Index = GetPredefKeyIndex(Key);
-    if (Index >= MAX_DEFAULT_HANDLES)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-    RegInitialize(); /* HACK until delay-loading is implemented */
-    RtlEnterCriticalSection (&HandleTableCS);
-
-    if (Key == HKEY_CURRENT_USER)
-        DefDisabled = DefaultHandleHKUDisabled;
-    else
-        DefDisabled = DefaultHandlesDisabled;
-
-    if (!DefDisabled)
-    {
-        Handle = &DefaultHandleTable[Index];
-        DoOpen = (*Handle == NULL);
-    }
-    else
-    {
-        Handle = RealKey;
-        DoOpen = TRUE;
-    }
-
-    if (DoOpen)
-    {
-        /* create/open the default handle */
-        Status = OpenPredefinedKey(Index,
-                                   Handle);
-    }
-
-    if (NT_SUCCESS(Status))
-    {
-        if (!DefDisabled)
-            *RealKey = *Handle;
-        else
-            *(PULONG_PTR)Handle |= 0x1;
-    }
-
-    RtlLeaveCriticalSection (&HandleTableCS);
-
-    return Status;
 }
 
 /* unimplemented*/
@@ -566,209 +373,6 @@ DWORD WINAPI NotifyServiceStatusChangeW(
 	return ERROR_SUCCESS;
 }
 */
-// Non-recursive RegDeleteTreeW implementation by Thomas, however it needs bugfixing
-static NTSTATUS
-RegpDeleteTree(IN HKEY hKey)
-{
-    typedef struct
-    {
-        LIST_ENTRY ListEntry;
-        HANDLE KeyHandle;
-    } REGP_DEL_KEYS, *PREG_DEL_KEYS;
-
-    LIST_ENTRY delQueueHead;
-    PREG_DEL_KEYS delKeys, newDelKeys;
-    HANDLE ProcessHeap;
-    ULONG BufferSize;
-    PKEY_BASIC_INFORMATION BasicInfo;
-    PREG_DEL_KEYS KeyDelRoot;
-    NTSTATUS Status = STATUS_SUCCESS;
-    NTSTATUS Status2 = STATUS_SUCCESS;
-
-    InitializeListHead(&delQueueHead);
-
-    ProcessHeap = RtlGetProcessHeap();
-
-    /* NOTE: no need to allocate enough memory for an additional KEY_BASIC_INFORMATION
-             structure for the root key, we only do that for subkeys as we need to
-             allocate REGP_DEL_KEYS structures anyway! */
-    KeyDelRoot = RtlAllocateHeap(ProcessHeap,
-                                 0,
-                                 sizeof(REGP_DEL_KEYS));
-    if (KeyDelRoot != NULL)
-    {
-        KeyDelRoot->KeyHandle = hKey;
-        InsertTailList(&delQueueHead,
-                       &KeyDelRoot->ListEntry);
-
-        do
-        {
-            delKeys = CONTAINING_RECORD(delQueueHead.Flink,
-                                        REGP_DEL_KEYS,
-                                        ListEntry);
-
-            BufferSize = 0;
-            BasicInfo = NULL;
-            newDelKeys = NULL;
-
-ReadFirstSubKey:
-            /* check if this key contains subkeys and delete them first by queuing
-               them at the head of the list */
-            Status2 = NtEnumerateKey(delKeys->KeyHandle,
-                                     0,
-                                     KeyBasicInformation,
-                                     BasicInfo,
-                                     BufferSize,
-                                     &BufferSize);
-
-            if (NT_SUCCESS(Status2))
-            {
-                OBJECT_ATTRIBUTES ObjectAttributes;
-                UNICODE_STRING SubKeyName;
-
-                ASSERT(newDelKeys != NULL);
-                ASSERT(BasicInfo != NULL);
-
-                /* don't use RtlInitUnicodeString as the string is not NULL-terminated! */
-                SubKeyName.Length = (ULONG)(USHORT)BasicInfo->NameLength;
-                SubKeyName.MaximumLength = (ULONG)(USHORT)BasicInfo->NameLength;
-                SubKeyName.Buffer = BasicInfo->Name;
-
-                InitializeObjectAttributes(&ObjectAttributes,
-                                           &SubKeyName,
-                                           OBJ_CASE_INSENSITIVE,
-                                           delKeys->KeyHandle,
-                                           NULL);
-
-                /* open the subkey */
-                Status2 = NtOpenKey(&newDelKeys->KeyHandle,
-                                    DELETE | KEY_ENUMERATE_SUB_KEYS,
-                                    &ObjectAttributes);
-                if (!NT_SUCCESS(Status2))
-                {
-                    goto SubKeyFailure;
-                }
-
-                /* enqueue this key to the head of the deletion queue */
-                InsertHeadList(&delQueueHead,
-                               &newDelKeys->ListEntry);
-
-                /* try again from the head of the list */
-                continue;
-            }
-            else
-            {
-                if (Status2 == STATUS_BUFFER_TOO_SMALL)
-                {
-                    newDelKeys = RtlAllocateHeap(ProcessHeap,
-                                                 0,
-                                                 BufferSize + sizeof(REGP_DEL_KEYS));
-                    if (newDelKeys != NULL)
-                    {
-                        BasicInfo = (PKEY_BASIC_INFORMATION)(newDelKeys + 1);
-
-                        /* try again */
-                        goto ReadFirstSubKey;
-                    }
-                    else
-                    {
-                        /* don't break, let's try to delete as many keys as possible */
-                        Status2 = STATUS_INSUFFICIENT_RESOURCES;
-                        goto SubKeyFailureNoFree;
-                    }
-                }
-                else if (Status2 == STATUS_BUFFER_OVERFLOW)
-                {
-                    PREG_DEL_KEYS newDelKeys2;
-
-                    ASSERT(newDelKeys != NULL);
-
-                    /* we need more memory to query the key name */
-                    newDelKeys2 = RtlReAllocateHeap(ProcessHeap,
-                                                    0,
-                                                    newDelKeys,
-                                                    BufferSize + sizeof(REGP_DEL_KEYS));
-                    if (newDelKeys2 != NULL)
-                    {
-                        newDelKeys = newDelKeys2;
-                        BasicInfo = (PKEY_BASIC_INFORMATION)(newDelKeys + 1);
-
-                        /* try again */
-                        goto ReadFirstSubKey;
-                    }
-                    else
-                    {
-                        /* don't break, let's try to delete as many keys as possible */
-                        Status2 = STATUS_INSUFFICIENT_RESOURCES;
-                    }
-                }
-                else if (Status2 == STATUS_NO_MORE_ENTRIES)
-                {
-                    /* in some race conditions where another thread would delete
-                       the same tree at the same time, newDelKeys could actually
-                       be != NULL! */
-                    if (newDelKeys != NULL)
-                    {
-                        RtlFreeHeap(ProcessHeap,
-                                    0,
-                                    newDelKeys);
-                    }
-                    break;
-                }
-
-SubKeyFailure:
-                /* newDelKeys can be NULL here when NtEnumerateKey returned an
-                   error other than STATUS_BUFFER_TOO_SMALL or STATUS_BUFFER_OVERFLOW! */
-                if (newDelKeys != NULL)
-                {
-                    RtlFreeHeap(ProcessHeap,
-                                0,
-                                newDelKeys);
-                }
-
-SubKeyFailureNoFree:
-                /* don't break, let's try to delete as many keys as possible */
-                if (NT_SUCCESS(Status))
-                {
-                    Status = Status2;
-                }
-            }
-
-            Status2 = NtDeleteKey(delKeys->KeyHandle);
-
-            /* NOTE: do NOT close the handle anymore, it's invalid already! */
-
-            if (!NT_SUCCESS(Status2))
-            {
-                /* close the key handle so we don't leak handles for keys we were
-                   unable to delete. But only do this for handles not supplied
-                   by the caller! */
-
-                if (delKeys->KeyHandle != hKey)
-                {
-                    NtClose(delKeys->KeyHandle);
-                }
-
-                if (NT_SUCCESS(Status))
-                {
-                    /* don't break, let's try to delete as many keys as possible */
-                    Status = Status2;
-                }
-            }
-
-            /* remove the entry from the list */
-            RemoveEntryList(&delKeys->ListEntry);
-
-            RtlFreeHeap(ProcessHeap,
-                        0,
-                        delKeys);
-        } while (!IsListEmpty(&delQueueHead));
-    }
-    else
-        Status = STATUS_INSUFFICIENT_RESOURCES;
-
-    return Status;
-}
 
 BOOL 
 WINAPI 
@@ -794,23 +398,6 @@ AddMandatoryAce(
   }
   return result;
 }
-
-ULONG 
-WINAPI
-EnableTraceEx2(
-  _In_     TRACEHANDLE              TraceHandle,
-  _In_     LPCGUID                  ProviderId,
-  _In_     ULONG                    ControlCode,
-  _In_     UCHAR                    Level,
-  _In_     ULONGLONG                MatchAnyKeyword,
-  _In_     ULONGLONG                MatchAllKeyword,
-  _In_     ULONG                    Timeout,
-  _In_opt_ PENABLE_TRACE_PARAMETERS EnableParameters
-)
-{
-	return ERROR_SUCCESS;
-}
-
 
 ULONG 
 WINAPI
@@ -1076,16 +663,6 @@ BOOL WINAPI CreateRestrictedTokenInternal(
             return FALSE;
     }
     return DuplicateTokenEx( baseToken, MAXIMUM_ALLOWED, NULL, level, type, newToken );
-}
-
-//DELETE ME
-
-LONG WINAPI RegDeleteTreeW(
-  _In_     HKEY    hKey,
-  _In_opt_ LPCWSTR lpSubKey
-)
-{
-	return ERROR_SUCCESS;
 }
 
 BOOL WINAPI GetKernelObjectSecurityInternal(

@@ -9,6 +9,6 @@ list(APPEND SOURCE
 add_library(API-MS-WIN-CORE-FILE-L1-2-1 SHARED ${SOURCE})
 
 set_module_type(API-MS-WIN-CORE-FILE-L1-2-1 win32dll ENTRYPOINT 0)
-add_importlibs(API-MS-WIN-CORE-FILE-L1-2-1 kernel32)
+add_importlibs(API-MS-WIN-CORE-FILE-L1-2-1 kernelbase)
 add_dependencies(API-MS-WIN-CORE-FILE-L1-2-1 psdk)
 add_cd_file(TARGET API-MS-WIN-CORE-FILE-L1-2-1 DESTINATION reactos/system32 FOR all)

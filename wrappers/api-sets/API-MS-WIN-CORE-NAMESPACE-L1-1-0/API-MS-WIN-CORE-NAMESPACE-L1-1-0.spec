@@ -1,6 +1,6 @@
-@ stdcall AddSIDToBoundaryDescriptor(ptr ptr) kernel32.AddSIDToBoundaryDescriptor
-@ stdcall ClosePrivateNamespace(ptr long) kernel32.ClosePrivateNamespace
-@ stdcall CreateBoundaryDescriptorW(wstr long) kernel32.CreateBoundaryDescriptorW
-@ stdcall CreatePrivateNamespaceW(ptr ptr wstr) kernel32.CreatePrivateNamespaceW
-@ stdcall DeleteBoundaryDescriptor() kernel32.DeleteBoundaryDescriptor
-@ stdcall OpenPrivateNamespaceW(ptr wstr) kernel32.OpenPrivateNamespaceW
+@ stdcall AddSIDToBoundaryDescriptor(ptr ptr) kernelbase.AddSIDToBoundaryDescriptor
+@ stdcall ClosePrivateNamespace(ptr long) kernelbase.ClosePrivateNamespace
+@ stdcall CreateBoundaryDescriptorW(wstr long) kernelbase.CreateBoundaryDescriptorW
+@ stdcall CreatePrivateNamespaceW(ptr ptr wstr) kernelbase.CreatePrivateNamespaceW
+@ stdcall DeleteBoundaryDescriptor() kernelbase.DeleteBoundaryDescriptor
+@ stdcall OpenPrivateNamespaceW(ptr wstr) kernelbase.OpenPrivateNamespaceW

@@ -20,24 +20,25 @@
 
 #pragma once
 
-#include <ndrtypes.h>
+#include "ndrtypes.h"
 
 /* there can't be any alignment with the structures in this file */
-#include <pshpack1.h>
+#include "pshpack1.h"
 
 typedef struct _NDR_PROC_HEADER
 {
     /* type of handle to use:
-     * RPC_FC_BIND_EXPLICIT = 0 - Explicit handle.
+     * 0 - Explicit handle.
      *   Handle is passed as a parameter to the function.
      *   Indicates that explicit handle information follows the header,
      *   which actually describes the handle.
-     * RPC_FC_BIND_GENERIC = 31 - Implicit handle with custom binding routines
+     * FC_BIND_GENERIC = 31 - Implicit handle with custom binding routines
      *   (MIDL_STUB_DESC::IMPLICIT_HANDLE_INFO::pGenericBindingInfo)
-     * RPC_FC_BIND_PRIMITIVE = 32 - Implicit handle using handle_t created by
+     * FC_BIND_PRIMITIVE = 32 - Implicit handle using handle_t created by
      *   calling application
-     * RPC_FC_AUTO_HANDLE = 33 - Automatic handle
-     * RPC_FC_CALLBACK_HANDLE = 34 - undocumented
+     * FC_AUTO_HANDLE = 33 - Automatic handle
+     * FC_CALLBACK_HANDLE = 34 - Implicit handle used for a callback: current handle
+     *   from last remote call
      */
     unsigned char handle_type;
 
@@ -96,13 +97,11 @@ typedef struct _NDR_PROC_HEADER_RPC
 typedef struct _NDR_PROC_PARTIAL_OIF_HEADER
 {
     /* the pre-computed client buffer size so that interpreter can skip all
-     * or some (if the flag RPC_FC_PROC_OI2F_CLTMUSTSIZE is specified) of the
-     * sizing pass */
+     * or some (if the flag ClientMustSize is specified) of the sizing pass */
     unsigned short constant_client_buffer_size;
 
     /* the pre-computed server buffer size so that interpreter can skip all
-     * or some (if the flag RPC_FC_PROC_OI2F_SRVMUSTSIZE is specified) of the
-     * sizing pass */
+     * or some (if the flag ServerMustSize is specified) of the sizing pass */
     unsigned short constant_server_buffer_size;
 
     INTERPRETER_OPT_FLAGS Oi2Flags;
@@ -205,8 +204,8 @@ typedef struct _NDR_EHD_CONTEXT
      * NDR_CONTEXT_HANDLE_SERIALIZE = 0x02
      * NDR_CONTEXT_HANDLE_NO_SERIALIZE = 0x04
      * NDR_STRICT_CONTEXT_HANDLE = 0x08
+     * HANDLE_PARAM_IS_RETURN = 0x10
      * HANDLE_PARAM_IS_OUT = 0x20
-     * HANDLE_PARAM_IS_RETURN = 0x21
      * HANDLE_PARAM_IS_IN = 0x40
      * HANDLE_PARAM_IS_VIA_PTR = 0x80
      */
@@ -225,7 +224,24 @@ typedef struct _NDR_EHD_CONTEXT
     unsigned char param_num;
 } NDR_EHD_CONTEXT;
 
-#include <poppack.h>
+#include "poppack.h"
+
+struct async_call_data
+{
+    MIDL_STUB_MESSAGE *pStubMsg;
+    const NDR_PROC_HEADER *pProcHeader;
+    PFORMAT_STRING pHandleFormat;
+    PFORMAT_STRING pParamFormat;
+    RPC_BINDING_HANDLE hBinding;
+    /* size of stack */
+    unsigned short stack_size;
+    /* number of parameters. optional for client to give it to us */
+    unsigned int number_of_params;
+    /* location to put retval into */
+    LONG_PTR *retval_ptr;
+    /* correlation cache */
+    ULONG_PTR NdrCorrCache[256];
+};
 
 enum stubless_phase
 {
@@ -235,6 +251,7 @@ enum stubless_phase
     STUBLESS_CALCSIZE,
     STUBLESS_GETBUFFER,
     STUBLESS_MARSHAL,
+    STUBLESS_MUSTFREE,
     STUBLESS_FREE
 };
 
@@ -248,3 +265,4 @@ PFORMAT_STRING convert_old_args( PMIDL_STUB_MESSAGE pStubMsg, PFORMAT_STRING pFo
                                  unsigned int stack_size, BOOL object_proc,
                                  void *buffer, unsigned int size, unsigned int *count ) DECLSPEC_HIDDEN;
 RPC_STATUS NdrpCompleteAsyncClientCall(RPC_ASYNC_STATE *pAsync, void *Reply) DECLSPEC_HIDDEN;
+RPC_STATUS NdrpCompleteAsyncServerCall(RPC_ASYNC_STATE *pAsync, void *Reply) DECLSPEC_HIDDEN;

@@ -200,6 +200,7 @@ IntEnumFontFamilies(HDC Dc, LPLOGFONTW LogFont, PVOID EnumProc, LPARAM lParam,
     ENUMLOGFONTEXA EnumLogFontExA;
     NEWTEXTMETRICEXA NewTextMetricExA;
     LOGFONTW lfW;
+	LONG InfoCount;
 
     Info = RtlAllocateHeap(GetProcessHeap(), 0,
                            INITIAL_FAMILY_COUNT * sizeof(FONTFAMILYINFO));
@@ -216,7 +217,8 @@ IntEnumFontFamilies(HDC Dc, LPLOGFONTW LogFont, PVOID EnumProc, LPARAM lParam,
         LogFont = &lfW;
     }
 
-    FontFamilyCount = NtGdiGetFontFamilyInfo(Dc, LogFont, Info, INITIAL_FAMILY_COUNT);
+	InfoCount = INITIAL_FAMILY_COUNT;
+    FontFamilyCount = NtGdiGetFontFamilyInfo(Dc, LogFont, Info, &InfoCount);
     if (FontFamilyCount < 0)
     {
         RtlFreeHeap(GetProcessHeap(), 0, Info);
@@ -232,7 +234,7 @@ IntEnumFontFamilies(HDC Dc, LPLOGFONTW LogFont, PVOID EnumProc, LPARAM lParam,
         {
             return 0;
         }
-        FontFamilyCount = NtGdiGetFontFamilyInfo(Dc, LogFont, Info, FontFamilySize);
+        FontFamilyCount = NtGdiGetFontFamilyInfo(Dc, LogFont, Info, &InfoCount);
         if (FontFamilyCount < 0 || FontFamilySize < FontFamilyCount)
         {
             RtlFreeHeap(GetProcessHeap(), 0, Info);

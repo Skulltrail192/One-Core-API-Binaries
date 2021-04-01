@@ -11,5 +11,5 @@ list(APPEND SOURCE
 add_library(API-MS-WIN-SHCORE-THREAD-L1-1-0 SHARED ${SOURCE})
 set_module_type(API-MS-WIN-SHCORE-THREAD-L1-1-0 win32dll ENTRYPOINT 0)
 target_link_libraries(API-MS-WIN-SHCORE-THREAD-L1-1-0 wine)
-add_importlibs(API-MS-WIN-SHCORE-THREAD-L1-1-0 kernel32 ntdll shcore)
+add_importlibs(API-MS-WIN-SHCORE-THREAD-L1-1-0 kernelbase ntdll shcore)
 add_cd_file(TARGET API-MS-WIN-SHCORE-THREAD-L1-1-0 DESTINATION reactos/system32 FOR all)

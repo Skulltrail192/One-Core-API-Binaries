@@ -97,7 +97,7 @@ NTSTATUS NTAPI TpAllocCleanupGroup(__out PTP_CLEANUP_GROUP *  	CleanupGroupRetur
 	return 0x00000000;
 }
 
-NTSTATUS NTAPI TpAllocPool(__out PTP_POOL *PoolReturn, __reserved PVOID Reserved)
+NTSTATUS NTAPI TpAllocPool(__out PTP_POOL *PoolReturn, PVOID Reserved)
 {
 	return 0x00000000;
 }
@@ -271,9 +271,10 @@ NTSTATUS NTAPI NtAlpcCreatePortSection( 	__in HANDLE  	PortHandle,
 }
 
 /*subimplemented*/
-NTSTATUS NTAPI NtAlpcCreateSecurityContext( 	__in HANDLE  	PortHandle,
-		__reserved ULONG  	Flags,
-		__inout PALPC_SECURITY_ATTR  	SecurityAttribute 
+NTSTATUS NTAPI NtAlpcCreateSecurityContext( 	
+	HANDLE  	PortHandle,
+	ULONG  	Flags,
+    PALPC_SECURITY_ATTR  	SecurityAttribute 
 	) 	
 {
 	return STATUS_NOT_IMPLEMENTED;
@@ -281,7 +282,7 @@ NTSTATUS NTAPI NtAlpcCreateSecurityContext( 	__in HANDLE  	PortHandle,
 
 /*subimplemented*/
 NTSTATUS NTAPI NtAlpcDeletePortSection( 	__in HANDLE  	PortHandle,
-		__reserved ULONG  	Flags,
+		ULONG  	Flags,
 		__in ALPC_HANDLE  	SectionHandle 
 	) 	
 {
@@ -290,7 +291,7 @@ NTSTATUS NTAPI NtAlpcDeletePortSection( 	__in HANDLE  	PortHandle,
 
 /*subimplemented*/
 NTSTATUS NTAPI NtAlpcDeleteSectionView( 	__in HANDLE  	PortHandle,
-		__reserved ULONG  	Flags,
+		ULONG  	Flags,
 		__in PVOID  	ViewBase 
 	) 	
 {
@@ -299,7 +300,7 @@ NTSTATUS NTAPI NtAlpcDeleteSectionView( 	__in HANDLE  	PortHandle,
 
 /*subimplemented*/
 NTSTATUS NTAPI NtAlpcDeleteSecurityContext( 	__in HANDLE  	PortHandle,
-		__reserved ULONG  	Flags,
+		ULONG  	Flags,
 		__in ALPC_HANDLE  	ContextHandle 
 	) 	
 {
@@ -309,7 +310,7 @@ NTSTATUS NTAPI NtAlpcDeleteSecurityContext( 	__in HANDLE  	PortHandle,
 /*subimplemented*/
 NTSTATUS NTAPI NtAlpcImpersonateClientOfPort( 	__in HANDLE  	PortHandle,
 		__in PPORT_MESSAGE  	PortMessage,
-		__reserved PVOID  	Reserved 
+		PVOID  	Reserved 
 	) 	
 {
 	return STATUS_NOT_IMPLEMENTED;
@@ -352,7 +353,7 @@ NTSTATUS NTAPI NtAlpcSetInformation( 	__in HANDLE  	PortHandle,
 
 /*subimplemented*/
 NTSTATUS NTAPI NtAlpcCreateSectionView( 	__in HANDLE  	PortHandle,
-		__reserved ULONG  	Flags,
+		ULONG  	Flags,
 		__inout PALPC_DATA_VIEW_ATTR  	ViewAttributes 
 	) 	
 {
@@ -364,7 +365,7 @@ NTSTATUS NTAPI NtAlpcDisconnectPort(__in HANDLE PortHandle, __in ULONG Flags)
 	return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS NTAPI NtAlpcCreateResourceReserve(__in HANDLE PortHandle, __reserved ULONG Flags, __in SIZE_T MessageSize, __out PALPC_HANDLE ResourceId)
+NTSTATUS NTAPI NtAlpcCreateResourceReserve(__in HANDLE PortHandle, ULONG Flags, __in SIZE_T MessageSize, __out PALPC_HANDLE ResourceId)
 {
 	return STATUS_NOT_IMPLEMENTED;
 }
@@ -663,7 +664,7 @@ DWORD WINAPI EtwProcessPrivateLoggerRequest(PVOID number)
 NTSTATUS NTAPI NtCreateKeyTransacted (__out PHANDLE KeyHandle, 
 									  __in ACCESS_MASK DesiredAccess, 
 									  __in POBJECT_ATTRIBUTES ObjectAttributes, 
-									  __reserved ULONG TitleIndex, 
+									  ULONG TitleIndex, 
 									  __in_opt PUNICODE_STRING Class, 
 									  __in ULONG CreateOptions, 
 									  __in HANDLE TransactionHandle, 
@@ -969,16 +970,12 @@ NTSTATUS WINAPI RtlGetUserPreferredUILanguages(DWORD dwFlags,
 	return 0x00000000;
 }
 
-BOOL WINAPI RtlDeregisterSecureMemoryCacheCallback(
-  _In_  PRTL_SECURE_MEMORY_CACHE_CALLBACK pfnCallBack
-)
+BOOL WINAPI RtlDeregisterSecureMemoryCacheCallback(_In_  PSECURE_MEMORY_CACHE_CALLBACK pfnCallBack)
 {
 	return TRUE;
 }
 
-NTSTATUS WINAPI RtlRegisterSecureMemoryCacheCallback(
-  _In_  PRTL_SECURE_MEMORY_CACHE_CALLBACK pfnCallBack
-)
+NTSTATUS WINAPI RtlRegisterSecureMemoryCacheCallback(_In_ PRTL_SECURE_MEMORY_CACHE_CALLBACK pfnCallBack)
 {
 	return 0x00000000;
 }
@@ -1393,16 +1390,6 @@ NTSTATUS NTAPI RtlWow64EnableFsRedirectionEx(
 	return STATUS_SUCCESS;			
 }
 
-PVOID
-NTAPI
-LdrLoadAlternateResourceModule(
-    IN PVOID Module,
-    IN LPCWSTR PathToAlternateModule OPTIONAL
-    )
-{
-	return NULL;
-}
-
 BOOLEAN
 LdrAlternateResourcesEnabled(
     VOID
@@ -1418,18 +1405,6 @@ LdrAccessResource(
     IN PIMAGE_RESOURCE_DATA_ENTRY ResourceDataEntry,
     OUT PVOID *Address OPTIONAL,
     OUT PULONG Size OPTIONAL
-    )
-{
-	return STATUS_SUCCESS;			
-}
-
-NTSTATUS
-NTAPI
-LdrFindResource_U(
-    IN PVOID DllHandle,
-    IN PULONG_PTR ResourceIdPath,
-    IN ULONG ResourceIdPathLength,
-    OUT PIMAGE_RESOURCE_DATA_ENTRY *ResourceDataEntry
     )
 {
 	return STATUS_SUCCESS;			

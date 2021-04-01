@@ -33,21 +33,6 @@
 #define GUID_ARG(guid) guid->Data1, guid->Data2, guid->Data3, guid->Data4[0], guid->Data4[1], guid->Data4[2], guid->Data4[3], guid->Data4[4], guid->Data4[5], guid->Data4[6], guid->Data4[7]
 #define GUID_ARG_NO_POINTER(guid) guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]
 
-
-typedef enum{ 
-  KF_FLAG_DEFAULT                      = 0x00000000,
-  KF_FLAG_SIMPLE_IDLIST                = 0x00000100,
-  KF_FLAG_NOT_PARENT_RELATIVE          = 0x00000200,
-  //KF_FLAG_DEFAULT_PATH                 = 0x00000400,
-  KF_FLAG_INIT                         = 0x00000800,
-  KF_FLAG_NO_ALIAS                     = 0x00001000,
-  KF_FLAG_DONT_UNEXPAND                = 0x00002000,
-  KF_FLAG_DONT_VERIFY                  = 0x00004000,
-  KF_FLAG_CREATE                       = 0x00008000,
-  KF_FLAG_NO_APPCONTAINER_REDIRECTION  = 0x00010000,
-  KF_FLAG_ALIAS_ONLY                   = 0x80000000
-} KNOWN_FOLDER_FLAG;
-
 static const GUID CLSID_UnixDosFolder = 
 {0x9d20aae8, 0x0625, 0x44b0, {0x9c, 0xa7, 0x71, 0x88, 0x9c, 0x22, 0x54, 0xd9}};
 
@@ -4766,7 +4751,7 @@ SHSetKnownFolderPath(
 	 
     if (index < 0)
         return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );	
-	return SHSetFolderPathW(index, hToken, dwFlags, pszPath);
+	return SHSetFolderPathW(index, hToken, dwFlags, (LPCSTR)pszPath);
 }
 
 /*************************************************************************

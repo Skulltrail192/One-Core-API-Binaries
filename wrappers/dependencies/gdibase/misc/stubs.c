@@ -929,12 +929,17 @@ BOOL
 WINAPI
 GdiIsPlayMetafileDC(HDC hDC)
 {
+#if 0
     PLDC pLDC = GdiGetLDC(hDC);
     if ( pLDC )
     {
         if ( pLDC->Flags & LDC_PLAY_MFDC ) return TRUE;
     }
     return FALSE;
+#else
+    UNIMPLEMENTED;
+    return FALSE;
+#endif
 }
 
 /*

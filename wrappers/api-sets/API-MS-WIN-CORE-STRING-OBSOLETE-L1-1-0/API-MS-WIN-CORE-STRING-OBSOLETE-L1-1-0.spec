@@ -1,8 +1,8 @@
-@ stdcall lstrcmpiA(str str) kernel32.lstrcmpiA
-@ stdcall lstrcmpiW(wstr wstr) kernel32.lstrcmpiW
-@ stdcall lstrcmpW(wstr wstr) kernel32.lstrcmpW
-@ stdcall lstrcpynA(ptr str long) kernel32.lstrcpynA
-@ stdcall lstrcpynW(ptr wstr long) kernel32.lstrcpynW
-@ stdcall lstrcpyW(ptr wstr) kernel32.lstrcpyW
-@ stdcall lstrlenA(str) kernel32.lstrlenA
-@ stdcall lstrlenW(wstr) kernel32.lstrlenW
+@ stdcall lstrcmpiA(str str) kernelbase.lstrcmpiA
+@ stdcall lstrcmpiW(wstr wstr) kernelbase.lstrcmpiW
+@ stdcall lstrcmpW(wstr wstr) kernelbase.lstrcmpW
+@ stdcall lstrcpynA(ptr str long) kernelbase.lstrcpynA
+@ stdcall lstrcpynW(ptr wstr long) kernelbase.lstrcpynW
+@ stdcall lstrcpyW(ptr wstr) kernelbase.lstrcpyW
+@ stdcall lstrlenA(str) kernelbase.lstrlenA
+@ stdcall lstrlenW(wstr) kernelbase.lstrlenW

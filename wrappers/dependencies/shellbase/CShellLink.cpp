@@ -2689,7 +2689,7 @@ INT_PTR CALLBACK ExtendedShortcutProc(HWND hwndDlg, UINT uMsg,
     return FALSE;
 }
 
-EXTERN_C HRESULT
+HRESULT
 WINAPI
 SHOpenFolderAndSelectItems(LPITEMIDLIST pidlFolder,
                            UINT cidl,

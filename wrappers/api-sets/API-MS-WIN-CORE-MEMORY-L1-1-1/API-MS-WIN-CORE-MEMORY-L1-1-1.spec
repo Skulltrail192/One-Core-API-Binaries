@@ -1,32 +1,32 @@
-@ stdcall CreateFileMappingFromApp(ptr ptr long int64 wstr) kernel32.CreateFileMappingFromApp
-@ stdcall CreateFileMappingNumaW(ptr ptr long long long wstr long) kernel32.CreateFileMappingNumaW
-@ stdcall CreateFileMappingW(long ptr long long long wstr) kernel32.CreateFileMappingW
-@ stdcall CreateMemoryResourceNotification(long) kernel32.CreateMemoryResourceNotification
-@ stdcall FlushViewOfFile(ptr long) kernel32.FlushViewOfFile
-@ stdcall GetLargePageMinimum() kernel32.GetLargePageMinimum
-@ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) kernel32.GetProcessWorkingSetSizeEx
-@ stdcall GetSystemFileCacheSize(ptr ptr ptr) kernel32.GetSystemFileCacheSize
-@ stdcall GetWriteWatch(long ptr long ptr ptr ptr) kernel32.GetWriteWatch
-@ stdcall MapViewOfFile(long long long long long) kernel32.MapViewOfFile
-@ stdcall MapViewOfFileEx(long long long long long ptr) kernel32.MapViewOfFileEx
-@ stdcall MapViewOfFileFromApp(ptr long int64 long) kernel32.MapViewOfFileFromApp
-@ stdcall OpenFileMappingW(long long wstr) kernel32.OpenFileMappingW
-@ stdcall PrefetchVirtualMemory(ptr long ptr long) kernel32.PrefetchVirtualMemory
-@ stdcall QueryMemoryResourceNotification(ptr ptr) kernel32.QueryMemoryResourceNotification
-@ stdcall ReadProcessMemory(long ptr ptr long ptr) kernel32.ReadProcessMemory
-@ stdcall ResetWriteWatch(ptr long) kernel32.ResetWriteWatch
-@ stdcall SetProcessWorkingSetSizeEx(long long long long) kernel32.SetProcessWorkingSetSizeEx
-@ stdcall SetSystemFileCacheSize(long long long) kernel32.SetSystemFileCacheSize
-@ stdcall UnmapViewOfFile(ptr) kernel32.UnmapViewOfFile
-@ stdcall UnmapViewOfFileEx(ptr long) kernel32.UnmapViewOfFileEx
-@ stdcall VirtualAlloc(ptr long long long) kernel32.VirtualAlloc
-@ stdcall VirtualAllocEx(long ptr long long long) kernel32.VirtualAllocEx
-@ stdcall VirtualFree(ptr long long) kernel32.VirtualFree
-@ stdcall VirtualFreeEx(long ptr long long) kernel32.VirtualFreeEx
-@ stdcall VirtualLock(ptr long) kernel32.VirtualLock
-@ stdcall VirtualProtect(ptr long long ptr) kernel32.VirtualProtect
-@ stdcall VirtualProtectEx(long ptr long long ptr) kernel32.VirtualProtectEx
-@ stdcall VirtualQuery(ptr ptr long) kernel32.VirtualQuery
-@ stdcall VirtualQueryEx(long ptr ptr long) kernel32.VirtualQueryEx
-@ stdcall VirtualUnlock(ptr long) kernel32.VirtualUnlock
-@ stdcall WriteProcessMemory(long ptr ptr long ptr) kernel32.WriteProcessMemory
+@ stdcall CreateFileMappingFromApp(ptr ptr long int64 wstr) kernelbase.CreateFileMappingFromApp
+@ stdcall CreateFileMappingNumaW(ptr ptr long long long wstr long) kernelbase.CreateFileMappingNumaW
+@ stdcall CreateFileMappingW(long ptr long long long wstr) kernelbase.CreateFileMappingW
+@ stdcall CreateMemoryResourceNotification(long) kernelbase.CreateMemoryResourceNotification
+@ stdcall FlushViewOfFile(ptr long) kernelbase.FlushViewOfFile
+@ stdcall GetLargePageMinimum() kernelbase.GetLargePageMinimum
+@ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long) kernelbase.GetProcessWorkingSetSizeEx
+@ stdcall GetSystemFileCacheSize(ptr ptr ptr) kernelbase.GetSystemFileCacheSize
+@ stdcall GetWriteWatch(long ptr long ptr ptr ptr) kernelbase.GetWriteWatch
+@ stdcall MapViewOfFile(long long long long long) kernelbase.MapViewOfFile
+@ stdcall MapViewOfFileEx(long long long long long ptr) kernelbase.MapViewOfFileEx
+@ stdcall MapViewOfFileFromApp(ptr long int64 long) kernelbase.MapViewOfFileFromApp
+@ stdcall OpenFileMappingW(long long wstr) kernelbase.OpenFileMappingW
+@ stdcall PrefetchVirtualMemory(ptr long ptr long) kernelbase.PrefetchVirtualMemory
+@ stdcall QueryMemoryResourceNotification(ptr ptr) kernelbase.QueryMemoryResourceNotification
+@ stdcall ReadProcessMemory(long ptr ptr long ptr) kernelbase.ReadProcessMemory
+@ stdcall ResetWriteWatch(ptr long) kernelbase.ResetWriteWatch
+@ stdcall SetProcessWorkingSetSizeEx(long long long long) kernelbase.SetProcessWorkingSetSizeEx
+@ stdcall SetSystemFileCacheSize(long long long) kernelbase.SetSystemFileCacheSize
+@ stdcall UnmapViewOfFile(ptr) kernelbase.UnmapViewOfFile
+@ stdcall UnmapViewOfFileEx(ptr long) kernelbase.UnmapViewOfFileEx
+@ stdcall VirtualAlloc(ptr long long long) kernelbase.VirtualAlloc
+@ stdcall VirtualAllocEx(long ptr long long long) kernelbase.VirtualAllocEx
+@ stdcall VirtualFree(ptr long long) kernelbase.VirtualFree
+@ stdcall VirtualFreeEx(long ptr long long) kernelbase.VirtualFreeEx
+@ stdcall VirtualLock(ptr long) kernelbase.VirtualLock
+@ stdcall VirtualProtect(ptr long long ptr) kernelbase.VirtualProtect
+@ stdcall VirtualProtectEx(long ptr long long ptr) kernelbase.VirtualProtectEx
+@ stdcall VirtualQuery(ptr ptr long) kernelbase.VirtualQuery
+@ stdcall VirtualQueryEx(long ptr ptr long) kernelbase.VirtualQueryEx
+@ stdcall VirtualUnlock(ptr long) kernelbase.VirtualUnlock
+@ stdcall WriteProcessMemory(long ptr ptr long ptr) kernelbase.WriteProcessMemory

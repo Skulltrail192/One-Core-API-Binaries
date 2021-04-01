@@ -9,6 +9,6 @@ list(APPEND SOURCE
 add_library(API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-4 SHARED ${SOURCE})
 
 set_module_type(API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-4 win32dll ENTRYPOINT 0)
-add_importlibs(API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-4 user32 ntdll kernel32)
+add_importlibs(API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-4 user32 ntdll kernelbase)
 add_dependencies(API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-4 psdk)
 add_cd_file(TARGET API-MS-WIN-RTCORE-NTUSER-PRIVATE-L1-1-4 DESTINATION reactos/system32 FOR all)

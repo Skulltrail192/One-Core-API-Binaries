@@ -1,5 +1,5 @@
-@ stdcall GetActiveProcessorCount(long) kernel32.GetActiveProcessorCount
-@ stdcall GetProcessAffinityMask(long ptr ptr) kernel32.GetProcessAffinityMask
-@ stdcall GetProcessIoCounters(long ptr) kernel32.GetProcessIoCounters
-@ stdcall SetProcessAffinityMask(long long) kernel32.SetProcessAffinityMask
-@ stdcall SetThreadAffinityMask(long long) kernel32.SetThreadAffinityMask
+@ stdcall GetActiveProcessorCount(long) kernelbase.GetActiveProcessorCount
+@ stdcall GetProcessAffinityMask(long ptr ptr) kernelbase.GetProcessAffinityMask
+@ stdcall GetProcessIoCounters(long ptr) kernelbase.GetProcessIoCounters
+@ stdcall SetProcessAffinityMask(long long) kernelbase.SetProcessAffinityMask
+@ stdcall SetThreadAffinityMask(long long) kernelbase.SetThreadAffinityMask

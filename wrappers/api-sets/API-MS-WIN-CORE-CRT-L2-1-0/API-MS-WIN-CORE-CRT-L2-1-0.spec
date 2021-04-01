@@ -5,8 +5,8 @@
 @ cdecl _cexit() msvcrt._cexit
 @ cdecl _exit(long) msvcrt._exit
 @ cdecl _initterm(ptr ptr) msvcrt._initterm
-@ cdecl _initterm_e(ptr ptr) msvcrt._initterm_e
-@ cdecl _invalid_parameter(wstr wstr wstr long long) msvcrt._invalid_parameter
+@ cdecl -version=0x600+ _initterm_e(ptr ptr) msvcrt._initterm_e
+@ cdecl -version=0x600+ _invalid_parameter(wstr wstr wstr long long) msvcrt._invalid_parameter
 @ cdecl _onexit(ptr) msvcrt._onexit
 @ cdecl _purecall() msvcrt._purecall
 @ cdecl _time64(ptr) msvcrt._time64

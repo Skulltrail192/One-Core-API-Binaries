@@ -250,7 +250,7 @@ NTSTATUS WINAPI RtlFlsAlloc(PFLS_CALLBACK_FUNCTION lpCallback,
 
 NTSTATUS WINAPI RtlFlsFree(DWORD dwFlsIndex);
 
-NTSTATUS NTAPI TpAllocPool(__out PTP_POOL *PoolReturn, __reserved PVOID Reserved);
+NTSTATUS NTAPI TpAllocPool(__out PTP_POOL *PoolReturn, PVOID Reserved);
 
 NTSTATUS NTAPI TpAllocCleanupGroup(__out PTP_CLEANUP_GROUP *CleanupGroupReturn);
 
@@ -460,7 +460,7 @@ NTSTATUS NTAPI RtlNormalizeString(_In_       NORM_FORM NormForm,  _In_ LPCWSTR l
 
 BOOL WINAPI RtlDeregisterSecureMemoryCacheCallback(_In_  PSECURE_MEMORY_CACHE_CALLBACK pfnCallBack);
 
-NTSYSAPI NTSTATUS WINAPI RtlRegisterSecureMemoryCacheCallback(_In_  PRTL_SECURE_MEMORY_CACHE_CALLBACK pfnCallBack);
+NTSTATUS WINAPI RtlRegisterSecureMemoryCacheCallback(_In_ PRTL_SECURE_MEMORY_CACHE_CALLBACK pfnCallBack);
 
 NTSTATUS NTAPI RtlEnableThreadProfiling(HANDLE ThreadHandle, DWORD Flags, DWORD64 HardwareCounters, HANDLE PerformanceDataHandle);
 

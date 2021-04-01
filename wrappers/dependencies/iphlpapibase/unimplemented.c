@@ -23,13 +23,7 @@
 WINE_DEFAULT_DEBUG_CHANNEL(iphlpapi);
 
 typedef DWORD (WINAPI *PtFuncCompare)(const void *, const void *);
-
-// typedef enum  { 
-  // UDP_TABLE_BASIC,
-  // UDP_TABLE_OWNER_PID,
-  // UDP_TABLE_OWNER_MODULE
-// } UDP_TABLE_CLASS, *PUDP_TABLE_CLASS;
-
+ 
 DWORD WINAPI AllocateAndGetTcpExTableFromStack(
   _Out_  PVOID *ppTcpTable,
   _In_   BOOL bOrder,
@@ -435,17 +429,42 @@ DWORD WINAPI AllocateAndGetUdpExTableFromStack(
 	return 0;
 }
 
-DWORD WINAPI AllocateAndGetTcpExTable2FromStack(int a1, int a2, HANDLE hHeap, DWORD dwFlags, HANDLE Handle, PtFuncCompare compare)
+DWORD 
+WINAPI 
+AllocateAndGetTcpExTable2FromStack(
+	PVOID *ppTcpTable,
+	BOOL bOrder, 
+	HANDLE heap, 
+	DWORD flags, 
+	DWORD family, 
+	TCP_TABLE_CLASS class
+)
 {
 	return 0;
 }
 
-DWORD WINAPI AllocateAndGetArpEntTableFromStack(LPVOID *a1, int a2, HANDLE hHeap, DWORD dwFlags, DWORD a5)
+DWORD
+AllocateAndGetArpEntTableFromStack(
+    OUT PDWORD    *ppdwArpEntTable,
+    OUT PDWORD    pdwNumEntries,
+    IN  HANDLE    hHeap,
+    IN  DWORD     dwAllocFlags,
+    IN  DWORD     dwReAllocFlags
+)
 {
 	return 0;
 }
 
-DWORD WINAPI AllocateAndGetUdpExTable2FromStack(int a1, int a2, HANDLE hHeap, DWORD dwFlags, HANDLE Handle, PtFuncCompare compare)
+DWORD 
+WINAPI 
+AllocateAndGetUdpExTable2FromStack(
+	PVOID *ppUdpTable,
+	BOOL bOrder, 
+	HANDLE heap, 
+	DWORD flags, 
+	DWORD family, 
+	UDP_TABLE_CLASS class
+)
 {
 	return 0;
 }

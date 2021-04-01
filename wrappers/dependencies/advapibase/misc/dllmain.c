@@ -9,11 +9,11 @@
  */
 
 #include <advapi32.h>
-WINE_DEFAULT_DEBUG_CHANNEL(advapi);
 
 extern BOOL RegInitialize(VOID);
 extern BOOL RegCleanup(VOID);
 extern VOID UnloadNtMarta(VOID);
+extern VOID CloseKsecDdHandle(VOID);
 
 BOOL
 WINAPI
@@ -33,29 +33,11 @@ DllMain(
             CloseLogonLsaHandle();
             RegCleanup();
             UnloadNtMarta();
+            CloseKsecDdHandle();
             break;
     }
 
     return TRUE;
 }
 
-
-BOOL 
-WINAPI 
-LogonUserExExW(
-  _In_      LPTSTR        lpszUsername,
-  _In_opt_  LPTSTR        lpszDomain,
-  _In_opt_  LPTSTR        lpszPassword,
-  _In_      DWORD         dwLogonType,
-  _In_      DWORD         dwLogonProvider,
-  _In_opt_  PTOKEN_GROUPS pTokenGroups,
-  _Out_opt_ PHANDLE       phToken,
-  _Out_opt_ PSID          *ppLogonSid,
-  _Out_opt_ PVOID         *ppProfileBuffer,
-  _Out_opt_ LPDWORD       pdwProfileLength,
-  _Out_opt_ PQUOTA_LIMITS pQuotaLimits
-)
-{
-	return FALSE;
-}
 /* EOF */

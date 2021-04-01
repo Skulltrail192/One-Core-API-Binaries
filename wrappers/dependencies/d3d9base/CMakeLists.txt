@@ -7,16 +7,17 @@ include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 spec2def(d3d9base.dll d3d9base.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
-    buffer.c
     d3d9_main.c
     device.c
     directx.c
+	index_buffer.c
     query.c
     shader.c
     stateblock.c
     surface.c
     swapchain.c
     texture.c
+    vertex_buffer.c	
     vertexdeclaration.c
     volume.c
     d3d9_private.h)
@@ -30,6 +31,6 @@ add_library(d3d9base SHARED
 
 set_module_type(d3d9base win32dll UNICODE)
 target_link_libraries(d3d9base wine)
-add_importlibs(d3d9base d3dwine user32 msvcrt kernel32 ntdll)
-add_pch(d3d9base d3d9base_private.h SOURCE)
+add_importlibs(d3d9base d3dwine d3d9base user32 msvcrt kernel32 ntdll)
+add_pch(d3d9base d3d9_private.h SOURCE)
 add_cd_file(TARGET d3d9base DESTINATION reactos/system32 FOR all)

@@ -30,7 +30,7 @@ Revision History:
 #define NONAMELESSUNION
 #include "winternl.h"
 #include "ddk/wdm.h"
-#include "ntdll_misc.h"
+//#include "ntdll_misc.h"
 #include "wine/exception.h"
 #include "wine/debug.h"
 #include "wine/unicode.h"

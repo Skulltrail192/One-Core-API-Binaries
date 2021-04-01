@@ -18,6 +18,8 @@
 #include <ndk/cmfuncs.h>
 #include <pseh/pseh2.h>
 
+#include "reg.h"
+
 WINE_DEFAULT_DEBUG_CHANNEL(reg);
 
 /* DEFINES ******************************************************************/
@@ -25,7 +27,6 @@ WINE_DEFAULT_DEBUG_CHANNEL(reg);
 #define MAX_DEFAULT_HANDLES   6
 #define REG_MAX_NAME_SIZE     256
 #define REG_MAX_DATA_SIZE     2048
-#define ERROR_TRANSFER_TOO_LONG 0
 
 /* GLOBALS ******************************************************************/
 
@@ -232,10 +233,11 @@ CloseDefaultKeys(VOID)
 
 
 static NTSTATUS
-OpenClassesRootKey(PHANDLE KeyHandle)
+OpenClassesRootKey(_Out_ PHANDLE KeyHandle)
 {
     OBJECT_ATTRIBUTES Attributes;
     UNICODE_STRING KeyName = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\Software\\CLASSES");
+    NTSTATUS Status;
 
     TRACE("OpenClassesRootKey()\n");
 
@@ -244,9 +246,17 @@ OpenClassesRootKey(PHANDLE KeyHandle)
                                OBJ_CASE_INSENSITIVE,
                                NULL,
                                NULL);
-    return NtOpenKey(KeyHandle,
-                     MAXIMUM_ALLOWED,
-                     &Attributes);
+    Status = NtOpenKey(KeyHandle,
+                       MAXIMUM_ALLOWED,
+                       &Attributes);
+
+    if (!NT_SUCCESS(Status))
+        return Status;
+
+    /* Mark it as HKCR */
+    MakeHKCRKey((HKEY*)KeyHandle);
+
+    return Status;
 }
 
 
@@ -415,9 +425,14 @@ RegCloseKey(HKEY hKey)
     NTSTATUS Status;
 
     /* don't close null handle or a pseudo handle */
-    if ((!hKey) || (((ULONG_PTR)hKey & 0xF0000000) == 0x80000000))
+    if (!hKey)
     {
         return ERROR_INVALID_HANDLE;
+    }
+
+    if (((ULONG_PTR)hKey & 0xF0000000) == 0x80000000)
+    {
+        return ERROR_SUCCESS;
     }
 
     Status = NtClose(hKey);
@@ -744,8 +759,7 @@ RegCopyTreeW(IN HKEY hKeySrc,
         OBJECT_ATTRIBUTES ObjectAttributes;
         UNICODE_STRING SubKeyName;
 
-        RtlInitUnicodeString(&SubKeyName,
-                             (LPWSTR)lpSubKey);
+        RtlInitUnicodeString(&SubKeyName, lpSubKey);
 
         InitializeObjectAttributes(&ObjectAttributes,
                                    &SubKeyName,
@@ -802,8 +816,7 @@ RegCopyTreeA(IN HKEY hKeySrc,
     LONG Ret;
 
     if (lpSubKey != NULL &&
-        !RtlCreateUnicodeStringFromAsciiz(&SubKeyName,
-                                          (LPSTR)lpSubKey))
+        !RtlCreateUnicodeStringFromAsciiz(&SubKeyName, lpSubKey))
     {
         return ERROR_NOT_ENOUGH_MEMORY;
     }
@@ -832,8 +845,7 @@ RegConnectRegistryA(IN LPCSTR lpMachineName,
     LONG Ret;
 
     if (lpMachineName != NULL &&
-        !RtlCreateUnicodeStringFromAsciiz(&MachineName,
-                                          (LPSTR)lpMachineName))
+        !RtlCreateUnicodeStringFromAsciiz(&MachineName, lpMachineName))
     {
         return ERROR_NOT_ENOUGH_MEMORY;
     }
@@ -1014,75 +1026,58 @@ CreateNestedKey(PHKEY KeyHandle,
  * @implemented
  */
 LONG WINAPI
-RegCreateKeyExA(HKEY hKey,
-                LPCSTR lpSubKey,
-                DWORD Reserved,
-                LPSTR lpClass,
-                DWORD dwOptions,
-                REGSAM samDesired,
-                LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-                PHKEY phkResult,
-                LPDWORD lpdwDisposition)
+RegCreateKeyExA(
+    _In_ HKEY hKey,
+    _In_ LPCSTR lpSubKey,
+    _In_ DWORD Reserved,
+    _In_ LPSTR lpClass,
+    _In_ DWORD dwOptions,
+    _In_ REGSAM samDesired,
+    _In_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    _Out_ PHKEY phkResult,
+    _Out_ LPDWORD lpdwDisposition)
 {
     UNICODE_STRING SubKeyString;
     UNICODE_STRING ClassString;
-    OBJECT_ATTRIBUTES ObjectAttributes;
-    HANDLE ParentKey;
-    ULONG Attributes = OBJ_CASE_INSENSITIVE;
-    NTSTATUS Status;
+    DWORD ErrorCode;
 
-    TRACE("RegCreateKeyExA() called\n");
+    RtlInitEmptyUnicodeString(&ClassString, NULL, 0);
+    RtlInitEmptyUnicodeString(&SubKeyString, NULL, 0);
 
-    if (lpSecurityAttributes && lpSecurityAttributes->nLength != sizeof(SECURITY_ATTRIBUTES))
-        return ERROR_INVALID_USER_BUFFER;
-
-    /* get the real parent key */
-    Status = MapDefaultKey(&ParentKey,
-                           hKey);
-    if (!NT_SUCCESS(Status))
+    if (lpClass)
     {
-        return RtlNtStatusToDosError(Status);
+        if (!RtlCreateUnicodeStringFromAsciiz(&ClassString, lpClass))
+        {
+            ErrorCode = ERROR_NOT_ENOUGH_MEMORY;
+            goto Exit;
+        }
     }
 
-    TRACE("ParentKey %p\n", ParentKey);
-
-    if (lpClass != NULL)
+    if (lpSubKey)
     {
-        RtlCreateUnicodeStringFromAsciiz(&ClassString,
-                                         lpClass);
+        if (!RtlCreateUnicodeStringFromAsciiz(&SubKeyString, lpSubKey))
+        {
+            ErrorCode = ERROR_NOT_ENOUGH_MEMORY;
+            goto Exit;
+        }
     }
 
-    if (dwOptions & REG_OPTION_OPEN_LINK)
-        Attributes |= OBJ_OPENLINK;
+    ErrorCode = RegCreateKeyExW(
+        hKey,
+        SubKeyString.Buffer,
+        Reserved,
+        ClassString.Buffer,
+        dwOptions,
+        samDesired,
+        lpSecurityAttributes,
+        phkResult,
+        lpdwDisposition);
 
-    RtlCreateUnicodeStringFromAsciiz(&SubKeyString,
-                                     (LPSTR)lpSubKey);
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &SubKeyString,
-                               Attributes,
-                               (HANDLE)ParentKey,
-                               lpSecurityAttributes ? (PSECURITY_DESCRIPTOR)lpSecurityAttributes->lpSecurityDescriptor : NULL);
-    Status = CreateNestedKey(phkResult,
-                             &ObjectAttributes,
-                             (lpClass == NULL)? NULL : &ClassString,
-                             dwOptions,
-                             samDesired,
-                             lpdwDisposition);
+Exit:
     RtlFreeUnicodeString(&SubKeyString);
-    if (lpClass != NULL)
-    {
-        RtlFreeUnicodeString(&ClassString);
-    }
+    RtlFreeUnicodeString(&ClassString);
 
-    ClosePredefKey(ParentKey);
-
-    TRACE("Status %x\n", Status);
-    if (!NT_SUCCESS(Status))
-    {
-        return RtlNtStatusToDosError(Status);
-    }
-
-    return ERROR_SUCCESS;
+    return ErrorCode;
 }
 
 
@@ -1091,16 +1086,18 @@ RegCreateKeyExA(HKEY hKey,
  *
  * @implemented
  */
-LONG WINAPI
-RegCreateKeyExW(HKEY hKey,
-                LPCWSTR lpSubKey,
-                DWORD Reserved,
-                LPWSTR lpClass,
-                DWORD dwOptions,
-                REGSAM samDesired,
-                LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-                PHKEY phkResult,
-                LPDWORD lpdwDisposition)
+LONG
+WINAPI
+RegCreateKeyExW(
+    _In_ HKEY hKey,
+    _In_ LPCWSTR lpSubKey,
+    _In_ DWORD Reserved,
+    _In_opt_ LPWSTR lpClass,
+    _In_ DWORD dwOptions,
+    _In_ REGSAM samDesired,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    _Out_ PHKEY phkResult,
+    _Out_opt_ LPDWORD lpdwDisposition)
 {
     UNICODE_STRING SubKeyString;
     UNICODE_STRING ClassString;
@@ -1123,6 +1120,22 @@ RegCreateKeyExW(HKEY hKey,
     }
 
     TRACE("ParentKey %p\n", ParentKey);
+
+    if (IsHKCRKey(ParentKey))
+    {
+        LONG ErrorCode = CreateHKCRKey(
+            ParentKey,
+            lpSubKey,
+            Reserved,
+            lpClass,
+            dwOptions,
+            samDesired,
+            lpSecurityAttributes,
+            phkResult,
+            lpdwDisposition);
+        ClosePredefKey(ParentKey);
+        return ErrorCode;
+    }
 
     if (dwOptions & REG_OPTION_OPEN_LINK)
         Attributes |= OBJ_OPENLINK;
@@ -1204,59 +1217,13 @@ RegCreateKeyW(HKEY hKey,
  *
  * @implemented
  */
-LONG WINAPI
-RegDeleteKeyA(HKEY hKey,
-              LPCSTR lpSubKey)
+LONG
+WINAPI
+RegDeleteKeyA(
+    _In_ HKEY hKey,
+    _In_ LPCSTR lpSubKey)
 {
-    OBJECT_ATTRIBUTES ObjectAttributes;
-    UNICODE_STRING SubKeyName;
-    HANDLE ParentKey;
-    HANDLE TargetKey;
-    NTSTATUS Status;
-
-    /* Make sure we got a subkey */
-    if (!lpSubKey)
-    {
-        /* Fail */
-        return ERROR_INVALID_PARAMETER;
-    }
-
-    Status = MapDefaultKey(&ParentKey,
-                           hKey);
-    if (!NT_SUCCESS(Status))
-    {
-        return RtlNtStatusToDosError(Status);
-    }
-
-    RtlCreateUnicodeStringFromAsciiz(&SubKeyName,
-                                     (LPSTR)lpSubKey);
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &SubKeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               ParentKey,
-                               NULL);
-
-    Status = NtOpenKey(&TargetKey,
-                       DELETE,
-                       &ObjectAttributes);
-    RtlFreeUnicodeString(&SubKeyName);
-    if (!NT_SUCCESS(Status))
-    {
-        goto Cleanup;
-    }
-
-    Status = NtDeleteKey(TargetKey);
-    NtClose (TargetKey);
-
-Cleanup:
-    ClosePredefKey(ParentKey);
-
-    if (!NT_SUCCESS(Status))
-    {
-        return RtlNtStatusToDosError(Status);
-    }
-
-    return ERROR_SUCCESS;
+    return RegDeleteKeyExA(hKey, lpSubKey, 0, 0);
 }
 
 
@@ -1265,57 +1232,13 @@ Cleanup:
  *
  * @implemented
  */
-LONG WINAPI
-RegDeleteKeyW(HKEY hKey,
-              LPCWSTR lpSubKey)
+LONG
+WINAPI
+RegDeleteKeyW(
+    _In_ HKEY hKey,
+    _In_ LPCWSTR lpSubKey)
 {
-    OBJECT_ATTRIBUTES ObjectAttributes;
-    UNICODE_STRING SubKeyName;
-    HANDLE ParentKey;
-    HANDLE TargetKey;
-    NTSTATUS Status;
-
-    /* Make sure we got a subkey */
-    if (!lpSubKey)
-    {
-        /* Fail */
-        return ERROR_INVALID_PARAMETER;
-    }
-
-    Status = MapDefaultKey(&ParentKey,
-                           hKey);
-    if (!NT_SUCCESS(Status))
-    {
-        return RtlNtStatusToDosError(Status);
-    }
-
-    RtlInitUnicodeString(&SubKeyName,
-                         (LPWSTR)lpSubKey);
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &SubKeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               ParentKey,
-                               NULL);
-    Status = NtOpenKey(&TargetKey,
-                       DELETE,
-                       &ObjectAttributes);
-    if (!NT_SUCCESS(Status))
-    {
-        goto Cleanup;
-    }
-
-    Status = NtDeleteKey(TargetKey);
-    NtClose(TargetKey);
-
-Cleanup:
-    ClosePredefKey(ParentKey);
-
-    if (!NT_SUCCESS(Status))
-    {
-        return RtlNtStatusToDosError(Status);
-    }
-
-    return ERROR_SUCCESS;
+    return RegDeleteKeyExW(hKey, lpSubKey, 0, 0);
 }
 
 
@@ -1326,66 +1249,28 @@ Cleanup:
  */
 LONG
 WINAPI
-RegDeleteKeyExA(HKEY hKey,
-                LPCSTR lpSubKey,
-                REGSAM samDesired,
-                DWORD Reserved)
+RegDeleteKeyExA(
+    _In_ HKEY hKey,
+    _In_ LPCSTR lpSubKey,
+    _In_ REGSAM samDesired,
+    _In_ DWORD Reserved)
 {
-    OBJECT_ATTRIBUTES ObjectAttributes;
+    LONG ErrorCode;
     UNICODE_STRING SubKeyName;
-    HANDLE ParentKey;
-    HANDLE TargetKey;
-    NTSTATUS Status;
 
-    /* Make sure we got a subkey */
-    if (!lpSubKey)
+    if (lpSubKey)
     {
-        /* Fail */
-        return ERROR_INVALID_PARAMETER;
+        if (!RtlCreateUnicodeStringFromAsciiz(&SubKeyName, lpSubKey))
+            return ERROR_NOT_ENOUGH_MEMORY;
     }
+    else
+        RtlInitEmptyUnicodeString(&SubKeyName, NULL, 0);
 
-    Status = MapDefaultKey(&ParentKey,
-                           hKey);
-    if (!NT_SUCCESS(Status))
-    {
-        return RtlNtStatusToDosError(Status);
-    }
+    ErrorCode = RegDeleteKeyExW(hKey, SubKeyName.Buffer, samDesired, Reserved);
 
-    if (samDesired & KEY_WOW64_32KEY)
-        ERR("Wow64 not yet supported!\n");
-
-    if (samDesired & KEY_WOW64_64KEY)
-        ERR("Wow64 not yet supported!\n");
-
-    RtlCreateUnicodeStringFromAsciiz(&SubKeyName,
-                                     (LPSTR)lpSubKey);
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &SubKeyName,
-                               OBJ_CASE_INSENSITIVE,
-                               ParentKey,
-                               NULL);
-
-    Status = NtOpenKey(&TargetKey,
-                       DELETE,
-                       &ObjectAttributes);
     RtlFreeUnicodeString(&SubKeyName);
-    if (!NT_SUCCESS(Status))
-    {
-        goto Cleanup;
-    }
 
-    Status = NtDeleteKey(TargetKey);
-    NtClose (TargetKey);
-
-Cleanup:
-    ClosePredefKey(ParentKey);
-
-    if (!NT_SUCCESS(Status))
-    {
-        return RtlNtStatusToDosError(Status);
-    }
-
-    return ERROR_SUCCESS;
+    return ErrorCode;
 }
 
 
@@ -1396,10 +1281,11 @@ Cleanup:
  */
 LONG
 WINAPI
-RegDeleteKeyExW(HKEY hKey,
-                LPCWSTR lpSubKey,
-                REGSAM samDesired,
-                DWORD Reserved)
+RegDeleteKeyExW(
+    _In_ HKEY hKey,
+    _In_ LPCWSTR lpSubKey,
+    _In_ REGSAM samDesired,
+    _In_ DWORD Reserved)
 {
     OBJECT_ATTRIBUTES ObjectAttributes;
     UNICODE_STRING SubKeyName;
@@ -1421,6 +1307,13 @@ RegDeleteKeyExW(HKEY hKey,
         return RtlNtStatusToDosError(Status);
     }
 
+    if (IsHKCRKey(ParentKey))
+    {
+        LONG ErrorCode = DeleteHKCRKey(ParentKey, lpSubKey, samDesired, Reserved);
+        ClosePredefKey(ParentKey);
+        return ErrorCode;
+    }
+
     if (samDesired & KEY_WOW64_32KEY)
         ERR("Wow64 not yet supported!\n");
 
@@ -1428,8 +1321,7 @@ RegDeleteKeyExW(HKEY hKey,
         ERR("Wow64 not yet supported!\n");
 
 
-    RtlInitUnicodeString(&SubKeyName,
-                         (LPWSTR)lpSubKey);
+    RtlInitUnicodeString(&SubKeyName, lpSubKey);
     InitializeObjectAttributes(&ObjectAttributes,
                                &SubKeyName,
                                OBJ_CASE_INSENSITIVE,
@@ -1484,8 +1376,7 @@ RegDeleteKeyValueW(IN HKEY hKey,
         OBJECT_ATTRIBUTES ObjectAttributes;
         UNICODE_STRING SubKeyName;
 
-        RtlInitUnicodeString(&SubKeyName,
-                             (LPWSTR)lpSubKey);
+        RtlInitUnicodeString(&SubKeyName, lpSubKey);
 
         InitializeObjectAttributes(&ObjectAttributes,
                                    &SubKeyName,
@@ -1506,8 +1397,7 @@ RegDeleteKeyValueW(IN HKEY hKey,
     else
         CurKey = KeyHandle;
 
-    RtlInitUnicodeString(&ValueName,
-                         (LPWSTR)lpValueName);
+    RtlInitUnicodeString(&ValueName, lpValueName);
 
     Status = NtDeleteValueKey(CurKey,
                               &ValueName);
@@ -1543,15 +1433,13 @@ RegDeleteKeyValueA(IN HKEY hKey,
     LONG Ret;
 
     if (lpSubKey != NULL &&
-        !RtlCreateUnicodeStringFromAsciiz(&SubKey,
-                                          (LPSTR)lpSubKey))
+        !RtlCreateUnicodeStringFromAsciiz(&SubKey, lpSubKey))
     {
         return ERROR_NOT_ENOUGH_MEMORY;
     }
 
     if (lpValueName != NULL &&
-        !RtlCreateUnicodeStringFromAsciiz(&ValueName,
-                                          (LPSTR)lpValueName))
+        !RtlCreateUnicodeStringFromAsciiz(&ValueName, lpValueName))
     {
         RtlFreeUnicodeString(&SubKey);
         return ERROR_NOT_ENOUGH_MEMORY;
@@ -1797,8 +1685,7 @@ RegDeleteTreeW(IN HKEY hKey,
         OBJECT_ATTRIBUTES ObjectAttributes;
         UNICODE_STRING SubKeyName;
 
-        RtlInitUnicodeString(&SubKeyName,
-                             (LPWSTR)lpSubKey);
+        RtlInitUnicodeString(&SubKeyName, lpSubKey);
 
         InitializeObjectAttributes(&ObjectAttributes,
                                    &SubKeyName,
@@ -1957,8 +1844,7 @@ RegDeleteTreeA(IN HKEY hKey,
     LONG Ret;
 
     if (lpSubKey != NULL &&
-        !RtlCreateUnicodeStringFromAsciiz(&SubKeyName,
-                                          (LPSTR)lpSubKey))
+        !RtlCreateUnicodeStringFromAsciiz(&SubKeyName, lpSubKey))
     {
         return ERROR_NOT_ENOUGH_MEMORY;
     }
@@ -2070,7 +1956,7 @@ RegpApplyRestrictions(DWORD dwFlags,
  * NOTES
  *  - Unless RRF_NOEXPAND is specified, REG_EXPAND_SZ values are automatically
  *    expanded and pdwType is set to REG_SZ instead.
- *  - Restrictions are applied after expanding, using RRF_RT_REG_EXPAND_SZ 
+ *  - Restrictions are applied after expanding, using RRF_RT_REG_EXPAND_SZ
  *    without RRF_NOEXPAND is thus not allowed.
  *    An exception is the case where RRF_RT_ANY is specified, because then
  *    RRF_NOEXPAND is allowed.
@@ -2306,8 +2192,7 @@ RegSetKeyValueW(IN HKEY hKey,
         OBJECT_ATTRIBUTES ObjectAttributes;
         UNICODE_STRING SubKeyName;
 
-        RtlInitUnicodeString(&SubKeyName,
-                             (LPWSTR)lpSubKey);
+        RtlInitUnicodeString(&SubKeyName, lpSubKey);
 
         InitializeObjectAttributes(&ObjectAttributes,
                                    &SubKeyName,
@@ -2377,8 +2262,7 @@ RegSetKeyValueA(IN HKEY hKey,
         OBJECT_ATTRIBUTES ObjectAttributes;
         UNICODE_STRING SubKeyName;
 
-        if (!RtlCreateUnicodeStringFromAsciiz(&SubKeyName,
-                                              (LPSTR)lpSubKey))
+        if (!RtlCreateUnicodeStringFromAsciiz(&SubKeyName, lpSubKey))
         {
             Ret = ERROR_NOT_ENOUGH_MEMORY;
             goto Cleanup;
@@ -2446,8 +2330,7 @@ RegDeleteValueA(HKEY hKey,
         return RtlNtStatusToDosError(Status);
     }
 
-    RtlCreateUnicodeStringFromAsciiz(&ValueName,
-                                     (LPSTR)lpValueName);
+    RtlCreateUnicodeStringFromAsciiz(&ValueName, lpValueName);
     Status = NtDeleteValueKey(KeyHandle,
                               &ValueName);
     RtlFreeUnicodeString (&ValueName);
@@ -2483,8 +2366,7 @@ RegDeleteValueW(HKEY hKey,
         return RtlNtStatusToDosError(Status);
     }
 
-    RtlInitUnicodeString(&ValueName,
-                         (LPWSTR)lpValueName);
+    RtlInitUnicodeString(&ValueName, lpValueName);
 
     Status = NtDeleteValueKey(KeyHandle,
                               &ValueName);
@@ -2555,166 +2437,81 @@ RegEnumKeyW(HKEY hKey,
  *
  * @implemented
  */
-LONG WINAPI
-RegEnumKeyExA(HKEY hKey,
-              DWORD dwIndex,
-              LPSTR lpName,
-              LPDWORD lpcbName,
-              LPDWORD lpReserved,
-              LPSTR lpClass,
-              LPDWORD lpcbClass,
-              PFILETIME lpftLastWriteTime)
+LONG
+WINAPI
+RegEnumKeyExA(
+    _In_ HKEY hKey,
+    _In_ DWORD dwIndex,
+    _Out_ LPSTR lpName,
+    _Inout_ LPDWORD lpcbName,
+    _Reserved_ LPDWORD lpReserved,
+    _Out_opt_ LPSTR lpClass,
+    _Inout_opt_ LPDWORD lpcbClass,
+    _Out_opt_ PFILETIME lpftLastWriteTime)
 {
-    union
-    {
-        KEY_NODE_INFORMATION Node;
-        KEY_BASIC_INFORMATION Basic;
-    } *KeyInfo;
+    WCHAR* NameBuffer = NULL;
+    WCHAR* ClassBuffer = NULL;
+    DWORD NameLength, ClassLength;
+    LONG ErrorCode;
 
-    UNICODE_STRING StringU;
-    ANSI_STRING StringA;
-    LONG ErrorCode = ERROR_SUCCESS;
-    DWORD NameLength;
-    DWORD ClassLength = 0;
-    DWORD BufferSize;
-    ULONG ResultSize;
-    HANDLE KeyHandle;
-    NTSTATUS Status;
-
-    TRACE("RegEnumKeyExA(hKey 0x%x, dwIndex %d, lpName 0x%x, *lpcbName %d, lpClass 0x%x, lpcbClass %d)\n",
-          hKey, dwIndex, lpName, *lpcbName, lpClass, lpcbClass ? *lpcbClass : 0);
-
-    if ((lpClass) && (!lpcbClass))
-    {
-        return ERROR_INVALID_PARAMETER;
-    }
-
-    Status = MapDefaultKey(&KeyHandle, hKey);
-    if (!NT_SUCCESS(Status))
-    {
-        return RtlNtStatusToDosError(Status);
-    }
-
+    /* Allocate our buffers */
     if (*lpcbName > 0)
     {
-        NameLength = min (*lpcbName - 1 , REG_MAX_NAME_SIZE) * sizeof (WCHAR);
-    }
-    else
-    {
-        NameLength = 0;
+        NameLength = *lpcbName;
+        NameBuffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, *lpcbName * sizeof(WCHAR));
+        if (NameBuffer == NULL)
+        {
+            ErrorCode = ERROR_NOT_ENOUGH_MEMORY;
+            goto Exit;
+        }
     }
 
     if (lpClass)
     {
         if (*lpcbClass > 0)
         {
-            ClassLength = min (*lpcbClass -1, REG_MAX_NAME_SIZE) * sizeof(WCHAR);
+            ClassLength = *lpcbClass;
+            ClassBuffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, *lpcbClass * sizeof(WCHAR));
+            if (ClassBuffer == NULL)
+            {
+                ErrorCode = ERROR_NOT_ENOUGH_MEMORY;
+                goto Exit;
+            }
         }
-        else
-        {
-            ClassLength = 0;
-        }
-
-        /* The class name should start at a dword boundary */
-        BufferSize = ((sizeof(KEY_NODE_INFORMATION) + NameLength + 3) & ~3) + ClassLength;
     }
-    else
+
+    /* Do the actual call */
+    ErrorCode = RegEnumKeyExW(
+        hKey,
+        dwIndex,
+        NameBuffer,
+        lpcbName,
+        lpReserved,
+        ClassBuffer,
+        lpcbClass,
+        lpftLastWriteTime);
+
+    if (ErrorCode != ERROR_SUCCESS)
+        goto Exit;
+
+    /* Convert the strings */
+    RtlUnicodeToMultiByteN(lpName, *lpcbName, 0, NameBuffer, *lpcbName * sizeof(WCHAR));
+    /* NULL terminate if we can */
+    if (NameLength > *lpcbName)
+        lpName[*lpcbName] = '\0';
+
+    if (lpClass)
     {
-        BufferSize = sizeof(KEY_BASIC_INFORMATION) + NameLength;
+        RtlUnicodeToMultiByteN(lpClass, *lpcbClass, 0, NameBuffer, *lpcbClass * sizeof(WCHAR));
+        if (ClassLength > *lpcbClass)
+            lpClass[*lpcbClass] = '\0';
     }
 
-    KeyInfo = RtlAllocateHeap (ProcessHeap, 0, BufferSize);
-    if (KeyInfo == NULL)
-    {
-        ErrorCode = ERROR_OUTOFMEMORY;
-        goto Cleanup;
-    }
-
-    Status = NtEnumerateKey(KeyHandle,
-                            (ULONG)dwIndex,
-                            lpClass == NULL ? KeyBasicInformation : KeyNodeInformation,
-                            KeyInfo,
-                            BufferSize,
-                            &ResultSize);
-    TRACE("NtEnumerateKey() returned status 0x%X\n", Status);
-    if (!NT_SUCCESS(Status))
-    {
-        ErrorCode = RtlNtStatusToDosError (Status);
-    }
-    else
-    {
-        if (lpClass == NULL)
-        {
-            if (KeyInfo->Basic.NameLength > NameLength)
-            {
-                ErrorCode = ERROR_BUFFER_OVERFLOW;
-            }
-            else
-            {
-                StringU.Buffer = KeyInfo->Basic.Name;
-                StringU.Length = KeyInfo->Basic.NameLength;
-                StringU.MaximumLength = KeyInfo->Basic.NameLength;
-            }
-        }
-        else
-        {
-            if (KeyInfo->Node.NameLength > NameLength ||
-                KeyInfo->Node.ClassLength > ClassLength)
-            {
-                ErrorCode = ERROR_BUFFER_OVERFLOW;
-            }
-            else
-            {
-                StringA.Buffer = lpClass;
-                StringA.Length = 0;
-                StringA.MaximumLength = *lpcbClass;
-                StringU.Buffer = (PWCHAR)((ULONG_PTR)KeyInfo->Node.Name + KeyInfo->Node.ClassOffset);
-                StringU.Length = KeyInfo->Node.ClassLength;
-                StringU.MaximumLength = KeyInfo->Node.ClassLength;
-                RtlUnicodeStringToAnsiString (&StringA, &StringU, FALSE);
-                lpClass[StringA.Length] = 0;
-                *lpcbClass = StringA.Length;
-                StringU.Buffer = KeyInfo->Node.Name;
-                StringU.Length = KeyInfo->Node.NameLength;
-                StringU.MaximumLength = KeyInfo->Node.NameLength;
-            }
-        }
-
-        if (ErrorCode == ERROR_SUCCESS)
-        {
-            StringA.Buffer = lpName;
-            StringA.Length = 0;
-            StringA.MaximumLength = *lpcbName;
-            RtlUnicodeStringToAnsiString (&StringA, &StringU, FALSE);
-            lpName[StringA.Length] = 0;
-            *lpcbName = StringA.Length;
-            if (lpftLastWriteTime != NULL)
-            {
-                if (lpClass == NULL)
-                {
-                    lpftLastWriteTime->dwLowDateTime = KeyInfo->Basic.LastWriteTime.u.LowPart;
-                    lpftLastWriteTime->dwHighDateTime = KeyInfo->Basic.LastWriteTime.u.HighPart;
-                }
-                else
-                {
-                    lpftLastWriteTime->dwLowDateTime = KeyInfo->Node.LastWriteTime.u.LowPart;
-                    lpftLastWriteTime->dwHighDateTime = KeyInfo->Node.LastWriteTime.u.HighPart;
-                }
-            }
-        }
-    }
-
-    /*TRACE("Key Namea0 Length %d\n", StringU.Length);*/ /* BUGBUG could be uninitialized */
-    TRACE("Key Name1 Length %d\n", NameLength);
-    TRACE("Key Name Length %d\n", *lpcbName);
-    TRACE("Key Name %s\n", lpName);
-
-    RtlFreeHeap(ProcessHeap,
-                0,
-                KeyInfo);
-
-Cleanup:
-    ClosePredefKey(KeyHandle);
+Exit:
+    if (NameBuffer)
+        RtlFreeHeap(RtlGetProcessHeap(), 0, NameBuffer);
+    if (ClassBuffer)
+        RtlFreeHeap(RtlGetProcessHeap(), 0, ClassBuffer);
 
     return ErrorCode;
 }
@@ -2725,15 +2522,17 @@ Cleanup:
  *
  * @implemented
  */
-LONG WINAPI
-RegEnumKeyExW(HKEY hKey,
-              DWORD dwIndex,
-              LPWSTR lpName,
-              LPDWORD lpcbName,
-              LPDWORD lpReserved,
-              LPWSTR lpClass,
-              LPDWORD lpcbClass,
-              PFILETIME lpftLastWriteTime)
+LONG
+WINAPI
+RegEnumKeyExW(
+    _In_ HKEY hKey,
+    _In_ DWORD dwIndex,
+    _Out_ LPWSTR lpName,
+    _Inout_ LPDWORD lpcbName,
+    _Reserved_ LPDWORD lpReserved,
+    _Out_opt_ LPWSTR lpClass,
+    _Inout_opt_ LPDWORD lpcbClass,
+    _Out_opt_ PFILETIME lpftLastWriteTime)
 {
     union
     {
@@ -2754,6 +2553,21 @@ RegEnumKeyExW(HKEY hKey,
     if (!NT_SUCCESS(Status))
     {
         return RtlNtStatusToDosError(Status);
+    }
+
+    if (IsHKCRKey(KeyHandle))
+    {
+        ErrorCode = EnumHKCRKey(
+            KeyHandle,
+            dwIndex,
+            lpName,
+            lpcbName,
+            lpReserved,
+            lpClass,
+            lpcbClass,
+            lpftLastWriteTime);
+        ClosePredefKey(KeyHandle);
+        return ErrorCode;
     }
 
     if (*lpcbName > 0)
@@ -2809,7 +2623,7 @@ RegEnumKeyExW(HKEY hKey,
         {
             if (KeyInfo->Basic.NameLength > NameLength)
             {
-                ErrorCode = ERROR_BUFFER_OVERFLOW;
+                ErrorCode = ERROR_MORE_DATA;
             }
             else
             {
@@ -2825,7 +2639,7 @@ RegEnumKeyExW(HKEY hKey,
             if (KeyInfo->Node.NameLength > NameLength ||
                 KeyInfo->Node.ClassLength > ClassLength)
             {
-                ErrorCode = ERROR_BUFFER_OVERFLOW;
+                ErrorCode = ERROR_MORE_DATA;
             }
             else
             {
@@ -2874,120 +2688,145 @@ Cleanup:
  * @implemented
  */
 LONG WINAPI
-RegEnumValueA(HKEY hKey,
-              DWORD index,
-              LPSTR value,
-              LPDWORD val_count,
-              LPDWORD reserved,
-              LPDWORD type,
-              LPBYTE data,
-              LPDWORD count)
+RegEnumValueA(
+    _In_ HKEY hKey,
+    _In_ DWORD dwIndex,
+    _Out_ LPSTR lpName,
+    _Inout_ LPDWORD lpcbName,
+    _Reserved_ LPDWORD lpdwReserved,
+    _Out_opt_ LPDWORD lpdwType,
+    _Out_opt_ LPBYTE lpData,
+    _Inout_opt_ LPDWORD lpcbData)
 {
-    HANDLE KeyHandle;
-    NTSTATUS status;
-    ULONG total_size;
-    char buffer[256], *buf_ptr = buffer;
-    KEY_VALUE_FULL_INFORMATION *info = (KEY_VALUE_FULL_INFORMATION *)buffer;
-    static const int info_size = FIELD_OFFSET( KEY_VALUE_FULL_INFORMATION, Name );
+    WCHAR* NameBuffer;
+    DWORD NameBufferSize, NameLength;
+    LONG ErrorCode;
+    DWORD LocalType = REG_NONE;
+    BOOL NameOverflow = FALSE;
 
-    //TRACE("(%p,%ld,%p,%p,%p,%p,%p,%p)\n",
-      //    hkey, index, value, val_count, reserved, type, data, count );
-
-    /* NT only checks count, not val_count */
-    if ((data && !count) || reserved)
+    /* Do parameter checks now, once and for all. */
+    if (!lpName || !lpcbName)
         return ERROR_INVALID_PARAMETER;
 
-    status = MapDefaultKey(&KeyHandle, hKey);
-    if (!NT_SUCCESS(status))
+    if ((lpData && !lpcbData) || lpdwReserved)
+        return ERROR_INVALID_PARAMETER;
+
+    /* Get the size of the buffer we must use for the first call to RegEnumValueW */
+    ErrorCode = RegQueryInfoKeyW(
+        hKey, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &NameBufferSize, NULL, NULL, NULL);
+    if (ErrorCode != ERROR_SUCCESS)
+        return ErrorCode;
+
+    /* Add space for the null terminator */
+    NameBufferSize++;
+
+    /* Allocate the buffer for the unicode name */
+    NameBuffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, NameBufferSize * sizeof(WCHAR));
+    if (NameBuffer == NULL)
     {
-        return RtlNtStatusToDosError(status);
+        return ERROR_NOT_ENOUGH_MEMORY;
     }
 
-    total_size = info_size + (MAX_PATH + 1) * sizeof(WCHAR);
-    if (data) total_size += *count;
-    total_size = min( sizeof(buffer), total_size );
-
-    status = NtEnumerateValueKey( KeyHandle, index, KeyValueFullInformation,
-                                  buffer, total_size, &total_size );
-    if (status && (status != STATUS_BUFFER_OVERFLOW) && (status != STATUS_BUFFER_TOO_SMALL)) goto done;
-
-    /* we need to fetch the contents for a string type even if not requested,
-     * because we need to compute the length of the ASCII string. */
-    if (value || data || is_string(info->Type))
+    /*
+     * This code calls RegEnumValueW twice, because we need to know the type of the enumerated value.
+     * So for the first call, we check if we overflow on the name, as we have no way of knowing if this
+     * is an overflow on the data or on the name during the the second call. So the first time, we make the
+     * call with the supplied value. This is merdique, but this is how it is.
+     */
+    NameLength = *lpcbName;
+    ErrorCode = RegEnumValueW(
+        hKey,
+        dwIndex,
+        NameBuffer,
+        &NameLength,
+        NULL,
+        &LocalType,
+        NULL,
+        NULL);
+    if (ErrorCode != ERROR_SUCCESS)
     {
-        /* retry with a dynamically allocated buffer */
-        while ((status == STATUS_BUFFER_OVERFLOW) || (status == STATUS_BUFFER_TOO_SMALL))
+        if (ErrorCode == ERROR_MORE_DATA)
+            NameOverflow = TRUE;
+        else
+            goto Exit;
+    }
+
+    if (is_string(LocalType) && lpcbData)
+    {
+        /* We must allocate a buffer to get the unicode data */
+        DWORD DataBufferSize = *lpcbData * sizeof(WCHAR);
+        WCHAR* DataBuffer = NULL;
+        DWORD DataLength = *lpcbData;
+        LPSTR DataStr = (LPSTR)lpData;
+
+        if (lpData)
+            DataBuffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, *lpcbData * sizeof(WCHAR));
+
+        /* Do the real call */
+        ErrorCode = RegEnumValueW(
+            hKey,
+            dwIndex,
+            NameBuffer,
+            &NameBufferSize,
+            lpdwReserved,
+            lpdwType,
+            (LPBYTE)DataBuffer,
+            &DataBufferSize);
+
+        *lpcbData = DataBufferSize / sizeof(WCHAR);
+
+        if (ErrorCode != ERROR_SUCCESS)
         {
-            if (buf_ptr != buffer) HeapFree( GetProcessHeap(), 0, buf_ptr );
-            if (!(buf_ptr = HeapAlloc( GetProcessHeap(), 0, total_size )))
-            {
-                status = STATUS_INSUFFICIENT_RESOURCES;
-                goto done;
-            }
-            info = (KEY_VALUE_FULL_INFORMATION *)buf_ptr;
-            status = NtEnumerateValueKey( KeyHandle, index, KeyValueFullInformation,
-                                          buf_ptr, total_size, &total_size );
+            RtlFreeHeap(RtlGetProcessHeap(), 0, DataBuffer);
+            goto Exit;
         }
 
-        if (status) goto done;
-
-        if (is_string(info->Type))
+        /* Copy the data whatever the error code is */
+        if (lpData)
         {
-            ULONG len;
-            RtlUnicodeToMultiByteSize( &len, (WCHAR *)(buf_ptr + info->DataOffset),
-                                       info->DataLength );
-            if (data && len)
-            {
-                if (len > *count) status = STATUS_BUFFER_OVERFLOW;
-                else
-                {
-                    RtlUnicodeToMultiByteN( (PCHAR)data, len, NULL, (WCHAR *)(buf_ptr + info->DataOffset),
-                                            info->DataLength );
-                    /* if the type is REG_SZ and data is not 0-terminated
-                     * and there is enough space in the buffer NT appends a \0 */
-                    if (len < *count && data[len-1]) data[len] = 0;
-                }
-            }
-            info->DataLength = len;
-        }
-        else if (data)
-        {
-            if (info->DataLength > *count) status = STATUS_BUFFER_OVERFLOW;
-            else memcpy( data, buf_ptr + info->DataOffset, info->DataLength );
+            /* Do the data conversion */
+            RtlUnicodeToMultiByteN(DataStr, DataLength, 0, DataBuffer, DataBufferSize);
+            /* NULL-terminate if there is enough room */
+            if ((DataLength > *lpcbData) && (DataStr[*lpcbData - 1] != '\0'))
+                DataStr[*lpcbData] = '\0';
         }
 
-        if (value && !status)
-        {
-            ULONG len;
+        RtlFreeHeap(RtlGetProcessHeap(), 0, DataBuffer);
+    }
+    else
+    {
+        /* No data conversion needed. Do the call with provided buffers */
+        ErrorCode = RegEnumValueW(
+            hKey,
+            dwIndex,
+            NameBuffer,
+            &NameBufferSize,
+            lpdwReserved,
+            lpdwType,
+            lpData,
+            lpcbData);
 
-            RtlUnicodeToMultiByteSize( &len, info->Name, info->NameLength );
-            if (len >= *val_count)
-            {
-                status = STATUS_BUFFER_OVERFLOW;
-                if (*val_count)
-                {
-                    len = *val_count - 1;
-                    RtlUnicodeToMultiByteN( value, len, NULL, info->Name, info->NameLength );
-                    value[len] = 0;
-                }
-            }
-            else
-            {
-                RtlUnicodeToMultiByteN( value, len, NULL, info->Name, info->NameLength );
-                value[len] = 0;
-                *val_count = len;
-            }
+        if (ErrorCode != ERROR_SUCCESS)
+        {
+            goto Exit;
         }
     }
-    else status = STATUS_SUCCESS;
 
-    if (type) *type = info->Type;
-    if (count) *count = info->DataLength;
+    if (NameOverflow)
+    {
+        ErrorCode = ERROR_MORE_DATA;
+        goto Exit;
+    }
 
- done:
-    if (buf_ptr != buffer) HeapFree( GetProcessHeap(), 0, buf_ptr );
-    ClosePredefKey(KeyHandle);
-    return RtlNtStatusToDosError(status);
+    /* Convert the name string */
+    RtlUnicodeToMultiByteN(lpName, *lpcbName, lpcbName, NameBuffer, NameBufferSize * sizeof(WCHAR));
+    lpName[*lpcbName] = ANSI_NULL;
+
+Exit:
+    if (NameBuffer)
+        RtlFreeHeap(RtlGetProcessHeap(), 0, NameBuffer);
+
+    return ErrorCode;
 }
 
 
@@ -3009,15 +2848,17 @@ RegEnumValueA(HKEY hKey,
  *  Success: ERROR_SUCCESS
  *  Failure: nonzero error code from Winerror.h
  */
-LONG WINAPI
-RegEnumValueW(HKEY hKey,
-              DWORD index,
-              LPWSTR value,
-              PDWORD val_count,
-              PDWORD reserved,
-              PDWORD type,
-              LPBYTE data,
-              PDWORD count)
+LONG
+WINAPI
+RegEnumValueW(
+    _In_ HKEY hKey,
+    _In_ DWORD index,
+    _Out_ LPWSTR value,
+    _Inout_ PDWORD val_count,
+    _Reserved_ PDWORD reserved,
+    _Out_opt_ PDWORD type,
+    _Out_opt_ LPBYTE data,
+    _Inout_opt_ PDWORD count)
 {
     HANDLE KeyHandle;
     NTSTATUS status;
@@ -3026,16 +2867,34 @@ RegEnumValueW(HKEY hKey,
     KEY_VALUE_FULL_INFORMATION *info = (KEY_VALUE_FULL_INFORMATION *)buffer;
     static const int info_size = FIELD_OFFSET( KEY_VALUE_FULL_INFORMATION, Name );
 
-    //TRACE("(%p,%ld,%p,%p,%p,%p,%p,%p)\n",
-    //      hkey, index, value, val_count, reserved, type, data, count );
+    TRACE("(%p,%ld,%p,%p,%p,%p,%p,%p)\n",
+          hKey, index, value, val_count, reserved, type, data, count );
 
-    /* NT only checks count, not val_count */
-    if ((data && !count) || reserved) return ERROR_INVALID_PARAMETER;
+    if (!value || !val_count)
+        return ERROR_INVALID_PARAMETER;
+
+    if ((data && !count) || reserved)
+        return ERROR_INVALID_PARAMETER;
 
     status = MapDefaultKey(&KeyHandle, hKey);
     if (!NT_SUCCESS(status))
     {
         return RtlNtStatusToDosError(status);
+    }
+
+    if (IsHKCRKey(KeyHandle))
+    {
+        LONG ErrorCode = EnumHKCRValue(
+            KeyHandle,
+            index,
+            value,
+            val_count,
+            reserved,
+            type,
+            data,
+            count);
+        ClosePredefKey(KeyHandle);
+        return ErrorCode;
     }
 
     total_size = info_size + (MAX_PATH + 1) * sizeof(WCHAR);
@@ -3169,13 +3028,11 @@ RegGetKeySecurity(HKEY hKey,
         return RtlNtStatusToDosError(Status);
     }
 
-#if 0
     Status = NtQuerySecurityObject(KeyHandle,
                                    SecurityInformation,
                                    pSecurityDescriptor,
                                    *lpcbSecurityDescriptor,
                                    lpcbSecurityDescriptor);
-#endif
 
     ClosePredefKey(KeyHandle);
 
@@ -3203,15 +3060,32 @@ RegLoadKeyA(HKEY hKey,
     UNICODE_STRING KeyName;
     LONG ErrorCode;
 
-    RtlCreateUnicodeStringFromAsciiz(&KeyName,
-                                     (LPSTR)lpSubKey);
-    RtlCreateUnicodeStringFromAsciiz(&FileName,
-                                     (LPSTR)lpFile);
+    RtlInitEmptyUnicodeString(&KeyName, NULL, 0);
+    RtlInitEmptyUnicodeString(&FileName, NULL, 0);
+
+    if (lpSubKey)
+    {
+        if (!RtlCreateUnicodeStringFromAsciiz(&KeyName, lpSubKey))
+        {
+            ErrorCode = ERROR_NOT_ENOUGH_MEMORY;
+            goto Exit;
+        }
+    }
+
+    if (lpFile)
+    {
+        if (!RtlCreateUnicodeStringFromAsciiz(&FileName, lpFile))
+        {
+            ErrorCode = ERROR_NOT_ENOUGH_MEMORY;
+            goto Exit;
+        }
+    }
 
     ErrorCode = RegLoadKeyW(hKey,
                             KeyName.Buffer,
                             FileName.Buffer);
 
+Exit:
     RtlFreeUnicodeString(&FileName);
     RtlFreeUnicodeString(&KeyName);
 
@@ -3264,8 +3138,7 @@ RegLoadKeyW(HKEY hKey,
                                NULL,
                                NULL);
 
-    RtlInitUnicodeString(&KeyName,
-                         (LPWSTR)lpSubKey);
+    RtlInitUnicodeString(&KeyName, lpSubKey);
 
     InitializeObjectAttributes(&KeyObjectAttributes,
                                &KeyName,
@@ -3315,7 +3188,7 @@ RegNotifyChangeKeyValue(HKEY hKey,
         return ERROR_INVALID_HANDLE;
     }
 
-    if (fAsynchronous == TRUE && hEvent == NULL)
+    if ((fAsynchronous != FALSE) && (hEvent == NULL))
     {
         return ERROR_INVALID_PARAMETER;
     }
@@ -3455,54 +3328,30 @@ RegOpenKeyW(HKEY hKey,
  * @implemented
  */
 LONG WINAPI
-RegOpenKeyExA(HKEY hKey,
-              LPCSTR lpSubKey,
-              DWORD ulOptions,
-              REGSAM samDesired,
-              PHKEY phkResult)
+RegOpenKeyExA(
+    _In_ HKEY hKey,
+    _In_ LPCSTR lpSubKey,
+    _In_ DWORD ulOptions,
+    _In_ REGSAM samDesired,
+    _Out_ PHKEY phkResult)
 {
-    OBJECT_ATTRIBUTES ObjectAttributes;
     UNICODE_STRING SubKeyString;
-    HANDLE KeyHandle;
-    NTSTATUS Status;
-    ULONG Attributes = OBJ_CASE_INSENSITIVE;
-    LONG ErrorCode = ERROR_SUCCESS;
+    LONG ErrorCode;
 
     TRACE("RegOpenKeyExA hKey 0x%x lpSubKey %s ulOptions 0x%x samDesired 0x%x phkResult %p\n",
           hKey, lpSubKey, ulOptions, samDesired, phkResult);
-    if (!phkResult)
+
+    if (lpSubKey)
     {
-        return ERROR_INVALID_PARAMETER;
+        if (!RtlCreateUnicodeStringFromAsciiz(&SubKeyString, lpSubKey))
+            return ERROR_NOT_ENOUGH_MEMORY;
     }
+    else
+        RtlInitEmptyUnicodeString(&SubKeyString, NULL, 0);
 
-    Status = MapDefaultKey(&KeyHandle,
-                           hKey);
-    if (!NT_SUCCESS(Status))
-    {
-        return RtlNtStatusToDosError(Status);
-    }
+    ErrorCode = RegOpenKeyExW(hKey, SubKeyString.Buffer, ulOptions, samDesired, phkResult);
 
-    if (ulOptions & REG_OPTION_OPEN_LINK)
-        Attributes |= OBJ_OPENLINK;
-
-    RtlCreateUnicodeStringFromAsciiz(&SubKeyString,
-                                     (LPSTR)lpSubKey);
-    InitializeObjectAttributes(&ObjectAttributes,
-                               &SubKeyString,
-                               Attributes,
-                               KeyHandle,
-                               NULL);
-
-    Status = NtOpenKey((PHANDLE)phkResult,
-                       samDesired,
-                       &ObjectAttributes);
     RtlFreeUnicodeString(&SubKeyString);
-    if (!NT_SUCCESS(Status))
-    {
-        ErrorCode = RtlNtStatusToDosError(Status);
-    }
-
-    ClosePredefKey(KeyHandle);
 
     return ErrorCode;
 }
@@ -3540,13 +3389,17 @@ RegOpenKeyExW(HKEY hKey,
         return RtlNtStatusToDosError(Status);
     }
 
+    if (IsHKCRKey(KeyHandle))
+    {
+        ErrorCode = OpenHKCRKey(KeyHandle, lpSubKey, ulOptions, samDesired, phkResult);
+        ClosePredefKey(KeyHandle);
+        return ErrorCode;
+    }
+
     if (ulOptions & REG_OPTION_OPEN_LINK)
         Attributes |= OBJ_OPENLINK;
 
-    if (lpSubKey != NULL)
-        RtlInitUnicodeString(&SubKeyString, (LPWSTR)lpSubKey);
-    else
-        RtlInitUnicodeString(&SubKeyString, (LPWSTR)L"");
+    RtlInitUnicodeString(&SubKeyString, lpSubKey ? lpSubKey : L"");
 
     InitializeObjectAttributes(&ObjectAttributes,
                                &SubKeyString,
@@ -3557,10 +3410,45 @@ RegOpenKeyExW(HKEY hKey,
     Status = NtOpenKey((PHANDLE)phkResult,
                        samDesired,
                        &ObjectAttributes);
+
+    if (Status == STATUS_DATATYPE_MISALIGNMENT)
+    {
+        HANDLE hAligned;
+        UNICODE_STRING AlignedString;
+
+        Status = RtlDuplicateUnicodeString(RTL_DUPLICATE_UNICODE_STRING_NULL_TERMINATE,
+                                           &SubKeyString,
+                                           &AlignedString);
+        if (NT_SUCCESS(Status))
+        {
+            /* Try again with aligned parameters */
+            InitializeObjectAttributes(&ObjectAttributes,
+                                       &AlignedString,
+                                       Attributes,
+                                       KeyHandle,
+                                       NULL);
+
+            Status = NtOpenKey(&hAligned,
+                               samDesired,
+                               &ObjectAttributes);
+
+            RtlFreeUnicodeString(&AlignedString);
+
+            if (NT_SUCCESS(Status))
+                *phkResult = hAligned;
+        }
+        else
+        {
+            /* Restore the original error */
+            Status = STATUS_DATATYPE_MISALIGNMENT;
+        }
+    }
+
     if (!NT_SUCCESS(Status))
     {
         ErrorCode = RtlNtStatusToDosError(Status);
     }
+
 
     ClosePredefKey(KeyHandle);
 
@@ -3718,14 +3606,14 @@ ReadTokenSid:
 LONG WINAPI
 RegQueryInfoKeyA(HKEY hKey,
                  LPSTR lpClass,
-                 LPDWORD lpcbClass,
+                 LPDWORD lpcClass,
                  LPDWORD lpReserved,
                  LPDWORD lpcSubKeys,
-                 LPDWORD lpcbMaxSubKeyLen,
-                 LPDWORD lpcbMaxClassLen,
+                 LPDWORD lpcMaxSubKeyLen,
+                 LPDWORD lpcMaxClassLen,
                  LPDWORD lpcValues,
-                 LPDWORD lpcbMaxValueNameLen,
-                 LPDWORD lpcbMaxValueLen,
+                 LPDWORD lpcMaxValueNameLen,
+                 LPDWORD lpcMaxValueLen,
                  LPDWORD lpcbSecurityDescriptor,
                  PFILETIME lpftLastWriteTime)
 {
@@ -3733,38 +3621,56 @@ RegQueryInfoKeyA(HKEY hKey,
     UNICODE_STRING UnicodeString;
     ANSI_STRING AnsiString;
     LONG ErrorCode;
+    NTSTATUS Status;
+    DWORD cClass = 0;
+
+    if ((lpClass) && (!lpcClass))
+    {
+        return ERROR_INVALID_PARAMETER;
+    }
 
     RtlInitUnicodeString(&UnicodeString,
                          NULL);
     if (lpClass != NULL)
     {
-        UnicodeString.Buffer = &ClassName[0];
-        UnicodeString.MaximumLength = sizeof(ClassName);
-        AnsiString.MaximumLength = *lpcbClass;
+        RtlInitEmptyUnicodeString(&UnicodeString,
+                                  ClassName,
+                                  sizeof(ClassName));
+        cClass = sizeof(ClassName) / sizeof(WCHAR);
     }
 
     ErrorCode = RegQueryInfoKeyW(hKey,
                                  UnicodeString.Buffer,
-                                 lpcbClass,
+                                 &cClass,
                                  lpReserved,
                                  lpcSubKeys,
-                                 lpcbMaxSubKeyLen,
-                                 lpcbMaxClassLen,
+                                 lpcMaxSubKeyLen,
+                                 lpcMaxClassLen,
                                  lpcValues,
-                                 lpcbMaxValueNameLen,
-                                 lpcbMaxValueLen,
+                                 lpcMaxValueNameLen,
+                                 lpcMaxValueLen,
                                  lpcbSecurityDescriptor,
                                  lpftLastWriteTime);
     if ((ErrorCode == ERROR_SUCCESS) && (lpClass != NULL))
     {
-        AnsiString.Buffer = lpClass;
-        AnsiString.Length = 0;
-        UnicodeString.Length = *lpcbClass * sizeof(WCHAR);
-        RtlUnicodeStringToAnsiString(&AnsiString,
-                                     &UnicodeString,
-                                     FALSE);
-        *lpcbClass = AnsiString.Length;
-        lpClass[AnsiString.Length] = 0;
+        if (*lpcClass == 0)
+        {
+            return ErrorCode;
+        }
+
+        RtlInitEmptyAnsiString(&AnsiString, lpClass, *lpcClass);
+        UnicodeString.Length = cClass * sizeof(WCHAR);
+        Status = RtlUnicodeStringToAnsiString(&AnsiString,
+                                              &UnicodeString,
+                                              FALSE);
+        ErrorCode = RtlNtStatusToDosError(Status);
+        cClass = AnsiString.Length;
+        lpClass[cClass] = ANSI_NULL;
+    }
+
+    if (lpcClass != NULL)
+    {
+        *lpcClass = cClass;
     }
 
     return ErrorCode;
@@ -3779,14 +3685,14 @@ RegQueryInfoKeyA(HKEY hKey,
 LONG WINAPI
 RegQueryInfoKeyW(HKEY hKey,
                  LPWSTR lpClass,
-                 LPDWORD lpcbClass,
+                 LPDWORD lpcClass,
                  LPDWORD lpReserved,
                  LPDWORD lpcSubKeys,
-                 LPDWORD lpcbMaxSubKeyLen,
-                 LPDWORD lpcbMaxClassLen,
+                 LPDWORD lpcMaxSubKeyLen,
+                 LPDWORD lpcMaxClassLen,
                  LPDWORD lpcValues,
-                 LPDWORD lpcbMaxValueNameLen,
-                 LPDWORD lpcbMaxValueLen,
+                 LPDWORD lpcMaxValueNameLen,
+                 LPDWORD lpcMaxValueLen,
                  LPDWORD lpcbSecurityDescriptor,
                  PFILETIME lpftLastWriteTime)
 {
@@ -3799,7 +3705,7 @@ RegQueryInfoKeyW(HKEY hKey,
     ULONG Length;
     LONG ErrorCode = ERROR_SUCCESS;
 
-    if ((lpClass) && (!lpcbClass))
+    if ((lpClass) && (!lpcClass))
     {
         return ERROR_INVALID_PARAMETER;
     }
@@ -3813,9 +3719,9 @@ RegQueryInfoKeyW(HKEY hKey,
 
     if (lpClass != NULL)
     {
-        if (*lpcbClass > 0)
+        if (*lpcClass > 0)
         {
-            ClassLength = min(*lpcbClass - 1, REG_MAX_NAME_SIZE) * sizeof(WCHAR);
+            ClassLength = min(*lpcClass - 1, REG_MAX_NAME_SIZE) * sizeof(WCHAR);
         }
         else
         {
@@ -3831,16 +3737,15 @@ RegQueryInfoKeyW(HKEY hKey,
             ErrorCode = ERROR_OUTOFMEMORY;
             goto Cleanup;
         }
-
-        FullInfo->ClassLength = ClassLength;
     }
     else
     {
         FullInfoSize = sizeof(KEY_FULL_INFORMATION);
         FullInfo = &FullInfoBuffer;
-        FullInfo->ClassLength = 0;
     }
-    FullInfo->ClassOffset = FIELD_OFFSET(KEY_FULL_INFORMATION, Class);
+
+    if (lpcbSecurityDescriptor != NULL)
+        *lpcbSecurityDescriptor = 0;
 
     Status = NtQueryKey(KeyHandle,
                         KeyFullInformation,
@@ -3848,15 +3753,8 @@ RegQueryInfoKeyW(HKEY hKey,
                         FullInfoSize,
                         &Length);
     TRACE("NtQueryKey() returned status 0x%X\n", Status);
-    if (!NT_SUCCESS(Status))
+    if (!NT_SUCCESS(Status) && Status != STATUS_BUFFER_OVERFLOW)
     {
-        if (lpClass != NULL)
-        {
-            RtlFreeHeap(ProcessHeap,
-                        0,
-                        FullInfo);
-        }
-
         ErrorCode = RtlNtStatusToDosError(Status);
         goto Cleanup;
     }
@@ -3868,15 +3766,15 @@ RegQueryInfoKeyW(HKEY hKey,
     }
 
     TRACE("MaxNameLen %lu\n", FullInfo->MaxNameLen);
-    if (lpcbMaxSubKeyLen != NULL)
+    if (lpcMaxSubKeyLen != NULL)
     {
-        *lpcbMaxSubKeyLen = FullInfo->MaxNameLen / sizeof(WCHAR) + 1;
+        *lpcMaxSubKeyLen = FullInfo->MaxNameLen / sizeof(WCHAR);
     }
 
     TRACE("MaxClassLen %lu\n", FullInfo->MaxClassLen);
-    if (lpcbMaxClassLen != NULL)
+    if (lpcMaxClassLen != NULL)
     {
-        *lpcbMaxClassLen = FullInfo->MaxClassLen / sizeof(WCHAR) + 1;
+        *lpcMaxClassLen = FullInfo->MaxClassLen / sizeof(WCHAR);
     }
 
     TRACE("Values %lu\n", FullInfo->Values);
@@ -3886,18 +3784,17 @@ RegQueryInfoKeyW(HKEY hKey,
     }
 
     TRACE("MaxValueNameLen %lu\n", FullInfo->MaxValueNameLen);
-    if (lpcbMaxValueNameLen != NULL)
+    if (lpcMaxValueNameLen != NULL)
     {
-        *lpcbMaxValueNameLen = FullInfo->MaxValueNameLen / sizeof(WCHAR) + 1;
+        *lpcMaxValueNameLen = FullInfo->MaxValueNameLen / sizeof(WCHAR);
     }
 
     TRACE("MaxValueDataLen %lu\n", FullInfo->MaxValueDataLen);
-    if (lpcbMaxValueLen != NULL)
+    if (lpcMaxValueLen != NULL)
     {
-        *lpcbMaxValueLen = FullInfo->MaxValueDataLen;
+        *lpcMaxValueLen = FullInfo->MaxValueDataLen;
     }
 
-#if 0
     if (lpcbSecurityDescriptor != NULL)
     {
         Status = NtQuerySecurityObject(KeyHandle,
@@ -3907,20 +3804,8 @@ RegQueryInfoKeyW(HKEY hKey,
                                        NULL,
                                        0,
                                        lpcbSecurityDescriptor);
-        if (!NT_SUCCESS(Status))
-        {
-            if (lpClass != NULL)
-            {
-                RtlFreeHeap(ProcessHeap,
-                            0,
-                            FullInfo);
-            }
-
-            ErrorCode = RtlNtStatusToDosError(Status);
-            goto Cleanup;
-        }
+        TRACE("NtQuerySecurityObject() returned status 0x%X\n", Status);
     }
-#endif
 
     if (lpftLastWriteTime != NULL)
     {
@@ -3930,25 +3815,37 @@ RegQueryInfoKeyW(HKEY hKey,
 
     if (lpClass != NULL)
     {
+        if (*lpcClass == 0)
+        {
+            goto Cleanup;
+        }
+
         if (FullInfo->ClassLength > ClassLength)
         {
-            ErrorCode = ERROR_BUFFER_OVERFLOW;
+            ErrorCode = ERROR_INSUFFICIENT_BUFFER;
         }
         else
         {
             RtlCopyMemory(lpClass,
                           FullInfo->Class,
                           FullInfo->ClassLength);
-            *lpcbClass = FullInfo->ClassLength / sizeof(WCHAR);
-            lpClass[*lpcbClass] = 0;
+            lpClass[FullInfo->ClassLength / sizeof(WCHAR)] = UNICODE_NULL;
         }
+    }
 
+    if (lpcClass != NULL)
+    {
+        *lpcClass = FullInfo->ClassLength / sizeof(WCHAR);
+    }
+
+Cleanup:
+    if (lpClass != NULL)
+    {
         RtlFreeHeap(ProcessHeap,
                     0,
                     FullInfo);
     }
 
-Cleanup:
     ClosePredefKey(KeyHandle);
 
     return ErrorCode;
@@ -3969,11 +3866,11 @@ RegQueryMultipleValuesA(HKEY hKey,
 {
     ULONG i;
     DWORD maxBytes = *ldwTotsize;
-    LPSTR bufptr = (LPSTR)lpValueBuf;
+    LPSTR bufptr = lpValueBuf;
     LONG ErrorCode;
 
     if (maxBytes >= (1024*1024))
-        return ERROR_TRANSFER_TOO_LONG;
+        return ERROR_MORE_DATA;
 
     *ldwTotsize = 0;
 
@@ -4037,7 +3934,7 @@ RegQueryMultipleValuesW(HKEY hKey,
     LONG ErrorCode;
 
     if (maxBytes >= (1024*1024))
-        return ERROR_TRANSFER_TOO_LONG;
+        return ERROR_MORE_DATA;
 
     *ldwTotsize = 0;
 
@@ -4116,109 +4013,96 @@ RegQueryReflectionKey(IN HKEY hBase,
  *  Failure: ERROR_INVALID_HANDLE, if hkey is invalid.
  *           ERROR_INVALID_PARAMETER, if any other parameter is invalid.
  *           ERROR_MORE_DATA, if on input *count is too small to hold the contents.
- *                     
+ *
  * NOTES
- *   MSDN states that if data is too small it is partially filled. In reality 
+ *   MSDN states that if data is too small it is partially filled. In reality
  *   it remains untouched.
  */
 LONG
 WINAPI
-RegQueryValueExA(HKEY hkeyorg,
-                 LPCSTR name,
-                 LPDWORD reserved,
-                 LPDWORD type,
-                 LPBYTE data,
-                 LPDWORD count)
+RegQueryValueExA(
+    _In_ HKEY hkeyorg,
+    _In_ LPCSTR name,
+    _In_ LPDWORD reserved,
+    _Out_opt_ LPDWORD type,
+    _Out_opt_ LPBYTE data,
+    _Inout_opt_ LPDWORD count)
 {
-    HANDLE hkey;
-    NTSTATUS status;
-    ANSI_STRING nameA;
     UNICODE_STRING nameW;
-    DWORD total_size, datalen = 0;
-    char buffer[256], *buf_ptr = buffer;
-    KEY_VALUE_PARTIAL_INFORMATION *info = (KEY_VALUE_PARTIAL_INFORMATION *)buffer;
-    static const int info_size = offsetof( KEY_VALUE_PARTIAL_INFORMATION, Data );
+    DWORD DataLength;
+    DWORD ErrorCode;
+    DWORD BufferSize = 0;
+    WCHAR* Buffer;
+    CHAR* DataStr = (CHAR*)data;
+    DWORD LocalType;
 
-    TRACE("(%p,%s,%p,%p,%p,%p=%d)\n",
-          hkeyorg, debugstr_a(name), reserved, type, data, count, count ? *count : 0 );
+    /* Validate those parameters, the rest will be done with the first RegQueryValueExW call */
+    if ((data && !count) || reserved)
+        return ERROR_INVALID_PARAMETER;
 
-    if ((data && !count) || reserved) return ERROR_INVALID_PARAMETER;
-    status = MapDefaultKey(&hkey, hkeyorg);
-    if (!NT_SUCCESS(status))
+    if (name)
     {
-        return RtlNtStatusToDosError(status);
+        if (!RtlCreateUnicodeStringFromAsciiz(&nameW, name))
+            return ERROR_NOT_ENOUGH_MEMORY;
+    }
+    else
+        RtlInitEmptyUnicodeString(&nameW, NULL, 0);
+
+    ErrorCode = RegQueryValueExW(hkeyorg, nameW.Buffer, NULL, &LocalType, NULL, &BufferSize);
+    if (ErrorCode != ERROR_SUCCESS)
+    {
+        if ((!data) && count)
+            *count = 0;
+        RtlFreeUnicodeString(&nameW);
+        return ErrorCode;
     }
 
-    if (count) datalen = *count;
-    if (!data && count) *count = 0;
-
-    RtlInitAnsiString( &nameA, name );
-    if ((status = RtlAnsiStringToUnicodeString( &nameW, &nameA, TRUE )))
+    /* See if we can directly handle the call without caring for conversion */
+    if (!is_string(LocalType) || !count)
     {
-        ClosePredefKey(hkey);
-        return RtlNtStatusToDosError(status);
+        ErrorCode = RegQueryValueExW(hkeyorg, nameW.Buffer, reserved, type, data, count);
+        RtlFreeUnicodeString(&nameW);
+        return ErrorCode;
     }
 
-    status = NtQueryValueKey( hkey, &nameW, KeyValuePartialInformation,
-                              buffer, sizeof(buffer), &total_size );
-    if (status && status != STATUS_BUFFER_OVERFLOW) goto done;
-
-    /* we need to fetch the contents for a string type even if not requested,
-     * because we need to compute the length of the ASCII string. */
-    if (data || is_string(info->Type))
+    /* Allocate a unicode string to get the data */
+    Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, BufferSize);
+    if (!Buffer)
     {
-        /* retry with a dynamically allocated buffer */
-        while (status == STATUS_BUFFER_OVERFLOW)
-        {
-            if (buf_ptr != buffer) HeapFree( GetProcessHeap(), 0, buf_ptr );
-            if (!(buf_ptr = HeapAlloc( GetProcessHeap(), 0, total_size )))
-            {
-                status = STATUS_NO_MEMORY;
-                goto done;
-            }
-            info = (KEY_VALUE_PARTIAL_INFORMATION *)buf_ptr;
-            status = NtQueryValueKey( hkey, &nameW, KeyValuePartialInformation,
-                                      buf_ptr, total_size, &total_size );
-        }
-
-        if (status) goto done;
-
-        if (is_string(info->Type))
-        {
-            DWORD len;
-
-            RtlUnicodeToMultiByteSize( &len, (WCHAR *)(buf_ptr + info_size),
-                                       total_size - info_size );
-            if (data && len)
-            {
-                if (len > datalen) status = STATUS_BUFFER_OVERFLOW;
-                else
-                {
-                    RtlUnicodeToMultiByteN( (char*)data, len, NULL, (WCHAR *)(buf_ptr + info_size),
-                                            total_size - info_size );
-                    /* if the type is REG_SZ and data is not 0-terminated
-                     * and there is enough space in the buffer NT appends a \0 */
-                    if (len < datalen && data[len-1]) data[len] = 0;
-                }
-            }
-            total_size = len + info_size;
-        }
-        else if (data)
-        {
-            if (total_size - info_size > datalen) status = STATUS_BUFFER_OVERFLOW;
-            else memcpy( data, buf_ptr + info_size, total_size - info_size );
-        }
+        RtlFreeUnicodeString(&nameW);
+        return ERROR_NOT_ENOUGH_MEMORY;
     }
-    else status = STATUS_SUCCESS;
 
-    if (type) *type = info->Type;
-    if (count) *count = total_size - info_size;
+    ErrorCode = RegQueryValueExW(hkeyorg, nameW.Buffer, reserved, type, (LPBYTE)Buffer, &BufferSize);
+    if (ErrorCode != ERROR_SUCCESS)
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, Buffer);
+        RtlFreeUnicodeString(&nameW);
+        return ErrorCode;
+    }
 
- done:
-    if (buf_ptr != buffer) HeapFree( GetProcessHeap(), 0, buf_ptr );
-    RtlFreeUnicodeString( &nameW );
-    ClosePredefKey(hkey);
-    return RtlNtStatusToDosError(status);
+    /* We don't need this anymore */
+    RtlFreeUnicodeString(&nameW);
+
+    DataLength = *count;
+    RtlUnicodeToMultiByteSize(count, Buffer, BufferSize);
+
+    if ((!data) || (DataLength < *count))
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, Buffer);
+        return  data ? ERROR_MORE_DATA : ERROR_SUCCESS;
+    }
+
+    /* We can finally do the conversion */
+    RtlUnicodeToMultiByteN(DataStr, DataLength, NULL, Buffer, BufferSize);
+
+    /* NULL-terminate if there is enough room */
+    if ((DataLength > *count) && (DataStr[*count - 1] != '\0'))
+        DataStr[*count] = '\0';
+
+    RtlFreeHeap(RtlGetProcessHeap(), 0, Buffer);
+
+    return ERROR_SUCCESS;
 }
 
 
@@ -4229,12 +4113,13 @@ RegQueryValueExA(HKEY hkeyorg,
  */
 LONG
 WINAPI
-RegQueryValueExW(HKEY hkeyorg,
-                 LPCWSTR name,
-                 LPDWORD reserved,
-                 LPDWORD type,
-                 LPBYTE data,
-                 LPDWORD count)
+RegQueryValueExW(
+    _In_ HKEY hkeyorg,
+    _In_ LPCWSTR name,
+    _In_ LPDWORD reserved,
+    _In_ LPDWORD type,
+    _In_ LPBYTE data,
+    _In_ LPDWORD count)
 {
     HANDLE hkey;
     NTSTATUS status;
@@ -4256,21 +4141,40 @@ RegQueryValueExW(HKEY hkeyorg,
         return RtlNtStatusToDosError(status);
     }
 
-    RtlInitUnicodeString( &name_str, name );
-
-    if (data) total_size = min( sizeof(buffer), *count + info_size );
-    else
+    if (IsHKCRKey(hkey))
     {
-        total_size = info_size;
-        if (count) *count = 0;
+        LONG ErrorCode = QueryHKCRValue(hkey, name, reserved, type, data, count);
+        ClosePredefKey(hkey);
+        return ErrorCode;
     }
 
-    /* this matches Win9x behaviour - NT sets *type to a random value */
-    if (type) *type = REG_NONE;
+    RtlInitUnicodeString( &name_str, name );
+
+    if (data)
+        total_size = min( sizeof(buffer), *count + info_size );
+    else
+        total_size = info_size;
+
 
     status = NtQueryValueKey( hkey, &name_str, KeyValuePartialInformation,
                               buffer, total_size, &total_size );
-    if (!NT_SUCCESS(status) && status != STATUS_BUFFER_OVERFLOW) goto done;
+
+    if (!NT_SUCCESS(status) && status != STATUS_BUFFER_OVERFLOW)
+    {
+        // NT: Valid handles with inexistant/null values or invalid (but not NULL) handles sets type to REG_NONE
+        // On windows these conditions are likely to be side effects of the implementation...
+        if (status == STATUS_INVALID_HANDLE && hkey)
+        {
+            if (type) *type = REG_NONE;
+            if (count) *count = 0;
+        }
+        else if (status == STATUS_OBJECT_NAME_NOT_FOUND)
+        {
+            if (type) *type = REG_NONE;
+            if (data == NULL && count) *count = 0;
+        }
+        goto done;
+    }
 
     if (data)
     {
@@ -4360,15 +4264,15 @@ LSTATUS WINAPI RegQueryValueW( HKEY hkey, LPCWSTR name, LPWSTR data, LPLONG coun
     if (name && name[0])
     {
         ret = RegOpenKeyW( hkey, name, &subkey);
-        if (ret != ERROR_SUCCESS) 
+        if (ret != ERROR_SUCCESS)
         {
             return ret;
         }
     }
 
     ret = RegQueryValueExW( subkey, NULL, NULL, NULL, (LPBYTE)data, (LPDWORD)count );
-    
-    if (subkey != hkey) 
+
+    if (subkey != hkey)
     {
         RegCloseKey( subkey );
     }
@@ -4376,9 +4280,9 @@ LSTATUS WINAPI RegQueryValueW( HKEY hkey, LPCWSTR name, LPWSTR data, LPLONG coun
     if (ret == ERROR_FILE_NOT_FOUND)
     {
         /* return empty string if default value not found */
-        if (data) 
+        if (data)
             *data = 0;
-        if (count) 
+        if (count)
             *count = sizeof(WCHAR);
         ret = ERROR_SUCCESS;
     }
@@ -4402,18 +4306,43 @@ RegReplaceKeyA(HKEY hKey,
     UNICODE_STRING OldFile;
     LONG ErrorCode;
 
-    RtlCreateUnicodeStringFromAsciiz(&SubKey,
-                                     (PCSZ)lpSubKey);
-    RtlCreateUnicodeStringFromAsciiz(&OldFile,
-                                     (PCSZ)lpOldFile);
-    RtlCreateUnicodeStringFromAsciiz(&NewFile,
-                                     (PCSZ)lpNewFile);
+    RtlInitEmptyUnicodeString(&SubKey, NULL, 0);
+    RtlInitEmptyUnicodeString(&OldFile, NULL, 0);
+    RtlInitEmptyUnicodeString(&NewFile, NULL, 0);
+
+    if (lpSubKey)
+    {
+        if (!RtlCreateUnicodeStringFromAsciiz(&SubKey, lpSubKey))
+        {
+            ErrorCode = ERROR_NOT_ENOUGH_MEMORY;
+            goto Exit;
+        }
+    }
+
+    if (lpOldFile)
+    {
+        if (!RtlCreateUnicodeStringFromAsciiz(&OldFile, lpOldFile))
+        {
+            ErrorCode = ERROR_NOT_ENOUGH_MEMORY;
+            goto Exit;
+        }
+    }
+
+    if (lpNewFile)
+    {
+        if (!RtlCreateUnicodeStringFromAsciiz(&NewFile, lpNewFile))
+        {
+            ErrorCode = ERROR_NOT_ENOUGH_MEMORY;
+            goto Exit;
+        }
+    }
 
     ErrorCode = RegReplaceKeyW(hKey,
                                SubKey.Buffer,
                                NewFile.Buffer,
                                OldFile.Buffer);
 
+Exit:
     RtlFreeUnicodeString(&OldFile);
     RtlFreeUnicodeString(&NewFile);
     RtlFreeUnicodeString(&SubKey);
@@ -4460,8 +4389,7 @@ RegReplaceKeyW(HKEY hKey,
     /* Open the real key */
     if (lpSubKey != NULL && *lpSubKey != (WCHAR)0)
     {
-        RtlInitUnicodeString(&SubKeyName,
-                             (PWSTR)lpSubKey);
+        RtlInitUnicodeString(&SubKeyName, lpSubKey);
         InitializeObjectAttributes(&KeyObjectAttributes,
                                    &SubKeyName,
                                    OBJ_CASE_INSENSITIVE,
@@ -4570,8 +4498,13 @@ RegRestoreKeyA(HKEY hKey,
     UNICODE_STRING FileName;
     LONG ErrorCode;
 
-    RtlCreateUnicodeStringFromAsciiz(&FileName,
-                                     (PCSZ)lpFile);
+    if (lpFile)
+    {
+        if (!RtlCreateUnicodeStringFromAsciiz(&FileName, lpFile))
+            return ERROR_NOT_ENOUGH_MEMORY;
+    }
+    else
+        RtlInitEmptyUnicodeString(&FileName, NULL, 0);
 
     ErrorCode = RegRestoreKeyW(hKey,
                                FileName.Buffer,
@@ -4671,8 +4604,14 @@ RegSaveKeyA(HKEY hKey,
     UNICODE_STRING FileName;
     LONG ErrorCode;
 
-    RtlCreateUnicodeStringFromAsciiz(&FileName,
-                                     (LPSTR)lpFile);
+    if (lpFile)
+    {
+        if (!RtlCreateUnicodeStringFromAsciiz(&FileName, lpFile))
+            return ERROR_NOT_ENOUGH_MEMORY;
+    }
+    else
+        RtlInitEmptyUnicodeString(&FileName, NULL, 0);
+
     ErrorCode = RegSaveKeyW(hKey,
                             FileName.Buffer,
                             lpSecurityAttributes);
@@ -4776,8 +4715,14 @@ RegSaveKeyExA(HKEY hKey,
     UNICODE_STRING FileName;
     LONG ErrorCode;
 
-    RtlCreateUnicodeStringFromAsciiz(&FileName,
-                                     (LPSTR)lpFile);
+    if (lpFile)
+    {
+        if (!RtlCreateUnicodeStringFromAsciiz(&FileName, lpFile))
+            return ERROR_NOT_ENOUGH_MEMORY;
+    }
+    else
+        RtlInitEmptyUnicodeString(&FileName, NULL, 0);
+
     ErrorCode = RegSaveKeyExW(hKey,
                               FileName.Buffer,
                               lpSecurityAttributes,
@@ -4883,10 +4828,7 @@ RegSetValueExA(HKEY hKey,
     /* Convert SubKey name to Unicode */
     if (lpValueName != NULL && lpValueName[0] != '\0')
     {
-        BOOL bConverted;
-        bConverted = RtlCreateUnicodeStringFromAsciiz(&ValueName,
-                                                  (PSTR)lpValueName);
-        if(!bConverted)
+        if (!RtlCreateUnicodeStringFromAsciiz(&ValueName, lpValueName))
             return ERROR_NOT_ENOUGH_MEMORY;
     }
     else
@@ -4948,17 +4890,33 @@ RegSetValueExA(HKEY hKey,
  *
  * @implemented
  */
-LONG WINAPI
-RegSetValueExW(HKEY hKey,
-               LPCWSTR lpValueName,
-               DWORD Reserved,
-               DWORD dwType,
-               CONST BYTE* lpData,
-               DWORD cbData)
+LONG
+WINAPI
+RegSetValueExW(
+    _In_ HKEY hKey,
+    _In_ LPCWSTR lpValueName,
+    _In_ DWORD Reserved,
+    _In_ DWORD dwType,
+    _In_ CONST BYTE* lpData,
+    _In_ DWORD cbData)
 {
     UNICODE_STRING ValueName;
     HANDLE KeyHandle;
     NTSTATUS Status;
+
+    Status = MapDefaultKey(&KeyHandle,
+                           hKey);
+    if (!NT_SUCCESS(Status))
+    {
+        return RtlNtStatusToDosError(Status);
+    }
+
+    if (IsHKCRKey(KeyHandle))
+    {
+        LONG ErrorCode = SetHKCRValue(KeyHandle, lpValueName, Reserved, dwType, lpData, cbData);
+        ClosePredefKey(KeyHandle);
+        return ErrorCode;
+    }
 
     if (is_string(dwType) && (cbData != 0))
     {
@@ -4975,16 +4933,10 @@ RegSetValueExW(HKEY hKey,
         }
         _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER)
         {
-            _SEH2_YIELD(return ERROR_NOACCESS);
+            ClosePredefKey(KeyHandle);
+            return ERROR_NOACCESS;
         }
         _SEH2_END;
-    }
-
-    Status = MapDefaultKey(&KeyHandle,
-                           hKey);
-    if (!NT_SUCCESS(Status))
-    {
-        return RtlNtStatusToDosError(Status);
     }
 
     RtlInitUnicodeString(&ValueName, lpValueName);
@@ -5114,8 +5066,13 @@ RegUnLoadKeyA(HKEY hKey,
     UNICODE_STRING KeyName;
     DWORD ErrorCode;
 
-    RtlCreateUnicodeStringFromAsciiz(&KeyName,
-                                     (LPSTR)lpSubKey);
+    if (lpSubKey)
+    {
+        if (!RtlCreateUnicodeStringFromAsciiz(&KeyName, lpSubKey))
+            return ERROR_NOT_ENOUGH_MEMORY;
+    }
+    else
+        RtlInitEmptyUnicodeString(&KeyName, NULL, 0);
 
     ErrorCode = RegUnLoadKeyW(hKey,
                               KeyName.Buffer);
@@ -5151,8 +5108,7 @@ RegUnLoadKeyW(HKEY hKey,
         return RtlNtStatusToDosError(Status);
     }
 
-    RtlInitUnicodeString(&KeyName,
-                         (LPWSTR)lpSubKey);
+    RtlInitUnicodeString(&KeyName, lpSubKey);
 
     InitializeObjectAttributes(&ObjectAttributes,
                                &KeyName,
@@ -5170,197 +5126,6 @@ RegUnLoadKeyW(HKEY hKey,
     }
 
     return ERROR_SUCCESS;
-}
-
-
-/******************************************************************************
- * load_string [Internal]
- *
- * This is basically a copy of user32/resource.c's LoadStringW. Necessary to
- * avoid importing user32, which is higher level than advapi32. Helper for
- * RegLoadMUIString.
- */
-static int load_string(HINSTANCE hModule, UINT resId, LPWSTR pwszBuffer, INT cMaxChars)
-{
-    HGLOBAL hMemory;
-    HRSRC hResource;
-    WCHAR *pString;
-    int idxString;
-
-    /* Negative values have to be inverted. */
-    if (HIWORD(resId) == 0xffff)
-        resId = (UINT)(-((INT)resId));
-
-    /* Load the resource into memory and get a pointer to it. */
-    hResource = FindResourceW(hModule, MAKEINTRESOURCEW(LOWORD(resId >> 4) + 1), (LPWSTR)RT_STRING);
-    if (!hResource) return 0;
-    hMemory = LoadResource(hModule, hResource);
-    if (!hMemory) return 0;
-    pString = LockResource(hMemory);
-
-    /* Strings are length-prefixed. Lowest nibble of resId is an index. */
-    idxString = resId & 0xf;
-    while (idxString--) pString += *pString + 1;
-
-    /* If no buffer is given, return length of the string. */
-    if (!pwszBuffer) return *pString;
-
-    /* Else copy over the string, respecting the buffer size. */
-    cMaxChars = (*pString < cMaxChars) ? *pString : (cMaxChars - 1);
-    if (cMaxChars >= 0)
-    {
-        memcpy(pwszBuffer, pString+1, cMaxChars * sizeof(WCHAR));
-        pwszBuffer[cMaxChars] = L'\0';
-    }
-
-    return cMaxChars;
-}
-
-
-/************************************************************************
- *  RegLoadMUIStringW
- *
- * @implemented
- */
-LONG WINAPI
-RegLoadMUIStringW(IN HKEY hKey,
-                  IN LPCWSTR pszValue  OPTIONAL,
-                  OUT LPWSTR pszOutBuf,
-                  IN DWORD cbOutBuf,
-                  OUT LPDWORD pcbData OPTIONAL,
-                  IN DWORD Flags,
-                  IN LPCWSTR pszDirectory  OPTIONAL)
-{
-    DWORD dwValueType, cbData;
-    LPWSTR pwszTempBuffer = NULL, pwszExpandedBuffer = NULL;
-    LONG result;
-
-    /* Parameter sanity checks. */
-    if (!hKey || !pszOutBuf)
-        return ERROR_INVALID_PARAMETER;
-
-    if (pszDirectory && *pszDirectory)
-    {
-        FIXME("BaseDir parameter not yet supported!\n");
-        return ERROR_INVALID_PARAMETER;
-    }
-
-    /* Check for value existence and correctness of it's type, allocate a buffer and load it. */
-    result = RegQueryValueExW(hKey, pszValue, NULL, &dwValueType, NULL, &cbData);
-    if (result != ERROR_SUCCESS) goto cleanup;
-    if (!(dwValueType == REG_SZ || dwValueType == REG_EXPAND_SZ) || !cbData)
-    {
-        result = ERROR_FILE_NOT_FOUND;
-        goto cleanup;
-    }
-    pwszTempBuffer = HeapAlloc(GetProcessHeap(), 0, cbData);
-    if (!pwszTempBuffer)
-    {
-        result = ERROR_NOT_ENOUGH_MEMORY;
-        goto cleanup;
-    }
-    result = RegQueryValueExW(hKey, pszValue, NULL, &dwValueType, (LPBYTE)pwszTempBuffer, &cbData);
-    if (result != ERROR_SUCCESS) goto cleanup;
-
-    /* Expand environment variables, if appropriate, or copy the original string over. */
-    if (dwValueType == REG_EXPAND_SZ)
-    {
-        cbData = ExpandEnvironmentStringsW(pwszTempBuffer, NULL, 0) * sizeof(WCHAR);
-        if (!cbData) goto cleanup;
-        pwszExpandedBuffer = HeapAlloc(GetProcessHeap(), 0, cbData);
-        if (!pwszExpandedBuffer)
-        {
-            result = ERROR_NOT_ENOUGH_MEMORY;
-            goto cleanup;
-        }
-        ExpandEnvironmentStringsW(pwszTempBuffer, pwszExpandedBuffer, cbData);
-    }
-    else
-    {
-        pwszExpandedBuffer = HeapAlloc(GetProcessHeap(), 0, cbData);
-        memcpy(pwszExpandedBuffer, pwszTempBuffer, cbData);
-    }
-
-    /* If the value references a resource based string, parse the value and load the string.
-     * Else just copy over the original value. */
-    result = ERROR_SUCCESS;
-    if (*pwszExpandedBuffer != L'@') /* '@' is the prefix for resource based string entries. */
-    {
-        lstrcpynW(pszOutBuf, pwszExpandedBuffer, cbOutBuf / sizeof(WCHAR));
-    }
-    else
-    {
-        WCHAR *pComma = wcsrchr(pwszExpandedBuffer, L',');
-        UINT uiStringId;
-        HMODULE hModule;
-
-        /* Format of the expanded value is 'path_to_dll,-resId' */
-        if (!pComma || pComma[1] != L'-')
-        {
-            result = ERROR_BADKEY;
-            goto cleanup;
-        }
-
-        uiStringId = _wtoi(pComma+2);
-        *pComma = L'\0';
-
-        hModule = LoadLibraryExW(pwszExpandedBuffer + 1, NULL, LOAD_LIBRARY_AS_DATAFILE);
-        if (!hModule || !load_string(hModule, uiStringId, pszOutBuf, cbOutBuf / sizeof(WCHAR)))
-            result = ERROR_BADKEY;
-        FreeLibrary(hModule);
-    }
-
-cleanup:
-    HeapFree(GetProcessHeap(), 0, pwszTempBuffer);
-    HeapFree(GetProcessHeap(), 0, pwszExpandedBuffer);
-    return result;
-}
-
-
-/************************************************************************
- *  RegLoadMUIStringA
- *
- * @implemented
- */
-LONG WINAPI
-RegLoadMUIStringA(IN HKEY hKey,
-                  IN LPCSTR pszValue  OPTIONAL,
-                  OUT LPSTR pszOutBuf,
-                  IN DWORD cbOutBuf,
-                  OUT LPDWORD pcbData OPTIONAL,
-                  IN DWORD Flags,
-                  IN LPCSTR pszDirectory  OPTIONAL)
-{
-    UNICODE_STRING valueW, baseDirW;
-    WCHAR *pwszBuffer;
-    DWORD cbData = cbOutBuf * sizeof(WCHAR);
-    LONG result;
-
-    valueW.Buffer = baseDirW.Buffer = pwszBuffer = NULL;
-    if (!RtlCreateUnicodeStringFromAsciiz(&valueW, pszValue) ||
-        !RtlCreateUnicodeStringFromAsciiz(&baseDirW, pszDirectory) ||
-        !(pwszBuffer = HeapAlloc(GetProcessHeap(), 0, cbData)))
-    {
-        result = ERROR_NOT_ENOUGH_MEMORY;
-        goto cleanup;
-    }
-
-    result = RegLoadMUIStringW(hKey, valueW.Buffer, pwszBuffer, cbData, NULL, Flags,
-                               baseDirW.Buffer);
-
-    if (result == ERROR_SUCCESS)
-    {
-        cbData = WideCharToMultiByte(CP_ACP, 0, pwszBuffer, -1, pszOutBuf, cbOutBuf, NULL, NULL);
-        if (pcbData)
-            *pcbData = cbData;
-    }
-
-cleanup:
-    HeapFree(GetProcessHeap(), 0, pwszBuffer);
-    RtlFreeUnicodeString(&baseDirW);
-    RtlFreeUnicodeString(&valueW);
-
-    return result;
 }
 
 /* EOF */

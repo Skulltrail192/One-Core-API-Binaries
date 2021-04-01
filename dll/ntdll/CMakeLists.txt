@@ -24,6 +24,7 @@ list(APPEND SOURCE
     rtl/uilist.c
     rtl/version.c
     etw/trace.c
+	stubs.c
     include/ntdll.h)
 
 if(ARCH STREQUAL "i386")

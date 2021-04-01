@@ -27,18 +27,17 @@
 @ stdcall I_RpcBCacheAllocate() rpcrtbase.I_RpcBCacheAllocate
 @ stdcall I_RpcBCacheFree() rpcrtbase.I_RpcBCacheFree
 @ stdcall I_RpcBindingCopy() rpcrtbase.I_RpcBindingCopy
-@ stdcall I_RpcBindingHandleToAsyncHandle() rpcrtbase.I_RpcBindingHandleToAsyncHandle
+@ stdcall I_RpcBindingHandleToAsyncHandle(ptr ptr) rpcrtbase.I_RpcBindingHandleToAsyncHandle
 @ stdcall I_RpcBindingInqConnId() rpcrtbase.I_RpcBindingInqConnId
-@ stdcall I_RpcBindingInqDynamicEndpoint() rpcrtbase.I_RpcBindingInqDynamicEndpoint
-@ stdcall I_RpcBindingInqDynamicEndpointA() rpcrtbase.I_RpcBindingInqDynamicEndpointA
-@ stdcall I_RpcBindingInqDynamicEndpointW() rpcrtbase.I_RpcBindingInqDynamicEndpointW
+@ stdcall I_RpcBindingInqDynamicEndpoint(ptr str) rpcrtbase.I_RpcBindingInqDynamicEndpointW
+@ stdcall I_RpcBindingInqDynamicEndpointA(ptr str) rpcrtbase.I_RpcBindingInqDynamicEndpointA
+@ stdcall I_RpcBindingInqDynamicEndpointW(ptr wstr) rpcrtbase.I_RpcBindingInqDynamicEndpointW
 @ stdcall I_RpcBindingInqLocalClientPID() rpcrtbase.I_RpcBindingInqLocalClientPID 
 @ stdcall I_RpcBindingInqMarshalledTargetInfo() rpcrtbase.I_RpcBindingInqMarshalledTargetInfo
 @ stdcall I_RpcBindingInqSecurityContext() rpcrtbase.I_RpcBindingInqSecurityContext
 @ stdcall I_RpcBindingInqTransportType(ptr ptr)
 @ stdcall I_RpcBindingInqWireIdForSnego() rpcrtbase.I_RpcBindingInqWireIdForSnego
 @ stdcall I_RpcBindingIsClientLocal() rpcrtbase.I_RpcBindingIsClientLocal
-@ stdcall I_RpcBindingIsServerLocal() rpcrtbase.I_RpcBindingIsServerLocal
 @ stdcall I_RpcBindingToStaticStringBindingW() rpcrtbase.I_RpcBindingToStaticStringBindingW
 @ stdcall I_RpcClearMutex() rpcrtbase.I_RpcClearMutex
 @ stdcall I_RpcConnectionInqSockBuffSize() rpcrtbase.I_RpcConnectionInqSockBuffSize
@@ -517,7 +516,7 @@
 @ stdcall UuidToStringW(ptr ptr)
 @ stdcall char_array_from_ndr() rpcrtbase.char_array_from_ndr
 @ stdcall char_from_ndr() rpcrtbase.char_from_ndr
-@ stdcall CheckVerificationTrailer() rpcrtbase.CheckVerificationTrailer
+@ stdcall CheckVerificationTrailer(ptr ptr ptr ptr long) rpcrtbase.CheckVerificationTrailer
 @ stdcall data_from_ndr() rpcrtbase.data_from_ndr
 @ stdcall data_into_ndr() rpcrtbase.data_into_ndr
 @ stdcall data_size_ndr() rpcrtbase.data_size_ndr

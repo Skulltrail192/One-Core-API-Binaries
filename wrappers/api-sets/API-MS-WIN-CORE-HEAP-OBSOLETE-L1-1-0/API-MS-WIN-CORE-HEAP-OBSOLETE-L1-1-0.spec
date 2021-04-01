@@ -1,15 +1,15 @@
-@ stdcall GlobalAlloc(long long) kernel32.GlobalAlloc
-@ stdcall GlobalFlags(long) kernel32.GlobalFlags
-@ stdcall GlobalFree(long) kernel32.GlobalFree
-@ stdcall GlobalHandle(ptr) kernel32.GlobalHandle
-@ stdcall GlobalLock(long) kernel32.GlobalLock
-@ stdcall GlobalReAlloc(long long long) kernel32.GlobalReAlloc
-@ stdcall GlobalSize(long) kernel32.GlobalSize
-@ stdcall GlobalUnlock(long) kernel32.GlobalUnlock
-@ stdcall LocalAlloc(long long) kernel32.LocalAlloc
-@ stdcall LocalFlags(long) kernel32.LocalFlags
-@ stdcall LocalFree(long) kernel32.LocalFree
-@ stdcall LocalLock(long) kernel32.LocalLock
-@ stdcall LocalReAlloc(long long long) kernel32.LocalReAlloc
-@ stdcall LocalSize(long) kernel32.LocalSize
-@ stdcall LocalUnlock(long) kernel32.LocalUnlock
+@ stdcall GlobalAlloc(long long) kernelbase.GlobalAlloc
+@ stdcall GlobalFlags(long) kernelbase.GlobalFlags
+@ stdcall GlobalFree(long) kernelbase.GlobalFree
+@ stdcall GlobalHandle(ptr) kernelbase.GlobalHandle
+@ stdcall GlobalLock(long) kernelbase.GlobalLock
+@ stdcall GlobalReAlloc(long long long) kernelbase.GlobalReAlloc
+@ stdcall GlobalSize(long) kernelbase.GlobalSize
+@ stdcall GlobalUnlock(long) kernelbase.GlobalUnlock
+@ stdcall LocalAlloc(long long) kernelbase.LocalAlloc
+@ stdcall LocalFlags(long) kernelbase.LocalFlags
+@ stdcall LocalFree(long) kernelbase.LocalFree
+@ stdcall LocalLock(long) kernelbase.LocalLock
+@ stdcall LocalReAlloc(long long long) kernelbase.LocalReAlloc
+@ stdcall LocalSize(long) kernelbase.LocalSize
+@ stdcall LocalUnlock(long) kernelbase.LocalUnlock

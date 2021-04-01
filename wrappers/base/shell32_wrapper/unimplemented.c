@@ -18,8 +18,6 @@
  */
 
 #include <main.h>
-#include <windef.h>
-#include <pidl.h>
  
 WINE_DEFAULT_DEBUG_CHANNEL(shell);
 
@@ -65,7 +63,7 @@ HRESULT
 WINAPI 
 SHBindToObject(
 	IShellFolder *psf, 
-	struct _ITEMIDLIST_RELATIVE *pidl, 
+	PCUIDLIST_RELATIVE pidl, 
 	IBindCtx *pbc, 
 	const IID *const riid, 
 	void **ppv
@@ -86,7 +84,7 @@ SHBindToObject(
   resp = callResult;
   if ( callResult >= 0 )
   {
-    verification = _ILIsEmpty(pidl) == 0;
+    verification = _ILIsEmpty((LPCITEMIDLIST)pidl) == 0;
     bindObject = ppshf->lpVtbl;
     if ( verification )
       bindResult = bindObject->BindToObject(ppshf, (LPCITEMIDLIST)pidl, pbc, riid, ppv);
@@ -277,14 +275,6 @@ SHGetDriveMedia(
 	return E_FAIL;
 }
 
-HRESULT WINAPI SHCreateAssociationRegistration(
-  _In_   REFIID riid,
-  _Out_  void **ppv
-)
-{
-	return E_FAIL;
-}
-
 void WINAPI SHChangeNotifyRegisterThread(
   SCNRT_STATUS status
 )
@@ -328,12 +318,6 @@ GetCurrentProcessExplicitAppUserModelID(
 	return E_NOTIMPL;
 }
 
-// HRESULT 
-// WINAPI 
-// Shell_NotifyIconGetRect(
-	// const NOTIFYICONIDENTIFIER *identifier, 
-	// RECT *iconLocation
-// )
 HRESULT 
 WINAPI 
 Shell_NotifyIconGetRect(
@@ -342,4 +326,44 @@ Shell_NotifyIconGetRect(
 )
 {
 	return E_NOTIMPL;
+}
+
+HRESULT 
+WINAPI 
+StgMakeUniqueName(
+  _In_  IStorage *pstgParent,
+  _In_  PCWSTR   pszFileSpec,
+  _In_  DWORD    grfMode,
+  _In_  REFIID   riid,
+  _Out_ void     **ppv
+)
+{
+	return S_OK;
+}
+
+BOOL 
+IsElevationRequired(LPCWSTR pszPath)
+{
+	return FALSE;
+}
+
+HRESULT WINAPI SHSetDefaultProperties(
+  _In_opt_ HWND                       hwnd,
+  _In_     IShellItem                 *psi,
+           DWORD                      dwFileOpFlags,
+  _In_opt_ IFileOperationProgressSink **pfops
+)
+{
+	return S_OK;
+}
+
+HRESULT SHUserSetPasswordHint(LPCWSTR lpStart, LPCWSTR lpString)
+{
+	return S_OK;	
+}
+
+HRESULT
+WINAPI
+StampIconForElevation(HICON icon, int x, int y){
+	return S_OK;
 }

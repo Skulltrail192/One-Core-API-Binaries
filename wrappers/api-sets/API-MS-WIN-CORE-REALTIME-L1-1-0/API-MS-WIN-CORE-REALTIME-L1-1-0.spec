@@ -1,5 +1,5 @@
-@ stdcall QueryIdleProcessorCycleTime(ptr ptr) kernel32.QueryIdleProcessorCycleTime
-@ stdcall QueryIdleProcessorCycleTimeEx(long ptr ptr) kernel32.QueryIdleProcessorCycleTimeEx
-@ stdcall QueryProcessCycleTime(ptr ptr) kernel32.QueryProcessCycleTime
-@ stdcall QueryThreadCycleTime(long ptr) kernel32.QueryThreadCycleTime
-@ stdcall QueryUnbiasedInterruptTime(ptr) kernel32.QueryUnbiasedInterruptTime
+@ stdcall QueryIdleProcessorCycleTime(ptr ptr) kernelbase.QueryIdleProcessorCycleTime
+@ stdcall QueryIdleProcessorCycleTimeEx(long ptr ptr) kernelbase.QueryIdleProcessorCycleTimeEx
+@ stdcall QueryProcessCycleTime(ptr ptr) kernelbase.QueryProcessCycleTime
+@ stdcall QueryThreadCycleTime(long ptr) kernelbase.QueryThreadCycleTime
+@ stdcall QueryUnbiasedInterruptTime(ptr) kernelbase.QueryUnbiasedInterruptTime

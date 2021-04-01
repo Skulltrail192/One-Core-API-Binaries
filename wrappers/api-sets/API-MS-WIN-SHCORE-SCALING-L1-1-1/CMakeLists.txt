@@ -11,5 +11,5 @@ list(APPEND SOURCE
 add_library(API-MS-WIN-SHCORE-SCALING-L1-1-1 SHARED ${SOURCE})
 set_module_type(API-MS-WIN-SHCORE-SCALING-L1-1-1 win32dll ENTRYPOINT 0)
 target_link_libraries(API-MS-WIN-SHCORE-SCALING-L1-1-1 wine)
-add_importlibs(API-MS-WIN-SHCORE-SCALING-L1-1-1 kernel32 ntdll shcore)
+add_importlibs(API-MS-WIN-SHCORE-SCALING-L1-1-1 kernelbase ntdll shcore)
 add_cd_file(TARGET API-MS-WIN-SHCORE-SCALING-L1-1-1 DESTINATION reactos/system32 FOR all)

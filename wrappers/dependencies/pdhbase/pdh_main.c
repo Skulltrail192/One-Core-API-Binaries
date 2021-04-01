@@ -31,7 +31,6 @@
 
 #include <pdh.h>
 #include <pdhmsg.h>
-//#include "winperf.h"
 
 #include <wine/debug.h>
 #include <wine/list.h>
@@ -80,7 +79,7 @@ typedef struct _PDH_STATISTICS {
     PDH_FMT_COUNTERVALUE    mean;
 } PDH_STATISTICS, * PPDH_STATISTICS;
 
-typedef PDH_STATUS (__stdcall *CounterPathCallBack)(DWORD);
+typedef PDH_STATUS (__stdcall * CounterPathCallBack)(DWORD_PTR);
 
 typedef struct _BrowseDlgConfig_W {
     // Configuration flags
@@ -129,8 +128,6 @@ typedef struct _BrowseDlgConfig_A {
     DWORD               dwDefaultDetailLevel;
     LPSTR               szDialogBoxCaption;
 } PDH_BROWSE_DLG_CONFIG_A, *PPDH_BROWSE_DLG_CONFIG_A;
-
-typedef PDH_STATUS (__stdcall * CounterPathCallBack)(DWORD_PTR);
 
 typedef struct _BrowseDlgConfig_HW {
     // Configuration flags

@@ -111,7 +111,7 @@ static HRESULT PROPVAR_ConvertNumber(REFPROPVARIANT pv, int dest_bits,
     case VT_LPSTR:
     {
         char *end;
-        *res = strtoll(pv->u.pszVal, &end, 0);
+        *res = _strtoi64(pv->u.pszVal, &end, 0);
         if (pv->u.pszVal == end)
             return DISP_E_TYPEMISMATCH;
         src_signed = *res < 0;
@@ -245,6 +245,10 @@ HRESULT WINAPI PropVariantToUInt64(REFPROPVARIANT propvarIn, ULONGLONG *ret)
 
 HRESULT WINAPI PropVariantToBoolean(REFPROPVARIANT propvarIn, BOOL *ret)
 {
+    static const WCHAR trueW[] = {'t','r','u','e',0};
+    static const WCHAR falseW[] = {'f','a','l','s','e',0};
+    static const WCHAR true2W[] = {'#','T','R','U','E','#',0};
+    static const WCHAR false2W[] = {'#','F','A','L','S','E','#',0};
     LONGLONG res;
     HRESULT hr;
 
@@ -263,13 +267,13 @@ HRESULT WINAPI PropVariantToBoolean(REFPROPVARIANT propvarIn, BOOL *ret)
             if (!propvarIn->u.pwszVal)
                 return DISP_E_TYPEMISMATCH;
 
-            if (!lstrcmpiW(propvarIn->u.pwszVal, L"true") || !lstrcmpW(propvarIn->u.pwszVal, L"#TRUE#"))
+            if (!lstrcmpiW(propvarIn->u.pwszVal, trueW) || !lstrcmpW(propvarIn->u.pwszVal, true2W))
             {
                 *ret = TRUE;
                 return S_OK;
             }
 
-            if (!lstrcmpiW(propvarIn->u.pwszVal, L"false") || !lstrcmpW(propvarIn->u.pwszVal, L"#FALSE#"))
+            if (!lstrcmpiW(propvarIn->u.pwszVal, falseW) || !lstrcmpW(propvarIn->u.pwszVal, false2W))
             {
                 *ret = FALSE;
                 return S_OK;
@@ -402,10 +406,11 @@ HRESULT WINAPI PropVariantToStringAlloc(REFPROPVARIANT propvarIn, WCHAR **ret)
 
 PCWSTR WINAPI PropVariantToStringWithDefault(REFPROPVARIANT propvarIn, LPCWSTR pszDefault)
 {
+    static const WCHAR str_empty[] = {0};
     if (propvarIn->vt == VT_BSTR)
     {
         if (propvarIn->u.bstrVal == NULL)
-            return L"";
+            return str_empty;
 
         return propvarIn->u.bstrVal;
     }
@@ -575,9 +580,13 @@ HRESULT WINAPI PropVariantChangeType(PROPVARIANT *ppropvarDest, REFPROPVARIANT p
 
 static void PROPVAR_GUIDToWSTR(REFGUID guid, WCHAR *str)
 {
-    swprintf(str, 39, L"{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}", guid->Data1,
-            guid->Data2, guid->Data3, guid->Data4[0], guid->Data4[1], guid->Data4[2],
-            guid->Data4[3], guid->Data4[4], guid->Data4[5], guid->Data4[6], guid->Data4[7]);
+    static const WCHAR format[] = {'{','%','0','8','X','-','%','0','4','X','-','%','0','4','X',
+        '-','%','0','2','X','%','0','2','X','-','%','0','2','X','%','0','2','X','%','0','2','X',
+        '%','0','2','X','%','0','2','X','%','0','2','X','}',0};
+
+    swprintf(str, format, guid->Data1, guid->Data2, guid->Data3,
+            guid->Data4[0], guid->Data4[1], guid->Data4[2], guid->Data4[3],
+            guid->Data4[4], guid->Data4[5], guid->Data4[6], guid->Data4[7]);
 }
 
 HRESULT WINAPI InitPropVariantFromGUIDAsString(REFGUID guid, PROPVARIANT *ppropvar)

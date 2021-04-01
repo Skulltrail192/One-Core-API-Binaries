@@ -604,3 +604,6 @@
 @ stub pSetupVerifyQueuedCatalogs
 @ stub pSetupWriteLogEntry
 @ stub pSetupWriteLogError
+
+#Vista Functions
+@ stdcall SetupDiGetDevicePropertyW(ptr ptr ptr ptr ptr long ptr long)

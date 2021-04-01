@@ -11,6 +11,9 @@ WINE_DEFAULT_DEBUG_CHANNEL(advapi);
 
 /* GLOBALS *****************************************************************/
 
+static const CHAR AdvapiTokenSourceName[] = "Advapi  ";
+C_ASSERT(sizeof(AdvapiTokenSourceName) == RTL_FIELD_SIZE(TOKEN_SOURCE, SourceName) + 1);
+
 HANDLE LsaHandle = NULL;
 ULONG AuthenticationPackage = 0;
 
@@ -86,24 +89,165 @@ CloseLogonLsaHandle(VOID)
 }
 
 
+static
+BOOL
+CreateProcessAsUserCommon(
+    _In_opt_ HANDLE hToken,
+    _In_ DWORD dwCreationFlags,
+    _Out_ LPPROCESS_INFORMATION lpProcessInformation)
+{
+    NTSTATUS Status;
+    PROCESS_ACCESS_TOKEN AccessToken;
+
+    if (hToken != NULL)
+    {
+        TOKEN_TYPE Type;
+        ULONG ReturnLength;
+        OBJECT_ATTRIBUTES ObjectAttributes;
+        HANDLE hTokenDup;
+        BOOLEAN PrivilegeSet = FALSE, HavePrivilege;
+
+        /* Check whether the user-provided token is a primary token */
+        // GetTokenInformation();
+        Status = NtQueryInformationToken(hToken,
+                                         TokenType,
+                                         &Type,
+                                         sizeof(Type),
+                                         &ReturnLength);
+        if (!NT_SUCCESS(Status))
+        {
+            ERR("NtQueryInformationToken() failed, Status 0x%08x\n", Status);
+            goto Quit;
+        }
+        if (Type != TokenPrimary)
+        {
+            ERR("Wrong token type for token 0x%p, expected TokenPrimary, got %ld\n", hToken, Type);
+            Status = STATUS_BAD_TOKEN_TYPE;
+            goto Quit;
+        }
+
+        /* Duplicate the token for this new process */
+        InitializeObjectAttributes(&ObjectAttributes,
+                                   NULL,
+                                   0,
+                                   NULL,
+                                   NULL); // FIXME: Use a valid SecurityDescriptor!
+        Status = NtDuplicateToken(hToken,
+                                  0,
+                                  &ObjectAttributes,
+                                  FALSE,
+                                  TokenPrimary,
+                                  &hTokenDup);
+        if (!NT_SUCCESS(Status))
+        {
+            ERR("NtDuplicateToken() failed, Status 0x%08x\n", Status);
+            goto Quit;
+        }
+
+        // FIXME: Do we always need SecurityImpersonation?
+        Status = RtlImpersonateSelf(SecurityImpersonation);
+        if (!NT_SUCCESS(Status))
+        {
+            ERR("RtlImpersonateSelf(SecurityImpersonation) failed, Status 0x%08x\n", Status);
+            NtClose(hTokenDup);
+            goto Quit;
+        }
+
+        /*
+         * Attempt to acquire the process primary token assignment privilege
+         * in case we actually need it.
+         * The call will either succeed or fail when the caller has (or has not)
+         * enough rights.
+         * The last situation may not be dramatic for us. Indeed it may happen
+         * that the user-provided token is a restricted version of the caller's
+         * primary token (aka. a "child" token), or both tokens inherit (i.e. are
+         * children, and are together "siblings") from a common parent token.
+         * In this case the NT kernel allows us to assign the token to the child
+         * process without the need for the assignment privilege, which is fine.
+         * On the contrary, if the user-provided token is completely arbitrary,
+         * then the NT kernel will enforce the presence of the assignment privilege:
+         * because we failed (by assumption) to assign the privilege, the process
+         * token assignment will fail as required. It is then the job of the
+         * caller to manually acquire the necessary privileges.
+         */
+        Status = RtlAdjustPrivilege(SE_ASSIGNPRIMARYTOKEN_PRIVILEGE,
+                                    TRUE, TRUE, &PrivilegeSet);
+        HavePrivilege = NT_SUCCESS(Status);
+        if (!HavePrivilege)
+        {
+            ERR("RtlAdjustPrivilege(SE_ASSIGNPRIMARYTOKEN_PRIVILEGE) failed, Status 0x%08lx, "
+                "attempting to continue without it...\n", Status);
+        }
+
+        AccessToken.Token  = hTokenDup;
+        AccessToken.Thread = lpProcessInformation->hThread;
+
+        /* Set the new process token */
+        Status = NtSetInformationProcess(lpProcessInformation->hProcess,
+                                         ProcessAccessToken,
+                                         (PVOID)&AccessToken,
+                                         sizeof(AccessToken));
+
+        /* Restore the privilege */
+        if (HavePrivilege)
+        {
+            RtlAdjustPrivilege(SE_ASSIGNPRIMARYTOKEN_PRIVILEGE,
+                               PrivilegeSet, TRUE, &PrivilegeSet);
+        }
+
+        RevertToSelf();
+
+        /* Close the duplicated token */
+        NtClose(hTokenDup);
+
+        /* Check whether NtSetInformationProcess() failed */
+        if (!NT_SUCCESS(Status))
+        {
+            ERR("NtSetInformationProcess() failed, Status 0x%08x\n", Status);
+            goto Quit;
+        }
+
+        if (!NT_SUCCESS(Status))
+        {
+Quit:
+            TerminateProcess(lpProcessInformation->hProcess, Status);
+            SetLastError(RtlNtStatusToDosError(Status));
+            return FALSE;
+        }
+    }
+
+    /* Resume the main thread */
+    if (!(dwCreationFlags & CREATE_SUSPENDED))
+    {
+        ResumeThread(lpProcessInformation->hThread);
+    }
+
+    return TRUE;
+}
+
+
 /*
  * @implemented
  */
-BOOL WINAPI
-CreateProcessAsUserA(HANDLE hToken,
-                     LPCSTR lpApplicationName,
-                     LPSTR lpCommandLine,
-                     LPSECURITY_ATTRIBUTES lpProcessAttributes,
-                     LPSECURITY_ATTRIBUTES lpThreadAttributes,
-                     BOOL bInheritHandles,
-                     DWORD dwCreationFlags,
-                     LPVOID lpEnvironment,
-                     LPCSTR lpCurrentDirectory,
-                     LPSTARTUPINFOA lpStartupInfo,
-                     LPPROCESS_INFORMATION lpProcessInformation)
+BOOL
+WINAPI
+DECLSPEC_HOTPATCH
+CreateProcessAsUserA(
+    _In_opt_ HANDLE hToken,
+    _In_opt_ LPCSTR lpApplicationName,
+    _Inout_opt_ LPSTR lpCommandLine,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    _In_ BOOL bInheritHandles,
+    _In_ DWORD dwCreationFlags,
+    _In_opt_ LPVOID lpEnvironment,
+    _In_opt_ LPCSTR lpCurrentDirectory,
+    _In_ LPSTARTUPINFOA lpStartupInfo,
+    _Out_ LPPROCESS_INFORMATION lpProcessInformation)
 {
-    PROCESS_ACCESS_TOKEN AccessToken;
-    NTSTATUS Status;
+    TRACE("%p %s %s %p %p %d 0x%08x %p %s %p %p\n", hToken, debugstr_a(lpApplicationName),
+        debugstr_a(lpCommandLine), lpProcessAttributes, lpThreadAttributes, bInheritHandles,
+        dwCreationFlags, lpEnvironment, debugstr_a(lpCurrentDirectory), lpStartupInfo, lpProcessInformation);
 
     /* Create the process with a suspended main thread */
     if (!CreateProcessA(lpApplicationName,
@@ -117,51 +261,39 @@ CreateProcessAsUserA(HANDLE hToken,
                         lpStartupInfo,
                         lpProcessInformation))
     {
+        ERR("CreateProcessA failed, last error: %d\n", GetLastError());
         return FALSE;
     }
 
-    AccessToken.Token = hToken;
-    AccessToken.Thread = NULL;
-
-    /* Set the new process token */
-    Status = NtSetInformationProcess(lpProcessInformation->hProcess,
-                                     ProcessAccessToken,
-                                     (PVOID)&AccessToken,
-                                     sizeof(AccessToken));
-    if (!NT_SUCCESS (Status))
-    {
-        SetLastError(RtlNtStatusToDosError(Status));
-        return FALSE;
-    }
-
-    /* Resume the main thread */
-    if (!(dwCreationFlags & CREATE_SUSPENDED))
-    {
-        ResumeThread(lpProcessInformation->hThread);
-    }
-
-    return TRUE;
+    /* Call the helper function */
+    return CreateProcessAsUserCommon(hToken,
+                                     dwCreationFlags,
+                                     lpProcessInformation);
 }
 
 
 /*
  * @implemented
  */
-BOOL WINAPI
-CreateProcessAsUserW(HANDLE hToken,
-                     LPCWSTR lpApplicationName,
-                     LPWSTR lpCommandLine,
-                     LPSECURITY_ATTRIBUTES lpProcessAttributes,
-                     LPSECURITY_ATTRIBUTES lpThreadAttributes,
-                     BOOL bInheritHandles,
-                     DWORD dwCreationFlags,
-                     LPVOID lpEnvironment,
-                     LPCWSTR lpCurrentDirectory,
-                     LPSTARTUPINFOW lpStartupInfo,
-                     LPPROCESS_INFORMATION lpProcessInformation)
+BOOL
+WINAPI
+DECLSPEC_HOTPATCH
+CreateProcessAsUserW(
+    _In_opt_ HANDLE hToken,
+    _In_opt_ LPCWSTR lpApplicationName,
+    _Inout_opt_ LPWSTR lpCommandLine,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    _In_ BOOL bInheritHandles,
+    _In_ DWORD dwCreationFlags,
+    _In_opt_ LPVOID lpEnvironment,
+    _In_opt_ LPCWSTR lpCurrentDirectory,
+    _In_ LPSTARTUPINFOW lpStartupInfo,
+    _Out_ LPPROCESS_INFORMATION lpProcessInformation)
 {
-    PROCESS_ACCESS_TOKEN AccessToken;
-    NTSTATUS Status;
+    TRACE("%p %s %s %p %p %d 0x%08x %p %s %p %p\n", hToken, debugstr_w(lpApplicationName),
+        debugstr_w(lpCommandLine), lpProcessAttributes, lpThreadAttributes, bInheritHandles,
+        dwCreationFlags, lpEnvironment, debugstr_w(lpCurrentDirectory), lpStartupInfo, lpProcessInformation);
 
     /* Create the process with a suspended main thread */
     if (!CreateProcessW(lpApplicationName,
@@ -175,66 +307,59 @@ CreateProcessAsUserW(HANDLE hToken,
                         lpStartupInfo,
                         lpProcessInformation))
     {
+        ERR("CreateProcessW failed, last error: %d\n", GetLastError());
         return FALSE;
     }
 
-    AccessToken.Token = hToken;
-    AccessToken.Thread = NULL;
-
-    /* Set the new process token */
-    Status = NtSetInformationProcess(lpProcessInformation->hProcess,
-                                     ProcessAccessToken,
-                                     (PVOID)&AccessToken,
-                                     sizeof(AccessToken));
-    if (!NT_SUCCESS (Status))
-    {
-        SetLastError(RtlNtStatusToDosError(Status));
-        return FALSE;
-    }
-
-    /* Resume the main thread */
-    if (!(dwCreationFlags & CREATE_SUSPENDED))
-    {
-        ResumeThread(lpProcessInformation->hThread);
-    }
-
-    return TRUE;
+    /* Call the helper function */
+    return CreateProcessAsUserCommon(hToken,
+                                     dwCreationFlags,
+                                     lpProcessInformation);
 }
 
-/*
- * @unimplemented
- */
-BOOL WINAPI
-CreateProcessWithLogonW(LPCWSTR lpUsername,
-                        LPCWSTR lpDomain,
-                        LPCWSTR lpPassword,
-                        DWORD dwLogonFlags,
-                        LPCWSTR lpApplicationName,
-                        LPWSTR lpCommandLine,
-                        DWORD dwCreationFlags,
-                        LPVOID lpEnvironment,
-                        LPCWSTR lpCurrentDirectory,
-                        LPSTARTUPINFOW lpStartupInfo,
-                        LPPROCESS_INFORMATION lpProcessInformation)
-{
-    FIXME("%s %s %s 0x%08x %s %s 0x%08x %p %s %p %p stub\n", debugstr_w(lpUsername), debugstr_w(lpDomain),
-    debugstr_w(lpPassword), dwLogonFlags, debugstr_w(lpApplicationName),
-    debugstr_w(lpCommandLine), dwCreationFlags, lpEnvironment, debugstr_w(lpCurrentDirectory),
-    lpStartupInfo, lpProcessInformation);
-
-    return FALSE;
-}
 
 /*
  * @implemented
  */
-BOOL WINAPI
-LogonUserA(LPSTR lpszUsername,
-           LPSTR lpszDomain,
-           LPSTR lpszPassword,
-           DWORD dwLogonType,
-           DWORD dwLogonProvider,
-           PHANDLE phToken)
+BOOL
+WINAPI
+LogonUserA(
+    _In_ LPSTR lpszUsername,
+    _In_opt_ LPSTR lpszDomain,
+    _In_opt_ LPSTR lpszPassword,
+    _In_ DWORD dwLogonType,
+    _In_ DWORD dwLogonProvider,
+    _Out_opt_ PHANDLE phToken)
+{
+    return LogonUserExA(lpszUsername,
+                        lpszDomain,
+                        lpszPassword,
+                        dwLogonType,
+                        dwLogonProvider,
+                        phToken,
+                        NULL,
+                        NULL,
+                        NULL,
+                        NULL);
+}
+
+
+/*
+ * @implemented
+ */
+BOOL
+WINAPI
+LogonUserExA(
+    _In_ LPSTR lpszUsername,
+    _In_opt_ LPSTR lpszDomain,
+    _In_opt_ LPSTR lpszPassword,
+    _In_ DWORD dwLogonType,
+    _In_ DWORD dwLogonProvider,
+    _Out_opt_ PHANDLE phToken,
+    _Out_opt_ PSID *ppLogonSid,
+    _Out_opt_ PVOID *ppProfileBuffer,
+    _Out_opt_ LPDWORD pdwProfileLength,
+    _Out_opt_ PQUOTA_LIMITS pQuotaLimits)
 {
     UNICODE_STRING UserName;
     UNICODE_STRING Domain;
@@ -263,12 +388,16 @@ LogonUserA(LPSTR lpszUsername,
         goto PasswordDone;
     }
 
-    ret = LogonUserW(UserName.Buffer,
-                     Domain.Buffer,
-                     Password.Buffer,
-                     dwLogonType,
-                     dwLogonProvider,
-                     phToken);
+    ret = LogonUserExW(UserName.Buffer,
+                       Domain.Buffer,
+                       Password.Buffer,
+                       dwLogonType,
+                       dwLogonProvider,
+                       phToken,
+                       ppLogonSid,
+                       ppProfileBuffer,
+                       pdwProfileLength,
+                       pQuotaLimits);
 
     if (Password.Buffer != NULL)
         RtlFreeUnicodeString(&Password);
@@ -289,13 +418,45 @@ UsernameDone:
 /*
  * @implemented
  */
-BOOL WINAPI
-LogonUserW(LPWSTR lpszUsername,
-           LPWSTR lpszDomain,
-           LPWSTR lpszPassword,
-           DWORD dwLogonType,
-           DWORD dwLogonProvider,
-           PHANDLE phToken)
+BOOL
+WINAPI
+LogonUserW(
+    _In_ LPWSTR lpszUsername,
+    _In_opt_ LPWSTR lpszDomain,
+    _In_opt_ LPWSTR lpszPassword,
+    _In_ DWORD dwLogonType,
+    _In_ DWORD dwLogonProvider,
+    _Out_opt_ PHANDLE phToken)
+{
+    return LogonUserExW(lpszUsername,
+                        lpszDomain,
+                        lpszPassword,
+                        dwLogonType,
+                        dwLogonProvider,
+                        phToken,
+                        NULL,
+                        NULL,
+                        NULL,
+                        NULL);
+}
+
+
+/*
+ * @implemented
+ */
+BOOL
+WINAPI
+LogonUserExW(
+    _In_ LPWSTR lpszUsername,
+    _In_opt_ LPWSTR lpszDomain,
+    _In_opt_ LPWSTR lpszPassword,
+    _In_ DWORD dwLogonType,
+    _In_ DWORD dwLogonProvider,
+    _Out_opt_ PHANDLE phToken,
+    _Out_opt_ PSID *ppLogonSid,
+    _Out_opt_ PVOID *ppProfileBuffer,
+    _Out_opt_ LPDWORD pdwProfileLength,
+    _Out_opt_ PQUOTA_LIMITS pQuotaLimits)
 {
     SID_IDENTIFIER_AUTHORITY LocalAuthority = {SECURITY_LOCAL_SID_AUTHORITY};
     SID_IDENTIFIER_AUTHORITY SystemAuthority = {SECURITY_NT_AUTHORITY};
@@ -320,7 +481,21 @@ LogonUserW(LPWSTR lpszUsername,
     NTSTATUS SubStatus = STATUS_SUCCESS;
     NTSTATUS Status;
 
-    *phToken = NULL;
+    if ((ppProfileBuffer != NULL && pdwProfileLength == NULL) ||
+        (ppProfileBuffer == NULL && pdwProfileLength != NULL))
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    if (ppProfileBuffer != NULL && pdwProfileLength != NULL)
+    {
+        *ppProfileBuffer = NULL;
+        *pdwProfileLength = 0;
+    }
+
+    if (phToken != NULL)
+        *phToken = NULL;
 
     switch (dwLogonType)
     {
@@ -413,7 +588,7 @@ LogonUserW(LPWSTR lpszUsername,
                       Password.Buffer,
                       Password.MaximumLength);
 
-    /* Create the Logon SID*/
+    /* Create the Logon SID */
     AllocateLocallyUniqueId(&LogonId);
     Status = RtlAllocateAndInitializeSid(&SystemAuthority,
                                          SECURITY_LOGON_IDS_RID_COUNT,
@@ -429,7 +604,7 @@ LogonUserW(LPWSTR lpszUsername,
     if (!NT_SUCCESS(Status))
         goto done;
 
-    /* Create the Local SID*/
+    /* Create the Local SID */
     Status = RtlAllocateAndInitializeSid(&LocalAuthority,
                                          1,
                                          SECURITY_LOCAL_RID,
@@ -463,7 +638,9 @@ LogonUserW(LPWSTR lpszUsername,
                                         SE_GROUP_ENABLED_BY_DEFAULT;
 
     /* Set the token source */
-    strncpy(TokenSource.SourceName, "Advapi  ", sizeof(TokenSource.SourceName));
+    RtlCopyMemory(TokenSource.SourceName,
+                  AdvapiTokenSourceName,
+                  sizeof(TokenSource.SourceName));
     AllocateLocallyUniqueId(&TokenSource.SourceIdentifier);
 
     Status = LsaLogonUser(LsaHandle,
@@ -505,7 +682,10 @@ LogonUserW(LPWSTR lpszUsername,
         TRACE("TokenHandle: %p\n", TokenHandle);
     }
 
-    *phToken = TokenHandle;
+    if (phToken != NULL)
+        *phToken = TokenHandle;
+
+    /* FIXME: return ppLogonSid and pQuotaLimits */
 
 done:
     if (ProfileBuffer != NULL)

@@ -1024,9 +1024,9 @@ MessageBoxTimeoutW(
 /*
  * @unimplemented
  */
-DWORD
+int
 WINAPI
-SoftModalMessageBox(DWORD Unknown0)
+SoftModalMessageBox(IN LPMSGBOXDATA lpMsgBoxData)
 {
   UNIMPLEMENTED;
   return 0;

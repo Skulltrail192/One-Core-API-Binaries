@@ -1,102 +1,104 @@
-1 stdcall I_ScGetCurrentGroupStateW(ptr wstr ptr) 
-2 stdcall A_SHAFinal(ptr ptr) 
+1 stdcall I_ScGetCurrentGroupStateW(ptr wstr ptr)
+2 stdcall A_SHAFinal(ptr ptr)
 3 stdcall A_SHAInit(ptr)
-4 stdcall A_SHAUpdate(ptr ptr long) 
-5 stdcall AbortSystemShutdownA(ptr) 
-6 stdcall AbortSystemShutdownW(ptr) 
-7 stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr) 
-8 stdcall AccessCheckAndAuditAlarmA(str ptr str str ptr long ptr long ptr ptr ptr) 
-9 stdcall AccessCheckAndAuditAlarmW(wstr ptr wstr wstr ptr long ptr long ptr ptr ptr) 
-10 stdcall AccessCheckByType(ptr ptr long long ptr long ptr ptr ptr ptr ptr) 
-11 stdcall AccessCheckByTypeAndAuditAlarmA(str ptr str str ptr ptr long long long ptr long ptr long ptr ptr ptr) 
-12 stdcall AccessCheckByTypeAndAuditAlarmW(wstr ptr wstr wstr ptr ptr long long long ptr long ptr long ptr ptr ptr) 
-13 stdcall AccessCheckByTypeResultList(ptr ptr ptr long ptr long ptr ptr ptr ptr ptr) 
-14 stdcall AccessCheckByTypeResultListAndAuditAlarmA(str ptr str str ptr long long long long ptr long ptr long ptr ptr ptr) 
-15 stdcall AccessCheckByTypeResultListAndAuditAlarmByHandleA(str ptr ptr str str ptr long long long long ptr long ptr long ptr ptr ptr) 
-16 stdcall AccessCheckByTypeResultListAndAuditAlarmByHandleW(wstr ptr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr) 
-17 stdcall AccessCheckByTypeResultListAndAuditAlarmW(wstr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr) 
-18 stdcall AddAccessAllowedAce(ptr long long ptr) 
-19 stdcall AddAccessAllowedAceEx(ptr long long long ptr) 
-20 stdcall AddAccessAllowedObjectAce(ptr long long long ptr ptr ptr) 
-21 stdcall AddAccessDeniedAce(ptr long long ptr) 
-22 stdcall AddAccessDeniedAceEx(ptr long long long ptr) 
-23 stdcall AddAccessDeniedObjectAce(ptr long long long ptr ptr ptr) 
-24 stdcall AddAce(ptr long long ptr long) 
-25 stdcall AddAuditAccessAce(ptr long long ptr long long) 
-26 stdcall AddAuditAccessAceEx(ptr long long long ptr long long) 
-27 stdcall AddAuditAccessObjectAce(ptr long long long ptr ptr ptr long long) 
-28 stdcall AddUsersToEncryptedFile(wstr ptr) 
-29 stdcall AdjustTokenGroups(long long ptr long ptr ptr) 
+4 stdcall A_SHAUpdate(ptr ptr long)
+5 stdcall AbortSystemShutdownA(ptr)
+6 stdcall AbortSystemShutdownW(ptr)
+7 stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr)
+8 stdcall AccessCheckAndAuditAlarmA(str ptr str str ptr long ptr long ptr ptr ptr)
+9 stdcall AccessCheckAndAuditAlarmW(wstr ptr wstr wstr ptr long ptr long ptr ptr ptr)
+10 stdcall AccessCheckByType(ptr ptr long long ptr long ptr ptr ptr ptr ptr)
+11 stdcall AccessCheckByTypeAndAuditAlarmA(str ptr str str ptr ptr long long long ptr long ptr long ptr ptr ptr)
+12 stdcall AccessCheckByTypeAndAuditAlarmW(wstr ptr wstr wstr ptr ptr long long long ptr long ptr long ptr ptr ptr)
+13 stdcall AccessCheckByTypeResultList(ptr ptr ptr long ptr long ptr ptr ptr ptr ptr)
+14 stdcall AccessCheckByTypeResultListAndAuditAlarmA(str ptr str str ptr long long long long ptr long ptr long ptr ptr ptr)
+15 stdcall AccessCheckByTypeResultListAndAuditAlarmByHandleA(str ptr ptr str str ptr long long long long ptr long ptr long ptr ptr ptr)
+16 stdcall AccessCheckByTypeResultListAndAuditAlarmByHandleW(wstr ptr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr)
+17 stdcall AccessCheckByTypeResultListAndAuditAlarmW(wstr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr)
+18 stdcall AddAccessAllowedAce(ptr long long ptr)
+19 stdcall AddAccessAllowedAceEx(ptr long long long ptr)
+20 stdcall AddAccessAllowedObjectAce(ptr long long long ptr ptr ptr)
+21 stdcall AddAccessDeniedAce(ptr long long ptr)
+22 stdcall AddAccessDeniedAceEx(ptr long long long ptr)
+23 stdcall AddAccessDeniedObjectAce(ptr long long long ptr ptr ptr)
+24 stdcall AddAce(ptr long long ptr long)
+25 stdcall AddAuditAccessAce(ptr long long ptr long long)
+26 stdcall AddAuditAccessAceEx(ptr long long long ptr long long)
+27 stdcall AddAuditAccessObjectAce(ptr long long long ptr ptr ptr long long)
+28 stdcall AddUsersToEncryptedFile(wstr ptr)
+29 stdcall AdjustTokenGroups(long long ptr long ptr ptr)
 30 stdcall AdjustTokenPrivileges(long long ptr long ptr ptr)
-31 stdcall AllocateAndInitializeSid(ptr long long long long long long long long long ptr) 
-32 stdcall AllocateLocallyUniqueId(ptr) 
-33 stdcall AreAllAccessesGranted(long long) 
-34 stdcall AreAnyAccessesGranted(long long) 
-35 stdcall BackupEventLogA(long str) 
-36 stdcall BackupEventLogW(long wstr) 
-37 stdcall BuildExplicitAccessWithNameA(ptr str long long long) 
-38 stdcall BuildExplicitAccessWithNameW(ptr wstr long long long) 
-39 stdcall BuildImpersonateExplicitAccessWithNameA(ptr str ptr long long long) 
-40 stdcall BuildImpersonateExplicitAccessWithNameW(ptr wstr ptr long long long) 
-41 stdcall BuildImpersonateTrusteeA(ptr ptr) 
+31 stdcall AllocateAndInitializeSid(ptr long long long long long long long long long ptr)
+32 stdcall AllocateLocallyUniqueId(ptr)
+33 stdcall AreAllAccessesGranted(long long)
+34 stdcall AreAnyAccessesGranted(long long)
+35 stdcall BackupEventLogA(long str)
+36 stdcall BackupEventLogW(long wstr)
+37 stdcall BuildExplicitAccessWithNameA(ptr str long long long)
+38 stdcall BuildExplicitAccessWithNameW(ptr wstr long long long)
+39 stdcall BuildImpersonateExplicitAccessWithNameA(ptr str ptr long long long)
+40 stdcall BuildImpersonateExplicitAccessWithNameW(ptr wstr ptr long long long)
+41 stdcall BuildImpersonateTrusteeA(ptr ptr)
 42 stdcall BuildImpersonateTrusteeW(ptr ptr)
 43 stdcall BuildSecurityDescriptorA(ptr ptr long ptr long ptr ptr ptr ptr)
 44 stdcall BuildSecurityDescriptorW(ptr ptr long ptr long ptr ptr ptr ptr)
-45 stdcall BuildTrusteeWithNameA(ptr str) 
-46 stdcall BuildTrusteeWithNameW(ptr wstr) 
-47 stdcall BuildTrusteeWithObjectsAndNameA(ptr ptr long str str str) 
-48 stdcall BuildTrusteeWithObjectsAndNameW(ptr ptr long wstr wstr wstr) 
-49 stdcall BuildTrusteeWithObjectsAndSidA(ptr ptr ptr ptr ptr) 
-50 stdcall BuildTrusteeWithObjectsAndSidW(ptr ptr ptr ptr ptr) 
-51 stdcall BuildTrusteeWithSidA(ptr ptr) 
-52 stdcall BuildTrusteeWithSidW(ptr ptr) 
-53 stdcall CancelOverlappedAccess(ptr) 
+45 stdcall BuildTrusteeWithNameA(ptr str)
+46 stdcall BuildTrusteeWithNameW(ptr wstr)
+47 stdcall BuildTrusteeWithObjectsAndNameA(ptr ptr long str str str)
+48 stdcall BuildTrusteeWithObjectsAndNameW(ptr ptr long wstr wstr wstr)
+49 stdcall BuildTrusteeWithObjectsAndSidA(ptr ptr ptr ptr ptr)
+50 stdcall BuildTrusteeWithObjectsAndSidW(ptr ptr ptr ptr ptr)
+51 stdcall BuildTrusteeWithSidA(ptr ptr)
+52 stdcall BuildTrusteeWithSidW(ptr ptr)
+53 stub CancelOverlappedAccess
 54 stdcall ChangeServiceConfig2A(long long ptr)
 55 stdcall ChangeServiceConfig2W(long long ptr)
-56 stdcall ChangeServiceConfigA(long long long long wstr str ptr str str str str) 
-57 stdcall ChangeServiceConfigW(long long long long wstr wstr ptr wstr wstr wstr wstr) 
-58 stdcall CheckTokenMembership(long ptr ptr) 
-59 stdcall ClearEventLogA(long str) 
-60 stdcall ClearEventLogW(long wstr) 
-61 stdcall CloseCodeAuthzLevel(ptr) 
-62 stdcall CloseEncryptedFileRaw(ptr) 
-63 stdcall CloseEventLog(long) 
-64 stdcall CloseServiceHandle(long) 
-65 stdcall CloseTrace(long long) 
-66 stdcall CommandLineFromMsiDescriptor(wstr ptr ptr) 
-67 stdcall ComputeAccessTokenFromCodeAuthzLevel(ptr long) 
-68 stdcall ControlService(long long ptr) 
-69 stdcall ControlTraceA(double str ptr long) 
-70 stdcall ControlTraceW(double wstr ptr long) 
-71 stdcall ConvertAccessToSecurityDescriptorA(ptr ptr str str ptr) 
-72 stdcall ConvertAccessToSecurityDescriptorW(ptr ptr wstr wstr ptr)
-73 stdcall ConvertSDToStringSDRootDomainA(long ptr long long str long) 
-74 stdcall ConvertSDToStringSDRootDomainW(long ptr long long wstr long)
-75 stdcall ConvertSecurityDescriptorToAccessA(ptr long ptr ptr ptr str str) 
-76 stdcall ConvertSecurityDescriptorToAccessNamedA(str long ptr ptr ptr str str) 
-77 stdcall ConvertSecurityDescriptorToAccessNamedW(wstr long ptr ptr ptr wstr wstr) 
-78 stdcall ConvertSecurityDescriptorToAccessW(ptr long ptr ptr ptr wstr wstr) 
-79 stdcall ConvertSecurityDescriptorToStringSecurityDescriptorA(ptr long long ptr ptr) 
-80 stdcall ConvertSecurityDescriptorToStringSecurityDescriptorW(ptr long long ptr ptr) 
-81 stdcall ConvertSidToStringSidA(ptr ptr) 
-82 stdcall ConvertSidToStringSidW(ptr ptr) 
-83 stdcall ConvertStringSDToSDDomainA(ptr long str long long long) 
-84 stdcall ConvertStringSDToSDDomainW(ptr long wstr long long long) 
-85 stdcall ConvertStringSDToSDRootDomainA(long long long long long) 
-86 stdcall ConvertStringSDToSDRootDomainW(long long long long long) 
-87 stdcall ConvertStringSecurityDescriptorToSecurityDescriptorA(str long ptr ptr) 
-88 stdcall ConvertStringSecurityDescriptorToSecurityDescriptorW(wstr long ptr ptr) 
-89 stdcall ConvertStringSidToSidA(ptr ptr) 
-90 stdcall ConvertStringSidToSidW(ptr ptr) 
-91 stdcall ConvertToAutoInheritPrivateObjectSecurity(ptr ptr ptr ptr long ptr) 
-92 stdcall CopySid(long ptr ptr) 
-93 stdcall CreateCodeAuthzLevel() 
+56 stdcall ChangeServiceConfigA(long long long long wstr str ptr str str str str)
+57 stdcall ChangeServiceConfigW(long long long long wstr wstr ptr wstr wstr wstr wstr)
+58 stdcall CheckTokenMembership(long ptr ptr)
+59 stdcall ClearEventLogA(long str)
+60 stdcall ClearEventLogW(long wstr)
+61 stub CloseCodeAuthzLevel
+62 stdcall CloseEncryptedFileRaw(ptr)
+63 stdcall CloseEventLog(long)
+64 stdcall CloseServiceHandle(long)
+65 stub CloseTrace
+66 stdcall CommandLineFromMsiDescriptor(wstr ptr ptr)
+67 stub ComputeAccessTokenFromCodeAuthzLevel
+68 stdcall ControlService(long long ptr)
+69 stdcall ControlTraceA(double str ptr long) ntdll.EtwControlTraceA
+70 stdcall ControlTraceW(double wstr ptr long) ntdll.EtwControlTraceW
+71 stub ConvertAccessToSecurityDescriptorA
+72 stub ConvertAccessToSecurityDescriptorW
+73 stub ConvertSDToStringSDRootDomainA
+74 stub ConvertSDToStringSDRootDomainW
+75 stub ConvertSecurityDescriptorToAccessA
+76 stub ConvertSecurityDescriptorToAccessNamedA #ConvertSecurityDescriptorToAccessA
+77 stub ConvertSecurityDescriptorToAccessNamedW #ConvertSecurityDescriptorToAccessW
+78 stub ConvertSecurityDescriptorToAccessW
+79 stdcall ConvertSecurityDescriptorToStringSecurityDescriptorA(ptr long long ptr ptr)
+80 stdcall ConvertSecurityDescriptorToStringSecurityDescriptorW(ptr long long ptr ptr)
+81 stdcall ConvertSidToStringSidA(ptr ptr)
+82 stdcall ConvertSidToStringSidW(ptr ptr)
+83 stub ConvertStringSDToSDDomainA
+84 stub ConvertStringSDToSDDomainW
+85 stub ConvertStringSDToSDRootDomainA
+86 stub ConvertStringSDToSDRootDomainW
+87 stdcall ConvertStringSecurityDescriptorToSecurityDescriptorA(str long ptr ptr)
+88 stdcall ConvertStringSecurityDescriptorToSecurityDescriptorW(wstr long ptr ptr)
+89 stdcall ConvertStringSidToSidA(ptr ptr)
+90 stdcall ConvertStringSidToSidW(ptr ptr)
+91 stdcall ConvertToAutoInheritPrivateObjectSecurity(ptr ptr ptr ptr long ptr)
+92 stdcall CopySid(long ptr ptr)
+93 stub CreateCodeAuthzLevel
 94 stdcall CreatePrivateObjectSecurity(ptr ptr ptr long long ptr)
-95 stdcall CreatePrivateObjectSecurityEx(ptr ptr ptr ptr long long ptr ptr) 
+95 stdcall CreatePrivateObjectSecurityEx(ptr ptr ptr ptr long long ptr ptr)
 96 stdcall CreatePrivateObjectSecurityWithMultipleInheritance(ptr ptr ptr ptr long long long ptr ptr)
-97 stdcall CreateProcessAsUserA(long str str ptr ptr long long ptr str ptr ptr) 
-98 stdcall CreateProcessAsUserW(long str str ptr ptr long long ptr str ptr ptr) 
-99 stdcall CreateProcessWithLogonW(wstr wstr wstr long wstr wstr long ptr wstr ptr ptr) 
+97 stdcall CreateProcessAsUserA(long str str ptr ptr long long ptr str ptr ptr)
+98 stdcall CreateProcessAsUserW(long str str ptr ptr long long ptr str ptr ptr)
+99 stdcall CreateProcessWithLogonW(wstr wstr wstr long wstr wstr long ptr wstr ptr ptr)
+100 stdcall CreateProcessWithTokenW(ptr long wstr wstr long ptr wstr ptr ptr)
+101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr)
 102 stdcall CreateServiceA(long str str long long long long str str ptr str str str)
 103 stdcall CreateServiceW(long wstr wstr long long long long wstr wstr ptr wstr wstr wstr)
 104 stdcall CreateTraceInstanceId(ptr ptr) ntdll.EtwCreateTraceInstanceId
@@ -107,29 +109,29 @@
 109 stdcall CredEnumerateW(wstr long ptr ptr)
 110 stdcall CredFree(ptr)
 111 stdcall CredGetSessionTypes(long ptr)
-112 stdcall CredGetTargetInfoA(str long ptr)
-113 stdcall CredGetTargetInfoW(wstr long ptr)
+112 stub CredGetTargetInfoA
+113 stub CredGetTargetInfoW
 114 stdcall CredIsMarshaledCredentialA(str)
 115 stdcall CredIsMarshaledCredentialW(wstr)
 116 stdcall CredMarshalCredentialA(long ptr str)
 117 stdcall CredMarshalCredentialW(long ptr wstr)
-118 stdcall CredProfileLoaded()
+118 stub CredProfileLoaded
 119 stdcall CredReadA(str long long ptr)
 120 stdcall CredReadDomainCredentialsA(ptr long ptr ptr)
 121 stdcall CredReadDomainCredentialsW(ptr long ptr ptr)
 122 stdcall CredReadW(wstr long long ptr)
-123 stdcall CredRenameA(str str long long)
-124 stdcall CredRenameW(wstr wstr long long)
+123 stub CredRenameA
+124 stub CredRenameW
 125 stdcall CredUnmarshalCredentialA(str ptr ptr)
 126 stdcall CredUnmarshalCredentialW(wstr ptr ptr)
 127 stdcall CredWriteA(ptr long)
 128 stdcall CredWriteDomainCredentialsA(ptr ptr long)
-129 stdcall CredWriteDomainCredentialsW(ptr ptr long)
+129 stub CredWriteDomainCredentialsW
 130 stdcall CredWriteW(ptr long)
-131 stdcall CredpConvertCredential(long long long ptr)
-132 stdcall CredpConvertTargetInfo(long long ptr long) ;need implement
-133 stdcall CredpDecodeCredential(ptr) ;need implement
-134 stdcall CredpEncodeCredential(ptr) ;need implement
+131 stub CredpConvertCredential
+132 stub CredpConvertTargetInfo
+133 stub CredpDecodeCredential
+134 stub CredpEncodeCredential
 135 stdcall CryptAcquireContextA(ptr str str long long)
 136 stdcall CryptAcquireContextW(ptr wstr wstr long long)
 137 stdcall CryptContextAddRef(long ptr long)
@@ -175,7 +177,7 @@
 177 stdcall DeleteService(long)
 178 stdcall DeregisterEventSource(long)
 179 stdcall DestroyPrivateObjectSecurity(ptr)
-180 stdcall DuplicateEncryptionInfoFile(wstr wstr long long ptr)
+180 stub DuplicateEncryptionInfoFile
 181 stdcall DuplicateToken(long long ptr)
 182 stdcall DuplicateTokenEx(long long ptr long long ptr)
 183 stdcall ElfBackupEventLogFileA(long ptr)
@@ -197,11 +199,12 @@
 199 stdcall ElfRegisterEventSourceA(ptr ptr ptr)
 200 stdcall ElfRegisterEventSourceW(ptr ptr ptr)
 201 stdcall ElfReportEventA(long long long long ptr long long ptr ptr long ptr ptr)
+202 stdcall ElfReportEventAndSourceW(long long ptr long long long ptr ptr long long ptr ptr long ptr ptr)
 203 stdcall ElfReportEventW(long long long long ptr long long ptr ptr long ptr ptr)
 204 stdcall EnableTrace(long long long ptr double) ntdll.EtwEnableTrace
 205 stdcall EncryptFileA(str)
 206 stdcall EncryptFileW(wstr)
-207 stdcall EncryptedFileKeyInfo(long long long)
+207 stub EncryptedFileKeyInfo
 208 stdcall EncryptionDisable(wstr long)
 209 stdcall EnumDependentServicesA(long long ptr long ptr ptr)
 210 stdcall EnumDependentServicesW(long long ptr long ptr ptr)
@@ -219,12 +222,12 @@
 222 stdcall FindFirstFreeAce(ptr ptr)
 223 stdcall FlushTraceA(double str ptr) ntdll.EtwFlushTraceA
 224 stdcall FlushTraceW(double wstr ptr) ntdll.EtwFlushTraceW
-225 stdcall FreeEncryptedFileKeyInfo(long)
+225 stub FreeEncryptedFileKeyInfo
 226 stdcall FreeEncryptionCertificateHashList(ptr)
 227 stdcall FreeInheritedFromArray(ptr long ptr)
 228 stdcall FreeSid(ptr)
-229 stdcall GetAccessPermissionsForObjectA(str long str str ptr ptr ptr ptr ptr)
-230 stdcall GetAccessPermissionsForObjectW(wstr long wstr wstr ptr ptr ptr ptr ptr)
+229 stub GetAccessPermissionsForObjectA
+230 stub GetAccessPermissionsForObjectW
 231 stdcall GetAce(ptr long ptr)
 232 stdcall GetAclInformation(ptr ptr long long)
 233 stdcall GetAuditedPermissionsFromAclA(ptr ptr ptr ptr)
@@ -238,27 +241,27 @@
 241 stdcall GetExplicitEntriesFromAclW(ptr ptr ptr)
 242 stdcall GetFileSecurityA(str long ptr long ptr)
 243 stdcall GetFileSecurityW(wstr long ptr long ptr)
-244 stdcall GetInformationCodeAuthzLevelW()
-245 stdcall GetInformationCodeAuthzPolicyW()
+244 stub GetInformationCodeAuthzLevelW
+245 stub GetInformationCodeAuthzPolicyW
 246 stdcall GetInheritanceSourceA(str long long long ptr long ptr ptr ptr ptr)
 247 stdcall GetInheritanceSourceW(wstr long long long ptr long ptr ptr ptr ptr)
 248 stdcall GetKernelObjectSecurity(long long ptr long ptr)
 249 stdcall GetLengthSid(ptr)
-250 stdcall GetLocalManagedApplicationData(wstr wstr wstr)
-251 stdcall GetLocalManagedApplications(long ptr ptr)
-252 stdcall GetManagedApplicationCategories(long ptr)
-253 stdcall GetManagedApplications(ptr long long ptr ptr)
+250 stub GetLocalManagedApplicationData
+251 stub GetLocalManagedApplications
+252 stub GetManagedApplicationCategories
+253 stub GetManagedApplications
 254 stdcall GetMultipleTrusteeA(ptr)
 255 stdcall GetMultipleTrusteeOperationA(ptr)
 256 stdcall GetMultipleTrusteeOperationW(ptr)
 257 stdcall GetMultipleTrusteeW(ptr)
 258 stdcall GetNamedSecurityInfoA(str long long ptr ptr ptr ptr ptr)
-259 stdcall GetNamedSecurityInfoExA(str long long str str ptr ptr str str)
-260 stdcall GetNamedSecurityInfoExW(wstr long long wstr wstr ptr ptr wstr wstr)
+259 stub GetNamedSecurityInfoExA
+260 stub GetNamedSecurityInfoExW
 261 stdcall GetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr ptr)
 262 stdcall GetNumberOfEventLogRecords(long ptr)
 263 stdcall GetOldestEventLogRecord(long ptr)
-264 stdcall GetOverlappedAccessResults(ptr long ptr ptr)
+264 stub GetOverlappedAccessResults
 265 stdcall GetPrivateObjectSecurity(ptr long ptr long ptr)
 266 stdcall GetSecurityDescriptorControl(ptr ptr ptr)
 267 stdcall GetSecurityDescriptorDacl(ptr ptr ptr ptr)
@@ -278,6 +281,7 @@
 281 stdcall GetSidLengthRequired(long)
 282 stdcall GetSidSubAuthority(ptr long)
 283 stdcall GetSidSubAuthorityCount(ptr)
+284 stdcall GetTokenInformation(long long ptr long ptr)
 285 stdcall GetTraceEnableFlags(double) ntdll.EtwGetTraceEnableFlags
 286 stdcall GetTraceEnableLevel(double) ntdll.EtwGetTraceEnableLevel
 287 stdcall GetTraceLoggerHandle(ptr) ntdll.EtwGetTraceLoggerHandle
@@ -290,12 +294,13 @@
 294 stdcall GetUserNameA(ptr ptr)
 295 stdcall GetUserNameW(ptr ptr)
 296 stdcall GetWindowsAccountDomainSid(ptr ptr ptr)
+297 stdcall I_QueryTagInformation(ptr long ptr)
 298 stdcall I_ScIsSecurityProcess()
 299 stdcall I_ScPnPGetServiceName(ptr wstr long)
-300 stdcall I_ScSendTSMessage(long long long long)
+300 stub I_ScSendTSMessage
 301 stdcall I_ScSetServiceBitsA(ptr long long long str)
 302 stdcall I_ScSetServiceBitsW(ptr long long long wstr)
-303 stdcall IdentifyCodeAuthzLevelW()
+303 stub IdentifyCodeAuthzLevelW
 304 stdcall ImpersonateAnonymousToken(ptr)
 305 stdcall ImpersonateLoggedOnUser(long)
 306 stdcall ImpersonateNamedPipeClient(long)
@@ -307,10 +312,10 @@
 312 stdcall InitiateSystemShutdownExA(str str long long long long)
 313 stdcall InitiateSystemShutdownExW(wstr wstr long long long long)
 314 stdcall InitiateSystemShutdownW(str str long long long)
-315 stdcall InstallApplication(ptr)
+315 stub InstallApplication
 316 stdcall IsTextUnicode(ptr long ptr)
 317 stdcall IsTokenRestricted(long)
-318 stdcall IsTokenUntrusted(ptr)
+318 stub IsTokenUntrusted
 319 stdcall IsValidAcl(ptr)
 320 stdcall IsValidSecurityDescriptor(ptr)
 321 stdcall IsValidSid(ptr)
@@ -330,8 +335,8 @@
 335 stdcall LookupPrivilegeNameW(wstr ptr ptr long)
 336 stdcall LookupPrivilegeValueA(ptr ptr ptr)
 337 stdcall LookupPrivilegeValueW(ptr ptr ptr)
-338 stdcall LookupSecurityDescriptorPartsA(ptr ptr ptr ptr ptr ptr ptr)
-339 stdcall LookupSecurityDescriptorPartsW(ptr ptr ptr ptr ptr ptr ptr)
+338 stub LookupSecurityDescriptorPartsA
+339 stub LookupSecurityDescriptorPartsW
 340 stdcall LsaAddAccountRights(ptr ptr ptr long)
 341 stdcall LsaAddPrivilegesToAccount(ptr ptr)
 342 stdcall LsaClearAuditLog(ptr)
@@ -354,10 +359,10 @@
 359 stdcall LsaGetRemoteUserName(ptr ptr ptr)
 360 stdcall LsaGetSystemAccessAccount(ptr ptr)
 361 stdcall LsaGetUserName(ptr ptr)
-362 stdcall LsaICLookupNames(long long long ptr ptr long long long long long)
-363 stdcall LsaICLookupNamesWithCreds(wstr wstr long long ptr long long long long long long long)
-364 stdcall LsaICLookupSids(long long long ptr ptr long long long long)
-365 stdcall LsaICLookupSidsWithCreds(wstr wstr long long ptr long long long long long long long)
+362 stub LsaICLookupNames
+363 stub LsaICLookupNamesWithCreds
+364 stub LsaICLookupSids
+365 stub LsaICLookupSidsWithCreds
 366 stdcall LsaLookupNames2(ptr long long ptr ptr ptr)
 367 stdcall LsaLookupNames(ptr long ptr ptr ptr)
 368 stdcall LsaLookupPrivilegeDisplayName(ptr ptr ptr ptr)
@@ -399,8 +404,8 @@
 404 stdcall MD5Final(ptr)
 405 stdcall MD5Init(ptr)
 406 stdcall MD5Update(ptr ptr long)
-407 stdcall MSChapSrvChangePassword2(wstr wstr ptr ptr long ptr ptr)
-408 stdcall MSChapSrvChangePassword(wstr wstr long ptr ptr ptr ptr)
+407 stub MSChapSrvChangePassword2
+408 stub MSChapSrvChangePassword
 409 stdcall MakeAbsoluteSD2(ptr ptr)
 410 stdcall MakeAbsoluteSD(ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr)
 411 stdcall MakeSelfRelativeSD(ptr ptr ptr)
@@ -427,12 +432,12 @@
 432 stdcall OpenServiceA(long str long)
 433 stdcall OpenServiceW(long wstr long)
 434 stdcall OpenThreadToken(long long long ptr)
-435 stdcall OpenTraceA(ptr)
-436 stdcall OpenTraceW(ptr)
+435 stdcall -ret64 OpenTraceA(ptr)
+436 stdcall -ret64 OpenTraceW(ptr)
 437 stdcall PrivilegeCheck(ptr ptr ptr)
 438 stdcall PrivilegedServiceAuditAlarmA(str str long ptr long)
 439 stdcall PrivilegedServiceAuditAlarmW(wstr wstr long ptr long)
-440 stdcall ProcessIdleTasks()
+440 stub ProcessIdleTasks
 441 stdcall ProcessTrace(ptr long ptr ptr)
 442 stdcall QueryAllTracesA(ptr long ptr) ntdll.EtwQueryAllTracesA
 443 stdcall QueryAllTracesW(ptr long ptr) ntdll.EtwQueryAllTracesW
@@ -454,16 +459,22 @@
 459 stdcall ReadEventLogW(long long long ptr long ptr ptr)
 460 stdcall RegCloseKey(long)
 461 stdcall RegConnectRegistryA(str long ptr)
+462 stub RegConnectRegistryExA
+463 stub RegConnectRegistryExW
 464 stdcall RegConnectRegistryW(wstr long ptr)
 465 stdcall RegCreateKeyA(long str ptr)
 466 stdcall RegCreateKeyExA(long str long ptr long long ptr ptr ptr)
 467 stdcall RegCreateKeyExW(long wstr long ptr long long ptr ptr ptr)
 468 stdcall RegCreateKeyW(long wstr ptr)
 469 stdcall RegDeleteKeyA(long str)
+470 stdcall RegDeleteKeyExA(long str long long)
+471 stdcall RegDeleteKeyExW(long wstr long long)
 472 stdcall RegDeleteKeyW(long wstr)
 473 stdcall RegDeleteValueA(long str)
 474 stdcall RegDeleteValueW(long wstr)
 475 stdcall RegDisablePredefinedCache()
+476 stdcall RegDisableReflectionKey(ptr)
+477 stdcall RegEnableReflectionKey(ptr)
 478 stdcall RegEnumKeyA(long long ptr long)
 479 stdcall RegEnumKeyExA(long long ptr ptr ptr ptr ptr ptr)
 480 stdcall RegEnumKeyExW(long long ptr ptr ptr ptr ptr ptr)
@@ -472,6 +483,8 @@
 483 stdcall RegEnumValueW(long long ptr ptr ptr ptr ptr ptr)
 484 stdcall RegFlushKey(long)
 485 stdcall RegGetKeySecurity(long long ptr ptr)
+486 stdcall RegGetValueA(long str str long ptr ptr ptr)
+487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr)
 488 stdcall RegLoadKeyA(long str str)
 489 stdcall RegLoadKeyW(long wstr wstr)
 490 stdcall RegNotifyChangeKeyValue(long long long long long)
@@ -486,6 +499,7 @@
 499 stdcall RegQueryInfoKeyW(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr)
 500 stdcall RegQueryMultipleValuesA(long ptr long ptr ptr)
 501 stdcall RegQueryMultipleValuesW(long ptr long ptr ptr)
+502 stdcall RegQueryReflectionKey(ptr ptr)
 503 stdcall RegQueryValueA(long str ptr ptr)
 504 stdcall RegQueryValueExA(long str ptr ptr ptr ptr)
 505 stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr)
@@ -507,14 +521,14 @@
 521 stdcall RegUnLoadKeyW(long wstr)
 522 stdcall RegisterEventSourceA(ptr ptr)
 523 stdcall RegisterEventSourceW(ptr ptr)
-524 stdcall RegisterIdleTask(long long ptr ptr)
+524 stub RegisterIdleTask
 525 stdcall RegisterServiceCtrlHandlerA(str ptr)
 526 stdcall RegisterServiceCtrlHandlerExA(str ptr ptr)
 527 stdcall RegisterServiceCtrlHandlerExW(wstr ptr ptr)
 528 stdcall RegisterServiceCtrlHandlerW(wstr ptr)
 529 stdcall RegisterTraceGuidsA(ptr ptr ptr long ptr str str ptr) ntdll.EtwRegisterTraceGuidsA
 530 stdcall RegisterTraceGuidsW(ptr ptr ptr long ptr wstr wstr ptr) ntdll.EtwRegisterTraceGuidsW
-531 stdcall RemoveTraceCallback(ptr)
+531 stub RemoveTraceCallback
 532 stdcall RemoveUsersFromEncryptedFile(wstr ptr)
 533 stdcall ReportEventA(long long long long ptr long long str ptr)
 534 stdcall ReportEventW(long long long long ptr long long wstr ptr)
@@ -522,37 +536,37 @@
 536 stdcall SaferCloseLevel(ptr)
 537 stdcall SaferComputeTokenFromLevel(ptr ptr ptr long ptr)
 538 stdcall SaferCreateLevel(long long long ptr ptr)
-539 stdcall SaferGetLevelInformation(ptr long ptr long ptr)
+539 stub SaferGetLevelInformation
 540 stdcall SaferGetPolicyInformation(long long long ptr ptr ptr)
 541 stdcall SaferIdentifyLevel(long ptr ptr ptr)
 542 stdcall SaferRecordEventLogEntry(ptr wstr ptr)
-543 stdcall SaferSetLevelInformation(ptr long ptr long)
-544 stdcall SaferSetPolicyInformation(long long long ptr ptr)
-545 stdcall SaferiChangeRegistryScope(ptr long)
-546 stdcall SaferiCompareTokenLevels(long long long)
-547 stdcall SaferiIsExecutableFileType(wstr long)
-548 stdcall SaferiPopulateDefaultsInRegistry(ptr long)
-549 stdcall SaferiRecordEventLogEntry()
-550 stdcall SaferiReplaceProcessThreadTokens(ptr ptr ptr)
-551 stdcall SaferiSearchMatchingHashRules(long ptr long long ptr ptr)
+543 stub SaferSetLevelInformation
+544 stub SaferSetPolicyInformation
+545 stub SaferiChangeRegistryScope
+546 stub SaferiCompareTokenLevels
+547 stub SaferiIsExecutableFileType
+548 stub SaferiPopulateDefaultsInRegistry
+549 stub SaferiRecordEventLogEntry
+550 stub SaferiReplaceProcessThreadTokens
+551 stub SaferiSearchMatchingHashRules
 552 stdcall SetAclInformation(ptr ptr long long)
-553 stdcall SetEntriesInAccessListA(long ptr long str ptr ptr)
-554 stdcall SetEntriesInAccessListW(long ptr long wstr ptr ptr)
+553 stub SetEntriesInAccessListA
+554 stub SetEntriesInAccessListW
 555 stdcall SetEntriesInAclA(long ptr ptr ptr)
 556 stdcall SetEntriesInAclW(long ptr ptr ptr)
-557 stdcall SetEntriesInAuditListA(long ptr long str ptr ptr)
-558 stdcall SetEntriesInAuditListW(long ptr long wstr ptr ptr)
+557 stub SetEntriesInAuditListA
+558 stub SetEntriesInAuditListW
 559 stdcall SetFileSecurityA(str long ptr)
 560 stdcall SetFileSecurityW(wstr long ptr)
-561 stdcall SetInformationCodeAuthzLevelW()
-562 stdcall SetInformationCodeAuthzPolicyW()
+561 stub SetInformationCodeAuthzLevelW
+562 stub SetInformationCodeAuthzPolicyW
 563 stdcall SetKernelObjectSecurity(long long ptr)
 564 stdcall SetNamedSecurityInfoA(str long ptr ptr ptr ptr ptr)
-565 stdcall SetNamedSecurityInfoExA(str long long str ptr ptr str str ptr)
-566 stdcall SetNamedSecurityInfoExW(wstr long long wstr ptr ptr wstr wstr ptr)
+565 stub SetNamedSecurityInfoExA
+566 stub SetNamedSecurityInfoExW
 567 stdcall SetNamedSecurityInfoW(wstr long ptr ptr ptr ptr ptr)
 568 stdcall SetPrivateObjectSecurity(long ptr ptr ptr long)
-569 stdcall SetPrivateObjectSecurityEx(long ptr ptr long ptr ptr)
+569 stub SetPrivateObjectSecurityEx
 570 stdcall SetSecurityDescriptorControl(ptr long long)
 571 stdcall SetSecurityDescriptorDacl(ptr long ptr long)
 572 stdcall SetSecurityDescriptorGroup(ptr ptr long)
@@ -560,14 +574,15 @@
 574 stdcall SetSecurityDescriptorRMControl(ptr ptr)
 575 stdcall SetSecurityDescriptorSacl(ptr long ptr long)
 576 stdcall SetSecurityInfo(long long long ptr ptr ptr ptr)
-577 stdcall SetSecurityInfoExA(ptr long long str ptr ptr str str ptr)
-578 stdcall SetSecurityInfoExW(ptr long long wstr ptr ptr wstr wstr ptr)
+577 stub SetSecurityInfoExA
+578 stub SetSecurityInfoExW
 579 stdcall SetServiceBits(long long long long)
 580 stdcall SetServiceObjectSecurity(long long ptr)
 581 stdcall SetServiceStatus(long long)
+582 stdcall SetThreadToken(ptr ptr)
 583 stdcall SetTokenInformation(long long ptr long)
-584 stdcall SetTraceCallback(ptr ptr)
-585 stdcall SetUserFileEncryptionKey(ptr)
+584 stub SetTraceCallback
+585 stub SetUserFileEncryptionKey
 586 stdcall StartServiceA(long long ptr)
 587 stdcall StartServiceCtrlDispatcherA(ptr)
 588 stdcall StartServiceCtrlDispatcherW(ptr)
@@ -620,77 +635,57 @@
 635 stdcall TraceMessageVa(double long ptr long ptr) ntdll.EtwTraceMessageVa
 636 stdcall TreeResetNamedSecurityInfoA(str ptr ptr ptr ptr ptr ptr long ptr ptr ptr)
 637 stdcall TreeResetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr long ptr long ptr)
-638 stdcall TrusteeAccessToObjectA(str long str ptr long ptr)
-639 stdcall TrusteeAccessToObjectW(wstr long wstr ptr long ptr)
-640 stdcall UninstallApplication(ptr long)
+638 stub TrusteeAccessToObjectA
+639 stub TrusteeAccessToObjectW
+640 stub UninstallApplication
 641 stdcall UnlockServiceDatabase(ptr)
-642 stdcall UnregisterIdleTask(long ptr ptr)
+642 stub UnregisterIdleTask
 643 stdcall UnregisterTraceGuids(double) ntdll.EtwUnregisterTraceGuids
 644 stdcall UpdateTraceA(double str ptr) ntdll.EtwUpdateTraceA
 645 stdcall UpdateTraceW(double wstr ptr) ntdll.EtwUpdateTraceW
-646 stdcall WdmWmiServiceMain(ptr long)
-647 stdcall WmiCloseBlock(ptr)
-648 stdcall WmiCloseTraceWithCursor(ptr)
-649 stdcall WmiConvertTimestamp(long long long)
-650 stdcall WmiDevInstToInstanceNameA(ptr long str long)
-651 stdcall WmiDevInstToInstanceNameW(ptr long wstr long)
-652 stdcall WmiEnumerateGuids(long long)
-653 stdcall WmiExecuteMethodA(long str long long long long long)
-654 stdcall WmiExecuteMethodW(long wstr long long long long long)
-655 stdcall WmiFileHandleToInstanceNameA(long long ptr long)
-656 stdcall WmiFileHandleToInstanceNameW(long long ptr long)
-657 stdcall WmiFreeBuffer(ptr)
-658 stdcall WmiGetFirstTraceOffset(long long)
-659 stdcall WmiGetNextEvent(long)
-660 stdcall WmiGetTraceHeader(long long long)
-661 stdcall WmiMofEnumerateResourcesA(long long long)
-662 stdcall WmiMofEnumerateResourcesW(long long long)
+646 stub WdmWmiServiceMain
+647 stub WmiCloseBlock
+648 stub WmiCloseTraceWithCursor
+649 stub WmiConvertTimestamp
+650 stub WmiDevInstToInstanceNameA
+651 stub WmiDevInstToInstanceNameW
+652 stub WmiEnumerateGuids
+653 stub WmiExecuteMethodA
+654 stub WmiExecuteMethodW
+655 stub WmiFileHandleToInstanceNameA
+656 stub WmiFileHandleToInstanceNameW
+657 stub WmiFreeBuffer
+658 stub WmiGetFirstTraceOffset
+659 stub WmiGetNextEvent
+660 stub WmiGetTraceHeader
+661 stub WmiMofEnumerateResourcesA
+662 stub WmiMofEnumerateResourcesW
 663 stdcall WmiNotificationRegistrationA(ptr long ptr long long) ntdll.EtwNotificationRegistrationA
 664 stdcall WmiNotificationRegistrationW(ptr long ptr long long) ntdll.EtwNotificationRegistrationW
-665 stdcall WmiOpenBlock(long long long)
-666 stdcall WmiOpenTraceWithCursor(long long) 
-667 stdcall WmiParseTraceEvent(long long long long long)
-668 stdcall WmiQueryAllDataA(long ptr ptr)
-669 stdcall WmiQueryAllDataMultipleA(long long long ptr)
-670 stdcall WmiQueryAllDataMultipleW(long long long ptr)
-671 stdcall WmiQueryAllDataW(long ptr ptr)
-672 stdcall WmiQueryGuidInformation(ptr ptr)
-673 stdcall WmiQuerySingleInstanceA(long str ptr ptr)
-674 stdcall WmiQuerySingleInstanceMultipleA(long long long long long)
-675 stdcall WmiQuerySingleInstanceMultipleW(long long long long long)
-676 stdcall WmiQuerySingleInstanceW(long wstr ptr ptr)
+665 stub WmiOpenBlock
+666 stub WmiOpenTraceWithCursor
+667 stub WmiParseTraceEvent
+668 stub WmiQueryAllDataA
+669 stub WmiQueryAllDataMultipleA
+670 stub WmiQueryAllDataMultipleW
+671 stub WmiQueryAllDataW
+672 stub WmiQueryGuidInformation
+673 stub WmiQuerySingleInstanceA
+674 stub WmiQuerySingleInstanceMultipleA
+675 stub WmiQuerySingleInstanceMultipleW
+676 stub WmiQuerySingleInstanceW
 677 stdcall WmiReceiveNotificationsA(long long long long) ntdll.EtwReceiveNotificationsA
 678 stdcall WmiReceiveNotificationsW(long long long long) ntdll.EtwReceiveNotificationsW
-679 stdcall WmiSetSingleInstanceA(long str long long ptr)
-680 stdcall WmiSetSingleInstanceW(long wstr long long ptr)
-681 stdcall WmiSetSingleItemA(long str long long long ptr)
-682 stdcall WmiSetSingleItemW(long wstr long long long ptr)
-683 stdcall Wow64Win32ApiEntry(long long long)
+679 stub WmiSetSingleInstanceA
+680 stub WmiSetSingleInstanceW
+681 stub WmiSetSingleItemA
+682 stub WmiSetSingleItemW
+683 stub Wow64Win32ApiEntry
 684 stdcall WriteEncryptedFileRaw(ptr ptr ptr)
+685 stdcall RegLoadMUIStringW(ptr wstr wstr long ptr long wstr) advapi32_vista.RegLoadMUIStringW
+686 stdcall RegLoadMUIStringA(ptr str str long ptr long str) advapi32_vista.RegLoadMUIStringA
 
 #Only on XP
-@ stdcall CreateProcessAsUserSecure(ptr str str ptr ptr long long ptr str ptr ptr) advapibase.CreateProcessAsUserSecure;only on XP (needed for synchronization)
+@ stdcall CreateProcessAsUserSecure(ptr str str ptr ptr long long ptr str ptr ptr)
 @ stdcall QueryWindows31FilesMigration(long) advapibase.QueryWindows31FilesMigration
 @ stdcall SynchronizeWindows31FilesAndWindowsNTRegistry(long long long long) advapibase.SynchronizeWindows31FilesAndWindowsNTRegistry  ;only on XP (needed for synchronization)
-
-#Missing on XP
-100 stdcall CreateProcessWithTokenW(ptr long wstr wstr long ptr wstr ptr ptr) advapinew.CreateProcessWithTokenW
-202 stdcall ElfReportEventAndSourceW(long long ptr long long long ptr ptr long long ptr ptr long ptr ptr) advapinew.ElfReportEventAndSourceW
-297 stdcall I_QueryTagInformation(long long ptr)
-462 stdcall RegConnectRegistryExA(str ptr long ptr)
-463 stdcall RegConnectRegistryExW(wstr ptr long ptr)	
-470 stdcall RegDeleteKeyExA(long str long long)
-471 stdcall RegDeleteKeyExW(long wstr long long) 
-476 stdcall RegDisableReflectionKey(ptr)
-477 stdcall RegEnableReflectionKey(ptr)	
-502 stdcall RegQueryReflectionKey(ptr ptr)	 ;native on Server 2003, but, missing on XP (needed for synchronization) 
-
-#Missing on Server 2003 RTM
-@ stdcall RegDisablePredefinedCacheEx() advapinew.RegDisablePredefinedCacheEx
-;486 stdcall RegGetValueA(long str str long ptr ptr ptr) advapinew.RegGetValueA
-;487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapinew.RegGetValueW
-
-@ stdcall LogonUserExExW(str str str long long ptr ptr ptr ptr ptr ptr)
-101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr)
-582 stdcall SetThreadToken(ptr ptr)
-284 stdcall GetTokenInformation(long long ptr long ptr)

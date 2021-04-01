@@ -19,7 +19,18 @@
  *
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#include <assert.h>
+
+#include "rpc.h"
+#include "rpcndr.h"
+#include "wine/winternl.h"
+
+#include "wine/debug.h"
+
+#include "rpc_binding.h"
+#include "rpc_assoc.h"
+#include "rpc_message.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(rpc);
 
@@ -68,6 +79,8 @@ static RPC_STATUS RpcAssoc_Alloc(LPCSTR Protseq, LPCSTR NetworkAddr,
     assoc->Endpoint = RPCRT4_strdupA(Endpoint);
     assoc->NetworkOptions = NetworkOptions ? RPCRT4_strdupW(NetworkOptions) : NULL;
     assoc->assoc_group_id = 0;
+    assoc->connection_cnt = 0;
+    UuidCreate(&assoc->http_uuid);
     list_init(&assoc->entry);
     *assoc_out = assoc;
     return RPC_S_OK;
@@ -79,7 +92,7 @@ static BOOL compare_networkoptions(LPCWSTR opts1, LPCWSTR opts2)
         return TRUE;
     if ((opts1 == NULL) || (opts2 == NULL))
         return FALSE;
-    return !strcmpW(opts1, opts2);
+    return !wcscmp(opts1, opts2);
 }
 
 RPC_STATUS RPCRT4_GetAssociation(LPCSTR Protseq, LPCSTR NetworkAddr,
@@ -140,7 +153,7 @@ RPC_STATUS RpcServerAssoc_GetAssociation(LPCSTR Protseq, LPCSTR NetworkAddr,
                 (!NetworkAddr || !assoc->NetworkAddr || !strcmp(NetworkAddr, assoc->NetworkAddr)) &&
                 !strcmp(Endpoint, assoc->Endpoint) &&
                 ((!assoc->NetworkOptions == !NetworkOptions) &&
-                 (!NetworkOptions || !strcmpW(NetworkOptions, assoc->NetworkOptions))))
+                 (!NetworkOptions || !wcscmp(NetworkOptions, assoc->NetworkOptions))))
             {
                 assoc->refs++;
                 *assoc_out = assoc;
@@ -329,7 +342,7 @@ static RPC_STATUS RpcAssoc_BindConnection(const RpcAssoc *assoc, RpcConnection *
             break;
         case REJECT_INVALID_CHECKSUM:
             ERR("invalid checksum\n");
-            status = ERROR_ACCESS_DENIED;
+            status = RPC_S_ACCESS_DENIED;
             break;
         default:
             ERR("rejected bind for reason %d\n", response_hdr->bind_nack.reject_reason);
@@ -377,14 +390,18 @@ static RpcConnection *RpcAssoc_GetIdleConnection(RpcAssoc *assoc,
 RPC_STATUS RpcAssoc_GetClientConnection(RpcAssoc *assoc,
                                         const RPC_SYNTAX_IDENTIFIER *InterfaceId,
                                         const RPC_SYNTAX_IDENTIFIER *TransferSyntax, RpcAuthInfo *AuthInfo,
-                                        RpcQualityOfService *QOS, LPCWSTR CookieAuth, RpcConnection **Connection)
+                                        RpcQualityOfService *QOS, LPCWSTR CookieAuth,
+                                        RpcConnection **Connection, BOOL *from_cache)
 {
     RpcConnection *NewConnection;
     RPC_STATUS status;
 
     *Connection = RpcAssoc_GetIdleConnection(assoc, InterfaceId, TransferSyntax, AuthInfo, QOS);
-    if (*Connection)
+    if (*Connection) {
+        TRACE("return idle connection %p for association %p\n", *Connection, assoc);
+        if (from_cache) *from_cache = TRUE;
         return RPC_S_OK;
+    }
 
     /* create a new connection */
     status = RPCRT4_CreateConnection(&NewConnection, FALSE /* is this a server connection? */,
@@ -409,8 +426,11 @@ RPC_STATUS RpcAssoc_GetClientConnection(RpcAssoc *assoc,
         return status;
     }
 
-    *Connection = NewConnection;
+    InterlockedIncrement(&assoc->connection_cnt);
 
+    TRACE("return new connection %p for association %p\n", *Connection, assoc);
+    *Connection = NewConnection;
+    if (from_cache) *from_cache = FALSE;
     return RPC_S_OK;
 }
 
@@ -424,6 +444,15 @@ void RpcAssoc_ReleaseIdleConnection(RpcAssoc *assoc, RpcConnection *Connection)
     LeaveCriticalSection(&assoc->cs);
 }
 
+void RpcAssoc_ConnectionReleased(RpcAssoc *assoc)
+{
+    if (InterlockedDecrement(&assoc->connection_cnt))
+        return;
+
+    TRACE("Last %p connection released\n", assoc);
+    assoc->assoc_group_id = 0;
+}
+
 RPC_STATUS RpcServerAssoc_AllocateContextHandle(RpcAssoc *assoc, void *CtxGuard,
                                                 NDR_SCONTEXT *SContext)
 {
@@ -431,7 +460,7 @@ RPC_STATUS RpcServerAssoc_AllocateContextHandle(RpcAssoc *assoc, void *CtxGuard,
 
     context_handle = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*context_handle));
     if (!context_handle)
-        return ERROR_OUTOFMEMORY;
+        return RPC_S_OUT_OF_MEMORY;
 
     context_handle->ctx_guard = CtxGuard;
     RtlInitializeResource(&context_handle->rw_lock);

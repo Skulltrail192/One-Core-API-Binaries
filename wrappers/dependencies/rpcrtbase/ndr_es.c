@@ -18,9 +18,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+#include <stdio.h>
 
-#include <midles.h>
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "rpc.h"
+#include "midles.h"
+#include "ndrtypes.h"
+
+#include "ndr_misc.h"
+#include "ndr_stubless.h"
+
+#include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
 
@@ -30,6 +41,7 @@ static inline void init_MIDL_ES_MESSAGE(MIDL_ES_MESSAGE *pEsMsg)
     /* even if we are unmarshalling, as we don't want pointers to be pointed
      * to buffer memory */
     pEsMsg->StubMsg.IsClient = TRUE;
+    pEsMsg->MesVersion = 1;
 }
 
 /***********************************************************************
@@ -45,7 +57,7 @@ RPC_STATUS WINAPI MesEncodeIncrementalHandleCreate(
 
     pEsMsg = HeapAlloc(GetProcessHeap(), 0, sizeof(*pEsMsg));
     if (!pEsMsg)
-        return ERROR_OUTOFMEMORY;
+        return RPC_S_OUT_OF_MEMORY;
 
     init_MIDL_ES_MESSAGE(pEsMsg);
 
@@ -72,7 +84,7 @@ RPC_STATUS WINAPI MesDecodeIncrementalHandleCreate(
 
     pEsMsg = HeapAlloc(GetProcessHeap(), 0, sizeof(*pEsMsg));
     if (!pEsMsg)
-        return ERROR_OUTOFMEMORY;
+        return RPC_S_OUT_OF_MEMORY;
 
     init_MIDL_ES_MESSAGE(pEsMsg);
 
@@ -111,12 +123,57 @@ RPC_STATUS WINAPI MesIncrementalHandleReset(
 }
 
 /***********************************************************************
+ *            MesBufferHandleReset [RPCRT4.@]
+ */
+RPC_STATUS WINAPI MesBufferHandleReset(handle_t Handle, ULONG HandleStyle,
+    MIDL_ES_CODE Operation, char **Buffer, ULONG BufferSize, ULONG *EncodedSize)
+{
+    MIDL_ES_MESSAGE *pEsMsg = (MIDL_ES_MESSAGE *)Handle;
+
+    TRACE("(%p, %u, %d, %p, %u, %p)\n", Handle, HandleStyle, Operation, Buffer,
+        BufferSize, EncodedSize);
+
+    if (!Handle || !Buffer || !EncodedSize)
+        return RPC_S_INVALID_ARG;
+
+    if (Operation != MES_ENCODE && Operation != MES_DECODE && Operation != MES_ENCODE_NDR64)
+        return RPC_S_INVALID_ARG;
+
+    if (HandleStyle != MES_FIXED_BUFFER_HANDLE && HandleStyle != MES_DYNAMIC_BUFFER_HANDLE)
+        return RPC_S_INVALID_ARG;
+
+    init_MIDL_ES_MESSAGE(pEsMsg);
+
+    pEsMsg->Operation = Operation;
+    pEsMsg->HandleStyle = HandleStyle;
+    if (HandleStyle == MES_FIXED_BUFFER_HANDLE)
+        pEsMsg->Buffer = (unsigned char*)*Buffer;
+    else
+        pEsMsg->pDynBuffer = (unsigned char**)Buffer;
+    pEsMsg->BufferSize = BufferSize;
+    pEsMsg->pEncodedSize = EncodedSize;
+
+    return RPC_S_OK;
+}
+
+/***********************************************************************
  *            MesHandleFree [RPCRT4.@]
  */
 RPC_STATUS WINAPI MesHandleFree(handle_t Handle)
 {
     TRACE("(%p)\n", Handle);
     HeapFree(GetProcessHeap(), 0, Handle);
+    return RPC_S_OK;
+}
+
+static RPC_STATUS validate_mes_buffer_pointer(const char *Buffer)
+{
+    if (!Buffer)
+        return RPC_S_INVALID_ARG;
+
+    if (((ULONG_PTR)Buffer & 7) != 0)
+        return RPC_X_INVALID_BUFFER;
+
     return RPC_S_OK;
 }
 
@@ -127,12 +184,21 @@ RPC_STATUS RPC_ENTRY MesEncodeFixedBufferHandleCreate(
     char *Buffer, ULONG BufferSize, ULONG *pEncodedSize, handle_t *pHandle)
 {
     MIDL_ES_MESSAGE *pEsMsg;
+    RPC_STATUS status;
 
     TRACE("(%p, %d, %p, %p)\n", Buffer, BufferSize, pEncodedSize, pHandle);
 
+    if ((status = validate_mes_buffer_pointer(Buffer)))
+        return status;
+
+    if (!pEncodedSize)
+        return RPC_S_INVALID_ARG;
+
+    /* FIXME: check BufferSize too */
+
     pEsMsg = HeapAlloc(GetProcessHeap(), 0, sizeof(*pEsMsg));
     if (!pEsMsg)
-        return ERROR_OUTOFMEMORY;
+        return RPC_S_OUT_OF_MEMORY;
 
     init_MIDL_ES_MESSAGE(pEsMsg);
 
@@ -150,10 +216,29 @@ RPC_STATUS RPC_ENTRY MesEncodeFixedBufferHandleCreate(
 /***********************************************************************
  *            MesEncodeDynBufferHandleCreate [RPCRT4.@]
  */
-RPC_STATUS RPC_ENTRY MesEncodeDynBufferHandleCreate(char **ppBuffer,
+RPC_STATUS RPC_ENTRY MesEncodeDynBufferHandleCreate(char **Buffer,
         ULONG *pEncodedSize, handle_t *pHandle)
 {
-    FIXME("%p %p %p stub\n", ppBuffer, pEncodedSize, pHandle);
+    MIDL_ES_MESSAGE *pEsMsg;
+
+    TRACE("(%p, %p, %p)\n", Buffer, pEncodedSize, pHandle);
+
+    if (!pEncodedSize)
+        return RPC_S_INVALID_ARG;
+
+    pEsMsg = HeapAlloc(GetProcessHeap(), 0, sizeof(*pEsMsg));
+    if (!pEsMsg)
+        return RPC_S_OUT_OF_MEMORY;
+
+    init_MIDL_ES_MESSAGE(pEsMsg);
+
+    pEsMsg->Operation = MES_ENCODE;
+    pEsMsg->HandleStyle = MES_DYNAMIC_BUFFER_HANDLE;
+    pEsMsg->pDynBuffer = (unsigned char **)Buffer;
+    pEsMsg->pEncodedSize = pEncodedSize;
+
+    *pHandle = (handle_t)pEsMsg;
+
     return RPC_S_OK;
 }
 
@@ -164,12 +249,16 @@ RPC_STATUS RPC_ENTRY MesDecodeBufferHandleCreate(
     char *Buffer, ULONG BufferSize, handle_t *pHandle)
 {
     MIDL_ES_MESSAGE *pEsMsg;
+    RPC_STATUS status;
 
     TRACE("(%p, %d, %p)\n", Buffer, BufferSize, pHandle);
 
+    if ((status = validate_mes_buffer_pointer(Buffer)))
+        return status;
+
     pEsMsg = HeapAlloc(GetProcessHeap(), 0, sizeof(*pEsMsg));
     if (!pEsMsg)
-        return ERROR_OUTOFMEMORY;
+        return RPC_S_OUT_OF_MEMORY;
 
     init_MIDL_ES_MESSAGE(pEsMsg);
 
@@ -193,7 +282,7 @@ static void es_data_alloc(MIDL_ES_MESSAGE *pEsMsg, ULONG size)
         if (tmpsize < size)
         {
             ERR("not enough bytes allocated - requested %d, got %d\n", size, tmpsize);
-            RpcRaiseException(ERROR_OUTOFMEMORY);
+            RpcRaiseException(RPC_S_OUT_OF_MEMORY);
         }
     }
     else if (pEsMsg->HandleStyle == MES_FIXED_BUFFER_HANDLE)
@@ -214,7 +303,7 @@ static void es_data_read(MIDL_ES_MESSAGE *pEsMsg, ULONG size)
         if (tmpsize < size)
         {
             ERR("not enough bytes read - requested %d, got %d\n", size, tmpsize);
-            RpcRaiseException(ERROR_OUTOFMEMORY);
+            RpcRaiseException(RPC_S_OUT_OF_MEMORY);
         }
     }
     else
@@ -334,7 +423,7 @@ void WINAPIV NdrMesProcEncodeDecode(handle_t Handle, const MIDL_STUB_DESC * pStu
     client_interface = pStubDesc->RpcInterfaceInformation;
     pEsMsg->InterfaceId = client_interface->InterfaceId;
 
-    if (pProcHeader->Oi_flags & RPC_FC_PROC_OIF_RPCFLAGS)
+    if (pProcHeader->Oi_flags & Oi_HAS_RPCFLAGS)
     {
         const NDR_PROC_HEADER_RPC *header_rpc = (const NDR_PROC_HEADER_RPC *)&pFormat[0];
         stack_size = header_rpc->stack_size;
@@ -348,17 +437,17 @@ void WINAPIV NdrMesProcEncodeDecode(handle_t Handle, const MIDL_STUB_DESC * pStu
         pFormat += sizeof(NDR_PROC_HEADER);
     }
 
-    if (pProcHeader->handle_type == RPC_FC_BIND_EXPLICIT)
+    if (pProcHeader->handle_type == 0)
     {
         switch (*pFormat) /* handle_type */
         {
-        case RPC_FC_BIND_PRIMITIVE: /* explicit primitive */
+        case FC_BIND_PRIMITIVE: /* explicit primitive */
             pFormat += sizeof(NDR_EHD_PRIMITIVE);
             break;
-        case RPC_FC_BIND_GENERIC: /* explicit generic */
+        case FC_BIND_GENERIC: /* explicit generic */
             pFormat += sizeof(NDR_EHD_GENERIC);
             break;
-        case RPC_FC_BIND_CONTEXT: /* explicit context */
+        case FC_BIND_CONTEXT: /* explicit context */
             pFormat += sizeof(NDR_EHD_CONTEXT);
             break;
         default:
@@ -377,7 +466,7 @@ void WINAPIV NdrMesProcEncodeDecode(handle_t Handle, const MIDL_STUB_DESC * pStu
     pEsMsg->StubMsg.pfnFree = pStubDesc->pfnFree;
 
     /* create the full pointer translation tables, if requested */
-    if (pProcHeader->Oi_flags & RPC_FC_PROC_OIF_FULLPTR)
+    if (pProcHeader->Oi_flags & Oi_FULL_PTR_USED)
         pEsMsg->StubMsg.FullPtrXlatTables = NdrFullPointerXlatInit(0,XLAT_CLIENT);
 
     TRACE("Oi_flags = 0x%02x\n", pProcHeader->Oi_flags);
@@ -420,7 +509,7 @@ void WINAPIV NdrMesProcEncodeDecode(handle_t Handle, const MIDL_STUB_DESC * pStu
         return;
     }
     /* free the full pointer translation tables */
-    if (pProcHeader->Oi_flags & RPC_FC_PROC_OIF_FULLPTR)
+    if (pProcHeader->Oi_flags & Oi_FULL_PTR_USED)
         NdrFullPointerXlatFree(pEsMsg->StubMsg.FullPtrXlatTables);
 }
 

@@ -9,6 +9,6 @@ list(APPEND SOURCE
 add_library(API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-1-0 SHARED ${SOURCE})
 
 set_module_type(API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-1-0 win32dll ENTRYPOINT 0)
-add_importlibs(API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-1-0 shlwapi kernel32 ntdll)
+add_importlibs(API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-1-0 shlwapi kernelbase ntdll)
 add_dependencies(API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-1-0 psdk)
 add_cd_file(TARGET API-MS-WIN-CORE-SHLWAPI-OBSOLETE-L1-1-0 DESTINATION reactos/system32 FOR all)

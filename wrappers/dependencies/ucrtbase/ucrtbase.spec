@@ -2439,7 +2439,7 @@
 @ cdecl strpbrk(str str)
 @ stub strspn ;(str str) ucrtbase.strspn
 @ cdecl strtok(str str)
-@ stub strtok_s ;(ptr str ptr) ucrtbase.strtok_s
+@ cdecl strtok_s(ptr str ptr)
 @ stub strxfrm ;(ptr str long) ucrtbase.strxfrm
 @ stub tolower ;(long) ucrtbase.tolower
 @ stub toupper ;(long) ucrtbase.toupper
@@ -2463,7 +2463,7 @@
 @ cdecl wcspbrk(wstr wstr)
 @ stub wcsspn ;(wstr wstr) ucrtbase.wcsspn
 @ cdecl wcstok(wstr wstr)
-@ stub wcstok_s ;(ptr wstr ptr) ucrtbase.wcstok_s
+@ cdecl wcstok_s(ptr wstr ptr)
 @ stub wcsxfrm ;(ptr wstr long) ucrtbase.wcsxfrm
 @ stub wctype ;() ucrtbase.wctype
 @ stub wmemcpy_s ;(ptr long ptr long) ucrtbase.wmemcpy_s
@@ -2540,7 +2540,7 @@
 @ stub clock ;() ucrtbase.clock
 @ stub strftime ;(str long str ptr) ucrtbase.strftime
 @ stub wcsftime ;(ptr long wstr ptr) ucrtbase.wcsftime
-@ cdecl _abs64(int64) abs64
+@ cdecl -ret64 _abs64(int64)
 @ cdecl _byteswap_uint64(int64) byteswap_uint64
 @ cdecl _byteswap_ulong(long) byteswap_ulong
 @ cdecl _byteswap_ushort(long) byteswap_ushort

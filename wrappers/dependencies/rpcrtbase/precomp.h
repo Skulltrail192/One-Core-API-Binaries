@@ -1,7 +1,6 @@
+
 #ifndef _RPCRT4_PCH_
 #define _RPCRT4_PCH_
-
-#include <config.h>
 
 #include <assert.h>
 #include <stdarg.h>
@@ -18,6 +17,7 @@
 #include <windef.h>
 #include <winbase.h>
 #include <winternl.h>
+#include <winnls.h>
 #include <objbase.h>
 #include <rpcproxy.h>
 #include <security.h>
@@ -26,7 +26,6 @@
 #include <wine/exception.h>
 #include <wine/list.h>
 #include <wine/rpcfc.h>
-#include <wine/unicode.h>
 
 #include "cpsf.h"
 #include "ncastatus.h"
@@ -37,4 +36,4 @@
 #include "rpc_message.h"
 #include "rpc_server.h"
 
-#endif /* _RPCRT4_PCH_ */
+#endif /* !_RPCRT4_PCH_ */

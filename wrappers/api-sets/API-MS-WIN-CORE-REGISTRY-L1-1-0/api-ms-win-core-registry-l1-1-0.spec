@@ -1,14 +1,14 @@
 @ stdcall RegCloseKey(long) advapi32.RegCloseKey
-@ stdcall RegCopyTreeW(ptr str ptr) advapi32.RegCopyTreeW
+@ stdcall RegCopyTreeW(ptr str ptr) kernelbase.RegCopyTreeW
 @ stdcall RegCreateKeyExA(long str long ptr long long ptr ptr ptr) advapi32.RegCreateKeyExA
 @ stdcall RegCreateKeyExW(long wstr long ptr long long ptr ptr ptr) advapi32.RegCreateKeyExW
 @ stdcall RegDeleteKeyExA(long str long long) advapi32.RegDeleteKeyExA
 @ stdcall RegDeleteKeyExW(long wstr long long) advapi32.RegDeleteKeyExW
-@ stdcall RegDeleteTreeA(long str) advapi32.RegDeleteTreeA
-@ stdcall RegDeleteTreeW(long wstr) advapi32.RegDeleteTreeW
+@ stdcall RegDeleteTreeA(long str) kernelbase.RegDeleteTreeA
+@ stdcall RegDeleteTreeW(long wstr) kernelbase.RegDeleteTreeW
 @ stdcall RegDeleteValueA(long str) advapi32.RegDeleteValueA
 @ stdcall RegDeleteValueW(long wstr) advapi32.RegDeleteValueW
-@ stdcall RegDisablePredefinedCacheEx() advapi32.RegDisablePredefinedCacheEx
+@ stdcall RegDisablePredefinedCacheEx() kernelbase.RegDisablePredefinedCacheEx
 @ stdcall RegEnumKeyExA(long long ptr ptr ptr ptr ptr ptr) advapi32.RegEnumKeyExA
 @ stdcall RegEnumKeyExW(long long ptr ptr ptr ptr ptr ptr) advapi32.RegEnumKeyExW
 @ stdcall RegEnumValueA(long long ptr ptr ptr ptr ptr ptr) advapi32.RegEnumValueA
@@ -17,8 +17,8 @@
 @ stdcall RegGetKeySecurity(long long ptr ptr) advapi32.RegGetKeySecurity
 @ stdcall RegGetValueA(long str str long ptr ptr ptr) advapi32.RegGetValueA
 @ stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapi32.RegGetValueW
-@ stdcall RegLoadAppKeyA(str ptr long long long) advapi32.RegLoadAppKeyA
-@ stdcall RegLoadAppKeyW(wstr ptr long long long) advapi32.RegLoadAppKeyW
+@ stdcall RegLoadAppKeyA(str ptr long long long) kernelbase.RegLoadAppKeyA
+@ stdcall RegLoadAppKeyW(wstr ptr long long long) kernelbase.RegLoadAppKeyW
 @ stdcall RegLoadKeyA(long str str) advapi32.RegLoadKeyA
 @ stdcall RegLoadKeyW(long wstr wstr) advapi32.RegLoadKeyW
 @ stdcall RegLoadMUIStringA(long str str long ptr long str) advapi32.RegLoadMUIStringA

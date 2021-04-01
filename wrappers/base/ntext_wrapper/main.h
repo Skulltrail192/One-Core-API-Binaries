@@ -34,8 +34,6 @@
 #include <list.h>
 #include <wmistr.h>
 #include <lpcfuncs.h>
-#include <cmfuncs.h>
-//#include "ntdll_misc.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -1081,6 +1079,14 @@ typedef struct _TP_CALLBACK_ENVIRON_V3
     DWORD Size;
 } TP_CALLBACK_ENVIRON_V3;
 
+typedef enum _EVENT_INFO_CLASS {
+  EventProviderBinaryTrackInfo,
+  EventProviderSetReserved1,
+  EventProviderSetTraits,
+  EventProviderUseDescriptorType,
+  MaxEventInfo
+} EVENT_INFO_CLASS;
+
 RTL_CRITICAL_SECTION time_tz_section;
 
 RTL_CRITICAL_SECTION localeCritSection;
@@ -1153,4 +1159,9 @@ NTSYSAPI void      WINAPI TpWaitForTimer(TP_TIMER *,BOOL);
 NTSYSAPI void      WINAPI TpWaitForWait(TP_WAIT *,BOOL);
 NTSYSAPI void      WINAPI TpWaitForWork(TP_WORK *,BOOL);
 
-NTSYSAPI NTSTATUS  WINAPI RtlDosPathNameToNtPathName_U_WithStatus(PCWSTR,PUNICODE_STRING,PWSTR*,CURDIR*);
+NTSTATUS
+NTAPI
+RtlDosPathNameToNtPathName_U_WithStatus(IN PCWSTR DosName,
+                                        OUT PUNICODE_STRING NtName,
+                                        OUT PCWSTR *PartName,
+                                        OUT PRTL_RELATIVE_NAME_U RelativeName);

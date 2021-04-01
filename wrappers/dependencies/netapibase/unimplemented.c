@@ -115,7 +115,14 @@ DWORD WINAPI DsGetSiteNameA(LPCSTR ComputerName, LPSTR *SiteName)
 	return 0;
 }
 
-DWORD WINAPI DsMergeForestTrustInformationW(PCWSTR SourceString, PCUNICODE_STRING String1, int a3, int a4)
+
+DWORD
+WINAPI
+DsMergeForestTrustInformationW(
+    _In_ LPCWSTR DomainName,
+    _In_ PLSA_FOREST_TRUST_INFORMATION NewForestTrustInfo,
+    _In_opt_ PLSA_FOREST_TRUST_INFORMATION OldForestTrustInfo,
+    _Out_ PLSA_FOREST_TRUST_INFORMATION *ForestTrustInfo)
 {
 	return 0;
 }

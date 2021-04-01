@@ -115,7 +115,9 @@ SHBindToFolderIDListParentEx(
 	//return SHBindToFolderIDListParent(psfRoot, pidl, riid, ppv, ppidlLast);
 }
 
-HRESULT WINAPI SHFormatForDisplay(
+HRESULT 
+WINAPI 
+SHFormatForDisplay(
   _In_   REFPROPERTYKEY propkey,
   _In_   REFPROPVARIANT propvar,
   _In_   PROPDESC_FORMAT_FLAGS pdfFlags,

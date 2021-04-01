@@ -278,7 +278,6 @@ GetTimeZoneInformation(LPTIME_ZONE_INFORMATION lpTimeZoneInformation)
     return TIME_ZoneID(lpTimeZoneInformation);
 }
 
-
 /*
  * @implemented
  */
@@ -286,11 +285,40 @@ BOOL
 WINAPI
 SetTimeZoneInformation(CONST TIME_ZONE_INFORMATION *lpTimeZoneInformation)
 {
+    RTL_TIME_ZONE_INFORMATION TimeZoneInformation;
     NTSTATUS Status;
 
     DPRINT("SetTimeZoneInformation()\n");
 
-    Status = RtlSetTimeZoneInformation((LPTIME_ZONE_INFORMATION)lpTimeZoneInformation);
+    TimeZoneInformation.Bias = lpTimeZoneInformation->Bias;
+
+    wcsncpy(TimeZoneInformation.StandardName,
+            lpTimeZoneInformation->StandardName,
+            ARRAYSIZE(TimeZoneInformation.StandardName));
+    TimeZoneInformation.StandardDate.Year = lpTimeZoneInformation->StandardDate.wYear;
+    TimeZoneInformation.StandardDate.Month = lpTimeZoneInformation->StandardDate.wMonth;
+    TimeZoneInformation.StandardDate.Day = lpTimeZoneInformation->StandardDate.wDay;
+    TimeZoneInformation.StandardDate.Hour = lpTimeZoneInformation->StandardDate.wHour;
+    TimeZoneInformation.StandardDate.Minute = lpTimeZoneInformation->StandardDate.wMinute;
+    TimeZoneInformation.StandardDate.Second = lpTimeZoneInformation->StandardDate.wSecond;
+    TimeZoneInformation.StandardDate.Milliseconds = lpTimeZoneInformation->StandardDate.wMilliseconds;
+    TimeZoneInformation.StandardDate.Weekday = lpTimeZoneInformation->StandardDate.wDayOfWeek;
+    TimeZoneInformation.StandardBias = lpTimeZoneInformation->StandardBias;
+
+    wcsncpy(TimeZoneInformation.DaylightName,
+            lpTimeZoneInformation->DaylightName,
+            ARRAYSIZE(TimeZoneInformation.DaylightName));
+    TimeZoneInformation.DaylightDate.Year = lpTimeZoneInformation->DaylightDate.wYear;
+    TimeZoneInformation.DaylightDate.Month = lpTimeZoneInformation->DaylightDate.wMonth;
+    TimeZoneInformation.DaylightDate.Day = lpTimeZoneInformation->DaylightDate.wDay;
+    TimeZoneInformation.DaylightDate.Hour = lpTimeZoneInformation->DaylightDate.wHour;
+    TimeZoneInformation.DaylightDate.Minute = lpTimeZoneInformation->DaylightDate.wMinute;
+    TimeZoneInformation.DaylightDate.Second = lpTimeZoneInformation->DaylightDate.wSecond;
+    TimeZoneInformation.DaylightDate.Milliseconds = lpTimeZoneInformation->DaylightDate.wMilliseconds;
+    TimeZoneInformation.DaylightDate.Weekday = lpTimeZoneInformation->DaylightDate.wDayOfWeek;
+    TimeZoneInformation.DaylightBias = lpTimeZoneInformation->DaylightBias;
+
+    Status = RtlSetTimeZoneInformation(&TimeZoneInformation);
     if (!NT_SUCCESS(Status))
     {
         DPRINT1("RtlSetTimeZoneInformation() failed (Status %lx)\n", Status);
@@ -299,8 +327,8 @@ SetTimeZoneInformation(CONST TIME_ZONE_INFORMATION *lpTimeZoneInformation)
     }
 
     Status = NtSetSystemInformation(SystemCurrentTimeZoneInformation,
-                                    (PVOID)lpTimeZoneInformation,
-                                    sizeof(TIME_ZONE_INFORMATION));
+                                    (PVOID)&TimeZoneInformation,
+                                    sizeof(RTL_TIME_ZONE_INFORMATION));
     if (!NT_SUCCESS(Status))
     {
         DPRINT1("NtSetSystemInformation() failed (Status %lx)\n", Status);
@@ -310,6 +338,7 @@ SetTimeZoneInformation(CONST TIME_ZONE_INFORMATION *lpTimeZoneInformation)
 
     return TRUE;
 }
+
 
 /*
  * @implemented

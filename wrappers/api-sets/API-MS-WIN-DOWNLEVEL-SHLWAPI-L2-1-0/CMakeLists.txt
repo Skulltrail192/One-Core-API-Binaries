@@ -9,6 +9,6 @@ list(APPEND SOURCE
 add_library(API-MS-WIN-DOWNLEVEL-SHLWAPI-L2-1-0 SHARED ${SOURCE})
 
 set_module_type(API-MS-WIN-DOWNLEVEL-SHLWAPI-L2-1-0 win32dll ENTRYPOINT 0)
-add_importlibs(API-MS-WIN-DOWNLEVEL-SHLWAPI-L2-1-0 shlwapi ntdll kernel32)
+add_importlibs(API-MS-WIN-DOWNLEVEL-SHLWAPI-L2-1-0 shlwapi ntdll kernelbase)
 add_dependencies(API-MS-WIN-DOWNLEVEL-SHLWAPI-L2-1-0 psdk)
 add_cd_file(TARGET API-MS-WIN-DOWNLEVEL-SHLWAPI-L2-1-0 DESTINATION reactos/system32 FOR all)

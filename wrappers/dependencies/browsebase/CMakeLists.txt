@@ -39,8 +39,7 @@ add_library(browsebase SHARED
 
 set_module_type(browsebase win32dll UNICODE)
 
-target_link_libraries(browsebase
-    atlnew
+target_link_libraries(browsebase    
     uuid
     wine)
 

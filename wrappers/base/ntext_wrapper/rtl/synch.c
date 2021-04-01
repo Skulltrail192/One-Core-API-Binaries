@@ -623,21 +623,24 @@ void NTAPI RtlWakeAllConditionVariable( RTL_CONDITION_VARIABLE *variable )
  * RETURNS
  *  see NtWaitForKeyedEvent for all possible return values.
  */
-NTSTATUS NTAPI RtlSleepConditionVariableCS( PRTL_CONDITION_VARIABLE variable, PRTL_CRITICAL_SECTION crit,
-                                             IN const LARGE_INTEGER * TimeOut OPTIONAL)
+NTSTATUS
+NTAPI
+RtlSleepConditionVariableCS(IN OUT PRTL_CONDITION_VARIABLE ConditionVariable,
+                            IN OUT PRTL_CRITICAL_SECTION CriticalSection,
+                            IN PLARGE_INTEGER TimeOut OPTIONAL)
 {
     NTSTATUS status;
-    interlocked_xchg_add( (int *)&variable->Ptr, 1 );
-    RtlLeaveCriticalSection( crit );
+    interlocked_xchg_add( (int *)&ConditionVariable->Ptr, 1 );
+    RtlLeaveCriticalSection( CriticalSection );
 
-    status = NtWaitForKeyedEvent( GlobalKeyedEventHandle, &variable->Ptr, FALSE, TimeOut );
+    status = NtWaitForKeyedEvent( GlobalKeyedEventHandle, &ConditionVariable->Ptr, FALSE, TimeOut );
     if (status != STATUS_SUCCESS)
     {
-        if (!interlocked_dec_if_nonzero( (int *)&variable->Ptr ))
-            status = NtWaitForKeyedEvent( GlobalKeyedEventHandle, &variable->Ptr, FALSE, NULL );
+        if (!interlocked_dec_if_nonzero( (int *)&ConditionVariable->Ptr ))
+            status = NtWaitForKeyedEvent( GlobalKeyedEventHandle, &ConditionVariable->Ptr, FALSE, NULL );
     }
 
-    RtlEnterCriticalSection( crit );
+    RtlEnterCriticalSection( CriticalSection );
     return status;
 }
 

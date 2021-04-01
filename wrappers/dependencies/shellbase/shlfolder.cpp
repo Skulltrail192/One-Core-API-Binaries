@@ -383,7 +383,7 @@ HRESULT WINAPI SHCreateLinks( HWND hWnd, LPCSTR lpszDir, IDataObject * lpDataObj
  *
  *   Unimplemented.
  */
-EXTERN_C HRESULT
+HRESULT
 WINAPI
 SHOpenFolderAndSelectItems(LPITEMIDLIST pidlFolder,
                            UINT cidl,

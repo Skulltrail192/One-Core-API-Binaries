@@ -1,17 +1,17 @@
-@ stdcall AddAtomA(str) kernel32.AddAtomA
-@ stdcall AddAtomW(wstr) kernel32.AddAtomW
-@ stdcall DeleteAtom(long) kernel32.DeleteAtom
-@ stdcall FindAtomA(str) kernel32.FindAtomA
-@ stdcall FindAtomW(wstr) kernel32.FindAtomW
-@ stdcall GetAtomNameA(long ptr long) kernel32.GetAtomNameA
-@ stdcall GetAtomNameW(long ptr long) kernel32.GetAtomNameW
-@ stdcall GlobalAddAtomA(str) kernel32.GlobalAddAtomA
-@ stdcall GlobalAddAtomExA(str long) kernel32.GlobalAddAtomExA
-@ stdcall GlobalAddAtomExW(wstr long) kernel32.GlobalAddAtomExW
-@ stdcall GlobalAddAtomW(wstr) kernel32.GlobalAddAtomW
-@ stdcall GlobalDeleteAtom(long) kernel32.GlobalDeleteAtom
-@ stdcall GlobalFindAtomA(str) kernel32.GlobalFindAtomA
-@ stdcall GlobalFindAtomW(wstr) kernel32.GlobalFindAtomW
-@ stdcall GlobalGetAtomNameA(long ptr long) kernel32.GlobalGetAtomNameA
-@ stdcall GlobalGetAtomNameW(long ptr long) kernel32.GlobalGetAtomNameW
-@ stdcall InitAtomTable(long) kernel32.InitAtomTable
+@ stdcall AddAtomA(str) kernelbase.AddAtomA
+@ stdcall AddAtomW(wstr) kernelbase.AddAtomW
+@ stdcall DeleteAtom(long) kernelbase.DeleteAtom
+@ stdcall FindAtomA(str) kernelbase.FindAtomA
+@ stdcall FindAtomW(wstr) kernelbase.FindAtomW
+@ stdcall GetAtomNameA(long ptr long) kernelbase.GetAtomNameA
+@ stdcall GetAtomNameW(long ptr long) kernelbase.GetAtomNameW
+@ stdcall GlobalAddAtomA(str) kernelbase.GlobalAddAtomA
+@ stdcall GlobalAddAtomExA(str long) kernelbase.GlobalAddAtomExA
+@ stdcall GlobalAddAtomExW(wstr long) kernelbase.GlobalAddAtomExW
+@ stdcall GlobalAddAtomW(wstr) kernelbase.GlobalAddAtomW
+@ stdcall GlobalDeleteAtom(long) kernelbase.GlobalDeleteAtom
+@ stdcall GlobalFindAtomA(str) kernelbase.GlobalFindAtomA
+@ stdcall GlobalFindAtomW(wstr) kernelbase.GlobalFindAtomW
+@ stdcall GlobalGetAtomNameA(long ptr long) kernelbase.GlobalGetAtomNameA
+@ stdcall GlobalGetAtomNameW(long ptr long) kernelbase.GlobalGetAtomNameW
+@ stdcall InitAtomTable(long) kernelbase.InitAtomTable

@@ -3,14 +3,14 @@
 @ stub FormatApplicationUserModelId
 @ stub GetApplicationUserModelId
 @ stub GetCurrentApplicationUserModelId
-@ stdcall GetCurrentPackageFamilyName(ptr ptr) kernel32.GetCurrentPackageFamilyName
-@ stdcall GetCurrentPackageFullName(ptr ptr) kernel32.GetCurrentPackageFullName
-@ stdcall GetCurrentPackageId(ptr ptr) kernel32.GetCurrentPackageId
+@ stdcall GetCurrentPackageFamilyName(ptr ptr) kernelbase.GetCurrentPackageFamilyName
+@ stdcall GetCurrentPackageFullName(ptr ptr) kernelbase.GetCurrentPackageFullName
+@ stdcall GetCurrentPackageId(ptr ptr) kernelbase.GetCurrentPackageId
 @ stub GetCurrentPackageInfo
 @ stub GetCurrentPackagePath
 @ stub GetPackageApplicationIds
 @ stub GetPackageFamilyName
-@ stdcall GetPackageFullName(long ptr ptr) kernel32.GetPackageFullName
+@ stdcall GetPackageFullName(long ptr ptr) kernelbase.GetPackageFullName
 @ stub GetPackageId
 @ stub GetPackageInfo
 @ stub GetPackagePath

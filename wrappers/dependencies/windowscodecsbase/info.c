@@ -1420,7 +1420,7 @@ static HRESULT WINAPI PixelFormatInfo_GetNumericRepresentation(IWICPixelFormatIn
 
     TRACE("(%p,%p)\n", iface, pNumericRepresentation);
 
-    return ComponentInfo_GetDWORDValue(This->classkey, numericrepresentation_valuename, pNumericRepresentation);
+    return ComponentInfo_GetDWORDValue(This->classkey, numericrepresentation_valuename, (DWORD*)pNumericRepresentation);
 }
 
 static const IWICPixelFormatInfo2Vtbl PixelFormatInfo_Vtbl = {

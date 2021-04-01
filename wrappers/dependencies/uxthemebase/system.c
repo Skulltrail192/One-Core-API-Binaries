@@ -1006,10 +1006,12 @@ DWORD WINAPI QueryThemeServices(void)
  *     Success: S_OK
  *     Failure: HRESULT error-code
  */
-HRESULT WINAPI OpenThemeFile(LPCWSTR lpLibFileName, LPCWSTR pszSrc, HANDLE hFileMappingObject, LPVOID lp, DWORD a5)
+HRESULT WINAPI OpenThemeFile(LPCWSTR pszThemeFileName, LPCWSTR pszColorName,
+                             LPCWSTR pszSizeName, HTHEMEFILE *hThemeFile,
+                             DWORD unknown)
 {
     /*TRACE("(%s,%s,%s,%p,%d)\n", debugstr_w(pszThemeFileName),
-          debugstr_w(pszColorName), debugstr_w(pszSizeName),
+          debugstr_w(pszColorName), debugstr_w(pszSizeName), 
           hThemeFile, unknown);
     return MSSTYLES_OpenThemeFile(pszThemeFileName, pszColorName, pszSizeName, (PTHEME_FILE*)hThemeFile);
 	*/
@@ -1059,10 +1061,10 @@ HRESULT WINAPI CloseThemeFile(HTHEMEFILE hThemeFile)
  * char *b = "\0" or NULL; where \0 can be zero or more of any character, makes no difference
  *   the function fails returning invalid parameter... very strange
  */
-HRESULT WINAPI ApplyTheme(HTHEMEFILE hThemeFile, WPARAM wParam, HWND hWnd)
+HRESULT WINAPI ApplyTheme(HTHEMEFILE hThemeFile, char *unknown, HWND hWnd)
 {
     HRESULT hr;
-    TRACE("(%p,%l,%p)\n", hThemeFile, wParam, hWnd);
+    TRACE("(%p,%l,%p)\n", hThemeFile, unknown, hWnd);
     hr = UXTHEME_ApplyTheme(hThemeFile);
     UXTHEME_broadcast_msg (NULL, WM_THEMECHANGED);
     return hr;
@@ -1203,7 +1205,7 @@ HRESULT WINAPI EnumThemes(LPCWSTR pszThemePath, ENUMTHEMEPROC callback,
  * (and this is how windows works too)
  */
 HRESULT WINAPI EnumThemeColors(LPWSTR pszThemeFileName, LPWSTR pszSizeName,
-                               DWORD dwColorNum, LPWSTR pszColorNames)
+                               DWORD dwColorNum, PTHEMENAMES pszColorNames)
 {
     /*PTHEME_FILE pt;
     HRESULT hr;

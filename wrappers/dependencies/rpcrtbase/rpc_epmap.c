@@ -20,7 +20,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "precomp.h"
+#include <stdarg.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "winerror.h"
+#include "winsvc.h"
+
+#include "rpc.h"
+
+#include "wine/debug.h"
+#include "wine/exception.h"
+
+#include "rpc_binding.h"
+#include "epm_c.h"
 #include "epm_towers.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(ole);
@@ -65,32 +78,52 @@ static const struct epm_endpoints
 
 static BOOL start_rpcss(void)
 {
-    PROCESS_INFORMATION pi;
-    STARTUPINFOW si;
-    WCHAR cmd[MAX_PATH];
-    static const WCHAR rpcss[] = {'\\','r','p','c','s','s','.','e','x','e',0};
-    BOOL rslt;
-    void *redir;
+    static const WCHAR rpcssW[] = {'R','p','c','S','s',0};
+    SC_HANDLE scm, service;
+    SERVICE_STATUS_PROCESS status;
+    BOOL ret = FALSE;
 
     TRACE("\n");
 
-    ZeroMemory(&si, sizeof(STARTUPINFOA));
-    si.cb = sizeof(STARTUPINFOA);
-    GetSystemDirectoryW( cmd, MAX_PATH - sizeof(rpcss)/sizeof(WCHAR) );
-    lstrcatW( cmd, rpcss );
-
-    Wow64DisableWow64FsRedirection( &redir );
-    rslt = CreateProcessW( cmd, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi );
-    Wow64RevertWow64FsRedirection( redir );
-
-    if (rslt)
+    if (!(scm = OpenSCManagerW( NULL, NULL, 0 )))
     {
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        Sleep(100);
+        ERR( "failed to open service manager\n" );
+        return FALSE;
     }
+    if (!(service = OpenServiceW( scm, rpcssW, SERVICE_START | SERVICE_QUERY_STATUS )))
+    {
+        ERR( "failed to open RpcSs service\n" );
+        CloseServiceHandle( scm );
+        return FALSE;
+    }
+    if (StartServiceW( service, 0, NULL ) || GetLastError() == ERROR_SERVICE_ALREADY_RUNNING)
+    {
+        ULONGLONG start_time = GetTickCount64();
+        do
+        {
+            DWORD dummy;
 
-    return rslt;
+            if (!QueryServiceStatusEx( service, SC_STATUS_PROCESS_INFO,
+                                       (BYTE *)&status, sizeof(status), &dummy ))
+                break;
+            if (status.dwCurrentState == SERVICE_RUNNING)
+            {
+                ret = TRUE;
+                break;
+            }
+            if (GetTickCount64() - start_time > 30000) break;
+            Sleep( 100 );
+
+        } while (status.dwCurrentState == SERVICE_START_PENDING);
+
+        if (status.dwCurrentState != SERVICE_RUNNING)
+            WARN( "RpcSs failed to start %u\n", status.dwCurrentState );
+    }
+    else ERR( "failed to start RpcSs service\n" );
+
+    CloseServiceHandle( service );
+    CloseServiceHandle( scm );
+    return ret;
 }
 
 static inline BOOL is_epm_destination_local(RPC_BINDING_HANDLE handle)
@@ -115,7 +148,7 @@ static RPC_STATUS get_epm_handle_client(RPC_BINDING_HANDLE handle, RPC_BINDING_H
     if (bind->server)
         return RPC_S_INVALID_BINDING;
 
-    for (i = 0; i < sizeof(epm_endpoints)/sizeof(epm_endpoints[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(epm_endpoints); i++)
         if (!strcmp(bind->Protseq, epm_endpoints[i].protseq))
             pszEndpoint = epm_endpoints[i].endpoint;
 
@@ -436,7 +469,7 @@ RPC_STATUS WINAPI RpcEpResolveBinding( RPC_BINDING_HANDLE Binding, RPC_IF_HANDLE
   {
     __TRY
     {
-      ept_map(handle, &uuid, tower, &entry_handle, sizeof(towers)/sizeof(towers[0]), &num_towers, towers, &status2);
+      ept_map(handle, &uuid, tower, &entry_handle, ARRAY_SIZE(towers), &num_towers, towers, &status2);
       /* FIXME: translate status2? */
     }
     __EXCEPT(rpc_filter)

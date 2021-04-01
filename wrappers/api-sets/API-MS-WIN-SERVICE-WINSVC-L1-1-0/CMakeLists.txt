@@ -11,5 +11,5 @@ list(APPEND SOURCE
 add_library(API-MS-WIN-SERVICE-WINSVC-L1-1-0 SHARED ${SOURCE})
 set_module_type(API-MS-WIN-SERVICE-WINSVC-L1-1-0 win32dll ENTRYPOINT 0)
 target_link_libraries(API-MS-WIN-SERVICE-WINSVC-L1-1-0 wine)
-add_importlibs(API-MS-WIN-SERVICE-WINSVC-L1-1-0 advapi32 kernel32 ntdll)
+add_importlibs(API-MS-WIN-SERVICE-WINSVC-L1-1-0 advapi32 kernelbase ntdll)
 add_cd_file(TARGET API-MS-WIN-SERVICE-WINSVC-L1-1-0 DESTINATION reactos/system32 FOR all)

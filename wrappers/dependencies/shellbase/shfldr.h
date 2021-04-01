@@ -24,6 +24,9 @@
 #ifndef _SHFLDR_H_
 #define _SHFLDR_H_
 
+#define DWL_MSGRESULT 0
+#define DWL_USER 8
+
 #define CHARS_IN_GUID 39
 
 typedef struct {

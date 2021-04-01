@@ -1,12 +1,24 @@
-/*==========================================================================;
+/*
+ * IDirect3D9 implementation
  *
- *  Copyright (C) 2018 Shorthorn Project.  All Rights Reserved.
+ * Copyright 2002 Jason Edmeades
+ * Copyright 2005 Oliver Stieber
  *
- *  File:   directx.c
- *  Content:    Direct3D IDirect3D9 implementation
- */ 
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+ */
 
-#include "config.h"
 #include "d3d9_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
@@ -73,6 +85,7 @@ static ULONG WINAPI d3d9_Release(IDirect3D9Ex *iface)
         wined3d_decref(d3d9->wined3d);
         wined3d_mutex_unlock();
 
+        heap_free(d3d9->wined3d_outputs);
         heap_free(d3d9);
     }
 
@@ -81,222 +94,522 @@ static ULONG WINAPI d3d9_Release(IDirect3D9Ex *iface)
 
 static HRESULT WINAPI d3d9_RegisterSoftwareDevice(IDirect3D9Ex *iface, void *init_function)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->RegisterSoftwareDevice(ppD3D, init_function);
-	}
-	
-	return D3DERR_INVALIDCALL; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    HRESULT hr;
+
+    TRACE("iface %p, init_function %p.\n", iface, init_function);
+
+    wined3d_mutex_lock();
+    hr = wined3d_register_software_device(d3d9->wined3d, init_function);
+    wined3d_mutex_unlock();
+
+    return hr;
 }
 
 static UINT WINAPI d3d9_GetAdapterCount(IDirect3D9Ex *iface)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->GetAdapterCount(ppD3D);
-	}
-	
-	return 0; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+
+    TRACE("iface %p.\n", iface);
+
+    return d3d9->wined3d_output_count;
 }
 
 static HRESULT WINAPI d3d9_GetAdapterIdentifier(IDirect3D9Ex *iface, UINT adapter,
         DWORD flags, D3DADAPTER_IDENTIFIER9 *identifier)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->GetAdapterIdentifier(ppD3D, adapter, flags, identifier);
-	}
-	
-	return D3DERR_INVALIDCALL; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    struct wined3d_adapter_identifier adapter_id;
+    struct wined3d_adapter *wined3d_adapter;
+    struct wined3d_output_desc output_desc;
+    unsigned int output_idx;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u, flags %#x, identifier %p.\n",
+            iface, adapter, flags, identifier);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
+    wined3d_mutex_lock();
+    if (FAILED(hr = wined3d_output_get_desc(d3d9->wined3d_outputs[output_idx], &output_desc)))
+    {
+        wined3d_mutex_unlock();
+        WARN("Failed to get output description, hr %#x.\n", hr);
+        return hr;
+    }
+    WideCharToMultiByte(CP_ACP, 0, output_desc.device_name, -1, identifier->DeviceName,
+            sizeof(identifier->DeviceName), NULL, NULL);
+
+    adapter_id.driver = identifier->Driver;
+    adapter_id.driver_size = sizeof(identifier->Driver);
+    adapter_id.description = identifier->Description;
+    adapter_id.description_size = sizeof(identifier->Description);
+
+    wined3d_adapter = wined3d_output_get_adapter(d3d9->wined3d_outputs[output_idx]);
+    if (SUCCEEDED(hr = wined3d_adapter_get_identifier(wined3d_adapter, flags, &adapter_id)))
+    {
+        identifier->DriverVersion = adapter_id.driver_version;
+        identifier->VendorId = adapter_id.vendor_id;
+        identifier->DeviceId = adapter_id.device_id;
+        identifier->SubSysId = adapter_id.subsystem_id;
+        identifier->Revision = adapter_id.revision;
+        memcpy(&identifier->DeviceIdentifier, &adapter_id.device_identifier, sizeof(identifier->DeviceIdentifier));
+        identifier->WHQLLevel = adapter_id.whql_level;
+    }
+    wined3d_mutex_unlock();
+
+    return hr;
 }
 
 static UINT WINAPI d3d9_GetAdapterModeCount(IDirect3D9Ex *iface, UINT adapter, D3DFORMAT format)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->GetAdapterModeCount(ppD3D, adapter, format);
-	}
-	
-	return 0; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    unsigned int output_idx, count;
+
+    TRACE("iface %p, adapter %u, format %#x.\n", iface, adapter, format);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return 0;
+
+    /* Others than that not supported by d3d9, but reported by wined3d for ddraw. Filter them out. */
+    if (format != D3DFMT_X8R8G8B8 && format != D3DFMT_R5G6B5)
+        return 0;
+
+    wined3d_mutex_lock();
+    count = wined3d_output_get_mode_count(d3d9->wined3d_outputs[output_idx],
+            wined3dformat_from_d3dformat(format), WINED3D_SCANLINE_ORDERING_UNKNOWN);
+    wined3d_mutex_unlock();
+
+    return count;
 }
 
 static HRESULT WINAPI d3d9_EnumAdapterModes(IDirect3D9Ex *iface, UINT adapter,
         D3DFORMAT format, UINT mode_idx, D3DDISPLAYMODE *mode)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->EnumAdapterModes(ppD3D, adapter, format, mode_idx, mode);
-	}
-	
-	return D3DERR_INVALIDCALL; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    struct wined3d_display_mode wined3d_mode;
+    unsigned int output_idx;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u, format %#x, mode_idx %u, mode %p.\n",
+            iface, adapter, format, mode_idx, mode);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
+    if (format != D3DFMT_X8R8G8B8 && format != D3DFMT_R5G6B5)
+        return D3DERR_INVALIDCALL;
+
+    wined3d_mutex_lock();
+    hr = wined3d_output_get_mode(d3d9->wined3d_outputs[output_idx],
+            wined3dformat_from_d3dformat(format), WINED3D_SCANLINE_ORDERING_UNKNOWN, mode_idx,
+            &wined3d_mode);
+    wined3d_mutex_unlock();
+
+    if (SUCCEEDED(hr))
+    {
+        mode->Width = wined3d_mode.width;
+        mode->Height = wined3d_mode.height;
+        mode->RefreshRate = wined3d_mode.refresh_rate;
+        mode->Format = d3dformat_from_wined3dformat(wined3d_mode.format_id);
+    }
+
+    return hr;
 }
 
 static HRESULT WINAPI d3d9_GetAdapterDisplayMode(IDirect3D9Ex *iface, UINT adapter, D3DDISPLAYMODE *mode)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->GetAdapterDisplayMode(ppD3D, adapter, mode);
-	}
-	
-	return D3DERR_INVALIDCALL; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    struct wined3d_display_mode wined3d_mode;
+    unsigned int output_idx;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u, mode %p.\n", iface, adapter, mode);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
+    wined3d_mutex_lock();
+    hr = wined3d_output_get_display_mode(d3d9->wined3d_outputs[output_idx], &wined3d_mode, NULL);
+    wined3d_mutex_unlock();
+
+    if (SUCCEEDED(hr))
+    {
+        mode->Width = wined3d_mode.width;
+        mode->Height = wined3d_mode.height;
+        mode->RefreshRate = wined3d_mode.refresh_rate;
+        mode->Format = d3dformat_from_wined3dformat(wined3d_mode.format_id);
+    }
+
+    return hr;
 }
 
 static HRESULT WINAPI d3d9_CheckDeviceType(IDirect3D9Ex *iface, UINT adapter, D3DDEVTYPE device_type,
         D3DFORMAT display_format, D3DFORMAT backbuffer_format, BOOL windowed)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->CheckDeviceType(ppD3D, adapter, device_type, display_format, backbuffer_format, windowed);
-	}
-	
-	return D3DERR_INVALIDCALL; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    unsigned int output_idx;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u, device_type %#x, display_format %#x, backbuffer_format %#x, windowed %#x.\n",
+            iface, adapter, device_type, display_format, backbuffer_format, windowed);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
+    /* Others than that not supported by d3d9, but reported by wined3d for ddraw. Filter them out. */
+    if (!windowed && display_format != D3DFMT_X8R8G8B8 && display_format != D3DFMT_R5G6B5)
+        return WINED3DERR_NOTAVAILABLE;
+
+    wined3d_mutex_lock();
+    hr = wined3d_check_device_type(d3d9->wined3d, d3d9->wined3d_outputs[output_idx],
+            wined3d_device_type_from_d3d(device_type), wined3dformat_from_d3dformat(display_format),
+            wined3dformat_from_d3dformat(backbuffer_format), windowed);
+    wined3d_mutex_unlock();
+
+    return hr;
 }
 
 static HRESULT WINAPI d3d9_CheckDeviceFormat(IDirect3D9Ex *iface, UINT adapter, D3DDEVTYPE device_type,
         D3DFORMAT adapter_format, DWORD usage, D3DRESOURCETYPE resource_type, D3DFORMAT format)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->CheckDeviceFormat(ppD3D, adapter, device_type, adapter_format, usage, resource_type, format);
-	}
-	
-	return D3DERR_INVALIDCALL; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    enum wined3d_resource_type wined3d_rtype;
+    struct wined3d_adapter *wined3d_adapter;
+    unsigned int bind_flags;
+    unsigned int output_idx;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u, device_type %#x, adapter_format %#x, usage %#x, resource_type %#x, format %#x.\n",
+            iface, adapter, device_type, adapter_format, usage, resource_type, format);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
+    if (adapter_format != D3DFMT_X8R8G8B8 && adapter_format != D3DFMT_R5G6B5
+            && adapter_format != D3DFMT_X1R5G5B5)
+    {
+        WARN("Invalid adapter format.\n");
+        return adapter_format ? D3DERR_NOTAVAILABLE : D3DERR_INVALIDCALL;
+    }
+
+    bind_flags = wined3d_bind_flags_from_d3d9_usage(usage);
+    usage = usage & (WINED3DUSAGE_MASK | WINED3DUSAGE_QUERY_MASK);
+    switch (resource_type)
+    {
+        case D3DRTYPE_CUBETEXTURE:
+            usage |= WINED3DUSAGE_LEGACY_CUBEMAP;
+        case D3DRTYPE_TEXTURE:
+            bind_flags |= WINED3D_BIND_SHADER_RESOURCE;
+        case D3DRTYPE_SURFACE:
+            wined3d_rtype = WINED3D_RTYPE_TEXTURE_2D;
+            break;
+
+        case D3DRTYPE_VOLUMETEXTURE:
+        case D3DRTYPE_VOLUME:
+            bind_flags |= WINED3D_BIND_SHADER_RESOURCE;
+            wined3d_rtype = WINED3D_RTYPE_TEXTURE_3D;
+            break;
+
+        case D3DRTYPE_VERTEXBUFFER:
+        case D3DRTYPE_INDEXBUFFER:
+            wined3d_rtype = WINED3D_RTYPE_BUFFER;
+            break;
+
+        default:
+            FIXME("Unhandled resource type %#x.\n", resource_type);
+            return WINED3DERR_INVALIDCALL;
+    }
+
+    wined3d_mutex_lock();
+    wined3d_adapter = wined3d_output_get_adapter(d3d9->wined3d_outputs[output_idx]);
+    if (format == D3DFMT_RESZ && resource_type == D3DRTYPE_SURFACE && usage == D3DUSAGE_RENDERTARGET)
+    {
+        DWORD levels;
+
+        hr = wined3d_check_device_multisample_type(wined3d_adapter, wined3d_device_type_from_d3d(device_type),
+                WINED3DFMT_D24_UNORM_S8_UINT, FALSE, WINED3D_MULTISAMPLE_NON_MASKABLE, &levels);
+        if (SUCCEEDED(hr) && !levels)
+            hr = D3DERR_NOTAVAILABLE;
+    }
+    else
+        hr = wined3d_check_device_format(d3d9->wined3d, wined3d_adapter, wined3d_device_type_from_d3d(device_type),
+                wined3dformat_from_d3dformat(adapter_format), usage, bind_flags,
+                wined3d_rtype, wined3dformat_from_d3dformat(format));
+    wined3d_mutex_unlock();
+
+    return hr;
 }
 
 static HRESULT WINAPI d3d9_CheckDeviceMultiSampleType(IDirect3D9Ex *iface, UINT adapter, D3DDEVTYPE device_type,
         D3DFORMAT format, BOOL windowed, D3DMULTISAMPLE_TYPE multisample_type, DWORD *levels)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->CheckDeviceMultiSampleType(ppD3D, adapter, device_type, format, windowed, multisample_type, levels);
-	}
-	
-	return D3DERR_INVALIDCALL; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    struct wined3d_adapter *wined3d_adapter;
+    unsigned int output_idx;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u, device_type %#x, format %#x, windowed %#x, multisample_type %#x, levels %p.\n",
+            iface, adapter, device_type, format, windowed, multisample_type, levels);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
+    if (multisample_type > D3DMULTISAMPLE_16_SAMPLES)
+        return D3DERR_INVALIDCALL;
+
+    wined3d_mutex_lock();
+    wined3d_adapter = wined3d_output_get_adapter(d3d9->wined3d_outputs[output_idx]);
+    hr = wined3d_check_device_multisample_type(wined3d_adapter,
+            wined3d_device_type_from_d3d(device_type), wined3dformat_from_d3dformat(format),
+            windowed, wined3d_multisample_type_from_d3d(multisample_type), levels);
+    wined3d_mutex_unlock();
+    if (hr == WINED3DERR_NOTAVAILABLE && levels)
+        *levels = 1;
+
+    return hr;
 }
 
 static HRESULT WINAPI d3d9_CheckDepthStencilMatch(IDirect3D9Ex *iface, UINT adapter, D3DDEVTYPE device_type,
         D3DFORMAT adapter_format, D3DFORMAT rt_format, D3DFORMAT ds_format)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->CheckDepthStencilMatch(ppD3D, adapter, device_type, adapter_format, rt_format, ds_format);
-	}
-	
-	return D3DERR_INVALIDCALL; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    struct wined3d_adapter *wined3d_adapter;
+    unsigned int output_idx;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u, device_type %#x, adapter_format %#x, rt_format %#x, ds_format %#x.\n",
+            iface, adapter, device_type, adapter_format, rt_format, ds_format);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
+    wined3d_mutex_lock();
+    wined3d_adapter = wined3d_output_get_adapter(d3d9->wined3d_outputs[output_idx]);
+    hr = wined3d_check_depth_stencil_match(wined3d_adapter,
+            wined3d_device_type_from_d3d(device_type), wined3dformat_from_d3dformat(adapter_format),
+            wined3dformat_from_d3dformat(rt_format), wined3dformat_from_d3dformat(ds_format));
+    wined3d_mutex_unlock();
+
+    return hr;
 }
 
 static HRESULT WINAPI d3d9_CheckDeviceFormatConversion(IDirect3D9Ex *iface, UINT adapter,
         D3DDEVTYPE device_type, D3DFORMAT src_format, D3DFORMAT dst_format)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->CheckDeviceFormatConversion(ppD3D, adapter, device_type, src_format, dst_format);
-	}
-	
-	return D3DERR_INVALIDCALL; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    unsigned int output_idx;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u, device_type %#x, src_format %#x, dst_format %#x.\n",
+            iface, adapter, device_type, src_format, dst_format);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
+    wined3d_mutex_lock();
+    hr = wined3d_check_device_format_conversion(d3d9->wined3d_outputs[output_idx],
+            wined3d_device_type_from_d3d(device_type), wined3dformat_from_d3dformat(src_format),
+            wined3dformat_from_d3dformat(dst_format));
+    wined3d_mutex_unlock();
+
+    return hr;
 }
 
 static HRESULT WINAPI d3d9_GetDeviceCaps(IDirect3D9Ex *iface, UINT adapter, D3DDEVTYPE device_type, D3DCAPS9 *caps)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->GetDeviceCaps(ppD3D, adapter, device_type, caps);
-	}
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    struct wined3d_adapter *wined3d_adapter;
+    struct wined3d_caps wined3d_caps;
+    unsigned int output_idx;
+    HRESULT hr;
 
-	return D3DERR_INVALIDCALL; 
+    TRACE("iface %p, adapter %u, device_type %#x, caps %p.\n", iface, adapter, device_type, caps);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
+    if (!caps)
+        return D3DERR_INVALIDCALL;
+
+    memset(caps, 0, sizeof(*caps));
+
+    wined3d_mutex_lock();
+    wined3d_adapter = wined3d_output_get_adapter(d3d9->wined3d_outputs[output_idx]);
+    hr = wined3d_get_device_caps(wined3d_adapter, wined3d_device_type_from_d3d(device_type), &wined3d_caps);
+    wined3d_mutex_unlock();
+
+    d3d9_caps_from_wined3dcaps(d3d9, adapter, caps, &wined3d_caps);
+
+    return hr;
 }
 
 static HMONITOR WINAPI d3d9_GetAdapterMonitor(IDirect3D9Ex *iface, UINT adapter)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->GetAdapterMonitor(ppD3D, adapter);
-	}	
-	
-	return NULL;
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    struct wined3d_output_desc desc;
+    unsigned int output_idx;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u.\n", iface, adapter);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return NULL;
+
+    wined3d_mutex_lock();
+    hr = wined3d_output_get_desc(d3d9->wined3d_outputs[output_idx], &desc);
+    wined3d_mutex_unlock();
+
+    if (FAILED(hr))
+    {
+        WARN("Failed to get output desc, hr %#x.\n", hr);
+        return NULL;
+    }
+
+    return desc.monitor;
 }
 
 static HRESULT WINAPI DECLSPEC_HOTPATCH d3d9_CreateDevice(IDirect3D9Ex *iface, UINT adapter,
         D3DDEVTYPE device_type, HWND focus_window, DWORD flags, D3DPRESENT_PARAMETERS *parameters,
         IDirect3DDevice9 **device)
 {
-	if(ppD3D!=NULL){
-		return (ppD3D)->lpVtbl->CreateDevice(ppD3D, adapter, device_type, focus_window, flags, parameters, device);
-	}	
-	
-	return D3DERR_INVALIDCALL;
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    struct d3d9_device *object;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u, device_type %#x, focus_window %p, flags %#x, parameters %p, device %p.\n",
+            iface, adapter, device_type, focus_window, flags, parameters, device);
+
+    if (!(object = heap_alloc_zero(sizeof(*object))))
+        return E_OUTOFMEMORY;
+
+    hr = device_init(object, d3d9, d3d9->wined3d, adapter, device_type, focus_window, flags, parameters, NULL);
+    if (FAILED(hr))
+    {
+        WARN("Failed to initialize device, hr %#x.\n", hr);
+        heap_free(object);
+        return hr;
+    }
+
+    TRACE("Created device %p.\n", object);
+    *device = (IDirect3DDevice9 *)&object->IDirect3DDevice9Ex_iface;
+
+    return D3D_OK;
 }
 
 static UINT WINAPI d3d9_GetAdapterModeCountEx(IDirect3D9Ex *iface,
         UINT adapter, const D3DDISPLAYMODEFILTER *filter)
 {
-	if(ppD3D!=NULL){
-		return IDirect3D9_GetAdapterModeCount(ppD3D,adapter,filter->Format);
-	}
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    unsigned int output_idx, count;
 
-	return D3DERR_INVALIDCALL;
+    TRACE("iface %p, adapter %u, filter %p.\n", iface, adapter, filter);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return 0;
+
+    if (filter->Format != D3DFMT_X8R8G8B8 && filter->Format != D3DFMT_R5G6B5)
+        return 0;
+
+    wined3d_mutex_lock();
+    count = wined3d_output_get_mode_count(d3d9->wined3d_outputs[output_idx],
+            wined3dformat_from_d3dformat(filter->Format), wined3d_scanline_ordering_from_d3d(filter->ScanLineOrdering));
+    wined3d_mutex_unlock();
+
+    return count;
 }
 
 static HRESULT WINAPI d3d9_EnumAdapterModesEx(IDirect3D9Ex *iface,
         UINT adapter, const D3DDISPLAYMODEFILTER *filter, UINT mode_idx, D3DDISPLAYMODEEX *mode)
 {
-	D3DDISPLAYMODE pMode;
-	HRESULT ret;
-	//DEVMODEW devMode;
-	
-	//EnumDisplaySettingsExW(adapter->DeviceName, j++, &devMode, 0))
-	
-	if(ppD3D!=NULL){
-		ret = (ppD3D)->lpVtbl->EnumAdapterModes(ppD3D,adapter,filter->Format, mode_idx, &pMode);
-		if(ret == D3D_OK)
-		{
-			mode->Size = sizeof(D3DDISPLAYMODEEX);
-			mode->Width = pMode.Width;
-			mode->Height = pMode.Height;
-			mode->RefreshRate = pMode.RefreshRate;
-			mode->Format = pMode.Format;
-			mode->ScanLineOrdering = D3DSCANLINEORDERING_PROGRESSIVE; //HardCoded for now, need call EnumDisplaySettingsExW
-			return ret;
-		}
-	}
-	
-	return D3DERR_INVALIDCALL; 
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    struct wined3d_display_mode wined3d_mode;
+    unsigned int output_idx;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u, filter %p, mode_idx %u, mode %p.\n",
+            iface, adapter, filter, mode_idx, mode);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
+    if (filter->Format != D3DFMT_X8R8G8B8 && filter->Format != D3DFMT_R5G6B5)
+        return D3DERR_INVALIDCALL;
+
+    wined3d_mutex_lock();
+    hr = wined3d_output_get_mode(d3d9->wined3d_outputs[output_idx], wined3dformat_from_d3dformat(filter->Format),
+            wined3d_scanline_ordering_from_d3d(filter->ScanLineOrdering), mode_idx, &wined3d_mode);
+    wined3d_mutex_unlock();
+
+    if (SUCCEEDED(hr))
+    {
+        mode->Width = wined3d_mode.width;
+        mode->Height = wined3d_mode.height;
+        mode->RefreshRate = wined3d_mode.refresh_rate;
+        mode->Format = d3dformat_from_wined3dformat(wined3d_mode.format_id);
+        mode->ScanLineOrdering = d3dscanlineordering_from_wined3d(wined3d_mode.scanline_ordering);
+    }
+
+    return hr;
 }
 
 static HRESULT WINAPI d3d9_GetAdapterDisplayModeEx(IDirect3D9Ex *iface,
         UINT adapter, D3DDISPLAYMODEEX *mode, D3DDISPLAYROTATION *rotation)
 {
-	D3DDISPLAYMODE pMode;
-	HRESULT ret;
-	//DEVMODEW devMode;
-	
-	//EnumDisplaySettingsExW(adapter->DeviceName, j++, &devMode, 0))
-	
-	if(ppD3D!=NULL){
-		ret = (ppD3D)->lpVtbl->GetAdapterDisplayMode(ppD3D, adapter, &pMode);
-		if(ret == D3D_OK)
-		{
-			mode->Size = sizeof(D3DDISPLAYMODEEX);
-			mode->Width = pMode.Width;
-			mode->Height = pMode.Height;
-			mode->RefreshRate = pMode.RefreshRate;
-			mode->Format = pMode.Format;
-			mode->ScanLineOrdering = D3DSCANLINEORDERING_PROGRESSIVE; //HardCoded for now, need call EnumDisplaySettingsExW
-			
-			*rotation = D3DDISPLAYROTATION_IDENTITY;
-			return ret;
-		}
-	}
-	return D3DERR_INVALIDCALL;
+    struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
+    struct wined3d_display_mode wined3d_mode;
+    unsigned int output_idx;
+    HRESULT hr;
+
+    TRACE("iface %p, adapter %u, mode %p, rotation %p.\n",
+            iface, adapter, mode, rotation);
+
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
+    if (mode->Size != sizeof(*mode))
+        return D3DERR_INVALIDCALL;
+
+    wined3d_mutex_lock();
+    hr = wined3d_output_get_display_mode(d3d9->wined3d_outputs[output_idx], &wined3d_mode,
+            (enum wined3d_display_rotation *)rotation);
+    wined3d_mutex_unlock();
+
+    if (SUCCEEDED(hr))
+    {
+        mode->Width = wined3d_mode.width;
+        mode->Height = wined3d_mode.height;
+        mode->RefreshRate = wined3d_mode.refresh_rate;
+        mode->Format = d3dformat_from_wined3dformat(wined3d_mode.format_id);
+        mode->ScanLineOrdering = d3dscanlineordering_from_wined3d(wined3d_mode.scanline_ordering);
+    }
+
+    return hr;
 }
 
-static 
-HRESULT 
-WINAPI 
-DECLSPEC_HOTPATCH 
-d3d9_CreateDeviceEx(
-	IDirect3D9Ex *iface,
-    UINT adapter, 
-	D3DDEVTYPE device_type, 
-	HWND focus_window, 
-	DWORD flags,
-    D3DPRESENT_PARAMETERS *parameters, 
-	D3DDISPLAYMODEEX *mode, 
-	IDirect3DDevice9Ex **device
-)
+static HRESULT WINAPI DECLSPEC_HOTPATCH d3d9_CreateDeviceEx(IDirect3D9Ex *iface,
+        UINT adapter, D3DDEVTYPE device_type, HWND focus_window, DWORD flags,
+        D3DPRESENT_PARAMETERS *parameters, D3DDISPLAYMODEEX *mode, IDirect3DDevice9Ex **device)
 {
     struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
     struct d3d9_device *object;
     HRESULT hr;
-	IDirect3DDevice9Ex direct3ddevice;
-	
+
     TRACE("iface %p, adapter %u, device_type %#x, focus_window %p, flags %#x, parameters %p, mode %p, device %p.\n",
             iface, adapter, device_type, focus_window, flags, parameters, mode, device);
 
@@ -311,7 +624,6 @@ d3d9_CreateDeviceEx(
         return hr;
     }
 
-	direct3ddevice.lpVtbl = &d3d9_device_vtbl;
     TRACE("Created device %p.\n", object);
     *device = &object->IDirect3DDevice9Ex_iface;
 
@@ -322,24 +634,27 @@ static HRESULT WINAPI d3d9_GetAdapterLUID(IDirect3D9Ex *iface, UINT adapter, LUI
 {
     struct d3d9 *d3d9 = impl_from_IDirect3D9Ex(iface);
     struct wined3d_adapter_identifier adapter_id;
+    struct wined3d_adapter *wined3d_adapter;
+    unsigned int output_idx;
     HRESULT hr;
 
     TRACE("iface %p, adapter %u, luid %p.\n", iface, adapter, luid);
 
+    output_idx = adapter;
+    if (output_idx >= d3d9->wined3d_output_count)
+        return D3DERR_INVALIDCALL;
+
     adapter_id.driver_size = 0;
     adapter_id.description_size = 0;
-    adapter_id.device_name_size = 0;
 
-    wined3d_mutex_lock();
-    hr = wined3d_get_adapter_identifier(d3d9->wined3d, adapter, 0, &adapter_id);
-    wined3d_mutex_unlock();
-
-    memcpy(luid, &adapter_id.adapter_luid, sizeof(*luid));
+    wined3d_adapter = wined3d_output_get_adapter(d3d9->wined3d_outputs[output_idx]);
+    if (SUCCEEDED(hr = wined3d_adapter_get_identifier(wined3d_adapter, 0, &adapter_id)))
+        *luid = adapter_id.adapter_luid;
 
     return hr;
 }
 
-static const struct IDirect3D9ExVtbl Direct3D9_Vtbl =
+static const struct IDirect3D9ExVtbl d3d9_vtbl =
 {
     /* IUnknown */
     d3d9_QueryInterface,
@@ -374,57 +689,55 @@ BOOL d3d9_init(struct d3d9 *d3d9, BOOL extended)
             | WINED3D_SRGB_READ_WRITE_CONTROL | WINED3D_LEGACY_UNBOUND_RESOURCE_COLOR
             | WINED3D_NO_PRIMITIVE_RESTART | WINED3D_LEGACY_CUBEMAP_FILTERING
             | WINED3D_NORMALIZED_DEPTH_BIAS;
+    unsigned int adapter_idx, output_idx, adapter_count, output_count = 0;
+    struct wined3d_adapter *wined3d_adapter;
 
     if (!extended)
         flags |= WINED3D_VIDMEM_ACCOUNTING;
     else
         flags |= WINED3D_RESTORE_MODE_ON_ACTIVATE;
 
-    d3d9->IDirect3D9Ex_iface.lpVtbl = &Direct3D9_Vtbl;
+    d3d9->IDirect3D9Ex_iface.lpVtbl = &d3d9_vtbl;
     d3d9->refcount = 1;
 
     wined3d_mutex_lock();
     d3d9->wined3d = wined3d_create(flags);
-    wined3d_mutex_unlock();
     if (!d3d9->wined3d)
+    {
+        wined3d_mutex_unlock();
         return FALSE;
+    }
+
+    adapter_count = wined3d_get_adapter_count(d3d9->wined3d);
+    for (adapter_idx = 0; adapter_idx < adapter_count; ++adapter_idx)
+    {
+        wined3d_adapter = wined3d_get_adapter(d3d9->wined3d, adapter_idx);
+        output_count += wined3d_adapter_get_output_count(wined3d_adapter);
+    }
+
+    d3d9->wined3d_outputs = heap_calloc(output_count, sizeof(*d3d9->wined3d_outputs));
+    if (!d3d9->wined3d_outputs)
+    {
+        wined3d_decref(d3d9->wined3d);
+        wined3d_mutex_unlock();
+        return FALSE;
+    }
+
+    d3d9->wined3d_output_count = 0;
+    for (adapter_idx = 0; adapter_idx < adapter_count; ++adapter_idx)
+    {
+        wined3d_adapter = wined3d_get_adapter(d3d9->wined3d, adapter_idx);
+        output_count = wined3d_adapter_get_output_count(wined3d_adapter);
+        for (output_idx = 0; output_idx < output_count; ++output_idx)
+        {
+            d3d9->wined3d_outputs[d3d9->wined3d_output_count] =
+                    wined3d_adapter_get_output(wined3d_adapter, output_idx);
+            ++d3d9->wined3d_output_count;
+        }
+    }
+
+    wined3d_mutex_unlock();
     d3d9->extended = extended;
 
     return TRUE;
-}
-
-HRESULT CreateD3D9(OUT LPDIRECT3D9 *ppDirect3D9, UINT SDKVersion)
-{
-    LPDIRECT3D9_INT pDirect3D9;
-
-    if (ppDirect3D9 == 0)
-        return DDERR_INVALIDPARAMS;
-
-    if (AlignedAlloc((LPVOID *)&pDirect3D9, sizeof(DIRECT3D9_INT)) != S_OK)
-        return DDERR_OUTOFMEMORY;
-
-    if (pDirect3D9 == 0)
-        return DDERR_OUTOFMEMORY;
-
-    pDirect3D9->lpVtbl = &Direct3D9_Vtbl;
-    pDirect3D9->dwProcessId = GetCurrentThreadId();
-    pDirect3D9->lRefCnt = 1;
-
-    pDirect3D9->SDKVersion = SDKVersion;
-
-    pDirect3D9->lpInt = pDirect3D9;
-    pDirect3D9->unknown000007 = 1;
-
-    InitializeCriticalSection(&pDirect3D9->d3d9_cs);
-
-    if (FALSE == GetDisplayDeviceInfo(pDirect3D9))
-    {
-        DPRINT1("Could not create Direct3D9 object");
-        AlignedFree(pDirect3D9);
-        return DDERR_GENERIC;
-    }
-
-    *ppDirect3D9 = (LPDIRECT3D9)&pDirect3D9->lpVtbl;
-
-    return D3D_OK;
 }

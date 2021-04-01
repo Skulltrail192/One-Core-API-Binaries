@@ -1,5 +1,5 @@
-@ stdcall GetStringScripts(long wstr long wstr long) kernel32.GetStringScripts
-@ stdcall IdnToNameprepUnicode(long wstr long ptr long) kernel32.IdnToNameprepUnicode
-@ stdcall IsNormalizedString(long wstr long) kernel32.IsNormalizedString
-@ stdcall NormalizeString(long wstr long ptr long) kernel32.NormalizeString
+@ stdcall GetStringScripts(long wstr long wstr long) kernelbase.GetStringScripts
+@ stdcall IdnToNameprepUnicode(long wstr long ptr long) kernelbase.IdnToNameprepUnicode
+@ stdcall IsNormalizedString(long wstr long) kernelbase.IsNormalizedString
+@ stdcall NormalizeString(long wstr long ptr long) kernelbase.NormalizeString
 @ stdcall VerifyScripts(long wstr long wstr long)

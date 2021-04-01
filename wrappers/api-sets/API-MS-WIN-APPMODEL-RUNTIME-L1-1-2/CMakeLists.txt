@@ -9,6 +9,6 @@ list(APPEND SOURCE
 add_library(API-MS-WIN-APPMODEL-RUNTIME-L1-1-2 SHARED ${SOURCE})
 
 set_module_type(API-MS-WIN-APPMODEL-RUNTIME-L1-1-2 win32dll ENTRYPOINT 0)
-add_importlibs(API-MS-WIN-APPMODEL-RUNTIME-L1-1-2 kernel32 ntdll)
+add_importlibs(API-MS-WIN-APPMODEL-RUNTIME-L1-1-2 kernelbase kernel32 ntdll)
 add_dependencies(API-MS-WIN-APPMODEL-RUNTIME-L1-1-2 psdk)
 add_cd_file(TARGET API-MS-WIN-APPMODEL-RUNTIME-L1-1-2 DESTINATION reactos/system32 FOR all)

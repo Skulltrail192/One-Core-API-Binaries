@@ -14,7 +14,7 @@ add_definitions(
     -D__MINGW_IMPORT="")
 
 list(APPEND SOURCE
-	main.c
+	printf.c
     ucrtbase.rc
     ${CMAKE_CURRENT_BINARY_DIR}/ucrtbase_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/ucrtbase.def)

@@ -102,7 +102,7 @@ add_typelib(shell32_shldisp.idl)
 set_source_files_properties(shellbase.rc PROPERTIES OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/shell32_shldisp.tlb)
 
 set_module_type(shellbase win32dll UNICODE)
-target_link_libraries(shellbase shellmenu shelldesktop atlnew wine uuid recyclebin)
+target_link_libraries(shellbase shellmenu shelldesktop wine uuid recyclebin)
 add_delay_importlibs(shellbase powrprof shdocvw devmgr winspool winmm mpr uxtheme ole32 oleaut32 userenv browseui version fmifs)
 add_importlibs(shellbase advapi32 gdi32 user32 comctl32 comdlg32 shlwapi msvcrt kernel32 ntdll)
 add_dependencies(shellbase stdole2) # shell32_shldisp.tlb needs stdole2.tlb

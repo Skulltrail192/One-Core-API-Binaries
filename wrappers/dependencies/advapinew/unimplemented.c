@@ -99,7 +99,6 @@ BOOL WINAPI ControlServiceExW(
 	return TRUE;
 }
 
-
 LONG WINAPI RegCopyTreeA(
   _In_      HKEY hKeySrc,
   _In_opt_  LPCTSTR lpSubKey,
@@ -321,10 +320,10 @@ BOOL WINAPI GetTokenInformation(
 DWORD
 WINAPI
 SetUserFileEncryptionKeyEx(
-    __in            PENCRYPTION_CERTIFICATE     pEncryptionCertificate,
-                    DWORD                       dwCapabilities, 
-                    DWORD                       dwFlags,
-    __reserved      LPVOID                      pvReserved
+    PENCRYPTION_CERTIFICATE     pEncryptionCertificate,
+    DWORD                       dwCapabilities, 
+    DWORD                       dwFlags,
+    LPVOID                      pvReserved
 )
 {
 	return ERROR_SUCCESS;

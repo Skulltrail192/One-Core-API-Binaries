@@ -1,3 +1,3 @@
-@ stdcall FindResourceW(long wstr wstr) kernel32.FindResourceW
-@ stdcall LoadLibraryA(str) kernel32.LoadLibraryA
-@ stdcall LoadLibraryW(wstr) kernel32.LoadLibraryW
+@ stdcall FindResourceW(long wstr wstr) kernelbase.FindResourceW
+@ stdcall LoadLibraryA(str) kernelbase.LoadLibraryA
+@ stdcall LoadLibraryW(wstr) kernelbase.LoadLibraryW

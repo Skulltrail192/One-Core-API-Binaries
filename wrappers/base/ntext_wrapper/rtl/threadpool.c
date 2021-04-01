@@ -1568,7 +1568,7 @@ static NTSTATUS tp_threadpool_alloc( struct threadpool **out )
     pool->shutdown              = FALSE;
 
     RtlInitializeCriticalSection( &pool->cs );
-    pool->cs.DebugInfo->Spare[0] = (DWORD_PTR)(__FILE__ ": threadpool.cs");
+    //pool->cs.DebugInfo->Spare[0] = (DWORD_PTR)(__FILE__ ": threadpool.cs");
 
     for (i = 0; i < ARRAY_SIZE(pool->pools); ++i)
         list_init( &pool->pools[i] );
@@ -1621,7 +1621,7 @@ static BOOL tp_threadpool_release( struct threadpool *pool )
     for (i = 0; i < ARRAY_SIZE(pool->pools); ++i)
         ASSERT( list_empty( &pool->pools[i] ) );
 
-    pool->cs.DebugInfo->Spare[0] = 0;
+    //pool->cs.DebugInfo->Spare[0] = 0;
     RtlDeleteCriticalSection( &pool->cs );
 
     RtlFreeHeap( RtlProcessHeap(), 0, pool );
@@ -1732,7 +1732,7 @@ static NTSTATUS tp_group_alloc( struct threadpool_group **out )
     group->shutdown     = FALSE;
 
     RtlInitializeCriticalSection( &group->cs );
-    group->cs.DebugInfo->Spare[0] = (DWORD_PTR)(__FILE__ ": threadpool_group.cs");
+    //group->cs.DebugInfo->Spare[0] = (DWORD_PTR)(__FILE__ ": threadpool_group.cs");
 
     list_init( &group->members );
 
@@ -1767,7 +1767,7 @@ static BOOL tp_group_release( struct threadpool_group *group )
     ASSERT( group->shutdown );
     ASSERT( list_empty( &group->members ) );
 
-    group->cs.DebugInfo->Spare[0] = 0;
+    //group->cs.DebugInfo->Spare[0] = 0;
     RtlDeleteCriticalSection( &group->cs );
 
     RtlFreeHeap( RtlProcessHeap(), 0, group );

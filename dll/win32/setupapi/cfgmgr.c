@@ -8416,3 +8416,13 @@ CM_Unregister_Device_Interface_ExW(
 
     return ret;
 }
+
+/***********************************************************************
+ *              SetupDiGetDevicePropertyW (SETUPAPI.@)
+ */
+BOOL WINAPI SetupDiGetDevicePropertyW(HDEVINFO devinfo, PSP_DEVINFO_DATA device_data,
+                const DEVPROPKEY *prop_key, DEVPROPTYPE *prop_type, BYTE *prop_buff,
+                DWORD prop_buff_size, DWORD *required_size, DWORD flags)
+{
+	return FALSE;
+}

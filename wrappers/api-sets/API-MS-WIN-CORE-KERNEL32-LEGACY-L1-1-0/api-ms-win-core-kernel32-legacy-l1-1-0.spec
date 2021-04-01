@@ -1,55 +1,55 @@
-@ stdcall AddLocalAlternateComputerNameW(wstr ptr) kernel32.AddLocalAlternateComputerNameW
-@ stdcall BackupRead(ptr ptr long ptr long long ptr) kernel32.BackupRead
-@ stdcall BackupWrite(ptr ptr long ptr long long ptr) kernel32.BackupWrite
-@ stdcall BindIoCompletionCallback(long ptr long) kernel32.BindIoCompletionCallback
-@ stdcall CopyFileA(str str long) kernel32.CopyFileA
-@ stdcall CopyFileW(wstr wstr long) kernel32.CopyFileW
-@ stdcall CreateFileMappingA(long ptr long long long str) kernel32.CreateFileMappingA
-@ stdcall CreateFileTransactedA(str long long ptr long long ptr ptr ptr ptr) kernel32.CreateFileTransactedA
-@ stdcall CreateFileTransactedW(wstr long long ptr long long ptr ptr ptr ptr) kernel32.CreateFileTransactedW
-@ stdcall CreateMailslotA(str long long ptr) kernel32.CreateMailslotA
-@ stdcall CreateNamedPipeA(str long long long long long long ptr) kernel32.CreateNamedPipeA
-@ stdcall CreateSemaphoreW(ptr long long wstr) kernel32.CreateSemaphoreW
-@ stdcall DnsHostnameToComputerNameW(wstr ptr ptr) kernel32.DnsHostnameToComputerNameW
-@ stdcall DosDateTimeToFileTime(long long ptr) kernel32.DosDateTimeToFileTime
-@ stdcall FatalAppExitA(long str) kernel32.FatalAppExitA
-@ stdcall FatalAppExitW(long wstr) kernel32.FatalAppExitW
-@ stdcall FileTimeToDosDateTime(ptr ptr ptr) kernel32.FileTimeToDosDateTime
-@ stdcall FindResourceA(long str str) kernel32.FindResourceA
-@ stdcall FindResourceExA(long str str long) kernel32.FindResourceExA
-@ stdcall FindResourceW(long wstr wstr) kernel32.FindResourceW
-@ stdcall GetComputerNameA(ptr ptr) kernel32.GetComputerNameA
-@ stdcall GetComputerNameW(ptr ptr) kernel32.GetComputerNameW
-@ stdcall GetConsoleWindow() kernel32.GetConsoleWindow
-@ stdcall GetDurationFormatEx(wstr long ptr long long ptr ptr long) kernel32.GetDurationFormatEx
-@ stdcall GetMaximumProcessorGroupCount() kernel32.GetMaximumProcessorGroupCount
-@ stdcall GetNamedPipeClientProcessId(ptr ptr) kernel32.GetNamedPipeClientProcessId
-@ stdcall GetNamedPipeClientSessionId(ptr ptr) kernel32.GetNamedPipeClientSessionId
-@ stdcall GetShortPathNameA(str ptr long) kernel32.GetShortPathNameA
-@ stdcall GetStartupInfoA(ptr) kernel32.GetStartupInfoA
-@ stdcall GetStringTypeExA(long long str long ptr) kernel32.GetStringTypeExA
-@ stdcall GetSystemPowerStatus(ptr) kernel32.GetSystemPowerStatus
-@ stdcall GetSystemWow64DirectoryA(ptr long) kernel32.GetSystemWow64DirectoryA
-@ stdcall GetSystemWow64DirectoryW(ptr long) kernel32.GetSystemWow64DirectoryW
-@ stdcall GetTapeParameters(ptr long ptr ptr) kernel32.GetTapeParameters
-@ stdcall GetTempPathA(long ptr) kernel32.GetTempPathA
-@ stdcall GetThreadSelectorEntry(long long ptr) kernel32.GetThreadSelectorEntry
-@ stdcall GlobalMemoryStatus(ptr) kernel32.GlobalMemoryStatus
-@ stdcall LoadLibraryA(str) kernel32.LoadLibraryA
-@ stdcall LoadLibraryW(wstr) kernel32.LoadLibraryW
-@ stdcall MoveFileA(str str) kernel32.MoveFileA
-@ stdcall MoveFileExA(str str long) kernel32.MoveFileExA
-@ stdcall MoveFileW(wstr wstr) kernel32.MoveFileW
-@ stdcall MulDiv(long long long) kernel32.MulDiv
-@ stdcall OpenFile(str ptr long) kernel32.OpenFile
-@ stdcall PulseEvent(long) kernel32.PulseEvent
-@ stdcall RaiseFailFastException(ptr ptr long) kernel32.RaiseFailFastException
-@ stdcall RegisterWaitForSingleObject(ptr long ptr ptr long long) kernel32.RegisterWaitForSingleObject
-@ stdcall SetConsoleTitleA(str) kernel32.SetConsoleTitleA
-@ stdcall SetFileCompletionNotificationModes(ptr str) kernel32.SetFileCompletionNotificationModes
-@ stdcall SetHandleCount(long) kernel32.SetHandleCount
-@ stdcall SetMailslotInfo(long long) kernel32.SetMailslotInfo
-@ stdcall SetVolumeLabelW(wstr wstr) kernel32.SetVolumeLabelW
-@ stdcall UnregisterWait(long) kernel32.UnregisterWait
-@ stdcall WTSGetActiveConsoleSessionId() kernel32.WTSGetActiveConsoleSessionId
-@ stdcall WaitForMultipleObjects(long ptr long long) kernel32.WaitForMultipleObjects
+@ stdcall AddLocalAlternateComputerNameW(wstr ptr) kernelbase.AddLocalAlternateComputerNameW
+@ stdcall BackupRead(ptr ptr long ptr long long ptr) kernelbase.BackupRead
+@ stdcall BackupWrite(ptr ptr long ptr long long ptr) kernelbase.BackupWrite
+@ stdcall BindIoCompletionCallback(long ptr long) kernelbase.BindIoCompletionCallback
+@ stdcall CopyFileA(str str long) kernelbase.CopyFileA
+@ stdcall CopyFileW(wstr wstr long) kernelbase.CopyFileW
+@ stdcall CreateFileMappingA(long ptr long long long str) kernelbase.CreateFileMappingA
+@ stdcall CreateFileTransactedA(str long long ptr long long ptr ptr ptr ptr) kernelbase.CreateFileTransactedA
+@ stdcall CreateFileTransactedW(wstr long long ptr long long ptr ptr ptr ptr) kernelbase.CreateFileTransactedW
+@ stdcall CreateMailslotA(str long long ptr) kernelbase.CreateMailslotA
+@ stdcall CreateNamedPipeA(str long long long long long long ptr) kernelbase.CreateNamedPipeA
+@ stdcall CreateSemaphoreW(ptr long long wstr) kernelbase.CreateSemaphoreW
+@ stdcall DnsHostnameToComputerNameW(wstr ptr ptr) kernelbase.DnsHostnameToComputerNameW
+@ stdcall DosDateTimeToFileTime(long long ptr) kernelbase.DosDateTimeToFileTime
+@ stdcall FatalAppExitA(long str) kernelbase.FatalAppExitA
+@ stdcall FatalAppExitW(long wstr) kernelbase.FatalAppExitW
+@ stdcall FileTimeToDosDateTime(ptr ptr ptr) kernelbase.FileTimeToDosDateTime
+@ stdcall FindResourceA(long str str) kernelbase.FindResourceA
+@ stdcall FindResourceExA(long str str long) kernelbase.FindResourceExA
+@ stdcall FindResourceW(long wstr wstr) kernelbase.FindResourceW
+@ stdcall GetComputerNameA(ptr ptr) kernelbase.GetComputerNameA
+@ stdcall GetComputerNameW(ptr ptr) kernelbase.GetComputerNameW
+@ stdcall GetConsoleWindow() kernelbase.GetConsoleWindow
+@ stdcall GetDurationFormatEx(wstr long ptr long long ptr ptr long) kernelbase.GetDurationFormatEx
+@ stdcall GetMaximumProcessorGroupCount() kernelbase.GetMaximumProcessorGroupCount
+@ stdcall GetNamedPipeClientProcessId(ptr ptr) kernelbase.GetNamedPipeClientProcessId
+@ stdcall GetNamedPipeClientSessionId(ptr ptr) kernelbase.GetNamedPipeClientSessionId
+@ stdcall GetShortPathNameA(str ptr long) kernelbase.GetShortPathNameA
+@ stdcall GetStartupInfoA(ptr) kernelbase.GetStartupInfoA
+@ stdcall GetStringTypeExA(long long str long ptr) kernelbase.GetStringTypeExA
+@ stdcall GetSystemPowerStatus(ptr) kernelbase.GetSystemPowerStatus
+@ stdcall GetSystemWow64DirectoryA(ptr long) kernelbase.GetSystemWow64DirectoryA
+@ stdcall GetSystemWow64DirectoryW(ptr long) kernelbase.GetSystemWow64DirectoryW
+@ stdcall GetTapeParameters(ptr long ptr ptr) kernelbase.GetTapeParameters
+@ stdcall GetTempPathA(long ptr) kernelbase.GetTempPathA
+@ stdcall GetThreadSelectorEntry(long long ptr) kernelbase.GetThreadSelectorEntry
+@ stdcall GlobalMemoryStatus(ptr) kernelbase.GlobalMemoryStatus
+@ stdcall LoadLibraryA(str) kernelbase.LoadLibraryA
+@ stdcall LoadLibraryW(wstr) kernelbase.LoadLibraryW
+@ stdcall MoveFileA(str str) kernelbase.MoveFileA
+@ stdcall MoveFileExA(str str long) kernelbase.MoveFileExA
+@ stdcall MoveFileW(wstr wstr) kernelbase.MoveFileW
+@ stdcall MulDiv(long long long) kernelbase.MulDiv
+@ stdcall OpenFile(str ptr long) kernelbase.OpenFile
+@ stdcall PulseEvent(long) kernelbase.PulseEvent
+@ stdcall RaiseFailFastException(ptr ptr long) kernelbase.RaiseFailFastException
+@ stdcall RegisterWaitForSingleObject(ptr long ptr ptr long long) kernelbase.RegisterWaitForSingleObject
+@ stdcall SetConsoleTitleA(str) kernelbase.SetConsoleTitleA
+@ stdcall SetFileCompletionNotificationModes(ptr str) kernelbase.SetFileCompletionNotificationModes
+@ stdcall SetHandleCount(long) kernelbase.SetHandleCount
+@ stdcall SetMailslotInfo(long long) kernelbase.SetMailslotInfo
+@ stdcall SetVolumeLabelW(wstr wstr) kernelbase.SetVolumeLabelW
+@ stdcall UnregisterWait(long) kernelbase.UnregisterWait
+@ stdcall WTSGetActiveConsoleSessionId() kernelbase.WTSGetActiveConsoleSessionId
+@ stdcall WaitForMultipleObjects(long ptr long long) kernelbase.WaitForMultipleObjects

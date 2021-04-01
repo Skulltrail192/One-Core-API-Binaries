@@ -182,7 +182,7 @@ BOOL WINAPI IsSyncForegroundPolicyRefresh(BOOL a1, HANDLE TokenHandle)
 	return TRUE;
 }
 
-BOOL WINAPI CopySystemProfile(HANDLE TokenHandle)
+BOOL WINAPI CopySystemProfile(ULONG TokenHandle)
 {
 	return TRUE;
 }
