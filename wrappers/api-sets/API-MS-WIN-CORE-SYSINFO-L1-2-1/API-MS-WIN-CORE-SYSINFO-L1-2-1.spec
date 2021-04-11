@@ -27,8 +27,8 @@
 @ stdcall GetWindowsDirectoryA(ptr long) kernelbase.GetWindowsDirectoryA
 @ stdcall GetWindowsDirectoryW(ptr long) kernelbase.GetWindowsDirectoryW
 @ stdcall GlobalMemoryStatusEx(ptr) kernelbase.GlobalMemoryStatusEx
-@ stdcall InstallELAMCertificateInfo(ptr) kernelbase.InstallELAMCertificateInfo
-@ stdcall SetComputerNameEx2W(long long wstr) kernelbase.SetComputerNameEx2W
+@ stub InstallELAMCertificateInfo ;(ptr) kernelbase.InstallELAMCertificateInfo
+@ stub SetComputerNameEx2W  ;(long long wstr) kernelbase.SetComputerNameEx2W
 @ stdcall SetComputerNameExW(long wstr) kernelbase.SetComputerNameExW
 @ stdcall SetLocalTime(ptr) kernelbase.SetLocalTime
 @ stdcall SetSystemTime(ptr) kernelbase.SetSystemTime

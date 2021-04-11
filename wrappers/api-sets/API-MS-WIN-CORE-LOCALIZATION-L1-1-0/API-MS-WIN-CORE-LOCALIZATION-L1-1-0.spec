@@ -21,7 +21,7 @@
 @ stdcall GetThreadLocale() kernelbase.GetThreadLocale
 @ stdcall GetThreadPreferredUILanguages(long ptr wstr ptr) kernelbase.GetThreadPreferredUILanguages
 @ stdcall GetThreadUILanguage() kernelbase.GetThreadUILanguage
-@ stdcall GetUILanguageInfo(long wstr wstr ptr ptr) kernelbase.GetUILanguageInfo
+@ stub GetUILanguageInfo ;(long wstr wstr ptr ptr) kernelbase.GetUILanguageInfo
 @ stdcall GetUserDefaultLangID() kernelbase.GetUserDefaultLangID
 @ stdcall GetUserPreferredUILanguages(long ptr wstr ptr) kernelbase.GetUserPreferredUILanguages
 @ stdcall GetUserDefaultLCID() kernelbase.GetUserDefaultLCID
@@ -31,12 +31,12 @@
 @ stdcall IsValidLocale(long long) kernelbase.IsValidLocale
 @ stdcall LCMapStringEx(wstr long wstr long ptr long ptr ptr long) kernelbase.LCMapStringEx
 @ stdcall LCMapStringW(long long wstr long ptr long) kernelbase.LCMapStringW
-@ stdcall NlsCheckPolicy(wstr long) kernelbase.NlsCheckPolicy
-@ stdcall NlsEventDataDescCreate(ptr wstr wstr long) kernelbase.NlsEventDataDescCreate
+@ stub NlsCheckPolicy ;(wstr long) kernelbase.NlsCheckPolicy
+@ stub NlsEventDataDescCreate   ;(ptr wstr wstr long) kernelbase.NlsEventDataDescCreate
 @ stdcall NlsGetCacheUpdateCount() kernelbase.NlsGetCacheUpdateCount
-@ stdcall NlsUpdateLocale(long long) kernelbase.NlsUpdateLocale
-@ stdcall NlsUpdateSystemLocale(long long) kernelbase.NlsUpdateSystemLocale
-@ stdcall NlsWriteEtwEvent(int64 ptr long ptr) kernelbase.NlsWriteEtwEvent
+@ stub NlsUpdateLocale ;(long long) kernelbase.NlsUpdateLocale
+@ stub NlsUpdateSystemLocale    ;(long long) kernelbase.NlsUpdateSystemLocale
+@ stub NlsWriteEtwEvent  ;(int64 ptr long ptr) kernelbase.NlsWriteEtwEvent
 @ stdcall ResolveLocaleName(wstr wstr long) kernelbase.ResolveLocaleName
 @ stdcall SetCalendarInfoW(long long long wstr) kernelbase.SetCalendarInfoW
 @ stdcall SetLocaleInfoW(long long wstr) kernelbase.SetLocaleInfoW

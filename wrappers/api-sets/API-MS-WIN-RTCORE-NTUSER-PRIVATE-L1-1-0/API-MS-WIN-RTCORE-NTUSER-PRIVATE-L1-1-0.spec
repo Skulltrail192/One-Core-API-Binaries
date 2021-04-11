@@ -6,4 +6,4 @@
 @ stdcall IsWindowInDestroy(long) user32.IsWindowInDestroy
 @ stdcall RegisterSessionPort(ptr ptr) user32.RegisterSessionPort
 @ stdcall SetTaskmanWindow(long) user32.SetTaskmanWindow
-@ stdcall UnregisterSessionPort() user32.UnregisterSessionPort
+@ stub UnregisterSessionPort

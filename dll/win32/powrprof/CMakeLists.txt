@@ -4,6 +4,7 @@ spec2def(powrprof.dll powrprof.spec ADD_IMPORTLIB)
 add_library(powrprof MODULE
     powrprof.c
     powrprof.rc
+	${CMAKE_CURRENT_BINARY_DIR}/powrprof_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/powrprof.def)
 
 set_module_type(powrprof win32dll UNICODE)

@@ -27,7 +27,7 @@
 @ stdcall GetDurationFormatEx(wstr long ptr long long ptr ptr long) kernelbase.GetDurationFormatEx
 @ stdcall GetFileAttributesTransactedA(str long ptr ptr) kernelbase.GetFileAttributesTransactedA
 @ stdcall GetFileAttributesTransactedW(wstr long ptr ptr) kernelbase.GetFileAttributesTransactedW
-@ stdcall GetFirmwareType(ptr) kernelbase.GetFirmwareType
+@ stub GetFirmwareType ;(ptr) kernelbase.GetFirmwareType
 @ stdcall GetMaximumProcessorGroupCount() kernelbase.GetMaximumProcessorGroupCount
 @ stdcall GetNamedPipeClientProcessId(ptr ptr) kernelbase.GetNamedPipeClientProcessId
 @ stdcall GetNamedPipeClientSessionId(ptr ptr) kernelbase.GetNamedPipeClientSessionId

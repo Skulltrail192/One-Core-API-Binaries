@@ -748,3 +748,13 @@
 739 varargs wsprintfW(wstr wstr)
 740 stdcall wvsprintfA(ptr str ptr)
 741 stdcall wvsprintfW(ptr wstr ptr)
+
+742 stub DisplayConfigGetDeviceInfo
+743 stub GetDisplayConfigBufferSizes
+744 stub QueryDisplayConfig
+745 stub CreateWindowInBand
+746 stub GetWindowBand
+747 stub RegisterSessionPort
+748 stub EnableMouseInPointer
+749 stub GetPointerDevices
+750 stub GetCurrentInputMessageSource

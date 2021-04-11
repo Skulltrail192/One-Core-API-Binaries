@@ -464,3 +464,9 @@
 754 stub -noname SHLimitInputEditWithFlags
 755 stdcall -noname PathIsEqualOrSubFolder(wstr wstr)
 756 stub -noname DeleteFileThumbnail
+
+
+757 stub SHGetKnownFolderPath
+758 stub GetCurrentProcessExplicitAppUserModelID
+759 stub SetCurrentProcessExplicitAppUserModelID
+760 stub SHSetKnownFolderPath

@@ -70,7 +70,7 @@
 @ stdcall SetFileAttributesA(str long) kernelbase.SetFileAttributesA
 @ stdcall SetFileAttributesW(wstr long) kernelbase.SetFileAttributesW
 @ stdcall SetFileInformationByHandle(long long ptr long) kernelbase.SetFileInformationByHandle
-@ stdcall SetFileIoOverlappedRange(ptr ptr long) kernelbase.SetFileIoOverlappedRange
+@ stub SetFileIoOverlappedRange ;(ptr ptr long) kernelbase.SetFileIoOverlappedRange
 @ stdcall SetFilePointer(long long ptr long) kernelbase.SetFilePointer
 @ stdcall SetFilePointerEx(long int64 ptr long) kernelbase.SetFilePointerEx
 @ stdcall SetFileTime(long ptr ptr ptr) kernelbase.SetFileTime

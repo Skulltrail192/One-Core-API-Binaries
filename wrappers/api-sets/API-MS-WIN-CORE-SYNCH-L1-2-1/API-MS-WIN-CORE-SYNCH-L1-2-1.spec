@@ -14,15 +14,15 @@
 @ stdcall CreateWaitableTimerExW(ptr wstr long long) kernelbase.CreateWaitableTimerExW
 @ stdcall CreateWaitableTimerW(ptr long wstr) kernelbase.CreateWaitableTimerW
 @ stdcall DeleteCriticalSection(ptr) kernelbase.DeleteCriticalSection
-@ stub DeleteSynchronizationBarrier
+@ stdcall DeleteSynchronizationBarrier(ptr) kernelbase.DeleteSynchronizationBarrier
 @ stdcall EnterCriticalSection(ptr) kernelbase.EnterCriticalSection
-@ stub EnterSynchronizationBarrier
+@ stdcall EnterSynchronizationBarrier(ptr long) kernelbase.EnterSynchronizationBarrier
 @ stdcall InitializeConditionVariable(ptr) kernelbase.InitializeConditionVariable
 @ stdcall InitializeCriticalSection(ptr) kernelbase.InitializeCriticalSection
 @ stdcall InitializeCriticalSectionAndSpinCount(ptr long) kernelbase.InitializeCriticalSectionAndSpinCount
 @ stdcall InitializeCriticalSectionEx(ptr long long) kernelbase.InitializeCriticalSectionEx
 @ stdcall InitializeSRWLock(ptr) kernelbase.InitializeSRWLock
-@ stub InitializeSynchronizationBarrier
+@ stdcall InitializeSynchronizationBarrier(ptr long long) kernelbase.InitializeSynchronizationBarrier
 @ stdcall InitOnceBeginInitialize(ptr long ptr ptr) kernelbase.InitOnceBeginInitialize
 @ stdcall InitOnceComplete(ptr long ptr) kernelbase.InitOnceComplete
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr) kernelbase.InitOnceExecuteOnce

@@ -1,10 +1,10 @@
 @ stdcall AllocateUserPhysicalPages(long ptr ptr) kernelbase.AllocateUserPhysicalPages
 @ stdcall AllocateUserPhysicalPagesNuma(ptr ptr ptr long) kernelbase.AllocateUserPhysicalPagesNuma
 @ stdcall FreeUserPhysicalPages(long ptr ptr) kernelbase.FreeUserPhysicalPages
-@ stdcall GetMemoryErrorHandlingCapabilities(ptr) kernelbase.GetMemoryErrorHandlingCapabilities
+@ stub GetMemoryErrorHandlingCapabilities ;(ptr) kernelbase.GetMemoryErrorHandlingCapabilities
 @ stdcall MapUserPhysicalPages(ptr long ptr) kernelbase.MapUserPhysicalPages
-@ stdcall RegisterBadMemoryNotification(ptr) kernelbase.RegisterBadMemoryNotification
-@ stdcall UnregisterBadMemoryNotification(ptr) kernelbase.UnregisterBadMemoryNotification
+@ stub RegisterBadMemoryNotification
+@ stub UnregisterBadMemoryNotification
 @ stdcall VirtualAllocExNuma(ptr ptr long long long long) kernelbase.VirtualAllocExNuma
 @ stdcall VirtualAlloc(ptr long long long) kernelbase.VirtualAlloc
 @ stdcall VirtualAllocEx(long ptr long long long) kernelbase.VirtualAllocEx

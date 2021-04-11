@@ -611,3 +611,6 @@
 ; FIXME: Wine DX Dlls need these
 @ stdcall D3DKMTCreateDCFromMemory(ptr)
 @ stdcall D3DKMTDestroyDCFromMemory(ptr)
+
+611 stub D3DKMTEscape
+612 stub D3DKMTOpenAdapterFromHdc

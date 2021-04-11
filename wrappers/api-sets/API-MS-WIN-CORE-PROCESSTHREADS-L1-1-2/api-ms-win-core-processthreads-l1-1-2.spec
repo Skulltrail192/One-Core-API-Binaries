@@ -37,7 +37,7 @@
 @ stdcall GetThreadPriorityBoost(long ptr) kernelbase.GetThreadPriorityBoost
 @ stdcall GetThreadTimes(long ptr ptr ptr ptr) kernelbase.GetThreadTimes
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) kernelbase.InitializeProcThreadAttributeList
-@ stdcall IsProcessCritical(ptr ptr) kernelbase.IsProcessCritical
+@ stub IsProcessCritical ;(ptr ptr) kernelbase.IsProcessCritical
 @ stdcall IsProcessorFeaturePresent(long) kernelbase.IsProcessorFeaturePresent
 @ stdcall OpenProcess(long long long) kernelbase.OpenProcess
 @ stdcall OpenProcessToken(ptr long ptr) kernelbase.OpenProcessToken
@@ -54,7 +54,7 @@
 @ stdcall SetProcessShutdownParameters(long long) kernelbase.SetProcessShutdownParameters
 @ stdcall SetThreadContext(long ptr) kernelbase.SetThreadContext
 @ stdcall SetThreadIdealProcessorEx(ptr ptr ptr) kernelbase.SetThreadIdealProcessorEx
-@ stdcall SetThreadInformation(ptr long ptr long) kernelbase.SetThreadInformation
+@ stub SetThreadInformation   ;(ptr long ptr long) kernelbase.SetThreadInformation
 @ stdcall SetThreadPriority(long long) kernelbase.SetThreadPriority
 @ stdcall SetThreadPriorityBoost(long long) kernelbase.SetThreadPriorityBoost
 @ stdcall SetThreadStackGuarantee(ptr) kernelbase.SetThreadStackGuarantee

@@ -21,8 +21,8 @@
 @ stdcall LoadLibraryExA( str long long) kernelbase.LoadLibraryExA
 @ stdcall LoadLibraryExW(wstr long long) kernelbase.LoadLibraryExW
 @ stdcall LoadResource(long long) kernelbase.LoadResource
-@ stdcall LoadStringA(long long ptr long) user32.LoadStringA
-@ stdcall LoadStringW(long long ptr long) user32.LoadStringW
+@ stdcall LoadStringA(long long ptr long) kernelbase.LoadStringA
+@ stdcall LoadStringW(long long ptr long) kernelbase.LoadStringW
 @ stdcall LockResource(long) kernelbase.LockResource
 @ stub QueryOptionalDelayLoadedAPI
 @ stdcall RemoveDllDirectory(ptr) kernelbase.RemoveDllDirectory

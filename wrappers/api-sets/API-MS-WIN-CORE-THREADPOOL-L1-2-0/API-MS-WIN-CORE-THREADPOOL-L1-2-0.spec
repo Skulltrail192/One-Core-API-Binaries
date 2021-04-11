@@ -25,9 +25,9 @@
 @ stdcall SetThreadpoolThreadMaximum(ptr long) kernelbase.SetThreadpoolThreadMaximum
 @ stdcall SetThreadpoolThreadMinimum(ptr long) kernelbase.SetThreadpoolThreadMinimum
 @ stdcall SetThreadpoolTimer(ptr ptr long long) kernelbase.SetThreadpoolTimer
-@ stdcall SetThreadpoolTimerEx(ptr ptr long long) kernelbase.SetThreadpoolTimerEx
+@ stub SetThreadpoolTimerEx  ;(ptr ptr long long) kernelbase.SetThreadpoolTimerEx
 @ stdcall SetThreadpoolWait(ptr long ptr) kernelbase.SetThreadpoolWait
-@ stdcall SetThreadpoolWaitEx(ptr ptr ptr) kernelbase.SetThreadpoolWaitEx
+@ stub SetThreadpoolWaitEx  ;(ptr ptr ptr) kernelbase.SetThreadpoolWaitEx
 @ stdcall StartThreadpoolIo(ptr) kernelbase.StartThreadpoolIo
 @ stdcall SubmitThreadpoolWork(ptr) kernelbase.SubmitThreadpoolWork
 @ stdcall TrySubmitThreadpoolCallback(ptr ptr ptr) kernelbase.TrySubmitThreadpoolCallback
