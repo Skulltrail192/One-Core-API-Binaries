@@ -747,16 +747,16 @@
 @ stub PerfStartProvider
 @ stub PerfStartProviderEx
 @ stub PerfStopProvider
-@ stub RegCopyTreeA
-@ stub RegCopyTreeW
-@ stub RegDeleteTreeA
-@ stub RegDeleteTreeW
-@ stub QuerySecurityAccessMask
-@ stub SetSecurityAccessMask
-@ stub RegDisablePredefinedCacheEx
+@ stdcall RegCopyTreeA(long str long)
+@ stdcall RegCopyTreeW(long wstr long)
+@ stdcall RegDeleteTreeA(long str)
+@ stdcall RegDeleteTreeW(long wstr)
+@ stdcall QuerySecurityAccessMask(long ptr)
+@ stdcall SetSecurityAccessMask(long ptr)
+@ stdcall RegDisablePredefinedCacheEx()
 @ stub RegLoadAppKeyA
 @ stub RegLoadAppKeyW
-@ stub RegDeleteKeyValueA
-@ stub RegDeleteKeyValueW
-@ stub RegSetKeyValueA
-@ stub RegSetKeyValueW
+@ stdcall RegDeleteKeyValueA(ptr str str)
+@ stdcall RegDeleteKeyValueW(ptr wstr str)
+@ stdcall RegSetKeyValueA(ptr str str long ptr long)
+@ stdcall RegSetKeyValueW(ptr wstr wstr long ptr long)

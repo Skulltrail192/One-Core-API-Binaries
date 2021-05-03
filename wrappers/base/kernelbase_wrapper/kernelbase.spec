@@ -1594,7 +1594,7 @@
 @ stdcall VerQueryValueA(ptr str ptr ptr)
 @ stdcall VerQueryValueW(ptr wstr ptr ptr)
 @ stdcall GetFileVersionInfoA(str long long ptr)
-@ stdcall GetFileVersionInfoByHandle(str ptr ptr long)
+;@ stdcall GetFileVersionInfoByHandle(str ptr ptr long)
 @ stdcall GetFileVersionInfoExA(long str long long ptr)
 @ stdcall GetFileVersionInfoExW(long wstr long long ptr)
 @ stdcall GetFileVersionInfoSizeA(str ptr)

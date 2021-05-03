@@ -414,7 +414,7 @@ NTSTATUS
 NTAPI
 NtRemoveIoCompletionEx(
     __in HANDLE IoCompletionHandle,
-    __out FILE_IO_COMPLETION_INFORMATION IoCompletionInformation,
+    __out FILE_IO_COMPLETION_INFORMATION *IoCompletionInformation,
     __in ULONG Count,
     __out PVOID NumEntriesRemoved,
     __in_opt PLARGE_INTEGER Timeout,

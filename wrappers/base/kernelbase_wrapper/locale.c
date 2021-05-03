@@ -72,6 +72,16 @@ typedef BOOL (WINAPI *pGetNLSVersion)(
 	LCID,
 	LPNLSVERSIONINFO);
 
+struct sortguid
+{
+    GUID  id;          /* sort GUID */
+    DWORD flags;       /* flags */
+    DWORD compr;       /* offset to compression table */
+    DWORD except;      /* exception table offset in sortkey table */
+    DWORD ling_except; /* exception table offset for linguistic casing */
+    DWORD casemap;     /* linguistic casemap table offset */
+};
+
 struct locale_name
 {
     WCHAR  win_name[128];   /* Windows name ("en-US") */
@@ -84,6 +94,17 @@ struct locale_name
     int    matches;         /* number of elements matching LCID (0..4) */
     UINT   codepage;        /* codepage corresponding to charset */
 };
+
+static struct
+{
+    DWORD           *keys;       /* sortkey table, indexed by char */
+    USHORT          *casemap;    /* casemap table, in l_intl.nls format */
+    WORD            *ctypes;     /* CT_CTYPE1,2,3 values */
+    BYTE            *ctype_idx;  /* index to map char to ctypes array entry */
+    DWORD            version;    /* NLS version */
+    DWORD            guid_count; /* number of sort GUIDs */
+    struct sortguid *guids;      /* table of sort GUIDs */
+} sort;
 
 static const WCHAR iCalendarTypeW[] = {'i','C','a','l','e','n','d','a','r','T','y','p','e',0};
 static const WCHAR iCountryW[] = {'i','C','o','u','n','t','r','y',0};
@@ -188,6 +209,40 @@ struct enum_locale_ex_data
 
 void InitializeCriticalForLocaleInfo(){
 	 RtlInitializeCriticalSection(&cache_section);
+}
+
+static void init_sortkeys( DWORD *ptr )
+{
+    WORD *ctype;
+    DWORD *table;
+
+    sort.keys = (DWORD *)((char *)ptr + ptr[0]);
+    sort.casemap = (USHORT *)((char *)ptr + ptr[1]);
+
+    ctype = (WORD *)((char *)ptr + ptr[2]);
+    sort.ctypes = ctype + 2;
+    sort.ctype_idx = (BYTE *)ctype + ctype[1] + 2;
+
+    table = (DWORD *)((char *)ptr + ptr[3]);
+    sort.version = table[0];
+    sort.guid_count = table[1];
+    sort.guids = (struct sortguid *)(table + 2);
+}
+
+static const struct sortguid *find_sortguid( const GUID *guid )
+{
+    int pos, ret, min = 0, max = sort.guid_count - 1;
+
+    while (min <= max)
+    {
+        pos = (min + max) / 2;
+        ret = memcmp( guid, &sort.guids[pos].id, sizeof(*guid) );
+        if (!ret) return &sort.guids[pos];
+        if (ret > 0) min = pos + 1;
+        else max = pos - 1;
+    }
+    ERR( "no sort found for %s\n", debugstr_guid( guid ));
+    return NULL;
 }
 
 /***********************************************************************
@@ -1974,7 +2029,7 @@ DWORD WINAPI DECLSPEC_HOTPATCH IsValidNLSVersion( NLS_FUNCTION func, const WCHAR
         return FALSE;
     }
     if (info->dwNLSVersionInfoSize < sizeof(*info) &&
-        (info->dwNLSVersionInfoSize != offsetof( NLSVERSIONINFO, dwEffectiveId )))
+        (info->dwNLSVersionInfoSize != offsetof( NLSVERSIONINFOEX, dwEffectiveId )))
     {
         SetLastError( ERROR_INVALID_PARAMETER );
         return FALSE;

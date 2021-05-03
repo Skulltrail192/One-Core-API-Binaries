@@ -20,6 +20,8 @@ Revision History:
 
 #include "main.h"
 
+WINE_DEFAULT_DEBUG_CHANNEL(error); 
+
 ULONG
 WINAPI
 BaseSetLastNTError(
@@ -97,13 +99,20 @@ BOOL WINAPI DECLSPEC_HOTPATCH GetOverlappedResultEx( HANDLE file, OVERLAPPED *ov
     }
 
     *result = overlapped->InternalHigh;
-    return set_ntstatus( status );
+	
+	if(!NT_SUCCESS(status))
+	{
+		BaseSetLastNTError(status);
+        return FALSE;
+	}else{
+		return TRUE;
+	}
 }
 
 /******************************************************************************
  *              GetQueuedCompletionStatusEx   (kernelbase.@)
  */
-BOOL WINAPI DECLSPEC_HOTPATCH GetQueuedCompletionStatusEx( HANDLE port, OVERLAPPED_ENTRY *entries,
+BOOL WINAPI DECLSPEC_HOTPATCH GetQueuedCompletionStatusEx( HANDLE port, LPOVERLAPPED_ENTRY entries,
                                                            ULONG count, ULONG *written,
                                                            DWORD timeout, BOOL alertable )
 {

@@ -20,6 +20,8 @@ Revision History:
 
 #include "main.h"
 
+WINE_DEFAULT_DEBUG_CHANNEL(dllatom); 
+
 ATOM GlobalAddAtomExA(
   LPCSTR lpString,
   DWORD  Flags //Ignored for now
@@ -33,5 +35,5 @@ ATOM GlobalAddAtomExW(
   DWORD  Flags //Ignored for now
 )
 {
-	return GlobalAddAtomA(lpString);
+	return GlobalAddAtomW(lpString);
 }

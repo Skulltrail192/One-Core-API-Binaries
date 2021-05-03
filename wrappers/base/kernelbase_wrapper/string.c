@@ -20,6 +20,8 @@ Revision History:
 
 #include <main.h>
 
+WINE_DEFAULT_DEBUG_CHANNEL(string); 
+
 INT WINAPI DECLSPEC_HOTPATCH LoadStringW(HINSTANCE instance, UINT resource_id, LPWSTR buffer, INT buflen)
 {
     int string_num, i;
