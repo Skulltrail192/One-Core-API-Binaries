@@ -49,7 +49,7 @@ VidBitmap(
 )
 {
 	  DbgPrint("Bootanim::InbvBitBlt: Entered worker thread.\n");
-	  VidBitBlt(Buffer, Left, Top);
+	  VidBitBlt((PUCHAR)Buffer, Left, Top);
 }
 
 PIMAGE_RESOURCE_DATA_ENTRY 
