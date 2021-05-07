@@ -1720,3 +1720,34 @@ void msvcrt_free_tls_mem(void)
   }
   HeapFree(GetProcessHeap(), 0, tls);
 }
+
+/******************************************************************
+ *		wcsncpy_s (MSVCRT.@)
+ */
+INT CDECL wcsncpy_s( wchar_t* wcDest, size_t numElement, const wchar_t *wcSrc,
+                            size_t count )
+{
+    size_t size = 0;
+
+    if (!wcDest || !numElement)
+        return EINVAL;
+
+    wcDest[0] = 0;
+
+    if (!wcSrc)
+    {
+        return EINVAL;
+    }
+
+    size = min(strlenW(wcSrc), count);
+
+    if (size >= numElement)
+    {
+        return ERANGE;
+    }
+
+    memcpy( wcDest, wcSrc, size*sizeof(WCHAR) );
+    wcDest[size] = '\0';
+
+    return 0;
+}

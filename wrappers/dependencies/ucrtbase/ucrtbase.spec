@@ -2458,12 +2458,12 @@
 @ stub wcsncat_s ;(wstr long wstr long) ucrtbase.wcsncat_s
 @ stub wcsncmp ;(wstr wstr long) ucrtbase.wcsncmp
 @ cdecl wcsncpy(ptr wstr long)
-@ stub wcsncpy_s ;(ptr long wstr long) ucrtbase.wcsncpy_s
+@ cdecl wcsncpy_s(ptr long wstr long) ;ucrtbase.wcsncpy_s
 @ stub wcsnlen ;(wstr long) ucrtbase.wcsnlen
 @ cdecl wcspbrk(wstr wstr)
 @ stub wcsspn ;(wstr wstr) ucrtbase.wcsspn
 @ cdecl wcstok(wstr wstr)
-; @ stub wcstok_s ;(ptr wstr ptr) ucrtbase.wcstok_s
+@ cdecl -version=0x600+ wcstok_s(wstr wstr ptr)
 @ stub wcsxfrm ;(ptr wstr long) ucrtbase.wcsxfrm
 @ stub wctype ;() ucrtbase.wctype
 @ stub wmemcpy_s ;(ptr long ptr long) ucrtbase.wmemcpy_s
