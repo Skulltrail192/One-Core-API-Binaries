@@ -14,22 +14,16 @@ add_definitions(
     -D__MINGW_IMPORT="")
 
 list(APPEND SOURCE
-	printf.c
+	main.c
     ucrtbase.rc
     ${CMAKE_CURRENT_BINARY_DIR}/ucrtbase_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/ucrtbase.def)
 
 add_library(ucrtbase SHARED ${SOURCE})
 
-set_module_type(ucrtbase win32dll ENTRYPOINT 0)
+set_module_type(ucrtbase win32dll ENTRYPOINT DllMain 12)
 add_dependencies(ucrtbase psdk)
 target_link_libraries(ucrtbase wine ${PSEH_LIB})
-
-if(MSVC)
-    # export of deleting destructor "name"
-    add_target_link_flags(msvcrt "/ignore:4102")
-    add_target_link_flags(libmsvcrt "/ignore:4102")
-endif()
 
 add_importlibs(ucrtbase kernel32 msvcrt ntdll)
 add_cd_file(TARGET ucrtbase DESTINATION reactos/system32 FOR all)

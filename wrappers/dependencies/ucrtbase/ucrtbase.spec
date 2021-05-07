@@ -2108,7 +2108,7 @@
 @ cdecl _strerror_s(str long long)
 @ stub _wassert ;(wstr wstr long) ucrtbase._wassert
 @ cdecl _wcserror(long) 
-@ stub _wcserror_s ;(ptr long long) ucrtbase._wcserror_s
+@ stdcall _wcserror_s(ptr long long) ucrtbase._wcserror_s
 @ stub _wperror ;(wstr) ucrtbase._wperror
 @ stub _wsystem ;(wstr) ucrtbase._wsystem
 @ stub abort ;() ucrtbase.abort
@@ -2439,7 +2439,7 @@
 @ cdecl strpbrk(str str)
 @ stub strspn ;(str str) ucrtbase.strspn
 @ cdecl strtok(str str)
-@ cdecl strtok_s(ptr str ptr)
+@ stdcall strtok_s(ptr str ptr) msvcrt.strtok_s
 @ stub strxfrm ;(ptr str long) ucrtbase.strxfrm
 @ stub tolower ;(long) ucrtbase.tolower
 @ stub toupper ;(long) ucrtbase.toupper
@@ -2463,7 +2463,7 @@
 @ cdecl wcspbrk(wstr wstr)
 @ stub wcsspn ;(wstr wstr) ucrtbase.wcsspn
 @ cdecl wcstok(wstr wstr)
-@ cdecl wcstok_s(ptr wstr ptr)
+; @ stub wcstok_s ;(ptr wstr ptr) ucrtbase.wcstok_s
 @ stub wcsxfrm ;(ptr wstr long) ucrtbase.wcsxfrm
 @ stub wctype ;() ucrtbase.wctype
 @ stub wmemcpy_s ;(ptr long ptr long) ucrtbase.wmemcpy_s
@@ -2540,7 +2540,7 @@
 @ stub clock ;() ucrtbase.clock
 @ stub strftime ;(str long str ptr) ucrtbase.strftime
 @ stub wcsftime ;(ptr long wstr ptr) ucrtbase.wcsftime
-@ cdecl -ret64 _abs64(int64)
+@ cdecl _abs64(int64) abs64
 @ cdecl _byteswap_uint64(int64) byteswap_uint64
 @ cdecl _byteswap_ulong(long) byteswap_ulong
 @ cdecl _byteswap_ushort(long) byteswap_ushort
