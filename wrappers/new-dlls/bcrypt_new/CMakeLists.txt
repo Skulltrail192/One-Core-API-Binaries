@@ -4,7 +4,9 @@ spec2def(bcrypt_new.dll bcrypt_new.spec)
 
 list(APPEND SOURCE
     bcrypt_main.c
+    gnutls.c
 	md2.c
+	macos.c
 	sha256.c
 	sha512.c
     version.rc
