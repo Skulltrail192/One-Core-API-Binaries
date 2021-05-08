@@ -1,4 +1,4 @@
-@ stdcall CancelShutdown() user32.CancelShutdown
+@ stub CancelShutdown	;() user32.CancelShutdown
 @ stdcall CreateWindowInBand(long wstr wstr long long long long ptr ptr ptr ptr long) user32.CreateWindowInBand
 @ stub DwmGetRemoteSessionOcclusionEvent
 @ stub DwmGetRemoteSessionOcclusionState
@@ -7,7 +7,7 @@
 @ stdcall GetWindowBand(ptr ptr) user32.GetWindowBand
 @ stub GetWindowCompositionAttribute
 @ stub IsQueueAttached
-@ stdcall IsThreadDesktopComposited() user32.IsThreadDesktopComposited
+@ stub IsThreadDesktopComposited	;() user32.IsThreadDesktopComposited
 @ stub IsThreadMessageQueueAttached
 @ stdcall LoadLocalFonts() user32.LoadLocalFonts
 @ stdcall LoadRemoteFonts() user32.LoadRemoteFonts
@@ -17,7 +17,7 @@
 @ stub SetThreadInputBlocked
 @ stdcall SetWindowCompositionAttribute(ptr ptr) user32.SetWindowCompositionAttribute
 @ stdcall SetWindowStationUser(long long) user32.SetWindowStationUser
-@ stdcall SwitchDesktopWithFade(ptr long) user32.SwitchDesktopWithFade
+@ stub SwitchDesktopWithFade	;(ptr long) user32.SwitchDesktopWithFade
 @ stdcall UnlockWindowStation(long) user32.UnlockWindowStation
 @ stdcall UpdatePerUserSystemParameters(long long) user32.UpdatePerUserSystemParameters
 @ stub UpdateWindowInputSinkHints

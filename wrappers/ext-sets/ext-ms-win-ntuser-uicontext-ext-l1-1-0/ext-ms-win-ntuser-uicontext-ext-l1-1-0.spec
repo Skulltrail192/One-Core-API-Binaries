@@ -48,8 +48,8 @@
 @ stdcall SetWindowTextW(long wstr) user32.SetWindowTextW
 @ stdcall SetWindowsHookExW(long long long long) user32.SetWindowsHookExW
 @ stdcall ShowWindow(long long) user32.ShowWindow
-@ stdcall SoundSentry() user32.SoundSentry
+@ stub SoundSentry	;() user32.SoundSentry
 @ stdcall UnhookWindowsHookEx(long) user32.UnhookWindowsHookEx
 @ stdcall UpdateLayeredWindow(long long ptr ptr long ptr long ptr long) user32.UpdateLayeredWindow
-@ stdcall WindowFromPhysicalPoint(double) user32.WindowFromPhysicalPoint
+@ stub WindowFromPhysicalPoint	;(double) user32.WindowFromPhysicalPoint
 @ stdcall WindowFromPoint(int64) user32.WindowFromPoint
