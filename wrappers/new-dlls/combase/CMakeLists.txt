@@ -5,8 +5,17 @@ include_directories(${REACTOS_SOURCE_DIR}/sdk/include/psdk)
 spec2def(combase.dll combase.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
+	apartment.c
+	combase.c
+	errorinfo.c
+	hglobalstream.c
+	malloc.c
+	marshal.c
 	roapi.c
+	rpc.c
 	string.c
+	stubmanager.c
+	usrmarshal.c
     combase.rc
 	${CMAKE_CURRENT_BINARY_DIR}/combase_stubs.c
 	${CMAKE_CURRENT_BINARY_DIR}/combase.def
