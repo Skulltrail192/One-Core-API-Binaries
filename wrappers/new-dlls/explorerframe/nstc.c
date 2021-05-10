@@ -28,15 +28,14 @@
 #include "winbase.h"
 #include "winuser.h"
 #include "shellapi.h"
+#include "commctrl.h"
+#include "commoncontrols.h"
 
 #include "wine/list.h"
 #include "wine/debug.h"
-
-#include "shlobj.h"
+#include "wine/heap.h"
 
 #include "explorerframe_main.h"
-
-typedef BOOL (WINAPI * SH_GIL_PROC)(HIMAGELIST *phLarge, HIMAGELIST *phSmall);
 
 WINE_DEFAULT_DEBUG_CHANNEL(nstc);
 
@@ -69,14 +68,12 @@ typedef struct {
 } NSTC2Impl;
 
 static const DWORD unsupported_styles =
-    NSTCS_SINGLECLICKEXPAND | NSTCS_NOREPLACEOPEN | NSTCS_NOORDERSTREAM | NSTCS_FAVORITESMODE |
+    NSTCS_NOREPLACEOPEN | NSTCS_NOORDERSTREAM | NSTCS_FAVORITESMODE |
     NSTCS_EMPTYTEXT | NSTCS_ALLOWJUNCTIONS | NSTCS_SHOWTABSBUTTON | NSTCS_SHOWDELETEBUTTON |
     NSTCS_SHOWREFRESHBUTTON | NSTCS_SPRINGEXPAND | NSTCS_RICHTOOLTIP | NSTCS_NOINDENTCHECKS;
 static const DWORD unsupported_styles2 =
     NSTCS2_INTERRUPTNOTIFICATIONS | NSTCS2_SHOWNULLSPACEMENU | NSTCS2_DISPLAYPADDING |
     NSTCS2_DISPLAYPINNEDONLY | NTSCS2_NOSINGLETONAUTOEXPAND | NTSCS2_NEVERINSERTNONENUMERATED;
-
-static const WCHAR thispropW[] = {'P','R','O','P','_','T','H','I','S',0};
 
 static inline NSTC2Impl *impl_from_INameSpaceTreeControl2(INameSpaceTreeControl2 *iface)
 {
@@ -216,6 +213,7 @@ static DWORD treeview_style_from_nstcs(NSTC2Impl *This, NSTCSTYLE nstcs,
     if(nstcs_mask & NSTCS_DISABLEDRAGDROP)     tv_mask |= TVS_DISABLEDRAGDROP;
     if(nstcs_mask & NSTCS_NOEDITLABELS)        tv_mask |= TVS_EDITLABELS;
     if(nstcs_mask & NSTCS_CHECKBOXES)          tv_mask |= TVS_CHECKBOXES;
+    if(nstcs_mask & NSTCS_SINGLECLICKEXPAND)   tv_mask |= TVS_SINGLEEXPAND;
 
     *new_style = 0;
 
@@ -230,6 +228,7 @@ static DWORD treeview_style_from_nstcs(NSTC2Impl *This, NSTCSTYLE nstcs,
     if(nstcs & NSTCS_DISABLEDRAGDROP)     *new_style |= TVS_DISABLEDRAGDROP;
     if(!(nstcs & NSTCS_NOEDITLABELS))     *new_style |= TVS_EDITLABELS;
     if(nstcs & NSTCS_CHECKBOXES)          *new_style |= TVS_CHECKBOXES;
+    if(nstcs & NSTCS_SINGLECLICKEXPAND)   *new_style |= TVS_SINGLEEXPAND;
 
     *new_style = (old_style & ~tv_mask) | (*new_style & tv_mask);
 
@@ -322,7 +321,10 @@ static int get_icon(LPCITEMIDLIST lpi, UINT extra_flags)
 {
     SHFILEINFOW sfi;
     UINT flags = SHGFI_PIDL | SHGFI_SYSICONINDEX | SHGFI_SMALLICON;
-    SHGetFileInfoW((LPCWSTR)lpi, 0 ,&sfi, sizeof(SHFILEINFOW), flags | extra_flags);
+    IImageList *list;
+
+    list = (IImageList *)SHGetFileInfoW((LPCWSTR)lpi, 0 ,&sfi, sizeof(SHFILEINFOW), flags | extra_flags);
+    if (list) IImageList_Release(list);
     return sfi.iIcon;
 }
 
@@ -458,9 +460,7 @@ static LRESULT create_namespacetree(HWND hWnd, CREATESTRUCTW *crs)
 {
     NSTC2Impl *This = crs->lpCreateParams;
     HIMAGELIST ShellSmallIconList;
-	SH_GIL_PROC Shell_GetImageLists;
     DWORD treeview_style, treeview_ex_style;
-	HMODULE hShell32;
 
     TRACE("%p (%p)\n", This, crs);
     SetWindowLongPtrW(hWnd, GWLP_USERDATA, (LPARAM)This);
@@ -494,17 +494,6 @@ static LRESULT create_namespacetree(HWND hWnd, CREATESTRUCTW *crs)
 
     SendMessageW(This->hwnd_tv, TVM_SETEXTENDEDSTYLE, treeview_ex_style, 0xffff);
 
-	hShell32 = LoadLibraryW(L"shell32.dll");
-	
-	Shell_GetImageLists = (SH_GIL_PROC)GetProcAddress(hShell32, (LPCSTR)71);
-
-    if(Shell_GetImageLists == NULL)
-    {
-       FreeLibrary(hShell32);
-       return FALSE;
-    }
-    	
-
     if(Shell_GetImageLists(NULL, &ShellSmallIconList))
     {
         SendMessageW(This->hwnd_tv, TVM_SETIMAGELIST,
@@ -514,8 +503,6 @@ static LRESULT create_namespacetree(HWND hWnd, CREATESTRUCTW *crs)
     {
         ERR("Failed to get the System Image List.\n");
     }
-	
-	FreeLibrary(hShell32);
 
     INameSpaceTreeControl2_AddRef(&This->INameSpaceTreeControl2_iface);
 
@@ -523,7 +510,7 @@ static LRESULT create_namespacetree(HWND hWnd, CREATESTRUCTW *crs)
     This->tv_oldwndproc = (WNDPROC)SetWindowLongPtrW(This->hwnd_tv, GWLP_WNDPROC,
                                                      (ULONG_PTR)tv_wndproc);
     if(This->tv_oldwndproc)
-        SetPropW(This->hwnd_tv, thispropW, This);
+        SetPropW(This->hwnd_tv, L"PROP_THIS", This);
 
     return TRUE;
 }
@@ -547,7 +534,7 @@ static LRESULT destroy_namespacetree(NSTC2Impl *This)
     if(This->tv_oldwndproc)
     {
         SetWindowLongPtrW(This->hwnd_tv, GWLP_WNDPROC, (ULONG_PTR)This->tv_oldwndproc);
-        RemovePropW(This->hwnd_tv, thispropW);
+        RemovePropW(This->hwnd_tv, L"PROP_THIS");
     }
 
     INameSpaceTreeControl2_RemoveAllRoots(&This->INameSpaceTreeControl2_iface);
@@ -693,7 +680,7 @@ static LRESULT on_nm_click(NSTC2Impl *This, NMHDR *nmhdr)
 {
     TVHITTESTINFO tvhit;
     IShellItem *psi;
-    HRESULT hr;
+
     TRACE("%p (%p)\n", This, nmhdr);
 
     GetCursorPos(&tvhit.pt);
@@ -705,17 +692,7 @@ static LRESULT on_nm_click(NSTC2Impl *This, NMHDR *nmhdr)
 
     /* TVHT_ maps onto the corresponding NSTCEHT_ */
     psi = shellitem_from_treeitem(This, tvhit.hItem);
-    hr = events_OnItemClick(This, psi, tvhit.flags, NSTCECT_LBUTTON);
-
-    /* The expando should not be expanded unless
-     * double-clicked. */
-    if(tvhit.flags == TVHT_ONITEMBUTTON)
-        return TRUE;
-
-    if(SUCCEEDED(hr))
-        return FALSE;
-    else
-        return TRUE;
+    return FAILED(events_OnItemClick(This, psi, tvhit.flags, NSTCECT_LBUTTON));
 }
 
 static LRESULT on_wm_mbuttonup(NSTC2Impl *This, WPARAM wParam, LPARAM lParam)
@@ -775,7 +752,7 @@ static LRESULT on_kbd_event(NSTC2Impl *This, UINT uMsg, WPARAM wParam, LPARAM lP
 
 static LRESULT CALLBACK tv_wndproc(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam)
 {
-    NSTC2Impl *This = (NSTC2Impl*)GetPropW(hWnd, thispropW);
+    NSTC2Impl *This = (NSTC2Impl*)GetPropW(hWnd, L"PROP_THIS");
 
     switch(uMessage) {
     case WM_KEYDOWN:
@@ -875,9 +852,8 @@ static ULONG WINAPI NSTC2_fnRelease(INameSpaceTreeControl2* iface)
     if(!ref)
     {
         TRACE("Freeing.\n");
-        HeapFree(GetProcessHeap(), 0, This);
+        heap_free(This);
         EFRAME_UnlockModule();
-        return 0;
     }
 
     return ref;
@@ -893,9 +869,7 @@ static HRESULT WINAPI NSTC2_fnInitialize(INameSpaceTreeControl2* iface,
     DWORD window_style, window_ex_style;
     INITCOMMONCONTROLSEX icex;
     RECT rc;
-    static const WCHAR NSTC2_CLASS_NAME[] =
-        {'N','a','m','e','s','p','a','c','e','T','r','e','e',
-         'C','o','n','t','r','o','l',0};
+    static const WCHAR NSTC2_CLASS_NAME[] = L"NamespaceTreeControl";
 
     TRACE("%p (%p, %p, %x)\n", This, hwndParent, prc, nstcsFlags);
 
@@ -1015,7 +989,7 @@ static HRESULT WINAPI NSTC2_fnInsertRoot(INameSpaceTreeControl2* iface,
 
     TRACE("%p, %d, %p, %x, %x, %p\n", This, iIndex, psiRoot, grfEnumFlags, grfRootStyle, pif);
 
-    new_root = HeapAlloc(GetProcessHeap(), 0, sizeof(nstc_root));
+    new_root = heap_alloc(sizeof(*new_root));
     if(!new_root)
         return E_OUTOFMEMORY;
 
@@ -1039,7 +1013,7 @@ static HRESULT WINAPI NSTC2_fnInsertRoot(INameSpaceTreeControl2* iface,
     if(!new_root->htreeitem)
     {
         WARN("Failed to add the root.\n");
-        HeapFree(GetProcessHeap(), 0, new_root);
+        heap_free(new_root);
         return E_FAIL;
     }
 
@@ -1107,7 +1081,7 @@ static HRESULT WINAPI NSTC2_fnRemoveRoot(INameSpaceTreeControl2* iface,
         events_OnItemDeleted(This, root->psi, TRUE);
         SendMessageW(This->hwnd_tv, TVM_DELETEITEM, 0, (LPARAM)root->htreeitem);
         list_remove(&root->entry);
-        HeapFree(GetProcessHeap(), 0, root);
+        heap_free(root);
         return S_OK;
     }
     else
@@ -1149,7 +1123,7 @@ static HRESULT WINAPI NSTC2_fnGetRootItems(INameSpaceTreeControl2* iface,
     if(!count)
         return E_INVALIDARG;
 
-    array = HeapAlloc(GetProcessHeap(), 0, sizeof(LPITEMIDLIST)*count);
+    array = heap_alloc(sizeof(LPITEMIDLIST)*count);
 
     i = 0;
     LIST_FOR_EACH_ENTRY(root, &This->roots, nstc_root, entry)
@@ -1163,7 +1137,7 @@ static HRESULT WINAPI NSTC2_fnGetRootItems(INameSpaceTreeControl2* iface,
     for(i = 0; i < count; i++)
         ILFree(array[i]);
 
-    HeapFree(GetProcessHeap(), 0, array);
+    heap_free(array);
 
     return hr;
 }
@@ -1624,7 +1598,7 @@ HRESULT NamespaceTreeControl_Constructor(IUnknown *pUnkOuter, REFIID riid, void 
 
     EFRAME_LockModule();
 
-    nstc = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(NSTC2Impl));
+    nstc = heap_alloc_zero(sizeof(*nstc));
     if (!nstc)
         return E_OUTOFMEMORY;
 

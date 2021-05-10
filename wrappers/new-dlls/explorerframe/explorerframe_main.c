@@ -208,18 +208,20 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, void **ppv)
     return CLASS_E_CLASSNOTAVAILABLE;
 }
 
-/*************************************************************************
- *          DllRegisterServer (ExplorerFrame.@)
+/***********************************************************************
+ *              DllRegisterServer (ITIRCL.@)
  */
 HRESULT WINAPI DllRegisterServer(void)
 {
-    return __wine_register_resources( explorerframe_hinstance );
+    FIXME("stub\n");
+    return S_FALSE;
 }
 
-/*************************************************************************
- *          DllUnregisterServer (ExplorerFrame.@)
+/***********************************************************************
+ *              DllUnregisterServer (ITIRCL.@)
  */
 HRESULT WINAPI DllUnregisterServer(void)
 {
-    return __wine_unregister_resources( explorerframe_hinstance );
+    FIXME("stub\n");
+    return S_FALSE;
 }

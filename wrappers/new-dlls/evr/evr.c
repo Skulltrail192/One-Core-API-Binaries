@@ -48,13 +48,13 @@ static void evr_destroy(struct strmbase_renderer *iface)
     free(filter);
 }
 
-static HRESULT WINAPI evr_DoRenderSample(struct strmbase_renderer *iface, IMediaSample *sample)
+static HRESULT evr_DoRenderSample(struct strmbase_renderer *iface, IMediaSample *sample)
 {
     FIXME("Not implemented.\n");
     return E_NOTIMPL;
 }
 
-static HRESULT WINAPI evr_CheckMediaType(struct strmbase_renderer *iface, const AM_MEDIA_TYPE *mt)
+static HRESULT evr_CheckMediaType(struct strmbase_renderer *iface, const AM_MEDIA_TYPE *mt)
 {
     FIXME("Not implemented.\n");
     return E_NOTIMPL;
