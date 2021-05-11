@@ -1,0 +1,4 @@
+Add these functions to stubs.c on user32/misc:
+- GetDpiForMonitorInternal;
+- GetProcessDpiAwarenessInterna
+- SetProcessDpiAwarenessInternal

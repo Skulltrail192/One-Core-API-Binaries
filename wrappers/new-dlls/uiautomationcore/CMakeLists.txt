@@ -8,7 +8,7 @@ include_directories(${REACTOS_SOURCE_DIR}/sdk/include/dxsdk)
 spec2def(uiautomationcore.dll uiautomationcore.spec)
 
 list(APPEND SOURCE
-    main.c
+    uia_main.c
     ${CMAKE_CURRENT_BINARY_DIR}/uiautomationcore_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/uiautomationcore.def)
 	

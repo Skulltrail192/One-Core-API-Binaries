@@ -773,4 +773,6 @@
 763 stub IsProcessDPIAware
 764 stub SetProcessDPIAware
 765 stub SetWindowCompositionAttribute
-766 stub GetDpiForMonitorInternal
+766 stdcall GetDpiForMonitorInternal(long long ptr ptr)
+767 stdcall GetProcessDpiAwarenessInternal(long ptr)
+768 stdcall SetProcessDpiAwarenessInternal(long)
