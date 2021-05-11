@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Henri Verbeet for CodeWeavers
+ * Copyright 2016 Hans Leidekker for CodeWeavers
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,79 +14,185 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
- *
  */
 
-#include <wine/config.h>
+#include <stdarg.h>
 
-#include <ntstatus.h>
-#define WIN32_NO_STATUS
+#include "windef.h"
+#include "winbase.h"
+#include "rpc.h"
+#include "sspi.h"
+#include "wincred.h"
 
-#include <wine/debug.h>
+#include "wine/debug.h"
 
-#include <winbase.h>
-#include <ntsecapi.h>
-#include <bcrypt.h>
+WINE_DEFAULT_DEBUG_CHANNEL(sspicli);
 
-WINE_DEFAULT_DEBUG_CHANNEL(bcrypt);
-
-BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
+/***********************************************************************
+ *		SspiEncodeStringsAsAuthIdentity (SECUR32.0)
+ */
+SECURITY_STATUS SEC_ENTRY SspiEncodeStringsAsAuthIdentity(
+    const WCHAR *username, const WCHAR *domainname, const WCHAR *creds,
+    PSEC_WINNT_AUTH_IDENTITY_OPAQUE *opaque_id )
 {
-    TRACE("fdwReason %u\n", fdwReason);
+    SEC_WINNT_AUTH_IDENTITY_W *id;
+    DWORD len_username = 0, len_domainname = 0, len_password = 0, size;
+    WCHAR *ptr;
 
-    switch(fdwReason)
+    FIXME( "%s %s %s %p\n", debugstr_w(username), debugstr_w(domainname),
+           debugstr_w(creds), opaque_id );
+
+    if (!username && !domainname && !creds) return SEC_E_INVALID_TOKEN;
+
+    if (username) len_username = lstrlenW( username );
+    if (domainname) len_domainname = lstrlenW( domainname );
+    if (creds) len_password = lstrlenW( creds );
+
+    size = sizeof(*id);
+    if (username) size += (len_username + 1) * sizeof(WCHAR);
+    if (domainname) size += (len_domainname + 1) * sizeof(WCHAR);
+    if (creds) size += (len_password + 1) * sizeof(WCHAR);
+    if (!(id = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, size ))) return ERROR_OUTOFMEMORY;
+    ptr = (WCHAR *)(id + 1);
+
+    if (username)
     {
-        case DLL_PROCESS_ATTACH:
-            DisableThreadLibraryCalls(hInstDLL);
-            break;
+        memcpy( ptr, username, (len_username + 1) * sizeof(WCHAR) );
+        id->User       = ptr;
+        id->UserLength = len_username;
+        ptr += len_username + 1;
+    }
+    if (domainname)
+    {
+        memcpy( ptr, domainname, (len_domainname + 1) * sizeof(WCHAR) );
+        id->Domain       = ptr;
+        id->DomainLength = len_domainname;
+        ptr += len_domainname + 1;
+    }
+    if (creds)
+    {
+        memcpy( ptr, creds, (len_password + 1) * sizeof(WCHAR) );
+        id->Password       = ptr;
+        id->PasswordLength = len_password;
     }
 
-    return TRUE;
+    *opaque_id = id;
+    return SEC_E_OK;
 }
 
-NTSTATUS WINAPI BCryptEnumAlgorithms(ULONG dwAlgOperations, ULONG *pAlgCount,
-                                     BCRYPT_ALGORITHM_IDENTIFIER **ppAlgList, ULONG dwFlags)
+/***********************************************************************
+ *		SspiZeroAuthIdentity (SECUR32.0)
+ */
+void SEC_ENTRY SspiZeroAuthIdentity( PSEC_WINNT_AUTH_IDENTITY_OPAQUE opaque_id )
 {
-    FIXME("%08x, %p, %p, %08x - stub\n", dwAlgOperations, pAlgCount, ppAlgList, dwFlags);
+    SEC_WINNT_AUTH_IDENTITY_W *id = (SEC_WINNT_AUTH_IDENTITY_W *)opaque_id;
 
-    *ppAlgList=NULL;
-    *pAlgCount=0;
+    TRACE( "%p\n", opaque_id );
 
-    return STATUS_NOT_IMPLEMENTED;
+    if (!id) return;
+    if (id->User) memset( id->User, 0, id->UserLength * sizeof(WCHAR) );
+    if (id->Domain) memset( id->Domain, 0, id->DomainLength * sizeof(WCHAR) );
+    if (id->Password) memset( id->Password, 0, id->PasswordLength * sizeof(WCHAR) );
+    memset( id, 0, sizeof(*id) );
 }
 
-NTSTATUS WINAPI BCryptGenRandom(BCRYPT_ALG_HANDLE algorithm, UCHAR *buffer, ULONG count, ULONG flags)
+static inline WCHAR *strdupW( const WCHAR *src )
 {
-    const DWORD supported_flags = BCRYPT_USE_SYSTEM_PREFERRED_RNG;
-    TRACE("%p, %p, %u, %08x - semi-stub\n", algorithm, buffer, count, flags);
+    WCHAR *dst;
+    if (!src) return NULL;
+    if ((dst = HeapAlloc( GetProcessHeap(), 0, (lstrlenW( src ) + 1) * sizeof(WCHAR) )))
+        lstrcpyW( dst, src );
+    return dst;
+}
 
-    if (!algorithm)
+/***********************************************************************
+ *		SspiEncodeAuthIdentityAsStrings (SECUR32.0)
+ */
+SECURITY_STATUS SEC_ENTRY SspiEncodeAuthIdentityAsStrings(
+    PSEC_WINNT_AUTH_IDENTITY_OPAQUE opaque_id, PCWSTR *username,
+    PCWSTR *domainname, PCWSTR *creds )
+{
+    SEC_WINNT_AUTH_IDENTITY_W *id = (SEC_WINNT_AUTH_IDENTITY_W *)opaque_id;
+
+    FIXME("%p %p %p %p\n", opaque_id, username, domainname, creds);
+
+    *username = strdupW( id->User );
+    *domainname = strdupW( id->Domain );
+    *creds = strdupW( id->Password );
+
+    return SEC_E_OK;
+}
+
+/***********************************************************************
+ *		SspiFreeAuthIdentity (SECUR32.0)
+ */
+void SEC_ENTRY SspiFreeAuthIdentity( PSEC_WINNT_AUTH_IDENTITY_OPAQUE opaque_id )
+{
+    TRACE( "%p\n", opaque_id );
+    HeapFree( GetProcessHeap(), 0, opaque_id );
+}
+
+/***********************************************************************
+ *		SspiLocalFree (SECUR32.0)
+ */
+void SEC_ENTRY SspiLocalFree( void *ptr )
+{
+    TRACE( "%p\n", ptr );
+    HeapFree( GetProcessHeap(), 0, ptr );
+}
+
+/***********************************************************************
+ *		SspiPrepareForCredWrite (SECUR32.0)
+ */
+SECURITY_STATUS SEC_ENTRY SspiPrepareForCredWrite( PSEC_WINNT_AUTH_IDENTITY_OPAQUE opaque_id,
+    PCWSTR target, PULONG type, PCWSTR *targetname, PCWSTR *username, PUCHAR *blob, PULONG size )
+{
+    SEC_WINNT_AUTH_IDENTITY_W *id = (SEC_WINNT_AUTH_IDENTITY_W *)opaque_id;
+    WCHAR *str, *str2;
+    UCHAR *password;
+    ULONG len;
+
+    FIXME( "%p %s %p %p %p %p %p\n", opaque_id, debugstr_w(target), type, targetname, username,
+           blob, size );
+
+    if (id->DomainLength)
     {
-        /* It's valid to call without an algorithm if BCRYPT_USE_SYSTEM_PREFERRED_RNG
-         * is set. In this case the preferred system RNG is used.
-         */
-        if (!(flags & BCRYPT_USE_SYSTEM_PREFERRED_RNG))
-            return STATUS_INVALID_HANDLE;
+        len = (id->DomainLength + id->UserLength + 2) * sizeof(WCHAR);
+        if (!(str = HeapAlloc(GetProcessHeap(), 0 , len ))) return SEC_E_INSUFFICIENT_MEMORY;
+        memcpy( str, id->Domain, id->DomainLength * sizeof(WCHAR) );
+        str[id->DomainLength] = '\\';
+        memcpy( str + id->DomainLength + 1, id->User, id->UserLength * sizeof(WCHAR) );
+        str[id->DomainLength + 1 + id->UserLength] = 0;
     }
-    if (!buffer)
-        return STATUS_INVALID_PARAMETER;
-
-    if (flags & ~supported_flags)
-        FIXME("unsupported flags %08x\n", flags & ~supported_flags);
-
-    if (algorithm)
-        FIXME("ignoring selected algorithm\n");
-
-    /* When zero bytes are requested the function returns success too. */
-    if (!count)
-        return STATUS_SUCCESS;
-
-    if (flags & BCRYPT_USE_SYSTEM_PREFERRED_RNG)
+    else
     {
-        if (RtlGenRandom(buffer, count))
-            return STATUS_SUCCESS;
+        len = (id->UserLength + 1) * sizeof(WCHAR);
+        if (!(str = HeapAlloc(GetProcessHeap(), 0 , len ))) return SEC_E_INSUFFICIENT_MEMORY;
+        memcpy( str, id->User, id->UserLength * sizeof(WCHAR) );
+        str[id->UserLength] = 0;
     }
 
-    FIXME("called with unsupported parameters, returning error\n");
-    return STATUS_NOT_IMPLEMENTED;
+    str2 = target ? strdupW( target ) : strdupW( str );
+    if (!str2)
+    {
+        HeapFree( GetProcessHeap(), 0, str );
+        return SEC_E_INSUFFICIENT_MEMORY;
+    }
+
+    len = id->PasswordLength * sizeof(WCHAR);
+    if (!(password = HeapAlloc(GetProcessHeap(), 0 , len )))
+    {
+        HeapFree( GetProcessHeap(), 0, str );
+        HeapFree( GetProcessHeap(), 0, str2 );
+        return SEC_E_INSUFFICIENT_MEMORY;
+    }
+    memcpy( password, id->Password, len );
+
+    *type = CRED_TYPE_DOMAIN_PASSWORD;
+    *username = str;
+    *targetname = str2;
+    *blob = password;
+    *size = len;
+
+    return SEC_E_OK;
 }
