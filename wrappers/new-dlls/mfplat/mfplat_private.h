@@ -25,7 +25,6 @@
 #include "mferror.h"
 #include "d3d9types.h"
 
-#include "wine/heap.h"
 #include "wine/debug.h"
 
 struct attribute
@@ -106,7 +105,7 @@ static inline BOOL mf_array_reserve(void **elements, size_t *capacity, size_t co
     if (new_capacity < count)
         new_capacity = max_capacity;
 
-    if (!(new_elements = heap_realloc(*elements, new_capacity * size)))
+    if (!(new_elements = realloc(*elements, new_capacity * size)))
         return FALSE;
 
     *elements = new_elements;
@@ -129,19 +128,21 @@ static inline const char *debugstr_propvar(const PROPVARIANT *v)
         case VT_NULL:
             return wine_dbg_sprintf("%p {VT_NULL}", v);
         case VT_UI4:
-            return wine_dbg_sprintf("%p {VT_UI4: %d}", v, v->u.ulVal);
+            return wine_dbg_sprintf("%p {VT_UI4: %d}", v, v->ulVal);
         case VT_UI8:
-            return wine_dbg_sprintf("%p {VT_UI8: %s}", v, wine_dbgstr_longlong(v->u.uhVal.QuadPart));
+            return wine_dbg_sprintf("%p {VT_UI8: %s}", v, wine_dbgstr_longlong(v->uhVal.QuadPart));
+        case VT_I8:
+            return wine_dbg_sprintf("%p {VT_I8: %s}", v, wine_dbgstr_longlong(v->hVal.QuadPart));
         case VT_R8:
-            return wine_dbg_sprintf("%p {VT_R8: %lf}", v, v->u.dblVal);
+            return wine_dbg_sprintf("%p {VT_R8: %lf}", v, v->dblVal);
         case VT_CLSID:
-            return wine_dbg_sprintf("%p {VT_CLSID: %s}", v, debugstr_mf_guid(v->u.puuid));
+            return wine_dbg_sprintf("%p {VT_CLSID: %s}", v, debugstr_mf_guid(v->puuid));
         case VT_LPWSTR:
-            return wine_dbg_sprintf("%p {VT_LPWSTR: %s}", v, wine_dbgstr_w(v->u.pwszVal));
+            return wine_dbg_sprintf("%p {VT_LPWSTR: %s}", v, wine_dbgstr_w(v->pwszVal));
         case VT_VECTOR | VT_UI1:
-            return wine_dbg_sprintf("%p {VT_VECTOR|VT_UI1: %p}", v, v->u.caub.pElems);
+            return wine_dbg_sprintf("%p {VT_VECTOR|VT_UI1: %p}", v, v->caub.pElems);
         case VT_UNKNOWN:
-            return wine_dbg_sprintf("%p {VT_UNKNOWN: %p}", v, v->u.punkVal);
+            return wine_dbg_sprintf("%p {VT_UNKNOWN: %p}", v, v->punkVal);
         default:
             return wine_dbg_sprintf("%p {vt %#x}", v, v->vt);
     }

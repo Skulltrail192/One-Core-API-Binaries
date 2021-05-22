@@ -1,4 +1,6 @@
 
+remove_definitions(-D_WIN32_WINNT=0x502)
+add_definitions(-D_WIN32_WINNT=0x600)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/psdk)
 
@@ -9,6 +11,8 @@ list(APPEND SOURCE
 	combase.c
 	errorinfo.c
 	hglobalstream.c
+	git.c #from wine ol32, because WinXP/2003 not implement some functions
+	imports.c
 	malloc.c
 	marshal.c
 	roapi.c
@@ -23,8 +27,10 @@ list(APPEND SOURCE
 
 add_library(combase SHARED ${SOURCE})
 
+add_idl_headers(combase_idlheader dcom.idl irpcss.idl)
+
 set_module_type(combase win32dll UNICODE)
-target_link_libraries(combase uuid activation_uuids wine ${PSEH_LIB})
-add_delay_importlibs(combase winmm uxtheme)
-add_importlibs(combase user32 gdi32 advapi32 msvcrt kernel32 ole32 ntdll)
+add_dependencies(combase combase_idlheader)
+target_link_libraries(combase uuid wine ${PSEH_LIB})
+add_importlibs(combase user32 gdi32 advapi32 msvcrt kernelbase rpcrt4 ole32 oleaut32 ntdll)
 add_cd_file(TARGET combase DESTINATION reactos/system32 FOR all)

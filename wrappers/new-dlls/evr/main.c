@@ -47,7 +47,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
     }
     else if (reason == DLL_PROCESS_DETACH && !reserved)
     {
-        strmbase_release_typelibs();
+        //strmbase_release_typelibs();
     }
     return TRUE;
 }

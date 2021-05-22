@@ -43,7 +43,7 @@
 @ stdcall MFCreateAlignedMemoryBuffer(long long ptr)
 @ stdcall MFCreateAsyncResult(ptr ptr ptr ptr) rtworkq.RtwqCreateAsyncResult
 @ stdcall MFCreateAttributes(ptr long)
-@ stub MFCreateAudioMediaType
+@ stdcall MFCreateAudioMediaType(ptr ptr)
 @ stdcall MFCreateCollection(ptr)
 @ stdcall MFCreateDXGIDeviceManager(ptr ptr)
 @ stdcall MFCreateDXGISurfaceBuffer(ptr ptr long long ptr)
@@ -131,7 +131,9 @@
 @ stdcall MFInvokeCallback(ptr)
 @ stub MFJoinIoPort
 @ stdcall MFJoinWorkQueue(long long ptr) rtworkq.RtwqJoinWorkQueue
+@ stdcall MFLockDXGIDeviceManager(ptr ptr)
 @ stdcall MFLockPlatform() rtworkq.RtwqLockPlatform
+@ stdcall MFLockSharedWorkQueue(wstr long ptr ptr) rtworkq.RtwqLockSharedWorkQueue
 @ stdcall MFLockWorkQueue(long) rtworkq.RtwqLockWorkQueue
 @ stdcall MFMapDX9FormatToDXGIFormat(long)
 @ stdcall MFMapDXGIFormatToDX9Format(long)
@@ -170,11 +172,12 @@
 @ stub MFTraceFuncEnter
 @ stub MFUnblockThread
 @ stdcall MFUnjoinWorkQueue(long long) rtworkq.RtwqUnjoinWorkQueue
+@ stdcall MFUnlockDXGIDeviceManager()
 @ stdcall MFUnlockPlatform() rtworkq.RtwqUnlockPlatform
 @ stdcall MFUnlockWorkQueue(long) rtworkq.RtwqUnlockWorkQueue
 @ stdcall MFUnwrapMediaType(ptr ptr)
 @ stub MFValidateMediaTypeSize
 @ stdcall MFWrapMediaType(ptr ptr ptr ptr)
-@ stub MFllMulDiv
+@ stdcall -ret64 MFllMulDiv(int64 int64 int64 int64)
 @ stub PropVariantFromStream
 @ stub PropVariantToStream

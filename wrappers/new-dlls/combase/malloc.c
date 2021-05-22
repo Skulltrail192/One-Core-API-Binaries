@@ -37,7 +37,7 @@ struct allocator
     DWORD blocks_length;
 };
 
-static struct allocator allocator = { .IMalloc_iface.lpVtbl = &allocator_vtbl };
+static struct allocator allocator = { &allocator_vtbl };
 
 static CRITICAL_SECTION allocspy_cs;
 static CRITICAL_SECTION_DEBUG allocspy_cs_debug =

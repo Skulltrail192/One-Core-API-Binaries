@@ -54,7 +54,7 @@ list(APPEND SOURCE
     # downloadmgr.idl
 # #   dyngraph.idl
     # endpointvolume.idl
-	evr.idl
+	#evr.idl
 	evr9.idl
     # exdisp.idl
     # fusion.idl

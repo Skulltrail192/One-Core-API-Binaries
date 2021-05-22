@@ -1,0 +1,3 @@
+strmbase_renderer_init - > BaseRenderer_Init
+strmbase_renderer_cleanup -> BaseRendererImpl_Release
+strmbase_release_typelibs -> Not found equivalent

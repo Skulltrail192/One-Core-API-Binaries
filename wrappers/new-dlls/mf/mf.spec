@@ -2,10 +2,10 @@
 @ stub ConvertPropVariant
 @ stub CopyPropertyStore
 @ stub CreateNamedPropertyStore
-@ stub DllCanUnloadNow
-@ stub DllGetClassObject
-@ stub DllRegisterServer
-@ stub DllUnregisterServer
+@ stdcall -private DllCanUnloadNow()
+@ stdcall -private DllGetClassObject(ptr ptr ptr)
+@ stdcall -private DllRegisterServer()
+@ stdcall -private DllUnregisterServer()
 @ stub ExtractPropVariant
 @ stub MFCreate3GPMediaSink
 @ stub MFCreateASFByteStreamPlugin
@@ -23,8 +23,8 @@
 @ stub MFCreateASFStreamingMediaSinkActivate
 @ stub MFCreateAggregateSource
 @ stub MFCreateAppSourceProxy
-@ stub MFCreateAudioRenderer
-@ stub MFCreateAudioRendererActivate
+@ stdcall MFCreateAudioRenderer(ptr ptr)
+@ stdcall MFCreateAudioRendererActivate(ptr)
 @ stub MFCreateByteCacheFile
 @ stub MFCreateCacheManager
 @ stub MFCreateCredentialCache
@@ -39,45 +39,45 @@
 @ stub MFCreateMP3MediaSink
 @ stub MFCreateMPEG4MediaSink
 @ stub MFCreateMediaProcessor
-@ stub MFCreateMediaSession
+@ stdcall MFCreateMediaSession(ptr ptr)
 @ stub MFCreateNSCByteStreamPlugin
 @ stub MFCreateNetSchemePlugin
 @ stub MFCreatePMPHost
 @ stub MFCreatePMPMediaSession
 @ stub MFCreatePMPServer
-@ stub MFCreatePresentationClock
+@ stdcall MFCreatePresentationClock(ptr)
 @ stub MFCreatePresentationDescriptorFromASFProfile
 @ stub MFCreateProxyLocator
 @ stub MFCreateRemoteDesktopPlugin
 @ stub MFCreateSAMIByteStreamPlugin
-@ stub MFCreateSampleCopierMFT
-@ stub MFCreateSampleGrabberSinkActivate
+@ stdcall MFCreateSampleCopierMFT(ptr)
+@ stdcall MFCreateSampleGrabberSinkActivate(ptr ptr ptr)
 @ stub MFCreateSecureHttpSchemePlugin
 @ stub MFCreateSequencerSegmentOffset
-@ stub MFCreateSequencerSource
+@ stdcall MFCreateSequencerSource(ptr ptr)
 @ stub MFCreateSequencerSourceRemoteStream
-@ stub MFCreateSimpleTypeHandler
-@ stub MFCreateSourceResolver
-@ stub MFCreateStandardQualityManager
-@ stub MFCreateTopoLoader
-@ stub MFCreateTopology
-@ stub MFCreateTopologyNode
+@ stdcall MFCreateSimpleTypeHandler(ptr)
+@ stdcall MFCreateSourceResolver(ptr) mfplat.MFCreateSourceResolver
+@ stdcall MFCreateStandardQualityManager(ptr)
+@ stdcall MFCreateTopoLoader(ptr)
+@ stdcall MFCreateTopology(ptr)
+@ stdcall MFCreateTopologyNode(long ptr)
 @ stub MFCreateTranscodeProfile
 @ stub MFCreateTranscodeSinkActivate
 @ stub MFCreateTranscodeTopology
 @ stub MFCreateUrlmonSchemePlugin
-@ stub MFCreateVideoRenderer
-@ stub MFCreateVideoRendererActivate
+@ stdcall MFCreateVideoRenderer(ptr ptr)
+@ stdcall MFCreateVideoRendererActivate(long ptr)
 @ stub MFCreateWMAEncoderActivate
 @ stub MFCreateWMVEncoderActivate
-@ stub MFEnumDeviceSources
+@ stdcall MFEnumDeviceSources(ptr ptr ptr)
 @ stub MFGetMultipleServiceProviders
-@ stub MFGetService
-@ stub MFGetSupportedMimeTypes
-@ stub MFGetSupportedSchemes
-@ stub MFGetTopoNodeCurrentType
+@ stdcall MFGetService(ptr ptr ptr ptr)
+@ stdcall MFGetSupportedMimeTypes(ptr)
+@ stdcall MFGetSupportedSchemes(ptr)
+@ stdcall MFGetTopoNodeCurrentType(ptr long long ptr)
 @ stub MFReadSequencerSegmentOffset
-@ stub MFRequireProtectedEnvironment
-@ stub MFShutdownObject
+@ stdcall MFRequireProtectedEnvironment(ptr)
+@ stdcall MFShutdownObject(ptr)
 @ stub MFTranscodeGetAudioOutputAvailableTypes
 @ stub MergePropertyStore

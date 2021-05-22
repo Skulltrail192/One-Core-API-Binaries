@@ -1,7 +1,5 @@
 /*
- * Resources for mfplat test suite.
- *
- * Copyright 2018 Sven Baars
+ * Copyright 2019 Nikolay Sivov for CodeWeavers
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +16,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "windef.h"
+#pragma makedep register
 
-/* @makedep: test.mp4 */
-test.mp4 RCDATA test.mp4
+[
+    helpstring("File scheme handler"),
+    threading(both),
+    uuid(477ec299-1421-4bdd-971f-7ccb933f21ad)
+]
+coclass FileSchemePlugin { }

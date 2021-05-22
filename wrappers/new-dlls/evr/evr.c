@@ -27,12 +27,14 @@
 
 #include "initguid.h"
 #include "dxva2api.h"
+#include "evr_classes.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(evr);
 
 struct evr
 {
     struct strmbase_renderer renderer;
+    IEVRFilterConfig IEVRFilterConfig_iface;
 };
 
 static struct evr *impl_from_strmbase_renderer(struct strmbase_renderer *iface)
@@ -40,21 +42,34 @@ static struct evr *impl_from_strmbase_renderer(struct strmbase_renderer *iface)
     return CONTAINING_RECORD(iface, struct evr, renderer);
 }
 
+static HRESULT evr_query_interface(struct strmbase_renderer *iface, REFIID iid, void **out)
+{
+    struct evr *filter = impl_from_strmbase_renderer(iface);
+
+    if (IsEqualGUID(iid, &IID_IEVRFilterConfig))
+        *out = &filter->IEVRFilterConfig_iface;
+    else
+        return E_NOINTERFACE;
+
+    IUnknown_AddRef((IUnknown *)*out);
+    return S_OK;
+}
+
 static void evr_destroy(struct strmbase_renderer *iface)
 {
     struct evr *filter = impl_from_strmbase_renderer(iface);
 
-    strmbase_renderer_cleanup(&filter->renderer);
+    BaseRendererImpl_Release((IBaseFilter*)&filter->renderer);
     free(filter);
 }
 
-static HRESULT evr_DoRenderSample(struct strmbase_renderer *iface, IMediaSample *sample)
+static HRESULT evr_render(struct strmbase_renderer *iface, IMediaSample *sample)
 {
     FIXME("Not implemented.\n");
     return E_NOTIMPL;
 }
 
-static HRESULT evr_CheckMediaType(struct strmbase_renderer *iface, const AM_MEDIA_TYPE *mt)
+static HRESULT evr_query_accept(struct strmbase_renderer *iface, const AM_MEDIA_TYPE *mt)
 {
     FIXME("Not implemented.\n");
     return E_NOTIMPL;
@@ -62,9 +77,65 @@ static HRESULT evr_CheckMediaType(struct strmbase_renderer *iface, const AM_MEDI
 
 static const struct strmbase_renderer_ops renderer_ops =
 {
-    evr_CheckMediaType,
-    evr_DoRenderSample,
+    evr_query_accept,
+    evr_render,    
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
     evr_destroy,
+	evr_query_interface,
+};
+
+static struct evr *impl_from_IEVRFilterConfig(IEVRFilterConfig *iface)
+{
+    return CONTAINING_RECORD(iface, struct evr, IEVRFilterConfig_iface);
+}
+
+static HRESULT WINAPI filter_config_QueryInterface(IEVRFilterConfig *iface, REFIID iid, void **out)
+{
+    struct evr *filter = impl_from_IEVRFilterConfig(iface);
+    return IUnknown_QueryInterface(filter->renderer.filter.outer_unk, iid, out);
+}
+
+static ULONG WINAPI filter_config_AddRef(IEVRFilterConfig *iface)
+{
+    struct evr *filter = impl_from_IEVRFilterConfig(iface);
+    return IUnknown_AddRef(filter->renderer.filter.outer_unk);
+}
+
+static ULONG WINAPI filter_config_Release(IEVRFilterConfig *iface)
+{
+    struct evr *filter = impl_from_IEVRFilterConfig(iface);
+    return IUnknown_Release(filter->renderer.filter.outer_unk);
+}
+
+static HRESULT WINAPI filter_config_SetNumberOfStreams(IEVRFilterConfig *iface, DWORD count)
+{
+    struct evr *filter = impl_from_IEVRFilterConfig(iface);
+
+    FIXME("filter %p, count %u, stub!\n", filter, count);
+
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI filter_config_GetNumberOfStreams(IEVRFilterConfig *iface, DWORD *count)
+{
+    struct evr *filter = impl_from_IEVRFilterConfig(iface);
+
+    FIXME("filter %p, count %p, stub!\n", filter, count);
+
+    return E_NOTIMPL;
+}
+
+static const IEVRFilterConfigVtbl filter_config_vtbl =
+{
+    filter_config_QueryInterface,
+    filter_config_AddRef,
+    filter_config_Release,
+    filter_config_SetNumberOfStreams,
+    filter_config_GetNumberOfStreams,
 };
 
 HRESULT evr_filter_create(IUnknown *outer, void **out)
@@ -73,9 +144,11 @@ HRESULT evr_filter_create(IUnknown *outer, void **out)
 
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
-
-    strmbase_renderer_init(&object->renderer, outer,
-            &CLSID_EnhancedVideoRenderer, L"EVR Input0", &renderer_ops);
+	
+	object->IEVRFilterConfig_iface.lpVtbl = &filter_config_vtbl;
+    BaseRenderer_Init((BaseRenderer *)&object->renderer, (const IBaseFilterVtbl *)object->IEVRFilterConfig_iface.lpVtbl, outer,
+            &CLSID_EnhancedVideoRenderer, (DWORD_PTR)L"EVR Input0", (const BaseRendererFuncTable *)&renderer_ops);
+    
 
     TRACE("Created EVR %p.\n", object);
     *out = &object->renderer.filter.IUnknown_inner;

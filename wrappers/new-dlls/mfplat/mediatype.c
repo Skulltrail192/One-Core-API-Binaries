@@ -41,6 +41,7 @@ struct media_type
     IMFVideoMediaType IMFVideoMediaType_iface;
     IMFAudioMediaType IMFAudioMediaType_iface;
     MFVIDEOFORMAT *video_format;
+    WAVEFORMATEX *audio_format;
 };
 
 struct stream_desc
@@ -154,7 +155,9 @@ static ULONG WINAPI mediatype_Release(IMFMediaType *iface)
     if (!refcount)
     {
         clear_attributes_object(&media_type->attributes);
-        heap_free(media_type);
+        CoTaskMemFree(media_type->video_format);
+        CoTaskMemFree(media_type->audio_format);
+        free(media_type);
     }
 
     return refcount;
@@ -975,7 +978,7 @@ static const MFVIDEOFORMAT * WINAPI video_mediatype_GetVideoFormat(IMFVideoMedia
     TRACE("%p.\n", iface);
 
     CoTaskMemFree(media_type->video_format);
-    if (FAILED(hr = MFCreateMFVideoFormatFromMFMediaType((IMFMediaType *)iface, &media_type->video_format, &size)))
+    if (FAILED(hr = MFCreateMFVideoFormatFromMFMediaType(&media_type->IMFMediaType_iface, &media_type->video_format, &size)))
         WARN("Failed to create format description, hr %#x.\n", hr);
 
     return media_type->video_format;
@@ -1368,9 +1371,20 @@ static HRESULT WINAPI audio_mediatype_FreeRepresentation(IMFAudioMediaType *ifac
 
 static const WAVEFORMATEX * WINAPI audio_mediatype_GetAudioFormat(IMFAudioMediaType *iface)
 {
-    FIXME("%p.\n", iface);
+    struct media_type *media_type = impl_from_IMFAudioMediaType(iface);
+    unsigned int size;
+    HRESULT hr;
 
-    return NULL;
+    TRACE("%p.\n", iface);
+
+    CoTaskMemFree(media_type->audio_format);
+    if (FAILED(hr = MFCreateWaveFormatExFromMFMediaType(&media_type->IMFMediaType_iface, &media_type->audio_format,
+            &size, MFWaveFormatExConvertFlag_Normal)))
+    {
+        WARN("Failed to create wave format description, hr %#x.\n", hr);
+    }
+
+    return media_type->audio_format;
 }
 
 static const IMFAudioMediaTypeVtbl audiomediatypevtbl =
@@ -1421,13 +1435,12 @@ static HRESULT create_media_type(struct media_type **ret)
     struct media_type *object;
     HRESULT hr;
 
-    object = heap_alloc_zero(sizeof(*object));
-    if (!object)
+    if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
     if (FAILED(hr = init_attributes_object(&object->attributes, 0)))
     {
-        heap_free(object);
+        free(object);
         return hr;
     }
     object->IMFMediaType_iface.lpVtbl = &mediatypevtbl;
@@ -1505,11 +1518,11 @@ static ULONG WINAPI stream_descriptor_Release(IMFStreamDescriptor *iface)
             if (stream_desc->media_types[i])
                 IMFMediaType_Release(stream_desc->media_types[i]);
         }
-        heap_free(stream_desc->media_types);
+        free(stream_desc->media_types);
         if (stream_desc->current_type)
             IMFMediaType_Release(stream_desc->current_type);
         clear_attributes_object(&stream_desc->attributes);
-        heap_free(stream_desc);
+        free(stream_desc);
     }
 
     return refcount;
@@ -2038,19 +2051,18 @@ HRESULT WINAPI MFCreateStreamDescriptor(DWORD identifier, DWORD count,
     if (!count)
         return E_INVALIDARG;
 
-    object = heap_alloc_zero(sizeof(*object));
-    if (!object)
+    if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
     if (FAILED(hr = init_attributes_object(&object->attributes, 0)))
     {
-        heap_free(object);
+        free(object);
         return hr;
     }
     object->IMFStreamDescriptor_iface.lpVtbl = &streamdescriptorvtbl;
     object->IMFMediaTypeHandler_iface.lpVtbl = &mediatypehandlervtbl;
     object->identifier = identifier;
-    object->media_types = heap_alloc(count * sizeof(*object->media_types));
+    object->media_types = calloc(count, sizeof(*object->media_types));
     if (!object->media_types)
     {
         IMFStreamDescriptor_Release(&object->IMFStreamDescriptor_iface);
@@ -2113,8 +2125,8 @@ static ULONG WINAPI presentation_descriptor_Release(IMFPresentationDescriptor *i
                 IMFStreamDescriptor_Release(presentation_desc->descriptors[i].descriptor);
         }
         clear_attributes_object(&presentation_desc->attributes);
-        heap_free(presentation_desc->descriptors);
-        heap_free(presentation_desc);
+        free(presentation_desc->descriptors);
+        free(presentation_desc);
     }
 
     return refcount;
@@ -2477,8 +2489,7 @@ static HRESULT WINAPI presentation_descriptor_Clone(IMFPresentationDescriptor *i
 
     TRACE("%p, %p.\n", iface, descriptor);
 
-    object = heap_alloc_zero(sizeof(*object));
-    if (!object)
+    if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
     presentation_descriptor_init(object, presentation_desc->count);
@@ -2549,8 +2560,7 @@ static HRESULT presentation_descriptor_init(struct presentation_desc *object, DW
     if (FAILED(hr = init_attributes_object(&object->attributes, 0)))
         return hr;
     object->IMFPresentationDescriptor_iface.lpVtbl = &presentationdescriptorvtbl;
-    object->descriptors = heap_alloc_zero(count * sizeof(*object->descriptors));
-    if (!object->descriptors)
+    if (!(object->descriptors = calloc(count, sizeof(*object->descriptors))))
     {
         IMFPresentationDescriptor_Release(&object->IMFPresentationDescriptor_iface);
         return E_OUTOFMEMORY;
@@ -2581,13 +2591,12 @@ HRESULT WINAPI MFCreatePresentationDescriptor(DWORD count, IMFStreamDescriptor *
             return E_INVALIDARG;
     }
 
-    object = heap_alloc_zero(sizeof(*object));
-    if (!object)
+    if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
 
     if (FAILED(hr = presentation_descriptor_init(object, count)))
     {
-        heap_free(object);
+        free(object);
         return hr;
     }
 
@@ -2634,6 +2643,7 @@ static const struct uncompressed_video_format video_formats[] =
     { &MFVideoFormat_IMC2,          1, 0, 0, 1 },
     { &MFVideoFormat_IMC3,          2, 3, 0, 1 },
     { &MFVideoFormat_IMC4,          1, 0, 0, 1 },
+    { &MFVideoFormat_IYUV,          1, 0, 0, 1 },
     { &MFVideoFormat_NV12,          1, 0, 0, 1 },
     { &MFVideoFormat_D16,           2, 3, 0, 0 },
     { &MFVideoFormat_L16,           2, 3, 0, 0 },
@@ -2716,6 +2726,7 @@ HRESULT WINAPI MFCalculateImageSize(REFGUID subtype, UINT32 width, UINT32 height
         case MAKEFOURCC('N','V','1','2'):
         case MAKEFOURCC('Y','V','1','2'):
         case MAKEFOURCC('I','4','2','0'):
+        case MAKEFOURCC('I','Y','U','V'):
             /* 2 x 2 block, interleaving UV for half the height */
             *size = ((width + 1) & ~1) * height * 3 / 2;
             break;
@@ -2758,6 +2769,7 @@ HRESULT WINAPI MFGetPlaneSize(DWORD fourcc, DWORD width, DWORD height, DWORD *si
         case MAKEFOURCC('N','V','1','2'):
         case MAKEFOURCC('Y','V','1','2'):
         case MAKEFOURCC('I','4','2','0'):
+        case MAKEFOURCC('I','Y','U','V'):
             *size = stride * height * 3 / 2;
             break;
         default:
@@ -2801,7 +2813,7 @@ HRESULT WINAPI MFWrapMediaType(IMFMediaType *original, REFGUID major, REFGUID su
     if (FAILED(hr = MFGetAttributesAsBlobSize((IMFAttributes *)original, &size)))
         return hr;
 
-    if (!(buffer = heap_alloc(size)))
+    if (!(buffer = malloc(size)))
         return E_OUTOFMEMORY;
 
     if (FAILED(hr = MFGetAttributesAsBlob((IMFAttributes *)original, buffer, size)))
@@ -2822,7 +2834,7 @@ HRESULT WINAPI MFWrapMediaType(IMFMediaType *original, REFGUID major, REFGUID su
     *ret = mediatype;
 
 failed:
-    heap_free(buffer);
+    free(buffer);
 
     return hr;
 }
@@ -2881,7 +2893,7 @@ HRESULT WINAPI MFCreateWaveFormatExFromMFMediaType(IMFMediaType *mediatype, WAVE
     if (!IsEqualGUID(&major, &MFMediaType_Audio))
         return E_INVALIDARG;
 
-    if (!IsEqualGUID(&subtype, &MFAudioFormat_PCM))
+    if (!IsEqualGUID(&subtype, &MFAudioFormat_PCM) && !IsEqualGUID(&subtype, &MFAudioFormat_Float))
     {
         FIXME("Unsupported audio format %s.\n", debugstr_guid(&subtype));
         return E_NOTIMPL;
@@ -2905,7 +2917,12 @@ HRESULT WINAPI MFCreateWaveFormatExFromMFMediaType(IMFMediaType *mediatype, WAVE
 
     memset(format, 0, *size);
 
-    format->wFormatTag = format_ext ? WAVE_FORMAT_EXTENSIBLE : WAVE_FORMAT_PCM;
+    if (format_ext)
+        format->wFormatTag = WAVE_FORMAT_EXTENSIBLE;
+    else if (IsEqualGUID(&subtype, &MFAudioFormat_Float))
+        format->wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
+    else
+        format->wFormatTag = WAVE_FORMAT_PCM;
 
     if (SUCCEEDED(IMFMediaType_GetUINT32(mediatype, &MF_MT_AUDIO_NUM_CHANNELS, &value)))
         format->nChannels = value;
@@ -3041,10 +3058,43 @@ HRESULT WINAPI MFCreateVideoMediaTypeFromSubtype(const GUID *subtype, IMFVideoMe
     return S_OK;
 }
 
-static void media_type_get_ratio(UINT64 value, UINT32 *numerator, UINT32 *denominator)
+/***********************************************************************
+ *      MFCreateAudioMediaType (mfplat.@)
+ */
+HRESULT WINAPI MFCreateAudioMediaType(const WAVEFORMATEX *format, IMFAudioMediaType **media_type)
 {
-    *numerator = value >> 32;
-    *denominator = value;
+    struct media_type *object;
+    HRESULT hr;
+
+    TRACE("%p, %p.\n", format, media_type);
+
+    if (!media_type)
+        return E_INVALIDARG;
+
+    if (FAILED(hr = create_media_type(&object)))
+        return hr;
+
+    if (FAILED(hr = MFInitMediaTypeFromWaveFormatEx(&object->IMFMediaType_iface, format, sizeof(*format) + format->cbSize)))
+    {
+        IMFMediaType_Release(&object->IMFMediaType_iface);
+        return hr;
+    }
+
+    *media_type = &object->IMFAudioMediaType_iface;
+
+    return S_OK;
+}
+
+static void media_type_get_ratio(IMFMediaType *media_type, const GUID *attr, UINT32 *numerator,
+        UINT32 *denominator)
+{
+    UINT64 value;
+
+    if (SUCCEEDED(IMFMediaType_GetUINT64(media_type, attr, &value)))
+    {
+        *numerator = value >> 32;
+        *denominator = value;
+    }
 }
 
 /***********************************************************************
@@ -3054,7 +3104,6 @@ HRESULT WINAPI MFCreateMFVideoFormatFromMFMediaType(IMFMediaType *media_type, MF
 {
     UINT32 flags, palette_size = 0, avgrate;
     MFVIDEOFORMAT *format;
-    UINT64 value;
     INT32 stride;
     GUID guid;
 
@@ -3079,14 +3128,11 @@ HRESULT WINAPI MFCreateMFVideoFormatFromMFMediaType(IMFMediaType *media_type, MF
         format->surfaceInfo.Format = guid.Data1;
     }
 
-    if (SUCCEEDED(IMFMediaType_GetUINT64(media_type, &MF_MT_FRAME_SIZE, &value)))
-        media_type_get_ratio(value, &format->videoInfo.dwWidth, &format->videoInfo.dwHeight);
-
-    if (SUCCEEDED(IMFMediaType_GetUINT64(media_type, &MF_MT_PIXEL_ASPECT_RATIO, &value)))
-    {
-        media_type_get_ratio(value, &format->videoInfo.PixelAspectRatio.Numerator,
-                &format->videoInfo.PixelAspectRatio.Denominator);
-    }
+    media_type_get_ratio(media_type, &MF_MT_FRAME_SIZE, &format->videoInfo.dwWidth, &format->videoInfo.dwHeight);
+    media_type_get_ratio(media_type, &MF_MT_PIXEL_ASPECT_RATIO, &format->videoInfo.PixelAspectRatio.Numerator,
+            &format->videoInfo.PixelAspectRatio.Denominator);
+    media_type_get_ratio(media_type, &MF_MT_FRAME_RATE, &format->videoInfo.FramesPerSecond.Numerator,
+            &format->videoInfo.FramesPerSecond.Denominator);
 
     IMFMediaType_GetUINT32(media_type, &MF_MT_VIDEO_CHROMA_SITING, &format->videoInfo.SourceChromaSubsampling);
     IMFMediaType_GetUINT32(media_type, &MF_MT_INTERLACE_MODE, &format->videoInfo.InterlaceMode);
@@ -3094,13 +3140,6 @@ HRESULT WINAPI MFCreateMFVideoFormatFromMFMediaType(IMFMediaType *media_type, MF
     IMFMediaType_GetUINT32(media_type, &MF_MT_VIDEO_PRIMARIES, &format->videoInfo.ColorPrimaries);
     IMFMediaType_GetUINT32(media_type, &MF_MT_YUV_MATRIX, &format->videoInfo.TransferMatrix);
     IMFMediaType_GetUINT32(media_type, &MF_MT_VIDEO_LIGHTING, &format->videoInfo.SourceLighting);
-
-    if (SUCCEEDED(IMFMediaType_GetUINT64(media_type, &MF_MT_FRAME_RATE, &value)))
-    {
-        media_type_get_ratio(value, &format->videoInfo.FramesPerSecond.Numerator,
-                &format->videoInfo.FramesPerSecond.Denominator);
-    }
-
     IMFMediaType_GetUINT32(media_type, &MF_MT_VIDEO_NOMINAL_RANGE, &format->videoInfo.NominalRange);
     IMFMediaType_GetBlob(media_type, &MF_MT_GEOMETRIC_APERTURE, (UINT8 *)&format->videoInfo.GeometricAperture,
            sizeof(format->videoInfo.GeometricAperture), NULL);
