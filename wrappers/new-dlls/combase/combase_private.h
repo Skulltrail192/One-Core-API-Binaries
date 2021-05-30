@@ -21,11 +21,11 @@
 #include "wine/list.h"
 #include <stdio.h>
 
-extern HINSTANCE hProxyDll;
-
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-#define CO_E_CANCEL_DISABLED                               _HRESULT_TYPEDEF_(0x80010140)
+WINBASEAPI ULONGLONG   WINAPI GetTickCount64(void);
+
+extern HINSTANCE hProxyDll;
 
 struct apartment
 {
@@ -265,4 +265,3 @@ HRESULT ipid_get_dispatch_params(const IPID *ipid, struct apartment **stub_apt,
         struct stub_manager **manager, IRpcStubBuffer **stub, IRpcChannelBuffer **chan,
         IID *iid, IUnknown **iface) DECLSPEC_HIDDEN;
 HRESULT start_apartment_remote_unknown(struct apartment *apt) DECLSPEC_HIDDEN;
-WINBASEAPI INT WINAPI CompareStringOrdinal(const WCHAR *,INT,const WCHAR *,INT,BOOL);

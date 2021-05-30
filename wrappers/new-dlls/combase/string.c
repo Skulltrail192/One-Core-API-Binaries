@@ -23,9 +23,10 @@
 #include "winerror.h"
 #include "hstring.h"
 #include "wine/debug.h"
-#include "combase_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(winstring);
+
+WINBASEAPI INT WINAPI CompareStringOrdinal(const WCHAR *,INT,const WCHAR *,INT,BOOL);	
 
 struct hstring_private
 {

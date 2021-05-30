@@ -1504,7 +1504,7 @@ HRESULT WINAPI StringFromCLSID(REFCLSID clsid, LPOLESTR *str)
 INT WINAPI StringFromGUID2(REFGUID guid, LPOLESTR str, INT cmax)
 {
     if (!guid || cmax < CHARS_IN_GUID) return 0;
-    swprintf_s(str, CHARS_IN_GUID, L"{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}", guid->Data1,
+    swprintf(str, L"{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}", guid->Data1,
             guid->Data2, guid->Data3, guid->Data4[0], guid->Data4[1], guid->Data4[2], guid->Data4[3],
             guid->Data4[4], guid->Data4[5], guid->Data4[6], guid->Data4[7]);
     return CHARS_IN_GUID;
@@ -1664,7 +1664,7 @@ HRESULT WINAPI CoGetInstanceFromIStorage(COSERVERINFO *server_info, CLSID *rclsi
 HRESULT WINAPI DECLSPEC_HOTPATCH CoCreateInstance(REFCLSID rclsid, IUnknown *outer, DWORD cls_context,
         REFIID riid, void **obj)
 {
-    MULTI_QI multi_qi = {  riid };
+    MULTI_QI multi_qi = { riid };
     HRESULT hr;
 
     TRACE("%s, %p, %#x, %s, %p.\n", debugstr_guid(rclsid), outer, cls_context, debugstr_guid(riid), obj);
@@ -1724,7 +1724,7 @@ static HRESULT com_get_class_object(REFCLSID rclsid, DWORD clscontext,
             if (IsEqualCLSID(rclsid, &CLSID_GlobalOptions))
                 return get_builtin_class_factory(rclsid, riid, obj);
             else
-                return Ole32DllGetClassObject(rclsid, riid, obj);
+                return DllGetClassObject(rclsid, riid, obj);
         }
     }
 
@@ -2864,7 +2864,7 @@ void WINAPI DECLSPEC_HOTPATCH CoUninitialize(void)
         TRACE("Releasing the COM libraries\n");
 
         com_revoke_all_ps_clsids();
-        DestroyRunningObjectTable();
+        //DestroyRunningObjectTable();
     }
     else if (lockcount < 1)
     {

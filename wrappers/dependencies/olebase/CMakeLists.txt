@@ -4,9 +4,9 @@ add_definitions(-D_WIN32_WINNT=0x600)
 
 add_definitions(
     -D__WINESRC__
-    -D_olebase_
+    -D_OLE32_
     -DCOM_NO_WINDOWS_H
-    -DENTRY_PREFIX=olebase_
+    -DENTRY_PREFIX=OLE32_
     -DPROXY_CLSID=CLSID_PSFactoryBuffer
     -DWINE_REGISTER_DLL)
 
