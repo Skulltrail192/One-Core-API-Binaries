@@ -40,6 +40,11 @@
 typedef LONG NTSTATUS;
 #endif
 
+#ifndef _NTDEF_
+typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
+typedef NTSTATUS *PNTSTATUS;
+#endif
+
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #define BCRYPT_ALGORITHM_NAME       L"AlgorithmName"
 #define BCRYPT_AUTH_TAG_LENGTH      L"AuthTagLength"

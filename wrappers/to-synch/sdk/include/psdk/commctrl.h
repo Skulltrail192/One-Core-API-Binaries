@@ -24,6 +24,14 @@
 #include <prsht.h>
 #include <commctrl.rh>
 
+#ifndef WINCOMMCTRLAPI
+#ifndef _COMCTL32_
+#define WINCOMMCTRLAPI DECLSPEC_IMPORT
+#else
+#define WINCOMMCTRLAPI
+#endif
+#endif /* !WINCOMMCTRLAPI */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1665,22 +1673,6 @@ typedef struct
     INT cyButtonSpacing;
 } TBMETRICS, *LPTBMETRICS;
 
-/* these are undocumented and the names are guesses */
-typedef struct
-{
-    NMHDR hdr;
-    HWND hwndDialog;
-} NMTBINITCUSTOMIZE;
-
-typedef struct
-{
-    NMHDR hdr;
-    INT idNew;
-    INT iDirection; /* left is -1, right is 1 */
-    DWORD dwReason; /* HICF_* */
-} NMTBWRAPHOTITEM;
-
-
 HWND WINAPI
 CreateToolbar(HWND, DWORD, UINT, INT, HINSTANCE,
               UINT, LPCTBBUTTON, INT);
@@ -2023,6 +2015,8 @@ static const WCHAR REBARCLASSNAMEW[] = { 'R','e','B','a','r',
 #define RBN_SPLITTERDRAG        (RBN_FIRST-11)
 #define RBN_MINMAX              (RBN_FIRST-21)
 #define RBN_AUTOBREAK           (RBN_FIRST-22)
+
+#define RBSTR_CHANGERECT 0x1
 
 typedef struct tagREBARINFO
 {
@@ -3423,6 +3417,9 @@ static const WCHAR WC_LISTVIEWW[] = { 'S','y','s',
 #define LVN_LINKCLICK           (LVN_FIRST-84)
 #define LVN_ASYNCDRAWN          (LVN_FIRST-86)
 #define LVN_GETEMPTYMARKUP      (LVN_FIRST-87)
+
+#define WC_TREEVIEWA "SysTreeView32"
+#define WC_TREEVIEWW L"SysTreeView32"
 
 /* LVN_INCREMENTALSEARCH return codes */
 #define LVNSCH_DEFAULT          -1
@@ -5132,6 +5129,16 @@ void   WINAPI DSA_DestroyCallback(HDSA, PFNDSAENUMCALLBACK, LPVOID);
 LPVOID WINAPI DSA_GetItemPtr(HDSA, INT);
 INT    WINAPI DSA_InsertItem(HDSA, INT, LPVOID);
 
+WINCOMMCTRLAPI
+VOID
+WINAPI
+DSA_EnumCallback(
+  _In_ HDSA hdsa,
+  _In_ PFNDSAENUMCALLBACK enumProc,
+  _In_opt_ LPVOID lParam);
+  
+WINCOMMCTRLAPI BOOL WINAPI DSA_DeleteAllItems(_In_ HDSA hdsa); 
+
 #define DPAS_SORTED             0x0001
 #define DPAS_INSERTBEFORE       0x0002
 #define DPAS_INSERTAFTER        0x0004
@@ -5140,7 +5147,12 @@ INT    WINAPI DSA_InsertItem(HDSA, INT, LPVOID);
 struct _DPA;
 typedef struct _DPA *HDPA;
 
-#define DPA_GetPtrCount(hdpa)  (*(INT*)(hdpa))
+#define DPA_GetPtrCount(hdpa) (*(int *)(hdpa))
+#define DPA_SetPtrCount(hdpa, cItems) (*(int *)(hdpa) = (cItems))
+#define DPA_GetPtrPtr(hdpa) (*((void * **)((BYTE *)(hdpa) + sizeof(void *))))
+#define DPA_AppendPtr(hdpa, pitem) DPA_InsertPtr(hdpa, DA_LAST, pitem)
+#define DPA_FastDeleteLastPtr(hdpa) (--*(int *)(hdpa))
+#define DPA_FastGetPtr(hdpa, i) (DPA_GetPtrPtr(hdpa)[i])
 
 typedef INT (CALLBACK *PFNDPAENUMCALLBACK)(LPVOID, LPVOID);
 typedef INT (CALLBACK *PFNDPACOMPARE)(LPVOID, LPVOID, LPARAM);
