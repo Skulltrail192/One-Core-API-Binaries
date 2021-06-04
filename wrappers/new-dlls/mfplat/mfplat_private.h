@@ -128,21 +128,21 @@ static inline const char *debugstr_propvar(const PROPVARIANT *v)
         case VT_NULL:
             return wine_dbg_sprintf("%p {VT_NULL}", v);
         case VT_UI4:
-            return wine_dbg_sprintf("%p {VT_UI4: %d}", v, v->ulVal);
+            return wine_dbg_sprintf("%p {VT_UI4: %d}", v, v->u.ulVal);
         case VT_UI8:
-            return wine_dbg_sprintf("%p {VT_UI8: %s}", v, wine_dbgstr_longlong(v->uhVal.QuadPart));
+            return wine_dbg_sprintf("%p {VT_UI8: %s}", v, wine_dbgstr_longlong(v->u.uhVal.QuadPart));
         case VT_I8:
-            return wine_dbg_sprintf("%p {VT_I8: %s}", v, wine_dbgstr_longlong(v->hVal.QuadPart));
+            return wine_dbg_sprintf("%p {VT_I8: %s}", v, wine_dbgstr_longlong(v->u.hVal.QuadPart));
         case VT_R8:
-            return wine_dbg_sprintf("%p {VT_R8: %lf}", v, v->dblVal);
+            return wine_dbg_sprintf("%p {VT_R8: %lf}", v, v->u.dblVal);
         case VT_CLSID:
-            return wine_dbg_sprintf("%p {VT_CLSID: %s}", v, debugstr_mf_guid(v->puuid));
+            return wine_dbg_sprintf("%p {VT_CLSID: %s}", v, debugstr_mf_guid(v->u.puuid));
         case VT_LPWSTR:
-            return wine_dbg_sprintf("%p {VT_LPWSTR: %s}", v, wine_dbgstr_w(v->pwszVal));
+            return wine_dbg_sprintf("%p {VT_LPWSTR: %s}", v, wine_dbgstr_w(v->u.pwszVal));
         case VT_VECTOR | VT_UI1:
-            return wine_dbg_sprintf("%p {VT_VECTOR|VT_UI1: %p}", v, v->caub.pElems);
+            return wine_dbg_sprintf("%p {VT_VECTOR|VT_UI1: %p}", v, v->u.caub.pElems);
         case VT_UNKNOWN:
-            return wine_dbg_sprintf("%p {VT_UNKNOWN: %p}", v, v->punkVal);
+            return wine_dbg_sprintf("%p {VT_UNKNOWN: %p}", v, v->u.punkVal);
         default:
             return wine_dbg_sprintf("%p {vt %#x}", v, v->vt);
     }

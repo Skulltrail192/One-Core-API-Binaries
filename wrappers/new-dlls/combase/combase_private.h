@@ -161,8 +161,6 @@ struct class_reg_data
     } u;
 };
 
-DECLARE_HANDLE(CO_MTA_USAGE_COOKIE);
-
 HRESULT enter_apartment(struct tlsdata *data, DWORD model) DECLSPEC_HIDDEN;
 void leave_apartment(struct tlsdata *data) DECLSPEC_HIDDEN;
 void apartment_release(struct apartment *apt) DECLSPEC_HIDDEN;

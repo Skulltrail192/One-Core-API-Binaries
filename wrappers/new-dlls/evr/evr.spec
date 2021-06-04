@@ -24,5 +24,5 @@
 @ stdcall -import MFGetStrideForBitmapInfoHeader(long long ptr)
 @ stub MFGetUncompressedVideoFormat
 @ stub MFInitVideoFormat
-@ stub MFInitVideoFormat_RGB
+@ stdcall -import MFInitVideoFormat_RGB(ptr long long long)
 @ stub MFIsFormatYUV

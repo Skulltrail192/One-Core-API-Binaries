@@ -1,2 +1,19 @@
 
-add_idl_headers(wineheaders fil_data.idl itss.idl evr.idl orpc.idl)
+add_idl_headers(wineheaders 
+				fil_data.idl 
+				itss.idl 
+				evr.idl 
+				orpc.idl 
+				rtworkq.idl 
+				d3d10.idl 
+				d3d10_1.idl 
+				d3d10sdklayers.idl 
+				d3d11sdklayers.idl 
+				d3d11.idl 
+				dxgi.idl 
+				dxgitype.idl 
+				dxgicommon.idl 
+				mfmediaengine.idl 
+				mfplay.idl 
+				mfreadwrite.idl 
+				)

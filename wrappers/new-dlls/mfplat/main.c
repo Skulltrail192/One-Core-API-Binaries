@@ -20,6 +20,7 @@
 #include <string.h>
 #include <math.h>
 #include <limits.h>
+#include <msvcrt/limits.h>
 
 #define COBJMACROS
 #define NONAMELESSUNION
@@ -44,6 +45,8 @@
 #include "mfmediaengine.h"
 #include "propvarutil.h"
 #include "strsafe.h"
+#undef INITGUID
+#include "evr.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(mfplat);
 
@@ -619,7 +622,7 @@ static const BYTE guid_conv_table[256] =
 
 static WCHAR* GUIDToString(WCHAR *str, REFGUID guid)
 {
-    swprintf(str, 39, L"%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+    swprintf(str, L"%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
             guid->Data1, guid->Data2, guid->Data3, guid->Data4[0], guid->Data4[1],
             guid->Data4[2], guid->Data4[3], guid->Data4[4], guid->Data4[5],
             guid->Data4[6], guid->Data4[7]);
@@ -693,7 +696,7 @@ static HRESULT register_transform(const CLSID *clsid, const WCHAR *name, UINT32 
     UINT8 *blob;
 
     GUIDToString(buffer, clsid);
-    swprintf(str, ARRAY_SIZE(str), L"%s\\%s", transform_keyW, buffer);
+    swprintf(str, L"%s\\%s", transform_keyW, buffer);
 
     if ((ret = RegCreateKeyW(HKEY_CLASSES_ROOT, str, &hclsid)))
         hr = HRESULT_FROM_WIN32(ret);
@@ -756,7 +759,7 @@ static HRESULT register_category(CLSID *clsid, GUID *category)
     GUIDToString(guid1, category);
     GUIDToString(guid2, clsid);
 
-    swprintf(str, ARRAY_SIZE(str), L"%s\\%s\\%s", categories_keyW, guid1, guid2);
+    swprintf(str, L"%s\\%s\\%s", categories_keyW, guid1, guid2);
 
     if (RegCreateKeyW(HKEY_CLASSES_ROOT, str, &htmp1))
         return E_FAIL;
@@ -823,7 +826,7 @@ static HRESULT mft_register_local(IClassFactory *factory, REFCLSID clsid, REFGUI
         flags |= MFT_ENUM_FLAG_SYNCMFT;
     mft->flags = flags;
     mft->local = TRUE;
-    if (name && !(mft->name = wcsdup(name)))
+    if (name && !(mft->name = _wcsdup(name)))
     {
         hr = E_OUTOFMEMORY;
         goto failed;
@@ -1518,7 +1521,6 @@ const char *debugstr_attr(const GUID *guid)
         X(EVRConfig_AllowBatching),
         X(MF_TOPOLOGY_DYNAMIC_CHANGE_NOT_ALLOWED),
         X(MF_MT_VIDEO_PROFILE),
-        X(MF_MT_MPEG2_PROFILE),
         X(MF_MT_DV_AAUX_CTRL_PACK_1),
         X(MF_MT_ALPHA_MODE),
         X(MF_MT_MPEG2_TIMECODE),
@@ -1564,6 +1566,7 @@ const char *debugstr_attr(const GUID *guid)
         X(MF_PD_MIME_TYPE),
         X(MF_MT_H264_SUPPORTED_SLICE_MODES),
         X(MF_PD_LAST_MODIFIED_TIME),
+        X(VIDEO_ZOOM_RECT),
         X(MF_PD_PLAYBACK_ELEMENT_ID),
         X(MF_MEDIA_ENGINE_BROWSER_COMPATIBILITY_MODE_IE9),
         X(MF_MT_ALL_SAMPLES_INDEPENDENT),
@@ -1614,6 +1617,7 @@ const char *debugstr_attr(const GUID *guid)
         X(MF_ACTIVATE_CUSTOM_VIDEO_MIXER_CLSID),
         X(MF_MT_MIN_MASTERING_LUMINANCE),
         X(MF_ACTIVATE_CUSTOM_VIDEO_MIXER_ACTIVATE),
+        X(MF_SA_REQUIRED_SAMPLE_COUNT),
         X(MF_ACTIVATE_CUSTOM_VIDEO_MIXER_FLAGS),
         X(MF_ACTIVATE_CUSTOM_VIDEO_PRESENTER_CLSID),
         X(MF_EVENT_STREAM_METADATA_SYSTEMID),
@@ -1638,7 +1642,6 @@ const char *debugstr_attr(const GUID *guid)
         X(MFSampleExtension_3DVideo_SampleFormat),
         X(MF_MT_H264_RESOLUTION_SCALING),
         X(MF_MT_VIDEO_LEVEL),
-        X(MF_MT_MPEG2_LEVEL),
         X(MF_SAMPLEGRABBERSINK_SAMPLE_TIME_OFFSET),
         X(MF_MT_SAMPLE_SIZE),
         X(MF_MT_AAC_PAYLOAD_TYPE),
@@ -2198,7 +2201,7 @@ static HRESULT attributes_get_item(struct attributes *attributes, const GUID *ke
     attribute = attributes_find_item(attributes, key, NULL);
     if (attribute)
     {
-        if (attribute->value.vt == value->vt && !(value->vt == VT_UNKNOWN && !attribute->value.punkVal))
+        if (attribute->value.vt == value->vt && !(value->vt == VT_UNKNOWN && !attribute->value.u.punkVal))
             hr = PropVariantCopy(value, &attribute->value);
         else
             hr = MF_E_INVALIDTYPE;
@@ -2354,7 +2357,7 @@ HRESULT attributes_GetUINT32(struct attributes *attributes, REFGUID key, UINT32 
     attrval.vt = VT_UI4;
     hr = attributes_get_item(attributes, key, &attrval);
     if (SUCCEEDED(hr))
-        *value = attrval.ulVal;
+        *value = attrval.u.ulVal;
 
     return hr;
 }
@@ -2368,7 +2371,7 @@ HRESULT attributes_GetUINT64(struct attributes *attributes, REFGUID key, UINT64 
     attrval.vt = VT_UI8;
     hr = attributes_get_item(attributes, key, &attrval);
     if (SUCCEEDED(hr))
-        *value = attrval.uhVal.QuadPart;
+        *value = attrval.u.uhVal.QuadPart;
 
     return hr;
 }
@@ -2382,7 +2385,7 @@ HRESULT attributes_GetDouble(struct attributes *attributes, REFGUID key, double 
     attrval.vt = VT_R8;
     hr = attributes_get_item(attributes, key, &attrval);
     if (SUCCEEDED(hr))
-        *value = attrval.dblVal;
+        *value = attrval.u.dblVal;
 
     return hr;
 }
@@ -2398,7 +2401,7 @@ HRESULT attributes_GetGUID(struct attributes *attributes, REFGUID key, GUID *val
     if (attribute)
     {
         if (attribute->value.vt == MF_ATTRIBUTE_GUID)
-            *value = *attribute->value.puuid;
+            *value = *attribute->value.u.puuid;
         else
             hr = MF_E_INVALIDTYPE;
     }
@@ -2421,7 +2424,7 @@ HRESULT attributes_GetStringLength(struct attributes *attributes, REFGUID key, U
     if (attribute)
     {
         if (attribute->value.vt == MF_ATTRIBUTE_STRING)
-            *length = lstrlenW(attribute->value.pwszVal);
+            *length = lstrlenW(attribute->value.u.pwszVal);
         else
             hr = MF_E_INVALIDTYPE;
     }
@@ -2446,7 +2449,7 @@ HRESULT attributes_GetString(struct attributes *attributes, REFGUID key, WCHAR *
     {
         if (attribute->value.vt == MF_ATTRIBUTE_STRING)
         {
-            int len = lstrlenW(attribute->value.pwszVal);
+            int len = lstrlenW(attribute->value.u.pwszVal);
 
             if (length)
                 *length = len;
@@ -2454,7 +2457,7 @@ HRESULT attributes_GetString(struct attributes *attributes, REFGUID key, WCHAR *
             if (size <= len)
                 hr = STRSAFE_E_INSUFFICIENT_BUFFER;
             else
-                memcpy(value, attribute->value.pwszVal, (len + 1) * sizeof(WCHAR));
+                memcpy(value, attribute->value.u.pwszVal, (len + 1) * sizeof(WCHAR));
         }
         else
             hr = MF_E_INVALIDTYPE;
@@ -2477,7 +2480,7 @@ HRESULT attributes_GetAllocatedString(struct attributes *attributes, REFGUID key
     hr = attributes_get_item(attributes, key, &attrval);
     if (SUCCEEDED(hr))
     {
-        *value = attrval.pwszVal;
+        *value = attrval.u.pwszVal;
         *length = lstrlenW(*value);
     }
 
@@ -2495,7 +2498,7 @@ HRESULT attributes_GetBlobSize(struct attributes *attributes, REFGUID key, UINT3
     if (attribute)
     {
         if (attribute->value.vt == MF_ATTRIBUTE_BLOB)
-            *size = attribute->value.caub.cElems;
+            *size = attribute->value.u.caub.cElems;
         else
             hr = MF_E_INVALIDTYPE;
     }
@@ -2519,7 +2522,7 @@ HRESULT attributes_GetBlob(struct attributes *attributes, REFGUID key, UINT8 *bu
     {
         if (attribute->value.vt == MF_ATTRIBUTE_BLOB)
         {
-            UINT32 size = attribute->value.caub.cElems;
+            UINT32 size = attribute->value.u.caub.cElems;
 
             if (bufsize >= size)
                 hr = PropVariantToBuffer(&attribute->value, buf, size);
@@ -2549,8 +2552,8 @@ HRESULT attributes_GetAllocatedBlob(struct attributes *attributes, REFGUID key, 
     hr = attributes_get_item(attributes, key, &attrval);
     if (SUCCEEDED(hr))
     {
-        *buf = attrval.caub.pElems;
-        *size = attrval.caub.cElems;
+        *buf = attrval.u.caub.pElems;
+        *size = attrval.u.caub.cElems;
     }
 
     return hr;
@@ -2565,7 +2568,7 @@ HRESULT attributes_GetUnknown(struct attributes *attributes, REFGUID key, REFIID
     attrval.vt = VT_UNKNOWN;
     hr = attributes_get_item(attributes, key, &attrval);
     if (SUCCEEDED(hr))
-        hr = IUnknown_QueryInterface(attrval.punkVal, riid, out);
+        hr = IUnknown_QueryInterface(attrval.u.punkVal, riid, out);
     PropVariantClear(&attrval);
     return hr;
 }
@@ -2665,7 +2668,7 @@ HRESULT attributes_SetUINT32(struct attributes *attributes, REFGUID key, UINT32 
     PROPVARIANT attrval;
 
     attrval.vt = VT_UI4;
-    attrval.ulVal = value;
+    attrval.u.ulVal = value;
     return attributes_set_item(attributes, key, &attrval);
 }
 
@@ -2674,7 +2677,7 @@ HRESULT attributes_SetUINT64(struct attributes *attributes, REFGUID key, UINT64 
     PROPVARIANT attrval;
 
     attrval.vt = VT_UI8;
-    attrval.uhVal.QuadPart = value;
+    attrval.u.uhVal.QuadPart = value;
     return attributes_set_item(attributes, key, &attrval);
 }
 
@@ -2683,7 +2686,7 @@ HRESULT attributes_SetDouble(struct attributes *attributes, REFGUID key, double 
     PROPVARIANT attrval;
 
     attrval.vt = VT_R8;
-    attrval.dblVal = value;
+    attrval.u.dblVal = value;
     return attributes_set_item(attributes, key, &attrval);
 }
 
@@ -2692,7 +2695,7 @@ HRESULT attributes_SetGUID(struct attributes *attributes, REFGUID key, REFGUID v
     PROPVARIANT attrval;
 
     attrval.vt = VT_CLSID;
-    attrval.puuid = (CLSID *)value;
+    attrval.u.puuid = (CLSID *)value;
     return attributes_set_item(attributes, key, &attrval);
 }
 
@@ -2701,7 +2704,7 @@ HRESULT attributes_SetString(struct attributes *attributes, REFGUID key, const W
     PROPVARIANT attrval;
 
     attrval.vt = VT_LPWSTR;
-    attrval.pwszVal = (WCHAR *)value;
+    attrval.u.pwszVal = (WCHAR *)value;
     return attributes_set_item(attributes, key, &attrval);
 }
 
@@ -2710,8 +2713,8 @@ HRESULT attributes_SetBlob(struct attributes *attributes, REFGUID key, const UIN
     PROPVARIANT attrval;
 
     attrval.vt = VT_VECTOR | VT_UI1;
-    attrval.caub.cElems = size;
-    attrval.caub.pElems = (UINT8 *)buf;
+    attrval.u.caub.cElems = size;
+    attrval.u.caub.pElems = (UINT8 *)buf;
     return attributes_set_item(attributes, key, &attrval);
 }
 
@@ -2720,7 +2723,7 @@ HRESULT attributes_SetUnknown(struct attributes *attributes, REFGUID key, IUnkno
     PROPVARIANT attrval;
 
     attrval.vt = VT_UNKNOWN;
-    attrval.punkVal = unknown;
+    attrval.u.punkVal = unknown;
     return attributes_set_item(attributes, key, &attrval);
 }
 
@@ -3321,22 +3324,22 @@ HRESULT WINAPI MFGetAttributesAsBlob(IMFAttributes *attributes, UINT8 *buffer, U
         {
             case MF_ATTRIBUTE_UINT32:
             case MF_ATTRIBUTE_UINT64:
-                item.u.i64 = value.uhVal.QuadPart;
+                item.u.i64 = value.u.uhVal.QuadPart;
                 break;
             case MF_ATTRIBUTE_DOUBLE:
-                item.u.f = value.dblVal;
+                item.u.f = value.u.dblVal;
                 break;
             case MF_ATTRIBUTE_GUID:
-                item.u.subheader.size = sizeof(*value.puuid);
-                data = value.puuid;
+                item.u.subheader.size = sizeof(*value.u.puuid);
+                data = value.u.puuid;
                 break;
             case MF_ATTRIBUTE_STRING:
-                item.u.subheader.size = (lstrlenW(value.pwszVal) + 1) * sizeof(WCHAR);
-                data = value.pwszVal;
+                item.u.subheader.size = (lstrlenW(value.u.pwszVal) + 1) * sizeof(WCHAR);
+                data = value.u.pwszVal;
                 break;
             case MF_ATTRIBUTE_BLOB:
-                item.u.subheader.size = value.caub.cElems;
-                data = value.caub.pElems;
+                item.u.subheader.size = value.u.caub.cElems;
+                data = value.u.caub.pElems;
                 break;
             case MF_ATTRIBUTE_IUNKNOWN:
                 break;
@@ -7218,7 +7221,7 @@ static HRESULT WINAPI eventqueue_QueueEventParamUnk(IMFMediaEventQueue *iface, M
     TRACE("%p, %s, %s, %#x, %p.\n", iface, debugstr_eventid(event_type), debugstr_guid(extended_type), status, unk);
 
     value.vt = VT_UNKNOWN;
-    value.punkVal = unk;
+    value.u.punkVal = unk;
 
     if (FAILED(hr = MFCreateMediaEvent(event_type, extended_type, status, &value, &event)))
         return hr;
@@ -8165,7 +8168,7 @@ HRESULT WINAPI MFBeginCreateFile(MF_FILE_ACCESSMODE access_mode, MF_FILE_OPENMOD
     async->access_mode = access_mode;
     async->open_mode = open_mode;
     async->flags = flags;
-    if (!(async->path = wcsdup(path)))
+    if (!(async->path = _wcsdup(path)))
     {
         hr = E_OUTOFMEMORY;
         goto failed;
@@ -8272,7 +8275,7 @@ HRESULT WINAPI MFRegisterLocalSchemeHandler(const WCHAR *scheme, IMFActivate *ac
     if (!(handler = malloc(sizeof(*handler))))
         return E_OUTOFMEMORY;
 
-    if (!(handler->u.scheme = wcsdup(scheme)))
+    if (!(handler->u.scheme = _wcsdup(scheme)))
     {
         free(handler);
         return E_OUTOFMEMORY;
@@ -8302,9 +8305,9 @@ HRESULT WINAPI MFRegisterLocalByteStreamHandler(const WCHAR *extension, const WC
     if (!(handler = calloc(1, sizeof(*handler))))
         return E_OUTOFMEMORY;
 
-    if (extension && !(handler->u.bytestream.extension = wcsdup(extension)))
+    if (extension && !(handler->u.bytestream.extension = _wcsdup(extension)))
         goto failed;
-    if (mime && !(handler->u.bytestream.mime = wcsdup(mime)))
+    if (mime && !(handler->u.bytestream.mime = _wcsdup(mime)))
         goto failed;
 
     EnterCriticalSection(&local_handlers_section);
@@ -8999,19 +9002,19 @@ static void llmult128(ULARGE_INTEGER *c1, ULARGE_INTEGER *c0, LONGLONG val, LONG
      * "a0" is optimized away, result is stored directly in c0.  "b1" is
      * optimized away, result is stored directly in c1.
      */
-    c0->QuadPart = (ULONGLONG)v.LowPart * n.LowPart;
-    a1.QuadPart = (ULONGLONG)v.LowPart * n.HighPart;
-    b0.QuadPart = (ULONGLONG)v.HighPart * n.LowPart;
+    c0->QuadPart = (ULONGLONG)v.u.LowPart * n.u.LowPart;
+    a1.QuadPart = (ULONGLONG)v.u.LowPart * n.u.HighPart;
+    b0.QuadPart = (ULONGLONG)v.u.HighPart * n.u.LowPart;
 
     /* add the high word of a0 to the low words of a1 and b0 using c1 as
      * scratch space to capture the carry. the low word of the result becomes
      * the final high word of c0 */
-    c1->QuadPart = (ULONGLONG)c0->HighPart + a1.LowPart + b0.LowPart;
-    c0->HighPart = c1->LowPart;
+    c1->QuadPart = (ULONGLONG)c0->u.HighPart + a1.u.LowPart + b0.u.LowPart;
+    c0->u.HighPart = c1->u.LowPart;
 
     /* add the carry from the result above (found in the high word of c1) and
      * the high words of a1 and b0 to b1, the result is c1. */
-    c1->QuadPart = (ULONGLONG)v.HighPart * n.HighPart + c1->HighPart + a1.HighPart + b0.HighPart;
+    c1->QuadPart = (ULONGLONG)v.u.HighPart * n.u.HighPart + c1->u.HighPart + a1.u.HighPart + b0.u.HighPart;
 }
 
 static ULONGLONG lldiv128(ULARGE_INTEGER c1, ULARGE_INTEGER c0, LONGLONG denom)
@@ -9027,65 +9030,65 @@ static ULONGLONG lldiv128(ULARGE_INTEGER c1, ULARGE_INTEGER c0, LONGLONG denom)
         return c0.QuadPart / v.QuadPart;
 
     /* 96bit numerator, 32bit denominator */
-    if (v.HighPart == 0 && c1.HighPart == 0)
+    if (v.u.HighPart == 0 && c1.u.HighPart == 0)
     {
-        ULONGLONG low = c0.LowPart, high = c0.HighPart + ((ULONGLONG)c1.LowPart << 32);
-        low += (high % v.LowPart) << 32;
-        return ((high / v.LowPart) << 32) + (low / v.LowPart);
+        ULONGLONG low = c0.u.LowPart, high = c0.u.HighPart + ((ULONGLONG)c1.u.LowPart << 32);
+        low += (high % v.u.LowPart) << 32;
+        return ((high / v.u.LowPart) << 32) + (low / v.u.LowPart);
     }
 
     /* 128bit numerator, 32bit denominator */
-    if (v.HighPart == 0)
+    if (v.u.HighPart == 0)
         return UI64_MAX;
 
     /* count number of leading zeroes */
-    BitScanReverse(&s, v.HighPart);
+    BitScanReverse(&s, v.u.HighPart);
     s = 31 - s;
 
     if (s)
     {
         /* normalize divisor and dividend */
         v.QuadPart <<= s;
-        c1.QuadPart = (c1.QuadPart << s) | (c0.HighPart >> (32 - s));
+        c1.QuadPart = (c1.QuadPart << s) | (c0.u.HighPart >> (32 - s));
         c0.QuadPart <<= s;
     }
 
-    q1.QuadPart = c1.QuadPart / v.HighPart;
-    rhat.QuadPart = c1.QuadPart - q1.QuadPart * v.HighPart;
+    q1.QuadPart = c1.QuadPart / v.u.HighPart;
+    rhat.QuadPart = c1.QuadPart - q1.QuadPart * v.u.HighPart;
 
-    cmp1.HighPart = rhat.LowPart;
-    cmp1.LowPart = c0.HighPart;
-    cmp2.QuadPart = q1.QuadPart * v.LowPart;
+    cmp1.u.HighPart = rhat.u.LowPart;
+    cmp1.u.LowPart = c0.u.HighPart;
+    cmp2.QuadPart = q1.QuadPart * v.u.LowPart;
 
-    while (q1.HighPart || cmp2.QuadPart > cmp1.QuadPart)
+    while (q1.u.HighPart || cmp2.QuadPart > cmp1.QuadPart)
     {
         q1.QuadPart--;
-        rhat.QuadPart += v.HighPart;
-        if (rhat.HighPart)
+        rhat.QuadPart += v.u.HighPart;
+        if (rhat.u.HighPart)
             break;
-        cmp1.HighPart = rhat.LowPart;
-        cmp2.QuadPart -= v.LowPart;
+        cmp1.u.HighPart = rhat.u.LowPart;
+        cmp2.QuadPart -= v.u.LowPart;
     }
-    c1.HighPart = c1.LowPart;
-    c1.LowPart = c0.HighPart;
+    c1.u.HighPart = c1.u.LowPart;
+    c1.u.LowPart = c0.u.HighPart;
     c1.QuadPart -= q1.QuadPart * v.QuadPart;
-    q0.QuadPart = c1.QuadPart / v.HighPart;
-    rhat.QuadPart = c1.QuadPart - q0.QuadPart * v.HighPart;
+    q0.QuadPart = c1.QuadPart / v.u.HighPart;
+    rhat.QuadPart = c1.QuadPart - q0.QuadPart * v.u.HighPart;
 
-    cmp1.HighPart = rhat.LowPart;
-    cmp1.LowPart = c0.LowPart;
-    cmp2.QuadPart = q0.QuadPart * v.LowPart;
+    cmp1.u.HighPart = rhat.u.LowPart;
+    cmp1.u.LowPart = c0.u.LowPart;
+    cmp2.QuadPart = q0.QuadPart * v.u.LowPart;
 
-    while (q0.HighPart || cmp2.QuadPart > cmp1.QuadPart)
+    while (q0.u.HighPart || cmp2.QuadPart > cmp1.QuadPart)
     {
         q0.QuadPart--;
-        rhat.QuadPart += v.HighPart;
-        if (rhat.HighPart)
+        rhat.QuadPart += v.u.HighPart;
+        if (rhat.u.HighPart)
             break;
-        cmp1.HighPart = rhat.LowPart;
-        cmp2.QuadPart -= v.LowPart;
+        cmp1.u.HighPart = rhat.u.LowPart;
+        cmp2.QuadPart -= v.u.LowPart;
     }
-    q0.HighPart += q1.LowPart;
+    q0.u.HighPart += q1.u.LowPart;
 
     return q0.QuadPart;
 }
