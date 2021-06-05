@@ -28,7 +28,6 @@
 #include "schrpc.h"
 #include "taskschd_private.h"
 
-#include "wine/unicode.h"
 #include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(taskschd);
@@ -124,7 +123,7 @@ static HRESULT WINAPI regtask_get_Name(IRegisteredTask *iface, BSTR *name)
 
     if (!name) return E_POINTER;
 
-    p_name = strrchrW(regtask->path, '\\');
+    p_name = wcsrchr(regtask->path, '\\');
     if (!p_name)
         p_name = regtask->path;
     else
@@ -350,6 +349,7 @@ HRESULT RegisteredTask_create(const WCHAR *path, const WCHAR *name, ITaskDefinit
             SysFreeString(xml);
             return hr;
         }
+        SysFreeString(xml);
 
         heap_free(full_name);
         full_name = heap_strdupW(actual_path);
@@ -357,15 +357,15 @@ HRESULT RegisteredTask_create(const WCHAR *path, const WCHAR *name, ITaskDefinit
     }
     else
     {
-        static const WCHAR languages[] = { 0 };
         DWORD count = 0;
         WCHAR *xml = NULL;
 
-        hr = SchRpcRetrieveTask(full_name, languages, &count, &xml);
+        hr = SchRpcRetrieveTask(full_name, L"", &count, &xml);
         if (hr != S_OK || (hr = ITaskDefinition_put_XmlText(definition, xml)) != S_OK)
         {
             heap_free(full_name);
             heap_free(regtask);
+            MIDL_user_free(xml);
             return hr;
         }
         MIDL_user_free(xml);

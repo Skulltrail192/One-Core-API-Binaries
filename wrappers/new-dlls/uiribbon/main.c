@@ -39,23 +39,6 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(uiribbon);
 
-static HINSTANCE instance;
-
-BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpvReserved)
-{
-    TRACE("(0x%p, %d, %p)\n", hInstDLL, fdwReason, lpvReserved);
-
-    switch (fdwReason)
-    {
-        case DLL_PROCESS_ATTACH:
-            instance = hInstDLL;
-            DisableThreadLibraryCalls(hInstDLL);
-            break;
-    }
-
-    return TRUE;
-}
-
 typedef struct {
     IClassFactory IClassFactory_iface;
 
@@ -173,13 +156,13 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, void **ppv)
          && ! IsEqualGUID( &IID_IUnknown, riid) )
         return E_NOINTERFACE;
 
-    for (i=0; i < sizeof(object_creation)/sizeof(object_creation[0]); i++)
+    for (i = 0; i < ARRAY_SIZE(object_creation); i++)
     {
         if (IsEqualGUID(object_creation[i].clsid, rclsid))
             break;
     }
 
-    if (i == sizeof(object_creation)/sizeof(object_creation[0]))
+    if (i == ARRAY_SIZE(object_creation))
     {
         FIXME("%s: no class found.\n", debugstr_guid(rclsid));
         return CLASS_E_CLASSNOTAVAILABLE;
@@ -195,19 +178,4 @@ HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, void **ppv)
 
     *ppv = &(factory->IClassFactory_iface);
     return S_OK;
-}
-
-HRESULT WINAPI DllCanUnloadNow(void)
-{
-    return S_FALSE;
-}
-
-HRESULT WINAPI DllRegisterServer(void)
-{
-    return __wine_register_resources( instance );
-}
-
-HRESULT WINAPI DllUnregisterServer(void)
-{
-    return __wine_unregister_resources( instance );
 }

@@ -17,16 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "wine/config.h"
-
 #include <stdarg.h>
 
 #include "windef.h"
 #include "winbase.h"
 #include "winreg.h"
 #include "werapi.h"
+#include "wine/heap.h"
 #include "wine/list.h"
-#include "wine/unicode.h"
 #include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(wer);
@@ -50,41 +48,7 @@ static CRITICAL_SECTION report_table_cs = { &report_table_cs_debug, -1, 0, 0, 0,
 
 static struct list report_table = LIST_INIT(report_table);
 
-static const WCHAR regpath_exclude[] =
-    {'S','o','f','t','w','a','r','e','\\',
-     'M','i','c','r','o','s','o','f','t','\\',
-     'W','i','n','d','o','w','s',' ','E','r','r','o','r',' ','R','e','p','o','r','t','i','n','g','\\',
-     'E','x','c','l','u','d','e','d','A','p','p','l','i','c','a','t','i','o','n','s',0};
-
-/***********************************************************************
- * Memory allocation helper
- */
-
-static inline void * __WINE_ALLOC_SIZE(1) heap_alloc_zero(size_t len)
-{
-    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, len);
-}
-
-static inline BOOL heap_free(void *mem)
-{
-    return HeapFree(GetProcessHeap(), 0, mem);
-}
-
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
-{
-    TRACE("(0x%p, %d, %p)\n", hinstDLL, fdwReason, lpvReserved);
-
-    switch (fdwReason)
-    {
-        case DLL_WINE_PREATTACH:
-            return FALSE;    /* prefer native version */
-        case DLL_PROCESS_ATTACH:
-            DisableThreadLibraryCalls(hinstDLL);
-            break;
-    }
-
-    return TRUE;
-}
+static const WCHAR regpath_exclude[] = L"Software\\Microsoft\\Windows Error Reporting\\ExcludedApplications";
 
 /***********************************************************************
  * WerAddExcludedApplication (wer.@)
@@ -110,7 +74,7 @@ HRESULT WINAPI WerAddExcludedApplication(PCWSTR exeName, BOOL allUsers)
     if (!exeName || !exeName[0])
         return E_INVALIDARG;
 
-    bs = strrchrW(exeName, '\\');
+    bs = wcsrchr(exeName, '\\');
     if (bs) {
         bs++;   /* skip the backslash */
         if (!bs[0]) {
@@ -151,7 +115,7 @@ HRESULT WINAPI WerRemoveExcludedApplication(PCWSTR exeName, BOOL allUsers)
     if (!exeName || !exeName[0])
         return E_INVALIDARG;
 
-    bs = strrchrW(exeName, '\\');
+    bs = wcsrchr(exeName, '\\');
     if (bs) {
         bs++;   /* skip the backslash */
         if (!bs[0]) {
@@ -291,7 +255,7 @@ HRESULT WINAPI WerReportCreate(PCWSTR eventtype, WER_REPORT_TYPE reporttype, PWE
     }
 
     if (phandle)  *phandle = NULL;
-    if (!eventtype || !eventtype[0] || !phandle) {
+    if (!eventtype || !eventtype[0] || !phandle || (reporttype >= WerReportInvalid)) {
         return E_INVALIDARG;
     }
 

@@ -1,5 +1,7 @@
 /*
- * Copyright 2018 Stefan Leichter
+ * Gameux library resources
+ *
+ * Copyright (C) 2010 Mariusz Pluciński
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,26 +18,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
-#include <stdarg.h>
+#define WINE_FILEDESCRIPTION_STR "FWP/IPsec User-Mode API"
+#define WINE_FILENAME_STR "FWPUCLNT.dll"
+#define WINE_FILEVERSION 6,1,7600,16385
+#define WINE_FILEVERSION_STR "6.1.7600.16385"
+#define WINE_PRODUCTVERSION 6,1,7600,16385
+#define WINE_PRODUCTVERSION_STR "6.1.7600.16385"
+#define WINE_EXTRAVALUES VALUE "OLESelfRegister",""
 
-#include "windef.h"
-#include "winbase.h"
-#include "wine/debug.h"
-
-WINE_DEFAULT_DEBUG_CHANNEL(strmdll);
-
-BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD reason, LPVOID lpv)
-{
-    TRACE("(%p, %d, %p)\n", hInstDLL, reason, lpv);
-
-    switch (reason)
-    {
-    case DLL_WINE_PREATTACH:
-        return FALSE;    /* prefer native version */
-    case DLL_PROCESS_ATTACH:
-        DisableThreadLibraryCalls(hInstDLL);
-        break;
-    }
-    return TRUE;
-}
+#include "wine/wine_common_ver.rc"

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Austin English
+ * Copyright 2018 Gijs Vermeulen
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,25 +16,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include <stdarg.h>
+#define WINE_FILEDESCRIPTION_STR "Wine Event Trace Helper Library"
+#define WINE_FILENAME_STR "tdh.dll"
+#define WINE_FILEVERSION 10,0,16299,15
+#define WINE_FILEVERSION_STR "10.0.16299.15"
+#define WINE_PRODUCTVERSION 10,0,16299,15
+#define WINE_PRODUCTVERSION_STR "10.0.16299.15"
 
-#include "ntstatus.h"
-#define WIN32_NO_STATUS
-#include "windef.h"
-#include "winbase.h"
-#include "winternl.h"
-#include "wine/debug.h"
-
-WINE_DEFAULT_DEBUG_CHANNEL(tdh);
-
-ULONG WINAPI TdhLoadManifest(LPWSTR manifest)
-{
-    FIXME("(%s): stub\n", debugstr_w(manifest));
-    return STATUS_SUCCESS;
-}
-
-ULONG WINAPI TdhLoadManifestFromBinary(LPWSTR binary)
-{
-    FIXME("(%s): stub\n", debugstr_w(binary));
-    return STATUS_SUCCESS;
-}
+#include "wine/wine_common_ver.rc"

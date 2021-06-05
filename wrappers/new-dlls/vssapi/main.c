@@ -16,37 +16,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
 #include <stdarg.h>
 #include "windef.h"
 #include "winbase.h"
 #include "vss.h"
 #include "vswriter.h"
+#include "vsbackup.h"
+#include "wine/asm.h"
 #include "wine/debug.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL( vssapi );
-
-#undef __thiscall
-#ifdef __i386__  /* thiscall functions are i386-specific */
-
-#define THISCALL(func) __thiscall_ ## func
-#define THISCALL_NAME(func) __ASM_NAME("__thiscall_" #func)
-#define __thiscall __stdcall
-#define DEFINE_THISCALL_WRAPPER(func,args) \
-    extern void THISCALL(func)(void); \
-    __ASM_GLOBAL_FUNC(__thiscall_ ## func, \
-                      "popl %eax\n\t" \
-                      "pushl %ecx\n\t" \
-                      "pushl %eax\n\t" \
-                      "jmp " __ASM_NAME(#func) __ASM_STDCALL(args) )
-#else /* __i386__ */
-
-#define THISCALL(func) func
-#define THISCALL_NAME(func) __ASM_NAME(#func)
-#define __thiscall __cdecl
-#define DEFINE_THISCALL_WRAPPER(func,args) /* nothing */
-
-#endif /* __i386__ */
 
 struct CVssWriter
 {
@@ -106,4 +85,20 @@ HRESULT __thiscall VSSAPI_CVssWriter_Unsubscribe( struct CVssWriter *writer )
 {
     FIXME( "%p\n", writer );
     return S_OK;
+}
+
+HRESULT WINAPI CreateVssBackupComponentsInternal(IVssBackupComponents **backup)
+{
+    FIXME("%p\n", backup);
+    return E_NOTIMPL;
+}
+
+/******************************************************************
+ *  ?CreateVssBackupComponents@@YGJPAPAVIVssBackupComponents@@@Z
+ */
+HRESULT WINAPI VSSAPI_CreateVssBackupComponents( IVssBackupComponents **backup )
+{
+    FIXME( "%p\n", backup );
+
+    return CreateVssBackupComponentsInternal(backup);
 }

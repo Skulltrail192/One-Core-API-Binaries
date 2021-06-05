@@ -3,11 +3,13 @@
 @ stub ShouldBlockRevert
 @ stub ??0CVssJetWriter@@QAE@XZ
 @ thiscall -arch=i386 ??0CVssWriter@@QAE@XZ(ptr) VSSAPI_CVssWriter_default_ctor
+@ cdecl -arch=win64 ??0CVssWriter@@QEAA@XZ(ptr) VSSAPI_CVssWriter_default_ctor
 @ stub ??1CVssJetWriter@@UAE@XZ
 @ thiscall -arch=i386 ??1CVssWriter@@UAE@XZ(ptr) VSSAPI_CVssWriter_dtor
+@ cdecl -arch=win64 ??1CVssWriter@@UEAA@XZ(ptr) VSSAPI_CVssWriter_dtor
 @ stub ?AreComponentsSelected@CVssJetWriter@@IBG_NXZ
 @ stub ?AreComponentsSelected@CVssWriter@@IBG_NXZ
-@ stub ?CreateVssBackupComponents@@YGJPAPAVIVssBackupComponents@@@Z
+@ stdcall ?CreateVssBackupComponents@@YGJPAPAVIVssBackupComponents@@@Z(ptr) VSSAPI_CreateVssBackupComponents
 @ stub ?CreateVssExamineWriterMetadata@@YGJPAGPAPAVIVssExamineWriterMetadata@@@Z
 @ stub ?CreateVssSnapshotSetDescription@@YGJU_GUID@@JPAPAVIVssSnapshotSetDescription@@@Z
 @ stub ?GetBackupType@CVssJetWriter@@IBG?AW4_VSS_BACKUP_TYPE@@XZ
@@ -27,7 +29,8 @@
 @ stub ?GetSnapshotDeviceName@CVssJetWriter@@IBGJPBGPAPBG@Z
 @ stub ?GetSnapshotDeviceName@CVssWriter@@IBGJPBGPAPBG@Z
 @ stub ?Initialize@CVssJetWriter@@QAGJU_GUID@@PBG_N211K@Z
-@ thiscall -arch=i386 ?Initialize@CVssWriter@@QAGJU_GUID@@PBGW4VSS_USAGE_TYPE@@W4VSS_SOURCE_TYPE@@W4_VSS_APPLICATION_LEVEL@@KW4VSS_ALTERNATE_WRITER_STATE@@_N@Z(ptr ptr wstr long long long long long long wstr) VSSAPI_CVssWriter_Initialize
+@ thiscall -arch=i386 ?Initialize@CVssWriter@@QAGJU_GUID@@PBGW4VSS_USAGE_TYPE@@W4VSS_SOURCE_TYPE@@W4_VSS_APPLICATION_LEVEL@@KW4VSS_ALTERNATE_WRITER_STATE@@_N@Z(ptr int128 wstr long long long long long long wstr) VSSAPI_CVssWriter_Initialize
+@ cdecl -arch=win64 ?Initialize@CVssWriter@@QEAAJU_GUID@@PEBGW4VSS_USAGE_TYPE@@W4VSS_SOURCE_TYPE@@W4_VSS_APPLICATION_LEVEL@@KW4VSS_ALTERNATE_WRITER_STATE@@_N1@Z(ptr int128 wstr long long long long long long wstr) VSSAPI_CVssWriter_Initialize
 @ stub ?InstallAlternateWriter@CVssWriter@@QAGJU_GUID@@0@Z
 @ stub ?IsBootableSystemStateBackedUp@CVssJetWriter@@IBG_NXZ
 @ stub ?IsBootableSystemStateBackedUp@CVssWriter@@IBG_NXZ
@@ -68,14 +71,16 @@
 @ stub ?SetWriterFailure@CVssJetWriter@@IAGJJ@Z
 @ stub ?SetWriterFailure@CVssWriter@@IAGJJ@Z
 @ thiscall -arch=i386 ?Subscribe@CVssWriter@@QAGJK@Z(ptr long) VSSAPI_CVssWriter_Subscribe
+@ cdecl -arch=win64 ?Subscribe@CVssWriter@@QEAAJK@Z(ptr long) VSSAPI_CVssWriter_Subscribe
 @ stub ?Uninitialize@CVssJetWriter@@QAGXXZ
 @ thiscall -arch=i386 ?Unsubscribe@CVssWriter@@QAGJXZ(ptr) VSSAPI_CVssWriter_Unsubscribe
-@ stub CreateVssBackupComponentsInternal
+@ cdecl -arch=win64 ?Unsubscribe@CVssWriter@@QEAAJXZ(ptr) VSSAPI_CVssWriter_Unsubscribe
+@ stdcall CreateVssBackupComponentsInternal(ptr)
 @ stub CreateVssExamineWriterMetadataInternal
 @ stub CreateVssExpressWriterInternal
 @ stub CreateWriter
 @ stub CreateWriterEx
-@ stub DllCanUnloadNow
+@ stdcall -private DllCanUnloadNow()
 @ stub DllGetClassObject
 @ stub GetProviderMgmtInterface
 @ stub GetProviderMgmtInterfaceInternal
