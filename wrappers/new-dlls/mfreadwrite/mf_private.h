@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Henri Verbeet for CodeWeavers
+ * Copyright 2020 Nikolay Sivov for CodeWeavers
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,11 +16,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#define WINE_FILEDESCRIPTION_STR "Wine KTM Win32 Client DLL"
-#define WINE_FILENAME_STR "ktmw32.dll"
-#define WINE_FILEVERSION 6,0,6000,16386
-#define WINE_FILEVERSION_STR "6.0.6000.16386"
-#define WINE_PRODUCTVERSION 6,0,6000,16386
-#define WINE_PRODUCTVERSION_STR "6.0.6000.16386"
-
-#include "wine/wine_common_ver.rc"
+extern HRESULT create_sink_writer_from_stream(IMFByteStream *stream, IMFAttributes *attributes,
+        REFIID riid, void **out) DECLSPEC_HIDDEN;
+extern HRESULT create_sink_writer_from_sink(IMFMediaSink *sink, IMFAttributes *attributes,
+        REFIID riid, void **out) DECLSPEC_HIDDEN;

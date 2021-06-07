@@ -16,37 +16,45 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-#include "config.h"
+#include "wine/config.h"
 
 #include <stdarg.h>
 
 #include "windef.h"
 #include "winbase.h"
-#include "mfreadwrite.h"
+#include "rpcproxy.h"
 
 #include "wine/debug.h"
+#include "wine/heap.h"
+#include "wine/list.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(mfplat);
 
-BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
+static HINSTANCE instance;
+
+BOOL WINAPI DllMain(HINSTANCE hinstance, DWORD reason, LPVOID reserved)
 {
     switch (reason)
     {
-        case DLL_WINE_PREATTACH:
-            return FALSE;    /* prefer native version */
-        case DLL_PROCESS_ATTACH:
-            DisableThreadLibraryCalls(instance);
-            break;
+    case DLL_PROCESS_ATTACH:
+        instance = hinstance;
+        DisableThreadLibraryCalls(hinstance);
+        break;
     }
-
     return TRUE;
 }
 
-
-HRESULT WINAPI MFCreateSourceReaderFromMediaSource(IMFMediaSource *source, IMFAttributes *attributes,
-                                                   IMFSourceReader **reader)
+HRESULT WINAPI DllCanUnloadNow(void)
 {
-    FIXME("%p %p %p stub.\n", source, attributes, reader);
+    return S_FALSE;
+}
 
-    return E_NOTIMPL;
+HRESULT WINAPI DllRegisterServer(void)
+{
+    return __wine_register_resources(instance);
+}
+
+HRESULT WINAPI DllUnregisterServer(void)
+{
+    return __wine_unregister_resources(instance);
 }

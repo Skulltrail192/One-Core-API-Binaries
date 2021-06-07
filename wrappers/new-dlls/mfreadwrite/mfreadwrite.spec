@@ -1,7 +1,9 @@
-@ stub DllCanUnloadNow
-@ stub DllGetClassObject
-@ stub MFCreateSinkWriterFromMediaSink
-@ stub MFCreateSinkWriterFromURL
-@ stub MFCreateSourceReaderFromByteStream
+@ stdcall -private DllCanUnloadNow()
+@ stdcall -private DllGetClassObject(ptr ptr ptr)
+@ stdcall -private DllRegisterServer()
+@ stdcall -private DllUnregisterServer()
+@ stdcall MFCreateSinkWriterFromMediaSink(ptr ptr ptr)
+@ stdcall MFCreateSinkWriterFromURL(wstr ptr ptr ptr)
+@ stdcall MFCreateSourceReaderFromByteStream(ptr ptr ptr)
 @ stdcall MFCreateSourceReaderFromMediaSource(ptr ptr ptr)
-@ stub MFCreateSourceReaderFromURL
+@ stdcall MFCreateSourceReaderFromURL(wstr ptr ptr)
