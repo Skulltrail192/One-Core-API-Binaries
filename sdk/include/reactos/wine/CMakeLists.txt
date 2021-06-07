@@ -16,4 +16,5 @@ add_idl_headers(wineheaders
 				mfmediaengine.idl 
 				mfplay.idl 
 				mfreadwrite.idl 
+				schrpc.idl 
 				)
