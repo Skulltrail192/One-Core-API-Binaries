@@ -1,0 +1,1 @@
+Reactos already has rsabase. Please include it on One-Core-API new dlls package
