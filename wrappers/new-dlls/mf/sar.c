@@ -1898,8 +1898,8 @@ static void sar_shutdown_object(void *user_context, IUnknown *obj)
 
 static const struct activate_funcs sar_activate_funcs =
 {
-    .create_object = sar_create_object,
-    .shutdown_object = sar_shutdown_object,
+    sar_create_object,
+    sar_shutdown_object,
 };
 
 /***********************************************************************

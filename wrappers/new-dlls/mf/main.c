@@ -36,6 +36,8 @@ WINE_DEFAULT_DEBUG_CHANNEL(mfplat);
 
 extern const GUID CLSID_FileSchemePlugin;
 
+static HINSTANCE instance;
+
 struct activate_object
 {
     IMFActivate IMFActivate_iface;
@@ -933,7 +935,7 @@ static HRESULT WINAPI file_scheme_handler_callback_Invoke(IMFAsyncCallback *ifac
 
     /* Strip from scheme, MFCreateFile() won't be expecting it. */
     url = context->url;
-    if (!wcsnicmp(context->url, schemeW, ARRAY_SIZE(schemeW)))
+    if (!_wcsnicmp(context->url, schemeW, ARRAY_SIZE(schemeW)))
         url += ARRAY_SIZE(schemeW);
 
     hr = MFCreateFile(context->flags & MF_RESOLUTION_WRITE ? MF_ACCESSMODE_READWRITE : MF_ACCESSMODE_READ,
@@ -1440,4 +1442,31 @@ HRESULT WINAPI MFRequireProtectedEnvironment(IMFPresentationDescriptor *pd)
     }
 
     return protected ? S_OK : S_FALSE;
+}
+
+BOOL WINAPI DllMain(HINSTANCE hinstance, DWORD reason, LPVOID reserved)
+{
+    switch (reason)
+    {
+    case DLL_PROCESS_ATTACH:
+        instance = hinstance;
+        DisableThreadLibraryCalls(hinstance);
+        break;
+    }
+    return TRUE;
+}
+
+HRESULT WINAPI DllCanUnloadNow(void)
+{
+    return S_FALSE;
+}
+
+HRESULT WINAPI DllRegisterServer(void)
+{
+    return __wine_register_resources(instance);
+}
+
+HRESULT WINAPI DllUnregisterServer(void)
+{
+    return __wine_unregister_resources(instance);
 }

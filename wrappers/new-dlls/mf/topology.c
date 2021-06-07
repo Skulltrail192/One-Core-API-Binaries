@@ -2295,9 +2295,9 @@ static HRESULT topology_loader_connect_source_to_sink(struct topoloader_context 
     if (FAILED(hr = topology_loader_get_node_type_handler(sink, &sink_handler)))
         goto done;
 
-    if (FAILED(IMFTopologyNode_GetUINT32(source, &MF_TOPONODE_CONNECT_METHOD, &source_method)))
+    if (FAILED(IMFTopologyNode_GetUINT32(source, &MF_TOPONODE_CONNECT_METHOD, (UINT32 *)&source_method)))
         source_method = MF_CONNECT_DIRECT;
-    if (FAILED(IMFTopologyNode_GetUINT32(sink, &MF_TOPONODE_CONNECT_METHOD, &sink_method)))
+    if (FAILED(IMFTopologyNode_GetUINT32(sink, &MF_TOPONODE_CONNECT_METHOD, (UINT32 *)&sink_method)))
         sink_method = MF_CONNECT_ALLOW_DECODER;
 
     sink_ctx.context = context;
