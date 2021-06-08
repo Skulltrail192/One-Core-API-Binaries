@@ -1,0 +1,10 @@
+TESTDLL   = ucrtbase.dll
+IMPORTS   = ucrtbase
+EXTRADEFS = -fno-builtin
+
+C_SRCS = \
+	cpp.c \
+	misc.c \
+	printf.c \
+	scanf.c \
+	string.c

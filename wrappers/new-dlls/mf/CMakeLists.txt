@@ -20,8 +20,6 @@ list(APPEND SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/mf.def)
 
 add_idl_headers(mf_idlheader mf.idl)
-# add_typelib(mf.idl)
-# add_rpcproxy_files(mf.idl)
 	
 add_library(mf SHARED ${SOURCE} mf.rc)
 add_dependencies(mf mf_idlheader stdole2 dxsdk)

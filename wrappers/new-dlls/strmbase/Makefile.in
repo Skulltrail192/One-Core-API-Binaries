@@ -1,0 +1,12 @@
+MODULE    = libstrmbase.a
+
+C_SRCS = \
+	dispatch.c \
+	filter.c \
+	mediatype.c \
+	outputqueue.c \
+	pin.c \
+	pospass.c \
+	qualitycontrol.c \
+	renderer.c \
+	seeking.c

@@ -1,0 +1,8 @@
+MODULE    = wpcap.dll
+DELAYIMPORTS = ws2_32
+EXTRALIBS = $(PCAP_LIBS)
+
+C_SRCS = \
+	wpcap.c
+
+RC_SRCS = version.rc

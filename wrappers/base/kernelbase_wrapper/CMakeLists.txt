@@ -9,7 +9,7 @@ include_directories(
 	${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine
 	${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys
 	${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys/win
-	${REACTOS_SOURCE_DIR}/wrappers/includes)	
+	${REACTOS_SOURCE_DIR}/wrappers/sdk/include/wsdk)	
 spec2def(kernelbase.dll kernelbase.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
