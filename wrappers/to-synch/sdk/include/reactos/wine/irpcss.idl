@@ -17,7 +17,7 @@
  */
 
 import "wtypes.idl";
-#include "orpc.idl"
+#include "wine/orpc.idl"
 
 cpp_quote("#define IRPCSS_PROTSEQ {'n','c','a','l','r','p','c',0}")
 cpp_quote("#define IRPCSS_ENDPOINT {'i','r','p','c','s','s',0}")

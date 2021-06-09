@@ -19,6 +19,7 @@
 #define COBJMACROS
 
 #include <stdarg.h>
+#include <stdio.h>
 #include "windef.h"
 #include "winbase.h"
 #include "ntsecapi.h"
@@ -1205,7 +1206,7 @@ static HRESULT opc_relationship_create(struct opc_relationship_set *set, const W
 
             /* FIXME: test that generated id is unique */
             RtlGenRandom(&generated, sizeof(generated));
-            swprintf(relationship->id, 10, L"R%08X", generated);
+            swprintf(relationship->id, L"R%08X", generated);
 
             if (opc_relationshipset_get_rel(set, relationship->id))
             {

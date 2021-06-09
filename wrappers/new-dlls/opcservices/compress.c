@@ -21,7 +21,7 @@
 #include <stdarg.h>
 
 #include "windef.h"
-#include "winternl.h"
+#include "wine/winternl.h"
 #include "msopc.h"
 
 #include "opc_private.h"

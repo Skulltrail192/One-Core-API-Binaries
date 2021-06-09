@@ -24,7 +24,11 @@ list(APPEND SOURCE
 	mfmediaengine.idl 
 	mfplay.idl 
 	mfreadwrite.idl 
+	opcbase.idl 	
+	opcobjectmodel.idl 	
+	opcparturi.idl 	
 	orpc.idl 	
+	msopc.idl 	
 	restrictederrorinfo.idl 	
 	roparameterizediid.idl 	
 	rtworkq.idl
