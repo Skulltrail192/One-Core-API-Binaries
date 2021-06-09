@@ -1,5 +1,0 @@
-TESTDLL  = prntvpt.dll
-IMPORTS  = prntvpt winspool ole32
-
-C_SRCS = \
-	prntvpt.c

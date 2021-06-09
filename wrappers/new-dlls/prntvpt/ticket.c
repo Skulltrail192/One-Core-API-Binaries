@@ -37,6 +37,9 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(prntvpt);
 
+#define DC_COLLATE              22
+#define DC_COLORDEVICE          32
+
 struct size
 {
     int width;
