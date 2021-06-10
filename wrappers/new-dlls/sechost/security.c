@@ -19,6 +19,7 @@
  */
 
 #include <stdarg.h>
+#include <stdio.h>
 #include "windef.h"
 #include "winbase.h"
 #include "sddl.h"
@@ -28,6 +29,12 @@
 #include "wine/heap.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(security);
+
+#define SECURITY_APP_PACKAGE_AUTHORITY {0,0,0,0,0,15}
+#define SECURITY_APP_PACKAGE_BASE_RID           __MSABI_LONG(0x000000002)
+#define SECURITY_BUILTIN_PACKAGE_ANY_PACKAGE    __MSABI_LONG(0x000000001)
+#define	ACCESS_AUDIT_OBJECT_ACE_TYPE	0x7
+#define	ACCESS_ALARM_OBJECT_ACE_TYPE	0x8
 
 static const struct
 {
@@ -205,7 +212,7 @@ static BOOL print_sid_numeric(PSID psid, WCHAR **pwptr, ULONG *plen)
         return FALSE;
     }
 
-    swprintf( buf, ARRAY_SIZE(buf), L"S-%u-%d", pisid->Revision, MAKELONG(
+    swprintf( buf, L"S-%u-%d", pisid->Revision, MAKELONG(
             MAKEWORD( pisid->IdentifierAuthority.Value[5], pisid->IdentifierAuthority.Value[4] ),
             MAKEWORD( pisid->IdentifierAuthority.Value[3], pisid->IdentifierAuthority.Value[2] )
             ) );
@@ -213,7 +220,7 @@ static BOOL print_sid_numeric(PSID psid, WCHAR **pwptr, ULONG *plen)
 
     for( i=0; i<pisid->SubAuthorityCount; i++ )
     {
-        swprintf( buf, ARRAY_SIZE(buf), L"-%u", pisid->SubAuthority[i] );
+        swprintf( buf, L"-%u", pisid->SubAuthority[i] );
         print_string(buf, -1, pwptr, plen);
     }
     return TRUE;
@@ -315,7 +322,7 @@ static void print_rights(DWORD mask, WCHAR **pwptr, ULONG *plen)
         if ((mask & (1 << i)) && !bit_names[i])
         {
             /* can't be built from bit names */
-            swprintf(buf, ARRAY_SIZE(buf), L"0x%x", mask);
+            swprintf(buf, L"0x%x", mask);
             print_string(buf, -1, pwptr, plen);
             return;
         }

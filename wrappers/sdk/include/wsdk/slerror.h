@@ -16,37 +16,12 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
+#ifndef __WINE_SLERROR_H
+#define __WINE_SLERROR_H
 
-#include <stdarg.h>
+#define SL_E_RIGHT_NOT_CONSUMED       0xC004F002
+#define SL_E_VALUE_NOT_FOUND          0xC004F012
+#define SL_E_RIGHT_NOT_GRANTED        0xC004F013
+#define SL_E_DATATYPE_MISMATCHED      0xC004F01E
 
-#include "ntstatus.h"
-#define WIN32_NO_STATUS
-#include "windef.h"
-#include "winbase.h"
-#include "wine/winternl.h"
-#include "wine/debug.h"
-
-#include "slpublic.h"
-#include "slerror.h"
-
-WINE_DEFAULT_DEBUG_CHANNEL(slc);
-
-HRESULT WINAPI SLGetLicensingStatusInformation(HSLC handle, const SLID *app, const SLID *product,
-                                               LPCWSTR name, UINT *count, SL_LICENSING_STATUS **status)
-{
-    FIXME("(%p %p %p %s %p %p) stub\n", handle, app, product, debugstr_w(name), count, status );
-
-    return SL_E_RIGHT_NOT_CONSUMED;
-}
-
-HRESULT WINAPI SLOpen(HSLC *handle)
-{
-    FIXME("(%p) stub\n", handle );
-
-    if (!handle)
-        return E_INVALIDARG;
-
-    *handle = (HSLC)0xdeadbeef;
-
-    return S_OK;
-}
+#endif /* __WINE_SLERROR_H */

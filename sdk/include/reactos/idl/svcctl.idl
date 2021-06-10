@@ -2,7 +2,12 @@
  * Service Control Manager (SCM) interface definition
  */
 
-#include <ms-dtyp.idl>
+#include "ms-dtyp.idl"
+
+cpp_quote("#define SVCCTL_TRANSPORT {'n','c','a','c','n','_','n','p',0}")
+cpp_quote("#define SVCCTL_TRANSPORTA \"ncacn_np\"")
+cpp_quote("#define SVCCTL_ENDPOINT {'\\\\','p','i','p','e','\\\\','s','v','c','c','t','l',0}")
+cpp_quote("#define SVCCTL_ENDPOINTA \"\\\\pipe\\\\svcctl\"")
 
 const unsigned int MAX_SERVICE_NAME_LENGTH = 256;
 const unsigned short SC_MAX_DEPEND_SIZE = 4 * 1024;
@@ -328,6 +333,8 @@ typedef struct _TAG_INFO_NAME_FROM_TAG
 ]
 interface svcctl
 {
+    typedef [handle] LPCWSTR MACHINE_HANDLEW;
+    typedef [handle] LPCSTR  MACHINE_HANDLEA;
     /* Function 0 */
     DWORD
     __stdcall
