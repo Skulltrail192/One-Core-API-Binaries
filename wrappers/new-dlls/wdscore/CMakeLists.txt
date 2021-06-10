@@ -12,5 +12,5 @@ list(APPEND SOURCE
 add_library(wdscore SHARED ${SOURCE})
 set_module_type(wdscore win32dll)
 target_link_libraries(wdscore wine)
-add_importlibs(wdscore advapi32 msvcrt kernel32 ntdll wdscorebase wdslegacy)
+add_importlibs(wdscore advapi32 msvcrt kernel32 ntdll)
 add_cd_file(TARGET wdscore DESTINATION reactos/system32 FOR all)

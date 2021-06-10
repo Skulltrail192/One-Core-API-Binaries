@@ -43,8 +43,3 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 
     return TRUE;
 }
-
-BOOL WINAPI WdsIsDiagnosticModeEnabled()
-{
-  return TRUE;
-}
