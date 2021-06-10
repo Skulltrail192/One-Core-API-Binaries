@@ -23,7 +23,7 @@
 #define WIN32_NO_STATUS
 #include "windef.h"
 #include "winbase.h"
-#include "wine/winternl.h"
+#include "winternl.h"
 #include "wine/debug.h"
 
 #include "slpublic.h"
@@ -47,6 +47,16 @@ HRESULT WINAPI SLOpen(HSLC *handle)
         return E_INVALIDARG;
 
     *handle = (HSLC)0xdeadbeef;
+
+    return S_OK;
+}
+
+HRESULT WINAPI SLPersistApplicationPolicies(const SLID *app, const SLID *product, DWORD flags)
+{
+    FIXME("(%s,%s,%x) stub\n", wine_dbgstr_guid(app), wine_dbgstr_guid(product), flags);
+
+    if (!app)
+        return E_INVALIDARG;
 
     return S_OK;
 }

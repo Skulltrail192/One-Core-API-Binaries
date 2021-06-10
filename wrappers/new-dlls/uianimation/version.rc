@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Alexandre Julliard
+ * Copyright 2009 Henri Verbeet for CodeWeavers
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,19 +16,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-/* this function is part of the import lib */
-#if 0
-#pragma makedep implib
-#endif
+#define WINE_FILEDESCRIPTION_STR "Windows Animation Manager"
+#define WINE_FILENAME_STR "uianimation.dll"
+#define WINE_FILEVERSION 6,0,6000,16386
+#define WINE_FILEVERSION_STR "6.0.6000.16386"
+#define WINE_PRODUCTVERSION 6,0,6000,16386
+#define WINE_PRODUCTVERSION_STR "6.0.6000.16386"
 
-#include <stdarg.h>
-#include <corecrt_stdio_config.h>
-
-int __cdecl __stdio_common_vsprintf(unsigned __int64 options, char *str, size_t len,
-                                    const char *format, _locale_t locale, __ms_va_list valist);
-
-int __cdecl _vsnprintf( char *buf, size_t size, const char *fmt, __ms_va_list args )
-{
-    return __stdio_common_vsprintf( _CRT_INTERNAL_LOCAL_PRINTF_OPTIONS | _CRT_INTERNAL_PRINTF_STANDARD_SNPRINTF_BEHAVIOR,
-                                    buf, size, fmt, NULL, args );
-}
+#include "wine/wine_common_ver.rc"

@@ -36,24 +36,6 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(uianimation);
 
-static HINSTANCE hinstance;
-
-BOOL WINAPI DllMain( HINSTANCE dll, DWORD reason, LPVOID reserved )
-{
-    TRACE("(%p %d %p)\n", dll, reason, reserved);
-
-    switch (reason)
-    {
-    case DLL_WINE_PREATTACH:
-        return FALSE;  /* prefer native version */
-    case DLL_PROCESS_ATTACH:
-        hinstance = dll;
-        DisableThreadLibraryCalls( dll );
-        break;
-    }
-    return TRUE;
-}
-
 struct class_factory
 {
     IClassFactory IClassFactory_iface;
@@ -1199,29 +1181,4 @@ HRESULT WINAPI DllGetClassObject( REFCLSID clsid, REFIID iid, void **obj )
         return CLASS_E_CLASSNOTAVAILABLE;
 
     return IClassFactory_QueryInterface( cf, iid, obj );
-}
-
-/******************************************************************
- *              DllCanUnloadNow
- */
-HRESULT WINAPI DllCanUnloadNow( void )
-{
-    TRACE( "()\n" );
-    return S_FALSE;
-}
-
-/***********************************************************************
- *          DllRegisterServer
- */
-HRESULT WINAPI DllRegisterServer( void )
-{
-    return __wine_register_resources( hinstance );
-}
-
-/***********************************************************************
- *          DllUnregisterServer
- */
-HRESULT WINAPI DllUnregisterServer( void )
-{
-    return __wine_unregister_resources( hinstance );
 }

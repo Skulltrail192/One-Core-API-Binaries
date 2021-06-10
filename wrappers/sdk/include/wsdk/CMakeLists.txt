@@ -33,6 +33,7 @@ list(APPEND SOURCE
 	roparameterizediid.idl 	
 	rtworkq.idl
 	schrpc.idl
+	uianimation.idl
 	uiautomationclient.idl
 	uiautomationcore.idl
 	uiribbon.idl
