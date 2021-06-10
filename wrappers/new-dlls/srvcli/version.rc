@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Fabian Maurer
+ * Copyright 2009 Henri Verbeet for CodeWeavers
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,10 +16,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-/* Don't define those GUIDs here */
-#include "propidl.h"
-#include "mfidl.h"
+#define WINE_FILEDESCRIPTION_STR "Server Service Client DLL"
+#define WINE_FILENAME_STR "srvcli.dll"
+#define WINE_FILEVERSION 6,0,6000,16386
+#define WINE_FILEVERSION_STR "6.0.6000.16386"
+#define WINE_PRODUCTVERSION 6,0,6000,16386
+#define WINE_PRODUCTVERSION_STR "6.0.6000.16386"
 
-#include "initguid.h"
-
-#include "evr.h"
+#include "wine/wine_common_ver.rc"

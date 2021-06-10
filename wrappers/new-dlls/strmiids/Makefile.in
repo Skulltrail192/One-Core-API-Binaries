@@ -1,5 +1,0 @@
-MODULE    = libstrmiids.a
-
-C_SRCS = \
-	evr.c \
-	strmiids.c
