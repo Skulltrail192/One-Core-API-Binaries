@@ -19,8 +19,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
-
 #include <stdarg.h>
 
 #include "windef.h"
@@ -29,22 +27,6 @@
 #include "wimgapi.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(wimgapi);
-
-BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, void *reserved)
-{
-    TRACE("(0x%p, %d, %p)\n", instance, reason, reserved);
-
-    switch (reason)
-    {
-        case DLL_WINE_PREATTACH:
-            return FALSE;    /* prefer native version */
-        case DLL_PROCESS_ATTACH:
-            DisableThreadLibraryCalls(instance);
-            break;
-    }
-
-    return TRUE;
-}
 
 DWORD WINAPI WIMRegisterMessageCallback(HANDLE wim, FARPROC callback, PVOID data)
 {
@@ -64,4 +46,9 @@ HANDLE WINAPI WIMCreateFile(WCHAR *path, DWORD access, DWORD creation, DWORD fla
     FIXME("(%s %d %d %d %d %p) stub\n", debugstr_w(path), access, creation, flags, compression, result);
     SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
     return NULL;
+}
+
+HRESULT WINAPI DllCanUnloadNow(void)
+{
+    return S_FALSE;
 }
