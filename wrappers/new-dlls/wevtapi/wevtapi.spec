@@ -4,7 +4,7 @@
 @ stdcall EvtClose(ptr)
 @ stub EvtCreateBookmark
 @ stub EvtCreateRenderContext
-@ stub EvtExportLog
+@ stdcall EvtExportLog(ptr wstr wstr wstr long)
 @ stub EvtFormatMessage
 @ stdcall EvtGetChannelConfigProperty(ptr long long long ptr ptr)
 @ stub EvtGetEventInfo
@@ -38,7 +38,7 @@
 @ stdcall EvtOpenSession(long ptr long long)
 @ stdcall EvtQuery(ptr wstr wstr long)
 @ stub EvtRender
-@ stub EvtSaveChannelConfig
+@ stdcall EvtSaveChannelConfig(ptr long)
 @ stub EvtSeek
 @ stdcall EvtSetChannelConfigProperty(ptr long long ptr)
 @ stub EvtSetObjectArrayProperty

@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "config.h"
-
 #include <stdarg.h>
+
+#define NONAMELESSUNION
 
 #include "windef.h"
 #include "winbase.h"
@@ -28,21 +28,7 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(wevtapi);
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
-{
-    TRACE("(0x%p, %d, %p)\n", hinstDLL, fdwReason, lpvReserved);
-
-    switch (fdwReason)
-    {
-        case DLL_WINE_PREATTACH:
-            return FALSE;    /* prefer native version */
-        case DLL_PROCESS_ATTACH:
-            DisableThreadLibraryCalls(hinstDLL);
-            break;
-    }
-
-    return TRUE;
-}
+static const WCHAR log_pathW[] = L"C:\\windows\\temp\\evt.log";
 
 EVT_HANDLE WINAPI EvtOpenSession(EVT_LOGIN_CLASS login_class, void *login, DWORD timeout, DWORD flags)
 {
@@ -65,6 +51,28 @@ BOOL WINAPI EvtGetChannelConfigProperty(EVT_HANDLE ChannelConfig,
 {
     FIXME("(%p %i %u %u %p %p) stub\n", ChannelConfig, PropertyId, Flags, PropertyValueBufferSize,
           PropertyValueBuffer, PropertyValueBufferUsed);
+
+    switch (PropertyId)
+    {
+    case EvtChannelLoggingConfigLogFilePath:
+        *PropertyValueBufferUsed = sizeof(log_pathW) + sizeof(EVT_VARIANT);
+
+        if (PropertyValueBufferSize < sizeof(log_pathW) + sizeof(EVT_VARIANT) || !PropertyValueBuffer)
+        {
+            SetLastError(ERROR_INSUFFICIENT_BUFFER);
+            return FALSE;
+        }
+
+        PropertyValueBuffer->u.StringVal = (LPWSTR)(PropertyValueBuffer + 1);
+        wcscpy((LPWSTR)PropertyValueBuffer->u.StringVal, log_pathW);
+        PropertyValueBuffer->Type = EvtVarTypeString;
+        return TRUE;
+
+    default:
+        SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+        break;
+    }
+
     return FALSE;
 }
 
@@ -74,7 +82,7 @@ BOOL WINAPI EvtSetChannelConfigProperty(EVT_HANDLE ChannelConfig,
                                         PEVT_VARIANT PropertyValue)
 {
     FIXME("(%p %i %u %p) stub\n", ChannelConfig, PropertyId, Flags, PropertyValue);
-    return FALSE;
+    return TRUE;
 }
 
 EVT_HANDLE WINAPI EvtSubscribe(EVT_HANDLE Session, HANDLE SignalEvent, LPCWSTR ChannelPath,
@@ -101,13 +109,19 @@ BOOL WINAPI EvtNextChannelPath(EVT_HANDLE channel_enum, DWORD buffer_len, WCHAR 
 EVT_HANDLE WINAPI EvtOpenChannelConfig(EVT_HANDLE Session, LPCWSTR ChannelPath, DWORD Flags)
 {
     FIXME("(%p %s %u) stub\n", Session, debugstr_w(ChannelPath), Flags);
-    return NULL;
+    return (EVT_HANDLE)0xdeadbeef;
 }
 
 EVT_HANDLE WINAPI EvtQuery(EVT_HANDLE session, const WCHAR *path, const WCHAR *query, DWORD flags)
 {
     FIXME("(%p %s %s %u) stub\n", session, debugstr_w(path), debugstr_w(query), flags);
     return NULL;
+}
+
+BOOL WINAPI EvtSaveChannelConfig(EVT_HANDLE channel, DWORD flags)
+{
+    FIXME("(%p,%08x) stub\n", channel, flags);
+    return TRUE;
 }
 
 BOOL WINAPI EvtClose(EVT_HANDLE handle)
@@ -119,6 +133,13 @@ BOOL WINAPI EvtClose(EVT_HANDLE handle)
 BOOL WINAPI EvtNext(EVT_HANDLE result_set, DWORD size, EVT_HANDLE *array, DWORD timeout, DWORD flags, DWORD *ret_count)
 {
     FIXME("(%p %u %p %u %#x %p) stub!\n", result_set, size, array, timeout, flags, ret_count);
+    SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
+    return FALSE;
+}
+
+BOOL WINAPI EvtExportLog(EVT_HANDLE session, const WCHAR *path, const WCHAR *query, const WCHAR *file, DWORD flags)
+{
+    FIXME("(%p %s %s %s %#x) stub!\n", session, debugstr_w(path), debugstr_w(query), debugstr_w(file), flags);
     SetLastError(ERROR_CALL_NOT_IMPLEMENTED);
     return FALSE;
 }
