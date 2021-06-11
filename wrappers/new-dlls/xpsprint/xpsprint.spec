@@ -1,6 +1,6 @@
-3 stub @
-5 stub @
+3 stub -noname Function1
+5 stub -noname Function2
 
-@ stub DllMain
+@ stdcall DllMain(ptr long ptr)
 @ stub StartXpsPrintJob1
 @ stub StartXpsPrintJob
