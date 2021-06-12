@@ -4,7 +4,7 @@ remove_definitions(-D_WIN32_WINNT=0x502)
 add_definitions(-D_WIN32_WINNT=0x600)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 
-spec2def(gamingtcui.dll gamingtcui.spec)
+spec2def(gamingtcui.dll gamingtcui.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
     gamingtcui_main.c
