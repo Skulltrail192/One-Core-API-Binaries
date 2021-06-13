@@ -1,0 +1,24 @@
+MODULE    = dwrite.dll
+IMPORTLIB = dwrite
+IMPORTS   = user32 gdi32 advapi32
+EXTRAINCL = $(FREETYPE_CFLAGS)
+
+EXTRADLLFLAGS = -mno-cygwin
+
+C_SRCS = \
+	analyzer.c \
+	bidi.c \
+	bracket.c \
+	direction.c \
+	font.c \
+	freetype.c \
+	gdiinterop.c \
+	layout.c \
+	linebreak.c \
+	main.c \
+	mirror.c \
+	opentype.c \
+	scripts.c \
+	shape.c \
+	shapers/arabic.c \
+	shapers/arabic_table.c
