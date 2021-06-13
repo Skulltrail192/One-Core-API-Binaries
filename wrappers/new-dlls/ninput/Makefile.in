@@ -1,7 +1,0 @@
-MODULE    = ninput.dll
-IMPORTLIB = ninput
-
-EXTRADLLFLAGS = -mno-cygwin -Wb,--prefer-native
-
-C_SRCS = \
-	main.c
