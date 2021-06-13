@@ -1,2 +1,0 @@
-MODULE = tzres.dll
-RC_SRCS = tzres.rc
