@@ -1,5 +1,0 @@
-TESTDLL = windows.gaming.input.dll
-IMPORTS = combase uuid
-
-C_SRCS = \
-	input.c

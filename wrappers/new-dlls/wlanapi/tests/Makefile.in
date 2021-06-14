@@ -1,5 +1,0 @@
-TESTDLL   = wlanapi.dll
-IMPORTS   = wlanapi
-
-C_SRCS = \
-	wlanapi.c

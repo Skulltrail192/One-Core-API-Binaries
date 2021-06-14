@@ -1,5 +1,0 @@
-TESTDLL = windows.globalization.dll
-IMPORTS = combase uuid
-
-C_SRCS = \
-	globalization.c

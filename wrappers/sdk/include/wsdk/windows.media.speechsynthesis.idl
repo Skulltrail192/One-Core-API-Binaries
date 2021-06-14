@@ -1,0 +1,115 @@
+/*
+ * Copyright 2020 Rémi Bernon for CodeWeavers
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+ */
+
+#ifdef __WIDL__
+#pragma winrt ns_prefix
+#endif
+
+import "inspectable.idl";
+import "windows.foundation.idl";
+
+namespace Windows {
+    namespace Foundation {
+        interface IClosable;
+    }
+    namespace Media {
+        namespace SpeechSynthesis {
+            typedef enum VoiceGender VoiceGender;
+            interface IInstalledVoicesStatic;
+            interface IInstalledVoicesStatic2;
+            interface ISpeechSynthesizer;
+            interface ISpeechSynthesizer2;
+            interface IVoiceInformation;
+            runtimeclass SpeechSynthesizer;
+            runtimeclass VoiceInformation;
+        }
+    }
+}
+
+namespace Windows {
+    namespace Media {
+        namespace SpeechSynthesis {
+            declare {
+                interface Windows.Foundation.Collections.IIterator<Windows.Media.SpeechSynthesis.VoiceInformation*>;
+                interface Windows.Foundation.Collections.IIterable<Windows.Media.SpeechSynthesis.VoiceInformation*>;
+                interface Windows.Foundation.Collections.IVectorView<Windows.Media.SpeechSynthesis.VoiceInformation*>;
+            }
+        }
+    }
+}
+
+namespace Windows {
+    namespace Media {
+        namespace SpeechSynthesis {
+            [contract(Windows.Foundation.UniversalApiContract, 1.0)]
+            enum VoiceGender
+            {
+                Male   = 0,
+                Female = 1
+            };
+
+            [
+                contract(Windows.Foundation.UniversalApiContract, 1.0),
+                exclusiveto(Windows.Media.SpeechSynthesis.VoiceInformation),
+                uuid(b127d6a4-1291-4604-aa9c-83134083352c)
+            ]
+            interface IVoiceInformation : IInspectable
+            {
+                [propget] HRESULT DisplayName([out] [retval] HSTRING* value);
+                [propget] HRESULT Id([out] [retval] HSTRING* value);
+                [propget] HRESULT Language([out] [retval] HSTRING* value);
+                [propget] HRESULT Description([out] [retval] HSTRING* value);
+                [propget] HRESULT Gender([out] [retval] VoiceGender* value);
+            }
+
+            [
+                contract(Windows.Foundation.UniversalApiContract, 1.0),
+                exclusiveto(Windows.Media.SpeechSynthesis.SpeechSynthesizer),
+                uuid(7d526ecc-7533-4c3f-85be-888c2baeebdc)
+            ]
+            interface IInstalledVoicesStatic : IInspectable
+            {
+                [propget] HRESULT AllVoices([out, retval] Windows.Foundation.Collections.IVectorView<VoiceInformation*>** value);
+                [propget] HRESULT DefaultVoice([out, retval] VoiceInformation** value);
+            }
+
+            [
+                contract(Windows.Foundation.UniversalApiContract, 1.0),
+                marshaling_behavior(agile)
+            ]
+            runtimeclass VoiceInformation
+            {
+                [default] interface Windows.Media.SpeechSynthesis.IVoiceInformation;
+            }
+
+            [
+                activatable(Windows.Foundation.UniversalApiContract, 1.0),
+                contract(Windows.Foundation.UniversalApiContract, 1.0),
+                marshaling_behavior(agile),
+                static(Windows.Media.SpeechSynthesis.IInstalledVoicesStatic, Windows.Foundation.UniversalApiContract, 1.0),
+                static(Windows.Media.SpeechSynthesis.IInstalledVoicesStatic2, Windows.Foundation.UniversalApiContract, 5.0)
+            ]
+            runtimeclass SpeechSynthesizer
+            {
+                [default] interface Windows.Media.SpeechSynthesis.ISpeechSynthesizer;
+                interface Windows.Foundation.IClosable;
+                [contract(Windows.Foundation.UniversalApiContract, 4.0)] interface Windows.Media.SpeechSynthesis.ISpeechSynthesizer2;
+            }
+        }
+    }
+}
