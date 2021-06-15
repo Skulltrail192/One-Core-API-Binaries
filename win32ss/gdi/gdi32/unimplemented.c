@@ -108,3 +108,8 @@ BOOL WINAPI GetFontRealizationInfo(HDC hdc, struct font_realization_info *info)
 {
 	return FALSE;
 }
+
+NTSTATUS WINAPI D3DKMTCheckVidPnExclusiveOwnership( const D3DKMT_CHECKVIDPNEXCLUSIVEOWNERSHIP *desc )
+{
+	return STATUS_SUCCESS;
+}

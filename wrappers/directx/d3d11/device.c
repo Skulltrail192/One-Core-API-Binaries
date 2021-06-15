@@ -302,7 +302,7 @@ static struct wined3d_state *d3d_device_context_state_get_wined3d_state(struct d
         return entry->wined3d_state;
 
     if (FAILED(wined3d_state_create(device->wined3d_device,
-            (enum wined3d_feature_level *)&state->feature_level, 1, &wined3d_state)))
+            (const enum wined3d_feature_level *)(D3D_FEATURE_LEVEL *)&state->feature_level, 1, &wined3d_state)))
         return NULL;
 
     if (!d3d_device_context_state_add_entry(state, device, wined3d_state))

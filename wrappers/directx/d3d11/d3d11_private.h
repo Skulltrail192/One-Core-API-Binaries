@@ -36,7 +36,7 @@
 #include "initguid.h"
 #endif
 #include "d3d/wined3d.h"
-#include "wine/winedxgi.h"
+#include "winedxgi.h"
 #include "wine/rbtree.h"
 
 #define MAKE_TAG(ch0, ch1, ch2, ch3) \

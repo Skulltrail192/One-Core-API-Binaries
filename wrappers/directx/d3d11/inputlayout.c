@@ -18,7 +18,7 @@
  */
 
 #include "d3d11_private.h"
-#include "winternl.h"
+#include "wine/winternl.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d11);
 

@@ -622,3 +622,4 @@
 618 stdcall D3DKMTDestroyDevice(ptr)
 619 stdcall D3DKMTOpenAdapterFromGdiDisplayName(ptr)
 620 stdcall D3DKMTSetVidPnSourceOwner(ptr)
+621 stdcall D3DKMTCheckVidPnExclusiveOwnership(ptr)
