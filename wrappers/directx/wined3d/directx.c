@@ -679,7 +679,7 @@ static void wined3d_copy_name(char *dst, const char *src, unsigned int dst_size)
     }
 }
 
-bool wined3d_driver_info_init(struct wined3d_driver_info *driver_info,
+BOOL wined3d_driver_info_init(struct wined3d_driver_info *driver_info,
         const struct wined3d_gpu_description *gpu_desc, enum wined3d_feature_level feature_level,
         UINT64 vram_bytes, UINT64 sysmem_bytes)
 {
@@ -3047,45 +3047,45 @@ static void adapter_no3d_dispatch_compute(struct wined3d_device *device,
 }
 
 static void adapter_no3d_clear_uav(struct wined3d_context *context,
-        struct wined3d_unordered_access_view *view, const struct wined3d_uvec4 *clear_value, bool fp)
+        struct wined3d_unordered_access_view *view, const struct wined3d_uvec4 *clear_value, BOOL fp)
 {
     ERR("context %p, view %p, clear_value %s, fp %#x.\n", context, view, debug_uvec4(clear_value), fp);
 }
 
 static const struct wined3d_adapter_ops wined3d_adapter_no3d_ops =
 {
-    .adapter_destroy = adapter_no3d_destroy,
-    .adapter_create_device = adapter_no3d_create_device,
-    .adapter_destroy_device = adapter_no3d_destroy_device,
-    .adapter_acquire_context = adapter_no3d_acquire_context,
-    .adapter_release_context = adapter_no3d_release_context,
-    .adapter_get_wined3d_caps = adapter_no3d_get_wined3d_caps,
-    .adapter_check_format = adapter_no3d_check_format,
-    .adapter_init_3d = adapter_no3d_init_3d,
-    .adapter_uninit_3d = adapter_no3d_uninit_3d,
-    .adapter_map_bo_address = adapter_no3d_map_bo_address,
-    .adapter_unmap_bo_address = adapter_no3d_unmap_bo_address,
-    .adapter_copy_bo_address = adapter_no3d_copy_bo_address,
-    .adapter_create_swapchain = adapter_no3d_create_swapchain,
-    .adapter_destroy_swapchain = adapter_no3d_destroy_swapchain,
-    .adapter_create_buffer = adapter_no3d_create_buffer,
-    .adapter_destroy_buffer = adapter_no3d_destroy_buffer,
-    .adapter_create_texture = adapter_no3d_create_texture,
-    .adapter_destroy_texture = adapter_no3d_destroy_texture,
-    .adapter_create_rendertarget_view = adapter_no3d_create_rendertarget_view,
-    .adapter_destroy_rendertarget_view = adapter_no3d_destroy_rendertarget_view,
-    .adapter_create_shader_resource_view = adapter_no3d_create_shader_resource_view,
-    .adapter_destroy_shader_resource_view = adapter_no3d_destroy_shader_resource_view,
-    .adapter_create_unordered_access_view = adapter_no3d_create_unordered_access_view,
-    .adapter_destroy_unordered_access_view = adapter_no3d_destroy_unordered_access_view,
-    .adapter_create_sampler = adapter_no3d_create_sampler,
-    .adapter_destroy_sampler = adapter_no3d_destroy_sampler,
-    .adapter_create_query = adapter_no3d_create_query,
-    .adapter_destroy_query = adapter_no3d_destroy_query,
-    .adapter_flush_context = adapter_no3d_flush_context,
-    .adapter_draw_primitive = adapter_no3d_draw_primitive,
-    .adapter_dispatch_compute = adapter_no3d_dispatch_compute,
-    .adapter_clear_uav = adapter_no3d_clear_uav,
+    adapter_no3d_destroy,
+    adapter_no3d_create_device,
+    adapter_no3d_destroy_device,
+    adapter_no3d_acquire_context,
+    adapter_no3d_release_context,
+    adapter_no3d_get_wined3d_caps,
+    adapter_no3d_check_format,
+    adapter_no3d_init_3d,
+    adapter_no3d_uninit_3d,
+    adapter_no3d_map_bo_address,
+    adapter_no3d_unmap_bo_address,
+    adapter_no3d_copy_bo_address,
+    adapter_no3d_create_swapchain,
+    adapter_no3d_destroy_swapchain,
+    adapter_no3d_create_buffer,
+    adapter_no3d_destroy_buffer,
+    adapter_no3d_create_texture,
+    adapter_no3d_destroy_texture,
+    adapter_no3d_create_rendertarget_view,
+    adapter_no3d_destroy_rendertarget_view,
+    adapter_no3d_create_shader_resource_view,
+    adapter_no3d_destroy_shader_resource_view,
+    adapter_no3d_create_unordered_access_view,
+    adapter_no3d_destroy_unordered_access_view,
+    adapter_no3d_create_sampler,
+    adapter_no3d_destroy_sampler,
+    adapter_no3d_create_query,
+    adapter_no3d_destroy_query,
+    adapter_no3d_flush_context,
+    adapter_no3d_draw_primitive,
+    adapter_no3d_dispatch_compute,
+    adapter_no3d_clear_uav,
 };
 
 static void wined3d_adapter_no3d_init_d3d_info(struct wined3d_adapter *adapter, unsigned int wined3d_creation_flags)

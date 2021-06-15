@@ -249,11 +249,11 @@ static void wined3d_unload_vulkan(struct wined3d_vk_info *vk_info)
 static BOOL wined3d_load_vulkan(struct wined3d_vk_info *vk_info)
 {
     struct vulkan_ops *vk_ops = &vk_info->vk_ops;
-    const struct vulkan_funcs *vk_funcs;
+    const struct vulkan_funcs *vk_funcs = NULL;
     HDC dc;
 
     dc = GetDC(0);
-    vk_funcs = __wine_get_vulkan_driver(dc, WINE_VULKAN_DRIVER_VERSION);
+	//vk_funcs = __wine_get_vulkan_driver(dc, WINE_VULKAN_DRIVER_VERSION);
     ReleaseDC(0, dc);
 
     if (!vk_funcs)
@@ -392,8 +392,8 @@ static void wined3d_allocator_vk_destroy_chunk(struct wined3d_allocator_chunk *c
 
 static const struct wined3d_allocator_ops wined3d_allocator_vk_ops =
 {
-    .allocator_create_chunk = wined3d_allocator_vk_create_chunk,
-    .allocator_destroy_chunk = wined3d_allocator_vk_destroy_chunk,
+    wined3d_allocator_vk_create_chunk,
+    wined3d_allocator_vk_destroy_chunk,
 };
 
 static HRESULT adapter_vk_create_device(struct wined3d *wined3d, const struct wined3d_adapter *adapter,
@@ -558,7 +558,7 @@ static void adapter_vk_get_wined3d_caps(const struct wined3d_adapter *adapter, s
 {
     const struct wined3d_adapter_vk *adapter_vk = wined3d_adapter_vk_const(adapter);
     const VkPhysicalDeviceLimits *limits = &adapter_vk->device_limits;
-    bool sampler_anisotropy = limits->maxSamplerAnisotropy > 1.0f;
+    BOOL sampler_anisotropy = limits->maxSamplerAnisotropy > 1.0f;
     const struct wined3d_vk_info *vk_info = &adapter_vk->vk_info;
 
     caps->ddraw_caps.dds_caps |= WINEDDSCAPS_BACKBUFFER
@@ -1744,7 +1744,7 @@ static void adapter_vk_dispatch_compute(struct wined3d_device *device,
 }
 
 static void adapter_vk_clear_uav(struct wined3d_context *context,
-        struct wined3d_unordered_access_view *view, const struct wined3d_uvec4 *clear_value, bool fp)
+        struct wined3d_unordered_access_view *view, const struct wined3d_uvec4 *clear_value, BOOL fp)
 {
     TRACE("context %p, view %p, clear_value %s.\n", context, view, debug_uvec4(clear_value));
 
@@ -1762,44 +1762,44 @@ static void adapter_vk_generate_mipmap(struct wined3d_context *context, struct w
 
 static const struct wined3d_adapter_ops wined3d_adapter_vk_ops =
 {
-    .adapter_destroy = adapter_vk_destroy,
-    .adapter_create_device = adapter_vk_create_device,
-    .adapter_destroy_device = adapter_vk_destroy_device,
-    .adapter_acquire_context = adapter_vk_acquire_context,
-    .adapter_release_context = adapter_vk_release_context,
-    .adapter_get_wined3d_caps = adapter_vk_get_wined3d_caps,
-    .adapter_check_format = adapter_vk_check_format,
-    .adapter_init_3d = adapter_vk_init_3d,
-    .adapter_uninit_3d = adapter_vk_uninit_3d,
-    .adapter_map_bo_address = adapter_vk_map_bo_address,
-    .adapter_unmap_bo_address = adapter_vk_unmap_bo_address,
-    .adapter_copy_bo_address = adapter_vk_copy_bo_address,
-    .adapter_create_swapchain = adapter_vk_create_swapchain,
-    .adapter_destroy_swapchain = adapter_vk_destroy_swapchain,
-    .adapter_create_buffer = adapter_vk_create_buffer,
-    .adapter_destroy_buffer = adapter_vk_destroy_buffer,
-    .adapter_create_texture = adapter_vk_create_texture,
-    .adapter_destroy_texture = adapter_vk_destroy_texture,
-    .adapter_create_rendertarget_view = adapter_vk_create_rendertarget_view,
-    .adapter_destroy_rendertarget_view = adapter_vk_destroy_rendertarget_view,
-    .adapter_create_shader_resource_view = adapter_vk_create_shader_resource_view,
-    .adapter_destroy_shader_resource_view = adapter_vk_destroy_shader_resource_view,
-    .adapter_create_unordered_access_view = adapter_vk_create_unordered_access_view,
-    .adapter_destroy_unordered_access_view = adapter_vk_destroy_unordered_access_view,
-    .adapter_create_sampler = adapter_vk_create_sampler,
-    .adapter_destroy_sampler = adapter_vk_destroy_sampler,
-    .adapter_create_query = adapter_vk_create_query,
-    .adapter_destroy_query = adapter_vk_destroy_query,
-    .adapter_flush_context = adapter_vk_flush_context,
-    .adapter_draw_primitive = adapter_vk_draw_primitive,
-    .adapter_dispatch_compute = adapter_vk_dispatch_compute,
-    .adapter_clear_uav = adapter_vk_clear_uav,
-    .adapter_generate_mipmap = adapter_vk_generate_mipmap,
+    adapter_vk_destroy,
+    adapter_vk_create_device,
+    adapter_vk_destroy_device,
+    adapter_vk_acquire_context,
+    adapter_vk_release_context,
+    adapter_vk_get_wined3d_caps,
+    adapter_vk_check_format,
+    adapter_vk_init_3d,
+    adapter_vk_uninit_3d,
+    adapter_vk_map_bo_address,
+    adapter_vk_unmap_bo_address,
+    adapter_vk_copy_bo_address,
+    adapter_vk_create_swapchain,
+    adapter_vk_destroy_swapchain,
+    adapter_vk_create_buffer,
+    adapter_vk_destroy_buffer,
+    adapter_vk_create_texture,
+    adapter_vk_destroy_texture,
+    adapter_vk_create_rendertarget_view,
+    adapter_vk_destroy_rendertarget_view,
+    adapter_vk_create_shader_resource_view,
+    adapter_vk_destroy_shader_resource_view,
+    adapter_vk_create_unordered_access_view,
+    adapter_vk_destroy_unordered_access_view,
+    adapter_vk_create_sampler,
+    adapter_vk_destroy_sampler,
+    adapter_vk_create_query,
+    adapter_vk_destroy_query,
+    adapter_vk_flush_context,
+    adapter_vk_draw_primitive,
+    adapter_vk_dispatch_compute,
+    adapter_vk_clear_uav,
+    adapter_vk_generate_mipmap,
 };
 
 static unsigned int wined3d_get_wine_vk_version(void)
 {
-    const char *ptr = PACKAGE_VERSION;
+    const char *ptr = "1.0";
     int major, minor;
 
     major = atoi(ptr);
@@ -2036,7 +2036,7 @@ static enum wined3d_display_driver guess_display_driver(enum wined3d_pci_vendor 
     }
 }
 
-static bool adapter_vk_init_driver_info(struct wined3d_adapter_vk *adapter_vk,
+static BOOL adapter_vk_init_driver_info(struct wined3d_adapter_vk *adapter_vk,
         const VkPhysicalDeviceProperties *properties)
 {
     const VkPhysicalDeviceMemoryProperties *memory_properties = &adapter_vk->memory_properties;
@@ -2166,14 +2166,14 @@ static void wined3d_adapter_vk_init_d3d_info(struct wined3d_adapter_vk *adapter_
     d3d_info->multisample_draw_location = WINED3D_LOCATION_TEXTURE_RGB;
 }
 
-static bool wined3d_adapter_vk_init_device_extensions(struct wined3d_adapter_vk *adapter_vk)
+static BOOL wined3d_adapter_vk_init_device_extensions(struct wined3d_adapter_vk *adapter_vk)
 {
     VkPhysicalDevice physical_device = adapter_vk->physical_device;
     struct wined3d_vk_info *vk_info = &adapter_vk->vk_info;
     unsigned int count, enable_count, i, j;
     const char **enabled_extensions = NULL;
     VkExtensionProperties *extensions;
-    bool found, success = false;
+    BOOL found, success = false;
     SIZE_T enable_size = 0;
     VkResult vr;
 
@@ -2181,7 +2181,7 @@ static bool wined3d_adapter_vk_init_device_extensions(struct wined3d_adapter_vk 
     {
         const char *name;
         unsigned int core_since_version;
-        bool required;
+        BOOL required;
     }
     info[] =
     {

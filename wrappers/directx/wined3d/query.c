@@ -1356,7 +1356,7 @@ void wined3d_query_pool_vk_free_query(struct wined3d_query_pool_vk *pool_vk, siz
         list_add_tail(pool_vk->free_list, &pool_vk->entry);
 }
 
-bool wined3d_query_pool_vk_allocate_query(struct wined3d_query_pool_vk *pool_vk, size_t *idx)
+BOOL wined3d_query_pool_vk_allocate_query(struct wined3d_query_pool_vk *pool_vk, size_t *idx)
 {
     if ((*idx = wined3d_bitmap_ffz(pool_vk->allocated, WINED3D_QUERY_POOL_SIZE, 0)) > WINED3D_QUERY_POOL_SIZE)
         return false;
@@ -1374,7 +1374,7 @@ void wined3d_query_pool_vk_cleanup(struct wined3d_query_pool_vk *pool_vk, struct
     list_remove(&pool_vk->entry);
 }
 
-bool wined3d_query_pool_vk_init(struct wined3d_query_pool_vk *pool_vk,
+BOOL wined3d_query_pool_vk_init(struct wined3d_query_pool_vk *pool_vk,
         struct wined3d_context_vk *context_vk, enum wined3d_query_type type, struct list *free_pools)
 {
     struct wined3d_device_vk *device_vk = wined3d_device_vk(context_vk->c.device);
@@ -1442,7 +1442,7 @@ bool wined3d_query_pool_vk_init(struct wined3d_query_pool_vk *pool_vk,
     return true;
 }
 
-bool wined3d_query_vk_accumulate_data(struct wined3d_query_vk *query_vk,
+BOOL wined3d_query_vk_accumulate_data(struct wined3d_query_vk *query_vk,
         struct wined3d_context_vk *context_vk, const struct wined3d_query_pool_idx_vk *pool_idx)
 {
     struct wined3d_device_vk *device_vk = wined3d_device_vk(context_vk->c.device);
@@ -1614,7 +1614,7 @@ static BOOL wined3d_query_vk_issue(struct wined3d_query *query, uint32_t flags)
     struct wined3d_query_vk *query_vk = wined3d_query_vk(query);
     struct wined3d_context_vk *context_vk;
     VkCommandBuffer vk_command_buffer;
-    bool poll = false;
+    BOOL poll = false;
 
     TRACE("query %p, flags %#x.\n", query, flags);
 
@@ -1676,9 +1676,9 @@ static void wined3d_query_vk_destroy(struct wined3d_query *query)
 
 static const struct wined3d_query_ops wined3d_query_vk_ops =
 {
-    .query_poll = wined3d_query_vk_poll,
-    .query_issue = wined3d_query_vk_issue,
-    .query_destroy = wined3d_query_vk_destroy,
+    wined3d_query_vk_poll,
+    wined3d_query_vk_issue,
+    wined3d_query_vk_destroy,
 };
 
 static BOOL wined3d_query_event_vk_poll(struct wined3d_query *query, uint32_t flags)
@@ -1737,9 +1737,9 @@ static BOOL wined3d_query_event_vk_issue(struct wined3d_query *query, uint32_t f
 
 static const struct wined3d_query_ops wined3d_query_event_vk_ops =
 {
-    .query_poll = wined3d_query_event_vk_poll,
-    .query_issue = wined3d_query_event_vk_issue,
-    .query_destroy = wined3d_query_vk_destroy,
+    wined3d_query_event_vk_poll,
+    wined3d_query_event_vk_issue,
+    wined3d_query_vk_destroy,
 };
 
 static BOOL wined3d_query_timestamp_vk_issue(struct wined3d_query *query, uint32_t flags)
@@ -1780,16 +1780,16 @@ static BOOL wined3d_query_timestamp_vk_issue(struct wined3d_query *query, uint32
 
 static const struct wined3d_query_ops wined3d_query_timestamp_vk_ops =
 {
-    .query_poll = wined3d_query_vk_poll,
-    .query_issue = wined3d_query_timestamp_vk_issue,
-    .query_destroy = wined3d_query_vk_destroy,
+    wined3d_query_vk_poll,
+    wined3d_query_timestamp_vk_issue,
+    wined3d_query_vk_destroy,
 };
 
 static const struct wined3d_query_ops wined3d_query_timestamp_disjoint_vk_ops =
 {
-    .query_poll = wined3d_timestamp_disjoint_query_ops_poll,
-    .query_issue = wined3d_timestamp_disjoint_query_ops_issue,
-    .query_destroy = wined3d_query_vk_destroy,
+    wined3d_timestamp_disjoint_query_ops_poll,
+    wined3d_timestamp_disjoint_query_ops_issue,
+    wined3d_query_vk_destroy,
 };
 
 HRESULT wined3d_query_vk_create(struct wined3d_device *device, enum wined3d_query_type type,

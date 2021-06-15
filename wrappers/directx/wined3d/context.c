@@ -335,7 +335,7 @@ void context_update_stream_info(struct wined3d_context *context, const struct wi
     }
 }
 
-static bool is_resource_rtv_bound(const struct wined3d_state *state,
+static BOOL is_resource_rtv_bound(const struct wined3d_state *state,
         const struct wined3d_resource *resource)
 {
     unsigned int i;

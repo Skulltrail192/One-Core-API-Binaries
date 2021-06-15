@@ -81,7 +81,7 @@ VkShaderStageFlagBits vk_shader_stage_from_wined3d(enum wined3d_shader_type shad
 }
 
 static VkBlendFactor vk_blend_factor_from_wined3d(enum wined3d_blend blend,
-        const struct wined3d_format *dst_format, bool alpha)
+        const struct wined3d_format *dst_format, BOOL alpha)
 {
     switch (blend)
     {
@@ -330,7 +330,7 @@ struct wined3d_allocator_block *wined3d_context_vk_allocate_memory(struct wined3
     return block;
 }
 
-static bool wined3d_context_vk_create_slab_bo(struct wined3d_context_vk *context_vk,
+static BOOL wined3d_context_vk_create_slab_bo(struct wined3d_context_vk *context_vk,
         VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_type, struct wined3d_bo_vk *bo)
 {
     const struct wined3d_adapter_vk *adapter_vk = wined3d_adapter_vk(context_vk->c.device->adapter);
@@ -1094,7 +1094,7 @@ static void wined3d_context_vk_destroy_pipeline_layout(struct wine_rb_entry *ent
 }
 
 static void wined3d_render_pass_key_vk_init(struct wined3d_render_pass_key_vk *key,
-        const struct wined3d_fb_state *fb, unsigned int rt_count, bool depth_stencil, uint32_t clear_flags)
+        const struct wined3d_fb_state *fb, unsigned int rt_count, BOOL depth_stencil, uint32_t clear_flags)
 {
     struct wined3d_render_pass_attachment_vk *a;
     struct wined3d_rendertarget_view *view;
@@ -1135,7 +1135,7 @@ static void wined3d_render_pass_vk_cleanup(struct wined3d_render_pass_vk *pass,
     VK_CALL(vkDestroyRenderPass(device_vk->vk_device, pass->vk_render_pass, NULL));
 }
 
-static bool wined3d_render_pass_vk_init(struct wined3d_render_pass_vk *pass,
+static BOOL wined3d_render_pass_vk_init(struct wined3d_render_pass_vk *pass,
         struct wined3d_context_vk *context_vk, const struct wined3d_render_pass_key_vk *key)
 {
     struct wined3d_device_vk *device_vk = wined3d_device_vk(context_vk->c.device);
@@ -1250,7 +1250,7 @@ static bool wined3d_render_pass_vk_init(struct wined3d_render_pass_vk *pass,
 }
 
 VkRenderPass wined3d_context_vk_get_render_pass(struct wined3d_context_vk *context_vk,
-        const struct wined3d_fb_state *fb, unsigned int rt_count, bool depth_stencil, uint32_t clear_flags)
+        const struct wined3d_fb_state *fb, unsigned int rt_count, BOOL depth_stencil, uint32_t clear_flags)
 {
     struct wined3d_render_pass_key_vk key;
     struct wined3d_render_pass_vk *pass;
@@ -1327,7 +1327,7 @@ static void wined3d_context_vk_destroy_query_pools(struct wined3d_context_vk *co
     }
 }
 
-bool wined3d_context_vk_allocate_query(struct wined3d_context_vk *context_vk,
+BOOL wined3d_context_vk_allocate_query(struct wined3d_context_vk *context_vk,
         enum wined3d_query_type type, struct wined3d_query_pool_idx_vk *pool_idx)
 {
     struct wined3d_query_pool_vk *pool_vk, *entry;
@@ -2019,7 +2019,7 @@ static VkFormat vk_format_from_component_type(enum wined3d_component_type compon
     return VK_FORMAT_UNDEFINED;
 }
 
-static bool wined3d_context_vk_update_graphics_pipeline_key(struct wined3d_context_vk *context_vk,
+static BOOL wined3d_context_vk_update_graphics_pipeline_key(struct wined3d_context_vk *context_vk,
         const struct wined3d_state *state, VkPipelineLayout vk_pipeline_layout, uint32_t *null_buffer_binding)
 {
     unsigned int i, attribute_count, binding_count, divisor_count, stage_count;
@@ -2030,7 +2030,7 @@ static bool wined3d_context_vk_update_graphics_pipeline_key(struct wined3d_conte
     struct wined3d_shader *vertex_shader;
     VkPrimitiveTopology vk_topology;
     VkShaderModule module;
-    bool update = false;
+    BOOL update = false;
     uint32_t mask;
 
     *null_buffer_binding = ~0u;
@@ -2302,7 +2302,7 @@ static bool wined3d_context_vk_update_graphics_pipeline_key(struct wined3d_conte
     return update;
 }
 
-static bool wined3d_context_vk_begin_render_pass(struct wined3d_context_vk *context_vk,
+static BOOL wined3d_context_vk_begin_render_pass(struct wined3d_context_vk *context_vk,
         VkCommandBuffer vk_command_buffer, const struct wined3d_state *state, const struct wined3d_vk_info *vk_info)
 {
     struct wined3d_device_vk *device_vk = wined3d_device_vk(context_vk->c.device);
@@ -2556,7 +2556,7 @@ static VkResult wined3d_context_vk_create_vk_descriptor_set(struct wined3d_conte
     return vr;
 }
 
-static bool wined3d_shader_descriptor_writes_vk_add_write(struct wined3d_shader_descriptor_writes_vk *writes,
+static BOOL wined3d_shader_descriptor_writes_vk_add_write(struct wined3d_shader_descriptor_writes_vk *writes,
         VkDescriptorSet vk_descriptor_set, size_t binding_idx, VkDescriptorType type,
         const VkDescriptorBufferInfo *buffer_info, const VkDescriptorImageInfo *image_info,
         const VkBufferView *buffer_view)
@@ -2585,7 +2585,7 @@ static bool wined3d_shader_descriptor_writes_vk_add_write(struct wined3d_shader_
     return true;
 }
 
-static bool wined3d_shader_resource_bindings_add_null_srv_binding(struct wined3d_shader_descriptor_writes_vk *writes,
+static BOOL wined3d_shader_resource_bindings_add_null_srv_binding(struct wined3d_shader_descriptor_writes_vk *writes,
         VkDescriptorSet vk_descriptor_set, size_t binding_idx, enum wined3d_shader_resource_type type,
         enum wined3d_data_type data_type, struct wined3d_context_vk *context_vk)
 {
@@ -2638,7 +2638,7 @@ static bool wined3d_shader_resource_bindings_add_null_srv_binding(struct wined3d
     }
 }
 
-static bool wined3d_context_vk_update_descriptors(struct wined3d_context_vk *context_vk,
+static BOOL wined3d_context_vk_update_descriptors(struct wined3d_context_vk *context_vk,
         VkCommandBuffer vk_command_buffer, const struct wined3d_state *state, enum wined3d_pipeline pipeline)
 {
     struct wined3d_shader_descriptor_writes_vk *writes = &context_vk->descriptor_writes;
@@ -3058,7 +3058,7 @@ static void wined3d_context_vk_load_shader_resources(struct wined3d_context_vk *
 }
 
 VkCommandBuffer wined3d_context_vk_apply_draw_state(struct wined3d_context_vk *context_vk,
-        const struct wined3d_state *state, struct wined3d_buffer_vk *indirect_vk, bool indexed)
+        const struct wined3d_state *state, struct wined3d_buffer_vk *indirect_vk, BOOL indexed)
 {
     struct wined3d_device_vk *device_vk = wined3d_device_vk(context_vk->c.device);
     const struct wined3d_vk_info *vk_info = context_vk->vk_info;

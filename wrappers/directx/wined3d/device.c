@@ -581,7 +581,7 @@ void wined3d_device_destroy_default_samplers(struct wined3d_device *device, stru
     device->null_sampler = NULL;
 }
 
-static bool wined3d_null_image_vk_init(struct wined3d_image_vk *image, struct wined3d_context_vk *context_vk,
+static BOOL wined3d_null_image_vk_init(struct wined3d_image_vk *image, struct wined3d_context_vk *context_vk,
         VkCommandBuffer vk_command_buffer, VkImageType type, unsigned int layer_count, unsigned int sample_count)
 {
     const struct wined3d_vk_info *vk_info = context_vk->vk_info;
@@ -628,7 +628,7 @@ static bool wined3d_null_image_vk_init(struct wined3d_image_vk *image, struct wi
     return true;
 }
 
-bool wined3d_device_vk_create_null_resources(struct wined3d_device_vk *device_vk,
+BOOL wined3d_device_vk_create_null_resources(struct wined3d_device_vk *device_vk,
         struct wined3d_context_vk *context_vk)
 {
     struct wined3d_null_resources_vk *r = &device_vk->null_resources_vk;
@@ -718,7 +718,7 @@ void wined3d_device_vk_destroy_null_resources(struct wined3d_device_vk *device_v
     wined3d_context_vk_destroy_bo(context_vk, &r->bo);
 }
 
-bool wined3d_device_vk_create_null_views(struct wined3d_device_vk *device_vk, struct wined3d_context_vk *context_vk)
+BOOL wined3d_device_vk_create_null_views(struct wined3d_device_vk *device_vk, struct wined3d_context_vk *context_vk)
 {
     struct wined3d_null_resources_vk *r = &device_vk->null_resources_vk;
     struct wined3d_null_views_vk *v = &device_vk->null_views_vk;
@@ -4381,7 +4381,7 @@ void CDECL wined3d_device_context_copy_uav_counter(struct wined3d_device_context
     wined3d_device_context_emit_copy_uav_counter(context, dst_buffer, offset, uav);
 }
 
-static bool resources_format_compatible(const struct wined3d_resource *src_resource,
+static BOOL resources_format_compatible(const struct wined3d_resource *src_resource,
         const struct wined3d_resource *dst_resource)
 {
     if (src_resource->format->id == dst_resource->format->id)
@@ -4903,7 +4903,7 @@ void CDECL wined3d_device_context_issue_query(struct wined3d_device_context *con
 }
 
 void CDECL wined3d_device_context_execute_command_list(struct wined3d_device_context *context,
-        struct wined3d_command_list *list, bool restore_state)
+        struct wined3d_command_list *list, BOOL restore_state)
 {
     TRACE("context %p, list %p, restore_state %d.\n", context, list, restore_state);
 

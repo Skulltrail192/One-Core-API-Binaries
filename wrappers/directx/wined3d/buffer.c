@@ -169,7 +169,7 @@ static BOOL wined3d_buffer_gl_create_buffer_object(struct wined3d_buffer_gl *buf
     GLenum usage = GL_STATIC_DRAW;
     GLbitfield gl_storage_flags;
     struct wined3d_bo_gl *bo;
-    bool coherent = true;
+    BOOL coherent = true;
     GLsizeiptr size;
     GLenum binding;
 

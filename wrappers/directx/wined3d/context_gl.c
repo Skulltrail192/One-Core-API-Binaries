@@ -2830,8 +2830,8 @@ void wined3d_context_gl_destroy_bo(struct wined3d_context_gl *context_gl, struct
     bo->id = 0;
 }
 
-bool wined3d_context_gl_create_bo(struct wined3d_context_gl *context_gl, GLsizeiptr size,
-        GLenum binding, GLenum usage, bool coherent, GLbitfield flags, struct wined3d_bo_gl *bo)
+BOOL wined3d_context_gl_create_bo(struct wined3d_context_gl *context_gl, GLsizeiptr size,
+        GLenum binding, GLenum usage, BOOL coherent, GLbitfield flags, struct wined3d_bo_gl *bo)
 {
     const struct wined3d_gl_info *gl_info = context_gl->gl_info;
     GLuint id = 0;

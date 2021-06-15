@@ -61,7 +61,7 @@ struct shader_spirv_priv
 {
     const struct wined3d_vertex_pipe_ops *vertex_pipe;
     const struct wined3d_fragment_pipe_ops *fragment_pipe;
-    bool ffp_proj_control;
+    BOOL ffp_proj_control;
 
     struct shader_spirv_resource_bindings bindings;
 };
@@ -118,7 +118,7 @@ struct wined3d_shader_spirv_shader_interface
     struct vkd3d_shader_transform_feedback_info xfb_info;
 };
 
-static bool wined3d_load_vkd3d_shader_functions(void *vkd3d_shader_handle)
+static BOOL wined3d_load_vkd3d_shader_functions(void *vkd3d_shader_handle)
 {
 #define LOAD_FUNCPTR(f) if (!(f = dlsym(vkd3d_shader_handle, #f))) return false;
     LOAD_FUNCPTR(vkd3d_shader_compile)
@@ -162,7 +162,7 @@ static BOOL WINAPI wined3d_init_vkd3d_once(INIT_ONCE *once, void *param, void **
     return TRUE;
 }
 
-static bool wined3d_init_vkd3d(void)
+static BOOL wined3d_init_vkd3d(void)
 {
     static INIT_ONCE init_once = INIT_ONCE_STATIC_INIT;
     InitOnceExecuteOnce(&init_once, wined3d_init_vkd3d_once, NULL, NULL);
@@ -481,7 +481,7 @@ static void shader_spirv_resource_bindings_cleanup(struct shader_spirv_resource_
     heap_free(bindings->bindings);
 }
 
-static bool shader_spirv_resource_bindings_add_vk_binding(struct shader_spirv_resource_bindings *bindings,
+static BOOL shader_spirv_resource_bindings_add_vk_binding(struct shader_spirv_resource_bindings *bindings,
         VkDescriptorType vk_type, VkShaderStageFlagBits vk_stage, size_t *binding_idx)
 {
     SIZE_T binding_count = bindings->vk_binding_count;
@@ -503,7 +503,7 @@ static bool shader_spirv_resource_bindings_add_vk_binding(struct shader_spirv_re
     return true;
 }
 
-static bool shader_spirv_resource_bindings_add_binding(struct shader_spirv_resource_bindings *bindings,
+static BOOL shader_spirv_resource_bindings_add_binding(struct shader_spirv_resource_bindings *bindings,
         enum vkd3d_shader_descriptor_type vkd3d_type, VkDescriptorType vk_type, size_t register_idx,
         enum vkd3d_shader_visibility vkd3d_visibility, VkShaderStageFlagBits vk_stage,
         uint32_t flags, size_t *binding_idx)
@@ -532,7 +532,7 @@ static bool shader_spirv_resource_bindings_add_binding(struct shader_spirv_resou
     return true;
 }
 
-static bool shader_spirv_resource_bindings_add_uav_counter_binding(struct shader_spirv_resource_bindings *bindings,
+static BOOL shader_spirv_resource_bindings_add_uav_counter_binding(struct shader_spirv_resource_bindings *bindings,
         size_t register_idx, enum vkd3d_shader_visibility vkd3d_visibility,
         VkShaderStageFlagBits vk_stage, size_t *binding_idx)
 {
@@ -559,7 +559,7 @@ static bool shader_spirv_resource_bindings_add_uav_counter_binding(struct shader
     return true;
 }
 
-static bool wined3d_shader_resource_bindings_add_binding(struct wined3d_shader_resource_bindings *bindings,
+static BOOL wined3d_shader_resource_bindings_add_binding(struct wined3d_shader_resource_bindings *bindings,
         enum wined3d_shader_type shader_type, enum wined3d_shader_descriptor_type shader_descriptor_type,
         size_t resource_idx, enum wined3d_shader_resource_type resource_type,
         enum wined3d_data_type resource_data_type, size_t binding_idx)
@@ -657,7 +657,7 @@ static enum wined3d_data_type wined3d_data_type_from_vkd3d(enum vkd3d_shader_res
     }
 }
 
-static bool shader_spirv_resource_bindings_init(struct shader_spirv_resource_bindings *bindings,
+static BOOL shader_spirv_resource_bindings_init(struct shader_spirv_resource_bindings *bindings,
         struct wined3d_shader_resource_bindings *wined3d_bindings,
         const struct wined3d_state *state, uint32_t shader_mask)
 {

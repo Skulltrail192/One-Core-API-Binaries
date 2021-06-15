@@ -787,7 +787,7 @@ static BOOL shader_record_register_usage(struct wined3d_shader *shader, struct w
         case WINED3DSPR_CONSTBOOL:
             if (reg->idx[0].offset >= shader->limits->constant_bool)
             {
-                WARN("Shader using bool constant %u which is not supported.\n", reg->idx[0].offset);
+                WARN("Shader using BOOL constant %u which is not supported.\n", reg->idx[0].offset);
                 return FALSE;
             }
             else

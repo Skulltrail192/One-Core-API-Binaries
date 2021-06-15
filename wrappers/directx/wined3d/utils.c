@@ -5493,7 +5493,7 @@ void get_projection_matrix(const struct wined3d_context *context, const struct w
         float y_offset = flip
                 ? (center_offset - (2.0f * y) - h) / h
                 : (center_offset - (2.0f * y) - h) / -h;
-        bool zenable = state->fb.depth_stencil ?
+        BOOL zenable = state->fb.depth_stencil ?
                 (state->depth_stencil_state ? state->depth_stencil_state->desc.depth : true) : false;
         float z_scale = zenable ? clip_control ? 1.0f : 2.0f : 0.0f;
         float z_offset = zenable ? clip_control ? 0.0f : -1.0f : 0.0f;
@@ -7176,7 +7176,7 @@ void wined3d_allocator_block_free(struct wined3d_allocator_block *block)
 
 static void wined3d_allocator_block_init(struct wined3d_allocator_block *block,
         struct wined3d_allocator_chunk *chunk, struct wined3d_allocator_block *parent,
-        struct wined3d_allocator_block *sibling, unsigned int order, size_t offset, bool free)
+        struct wined3d_allocator_block *sibling, unsigned int order, size_t offset, BOOL free)
 {
     list_init(&block->entry);
     block->chunk = chunk;
@@ -7211,7 +7211,7 @@ void wined3d_allocator_chunk_cleanup(struct wined3d_allocator_chunk *chunk)
     wined3d_allocator_release_block(chunk->allocator, block);
 }
 
-bool wined3d_allocator_chunk_init(struct wined3d_allocator_chunk *chunk, struct wined3d_allocator *allocator)
+BOOL wined3d_allocator_chunk_init(struct wined3d_allocator_chunk *chunk, struct wined3d_allocator *allocator)
 {
     struct wined3d_allocator_block *block;
     unsigned int i;
@@ -7335,7 +7335,7 @@ struct wined3d_allocator_block *wined3d_allocator_allocate(struct wined3d_alloca
     return block;
 }
 
-bool wined3d_allocator_init(struct wined3d_allocator *allocator,
+BOOL wined3d_allocator_init(struct wined3d_allocator *allocator,
         size_t pool_count, const struct wined3d_allocator_ops *allocator_ops)
 {
     size_t i;

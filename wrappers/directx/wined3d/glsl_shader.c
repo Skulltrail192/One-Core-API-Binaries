@@ -2229,7 +2229,7 @@ static void shader_generate_glsl_declarations(const struct wined3d_context_gl *c
                 if (vs_args->clip_enabled)
                     max_constantsF -= gl_info->limits.user_clip_distances;
                 max_constantsF -= wined3d_popcount(reg_maps->integer_constants);
-                /* Strictly speaking a bool only uses one scalar, but the nvidia(Linux) compiler doesn't pack them properly,
+                /* Strictly speaking a BOOL only uses one scalar, but the nvidia(Linux) compiler doesn't pack them properly,
                  * so each scalar requires a full vec4. We could work around this by packing the booleans ourselves, but
                  * for now take this into account when calculating the number of available constants
                  */
@@ -2258,13 +2258,13 @@ static void shader_generate_glsl_declarations(const struct wined3d_context_gl *c
     }
 
     /* Always declare the full set of constants, the compiler can remove the
-     * unused ones because d3d doesn't (yet) support indirect int and bool
+     * unused ones because d3d doesn't (yet) support indirect int and BOOL
      * constant addressing. This avoids problems if the app uses e.g. i0 and i9. */
     if (shader->limits->constant_int > 0 && reg_maps->integer_constants)
         shader_addline(buffer, "uniform ivec4 %s_i[%u];\n", prefix, shader->limits->constant_int);
 
     if (shader->limits->constant_bool > 0 && reg_maps->boolean_constants)
-        shader_addline(buffer, "uniform bool %s_b[%u];\n", prefix, shader->limits->constant_bool);
+        shader_addline(buffer, "uniform BOOL %s_b[%u];\n", prefix, shader->limits->constant_bool);
 
     /* Declare immediate constant buffer */
     if (reg_maps->icb)
@@ -2871,7 +2871,7 @@ static void shader_glsl_get_register_name(const struct wined3d_shader_register *
             }
             else if (reg->idx[0].offset == 1)
             {
-                /* Note that gl_FrontFacing is a bool, while vFace is
+                /* Note that gl_FrontFacing is a BOOL, while vFace is
                  * a float for which the sign determines front/back */
                 string_buffer_sprintf(register_name, "(gl_FrontFacing ? 1.0 : -1.0)");
             }
@@ -4037,7 +4037,7 @@ static void shader_glsl_pow(const struct wined3d_shader_instruction *ins)
 static void shader_glsl_map2gl(const struct wined3d_shader_instruction *ins)
 {
     const struct shader_glsl_ctx_priv *priv = ins->ctx->backend_data;
-    bool y_correction = ins->ctx->reg_maps->shader_version.type == WINED3D_SHADER_TYPE_PIXEL
+    BOOL y_correction = ins->ctx->reg_maps->shader_version.type == WINED3D_SHADER_TYPE_PIXEL
             ? priv->cur_ps_args->y_correction : false;
     struct wined3d_string_buffer *buffer = ins->ctx->buffer;
     struct glsl_src_param src_param;
@@ -4452,7 +4452,7 @@ static void shader_glsl_conditional_move(const struct wined3d_shader_instruction
             break;
 
         case WINED3DSIH_MOVC:
-            condition_prefix = "bool(";
+            condition_prefix = "BOOL(";
             condition_suffix = ")";
             break;
 
@@ -4995,7 +4995,7 @@ static void shader_glsl_generate_condition(const struct wined3d_shader_instructi
     struct glsl_src_param src_param;
     const char *condition;
 
-    condition = ins->flags == WINED3D_SHADER_CONDITIONAL_OP_NZ ? "bool" : "!bool";
+    condition = ins->flags == WINED3D_SHADER_CONDITIONAL_OP_NZ ? "BOOL" : "!BOOL";
     shader_glsl_add_src_param(ins, &ins->src[0], WINED3DSP_WRITEMASK_0, &src_param);
     shader_addline(ins->ctx->buffer, "if (%s(%s))\n", condition, src_param.param_str);
 }
@@ -12544,7 +12544,7 @@ static void gen_packed_yuv_read(struct wined3d_string_buffer *buffer,
     /* Multiply the x coordinate by 0.5 and get the fraction. This gives 0.25
      * and 0.75 for the even and odd pixels respectively. */
     /* Put the value into either of the chroma values. */
-    shader_addline(buffer, "    bool even = fract(texcoord.x * size.x * 0.5) < 0.5;\n");
+    shader_addline(buffer, "    BOOL even = fract(texcoord.x * size.x * 0.5) < 0.5;\n");
     shader_addline(buffer, "    if (even)\n");
     shader_addline(buffer, "        chroma.y = luminance;\n");
     shader_addline(buffer, "    else\n");
@@ -13001,7 +13001,7 @@ static BOOL glsl_blitter_supported(enum wined3d_blit_op blit_op, const struct wi
     const struct wined3d_resource *dst_resource = &dst_texture->t.resource;
     const struct wined3d_format *src_format = src_resource->format;
     const struct wined3d_format *dst_format = dst_resource->format;
-    bool src_ds, dst_ds;
+    BOOL src_ds, dst_ds;
     BOOL decompress;
 
     if (blit_op == WINED3D_BLIT_OP_RAW_BLIT && dst_format->id == src_format->id)

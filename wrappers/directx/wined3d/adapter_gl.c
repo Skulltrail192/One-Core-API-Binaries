@@ -4288,7 +4288,7 @@ static struct wined3d_context *adapter_gl_acquire_context(struct wined3d_device 
 
 static void adapter_gl_release_context(struct wined3d_context *context)
 {
-    return wined3d_context_gl_release(wined3d_context_gl(context));
+    wined3d_context_gl_release(wined3d_context_gl(context));
 }
 
 static void adapter_gl_get_wined3d_caps(const struct wined3d_adapter *adapter, struct wined3d_caps *caps)
@@ -5016,7 +5016,7 @@ static void adapter_gl_flush_context(struct wined3d_context *context)
 }
 
 static void adapter_gl_clear_uav(struct wined3d_context *context,
-        struct wined3d_unordered_access_view *view, const struct wined3d_uvec4 *clear_value, bool fp)
+        struct wined3d_unordered_access_view *view, const struct wined3d_uvec4 *clear_value, BOOL fp)
 {
     TRACE("context %p, view %p, clear_value %s.\n", context, view, debug_uvec4(clear_value));
 
@@ -5034,39 +5034,39 @@ static void adapter_gl_generate_mipmap(struct wined3d_context *context, struct w
 
 static const struct wined3d_adapter_ops wined3d_adapter_gl_ops =
 {
-    .adapter_destroy = adapter_gl_destroy,
-    .adapter_create_device = adapter_gl_create_device,
-    .adapter_destroy_device = adapter_gl_destroy_device,
-    .adapter_acquire_context = adapter_gl_acquire_context,
-    .adapter_release_context = adapter_gl_release_context,
-    .adapter_get_wined3d_caps = adapter_gl_get_wined3d_caps,
-    .adapter_check_format = adapter_gl_check_format,
-    .adapter_init_3d = adapter_gl_init_3d,
-    .adapter_uninit_3d = adapter_gl_uninit_3d,
-    .adapter_map_bo_address = adapter_gl_map_bo_address,
-    .adapter_unmap_bo_address = adapter_gl_unmap_bo_address,
-    .adapter_copy_bo_address = adapter_gl_copy_bo_address,
-    .adapter_create_swapchain = adapter_gl_create_swapchain,
-    .adapter_destroy_swapchain = adapter_gl_destroy_swapchain,
-    .adapter_create_buffer = adapter_gl_create_buffer,
-    .adapter_destroy_buffer = adapter_gl_destroy_buffer,
-    .adapter_create_texture = adapter_gl_create_texture,
-    .adapter_destroy_texture = adapter_gl_destroy_texture,
-    .adapter_create_rendertarget_view = adapter_gl_create_rendertarget_view,
-    .adapter_destroy_rendertarget_view = adapter_gl_destroy_rendertarget_view,
-    .adapter_create_shader_resource_view = adapter_gl_create_shader_resource_view,
-    .adapter_destroy_shader_resource_view = adapter_gl_destroy_shader_resource_view,
-    .adapter_create_unordered_access_view = adapter_gl_create_unordered_access_view,
-    .adapter_destroy_unordered_access_view = adapter_gl_destroy_unordered_access_view,
-    .adapter_create_sampler = adapter_gl_create_sampler,
-    .adapter_destroy_sampler = adapter_gl_destroy_sampler,
-    .adapter_create_query = adapter_gl_create_query,
-    .adapter_destroy_query = adapter_gl_destroy_query,
-    .adapter_flush_context = adapter_gl_flush_context,
-    .adapter_draw_primitive = draw_primitive,
-    .adapter_dispatch_compute = dispatch_compute,
-    .adapter_clear_uav = adapter_gl_clear_uav,
-    .adapter_generate_mipmap = adapter_gl_generate_mipmap,
+    adapter_gl_destroy,
+    adapter_gl_create_device,
+    adapter_gl_destroy_device,
+    adapter_gl_acquire_context,
+    adapter_gl_release_context,
+    adapter_gl_get_wined3d_caps,
+    adapter_gl_check_format,
+    adapter_gl_init_3d,
+    adapter_gl_uninit_3d,
+    adapter_gl_map_bo_address,
+    adapter_gl_unmap_bo_address,
+    adapter_gl_copy_bo_address,
+    adapter_gl_create_swapchain,
+    adapter_gl_destroy_swapchain,
+    adapter_gl_create_buffer,
+    adapter_gl_destroy_buffer,
+    adapter_gl_create_texture,
+    adapter_gl_destroy_texture,
+    adapter_gl_create_rendertarget_view,
+    adapter_gl_destroy_rendertarget_view,
+    adapter_gl_create_shader_resource_view,
+    adapter_gl_destroy_shader_resource_view,
+    adapter_gl_create_unordered_access_view,
+    adapter_gl_destroy_unordered_access_view,
+    adapter_gl_create_sampler,
+    adapter_gl_destroy_sampler,
+    adapter_gl_create_query,
+    adapter_gl_destroy_query,
+    adapter_gl_flush_context,
+    draw_primitive,
+    dispatch_compute,
+    adapter_gl_clear_uav,
+    adapter_gl_generate_mipmap,
 };
 
 static void wined3d_adapter_gl_init_d3d_info(struct wined3d_adapter_gl *adapter_gl, uint32_t wined3d_creation_flags)

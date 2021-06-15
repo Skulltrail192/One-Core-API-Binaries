@@ -421,7 +421,7 @@ struct wined3d_cs_push_constants
 struct wined3d_cs_reset_state
 {
     enum wined3d_cs_op opcode;
-    bool invalidate;
+    BOOL invalidate;
 };
 
 struct wined3d_cs_callback
@@ -504,7 +504,7 @@ struct wined3d_cs_clear_unordered_access_view
     enum wined3d_cs_op opcode;
     struct wined3d_unordered_access_view *view;
     struct wined3d_uvec4 clear_value;
-    bool fp;
+    BOOL fp;
 };
 
 struct wined3d_cs_copy_uav_counter
@@ -1141,7 +1141,7 @@ static void acquire_graphics_pipeline_resources(struct wined3d_device_context *c
 void wined3d_device_context_emit_draw(struct wined3d_device_context *context,
         enum wined3d_primitive_type primitive_type, unsigned int patch_vertex_count, int base_vertex_idx,
         unsigned int start_idx, unsigned int index_count, unsigned int start_instance, unsigned int instance_count,
-        bool indexed)
+        BOOL indexed)
 {
     const struct wined3d_d3d_info *d3d_info = &context->device->adapter->d3d_info;
     struct wined3d_cs_draw *op;
@@ -1164,7 +1164,7 @@ void wined3d_device_context_emit_draw(struct wined3d_device_context *context,
 }
 
 void CDECL wined3d_device_context_draw_indirect(struct wined3d_device_context *context,
-        struct wined3d_buffer *buffer, unsigned int offset, bool indexed)
+        struct wined3d_buffer *buffer, unsigned int offset, BOOL indexed)
 {
     const struct wined3d_d3d_info *d3d_info = &context->device->adapter->d3d_info;
     const struct wined3d_state *state = context->state;
@@ -1282,9 +1282,9 @@ void wined3d_device_context_emit_set_scissor_rects(struct wined3d_device_context
 static void wined3d_cs_exec_set_rendertarget_view(struct wined3d_cs *cs, const void *data)
 {
     const struct wined3d_cs_set_rendertarget_view *op = data;
-    bool prev_alpha_swizzle, curr_alpha_swizzle;
+    BOOL prev_alpha_swizzle, curr_alpha_swizzle;
     struct wined3d_rendertarget_view *prev;
-    bool prev_srgb_write, curr_srgb_write;
+    BOOL prev_srgb_write, curr_srgb_write;
     struct wined3d_device *device;
 
     device = cs->c.device;
@@ -2226,7 +2226,7 @@ static void wined3d_cs_exec_reset_state(struct wined3d_cs *cs, const void *data)
     }
 }
 
-void wined3d_device_context_emit_reset_state(struct wined3d_device_context *context, bool invalidate)
+void wined3d_device_context_emit_reset_state(struct wined3d_device_context *context, BOOL invalidate)
 {
     struct wined3d_cs_reset_state *op;
 
@@ -2332,7 +2332,7 @@ static void wined3d_cs_issue_query(struct wined3d_device_context *context,
 }
 
 static void wined3d_cs_execute_command_list(struct wined3d_device_context *context,
-        struct wined3d_command_list *list, bool restore_state)
+        struct wined3d_command_list *list, BOOL restore_state)
 {
     struct wined3d_cs_execute_command_list *op;
     SIZE_T i;
@@ -2729,7 +2729,7 @@ static void wined3d_cs_exec_clear_unordered_access_view(struct wined3d_cs *cs, c
 }
 
 void wined3d_device_context_emit_clear_uav(struct wined3d_device_context *context,
-        struct wined3d_unordered_access_view *view, const struct wined3d_uvec4 *clear_value, bool fp)
+        struct wined3d_unordered_access_view *view, const struct wined3d_uvec4 *clear_value, BOOL fp)
 {
     struct wined3d_cs_clear_unordered_access_view *op;
 
@@ -2989,7 +2989,7 @@ static void wined3d_cs_mt_submit(struct wined3d_device_context *context, enum wi
     struct wined3d_cs *cs = wined3d_cs_from_context(context);
 
     if (cs->thread_id == GetCurrentThreadId())
-        return wined3d_cs_st_submit(context, queue_id);
+        wined3d_cs_st_submit(context, queue_id);
 
     wined3d_cs_queue_submit(&cs->queue[queue_id], cs);
 }
@@ -3072,7 +3072,7 @@ static void wined3d_cs_mt_finish(struct wined3d_device_context *context, enum wi
     struct wined3d_cs *cs = wined3d_cs_from_context(context);
 
     if (cs->thread_id == GetCurrentThreadId())
-        return wined3d_cs_st_finish(context, queue_id);
+        wined3d_cs_st_finish(context, queue_id);
 
     while (cs->queue[queue_id].head != *(volatile LONG *)&cs->queue[queue_id].tail)
         YieldProcessor();
@@ -3406,7 +3406,7 @@ static void wined3d_deferred_context_acquire_resource(struct wined3d_device_cont
 }
 
 static void wined3d_deferred_context_execute_command_list(struct wined3d_device_context *context,
-        struct wined3d_command_list *list, bool restore_state)
+        struct wined3d_command_list *list, BOOL restore_state)
 {
     struct wined3d_deferred_context *deferred = wined3d_deferred_context_from_context(context);
     struct wined3d_cs_execute_command_list *op;
@@ -3486,7 +3486,7 @@ void CDECL wined3d_deferred_context_destroy(struct wined3d_device_context *conte
 }
 
 HRESULT CDECL wined3d_deferred_context_record_command_list(struct wined3d_device_context *context,
-        bool restore, struct wined3d_command_list **list)
+        BOOL restore, struct wined3d_command_list **list)
 {
     struct wined3d_deferred_context *deferred = wined3d_deferred_context_from_context(context);
     struct wined3d_command_list *object;

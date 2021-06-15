@@ -658,7 +658,7 @@ static void shader_arb_load_constants_internal(struct shader_arb_priv *priv, str
                 || (!gl_info->supported[NV_VERTEX_PROGRAM2_OPTION]
                 && (vshader->reg_maps.integer_constants & ~vshader->reg_maps.local_int_consts))))
         {
-            TRACE("bool/integer vertex shader constants potentially modified, forcing shader reselection.\n");
+            TRACE("BOOL/integer vertex shader constants potentially modified, forcing shader reselection.\n");
             shader_arb_select(priv, &context_gl->c, state);
         }
         else if (pshader
@@ -666,7 +666,7 @@ static void shader_arb_load_constants_internal(struct shader_arb_priv *priv, str
                 || (!gl_info->supported[NV_FRAGMENT_PROGRAM_OPTION]
                 && (pshader->reg_maps.integer_constants & ~pshader->reg_maps.local_int_consts))))
         {
-            TRACE("bool/integer pixel shader constants potentially modified, forcing shader reselection.\n");
+            TRACE("BOOL/integer pixel shader constants potentially modified, forcing shader reselection.\n");
             shader_arb_select(priv, &context_gl->c, state);
         }
     }
@@ -4505,7 +4505,7 @@ static void find_arb_vs_compile_args(const struct wined3d_state *state,
 
     /* This forces all local boolean constants to 1 to make them stateblock independent */
     args->clip.boolclip.bools = shader->reg_maps.local_bool_consts;
-    /* TODO: Figure out if it would be better to store bool constants as bitmasks in the stateblock */
+    /* TODO: Figure out if it would be better to store BOOL constants as bitmasks in the stateblock */
     for (i = 0; i < WINED3D_MAX_CONSTS_B; ++i)
     {
         if (state->vs_consts_b[i])
@@ -5235,7 +5235,7 @@ static BOOL get_bool_const(const struct wined3d_shader_instruction *ins,
 
     if (reg_maps->local_bool_consts & flag)
     {
-        /* What good is an if(bool) with a hardcoded local constant? I don't know, but handle it */
+        /* What good is an if(BOOL) with a hardcoded local constant? I don't know, but handle it */
         LIST_FOR_EACH_ENTRY(constant, &shader->constantsB, struct wined3d_shader_lconst, entry)
         {
             if (constant->idx == idx)
@@ -5562,7 +5562,7 @@ static void shader_arb_handle_instruction(const struct wined3d_shader_instructio
     }
     else if(ins->handler_idx == WINED3DSIH_IFC)
     {
-        /* IF(bool) and if_cond(a, b) use the same ELSE and ENDIF tokens */
+        /* IF(BOOL) and if_cond(a, b) use the same ELSE and ENDIF tokens */
         control_frame = heap_alloc_zero(sizeof(*control_frame));
         control_frame->type = IFC;
         control_frame->no.ifc = priv->num_ifcs++;

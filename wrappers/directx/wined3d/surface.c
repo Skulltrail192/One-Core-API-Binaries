@@ -1460,7 +1460,7 @@ struct wined3d_blitter *wined3d_cpu_blitter_create(void)
     return blitter;
 }
 
-static bool wined3d_is_colour_blit(enum wined3d_blit_op blit_op)
+static BOOL wined3d_is_colour_blit(enum wined3d_blit_op blit_op)
 {
     switch (blit_op)
     {
@@ -1489,7 +1489,7 @@ HRESULT texture2d_blt(struct wined3d_texture *dst_texture, unsigned int dst_sub_
     struct wined3d_context *context;
     enum wined3d_blit_op blit_op;
     RECT src_rect, dst_rect;
-    bool src_ds, dst_ds;
+    BOOL src_ds, dst_ds;
 
     static const DWORD simple_blit = WINED3D_BLT_SRC_CKEY
             | WINED3D_BLT_SRC_CKEY_OVERRIDE

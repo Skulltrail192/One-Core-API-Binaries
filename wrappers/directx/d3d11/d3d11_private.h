@@ -35,7 +35,7 @@
 #ifdef D3D11_INIT_GUID
 #include "initguid.h"
 #endif
-#include "wine/wined3d.h"
+#include "d3d/wined3d.h"
 #include "wine/winedxgi.h"
 #include "wine/rbtree.h"
 

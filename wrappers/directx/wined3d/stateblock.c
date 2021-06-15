@@ -1888,7 +1888,7 @@ void state_init(struct wined3d_state *state, const struct wined3d_d3d_info *d3d_
         state_init_default(state, d3d_info);
 }
 
-static bool wined3d_select_feature_level(const struct wined3d_adapter *adapter,
+static BOOL wined3d_select_feature_level(const struct wined3d_adapter *adapter,
         const enum wined3d_feature_level *levels, unsigned int level_count,
         enum wined3d_feature_level *selected_level)
 {

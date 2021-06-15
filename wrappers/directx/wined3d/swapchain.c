@@ -662,7 +662,7 @@ static const struct wined3d_swapchain_ops swapchain_gl_ops =
     swapchain_frontbuffer_updated,
 };
 
-static bool wined3d_swapchain_vk_present_mode_supported(struct wined3d_swapchain_vk *swapchain_vk,
+static BOOL wined3d_swapchain_vk_present_mode_supported(struct wined3d_swapchain_vk *swapchain_vk,
         VkPresentModeKHR vk_present_mode)
 {
     struct wined3d_device_vk *device_vk = wined3d_device_vk(swapchain_vk->s.device);
@@ -670,7 +670,7 @@ static bool wined3d_swapchain_vk_present_mode_supported(struct wined3d_swapchain
     struct wined3d_adapter_vk *adapter_vk;
     VkPhysicalDevice vk_physical_device;
     VkPresentModeKHR *vk_modes;
-    bool supported = false;
+    BOOL supported = false;
     uint32_t count, i;
     VkResult vr;
 
@@ -794,7 +794,7 @@ static VkFormat wined3d_swapchain_vk_select_vk_format(struct wined3d_swapchain_v
     return vk_format;
 }
 
-static bool wined3d_swapchain_vk_create_vulkan_swapchain_images(struct wined3d_swapchain_vk *swapchain_vk,
+static BOOL wined3d_swapchain_vk_create_vulkan_swapchain_images(struct wined3d_swapchain_vk *swapchain_vk,
         VkSwapchainKHR vk_swapchain)
 {
     struct wined3d_device_vk *device_vk = wined3d_device_vk(swapchain_vk->s.device);

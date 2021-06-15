@@ -612,8 +612,13 @@
 @ stdcall D3DKMTCreateDCFromMemory(ptr)
 @ stdcall D3DKMTDestroyDCFromMemory(ptr)
 
-611 stub D3DKMTEscape
-612 stub D3DKMTOpenAdapterFromHdc
-613 stub GetFontFileData
-614 stub GetFontFileInfo
-615 stub GetFontRealizationInfo
+611 stdcall D3DKMTEscape(ptr)
+612 stdcall D3DKMTOpenAdapterFromHdc(ptr)
+613 stdcall GetFontFileData(long long int64 ptr long)
+614 stdcall GetFontFileInfo(long long ptr long ptr)
+615 stdcall GetFontRealizationInfo(long ptr)
+616 stdcall D3DKMTCloseAdapter(ptr)
+617 stdcall D3DKMTCreateDevice(ptr)
+618 stdcall D3DKMTDestroyDevice(ptr)
+619 stdcall D3DKMTOpenAdapterFromGdiDisplayName(ptr)
+620 stdcall D3DKMTSetVidPnSourceOwner(ptr)

@@ -1998,8 +1998,8 @@ static HRESULT shader_parse_signature(DWORD tag, const char *data, DWORD data_si
             return E_INVALIDARG;
         }
         read_dword(&ptr, &e[i].semantic_idx);
-        read_dword(&ptr, &e[i].sysval_semantic);
-        read_dword(&ptr, &e[i].component_type);
+        read_dword(&ptr, (DWORD *)&e[i].sysval_semantic);
+        read_dword(&ptr, (DWORD *)&e[i].component_type);
         read_dword(&ptr, &e[i].register_idx);
         read_dword(&ptr, &e[i].mask);
 

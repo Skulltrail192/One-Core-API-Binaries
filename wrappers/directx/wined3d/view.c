@@ -690,7 +690,7 @@ static VkBufferView wined3d_view_vk_create_vk_buffer_view(struct wined3d_context
 
 static VkImageView wined3d_view_vk_create_vk_image_view(struct wined3d_context_vk *context_vk,
         const struct wined3d_view_desc *desc, struct wined3d_texture_vk *texture_vk,
-        const struct wined3d_format_vk *view_format_vk, struct color_fixup_desc fixup, bool rtv)
+        const struct wined3d_format_vk *view_format_vk, struct color_fixup_desc fixup, BOOL rtv)
 {
     const struct wined3d_resource *resource = &texture_vk->t.resource;
     const struct wined3d_vk_info *vk_info = context_vk->vk_info;
@@ -773,8 +773,19 @@ static VkImageView wined3d_view_vk_create_vk_image_view(struct wined3d_context_v
     }
     create_info.subresourceRange.baseMipLevel = desc->u.texture.level_idx;
     create_info.subresourceRange.levelCount = desc->u.texture.level_count;
-    create_info.subresourceRange.baseArrayLayer = desc->u.texture.layer_idx;
-    create_info.subresourceRange.layerCount = desc->u.texture.layer_count;
+    if (create_info.viewType == VK_IMAGE_VIEW_TYPE_3D)
+    {
+        if (desc->u.texture.layer_idx || (desc->u.texture.layer_count != texture_vk->t.resource.depth
+                && desc->u.texture.layer_count != ~0u))
+            WARN("Partial 3D texture views are not supported.\n");
+        create_info.subresourceRange.baseArrayLayer = 0;
+        create_info.subresourceRange.layerCount = 1;
+    }
+    else
+    {
+        create_info.subresourceRange.baseArrayLayer = desc->u.texture.layer_idx;
+        create_info.subresourceRange.layerCount = desc->u.texture.layer_count;
+    }
     if ((vr = VK_CALL(vkCreateImageView(device_vk->vk_device, &create_info, NULL, &vk_image_view))) < 0)
     {
         ERR("Failed to create Vulkan image view, vr %s.\n", wined3d_debug_vkresult(vr));
@@ -1446,7 +1457,7 @@ void wined3d_unordered_access_view_invalidate_location(struct wined3d_unordered_
 }
 
 void wined3d_unordered_access_view_gl_clear(struct wined3d_unordered_access_view_gl *view_gl,
-        const struct wined3d_uvec4 *clear_value, struct wined3d_context_gl *context_gl, bool fp)
+        const struct wined3d_uvec4 *clear_value, struct wined3d_context_gl *context_gl, BOOL fp)
 {
     const struct wined3d_gl_info *gl_info = context_gl->gl_info;
     const struct wined3d_format_gl *format_gl;
@@ -1706,7 +1717,7 @@ HRESULT wined3d_unordered_access_view_gl_init(struct wined3d_unordered_access_vi
 }
 
 void wined3d_unordered_access_view_vk_clear(struct wined3d_unordered_access_view_vk *view_vk,
-        const struct wined3d_uvec4 *clear_value, struct wined3d_context_vk *context_vk, bool fp)
+        const struct wined3d_uvec4 *clear_value, struct wined3d_context_vk *context_vk, BOOL fp)
 {
     const struct wined3d_vk_info *vk_info;
     const struct wined3d_format *format;

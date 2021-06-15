@@ -263,13 +263,13 @@ void texture2d_get_blt_info(const struct wined3d_texture_gl *texture_gl,
     }
 }
 
-static bool fbo_blitter_supported(enum wined3d_blit_op blit_op, const struct wined3d_gl_info *gl_info,
+static BOOL fbo_blitter_supported(enum wined3d_blit_op blit_op, const struct wined3d_gl_info *gl_info,
         const struct wined3d_resource *src_resource, DWORD src_location,
         const struct wined3d_resource *dst_resource, DWORD dst_location)
 {
     const struct wined3d_format *src_format = src_resource->format;
     const struct wined3d_format *dst_format = dst_resource->format;
-    bool src_ds, dst_ds;
+    BOOL src_ds, dst_ds;
 
     if ((wined3d_settings.offscreen_rendering_mode != ORM_FBO) || !gl_info->fbo_ops.glBlitFramebuffer)
         return false;
@@ -338,7 +338,7 @@ static void texture2d_blt_fbo(struct wined3d_device *device, struct wined3d_cont
     struct wined3d_texture *src_staging_texture = NULL;
     const struct wined3d_gl_info *gl_info;
     struct wined3d_context_gl *context_gl;
-    bool resolve, scaled_resolve;
+    BOOL resolve, scaled_resolve;
     GLenum gl_filter;
     GLenum buffer;
     RECT s, d;
@@ -1879,8 +1879,8 @@ HRESULT CDECL wined3d_texture_update_desc(struct wined3d_texture *texture, unsig
     unsigned int resource_size;
     const struct wined3d *d3d;
     unsigned int slice_pitch;
-    bool update_memory_only;
-    bool create_dib = false;
+    BOOL update_memory_only;
+    BOOL create_dib = false;
 
     TRACE("texture %p, width %u, height %u, format %s, multisample_type %#x, multisample_quality %u, "
             "mem %p, pitch %u, sub_resource_idx %u.\n",
@@ -2333,7 +2333,7 @@ static void wined3d_texture_gl_upload_bo(const struct wined3d_format *src_format
     else
     {
         unsigned int y, y_count, z, z_count;
-        bool unpacking_rows = false;
+        BOOL unpacking_rows = false;
 
         TRACE("Uploading data, target %#x, level %u, x %u, y %u, z %u, "
                 "w %u, h %u, d %u, format %#x, type %#x, addr %p.\n",
@@ -5320,13 +5320,13 @@ static void ffp_blitter_destroy(struct wined3d_blitter *blitter, struct wined3d_
     heap_free(blitter);
 }
 
-static bool ffp_blit_supported(enum wined3d_blit_op blit_op, const struct wined3d_context *context,
+static BOOL ffp_blit_supported(enum wined3d_blit_op blit_op, const struct wined3d_context *context,
         const struct wined3d_resource *src_resource, DWORD src_location,
         const struct wined3d_resource *dst_resource, DWORD dst_location)
 {
     const struct wined3d_format *src_format = src_resource->format;
     const struct wined3d_format *dst_format = dst_resource->format;
-    bool decompress;
+    BOOL decompress;
 
     if (src_resource->type != WINED3D_RTYPE_TEXTURE_2D)
         return false;
@@ -5395,7 +5395,7 @@ static bool ffp_blit_supported(enum wined3d_blit_op blit_op, const struct wined3
     }
 }
 
-static bool is_full_clear(const struct wined3d_rendertarget_view *rtv, const RECT *draw_rect, const RECT *clear_rect)
+static BOOL is_full_clear(const struct wined3d_rendertarget_view *rtv, const RECT *draw_rect, const RECT *clear_rect)
 {
     unsigned int height = rtv->height;
     unsigned int width = rtv->width;
@@ -5427,7 +5427,7 @@ static void ffp_blitter_clear_rendertargets(struct wined3d_device *device, unsig
     struct wined3d_color colour_srgb;
     struct wined3d_context *context;
     GLbitfield clear_mask = 0;
-    bool render_offscreen;
+    BOOL render_offscreen;
     unsigned int i;
 
     if (rtv && rtv->resource->type != WINED3D_RTYPE_BUFFER)
@@ -5633,7 +5633,7 @@ static void ffp_blitter_clear_rendertargets(struct wined3d_device *device, unsig
     context_release(context);
 }
 
-static bool blitter_use_cpu_clear(struct wined3d_rendertarget_view *view)
+static BOOL blitter_use_cpu_clear(struct wined3d_rendertarget_view *view)
 {
     struct wined3d_resource *resource;
     struct wined3d_texture *texture;
@@ -5658,7 +5658,7 @@ static void ffp_blitter_clear(struct wined3d_blitter *blitter, struct wined3d_de
         const RECT *draw_rect, DWORD flags, const struct wined3d_color *colour, float depth, DWORD stencil)
 {
     struct wined3d_rendertarget_view *view, *previous = NULL;
-    bool have_identical_size = TRUE;
+    BOOL have_identical_size = TRUE;
     struct wined3d_fb_state tmp_fb;
     unsigned int next_rt_count = 0;
     struct wined3d_blitter *next;
@@ -6093,7 +6093,7 @@ static DWORD raw_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit
     unsigned int src_level, src_layer, dst_level, dst_layer;
     struct wined3d_blitter *next;
     GLuint src_name, dst_name;
-    bool src_ds, dst_ds;
+    BOOL src_ds, dst_ds;
     DWORD location;
 
     src_ds = src_texture->resource.format->depth_size || src_texture->resource.format->stencil_size;
@@ -6222,7 +6222,7 @@ static void vk_blitter_clear_rendertargets(struct wined3d_context_vk *context_vk
     VkFramebufferCreateInfo fb_desc;
     VkFramebuffer vk_framebuffer;
     VkRenderPass vk_render_pass;
-    bool depth_stencil = false;
+    BOOL depth_stencil = false;
     unsigned int layer_count;
     VkClearColorValue *c;
     VkResult vr;
@@ -6382,7 +6382,7 @@ static void vk_blitter_clear(struct wined3d_blitter *blitter, struct wined3d_dev
     struct wined3d_device_vk *device_vk = wined3d_device_vk(device);
     struct wined3d_rendertarget_view *view, *previous = NULL;
     struct wined3d_context_vk *context_vk;
-    bool have_identical_size = true;
+    BOOL have_identical_size = true;
     struct wined3d_fb_state tmp_fb;
     unsigned int next_rt_count = 0;
     struct wined3d_blitter *next;
@@ -6491,7 +6491,7 @@ static void vk_blitter_clear(struct wined3d_blitter *blitter, struct wined3d_dev
             clear_rects, draw_rect, next_flags, colour, depth, stencil);
 }
 
-static bool vk_blitter_blit_supported(enum wined3d_blit_op op, const struct wined3d_context *context,
+static BOOL vk_blitter_blit_supported(enum wined3d_blit_op op, const struct wined3d_context *context,
         const struct wined3d_resource *src_resource, const RECT *src_rect,
         const struct wined3d_resource *dst_resource, const RECT *dst_rect, const struct wined3d_format *resolve_format)
 {
@@ -6574,7 +6574,7 @@ static DWORD vk_blitter_blit(struct wined3d_blitter *blitter, enum wined3d_blit_
     VkCommandBuffer vk_command_buffer;
     struct wined3d_blitter *next;
     unsigned src_sample_count;
-    bool resolve = false;
+    BOOL resolve = false;
 
     TRACE("blitter %p, op %#x, context %p, src_texture %p, src_sub_resource_idx %u, src_location %s, "
             "src_rect %s, dst_texture %p, dst_sub_resource_idx %u, dst_location %s, dst_rect %s, "
@@ -6914,9 +6914,9 @@ next:
 
 static const struct wined3d_blitter_ops vk_blitter_ops =
 {
-    .blitter_destroy = vk_blitter_destroy,
-    .blitter_clear = vk_blitter_clear,
-    .blitter_blit = vk_blitter_blit,
+    vk_blitter_destroy,
+    vk_blitter_clear,
+    vk_blitter_blit,
 };
 
 void wined3d_vk_blitter_create(struct wined3d_blitter **next)
