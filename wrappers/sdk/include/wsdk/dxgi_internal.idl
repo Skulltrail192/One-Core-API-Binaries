@@ -1,0 +1,20 @@
+//
+// Example.idl 
+//
+import "unknwn.idl";
+import "dcommon.idl";
+import "dxgi1_6.idl";
+
+[
+	object,
+	uuid(7abb6563-02bc-47c4-8ef9-acc4795edbcf)
+] 
+interface IDXGIAdapterInternal : IDXGIAdapter4
+{
+HRESULT GetUMDDeviceSize([in] int Bread, [in] int *pBToast, [in] int *pBToast3);
+HRESULT LoadUMD([in]int a1,[in] int a2,[in] int a3);
+HRESULT InstanceThunks([in]int a1,[in]int *a2,[in]int a3,[in]int *a4);
+HRESULT RetireUsage([in] int usage);
+HRESULT SetAdapterCapabilities([in] int * capabilities);
+HRESULT GetAdapterCapabilities([in] int * capabilities);
+};

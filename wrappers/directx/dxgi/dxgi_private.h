@@ -38,7 +38,7 @@
 #include "initguid.h"
 #endif
 #include "d3d/wined3d.h"
-#include "wine/winedxgi.h"
+#include "winedxgi.h"
 
 enum dxgi_frame_latency
 {
