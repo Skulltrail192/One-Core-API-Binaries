@@ -10,6 +10,7 @@ spec2def(evr.dll evr.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
     evr.c
+	dllmain.c
 	main.c
 	mixer.c
 	presenter.c

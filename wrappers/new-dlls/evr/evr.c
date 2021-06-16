@@ -27,7 +27,6 @@
 
 #include "initguid.h"
 #include "dxva2api.h"
-#include "evr_classes.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(evr);
 
@@ -74,6 +73,7 @@ static HRESULT evr_query_accept(struct strmbase_renderer *iface, const AM_MEDIA_
     FIXME("Not implemented.\n");
     return E_NOTIMPL;
 }
+
 
 static const struct strmbase_renderer_ops renderer_ops =
 {
@@ -144,11 +144,10 @@ HRESULT evr_filter_create(IUnknown *outer, void **out)
 
     if (!(object = calloc(1, sizeof(*object))))
         return E_OUTOFMEMORY;
-	
-	object->IEVRFilterConfig_iface.lpVtbl = &filter_config_vtbl;
+
+    object->IEVRFilterConfig_iface.lpVtbl = &filter_config_vtbl;
     BaseRenderer_Init((BaseRenderer *)&object->renderer, (const IBaseFilterVtbl *)object->IEVRFilterConfig_iface.lpVtbl, outer,
             &CLSID_EnhancedVideoRenderer, (DWORD_PTR)L"EVR Input0", (const BaseRendererFuncTable *)&renderer_ops);
-    
 
     TRACE("Created EVR %p.\n", object);
     *out = &object->renderer.filter.IUnknown_inner;

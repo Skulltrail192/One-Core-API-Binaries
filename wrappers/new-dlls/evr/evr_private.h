@@ -49,14 +49,4 @@ HRESULT evr_filter_create(IUnknown *outer_unk, void **ppv) DECLSPEC_HIDDEN;
 HRESULT evr_mixer_create(IUnknown *outer_unk, void **ppv) DECLSPEC_HIDDEN;
 HRESULT evr_presenter_create(IUnknown *outer_unk, void **ppv) DECLSPEC_HIDDEN;
 
-#ifndef OUR_GUID_ENTRY
-#define OUR_GUID_ENTRY(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
-           DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8);
-#endif
-
-#define MEDIATYPE_NULL       GUID_NULL
-#define MEDIASUBTYPE_NULL    GUID_NULL
-
-OUR_GUID_ENTRY(CLSID_EnhancedVideoRenderer,          0xfa10746c, 0x9b63, 0x4b6c, 0xbc, 0x49, 0xfc, 0x30, 0x0e, 0xa5, 0xf2, 0x56)
-
 #endif /* __EVR_PRIVATE_INCLUDED__ */
