@@ -7,7 +7,9 @@ add_subdirectory(cryptbasex)
 add_subdirectory(d3d9base)
 add_subdirectory(fileextd)
 add_subdirectory(gdibase)
+#on future reactos releases, maybe it need be disabled
 add_subdirectory(idndl)
+#end
 add_subdirectory(iphlpapibase)
 add_subdirectory(kernelex)
 add_subdirectory(netapibase)

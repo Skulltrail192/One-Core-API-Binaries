@@ -337,17 +337,17 @@ static inline GLenum wined3d_gl_min_mip_filter(enum wined3d_texture_filter_type 
 #include <ieeefp.h>
 #endif
 
-#if !defined(HAVE_ISFINITE) && !defined(isfinite)
-static inline int isfinite(double x) { return _finite(x); }
-#endif
+// #if !defined(HAVE_ISFINITE) && !defined(isfinite)
+// static inline int isfinite(double x) { return _finite(x); }
+// #endif
 
-#if !defined(HAVE_ISINF) && !defined(isinf)
-static inline int isinf(double x) { return (!(_finite(x) || _isnan(x))); }
-#endif
+// #if !defined(HAVE_ISINF) && !defined(isinf)
+// static inline int isinf(double x) { return (!(_finite(x) || _isnan(x))); }
+// #endif
 
-#if !defined(HAVE_ISNAN) && !defined(isnan)
-static inline int isnan(double x) { return _isnan(x); }
-#endif
+// #if !defined(HAVE_ISNAN) && !defined(isnan)
+// static inline int isnan(double x) { return _isnan(x); }
+// #endif
 
 #ifndef INFINITY
 static inline float __port_infinity(void)

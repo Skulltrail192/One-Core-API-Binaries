@@ -18,6 +18,7 @@ list(APPEND SOURCE
 	d3d12.idl 
 	d3d12sdklayers.idl 
 	d3d12shader.idl 
+	d3dcommon.idl 
 	dxgi.idl 
 	dxgi1_2.idl 
 	dxgi1_3.idl 

@@ -43,8 +43,8 @@ list(APPEND SOURCE
     utils.c
     vertexdeclaration.c
     view.c
-    wined3d_main.c)
-    #precomp.h)
+    wined3d_main.c
+    precomp.h)
 
 add_library(wined3d MODULE
     ${SOURCE}
@@ -54,5 +54,5 @@ add_library(wined3d MODULE
 set_module_type(wined3d win32dll)
 target_link_libraries(wined3d wine)
 add_importlibs(wined3d user32 opengl32 gdi32 advapi32 msvcrt kernel32 ntdll)
-#add_pch(wined3d precomp.h SOURCE)
+add_pch(wined3d precomp.h SOURCE)
 add_cd_file(TARGET wined3d DESTINATION reactos/system32 FOR all)

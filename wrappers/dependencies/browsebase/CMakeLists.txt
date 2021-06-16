@@ -60,12 +60,15 @@ add_pch(browsebase precomp.h SOURCE)
 add_cd_file(TARGET browsebase DESTINATION reactos/system32 FOR all)
 
 if(NOT MSVC)
-    if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
-        add_target_compile_flags(browsebase "-Wno-unused-but-set-variable")
-    endif()
-
+    target_compile_options(browseui PRIVATE "-Wno-unused-but-set-variable")
     # Binutils linker bug
     if(LTCG)
-        add_target_link_flags(browsebase "-Wl,--allow-multiple-definition")
+        add_target_link_flags(browseui "-Wl,--allow-multiple-definition")
     endif()
 endif()
+
+add_custom_command(TARGET browsebase POST_BUILD 
+  COMMAND "${CMAKE_COMMAND}" -E copy 
+     "$<TARGET_FILE:browseui>"
+     "$<TARGET_FILE_DIR:filebrowser>/$<TARGET_FILE_NAME:browseui>" 
+  COMMENT "Copying to output directory")
