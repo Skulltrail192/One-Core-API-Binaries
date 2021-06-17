@@ -1,6 +1,5 @@
 add_subdirectory(kernelbase_wrapper)
 add_subdirectory(ntext_wrapper)
-# add_subdirectory(halext)
 # add_subdirectory(ntkrnlext)
 add_subdirectory(advapi32_wrapper)
 add_subdirectory(browseui_wrapper)

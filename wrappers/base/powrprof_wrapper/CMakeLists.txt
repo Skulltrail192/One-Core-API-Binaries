@@ -3,7 +3,7 @@ spec2def(powrprof_wrapper.dll powrprof_wrapper.spec)
 
 list(APPEND SOURCE
 	main.c
-    powrprof_wrapper.rc
+    version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/powrprof_wrapper_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/powrprof_wrapper.def)
 

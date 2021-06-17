@@ -62,7 +62,7 @@ list(APPEND SOURCE
 	utils.c
 	vdm.c
 	winnls/ansi.c
-    kernelbase.rc
+    version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/kernelbase_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/kernelbase.def)
 	

@@ -15,12 +15,8 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
+ 
+#include "common_wrappers_ver.rc" 
 
-#define WINE_FILEDESCRIPTION_STR "Windows USER API Client DLL Compatibility Layer"
+#define WINE_FILEDESCRIPTION_STR "Windows USER API Client Wrapper for One-Core-API"
 #define WINE_FILENAME_STR "user32.dll"
-#define WINE_FILEVERSION 6,0,6000,16386
-#define WINE_FILEVERSION_STR "6.0.6000.16386(winmain_wrapper_beta1)"
-#define WINE_PRODUCTVERSION 6,0,6000,16386
-#define WINE_PRODUCTVERSION_STR "6.0.6000.16386"
-
-#include "wine/wine_common_ver.rc"

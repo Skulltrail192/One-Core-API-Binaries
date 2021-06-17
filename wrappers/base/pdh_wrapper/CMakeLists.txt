@@ -3,7 +3,7 @@ spec2def(pdh_wrapper.dll pdh_wrapper.spec)
 
 list(APPEND SOURCE
     pdh_main.c
-	pdh_wrapper.rc
+	version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/pdh_wrapper_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/pdh_wrapper.def)
 

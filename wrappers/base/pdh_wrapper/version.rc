@@ -18,12 +18,8 @@
 
 #include <windef.h>
 
-LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-#define WINE_FILEDESCRIPTION_STR "Windows Performance Data Helper DLL API COMPATIBILITY LAYER"
-#define WINE_FILENAME_STR "pdh.dll"
-#define WINE_FILEVERSION 6,1,7601,16978
-#define WINE_FILEVERSION_STR "6.1.7601.16978"
-#define WINE_PRODUCTVERSION 6,1,7601,16978
-#define WINE_PRODUCTVERSION_STR "6.1.7601.16978"
+#include "common_wrappers_ver.rc"
 
-#include <wine/wine_common_ver.rc>
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#define WINE_FILEDESCRIPTION_STR "Windows Performance Data Helper Wrapper for One-Core-API"
+#define WINE_FILENAME_STR "pdh.dll"
