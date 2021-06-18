@@ -2,7 +2,7 @@
 #define REACTOS_STR_FILE_DESCRIPTION  "BootAnim"
 #define REACTOS_STR_INTERNAL_NAME     "BootAnim"
 #define REACTOS_STR_ORIGINAL_FILENAME "BootAnim.sys"
-#include <reactos/version.rc>
+#include "common_wrappers_ver.rc
 
 1 BITMAP "Bitmap/1.bmp"
 2 BITMAP "Bitmap/2.bmp"
