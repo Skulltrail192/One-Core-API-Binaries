@@ -18,9 +18,9 @@
 
 #define WINE_FILEDESCRIPTION_STR "Wine user32 downlevel apiset"
 #define WINE_FILENAME_STR "api-ms-win-downlevel-user32-l1-1-0.dll"
-#define WINE_FILEVERSION 6,2,9200,16426
-#define WINE_FILEVERSION_STR "6.2.9200.16426"
-#define WINE_PRODUCTVERSION 6,2,9200,16426
-#define WINE_PRODUCTVERSION_STR "6.2.9200.16426"
 
-#include "wine/wine_common_ver.rc"
+
+
+
+
+#include "common_wrappers_ver.rc"

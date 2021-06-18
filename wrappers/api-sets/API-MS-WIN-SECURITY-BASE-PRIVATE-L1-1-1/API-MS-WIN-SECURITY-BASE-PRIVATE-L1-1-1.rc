@@ -18,9 +18,9 @@
 
 #define WINE_FILEDESCRIPTION_STR "Wine base security apiset"
 #define WINE_FILENAME_STR "api-ms-win-security-base-l1-1-0.dll"
-#define WINE_FILEVERSION 6,1,7601,21728
-#define WINE_FILEVERSION_STR "6.1.7601.21728"
-#define WINE_PRODUCTVERSION 6,1,7601,21728
-#define WINE_PRODUCTVERSION_STR "6.1.7601.21728"
 
-#include "wine/wine_common_ver.rc"
+
+
+
+
+#include "common_wrappers_ver.rc"

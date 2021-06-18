@@ -18,11 +18,11 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#define WINE_FILEDESCRIPTION_STR "APISET STUB Dll Compatibility Layer"
+#define WINE_FILEDESCRIPTION_STR "APISET STUB Dll for One-Core-API"
 #define WINE_FILENAME_STR "apistub.dll"
-#define WINE_FILEVERSION 6,0,6000,16386
-#define WINE_FILEVERSION_STR "6.0.6000.16386(winmain_wrapper_beta1)"
-#define WINE_PRODUCTVERSION 6,0,6000,16386
-#define WINE_PRODUCTVERSION_STR "6.0.6000.16386"
 
-#include "wine/wine_common_ver.rc"
+
+
+
+
+#include "common_wrappers_ver.rc"
