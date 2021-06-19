@@ -30,6 +30,6 @@ add_library(d3d9_wrapper MODULE
 
 set_module_type(d3d9_wrapper win32dll UNICODE)
 target_link_libraries(d3d9_wrapper wine)
-add_importlibs(d3d9_wrapper d3dwine user32 msvcrt kernel32 ntdll)
+add_importlibs(d3d9_wrapper wined3d user32 msvcrt kernel32 ntdll)
 add_pch(d3d9_wrapper precomp.h SOURCE)
 add_cd_file(TARGET d3d9_wrapper DESTINATION reactos/system32 FOR all)

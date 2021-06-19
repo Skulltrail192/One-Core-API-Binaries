@@ -2,7 +2,7 @@
 
 #include <wine/config.h>
 
-#include <ntstatus.h>
+//#include <ntstatus.h>
 #define WIN32_NO_STATUS
 
 #include <wine/debug.h>
@@ -132,8 +132,6 @@
 #define FIND_FROMEND               0x00800000
 
 #define EXTENDED_STARTUPINFO_PRESENT 0x00080000
-
-#define STATUS_FAIL_FAST_EXCEPTION          ((NTSTATUS) 0xC0000602) 
 
 //
 // Do not add heap dumps for reports for the process

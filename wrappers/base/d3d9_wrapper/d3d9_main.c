@@ -32,26 +32,26 @@ void WINAPI DebugSetMute(void) {
     /* nothing to do */
 }
 
-// IDirect3D9 * WINAPI DECLSPEC_HOTPATCH Direct3DCreate9(UINT sdk_version)
-// {
-    // struct d3d9 *object;
+IDirect3D9 * WINAPI DECLSPEC_HOTPATCH Direct3DCreate9(UINT sdk_version)
+{
+    struct d3d9 *object;
 
-    // TRACE("sdk_version %#x.\n", sdk_version);
+    TRACE("sdk_version %#x.\n", sdk_version);
 
-    // if (!(object = heap_alloc_zero(sizeof(*object))))
-        // return NULL;
+    if (!(object = heap_alloc_zero(sizeof(*object))))
+        return NULL;
 
-    // if (!d3d9_init(object, FALSE))
-    // {
-        // WARN("Failed to initialize d3d9.\n");
-        // heap_free(object);
-        // return NULL;
-    // }
+    if (!d3d9_init(object, FALSE))
+    {
+        WARN("Failed to initialize d3d9.\n");
+        heap_free(object);
+        return NULL;
+    }
 
-    // TRACE("Created d3d9 object %p.\n", object);
+    TRACE("Created d3d9 object %p.\n", object);
 
-    // return (IDirect3D9 *)&object->IDirect3D9Ex_iface;
-// }
+    return (IDirect3D9 *)&object->IDirect3D9Ex_iface;
+}
 
 HRESULT WINAPI DECLSPEC_HOTPATCH Direct3DCreate9Ex(UINT sdk_version, IDirect3D9Ex **d3d9ex)
 {
