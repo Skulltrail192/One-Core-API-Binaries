@@ -603,9 +603,7 @@
 @ stub CM_Install_DevNodeW
 @ stub pSetupDiInvalidateHelperModules
 @ stub SetupDiGetClassPropertyW
-@ stub SetupDiGetDevicePropertyW
 @ stub SetupDiLoadDeviceIcon
-@ stub SetupDiSetDevicePropertyW
 @ stub CM_Install_DevNode_ExW
 @ stub pSetupDiBuildInfoDataFromStrongName
 @ stub pSetupDiGetStrongNameForDriverNode
@@ -618,6 +616,7 @@
 @ stub SetupDiSetDeviceProperty
 @ stub SetupDiGetDeviceProperty
 @ stub SetupDiGetClassProperty
+@ stub SetupDiDeleteDeviceRegKey
 
 #Missing on XP
 @ stdcall SetupConfigureWmiFromInfSectionA(ptr ptr str) setupapibase.SetupConfigureWmiFromInfSectionA
@@ -629,3 +628,6 @@
 
 #Vista functions
 @ stdcall CM_Get_DevNode_PropertyW(long ptr ptr ptr ptr long)
+@ stdcall SetupGetInfDriverStoreLocationW(wstr ptr wstr ptr long ptr) 
+@ stdcall SetupDiGetDevicePropertyW(ptr ptr ptr ptr ptr long ptr long)
+@ stdcall SetupDiSetDevicePropertyW(ptr ptr ptr long ptr long long)
