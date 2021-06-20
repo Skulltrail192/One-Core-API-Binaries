@@ -15,7 +15,7 @@
  */
 
 #include "wine/winternl.h"
-#include "wine/orpc.h"
+#include "orpc.h"
 
 #include "wine/heap.h"
 #include "wine/list.h"

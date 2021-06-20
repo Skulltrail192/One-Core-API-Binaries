@@ -30,6 +30,8 @@
 #define MAGIC_DSS1 ('D' | ('S' << 8) | ('S' << 16) | ('1' << 24))
 #define MAGIC_DSS2 ('D' | ('S' << 8) | ('S' << 16) | ('2' << 24))
 
+#define STATUS_AUTH_TAG_MISMATCH         ((NTSTATUS) 0xC000A002)
+
 typedef struct
 {
     ULONG64 len;
