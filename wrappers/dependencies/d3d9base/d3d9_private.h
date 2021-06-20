@@ -37,8 +37,8 @@
 #include "wine/heap.h"
 
 #include "d3d9.h"
-#include "wine/config.h"
-#include "wine/wined3d.h"
+#include "unknwn.h"
+#include "d3d/wined3d.h"
 
 #define D3D9_MAX_VERTEX_SHADER_CONSTANTF 256
 #define D3D9_MAX_TEXTURE_UNITS 20
@@ -94,6 +94,7 @@ struct d3d9_device
     struct wined3d_device_parent device_parent;
     LONG refcount;
     struct wined3d_device *wined3d_device;
+    struct wined3d_device_context *immediate_context;
     unsigned int adapter_ordinal;
     struct d3d9 *d3d_parent;
 
@@ -114,8 +115,7 @@ struct d3d9_device
     DWORD sysmem_ib : 1;
     DWORD in_destruction : 1;
     DWORD in_scene : 1;
-    DWORD has_vertex_declaration : 1;
-    DWORD padding : 12;
+    DWORD padding : 13;
 
     DWORD auto_mipmaps; /* D3D9_MAX_TEXTURE_UNITS */
 
@@ -226,7 +226,7 @@ struct d3d9_texture
     IDirect3DBaseTexture9 IDirect3DBaseTexture9_iface;
     struct d3d9_resource resource;
     struct wined3d_texture *wined3d_texture;
-    IDirect3DDevice9Ex *parent_device;
+    struct d3d9_device *parent_device;
     struct list rtv_list;
     DWORD usage;
     BOOL flags;

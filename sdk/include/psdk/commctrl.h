@@ -2753,6 +2753,13 @@ typedef struct tagTVHITTESTINFO {
 
 #define TVCDRF_NOIMAGES     0x00010000
 
+#ifndef NOUSEREXCONTROLS
+
+#define WC_COMBOBOXEXW L"ComboBoxEx32"
+#define WC_COMBOBOXEXA "ComboBoxEx32"
+
+#endif
+
 typedef struct tagNMTVCUSTOMDRAW
 {
     NMCUSTOMDRAW nmcd;
@@ -5128,6 +5135,9 @@ BOOL   WINAPI DSA_Destroy(HDSA);
 void   WINAPI DSA_DestroyCallback(HDSA, PFNDSAENUMCALLBACK, LPVOID);
 LPVOID WINAPI DSA_GetItemPtr(HDSA, INT);
 INT    WINAPI DSA_InsertItem(HDSA, INT, LPVOID);
+
+#define DSA_GetItemCount(hdsa) (*(int *) (hdsa))
+#define DSA_AppendItem(hdsa, pitem) DSA_InsertItem (hdsa, DA_LAST, pitem)
 
 WINCOMMCTRLAPI
 VOID
