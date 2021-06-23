@@ -443,7 +443,7 @@ static BOOL fx10_get_string(const char *data, size_t data_size, DWORD offset, co
     }
 
     max_len = data_size - offset;
-    if (!(len = strnlen(data + offset, max_len)))
+    if (!(len = strlen(data + offset)))
     {
         *s = NULL;
         *l = 0;
@@ -561,8 +561,8 @@ static HRESULT shader_parse_signature(const char *data, DWORD data_size, struct 
             return E_INVALIDARG;
         }
         read_dword(&ptr, &e[i].SemanticIndex);
-        read_dword(&ptr, &e[i].SystemValueType);
-        read_dword(&ptr, &e[i].ComponentType);
+        read_dword(&ptr, (DWORD *)&e[i].SystemValueType);
+        read_dword(&ptr, (DWORD *)&e[i].ComponentType);
         read_dword(&ptr, &e[i].Register);
         read_dword(&ptr, &mask);
 
@@ -1620,13 +1620,13 @@ static HRESULT parse_fx10_object(const char *data, size_t data_size,
         return E_FAIL;
     }
 
-    read_dword(ptr, &o->type);
+    read_dword(ptr, (DWORD *)&o->type);
     TRACE("Effect object is of type %#x.\n", o->type);
 
     read_dword(ptr, &tmp);
     TRACE("Effect object index %#x.\n", tmp);
 
-    read_dword(ptr, &operation);
+    read_dword(ptr, (DWORD *)&operation);
     TRACE("Effect object operation %#x.\n", operation);
 
     read_dword(ptr, &offset);
@@ -2285,7 +2285,7 @@ static HRESULT parse_fx10_local_buffer(const char *data, size_t data_size,
     read_dword(ptr, &l->data_size);
     TRACE("Local buffer data size: %#x.\n", l->data_size);
 
-    read_dword(ptr, &d3d10_cbuffer_type);
+    read_dword(ptr, (DWORD *)&d3d10_cbuffer_type);
     TRACE("Local buffer type: %#x.\n", d3d10_cbuffer_type);
 
     switch(d3d10_cbuffer_type)

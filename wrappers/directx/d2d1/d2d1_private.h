@@ -21,6 +21,8 @@
 
 #include "wine/debug.h"
 #include "wine/heap.h"
+#include "wine/config.h"
+#include "wine/port.h"
 
 #include <assert.h>
 #include <limits.h>
