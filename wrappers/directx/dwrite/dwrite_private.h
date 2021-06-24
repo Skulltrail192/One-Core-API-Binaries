@@ -23,6 +23,7 @@
 #include "wine/debug.h"
 #include "wine/heap.h"
 #include "wine/list.h"
+#include "stdio.h"
 
 #define MS_GSUB_TAG DWRITE_MAKE_OPENTYPE_TAG('G','S','U','B')
 #define MS_GPOS_TAG DWRITE_MAKE_OPENTYPE_TAG('G','P','O','S')
@@ -747,3 +748,6 @@ extern void init_font_backend(void) DECLSPEC_HIDDEN;
 extern void release_font_backend(void) DECLSPEC_HIDDEN;
 
 extern void dwrite_fontface_get_glyph_bbox(struct dwrite_glyphbitmap *bitmap) DECLSPEC_HIDDEN;
+
+WINBASEAPI INT WINAPI LCIDToLocaleName(LCID,LPWSTR,INT,DWORD);
+WINBASEAPI INT WINAPI GetSystemDefaultLocaleName(LPWSTR,int);

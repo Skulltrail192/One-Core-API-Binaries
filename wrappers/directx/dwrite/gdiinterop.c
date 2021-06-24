@@ -75,7 +75,7 @@ static inline int get_dib_stride(int width, int bpp)
 
 static HRESULT create_target_dibsection(struct rendertarget *target, UINT32 width, UINT32 height)
 {
-    char bmibuf[FIELD_OFFSET(BITMAPINFO, bmiColors[256])];
+    char bmibuf[FIELD_OFFSET(BITMAPINFO, bmiColors) + 256 * sizeof(RGBQUAD)];
     BITMAPINFO *bmi = (BITMAPINFO*)bmibuf;
     HBITMAP hbm;
 

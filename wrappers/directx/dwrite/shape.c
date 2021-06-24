@@ -402,7 +402,7 @@ HRESULT shape_check_typographic_feature(struct scriptshaping_context *context, c
         unsigned int tag, unsigned int glyph_count, const UINT16 *glyphs, UINT8 *feature_applies)
 {
     static const unsigned int tables[] = { MS_GSUB_TAG, MS_GPOS_TAG };
-    struct shaping_feature feature = { .tag = tag };
+    struct shaping_feature feature = { tag };
     unsigned int script_index, language_index;
     unsigned int i;
 

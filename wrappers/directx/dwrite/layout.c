@@ -2791,7 +2791,7 @@ static BOOL set_layout_range_attrval(struct layout_range_header *h, enum layout_
         if (changed)
         {
             wcscpy(dest->locale, value->u.locale);
-            wcslwr(dest->locale);
+            _wcslwr(dest->locale);
         }
         break;
     case LAYOUT_RANGE_ATTR_FONTFAMILY:
@@ -6218,7 +6218,7 @@ HRESULT create_textformat(const WCHAR *family_name, IDWriteFontCollection *colle
     object->format.locale = heap_strdupW(locale);
     object->format.locale_len = wcslen(locale);
     /* Force locale name to lower case, layout will inherit this modified value. */
-    wcslwr(object->format.locale);
+    _wcslwr(object->format.locale);
     object->format.weight = weight;
     object->format.style = style;
     object->format.fontsize = size;

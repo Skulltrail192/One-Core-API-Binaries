@@ -1590,7 +1590,7 @@ static int __cdecl cmap_format4_compare_range(const void *a, const void *b)
 
 static UINT16 opentype_cmap_format4_get_glyph(const struct dwrite_cmap *cmap, unsigned int ch)
 {
-    struct cmap_format4_compare_context key = { .cmap = cmap, .ch = ch };
+    struct cmap_format4_compare_context key = { cmap, ch };
     unsigned int glyph, idx, range_offset;
     const UINT16 *end_found;
 
@@ -5076,7 +5076,7 @@ static BOOL opentype_layout_apply_gsub_alt_substitution(struct scriptshaping_con
 
     if (format == 1)
     {
-        const struct ot_gsub_altsubst_format1 *format1 = table_read_ensure(table, subtable_offset, sizeof(*format1));
+        //const struct ot_gsub_altsubst_format1 *format1 = table_read_ensure(table, subtable_offset, sizeof(*format1));
         unsigned int shift, alt_index;
         UINT16 set_offset;
 
@@ -5111,7 +5111,7 @@ static BOOL opentype_layout_apply_gsub_alt_substitution(struct scriptshaping_con
 static BOOL opentype_layout_context_match_input(const struct match_context *mc, unsigned int count, const UINT16 *input,
         unsigned int *end_offset, unsigned int *match_positions)
 {
-    struct match_data match_data = { .mc = mc, .subtable_offset = mc->input_offset };
+    struct match_data match_data = { mc, mc->input_offset };
     struct scriptshaping_context *context = mc->context;
     struct glyph_iterator iter;
     unsigned int i;
@@ -5185,7 +5185,7 @@ static void opentype_layout_delete_glyph(struct scriptshaping_context *context, 
 static BOOL opentype_layout_apply_ligature(struct scriptshaping_context *context, unsigned int offset,
         const struct lookup *lookup)
 {
-    struct match_context mc = { .context = context, .lookup = lookup, .match_func = opentype_match_glyph_func };
+    struct match_context mc = { context, 0, 0, 0, opentype_match_glyph_func, lookup };
     const struct dwrite_fonttable *gsub = &context->table->table;
     unsigned int match_positions[GLYPH_CONTEXT_MAX_LENGTH];
     unsigned int i, j, comp_count, match_length = 0;
@@ -5254,7 +5254,7 @@ static BOOL opentype_layout_apply_gsub_lig_substitution(struct scriptshaping_con
 
     if (format == 1)
     {
-        const struct ot_gsub_ligsubst_format1 *format1 = table_read_ensure(table, subtable_offset, sizeof(*format1));
+        //const struct ot_gsub_ligsubst_format1 *format1 = table_read_ensure(table, subtable_offset, sizeof(*format1));
         unsigned int i;
         const UINT16 *offsets;
         UINT16 lig_count;
@@ -5287,7 +5287,7 @@ static BOOL opentype_layout_apply_gsub_lig_substitution(struct scriptshaping_con
 static BOOL opentype_layout_context_match_backtrack(const struct match_context *mc, unsigned int count,
         const UINT16 *backtrack, unsigned int *match_start)
 {
-    struct match_data match_data = { .mc = mc, .subtable_offset = mc->backtrack_offset };
+    struct match_data match_data = { mc, mc->backtrack_offset };
     struct scriptshaping_context *context = mc->context;
     struct glyph_iterator iter;
     unsigned int i;
@@ -5313,7 +5313,7 @@ static BOOL opentype_layout_context_match_backtrack(const struct match_context *
 static BOOL opentype_layout_context_match_lookahead(const struct match_context *mc, unsigned int count,
         const UINT16 *lookahead, unsigned int offset, unsigned int *end_index)
 {
-    struct match_data match_data = { .mc = mc, .subtable_offset = mc->lookahead_offset };
+    struct match_data match_data = { mc, mc->lookahead_offset };
     struct scriptshaping_context *context = mc->context;
     struct glyph_iterator iter;
     unsigned int i;
@@ -5518,7 +5518,7 @@ static BOOL opentype_layout_apply_rule_set(const struct match_context *mc, unsig
 static BOOL opentype_layout_apply_context(struct scriptshaping_context *context, const struct lookup *lookup,
         unsigned int subtable_offset)
 {
-    struct match_context mc = { .context = context, .lookup = lookup };
+	struct match_context mc = { context, 0, 0, 0, NULL, lookup };
     const struct dwrite_fonttable *table = &context->table->table;
     unsigned int coverage_index = GLYPH_NOT_COVERED, count, offset;
     UINT16 glyph, format, coverage;
@@ -5619,7 +5619,7 @@ static BOOL opentype_layout_apply_context(struct scriptshaping_context *context,
 static BOOL opentype_layout_apply_chain_context(struct scriptshaping_context *context, const struct lookup *lookup,
         unsigned int subtable_offset)
 {
-    struct match_context mc = { .context = context, .lookup = lookup };
+	struct match_context mc = { context, 0, 0, 0, NULL, lookup };
     const struct dwrite_fonttable *table = &context->table->table;
     unsigned int coverage_index = GLYPH_NOT_COVERED, count, offset;
     UINT16 glyph, format, coverage;
@@ -5751,7 +5751,7 @@ static BOOL opentype_layout_apply_gsub_reverse_chain_context_substitution(struct
 
     if (format == 1)
     {
-        struct match_context mc = { .context = context, .lookup = lookup };
+        struct match_context mc = { context, 0, 0, 0, NULL, lookup };
         unsigned int start_index = 0, end_index = 0, backtrack_count, lookahead_count;
         unsigned int coverage, coverage_index;
         const UINT16 *backtrack, *lookahead;

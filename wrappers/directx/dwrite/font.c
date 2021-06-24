@@ -3363,7 +3363,7 @@ static BOOL match_pattern_list(struct list *tokens, const struct name_pattern *p
                 if (token->len != len_part1)
                     continue;
 
-                if (!wcsnicmp(token->ptr, pattern->part1, len_part1))
+                if (!_wcsnicmp(token->ptr, pattern->part1, len_part1))
                 {
                     if (match) *match = *token;
                     list_remove(&token->entry);
@@ -3382,10 +3382,10 @@ static BOOL match_pattern_list(struct list *tokens, const struct name_pattern *p
                 /* it's possible to have combined string as a token, like ExtraCondensed */
                 if (token->len == len_part1 + len_part2)
                 {
-                    if (wcsnicmp(token->ptr, pattern->part1, len_part1))
+                    if (_wcsnicmp(token->ptr, pattern->part1, len_part1))
                         continue;
 
-                    if (wcsnicmp(&token->ptr[len_part1], pattern->part2, len_part2))
+                    if (_wcsnicmp(&token->ptr[len_part1], pattern->part2, len_part2))
                         continue;
 
                     /* combined string match */
@@ -3405,10 +3405,10 @@ static BOOL match_pattern_list(struct list *tokens, const struct name_pattern *p
                     if (next_token->len != len_part1)
                         continue;
 
-                    if (wcsnicmp(token->ptr, pattern->part2, len_part2))
+                    if (_wcsnicmp(token->ptr, pattern->part2, len_part2))
                         continue;
 
-                    if (wcsnicmp(next_token->ptr, pattern->part1, len_part1))
+                    if (_wcsnicmp(next_token->ptr, pattern->part1, len_part1))
                         continue;
 
                     /* both parts matched, remove tokens */
@@ -3790,7 +3790,7 @@ static const WCHAR *facename_remove_regular_term(WCHAR *facenameW, INT len)
         src = facenameW + len - pattern_len;
         while (src >= facenameW)
         {
-            if (!wcsnicmp(src, ptr, pattern_len))
+            if (!_wcsnicmp(src, ptr, pattern_len))
             {
                 memmove(src, src + pattern_len, (len - pattern_len - (src - facenameW) + 1)*sizeof(WCHAR));
                 len = wcslen(facenameW);
@@ -3939,7 +3939,7 @@ static BOOL font_apply_differentiation_rules(struct dwrite_font_data *font, WCHA
     }
     /* use Wnnn format as a fallback in case weight is not one of known values */
     else
-        swprintf(weightW, ARRAY_SIZE(weightW), L"W%d", font->weight);
+        swprintf(weightW, L"W%d", font->weight);
 
     /* resolved stretch name */
     if (stretch_name.ptr)
@@ -4834,7 +4834,7 @@ HRESULT get_eudc_fontcollection(IDWriteFactory7 *factory, IDWriteFontCollection3
     IDWriteFactory7_AddRef(factory);
 
     /* return empty collection if EUDC fonts are not configured */
-    swprintf(eudckeypathW, ARRAY_SIZE(eudckeypathW), L"EUDC\\%u", GetACP());
+    swprintf(eudckeypathW, L"EUDC\\%u", GetACP());
     if (RegOpenKeyExW(HKEY_CURRENT_USER, eudckeypathW, 0, GENERIC_READ, &eudckey))
         return S_OK;
 
@@ -7981,10 +7981,10 @@ struct font_callback_funcs callback_funcs =
 
 void init_font_backend(void)
 {
-    __wine_init_unix_lib(dwrite_module, DLL_PROCESS_ATTACH, &callback_funcs, &font_funcs);
+   // __wine_init_unix_lib(dwrite_module, DLL_PROCESS_ATTACH, &callback_funcs, &font_funcs);
 }
 
 void release_font_backend(void)
 {
-    __wine_init_unix_lib(dwrite_module, DLL_PROCESS_DETACH, &callback_funcs, NULL);
+    //__wine_init_unix_lib(dwrite_module, DLL_PROCESS_DETACH, &callback_funcs, NULL);
 }

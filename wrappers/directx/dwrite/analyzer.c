@@ -1804,7 +1804,7 @@ static HRESULT WINAPI dwritetextanalyzer2_GetTypographicFeatures(IDWriteTextAnal
     context.language_tag = get_opentype_language(locale);
     props = &dwritescripts_properties[sa.script];
 
-    return shape_get_typographic_features(&context, props->scripttags, max_tagcount, actual_tagcount, tags);
+    return shape_get_typographic_features(&context, props->scripttags, max_tagcount, actual_tagcount, (unsigned int *)tags);
 };
 
 static HRESULT WINAPI dwritetextanalyzer2_CheckTypographicFeature(IDWriteTextAnalyzer2 *iface,

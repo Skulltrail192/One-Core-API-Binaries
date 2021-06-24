@@ -66,7 +66,7 @@ typedef struct
 
 static const struct font_callback_funcs *callback_funcs;
 
-#define MAKE_FUNCPTR(f) static typeof(f) * p##f = NULL
+#define MAKE_FUNCPTR(f) static typeof(f) * p##f;
 MAKE_FUNCPTR(FT_Done_FreeType);
 MAKE_FUNCPTR(FT_Done_Glyph);
 MAKE_FUNCPTR(FT_Get_First_Char);
