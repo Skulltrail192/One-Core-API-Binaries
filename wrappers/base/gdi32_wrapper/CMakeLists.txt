@@ -17,5 +17,6 @@ list(APPEND SOURCE
 add_library(gdi32_wrapper SHARED ${SOURCE})
 set_module_type(gdi32_wrapper win32dll ENTRYPOINT DllMain 12 UNICODE)
 target_link_libraries(gdi32_wrapper wine dxguid freetype)
-add_importlibs(gdi32_wrapper gdibase advapi32 msvcrt kernel32 setupapi user32 ntdll)
+add_delay_importlibs(gdi32_wrapper setupapi advapi32)
+add_importlibs(gdi32_wrapper gdibase  msvcrt kernel32 user32 ntdll)
 add_cd_file(TARGET gdi32_wrapper DESTINATION reactos/system32 FOR all)
