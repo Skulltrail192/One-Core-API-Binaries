@@ -1304,7 +1304,7 @@
 @ stdcall GetCurrentProcessorNumberEx(ptr) ntext.RtlGetCurrentProcessorNumberEx
 @ stdcall -arch=x86_64 GetCurrentUmsThread()
 @ stdcall -ret64 -arch=i386,x86_64 GetEnabledXStateFeatures()
-# @ stub GetEraNameCountedString
+@ stub GetEraNameCountedString
 @ stdcall GetMaximumProcessorCount(long)
 @ stdcall GetMaximumProcessorGroupCount()
 @ stdcall GetTimeFormatWWorker(long long ptr wstr ptr long) GetTimeFormatW
@@ -1318,7 +1318,8 @@
 @ stdcall GetThreadIdealProcessorEx(ptr ptr)
 @ stdcall -arch=x86_64 GetUmsCompletionListEvent(ptr ptr)
 # @ stub GetXStateFeaturesMask
-# @ stub LoadStringBaseExW
+@ stub LoadStringBaseExW
+@ stub LoadStringByReference
 # @ stub LoadStringBaseW
 # @ stub LocateXStateFeature
 @ stdcall K32EmptyWorkingSet(ptr) EmptyWorkingSet
