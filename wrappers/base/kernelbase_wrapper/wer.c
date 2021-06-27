@@ -118,9 +118,8 @@ WerpNotifyLoadStringResource(
 HRESULT WINAPI WerSetFlags(DWORD flags)
 {
      FIXME("(%d) stub!\n", flags);
-     return E_NOTIMPL;
+     return S_OK;
 }
-
 
 HRESULT 
 WINAPI 

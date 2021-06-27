@@ -759,52 +759,6 @@ INT WINAPI GetLocaleInfoInternalW( LCID lcid, LCTYPE lctype, LPWSTR buffer, INT 
     return ret;
 }
 
-static BOOL get_dummy_preferred_ui_language( DWORD flags, ULONG *count, WCHAR *buffer, ULONG *size )
-{
-    LCTYPE type;
-    int lsize;
-
-    FIXME("(0x%x %p %p %p) returning a dummy value (current locale)\n", flags, count, buffer, size);
-
-    if (flags & MUI_LANGUAGE_ID)
-        type = LOCALE_ILANGUAGE;
-    else
-        type = LOCALE_SNAME;
-
-    lsize = GetLocaleInfoInternalW(LOCALE_SYSTEM_DEFAULT, type, NULL, 0);
-    if (!lsize)
-    {
-        /* keep last error from callee */
-        return FALSE;
-    }
-    lsize++;
-    if (!*size)
-    {
-        *size = lsize;
-        *count = 1;
-        return TRUE;
-    }
-
-    if (lsize > *size)
-    {
-        SetLastError(ERROR_INSUFFICIENT_BUFFER);
-        return FALSE;
-    }
-
-    if (!GetLocaleInfoInternalW(LOCALE_SYSTEM_DEFAULT, type, buffer, *size))
-    {
-        /* keep last error from callee */
-        return FALSE;
-    }
-
-    buffer[lsize-1] = 0;
-    *size = lsize;
-    *count = 1;
-    TRACE("returned variable content: %d, \"%s\", %d\n", *count, debugstr_w(buffer), *size);
-    return TRUE;
-
-}
-
 /***********************************************************************
  *           LocaleNameToLCID  (KERNEL32.@)
  */

@@ -1170,6 +1170,7 @@
 @ stdcall GetPhysicallyInstalledSystemMemory(ptr)
 @ stdcall GetProcessPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetProductInfo(long long long long ptr) 
+@ stub GetProductName
 @ stdcall GetQueuedCompletionStatusEx(ptr ptr long ptr long long)
 @ stdcall GetStringScripts(long wstr long wstr long) idndl.DownlevelGetStringScripts
 @ stdcall GetSystemDefaultLocaleName(ptr long)
@@ -1314,6 +1315,7 @@
 @ stdcall GetNumaNodeProcessorMaskEx(long ptr)
 @ stdcall GetNumaProcessorNodeEx(ptr ptr)
 @ stdcall GetNumaProximityNodeEx(long ptr)
+@ stdcall GetProcessGroupAffinity(long ptr ptr)
 @ stdcall GetThreadGroupAffinity(long ptr)
 @ stdcall GetThreadIdealProcessorEx(ptr ptr)
 @ stdcall -arch=x86_64 GetUmsCompletionListEvent(ptr ptr)
