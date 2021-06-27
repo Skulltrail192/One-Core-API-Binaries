@@ -1184,9 +1184,9 @@
 @ stdcall GetUserDefaultLocaleName(wstr long)
 @ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetVolumeInformationByHandleW(ptr ptr long ptr ptr ptr ptr long)
-@ stdcall IdnToAscii(long wstr long ptr long) normaliz.IdnToAscii
-@ stdcall IdnToNameprepUnicode(long wstr long ptr long) normaliz.IdnToNameprepUnicode
-@ stdcall IdnToUnicode(long wstr long ptr long) normaliz.IdnToUnicode
+@ stdcall IdnToAscii(long wstr long ptr long)
+@ stdcall IdnToNameprepUnicode(long wstr long ptr long)
+@ stdcall IdnToUnicode(long wstr long ptr long)
 @ stdcall InitializeProcThreadAttributeList(ptr long long ptr) ;need test
 @ stdcall InitializeConditionVariable(ptr) ntext.RtlInitializeConditionVariable
 @ stdcall InitializeCriticalSectionEx(ptr long long) ;EXPERIMENTAL
@@ -1199,7 +1199,7 @@
 @ stdcall IsCalendarLeapDay(long long long long long)
 @ stdcall IsCalendarLeapMonth(long long long long)
 @ stdcall IsCalendarLeapYear(long long long)
-@ stdcall IsNormalizedString(long wstr long) normaliz.IsNormalizedString
+@ stdcall IsNormalizedString(long wstr long)
 @ stdcall IsThreadAFiber()
 @ stdcall IsThreadpoolTimerSet(ptr) ntext.TpIsTimerSet
 @ stdcall IsValidCalDateTime(ptr long)
@@ -1211,7 +1211,7 @@
 @ stdcall MapViewOfFileExNuma(ptr long long long long ptr long)
 @ stdcall MoveFileTransactedA(str str ptr ptr long ptr)
 @ stdcall MoveFileTransactedW(wstr wstr ptr ptr long ptr)
-@ stdcall NormalizeString(long wstr long wstr long) normaliz.NormalizeString
+@ stdcall NormalizeString(long wstr long wstr long)
 @ stdcall OpenFileById(long ptr long long ptr long) 
 @ stdcall QueryActCtxSettingsW(long ptr wstr wstr ptr long ptr)
 @ stdcall QueryFullProcessImageNameA(ptr long ptr ptr) 

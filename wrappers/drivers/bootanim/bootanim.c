@@ -1,7 +1,7 @@
 /*
  * PROJECT:         ReactOS WMI driver
  * COPYRIGHT:       GPL - See COPYING in the top level directory
- * FILE:            drivers/bootanim/bootanim.c
+ * FILE:            wrappers/drivers/bootanim/bootanim.c
  * PURPOSE:         Windows Management Intstrumentation
  * PROGRAMMERS:     Aleksey Bragin (aleksey@reactos.org)
  *                  
@@ -185,10 +185,10 @@ FindResource(
 )
 {
   PIMAGE_RESOURCE_DATA_ENTRY Image; // esi@1
-  PVOID section; // ecx@1
+  //PVOID section; // ecx@1
   NTSTATUS FindStatus; // esi@2
   NTSTATUS status; // eax@3
-  PIMAGE_RESOURCE_DATA_ENTRY unsed; // [sp+Ch] [bp-14h]@2
+  //PIMAGE_RESOURCE_DATA_ENTRY unsed; // [sp+Ch] [bp-14h]@2
   ULONG DataLength; // [sp+18h] [bp-8h]@3
   PIMAGE_RESOURCE_DATA_ENTRY Data; // [sp+1Ch] [bp-4h]@1
   LDR_RESOURCE_INFO ResourceInfo;
@@ -196,17 +196,17 @@ FindResource(
   Data = 0;
   Image = DataEntry;
   DbgPrint("NtEmu: FindBitmapResource: _ULONG ResourceId = %d\n", DataEntry);
-  section = GlobalDriverObject->DriverSection;
+  //section = GlobalDriverObject->DriverSection;
   ResourceInfo.Type = 2; //RT_BITMAP;
   ResourceInfo.Name = (ULONG_PTR)DataEntry;
   ResourceInfo.Language = 0;    
     DbgPrint("ResourceInfo.Type = %d\nResourceInfo.Name = %d\nResourceInfo.Language = %d\n", 2, Image, 0);
-    unsed = 0;
+    //unsed = 0;
     FindStatus = LdrFindResource_U(GlobalDriverObject->DriverStart, &ResourceInfo, 3, &DataEntry);
     DbgPrint("NtEmu: LdrFindResource_U: status = 0x%x\n", FindStatus);
     if ( FindStatus >= 0 )
     {
-      status = LdrAccessResource(GlobalDriverObject->DriverStart, DataEntry, &Data, &DataLength);
+      status = LdrAccessResource(GlobalDriverObject->DriverStart, DataEntry, (PVOID *)&Data, &DataLength);
       if ( status < 0 )
         Data = 0;
       DbgPrint("NtEmu: LdrAccessResource: status = 0x%x\n", status);
@@ -250,7 +250,7 @@ Animation(
   }
   while ( (int)image < 91 );
   DbgPrint("Bootanim::DriverEntry: Creating system thread.\n");
-  status = PsCreateSystemThread(&DriverObject, 0x1F03FFu, &ObjectAttributes, 0, 0, (PKSTART_ROUTINE)StartRoutine, 0);
+  status = PsCreateSystemThread((PHANDLE)&DriverObject, 0x1F03FFu, &ObjectAttributes, 0, 0, (PKSTART_ROUTINE)StartRoutine, 0);
   if ( status )
     DbgPrint("Bootanim::DriverEntry: PsCreateSystemThread failed with status %x\n", status);
   ZwClose(DriverObject);

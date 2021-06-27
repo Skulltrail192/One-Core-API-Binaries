@@ -503,10 +503,9 @@ NTSTATUS NTAPI RtlDisableThreadProfiling(HANDLE PerformanceDataHandle);
 
 NTSTATUS NTAPI NtDeletePrivateNamespace(__in HANDLE NamespaceHandle);
 
-NTSTATUS NTAPI RtlIsNormalizedString(NORM_FORM NormForm, LPCWSTR lpString, int cwLength, LPCWSTR other);
+NTSYSAPI NTSTATUS  WINAPI RtlIsNormalizedString(ULONG,const WCHAR*,INT,BOOLEAN*);
 
-NTSTATUS NTAPI RtlNormalizeString(_In_       NORM_FORM NormForm,  _In_ LPCWSTR lpSrcString,
-  _In_       int cwSrcLength,  _Out_opt_  LPWSTR lpDstString,  _In_  int *cwDstLength);
+NTSYSAPI NTSTATUS  WINAPI RtlNormalizeString(ULONG,const WCHAR*,INT,WCHAR*,INT*);
 
 BOOL WINAPI RtlDeregisterSecureMemoryCacheCallback(_In_  PSECURE_MEMORY_CACHE_CALLBACK pfnCallBack);
 
@@ -672,3 +671,6 @@ NTSYSAPI NTSTATUS  WINAPI LdrAddDllDirectory(const UNICODE_STRING*,void**);
 NTSYSAPI NTSTATUS  WINAPI LdrSetDefaultDllDirectories(ULONG);
 NTSYSAPI NTSTATUS  WINAPI RtlSetSearchPathMode(ULONG);
 NTSYSAPI NTSTATUS  WINAPI LdrRemoveDllDirectory(void*);
+NTSYSAPI NTSTATUS  WINAPI RtlIdnToAscii(DWORD,const WCHAR*,INT,WCHAR*,INT*);
+NTSYSAPI NTSTATUS  WINAPI RtlIdnToNameprepUnicode(DWORD,const WCHAR*,INT,WCHAR*,INT*);
+NTSYSAPI NTSTATUS  WINAPI RtlIdnToUnicode(DWORD,const WCHAR*,INT,WCHAR*,INT*);

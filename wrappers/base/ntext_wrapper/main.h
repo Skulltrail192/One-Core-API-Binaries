@@ -71,6 +71,10 @@ typedef RTL_RUN_ONCE_INIT_FN *PRTL_RUN_ONCE_INIT_FN;
 
 static RTL_CRITICAL_SECTION loader_section;
 
+/* IDN defines. - From wine's winnls.h*/
+#define IDN_ALLOW_UNASSIGNED        0x1
+#define IDN_USE_STD3_ASCII_RULES    0x2
+
 /* SHA1 Helper Macros */
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))

@@ -1108,8 +1108,7 @@ GetSystemDefaultLocaleName(
 	INT len
 )
 {
-    LCID lcid = GetSystemDefaultLCID();
-    return LCIDToLocaleName(lcid, localename, len, 0);
+    return LCIDToLocaleName(GetSystemDefaultLCID(), localename, len, 0);
 }
 
 /******************************************************************************
@@ -1154,7 +1153,12 @@ GetThreadUILanguage( void )
      //DbgPrint("GetThreadUILanguage is UNIMPLEMENTED, returning default language.\n");
 	 //Windows XP and Server 2003 doesn't use really LANGIID passed how paremeter on SetThreadUILanguage, so, we 
 	 //can use to get Thread UI Language;	 
-     return SetThreadUILanguage(0);
+     //return SetThreadUILanguage(0);
+    LANGID lang;
+
+    FIXME(": stub, returning default language.\n");
+    NtQueryDefaultUILanguage( &lang );
+    return lang;	 
 }
 
 BOOL 
@@ -1394,11 +1398,9 @@ GetUserDefaultLocaleName(
 	int buffersize
 )
 {
-    LCID userlcid;
 	int ret;
-   
-	userlcid = GetUserDefaultLCID();
-    ret = LCIDToLocaleName(userlcid, localename, buffersize, 0);
+	
+    ret = LCIDToLocaleName(GetUserDefaultLCID(), localename, buffersize, 0);
 	
 	DbgPrint("GetUserDefaultLocaleName :: Default Locale: %s\n", localename);
 	
@@ -2043,4 +2045,81 @@ DWORD WINAPI DECLSPEC_HOTPATCH IsValidNLSVersion( NLS_FUNCTION func, const WCHAR
 
     if (!ret) SetLastError( ERROR_SUCCESS );
     return ret;
+}
+
+/******************************************************************************
+ *	IdnToAscii   (kernelbase.@)
+ */
+INT WINAPI DECLSPEC_HOTPATCH IdnToAscii( DWORD flags, const WCHAR *src, INT srclen,
+                                         WCHAR *dst, INT dstlen )
+{
+    NTSTATUS status = RtlIdnToAscii( flags, src, srclen, dst, &dstlen );
+    if (!NT_SUCCESS( status )){
+		SetLastError( ERROR_SUCCESS );
+		return 0;
+	}		
+    return dstlen;
+}
+
+/******************************************************************************
+ *	IdnToNameprepUnicode   (kernelbase.@)
+ */
+INT WINAPI DECLSPEC_HOTPATCH IdnToNameprepUnicode( DWORD flags, const WCHAR *src, INT srclen,
+                                                   WCHAR *dst, INT dstlen )
+{
+    NTSTATUS status = RtlIdnToNameprepUnicode( flags, src, srclen, dst, &dstlen );
+    if (!NT_SUCCESS( status )){
+		SetLastError( ERROR_SUCCESS );
+		return 0;
+	}		
+    return dstlen;
+}
+
+/******************************************************************************
+ *	IdnToUnicode   (kernelbase.@)
+ */
+INT WINAPI DECLSPEC_HOTPATCH IdnToUnicode( DWORD flags, const WCHAR *src, INT srclen,
+                                           WCHAR *dst, INT dstlen )
+{
+    NTSTATUS status = RtlIdnToUnicode( flags, src, srclen, dst, &dstlen );
+    if (!NT_SUCCESS( status )){
+		SetLastError( ERROR_SUCCESS );
+		return 0;
+	}		
+    return dstlen;
+}
+
+/******************************************************************************
+ *	IsNormalizedString   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsNormalizedString( NORM_FORM form, const WCHAR *str, INT len )
+{
+    BOOLEAN res = TRUE;
+    if (!NT_SUCCESS(RtlIsNormalizedString( form, str, len, &res ))){
+		SetLastError( ERROR_SUCCESS );
+		res = FALSE;
+	}		
+    return res;
+}
+
+/******************************************************************************
+ *	NormalizeString   (kernelbase.@)
+ */
+INT WINAPI DECLSPEC_HOTPATCH NormalizeString(NORM_FORM form, const WCHAR *src, INT src_len,
+                                             WCHAR *dst, INT dst_len)
+{
+    NTSTATUS status = RtlNormalizeString( form, src, src_len, dst, &dst_len );
+
+    switch (status)
+    {
+    case STATUS_OBJECT_NAME_NOT_FOUND:
+        status = STATUS_INVALID_PARAMETER;
+        break;
+    case STATUS_BUFFER_TOO_SMALL:
+    case STATUS_NO_UNICODE_TRANSLATION:
+        dst_len = -dst_len;
+        break;
+    }
+    SetLastError( RtlNtStatusToDosError( status ));
+    return dst_len;
 }
