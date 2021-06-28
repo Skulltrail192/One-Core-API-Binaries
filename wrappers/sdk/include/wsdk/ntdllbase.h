@@ -241,12 +241,7 @@ NTSTATUS WINAPI RtlGetUILanguageInfo(DWORD dwFlags,
 									 PDWORD pcchFallbackLanguages,
 									 PDWORD pdwAttributes);
 
-BOOL WINAPI RtlGetSystemPreferredUILanguages(
-  _In_       DWORD dwFlags,
-  _Out_      PULONG pulNumLanguages,
-  _Out_opt_  PZZWSTR pwszLanguagesBuffer,
-  _Inout_    PULONG pcchLanguagesBuffer
-);
+NTSYSAPI NTSTATUS  WINAPI RtlGetSystemPreferredUILanguages(DWORD,ULONG,ULONG*,WCHAR*,ULONG*);
 
 HANDLE WINAPI RtlGetCurrentTransaction();
 
@@ -674,3 +669,6 @@ NTSYSAPI NTSTATUS  WINAPI LdrRemoveDllDirectory(void*);
 NTSYSAPI NTSTATUS  WINAPI RtlIdnToAscii(DWORD,const WCHAR*,INT,WCHAR*,INT*);
 NTSYSAPI NTSTATUS  WINAPI RtlIdnToNameprepUnicode(DWORD,const WCHAR*,INT,WCHAR*,INT*);
 NTSYSAPI NTSTATUS  WINAPI RtlIdnToUnicode(DWORD,const WCHAR*,INT,WCHAR*,INT*);
+NTSYSAPI NTSTATUS  WINAPI RtlGetProcessPreferredUILanguages(DWORD,ULONG*,WCHAR*,ULONG*);
+NTSYSAPI NTSTATUS  WINAPI RtlSetThreadPreferredUILanguages(DWORD,PCZZWSTR,ULONG*);
+NTSYSAPI NTSTATUS  WINAPI RtlSetProcessPreferredUILanguages(DWORD,PCZZWSTR,ULONG*);

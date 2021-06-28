@@ -31,7 +31,6 @@
 #include <strsafe.h>
 
 #define WIN32_NO_STATUS
-#include <winbase.h>
 #include <obfuncs.h>
 #include <mmfuncs.h>
 #include <exfuncs.h>
@@ -44,6 +43,7 @@
 #include "datetime.h"
 #include <shlwapi.h>
 #include <psapi.h>
+#include <timezoneapi.h>
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -1460,3 +1460,16 @@ BaseFormatTimeOut(
 	OUT PLARGE_INTEGER  	Timeout,
 	IN DWORD  	dwMilliseconds 
 );
+
+INT 
+WINAPI 
+GetUserDefaultLocaleName(
+	LPWSTR localename, 
+	int buffersize
+);
+
+static inline BOOL set_ntstatus( NTSTATUS status )
+{
+    if (status) SetLastError( RtlNtStatusToDosError( status ));
+    return !status;
+}

@@ -1311,7 +1311,7 @@ DWORD WINAPI GetDynamicTimeZoneInformation(DYNAMIC_TIME_ZONE_INFORMATION *tzinfo
 BOOL 
 WINAPI 
 SetDynamicTimeZoneInformation(
-	PDYNAMIC_TIME_ZONE_INFORMATION lpTimeZoneDynamicInformation
+	const DYNAMIC_TIME_ZONE_INFORMATION* lpTimeZoneDynamicInformation
 )
 {
 	TIME_ZONE_INFORMATION lpTimeZoneInformation;

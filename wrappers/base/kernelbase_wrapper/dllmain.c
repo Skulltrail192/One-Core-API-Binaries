@@ -27,6 +27,7 @@ HMODULE kernel32_handle = NULL;
 ULONG BaseDllTag;
 
 void InitializeCriticalForLocaleInfo();
+void init_locale(void);
 
 BOOL
 WINAPI
@@ -45,6 +46,9 @@ BaseDllInitialize(
             /* Insert more dll attach stuff here! */
 			kernel32_handle = GetModuleHandleW(L"kernelex");
 			InitializeCriticalForLocaleInfo();
+			
+			//Initialize Locale
+			init_locale();
 			
 			BaseDllTag = RtlCreateTagHeap( RtlProcessHeap(),
                                        0,

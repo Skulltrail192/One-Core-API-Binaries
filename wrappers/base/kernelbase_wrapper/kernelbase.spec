@@ -1168,7 +1168,6 @@
 @ stdcall GetOSProductNameW(wstr long long)
 @ stdcall GetOverlappedResultEx(long ptr ptr long long)
 @ stdcall GetPhysicallyInstalledSystemMemory(ptr)
-@ stdcall GetProcessPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetProductInfo(long long long long ptr) 
 @ stub GetProductName
 @ stdcall GetQueuedCompletionStatusEx(ptr ptr long ptr long long)
@@ -1316,6 +1315,7 @@
 @ stdcall GetNumaProcessorNodeEx(ptr ptr)
 @ stdcall GetNumaProximityNodeEx(long ptr)
 @ stdcall GetProcessGroupAffinity(long ptr ptr)
+@ stdcall GetProcessPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetThreadGroupAffinity(long ptr)
 @ stdcall GetThreadIdealProcessorEx(ptr ptr)
 @ stdcall -arch=x86_64 GetUmsCompletionListEvent(ptr ptr)

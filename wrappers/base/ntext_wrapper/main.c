@@ -24,10 +24,11 @@ extern RTL_CRITICAL_SECTION time_tz_section;
 extern RTL_CRITICAL_SECTION localeCritSection;
 extern RTL_CRITICAL_SECTION loader_section;
 extern RTL_CRITICAL_SECTION dlldir_section;
-
 VOID RtlpInitializeKeyedEvent(VOID);
 VOID RtlpCloseKeyedEvent(VOID);
 void load_global_options(void);
+void init_locale();
+static UNICODE_STRING Kernel32DllName = RTL_CONSTANT_STRING(L"kernel32.dll");
 
 /*****************************************************
  *      DllMain
@@ -46,7 +47,8 @@ LdrInitialize(
 		RtlInitializeCriticalSection(&localeCritSection);
 		RtlInitializeCriticalSection(&loader_section);
 		RtlInitializeCriticalSection(&dlldir_section);
-		load_global_options();
+		load_global_options();		
+		init_locale();
         LdrDisableThreadCalloutsForDll(hDll);
         RtlpInitializeKeyedEvent();
     }

@@ -35,7 +35,13 @@ Revision History:
 #define LOCALE_LOCALEINFOFLAGSMASK (LOCALE_NOUSEROVERRIDE|LOCALE_USE_CP_ACP|\
                                     LOCALE_RETURN_NUMBER|LOCALE_RETURN_GENITIVE_NAMES)
 									
-static LPWSTR systemLocale;									
+#define LOCALE_ALLOW_NEUTRAL_NAMES    0x08000000									
+									
+static const GUID default_sort_guid = { 0x00000001, 0x57ee, 0x1e5c, { 0x00, 0xb4, 0xd0, 0x00, 0x0b, 0xb1, 0xe1, 0x1e }};									
+									
+static LPWSTR systemLocale;			
+
+static const struct sortguid *current_locale_sort;						
 
 /* locale ids corresponding to the various Unix locale parameters */
 static LCID lcid_LC_COLLATE;
@@ -48,6 +54,8 @@ static LCID lcid_LC_PAPER;
 static LCID lcid_LC_MEASUREMENT;
 static LCID lcid_LC_TELEPHONE;
 
+static HKEY nls_key;
+static HKEY tz_key;
 
 static RTL_CRITICAL_SECTION cache_section;
 
@@ -198,6 +206,75 @@ static struct registry_value
     { LOCALE_ITIMEMARKPOSN, iTimePrefixW }
 };
 
+static const struct sortguid *find_sortguid( const GUID *guid )
+{
+    int pos, ret, min = 0, max = sort.guid_count - 1;
+
+    while (min <= max)
+    {
+        pos = (min + max) / 2;
+        ret = memcmp( guid, &sort.guids[pos].id, sizeof(*guid) );
+        if (!ret) return &sort.guids[pos];
+        if (ret > 0) min = pos + 1;
+        else max = pos - 1;
+    }
+    ERR( "no sort found for %s\n", debugstr_guid( guid ));
+    return NULL;
+}
+
+static const struct sortguid *get_language_sort( const WCHAR *locale )
+{
+    WCHAR *p, *end, buffer[LOCALE_NAME_MAX_LENGTH], guidstr[39];
+    const struct sortguid *ret;
+    UNICODE_STRING str;
+    GUID guid;
+    HKEY key = 0;
+    DWORD size, type;
+
+    if (locale == LOCALE_NAME_USER_DEFAULT)
+    {
+        if (current_locale_sort) return current_locale_sort;
+        GetUserDefaultLocaleName( buffer, ARRAY_SIZE( buffer ));
+    }
+    else lstrcpynW( buffer, locale, LOCALE_NAME_MAX_LENGTH );
+
+    if (buffer[0] && !RegOpenKeyExW( nls_key, L"Sorting\\Ids", 0, KEY_READ, &key ))
+    {
+        for (;;)
+        {
+            size = sizeof(guidstr);
+            if (!RegQueryValueExW( key, buffer, NULL, &type, (BYTE *)guidstr, &size ) && type == REG_SZ)
+            {
+                RtlInitUnicodeString( &str, guidstr );
+                if (!RtlGUIDFromString( &str, &guid ))
+                {
+                    ret = find_sortguid( &guid );
+                    goto done;
+                }
+                break;
+            }
+            for (p = end = buffer; *p; p++) if (*p == '-' || *p == '_') end = p;
+            if (end == buffer) break;
+            *end = 0;
+        }
+    }
+    ret = find_sortguid( &default_sort_guid );
+done:
+    RegCloseKey( key );
+    return ret;
+}
+
+/***********************************************************************
+ *		init_locale
+ */
+void init_locale(void)
+{
+	current_locale_sort = get_language_sort( LOCALE_NAME_USER_DEFAULT );
+    RegCreateKeyExW( HKEY_LOCAL_MACHINE, L"System\\CurrentControlSet\\Control\\Nls",
+                     0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &nls_key, NULL );	
+    RegCreateKeyExW( HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones",
+                     0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &tz_key, NULL );					 
+}
 
 struct enum_locale_ex_data
 {
@@ -227,22 +304,6 @@ static void init_sortkeys( DWORD *ptr )
     sort.version = table[0];
     sort.guid_count = table[1];
     sort.guids = (struct sortguid *)(table + 2);
-}
-
-static const struct sortguid *find_sortguid( const GUID *guid )
-{
-    int pos, ret, min = 0, max = sort.guid_count - 1;
-
-    while (min <= max)
-    {
-        pos = (min + max) / 2;
-        ret = memcmp( guid, &sort.guids[pos].id, sizeof(*guid) );
-        if (!ret) return &sort.guids[pos];
-        if (ret > 0) min = pos + 1;
-        else max = pos - 1;
-    }
-    ERR( "no sort found for %s\n", debugstr_guid( guid ));
-    return NULL;
 }
 
 /***********************************************************************
@@ -1567,47 +1628,54 @@ BOOL CALLBACK EnumLocalesProc(
 	return FALSE;
 }
 
-//MAYBE REMAKE
 /******************************************************************************
- *           EnumSystemLocalesEx  (KERNEL32.@)
+ *	EnumSystemLocalesEx   (kernelbase.@)
  */
-BOOL 
-WINAPI 
-EnumSystemLocalesEx( 
-	LOCALE_ENUMPROCEX proc, 
-	DWORD dwFlags, 
-	LPARAM lparam, 
-	LPVOID reserved )
+BOOL WINAPI DECLSPEC_HOTPATCH EnumSystemLocalesEx( LOCALE_ENUMPROCEX proc, DWORD wanted_flags,
+                                                   LPARAM param, void *reserved )
 {
-	DWORD flags = LCID_INSTALLED;
-	
-	if(flags & (LOCALE_NEUTRALDATA | LOCALE_SUPPLEMENTAL))
-	{
-		DbgPrint("EnumSystemLocalesEx called with unsupported flags\n");
-		return FALSE;
-	}		
-	
-	switch(dwFlags)
-	{
-		case LOCALE_ALL:
-			flags = LCID_INSTALLED || LCID_SUPPORTED || LCID_ALTERNATE_SORTS;
-			break;
-		case LOCALE_ALTERNATE_SORTS:
-			flags = LCID_ALTERNATE_SORTS; 
-			break;
-		case LOCALE_WINDOWS:
-			flags = LCID_INSTALLED;
-			break;
-		default:
-			flags = LCID_SUPPORTED;
-			break;
-	}	
-	EnumSystemLocalesW((LOCALE_ENUMPROCW)EnumLocalesProc, flags);
-	
-	if(systemLocale){
-		return proc(systemLocale, dwFlags, lparam);
-	}	
-	return FALSE;
+    WCHAR buffer[256], name[10];
+    DWORD name_len, type, neutral, flags, index = 0, alt = 0;
+    HKEY key, altkey;
+    LCID lcid;
+
+    if (reserved)
+    {
+        SetLastError( ERROR_INVALID_PARAMETER );
+        return FALSE;
+    }
+
+    if (RegOpenKeyExW( nls_key, L"Locale", 0, KEY_READ, &key )) return FALSE;
+    if (RegOpenKeyExW( key, L"Alternate Sorts", 0, KEY_READ, &altkey )) altkey = 0;
+
+    for (;;)
+    {
+        name_len = ARRAY_SIZE(name);
+        if (RegEnumValueW( alt ? altkey : key, index++, name, &name_len, NULL, &type, NULL, NULL ))
+        {
+            if (alt++) break;
+            index = 0;
+            continue;
+        }
+        if (type != REG_SZ) continue;
+        if (!(lcid = wcstoul( name, NULL, 16 ))) continue;
+
+        GetLocaleInfoW( lcid, LOCALE_SNAME | LOCALE_NOUSEROVERRIDE, buffer, ARRAY_SIZE( buffer ));
+        if (!GetLocaleInfoW( lcid, LOCALE_INEUTRAL | LOCALE_NOUSEROVERRIDE | LOCALE_RETURN_NUMBER,
+                             (LPWSTR)&neutral, sizeof(neutral) / sizeof(WCHAR) ))
+            neutral = 0;
+
+        if (alt)
+            flags = LOCALE_ALTERNATE_SORTS;
+        else
+            flags = LOCALE_WINDOWS | (neutral ? LOCALE_NEUTRALDATA : LOCALE_SPECIFICDATA);
+
+        if (wanted_flags && !(flags & wanted_flags)) continue;
+        if (!proc( buffer, flags, param )) break;
+    }
+    RegCloseKey( altkey );
+    RegCloseKey( key );
+    return TRUE;
 }
 
 //Wrapper to special cases of GetLocaleInfoW
@@ -1698,55 +1766,67 @@ GetLocaleInfoEx(
     return GetpLocaleInfoW(lcid, info, buffer, len);
 }
 
-/*
- * @unimplemented
-*/
-BOOL 
-WINAPI 
-GetNLSVersionEx(
-  _In_      NLS_FUNCTION function,
-  _In_opt_  LPCWSTR lpLocaleName,
-  _Inout_   LPNLSVERSIONINFOEX lpVersionInformation
-)
+/******************************************************************************
+ *	GetNLSVersionEx   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH GetNLSVersionEx( NLS_FUNCTION func, const WCHAR *locale,
+                                               NLSVERSIONINFOEX *info )
 {
-	NLSVERSIONINFO lpVersionInformationOld;
-	LCID lcid = LocaleNameToLCID(lpLocaleName, 0);
-	
-	lpVersionInformationOld.dwNLSVersionInfoSize = sizeof(LPNLSVERSIONINFO);
-	
-	if(GetNLSVersion(function, lcid , &lpVersionInformationOld))
-	{
-		lpVersionInformation->dwNLSVersionInfoSize = sizeof(LPNLSVERSIONINFOEX);
-		lpVersionInformation->dwNLSVersion = lpVersionInformationOld.dwNLSVersion;
-		lpVersionInformation->dwDefinedVersion = lpVersionInformationOld.dwDefinedVersion;
-		lpVersionInformation->dwEffectiveId = LocaleNameToLCID(lpLocaleName, 0);		
-		return TRUE;
-	}else{
-		return FALSE;
-	}	
+    LCID lcid = 0;
+
+    if (func != COMPARE_STRING)
+    {
+        SetLastError( ERROR_INVALID_FLAGS );
+        return FALSE;
+    }
+    if (info->dwNLSVersionInfoSize < sizeof(*info) &&
+        (info->dwNLSVersionInfoSize != offsetof( NLSVERSIONINFO, dwNLSVersionInfoSize )))
+    {
+        SetLastError( ERROR_INSUFFICIENT_BUFFER );
+        return FALSE;
+    }
+
+    if (!(lcid = LocaleNameToLCID( locale, 0 ))) return FALSE;
+
+    info->dwNLSVersion = info->dwDefinedVersion = sort.version;
+    if (info->dwNLSVersionInfoSize >= sizeof(*info))
+    {
+        const struct sortguid *sortid = get_language_sort( locale );
+        info->dwEffectiveId = lcid;
+        info->guidCustomVersion = sortid ? sortid->id : default_sort_guid;
+    }
+    return TRUE;
 }
 
 BOOL 
 WINAPI 
 GetNLSVersion(
-    NLS_FUNCTION     function,
-    LCID             locale,
-    LPNLSVERSIONINFO lpVersionInformation)
+    NLS_FUNCTION     func,
+    LCID             lcid,
+    LPNLSVERSIONINFO info)
 {
 	pGetNLSVersion nlsVersion;
+    WCHAR locale[LOCALE_NAME_MAX_LENGTH];
 	
 	nlsVersion = (pGetNLSVersion) GetProcAddress(
                             GetModuleHandleW(L"kernelex"),
                             "GetNLSVersion");
 							
 	if(nlsVersion!=NULL){
-		return nlsVersion(function, locale, lpVersionInformation);
+		return nlsVersion(func, lcid, info);
 	}
 	
-	lpVersionInformation->dwNLSVersionInfoSize = sizeof(NLSVERSIONINFO);
-	lpVersionInformation->dwNLSVersion = 1;
-    lpVersionInformation->dwDefinedVersion = 1;
-	return TRUE;
+    if (info->dwNLSVersionInfoSize < offsetof( NLSVERSIONINFO, dwNLSVersionInfoSize ))
+    {
+        SetLastError( ERROR_INSUFFICIENT_BUFFER );
+        return FALSE;
+    }
+    if (!LCIDToLocaleName( lcid, locale, LOCALE_NAME_MAX_LENGTH, LOCALE_ALLOW_NEUTRAL_NAMES ))
+    {
+        SetLastError( ERROR_INVALID_PARAMETER );
+        return FALSE;
+    }
+    return GetNLSVersionEx( func, locale, (NLSVERSIONINFOEX *)info );
 }
 
 INT 
@@ -1882,78 +1962,46 @@ GetUserPreferredUILanguages(
 }
 
 /***********************************************************************
- *              GetThreadPreferredUILanguages (KERNEL32.@)
+ *      GetThreadPreferredUILanguages   (kernelbase.@)
  */
-BOOL 
-WINAPI 
-GetThreadPreferredUILanguages(
-	DWORD dwFlags, 
-	PULONG pulNumLanguages, 
-	PZZWSTR pwszLanguagesBuffer, 
-	PULONG pcchLanguagesBuffer
-)
+BOOL WINAPI DECLSPEC_HOTPATCH GetThreadPreferredUILanguages( DWORD flags, ULONG *count,
+                                                             WCHAR *buffer, ULONG *size )
 {
-	return EnumPreferredThreadUILanguages(dwFlags,
-									      pulNumLanguages,
-									      pwszLanguagesBuffer,
-									      pcchLanguagesBuffer);
+    return set_ntstatus( RtlGetThreadPreferredUILanguages( flags, count, buffer, size ));
 }
 
 /***********************************************************************
- *             GetSystemPreferredUILanguages (KERNEL32.@)
+ *      GetSystemPreferredUILanguages   (kernelbase.@)
  */
-BOOL 
-WINAPI 
-GetSystemPreferredUILanguages(
-  _In_       DWORD flags,
-  _Out_      PULONG count,
-  _Out_opt_  PZZWSTR buffer,
-  _Inout_    PULONG size
-)
+BOOL WINAPI DECLSPEC_HOTPATCH GetSystemPreferredUILanguages( DWORD flags, ULONG *count,
+                                                             WCHAR *buffer, ULONG *size )
 {
-	return EnumPreferredSystemUILanguages(flags,
-										  count,
-										  buffer,
-									      size);
+    return set_ntstatus( RtlGetSystemPreferredUILanguages( flags, 0, count, buffer, size ));
 }
 
-BOOL GetProcessPreferredUILanguages(
-  _In_      DWORD   dwFlags,
-  _Out_     PULONG  pulNumLanguages,
-  _Out_opt_ PZZWSTR pwszLanguagesBuffer,
-  _Inout_   PULONG  pcchLanguagesBuffer
-)
-{
-	return EnumPreferredProcessUILanguages(dwFlags,
-										  pulNumLanguages,
-										  pwszLanguagesBuffer,
-									      pcchLanguagesBuffer);
-}
-
-/*
- * @unimplemented - need reimplementation
+/***********************************************************************
+ *      GetProcessPreferredUILanguages   (kernelbase.@)
  */
-BOOL 
-WINAPI 
-SetThreadPreferredUILanguages(
-  _In_       DWORD dwFlags,
-  _In_opt_   PCZZWSTR pwszLanguagesBuffer,
-  _Out_opt_  PULONG pulNumLanguages
-)
+BOOL WINAPI DECLSPEC_HOTPATCH GetProcessPreferredUILanguages( DWORD flags, ULONG *count,
+                                                              WCHAR *buffer, ULONG *size )
 {
-	return TRUE;
+    return set_ntstatus( RtlGetProcessPreferredUILanguages( flags, count, buffer, size ));
 }
 
-BOOL 
-WINAPI 
-SetProcessPreferredUILanguages(
-  _In_       DWORD dwFlags,
-  _In_opt_   PCZZWSTR pwszLanguagesBuffer,
-  _Out_opt_  PULONG pulNumLanguages
-)
+/***********************************************************************
+ *      SetThreadPreferredUILanguages   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH SetThreadPreferredUILanguages( DWORD flags, PCZZWSTR buffer, ULONG *count )
 {
-	UNIMPLEMENTED;
-	return TRUE;	
+    return set_ntstatus( RtlSetThreadPreferredUILanguages( flags, buffer, count ));
+}
+
+/***********************************************************************
+ *      SetProcessPreferredUILanguages   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH SetProcessPreferredUILanguages( DWORD flags, PCZZWSTR buffer, ULONG *count )
+{
+    return set_ntstatus( RtlSetProcessPreferredUILanguages( flags, buffer, count ));
 }
 
 /******************************************************************************
@@ -2076,4 +2124,28 @@ INT WINAPI DECLSPEC_HOTPATCH NormalizeString(NORM_FORM form, const WCHAR *src, I
     }
     SetLastError( RtlNtStatusToDosError( status ));
     return dst_len;
+}
+
+/******************************************************************************
+ *	EnumDynamicTimeZoneInformation   (kernelbase.@)
+ */
+DWORD WINAPI DECLSPEC_HOTPATCH EnumDynamicTimeZoneInformation( DWORD index,
+                                                               DYNAMIC_TIME_ZONE_INFORMATION *info )
+{
+    DYNAMIC_TIME_ZONE_INFORMATION tz;
+    LSTATUS ret;
+    DWORD size;
+
+    if (!info) return ERROR_INVALID_PARAMETER;
+
+    size = ARRAY_SIZE(tz.TimeZoneKeyName);
+    ret = RegEnumKeyExW( tz_key, index, tz.TimeZoneKeyName, &size, NULL, NULL, NULL, NULL );
+    if (ret) return ret;
+
+    tz.DynamicDaylightTimeDisabled = TRUE;
+    if (!GetTimeZoneInformationForYear( 0, &tz, (TIME_ZONE_INFORMATION *)info )) return GetLastError();
+
+    lstrcpyW( info->TimeZoneKeyName, tz.TimeZoneKeyName );
+    info->DynamicDaylightTimeDisabled = FALSE;
+    return 0;
 }
