@@ -1,6 +1,8 @@
 
 add_definitions(-D_KERNEL32_)
 add_definitions(-D__WINESRC__)
+remove_definitions(-D_WIN32_WINNT=0x502)
+add_definitions(-D_WIN32_WINNT=0x600)
 include_directories(
 	${REACTOS_SOURCE_DIR}/sdk/lib/rtl
 	${REACTOS_SOURCE_DIR}/sdk/include/crt
@@ -16,6 +18,7 @@ list(APPEND SOURCE
 	ahcache.c
 	appcompat.c
 	appmodel.c
+	audit.c
 	baseinit.c
 	console.c
 	cpu.c
@@ -92,12 +95,13 @@ set_subsystem(kernel32 console)
 
 target_link_libraries(kernelbase wine ${PSEH_LIB})
 
-add_delay_importlibs(kernelbase shlwapi idndl)
 if(ARCH STREQUAL "i386")
-	add_importlibs(kernelbase kernelex ntext advapibase user32)
+	add_importlibs(kernelbase kernelex ntext user32)
 
 elseif(ARCH STREQUAL "amd64")
-	add_importlibs(kernelbase kernel32 ntext advapibase user32)
+	add_importlibs(kernelbase kernel32 ntext user32)
 endif()
+
+add_delay_importlibs(kernelbase shlwapi idndl)
 
 add_cd_file(TARGET kernelbase DESTINATION reactos/system32 FOR all)

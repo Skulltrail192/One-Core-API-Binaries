@@ -1288,7 +1288,7 @@
 @ stdcall Basep8BitStringToDynamicUnicodeString(wstr str)
 @ stdcall BasepMapModuleHandle(ptr long)
 @ stdcall BaseSetLastNTError(long)
-@ stub BaseThreadInitThunk
+@ stdcall -fastcall BaseThreadInitThunk(long ptr ptr)
 @ stdcall CheckForReadOnlyResource(ptr) BasepCheckForReadOnlyResource
 @ stdcall CreateRemoteThreadEx(long ptr long ptr long long ptr ptr)
 @ stdcall -arch=x86_64 CreateUmsCompletionList(ptr)
@@ -1433,47 +1433,47 @@
 ; @ stdcall GetThreadDescription(long ptr)
 ; @ stdcall SetThreadDescription(long ptr)
 
-#Import from advapibase or registry function
-@ stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr) advapibase.AccessCheck
-@ stdcall AccessCheckAndAuditAlarmW(wstr ptr wstr wstr ptr long ptr long ptr ptr ptr) advapibase.AccessCheckAndAuditAlarmW
-@ stdcall AccessCheckByType(ptr ptr long long ptr long ptr ptr ptr ptr ptr) advapibase.AccessCheckByType
-@ stdcall AccessCheckByTypeAndAuditAlarmW(wstr ptr wstr wstr ptr ptr long long long ptr long ptr long ptr ptr ptr) advapibase.AccessCheckByTypeAndAuditAlarmW
-@ stdcall AccessCheckByTypeResultList(ptr ptr ptr long ptr long ptr ptr ptr ptr ptr) advapibase.AccessCheckByTypeResultList
-@ stdcall AccessCheckByTypeResultListAndAuditAlarmByHandleW(wstr ptr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr) advapibase.AccessCheckByTypeResultListAndAuditAlarmByHandleW
-@ stdcall AccessCheckByTypeResultListAndAuditAlarmW(wstr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr) advapibase.AccessCheckByTypeResultListAndAuditAlarmW
-@ stdcall AddAccessAllowedAce(ptr long long ptr) advapibase.AddAccessAllowedAce
-@ stdcall AddAccessAllowedAceEx(ptr long long long ptr) advapibase.AddAccessAllowedAceEx
-@ stdcall AddAccessAllowedObjectAce(ptr long long long ptr ptr ptr) advapibase.AddAccessAllowedObjectAce
-@ stdcall AddAccessDeniedAce(ptr long long ptr) advapibase.AddAccessDeniedAce
-@ stdcall AddAccessDeniedAceEx(ptr long long long ptr) advapibase.AddAccessDeniedAceEx
-@ stdcall AddAccessDeniedObjectAce(ptr long long long ptr ptr ptr) advapibase.AddAccessDeniedObjectAce
-@ stdcall AddAce(ptr long long ptr long) advapibase.AddAce
-@ stdcall AddAuditAccessAce(ptr long long ptr long long) advapibase.AddAuditAccessAce
-@ stdcall AddAuditAccessAceEx(ptr long long long ptr long long) advapibase.AddAuditAccessAceEx
-@ stdcall AddAuditAccessObjectAce(ptr long long long ptr ptr ptr long long) advapibase.AddAuditAccessObjectAce
+#Import from 
+@ stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr)
+@ stdcall AccessCheckAndAuditAlarmW(wstr ptr wstr wstr ptr long ptr long ptr ptr ptr)
+@ stdcall AccessCheckByType(ptr ptr long long ptr long ptr ptr ptr ptr ptr)
+@ stdcall AccessCheckByTypeAndAuditAlarmW(wstr ptr wstr wstr ptr ptr long long long ptr long ptr long ptr ptr ptr)
+@ stdcall AccessCheckByTypeResultList(ptr ptr ptr long ptr long ptr ptr ptr ptr ptr)
+@ stdcall AccessCheckByTypeResultListAndAuditAlarmByHandleW(wstr ptr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr)
+@ stdcall AccessCheckByTypeResultListAndAuditAlarmW(wstr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr)
+@ stdcall AddAccessAllowedAce(ptr long long ptr)
+@ stdcall AddAccessAllowedAceEx(ptr long long long ptr)
+@ stdcall AddAccessAllowedObjectAce(ptr long long long ptr ptr ptr)
+@ stdcall AddAccessDeniedAce(ptr long long ptr)
+@ stdcall AddAccessDeniedAceEx(ptr long long long ptr)
+@ stdcall AddAccessDeniedObjectAce(ptr long long long ptr ptr ptr)
+@ stdcall AddAce(ptr long long ptr long)
+@ stdcall AddAuditAccessAce(ptr long long ptr long long)
+@ stdcall AddAuditAccessAceEx(ptr long long long ptr long long)
+@ stdcall AddAuditAccessObjectAce(ptr long long long ptr ptr ptr long long)
 @ stdcall AddMandatoryAce(ptr long long long ptr)
-@ stdcall AdjustTokenGroups(long long ptr long ptr ptr) advapibase.AdjustTokenGroups
-@ stdcall AdjustTokenPrivileges(long long ptr long ptr ptr) advapibase.AdjustTokenPrivileges
-@ stdcall AllocateAndInitializeSid(ptr long long long long long long long long long ptr) advapibase.AllocateAndInitializeSid
-@ stdcall AllocateLocallyUniqueId(ptr) advapibase.AllocateLocallyUniqueId
-@ stdcall AreAllAccessesGranted(long long) advapibase.AreAllAccessesGranted
-@ stdcall AreAnyAccessesGranted(long long) advapibase.AreAnyAccessesGranted
-@ stdcall CheckTokenMembership(long ptr ptr) advapibase.CheckTokenMembership
-@ stdcall ConvertToAutoInheritPrivateObjectSecurity(ptr ptr ptr ptr long ptr) advapibase.ConvertToAutoInheritPrivateObjectSecurity
-@ stdcall CopySid(long ptr ptr) advapibase.CopySid
-@ stdcall CreatePrivateObjectSecurity(ptr ptr ptr long long ptr) advapibase.CreatePrivateObjectSecurity
-@ stdcall CreatePrivateObjectSecurityEx(ptr ptr ptr ptr long long long ptr) advapibase.CreatePrivateObjectSecurityEx
-@ stdcall CreatePrivateObjectSecurityWithMultipleInheritance(ptr ptr ptr ptr long long long long ptr) advapibase.CreatePrivateObjectSecurityWithMultipleInheritance
-@ stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr) advapibase.CreateRestrictedToken
-@ stdcall CreateProcessAsUserA(long str str ptr ptr long long ptr str ptr ptr) advapibase.CreateProcessAsUserA
-@ stdcall CreateProcessAsUserW(long wstr wstr ptr ptr long long ptr wstr ptr ptr) advapibase.CreateProcessAsUserW
-@ stdcall CreateWellKnownSid(long ptr ptr ptr) advapibase.CreateWellKnownSid
-@ stdcall DeleteAce(ptr long) advapibase.DeleteAce
-@ stdcall DestroyPrivateObjectSecurity(ptr) advapibase.DestroyPrivateObjectSecurity
-@ stdcall DuplicateToken(long long ptr) advapibase.DuplicateToken
-@ stdcall DuplicateTokenEx(long long ptr long long ptr) advapibase.DuplicateTokenEx
-@ stdcall EqualPrefixSid(ptr ptr) advapibase.EqualPrefixSid
-@ stdcall EqualSid(ptr ptr) advapibase.EqualSid
+@ stdcall AdjustTokenGroups(long long ptr long ptr ptr)
+@ stdcall AdjustTokenPrivileges(long long ptr long ptr ptr)
+@ stdcall AllocateAndInitializeSid(ptr long long long long long long long long long ptr)
+@ stdcall AllocateLocallyUniqueId(ptr)
+@ stdcall AreAllAccessesGranted(long long)
+@ stdcall AreAnyAccessesGranted(long long)
+@ stdcall CheckTokenMembership(long ptr ptr)
+@ stdcall ConvertToAutoInheritPrivateObjectSecurity(ptr ptr ptr ptr long ptr)
+@ stdcall CopySid(long ptr ptr)
+@ stdcall CreatePrivateObjectSecurity(ptr ptr ptr long long ptr)
+@ stdcall CreatePrivateObjectSecurityEx(ptr ptr ptr ptr long long long ptr)
+@ stdcall CreatePrivateObjectSecurityWithMultipleInheritance(ptr ptr ptr ptr long long long long ptr)
+@ stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr)
+@ stdcall CreateProcessAsUserA(long str str ptr ptr long long ptr str ptr ptr)
+@ stdcall CreateProcessAsUserW(long wstr wstr ptr ptr long long ptr wstr ptr ptr)
+@ stdcall CreateWellKnownSid(long ptr ptr ptr)
+@ stdcall DeleteAce(ptr long)
+@ stdcall DestroyPrivateObjectSecurity(ptr)
+@ stdcall DuplicateToken(long long ptr)
+@ stdcall DuplicateTokenEx(long long ptr long long ptr)
+@ stdcall EqualPrefixSid(ptr ptr)
+@ stdcall EqualSid(ptr ptr)
 @ stdcall EventActivityIdControl(long ptr) ntext.EtwEventActivityIdControl
 @ stdcall EventEnabled(int64 ptr) ntext.EtwEventEnabled
 @ stdcall EventProviderEnabled(int64 long int64) ntext.EtwEventProviderEnabled
@@ -1482,116 +1482,117 @@
 @ stdcall EventWrite(int64 ptr long ptr) ntext.EtwEventWrite
 @ stdcall EventWriteString(int64 long int64 ptr) ntext.EtwEventWriteString
 @ stdcall EventWriteTransfer(int64 ptr ptr ptr long ptr) ntext.EtwEventWriteTransfer
-@ stdcall FindFirstFreeAce(ptr ptr) advapibase.FindFirstFreeAce
-@ stdcall FreeSid(ptr) advapibase.FreeSid
-@ stdcall GetAce(ptr long ptr) advapibase.GetAce
-@ stdcall GetAclInformation(ptr ptr long long) advapibase.GetAclInformation
-@ stdcall GetFileSecurityA(str long ptr long ptr) advapibase.GetFileSecurityA
-@ stdcall GetFileSecurityW(wstr long ptr long ptr) advapibase.GetFileSecurityW
-@ stdcall GetLengthSid(ptr) advapibase.GetLengthSid
-@ stdcall GetPrivateObjectSecurity(ptr long ptr long ptr) advapibase.GetPrivateObjectSecurity
-@ stdcall GetSecurityDescriptorControl(ptr ptr ptr) advapibase.GetSecurityDescriptorControl
-@ stdcall GetSecurityDescriptorDacl(ptr ptr ptr ptr) advapibase.GetSecurityDescriptorDacl
+@ stdcall FindFirstFreeAce(ptr ptr)
+@ stdcall FreeSid(ptr)
+@ stdcall GetAce(ptr long ptr)
+@ stdcall GetAclInformation(ptr ptr long long)
+@ stdcall GetFileSecurityA(str long ptr long ptr)
+@ stdcall GetFileSecurityW(wstr long ptr long ptr)
+@ stdcall GetLengthSid(ptr)
+@ stdcall GetPrivateObjectSecurity(ptr long ptr long ptr)
+@ stdcall GetSecurityDescriptorControl(ptr ptr ptr)
+@ stdcall GetSecurityDescriptorDacl(ptr ptr ptr ptr)
 @ stdcall GetSecurityDescriptorLength(ptr) ntext.RtlLengthSecurityDescriptor
-@ stdcall GetSecurityDescriptorOwner(ptr ptr ptr) advapibase.GetSecurityDescriptorOwner
-@ stdcall GetSecurityDescriptorSacl(ptr ptr ptr ptr) advapibase.GetSecurityDescriptorSacl
-@ stdcall GetSidIdentifierAuthority(ptr) advapibase.GetSidIdentifierAuthority
-@ stdcall GetSidLengthRequired(long) advapibase.GetSidLengthRequired
-@ stdcall GetSidSubAuthority(ptr long) advapibase.GetSidSubAuthority
-@ stdcall GetSidSubAuthorityCount(ptr) advapibase.GetSidSubAuthorityCount
-@ stdcall GetTokenInformation(long long ptr long ptr) advapibase.GetTokenInformation
-@ stdcall GetTraceEnableFlags(int64) advapibase.GetTraceEnableFlags
-@ stdcall GetTraceEnableLevel(int64) advapibase.GetTraceEnableLevel
-@ stdcall -ret64 GetTraceLoggerHandle(ptr) advapibase.GetTraceLoggerHandle
-@ stdcall GetWindowsAccountDomainSid(ptr ptr ptr) advapibase.GetWindowsAccountDomainSid
-@ stdcall ImpersonateAnonymousToken(long) advapibase.ImpersonateAnonymousToken
-@ stdcall ImpersonateLoggedOnUser(long) advapibase.ImpersonateLoggedOnUser
-@ stdcall ImpersonateNamedPipeClient(long) advapibase.ImpersonateNamedPipeClient
-@ stdcall ImpersonateSelf(long) advapibase.ImpersonateSelf
-@ stdcall InitializeAcl(ptr long long) advapibase.InitializeAcl
-@ stdcall InitializeSid(ptr ptr long) advapibase.InitializeSid
-@ stdcall IsTokenRestricted(long) advapibase.IsTokenRestricted
-@ stdcall IsValidAcl(ptr) advapibase.IsValidAcl
-@ stdcall InitializeSecurityDescriptor(ptr long) advapibase.InitializeSecurityDescriptor
-@ stdcall IsWellKnownSid(ptr long) advapibase.IsWellKnownSid
-@ stdcall IsValidSecurityDescriptor(ptr) advapibase.IsValidSecurityDescriptor
-@ stdcall IsValidSid(ptr) advapibase.IsValidSid
-@ stdcall MakeAbsoluteSD(ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapibase.MakeAbsoluteSD
-@ stdcall MakeSelfRelativeSD(ptr ptr ptr) advapibase.MakeSelfRelativeSD
-@ stdcall MapGenericMask(ptr ptr) advapibase.MapGenericMask
-@ stdcall ObjectCloseAuditAlarmW(wstr ptr long) advapibase.ObjectCloseAuditAlarmW
-@ stdcall ObjectDeleteAuditAlarmW(wstr ptr long) advapibase.ObjectDeleteAuditAlarmW
-@ stdcall ObjectOpenAuditAlarmW(wstr ptr wstr wstr ptr long long long ptr long long ptr) advapibase.ObjectOpenAuditAlarmW
-@ stdcall ObjectPrivilegeAuditAlarmW(wstr ptr long long ptr long) advapibase.ObjectPrivilegeAuditAlarmW
-@ stdcall PrivilegeCheck(ptr ptr ptr) advapibase.PrivilegeCheck
-@ stdcall PrivilegedServiceAuditAlarmW(wstr wstr long ptr long) advapibase.PrivilegedServiceAuditAlarmW
-@ stdcall OpenProcessToken(ptr long ptr) advapibase.OpenProcessToken
-@ stdcall OpenThreadToken(ptr long long ptr) advapibase.OpenThreadToken
-@ stdcall RegCloseKey(ptr) advapibase.RegCloseKey 
+@ stdcall GetSecurityDescriptorOwner(ptr ptr ptr) 
+@ stdcall GetSecurityDescriptorSacl(ptr ptr ptr ptr) 
+@ stdcall GetSidIdentifierAuthority(ptr) 
+@ stdcall GetSidLengthRequired(long) 
+@ stdcall GetSidSubAuthority(ptr long) 
+@ stdcall GetSidSubAuthorityCount(ptr) 
+@ stdcall GetTokenInformation(long long ptr long ptr) 
+@ stdcall GetTraceEnableFlags(int64) ntext.EtwGetTraceEnableFlags
+@ stdcall GetTraceEnableLevel(int64) ntext.EtwGetTraceEnableLevel 
+@ stdcall -ret64 GetTraceLoggerHandle(ptr) ntext.EtwGetTraceLoggerHandle
+@ stdcall GetWindowsAccountDomainSid(ptr ptr ptr) 
+@ stdcall ImpersonateAnonymousToken(long) 
+@ stdcall ImpersonateLoggedOnUser(long) 
+@ stdcall ImpersonateNamedPipeClient(long) 
+@ stdcall ImpersonateSelf(long) 
+@ stdcall InitializeAcl(ptr long long) 
+@ stdcall InitializeSid(ptr ptr long) 
+@ stdcall IsTokenRestricted(long) 
+@ stdcall IsValidAcl(ptr) 
+@ stdcall InitializeSecurityDescriptor(ptr long) 
+@ stdcall IsWellKnownSid(ptr long) 
+@ stdcall IsValidSecurityDescriptor(ptr) 
+@ stdcall IsValidSid(ptr) 
+@ stdcall MakeAbsoluteSD(ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) 
+@ stdcall MakeSelfRelativeSD(ptr ptr ptr) 
+@ stdcall MapGenericMask(ptr ptr) 
+@ stdcall ObjectCloseAuditAlarmW(wstr ptr long) 
+@ stdcall ObjectDeleteAuditAlarmW(wstr ptr long) 
+@ stdcall ObjectOpenAuditAlarmW(wstr ptr wstr wstr ptr long long long ptr long long ptr) 
+@ stdcall ObjectPrivilegeAuditAlarmW(wstr ptr long long ptr long) 
+@ stdcall PrivilegeCheck(ptr ptr ptr) 
+@ stdcall PrivilegedServiceAuditAlarmW(wstr wstr long ptr long) 
+@ stdcall OpenProcessToken(ptr long ptr) 
+@ stdcall OpenThreadToken(ptr long long ptr) 
+@ stdcall RegCloseKey(ptr) 
 @ stdcall RegCopyTreeW(ptr str ptr)
-@ stdcall RegCreateKeyExA(long str long ptr long long ptr ptr ptr) advapibase.RegCreateKeyExA 
-@ stdcall RegCreateKeyExW(long wstr long ptr long long ptr ptr ptr) advapibase.RegCreateKeyExW 
+@ stdcall RegCreateKeyExA(long str long ptr long long ptr ptr ptr) 
+@ stdcall RegCreateKeyExW(long wstr long ptr long long ptr ptr ptr) 
 @ stdcall RegDeleteKeyValueA(long str str)
-@ stdcall RegDeleteKeyValueW(long wstr wstr) advapibase.RegDeleteKeyValueW
-@ stdcall RegDeleteKeyExA(long str long long) advapibase.RegDeleteKeyExA 
-@ stdcall RegDeleteKeyExW(long wstr long long) advapibase.RegDeleteKeyExW 
+@ stdcall RegDeleteKeyValueW(long wstr wstr) 
+@ stdcall RegDeleteKeyExA(long str long long) 
+@ stdcall RegDeleteKeyExW(long wstr long long) 
 @ stdcall RegDeleteTreeA(long str)
 @ stdcall RegDeleteTreeW(long wstr)
-@ stdcall RegDeleteValueA(long str) advapibase.RegDeleteValueA
-@ stdcall RegDeleteValueW(long wstr) advapibase.RegDeleteValueW 
+@ stdcall RegDeleteValueA(long str) 
+@ stdcall RegDeleteValueW(long wstr) 
 @ stdcall RegDisablePredefinedCacheEx()
-@ stdcall RegEnumKeyExA(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumKeyExA 
-@ stdcall RegEnumKeyExW(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumKeyExW 
-@ stdcall RegEnumValueA(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumValueA 
-@ stdcall RegEnumValueW(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumValueW 
-@ stdcall RegFlushKey(long) advapibase.RegFlushKey 
-@ stdcall RegGetKeySecurity(long long ptr ptr) advapibase.RegGetKeySecurity 
-@ stdcall RegGetValueA(long str str long ptr ptr ptr) advapibase.RegGetValueA 
-@ stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) advapibase.RegGetValueW
+@ stdcall RegEnumKeyExA(long long ptr ptr ptr ptr ptr ptr) 
+@ stdcall RegEnumKeyExW(long long ptr ptr ptr ptr ptr ptr) 
+@ stdcall RegEnumValueA(long long ptr ptr ptr ptr ptr ptr) 
+@ stdcall RegEnumValueW(long long ptr ptr ptr ptr ptr ptr) 
+@ stdcall RegFlushKey(long) 
+@ stdcall RegGetKeySecurity(long long ptr ptr) 
+@ stdcall RegGetValueA(long str str long ptr ptr ptr) 
+@ stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) 
 @ stdcall RegLoadAppKeyA(str ptr long long long)
 @ stdcall RegLoadAppKeyW(wstr ptr long long long)
-@ stdcall RegLoadKeyA(long str str) advapibase.RegLoadKeyA 
-@ stdcall RegLoadKeyW(long wstr wstr) advapibase.RegLoadKeyW 
+@ stdcall RegLoadKeyA(long str str) 
+@ stdcall RegLoadKeyW(long wstr wstr) 
 @ stdcall RegLoadMUIStringA(long str str long ptr long str)
 @ stdcall RegLoadMUIStringW(long wstr wstr long ptr long wstr)
-@ stdcall RegNotifyChangeKeyValue(long long long long long) advapibase.RegNotifyChangeKeyValue 
-@ stdcall RegOpenCurrentUser(long ptr) advapibase.RegOpenCurrentUser 
-@ stdcall RegOpenKeyExA(long str long long ptr) advapibase.RegOpenKeyExA 
-@ stdcall RegOpenKeyExW(long wstr long long ptr) advapibase.RegOpenKeyExW 
-@ stdcall RegOpenUserClassesRoot(ptr long long ptr) advapibase.RegOpenUserClassesRoot 
-@ stdcall RegQueryInfoKeyA(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapibase.RegQueryInfoKeyA 
-@ stdcall RegQueryInfoKeyW(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapibase.RegQueryInfoKeyW 
-@ stdcall RegQueryValueExA(long str ptr ptr ptr ptr) advapibase.RegQueryValueExA
-@ stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr) advapibase.RegQueryValueExW 
-@ stdcall RegRestoreKeyA(long str long) advapibase.RegRestoreKeyA 
-@ stdcall RegRestoreKeyW(long wstr long) advapibase.RegRestoreKeyW 
-@ stdcall RegSaveKeyExA(ptr str ptr long) advapibase.RegSaveKeyExA 
-@ stdcall RegSaveKeyExW(ptr str ptr long) advapibase.RegSaveKeyExW 
-@ stdcall RegSetKeySecurity(long long ptr) advapibase.RegSetKeySecurity 
+@ stdcall RegNotifyChangeKeyValue(long long long long long) 
+@ stdcall RegOpenCurrentUser(long ptr) 
+@ stdcall RegOpenKeyExA(long str long long ptr) 
+@ stdcall RegOpenKeyExW(long wstr long long ptr) 
+@ stdcall RegOpenUserClassesRoot(ptr long long ptr) 
+@ stdcall RegQueryInfoKeyA(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) 
+@ stdcall RegQueryInfoKeyW(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) 
+@ stdcall RegQueryValueExA(long str ptr ptr ptr ptr) 
+@ stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr) 
+@ stdcall RegRestoreKeyA(long str long) 
+@ stdcall RegRestoreKeyW(long wstr long) 
+@ stdcall RegSaveKeyExA(ptr str ptr long) 
+@ stdcall RegSaveKeyExW(ptr str ptr long) 
+@ stdcall RegSetKeySecurity(long long ptr) 
 @ stdcall RegSetKeyValueA(long str str long ptr long)
 @ stdcall RegSetKeyValueW(long wstr wstr long ptr long)
-@ stdcall RegSetValueExA(long str long long ptr long) advapibase.RegSetValueExA 
-@ stdcall RegSetValueExW(long wstr long long ptr long) advapibase.RegSetValueExW 
-@ stdcall RegUnLoadKeyA(long str) advapibase.RegUnLoadKeyA 
-@ stdcall RegUnLoadKeyW(long wstr) advapibase.RegUnLoadKeyW
-@ stdcall RevertToSelf() advapibase.RevertToSelf
-@ stdcall RegisterTraceGuidsW(ptr ptr ptr long ptr wstr wstr ptr) advapibase.RegisterTraceGuidsW
-@ stdcall SetAclInformation(ptr ptr long long) advapibase.SetAclInformation
-@ stdcall SetFileSecurityA(str long ptr) advapibase.SetFileSecurityA
-@ stdcall SetFileSecurityW(wstr long ptr) advapibase.SetFileSecurityW
-@ stdcall SetKernelObjectSecurity(long long ptr) advapibase.SetKernelObjectSecurity
-@ stdcall SetPrivateObjectSecurity(long ptr ptr ptr long) advapibase.SetPrivateObjectSecurity
-@ stdcall SetSecurityDescriptorControl(ptr long long) advapibase.SetSecurityDescriptorControl
-@ stdcall SetSecurityDescriptorDacl(ptr long ptr long) advapibase.SetSecurityDescriptorDacl
-@ stdcall SetSecurityDescriptorGroup(ptr ptr long) advapibase.SetSecurityDescriptorGroup
-@ stdcall SetSecurityDescriptorOwner(ptr ptr long) advapibase.SetSecurityDescriptorOwner
-@ stdcall SetSecurityDescriptorSacl(ptr long ptr long) advapibase.SetSecurityDescriptorSacl
-@ stdcall SetThreadToken(ptr ptr) advapibase.SetThreadToken
-@ stdcall SetTokenInformation(long long ptr long) advapibase.SetTokenInformation
-@ stdcall TraceEvent(int64 ptr) advapibase.TraceEvent
-@ varargs TraceMessage(int64 long ptr long) advapibase.TraceMessage
-@ stdcall TraceMessageVa(int64 long ptr long ptr) advapibase.TraceMessageVa
-@ stdcall UnregisterTraceGuids(int64) advapibase.UnregisterTraceGuids
+@ stdcall RegSetValueExA(long str long long ptr long) 
+@ stdcall RegSetValueExW(long wstr long long ptr long) 
+@ stdcall RegUnLoadKeyA(long str) 
+@ stdcall RegUnLoadKeyW(long wstr) 
+@ stdcall RevertToSelf() 
+@ stdcall RegisterTraceGuidsA(ptr ptr ptr long ptr str str ptr) ntext.EtwRegisterTraceGuidsW
+@ stdcall RegisterTraceGuidsW(ptr ptr ptr long ptr wstr wstr ptr) ntext.EtwRegisterTraceGuidsW
+@ stdcall SetAclInformation(ptr ptr long long) 
+@ stdcall SetFileSecurityA(str long ptr) 
+@ stdcall SetFileSecurityW(wstr long ptr) 
+@ stdcall SetKernelObjectSecurity(long long ptr) 
+@ stdcall SetPrivateObjectSecurity(long ptr ptr ptr long) 
+@ stdcall SetSecurityDescriptorControl(ptr long long) 
+@ stdcall SetSecurityDescriptorDacl(ptr long ptr long) 
+@ stdcall SetSecurityDescriptorGroup(ptr ptr long) 
+@ stdcall SetSecurityDescriptorOwner(ptr ptr long)
+@ stdcall SetSecurityDescriptorSacl(ptr long ptr long)
+@ stdcall SetThreadToken(ptr ptr)
+@ stdcall SetTokenInformation(long long ptr long)
+@ stdcall TraceEvent(int64 ptr) ntext.EtwTraceEvent
+@ varargs TraceMessage(int64 long ptr long) ntext.EtwTraceMessage
+@ stdcall TraceMessageVa(int64 long ptr long ptr) ntext.EtwTraceMessageVa
+@ stdcall UnregisterTraceGuids(int64) ntext.EtwUnregisterTraceGuids
 
 #Import from Version
 @ stdcall VerQueryValueA(ptr str ptr ptr)

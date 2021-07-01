@@ -38,7 +38,84 @@ DWORD WINAPI NsiAllocateAndGetTable( DWORD unk, const NPI_MODULEID *module, DWOR
     return ERROR_CALL_NOT_IMPLEMENTED;
 }
 
+DWORD WINAPI NsiEnumerateObjectsAllParameters( DWORD unk, DWORD unk2, const NPI_MODULEID *module, DWORD table,
+                                               void *key_data, DWORD key_size, void *rw_data, DWORD rw_size,
+                                               void *dynamic_data, DWORD dynamic_size, void *static_data, DWORD static_size,
+                                               DWORD *count )
+{
+    struct nsi_enumerate_all_ex params;
+    DWORD err;
+
+    FIXME( "%d %d %p %d %p %d %p %d %p %d %p %d %p: stub\n", unk, unk2, module, table, key_data, key_size,
+           rw_data, rw_size, dynamic_data, dynamic_size, static_data, static_size, count );
+
+    params.unknown[0] = 0;
+    params.unknown[1] = 0;
+    params.module = module;
+    params.table = table;
+    params.first_arg = unk;
+    params.second_arg = unk2;
+    params.key_data = key_data;
+    params.key_size = key_size;
+    params.rw_data = rw_data;
+    params.rw_size = rw_size;
+    params.dynamic_data = dynamic_data;
+    params.dynamic_size = dynamic_size;
+    params.static_data = static_data;
+    params.static_size = static_size;
+    params.count = *count;
+
+    err = NsiEnumerateObjectsAllParametersEx( &params );
+    *count = params.count;
+    return err;
+}
+
+DWORD WINAPI NsiEnumerateObjectsAllParametersEx( struct nsi_enumerate_all_ex *params )
+{
+    return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
 void WINAPI NsiFreeTable( void *key_data, void *rw_data, void *dynamic_data, void *static_data )
 {
     FIXME( "%p %p %p %p: stub\n", key_data, rw_data, dynamic_data, static_data );
+}
+
+DWORD WINAPI NsiGetAllParameters( DWORD unk, const NPI_MODULEID *module, DWORD table, const void *key, DWORD key_size,
+                                  void *rw_data, DWORD rw_size, void *dynamic_data, DWORD dynamic_size,
+                                  void *static_data, DWORD static_size )
+{
+    struct nsi_get_all_parameters_ex params;
+
+    FIXME( "%d %p %d %p %d %p %d %p %d %p %d: stub\n", unk, module, table, key, key_size,
+           rw_data, rw_size, dynamic_data, dynamic_size, static_data, static_size );
+
+    params.unknown[0] = 0;
+    params.unknown[1] = 0;
+    params.module = module;
+    params.table = table;
+    params.first_arg = unk;
+    params.unknown2 = 0;
+    params.key = key;
+    params.key_size = key_size;
+    params.rw_data = rw_data;
+    params.rw_size = rw_size;
+    params.dynamic_data = dynamic_data;
+    params.dynamic_size = dynamic_size;
+    params.static_data = static_data;
+    params.static_size = static_size;
+
+    return NsiGetAllParametersEx( &params );
+}
+
+DWORD WINAPI NsiGetAllParametersEx( struct nsi_get_all_parameters_ex *params )
+{
+    return ERROR_CALL_NOT_IMPLEMENTED;
+}
+
+DWORD WINAPI NsiGetParameter( DWORD unk, const NPI_MODULEID *module, DWORD table, const void *key, DWORD key_size,
+                              DWORD param_type, void *data, DWORD data_size, DWORD data_offset )
+{
+    FIXME( "%d %p %d %p %d %d %p %d %d: stub\n", unk, module, table, key, key_size,
+           param_type, data, data_size, data_offset );
+    return ERROR_CALL_NOT_IMPLEMENTED;
 }
