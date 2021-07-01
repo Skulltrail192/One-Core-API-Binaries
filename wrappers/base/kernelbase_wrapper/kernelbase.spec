@@ -1608,28 +1608,29 @@
 @ stdcall GetFileVersionInfoW(wstr long long ptr)
 
 #Import from user32
-@ stdcall CharLowerA(str) user32.CharLowerA
-@ stdcall CharLowerBuffA(str long) user32.CharLowerBuffA
-@ stdcall CharLowerBuffW(wstr long) user32.CharLowerBuffW
-@ stdcall CharLowerW(wstr) user32.CharLowerW
-@ stdcall CharNextA(str) user32.CharNextA
-@ stdcall CharNextExA(long str long) user32.CharNextExA
-@ stdcall CharNextW(wstr) user32.CharNextW
-@ stdcall CharPrevA(str str) user32.CharPrevA
-@ stdcall CharPrevExA(long str str long) user32.CharPrevExA
-@ stdcall CharPrevW(wstr wstr) user32.CharPrevW
-@ stdcall CharUpperA(str) user32.CharUpperA
-@ stdcall CharUpperBuffA(str long) user32.CharUpperBuffA
-@ stdcall CharUpperBuffW(wstr long) user32.CharUpperBuffW
-@ stdcall CharUpperW(wstr) user32.CharUpperW
-@ stdcall IsCharAlphaA(long) user32.IsCharAlphaA
-@ stdcall IsCharAlphaNumericA(long) user32.IsCharAlphaNumericA
-@ stdcall IsCharAlphaNumericW(long) user32.IsCharAlphaNumericW
-@ stdcall IsCharAlphaW(long) user32.IsCharAlphaW
-@ stdcall IsCharLowerA(long) user32.IsCharLowerA
-@ stdcall IsCharLowerW(long) user32.IsCharLowerW
-@ stdcall IsCharUpperA(long) user32.IsCharUpperA
-@ stdcall IsCharUpperW(long) user32.IsCharUpperW
+@ stdcall CharLowerA(str)
+@ stdcall CharLowerBuffA(str long)
+@ stdcall CharLowerBuffW(wstr long)
+@ stdcall CharLowerW(wstr)
+@ stdcall CharNextA(str)
+@ stdcall CharNextExA(long str long)
+@ stdcall CharNextW(wstr)
+@ stdcall CharPrevA(str str)
+@ stdcall CharPrevExA(long str str long)
+@ stdcall CharPrevW(wstr wstr)
+@ stdcall CharUpperA(str)
+@ stdcall CharUpperBuffA(str long)
+@ stdcall CharUpperBuffW(wstr long)
+@ stdcall CharUpperW(wstr)
+@ stdcall IsCharAlphaA(long)
+@ stdcall IsCharAlphaNumericA(long)
+@ stdcall IsCharAlphaNumericW(long)
+@ stdcall IsCharAlphaA(long)
+@ stdcall IsCharAlphaW(long)
+@ stdcall IsCharLowerA(long)
+@ stdcall IsCharLowerW(long)
+@ stdcall IsCharUpperA(long)
+@ stdcall IsCharUpperW(long)
 @ stdcall LoadStringA(ptr long ptr long)
 @ stdcall LoadStringW(ptr long ptr long)
 
@@ -1839,5 +1840,5 @@
 @ stdcall UrlIsOpaqueA(str) shlwapi.UrlIsOpaqueA
 @ stdcall UrlIsOpaqueW(wstr) shlwapi.UrlIsOpaqueW
 @ stdcall UrlIsW(wstr long) shlwapi.UrlIsW
-@ stdcall UrlUnescapeA(str ptr ptr long) shlwapi.UrlUnescapeA
-@ stdcall UrlUnescapeW(wstr ptr ptr long) shlwapi.UrlUnescapeW
+@ stdcall UrlUnescapeA(str ptr ptr long)
+@ stdcall UrlUnescapeW(wstr ptr ptr long)

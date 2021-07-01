@@ -59,6 +59,8 @@ static HKEY tz_key;
 
 static RTL_CRITICAL_SECTION cache_section;
 
+static NLSTABLEINFO nls_info;
+
 /* move to winnls*/
 
 #define LOCALE_SNAN                 0x0069
@@ -269,11 +271,37 @@ done:
  */
 void init_locale(void)
 {
-	current_locale_sort = get_language_sort( LOCALE_NAME_USER_DEFAULT );
+	UINT ansi_cp = 0, oem_cp = 0;
+	USHORT *ansi_ptr, *oem_ptr;
+	void *sort_ptr;
+	SIZE_T size;	
+	
+    GetLocaleInfoW( LOCALE_SYSTEM_DEFAULT, LOCALE_IDEFAULTANSICODEPAGE | LOCALE_RETURN_NUMBER,
+                    (WCHAR *)&ansi_cp, sizeof(ansi_cp)/sizeof(WCHAR) );	
+    GetLocaleInfoW( LOCALE_SYSTEM_DEFAULT, LOCALE_IDEFAULTCODEPAGE | LOCALE_RETURN_NUMBER,
+                    (WCHAR *)&oem_cp, sizeof(oem_cp)/sizeof(WCHAR) );
+					
+	NtGetNlsSectionPtr( 9, 0, NULL, &sort_ptr, &size );	
+    if (!ansi_cp || NtGetNlsSectionPtr( 11, ansi_cp, NULL, (void **)&ansi_ptr, &size ))
+        NtGetNlsSectionPtr( 11, 1252, NULL, (void **)&ansi_ptr, &size );
+    if (!oem_cp || NtGetNlsSectionPtr( 11, oem_cp, 0, (void **)&oem_ptr, &size ))
+        NtGetNlsSectionPtr( 11, 437, NULL, (void **)&oem_ptr, &size );					 
+    RtlInitNlsTables( ansi_ptr, oem_ptr, sort.casemap, &nls_info );
+    RtlResetRtlTranslations( &nls_info );	
+	
     RegCreateKeyExW( HKEY_LOCAL_MACHINE, L"System\\CurrentControlSet\\Control\\Nls",
                      0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &nls_key, NULL );	
     RegCreateKeyExW( HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones",
-                     0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &tz_key, NULL );					 
+                     0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &tz_key, NULL );
+
+	current_locale_sort = get_language_sort( LOCALE_NAME_USER_DEFAULT );								
+}
+
+static inline WORD get_char_type( DWORD type, WCHAR ch )
+{
+    const BYTE *ptr = sort.ctype_idx + ((const WORD *)sort.ctype_idx)[ch >> 8];
+    ptr = sort.ctype_idx + ((const WORD *)ptr)[(ch >> 4) & 0x0f] + (ch & 0x0f);
+    return sort.ctypes[*ptr * 3 + type / 2];
 }
 
 struct enum_locale_ex_data
@@ -2148,4 +2176,73 @@ DWORD WINAPI DECLSPEC_HOTPATCH EnumDynamicTimeZoneInformation( DWORD index,
     lstrcpyW( info->TimeZoneKeyName, tz.TimeZoneKeyName );
     info->DynamicDaylightTimeDisabled = FALSE;
     return 0;
+}
+
+/******************************************************************************
+ *	IsCharUpperA   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharUpperA( CHAR c )
+{
+    WCHAR wc = nls_info.AnsiTableInfo.MultiByteTable[(unsigned char)c];
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_UPPER);
+}
+
+/******************************************************************************
+ *	IsCharAlphaNumericA   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharAlphaNumericA( CHAR c )
+{
+    WCHAR wc = nls_info.AnsiTableInfo.MultiByteTable[(unsigned char)c];
+    return !!(get_char_type( CT_CTYPE1, wc ) & (C1_ALPHA | C1_DIGIT));
+}
+
+/******************************************************************************
+ *	IsCharAlphaNumericW   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharAlphaNumericW( WCHAR wc )
+{
+    return !!(get_char_type( CT_CTYPE1, wc ) & (C1_ALPHA | C1_DIGIT));
+}
+
+
+/******************************************************************************
+ *	IsCharAlphaA   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharAlphaA( CHAR c )
+{
+    WCHAR wc = nls_info.AnsiTableInfo.MultiByteTable[(unsigned char)c];
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_ALPHA);
+}
+
+/******************************************************************************
+ *	IsCharAlphaW   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharAlphaW( WCHAR wc )
+{
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_ALPHA);
+}
+
+/******************************************************************************
+ *	IsCharLowerA   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharLowerA( CHAR c )
+{
+    WCHAR wc = nls_info.AnsiTableInfo.MultiByteTable[(unsigned char)c];
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_LOWER);
+}
+
+/******************************************************************************
+ *	IsCharLowerW   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharLowerW( WCHAR wc )
+{
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_LOWER);
+}
+
+/******************************************************************************
+ *	IsCharUpperW   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharUpperW( WCHAR wc )
+{
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_UPPER);
 }

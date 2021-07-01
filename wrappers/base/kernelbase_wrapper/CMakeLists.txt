@@ -96,10 +96,10 @@ set_subsystem(kernel32 console)
 target_link_libraries(kernelbase wine ${PSEH_LIB})
 
 if(ARCH STREQUAL "i386")
-	add_importlibs(kernelbase kernelex ntext user32)
+	add_importlibs(kernelbase kernelex ntext)
 
 elseif(ARCH STREQUAL "amd64")
-	add_importlibs(kernelbase kernel32 ntext user32)
+	add_importlibs(kernelbase kernel32 ntext)
 endif()
 
 add_delay_importlibs(kernelbase shlwapi idndl)
