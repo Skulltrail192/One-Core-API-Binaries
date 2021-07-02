@@ -872,7 +872,9 @@
 @ stdcall EnableTraceEx2(int64 ptr long long int64 int64 long ptr)
 
 #Win8 functions 
-;@ stdcall EventSetInformation(ptr long ptr long);
+@ stdcall EventSetInformation(int64 long ptr long) ntext.EtwEventSetInformation
+@ stdcall -import EnumDynamicTimeZoneInformation(long ptr)
+@ stdcall GetDynamicTimeZoneInformationEffectiveYears(ptr ptr ptr) kernelbase.GetDynamicTimeZoneInformationEffectiveYears
 ;@ stdcall LsaLookupSids2(ptr long long ptr ptr ptr)
 
 101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr) CreateRestrictedTokenInternal
