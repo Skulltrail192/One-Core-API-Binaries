@@ -11,7 +11,8 @@ include_directories(
 	${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine
 	${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys
 	${REACTOS_SOURCE_DIR}/sdk/include/reactos/subsys/win
-	${REACTOS_SOURCE_DIR}/wrappers/sdk/include/wsdk)	
+	${REACTOS_SOURCE_DIR}/wrappers/sdk/include/wsdk
+	${REACTOS_BINARY_DIR}/sdk/include/reactos/wine)	
 spec2def(kernelbase.dll kernelbase.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
@@ -44,12 +45,14 @@ list(APPEND SOURCE
 	nls.c
 	numa.c
 	number.c
+	path.c
 	pathmisc.c
 	perf.c
 	powrmgmt.c
 	process.c
 	psapi.c
 	reg.c
+	search.c
 	security.c
 	sortkey.c	
 	string.c
@@ -93,7 +96,7 @@ set_module_type(kernelbase win32dll ENTRYPOINT BaseDllInitialize 12)
 set_subsystem(kernel32 console)
 ################# END  HACK #################
 
-target_link_libraries(kernelbase wine ${PSEH_LIB})
+target_link_libraries(kernelbase wine uuid ${PSEH_LIB})
 
 if(ARCH STREQUAL "i386")
 	add_importlibs(kernelbase kernelex ntext)
@@ -102,6 +105,6 @@ elseif(ARCH STREQUAL "amd64")
 	add_importlibs(kernelbase kernel32 ntext)
 endif()
 
-add_delay_importlibs(kernelbase shlwapi idndl)
+add_delay_importlibs(kernelbase idndl)
 
 add_cd_file(TARGET kernelbase DESTINATION reactos/system32 FOR all)

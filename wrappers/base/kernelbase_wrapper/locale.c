@@ -2246,3 +2246,60 @@ BOOL WINAPI DECLSPEC_HOTPATCH IsCharUpperW( WCHAR wc )
 {
     return !!(get_char_type( CT_CTYPE1, wc ) & C1_UPPER);
 }
+
+/******************************************************************************
+ *	IsCharBlankW   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharBlankW( WCHAR wc )
+{
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_BLANK);
+}
+
+/******************************************************************************
+ *	IsCharCntrlW   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharCntrlW( WCHAR wc )
+{
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_CNTRL);
+}
+
+/******************************************************************************
+ *	IsCharDigitW   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharDigitW( WCHAR wc )
+{
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_DIGIT);
+}
+
+/******************************************************************************
+ *	IsCharPunctW   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharPunctW( WCHAR wc )
+{
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_PUNCT);
+}
+
+/******************************************************************************
+ *	IsCharSpaceA   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharSpaceA( CHAR c )
+{
+    WCHAR wc = nls_info.AnsiTableInfo.MultiByteTable[(unsigned char)c];
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_SPACE);
+}
+
+/******************************************************************************
+ *	IsCharSpaceW   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharSpaceW( WCHAR wc )
+{
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_SPACE);
+}
+
+/******************************************************************************
+ *	IsCharXDigitW   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH IsCharXDigitW( WCHAR wc )
+{
+    return !!(get_char_type( CT_CTYPE1, wc ) & C1_XDIGIT);
+}

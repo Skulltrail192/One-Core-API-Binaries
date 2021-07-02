@@ -1266,13 +1266,13 @@
 @ stdcall WerpNotifyLoadStringResource(ptr wstr ptr long)
 @ stub WerpNotifyLoadStringResourceEx
 @ stdcall WerpNotifyUseStringResource(ptr)
+@ stdcall WerGetFlags(ptr ptr)
 @ stdcall WerRegisterFile(wstr long long)
 @ stdcall WerRegisterMemoryBlock(ptr long)
 @ stdcall WerRegisterMemoryBlockWorker(ptr long) WerRegisterMemoryBlock
+@ stdcall WerSetFlags(long)
 @ stdcall WerUnregisterMemoryBlock(ptr)
 @ stdcall WerUnregisterFile(wstr)
-@ stdcall WerGetFlags(ptr ptr)
-@ stdcall WerSetFlags(long)
 @ stdcall Wow64GetThreadContext(ptr ptr)
 @ stdcall Wow64SetThreadContext(ptr ptr)
 @ stdcall Wow64SuspendThread(ptr)
@@ -1400,20 +1400,27 @@
 @ stdcall InitializeSynchronizationBarrier(ptr long long)
 @ stdcall IsValidNLSVersion(long wstr ptr)
 @ stdcall LoadPackagedLibrary(wstr long) 
+@ stdcall PathAllocCanonicalize(wstr long ptr)
+@ stdcall PathAllocCombine(wstr wstr long ptr)
 @ stdcall PathCchAddBackslash(wstr long)
 @ stdcall PathCchAddBackslashEx(wstr long ptr ptr) 
 @ stdcall PathCchAddExtension(wstr long wstr)
-@ stdcall PathCchFindExtension(wstr long ptr)
-@ stdcall PathCchAppend(wstr long wstr) kernelbase.PathCchAppend
-@ stdcall PathCchAppendEx(wstr long wstr long) kernelbase.PathCchAppendEx
-@ stub PathCchCanonicalize
-@ stub PathCchCanonicalizeEx
+@ stdcall PathCchAppend(wstr long wstr)
+@ stdcall PathCchAppendEx(wstr long wstr long)
+@ stdcall PathCchCanonicalize(ptr long wstr)
+@ stdcall PathCchCanonicalizeEx(ptr long wstr long)
 @ stdcall PathCchCombine(ptr long ptr ptr)
 @ stdcall PathCchCombineEx(ptr long ptr ptr long)
+@ stdcall PathCchFindExtension(wstr long ptr)
+@ stdcall PathCchIsRoot(wstr)
 @ stdcall PathCchRemoveBackslash(wstr long)
 @ stdcall PathCchRemoveBackslashEx(wstr long ptr ptr)
 @ stdcall PathCchRenameExtension(wstr long wstr)
 @ stdcall PathCchRemoveExtension(wstr long)
+@ stdcall PathCchRemoveFileSpec(wstr long)
+@ stdcall PathCchSkipRoot(wstr ptr)
+@ stdcall PathCchStripPrefix(wstr long)
+@ stdcall PathCchStripToRoot(wstr long)
 @ stdcall SetProcessMitigationPolicy(long ptr long)
 @ stdcall WaitOnAddress(ptr ptr long long)
 @ stdcall WakeByAddressAll(ptr) ntext.RtlWakeAddressAll
@@ -1433,7 +1440,7 @@
 ; @ stdcall GetThreadDescription(long ptr)
 ; @ stdcall SetThreadDescription(long ptr)
 
-#Import from 
+#Import from advapi32
 @ stdcall AccessCheck(ptr long long ptr ptr ptr ptr ptr)
 @ stdcall AccessCheckAndAuditAlarmW(wstr ptr wstr wstr ptr long ptr long ptr ptr ptr)
 @ stdcall AccessCheckByType(ptr ptr long long ptr long ptr ptr ptr ptr ptr)
@@ -1623,10 +1630,9 @@
 @ stdcall CharUpperBuffW(wstr long)
 @ stdcall CharUpperW(wstr)
 @ stdcall IsCharAlphaA(long)
+@ stdcall IsCharAlphaW(long)
 @ stdcall IsCharAlphaNumericA(long)
 @ stdcall IsCharAlphaNumericW(long)
-@ stdcall IsCharAlphaA(long)
-@ stdcall IsCharAlphaW(long)
 @ stdcall IsCharLowerA(long)
 @ stdcall IsCharLowerW(long)
 @ stdcall IsCharUpperA(long)
@@ -1638,207 +1644,215 @@
 @ stdcall QuirkIsEnabled3(ptr ptr)
 
 #Import from shlwapi
-@ stdcall ChrCmpIA(long long) shlwapi.ChrCmpIA
-@ stdcall ChrCmpIW(long long) shlwapi.ChrCmpIW
-@ stdcall GetAcceptLanguagesA(ptr ptr) shlwapi.GetAcceptLanguagesA
-@ stdcall GetAcceptLanguagesW(ptr ptr) shlwapi.GetAcceptLanguagesW
-@ stdcall HashData(ptr long ptr long) shlwapi.HashData
-@ stdcall IsCharBlankW(long) shlwapi.IsCharBlankW
-@ stdcall IsCharCntrlW(ptr) shlwapi.IsCharCntrlW
-@ stdcall IsCharDigitW(long) shlwapi.IsCharDigitW
-@ stdcall IsCharPunctW(long) shlwapi.IsCharPunctW
-@ stdcall IsCharSpaceA(long) shlwapi.IsCharSpaceA
-@ stdcall IsCharSpaceW(long) shlwapi.IsCharSpaceW
-@ stdcall IsCharXDigitW(long) shlwapi.IsCharXDigitW
-@ stdcall IsInternetESCEnabled() shlwapi.IsInternetESCEnabled
-@ stdcall PathCombineA(ptr str str) shlwapi.PathCombineA
-@ stdcall PathCombineW(ptr wstr wstr) shlwapi.PathCombineW
-@ stdcall PathCommonPrefixA(str str ptr) shlwapi.PathCommonPrefixA
-@ stdcall PathCommonPrefixW(wstr wstr ptr) shlwapi.PathCommonPrefixW
-@ stdcall PathCreateFromUrlA(str ptr ptr long) shlwapi.PathCreateFromUrlA
+@ stdcall ChrCmpIA(long long) 
+@ stdcall ChrCmpIW(long long) 
+@ stdcall GetAcceptLanguagesA(ptr ptr) 
+@ stdcall GetAcceptLanguagesW(ptr ptr) 
+@ stdcall HashData(ptr long ptr long) 
+@ stdcall IsCharBlankW(long) 
+@ stdcall IsCharCntrlW(ptr) 
+@ stdcall IsCharDigitW(long) 
+@ stdcall IsCharPunctW(long) 
+@ stdcall IsCharSpaceA(long) 
+@ stdcall IsCharSpaceW(long) 
+@ stdcall IsCharXDigitW(long) 
+@ stdcall IsInternetESCEnabled() 
+@ stdcall PathAddBackslashA(str)
+@ stdcall PathAddBackslashW(wstr)
+@ stdcall PathAddExtensionA(str str)
+@ stdcall PathAddExtensionW(wstr wstr)
+@ stdcall PathAppendA(str str)
+@ stdcall PathAppendW(wstr wstr)
+@ stdcall PathCanonicalizeA(ptr str)
+@ stdcall PathCanonicalizeW(ptr wstr)
+@ stdcall PathCombineA(ptr str str) 
+@ stdcall PathCombineW(ptr wstr wstr) 
+@ stdcall PathCommonPrefixA(str str ptr) 
+@ stdcall PathCommonPrefixW(wstr wstr ptr) 
+@ stdcall PathCreateFromUrlA(str ptr ptr long) 
 @ stdcall PathCreateFromUrlAlloc(wstr ptr long)
-@ stdcall PathCreateFromUrlW(wstr ptr ptr long) shlwapi.PathCreateFromUrlW
-@ stdcall PathFileExistsA(str) shlwapi.PathFileExistsA
-@ stdcall PathFileExistsW(wstr) shlwapi.PathFileExistsW
-@ stdcall PathFindExtensionA(str) shlwapi.PathFindExtensionA
-@ stdcall PathFindExtensionW(wstr) shlwapi.PathFindExtensionW
-@ stdcall PathFindFileNameA(str) shlwapi.PathFindFileNameA
-@ stdcall PathFindFileNameW(wstr) shlwapi.PathFindFileNameW
-@ stdcall PathFindNextComponentA(str) shlwapi.PathFindNextComponentA
-@ stdcall PathFindNextComponentW(wstr) shlwapi.PathFindNextComponentW
-@ stdcall PathGetArgsA(str) shlwapi.PathGetArgsA
-@ stdcall PathGetArgsW(wstr) shlwapi.PathGetArgsW
-@ stdcall PathGetCharTypeA(long) shlwapi.PathGetCharTypeA
-@ stdcall PathGetCharTypeW(long) shlwapi.PathGetCharTypeW
-@ stdcall PathGetDriveNumberA(str) shlwapi.PathGetDriveNumberA
-@ stdcall PathGetDriveNumberW(wstr) shlwapi.PathGetDriveNumberW
-@ stdcall PathIsFileSpecA(str) shlwapi.PathIsFileSpecA
-@ stdcall PathIsFileSpecW(wstr) shlwapi.PathIsFileSpecW
-@ stdcall PathIsLFNFileSpecA(str) shlwapi.PathIsLFNFileSpecA
-@ stdcall PathIsLFNFileSpecW(wstr) shlwapi.PathIsLFNFileSpecW
-@ stdcall PathIsPrefixA(str str) shlwapi.PathIsPrefixA
-@ stdcall PathIsPrefixW(wstr wstr) shlwapi.PathIsPrefixW
-@ stdcall PathIsRelativeA(str) shlwapi.PathIsRelativeA
-@ stdcall PathIsRelativeW(wstr) shlwapi.PathIsRelativeW
-@ stdcall PathIsRootA(str) shlwapi.PathIsRootA
-@ stdcall PathIsRootW(wstr) shlwapi.PathIsRootW
-@ stdcall PathIsSameRootA(str str) shlwapi.PathIsSameRootA
-@ stdcall PathIsSameRootW(wstr wstr) shlwapi.PathIsSameRootW
-@ stdcall PathIsUNCA(str) shlwapi.PathIsUNCA
-# @ stub PathIsUNCEx
-@ stdcall PathIsUNCServerA(str) shlwapi.PathIsUNCServerA
-@ stdcall PathIsUNCServerShareA(str) shlwapi.PathIsUNCServerShareA
-@ stdcall PathIsUNCServerShareW(wstr) shlwapi.PathIsUNCServerShareW
-@ stdcall PathIsUNCServerW(wstr) shlwapi.PathIsUNCServerW
-@ stdcall PathIsUNCW(wstr) shlwapi.PathIsUNCW
-@ stdcall PathIsURLA(str) shlwapi.PathIsURLA
-@ stdcall PathIsURLW(wstr) shlwapi.PathIsURLW
-@ stdcall PathIsValidCharA(long long) shlwapi.PathIsValidCharA
-@ stdcall PathIsValidCharW(long long) shlwapi.PathIsValidCharW
-@ stdcall PathMatchSpecA(str str) shlwapi.PathMatchSpecA
+@ stdcall PathCreateFromUrlW(wstr ptr ptr long) 
+@ stdcall PathFileExistsA(str) 
+@ stdcall PathFileExistsW(wstr) 
+@ stdcall PathFindExtensionA(str) 
+@ stdcall PathFindExtensionW(wstr) 
+@ stdcall PathFindFileNameA(str) 
+@ stdcall PathFindFileNameW(wstr) 
+@ stdcall PathFindNextComponentA(str) 
+@ stdcall PathFindNextComponentW(wstr) 
+@ stdcall PathGetArgsA(str) 
+@ stdcall PathGetArgsW(wstr) 
+@ stdcall PathGetCharTypeA(long) 
+@ stdcall PathGetCharTypeW(long) 
+@ stdcall PathGetDriveNumberA(str) 
+@ stdcall PathGetDriveNumberW(wstr) 
+@ stdcall PathIsFileSpecA(str) 
+@ stdcall PathIsFileSpecW(wstr) 
+@ stdcall PathIsLFNFileSpecA(str) 
+@ stdcall PathIsLFNFileSpecW(wstr) 
+@ stdcall PathIsPrefixA(str str) 
+@ stdcall PathIsPrefixW(wstr wstr) 
+@ stdcall PathIsRelativeA(str) 
+@ stdcall PathIsRelativeW(wstr) 
+@ stdcall PathIsRootA(str) 
+@ stdcall PathIsRootW(wstr) 
+@ stdcall PathIsSameRootA(str str) 
+@ stdcall PathIsSameRootW(wstr wstr) 
+@ stdcall PathIsUNCA(str) 
+@ stdcall PathIsUNCEx(wstr ptr)
+@ stdcall PathIsUNCServerA(str) 
+@ stdcall PathIsUNCServerShareA(str) 
+@ stdcall PathIsUNCServerShareW(wstr) 
+@ stdcall PathIsUNCServerW(wstr) 
+@ stdcall PathIsUNCW(wstr) 
+@ stdcall PathIsURLA(str) 
+@ stdcall PathIsURLW(wstr) 
+@ stdcall PathIsValidCharA(long long) 
+@ stdcall PathIsValidCharW(long long) 
+@ stdcall PathMatchSpecA(str str) 
 # @ stub PathMatchSpecExA
 # @ stub PathMatchSpecExW
-@ stdcall PathMatchSpecW(wstr wstr) shlwapi.PathMatchSpecW
-@ stdcall PathParseIconLocationA(str) shlwapi.PathParseIconLocationA
-@ stdcall PathParseIconLocationW(wstr) shlwapi.PathParseIconLocationW
-@ stdcall PathQuoteSpacesA(str) shlwapi.PathQuoteSpacesA
-@ stdcall PathQuoteSpacesW(wstr) shlwapi.PathQuoteSpacesW
-@ stdcall PathRelativePathToA(ptr str long str long) shlwapi.PathRelativePathToA
-@ stdcall PathRelativePathToW(ptr wstr long wstr long) shlwapi.PathRelativePathToW
-@ stdcall PathRemoveBackslashA(str) shlwapi.PathRemoveBackslashA
-@ stdcall PathRemoveBackslashW(wstr) shlwapi.PathRemoveBackslashW
-@ stdcall PathRemoveBlanksA(str) shlwapi.PathRemoveBlanksA
-@ stdcall PathRemoveBlanksW(wstr) shlwapi.PathRemoveBlanksW
-@ stdcall PathRemoveExtensionA(str) shlwapi.PathRemoveExtensionA
-@ stdcall PathRemoveExtensionW(wstr) shlwapi.PathRemoveExtensionW
-@ stdcall PathRemoveFileSpecA(str) shlwapi.PathRemoveFileSpecA
-@ stdcall PathRemoveFileSpecW(wstr) shlwapi.PathRemoveFileSpecW
-@ stdcall PathRenameExtensionA(str str) shlwapi.PathRenameExtensionA
-@ stdcall PathRenameExtensionW(wstr wstr) shlwapi.PathRenameExtensionW
-@ stdcall PathSearchAndQualifyA(str ptr long) shlwapi.PathSearchAndQualifyA
-@ stdcall PathSearchAndQualifyW(wstr ptr long) shlwapi.PathSearchAndQualifyW
-@ stdcall PathSkipRootA(str) shlwapi.PathSkipRootA
-@ stdcall PathSkipRootW(wstr) shlwapi.PathSkipRootW
-@ stdcall PathStripPathA(str) shlwapi.PathStripPathA
-@ stdcall PathStripPathW(wstr) shlwapi.PathStripPathW
-@ stdcall PathStripToRootA(str) shlwapi.PathStripToRootA
-@ stdcall PathStripToRootW(wstr) shlwapi.PathStripToRootW
-@ stdcall PathUnExpandEnvStringsA(str ptr long) shlwapi.PathUnExpandEnvStringsA
-@ stdcall PathUnExpandEnvStringsW(wstr ptr long) shlwapi.PathUnExpandEnvStringsW
-@ stdcall PathUnquoteSpacesA(str) shlwapi.PathUnquoteSpacesA
-@ stdcall PathUnquoteSpacesW(wstr) shlwapi.PathUnquoteSpacesW
-@ stdcall QISearch(long long long long) shlwapi.QISearch
-@ stdcall SHLoadIndirectString(wstr ptr long ptr) shlwapi.SHLoadIndirectString
-@ stdcall SHRegCloseUSKey(ptr) shlwapi.SHRegCloseUSKey
-@ stdcall SHRegCreateUSKeyA(str long long ptr long) shlwapi.SHRegCreateUSKeyA
-@ stdcall SHRegCreateUSKeyW(wstr long long ptr long) shlwapi.SHRegCreateUSKeyW
-@ stdcall SHRegDeleteEmptyUSKeyA(long str long) shlwapi.SHRegDeleteEmptyUSKeyA
-@ stdcall SHRegDeleteEmptyUSKeyW(long wstr long) shlwapi.SHRegDeleteEmptyUSKeyW
-@ stdcall SHRegDeleteUSValueA(long str long) shlwapi.SHRegDeleteUSValueA
-@ stdcall SHRegDeleteUSValueW(long wstr long) shlwapi.SHRegDeleteUSValueW
-@ stdcall SHRegEnumUSKeyA(long long str ptr long) shlwapi.SHRegEnumUSKeyA
-@ stdcall SHRegEnumUSKeyW(long long wstr ptr long) shlwapi.SHRegEnumUSKeyW
-@ stdcall SHRegEnumUSValueA(long long ptr ptr ptr ptr ptr long) shlwapi.SHRegEnumUSValueA
-@ stdcall SHRegEnumUSValueW(long long ptr ptr ptr ptr ptr long) shlwapi.SHRegEnumUSValueW
-@ stdcall SHRegGetBoolUSValueA(str str long long) shlwapi.SHRegGetBoolUSValueA
-@ stdcall SHRegGetBoolUSValueW(wstr wstr long long) shlwapi.SHRegGetBoolUSValueW
-@ stdcall SHRegGetUSValueA( str str ptr ptr ptr long ptr long ) shlwapi.SHRegGetUSValueA
-@ stdcall SHRegGetUSValueW( wstr wstr ptr ptr ptr long ptr long ) shlwapi.SHRegGetUSValueW
-@ stdcall SHRegOpenUSKeyA( str long long long long ) shlwapi.SHRegOpenUSKeyA
-@ stdcall SHRegOpenUSKeyW( wstr long long long long ) shlwapi.SHRegOpenUSKeyW
-@ stdcall SHRegQueryInfoUSKeyA( long ptr ptr ptr ptr long ) shlwapi.SHRegQueryInfoUSKeyA
-@ stdcall SHRegQueryInfoUSKeyW( long ptr ptr ptr ptr long ) shlwapi.SHRegQueryInfoUSKeyW
-@ stdcall SHRegQueryUSValueA( long str ptr ptr ptr long ptr long ) shlwapi.SHRegQueryUSValueA
-@ stdcall SHRegQueryUSValueW( long wstr ptr ptr ptr long ptr long ) shlwapi.SHRegQueryUSValueW
-@ stdcall SHRegSetUSValueA( str str long ptr long long) shlwapi.SHRegSetUSValueA
-@ stdcall SHRegSetUSValueW( wstr wstr long ptr long long) shlwapi.SHRegSetUSValueW
-@ stdcall SHRegWriteUSValueA(long str long ptr long long) shlwapi.SHRegWriteUSValueA
-@ stdcall SHRegWriteUSValueW(long wstr long ptr long long) shlwapi.SHRegWriteUSValueW
-@ stdcall SHTruncateString(str long) shlwapi.SHTruncateString
-@ stdcall StrCSpnA(str str) shlwapi.StrCSpnA
-@ stdcall StrCSpnIA(str str) shlwapi.StrCSpnIA
-@ stdcall StrCSpnIW(wstr wstr) shlwapi.StrCSpnIW
-@ stdcall StrCSpnW(wstr wstr) shlwapi.StrCSpnW
-@ stdcall StrCatBuffA(str str long) shlwapi.StrCatBuffA
-@ stdcall StrCatBuffW(wstr wstr long) shlwapi.StrCatBuffW
-@ stdcall StrCatChainW(ptr long long wstr) shlwapi.StrCatChainW
-@ stdcall StrChrA(str long) shlwapi.StrChrA
+@ stdcall PathMatchSpecW(wstr wstr) 
+@ stdcall PathParseIconLocationA(str) 
+@ stdcall PathParseIconLocationW(wstr) 
+@ stdcall PathQuoteSpacesA(str) 
+@ stdcall PathQuoteSpacesW(wstr) 
+@ stdcall PathRelativePathToA(ptr str long str long) 
+@ stdcall PathRelativePathToW(ptr wstr long wstr long) 
+@ stdcall PathRemoveBackslashA(str) 
+@ stdcall PathRemoveBackslashW(wstr) 
+@ stdcall PathRemoveBlanksA(str) 
+@ stdcall PathRemoveBlanksW(wstr) 
+@ stdcall PathRemoveExtensionA(str) 
+@ stdcall PathRemoveExtensionW(wstr) 
+@ stdcall PathRemoveFileSpecA(str) 
+@ stdcall PathRemoveFileSpecW(wstr) 
+@ stdcall PathRenameExtensionA(str str) 
+@ stdcall PathRenameExtensionW(wstr wstr) 
+@ stdcall PathSearchAndQualifyA(str ptr long) 
+@ stdcall PathSearchAndQualifyW(wstr ptr long) 
+@ stdcall PathSkipRootA(str) 
+@ stdcall PathSkipRootW(wstr) 
+@ stdcall PathStripPathA(str) 
+@ stdcall PathStripPathW(wstr) 
+@ stdcall PathStripToRootA(str) 
+@ stdcall PathStripToRootW(wstr) 
+@ stdcall PathUnExpandEnvStringsA(str ptr long) 
+@ stdcall PathUnExpandEnvStringsW(wstr ptr long) 
+@ stdcall PathUnquoteSpacesA(str) 
+@ stdcall PathUnquoteSpacesW(wstr) 
+@ stdcall QISearch(long long long long) 
+@ stdcall SHLoadIndirectString(wstr ptr long ptr) 
+@ stdcall SHRegCloseUSKey(ptr) 
+@ stdcall SHRegCreateUSKeyA(str long long ptr long) 
+@ stdcall SHRegCreateUSKeyW(wstr long long ptr long) 
+@ stdcall SHRegDeleteEmptyUSKeyA(long str long) 
+@ stdcall SHRegDeleteEmptyUSKeyW(long wstr long) 
+@ stdcall SHRegDeleteUSValueA(long str long) 
+@ stdcall SHRegDeleteUSValueW(long wstr long) 
+@ stdcall SHRegEnumUSKeyA(long long str ptr long) 
+@ stdcall SHRegEnumUSKeyW(long long wstr ptr long) 
+@ stdcall SHRegEnumUSValueA(long long ptr ptr ptr ptr ptr long) 
+@ stdcall SHRegEnumUSValueW(long long ptr ptr ptr ptr ptr long) 
+@ stdcall SHRegGetBoolUSValueA(str str long long) 
+@ stdcall SHRegGetBoolUSValueW(wstr wstr long long) 
+@ stdcall SHRegGetUSValueA( str str ptr ptr ptr long ptr long ) 
+@ stdcall SHRegGetUSValueW( wstr wstr ptr ptr ptr long ptr long ) 
+@ stdcall SHRegOpenUSKeyA( str long long long long ) 
+@ stdcall SHRegOpenUSKeyW( wstr long long long long ) 
+@ stdcall SHRegQueryInfoUSKeyA( long ptr ptr ptr ptr long ) 
+@ stdcall SHRegQueryInfoUSKeyW( long ptr ptr ptr ptr long ) 
+@ stdcall SHRegQueryUSValueA( long str ptr ptr ptr long ptr long ) 
+@ stdcall SHRegQueryUSValueW( long wstr ptr ptr ptr long ptr long ) 
+@ stdcall SHRegSetUSValueA( str str long ptr long long) 
+@ stdcall SHRegSetUSValueW( wstr wstr long ptr long long) 
+@ stdcall SHRegWriteUSValueA(long str long ptr long long) 
+@ stdcall SHRegWriteUSValueW(long wstr long ptr long long) 
+@ stdcall SHTruncateString(str long) 
+@ stdcall StrCSpnA(str str) 
+@ stdcall StrCSpnIA(str str) 
+@ stdcall StrCSpnIW(wstr wstr) 
+@ stdcall StrCSpnW(wstr wstr) 
+@ stdcall StrCatBuffA(str str long) 
+@ stdcall StrCatBuffW(wstr wstr long) 
+@ stdcall StrCatChainW(ptr long long wstr) 
+@ stdcall StrChrA(str long) 
 # @ stub StrChrA_MB
-@ stdcall StrChrIA(str long) shlwapi.StrChrIA
-@ stdcall StrChrIW(wstr long) shlwapi.StrChrIW
+@ stdcall StrChrIA(str long) 
+@ stdcall StrChrIW(wstr long) 
 # @ stub StrChrNIW
-@ stdcall StrChrNW(wstr long long) shlwapi.StrChrNW
-@ stdcall StrChrW(wstr long) shlwapi.StrChrW
-@ stdcall StrCmpCA(str str) shlwapi.StrCmpCA
-@ stdcall StrCmpCW(wstr wstr) shlwapi.StrCmpCW
-@ stdcall StrCmpICA(str str) shlwapi.StrCmpICA
-@ stdcall StrCmpICW(wstr wstr) shlwapi.StrCmpICW
-@ stdcall StrCmpIW(wstr wstr) shlwapi.StrCmpIW
-@ stdcall StrCmpLogicalW(wstr wstr) shlwapi.StrCmpLogicalW
-@ stdcall StrCmpNA(str str long) shlwapi.StrCmpNA
-@ stdcall StrCmpNCA(str ptr long) shlwapi.StrCmpNCA
-@ stdcall StrCmpNCW(wstr wstr long) shlwapi.StrCmpNCW
-@ stdcall StrCmpNIA(str str long) shlwapi.StrCmpNIA
-@ stdcall StrCmpNICA(long long long) shlwapi.StrCmpNICA
-@ stdcall StrCmpNICW(wstr wstr long) shlwapi.StrCmpNICW
-@ stdcall StrCmpNIW(wstr wstr long) shlwapi.StrCmpNIW
-@ stdcall StrCmpNW(wstr wstr long) shlwapi.StrCmpNW
-@ stdcall StrCmpW(wstr wstr) shlwapi.StrCmpW
-@ stdcall StrCpyNW(ptr wstr long) shlwapi.StrCpyNW
-@ stdcall StrCpyNXA(ptr str long) shlwapi.StrCpyNXA
-@ stdcall StrCpyNXW(ptr wstr long) shlwapi.StrCpyNXW
-@ stdcall StrDupA(str) shlwapi.StrDupA
-@ stdcall StrDupW(wstr) shlwapi.StrDupW
-@ stdcall StrIsIntlEqualA(long str str long) shlwapi.StrIsIntlEqualA
-@ stdcall StrIsIntlEqualW(long wstr wstr long) shlwapi.StrIsIntlEqualW
-@ stdcall StrPBrkA(str str) shlwapi.StrPBrkA
-@ stdcall StrPBrkW(wstr wstr) shlwapi.StrPBrkW
-@ stdcall StrRChrA(str str long) shlwapi.StrRChrA
-@ stdcall StrRChrIA(str str long) shlwapi.StrRChrIA
-@ stdcall StrRChrIW(wstr wstr long) shlwapi.StrRChrIW
-@ stdcall StrRChrW(wstr wstr long) shlwapi.StrRChrW
-@ stdcall StrRStrIA(str str str) shlwapi.StrRStrIA
-@ stdcall StrRStrIW(wstr wstr wstr) shlwapi.StrRStrIW
-@ stdcall StrSpnA(str str) shlwapi.StrSpnA
-@ stdcall StrSpnW(wstr wstr) shlwapi.StrSpnW
-@ stdcall StrStrA(str str) shlwapi.StrStrA
-@ stdcall StrStrIA(str str) shlwapi.StrStrIA
-@ stdcall StrStrIW(wstr wstr) shlwapi.StrStrIW
-@ stdcall StrStrNIW(wstr wstr long) shlwapi.StrStrNIW
-@ stdcall StrStrNW(wstr wstr long) shlwapi.StrStrNW
-@ stdcall StrStrW(wstr wstr) shlwapi.StrStrW
-@ stdcall StrToInt64ExA(str long ptr) shlwapi.StrToInt64ExA
-@ stdcall StrToInt64ExW(wstr long ptr) shlwapi.StrToInt64ExW
-@ stdcall StrToIntA(str) shlwapi.StrToIntA
-@ stdcall StrToIntExA(str long ptr) shlwapi.StrToIntExA
-@ stdcall StrToIntExW(wstr long ptr) shlwapi.StrToIntExW
-@ stdcall StrToIntW(wstr) shlwapi.StrToIntW
-@ stdcall StrTrimA(str str) shlwapi.StrTrimA
-@ stdcall StrTrimW(wstr wstr) shlwapi.StrTrimW
-@ stdcall UrlApplySchemeA(str ptr ptr long) shlwapi.UrlApplySchemeA
-@ stdcall UrlApplySchemeW(wstr ptr ptr long) shlwapi.UrlApplySchemeW
-@ stdcall UrlCanonicalizeA(str ptr ptr long) shlwapi.UrlCanonicalizeA
-@ stdcall UrlCanonicalizeW(wstr ptr ptr long) shlwapi.UrlCanonicalizeW
-@ stdcall UrlCombineA(str str ptr ptr long) shlwapi.UrlCombineA
-@ stdcall UrlCombineW(wstr wstr ptr ptr long) shlwapi.UrlCombineW
-@ stdcall UrlCompareA(str str long) shlwapi.UrlCompareA
-@ stdcall UrlCompareW(wstr wstr long) shlwapi.UrlCompareW
-@ stdcall UrlCreateFromPathA(str ptr ptr long) shlwapi.UrlCreateFromPathA
-@ stdcall UrlCreateFromPathW(wstr ptr ptr long) shlwapi.UrlCreateFromPathW
-@ stdcall UrlEscapeA(str ptr ptr long) shlwapi.UrlEscapeA
-@ stdcall UrlEscapeW(wstr ptr ptr long) shlwapi.UrlEscapeW
-@ stdcall UrlFixupW(wstr wstr long) shlwapi.UrlFixupW
-@ stdcall UrlGetLocationA(str) shlwapi.UrlGetLocationA
-@ stdcall UrlGetLocationW(wstr) shlwapi.UrlGetLocationW
-@ stdcall UrlGetPartA(str ptr ptr long long) shlwapi.UrlGetPartA
-@ stdcall UrlGetPartW(wstr ptr ptr long long) shlwapi.UrlGetPartW
-@ stdcall UrlHashA(str ptr long) shlwapi.UrlHashA
-@ stdcall UrlHashW(wstr ptr long) shlwapi.UrlHashW
-@ stdcall UrlIsA(str long) shlwapi.UrlIsA
-@ stdcall UrlIsNoHistoryA(str) shlwapi.UrlIsNoHistoryA
-@ stdcall UrlIsNoHistoryW(wstr) shlwapi.UrlIsNoHistoryW
-@ stdcall UrlIsOpaqueA(str) shlwapi.UrlIsOpaqueA
-@ stdcall UrlIsOpaqueW(wstr) shlwapi.UrlIsOpaqueW
-@ stdcall UrlIsW(wstr long) shlwapi.UrlIsW
+@ stdcall StrChrNW(wstr long long) 
+@ stdcall StrChrW(wstr long) 
+@ stdcall StrCmpCA(str str) 
+@ stdcall StrCmpCW(wstr wstr) 
+@ stdcall StrCmpICA(str str) 
+@ stdcall StrCmpICW(wstr wstr) 
+@ stdcall StrCmpIW(wstr wstr) 
+@ stdcall StrCmpLogicalW(wstr wstr) 
+@ stdcall StrCmpNA(str str long) 
+@ stdcall StrCmpNCA(str ptr long) 
+@ stdcall StrCmpNCW(wstr wstr long) 
+@ stdcall StrCmpNIA(str str long) 
+@ stdcall StrCmpNICA(long long long) 
+@ stdcall StrCmpNICW(wstr wstr long) 
+@ stdcall StrCmpNIW(wstr wstr long) 
+@ stdcall StrCmpNW(wstr wstr long) 
+@ stdcall StrCmpW(wstr wstr) 
+@ stdcall StrCpyNW(ptr wstr long) 
+@ stdcall StrCpyNXA(ptr str long) 
+@ stdcall StrCpyNXW(ptr wstr long) 
+@ stdcall StrDupA(str) 
+@ stdcall StrDupW(wstr) 
+@ stdcall StrIsIntlEqualA(long str str long) 
+@ stdcall StrIsIntlEqualW(long wstr wstr long) 
+@ stdcall StrPBrkA(str str) 
+@ stdcall StrPBrkW(wstr wstr) 
+@ stdcall StrRChrA(str str long) 
+@ stdcall StrRChrIA(str str long) 
+@ stdcall StrRChrIW(wstr wstr long) 
+@ stdcall StrRChrW(wstr wstr long) 
+@ stdcall StrRStrIA(str str str) 
+@ stdcall StrRStrIW(wstr wstr wstr) 
+@ stdcall StrSpnA(str str) 
+@ stdcall StrSpnW(wstr wstr) 
+@ stdcall StrStrA(str str) 
+@ stdcall StrStrIA(str str) 
+@ stdcall StrStrIW(wstr wstr) 
+@ stdcall StrStrNIW(wstr wstr long) 
+@ stdcall StrStrNW(wstr wstr long) 
+@ stdcall StrStrW(wstr wstr) 
+@ stdcall StrToInt64ExA(str long ptr) 
+@ stdcall StrToInt64ExW(wstr long ptr) 
+@ stdcall StrToIntA(str) 
+@ stdcall StrToIntExA(str long ptr) 
+@ stdcall StrToIntExW(wstr long ptr) 
+@ stdcall StrToIntW(wstr) 
+@ stdcall StrTrimA(str str) 
+@ stdcall StrTrimW(wstr wstr) 
+@ stdcall UrlApplySchemeA(str ptr ptr long) 
+@ stdcall UrlApplySchemeW(wstr ptr ptr long) 
+@ stdcall UrlCanonicalizeA(str ptr ptr long) 
+@ stdcall UrlCanonicalizeW(wstr ptr ptr long) 
+@ stdcall UrlCombineA(str str ptr ptr long) 
+@ stdcall UrlCombineW(wstr wstr ptr ptr long) 
+@ stdcall UrlCompareA(str str long) 
+@ stdcall UrlCompareW(wstr wstr long) 
+@ stdcall UrlCreateFromPathA(str ptr ptr long) 
+@ stdcall UrlCreateFromPathW(wstr ptr ptr long) 
+@ stdcall UrlEscapeA(str ptr ptr long) 
+@ stdcall UrlEscapeW(wstr ptr ptr long) 
+@ stdcall UrlFixupW(wstr wstr long) 
+@ stdcall UrlGetLocationA(str) 
+@ stdcall UrlGetLocationW(wstr) 
+@ stdcall UrlGetPartA(str ptr ptr long long) 
+@ stdcall UrlGetPartW(wstr ptr ptr long long) 
+@ stdcall UrlHashA(str ptr long) 
+@ stdcall UrlHashW(wstr ptr long) 
+@ stdcall UrlIsA(str long) 
+@ stdcall UrlIsNoHistoryA(str) 
+@ stdcall UrlIsNoHistoryW(wstr) 
+@ stdcall UrlIsOpaqueA(str) 
+@ stdcall UrlIsOpaqueW(wstr) 
+@ stdcall UrlIsW(wstr long) 
 @ stdcall UrlUnescapeA(str ptr ptr long)
 @ stdcall UrlUnescapeW(wstr ptr ptr long)

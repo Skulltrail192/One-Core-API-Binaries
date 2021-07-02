@@ -41,9 +41,14 @@
 #include <wingdi.h>
 
 #include "datetime.h"
-#include <shlwapi.h>
+#include "pathcch.h"
+#include "strsafe.h"
+#include "shlwapi.h"
+#include "wininet.h"
+#include "intshcut.h"
 #include <psapi.h>
 #include <timezoneapi.h>
+#include "wine/exception.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -1512,3 +1517,6 @@ static inline BOOL set_ntstatus( NTSTATUS status )
     if (status) SetLastError( RtlNtStatusToDosError( status ));
     return !status;
 }
+
+//From Wine's winnls
+WINBASEAPI INT WINAPI CompareStringOrdinal(const WCHAR *,INT,const WCHAR *,INT,BOOL);

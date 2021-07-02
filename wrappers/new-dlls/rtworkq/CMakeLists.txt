@@ -1,7 +1,7 @@
 
 add_definitions(-D__WINESRC__)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
-include_directories(${REACTOS_SOURCE_DIR}/wrappers/includes)
+include_directories(${REACTOS_SOURCE_DIR}/wrappers/sdk/include/wsdk)
 include_directories(${REACTOS_BINARY_DIR}/sdk/include/reactos/wine)
 spec2def(rtworkq.dll rtworkq.spec ADD_IMPORTLIB)
 
