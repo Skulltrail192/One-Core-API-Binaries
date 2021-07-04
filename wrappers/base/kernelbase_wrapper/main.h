@@ -1520,3 +1520,6 @@ static inline BOOL set_ntstatus( NTSTATUS status )
 
 //From Wine's winnls
 WINBASEAPI INT WINAPI CompareStringOrdinal(const WCHAR *,INT,const WCHAR *,INT,BOOL);
+
+DWORD WINAPI K32GetProcessImageFileNameW(HANDLE hProcess, LPWSTR lpImageFileName, DWORD nSize);
+DWORD WINAPI K32GetProcessImageFileNameA(HANDLE hProcess, LPSTR lpImageFileName, DWORD nSize);

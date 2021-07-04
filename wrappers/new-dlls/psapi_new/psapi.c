@@ -1,29 +1,43 @@
-/*++
+/*
+ * COPYRIGHT:   See COPYING in the top level directory
+ * LICENSE:     See LGPL.txt in the top level directory
+ * PROJECT:     ReactOS system libraries
+ * FILE:        reactos/lib/psapi/misc/win32.c
+ * PURPOSE:     Win32 interfaces for PSAPI
+ * PROGRAMMER:  KJK::Hyperion <noog@libero.it>
+ *              Thomas Weidenmueller <w3seek@reactos.com>
+ *              Pierre Schweitzer <pierre@reactos.org>
+ * UPDATE HISTORY:
+ *              10/06/2002: Created
+ */
 
-Copyright (c) 2021 Shorthorn Project
+#include <stdarg.h>
 
-Module Name:
+#define WIN32_NO_STATUS
+#include <windef.h>
+#include <winbase.h>
+#include <winnls.h>
+#define NTOS_MODE_USER
+#include <ndk/exfuncs.h>
+#include <ndk/mmfuncs.h>
+#include <ndk/psfuncs.h>
+#include <ndk/rtlfuncs.h>
 
-    psapi.c
+#include <psapi.h>
 
-Abstract:
+#include <pseh/pseh2.h>
 
-    This module Win32 interfaces for PSAPI APIs - Copied from reactos/dll/win32/psapi
-
-Author:
-
-    Skulltrail 25-June-2021
-
-Revision History:
-
---*/
-
-#include <main.h>
+#define NDEBUG
+#include <debug.h>
 
 #define MAX_MODULES 0x2710      // Matches 10.000 modules
 #define INIT_MEMORY_SIZE 0x1000 // Matches 4kB
 
-WINE_DEFAULT_DEBUG_CHANNEL(kernelbase); 
+typedef struct _PSAPI_WS_WATCH_INFORMATION_EX {
+  PSAPI_WS_WATCH_INFORMATION BasicInfo;
+  ULONG_PTR                  FaultingThreadId;
+  ULONG_PTR                  Flags;
+} PSAPI_WS_WATCH_INFORMATION_EX, *PPSAPI_WS_WATCH_INFORMATION_EX;
 
 /* INTERNAL *******************************************************************/
 
@@ -318,7 +332,7 @@ DllMain(HINSTANCE hDllHandle,
  */
 BOOL
 WINAPI
-K32EmptyWorkingSet(HANDLE hProcess)
+EmptyWorkingSet(HANDLE hProcess)
 {
     SYSTEM_INFO SystemInfo;
     QUOTA_LIMITS QuotaLimits;
@@ -363,7 +377,7 @@ K32EmptyWorkingSet(HANDLE hProcess)
  */
 BOOL
 WINAPI
-K32EnumDeviceDrivers(LPVOID *lpImageBase,
+EnumDeviceDrivers(LPVOID *lpImageBase,
                   DWORD cb,
                   LPDWORD lpcbNeeded)
 {
@@ -447,7 +461,7 @@ K32EnumDeviceDrivers(LPVOID *lpImageBase,
  */
 BOOL
 WINAPI
-K32EnumProcesses(DWORD *lpidProcess,
+EnumProcesses(DWORD *lpidProcess,
               DWORD cb,
               LPDWORD lpcbNeeded)
 {
@@ -531,7 +545,7 @@ K32EnumProcesses(DWORD *lpidProcess,
  */
 BOOL
 WINAPI
-K32EnumProcessModules(HANDLE hProcess,
+EnumProcessModules(HANDLE hProcess,
                    HMODULE *lphModule,
                    DWORD cb,
                    LPDWORD lpcbNeeded)
@@ -634,7 +648,7 @@ K32EnumProcessModules(HANDLE hProcess,
  */
 DWORD
 WINAPI
-K32GetDeviceDriverBaseNameA(LPVOID ImageBase,
+GetDeviceDriverBaseNameA(LPVOID ImageBase,
                          LPSTR lpBaseName,
                          DWORD nSize)
 {
@@ -673,7 +687,7 @@ K32GetDeviceDriverBaseNameA(LPVOID ImageBase,
  */
 DWORD
 WINAPI
-K32GetDeviceDriverFileNameA(LPVOID ImageBase,
+GetDeviceDriverFileNameA(LPVOID ImageBase,
                          LPSTR lpFilename,
                          DWORD nSize)
 {
@@ -712,7 +726,7 @@ K32GetDeviceDriverFileNameA(LPVOID ImageBase,
  */
 DWORD
 WINAPI
-K32GetDeviceDriverBaseNameW(LPVOID ImageBase,
+GetDeviceDriverBaseNameW(LPVOID ImageBase,
                          LPWSTR lpBaseName,
                          DWORD nSize)
 {
@@ -727,7 +741,7 @@ K32GetDeviceDriverBaseNameW(LPVOID ImageBase,
     }
 
     /* Call A API */
-    Len = K32GetDeviceDriverBaseNameA(ImageBase, BaseName, nSize);
+    Len = GetDeviceDriverBaseNameA(ImageBase, BaseName, nSize);
     if (Len == 0)
     {
         LocalFree(BaseName);
@@ -751,7 +765,7 @@ K32GetDeviceDriverBaseNameW(LPVOID ImageBase,
  */
 DWORD
 WINAPI
-K32GetDeviceDriverFileNameW(LPVOID ImageBase,
+GetDeviceDriverFileNameW(LPVOID ImageBase,
                          LPWSTR lpFilename,
                          DWORD nSize)
 {
@@ -766,7 +780,7 @@ K32GetDeviceDriverFileNameW(LPVOID ImageBase,
     }
 
     /* Call A API */
-    Len = K32GetDeviceDriverFileNameA(ImageBase, FileName, nSize);
+    Len = GetDeviceDriverFileNameA(ImageBase, FileName, nSize);
     if (Len == 0)
     {
         LocalFree(FileName);
@@ -784,12 +798,49 @@ K32GetDeviceDriverFileNameW(LPVOID ImageBase,
     return Len;
 }
 
+
 /*
  * @implemented
  */
 DWORD
 WINAPI
-K32GetMappedFileNameW(HANDLE hProcess,
+GetMappedFileNameA(HANDLE hProcess,
+                   LPVOID lpv,
+                   LPSTR lpFilename,
+                   DWORD nSize)
+{
+    DWORD Len;
+    LPWSTR FileName;
+
+    DPRINT("GetMappedFileNameA(%p, %p, %p, %lu)\n", hProcess, lpv, lpFilename, nSize);
+
+    /* Allocate internal buffer for conversion */
+    FileName = LocalAlloc(LMEM_FIXED, nSize * sizeof(WCHAR));
+    if (FileName == NULL)
+    {
+        return 0;
+    }
+
+    /* Call W API */
+    Len = GetMappedFileNameW(hProcess, lpv, FileName, nSize);
+
+    /* And convert output */
+    if (WideCharToMultiByte(CP_ACP, 0, FileName, (Len < nSize) ? Len + 1 : Len, lpFilename, nSize, NULL, NULL) == 0)
+    {
+        Len = 0;
+    }
+
+    LocalFree(FileName);
+    return Len;
+}
+
+
+/*
+ * @implemented
+ */
+DWORD
+WINAPI
+GetMappedFileNameW(HANDLE hProcess,
                    LPVOID lpv,
                    LPWSTR lpFilename,
                    DWORD nSize)
@@ -803,7 +854,7 @@ K32GetMappedFileNameW(HANDLE hProcess,
         WCHAR CharBuffer[MAX_PATH];
     } SectionName;
 
-    DbgPrint("GetMappedFileNameW(%p, %p, %p, %lu)\n", hProcess, lpv, lpFilename, nSize);
+    DPRINT("GetMappedFileNameW(%p, %p, %p, %lu)\n", hProcess, lpv, lpFilename, nSize);
 
     /* If no buffer, no need to keep going on */
     if (nSize == 0)
@@ -842,47 +893,47 @@ K32GetMappedFileNameW(HANDLE hProcess,
     return OutSize;
 }
 
+
 /*
  * @implemented
  */
 DWORD
 WINAPI
-K32GetMappedFileNameA(HANDLE hProcess,
-                   LPVOID lpv,
-                   LPSTR lpFilename,
+GetModuleBaseNameA(HANDLE hProcess,
+                   HMODULE hModule,
+                   LPSTR lpBaseName,
                    DWORD nSize)
 {
     DWORD Len;
-    LPWSTR FileName;
-
-    DbgPrint("GetMappedFileNameA(%p, %p, %p, %lu)\n", hProcess, lpv, lpFilename, nSize);
+    PWSTR BaseName;
 
     /* Allocate internal buffer for conversion */
-    FileName = LocalAlloc(LMEM_FIXED, nSize * sizeof(WCHAR));
-    if (FileName == NULL)
+    BaseName = LocalAlloc(LMEM_FIXED, nSize * sizeof(WCHAR));
+    if (BaseName == NULL)
     {
         return 0;
     }
 
     /* Call W API */
-    Len = K32GetMappedFileNameW(hProcess, lpv, FileName, nSize);
-
+    Len = GetModuleBaseNameW(hProcess, hModule, BaseName, nSize);
     /* And convert output */
-    if (WideCharToMultiByte(CP_ACP, 0, FileName, (Len < nSize) ? Len + 1 : Len, lpFilename, nSize, NULL, NULL) == 0)
+    if (WideCharToMultiByte(CP_ACP, 0, BaseName, (Len < nSize) ? Len + 1 : Len, lpBaseName, nSize, NULL, NULL) == 0)
     {
         Len = 0;
     }
 
-    LocalFree(FileName);
+    LocalFree(BaseName);
+
     return Len;
 }
+
 
 /*
  * @implemented
  */
 DWORD
 WINAPI
-K32GetModuleBaseNameW(HANDLE hProcess,
+GetModuleBaseNameW(HANDLE hProcess,
                    HMODULE hModule,
                    LPWSTR lpBaseName,
                    DWORD nSize)
@@ -934,45 +985,47 @@ K32GetModuleBaseNameW(HANDLE hProcess,
     return Len / sizeof(WCHAR);
 }
 
+
 /*
  * @implemented
  */
 DWORD
 WINAPI
-K32GetModuleBaseNameA(HANDLE hProcess,
-                   HMODULE hModule,
-                   LPSTR lpBaseName,
-                   DWORD nSize)
+GetModuleFileNameExA(HANDLE hProcess,
+                     HMODULE hModule,
+                     LPSTR lpFilename,
+                     DWORD nSize)
 {
     DWORD Len;
-    PWSTR BaseName;
+    PWSTR Filename;
 
     /* Allocate internal buffer for conversion */
-    BaseName = LocalAlloc(LMEM_FIXED, nSize * sizeof(WCHAR));
-    if (BaseName == NULL)
+    Filename = LocalAlloc(LMEM_FIXED, nSize * sizeof(WCHAR));
+    if (Filename == NULL)
     {
         return 0;
     }
 
     /* Call W API */
-    Len = K32GetModuleBaseNameW(hProcess, hModule, BaseName, nSize);
+    Len = GetModuleFileNameExW(hProcess, hModule, Filename, nSize);
     /* And convert output */
-    if (WideCharToMultiByte(CP_ACP, 0, BaseName, (Len < nSize) ? Len + 1 : Len, lpBaseName, nSize, NULL, NULL) == 0)
+    if (WideCharToMultiByte(CP_ACP, 0, Filename, (Len < nSize) ? Len + 1 : Len, lpFilename, nSize, NULL, NULL) == 0)
     {
         Len = 0;
     }
 
-    LocalFree(BaseName);
+    LocalFree(Filename);
 
     return Len;
 }
+
 
 /*
  * @implemented
  */
 DWORD
 WINAPI
-K32GetModuleFileNameExW(HANDLE hProcess,
+GetModuleFileNameExW(HANDLE hProcess,
                      HMODULE hModule,
                      LPWSTR lpFilename,
                      DWORD nSize)
@@ -1024,45 +1077,13 @@ K32GetModuleFileNameExW(HANDLE hProcess,
     return Len / sizeof(WCHAR);
 }
 
-/*
- * @implemented
- */
-DWORD
-WINAPI
-K32GetModuleFileNameExA(HANDLE hProcess,
-                     HMODULE hModule,
-                     LPSTR lpFilename,
-                     DWORD nSize)
-{
-    DWORD Len;
-    PWSTR Filename;
-
-    /* Allocate internal buffer for conversion */
-    Filename = LocalAlloc(LMEM_FIXED, nSize * sizeof(WCHAR));
-    if (Filename == NULL)
-    {
-        return 0;
-    }
-
-    /* Call W API */
-    Len = K32GetModuleFileNameExW(hProcess, hModule, Filename, nSize);
-    /* And convert output */
-    if (WideCharToMultiByte(CP_ACP, 0, Filename, (Len < nSize) ? Len + 1 : Len, lpFilename, nSize, NULL, NULL) == 0)
-    {
-        Len = 0;
-    }
-
-    LocalFree(Filename);
-
-    return Len;
-}
 
 /*
  * @implemented
  */
 BOOL
 WINAPI
-K32GetModuleInformation(HANDLE hProcess,
+GetModuleInformation(HANDLE hProcess,
                      HMODULE hModule,
                      LPMODULEINFO lpmodinfo,
                      DWORD cb)
@@ -1109,7 +1130,7 @@ K32GetModuleInformation(HANDLE hProcess,
  */
 BOOL
 WINAPI
-K32InitializeProcessForWsWatch(HANDLE hProcess)
+InitializeProcessForWsWatch(HANDLE hProcess)
 {
     NTSTATUS Status;
 
@@ -1134,7 +1155,7 @@ K32InitializeProcessForWsWatch(HANDLE hProcess)
  */
 BOOL
 WINAPI
-K32GetWsChanges(HANDLE hProcess,
+GetWsChanges(HANDLE hProcess,
              PPSAPI_WS_WATCH_INFORMATION lpWatchInfo,
              DWORD cb)
 {
@@ -1161,7 +1182,7 @@ K32GetWsChanges(HANDLE hProcess,
  */
 DWORD
 WINAPI
-K32GetProcessImageFileNameW(HANDLE hProcess,
+GetProcessImageFileNameW(HANDLE hProcess,
                          LPWSTR lpImageFileName,
                          DWORD nSize)
 {
@@ -1214,7 +1235,7 @@ K32GetProcessImageFileNameW(HANDLE hProcess,
  */
 DWORD
 WINAPI
-K32GetProcessImageFileNameA(HANDLE hProcess,
+GetProcessImageFileNameA(HANDLE hProcess,
                          LPSTR lpImageFileName,
                          DWORD nSize)
 {
@@ -1262,12 +1283,41 @@ K32GetProcessImageFileNameA(HANDLE hProcess,
     return Len;
 }
 
+
 /*
  * @implemented
  */
 BOOL
 WINAPI
-K32EnumPageFilesW(PENUM_PAGE_FILE_CALLBACKW pCallbackRoutine,
+EnumPageFilesA(PENUM_PAGE_FILE_CALLBACKA pCallbackRoutine,
+               LPVOID lpContext)
+{
+    BOOL Ret;
+    INTERNAL_ENUM_PAGE_FILES_CONTEXT Context;
+
+    Context.dwErrCode = ERROR_SUCCESS;
+    Context.lpContext = lpContext;
+    Context.pCallbackRoutine = pCallbackRoutine;
+
+    /* Call W with our own callback for W -> A conversions */
+    Ret = EnumPageFilesW(CallBackConvertToAscii, &Context);
+    /* If we succeed but we have error code, fail and set error */
+    if (Ret && Context.dwErrCode != ERROR_SUCCESS)
+    {
+        Ret = FALSE;
+        SetLastError(Context.dwErrCode);
+    }
+
+    return Ret;
+}
+
+
+/*
+ * @implemented
+ */
+BOOL
+WINAPI
+EnumPageFilesW(PENUM_PAGE_FILE_CALLBACKW pCallbackRoutine,
                LPVOID lpContext)
 {
     PWSTR Colon;
@@ -1357,39 +1407,13 @@ K32EnumPageFilesW(PENUM_PAGE_FILE_CALLBACKW pCallbackRoutine,
     return TRUE;
 }
 
-/*
- * @implemented
- */
-BOOL
-WINAPI
-K32EnumPageFilesA(PENUM_PAGE_FILE_CALLBACKA pCallbackRoutine,
-               LPVOID lpContext)
-{
-    BOOL Ret;
-    INTERNAL_ENUM_PAGE_FILES_CONTEXT Context;
-
-    Context.dwErrCode = ERROR_SUCCESS;
-    Context.lpContext = lpContext;
-    Context.pCallbackRoutine = pCallbackRoutine;
-
-    /* Call W with our own callback for W -> A conversions */
-    Ret = K32EnumPageFilesW(CallBackConvertToAscii, &Context);
-    /* If we succeed but we have error code, fail and set error */
-    if (Ret && Context.dwErrCode != ERROR_SUCCESS)
-    {
-        Ret = FALSE;
-        SetLastError(Context.dwErrCode);
-    }
-
-    return Ret;
-}
 
 /*
  * @implemented
  */
 BOOL
 WINAPI
-K32GetPerformanceInfo(PPERFORMANCE_INFORMATION pPerformanceInformation,
+GetPerformanceInfo(PPERFORMANCE_INFORMATION pPerformanceInformation,
                    DWORD cb)
 {
     NTSTATUS Status;
@@ -1534,7 +1558,7 @@ K32GetPerformanceInfo(PPERFORMANCE_INFORMATION pPerformanceInformation,
  */
 BOOL
 WINAPI
-K32GetProcessMemoryInfo(HANDLE Process,
+GetProcessMemoryInfo(HANDLE Process,
                      PPROCESS_MEMORY_COUNTERS ppsmemCounters,
                      DWORD cb)
 {
@@ -1608,7 +1632,7 @@ K32GetProcessMemoryInfo(HANDLE Process,
  */
 BOOL
 WINAPI
-K32QueryWorkingSet(HANDLE hProcess,
+QueryWorkingSet(HANDLE hProcess,
                 PVOID pv,
                 DWORD cb)
 {
@@ -1635,7 +1659,7 @@ K32QueryWorkingSet(HANDLE hProcess,
  */
 BOOL
 WINAPI
-K32QueryWorkingSetEx(IN HANDLE hProcess,
+QueryWorkingSetEx(IN HANDLE hProcess,
                   IN OUT PVOID pv,
                   IN DWORD cb)
 {
@@ -1657,21 +1681,22 @@ K32QueryWorkingSetEx(IN HANDLE hProcess,
     return TRUE;
 }
 
-/***********************************************************************
- *         K32EnumProcessModulesEx   (kernelbase.@)
+/*
+ * @semi-implemented
  */
-BOOL WINAPI K32EnumProcessModulesEx( HANDLE process, HMODULE *module, DWORD count,
+BOOL 
+WINAPI 
+EnumProcessModulesEx( HANDLE process, HMODULE *module, DWORD count,
                                      DWORD *needed, DWORD filter )
 {
-    FIXME( "(%p, %p, %d, %p, %d) semi-stub\n", process, module, count, needed, filter );
-    return K32EnumProcessModules( process, module, count, needed );
+    return EnumProcessModules( process, module, count, needed );
 }
 
 /* EOF */
 
 BOOL
 WINAPI
-K32GetWsChangesEx(
+GetWsChangesEx(
     HANDLE hProcess,
     PPSAPI_WS_WATCH_INFORMATION_EX lpWatchInfo,
     PDWORD cb
@@ -1694,3 +1719,4 @@ K32GetWsChangesEx(
         return FALSE;
         }
 }
+/* EOF */

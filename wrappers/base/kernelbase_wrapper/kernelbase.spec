@@ -1324,33 +1324,33 @@
 @ stub LoadStringByReference
 # @ stub LoadStringBaseW
 # @ stub LocateXStateFeature
-@ stdcall K32EmptyWorkingSet(ptr) EmptyWorkingSet
-@ stdcall K32EnumDeviceDrivers(ptr long ptr) EnumDeviceDrivers
-@ stdcall K32EnumPageFilesA(ptr ptr) EnumPageFilesA
-@ stdcall K32EnumPageFilesW(ptr ptr) EnumPageFilesW
-@ stdcall K32EnumProcessModules(ptr ptr long ptr) EnumProcessModules
+@ stdcall K32EmptyWorkingSet(ptr)
+@ stdcall K32EnumDeviceDrivers(ptr long ptr)
+@ stdcall K32EnumPageFilesA(ptr ptr)
+@ stdcall K32EnumPageFilesW(ptr ptr)
+@ stdcall K32EnumProcessModules(ptr ptr long ptr)
 @ stdcall K32EnumProcessModulesEx(ptr ptr long ptr long)
-@ stdcall K32EnumProcesses(ptr long ptr) EnumProcesses
-@ stdcall K32GetDeviceDriverBaseNameA(ptr ptr long) GetDeviceDriverBaseNameA
-@ stdcall K32GetDeviceDriverBaseNameW(ptr ptr long) GetDeviceDriverBaseNameW
-@ stdcall K32GetDeviceDriverFileNameA(ptr ptr long) GetDeviceDriverFileNameA
-@ stdcall K32GetDeviceDriverFileNameW(ptr ptr long) GetDeviceDriverFileNameW
-@ stdcall K32GetMappedFileNameA(ptr ptr ptr long) GetMappedFileNameA
-@ stdcall K32GetMappedFileNameW(ptr ptr ptr long) GetMappedFileNameW
-@ stdcall K32GetModuleBaseNameA(ptr ptr ptr long) GetModuleBaseNameA
-@ stdcall K32GetModuleBaseNameW(ptr ptr ptr long) GetModuleBaseNameW
-@ stdcall K32GetModuleFileNameExA(ptr ptr ptr long) GetModuleFileNameExA
-@ stdcall K32GetModuleFileNameExW(ptr ptr ptr long) GetModuleFileNameExW
-@ stdcall K32GetModuleInformation(ptr ptr ptr long) GetModuleInformation
-@ stdcall K32GetPerformanceInfo(ptr long) GetPerformanceInfo
-@ stdcall K32GetProcessImageFileNameA(ptr ptr long) GetProcessImageFileNameA
-@ stdcall K32GetProcessImageFileNameW(ptr ptr long) GetProcessImageFileNameW
-@ stdcall K32GetProcessMemoryInfo(ptr ptr long) GetProcessMemoryInfo
-@ stdcall K32GetWsChanges(ptr ptr long) GetWsChanges
-@ stdcall K32GetWsChangesEx(ptr ptr ptr) GetWsChangesEx
-@ stdcall K32InitializeProcessForWsWatch(ptr) InitializeProcessForWsWatch
-@ stdcall K32QueryWorkingSet(ptr ptr long) QueryWorkingSet
-@ stdcall K32QueryWorkingSetEx(ptr ptr long) QueryWorkingSetEx
+@ stdcall K32EnumProcesses(ptr long ptr)
+@ stdcall K32GetDeviceDriverBaseNameA(ptr ptr long)
+@ stdcall K32GetDeviceDriverBaseNameW(ptr ptr long)
+@ stdcall K32GetDeviceDriverFileNameA(ptr ptr long)
+@ stdcall K32GetDeviceDriverFileNameW(ptr ptr long)
+@ stdcall K32GetMappedFileNameA(ptr ptr ptr long)
+@ stdcall K32GetMappedFileNameW(ptr ptr ptr long)
+@ stdcall K32GetModuleBaseNameA(ptr ptr ptr long)
+@ stdcall K32GetModuleBaseNameW(ptr ptr ptr long)
+@ stdcall K32GetModuleFileNameExA(ptr ptr ptr long)
+@ stdcall K32GetModuleFileNameExW(ptr ptr ptr long)
+@ stdcall K32GetModuleInformation(ptr ptr ptr long)
+@ stdcall K32GetPerformanceInfo(ptr long)
+@ stdcall K32GetProcessImageFileNameA(ptr ptr long)
+@ stdcall K32GetProcessImageFileNameW(ptr ptr long)
+@ stdcall K32GetProcessMemoryInfo(ptr ptr long)
+@ stdcall K32GetWsChanges(ptr ptr long)
+@ stdcall K32GetWsChangesEx(ptr ptr ptr)
+@ stdcall K32InitializeProcessForWsWatch(ptr)
+@ stdcall K32QueryWorkingSet(ptr ptr long)
+@ stdcall K32QueryWorkingSetEx(ptr ptr long)
 @ stdcall LoadAppInitDlls()
 @ stdcall PowerClearRequest(ptr ptr)
 @ stdcall PowerCreateRequest(ptr)

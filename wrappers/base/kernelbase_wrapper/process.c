@@ -86,7 +86,7 @@ QueryFullProcessImageNameW(
 	PDWORD pdwSize
 )
 {
-	if(GetProcessImageFileNameW(hProcess, lpExeName, *pdwSize)>0){
+	if(K32GetProcessImageFileNameW(hProcess, lpExeName, *pdwSize)>0){
 		return TRUE;
 	}else{
 		return FALSE;
@@ -104,7 +104,7 @@ QueryFullProcessImageNameA(
     LPSTR lpExeName,
     PDWORD pdwSize)
 {
-	if(GetProcessImageFileNameA(hProcess, lpExeName, *pdwSize)>0){
+	if(K32GetProcessImageFileNameA(hProcess, lpExeName, *pdwSize)>0){
 		return TRUE;
 	}else{
 		return FALSE;
