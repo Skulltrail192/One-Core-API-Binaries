@@ -8,7 +8,7 @@ spec2def(npmshtml.dll npmshtml.spec)
 
 list(APPEND SOURCE
     main.c
-	rsrc.rc
+	version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/npmshtml_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/npmshtml.def)
 	

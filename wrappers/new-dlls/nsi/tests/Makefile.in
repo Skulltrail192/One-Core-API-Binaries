@@ -1,5 +1,0 @@
-TESTDLL = nsi.dll
-IMPORTS = nsi uuid iphlpapi
-
-C_SRCS = \
-	nsi.c
