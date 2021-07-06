@@ -25,9 +25,12 @@
 
 #include "ntstatus.h"
 #define WIN32_NO_STATUS
-#include "windef.h"
-#include "winioctl.h"
-#include "winternl.h"
+
+typedef unsigned short u_short;
+//#include "netio.h"
+//#include "windef.h"
+//#include "winioctl.h"
+//#include "winternl.h"
 #include "ddk/wdm.h"
 #include "ddk/wsk.h"
 #include "wine/debug.h"

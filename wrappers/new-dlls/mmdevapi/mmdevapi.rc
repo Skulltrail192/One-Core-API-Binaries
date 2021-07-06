@@ -19,7 +19,7 @@
 
 1 WINE_REGISTRY "mmdevapi_classes.rgs"
 
-#include "common_wrappers_ver.rc"
-
 #define WINE_FILEDESCRIPTION_STR "Wine MMDevice API for One-Core-API"
 #define WINE_FILENAME_STR "mmdevapi.dll"
+
+#include "common_wrappers_ver.rc"

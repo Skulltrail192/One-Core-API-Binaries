@@ -1,7 +1,6 @@
 #define REACTOS_VERSION_DLL
 #define REACTOS_STR_INTERNAL_NAME     "BootAnim"
 #define REACTOS_STR_ORIGINAL_FILENAME "BootAnim.sys"
-#include "common_wrappers_ver.rc"
 
 1 BITMAP "Bitmap/1.bmp"
 2 BITMAP "Bitmap/2.bmp"
@@ -94,3 +93,5 @@
 89 BITMAP "Bitmap/89.bmp"
 90 BITMAP "Bitmap/90.bmp"
 91 BITMAP "Bitmap/91.bmp"
+
+#include "common_wrappers_ver.rc"

@@ -18,8 +18,8 @@
 
 #include <windef.h>
 
-#include "common_wrappers_ver.rc"
-
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #define WINE_FILEDESCRIPTION_STR "Windows Sockets 2 DLL Wrapper for One-Core-API"
 #define WINE_FILENAME_STR "ws2_32.dll"
+
+#include "common_wrappers_ver.rc"

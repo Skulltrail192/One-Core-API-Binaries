@@ -18,7 +18,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "common_wrappers_ver.rc"
-
 #define WINE_FILEDESCRIPTION_STR "Wine Games Explorer for One-Core-API"
 #define WINE_FILENAME_STR "gameux.dll"
+
+#include "common_wrappers_ver.rc"

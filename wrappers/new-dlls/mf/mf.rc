@@ -23,7 +23,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 /* @makedep: mf.rgs */
 1 WINE_REGISTRY mf.rgs
 
-#include "common_wrappers_ver.rc"
-
 #define WINE_FILEDESCRIPTION_STR "Wine Media Foundation DLL for One-Core-API"
 #define WINE_FILENAME_STR "mf.dll"
+
+#include "common_wrappers_ver.rc"

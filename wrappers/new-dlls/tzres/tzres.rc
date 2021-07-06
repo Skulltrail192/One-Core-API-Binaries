@@ -251,3 +251,5 @@ STRINGTABLE
   40576 "Yakutsk Standard Time"
   40577 "Yakutsk Daylight Time"
 }
+
+#include "common_wrappers_ver.rc"

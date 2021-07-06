@@ -17,8 +17,9 @@
  */
 
 #include <windef.h>
-#include "common_wrappers_ver.rc"
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #define WINE_FILEDESCRIPTION_STR "Microsoft OLE for Windows Wrapper for One-Core-API"
 #define WINE_FILENAME_STR "ole32.dll"
+
+#include "common_wrappers_ver.rc"

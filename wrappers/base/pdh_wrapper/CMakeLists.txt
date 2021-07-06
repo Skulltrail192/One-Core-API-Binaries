@@ -13,6 +13,6 @@ add_importlibs(pdh_wrapper pdhbase msvcrt kernel32 ntdll)
 target_link_libraries(pdh_wrapper wine)
 add_cd_file(TARGET pdh_wrapper DESTINATION reactos/system32 FOR all)
 
-spec2def(vpowrprof.dll vpowrprof.spec)
+spec2def(pdh_wrapper.dll pdh_wrapper.spec)
 
 
