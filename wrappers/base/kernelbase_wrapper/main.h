@@ -41,14 +41,9 @@
 #include <wingdi.h>
 
 #include "datetime.h"
-#include "pathcch.h"
-#include "strsafe.h"
-#include "shlwapi.h"
-#include "wininet.h"
-#include "intshcut.h"
+#include <shlwapi.h>
 #include <psapi.h>
 #include <timezoneapi.h>
-#include "wine/exception.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -177,28 +172,6 @@
 	
 #endif	
 
-/*
- * RegGetValue() restrictions
- */
-
-#define RRF_RT_REG_NONE         (1 << 0)
-#define RRF_RT_REG_SZ           (1 << 1)
-#define RRF_RT_REG_EXPAND_SZ    (1 << 2)
-#define RRF_RT_REG_BINARY       (1 << 3)
-#define RRF_RT_REG_DWORD        (1 << 4)
-#define RRF_RT_REG_MULTI_SZ     (1 << 5)
-#define RRF_RT_REG_QWORD        (1 << 6)
-#define RRF_RT_DWORD            (RRF_RT_REG_BINARY | RRF_RT_REG_DWORD)
-#define RRF_RT_QWORD            (RRF_RT_REG_BINARY | RRF_RT_REG_QWORD)
-#define RRF_SUBKEY_WOW6464KEY   (1 << 16)
-#define RRF_SUBKEY_WOW6432KEY   (1 << 17)
-#define RRF_WOW64_MASK          (RRF_SUBKEY_WOW6432KEY | RRF_SUBKEY_WOW6464KEY)
-#define RRF_NOEXPAND            (1 << 28)
-#define RRF_ZEROONFAILURE       (1 << 29)
-
-#define REG_MUI_STRING_TRUNCATE     0x00000001
-
-
 static const BOOL is_win64 = (sizeof(void *) > sizeof(int));
 volatile long TzSpecificCache;
 extern ULONG BaseDllTag;
@@ -278,8 +251,8 @@ typedef enum _DEP_SYSTEM_POLICY_TYPE {
     OptOut = 3
 } DEP_SYSTEM_POLICY_TYPE;
 
-// #define PROCESS_DEP_ENABLE 1
-// #define PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION 2
+#define PROCESS_DEP_ENABLE 1
+#define PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION 2
 
 typedef struct _FIND_FILE_DATA
 {
@@ -991,23 +964,6 @@ OpenRegKey(
 
 extern HANDLE           hAltSortsKey;       // handle to Locale\Alternate Sorts key
 
-//From wine's winnt.h
-#define SECURITY_APP_PACKAGE_AUTHORITY {0,0,0,0,0,15}
-#define SECURITY_APP_PACKAGE_BASE_RID           __MSABI_LONG(0x000000002)
-#define SECURITY_BUILTIN_APP_PACKAGE_RID_COUNT  __MSABI_LONG(0x000000002)
-#define SECURITY_APP_PACKAGE_RID_COUNT          __MSABI_LONG(0x000000008)
-#define SECURITY_CAPABILITY_BASE_RID            __MSABI_LONG(0x000000003)
-#define SECURITY_CAPABILITY_APP_RID             __MSABI_LONG(0x000000400)
-#define SECURITY_BUILTIN_CAPABILITY_RID_COUNT   __MSABI_LONG(0x000000002)
-#define SECURITY_CAPABILITY_RID_COUNT           __MSABI_LONG(0x000000005)
-#define SECURITY_PARENT_PACKAGE_RID_COUNT       SECURITY_APP_PACKAGE_RID_COUNT
-#define SECURITY_CHILD_PACKAGE_RID_COUNT        __MSABI_LONG(0x00000000c)
-#define SECURITY_BUILTIN_PACKAGE_ANY_PACKAGE    __MSABI_LONG(0x000000001)
-
-//From wine's winbase
-BOOL WINAPI GetWindowsAccountDomainSid(PSID,PSID,DWORD*);
-BOOL WINAPI CreatePrivateObjectSecurityEx(PSECURITY_DESCRIPTOR,PSECURITY_DESCRIPTOR,PSECURITY_DESCRIPTOR*,GUID*,BOOL,ULONG,HANDLE,PGENERIC_MAPPING);
-
 HRESULT 
 WINAPI 
 PathCchAddBackslash(
@@ -1034,66 +990,66 @@ PathCchCombineEx(
 	DWORD flags
 );
 
-// typedef struct {
-  // UINT  cbSize;
-  // UINT  HistoryBufferSize;
-  // UINT  NumberOfHistoryBuffers;
-  // DWORD dwFlags;
-// } CONSOLE_HISTORY_INFO, *PCONSOLE_HISTORY_INFO;
+typedef struct {
+  UINT  cbSize;
+  UINT  HistoryBufferSize;
+  UINT  NumberOfHistoryBuffers;
+  DWORD dwFlags;
+} CONSOLE_HISTORY_INFO, *PCONSOLE_HISTORY_INFO;
 
-// typedef struct _CONSOLE_SCREEN_BUFFER_INFOEX {
-  // ULONG      cbSize;
-  // COORD      dwSize;
-  // COORD      dwCursorPosition;
-  // WORD       wAttributes;
-  // SMALL_RECT srWindow;
-  // COORD      dwMaximumWindowSize;
-  // WORD       wPopupAttributes;
-  // BOOL       bFullscreenSupported;
-  // COLORREF   ColorTable[16];
-// } CONSOLE_SCREEN_BUFFER_INFOEX, *PCONSOLE_SCREEN_BUFFER_INFOEX;
+typedef struct _CONSOLE_SCREEN_BUFFER_INFOEX {
+  ULONG      cbSize;
+  COORD      dwSize;
+  COORD      dwCursorPosition;
+  WORD       wAttributes;
+  SMALL_RECT srWindow;
+  COORD      dwMaximumWindowSize;
+  WORD       wPopupAttributes;
+  BOOL       bFullscreenSupported;
+  COLORREF   ColorTable[16];
+} CONSOLE_SCREEN_BUFFER_INFOEX, *PCONSOLE_SCREEN_BUFFER_INFOEX;
 
-// typedef struct _CONSOLE_FONT_INFOEX {
-  // ULONG cbSize;
-  // DWORD nFont;
-  // COORD dwFontSize;
-  // UINT  FontFamily;
-  // UINT  FontWeight;
-  // WCHAR FaceName[LF_FACESIZE];
-// } CONSOLE_FONT_INFOEX, *PCONSOLE_FONT_INFOEX;
+typedef struct _CONSOLE_FONT_INFOEX {
+  ULONG cbSize;
+  DWORD nFont;
+  COORD dwFontSize;
+  UINT  FontFamily;
+  UINT  FontWeight;
+  WCHAR FaceName[LF_FACESIZE];
+} CONSOLE_FONT_INFOEX, *PCONSOLE_FONT_INFOEX;
 
-// typedef struct _CONSOLE_GRAPHICS_BUFFER_INFO {
-       // DWORD        dwBitMapInfoLength;
-       // LPBITMAPINFO lpBitMapInfo;
-       // DWORD        dwUsage;    // DIB_PAL_COLORS or DIB_RGB_COLORS
-       // HANDLE       hMutex;
-       // PVOID        lpBitMap;
-// } CONSOLE_GRAPHICS_BUFFER_INFO, *PCONSOLE_GRAPHICS_BUFFER_INFO;
+typedef struct _CONSOLE_GRAPHICS_BUFFER_INFO {
+       DWORD        dwBitMapInfoLength;
+       LPBITMAPINFO lpBitMapInfo;
+       DWORD        dwUsage;    // DIB_PAL_COLORS or DIB_RGB_COLORS
+       HANDLE       hMutex;
+       PVOID        lpBitMap;
+} CONSOLE_GRAPHICS_BUFFER_INFO, *PCONSOLE_GRAPHICS_BUFFER_INFO;
 
-// typedef enum _FILE_INFO_BY_HANDLE_CLASS {
-    // FileBasicInfo,
-    // FileStandardInfo,
-    // FileNameInfo,
-    // FileRenameInfo,
-    // FileDispositionInfo,
-    // FileAllocationInfo,
-    // FileEndOfFileInfo,
-    // FileStreamInfo,
-    // FileCompressionInfo,
-    // FileAttributeTagInfo,
-    // FileIdBothDirectoryInfo,
-    // FileIdBothDirectoryRestartInfo,
-    // FileIoPriorityHintInfo,
-    // FileRemoteProtocolInfo,
-    // FileFullDirectoryInfo,
-    // FileFullDirectoryRestartInfo,
-    // FileStorageInfo,
-    // FileAlignmentInfo,
-    // FileIdInfo,
-    // FileIdExtdDirectoryInfo,
-    // FileIdExtdDirectoryRestartInfo,
-    // MaximumFileInfoByHandlesClass
-// } FILE_INFO_BY_HANDLE_CLASS, *PFILE_INFO_BY_HANDLE_CLASS;
+typedef enum _FILE_INFO_BY_HANDLE_CLASS {
+    FileBasicInfo,
+    FileStandardInfo,
+    FileNameInfo,
+    FileRenameInfo,
+    FileDispositionInfo,
+    FileAllocationInfo,
+    FileEndOfFileInfo,
+    FileStreamInfo,
+    FileCompressionInfo,
+    FileAttributeTagInfo,
+    FileIdBothDirectoryInfo,
+    FileIdBothDirectoryRestartInfo,
+    FileIoPriorityHintInfo,
+    FileRemoteProtocolInfo,
+    FileFullDirectoryInfo,
+    FileFullDirectoryRestartInfo,
+    FileStorageInfo,
+    FileAlignmentInfo,
+    FileIdInfo,
+    FileIdExtdDirectoryInfo,
+    FileIdExtdDirectoryRestartInfo,
+    MaximumFileInfoByHandlesClass
+} FILE_INFO_BY_HANDLE_CLASS, *PFILE_INFO_BY_HANDLE_CLASS;
 
 typedef struct _RTL_BARRIER
 {
@@ -1104,38 +1060,38 @@ typedef struct _RTL_BARRIER
 	DWORD Reserved5;
 } RTL_BARRIER, *PRTL_BARRIER, SYNCHRONIZATION_BARRIER, *PSYNCHRONIZATION_BARRIER, *LPSYNCHRONIZATION_BARRIER;
 
-// typedef struct _FILE_REMOTE_PROTOCOL_INFO {
-    // USHORT StructureVersion;
-    // USHORT StructureSize;
-    // ULONG Protocol;
-    // USHORT ProtocolMajorVersion;
-    // USHORT ProtocolMinorVersion;
-    // USHORT ProtocolRevision;
-    // USHORT Reserved;
-    // ULONG Flags;
-    // struct {
-        // ULONG Reserved[8];
-    // } GenericReserved;
-    // struct {
-        // ULONG Reserved[16];
-    // } ProtocolSpecificReserved;
-// } FILE_REMOTE_PROTOCOL_INFO, *PFILE_REMOTE_PROTOCOL_INFO;
+typedef struct _FILE_REMOTE_PROTOCOL_INFO {
+    USHORT StructureVersion;
+    USHORT StructureSize;
+    ULONG Protocol;
+    USHORT ProtocolMajorVersion;
+    USHORT ProtocolMinorVersion;
+    USHORT ProtocolRevision;
+    USHORT Reserved;
+    ULONG Flags;
+    struct {
+        ULONG Reserved[8];
+    } GenericReserved;
+    struct {
+        ULONG Reserved[16];
+    } ProtocolSpecificReserved;
+} FILE_REMOTE_PROTOCOL_INFO, *PFILE_REMOTE_PROTOCOL_INFO;
 
-// typedef enum _FILE_ID_TYPE {
-    // FileIdType,
-    // ObjectIdType,
-    // ExtendedFileIdType,
-    // MaximumFileIdType
-// } FILE_ID_TYPE, *PFILE_ID_TYPE;
+typedef enum _FILE_ID_TYPE {
+    FileIdType,
+    ObjectIdType,
+    ExtendedFileIdType,
+    MaximumFileIdType
+} FILE_ID_TYPE, *PFILE_ID_TYPE;
 
-// typedef struct _FILE_ID_DESCRIPTOR {
-    // DWORD        dwSize;
-    // FILE_ID_TYPE Type;
-    // union {
-        // LARGE_INTEGER FileId;
-        // GUID          ObjectId;
-    // } DUMMYUNIONNAME;
-// } FILE_ID_DESCRIPTOR, *LPFILE_ID_DESCRIPTOR;
+typedef struct _FILE_ID_DESCRIPTOR {
+    DWORD        dwSize;
+    FILE_ID_TYPE Type;
+    union {
+        LARGE_INTEGER FileId;
+        GUID          ObjectId;
+    } DUMMYUNIONNAME;
+} FILE_ID_DESCRIPTOR, *LPFILE_ID_DESCRIPTOR;
 
 typedef enum
 {
@@ -1517,9 +1473,3 @@ static inline BOOL set_ntstatus( NTSTATUS status )
     if (status) SetLastError( RtlNtStatusToDosError( status ));
     return !status;
 }
-
-//From Wine's winnls
-WINBASEAPI INT WINAPI CompareStringOrdinal(const WCHAR *,INT,const WCHAR *,INT,BOOL);
-
-DWORD WINAPI K32GetProcessImageFileNameW(HANDLE hProcess, LPWSTR lpImageFileName, DWORD nSize);
-DWORD WINAPI K32GetProcessImageFileNameA(HANDLE hProcess, LPSTR lpImageFileName, DWORD nSize);

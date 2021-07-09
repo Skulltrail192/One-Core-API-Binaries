@@ -22,8 +22,6 @@ Revision History:
 
 WINE_DEFAULT_DEBUG_CHANNEL(process); 
 
-#define SE_ASSIGNPRIMARYTOKEN_PRIVILEGE   3L
-
 typedef struct _SYSTEM_LOGICAL_INFORMATION_FILLED{
 	CACHE_DESCRIPTOR  CacheLevel1;
 	CACHE_DESCRIPTOR  CacheLevel2;
@@ -86,7 +84,7 @@ QueryFullProcessImageNameW(
 	PDWORD pdwSize
 )
 {
-	if(K32GetProcessImageFileNameW(hProcess, lpExeName, *pdwSize)>0){
+	if(GetProcessImageFileNameW(hProcess, lpExeName, *pdwSize)>0){
 		return TRUE;
 	}else{
 		return FALSE;
@@ -104,7 +102,7 @@ QueryFullProcessImageNameA(
     LPSTR lpExeName,
     PDWORD pdwSize)
 {
-	if(K32GetProcessImageFileNameA(hProcess, lpExeName, *pdwSize)>0){
+	if(GetProcessImageFileNameA(hProcess, lpExeName, *pdwSize)>0){
 		return TRUE;
 	}else{
 		return FALSE;
@@ -1908,231 +1906,4 @@ BOOL WINAPI DECLSPEC_HOTPATCH GetProcessGroupAffinity( HANDLE process, USHORT *c
     FIXME( "(%p,%p,%p): stub\n", process, count, array );
     SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
     return FALSE;
-}
-
-static
-BOOL
-CreateProcessAsUserCommon(
-    _In_opt_ HANDLE hToken,
-    _In_ DWORD dwCreationFlags,
-    _Out_ LPPROCESS_INFORMATION lpProcessInformation)
-{
-    NTSTATUS Status;
-    PROCESS_ACCESS_TOKEN AccessToken;
-
-    if (hToken != NULL)
-    {
-        TOKEN_TYPE Type;
-        ULONG ReturnLength;
-        OBJECT_ATTRIBUTES ObjectAttributes;
-        HANDLE hTokenDup;
-        BOOLEAN PrivilegeSet = FALSE, HavePrivilege;
-
-        /* Check whether the user-provided token is a primary token */
-        // GetTokenInformation();
-        Status = NtQueryInformationToken(hToken,
-                                         TokenType,
-                                         &Type,
-                                         sizeof(Type),
-                                         &ReturnLength);
-        if (!NT_SUCCESS(Status))
-        {
-            ERR("NtQueryInformationToken() failed, Status 0x%08x\n", Status);
-            goto Quit;
-        }
-        if (Type != TokenPrimary)
-        {
-            ERR("Wrong token type for token 0x%p, expected TokenPrimary, got %ld\n", hToken, Type);
-            Status = STATUS_BAD_TOKEN_TYPE;
-            goto Quit;
-        }
-
-        /* Duplicate the token for this new process */
-        InitializeObjectAttributes(&ObjectAttributes,
-                                   NULL,
-                                   0,
-                                   NULL,
-                                   NULL); // FIXME: Use a valid SecurityDescriptor!
-        Status = NtDuplicateToken(hToken,
-                                  0,
-                                  &ObjectAttributes,
-                                  FALSE,
-                                  TokenPrimary,
-                                  &hTokenDup);
-        if (!NT_SUCCESS(Status))
-        {
-            ERR("NtDuplicateToken() failed, Status 0x%08x\n", Status);
-            goto Quit;
-        }
-
-        // FIXME: Do we always need SecurityImpersonation?
-        Status = RtlImpersonateSelf(SecurityImpersonation);
-        if (!NT_SUCCESS(Status))
-        {
-            ERR("RtlImpersonateSelf(SecurityImpersonation) failed, Status 0x%08x\n", Status);
-            NtClose(hTokenDup);
-            goto Quit;
-        }
-
-        /*
-         * Attempt to acquire the process primary token assignment privilege
-         * in case we actually need it.
-         * The call will either succeed or fail when the caller has (or has not)
-         * enough rights.
-         * The last situation may not be dramatic for us. Indeed it may happen
-         * that the user-provided token is a restricted version of the caller's
-         * primary token (aka. a "child" token), or both tokens inherit (i.e. are
-         * children, and are together "siblings") from a common parent token.
-         * In this case the NT kernel allows us to assign the token to the child
-         * process without the need for the assignment privilege, which is fine.
-         * On the contrary, if the user-provided token is completely arbitrary,
-         * then the NT kernel will enforce the presence of the assignment privilege:
-         * because we failed (by assumption) to assign the privilege, the process
-         * token assignment will fail as required. It is then the job of the
-         * caller to manually acquire the necessary privileges.
-         */
-        Status = RtlAdjustPrivilege(SE_ASSIGNPRIMARYTOKEN_PRIVILEGE,
-                                    TRUE, TRUE, &PrivilegeSet);
-        HavePrivilege = NT_SUCCESS(Status);
-        if (!HavePrivilege)
-        {
-            ERR("RtlAdjustPrivilege(SE_ASSIGNPRIMARYTOKEN_PRIVILEGE) failed, Status 0x%08lx, "
-                "attempting to continue without it...\n", Status);
-        }
-
-        AccessToken.Token  = hTokenDup;
-        AccessToken.Thread = lpProcessInformation->hThread;
-
-        /* Set the new process token */
-        Status = NtSetInformationProcess(lpProcessInformation->hProcess,
-                                         ProcessAccessToken,
-                                         (PVOID)&AccessToken,
-                                         sizeof(AccessToken));
-
-        /* Restore the privilege */
-        if (HavePrivilege)
-        {
-            RtlAdjustPrivilege(SE_ASSIGNPRIMARYTOKEN_PRIVILEGE,
-                               PrivilegeSet, TRUE, &PrivilegeSet);
-        }
-
-        RevertToSelf();
-
-        /* Close the duplicated token */
-        NtClose(hTokenDup);
-
-        /* Check whether NtSetInformationProcess() failed */
-        if (!NT_SUCCESS(Status))
-        {
-            ERR("NtSetInformationProcess() failed, Status 0x%08x\n", Status);
-            goto Quit;
-        }
-
-        if (!NT_SUCCESS(Status))
-        {
-Quit:
-            TerminateProcess(lpProcessInformation->hProcess, Status);
-            SetLastError(RtlNtStatusToDosError(Status));
-            return FALSE;
-        }
-    }
-
-    /* Resume the main thread */
-    if (!(dwCreationFlags & CREATE_SUSPENDED))
-    {
-        ResumeThread(lpProcessInformation->hThread);
-    }
-
-    return TRUE;
-}
-
-/*
- * @implemented
- */
-BOOL
-WINAPI
-DECLSPEC_HOTPATCH
-CreateProcessAsUserA(
-    _In_opt_ HANDLE hToken,
-    _In_opt_ LPCSTR lpApplicationName,
-    _Inout_opt_ LPSTR lpCommandLine,
-    _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
-    _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
-    _In_ BOOL bInheritHandles,
-    _In_ DWORD dwCreationFlags,
-    _In_opt_ LPVOID lpEnvironment,
-    _In_opt_ LPCSTR lpCurrentDirectory,
-    _In_ LPSTARTUPINFOA lpStartupInfo,
-    _Out_ LPPROCESS_INFORMATION lpProcessInformation)
-{
-    TRACE("%p %s %s %p %p %d 0x%08x %p %s %p %p\n", hToken, debugstr_a(lpApplicationName),
-        debugstr_a(lpCommandLine), lpProcessAttributes, lpThreadAttributes, bInheritHandles,
-        dwCreationFlags, lpEnvironment, debugstr_a(lpCurrentDirectory), lpStartupInfo, lpProcessInformation);
-
-    /* Create the process with a suspended main thread */
-    if (!CreateProcessA(lpApplicationName,
-                        lpCommandLine,
-                        lpProcessAttributes,
-                        lpThreadAttributes,
-                        bInheritHandles,
-                        dwCreationFlags | CREATE_SUSPENDED,
-                        lpEnvironment,
-                        lpCurrentDirectory,
-                        lpStartupInfo,
-                        lpProcessInformation))
-    {
-        ERR("CreateProcessA failed, last error: %d\n", GetLastError());
-        return FALSE;
-    }
-
-    /* Call the helper function */
-    return CreateProcessAsUserCommon(hToken,
-                                     dwCreationFlags,
-                                     lpProcessInformation);
-}
-
-
-/*
- * @implemented
- */
-BOOL
-WINAPI
-DECLSPEC_HOTPATCH
-CreateProcessAsUserW(
-    _In_opt_ HANDLE hToken,
-    _In_opt_ LPCWSTR lpApplicationName,
-    _Inout_opt_ LPWSTR lpCommandLine,
-    _In_opt_ LPSECURITY_ATTRIBUTES lpProcessAttributes,
-    _In_opt_ LPSECURITY_ATTRIBUTES lpThreadAttributes,
-    _In_ BOOL bInheritHandles,
-    _In_ DWORD dwCreationFlags,
-    _In_opt_ LPVOID lpEnvironment,
-    _In_opt_ LPCWSTR lpCurrentDirectory,
-    _In_ LPSTARTUPINFOW lpStartupInfo,
-    _Out_ LPPROCESS_INFORMATION lpProcessInformation)
-{
-    TRACE("%p %s %s %p %p %d 0x%08x %p %s %p %p\n", hToken, debugstr_w(lpApplicationName),
-        debugstr_w(lpCommandLine), lpProcessAttributes, lpThreadAttributes, bInheritHandles,
-        dwCreationFlags, lpEnvironment, debugstr_w(lpCurrentDirectory), lpStartupInfo, lpProcessInformation);
-
-    /* Create the process with a suspended main thread */
-    if (!CreateProcessW(lpApplicationName,
-                        lpCommandLine,
-                        lpProcessAttributes,
-                        lpThreadAttributes,
-                        bInheritHandles,
-                        dwCreationFlags | CREATE_SUSPENDED,
-                        lpEnvironment,
-                        lpCurrentDirectory,
-                        lpStartupInfo,
-                        lpProcessInformation))
-    {
-        ERR("CreateProcessW failed, last error: %d\n", GetLastError());
-        return FALSE;
-    }
-
-    /* Call the helper function */
-    return CreateProcessAsUserCommon(hToken,
-                                     dwCreationFlags,
-                                     lpProcessInformation);
 }

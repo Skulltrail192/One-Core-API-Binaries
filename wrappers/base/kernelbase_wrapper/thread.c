@@ -402,12 +402,8 @@ ConvertThreadToFiberEx(
 
     /* Are we already a fiber? */
     Teb = NtCurrentTeb();
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
-    if (Teb->SpareBool2) //Windows Vista pebteb doesn't has HasFiberData, has SpareBool2 instead
-#else
-    if (Teb->HasFiberData) // On XP or 2003
-#endif
-	{	
+    if (Teb->HasFiberData)
+    {
         /* Fail */
         SetLastError(ERROR_ALREADY_FIBER);
         return NULL;
@@ -441,12 +437,7 @@ ConvertThreadToFiberEx(
 
     /* Associate the fiber to the current thread */
     Teb->NtTib.FiberData = Fiber;
-    
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
-    Teb->SpareBool2 = TRUE;
-#else
     Teb->HasFiberData = TRUE;
-#endif	
 
     /* Return opaque fiber data */
     return (LPVOID)Fiber;
@@ -1303,12 +1294,4 @@ BOOL WINAPI DECLSPEC_HOTPATCH QueryThreadpoolStackInformation( PTP_POOL pool, PT
 	Status = TpQueryPoolStackInformation( pool, stack_info );
 	
     return NT_SUCCESS(Status);
-}
-
-/***********************************************************************
- *           BaseThreadInitThunk (KERNEL32.@)
- */
-void __fastcall BaseThreadInitThunk( DWORD unknown, LPTHREAD_START_ROUTINE entry, void *arg )
-{
-    RtlExitUserThread( entry( arg ) );
 }

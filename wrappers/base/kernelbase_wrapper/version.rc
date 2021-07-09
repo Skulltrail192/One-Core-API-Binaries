@@ -18,7 +18,7 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
  
+#include "common_wrappers_ver.rc" 
+
 #define WINE_FILEDESCRIPTION_STR "Kernel32 Wrapper for One-Core-API"
 #define WINE_FILENAME_STR "kernel32.dll"
-
-#include "common_wrappers_ver.rc"
