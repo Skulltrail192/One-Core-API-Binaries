@@ -2149,3 +2149,29 @@ DWORD WINAPI DECLSPEC_HOTPATCH EnumDynamicTimeZoneInformation( DWORD index,
     info->DynamicDaylightTimeDisabled = FALSE;
     return 0;
 }
+
+/******************************************************************************
+ *	GetDynamicTimeZoneInformationEffectiveYears   (kernelbase.@)
+ */
+DWORD WINAPI DECLSPEC_HOTPATCH GetDynamicTimeZoneInformationEffectiveYears( const DYNAMIC_TIME_ZONE_INFORMATION *info,
+                                                                            DWORD *first, DWORD *last )
+{
+    HKEY key, dst_key = 0;
+    DWORD type, count, ret = ERROR_FILE_NOT_FOUND;
+
+    if (RegOpenKeyExW( tz_key, info->TimeZoneKeyName, 0, KEY_ALL_ACCESS, &key )) return ret;
+
+    if (RegOpenKeyExW( key, L"Dynamic DST", 0, KEY_ALL_ACCESS, &dst_key )) goto done;
+    count = sizeof(DWORD);
+    if (RegQueryValueExW( dst_key, L"FirstEntry", NULL, &type, (BYTE *)first, &count )) goto done;
+    if (type != REG_DWORD) goto done;
+    count = sizeof(DWORD);
+    if (RegQueryValueExW( dst_key, L"LastEntry", NULL, &type, (BYTE *)last, &count )) goto done;
+    if (type != REG_DWORD) goto done;
+    ret = 0;
+
+done:
+    RegCloseKey( dst_key );
+    RegCloseKey( key );
+    return ret;
+}
