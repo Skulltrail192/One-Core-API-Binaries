@@ -21,7 +21,7 @@ Module Name:
  
  */
 #include <main.h>
-
+#include <locale.h>
 
 #define DOS_MAX_PATH_LENGTH   (260)
 
@@ -327,7 +327,11 @@ Return Value:
 	//
 	// Get culture name by LANGID of CustomLangId
 	//
-	RtlLCIDToCultureName(CustomLangId,&LocaleName);
+	for(i=0;i<LOCALE_TABLE_SIZE;i++){
+		if(CustomLangId == locale_table[i].lcid){
+			RtlInitUnicodeString(&LocaleName, locale_table[i].localeName);
+		}
+	}	
 
     //
     //  Generate the first path c:\winnt\system32\mui\0409\ntdll.dll.mui
@@ -513,18 +517,14 @@ error_exit:
     return NULL;
 }
 
-NTSTATUS
+PVOID
 NTAPI
 LdrLoadAlternateResourceModule(
     IN PVOID Module,
-    IN PWSTR PathToAlternateModule OPTIONAL
+    IN LPCWSTR PathToAlternateModule OPTIONAL
     )
 {
-	if(LdrLoadAlternateResourceModuleEx(0, Module, PathToAlternateModule)!=NULL){
-		return STATUS_SUCCESS;
-	}else{
-		return STATUS_UNSUCCESSFUL;	
-	}
+	return LdrLoadAlternateResourceModuleEx(0, Module, PathToAlternateModule);
 }
 
 BOOLEAN
@@ -884,6 +884,8 @@ Arguments:
     PIMAGE_RESOURCE_DIRECTORY ResourceDirectory;
     ULONG ResourceSize;
     PIMAGE_NT_HEADERS NtHeaders;
+    //ULONG_PTR VirtualAddressOffset;
+    //PIMAGE_SECTION_HEADER NtSection;
 	NTSTATUS Status = STATUS_SUCCESS;
 
     RTL_PAGED_CODE();
@@ -899,7 +901,7 @@ Arguments:
     }
 
     if ((ULONG_PTR)ResourceDataEntry < (ULONG_PTR) ResourceDirectory ){
-        DllHandle = LdrLoadAlternateResourceModuleEx (0, DllHandle, NULL);
+        DllHandle = LdrLoadAlternateResourceModule (DllHandle, NULL);
     } else{
         NtHeaders = RtlImageNtHeader(
                         (PVOID)((ULONG_PTR)DllHandle & ~0x00000001)
@@ -935,7 +937,7 @@ Arguments:
 
             if (!(((ULONG_PTR)ResourceDataEntry >= ImageStart) && ((ULONG_PTR)ResourceDataEntry < (ImageStart + ImageSize)))) {
                 // Doesn't fall within the specified image.  Must be an alternate dll.
-                DllHandle = LdrLoadAlternateResourceModuleEx (0,DllHandle, NULL);
+                DllHandle = LdrLoadAlternateResourceModule (DllHandle, NULL);
             }
         }
     }
@@ -1158,7 +1160,7 @@ LdrpSearchResourceSection_U(
 
     root = RtlImageDirectoryEntryToData( BaseAddress, TRUE, IMAGE_DIRECTORY_ENTRY_RESOURCE, &size );
 	
-	AlternateModule = LdrLoadAlternateResourceModuleEx(0, BaseAddress, NULL);
+	AlternateModule = LdrLoadAlternateResourceModule(BaseAddress, NULL);
 	if(AlternateModule)
 	{
 		Status = LdrpSearchResourceSection_U(AlternateModule,
