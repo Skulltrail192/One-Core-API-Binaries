@@ -17,7 +17,6 @@ Author:
 Revision History:
 
 --*/
-
 #include "main.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(advapi32);
@@ -1223,87 +1222,4 @@ cleanup:
     RtlFreeUnicodeString(&valueW);
 
     return result;
-}
-
-/******************************************************************************
- * RegRenameKey [ADVAPI32.@]
- *
- */
-LSTATUS WINAPI RegRenameKey( HKEY hkey, LPCWSTR lpSubKey, LPCWSTR lpNewName )
-{
-    FIXME("(%p,%s,%s): stub\n", hkey, debugstr_w(lpSubKey), debugstr_w(lpNewName));
-    return ERROR_CALL_NOT_IMPLEMENTED;
-}
-
-/******************************************************************************
- * RegLoadAppKeyA (kernelbase.@) - unimplemented
- *
- */
-LSTATUS WINAPI RegLoadAppKeyA(const char *file, HKEY *result, REGSAM sam, DWORD options, DWORD reserved)
-{
-    FIXME("%s %p %u %u %u: stub\n", wine_dbgstr_a(file), result, sam, options, reserved);
-
-    if (!file || reserved)
-        return ERROR_INVALID_PARAMETER;
-
-    *result = (HKEY)0xdeadbeef;
-    return ERROR_SUCCESS;
-}
-
-/******************************************************************************
- * RegLoadAppKeyW (kernelbase.@) - unimplemented
- *
- */
-LSTATUS WINAPI RegLoadAppKeyW(const WCHAR *file, HKEY *result, REGSAM sam, DWORD options, DWORD reserved)
-{
-    FIXME("%s %p %u %u %u: stub\n", wine_dbgstr_w(file), result, sam, options, reserved);
-
-    if (!file || reserved)
-        return ERROR_INVALID_PARAMETER;
-
-    *result = (HKEY)0xdeadbeef;
-    return ERROR_SUCCESS;
-}
-
-LSTATUS RegOpenKeyTransactedA(
-  HKEY   hKey,
-  LPCSTR lpSubKey,
-  DWORD  ulOptions,
-  REGSAM samDesired,
-  PHKEY  phkResult,
-  HANDLE hTransaction,
-  PVOID  pExtendedParemeter
-)
-{
-	if(pExtendedParemeter){
-		return STATUS_INVALID_PARAMETER;
-	}
-	
-	return RegOpenKeyExA(hKey,
-						 lpSubKey,
-						 ulOptions,
-						 samDesired,
-						 phkResult);
-}
-
-LSTATUS 
-RegOpenKeyTransactedW(
-  HKEY   hKey,
-  LPCWSTR lpSubKey,
-  DWORD  ulOptions,
-  REGSAM samDesired,
-  PHKEY  phkResult,
-  HANDLE hTransaction,
-  PVOID  pExtendedParemeter
-)
-{
-	if(pExtendedParemeter){
-		return STATUS_INVALID_PARAMETER;
-	}
-	
-	return RegOpenKeyExW(hKey,
-						 lpSubKey,
-						 ulOptions,
-						 samDesired,
-						 phkResult);
 }

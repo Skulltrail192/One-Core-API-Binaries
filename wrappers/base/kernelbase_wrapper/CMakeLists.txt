@@ -12,6 +12,8 @@ include_directories(
 	${REACTOS_SOURCE_DIR}/wrappers/sdk/include/wsdk)	
 spec2def(kernelbase.dll kernelbase.spec ADD_IMPORTLIB)
 
+set(baseaddress_kernelbase                       0x7c620000)
+
 list(APPEND SOURCE
 	ahcache.c
 	appcompat.c

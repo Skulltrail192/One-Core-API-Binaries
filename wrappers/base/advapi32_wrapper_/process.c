@@ -53,7 +53,7 @@ CreateProcessWithTokenW(
 	CREATE_PROCESS_TOKEN createProcessToken;
 	
     createProcessToken = (CREATE_PROCESS_TOKEN) GetProcAddress(
-                            GetModuleHandle(TEXT("advapibase")),
+                            GetModuleHandle(TEXT("advapibase.dll")),
                             "CreateProcessWithTokenW");
     if (NULL == createProcessToken) 
     {

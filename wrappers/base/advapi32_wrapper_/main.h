@@ -13,7 +13,6 @@
 #include <ntsecapi.h>
 #include <evtlib.h>
 #include <strsafe.h>
-#include <perflib.h>
 #include <ndk/cmfuncs.h>
 #include <wine/config.h>
 
@@ -93,28 +92,3 @@ WINAPI
 BaseSetLastNTError(IN NTSTATUS Status);
 
 /* EOF */
-
-#define ARGUMENT_PRESENT(ArgumentPointer)((CHAR*)((ULONG_PTR)(ArgumentPointer)) != (CHAR*)NULL)
-
-typedef VOID( CALLBACK * PFN_SC_NOTIFY_CALLBACK ) (
-    IN PVOID pParameter 
-);
-
-typedef PVOID LSA_HANDLE, *PLSA_HANDLE;
-
-typedef ULONG64 TRACEHANDLE,*PTRACEHANDLE;
-
-typedef enum _EVENT_INFO_CLASS { 
-  EventProviderBinaryTrackInfo    = 0,
-  EventProviderSetTraits          = 1,
-  EventProviderUseDescriptorType  = 2,
-  MaxEventInfo                    = 3
-} EVENT_INFO_CLASS;
-
-/* set last error code from NT status and get the proper boolean return value */
- /* used for functions that are a simple wrapper around the corresponding ntdll API */
- static inline BOOL set_ntstatus( NTSTATUS status )
- {
-     if (status) SetLastError( RtlNtStatusToDosError( status ));
-     return !status;
-}

@@ -12,21 +12,25 @@ include_directories(${REACTOS_SOURCE_DIR}/sdk/lib/evtlib)
 spec2def(advapi32_wrapper.dll advapi32_wrapper.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
-    eventlog.c
-	main.c
-	perf.c
-	reg.c
-	security.c
-	shutdown.c
+	#eventlog.c
+    main.c
+	#process.c
+	#reg.c
+	sec.c
+	service.c
+	#trace.c
+	utils
     version.rc
     ${CMAKE_CURRENT_BINARY_DIR}/advapi32_wrapper_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/advapi32_wrapper.def)
 
 add_library(advapi32_wrapper SHARED ${SOURCE})
-set_module_type(advapi32_wrapper win32dll ENTRYPOINT  0)
+set_module_type(advapi32_wrapper win32dll ENTRYPOINT 0)
 
-target_link_libraries(advapi32_wrapper wine)
+set(baseaddress_advapi32_wrapper                       0x7c520000)
 
-add_importlibs(advapi32_wrapper advapibase ntext kernel32)
+target_link_libraries(advapi32_wrapper wine ${PSEH_LIB})
+#add_delay_importlibs(advapi32_wrapper advapilong wevtapibase)
+add_importlibs(advapi32_wrapper advapibase kernelbase ntext rpcrt4)
 
 add_cd_file(TARGET advapi32_wrapper DESTINATION reactos/system32 FOR all)
