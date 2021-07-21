@@ -15,7 +15,9 @@ list(APPEND SOURCE
     eventlog.c
 	main.c
 	perf.c
+	process.c
 	reg.c
+	scm.c
 	security.c
 	shutdown.c
     version.rc
@@ -23,7 +25,7 @@ list(APPEND SOURCE
     ${CMAKE_CURRENT_BINARY_DIR}/advapi32_wrapper.def)
 
 add_library(advapi32_wrapper SHARED ${SOURCE})
-set_module_type(advapi32_wrapper win32dll ENTRYPOINT  0)
+set_module_type(advapi32_wrapper win32dll ENTRYPOINT DllMain)
 
 target_link_libraries(advapi32_wrapper wine)
 

@@ -672,7 +672,7 @@
 @ stdcall SynchronizeWindows31FilesAndWindowsNTRegistry(long long long long) advapibase.SynchronizeWindows31FilesAndWindowsNTRegistry  ;only on XP (needed for synchronization)
 
 #Missing on XP
-100 stdcall CreateProcessWithTokenW(ptr long wstr wstr long ptr wstr ptr ptr) ;advapibase.CreateProcessWithTokenW
+100 stdcall CreateProcessWithTokenW(ptr long wstr wstr long ptr wstr ptr ptr)
 202 stdcall ElfReportEventAndSourceW(long long ptr long long long ptr ptr long long ptr ptr long ptr ptr) ;advapibase.ElfReportEventAndSourceW
 297 stdcall I_QueryTagInformation(long long ptr)
 462 stdcall RegConnectRegistryExA(str ptr long ptr)
@@ -684,7 +684,7 @@
 502 stdcall RegQueryReflectionKey(ptr ptr)	 ;native on Server 2003, but, missing on XP (needed for synchronization) 
 
 #Missing on Server 2003 RTM
-;@ stdcall RegDisablePredefinedCacheEx() 
+@ stdcall RegDisablePredefinedCacheEx() 
 486 stdcall RegGetValueA(long str str long ptr ptr ptr) 
 487 stdcall RegGetValueW(long wstr wstr long ptr ptr ptr) 
 
@@ -718,6 +718,10 @@
 @ stdcall QuerySecurityAccessMask(long ptr)
 @ stdcall RegCopyTreeA(ptr str ptr)
 @ stdcall RegCopyTreeW(ptr str ptr)
+@ stdcall RegCreateKeyTransactedA(ptr str long str long long ptr ptr ptr ptr ptr)
+@ stdcall RegCreateKeyTransactedW(ptr wstr long wstr long long ptr ptr ptr ptr ptr)
+@ stdcall RegDeleteKeyTransactedA(ptr str long long ptr ptr)
+@ stdcall RegDeleteKeyTransactedW(ptr wstr long long ptr ptr)
 @ stdcall RegDeleteKeyValueA(ptr str str)
 @ stdcall RegDeleteKeyValueW(ptr wstr wstr) 
 @ stdcall RegDeleteTreeA(long str)
@@ -811,10 +815,6 @@
 ; @ stdcall OpenThreadWaitChainSession(long ptr)
 ; @ stdcall RegCreateKeyExA(ptr str long ptr long long ptr ptr ptr) 
 ; @ stdcall RegCreateKeyExW(ptr wstr long ptr long long ptr ptr ptr) 
-; @ stdcall RegCreateKeyTransactedA(ptr str long str long long ptr ptr ptr ptr ptr)
-; @ stdcall RegCreateKeyTransactedW(ptr wstr long wstr long long ptr ptr ptr ptr ptr)
-; @ stdcall RegDeleteKeyTransactedA(ptr str long long ptr ptr)
-; @ stdcall RegDeleteKeyTransactedW(ptr wstr long long ptr ptr)
 ; @ stdcall RegisterWaitChainCOMCallback(ptr ptr)
 ; @ stdcall RegLoadKeyA(ptr str str)
 ; @ stdcall RegLoadKeyW(ptr wstr wstr)

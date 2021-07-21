@@ -22,6 +22,45 @@ Revision History:
 
 WINE_DEFAULT_DEBUG_CHANNEL(advapi32);
 
+typedef LONG (WINAPI *REG_DELETE_KEY_EX_W)(
+    HKEY,
+	LPCWSTR,
+	REGSAM,
+	DWORD);
+	
+typedef LONG (WINAPI *REG_DELETE_KEY_EX_A)(
+    HKEY,
+	LPCSTR,
+	REGSAM,
+	DWORD);	
+	
+typedef LONG (WINAPI *REG_DISABLE_REFLECTION_KEY)(
+    HKEY);
+
+typedef LONG (WINAPI *REG_ENABLE_REFLECTION_KEY)(
+    HKEY);		
+
+typedef LONG (WINAPI *REG_QUERY_REFLECTION_KEY)(
+	HKEY,
+	BOOL*);	
+
+typedef LONG (WINAPI *REG_CONNECT_REGISTRY_EX_A)(
+    LPCSTR,
+	HKEY,
+	ULONG,
+	PHKEY);	
+	
+typedef LONG (WINAPI *REG_CONNECT_REGISTRY_EX_W)(
+    LPCWSTR,
+	HKEY,
+	ULONG,
+	PHKEY);
+
+typedef LONG (WINAPI *REG_DISABLE_PREDEFINED_CACHE_EX)(
+    VOID);		
+
+static const UNICODE_STRING HKLM_ClassesPath = RTL_CONSTANT_STRING(L"\\Registry\\Machine\\Software\\Classes");
+
 /* DEFINES ******************************************************************/
 
 #define MAX_DEFAULT_HANDLES   6
@@ -776,22 +815,6 @@ RegDeleteKeyValueA(IN HKEY hKey,
 }
 
 /************************************************************************
- *  RegDisablePredefinedCacheEx
- *
- * @implemented
- */
-LONG WINAPI
-RegDisablePredefinedCacheEx(VOID)
-{
-    RegInitialize(); /* HACK until delay-loading is implemented */
-    RtlEnterCriticalSection(&HandleTableCS);
-    DefaultHandlesDisabled = TRUE;
-    DefaultHandleHKUDisabled = TRUE;
-    RtlLeaveCriticalSection(&HandleTableCS);
-    return ERROR_SUCCESS;
-}
-
-/************************************************************************
  *  RegSetKeyValueW
  *
  * @implemented
@@ -1306,4 +1329,895 @@ RegOpenKeyTransactedW(
 						 ulOptions,
 						 samDesired,
 						 phkResult);
+}
+
+static
+LONG
+GetKeyName(HKEY hKey, PUNICODE_STRING KeyName)
+{
+    UNICODE_STRING InfoName;
+    PKEY_NAME_INFORMATION NameInformation;
+    ULONG InfoLength;
+    NTSTATUS Status;
+
+    /* Get info length */
+    InfoLength = 0;
+    Status = NtQueryKey(hKey, KeyNameInformation, NULL, 0, &InfoLength);
+    if (Status != STATUS_BUFFER_TOO_SMALL)
+    {
+        ERR("NtQueryKey returned unexpected Status: 0x%08x\n", Status);
+        return RtlNtStatusToDosError(Status);
+    }
+
+    /* Get it for real */
+    NameInformation = RtlAllocateHeap(RtlGetProcessHeap(), 0, InfoLength);
+    if (NameInformation == NULL)
+    {
+        ERR("Failed to allocate %lu bytes", InfoLength);
+        return ERROR_NOT_ENOUGH_MEMORY;
+    }
+
+    Status = NtQueryKey(hKey, KeyNameInformation, NameInformation, InfoLength, &InfoLength);
+    if (!NT_SUCCESS(Status))
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, NameInformation);
+        ERR("NtQueryKey failed: 0x%08x\n", Status);
+        return RtlNtStatusToDosError(Status);
+    }
+
+    /* Make it a proper UNICODE_STRING */
+    InfoName.Length = NameInformation->NameLength;
+    InfoName.MaximumLength = NameInformation->NameLength;
+    InfoName.Buffer = NameInformation->Name;
+
+    Status = RtlDuplicateUnicodeString(RTL_DUPLICATE_UNICODE_STRING_NULL_TERMINATE, &InfoName, KeyName);
+    if (!NT_SUCCESS(Status))
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, NameInformation);
+        ERR("RtlDuplicateUnicodeString failed: 0x%08x\n", Status);
+        return RtlNtStatusToDosError(Status);
+    }
+
+    RtlFreeHeap(RtlGetProcessHeap(), 0, NameInformation);
+
+    return ERROR_SUCCESS;
+}
+
+static
+LONG
+GetKeySam(
+    _In_ HKEY hKey,
+    _Out_ REGSAM* RegSam)
+{
+    NTSTATUS Status;
+    OBJECT_BASIC_INFORMATION ObjectInfo;
+
+    Status = NtQueryObject(hKey, ObjectBasicInformation, &ObjectInfo, sizeof(ObjectInfo), NULL);
+    if (!NT_SUCCESS(Status))
+    {
+        ERR("NtQueryObject failed, Status %x08x\n", Status);
+        return RtlNtStatusToDosError(Status);
+    }
+
+    *RegSam = ObjectInfo.GrantedAccess;
+    return ERROR_SUCCESS;
+}
+
+/*
+ * Gets a HKLM key from an HKCU key.
+ */
+static
+LONG
+GetFallbackHKCRKey(
+    _In_ HKEY hKey,
+    _Out_ HKEY* MachineKey,
+    _In_ BOOL MustCreate)
+{
+    UNICODE_STRING KeyName;
+    LPWSTR SubKeyName;
+    LONG ErrorCode;
+    REGSAM SamDesired;
+
+    /* Get the key name */
+    ErrorCode = GetKeyName(hKey, &KeyName);
+    if (ErrorCode != ERROR_SUCCESS)
+        return ErrorCode;
+
+    /* See if we really need a conversion */
+    if (RtlPrefixUnicodeString(&HKLM_ClassesPath, &KeyName, TRUE))
+    {
+        RtlFreeUnicodeString(&KeyName);
+        *MachineKey = hKey;
+        return ERROR_SUCCESS;
+    }
+
+    SubKeyName = KeyName.Buffer + 15; /* 15 == wcslen(L"\\Registry\\User\\") */
+    /* Skip the user token */
+    while (*SubKeyName++ != L'\\')
+    {
+        if (!*SubKeyName)
+        {
+            ERR("Key name %S is invalid!\n", KeyName.Buffer);
+            return ERROR_INTERNAL_ERROR;
+        }
+    }
+
+    /* Use the same access mask than the original key */
+    ErrorCode = GetKeySam(hKey, &SamDesired);
+    if (ErrorCode != ERROR_SUCCESS)
+    {
+        RtlFreeUnicodeString(&KeyName);
+        return ErrorCode;
+    }
+
+    if (MustCreate)
+    {
+        ErrorCode = RegCreateKeyExW(
+            HKEY_LOCAL_MACHINE,
+            SubKeyName,
+            0,
+            NULL,
+            0,
+            SamDesired,
+            NULL,
+            MachineKey,
+            NULL);
+    }
+    else
+    {
+        /* Open the key. */
+        ErrorCode = RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            SubKeyName,
+            0,
+            SamDesired,
+            MachineKey);
+    }
+
+    RtlFreeUnicodeString(&KeyName);
+
+    return ErrorCode;
+}
+
+/* Get the HKCU key (if it exists) from an HKCR key */
+static
+LONG
+GetPreferredHKCRKey(
+    _In_ HKEY hKey,
+    _Out_ HKEY* PreferredKey)
+{
+    UNICODE_STRING KeyName;
+    LPWSTR SubKeyName;
+    LONG ErrorCode;
+    REGSAM SamDesired;
+
+    /* Get the key name */
+    ErrorCode = GetKeyName(hKey, &KeyName);
+    if (ErrorCode != ERROR_SUCCESS)
+        return ErrorCode;
+
+    /* See if we really need a conversion */
+    if (!RtlPrefixUnicodeString(&HKLM_ClassesPath, &KeyName, TRUE))
+    {
+        RtlFreeUnicodeString(&KeyName);
+        *PreferredKey = hKey;
+        return ERROR_SUCCESS;
+    }
+
+    /* 18 == wcslen(L"\\Registry\\Machine\\") */
+    SubKeyName = KeyName.Buffer + 18;
+
+    /* Use the same access mask than the original key */
+    ErrorCode = GetKeySam(hKey, &SamDesired);
+    if (ErrorCode != ERROR_SUCCESS)
+    {
+        RtlFreeUnicodeString(&KeyName);
+        return ErrorCode;
+    }
+
+    /* Open the key. */
+    ErrorCode = RegOpenKeyExW(
+        HKEY_CURRENT_USER,
+        SubKeyName,
+        0,
+        SamDesired,
+        PreferredKey);
+
+    RtlFreeUnicodeString(&KeyName);
+
+    return ErrorCode;
+}
+
+/* HKCR version of RegDeleteKeyExW */
+LONG
+WINAPI
+DeleteHKCRKey(
+    _In_ HKEY hKey,
+    _In_ LPCWSTR lpSubKey,
+    _In_ REGSAM RegSam,
+    _In_ DWORD Reserved)
+{
+    HKEY QueriedKey;
+    LONG ErrorCode;
+
+    ASSERT(IsHKCRKey(hKey));
+
+    /* Remove the HKCR flag while we're working */
+    hKey = (HKEY)(((ULONG_PTR)hKey) & ~0x2);
+
+    ErrorCode = GetPreferredHKCRKey(hKey, &QueriedKey);
+
+    if (ErrorCode == ERROR_FILE_NOT_FOUND)
+    {
+        /* The key doesn't exist on HKCU side, no chance for a subkey */
+        return RegDeleteKeyExW(hKey, lpSubKey, RegSam, Reserved);
+    }
+
+    if (ErrorCode != ERROR_SUCCESS)
+    {
+        /* Somehow we failed for another reason (maybe deleted key or whatever) */
+        return ErrorCode;
+    }
+
+    ErrorCode = RegDeleteKeyExW(QueriedKey, lpSubKey, RegSam, Reserved);
+
+    /* Close it if we must */
+    if (QueriedKey != hKey)
+    {
+        /* The original key is on the machine view */
+        RegCloseKey(QueriedKey);
+    }
+
+    /* Anything else than ERROR_FILE_NOT_FOUND means that we found it, even if it is with failures. */
+    if (ErrorCode != ERROR_FILE_NOT_FOUND)
+        return ErrorCode;
+
+    /* If we're here, we must open from HKLM key. */
+    ErrorCode = GetFallbackHKCRKey(hKey, &QueriedKey, FALSE);
+    if (ErrorCode != ERROR_SUCCESS)
+    {
+        /* Maybe the key doesn't exist in the HKLM view */
+        return ErrorCode;
+    }
+
+    ErrorCode = RegDeleteKeyExW(QueriedKey, lpSubKey, RegSam, Reserved);
+
+    /* Close it if we must */
+    if (QueriedKey != hKey)
+    {
+        RegCloseKey(QueriedKey);
+    }
+
+    return ErrorCode;
+}
+
+/************************************************************************
+ *  RegDeleteKeyExW
+ *
+ * @implemented
+ */
+LONG
+WINAPI
+RegDeleteKeyExW(
+    _In_ HKEY hKey,
+    _In_ LPCWSTR lpSubKey,
+    _In_ REGSAM samDesired,
+    _In_ DWORD Reserved)
+{
+    OBJECT_ATTRIBUTES ObjectAttributes;
+    UNICODE_STRING SubKeyName;
+    HANDLE ParentKey;
+    HANDLE TargetKey;
+    NTSTATUS Status;
+	REG_DELETE_KEY_EX_W regDeleteKeyExW;
+
+    regDeleteKeyExW = (REG_DELETE_KEY_EX_W) GetProcAddress(
+                            GetModuleHandle(TEXT("advapibase.dll")),
+                            "RegDeleteKeyExW");	
+	if(regDeleteKeyExW == NULL){
+		/* Make sure we got a subkey */
+		if (!lpSubKey)
+		{
+			/* Fail */
+			return ERROR_INVALID_PARAMETER;
+		}
+
+		Status = MapDefaultKey(&ParentKey,
+							   hKey);
+		if (!NT_SUCCESS(Status))
+		{
+			return RtlNtStatusToDosError(Status);
+		}
+
+		if (IsHKCRKey(ParentKey))
+		{
+			LONG ErrorCode = DeleteHKCRKey(ParentKey, lpSubKey, samDesired, Reserved);
+			ClosePredefKey(ParentKey);
+			return ErrorCode;
+		}
+
+		if (samDesired & KEY_WOW64_32KEY)
+			ERR("Wow64 not yet supported!\n");
+
+		if (samDesired & KEY_WOW64_64KEY)
+			ERR("Wow64 not yet supported!\n");
+
+
+		RtlInitUnicodeString(&SubKeyName, lpSubKey);
+		InitializeObjectAttributes(&ObjectAttributes,
+								   &SubKeyName,
+								   OBJ_CASE_INSENSITIVE,
+								   ParentKey,
+								   NULL);
+		Status = NtOpenKey(&TargetKey,
+						   DELETE,
+						   &ObjectAttributes);
+		if (!NT_SUCCESS(Status))
+		{
+			goto Cleanup;
+		}
+
+		Status = NtDeleteKey(TargetKey);
+		NtClose(TargetKey);
+
+	Cleanup:
+		ClosePredefKey(ParentKey);
+
+		if (!NT_SUCCESS(Status))
+		{
+			return RtlNtStatusToDosError(Status);
+		}
+
+		return ERROR_SUCCESS;
+	}else{
+		return regDeleteKeyExW(hKey,
+							   lpSubKey,
+							   samDesired,
+							   Reserved);
+	}
+}
+
+/************************************************************************
+ *  RegDeleteKeyExA
+ *
+ * @implemented
+ */
+LONG
+WINAPI
+RegDeleteKeyExA(
+    _In_ HKEY hKey,
+    _In_ LPCSTR lpSubKey,
+    _In_ REGSAM samDesired,
+    _In_ DWORD Reserved)
+{
+    LONG ErrorCode;
+    UNICODE_STRING SubKeyName;
+	REG_DELETE_KEY_EX_A regDeleteKeyExA;
+
+    regDeleteKeyExA = (REG_DELETE_KEY_EX_A) GetProcAddress(
+                            GetModuleHandle(TEXT("advapibase.dll")),
+                            "RegDeleteKeyExA");		
+
+	if(regDeleteKeyExA == NULL){
+		if (lpSubKey)
+		{
+			if (!RtlCreateUnicodeStringFromAsciiz(&SubKeyName, lpSubKey))
+				return ERROR_NOT_ENOUGH_MEMORY;
+		}
+		else
+			RtlInitEmptyUnicodeString(&SubKeyName, NULL, 0);
+
+		ErrorCode = RegDeleteKeyExW(hKey, SubKeyName.Buffer, samDesired, Reserved);
+
+		RtlFreeUnicodeString(&SubKeyName);
+
+		return ErrorCode;	
+	}else{
+		return regDeleteKeyExA(hKey,
+							   lpSubKey,
+							   samDesired,
+							   Reserved);
+	}
+}
+
+/************************************************************************
+ *  RegDisableReflectionKey
+ *
+ * @unimplemented
+ */
+LONG WINAPI
+RegDisableReflectionKey(IN HKEY hBase)
+{
+	REG_DISABLE_REFLECTION_KEY regDisableReflectionKey;
+    regDisableReflectionKey = (REG_DISABLE_REFLECTION_KEY) GetProcAddress(
+                            GetModuleHandle(TEXT("advapibase.dll")),
+                            "RegDisableReflectionKey");	
+	if(regDisableReflectionKey == NULL){
+		FIXME("RegDisableReflectionKey(0x%p) UNIMPLEMENTED!\n", hBase);
+		return ERROR_CALL_NOT_IMPLEMENTED;
+	}else{
+		return regDisableReflectionKey(hBase);
+	}    	
+}
+
+
+/************************************************************************
+ *  RegEnableReflectionKey
+ *
+ * @unimplemented
+ */
+LONG WINAPI
+RegEnableReflectionKey(IN HKEY hBase)
+{
+	REG_ENABLE_REFLECTION_KEY regEnableReflectionKey;
+    regEnableReflectionKey = (REG_ENABLE_REFLECTION_KEY) GetProcAddress(
+                            GetModuleHandle(TEXT("advapibase.dll")),
+                            "RegEnableReflectionKey");	
+	if(regEnableReflectionKey == NULL){
+		FIXME("RegEnableReflectionKey(0x%p) UNIMPLEMENTED!\n", hBase);
+		return ERROR_CALL_NOT_IMPLEMENTED;
+	}else{
+		return regEnableReflectionKey(hBase);
+	} 
+}
+
+LONG 
+WINAPI 
+RegConnectRegistryExA(
+	LPCSTR lpMachineName,
+	HKEY hKey,
+	ULONG Flags,
+	PHKEY phkResult
+)
+{
+	REG_CONNECT_REGISTRY_EX_A regConnectRegistryExA;
+    regConnectRegistryExA = (REG_CONNECT_REGISTRY_EX_A) GetProcAddress(
+                            GetModuleHandle(TEXT("advapibase.dll")),
+                            "RegConnectRegistryExA");	
+	if(regConnectRegistryExA == NULL){
+		FIXME("RegConnectRegistryExA UNIMPLEMENTED!\n");
+		return ERROR_CALL_NOT_IMPLEMENTED;
+	}else{
+		return regConnectRegistryExA(lpMachineName,
+									 hKey,
+									 Flags,
+									 phkResult);
+	} 	
+}
+
+LONG 
+WINAPI 
+RegConnectRegistryExW(
+	LPCWSTR lpMachineName,
+	HKEY hKey,
+	ULONG Flags,
+	PHKEY phkResult
+)
+{
+	REG_CONNECT_REGISTRY_EX_W regConnectRegistryExW;
+    regConnectRegistryExW = (REG_CONNECT_REGISTRY_EX_W) GetProcAddress(
+                            GetModuleHandle(TEXT("advapibase.dll")),
+                            "RegConnectRegistryExW");	
+	if(regConnectRegistryExW == NULL){
+		FIXME("RegConnectRegistryExW UNIMPLEMENTED!\n");
+		return ERROR_CALL_NOT_IMPLEMENTED;
+	}else{
+		return regConnectRegistryExW(lpMachineName,
+									 hKey,
+									 Flags,
+									 phkResult);
+	} 	
+}
+
+
+/******************************************************************************
+ * RegpApplyRestrictions   [internal]
+ *
+ * Helper function for RegGetValueA/W.
+ */
+static VOID
+RegpApplyRestrictions(DWORD dwFlags,
+                      DWORD dwType,
+                      DWORD cbData,
+                      PLONG ret)
+{
+    /* Check if the type is restricted by the passed flags */
+    if (*ret == ERROR_SUCCESS || *ret == ERROR_MORE_DATA)
+    {
+        DWORD dwMask = 0;
+
+        switch (dwType)
+        {
+        case REG_NONE: dwMask = RRF_RT_REG_NONE; break;
+        case REG_SZ: dwMask = RRF_RT_REG_SZ; break;
+        case REG_EXPAND_SZ: dwMask = RRF_RT_REG_EXPAND_SZ; break;
+        case REG_MULTI_SZ: dwMask = RRF_RT_REG_MULTI_SZ; break;
+        case REG_BINARY: dwMask = RRF_RT_REG_BINARY; break;
+        case REG_DWORD: dwMask = RRF_RT_REG_DWORD; break;
+        case REG_QWORD: dwMask = RRF_RT_REG_QWORD; break;
+        }
+
+        if (dwFlags & dwMask)
+        {
+            /* Type is not restricted, check for size mismatch */
+            if (dwType == REG_BINARY)
+            {
+                DWORD cbExpect = 0;
+
+                if ((dwFlags & RRF_RT_ANY) == RRF_RT_DWORD)
+                    cbExpect = 4;
+                else if ((dwFlags & RRF_RT_ANY) == RRF_RT_QWORD)
+                    cbExpect = 8;
+
+                if (cbExpect && cbData != cbExpect)
+                    *ret = ERROR_DATATYPE_MISMATCH;
+            }
+        }
+        else *ret = ERROR_UNSUPPORTED_TYPE;
+    }
+}
+
+/******************************************************************************
+ * RegGetValueW   [ADVAPI32.@]
+ *
+ * Retrieves the type and data for a value name associated with a key,
+ * optionally expanding its content and restricting its type.
+ *
+ * PARAMS
+ *  hKey      [I] Handle to an open key.
+ *  pszSubKey [I] Name of the subkey of hKey.
+ *  pszValue  [I] Name of value under hKey/szSubKey to query.
+ *  dwFlags   [I] Flags restricting the value type to retrieve.
+ *  pdwType   [O] Destination for the values type, may be NULL.
+ *  pvData    [O] Destination for the values content, may be NULL.
+ *  pcbData   [I/O] Size of pvData, updated with the size in bytes required to
+ *                  retrieve the whole content, including the trailing '\0'
+ *                  for strings.
+ *
+ * RETURNS
+ *  Success: ERROR_SUCCESS
+ *  Failure: nonzero error code from Winerror.h
+ *
+ * NOTES
+ *  - Unless RRF_NOEXPAND is specified, REG_EXPAND_SZ values are automatically
+ *    expanded and pdwType is set to REG_SZ instead.
+ *  - Restrictions are applied after expanding, using RRF_RT_REG_EXPAND_SZ
+ *    without RRF_NOEXPAND is thus not allowed.
+ *    An exception is the case where RRF_RT_ANY is specified, because then
+ *    RRF_NOEXPAND is allowed.
+ */
+LSTATUS WINAPI
+RegGetValueW(HKEY hKey,
+             LPCWSTR pszSubKey,
+             LPCWSTR pszValue,
+             DWORD dwFlags,
+             LPDWORD pdwType,
+             PVOID pvData,
+             LPDWORD pcbData)
+{
+    DWORD dwType, cbData = pcbData ? *pcbData : 0;
+    PVOID pvBuf = NULL;
+    LONG ret;
+
+    TRACE("(%p,%s,%s,%ld,%p,%p,%p=%ld)\n",
+          hKey, debugstr_w(pszSubKey), debugstr_w(pszValue), dwFlags, pdwType,
+          pvData, pcbData, cbData);
+
+    if (pvData && !pcbData)
+        return ERROR_INVALID_PARAMETER;
+    if ((dwFlags & RRF_RT_REG_EXPAND_SZ) && !(dwFlags & RRF_NOEXPAND) &&
+            ((dwFlags & RRF_RT_ANY) != RRF_RT_ANY))
+        return ERROR_INVALID_PARAMETER;
+
+    if (pszSubKey && pszSubKey[0])
+    {
+        ret = RegOpenKeyExW(hKey, pszSubKey, 0, KEY_QUERY_VALUE, &hKey);
+        if (ret != ERROR_SUCCESS) return ret;
+    }
+
+    ret = RegQueryValueExW(hKey, pszValue, NULL, &dwType, pvData, &cbData);
+
+    /* If we are going to expand we need to read in the whole the value even
+     * if the passed buffer was too small as the expanded string might be
+     * smaller than the unexpanded one and could fit into cbData bytes. */
+    if ((ret == ERROR_SUCCESS || ret == ERROR_MORE_DATA) &&
+        dwType == REG_EXPAND_SZ && !(dwFlags & RRF_NOEXPAND))
+    {
+        do
+        {
+            HeapFree(GetProcessHeap(), 0, pvBuf);
+
+            pvBuf = HeapAlloc(GetProcessHeap(), 0, cbData);
+            if (!pvBuf)
+            {
+                ret = ERROR_NOT_ENOUGH_MEMORY;
+                break;
+            }
+
+            if (ret == ERROR_MORE_DATA || !pvData)
+                ret = RegQueryValueExW(hKey, pszValue, NULL,
+                                       &dwType, pvBuf, &cbData);
+            else
+            {
+                /* Even if cbData was large enough we have to copy the
+                 * string since ExpandEnvironmentStrings can't handle
+                 * overlapping buffers. */
+                CopyMemory(pvBuf, pvData, cbData);
+            }
+
+            /* Both the type or the value itself could have been modified in
+             * between so we have to keep retrying until the buffer is large
+             * enough or we no longer have to expand the value. */
+        }
+        while (dwType == REG_EXPAND_SZ && ret == ERROR_MORE_DATA);
+
+        if (ret == ERROR_SUCCESS)
+        {
+            /* Recheck dwType in case it changed since the first call */
+            if (dwType == REG_EXPAND_SZ)
+            {
+                cbData = ExpandEnvironmentStringsW(pvBuf, pvData,
+                                                   pcbData ? *pcbData : 0) * sizeof(WCHAR);
+                dwType = REG_SZ;
+                if (pvData && pcbData && cbData > *pcbData)
+                    ret = ERROR_MORE_DATA;
+            }
+            else if (pvData)
+                CopyMemory(pvData, pvBuf, *pcbData);
+        }
+
+        HeapFree(GetProcessHeap(), 0, pvBuf);
+    }
+
+    if (pszSubKey && pszSubKey[0])
+        RegCloseKey(hKey);
+
+    RegpApplyRestrictions(dwFlags, dwType, cbData, &ret);
+
+    if (pvData && ret != ERROR_SUCCESS && (dwFlags & RRF_ZEROONFAILURE))
+        ZeroMemory(pvData, *pcbData);
+
+    if (pdwType)
+        *pdwType = dwType;
+
+    if (pcbData)
+        *pcbData = cbData;
+
+    return ret;
+}
+
+
+/******************************************************************************
+ * RegGetValueA   [ADVAPI32.@]
+ *
+ * See RegGetValueW.
+ */
+LSTATUS WINAPI
+RegGetValueA(HKEY hKey,
+             LPCSTR pszSubKey,
+             LPCSTR pszValue,
+             DWORD dwFlags,
+             LPDWORD pdwType,
+             PVOID pvData,
+             LPDWORD pcbData)
+{
+    DWORD dwType, cbData = pcbData ? *pcbData : 0;
+    PVOID pvBuf = NULL;
+    LONG ret;
+
+    TRACE("(%p,%s,%s,%ld,%p,%p,%p=%ld)\n",
+          hKey, pszSubKey, pszValue, dwFlags, pdwType, pvData, pcbData,
+          cbData);
+
+    if (pvData && !pcbData)
+        return ERROR_INVALID_PARAMETER;
+    if ((dwFlags & RRF_RT_REG_EXPAND_SZ) && !(dwFlags & RRF_NOEXPAND) &&
+            ((dwFlags & RRF_RT_ANY) != RRF_RT_ANY))
+        return ERROR_INVALID_PARAMETER;
+
+    if (pszSubKey && pszSubKey[0])
+    {
+        ret = RegOpenKeyExA(hKey, pszSubKey, 0, KEY_QUERY_VALUE, &hKey);
+        if (ret != ERROR_SUCCESS) return ret;
+    }
+
+    ret = RegQueryValueExA(hKey, pszValue, NULL, &dwType, pvData, &cbData);
+
+    /* If we are going to expand we need to read in the whole the value even
+     * if the passed buffer was too small as the expanded string might be
+     * smaller than the unexpanded one and could fit into cbData bytes. */
+    if ((ret == ERROR_SUCCESS || ret == ERROR_MORE_DATA) &&
+        (dwType == REG_EXPAND_SZ && !(dwFlags & RRF_NOEXPAND)))
+    {
+        do {
+            HeapFree(GetProcessHeap(), 0, pvBuf);
+
+            pvBuf = HeapAlloc(GetProcessHeap(), 0, cbData);
+            if (!pvBuf)
+            {
+                ret = ERROR_NOT_ENOUGH_MEMORY;
+                break;
+            }
+
+            if (ret == ERROR_MORE_DATA || !pvData)
+                ret = RegQueryValueExA(hKey, pszValue, NULL,
+                                       &dwType, pvBuf, &cbData);
+            else
+            {
+                /* Even if cbData was large enough we have to copy the
+                 * string since ExpandEnvironmentStrings can't handle
+                 * overlapping buffers. */
+                CopyMemory(pvBuf, pvData, cbData);
+            }
+
+            /* Both the type or the value itself could have been modified in
+             * between so we have to keep retrying until the buffer is large
+             * enough or we no longer have to expand the value. */
+        } while (dwType == REG_EXPAND_SZ && ret == ERROR_MORE_DATA);
+
+        if (ret == ERROR_SUCCESS)
+        {
+            /* Recheck dwType in case it changed since the first call */
+            if (dwType == REG_EXPAND_SZ)
+            {
+                cbData = ExpandEnvironmentStringsA(pvBuf, pvData,
+                                                   pcbData ? *pcbData : 0);
+                dwType = REG_SZ;
+                if(pvData && pcbData && cbData > *pcbData)
+                    ret = ERROR_MORE_DATA;
+            }
+            else if (pvData)
+                CopyMemory(pvData, pvBuf, *pcbData);
+        }
+
+        HeapFree(GetProcessHeap(), 0, pvBuf);
+    }
+
+    if (pszSubKey && pszSubKey[0])
+        RegCloseKey(hKey);
+
+    RegpApplyRestrictions(dwFlags, dwType, cbData, &ret);
+
+    if (pvData && ret != ERROR_SUCCESS && (dwFlags & RRF_ZEROONFAILURE))
+        ZeroMemory(pvData, *pcbData);
+
+    if (pdwType) *pdwType = dwType;
+    if (pcbData) *pcbData = cbData;
+
+    return ret;
+}
+
+/************************************************************************
+ *  RegDisablePredefinedCacheEx
+ *
+ * @implemented
+ */
+LONG WINAPI
+RegDisablePredefinedCacheEx(VOID)
+{
+    RegInitialize(); /* HACK until delay-loading is implemented */
+    RtlEnterCriticalSection(&HandleTableCS);
+    DefaultHandlesDisabled = TRUE;
+    DefaultHandleHKUDisabled = TRUE;
+    RtlLeaveCriticalSection(&HandleTableCS);
+    return ERROR_SUCCESS;
+}
+
+/************************************************************************
+ *  RegQueryReflectionKey
+ *
+ * @unimplemented
+ */
+LONG WINAPI
+RegQueryReflectionKey(IN HKEY hBase,
+                      OUT BOOL* bIsReflectionDisabled)
+{
+	REG_QUERY_REFLECTION_KEY regQueryReflectionKey;
+    regQueryReflectionKey = (REG_QUERY_REFLECTION_KEY) GetProcAddress(
+                            GetModuleHandle(TEXT("advapibase.dll")),
+                            "RegQueryReflectionKey");	
+	if(regQueryReflectionKey == NULL){
+		FIXME("RegQueryReflectionKey(0x%p, 0x%p) UNIMPLEMENTED!\n",
+			  hBase, bIsReflectionDisabled);
+		return ERROR_CALL_NOT_IMPLEMENTED;
+	}else{
+		return regQueryReflectionKey(hBase,
+									 bIsReflectionDisabled);
+	}
+}
+
+LSTATUS RegCreateKeyTransactedA(
+  HKEY                        hKey,
+  LPCSTR                      lpSubKey,
+  DWORD                       Reserved,
+  LPSTR                       lpClass,
+  DWORD                       dwOptions,
+  REGSAM                      samDesired,
+  const LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+  PHKEY                       phkResult,
+  LPDWORD                     lpdwDisposition,
+  HANDLE                      hTransaction,
+  PVOID                       pExtendedParemeter
+)
+{
+	if(pExtendedParemeter){
+		return STATUS_INVALID_PARAMETER;
+	}
+	
+	return RegCreateKeyExA(hKey,
+						   lpSubKey,
+						   Reserved,
+						   lpClass,
+						   dwOptions,
+						   samDesired,
+						   lpSecurityAttributes,
+						   phkResult,
+						   lpdwDisposition);
+}
+
+LSTATUS RegCreateKeyTransactedW(
+  HKEY                        hKey,
+  LPCWSTR                     lpSubKey,
+  DWORD                       Reserved,
+  LPWSTR                      lpClass,
+  DWORD                       dwOptions,
+  REGSAM                      samDesired,
+  const LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+  PHKEY                       phkResult,
+  LPDWORD                     lpdwDisposition,
+  HANDLE                      hTransaction,
+  PVOID                       pExtendedParemeter
+)
+{
+	if(pExtendedParemeter){
+		return STATUS_INVALID_PARAMETER;
+	}
+	
+	return RegCreateKeyExW(hKey,
+						   lpSubKey,
+						   Reserved,
+						   lpClass,
+						   dwOptions,
+						   samDesired,
+						   lpSecurityAttributes,
+						   phkResult,
+						   lpdwDisposition);
+}
+
+LSTATUS RegDeleteKeyTransactedA(
+  HKEY   hKey,
+  LPCSTR lpSubKey,
+  REGSAM samDesired,
+  DWORD  Reserved,
+  HANDLE hTransaction,
+  PVOID  pExtendedParameter
+)
+{
+	if(pExtendedParameter){
+		return STATUS_INVALID_PARAMETER;
+	}
+
+	return RegDeleteKeyExA(hKey,
+						   lpSubKey,
+						   samDesired,
+						   Reserved);
+}
+
+LSTATUS RegDeleteKeyTransactedW(
+  HKEY   hKey,
+  LPCWSTR lpSubKey,
+  REGSAM samDesired,
+  DWORD  Reserved,
+  HANDLE hTransaction,
+  PVOID  pExtendedParameter
+)
+{
+	if(pExtendedParameter){
+		return STATUS_INVALID_PARAMETER;
+	}
+
+	return RegDeleteKeyExW(hKey,
+						   lpSubKey,
+						   samDesired,
+						   Reserved);
 }

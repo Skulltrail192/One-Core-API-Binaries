@@ -20,6 +20,23 @@ Revision History:
 
 #include "main.h"
 
+typedef BOOL (WINAPI *ELF_REPORT_EVENT_AND_SOURCE)(
+						 HANDLE,
+                         ULONG,
+                         PUNICODE_STRING,
+                         USHORT,
+                         USHORT,
+                         ULONG,
+                         PSID,
+                         PUNICODE_STRING,
+                         USHORT,
+                         ULONG,
+                         PUNICODE_STRING*,
+                         PVOID,
+                         USHORT,
+                         PULONG,
+                         PULONG);
+
 ULONG WINAPI
 EventWriteEndScenario(
     REGHANDLE RegHandle,
@@ -100,3 +117,54 @@ EnableTraceEx2(
 {
 	return ERROR_SUCCESS;
 }
+
+/*
+ * @implemented
+ */
+NTSTATUS
+NTAPI
+ElfReportEventAndSourceW(
+	IN HANDLE hEventLog,
+    IN ULONG Time,
+    IN PUNICODE_STRING ComputerName,
+    IN USHORT EventType,
+    IN USHORT EventCategory,
+    IN ULONG EventID,
+    IN PSID UserSID,
+    IN PUNICODE_STRING SourceName,
+    IN USHORT NumStrings,
+    IN ULONG DataSize,
+    IN PUNICODE_STRING* Strings,
+    IN PVOID Data,
+    IN USHORT Flags,
+    IN OUT PULONG RecordNumber,
+    IN OUT PULONG TimeWritten)
+{
+	ELF_REPORT_EVENT_AND_SOURCE elfReportEventAndSource;
+	
+    elfReportEventAndSource = (ELF_REPORT_EVENT_AND_SOURCE) GetProcAddress(
+                            GetModuleHandle(TEXT("advapibase.dll")),
+                            "ElfReportEventAndSourceW");
+    if (NULL == elfReportEventAndSource) 
+    {	
+
+		return STATUS_NOT_IMPLEMENTED;
+
+    }else{
+		return (NTSTATUS)elfReportEventAndSource(hEventLog, 
+											Time,
+											ComputerName,
+											EventType,
+											EventCategory,
+											EventID,
+											UserSID,
+											SourceName,
+											NumStrings,
+											DataSize,
+											Strings,
+											Data,
+											Flags,
+											RecordNumber,
+											TimeWritten);
+	}
+}	

@@ -23,6 +23,15 @@
 #include <wine/debug.h>
 #include <wine/unicode.h>
 
+
+/* FUNCTIONS ****************************************************************/
+FORCEINLINE
+BOOL
+IsHKCRKey(_In_ HKEY hKey)
+{
+    return ((ULONG_PTR)hKey & 0x2) != 0;
+}
+
 typedef PVOID IELF_HANDLE;
 
 typedef ULONG64 TRACEHANDLE, *PTRACEHANDLE;
@@ -118,3 +127,27 @@ typedef enum _EVENT_INFO_CLASS {
      if (status) SetLastError( RtlNtStatusToDosError( status ));
      return !status;
 }
+
+typedef enum _TAG_INFO_LEVEL {
+    TagInfoLevelNameFromTag = 1,
+} TAG_INFO_LEVEL;
+
+typedef enum _TAG_TYPE {
+    TagTypeService = 1,
+} TAG_TYPE;
+
+typedef struct _TAG_INFO_NAME_FROM_TAG_IN_PARAMS {
+    DWORD dwPid;
+    DWORD dwTag;
+} TAG_INFO_NAME_FROM_TAG_IN_PARAMS, *PTAG_INFO_NAME_FROM_TAG_IN_PARAMS;
+
+typedef struct _TAG_INFO_NAME_FROM_TAG_OUT_PARAMS {
+    TAG_TYPE TagType;
+    LPWSTR pszName;
+} TAG_INFO_NAME_FROM_TAG_OUT_PARAMS, *PTAG_INFO_NAME_FROM_TAG_OUT_PARAMS;
+
+typedef struct _TAG_INFO_NAME_FROM_TAG
+{
+    TAG_INFO_NAME_FROM_TAG_IN_PARAMS InParams;
+    TAG_INFO_NAME_FROM_TAG_OUT_PARAMS OutParams;
+} TAG_INFO_NAME_FROM_TAG, *PTAG_INFO_NAME_FROM_TAG;
