@@ -11,6 +11,8 @@ include_directories(${REACTOS_SOURCE_DIR}/win32ss/include)
 
 spec2def(user32_wrapper.dll user32_wrapper.spec)
 
+set(baseaddress_user32_wrapper                         0x77a20000) # reserved
+
 list(APPEND SOURCE
 	dib.c
 	display.c
