@@ -13,6 +13,7 @@ spec2def(advapi32_wrapper.dll advapi32_wrapper.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
     eventlog.c
+	hooks.c
 	main.c
 	perf.c
 	process.c

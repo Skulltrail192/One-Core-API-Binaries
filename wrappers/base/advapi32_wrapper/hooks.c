@@ -20,6 +20,8 @@ Revision History:
 
 #include "main.h"
 
+WINE_DEFAULT_DEBUG_CHANNEL(advapi32_hooks); 
+
 BOOL
 APIENTRY
 GetTokenInformationInternal (

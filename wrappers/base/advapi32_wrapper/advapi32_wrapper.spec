@@ -872,8 +872,8 @@
 ; @ stdcall EvtScopePublisher()
 ; @ stdcall EvtSetThreadCorrelationId()
 
-101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr); CreateRestrictedTokenInternal
-284 stdcall GetTokenInformation(ptr long ptr long ptr) ;GetTokenInformationInternal
-429 stdcall OpenProcessToken(long long ptr) ;OpenProcessTokenInternal
-434 stdcall OpenThreadToken(ptr long long ptr) ;OpenThreadTokenInternal
-583 stdcall SetTokenInformation(ptr long ptr long) ;SetTokenInformationInternal
+101 stdcall CreateRestrictedToken(long long long ptr long ptr long ptr ptr) CreateRestrictedTokenInternal
+284 stdcall GetTokenInformation(ptr long ptr long ptr) GetTokenInformationInternal
+429 stdcall OpenProcessToken(long long ptr) OpenProcessTokenInternal
+434 stdcall OpenThreadToken(ptr long long ptr) OpenThreadTokenInternal
+583 stdcall SetTokenInformation(ptr long ptr long) SetTokenInformationInternal
