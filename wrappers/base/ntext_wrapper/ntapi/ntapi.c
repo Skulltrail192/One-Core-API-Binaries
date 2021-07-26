@@ -83,18 +83,48 @@ NTSTATUS
 NTAPI
 NtRemoveIoCompletionEx(
     __in HANDLE IoCompletionHandle,
-    __out FILE_IO_COMPLETION_INFORMATION IoCompletionInformation,
+    __out FILE_IO_COMPLETION_INFORMATION *IoCompletionInformation,
     __in ULONG Count,
-    __out PVOID NumEntriesRemoved,
+    __out ULONG *NumEntriesRemoved,
     __in_opt PLARGE_INTEGER Timeout,
     __in BOOLEAN Alertable
 )
 {
-	return NtRemoveIoCompletion(IoCompletionHandle,
-								NULL,
-								NULL,
-								NULL,
-								Timeout);
+	PVOID CompletionKey;
+	PVOID CompletionValue;
+	IO_STATUS_BLOCK IoStatusBlock;
+	NTSTATUS Status;
+	ULONG i = 0;
+	
+    for (;;)
+    {
+        while (i < Count)
+        {
+			Status = NtRemoveIoCompletion(IoCompletionHandle,
+										 &CompletionKey,
+										 &CompletionValue,
+										 &IoStatusBlock,
+										  Timeout);
+                if (NT_SUCCESS(Status))
+                {
+                    IoCompletionInformation[i].KeyContext             = CompletionKey;
+                    IoCompletionInformation[i].ApcContext             = CompletionValue;
+                    IoCompletionInformation[i].IoStatusBlock.Information = IoStatusBlock.Information;
+                    IoCompletionInformation[i].IoStatusBlock.Status    = IoStatusBlock.Status;
+                }
+            if (Status != STATUS_SUCCESS) break;
+            ++i;
+        }
+        if (i || Status != STATUS_PENDING)
+        {
+            if (Status == STATUS_PENDING) Status = STATUS_SUCCESS;
+            break;
+        }
+        Status = NtWaitForSingleObject( IoCompletionHandle, Alertable, Timeout );
+        if (Status != WAIT_OBJECT_0) break;
+    }
+    *NumEntriesRemoved = i ? i : 1;
+    return Status;
 }
 
 NTSTATUS 
