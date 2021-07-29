@@ -66,45 +66,6 @@ HRESULT WINAPI SHGetPropertyStoreForWindow(
 static const GUID CLSID_Bind_Query = 
 {0x000214e6, 0x0000, 0x0000, {0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
-HRESULT 
-WINAPI 
-SHBindToObject(
-	IShellFolder *psf, 
-	struct _ITEMIDLIST_RELATIVE *pidl, 
-	IBindCtx *pbc, 
-	const IID *const riid, 
-	void **ppv
-)
-{
-  HRESULT callResult; // eax@2
-  BOOL verification; // zf@4
-  struct IShellFolderVtbl *bindObject; // ecx@4
-  int bindResult; // eax@5
-  HRESULT resp; // [sp+10h] [bp-Ch]@3
-  IShellFolder *ppshf; // [sp+14h] [bp-8h]@2
-
-  *ppv = 0;
-  if ( psf )
-    callResult = psf->lpVtbl->QueryInterface(psf, &IID_IShellFolder, (LPVOID *)&ppshf);
-  else
-    callResult = SHGetDesktopFolder(&ppshf);
-  resp = callResult;
-  if ( callResult >= 0 )
-  {
-    verification = _ILIsEmpty(pidl) == 0;
-    bindObject = ppshf->lpVtbl;
-    if ( verification )
-      bindResult = bindObject->BindToObject(ppshf, (LPCITEMIDLIST)pidl, pbc, riid, ppv);
-    else
-      bindResult = bindObject->QueryInterface(ppshf, riid, ppv);
-    resp = bindResult;
-    if ( bindResult >= 0 && !*ppv )
-      resp = E_FAIL;
-    ppshf->lpVtbl->Release(ppshf);
-  }
-  return resp;
-}
-
 HRESULT WINAPI SHBindToFolderIDListParent(
   _In_opt_   IShellFolder *psfRoot,
   _In_       PCUIDLIST_RELATIVE pidl,

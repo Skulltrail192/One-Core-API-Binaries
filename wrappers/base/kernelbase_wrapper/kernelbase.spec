@@ -1539,13 +1539,13 @@
 @ stdcall RegDeleteKeyExW(long wstr long long) advapibase.RegDeleteKeyExW 
 @ stdcall RegDeleteTreeA(long str)
 @ stdcall RegDeleteTreeW(long wstr)
-@ stdcall RegDeleteValueA(long str) advapibase.RegDeleteValueA
-@ stdcall RegDeleteValueW(long wstr) advapibase.RegDeleteValueW 
+@ stdcall RegDeleteValueA(long str)
+@ stdcall RegDeleteValueW(long wstr)
 @ stdcall RegDisablePredefinedCacheEx()
-@ stdcall RegEnumKeyExA(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumKeyExA 
-@ stdcall RegEnumKeyExW(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumKeyExW 
-@ stdcall RegEnumValueA(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumValueA 
-@ stdcall RegEnumValueW(long long ptr ptr ptr ptr ptr ptr) advapibase.RegEnumValueW 
+@ stdcall RegEnumKeyExA(long long ptr ptr ptr ptr ptr ptr)
+@ stdcall RegEnumKeyExW(long long ptr ptr ptr ptr ptr ptr)
+@ stdcall RegEnumValueA(long long ptr ptr ptr ptr ptr ptr)
+@ stdcall RegEnumValueW(long long ptr ptr ptr ptr ptr ptr)
 @ stdcall RegFlushKey(long) advapibase.RegFlushKey 
 @ stdcall RegGetKeySecurity(long long ptr ptr) advapibase.RegGetKeySecurity 
 @ stdcall RegGetValueA(long str str long ptr ptr ptr) advapibase.RegGetValueA 
@@ -1558,13 +1558,13 @@
 @ stdcall RegLoadMUIStringW(long wstr wstr long ptr long wstr)
 @ stdcall RegNotifyChangeKeyValue(long long long long long) advapibase.RegNotifyChangeKeyValue 
 @ stdcall RegOpenCurrentUser(long ptr) advapibase.RegOpenCurrentUser 
-@ stdcall RegOpenKeyExA(long str long long ptr) advapibase.RegOpenKeyExA 
-@ stdcall RegOpenKeyExW(long wstr long long ptr) advapibase.RegOpenKeyExW 
+@ stdcall RegOpenKeyExA(long str long long ptr)
+@ stdcall RegOpenKeyExW(long wstr long long ptr)
 @ stdcall RegOpenUserClassesRoot(ptr long long ptr) advapibase.RegOpenUserClassesRoot 
-@ stdcall RegQueryInfoKeyA(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapibase.RegQueryInfoKeyA 
-@ stdcall RegQueryInfoKeyW(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr) advapibase.RegQueryInfoKeyW 
-@ stdcall RegQueryValueExA(long str ptr ptr ptr ptr) advapibase.RegQueryValueExA
-@ stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr) advapibase.RegQueryValueExW 
+@ stdcall RegQueryInfoKeyA(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr)
+@ stdcall RegQueryInfoKeyW(long ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr)
+@ stdcall RegQueryValueExA(long str ptr ptr ptr ptr)
+@ stdcall RegQueryValueExW(long wstr ptr ptr ptr ptr)
 @ stdcall RegRestoreKeyA(long str long) advapibase.RegRestoreKeyA 
 @ stdcall RegRestoreKeyW(long wstr long) advapibase.RegRestoreKeyW 
 @ stdcall RegSaveKeyExA(ptr str ptr long) advapibase.RegSaveKeyExA 
@@ -1572,8 +1572,8 @@
 @ stdcall RegSetKeySecurity(long long ptr) advapibase.RegSetKeySecurity 
 @ stdcall RegSetKeyValueA(long str str long ptr long)
 @ stdcall RegSetKeyValueW(long wstr wstr long ptr long)
-@ stdcall RegSetValueExA(long str long long ptr long) advapibase.RegSetValueExA 
-@ stdcall RegSetValueExW(long wstr long long ptr long) advapibase.RegSetValueExW 
+@ stdcall RegSetValueExA(long str long long ptr long) 
+@ stdcall RegSetValueExW(long wstr long long ptr long)
 @ stdcall RegUnLoadKeyA(long str) advapibase.RegUnLoadKeyA 
 @ stdcall RegUnLoadKeyW(long wstr) advapibase.RegUnLoadKeyW
 @ stdcall RevertToSelf() advapibase.RevertToSelf

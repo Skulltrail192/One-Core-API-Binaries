@@ -457,38 +457,20 @@ SetThreadStackGuarantee(
 	if(pSetThreadStackGuarantee){
 		return pSetThreadStackGuarantee(StackSizeInBytes);
 	}else{
-		PTEB Teb = NtCurrentTeb();
-		ULONG GuaranteedStackBytes;
-		ULONG AllocationSize;
+		ULONG prev_size = NtCurrentTeb()->GuaranteedStackBytes;
+		ULONG new_size = (*StackSizeInBytes + 4095) & ~4095;
 
-		if (!StackSizeInBytes)
+		/* at least 2 pages on 64-bit */
+		if (sizeof(void *) > sizeof(int) && new_size) new_size = max( new_size, 8192 );
+
+		*StackSizeInBytes = prev_size;
+		if (new_size >= (char *)NtCurrentTeb()->NtTib.StackBase - (char *)NtCurrentTeb()->DeallocationStack)
 		{
-			SetLastError(ERROR_INVALID_PARAMETER);
+			SetLastError( ERROR_INVALID_PARAMETER );
 			return FALSE;
 		}
-
-		AllocationSize = *StackSizeInBytes;
-
-		/* Retrieve the current stack size */
-		GuaranteedStackBytes = Teb->GuaranteedStackBytes;
-
-		/* Return the size of the previous stack */
-		*StackSizeInBytes = GuaranteedStackBytes;
-
-		/*
-		 * If the new stack size is either zero or is less than the current size,
-		 * the previous stack size is returned and we return success.
-		 */
-		if ((AllocationSize == 0) || (AllocationSize < GuaranteedStackBytes))
-		{
-			return TRUE;
-		}
-
-		// FIXME: Unimplemented!
-		DbgPrint("SetThreadStackGuarantee::Unimplemented\n");
-
-		// return TRUE;
-		return FALSE;
+		if (new_size > prev_size) NtCurrentTeb()->GuaranteedStackBytes = (new_size + 4095) & ~4095;
+		return TRUE;
 	}    
 }
 

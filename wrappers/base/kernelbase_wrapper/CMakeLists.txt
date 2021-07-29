@@ -94,12 +94,11 @@ set_subsystem(kernel32 console)
 
 target_link_libraries(kernelbase wine ${PSEH_LIB})
 
-add_delay_importlibs(kernelbase shlwapi idndl)
 if(ARCH STREQUAL "i386")
-	add_importlibs(kernelbase kernelex ntext advapibase user32)
+	add_importlibs(kernelbase kernelex ntext advapibase user32 shlwapi idndl)
 
 elseif(ARCH STREQUAL "amd64")
-	add_importlibs(kernelbase kernel32 ntext advapibase user32)
+	add_importlibs(kernelbase kernel32 ntext advapibase user32 shlwapi idndl)
 endif()
 
 add_cd_file(TARGET kernelbase DESTINATION reactos/system32 FOR all)
