@@ -44,6 +44,7 @@
 #include <shlwapi.h>
 #include <psapi.h>
 #include <timezoneapi.h>
+#include <wine/heap.h>
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 

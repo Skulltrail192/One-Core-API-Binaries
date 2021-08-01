@@ -1440,7 +1440,7 @@
 @ stdcall AccessCheckAndAuditAlarmW(wstr ptr wstr wstr ptr long ptr long ptr ptr ptr) advapibase.AccessCheckAndAuditAlarmW
 @ stdcall AccessCheckByType(ptr ptr long long ptr long ptr ptr ptr ptr ptr) advapibase.AccessCheckByType
 @ stdcall AccessCheckByTypeAndAuditAlarmW(wstr ptr wstr wstr ptr ptr long long long ptr long ptr long ptr ptr ptr) advapibase.AccessCheckByTypeAndAuditAlarmW
-@ stdcall AccessCheckByTypeResultList(ptr ptr ptr long ptr long ptr ptr ptr ptr ptr) advapibase.AccessCheckByTypeResultList
+@ stdcall AccessCheckByTypeResultList(ptr ptr ptr long ptr long ptr ptr ptr ptr ptr)
 @ stdcall AccessCheckByTypeResultListAndAuditAlarmByHandleW(wstr ptr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr) advapibase.AccessCheckByTypeResultListAndAuditAlarmByHandleW
 @ stdcall AccessCheckByTypeResultListAndAuditAlarmW(wstr ptr wstr wstr ptr long long long long ptr long ptr long ptr ptr ptr) advapibase.AccessCheckByTypeResultListAndAuditAlarmW
 @ stdcall AddAccessAllowedAce(ptr long long ptr) advapibase.AddAccessAllowedAce
@@ -1531,8 +1531,8 @@
 @ stdcall OpenThreadToken(ptr long long ptr) advapibase.OpenThreadToken
 @ stdcall RegCloseKey(ptr) advapibase.RegCloseKey 
 @ stdcall RegCopyTreeW(ptr str ptr)
-@ stdcall RegCreateKeyExA(long str long ptr long long ptr ptr ptr) advapibase.RegCreateKeyExA 
-@ stdcall RegCreateKeyExW(long wstr long ptr long long ptr ptr ptr) advapibase.RegCreateKeyExW 
+@ stdcall RegCreateKeyExA(long str long ptr long long ptr ptr ptr)
+@ stdcall RegCreateKeyExW(long wstr long ptr long long ptr ptr ptr)
 @ stdcall RegDeleteKeyValueA(long str str)
 @ stdcall RegDeleteKeyValueW(long wstr wstr) advapibase.RegDeleteKeyValueW
 @ stdcall RegDeleteKeyExA(long str long long) advapibase.RegDeleteKeyExA 
@@ -1572,8 +1572,8 @@
 @ stdcall RegSetKeySecurity(long long ptr) advapibase.RegSetKeySecurity 
 @ stdcall RegSetKeyValueA(long str str long ptr long)
 @ stdcall RegSetKeyValueW(long wstr wstr long ptr long)
-@ stdcall RegSetValueExA(long str long long ptr long) 
-@ stdcall RegSetValueExW(long wstr long long ptr long)
+@ stdcall RegSetValueExA(long str long long ptr long) advapibase.RegSetValueExA ;Need use native Windows RegSetValueExA from advapi32. Reactos and wine's version may corrupt and cause error on .Net Framework 4.5.1+. Error on .Net Framework: Unhandled Exception: System.AccessViolationException: Attempted to read or write protected memory. This is often an indication that other memory is corrupt.at System.AddIn.Hosting.Program.Main(String[] args)
+@ stdcall RegSetValueExW(long wstr long long ptr long) advapibase.RegSetValueExW
 @ stdcall RegUnLoadKeyA(long str) advapibase.RegUnLoadKeyA 
 @ stdcall RegUnLoadKeyW(long wstr) advapibase.RegUnLoadKeyW
 @ stdcall RevertToSelf() advapibase.RevertToSelf

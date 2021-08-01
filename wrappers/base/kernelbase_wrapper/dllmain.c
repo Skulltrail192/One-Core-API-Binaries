@@ -47,11 +47,11 @@ BaseDllInitialize(
         {
             /* Insert more dll attach stuff here! */
 			kernel32_handle = GetModuleHandleW(L"kernelex");
-			//InitializeCriticalForLocaleInfo();
+			InitializeCriticalForLocaleInfo();
 			//RegInitialize();
 			
 			//Initialize Locale
-			//init_locale();
+			init_locale();
 			
 			BaseDllTag = RtlCreateTagHeap( RtlProcessHeap(),
                                        0,
