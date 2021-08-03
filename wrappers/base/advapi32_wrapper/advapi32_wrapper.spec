@@ -66,8 +66,8 @@
 66 stdcall CommandLineFromMsiDescriptor(wstr ptr ptr)
 67 stdcall ComputeAccessTokenFromCodeAuthzLevel(ptr long)
 68 stdcall ControlService(long long ptr)
-69 stdcall ControlTraceA(double str ptr long) ntdll.EtwControlTraceA
-70 stdcall ControlTraceW(double wstr ptr long) ntdll.EtwControlTraceW
+69 stdcall ControlTraceA(double str ptr long) #ntdll.EtwControlTraceA ; Windows XP doesn't have this function on Ntdll
+70 stdcall ControlTraceW(double wstr ptr long) #ntdll.EtwControlTraceW ; Windows XP doesn't have this function on Ntdll
 71 stdcall ConvertAccessToSecurityDescriptorA(ptr ptr str str ptr)
 72 stdcall ConvertAccessToSecurityDescriptorW(ptr ptr wstr wstr ptr)
 73 stdcall ConvertSDToStringSDRootDomainA(long ptr long long str long)
@@ -99,7 +99,7 @@
 99 stdcall CreateProcessWithLogonW(wstr wstr wstr long wstr wstr long ptr wstr ptr ptr)
 102 stdcall CreateServiceA(long str str long long long long str str ptr str str str)
 103 stdcall CreateServiceW(long wstr wstr long long long long wstr wstr ptr wstr wstr wstr)
-104 stdcall CreateTraceInstanceId(ptr ptr) ntdll.EtwCreateTraceInstanceId
+104 stdcall CreateTraceInstanceId(ptr ptr) #ntdll.EtwCreateTraceInstanceId ; Windows XP doesn't have this function on Ntdll
 105 stdcall CreateWellKnownSid(long ptr ptr ptr)
 106 stdcall CredDeleteA(str long long)
 107 stdcall CredDeleteW(wstr long long)
@@ -198,7 +198,7 @@
 200 stdcall ElfRegisterEventSourceW(ptr ptr ptr)
 201 stdcall ElfReportEventA(long long long long ptr long long ptr ptr long ptr ptr)
 203 stdcall ElfReportEventW(long long long long ptr long long ptr ptr long ptr ptr)
-204 stdcall EnableTrace(long long long ptr double) ntdll.EtwEnableTrace
+204 stdcall EnableTrace(long long long ptr double) #ntdll.EtwEnableTrace ; Windows XP doesn't have this function on Ntdll
 205 stdcall EncryptFileA(str)
 206 stdcall EncryptFileW(wstr)
 207 stdcall EncryptedFileKeyInfo(long long long)
@@ -210,15 +210,15 @@
 213 stdcall EnumServicesStatusExA(long long long long ptr long ptr ptr ptr str)
 214 stdcall EnumServicesStatusExW(long long long long ptr long ptr ptr ptr wstr)
 215 stdcall EnumServicesStatusW(long long long ptr long ptr ptr ptr)
-216 stdcall EnumerateTraceGuids(ptr long ptr) ntdll.EtwEnumerateTraceGuids
+216 stdcall EnumerateTraceGuids(ptr long ptr) #ntdll.EtwEnumerateTraceGuids ; Windows XP doesn't have this function on Ntdll
 217 stdcall EqualDomainSid(ptr ptr ptr)
 218 stdcall EqualPrefixSid(ptr ptr)
 219 stdcall EqualSid(ptr ptr)
 220 stdcall FileEncryptionStatusA(str ptr)
 221 stdcall FileEncryptionStatusW(wstr ptr)
 222 stdcall FindFirstFreeAce(ptr ptr)
-223 stdcall FlushTraceA(double str ptr) ntdll.EtwFlushTraceA
-224 stdcall FlushTraceW(double wstr ptr) ntdll.EtwFlushTraceW
+223 stdcall FlushTraceA(double str ptr) #ntdll.EtwFlushTraceA ; Windows XP doesn't have this function on Ntdll
+224 stdcall FlushTraceW(double wstr ptr) #ntdll.EtwFlushTraceW ; Windows XP doesn't have this function on Ntdll
 225 stdcall FreeEncryptedFileKeyInfo(long)
 226 stdcall FreeEncryptionCertificateHashList(ptr)
 227 stdcall FreeInheritedFromArray(ptr long ptr)
@@ -278,9 +278,9 @@
 281 stdcall GetSidLengthRequired(long)
 282 stdcall GetSidSubAuthority(ptr long)
 283 stdcall GetSidSubAuthorityCount(ptr)
-285 stdcall GetTraceEnableFlags(double) ntdll.EtwGetTraceEnableFlags
-286 stdcall GetTraceEnableLevel(double) ntdll.EtwGetTraceEnableLevel
-287 stdcall GetTraceLoggerHandle(ptr) ntdll.EtwGetTraceLoggerHandle
+285 stdcall GetTraceEnableFlags(double) #ntdll.EtwGetTraceEnableFlags ; Windows XP doesn't have this function on Ntdll
+286 stdcall GetTraceEnableLevel(double) #ntdll.EtwGetTraceEnableLevel ; Windows XP doesn't have this function on Ntdll
+287 stdcall GetTraceLoggerHandle(ptr) #ntdll.EtwGetTraceLoggerHandle ; Windows XP doesn't have this function on Ntdll
 288 stdcall GetTrusteeFormA(ptr)
 289 stdcall GetTrusteeFormW(ptr)
 290 stdcall GetTrusteeNameA(ptr)
@@ -432,8 +432,8 @@
 439 stdcall PrivilegedServiceAuditAlarmW(wstr wstr long ptr long)
 440 stdcall ProcessIdleTasks()
 441 stdcall ProcessTrace(ptr long ptr ptr)
-442 stdcall QueryAllTracesA(ptr long ptr) ntdll.EtwQueryAllTracesA
-443 stdcall QueryAllTracesW(ptr long ptr) ntdll.EtwQueryAllTracesW
+442 stdcall QueryAllTracesA(ptr long ptr) #ntdll.EtwQueryAllTracesA ; Windows XP doesn't have this function on Ntdll
+443 stdcall QueryAllTracesW(ptr long ptr) #ntdll.EtwQueryAllTracesW ; Windows XP doesn't have this function on Ntdll
 444 stdcall QueryRecoveryAgentsOnEncryptedFile(wstr ptr)
 445 stdcall QueryServiceConfig2A(long long ptr long ptr)
 446 stdcall QueryServiceConfig2W(long long ptr long ptr)
@@ -444,8 +444,8 @@
 451 stdcall QueryServiceObjectSecurity(long long ptr long ptr)
 452 stdcall QueryServiceStatus(long ptr)
 453 stdcall QueryServiceStatusEx(long long ptr long ptr)
-454 stdcall QueryTraceA(double str ptr) ntdll.EtwQueryTraceA
-455 stdcall QueryTraceW(double str ptr) ntdll.EtwQueryTraceA
+454 stdcall QueryTraceA(double str ptr) #ntdll.EtwQueryTraceA ; Windows XP doesn't have this function on Ntdll
+455 stdcall QueryTraceW(double str ptr) #ntdll.EtwQueryTraceA ; Windows XP doesn't have this function on Ntdll
 456 stdcall QueryUsersOnEncryptedFile(wstr ptr)
 457 stdcall ReadEncryptedFileRaw(ptr ptr ptr)
 458 stdcall ReadEventLogA(long long long ptr long ptr ptr)
@@ -510,8 +510,8 @@
 526 stdcall RegisterServiceCtrlHandlerExA(str ptr ptr)
 527 stdcall RegisterServiceCtrlHandlerExW(wstr ptr ptr)
 528 stdcall RegisterServiceCtrlHandlerW(wstr ptr)
-529 stdcall RegisterTraceGuidsA(ptr ptr ptr long ptr str str ptr) ntdll.EtwRegisterTraceGuidsA
-530 stdcall RegisterTraceGuidsW(ptr ptr ptr long ptr wstr wstr ptr) ntdll.EtwRegisterTraceGuidsW
+529 stdcall RegisterTraceGuidsA(ptr ptr ptr long ptr str str ptr) #ntdll.EtwRegisterTraceGuidsA ; Windows XP doesn't have this function on Ntdll
+530 stdcall RegisterTraceGuidsW(ptr ptr ptr long ptr wstr wstr ptr) #ntdll.EtwRegisterTraceGuidsW ; Windows XP doesn't have this function on Ntdll
 531 stdcall RemoveTraceCallback(ptr)
 532 stdcall RemoveUsersFromEncryptedFile(wstr ptr)
 533 stdcall ReportEventA(long long long long ptr long long str ptr)
@@ -570,10 +570,10 @@
 587 stdcall StartServiceCtrlDispatcherA(ptr)
 588 stdcall StartServiceCtrlDispatcherW(ptr)
 589 stdcall StartServiceW(long long ptr)
-590 stdcall StartTraceA(ptr str ptr) ntdll.EtwStartTraceA
-591 stdcall StartTraceW(ptr wstr ptr) ntdll.EtwStartTraceW
-592 stdcall StopTraceA(double str ptr) ntdll.EtwStopTraceA
-593 stdcall StopTraceW(double wstr ptr) ntdll.EtwStopTraceA
+590 stdcall StartTraceA(ptr str ptr) #ntdll.EtwStartTraceA ; Windows XP doesn't have this function on Ntdll
+591 stdcall StartTraceW(ptr wstr ptr) #ntdll.EtwStartTraceW ; Windows XP doesn't have this function on Ntdll
+592 stdcall StopTraceA(double str ptr) #ntdll.EtwStopTraceA ; Windows XP doesn't have this function on Ntdll
+593 stdcall StopTraceW(double wstr ptr) #ntdll.EtwStopTraceA ; Windows XP doesn't have this function on Ntdll
 594 stdcall SystemFunction001(ptr ptr ptr)
 595 stdcall SystemFunction002(ptr ptr ptr)
 596 stdcall SystemFunction003(ptr ptr)
@@ -612,10 +612,10 @@
 629 stdcall SystemFunction036(ptr long) # RtlGenRandom
 630 stdcall SystemFunction040(ptr long long) # RtlEncryptMemory
 631 stdcall SystemFunction041(ptr long long) # RtlDecryptMemory
-632 stdcall TraceEvent(double ptr) ntdll.EtwTraceEvent
-633 stdcall TraceEventInstance(double ptr ptr ptr) ntdll.EtwTraceEventInstance
-634 varargs TraceMessage(ptr long ptr long) ntdll.EtwTraceMessage
-635 stdcall TraceMessageVa(double long ptr long ptr) ntdll.EtwTraceMessageVa
+632 stdcall TraceEvent(double ptr) #ntdll.EtwTraceEvent ; Windows XP doesn't have this function on Ntdll
+633 stdcall TraceEventInstance(double ptr ptr ptr) #ntdll.EtwTraceEventInstance ; Windows XP doesn't have this function on Ntdll
+634 varargs TraceMessage(ptr long ptr long) #ntdll.EtwTraceMessage ; Windows XP doesn't have this function on Ntdll
+635 stdcall TraceMessageVa(double long ptr long ptr) #ntdll.EtwTraceMessageVa ; Windows XP doesn't have this function on Ntdll
 636 stdcall TreeResetNamedSecurityInfoA(str ptr ptr ptr ptr ptr ptr long ptr ptr ptr)
 637 stdcall TreeResetNamedSecurityInfoW(wstr long long ptr ptr ptr ptr long ptr long ptr)
 638 stdcall TrusteeAccessToObjectA(str long str ptr long ptr)
@@ -623,9 +623,9 @@
 640 stdcall UninstallApplication(ptr long)
 641 stdcall UnlockServiceDatabase(ptr)
 642 stdcall UnregisterIdleTask(long ptr ptr)
-643 stdcall UnregisterTraceGuids(double) ntdll.EtwUnregisterTraceGuids
-644 stdcall UpdateTraceA(double str ptr) ntdll.EtwUpdateTraceA
-645 stdcall UpdateTraceW(double wstr ptr) ntdll.EtwUpdateTraceW
+643 stdcall UnregisterTraceGuids(double) #ntdll.EtwUnregisterTraceGuids ; Windows XP doesn't have this function on Ntdll
+644 stdcall UpdateTraceA(double str ptr) #ntdll.EtwUpdateTraceA ; Windows XP doesn't have this function on Ntdll
+645 stdcall UpdateTraceW(double wstr ptr) #ntdll.EtwUpdateTraceW ; Windows XP doesn't have this function on Ntdll
 646 stdcall WdmWmiServiceMain(ptr long)
 647 stdcall WmiCloseBlock(ptr)
 648 stdcall WmiCloseTraceWithCursor(ptr)
@@ -643,8 +643,8 @@
 660 stdcall WmiGetTraceHeader(long long long)
 661 stdcall WmiMofEnumerateResourcesA(long long long)
 662 stdcall WmiMofEnumerateResourcesW(long long long)
-663 stdcall WmiNotificationRegistrationA(ptr long ptr long long) ntdll.EtwNotificationRegistrationA
-664 stdcall WmiNotificationRegistrationW(ptr long ptr long long) ntdll.EtwNotificationRegistrationW
+663 stdcall WmiNotificationRegistrationA(ptr long ptr long long) #ntdll.EtwNotificationRegistrationA ; Windows XP doesn't have this function on Ntdll
+664 stdcall WmiNotificationRegistrationW(ptr long ptr long long) #ntdll.EtwNotificationRegistrationW ; Windows XP doesn't have this function on Ntdll
 665 stdcall WmiOpenBlock(long long long)
 666 stdcall WmiOpenTraceWithCursor(long long) 
 667 stdcall WmiParseTraceEvent(long long long long long)
