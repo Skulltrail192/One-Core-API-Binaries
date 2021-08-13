@@ -156,7 +156,7 @@ NtAlpcConnectPort(
 						 &PortAttributes->SecurityQos, 
 						 NULL, 
 						 NULL, 
-						 &PortAttributes->MaxMessageLength,
+						 (PULONG)&PortAttributes->MaxMessageLength,
 						 NULL,
 						 NULL);
 						 
@@ -238,7 +238,7 @@ NtAlpcCreateSectionView(
 	
 	DbgPrint("NtAlpcCreateSectionView called\n");
 	
-	Status = NtMapViewOfSection(ViewAttributes->SectionHandle, PortHandle, ViewAttributes->ViewBase, 0, 0, 0, (PULONG)ViewAttributes->ViewSize, 0, 0, 0);
+	Status = NtMapViewOfSection(ViewAttributes->SectionHandle, PortHandle, ViewAttributes->ViewBase, 0, 0, 0, (PSIZE_T)ViewAttributes->ViewSize, 0, 0, 0);
 	
 	DbgPrint("Status: %08x\n",Status);	
 	

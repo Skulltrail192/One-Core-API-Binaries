@@ -84,20 +84,20 @@ static BOOL OpenGLEnable(void)
                  thread-safe */
     }
 
-
-    if (!OpenGLInitFunction("wglChoosePixelFormat", &glChoosePixelFormat))
+    /* The cast is required on x64, because FARPROC has INT_PTR sized return */
+    if (!OpenGLInitFunction("wglChoosePixelFormat", (FARPROC*)&glChoosePixelFormat))
         Ret = FALSE;
 
-    if (!OpenGLInitFunction("wglSetPixelFormat", &glSetPixelFormat))
+    if (!OpenGLInitFunction("wglSetPixelFormat", (FARPROC*)&glSetPixelFormat))
         Ret = FALSE;
 
-    if (!OpenGLInitFunction("wglSwapBuffers", &glSwapBuffers))
+    if (!OpenGLInitFunction("wglSwapBuffers", (FARPROC*)&glSwapBuffers))
         Ret = FALSE;
 
-    if (!OpenGLInitFunction("wglDescribePixelFormat", &glDescribePixelFormat))
+    if (!OpenGLInitFunction("wglDescribePixelFormat", (FARPROC*)&glDescribePixelFormat))
         Ret = FALSE;
 
-    if (!OpenGLInitFunction("wglGetPixelFormat", &glGetPixelFormat))
+    if (!OpenGLInitFunction("wglGetPixelFormat", (FARPROC*)&glGetPixelFormat))
         Ret = FALSE;
 
     return Ret;
@@ -198,32 +198,5 @@ SwapBuffers(HDC  hdc)
 /*
 	Do this here for now.
 */
-
-/*
- * @implemented
- */
-UINT
-WINAPI
-GetEnhMetaFilePixelFormat(
-    HENHMETAFILE			hemf,
-    UINT				cbBuffer,
-    PIXELFORMATDESCRIPTOR	*ppfd
-)
-{
-    ENHMETAHEADER pemh;
-
-    if(GetEnhMetaFileHeader(hemf, sizeof(ENHMETAHEADER), &pemh))
-    {
-        if(pemh.bOpenGL)
-        {
-            if(pemh.cbPixelFormat)
-            {
-                memcpy((void*)ppfd, UlongToPtr(pemh.offPixelFormat), cbBuffer );
-                return(pemh.cbPixelFormat);
-            }
-        }
-    }
-    return(0);
-}
 
 /* EOF */

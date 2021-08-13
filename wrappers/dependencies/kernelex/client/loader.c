@@ -626,7 +626,7 @@ GetModuleFileNameW(HINSTANCE hModule,
         Peb = NtCurrentPeb ();
 
         /* Acquire a loader lock */
-        LdrLockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_RAISE_ON_ERRORS, NULL, &Cookie);
+        LdrLockLoaderLock(LDR_LOCK_LOADER_LOCK_FLAG_RAISE_ON_ERRORS, NULL, (PULONG_PTR)&Cookie);
 
         /* Traverse the module list */
         ModuleListHead = &Peb->Ldr->InLoadOrderModuleList;
@@ -735,7 +735,7 @@ BasepGetModuleHandleExW(BOOLEAN NoLock, DWORD dwPublicFlags, LPCWSTR lpwModuleNa
     /* Acquire lock if necessary */
     if (!NoLock)
     {
-        Status = LdrLockLoaderLock(0, NULL, &Cookie);
+        Status = LdrLockLoaderLock(0, NULL, (PULONG_PTR)&Cookie);
         if (!NT_SUCCESS(Status))
         {
             /* Fail */

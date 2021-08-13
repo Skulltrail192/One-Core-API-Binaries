@@ -58,7 +58,7 @@ extern "C" BOOL WINAPI SHCreateFromDesktop(PEXPLORER_CMDLINE_PARSE_RESULTS parse
 /*************************************************************************
  * SHExplorerParseCmdLine		[BROWSEUI.107]
  */
-extern "C" UINT WINAPI SHExplorerParseCmdLine(PEXPLORER_CMDLINE_PARSE_RESULTS pParseResults)
+extern "C" UINT_PTR WINAPI SHExplorerParseCmdLine(PEXPLORER_CMDLINE_PARSE_RESULTS pParseResults)
 {
     return -1;
 }

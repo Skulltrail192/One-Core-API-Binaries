@@ -91,7 +91,8 @@
 #define IApplicationAssociationRegistration_QueryInterface( x, p1, p2 ) \
             (x)->lpVtbl->QueryInterface( x, p1, p2 )
 #define IEnumAssocHandlers_AddRef( x ) \
-            (x)->lpVtbl->AddRef( x )			
+            (x)->lpVtbl->AddRef( x )	
+			
 
 typedef BYTE PIDLTYPE;
 
@@ -123,4 +124,13 @@ PSFormatForDisplay(
   _In_   PROPDESC_FORMAT_FLAGS pdfFlags,
   _Out_  LPWSTR pwszText,
   _In_   DWORD cchText
+);
+
+HRESULT 
+WINAPI 
+SHGetKnownFolderIDList(
+	REFKNOWNFOLDERID rfid, 
+	DWORD flags, 
+	HANDLE token, 
+	PIDLIST_ABSOLUTE *pidl
 );

@@ -143,6 +143,10 @@ HKCR
         {
             InprocServer32 = s '%MODULE%' { val ThreadingModel = s 'Both' }
         }
+        '{317D06E8-5F24-433D-BDF7-79CE68D8ABC2}' = s 'WIC Imaging Factory 2'
+        {
+            InprocServer32 = s '%MODULE%' { val ThreadingModel = s 'Both' }
+        }
         '{6B462062-7CBF-400D-9FDB-813DD10F2778}' = s 'WIC BMP Decoder'
         {
             InprocServer32 = s '%MODULE%' { val ThreadingModel = s 'Both' }

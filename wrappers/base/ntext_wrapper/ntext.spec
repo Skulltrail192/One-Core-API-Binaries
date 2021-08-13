@@ -244,7 +244,7 @@
 @ stdcall NtQueryInformationPort(ptr long ptr long ptr)
 @ stdcall NtQueryInformationProcess(long long ptr long ptr)
 @ stdcall NtQueryInformationThread(long long ptr long ptr)
-@ stdcall NtQueryInformationToken(long long ptr long ptr) NtQueryInformationTokenInternal #Wrapper needed for Integrity Level Introduzed on Vista
+@ stdcall NtQueryInformationToken(long long ptr long ptr) NtQueryInformationTokenInternal #Wrapper needed for Integrity Level Introduced on Vista
 @ stdcall NtQueryInstallUILanguage(ptr)
 @ stdcall NtQueryIntervalProfile(long ptr)
 @ stdcall NtQueryIoCompletion(long long ptr long ptr)
@@ -1427,7 +1427,7 @@
 @ stdcall -arch=x86_64 LdrGetKnownDllSectionHandle(wstr long ptr) ntdll.LdrGetKnownDllSectionHandle
 @ stdcall -arch=x86_64 LdrProcessInitializationComplete() ntdll.LdrProcessInitializationComplete
 @ stdcall -arch=x86_64 RtlLookupFunctionTable(int64 ptr ptr) ntdll.RtlLookupFunctionTable
-@ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr long) ntdll.RtlCopyMemory
+@ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr int64) memmove
 @ stdcall -arch=x86_64 RtlCopyMemoryNonTemporal(ptr ptr long) ntdll.RtlCopyMemoryNonTemporal
 @ stdcall -arch=x86_64 RtlGetFunctionTableListHead() ntdll.RtlGetFunctionTableListHead
 

@@ -18,7 +18,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "objbase.h"
+
 #include "wincodecs_private.h"
+
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(wincodecs);
 
 typedef struct {
     IWICPalette IWICPalette_iface;
@@ -654,8 +669,8 @@ static HRESULT WINAPI PaletteImpl_InitializeFromBitmap(IWICPalette *palette,
     hr = IWICBitmapSource_GetPixelFormat(source, &format);
     if (hr != S_OK) return hr;
 
-    /* For interoperability with gdiplus where PixelFormat24bppRGB actully stored
-     * as BGR (and there is no a corresponding RGB format) we have to use 24bppBGR
+    /* For interoperability with gdiplus where PixelFormat24bppRGB is actually stored
+     * as BGR (and there is no corresponding RGB format), we have to use 24bppBGR
      * to avoid format conversions.
      */
     if (!IsEqualGUID(&format, &GUID_WICPixelFormat24bppBGR))
@@ -666,7 +681,7 @@ static HRESULT WINAPI PaletteImpl_InitializeFromBitmap(IWICPalette *palette,
     else
         rgb24_source = source;
 
-    hr = ComponentFactory_CreateInstance(&IID_IWICImagingFactory, (void **)&factory);
+    hr = ImagingFactory_CreateInstance(&IID_IWICImagingFactory, (void **)&factory);
     if (hr != S_OK) goto fail;
 
     hr = IWICImagingFactory_CreateBitmapFromSource(factory, rgb24_source, WICBitmapCacheOnLoad, &rgb24_bitmap);

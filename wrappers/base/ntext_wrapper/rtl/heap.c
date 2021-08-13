@@ -41,7 +41,7 @@ RtlpFreeMemory(
 PVOID 
 NTAPI 
 RtlpAllocateMemory( 	
-	ULONG  	Bytes,
+	SIZE_T  	Bytes,
 	ULONG  	Tag 
 ) 		
 {

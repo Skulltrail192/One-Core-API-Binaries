@@ -260,6 +260,12 @@ struct threadmbcinfostruct;
 typedef struct threadlocaleinfostruct *pthreadlocinfo;
 typedef struct threadmbcinfostruct *pthreadmbcinfo;
 
+// typedef struct localeinfo_struct
+// {
+    // pthreadlocinfo locinfo;
+    // pthreadmbcinfo mbcinfo;
+// } _locale_tstruct, *_locale_t;
+
 #ifndef _TAGLC_ID_DEFINED
 typedef struct tagLC_ID {
     unsigned short wLanguage;

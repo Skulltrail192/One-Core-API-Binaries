@@ -45,6 +45,7 @@
 #include <internal/wine/msvcrt.h>
 #include <windows.h>
 #include <stdio.h>
+#include <safecrt.h>
 
 #include <internal/rterror.h>
 #include <internal/locale.h>
@@ -52,8 +53,6 @@
 #include <locale.h>
 #include <mbctype.h>
 #include <unicode.h>
-
-#define MSVCRT_CHECK_PMT(x) (x)
 
 #define MSVCRT_INT_MAX     0x7fffffff
 #define MSVCRT_LONG_MAX    0x7fffffff
@@ -75,6 +74,43 @@
 #else
 #define MSVCRT_SIZE_MAX MSVCRT_ULONG_MAX
 #endif
+
+#define MSVCRT_EPERM   1
+#define MSVCRT_ENOENT  2
+#define MSVCRT_ESRCH   3
+#define MSVCRT_EINTR   4
+#define MSVCRT_EIO     5
+#define MSVCRT_ENXIO   6
+#define MSVCRT_E2BIG   7
+#define MSVCRT_ENOEXEC 8
+#define MSVCRT_EBADF   9
+#define MSVCRT_ECHILD  10
+#define MSVCRT_EAGAIN  11
+#define MSVCRT_ENOMEM  12
+#define MSVCRT_EACCES  13
+#define MSVCRT_EFAULT  14
+#define MSVCRT_EBUSY   16
+#define MSVCRT_EEXIST  17
+#define MSVCRT_EXDEV   18
+#define MSVCRT_ENODEV  19
+#define MSVCRT_ENOTDIR 20
+#define MSVCRT_EISDIR  21
+#define MSVCRT_EINVAL  22
+#define MSVCRT_ENFILE  23
+#define MSVCRT_EMFILE  24
+#define MSVCRT_ENOTTY  25
+#define MSVCRT_EFBIG   27
+#define MSVCRT_ENOSPC  28
+#define MSVCRT_ESPIPE  29
+#define MSVCRT_EROFS   30
+#define MSVCRT_EMLINK  31
+#define MSVCRT_EPIPE   32
+#define MSVCRT_EDOM    33
+#define MSVCRT_ERANGE  34
+#define MSVCRT_EDEADLK 36
+#define MSVCRT_ENOTEMPTY 41
+#define MSVCRT_EILSEQ    42
+
 
 typedef unsigned char  MSVCRT_bool;
 typedef unsigned short MSVCRT_wchar_t;
@@ -187,3 +223,5 @@ typedef struct __thread_data thread_data_t;
 
 extern BOOL msvcrt_init_tls(void);
 extern void msvcrt_free_tls_mem(void);
+int* __cdecl     MSVCRT__errno(void);
+extern thread_data_t *msvcrt_get_thread_data(void) DECLSPEC_HIDDEN;

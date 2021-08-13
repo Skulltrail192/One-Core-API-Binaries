@@ -17,22 +17,45 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+
+#include <assert.h>
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "objbase.h"
+#include "shellapi.h"
+
 #include "wincodecs_private.h"
 
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(wincodecs);
+
 typedef struct {
+    IWICImagingFactory2 IWICImagingFactory2_iface;
     IWICComponentFactory IWICComponentFactory_iface;
     LONG ref;
-} ComponentFactory;
+} ImagingFactory;
 
-static inline ComponentFactory *impl_from_IWICComponentFactory(IWICComponentFactory *iface)
+static inline ImagingFactory *impl_from_IWICComponentFactory(IWICComponentFactory *iface)
 {
-    return CONTAINING_RECORD(iface, ComponentFactory, IWICComponentFactory_iface);
+    return CONTAINING_RECORD(iface, ImagingFactory, IWICComponentFactory_iface);
 }
 
-static HRESULT WINAPI ComponentFactory_QueryInterface(IWICComponentFactory *iface, REFIID iid,
+static inline ImagingFactory *impl_from_IWICImagingFactory2(IWICImagingFactory2 *iface)
+{
+    return CONTAINING_RECORD(iface, ImagingFactory, IWICImagingFactory2_iface);
+}
+
+static HRESULT WINAPI ImagingFactory_QueryInterface(IWICImagingFactory2 *iface, REFIID iid,
     void **ppv)
 {
-    ComponentFactory *This = impl_from_IWICComponentFactory(iface);
+    ImagingFactory *This = impl_from_IWICImagingFactory2(iface);
     TRACE("(%p,%s,%p)\n", iface, debugstr_guid(iid), ppv);
 
     if (!ppv) return E_INVALIDARG;
@@ -42,6 +65,10 @@ static HRESULT WINAPI ComponentFactory_QueryInterface(IWICComponentFactory *ifac
         IsEqualIID(&IID_IWICComponentFactory, iid))
     {
         *ppv = &This->IWICComponentFactory_iface;
+    }
+    else if (IsEqualIID(&IID_IWICImagingFactory2, iid))
+    {
+        *ppv = &This->IWICImagingFactory2_iface;
     }
     else
     {
@@ -53,9 +80,9 @@ static HRESULT WINAPI ComponentFactory_QueryInterface(IWICComponentFactory *ifac
     return S_OK;
 }
 
-static ULONG WINAPI ComponentFactory_AddRef(IWICComponentFactory *iface)
+static ULONG WINAPI ImagingFactory_AddRef(IWICImagingFactory2 *iface)
 {
-    ComponentFactory *This = impl_from_IWICComponentFactory(iface);
+    ImagingFactory *This = impl_from_IWICImagingFactory2(iface);
     ULONG ref = InterlockedIncrement(&This->ref);
 
     TRACE("(%p) refcount=%u\n", iface, ref);
@@ -63,9 +90,9 @@ static ULONG WINAPI ComponentFactory_AddRef(IWICComponentFactory *iface)
     return ref;
 }
 
-static ULONG WINAPI ComponentFactory_Release(IWICComponentFactory *iface)
+static ULONG WINAPI ImagingFactory_Release(IWICImagingFactory2 *iface)
 {
-    ComponentFactory *This = impl_from_IWICComponentFactory(iface);
+    ImagingFactory *This = impl_from_IWICImagingFactory2(iface);
     ULONG ref = InterlockedDecrement(&This->ref);
 
     TRACE("(%p) refcount=%u\n", iface, ref);
@@ -76,8 +103,8 @@ static ULONG WINAPI ComponentFactory_Release(IWICComponentFactory *iface)
     return ref;
 }
 
-static HRESULT WINAPI ComponentFactory_CreateDecoderFromFilename(
-    IWICComponentFactory *iface, LPCWSTR wzFilename, const GUID *pguidVendor,
+static HRESULT WINAPI ImagingFactory_CreateDecoderFromFilename(
+    IWICImagingFactory2 *iface, LPCWSTR wzFilename, const GUID *pguidVendor,
     DWORD dwDesiredAccess, WICDecodeOptions metadataOptions,
     IWICBitmapDecoder **ppIDecoder)
 {
@@ -94,7 +121,7 @@ static HRESULT WINAPI ComponentFactory_CreateDecoderFromFilename(
 
         if (SUCCEEDED(hr))
         {
-            hr = IWICComponentFactory_CreateDecoderFromStream(iface, (IStream*)stream,
+            hr = IWICImagingFactory2_CreateDecoderFromStream(iface, (IStream*)stream,
                 pguidVendor, metadataOptions, ppIDecoder);
         }
 
@@ -158,6 +185,7 @@ static HRESULT find_decoder(IStream *pIStream, const GUID *pguidVendor,
                             IWICBitmapDecoder_Release(*decoder);
                             IWICBitmapDecoderInfo_Release(decoderinfo);
                             IUnknown_Release(unkdecoderinfo);
+                            IEnumUnknown_Release(enumdecoders);
                             *decoder = NULL;
                             return res;
                         }
@@ -178,8 +206,8 @@ static HRESULT find_decoder(IStream *pIStream, const GUID *pguidVendor,
     return WINCODEC_ERR_COMPONENTNOTFOUND;
 }
 
-static HRESULT WINAPI ComponentFactory_CreateDecoderFromStream(
-    IWICComponentFactory *iface, IStream *pIStream, const GUID *pguidVendor,
+static HRESULT WINAPI ImagingFactory_CreateDecoderFromStream(
+    IWICImagingFactory2 *iface, IStream *pIStream, const GUID *pguidVendor,
     WICDecodeOptions metadataOptions, IWICBitmapDecoder **ppIDecoder)
 {
     HRESULT res;
@@ -220,8 +248,8 @@ static HRESULT WINAPI ComponentFactory_CreateDecoderFromStream(
     }
 }
 
-static HRESULT WINAPI ComponentFactory_CreateDecoderFromFileHandle(
-    IWICComponentFactory *iface, ULONG_PTR hFile, const GUID *pguidVendor,
+static HRESULT WINAPI ImagingFactory_CreateDecoderFromFileHandle(
+    IWICImagingFactory2 *iface, ULONG_PTR hFile, const GUID *pguidVendor,
     WICDecodeOptions metadataOptions, IWICBitmapDecoder **ppIDecoder)
 {
     IWICStream *stream;
@@ -236,7 +264,7 @@ static HRESULT WINAPI ComponentFactory_CreateDecoderFromFileHandle(
         hr = stream_initialize_from_filehandle(stream, (HANDLE)hFile);
         if (SUCCEEDED(hr))
         {
-            hr = IWICComponentFactory_CreateDecoderFromStream(iface, (IStream*)stream,
+            hr = IWICImagingFactory2_CreateDecoderFromStream(iface, (IStream*)stream,
                 pguidVendor, metadataOptions, ppIDecoder);
         }
         IWICStream_Release(stream);
@@ -244,14 +272,14 @@ static HRESULT WINAPI ComponentFactory_CreateDecoderFromFileHandle(
     return hr;
 }
 
-static HRESULT WINAPI ComponentFactory_CreateComponentInfo(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateComponentInfo(IWICImagingFactory2 *iface,
     REFCLSID clsidComponent, IWICComponentInfo **ppIInfo)
 {
     TRACE("(%p,%s,%p)\n", iface, debugstr_guid(clsidComponent), ppIInfo);
     return CreateComponentInfo(clsidComponent, ppIInfo);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateDecoder(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateDecoder(IWICImagingFactory2 *iface,
     REFGUID guidContainerFormat, const GUID *pguidVendor,
     IWICBitmapDecoder **ppIDecoder)
 {
@@ -334,7 +362,7 @@ static HRESULT WINAPI ComponentFactory_CreateDecoder(IWICComponentFactory *iface
     return WINCODEC_ERR_COMPONENTNOTFOUND;
 }
 
-static HRESULT WINAPI ComponentFactory_CreateEncoder(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateEncoder(IWICImagingFactory2 *iface,
     REFGUID guidContainerFormat, const GUID *pguidVendor,
     IWICBitmapEncoder **ppIEncoder)
 {
@@ -399,20 +427,20 @@ static HRESULT WINAPI ComponentFactory_CreateEncoder(IWICComponentFactory *iface
     }
 }
 
-static HRESULT WINAPI ComponentFactory_CreatePalette(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreatePalette(IWICImagingFactory2 *iface,
     IWICPalette **ppIPalette)
 {
     TRACE("(%p,%p)\n", iface, ppIPalette);
     return PaletteImpl_Create(ppIPalette);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateFormatConverter(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateFormatConverter(IWICImagingFactory2 *iface,
     IWICFormatConverter **ppIFormatConverter)
 {
     return FormatConverter_CreateInstance(&IID_IWICFormatConverter, (void**)ppIFormatConverter);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateBitmapScaler(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateBitmapScaler(IWICImagingFactory2 *iface,
     IWICBitmapScaler **ppIBitmapScaler)
 {
     TRACE("(%p,%p)\n", iface, ppIBitmapScaler);
@@ -420,53 +448,52 @@ static HRESULT WINAPI ComponentFactory_CreateBitmapScaler(IWICComponentFactory *
     return BitmapScaler_Create(ppIBitmapScaler);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateBitmapClipper(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateBitmapClipper(IWICImagingFactory2 *iface,
     IWICBitmapClipper **ppIBitmapClipper)
 {
     TRACE("(%p,%p)\n", iface, ppIBitmapClipper);
     return BitmapClipper_Create(ppIBitmapClipper);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateBitmapFlipRotator(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateBitmapFlipRotator(IWICImagingFactory2 *iface,
     IWICBitmapFlipRotator **ppIBitmapFlipRotator)
 {
     TRACE("(%p,%p)\n", iface, ppIBitmapFlipRotator);
     return FlipRotator_Create(ppIBitmapFlipRotator);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateStream(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateStream(IWICImagingFactory2 *iface,
     IWICStream **ppIWICStream)
 {
     TRACE("(%p,%p)\n", iface, ppIWICStream);
     return StreamImpl_Create(ppIWICStream);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateColorContext(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateColorContext(IWICImagingFactory2 *iface,
     IWICColorContext **ppIColorContext)
 {
     TRACE("(%p,%p)\n", iface, ppIColorContext);
     return ColorContext_Create(ppIColorContext);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateColorTransformer(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateColorTransformer(IWICImagingFactory2 *iface,
     IWICColorTransform **ppIColorTransform)
 {
     TRACE("(%p,%p)\n", iface, ppIColorTransform);
     return ColorTransform_Create(ppIColorTransform);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateBitmap(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateBitmap(IWICImagingFactory2 *iface,
     UINT uiWidth, UINT uiHeight, REFWICPixelFormatGUID pixelFormat,
     WICBitmapCreateCacheOption option, IWICBitmap **ppIBitmap)
 {
     TRACE("(%p,%u,%u,%s,%u,%p)\n", iface, uiWidth, uiHeight,
         debugstr_guid(pixelFormat), option, ppIBitmap);
-    return BitmapImpl_Create(uiWidth, uiHeight, 0, 0, NULL, pixelFormat, option, ppIBitmap);
+    return BitmapImpl_Create(uiWidth, uiHeight, 0, 0, NULL, 0, pixelFormat, option, ppIBitmap);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateBitmapFromSource(IWICComponentFactory *iface,
-    IWICBitmapSource *piBitmapSource, WICBitmapCreateCacheOption option,
-    IWICBitmap **ppIBitmap)
+static HRESULT create_bitmap_from_source_rect(IWICBitmapSource *piBitmapSource, const WICRect *rect,
+    WICBitmapCreateCacheOption option, IWICBitmap **ppIBitmap)
 {
     IWICBitmap *result;
     IWICBitmapLock *lock;
@@ -480,12 +507,28 @@ static HRESULT WINAPI ComponentFactory_CreateBitmapFromSource(IWICComponentFacto
     IWICPixelFormatInfo2 *formatinfo;
     WICPixelFormatNumericRepresentation format_type;
 
-    TRACE("(%p,%p,%u,%p)\n", iface, piBitmapSource, option, ppIBitmap);
+    assert(!rect || option == WICBitmapCacheOnLoad);
 
     if (!piBitmapSource || !ppIBitmap)
         return E_INVALIDARG;
 
+    if (option == WICBitmapNoCache && SUCCEEDED(IWICBitmapSource_QueryInterface(piBitmapSource,
+            &IID_IWICBitmap, (void **)&result)))
+    {
+        *ppIBitmap = result;
+        return S_OK;
+    }
+
     hr = IWICBitmapSource_GetSize(piBitmapSource, &width, &height);
+
+    if (SUCCEEDED(hr) && rect)
+    {
+        if (rect->X >= width || rect->Y >= height || rect->Width == 0 || rect->Height == 0)
+            return E_INVALIDARG;
+
+        width = min(width - rect->X, rect->Width);
+        height = min(height - rect->Y, rect->Height);
+    }
 
     if (SUCCEEDED(hr))
         hr = IWICBitmapSource_GetPixelFormat(piBitmapSource, &pixelformat);
@@ -508,7 +551,7 @@ static HRESULT WINAPI ComponentFactory_CreateBitmapFromSource(IWICComponentFacto
     }
 
     if (SUCCEEDED(hr))
-        hr = BitmapImpl_Create(width, height, 0, 0, NULL, &pixelformat, option, &result);
+        hr = BitmapImpl_Create(width, height, 0, 0, NULL, 0, &pixelformat, option, &result);
 
     if (SUCCEEDED(hr))
     {
@@ -517,7 +560,14 @@ static HRESULT WINAPI ComponentFactory_CreateBitmapFromSource(IWICComponentFacto
         {
             UINT stride, buffersize;
             BYTE *buffer;
-            rc.X = rc.Y = 0;
+
+            if (rect)
+            {
+                rc.X = rect->X;
+                rc.Y = rect->Y;
+            }
+            else
+                rc.X = rc.Y = 0;
             rc.Width = width;
             rc.Height = height;
 
@@ -570,16 +620,33 @@ static HRESULT WINAPI ComponentFactory_CreateBitmapFromSource(IWICComponentFacto
     return hr;
 }
 
-static HRESULT WINAPI ComponentFactory_CreateBitmapFromSourceRect(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateBitmapFromSource(IWICImagingFactory2 *iface,
+    IWICBitmapSource *piBitmapSource, WICBitmapCreateCacheOption option,
+    IWICBitmap **ppIBitmap)
+{
+    TRACE("(%p,%p,%u,%p)\n", iface, piBitmapSource, option, ppIBitmap);
+
+    return create_bitmap_from_source_rect(piBitmapSource, NULL, option, ppIBitmap);
+}
+
+static HRESULT WINAPI ImagingFactory_CreateBitmapFromSourceRect(IWICImagingFactory2 *iface,
     IWICBitmapSource *piBitmapSource, UINT x, UINT y, UINT width, UINT height,
     IWICBitmap **ppIBitmap)
 {
-    FIXME("(%p,%p,%u,%u,%u,%u,%p): stub\n", iface, piBitmapSource, x, y, width,
+    WICRect rect;
+
+    TRACE("(%p,%p,%u,%u,%u,%u,%p)\n", iface, piBitmapSource, x, y, width,
         height, ppIBitmap);
-    return E_NOTIMPL;
+
+    rect.X = x;
+    rect.Y = y;
+    rect.Width = width;
+    rect.Height = height;
+
+    return create_bitmap_from_source_rect(piBitmapSource, &rect, WICBitmapCacheOnLoad, ppIBitmap);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateBitmapFromMemory(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateBitmapFromMemory(IWICImagingFactory2 *iface,
     UINT width, UINT height, REFWICPixelFormatGUID format, UINT stride,
     UINT size, BYTE *buffer, IWICBitmap **bitmap)
 {
@@ -590,7 +657,7 @@ static HRESULT WINAPI ComponentFactory_CreateBitmapFromMemory(IWICComponentFacto
 
     if (!stride || !size || !buffer || !bitmap) return E_INVALIDARG;
 
-    hr = BitmapImpl_Create(width, height, stride, size, NULL, format, WICBitmapCacheOnLoad, bitmap);
+    hr = BitmapImpl_Create(width, height, stride, size, NULL, 0, format, WICBitmapCacheOnLoad, bitmap);
     if (SUCCEEDED(hr))
     {
         IWICBitmapLock *lock;
@@ -655,7 +722,7 @@ static BOOL get_16bpp_format(HBITMAP hbm, WICPixelFormatGUID *format)
     return ret;
 }
 
-static HRESULT WINAPI ComponentFactory_CreateBitmapFromHBITMAP(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateBitmapFromHBITMAP(IWICImagingFactory2 *iface,
     HBITMAP hbm, HPALETTE hpal, WICBitmapAlphaChannelOption option, IWICBitmap **bitmap)
 {
     BITMAP bm;
@@ -722,7 +789,8 @@ static HRESULT WINAPI ComponentFactory_CreateBitmapFromHBITMAP(IWICComponentFact
         return E_INVALIDARG;
     }
 
-    hr = BitmapImpl_Create(bm.bmWidth, bm.bmHeight, bm.bmWidthBytes, 0, NULL, &format, WICBitmapCacheOnLoad, bitmap);
+    hr = BitmapImpl_Create(bm.bmWidth, bm.bmHeight, bm.bmWidthBytes, 0, NULL, 0, &format,
+                           WICBitmapCacheOnLoad, bitmap);
     if (hr != S_OK) return hr;
 
     hr = IWICBitmap_Lock(*bitmap, NULL, WICBitmapLockWrite, &lock);
@@ -777,7 +845,7 @@ static HRESULT WINAPI ComponentFactory_CreateBitmapFromHBITMAP(IWICComponentFact
     return hr;
 }
 
-static HRESULT WINAPI ComponentFactory_CreateBitmapFromHICON(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateBitmapFromHICON(IWICImagingFactory2 *iface,
     HICON hicon, IWICBitmap **bitmap)
 {
     IWICBitmapLock *lock;
@@ -806,7 +874,7 @@ static HRESULT WINAPI ComponentFactory_CreateBitmapFromHICON(IWICComponentFactor
     stride = width * 4;
     size = stride * height;
 
-    hr = BitmapImpl_Create(width, height, stride, size, NULL,
+    hr = BitmapImpl_Create(width, height, stride, size, NULL, 0,
                            &GUID_WICPixelFormat32bppBGRA, WICBitmapCacheOnLoad, bitmap);
     if (hr != S_OK) goto failed;
 
@@ -914,30 +982,30 @@ failed:
     return hr;
 }
 
-static HRESULT WINAPI ComponentFactory_CreateComponentEnumerator(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateComponentEnumerator(IWICImagingFactory2 *iface,
     DWORD componentTypes, DWORD options, IEnumUnknown **ppIEnumUnknown)
 {
     TRACE("(%p,%u,%u,%p)\n", iface, componentTypes, options, ppIEnumUnknown);
     return CreateComponentEnumerator(componentTypes, options, ppIEnumUnknown);
 }
 
-static HRESULT WINAPI ComponentFactory_CreateFastMetadataEncoderFromDecoder(
-    IWICComponentFactory *iface, IWICBitmapDecoder *pIDecoder,
+static HRESULT WINAPI ImagingFactory_CreateFastMetadataEncoderFromDecoder(
+    IWICImagingFactory2 *iface, IWICBitmapDecoder *pIDecoder,
     IWICFastMetadataEncoder **ppIFastEncoder)
 {
     FIXME("(%p,%p,%p): stub\n", iface, pIDecoder, ppIFastEncoder);
     return E_NOTIMPL;
 }
 
-static HRESULT WINAPI ComponentFactory_CreateFastMetadataEncoderFromFrameDecode(
-    IWICComponentFactory *iface, IWICBitmapFrameDecode *pIFrameDecoder,
+static HRESULT WINAPI ImagingFactory_CreateFastMetadataEncoderFromFrameDecode(
+    IWICImagingFactory2 *iface, IWICBitmapFrameDecode *pIFrameDecoder,
     IWICFastMetadataEncoder **ppIFastEncoder)
 {
     FIXME("(%p,%p,%p): stub\n", iface, pIFrameDecoder, ppIFastEncoder);
     return E_NOTIMPL;
 }
 
-static HRESULT WINAPI ComponentFactory_CreateQueryWriter(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateQueryWriter(IWICImagingFactory2 *iface,
     REFGUID guidMetadataFormat, const GUID *pguidVendor,
     IWICMetadataQueryWriter **ppIQueryWriter)
 {
@@ -946,13 +1014,244 @@ static HRESULT WINAPI ComponentFactory_CreateQueryWriter(IWICComponentFactory *i
     return E_NOTIMPL;
 }
 
-static HRESULT WINAPI ComponentFactory_CreateQueryWriterFromReader(IWICComponentFactory *iface,
+static HRESULT WINAPI ImagingFactory_CreateQueryWriterFromReader(IWICImagingFactory2 *iface,
     IWICMetadataQueryReader *pIQueryReader, const GUID *pguidVendor,
     IWICMetadataQueryWriter **ppIQueryWriter)
 {
     FIXME("(%p,%p,%s,%p): stub\n", iface, pIQueryReader, debugstr_guid(pguidVendor),
         ppIQueryWriter);
     return E_NOTIMPL;
+}
+
+#ifndef __REACTOS__
+static HRESULT WINAPI ImagingFactory_CreateImageEncoder(IWICImagingFactory2 *iface, ID2D1Device *device, IWICImageEncoder **encoder)
+{
+    FIXME("%p,%p,%p stub.\n", iface, device, encoder);
+    return E_NOTIMPL;
+}
+#endif
+
+static const IWICImagingFactory2Vtbl ImagingFactory_Vtbl = {
+    ImagingFactory_QueryInterface,
+    ImagingFactory_AddRef,
+    ImagingFactory_Release,
+    ImagingFactory_CreateDecoderFromFilename,
+    ImagingFactory_CreateDecoderFromStream,
+    ImagingFactory_CreateDecoderFromFileHandle,
+    ImagingFactory_CreateComponentInfo,
+    ImagingFactory_CreateDecoder,
+    ImagingFactory_CreateEncoder,
+    ImagingFactory_CreatePalette,
+    ImagingFactory_CreateFormatConverter,
+    ImagingFactory_CreateBitmapScaler,
+    ImagingFactory_CreateBitmapClipper,
+    ImagingFactory_CreateBitmapFlipRotator,
+    ImagingFactory_CreateStream,
+    ImagingFactory_CreateColorContext,
+    ImagingFactory_CreateColorTransformer,
+    ImagingFactory_CreateBitmap,
+    ImagingFactory_CreateBitmapFromSource,
+    ImagingFactory_CreateBitmapFromSourceRect,
+    ImagingFactory_CreateBitmapFromMemory,
+    ImagingFactory_CreateBitmapFromHBITMAP,
+    ImagingFactory_CreateBitmapFromHICON,
+    ImagingFactory_CreateComponentEnumerator,
+    ImagingFactory_CreateFastMetadataEncoderFromDecoder,
+    ImagingFactory_CreateFastMetadataEncoderFromFrameDecode,
+    ImagingFactory_CreateQueryWriter,
+    ImagingFactory_CreateQueryWriterFromReader,
+#ifndef __REACTOS__
+    ImagingFactory_CreateImageEncoder,
+#endif
+};
+
+static HRESULT WINAPI ComponentFactory_QueryInterface(IWICComponentFactory *iface, REFIID iid, void **ppv)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_QueryInterface(&This->IWICImagingFactory2_iface, iid, ppv);
+}
+
+static ULONG WINAPI ComponentFactory_AddRef(IWICComponentFactory *iface)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_AddRef(&This->IWICImagingFactory2_iface);
+}
+
+static ULONG WINAPI ComponentFactory_Release(IWICComponentFactory *iface)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_Release(&This->IWICImagingFactory2_iface);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateDecoderFromFilename(IWICComponentFactory *iface, LPCWSTR filename,
+    const GUID *vendor, DWORD desired_access, WICDecodeOptions options, IWICBitmapDecoder **decoder)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateDecoderFromFilename(&This->IWICImagingFactory2_iface, filename, vendor,
+        desired_access, options, decoder);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateDecoderFromStream(IWICComponentFactory *iface, IStream *stream,
+    const GUID *vendor, WICDecodeOptions options, IWICBitmapDecoder **decoder)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateDecoderFromStream(&This->IWICImagingFactory2_iface, stream, vendor,
+        options, decoder);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateDecoderFromFileHandle(IWICComponentFactory *iface, ULONG_PTR hFile,
+    const GUID *vendor, WICDecodeOptions options, IWICBitmapDecoder **decoder)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateDecoderFromFileHandle(&This->IWICImagingFactory2_iface, hFile, vendor,
+        options, decoder);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateComponentInfo(IWICComponentFactory *iface, REFCLSID component,
+    IWICComponentInfo **info)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateComponentInfo(&This->IWICImagingFactory2_iface, component, info);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateDecoder(IWICComponentFactory *iface, REFGUID format, const GUID *vendor,
+    IWICBitmapDecoder **decoder)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateDecoder(&This->IWICImagingFactory2_iface, format, vendor, decoder);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateEncoder(IWICComponentFactory *iface, REFGUID format, const GUID *vendor,
+    IWICBitmapEncoder **encoder)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateEncoder(&This->IWICImagingFactory2_iface, format, vendor, encoder);
+}
+
+static HRESULT WINAPI ComponentFactory_CreatePalette(IWICComponentFactory *iface, IWICPalette **palette)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreatePalette(&This->IWICImagingFactory2_iface, palette);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateFormatConverter(IWICComponentFactory *iface, IWICFormatConverter **converter)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateFormatConverter(&This->IWICImagingFactory2_iface, converter);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateBitmapScaler(IWICComponentFactory *iface, IWICBitmapScaler **scaler)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateBitmapScaler(&This->IWICImagingFactory2_iface, scaler);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateBitmapClipper(IWICComponentFactory *iface, IWICBitmapClipper **clipper)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateBitmapClipper(&This->IWICImagingFactory2_iface, clipper);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateBitmapFlipRotator(IWICComponentFactory *iface, IWICBitmapFlipRotator **fliprotator)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateBitmapFlipRotator(&This->IWICImagingFactory2_iface, fliprotator);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateStream(IWICComponentFactory *iface, IWICStream **stream)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateStream(&This->IWICImagingFactory2_iface, stream);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateColorContext(IWICComponentFactory *iface, IWICColorContext **context)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateColorContext(&This->IWICImagingFactory2_iface, context);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateColorTransformer(IWICComponentFactory *iface, IWICColorTransform **transformer)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateColorTransformer(&This->IWICImagingFactory2_iface, transformer);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateBitmap(IWICComponentFactory *iface, UINT width, UINT height, REFWICPixelFormatGUID pixel_format,
+    WICBitmapCreateCacheOption option, IWICBitmap **bitmap)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateBitmap(&This->IWICImagingFactory2_iface, width, height, pixel_format, option, bitmap);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateBitmapFromSource(IWICComponentFactory *iface, IWICBitmapSource *source,
+    WICBitmapCreateCacheOption option, IWICBitmap **bitmap)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateBitmapFromSource(&This->IWICImagingFactory2_iface, source, option, bitmap);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateBitmapFromSourceRect(IWICComponentFactory *iface, IWICBitmapSource *source,
+    UINT x, UINT y, UINT width, UINT height, IWICBitmap **bitmap)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateBitmapFromSourceRect(&This->IWICImagingFactory2_iface, source, x, y, width, height, bitmap);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateBitmapFromMemory(IWICComponentFactory *iface, UINT width, UINT height,
+    REFWICPixelFormatGUID format, UINT stride, UINT size, BYTE *buffer, IWICBitmap **bitmap)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateBitmapFromMemory(&This->IWICImagingFactory2_iface, width, height, format, stride,
+        size, buffer, bitmap);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateBitmapFromHBITMAP(IWICComponentFactory *iface, HBITMAP hbm, HPALETTE hpal,
+    WICBitmapAlphaChannelOption option, IWICBitmap **bitmap)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateBitmapFromHBITMAP(&This->IWICImagingFactory2_iface, hbm, hpal, option, bitmap);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateBitmapFromHICON(IWICComponentFactory *iface, HICON hicon, IWICBitmap **bitmap)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateBitmapFromHICON(&This->IWICImagingFactory2_iface, hicon, bitmap);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateComponentEnumerator(IWICComponentFactory *iface, DWORD component_types,
+    DWORD options, IEnumUnknown **enumerator)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateComponentEnumerator(&This->IWICImagingFactory2_iface, component_types,
+        options, enumerator);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateFastMetadataEncoderFromDecoder(IWICComponentFactory *iface, IWICBitmapDecoder *decoder,
+    IWICFastMetadataEncoder **encoder)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateFastMetadataEncoderFromDecoder(&This->IWICImagingFactory2_iface, decoder, encoder);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateFastMetadataEncoderFromFrameDecode(IWICComponentFactory *iface,
+    IWICBitmapFrameDecode *frame_decode, IWICFastMetadataEncoder **encoder)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateFastMetadataEncoderFromFrameDecode(&This->IWICImagingFactory2_iface, frame_decode, encoder);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateQueryWriter(IWICComponentFactory *iface, REFGUID format, const GUID *vendor,
+    IWICMetadataQueryWriter **writer)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateQueryWriter(&This->IWICImagingFactory2_iface, format, vendor, writer);
+}
+
+static HRESULT WINAPI ComponentFactory_CreateQueryWriterFromReader(IWICComponentFactory *iface, IWICMetadataQueryReader *reader,
+    const GUID *vendor, IWICMetadataQueryWriter **writer)
+{
+    ImagingFactory *This = impl_from_IWICComponentFactory(iface);
+    return IWICImagingFactory2_CreateQueryWriterFromReader(&This->IWICImagingFactory2_iface, reader, vendor, writer);
 }
 
 static HRESULT WINAPI ComponentFactory_CreateMetadataReader(IWICComponentFactory *iface,
@@ -1113,7 +1412,7 @@ static HRESULT WINAPI ComponentFactory_CreateQueryReaderFromBlockReader(IWICComp
     if (!block_reader || !query_reader)
         return E_INVALIDARG;
 
-    return MetadataQueryReader_CreateInstance(block_reader, query_reader);
+    return MetadataQueryReader_CreateInstance(block_reader, NULL, query_reader);
 }
 
 static HRESULT WINAPI ComponentFactory_CreateQueryWriterFromBlockWriter(IWICComponentFactory *iface,
@@ -1168,23 +1467,24 @@ static const IWICComponentFactoryVtbl ComponentFactory_Vtbl = {
     ComponentFactory_CreateEncoderPropertyBag
 };
 
-HRESULT ComponentFactory_CreateInstance(REFIID iid, void** ppv)
+HRESULT ImagingFactory_CreateInstance(REFIID iid, void** ppv)
 {
-    ComponentFactory *This;
+    ImagingFactory *This;
     HRESULT ret;
 
     TRACE("(%s,%p)\n", debugstr_guid(iid), ppv);
 
     *ppv = NULL;
 
-    This = HeapAlloc(GetProcessHeap(), 0, sizeof(ComponentFactory));
+    This = HeapAlloc(GetProcessHeap(), 0, sizeof(*This));
     if (!This) return E_OUTOFMEMORY;
 
+    This->IWICImagingFactory2_iface.lpVtbl = &ImagingFactory_Vtbl;
     This->IWICComponentFactory_iface.lpVtbl = &ComponentFactory_Vtbl;
     This->ref = 1;
 
-    ret = IWICComponentFactory_QueryInterface(&This->IWICComponentFactory_iface, iid, ppv);
-    IWICComponentFactory_Release(&This->IWICComponentFactory_iface);
+    ret = IWICImagingFactory2_QueryInterface(&This->IWICImagingFactory2_iface, iid, ppv);
+    IWICImagingFactory2_Release(&This->IWICImagingFactory2_iface);
 
     return ret;
 }
@@ -1193,14 +1493,18 @@ HRESULT WINAPI WICCreateBitmapFromSectionEx(UINT width, UINT height,
         REFWICPixelFormatGUID format, HANDLE section, UINT stride,
         UINT offset, WICSectionAccessLevel wicaccess, IWICBitmap **bitmap)
 {
-    DWORD access;
-    void *buffer;
+    SYSTEM_INFO sysinfo;
+    UINT bpp, access, size, view_offset, view_size;
+    void *view;
     HRESULT hr;
 
-    TRACE("%u,%u,%s,%p,%u,%#x,%#x,%p\n", width, height, debugstr_guid(format),
-        section, stride, offset, wicaccess, bitmap);
+    TRACE("%u,%u,%s,%p,%u,%u,%#x,%p\n", width, height, debugstr_guid(format),
+          section, stride, offset, wicaccess, bitmap);
 
     if (!width || !height || !section || !bitmap) return E_INVALIDARG;
+
+    hr = get_pixelformat_bpp(format, &bpp);
+    if (FAILED(hr)) return hr;
 
     switch (wicaccess)
     {
@@ -1217,11 +1521,20 @@ HRESULT WINAPI WICCreateBitmapFromSectionEx(UINT width, UINT height,
         return E_INVALIDARG;
     }
 
-    buffer = MapViewOfFile(section, access, 0, offset, 0);
-    if (!buffer) return HRESULT_FROM_WIN32(GetLastError());
+    if (!stride) stride = (((bpp * width) + 31) / 32) * 4;
+    size = stride * height;
+    if (size / height != stride) return E_INVALIDARG;
 
-    hr = BitmapImpl_Create(width, height, stride, 0, buffer, format, WICBitmapCacheOnLoad, bitmap);
-    if (FAILED(hr)) UnmapViewOfFile(buffer);
+    GetSystemInfo(&sysinfo);
+    view_offset = offset - (offset % sysinfo.dwAllocationGranularity);
+    view_size = size + (offset - view_offset);
+
+    view = MapViewOfFile(section, access, 0, view_offset, view_size);
+    if (!view) return HRESULT_FROM_WIN32(GetLastError());
+
+    offset -= view_offset;
+    hr = BitmapImpl_Create(width, height, stride, 0, view, offset, format, WICBitmapCacheOnLoad, bitmap);
+    if (FAILED(hr)) UnmapViewOfFile(view);
     return hr;
 }
 

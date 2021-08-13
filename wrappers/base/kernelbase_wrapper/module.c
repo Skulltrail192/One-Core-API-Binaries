@@ -38,7 +38,7 @@ struct exclusive_datafile
 };
 static struct list exclusive_datafile_list = LIST_INIT( exclusive_datafile_list );
 
-
+#ifdef _M_IX86
 typedef struct _PEB32
 {
     BOOLEAN InheritedAddressSpace;
@@ -49,6 +49,7 @@ typedef struct _PEB32
     DWORD   ImageBaseAddress;
     DWORD   LdrData;
 } PEB32;
+#endif
 
 typedef struct _PEB_LDR_DATA32
 {
@@ -208,7 +209,7 @@ LoadLibraryExInternalW(
     UNICODE_STRING      wstr;
     HMODULE             res;
 	
-	DbgPrint("LoadLibraryExInternalW:: Module Name: %ws\n",libnameW);
+	//DbgPrint("LoadLibraryExInternalW:: Module Name: %ws\n",libnameW);
 	
 	switch(flags){
 		case LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE:
@@ -667,7 +668,11 @@ static BOOL init_module_iterator( struct module_iterator *iter, HANDLE process )
         PEB32 *peb32;
 
         peb32 = (PEB32 *)(DWORD_PTR)pbi.PebBaseAddress;
+#ifdef _M_IX86		
         if (!ReadProcessMemory( process, &peb32->LdrData, &ldr_data32, sizeof(ldr_data32), NULL ))
+#else
+        if (!ReadProcessMemory( process, &peb32->Ldr, &ldr_data32, sizeof(ldr_data32), NULL ))	
+#endif
             return FALSE;
         ldr_data32_ptr = (PEB_LDR_DATA32 *)(DWORD_PTR) ldr_data32;
         if (!ReadProcessMemory( process, &ldr_data32_ptr->InLoadOrderModuleList.Flink,

@@ -2,7 +2,7 @@
 @ stdcall -norelay RtlCaptureContext(ptr) ntdll.RtlCaptureContext
 @ stdcall RtlCaptureStackBackTrace(long long ptr ptr) ntdll.RtlCaptureStackBackTrace
 @ stdcall RtlCompareMemory(ptr ptr long) ntdll.RtlCompareMemory
-@ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr long) ntdll.RtlCopyMemory
+@ stdcall -arch=x86_64 RtlCopyMemory(ptr ptr long) memmove
 @ cdecl -arch=arm,arm64,x86_64 RtlDeleteFunctionTable(ptr) ntdll.RtlDeleteFunctionTable
 @ stdcall RtlFillMemory(ptr long long) ntdll.RtlFillMemory
 @ cdecl -arch=x86_64 RtlInstallFunctionTableCallback(long long long ptr ptr wstr) ntdll.RtlInstallFunctionTableCallback

@@ -262,6 +262,20 @@ static VOID WINAPI IMalloc_fnFree(LPMALLOC iface,LPVOID pv) {
         }
 }
 
+static void** mallocspy_is_allocation_spyed(const void *mem)
+{
+    void **current = Malloc32.SpyedBlocks;
+
+    while (*current != mem)
+    {
+        current++;
+        if (current >= Malloc32.SpyedBlocks + Malloc32.SpyedBlockTableLength)
+            return NULL;
+    }
+
+    return current;
+}
+
 /******************************************************************************
  * IMalloc32_GetSize [VTABLE]
  *
@@ -270,26 +284,32 @@ static VOID WINAPI IMalloc_fnFree(LPMALLOC iface,LPVOID pv) {
  *      win95:  size allocated (4 byte boundarys)
  *      win2k:  size originally requested !!! (allocated on 8 byte boundarys)
  */
-static DWORD WINAPI IMalloc_fnGetSize(LPMALLOC iface,LPVOID pv) {
+static SIZE_T WINAPI IMalloc_fnGetSize(IMalloc *iface, void *mem)
+{
+    BOOL spyed_block = FALSE, spy_active = FALSE;
+    SIZE_T size;
 
-	DWORD cb;
-        BOOL fSpyed = FALSE;
+    TRACE("(%p)\n", mem);
 
-	TRACE("(%p)\n",pv);
+    if (!mem)
+        return (SIZE_T)-1;
 
-	if(Malloc32.pSpy) {
-            EnterCriticalSection(&IMalloc32_SpyCS);
-	    pv = IMallocSpy_PreGetSize(Malloc32.pSpy, pv, fSpyed);
-	}
+    if (Malloc32.pSpy)
+    {
+        EnterCriticalSection(&IMalloc32_SpyCS);
+        spyed_block = !!mallocspy_is_allocation_spyed(mem);
+        spy_active = TRUE;
+        mem = IMallocSpy_PreGetSize(Malloc32.pSpy, mem, spyed_block);
+    }
 
-	cb = HeapSize(GetProcessHeap(),0,pv);
+    size = HeapSize(GetProcessHeap(), 0, mem);
 
-	if(Malloc32.pSpy) {
-	    cb = IMallocSpy_PostGetSize(Malloc32.pSpy, cb, fSpyed);
-	    LeaveCriticalSection(&IMalloc32_SpyCS);
-	}
-
-	return cb;
+    if (spy_active)
+    {
+        size = IMallocSpy_PostGetSize(Malloc32.pSpy, size, spyed_block);
+        LeaveCriticalSection(&IMalloc32_SpyCS);
+    }
+    return size;
 }
 
 /******************************************************************************

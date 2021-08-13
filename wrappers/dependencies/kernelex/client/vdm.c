@@ -804,7 +804,7 @@ BaseCreateVDMEnvironment(IN PWCHAR lpEnvironment,
     Status = NtAllocateVirtualMemory(NtCurrentProcess(),
                                      (PVOID*)&NewEnvironment,
                                      0,
-                                     &RegionSize,
+                                     (PSIZE_T)&RegionSize,
                                      MEM_COMMIT,
                                      PAGE_READWRITE);
     if (!NT_SUCCESS(Status))
@@ -1011,7 +1011,7 @@ Cleanup:
         RegionSize = 0;
         Status = NtFreeVirtualMemory(NtCurrentProcess(),
                                      (PVOID*)&NewEnvironment,
-                                     &RegionSize,
+                                     (PSIZE_T)&RegionSize,
                                      MEM_RELEASE);
         ASSERT(NT_SUCCESS(Status));
     }
@@ -1036,7 +1036,7 @@ BaseDestroyVDMEnvironment(IN PANSI_STRING AnsiEnv,
         /* So clear it through the API */
         NtFreeVirtualMemory(NtCurrentProcess(),
                             (PVOID*)&UnicodeEnv->Buffer,
-                            &Dummy,
+                            (PSIZE_T)&Dummy,
                             MEM_RELEASE);
     }
 

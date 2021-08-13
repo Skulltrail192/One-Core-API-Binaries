@@ -2569,7 +2569,7 @@ CreateProcessInternalW(IN HANDLE hUserToken,
         Status = NtAllocateVirtualMemory(NtCurrentProcess(),
                                          (PVOID)&UnicodeEnv.Buffer,
                                          0,
-                                         &RegionSize,
+                                         (PSIZE_T)&RegionSize,
                                          MEM_COMMIT,
                                          PAGE_READWRITE);
         if (!NT_SUCCESS(Status))
@@ -2587,7 +2587,7 @@ CreateProcessInternalW(IN HANDLE hUserToken,
             /* Fail */
             NtFreeVirtualMemory(NtCurrentProcess(),
                                 (PVOID)&UnicodeEnv.Buffer,
-                                &RegionSize,
+                                (PSIZE_T)&RegionSize,
                                 MEM_RELEASE);
             BaseSetLastNTError(Status);
             return FALSE;
@@ -3994,7 +3994,7 @@ StartScan:
         Status = NtAllocateVirtualMemory(ProcessHandle,
                                          &BaseAddress,
                                          0,
-                                         &VdmReserve,
+                                         (PSIZE_T)&VdmReserve,
                                          MEM_RESERVE,
                                          PAGE_EXECUTE_READWRITE);
         if (!NT_SUCCESS(Status))

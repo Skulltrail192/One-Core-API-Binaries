@@ -1608,7 +1608,7 @@
 @ stub _o__wcsupr_l
 @ stub _o__wcsupr_s
 @ stub _o__wcsupr_s_l
-@ stub _o__wcsxfrm_l
+@ cdecl _o__wcsxfrm_l(ptr wstr long ptr) _wcsxfrm_l
 @ stub _o__wctime32
 @ stub _o__wctime32_s
 @ stub _o__wctime64
@@ -2039,7 +2039,7 @@
 @ stub __pxcptinfoptrs ;() ucrtbase.__pxcptinfoptrs
 @ stub __sys_errlist ;() ucrtbase.__sys_errlist
 @ stub __sys_nerr ;() ucrtbase.__sys_nerr
-@ stub __threadhandle ;() ucrtbase.__threadhandle
+@ cdecl __threadhandle()
 @ stub __threadid ;() ucrtbase.__threadid
 @ cdecl __wcserror(wstr) msvcrt.__wcserror
 @ cdecl __wcserror_s(ptr long wstr) 
@@ -2105,7 +2105,7 @@
 @ stub _statusfp ;() ucrtbase._statusfp
 @ stub -arch=i386 _statusfp2 ;(ptr ptr) ucrtbase._statusfp2
 @ cdecl _strerror(long)
-@ cdecl _strerror_s(str long long)
+@ stub _strerror_s ;(str long long)
 @ stub _wassert ;(wstr wstr long) ucrtbase._wassert
 @ cdecl _wcserror(long) 
 @ stdcall _wcserror_s(ptr long long) ucrtbase._wcserror_s
@@ -2355,7 +2355,7 @@
 @ cdecl _strupr_l(str ptr) strupr_l
 @ stub _strupr_s ;(str long) ucrtbase._strupr_s
 @ stub _strupr_s_l ;(str long ptr) ucrtbase._strupr_s_l
-@ stub _strxfrm_l ;(ptr str long ptr) ucrtbase._strxfrm_l
+@ cdecl _strxfrm_l(ptr str long ptr)
 @ stub _tolower ;(long) ucrtbase._tolower
 @ stub _tolower_l ;(long ptr) ucrtbase._tolower_l
 @ stub _toupper ;(long) ucrtbase._toupper
@@ -2387,7 +2387,7 @@
 @ cdecl _wcsupr_l(wstr ptr) MSVCRT__wcsupr_l
 @ stub _wcsupr_s ;(wstr long) ucrtbase._wcsupr_s
 @ stub _wcsupr_s_l ;(wstr long ptr) ucrtbase._wcsupr_s_l
-@ stub _wcsxfrm_l ;(ptr wstr long ptr) ucrtbase._wcsxfrm_l
+@ cdecl _wcsxfrm_l(ptr wstr long ptr)
 @ stub _wctype ;() ucrtbase._wctype
 @ stub is_wctype ;(long long) ucrtbase.is_wctype
 @ stub isalnum ;(long) ucrtbase.isalnum
@@ -2428,19 +2428,19 @@
 @ stub strcoll ;(str str) ucrtbase.strcoll
 @ cdecl strcpy(ptr str) 
 @ stub strcpy_s ;(ptr long str) ucrtbase.strcpy_s
-@ stub strcspn ;(str str) ucrtbase.strcspn
-@ stub strlen ;(str) ucrtbase.strlen
+@ cdecl strcspn(str str)
+@ cdecl strlen(str)
 @ cdecl strncat(str str long)
 @ stub strncat_s ;(str long str long) ucrtbase.strncat_s
 @ stub strncmp ;(str str long) ucrtbase.strncmp
 @ cdecl strncpy(ptr str long)
 @ stub strncpy_s ;(ptr long str long) ucrtbase.strncpy_s
-@ stub strnlen ;(str long) ucrtbase.strnlen
+@ cdecl strnlen(str long)
 @ cdecl strpbrk(str str)
-@ stub strspn ;(str str) ucrtbase.strspn
+@ cdecl strspn(str str)
 @ cdecl strtok(str str)
 @ stdcall strtok_s(ptr str ptr) msvcrt.strtok_s
-@ stub strxfrm ;(ptr str long) ucrtbase.strxfrm
+@ cdecl strxfrm(ptr str long)
 @ stub tolower ;(long) ucrtbase.tolower
 @ stub toupper ;(long) ucrtbase.toupper
 @ stub towctrans ;() ucrtbase.towctrans
@@ -2452,19 +2452,19 @@
 @ stub wcscoll ;(wstr wstr) ucrtbase.wcscoll
 @ cdecl wcscpy(ptr wstr)
 @ stub wcscpy_s ;(ptr long wstr) ucrtbase.wcscpy_s
-@ stub wcscspn ;(wstr wstr) ucrtbase.wcscspn
-@ stub wcslen ;(wstr) ucrtbase.wcslen
+@ cdecl wcscspn(wstr wstr)
+@ cdecl wcslen(wstr)
 @ cdecl wcsncat(wstr wstr long)
 @ stub wcsncat_s ;(wstr long wstr long) ucrtbase.wcsncat_s
 @ stub wcsncmp ;(wstr wstr long) ucrtbase.wcsncmp
 @ cdecl wcsncpy(ptr wstr long)
 @ cdecl wcsncpy_s(ptr long wstr long) ;ucrtbase.wcsncpy_s
-@ stub wcsnlen ;(wstr long) ucrtbase.wcsnlen
+@ cdecl wcsnlen(wstr long)
 @ cdecl wcspbrk(wstr wstr)
-@ stub wcsspn ;(wstr wstr) ucrtbase.wcsspn
+@ cdecl wcsspn(wstr wstr)
 @ cdecl wcstok(wstr wstr)
 @ cdecl -version=0x600+ wcstok_s(wstr wstr ptr)
-@ stub wcsxfrm ;(ptr wstr long) ucrtbase.wcsxfrm
+@ cdecl wcsxfrm(ptr wstr long)
 @ stub wctype ;() ucrtbase.wctype
 @ stub wmemcpy_s ;(ptr long ptr long) ucrtbase.wmemcpy_s
 @ stub wmemmove_s ;(ptr long ptr long) ucrtbase.wmemmove_s

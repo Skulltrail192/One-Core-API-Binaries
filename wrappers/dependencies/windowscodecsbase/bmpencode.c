@@ -17,9 +17,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#include "config.h"
+
+#include <stdarg.h>
+
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "winreg.h"
+#include "wingdi.h"
+#include "objbase.h"
+
 #include "wincodecs_private.h"
 
-#include <wingdi.h>
+#include "wine/debug.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(wincodecs);
 
 struct bmp_pixelformat {
     const WICPixelFormatGUID *guid;
@@ -64,6 +78,8 @@ typedef struct BmpFrameEncode {
     UINT colors;
     BOOL committed;
 } BmpFrameEncode;
+
+static const WCHAR wszEnableV5Header32bppBGRA[] = {'E','n','a','b','l','e','V','5','H','e','a','d','e','r','3','2','b','p','p','B','G','R','A',0};
 
 static inline BmpFrameEncode *impl_from_IWICBitmapFrameEncode(IWICBitmapFrameEncode *iface)
 {
@@ -128,6 +144,9 @@ static HRESULT WINAPI BmpFrameEncode_Initialize(IWICBitmapFrameEncode *iface,
 
     if (This->initialized) return WINCODEC_ERR_WRONGSTATE;
 
+    if (pIEncoderOptions)
+        WARN("ignoring encoder options.\n");
+
     This->initialized = TRUE;
 
     return S_OK;
@@ -170,6 +189,11 @@ static HRESULT WINAPI BmpFrameEncode_SetPixelFormat(IWICBitmapFrameEncode *iface
 
     if (!This->initialized || This->bits) return WINCODEC_ERR_WRONGSTATE;
 
+    if (IsEqualGUID(pPixelFormat, &GUID_WICPixelFormatBlackWhite))
+        *pPixelFormat = GUID_WICPixelFormat1bppIndexed;
+    else if (IsEqualGUID(pPixelFormat, &GUID_WICPixelFormat2bppIndexed))
+        *pPixelFormat = GUID_WICPixelFormat4bppIndexed;
+
     for (i=0; formats[i].guid; i++)
     {
         if (IsEqualGUID(formats[i].guid, pPixelFormat))
@@ -177,8 +201,6 @@ static HRESULT WINAPI BmpFrameEncode_SetPixelFormat(IWICBitmapFrameEncode *iface
     }
 
     if (!formats[i].guid) i = 0;
-    else if (IsEqualGUID(pPixelFormat, &GUID_WICPixelFormatBlackWhite))
-        i = 2; /* GUID_WICPixelFormat1bppIndexed */
 
     This->format = &formats[i];
     memcpy(pPixelFormat, This->format->guid, sizeof(GUID));
@@ -242,8 +264,10 @@ static HRESULT WINAPI BmpFrameEncode_WritePixels(IWICBitmapFrameEncode *iface,
     UINT lineCount, UINT cbStride, UINT cbBufferSize, BYTE *pbPixels)
 {
     BmpFrameEncode *This = impl_from_IWICBitmapFrameEncode(iface);
+    UINT dstbuffersize, bytesperrow, row;
+    BYTE *dst, *src;
     HRESULT hr;
-    WICRect rc;
+
     TRACE("(%p,%u,%u,%u,%p)\n", iface, lineCount, cbStride, cbBufferSize, pbPixels);
 
     if (!This->initialized || !This->width || !This->height || !This->format)
@@ -252,19 +276,27 @@ static HRESULT WINAPI BmpFrameEncode_WritePixels(IWICBitmapFrameEncode *iface,
     hr = BmpFrameEncode_AllocateBits(This);
     if (FAILED(hr)) return hr;
 
-    rc.X = 0;
-    rc.Y = 0;
-    rc.Width = This->width;
-    rc.Height = lineCount;
+    bytesperrow = ((This->format->bpp * This->width) + 7) / 8;
 
-    hr = copy_pixels(This->format->bpp, pbPixels, This->width, lineCount, cbStride,
-        &rc, This->stride, This->stride*(This->height-This->lineswritten),
-        This->bits + This->stride*This->lineswritten);
+    if (This->stride < bytesperrow)
+        return E_INVALIDARG;
 
-    if (SUCCEEDED(hr))
-        This->lineswritten += lineCount;
+    dstbuffersize = This->stride * (This->height - This->lineswritten);
+    if ((This->stride * (lineCount - 1)) + bytesperrow > dstbuffersize)
+        return E_INVALIDARG;
 
-    return hr;
+    src = pbPixels;
+    dst = This->bits + This->stride * (This->height - This->lineswritten - 1);
+    for (row = 0; row < lineCount; row++)
+    {
+        memcpy(dst, src, bytesperrow);
+        src += cbStride;
+        dst -= This->stride;
+    }
+
+    This->lineswritten += lineCount;
+
+    return S_OK;
 }
 
 static HRESULT WINAPI BmpFrameEncode_WriteSource(IWICBitmapFrameEncode *iface,
@@ -272,7 +304,7 @@ static HRESULT WINAPI BmpFrameEncode_WriteSource(IWICBitmapFrameEncode *iface,
 {
     BmpFrameEncode *This = impl_from_IWICBitmapFrameEncode(iface);
     HRESULT hr;
-    TRACE("(%p,%p,%p)\n", iface, pIBitmapSource, prc);
+    TRACE("(%p,%p,%s)\n", iface, pIBitmapSource, debug_wic_rect(prc));
 
     if (!This->initialized)
         return WINCODEC_ERR_WRONGSTATE;
@@ -295,11 +327,10 @@ static HRESULT WINAPI BmpFrameEncode_Commit(IWICBitmapFrameEncode *iface)
     BmpFrameEncode *This = impl_from_IWICBitmapFrameEncode(iface);
     BITMAPFILEHEADER bfh;
     BITMAPV5HEADER bih;
-    UINT info_size, i;
+    UINT info_size;
     LARGE_INTEGER pos;
     ULONG byteswritten;
     HRESULT hr;
-    const BYTE *bits;
 
     TRACE("(%p)\n", iface);
 
@@ -312,7 +343,7 @@ static HRESULT WINAPI BmpFrameEncode_Commit(IWICBitmapFrameEncode *iface)
 
     bih.bV5Size = info_size = sizeof(BITMAPINFOHEADER);
     bih.bV5Width = This->width;
-    bih.bV5Height = This->height; /* bottom-top bitmap */
+    bih.bV5Height = This->height;
     bih.bV5Planes = 1;
     bih.bV5BitCount = This->format->bpp;
     bih.bV5Compression = This->format->compression;
@@ -359,15 +390,9 @@ static HRESULT WINAPI BmpFrameEncode_Commit(IWICBitmapFrameEncode *iface)
         if (byteswritten != This->colors * sizeof(WICColor)) return E_FAIL;
     }
 
-    /* write the image bits as a bottom-top array */
-    bits = This->bits + bih.bV5SizeImage;
-    for (i = 0; i < This->height; i++)
-    {
-        bits -= This->stride;
-        hr = IStream_Write(This->stream, bits, This->stride, &byteswritten);
-        if (FAILED(hr)) return hr;
-        if (byteswritten != This->stride) return E_FAIL;
-    }
+    hr = IStream_Write(This->stream, This->bits, bih.bV5SizeImage, &byteswritten);
+    if (FAILED(hr)) return hr;
+    if (byteswritten != bih.bV5SizeImage) return E_FAIL;
 
     This->committed = TRUE;
 
@@ -476,6 +501,11 @@ static HRESULT WINAPI BmpEncoder_Initialize(IWICBitmapEncoder *iface,
 static HRESULT WINAPI BmpEncoder_GetContainerFormat(IWICBitmapEncoder *iface,
     GUID *pguidContainerFormat)
 {
+    TRACE("(%p,%p)\n", iface, pguidContainerFormat);
+
+    if (!pguidContainerFormat)
+        return E_INVALIDARG;
+
     memcpy(pguidContainerFormat, &GUID_ContainerFormatBmp, sizeof(GUID));
     return S_OK;
 }
@@ -531,6 +561,10 @@ static HRESULT WINAPI BmpEncoder_CreateNewFrame(IWICBitmapEncoder *iface,
     BmpEncoder *This = impl_from_IWICBitmapEncoder(iface);
     BmpFrameEncode *encode;
     HRESULT hr;
+    static const PROPBAG2 opts[1] =
+    {
+        { PROPBAG2_TYPE_DATA, VT_BOOL, 0, 0, (LPOLESTR)wszEnableV5Header32bppBGRA },
+    };
 
     TRACE("(%p,%p,%p)\n", iface, ppIFrameEncode, ppIEncoderOptions);
 
@@ -538,8 +572,11 @@ static HRESULT WINAPI BmpEncoder_CreateNewFrame(IWICBitmapEncoder *iface,
 
     if (!This->stream) return WINCODEC_ERR_NOTINITIALIZED;
 
-    hr = CreatePropertyBag2(NULL, 0, ppIEncoderOptions);
-    if (FAILED(hr)) return hr;
+    if (ppIEncoderOptions)
+    {
+        hr = CreatePropertyBag2(opts, ARRAY_SIZE(opts), ppIEncoderOptions);
+        if (FAILED(hr)) return hr;
+    }
 
     encode = HeapAlloc(GetProcessHeap(), 0, sizeof(BmpFrameEncode));
     if (!encode)

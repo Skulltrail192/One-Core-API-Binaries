@@ -5,7 +5,7 @@
 @ stub CreateStreamOverRandomAccessStream
 @ stdcall -private DllCanUnloadNow()
 @ stub DllGetActivationFactory
-@ stub DllGetClassObject
+@ stdcall DllGetClassObject(ptr ptr ptr)
 @ stdcall GetCurrentProcessExplicitAppUserModelID(ptr)
 @ stdcall GetDpiForMonitor(long long ptr ptr)
 @ stub GetDpiForShellUIComponent
@@ -140,22 +140,22 @@
 171 stub -noname PathIsNetworkPathA
 172 stub -noname PathBuildRootW
 173 stub -noname PathBuildRootA
-174 stub -noname DriveType
-175 stub -noname IsNetDrive
+174 stdcall -noname DriveType(long)
+175 stdcall -noname IsNetDrive(long)
 181 stub -noname SHMapHandle
-182 stub -noname SHAllocShared
+182 stdcall -noname SHAllocShared(ptr long long)
 183 stub -noname SHLockSharedEx
-184 stub -noname SHLockShared
+184 stdcall -noname SHLockShared(long long)
 185 stub -noname SHGetSizeShared
-186 stub -noname SHUnlockShared
-187 stub -noname SHFreeShared
+186 stdcall -noname SHUnlockShared(ptr)
+187 stdcall -noname SHFreeShared(long long)
 188 stub -noname SHCreateWorkerWindowW
 189 stub -noname SHCreateOplockProvider
 190 stub -noname SHWindowsPolicy
 191 stub -noname SHWindowsPolicyGetValue
 192 stub -noname IsAppCompatModeEnabled
 193 stub -noname SHGetObjectCompatFlags
-200 stub -noname GUIDFromStringW
+200 stdcall -noname GUIDFromStringW(wstr ptr)
 220 stub -noname GetPhysicalDpiForDevice
 222 stub -noname ScaleRelativePixelsForDevice
 223 stub -noname PhysicalRectFromScaledRect
@@ -189,10 +189,10 @@
 261 stub -noname RelativeRectFromPhysicalRectWithScales
 270 stub -noname SHCreateMemoryStreamOnSharedBuffer
 280 stub -noname _CreateDirectoryHelper
-281 stub -noname Win32CreateDirectory
+281 stdcall -noname Win32CreateDirectory(wstr ptr)
 282 stub -noname SuspendSHNotify
 283 stub -noname ResumeSHNotify
 284 stub -noname IsNotifySuspended
-290 stub -noname SHCreateDirectoryExW
-291 stub -noname SHCreateDirectoryExA
+290 stdcall -noname SHCreateDirectoryExW(long wstr ptr)
+291 stdcall -noname SHCreateDirectoryExA(long str ptr)
 292 stub -noname SHCreateDirectory

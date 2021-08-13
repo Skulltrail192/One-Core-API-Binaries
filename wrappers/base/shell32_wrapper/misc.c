@@ -111,7 +111,7 @@ SHBindToFolderIDListParentEx(
   _Out_opt_  PCUITEMID_CHILD *ppidlLast
 )
 {
-	return S_OK;
+	return E_NOTIMPL;
 	//return SHBindToFolderIDListParent(psfRoot, pidl, riid, ppv, ppidlLast);
 }
 

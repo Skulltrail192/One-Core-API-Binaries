@@ -2,8 +2,8 @@
 @ stdcall DllGetClassObject(ptr ptr ptr)
 @ stdcall DllRegisterServer()
 @ stdcall DllUnregisterServer()
-@ stdcall IEnumString_Next_WIC_Proxy(ptr)
-@ stdcall IEnumString_Reset_WIC_Proxy(ptr long str ptr)
+@ stub IEnumString_Next_WIC_Proxy
+@ stub IEnumString_Reset_WIC_Proxy
 @ stdcall IPropertyBag2_Write_Proxy(ptr long ptr ptr)
 @ stdcall IWICBitmapClipper_Initialize_Proxy(ptr ptr ptr) IWICBitmapClipper_Initialize_Proxy_W
 @ stdcall IWICBitmapCodecInfo_DoesSupportAnimation_Proxy(ptr ptr) IWICBitmapCodecInfo_DoesSupportAnimation_Proxy_W
@@ -72,7 +72,7 @@
 @ stdcall IWICImagingFactory_CreateBitmapScaler_Proxy(ptr ptr) IWICImagingFactory_CreateBitmapScaler_Proxy_W
 @ stdcall IWICImagingFactory_CreateBitmap_Proxy(ptr long long ptr long ptr) IWICImagingFactory_CreateBitmap_Proxy_W
 @ stdcall IWICImagingFactory_CreateComponentInfo_Proxy(ptr ptr ptr) IWICImagingFactory_CreateComponentInfo_Proxy_W
-@ stdcall IWICImagingFactory_CreateDecoderFromFileHandle_Proxy(ptr ptr ptr long ptr) IWICImagingFactory_CreateDecoderFromFileHandle_Proxy_W
+@ stdcall IWICImagingFactory_CreateDecoderFromFileHandle_Proxy(ptr long ptr long ptr) IWICImagingFactory_CreateDecoderFromFileHandle_Proxy_W
 @ stdcall IWICImagingFactory_CreateDecoderFromFilename_Proxy(ptr wstr ptr long long ptr) IWICImagingFactory_CreateDecoderFromFilename_Proxy_W
 @ stdcall IWICImagingFactory_CreateDecoderFromStream_Proxy(ptr ptr ptr long ptr) IWICImagingFactory_CreateDecoderFromStream_Proxy_W
 @ stdcall IWICImagingFactory_CreateEncoder_Proxy(ptr ptr ptr ptr) IWICImagingFactory_CreateEncoder_Proxy_W
@@ -99,19 +99,20 @@
 @ stdcall IWICPalette_InitializeFromBitmap_Proxy(ptr ptr long long) IWICPalette_InitializeFromBitmap_Proxy_W
 @ stdcall IWICPalette_InitializeFromPalette_Proxy(ptr ptr) IWICPalette_InitializeFromPalette_Proxy_W
 @ stdcall IWICPalette_InitializePredefined_Proxy(ptr long long) IWICPalette_InitializePredefined_Proxy_W
-@ stdcall IWICPixelFormatInfo_GetBitsPerPixel_Proxy(ptr ptr)
-@ stdcall IWICPixelFormatInfo_GetChannelCount_Proxy(ptr ptr)
-@ stdcall IWICPixelFormatInfo_GetChannelMask_Proxy(ptr long long ptr ptr)
+@ stdcall IWICPixelFormatInfo_GetBitsPerPixel_Proxy(ptr ptr) IWICPixelFormatInfo_GetBitsPerPixel_Proxy_W
+@ stdcall IWICPixelFormatInfo_GetChannelCount_Proxy(ptr ptr) IWICPixelFormatInfo_GetChannelCount_Proxy_W
+@ stdcall IWICPixelFormatInfo_GetChannelMask_Proxy(ptr long long ptr ptr) IWICPixelFormatInfo_GetChannelMask_Proxy_W
 @ stdcall IWICStream_InitializeFromIStream_Proxy(ptr ptr) IWICStream_InitializeFromIStream_Proxy_W
 @ stdcall IWICStream_InitializeFromMemory_Proxy(ptr ptr long) IWICStream_InitializeFromMemory_Proxy_W
 @ stdcall WICConvertBitmapSource(ptr ptr ptr)
-@ stdcall WICCreateBitmapFromSection(long long long ptr long long ptr)
+@ stdcall WICCreateBitmapFromSection(long long ptr long long long ptr)
+@ stdcall WICCreateBitmapFromSectionEx(long long ptr long long long long ptr)
 @ stdcall WICCreateColorContext_Proxy(ptr ptr)
 @ stdcall WICCreateImagingFactory_Proxy(long ptr)
-@ stdcall WICGetMetadataContentSize(long ptr ptr)
-@ stdcall WICMapGuidToShortName(long long wstr ptr)
-@ stdcall WICMapSchemaToName(ptr wstr long wstr long)
+@ stub WICGetMetadataContentSize
+@ stdcall WICMapGuidToShortName(ptr long ptr ptr)
+@ stdcall WICMapSchemaToName(ptr wstr long ptr ptr)
 @ stdcall WICMapShortNameToGuid(wstr ptr)
-@ stdcall WICMatchMetadataContent(long ptr ptr ptr)
-@ stdcall WICSerializeMetadataContent(long ptr long ptr)
+@ stub WICMatchMetadataContent
+@ stub WICSerializeMetadataContent
 @ stdcall WICSetEncoderFormat_Proxy(ptr ptr ptr ptr)

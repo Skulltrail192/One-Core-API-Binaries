@@ -1397,8 +1397,8 @@ SearchPathW(IN LPCWSTR lpPath OPTIONAL,
                                    &CallerBuffer,
                                    NULL,
                                    NULL,
-                                   &FilePartSize,
-                                   &LengthNeeded);
+                                   (PSIZE_T)&FilePartSize,
+                                   (PSIZE_T)&LengthNeeded);
     if (NT_ERROR(Status))
     {
         /* Check for unusual status codes */

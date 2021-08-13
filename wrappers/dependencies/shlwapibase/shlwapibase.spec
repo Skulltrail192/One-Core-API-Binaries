@@ -497,11 +497,11 @@
 497 stub -noname SHPropertyBag_WriteLONG
 498 stub -noname SHPropertyBag_ReadBOOLOld
 499 stub -noname SHPropertyBag_WriteBOOL
-500 stdcall AssocGetPerceivedType(wstr ptr ptr ptr)
-501 stdcall AssocIsDangerous(wstr)
-502 stdcall AssocQueryKeyA(long long str str ptr)
-503 stdcall AssocQueryKeyW(long long wstr wstr ptr)
-504 stdcall AssocQueryStringA(long long str str ptr ptr)
+@ stdcall AssocGetPerceivedType(wstr ptr ptr ptr)
+@ stdcall AssocIsDangerous(wstr)
+@ stdcall AssocQueryKeyA(long long str str ptr)
+@ stdcall AssocQueryKeyW(long long wstr wstr ptr)
+@ stdcall AssocQueryStringA(long long str str ptr ptr)
 505 stub -noname SHPropertyBag_ReadGUID
 506 stub -noname SHPropertyBag_WriteGUID
 507 stub -noname SHPropertyBag_ReadDWORD
@@ -857,8 +857,8 @@
 857 stdcall wvnsprintfA(ptr long str ptr)
 858 stdcall wvnsprintfW(ptr long wstr ptr)
 
-500 stdcall -arch=x86_64 -noname ualstrcpynW(wstr wstr long)
+500 stdcall -arch=x86_64 -noname ualstrcpynW(wstr wstr long) StrCpyNW
 501 stdcall -arch=x86_64 -noname SHLWAPI_501(wstr wstr)
 502 stdcall -arch=x86_64 -noname SHLWAPI_502(wstr wstr)
 503 stdcall -arch=x86_64 -noname ualstrlenW(wstr)
-504 stdcall -arch=x86_64 -noname ualstrcpyW(wstr wstr)
+504 stdcall -arch=x86_64 -noname ualstrcpyW(wstr wstr) StrCpyW

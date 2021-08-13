@@ -21,6 +21,13 @@
  
 WINE_DEFAULT_DEBUG_CHANNEL(shell);
 
+typedef struct _NOTIFYICONIDENTIFIER {
+  DWORD cbSize;
+  HWND  hWnd;
+  UINT  uID;
+  GUID  guidItem;
+} NOTIFYICONIDENTIFIER, *PNOTIFYICONIDENTIFIER;
+
 typedef enum _ASSOCCLASS{
 	ASSOCCLASS_APP_KEY,
 	ASSOCCLASS_CLSID_KEY,
@@ -59,45 +66,6 @@ HRESULT WINAPI SHGetPropertyStoreForWindow(
 static const GUID CLSID_Bind_Query = 
 {0x000214e6, 0x0000, 0x0000, {0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
-HRESULT 
-WINAPI 
-SHBindToObject(
-	IShellFolder *psf, 
-	PCUIDLIST_RELATIVE pidl, 
-	IBindCtx *pbc, 
-	const IID *const riid, 
-	void **ppv
-)
-{
-  HRESULT callResult; // eax@2
-  BOOL verification; // zf@4
-  struct IShellFolderVtbl *bindObject; // ecx@4
-  int bindResult; // eax@5
-  HRESULT resp; // [sp+10h] [bp-Ch]@3
-  IShellFolder *ppshf; // [sp+14h] [bp-8h]@2
-
-  *ppv = 0;
-  if ( psf )
-    callResult = psf->lpVtbl->QueryInterface(psf, &IID_IShellFolder, (LPVOID *)&ppshf);
-  else
-    callResult = SHGetDesktopFolder(&ppshf);
-  resp = callResult;
-  if ( callResult >= 0 )
-  {
-    verification = _ILIsEmpty((LPCITEMIDLIST)pidl) == 0;
-    bindObject = ppshf->lpVtbl;
-    if ( verification )
-      bindResult = bindObject->BindToObject(ppshf, (LPCITEMIDLIST)pidl, pbc, riid, ppv);
-    else
-      bindResult = bindObject->QueryInterface(ppshf, riid, ppv);
-    resp = bindResult;
-    if ( bindResult >= 0 && !*ppv )
-      resp = E_FAIL;
-    ppshf->lpVtbl->Release(ppshf);
-  }
-  return resp;
-}
-
 HRESULT WINAPI SHBindToFolderIDListParent(
   _In_opt_   IShellFolder *psfRoot,
   _In_       PCUIDLIST_RELATIVE pidl,
@@ -115,16 +83,14 @@ EXTERN_C HANDLE WINAPI IsEnabled()
 	return NULL;
 }
 
-HRESULT WINAPI SHCreateDataObject(
-  _In_opt_  PCIDLIST_ABSOLUTE pidlFolder,
-  _In_      UINT cidl,
-  _In_opt_  PCUITEMID_CHILD_ARRAY apidl,
-  _In_opt_  IDataObject *pdtInner,
-  _In_      REFIID riid,
-  _Out_     void **ppv
-)
+/***********************************************************************
+ *              SHCreateDataObject (SHELL32.@)
+ */
+HRESULT WINAPI SHCreateDataObject(PCIDLIST_ABSOLUTE pidl_folder, UINT count, PCUITEMID_CHILD_ARRAY pidl_array,
+                                  IDataObject *object, REFIID riid, void **ppv)
 {
-	return E_FAIL;
+    FIXME("%p %d %p %p %s %p: stub\n", pidl_folder, count, pidl_array, object, debugstr_guid(riid), ppv);
+    return E_NOTIMPL;
 }
 
 //@unimplemented
@@ -135,16 +101,15 @@ HRESULT WINAPI SHEvaluateSystemCommandTemplate(
   _Out_opt_  PWSTR *ppszParameters
 )
 {
-	return E_FAIL;
+    return E_NOTIMPL;
 }
-
 
 HRESULT WINAPI SHCreateDefaultExtractIcon(
   REFIID riid,
   _Out_  void **ppv
 )
 {
-	return E_FAIL;
+    return E_NOTIMPL;
 }
 
 HRESULT 
@@ -158,18 +123,14 @@ SHSetTemporaryPropertyForItem(
 	return E_FAIL;
 }
 
-HRESULT 
-WINAPI 
-SHGetLocalizedName(
-  _In_   PCWSTR pszPath,
-  _Out_  PWSTR pszResModule,
-  UINT cch,
-  _Out_  int *pidsRes
-)
+/***********************************************************************
+ *              SHGetLocalizedName (SHELL32.@)
+ */
+HRESULT WINAPI SHGetLocalizedName(LPCWSTR path, LPWSTR module, UINT size, INT *res)
 {
-	return E_FAIL;
+    FIXME("%s %p %u %p: stub\n", debugstr_w(path), module, size, res);
+    return E_NOTIMPL;
 }
-
 
 HRESULT 
 WINAPI 
@@ -181,22 +142,13 @@ ILLoadFromStreamEx(
 	return E_FAIL;
 }
 
-BOOL 
-WINAPI 
-InitNetworkAddressControl(void)
+/***********************************************************************
+ *              InitNetworkAddressControl (SHELL32.@)
+ */
+BOOL WINAPI InitNetworkAddressControl(void)
 {
-	return FALSE;
-}
-
-HRESULT WINAPI SHCreateItemInKnownFolder(
-  _In_      REFKNOWNFOLDERID kfid,
-  DWORD dwKFFlags,
-  _In_opt_  PCWSTR pszItem,
-  _In_      REFIID riid,
-  _Out_     void **ppv
-)
-{
-	return E_FAIL;
+    FIXME("stub\n");
+    return FALSE;
 }
 
 HRESULT WINAPI SHGetTemporaryPropertyForItem(
@@ -247,22 +199,13 @@ HRESULT WINAPI SHAddDefaultPropertiesByExt(
 	return E_FAIL;
 }
 
-HRESULT WINAPI SHRemoveLocalizedName(
-  _In_  PCWSTR pszPath
-)
+/*************************************************************************
+ *              SHRemoveLocalizedName (SHELL32.@)
+ */
+HRESULT WINAPI SHRemoveLocalizedName(const WCHAR *path)
 {
-	return E_FAIL;
-}
-
-HRESULT WINAPI SHCreateItemFromRelativeName(
-  _In_   IShellItem *psiParent,
-  _In_   PCWSTR pszName,
-  _In_   IBindCtx *pbc,
-  _In_   REFIID riid,
-  _Out_  void **ppv
-)
-{
-	return E_FAIL;
+    FIXME("%s stub\n", debugstr_w(path));
+    return S_OK;
 }
 
 HRESULT 
@@ -300,32 +243,13 @@ WPC_InstallState(
 	return S_OK;
 }
 
-HRESULT 
-WINAPI
-SetCurrentProcessExplicitAppUserModelID(
-  _In_ PCWSTR AppID
-)
+/*************************************************************************
+ * Shell_NotifyIconGetRect		[SHELL32.@]
+ */
+HRESULT WINAPI Shell_NotifyIconGetRect(const NOTIFYICONIDENTIFIER* identifier, RECT* icon_location)
 {
-	return E_NOTIMPL;
-}
-
-HRESULT 
-WINAPI
-GetCurrentProcessExplicitAppUserModelID(
-  _Out_ PWSTR *AppID
-)
-{
-	return E_NOTIMPL;
-}
-
-HRESULT 
-WINAPI 
-Shell_NotifyIconGetRect(
-	PVOID *identifier, 
-	PVOID *iconLocation
-)
-{
-	return E_NOTIMPL;
+    FIXME("stub (%p) (%p)\n", identifier, icon_location);
+    return E_NOTIMPL;
 }
 
 HRESULT 

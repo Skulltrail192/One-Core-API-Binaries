@@ -1001,13 +1001,14 @@ int WSAAPI WSCInstallNameSpace32(
 	return 0;
 }
 
-int WSPAPI WSCInstallProvider64_32(
-  _In_  const LPGUID             lpProviderId,
-  _In_  const LPWSTR             lpszProviderDllPath,
-  _In_  const LPWSAPROTOCOL_INFO lpProtocolInfoList,
-  _In_        DWORD              dwNumberOfEntries,
-  _Out_       LPINT              lpErrno
-)
+int
+WSPAPI
+WSCInstallProvider64_32(
+  _In_ LPGUID lpProviderId,
+  _In_z_ const WCHAR FAR *lpszProviderDllPath,
+  _In_reads_(dwNumberOfEntries) const LPWSAPROTOCOL_INFOW lpProtocolInfoList,
+  _In_ DWORD dwNumberOfEntries,
+  _Out_ LPINT lpErrno)
 {
 	return 0;
 }

@@ -551,3 +551,30 @@ CreateEnhMetaFileW(
     UNIMPLEMENTED;
     return 0;
 }
+
+/*
+ * @implemented
+ */
+UINT
+WINAPI
+GetEnhMetaFilePixelFormat(
+    HENHMETAFILE			hemf,
+    UINT				cbBuffer,
+    PIXELFORMATDESCRIPTOR	*ppfd
+)
+{
+    ENHMETAHEADER pemh;
+
+    if(GetEnhMetaFileHeader(hemf, sizeof(ENHMETAHEADER), &pemh))
+    {
+        if(pemh.bOpenGL)
+        {
+            if(pemh.cbPixelFormat)
+            {
+                memcpy((void*)ppfd, UlongToPtr(pemh.offPixelFormat), cbBuffer );
+                return(pemh.cbPixelFormat);
+            }
+        }
+    }
+    return(0);
+}

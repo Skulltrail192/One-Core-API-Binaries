@@ -1,9 +1,11 @@
 #define typeof(X_) __typeof_ ## X_
 
 #ifdef _WIN64
+#define __typeof_uintptr unsigned long long
 #define __typeof_intptr long long
 #define __typeof_longptr long long
 #else
+#define __typeof_uintptr unsigned int
 #define __typeof_intptr int
 #define __typeof_longptr long
 #endif
@@ -38,7 +40,7 @@ typedef void (__cdecl typeof(jpeg_set_defaults))(struct jpeg_compress_struct *);
 typedef unsigned int (__cdecl typeof(jpeg_write_scanlines))(struct jpeg_compress_struct *, char **, unsigned int);
 
 typedef void (*png_error_ptr_1)(struct png_struct_def *, const char *);
-typedef void (*png_rw_ptr_1)(struct png_struct_def *, unsigned char *, unsigned int);
+typedef void (*png_rw_ptr_1)(struct png_struct_def *, unsigned char *, __typeof_uintptr);
 typedef void (*png_flush_ptr_1)(struct png_struct_def *);
 typedef struct png_info_def* (__cdecl typeof(png_create_info_struct))(struct png_struct_def *);
 typedef struct png_struct_def * (__cdecl typeof(png_create_read_struct))(const char *, void *, png_error_ptr_1, png_error_ptr_1);
@@ -76,11 +78,12 @@ typedef void (__cdecl typeof(png_write_info))(struct png_struct_def *, struct pn
 typedef void (__cdecl typeof(png_write_rows))(struct png_struct_def *, unsigned char **row, unsigned int);
 typedef unsigned int (__cdecl typeof(png_get_iCCP))(struct png_struct_def *, struct png_info_def *, char **, int *, char **, unsigned int *);
 typedef void (__cdecl typeof(png_set_crc_action))(struct png_struct_def *, int, int);
-typedef void (__stdcall typeof(png_set_PLTE))(struct png_struct_def *, struct png_info_def *, const struct png_color_struct *, int);
-typedef void (__stdcall typeof(png_set_tRNS))(struct png_struct_def *, struct png_info_def *, const unsigned char *, int, const struct png_color_16_struct *);
+typedef void (__cdecl typeof(png_set_PLTE))(struct png_struct_def *, struct png_info_def *, const struct png_color_struct *, int);
+typedef void (__cdecl typeof(png_set_tRNS))(struct png_struct_def *, struct png_info_def *, const unsigned char *, int, const struct png_color_16_struct *);
 typedef void (__cdecl typeof(png_set_filter))(struct png_struct_def *, int, int);
+typedef void (__cdecl typeof(png_set_swap))(struct png_struct_def *);
 typedef void *thandle_t_1;
-typedef int (*TIFFReadWriteProc_1)(thandle_t_1, void *, __typeof_intptr);
+typedef __typeof_intptr (*TIFFReadWriteProc_1)(thandle_t_1, void *, __typeof_intptr);
 typedef unsigned int (*TIFFSeekProc_1)(void *, unsigned int, int);
 typedef int (*TIFFCloseProc_1)(thandle_t_1);
 typedef unsigned int (*TIFFSizeProc_1)(thandle_t_1);

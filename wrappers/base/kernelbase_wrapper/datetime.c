@@ -682,7 +682,7 @@ WINAPI IsValidGregorianDateTime(LPCALDATETIME lpCalDateTime, UINT amount, UINT p
 * @implemented
 */
 BOOL 
-WINAPI IsValidCalDateTime(_In_ LPCALDATETIME lpCalDateTime,_In_ UINT amount)
+WINAPI IsValidCalDateTime(_In_ LPCALDATETIME lpCalDateTime,_In_ CALID amount)
 {
 	return IsValidGregorianDateTime(lpCalDateTime, amount, 1);
 }

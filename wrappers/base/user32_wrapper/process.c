@@ -52,7 +52,7 @@ BOOL WINAPI SetProcessRestrictionExemption(BOOL verification)
 BOOL WINAPI SetProcessDPIAware(void)
 {
     DbgPrint("SetProcessDPIAware called\n");
-    InterlockedCompareExchange( &dpi_awareness, 0x11, 0 );
+    InterlockedCompareExchange( (volatile long *)&dpi_awareness, 0x11, 0 );
     return TRUE;
 }
 

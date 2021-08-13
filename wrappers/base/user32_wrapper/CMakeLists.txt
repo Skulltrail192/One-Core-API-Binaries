@@ -11,7 +11,11 @@ include_directories(${REACTOS_SOURCE_DIR}/win32ss/include)
 
 spec2def(user32_wrapper.dll user32_wrapper.spec)
 
-set(baseaddress_user32_wrapper                         0x77a20000) # reserved
+if(ARCH STREQUAL "amd64")
+	set(baseaddress_user32_wrapper     0x7c3e0000)
+elseif(ARCH STREQUAL "i386")
+	set(baseaddress_user32_wrapper     0x75a20000)
+endif()
 
 list(APPEND SOURCE
 	dib.c

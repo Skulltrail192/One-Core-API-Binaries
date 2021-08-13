@@ -421,10 +421,10 @@ NtAccessCheckInternal(
 							GrantedAccess,
 							AccessStatus);
 							
-	if(!NT_SUCCESS(Status))
-	{
-		DbgPrint("NtAccessCheck :: Status: %08x\n",Status);		
-	}
+	// if(!NT_SUCCESS(Status))
+	// {
+		// DbgPrint("NtAccessCheck :: Status: %08x\n",Status);		
+	// }
 	
 	return Status;
 }

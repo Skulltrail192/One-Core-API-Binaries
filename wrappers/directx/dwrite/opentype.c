@@ -3189,7 +3189,7 @@ void opentype_layout_scriptshaping_cache_init(struct scriptshaping_cache *cache)
     }
 }
 
-unsigned int opentype_layout_find_script(const struct scriptshaping_cache *cache, unsigned int kind, DWORD script,
+unsigned int opentype_layout_find_script(const struct scriptshaping_cache *cache, DWORD kind, DWORD script,
         unsigned int *script_index)
 {
     const struct ot_gsubgpos_table *table = kind == MS_GSUB_TAG ? &cache->gsub : &cache->gpos;
@@ -3219,7 +3219,7 @@ unsigned int opentype_layout_find_script(const struct scriptshaping_cache *cache
     return 0;
 }
 
-unsigned int opentype_layout_find_language(const struct scriptshaping_cache *cache, unsigned int kind, DWORD language,
+unsigned int opentype_layout_find_language(const struct scriptshaping_cache *cache, DWORD kind, DWORD language,
         unsigned int script_index, unsigned int *language_index)
 {
     const struct ot_gsubgpos_table *table = kind == MS_GSUB_TAG ? &cache->gsub : &cache->gpos;

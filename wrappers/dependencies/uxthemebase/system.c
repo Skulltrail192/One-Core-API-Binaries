@@ -1087,8 +1087,8 @@ HRESULT WINAPI ApplyTheme(HTHEMEFILE hThemeFile, char *unknown, HWND hWnd)
  *     Failure: HRESULT error-code
  */
 HRESULT WINAPI GetThemeDefaults(LPCWSTR pszThemeFileName, LPWSTR pszColorName,
-                                size_t dwColorNameLen, LPWSTR pszSizeName,
-                                size_t dwSizeNameLen)
+                                DWORD dwColorNameLen, LPWSTR pszSizeName,
+                                DWORD dwSizeNameLen)
 {
     PTHEME_FILE pt;
     HRESULT hr;

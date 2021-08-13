@@ -553,7 +553,7 @@ GetSystemTimes(OUT LPFILETIME lpIdleTime OPTIONAL,
     Status = NtQuerySystemInformation(SystemProcessorPerformanceInformation,
                                       ProcPerfInfo,
                                       BufferSize,
-                                      &ReturnLength);
+                                      (PULONG)&ReturnLength);
     if ((NT_SUCCESS(Status)) && (ReturnLength == BufferSize))
     {
         if (lpIdleTime)

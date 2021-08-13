@@ -992,30 +992,14 @@
 973 stdcall lstrlen(str) lstrlenA
 974 stdcall lstrlenA(str)
 975 stdcall lstrlenW(wstr)
-;@ stdcall -arch=x86_64 uaw_lstrcmpW(wstr wstr)
-;@ stdcall -arch=x86_64 uaw_lstrcmpiW(wstr wstr)
-;@ stdcall -arch=x86_64 uaw_lstrlenW(wstr)
-;@ stdcall -arch=x86_64 uaw_wcschr(wstr long)
-;@ stdcall -arch=x86_64 uaw_wcscpy(ptr wstr)
-;@ stdcall -arch=x86_64 uaw_wcsicmp(wstr wstr)
-;@ stdcall -arch=x86_64 uaw_wcslen(wstr)
-;@ stdcall -arch=x86_64 uaw_wcsrchr(wstr long)
-
-; @ stub BaseCleanupAppcompatCache
-; @ stub BaseInitAppcompatCache
-; @ stub CreateProcessInternalWSecure
-; @ stub CreateVirtualBuffer
-; @ stub ExtendVirtualBuffer
-; @ stub FreeVirtualBuffer
-; @ stub GetNumaAvailableMemory
-; @ stub GetNumaProcessorMap
-; @ stub GetProcessDEPPolicy
-; @ stub GetSystemDEPPolicy
-; @ stub NumaVirtualQueryNode
-; @ stub QueryWin31IniFilesMappedToRegistry
-; @ stub SetProcessDEPPolicy
-; @ stub TrimVirtualBuffer
-; @ stub VirtualBufferExceptionHandler
+@ stdcall -stub -arch=x86_64 uaw_lstrcmpW(wstr wstr)
+@ stdcall -stub -arch=x86_64 uaw_lstrcmpiW(wstr wstr)
+@ stdcall -stub -arch=x86_64 uaw_lstrlenW(wstr)
+@ stdcall -stub -arch=x86_64 uaw_wcschr(wstr long)
+@ stdcall -stub -arch=x86_64 uaw_wcscpy(ptr wstr)
+@ stdcall -stub -arch=x86_64 uaw_wcsicmp(wstr wstr)
+@ stdcall -stub -arch=x86_64 uaw_wcslen(wstr)
+@ stdcall -stub -arch=x86_64 uaw_wcsrchr(wstr long)
 
 #Only for Windows XP
 @ stdcall BaseInitAppcompatCache() 

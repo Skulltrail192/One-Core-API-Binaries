@@ -267,7 +267,7 @@ CreateRemoteThread(IN HANDLE hProcess,
                                                       ActivationContextBasicInformation,
                                                       &ActCtxInfo,
                                                       sizeof(ActCtxInfo),
-                                                      &ReturnLength);
+                                                      (SIZE_T*)&ReturnLength);
         if (!NT_SUCCESS(Status))
         {
             /* Fail */

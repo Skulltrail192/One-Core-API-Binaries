@@ -97,25 +97,6 @@ BOOL WINAPI StrRetToStrNW(LPWSTR dest, DWORD len, LPSTRRET src, const ITEMIDLIST
     return TRUE;
 }
 
-const char * shdebugstr_guid( const struct _GUID *id )
-{
-	int i;
-	const char* name = NULL;
-	char clsidbuf[100];
-
-	if (!id) return "(null)";
-
-	for (i = 0; InterfaceDesc[i].riid && !name; i++) {
-	    if (IsEqualIID(InterfaceDesc[i].riid, id)) name = InterfaceDesc[i].name;
-	}
-	if (!name) {
-	    if (HCR_GetClassNameA(id, clsidbuf, 100))
-		name = clsidbuf;
-	}
-
-        return wine_dbg_sprintf( "%s (%s)", debugstr_guid(id), name ? name : "unknown" );
-}
-
 WNDPROC lpPrevWndFunc;
 
 LRESULT 

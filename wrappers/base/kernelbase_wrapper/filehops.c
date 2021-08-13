@@ -532,10 +532,9 @@ Wow64SetThreadContext(
 )
 { 
   #ifdef _M_IX86
-	BaseSetLastNTError(STATUS_NOT_SUPPORTED);
-	return FALSE;
+	return set_ntstatus( NtSetContextThread( hThread, (const CONTEXT *)lpContext ));
   #elif defined(_M_AMD64)
-	return SetThreadContext(hThread, lpContext);
+	return SetThreadContext(hThread, (const CONTEXT *)lpContext);
   #endif  
 }
 
@@ -547,10 +546,9 @@ Wow64GetThreadContext(
 )
 { 
   #ifdef _M_IX86
-	BaseSetLastNTError(STATUS_NOT_SUPPORTED);
-	return FALSE;
+	return set_ntstatus( NtGetContextThread( hThread, (CONTEXT *)lpContext ));
   #elif defined(_M_AMD64)
-	return GetThreadContext(hThread, lpContext);
+	return GetThreadContext(hThread, (const CONTEXT *)lpContext);
   #endif  
 }
 
@@ -566,6 +564,6 @@ Wow64GetThreadSelectorEntry(
 	BaseSetLastNTError(STATUS_NOT_SUPPORTED);
 	return FALSE;
   #elif defined(_M_AMD64)
-	return GetThreadSelectorEntry(hThread, dwSelector, lpSelectorEntry);
+	return GetThreadSelectorEntry(hThread, dwSelector, (LPLDT_ENTRY)lpSelectorEntry);
   #endif  
 }

@@ -81,6 +81,7 @@ list(APPEND SOURCE
     winnls/string/lstring.c
     winnls/string/nls.c
     winnls/string/sortkey.c
+	${CMAKE_CURRENT_BINARY_DIR}/kernelex_stubs.c
     k32.h)
 
 if(ARCH STREQUAL "i386")

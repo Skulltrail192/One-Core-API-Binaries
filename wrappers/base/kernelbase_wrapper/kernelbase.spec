@@ -1021,20 +1021,20 @@
 @ stdcall SetThreadPriority(ptr long) SetThreadPriorityInternal
 
 #Needed functions for Server 2003 RTM and XP
-@ stdcall CreateVirtualBuffer(ptr long long) kernelex.CreateVirtualBuffer
-@ stdcall ExtendVirtualBuffer(ptr) kernelex.ExtendVirtualBuffer
-@ stdcall FreeVirtualBuffer(ptr) kernelex.FreeVirtualBuffer
-@ stdcall TrimVirtualBuffer(ptr) kernelex.TrimVirtualBuffer
-@ stdcall VirtualBufferExceptionHandler(long ptr ptr) kernelex.VirtualBufferExceptionHandler
+@ stdcall -arch=i386 CreateVirtualBuffer(ptr long long) kernelex.CreateVirtualBuffer
+@ stdcall -arch=i386 ExtendVirtualBuffer(ptr) kernelex.ExtendVirtualBuffer
+@ stdcall -arch=i386 FreeVirtualBuffer(ptr) kernelex.FreeVirtualBuffer
+@ stdcall -arch=i386 TrimVirtualBuffer(ptr) kernelex.TrimVirtualBuffer
+@ stdcall -arch=i386 VirtualBufferExceptionHandler(long ptr ptr) kernelex.VirtualBufferExceptionHandler
 
 #Only for Windows XP
-@ stdcall BaseInitAppcompatCache() kernelex.BaseInitAppcompatCache
-@ stdcall BaseCleanupAppcompatCache() kernelex.BaseCleanupAppcompatCache
-@ stdcall CreateProcessInternalWSecure() kernelex.CreateProcessInternalWSecure
-@ stdcall QueryWin31IniFilesMappedToRegistry(long wstr long ptr) kernelex.QueryWin31IniFilesMappedToRegistry
-@ stdcall GetNumaAvailableMemory(ptr long ptr) kernelex.GetNumaAvailableMemory
-@ stdcall GetNumaProcessorMap(ptr long ptr) kernelex.GetNumaProcessorMap
-@ stdcall NumaVirtualQueryNode(long long long long) kernelex.NumaVirtualQueryNode
+@ stdcall -arch=i386 BaseInitAppcompatCache() kernelex.BaseInitAppcompatCache
+@ stdcall -arch=i386 BaseCleanupAppcompatCache() kernelex.BaseCleanupAppcompatCache
+@ stdcall -arch=i386 CreateProcessInternalWSecure() kernelex.CreateProcessInternalWSecure
+@ stdcall -arch=i386 QueryWin31IniFilesMappedToRegistry(long wstr long ptr) kernelex.QueryWin31IniFilesMappedToRegistry
+@ stdcall -arch=i386 GetNumaAvailableMemory(ptr long ptr) kernelex.GetNumaAvailableMemory
+@ stdcall -arch=i386 GetNumaProcessorMap(ptr long ptr) kernelex.GetNumaProcessorMap
+@ stdcall -arch=i386 NumaVirtualQueryNode(long long long long) kernelex.NumaVirtualQueryNode
 
 #Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) ntext.RtlAcquireSRWLockExclusive

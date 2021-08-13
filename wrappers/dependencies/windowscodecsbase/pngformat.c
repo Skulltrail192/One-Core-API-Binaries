@@ -17,13 +17,28 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-#include "wincodecs_private.h"
+#include "config.h"
+#include "wine/port.h"
 
-#include <winerror.h>
+#include <stdarg.h>
 
 #ifdef HAVE_PNG_H
 #include <png.h>
 #endif
+
+#define NONAMELESSUNION
+#define COBJMACROS
+
+#include "windef.h"
+#include "winbase.h"
+#include "objbase.h"
+
+#include "wincodecs_private.h"
+
+#include "wine/debug.h"
+#include "wine/library.h"
+
+WINE_DEFAULT_DEBUG_CHANNEL(wincodecs);
 
 static inline ULONG read_ulong_be(BYTE* data)
 {
@@ -317,6 +332,7 @@ MAKE_FUNCPTR(png_set_strip_16);
 MAKE_FUNCPTR(png_set_tRNS);
 MAKE_FUNCPTR(png_set_tRNS_to_alpha);
 MAKE_FUNCPTR(png_set_write_fn);
+MAKE_FUNCPTR(png_set_swap);
 MAKE_FUNCPTR(png_read_end);
 MAKE_FUNCPTR(png_read_image);
 MAKE_FUNCPTR(png_read_info);
@@ -383,6 +399,7 @@ static void *load_libpng(void)
         LOAD_FUNCPTR(png_set_tRNS);
         LOAD_FUNCPTR(png_set_tRNS_to_alpha);
         LOAD_FUNCPTR(png_set_write_fn);
+        LOAD_FUNCPTR(png_set_swap);
         LOAD_FUNCPTR(png_read_end);
         LOAD_FUNCPTR(png_read_image);
         LOAD_FUNCPTR(png_read_info);
@@ -565,8 +582,6 @@ static HRESULT WINAPI PngDecoder_Initialize(IWICBitmapDecoder *iface, IStream *p
     int num_trans;
     png_uint_32 transparency;
     png_color_16p trans_values;
-    png_colorp png_palette;
-    int num_palette;
     jmp_buf jmpbuf;
     BYTE chunk_type[4];
     ULONG chunk_size;
@@ -607,7 +622,6 @@ static HRESULT WINAPI PngDecoder_Initialize(IWICBitmapDecoder *iface, IStream *p
     if (setjmp(jmpbuf))
     {
         ppng_destroy_read_struct(&This->png_ptr, &This->info_ptr, &This->end_info);
-        HeapFree(GetProcessHeap(), 0, row_pointers);
         This->png_ptr = NULL;
         hr = WINCODEC_ERR_UNKNOWNIMAGEFORMAT;
         goto end;
@@ -630,40 +644,25 @@ static HRESULT WINAPI PngDecoder_Initialize(IWICBitmapDecoder *iface, IStream *p
     color_type = ppng_get_color_type(This->png_ptr, This->info_ptr);
     bit_depth = ppng_get_bit_depth(This->png_ptr, This->info_ptr);
 
+    /* PNGs with bit-depth greater than 8 are network byte order. Windows does not expect this. */
+    if (bit_depth > 8)
+        ppng_set_swap(This->png_ptr);
+
     /* check for color-keyed alpha */
     transparency = ppng_get_tRNS(This->png_ptr, This->info_ptr, &trans, &num_trans, &trans_values);
 
-    if (!ppng_get_PLTE(This->png_ptr, This->info_ptr, &png_palette, &num_palette))
-        num_palette = 0;
-
-    TRACE("color_type %d, bit_depth %d, transparency %d, num_palette %d\n",
-          color_type, bit_depth, transparency, num_palette);
+    if (transparency && (color_type == PNG_COLOR_TYPE_RGB ||
+        (color_type == PNG_COLOR_TYPE_GRAY && bit_depth == 16)))
+    {
+        /* expand to RGBA */
+        if (color_type == PNG_COLOR_TYPE_GRAY)
+            ppng_set_gray_to_rgb(This->png_ptr);
+        ppng_set_tRNS_to_alpha(This->png_ptr);
+        color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+    }
 
     switch (color_type)
     {
-    case PNG_COLOR_TYPE_GRAY:
-        This->bpp = bit_depth;
-        switch (bit_depth)
-        {
-        case 1:
-            This->format = num_palette ? &GUID_WICPixelFormat1bppIndexed : &GUID_WICPixelFormatBlackWhite;
-            break;
-        case 2:
-            This->format = num_palette ? &GUID_WICPixelFormat2bppIndexed : &GUID_WICPixelFormat2bppGray;
-            break;
-        case 4:
-            This->format = num_palette ? &GUID_WICPixelFormat4bppIndexed : &GUID_WICPixelFormat4bppGray;
-            break;
-        case 8:
-            This->format = num_palette ? &GUID_WICPixelFormat8bppIndexed : &GUID_WICPixelFormat8bppGray;
-            break;
-        case 16: This->format = &GUID_WICPixelFormat16bppGray; break;
-        default:
-            ERR("invalid grayscale bit depth: %i\n", bit_depth);
-            hr = WINCODEC_ERR_UNKNOWNIMAGEFORMAT;
-            goto end;
-        }
-        break;
     case PNG_COLOR_TYPE_GRAY_ALPHA:
         /* WIC does not support grayscale alpha formats so use RGBA */
         ppng_set_gray_to_rgb(This->png_ptr);
@@ -683,6 +682,25 @@ static HRESULT WINAPI PngDecoder_Initialize(IWICBitmapDecoder *iface, IStream *p
             goto end;
         }
         break;
+    case PNG_COLOR_TYPE_GRAY:
+        This->bpp = bit_depth;
+        if (!transparency)
+        {
+            switch (bit_depth)
+            {
+            case 1: This->format = &GUID_WICPixelFormatBlackWhite; break;
+            case 2: This->format = &GUID_WICPixelFormat2bppGray; break;
+            case 4: This->format = &GUID_WICPixelFormat4bppGray; break;
+            case 8: This->format = &GUID_WICPixelFormat8bppGray; break;
+            case 16: This->format = &GUID_WICPixelFormat16bppGray; break;
+            default:
+                ERR("invalid grayscale bit depth: %i\n", bit_depth);
+                hr = E_FAIL;
+                goto end;
+            }
+            break;
+        }
+        /* else fall through */
     case PNG_COLOR_TYPE_PALETTE:
         This->bpp = bit_depth;
         switch (bit_depth)
@@ -803,6 +821,8 @@ static HRESULT WINAPI PngDecoder_Initialize(IWICBitmapDecoder *iface, IStream *p
 end:
     LeaveCriticalSection(&This->lock);
 
+    HeapFree(GetProcessHeap(), 0, row_pointers);
+
     return hr;
 }
 
@@ -816,20 +836,9 @@ static HRESULT WINAPI PngDecoder_GetContainerFormat(IWICBitmapDecoder *iface,
 static HRESULT WINAPI PngDecoder_GetDecoderInfo(IWICBitmapDecoder *iface,
     IWICBitmapDecoderInfo **ppIDecoderInfo)
 {
-    HRESULT hr;
-    IWICComponentInfo *compinfo;
-
     TRACE("(%p,%p)\n", iface, ppIDecoderInfo);
 
-    hr = CreateComponentInfo(&CLSID_WICPngDecoder, &compinfo);
-    if (FAILED(hr)) return hr;
-
-    hr = IWICComponentInfo_QueryInterface(compinfo, &IID_IWICBitmapDecoderInfo,
-        (void**)ppIDecoderInfo);
-
-    IWICComponentInfo_Release(compinfo);
-
-    return hr;
+    return get_decoder_info(&CLSID_WICPngDecoder, ppIDecoderInfo);
 }
 
 static HRESULT WINAPI PngDecoder_CopyPalette(IWICBitmapDecoder *iface,
@@ -842,7 +851,7 @@ static HRESULT WINAPI PngDecoder_CopyPalette(IWICBitmapDecoder *iface,
 static HRESULT WINAPI PngDecoder_GetMetadataQueryReader(IWICBitmapDecoder *iface,
     IWICMetadataQueryReader **reader)
 {
-    FIXME("(%p,%p): stub\n", iface, reader);
+    TRACE("(%p,%p)\n", iface, reader);
 
     if (!reader) return E_INVALIDARG;
 
@@ -1014,7 +1023,7 @@ static HRESULT WINAPI PngDecoder_Frame_CopyPalette(IWICBitmapFrameDecode *iface,
     IWICPalette *pIPalette)
 {
     PngDecoder *This = impl_from_IWICBitmapFrameDecode(iface);
-    png_uint_32 ret;
+    png_uint_32 ret, color_type, bit_depth;
     png_colorp png_palette;
     int num_palette;
     WICColor palette[256];
@@ -1028,30 +1037,58 @@ static HRESULT WINAPI PngDecoder_Frame_CopyPalette(IWICBitmapFrameDecode *iface,
 
     EnterCriticalSection(&This->lock);
 
-    ret = ppng_get_PLTE(This->png_ptr, This->info_ptr, &png_palette, &num_palette);
-    if (!ret)
+    color_type = ppng_get_color_type(This->png_ptr, This->info_ptr);
+    bit_depth = ppng_get_bit_depth(This->png_ptr, This->info_ptr);
+
+    if (color_type == PNG_COLOR_TYPE_PALETTE)
+    {
+        ret = ppng_get_PLTE(This->png_ptr, This->info_ptr, &png_palette, &num_palette);
+        if (!ret)
+        {
+            hr = WINCODEC_ERR_PALETTEUNAVAILABLE;
+            goto end;
+        }
+
+        if (num_palette > 256)
+        {
+            ERR("palette has %i colors?!\n", num_palette);
+            hr = E_FAIL;
+            goto end;
+        }
+
+        ret = ppng_get_tRNS(This->png_ptr, This->info_ptr, &trans_alpha, &num_trans, &trans_values);
+        if (!ret) num_trans = 0;
+
+        for (i=0; i<num_palette; i++)
+        {
+            BYTE alpha = (i < num_trans) ? trans_alpha[i] : 0xff;
+            palette[i] = (alpha << 24 |
+                          png_palette[i].red << 16|
+                          png_palette[i].green << 8|
+                          png_palette[i].blue);
+        }
+    }
+    else if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth <= 8) {
+        ret = ppng_get_tRNS(This->png_ptr, This->info_ptr, &trans_alpha, &num_trans, &trans_values);
+
+        if (!ret)
+        {
+            hr = WINCODEC_ERR_PALETTEUNAVAILABLE;
+            goto end;
+        }
+
+        num_palette = 1 << bit_depth;
+
+        for (i=0; i<num_palette; i++)
+        {
+            BYTE alpha = (i == trans_values[0].gray) ? 0 : 0xff;
+            BYTE val = i * 255 / (num_palette - 1);
+            palette[i] = (alpha << 24 | val << 16 | val << 8 | val);
+        }
+    }
+    else
     {
         hr = WINCODEC_ERR_PALETTEUNAVAILABLE;
-        goto end;
-    }
-
-    if (num_palette > 256)
-    {
-        ERR("palette has %i colors?!\n", num_palette);
-        hr = E_FAIL;
-        goto end;
-    }
-
-    ret = ppng_get_tRNS(This->png_ptr, This->info_ptr, &trans_alpha, &num_trans, &trans_values);
-    if (!ret) num_trans = 0;
-
-    for (i=0; i<num_palette; i++)
-    {
-        BYTE alpha = (i < num_trans) ? trans_alpha[i] : 0xff;
-        palette[i] = (alpha << 24 |
-                      png_palette[i].red << 16|
-                      png_palette[i].green << 8|
-                      png_palette[i].blue);
     }
 
 end:
@@ -1068,7 +1105,7 @@ static HRESULT WINAPI PngDecoder_Frame_CopyPixels(IWICBitmapFrameDecode *iface,
     const WICRect *prc, UINT cbStride, UINT cbBufferSize, BYTE *pbBuffer)
 {
     PngDecoder *This = impl_from_IWICBitmapFrameDecode(iface);
-    TRACE("(%p,%p,%u,%u,%p)\n", iface, prc, cbStride, cbBufferSize, pbBuffer);
+    TRACE("(%p,%s,%u,%u,%p)\n", iface, debug_wic_rect(prc), cbStride, cbBufferSize, pbBuffer);
 
     return copy_pixels(This->bpp, This->image_bits,
         This->width, This->height, This->stride,
@@ -1085,7 +1122,7 @@ static HRESULT WINAPI PngDecoder_Frame_GetMetadataQueryReader(IWICBitmapFrameDec
     if (!ppIMetadataQueryReader)
         return E_INVALIDARG;
 
-    return MetadataQueryReader_CreateInstance(&This->IWICMetadataBlockReader_iface, ppIMetadataQueryReader);
+    return MetadataQueryReader_CreateInstance(&This->IWICMetadataBlockReader_iface, NULL, ppIMetadataQueryReader);
 }
 
 static HRESULT WINAPI PngDecoder_Frame_GetColorContexts(IWICBitmapFrameDecode *iface,
@@ -1214,7 +1251,7 @@ static HRESULT WINAPI PngDecoder_Block_GetReaderByIndex(IWICMetadataBlockReader 
                 This->metadata_blocks[nIndex].ofs, This->metadata_blocks[nIndex].len);
 
             if (SUCCEEDED(hr))
-                hr = ComponentFactory_CreateInstance(&IID_IWICComponentFactory, (void**)&factory);
+                hr = ImagingFactory_CreateInstance(&IID_IWICComponentFactory, (void**)&factory);
 
             if (SUCCEEDED(hr))
             {
@@ -1307,6 +1344,7 @@ struct png_pixelformat {
 };
 
 static const struct png_pixelformat formats[] = {
+    {&GUID_WICPixelFormat32bppBGRA, 32, 8, PNG_COLOR_TYPE_RGB_ALPHA, 0, 1},
     {&GUID_WICPixelFormat24bppBGR, 24, 8, PNG_COLOR_TYPE_RGB, 0, 1},
     {&GUID_WICPixelFormatBlackWhite, 1, 1, PNG_COLOR_TYPE_GRAY, 0, 0},
     {&GUID_WICPixelFormat2bppGray, 2, 2, PNG_COLOR_TYPE_GRAY, 0, 0},
@@ -1314,7 +1352,6 @@ static const struct png_pixelformat formats[] = {
     {&GUID_WICPixelFormat8bppGray, 8, 8, PNG_COLOR_TYPE_GRAY, 0, 0},
     {&GUID_WICPixelFormat16bppGray, 16, 16, PNG_COLOR_TYPE_GRAY, 0, 0},
     {&GUID_WICPixelFormat32bppBGR, 32, 8, PNG_COLOR_TYPE_RGB, 1, 1},
-    {&GUID_WICPixelFormat32bppBGRA, 32, 8, PNG_COLOR_TYPE_RGB_ALPHA, 0, 1},
     {&GUID_WICPixelFormat48bppRGB, 48, 16, PNG_COLOR_TYPE_RGB, 0, 0},
     {&GUID_WICPixelFormat64bppRGBA, 64, 16, PNG_COLOR_TYPE_RGB_ALPHA, 0, 0},
     {&GUID_WICPixelFormat1bppIndexed, 1, 1, PNG_COLOR_TYPE_PALETTE, 0, 0},
@@ -1415,7 +1452,7 @@ static HRESULT WINAPI PngFrameEncode_Initialize(IWICBitmapFrameEncode *iface,
 
     if (pIEncoderOptions)
     {
-        hr = IPropertyBag2_Read(pIEncoderOptions, sizeof(opts)/sizeof(opts[0]), opts, NULL, opt_values, opt_hres);
+        hr = IPropertyBag2_Read(pIEncoderOptions, ARRAY_SIZE(opts), opts, NULL, opt_values, opt_hres);
 
         if (FAILED(hr))
             return hr;
@@ -1612,6 +1649,10 @@ static HRESULT WINAPI PngFrameEncode_WritePixels(IWICBitmapFrameEncode *iface,
             }
         }
 
+        /* Tell PNG we need to byte swap if writing a >8-bpp image */
+        if (This->format->bit_depth > 8)
+            ppng_set_swap(This->png_ptr);
+
         ppng_set_IHDR(This->png_ptr, This->info_ptr, This->width, This->height,
             This->format->bit_depth, This->format->color_type,
             This->interlace ? PNG_INTERLACE_ADAM7 : PNG_INTERLACE_NONE,
@@ -1632,31 +1673,22 @@ static HRESULT WINAPI PngFrameEncode_WritePixels(IWICBitmapFrameEncode *iface,
             /* Newer libpng versions don't accept larger palettes than the declared
              * bit depth, so we need to generate the palette of the correct length.
              */
-            colors = 1 << This->format->bit_depth;
+            colors = min(This->colors, 1 << This->format->bit_depth);
 
             for (i = 0; i < colors; i++)
             {
-                if (i < This->colors)
-                {
-                    png_palette[i].red = (This->palette[i] >> 16) & 0xff;
-                    png_palette[i].green = (This->palette[i] >> 8) & 0xff;
-                    png_palette[i].blue = This->palette[i] & 0xff;
-                    trans[i] = (This->palette[i] >> 24) & 0xff;
-                    if (trans[i] != 0xff)
-                        num_trans++;
-                }
-                else
-                {
-                    png_palette[i].red = 0;
-                    png_palette[i].green = 0;
-                    png_palette[i].blue = 0;
-                }
+                png_palette[i].red = (This->palette[i] >> 16) & 0xff;
+                png_palette[i].green = (This->palette[i] >> 8) & 0xff;
+                png_palette[i].blue = This->palette[i] & 0xff;
+                trans[i] = (This->palette[i] >> 24) & 0xff;
+                if (trans[i] != 0xff)
+                    num_trans = i+1;
             }
 
             ppng_set_PLTE(This->png_ptr, This->info_ptr, png_palette, colors);
 
             if (num_trans)
-                ppng_set_tRNS(This->png_ptr, This->info_ptr, trans, colors, NULL);
+                ppng_set_tRNS(This->png_ptr, This->info_ptr, trans, num_trans, NULL);
         }
 
         ppng_write_info(This->png_ptr, This->info_ptr);
@@ -1728,7 +1760,7 @@ static HRESULT WINAPI PngFrameEncode_WriteSource(IWICBitmapFrameEncode *iface,
 {
     PngEncoder *This = impl_from_IWICBitmapFrameEncode(iface);
     HRESULT hr;
-    TRACE("(%p,%p,%p)\n", iface, pIBitmapSource, prc);
+    TRACE("(%p,%p,%s)\n", iface, pIBitmapSource, debug_wic_rect(prc));
 
     if (!This->frame_initialized)
         return WINCODEC_ERR_WRONGSTATE;
@@ -1951,11 +1983,15 @@ static HRESULT WINAPI PngEncoder_Initialize(IWICBitmapEncoder *iface,
     return S_OK;
 }
 
-static HRESULT WINAPI PngEncoder_GetContainerFormat(IWICBitmapEncoder *iface,
-    GUID *pguidContainerFormat)
+static HRESULT WINAPI PngEncoder_GetContainerFormat(IWICBitmapEncoder *iface, GUID *format)
 {
-    FIXME("(%p,%s): stub\n", iface, debugstr_guid(pguidContainerFormat));
-    return E_NOTIMPL;
+    TRACE("(%p,%p)\n", iface, format);
+
+    if (!format)
+        return E_INVALIDARG;
+
+    memcpy(format, &GUID_ContainerFormatPng, sizeof(*format));
+    return S_OK;
 }
 
 static HRESULT WINAPI PngEncoder_GetEncoderInfo(IWICBitmapEncoder *iface, IWICBitmapEncoderInfo **info)
@@ -2016,7 +2052,11 @@ static HRESULT WINAPI PngEncoder_CreateNewFrame(IWICBitmapEncoder *iface,
 {
     PngEncoder *This = impl_from_IWICBitmapEncoder(iface);
     HRESULT hr;
-    PROPBAG2 opts[2]= {{0}};
+    static const PROPBAG2 opts[2] =
+    {
+        { PROPBAG2_TYPE_DATA, VT_BOOL, 0, 0, (LPOLESTR)wszPngInterlaceOption },
+        { PROPBAG2_TYPE_DATA, VT_UI1,  0, 0, (LPOLESTR)wszPngFilterOption },
+    };
 
     TRACE("(%p,%p,%p)\n", iface, ppIFrameEncode, ppIEncoderOptions);
 
@@ -2034,18 +2074,14 @@ static HRESULT WINAPI PngEncoder_CreateNewFrame(IWICBitmapEncoder *iface,
         return WINCODEC_ERR_NOTINITIALIZED;
     }
 
-    opts[0].pstrName = (LPOLESTR)wszPngInterlaceOption;
-    opts[0].vt = VT_BOOL;
-    opts[0].dwType = PROPBAG2_TYPE_DATA;
-    opts[1].pstrName = (LPOLESTR)wszPngFilterOption;
-    opts[1].vt = VT_UI1;
-    opts[1].dwType = PROPBAG2_TYPE_DATA;
-
-    hr = CreatePropertyBag2(opts, sizeof(opts)/sizeof(opts[0]), ppIEncoderOptions);
-    if (FAILED(hr))
+    if (ppIEncoderOptions)
     {
-        LeaveCriticalSection(&This->lock);
-        return hr;
+        hr = CreatePropertyBag2(opts, ARRAY_SIZE(opts), ppIEncoderOptions);
+        if (FAILED(hr))
+        {
+            LeaveCriticalSection(&This->lock);
+            return hr;
+        }
     }
 
     This->frame_count = 1;

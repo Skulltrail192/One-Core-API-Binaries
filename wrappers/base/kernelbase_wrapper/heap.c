@@ -24,10 +24,10 @@ BOOL WINAPI HeapSetInformationInternal( HANDLE heap, HEAP_INFORMATION_CLASS info
  {
     NTSTATUS Status = RtlSetHeapInformation( heap, infoclass, info, size );
 	
-	DbgPrint("HeapSetInformation :: Status: 0x%08x\n", Status);	
+	//DbgPrint("HeapSetInformation :: Status: 0x%08x\n", Status);	
 	
 	if (NT_SUCCESS( Status )) {
-		DbgPrint("HeapSetInformation :: Status success, return TRUE\n");			
+		//DbgPrint("HeapSetInformation :: Status success, return TRUE\n");			
         return TRUE;
     }else {
 		DbgPrint("HeapSetInformation :: Status unsuccess, return FALSE\n");

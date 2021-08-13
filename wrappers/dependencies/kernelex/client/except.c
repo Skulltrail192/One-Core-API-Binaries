@@ -197,7 +197,7 @@ BasepCheckForReadOnlyResource(IN PVOID Ptr)
                 Size = 1;
                 Status = NtProtectVirtualMemory(NtCurrentProcess(),
                                                 &Ptr,
-                                                &Size,
+                                                (SIZE_T*)&Size,
                                                 PAGE_READWRITE,
                                                 &OldProtect);
                 if (NT_SUCCESS(Status))

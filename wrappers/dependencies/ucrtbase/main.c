@@ -18,7 +18,7 @@
  */
 #include <ucrtbase.h>
 
-WINE_DEFAULT_DEBUG_CHANNEL(appmodel);
+WINE_DEFAULT_DEBUG_CHANNEL(main);
 
 #define MAX_ELEM_LEN 64 /* Max length of country/language/CP string */
 

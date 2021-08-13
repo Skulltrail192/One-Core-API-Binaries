@@ -1482,3 +1482,87 @@ SHCreateItemWithParent(
     }
 	return ret;
 }
+
+HRESULT WINAPI SHCreateItemFromRelativeName(IShellItem *parent, PCWSTR name, IBindCtx *pbc,
+                                            REFIID riid, void **ppv)
+{
+    LPITEMIDLIST pidl_folder = NULL, pidl = NULL;
+    IShellFolder *desktop = NULL, *folder = NULL;
+    HRESULT hr;
+
+    TRACE("(%p, %s, %p, %s, %p)\n", parent, wine_dbgstr_w(name), pbc, debugstr_guid(riid), ppv);
+
+    if(!ppv)
+        return E_INVALIDARG;
+    *ppv = NULL;
+    if(!name)
+        return E_INVALIDARG;
+
+    hr = SHGetIDListFromObject((IUnknown*)parent, &pidl_folder);
+    if(hr != S_OK)
+        return hr;
+
+    hr = SHGetDesktopFolder(&desktop);
+    if(hr != S_OK)
+        goto cleanup;
+
+    if(!_ILIsDesktop(pidl_folder))
+    {
+        hr = IShellFolder_BindToObject(desktop, pidl_folder, NULL, &IID_IShellFolder,
+                                       (void**)&folder);
+        if(hr != S_OK)
+            goto cleanup;
+    }
+
+    hr = IShellFolder_ParseDisplayName(folder ? folder : desktop, NULL, pbc, (LPWSTR)name,
+                                       NULL, &pidl, NULL);
+    if(hr != S_OK)
+        goto cleanup;
+    hr = SHCreateItemFromIDList(pidl, riid, ppv);
+
+cleanup:
+    if(pidl_folder)
+        ILFree(pidl_folder);
+    if(pidl)
+        ILFree(pidl);
+    if(desktop)
+        IShellFolder_Release(desktop);
+    if(folder)
+        IShellFolder_Release(folder);
+    return hr;
+}
+
+HRESULT WINAPI SHCreateItemInKnownFolder(REFKNOWNFOLDERID rfid, DWORD flags,
+                                         PCWSTR filename, REFIID riid, void **ppv)
+{
+    HRESULT hr;
+    IShellItem *parent = NULL;
+    LPITEMIDLIST pidl = NULL;
+
+    TRACE("(%p, %x, %s, %s, %p)\n", rfid, flags, wine_dbgstr_w(filename),
+          debugstr_guid(riid), ppv);
+
+    if(!rfid || !ppv)
+        return E_INVALIDARG;
+
+    *ppv = NULL;
+    hr = SHGetKnownFolderIDList(rfid, flags, NULL, &pidl);
+    if(hr != S_OK)
+        return hr;
+
+    hr = SHCreateItemFromIDList(pidl, &IID_IShellItem, (void**)&parent);
+    if(hr != S_OK)
+    {
+        ILFree(pidl);
+        return hr;
+    }
+
+    if(filename)
+        hr = SHCreateItemFromRelativeName(parent, filename, NULL, riid, ppv);
+    else
+        hr = IShellItem_QueryInterface(parent, riid, ppv);
+
+    ILFree(pidl);
+    IShellItem_Release(parent);
+    return hr;
+}

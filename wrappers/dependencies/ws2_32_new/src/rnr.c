@@ -263,7 +263,7 @@ WSALookupServiceBeginA(IN LPWSAQUERYSETA lpqsRestrictions,
 
     /* Find out the side we'll need */
     ErrorCode = MapAnsiQuerySetToUnicode(lpqsRestrictions,
-                                         &UnicodeQuerySetSize,
+                                        (PSIZE_T)&UnicodeQuerySetSize,
                                          UnicodeQuerySet);
 
     /* We should've failed */
@@ -275,7 +275,7 @@ WSALookupServiceBeginA(IN LPWSAQUERYSETA lpqsRestrictions,
         {
             /* Do the conversion for real */
             ErrorCode = MapAnsiQuerySetToUnicode(lpqsRestrictions,
-                                                 &UnicodeQuerySetSize,
+                                                (PSIZE_T)&UnicodeQuerySetSize,
                                                  UnicodeQuerySet);
             if (ErrorCode == ERROR_SUCCESS)
             {
@@ -460,7 +460,7 @@ WSALookupServiceNextA(IN HANDLE hLookup,
     {
         /* Not convert to ANSI */
         ErrorCode = MapUnicodeQuerySetToAnsi(UnicodeQuerySet,
-                                             lpdwBufferLength,
+                                             (PSIZE_T)lpdwBufferLength,
                                              lpqsResults);
         if (ErrorCode != ERROR_SUCCESS) SetLastError(ErrorCode);
     }

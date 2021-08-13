@@ -1,6 +1,7 @@
 
 include_directories(BEFORE ${REACTOS_SOURCE_DIR}/sdk/include/reactos/wine)
 include_directories(${REACTOS_SOURCE_DIR}/sdk/lib/crt/include)
+include_directories(${REACTOS_SOURCE_DIR}/sdk/lib/crt/include/internal)
 spec2def(ucrtbase.dll ucrtbase.spec ADD_IMPORTLIB)
 
 add_definitions(
@@ -14,7 +15,11 @@ add_definitions(
     -D__MINGW_IMPORT="")
 
 list(APPEND SOURCE
+	errno.c
 	main.c
+	strerror.c
+	string.c
+	wcs.c
     ucrtbase.rc
     ${CMAKE_CURRENT_BINARY_DIR}/ucrtbase_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/ucrtbase.def)

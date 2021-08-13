@@ -169,15 +169,6 @@ SHGetKnownFolderPath(
 );
 
 HRESULT 
-WINAPI 
-SHGetKnownFolderIDList(
-	REFKNOWNFOLDERID rfid, 
-	DWORD flags, 
-	HANDLE token, 
-	PIDLIST_ABSOLUTE *pidl
-);
-
-HRESULT 
 WINAPI
 SHSetFolderPathW(
   _In_       int     csidl,

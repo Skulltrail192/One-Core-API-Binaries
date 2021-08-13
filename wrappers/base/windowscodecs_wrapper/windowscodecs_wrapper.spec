@@ -1,4 +1,7 @@
+@ stdcall -private DllCanUnloadNow()
 @ stdcall -private DllGetClassObject(ptr ptr ptr)
+@ stdcall -private DllRegisterServer()
+@ stdcall -private DllUnregisterServer()
 @ stdcall IEnumString_Next_WIC_Proxy(ptr)
 @ stdcall IEnumString_Reset_WIC_Proxy(ptr long str ptr)
 @ stdcall IPropertyBag2_Write_Proxy(ptr long ptr ptr)

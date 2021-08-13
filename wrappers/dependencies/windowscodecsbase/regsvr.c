@@ -16,9 +16,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#define COBJMACROS
+#include <stdarg.h>
+#include <string.h>
+
+#include "windef.h"
+#include "winbase.h"
+#include "wingdi.h"
+#include "winuser.h"
+#include "winreg.h"
+#include "winerror.h"
+
+#include "objbase.h"
+#include "ocidl.h"
+
+#include "wine/debug.h"
+#include "wine/unicode.h"
+
 #include "wincodecs_private.h"
 
-#include <shlwapi.h>
+WINE_DEFAULT_DEBUG_CHANNEL(wincodecs);
 
 /***********************************************************************
  *		interface for self-registering
@@ -1015,10 +1032,10 @@ static HRESULT register_pixelformats(struct regsvr_pixelformat const *list)
         if (res != ERROR_SUCCESS) goto error_close_clsid_key;
 
         if (list->channelmasks) {
+            static const WCHAR valuename_format[] = {'%','d',0};
             HKEY masks_key;
             UINT i, mask_size;
             WCHAR mask_valuename[11];
-            const WCHAR valuename_format[] = {'%','d',0};
 
             mask_size = (list->bitsperpixel + 7)/8;
 
@@ -1337,7 +1354,6 @@ static GUID const * const bmp_encode_formats[] = {
     &GUID_WICPixelFormat32bppBGR,
     &GUID_WICPixelFormatBlackWhite,
     &GUID_WICPixelFormat1bppIndexed,
-    &GUID_WICPixelFormat2bppIndexed,
     &GUID_WICPixelFormat4bppIndexed,
     &GUID_WICPixelFormat8bppIndexed,
     NULL
@@ -1366,7 +1382,6 @@ static GUID const * const tiff_encode_formats[] = {
     &GUID_WICPixelFormat4bppGray,
     &GUID_WICPixelFormat8bppGray,
     &GUID_WICPixelFormat1bppIndexed,
-    &GUID_WICPixelFormat2bppIndexed,
     &GUID_WICPixelFormat4bppIndexed,
     &GUID_WICPixelFormat8bppIndexed,
     &GUID_WICPixelFormat24bppBGR,

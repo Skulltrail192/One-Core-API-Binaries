@@ -761,13 +761,22 @@ HRESULT WINAPI SHBindToObject(IShellFolder *psf, LPCITEMIDLIST pidl, IBindCtx *p
 
     if (_ILIsPidlSimple(pidl))
         /* we are on desktop level */
-        hr = IShellFolder_QueryInterface(psf, riid, ppv);
+        hr = psf->lpVtbl->QueryInterface(psf, riid, ppv);
     else
-        hr = IShellFolder_BindToObject(psf, pidl, pbc, riid, ppv);
+        hr = psf->lpVtbl->BindToObject(psf, pidl, pbc, riid, ppv);
 
     if (psfDesktop)
         IShellFolder_Release(psfDesktop);
 
     TRACE_(shell)("-- ppv=%p ret=0x%08x\n", *ppv, hr);
     return hr;
+}
+
+BOOL _ILIsUnicode(LPCITEMIDLIST pidl)
+{
+    LPPIDLDATA lpPData = _ILGetDataPointer(pidl);
+
+    TRACE("(%p)\n",pidl);
+
+    return (pidl && lpPData && PT_VALUEW == lpPData->type);
 }
