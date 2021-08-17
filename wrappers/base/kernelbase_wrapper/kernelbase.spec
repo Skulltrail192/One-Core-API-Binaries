@@ -1049,6 +1049,8 @@
 @ stdcall CancelThreadpoolIo(ptr) ntext.TpCancelAsyncIoOperation
 @ stdcall CheckElevation(wstr long ptr long long)
 @ stdcall CheckElevationEnabled(ptr) 
+@ stdcall -stub ClosePrivateNamespace(ptr long) 
+@ stdcall -stub CreateBoundaryDescritorW(wstr long)  
 @ stdcall CloseThreadpool(ptr) ntext.TpReleasePool
 @ stdcall CloseThreadpoolCleanupGroup(ptr) ntext.TpReleaseCleanupGroup
 @ stdcall CloseThreadpoolCleanupGroupMembers(ptr long ptr) ntext.TpReleaseCleanupGroupMembers

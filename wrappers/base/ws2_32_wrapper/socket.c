@@ -386,3 +386,72 @@ PCWSTR WINAPI InetNtopW(INT family, PVOID addr, PWSTR buffer, SIZE_T len)
     }
     return ret;
 }
+
+
+/***********************************************************************
+ *		GetAddrInfoExW		(WS2_32.@)
+ */
+int WINAPI GetAddrInfoExW(const WCHAR *name, const WCHAR *servname, DWORD namespace, GUID *namespace_id,
+        const ADDRINFOEXW *hints, ADDRINFOEXW **result, struct WS_timeval *timeout, OVERLAPPED *overlapped,
+        LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine, HANDLE *handle)
+{
+    int ret;
+
+    TRACE("(%s %s %x %s %p %p %p %p %p %p)\n", debugstr_w(name), debugstr_w(servname), namespace,
+          debugstr_guid(namespace_id), hints, result, timeout, overlapped, completion_routine, handle);
+
+    if (namespace != NS_DNS)
+        FIXME("Unsupported namespace %u\n", namespace);
+    if (namespace_id)
+        FIXME("Unsupported naemspace_id %s\n", debugstr_guid(namespace_id));
+    if (hints)
+        FIXME("Unsupported hints\n");
+    if (timeout)
+        FIXME("Unsupported timeout\n");
+    if (handle)
+        FIXME("Unsupported cancel handle\n");
+
+    ret = WS_getaddrinfoW(name, servname, NULL, result, overlapped, completion_routine);
+    if (ret) return ret;
+    if (handle) *handle = (HANDLE)0xdeadbeef;
+    return 0;
+}
+
+/***********************************************************************
+ *      FreeAddrInfoExW      (WS2_32.@)
+ */
+void WINAPI FreeAddrInfoExW(ADDRINFOEXW *ai)
+{
+    TRACE("(%p)\n", ai);
+
+    while (ai)
+    {
+        ADDRINFOEXW *next;
+        HeapFree(GetProcessHeap(), 0, ai->ai_canonname);
+        HeapFree(GetProcessHeap(), 0, ai->ai_addr);
+        next = ai->ai_next;
+        HeapFree(GetProcessHeap(), 0, ai);
+        ai = next;
+    }
+}
+
+/***********************************************************************
+ *              WSCGetProviderInfo
+ */
+INT WINAPI WSCGetProviderInfo( LPGUID provider, WSC_PROVIDER_INFO_TYPE info_type,
+                               PBYTE info, size_t* len, DWORD flags, LPINT errcode )
+{
+    FIXME( "(%s 0x%08x %p %p 0x%08x %p) Stub!\n",
+           debugstr_guid(provider), info_type, info, len, flags, errcode );
+
+    if (!errcode)
+        return SOCKET_ERROR;
+
+    if (!provider) {
+        *errcode = WSAEFAULT;
+        return SOCKET_ERROR;
+    }
+
+    *errcode = WSANO_RECOVERY;
+    return SOCKET_ERROR;
+}

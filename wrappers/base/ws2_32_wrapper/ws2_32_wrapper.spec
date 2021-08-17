@@ -140,4 +140,5 @@
 @ stdcall InetPtonW(long wstr ptr)
 @ stdcall WSAPoll(ptr long long)
 @ stdcall WSCInstallProviderAndChains(ptr wstr wstr long ptr long ptr ptr)
+@ stdcall WSCGetProviderInfo(ptr long ptr ptr long ptr)
 @ stdcall WSCSetProviderInfo(ptr long ptr long long ptr)

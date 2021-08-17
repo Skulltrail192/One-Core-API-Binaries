@@ -1,5 +1,5 @@
-1   stdcall -noname ParseURLA(str ptr)
-2   stdcall -noname ParseURLW(wstr ptr)
+1   stdcall ParseURLA(str ptr)
+2   stdcall ParseURLW(wstr ptr)
 3   stdcall -noname PathFileExistsDefExtA(str long)
 4   stdcall -noname PathFileExistsDefExtW(wstr long)
 5   stdcall -noname PathFindOnPathExA(str ptr long)
@@ -148,10 +148,10 @@
 148 stdcall -noname VkKeyScanWrapW(long) user32.VkKeyScanW
 149 stdcall -noname WinHelpWrapW(long wstr long long) user32.WinHelpW
 150 stdcall -noname wvsprintfWrapW(ptr wstr ptr) user32.wvsprintfW
-151 stdcall -noname StrCmpNCA(str ptr long)
-152 stdcall -noname StrCmpNCW(wstr wstr long)
-153 stdcall -noname StrCmpNICA(long long long)
-154 stdcall -noname StrCmpNICW(wstr wstr long)
+151 stdcall StrCmpNCA(str ptr long)
+152 stdcall StrCmpNCW(wstr wstr long)
+153 stdcall StrCmpNICA(long long long)
+154 stdcall StrCmpNICW(wstr wstr long)
 155 stdcall -ordinal StrCmpCA(str str)
 156 stdcall -ordinal StrCmpCW(wstr wstr)
 157 stdcall -ordinal StrCmpICA(str str)
@@ -216,7 +216,7 @@
 216 stdcall -noname SHAnsiToUnicodeCP(long str ptr long)
 217 stdcall -noname SHUnicodeToAnsi(wstr ptr ptr)
 218 stdcall -noname SHUnicodeToAnsiCP(long wstr ptr long)
-219 stdcall -noname QISearch(long long long long)
+219 stdcall QISearch(long long long long)
 220 stdcall -noname SHSetDefaultDialogFont(ptr long)
 221 stdcall -noname SHRemoveDefaultDialogFont(ptr)
 222 stdcall -noname SHGlobalCounterCreate(long)

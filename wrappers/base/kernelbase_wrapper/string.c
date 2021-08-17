@@ -99,3 +99,8 @@ INT WINAPI DECLSPEC_HOTPATCH LoadStringA(HINSTANCE instance, UINT resource_id, L
     TRACE("returning %s\n", debugstr_a(buffer));
     return retval;
 }
+
+DWORD WINAPI StrCmpNICA(const char *str, const char *cmp, DWORD len)
+{
+    return StrCmpNIA(str, cmp, len);
+}
