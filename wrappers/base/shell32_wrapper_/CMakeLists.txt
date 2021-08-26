@@ -34,5 +34,5 @@ add_library(shell32_wrapper SHARED ${SOURCE})
 
 set_module_type(shell32_wrapper win32dll)
 target_link_libraries(shell32_wrapper wine uuid)
-add_importlibs(shell32_wrapper advapi32 msvcrt user32 kernel32 ntdll shellbase shlwapi secur32 ole32 netapi32 rpcrt4 propsys comctl32 userenv gdi32 browseui version)
+add_importlibs(shell32_wrapper advapi32 msvcrt user32 kernel32 ntdll shellbase shlwapi secur32 ole32 netapi32 rpcrt4 propsys comctl32 userenv gdi32 browseui version shcore)
 add_cd_file(TARGET shell32_wrapper DESTINATION reactos/system32 FOR all)

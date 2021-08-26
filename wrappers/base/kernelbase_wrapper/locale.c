@@ -876,6 +876,7 @@ BOOL
 WINAPI
 EnumPreferredUserUILanguages(
   _In_      DWORD   flags,
+  _In_		LANGID langid,
   _Out_     PULONG  count,
   _Out_opt_ PZZWSTR buffer,
   _Inout_   PULONG  buffersize 
@@ -885,8 +886,6 @@ EnumPreferredUserUILanguages(
 
     static const WCHAR formatstringW[] = { '%','.','2','s',0 };
 	
-
-    LANGID langid;
 
     FIXME( "semi-stub %u, %p, %p %p\n", flags, count, buffer, buffersize );
 
@@ -907,8 +906,7 @@ EnumPreferredUserUILanguages(
            *count=2;
            return TRUE;
     }
-
-    langid = GetUserDefaultLangID();
+	
     memset((WCHAR *)buffer,0,*buffersize);
     if ((flags & MUI_LANGUAGE_ID) == MUI_LANGUAGE_ID)  
     { 
@@ -936,6 +934,7 @@ BOOL
 WINAPI
 EnumPreferredThreadUILanguages(
   _In_      DWORD   flags,
+  _In_		LANGID	langid,
   _Out_     PULONG  count,
   _Out_opt_ PZZWSTR buffer,
   _Inout_   PULONG  buffersize 
@@ -945,8 +944,6 @@ EnumPreferredThreadUILanguages(
 
     static const WCHAR formatstringW[] = { '%','.','2','s',0 };
 	
-
-    LANGID langid;
 
     FIXME( "EnumPreferredThreadUILanguages :: semi-stub %u, %p, %p %p\n", flags, count, buffer, buffersize );
 
@@ -968,7 +965,6 @@ EnumPreferredThreadUILanguages(
            return TRUE;
     }
 
-    NtQueryDefaultUILanguage( &langid );
     memset((WCHAR *)buffer,0,*buffersize);
     if ((flags & MUI_LANGUAGE_ID) == MUI_LANGUAGE_ID)  
     { 
@@ -1955,7 +1951,11 @@ GetUserPreferredUILanguages(
   _Inout_   PULONG  pcchLanguagesBuffer
 )
 {
+	LANGID ui_language;
+	
+	NtQueryDefaultUILanguage( &ui_language );	
 	return EnumPreferredUserUILanguages(dwFlags,
+										ui_language,
 									    pulNumLanguages,
 									    pwszLanguagesBuffer,
 									    pcchLanguagesBuffer);
@@ -1967,7 +1967,15 @@ GetUserPreferredUILanguages(
 BOOL WINAPI DECLSPEC_HOTPATCH GetThreadPreferredUILanguages( DWORD flags, ULONG *count,
                                                              WCHAR *buffer, ULONG *size )
 {
-    return set_ntstatus( RtlGetThreadPreferredUILanguages( flags, count, buffer, size ));
+	LANGID ui_language;
+	
+	NtQueryDefaultUILanguage( &ui_language );
+    //return set_ntstatus( RtlGetThreadPreferredUILanguages( flags, count, buffer, size ));
+	return EnumPreferredThreadUILanguages(flags,
+										  ui_language,
+										  count,
+										  buffer,
+										  size);	
 }
 
 /***********************************************************************
@@ -1976,7 +1984,15 @@ BOOL WINAPI DECLSPEC_HOTPATCH GetThreadPreferredUILanguages( DWORD flags, ULONG 
 BOOL WINAPI DECLSPEC_HOTPATCH GetSystemPreferredUILanguages( DWORD flags, ULONG *count,
                                                              WCHAR *buffer, ULONG *size )
 {
-    return set_ntstatus( RtlGetSystemPreferredUILanguages( flags, 0, count, buffer, size ));
+	LANGID ui_language;
+	
+	NtQueryInstallUILanguage( &ui_language );	
+    //return set_ntstatus( RtlGetSystemPreferredUILanguages( flags, 0, count, buffer, size ));
+	return EnumPreferredThreadUILanguages(flags,
+										  ui_language,
+										  count,
+										  buffer,
+										  size);		
 }
 
 /***********************************************************************

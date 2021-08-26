@@ -134,6 +134,11 @@
 @ stdcall -arch=x86_64 WSCUpdateProvider32(ptr wstr ptr long ptr)
 
 #Vista functions
+@ stdcall FreeAddrInfoEx(ptr)
+@ stdcall FreeAddrInfoExW(ptr)
+@ stdcall GetAddrInfoExCancel(ptr)
+@ stdcall GetAddrInfoExOverlappedResult(ptr)
+@ stdcall GetAddrInfoExW(wstr wstr long ptr ptr ptr ptr ptr ptr ptr)
 @ stdcall inet_ntop(long ptr ptr long) WS_inet_ntop
 @ stdcall inet_pton(long str ptr) WS_inet_pton
 @ stdcall InetNtopW(long ptr wstr long)

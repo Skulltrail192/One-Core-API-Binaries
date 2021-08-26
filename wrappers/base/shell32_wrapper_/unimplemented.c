@@ -291,16 +291,3 @@ WINAPI
 StampIconForElevation(HICON icon, int x, int y){
 	return S_OK;
 }
-
-HRESULT WINAPI SetCurrentProcessExplicitAppUserModelID(const WCHAR *appid)
-{
-    FIXME("%s: stub\n", debugstr_w(appid));
-    return S_OK;
-}
-
-HRESULT WINAPI GetCurrentProcessExplicitAppUserModelID(const WCHAR **appid)
-{
-    FIXME("%p: stub\n", appid);
-    *appid = NULL;
-    return E_NOTIMPL;
-}

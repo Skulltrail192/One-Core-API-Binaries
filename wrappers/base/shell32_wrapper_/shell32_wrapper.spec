@@ -529,9 +529,9 @@
 @ stdcall Shell_NotifyIconW(long ptr) ;Redirected to Longhorn shell
 
 #Win7
-@ stdcall GetCurrentProcessExplicitAppUserModelID(ptr)
+@ stdcall GetCurrentProcessExplicitAppUserModelID(ptr) shcore.GetCurrentProcessExplicitAppUserModelID
 @ stdcall Shell_NotifyIconGetRect(ptr ptr)
-@ stdcall SetCurrentProcessExplicitAppUserModelID(wstr)
+@ stdcall SetCurrentProcessExplicitAppUserModelID(wstr) shcore.SetCurrentProcessExplicitAppUserModelID
 @ stdcall SHGetKnownFolderItem(ptr long long ptr ptr)
 @ stdcall SHGetItemFromObject(ptr long ptr)
 @ stdcall SHGetItemFromDataObject(ptr long ptr ptr)

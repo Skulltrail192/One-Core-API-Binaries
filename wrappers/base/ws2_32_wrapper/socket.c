@@ -18,73 +18,10 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
+ 
+#include "main.h"
 
-#define WIN32_NO_STATUS
-
-#include <stdarg.h>
-#include <math.h>
-
-#define NONAMELESSUNION
-#define NONAMELESSSTRUCT
-#include <windef.h>
-#include <winbase.h>
-
-#include <wine/debug.h>
-#include <wine/list.h>
-#include <wine/unicode.h>
-#include <winsock.h>
-#include <winsock2.h>
-
-#define POLLHUP                    0x0002
-#define WS_POLLHUP                 0x0002
-#define WS_POLLNVAL                0x0004
-
-#define POLLERR                    0x0001
-#define POLLHUP                    0x0002
-#define POLLNVAL                   0x0004
-#define POLLWRNORM                 0x0010
-#define POLLWRBAND                 0x0020
-#define POLLRDNORM                 0x0100
-#define POLLRDBAND                 0x0200
-#define POLLPRI                    0x0400
-#define POLLIN                     (POLLRDNORM|POLLRDBAND)
-#define POLLOUT                    (POLLWRNORM)
-
-#define WS_POLLERR                 0x0001
-#define WS_POLLHUP                 0x0002
-#define WS_POLLNVAL                0x0004
-#define WS_POLLWRNORM              0x0010
-#define WS_POLLWRBAND              0x0020
-#define WS_POLLRDNORM              0x0100
-#define WS_POLLRDBAND              0x0200
-#define WS_POLLPRI                 0x0400
-#define WS_POLLIN                  (WS_POLLRDNORM|WS_POLLRDBAND)
-#define WS_POLLOUT                 (WS_POLLWRNORM)
-#define WSA_NOT_ENOUGH_MEMORY      (ERROR_NOT_ENOUGH_MEMORY)
-
-#define WS_INET6_ADDRSTRLEN     65
-
-#define MAP_OPTION(opt) { WS_##opt, opt }
-
-static const unsigned __int64 epoch = ((unsigned __int64) 116444736000000000ULL);
-
-struct pollfd
-{
-     int fd;
-     short events;
-     short revents;
-};
-
-typedef struct /*WS(pollfd)*/
-{
-    SOCKET fd;
-    SHORT events;
-    SHORT revents;
-} WSAPOLLFD;
-
-int poll( struct pollfd *fds, unsigned int count, int timeout );
-
-WINE_DEFAULT_DEBUG_CHANNEL(ws2_32);
+WINE_DEFAULT_DEBUG_CHANNEL(socket);
 
 /***********************************************************************
  *              inet_ntop                      (WS2_32.@)
@@ -210,7 +147,7 @@ static int convert_poll_w2u(int events)
 }
 
 int
-gettimeofday(struct timeval * tp, struct timezone * tzp)
+gettimeofday(PTIMEVAL tp, struct timezone * tzp)
 {
     FILETIME    file_time;
     SYSTEMTIME  system_time;
@@ -387,6 +324,187 @@ PCWSTR WINAPI InetNtopW(INT family, PVOID addr, PWSTR buffer, SIZE_T len)
     return ret;
 }
 
+static ADDRINFOEXW *addrinfo_AtoW(const PADDRINFOA ai)
+{
+    ADDRINFOEXW *ret;
+
+    if (!(ret = HeapAlloc(GetProcessHeap(), 0, sizeof(ADDRINFOEXW)))) return NULL;
+    ret->ai_flags     = ai->ai_flags;
+    ret->ai_family    = ai->ai_family;
+    ret->ai_socktype  = ai->ai_socktype;
+    ret->ai_protocol  = ai->ai_protocol;
+    ret->ai_addrlen   = ai->ai_addrlen;
+    ret->ai_canonname = NULL;
+    ret->ai_addr      = NULL;
+    ret->ai_blob      = NULL;
+    ret->ai_bloblen   = 0;
+    ret->ai_provider  = NULL;
+    ret->ai_next      = NULL;
+    if (ai->ai_canonname)
+    {
+        int len = MultiByteToWideChar(CP_ACP, 0, ai->ai_canonname, -1, NULL, 0);
+        if (!(ret->ai_canonname = HeapAlloc(GetProcessHeap(), 0, len*sizeof(WCHAR))))
+        {
+            HeapFree(GetProcessHeap(), 0, ret);
+            return NULL;
+        }
+        MultiByteToWideChar(CP_ACP, 0, ai->ai_canonname, -1, ret->ai_canonname, len);
+    }
+    if (ai->ai_addr)
+    {
+        if (!(ret->ai_addr = HeapAlloc(GetProcessHeap(), 0, ai->ai_addrlen)))
+        {
+            HeapFree(GetProcessHeap(), 0, ret->ai_canonname);
+            HeapFree(GetProcessHeap(), 0, ret);
+            return NULL;
+        }
+        memcpy(ret->ai_addr, ai->ai_addr, ai->ai_addrlen);
+    }
+    return ret;
+}
+
+static ADDRINFOEXW *addrinfo_list_AtoW(PADDRINFOA info)
+{
+    ADDRINFOEXW *ret, *infoW;
+
+    if (!(ret = infoW = addrinfo_AtoW(info))) return NULL;
+    while (info->ai_next)
+    {
+        if (!(infoW->ai_next = addrinfo_AtoW(info->ai_next)))
+        {
+            FreeAddrInfoExW(ret);
+            return NULL;
+        }
+        infoW = infoW->ai_next;
+        info = info->ai_next;
+    }
+    return ret;
+}
+
+static void WINAPI getaddrinfo_callback(TP_CALLBACK_INSTANCE *instance, void *context)
+{
+    struct getaddrinfo_args *args = context;
+    OVERLAPPED *overlapped = args->overlapped;
+    HANDLE event = overlapped->hEvent;
+    LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine = args->completion_routine;
+    PADDRINFOA res;
+    int ret;
+
+    ret = getaddrinfo(args->nodename, args->servname, NULL, &res);
+    if (res)
+    {
+        *args->result = addrinfo_list_AtoW(res);
+        overlapped->u.Pointer = args->result;
+        freeaddrinfo(res);
+    }
+
+    HeapFree(GetProcessHeap(), 0, args->nodename);
+    HeapFree(GetProcessHeap(), 0, args->servname);
+    HeapFree(GetProcessHeap(), 0, args);
+
+    overlapped->Internal = ret;
+    if (completion_routine) completion_routine(ret, 0, (LPWSAOVERLAPPED)overlapped);
+    if (event) SetEvent(event);
+}
+
+static int WS_getaddrinfoW(const WCHAR *nodename, const WCHAR *servname, const PADDRINFOA hints, ADDRINFOEXW **res,
+                           OVERLAPPED *overlapped, LPLOOKUPSERVICE_COMPLETION_ROUTINE completion_routine)
+{
+    int ret = EAI_MEMORY, len, i;
+    char *nodenameA = NULL, *servnameA = NULL;
+    PADDRINFOA resA;
+    WCHAR *local_nodenameW = (WCHAR *)nodename;
+
+    *res = NULL;
+    if (nodename)
+    {
+        /* Is this an IDN? Most likely if any char is above the Ascii table, this
+         * is the simplest validation possible, further validation will be done by
+         * the native getaddrinfo() */
+        for (i = 0; nodename[i]; i++)
+        {
+            if (nodename[i] > 'z')
+                break;
+        }
+        if (nodename[i])
+        {
+            if (hints && (hints->ai_flags & WS_AI_DISABLE_IDN_ENCODING))
+            {
+                /* Name requires conversion but it was disabled */
+                ret = WSAHOST_NOT_FOUND;
+                WSASetLastError(ret);
+                goto end;
+            }
+
+            len = IdnToAscii(0, nodename, -1, NULL, 0);
+            if (!len)
+            {
+                ERR("Failed to convert %s to punycode\n", debugstr_w(nodename));
+                ret = EAI_FAIL;
+                goto end;
+            }
+            if (!(local_nodenameW = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR)))) goto end;
+            IdnToAscii(0, nodename, -1, local_nodenameW, len);
+        }
+    }
+    if (local_nodenameW)
+    {
+        len = WideCharToMultiByte(CP_ACP, 0, local_nodenameW, -1, NULL, 0, NULL, NULL);
+        if (!(nodenameA = HeapAlloc(GetProcessHeap(), 0, len))) goto end;
+        WideCharToMultiByte(CP_ACP, 0, local_nodenameW, -1, nodenameA, len, NULL, NULL);
+    }
+    if (servname)
+    {
+        len = WideCharToMultiByte(CP_ACP, 0, servname, -1, NULL, 0, NULL, NULL);
+        if (!(servnameA = HeapAlloc(GetProcessHeap(), 0, len))) goto end;
+        WideCharToMultiByte(CP_ACP, 0, servname, -1, servnameA, len, NULL, NULL);
+    }
+
+    if (overlapped)
+    {
+        struct getaddrinfo_args *args;
+
+        if (overlapped->hEvent && completion_routine)
+        {
+            ret = WSAEINVAL;
+            goto end;
+        }
+
+        if (!(args = HeapAlloc(GetProcessHeap(), 0, sizeof(*args)))) goto end;
+        args->overlapped = overlapped;
+        args->completion_routine = completion_routine;
+        args->result = res;
+        args->nodename = nodenameA;
+        args->servname = servnameA;
+
+        overlapped->Internal = WSAEINPROGRESS;
+        if (!TrySubmitThreadpoolCallback(getaddrinfo_callback, args, NULL))
+        {
+            HeapFree(GetProcessHeap(), 0, args);
+            ret = GetLastError();
+            goto end;
+        }
+
+        if (local_nodenameW != nodename)
+            HeapFree(GetProcessHeap(), 0, local_nodenameW);
+        WSASetLastError(ERROR_IO_PENDING);
+        return ERROR_IO_PENDING;
+    }
+
+    ret = getaddrinfo(nodenameA, servnameA, hints, &resA);
+    if (!ret)
+    {
+        *res = addrinfo_list_AtoW(resA);
+        freeaddrinfo(resA);
+    }
+
+end:
+    if (local_nodenameW != nodename)
+        HeapFree(GetProcessHeap(), 0, local_nodenameW);
+    HeapFree(GetProcessHeap(), 0, nodenameA);
+    HeapFree(GetProcessHeap(), 0, servnameA);
+    return ret;
+}
 
 /***********************************************************************
  *		GetAddrInfoExW		(WS2_32.@)
@@ -454,4 +572,40 @@ INT WINAPI WSCGetProviderInfo( LPGUID provider, WSC_PROVIDER_INFO_TYPE info_type
 
     *errcode = WSANO_RECOVERY;
     return SOCKET_ERROR;
+}
+
+/***********************************************************************
+ *      FreeAddrInfoEx      (WS2_32.@)
+ */
+void WINAPI FreeAddrInfoEx(ADDRINFOEXA *ai)
+{
+    TRACE("(%p)\n", ai);
+
+    while (ai)
+    {
+        ADDRINFOEXA *next;
+        HeapFree(GetProcessHeap(), 0, ai->ai_canonname);
+        HeapFree(GetProcessHeap(), 0, ai->ai_addr);
+        next = ai->ai_next;
+        HeapFree(GetProcessHeap(), 0, ai);
+        ai = next;
+    }
+}
+
+/***********************************************************************
+ *		GetAddrInfoExOverlappedResult  (WS2_32.@)
+ */
+int WINAPI GetAddrInfoExOverlappedResult(OVERLAPPED *overlapped)
+{
+    TRACE("(%p)\n", overlapped);
+    return overlapped->Internal;
+}
+
+/***********************************************************************
+ *		GetAddrInfoExCancel     (WS2_32.@)
+ */
+int WINAPI GetAddrInfoExCancel(HANDLE *handle)
+{
+    FIXME("(%p)\n", handle);
+    return WSA_INVALID_HANDLE;
 }

@@ -89,3 +89,14 @@ QuerySecurityAccessMask(IN SECURITY_INFORMATION SecurityInformation,
     if (SecurityInformation & SACL_SECURITY_INFORMATION)
         *DesiredAccess |= ACCESS_SYSTEM_SECURITY;
 }
+
+BOOL CredUnprotectW(
+  BOOL   fAsSelf,
+  LPWSTR pszProtectedCredentials,
+  DWORD  cchProtectedCredentials,
+  LPWSTR pszCredentials,
+  DWORD  *pcchMaxChars
+)
+{
+	return FALSE;
+}

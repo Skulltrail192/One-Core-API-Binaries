@@ -692,6 +692,7 @@
 
 #Vista Functions implemented (without redirection)
 @ stdcall AddMandatoryAce(ptr long long long ptr)
+@ stdcall CredUnprotectW(long wstr long wstr ptr)
 @ stdcall EnableTraceEx(ptr ptr int64 long long long long long long long ptr) 
 @ stdcall EventAccessControl(ptr long ptr long long)
 @ stdcall EventActivityIdControl(long ptr) ntext.EtwEventActivityIdControl

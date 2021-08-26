@@ -35,6 +35,13 @@ SecTlsIP = 0;
 
 WINE_DEFAULT_DEBUG_CHANNEL(bcrypt);
 
+typedef SECURITY_STATUS (WINAPI *SASL_GET_CONTEXT_OPTION)(
+    PCtxtHandle,
+    ULONG,
+    PVOID,
+    ULONG,
+    PULONG);
+
 BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 {
     TRACE("fdwReason %u\n", fdwReason);
@@ -85,4 +92,18 @@ LABEL_4:
     result = 0x80090300u;
   }
   return result;
+}
+
+
+static
+SECURITY_STATUS
+SaslGetContextOption(
+    PCtxtHandle ContextHandle,
+    ULONG Option,
+    PVOID Value,
+    ULONG Size,
+    PULONG Needed OPTIONAL
+    )
+{
+    return STATUS_PROCEDURE_NOT_FOUND;
 }
