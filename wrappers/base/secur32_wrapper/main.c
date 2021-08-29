@@ -105,5 +105,13 @@ SaslGetContextOption(
     PULONG Needed OPTIONAL
     )
 {
+    NTSTATUS Status;
+	LPFN_GLPI glpi;
+	
+    glpi = (LPFN_GLPI) GetProcAddress(
+                            GetModuleHandle(TEXT("securbase")),
+                            "GetLogicalProcessorInformation");
+    if (NULL == glpi) 
+    {	
     return STATUS_PROCEDURE_NOT_FOUND;
 }

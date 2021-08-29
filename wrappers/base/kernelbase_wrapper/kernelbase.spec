@@ -1537,8 +1537,8 @@
 @ stdcall RegCreateKeyExW(long wstr long ptr long long ptr ptr ptr)
 @ stdcall RegDeleteKeyValueA(long str str)
 @ stdcall RegDeleteKeyValueW(long wstr wstr) advapibase.RegDeleteKeyValueW
-@ stdcall RegDeleteKeyExA(long str long long) advapibase.RegDeleteKeyExA 
-@ stdcall RegDeleteKeyExW(long wstr long long) advapibase.RegDeleteKeyExW 
+@ stdcall RegDeleteKeyExA(long str long long) 
+@ stdcall RegDeleteKeyExW(long wstr long long) 
 @ stdcall RegDeleteTreeA(long str)
 @ stdcall RegDeleteTreeW(long wstr)
 @ stdcall RegDeleteValueA(long str)
