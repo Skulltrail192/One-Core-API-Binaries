@@ -1469,3 +1469,33 @@ SystemTimeToTzSpecificLocalTimeEx(
 	time_information->DaylightBias = lpTimeZoneInformation->DaylightBias;	
 	return SystemTimeToTzSpecificLocalTime(time_information, (LPSYSTEMTIME)lpUniversalTime, lpLocalTime);
 }
+
+DWORD
+WINAPI
+GetTickCount(
+    VOID
+    )
+
+/*++
+
+Routine Description:
+
+    Win32 systems implement a free-running millisecond counter.  The
+    value of this counter can be read using GetTickCount.
+
+Arguments:
+
+    None.
+
+Return Value:
+
+    This function returns the number of milliseconds that have elapsed
+    since the system was started. If the system has been running for
+    a long time, it is possible that the count will repeat. The value of
+    the counter is accurate within 55 milliseconds.
+
+--*/
+
+{
+    return (DWORD)NtGetTickCount();
+}

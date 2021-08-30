@@ -35,7 +35,10 @@ Revision History:
 #include <tcpestats.h>
 #include <wine/unicode.h>
 #include <wine/winternl.h>
+#include <wine/heap.h>
 #include <stdio.h>
+#include <netiodefwine.h>
+#include <nsi.h>
 
 //Hack to not include ntstatus.h or similar
 #define STATUS_SUCCESS                ((NTSTATUS)0x00000000L)

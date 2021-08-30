@@ -158,8 +158,12 @@
 
 ;Vista functions
 @ stdcall CancelMibChangeNotify2(ptr)
+@ stdcall ConvertGuidToStringA( ptr ptr long )
+@ stdcall ConvertGuidToStringW( ptr ptr long )
+@ stdcall ConvertInterfaceAliasToLuid( ptr ptr )
 @ stdcall ConvertInterfaceGuidToLuid(ptr ptr)
 @ stdcall ConvertInterfaceIndexToLuid( long ptr )
+@ stdcall ConvertInterfaceLuidToAlias( ptr ptr long )
 @ stdcall ConvertInterfaceLuidToGuid(ptr ptr)
 @ stdcall ConvertInterfaceLuidToIndex(ptr ptr)
 @ stdcall ConvertInterfaceLuidToNameA( ptr ptr long )
@@ -167,6 +171,7 @@
 @ stdcall ConvertInterfaceNameToLuidA( str ptr )
 @ stdcall ConvertInterfaceNameToLuidW( wstr ptr )
 @ stdcall ConvertLengthToIpv4Mask(long ptr)
+@ stdcall ConvertStringToGuidW( ptr ptr )
 @ stdcall CreateSortedAddressPairs(ptr long ptr long long ptr ptr)
 @ stdcall FreeMibTable(ptr)
 @ stdcall GetBestRoute2(ptr long ptr ptr long ptr ptr)

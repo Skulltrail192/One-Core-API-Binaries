@@ -4630,6 +4630,18 @@ static int convertWinVistaFolderToWinXPFolder(KNOWNFOLDERID *id){
 		return CSIDL_PERSONAL;	
 	if(IsEqualGUID( id , &FOLDERID_Downloads ))
 		return CSIDL_PERSONAL;	
+	if(IsEqualGUID( id , &FOLDERID_AdminTools ))
+		return CSIDL_ADMINTOOLS;
+	if(IsEqualGUID( id , &FOLDERID_AddNewPrograms ))
+		return CSIDL_Type_Disallowed;
+	if(IsEqualGUID( id , &FOLDERID_AppUpdates ))
+		return CSIDL_Type_Disallowed;	
+	if(IsEqualGUID( id , &FOLDERID_ChangeRemovePrograms ))
+		return CSIDL_Type_Disallowed;		
+	if(IsEqualGUID( id , &FOLDERID_ComputerFolder ))
+		return CSIDL_Type_Disallowed;	
+	if(IsEqualGUID( id , &FOLDERID_ConflictFolder ))
+		return CSIDL_Type_Disallowed;		
 	return 0;
 }
 
@@ -4745,215 +4757,75 @@ SHSetKnownFolderPath(
 	return SHSetFolderPathW(index, hToken, dwFlags, (LPCSTR)pszPath);
 }
 
-// /*************************************************************************
- // * SHGetKnownFolderPath           [SHELL32.@]
- // */
-// HRESULT 
-// WINAPI 
-// SHGetKnownFolderPath(
-	// REFKNOWNFOLDERID rfid, 
-	// DWORD flags, 
-	// HANDLE token, 
-	// PWSTR *path
-// )
-// {
-     // wchar_t folder[512+1] = {0};
-     // int index = csidl_from_id( rfid );
-	 // LPCWSTR allusers = L"";
-	 // LPCWSTR userfolder = L"";
-	 
-	 // DbgPrint("SHGetKnownFolderPath FOLDERID_UserProgramFiles GUID is = {" GUID_FORMAT "}\n",  GUID_ARG_NO_POINTER(FOLDERID_UserProgramFiles));
-     // DbgPrint("SHGetKnownFolderPath REFKNOWNFOLDERID GUID = {" GUID_FORMAT "}\n",  GUID_ARG(rfid));	 
-	 
-    // if (index < 0)
-        // return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
-
-    // if (flags & KF_FLAG_CREATE)
-        // index |= CSIDL_FLAG_CREATE;
-
-    // if (flags & KF_FLAG_DONT_VERIFY)
-        // index |= CSIDL_FLAG_DONT_VERIFY;
-
-    // if (flags & KF_FLAG_NO_ALIAS)
-        // index |= CSIDL_FLAG_NO_ALIAS;
-
-    // if (flags & KF_FLAG_INIT)
-        // index |= CSIDL_FLAG_PER_USER_INIT;
-
-    // if (flags & ~(KF_FLAG_CREATE|KF_FLAG_DONT_VERIFY|KF_FLAG_NO_ALIAS|KF_FLAG_INIT))
-    // {
-        // FIXME("flags 0x%08x not supported\n", flags);
-        // return E_INVALIDARG;
-    // }
-	
-	// //FOLDERID_QuickLaunch
-	// //FOLDERID_SampleMusic
-	// //FOLDERID_SamplePictures
-	// //FOLDERID_SampleVideos
-	// //FOLDERID_SavedGames
-	// //DbgPrint("SHGetKnownFolderPath the CSLD is %d\n",index);
-	// SHGetFolderPathW(NULL, index, token, 0, folder);	
-	// DbgPrint("SHGetKnownFolderPath: Folder is: %s\n",folder);
-	
-	// if(IsEqualGUID( rfid , &FOLDERID_Public ))
-	// {
-		// ExpandEnvironmentStringsW(L"%ALLUSERSPROFILE%", allusers, MAX_PATH);
-		// *path = allusers;
-	// }else if(IsEqualGUID( rfid , &FOLDERID_UserProfiles )){
-		// GetProfilesDirectory(userfolder, NULL);
-		// *path = userfolder;
-	// }else if(IsEqualGUID( rfid , &FOLDERID_Downloads )){
-		// return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
-	// }else{
-		// *path = folder;
-	// }
-
-    // return S_OK;
-// }
-
 /*************************************************************************
  * SHGetKnownFolderPath           [SHELL32.@]
  */
-HRESULT WINAPI SHGetKnownFolderPath(REFKNOWNFOLDERID rfid, DWORD flags, HANDLE token, WCHAR **ret_path)
+HRESULT 
+WINAPI 
+SHGetKnownFolderPath(
+	REFKNOWNFOLDERID rfid, 
+	DWORD flags, 
+	HANDLE token, 
+	PWSTR *path
+)
 {
-    WCHAR pathW[MAX_PATH], tempW[MAX_PATH];
-    HRESULT    hr;
-    CSIDL_Type type;
-    int        ret;
-    int folder = csidl_from_id(rfid), shgfp_flags;
-
-    TRACE("%s, 0x%08x, %p, %p\n", debugstr_guid(rfid), flags, token, ret_path);
-
-    *ret_path = NULL;
-
-    if (folder < 0)
+     wchar_t folder[512+1] = {0};
+     int index = csidl_from_id( rfid );
+	 LPCWSTR allusers = L"";
+	 LPCWSTR userfolder = L"";
+	 
+	 DbgPrint("SHGetKnownFolderPath FOLDERID_UserProgramFiles GUID is = {" GUID_FORMAT "}\n",  GUID_ARG_NO_POINTER(FOLDERID_UserProgramFiles));
+     DbgPrint("SHGetKnownFolderPath REFKNOWNFOLDERID GUID = {" GUID_FORMAT "}\n",  GUID_ARG(rfid));	 
+	 
+    if (index < 0)
         return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
 
-    if (flags & ~(KF_FLAG_CREATE|KF_FLAG_SIMPLE_IDLIST|KF_FLAG_DONT_UNEXPAND|
-        KF_FLAG_DONT_VERIFY|KF_FLAG_NO_ALIAS|KF_FLAG_INIT|KF_FLAG_DEFAULT_PATH))
+    if (flags & KF_FLAG_CREATE)
+        index |= CSIDL_FLAG_CREATE;
+
+    if (flags & KF_FLAG_DONT_VERIFY)
+        index |= CSIDL_FLAG_DONT_VERIFY;
+
+    if (flags & KF_FLAG_NO_ALIAS)
+        index |= CSIDL_FLAG_NO_ALIAS;
+
+    if (flags & KF_FLAG_INIT)
+        index |= CSIDL_FLAG_PER_USER_INIT;
+
+    if (flags & ~(KF_FLAG_CREATE|KF_FLAG_DONT_VERIFY|KF_FLAG_NO_ALIAS|KF_FLAG_INIT))
     {
         FIXME("flags 0x%08x not supported\n", flags);
         return E_INVALIDARG;
     }
+	
+	//FOLDERID_QuickLaunch
+	//FOLDERID_SampleMusic
+	//FOLDERID_SamplePictures
+	//FOLDERID_SampleVideos
+	//FOLDERID_SavedGames
+	//DbgPrint("SHGetKnownFolderPath the CSLD is %d\n",index);
+	SHGetFolderPathW(NULL, index, token, 0, folder);	
+	DbgPrint("SHGetKnownFolderPath: Folder is: %s\n",folder);
+	
+	if(IsEqualGUID( rfid , &FOLDERID_Public ))
+	{
+		ExpandEnvironmentStringsW(L"%ALLUSERSPROFILE%", allusers, MAX_PATH);
+		*path = allusers;
+	}else if(IsEqualGUID( rfid , &FOLDERID_QuickLaunch ))
+	{
+		ExpandEnvironmentStringsW(L"%APPDATA%", allusers , MAX_PATH);
+		strcatW(allusers, L"Microsoft\\Internet Explorer\\Quick");
+		*path = allusers;		
+	}else if(IsEqualGUID( rfid , &FOLDERID_UserProfiles )){
+		GetProfilesDirectory(userfolder, NULL);
+		*path = userfolder;
+	}else if(IsEqualGUID( rfid , &FOLDERID_Downloads )){
+		return HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND );
+	}else{
+		*path = folder;
+	}
 
-    shgfp_flags = flags & KF_FLAG_DEFAULT_PATH ? SHGFP_TYPE_DEFAULT : SHGFP_TYPE_CURRENT;
-
-    type = CSIDL_Data[folder].type;
-    switch (type)
-    {
-        case CSIDL_Type_Disallowed:
-            hr = E_INVALIDARG;
-            break;
-        case CSIDL_Type_NonExistent:
-            *tempW = 0;
-            hr = S_FALSE;
-            break;
-        case CSIDL_Type_WindowsPath:
-            GetWindowsDirectoryW(tempW, MAX_PATH);
-            if (CSIDL_Data[folder].szDefaultPath &&
-             !IS_INTRESOURCE(CSIDL_Data[folder].szDefaultPath) &&
-             *CSIDL_Data[folder].szDefaultPath)
-            {
-                PathAddBackslashW(tempW);
-                strcatW(tempW, CSIDL_Data[folder].szDefaultPath);
-            }
-            hr = S_OK;
-            break;
-        case CSIDL_Type_SystemPath:
-            GetSystemDirectoryW(tempW, MAX_PATH);
-            if (CSIDL_Data[folder].szDefaultPath &&
-             !IS_INTRESOURCE(CSIDL_Data[folder].szDefaultPath) &&
-             *CSIDL_Data[folder].szDefaultPath)
-            {
-                PathAddBackslashW(tempW);
-                strcatW(tempW, CSIDL_Data[folder].szDefaultPath);
-            }
-            hr = S_OK;
-            break;
-        case CSIDL_Type_SystemX86Path:
-            if (!GetSystemWow64DirectoryW(tempW, MAX_PATH)) GetSystemDirectoryW(tempW, MAX_PATH);
-            if (CSIDL_Data[folder].szDefaultPath &&
-             !IS_INTRESOURCE(CSIDL_Data[folder].szDefaultPath) &&
-             *CSIDL_Data[folder].szDefaultPath)
-            {
-                PathAddBackslashW(tempW);
-                strcatW(tempW, CSIDL_Data[folder].szDefaultPath);
-            }
-            hr = S_OK;
-            break;
-        case CSIDL_Type_CurrVer:
-            hr = _SHGetCurrentVersionPath(shgfp_flags, folder, tempW);
-            break;
-        case CSIDL_Type_User:
-            hr = _SHGetUserProfilePath(token, shgfp_flags, folder, tempW);
-            break;
-        case CSIDL_Type_AllUsers:
-        case CSIDL_Type_ProgramData:
-            hr = _SHGetAllUsersProfilePath(shgfp_flags, folder, tempW);
-            break;
-        default:
-            FIXME("bogus type %d, please fix\n", type);
-            hr = E_INVALIDARG;
-            break;
-    }
-
-    if (FAILED(hr))
-        goto failed;
-
-    /* Expand environment strings if necessary */
-    if (*tempW == '%')
-    {
-        hr = _SHExpandEnvironmentStrings(tempW, pathW);
-        if (FAILED(hr))
-            goto failed;
-    }
-    else
-        strcpyW(pathW, tempW);
-
-    /* if we don't care about existing directories we are ready */
-    if (flags & KF_FLAG_DONT_VERIFY) goto done;
-
-    if (PathFileExistsW(pathW)) goto done;
-
-    /* Does not exist but we are not allowed to create it. The return value
-     * is verified against shell32 version 6.0.
-     */
-    if (!(flags & KF_FLAG_CREATE))
-    {
-        hr = HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND);
-        goto failed;
-    }
-
-	//SHGetFolderPathW(NULL, folder, token, flags, );
-    /* create symbolic links rather than directories for specific
-     * user shell folders */
-    //_SHCreateSymbolicLink(folder);
-
-    /* create directory/directories */
-    ret = SHCreateDirectoryExW(NULL, pathW, NULL);
-    if (ret && ret != ERROR_ALREADY_EXISTS)
-    {
-        ERR("Failed to create directory %s.\n", debugstr_w(pathW));
-        hr = E_FAIL;
-        goto failed;
-    }
-
-    TRACE("Created missing system directory %s\n", debugstr_w(pathW));
-
-done:
-    TRACE("Final path is %s, %#x\n", debugstr_w(pathW), hr);
-
-    *ret_path = CoTaskMemAlloc((strlenW(pathW) + 1) * sizeof(WCHAR));
-    if (!*ret_path)
-        return E_OUTOFMEMORY;
-    strcpyW(*ret_path, pathW);
-
-    return hr;
-
-failed:
-    TRACE("Failed to get folder path, %#x.\n", hr);
-
-    return hr;
+    return S_OK;
 }
 
 /*************************************************************************

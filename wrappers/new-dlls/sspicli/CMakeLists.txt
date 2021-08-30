@@ -1,7 +1,7 @@
 
 add_definitions(-D__WINESRC__)
 include_directories(${REACTOS_SOURCE_DIR}/include/reactos/wine)
-spec2def(sspicli.dll sspicli.spec)
+spec2def(sspicli.dll sspicli.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
     main.c

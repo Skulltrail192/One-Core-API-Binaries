@@ -6,22 +6,22 @@
 @ stdcall AddSecurityPackageA(str ptr) secur32.AddSecurityPackageA
 @ stdcall AddSecurityPackageW(wstr ptr) secur32.AddSecurityPackageW
 @ stdcall ApplyControlToken(ptr ptr) secur32.ApplyControlToken
-@ stub ChangeAccountPasswordA
-@ stub ChangeAccountPasswordW
+@ stdcall -stub ChangeAccountPasswordA(wstr wstr wstr wstr wstr long long ptr)
+@ stdcall -stub ChangeAccountPasswordW(wstr wstr wstr wstr wstr long long ptr)
 @ stdcall CompleteAuthToken(ptr ptr) secur32.CompleteAuthToken
-@ stub CredMarshalTargetInfo
-@ stub CredUnmarshalTargetInfo
+@ stdcall CredMarshalTargetInfo(ptr ptr ptr) secur32.CredMarshalTargetInfo
+@ stdcall CredUnmarshalTargetInfo(long long long long) secur32.CredUnmarshalTargetInfo
 @ stdcall DecryptMessage(ptr ptr long ptr) secur32.DecryptMessage
 @ stdcall DeleteSecurityContext(ptr) secur32.DeleteSecurityContext
-@ stub DeleteSecurityPackageA
-@ stub DeleteSecurityPackageW
+@ stdcall DeleteSecurityPackageA(str) secur32.DeleteSecurityPackageA
+@ stdcall DeleteSecurityPackageW(wstr) secur32.DeleteSecurityPackageW
 @ stdcall EncryptMessage(ptr long ptr long) secur32.EncryptMessage
 @ stdcall EnumerateSecurityPackagesA(ptr ptr) secur32.EnumerateSecurityPackagesA
 @ stdcall EnumerateSecurityPackagesW(ptr ptr) secur32.EnumerateSecurityPackagesW
 @ stdcall ExportSecurityContext(ptr long ptr ptr) secur32.ExportSecurityContext
 @ stdcall FreeContextBuffer(ptr) secur32.FreeContextBuffer
 @ stdcall FreeCredentialsHandle(ptr) secur32.FreeCredentialsHandle
-@ stub GetSecurityUserInfo
+@ stdcall GetSecurityUserInfo(ptr long ptr) secur32.GetSecurityUserInfo
 @ stdcall GetUserNameExA(long ptr ptr) secur32.GetUserNameExA
 @ stdcall GetUserNameExW(long ptr ptr) secur32.GetUserNameExW
 @ stdcall ImpersonateSecurityContext(ptr) secur32.ImpersonateSecurityContext
@@ -41,8 +41,8 @@
 @ stdcall LsaLogonUser(ptr ptr long long ptr long ptr ptr ptr ptr ptr ptr ptr ptr) secur32.LsaLogonUser
 @ stdcall LsaLookupAuthenticationPackage(ptr ptr ptr) secur32.LsaLookupAuthenticationPackage
 @ stdcall LsaRegisterLogonProcess(ptr ptr ptr) secur32.LsaRegisterLogonProcess
-@ stub LsaRegisterPolicyChangeNotification
-@ stub LsaUnregisterPolicyChangeNotification
+@ stdcall LsaRegisterPolicyChangeNotification(long ptr) secur32.LsaRegisterPolicyChangeNotification
+@ stdcall LsaUnregisterPolicyChangeNotification(long ptr) secur32.LsaUnregisterPolicyChangeNotification
 @ stdcall MakeSignature(ptr long ptr long) secur32.MakeSignature
 @ stdcall QueryContextAttributesA(ptr long ptr) secur32.QueryContextAttributesA
 @ stub QueryContextAttributesExA
@@ -56,29 +56,29 @@
 @ stdcall QuerySecurityPackageInfoA(str ptr) secur32.QuerySecurityPackageInfoA
 @ stdcall QuerySecurityPackageInfoW(wstr ptr) secur32.QuerySecurityPackageInfoW
 @ stdcall RevertSecurityContext(ptr) secur32.RevertSecurityContext
-@ stub SaslAcceptSecurityContext
-@ stub SaslEnumerateProfilesA
-@ stub SaslEnumerateProfilesW
-@ stub SaslGetContextOption
-@ stub SaslGetProfilePackageA
-@ stub SaslGetProfilePackageW
-@ stub SaslIdentifyPackageA
-@ stub SaslIdentifyPackageW
-@ stub SaslInitializeSecurityContextA
-@ stub SaslInitializeSecurityContextW
-@ stub SaslSetContextOption
+@ stdcall SaslAcceptSecurityContext(ptr ptr ptr long long ptr ptr long ptr) secur32.SaslAcceptSecurityContext
+@ stdcall SaslEnumerateProfilesA(str ptr) secur32.SaslEnumerateProfilesA
+@ stdcall SaslEnumerateProfilesW(wstr ptr) secur32.SaslEnumerateProfilesW
+@ stdcall -stub SaslGetContextOption(ptr long ptr long ptr) securbase.SaslGetContextOption
+@ stdcall SaslGetProfilePackageA(str ptr) secur32.SaslGetProfilePackageA
+@ stdcall SaslGetProfilePackageW(wstr ptr) secur32.SaslGetProfilePackageW
+@ stdcall SaslIdentifyPackageA(ptr ptr) secur32.SaslIdentifyPackageA
+@ stdcall SaslIdentifyPackageW(ptr ptr) secur32.SaslIdentifyPackageW
+@ stdcall SaslInitializeSecurityContextA(ptr ptr str long long long ptr long ptr ptr long ptr) secur32.SaslInitializeSecurityContextA
+@ stdcall SaslInitializeSecurityContextW(ptr ptr wstr long long long ptr long ptr ptr long ptr) secur32.SaslInitializeSecurityContextW
+@ stdcall -stub SaslSetContextOption(ptr long ptr long long) securbase.SaslSetContextOption
 @ stdcall SealMessage(ptr long ptr long) secur32.SealMessage
-@ stub SecCacheSspiPackages
-@ stub SecDeleteUserModeContext
-@ stub SeciAllocateAndSetCallFlags
-@ stub SeciAllocateAndSetIPAddress
-@ stub SeciFreeCallContext
+@ stdcall SecCacheSspiPackages() secur32.SecCacheSspiPackages
+@ stdcall SecDeleteUserModeContext(ptr) secur32.SecDeleteUserModeContext
+@ stdcall -stub SeciAllocateAndSetCallFlags(ptr long) securbase.SeciAllocateAndSetCallFlags
+@ stdcall -stub SeciAllocateAndSetIPAddress(ptr long long) securbase.SeciAllocateAndSetIPAddress
+@ stdcall -stub SeciFreeCallContext() securbase.SeciFreeCallContext
 @ stub SeciIsProtectedUser
-@ stub SecInitUserModeContext
+@ stdcall SecInitUserModeContext(ptr ptr) secur32.SecInitUserModeContext
 @ stdcall SetContextAttributesA(ptr long ptr long) secur32.SetContextAttributesA
 @ stdcall SetContextAttributesW(ptr long ptr long) secur32.SetContextAttributesW
-@ stub SetCredentialsAttributesA
-@ stub SetCredentialsAttributesW
+@ stdcall -stub SetCredentialsAttributesA(ptr long ptr long) securbase.SetCredentialsAttributesA
+@ stdcall -stub SetCredentialsAttributesW(ptr long ptr long) securbase.SetCredentialsAttributesW
 @ stub SspiCompareAuthIdentities
 @ stub SspiCopyAuthIdentity
 @ stub SspiDecryptAuthIdentity

@@ -27,6 +27,7 @@
 #include <winbase.h>
 #include <secext.h>
 #include <security.h>
+#include <stdio.h>
 
 DWORD SecTlsIP;
 DWORD state;
@@ -105,13 +106,19 @@ SaslGetContextOption(
     PULONG Needed OPTIONAL
     )
 {
-    NTSTATUS Status;
-	LPFN_GLPI glpi;
+	SASL_GET_CONTEXT_OPTION saslGetContextOption;
 	
-    glpi = (LPFN_GLPI) GetProcAddress(
+    saslGetContextOption = (SASL_GET_CONTEXT_OPTION) GetProcAddress(
                             GetModuleHandle(TEXT("securbase")),
-                            "GetLogicalProcessorInformation");
-    if (NULL == glpi) 
-    {	
-    return STATUS_PROCEDURE_NOT_FOUND;
+                            "SaslGetContextOption");
+    if (NULL == saslGetContextOption) 
+    {
+		return S_FALSE;
+	}else{
+		return saslGetContextOption(ContextHandle,
+									Option,
+									Value,
+									Size,
+									Needed);
+	}	    
 }
