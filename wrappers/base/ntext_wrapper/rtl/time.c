@@ -166,3 +166,12 @@ NTSTATUS WINAPI RtlQueryDynamicTimeZoneInformation(PRTL_TIME_ZONE_INFORMATION tz
 {
 	return RtlQueryTimeZoneInformation(tzinfo);
 }
+
+/* FIXME: code duplication with kernel32/client/time.c */
+ULONG
+WINAPI
+RtlGetTickCount(VOID)
+{
+	return ((ULONG)(UInt32x32To64(SharedUserData->TickCountLowDeprecated, \
+								  SharedUserData->TickCountMultiplier) >> 24));
+}

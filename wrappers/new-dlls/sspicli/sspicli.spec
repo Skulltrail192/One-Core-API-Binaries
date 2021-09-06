@@ -59,26 +59,26 @@
 @ stdcall SaslAcceptSecurityContext(ptr ptr ptr long long ptr ptr long ptr) secur32.SaslAcceptSecurityContext
 @ stdcall SaslEnumerateProfilesA(str ptr) secur32.SaslEnumerateProfilesA
 @ stdcall SaslEnumerateProfilesW(wstr ptr) secur32.SaslEnumerateProfilesW
-@ stdcall -stub SaslGetContextOption(ptr long ptr long ptr) securbase.SaslGetContextOption
+@ stdcall -stub SaslGetContextOption(ptr long ptr long ptr) secur32.SaslGetContextOption
 @ stdcall SaslGetProfilePackageA(str ptr) secur32.SaslGetProfilePackageA
 @ stdcall SaslGetProfilePackageW(wstr ptr) secur32.SaslGetProfilePackageW
 @ stdcall SaslIdentifyPackageA(ptr ptr) secur32.SaslIdentifyPackageA
 @ stdcall SaslIdentifyPackageW(ptr ptr) secur32.SaslIdentifyPackageW
 @ stdcall SaslInitializeSecurityContextA(ptr ptr str long long long ptr long ptr ptr long ptr) secur32.SaslInitializeSecurityContextA
 @ stdcall SaslInitializeSecurityContextW(ptr ptr wstr long long long ptr long ptr ptr long ptr) secur32.SaslInitializeSecurityContextW
-@ stdcall -stub SaslSetContextOption(ptr long ptr long long) securbase.SaslSetContextOption
+@ stdcall -stub SaslSetContextOption(ptr long ptr long long) secur32.SaslSetContextOption
 @ stdcall SealMessage(ptr long ptr long) secur32.SealMessage
 @ stdcall SecCacheSspiPackages() secur32.SecCacheSspiPackages
 @ stdcall SecDeleteUserModeContext(ptr) secur32.SecDeleteUserModeContext
-@ stdcall -stub SeciAllocateAndSetCallFlags(ptr long) securbase.SeciAllocateAndSetCallFlags
-@ stdcall -stub SeciAllocateAndSetIPAddress(ptr long long) securbase.SeciAllocateAndSetIPAddress
-@ stdcall -stub SeciFreeCallContext() securbase.SeciFreeCallContext
+@ stdcall -stub SeciAllocateAndSetCallFlags(ptr long) secur32.SeciAllocateAndSetCallFlags
+@ stdcall -stub SeciAllocateAndSetIPAddress(ptr long long) secur32.SeciAllocateAndSetIPAddress
+@ stdcall -stub SeciFreeCallContext() secur32.SeciFreeCallContext
 @ stub SeciIsProtectedUser
 @ stdcall SecInitUserModeContext(ptr ptr) secur32.SecInitUserModeContext
 @ stdcall SetContextAttributesA(ptr long ptr long) secur32.SetContextAttributesA
 @ stdcall SetContextAttributesW(ptr long ptr long) secur32.SetContextAttributesW
-@ stdcall -stub SetCredentialsAttributesA(ptr long ptr long) securbase.SetCredentialsAttributesA
-@ stdcall -stub SetCredentialsAttributesW(ptr long ptr long) securbase.SetCredentialsAttributesW
+@ stdcall -stub SetCredentialsAttributesA(ptr long ptr long) secur32.SetCredentialsAttributesA
+@ stdcall -stub SetCredentialsAttributesW(ptr long ptr long) secur32.SetCredentialsAttributesW
 @ stub SspiCompareAuthIdentities
 @ stub SspiCopyAuthIdentity
 @ stub SspiDecryptAuthIdentity
