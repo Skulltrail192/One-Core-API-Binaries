@@ -27,7 +27,7 @@
 	BASE_VERSION             = "3.0.0.0"
 	SP_TITLE                = "One-Core-API Base"
 	LANGTYPEVALUE           = 0x0
-	SP_SHORT_TITLE          = "OCABv1"
+	SP_SHORT_TITLE          = "OCAB"
 	SERVICE_PACK_NUMBER     = 3
 	COMMENT                 = "One-Core-API Base [See Q100000 for more information]"
 	SERVICEPACKSOURCEFILES  = "One-Core-API Base"
@@ -461,7 +461,7 @@
 
 [MustReplace.System32.files]
     ntdll.dll,XPSP3\xpntdll.dll	
-	crypt32.dll,XPSP3\xpcrypt32.dll
+	crypt32.dll,XPSP3\xpcrypt32.dll		
 	
 [MustReplace.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
@@ -497,7 +497,8 @@
 	samlib.dll,XPSP3\xpsamlib.dll
     securbase.dll,XPSP3\xpsecurbase.dll
     setupapibase.dll,XPSP3\xpsetupapibase.dll
-    shellbase.dll,XPSP3\xpshellbase.dll	
+    shellbase.dll,XPSP3\xpshellbase.dll
+	shlwapibase.dll,XPSP3\xpshlwapibase.dll
     userbase.dll,XPSP3\xpuserbase.dll
     uxthemebase.dll,XPSP3\xpuxthemebase.dll
     winstabase.dll,XPSP3\xpwinstabase.dll
@@ -521,6 +522,7 @@
     netapinew.dll
     Nlsdl.dll
     normaliz.dll		
+    nsi.dll		
 	ntext.dll	
 	ole32.dll
     pdh.dll	
@@ -532,6 +534,8 @@
     securnew.dll
     setupapi.dll
     shell32.dll
+    shlwapi.dll
+    sspicli.dll
     user32.dll
     uxtheme.dll
 	version.dll	
@@ -582,6 +586,7 @@
     netapinew.dll = 1
     Nlsdl.dll = 1
     normaliz.dll = 1
+    nsi.dll = 1
 	ntext.dll = 1	
 	ole32.dll = 1	
     pdh.dll = 1
@@ -594,6 +599,8 @@
     securnew.dll = 1
     setupapi.dll = 1
     shell32.dll = 1
+    shlwapi.dll = 1
+    sspicli.dll = 1
     user32.dll = 1
 	version.dll = 1		
     uxtheme.dll = 1

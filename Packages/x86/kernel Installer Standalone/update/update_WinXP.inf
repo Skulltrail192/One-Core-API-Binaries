@@ -50,10 +50,10 @@
     ACCESSDIR               = "accessories"
     ACCESSDIRNAME           = "accessories" ;; accessories folder name is different from the display name in case of PLK, FIN and ELL
     ServicePackSourceFiles  = "Windows Server 2003 Hotfix Source Files"
-    SP_SHORT_TITLE          = "KB2393802"
-    SP_TITLE                = "One-Core-API Kernel Update"
-    SP_TITLE_XP             = "One-Core-API Kernel Update"
-    SP_TITLE_WS03           = "One-Core-API Kernel Update"
+    SP_SHORT_TITLE          = "One-Core-API Kernel Stanalone Update"
+    SP_TITLE                = "One-Core-API Kernel Stanalone Update"
+    SP_TITLE_XP             = "One-Core-API Kernel Stanalone Update"
+    SP_TITLE_WS03           = "One-Core-API Kernel Stanalone Update"
     LOC_UPDATE="Update"
     LOC_CRITICALUPDATE="Critical Update"
     LOC_HOTFIX="Hotfix"
@@ -317,12 +317,12 @@
 [IE7.AdditionalSettings.Save.Reg.For.Uninstall]
 
 [SourceDisksFiles]
-    XPSP3\ntkrnlmp.exe=1
-    XPSP3\ntdll.dll=1
-    XPSP3\ntkrpamp.exe=1
-    XPSP3\ntoskrnl.exe=1
-    XPSP3\ntkrnlpa.exe=1
-	XPSP3\win32k.sys=1
+    XPSP3\xpspntkrnlmp.exe=1
+    XPSP3\xpspntdll.dll=1
+    XPSP3\xpspntkrpamp.exe=1
+    XPSP3\xpspntoskrnl.exe=1
+    XPSP3\xpspntkrnlpa.exe=1
+	XPSP3\xpspwin32k.sys=1
 
 [DestinationDirs]
 	System32.files=11 
@@ -338,69 +338,65 @@
 	CopyFiles = ACPI.CoreDriverFiles		
 
 [MustReplace.System32.files]
-    ntdll.dll,XPSP3\ntdll.dll
-	basesrv.dll, XPSP3\basesrv.dll
-	gdi32.dll, XPSP3\gdi32.dll
-	kernel32.dll, XPSP3\kernel32.dll
-	lsasrv.dll, XPSP3\lsasrv.dll
-	user32.dll, XPSP3\user32.dll
-	winsrv.dll, XPSP3\winsrv.dll
-	win32k.sys, XPSP3\win32k.sys
+    ntdll.dll,XPSP3\xpspntdll.dll
+	gdi32.dll, XPSP3\xpspgdi32.dll
+	kernel32.dll, XPSP3\xpspkernel32.dll
+	user32.dll, XPSP3\xpspuser32.dll
+	winsrv.dll, XPSP3\xpspwinsrv.dll
+	win32k.sys, XPSP3\xpspwin32k.sys
 	
 [System32.files]
-	win32k.sys, XPSP3\win32k.sys
+	win32k.sys, XPSP3\xpspwin32k.sys
 	
 [ACPI.CoreDriverFiles]
-	acpi.sys, XPSP3\Drivers\acpi.sys 		
+	acpi.sys, XPSP3\Drivers\xpspacpi.sys 		
 	
 [CopyAlways.System32.Files]
-    ntdll.dll,XPSP3\ntdll.dll
-	basesrv.dll, XPSP3\basesrv.dll
-	gdi32.dll, XPSP3\gdi32.dll
-	kernel32.dll, XPSP3\kernel32.dll
-	lsasrv.dll, XPSP3\lsasrv.dll
-	user32.dll, XPSP3\user32.dll	
-	winsrv.dll, XPSP3\winsrv.dll
-	win32k.sys, XPSP3\win32k.sys
+    ntdll.dll,XPSP3\xpspntdll.dll
+	gdi32.dll, XPSP3\xpspgdi32.dll
+	kernel32.dll, XPSP3\xpspkernel32.dll
+	user32.dll, XPSP3\xpspuser32.dll	
+	winsrv.dll, XPSP3\xpspwinsrv.dll
+	win32k.sys, XPSP3\xpspwin32k.sys
 
 [CopyAlways.DriverCab.files]
-    ntoskrnl.exe,XPSP3\ntoskrnl.exe
-    ntkrpamp.exe,XPSP3\ntkrpamp.exe
-    ntkrnlpa.exe,XPSP3\ntkrnlpa.exe
-    ntkrnlmp.exe,XPSP3\ntkrnlmp.exe
-	hal.dll,XPSP3\hal.dll
-	halaacpi.dll,XPSP3\halaacpi.dll	
-	halacpi.dll,XPSP3\halacpi.dll	
-	halapic.dll,XPSP3\halapic.dll	
-	halmacpi.dll,XPSP3\halmacpi.dll	
-	halmps.dll,XPSP3\halmps.dll	
-	halsp.dll,XPSP3\halsp.dll	
-	acpi.sys,XPSP3\Drivers\acpi.sys	
+    ntoskrnl.exe,XPSP3\xpspntoskrnl.exe
+    ntkrpamp.exe,XPSP3\xpspntkrpamp.exe
+    ntkrnlpa.exe,XPSP3\xpspntkrnlpa.exe
+    ntkrnlmp.exe,XPSP3\xpspntkrnlmp.exe
+	hal.dll,XPSP3\xpsphal.dll
+	halaacpi.dll,XPSP3\xpsphalaacpi.dll	
+	halacpi.dll,XPSP3\xpsphalacpi.dll	
+	halapic.dll,XPSP3\xpsphalapic.dll	
+	halmacpi.dll,XPSP3\xpsphalmacpi.dll	
+	halmps.dll,XPSP3\xpsphalmps.dll	
+	halsp.dll,XPSP3\xpsphalsp.dll	
+	acpi.sys,XPSP3\Drivers\xpspacpi.sys	
 
 [CopyAlways.Cache.files]
-    ntoskrnl.exe,XPSP3\ntoskrnl.exe
-    ntkrpamp.exe,XPSP3\ntkrpamp.exe
-    ntkrnlpa.exe,XPSP3\ntkrnlpa.exe
-    ntkrnlmp.exe,XPSP3\ntkrnlmp.exe
-    ntdll.dll,XPSP3\ntdll.dll
-	hal.dll,XPSP3\hal.dll
-	halaacpi.dll,XPSP3\halaacpi.dll	
-	halacpi.dll,XPSP3\halacpi.dll	
-	halapic.dll,XPSP3\halapic.dll	
-	halmacpi.dll,XPSP3\halmacpi.dll	
-	halmps.dll,XPSP3\halmps.dll	
-	halsp.dll,XPSP3\halsp.dll	
-	acpi.sys,XPSP3\Drivers\acpi.sys	
+    ntoskrnl.exe,XPSP3\xpspntoskrnl.exe
+    ntkrpamp.exe,XPSP3\xpspntkrpamp.exe
+    ntkrnlpa.exe,XPSP3\xpspntkrnlpa.exe
+    ntkrnlmp.exe,XPSP3\xpspntkrnlmp.exe
+    ntdll.dll,XPSP3\xpspntdll.dll
+	hal.dll,XPSP3\xpsphal.dll
+	halaacpi.dll,XPSP3\xpsphalaacpi.dll	
+	halacpi.dll,XPSP3\xpsphalacpi.dll	
+	halapic.dll,XPSP3\xpsphalapic.dll	
+	halmacpi.dll,XPSP3\xpsphalmacpi.dll	
+	halmps.dll,XPSP3\xpsphalmps.dll	
+	halsp.dll,XPSP3\xpsphalsp.dll	
+	acpi.sys,XPSP3\Drivers\xpspacpi.sys	
 
 [Uniprocessor.Kernel.files]
-    ntoskrnl.exe,XPSP3\ntoskrnl.exe
-    ntkrnlpa.exe,XPSP3\ntkrnlpa.exe
-	hal.dll,XPSP3\halaacpi.dll
+    ntoskrnl.exe,XPSP3\xpspntoskrnl.exe
+    ntkrnlpa.exe,XPSP3\xpspntkrnlpa.exe
+	hal.dll,XPSP3\xpsphalaacpi.dll
 	
 [Multiprocessor.Kernel.files]
-    ntkrnlpa.exe,XPSP3\ntkrpamp.exe
-    ntoskrnl.exe,XPSP3\ntkrnlmp.exe
-	hal.dll,XPSP3\halmacpi.dll	
+    ntkrnlpa.exe,XPSP3\xpspntkrpamp.exe
+    ntoskrnl.exe,XPSP3\xpspntkrnlmp.exe
+	hal.dll,XPSP3\xpsphalmacpi.dll	
 
 [SourceDisksNames]
     1=%ServicePackSourceFiles%

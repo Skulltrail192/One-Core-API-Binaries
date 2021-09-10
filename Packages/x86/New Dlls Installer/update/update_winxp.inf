@@ -1,14 +1,14 @@
 [Version]
-LanguageType 		  = %LANGTYPEVALUE%
-MaxNtBuildToUpdate        = 2600
-MaxNtMajorVersionToUpdate = 5
-MaxNtMinorVersionToUpdate = 1
-MaxNtServicePackVersion   = 768
-MinNtServicePackVersion   = 512
-NtBuildToUpdate           = 2600
-NtMajorVersionToUpdate    = 5
-NtMinorVersionToUpdate    = 1
-Signature                 = "$Windows NT$"
+	LanguageType 		  = %LANGTYPEVALUE%
+	MaxNtBuildToUpdate        = 2600
+	MaxNtMajorVersionToUpdate = 5
+	MaxNtMinorVersionToUpdate = 1
+	MaxNtServicePackVersion   = 768
+	MinNtServicePackVersion   = 512
+	NtBuildToUpdate           = 2600
+	NtMajorVersionToUpdate    = 5
+	NtMinorVersionToUpdate    = 1
+	Signature                 = "$Windows NT$"
 
 [Configuration]
     InstallationType     = Hotfix
@@ -25,7 +25,7 @@ Signature                 = "$Windows NT$"
 	condition=SingleOp,LatestUpdateCheck2.Section
 	
 [LatestUpdateCheck2.Section]
-    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAB",Installed,0x10001,==,1
     Display_String="%LatestUpdateFail%"		
 	
 [Strings]
@@ -2146,9 +2146,6 @@ Signature                 = "$Windows NT$"
 	HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%,,%MSFT_Namespace%
 	HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%,,%MSFT_Namespace%
 	
-[Add.Reg.Uninstall]
-
-[Save.Reg.For.Uninstall]
 
 	HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
 	HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
@@ -2688,6 +2685,14 @@ Signature                 = "$Windows NT$"
 	HKCR,"CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}",,0x10
 	HKCR,"CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
 	HKCR,"CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
 	
 	;License Information
 	HKLM,Software\Windows\LicenseInformation,"Kernel-MUI-Language-Allowed",,"EMPTY"
@@ -2702,11 +2707,70 @@ Signature                 = "$Windows NT$"
 	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-SpiderSolitaire-EnableGame",0x10001,0x00000001
 	HKLM,Software\Windows\LicenseInformation,"Shell-PremiumInBoxGames-Chess-EnableGame",0x10001,0x00000001	
 	
+	;Uiautomation
+	HKLM,"SOFTWARE\Classes\TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0\0\win32",,0x0,"UIAutomationCore.dll"
+	HKLM,"SOFTWARE\Classes\TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0",,0x0,"UIAutomationClient"
+	HKLM,"SOFTWARE\Classes\TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0\0\win32",,0x0,"uiautomationcore.dll\2"
+	HKLM,"SOFTWARE\Classes\TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0",,0x0,"UIAutomation CrossBitnessHook 1.0 Type Library"
+	HKLM,"SOFTWARE\Classes\Interface\{E81D1B4E-11C5-42F8-9754-E7036C79F054}",,0x0,"IUIAutomationStructureChangedEventHandler"
+	HKLM,"SOFTWARE\Classes\Interface\{C270F6B5-5C69-4290-9745-7A7F97169468}",,0x0,"IUIAutomationFocusChangedEventHandler"
+	HKLM,"SOFTWARE\Classes\Interface\{4ece4541-81d4-44ac-9df6-d199ef66f904}",,0x0,"IUIAutomationCrossBitnessHook"
+	HKLM,"SOFTWARE\Classes\Interface\{40CD37D4-C756-4B0C-8C6F-BDDFEEB13B50}",,0x0,"IUIAutomationPropertyChangedEventHandler"
+	HKLM,"SOFTWARE\Classes\Interface\{146C3C17-F12E-4E22-8C27-F894B9B79C69}",,0x0,"IUIAutomationEventHandler"
+	HKLM,"SOFTWARE\Classes\CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}",,0x0,"UIAutomation Client Central Class"
+	HKLM,"SOFTWARE\Classes\CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}",,0x0,"UIAutomation Registrar Class"
+	HKLM,"SOFTWARE\Classes\CLSID\{60a90a2f-858d-42af-8929-82be9d99e8a1}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
+	HKLM,"SOFTWARE\Classes\AppID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
+	HKCR,"TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0\0\win32",,0x0,"UIAutomationCore.dll"
+	HKCR,"TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0",,0x0,"UIAutomationClient"
+	HKCR,"TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0\0\win32",,0x0,"uiautomationcore.dll\2"
+	HKCR,"TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0",,0x0,"UIAutomation CrossBitnessHook 1.0 Type Library"
+	HKCR,"Interface\{E81D1B4E-11C5-42F8-9754-E7036C79F054}",,0x0,"IUIAutomationStructureChangedEventHandler"
+	HKCR,"Interface\{C270F6B5-5C69-4290-9745-7A7F97169468}",,0x0,"IUIAutomationFocusChangedEventHandler"
+	HKCR,"Interface\{4ece4541-81d4-44ac-9df6-d199ef66f904}",,0x0,"IUIAutomationCrossBitnessHook"
+	HKCR,"Interface\{40CD37D4-C756-4B0C-8C6F-BDDFEEB13B50}",,0x0,"IUIAutomationPropertyChangedEventHandler"
+	HKCR,"Interface\{146C3C17-F12E-4E22-8C27-F894B9B79C69}",,0x0,"IUIAutomationEventHandler"
+	HKCR,"CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKCR,"CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}",,0x0,"UIAutomation Client Central Class"
+	HKCR,"CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKCR,"CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}",,0x0,"UIAutomation Registrar Class"
+	HKCR,"CLSID\{60a90a2f-858d-42af-8929-82be9d99e8a1}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKCR,"CLSID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
+	HKCR,"AppID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"	
+
+	;Uianimation	
+	HKLM,"SOFTWARE\Classes\CLSID\{BFCD4A0C-06B6-4384-B768-0DAA792C380E}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{BFCD4A0C-06B6-4384-B768-0DAA792C380E}",,0x0,"UIAnimationTimer"
+	HKLM,"SOFTWARE\Classes\CLSID\{8A9B1CDD-FCD7-419c-8B44-42FD17DB1887}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{8A9B1CDD-FCD7-419c-8B44-42FD17DB1887}",,0x0,"UIAnimationTransitionFactory"
+	HKLM,"SOFTWARE\Classes\CLSID\{641ABA69-56FD-4029-A445-4D8375D3A699}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{641ABA69-56FD-4029-A445-4D8375D3A699}",,0x0,"UIAnimationDiagnostic"
+	HKLM,"SOFTWARE\Classes\CLSID\{4C1FC63A-695C-47E8-A339-1A194BE3D0B8}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{4C1FC63A-695C-47E8-A339-1A194BE3D0B8}",,0x0,"UIAnimationManager"
+	HKLM,"SOFTWARE\Classes\CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}",,0x0,"UIAnimationTransitionLibrary"
+	HKCR,"CLSID\{BFCD4A0C-06B6-4384-B768-0DAA792C380E}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"CLSID\{BFCD4A0C-06B6-4384-B768-0DAA792C380E}",,0x0,"UIAnimationTimer"
+	HKCR,"CLSID\{8A9B1CDD-FCD7-419c-8B44-42FD17DB1887}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"CLSID\{8A9B1CDD-FCD7-419c-8B44-42FD17DB1887}",,0x0,"UIAnimationTransitionFactory"
+	HKCR,"CLSID\{641ABA69-56FD-4029-A445-4D8375D3A699}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIAnimation.dll"
+	HKCR,"CLSID\{641ABA69-56FD-4029-A445-4D8375D3A699}",,0x0,"UIAnimationDiagnostic"
+	HKCR,"CLSID\{4C1FC63A-695C-47E8-A339-1A194BE3D0B8}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"CLSID\{4C1FC63A-695C-47E8-A339-1A194BE3D0B8}",,0x0,"UIAnimationManager"
+	HKCR,"CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}",,0x0,"UIAnimationTransitionLibrary"	
+	
+[Add.Reg.Uninstall]
+
+	
 [ProductInstall.CopyFilesAlways]
     CopyFiles                  = CopyAlways.System32.files
 	
 [ProductInstall.DontDelayUntilReboot]
-    CopyFiles=MustReplace.System32.files
+    CopyFiles=MustReplace.System32.files	
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -2722,27 +2786,34 @@ Signature                 = "$Windows NT$"
 	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
 	
 [MustReplace.System32.files]	
-	"dbghelp.dll"
+	"dbghelp.dll"	
 
 [CopyAlways.System32.Files]
 	"avrt.dll"
+	"bluetoothapis.dll"
 	"cabiext.dll"
-	"cardgames.dll"	
-	;"combase.dll" 	- Cause error with .net 4.5 application	
+	;"cardgames.dll" - Cause error with sfxcab when build hotfix		
+	;"combase.dll"	- Cause error with .net 4.5 application
+	"connect.dll"
+	"credui.dll"
 	"cryptbase.dll"
 	"cryptsp.dll"
+	"dbghelp.dll"
 	"dbgeng.dll"
 	"dpx.dll"
 	"dui70.dll"
+	"duser.dll"
 	"dusex.dll"
 	"dxva2.dll"
 	"dwmapi.dll"
+	"eappcfg.dll"
+	"eappprxy.dll"	
 	"esent.dll"
 	"evr.dll"
 	"explorerframe.dll"
-	"FWPUCLNT.dll"
+	"FWPUCLNT.dll"	
 	"gameux.dll"
-	"GameUXLegacyGDFs.dll"	
+	;"GameUXLegacyGDFs.dll"	- Cause error with sfxcab when build hotfix
 	"httpapi.dll"
 	"httpapinew.dll"
 	"ktmw32.dll"
@@ -2756,69 +2827,92 @@ Signature                 = "$Windows NT$"
 	"msdrm.dll"
 	"msidcrl30.dll"
 	"mspatcha.dll"
-	"ncrypt.dll"
+	"ncrypt.dll"	
 	"ndfapi.dll"
+	"ninput.dll"
+	"npmshtml.dll"
+	"onex.dll"
+	"opcservices.dll"	
 	"photometadatahandler.dll"
+	"pkgmgr.exe"
+	"prntvpt.dll"		
+	"pwrshplugin.dll"		
 	"RstrtMgr.dll"
+	"rtworkq.dll"
+	"sas.dll"
 	"sddlbase.dll"
 	"secbase.dll"
+	"shcore.dll"
 	"slc.dll"
 	"SLCExt.dll"
+	"sppc.dll"
 	"sqmapi.dll"
-	"sspicli.dll"
+	"srvcli.dll"
+	"svrapi.dll"
+	"taskschd.dll"
+	"tbs.dll"
+	"tdh.dll"
 	"traffic.dll"
+	"tzres.dll"
 	"UIAnimation.dll"
 	"UIAutomationCore.dll"
 	"UIRibbon.dll"
 	"UIRibbonRes.dll"
 	"wdi.dll"
+	"wdscore.dll"
 	"wer.dll"
-	"wevtapi.dll"
+	"wevtapi.dll"	
 	"wevtapibase.dll"
 	"wevtbase.dll"
+	"wevtsvc.dll"
 	"wfapi.dll"
+	"wimgapi.dll"
 	"windowscodecs.dll"
 	"windowscodecsext.dll"
 	"winsvc.dll"
+	"winusb.dll"
 	"wlanapi.dll"
+	"wlanui.dll"
 	"wlanutil.dll"
 	"wmphoto.dll"
+	"WMDRMSDK.DLL"
 	"wpc.dll"
 	"WSDApi.dll"
 	"wtsapi32.dll"
 	"wusa.exe"
-	"pkgmgr.exe"
-	"prntvpt.dll"		
-	"eappcfg.dll"
-	"eappprxy.dll"
-	"onex.dll"
-	"XInput9_1_0.dll"	
-	"WMDRMSDK.DLL"
-	"winusb.dll"
+	"XInput9_1_0.dll"		
+	"xpsprint.dll"		
+	"xpssvcs.dll"		
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
 [SourceDisksFiles]
 	"avrt.dll" = 1
+	"bluetoothapis.dll" = 1
 	"cabiext.dll" = 1
-	"cardgames.dll" = 1		
+	;"cardgames.dll" = 1 - Cause error with sfxcab when build hotfix	
 	;"combase.dll" = 1	- Cause error with .net 4.5 application
+	"connect.dll" = 1
+	"credui.dll" = 1
 	"cryptbase.dll" = 1
 	"cryptsp.dll" = 1
 	"dbghelp.dll" = 1
 	"dbgeng.dll" = 1
 	"dpx.dll" = 1
 	"dui70.dll" = 1
+	"duser.dll" = 1
 	"dusex.dll" = 1
 	"dxva2.dll" = 1
 	"dwmapi.dll" = 1
+	"eappcfg.dll" = 1
+	"eappprxy.dll" = 1	
 	"esent.dll" = 1
 	"evr.dll" = 1
 	"explorerframe.dll" = 1
 	"FWPUCLNT.dll" = 1	
 	"gameux.dll" = 1
-	"GameUXLegacyGDFs.dll" = 1	
+	;"GameUXLegacyGDFs.dll" = 1 - Cause error with sfxcab when build hotfix	
 	"httpapi.dll" = 1
 	"httpapinew.dll" = 1
 	"ktmw32.dll" = 1
@@ -2834,40 +2928,65 @@ Signature                 = "$Windows NT$"
 	"mspatcha.dll" = 1
 	"ncrypt.dll" = 1	
 	"ndfapi.dll" = 1
+	"ninput.dll" = 1
+	"npmshtml.dll" = 1
+	"onex.dll" = 1
+	"opcservices.dll" = 1	
 	"photometadatahandler.dll" = 1
+	"pkgmgr.exe" = 1
+	"prntvpt.dll" = 1		
+	"pwrshplugin.dll" = 1		
 	"RstrtMgr.dll" = 1
+	"rtworkq.dll" = 1
+	"sas.dll" = 1
 	"sddlbase.dll" = 1
 	"secbase.dll" = 1
+	"shcore.dll" = 1
 	"slc.dll" = 1
 	"SLCExt.dll" = 1
+	"sppc.dll" = 1
 	"sqmapi.dll" = 1
-	"sspicli.dll" = 1
+	"srvcli.dll" = 1
+	"svrapi.dll" = 1
+	"taskschd.dll" = 1
+	"tbs.dll" = 1
+	"tdh.dll" = 1
 	"traffic.dll" = 1
+	"tzres.dll" = 1
 	"UIAnimation.dll" = 1
 	"UIAutomationCore.dll" = 1
 	"UIRibbon.dll" = 1
 	"UIRibbonRes.dll" = 1
 	"wdi.dll" = 1
+	"wdscore.dll" = 1
 	"wer.dll" = 1
 	"wevtapi.dll" = 1	
 	"wevtapibase.dll" = 1
 	"wevtbase.dll" = 1
+	"wevtsvc.dll" = 1
 	"wfapi.dll" = 1
+	"wimgapi.dll" = 1
 	"windowscodecs.dll" = 1
 	"windowscodecsext.dll" = 1
 	"winsvc.dll" = 1
+	"winusb.dll" = 1
 	"wlanapi.dll" = 1
+	"wlanui.dll" = 1
 	"wlanutil.dll" = 1
 	"wmphoto.dll" = 1
+	"WMDRMSDK.DLL" = 1
 	"wpc.dll" = 1
 	"WSDApi.dll" = 1
 	"wtsapi32.dll" = 1
 	"wusa.exe" = 1
-	"pkgmgr.exe" = 1
-	"prntvpt.dll" = 1		
-	"eappcfg.dll" = 1
-	"eappprxy.dll" = 1
-	"onex.dll" = 1
 	"XInput9_1_0.dll" = 1		
-	"WMDRMSDK.DLL" = 1
-	"winusb.dll" = 1
+	"xpsprint.dll" = 1		
+	"xpssvcs.dll" = 1
+	
+[Save.Reg.For.Uninstall]
+
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"	

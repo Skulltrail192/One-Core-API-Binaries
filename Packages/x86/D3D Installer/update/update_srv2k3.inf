@@ -1,14 +1,14 @@
 [Version]
-LanguageType 		  = %LANGTYPEVALUE%
-MaxNtBuildToUpdate        = 3790
-MaxNtMajorVersionToUpdate = 5
-MaxNtMinorVersionToUpdate = 2
-MaxNtServicePackVersion   = 512
-MinNtServicePackVersion   = 0
-NtBuildToUpdate           = 3790
-NtMajorVersionToUpdate    = 5
-NtMinorVersionToUpdate    = 2
-Signature                 = "$Windows NT$"
+	LanguageType 		  = %LANGTYPEVALUE%
+	MaxNtBuildToUpdate        = 3790
+	MaxNtMajorVersionToUpdate = 5
+	MaxNtMinorVersionToUpdate = 2
+	MaxNtServicePackVersion   = 512
+	MinNtServicePackVersion   = 0
+	NtBuildToUpdate           = 3790
+	NtMajorVersionToUpdate    = 5
+	NtMinorVersionToUpdate    = 2
+	Signature                 = "$Windows NT$"
 
 [Configuration]
     InstallationType     = Hotfix
@@ -25,24 +25,24 @@ Signature                 = "$Windows NT$"
 	condition=SingleOp,LatestUpdateCheck2.Section
 	
 [LatestUpdateCheck2.Section]
-    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAB",Installed,0x10001,==,1
     Display_String="%LatestUpdateFail%"		
 	
 [Strings]
-D3DR_FILE_VERSION       = "6.0.6000.16385"
-D3DR_VERSION             = "1.0.0.0"
-SP_TITLE                = "One-Core-API D3D Runtime"
-LANGTYPEVALUE           = 0x0
-SP_SHORT_TITLE          = "OCAD3DR"
-SERVICE_PACK_NUMBER     = 3
-COMMENT                 = "One-Core-API D3D Runtime [Experimental]"
-SERVICEPACKSOURCEFILES  = "One-Core-API D3D Runtime"
-Msft                    = "Microsoft"
-ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
-PARENT_DISPLAY_NAME     = "Windows Updates"
-MSFT_Prefix                 = "MicrosoftOneCoreAPID3dRuntime"
-MSFT_Namespace              = "http://ns.microsoft.com/d3d/1.0"
-LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
+	D3DR_FILE_VERSION       = "6.0.6000.16385"
+	D3DR_VERSION             = "1.0.0.0"
+	SP_TITLE                = "One-Core-API D3D Runtime"
+	LANGTYPEVALUE           = 0x0
+	SP_SHORT_TITLE          = "OCAD3DR"
+	SERVICE_PACK_NUMBER     = 3
+	COMMENT                 = "One-Core-API D3D Runtime [Experimental]"
+	SERVICEPACKSOURCEFILES  = "One-Core-API D3D Runtime"
+	Msft                    = "Microsoft"
+	ARP_Link                = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+	PARENT_DISPLAY_NAME     = "Windows Updates"
+	MSFT_Prefix                 = "MicrosoftOneCoreAPID3dRuntime"
+	MSFT_Namespace              = "http://ns.microsoft.com/d3d/1.0"
+	LatestUpdateFail        = "Please Install latest One-Core-API Base first!"
 
 [UninstallSections]
     Add.Reg, Add.Reg.Uninstall

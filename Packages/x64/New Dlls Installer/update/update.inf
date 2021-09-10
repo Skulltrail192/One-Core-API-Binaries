@@ -43,7 +43,7 @@
 	condition=SingleOp,LatestUpdateCheck2.Section
 	
 [LatestUpdateCheck2.Section]
-    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAB",Installed,0x10001,==,1
     Display_String="%LatestUpdateFail%"		
 
 [UninstallSections]
@@ -4116,8 +4116,8 @@
     HKCR,"Wow6432Node\SystemFileAssociations\.wdp\ShellEx\{BB2E617C-0920-11d1-9A0B-00C04FC2D6C1}",,0x00000000,"{3F30C968-480A-4C6C-862D-EFC0897BB84B}"
     HKCR,"SystemFileAssociations\.wdp\ShellEx\{E357FCCD-A995-4576-B01F-234630154E96}",,0x00000000,"{C7657C4A-9F68-40fa-A4DF-96BC08EB3551}"
     HKCR,"Wow6432Node\SystemFileAssociations\.wdp\ShellEx\{E357FCCD-A995-4576-B01F-234630154E96}",,0x00000000,"{C7657C4A-9F68-40fa-A4DF-96BC08EB3551}"
-HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.wdp",,0x00000000,"{A38B883C-1682-497E-97B0-0A3A9E801682}"
-HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.wdp",,0x00000000,"{A38B883C-1682-497E-97B0-0A3A9E801682}"
+	HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.wdp",,0x00000000,"{A38B883C-1682-497E-97B0-0A3A9E801682}"
+	HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\PropertyHandlers\.wdp",,0x00000000,"{A38B883C-1682-497E-97B0-0A3A9E801682}"
 
 ;-------------------------------------------------------------------------
 ; photometadata.dll
@@ -4180,29 +4180,8 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
     HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%,,%MSFT_Namespace%
     HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%,,%MSFT_Namespace%
     HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%,,%MSFT_Namespace%
-    HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%,,%MSFT_Namespace%	
+    HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%,,%MSFT_Namespace%
 
-[ProductInstall.CopyFilesAlways]
-    CopyFiles                  = CopyAlways.System32.files
-	CopyFiles                  = CopyAlways.SysWOW64.files
-	
-[ProductInstall.GlobalRegistryChanges.Install]
-    AddReg=Product.Add.Reg
-
-[ProductInstall.GlobalRegistryChanges.ReInstall]
-    AddReg=Product.Add.Reg
-	
-[Add.Reg.Uninstall]
-
-[Save.Reg.For.Uninstall]
-
-	HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
-	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"	
-	HKLM,"SOFTWARE\Wow6432Node\Microsoft\%SP_TITLE%","InstalledVersion" 
-	
 ;-------------------------------------------------------------------------
 ; WindowsCodec.dll
 
@@ -5069,24 +5048,191 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
     HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Prefix%,%MSFT_Prefix%
     HKCR,CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%
     HKCR,Wow6432Node\CLSID\%CLSID_WIC%\Schemas\%CLSID_WIC_Namespace%,%MSFT_Prefix%	
+	
+	;License Information
+	HKLM,Software\Windows\LicenseInformation,"Kernel-MUI-Language-Allowed",,"EMPTY"
+	HKLM,Software\Windows\LicenseInformation,"Kernel-MUI-Language-Disallowed",,"EMPTY"
+	HKLM,Software\Windows\LicenseInformation,"Kernel-MUI-Number-Allowed",0x10001,1000
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-FreeCell-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-Hearts-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-Minesweeper-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-PurblePlace-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-Shanghai-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-Solitaire-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-InBoxGames-SpiderSolitaire-EnableGame",0x10001,0x00000001
+	HKLM,Software\Windows\LicenseInformation,"Shell-PremiumInBoxGames-Chess-EnableGame",0x10001,0x00000001
+	HKLM,Software\Wow6432Node\Windows\LicenseInformation,"Kernel-MUI-Language-Allowed",,"EMPTY"
+	HKLM,Software\Wow6432Node\Windows\LicenseInformation,"Kernel-MUI-Language-Disallowed",,"EMPTY"
+	HKLM,Software\Wow6432Node\Windows\LicenseInformation,"Kernel-MUI-Number-Allowed",0x10001,1000
+	HKLM,Software\Wow6432Node\Windows\LicenseInformation,"Shell-InBoxGames-FreeCell-EnableGame",0x10001,0x00000001
+	HKLM,Software\Wow6432Node\Windows\LicenseInformation,"Shell-InBoxGames-Hearts-EnableGame",0x10001,0x00000001
+	HKLM,Software\Wow6432Node\Windows\LicenseInformation,"Shell-InBoxGames-Minesweeper-EnableGame",0x10001,0x00000001
+	HKLM,Software\Wow6432Node\Windows\LicenseInformation,"Shell-InBoxGames-PurblePlace-EnableGame",0x10001,0x00000001
+	HKLM,Software\Wow6432Node\Windows\LicenseInformation,"Shell-InBoxGames-Shanghai-EnableGame",0x10001,0x00000001
+	HKLM,Software\Wow6432Node\Windows\LicenseInformation,"Shell-InBoxGames-Solitaire-EnableGame",0x10001,0x00000001
+	HKLM,Software\Wow6432Node\Windows\LicenseInformation,"Shell-InBoxGames-SpiderSolitaire-EnableGame",0x10001,0x00000001
+	HKLM,Software\Wow6432Node\Windows\LicenseInformation,"Shell-PremiumInBoxGames-Chess-EnableGame",0x10001,0x00000001	
 
 	;UIRibbon
-	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
 	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
-	HKLM,"SOFTWARE\Classes\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32","ThreadingModel",0x0,"Apartment"
-	HKLM,"SOFTWARE\Classes\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
-	HKLM,"SOFTWARE\Classes\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32","ThreadingModel",0x0,"Apartment"
-	HKLM,"SOFTWARE\Classes\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
-	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32","ThreadingModel",0x0,"Apartment"
-	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
-	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32","ThreadingModel",0x0,"Apartment"
 	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
-	HKLM,"SOFTWARE\Classes\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32","ThreadingModel",0x0,"Apartment"
-	HKLM,"SOFTWARE\Classes\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
-	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
 	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
-	HKLM,"SOFTWARE\Classes\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32","ThreadingModel",0x0,"Apartment"
+	HKLM,"SOFTWARE\Classes\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
 	HKLM,"SOFTWARE\Classes\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"Wow6432Node\CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"Wow6432Node\CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"Wow6432Node\CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"Wow6432Node\CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"CLSID\{C608E099-892D-4628-B6A2-97257B014E2E}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"CLSID\{926749fa-2615-4987-8845-c33e65f2b957}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"CLSID\{32665929-D77E-4ab5-8C08-FBF409B8A233}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+	HKCR,"CLSID\{0F7434B6-59B6-4250-999E-D168D6AE4293}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIRibbon.dll"
+
+	;UIAnimation
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{D25D8842-8884-4A4A-B321-091314379BDD}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{BFCD4A0C-06B6-4384-B768-0DAA792C380E}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{8A9B1CDD-FCD7-419c-8B44-42FD17DB1887}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{84302F97-7F7B-4040-B190-72AC9D18E420}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{812F944A-C5C8-4CD9-B0A6-B3DA802F228D}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{641ABA69-56FD-4029-A445-4D8375D3A699}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{4C1FC63A-695C-47E8-A339-1A194BE3D0B8}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{D25D8842-8884-4A4A-B321-091314379BDD}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{BFCD4A0C-06B6-4384-B768-0DAA792C380E}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{8A9B1CDD-FCD7-419c-8B44-42FD17DB1887}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{84302F97-7F7B-4040-B190-72AC9D18E420}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{812F944A-C5C8-4CD9-B0A6-B3DA802F228D}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{641ABA69-56FD-4029-A445-4D8375D3A699}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{4C1FC63A-695C-47E8-A339-1A194BE3D0B8}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{D25D8842-8884-4A4A-B321-091314379BDD}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{BFCD4A0C-06B6-4384-B768-0DAA792C380E}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{8A9B1CDD-FCD7-419c-8B44-42FD17DB1887}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{84302F97-7F7B-4040-B190-72AC9D18E420}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{812F944A-C5C8-4CD9-B0A6-B3DA802F228D}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{641ABA69-56FD-4029-A445-4D8375D3A699}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{4C1FC63A-695C-47E8-A339-1A194BE3D0B8}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"Wow6432Node\CLSID\{D25D8842-8884-4A4A-B321-091314379BDD}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"Wow6432Node\CLSID\{BFCD4A0C-06B6-4384-B768-0DAA792C380E}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"Wow6432Node\CLSID\{8A9B1CDD-FCD7-419c-8B44-42FD17DB1887}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"Wow6432Node\CLSID\{84302F97-7F7B-4040-B190-72AC9D18E420}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"Wow6432Node\CLSID\{812F944A-C5C8-4CD9-B0A6-B3DA802F228D}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"Wow6432Node\CLSID\{641ABA69-56FD-4029-A445-4D8375D3A699}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIAnimation.dll"
+	HKCR,"Wow6432Node\CLSID\{4C1FC63A-695C-47E8-A339-1A194BE3D0B8}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"Wow6432Node\CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"CLSID\{D25D8842-8884-4A4A-B321-091314379BDD}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"CLSID\{BFCD4A0C-06B6-4384-B768-0DAA792C380E}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"CLSID\{8A9B1CDD-FCD7-419c-8B44-42FD17DB1887}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"CLSID\{84302F97-7F7B-4040-B190-72AC9D18E420}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"CLSID\{812F944A-C5C8-4CD9-B0A6-B3DA802F228D}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"CLSID\{641ABA69-56FD-4029-A445-4D8375D3A699}\InProcServer32",,0x20000,"%%SystemRoot%%\system32\UIAnimation.dll"
+	HKCR,"CLSID\{4C1FC63A-695C-47E8-A339-1A194BE3D0B8}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+	HKCR,"CLSID\{1D6322AD-AA85-4EF5-A828-86D71067D145}\InProcServer32",,0x20000,"%%SystemRoot%%\System32\UIAnimation.dll"
+
+	;UIAutomation
+	HKLM,"SOFTWARE\Wow6432Node\Classes\TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0\0\win32",,0x0,"UIAutomationCore.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0",,0x0,"UIAutomationClient"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0\0\win32",,0x0,"uiautomationcore.dll\2"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0",,0x0,"UIAutomation CrossBitnessHook 1.0 Type Library"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\Interface\{E81D1B4E-11C5-42F8-9754-E7036C79F054}",,0x0,"IUIAutomationStructureChangedEventHandler"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\Interface\{C270F6B5-5C69-4290-9745-7A7F97169468}",,0x0,"IUIAutomationFocusChangedEventHandler"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\Interface\{4ece4541-81d4-44ac-9df6-d199ef66f904}",,0x0,"IUIAutomationCrossBitnessHook"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\Interface\{40CD37D4-C756-4B0C-8C6F-BDDFEEB13B50}",,0x0,"IUIAutomationPropertyChangedEventHandler"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\Interface\{146C3C17-F12E-4E22-8C27-F894B9B79C69}",,0x0,"IUIAutomationEventHandler"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}\InprocServer32",,0x0,"C:\Windows\SysWOW64\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}",,0x0,"UIAutomation Client Central Class"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}\InprocServer32",,0x0,"C:\Windows\SysWOW64\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}",,0x0,"UIAutomation Registrar Class"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{60a90a2f-858d-42af-8929-82be9d99e8a1}\InprocServer32",,0x0,"C:\Windows\SysWOW64\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\CLSID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\AppID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
+	HKLM,"SOFTWARE\Wow6432Node\Classes\AppID\{49f171dd-b51a-40d3-9a6c-52d674cc729d}",,0x0,"UIAutomationCrossBitnessHook64 Class"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0\0\win32",,0x0,"UIAutomationCore.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0",,0x0,"UIAutomationClient"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0\0\win32",,0x0,"uiautomationcore.dll\2"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0",,0x0,"UIAutomation CrossBitnessHook 1.0 Type Library"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\Interface\{E81D1B4E-11C5-42F8-9754-E7036C79F054}",,0x0,"IUIAutomationStructureChangedEventHandler"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\Interface\{C270F6B5-5C69-4290-9745-7A7F97169468}",,0x0,"IUIAutomationFocusChangedEventHandler"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\Interface\{4ece4541-81d4-44ac-9df6-d199ef66f904}",,0x0,"IUIAutomationCrossBitnessHook"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\Interface\{40CD37D4-C756-4B0C-8C6F-BDDFEEB13B50}",,0x0,"IUIAutomationPropertyChangedEventHandler"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\Interface\{146C3C17-F12E-4E22-8C27-F894B9B79C69}",,0x0,"IUIAutomationEventHandler"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}\InprocServer32",,0x0,"C:\Windows\SysWOW64\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}",,0x0,"UIAutomation Client Central Class"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}\InprocServer32",,0x0,"C:\Windows\SysWOW64\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}",,0x0,"UIAutomation Registrar Class"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{60a90a2f-858d-42af-8929-82be9d99e8a1}\InprocServer32",,0x0,"C:\Windows\SysWOW64\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\CLSID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\AppID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
+	HKLM,"SOFTWARE\Classes\Wow6432Node\AppID\{49f171dd-b51a-40d3-9a6c-52d674cc729d}",,0x0,"UIAutomationCrossBitnessHook64 Class"
+	HKLM,"SOFTWARE\Classes\TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0\0\win32",,0x0,"UIAutomationCore.dll"
+	HKLM,"SOFTWARE\Classes\TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0",,0x0,"UIAutomationClient"
+	HKLM,"SOFTWARE\Classes\TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0\0\win32",,0x0,"uiautomationcore.dll\2"
+	HKLM,"SOFTWARE\Classes\TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0",,0x0,"UIAutomation CrossBitnessHook 1.0 Type Library"
+	HKLM,"SOFTWARE\Classes\Interface\{E81D1B4E-11C5-42F8-9754-E7036C79F054}",,0x0,"IUIAutomationStructureChangedEventHandler"
+	HKLM,"SOFTWARE\Classes\Interface\{C270F6B5-5C69-4290-9745-7A7F97169468}",,0x0,"IUIAutomationFocusChangedEventHandler"
+	HKLM,"SOFTWARE\Classes\Interface\{4ece4541-81d4-44ac-9df6-d199ef66f904}",,0x0,"IUIAutomationCrossBitnessHook"
+	HKLM,"SOFTWARE\Classes\Interface\{40CD37D4-C756-4B0C-8C6F-BDDFEEB13B50}",,0x0,"IUIAutomationPropertyChangedEventHandler"
+	HKLM,"SOFTWARE\Classes\Interface\{146C3C17-F12E-4E22-8C27-F894B9B79C69}",,0x0,"IUIAutomationEventHandler"
+	HKLM,"SOFTWARE\Classes\CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}",,0x0,"UIAutomation Client Central Class"
+	HKLM,"SOFTWARE\Classes\CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}",,0x0,"UIAutomation Registrar Class"
+	HKLM,"SOFTWARE\Classes\CLSID\{49f171dd-b51a-40d3-9a6c-52d674cc729d}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKLM,"SOFTWARE\Classes\CLSID\{49f171dd-b51a-40d3-9a6c-52d674cc729d}",,0x0,"UIAutomationCrossBitnessHook64 Class"
+	HKLM,"SOFTWARE\Classes\AppID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
+	HKLM,"SOFTWARE\Classes\AppID\{49f171dd-b51a-40d3-9a6c-52d674cc729d}",,0x0,"UIAutomationCrossBitnessHook64 Class"
+	HKCR,"Wow6432Node\TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0\0\win32",,0x0,"UIAutomationCore.dll"
+	HKCR,"Wow6432Node\TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0",,0x0,"UIAutomationClient"
+	HKCR,"Wow6432Node\TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0\0\win32",,0x0,"uiautomationcore.dll\2"
+	HKCR,"Wow6432Node\TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0",,0x0,"UIAutomation CrossBitnessHook 1.0 Type Library"
+	HKCR,"Wow6432Node\Interface\{E81D1B4E-11C5-42F8-9754-E7036C79F054}",,0x0,"IUIAutomationStructureChangedEventHandler"
+	HKCR,"Wow6432Node\Interface\{C270F6B5-5C69-4290-9745-7A7F97169468}",,0x0,"IUIAutomationFocusChangedEventHandler"
+	HKCR,"Wow6432Node\Interface\{4ece4541-81d4-44ac-9df6-d199ef66f904}",,0x0,"IUIAutomationCrossBitnessHook"
+	HKCR,"Wow6432Node\Interface\{40CD37D4-C756-4B0C-8C6F-BDDFEEB13B50}",,0x0,"IUIAutomationPropertyChangedEventHandler"
+	HKCR,"Wow6432Node\Interface\{146C3C17-F12E-4E22-8C27-F894B9B79C69}",,0x0,"IUIAutomationEventHandler"
+	HKCR,"Wow6432Node\CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}\InprocServer32",,0x0,"C:\Windows\SysWOW64\uiautomationcore.dll"
+	HKCR,"Wow6432Node\CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}",,0x0,"UIAutomation Client Central Class"
+	HKCR,"Wow6432Node\CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}\InprocServer32",,0x0,"C:\Windows\SysWOW64\uiautomationcore.dll"
+	HKCR,"Wow6432Node\CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}",,0x0,"UIAutomation Registrar Class"
+	HKCR,"Wow6432Node\CLSID\{60a90a2f-858d-42af-8929-82be9d99e8a1}\InprocServer32",,0x0,"C:\Windows\SysWOW64\uiautomationcore.dll"
+	HKCR,"Wow6432Node\CLSID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
+	HKCR,"Wow6432Node\AppID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
+	HKCR,"Wow6432Node\AppID\{49f171dd-b51a-40d3-9a6c-52d674cc729d}",,0x0,"UIAutomationCrossBitnessHook64 Class"
+	HKCR,"TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0\0\win32",,0x0,"UIAutomationCore.dll"
+	HKCR,"TypeLib\{944DE083-8FB8-45CF-BCB7-C477ACB2F897}\1.0",,0x0,"UIAutomationClient"
+	HKCR,"TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0\0\win32",,0x0,"uiautomationcore.dll\2"
+	HKCR,"TypeLib\{8acc2016-04a3-4343-b8e1-1870e35d6a41}\1.0",,0x0,"UIAutomation CrossBitnessHook 1.0 Type Library"
+	HKCR,"Interface\{E81D1B4E-11C5-42F8-9754-E7036C79F054}",,0x0,"IUIAutomationStructureChangedEventHandler"
+	HKCR,"Interface\{C270F6B5-5C69-4290-9745-7A7F97169468}",,0x0,"IUIAutomationFocusChangedEventHandler"
+	HKCR,"Interface\{4ece4541-81d4-44ac-9df6-d199ef66f904}",,0x0,"IUIAutomationCrossBitnessHook"
+	HKCR,"Interface\{40CD37D4-C756-4B0C-8C6F-BDDFEEB13B50}",,0x0,"IUIAutomationPropertyChangedEventHandler"
+	HKCR,"Interface\{146C3C17-F12E-4E22-8C27-F894B9B79C69}",,0x0,"IUIAutomationEventHandler"
+	HKCR,"CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKCR,"CLSID\{ff48dba4-60ef-4201-aa87-54103eef594e}",,0x0,"UIAutomation Client Central Class"
+	HKCR,"CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKCR,"CLSID\{6e29fabf-9977-42d1-8d0e-ca7e61ad87e6}",,0x0,"UIAutomation Registrar Class"
+	HKCR,"CLSID\{49f171dd-b51a-40d3-9a6c-52d674cc729d}\InprocServer32",,0x0,"C:\Windows\system32\uiautomationcore.dll"
+	HKCR,"CLSID\{49f171dd-b51a-40d3-9a6c-52d674cc729d}",,0x0,"UIAutomationCrossBitnessHook64 Class"
+	HKCR,"AppID\{60a90a2f-858d-42af-8929-82be9d99e8a1}",,0x0,"UIAutomationCrossBitnessHook32 Class"
+	HKCR,"AppID\{49f171dd-b51a-40d3-9a6c-52d674cc729d}",,0x0,"UIAutomationCrossBitnessHook64 Class"
+
+[ProductInstall.CopyFilesAlways]
+    CopyFiles                  = CopyAlways.System32.files
+	CopyFiles                  = CopyAlways.SysWOW64.files
+	
+[ProductInstall.GlobalRegistryChanges.Install]
+    AddReg=Product.Add.Reg
+
+[ProductInstall.GlobalRegistryChanges.ReInstall]
+    AddReg=Product.Add.Reg
 	
 [DestinationDirs]
     CopyAlways.System32.files=11  ; %windir%\system32 (don't delay until reboot)
@@ -5098,26 +5244,31 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	
 [CopyAlways.System32.Files]
 	avrt.dll,amd64/avrt.dll
+	bluetoothapis.dll,amd64/bluetoothapis.dll
 	cabiext.dll,amd64/cabiext.dll
 	CardGames.dll,amd64/CardGames.dll
 	;combase.dll,amd64/combase.dll	- Cause error with .net 4.5 application
+	connect.dll,amd64/connect.dll
 	cryptbase.dll,amd64/cryptbase.dll
 	cryptsp.dll,amd64/cryptsp.dll
-	dbghelp.dll,amd64/dbghelp.dll
 	dbgeng.dll,amd64/dbgeng.dll
+	dbghelp.dll,amd64/dbghelp.dll
 	dpx.dll,amd64/dpx.dll
 	dui70.dll,amd64/dui70.dll
+	duser.dll,amd64/duser.dll
 	dusex.dll,amd64/dusex.dll
 	dwmapi.dll,amd64/dwmapi.dll
 	dxva2.dll,amd64/dxva2.dll
 	esent.dll,amd64/esent.dll
 	evr.dll,amd64/evr.dll
 	explorerframe.dll,amd64/explorerframe.dll
+	fntcache.dll,amd64/fntcache.dll
 	FWPUCLNT.dll,amd64/FWPUCLNT.dll
-	httpapi.dll,amd64/httpapi.dll
-	httpapinew.dll,amd64/httpapinew.dll	
 	gameux.dll,amd64/gameux.dll
 	GameUXLegacyGDFs.dll,amd64/GameUXLegacyGDFs.dll
+	gamingtcui.dll,amd64/gamingtcui.dll
+	httpapi.dll,amd64/httpapi.dll
+	httpapinew.dll,amd64/httpapinew.dll		
 	ktmw32.dll,amd64/ktmw32.dll
 	lsalookup.dll,amd64/lsalookup.dll
 	mf.dll,amd64/mf.dll
@@ -5132,66 +5283,89 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	mtdll.dll,amd64/mtdll.dll
 	ncrypt.dll,amd64/ncrypt.dll
 	ndfapi.dll,amd64/ndfapi.dll
+	ninput.dll,amd64/ninput.dll
+	npmshtml.dll,amd64/npmshtml.dll
+	onex.dll,amd64/onex.dll 	
+	opcservices.dll,amd64/opcservices.dll 	
 	photometadatahandler.dll,amd64/photometadatahandler.dll
+	pkgmgr.exe,amd64/pkgmgr.exe
+	prntvpt.dll,amd64/prntvpt.dll		
+	pwrshplugin.dll,amd64/pwrshplugin.dll		
 	RstrtMgr.dll,amd64/RstrtMgr.dll
+	rtworkq.dll,amd64/rtworkq.dll
+	sas.dll,amd64/sas.dll
 	sddlbase.dll,amd64/sddlbase.dll
 	secbase.dll,amd64/secbase.dll
+	shcore.dll,amd64/shcore.dll
 	SLC.dll,amd64/SLC.dll
 	SLCExt.dll,amd64/SLCExt.dll
+	sppc.dll,amd64/sppc.dll
 	sqmapi.dll,amd64/sqmapi.dll
-	sspicli.dll,amd64/sspicli.dll
+	srvcli.dll,amd64/srvcli.dll
+	svrapi.dll,amd64/svrapi.dll
+	taskschd.dll,amd64/taskschd.dll
+	tbs.dll,amd64/tbs.dll
+	tdh.dll,amd64/tdh.dll
 	traffic.dll,amd64/traffic.dll
-	version.dll,amd64/version.dll
+	tzres.dll,amd64/tzres.dll
 	UIAnimation.dll,amd64/UIAnimation.dll
 	UIAutomationCore.dll,amd64/UIAutomationCore.dll
 	UIRibbon.dll,amd64/UIRibbon.dll
 	UIRibbonRes.dll,amd64/UIRibbonRes.dll
+	version.dll,amd64/version.dll
 	wdi.dll,amd64/wdi.dll
+	wdscore.dll,amd64/wdscore.dll
 	wer.dll,amd64/wer.dll
 	wevtapi.dll,amd64/wevtapi.dll
 	wevtapibase.dll,amd64/wevtapibase.dll
 	wevtbase.dll,amd64/wevtbase.dll
-	wpc.dll,amd64/wpc.dll
+	wevtsvc.dll,amd64/wevtsvc.dll
 	wfapi.dll,amd64/wfapi.dll
+	wimgapi.dll,amd64/wimgapi.dll
 	windowscodecs.dll,amd64/windowscodecs.dll
 	windowscodecsext.dll,amd64/windowscodecsext.dll
 	winsvc.dll,amd64/winsvc.dll
+	winusb.dll,amd64/winusb.dll
 	wlanapi.dll,amd64/wlanapi.dll
+	wlanui.dll,amd64/wlanui.dll
 	wlanutil.dll,amd64/wlanutil.dll
+	wmdrmsdk.dll,amd64/wmdrmsdk.dll	
 	wmphoto.dll,amd64/wmphoto.dll
+	wpc.dll,amd64/wpc.dll	
 	WSDApi.dll,amd64/WSDApi.dll
 	wtsapi32.dll,amd64/wtsapi32.dll
-	wmdrmsdk.dll,amd64/wmdrmsdk.dll	
 	wusa.exe,amd64/wusa.exe
-	onex.dll,amd64/onex.dll 
-	pkgmgr.exe,amd64/pkgmgr.exe
-	prntvpt.dll,amd64/prntvpt.dll	
 	XInput9_1_0.dll,amd64/XInput9_1_0.dll
-	WMDRMSDK.DLL,amd64/WMDRMSDK.DLL
-	winusb.dll,amd64/winusb.dll
+	xpsprint.dll,amd64/xpsprint.dll
+	xpssvcs.dll,amd64/xpssvcs.dll
 	
 [CopyAlways.SysWOW64.Files]	
 	avrt.dll,i386/wavrt.dll
+	bluetoothapis.dll,i386/wbluetoothapis.dll
 	cabiext.dll,i386/wcabiext.dll
-	CardGames.dll,i386/wCardGames.dll	
+	CardGames.dll,i386/wCardGames.dll
 	;combase.dll,i386/wcombase.dll	- Cause error with .net 4.5 application
+	connect.dll,i386/wconnect.dll
 	cryptbase.dll,i386/wcryptbase.dll
 	cryptsp.dll,i386/wcryptsp.dll
-	dbghelp.dll,i386/wdbghelp.dll
 	dbgeng.dll,i386/wdbgeng.dll
+	dbghelp.dll,i386/wdbghelp.dll
 	dpx.dll,i386/wdpx.dll
 	dui70.dll,i386/wdui70.dll
+	duser.dll,i386/wduser.dll
 	dusex.dll,i386/wdusex.dll
 	dwmapi.dll,i386/wdwmapi.dll
 	dxva2.dll,i386/wdxva2.dll
 	esent.dll,i386/wesent.dll
 	evr.dll,i386/wevr.dll
 	explorerframe.dll,i386/wexplorerframe.dll
-	FWPUCLNT.dll,i386/wFWPUCLNT.dll	
-	httpapi.dll,i386/whttpapi.dll
-	httpapinew.dll,i386/whttpapinew.dll	
+	fntcache.dll,i386/wfntcache.dll
+	FWPUCLNT.dll,i386/wFWPUCLNT.dll
 	gameux.dll,i386/wgameux.dll
-	GameUXLegacyGDFs.dll,i386/wGameUXLegacyGDFs.dll	
+	GameUXLegacyGDFs.dll,i386/wGameUXLegacyGDFs.dll
+	gamingtcui.dll,i386/wgamingtcui.dll
+	httpapi.dll,i386/whttpapi.dll
+	httpapinew.dll,i386/whttpapinew.dll		
 	ktmw32.dll,i386/wktmw32.dll
 	lsalookup.dll,i386/wlsalookup.dll
 	mf.dll,i386/wmf.dll
@@ -5206,54 +5380,72 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	mtdll.dll,i386/wmtdll.dll
 	ncrypt.dll,i386/wncrypt.dll
 	ndfapi.dll,i386/wndfapi.dll
+	ninput.dll,i386/wninput.dll
+	npmshtml.dll,i386/wnpmshtml.dll
+	onex.dll,i386/wonex.dll 	
+	opcservices.dll,i386/wopcservices.dll 	
 	photometadatahandler.dll,i386/wphotometadatahandler.dll
+	pkgmgr.exe,i386/wpkgmgr.exe
+	prntvpt.dll,i386/wprntvpt.dll		
+	pwrshplugin.dll,i386/wpwrshplugin.dll		
 	RstrtMgr.dll,i386/wRstrtMgr.dll
+	rtworkq.dll,i386/wrtworkq.dll
+	sas.dll,i386/wsas.dll
 	sddlbase.dll,i386/wsddlbase.dll
 	secbase.dll,i386/wsecbase.dll
+	shcore.dll,i386/wshcore.dll
 	SLC.dll,i386/wSLC.dll
 	SLCExt.dll,i386/wSLCExt.dll
+	sppc.dll,i386/wsppc.dll
 	sqmapi.dll,i386/wsqmapi.dll
-	sspicli.dll,i386/wsspicli.dll
+	srvcli.dll,i386/wsrvcli.dll
+	svrapi.dll,i386/wsvrapi.dll
+	taskschd.dll,i386/wtaskschd.dll
+	tbs.dll,i386/wtbs.dll
+	tdh.dll,i386/wtdh.dll
 	traffic.dll,i386/wtraffic.dll
-	version.dll,i386/wversion.dll
+	tzres.dll,i386/wtzres.dll
 	UIAnimation.dll,i386/wUIAnimation.dll
 	UIAutomationCore.dll,i386/wUIAutomationCore.dll
 	UIRibbon.dll,i386/wUIRibbon.dll
 	UIRibbonRes.dll,i386/wUIRibbonRes.dll
+	version.dll,i386/wversion.dll
 	wdi.dll,i386/wwdi.dll
+	wdscore.dll,i386/wwdscore.dll
 	wer.dll,i386/wwer.dll
-	wevtapi.dll,i386/wwevtapi.dll	
+	wevtapi.dll,i386/wwevtapi.dll
 	wevtapibase.dll,i386/wwevtapibase.dll
 	wevtbase.dll,i386/wwevtbase.dll
-	wpc.dll,i386/wwpc.dll
+	wevtsvc.dll,i386/wwevtsvc.dll
 	wfapi.dll,i386/wwfapi.dll
+	wimgapi.dll,i386/wwimgapi.dll
 	windowscodecs.dll,i386/wwindowscodecs.dll
 	windowscodecsext.dll,i386/wwindowscodecsext.dll
 	winsvc.dll,i386/wwinsvc.dll
+	winusb.dll,i386/wwinusb.dll
 	wlanapi.dll,i386/wwlanapi.dll
+	wlanui.dll,i386/wwlanui.dll
 	wlanutil.dll,i386/wwlanutil.dll
+	wmdrmsdk.dll,i386/wwmdrmsdk.dll	
 	wmphoto.dll,i386/wwmphoto.dll
+	wpc.dll,i386/wwpc.dll	
 	WSDApi.dll,i386/wWSDApi.dll
 	wtsapi32.dll,i386/wwtsapi32.dll
-	wmdrmsdk.dll,i386/wwmdrmsdk.dll
 	wusa.exe,i386/wwusa.exe
-	eappcfg.dll,i386/weappcfg.dll 
-	eappprxy.dll,i386/weappprxy.dll 
-	onex.dll,i386/wonex.dll 
-	pkgmgr.exe,i386/wpkgmgr.exe
-	prntvpt.dll,i386/wprntvpt.dll	
-	XInput9_1_0.dll,i386/wXInput9_1_0.dll	
-	WMDRMSDK.DLL,i386/wWMDRMSDK.DLL
-	winusb.dll,i386/wwinusb.dll
+	XInput9_1_0.dll,i386/wXInput9_1_0.dll
+	xpsprint.dll,i386/wxpsprint.dll
+	xpssvcs.dll,i386/wxpssvcs.dll
 	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
 [SourceDisksFiles]
 	amd64/avrt.dll = 1
+	amd64/bluetoothapis.dll = 1
 	amd64/cabiext = 1
 	amd64/CardGames.dll = 1 
 	;amd64/combase.dll = 1	- Cause error with .net 4.5 application
+	amd64/connect.dll = 1
 	amd64/cryptbase.dll = 1
 	amd64/cryptsp.dll = 1
 	amd64/dbghelp.dll = 1
@@ -5261,14 +5453,19 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	amd64/dpx.dll = 1
 	amd64/dui70.dll = 1
 	amd64/dusex.dll = 1
+	amd64/duser.dll = 1
 	amd64/dwmapi.dll = 1
 	amd64/dxva2.dll = 1
-	amd64/explorerframe.dll = 1
 	amd64/esent.dll = 1
 	amd64/evr.dll = 1
+	amd64/explorerframe.dll = 1
+	amd64/fntcache.dll = 1	
+	amd64/FWPUCLNT.dll = 1	
+	amd64/gameux.dll = 1
+	amd64/GameUXLegacyGDFs.dll = 1
+	amd64/gamingtcui.dll = 1
 	amd64/httpapi.dll = 1
 	amd64/httpapinew.dll = 1
-	amd64/gameux.dll = 1
 	amd64/ktmw32.dll = 1
 	amd64/lsalookup.dll = 1
 	amd64/mf.dll = 1
@@ -5283,47 +5480,68 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	amd64/mtdll.dll = 1
 	amd64/ncrypt.dll = 1
 	amd64/ndfapi.dll = 1
+	amd64/ninput.dll = 1
+	amd64/npmshtml.dll = 1
+	amd64/onex.dll = 1
+	amd64/opcservices.dll = 1
 	amd64/photometadatahandler.dll = 1
+	amd64/pkgmgr.exe = 1
+	amd64/prntvpt.dll = 1	
+	amd64/pwrshplugin.dll = 1	
 	amd64/RstrtMgr.dll = 1
+	amd64/rtworkq.dll = 1
+	amd64/sas.dll = 1
 	amd64/sddlbase.dll = 1
 	amd64/secbase.dll = 1
+	amd64/shcore.dll = 1
 	amd64/SLC.dll = 1
 	amd64/SLCExt.dll = 1
+	amd64/sppc.dll = 1
 	amd64/sqmapi.dll = 1
-	amd64/sspicli.dll = 1
+	amd64/srvcli.dll = 1
+	amd64/svrapi.dll = 1
+	amd64/taskschd.dll = 1
+	amd64/tbs.dll = 1
+	amd64/tdh.dll = 1
 	amd64/traffic.dll = 1
-	amd64/version.dll = 1
+	amd64/tzres.dll = 1
 	amd64/UIAnimation.dll = 1
 	amd64/UIAutomationCore.dll = 1
 	amd64/UIRibbon.dll = 1
 	amd64/UIRibbonRes.dll = 1
+	amd64/version.dll = 1	
 	amd64/wdi.dll = 1
+	amd64/wdscore.dll = 1
 	amd64/wer.dll = 1
 	amd64/wevtapi.dll = 1	
 	amd64/wevtapibase.dll = 1
 	amd64/wevtbase.dll = 1
+	amd64/wevtsvc.dll = 1
 	amd64/wfapi.dll = 1
+	amd64/wimgapi.dll = 1
 	amd64/windowscodecs.dll = 1
 	amd64/windowscodecsext.dll = 1
 	amd64/winsvc.dll = 1
+	amd64/winusb.dll = 1
 	amd64/wlanapi.dll = 1
+	amd64/wlanui.dll = 1
 	amd64/wlanutil.dll = 1
+	amd64/WMDRMSDK.DLL = 1
 	amd64/wmphoto.dll = 1
 	amd64/wpc.dll = 1
 	amd64/WSDApi.dll = 1
 	amd64/wtsapi32.dll = 1
 	amd64/wusa.exe = 1
-	amd64/onex.dll = 1
-	amd64/pkgmgr.exe = 1
-	amd64/prntvpt.dll = 1		
 	amd64/XInput9_1_0.dll = 1
-	amd64/WMDRMSDK.DLL = 1
-	amd64/winusb.dll = 1
+	amd64/xpsprint.dll = 1
+	amd64/xpssvcs.dll = 1
 	
 	i386/wavrt.dll = 1
+	i386/wbluetoothapis.dll = 1
 	i386/wcabiext = 1
-	i386/wCardGames.dll = 1 	
+	i386/wCardGames.dll = 1 
 	;i386/wcombase.dll = 1	- Cause error with .net 4.5 application
+	i386/wconnect.dll = 1
 	i386/wcryptbase.dll = 1
 	i386/wcryptsp.dll = 1
 	i386/wdbghelp.dll = 1
@@ -5331,14 +5549,19 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	i386/wdpx.dll = 1
 	i386/wdui70.dll = 1
 	i386/wdusex.dll = 1
+	i386/wduser.dll = 1
 	i386/wdwmapi.dll = 1
 	i386/wdxva2.dll = 1
-	i386/wexplorerframe.dll = 1
 	i386/wesent.dll = 1
 	i386/wevr.dll = 1
+	i386/wexplorerframe.dll = 1
+	i386/wfntcache.dll = 1	
+	i386/wFWPUCLNT.dll = 1	
+	i386/wgameux.dll = 1
+	i386/wGameUXLegacyGDFs.dll = 1
+	i386/wgamingtcui.dll = 1
 	i386/whttpapi.dll = 1
 	i386/whttpapinew.dll = 1
-	i386/wgameux.dll = 1
 	i386/wktmw32.dll = 1
 	i386/wlsalookup.dll = 1
 	i386/wmf.dll = 1
@@ -5353,41 +5576,69 @@ HKLM,"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\PropertySystem\Prope
 	i386/wmtdll.dll = 1
 	i386/wncrypt.dll = 1
 	i386/wndfapi.dll = 1
+	i386/wninput.dll = 1
+	i386/wnpmshtml.dll = 1
+	i386/wonex.dll = 1
+	i386/wopcservices.dll = 1
 	i386/wphotometadatahandler.dll = 1
+	i386/wpkgmgr.exe = 1
+	i386/wprntvpt.dll = 1	
+	i386/wpwrshplugin.dll = 1	
 	i386/wRstrtMgr.dll = 1
+	i386/wrtworkq.dll = 1
+	i386/wsas.dll = 1
 	i386/wsddlbase.dll = 1
 	i386/wsecbase.dll = 1
+	i386/wshcore.dll = 1
 	i386/wSLC.dll = 1
 	i386/wSLCExt.dll = 1
+	i386/wsppc.dll = 1
 	i386/wsqmapi.dll = 1
-	i386/wsspicli.dll = 1
+	i386/wsrvcli.dll = 1
+	i386/wsvrapi.dll = 1
+	i386/wtaskschd.dll = 1
+	i386/wtbs.dll = 1
+	i386/wtdh.dll = 1
 	i386/wtraffic.dll = 1
-	i386/wversion.dll = 1
+	i386/wtzres.dll = 1
 	i386/wUIAnimation.dll = 1
 	i386/wUIAutomationCore.dll = 1
 	i386/wUIRibbon.dll = 1
 	i386/wUIRibbonRes.dll = 1
+	i386/wversion.dll = 1	
 	i386/wwdi.dll = 1
+	i386/wwdscore.dll = 1
 	i386/wwer.dll = 1
-	i386/wwevtapi.dll = 1		
+	i386/wwevtapi.dll = 1	
 	i386/wwevtapibase.dll = 1
 	i386/wwevtbase.dll = 1
+	i386/wwevtsvc.dll = 1
 	i386/wwfapi.dll = 1
+	i386/wwimgapi.dll = 1
 	i386/wwindowscodecs.dll = 1
 	i386/wwindowscodecsext.dll = 1
 	i386/wwinsvc.dll = 1
+	i386/wwinusb.dll = 1
 	i386/wwlanapi.dll = 1
+	i386/wwlanui.dll = 1
 	i386/wwlanutil.dll = 1
+	i386/wWMDRMSDK.DLL = 1
 	i386/wwmphoto.dll = 1
 	i386/wwpc.dll = 1
 	i386/wWSDApi.dll = 1
 	i386/wwtsapi32.dll = 1
 	i386/wwusa.exe = 1
-	i386/weappcfg.dll = 1
-	i386/weappprxy.dll = 1
-	i386/wonex.dll = 1	
-	i386/wpkgmgr.exe = 1	
-	i386/wprntvpt.dll = 1	
 	i386/wXInput9_1_0.dll = 1
-	i386/wWMDRMSDK.DLL = 1
-	i386/wwinusb.dll = 1
+	i386/wxpsprint.dll = 1
+	i386/wxpssvcs.dll = 1
+	
+[Add.Reg.Uninstall]
+
+[Save.Reg.For.Uninstall]
+
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows Server 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP2\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Updates\"Windows XP\SP3"\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Hotfix\%SP_SHORT_TITLE%"
+	HKLM,"SOFTWARE\Microsoft\%SP_TITLE%","InstalledVersion"	
+	HKLM,"SOFTWARE\Wow6432Node\Microsoft\%SP_TITLE%","InstalledVersion" 	

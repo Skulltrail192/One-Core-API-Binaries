@@ -24,7 +24,7 @@
     EventLogDllName         = spmsg.dll	
 
 [LatestUpdateCheck2.Section]
-    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCABv1",Installed,0x10001,==,1
+    EqualOp=CheckReg,HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\OCAB",Installed,0x10001,==,1
     Display_String="%LatestUpdateFail%"			
 	
 [Strings]
@@ -56,7 +56,7 @@
     ACCESSDIR               = "accessories"
     ACCESSDIRNAME           = "accessories" ;; accessories folder name is different from the display name in case of PLK, FIN and ELL
     ServicePackSourceFiles  = "Windows Server 2003 Hotfix Source Files"
-    SP_SHORT_TITLE          = "KB2393802"
+    SP_SHORT_TITLE          = "One-Core-API Kernel Update"
     SP_TITLE                = "One-Core-API Kernel Update"
     SP_TITLE_XP             = "One-Core-API Kernel Update"
     SP_TITLE_WS03           = "One-Core-API Kernel Update"
@@ -321,12 +321,12 @@
     HKLM,SOFTWARE\Microsoft\Updates\Windows XP Version 2003\SP%SERVICE_PACK_NUMBER%\%SP_SHORT_TITLE%,"Description",,%SP_TITLE_XP%
 
 [SourceDisksFiles]
-    2k3SP2\ntkrnlmp.exe=1
-    2k3SP2\ntkrpamp.exe=1
-    2k3SP2\ntoskrnl.exe=1
-    2k3SP2\ntkrnlpa.exe=1
-    2k3SP2\ntdll.dll=1	
-	2k3SP2\win32k.sys=1	
+    2k3SP2\srvntkrnlmp.exe=1
+    2k3SP2\srvntkrpamp.exe=1
+    2k3SP2\srvntoskrnl.exe=1
+    2k3SP2\srvntkrnlpa.exe=1
+    2k3SP2\srvntdll.dll=1	
+	2k3SP2\srvwin32k.sys=1	
 
 [DestinationDirs]
 	System32.files=11 
@@ -342,61 +342,62 @@
 	CopyFiles = ACPI.CoreDriverFiles	
 
 [MustReplace.System32.files]
-    ntdll.dll,2k3SP2\ntdll.dll
-	gdibase.dll, 2k3SP2\gdibase.dll
-	userbase.dll, 2k3SP2\userbase.dll
-	winsrv.dll, 2k3SP2\winsrv.dll
-	win32k.sys, 2k3SP2\win32k.sys
+    ntdll.dll,2k3SP2\srvntdll.dll
+	kernelex.dll, 2k3SP2\srvkernelex.dll
+	gdibase.dll, 2k3SP2\srvgdibase.dll
+	userbase.dll, 2k3SP2\srvuserbase.dll
+	winsrv.dll, 2k3SP2\srvwinsrv.dll
+	win32k.sys, 2k3SP2\srvwin32k.sys
 	
 [System32.files]
-	win32k.sys, 2k3SP2\win32k.sys
+	win32k.sys, 2k3SP2\srvwin32k.sys
 	
 [ACPI.CoreDriverFiles]
-	acpi.sys, 2k3SP2\Drivers\acpi.sys 	
+	acpi.sys, 2k3SP2\Drivers\srvacpi.sys 	
 	
 [CopyAlways.System32.Files]
-    ntdll.dll,2k3SP2\ntdll.dll
-	gdibase.dll, 2k3SP2\gdibase.dll
-	userbase.dll, 2k3SP2\userbase.dll
-	winsrv.dll, 2k3SP2\winsrv.dll
-	win32k.sys, 2k3SP2\win32k.sys
+    ntdll.dll,2k3SP2\srvntdll.dll
+	gdibase.dll, 2k3SP2\srvgdibase.dll
+	userbase.dll, 2k3SP2\srvuserbase.dll
+	winsrv.dll, 2k3SP2\srvwinsrv.dll
+	win32k.sys, 2k3SP2\srvwin32k.sys
 
 [CopyAlways.DriverCab.files]
-    ntoskrnl.exe,2k3SP2\ntoskrnl.exe
-    ntkrpamp.exe,2k3SP2\ntkrpamp.exe
-    ntkrnlpa.exe,2k3SP2\ntkrnlpa.exe
-    ntkrnlmp.exe,2k3SP2\ntkrnlmp.exe
-	hal.dll,2k3SP2\hal.dll
-	halaacpi.dll,2k3SP2\halaacpi.dll
-	halacpi.dll,2k3SP2\halacpi.dll
-	halapic.dll,2k3SP2\halapic.dll
-	halmacpi.dll,2k3SP2\halmacpi.dll
-	halmps.dll,2k3SP2\halmps.dll
-	acpi.sys,2k3SP2\Drivers\acpi.sys	
+    ntoskrnl.exe,2k3SP2\srvntoskrnl.exe
+    ntkrpamp.exe,2k3SP2\srvntkrpamp.exe
+    ntkrnlpa.exe,2k3SP2\srvntkrnlpa.exe
+    ntkrnlmp.exe,2k3SP2\srvntkrnlmp.exe
+	hal.dll,2k3SP2\srvhal.dll
+	halaacpi.dll,2k3SP2\srvhalaacpi.dll
+	halacpi.dll,2k3SP2\srvhalacpi.dll
+	halapic.dll,2k3SP2\srvhalapic.dll
+	halmacpi.dll,2k3SP2\srvhalmacpi.dll
+	halmps.dll,2k3SP2\srvhalmps.dll
+	acpi.sys,2k3SP2\Drivers\srvacpi.sys	
 
 [CopyAlways.Cache.files]
-    ntoskrnl.exe,2k3SP2\ntoskrnl.exe
-    ntkrpamp.exe,2k3SP2\ntkrpamp.exe
-    ntkrnlpa.exe,2k3SP2\ntkrnlpa.exe
-    ntkrnlmp.exe,2k3SP2\ntkrnlmp.exe
-	hal.dll,2k3SP2\hal.dll
-    ntdll.dll,2k3SP2\ntdll.dll	
-	halaacpi.dll,2k3SP2\halaacpi.dll
-	halacpi.dll,2k3SP2\halacpi.dll
-	halapic.dll,2k3SP2\halapic.dll
-	halmacpi.dll,2k3SP2\halmacpi.dll
-	halmps.dll,2k3SP2\halmps.dll
-	acpi.sys,2k3SP2\Drivers\acpi.sys
+    ntoskrnl.exe,2k3SP2\srvntoskrnl.exe
+    ntkrpamp.exe,2k3SP2\srvntkrpamp.exe
+    ntkrnlpa.exe,2k3SP2\srvntkrnlpa.exe
+    ntkrnlmp.exe,2k3SP2\srvntkrnlmp.exe
+	hal.dll,2k3SP2\srvhal.dll
+    ntdll.dll,2k3SP2\srvntdll.dll	
+	halaacpi.dll,2k3SP2\srvhalaacpi.dll
+	halacpi.dll,2k3SP2\srvhalacpi.dll
+	halapic.dll,2k3SP2\srvhalapic.dll
+	halmacpi.dll,2k3SP2\srvhalmacpi.dll
+	halmps.dll,2k3SP2\srvhalmps.dll
+	acpi.sys,2k3SP2\Drivers\srvacpi.sys
 
 [Uniprocessor.Kernel.files]
-    ntoskrnl.exe,2k3SP2\ntoskrnl.exe
-    ntkrnlpa.exe,2k3SP2\ntkrnlpa.exe
-	hal.dll,2k3SP2\halaacpi.dll
+    ntoskrnl.exe,2k3SP2\srvntoskrnl.exe
+    ntkrnlpa.exe,2k3SP2\srvntkrnlpa.exe
+	hal.dll,2k3SP2\srvhalaacpi.dll
 
 [Multiprocessor.Kernel.files]
-    ntkrnlpa.exe,2k3SP2\ntkrpamp.exe
-    ntoskrnl.exe,2k3SP2\ntkrnlmp.exe
-	hal.dll,2k3SP2\halmacpi.dll
+    ntkrnlpa.exe,2k3SP2\srvntkrpamp.exe
+    ntoskrnl.exe,2k3SP2\srvntkrnlmp.exe
+	hal.dll,2k3SP2\srvhalmacpi.dll
 
 [SourceDisksNames]
     1=%ServicePackSourceFiles%

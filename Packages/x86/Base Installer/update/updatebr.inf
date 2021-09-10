@@ -17,8 +17,8 @@ Signature="$Windows NT$"
 SP1RC1="update\update_srv2k3_SP1_RC1.inf"
 
 [SourceInfsBranches]
-WinXPSP2=update\update_WinXP_SP2.inf
-WinXPSP3=update\update_WinXP_SP3.inf
+WinXPSP2=update\update_winXP_SP2.inf
+WinXPSP3=update\update_winXP_SP3.inf
 Srv2k3RTM=update\update_srv2k3_RTM.inf
 Srv2k3SP1=update\update_srv2k3_SP1.inf
 Srv2k3SP2=update\update_srv2k3_SP2.inf
