@@ -1907,3 +1907,14 @@ BOOL WINAPI DECLSPEC_HOTPATCH GetProcessGroupAffinity( HANDLE process, USHORT *c
     SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
     return FALSE;
 }
+
+/***********************************************************************
+ *           SetProcessGroupAffinity   (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH SetProcessGroupAffinity( HANDLE process, const GROUP_AFFINITY *new,
+                                                       GROUP_AFFINITY *old )
+{
+    FIXME( "(%p,%p,%p): stub\n", process, new, old );
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}

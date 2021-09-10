@@ -1432,6 +1432,7 @@
 @ stdcall PerfStartProvider(ptr ptr ptr)
 @ stdcall PerfStartProviderEx(ptr ptr ptr)
 @ stdcall PerfStopProvider(long)
+@ stdcall SetProcessGroupAffinity(long ptr ptr)
 
 ; #Win10 functions
 ; @ stdcall GetThreadDescription(long ptr)
