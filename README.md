@@ -42,3 +42,9 @@ You can run several programs with One-Core-API, like:
 - Windows 7 games
 - Vista Applications
 - Several other applications
+
+Installation order of packages:
+Kernel Standalone -> App Compat Installer: you can't install Base installer and others packages side by side with Kernel Standalone installed;
+App Compat (only one)
+Base Installer -> New Installer (Additional Dlls) -> D3d Installer -> API-SET installer -> App Compat -> Kernel Update
+App Compat -> Base Installer -> New Installer (Additional Dlls) -> D3d Installer -> API-SET installer -> Kernel Update
