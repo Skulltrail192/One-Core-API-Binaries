@@ -28,7 +28,16 @@
 /* #include <windows.h> FIXME: Need to include for compatibility. Inclusion caused compile fail */
 
 #if (DIRECT3D_VERSION >= 0x0800)
-#error "You should not include d3dtypes.h when compiling for DX8 or newer."
+	
+#ifndef _D3DHAL_H_
+#pragma message("should not include d3dtypes.h when compiling for DX8 or newer interfaces")
+#endif
+
+#if (DIRECT3D_VERSION >= 0x0900)
+#include <d3d9types.h>
+#else
+#include <d3d8types.h>
+#endif
 #endif
 
 #include <float.h>

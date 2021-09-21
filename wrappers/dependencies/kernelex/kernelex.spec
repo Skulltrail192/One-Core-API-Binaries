@@ -24,9 +24,9 @@
 24 stdcall BaseInitAppcompatCacheSupport()
 25 stdcall BaseIsAppcompatInfrastructureDisabled() IsShimInfrastructureDisabled
 26 stdcall BaseProcessInitPostImport() ; missing in Win 7
-;@ stdcall -arch=x86_64 BaseProcessStart()
+@ stdcall -arch=x86_64 BaseProcessStart(ptr)
 27 stdcall BaseQueryModuleData(str str ptr ptr ptr) ;check
-;@ stdcall -arch=x86_64 BaseThreadStart()
+@ stdcall -arch=x86_64 BaseThreadStart(ptr ptr)
 28 stdcall BaseUpdateAppcompatCache(long long long)
 29 stdcall BasepCheckBadapp(long ptr long long long long long long long)
 30 stdcall BasepCheckWinSaferRestrictions(long long long long long long)
@@ -61,7 +61,7 @@
 59 stdcall CompareStringA(long long str long str long)
 60 stdcall CompareStringW(long long wstr long wstr long)
 61 stdcall ConnectNamedPipe(long ptr)
-;@ stdcall -arch=x86_64 ConsoleIMERoutine()
+@ stdcall -arch=x86_64 ConsoleIMERoutine(ptr)
 62 stdcall ConsoleMenuControl(long long long)
 63 stdcall ContinueDebugEvent(long long long)
 64 stdcall ConvertDefaultLocale (long)
@@ -118,7 +118,7 @@
 115 stdcall CreateToolhelp32Snapshot(long long)
 116 stdcall CreateWaitableTimerA(ptr long str)
 117 stdcall CreateWaitableTimerW(ptr long wstr)
-;@ stdcall -arch=x86_64 CtrlRoutine()
+@ stdcall -arch=x86_64 CtrlRoutine(ptr)
 118 stdcall DeactivateActCtx(long ptr)
 119 stdcall DebugActiveProcess(long)
 120 stdcall DebugActiveProcessStop(long)

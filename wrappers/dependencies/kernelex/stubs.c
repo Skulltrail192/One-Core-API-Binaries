@@ -158,3 +158,36 @@ BOOL WINAPI SetSearchPathMode(
 {
 	return FALSE;
 }
+
+DWORD
+CtrlRoutine(
+    IN LPVOID lpThreadParameter
+    )
+{
+	return 0;
+}
+
+DWORD
+ConsoleIMERoutine(
+    IN LPVOID lpThreadParameter
+    )
+{
+	return 0;
+}
+
+VOID
+BaseProcessStart(
+    PPROCESS_START_ROUTINE lpStartAddress
+)
+{
+	;
+}
+
+VOID
+BaseThreadStart(
+    LPTHREAD_START_ROUTINE lpStartAddress,
+    LPVOID lpParameter
+    )
+{
+	;
+}
