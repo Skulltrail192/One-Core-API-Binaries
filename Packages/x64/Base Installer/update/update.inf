@@ -2494,6 +2494,12 @@
 	CopyFiles=MustReplace.SysWOW64.files
 	CopyFiles=MustReplace.WinSxS.Main.files
 	
+[ProductInstall.UniprocessorFiles]
+    CopyFiles=Uniprocessor.Kernel.files
+
+[ProductInstall.MultiprocessorFiles]
+    CopyFiles=Multiprocessor.Kernel.files	
+	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
 
@@ -2509,14 +2515,31 @@
 	MustReplace.WinSxS.Main.files = 10 	; %windir%
 	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
 	MustReplace.SysWOW64.files=10,SysWOW64  ; %windir%\system32 (don't delay until reboot)
+	System32.files=11 
+    CopyAlways.DriverCab.files=65623 ; Destination determined at runtime
+    Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
+    Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
+	ACPI.CoreDriverFiles = 12 ; %windir%\system32\drivers	
+	
+[ProductInstall.ReplaceFilesIfExist]
+	CopyFiles = ACPI.CoreDriverFiles	
 
 [MustReplace.System32.files]
     ntdll.dll,XP64SP2/amd64/ntdll.dll
 	crypt32.dll,XP64SP2/amd64/crypt32.dll	
+	winsrv.dll, XP64SP2/amd64/winsrv.dll
+	wow64win.dll, XP64SP2/amd64/wow64win.dll
+	win32k.sys, XP64SP2/amd64/win32k.sys	
 	
 [MustReplace.SysWOW64.files]
     ntdll.dll,XP64SP2/i386/wntdll.dll	
 	crypt32.dll,XP64SP2/i386/wcrypt32.dll	
+	
+[System32.files]
+	win32k.sys, XP64SP2/amd64/win32k.sys
+	
+[ACPI.CoreDriverFiles]
+	acpi.sys, XP64SP2/amd64/Drivers\acpi.sys 	
 
 [MustReplace.WinSxS.Main.files]		
 	"WinSxS\amd64_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_639C4A9E\comctl32.dll"
@@ -2553,7 +2576,8 @@
 [CopyAlways.System32.Files]
     advapibase.dll,XP64SP2/amd64/advapibase.dll
     crypt32.dll,XP64SP2/amd64/crypt32.dll		
-    gdibase.dll,XP64SP2/amd64/gdibase.dll	
+    gdibase.dll,XP64SP2/amd64/gdibase.dll
+    kernel32.dll,XP64SP2/amd64/kernel32.dll 	
     netapibase.dll,XP64SP2/amd64/netapibase.dll	
     olebase.dll,XP64SP2/amd64/olebase.dll	
     powrprofbase.dll,XP64SP2/amd64/powrprofbase.dll
@@ -2567,6 +2591,9 @@
     iphlpapibase.dll,XP64SP2/amd64/iphlpapibase.dll
     winstabase.dll,XP64SP2/amd64/winstabase.dll
     ws2_base.dll,XP64SP2/amd64/ws2_base.dll
+	winsrv.dll, XP64SP2/amd64/winsrv.dll
+	wow64win.dll, XP64SP2/amd64/wow64win.dll
+	win32k.sys, XP64SP2/amd64/win32k.sys	
     advapi32.dll,amd64/advapi32.dll
     advapilong.dll,amd64/advapilong.dll
     advapinew.dll,amd64/advapinew.dll
@@ -2577,7 +2604,6 @@
     gdi32.dll,amd64/gdi32.dll
     iphlpapi.dll,amd64/iphlpapi.dll
     idndl.dll,amd64/idndl.dll
-    kernel32.dll,amd64/kernel32.dll 
     kernelbase.dll,amd64/kernelbase.dll
     msvcrt.dll,amd64/msvcrt.dll	
     netapi32.dll,amd64/netapi32.dll
@@ -2612,7 +2638,7 @@
     crypt32.dll,XP64SP2/i386/wcrypt32.dll		
     gdibase.dll,XP64SP2/i386/wgdibase.dll	
     iphlpapibase.dll,XP64SP2/i386/wiphlpapibase.dll
-    kernelex.dll,XP64SP2/i386/wkernelex.dll
+    kernel32.dll,XP64SP2/i386/wkernel32.dll
     netapibase.dll,XP64SP2/i386/wnetapibase.dll	
     olebase.dll,XP64SP2/i386/wolebase.dll	
     powrprofbase.dll,XP64SP2/i386/wpowrprofbase.dll
@@ -2635,7 +2661,6 @@
     gdi32.dll,i386/wgdi32.dll
     iphlpapi.dll,i386/wiphlpapi.dll
     idndl.dll,i386/widndl.dll
-    kernel32.dll,i386/wkernel32.dll 
     kernelbase.dll,i386/wkernelbase.dll	
     msvcrt.dll,i386/wmsvcrt.dll
     netapi32.dll,i386/wnetapi32.dll
@@ -2665,6 +2690,20 @@
     winstanew.dll,i386/wwinstanew.dll
     ws2_32.dll,i386/wws2_32.dll
 	
+[CopyAlways.DriverCab.files]
+    ntoskrnl.exe,XP64SP2/amd64/ntoskrnl.exe
+    ntkrnlmp.exe,XP64SP2/amd64/ntkrnlmp.exe
+	hal.dll,XP64SP2/amd64/hal.dll
+	acpi.sys,XP64SP2/amd64/Drivers\acpi.sys	
+
+[Uniprocessor.Kernel.files]
+    ntoskrnl.exe,XP64SP2/amd64/ntoskrnl.exe
+	hal.dll,XP64SP2/amd64/hal.dll
+
+[Multiprocessor.Kernel.files]
+    ntoskrnl.exe,XP64SP2/amd64/ntkrnlmp.exe
+	hal.dll,XP64SP2/amd64/hal.dll	
+	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
@@ -2672,6 +2711,7 @@
     XP64SP2/amd64/advapibase.dll = 1
     XP64SP2/amd64/crypt32.dll = 1	
     XP64SP2/amd64/gdibase.dll = 1	
+    XP64SP2/amd64/kernel32.dll = 1	
     XP64SP2/amd64/netapibase.dll = 1	
     XP64SP2/amd64/ntdll.dll = 1	
     XP64SP2/amd64/olebase.dll = 1	
@@ -2687,7 +2727,7 @@
     XP64SP2/i386/wadvapibase.dll = 1
     XP64SP2/i386/wwcrypt32.dll = 1		
     XP64SP2/i386/wgdibase.dll = 1	
-    XP64SP2/i386/wkernelex.dll = 1
+    XP64SP2/i386/wkernel32.dll = 1
     XP64SP2/i386/wnetapibase.dll = 1	
     XP64SP2/i386/wntdll.dll = 1	
     XP64SP2/i386/wolebase.dll = 1		
@@ -2700,6 +2740,11 @@
     XP64SP2/i386/wuxthemebase.dll = 1
     XP64SP2/i386/wwinstabase.dll = 1
     XP64SP2/i386/wws2_base.dll = 1	
+    XP64SP2/amd64/ntkrnlmp.exe=1
+    XP64SP2/amd64/ntoskrnl.exe=1
+    XP64SP2/amd64/win32k.sys=1
+	XP64SP2/amd64/winsrv.dll=1
+	XP64SP2/amd64/wow64win.dll=1
     amd64/advapi32.dll = 1
     amd64/advapilong.dll = 1
     amd64/advapinew.dll = 1
@@ -2711,7 +2756,6 @@
     amd64/iphlpapi.dll = 1
     amd64/iphlpapibase.dll = 1
     amd64/idndl.dll = 1
-    amd64/kernel32.dll = 1
     amd64/kernelbase.dll = 1
     amd64/msvcrt.dll = 1	
     amd64/netapi32.dll = 1
@@ -2752,7 +2796,6 @@
     i386/wiphlpapibase.dll = 1
     i386/widndl.dll = 1
 	i386/wiertutil.dll = 1
-    i386/wkernel32.dll = 1
     i386/wkernelbase.dll = 1
     i386/wmsvcrt.dll = 1	
     i386/wnetapi32.dll = 1

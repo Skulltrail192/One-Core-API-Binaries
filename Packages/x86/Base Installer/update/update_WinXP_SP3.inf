@@ -441,6 +441,7 @@
 	CopyFiles                  = CopyAlways.WinSxS.Main.files
 	CopyFiles                  = CopyAlways.WinSxS.Manifests.files
 	CopyFiles                  = CopyAlways.WinSxS.Policies.files
+    CopyFiles				   = CopyAlways.DriverCab.files	
 	
 [ProductInstall.DontDelayUntilReboot]
     CopyFiles=MustReplace.System32.files
@@ -450,6 +451,12 @@
 
 [ProductInstall.GlobalRegistryChanges.ReInstall]
     AddReg=Product.Add.Reg
+	
+[ProductInstall.UniprocessorFiles]
+    CopyFiles=Uniprocessor.Kernel.files
+
+[ProductInstall.MultiprocessorFiles]
+    CopyFiles=Multiprocessor.Kernel.files	
 
 [DestinationDirs]
 	System32.files=11                   ; %windir%\system32 (replace if exist)
@@ -458,10 +465,50 @@
 	CopyAlways.WinSxS.Manifests.files = 10 ; %windir%
 	CopyAlways.WinSxS.Policies.files = 10 ; %windir%
 	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
+    CopyAlways.DriverCab.files=65623 ; Destination determined at runtime
+    Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
+    Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
+	ACPI.CoreDriverFiles = 12 ; %windir%\system32\drivers	
+	
+[ProductInstall.ReplaceFilesIfExist]
+	CopyFiles = ACPI.CoreDriverFiles	
 
 [MustReplace.System32.files]
-    ntdll.dll,XPSP3\xpntdll.dll	
-	crypt32.dll,XPSP3\xpcrypt32.dll		
+	crypt32.dll,XPSP3\xpspcrypt32.dll
+    ntdll.dll,XPSP3\xpspntdll.dll
+	kernel32.dll, XPSP3\xpspkernel32.dll
+	winsrv.dll, XPSP3\xpspwinsrv.dll
+	win32k.sys, XPSP3\xpspwin32k.sys	
+
+[System32.files]
+	win32k.sys, XPSP3\xpspwin32k.sys
+	
+[ACPI.CoreDriverFiles]
+	acpi.sys, XPSP3\Drivers\xpspacpi.sys 
+
+[CopyAlways.DriverCab.files]
+    ntoskrnl.exe,XPSP3\xpspntoskrnl.exe
+    ntkrpamp.exe,XPSP3\xpspntkrpamp.exe
+    ntkrnlpa.exe,XPSP3\xpspntkrnlpa.exe
+    ntkrnlmp.exe,XPSP3\xpspntkrnlmp.exe
+	hal.dll,XPSP3\xpsphal.dll
+	halaacpi.dll,XPSP3\xpsphalaacpi.dll	
+	halacpi.dll,XPSP3\xpsphalacpi.dll	
+	halapic.dll,XPSP3\xpsphalapic.dll	
+	halmacpi.dll,XPSP3\xpsphalmacpi.dll	
+	halmps.dll,XPSP3\xpsphalmps.dll	
+	halsp.dll,XPSP3\xpsphalsp.dll	
+	acpi.sys,XPSP3\Drivers\xpspacpi.sys	
+
+[Uniprocessor.Kernel.files]
+    ntoskrnl.exe,XPSP3\xpspntoskrnl.exe
+    ntkrnlpa.exe,XPSP3\xpspntkrnlpa.exe
+	hal.dll,XPSP3\xpsphalaacpi.dll
+	
+[Multiprocessor.Kernel.files]
+    ntkrnlpa.exe,XPSP3\xpspntkrpamp.exe
+    ntoskrnl.exe,XPSP3\xpspntkrnlmp.exe
+	hal.dll,XPSP3\xpsphalmacpi.dll		
 	
 [MustReplace.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winxp\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
@@ -484,28 +531,30 @@
 	"WinSxS\Policies\x86_policy.1.0.Microsoft.Windows.GdiPlus_6595b64144ccf1df_x-ww_4E8510AC\1.0.6002.24102.policy"
 
 [CopyAlways.System32.Files]
-    advapibase.dll,XPSP3\xpadvapibase.dll
-	advpack.dll,XPSP3\xpadvpack.dll
-	crypt32.dll,XPSP3\xpcrypt32.dll
-    gdibase.dll,XPSP3\xpgdibase.dll	
-    kernelex.dll,XPSP3\xpkernelex.dll
-    netapibase.dll,XPSP3\xpnetapibase.dll	
-	ntdsapi.dll,XPSP3\xpntdsapi.dll	
-    olebase.dll,XPSP3\xpolebase.dll		
-    powrprofbase.dll,XPSP3\xppowrprofbase.dll
-    rpcrtbase.dll,XPSP3\xprpcrtbase.dll
-	samlib.dll,XPSP3\xpsamlib.dll
-    securbase.dll,XPSP3\xpsecurbase.dll
-    setupapibase.dll,XPSP3\xpsetupapibase.dll
-    shellbase.dll,XPSP3\xpshellbase.dll
-	shlwapibase.dll,XPSP3\xpshlwapibase.dll
-    userbase.dll,XPSP3\xpuserbase.dll
-    uxthemebase.dll,XPSP3\xpuxthemebase.dll
-    winstabase.dll,XPSP3\xpwinstabase.dll
-    ws2_base.dll,XPSP3\xpws2_base.dll
+    advapibase.dll,XPSP3\xpspadvapibase.dll
+	advpack.dll,XPSP3\xpspadvpack.dll
+	crypt32.dll,XPSP3\xpspcrypt32.dll
+    gdibase.dll,XPSP3\xpspgdibase.dll	
+    kernel32.dll,XPSP3\xpspkernel32.dll
+    netapibase.dll,XPSP3\xpspnetapibase.dll	
+	ntdsapi.dll,XPSP3\xpspntdsapi.dll	
+    olebase.dll,XPSP3\xpspolebase.dll		
+    powrprofbase.dll,XPSP3\xpsppowrprofbase.dll
+    rpcrtbase.dll,XPSP3\xpsprpcrtbase.dll
+	samlib.dll,XPSP3\xpspsamlib.dll
+    securbase.dll,XPSP3\xpspsecurbase.dll
+    setupapibase.dll,XPSP3\xpspsetupapibase.dll
+    shellbase.dll,XPSP3\xpspshellbase.dll
+	shlwapibase.dll,XPSP3\xpspshlwapibase.dll
+    userbase.dll,XPSP3\xpspuserbase.dll
+    uxthemebase.dll,XPSP3\xpspuxthemebase.dll
+    winstabase.dll,XPSP3\xpspwinstabase.dll
+    ws2_base.dll,XPSP3\xpspws2_base.dll
+	winsrv.dll, XPSP3\xpspwinsrv.dll
+	win32k.sys, XPSP3\xpspwin32k.sys	
     advapi32.dll
-    advapilong.dll
-    advapinew.dll	
+    ;advapilong.dll
+    ;advapinew.dll	
     bcrypt.dll
     comctlext.dll
 	cryptnew.dll
@@ -515,7 +564,7 @@
     iphlpapi.dll
     iphlpapibase.dll
     idndl.dll
-    kernel32.dll 
+    ;kernel32.dll 
     kernelbase.dll
 	msvcrt.dll
     netapi32.dll
@@ -531,7 +580,7 @@
     psapi.dll	
     rpcrt4.dll	
     secur32.dll
-    securnew.dll
+    ;securnew.dll
     setupapi.dll
     shell32.dll
     shlwapi.dll
@@ -549,28 +598,33 @@
     1=%ServicePackSourceFiles%
 
 [SourceDisksFiles]
-    XPSP3\xpadvapibase.dll = 1
-	XPSP3\xpadvpack.dll = 1	
-	XPSP3\xpcrypt32.dll = 1
-    XPSP3\xpgdibase.dll = 1	
-    XPSP3\xpkernelex.dll = 1
-    XPSP3\xpnetapibase.dll = 1	
-    XPSP3\xpntdll.dll = 1	
-	XPSP3\xpntdsapi.dll = 1	
-    XPSP3\xpolebase.dll = 1	
-    XPSP3\xppowrprofbase.dll = 1
-    XPSP3\xprpcrtbase.dll = 1
-	XPSP3\xpsamlib.dll	= 1
-    XPSP3\xpsecurbase.dll = 1
-    XPSP3\xpsetupapibase.dll = 1
-    XPSP3\xpshellbase.dll = 1
-    XPSP3\xpuserbase.dll = 1
-    XPSP3\xpuxthemebase.dll = 1
-    XPSP3\xpwinstabase.dll = 1
-    XPSP3\xpws2_base.dll = 1
+    XPSP3\xpspadvapibase.dll = 1
+	XPSP3\xpspadvpack.dll = 1	
+	XPSP3\xpspcrypt32.dll = 1
+    XPSP3\xpspgdibase.dll = 1	
+    XPSP3\xpspkernel32.dll = 1
+    XPSP3\xpspnetapibase.dll = 1	
+	XPSP3\xpspntdsapi.dll = 1	
+    XPSP3\xpspolebase.dll = 1	
+    XPSP3\xpsppowrprofbase.dll = 1
+    XPSP3\xpsprpcrtbase.dll = 1
+	XPSP3\xpspsamlib.dll	= 1
+    XPSP3\xpspsecurbase.dll = 1
+    XPSP3\xpspsetupapibase.dll = 1
+    XPSP3\xpspshellbase.dll = 1
+    XPSP3\xpspuserbase.dll = 1
+    XPSP3\xpspuxthemebase.dll = 1
+    XPSP3\xpspwinstabase.dll = 1
+    XPSP3\xpspws2_base.dll = 1
+    XPSP3\xpspntkrnlmp.exe=1
+    XPSP3\xpspntdll.dll=1
+    XPSP3\xpspntkrpamp.exe=1
+    XPSP3\xpspntoskrnl.exe=1
+    XPSP3\xpspntkrnlpa.exe=1
+	XPSP3\xpspwin32k.sys=1	
     advapi32.dll = 1
-    advapilong.dll = 1
-    advapinew.dll = 1
+    ;advapilong.dll = 1
+    ;advapinew.dll = 1
     bcrypt.dll = 1
     comctlext.dll =1
 	cryptnew.dll = 1
@@ -579,7 +633,7 @@
     iphlpapi.dll = 1
     iphlpapibase.dll = 1
     idndl.dll = 1
-    kernel32.dll = 1
+    ;kernel32.dll = 1
     kernelbase.dll = 1
 	msvcrt.dll = 1
     netapi32.dll = 1
@@ -596,7 +650,7 @@
     psapi.dll = 1	
     rpcrt4.dll = 1
     secur32.dll = 1
-    securnew.dll = 1
+    ;securnew.dll = 1
     setupapi.dll = 1
     shell32.dll = 1
     shlwapi.dll = 1

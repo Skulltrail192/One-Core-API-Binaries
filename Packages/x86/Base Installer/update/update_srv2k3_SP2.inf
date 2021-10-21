@@ -440,10 +440,17 @@
 	CopyFiles                  = CopyAlways.WinSxS.Main.files
 	CopyFiles                  = CopyAlways.WinSxS.Manifests.files
 	CopyFiles                  = CopyAlways.WinSxS.Policies.files
+	CopyFiles				   = CopyAlways.DriverCab.files	
 	
 [ProductInstall.DontDelayUntilReboot]
     CopyFiles=MustReplace.System32.files
 	CopyFiles=MustReplace.WinSxS.Main.files
+	
+[ProductInstall.UniprocessorFiles]
+    CopyFiles=Uniprocessor.Kernel.files
+
+[ProductInstall.MultiprocessorFiles]
+    CopyFiles=Multiprocessor.Kernel.files	
 	
 [ProductInstall.GlobalRegistryChanges.Install]
     AddReg=Product.Add.Reg
@@ -459,10 +466,28 @@
 	CopyAlways.WinSxS.Manifests.files = 10 ; %windir%
 	CopyAlways.WinSxS.Policies.files = 10 ; %windir%
 	MustReplace.System32.files=11       ; %windir%\system32 (don't delay until reboot)
+    CopyAlways.DriverCab.files=65623 ; Destination determined at runtime
+    Uniprocessor.Kernel.files=11    ; %windir%\system32 (don't delay until reboot)
+    Multiprocessor.Kernel.files=11  ; %windir%\system32 (don't delay until reboot)
+	ACPI.CoreDriverFiles = 12 ; %windir%\system32\drivers	
+
+[ProductInstall.ReplaceFilesIfExist]
+	CopyFiles = ACPI.CoreDriverFiles	
 
 [MustReplace.System32.files]
+	crypt32.dll,2k3SP2\srvcrypt32.dll
     ntdll.dll,2k3SP2\srvntdll.dll
-	crypt32.dll,2k3SP2\srvcrypt32.dll		
+	kernel32.dll, 2k3SP2\srvkernel32.dll
+	gdibase.dll, 2k3SP2\srvgdibase.dll
+	userbase.dll, 2k3SP2\srvuserbase.dll
+	winsrv.dll, 2k3SP2\srvwinsrv.dll
+	win32k.sys, 2k3SP2\srvwin32k.sys	
+	
+[System32.files]
+	win32k.sys, 2k3SP2\srvwin32k.sys
+	
+[ACPI.CoreDriverFiles]
+	acpi.sys, 2k3SP2\Drivers\srvacpi.sys 		
 	
 [MustReplace.WinSxS.Main.files]	
 	WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll, WinSxS\winsrv2k3\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.3790.5190_x-ww_319264BE\comctl32.dll
@@ -488,8 +513,9 @@
     advapibase.dll,2k3SP2\srvadvapibase.dll
 	crypt32.dll,2k3SP2\srvcrypt32.dll			
     gdibase.dll,2k3SP2\srvgdibase.dll	
-    kernelex.dll,2k3SP2\srvkernelex.dll
+    kernel32.dll,2k3SP2\srvkernel32.dll
     netapibase.dll,2k3SP2\srvnetapibase.dll	
+    ntdll.dll,2k3SP2\srvntdll.dll
     olebase.dll,2k3SP2\srvolebase.dll	
     powrprofbase.dll,2k3SP2\srvpowrprofbase.dll
     rpcrtbase.dll,2k3SP2\srvrpcrtbase.dll
@@ -501,9 +527,11 @@
     uxthemebase.dll,2k3SP2\srvuxthemebase.dll
     winstabase.dll,2k3SP2\srvwinstabase.dll
     ws2_base.dll,2k3SP2\srvws2_base.dll
+	winsrv.dll, 2k3SP2\srvwinsrv.dll
+	win32k.sys, 2k3SP2\srvwin32k.sys	
     advapi32.dll
-    advapilong.dll
-    advapinew.dll	
+    ;advapilong.dll
+    ;advapinew.dll	
     bcrypt.dll
     comctlext.dll
 	cryptnew.dll
@@ -512,7 +540,7 @@
     iphlpapi.dll
     iphlpapibase.dll
     idndl.dll
-    kernel32.dll 
+    ;kernel32.dll 
     kernelbase.dll	
 	msvcrt.dll	
     netapi32.dll
@@ -529,7 +557,7 @@
     psapi.dll	
     rpcrt4.dll
     secur32.dll
-    securnew.dll
+    ;securnew.dll
     setupapi.dll
     shell32.dll
     shlwapi.dll
@@ -543,15 +571,37 @@
     winstanew.dll
     ws2_32.dll
 	
+[CopyAlways.DriverCab.files]
+    ntoskrnl.exe,2k3SP2\srvntoskrnl.exe
+    ntkrpamp.exe,2k3SP2\srvntkrpamp.exe
+    ntkrnlpa.exe,2k3SP2\srvntkrnlpa.exe
+    ntkrnlmp.exe,2k3SP2\srvntkrnlmp.exe
+	hal.dll,2k3SP2\srvhal.dll
+	halaacpi.dll,2k3SP2\srvhalaacpi.dll
+	halacpi.dll,2k3SP2\srvhalacpi.dll
+	halapic.dll,2k3SP2\srvhalapic.dll
+	halmacpi.dll,2k3SP2\srvhalmacpi.dll
+	halmps.dll,2k3SP2\srvhalmps.dll
+	acpi.sys,2k3SP2\Drivers\srvacpi.sys		
+	
+[Uniprocessor.Kernel.files]
+    ntoskrnl.exe,2k3SP2\srvntoskrnl.exe
+    ntkrnlpa.exe,2k3SP2\srvntkrnlpa.exe
+	hal.dll,2k3SP2\srvhalaacpi.dll
+
+[Multiprocessor.Kernel.files]
+    ntkrnlpa.exe,2k3SP2\srvntkrpamp.exe
+    ntoskrnl.exe,2k3SP2\srvntkrnlmp.exe
+	hal.dll,2k3SP2\srvhalmacpi.dll	
+	
 [SourceDisksNames]
     1=%ServicePackSourceFiles%
 
 [SourceDisksFiles]
     2k3SP2\srvadvapibase.dll = 1
     2k3SP2\srvgdibase.dll = 1	
-    2k3SP2\srvkernelex.dll = 1
+    2k3SP2\srvkernel32.dll = 1
     2k3SP2\srvnetapibase.dll = 1	
-    2k3SP2\srvntdll.dll = 1	
     2k3SP2\srvolebase.dll = 1		
     2k3SP2\srvpowrprofbase.dll = 1
     2k3SP2\srvrpcrtbase.dll = 1
@@ -562,9 +612,15 @@
     2k3SP2\srvuxthemebase.dll = 1
     2k3SP2\srvwinstabase.dll = 1
     2k3SP2\srvws2_base.dll = 1
+    2k3SP2\srvntkrnlmp.exe=1
+    2k3SP2\srvntkrpamp.exe=1
+    2k3SP2\srvntoskrnl.exe=1
+    2k3SP2\srvntkrnlpa.exe=1
+    2k3SP2\srvntdll.dll=1	
+	2k3SP2\srvwin32k.sys=1		
     advapi32.dll = 1
-    advapilong.dll = 1
-    advapinew.dll = 1
+    ;advapilong.dll = 1
+    ;advapinew.dll = 1
     bcrypt.dll = 1
     combase.dll = 1
     comctlext.dll =1
@@ -574,7 +630,7 @@
     iphlpapi.dll = 1
     iphlpapibase.dll = 1
     idndl.dll = 1
-    kernel32.dll = 1
+    ;kernel32.dll = 1
     kernelbase.dll = 1	
 	msvcrt.dll = 1	
     netapi32.dll = 1
@@ -591,7 +647,7 @@
     psapi.dll = 1	
     rpcrt4.dll = 1
     secur32.dll = 1
-    securnew.dll = 1
+    ;securnew.dll = 1
     setupapi.dll = 1
     shell32.dll = 1
     shlwapi.dll = 1
