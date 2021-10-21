@@ -61,7 +61,7 @@ FilenameA2W(
  */
 BOOL WINAPI SetFileCompletionNotificationModes( HANDLE handle, UCHAR flags )
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
+	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
 	NTSTATUS Status;
 	
 	pSetFileCompletionNotificationModes = (void *)GetProcAddress(hkernel32, "SetFileCompletionNotificationModes");

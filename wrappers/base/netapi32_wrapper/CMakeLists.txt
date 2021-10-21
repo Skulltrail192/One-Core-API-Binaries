@@ -12,5 +12,5 @@ list(APPEND SOURCE
 add_library(netapi32_wrapper SHARED ${SOURCE})
 set_module_type(netapi32_wrapper win32dll)
 target_link_libraries(netapi32_wrapper wine)
-add_importlibs(netapi32_wrapper advapi32 msvcrt kernel32 netapibase netapinew ntdll)
+add_importlibs(netapi32_wrapper advapi32 msvcrt kernel32 netapibase ntdll)
 add_cd_file(TARGET netapi32_wrapper DESTINATION reactos/system32 FOR all)

@@ -350,7 +350,7 @@ GetLogicalProcessorInformation(
 	LPFN_GLPI glpi;
 	
     glpi = (LPFN_GLPI) GetProcAddress(
-                            GetModuleHandle(TEXT("kernelex")),
+                            GetModuleHandle(TEXT("kernel32")),
                             "GetLogicalProcessorInformation");
     if (NULL == glpi) 
     {
@@ -598,7 +598,7 @@ SYSTEM_LOGICAL_INFORMATION_FILLED _cdecl GetLogicalInfo()
     PCACHE_DESCRIPTOR Cache;
 
     glpi = (LPFN_GLPI) GetProcAddress(
-                            GetModuleHandle(TEXT("kernelex")),
+                            GetModuleHandle(TEXT("kernel32")),
                             "GetLogicalProcessorInformation");
     if (NULL == glpi) 
     {

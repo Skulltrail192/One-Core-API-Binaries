@@ -22,7 +22,7 @@
 @ stdcall BaseDumpAppcompatCache()
 @ stdcall BaseFlushAppcompatCache()
 @ stdcall BaseInitAppcompatCacheSupport()
-@ stdcall BaseProcessInitPostImport() kernelex.BaseProcessInitPostImport; missing in Win 7
+@ stdcall BaseProcessInitPostImport() kernel32.BaseProcessInitPostImport; missing in Win 7
 @ stdcall -arch=x86_64 BaseProcessStart()
 @ stdcall -arch=x86_64 BaseThreadStart()
 @ stdcall BaseUpdateAppcompatCache(long long long)
@@ -94,7 +94,7 @@
 @ stdcall CreateMutexW(ptr long wstr)
 @ stdcall CreateNamedPipeA(str long long long long long long ptr)
 @ stdcall CreateNamedPipeW(wstr long long long long long long ptr)
-@ stdcall CreateNlsSecurityDescriptor(ptr long long) kernelex.CreateNlsSecurityDescriptor ; missing in Win 7
+@ stdcall CreateNlsSecurityDescriptor(ptr long long) kernel32.CreateNlsSecurityDescriptor ; missing in Win 7
 @ stdcall CreatePipe(ptr ptr ptr long)
 @ stdcall CreateRemoteThread(long ptr long ptr long long ptr)
 @ stdcall CreateSemaphoreA(ptr long long str)
@@ -314,7 +314,7 @@
 @ stdcall GetDateFormatW(long long ptr wstr ptr long)
 @ stdcall GetDefaultCommConfigA(str ptr long)
 @ stdcall GetDefaultCommConfigW(wstr ptr long)
-@ stdcall GetDefaultSortkeySize(ptr) kernelex.GetDefaultSortkeySize ; missing in Win 7
+@ stdcall GetDefaultSortkeySize(ptr) kernel32.GetDefaultSortkeySize ; missing in Win 7
 @ stdcall GetDevicePowerState(long ptr)
 @ stdcall GetDiskFreeSpaceA(str ptr ptr ptr ptr)
 @ stdcall GetDiskFreeSpaceExA (str ptr ptr ptr)
@@ -352,7 +352,7 @@
 @ stdcall GetHandleInformation(long ptr)
 @ stdcall GetLargestConsoleWindowSize(long)
 @ stdcall GetLastError() ntext.RtlGetLastWin32Error
-@ stdcall GetLinguistLangSize(ptr) kernelex.GetLinguistLangSize ; missing in Win 7
+@ stdcall GetLinguistLangSize(ptr) kernel32.GetLinguistLangSize ; missing in Win 7
 @ stdcall GetLocalTime(ptr)
 @ stdcall GetLocaleInfoA(long long ptr long) ;GeptLocaleInfoA
 @ stdcall GetLocaleInfoW(long long ptr long) ;GetpLocaleInfoW
@@ -372,7 +372,7 @@
 @ stdcall GetNamedPipeInfo(long ptr ptr ptr ptr)
 @ stdcall GetNativeSystemInfo(ptr)
 @ stdcall GetNextVDMCommand(long)
-@ stdcall GetNlsSectionName(long long long str str long) kernelex.GetNlsSectionName ; missing in Win 7
+@ stdcall GetNlsSectionName(long long long str str long) kernel32.GetNlsSectionName ; missing in Win 7
 @ stdcall GetNumaAvailableMemoryNode(long ptr)
 @ stdcall GetNumaHighestNodeNumber(ptr)
 @ stdcall GetNumaNodeProcessorMask(long ptr)
@@ -504,18 +504,18 @@
 @ stdcall HeapAlloc(long long long) ntext.RtlAllocateHeap
 @ stdcall HeapCompact(long long)
 @ stdcall HeapCreate(long long long)
-@ stdcall HeapCreateTagsW(long long wstr wstr) kernelex.HeapCreateTagsW ; missing in Win 7
+@ stdcall HeapCreateTagsW(long long wstr wstr) kernel32.HeapCreateTagsW ; missing in Win 7
 @ stdcall HeapDestroy(long)
-@ stdcall HeapExtend(long long ptr long) kernelex.HeapExtend ; missing in Win 7
+@ stdcall HeapExtend(long long ptr long) kernel32.HeapExtend ; missing in Win 7
 @ stdcall HeapFree(long long long) ntext.RtlFreeHeap
 @ stdcall HeapLock(long)
 @ stdcall HeapQueryInformation(long long ptr long ptr)
-@ stdcall HeapQueryTagW(long long long long ptr) kernelex.HeapQueryTagW ; missing in Win 7
+@ stdcall HeapQueryTagW(long long long long ptr) kernel32.HeapQueryTagW ; missing in Win 7
 @ stdcall HeapReAlloc(long long ptr long) ntext.RtlReAllocateHeap
 @ stdcall HeapSize(long long ptr) ntext.RtlSizeHeap
 @ stdcall HeapSummary(long long ptr)
 @ stdcall HeapUnlock(long)
-@ stdcall HeapUsage(long long long long ptr) kernelex.HeapUsage ; missing in Win 7
+@ stdcall HeapUsage(long long long long ptr) kernel32.HeapUsage ; missing in Win 7
 @ stdcall HeapValidate(long long ptr)
 @ stdcall HeapWalk(long ptr)
 @ stdcall InitAtomTable(long)
@@ -547,7 +547,7 @@
 @ stdcall IsValidCodePage(long)
 @ stdcall IsValidLanguageGroup(long long)
 @ stdcall IsValidLocale(long long)
-@ stdcall IsValidUILanguage(long) kernelex.IsValidUILanguage ; missing in Win 7
+@ stdcall IsValidUILanguage(long) kernel32.IsValidUILanguage ; missing in Win 7
 @ stdcall IsWow64Process(ptr ptr)
 @ stdcall LCMapStringA(long long str long ptr long)
 @ stdcall LCMapStringW(long long wstr long ptr long)
@@ -597,9 +597,9 @@
 @ stdcall MultiByteToWideChar(long long str long ptr long)
 @ stdcall NlsConvertIntegerToString(long long long wstr long) ; missing in Win 7
 @ stdcall NlsGetCacheUpdateCount()
-@ stdcall NlsResetProcessLocale() kernelex.NlsResetProcessLocale
+@ stdcall NlsResetProcessLocale() kernel32.NlsResetProcessLocale
 @ stdcall OpenConsoleW(wstr long long long)
-@ stdcall OpenDataFile(long long) kernelex.OpenDataFile ; missing in Win 7
+@ stdcall OpenDataFile(long long) kernel32.OpenDataFile ; missing in Win 7
 @ stdcall OpenEventA(long long str)
 @ stdcall OpenEventW(long long wstr)
 @ stdcall OpenFile(str ptr long)
@@ -706,7 +706,7 @@
 @ stdcall ScrollConsoleScreenBufferW(long ptr ptr ptr ptr)
 @ stdcall SearchPathA(str str str long ptr ptr)
 @ stdcall SearchPathW(wstr wstr wstr long ptr ptr)
-@ stdcall SetCPGlobal(long) kernelex.SetCPGlobal ; missing in Win 7
+@ stdcall SetCPGlobal(long) kernel32.SetCPGlobal ; missing in Win 7
 @ stdcall SetCalendarInfoA(long long long str)
 @ stdcall SetCalendarInfoW(long long long wstr)
 @ stdcall SetClientTimeZoneInformation(ptr)
@@ -722,7 +722,7 @@
 @ stdcall SetComputerNameW(wstr)
 @ stdcall SetConsoleActiveScreenBuffer(long)
 @ stdcall SetConsoleCP(long)
-@ stdcall SetConsoleCommandHistoryMode(long) kernelex.SetConsoleCommandHistoryMode ; missing in win 7
+@ stdcall SetConsoleCommandHistoryMode(long) kernel32.SetConsoleCommandHistoryMode ; missing in win 7
 @ stdcall SetConsoleCtrlHandler(ptr long)
 @ stdcall SetConsoleCursor(long long)
 @ stdcall SetConsoleCursorInfo(long ptr)
@@ -854,8 +854,8 @@
 @ stdcall UpdateResourceW(long wstr wstr long ptr long)
 @ stdcall VDMConsoleOperation(long long)
 @ stdcall VDMOperationStarted(long)
-@ stdcall ValidateLCType(long long ptr ptr) kernelex.ValidateLCType
-@ stdcall ValidateLocale(long) kernelex.ValidateLocale
+@ stdcall ValidateLCType(long long ptr ptr) kernel32.ValidateLCType
+@ stdcall ValidateLocale(long) kernel32.ValidateLocale
 @ stdcall VerLanguageNameA(long str long)
 @ stdcall VerLanguageNameW(long wstr long)
 @ stdcall -ret64 VerSetConditionMask(long long long long) ntext.VerSetConditionMask
@@ -979,19 +979,19 @@
 @ stdcall Wow64RevertWow64FsRedirection(ptr)
 @ stdcall ReOpenFile(ptr long long long)
 @ stdcall GetNLSVersion(long long ptr) 
-@ stdcall IsNLSDefinedString(long long ptr long long) kernelex.IsNLSDefinedString
+@ stdcall IsNLSDefinedString(long long ptr long long) kernel32.IsNLSDefinedString
 @ stdcall SetFileCompletionNotificationModes(ptr long)
 
 #Missing on XP and 2003 RTM
-@ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernelex.BaseCheckRunApp
-@ stdcall BasepCheckBadapp(long ptr long long long long long long long) kernelex.BasepCheckBadapp
-@ stdcall EnumSystemFirmwareTables(long ptr long) kernelex.EnumSystemFirmwareTables
-@ stdcall GetSystemFileCacheSize(ptr ptr ptr) kernelex.GetSystemFileCacheSize
-@ stdcall GetSystemFirmwareTable(long long ptr long) kernelex.GetSystemFirmwareTable
+@ stdcall BaseCheckRunApp(long ptr long long long long long long long long) kernel32.BaseCheckRunApp
+@ stdcall BasepCheckBadapp(long ptr long long long long long long long) kernel32.BasepCheckBadapp
+@ stdcall EnumSystemFirmwareTables(long ptr long) kernel32.EnumSystemFirmwareTables
+@ stdcall GetSystemFileCacheSize(ptr ptr ptr) kernel32.GetSystemFileCacheSize
+@ stdcall GetSystemFirmwareTable(long long ptr long) kernel32.GetSystemFirmwareTable
  
 #Missing on Server 2003 RTM (only available on 2003 SP1 and SP2 and XP SP3)
-@ stdcall BaseQueryModuleData(str str ptr ptr ptr) kernelex.BaseQueryModuleData
-@ stdcall BasepCheckWinSaferRestrictions(long long long long long long) kernelex.BasepCheckWinSaferRestrictions
+@ stdcall BaseQueryModuleData(str str ptr ptr ptr) kernel32.BaseQueryModuleData
+@ stdcall BasepCheckWinSaferRestrictions(long long long long long long) kernel32.BasepCheckWinSaferRestrictions
 @ stdcall BasepFreeAppCompatData(ptr ptr)
 @ stdcall SetSystemFileCacheSize(long long long) 
 @ stdcall SetThreadStackGuarantee(ptr)
@@ -1020,21 +1020,21 @@
 @ stdcall HeapSetInformation(ptr long ptr long) HeapSetInformationInternal
 @ stdcall SetThreadPriority(ptr long) SetThreadPriorityInternal
 
-#Needed functions for Server 2003 RTM and XP
-@ stdcall -arch=i386 CreateVirtualBuffer(ptr long long) kernelex.CreateVirtualBuffer
-@ stdcall -arch=i386 ExtendVirtualBuffer(ptr) kernelex.ExtendVirtualBuffer
-@ stdcall -arch=i386 FreeVirtualBuffer(ptr) kernelex.FreeVirtualBuffer
-@ stdcall -arch=i386 TrimVirtualBuffer(ptr) kernelex.TrimVirtualBuffer
-@ stdcall -arch=i386 VirtualBufferExceptionHandler(long ptr ptr) kernelex.VirtualBufferExceptionHandler
+; #Needed functions for Server 2003 RTM and XP
+; @ stdcall -arch=i386 CreateVirtualBuffer(ptr long long) kernel32.CreateVirtualBuffer
+; @ stdcall -arch=i386 ExtendVirtualBuffer(ptr) kernel32.ExtendVirtualBuffer
+; @ stdcall -arch=i386 FreeVirtualBuffer(ptr) kernel32.FreeVirtualBuffer
+; @ stdcall -arch=i386 TrimVirtualBuffer(ptr) kernel32.TrimVirtualBuffer
+; @ stdcall -arch=i386 VirtualBufferExceptionHandler(long ptr ptr) kernel32.VirtualBufferExceptionHandler
 
-#Only for Windows XP
-@ stdcall -arch=i386 BaseInitAppcompatCache() kernelex.BaseInitAppcompatCache
-@ stdcall -arch=i386 BaseCleanupAppcompatCache() kernelex.BaseCleanupAppcompatCache
-@ stdcall -arch=i386 CreateProcessInternalWSecure() kernelex.CreateProcessInternalWSecure
-@ stdcall -arch=i386 QueryWin31IniFilesMappedToRegistry(long wstr long ptr) kernelex.QueryWin31IniFilesMappedToRegistry
-@ stdcall -arch=i386 GetNumaAvailableMemory(ptr long ptr) kernelex.GetNumaAvailableMemory
-@ stdcall -arch=i386 GetNumaProcessorMap(ptr long ptr) kernelex.GetNumaProcessorMap
-@ stdcall -arch=i386 NumaVirtualQueryNode(long long long long) kernelex.NumaVirtualQueryNode
+; #Only for Windows XP
+; @ stdcall -arch=i386 BaseInitAppcompatCache() kernel32.BaseInitAppcompatCache
+; @ stdcall -arch=i386 BaseCleanupAppcompatCache() kernel32.BaseCleanupAppcompatCache
+; @ stdcall -arch=i386 CreateProcessInternalWSecure() kernel32.CreateProcessInternalWSecure
+; @ stdcall -arch=i386 QueryWin31IniFilesMappedToRegistry(long wstr long ptr) kernel32.QueryWin31IniFilesMappedToRegistry
+; @ stdcall -arch=i386 GetNumaAvailableMemory(ptr long ptr) kernel32.GetNumaAvailableMemory
+; @ stdcall -arch=i386 GetNumaProcessorMap(ptr long ptr) kernel32.GetNumaProcessorMap
+; @ stdcall -arch=i386 NumaVirtualQueryNode(long long long long) kernel32.NumaVirtualQueryNode
 
 #Vista Functions 
 @ stdcall AcquireSRWLockExclusive(ptr) ntext.RtlAcquireSRWLockExclusive
@@ -1408,8 +1408,8 @@
 @ stdcall PathCchAddBackslashEx(wstr long ptr ptr) 
 @ stdcall PathCchAddExtension(wstr long wstr)
 @ stdcall PathCchFindExtension(wstr long ptr)
-@ stdcall PathCchAppend(wstr long wstr) kernelbase.PathCchAppend
-@ stdcall PathCchAppendEx(wstr long wstr long) kernelbase.PathCchAppendEx
+@ stdcall PathCchAppend(wstr long wstr)
+@ stdcall PathCchAppendEx(wstr long wstr long)
 @ stub PathCchCanonicalize
 @ stub PathCchCanonicalizeEx
 @ stdcall PathCchCombine(ptr long ptr ptr)
@@ -1418,6 +1418,7 @@
 @ stdcall PathCchRemoveBackslashEx(wstr long ptr ptr)
 @ stdcall PathCchRenameExtension(wstr long wstr)
 @ stdcall PathCchRemoveExtension(wstr long)
+# @ stub PathIsUNCEx
 @ stdcall SetProcessMitigationPolicy(long ptr long)
 @ stdcall WaitOnAddress(ptr ptr long long)
 @ stdcall WakeByAddressAll(ptr) ntext.RtlWakeAddressAll
@@ -1688,7 +1689,6 @@
 @ stdcall PathIsSameRootA(str str) shlwapi.PathIsSameRootA
 @ stdcall PathIsSameRootW(wstr wstr) shlwapi.PathIsSameRootW
 @ stdcall PathIsUNCA(str) shlwapi.PathIsUNCA
-# @ stub PathIsUNCEx
 @ stdcall PathIsUNCServerA(str) shlwapi.PathIsUNCServerA
 @ stdcall PathIsUNCServerShareA(str) shlwapi.PathIsUNCServerShareA
 @ stdcall PathIsUNCServerShareW(wstr) shlwapi.PathIsUNCServerShareW

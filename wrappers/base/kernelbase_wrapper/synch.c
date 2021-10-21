@@ -171,11 +171,11 @@ InitOnceExecuteOnce(
 {	
 	BOOL ret;
 	
-	DbgPrint("InitOnceExecuteOnce called\n");
+	//DbgPrint("InitOnceExecuteOnce called\n");
 	
 	ret = !RtlRunOnceExecuteOnce( once, (PRTL_RUN_ONCE_INIT_FN)func, param, context );
 	
-	DbgPrint("InitOnceExecuteOnce:: ret is %d\n", ret);
+	//DbgPrint("InitOnceExecuteOnce:: ret is %d\n", ret);
 	
     return ret;
 }

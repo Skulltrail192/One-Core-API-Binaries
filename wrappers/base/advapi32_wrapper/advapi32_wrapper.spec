@@ -263,7 +263,7 @@
 266 stdcall GetSecurityDescriptorControl(ptr ptr ptr)
 267 stdcall GetSecurityDescriptorDacl(ptr ptr ptr ptr)
 268 stdcall GetSecurityDescriptorGroup(ptr ptr ptr)
-269 stdcall GetSecurityDescriptorLength(ptr) ntdll.RtlLengthSecurityDescriptor
+269 stdcall GetSecurityDescriptorLength(ptr) #ntdll.RtlLengthSecurityDescriptor
 270 stdcall GetSecurityDescriptorOwner(ptr ptr ptr)
 271 stdcall GetSecurityDescriptorRMControl(ptr ptr)
 272 stdcall GetSecurityDescriptorSacl(ptr ptr ptr ptr)
@@ -404,7 +404,7 @@
 409 stdcall MakeAbsoluteSD2(ptr ptr)
 410 stdcall MakeAbsoluteSD(ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr ptr)
 411 stdcall MakeSelfRelativeSD(ptr ptr ptr)
-412 stdcall MapGenericMask(ptr ptr) ntdll.RtlMapGenericMask
+412 stdcall MapGenericMask(ptr ptr) #ntdll.RtlMapGenericMask
 413 stdcall NotifyBootConfigStatus(long)
 414 stdcall NotifyChangeEventLog(long long)
 415 stdcall ObjectCloseAuditAlarmA(str ptr long)
@@ -657,8 +657,8 @@
 674 stdcall WmiQuerySingleInstanceMultipleA(long long long long long)
 675 stdcall WmiQuerySingleInstanceMultipleW(long long long long long)
 676 stdcall WmiQuerySingleInstanceW(long wstr ptr ptr)
-677 stdcall WmiReceiveNotificationsA(long long long long) ntdll.EtwReceiveNotificationsA
-678 stdcall WmiReceiveNotificationsW(long long long long) ntdll.EtwReceiveNotificationsW
+677 stdcall WmiReceiveNotificationsA(long long long long) #ntdll.EtwReceiveNotificationsA
+678 stdcall WmiReceiveNotificationsW(long long long long) #ntdll.EtwReceiveNotificationsW
 679 stdcall WmiSetSingleInstanceA(long str long long ptr)
 680 stdcall WmiSetSingleInstanceW(long wstr long long ptr)
 681 stdcall WmiSetSingleItemA(long str long long long ptr)

@@ -29,7 +29,7 @@ static DEP_SYSTEM_POLICY_TYPE (WINAPI *pGetSystemDEPPolicy)();
 DEP_SYSTEM_POLICY_TYPE WINAPI 
 GetSystemDEPPolicy(void)
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
+	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
 	
 	pGetSystemDEPPolicy = (void *)GetProcAddress(hkernel32, "GetSystemDEPPolicy");
 	if(pGetSystemDEPPolicy){
@@ -43,7 +43,7 @@ BOOL
 WINAPI 
 GetProcessDEPPolicy(HANDLE ProcessInformation, LPDWORD lpFlags, PBOOL lpPermanent)
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
+	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
 	NTSTATUS status;
 	ULONG dep_flags;
 	
@@ -78,7 +78,7 @@ BOOL
 WINAPI 
 SetProcessDEPPolicy(DWORD dwFlags)
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
+	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
 	NTSTATUS status;
 	ULONG depFlags = 0;
 	

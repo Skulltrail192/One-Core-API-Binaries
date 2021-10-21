@@ -1278,7 +1278,7 @@ LCMapStringEx(
 {
     LPWSTR dst_ptr;
 	
-	DbgPrint("LCMapStringEx called\n");		
+	//DbgPrint("LCMapStringEx called\n");		
 
     if (version) DbgPrint("unsupported version structure %p\n", version);
     if (reserved) DbgPrint("unsupported reserved pointer %p\n", reserved);
@@ -1333,8 +1333,8 @@ LCMapStringEx(
 
     if (srclen < 0) srclen = strlenW(src) + 1;
 
-    DbgPrint("(%s,0x%08x,%s,%d,%p,%d)\n",
-          debugstr_w(name), flags, debugstr_wn(src, srclen), srclen, dst, dstlen);
+    // DbgPrint("(%s,0x%08x,%s,%d,%p,%d)\n",
+          // debugstr_w(name), flags, debugstr_wn(src, srclen), srclen, dst, dstlen);
 
     if (!dst) /* return required string length */
     {
@@ -1805,7 +1805,7 @@ GetNLSVersion(
     WCHAR locale[LOCALE_NAME_MAX_LENGTH];
 	
 	nlsVersion = (pGetNLSVersion) GetProcAddress(
-                            GetModuleHandleW(L"kernelex"),
+                            GetModuleHandleW(L"kernel32"),
                             "GetNLSVersion");
 							
 	if(nlsVersion!=NULL){

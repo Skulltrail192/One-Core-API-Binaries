@@ -80,7 +80,7 @@ SetSystemFileCacheSize(
 	int Flags
 )
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
+	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
 	NTSTATUS status; 
 	BOOL result; 
 	char SystemInformation; 

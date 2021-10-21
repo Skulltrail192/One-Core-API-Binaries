@@ -374,7 +374,7 @@ BOOL WINAPI DECLSPEC_HOTPATCH SetDefaultDllDirectories( DWORD flags )
  */
 BOOL WINAPI SetSearchPathMode( DWORD flags )
 {
-	HMODULE hkernel32 = GetModuleHandleA("kernelex.dll");
+	HMODULE hkernel32 = GetModuleHandleA("kernel32.dll");
 	NTSTATUS Status;
 	
 	pSetSearchPathMode = (void *)GetProcAddress(hkernel32, "SetSearchPathMode");
