@@ -43,8 +43,14 @@ You can run several programs with One-Core-API, like:
 - Vista Applications
 - Several other applications
 
-Installation order of packages:
+**Installation order of packages:**
+**Case 1 (Kernel Standalone first):**
 Kernel Standalone -> App Compat Installer: you can't install Base installer and others packages side by side with Kernel Standalone installed;
-App Compat (only one)
+
+**App Compat (only one)**
+
+**Case Base Installer first**
 Base Installer -> New Installer (Additional Dlls) -> D3d Installer -> API-SET installer -> App Compat -> Kernel Update
+
+**AppCompat Base Installer first**
 App Compat -> Base Installer -> New Installer (Additional Dlls) -> D3d Installer -> API-SET installer -> Kernel Update
